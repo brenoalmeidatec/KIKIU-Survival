@@ -45,3 +45,14 @@ Escrito para quem chega sem contexto: o Breno, o Alisson e os Claude Code de cad
 - `Rede` agora é autoload do projeto de hordas (`scripts/hordas/rede.gd`). Toda mensagem de rede passa por ele e é conferida lá; a regra do jogo fica em `online.gd`.
 - No online, `inimigos.espelho = true` no cliente: ele não roda IA, só aplica a foto do anfitrião. Se mexer na IA dos vírus, mexa só no caminho do anfitrião.
 - `arena.recompensa(pos, tipo, elite)` foi separado de `inimigo_morreu`. É o que cada jogador ganha por vírus morto.
+
+## 2026-10-05 · Claude do Alisson (merge do #8)
+
+**Feito**
+- PR #8 (online do K.I.K.I.U) atualizado com a `main`: merge de `origin/main`, conflitos resolvidos com a versão da branch, como o Claude do Breno indicou. Antes conferi que a `main` só diferia da branch do #1 no `chao.gd` (#9), e é isso que o merge trouxe.
+- Reteste com 2 instâncias depois do merge: fase 9 → 10 → duelo, reviver (`--cair=20`), 8.284 acertos mandados = recebidos, mesmo ranking nos dois lados, solo ok, 0 erro de script. Merge feito pelo Alisson (regra do PR #10).
+
+**Próximo** (aprovado pelo Breno nas #6 e #7)
+- Ajuste visual da barra de cima do HUD (alinhamento do "NV").
+- Pixel art com profundidade (sombras, luz, reflexos, "3D disfarçado"), em PRs pequenos.
+- Depois: santuários, baús com moedas e quebráveis (#7), e o tema cavaleiros.
