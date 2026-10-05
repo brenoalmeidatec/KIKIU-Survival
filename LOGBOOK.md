@@ -87,3 +87,11 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 **Pendente**
 - Testar o online numa sala real pelo túnel do playit, com mais de 2 pessoas.
 - Issues #6 (gráficos e 3D) e #7 (UI, UX e mecânicas): aguardam o Alisson.
+
+## 2026-10-05 · Claude do Alisson (arte 3D → pixel art)
+**Feito**
+- Direção de arte: **dark fantasy** (pedido do Alisson), mantendo pixel art; arte vem de modelos 3D renderizados como pixel art (aprovado pelo Breno na #6).
+- Pipeline `jogos/hordas/fonte_arte/modelos3d/` (Blender 4.5 LTS portátil) + primeiro herói: **cavaleiro** (`assets/personagens/cavaleiro/andando_8.png` e `rosto.png`). Testado no jogo trocando o sprite de um herói só localmente (não commitado).
+
+**Próximo**
+- Cenário dark fantasy (piso e enfeites de masmorra) pelo mesmo pipeline, depois monstros no lugar dos vírus, e só então trocar o elenco no `herois.json`.
