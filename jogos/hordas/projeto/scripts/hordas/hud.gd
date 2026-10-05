@@ -68,7 +68,7 @@ func _process(_dt: float) -> void:
 	elif Input.is_action_just_pressed("confirmar") and _op_pausa == 1:
 		_pausado = false
 		get_tree().paused = false
-		arena.morrer()
+		arena.morrer("desistiu")
 
 
 func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, alinhar := HORIZONTAL_ALIGNMENT_LEFT, largura := -1.0) -> void:
@@ -168,7 +168,7 @@ func _duelo_hud() -> void:
 		var txt := "O anel está fechando" if f > 0.0 and f < 1.0 else ("Anel no tamanho final!" if f >= 1.0 else "O anel começa a fechar em %ds" % maxi(1, ceili(float(d.cfg.get("arena", {}).get("inicio_encolher", 12)) - d.t_luta)))
 		_txt(Vector2(0, 58), txt, 8, Color(1, 0.7, 0.6, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
 	# fora do anel: aviso piscando
-	if d.estado == "luta" and arena.jogador.position.distance_to(d.centro) > d.raio and d.lut_jogador.vivo:
+	if d.estado == "luta" and arena.jogador.centro().distance_to(d.centro) > d.raio and d.lut_jogador.vivo:
 		if int(_t * 6) % 2 == 0:
 			_txt(Vector2(0, 90), "VOLTE PRO ANEL!", 16, Color(1, 0.3, 0.3), HORIZONTAL_ALIGNMENT_CENTER, W)
 	# setas pros rivais que estão fora da tela

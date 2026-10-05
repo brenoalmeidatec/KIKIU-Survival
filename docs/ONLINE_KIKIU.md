@@ -2,7 +2,7 @@
 
 O Breno quer testar o online do K.I.K.I.U com o Alisson, de casas diferentes. Esta é a tarefa, com o desenho que já pensei depois de ler o código. **Nada disso foi construído ainda**; o que existe hoje é a corrida de 10 fases e o duelo final contra robôs (PR #1).
 
-Código do jogo: `jogos/hordas/projeto/scripts/hordas/`. Rede pronta para reaproveitar (com a sua validação): `jogos/cairu/projeto/scripts/rede.gd`. Túnel: `abrir_tunel_playit.bat` (está em `/mnt/project-files/jogo/build/` e deve ir no zip do K.I.K.I.U). Meta: até 6 jogadores, o anfitrião é o servidor (ENet, UDP 7777).
+Código do jogo: `jogos/hordas/projeto/scripts/hordas/`. Rede pronta para reaproveitar (com a sua validação): `jogos/cairu/projeto/scripts/rede.gd`. Túnel: `abrir_tunel_playit.bat` (está em `jogos/cairu/ferramentas/` e deve ir junto do .exe do K.I.K.I.U). Meta: até 6 jogadores, o anfitrião é o servidor (ENet, UDP 7777).
 
 ## 1. Sala e menu
 - Copiar `rede.gd` para o projeto de hordas como autoload `Rede` (no `project.godot`). Tirar as partes de mundo/cenas da Cairu e manter: criar sala, entrar por endereço, lista de jogadores, escolha de herói sem repetir, `sair`, sinais, validação.
@@ -38,7 +38,7 @@ Reaproveitar `duelo.gd`: no lugar dos robôs (`rival.gd`), cada outra pessoa vir
 ## 5. Entrega para testar
 - Zip do K.I.K.I.U com `abrir_tunel_playit.bat` e um LEIA-ME curto: como criar a sala, como o amigo entra (endereço do túnel `nome.gl.at.ply.gg:porta`), o que fazer se não conectar.
 - Testar antes com 2 instâncias na mesma máquina (`--online=host` e `--online=join --endereco=127.0.0.1:7777`, ambas com `--bot`): corrida de 10 fases até o duelo.
-- Atualizar `CairuVirus_prototipo.zip` no mesmo lugar (regra do projeto) e levar tudo por PR.
+- O zip e o .exe **não vão para o Git** (o README proíbe). O zip fica nos Arquivos do projeto, que é onde o Breno baixa (`CairuVirus_prototipo.zip`, atualizado no mesmo lugar). Só o código vai por PR.
 
 ## 6. Riscos
 - CPU do anfitrião com 6 jogadores e 500 vírus: hoje o laço leva 3 a 5 ms com 1 jogador, precisa medir.

@@ -290,7 +290,11 @@ func _atualizar_anel(dt: float) -> void:
 	var f := fracao_anel()
 	raio = lerpf(raio_ini, float(c.get("raio_final", 70.0)), f * f * (3.0 - 2.0 * f))
 	var pct := float(c.get("dano_anel_pct", 0.04)) * (1.0 + f * float(c.get("dano_anel_cresce", 1.0)))
-	for l in vivos():
+	var no_anel: Array = vivos()
+	no_anel.sort_custom(func(a, b): return _hp_frac(a) < _hp_frac(b))   # empate: quem tem menos vida cai primeiro
+	for l in no_anel:
+		if not l.vivo:
+			continue
 		if l.pos.distance_to(centro) > raio:
 			var hpmax: float = arena.stat("vida_max") if l.jogador else l.no.hpmax
 			if l.no.dano_direto(pct * hpmax * dt, "anel"):
@@ -301,7 +305,7 @@ func _atualizar_anel(dt: float) -> void:
 
 ## Uma arma do lutador "atq" acertou "alvo". Retorna true se o alvo caiu.
 func ferir(atq: Lutador, alvo: Lutador, valor: float, empurrao: Vector2, arma: String, statf: Callable) -> bool:
-	if estado != "luta" or not alvo.vivo:
+	if estado != "luta" or not alvo.vivo or not atq.vivo:
 		return false
 	var d := valor * atq.mult
 	var tipo := str(Dados.item(arma).get("tipo", "?")) if arma != "" else "?"
@@ -334,10 +338,13 @@ func eliminado(l: Lutador, quem: String) -> void:
 	l.vivo_ate = t_luta
 	l.lugar = vivos().size()      # 4 vivos e você caiu = 4º lugar
 	l.vivo = false
+	quem = quem.trim_prefix("rival:")
 	arena.efeitos.explodir(l.pos, l.cor, 22, 200.0)
 	arena.tremer(5)
 	Som.tocar("soco", 0.05, 0.8)
-	if quem == "" or quem == "anel":
+	if quem == "desistiu":
+		arena.mensagem("%s desistiu!" % l.nome, l.cor.lightened(0.3))
+	elif quem == "" or quem == "anel":
 		arena.mensagem("%s caiu fora do anel!" % l.nome, l.cor.lightened(0.3))
 	else:
 		arena.mensagem("%s derrubou %s!" % [quem, l.nome], Color(1, 0.85, 0.5))

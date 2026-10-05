@@ -209,6 +209,9 @@ func inimigo_morreu(v) -> void:
 				efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
 			inimigos.limpar()
 			await get_tree().create_timer(2.0, true, false, true).timeout
+			await _esperar_cartas()
+			if acabou:
+				return
 			iniciar_duelo()
 		else:
 			_fim(true)
@@ -223,6 +226,13 @@ func chefe_final_chegou(final := true) -> void:
 		hud.mensagem("Derrote o chefe pra fechar a fase!", Color(1, 0.75, 0.6))
 
 
+## Espera as escolhas de carta (nível, tomada, baú) acabarem, sem perder nenhuma.
+func _esperar_cartas() -> void:
+	await get_tree().process_frame
+	while not acabou and (cartas.aberto() or _niveis_pendentes > 0 or _cartas_tomada > 0):
+		await get_tree().process_frame
+
+
 ## O chefe da fase caiu: limpa a tela, junta o XP, dá um baú e uma cura, e começa a próxima fase.
 func _fase_completa() -> void:
 	entre_fases = true
@@ -234,13 +244,12 @@ func _fase_completa() -> void:
 	inimigos.limpar()
 	coleta.puxar_tudo()
 	await get_tree().create_timer(2.2, true, false, true).timeout
+	await _esperar_cartas()
 	if acabou:
 		return
 	jogador.curar(stat("vida_max") * 0.5)
 	abrir_bau()
-	await get_tree().process_frame
-	while not acabou and (cartas.aberto() or _niveis_pendentes > 0 or _cartas_tomada > 0):
-		await get_tree().process_frame
+	await _esperar_cartas()
 	if acabou:
 		return
 	diretor.proxima_fase()
