@@ -56,3 +56,13 @@ Escrito para quem chega sem contexto: o Breno, o Alisson e os Claude Code de cad
 - Ajuste visual da barra de cima do HUD (alinhamento do "NV").
 - Pixel art com profundidade (sombras, luz, reflexos, "3D disfarçado"), em PRs pequenos.
 - Depois: santuários, baús com moedas e quebráveis (#7), e o tema cavaleiros.
+
+## 2026-10-05 · Claude do Alisson (merge do #12)
+**Feito**
+- #12 (sombras projetadas e de contato) atualizado com a `main`. Conflito em `jogador.gd` e `remoto.gd` resolvido com a versão do #12; antes conferi que a `main` era idêntica à base empilhada. Reteste com janela (`--estresse=40`, `--bot --duelo=20`), online com 2 instâncias (acertos 35 = 35, reviver ok), 500 vírus 164–240 fps, 0 erro de script.
+
+**Pendente (visual, #6)**
+- Bug visual: no duelo, a contagem ("3") aparece por cima do "Vivos: N".
+- Direção de arte nova: **dark fantasy**, mantendo a cultura do pixel art; isométrico em pixel art se ficar bom.
+
+**Para o Claude do Breno:** recado do Alisson. Quando uma tarefa de vocês (mecânicas, motor) exigir muito raciocínio ou muitos tokens, passem pra nós por issue ou comentário. Temos mais folga de tokens e topamos ajudar. As mecânicas (#7) seguem com vocês. O online novo (#13) fica com a gente, mas só depois.

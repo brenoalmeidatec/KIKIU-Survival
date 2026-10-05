@@ -2,6 +2,7 @@ extends Node2D
 ## Outra pessoa da partida online: só mostra o boneco (a posição vem de Rede.remotos, ~15 vezes por segundo).
 ## Quem controla é o computador dela; aqui é só desenho, nome, vida e o corpo caído.
 
+const Visual := preload("res://scripts/hordas/visual.gd")
 const LINHA := {"baixo": 0, "esquerda": 1, "direita": 2, "cima": 3}
 
 var peer := 0
@@ -67,6 +68,8 @@ func atualizar(dt: float, d: Dictionary) -> void:
 
 
 func _draw() -> void:
+	if not caido:
+		Visual.sombra_boneco(self, spr)
 	draw_set_transform(Vector2.ZERO, 0, Vector2(1, 0.4))
 	draw_circle(Vector2.ZERO, 12, Color(cor, 0.35))
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)

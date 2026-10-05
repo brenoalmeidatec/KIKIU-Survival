@@ -3,6 +3,7 @@ extends Node2D
 ## armas do jogador (armas.gd). Aqui ele é controlado pela IA (ia_luta.gd); no jogo online, cada
 ## rival será uma pessoa e este nó só mostra o boneco dela.
 
+const Visual := preload("res://scripts/hordas/visual.gd")
 const Armas := preload("res://scripts/hordas/armas.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 const IA := preload("res://scripts/hordas/ia_luta.gd")
@@ -161,6 +162,7 @@ func sumir() -> void:
 
 
 func _draw() -> void:
+	Visual.sombra_boneco(self, spr)
 	for r in _rastro:
 		var tex := spr.texture
 		var w := tex.get_width() / 9.0
