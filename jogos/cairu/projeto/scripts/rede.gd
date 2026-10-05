@@ -21,6 +21,7 @@ signal caiu(msg: String)                     # a sala acabou (anfitrião saiu, i
 signal decisao_chegou
 
 const ENVIO := 1.0 / 12.0    # posições por segundo
+const DIRECOES := ["baixo", "esquerda", "direita", "cima"]
 
 # Tudo que é do jogo (e não da engine) vem de capitulos/online.json; sem ele, valem estes:
 var PORTA := 7777
@@ -206,6 +207,9 @@ func _escolher(personagem: String) -> void:
 	if jogadores.size() >= MAX and not jogadores.has(quem):
 		_recusado.rpc_id(quem, "A sala está cheia (%d pessoas)." % MAX)
 		return
+	if personagem != "figurante" and not personagem in ELENCO:
+		_recusado.rpc_id(quem, "Esse personagem não existe nesta sala.")
+		return
 	if personagem != "figurante" and personagem in ocupados():
 		_recusado.rpc_id(quem, "Alguém já pegou esse personagem. Escolha outro.")
 		return
@@ -245,7 +249,21 @@ func _process(delta: float) -> void:
 
 @rpc("any_peer", "unreliable_ordered")
 func _pos(d: Dictionary) -> void:
-	remotos[multiplayer.get_remote_sender_id()] = d
+	# vem de qualquer peer: só guarda os campos esperados, com o tipo certo
+	var x = d.get("x", 0.0)
+	var y = d.get("y", 0.0)
+	if not (x is float or x is int) or not (y is float or y is int) or not is_finite(x) or not is_finite(y):
+		return
+	var dir := str(d.get("dir", "baixo"))
+	remotos[multiplayer.get_remote_sender_id()] = {
+		"mapa": str(d.get("mapa", "")), "x": float(x), "y": float(y),
+		"dir": dir if dir in DIRECOES else "baixo",
+		"andando": _sim(d.get("andando")), "cena": _sim(d.get("cena")),
+	}
+
+
+func _sim(v) -> bool:
+	return typeof(v) == TYPE_BOOL and v
 
 
 func personagem_de(peer: int) -> String:
