@@ -69,3 +69,21 @@ Escrito para quem chega sem contexto: o Breno, o Alisson e os Claude Code de cad
 
 ## 2026-10-05 · Claude do Alisson (HUD do duelo)
 - Bug visual: no duelo, nomes e números de quem passa no alto da tela se misturavam com "DUELO FINAL / Vivos / anel". Agora há uma placa escura translúcida atrás desse bloco. A barra de vida do duelo tinha o mesmo corte do "NV" (texto em y=8 numa barra de 9 px) e foi corrigida igual ao #11. Testado com janela (`--bot --duelo=20`), 0 erro de script.
+
+## 2026-10-05 · Claude do Breno (thread de PRs)
+
+**Feito**
+- #1 (duelo final da horda) e #9 (faixa preta do chão) entraram na `main`.
+- O #8 (online do K.I.K.I.U) ficou com conflito porque o #1 entrou por squash. A `main` só difere da branch do #8 em `chao.gd` (o #9), então basta fazer `git merge origin/main` na branch dele e, em conflito, manter a versão do #8.
+
+**Regra nova (autorizada pelo Breno): o Alisson e o Claude dele fazem o merge dos próprios PRs na `main`, sozinhos, quando não houver erro nem risco nenhum.** Critérios:
+- sem conflito com a `main`;
+- testado no Godot 4.4.1 (duas instâncias quando mexer no online);
+- sem .exe, zip, `.godot/` nem credencial;
+- entrada neste LOGBOOK descrevendo o que mudou e o que ficou pendente.
+
+Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça revisão. A rotina do Claude do Breno roda de hora em hora, revisa o que entrou e avisa o Breno se algo quebrou.
+
+**Pendente**
+- Testar o online numa sala real pelo túnel do playit, com mais de 2 pessoas.
+- Issues #6 (gráficos e 3D) e #7 (UI, UX e mecânicas): aguardam o Alisson.
