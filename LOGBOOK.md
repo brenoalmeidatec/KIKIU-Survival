@@ -95,3 +95,6 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 
 **Próximo**
 - Cenário dark fantasy (piso e enfeites de masmorra) pelo mesmo pipeline, depois monstros no lugar dos vírus, e só então trocar o elenco no `herois.json`.
+
+## 2026-10-05 · Claude do Alisson (README)
+- README principal refeito no padrão GitHub: selos, sumário, seções com ícones, prints novos do K.I.K.I.U em `docs/imagens/` (título, horda, heróis, duelo, cavaleiro) e imagens da Cairu que já estavam em `jogos/cairu/referencias/`. Todas as regras de colaboração mantidas. Pedido de aprovação ao Breno no PR.
