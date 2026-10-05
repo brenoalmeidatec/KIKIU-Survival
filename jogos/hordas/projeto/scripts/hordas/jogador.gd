@@ -27,15 +27,49 @@ var _bot_ang := 0.0
 var kb := Vector2.ZERO
 var _ia := {}
 var _pref := 120.0
+var camadas := {}                # nome -> Sprite2D (personagem em camadas; veja definir_camadas)
+var _sprite := ""
 
 
 func configurar(sprite: String) -> void:
+	_sprite = sprite
 	spr.texture = Dados.tex_personagem(sprite, "andando_8")
 	spr.hframes = 9
 	spr.vframes = 4
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
 	add_child(spr)
+
+
+## Personagem em camadas: desenha por cima do corpo as camadas pedidas (equipamentos e armas na mão),
+## na ordem da lista. Cada camada é filha do sprite do corpo: herda rotação, piscar e cor; só o quadro
+## da animação é copiado (em _animar). Arquivos em assets/personagens/<sprite>/camadas/.
+func definir_camadas(nomes: Array) -> void:
+	# em camadas, o corpo é o corpo.png (sem cabelo); o andando_8.png completo fica pra quem não usa camadas
+	var corpo := Dados.tex_personagem(_sprite, "corpo")
+	if corpo and spr.texture != corpo:
+		spr.texture = corpo
+	for n in camadas.keys():
+		if not n in nomes:
+			camadas[n].queue_free()
+			camadas.erase(n)
+	for n in nomes:
+		if not camadas.has(n):
+			var tex := Dados.tex_personagem(_sprite, "camadas/" + str(n))
+			if tex == null:
+				continue
+			var c := Sprite2D.new()
+			c.texture = tex
+			c.hframes = spr.hframes
+			c.vframes = spr.vframes
+			c.centered = false
+			c.offset = spr.offset
+			c.frame = spr.frame
+			spr.add_child(c)
+			camadas[n] = c
+	for i in nomes.size():
+		if camadas.has(nomes[i]):
+			spr.move_child(camadas[nomes[i]], -1)   # a ordem da lista é a ordem de desenho
 
 
 func centro() -> Vector2:
@@ -175,6 +209,8 @@ func _animar(entrada: Vector2) -> void:
 		spr.frame = LINHA[_dir] * 9 + 1 + int(_t * 12.0) % 8
 	else:
 		spr.frame = LINHA[_dir] * 9
+	for c in camadas.values():
+		c.frame = spr.frame
 	# pisca quando está invencível depois de apanhar
 	var piscar := invencivel > 0 and dash_t <= 0 and int(_t * 20) % 2 == 0
 	spr.modulate = Color(1, 0.4, 0.4) if _vermelho > 0 else Color.WHITE

@@ -122,3 +122,7 @@ static func pintar(w, e: Dictionary) -> void:
 
 static func fundo(_w, _a: Dictionary, _s: Dictionary) -> void:
 	pass
+
+
+static func atras(_w, _ci: CanvasItem, _a: Dictionary, _s: Dictionary) -> void:
+	pass

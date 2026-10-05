@@ -1,5 +1,5 @@
 {
- "_ajuda": "tipo: projetil (atira no vírus mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio: katana, pistolas, marcial, aura_energia, elemental (scripts/hordas/armas/).",
+ "_ajuda": "tipo: projetil (atira no vírus mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio: katana, pistolas, marcial, aura_energia, elemental (scripts/hordas/armas/). visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos).",
  "_config": {
   "limite_exclusivas": 2
  },
@@ -8,6 +8,7 @@
   "icone": "katana",
   "tipo": "katana",
   "familia": "chicote",
+  "visual": {"camada": "katana_mao", "maos": ["arma_dir"], "senao": "katana_bainha", "prioridade": 1},
   "classe": "character_exclusive",
   "characterId": "hazaki",
   "peso_carta": 8,
@@ -20,6 +21,7 @@
   "icone": "desert_eagles",
   "tipo": "pistolas",
   "familia": "projetil",
+  "visual": {"camada": "pistolas", "maos": ["arma_dir", "arma_esq"], "prioridade": 2},
   "classe": "character_exclusive",
   "characterId": "hazaki",
   "peso_carta": 8,

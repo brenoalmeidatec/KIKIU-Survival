@@ -12,7 +12,7 @@ const ESCALA := 2.0
 const Poca := preload("res://scripts/hordas/poca.gd")
 ## Comportamentos que moram no próprio arquivo (scripts/hordas/armas/<tipo>.gd). Pra criar arma nova com
 ## comportamento próprio (ex.: exclusiva de outro personagem): escreva o arquivo com atualizar/passo/pintar/fundo
-## (veja katana.gd) e registre aqui. Os tipos antigos (projetil, chicote...) continuam neste arquivo.
+## (veja katana.gd) e registre aqui. atras() desenha o que fica atrás do personagem. Os tipos antigos (projetil, chicote...) continuam neste arquivo.
 const MODULOS := {
 	"katana": preload("res://scripts/hordas/armas/katana.gd"),
 	"pistolas": preload("res://scripts/hordas/armas/pistolas.gd"),
@@ -35,6 +35,7 @@ var _fila: Array = []        # golpes atrasados do chicote {t, arma}
 var especiais: Array = []    # efeitos das armas de MODULOS (cada um tem "tipo"; o módulo cuida do resto)
 var _t := 0.0
 var _chao_pocas := Node2D.new()   # poças ficam no chão: abaixo de quem pisa nelas, acima do piso
+var _atras := Node2D.new()        # atrás do personagem (ex.: chamas da aura saindo de trás do corpo)
 
 
 func limpar_tiros() -> void:
@@ -163,6 +164,7 @@ func atualizar(dt: float) -> void:
 			golpes.erase(g)
 	queue_redraw()
 	_chao_pocas.queue_redraw()
+	_atras.queue_redraw()
 
 
 # ---------- projétil ----------
@@ -359,6 +361,13 @@ func _ready() -> void:
 		for p in pocas:
 			_desenhar_poca(_chao_pocas, p))
 	add_child(_chao_pocas)
+	_atras.z_index = -1
+	_atras.draw.connect(func():
+		for a in lista:
+			var tipo := str(Dados.item(a.id).get("tipo", ""))
+			if MODULOS.has(tipo):
+				MODULOS[tipo].atras(self, _atras, a, _s(a)))
+	add_child(_atras)
 
 
 ## Poça em pixel art (poca.gd) + bolhas que estouram e vapor subindo, tudo alinhado ao pixel.

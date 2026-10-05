@@ -44,31 +44,37 @@ static func pintar(w, e: Dictionary) -> void:
 	w.draw_arc(e.pos.floor(), e.r + 3.0, 0, TAU, 40, Color(OURO, 0.4 * f), 1.0)
 
 
-## O que fica sempre na tela enquanto a arma está equipada: anel no chão, chamas e faíscas.
-static func fundo(w, a: Dictionary, s: Dictionary) -> void:
+## Atrás do personagem (a energia sai DE TRÁS do corpo e não esconde o equipamento): anel no chão e chamas.
+static func atras(w, ci: CanvasItem, a: Dictionary, s: Dictionary) -> void:
 	var t: float = w._t
 	var pe: Vector2 = w.dono.position
-	var c: Vector2 = w.dono.centro()
 	var r: float = float(s.get("raio", 56)) * float(s.area)
 	var nv: int = int(a.nivel)
 	# anel de energia no chão (elipse em perspectiva) mostrando o alcance
-	w.draw_set_transform(pe, 0, Vector2(1, 0.45))
-	w.draw_arc(Vector2.ZERO, r, 0, TAU, 40, Color(COBALTO, 0.25 + 0.1 * sin(t * 5.0)), 2.0)
-	w.draw_circle(Vector2.ZERO, 16.0, Color(CIANO, 0.18))
-	w.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
-	# chamas: línguas de energia em volta do corpo, subindo e tremendo (mais e mais altas a cada nível)
+	ci.draw_set_transform(pe, 0, Vector2(1, 0.45))
+	ci.draw_arc(Vector2.ZERO, r, 0, TAU, 40, Color(COBALTO, 0.25 + 0.1 * sin(t * 5.0)), 2.0)
+	ci.draw_circle(Vector2.ZERO, 16.0, Color(CIANO, 0.18))
+	ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+	# chamas: línguas de energia em volta do corpo, subindo e tremendo (mais e mais altas a cada nível);
+	# como ficam atrás, saem pelos lados e por cima do boneco, que nem aura de verdade
 	var n := 6 + nv * 2
 	for i in n:
 		var ang := TAU * i / n + t * 1.5
-		var base := pe + Vector2(cos(ang) * 13.0, sin(ang) * 4.0 - 4.0)
-		var alt := (12.0 + nv * 3.0) * (0.6 + 0.4 * absf(sin(t * 9.0 + i * 1.7)))
+		var base := pe + Vector2(cos(ang) * 15.0, sin(ang) * 4.0 - 4.0)
+		var alt := (34.0 + nv * 5.0) * (0.6 + 0.4 * absf(sin(t * 9.0 + i * 1.7)))
 		var topo := base + Vector2(sin(t * 6.0 + i) * 3.0, -alt)
-		var larg := 3.0 + nv * 0.4
+		var larg := 3.0 + nv * 0.5
 		if nv >= 4:   # no alto, uma camada dourada por fora
-			w.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg - 1.5, 0), base + Vector2(larg + 1.5, 0), topo + Vector2(0, -3)]), Color(OURO, 0.35))
-		w.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg, 0), base + Vector2(larg, 0), topo]), Color(COBALTO, 0.55))
-		w.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg * 0.4, 0), base + Vector2(larg * 0.4, 0), base.lerp(topo, 0.6)]), Color(CIANO, 0.7))
-	# faíscas douradas subindo (pixels)
+			ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg - 1.5, 0), base + Vector2(larg + 1.5, 0), topo + Vector2(0, -4)]), Color(OURO, 0.4))
+		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg, 0), base + Vector2(larg, 0), topo]), Color(COBALTO, 0.6))
+		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg * 0.4, 0), base + Vector2(larg * 0.4, 0), base.lerp(topo, 0.6)]), Color(CIANO, 0.75))
+
+
+## Na frente do personagem: só as faíscas douradas subindo (pixels), que não escondem nada.
+static func fundo(w, a: Dictionary, _s: Dictionary) -> void:
+	var t: float = w._t
+	var c: Vector2 = w.dono.centro()
+	var nv: int = int(a.nivel)
 	for i in 3 + nv:
 		var fase := fmod(t * 0.9 + i * 0.37, 1.0)
 		var px := c + Vector2(sin(i * 2.7 + t) * 14.0, 18.0 - fase * 46.0)

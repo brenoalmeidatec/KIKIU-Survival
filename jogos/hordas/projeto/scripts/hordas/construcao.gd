@@ -6,12 +6,17 @@ extends RefCounted
 const BASE := {"dano": 1.0, "recarga": 1.0, "area": 1.0, "quantidade": 0.0, "velocidade_proj": 1.0, "duracao": 1.0,
 	"vida_max": 100.0, "regen": 0.0, "velocidade": 1.0, "ima": 1.0, "sorte": 0.0, "xp": 1.0,
 	"critico": 0.05, "critico_mult": 1.5}
+const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const MAX_ARMAS := 4
 const MAX_PASSIVOS := 5
 
 
-static func stats(heroi: Dictionary, passivos: Dictionary) -> Dictionary:
+## equip = slot -> id dos equipamentos vestidos (somam bônus como os passivos).
+static func stats(heroi: Dictionary, passivos: Dictionary, equip := {}) -> Dictionary:
 	var s := BASE.duplicate()
+	var eb := Equipamento.bonus(equip)
+	for k in eb:
+		s[k] = float(s.get(k, 0)) + float(eb[k])
 	var bonus: Dictionary = heroi.get("bonus", {})
 	for k in bonus:
 		s[k] = float(s.get(k, 0)) + float(bonus[k])

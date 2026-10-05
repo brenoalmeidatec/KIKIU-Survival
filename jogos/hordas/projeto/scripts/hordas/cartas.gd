@@ -141,6 +141,9 @@ func _desenhar() -> void:
 				cor_e = Color(1, 0.5, 0.9)
 			"cura":
 				etiqueta = ""
+			"equipamento":
+				etiqueta = "EQUIPAMENTO"
+				cor_e = Color(0.55, 0.85, 1.0)
 			_:
 				etiqueta = "NOVO!" if c.nivel == 1 else "Nível %d" % c.nivel
 				cor_e = Color(0.5, 1, 0.5) if c.nivel == 1 else Color(1, 0.9, 0.5)

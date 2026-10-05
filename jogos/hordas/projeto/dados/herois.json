@@ -1,5 +1,5 @@
 {
- "_ajuda": "Heróis jogáveis. 'lista' = os que aparecem na escolha; os outros só aparecem como rivais no duelo (veja pvp.json). sprite = pasta em assets/personagens. arma = id em armas.json. bonus = atributos somados no começo. reviver = rapidez pra levantar um amigo caído no online (1 = normal, 2 = o dobro).",
+ "_ajuda": "Heróis jogáveis. 'lista' = os que aparecem na escolha; os outros só aparecem como rivais no duelo (veja pvp.json). sprite = pasta em assets/personagens. arma = id em armas.json. bonus = atributos somados no começo. camadas = true: personagem desenhado em camadas (equipamentos e armas aparecem nele; veja dados/equipamentos.json). reviver = rapidez pra levantar um amigo caído no online (1 = normal, 2 = o dobro).",
  "lista": [
   "hazaki",
   "nicao",
@@ -8,6 +8,7 @@
  "hazaki": {
   "nome": "Hazaki",
   "sprite": "hazaki",
+  "camadas": true,
   "reviver": 1.0,
   "arma": "cabo_rede",
   "descricao": "Samurai, lutador e feiticeiro. Começa simples e vira uma lenda.",

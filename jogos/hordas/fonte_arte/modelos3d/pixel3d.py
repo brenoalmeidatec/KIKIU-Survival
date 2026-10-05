@@ -31,6 +31,7 @@ RAMPA = {
     "veneno": ["0f2a1c", "1d4a2a", "2f7a3a", "56b04a", "a6e070", "e4ffb0"],                    # brilho alquímico
     "fogo": ["3a1408", "7a2c0c", "c45a14", "f0921e", "ffd060", "fff2b0"],                      # tocha, vela
     "noite": ["0b1020", "152040", "223566", "3a5794", "6f8fc8"],                               # cidade à noite
+    "pele": ["3b2219", "6b3f2a", "9c6444", "c98e62", "e8b98e"],                               # pele (Hazaki)
 }
 PALETA_HEX = [h for r in RAMPA.values() for h in r]
 PALETA = np.array([[int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)] for h in PALETA_HEX])
@@ -168,7 +169,7 @@ def camera(elevacao_graus=32.0, escala=2.4):
     return obj
 
 
-def luz(rasante=False, suave=False):
+def luz(rasante=False, suave=False, preenche=1.2):
     """Luz principal de cima, da esquerda e de trás (igual às sombras do jogo) + preenchimento fraco do lado da câmera.
     suave=True (render pré-renderizado no Cycles): sombra real e macia; o céu do mundo faz o preenchimento."""
     def sol(nome, direcao, forca):
@@ -184,7 +185,7 @@ def luz(rasante=False, suave=False):
         sol("principal", (1.0, -0.55, -0.75) if rasante else (1.0, -0.55, -1.4), 3.2)
         return
     sol("principal", (1.0, -0.55, -0.6) if rasante else (1.0, -0.55, -1.4), 4.0)   # viaja pra direita, pra câmera e pra baixo = vem de cima/esquerda/trás (igual às sombras do jogo)
-    sol("preenche", (0.25, 1.0, -0.45), 1.2)   # fraca, do lado da câmera: a frente não vira borrão
+    sol("preenche", (0.25, 1.0, -0.45), preenche)   # do lado da câmera: a frente não vira borrão (rosto pede mais)
 
 
 def material_toon(nome, cor_base, faixas=(0.35, 0.62, 1.0), limites=(0.22, 0.55), ruido=0.0, escala_ruido=6.0):
