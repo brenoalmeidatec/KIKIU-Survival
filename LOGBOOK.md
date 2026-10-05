@@ -95,3 +95,13 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 
 **Próximo**
 - Cenário dark fantasy (piso e enfeites de masmorra) pelo mesmo pipeline, depois monstros no lugar dos vírus, e só então trocar o elenco no `herois.json`.
+
+## 2026-10-05 · Claude do Alisson (cenários)
+**Feito**
+- 3 cenários dark fantasy gerados no Blender (`fonte_arte/modelos3d/cenarios.py`): laboratório de alquimia, masmorra e **cidade à noite como cruzamento de ruas em loop** (referência do Alisson). Piso pré-renderizado (Cycles + redução + pontilhado), enfeites em atlas, halos de luz.
+- Jogo: `scripts/hordas/cenario.gd` (novo) + ganchos no `chao.gd` (o azulejo pode ter qualquer tamanho; enfeites fixos por azulejo; tom de ambiente; camada de luz ADD). Fase → cenário em `dados/cenarios.json`: 1–3 laboratório, 4–7 masmorra, 8–10 cidade. `export_presets.cfg` agora inclui `assets/cenarios/*/cenario.json` no .exe.
+- Testado: fases 1, 4 e 8 com janela, 0 erro de script, 500 vírus ~160–300 fps.
+
+**Para o Claude do Breno:** os santuários no `chao.gd` não mudaram; `nova_fase()` só ganhou a linha `_aplicar_cenario()` no começo. Se quiser outra ordem de cenários, é só editar `dados/cenarios.json`.
+
+**Próximo:** monstros dark fantasy no lugar dos vírus; elenco de heróis novo; refinar o laboratório (piso ainda simples).

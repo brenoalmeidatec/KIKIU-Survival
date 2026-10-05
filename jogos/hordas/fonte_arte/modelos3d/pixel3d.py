@@ -18,26 +18,36 @@ import numpy as np
 from mathutils import Vector
 
 # ---------------------------------------------------------------- paleta dark fantasy
-# ferro frio, couro, sangue, ouro velho, osso e musgo, sobre pretos arroxeados
-PALETA_HEX = [
-    "0d0b14", "1d1a2b", "2e2a40", "45405c", "6b6585", "9a94b0", "c9c3d6", "ece8f2",   # sombra -> aço
-    "2a0d14", "4f1520", "7e2027", "b0342f", "d9614a",                                 # sangue
-    "2b1d18", "4a3324", "6e4c32", "9a6d45",                                           # couro / madeira
-    "5c4320", "8f6a2e", "c49a45", "eccb7a",                                           # ouro velho
-    "1f2a24", "35473a", "566e55",                                                     # musgo
-    "a89e86", "d6ccb2",                                                               # osso
-]
+# Cada material usa UMA rampa (do escuro pro claro), como num pixel art desenhado à mão.
+# A luz de borda sobe um degrau dentro da rampa; cada modelo/cenário escolhe as rampas que usa.
+RAMPA = {
+    "aco": ["0d0b14", "1d1a2b", "2e2a40", "45405c", "6b6585", "9a94b0", "c9c3d6", "ece8f2"],   # sombra -> aço frio
+    "sangue": ["2a0d14", "4f1520", "7e2027", "b0342f", "d9614a"],
+    "couro": ["2b1d18", "4a3324", "6e4c32", "9a6d45"],                                         # couro / madeira
+    "ouro": ["5c4320", "8f6a2e", "c49a45", "eccb7a"],
+    "musgo": ["1f2a24", "35473a", "566e55"],
+    "osso": ["a89e86", "d6ccb2"],
+    "pedra": ["141211", "1f1b19", "2c2724", "3a3430", "4a423b", "5e544a", "766a5d", "958775", "b8a892"],   # pedra quente (muitos tons: chão)
+    "veneno": ["0f2a1c", "1d4a2a", "2f7a3a", "56b04a", "a6e070", "e4ffb0"],                    # brilho alquímico
+    "fogo": ["3a1408", "7a2c0c", "c45a14", "f0921e", "ffd060", "fff2b0"],                      # tocha, vela
+    "noite": ["0b1020", "152040", "223566", "3a5794", "6f8fc8"],                               # cidade à noite
+}
+PALETA_HEX = [h for r in RAMPA.values() for h in r]
 PALETA = np.array([[int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)] for h in PALETA_HEX])
 CONTORNO = PALETA[0]
-
-# rampas de cada material (do escuro pro claro): a luz de borda sobe um degrau DENTRO da rampa
-RAMPAS = [PALETA_HEX[0:8], PALETA_HEX[8:13], PALETA_HEX[13:17], PALETA_HEX[17:21], PALETA_HEX[21:24], PALETA_HEX[24:26]]
+RAMPAS = list(RAMPA.values())
 DEGRAU_ACIMA = {PALETA_HEX.index(r[k]): PALETA_HEX.index(r[k + 1]) for r in RAMPAS for k in range(len(r) - 1)}
 
 
 def paleta_sem(*hexas):
     """Paleta sem algumas cores (cada material só deve usar a rampa dele; ex.: cavaleiro sem musgo e osso)."""
     return np.array([c for h, c in zip(PALETA_HEX, PALETA) if h not in hexas])
+
+
+def paleta_de(*rampas):
+    """Só as rampas pedidas, mais o preto do contorno (ex.: paleta_de("pedra", "fogo", "osso"))."""
+    hexas = {"0d0b14"} | {h for r in rampas for h in RAMPA[r]}
+    return np.array([c for h, c in zip(PALETA_HEX, PALETA) if h in hexas])
 
 
 def linear(v):
@@ -75,6 +85,75 @@ def preparar_render(largura, altura):
     return cena
 
 
+def preparar_suave(largura, altura, fator=4, amostras=48):
+    """Render "pré-renderizado" (técnica de Donkey Kong Country / Diablo): Cycles com luz e sombra reais e oclusão
+    nas frestas, em 'fator' vezes o tamanho. Depois reduzir() faz a média e pixelar(pontilhado=...) põe na paleta."""
+    cena = bpy.context.scene
+    cena.render.engine = "CYCLES"
+    cena.cycles.device = "CPU"
+    cena.cycles.samples = amostras
+    cena.cycles.use_denoising = True
+    cena.render.resolution_x = largura * fator
+    cena.render.resolution_y = altura * fator
+    cena.render.resolution_percentage = 100
+    cena.render.film_transparent = True
+    cena.render.image_settings.file_format = "PNG"
+    cena.render.image_settings.color_mode = "RGBA"
+    cena.view_settings.view_transform = "Standard"
+    cena.world = bpy.data.worlds.new("mundo")
+    cena.world.use_nodes = True
+    fundo = cena.world.node_tree.nodes.get("Background")
+    fundo.inputs[0].default_value = (0.32, 0.34, 0.45, 1.0)   # céu fraco e frio: preenche as sombras sem chapar
+    fundo.inputs[1].default_value = 0.35
+    return cena
+
+
+def reduzir(px, fator):
+    """Média de cada bloco fator x fator (guarda a informação de luz e textura do render grande)."""
+    h, w = px.shape[0] // fator, px.shape[1] // fator
+    return px[:h * fator, :w * fator].reshape(h, fator, w, fator, 4).mean(axis=(1, 3))
+
+
+def material_suave(nome, cor_base, rugosidade=0.85, relevo=0.0, variacao=0.0, escala=4.0):
+    """Material pra render suave (Cycles): cor + rugosidade, a luz faz o resto.
+    relevo > 0: ruído no relevo (bump) -> sob luz rasante vira micro sombra e brilho, textura de pedra.
+    variacao > 0: ruído na cor (manchas mais claras e mais escuras)."""
+    m = bpy.data.materials.new(nome)
+    m.use_nodes = True
+    n = m.node_tree.nodes
+    l = m.node_tree.links
+    p = n.get("Principled BSDF")
+    p.inputs["Base Color"].default_value = cor_base
+    p.inputs["Roughness"].default_value = rugosidade
+    if relevo > 0 or variacao > 0:
+        coord = n.new("ShaderNodeTexCoord")
+        ruido = n.new("ShaderNodeTexNoise")
+        ruido.inputs["Scale"].default_value = escala
+        ruido.inputs["Detail"].default_value = 6.0
+        l.new(coord.outputs["Object"], ruido.inputs["Vector"])
+        if relevo > 0:
+            bump = n.new("ShaderNodeBump")
+            bump.inputs["Strength"].default_value = relevo
+            l.new(ruido.outputs["Fac"], bump.inputs["Height"])
+            l.new(bump.outputs["Normal"], p.inputs["Normal"])
+        if variacao > 0:
+            mix = n.new("ShaderNodeMix")
+            mix.data_type = "RGBA"
+            mix.blend_type = "MULTIPLY"
+            rampa = n.new("ShaderNodeMapRange")
+            rampa.inputs["To Min"].default_value = 1.0 - variacao
+            rampa.inputs["To Max"].default_value = 1.0 + variacao
+            l.new(ruido.outputs["Fac"], rampa.inputs["Value"])
+            mix.inputs[0].default_value = 1.0
+            mix.inputs[6].default_value = cor_base
+            comb = n.new("ShaderNodeCombineColor")
+            for k in range(3):
+                l.new(rampa.outputs["Result"], comb.inputs[k])
+            l.new(comb.outputs[0], mix.inputs[7])
+            l.new(mix.outputs[2], p.inputs["Base Color"])
+    return m
+
+
 def camera(elevacao_graus=32.0, escala=2.4):
     """Câmera ortográfica olhando o personagem de frente, um pouco de cima (o '3/4' do jogo)."""
     cam = bpy.data.cameras.new("cam")
@@ -89,22 +168,26 @@ def camera(elevacao_graus=32.0, escala=2.4):
     return obj
 
 
-def luz():
-    """Luz principal de cima, da esquerda e de trás (igual às sombras do jogo) + preenchimento fraco do lado da câmera."""
+def luz(rasante=False, suave=False):
+    """Luz principal de cima, da esquerda e de trás (igual às sombras do jogo) + preenchimento fraco do lado da câmera.
+    suave=True (render pré-renderizado no Cycles): sombra real e macia; o céu do mundo faz o preenchimento."""
     def sol(nome, direcao, forca):
         d = bpy.data.lights.new(nome, "SUN")
         d.energy = forca
-        d.angle = 0.0
-        d.use_shadow = False   # sombra própria em 44 px vira chiado; o volume vem das faixas do toon
+        d.angle = math.radians(4.0) if suave else 0.0
+        d.use_shadow = suave   # no toon, sombra própria em 44 px vira chiado; no suave, é a graça
         o = bpy.data.objects.new(nome, d)
         bpy.context.collection.objects.link(o)
         o.rotation_euler = Vector(direcao).normalized().to_track_quat("-Z", "Y").to_euler()
         return o
-    sol("principal", (1.0, -0.55, -1.4), 4.0)   # viaja pra direita, pra câmera e pra baixo = vem de cima/esquerda/trás (igual às sombras do jogo)
+    if suave:
+        sol("principal", (1.0, -0.55, -0.75) if rasante else (1.0, -0.55, -1.4), 3.2)
+        return
+    sol("principal", (1.0, -0.55, -0.6) if rasante else (1.0, -0.55, -1.4), 4.0)   # viaja pra direita, pra câmera e pra baixo = vem de cima/esquerda/trás (igual às sombras do jogo)
     sol("preenche", (0.25, 1.0, -0.45), 1.2)   # fraca, do lado da câmera: a frente não vira borrão
 
 
-def material_toon(nome, cor_base, faixas=(0.35, 0.62, 1.0)):
+def material_toon(nome, cor_base, faixas=(0.35, 0.62, 1.0), limites=(0.22, 0.55), ruido=0.0, escala_ruido=6.0):
     """Difuso -> faixas constantes (3 tons) x cor base -> emissão. Sombreamento de pixel art."""
     m = bpy.data.materials.new(nome)
     m.use_nodes = True
@@ -118,9 +201,9 @@ def material_toon(nome, cor_base, faixas=(0.35, 0.62, 1.0)):
     els = rampa.color_ramp.elements
     els[0].position = 0.0
     els[0].color = (linear(faixas[0]),) * 3 + (1,)
-    els[1].position = 0.22
+    els[1].position = limites[0]
     els[1].color = (linear(faixas[1]),) * 3 + (1,)
-    e3 = els.new(0.55)
+    e3 = els.new(limites[1])
     e3.color = (linear(faixas[2]),) * 3 + (1,)
     mult = n.new("ShaderNodeMix")
     mult.data_type = "RGBA"
@@ -130,7 +213,21 @@ def material_toon(nome, cor_base, faixas=(0.35, 0.62, 1.0)):
     emi = n.new("ShaderNodeEmission")
     out = n.new("ShaderNodeOutputMaterial")
     l.new(dif.outputs[0], s2r.inputs[0])
-    l.new(s2r.outputs[0], rampa.inputs[0])
+    if ruido > 0:
+        # ruído sutil na luz ANTES das faixas: vira aglomerado de pixels (textura de pedra), não chiado
+        tex = n.new("ShaderNodeTexNoise")
+        tex.inputs["Scale"].default_value = escala_ruido
+        mapa = n.new("ShaderNodeMapRange")
+        mapa.inputs["To Min"].default_value = 1.0 - ruido
+        mapa.inputs["To Max"].default_value = 1.0 + ruido
+        mul = n.new("ShaderNodeMath")
+        mul.operation = "MULTIPLY"
+        l.new(tex.outputs["Fac"], mapa.inputs["Value"])
+        l.new(s2r.outputs[0], mul.inputs[0])
+        l.new(mapa.outputs["Result"], mul.inputs[1])
+        l.new(mul.outputs[0], rampa.inputs[0])
+    else:
+        l.new(s2r.outputs[0], rampa.inputs[0])
     l.new(rampa.outputs[0], mult.inputs[6])
     l.new(mult.outputs[2], emi.inputs[0])
     l.new(emi.outputs[0], out.inputs[0])
@@ -151,12 +248,19 @@ def render_rgba():
     return px
 
 
-def pixelar(px, contorno=True, paleta=None, luz_borda=True):
-    """Alfa binário, cor na paleta mais próxima e contorno escuro de 1 px por fora da silhueta."""
+BAYER = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16.0
+
+
+def pixelar(px, contorno=True, paleta=None, luz_borda=True, pontilhado=0.0):
+    """Alfa binário, cor na paleta mais próxima e contorno escuro de 1 px por fora da silhueta.
+    pontilhado > 0: pontilhado ordenado (Bayer 4x4) antes de escolher a cor, que vira textura de pixel art."""
     out = np.zeros_like(px)
     pal = PALETA if paleta is None else paleta
     cheio = px[:, :, 3] > 0.5
     rgb = px[:, :, :3][cheio]
+    if len(rgb) and pontilhado > 0:
+        ys, xs = np.nonzero(cheio)
+        rgb = rgb + ((BAYER[ys % 4, xs % 4] - 0.5) * pontilhado)[:, None]
     if len(rgb):
         # distância "redmean" (aproxima como o olho vê cor): respeita o matiz, não só o brilho,
         # senão vermelho escuro vira marrom
@@ -224,3 +328,150 @@ def salvar_png(px, caminho):
     os.makedirs(os.path.dirname(caminho), exist_ok=True)
     img.save()
     bpy.data.images.remove(img)
+
+
+# ---------------------------------------------------------------- cenários (piso, enfeites, luzes)
+
+def material_emissao(nome, cor_base, forca=1.0):
+    """Material que brilha sozinho (chama, frasco, janela acesa): não passa pelas faixas do toon."""
+    m = bpy.data.materials.new(nome)
+    m.use_nodes = True
+    n = m.node_tree.nodes
+    n.clear()
+    emi = n.new("ShaderNodeEmission")
+    emi.inputs[0].default_value = cor_base
+    emi.inputs[1].default_value = forca
+    out = n.new("ShaderNodeOutputMaterial")
+    m.node_tree.links.new(emi.outputs[0], out.inputs[0])
+    return m
+
+
+def camera_topo(lado_mundo):
+    """Câmera ortográfica olhando reto pra baixo, cobrindo um quadrado de 'lado_mundo' (pra piso que repete)."""
+    cam = bpy.data.cameras.new("cam_topo")
+    cam.type = "ORTHO"
+    cam.ortho_scale = lado_mundo
+    obj = bpy.data.objects.new("cam_topo", cam)
+    bpy.context.collection.objects.link(obj)
+    obj.location = (lado_mundo / 2.0, lado_mundo / 2.0, 30.0)
+    obj.rotation_euler = (0.0, 0.0, 0.0)
+    bpy.context.scene.camera = obj
+    return obj
+
+
+def pe_na_tela(cam, ponto=(0.0, 0.0, 0.0)):
+    """Em que pixel (x, y com y pra baixo) um ponto do mundo cai no render atual."""
+    from bpy_extras.object_utils import world_to_camera_view
+    cena = bpy.context.scene
+    v = world_to_camera_view(cena, cam, Vector(ponto))
+    return v.x * cena.render.resolution_x, (1.0 - v.y) * cena.render.resolution_y
+
+
+def recortar(px, pe):
+    """Corta o vazio em volta (deixa 1 px pro contorno). Devolve (imagem, pé relativo ao canto do recorte)."""
+    cx = caixa_alfa(px)
+    if cx is None:
+        return None, None
+    x0, y0 = max(0, cx[0] - 1), max(0, cx[1] - 1)
+    x1, y1 = min(px.shape[1] - 1, cx[2] + 1), min(px.shape[0] - 1, cx[3] + 1)
+    return px[y0:y1 + 1, x0:x1 + 1], (pe[0] - x0, pe[1] - y0)
+
+
+def empacotar(imagens, largura=512):
+    """Atlas em prateleiras. imagens = [array RGBA]. Devolve (atlas, [(x, y, w, h)])."""
+    x = y = alt = 0
+    pos = []
+    for im in imagens:
+        h, w = im.shape[:2]
+        if x + w > largura:
+            x, y, alt = 0, y + alt + 1, 0
+        pos.append((x, y, w, h))
+        x += w + 1
+        alt = max(alt, h)
+    altura = y + alt
+    atlas = np.zeros((altura, largura, 4), dtype=np.float32)
+    for im, (x, y, w, h) in zip(imagens, pos):
+        atlas[y:y + h, x:x + w] = im
+    return atlas, pos
+
+
+def brilho(raio, rampa, degraus=4):
+    """Halo de luz em pixel art: anéis de cor/força constante (sem degradê liso) e pontilhado na borda de cada anel.
+    No jogo é somado à cena (blend ADD), então é barato pra qualquer PC."""
+    lado = raio * 2 + 1
+    bayer = np.array([[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]) / 16.0
+    cores = [PALETA[PALETA_HEX.index(h)] for h in RAMPA[rampa]][-degraus:]
+    out = np.zeros((lado, lado, 4), dtype=np.float32)
+    for y in range(lado):
+        for x in range(lado):
+            d = math.hypot(x - raio, (y - raio) * 1.6) / raio          # achatado: luz no chão em perspectiva
+            if d >= 1.0:
+                continue
+            nivel = (1.0 - d) * degraus                               # 0 (borda) .. degraus (centro)
+            k = int(nivel)
+            if nivel - k > bayer[y % 4, x % 4]:                        # pontilhado entre um anel e o próximo
+                k += 1
+            if k <= 0:
+                continue
+            k = min(k, degraus)
+            out[y, x, :3] = cores[k - 1]
+            out[y, x, 3] = 0.10 + 0.22 * (k / degraus)
+    return out
+
+
+# ---------------------------------------------------------------- primitivas (personagens e cenários)
+
+def pendurar(filho, pai):
+    """Prende o filho no pai SEM mudar a posição no mundo (senão a posição soma duas vezes)."""
+    bpy.context.view_layer.update()
+    filho.parent = pai
+    filho.matrix_parent_inverse = pai.matrix_world.inverted()
+
+
+def _finalizar(o, nome, mat, pai, chanfro):
+    o.name = nome
+    if chanfro > 0:
+        b = o.modifiers.new("chanfro", "BEVEL")
+        b.width = chanfro
+        b.segments = 1
+        b.limit_method = "ANGLE"
+    o.data.materials.append(mat)
+    if pai is not None:
+        pendurar(o, pai)
+    return o
+
+
+def caixa(nome, tam, pos, mat, pai=None, pivo=None, rot=(0, 0, 0), chanfro=0.0):
+    """Caixa de tamanho 'tam'. Com 'pivo', a origem fica no pivô (pra girar membro no ombro/quadril).
+    'chanfro' arredonda as quinas, que pegam luz: é o que faz pedra e madeira parecerem volume."""
+    from mathutils import Matrix
+    bpy.ops.mesh.primitive_cube_add(size=1.0)
+    o = bpy.context.active_object
+    o.scale = tam
+    bpy.ops.object.transform_apply(scale=True)
+    if pivo is not None:
+        o.data.transform(Matrix.Translation(Vector(pos) - Vector(pivo)))
+        o.location = pivo
+    else:
+        o.location = pos
+    o.rotation_euler = rot
+    return _finalizar(o, nome, mat, pai, chanfro)
+
+
+def esfera(nome, raio, pos, mat, pai=None, escala=(1, 1, 1)):
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=raio, segments=12, ring_count=8, location=pos)
+    o = bpy.context.active_object
+    o.scale = escala
+    return _finalizar(o, nome, mat, pai, 0.0)
+
+
+def cilindro(nome, raio, altura, pos, mat, pai=None, rot=(0, 0, 0), vertices=12, chanfro=0.0):
+    bpy.ops.mesh.primitive_cylinder_add(radius=raio, depth=altura, vertices=vertices, location=pos, rotation=rot)
+    o = bpy.context.active_object
+    return _finalizar(o, nome, mat, pai, chanfro)
+
+
+def cone(nome, r1, r2, altura, pos, mat, pai=None, vertices=12):
+    bpy.ops.mesh.primitive_cone_add(radius1=r1, radius2=r2, depth=altura, vertices=vertices, location=pos)
+    o = bpy.context.active_object
+    return _finalizar(o, nome, mat, pai, 0.0)

@@ -1,0 +1,163 @@
+{
+ "_gerado_por": "fonte_arte/modelos3d/cenarios.py (não edite à mão)",
+ "piso": "piso.png",
+ "enfeites": "enfeites.png",
+ "ambiente": [
+  0.7,
+  0.76,
+  0.82
+ ],
+ "itens": [
+  {
+   "nome": "mesa",
+   "peso": 2,
+   "pe": [
+    17,
+    25
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -20
+    ],
+    "pisca": 0.05,
+    "raio": 44,
+    "poca": [
+     35,
+     0,
+     89,
+     89
+    ],
+    "halo": [
+     125,
+     0,
+     23,
+     23
+    ]
+   },
+   "regiao": [
+    0,
+    0,
+    34,
+    31
+   ]
+  },
+  {
+   "nome": "caldeirao",
+   "peso": 1,
+   "pe": [
+    12,
+    24
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -16
+    ],
+    "pisca": 0.12,
+    "raio": 60,
+    "poca": [
+     174,
+     0,
+     121,
+     121
+    ],
+    "halo": [
+     296,
+     0,
+     31,
+     31
+    ]
+   },
+   "regiao": [
+    149,
+    0,
+    24,
+    30
+   ]
+  },
+  {
+   "nome": "estante",
+   "peso": 2,
+   "pe": [
+    16,
+    42
+   ],
+   "regiao": [
+    328,
+    0,
+    32,
+    46
+   ]
+  },
+  {
+   "nome": "jarra",
+   "peso": 2,
+   "pe": [
+    10,
+    26
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -10
+    ],
+    "pisca": 0.06,
+    "raio": 40,
+    "poca": [
+     382,
+     0,
+     81,
+     81
+    ],
+    "halo": [
+     464,
+     0,
+     21,
+     21
+    ]
+   },
+   "regiao": [
+    361,
+    0,
+    20,
+    32
+   ]
+  },
+  {
+   "nome": "candelabro",
+   "peso": 2,
+   "pe": [
+    10,
+    29
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -25
+    ],
+    "pisca": 0.15,
+    "raio": 48,
+    "poca": [
+     0,
+     122,
+     97,
+     97
+    ],
+    "halo": [
+     98,
+     122,
+     25,
+     25
+    ]
+   },
+   "regiao": [
+    486,
+    0,
+    20,
+    33
+   ]
+  }
+ ],
+ "fixos": []
+}
