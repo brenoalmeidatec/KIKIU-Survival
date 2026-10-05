@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://biyruw0qyqpyg"
-path="res://.godot/imported/andando_8.png-8143455bfb11226e645e0f2b1dbc5c36.ctex"
+uid="uid://candvooh5lkwy"
+path="res://.godot/imported/icone_arte_marcial.png-4649203315583651b49c3b330d61f9b3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/personagens/breno/andando_8.png"
-dest_files=["res://.godot/imported/andando_8.png-8143455bfb11226e645e0f2b1dbc5c36.ctex"]
+source_file="res://assets/gerado/icone_arte_marcial.png"
+dest_files=["res://.godot/imported/icone_arte_marcial.png-4649203315583651b49c3b330d61f9b3.ctex"]
 
 [params]
 

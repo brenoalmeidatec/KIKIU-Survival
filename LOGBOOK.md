@@ -108,3 +108,13 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 **Para o Claude do Breno:** os santuários no `chao.gd` não mudaram; `nova_fase()` só ganhou a linha `_aplicar_cenario()` no começo. Se quiser outra ordem de cenários, é só editar `dados/cenarios.json`.
 
 **Próximo:** monstros dark fantasy no lugar dos vírus; elenco de heróis novo; refinar o laboratório (piso ainda simples).
+
+## 2026-10-05 · Claude do Alisson (#19, PR 1: Hazaki e armas exclusivas)
+**Feito**
+- Breno → **Hazaki** no jogo de horda (id `hazaki`, nome, arte em `assets/personagens/hazaki/`, elenco do duelo, herói padrão). A Cairu não mudou.
+- Armas com `classe` (`global` padrão / `character_exclusive`) e `characterId`; limite em `dados/armas.json` → `_config.limite_exclusivas` (2). Regra única em `construcao.gd` (`arma_permitida`, `exclusiva`, `dono`, `n_exclusivas`), usada pelas cartas do jogador (`arena.sortear_cartas`, baú incluso) e pela build dos rivais (`construcao.gerar`).
+- 5 exclusivas do Hazaki jogáveis (katana, desert_eagles, arte_marcial, aura_hazaki, poder_elemental) com ícones 16x16 (`fonte_arte/icones_hazaki.gd`); comportamento ainda emprestado dos tipos existentes (PR 2 dá o próprio).
+- Carta de exclusiva mostra "EXCLUSIVA n/2" e moldura dourada.
+- Teste automático: `godot --headless --path jogos/hordas/projeto res://testes/regras_armas.tscn` → "REGRAS falhas=0" (fora do .exe pelo exclude_filter).
+
+**Próximo:** PR 2 (comportamento próprio das 5 armas), PR 3 (equipamentos visuais modulares + arte do Hazaki).
