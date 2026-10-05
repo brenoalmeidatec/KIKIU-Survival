@@ -402,6 +402,7 @@ func aplicar(c: Dictionary) -> void:
 		"passivo":
 			passivos[c.id] = int(passivos.get(c.id, 0)) + 1
 			_recalcular()
+			armas.preaquecer()   # passivo de área muda o tamanho da poça: gera agora, com as cartas abertas
 		"cura":
 			jogador.curar(40)
 		"evolucao":
