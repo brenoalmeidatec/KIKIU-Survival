@@ -124,6 +124,7 @@ func _desenhar() -> void:
 		else:
 			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(W - 120, 24), "Abates %d" % arena.abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, 112)
+		_energia_forma()
 	_icones_build()
 	if not arena.duelo_ativo:
 		# vida do chefe
@@ -164,6 +165,33 @@ func _desenhar() -> void:
 			var sel := i == _op_pausa
 			_txt(Vector2(0, 170 + i * 18), ("> " if sel else "") + OPS_PAUSA[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(0, 250), "WASD/setas: andar   Espaço/Shift: dash   Esc: pausa", 8, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+
+
+## Energia da transformação (dragão do Hazaki), embaixo do "Abates": enchendo, pronta (pisca "Q") ou o tempo que
+## resta transformado. Só aparece depois de desbloqueada.
+func _energia_forma() -> void:
+	var h = arena.habilidades
+	if h == null or not h.tem() or not h.desbloqueada:
+		return
+	var cor := Color(0.25, 0.45, 1.0)
+	var x := W - 112.0
+	var y := 31.0
+	var ic := Dados.icone(str(h.d().get("icone", "")))
+	if ic:
+		_tela.draw_texture_rect(ic, Rect2(x - 20, y - 3, 16, 16), false)
+	var frac: float = h.energia / h.energia_max()
+	_tela.draw_rect(Rect2(x, y, 104, 7), Color(0.05, 0.05, 0.1, 0.85))
+	_tela.draw_rect(Rect2(x + 1, y + 1, 102 * clampf(frac, 0, 1), 5), cor)
+	_tela.draw_rect(Rect2(x + 1, y + 1, 102 * clampf(frac, 0, 1), 1), Color(0.55, 0.85, 1.0))
+	var txt := "ENERGIA %d%%" % roundi(frac * 100.0)
+	var cor_t := Color(0.6, 0.7, 0.9)
+	if h.ativa:
+		txt = "DRAGÃO  %ds" % ceili(h.restante())
+		cor_t = Color(0.55, 0.85, 1.0)
+	elif h.pronta():
+		txt = "Q: DRAGÃO!"
+		cor_t = Color(1, 0.9, 0.4) if int(_t * 4) % 2 == 0 else Color(0.55, 0.85, 1.0)
+	_txt(Vector2(x, y + 17), txt, 8, cor_t, HORIZONTAL_ALIGNMENT_RIGHT, 104)
 
 
 func _icones_build() -> void:

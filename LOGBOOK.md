@@ -166,3 +166,14 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Conferido: pausa → Opções → Esc fecha só as Opções e o segundo Esc volta pro jogo; F11 = 1920x1080 em 3x e volta pra 1280x720; 266 vírus a 145 fps (headless); EQUIP e REGRAS sem falhas.
 
 **Próximo:** #20 (transformação em dragão).
+
+## 2026-10-05 · Claude do Alisson (#20: transformação em Dragão Cobalto)
+**Feito**
+- **Arte:** `fonte_arte/modelos3d/dragao.py` (Blender) gera um dragão oriental próprio: escamas cobalto (a energia da aura), ventre e chifres de ouro, juba de chamas e bigodes ciano. Cada peça (cabeça 64px com boca fechada e aberta, gomo em 4 tamanhos, patas da frente e de trás com 4 quadros, cauda) sai em 16 direções, com e sem contorno. Nova rampa `cobalto` no `pixel3d.py`.
+- **Corpo no jogo:** `scripts/hordas/dragao.gd`, uma corrente que segue o rastro da cabeça, serpenteia, ondula no ar e projeta sombra. É desenhada em duas passadas (silhueta com contorno, depois o corpo sem contorno), pra virar um tubo contínuo. A cabeça vira pro alvo da baforada.
+- **Motor:** `scripts/hordas/habilidades.gd` + `dados/habilidades.json` (DiscoverableAbility genérica, seção 31). Bloqueada → desbloqueia no nível 8 (vira fragmentos na #21) → Energia Dracônica enche com abates e tempo → Q/X transforma → esvazia em 15–30 s → volta sozinho → recarga. A energia pedida cresce a cada uso (100, 160, 220...).
+- **Armas da forma:** `armas.forma_lista` (as humanas param intactas; as cartas continuam evoluindo a build humana). Módulos `baforada`, `garras`, `energia_draconica` e `rugido` em `scripts/hordas/armas/`. No `armas.json` têm `classe: "transformacao"`: nunca viram carta e não contam como exclusiva. O dash vira investida. Inimigos ganharam `atordoado` (rugido).
+- HUD com a barra de energia (embaixo dos Abates), animação de transformação (redemoinho e coluna cobalto, o humano clareia e some, o dragão se desenrola), `--dragao` e `--print_tela=dragao` pra teste.
+- **Testes:** `testes/transformacao.tscn` (DRAGAO falhas=0, conferido que falha quando quebro a regra), opcoes, equip e regras sem falhas; desbloqueio natural no nível 8 numa partida de 5 min; duelo não transforma; online com 2 instâncias (34 = 34 abates); cerca de 300 vírus com o dragão em 4–6 ms.
+
+**Pendente:** online (a transformação fica desligada lá, porque não vai pela rede); ajuste fino de equilíbrio (tudo no `habilidades.json` e no `armas.json`). Próximo: #21 (santuários e fragmentos, que trocam o desbloqueio por nível).

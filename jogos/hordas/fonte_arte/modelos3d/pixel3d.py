@@ -32,6 +32,7 @@ RAMPA = {
     "fogo": ["3a1408", "7a2c0c", "c45a14", "f0921e", "ffd060", "fff2b0"],                      # tocha, vela
     "noite": ["0b1020", "152040", "223566", "3a5794", "6f8fc8"],                               # cidade à noite
     "pele": ["3b2219", "6b3f2a", "9c6444", "c98e62", "e8b98e"],                               # pele (Hazaki)
+    "cobalto": ["0a1030", "142a6e", "2a4fc0", "4073ff", "8cd9ff", "e0f6ff"],                  # energia do Hazaki (aura, dragão)
 }
 PALETA_HEX = [h for r in RAMPA.values() for h in r]
 PALETA = np.array([[int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)] for h in PALETA_HEX])

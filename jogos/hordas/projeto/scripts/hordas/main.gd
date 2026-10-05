@@ -5,6 +5,7 @@ extends Node
 ##   --sair=60 (fecha depois de 60 s de partida)  --fotos=pasta (salva prints a cada 20 s)
 ##   --online=host [--jogadores=2] (abre a sala e começa sozinho quando tiver 2)
 ##   --online=join --endereco=127.0.0.1:7777  (entra na sala)
+##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
 
 const Arena := preload("res://scripts/hordas/arena.gd")
 const W := 640.0
@@ -18,11 +19,11 @@ const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo
 const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
 	"dash": [KEY_SPACE, KEY_SHIFT], "confirmar": [KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_Z], "voltar": [KEY_ESCAPE],
-	"resortear": [KEY_R], "tela_cheia": [KEY_F11],
+	"resortear": [KEY_R], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F],
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP], "baixo": [JOY_BUTTON_DPAD_DOWN], "esquerda": [JOY_BUTTON_DPAD_LEFT], "direita": [JOY_BUTTON_DPAD_RIGHT],
-	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y],
+	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y], "transformar": [JOY_BUTTON_X],
 }
 
 var _tela := Control.new()
@@ -204,6 +205,9 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 		_arena.diretor.t_fase = float(o.pular)
 	if o.has("build"):
 		_arena.dar_build_teste(int(o.build))
+	if o.has("dragao") and not online:   # teste: transformação liberada e com a energia cheia
+		_arena.habilidades.desbloquear()
+		_arena.habilidades.energia = _arena.habilidades.energia_max()
 	if o.has("duelo") and not online:
 		_arena.iniciar_duelo_teste(int(o.duelo))
 	_estado = "partida"
@@ -408,11 +412,12 @@ func _teste() -> void:
 		_arena.morrer("teste")
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
-		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s" % [
+		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s forma=%s" % [
 			_t, _arena.diretor.fase_idx + 1, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,
 			_arena.armas.lista.map(func(a): return "%s:%d" % [a.id, a.nivel]), _arena.passivos,
-			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-"])
+			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-",
+			("%s energia=%.0f vezes=%d armas=%s" % ["DRAGAO" if _arena.habilidades.ativa else "humano", _arena.habilidades.energia, _arena.habilidades.vezes, _arena.armas.forma_lista.map(func(a): return "%s:%d" % [a.id, a.nivel])]) if _arena.habilidades.desbloqueada else "-"])
 		if _arena.online:
 			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
@@ -609,6 +614,9 @@ func _print_tela(qual: String) -> void:
 			_estado = "creditos"
 		"opcoes":
 			_abrir_opcoes()
+		"dragao":   # com --bot --dragao (e --estresse=N pra ter vírus): --espera=0.6 pega o meio da transformação
+			_comecar("hazaki")
+			await get_tree().create_timer(float(_args.get("espera", 5.0))).timeout
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout
