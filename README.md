@@ -43,6 +43,7 @@ O jogo lê capítulos e áudio da pasta ao lado do .exe, então distribua o `.ex
 - Este repositório é a **cópia oficial para colaboração**. Toda thread que mudar o jogo (cairu, hordas, arte ou docs) deve, ao terminar, copiar **só os arquivos-fonte alterados** para a pasta correspondente aqui e fazer commit.
 - Trabalho novo vai em **branch própria** (`claude/...` ou `nome/assunto`) e **Pull Request** para a `main`; não dar push direto na `main` depois do primeiro commit.
 - **Nunca** versionar: `.exe`, `.zip`, `.pck`, `.godot/`, `build/`, `__pycache__`, arquivos acima de 50 MB, chaves/senhas.
+- Ao terminar um bloco de trabalho, acrescente uma entrada curta no fim do `LOGBOOK.md` (feito / pendente / próximo, e recados para o outro Claude). Nunca reescreva entradas antigas.
 - Mantenha engine e conteúdo separados (veja `jogos/cairu/ENGINE.txt`) e atualize o `LEIA-ME` do módulo que mudar.
 - Convenção de pastas: jogos novos em `jogos/<nome>/projeto`, arte em `arte/`, documentos em `docs/`.
 - Usar só os primeiros nomes dos personagens (Nicão, Lucas, João, Matheus, Beto, Lukako, Fábio, Breno), sem sobrenomes.
