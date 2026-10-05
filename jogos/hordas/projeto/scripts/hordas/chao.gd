@@ -2,6 +2,7 @@ extends Node2D
 ## Chão infinito (azulejos que se repetem), enfeites espalhados e os santuários (tomadas).
 ## Santuário (ideia do Megabonk): fique dentro do círculo até carregar e ganhe uma carta.
 
+const Visual := preload("res://scripts/hordas/visual.gd")
 const ESCALA := 2.0
 const BLOCO := 256.0          # tamanho da textura do chão na tela (128 px x 2)
 const CEL_DECO := 150.0
@@ -87,6 +88,9 @@ func _draw() -> void:
 				continue
 			var reg: Rect2 = _deco_regioes[(h / 100) % _deco_regioes.size()]
 			var p := Vector2(cx * CEL_DECO + (h / 7) % 110, cy * CEL_DECO + (h / 13) % 110)
+			var sz := reg.size * ESCALA
+			Visual.contato(self, p + Vector2(sz.x / 2, sz.y), sz.x * 0.9)
+			Visual.sombra(self, _deco, Rect2(-sz.x / 2, -sz.y, sz.x, sz.y), reg, p + Vector2(sz.x / 2, sz.y))
 			draw_texture_rect_region(_deco, Rect2(p, reg.size * ESCALA), reg, Color(1, 1, 1, 0.9))
 	var tex := Dados.tex("tomada")
 	for s in santuarios:
@@ -99,4 +103,7 @@ func _draw() -> void:
 		draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 		var sz := tex.get_size() * ESCALA
 		var flut := 0.0 if s.usado else sin(_t * 3.0) * 2.0
+		var alt := 2.0 - flut   # flutuando: a sombra fica no chão e encolhe quando sobe
+		Visual.contato(self, s.pos, sz.x * 0.8, alt)
+		Visual.sombra(self, tex, Rect2(-sz.x / 2, -sz.y, sz.x, sz.y), Rect2(Vector2.ZERO, tex.get_size()), s.pos, alt)
 		draw_texture_rect(tex, Rect2(s.pos - Vector2(sz.x / 2, sz.y) + Vector2(0, flut), sz), false, Color(0.6, 0.6, 0.6) if s.usado else Color.WHITE)

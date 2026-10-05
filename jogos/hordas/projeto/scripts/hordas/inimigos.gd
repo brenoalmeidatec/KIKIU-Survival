@@ -3,6 +3,7 @@ extends Node2D
 ## Cada inimigo é um objeto leve (classe V). Uma grade espacial acha quem está perto rápido.
 ## Também cuida dos tiros dos inimigos.
 
+const Visual := preload("res://scripts/hordas/visual.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
 const LONGE := 720.0       # mais longe que isso do jogador = reaparece do outro lado
@@ -434,6 +435,17 @@ func _draw() -> void:
 	if _quadro % 4 == 0 or _ordem.size() < lista.size() / 2:
 		_ordem = lista.duplicate()
 		_ordem.sort_custom(func(a, b): return a.pos.y < b.pos.y)
+	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus)
+	for v: V in _ordem:
+		if v.hp <= 0:
+			continue
+		var s: Vector2 = v.tam * ESCALA * v.esc
+		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
+		var quadro := int(_t * 4.0 + v.id) % 2
+		var src := Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y)
+		var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if v.pos.x > jx else Rect2(-s.x / 2, -s.y, s.x, s.y)
+		Visual.contato(self, pe, s.x * 0.75)
+		Visual.sombra(self, v.tex, rs, src, pe)
 	for v: V in _ordem:
 		if v.hp <= 0:
 			continue
@@ -442,7 +454,6 @@ func _draw() -> void:
 		if v.estado == 1:
 			quadro = 2 if int(_t * 20) % 2 == 0 else 0
 		var base: Vector2 = v.pos - Vector2(s.x / 2, s.y * 0.6)
-		draw_rect(Rect2(v.pos.x - s.x * 0.35, v.pos.y + s.y * 0.32, s.x * 0.7, 3), Color(0, 0, 0, 0.25))
 		var vira: bool = v.pos.x > jx
 		var r := Rect2(base, s)
 		if vira:

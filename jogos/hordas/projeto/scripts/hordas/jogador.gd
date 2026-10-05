@@ -2,6 +2,7 @@ extends Node2D
 ## O herói: anda em 8 direções, dá dash (invencível por um instante) e leva dano.
 ## Usa a mesma folha de andar dos personagens da Cairu (andando_8.png: 9 colunas x 4 direções, 44x60).
 
+const Visual := preload("res://scripts/hordas/visual.gd")
 const LINHA := {"baixo": 0, "esquerda": 1, "direita": 2, "cima": 3}
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
@@ -221,6 +222,8 @@ func curar(valor: float) -> void:
 
 
 func _draw() -> void:
+	if not (arena.caido and arena.online):
+		Visual.sombra_boneco(self, spr)
 	for r in _rastro:
 		var tex := spr.texture
 		var w := tex.get_width() / 9.0
@@ -228,10 +231,7 @@ func _draw() -> void:
 		var f: int = r.frame
 		draw_texture_rect_region(tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)),
 			Rect2((f % 9) * w, (f / 9) * h, w, h), Color(0.5, 0.8, 1.0, r.t * 2.0))
-	# sombra, barra de vida e recarga do dash embaixo do pé
-	draw_set_transform(Vector2(0, 0), 0, Vector2(1, 0.4))
-	draw_circle(Vector2.ZERO, 11, Color(0, 0, 0, 0.3))
-	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+	# barra de vida e recarga do dash embaixo do pé
 	if arena.caido and arena.online:
 		# caído: anel mostrando quanto falta pra levantar
 		draw_arc(Vector2(0, -10), 18, 0, TAU, 32, Color(0, 0, 0, 0.4), 3)
