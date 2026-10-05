@@ -6,7 +6,10 @@ extends RefCounted
 ## Tudo configurado em dados/fase.json.
 
 var arena: Node
-var tempo := 0.0
+var tempo := 0.0              # tempo total da corrida
+var t_fase := 0.0             # tempo desta fase
+var fase_idx := 0
+var chefe_fase := ""          # tipo do chefe que fecha esta fase (depois que ele nasce)
 var creditos := 0.0
 var final_chamado := false
 var enxame_final := false
@@ -17,12 +20,42 @@ var _dif: Dictionary
 
 func iniciar(a: Node) -> void:
 	arena = a
-	_fase = Dados.json("fase")
-	_dif = _fase.get("dificuldade", {})
+	_dif = Dados.json("fase").get("dificuldade", {})
+	_ir_para_fase(0)
 
 
+## Lista de fases da corrida (dados/corrida.json). Sem esse arquivo, vale a fase única do fase.json.
+func fases() -> Array:
+	var lista: Array = Dados.json("corrida").get("fases", [])
+	if lista.is_empty():
+		var f: Dictionary = Dados.json("fase")
+		lista = [{"nome": f.get("nome", "Fase"), "duracao": f.get("duracao", 600), "chefe": f.get("chefe_final", "tela_azul"),
+			"eventos": f.get("eventos", []), "santuarios": f.get("santuarios", 6)}]
+	return lista
+
+
+func ultima_fase() -> bool:
+	return fase_idx >= fases().size() - 1
+
+
+func _ir_para_fase(i: int) -> void:
+	fase_idx = i
+	_fase = fases()[i]
+	t_fase = 0.0
+	creditos = 0.0
+	final_chamado = false
+	enxame_final = false
+	chefe_fase = ""
+	_feitos.clear()
+
+
+func proxima_fase() -> void:
+	_ir_para_fase(fase_idx + 1)
+
+
+## "Minutos de dificuldade": avança com o tempo e também a cada fase concluída.
 func minutos() -> float:
-	return tempo / 60.0
+	return fase_idx * float(Dados.json("corrida").get("minutos_por_fase", 0.0)) + t_fase / 60.0
 
 
 func coeficiente() -> float:
@@ -37,9 +70,10 @@ func nivel() -> int:
 
 func atualizar(dt: float) -> void:
 	tempo += dt
+	t_fase += dt
 	var mult := 1.0
 	if enxame_final:
-		var depois := tempo - float(_fase.get("duracao", 600))
+		var depois := t_fase - float(_fase.get("duracao", 600))
 		mult = float(_dif.get("enxame_final_multiplicador", 3.0)) * (1.0 + depois / 30.0)
 	creditos += float(_dif.get("creditos_base", 1.5)) * pow(coeficiente(), float(_dif.get("expoente", 1.3))) * mult * dt
 	_eventos()
@@ -49,7 +83,7 @@ func atualizar(dt: float) -> void:
 func _eventos() -> void:
 	for i in _fase.get("eventos", []).size():
 		var ev: Dictionary = _fase.eventos[i]
-		if _feitos.has(i) or tempo < float(ev.get("tempo", 0)):
+		if _feitos.has(i) or t_fase < float(ev.get("tempo", 0)):
 			continue
 		_feitos[i] = true
 		var tipo := str(ev.get("inimigo", "bug"))
@@ -72,13 +106,14 @@ func _eventos() -> void:
 					arena.inimigos.criar(tipo, base + lado.orthogonal() * randf_range(-180, 180) + lado * randf_range(0, 80), nivel())
 				arena.anunciar("Enxame!", Color(1, 0.8, 0.4))
 	var dur := float(_fase.get("duracao", 600))
-	if tempo >= dur and not final_chamado:
+	if t_fase >= dur and not final_chamado:
 		final_chamado = true
-		enxame_final = true
-		var chefe := str(_fase.get("chefe_final", "tela_azul"))
+		var chefe := str(_fase.get("chefe", "tela_azul"))
+		chefe_fase = chefe
+		enxame_final = bool(Dados.json("inimigos").get(chefe, {}).get("final", false))
 		arena.inimigos.criar(chefe, _ponto_fora(), nivel())
 		arena.anunciar(str(Dados.json("inimigos").get(chefe, {}).get("nome", chefe)).to_upper() + "!", Color(0.4, 0.6, 1))
-		arena.chefe_final_chegou()
+		arena.chefe_final_chegou(enxame_final)
 		Som.tocar("tremor")
 		arena.tremer(10)
 

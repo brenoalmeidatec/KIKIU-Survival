@@ -8,10 +8,11 @@ var numeros: Array = []      # {pos, txt, t, cor}
 var particulas: Array = []   # {pos, vel, t, cor, tam}
 
 
-func numero(pos: Vector2, valor: float, cor := Color.WHITE) -> void:
+func numero(pos: Vector2, valor: float, cor := Color.WHITE, crit := false) -> void:
 	if numeros.size() >= MAX_NUMEROS:
 		numeros.pop_front()
-	numeros.append({"pos": pos + Vector2(randf_range(-6, 6), -10), "txt": str(int(round(valor))), "t": 0.6, "cor": cor})
+	numeros.append({"pos": pos + Vector2(randf_range(-6, 6), -10), "txt": str(int(round(valor))) + ("!" if crit else ""),
+		"t": 0.9 if crit else 0.6, "cor": Color(1, 0.9, 0.3) if crit else cor, "tam": 16 if crit else 8})
 
 
 func explodir(pos: Vector2, cor: Color, n := 6, forca := 80.0) -> void:
@@ -48,5 +49,5 @@ func _draw() -> void:
 	var f: Font = Dados.fonte
 	for n in numeros:
 		var a := clampf(n.t * 3.0, 0.0, 1.0)
-		draw_string(f, n.pos + Vector2(1, 1), n.txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 8, Color(0, 0, 0, a))
-		draw_string(f, n.pos, n.txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 8, Color(n.cor, a))
+		draw_string(f, n.pos + Vector2(1, 1), n.txt, HORIZONTAL_ALIGNMENT_CENTER, -1, n.tam, Color(0, 0, 0, a))
+		draw_string(f, n.pos, n.txt, HORIZONTAL_ALIGNMENT_CENTER, -1, n.tam, Color(n.cor, a))

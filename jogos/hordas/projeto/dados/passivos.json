@@ -1,13 +1,113 @@
 {
-  "_ajuda": "Itens passivos. efeito = quanto soma em cada nível. Atributos: dano, recarga (menos = atira mais), area, quantidade, velocidade_proj, duracao, vida_max, regen, velocidade, ima, sorte, xp.",
-  "energetico": {"nome": "Energético", "icone": "energetico", "max": 5, "descricao": "+10% de dano.", "efeito": {"dano": 0.1}},
-  "overclock": {"nome": "Overclock", "icone": "overclock", "max": 5, "descricao": "Armas recarregam 8% mais rápido.", "efeito": {"recarga": -0.08}},
-  "monitor": {"nome": "Monitor Ultrawide", "icone": "monitor", "max": 5, "descricao": "+10% de área.", "efeito": {"area": 0.1}},
-  "ctrl_c_v": {"nome": "Ctrl+C Ctrl+V", "icone": "ctrl_c_v", "max": 2, "descricao": "+1 projétil em todas as armas.", "efeito": {"quantidade": 1}},
-  "tenis": {"nome": "Tênis Novo", "icone": "tenis", "max": 5, "descricao": "+10% de velocidade.", "efeito": {"velocidade": 0.1}},
-  "marmita": {"nome": "Marmita", "icone": "marmita", "max": 5, "descricao": "+20 de vida máxima.", "efeito": {"vida_max": 20}},
-  "antena": {"nome": "Antena", "icone": "antena", "max": 5, "descricao": "Puxa o XP de mais longe.", "efeito": {"ima": 0.3}},
-  "fitinha": {"nome": "Fitinha do Bonfim", "icone": "fitinha", "max": 5, "descricao": "+20% de sorte (cartas melhores).", "efeito": {"sorte": 0.2}},
-  "agua_coco": {"nome": "Água de Coco", "icone": "agua_coco", "max": 5, "descricao": "Recupera 0,4 de vida por segundo.", "efeito": {"regen": 0.4}},
-  "apostila": {"nome": "Apostila", "icone": "apostila", "max": 5, "descricao": "+10% de XP.", "efeito": {"xp": 0.1}}
+ "_ajuda": "Itens passivos. efeito = quanto soma em cada nível. Atributos: dano, recarga (menos = atira mais), area, quantidade, velocidade_proj, duracao, vida_max, regen, velocidade, ima, sorte, xp. peso_ia = o quanto os rivais controlados pela IA gostam desse item (0 a 1).",
+ "energetico": {
+  "nome": "Energético",
+  "icone": "energetico",
+  "max": 5,
+  "descricao": "+10% de dano.",
+  "efeito": {
+   "dano": 0.1
+  },
+  "peso_ia": 1.0
+ },
+ "overclock": {
+  "nome": "Overclock",
+  "icone": "overclock",
+  "max": 5,
+  "descricao": "Armas recarregam 8% mais rápido.",
+  "efeito": {
+   "recarga": -0.08
+  },
+  "peso_ia": 1.0
+ },
+ "monitor": {
+  "nome": "Monitor Ultrawide",
+  "icone": "monitor",
+  "max": 5,
+  "descricao": "+10% de área.",
+  "efeito": {
+   "area": 0.1
+  },
+  "peso_ia": 1.0
+ },
+ "ctrl_c_v": {
+  "nome": "Ctrl+C Ctrl+V",
+  "icone": "ctrl_c_v",
+  "max": 2,
+  "descricao": "+1 projétil em todas as armas.",
+  "efeito": {
+   "quantidade": 1
+  },
+  "peso_ia": 1.0
+ },
+ "tenis": {
+  "nome": "Tênis Novo",
+  "icone": "tenis",
+  "max": 5,
+  "descricao": "+10% de velocidade.",
+  "efeito": {
+   "velocidade": 0.1
+  },
+  "peso_ia": 1.0
+ },
+ "marmita": {
+  "nome": "Marmita",
+  "icone": "marmita",
+  "max": 5,
+  "descricao": "+20 de vida máxima.",
+  "efeito": {
+   "vida_max": 20
+  },
+  "peso_ia": 1.0
+ },
+ "antena": {
+  "nome": "Antena",
+  "icone": "antena",
+  "max": 5,
+  "descricao": "Puxa o XP de mais longe.",
+  "efeito": {
+   "ima": 0.3
+  },
+  "peso_ia": 0.15
+ },
+ "fitinha": {
+  "nome": "Fitinha do Bonfim",
+  "icone": "fitinha",
+  "max": 5,
+  "descricao": "+20% de sorte (cartas melhores).",
+  "efeito": {
+   "sorte": 0.2
+  },
+  "peso_ia": 0.3
+ },
+ "agua_coco": {
+  "nome": "Água de Coco",
+  "icone": "agua_coco",
+  "max": 5,
+  "descricao": "Recupera 0,4 de vida por segundo.",
+  "efeito": {
+   "regen": 0.4
+  },
+  "peso_ia": 0.7
+ },
+ "apostila": {
+  "nome": "Apostila",
+  "icone": "apostila",
+  "max": 5,
+  "descricao": "+10% de XP.",
+  "efeito": {
+   "xp": 0.1
+  },
+  "peso_ia": 0.15
+ },
+ "mouse": {
+  "nome": "Mouse Gamer",
+  "icone": "mouse",
+  "max": 5,
+  "descricao": "+7% de chance de acerto crítico (dano 1,5x).",
+  "efeito": {
+   "critico": 0.07
+  },
+  "peso_ia": 1.0
+ }
 }

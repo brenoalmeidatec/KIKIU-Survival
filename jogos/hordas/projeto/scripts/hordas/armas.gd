@@ -10,12 +10,27 @@ extends Node2D
 const ESCALA := 2.0
 
 var arena: Node
+## Quem usa a arma e contra quem ela bate. O jogador usa os vírus (inimigos.gd); no duelo final,
+## o jogador e os rivais usam um "campo" que aponta pros outros lutadores (duelo.gd).
+var dono: Node2D                 # precisa de centro(), lado e curar()
+var campo: Object                # precisa de no_circulo, n_mais_perto, aleatorio_na_tela, ferir
+var statf: Callable              # nome do atributo -> valor (dano, recarga, area...)
 var lista: Array = []        # {id, nivel, t, ativo, acertos{}}
 var projeteis: Array = []    # {pos, vel, dano, perfura, vida, tex, esc, acertou[], arma}
 var pocas: Array = []        # {pos, raio, vida, dano, tique, t, segue, arma}
 var golpes: Array = []       # desenho do chicote {pos, lado, alcance, largura, t, arma}
 var _fila: Array = []        # golpes atrasados do chicote {t, arma}
 var _t := 0.0
+
+
+func limpar_tiros() -> void:
+	projeteis.clear()
+	pocas.clear()
+	golpes.clear()
+	_fila.clear()
+	for a in lista:
+		a.ativo = 0.0
+		a.acertos = {}
 
 
 func tem(id: String) -> bool:
@@ -67,18 +82,18 @@ func atributos(id: String, nivel: int) -> Dictionary:
 func _s(a: Dictionary) -> Dictionary:
 	## Atributos finais = arma x jogador.
 	var s := atributos(a.id, a.nivel)
-	s["dano"] = float(s.get("dano", 1)) * arena.stat("dano")
-	s["recarga"] = float(s.get("recarga", 1)) * arena.stat("recarga")
-	s["area"] = float(s.get("area", 1)) * arena.stat("area")
-	s["quantidade"] = int(s.get("quantidade", 1)) + int(arena.stat("quantidade"))
-	s["duracao"] = float(s.get("duracao", 1)) * arena.stat("duracao")
-	s["velocidade"] = float(s.get("velocidade", 200)) * arena.stat("velocidade_proj")
+	s["dano"] = float(s.get("dano", 1)) * statf.call("dano")
+	s["recarga"] = float(s.get("recarga", 1)) * statf.call("recarga")
+	s["area"] = float(s.get("area", 1)) * statf.call("area")
+	s["quantidade"] = int(s.get("quantidade", 1)) + int(statf.call("quantidade"))
+	s["duracao"] = float(s.get("duracao", 1)) * statf.call("duracao")
+	s["velocidade"] = float(s.get("velocidade", 200)) * statf.call("velocidade_proj")
 	return s
 
 
 func atualizar(dt: float) -> void:
 	_t += dt
-	var jog: Node2D = arena.jogador
+	var jog: Node2D = dono
 	for a in lista:
 		var d := Dados.item(a.id)
 		var s := _s(a)
@@ -128,9 +143,9 @@ func atualizar(dt: float) -> void:
 # ---------- projétil ----------
 
 func _atirar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
-	var jog: Node2D = arena.jogador
+	var jog: Node2D = dono
 	var origem: Vector2 = jog.centro()
-	var alvos: Array = arena.inimigos.n_mais_perto(origem, s.quantidade, 380)
+	var alvos: Array = campo.n_mais_perto(origem, s.quantidade, 380)
 	for i in s.quantidade:
 		var dir: Vector2
 		if alvos.is_empty():
@@ -153,11 +168,11 @@ func _projeteis(dt: float) -> void:
 		if p.vida <= 0:
 			projeteis.erase(p)
 			continue
-		for v in arena.inimigos.no_circulo(p.pos, 6.0 * p.esc):
+		for v in campo.no_circulo(p.pos, 6.0 * p.esc):
 			if v.id in p.acertou:
 				continue
 			p.acertou.append(v.id)
-			arena.inimigos.ferir(v, p.dano, p.vel.normalized() * 60.0, p.arma)
+			campo.ferir(v, p.dano, p.vel.normalized() * 60.0, p.arma)
 			p.perfura -= 1
 			if p.perfura <= 0:
 				projeteis.erase(p)
@@ -176,14 +191,14 @@ func _chicotes(dt: float) -> void:
 			continue
 		var a: Dictionary = f.arma
 		var s := _s(a)
-		var jog: Node2D = arena.jogador
+		var jog: Node2D = dono
 		var alcance: float = float(s.get("alcance", 100)) * s.area
 		var larg: float = float(s.get("largura", 30)) * s.area
 		var c: Vector2 = jog.centro() + Vector2(f.lado * (alcance / 2 + 6), 0)
 		var curou := 0
-		for v in arena.inimigos.no_circulo(c, alcance / 2):
+		for v in campo.no_circulo(c, alcance / 2):
 			if absf(v.pos.y - c.y) <= larg / 2 + v.raio:
-				arena.inimigos.ferir(v, s.dano, Vector2(f.lado * 120, 0), a.id)
+				campo.ferir(v, s.dano, Vector2(f.lado * 120, 0), a.id)
 				if s.has("rouba_vida") and curou < 5:
 					jog.curar(float(s.rouba_vida))
 					curou += 1
@@ -194,15 +209,15 @@ func _chicotes(dt: float) -> void:
 # ---------- órbita ----------
 
 func _orbita(a: Dictionary, s: Dictionary) -> void:
-	var jog: Node2D = arena.jogador
+	var jog: Node2D = dono
 	var r: float = float(s.get("raio", 60)) * s.area
 	for i in s.quantidade:
 		var p: Vector2 = jog.centro() + Vector2.from_angle(_t * float(s.get("giro", 3)) + TAU * i / s.quantidade) * r
-		for v in arena.inimigos.no_circulo(p, 9.0 * s.area):
+		for v in campo.no_circulo(p, 9.0 * s.area):
 			var prox: float = a.acertos.get(v.id, 0.0)
 			if _t >= prox:
 				a.acertos[v.id] = _t + 0.5
-				arena.inimigos.ferir(v, s.dano, (v.pos - jog.centro()).normalized() * 90.0, a.id)
+				campo.ferir(v, s.dano, (v.pos - jog.centro()).normalized() * 90.0, a.id)
 	if a.acertos.size() > 600:
 		a.acertos = {}
 
@@ -210,9 +225,9 @@ func _orbita(a: Dictionary, s: Dictionary) -> void:
 # ---------- poça ----------
 
 func _derramar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
-	var jog: Node2D = arena.jogador
+	var jog: Node2D = dono
 	for i in s.quantidade:
-		var alvo = arena.inimigos.aleatorio_na_tela(jog.centro())
+		var alvo = campo.aleatorio_na_tela(jog.centro())
 		var p: Vector2 = alvo.pos if alvo else jog.centro() + Vector2.from_angle(randf() * TAU) * randf_range(40, 140)
 		pocas.append({"pos": p, "raio": float(s.get("raio", 40)) * s.area, "vida": s.duracao, "total": s.duracao,
 			"dano": s.dano, "tique": float(s.get("tique", 0.4)), "t": 0.0, "segue": bool(d.get("base", {}).get("segue", false)),
@@ -225,11 +240,11 @@ func _pocas(dt: float) -> void:
 		p.vida -= dt
 		p.t -= dt
 		if p.segue:
-			p.pos = p.pos.move_toward(arena.jogador.centro(), 40.0 * dt)
+			p.pos = p.pos.move_toward(dono.centro(), 40.0 * dt)
 		if p.t <= 0:
 			p.t = p.tique
-			for v in arena.inimigos.no_circulo(p.pos, p.raio * 0.85):
-				arena.inimigos.ferir(v, p.dano, Vector2.ZERO, p.arma)
+			for v in campo.no_circulo(p.pos, p.raio * 0.85):
+				campo.ferir(v, p.dano, Vector2.ZERO, p.arma)
 		if p.vida <= 0:
 			pocas.erase(p)
 
@@ -237,18 +252,18 @@ func _pocas(dt: float) -> void:
 # ---------- aura ----------
 
 func _aura(a: Dictionary, s: Dictionary) -> void:
-	var jog: Node2D = arena.jogador
+	var jog: Node2D = dono
 	var r: float = float(s.get("raio", 50)) * s.area
-	for v in arena.inimigos.no_circulo(jog.centro(), r):
+	for v in campo.no_circulo(jog.centro(), r):
 		if s.has("lentidao"):
 			v.lento = 0.8
-		arena.inimigos.ferir(v, s.dano, (v.pos - jog.centro()).normalized() * float(s.get("empurra", 40)), a.id)
+		campo.ferir(v, s.dano, (v.pos - jog.centro()).normalized() * float(s.get("empurra", 40)), a.id)
 
 
 # ---------- desenho ----------
 
 func _draw() -> void:
-	var jog: Node2D = arena.jogador
+	var jog: Node2D = dono
 	for p in pocas:
 		var alfa: float = clampf(p.vida / 0.4, 0.0, 1.0) * 0.55
 		var cresce: float = clampf((p.total - p.vida) / 0.15, 0.3, 1.0)

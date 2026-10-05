@@ -113,13 +113,16 @@ func limpar() -> void:
 func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 	if v.hp <= 0:
 		return false
+	var crit: bool = randf() < arena.stat("critico")
+	if crit:
+		valor *= arena.stat("critico_mult")
 	v.hp -= valor
 	v.flash = 0.09
 	var peso := 4.0 if v.pesado else 1.0
 	if v.chefe:
 		peso = 12.0
 	v.kb += empurrao / peso
-	arena.registrar_dano(arma, valor, v.pos)
+	arena.registrar_dano(arma, valor, v.pos, crit)
 	if v.hp <= 0:
 		_remover(v)
 		arena.inimigo_morreu(v)

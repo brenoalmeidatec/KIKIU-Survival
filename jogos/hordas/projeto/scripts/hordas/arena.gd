@@ -13,11 +13,11 @@ const Chao := preload("res://scripts/hordas/chao.gd")
 const Diretor := preload("res://scripts/hordas/diretor_hordas.gd")
 const Hud := preload("res://scripts/hordas/hud.gd")
 const Cartas := preload("res://scripts/hordas/cartas.gd")
+const Duelo := preload("res://scripts/hordas/duelo.gd")
+const Construcao := preload("res://scripts/hordas/construcao.gd")
 
-const BASE := {"dano": 1.0, "recarga": 1.0, "area": 1.0, "quantidade": 0.0, "velocidade_proj": 1.0, "duracao": 1.0,
-	"vida_max": 100.0, "regen": 0.0, "velocidade": 1.0, "ima": 1.0, "sorte": 0.0, "xp": 1.0}
-const MAX_ARMAS := 4
-const MAX_PASSIVOS := 5
+const MAX_ARMAS := Construcao.MAX_ARMAS
+const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
 
 var heroi_id := "breno"
 var heroi: Dictionary
@@ -33,6 +33,10 @@ var diretor
 var hud: CanvasLayer
 var cartas: CanvasLayer
 var camera := Camera2D.new()
+var duelo: Node2D
+var duelo_ativo := false
+var pre_duelo := false       # o chefe final caiu e o duelo ainda não começou
+var entre_fases := false     # a fase acabou: descanso, baú e escolha antes da próxima
 
 var passivos := {}          # id -> nível
 var _stats := {}
@@ -69,8 +73,14 @@ func _ready() -> void:
 	jogador.bot = bot
 	add_child(jogador)
 	add_child(armas)
+	armas.dono = jogador
+	armas.campo = inimigos
+	armas.statf = stat
 	efeitos = Efeitos.new()
 	add_child(efeitos)
+	duelo = Duelo.new()
+	duelo.arena = self
+	add_child(duelo)
 	add_child(camera)
 	camera.make_current()
 	diretor = Diretor.new()
@@ -87,6 +97,8 @@ func _ready() -> void:
 	cartas.arena = self
 	add_child(cartas)
 	Som.musica(str(Dados.json("fase").get("musica", "minijogo_tenso")))
+	var f0: Dictionary = diretor.fases()[0]
+	anunciar("Fase 1: %s" % f0.get("nome", ""), Color(0.7, 0.9, 1))
 	camera.position = jogador.centro()
 
 
@@ -95,22 +107,21 @@ func jogadores() -> int:
 
 
 func stat(k: String) -> float:
-	return float(_stats.get(k, BASE.get(k, 0.0)))
+	var v := float(_stats.get(k, Construcao.BASE.get(k, 0.0)))
+	if duelo_ativo:
+		# no duelo: a vida vem da regra do pvp.json, a regeneração é menor e a aura de lentidão pega
+		if k == "vida_max":
+			return duelo.hp_pvp(v)
+		elif k == "regen":
+			return v * duelo.regen_mult
+		elif k == "velocidade" and duelo.lut_jogador.lento > 0:
+			return v * 0.55
+	return v
 
 
 func _recalcular() -> void:
 	var antes := stat("vida_max")
-	_stats = BASE.duplicate()
-	var bonus: Dictionary = heroi.get("bonus", {})
-	for k in bonus:
-		_stats[k] = float(_stats.get(k, 0)) + float(bonus[k])
-	var pas: Dictionary = Dados.json("passivos")
-	for id in passivos:
-		var ef: Dictionary = pas.get(id, {}).get("efeito", {})
-		for k in ef:
-			_stats[k] = float(_stats.get(k, 0)) + float(ef[k]) * passivos[id]
-	_stats["recarga"] = maxf(0.35, _stats.recarga)
-	_stats["velocidade"] = maxf(0.4, _stats.velocidade)
+	_stats = Construcao.stats(heroi, passivos)
 	if jogador and stat("vida_max") > antes:
 		jogador.curar(stat("vida_max") - antes)
 
@@ -120,12 +131,19 @@ func _process(dt: float) -> void:
 		return
 	dt = minf(dt, 1.0 / 30.0)
 	var t0 := Time.get_ticks_usec()
-	jogador.atualizar(dt)
-	diretor.atualizar(dt)
+	var parado: bool = duelo_ativo and (duelo.estado == "contagem" or not duelo.lut_jogador.vivo)
+	if not parado:
+		jogador.atualizar(dt)
+	if duelo_ativo:
+		duelo.atualizar(dt)
+	elif not pre_duelo and not entre_fases:
+		diretor.atualizar(dt)
 	var t1 := Time.get_ticks_usec()
-	inimigos.atualizar(dt, jogador)
+	if not duelo_ativo and not pre_duelo and not entre_fases:
+		inimigos.atualizar(dt, jogador)
 	var t2 := Time.get_ticks_usec()
-	armas.atualizar(dt)
+	if not parado:
+		armas.atualizar(dt)
 	var t3 := Time.get_ticks_usec()
 	coleta.atualizar(dt)
 	efeitos.atualizar(dt)
@@ -134,7 +152,7 @@ func _process(dt: float) -> void:
 	var t4 := Time.get_ticks_usec()
 	perfil = [t1 - t0, t2 - t1, t3 - t2, t4 - t3]
 	_tremor = maxf(0.0, _tremor - dt * 20.0)
-	camera.position = jogador.centro()
+	camera.position = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro()
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
 	if Input.is_action_just_pressed("voltar") and not cartas.aberto():
 		hud.pausar()
@@ -154,10 +172,10 @@ func anunciar(txt: String, cor := Color.WHITE) -> void:
 	hud.anunciar(txt, cor)
 
 
-func registrar_dano(arma: String, valor: float, pos: Vector2) -> void:
+func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> void:
 	if arma != "":
 		dano_por_arma[arma] = float(dano_por_arma.get(arma, 0.0)) + valor
-	efeitos.numero(pos, valor)
+	efeitos.numero(pos, valor, Color.WHITE, crit)
 	Som.tocar("acerto", 0.07, randf_range(0.9, 1.2), -14)
 
 
@@ -184,11 +202,61 @@ func inimigo_morreu(v) -> void:
 		tremer(8)
 		Som.tocar("soco", 0.1, 0.7)
 	if v.d.get("final", false):
-		_fim(true)
+		if bool(Dados.json("pvp").get("ativo", true)):
+			anunciar("A Tela Azul caiu...", Color(0.6, 0.8, 1))
+			pre_duelo = true
+			for o in inimigos.lista.duplicate():
+				efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
+			inimigos.limpar()
+			await get_tree().create_timer(2.0, true, false, true).timeout
+			await _esperar_cartas()
+			if acabou:
+				return
+			iniciar_duelo()
+		else:
+			_fim(true)
+	elif v.chefe and diretor.final_chamado and v.tipo == diretor.chefe_fase:
+		_fase_completa()
 
 
-func chefe_final_chegou() -> void:
-	hud.mensagem("Derrote a Tela Azul pra vencer!", Color(0.6, 0.75, 1))
+func chefe_final_chegou(final := true) -> void:
+	if final:
+		hud.mensagem("Derrote a Tela Azul pra vencer!", Color(0.6, 0.75, 1))
+	else:
+		hud.mensagem("Derrote o chefe pra fechar a fase!", Color(1, 0.75, 0.6))
+
+
+## Espera as escolhas de carta (nível, tomada, baú) acabarem, sem perder nenhuma.
+func _esperar_cartas() -> void:
+	await get_tree().process_frame
+	while not acabou and (cartas.aberto() or _niveis_pendentes > 0 or _cartas_tomada > 0):
+		await get_tree().process_frame
+
+
+## O chefe da fase caiu: limpa a tela, junta o XP, dá um baú e uma cura, e começa a próxima fase.
+func _fase_completa() -> void:
+	entre_fases = true
+	var n: int = diretor.fase_idx + 1
+	anunciar("Fase %d completa!" % n, Color(1, 0.9, 0.4))
+	Som.tocar("vitoria", 0.1, 1.0, -8)
+	for o in inimigos.lista.duplicate():
+		efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
+	inimigos.limpar()
+	coleta.puxar_tudo()
+	await get_tree().create_timer(2.2, true, false, true).timeout
+	await _esperar_cartas()
+	if acabou:
+		return
+	jogador.curar(stat("vida_max") * 0.5)
+	abrir_bau()
+	await _esperar_cartas()
+	if acabou:
+		return
+	diretor.proxima_fase()
+	chao.nova_fase()
+	var f: Dictionary = diretor.fases()[diretor.fase_idx]
+	anunciar("Fase %d: %s" % [diretor.fase_idx + 1, f.get("nome", "")], Color(0.7, 0.9, 1))
+	entre_fases = false
 
 
 func chefes() -> Array:
@@ -373,13 +441,48 @@ func abrir_bau() -> void:
 
 # ---------- fim ----------
 
-func morrer() -> void:
+func morrer(quem := "") -> void:
 	if acabou:
+		return
+	if duelo_ativo:
+		duelo.jogador_caiu(quem)
 		return
 	_fim(false)
 
 
-func _fim(vitoria: bool) -> void:
+## Começa o duelo final (depois do chefe final, ou direto no teste).
+func iniciar_duelo() -> void:
+	if duelo_ativo or acabou:
+		return
+	if cartas.aberto():
+		cartas._fechar()
+	duelo.iniciar(self)
+
+
+## Teste: dá ao jogador uma build sorteada de nível N (--build=N).
+func dar_build_teste(nv: int) -> void:
+	var b: Dictionary = Construcao.gerar(heroi_id, nv, RandomNumberGenerator.new())
+	armas.lista.clear()
+	for a in b.armas:
+		armas.adicionar(a.id)
+		armas.achar(a.id).nivel = a.nivel
+	passivos = b.passivos
+	nivel = nv
+	_recalcular()
+	jogador.hp = stat("vida_max")
+
+
+## Teste: build de nível N e vai direto pro duelo (--duelo=N).
+func iniciar_duelo_teste(nv: int) -> void:
+	dar_build_teste(nv)
+	iniciar_duelo()
+
+
+func fim_duelo(res: Dictionary) -> void:
+	_fim(res.lugar == 1, {"duelo": res})
+
+
+func _fim(vitoria: bool, extra := {}) -> void:
 	acabou = true
 	Som.parar_musica()
 	Som.tocar("vitoria" if vitoria else "derrota")
@@ -387,7 +490,8 @@ func _fim(vitoria: bool) -> void:
 	for a in dano_por_arma:
 		lista_dano.append([a, dano_por_arma[a]])
 	lista_dano.sort_custom(func(x, y): return x[1] > y[1])
-	var res := {"vitoria": vitoria, "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
+	var res := {"vitoria": vitoria, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
 		"heroi": heroi_id, "dano": lista_dano, "apanhou": dano_recebido}
+	res.merge(extra)
 	await get_tree().create_timer(1.2, true, false, true).timeout
 	terminou.emit(res)

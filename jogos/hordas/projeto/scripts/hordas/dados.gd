@@ -17,6 +17,11 @@ func _ready() -> void:
 			tex(f.get_basename().get_basename() if f.ends_with(".import") else f.get_basename())
 
 
+	for pasta in DirAccess.get_directories_at("res://assets/personagens"):
+		tex_personagem(pasta, "andando_8")
+		tex_personagem(pasta, "rosto")
+
+
 func json(nome: String) -> Dictionary:
 	if _cache.has(nome):
 		return _cache[nome]
