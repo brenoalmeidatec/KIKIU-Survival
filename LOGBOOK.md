@@ -191,3 +191,11 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 
 ## 2026-10-05 · Claude do Alisson (README)
 - README principal refeito no padrão GitHub: selos, sumário, seções com ícones, prints novos do K.I.K.I.U em `docs/imagens/` (título, horda, heróis, duelo, cavaleiro) e imagens da Cairu que já estavam em `jogos/cairu/referencias/`. Todas as regras de colaboração mantidas. (Entrada movida pro fim ao juntar com a `main`, PC.)
+
+## 2026-10-05 · Claude do Alisson (PC) · faxina da arte (#3)
+**Feito**
+- Descobri quais artes os jogos usam comparando o conteúdo dos arquivos (hash) de `arte/` com os de `jogos/`. Saíram as gerações antigas que nenhum jogo usa: `final_v8_antes`, `final_v9_antes`, `final_v10_antes`, `sprites_v8_teste`, `sprites_v9_teste` e o `_fonte/animacoes.py`, que lia arquivos `*_sprites_cairu.png` que já não existem. Tudo continua no histórico do Git.
+- Sem `/mnt/project-files`: `construir_grafo.py` acha `jogos/cairu` pelo próprio caminho, `cabecas_gemini.py` acha `arte/personagens/final/` do mesmo jeito, e o `COMO_USAR.md` do grafo e o README usam caminhos do repo.
+- Nenhum arquivo dentro de `jogos/` mudou.
+
+**Pendente:** os outros scripts antigos de `_fonte/` (sprites4–7, traco, rosto2...) ficaram, porque não dá pra provar pelo código qual cadeia gerou a arte final. Se o Breno souber, sai num PR à parte. Apagar arquivo não diminui o clone, porque o histórico guarda tudo, e reescrever a `main` está fora dos limites.

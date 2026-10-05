@@ -11,7 +11,7 @@ faz essa parte no mesmo formato. Não altera nada do jogo.
 ## Para as threads (Claude)
 
     pip install -q graphifyy          # uma vez por sessão (o container é novo a cada vez)
-    G=/mnt/project-files/jogo/grafo/graph.json
+    G=jogos/cairu/grafo/graph.json
     graphify query "como o diretor roda uma cena" --graph $G --budget 1500
     graphify explain "cena h4_matheus" --graph $G       # vizinhos de um nó, com arquivo:linha
     graphify explain "diretor.gd" --graph $G
@@ -25,7 +25,7 @@ graph.html abre no navegador.
 
 ## Atualizar depois de mexer no jogo
 
-    python3 /mnt/project-files/jogo/grafo/ferramenta/construir_grafo.py
+    python3 jogos/cairu/grafo/ferramenta/construir_grafo.py
 
 Leva poucos segundos. Arestas INFERRED (chamadas entre arquivos deduzidas pelo nome)
 podem ter falso positivo; confira no arquivo antes de confiar.

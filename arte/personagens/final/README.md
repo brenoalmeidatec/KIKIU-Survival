@@ -1,7 +1,7 @@
 # Personagens: arte final
 
 São 8 personagens, cada um com uma pasta: `nicao`, `lucas`, `joao`, `matheus`, `beto`, `lukako`, `fabio` e `breno`.
-Todos têm o mesmo estilo e usam a farda azul da Cairu. Os scripts que geram a arte ficam em `../_fonte/final/`: `final2.py` e `rig.py` fazem corpo, andar e poses, `rostos7.py` faz o rosto de diálogo a partir da foto (com `marcos.py`, que acha olhos, boca e queixo na foto) e `acoes.py` faz as animações de corpo inteiro. As versões anteriores estão guardadas em `../final_v1/` a `../final_v4/`. A pele dos bonecos usa o mesmo tom medido na foto de cada um (`pele.json`).
+Todos têm o mesmo estilo e usam a farda azul da Cairu. Os scripts que geram a arte ficam em `../_fonte/final/`: `final2.py` e `rig.py` fazem corpo, andar e poses, `rostos7.py` faz o rosto de diálogo a partir da foto (com `marcos.py`, que acha olhos, boca e queixo na foto) e `acoes.py` faz as animações de corpo inteiro. As versões anteriores saíram da pasta e ficam só no histórico do Git. A pele dos bonecos usa o mesmo tom medido na foto de cada um (`pele.json`).
 
 ## Arquivos de cada personagem
 
@@ -101,7 +101,7 @@ Fala sugerida: alternar 0→1→2→1→3→1 (8 a 10 fps), com um ângulo (5, 6
 
 Notas: o Lucas não veio com inclinações nem com o três quartos para a direita no Gemini; q5/q6 são o quadro 1 girado e q8 é o q7 espelhado. Matheus e João vieram com 16 quadros: foram usados só os 12 desta tabela. Títulos, números e logos foram apagados; a camisa do Beto foi trocada pela camiseta azul lisa. Sem sobrenomes em nenhum arquivo.
 
-`rosto_hd.png` (27 quadros, 104x104) e `rosto.png` (52x52) agora são gerados destes mesmos quadros, então o jogo atual já mostra os rostos novos sem mudar código. Os rostos antigos de foto ficaram em `personagens/final_v5_rostos_foto/`. Prévias: `previa_rostos_gemini.png` e `previa_rostos_gemini.gif`. Fonte: `_fonte/final/gemini.py`.
+`rosto_hd.png` (27 quadros, 104x104) e `rosto.png` (52x52) agora são gerados destes mesmos quadros, então o jogo atual já mostra os rostos novos sem mudar código. Os rostos antigos de foto ficam só no histórico do Git. Prévias: `previa_rostos_gemini.png` e `previa_rostos_gemini.gif`. Fonte: `_fonte/final/gemini.py`.
 
 ## NPCs: alunos/ e mauro/
 

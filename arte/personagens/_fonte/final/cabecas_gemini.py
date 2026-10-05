@@ -8,7 +8,8 @@ from PIL import Image
 import mediapipe as mp
 from mediapipe.tasks.python import vision, BaseOptions
 
-FINAL = '/mnt/project-files/personagens/final/'
+import os
+FINAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'final', '')  # arte/personagens/final/
 OW, OH = 144, 192
 LM = vision.FaceLandmarker.create_from_options(vision.FaceLandmarkerOptions(
     base_options=BaseOptions(model_asset_path='face_landmarker.task', delegate=BaseOptions.Delegate.CPU), num_faces=1))

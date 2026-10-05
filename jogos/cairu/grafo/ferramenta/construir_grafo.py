@@ -10,9 +10,9 @@ import json, shutil, subprocess, sys, tempfile
 from collections import Counter
 from pathlib import Path
 
-JOGO = Path("/mnt/project-files/jogo")
-SAIDA = Path(sys.argv[1]) if len(sys.argv) > 1 else JOGO / "grafo"
 AQUI = Path(__file__).resolve().parent
+JOGO = AQUI.parents[1]  # jogos/cairu (antes: /mnt/project-files/jogo)
+SAIDA = Path(sys.argv[1]) if len(sys.argv) > 1 else JOGO / "grafo"
 
 from graphify.detect import detect
 from graphify.extract import collect_files, extract
