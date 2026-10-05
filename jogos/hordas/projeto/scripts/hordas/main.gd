@@ -61,7 +61,7 @@ func _ready() -> void:
 	elif _args.has("online"):
 		_online_teste()
 	elif _args.has("bot") or _args.has("heroi"):
-		_comecar(str(_args.get("heroi", "breno")))
+		_comecar(str(_args.get("heroi", "hazaki")))
 	else:
 		Som.musica("menu")
 

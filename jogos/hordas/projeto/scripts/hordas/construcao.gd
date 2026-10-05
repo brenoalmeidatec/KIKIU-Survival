@@ -46,8 +46,9 @@ static func gerar(heroi_id: String, nivel: int, rng: RandomNumberGenerator) -> D
 			if passivos[id] < int(pas_d[id].get("max", 5)):
 				cand.append([6.0 * float(pas_d[id].get("peso_ia", 1.0)), "sobe_passivo", id])
 		if armas.size() < MAX_ARMAS:
+			var ids: Array = armas.map(func(a): return a.id)
 			for id in armas_d:
-				if id.begins_with("_") or armas_d[id].get("evolucao", false) or _tem(armas, id) or _evoluida(armas, id):
+				if not arma_permitida(id, heroi_id, ids) or _evoluida(armas, id):
 					continue
 				cand.append([8.0, "nova_arma", id])
 		if passivos.size() < MAX_PASSIVOS:
@@ -140,3 +141,41 @@ static func dps_por_tipo(armas: Array, st: Dictionary) -> Dictionary:
 				v = dano / maxf(0.15, float(a.get("tique", 0.5)))
 		res[tipo] = float(res.get(tipo, 0.0)) + v
 	return res
+
+
+# ---------- quem pode pegar cada arma (cartas do jogador E build dos rivais usam isto) ----------
+# Cada arma em dados/armas.json tem "classe": "global" (qualquer personagem; é o padrão) ou
+# "character_exclusive" com "characterId" (só aquele personagem). Por partida, cada um pega no máximo
+# _config.limite_exclusivas armas exclusivas (2 por padrão). Evolução de arma exclusiva também é exclusiva.
+
+static func limite_exclusivas() -> int:
+	return int(Dados.json("armas").get("_config", {}).get("limite_exclusivas", 2))
+
+
+## Definição da arma (ou {} se não for arma: as chaves que começam com "_" são texto e configuração).
+static func _def(id: String) -> Dictionary:
+	var d = Dados.json("armas").get(id, {})
+	return d if d is Dictionary and not id.begins_with("_") else {}
+
+
+static func exclusiva(id: String) -> bool:
+	return str(_def(id).get("classe", "global")) == "character_exclusive"
+
+
+static func dono(id: String) -> String:
+	return str(_def(id).get("characterId", ""))
+
+
+## Quantas armas exclusivas do personagem já estão na lista (ids).
+static func n_exclusivas(ids: Array, heroi_id: String) -> int:
+	return ids.filter(func(i): return exclusiva(i) and dono(i) == heroi_id).size()
+
+
+## A arma pode ser oferecida/pega como NOVA por este personagem agora? (nunca oferecer carta impossível)
+static func arma_permitida(id: String, heroi_id: String, ids: Array) -> bool:
+	var d := _def(id)
+	if d.is_empty() or d.get("evolucao", false) or id in ids:
+		return false
+	if exclusiva(id):
+		return dono(id) == heroi_id and n_exclusivas(ids, heroi_id) < limite_exclusivas()
+	return true

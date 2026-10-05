@@ -20,7 +20,7 @@ const Online := preload("res://scripts/hordas/online.gd")
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
 
-var heroi_id := "breno"
+var heroi_id := "hazaki"
 var heroi: Dictionary
 var bot := false
 
@@ -430,10 +430,12 @@ func sortear_cartas() -> Array:
 		if passivos[id] < int(pas_d[id].get("max", 5)):
 			cand.append([8.0, _carta("passivo", id, passivos[id] + 1)])
 	if armas.lista.size() < MAX_ARMAS:
+		var ids: Array = armas.lista.map(func(a): return a.id)
 		for id in armas_d:
-			if id.begins_with("_") or armas_d[id].get("evolucao", false) or armas.tem(id) or _tem_evolucao_de(id):
+			# global ou exclusiva deste herói (até o limite): nunca oferece carta impossível
+			if not Construcao.arma_permitida(id, heroi_id, ids) or _tem_evolucao_de(id):
 				continue
-			cand.append([6.0, _carta("arma", id, 1)])
+			cand.append([float(armas_d[id].get("peso_carta", 6.0)), _carta("arma", id, 1)])
 	if passivos.size() < MAX_PASSIVOS:
 		for id in pas_d:
 			if id.begins_with("_") or passivos.has(id):
@@ -471,7 +473,12 @@ func _carta(tipo: String, id: String, nv: int) -> Dictionary:
 	var desc := str(d.get("descricao", ""))
 	if tipo == "arma" and nv > 1:
 		desc = _texto_nivel(d.get("niveis", [])[nv - 2])
-	return {"tipo": tipo, "id": id, "nome": str(d.get("nome", id)), "desc": desc, "icone": str(d.get("icone", id)), "nivel": nv}
+	var c := {"tipo": tipo, "id": id, "nome": str(d.get("nome", id)), "desc": desc, "icone": str(d.get("icone", id)), "nivel": nv}
+	if tipo == "arma" and Construcao.exclusiva(id):
+		# carta de arma exclusiva mostra quantas ele terá de quantas pode ter (ex.: EXCLUSIVA 1/2)
+		var ids: Array = armas.lista.map(func(a): return a.id)
+		c["exclusiva"] = "%d/%d" % [Construcao.n_exclusivas(ids, heroi_id) + (1 if nv == 1 else 0), Construcao.limite_exclusivas()]
+	return c
 
 
 func _texto_nivel(n: Dictionary) -> String:

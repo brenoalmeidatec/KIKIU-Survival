@@ -41,7 +41,7 @@ O QUE TEM (o melhor dos três jogos)
                      "créditos" e compra vírus (fraco = barato, forte = caro). Os vírus ficam
                      com mais vida e dano conforme o nível sobe.
 
-  Heróis: Breno (Cabo de Rede), Nicão (Ventoinha), Lucas (Pendrive).
+  Heróis: Hazaki (Cabo de Rede), Nicão (Ventoinha), Lucas (Pendrive).
   Armas: Pendrive, Cabo de Rede, Ventoinha, Café Derramado, Sinal de Wi-Fi.
   Evoluções:
     Pendrive    + Ctrl+C Ctrl+V      = SSD de 500GB
@@ -62,7 +62,7 @@ DUELO FINAL
     2. Vida do duelo = 500 + 0,6 x vida máxima (a regeneração vale 25%).
     3. O anel começa a fechar aos 10 s; quem fica fora perde 4% da vida por segundo.
   Dash = sua defesa. Setas coloridas nas bordas mostram onde estão os rivais.
-  Mais heróis só aparecem como rivais (Lucas, Nicão, Breno, João, Matheus, Beto, Lukako, Fábio).
+  Mais heróis só aparecem como rivais (Lucas, Nicão, Hazaki, João, Matheus, Beto, Lukako, Fábio).
   Novidades: acerto crítico (item Mouse Gamer) e recorde de melhor colocação por herói.
 
 EDITAR SEM PROGRAMAR
