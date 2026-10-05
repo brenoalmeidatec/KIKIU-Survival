@@ -10,6 +10,7 @@ var heroi := ""
 var cor := Color(0.6, 1.0, 0.7)
 var hp_frac := 1.0
 var caido := false
+var ajuda := false               # está segurando o botão de levantar alguém
 var fora := false               # duelo: já foi eliminado
 var spr := Sprite2D.new()
 var _alvo := Vector2.ZERO
@@ -20,6 +21,7 @@ var _novo := true
 
 
 func configurar(p: int, heroi_: String, nome_: String) -> void:
+	z_index = -1   # o seu boneco fica sempre por cima dos outros
 	peer = p
 	heroi = heroi_
 	nome = nome_
@@ -42,6 +44,7 @@ func atualizar(dt: float, d: Dictionary) -> void:
 		_alvo = Vector2(d.x, d.y)
 		_mov = Vector2(d.mx, d.my)
 		hp_frac = d.hp
+		ajuda = d.ajuda
 		caido = d.caido
 		if _novo:
 			position = _alvo
@@ -69,6 +72,6 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 	draw_rect(Rect2(-16, 5, 32, 4), Color(0.1, 0.05, 0.1))
 	draw_rect(Rect2(-15, 6, 30 * hp_frac, 2), cor)
-	var txt := nome + (" (caído)" if caido else "")
+	var txt := nome + (" (segure E)" if caido else "")
 	draw_string(Dados.fonte, Vector2(-60, -66), txt, HORIZONTAL_ALIGNMENT_CENTER, 120, 8, Color(0, 0, 0, 0.8))
 	draw_string(Dados.fonte, Vector2(-61, -67), txt, HORIZONTAL_ALIGNMENT_CENTER, 120, 8, cor.lightened(0.3))

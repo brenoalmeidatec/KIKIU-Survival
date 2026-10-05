@@ -32,6 +32,7 @@ var _cd_dano := {}
 var _prontos := {}
 var _t_prontos := -1.0
 var _t_caidos := 0.0
+var n_tx := 0                     # teste: acertos mandados (cliente) / recebidos (anfitrião)
 
 
 func _ready() -> void:
@@ -75,7 +76,7 @@ func estado_rede() -> Dictionary:
 	var j: Node2D = arena.jogador
 	var m: Vector2 = j.direcao_mov()
 	return {"x": j.position.x, "y": j.position.y, "mx": m.x, "my": m.y,
-		"hp": clampf(j.hp / maxf(1.0, j.vida_max()), 0.0, 1.0), "caido": arena.caido, "lado": j.lado}
+		"hp": clampf(j.hp / maxf(1.0, j.vida_max()), 0.0, 1.0), "caido": arena.caido, "lado": j.lado, "ajuda": ajudando()}
 
 
 ## Jogadores em pé que os vírus podem perseguir: [centro, peer]. O local vem primeiro.
@@ -113,6 +114,7 @@ func atualizar(dt: float) -> void:
 			Rede.enviar_mortes(_mortes)
 			_mortes = PackedFloat32Array()
 	elif not _acertos.is_empty():
+		n_tx += _acertos.size() / 4
 		Rede.enviar_acertos(_acertos)
 		_acertos = PackedFloat32Array()
 
@@ -198,6 +200,7 @@ func morreu(v) -> void:
 
 
 func acertos(_quem: int, a: PackedFloat32Array) -> void:
+	n_tx += a.size() / 4
 	for i in range(0, a.size(), 4):
 		var dano := a[i + 1]
 		if not is_finite(dano) or dano <= 0.0:
@@ -240,11 +243,24 @@ func dano(valor: float, fonte: String) -> void:
 
 # ---------- reviver ----------
 
+## Estou segurando o botão (Enter/E) perto de um amigo caído? O robô de teste segura sozinho.
+func ajudando() -> bool:
+	if arena.caido or arena.duelo_ativo or arena.cartas.aberto():
+		return false
+	if not arena.bot and not Input.is_action_pressed("confirmar"):
+		return false
+	for p in avatares:
+		var a: Node2D = avatares[p]
+		if a.visible and a.caido and a.position.distance_to(arena.jogador.position) <= REVIVER_DIST + 8.0:
+			return true
+	return false
+
+
 func _reviver(dt: float) -> void:
 	var melhor := 0.0
 	for p in avatares:
 		var a: Node2D = avatares[p]
-		if a.visible and not a.caido and a.position.distance_to(arena.jogador.position) <= REVIVER_DIST:
+		if a.visible and not a.caido and a.ajuda and a.position.distance_to(arena.jogador.position) <= REVIVER_DIST:
 			melhor = maxf(melhor, float(Dados.json("herois").get(a.heroi, {}).get("reviver", 1.0)))
 	if melhor > 0.0:
 		reviver_prog += dt * melhor / REVIVER_BASE

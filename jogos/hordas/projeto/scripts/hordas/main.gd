@@ -36,6 +36,7 @@ var _novo_recorde := false
 var _endereco := ""          # último endereço digitado (fica salvo)
 var _msg := ""               # aviso nas telas do online (erro, conectando...)
 var _comecou_teste := false
+var _caiu_teste := false
 
 
 func _ready() -> void:
@@ -251,6 +252,8 @@ func _rede_conectou(ok: bool, msg: String) -> void:
 
 
 func _rede_caiu(msg: String) -> void:
+	if _arena and _arena.acabou:
+		return   # a partida já acabou: deixa o resultado aparecer (a sala fechar agora é normal)
 	if _arena:
 		_arena.queue_free()
 		_arena = null
@@ -330,6 +333,8 @@ func _input(e: InputEvent) -> void:
 
 
 func _terminou(res: Dictionary) -> void:
+	if _arena == null:
+		return
 	_resumo = res
 	_novo_recorde = false
 	var h: String = res.heroi
@@ -376,6 +381,9 @@ func _teste() -> void:
 		for v in _arena.inimigos.lista:
 			if v.d.get("final", false) or (v.chefe and v.tipo == _arena.diretor.chefe_fase):
 				v.hp = minf(v.hp, 1.0)
+	if _args.has("cair") and _t >= float(_args.cair) and _arena.eh_online and not _arena.caido and not _caiu_teste:
+		_caiu_teste = true   # teste do reviver: cai uma vez no segundo N (--cair=N)
+		_arena.morrer("teste")
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
 		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s" % [
@@ -383,6 +391,10 @@ func _teste() -> void:
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,
 			_arena.armas.lista.map(func(a): return "%s:%d" % [a.id, a.nivel]), _arena.passivos,
 			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-"])
+		if _arena.online:
+			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
+				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
+				_arena.duelo.estado if _arena.duelo_ativo else "-"])
 		if _t >= float(_args.sair):
 			get_tree().quit()
 	if _args.has("fotos") and _t >= _prox_foto:
@@ -418,11 +430,46 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 100), "K.I.K.I.U", 32, Color(0.4, 0.65, 1))
 			_txt(Vector2(0, 142), "Knights In Kaos, Infinite Upgrades", 10, Color(0.5, 1, 0.5))
 			_txt(Vector2(0, 165), "sobreviva à horda e vença o duelo final", 8, Color(0.75, 0.75, 0.85))
-			var ops := ["Jogar", "Sair"]
-			for i in 2:
+			for i in OPCOES.size():
 				var sel := i == _sel
-				_txt(Vector2(0, 215 + i * 20), ("> " + ops[i] + " <") if sel else ops[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+				_txt(Vector2(0, 205 + i * 20), ("> " + OPCOES[i] + " <") if sel else OPCOES[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+			if _msg != "":
+				_txt(Vector2(0, 295), _msg, 8, Color(1, 0.6, 0.5))
 			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
+		"endereco", "conectando":
+			_fundo()
+			_txt(Vector2(0, 70), "Entrar em sala", 16, Color.WHITE)
+			_txt(Vector2(0, 110), "Endereço que o anfitrião mandou (ex.: nome.gl.at.ply.gg:12345)", 8, Color(0.75, 0.78, 0.85))
+			_tela.draw_rect(Rect2(120, 130, 400, 28), Color(0.1, 0.11, 0.18))
+			_tela.draw_rect(Rect2(120, 130, 400, 28), Color(1, 0.85, 0.3) if _estado == "endereco" else Color(0.3, 0.35, 0.5), false, 2.0)
+			var cursor := "_" if _estado == "endereco" and int(_t * 2) % 2 == 0 else ""
+			_txt(Vector2(130, 149), _endereco + cursor, 8, Color.WHITE, 380, HORIZONTAL_ALIGNMENT_LEFT)
+			if _msg != "":
+				_txt(Vector2(0, 190), _msg, 8, Color(1, 0.6, 0.5) if _estado == "endereco" else Color(0.6, 0.9, 1))
+			_txt(Vector2(0, 330), "Ctrl+V: colar   Enter: conectar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
+		"sala":
+			_fundo()
+			_txt(Vector2(0, 40), "Sala online", 16, Color.WHITE)
+			if Rede.anfitriao():
+				_txt(Vector2(0, 62), "Você é o anfitrião (porta %d). Abra o abrir_tunel_playit.bat e mande o endereço pro pessoal." % Rede.PORTA, 8, Color(0.6, 0.9, 1))
+			else:
+				_txt(Vector2(0, 62), "Esperando o anfitrião começar...", 8, Color(0.6, 0.9, 1))
+			var y0 := 90.0
+			for p in Rede.jogadores:
+				var h: Dictionary = Dados.json("herois").get(Rede.heroi_de(p), {})
+				var eu: bool = p == Rede.eu()
+				_tela.draw_rect(Rect2(170, y0, 300, 34), Color(0.1, 0.11, 0.18))
+				_tela.draw_rect(Rect2(170, y0, 300, 34), Color(1, 0.85, 0.3) if eu else Color(0.3, 0.35, 0.5), false, 1.0)
+				var rosto := Dados.tex_personagem(str(h.get("sprite", Rede.heroi_de(p))), "rosto")
+				if rosto:
+					_tela.draw_texture_rect_region(rosto, Rect2(174, y0 + 3, 28, 28), Rect2(0, 0, 52, 52))
+				var quem: String = ("Você" if eu else "Jogador") + (" (anfitrião)" if p == 1 else "")
+				_txt(Vector2(210, y0 + 15), str(h.get("nome", "?")), 8, Color.WHITE, 250, HORIZONTAL_ALIGNMENT_LEFT)
+				_txt(Vector2(210, y0 + 28), quem, 8, Color(0.6, 0.65, 0.75), 250, HORIZONTAL_ALIGNMENT_LEFT)
+				y0 += 40
+			if _msg != "":
+				_txt(Vector2(0, 314), _msg, 8, Color(1, 0.6, 0.5))
+			_txt(Vector2(0, 330), "Setas: trocar herói   " + ("Enter: começar   " if Rede.anfitriao() else "") + "Esc: sair da sala", 8, Color(0.6, 0.6, 0.7))
 		"herois":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)

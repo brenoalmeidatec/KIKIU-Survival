@@ -251,6 +251,7 @@ func _pos(d: Dictionary) -> void:
 		"my": clampf(float(d.get("my", 0.0)) if _num(d.get("my")) else 0.0, -1.0, 1.0),
 		"hp": clampf(float(d.get("hp", 1.0)) if _num(d.get("hp")) else 1.0, 0.0, 1.0),
 		"caido": typeof(d.get("caido")) == TYPE_BOOL and d.caido,
+		"ajuda": typeof(d.get("ajuda")) == TYPE_BOOL and d.ajuda,
 		"lado": -1.0 if _num(d.get("lado")) and float(d.lado) < 0 else 1.0,
 	}
 
