@@ -25,7 +25,7 @@
 - [🎨 Direção de arte](#-direção-de-arte)
 - [🚀 Como rodar](#-como-rodar)
 - [📦 Gerar o executável (.exe)](#-gerar-o-executável-exe)
-- [🗂️ Estrutura do repositório](#️-estrutura-do-repositório)
+- [📂 Estrutura do repositório](#-estrutura-do-repositório)
 - [📚 Documentação](#-documentação)
 - [🤝 Como colaborar](#-como-colaborar)
 - [👥 Equipe](#-equipe)
@@ -131,7 +131,7 @@ Executáveis e zips **não** ficam no Git (são grandes). Pra gerar:
 
 ---
 
-## 🗂️ Estrutura do repositório
+## 📂 Estrutura do repositório
 
 ```text
 📦 Jogao-gamer
