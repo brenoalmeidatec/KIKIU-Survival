@@ -21,6 +21,8 @@ signal caiu(msg: String)                     # a sala acabou (anfitrião saiu, i
 signal decisao_chegou
 
 const ENVIO := 1.0 / 12.0    # posições por segundo
+# direções aceitas de quem está online: as mesmas chaves de Personagem.LINHA (personagem.gd).
+# Se o boneco ganhar direções novas (diagonais, por ex.), acrescente aqui também, senão viram "baixo".
 const DIRECOES := ["baixo", "esquerda", "direita", "cima"]
 
 # Tudo que é do jogo (e não da engine) vem de capitulos/online.json; sem ele, valem estes:
