@@ -3,6 +3,7 @@ extends Node2D
 ## Cada inimigo é um objeto leve (classe V). Uma grade espacial acha quem está perto rápido.
 ## Também cuida dos tiros dos inimigos.
 
+const Visual := preload("res://scripts/hordas/visual.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
 const LONGE := 720.0       # mais longe que isso do jogador = reaparece do outro lado
@@ -41,6 +42,9 @@ class V:
 	var pesado := false
 
 var arena: Node
+var online: Node = null      # online.gd (só na partida online)
+var espelho := false         # cliente online: os vírus vêm do anfitrião, aqui não roda IA
+var por_id := {}             # id -> V
 var lista: Array = []
 var tiros: Array = []          # {pos, vel, dano, tex, vida}
 var _grade := {}
@@ -89,6 +93,7 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.t_inv = float(dd.get("investida", 0.0))
 	v.t_invoca = float(dd.get("invoca", {}).get("a_cada", 0.0)) if dd.get("invoca") is Dictionary else 0.0
 	lista.append(v)
+	por_id[v.id] = v
 	return v
 
 
@@ -97,6 +102,7 @@ func vivos() -> int:
 
 
 func _remover(v: V) -> void:
+	por_id.erase(v.id)
 	var i := lista.find(v)
 	if i >= 0:
 		lista[i] = lista[lista.size() - 1]
@@ -105,6 +111,7 @@ func _remover(v: V) -> void:
 
 func limpar() -> void:
 	lista.clear()
+	por_id.clear()
 	tiros.clear()
 	_ordem.clear()
 
@@ -118,16 +125,78 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 		valor *= arena.stat("critico_mult")
 	v.hp -= valor
 	v.flash = 0.09
+	arena.registrar_dano(arma, valor, v.pos, crit)
+	if espelho:
+		# cliente: o anfitrião aplica de verdade (e avisa se morreu); aqui só some até a confirmação
+		online.acerto(v.id, valor, empurrao)
+		if v.hp <= 0:
+			_remover(v)
+			return true
+		return false
 	var peso := 4.0 if v.pesado else 1.0
 	if v.chefe:
 		peso = 12.0
 	v.kb += empurrao / peso
-	arena.registrar_dano(arma, valor, v.pos, crit)
 	if v.hp <= 0:
 		_remover(v)
 		arena.inimigo_morreu(v)
 		return true
 	return false
+
+
+## Anfitrião: acerto que veio de outro computador (o dano e o crítico já foram calculados lá).
+func ferir_remoto(v: V, valor: float, empurrao: Vector2) -> void:
+	if v.hp <= 0:
+		return
+	v.hp -= valor
+	v.flash = 0.09
+	v.kb += empurrao / (12.0 if v.chefe else (4.0 if v.pesado else 1.0))
+	if v.hp <= 0:
+		_remover(v)
+		arena.inimigo_morreu(v)
+
+
+func remover_id(id: int) -> void:
+	var v = por_id.get(id)
+	if v:
+		_remover(v)
+
+
+## Cliente: aplica a foto do anfitrião. vir = [id, tipo_idx, x, y, hp_frac, flags] por vírus;
+## tiros = [x, y, vx, vy, sprite_idx]. Quem não veio na foto sumiu (morreu ou ficou longe).
+func aplicar_foto(vir: PackedFloat32Array, tir: PackedFloat32Array, onl: Node) -> void:
+	var vistos := {}
+	for i in range(0, vir.size(), 6):
+		var id := int(vir[i])
+		var ti := int(vir[i + 1])
+		if ti < 0 or ti >= onl.tipos.size() or not is_finite(vir[i + 2]) or not is_finite(vir[i + 3]):
+			continue
+		var flags := int(vir[i + 5])
+		var v: V = por_id.get(id)
+		if v == null:
+			v = criar(onl.tipos[ti], Vector2(vir[i + 2], vir[i + 3]), 1, (flags & 1) != 0)
+			if v == null:
+				continue
+			por_id.erase(v.id)
+			v.id = id
+			por_id[id] = v
+		v.set_meta("alvo", Vector2(vir[i + 2], vir[i + 3]))
+		v.hp = clampf(vir[i + 4], 0.01, 1.0) * v.hpmax
+		v.chefe = (flags & 2) != 0
+		if (flags & 4) != 0:
+			v.flash = maxf(v.flash, 0.05)
+		v.estado = 1 if (flags & 8) != 0 else 0
+		v.lento = 0.1 if (flags & 16) != 0 else 0.0
+		vistos[id] = true
+	for v in lista.duplicate():
+		if not vistos.has(v.id):
+			_remover(v)
+	tiros.clear()
+	for i in range(0, tir.size(), 5):
+		var si := int(tir[i + 4])
+		var spr: String = onl.sprites_tiro[si] if si >= 0 and si < onl.sprites_tiro.size() else "proj_email"
+		tiros.append({"pos": Vector2(tir[i], tir[i + 1]), "vel": Vector2(tir[i + 2], tir[i + 3]), "dano": 0.0,
+			"tex": Dados.tex(spr), "vida": 1.0, "sprite": spr})
 
 
 # ---------- buscas ----------
@@ -180,7 +249,6 @@ func aleatorio_na_tela(centro: Vector2) -> V:
 func atualizar(dt: float, jog: Node2D) -> void:
 	_t += dt
 	_quadro += 1
-	var alvo: Vector2 = jog.centro()
 	# grade
 	_grade.clear()
 	for v: V in lista:
@@ -189,12 +257,30 @@ func atualizar(dt: float, jog: Node2D) -> void:
 			_grade[c].append(v)
 		else:
 			_grade[c] = [v]
+	if espelho:
+		_atualizar_espelho(dt)
+		return
+	# quem os vírus perseguem: o jogador local ou, no online, o jogador em pé mais perto
+	var alvos: Array = online.alvos() if online else [[jog.centro(), 0]]
+	if alvos.is_empty():
+		alvos = [[jog.centro(), -1]]   # todo mundo caído: vão pro corpo do anfitrião sem ferir
+	var alvo: Vector2 = alvos[0][0]
+	var dono: int = alvos[0][1]
+	var local: int = Rede.eu() if online else 0
 
 	for v: V in lista.duplicate():
 		if v.hp <= 0:
 			continue
 		v.flash = maxf(0.0, v.flash - dt)
 		v.lento = maxf(0.0, v.lento - dt)
+		if alvos.size() > 1:
+			var md := INF
+			for a in alvos:
+				var d2: float = v.pos.distance_squared_to(a[0])
+				if d2 < md:
+					md = d2
+					alvo = a[0]
+					dono = a[1]
 		var para: Vector2 = alvo - v.pos
 		var dist: float = para.length()
 		var dir: Vector2 = para / dist if dist > 0.01 else Vector2.ZERO
@@ -277,11 +363,12 @@ func atualizar(dt: float, jog: Node2D) -> void:
 
 		# encostou no jogador
 		if dist < v.raio + 8:
-			jog.sofrer(v.dano, v.tipo)
+			_ferir_jogador(jog, dono, local, v.dano, v.tipo)
 		# muito longe: volta pra perto (do lado de onde o jogador está indo)
 		if dist > LONGE and not v.chefe:
-			var a: float = jog.direcao_mov().angle() + randf_range(-1.0, 1.0)
-			if jog.direcao_mov() == Vector2.ZERO:
+			var mov_j: Vector2 = jog.direcao_mov() if dono == local else Vector2.ZERO
+			var a: float = mov_j.angle() + randf_range(-1.0, 1.0)
+			if mov_j == Vector2.ZERO:
 				a = randf() * TAU
 			v.pos = alvo + Vector2.from_angle(a) * randf_range(380, 440)
 
@@ -289,11 +376,33 @@ func atualizar(dt: float, jog: Node2D) -> void:
 	for t in tiros.duplicate():
 		t.pos += t.vel * dt
 		t.vida -= dt
-		if t.pos.distance_squared_to(alvo) < 100.0:
-			jog.sofrer(t.dano, "tiro")
+		var acertou := false
+		for a in alvos:
+			if t.pos.distance_squared_to(a[0]) < 100.0:
+				_ferir_jogador(jog, a[1], local, t.dano, "tiro")
+				acertou = true
+				break
+		if acertou or t.vida <= 0:
 			tiros.erase(t)
-		elif t.vida <= 0:
-			tiros.erase(t)
+	queue_redraw()
+
+
+## Dano de vírus: no jogador daqui, ou (anfitrião online) manda pro computador de quem foi acertado.
+func _ferir_jogador(jog: Node2D, quem: int, local: int, dano: float, fonte: String) -> void:
+	if quem == local and quem >= 0:
+		jog.sofrer(dano, fonte)
+	elif quem > 0 and online:
+		online.dano_remoto(quem, dano, fonte)
+
+
+## Cliente online: os vírus só deslizam até a posição da última foto e os tiros seguem reto.
+func _atualizar_espelho(dt: float) -> void:
+	for v: V in lista:
+		v.flash = maxf(0.0, v.flash - dt)
+		var alvo: Vector2 = v.get_meta("alvo", v.pos)
+		v.pos = alvo if v.pos.distance_squared_to(alvo) > 120.0 * 120.0 else v.pos.lerp(alvo, minf(1.0, dt * 12.0))
+	for t in tiros:
+		t.pos += t.vel * dt
 	queue_redraw()
 
 
@@ -315,7 +424,7 @@ func _anel(v: V) -> void:
 func _novo_tiro(pos: Vector2, vel: Vector2, dano: float, sprite: String) -> void:
 	if tiros.size() > 300:
 		return
-	tiros.append({"pos": pos, "vel": vel, "dano": dano, "tex": Dados.tex(sprite), "vida": 5.0})
+	tiros.append({"pos": pos, "vel": vel, "dano": dano, "tex": Dados.tex(sprite), "vida": 5.0, "sprite": sprite})
 
 
 # ---------- desenho ----------
@@ -326,6 +435,17 @@ func _draw() -> void:
 	if _quadro % 4 == 0 or _ordem.size() < lista.size() / 2:
 		_ordem = lista.duplicate()
 		_ordem.sort_custom(func(a, b): return a.pos.y < b.pos.y)
+	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus)
+	for v: V in _ordem:
+		if v.hp <= 0:
+			continue
+		var s: Vector2 = v.tam * ESCALA * v.esc
+		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
+		var quadro := int(_t * 4.0 + v.id) % 2
+		var src := Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y)
+		var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if v.pos.x > jx else Rect2(-s.x / 2, -s.y, s.x, s.y)
+		Visual.contato(self, pe, s.x * 0.75)
+		Visual.sombra(self, v.tex, rs, src, pe)
 	for v: V in _ordem:
 		if v.hp <= 0:
 			continue
@@ -334,7 +454,6 @@ func _draw() -> void:
 		if v.estado == 1:
 			quadro = 2 if int(_t * 20) % 2 == 0 else 0
 		var base: Vector2 = v.pos - Vector2(s.x / 2, s.y * 0.6)
-		draw_rect(Rect2(v.pos.x - s.x * 0.35, v.pos.y + s.y * 0.32, s.x * 0.7, 3), Color(0, 0, 0, 0.25))
 		var vira: bool = v.pos.x > jx
 		var r := Rect2(base, s)
 		if vira:

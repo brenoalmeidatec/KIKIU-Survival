@@ -2,6 +2,7 @@ extends Node2D
 ## O herói: anda em 8 direções, dá dash (invencível por um instante) e leva dano.
 ## Usa a mesma folha de andar dos personagens da Cairu (andando_8.png: 9 colunas x 4 direções, 44x60).
 
+const Visual := preload("res://scripts/hordas/visual.gd")
 const LINHA := {"baixo": 0, "esquerda": 1, "direita": 2, "cima": 3}
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
@@ -88,7 +89,14 @@ var _dash_ia := false
 var _dt := 0.016
 
 
+## Online: com cartas ou pausa abertas o jogo não para, mas as setas são do menu.
+func _no_menu() -> bool:
+	return arena.eh_online and (arena.cartas.aberto() or arena.hud._pausado)
+
+
 func _entrada() -> Vector2:
+	if _no_menu():
+		return Vector2.ZERO
 	if bot and arena.duelo_ativo:
 		return _bot_duelo()
 	if bot:
@@ -97,6 +105,8 @@ func _entrada() -> Vector2:
 
 
 func _quer_dash() -> bool:
+	if _no_menu():
+		return false
 	if bot and arena.duelo_ativo:
 		return _dash_ia
 	if bot:
@@ -145,6 +155,13 @@ func _bot_dir() -> Vector2:
 	var ch: Array = arena.chefes()
 	if not ch.is_empty() and not melhor and ch[0].pos.distance_to(c) > 70.0:
 		quer = (ch[0].pos - c).normalized()
+	# online: amigo caído por perto, o robô vai levantar
+	if arena.online:
+		for a in arena.online.avatares.values():
+			if a.visible and a.caido and a.position.distance_to(position) < 400.0:
+				quer = (a.position - position).normalized() if a.position.distance_to(position) > 20.0 else Vector2.ZERO
+				fuga *= 0.3
+				break
 	var d := quer + fuga * 2.0
 	return d.normalized() if d.length() > 0.1 else Vector2.ZERO
 
@@ -205,6 +222,8 @@ func curar(valor: float) -> void:
 
 
 func _draw() -> void:
+	if not (arena.caido and arena.online):
+		Visual.sombra_boneco(self, spr)
 	for r in _rastro:
 		var tex := spr.texture
 		var w := tex.get_width() / 9.0
@@ -212,10 +231,12 @@ func _draw() -> void:
 		var f: int = r.frame
 		draw_texture_rect_region(tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)),
 			Rect2((f % 9) * w, (f / 9) * h, w, h), Color(0.5, 0.8, 1.0, r.t * 2.0))
-	# sombra, barra de vida e recarga do dash embaixo do pé
-	draw_set_transform(Vector2(0, 0), 0, Vector2(1, 0.4))
-	draw_circle(Vector2.ZERO, 11, Color(0, 0, 0, 0.3))
-	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+	# barra de vida e recarga do dash embaixo do pé
+	if arena.caido and arena.online:
+		# caído: anel mostrando quanto falta pra levantar
+		draw_arc(Vector2(0, -10), 18, 0, TAU, 32, Color(0, 0, 0, 0.4), 3)
+		draw_arc(Vector2(0, -10), 18, -PI / 2, -PI / 2 + TAU * arena.online.reviver_prog, 32, Color(0.5, 1, 0.6), 3)
+		return
 	var frac := hp / maxf(1.0, vida_max())
 	draw_rect(Rect2(-14, 5, 28, 4), Color(0.1, 0.05, 0.1))
 	draw_rect(Rect2(-13, 6, 26 * frac, 2), Color(0.9, 0.2, 0.25))

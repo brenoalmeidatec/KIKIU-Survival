@@ -44,7 +44,7 @@ func _abrir(modo: String, titulo: String, cartas: Array) -> void:
 	_cartas = cartas
 	_sel = 0
 	_espera = 0.35
-	get_tree().paused = true
+	get_tree().paused = not arena.eh_online   # no online o jogo dos outros não para
 	_tela.queue_redraw()
 
 
