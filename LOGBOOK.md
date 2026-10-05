@@ -136,3 +136,10 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Testes: `testes/equipamentos.tscn` (falhas=0), `testes/regras_armas.tscn` (falhas=0), solo, duelo, online (46 = 46), 500 vírus 171–180 fps.
 
 **Pendente:** equipamentos não vão pela rede (outros jogadores veem só o corpo com cabelo). Próximo: #20 (dragão).
+
+## 2026-10-05 · Claude do Alisson (F11 tela cheia sem barras)
+**Feito**
+- Bug confirmado antes do conserto: no Windows, `WINDOW_MODE_FULLSCREEN` deixa a janela com 1px a menos (1918x1078). Com `scale_mode="integer"`, a escala cai de 3x pra 2x, e o jogo fica pequeno no meio, com barras pretas (deslocamento 319,179).
+- `main.gd`: o F11 agora usa `WINDOW_MODE_EXCLUSIVE_FULLSCREEN`. Medido: janela 1920x1080, escala 3x, deslocamento 0. Ele também volta pra janela vindo de qualquer um dos dois modos de tela cheia.
+
+**Pendente:** a Cairu (`jogos/cairu/projeto/scripts/jogo.gd`) tem o mesmo padrão, mas não mexi porque está fora do escopo. Próximo: menu com multiplayer em beta, Opções, Créditos e depois o #20.

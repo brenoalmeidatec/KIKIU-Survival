@@ -113,8 +113,11 @@ func _process(dt: float) -> void:
 	_t += dt
 	_tela.queue_redraw()
 	if Input.is_action_just_pressed("tela_cheia"):
-		var cheia := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if cheia else DisplayServer.WINDOW_MODE_FULLSCREEN)
+		# tela cheia EXCLUSIVA: a "normal" do Windows deixa a janela 1px menor que o monitor (1918x1078),
+		# a escala inteira cai de 3x pra 2x e o jogo fica pequeno no meio com barras pretas
+		var modo := DisplayServer.window_get_mode()
+		var cheia := modo == DisplayServer.WINDOW_MODE_FULLSCREEN or modo == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if cheia else DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
 	match _estado:
 		"titulo":
 			if Input.is_action_just_pressed("cima"):
