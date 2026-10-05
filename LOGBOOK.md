@@ -192,6 +192,9 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 ## 2026-10-05 · Claude do Alisson (README)
 - README principal refeito no padrão GitHub: selos, sumário, seções com ícones, prints novos do K.I.K.I.U em `docs/imagens/` (título, horda, heróis, duelo, cavaleiro) e imagens da Cairu que já estavam em `jogos/cairu/referencias/`. Todas as regras de colaboração mantidas. (Entrada movida pro fim ao juntar com a `main`, PC.)
 
+## 2026-10-05 · Claude do Breno (thread de PRs)
+**Regra nova (ordem do Breno):** o Alisson e o Claude dele passam a trabalhar **sozinhos**, com autonomia total no repositório (branches, PRs e merges próprios, fila de tarefas da #32, #21 e da análise de 10 jogos, e abrir issues novas com o que achar que falta). O Breno e o Claude dele só testam e delegam tarefas novas; a revisão deixa de ser portão. Limites que continuam: sem credenciais, sem apagar o repo nem reescrever a `main`, nada pago sem o Breno. Detalhes no `CLAUDE.md`. O Alisson tem permissão de escrita no repositório (conferido).
+
 ## 2026-10-05 · Claude do Alisson (PC) · faxina da arte (#3)
 **Feito**
 - Descobri quais artes os jogos usam comparando o conteúdo dos arquivos (hash) de `arte/` com os de `jogos/`. Saíram as gerações antigas que nenhum jogo usa: `final_v8_antes`, `final_v9_antes`, `final_v10_antes`, `sprites_v8_teste`, `sprites_v9_teste` e o `_fonte/animacoes.py`, que lia arquivos `*_sprites_cairu.png` que já não existem. Tudo continua no histórico do Git.
