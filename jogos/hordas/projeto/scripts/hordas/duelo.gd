@@ -30,6 +30,7 @@ class Lutador:
 	var nom := {}                    # dano de catálogo por tipo de arma (calibragem)
 	var raw := {}                    # dano bruto que acertou, por tipo (calibragem)
 	var vivo_ate := 0.0
+	var remoto := false              # online: outra pessoa (id = peer dela)
 
 
 ## O que as armas de UM lutador enxergam: todos os outros lutadores vivos (mesma interface do inimigos.gd).
@@ -88,6 +89,10 @@ var _ultimo_numero := 99
 var _t := 0.0
 var abates := 0               # quantos o jogador derrubou
 var dano_causado := 0.0
+var online := false           # duelo entre pessoas (o anfitrião decide luta, quedas e fim)
+var _luta_mandada := false
+var _ultimo_golpe := 0        # online: peer de quem bateu por último (pra dizer quem derrubou)
+var _forca_local := 1.0
 
 
 func _ready() -> void:
@@ -120,6 +125,8 @@ func alvos_de(l: Lutador) -> Array:
 func _hp_frac(l: Lutador) -> float:
 	if l.jogador:
 		return clampf(arena.jogador.hp / maxf(1.0, arena.stat("vida_max")), 0.0, 1.0)
+	if l.remoto:
+		return float(Rede.remotos.get(l.id, {}).get("hp", 0.0))
 	return clampf(l.no.hp / l.no.hpmax, 0.0, 1.0)
 
 
@@ -129,7 +136,8 @@ func vivos() -> Array:
 
 # ---------- começo ----------
 
-func iniciar(a: Node) -> void:
+## Regras do pvp.json e limpeza da arena (igual no solo e no online).
+func _preparar(a: Node, c: Vector2) -> void:
 	arena = a
 	cfg = Dados.json("pvp")
 	ativo = true
@@ -142,7 +150,7 @@ func iniciar(a: Node) -> void:
 	t_contagem = float(cfg.get("contagem", 4.0))
 	raio_ini = float(cont.get("raio", 340.0))
 	raio = raio_ini
-	centro = a.jogador.position.snapped(Vector2(32, 32))
+	centro = c
 	a.inimigos.limpar()
 	a.coleta.limpar()
 	a.efeitos.limpar()
@@ -150,6 +158,10 @@ func iniciar(a: Node) -> void:
 	a.armas.limpar_tiros()
 	a.duelo_ativo = true
 	a.camera.position = centro
+
+
+func iniciar(a: Node) -> void:
+	_preparar(a, a.jogador.position.snapped(Vector2(32, 32)))
 
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
@@ -212,30 +224,39 @@ func iniciar(a: Node) -> void:
 ## forte que a média rende só 2^0,7 = 1,6x. A "eficiência" diz que fração do dano de catálogo de cada
 ## tipo de arma realmente acerta alguém que se mexe (calibrada com duelos de robôs).
 func _equilibrar() -> void:
-	var ef: Dictionary = cfg.get("eficiencia", {})
-	var ref := float(cfg.get("dps_ref", 12.0))
-	var ex := float(cfg.get("expoente_forca", 0.7))
 	var ests := []
 	for l in lutadores:
-		var st: Dictionary
-		var armas_l: Array
-		if l.jogador:
-			st = Construcao.stats(arena.heroi, arena.passivos)
-			armas_l = arena.armas.lista
-		else:
-			st = l.no.stats
-			armas_l = l.no.build.armas
-		l.nom = Construcao.dps_por_tipo(armas_l, st)
-		var est := 0.0
-		for tipo in l.nom:
-			est += l.nom[tipo] * float(ef.get(tipo, 0.6))
-		ests.append(maxf(est, 0.5))
+		ests.append(_forca(l))
 	var media := 0.0
 	for e in ests:
 		media += e
 	media /= ests.size()
 	for i in lutadores.size():
-		lutadores[i].mult = clampf(ref * pow(ests[i] / media, ex) / ests[i], 0.02, 30.0)
+		lutadores[i].mult = _mult(ests[i], media)
+
+
+## "Força" de um lutador: dano de catálogo de cada tipo de arma x eficiência daquele tipo.
+func _forca(l: Lutador) -> float:
+	var ef: Dictionary = cfg.get("eficiencia", {})
+	var st: Dictionary
+	var armas_l: Array
+	if l.jogador:
+		st = Construcao.stats(arena.heroi, arena.passivos)
+		armas_l = arena.armas.lista
+	else:
+		st = l.no.stats
+		armas_l = l.no.build.armas
+	l.nom = Construcao.dps_por_tipo(armas_l, st)
+	var est := 0.0
+	for tipo in l.nom:
+		est += l.nom[tipo] * float(ef.get(tipo, 0.6))
+	return maxf(est, 0.5)
+
+
+func _mult(est: float, media: float) -> float:
+	var ref := float(cfg.get("dps_ref", 12.0))
+	var ex := float(cfg.get("expoente_forca", 0.7))
+	return clampf(ref * pow(est / media, ex) / est, 0.02, 30.0)
 
 
 # ---------- a cada quadro ----------
@@ -245,6 +266,8 @@ func atualizar(dt: float) -> void:
 		return
 	_t += dt
 	lut_jogador.pos = arena.jogador.centro()
+	if online:
+		_posicoes_remotas()
 	for l in lutadores:
 		l.lento = maxf(0.0, l.lento - dt)
 	if estado == "contagem":
@@ -255,10 +278,10 @@ func atualizar(dt: float) -> void:
 			arena.anunciar(str(n), Color(1, 0.9, 0.5))
 			Som.tocar("cursor", 0.1, 1.0 + (4 - n) * 0.15)
 		if t_contagem <= 0:
-			estado = "luta"
-			arena.anunciar("LUTEM!", Color(1, 0.45, 0.4))
-			Som.tocar("soco")
-			arena.tremer(6)
+			if not online:
+				_comecar_luta()
+			elif Rede.anfitriao() and not _luta_mandada:
+				checar_forcas(t_contagem < -3.0)   # espera a força de todo mundo, até 3 s a mais
 		_anel.queue_redraw()
 		return
 	t_luta += dt
@@ -267,6 +290,11 @@ func atualizar(dt: float) -> void:
 			r.atualizar(dt)
 			r.lut.pos = r.centro()
 	_atualizar_anel(dt)
+	if online:
+		if Rede.anfitriao():
+			_fim_anfitriao(dt)
+		_anel.queue_redraw()
+		return
 	if _fim_em >= 0.0:
 		_fim_em -= dt
 		if _fim_em <= 0.0:
@@ -291,6 +319,8 @@ func _atualizar_anel(dt: float) -> void:
 	raio = lerpf(raio_ini, float(c.get("raio_final", 70.0)), f * f * (3.0 - 2.0 * f))
 	var pct := float(c.get("dano_anel_pct", 0.04)) * (1.0 + f * float(c.get("dano_anel_cresce", 1.0)))
 	for l in vivos():
+		if l.remoto:
+			continue   # online: cada um calcula o anel só pra si
 		if l.pos.distance_to(centro) > raio:
 			var hpmax: float = arena.stat("vida_max") if l.jogador else l.no.hpmax
 			if l.no.dano_direto(pct * hpmax * dt, "anel"):
@@ -301,7 +331,7 @@ func _atualizar_anel(dt: float) -> void:
 
 ## Uma arma do lutador "atq" acertou "alvo". Retorna true se o alvo caiu.
 func ferir(atq: Lutador, alvo: Lutador, valor: float, empurrao: Vector2, arma: String, statf: Callable) -> bool:
-	if estado != "luta" or not alvo.vivo:
+	if estado != "luta" or not alvo.vivo or not atq.vivo:
 		return false
 	var d := valor * atq.mult
 	var tipo := str(Dados.item(arma).get("tipo", "?")) if arma != "" else "?"
@@ -309,7 +339,12 @@ func ferir(atq: Lutador, alvo: Lutador, valor: float, empurrao: Vector2, arma: S
 	var crit := randf() < float(statf.call("critico"))
 	if crit:
 		d *= float(statf.call("critico_mult"))
-	var morreu: bool = alvo.no.receber(d, atq.nome, empurrao * float(cfg.get("empurrao_mult", 0.5)))
+	var morreu := false
+	if alvo.remoto:
+		# online: quem apanha decide (vida, invencibilidade, dash); aqui só manda o golpe e mostra o número
+		Rede.golpe(alvo.id, d, empurrao * float(cfg.get("empurrao_mult", 0.5)))
+	else:
+		morreu = alvo.no.receber(d, atq.nome, empurrao * float(cfg.get("empurrao_mult", 0.5)))
 	if atq.jogador:
 		dano_causado += d
 		if arma != "":
@@ -325,6 +360,13 @@ func ferir(atq: Lutador, alvo: Lutador, valor: float, empurrao: Vector2, arma: S
 
 
 func jogador_caiu(quem: String) -> void:
+	if online:
+		# online: avisa o anfitrião, que dá o lugar e conta pra todo mundo
+		if lut_jogador.vivo:
+			lut_jogador.vivo = false
+			arena.jogador.visible = false
+			Rede.avisar("caiu", 0.0, _ultimo_golpe if quem.begins_with("rival:") else 0)
+		return
 	eliminado(lut_jogador, quem)
 
 
@@ -377,6 +419,197 @@ func _fim() -> void:
 			calib.append({"nom": l.nom, "raw": l.raw, "t": l.vivo_ate, "mult": l.mult, "lugar": l.lugar})
 		print("CALIB ", JSON.stringify(calib))
 	arena.fim_duelo(res)
+
+
+func _comecar_luta() -> void:
+	estado = "luta"
+	arena.anunciar("LUTEM!", Color(1, 0.45, 0.4))
+	Som.tocar("soco")
+	arena.tremer(6)
+
+
+# ---------- online: duelo entre as pessoas da sala ----------
+# Cada pessoa vira um Lutador "remoto" (a posição vem do pacote de posição; o boneco é o remoto.gd).
+# Quem ataca detecta o acerto e manda o golpe; quem apanha decide. O anel cada um calcula pra si.
+# O anfitrião junta as forças (equilíbrio), começa a luta, dá os lugares e encerra.
+
+func iniciar_online(a: Node, d: Dictionary) -> void:
+	online = true
+	_preparar(a, Vector2(float(d.get("cx", 0.0)), float(d.get("cy", 0.0))))
+	var ordem: Array = d.get("ordem", []).filter(func(p): return Rede.jogadores.has(p))
+	var n := maxi(1, ordem.size())
+	var ang0 := float(d.get("ang", 0.0))
+	for s in ordem.size():
+		var peer: int = ordem[s]
+		var p := centro + Vector2.from_angle(ang0 + TAU * s / n) * raio_ini * 0.72
+		var l := Lutador.new()
+		l.id = peer
+		l.heroi = Rede.heroi_de(peer)
+		l.cor = CORES[s % CORES.size()]
+		if peer == Rede.eu():
+			l.nome = "Você"
+			l.jogador = true
+			l.no = a.jogador
+			l.cor = Color(0.45, 0.8, 1.0)
+			a.jogador.position = p + Vector2(0, 22)
+			lut_jogador = l
+		else:
+			l.nome = Rede.nome_de(peer)
+			l.remoto = true
+			l.no = a.online.avatares.get(peer)
+			l.pos = p
+			if l.no:
+				l.no.cor = l.cor
+		lutadores.append(l)
+	if lut_jogador == null:
+		# não estou na lista (entrei atrasado?): só assiste
+		lut_jogador = Lutador.new()
+		lut_jogador.jogador = true
+		lut_jogador.vivo = false
+		lut_jogador.no = a.jogador
+	lut_jogador.pos = a.jogador.centro()
+	a.armas.campo = campo_de(lut_jogador, a.stat)
+	a.jogador.hp = a.stat("vida_max")
+	a.jogador.invencivel = 0.0
+	_forca_local = _forca(lut_jogador)
+	Rede.avisar("forca", _forca_local)
+	Som.tocar("tremor")
+	a.tremer(8)
+	a.anunciar("DUELO FINAL!", Color(1, 0.45, 0.4))
+	Som.musica(str(cfg.get("musica", "minijogo_retro")))
+
+
+func _posicoes_remotas() -> void:
+	for l in lutadores:
+		if not l.remoto:
+			continue
+		if l.no == null or not is_instance_valid(l.no):
+			l.no = arena.online.avatares.get(l.id)
+		if l.no:
+			l.pos = l.no.centro()
+
+
+## Anfitrião: todo mundo mandou a força (ou passou do tempo)? Então começa a luta.
+func checar_forcas(forcar := false) -> void:
+	if not online or not Rede.anfitriao() or _luta_mandada or estado != "contagem" or t_contagem > 0:
+		return
+	var f: Dictionary = arena.online.forcas
+	var todos := true
+	for l in lutadores:
+		if l.id != 0 and not f.has(l.id):
+			todos = false
+	if todos or forcar:
+		_luta_mandada = true
+		Rede.evento("luta", {"forcas": f.duplicate()})
+
+
+func luta_online(d: Dictionary) -> void:
+	if estado != "contagem":
+		return
+	var f: Dictionary = d.get("forcas", {})
+	var media := 0.0
+	var n := 0
+	for k in f:
+		media += float(f[k])
+		n += 1
+	if n == 0:
+		media = _forca_local
+	else:
+		media /= n
+	lut_jogador.mult = _mult(_forca_local, maxf(media, 0.5))
+	t_luta = 0.0
+	_comecar_luta()
+
+
+## Golpe de outra pessoa em mim. Quem apanha decide: vida, invencibilidade e dash valem daqui.
+func golpe_online(quem: int, dano: float, empurrao: Vector2) -> void:
+	if not online or estado != "luta" or not lut_jogador.vivo:
+		return
+	_ultimo_golpe = quem
+	var antes: float = arena.jogador.hp
+	arena.jogador.receber(dano, Rede.nome_de(quem), empurrao)
+	if arena.jogador.hp < antes:
+		arena.efeitos.numero(lut_jogador.pos, antes - arena.jogador.hp, Color(1, 0.6, 0.55), false)
+		Som.tocar("acerto", 0.06, randf_range(0.9, 1.2), -12)
+		arena.tremer(2.0)
+
+
+## Anfitrião: alguém caiu (por = quem derrubou, 0 = anel). O lugar é quantos ainda estavam de pé.
+func caiu_online(quem: int, por: int) -> void:
+	if not online or not Rede.anfitriao() or estado == "fim":
+		return
+	var l = _lut(quem)
+	if l == null or l.lugar > 0:
+		return
+	var de_pe := lutadores.filter(func(o): return o.lugar == 0).size()
+	Rede.evento("eliminado", {"peer": quem, "lugar": de_pe, "por": por})
+
+
+func eliminado_online(d: Dictionary) -> void:
+	var l = _lut(int(d.get("peer", 0)))
+	if l == null or l.lugar > 0:
+		return
+	var por := int(d.get("por", 0))
+	l.lugar = int(d.get("lugar", 0))
+	l.vivo = false
+	l.vivo_ate = t_luta
+	arena.efeitos.explodir(l.pos, l.cor, 22, 200.0)
+	arena.tremer(5)
+	Som.tocar("soco", 0.05, 0.8)
+	var nome_por := "Você" if por == Rede.eu() else Rede.nome_de(por)
+	if por == 0:
+		arena.mensagem("%s caiu fora do anel!" % l.nome, l.cor.lightened(0.3))
+	else:
+		arena.mensagem("%s derrubou %s!" % [nome_por, l.nome], Color(1, 0.85, 0.5))
+	if por == Rede.eu() and l != lut_jogador:
+		abates += 1
+	if l == lut_jogador:
+		arena.jogador.visible = false
+		arena.jogador.hp = 0
+	elif l.no and is_instance_valid(l.no):
+		l.no.fora = true
+
+
+## Anfitrião: sobrou um (ou passou do tempo máximo)? Espera um pouco e manda o ranking.
+func _fim_anfitriao(dt: float) -> void:
+	if _fim_em >= 0.0:
+		_fim_em -= dt
+		if _fim_em <= 0.0:
+			var de_pe := lutadores.filter(func(o): return o.lugar == 0)
+			de_pe.sort_custom(func(a, b): return _hp_frac(a) > _hp_frac(b))
+			var lugares := {}
+			for l in lutadores:
+				lugares[l.id] = l.lugar
+			for i in de_pe.size():
+				lugares[de_pe[i].id] = i + 1
+			Rede.evento("duelo_fim", {"lugares": lugares, "duracao": t_luta})
+			_fim_em = 999.0
+	elif lutadores.filter(func(o): return o.lugar == 0).size() <= 1:
+		_fim_em = 1.5
+	elif t_luta > float(cfg.get("tempo_max", 150)):
+		_fim_em = 0.01
+
+
+func fim_online(d: Dictionary) -> void:
+	if estado == "fim":
+		return
+	estado = "fim"
+	var lugares: Dictionary = d.get("lugares", {})
+	for l in lutadores:
+		l.lugar = int(lugares.get(l.id, l.lugar))
+	var ranking := []
+	for l in lutadores:
+		ranking.append({"nome": l.nome, "heroi": l.heroi, "lugar": l.lugar, "jogador": l == lut_jogador})
+	ranking.sort_custom(func(a, b): return a.lugar < b.lugar)
+	arena.fim_duelo({"lugar": maxi(1, lut_jogador.lugar), "total": lutadores.size(), "ranking": ranking,
+		"abates": abates, "dano": dano_causado, "duracao": float(d.get("duracao", t_luta))})
+
+
+func _lut(peer: int):
+	for l in lutadores:
+		if l.id == peer:
+			return l
+	return null
 
 
 # ---------- desenho ----------

@@ -68,6 +68,12 @@ func nivel() -> int:
 	return 1 + int((coeficiente() - 1.0) / 0.33)
 
 
+## Cliente online: só conta o tempo (pro HUD); quem cria os vírus é o diretor do anfitrião.
+func so_relogio(dt: float) -> void:
+	tempo += dt
+	t_fase += dt
+
+
 func atualizar(dt: float) -> void:
 	tempo += dt
 	t_fase += dt
@@ -88,23 +94,23 @@ func _eventos() -> void:
 		_feitos[i] = true
 		var tipo := str(ev.get("inimigo", "bug"))
 		var n := int(ev.get("quantos", 1))
-		var c: Vector2 = arena.jogador.centro()
+		var c: Vector2 = _referencia()[0]
 		match str(ev.get("tipo", "")):
 			"chefe":
 				arena.inimigos.criar(tipo, _ponto_fora(), nivel())
-				arena.anunciar("Chefe: " + str(Dados.json("inimigos").get(tipo, {}).get("nome", tipo)), Color(1, 0.4, 0.4))
+				arena.anunciar_todos("Chefe: " + str(Dados.json("inimigos").get(tipo, {}).get("nome", tipo)), Color(1, 0.4, 0.4))
 				Som.tocar("tremor")
 				arena.tremer(6)
 			"anel":
 				for k in n:
 					arena.inimigos.criar(tipo, c + Vector2.from_angle(TAU * k / n) * 230.0, nivel())
-				arena.anunciar("Cercado!", Color(1, 0.8, 0.4))
+				arena.anunciar_todos("Cercado!", Color(1, 0.8, 0.4))
 			"enxame":
 				var lado := Vector2.from_angle(randf() * TAU)
 				var base := c + lado * 400.0
 				for k in n:
 					arena.inimigos.criar(tipo, base + lado.orthogonal() * randf_range(-180, 180) + lado * randf_range(0, 80), nivel())
-				arena.anunciar("Enxame!", Color(1, 0.8, 0.4))
+				arena.anunciar_todos("Enxame!", Color(1, 0.8, 0.4))
 	var dur := float(_fase.get("duracao", 600))
 	if t_fase >= dur and not final_chamado:
 		final_chamado = true
@@ -112,7 +118,7 @@ func _eventos() -> void:
 		chefe_fase = chefe
 		enxame_final = bool(Dados.json("inimigos").get(chefe, {}).get("final", false))
 		arena.inimigos.criar(chefe, _ponto_fora(), nivel())
-		arena.anunciar(str(Dados.json("inimigos").get(chefe, {}).get("nome", chefe)).to_upper() + "!", Color(0.4, 0.6, 1))
+		arena.anunciar_todos(str(Dados.json("inimigos").get(chefe, {}).get("nome", chefe)).to_upper() + "!", Color(0.4, 0.6, 1))
 		arena.chefe_final_chegou(enxame_final)
 		Som.tocar("tremor")
 		arena.tremer(10)
@@ -182,9 +188,24 @@ func _criar_grupo(tipo: String, n: int) -> void:
 
 
 ## Um ponto fora da tela, num anel em volta do jogador (mais na direção em que ele anda).
+## No online, em volta de um jogador sorteado.
 func _ponto_fora() -> Vector2:
-	var jog: Node2D = arena.jogador
+	var r := _referencia()
+	var mov: Vector2 = r[1]
 	var ang := randf() * TAU
-	if jog.direcao_mov() != Vector2.ZERO and randf() < 0.5:
-		ang = jog.direcao_mov().angle() + randf_range(-1.2, 1.2)
-	return jog.centro() + Vector2.from_angle(ang) * randf_range(380, 430)
+	if mov != Vector2.ZERO and randf() < 0.5:
+		ang = mov.angle() + randf_range(-1.2, 1.2)
+	return r[0] + Vector2.from_angle(ang) * randf_range(380, 430)
+
+
+## [centro, direção] de quem serve de referência pra nascer vírus: o jogador local ou um sorteado no online.
+func _referencia() -> Array:
+	var jog: Node2D = arena.jogador
+	if arena.online:
+		var alvos: Array = arena.online.alvos()
+		if not alvos.is_empty():
+			var a: Array = alvos.pick_random()
+			if a[1] != Rede.eu():
+				var d: Dictionary = Rede.remotos.get(a[1], {})
+				return [a[0], Vector2(d.get("mx", 0.0), d.get("my", 0.0))]
+	return [jog.centro(), jog.direcao_mov()]

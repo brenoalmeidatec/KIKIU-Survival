@@ -15,6 +15,7 @@ const Hud := preload("res://scripts/hordas/hud.gd")
 const Cartas := preload("res://scripts/hordas/cartas.gd")
 const Duelo := preload("res://scripts/hordas/duelo.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
+const Online := preload("res://scripts/hordas/online.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
@@ -37,6 +38,9 @@ var duelo: Node2D
 var duelo_ativo := false
 var pre_duelo := false       # o chefe final caiu e o duelo ainda não começou
 var entre_fases := false     # a fase acabou: descanso, baú e escolha antes da próxima
+var eh_online := false       # partida online (main.gd liga antes de abrir a arena)
+var online: Node             # online.gd, só no online
+var caido := false           # online: caiu na horda e espera alguém levantar
 
 var passivos := {}          # id -> nível
 var _stats := {}
@@ -83,6 +87,12 @@ func _ready() -> void:
 	add_child(duelo)
 	add_child(camera)
 	camera.make_current()
+	if eh_online:
+		online = Online.new()
+		online.arena = self
+		add_child(online)
+		inimigos.online = online
+		inimigos.espelho = Rede.cliente()
 	diretor = Diretor.new()
 	diretor.iniciar(self)
 	_recalcular()
@@ -103,7 +113,7 @@ func _ready() -> void:
 
 
 func jogadores() -> int:
-	return 1
+	return maxi(1, Rede.jogadores.size()) if eh_online else 1
 
 
 func stat(k: String) -> float:
@@ -131,19 +141,28 @@ func _process(dt: float) -> void:
 		return
 	dt = minf(dt, 1.0 / 30.0)
 	var t0 := Time.get_ticks_usec()
-	var parado: bool = duelo_ativo and (duelo.estado == "contagem" or not duelo.lut_jogador.vivo)
+	var parado: bool = caido or (duelo_ativo and (duelo.estado == "contagem" or not duelo.lut_jogador.vivo))
+	if eh_online and cartas.aberto():
+		jogador.invencivel = maxf(jogador.invencivel, 0.1)   # no online o jogo não pausa: escolhendo carta, não apanha
 	if not parado:
 		jogador.atualizar(dt)
+	elif caido:
+		jogador.queue_redraw()
 	if duelo_ativo:
 		duelo.atualizar(dt)
 	elif not pre_duelo and not entre_fases:
-		diretor.atualizar(dt)
+		if inimigos.espelho:
+			diretor.so_relogio(dt)   # cliente: quem cria os vírus é o anfitrião
+		else:
+			diretor.atualizar(dt)
 	var t1 := Time.get_ticks_usec()
 	if not duelo_ativo and not pre_duelo and not entre_fases:
 		inimigos.atualizar(dt, jogador)
 	var t2 := Time.get_ticks_usec()
 	if not parado:
 		armas.atualizar(dt)
+	if online:
+		online.atualizar(dt)
 	var t3 := Time.get_ticks_usec()
 	coleta.atualizar(dt)
 	efeitos.atualizar(dt)
@@ -154,7 +173,7 @@ func _process(dt: float) -> void:
 	_tremor = maxf(0.0, _tremor - dt * 20.0)
 	camera.position = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro()
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
-	if Input.is_action_just_pressed("voltar") and not cartas.aberto():
+	if Input.is_action_just_pressed("voltar") and not cartas.aberto() and not hud._pausado:
 		hud.pausar()
 
 
@@ -180,43 +199,91 @@ func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> 
 
 
 func inimigo_morreu(v) -> void:
+	recompensa(v.pos, v.tipo, v.elite)
+	if online:
+		online.morreu(v)   # anfitrião: cada um dos outros pega a própria recompensa
+	if v.d.get("final", false):
+		if online:
+			Rede.evento("tela_azul_caiu")
+		else:
+			tela_azul_caiu()
+	elif v.chefe and diretor.final_chamado and v.tipo == diretor.chefe_fase:
+		if online:
+			Rede.evento("fase_completa")
+		else:
+			fase_completa()
+
+
+## O que cada jogador ganha quando um vírus morre: abate, gema de XP, efeito e sorteio de drop
+## (no online cada um sorteia o seu, então XP, baú e tomada são pessoais).
+func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
+	var d: Dictionary = Dados.json("inimigos").get(tipo, {})
+	var chefe := bool(d.get("chefe", false))
 	abates += 1
-	var xp_v := float(v.d.get("xp", 1))
-	if v.elite:
+	var xp_v := float(d.get("xp", 1))
+	if elite:
 		xp_v *= 6.0
-	coleta.gema(v.pos, xp_v)
-	var cor := Color(1, 0.85, 0.3) if v.elite else Color(0.55, 0.9, 0.4)
-	if v.tipo in ["trojan", "trojan_gigante"]:
+	coleta.gema(pos, xp_v)
+	var cor := Color(1, 0.85, 0.3) if elite else Color(0.55, 0.9, 0.4)
+	if tipo in ["trojan", "trojan_gigante"]:
 		cor = Color(0.65, 0.4, 0.85)
-	elif v.tipo in ["ransomware"]:
+	elif tipo in ["ransomware"]:
 		cor = Color(0.9, 0.3, 0.3)
-	efeitos.explodir(v.pos, cor, 14 if v.chefe else 5, 160.0 if v.chefe else 80.0)
+	efeitos.explodir(pos, cor, 14 if chefe else 5, 160.0 if chefe else 80.0)
 	var drops: Dictionary = Dados.json("fase").get("drops", {})
-	if v.d.get("bau", false) or (v.elite and randf() < 0.25):
-		coleta.soltar(v.pos, "bau")
+	if d.get("bau", false) or (elite and randf() < 0.25):
+		coleta.soltar(pos, "bau")
 	elif randf() < float(drops.get("marmita", 0.004)):
-		coleta.soltar(v.pos, "marmita")
+		coleta.soltar(pos, "marmita")
 	elif randf() < float(drops.get("wifi", 0.0015)):
-		coleta.soltar(v.pos, "wifi")
-	if v.chefe:
+		coleta.soltar(pos, "wifi")
+	if chefe:
 		tremer(8)
 		Som.tocar("soco", 0.1, 0.7)
-	if v.d.get("final", false):
-		if bool(Dados.json("pvp").get("ativo", true)):
-			anunciar("A Tela Azul caiu...", Color(0.6, 0.8, 1))
-			pre_duelo = true
-			for o in inimigos.lista.duplicate():
-				efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
-			inimigos.limpar()
-			await get_tree().create_timer(2.0, true, false, true).timeout
-			iniciar_duelo()
+
+
+## O chefe final caiu: limpa a tela e, depois de 2 s, começa o duelo (no online quem decide é o anfitrião).
+func tela_azul_caiu() -> void:
+	if pre_duelo or duelo_ativo or acabou:
+		return
+	if not bool(Dados.json("pvp").get("ativo", true)):
+		_fim(true)
+		return
+	anunciar("A Tela Azul caiu...", Color(0.6, 0.8, 1))
+	pre_duelo = true
+	if caido:
+		levantar(1.0)
+	for o in inimigos.lista.duplicate():
+		efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
+	inimigos.limpar()
+	await get_tree().create_timer(2.0, true, false, true).timeout
+	if acabou:
+		return
+	if not eh_online:
+		iniciar_duelo()
+	elif Rede.anfitriao():
+		if Rede.jogadores.size() < 2:
+			iniciar_duelo()   # ficou sozinho na sala: duelo contra robôs, como no solo
 		else:
-			_fim(true)
-	elif v.chefe and diretor.final_chamado and v.tipo == diretor.chefe_fase:
-		_fase_completa()
+			var c: Vector2 = jogador.position.snapped(Vector2(32, 32))
+			Rede.evento("duelo_iniciar", {"cx": c.x, "cy": c.y, "ang": randf() * TAU, "ordem": Rede.jogadores.keys()})
+
+
+## Online: todo mundo caiu ao mesmo tempo.
+func fim_corrida() -> void:
+	if not acabou:
+		_fim(false)
+
+
+func anunciar_todos(txt: String, cor := Color.WHITE) -> void:
+	anunciar(txt, cor)
+	if online and Rede.anfitriao():
+		Rede.evento("anuncio", {"txt": txt, "cor": cor.to_html()})
 
 
 func chefe_final_chegou(final := true) -> void:
+	if online and Rede.anfitriao():
+		Rede.evento("chefe_final", {"final": final})
 	if final:
 		hud.mensagem("Derrote a Tela Azul pra vencer!", Color(0.6, 0.75, 1))
 	else:
@@ -224,11 +291,17 @@ func chefe_final_chegou(final := true) -> void:
 
 
 ## O chefe da fase caiu: limpa a tela, junta o XP, dá um baú e uma cura, e começa a próxima fase.
-func _fase_completa() -> void:
+## No online todo mundo faz isso ao mesmo tempo, cada um no seu computador, e avisa o anfitrião quando
+## terminou as cartas; a próxima fase começa quando todos terminarem (ou depois de 60 s).
+func fase_completa() -> void:
+	if entre_fases or acabou:
+		return
 	entre_fases = true
 	var n: int = diretor.fase_idx + 1
 	anunciar("Fase %d completa!" % n, Color(1, 0.9, 0.4))
 	Som.tocar("vitoria", 0.1, 1.0, -8)
+	if caido:
+		levantar(0.5)   # quem caiu volta no fim da fase
 	for o in inimigos.lista.duplicate():
 		efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
 	inimigos.limpar()
@@ -242,6 +315,16 @@ func _fase_completa() -> void:
 	while not acabou and (cartas.aberto() or _niveis_pendentes > 0 or _cartas_tomada > 0):
 		await get_tree().process_frame
 	if acabou:
+		return
+	if eh_online:
+		anunciar("Esperando os outros...", Color(0.7, 0.9, 1))
+		Rede.avisar("pronto")
+	else:
+		proxima_fase()
+
+
+func proxima_fase() -> void:
+	if not entre_fases or acabou:
 		return
 	diretor.proxima_fase()
 	chao.nova_fase()
@@ -438,7 +521,44 @@ func morrer(quem := "") -> void:
 	if duelo_ativo:
 		duelo.jogador_caiu(quem)
 		return
+	if eh_online:
+		_cair()
+		return
 	_fim(false)
+
+
+## Online: caiu na horda. Vira corpo no lugar e espera alguém ficar perto (ou a fase acabar).
+func _cair() -> void:
+	if caido:
+		return
+	caido = true
+	jogador.hp = 0
+	jogador.spr.rotation = PI / 2
+	jogador.spr.position = Vector2(-30, -10)
+	jogador.spr.modulate = Color(0.45, 0.45, 0.5, 0.8)
+	online.reviver_prog = 0.0
+	anunciar("Você caiu!", Color(1, 0.4, 0.4))
+	mensagem("Espere alguém chegar perto pra te levantar.", Color(1, 0.8, 0.6))
+
+
+func levantar(frac: float) -> void:
+	if not caido:
+		return
+	caido = false
+	jogador.spr.rotation = 0.0
+	jogador.spr.position = Vector2.ZERO
+	jogador.spr.modulate = Color.WHITE
+	jogador.hp = maxf(1.0, stat("vida_max") * frac)
+	jogador.invencivel = 1.5
+
+
+## Online: menu de pausa > Desistir. Sai da sala e termina a partida aqui.
+func desistir() -> void:
+	if eh_online:
+		Rede.sair()
+		_fim(false)
+	else:
+		morrer()
 
 
 ## Começa o duelo final (depois do chefe final, ou direto no teste).
@@ -448,6 +568,17 @@ func iniciar_duelo() -> void:
 	if cartas.aberto():
 		cartas._fechar()
 	duelo.iniciar(self)
+
+
+## Online: o anfitrião mandou começar o duelo entre as pessoas (d = centro, ângulo e ordem dos peers).
+func iniciar_duelo_online(d: Dictionary) -> void:
+	if duelo_ativo or acabou:
+		return
+	if cartas.aberto():
+		cartas._fechar()
+	if caido:
+		levantar(1.0)
+	duelo.iniciar_online(self, d)
 
 
 ## Teste: dá ao jogador uma build sorteada de nível N (--build=N).
