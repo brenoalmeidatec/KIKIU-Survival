@@ -30,3 +30,21 @@ Toda profundidade falsa depende de **uma direção de luz igual pra cena inteira
 - [GDQuest: lighting with 2D normal maps](https://www.gdquest.com/tutorial/godot/2d/lighting-with-normal-maps/)
 - [Sprite stacking em Godot](https://www.connorwolf.com/post/sprite-stacking-in-godot) (fatias empilhadas: alternativa de "3D" pra objetos que giram)
 - [Project Shadowglass: pixel art "3D"](https://80.lv/articles/interview-how-project-shadowglass-creates-its-impossible-fully-3d-pixel-art-look) (referência de onde o isométrico com render 3D pode chegar)
+
+## Pipeline: modelos 3D → pixel art (dark fantasy)
+Direção de arte nova: **dark fantasy, mantendo a cultura do pixel art**. Os personagens saem de modelos 3D simples renderizados no Blender e viram pixel art no próprio script:
+
+```
+blender -b -P jogos/hordas/fonte_arte/modelos3d/cavaleiro.py
+```
+(Blender 4.5 LTS portátil, grátis: baixar o zip em download.blender.org e descompactar; não precisa instalar.)
+
+- `pixel3d.py`: a base. Render no tamanho final sem antialiasing, material toon (3 faixas), luz de cima/esquerda/trás (igual às sombras do jogo) + preenchimento fraco da câmera, paleta fixa dark fantasy (rampas: aço, sangue, couro, ouro velho, musgo, osso), luz de borda de 1 px (sobe um degrau na rampa do próprio material) e contorno escuro de 1 px.
+- `cavaleiro.py`: o modelo (primitivas: elmo, tabardo, capa, espada, escudo) + ciclo de andar. Sai no formato que o jogo já usa: `andando_8.png` (9×4 quadros de 44×60; linhas baixo, esquerda, direita, cima) e `rosto.png` (52×52).
+- Pra um modelo novo: copie o `cavaleiro.py`, troque o `montar()` e as cores. Passe `paleta=px3.paleta_sem(...)` pra tirar rampas que o material não usa.
+
+Armadilhas que custaram tempo (já resolvidas no código):
+1. **Cor em linear.** Os nós do Blender esperam cor linear; passar o hexa direto deixa tudo lavado (vermelho vira marrom). Use `px3.cor("hexa")`.
+2. **Pendurar peça mantendo o lugar** (`pendurar()`), senão a posição soma duas vezes e a peça flutua.
+3. **Sombra própria desligada** nas luzes: em 44 px ela vira chiado.
+4. **Sinal do `shift_y`:** a linha da imagem cresce pra baixo, e o `shift_y` pra cima.
