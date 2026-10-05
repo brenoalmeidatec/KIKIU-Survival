@@ -1,13 +1,87 @@
 {
-  "_ajuda": "Heróis jogáveis. sprite = pasta em assets/personagens. arma = id em armas.json. bonus = atributos somados no começo (veja atributos em passivos.json).",
-  "lista": ["breno", "nicao", "lucas"],
-  "breno": {"nome": "Breno", "sprite": "breno", "arma": "cabo_rede",
-            "descricao": "Chicoteia vírus com o cabo de rede. Anda um pouco mais rápido.",
-            "bonus": {"velocidade": 0.1}},
-  "nicao": {"nome": "Nicão", "sprite": "nicao", "arma": "ventoinha",
-            "descricao": "Grandão e calmo. Mais vida e área, mas anda devagar.",
-            "bonus": {"vida_max": 40, "area": 0.1, "velocidade": -0.1}},
-  "lucas": {"nome": "Lucas", "sprite": "lucas", "arma": "pendrive",
-            "descricao": "Caótico. Joga pendrives e tem mais sorte nas cartas.",
-            "bonus": {"sorte": 0.3, "dano": 0.1, "vida_max": -10}}
+ "_ajuda": "Heróis jogáveis. 'lista' = os que aparecem na escolha; os outros só aparecem como rivais no duelo (veja pvp.json). sprite = pasta em assets/personagens. arma = id em armas.json. bonus = atributos somados no começo.",
+ "lista": [
+  "breno",
+  "nicao",
+  "lucas"
+ ],
+ "breno": {
+  "nome": "Breno",
+  "sprite": "breno",
+  "arma": "cabo_rede",
+  "descricao": "Chicoteia vírus com o cabo de rede. Anda um pouco mais rápido.",
+  "bonus": {
+   "velocidade": 0.1
+  }
+ },
+ "nicao": {
+  "nome": "Nicão",
+  "sprite": "nicao",
+  "arma": "ventoinha",
+  "descricao": "Grandão e calmo. Mais vida e área, mas anda devagar.",
+  "bonus": {
+   "vida_max": 40,
+   "area": 0.1,
+   "velocidade": -0.1
+  }
+ },
+ "lucas": {
+  "nome": "Lucas",
+  "sprite": "lucas",
+  "arma": "pendrive",
+  "descricao": "Caótico. Joga pendrives e tem mais sorte nas cartas.",
+  "bonus": {
+   "sorte": 0.3,
+   "dano": 0.1,
+   "vida_max": -10
+  }
+ },
+ "joao": {
+  "nome": "João",
+  "sprite": "joao",
+  "arma": "cafe",
+  "descricao": "Derrama café pra todo lado.",
+  "bonus": {
+   "area": 0.1,
+   "regen": 0.3
+  }
+ },
+ "matheus": {
+  "nome": "Matheus",
+  "sprite": "matheus",
+  "arma": "wifi",
+  "descricao": "Sinal forte em volta dele.",
+  "bonus": {
+   "critico": 0.05
+  }
+ },
+ "beto": {
+  "nome": "Beto",
+  "sprite": "beto",
+  "arma": "cabo_rede",
+  "descricao": "Cabo na mão e paciência zero.",
+  "bonus": {
+   "dano": 0.1
+  }
+ },
+ "lukako": {
+  "nome": "Lukako",
+  "sprite": "lukako",
+  "arma": "pendrive",
+  "descricao": "Pendrive em rajada.",
+  "bonus": {
+   "recarga": -0.1,
+   "vida_max": -10
+  }
+ },
+ "fabio": {
+  "nome": "Fábio",
+  "sprite": "fabio",
+  "arma": "ventoinha",
+  "descricao": "Ventoinha na velocidade máxima.",
+  "bonus": {
+   "velocidade": 0.05,
+   "duracao": 0.1
+  }
+ }
 }

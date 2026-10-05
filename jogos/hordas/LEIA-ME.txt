@@ -3,7 +3,10 @@ CAIRU x VIRUS  (protótipo do jogo de hordas)
 
 COMO JOGAR
   Abra CairuVirus.exe. Escolha o herói e sobreviva por 10 minutos. No fim do tempo chega
-  a Tela Azul da Morte; derrote ela pra vencer. Enquanto ela viver, o Enxame Final só piora.
+  a Tela Azul da Morte; enquanto ela viver, o Enxame Final só piora. Quando ela cai, começa o
+  DUELO FINAL: todos os lutadores se enfrentam numa arena redonda que vai fechando, e o último
+  de pé é o mais forte. (Por enquanto os rivais são robôs com builds do seu nível; no jogo
+  online serão os seus amigos.)
 
   WASD ou setas ....... andar (as armas atiram sozinhas)
   Espaço ou Shift ..... dash (corrida rápida, você fica invencível por um instante)
@@ -35,21 +38,33 @@ O QUE TEM (o melhor dos três jogos)
           Tela Azul da Morte (10:00, chefe final). Chefes soltam baú.
   Vírus dourados são elites: muita vida, às vezes soltam baú.
 
+DUELO FINAL
+  Cada um luta com as mesmas armas e itens que montou na horda. Pra ninguém ganhar só por ter o
+  maior número, o duelo tem 3 regras (arquivo dados/pvp.json):
+    1. Dano normalizado: cada build bate com "dps_ref x (força relativa)^0,7". O duelo dura de
+       45 a 70 s em qualquer nível, e uma build 2x mais forte rende 1,6x, não 2x.
+    2. Vida do duelo = 500 + 0,6 x vida máxima (a regeneração vale 25%).
+    3. O anel começa a fechar aos 10 s; quem fica fora perde 4% da vida por segundo.
+  Dash = sua defesa. Setas coloridas nas bordas mostram onde estão os rivais.
+  Mais heróis só aparecem como rivais (Lucas, Nicão, Breno, João, Matheus, Beto, Lukako, Fábio).
+  Novidades: acerto crítico (item Mouse Gamer) e recorde de melhor colocação por herói.
+
 EDITAR SEM PROGRAMAR
   A pasta "dados" ao lado do .exe manda no jogo. Abra no Bloco de Notas, salve e jogue de novo:
-    herois.json     heróis, arma inicial e bônus
+    herois.json     heróis, arma inicial e bônus (os fora de "lista" só aparecem como rivais)
     armas.json      dano, recarga, quantidade, o que cada nível dá
     passivos.json   itens passivos
     evolucoes.json  receitas de evolução
     inimigos.json   vida, velocidade, dano, quando começam a aparecer, chefes
     fase.json       duração, curva de dificuldade, eventos (chefe/anel/enxame), tomadas
+    pvp.json        o duelo final: quantos rivais, vida, dano, anel, eficiência de cada tipo de arma
   Se o jogo parar de funcionar depois de mexer, provavelmente faltou uma vírgula ou aspas.
   Apague a pasta "dados" pra voltar ao original.
 
 AINDA NÃO TEM (próximos passos sugeridos)
-  Arte final dos vírus (a atual é provisória, desenhada por código), mais heróis (os sprites
-  do João, Matheus, Beto, Lukako e Fábio já estão no projeto), baús e ouro no mapa, loja de
-  melhorias permanentes entre partidas, jogo online com amigos (a engine já tem sala até 6).
+  Arte final (a atual é provisória, desenhada por código), jogo online com amigos (até 6, com
+  o duelo entre pessoas de verdade), mais mecânicas, loja de melhorias entre partidas.
+  O desenho completo está em DESENHO_DO_JOGO.md.
 
 PARA QUEM MEXE NO CÓDIGO
   Projeto Godot 4.4: hordas/projeto. Tudo em scripts/hordas/:
@@ -60,8 +75,13 @@ PARA QUEM MEXE NO CÓDIGO
     armas.gd           5 tipos de arma: projetil, chicote, orbita, poca, aura
     diretor_hordas.gd  coeficiente, créditos, eventos, enxame final
     coleta.gd          XP, marmita, Wi-Fi, baú;  chao.gd  chão infinito e tomadas
+    duelo.gd           duelo final: lutadores, anel, equilíbrio de dano, ranking
+    rival.gd / ia_luta.gd   rival (herói + build + armas) e o cérebro dele (também joga pelo robô de teste)
+    construcao.gd      atributos de uma build e gerador de builds sorteadas pros rivais
     hud.gd / cartas.gd / efeitos.gd / dados.gd / som.gd
   Arte provisória: hordas/fonte_arte/gerar_arte.py (gera assets/gerado/).
   Teste automático (um robô joga sozinho):
     godot --headless -- --bot --heroi=nicao --sair=700 --rapido=4
-    --estresse=500 cria 500 vírus de uma vez; --pular=300 começa no minuto 5.
+    --estresse=500 cria 500 vírus de uma vez; --pular=300 começa no minuto 5;
+    --build=30 dá uma build de nível 30; --duelo=30 vai direto pro duelo; --facil faz a Tela Azul
+    nascer quase morta; --calibrar mostra os números pra ajustar a eficiência do pvp.json.

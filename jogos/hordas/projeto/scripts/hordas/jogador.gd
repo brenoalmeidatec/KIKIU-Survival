@@ -23,6 +23,9 @@ var _rastro: Array = []          # imagens fantasmas do dash
 var _vermelho := 0.0
 var bot := false                 # modo demonstração (anda sozinho)
 var _bot_ang := 0.0
+var kb := Vector2.ZERO
+var _ia := {}
+var _pref := 120.0
 
 
 func configurar(sprite: String) -> void:
@@ -48,6 +51,7 @@ func vida_max() -> float:
 
 func atualizar(dt: float) -> void:
 	_t += dt
+	_dt = dt
 	invencivel = maxf(0.0, invencivel - dt)
 	dash_recarga = maxf(0.0, dash_recarga - dt)
 	_vermelho = maxf(0.0, _vermelho - dt)
@@ -68,6 +72,8 @@ func atualizar(dt: float) -> void:
 			dash_recarga = DASH_RECARGA
 			invencivel = maxf(invencivel, DASH_TEMPO + 0.1)
 			Som.tocar("whoosh", 0.1, 1.2)
+	position += kb * dt
+	kb *= exp(-9.0 * dt)
 	# regeneração
 	hp = minf(vida_max(), hp + arena.stat("regen") * dt)
 	_animar(entrada)
@@ -78,21 +84,41 @@ func atualizar(dt: float) -> void:
 	queue_redraw()
 
 
+var _dash_ia := false
+var _dt := 0.016
+
+
 func _entrada() -> Vector2:
+	if bot and arena.duelo_ativo:
+		return _bot_duelo()
 	if bot:
 		return _bot_dir()
 	return Input.get_vector("esquerda", "direita", "cima", "baixo")
 
 
 func _quer_dash() -> bool:
+	if bot and arena.duelo_ativo:
+		return _dash_ia
 	if bot:
 		return arena.inimigos.no_circulo(centro(), 40).size() > 4
 	return Input.is_action_just_pressed("dash")
 
 
+## Robô no duelo: usa o mesmo cérebro dos rivais.
+func _bot_duelo() -> Vector2:
+	var d: Node2D = arena.duelo
+	if d.estado != "luta":
+		return Vector2.ZERO
+	_pref = d.IA.alcance_preferido(arena.armas.lista)
+	var eu := {"pos": centro(), "hp_frac": hp / maxf(1.0, vida_max()), "pref": _pref, "dash_pronto": dash_recarga <= 0}
+	var dec: Dictionary = d.IA.decidir(eu, d.alvos_de(d.lut_jogador), d.centro, d.raio, _ia, 0.9, _dt)
+	_dash_ia = dec.dash
+	return dec.dir
+
+
 ## Demonstração: foge dos vírus por perto, vai pegar XP e as tomadas, e anda em círculo quando está calmo.
 func _bot_dir() -> Vector2:
-	_bot_ang += 0.4 * get_physics_process_delta_time()
+	_bot_ang += 0.4 * _dt
 	var c := centro()
 	var fuga := Vector2.ZERO
 	for v in arena.inimigos.no_circulo(c, 110):
@@ -134,18 +160,40 @@ func _animar(entrada: Vector2) -> void:
 	spr.visible = not piscar
 
 
-func sofrer(dano: float, fonte := "") -> void:
+## Dano de vírus (fonte = tipo) ou de outro lutador no duelo. Retorna true se caiu.
+func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) -> bool:
 	if invencivel > 0 or hp <= 0:
-		return
+		return false
 	hp -= dano
 	arena.dano_recebido[fonte] = float(arena.dano_recebido.get(fonte, 0.0)) + dano
-	invencivel = 0.5
+	invencivel = iframes
 	_vermelho = 0.15
+	kb += empurrao
 	Som.tocar("erro", 0.15, 1.0, -4)
 	arena.tremer(3.0)
 	if hp <= 0:
 		hp = 0
-		arena.morrer()
+		arena.morrer(fonte)
+		return true
+	return false
+
+
+## Interface igual à dos rivais: o duelo chama isso quando uma arma de outro lutador acerta.
+func receber(dano: float, quem: String, empurrao := Vector2.ZERO) -> bool:
+	return sofrer(dano, "rival:" + quem, arena.duelo.iframes, empurrao)
+
+
+## Dano do anel (sem invencibilidade).
+func dano_direto(dano: float, fonte: String) -> bool:
+	if hp <= 0:
+		return false
+	hp -= dano
+	_vermelho = 0.05
+	if hp <= 0:
+		hp = 0
+		arena.morrer(fonte)
+		return true
+	return false
 
 
 func curar(valor: float) -> void:

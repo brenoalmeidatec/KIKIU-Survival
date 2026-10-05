@@ -147,6 +147,10 @@ func _comecar(heroi: String) -> void:
 			_arena.inimigos.criar(["bug", "popup", "spam", "trojan"].pick_random(), Vector2.from_angle(randf() * TAU) * randf_range(150, 420))
 	if _args.has("pular"):
 		_arena.diretor.tempo = float(_args.pular)
+	if _args.has("build"):
+		_arena.dar_build_teste(int(_args.build))
+	if _args.has("duelo"):
+		_arena.iniciar_duelo_teste(int(_args.duelo))
 	_estado = "partida"
 	_t = 0.0
 
@@ -162,6 +166,11 @@ func _terminou(res: Dictionary) -> void:
 	rec["abates"] = maxi(int(rec.get("abates", 0)), res.abates)
 	if res.vitoria:
 		rec["vitorias"] = int(rec.get("vitorias", 0)) + 1
+	if res.has("duelo"):
+		var lg: int = res.duelo.lugar
+		rec["melhor_lugar"] = mini(int(rec.get("melhor_lugar", 99)), lg)
+		if lg == 1:
+			rec["campeao"] = int(rec.get("campeao", 0)) + 1
 	_recordes[h] = rec
 	_salvar_recordes()
 	_arena.queue_free()
@@ -187,12 +196,18 @@ func _teste() -> void:
 		return
 	_quadros += 1
 	_t_quadros += get_process_delta_time()
+	if _args.has("facil") and not _arena.duelo_ativo:
+		# teste: o chefe final nasce quase morto, pra chegar logo no duelo
+		for v in _arena.inimigos.lista:
+			if v.d.get("final", false):
+				v.hp = minf(v.hp, 1.0)
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
-		print("t=%.0f partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s" % [
+		print("t=%.0f partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s" % [
 			_t, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,
-			_arena.armas.lista.map(func(a): return "%s:%d" % [a.id, a.nivel]), _arena.passivos])
+			_arena.armas.lista.map(func(a): return "%s:%d" % [a.id, a.nivel]), _arena.passivos,
+			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-"])
 		if _t >= float(_args.sair):
 			get_tree().quit()
 	if _args.has("fotos") and _t >= _prox_foto:
@@ -262,25 +277,48 @@ func _desenhar() -> void:
 		"fim":
 			_fundo()
 			var r := _resumo
-			if r.get("vitoria", false):
-				_txt(Vector2(0, 60), "VOCÊ SOBREVIVEU!", 24, Color(0.5, 1, 0.5))
-				_txt(Vector2(0, 80), "A Tela Azul caiu. A faculdade está salva.", 8, Color(0.8, 0.9, 0.8))
-			else:
-				_txt(Vector2(0, 60), "O VIRUS VENCEU...", 24, Color(1, 0.4, 0.4))
-				_txt(Vector2(0, 80), "Formata e tenta de novo.", 8, Color(0.9, 0.8, 0.8))
-			var tempo := float(r.get("tempo", 0))
-			_txt(Vector2(0, 112), "Tempo %02d:%02d   Nível %d   Abates %d" % [int(tempo) / 60, int(tempo) % 60, r.get("nivel", 1), r.get("abates", 0)], 8)
-			if _novo_recorde:
-				_txt(Vector2(0, 128), "NOVO RECORDE!", 8, Color(1, 0.85, 0.3).lerp(Color.WHITE, 0.5 + 0.5 * sin(_t * 8)))
-			_txt(Vector2(0, 156), "Dano por arma", 8, Color(0.7, 0.8, 1))
 			var y := 176.0
+			var x_dano := 200.0
+			if r.has("duelo"):
+				var du: Dictionary = r.duelo
+				var lg: int = du.lugar
+				if lg == 1:
+					_txt(Vector2(0, 50), "CAMPEÃO!", 24, Color(1, 0.85, 0.3).lerp(Color.WHITE, 0.5 + 0.5 * sin(_t * 6)))
+					_txt(Vector2(0, 80), "Você foi o mais forte do duelo final.", 8, Color(0.9, 0.9, 0.8))
+				else:
+					_txt(Vector2(0, 50), "%dº LUGAR" % lg, 24, Color(1, 0.55, 0.45))
+					_txt(Vector2(0, 80), "de %d lutadores. Tenta de novo!" % du.total, 8, Color(0.9, 0.8, 0.8))
+				_txt(Vector2(0, 104), "Duelo %ds   Derrubou %d   Dano %d" % [int(du.duracao), du.abates, int(du.dano)], 8)
+				_txt(Vector2(0, 120), "Horda: %02d:%02d  Nível %d  Abates %d" % [int(r.tempo) / 60, int(r.tempo) % 60, r.nivel, r.abates], 8, Color(0.7, 0.75, 0.85))
+				# ranking à esquerda, dano por arma à direita
+				_txt(Vector2(60, 156), "Ranking", 8, Color(0.7, 0.8, 1), 200, HORIZONTAL_ALIGNMENT_LEFT)
+				var ry := 176.0
+				for e in du.ranking:
+					var cor := Color(1, 0.9, 0.4) if e.jogador else Color(0.85, 0.85, 0.9)
+					_txt(Vector2(60, ry), "%dº" % e.lugar, 8, cor, 40, HORIZONTAL_ALIGNMENT_LEFT)
+					_txt(Vector2(100, ry), "Você" if e.jogador else str(e.nome), 8, cor, 140, HORIZONTAL_ALIGNMENT_LEFT)
+					ry += 20
+				x_dano = 340.0
+				_txt(Vector2(x_dano, 156), "Dano por arma", 8, Color(0.7, 0.8, 1), 240, HORIZONTAL_ALIGNMENT_LEFT)
+			else:
+				if r.get("vitoria", false):
+					_txt(Vector2(0, 60), "VOCÊ SOBREVIVEU!", 24, Color(0.5, 1, 0.5))
+					_txt(Vector2(0, 80), "A Tela Azul caiu. A faculdade está salva.", 8, Color(0.8, 0.9, 0.8))
+				else:
+					_txt(Vector2(0, 60), "O VIRUS VENCEU...", 24, Color(1, 0.4, 0.4))
+					_txt(Vector2(0, 80), "Formata e tenta de novo.", 8, Color(0.9, 0.8, 0.8))
+				var tempo := float(r.get("tempo", 0))
+				_txt(Vector2(0, 112), "Tempo %02d:%02d   Nível %d   Abates %d" % [int(tempo) / 60, int(tempo) % 60, r.get("nivel", 1), r.get("abates", 0)], 8)
+				if _novo_recorde:
+					_txt(Vector2(0, 128), "NOVO RECORDE!", 8, Color(1, 0.85, 0.3).lerp(Color.WHITE, 0.5 + 0.5 * sin(_t * 8)))
+				_txt(Vector2(0, 156), "Dano por arma", 8, Color(0.7, 0.8, 1))
 			for par in r.get("dano", []):
 				var d := Dados.item(str(par[0]))
 				var ic := Dados.icone(str(d.get("icone", "")))
 				if ic:
-					_tela.draw_texture(ic, Vector2(200, y - 12))
-				_txt(Vector2(222, y), str(d.get("nome", par[0])), 8, Color.WHITE, 200, HORIZONTAL_ALIGNMENT_LEFT)
-				_txt(Vector2(340, y), str(int(par[1])), 8, Color(1, 0.9, 0.5), 100, HORIZONTAL_ALIGNMENT_RIGHT)
+					_tela.draw_texture(ic, Vector2(x_dano, y - 12))
+				_txt(Vector2(x_dano + 22, y), str(d.get("nome", par[0])), 8, Color.WHITE, 200, HORIZONTAL_ALIGNMENT_LEFT)
+				_txt(Vector2(x_dano + 140, y), str(int(par[1])), 8, Color(1, 0.9, 0.5), 100, HORIZONTAL_ALIGNMENT_RIGHT)
 				y += 20
 			_txt(Vector2(0, 330), "Enter: voltar ao título", 8, Color(0.6, 0.6, 0.7))
 
@@ -301,6 +339,12 @@ func _print_tela(qual: String) -> void:
 				_arena.armas.lista[0].nivel = 6
 				_arena.passivos["ctrl_c_v"] = 1
 				_arena.abrir_bau()
+		"duelo", "duelo_fim":
+			_comecar("nicao")
+			await get_tree().create_timer(0.2).timeout
+			Engine.time_scale = 3.0
+			await get_tree().create_timer(float(_args.get("espera", 9.0)) / 3.0).timeout
+			Engine.time_scale = 1.0
 		"fim":
 			_resumo = {"vitoria": true, "tempo": 642.0, "nivel": 41, "abates": 5230, "heroi": "nicao",
 				"dano": [["water_cooler", 52000], ["cafe", 21000], ["pendrive", 9000]]}

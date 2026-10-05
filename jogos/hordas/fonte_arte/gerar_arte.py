@@ -510,6 +510,15 @@ def i_apostila(d):
         d.line([6, y, 11, y], fill=(120, 120, 130, 255))
 
 
+def i_mouse(d):
+    d.rounded_rectangle([3, 1, 12, 14], radius=4, fill=(40, 40, 50, 255))
+    d.rectangle([7, 1, 8, 6], fill=(120, 120, 140, 255))
+    d.rectangle([3, 6, 12, 6], fill=(120, 120, 140, 255))
+    d.rectangle([7, 3, 8, 5], fill=(255, 60, 90, 255))
+    d.point((4, 10), fill=(255, 60, 90, 255))
+    d.point((11, 10), fill=(60, 220, 255, 255))
+
+
 def i_vida(d):
     d.polygon([(8, 14), (1, 6), (3, 2), (6, 2), (8, 4), (10, 2), (13, 2), (15, 6)], fill=(230, 50, 70, 255))
 
@@ -526,7 +535,7 @@ ICONES = {
     "wifi": i_wifi, "roteador_5g": i_roteador,
     "energetico": i_energetico, "overclock": i_overclock, "monitor": i_monitor, "ctrl_c_v": i_ctrlc,
     "tenis": i_tenis, "marmita": i_marmita, "antena": i_antena, "fitinha": i_fitinha,
-    "agua_coco": i_coco, "apostila": i_apostila, "vida": i_vida, "moeda": i_moeda,
+    "agua_coco": i_coco, "mouse": i_mouse, "apostila": i_apostila, "vida": i_vida, "moeda": i_moeda,
 }
 for nome, fn in ICONES.items():
     salvar(icone(fn), "icone_" + nome)

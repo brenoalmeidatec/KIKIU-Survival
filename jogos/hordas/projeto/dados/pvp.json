@@ -1,0 +1,46 @@
+{
+ "_ajuda": "DUELO FINAL (depois da Tela Azul). vida do duelo = hp_base + vida_max x hp_por_vida_max. Dano: cada lutador bate com dps_ref x (força relativa)^expoente_forca, onde força = dano de catálogo de cada arma x eficiencia[tipo] (fração que realmente acerta um alvo em movimento). Expoente menor que 1 aproxima builds fortes e fracas; maior = quem tem build melhor ganha mais fácil. arena: o anel começa em 'raio', começa a fechar em 'inicio_encolher' s, chega em 'raio_final' depois de 'duracao_encolher' s; fora dele perde dano_anel_pct da vida por segundo (cresce até (1+dano_anel_cresce)x). rivais_solo = quantos rivais de mentirinha no modo solo (no online são as pessoas). habilidade_rival 0 a 1.",
+ "ativo": true,
+ "rivais_solo": 3,
+ "elenco": [
+  "lucas",
+  "nicao",
+  "breno",
+  "joao",
+  "matheus",
+  "beto",
+  "lukako",
+  "fabio"
+ ],
+ "rival_nivel_fator": [
+  0.85,
+  1.1
+ ],
+ "habilidade_rival": 0.85,
+ "hp_base": 500,
+ "hp_por_vida_max": 0.6,
+ "regen_mult": 0.25,
+ "empurrao_mult": 0.5,
+ "iframes": 0.12,
+ "contagem": 4.0,
+ "espera_apos_cair": 2.5,
+ "tempo_max": 150,
+ "musica": "minijogo_retro",
+ "arena": {
+  "raio": 340,
+  "raio_final": 70,
+  "inicio_encolher": 10,
+  "duracao_encolher": 55,
+  "dano_anel_pct": 0.04,
+  "dano_anel_cresce": 1.0
+ },
+ "dps_ref": 42,
+ "expoente_forca": 0.7,
+ "eficiencia": {
+  "projetil": 0.55,
+  "chicote": 0.35,
+  "orbita": 0.15,
+  "poca": 1.0,
+  "aura": 1.0
+ }
+}
