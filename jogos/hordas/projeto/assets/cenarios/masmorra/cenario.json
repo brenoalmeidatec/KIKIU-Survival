@@ -1,0 +1,116 @@
+{
+ "_gerado_por": "fonte_arte/modelos3d/cenarios.py (não edite à mão)",
+ "piso": "piso.png",
+ "enfeites": "enfeites.png",
+ "ambiente": [
+  0.62,
+  0.58,
+  0.7
+ ],
+ "itens": [
+  {
+   "nome": "tocha",
+   "peso": 2,
+   "pe": [
+    8,
+    45
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -39
+    ],
+    "pisca": 0.18,
+    "raio": 64,
+    "poca": [
+     17,
+     0,
+     129,
+     129
+    ],
+    "halo": [
+     147,
+     0,
+     33,
+     33
+    ]
+   },
+   "regiao": [
+    0,
+    0,
+    16,
+    49
+   ]
+  },
+  {
+   "nome": "barril",
+   "peso": 2,
+   "pe": [
+    10,
+    22
+   ],
+   "regiao": [
+    181,
+    0,
+    20,
+    28
+   ]
+  },
+  {
+   "nome": "ossos",
+   "peso": 3,
+   "pe": [
+    9,
+    11
+   ],
+   "regiao": [
+    202,
+    0,
+    21,
+    15
+   ]
+  },
+  {
+   "nome": "caixote",
+   "peso": 2,
+   "pe": [
+    10,
+    18
+   ],
+   "regiao": [
+    224,
+    0,
+    20,
+    24
+   ]
+  },
+  {
+   "nome": "coluna",
+   "peso": 1,
+   "pe": [
+    11,
+    35
+   ],
+   "regiao": [
+    245,
+    0,
+    25,
+    42
+   ]
+  },
+  {
+   "nome": "grilhao",
+   "peso": 1,
+   "pe": [
+    4,
+    31
+   ],
+   "regiao": [
+    271,
+    0,
+    12,
+    34
+   ]
+  }
+ ]
+}

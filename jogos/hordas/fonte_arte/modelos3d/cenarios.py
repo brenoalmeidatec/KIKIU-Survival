@@ -1,0 +1,439 @@
+"""Os 3 cenários do K.I.K.I.U (dark fantasy, pixel art com luz do Blender):
+laboratório de alquimia, masmorra e cidade à noite (ruas de pedra).
+
+Roda (Blender 4.5 LTS):
+    blender -b -P cenarios.py
+Saída por cenário em ../../projeto/assets/cenarios/<nome>/:
+    piso.png      azulejo 256x256 que repete sem emenda (visto de cima, 1 px de jogo = 1 px de tela)
+    enfeites.png  atlas com os enfeites (vistos de 3/4, como os personagens) e os halos de luz
+    cenario.json  onde está cada enfeite no atlas, o ponto do pé, a luz de cada um e o tom do ambiente
+
+A luz é "assada" pelo Blender (mesma direção das sombras do jogo). No jogo só entram truques baratos:
+tom de ambiente (CanvasModulate) e halos somados (blend ADD). Roda em qualquer PC.
+"""
+import json
+import math
+import os
+import random
+import sys
+
+import bpy
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import pixel3d as px3  # noqa: E402
+from pixel3d import caixa, cilindro, cone, esfera  # noqa: E402
+
+AQUI = os.path.dirname(os.path.abspath(__file__))
+SAIDA = os.path.normpath(os.path.join(AQUI, "..", "..", "projeto", "assets", "cenarios"))
+PX = 60.0 / 2.55            # pixels por unidade do Blender (a mesma densidade do cavaleiro: tudo em 1x)
+PISO = 256                  # lado do azulejo do chão, em pixels
+L = PISO / PX               # lado do azulejo no mundo do Blender
+ENFEITE = 128               # tela onde cada enfeite é renderizado antes do recorte
+FATOR = 4                   # piso renderizado 4x maior e reduzido pela média (pré-renderizado)
+RUA = 7.0                   # cidade: largura da rua e da calçada (unidades do Blender; 1 = ~23,5 px)
+CALCADA = 2.0
+
+
+SUAVE = [False]   # True enquanto monta o piso (render suave no Cycles, onde o toon não funciona)
+
+
+def toon(hexa, nome=None, **kw):
+    if SUAVE[0]:
+        return px3.material_suave("s_" + hexa, px3.cor(hexa))
+    return px3.material_toon(nome or ("m_" + hexa), px3.cor(hexa), **kw)
+
+
+def chao(hexa, ruido=0.18):
+    """Material de piso (render suave: a luz real e a oclusão nas frestas fazem o volume)."""
+    return px3.material_suave("p_" + hexa, px3.cor(hexa), rugosidade=0.9, relevo=0.9, variacao=0.32, escala=3.0)
+
+
+def brilha(hexa, forca=1.0):
+    return px3.material_emissao("e_" + hexa, px3.cor(hexa), forca)
+
+
+# ================================================================ pisos (vistos de cima, repetem sem emenda)
+
+def piso_masmorra(r):
+    caixa("rejunte", (L, L, 0.1), (L / 2, L / 2, -0.05), toon("2c2724"))
+    pedras = [chao(h) for h in ("5e544a", "544b42", "675c50", "4a423a")]
+    musgo = toon("35473a")
+    trinca = toon("1a1716")
+    n = 4
+    c = L / n
+    for i in range(n):
+        for j in range(n):
+            partes = [(i * c, j * c, c, c)]
+            if r.random() < 0.45:   # algumas lajes partidas em duas
+                if r.random() < 0.5:
+                    partes = [(i * c, j * c, c / 2, c), (i * c + c / 2, j * c, c / 2, c)]
+                else:
+                    partes = [(i * c, j * c, c, c / 2), (i * c, j * c + c / 2, c, c / 2)]
+            for (x, y, w, h) in partes:
+                alt = 0.25 + r.random() * 0.08
+                caixa("laje", (w - 0.16, h - 0.16, alt), (x + w / 2, y + h / 2, alt / 2), r.choice(pedras),
+                      rot=(r.uniform(-0.02, 0.02), r.uniform(-0.02, 0.02), r.uniform(-0.015, 0.015)), chanfro=0.1)
+                if r.random() < 0.3:
+                    caixa("trinca", (w * 0.5, 0.04, 0.02), (x + w / 2, y + h * r.uniform(0.3, 0.7), alt + 0.01), trinca,
+                          rot=(0, 0, r.uniform(-0.6, 0.6)))
+                if r.random() < 0.25:   # tufo de musgo: bolinhas achatadas espalhadas no canto da laje
+                    mx, my = x + 0.2, y + r.uniform(0.3, h - 0.3)
+                    for _ in range(6):
+                        esfera("musgo", r.uniform(0.05, 0.11), (mx + r.uniform(-0.15, 0.15), my + r.uniform(-0.2, 0.2), alt),
+                               musgo, escala=(1, 1, 0.35))
+
+
+def piso_laboratorio(r):
+    caixa("rejunte", (L, L, 0.1), (L / 2, L / 2, -0.05), toon("1d1a2b"))
+    escuro, claro = chao("2e2a40", 0.1), chao("45405c", 0.1)
+    mancha = brilha("1d4a2a", 0.6)
+    n = 8
+    c = L / n
+    for i in range(n):
+        for j in range(n):
+            alt = 0.12 + r.random() * 0.03
+            caixa("ladrilho", (c - 0.08, c - 0.08, alt), (i * c + c / 2, j * c + c / 2, alt / 2),
+                  claro if (i + j) % 2 == 0 else escuro, chanfro=0.05)
+    for _ in range(3):   # respingos de poção (fracos, só um brilho no chão)
+        x, y = r.uniform(1, L - 1), r.uniform(1, L - 1)
+        for k in range(4):
+            cilindro("respingo", r.uniform(0.08, 0.25), 0.02, (x + r.uniform(-0.4, 0.4), y + r.uniform(-0.4, 0.4), 0.16),
+                     mancha, vertices=8)
+
+
+def piso_cidade(r):
+    """Um cruzamento de ruas (referência: cidade vista de cima, em loop). O azulejo repete: o mapa vira uma grade
+    de ruas. Asfalto com relevo e rachaduras, faixa tracejada, faixa de pedestre, calçada elevada com meio-fio,
+    bueiro e, nos cantos, calçamento de praça. Os postes ficam fixos nas 4 esquinas (veja FIXOS_CIDADE)."""
+    c = L / 2
+    rw, sw = RUA, CALCADA
+    asfalto = px3.material_suave("asfalto", px3.cor("2e2b33"), rugosidade=0.7, relevo=0.6, variacao=0.22, escala=2.0)
+    remendo = px3.material_suave("remendo", px3.cor("25232a"), rugosidade=0.7, relevo=0.4, variacao=0.1, escala=3.0)
+    tinta = px3.material_suave("tinta", px3.cor("d6ccb2"), rugosidade=0.5, relevo=0.3, variacao=0.08, escala=6.0)
+    amarelo = px3.material_suave("amarelo", px3.cor("c49a45"), rugosidade=0.5, relevo=0.3, variacao=0.08, escala=6.0)
+    calcada = [chao(h) for h in ("766a5d", "6c6155")]
+    meiofio = chao("958775", 0.1)
+    praca = [chao(h) for h in ("5e544a", "544b42", "675c50")]
+    ferro = px3.material_suave("ferro", px3.cor("1d1a2b"), rugosidade=0.4)
+    # asfalto (o chão todo) e uns remendos
+    caixa("asfalto", (L, L, 0.1), (c, c, -0.05), asfalto)
+    for _ in range(3):
+        caixa("remendo", (r.uniform(1.0, 2.2), r.uniform(0.8, 1.6), 0.02), (r.uniform(c - rw / 2 + 1, c + rw / 2 - 1),
+              r.choice((r.uniform(0.5, c - rw / 2 - 1), r.uniform(c + rw / 2 + 1, L - 0.5))), 0.005), remendo)
+    # calçadas (faixas em volta das ruas) e praça nos 4 cantos
+    for qx in (0, 1):
+        for qy in (0, 1):
+            x0 = 0.0 if qx == 0 else c + rw / 2
+            y0 = 0.0 if qy == 0 else c + rw / 2
+            x1 = c - rw / 2 if qx == 0 else L
+            y1 = c - rw / 2 if qy == 0 else L
+            # meio-fio: um degrau claro em volta do quarteirão
+            caixa("meiofio", (x1 - x0, y1 - y0, 0.18), ((x0 + x1) / 2, (y0 + y1) / 2, 0.09), meiofio, chanfro=0.05)
+            # placas de concreto da calçada (faixa de largura sw junto da rua)
+            for (ax, ay, bx, by) in ((x0, y0, x1, y1),):
+                passo = 0.9
+                xs = [ax + 0.12 + passo * k for k in range(int((bx - ax - 0.24) / passo))]
+                ys = [ay + 0.12 + passo * k for k in range(int((by - ay - 0.24) / passo))]
+                for x in xs:
+                    for y in ys:
+                        perto_rua = (min(abs(x - (c - rw / 2)), abs(x + passo - (c + rw / 2))) < sw or
+                                     min(abs(y - (c - rw / 2)), abs(y + passo - (c + rw / 2))) < sw)
+                        mat = r.choice(calcada) if perto_rua else r.choice(praca)
+                        caixa("placa", (passo - 0.06, passo - 0.06, 0.05), (x + passo / 2, y + passo / 2, 0.205), mat,
+                              chanfro=0.02)
+    # faixa tracejada no meio das duas ruas (para antes da faixa de pedestre)
+    for k in range(int(L / 1.2)):
+        p = 0.3 + k * 1.2
+        if abs(p + 0.35 - c) < rw / 2 + 1.6:
+            continue
+        caixa("tracejado", (0.7, 0.1, 0.01), (p + 0.35, c, 0.006), amarelo)
+        caixa("tracejado", (0.1, 0.7, 0.01), (c, p + 0.35, 0.006), amarelo)
+    # faixa de pedestre nos 4 lados do cruzamento
+    for lado in (-1, 1):
+        for k in range(7):
+            o = -rw / 2 + 0.55 + k * (rw - 1.1) / 6.0
+            caixa("zebra", (1.1, 0.42, 0.01), (c + lado * (rw / 2 + 0.75), c + o, 0.006), tinta)
+            caixa("zebra", (0.42, 1.1, 0.01), (c + o, c + lado * (rw / 2 + 0.75), 0.006), tinta)
+        caixa("parada", (0.12, rw * 0.46, 0.01), (c + lado * (rw / 2 + 1.55), c - lado * rw * 0.24, 0.006), tinta)
+        caixa("parada", (rw * 0.46, 0.12, 0.01), (c + lado * rw * 0.24, c + lado * (rw / 2 + 1.55), 0.006), tinta)
+    # bueiro e grade de escoamento junto do meio-fio
+    cilindro("bueiro", 0.42, 0.03, (c + rw * 0.28, c - rw * 0.3, 0.015), ferro, vertices=16, chanfro=0.02)
+    caixa("grade", (0.9, 0.35, 0.03), (c - rw / 2 + 0.25, c + rw * 0.32, 0.015), ferro)
+    # rachaduras no asfalto
+    for _ in range(4):
+        x, y = r.uniform(0.5, L - 0.5), r.choice((r.uniform(c - rw / 2 + 0.4, c + rw / 2 - 0.4),))
+        for s in range(3):
+            caixa("racha", (r.uniform(0.3, 0.6), 0.04, 0.01), (x + s * 0.3, y + r.uniform(-0.15, 0.15), 0.004),
+                  remendo, rot=(0, 0, r.uniform(-0.8, 0.8)))
+
+
+def repetir_3x3():
+    """Cerca o azulejo com 8 cópias dele: luz e sombra também se repetem, sem emenda na borda."""
+    originais = [o for o in bpy.context.scene.objects if o.type == "MESH"]
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            if dx == 0 and dy == 0:
+                continue
+            for o in originais:
+                c = o.copy()
+                c.location = (o.location.x + dx * L, o.location.y + dy * L, o.location.z)
+                bpy.context.collection.objects.link(c)
+
+
+# ================================================================ enfeites (vistos de 3/4)
+# Cada um devolve a fonte de luz (ponto 3D + rampa + raio) ou None.
+
+def tocha_em_pe():
+    ferro, chama = toon("2e2a40"), brilha("f0921e", 1.0)
+    cilindro("haste", 0.06, 1.6, (0, 0, 0.8), ferro, vertices=8)
+    cilindro("base", 0.22, 0.08, (0, 0, 0.04), ferro, vertices=8, chanfro=0.02)
+    cone("braseiro", 0.12, 0.26, 0.22, (0, 0, 1.68), ferro, vertices=10)
+    cone("chama", 0.2, 0.0, 0.45, (0, 0, 1.98), chama, vertices=8)
+    cone("miolo", 0.1, 0.0, 0.3, (0, -0.06, 1.92), brilha("ffd060", 1.0), vertices=6)
+    return {"ponto": (0, 0, 1.95), "rampa": "fogo", "raio": 64, "pisca": 0.18}
+
+
+def barril():
+    madeira, aro = toon("6e4c32"), toon("2e2a40")
+    cilindro("barril", 0.34, 0.8, (0, 0, 0.4), madeira, vertices=14, chanfro=0.03)
+    for z in (0.15, 0.65):
+        cilindro("aro", 0.355, 0.06, (0, 0, z), aro, vertices=14)
+    return None
+
+
+def pilha_ossos(r):
+    osso = toon("d6ccb2")
+    for k in range(5):
+        caixa("osso", (0.5, 0.07, 0.07), (r.uniform(-0.3, 0.3), r.uniform(-0.25, 0.25), 0.05 + 0.04 * k), osso,
+              rot=(0, 0, r.uniform(0, math.pi)))
+    esfera("cranio", 0.16, (0.05, -0.05, 0.22), osso, escala=(1, 1.1, 0.9))
+    caixa("olho", (0.05, 0.02, 0.04), (-0.01, -0.21, 0.24), toon("0d0b14"))
+    caixa("olho2", (0.05, 0.02, 0.04), (0.11, -0.21, 0.24), toon("0d0b14"))
+    return None
+
+
+def caixote():
+    madeira, escura = toon("9a6d45"), toon("4a3324")
+    caixa("caixote", (0.7, 0.7, 0.6), (0, 0, 0.3), madeira, chanfro=0.04)
+    for z in (0.12, 0.48):
+        caixa("tabua", (0.72, 0.72, 0.06), (0, 0, z), escura)
+    caixa("diagonal", (0.06, 0.72, 0.5), (0, -0.01, 0.3), escura, rot=(0.75, 0, 0))
+    return None
+
+
+def coluna_quebrada(r):
+    pedra = toon("7d7163")
+    cilindro("base", 0.4, 0.2, (0, 0, 0.1), pedra, vertices=10, chanfro=0.03)
+    cilindro("fuste", 0.3, 1.1, (0, 0, 0.75), pedra, vertices=10)
+    caixa("quebra", (0.5, 0.5, 0.3), (0.05, 0, 1.3), pedra, rot=(0.4, 0.3, 0.2), chanfro=0.05)
+    for k in range(3):
+        caixa("caco", (0.18, 0.14, 0.1), (r.uniform(-0.6, 0.6), r.uniform(-0.5, 0.3), 0.05), pedra,
+              rot=(0, 0, r.uniform(0, 3)), chanfro=0.02)
+    return None
+
+
+def grilhao():
+    madeira, ferro = toon("4a3324"), toon("45405c")
+    caixa("poste", (0.18, 0.18, 1.4), (0, 0, 0.7), madeira, chanfro=0.03)
+    for k in range(6):
+        cilindro("elo", 0.06, 0.03, (0.14, -0.05, 1.2 - k * 0.12), ferro, rot=(math.pi / 2, 0, (k % 2) * math.pi / 2), vertices=8)
+    cilindro("algema", 0.12, 0.05, (0.14, -0.05, 0.45), ferro, rot=(math.pi / 2, 0, 0), vertices=10)
+    return None
+
+
+def mesa_alquimia(r):
+    madeira, latao = toon("6e4c32"), toon("c49a45")
+    caixa("tampo", (1.3, 0.7, 0.08), (0, 0, 0.75), madeira, chanfro=0.02)
+    for x in (-0.55, 0.55):
+        for y in (-0.28, 0.28):
+            caixa("perna", (0.08, 0.08, 0.72), (x, y, 0.36), madeira)
+    cores = ["56b04a", "a6e070", "b0342f", "3a5794"]
+    for k, x in enumerate((-0.45, -0.15, 0.2, 0.45)):
+        cor = cores[k % len(cores)]
+        esfera("frasco", 0.11, (x, r.uniform(-0.1, 0.1), 0.92), brilha(cor, 0.9))
+        cilindro("gargalo", 0.035, 0.14, (x, 0, 1.06), latao, vertices=6)
+    return {"ponto": (0, 0, 1.0), "rampa": "veneno", "raio": 44, "pisca": 0.05}
+
+
+def caldeirao():
+    ferro, liquido = toon("2e2a40"), brilha("56b04a", 1.0)
+    esfera("panela", 0.45, (0, 0, 0.45), ferro, escala=(1, 1, 0.8))
+    cilindro("borda", 0.4, 0.06, (0, 0, 0.82), ferro, vertices=14)
+    cilindro("caldo", 0.36, 0.04, (0, 0, 0.85), liquido, vertices=14)
+    for x in (-0.25, 0.1, 0.3):
+        esfera("bolha", 0.06, (x, -0.05, 0.88), brilha("a6e070", 1.0))
+    for a in range(3):
+        caixa("pe", (0.08, 0.08, 0.2), (0.32 * math.cos(a * 2.1), 0.32 * math.sin(a * 2.1), 0.08), ferro)
+    cone("fogo", 0.2, 0.0, 0.25, (0, 0, 0.08), brilha("f0921e", 1.0), vertices=8)
+    return {"ponto": (0, 0, 0.8), "rampa": "veneno", "raio": 60, "pisca": 0.12}
+
+
+def estante(r):
+    madeira = toon("4a3324")
+    caixa("fundo", (1.2, 0.35, 1.9), (0, 0, 0.95), madeira, chanfro=0.03)
+    livros = [toon(h) for h in ("7e2027", "35473a", "8f6a2e", "223566", "6e4c32")]
+    for z in (0.4, 0.95, 1.5):
+        caixa("prateleira", (1.22, 0.4, 0.06), (0, -0.02, z - 0.3), madeira)
+        x = -0.5
+        while x < 0.5:
+            w = r.uniform(0.06, 0.12)
+            h = r.uniform(0.3, 0.42)
+            caixa("livro", (w, 0.28, h), (x + w / 2, -0.06, z - 0.27 + h / 2), r.choice(livros))
+            x += w + 0.01
+    return None
+
+
+def jarra_grande():
+    vidro, latao, coisa = brilha("1d4a2a", 0.8), toon("c49a45"), toon("a89e86")
+    cilindro("jarra", 0.32, 0.9, (0, 0, 0.5), vidro, vertices=14)
+    esfera("especime", 0.16, (0, -0.05, 0.55), coisa, escala=(1, 1, 1.4))
+    cilindro("tampa", 0.34, 0.1, (0, 0, 0.98), latao, vertices=14, chanfro=0.02)
+    cilindro("base", 0.34, 0.08, (0, 0, 0.04), latao, vertices=14)
+    return {"ponto": (0, 0, 0.5), "rampa": "veneno", "raio": 40, "pisca": 0.06}
+
+
+def candelabro():
+    latao, cera = toon("c49a45"), toon("d6ccb2")
+    cilindro("base", 0.2, 0.06, (0, 0, 0.03), latao, vertices=10)
+    cilindro("haste", 0.04, 1.0, (0, 0, 0.5), latao, vertices=6)
+    caixa("braco", (0.6, 0.05, 0.05), (0, 0, 1.0), latao)
+    for x in (-0.28, 0.0, 0.28):
+        cilindro("vela", 0.05, 0.2, (x, 0, 1.12), cera, vertices=6)
+        cone("chama", 0.05, 0.0, 0.12, (x, 0, 1.28), brilha("ffd060", 1.0), vertices=6)
+    return {"ponto": (0, 0, 1.25), "rampa": "fogo", "raio": 48, "pisca": 0.15}
+
+
+def poste_rua():
+    """Poste de rua moderno com lâmpada de sódio (a luz laranja de cidade à noite)."""
+    ferro, lampada = toon("2e2a40"), brilha("f0921e", 1.0)
+    cilindro("base", 0.16, 0.25, (0, 0, 0.125), ferro, vertices=8, chanfro=0.03)
+    cilindro("poste", 0.07, 3.3, (0, 0, 1.75), ferro, vertices=8)
+    caixa("braco", (1.0, 0.08, 0.08), (0.5, 0, 3.35), ferro)   # braço de lado (de frente pra câmera ele sumia)
+    caixa("cabeca", (0.5, 0.3, 0.12), (1.0, 0, 3.3), ferro, chanfro=0.03)
+    caixa("lampada", (0.4, 0.22, 0.04), (1.0, 0, 3.23), lampada)
+    return {"ponto": (1.0, 0, 3.2), "rampa": "fogo", "raio": 84, "pisca": 0.03}
+
+
+def lixeira():
+    metal, tampa = toon("35473a"), toon("1f2a24")
+    cilindro("lixeira", 0.26, 0.75, (0, 0, 0.375), metal, vertices=12, chanfro=0.02)
+    cilindro("tampa", 0.28, 0.08, (0, 0, 0.79), tampa, vertices=12, chanfro=0.02)
+    return None
+
+
+def hidrante():
+    vermelho, metal = toon("b0342f"), toon("7e2027")
+    cilindro("corpo", 0.15, 0.55, (0, 0, 0.3), vermelho, vertices=10)
+    esfera("topo", 0.16, (0, 0, 0.6), vermelho, escala=(1, 1, 0.7))
+    cilindro("bocal", 0.07, 0.42, (0, 0, 0.4), metal, rot=(0, math.pi / 2, 0), vertices=8)
+    cilindro("base", 0.21, 0.08, (0, 0, 0.04), metal, vertices=10)
+    return None
+
+
+def cone_transito():
+    laranja, branco = toon("d9614a"), toon("ece8f2")
+    caixa("base", (0.42, 0.42, 0.05), (0, 0, 0.025), toon("1d1a2b"))
+    px3.cone("cone", 0.17, 0.03, 0.55, (0, 0, 0.32), laranja, vertices=10)
+    cilindro("faixa", 0.105, 0.08, (0, 0, 0.34), branco, vertices=10)
+    return None
+
+
+def fixos_cidade():
+    """Postes nas 4 esquinas do cruzamento, na calçada junto do meio-fio (em pixels do azulejo, com o pé)."""
+    c = L / 2
+    d = RUA / 2 + 0.8
+    return [{"item": "poste", "pos": [round(x * PX), round((L - y) * PX)]}
+            for x in (c - d, c + d) for y in (c - d, c + d)]
+
+
+CENARIOS = {
+    "masmorra": {
+        "piso": piso_masmorra, "ambiente": [0.62, 0.58, 0.7],
+        "paleta": ("pedra", "musgo", "osso", "fogo", "couro", "aco"),
+        "enfeites": [("tocha", tocha_em_pe, 2), ("barril", barril, 2), ("ossos", pilha_ossos, 3),
+                     ("caixote", caixote, 2), ("coluna", coluna_quebrada, 1), ("grilhao", grilhao, 1)],
+    },
+    "laboratorio": {
+        "piso": piso_laboratorio, "ambiente": [0.7, 0.76, 0.82],
+        "paleta": ("aco", "veneno", "couro", "ouro", "fogo", "osso", "sangue", "noite", "musgo"),
+        "enfeites": [("mesa", mesa_alquimia, 2), ("caldeirao", caldeirao, 1), ("estante", estante, 2),
+                     ("jarra", jarra_grande, 2), ("candelabro", candelabro, 2)],
+    },
+    "cidade": {
+        "piso": piso_cidade, "piso_px": 512, "ambiente": [0.5, 0.55, 0.78], "fixos": fixos_cidade,
+        "paleta": ("pedra", "noite", "fogo", "aco", "ouro", "osso", "sangue", "musgo"),
+        "enfeites": [("poste", poste_rua, 0), ("lixeira", lixeira, 2), ("hidrante", hidrante, 1), ("cone", cone_transito, 2),
+                     ("caixote", caixote, 1), ("barril", barril, 1)],
+    },
+}
+
+
+def chamar(f, r):
+    return f(r) if f.__code__.co_argcount == 1 else f()
+
+
+def gerar(nome, cfg):
+    import numpy as np
+    pal = px3.paleta_de(*cfg["paleta"])
+    pasta = os.path.join(SAIDA, nome)
+    # ---- piso (cada cenário pode ter um azulejo maior: a cidade usa 512 px, um cruzamento inteiro)
+    global L
+    tam = cfg.get("piso_px", PISO)
+    L = tam / PX
+    px3.limpar_cena()
+    px3.preparar_suave(tam, tam, FATOR)
+    px3.camera_topo(L)
+    px3.luz(rasante=True, suave=True)
+    SUAVE[0] = True
+    cfg["piso"](random.Random(nome))
+    SUAVE[0] = False
+    repetir_3x3()
+    bruto = px3.reduzir(px3.render_rgba(), FATOR)
+    piso = px3.pixelar(bruto, contorno=False, paleta=pal, luz_borda=False, pontilhado=0.03)
+    piso[:, :, 3] = 1.0
+    px3.salvar_png(piso, os.path.join(pasta, "piso.png"))
+    # ---- enfeites
+    imagens, itens = [], []
+    for nome_e, f, peso in cfg["enfeites"]:
+        px3.limpar_cena()
+        px3.preparar_render(ENFEITE, ENFEITE)
+        cam = px3.camera(elevacao_graus=32.0, escala=ENFEITE / PX)
+        px3.luz()
+        luz = chamar(f, random.Random(nome + nome_e))
+        bpy.context.view_layer.update()
+        pe = px3.pe_na_tela(cam)
+        img, pe_rel = px3.recortar(px3.pixelar(px3.render_rgba(), paleta=pal), pe)
+        item = {"nome": nome_e, "peso": peso, "pe": [round(pe_rel[0]), round(pe_rel[1])]}
+        imagens.append(img)
+        if luz:
+            fx, fy = px3.pe_na_tela(cam, luz["ponto"])
+            item["luz"] = {"fonte": [round(fx - pe[0]), round(fy - pe[1])], "pisca": luz["pisca"], "raio": luz["raio"]}
+            imagens.append(px3.brilho(luz["raio"], luz["rampa"]))                 # poça de luz no chão
+            imagens.append(px3.brilho(max(8, luz["raio"] // 4), luz["rampa"], 3))  # halo na fonte
+        itens.append(item)
+    atlas, pos = px3.empacotar(imagens)
+    k = 0
+    for item in itens:
+        item["regiao"] = list(pos[k])
+        k += 1
+        if "luz" in item:
+            item["luz"]["poca"] = list(pos[k])
+            item["luz"]["halo"] = list(pos[k + 1])
+            k += 2
+    px3.salvar_png(atlas, os.path.join(pasta, "enfeites.png"))
+    with open(os.path.join(pasta, "cenario.json"), "w", encoding="utf-8") as fp:
+        json.dump({"_gerado_por": "fonte_arte/modelos3d/cenarios.py (não edite à mão)", "piso": "piso.png",
+                   "enfeites": "enfeites.png", "ambiente": cfg["ambiente"], "itens": itens,
+                   "fixos": cfg["fixos"]() if "fixos" in cfg else []}, fp, ensure_ascii=False, indent=1)
+    _ = np
+    print("CENARIO OK", nome, "itens", len(itens), "atlas", atlas.shape[1], "x", atlas.shape[0])
+
+
+def main():
+    so = [a for a in sys.argv[sys.argv.index("--") + 1:]] if "--" in sys.argv else []
+    for nome, cfg in CENARIOS.items():
+        if not so or nome in so:
+            gerar(nome, cfg)
+
+
+main()

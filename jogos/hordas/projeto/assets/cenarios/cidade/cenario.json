@@ -1,0 +1,146 @@
+{
+ "_gerado_por": "fonte_arte/modelos3d/cenarios.py (não edite à mão)",
+ "piso": "piso.png",
+ "enfeites": "enfeites.png",
+ "ambiente": [
+  0.5,
+  0.55,
+  0.78
+ ],
+ "itens": [
+  {
+   "nome": "poste",
+   "peso": 0,
+   "pe": [
+    5,
+    64
+   ],
+   "luz": {
+    "fonte": [
+     24,
+     -64
+    ],
+    "pisca": 0.03,
+    "raio": 84,
+    "poca": [
+     37,
+     0,
+     169,
+     169
+    ],
+    "halo": [
+     207,
+     0,
+     43,
+     43
+    ]
+   },
+   "regiao": [
+    0,
+    0,
+    36,
+    67
+   ]
+  },
+  {
+   "nome": "lixeira",
+   "peso": 2,
+   "pe": [
+    9,
+    22
+   ],
+   "regiao": [
+    251,
+    0,
+    18,
+    27
+   ]
+  },
+  {
+   "nome": "hidrante",
+   "peso": 1,
+   "pe": [
+    7,
+    17
+   ],
+   "regiao": [
+    270,
+    0,
+    14,
+    22
+   ]
+  },
+  {
+   "nome": "cone",
+   "peso": 2,
+   "pe": [
+    7,
+    14
+   ],
+   "regiao": [
+    285,
+    0,
+    14,
+    19
+   ]
+  },
+  {
+   "nome": "caixote",
+   "peso": 1,
+   "pe": [
+    10,
+    18
+   ],
+   "regiao": [
+    300,
+    0,
+    20,
+    24
+   ]
+  },
+  {
+   "nome": "barril",
+   "peso": 1,
+   "pe": [
+    10,
+    22
+   ],
+   "regiao": [
+    321,
+    0,
+    20,
+    28
+   ]
+  }
+ ],
+ "fixos": [
+  {
+   "item": "poste",
+   "pos": [
+    155,
+    357
+   ]
+  },
+  {
+   "item": "poste",
+   "pos": [
+    155,
+    155
+   ]
+  },
+  {
+   "item": "poste",
+   "pos": [
+    357,
+    357
+   ]
+  },
+  {
+   "item": "poste",
+   "pos": [
+    357,
+    155
+   ]
+  }
+ ]
+}
