@@ -161,7 +161,7 @@ Executáveis e zips **não** ficam no Git (são grandes). Pra gerar:
 | `jogos/cairu/LEIA-ME.txt` | Manual completo do jogo: controles, como escrever histórias, validador, modo de teste (F5/F6), online. |
 | `jogos/cairu/fonte_mapas`, `fonte_audio`, `fonte_poses`, `modelos_mapa` | Fontes dos mapas, áudios e poses (scripts e arquivos que geram os assets). |
 | `jogos/cairu/ferramentas/` | Atalhos `.bat` do Windows (validar história, testar cena, túnel online). |
-| `jogos/cairu/grafo/` | Grafo de conhecimento do código e dos capítulos (Graphify). Os scripts usam caminhos antigos `/mnt/project-files/jogo/...`; ajuste ao rodar. |
+| `jogos/cairu/grafo/` | Grafo de conhecimento do código e dos capítulos (Graphify). Rode a partir da raiz do repo (caminhos relativos). |
 | `jogos/cairu/referencias/` | Imagens de referência e de antes e depois. |
 | `arte/personagens/` | Arte dos personagens (Breno, Nicão, Lucas, João, Matheus, Beto, Lukako, Fábio, Seu Mauro e alunos) e os scripts que a geram. |
 | `arte/prompts_gemini/` | Prompts e rostos usados pra gerar os retratos. |

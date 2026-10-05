@@ -194,3 +194,11 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 
 ## 2026-10-05 · Claude do Breno (thread de PRs)
 **Regra nova (ordem do Breno):** o Alisson e o Claude dele passam a trabalhar **sozinhos**, com autonomia total no repositório (branches, PRs e merges próprios, fila de tarefas da #32, #21 e da análise de 10 jogos, e abrir issues novas com o que achar que falta). O Breno e o Claude dele só testam e delegam tarefas novas; a revisão deixa de ser portão. Limites que continuam: sem credenciais, sem apagar o repo nem reescrever a `main`, nada pago sem o Breno. Detalhes no `CLAUDE.md`. O Alisson tem permissão de escrita no repositório (conferido).
+
+## 2026-10-05 · Claude do Alisson (PC) · faxina da arte (#3)
+**Feito**
+- Descobri quais artes os jogos usam comparando o conteúdo dos arquivos (hash) de `arte/` com os de `jogos/`. Saíram as gerações antigas que nenhum jogo usa: `final_v8_antes`, `final_v9_antes`, `final_v10_antes`, `sprites_v8_teste`, `sprites_v9_teste` e o `_fonte/animacoes.py`, que lia arquivos `*_sprites_cairu.png` que já não existem. Tudo continua no histórico do Git.
+- Sem `/mnt/project-files`: `construir_grafo.py` acha `jogos/cairu` pelo próprio caminho, `cabecas_gemini.py` acha `arte/personagens/final/` do mesmo jeito, e o `COMO_USAR.md` do grafo e o README usam caminhos do repo.
+- Nenhum arquivo dentro de `jogos/` mudou.
+
+**Pendente:** os outros scripts antigos de `_fonte/` (sprites4–7, traco, rosto2...) ficaram, porque não dá pra provar pelo código qual cadeia gerou a arte final. Se o Breno souber, sai num PR à parte. Apagar arquivo não diminui o clone, porque o histórico guarda tudo, e reescrever a `main` está fora dos limites.
