@@ -60,11 +60,14 @@ func icone(nome: String) -> Texture2D:
 	return tex("icone_" + nome)
 
 
-## Uma arma ou passivo pelo id (procura nos dois arquivos).
+## Uma arma, passivo ou equipamento pelo id (procura nos três arquivos).
 func item(id: String) -> Dictionary:
 	var a := json("armas")
 	if a.has(id):
 		return a[id]
+	var e := json("equipamentos")
+	if e.has(id) and e[id] is Dictionary:
+		return e[id]
 	return json("passivos").get(id, {})
 
 

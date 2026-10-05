@@ -15,6 +15,7 @@ const Hud := preload("res://scripts/hordas/hud.gd")
 const Cartas := preload("res://scripts/hordas/cartas.gd")
 const Duelo := preload("res://scripts/hordas/duelo.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
+const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Online := preload("res://scripts/hordas/online.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
@@ -43,6 +44,7 @@ var online: Node             # online.gd, só no online
 var caido := false           # online: caiu na horda e espera alguém levantar
 
 var passivos := {}          # id -> nível
+var equipamentos := {}      # slot -> id do equipamento vestido (aparece no personagem; veja equipamento.gd)
 var _stats := {}
 var xp := 0.0
 var nivel := 1
@@ -97,6 +99,7 @@ func _ready() -> void:
 	diretor.iniciar(self)
 	_recalcular()
 	jogador.configurar(str(heroi.get("sprite", heroi_id)))
+	atualizar_visual.call_deferred()   # personagem em camadas: cabelo e arma inicial
 	jogador.hp = stat("vida_max")
 	armas.adicionar(str(heroi.get("arma", "pendrive")))
 	chao.criar_santuarios()
@@ -131,7 +134,7 @@ func stat(k: String) -> float:
 
 func _recalcular() -> void:
 	var antes := stat("vida_max")
-	_stats = Construcao.stats(heroi, passivos)
+	_stats = Construcao.stats(heroi, passivos, equipamentos)
 	if jogador and stat("vida_max") > antes:
 		jogador.curar(stat("vida_max") - antes)
 
@@ -399,6 +402,7 @@ func aplicar(c: Dictionary) -> void:
 				armas.subir(c.id)
 			else:
 				armas.adicionar(c.id)
+			atualizar_visual()
 		"passivo":
 			passivos[c.id] = int(passivos.get(c.id, 0)) + 1
 			_recalcular()
@@ -407,6 +411,17 @@ func aplicar(c: Dictionary) -> void:
 			jogador.curar(40)
 		"evolucao":
 			armas.trocar(c.de, c.id)
+			atualizar_visual()
+		"equipamento":
+			equipamentos[str(Dados.item(c.id).get("slot", c.id))] = c.id
+			_recalcular()
+			atualizar_visual()
+
+
+## Personagem em camadas (herois.json "camadas": true): o que ele veste e segura aparece nele.
+func atualizar_visual() -> void:
+	if heroi.get("camadas", false) and jogador:
+		jogador.definir_camadas(Equipamento.camadas(armas.lista.map(func(a): return a.id), equipamentos))
 
 
 func pode_resortear() -> bool:
@@ -441,6 +456,12 @@ func sortear_cartas() -> Array:
 			if id.begins_with("_") or passivos.has(id):
 				continue
 			cand.append([5.0, _carta("passivo", id, 1)])
+	# equipamentos visuais: só slot livre e do próprio personagem (por enquanto só quem tem modelo em camadas)
+	if heroi.get("camadas", false):
+		var eq_d: Dictionary = Dados.json("equipamentos")
+		for id in eq_d:
+			if Equipamento.permitido(id, heroi_id, equipamentos):
+				cand.append([float(eq_d.get("_config", {}).get("peso_carta", 5.0)), _carta("equipamento", id, 1)])
 	var n := 3
 	if randf() < 0.1 + stat("sorte") * 0.35:
 		n = 4
@@ -608,6 +629,7 @@ func dar_build_teste(nv: int) -> void:
 	nivel = nv
 	_recalcular()
 	jogador.hp = stat("vida_max")
+	atualizar_visual()
 
 
 ## Teste: build de nível N e vai direto pro duelo (--duelo=N).

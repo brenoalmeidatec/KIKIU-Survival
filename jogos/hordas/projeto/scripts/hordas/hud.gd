@@ -152,6 +152,11 @@ func _icones_build() -> void:
 	for id in arena.passivos:
 		_icone(Vector2(x, 33), str(Dados.item(id).get("icone", id)), arena.passivos[id], false)
 		x += 20
+	x = 6.0
+	for slot in arena.equipamentos:   # equipamentos vestidos (sem número de nível)
+		var eid: String = arena.equipamentos[slot]
+		_icone(Vector2(x, 53), str(Dados.item(eid).get("icone", eid)), 0, false)
+		x += 20
 
 
 func _duelo_hud() -> void:
@@ -207,4 +212,4 @@ func _icone(p: Vector2, icone: String, nv: int, evo: bool) -> void:
 	var t := Dados.icone(icone)
 	if t:
 		_tela.draw_texture(t, p)
-	_txt(p + Vector2(10, 19), str(nv) if not evo else "", 8, Color(1, 1, 0.6))
+	_txt(p + Vector2(10, 19), str(nv) if not evo and nv > 0 else "", 8, Color(1, 1, 0.6))

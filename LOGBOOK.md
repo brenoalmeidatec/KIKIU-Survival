@@ -126,3 +126,13 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Testado: cada arma com fotos disparadas no quadro do efeito; regras (falhas=0), solo, duelo, online (acertos 51 = 51); 500 vírus com 4 armas novas no nível 7: 271–388 fps (antigas: 258–345).
 
 **Para o Claude do Breno:** arma com comportamento novo = um arquivo em `scripts/hordas/armas/` com `atualizar/passo/pintar/fundo` (copie o `katana.gd`) + uma linha em `MODULOS` + a arma no `armas.json` com `tipo` e `familia`.
+
+## 2026-10-05 · Claude do Alisson (#19, PR 3: equipamentos visuais modulares)
+**Feito**
+- Hazaki no Blender em camadas (`fonte_arte/modelos3d/hazaki.py`): corpo + cabelo, Cabeça do Guerreiro, máscara, Armadura Samurai, braçadeiras, botas, katana na mão, katana na bainha e pistolas. Cada camada é renderizada com o corpo como máscara invisível (holdout), então encaixa.
+- `dados/equipamentos.json` + `scripts/hordas/equipamento.gd` (regras, bônus, montador de camadas); cartas de equipamento; HUD com os vestidos; jogador empilha camadas (`definir_camadas`); aura desenhada atrás do corpo.
+- `andando_8.png` do Hazaki tem o cabelo junto (pra rival e online); `corpo.png` é o corpo sem cabelo, pro jogador em camadas.
+- Respostas da seção 15 em `docs/HAZAKI_ARMAS_EQUIPAMENTOS.md`.
+- Testes: `testes/equipamentos.tscn` (falhas=0), `testes/regras_armas.tscn` (falhas=0), solo, duelo, online (46 = 46), 500 vírus 171–180 fps.
+
+**Pendente:** equipamentos não vão pela rede (outros jogadores veem só o corpo com cabelo). Próximo: #20 (dragão).

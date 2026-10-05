@@ -1,0 +1,53 @@
+{
+ "_ajuda": "Equipamentos visuais (seção 6 do design). Cada um ocupa um slot (cabeca, cabelo, rosto, pescoco, peitoral, bracos, maos, pernas, pes, acessorios) e aparece no personagem: camada = arquivo em assets/personagens/<sprite>/camadas/<camada>.png (gerado em fonte_arte/modelos3d/<personagem>.py). esconde = camadas que somem com este (ex.: o elmo esconde o cabelo). bonus = atributos somados (como os passivos). characterId = só aparece pra esse personagem (por enquanto só o Hazaki tem modelo em camadas). _config.ordem = ordem de desenho das camadas (a primeira fica embaixo); peso_carta = chance da carta.",
+ "_config": {
+  "ordem": ["botas", "armadura_samurai", "bracadeiras", "cabelo", "mascara", "cabeca_guerreiro", "katana_bainha", "katana_mao", "pistolas"],
+  "peso_carta": 5
+ },
+ "cabeca_guerreiro": {
+  "nome": "Cabeça do Guerreiro",
+  "slot": "cabeca",
+  "camada": "cabeca_guerreiro",
+  "esconde": ["cabelo"],
+  "icone": "cabeca_guerreiro",
+  "characterId": "hazaki",
+  "descricao": "Elmo de aço com chifres dourados. +25 de vida.",
+  "bonus": {"vida_max": 25}
+ },
+ "armadura_samurai": {
+  "nome": "Armadura Samurai",
+  "slot": "peitoral",
+  "camada": "armadura_samurai",
+  "icone": "armadura_samurai",
+  "characterId": "hazaki",
+  "descricao": "Placas laqueadas e ombreiras. +40 de vida, regenera, um pouco mais lento.",
+  "bonus": {"vida_max": 40, "regen": 0.3, "velocidade": -0.04}
+ },
+ "mascara_menpo": {
+  "nome": "Máscara Menpo",
+  "slot": "rosto",
+  "camada": "mascara",
+  "icone": "mascara_menpo",
+  "characterId": "hazaki",
+  "descricao": "Máscara de guerra. +6% de chance de crítico.",
+  "bonus": {"critico": 0.06}
+ },
+ "bracadeiras_ferro": {
+  "nome": "Braçadeiras de Ferro",
+  "slot": "bracos",
+  "camada": "bracadeiras",
+  "icone": "bracadeiras_ferro",
+  "characterId": "hazaki",
+  "descricao": "Protegem o antebraço e pesam no golpe. +8% de dano.",
+  "bonus": {"dano": 0.08}
+ },
+ "botas_guerra": {
+  "nome": "Botas de Guerra",
+  "slot": "pes",
+  "camada": "botas",
+  "icone": "botas_guerra",
+  "characterId": "hazaki",
+  "descricao": "Caneleiras de ferro. +8% de velocidade.",
+  "bonus": {"velocidade": 0.08}
+ }
+}
