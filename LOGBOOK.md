@@ -147,3 +147,9 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 ## 2026-10-05 · Claude do Alisson (menu: multiplayer em BETA)
 **Feito:** "Criar sala" e "Entrar em sala" ganharam um selo roxo **BETA** no título. Com uma delas selecionada, aparece o aviso "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho." Pra testar: `--print_tela=titulo_beta --fotos=pasta`.
 **Próximo:** Créditos, depois Opções.
+
+## 2026-10-05 · Claude do Alisson (tela de Créditos)
+**Feito:** opção "Créditos" no título (antes de "Sair"), com uma tela curta: Breno (criador: ideia, história, personagens, mecânicas, motor), Alisson (arte Blender→pixel art, cenários, visual, online), feito com Godot, Blender e Claude Code, a fonte Press Start 2P (CodeMan38, OFL) e o áudio gerado por código. Enter/Esc voltam.
+- O menu do título agora escolhe pelo NOME da opção (`match OPCOES[_sel]`), não pelo índice, então dá pra pôr opção nova sem renumerar nada. O espaçamento foi pra 18px pra caber mais uma (Opções).
+- Print: `--print_tela=creditos --fotos=pasta`.
+**Próximo:** tela de Opções.

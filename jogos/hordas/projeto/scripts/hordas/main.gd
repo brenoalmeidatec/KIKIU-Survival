@@ -11,7 +11,7 @@ const W := 640.0
 const H := 360.0
 const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
-const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Sair"]
+const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Créditos", "Sair"]
 const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
 
 const TECLAS := {
@@ -130,16 +130,23 @@ func _process(dt: float) -> void:
 			elif Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("dash"):
 				Som.tocar("confirmar")
 				_msg = ""
-				match _sel:
-					0:
+				match OPCOES[_sel]:
+					"Jogar sozinho":
 						_estado = "herois"
 						_sel = 0
-					1:
+					"Criar sala":
 						_criar_sala()
-					2:
+					"Entrar em sala":
 						_estado = "endereco"
-					3:
+					"Créditos":
+						_estado = "creditos"
+					"Sair":
 						get_tree().quit()
+		"creditos":
+			if Input.is_action_just_pressed("voltar") or Input.is_action_just_pressed("confirmar"):
+				Som.tocar("confirmar")
+				_estado = "titulo"
+				_sel = OPCOES.find("Créditos")
 		"endereco":
 			pass   # o teclado é lido em _input (campo de texto)
 		"conectando":
@@ -446,15 +453,29 @@ func _desenhar() -> void:
 			for i in OPCOES.size():
 				var sel := i == _sel
 				var rotulo: String = ("> " + OPCOES[i] + " <") if sel else OPCOES[i]
-				_txt(Vector2(0, 205 + i * 20), rotulo, 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+				_txt(Vector2(0, 190 + i * 18), rotulo, 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
 				if i in BETA:
 					var meia := Dados.fonte.get_string_size(rotulo, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x / 2
-					_selo_beta(Vector2(W / 2 + meia + 6, 205 + i * 20))
+					_selo_beta(Vector2(W / 2 + meia + 6, 190 + i * 18))
 			if _sel in BETA and _msg == "":
-				_txt(Vector2(0, 295), "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho.", 8, Color(0.85, 0.6, 1.0))
+				_txt(Vector2(0, 302), "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho.", 8, Color(0.85, 0.6, 1.0))
 			if _msg != "":
-				_txt(Vector2(0, 295), _msg, 8, Color(1, 0.6, 0.5))
+				_txt(Vector2(0, 302), _msg, 8, Color(1, 0.6, 0.5))
 			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
+		"creditos":
+			_fundo()
+			_txt(Vector2(0, 50), "Créditos", 16, Color.WHITE)
+			_txt(Vector2(0, 76), "K.I.K.I.U nasceu de uma ideia e virou jogo a quatro mãos.", 8, Color(0.75, 0.75, 0.85))
+			_txt(Vector2(0, 110), "BRENO", 10, Color(0.4, 0.65, 1))
+			_txt(Vector2(0, 125), "criador: ideia, história, personagens, mecânicas e o motor", 8, Color.WHITE)
+			_txt(Vector2(0, 152), "ALISSON", 10, Color(0.5, 1, 0.5))
+			_txt(Vector2(0, 167), "arte do Blender virando pixel art, cenários, visual e online", 8, Color.WHITE)
+			_txt(Vector2(0, 198), "FEITO COM", 8, Color(1, 0.85, 0.3))
+			_txt(Vector2(0, 213), "Godot 4  ·  Blender  ·  Claude Code (um Claude de cada lado)", 8, Color.WHITE)
+			_txt(Vector2(0, 240), "Fonte Press Start 2P, de CodeMan38 (licença OFL)", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 254), "Músicas e efeitos gerados por código, no próprio projeto", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 290), "E valeu a você, que está jogando!", 10, Color(1, 0.6, 0.75))
+			_txt(Vector2(0, 335), "Enter/Esc: voltar", 8, Color(0.5, 0.5, 0.6))
 		"endereco", "conectando":
 			_fundo()
 			_txt(Vector2(0, 70), "Entrar em sala", 16, Color.WHITE)
@@ -571,6 +592,8 @@ func _print_tela(qual: String) -> void:
 			_estado = "herois"
 		"titulo_beta":
 			_sel = BETA[0]
+		"creditos":
+			_estado = "creditos"
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout
