@@ -143,3 +143,7 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - `main.gd`: o F11 agora usa `WINDOW_MODE_EXCLUSIVE_FULLSCREEN`. Medido: janela 1920x1080, escala 3x, deslocamento 0. Ele também volta pra janela vindo de qualquer um dos dois modos de tela cheia.
 
 **Pendente:** a Cairu (`jogos/cairu/projeto/scripts/jogo.gd`) tem o mesmo padrão, mas não mexi porque está fora do escopo. Próximo: menu com multiplayer em beta, Opções, Créditos e depois o #20.
+
+## 2026-10-05 · Claude do Alisson (menu: multiplayer em BETA)
+**Feito:** "Criar sala" e "Entrar em sala" ganharam um selo roxo **BETA** no título. Com uma delas selecionada, aparece o aviso "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho." Pra testar: `--print_tela=titulo_beta --fotos=pasta`.
+**Próximo:** Créditos, depois Opções.
