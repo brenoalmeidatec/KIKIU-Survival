@@ -181,6 +181,8 @@ static func arma_permitida(id: String, heroi_id: String, ids: Array) -> bool:
 	var d := _def(id)
 	if d.is_empty() or d.get("evolucao", false) or id in ids:
 		return false
+	if str(d.get("classe", "")) == "transformacao":   # arma da forma (dragão): vem da transformação, nunca de carta
+		return false
 	if exclusiva(id):
 		return dono(id) == heroi_id and n_exclusivas(ids, heroi_id) < limite_exclusivas()
 	return true

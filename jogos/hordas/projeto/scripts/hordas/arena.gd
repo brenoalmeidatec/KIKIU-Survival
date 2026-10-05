@@ -17,6 +17,7 @@ const Duelo := preload("res://scripts/hordas/duelo.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Online := preload("res://scripts/hordas/online.gd")
+const Habilidades := preload("res://scripts/hordas/habilidades.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
@@ -28,6 +29,7 @@ var bot := false
 var jogador: Node2D
 var inimigos: Node2D
 var armas: Node2D
+var habilidades: Node2D        # transformação (dragão do Hazaki), habilidades.gd
 var coleta: Node2D
 var efeitos: Node2D
 var chao: Node2D
@@ -82,6 +84,9 @@ func _ready() -> void:
 	armas.dono = jogador
 	armas.campo = inimigos
 	armas.statf = stat
+	habilidades = Habilidades.new()
+	add_child(habilidades)
+	habilidades.configurar(self)
 	efeitos = Efeitos.new()
 	add_child(efeitos)
 	duelo = Duelo.new()
@@ -121,6 +126,8 @@ func jogadores() -> int:
 
 func stat(k: String) -> float:
 	var v := float(_stats.get(k, Construcao.BASE.get(k, 0.0)))
+	if habilidades:
+		v += habilidades.bonus(k)   # transformado (dragão): mais rápido e mais forte
 	if duelo_ativo:
 		# no duelo: a vida vem da regra do pvp.json, a regeneração é menor e a aura de lentidão pega
 		if k == "vida_max":
@@ -163,6 +170,7 @@ func _process(dt: float) -> void:
 		inimigos.atualizar(dt, jogador)
 	var t2 := Time.get_ticks_usec()
 	if not parado:
+		habilidades.atualizar(dt)
 		armas.atualizar(dt)
 	if online:
 		online.atualizar(dt)
@@ -203,6 +211,7 @@ func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> 
 
 func inimigo_morreu(v) -> void:
 	recompensa(v.pos, v.tipo, v.elite)
+	habilidades.abate(v)   # enche a Energia da transformação
 	if online:
 		online.morreu(v)   # anfitrião: cada um dos outros pega a própria recompensa
 	if v.d.get("final", false):
@@ -603,6 +612,7 @@ func iniciar_duelo() -> void:
 		return
 	if cartas.aberto():
 		cartas._fechar()
+	habilidades.cancelar()   # o duelo é entre humanos: volta na hora
 	duelo.iniciar(self)
 
 
@@ -644,6 +654,7 @@ func fim_duelo(res: Dictionary) -> void:
 
 func _fim(vitoria: bool, extra := {}) -> void:
 	acabou = true
+	habilidades.cancelar()
 	Som.parar_musica()
 	Som.tocar("vitoria" if vitoria else "derrota")
 	var lista_dano := []

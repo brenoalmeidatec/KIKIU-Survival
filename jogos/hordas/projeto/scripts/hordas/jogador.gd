@@ -29,6 +29,8 @@ var _ia := {}
 var _pref := 120.0
 var camadas := {}                # nome -> Sprite2D (personagem em camadas; veja definir_camadas)
 var _sprite := ""
+var forma: Node2D = null         # corpo da forma transformada (dragão, habilidades.gd); null = humano
+var humano := 1.0                # 0..1: quanto do corpo humano aparece (some na transformação, volta no fim)
 
 
 func configurar(sprite: String) -> void:
@@ -103,7 +105,7 @@ func atualizar(dt: float) -> void:
 		position += entrada * VEL_BASE * arena.stat("velocidade") * dt
 		if _quer_dash() and dash_recarga <= 0:
 			_dir_dash = entrada if entrada != Vector2.ZERO else Vector2(lado, 0)
-			dash_t = DASH_TEMPO
+			dash_t = DASH_TEMPO + (0.12 if forma else 0.0)   # transformado, o dash vira investida: vai mais longe
 			dash_recarga = DASH_RECARGA
 			invencivel = maxf(invencivel, DASH_TEMPO + 0.1)
 			Som.tocar("whoosh", 0.1, 1.2)
@@ -214,13 +216,19 @@ func _animar(entrada: Vector2) -> void:
 	# pisca quando está invencível depois de apanhar
 	var piscar := invencivel > 0 and dash_t <= 0 and int(_t * 20) % 2 == 0
 	spr.modulate = Color(1, 0.4, 0.4) if _vermelho > 0 else Color.WHITE
-	spr.visible = not piscar
+	if humano < 1.0:
+		# transformando: o corpo (e o equipamento, que é filho dele) clareia em luz cobalto e some
+		var g := 1.0 - humano
+		spr.modulate = Color(1.0 + g * 1.2, 1.0 + g * 1.6, 1.0 + g * 2.2, humano)
+	spr.visible = not piscar and humano > 0.01
 
 
 ## Dano de vírus (fonte = tipo) ou de outro lutador no duelo. Retorna true se caiu.
 func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) -> bool:
 	if invencivel > 0 or hp <= 0:
 		return false
+	if arena.habilidades:
+		dano *= arena.habilidades.mult_dano()   # transformado, aguenta mais
 	hp -= dano
 	arena.dano_recebido[fonte] = float(arena.dano_recebido.get(fonte, 0.0)) + dano
 	invencivel = iframes
@@ -258,9 +266,9 @@ func curar(valor: float) -> void:
 
 
 func _draw() -> void:
-	if not (arena.caido and arena.online):
-		Visual.sombra_boneco(self, spr)
-	for r in _rastro:
+	if not (arena.caido and arena.online) and humano > 0.5:
+		Visual.sombra_boneco(self, spr)   # o dragão desenha a própria sombra
+	for r in (_rastro if forma == null else []):
 		var tex := spr.texture
 		var w := tex.get_width() / 9.0
 		var h := tex.get_height() / 4.0

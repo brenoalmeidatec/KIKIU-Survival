@@ -19,6 +19,11 @@ const MODULOS := {
 	"marcial": preload("res://scripts/hordas/armas/marcial.gd"),
 	"aura_energia": preload("res://scripts/hordas/armas/aura_energia.gd"),
 	"elemental": preload("res://scripts/hordas/armas/elemental.gd"),
+	# forma de dragão do Hazaki (habilidades.gd): só atacam enquanto ele está transformado
+	"baforada": preload("res://scripts/hordas/armas/baforada.gd"),
+	"garras": preload("res://scripts/hordas/armas/garras.gd"),
+	"energia_draconica": preload("res://scripts/hordas/armas/energia_draconica.gd"),
+	"rugido": preload("res://scripts/hordas/armas/rugido.gd"),
 }
 
 var arena: Node
@@ -28,6 +33,9 @@ var dono: Node2D                 # precisa de centro(), lado e curar()
 var campo: Object                # precisa de no_circulo, n_mais_perto, aleatorio_na_tela, ferir
 var statf: Callable              # nome do atributo -> valor (dano, recarga, area...)
 var lista: Array = []        # {id, nivel, t, ativo, acertos{}}
+## Armas da forma transformada (ex.: dragão, habilidades.gd). Enquanto tiver alguma, SÓ elas atacam; as de `lista`
+## ficam paradas e intactas (as cartas continuam evoluindo a build humana), e voltam como estavam no fim.
+var forma_lista: Array = []
 var projeteis: Array = []    # {pos, vel, dano, perfura, vida, tex, esc, acertou[], arma}
 var pocas: Array = []        # {pos, raio, vida, dano, tique, t, segue, arma}
 var golpes: Array = []       # desenho do chicote {pos, lado, alcance, largura, t, arma}
@@ -44,9 +52,13 @@ func limpar_tiros() -> void:
 	golpes.clear()
 	_fila.clear()
 	especiais.clear()
-	for a in lista:
+	for a in lista + forma_lista:
 		a.ativo = 0.0
 		a.acertos = {}
+
+
+func ativas() -> Array:
+	return forma_lista if not forma_lista.is_empty() else lista
 
 
 func tem(id: String) -> bool:
@@ -113,7 +125,7 @@ func _s(a: Dictionary) -> Dictionary:
 func atualizar(dt: float) -> void:
 	_t += dt
 	var jog: Node2D = dono
-	for a in lista:
+	for a in ativas():
 		var d := Dados.item(a.id)
 		var s := _s(a)
 		match str(d.get("tipo", "")):
@@ -291,7 +303,7 @@ func _aura(a: Dictionary, s: Dictionary) -> void:
 
 func _draw() -> void:
 	var jog: Node2D = dono
-	for a in lista:
+	for a in ativas():
 		var d := Dados.item(a.id)
 		var tipo := str(d.get("tipo", ""))
 		if MODULOS.has(tipo):
@@ -363,7 +375,7 @@ func _ready() -> void:
 	add_child(_chao_pocas)
 	_atras.z_index = -1
 	_atras.draw.connect(func():
-		for a in lista:
+		for a in ativas():
 			var tipo := str(Dados.item(a.id).get("tipo", ""))
 			if MODULOS.has(tipo):
 				MODULOS[tipo].atras(self, _atras, a, _s(a)))
