@@ -1,64 +1,67 @@
 {
- "_ajuda": "tipo: projetil (atira no vírus mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6).",
+ "_ajuda": "tipo: projetil (atira no vírus mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio: katana, pistolas, marcial, aura_energia, elemental (scripts/hordas/armas/).",
  "_config": {
   "limite_exclusivas": 2
  },
  "katana": {
   "nome": "Katana Samurai",
   "icone": "katana",
-  "tipo": "chicote",
+  "tipo": "katana",
+  "familia": "chicote",
   "classe": "character_exclusive",
   "characterId": "hazaki",
   "peso_carta": 8,
   "descricao": "Saca a katana e corta rápido na frente. Exclusiva do Hazaki.",
-  "base": {"dano": 18, "recarga": 0.9, "quantidade": 1, "area": 1.0, "alcance": 96, "largura": 30},
-  "niveis": [{"dano": 6}, {"recarga": -0.15}, {"quantidade": 1}, {"alcance": 24, "largura": 8}, {"dano": 10}, {"recarga": -0.15}]
+  "base": {"dano": 18, "recarga": 0.85, "quantidade": 1, "area": 1.0, "alcance": 70, "arco": 110},
+  "niveis": [{"dano": 6}, {"recarga": -0.12}, {"quantidade": 1}, {"alcance": 16, "arco": 30}, {"corte_energia": 1}, {"dano": 10, "recarga": -0.1}]
  },
  "desert_eagles": {
   "nome": "Duas Desert Eagles",
   "icone": "desert_eagles",
-  "tipo": "projetil",
-  "sprite": "proj_pendrive",
+  "tipo": "pistolas",
+  "familia": "projetil",
   "classe": "character_exclusive",
   "characterId": "hazaki",
   "peso_carta": 8,
   "descricao": "Atira com as duas pistolas ao mesmo tempo. Exclusiva do Hazaki.",
-  "base": {"dano": 10, "recarga": 0.6, "quantidade": 2, "velocidade": 520, "perfura": 1, "area": 1.0, "duracao": 1.0},
-  "niveis": [{"dano": 4}, {"recarga": -0.1}, {"perfura": 1}, {"quantidade": 2}, {"dano": 8}, {"perfura": 2}]
+  "base": {"dano": 9, "recarga": 0.55, "quantidade": 2, "velocidade": 560, "perfura": 1, "area": 1.0, "duracao": 0.9},
+  "niveis": [{"dano": 4}, {"recarga": -0.1}, {"perfura": 1}, {"ricochete": 1}, {"quantidade": 2}, {"explosivo": 1, "dano": 6}]
  },
  "arte_marcial": {
   "nome": "Arte Marcial",
   "icone": "arte_marcial",
-  "tipo": "chicote",
+  "tipo": "marcial",
+  "familia": "chicote",
   "classe": "character_exclusive",
   "characterId": "hazaki",
   "peso_carta": 8,
   "descricao": "Socos e chutes rápidos, sem arma na mão. Exclusiva do Hazaki.",
-  "base": {"dano": 12, "recarga": 0.55, "quantidade": 2, "area": 1.0, "alcance": 60, "largura": 34},
-  "niveis": [{"dano": 4}, {"recarga": -0.1}, {"alcance": 16}, {"dano": 6}, {"quantidade": 1}, {"recarga": -0.1, "dano": 8}]
+  "base": {"dano": 13, "recarga": 0.42, "area": 1.0, "alcance": 46},
+  "niveis": [{"dano": 4}, {"recarga": -0.06}, {"alcance": 10}, {"giro": 1}, {"dano": 6}, {"onda": 1, "dano": 6}]
  },
  "aura_hazaki": {
   "nome": "Aura",
   "icone": "aura_hazaki",
-  "tipo": "aura",
+  "tipo": "aura_energia",
+  "familia": "aura",
   "classe": "character_exclusive",
   "characterId": "hazaki",
   "peso_carta": 8,
   "descricao": "Libera energia em volta do corpo: machuca e empurra. Exclusiva do Hazaki.",
-  "base": {"dano": 6, "recarga": 0, "area": 1.0, "raio": 58, "tique": 0.5, "empurra": 70},
-  "niveis": [{"raio": 10}, {"dano": 3}, {"empurra": 30}, {"tique": -0.1}, {"raio": 14, "dano": 4}]
+  "base": {"dano": 5, "recarga": 0, "area": 1.0, "raio": 56, "tique": 0.5, "empurra": 50, "pulso": 3.0},
+  "niveis": [{"raio": 10}, {"dano": 3}, {"pulso": -0.6}, {"empurra": 40}, {"raio": 12, "dano": 4}]
  },
  "poder_elemental": {
   "nome": "Poder Elemental do Mago",
   "icone": "poder_elemental",
-  "tipo": "projetil",
-  "sprite": "proj_ssd",
+  "tipo": "elemental",
+  "familia": "projetil",
   "classe": "character_exclusive",
   "characterId": "hazaki",
   "peso_carta": 8,
   "descricao": "Projéteis mágicos de fogo, raio e gelo. Exclusiva do Hazaki.",
-  "base": {"dano": 11, "recarga": 1.0, "quantidade": 2, "velocidade": 300, "perfura": 1, "area": 1.0, "duracao": 1.6},
-  "niveis": [{"quantidade": 1}, {"dano": 5}, {"velocidade": 80}, {"quantidade": 1}, {"dano": 8}, {"perfura": 2}]
+  "base": {"dano": 12, "recarga": 0.9, "quantidade": 1, "velocidade": 300, "perfura": 1, "area": 1.0, "duracao": 1.6},
+  "niveis": [{"quantidade": 1}, {"dano": 5}, {"cadeia": 2}, {"explosao": 1}, {"velocidade": 80, "dano": 6}, {"combina": 1}]
  },
  "pendrive": {
   "nome": "Pendrive",

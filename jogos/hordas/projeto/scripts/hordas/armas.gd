@@ -5,10 +5,21 @@ extends Node2D
 ##   orbita    coisas girando em volta por um tempo
 ##   poca      poça no chão que machuca quem pisa
 ##   aura      círculo em volta do jogador que machuca e empurra
+## e os tipos com arquivo próprio em MODULOS (katana, pistolas, marcial, aura_energia, elemental).
 ## Os atributos do jogador (dano, área, quantidade...) multiplicam os da arma na hora de atirar.
 
 const ESCALA := 2.0
 const Poca := preload("res://scripts/hordas/poca.gd")
+## Comportamentos que moram no próprio arquivo (scripts/hordas/armas/<tipo>.gd). Pra criar arma nova com
+## comportamento próprio (ex.: exclusiva de outro personagem): escreva o arquivo com atualizar/passo/pintar/fundo
+## (veja katana.gd) e registre aqui. Os tipos antigos (projetil, chicote...) continuam neste arquivo.
+const MODULOS := {
+	"katana": preload("res://scripts/hordas/armas/katana.gd"),
+	"pistolas": preload("res://scripts/hordas/armas/pistolas.gd"),
+	"marcial": preload("res://scripts/hordas/armas/marcial.gd"),
+	"aura_energia": preload("res://scripts/hordas/armas/aura_energia.gd"),
+	"elemental": preload("res://scripts/hordas/armas/elemental.gd"),
+}
 
 var arena: Node
 ## Quem usa a arma e contra quem ela bate. O jogador usa os vírus (inimigos.gd); no duelo final,
@@ -21,6 +32,7 @@ var projeteis: Array = []    # {pos, vel, dano, perfura, vida, tex, esc, acertou
 var pocas: Array = []        # {pos, raio, vida, dano, tique, t, segue, arma}
 var golpes: Array = []       # desenho do chicote {pos, lado, alcance, largura, t, arma}
 var _fila: Array = []        # golpes atrasados do chicote {t, arma}
+var especiais: Array = []    # efeitos das armas de MODULOS (cada um tem "tipo"; o módulo cuida do resto)
 var _t := 0.0
 var _chao_pocas := Node2D.new()   # poças ficam no chão: abaixo de quem pisa nelas, acima do piso
 
@@ -30,6 +42,7 @@ func limpar_tiros() -> void:
 	pocas.clear()
 	golpes.clear()
 	_fila.clear()
+	especiais.clear()
 	for a in lista:
 		a.ativo = 0.0
 		a.acertos = {}
@@ -135,6 +148,12 @@ func atualizar(dt: float) -> void:
 				if a.tique <= 0:
 					a.tique = maxf(0.15, float(s.get("tique", 0.5)))
 					_aura(a, s)
+			var outro:
+				if MODULOS.has(outro):
+					MODULOS[outro].atualizar(self, a, d, s, dt)
+	for e in especiais.duplicate():
+		if not MODULOS[e.tipo].passo(self, e, dt):
+			especiais.erase(e)
 	_chicotes(dt)
 	_projeteis(dt)
 	_pocas(dt)
@@ -273,7 +292,9 @@ func _draw() -> void:
 	for a in lista:
 		var d := Dados.item(a.id)
 		var tipo := str(d.get("tipo", ""))
-		if tipo == "aura":
+		if MODULOS.has(tipo):
+			MODULOS[tipo].fundo(self, a, _s(a))
+		elif tipo == "aura":
 			var s := _s(a)
 			var r: float = float(s.get("raio", 50)) * s.area
 			var pulso := 0.5 + 0.5 * sin(_t * 4.0)
@@ -316,6 +337,8 @@ func _draw() -> void:
 		draw_set_transform(p.pos, p.vel.angle(), Vector2.ONE)
 		draw_texture_rect(tex, Rect2(-sz / 2, sz), false)
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+	for e in especiais:
+		MODULOS[e.tipo].pintar(self, e)
 
 
 ## Gera antes as texturas das poças (o pior tamanho leva ~30 ms): chamado ao pegar/subir arma e passivo,
