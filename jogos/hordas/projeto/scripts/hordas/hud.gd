@@ -85,9 +85,11 @@ func _desenhar() -> void:
 	else:
 		# XP
 		var frac: float = arena.xp / arena.xp_para(arena.nivel)
-		_tela.draw_rect(Rect2(0, 0, W, 9), Color(0.05, 0.05, 0.1, 0.85))
-		_tela.draw_rect(Rect2(1, 1, (W - 2) * clampf(frac, 0, 1), 7), Color(0.3, 0.6, 1.0))
-		_txt(Vector2(W - 70, 8), "NV %d" % arena.nivel, 8, Color.WHITE)
+		# barra de XP com o nível dentro, alinhado à direita na mesma coluna do "Abates"
+		_tela.draw_rect(Rect2(0, 0, W, 11), Color(0.05, 0.05, 0.1, 0.85))
+		_tela.draw_rect(Rect2(1, 1, (W - 2) * clampf(frac, 0, 1), 9), Color(0.3, 0.6, 1.0))
+		_tela.draw_rect(Rect2(1, 1, (W - 2) * clampf(frac, 0, 1), 1), Color(0.6, 0.85, 1.0))   # brilho em cima
+		_txt(Vector2(W - 120, 10), "NV %d" % arena.nivel, 8, Color.WHITE, HORIZONTAL_ALIGNMENT_RIGHT, 112)
 		# tempo
 		var df = arena.diretor
 		var fa: Dictionary = df.fases()[df.fase_idx]
