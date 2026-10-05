@@ -27,10 +27,20 @@ func _ready() -> void:
 
 
 func criar_santuarios() -> void:
-	var fase: Dictionary = Dados.json("fase")
-	for i in int(fase.get("santuarios", 6)):
-		var a := TAU * i / float(fase.get("santuarios", 6)) + randf_range(-0.3, 0.3)
-		santuarios.append({"pos": Vector2.from_angle(a) * randf_range(350, 900), "carga": 0.0, "usado": false})
+	var fase: Dictionary = arena.diretor.fases()[arena.diretor.fase_idx]
+	var n := int(fase.get("santuarios", 6))
+	var c: Vector2 = Vector2.ZERO if arena.jogador == null else arena.jogador.position
+	for i in n:
+		var a := TAU * i / float(n) + randf_range(-0.3, 0.3)
+		santuarios.append({"pos": c + Vector2.from_angle(a) * randf_range(350, 900), "carga": 0.0, "usado": false})
+	var cor: Array = fase.get("cor", [1, 1, 1])
+	_fundo.modulate = Color(cor[0], cor[1], cor[2])
+
+
+## Nova fase: tomadas novas em volta de onde o jogador está e o chão muda de cor.
+func nova_fase() -> void:
+	santuarios.clear()
+	criar_santuarios()
 
 
 func mais_perto_livre(p: Vector2):

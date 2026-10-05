@@ -89,9 +89,15 @@ func _desenhar() -> void:
 		_tela.draw_rect(Rect2(1, 1, (W - 2) * clampf(frac, 0, 1), 7), Color(0.3, 0.6, 1.0))
 		_txt(Vector2(W - 70, 8), "NV %d" % arena.nivel, 8, Color.WHITE)
 		# tempo
-		var tempo: float = arena.diretor.tempo
-		var cor_t := Color(1, 0.4, 0.4) if arena.diretor.enxame_final else Color.WHITE
-		_txt(Vector2(0, 30), "%02d:%02d" % [int(tempo) / 60, int(tempo) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
+		var df = arena.diretor
+		var fa: Dictionary = df.fases()[df.fase_idx]
+		var resta := maxf(0.0, float(fa.get("duracao", 0)) - df.t_fase)
+		var cor_t := Color(1, 0.4, 0.4) if df.enxame_final else Color.WHITE
+		_txt(Vector2(0, 21), "FASE %d/%d  %s" % [df.fase_idx + 1, df.fases().size(), str(fa.get("nome", "")).to_upper()], 8, Color(0.7, 0.9, 1), HORIZONTAL_ALIGNMENT_CENTER, W)
+		if df.final_chamado:
+			_txt(Vector2(0, 42), "CHEFE!", 16, Color(1, 0.4, 0.4), HORIZONTAL_ALIGNMENT_CENTER, W)
+		else:
+			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(W - 120, 24), "Abates %d" % arena.abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, 112)
 	_icones_build()
 	if not arena.duelo_ativo:

@@ -36,6 +36,7 @@ var camera := Camera2D.new()
 var duelo: Node2D
 var duelo_ativo := false
 var pre_duelo := false       # o chefe final caiu e o duelo ainda não começou
+var entre_fases := false     # a fase acabou: descanso, baú e escolha antes da próxima
 
 var passivos := {}          # id -> nível
 var _stats := {}
@@ -96,6 +97,8 @@ func _ready() -> void:
 	cartas.arena = self
 	add_child(cartas)
 	Som.musica(str(Dados.json("fase").get("musica", "minijogo_tenso")))
+	var f0: Dictionary = diretor.fases()[0]
+	anunciar("Fase 1: %s" % f0.get("nome", ""), Color(0.7, 0.9, 1))
 	camera.position = jogador.centro()
 
 
@@ -133,10 +136,10 @@ func _process(dt: float) -> void:
 		jogador.atualizar(dt)
 	if duelo_ativo:
 		duelo.atualizar(dt)
-	elif not pre_duelo:
+	elif not pre_duelo and not entre_fases:
 		diretor.atualizar(dt)
 	var t1 := Time.get_ticks_usec()
-	if not duelo_ativo and not pre_duelo:
+	if not duelo_ativo and not pre_duelo and not entre_fases:
 		inimigos.atualizar(dt, jogador)
 	var t2 := Time.get_ticks_usec()
 	if not parado:
@@ -209,10 +212,42 @@ func inimigo_morreu(v) -> void:
 			iniciar_duelo()
 		else:
 			_fim(true)
+	elif v.chefe and diretor.final_chamado and v.tipo == diretor.chefe_fase:
+		_fase_completa()
 
 
-func chefe_final_chegou() -> void:
-	hud.mensagem("Derrote a Tela Azul pra vencer!", Color(0.6, 0.75, 1))
+func chefe_final_chegou(final := true) -> void:
+	if final:
+		hud.mensagem("Derrote a Tela Azul pra vencer!", Color(0.6, 0.75, 1))
+	else:
+		hud.mensagem("Derrote o chefe pra fechar a fase!", Color(1, 0.75, 0.6))
+
+
+## O chefe da fase caiu: limpa a tela, junta o XP, dá um baú e uma cura, e começa a próxima fase.
+func _fase_completa() -> void:
+	entre_fases = true
+	var n: int = diretor.fase_idx + 1
+	anunciar("Fase %d completa!" % n, Color(1, 0.9, 0.4))
+	Som.tocar("vitoria", 0.1, 1.0, -8)
+	for o in inimigos.lista.duplicate():
+		efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
+	inimigos.limpar()
+	coleta.puxar_tudo()
+	await get_tree().create_timer(2.2, true, false, true).timeout
+	if acabou:
+		return
+	jogador.curar(stat("vida_max") * 0.5)
+	abrir_bau()
+	await get_tree().process_frame
+	while not acabou and (cartas.aberto() or _niveis_pendentes > 0 or _cartas_tomada > 0):
+		await get_tree().process_frame
+	if acabou:
+		return
+	diretor.proxima_fase()
+	chao.nova_fase()
+	var f: Dictionary = diretor.fases()[diretor.fase_idx]
+	anunciar("Fase %d: %s" % [diretor.fase_idx + 1, f.get("nome", "")], Color(0.7, 0.9, 1))
+	entre_fases = false
 
 
 func chefes() -> Array:
@@ -446,7 +481,7 @@ func _fim(vitoria: bool, extra := {}) -> void:
 	for a in dano_por_arma:
 		lista_dano.append([a, dano_por_arma[a]])
 	lista_dano.sort_custom(func(x, y): return x[1] > y[1])
-	var res := {"vitoria": vitoria, "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
+	var res := {"vitoria": vitoria, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
 		"heroi": heroi_id, "dano": lista_dano, "apanhou": dano_recebido}
 	res.merge(extra)
 	await get_tree().create_timer(1.2, true, false, true).timeout

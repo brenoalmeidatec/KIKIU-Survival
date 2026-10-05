@@ -141,6 +141,10 @@ func _bot_dir() -> Vector2:
 		var s = arena.chao.mais_perto_livre(position)
 		if s and s.pos.distance_to(position) < 700:
 			quer = (s.pos - position).normalized()
+	# chefe da fase em campo: o robô vai atrás dele (com a build na mão) em vez de só fugir
+	var ch: Array = arena.chefes()
+	if not ch.is_empty() and not melhor and ch[0].pos.distance_to(c) > 70.0:
+		quer = (ch[0].pos - c).normalized()
 	var d := quer + fuga * 2.0
 	return d.normalized() if d.length() > 0.1 else Vector2.ZERO
 

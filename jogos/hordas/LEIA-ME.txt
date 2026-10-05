@@ -86,3 +86,12 @@ PARA QUEM MEXE NO CÓDIGO
     --estresse=500 cria 500 vírus de uma vez; --pular=300 começa no minuto 5;
     --build=30 dá uma build de nível 30; --duelo=30 vai direto pro duelo; --facil faz a Tela Azul
     nascer quase morta; --calibrar mostra os números pra ajustar a eficiência do pvp.json.
+
+A CORRIDA (10 FASES)
+  Uma partida agora é uma corrida de 10 fases (dados/corrida.json). Cada fase tem nome, duração, eventos
+  (cercados e enxames), tomadas e um chefe no fim. Derrote o chefe para fechar a fase: a tela é limpa,
+  o XP é puxado, você recupera metade da vida, abre um baú e a próxima fase começa (mais difícil).
+  A fase 10 termina na Tela Azul e depois vem o duelo final entre os jogadores.
+  Se morrer, a corrida acaba (no jogo online, quem morre volta na próxima fase ou quando um amigo reviver; ainda não feito).
+  Testes: --fase=N começa na fase N; --facil deixa os chefes quase mortos.
+  Para voltar a uma fase única de 10 minutos, apague dados/corrida.json (usa dados/fase.json).

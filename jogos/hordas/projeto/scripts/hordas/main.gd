@@ -145,8 +145,13 @@ func _comecar(heroi: String) -> void:
 	if _args.has("estresse"):
 		for i in int(_args.estresse):
 			_arena.inimigos.criar(["bug", "popup", "spam", "trojan"].pick_random(), Vector2.from_angle(randf() * TAU) * randf_range(150, 420))
+	if _args.has("fase"):
+		for _i in int(_args.fase) - 1:
+			_arena.diretor.proxima_fase()
+		_arena.chao.nova_fase()
 	if _args.has("pular"):
 		_arena.diretor.tempo = float(_args.pular)
+		_arena.diretor.t_fase = float(_args.pular)
 	if _args.has("build"):
 		_arena.dar_build_teste(int(_args.build))
 	if _args.has("duelo"):
@@ -164,6 +169,7 @@ func _terminou(res: Dictionary) -> void:
 		rec["tempo"] = res.tempo
 		_novo_recorde = true
 	rec["abates"] = maxi(int(rec.get("abates", 0)), res.abates)
+	rec["melhor_fase"] = maxi(int(rec.get("melhor_fase", 0)), int(res.get("fase", 1)))
 	if res.vitoria:
 		rec["vitorias"] = int(rec.get("vitorias", 0)) + 1
 	if res.has("duelo"):
@@ -199,12 +205,12 @@ func _teste() -> void:
 	if _args.has("facil") and not _arena.duelo_ativo:
 		# teste: o chefe final nasce quase morto, pra chegar logo no duelo
 		for v in _arena.inimigos.lista:
-			if v.d.get("final", false):
+			if v.d.get("final", false) or (v.chefe and v.tipo == _arena.diretor.chefe_fase):
 				v.hp = minf(v.hp, 1.0)
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
-		print("t=%.0f partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s" % [
-			_t, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
+		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s" % [
+			_t, _arena.diretor.fase_idx + 1, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,
 			_arena.armas.lista.map(func(a): return "%s:%d" % [a.id, a.nivel]), _arena.passivos,
 			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-"])
@@ -289,7 +295,7 @@ func _desenhar() -> void:
 					_txt(Vector2(0, 50), "%dº LUGAR" % lg, 24, Color(1, 0.55, 0.45))
 					_txt(Vector2(0, 80), "de %d lutadores. Tenta de novo!" % du.total, 8, Color(0.9, 0.8, 0.8))
 				_txt(Vector2(0, 104), "Duelo %ds   Derrubou %d   Dano %d" % [int(du.duracao), du.abates, int(du.dano)], 8)
-				_txt(Vector2(0, 120), "Horda: %02d:%02d  Nível %d  Abates %d" % [int(r.tempo) / 60, int(r.tempo) % 60, r.nivel, r.abates], 8, Color(0.7, 0.75, 0.85))
+				_txt(Vector2(0, 120), "Corrida: %02d:%02d  %d fases  Nível %d  Abates %d" % [int(r.tempo) / 60, int(r.tempo) % 60, r.get("fase", 1), r.nivel, r.abates], 8, Color(0.7, 0.75, 0.85))
 				# ranking à esquerda, dano por arma à direita
 				_txt(Vector2(60, 156), "Ranking", 8, Color(0.7, 0.8, 1), 200, HORIZONTAL_ALIGNMENT_LEFT)
 				var ry := 176.0
@@ -305,8 +311,8 @@ func _desenhar() -> void:
 					_txt(Vector2(0, 60), "VOCÊ SOBREVIVEU!", 24, Color(0.5, 1, 0.5))
 					_txt(Vector2(0, 80), "A Tela Azul caiu. A faculdade está salva.", 8, Color(0.8, 0.9, 0.8))
 				else:
-					_txt(Vector2(0, 60), "O VIRUS VENCEU...", 24, Color(1, 0.4, 0.4))
-					_txt(Vector2(0, 80), "Formata e tenta de novo.", 8, Color(0.9, 0.8, 0.8))
+					_txt(Vector2(0, 60), "A CORRIDA ACABOU", 24, Color(1, 0.4, 0.4))
+					_txt(Vector2(0, 80), "Você chegou até a fase %d de %d. Tenta de novo!" % [r.get("fase", 1), r.get("fases", 1)], 8, Color(0.9, 0.8, 0.8))
 				var tempo := float(r.get("tempo", 0))
 				_txt(Vector2(0, 112), "Tempo %02d:%02d   Nível %d   Abates %d" % [int(tempo) / 60, int(tempo) % 60, r.get("nivel", 1), r.get("abates", 0)], 8)
 				if _novo_recorde:

@@ -1,0 +1,238 @@
+{
+ "_ajuda": "A corrida: lista de fases em sequência. Cada fase dura 'duracao' segundos; no fim nasce o 'chefe' e a fase acaba quando ele cai (o chefe com final=true leva ao duelo). 'minutos_por_fase' diz quanto a dificuldade (dados/fase.json) avança por fase. 'cor' tinge o chão. Para ter só uma fase longa, apague este arquivo.",
+ "minutos_por_fase": 1.2,
+ "fases": [
+  {
+   "nome": "Portão",
+   "duracao": 100,
+   "chefe": "trojan_gigante",
+   "santuarios": 3,
+   "cor": [
+    1,
+    1,
+    1
+   ],
+   "eventos": [
+    {
+     "tempo": 35,
+     "tipo": "anel",
+     "inimigo": "bug",
+     "quantos": 20
+    }
+   ]
+  },
+  {
+   "nome": "Pátio",
+   "duracao": 108,
+   "chefe": "ransomware",
+   "santuarios": 3,
+   "cor": [
+    0.85,
+    1,
+    0.9
+   ],
+   "eventos": [
+    {
+     "tempo": 37,
+     "tipo": "enxame",
+     "inimigo": "popup",
+     "quantos": 30
+    }
+   ]
+  },
+  {
+   "nome": "Biblioteca",
+   "duracao": 116,
+   "chefe": "trojan_gigante",
+   "santuarios": 3,
+   "cor": [
+    1,
+    0.95,
+    0.8
+   ],
+   "eventos": [
+    {
+     "tempo": 40,
+     "tipo": "anel",
+     "inimigo": "popup",
+     "quantos": 28
+    }
+   ]
+  },
+  {
+   "nome": "Laboratório",
+   "duracao": 124,
+   "chefe": "ransomware",
+   "santuarios": 3,
+   "cor": [
+    0.8,
+    0.9,
+    1
+   ],
+   "eventos": [
+    {
+     "tempo": 43,
+     "tipo": "enxame",
+     "inimigo": "minerador",
+     "quantos": 30
+    },
+    {
+     "tempo": 86,
+     "tipo": "anel",
+     "inimigo": "minerador",
+     "quantos": 24
+    }
+   ]
+  },
+  {
+   "nome": "Servidor",
+   "duracao": 132,
+   "chefe": "trojan_gigante",
+   "santuarios": 3,
+   "cor": [
+    0.9,
+    0.8,
+    1
+   ],
+   "eventos": [
+    {
+     "tempo": 46,
+     "tipo": "anel",
+     "inimigo": "trojan",
+     "quantos": 16
+    },
+    {
+     "tempo": 92,
+     "tipo": "enxame",
+     "inimigo": "trojan",
+     "quantos": 16
+    }
+   ]
+  },
+  {
+   "nome": "Porão",
+   "duracao": 140,
+   "chefe": "ransomware",
+   "santuarios": 3,
+   "cor": [
+    0.75,
+    0.75,
+    0.85
+   ],
+   "eventos": [
+    {
+     "tempo": 49,
+     "tipo": "enxame",
+     "inimigo": "popup",
+     "quantos": 50
+    },
+    {
+     "tempo": 98,
+     "tipo": "anel",
+     "inimigo": "trojan",
+     "quantos": 44
+    }
+   ]
+  },
+  {
+   "nome": "Telhado",
+   "duracao": 148,
+   "chefe": "trojan_gigante",
+   "santuarios": 3,
+   "cor": [
+    1,
+    0.85,
+    0.85
+   ],
+   "eventos": [
+    {
+     "tempo": 51,
+     "tipo": "anel",
+     "inimigo": "minerador",
+     "quantos": 26
+    },
+    {
+     "tempo": 103,
+     "tipo": "enxame",
+     "inimigo": "minerador",
+     "quantos": 20
+    }
+   ]
+  },
+  {
+   "nome": "Núcleo",
+   "duracao": 156,
+   "chefe": "ransomware",
+   "santuarios": 3,
+   "cor": [
+    0.8,
+    1,
+    1
+   ],
+   "eventos": [
+    {
+     "tempo": 54,
+     "tipo": "enxame",
+     "inimigo": "trojan",
+     "quantos": 24
+    },
+    {
+     "tempo": 109,
+     "tipo": "anel",
+     "inimigo": "bug",
+     "quantos": 18
+    }
+   ]
+  },
+  {
+   "nome": "Cofre",
+   "duracao": 164,
+   "chefe": "trojan_gigante",
+   "santuarios": 3,
+   "cor": [
+    1,
+    0.9,
+    0.7
+   ],
+   "eventos": [
+    {
+     "tempo": 57,
+     "tipo": "anel",
+     "inimigo": "trojan",
+     "quantos": 24
+    },
+    {
+     "tempo": 114,
+     "tipo": "enxame",
+     "inimigo": "popup",
+     "quantos": 18
+    }
+   ]
+  },
+  {
+   "nome": "Tela Azul",
+   "duracao": 150,
+   "chefe": "tela_azul",
+   "santuarios": 4,
+   "cor": [
+    0.7,
+    0.75,
+    1.0
+   ],
+   "eventos": [
+    {
+     "tempo": 60,
+     "tipo": "enxame",
+     "inimigo": "minerador",
+     "quantos": 50
+    },
+    {
+     "tempo": 120,
+     "tipo": "anel",
+     "inimigo": "popup",
+     "quantos": 44
+    }
+   ]
+  }
+ ]
+}
