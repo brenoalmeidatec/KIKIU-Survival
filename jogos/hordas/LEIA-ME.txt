@@ -1,5 +1,6 @@
-CAIRU x VIRUS  (protótipo do jogo de hordas)
-=============================================
+K.I.K.I.U - Knights In Kaos, Infinite Upgrades  (protótipo do jogo de hordas)
+===========================================================================
+O tema atual (Cairu x vírus) ainda é só teste; está em dados/*.json e pode ser trocado.
 
 COMO JOGAR
   Abra CairuVirus.exe. Escolha o herói e sobreviva por 10 minutos. No fim do tempo chega

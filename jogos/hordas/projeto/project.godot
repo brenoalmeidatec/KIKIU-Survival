@@ -3,8 +3,8 @@ config_version=5
 
 [application]
 
-config/name="Cairu x Vírus"
-config/description="Sobreviva às hordas de vírus na faculdade."
+config/name="K.I.K.I.U"
+config/description="Knights In Kaos, Infinite Upgrades: sobreviva à horda e vença o duelo final."
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 

@@ -240,9 +240,9 @@ func _desenhar() -> void:
 	match _estado:
 		"titulo":
 			_fundo()
-			_txt(Vector2(0, 100), "CAIRU", 32, Color(0.4, 0.65, 1))
-			_txt(Vector2(0, 140), "x VIRUS", 24, Color(0.5, 1, 0.5))
-			_txt(Vector2(0, 165), "sobreviva às hordas na faculdade", 8, Color(0.75, 0.75, 0.85))
+			_txt(Vector2(0, 100), "K.I.K.I.U", 32, Color(0.4, 0.65, 1))
+			_txt(Vector2(0, 142), "Knights In Kaos, Infinite Upgrades", 10, Color(0.5, 1, 0.5))
+			_txt(Vector2(0, 165), "sobreviva à horda e vença o duelo final", 8, Color(0.75, 0.75, 0.85))
 			var ops := ["Jogar", "Sair"]
 			for i in 2:
 				var sel := i == _sel
