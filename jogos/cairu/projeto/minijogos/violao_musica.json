@@ -1,0 +1,456 @@
+{
+ "bpm": 96,
+ "compasso": 2.5,
+ "intro": 1,
+ "duracao": 34.0,
+ "acordes": [
+  "G",
+  "G",
+  "Em",
+  "C",
+  "D",
+  "G",
+  "Em",
+  "Am",
+  "D",
+  "C",
+  "D",
+  "G",
+  "G"
+ ],
+ "notas_acorde": {
+  "G": [
+   55,
+   59,
+   67
+  ],
+  "Em": [
+   55,
+   59,
+   64
+  ],
+  "C": [
+   55,
+   60,
+   64
+  ],
+  "D": [
+   57,
+   62,
+   66
+  ],
+  "Am": [
+   57,
+   60,
+   64
+  ]
+ },
+ "notas": [
+  {
+   "t": 2.5,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 3.125,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 3.4375,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 3.75,
+   "nota": 79,
+   "faixa": 3,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 4.375,
+   "nota": 78,
+   "faixa": 3,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 4.6875,
+   "nota": 76,
+   "faixa": 3,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 5.0,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 3,
+   "forte": true
+  },
+  {
+   "t": 5.9375,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 6.25,
+   "nota": 67,
+   "faixa": 0,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 6.875,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 7.5,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 7.8125,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 8.125,
+   "nota": 76,
+   "faixa": 3,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 8.75,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 9.0625,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 9.375,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 10.0,
+   "nota": 69,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 10.625,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 10.9375,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 11.25,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 4,
+   "forte": true
+  },
+  {
+   "t": 12.5,
+   "nota": 79,
+   "faixa": 3,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 13.125,
+   "nota": 78,
+   "faixa": 3,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 13.4375,
+   "nota": 76,
+   "faixa": 3,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 13.75,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 14.375,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 15.0,
+   "nota": 76,
+   "faixa": 3,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 15.3125,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 15.625,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 16.25,
+   "nota": 67,
+   "faixa": 0,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 16.875,
+   "nota": 69,
+   "faixa": 1,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 17.1875,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 17.5,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 18.125,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 18.4375,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 18.75,
+   "nota": 69,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 19.375,
+   "nota": 76,
+   "faixa": 3,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 20.0,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 3,
+   "forte": true
+  },
+  {
+   "t": 20.9375,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 21.25,
+   "nota": 69,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 21.875,
+   "nota": 66,
+   "faixa": 0,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 22.5,
+   "nota": 64,
+   "faixa": 0,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 22.8125,
+   "nota": 67,
+   "faixa": 0,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 23.125,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 23.75,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 24.0625,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 24.375,
+   "nota": 76,
+   "faixa": 3,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 25.0,
+   "nota": 78,
+   "faixa": 3,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 25.3125,
+   "nota": 76,
+   "faixa": 3,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 25.625,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 26.25,
+   "nota": 72,
+   "faixa": 2,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 26.5625,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 26.875,
+   "nota": 69,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 27.5,
+   "nota": 71,
+   "faixa": 1,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 28.125,
+   "nota": 74,
+   "faixa": 2,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 28.75,
+   "nota": 79,
+   "faixa": 3,
+   "dura": 2,
+   "forte": true
+  },
+  {
+   "t": 29.375,
+   "nota": 78,
+   "faixa": 3,
+   "dura": 1,
+   "forte": true
+  },
+  {
+   "t": 29.6875,
+   "nota": 79,
+   "faixa": 3,
+   "dura": 1,
+   "forte": false
+  },
+  {
+   "t": 30.0,
+   "nota": 79,
+   "faixa": 3,
+   "dura": 6,
+   "forte": true
+  }
+ ]
+}

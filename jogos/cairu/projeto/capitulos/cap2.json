@@ -1,0 +1,179 @@
+{
+  "titulo": "Capítulo 2: [título]",
+  "descricao": "Modelo pronto pro próximo capítulo: três histórias e um final.",
+  "jogador": "breno",
+  "apelidos": {
+    "n": "nicao",
+    "b": "breno",
+    "luk": "lukako",
+    "mau": "mauro"
+  },
+  "mapa_inicial": "patio",
+  "inicio": {
+    "x": 420,
+    "y": 400,
+    "dir": "cima"
+  },
+  "abertura": "abertura",
+  "diario": [
+    {
+      "texto": "[História 1: falar com o Beto no pátio]",
+      "feito": "viu_h1"
+    },
+    {
+      "texto": "[História 2: achar o Nicão no Núcleo]",
+      "requer": "viu_h1",
+      "feito": "viu_h2"
+    },
+    {
+      "texto": "[História 3: ver o Lucas no Laboratório]",
+      "requer": "viu_h1",
+      "feito": "viu_h3"
+    },
+    {
+      "texto": "[Final: voltar pra recepção]",
+      "requer": [
+        "viu_h2",
+        "viu_h3"
+      ],
+      "feito": "viu_final"
+    }
+  ],
+  "npcs": [
+    {
+      "personagem": "beto",
+      "mapa": "patio",
+      "x": 420,
+      "y": 330,
+      "dir": "baixo",
+      "cenas": [
+        "h1",
+        "beto_depois"
+      ],
+      "comportamento": "olhar"
+    },
+    {
+      "personagem": "nicao",
+      "mapa": "nucleo",
+      "x": 208,
+      "y": 366,
+      "dir": "baixo",
+      "cenas": [
+        "espera",
+        "h2",
+        "nicao_depois"
+      ],
+      "comportamento": "olhar"
+    },
+    {
+      "personagem": "lucas",
+      "mapa": "laboratorio",
+      "x": 204,
+      "y": 252,
+      "dir": "direita",
+      "cenas": [
+        "espera",
+        "h3",
+        "lucas_depois"
+      ],
+      "comportamento": "pc"
+    }
+  ],
+  "gatilhos": [
+    {
+      "mapa": "recepcao",
+      "ao_entrar": true,
+      "cenas": [
+        "final"
+      ]
+    }
+  ],
+  "cenas": {
+    "abertura": {
+      "cinema": true,
+      "passos": [
+        "!barras sim",
+        "> [ABERTURA DO CAPÍTULO 2] Aqui entra como o Breno quer começar.",
+        "!barras nao"
+      ]
+    },
+    "espera": {
+      "requer": [
+        "!viu_h1"
+      ],
+      "passos": [
+        "b pensa: Primeiro vou falar com o Beto no pátio."
+      ]
+    },
+    "h1": {
+      "uma_vez": true,
+      "cinema": true,
+      "passos": [
+        "!camera beto 0.6",
+        "!zoom 1.4 0.5",
+        "> [HISTÓRIA 1: Pátio, com o Beto] Aqui entra a história que o Breno vai contar.",
+        "!zoom 1 0.5",
+        "!camera eu 0.5"
+      ]
+    },
+    "h2": {
+      "uma_vez": true,
+      "cinema": true,
+      "requer": [
+        "viu_h1"
+      ],
+      "passos": [
+        "!camera nicao 0.6",
+        "!zoom 1.4 0.5",
+        "> [HISTÓRIA 2: Núcleo, com o Nicão] Aqui entra a história que o Breno vai contar.",
+        "!zoom 1 0.5",
+        "!camera eu 0.5"
+      ]
+    },
+    "h3": {
+      "uma_vez": true,
+      "cinema": true,
+      "requer": [
+        "viu_h1"
+      ],
+      "passos": [
+        "!camera lucas 0.6",
+        "!zoom 1.4 0.5",
+        "> [HISTÓRIA 3: Laboratório, com o Lucas] Aqui entra a história que o Breno vai contar.",
+        "> [MINIJOGO opcional] Exemplo: atravessar o corredor lotado.",
+        "!minijogo esquiva h3_ganhou 1",
+        "!zoom 1 0.5",
+        "!camera eu 0.5"
+      ]
+    },
+    "final": {
+      "uma_vez": true,
+      "cinema": true,
+      "requer": [
+        "viu_h2",
+        "viu_h3"
+      ],
+      "passos": [
+        "!barras sim",
+        "> [FINAL DO CAPÍTULO 2] Aqui entra o fechamento.",
+        "!barras nao",
+        "!fim_capitulo"
+      ]
+    },
+    "beto_depois": [
+      "> [BETO: fala solta, depois das personalidades]"
+    ],
+    "nicao_depois": [
+      "> [NICÃO: fala solta, depois das personalidades]"
+    ],
+    "lucas_depois": [
+      "> [LUCAS: fala solta, depois das personalidades]"
+    ]
+  },
+  "musica": "cap2",
+  "musicas": {
+    "patio": "cap2",
+    "recepcao": "recepcao",
+    "nucleo": "nucleo"
+  }
+}

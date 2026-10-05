@@ -1,0 +1,33 @@
+// Cenas de teste dos efeitos de cena (abra com F6 > Cenas > teste_efeitos).
+// Mesmo jeito curto do cairu.txt; veja o MODELO_HISTORIA.txt.
+
+=== teste_efeitos | cinema | teste: Efeitos de cena (tremor, close, balões)
+> Teste dos efeitos de cena.
+!andar eu 440 250
+!virar eu lukako
+!close lukako
+lukako: Breno, tu apagou o projeto do semestre?
+!balao eu 😳
+eu: ...talvez.
+!tela normal
+!camera 458 165 0.4
+!zoom 2 0.4
+!susto lukako
+!impacto 6
+!balao lukako 💀
+lukako: Morri.
+!balao eu 😭
+!balao eu 😂
+!balao lukako 😱
+!balao lukako 🔥
+!balao eu ⚡
+!tela normal
+!flash 0.3
+!fade branco 0.6
+> Três horas depois...
+!fade volta 0.6
+!zoom 1.5 0.4
+!tremer 0.6 3
+!zoom 1 0.4
+!fade preto 0.5
+> (a cena pode terminar escura: o jogo clareia sozinho no fim)

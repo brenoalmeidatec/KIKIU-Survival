@@ -1,0 +1,512 @@
+{
+  "musica": "lab",
+  "nome": "Núcleo de Informática",
+  "tamanho": [
+    720,
+    448
+  ],
+  "fundo": {
+    "imagem": "nucleo.png"
+  },
+  "area_andavel": [
+    12,
+    110,
+    696,
+    330
+  ],
+  "colisoes": [],
+  "objetos": [
+    {
+      "imagem": "nucleo_armario.png",
+      "x": 360,
+      "y": 172,
+      "solido": [
+        696,
+        16
+      ]
+    },
+    {
+      "imagem": "nucleo_divisoria.png",
+      "x": 232,
+      "y": 290,
+      "solido": [
+        440,
+        10
+      ]
+    },
+    {
+      "imagem": "nucleo_balcao.png",
+      "x": 314,
+      "y": 380,
+      "solido": [
+        604,
+        8
+      ]
+    },
+    {
+      "imagem": "nucleo_portinhola.png",
+      "x": 622,
+      "y": 380
+    },
+    {
+      "x": 680,
+      "y": 420,
+      "imagem": "sala204_lixeira.png",
+      "solido": [
+        16,
+        8
+      ]
+    },
+    {
+      "x": 28,
+      "y": 424,
+      "balanco": 1.0,
+      "imagem": "sala204_planta.png",
+      "solido": [
+        18,
+        8
+      ]
+    },
+    {
+      "x": 680,
+      "y": 250,
+      "balanco": 1.0,
+      "imagem": "sala204_planta.png",
+      "solido": [
+        18,
+        8
+      ]
+    },
+    {
+      "imagem": "cadeira_escritorio.png",
+      "x": 186,
+      "y": 364,
+      "solido": [
+        12,
+        4
+      ]
+    }
+  ],
+  "pontos": [
+    {
+      "x": 212,
+      "y": 372,
+      "w": 34,
+      "h": 10,
+      "cena": "nucleo_pc"
+    },
+    {
+      "x": 12,
+      "y": 376,
+      "w": 604,
+      "h": 10,
+      "cena": "nucleo_balcao"
+    },
+    {
+      "x": 612,
+      "y": 366,
+      "w": 24,
+      "h": 18,
+      "cena": "portinhola"
+    },
+    {
+      "x": 12,
+      "y": 168,
+      "w": 696,
+      "h": 8,
+      "cena": "computadores_quebrados"
+    },
+    {
+      "x": 12,
+      "y": 274,
+      "w": 440,
+      "h": 8,
+      "cena": "divisoria_cartazes"
+    },
+    {
+      "x": 12,
+      "y": 286,
+      "w": 440,
+      "h": 8,
+      "cena": "divisoria_cartazes"
+    }
+  ],
+  "portas": [
+    {
+      "x": 320,
+      "y": 436,
+      "w": 64,
+      "h": 12,
+      "para": "corredor",
+      "chegada": {
+        "x": 480,
+        "y": 124,
+        "dir": "baixo"
+      }
+    }
+  ],
+  "luzes": [
+    {
+      "tipo": "luz",
+      "x": 165,
+      "y": 336,
+      "w": 90,
+      "h": 60,
+      "cor": "#7fb0ff",
+      "forca": 0.16
+    }
+  ],
+  "visual": {
+    "ambiente": "#ffffff",
+    "tinta": "#fff8f0",
+    "saturacao": 1.04,
+    "contraste": 1.04,
+    "brilho": 0.3,
+    "vinheta": 0.32,
+    "limiar": 0.88,
+    "sombras": "#06102a"
+  },
+  "particulas": [
+    {
+      "tipo": "poeira",
+      "x": 0,
+      "y": 100,
+      "w": 720,
+      "h": 340,
+      "quantidade": 14
+    }
+  ],
+  "animados": [
+    {
+      "tipo": "tela",
+      "x": 23,
+      "y": 111,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 107,
+      "y": 111,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 169,
+      "y": 111,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 253,
+      "y": 111,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 339,
+      "y": 111,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 445,
+      "y": 111,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 529,
+      "y": 111,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 655,
+      "y": 111,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 23,
+      "y": 131,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 87,
+      "y": 131,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 171,
+      "y": 131,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 277,
+      "y": 131,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 403,
+      "y": 131,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 443,
+      "y": 131,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 529,
+      "y": 131,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 613,
+      "y": 131,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 23,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 83,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 167,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 231,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 337,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 443,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 503,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "tela",
+      "x": 589,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 653,
+      "y": 151,
+      "w": 10,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "verde"
+    },
+    {
+      "tipo": "led",
+      "x": 370,
+      "y": 17,
+      "w": 5,
+      "h": 2,
+      "base": 19.5,
+      "ritmo": 1.5
+    },
+    {
+      "tipo": "led",
+      "x": 95,
+      "y": 119,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 1.2
+    },
+    {
+      "tipo": "led",
+      "x": 307,
+      "y": 119,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 1.5
+    },
+    {
+      "tipo": "led",
+      "x": 517,
+      "y": 119,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 1.5
+    },
+    {
+      "tipo": "led",
+      "x": 55,
+      "y": 139,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 1.5
+    },
+    {
+      "tipo": "led",
+      "x": 265,
+      "y": 139,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 1.5
+    },
+    {
+      "tipo": "led",
+      "x": 475,
+      "y": 139,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 1.5
+    },
+    {
+      "tipo": "led",
+      "x": 687,
+      "y": 139,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 0.75
+    },
+    {
+      "tipo": "led",
+      "x": 219,
+      "y": 159,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 0.8999999999999999
+    },
+    {
+      "tipo": "led",
+      "x": 431,
+      "y": 159,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 1.2
+    },
+    {
+      "tipo": "led",
+      "x": 641,
+      "y": 159,
+      "w": 3,
+      "h": 3,
+      "base": 172.5,
+      "ritmo": 1.2
+    },
+    {
+      "tipo": "relogio",
+      "x": 640,
+      "y": 30,
+      "r": 9,
+      "base": 40
+    }
+  ]
+}

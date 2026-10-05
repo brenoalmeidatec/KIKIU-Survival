@@ -1,0 +1,11 @@
+# Gerados / pesados: não vão pro Git. Veja "Como gerar o build" no README.
+*.exe
+*.zip
+*.pck
+build/
+.godot/
+__pycache__/
+*.pyc
+*.import.bak
+*.tmp
+.DS_Store

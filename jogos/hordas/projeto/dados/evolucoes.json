@@ -1,0 +1,10 @@
+{
+  "_ajuda": "arma no nível máximo + o passivo (qualquer nível) + abrir um baú = vira a arma evoluída.",
+  "lista": [
+    {"arma": "pendrive", "passivo": "ctrl_c_v", "vira": "ssd"},
+    {"arma": "cabo_rede", "passivo": "energetico", "vira": "fibra_optica"},
+    {"arma": "ventoinha", "passivo": "overclock", "vira": "water_cooler"},
+    {"arma": "cafe", "passivo": "monitor", "vira": "garrafa_termica"},
+    {"arma": "wifi", "passivo": "antena", "vira": "roteador_5g"}
+  ]
+}

@@ -1,0 +1,318 @@
+{
+  "musica": "cairu",
+  "nome": "Recepção",
+  "tamanho": [
+    800,
+    448
+  ],
+  "fundo": {
+    "imagem": "recepcao.png"
+  },
+  "area_andavel": [
+    12,
+    110,
+    776,
+    330
+  ],
+  "colisoes": [],
+  "objetos": [
+    {
+      "imagem": "recepcao_balcao.png",
+      "x": 400,
+      "y": 214,
+      "solido": [
+        224,
+        8
+      ]
+    },
+    {
+      "imagem": "recepcao_sofa.png",
+      "x": 110,
+      "y": 300,
+      "solido": [
+        88,
+        12
+      ]
+    },
+    {
+      "imagem": "recepcao_mesinha.png",
+      "x": 110,
+      "y": 344,
+      "solido": [
+        44,
+        10
+      ]
+    },
+    {
+      "imagem": "recepcao_sofa.png",
+      "x": 110,
+      "y": 392,
+      "solido": [
+        88,
+        12
+      ]
+    },
+    {
+      "imagem": "recepcao_bebedouro.png",
+      "x": 740,
+      "y": 200,
+      "solido": [
+        14,
+        6
+      ]
+    },
+    {
+      "imagem": "recepcao_banner.png",
+      "x": 580,
+      "y": 320,
+      "solido": [
+        24,
+        6
+      ]
+    },
+    {
+      "x": 28,
+      "y": 122,
+      "balanco": 1.0,
+      "imagem": "sala204_planta.png",
+      "solido": [
+        18,
+        8
+      ]
+    },
+    {
+      "x": 540,
+      "y": 122,
+      "balanco": 1.0,
+      "imagem": "sala204_planta.png",
+      "solido": [
+        18,
+        8
+      ]
+    },
+    {
+      "x": 330,
+      "y": 430,
+      "balanco": 1.0,
+      "imagem": "sala204_planta.png",
+      "solido": [
+        18,
+        8
+      ]
+    },
+    {
+      "x": 470,
+      "y": 430,
+      "balanco": 1.0,
+      "imagem": "sala204_planta.png",
+      "solido": [
+        18,
+        8
+      ]
+    },
+    {
+      "x": 700,
+      "y": 420,
+      "imagem": "sala204_lixeira.png",
+      "solido": [
+        16,
+        8
+      ]
+    },
+    {
+      "imagem": "cadeira_escritorio.png",
+      "x": 450,
+      "y": 198,
+      "solido": [
+        12,
+        4
+      ]
+    }
+  ],
+  "pontos": [
+    {
+      "x": 288,
+      "y": 210,
+      "w": 224,
+      "h": 10,
+      "cena": "recepcao_balcao"
+    },
+    {
+      "x": 262,
+      "y": 96,
+      "w": 276,
+      "h": 16,
+      "cena": "placa_cairu"
+    },
+    {
+      "x": 596,
+      "y": 96,
+      "w": 108,
+      "h": 16,
+      "cena": "mural"
+    },
+    {
+      "x": 726,
+      "y": 196,
+      "w": 28,
+      "h": 10,
+      "cena": "bebedouro"
+    },
+    {
+      "x": 564,
+      "y": 316,
+      "w": 32,
+      "h": 10,
+      "cena": "banner"
+    },
+    {
+      "x": 352,
+      "y": 436,
+      "w": 96,
+      "h": 12,
+      "cena": "rua"
+    }
+  ],
+  "portas": [
+    {
+      "x": 64,
+      "y": 96,
+      "w": 40,
+      "h": 14,
+      "para": "corredor",
+      "chegada": {
+        "x": 36,
+        "y": 200,
+        "dir": "direita"
+      },
+      "folha": [
+        64,
+        32,
+        40,
+        70
+      ]
+    },
+    {
+      "x": 786,
+      "y": 256,
+      "w": 14,
+      "h": 88,
+      "para": "patio",
+      "chegada": {
+        "x": 44,
+        "y": 300,
+        "dir": "direita"
+      }
+    }
+  ],
+  "luzes": [
+    {
+      "tipo": "luz",
+      "x": 300,
+      "y": 380,
+      "w": 200,
+      "h": 110,
+      "cor": "#ffffff",
+      "forca": 0.14
+    }
+  ],
+  "visual": {
+    "ambiente": "#ffffff",
+    "tinta": "#fff8f0",
+    "saturacao": 1.04,
+    "contraste": 1.04,
+    "brilho": 0.3,
+    "vinheta": 0.32,
+    "limiar": 0.88
+  },
+  "particulas": [
+    {
+      "tipo": "poeira",
+      "x": 0,
+      "y": 120,
+      "w": 800,
+      "h": 300,
+      "quantidade": 22
+    }
+  ],
+  "animados": [
+    {
+      "tipo": "papel",
+      "x": 604,
+      "y": 22,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.6
+    },
+    {
+      "tipo": "papel",
+      "x": 622,
+      "y": 26,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.9500000000000002
+    },
+    {
+      "tipo": "papel",
+      "x": 640,
+      "y": 22,
+      "w": 14,
+      "h": 18,
+      "ritmo": 2.3
+    },
+    {
+      "tipo": "papel",
+      "x": 659,
+      "y": 26,
+      "w": 14,
+      "h": 18,
+      "ritmo": 2.65
+    },
+    {
+      "tipo": "papel",
+      "x": 677,
+      "y": 22,
+      "w": 14,
+      "h": 18,
+      "ritmo": 3.0
+    },
+    {
+      "tipo": "relogio",
+      "x": 200,
+      "y": 32,
+      "r": 9,
+      "base": 40
+    },
+    {
+      "tipo": "bolhas",
+      "x": 736,
+      "y": 170,
+      "w": 8,
+      "h": 9,
+      "base": 200.5
+    },
+    {
+      "tipo": "letreiro",
+      "x": 262,
+      "y": 10,
+      "w": 276,
+      "h": 40,
+      "cor": "#ffd34e",
+      "base": 60
+    },
+    {
+      "tipo": "brilho",
+      "x": 98,
+      "y": 68,
+      "base": 70.6,
+      "periodo": 3.0
+    },
+    {
+      "tipo": "brilho",
+      "x": 588,
+      "y": 269,
+      "base": 320.6,
+      "periodo": 6.4
+    }
+  ]
+}

@@ -1,0 +1,336 @@
+{
+  "musica": "cairu",
+  "nome": "Corredor",
+  "tamanho": [
+    800,
+    270
+  ],
+  "fundo": {
+    "imagem": "corredor.png"
+  },
+  "area_andavel": [
+    12,
+    110,
+    776,
+    152
+  ],
+  "colisoes": [],
+  "objetos": [
+    {
+      "imagem": "recepcao_bebedouro.png",
+      "x": 760,
+      "y": 128,
+      "solido": [
+        14,
+        6
+      ]
+    },
+    {
+      "x": 240,
+      "y": 118,
+      "balanco": 1.0,
+      "imagem": "sala204_planta.png",
+      "solido": [
+        18,
+        8
+      ]
+    },
+    {
+      "x": 592,
+      "y": 118,
+      "balanco": 1.0,
+      "imagem": "sala204_planta.png",
+      "solido": [
+        18,
+        8
+      ]
+    },
+    {
+      "imagem": "patio_banco.png",
+      "x": 400,
+      "y": 256,
+      "solido": [
+        64,
+        10
+      ]
+    },
+    {
+      "x": 30,
+      "y": 256,
+      "imagem": "sala204_lixeira.png",
+      "solido": [
+        16,
+        8
+      ]
+    }
+  ],
+  "pontos": [
+    {
+      "x": 184,
+      "y": 96,
+      "w": 56,
+      "h": 16,
+      "cena": "cartazes_corredor"
+    },
+    {
+      "x": 360,
+      "y": 96,
+      "w": 56,
+      "h": 16,
+      "cena": "cartazes_corredor"
+    },
+    {
+      "x": 536,
+      "y": 96,
+      "w": 56,
+      "h": 16,
+      "cena": "cartazes_corredor"
+    },
+    {
+      "x": 748,
+      "y": 124,
+      "w": 24,
+      "h": 10,
+      "cena": "bebedouro"
+    }
+  ],
+  "portas": [
+    {
+      "x": 108,
+      "y": 96,
+      "w": 40,
+      "h": 14,
+      "para": "sala_aula",
+      "chegada": {
+        "x": 664,
+        "y": 124,
+        "dir": "baixo"
+      },
+      "folha": [
+        108,
+        32,
+        40,
+        70
+      ]
+    },
+    {
+      "x": 284,
+      "y": 96,
+      "w": 40,
+      "h": 14,
+      "para": "laboratorio",
+      "chegada": {
+        "x": 872,
+        "y": 424,
+        "dir": "cima"
+      },
+      "folha": [
+        284,
+        32,
+        40,
+        70
+      ]
+    },
+    {
+      "x": 460,
+      "y": 96,
+      "w": 40,
+      "h": 14,
+      "para": "nucleo",
+      "chegada": {
+        "x": 352,
+        "y": 424,
+        "dir": "cima"
+      },
+      "folha": [
+        460,
+        32,
+        40,
+        70
+      ]
+    },
+    {
+      "x": 636,
+      "y": 96,
+      "w": 40,
+      "h": 14,
+      "para": "presidencia",
+      "chegada": {
+        "x": 320,
+        "y": 424,
+        "dir": "cima"
+      },
+      "folha": [
+        636,
+        32,
+        40,
+        70
+      ]
+    },
+    {
+      "x": 0,
+      "y": 150,
+      "w": 14,
+      "h": 100,
+      "para": "recepcao",
+      "chegada": {
+        "x": 84,
+        "y": 124,
+        "dir": "baixo"
+      }
+    }
+  ],
+  "luzes": [
+    {
+      "tipo": "faixa",
+      "x": 14,
+      "y": 110,
+      "w": 64,
+      "h": 120,
+      "inclinacao": 40,
+      "cor": "#fff6d0",
+      "forca": 0.15
+    },
+    {
+      "tipo": "faixa",
+      "x": 708,
+      "y": 110,
+      "w": 60,
+      "h": 120,
+      "inclinacao": 40,
+      "cor": "#fff6d0",
+      "forca": 0.15
+    }
+  ],
+  "visual": {
+    "ambiente": "#ffffff",
+    "tinta": "#fff8f0",
+    "saturacao": 1.04,
+    "contraste": 1.04,
+    "brilho": 0.3,
+    "vinheta": 0.32,
+    "limiar": 0.88
+  },
+  "particulas": [
+    {
+      "tipo": "poeira",
+      "x": 0,
+      "y": 80,
+      "w": 800,
+      "h": 190,
+      "quantidade": 16
+    }
+  ],
+  "animados": [
+    {
+      "tipo": "papel",
+      "x": 191,
+      "y": 37,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.6
+    },
+    {
+      "tipo": "papel",
+      "x": 205,
+      "y": 41,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.9500000000000002
+    },
+    {
+      "tipo": "papel",
+      "x": 219,
+      "y": 37,
+      "w": 14,
+      "h": 18,
+      "ritmo": 2.3
+    },
+    {
+      "tipo": "papel",
+      "x": 367,
+      "y": 37,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.6
+    },
+    {
+      "tipo": "papel",
+      "x": 381,
+      "y": 41,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.9500000000000002
+    },
+    {
+      "tipo": "papel",
+      "x": 395,
+      "y": 37,
+      "w": 14,
+      "h": 18,
+      "ritmo": 2.3
+    },
+    {
+      "tipo": "papel",
+      "x": 543,
+      "y": 37,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.6
+    },
+    {
+      "tipo": "papel",
+      "x": 557,
+      "y": 41,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.9500000000000002
+    },
+    {
+      "tipo": "papel",
+      "x": 571,
+      "y": 37,
+      "w": 14,
+      "h": 18,
+      "ritmo": 2.3
+    },
+    {
+      "tipo": "tremeluz",
+      "x": 420,
+      "y": 104,
+      "w": 120,
+      "h": 158,
+      "forca": 0.05,
+      "periodo": 6.5,
+      "base": 104
+    },
+    {
+      "tipo": "brilho",
+      "x": 142,
+      "y": 68,
+      "base": 70.6,
+      "periodo": 3.0
+    },
+    {
+      "tipo": "brilho",
+      "x": 318,
+      "y": 68,
+      "base": 70.6,
+      "periodo": 4.7
+    },
+    {
+      "tipo": "brilho",
+      "x": 494,
+      "y": 68,
+      "base": 70.6,
+      "periodo": 6.4
+    },
+    {
+      "tipo": "brilho",
+      "x": 670,
+      "y": 68,
+      "base": 70.6,
+      "periodo": 4.1
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+	"_leia": "Jogo online (scripts/rede.gd). elenco = quem dá pra escolher (sem repetir), na ordem da lista. figurante = prefixo da arte de quem entra como figurante (aluno1..alunoN).",
+	"elenco": ["breno", "nicao", "lucas", "joao", "matheus", "beto", "lukako", "fabio"],
+	"max_jogadores": 6,
+	"porta": 7777,
+	"figurante": "aluno",
+	"figurantes": 10,
+	"nome_figurante": "Figurante (aluno)"
+}

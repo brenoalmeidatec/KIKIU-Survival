@@ -1,0 +1,337 @@
+{
+  "musica": "lab",
+  "nome": "Laboratório de Informática",
+  "tamanho": [
+    928,
+    448
+  ],
+  "fundo": {
+    "imagem": "laboratorio.png"
+  },
+  "area_andavel": [
+    4,
+    110,
+    908,
+    330
+  ],
+  "colisoes": [],
+  "objetos": [
+    {
+      "imagem": "laboratorio_balcao.png",
+      "x": 70,
+      "y": 236,
+      "solido": [
+        100,
+        8
+      ]
+    },
+    {
+      "imagem": "laboratorio_pcs.png",
+      "x": 400,
+      "y": 172,
+      "solido": [
+        304,
+        24
+      ]
+    },
+    {
+      "imagem": "laboratorio_pcs.png",
+      "x": 400,
+      "y": 256,
+      "solido": [
+        304,
+        24
+      ]
+    },
+    {
+      "imagem": "laboratorio_armario_ti.png",
+      "x": 628,
+      "y": 236,
+      "solido": [
+        48,
+        14
+      ]
+    },
+    {
+      "imagem": "laboratorio_armario_mat.png",
+      "x": 700,
+      "y": 236,
+      "solido": [
+        40,
+        14
+      ]
+    },
+    {
+      "imagem": "laboratorio_divisoria.png",
+      "x": 396,
+      "y": 322,
+      "solido": [
+        792,
+        20
+      ]
+    },
+    {
+      "imagem": "laboratorio_cadeiras.png",
+      "x": 70,
+      "y": 356,
+      "solido": [
+        36,
+        8
+      ]
+    },
+    {
+      "x": 200,
+      "y": 384,
+      "imagem": "sala204_lixeira.png",
+      "solido": [
+        16,
+        8
+      ]
+    },
+    {
+      "imagem": "laboratorio_mesa_lucas.png",
+      "x": 226,
+      "y": 251,
+      "desce": 1,
+      "solido": [
+        30,
+        6
+      ]
+    },
+    {
+      "imagem": "laboratorio_cadeira_lucas.png",
+      "x": 195,
+      "y": 250,
+      "desce": 4
+    },
+    {
+      "imagem": "cadeira_escritorio.png",
+      "x": 58,
+      "y": 220,
+      "solido": [
+        12,
+        4
+      ]
+    }
+  ],
+  "pontos": [
+    {
+      "x": 24,
+      "y": 232,
+      "w": 92,
+      "h": 8,
+      "cena": "balcao"
+    },
+    {
+      "x": 248,
+      "y": 168,
+      "w": 304,
+      "h": 8,
+      "cena": "computadores"
+    },
+    {
+      "x": 248,
+      "y": 252,
+      "w": 304,
+      "h": 8,
+      "cena": "computadores"
+    },
+    {
+      "x": 600,
+      "y": 232,
+      "w": 56,
+      "h": 8,
+      "cena": "armario_ti"
+    },
+    {
+      "x": 676,
+      "y": 232,
+      "w": 48,
+      "h": 8,
+      "cena": "armario_materiais"
+    },
+    {
+      "x": 230,
+      "y": 316,
+      "w": 400,
+      "h": 8,
+      "cena": "divisoria"
+    },
+    {
+      "x": 192,
+      "y": 96,
+      "w": 144,
+      "h": 16,
+      "cena": "janelas"
+    },
+    {
+      "x": 536,
+      "y": 96,
+      "w": 144,
+      "h": 16,
+      "cena": "janelas"
+    },
+    {
+      "x": 388,
+      "y": 96,
+      "w": 84,
+      "h": 16,
+      "cena": "ar_condicionado"
+    }
+  ],
+  "portas": [
+    {
+      "x": 840,
+      "y": 436,
+      "w": 64,
+      "h": 12,
+      "para": "corredor",
+      "chegada": {
+        "x": 304,
+        "y": 124,
+        "dir": "baixo"
+      }
+    }
+  ],
+  "luzes": [
+    {
+      "tipo": "luz",
+      "x": 230,
+      "y": 140,
+      "w": 340,
+      "h": 70,
+      "cor": "#7fb0ff",
+      "forca": 0.12
+    },
+    {
+      "tipo": "luz",
+      "x": 230,
+      "y": 224,
+      "w": 340,
+      "h": 70,
+      "cor": "#7fb0ff",
+      "forca": 0.12
+    }
+  ],
+  "visual": {
+    "ambiente": "#ffffff",
+    "tinta": "#fff8f0",
+    "saturacao": 1.04,
+    "contraste": 1.04,
+    "brilho": 0.3,
+    "vinheta": 0.32,
+    "limiar": 0.88,
+    "sombras": "#06102a"
+  },
+  "particulas": [
+    {
+      "tipo": "poeira",
+      "x": 0,
+      "y": 100,
+      "w": 928,
+      "h": 340,
+      "quantidade": 18
+    }
+  ],
+  "animados": [
+    {
+      "tipo": "tela",
+      "x": 275,
+      "y": 118,
+      "w": 14,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "codigo"
+    },
+    {
+      "tipo": "tela",
+      "x": 335,
+      "y": 118,
+      "w": 14,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 395,
+      "y": 118,
+      "w": 14,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "codigo"
+    },
+    {
+      "tipo": "tela",
+      "x": 455,
+      "y": 118,
+      "w": 14,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "codigo"
+    },
+    {
+      "tipo": "tela",
+      "x": 515,
+      "y": 118,
+      "w": 14,
+      "h": 8,
+      "base": 172.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 275,
+      "y": 202,
+      "w": 14,
+      "h": 8,
+      "base": 256.5,
+      "estilo": "codigo"
+    },
+    {
+      "tipo": "tela",
+      "x": 335,
+      "y": 202,
+      "w": 14,
+      "h": 8,
+      "base": 256.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "tela",
+      "x": 395,
+      "y": 202,
+      "w": 14,
+      "h": 8,
+      "base": 256.5,
+      "estilo": "codigo"
+    },
+    {
+      "tipo": "tela",
+      "x": 455,
+      "y": 202,
+      "w": 14,
+      "h": 8,
+      "base": 256.5,
+      "estilo": "codigo"
+    },
+    {
+      "tipo": "tela",
+      "x": 515,
+      "y": 202,
+      "w": 14,
+      "h": 8,
+      "base": 256.5,
+      "estilo": "brilho"
+    },
+    {
+      "tipo": "led",
+      "x": 458,
+      "y": 17,
+      "w": 5,
+      "h": 2,
+      "base": 19.5,
+      "ritmo": 1.0499999999999998
+    }
+  ]
+}

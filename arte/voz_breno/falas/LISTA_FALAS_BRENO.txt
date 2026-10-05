@@ -1,0 +1,38 @@
+// Falas de breno. Cada áudio vai em audio/vozes/<arquivo>.ogg (ou .wav) ao lado do JOGO.exe.
+// arquivo | cena | texto   (36 falas)
+breno_0742684b | cadeira_presidente | A cadeira vermelha do presidente. Combina comigo... mas melhor nem sentar.
+breno_4a5c2c01 | computadores | Um computador livre no laboratório! ...Não, tá escrito "NÃO USAR".
+breno_39879c15 | ar_condicionado | Esse ar-condicionado tá no modo Polo Norte.
+breno_01314b8f | relogio | Ainda faltam quarenta minutos de aula...
+breno_0ee223d0 | rua | Lá fora tá um sol de rachar. Melhor ficar aqui dentro.
+breno_7dbf77b7 | placa_cairu | Faculdade Cairu. Desde 1905, segundo o João.
+breno_1fed51e9 | maquina | A máquina engoliu minha moeda de novo.
+breno_ec3e310d | computadores_quebrados | Esse armário é um cemitério de computador. Uns têm conserto. Outros, só reza.
+breno_5bbb7b97 | nicao_depois | Religar os cabos com o Nicão?
+breno_a6e9d54d | lucas_depois | Ajudar o Lucas a fechar as abas?
+breno_2cae5bad | joao_depois | Consertar o PC pro João?
+breno_c0477ee9 | beto_depois | Ajudar o Beto a sair de fininho?
+breno_e16515d5 | lukako_depois | Jogar QW com o Lukako?
+breno_dcdd1adb | fabio_depois | Mostrar pro Fábio quem sabe?
+breno_1668a5e9 | mauro_oi | Tirar o vírus do celular do Seu Mauro?
+breno_1e25be1c | mauro_depois | O que fazer com o Seu Mauro?
+breno_6dff465f | mauro_violao | Fazer uma resenha no violão com o Seu Mauro?
+breno_a8c222de | teste_novidades | Nicão?
+breno_9d2915f6 | teste_novidades | E aí, Breno?
+breno_4c71bda9 | teste_minijogos | Qual minijogo?
+breno_246fa13b | nicao | Nicão, já é meio-dia.
+breno_277cd2b0 | lucas | Faz quanto tempo isso?
+breno_8c9b9254 | joao | E você sabe por quê?
+breno_53045256 | matheus | Matheus, você tá segurando ele.
+breno_d6a107a5 | beto | Resolve o quê?
+breno_4d5efed8 | lukako | Ele disse que ia resolver alguma coisa.
+breno_5b8a84cf | lukako | (Teste) Terminar o capítulo agora?
+breno_26dce641 | fabio | E vai contar?
+breno_d707ce50 | cadeira_presidente | A cadeira vermelha do presidente. Melhor nem pensar em sentar.
+breno_eba78ef3 | teste_cenas | Testar o sistema de cenas?
+breno_8b49a6b7 | teste_cenas | Que foi isso?! Terremoto em Salvador?
+breno_a88b94b0 | teste_cenas | A cadeira vermelha do presidente...
+breno_bcd1041d | teste_cenas | Sentar na cadeira?
+breno_026f66fc | teste_de_novo | Repetir o teste?
+breno_012a1275 | mj_lista1 | Qual?
+breno_008e8195 | teste_efeitos | ...talvez.

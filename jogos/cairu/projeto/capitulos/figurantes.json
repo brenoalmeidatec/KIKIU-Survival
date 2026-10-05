@@ -1,0 +1,215 @@
+{
+ "_leia": "Alunos de fundo (figurantes). 'bonecos': quais pastas de assets/personagens são alunos e alunas. 'mapas': o que aparece em cada mapa. tipo andar (passeia sozinho; n = quantos), grupo (n alunos em roda no ponto x,y), parado (em pé num dos 'lugares' [x,y], olhando pra 'dir'), sentado (nas carteiras: objetos do mapa cuja imagem tem 'objeto' no nome; 'dy' acerta a altura do pé e 'sobe' levanta o desenho), pc (de costas nos computadores, 'lugares'). 'sexo' fixa aluno ou aluna. 'requer' funciona como nas cenas. 'falas': o que eles dizem quando o Breno aperta E (por sexo, por tipo e 'mapa:<id>'). 'mauro_cantadas' e 'reacoes_aluna': quando o Seu Mauro vê uma aluna passando perto. Num capítulo, \"figurantes\": false desliga tudo.",
+ "bonecos": {
+  "aluno": [
+   "aluno1",
+   "aluno2",
+   "aluno3",
+   "aluno4",
+   "aluno9",
+   "aluno10"
+  ],
+  "aluna": [
+   "aluno5",
+   "aluno6",
+   "aluno7",
+   "aluno8"
+  ]
+ },
+ "mapas": {
+  "recepcao": [
+   {
+    "tipo": "andar",
+    "n": 2
+   },
+   {
+    "tipo": "parado",
+    "n": 1,
+    "lugares": [
+     [
+      720,
+      236
+     ]
+    ],
+    "dir": "cima"
+   },
+   {
+    "tipo": "grupo",
+    "x": 230,
+    "y": 400,
+    "n": 2
+   }
+  ],
+  "patio": [
+   {
+    "tipo": "andar",
+    "n": 2
+   },
+   {
+    "tipo": "andar",
+    "n": 2,
+    "sexo": "aluna"
+   },
+   {
+    "tipo": "grupo",
+    "x": 720,
+    "y": 250,
+    "n": 3
+   },
+   {
+    "tipo": "grupo",
+    "x": 300,
+    "y": 420,
+    "n": 2
+   }
+  ],
+  "corredor": [
+   {
+    "tipo": "andar",
+    "n": 2
+   },
+   {
+    "tipo": "parado",
+    "n": 1,
+    "lugares": [
+     [
+      212,
+      128
+     ],
+     [
+      388,
+      128
+     ]
+    ],
+    "dir": "cima"
+   },
+   {
+    "tipo": "grupo",
+    "x": 560,
+    "y": 205,
+    "n": 2
+   }
+  ],
+  "sala_aula": [
+   {
+    "tipo": "sentado",
+    "objeto": "sala204_carteira",
+    "n": 8,
+    "dy": -1,
+    "sobe": 17
+   }
+  ],
+  "laboratorio": [
+   {
+    "tipo": "pc",
+    "n": 4,
+    "lugares": [
+     [
+      282,
+      173
+     ],
+     [
+      402,
+      173
+     ],
+     [
+      522,
+      173
+     ],
+     [
+      342,
+      257
+     ],
+     [
+      462,
+      257
+     ]
+    ]
+   },
+   {
+    "tipo": "andar",
+    "n": 1
+   }
+  ],
+  "nucleo": [
+   {
+    "tipo": "parado",
+    "n": 1,
+    "lugares": [
+     [
+      460,
+      404
+     ]
+    ],
+    "dir": "cima"
+   }
+  ]
+ },
+ "falas": {
+  "aluno": [
+   "Colé, véi!",
+   "Ó paí, ó... o intervalo mal começou e eu já tô cansado.",
+   "Tu sabe se a prova é com consulta?",
+   "Barril dobrado essa prova de custos, viu?",
+   "Tô só esperando dar a hora pra meter o pé.",
+   "Ô, tu tem carregador aí? Tô com 3%.",
+   "O wi-fi daqui só pega perto do banheiro, véi.",
+   "Eu vim só pela chamada, tá ligado?",
+   "Massa! O professor faltou!",
+   "Bora comer um acarajé na saída?"
+  ],
+  "aluna": [
+   "Oxe, tá me olhando por quê?",
+   "Menina, tu viu o grupo da sala? Tá pegando fogo!",
+   "Alguém tem o resumo de ontem?",
+   "O Seu Mauro me chamou de flor de novo, rapaz...",
+   "Ai, que preguiça de fazer TCC.",
+   "Se o professor passar trabalho em grupo eu choro.",
+   "Ó o calor de Salvador, minha filha...",
+   "Vou fingir que entendi a aula. Funciona sempre."
+  ],
+  "grupo": [
+   "A gente tá falando da novela. Fofoca não, viu?",
+   "Shh! Tu não ouviu nada.",
+   "Tu vai na festa sexta?"
+  ],
+  "sentado": [
+   "Psiu, tô prestando atenção... mentira.",
+   "Já deu a hora?",
+   "Professor, isso cai na prova?",
+   "Acordei agora. O que eu perdi?"
+  ],
+  "pc": [
+   "Tô fazendo trabalho... de anime.",
+   "Não olha minha tela não, pô!",
+   "Esse PC é do tempo do Windows XP, véi.",
+   "Já reiniciei três vezes. Agora vai."
+  ],
+  "mapa:nucleo": [
+   "Tô aqui desde cedo pra resetar minha senha.",
+   "O Nicão disse que já vem... faz uma hora."
+  ],
+  "mapa:patio": [
+   "Cantina tá cara, véi. Coxinha a seis conto!"
+  ],
+  "mapa:recepcao": [
+   "Tô esperando a secretaria abrir desde ontem."
+  ]
+ },
+ "mauro_cantadas": [
+  "Ô minha fia, cê é mais bonita que chuva no sertão, visse?",
+  "Bom dia, moça! Vixe Maria, que formosura!",
+  "Eita, até a vassoura parou de varrer pra ver ocê passar.",
+  "Ô lindeza! Lá na roça não nasce flor assim, não.",
+  "Cuidado com o molhado, princesa, que eu passei pano agorinha. Hehe.",
+  "Ô flor do mandacaru! Boa tarde!"
+ ],
+ "reacoes_aluna": [
+  "Obrigada, Seu Mauro... vá varrer, vá.",
+  "Ai, Seu Mauro, o senhor de novo!",
+  "Respeita, Seu Mauro!",
+  "Hehe, bom dia, Seu Mauro.",
+  "...",
+  "raiva"
+ ]
+}

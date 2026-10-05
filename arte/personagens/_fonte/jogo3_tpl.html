@@ -1,0 +1,336 @@
+<title>JOGO Prévia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: palco de jogo centralizado em tela escura, tira de personagens andando embaixo. */
+:root {
+  --bg: #11152c;
+  --panel: #1a2050;
+  --line: #3a4380;
+  --ink: #f3efe2;
+  --muted: #a9b0d6;
+  --blue: #2f6bff;
+  --gold: #ffd34e;
+  --px: 'Press Start 2P', 'Courier New', monospace;
+  --ui: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--ui); font-size: 16px; line-height: 1.5; padding-inline: 16px; padding-block: 20px 40px; }
+main { max-width: 1040px; margin-inline: auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--px); font-size: clamp(16px, 3.2vw, 24px); font-weight: 400; margin: 0; letter-spacing: .04em; }
+.sub { color: var(--muted); margin: 6px 0 0; max-width: 62ch; }
+.stage { border: 3px solid var(--line); background: #000; line-height: 0; }
+canvas#game { width: 100%; height: auto; aspect-ratio: 16 / 9; image-rendering: pixelated; image-rendering: crisp-edges; display: block; outline: none; }
+.keys { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 14px; }
+kbd { font-family: var(--px); font-size: 10px; background: var(--panel); border: 2px solid var(--line); padding: 4px 6px; color: var(--ink); }
+h2 { font-family: var(--px); font-size: 13px; font-weight: 400; margin: 8px 0 0; letter-spacing: .05em; }
+.strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.strip li { background: var(--panel); border: 2px solid var(--line); padding: 10px 8px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.strip canvas { width: 88px; height: 120px; image-rendering: pixelated; image-rendering: crisp-edges; background: #f0e2bc; }
+.strip span { font-family: var(--px); font-size: 9px; letter-spacing: .04em; }
+.note { color: var(--muted); font-size: 14px; max-width: 70ch; }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+</style>
+
+<main>
+  <header>
+    <h1>JOGO</h1>
+    <p class="sub">Prévia jogável: ande pela sala, chegue perto de alguém e aperte E. A cena mostra os dois de corpo inteiro, com a boca mexendo e gestos. Os textos são só exemplos, as histórias de verdade entram depois.</p>
+  </header>
+  <div class="stage"><canvas id="game" width="480" height="270" tabindex="0" aria-label="Prévia do jogo"></canvas></div>
+  <div class="keys">
+    <span><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> ou <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> andar</span>
+    <span><kbd>E</kbd> ou <kbd>ENTER</kbd> conversar e avançar o texto</span>
+    <span>Clique no jogo antes de começar</span>
+  </div>
+  <h2>Todos andando</h2>
+  <ul class="strip" id="strip"></ul>
+  <p class="note">Farda azul da Cairu em todos. Rostos feitos a partir das fotos, em pixel art nítida. O logo da farda ainda é um desenho provisório.</p>
+</main>
+
+<script>
+const ASSETS = __ASSETS__;
+const QUADROS = __QUADROS__;
+const NAMES = {breno:'Breno', nicao:'Nicão', lucas:'Lucas', joao:'João', matheus:'Matheus', beto:'Beto', lukako:'Lukako', fabio:'Fábio'};
+
+// falas: [quem, texto, gestos do falante (alternam), reacao de quem ouve]
+const FALAS = {
+  nicao:  [['nicao','Bom dia... eu acho. Alguém sabe que horas são?',['think','talk1'],'idle'],
+           ['breno','Nicão, já é meio-dia.',['point','talk2'],'idle'],
+           ['nicao','Ah, então eu tô adiantado.',['shrug','talk1'],'laugh'],
+           ['*','(CENA) Nicão acena pro corredor inteiro e ri da própria piada.',['wave','laugh'],'idle']],
+  lucas:  [['lucas','Eu só desci pra pegar um café.',['talk1','talk2'],'idle'],
+           ['breno','Faz quanto tempo isso?',['shrug','talk2'],'idle'],
+           ['lucas','Uns quarenta minutos. A fila tá andando.',['point','talk1'],'laugh'],
+           ['*','(CENA) Lucas dá risada, acena e volta pra fila do café.',['laugh','wave'],'idle']],
+  joao:   [['joao','Dizem que a faculdade é de 1905.',['cross','talk1'],'idle'],
+           ['breno','E você sabe por quê?',['talk2','point'],'idle'],
+           ['joao','Eu estava lá. Pode perguntar pra qualquer um.',['point','cross'],'laugh']],
+  matheus:[['matheus','Quem pegou o meu lanche? Eu deixei bem aqui.',['talk1','point'],'idle'],
+           ['breno','Matheus, você tá segurando ele.',['point','talk2'],'idle'],
+           ['matheus','...Eu sabia que era você.',['shrug','cross'],'laugh']],
+  beto:   [['beto','Calma, gente. Deixa que eu resolvo isso.',['talk2','talk1'],'idle'],
+           ['breno','Resolve o quê?',['shrug','talk1'],'idle'],
+           ['beto','Ainda não sei. Já volto.',['wave','talk2'],'laugh']],
+  lukako: [['lukako','Alguém viu o Beto?',['talk1','shrug'],'idle'],
+           ['breno','Ele disse que ia resolver alguma coisa.',['talk2','talk1'],'think'],
+           ['lukako','Então a gente não vê mais ele hoje.',['cross','shrug'],'laugh']],
+  fabio:  [['fabio','Eu vi tudo o que aconteceu aqui.',['cross','talk1'],'idle'],
+           ['breno','E vai contar?',['point','talk2'],'idle'],
+           ['fabio','Não. Mas eu vi tudo.',['shrug','point'],'laugh']]
+};
+const W = 480, H = 270, DIRS = {baixo:0, esquerda:1, direita:2, cima:3}, CICLO = [1,3,2,3], CWD = 100, CHT = 140;
+const BOCA = ['m','o','c','o','m','c','o','m'];
+
+const EXTRA = {walk:{}, poses:{}, bust:{}};
+// folhas geradas por IA (Nicao): quadros de pose e cabecas
+const POSE_IDX = {idle:0, wave:3, point:4, shrug:5, cross:6, think:7, laugh:8, piscar:8, surp:10, sad:11};
+const BUST_IDX = {c:0, m:1, o:2, laugh:3, surp:4, sad:5};
+function load(src){ return new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; }); }
+
+async function boot(){
+  try { await document.fonts.load('8px "Press Start 2P"'); } catch(e){}
+  const spr = {}, cena = {};
+  await Promise.all(Object.keys(ASSETS).map(async k => {
+    const a = ASSETS[k]; spr[k] = await load(a.spr); cena[k] = await load(a.cena);
+    if (a.walk) EXTRA.walk[k] = await load(a.walk.src);
+    if (a.poses) EXTRA.poses[k] = await load(a.poses.src);
+    if (a.bust) EXTRA.bust[k] = await load(a.bust.src);
+  }));
+  strip(spr); game(spr, cena);
+}
+
+function strip(spr){
+  const ul = document.getElementById('strip'), items = [];
+  Object.keys(NAMES).forEach(k => {
+    const li = document.createElement('li'), c = document.createElement('canvas'), s = document.createElement('span');
+    c.width = 44; c.height = 60; s.textContent = NAMES[k]; li.append(c, s); ul.append(li);
+    items.push({k, ctx: c.getContext('2d')});
+  });
+  let t = 0;
+  setInterval(() => {
+    t++;
+    const dir = ['baixo','direita','cima','esquerda'][Math.floor(t / 16) % 4], f = CICLO[t % 4];
+    items.forEach(it => { it.ctx.clearRect(0,0,44,60); it.ctx.drawImage(spr[it.k], f*44, DIRS[dir]*60, 44, 60, 0, 0, 44, 60); });
+  }, 150);
+}
+
+function game(spr, cenaImg){
+  const cv = document.getElementById('game'), g = cv.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  const TW = 170, TX = (TW - CWD) / 2;
+  const tmp = document.createElement('canvas'); tmp.width = TW; tmp.height = CHT;
+  const tg = tmp.getContext('2d'); tg.imageSmoothingEnabled = false;
+  const WALL = 92;
+  const npcs = [['nicao',64,150],['lucas',150,128],['joao',250,148],['matheus',350,132],['beto',420,178],['lukako',110,232],['fabio',330,236]]
+    .map(([k,x,y]) => ({k, x, y, dir:'baixo', t:0}));
+  const p = {k:'breno', x:240, y:214, dir:'baixo', moving:false, t:0};
+  const keys = {};
+  let mode = 'play', fade = 0, fadeDir = 0, cena = null, target = null, frame = 0, cf = 0;
+
+  addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (['arrowup','arrowdown','arrowleft','arrowright',' ','enter'].includes(k)) e.preventDefault();
+    if (keys[k]) return;
+    keys[k] = true;
+    if (k === 'e' || k === 'enter' || k === ' ') action();
+  });
+  addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+  cv.addEventListener('pointerdown', () => cv.focus());
+
+  function near(){
+    let best = null, bd = 34;
+    npcs.forEach(n => { const d = Math.hypot(n.x - p.x, (n.y - p.y) * 1.3); if (d < bd) { bd = d; best = n; } });
+    return best;
+  }
+  function action(){
+    if (mode === 'play'){
+      const n = near();
+      if (n){ target = n; cena = {falas:FALAS[n.k], i:0, chars:0, t:0}; mode = 'in'; fadeDir = 1; }
+    } else if (mode === 'talk'){
+      const f = cena.falas[cena.i];
+      if (cena.chars < f[1].length) cena.chars = f[1].length;
+      else if (cena.i < cena.falas.length - 1){ cena.i++; cena.chars = 0; cena.t = 0; }
+      else { mode = 'out'; fadeDir = 1; }
+    }
+  }
+  function blocked(x, y){
+    if (x < 14 || x > W - 14 || y < WALL + 6 || y > H - 6) return true;
+    return npcs.some(n => Math.abs(n.x - x) < 14 && Math.abs(n.y - y) < 7);
+  }
+  function update(){
+    frame++;
+    if (fadeDir) {
+      fade = Math.max(0, Math.min(1, fade + fadeDir * 0.06));
+      if (fade >= 1 && fadeDir > 0){
+        fadeDir = -1;
+        if (mode === 'in') mode = 'talk';
+        else if (mode === 'out'){ mode = 'play'; target = null; cena = null; }
+      } else if (fade <= 0 && fadeDir < 0) fadeDir = 0;
+    }
+    if (mode === 'play'){
+      let dx = (keys['arrowright']||keys['d'] ? 1 : 0) - (keys['arrowleft']||keys['a'] ? 1 : 0);
+      let dy = (keys['arrowdown']||keys['s'] ? 1 : 0) - (keys['arrowup']||keys['w'] ? 1 : 0);
+      p.moving = !!(dx || dy);
+      if (p.moving){
+        if (dx && dy){ dx *= .72; dy *= .72; }
+        const sp = 1.5;
+        if (!blocked(p.x + dx * sp, p.y)) p.x += dx * sp;
+        if (!blocked(p.x, p.y + dy * sp)) p.y += dy * sp;
+        p.dir = Math.abs(dx) >= Math.abs(dy) && dx ? (dx < 0 ? 'esquerda' : 'direita') : (dy < 0 ? 'cima' : 'baixo');
+        p.t++;
+      } else p.t = 0;
+    } else if (mode === 'talk'){
+      cena.t++;
+      const f = cena.falas[cena.i];
+      if (frame % 2 === 0 && cena.chars < f[1].length) cena.chars++;
+    }
+  }
+
+  function chao(wallH, tile){
+    g.fillStyle = '#d9deee'; g.fillRect(0, 0, W, H);
+    for (let y = wallH; y < H; y += tile) for (let x = 0; x < W; x += tile){
+      g.fillStyle = ((x + y) / tile) % 2 ? '#c4cbe3' : '#e6e9f5'; g.fillRect(x, y, tile, tile);
+    }
+    for (let y = 0; y < wallH; y += 46) for (let x = 0; x < W; x += 80){
+      const azul = ((x / 80) + (y / 46)) % 2 === 0;
+      g.fillStyle = azul ? '#2a2fa8' : '#f1f3fb'; g.fillRect(x, y, 80, 46);
+      g.font = '8px "Press Start 2P", monospace'; g.textBaseline = 'top';
+      g.fillStyle = azul ? '#ffffff' : '#2a2fa8'; g.fillText('Cairu', x + 17, y + 18);
+    }
+    g.fillStyle = '#0d1140'; g.fillRect(0, wallH - 2, W, 4);
+    g.fillStyle = 'rgba(0,0,0,.14)'; g.fillRect(0, wallH + 2, W, 5);
+  }
+  function desenha(c){
+    const row = DIRS[c.dir], col = (c.moving ? CICLO[Math.floor(c.t / 6) % 4] : 0);
+    g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(c.x, c.y, 9, 3.5, 0, 0, 7); g.fill();
+    const W2 = EXTRA.walk[c.k];
+    if (W2){ const m = ASSETS[c.k].walk, cw = c.moving ? Math.floor(c.t / 6) % 4 : 0; g.drawImage(W2, cw * m.fw, row * m.fh, m.fw, m.fh, Math.round(c.x - m.fw / 2), Math.round(c.y + 3 - m.fh), m.fw, m.fh); return; }
+    g.drawImage(spr[c.k], col * 44, row * 60, 44, 60, Math.round(c.x - 22), Math.round(c.y - 57), 44, 60);
+  }
+  function balao(n){
+    const bob = Math.round(Math.sin(frame / 8) * 1.5), x = Math.round(n.x), y = Math.round(n.y - 66 + bob);
+    g.fillStyle = '#11152c'; g.fillRect(x - 8, y - 13, 16, 14);
+    g.fillStyle = '#ffd34e'; g.fillRect(x - 7, y - 12, 14, 12);
+    g.fillStyle = '#11152c'; g.font = '8px "Press Start 2P", monospace'; g.textBaseline = 'top'; g.fillText('E', x - 4, y - 9);
+  }
+  function quebra(txt, max){
+    const out = []; let linha = '';
+    txt.split(' ').forEach(w => { if ((linha + ' ' + w).trim().length > max){ out.push(linha); linha = w; } else linha = (linha + ' ' + w).trim(); });
+    out.push(linha); return out;
+  }
+
+  // ---- cena com corpo inteiro ----
+  const IDX = QUADROS.reduce((o, n, i) => (o[n] = i, o), {});
+  function quadro(k, falante, f, tt, reacao){
+    let nome = quadroNome(k, falante, f, tt, reacao);
+    if (!(nome in IDX)) nome = 'idle_c';
+    return IDX[nome];
+  }
+  function quadroNome(k, falante, f, tt, reacao){
+    let nome;
+    if (falante){
+      const gestos = f[2], gi = Math.floor(tt / 90) % gestos.length;
+      const digitando = cena.chars < f[1].length;
+      const b = digitando ? BOCA[Math.floor(tt / 6) % BOCA.length] : 'c';
+      nome = gestos[gi] + '_' + b;
+    } else if (reacao === 'laugh'){
+      nome = Math.floor(tt / 9) % 2 ? 'laugh_b' : 'laugh_a';
+    } else if (reacao === 'think'){
+      nome = 'think_c';
+    } else {
+      nome = (Math.floor(tt / 150) % 7 === 6 && tt % 150 < 8) ? 'piscar' : (Math.floor(tt / 55) % 2 ? 'idle_b' : 'idle_c');
+    }
+    return nome;
+  }
+  function poseIA(nome){
+    const [base, b] = nome.split('_');
+    if (base === 'talk1' || base === 'talk2') return {c:0, m:1, o:2}[b] || 0;
+    return POSE_IDX[base] || 0;
+  }
+  function personagem(k, x, falante, f, tt, reacao){
+    const cutscene = f[0] === '*', P = EXTRA.poses[k];
+    tg.clearRect(0, 0, TW, CHT);
+    if (P){
+      const m = ASSETS[k].poses, gi = Math.floor(tt / 70) % f[2].length;
+      let nome = quadroNome(k, falante, f, tt, reacao);
+      if (cutscene && k === target.k) nome = f[2][gi] + '_' + (Math.floor(tt / 6) % 2 ? 'm' : 'c');
+      const i = poseIA(nome);
+      const sc = m.sc || 1, dw = m.fw * sc, dh = m.fh * sc;
+      tg.drawImage(P, (i % 4) * m.fw, Math.floor(i / 4) * m.fh, m.fw, m.fh, Math.round((TW - dw) / 2), CHT - dh - 2, dw, dh);
+    } else {
+      let i = quadro(k, falante, f, tt, reacao);
+      if (cutscene && k === target.k){
+        const gn = f[2][Math.floor(tt / 70) % f[2].length], mb = Math.floor(tt / 6) % 2 ? 'o' : 'c';
+        const nm = gn === 'laugh' ? (Math.floor(tt / 9) % 2 ? 'laugh_b' : 'laugh_a') : gn === 'wave' ? (Math.floor(tt / 14) % 2 ? 'wave_b' : 'wave_a') : gn + '_' + mb;
+        if (nm in IDX) i = IDX[nm];
+      }
+      tg.drawImage(cenaImg[k], i * CWD, 0, CWD, CHT, TX, 0, CWD, CHT);
+    }
+    if (!falante && !cutscene){ tg.globalCompositeOperation = 'source-atop'; tg.fillStyle = 'rgba(10,14,60,.38)'; tg.fillRect(0, 0, TW, CHT); tg.globalCompositeOperation = 'source-over'; }
+    g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(x, 202, 30, 6, 0, 0, 7); g.fill();
+    g.drawImage(tmp, Math.round(x - TW / 2), 202 - CHT + 2);
+  }
+  function palco(){
+    chao(138, 16);
+    g.fillStyle = 'rgba(8,12,50,.45)'; g.fillRect(0, 0, W, H);
+    const f = cena.falas[cena.i], quem = f[0];
+    const npc = target.k, lado = {};
+    const esq = 'breno', dir = npc;
+    const tt = cena.t;
+    const cenaCorpo = quem === '*', B = EXTRA.bust[npc];
+    if (B && !cenaCorpo){
+      // conversa: rosto grande, boca mexe enquanto digita
+      const m = ASSETS[npc].bust, falando = quem === npc, digitando = cena.chars < f[1].length;
+      let bi = BUST_IDX[falando && digitando ? ['c','m','o','m','o','c'][Math.floor(tt / 5) % 6] : 'c'];
+      if (!falando && f[3] === 'laugh') bi = BUST_IDX.laugh;
+      if (!falando && f[3] === 'think') bi = BUST_IDX.sad;
+      if (falando && !digitando && Math.floor(tt / 150) % 6 === 5 && tt % 150 < 8) bi = BUST_IDX.laugh;
+      const S = m.sc || 4, bw = m.fw * S, bh = m.fh * S, bx = 250, by = 208 - bh + 0;
+      tg.clearRect(0, 0, CWD, CHT);
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(bx + bw / 2, 206, bw / 2 + 6, 7, 0, 0, 7); g.fill();
+      const oc = document.createElement('canvas'); oc.width = m.fw; oc.height = m.fh;
+      const og = oc.getContext('2d'); og.imageSmoothingEnabled = false;
+      og.drawImage(B, bi * m.fw, 0, m.fw, m.fh, 0, 0, m.fw, m.fh);
+      if (!falando){ og.globalCompositeOperation = 'source-atop'; og.fillStyle = 'rgba(10,14,60,.30)'; og.fillRect(0, 0, m.fw, m.fh); }
+      g.drawImage(oc, 0, 0, m.fw, m.fh, bx, by, bw, bh);
+      // Breno ouvindo/falando, pequeno no canto
+      personagem(esq, 118, quem === esq, f, tt, quem === esq ? null : f[3]);
+    } else {
+      personagem(esq, 118, quem === esq || cenaCorpo ? quem === esq : false, f, tt, quem === esq ? null : f[3]);
+      personagem(dir, 362, quem === dir, f, tt, quem === dir ? null : f[3]);
+    }
+    // tarjas
+    if (!(B && !cenaCorpo)) { g.fillStyle = '#000'; g.fillRect(0, 0, W, 22); }
+    // caixa de texto
+    const topo = 208;
+    g.fillStyle = '#080b26'; g.fillRect(12, topo, 456, 54);
+    g.strokeStyle = '#f3efe2'; g.lineWidth = 2; g.strokeRect(13, topo + 1, 454, 52);
+    g.font = '8px "Press Start 2P", monospace'; g.textBaseline = 'top';
+    if (!cenaCorpo){ const nx = quem === esq ? 22 : 342, wtag = Math.max(56, NAMES[quem].length * 9 + 14);
+    g.fillStyle = '#2f6bff'; g.fillRect(nx, topo - 9, wtag, 14);
+    g.fillStyle = '#fff'; g.fillText(NAMES[quem], nx + 7, topo - 6); }
+    const total = quebra(f[1], 52);
+    let resta = cena.chars;
+    total.forEach((l, i) => {
+      g.fillStyle = cenaCorpo ? '#ffd34e' : '#f3efe2'; g.fillText(l.slice(0, Math.max(0, resta)), 24, topo + 12 + i * 13); resta -= l.length + 1;
+    });
+    if (cena.chars >= f[1].length && Math.floor(frame / 20) % 2 === 0){ g.fillStyle = '#ffd34e'; g.fillText('▼', 446, topo + 40); }
+  }
+
+  function draw(){
+    if (mode === 'talk' || (mode === 'out' && fade >= 1)) { palco(); }
+    else {
+      chao(WALL, 16);
+      const todos = [p, ...npcs].sort((a, b) => a.y - b.y);
+      todos.forEach(desenha);
+      if (mode === 'play'){ const n = near(); if (n) balao(n); }
+    }
+    if (fade > 0){ g.fillStyle = `rgba(0,0,0,${fade})`; g.fillRect(0, 0, W, H); }
+  }
+  function loop(){ update(); draw(); requestAnimationFrame(loop); }
+  loop();
+}
+boot();
+</script>

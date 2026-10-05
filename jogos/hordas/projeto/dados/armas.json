@@ -1,0 +1,252 @@
+{
+ "_ajuda": "tipo: projetil (atira no vírus mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução.",
+ "pendrive": {
+  "nome": "Pendrive",
+  "icone": "pendrive",
+  "tipo": "projetil",
+  "sprite": "proj_pendrive",
+  "descricao": "Atira pendrives no vírus mais perto.",
+  "base": {
+   "dano": 12,
+   "recarga": 0.9,
+   "quantidade": 1,
+   "velocidade": 320,
+   "perfura": 1,
+   "area": 1.0,
+   "duracao": 1.5
+  },
+  "niveis": [
+   {
+    "quantidade": 1
+   },
+   {
+    "dano": 5
+   },
+   {
+    "quantidade": 1
+   },
+   {
+    "perfura": 1,
+    "recarga": -0.2
+   },
+   {
+    "dano": 10
+   }
+  ]
+ },
+ "ssd": {
+  "nome": "SSD de 500GB",
+  "icone": "ssd",
+  "tipo": "projetil",
+  "sprite": "proj_ssd",
+  "evolucao": true,
+  "descricao": "500GB de... arquivos importantes. Atravessa tudo.",
+  "base": {
+   "dano": 28,
+   "recarga": 0.45,
+   "quantidade": 4,
+   "velocidade": 420,
+   "perfura": 6,
+   "area": 1.3,
+   "duracao": 1.6
+  }
+ },
+ "cabo_rede": {
+  "nome": "Cabo de Rede",
+  "icone": "cabo_rede",
+  "tipo": "chicote",
+  "descricao": "Chicoteia pros dois lados com o cabo de rede.",
+  "base": {
+   "dano": 14,
+   "recarga": 1.3,
+   "quantidade": 2,
+   "area": 1.0,
+   "alcance": 112,
+   "largura": 35
+  },
+  "niveis": [
+   {
+    "dano": 5
+   },
+   {
+    "dano": 6
+   },
+   {
+    "area": 0.2
+   },
+   {
+    "dano": 8
+   },
+   {
+    "recarga": -0.25,
+    "area": 0.2
+   }
+  ]
+ },
+ "fibra_optica": {
+  "nome": "Fibra Óptica",
+  "icone": "fibra_optica",
+  "tipo": "chicote",
+  "evolucao": true,
+  "descricao": "Velocidade da luz. Golpeia dos dois lados e cura um pouco.",
+  "base": {
+   "dano": 40,
+   "recarga": 0.8,
+   "quantidade": 2,
+   "area": 1.7,
+   "alcance": 128,
+   "largura": 41,
+   "rouba_vida": 1
+  }
+ },
+ "ventoinha": {
+  "nome": "Ventoinha",
+  "icone": "ventoinha",
+  "tipo": "orbita",
+  "sprite": "proj_ventoinha",
+  "descricao": "Hélices giram em volta de você por um tempo.",
+  "base": {
+   "dano": 9,
+   "recarga": 3.5,
+   "quantidade": 2,
+   "area": 1.0,
+   "raio": 63,
+   "giro": 3.2,
+   "duracao": 3.0
+  },
+  "niveis": [
+   {
+    "quantidade": 1
+   },
+   {
+    "dano": 5,
+    "duracao": 0.5
+   },
+   {
+    "quantidade": 1
+   },
+   {
+    "area": 0.25
+   },
+   {
+    "dano": 8,
+    "duracao": 1.0
+   }
+  ]
+ },
+ "water_cooler": {
+  "nome": "Water Cooler RGB",
+  "icone": "water_cooler",
+  "tipo": "orbita",
+  "sprite": "proj_water_cooler",
+  "evolucao": true,
+  "descricao": "RGB dá +50% de FPS. Gira pra sempre.",
+  "base": {
+   "dano": 22,
+   "recarga": 0.1,
+   "quantidade": 6,
+   "area": 1.4,
+   "raio": 78,
+   "giro": 4.0,
+   "duracao": 999
+  }
+ },
+ "cafe": {
+  "nome": "Café Derramado",
+  "icone": "cafe",
+  "tipo": "poca",
+  "descricao": "Derrama café quente no chão. Queima quem pisa.",
+  "base": {
+   "dano": 6,
+   "recarga": 3.0,
+   "quantidade": 1,
+   "area": 1.0,
+   "raio": 39,
+   "duracao": 2.5,
+   "tique": 0.35
+  },
+  "niveis": [
+   {
+    "quantidade": 1
+   },
+   {
+    "dano": 3,
+    "area": 0.2
+   },
+   {
+    "duracao": 1.0
+   },
+   {
+    "quantidade": 1
+   },
+   {
+    "dano": 5
+   }
+  ]
+ },
+ "garrafa_termica": {
+  "nome": "Garrafa Térmica",
+  "icone": "garrafa_termica",
+  "tipo": "poca",
+  "evolucao": true,
+  "descricao": "Café que nunca esfria. Poças enormes que te seguem.",
+  "base": {
+   "dano": 16,
+   "recarga": 2.0,
+   "quantidade": 4,
+   "area": 1.5,
+   "raio": 45,
+   "duracao": 4.0,
+   "tique": 0.25,
+   "segue": true
+  }
+ },
+ "wifi": {
+  "nome": "Sinal de Wi-Fi",
+  "icone": "wifi",
+  "tipo": "aura",
+  "descricao": "Sinal em volta de você que machuca e empurra.",
+  "base": {
+   "dano": 4,
+   "recarga": 0,
+   "area": 1.0,
+   "raio": 51,
+   "tique": 0.6,
+   "empurra": 40
+  },
+  "niveis": [
+   {
+    "area": 0.2
+   },
+   {
+    "dano": 2
+   },
+   {
+    "area": 0.2,
+    "tique": -0.1
+   },
+   {
+    "dano": 3
+   },
+   {
+    "area": 0.2
+   }
+  ]
+ },
+ "roteador_5g": {
+  "nome": "Roteador 5G",
+  "icone": "roteador_5g",
+  "tipo": "aura",
+  "evolucao": true,
+  "descricao": "Sinal fortíssimo. Deixa os vírus lentos.",
+  "base": {
+   "dano": 12,
+   "recarga": 0,
+   "area": 1.9,
+   "raio": 60,
+   "tique": 0.4,
+   "empurra": 60,
+   "lentidao": 0.5
+  }
+ }
+}

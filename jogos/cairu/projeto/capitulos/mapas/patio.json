@@ -1,0 +1,316 @@
+{
+  "musica": "patio",
+  "nome": "Pátio e cantina",
+  "tamanho": [
+    864,
+    480
+  ],
+  "fundo": {
+    "imagem": "patio.png"
+  },
+  "area_andavel": [
+    12,
+    126,
+    840,
+    346
+  ],
+  "colisoes": [],
+  "objetos": [
+    {
+      "imagem": "patio_balcao.png",
+      "x": 240,
+      "y": 150,
+      "solido": [
+        264,
+        20
+      ]
+    },
+    {
+      "imagem": "patio_maquina.png",
+      "x": 550,
+      "y": 134,
+      "solido": [
+        28,
+        10
+      ]
+    },
+    {
+      "imagem": "patio_mesa.png",
+      "x": 200,
+      "y": 256,
+      "solido": [
+        44,
+        14
+      ]
+    },
+    {
+      "imagem": "patio_mesa.png",
+      "x": 330,
+      "y": 256,
+      "solido": [
+        44,
+        14
+      ]
+    },
+    {
+      "imagem": "patio_mesa.png",
+      "x": 200,
+      "y": 350,
+      "solido": [
+        44,
+        14
+      ]
+    },
+    {
+      "imagem": "patio_mesa.png",
+      "x": 330,
+      "y": 350,
+      "solido": [
+        44,
+        14
+      ]
+    },
+    {
+      "imagem": "patio_mesa.png",
+      "x": 470,
+      "y": 300,
+      "solido": [
+        44,
+        14
+      ]
+    },
+    {
+      "imagem": "patio_arvore.png",
+      "x": 700,
+      "y": 280,
+      "solido": [
+        16,
+        8
+      ],
+      "balanco": 1.6
+    },
+    {
+      "imagem": "patio_arvore.png",
+      "x": 790,
+      "y": 250,
+      "solido": [
+        16,
+        8
+      ],
+      "balanco": 1.6
+    },
+    {
+      "imagem": "patio_arvore.png",
+      "x": 760,
+      "y": 450,
+      "solido": [
+        16,
+        8
+      ],
+      "balanco": 1.6
+    },
+    {
+      "imagem": "patio_arvore.png",
+      "x": 90,
+      "y": 460,
+      "solido": [
+        16,
+        8
+      ],
+      "balanco": 1.6
+    },
+    {
+      "imagem": "patio_banco.png",
+      "x": 600,
+      "y": 440,
+      "solido": [
+        64,
+        10
+      ]
+    },
+    {
+      "imagem": "patio_banco.png",
+      "x": 470,
+      "y": 440,
+      "solido": [
+        64,
+        10
+      ]
+    },
+    {
+      "x": 420,
+      "y": 170,
+      "imagem": "sala204_lixeira.png",
+      "solido": [
+        16,
+        8
+      ]
+    },
+    {
+      "x": 580,
+      "y": 360,
+      "imagem": "sala204_lixeira.png",
+      "solido": [
+        16,
+        8
+      ]
+    }
+  ],
+  "pontos": [
+    {
+      "x": 108,
+      "y": 146,
+      "w": 264,
+      "h": 10,
+      "cena": "cantina"
+    },
+    {
+      "x": 382,
+      "y": 112,
+      "w": 132,
+      "h": 16,
+      "cena": "cardapio"
+    },
+    {
+      "x": 530,
+      "y": 130,
+      "w": 40,
+      "h": 10,
+      "cena": "maquina"
+    },
+    {
+      "x": 606,
+      "y": 112,
+      "w": 150,
+      "h": 16,
+      "cena": "banheiro"
+    },
+    {
+      "x": 180,
+      "y": 250,
+      "w": 40,
+      "h": 10,
+      "cena": "mesa"
+    },
+    {
+      "x": 310,
+      "y": 250,
+      "w": 40,
+      "h": 10,
+      "cena": "mesa"
+    },
+    {
+      "x": 692,
+      "y": 274,
+      "w": 16,
+      "h": 10,
+      "cena": "arvore"
+    }
+  ],
+  "portas": [
+    {
+      "x": 0,
+      "y": 256,
+      "w": 14,
+      "h": 88,
+      "para": "recepcao",
+      "chegada": {
+        "x": 760,
+        "y": 300,
+        "dir": "esquerda"
+      }
+    }
+  ],
+  "luzes": [
+    {
+      "tipo": "sombra",
+      "x": 660,
+      "y": 266,
+      "w": 84,
+      "h": 34,
+      "forca": 0.35
+    },
+    {
+      "tipo": "sombra",
+      "x": 750,
+      "y": 236,
+      "w": 84,
+      "h": 34,
+      "forca": 0.35
+    },
+    {
+      "tipo": "sombra",
+      "x": 720,
+      "y": 436,
+      "w": 84,
+      "h": 34,
+      "forca": 0.35
+    },
+    {
+      "tipo": "sombra",
+      "x": 50,
+      "y": 446,
+      "w": 84,
+      "h": 34,
+      "forca": 0.35
+    },
+    {
+      "tipo": "luz",
+      "x": 180,
+      "y": 200,
+      "w": 480,
+      "h": 240,
+      "cor": "#ffe7a0",
+      "forca": 0.1
+    }
+  ],
+  "visual": {
+    "ambiente": "#ffffff",
+    "tinta": "#fff8ec",
+    "saturacao": 1.08,
+    "contraste": 1.05,
+    "brilho": 0.3,
+    "limiar": 0.82,
+    "vinheta": 0.3
+  },
+  "particulas": [
+    {
+      "tipo": "folhas",
+      "x": 0,
+      "y": 0,
+      "w": 864,
+      "h": 420,
+      "quantidade": 12
+    },
+    {
+      "tipo": "poeira",
+      "x": 0,
+      "y": 100,
+      "w": 864,
+      "h": 380,
+      "quantidade": 18
+    }
+  ],
+  "animados": [
+    {
+      "tipo": "letreiro",
+      "x": 160,
+      "y": 6,
+      "w": 160,
+      "h": 20,
+      "cor": "#feae34",
+      "base": 30
+    },
+    {
+      "tipo": "tremeluz",
+      "x": 532,
+      "y": 60,
+      "w": 34,
+      "h": 70,
+      "cor": "#9fd8ff",
+      "forca": 0.08,
+      "periodo": 9,
+      "base": 134.5
+    }
+  ]
+}

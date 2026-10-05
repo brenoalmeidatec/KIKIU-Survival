@@ -1,0 +1,2509 @@
+{
+ "_leia": "Animações dos personagens. Veja a seção ANIMAÇÕES do LEIA-ME. 'passos' = versão sem quadros desenhados (mexe no sprite de andar); 'arte' = usa as linhas de assets/personagens/<id>/acoes.png (descritas em folha_acoes) quando o personagem tem essa folha.",
+ "folha_acoes": {
+  "tamanho": [
+   64,
+   64
+  ],
+  "colunas": 8,
+  "ancora": [
+   -32,
+   -61
+  ],
+  "linhas": {
+   "abrir_porta_cima": {
+    "linha": 0,
+    "quadros": 6,
+    "fps": 8,
+    "repete": false,
+    "vista": "cima"
+   },
+   "abrir_porta_lado": {
+    "linha": 1,
+    "quadros": 6,
+    "fps": 8,
+    "repete": false,
+    "vista": "lado"
+   },
+   "cair": {
+    "linha": 2,
+    "quadros": 8,
+    "fps": 10,
+    "repete": false,
+    "vista": "lado"
+   },
+   "caido": {
+    "linha": 3,
+    "quadros": 4,
+    "fps": 4,
+    "repete": true,
+    "vista": "lado"
+   },
+   "levantar": {
+    "linha": 4,
+    "quadros": 6,
+    "fps": 8,
+    "repete": false,
+    "vista": "lado"
+   },
+   "soco": {
+    "linha": 5,
+    "quadros": 6,
+    "fps": 12,
+    "repete": false,
+    "vista": "lado"
+   },
+   "empurrao": {
+    "linha": 6,
+    "quadros": 6,
+    "fps": 10,
+    "repete": false,
+    "vista": "lado"
+   },
+   "apanhar": {
+    "linha": 7,
+    "quadros": 6,
+    "fps": 10,
+    "repete": false,
+    "vista": "lado"
+   },
+   "correr": {
+    "linha": 8,
+    "quadros": 8,
+    "fps": 12,
+    "repete": true,
+    "vista": "lado"
+   },
+   "comemorar": {
+    "linha": 9,
+    "quadros": 6,
+    "fps": 8,
+    "repete": true,
+    "vista": "baixo"
+   },
+   "cocar_cabeca": {
+    "linha": 10,
+    "quadros": 4,
+    "fps": 6,
+    "repete": true,
+    "vista": "baixo"
+   },
+   "bracos_cruzados": {
+    "linha": 11,
+    "quadros": 4,
+    "fps": 4,
+    "repete": true,
+    "vista": "baixo"
+   },
+   "apontar": {
+    "linha": 12,
+    "quadros": 4,
+    "fps": 6,
+    "repete": false,
+    "vista": "lado"
+   },
+   "assustado": {
+    "linha": 13,
+    "quadros": 4,
+    "fps": 10,
+    "repete": false,
+    "vista": "baixo"
+   },
+   "respirar": {
+    "linha": 0,
+    "quadros": 4,
+    "fps": 4,
+    "repete": true,
+    "vista": "frente",
+    "folha": "acoes2"
+   },
+   "piscar": {
+    "linha": 1,
+    "quadros": 3,
+    "fps": 10,
+    "repete": false,
+    "vista": "frente",
+    "folha": "acoes2"
+   },
+   "olhar_lados": {
+    "linha": 2,
+    "quadros": 6,
+    "fps": 4,
+    "repete": false,
+    "vista": "frente",
+    "folha": "acoes2"
+   },
+   "bocejar": {
+    "linha": 3,
+    "quadros": 6,
+    "fps": 6,
+    "repete": false,
+    "vista": "frente",
+    "folha": "acoes2"
+   },
+   "sentar": {
+    "linha": 4,
+    "quadros": 4,
+    "fps": 8,
+    "repete": false,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "digitar": {
+    "linha": 5,
+    "quadros": 4,
+    "fps": 10,
+    "repete": true,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "levantar_cadeira": {
+    "linha": 6,
+    "quadros": 4,
+    "fps": 8,
+    "repete": false,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "pegar_objeto": {
+    "linha": 7,
+    "quadros": 6,
+    "fps": 8,
+    "repete": false,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "beber": {
+    "linha": 8,
+    "quadros": 6,
+    "fps": 6,
+    "repete": false,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "rir_alto": {
+    "linha": 9,
+    "quadros": 4,
+    "fps": 10,
+    "repete": true,
+    "vista": "frente",
+    "folha": "acoes2"
+   },
+   "chorar_de_rir": {
+    "linha": 10,
+    "quadros": 6,
+    "fps": 10,
+    "repete": true,
+    "vista": "frente",
+    "folha": "acoes2"
+   },
+   "bravo": {
+    "linha": 11,
+    "quadros": 4,
+    "fps": 8,
+    "repete": true,
+    "vista": "frente",
+    "folha": "acoes2"
+   },
+   "envergonhado": {
+    "linha": 12,
+    "quadros": 4,
+    "fps": 4,
+    "repete": true,
+    "vista": "frente",
+    "folha": "acoes2"
+   },
+   "andar_de_costas": {
+    "linha": 13,
+    "quadros": 8,
+    "fps": 10,
+    "repete": true,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "comemorar_lado": {
+    "linha": 14,
+    "quadros": 6,
+    "fps": 8,
+    "repete": true,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "rir_lado": {
+    "linha": 15,
+    "quadros": 4,
+    "fps": 10,
+    "repete": true,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "assustado_lado": {
+    "linha": 16,
+    "quadros": 4,
+    "fps": 10,
+    "repete": false,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "varrendo": {
+    "linha": 0,
+    "quadros": 6,
+    "fps": 8,
+    "repete": true,
+    "vista": "lado",
+    "folha": "extras"
+   },
+   "celular": {
+    "linha": 1,
+    "quadros": 6,
+    "fps": 4,
+    "repete": true,
+    "vista": "frente",
+    "folha": "extras"
+   },
+   "parado_vassoura": {
+    "linha": 2,
+    "quadros": 4,
+    "fps": 3,
+    "repete": true,
+    "vista": "lado",
+    "folha": "extras"
+   },
+   "tocando_violao": {
+    "linha": 3,
+    "quadros": 6,
+    "fps": 6,
+    "repete": true,
+    "vista": "lado",
+    "folha": "extras"
+   },
+   "chupando_cana": {
+    "linha": 4,
+    "quadros": 6,
+    "fps": 5,
+    "repete": true,
+    "vista": "lado",
+    "folha": "extras"
+   },
+   "agachado_dor": {
+    "linha": 17,
+    "quadros": 4,
+    "fps": 3,
+    "repete": true,
+    "vista": "lado",
+    "folha": "acoes2"
+   },
+   "sentar_banco": {
+    "linha": 18,
+    "quadros": 4,
+    "fps": 8,
+    "repete": false,
+    "vista": "lado",
+    "folha": "acoes2"
+   }
+  }
+ },
+ "animacoes": {
+  "normal": {
+   "passos": [
+    {
+     "t": 0.15,
+     "x": 0,
+     "y": 0,
+     "rot": 0,
+     "sx": 1,
+     "sy": 1,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "cair": {
+   "manter": true,
+   "nota": "cai no chão e fica caído (levanta com !anim <quem> levantar)",
+   "passos": [
+    {
+     "t": 0.08,
+     "y": -4,
+     "rot": -8,
+     "sx": 0.95,
+     "sy": 1.08,
+     "som": "whoosh"
+    },
+    {
+     "t": 0.24,
+     "y": 0,
+     "x": -4,
+     "rot": -90,
+     "sx": 1,
+     "sy": 1,
+     "ease": "in",
+     "mover": [
+      -6,
+      0
+     ]
+    },
+    {
+     "t": 0.07,
+     "y": -3,
+     "ease": "out",
+     "som": "queda",
+     "tremer": [
+      0.2,
+      3
+     ],
+     "particulas": "poeira"
+    },
+    {
+     "t": 0.07,
+     "y": 0,
+     "ease": "in"
+    },
+    {
+     "t": 0.25,
+     "balao": "estrela"
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.35,
+     "quadro": "cair",
+     "som": "whoosh",
+     "mover": [
+      4,
+      0
+     ]
+    },
+    {
+     "t": 0.45,
+     "som": "queda",
+     "tremer": [
+      0.2,
+      3
+     ],
+     "particulas": "poeira",
+     "mover": [
+      4,
+      0
+     ]
+    },
+    {
+     "t": 0.3,
+     "quadro": "caido",
+     "balao": "estrela"
+    }
+   ]
+  },
+  "tropecar": {
+   "manter": true,
+   "nota": "tropeça e cai de cara no chão",
+   "passos": [
+    {
+     "t": 0.1,
+     "rot": 12,
+     "x": 2,
+     "som": "whoosh",
+     "mover": [
+      4,
+      0
+     ]
+    },
+    {
+     "t": 0.12,
+     "rot": 4,
+     "y": -3,
+     "mover": [
+      6,
+      0
+     ]
+    },
+    {
+     "t": 0.2,
+     "rot": 90,
+     "y": 0,
+     "x": 4,
+     "ease": "in",
+     "mover": [
+      8,
+      0
+     ]
+    },
+    {
+     "t": 0.08,
+     "y": -2,
+     "som": "queda",
+     "tremer": [
+      0.2,
+      3
+     ],
+     "particulas": "poeira"
+    },
+    {
+     "t": 0.08,
+     "y": 0
+    },
+    {
+     "t": 0.4,
+     "balao": "..."
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.12,
+     "rot": 10,
+     "som": "whoosh",
+     "mover": [
+      5,
+      0
+     ]
+    },
+    {
+     "t": 0.35,
+     "rot": 0,
+     "quadro": "cair",
+     "mover": [
+      8,
+      0
+     ]
+    },
+    {
+     "t": 0.45,
+     "som": "queda",
+     "tremer": [
+      0.2,
+      3
+     ],
+     "particulas": "poeira",
+     "mover": [
+      4,
+      0
+     ]
+    },
+    {
+     "t": 0.4,
+     "quadro": "caido",
+     "balao": "..."
+    }
+   ]
+  },
+  "levantar": {
+   "nota": "levanta de onde estiver (caído, sentado...)",
+   "passos": [
+    {
+     "t": 0.12,
+     "y": -1
+    },
+    {
+     "t": 0.25,
+     "rot": 0,
+     "x": 0,
+     "y": -6,
+     "ease": "out",
+     "som": "pulo",
+     "quadro": "andar"
+    },
+    {
+     "t": 0.1,
+     "y": 0,
+     "sy": 0.9,
+     "sx": 1.08,
+     "ease": "in"
+    },
+    {
+     "t": 0.1,
+     "sy": 1,
+     "sx": 1
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "levantar",
+     "rot": 0,
+     "x": 0,
+     "y": 0,
+     "sx": 1,
+     "sy": 1,
+     "t": 0.75
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "desmaiar": {
+   "manter": true,
+   "nota": "fica tonto, balança e apaga",
+   "passos": [
+    {
+     "t": 0.25,
+     "rot": 8,
+     "balao": "...",
+     "tempo_balao": 1.2
+    },
+    {
+     "t": 0.3,
+     "rot": -7
+    },
+    {
+     "t": 0.3,
+     "rot": 10,
+     "y": 1
+    },
+    {
+     "t": 0.55,
+     "rot": -90,
+     "y": 0,
+     "ease": "in"
+    },
+    {
+     "t": 0.08,
+     "y": -2,
+     "som": "queda",
+     "tremer": [
+      0.15,
+      2
+     ],
+     "particulas": "poeira"
+    },
+    {
+     "t": 0.08,
+     "y": 0
+    },
+    {
+     "t": 0.3,
+     "balao": "zzz",
+     "tempo_balao": 1.5
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.25,
+     "rot": 8,
+     "balao": "...",
+     "tempo_balao": 1.2
+    },
+    {
+     "t": 0.3,
+     "rot": -7
+    },
+    {
+     "t": 0.15,
+     "rot": 0
+    },
+    {
+     "t": 0.4,
+     "quadro": "cair"
+    },
+    {
+     "t": 0.4,
+     "som": "queda",
+     "tremer": [
+      0.15,
+      2
+     ],
+     "particulas": "poeira"
+    },
+    {
+     "t": 0.3,
+     "quadro": "caido",
+     "balao": "zzz",
+     "tempo_balao": 1.5
+    }
+   ]
+  },
+  "nocaute": {
+   "manter": true,
+   "nota": "leva um golpe e voa pra trás (usado no fim da !briga)",
+   "passos": [
+    {
+     "t": 0.06,
+     "flash": "#ffffff",
+     "som": "soco",
+     "particulas": "pancada",
+     "x": -2
+    },
+    {
+     "t": 0.22,
+     "rot": -35,
+     "y": -10,
+     "ease": "out",
+     "mover": [
+      -14,
+      0
+     ]
+    },
+    {
+     "t": 0.18,
+     "rot": -90,
+     "y": 0,
+     "ease": "in",
+     "mover": [
+      -8,
+      0
+     ]
+    },
+    {
+     "t": 0.07,
+     "y": -3,
+     "som": "queda",
+     "tremer": [
+      0.25,
+      4
+     ],
+     "particulas": "poeira"
+    },
+    {
+     "t": 0.07,
+     "y": 0
+    },
+    {
+     "t": 0.4,
+     "balao": "estrela",
+     "tempo_balao": 1.4
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.3,
+     "quadro": "apanhar",
+     "flash": "#ffffff",
+     "som": "soco",
+     "particulas": "pancada",
+     "mover": [
+      -8,
+      0
+     ],
+     "ease": "out"
+    },
+    {
+     "t": 0.35,
+     "de_costas": true,
+     "quadro": "cair",
+     "mover": [
+      8,
+      0
+     ]
+    },
+    {
+     "t": 0.45,
+     "som": "queda",
+     "tremer": [
+      0.25,
+      4
+     ],
+     "particulas": "poeira",
+     "mover": [
+      4,
+      0
+     ]
+    },
+    {
+     "t": 0.4,
+     "quadro": "caido",
+     "balao": "estrela",
+     "tempo_balao": 1.4
+    }
+   ]
+  },
+  "soco": {
+   "nota": "dá um soco; com alvo, o alvo leva (\"!anim lucas soco nicao\")",
+   "passos": [
+    {
+     "t": 0.12,
+     "x": -3,
+     "rot": -10,
+     "sx": 0.95
+    },
+    {
+     "t": 0.06,
+     "x": 9,
+     "rot": 14,
+     "sx": 1.12,
+     "ease": "out",
+     "som": "whoosh"
+    },
+    {
+     "t": 0.12,
+     "acerta": "apanhar",
+     "som": "soco",
+     "tremer": [
+      0.12,
+      2
+     ]
+    },
+    {
+     "t": 0.15,
+     "x": 0,
+     "rot": 0,
+     "sx": 1
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.25,
+     "quadro": "soco",
+     "som": "whoosh"
+    },
+    {
+     "t": 0.25,
+     "acerta": "apanhar",
+     "som": "soco",
+     "tremer": [
+      0.12,
+      2
+     ]
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "chute": {
+   "nota": "chute (com alvo, o alvo leva)",
+   "passos": [
+    {
+     "t": 0.14,
+     "rot": -22,
+     "x": -2,
+     "y": -2
+    },
+    {
+     "t": 0.07,
+     "rot": -38,
+     "x": 6,
+     "sx": 1.15,
+     "ease": "out",
+     "som": "whoosh"
+    },
+    {
+     "t": 0.14,
+     "acerta": "apanhar",
+     "som": "soco",
+     "tremer": [
+      0.12,
+      2
+     ]
+    },
+    {
+     "t": 0.16,
+     "rot": 0,
+     "x": 0,
+     "y": 0,
+     "sx": 1
+    }
+   ]
+  },
+  "empurrar": {
+   "nota": "empurra (com alvo, o alvo cambaleia pra trás)",
+   "passos": [
+    {
+     "t": 0.1,
+     "x": -2,
+     "rot": -5
+    },
+    {
+     "t": 0.08,
+     "x": 7,
+     "rot": 10,
+     "ease": "out",
+     "acerta": "cambalear"
+    },
+    {
+     "t": 0.15,
+     "x": 0,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.3,
+     "quadro": "empurrao",
+     "som": "whoosh"
+    },
+    {
+     "t": 0.3,
+     "acerta": "cambalear"
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "apanhar": {
+   "nota": "leva um golpe e vai pra trás",
+   "passos": [
+    {
+     "t": 0.05,
+     "flash": "#ffffff",
+     "particulas": "pancada",
+     "rot": -14,
+     "x": -3
+    },
+    {
+     "t": 0.14,
+     "rot": -18,
+     "ease": "out",
+     "mover": [
+      -10,
+      0
+     ],
+     "sy": 0.94
+    },
+    {
+     "t": 0.2,
+     "rot": 0,
+     "x": 0,
+     "sy": 1,
+     "balao": "raiva",
+     "tempo_balao": 0.6
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.12,
+     "quadro": "apanhar",
+     "flash": "#ffffff",
+     "particulas": "pancada"
+    },
+    {
+     "t": 0.48,
+     "mover": [
+      -6,
+      0
+     ],
+     "ease": "out",
+     "balao": "raiva",
+     "tempo_balao": 0.6
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "cambalear": {
+   "nota": "vai pra trás se equilibrando",
+   "passos": [
+    {
+     "t": 0.15,
+     "rot": -12,
+     "mover": [
+      -10,
+      0
+     ],
+     "ease": "out",
+     "som": "whoosh"
+    },
+    {
+     "t": 0.12,
+     "rot": 8,
+     "mover": [
+      -3,
+      0
+     ]
+    },
+    {
+     "t": 0.12,
+     "rot": -5
+    },
+    {
+     "t": 0.12,
+     "rot": 0
+    }
+   ]
+  },
+  "esquivar": {
+   "nota": "abaixa e desvia pra trás",
+   "passos": [
+    {
+     "t": 0.07,
+     "sy": 0.7,
+     "sx": 1.15,
+     "som": "whoosh"
+    },
+    {
+     "t": 0.12,
+     "mover": [
+      -8,
+      0
+     ],
+     "rot": -6
+    },
+    {
+     "t": 0.15,
+     "sy": 1,
+     "sx": 1,
+     "rot": 0
+    }
+   ]
+  },
+  "zonzo": {
+   "nota": "fica tonto com estrelinhas",
+   "passos": [
+    {
+     "t": 0.2,
+     "rot": 7,
+     "balao": "estrela",
+     "tempo_balao": 1.3
+    },
+    {
+     "t": 0.25,
+     "rot": -7
+    },
+    {
+     "t": 0.25,
+     "rot": 6
+    },
+    {
+     "t": 0.25,
+     "rot": -4
+    },
+    {
+     "t": 0.2,
+     "rot": 0
+    }
+   ]
+  },
+  "medo": {
+   "nota": "treme de medo e sua",
+   "passos": [
+    {
+     "t": 0.04,
+     "x": 1,
+     "balao": "suor",
+     "particulas": "suor",
+     "sy": 0.94
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.04,
+     "x": 1
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.04,
+     "x": 1
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.04,
+     "x": 1
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.04,
+     "x": 1
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.1,
+     "x": 0,
+     "sy": 1
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.04,
+     "quadro": "assustado:3",
+     "x": 1,
+     "balao": "suor",
+     "particulas": "suor"
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.04,
+     "x": 1
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.04,
+     "x": 1
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.04,
+     "x": 1
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.04,
+     "x": 1
+    },
+    {
+     "t": 0.04,
+     "x": -1
+    },
+    {
+     "t": 0.05,
+     "x": 0,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "assustar": {
+   "nota": "leva um susto e pula",
+   "passos": [
+    {
+     "t": 0.05,
+     "sy": 0.8,
+     "sx": 1.15
+    },
+    {
+     "t": 0.12,
+     "y": -18,
+     "sy": 1.2,
+     "sx": 0.85,
+     "ease": "out",
+     "som": "pulo",
+     "balao": "!!"
+    },
+    {
+     "t": 0.14,
+     "y": 0,
+     "ease": "in"
+    },
+    {
+     "t": 0.06,
+     "sy": 0.88,
+     "sx": 1.1
+    },
+    {
+     "t": 0.08,
+     "sy": 1,
+     "sx": 1
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.1,
+     "quadro": "assustado",
+     "som": "pulo",
+     "balao": "!!"
+    },
+    {
+     "t": 0.15,
+     "y": -10,
+     "ease": "out"
+    },
+    {
+     "t": 0.15,
+     "y": 0,
+     "ease": "in"
+    },
+    {
+     "t": 0.3
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "comemorar": {
+   "nota": "pula comemorando duas vezes",
+   "passos": [
+    {
+     "t": 0.07,
+     "sy": 0.85,
+     "sx": 1.1
+    },
+    {
+     "t": 0.15,
+     "y": -14,
+     "sy": 1.1,
+     "sx": 0.92,
+     "ease": "out",
+     "som": "pulo"
+    },
+    {
+     "t": 0.15,
+     "y": 0,
+     "ease": "in"
+    },
+    {
+     "t": 0.07,
+     "sy": 0.85,
+     "sx": 1.1
+    },
+    {
+     "t": 0.15,
+     "y": -14,
+     "sy": 1.1,
+     "sx": 0.92,
+     "ease": "out",
+     "som": "pulo",
+     "particulas": "brilhos"
+    },
+    {
+     "t": 0.15,
+     "y": 0,
+     "ease": "in"
+    },
+    {
+     "t": 0.08,
+     "sy": 1,
+     "sx": 1,
+     "som": "plim"
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.75,
+     "quadro": "comemorar",
+     "som": "pulo"
+    },
+    {
+     "t": 0.75,
+     "som": "plim",
+     "particulas": "brilhos"
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "pose_heroi": {
+   "manter": true,
+   "nota": "estufa o peito, brilha e fica assim",
+   "passos": [
+    {
+     "t": 0.1,
+     "sy": 0.9,
+     "sx": 1.05
+    },
+    {
+     "t": 0.18,
+     "sy": 1.08,
+     "sx": 0.97,
+     "rot": -3,
+     "ease": "back",
+     "som": "plim",
+     "particulas": "brilhos"
+    }
+   ]
+  },
+  "bracos_cruzados": {
+   "manter": true,
+   "nota": "cruza os braços e fica assim",
+   "passos": [
+    {
+     "t": 0.15,
+     "rot": -3,
+     "sy": 1.03
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.2,
+     "quadro": "bracos_cruzados"
+    }
+   ]
+  },
+  "sentar": {
+   "manter": true,
+   "nota": "senta (com a arte nova, numa cadeira de escritório) e fica sentado",
+   "passos": [
+    {
+     "t": 0.12,
+     "sy": 0.9
+    },
+    {
+     "t": 0.15,
+     "sy": 0.78,
+     "sx": 1.06,
+     "y": 1,
+     "particulas": "poeira"
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "sentar",
+     "particulas": "poeira"
+    }
+   ]
+  },
+  "girar": {
+   "nota": "gira no lugar",
+   "passos": [
+    {
+     "t": 0.07,
+     "sx": 0.1,
+     "som": "whoosh"
+    },
+    {
+     "t": 0.07,
+     "sx": -1
+    },
+    {
+     "t": 0.07,
+     "sx": -0.1
+    },
+    {
+     "t": 0.07,
+     "sx": 1
+    },
+    {
+     "t": 0.07,
+     "sx": 0.1
+    },
+    {
+     "t": 0.07,
+     "sx": -1
+    },
+    {
+     "t": 0.07,
+     "sx": -0.1
+    },
+    {
+     "t": 0.1,
+     "sx": 1,
+     "ease": "back"
+    }
+   ]
+  },
+  "dancar": {
+   "nota": "dança balançando",
+   "passos": [
+    {
+     "t": 0.15,
+     "rot": 10,
+     "y": -3,
+     "balao": "musica",
+     "tempo_balao": 1.6
+    },
+    {
+     "t": 0.15,
+     "rot": 0,
+     "y": 0
+    },
+    {
+     "t": 0.15,
+     "rot": -10,
+     "y": -3
+    },
+    {
+     "t": 0.15,
+     "rot": 0,
+     "y": 0
+    },
+    {
+     "t": 0.15,
+     "rot": 10,
+     "y": -3,
+     "sx": -1
+    },
+    {
+     "t": 0.15,
+     "rot": 0,
+     "y": 0
+    },
+    {
+     "t": 0.15,
+     "rot": -10,
+     "y": -3,
+     "sx": 1
+    },
+    {
+     "t": 0.15,
+     "rot": 0,
+     "y": 0
+    }
+   ]
+  },
+  "rir": {
+   "nota": "ri se tremendo todo",
+   "passos": [
+    {
+     "t": 0.06,
+     "y": -2,
+     "rot": -4,
+     "balao": "kkkk",
+     "tempo_balao": 1.0
+    },
+    {
+     "t": 0.06,
+     "y": 0
+    },
+    {
+     "t": 0.06,
+     "y": -2
+    },
+    {
+     "t": 0.06,
+     "y": 0
+    },
+    {
+     "t": 0.06,
+     "y": -2
+    },
+    {
+     "t": 0.06,
+     "y": 0
+    },
+    {
+     "t": 0.06,
+     "y": -2
+    },
+    {
+     "t": 0.1,
+     "y": 0,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 1.0,
+     "quadro": "rir_alto",
+     "balao": "kkkk",
+     "tempo_balao": 1.0
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "abrir_porta": {
+   "nota": "estica o braço e abre (de lado)",
+   "passos": [
+    {
+     "t": 0.1,
+     "rot": 6,
+     "x": 2
+    },
+    {
+     "t": 0.25
+    },
+    {
+     "t": 0.1,
+     "rot": 0,
+     "x": 0
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "abrir_porta_lado"
+    }
+   ]
+  },
+  "pular": {
+   "nota": "pulinho",
+   "passos": [
+    {
+     "t": 0.05,
+     "sy": 0.85,
+     "sx": 1.1
+    },
+    {
+     "t": 0.12,
+     "y": -10,
+     "sy": 1.08,
+     "sx": 0.94,
+     "ease": "out",
+     "som": "pulo"
+    },
+    {
+     "t": 0.12,
+     "y": 0,
+     "ease": "in"
+    },
+    {
+     "t": 0.05,
+     "sy": 0.9,
+     "sx": 1.06
+    },
+    {
+     "t": 0.06,
+     "sy": 1,
+     "sx": 1
+    }
+   ]
+  },
+  "abrir_porta_cima": {
+   "nota": "de costas, abre uma porta na parede de cima",
+   "passos": [
+    {
+     "t": 0.1,
+     "y": -2
+    },
+    {
+     "t": 0.25
+    },
+    {
+     "t": 0.1,
+     "y": 0
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "abrir_porta_cima"
+    }
+   ]
+  },
+  "cocar_cabeca": {
+   "nota": "coça a cabeça sem saber o que fazer",
+   "passos": [
+    {
+     "t": 0.2,
+     "rot": -5,
+     "balao": "?",
+     "tempo_balao": 1.2
+    },
+    {
+     "t": 0.25,
+     "rot": 3
+    },
+    {
+     "t": 0.25,
+     "rot": -5
+    },
+    {
+     "t": 0.25,
+     "rot": 3
+    },
+    {
+     "t": 0.2,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 1.4,
+     "quadro": "cocar_cabeca",
+     "balao": "?",
+     "tempo_balao": 1.2
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "apontar": {
+   "nota": "aponta pra frente (com alvo, aponta pra ele)",
+   "passos": [
+    {
+     "t": 0.1,
+     "rot": 5,
+     "x": 1
+    },
+    {
+     "t": 0.7
+    },
+    {
+     "t": 0.1,
+     "rot": 0,
+     "x": 0
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "apontar"
+    },
+    {
+     "t": 0.7
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "espreguicar": {
+   "nota": "se espreguiça",
+   "passos": [
+    {
+     "t": 0.15,
+     "sy": 0.94,
+     "sx": 1.04
+    },
+    {
+     "t": 0.4,
+     "sy": 1.08,
+     "sx": 0.95,
+     "ease": "out"
+    },
+    {
+     "t": 0.5
+    },
+    {
+     "t": 0.2,
+     "sy": 1,
+     "sx": 1
+    }
+   ]
+  },
+  "bocejar": {
+   "nota": "boceja",
+   "passos": [
+    {
+     "t": 0.3,
+     "sy": 1.04,
+     "rot": -3,
+     "balao": "aaah",
+     "tempo_balao": 1.0
+    },
+    {
+     "t": 0.6
+    },
+    {
+     "t": 0.25,
+     "sy": 1,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "bocejar",
+     "balao": "aaah",
+     "tempo_balao": 1.0
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "balancar": {
+   "nota": "muda o peso de um pé pro outro",
+   "passos": [
+    {
+     "t": 0.4,
+     "rot": 2
+    },
+    {
+     "t": 0.4,
+     "rot": -2
+    },
+    {
+     "t": 0.4,
+     "rot": 2
+    },
+    {
+     "t": 0.3,
+     "rot": 0
+    }
+   ]
+  },
+  "bater_pe": {
+   "nota": "bate o pé, impaciente",
+   "passos": [
+    {
+     "t": 0.08,
+     "y": -1,
+     "balao": "...",
+     "tempo_balao": 1.2
+    },
+    {
+     "t": 0.08,
+     "y": 0
+    },
+    {
+     "t": 0.15
+    },
+    {
+     "t": 0.08,
+     "y": -1
+    },
+    {
+     "t": 0.08,
+     "y": 0
+    },
+    {
+     "t": 0.15
+    },
+    {
+     "t": 0.08,
+     "y": -1
+    },
+    {
+     "t": 0.08,
+     "y": 0
+    }
+   ]
+  },
+  "assobiar": {
+   "nota": "assobia balançando",
+   "passos": [
+    {
+     "t": 0.3,
+     "rot": 3,
+     "balao": "musica",
+     "tempo_balao": 1.4
+    },
+    {
+     "t": 0.3,
+     "rot": -3
+    },
+    {
+     "t": 0.3,
+     "rot": 3
+    },
+    {
+     "t": 0.3,
+     "rot": 0
+    }
+   ]
+  },
+  "bracos_cruzados_um_pouco": {
+   "nota": "cruza os braços por um tempinho",
+   "passos": [
+    {
+     "t": 0.2,
+     "rot": -3,
+     "sy": 1.03
+    },
+    {
+     "t": 1.6
+    },
+    {
+     "t": 0.2,
+     "rot": 0,
+     "sy": 1
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.1,
+     "quadro": "bracos_cruzados"
+    },
+    {
+     "t": 1.8
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "digitar": {
+   "manter": true,
+   "nota": "sentado digitando no computador (fica assim)",
+   "passos": [
+    {
+     "t": 0.12,
+     "sy": 0.82,
+     "sx": 1.05
+    },
+    {
+     "t": 0.1,
+     "x": 1
+    },
+    {
+     "t": 0.1,
+     "x": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.1,
+     "quadro": "digitar"
+    }
+   ]
+  },
+  "levantar_cadeira": {
+   "nota": "levanta da cadeira",
+   "passos": [
+    {
+     "t": 0.2,
+     "sy": 1,
+     "sx": 1,
+     "x": 0,
+     "rot": 0,
+     "y": 0,
+     "som": "pulo"
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "levantar_cadeira",
+     "rot": 0,
+     "x": 0,
+     "y": 0,
+     "sx": 1,
+     "sy": 1
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "pegar": {
+   "nota": "abaixa e pega uma caixa do chão",
+   "passos": [
+    {
+     "t": 0.2,
+     "sy": 0.8,
+     "sx": 1.08,
+     "rot": 8
+    },
+    {
+     "t": 0.3
+    },
+    {
+     "t": 0.2,
+     "sy": 1,
+     "sx": 1,
+     "rot": 0,
+     "som": "plim"
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "pegar_objeto"
+    },
+    {
+     "t": 0.3,
+     "som": "plim"
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "beber": {
+   "nota": "toma um gole de café",
+   "passos": [
+    {
+     "t": 0.2,
+     "rot": -6
+    },
+    {
+     "t": 0.6,
+     "balao": "...",
+     "tempo_balao": 0.6
+    },
+    {
+     "t": 0.2,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "beber"
+    },
+    {
+     "t": 0.2
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "chorar_de_rir": {
+   "nota": "ri até chorar",
+   "passos": [
+    {
+     "t": 0.06,
+     "y": -2,
+     "rot": -6,
+     "balao": "KKKKK",
+     "tempo_balao": 1.6
+    },
+    {
+     "t": 0.06,
+     "y": 0
+    },
+    {
+     "t": 0.06,
+     "y": -2
+    },
+    {
+     "t": 0.06,
+     "y": 0
+    },
+    {
+     "t": 0.06,
+     "y": -2
+    },
+    {
+     "t": 0.06,
+     "y": 0
+    },
+    {
+     "t": 0.06,
+     "y": -2
+    },
+    {
+     "t": 0.06,
+     "y": 0
+    },
+    {
+     "t": 0.06,
+     "y": -2
+    },
+    {
+     "t": 0.1,
+     "y": 0,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 1.8,
+     "quadro": "chorar_de_rir",
+     "balao": "KKKKK",
+     "tempo_balao": 1.6,
+     "particulas": "suor"
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "bravo": {
+   "nota": "fica bravo, bufando",
+   "passos": [
+    {
+     "t": 0.1,
+     "sy": 1.05,
+     "balao": "raiva",
+     "tempo_balao": 1.2,
+     "flash": "#ff6060"
+    },
+    {
+     "t": 0.08,
+     "x": 1
+    },
+    {
+     "t": 0.08,
+     "x": -1
+    },
+    {
+     "t": 0.08,
+     "x": 1
+    },
+    {
+     "t": 0.08,
+     "x": -1
+    },
+    {
+     "t": 0.4
+    },
+    {
+     "t": 0.15,
+     "x": 0,
+     "sy": 1
+    }
+   ],
+   "arte": [
+    {
+     "t": 1.4,
+     "quadro": "bravo",
+     "balao": "raiva",
+     "tempo_balao": 1.2
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "envergonhado": {
+   "nota": "fica sem graça",
+   "passos": [
+    {
+     "t": 0.2,
+     "sy": 0.95,
+     "rot": 4,
+     "balao": "gota",
+     "tempo_balao": 1.2
+    },
+    {
+     "t": 1.0
+    },
+    {
+     "t": 0.2,
+     "sy": 1,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 1.4,
+     "quadro": "envergonhado",
+     "balao": "gota",
+     "tempo_balao": 1.2
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "recuar": {
+   "nota": "anda de costas, recuando",
+   "passos": [
+    {
+     "t": 0.8,
+     "mover": [
+      -24,
+      0
+     ],
+     "rot": -4
+    },
+    {
+     "t": 0.15,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.8,
+     "quadro": "andar_de_costas",
+     "mover": [
+      -24,
+      0
+     ]
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "olhar_lados": {
+   "nota": "olha pra um lado e pro outro",
+   "passos": [
+    {
+     "t": 0.4,
+     "virar": "esquerda"
+    },
+    {
+     "t": 0.5,
+     "virar": "direita"
+    },
+    {
+     "t": 0.4,
+     "virar": "baixo"
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "olhar_lados"
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "piscar": {
+   "nota": "pisca",
+   "passos": [
+    {
+     "t": 0.2
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "piscar"
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "cismado": {
+   "nota": "aperta os olhos, desconfiado (mania do Beto)",
+   "passos": [
+    {
+     "t": 0.2,
+     "rot": -5,
+     "balao": "?",
+     "tempo_balao": 1.4
+    },
+    {
+     "t": 1.1,
+     "rot": -5
+    },
+    {
+     "t": 0.2,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 1.5,
+     "quadro": "piscar:1"
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar"
+    }
+   ]
+  },
+  "passinho_jamal": {
+   "nota": "passinho do Jamal (brega funk): dois pro lado, dois pro outro, as mãos acompanhando os pés",
+   "passos": [
+    {
+     "t": 0.17,
+     "mover": [
+      3,
+      0
+     ],
+     "y": -2,
+     "rot": 4,
+     "balao": "musica",
+     "tempo_balao": 1.6
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      3,
+      0
+     ],
+     "y": 0,
+     "rot": 0
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      -3,
+      0
+     ],
+     "y": -2,
+     "rot": -4
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      -3,
+      0
+     ],
+     "y": 0,
+     "rot": 0
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      3,
+      0
+     ],
+     "y": -2,
+     "rot": 4
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      3,
+      0
+     ],
+     "y": 0,
+     "rot": 0
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      -3,
+      0
+     ],
+     "y": -2,
+     "rot": -4
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      -3,
+      0
+     ],
+     "y": 0,
+     "rot": 0
+    },
+    {
+     "t": 0.05,
+     "rot": 0,
+     "y": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.17,
+     "mover": [
+      3,
+      0
+     ],
+     "y": -2,
+     "rot": 4,
+     "balao": "musica",
+     "tempo_balao": 1.6,
+     "quadro": "comemorar:1"
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      3,
+      0
+     ],
+     "y": 0,
+     "rot": 0,
+     "quadro": "comemorar:3"
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      -3,
+      0
+     ],
+     "y": -2,
+     "rot": -4,
+     "quadro": "comemorar:1"
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      -3,
+      0
+     ],
+     "y": 0,
+     "rot": 0,
+     "quadro": "comemorar:3"
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      3,
+      0
+     ],
+     "y": -2,
+     "rot": 4,
+     "quadro": "comemorar:1"
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      3,
+      0
+     ],
+     "y": 0,
+     "rot": 0,
+     "quadro": "comemorar:3"
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      -3,
+      0
+     ],
+     "y": -2,
+     "rot": -4,
+     "quadro": "comemorar:1"
+    },
+    {
+     "t": 0.17,
+     "mover": [
+      -3,
+      0
+     ],
+     "y": 0,
+     "rot": 0,
+     "quadro": "comemorar:3"
+    },
+    {
+     "t": 0.05,
+     "quadro": "andar",
+     "rot": 0,
+     "y": 0
+    }
+   ]
+  },
+  "varrer": {
+   "manter": true,
+   "nota": "varrendo o chão (Seu Mauro tem a arte; os outros só balançam)",
+   "passos": [
+    {
+     "t": 0.25,
+     "rot": 4
+    },
+    {
+     "t": 0.25,
+     "rot": -4
+    },
+    {
+     "t": 0.25,
+     "rot": 4
+    },
+    {
+     "t": 0.2,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.1,
+     "quadro": "varrendo"
+    }
+   ]
+  },
+  "celular": {
+   "manter": false,
+   "nota": "olhando o celular, rindo sozinho",
+   "passos": [
+    {
+     "t": 0.2,
+     "sy": 0.97
+    },
+    {
+     "t": 1.6,
+     "sy": 1.0,
+     "balao": "..."
+    }
+   ],
+   "arte": [
+    {
+     "t": 2.6,
+     "quadro": "celular"
+    },
+    {
+     "t": 0.05
+    }
+   ]
+  },
+  "vassoura": {
+   "manter": true,
+   "nota": "parado apoiado na vassoura",
+   "passos": [
+    {
+     "t": 0.3,
+     "rot": -3
+    },
+    {
+     "t": 0.3,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.1,
+     "quadro": "parado_vassoura"
+    }
+   ]
+  },
+  "violao": {
+   "manter": true,
+   "nota": "tocando violão sentado no banquinho (Seu Mauro)",
+   "passos": [
+    {
+     "t": 0.3,
+     "rot": 3,
+     "balao": "musica"
+    },
+    {
+     "t": 0.3,
+     "rot": -3
+    },
+    {
+     "t": 0.3,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.1,
+     "quadro": "tocando_violao"
+    }
+   ]
+  },
+  "cana": {
+   "manter": true,
+   "nota": "chupando cana (Seu Mauro)",
+   "passos": [
+    {
+     "t": 0.3,
+     "sy": 0.97
+    },
+    {
+     "t": 0.3,
+     "sy": 1.0
+    }
+   ],
+   "arte": [
+    {
+     "t": 0.1,
+     "quadro": "chupando_cana"
+    }
+   ]
+  },
+  "passando_mal": {
+   "manter": true,
+   "nota": "agacha com uma mão no chão e outra no peito, soluçando (fica assim até levantar)",
+   "passos": [
+    {
+     "t": 0.2,
+     "sy": 0.75,
+     "sx": 1.08,
+     "y": 2
+    },
+    {
+     "t": 0.3,
+     "rot": -6
+    },
+    {
+     "t": 0.3,
+     "rot": 0
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "agachado_dor",
+     "som": "queda"
+    }
+   ]
+  },
+  "sentar_banco": {
+   "manter": true,
+   "nota": "senta num banco (sem a cadeira de escritório)",
+   "passos": [
+    {
+     "t": 0.12,
+     "sy": 0.9
+    },
+    {
+     "t": 0.15,
+     "sy": 0.78,
+     "sx": 1.06,
+     "y": 1
+    }
+   ],
+   "arte": [
+    {
+     "quadro": "sentar_banco"
+    }
+   ]
+  },
+  "solucar": {
+   "nota": "soluça chorando (o corpo pula de leve)",
+   "passos": [
+    {
+     "t": 0.08,
+     "y": -2,
+     "balao": "choro",
+     "tempo_balao": 1.4
+    },
+    {
+     "t": 0.1,
+     "y": 0
+    },
+    {
+     "t": 0.25
+    },
+    {
+     "t": 0.08,
+     "y": -2
+    },
+    {
+     "t": 0.1,
+     "y": 0
+    }
+   ]
+  }
+ },
+ "manias": {
+  "_leia": "Coisas que cada um faz sozinho quando está parado no mapa (sorteadas). 'intervalo' = segundos entre uma e outra.",
+  "intervalo": [
+   7,
+   16
+  ],
+  "padrao": [
+   "cocar_cabeca",
+   "espreguicar",
+   "balancar",
+   "bracos_cruzados_um_pouco",
+   "assobiar",
+   "olhar_lados",
+   "bocejar"
+  ],
+  "nicao": [
+   "bocejar",
+   "espreguicar",
+   "balancar",
+   "olhar_lados"
+  ],
+  "lucas": [
+   "rir",
+   "dancar",
+   "assobiar",
+   "girar",
+   "chorar_de_rir"
+  ],
+  "joao": [
+   "bater_pe",
+   "cocar_cabeca",
+   "balancar",
+   "olhar_lados"
+  ],
+  "matheus": [
+   "bracos_cruzados_um_pouco",
+   "bater_pe",
+   "assobiar"
+  ],
+  "beto": [
+   "espreguicar",
+   "bracos_cruzados_um_pouco",
+   "rir",
+   "cismado",
+   "cismado"
+  ],
+  "lukako": [
+   "bater_pe",
+   "bocejar",
+   "cocar_cabeca",
+   "olhar_lados"
+  ],
+  "fabio": [
+   "assobiar",
+   "balancar",
+   "cocar_cabeca",
+   "olhar_lados"
+  ],
+  "breno": [
+   "cocar_cabeca",
+   "espreguicar",
+   "bater_pe",
+   "bocejar",
+   "olhar_lados",
+   "passinho_jamal"
+  ],
+  "mauro": [
+   "celular",
+   "olhar_lados",
+   "cocar_cabeca",
+   "assobiar"
+  ]
+ }
+}

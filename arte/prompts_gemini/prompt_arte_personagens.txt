@@ -1,0 +1,5 @@
+Use as imagens anexadas como referência exata de rosto: cada imagem é um personagem (Breno, Nicão, Lucas, João, Matheus, Beto, Lukako, Fábio), pessoas reais, amigos. Mantenha SEMPRE a mesma pessoa: formato do rosto, cabelo, barba, tom de pele, traços e brincos/acessórios.
+
+Gere o personagem [NOME] em pixel art realista, nítido e limpo, de corpo inteiro, de frente, com a camiseta azul da farda da Faculdade Cairu. Proporções realistas (nada de cabeção cartoon), pescoço natural ligado aos ombros, nada de pescoço flutuante, nada de rosto com cara de IA ou alienígena, nada de suavizar ou borrar traços. Fundo liso cinza azulado, sem texto, sem números, sem logos, sem nomes. Mesmo tamanho e enquadramento em todas as imagens.
+
+Pose/cena: [DESCREVA, ex.: em pé neutro / andando de lado / segurando um notebook].

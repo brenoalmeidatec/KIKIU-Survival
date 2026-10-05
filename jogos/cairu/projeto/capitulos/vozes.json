@@ -1,0 +1,13 @@
+{
+  "_leia": "Jeito de falar de cada um. velocidade: 1 = normal (0.7 fala devagar, 1.3 fala rápido). tom: altura do 'blip' (1 = normal, 0.8 = grave, 1.2 = agudo). variar: quanto o tom muda de uma letra pra outra. pausa: multiplica as pausas na pontuação (vírgula, ponto, reticências). blip_cada: um blip a cada N letras. tremer: 0 a 1, a fala treme e a cabeça balança. Todos ajustados pelas personalidades que o Breno contou.",
+  "padrao": {"velocidade": 1.0, "tom": 1.0, "variar": 0.06, "pausa": 1.0, "blip_cada": 2},
+  "breno": {"velocidade": 1.0, "tom": 0.96, "variar": 0.08, "pausa": 1.0, "blip_cada": 2},
+  "nicao": {"velocidade": 0.68, "tom": 0.8, "variar": 0.04, "pausa": 1.9, "blip_cada": 3},
+  "lucas": {"velocidade": 0.95, "tom": 0.92, "variar": 0.13, "pausa": 1.6, "blip_cada": 2},
+  "joao": {"velocidade": 0.85, "tom": 0.86, "variar": 0.05, "pausa": 1.5, "blip_cada": 2},
+  "matheus": {"velocidade": 1.08, "tom": 1.0, "variar": 0.08, "pausa": 0.9, "blip_cada": 2},
+  "beto": {"velocidade": 1.05, "tom": 0.88, "variar": 0.1, "pausa": 1.0, "blip_cada": 2},
+  "lukako": {"velocidade": 1.1, "tom": 0.95, "variar": 0.18, "pausa": 1.0, "blip_cada": 2, "tremer": 0.8},
+  "fabio": {"velocidade": 1.05, "tom": 0.9, "variar": 0.08, "pausa": 0.9, "blip_cada": 2},
+  "mauro": {"velocidade": 0.82, "tom": 1.12, "variar": 0.12, "pausa": 1.4, "blip_cada": 2}
+}

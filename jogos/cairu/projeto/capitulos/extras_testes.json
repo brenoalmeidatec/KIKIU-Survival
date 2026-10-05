@@ -1,0 +1,1123 @@
+{
+ "titulo": "Extras: Sala de testes",
+ "jogador": "breno",
+ "mapa_inicial": "recepcao",
+ "inicio": {
+  "x": 400,
+  "y": 424,
+  "dir": "cima"
+ },
+ "abertura": "abertura",
+ "musica": "cairu",
+ "apelidos": {
+  "n": "nicao",
+  "b": "breno",
+  "luk": "lukako"
+ },
+ "diario": [
+  {
+   "texto": "Falar com o Lukako na recepção",
+   "feito": "viu_lukako"
+  },
+  {
+   "texto": "Achar o Nicão no Núcleo de Informática",
+   "feito": "viu_teste_novidades"
+  },
+  {
+   "texto": "Ver o teste de cenas com o Lucas no laboratório",
+   "feito": "teste_feito"
+  },
+  {
+   "texto": "Procurar o João no pátio",
+   "requer": "teste_feito",
+   "feito": "viu_joao_cafe"
+  },
+  {
+   "texto": "Não sentar na cadeira do presidente de novo",
+   "requer": "sentou_na_cadeira"
+  }
+ ],
+ "npcs": [
+  {
+   "personagem": "nicao",
+   "mapa": "nucleo",
+   "x": 208,
+   "y": 352,
+   "dir": "baixo",
+   "cenas": [
+    "teste_novidades",
+    "nicao"
+   ],
+   "comportamento": "olhar"
+  },
+  {
+   "personagem": "lucas",
+   "mapa": "laboratorio",
+   "x": 300,
+   "y": 214,
+   "dir": "cima",
+   "cenas": [
+    "teste_cenas",
+    "teste_de_novo"
+   ],
+   "comportamento": "pc"
+  },
+  {
+   "personagem": "joao",
+   "mapa": "laboratorio",
+   "x": 80,
+   "y": 204,
+   "dir": "baixo",
+   "cena": "joao"
+  },
+  {
+   "personagem": "matheus",
+   "mapa": "sala_aula",
+   "x": 235,
+   "y": 320,
+   "dir": "cima",
+   "cenas": [
+    "teste_minijogos"
+   ],
+   "dica": "Jogar"
+  },
+  {
+   "personagem": "beto",
+   "mapa": "patio",
+   "x": 260,
+   "y": 300,
+   "dir": "esquerda",
+   "comportamento": "passear",
+   "raio": 50,
+   "cenas": [
+    "teste_animacoes",
+    "beto"
+   ]
+  },
+  {
+   "personagem": "lukako",
+   "mapa": "recepcao",
+   "x": 470,
+   "y": 196,
+   "dir": "baixo",
+   "cena": "lukako"
+  },
+  {
+   "personagem": "fabio",
+   "mapa": "patio",
+   "x": 420,
+   "y": 330,
+   "dir": "cima",
+   "cena": "fabio",
+   "comportamento": "olhar",
+   "dica": "Puxar papo"
+  }
+ ],
+ "gatilhos": [
+  {
+   "mapa": "laboratorio",
+   "x": 792,
+   "y": 330,
+   "w": 124,
+   "h": 40,
+   "cena": "aviso_lab"
+  }
+ ],
+ "cenas": {
+  "teste_novidades": {
+   "uma_vez": true,
+   "cinema": true,
+   "passos": [
+    "// Esta cena usa o jeito curto de escrever (veja o LEIA-ME).",
+    "!camera nicao 0.8",
+    "!zoom 1.6 0.6",
+    "!balao nicao ideia",
+    "n: Breno... chegou coisa nova no jogo. Deixa eu te mostrar... devagarinho. #wave #talk1",
+    "b pensa: Devagarinho é o único jeito que o Nicão faz as coisas.",
+    "!zoom 1 0.5",
+    "!camera eu 0.5",
+    "> Dica: segure X (ou Ctrl) pra acelerar a cena toda.",
+    "!pensar nicao Será que eu desliguei o ferro de passar?",
+    "!dizer breno Nicão?",
+    "!balao nicao suor",
+    "n: Ah, sim. Balões de emoção!",
+    "!balao nicao coracao",
+    "!balao breno raiva",
+    "!balao nicao zzz",
+    "!balao breno ?!",
+    "!entrar lucas 300 420",
+    "!virar lucas nicao",
+    "lucas: Alguém falou em coisa nova?! #point #talk2",
+    "!tom noite 1.2",
+    "nicão: Olha só... eu demorei tanto pra explicar que anoiteceu. @laugh",
+    "!tom normal 0.8",
+    "!camera 360 260 1",
+    "!camera eu 0.6",
+    "? E aí, Breno? | Mostra o diário -> teste_diario +pediu_diario | Tchau, Lucas -> teste_tchau",
+    "!sair lucas",
+    "!aparecer lucas 204 252 direita laboratorio",
+    "> Agora aperte J pra ver o diário e H pra ver tudo que já foi falado."
+   ]
+  },
+  "teste_minijogos": [
+   "matheus: Breno! Tô testando uns minijogos aqui. Quer jogar um? #wave #talk1",
+   "? Qual minijogo? | Os primeiros -> mj_lista1 | Os das histórias -> mj_lista2 | Agora não"
+  ],
+  "mj_pc": [
+   "!minijogo consertar_pc ganhou_pc 1",
+   "!se ganhou_pc -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_memoria": [
+   "!minijogo memoria ganhou_memoria 2",
+   "!se ganhou_memoria -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_reflexo": [
+   "!minijogo reflexo ganhou_reflexo 2",
+   "!se ganhou_reflexo -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_ganhou": [
+   "!pular matheus 2",
+   "matheus: Ganhou! Você é melhor que o técnico. #laugh #wave"
+  ],
+  "mj_perdeu": [
+   "!balao matheus suor",
+   "matheus: Relaxa, nem eu consigo. #shrug"
+  ],
+  "fim_teste": [
+   "> E assim terminou mais um dia na Cairu...",
+   "!fim_capitulo"
+  ],
+  "teste_diario": [
+   "nicão: O diário fica no J. Lá tem o que falta fazer no capítulo.",
+   "lucas: E no H fica o histórico, pra quem pulou as falas segurando X. Tipo eu. kkkk"
+  ],
+  "teste_tchau": [
+   "lucas: Tchau?! Eu acabei de chegar! #shrug #talk2",
+   "!balao lucas raiva"
+  ],
+  "abertura": [
+   {
+    "quem": "*",
+    "texto": "Sala de testes: aqui ficam as demonstrações do jogo. Fale com todo mundo pra ver cada recurso."
+   }
+  ],
+  "nicao": [
+   {
+    "quem": "nicao",
+    "texto": "Bom dia... eu acho. Alguém sabe que horas são?",
+    "gestos": [
+     "think",
+     "talk1"
+    ]
+   },
+   {
+    "quem": "breno",
+    "texto": "Nicão, já é meio-dia.",
+    "gestos": [
+     "point",
+     "talk2"
+    ]
+   },
+   {
+    "quem": "nicao",
+    "texto": "Ah, então eu tô adiantado.",
+    "gestos": [
+     "shrug",
+     "talk1"
+    ],
+    "ouvinte": "laugh"
+   },
+   {
+    "quem": "*",
+    "texto": "Nicão acena pra sala inteira e ri da própria piada.",
+    "gestos": [
+     "wave",
+     "laugh"
+    ],
+    "foco": "nicao"
+   }
+  ],
+  "lucas": [
+   {
+    "quem": "lucas",
+    "texto": "Eu só desci pra pegar um café.",
+    "gestos": [
+     "talk1",
+     "talk2"
+    ]
+   },
+   {
+    "quem": "breno",
+    "texto": "Faz quanto tempo isso?",
+    "gestos": [
+     "shrug",
+     "talk2"
+    ]
+   },
+   {
+    "quem": "lucas",
+    "texto": "Uns quarenta minutos. A fila tá andando.",
+    "gestos": [
+     "point",
+     "talk1"
+    ],
+    "ouvinte": "laugh"
+   }
+  ],
+  "joao": [
+   {
+    "quem": "joao",
+    "texto": "Dizem que a faculdade é de 1905.",
+    "gestos": [
+     "cross",
+     "talk1"
+    ]
+   },
+   {
+    "quem": "breno",
+    "texto": "E você sabe por quê?",
+    "gestos": [
+     "talk2",
+     "point"
+    ]
+   },
+   {
+    "quem": "joao",
+    "texto": "Eu estava lá. Pode perguntar pra qualquer um.",
+    "gestos": [
+     "point",
+     "cross"
+    ],
+    "ouvinte": "laugh"
+   }
+  ],
+  "matheus": [
+   {
+    "quem": "matheus",
+    "texto": "Quem pegou o meu lanche? Eu deixei bem aqui.",
+    "gestos": [
+     "talk1",
+     "point"
+    ]
+   },
+   {
+    "quem": "breno",
+    "texto": "Matheus, você tá segurando ele.",
+    "gestos": [
+     "point",
+     "talk2"
+    ]
+   },
+   {
+    "quem": "matheus",
+    "texto": "...Eu sabia que era você.",
+    "gestos": [
+     "shrug",
+     "cross"
+    ],
+    "ouvinte": "laugh"
+   }
+  ],
+  "beto": [
+   {
+    "quem": "beto",
+    "texto": "Calma, gente. Deixa que eu resolvo isso.",
+    "gestos": [
+     "talk2",
+     "talk1"
+    ]
+   },
+   {
+    "quem": "breno",
+    "texto": "Resolve o quê?",
+    "gestos": [
+     "shrug",
+     "talk1"
+    ]
+   },
+   {
+    "quem": "beto",
+    "texto": "Ainda não sei. Já volto.",
+    "gestos": [
+     "wave",
+     "talk2"
+    ],
+    "ouvinte": "laugh"
+   }
+  ],
+  "lukako": [
+   {
+    "quem": "lukako",
+    "texto": "Alguém viu o Beto?",
+    "gestos": [
+     "talk1",
+     "shrug"
+    ]
+   },
+   {
+    "quem": "breno",
+    "texto": "Ele disse que ia resolver alguma coisa.",
+    "gestos": [
+     "talk2",
+     "talk1"
+    ],
+    "ouvinte": "think"
+   },
+   {
+    "quem": "lukako",
+    "texto": "Então a gente não vê mais ele hoje.",
+    "gestos": [
+     "cross",
+     "shrug"
+    ],
+    "ouvinte": "laugh"
+   },
+   "? (Teste) Terminar o capítulo agora? | Sim -> fim_teste | Não"
+  ],
+  "fabio": [
+   {
+    "quem": "fabio",
+    "texto": "Eu vi tudo o que aconteceu aqui.",
+    "gestos": [
+     "cross",
+     "talk1"
+    ]
+   },
+   {
+    "quem": "breno",
+    "texto": "E vai contar?",
+    "gestos": [
+     "point",
+     "talk2"
+    ]
+   },
+   {
+    "quem": "fabio",
+    "texto": "Não. Mas eu vi tudo.",
+    "gestos": [
+     "shrug",
+     "point"
+    ],
+    "ouvinte": "laugh"
+   }
+  ],
+  "quadro": [
+   {
+    "quem": "*",
+    "texto": "No quadro: \"Aula 3: Custos\". Alguém desenhou um bonequinho no canto."
+   }
+  ],
+  "relogio": [
+   {
+    "quem": "breno",
+    "texto": "Ainda faltam quarenta minutos de aula...",
+    "gestos": [
+     "think"
+    ]
+   }
+  ],
+  "bebedouro": [
+   {
+    "quem": "*",
+    "texto": "O bebedouro. Água gelada, fila quente."
+   }
+  ],
+  "balcao": [
+   {
+    "quem": "*",
+    "texto": "O balcão do laboratório. Tem uma fila invisível que só o atendente enxerga."
+   }
+  ],
+  "computadores": [
+   {
+    "quem": "breno",
+    "texto": "Um computador livre no laboratório! ...Não, tá escrito \"NÃO USAR\".",
+    "gestos": [
+     "point",
+     "think"
+    ]
+   }
+  ],
+  "armario_ti": [
+   {
+    "quem": "*",
+    "texto": "Armário de TI: cabos, mouses e um teclado sem a tecla A."
+   }
+  ],
+  "armario_materiais": [
+   {
+    "quem": "*",
+    "texto": "Armário de materiais diversos. Trancado, claro."
+   }
+  ],
+  "divisoria": [
+   {
+    "quem": "*",
+    "texto": "A divisória cheia de avisos. Um deles é de 2019."
+   }
+  ],
+  "janelas": [
+   {
+    "quem": "*",
+    "texto": "As janelas pretas. Ninguém sabe se é dia ou noite lá fora."
+   }
+  ],
+  "ar_condicionado": [
+   {
+    "quem": "breno",
+    "texto": "Esse ar-condicionado tá no modo Polo Norte.",
+    "gestos": [
+     "cross",
+     "shrug"
+    ]
+   }
+  ],
+  "recepcao_balcao": [
+   {
+    "quem": "*",
+    "texto": "O balcão da recepção. Tem uma campainha que ninguém tem coragem de apertar."
+   }
+  ],
+  "placa_cairu": [
+   {
+    "quem": "breno",
+    "texto": "Faculdade Cairu. Desde 1905, segundo o João.",
+    "gestos": [
+     "point",
+     "talk1"
+    ]
+   }
+  ],
+  "mural": [
+   {
+    "quem": "*",
+    "texto": "Mural de avisos: \"Prova remarcada\", \"Vende-se bicicleta\", \"Achou um guarda-chuva?\""
+   }
+  ],
+  "banner": [
+   {
+    "quem": "*",
+    "texto": "Banner do vestibular. O modelo da foto nunca foi visto na faculdade."
+   }
+  ],
+  "rua": [
+   {
+    "quem": "breno",
+    "texto": "Lá fora tá um sol de rachar. Melhor ficar aqui dentro.",
+    "gestos": [
+     "think",
+     "shrug"
+    ]
+   }
+  ],
+  "cantina": [
+   {
+    "quem": "*",
+    "texto": "A cantina. O cheiro de coxinha chega até a sala 204."
+   }
+  ],
+  "cardapio": [
+   {
+    "quem": "*",
+    "texto": "Cardápio: café, salgado, suco e o PF do dia. O preço muda sem aviso."
+   }
+  ],
+  "maquina": [
+   {
+    "quem": "breno",
+    "texto": "A máquina engoliu minha moeda de novo.",
+    "gestos": [
+     "point",
+     "cross"
+    ]
+   }
+  ],
+  "banheiro": [
+   {
+    "quem": "*",
+    "texto": "Os banheiros. Melhor não comentar."
+   }
+  ],
+  "mesa": [
+   {
+    "quem": "*",
+    "texto": "Uma mesa com meio salgado esquecido. Ninguém sabe de quem é."
+   }
+  ],
+  "arvore": [
+   {
+    "quem": "*",
+    "texto": "A única sombra do pátio. Sempre ocupada."
+   }
+  ],
+  "mesa_professor": [
+   {
+    "quem": "*",
+    "texto": "A mesa do professor. A caneca diz \"Melhor professor do mundo\"."
+   }
+  ],
+  "ar_condicionado_sala": [
+   {
+    "quem": "breno",
+    "texto": "Esse ar-condicionado tá no modo Polo Norte.",
+    "gestos": [
+     "cross",
+     "shrug"
+    ]
+   }
+  ],
+  "janela_sala": [
+   {
+    "quem": "*",
+    "texto": "Pela janela dá pra ver o pátio. E a cantina. Foco na aula."
+   }
+  ],
+  "cartazes_corredor": [
+   {
+    "quem": "*",
+    "texto": "Cartazes: \"Semana Acadêmica\", \"Grupo de estudos\", \"Perdeu um pendrive?\""
+   }
+  ],
+  "nucleo_pc": [
+   {
+    "quem": "*",
+    "texto": "O computador do balcão do Núcleo. Abre o sistema de chamados... devagarzinho."
+   }
+  ],
+  "nucleo_balcao": [
+   {
+    "quem": "*",
+    "texto": "O balcão branco do Núcleo. Do lado de cá, quem pede ajuda. Do lado de lá, quem conserta."
+   }
+  ],
+  "portinhola": [
+   {
+    "quem": "*",
+    "texto": "A portinhola. Só passa quem é do Núcleo... ou quem finge que é."
+   }
+  ],
+  "computadores_quebrados": [
+   {
+    "quem": "breno",
+    "texto": "Esse armário é um cemitério de computador. Uns têm conserto. Outros, só reza.",
+    "gestos": [
+     "point",
+     "shrug"
+    ]
+   }
+  ],
+  "divisoria_cartazes": [
+   {
+    "quem": "*",
+    "texto": "A divisória cheia de anotações: senhas de wi-fi antigas, ramais e um \"NÃO MEXER\" sublinhado três vezes."
+   }
+  ],
+  "retratos": [
+   {
+    "quem": "*",
+    "texto": "A galeria dos presidentes. Todos olhando pra você ao mesmo tempo."
+   }
+  ],
+  "retrato_presidente": [
+   {
+    "quem": "*",
+    "texto": "O retrato do presidente atual. A moldura é maior que as outras, claro."
+   }
+  ],
+  "cadeira_presidente": [
+   {
+    "quem": "breno",
+    "texto": "A cadeira vermelha do presidente. Melhor nem pensar em sentar.",
+    "gestos": [
+     "think",
+     "cross"
+    ]
+   }
+  ],
+  "mesa_museu1": [
+   {
+    "quem": "*",
+    "texto": "Uma máquina de escrever, um telefone de disco e livros mais velhos que a faculdade."
+   }
+  ],
+  "mesa_museu2": [
+   {
+    "quem": "*",
+    "texto": "Um globo, um troféu sem placa e um vaso que ninguém tem coragem de tirar do lugar."
+   }
+  ],
+  "mesa_museu3": [
+   {
+    "quem": "*",
+    "texto": "Um gramofone, um relógio parado e um pergaminho. Parece museu, mas é a sala do presidente."
+   }
+  ],
+  "armario_antigo": [
+   {
+    "quem": "*",
+    "texto": "Armário cheio de taças, livros e caixinhas. Tudo com cara de 1905."
+   }
+  ],
+  "teste_cenas": {
+   "requer": [
+    "!teste_feito"
+   ],
+   "passos": [
+    {
+     "balao": "lucas",
+     "icone": "!"
+    },
+    {
+     "virar": "lucas",
+     "para": "breno"
+    },
+    {
+     "pular": "lucas",
+     "vezes": 2
+    },
+    {
+     "quem": "lucas",
+     "texto": "Breno! Quer ver tudo que as cenas do jogo sabem fazer agora?",
+     "gestos": [
+      "wave",
+      "talk1"
+     ]
+    },
+    {
+     "escolha": "Testar o sistema de cenas?",
+     "quem": "breno",
+     "opcoes": [
+      {
+       "texto": "Bora testar!",
+       "passos": [
+        {
+         "narrar": "Lucas sai andando pelo laboratório..."
+        },
+        {
+         "andar": "lucas",
+         "x": 580,
+         "y": 200,
+         "esperar": false
+        },
+        {
+         "andar": "jogador",
+         "x": 470,
+         "y": 200
+        },
+        {
+         "andar": "lucas",
+         "x": 580,
+         "y": 280
+        },
+        {
+         "andar": "jogador",
+         "x": 470,
+         "y": 280
+        },
+        {
+         "virar": "lucas",
+         "para": "breno"
+        },
+        {
+         "virar": "breno",
+         "para": "lucas"
+        },
+        {
+         "quem": "lucas",
+         "texto": "Primeiro, os efeitos. Segura essa...",
+         "gestos": [
+          "point",
+          "talk1"
+         ]
+        },
+        {
+         "tremer": 0.8,
+         "forca": 5
+        },
+        {
+         "flash": 0.4
+        },
+        {
+         "balao": "breno",
+         "icone": "?!"
+        },
+        {
+         "quem": "breno",
+         "texto": "Que foi isso?! Terremoto em Salvador?",
+         "gestos": [
+          "shrug",
+          "talk2"
+         ]
+        },
+        {
+         "quem": "lucas",
+         "texto": "Tremer e flash. Agora olha o João...",
+         "gestos": [
+          "point",
+          "talk1"
+         ],
+         "ouvinte": "think"
+        },
+        {
+         "balao": "joao",
+         "icone": "..."
+        },
+        {
+         "sair": "joao",
+         "por": "porta"
+        },
+        {
+         "narrar": "O João foi tomar café. E não volta tão cedo."
+        },
+        {
+         "aparecer": "joao",
+         "no_mapa": "patio",
+         "x": 420,
+         "y": 220,
+         "dir": "baixo",
+         "cenas": [
+          "joao_cafe"
+         ]
+        },
+        {
+         "quem": "lucas",
+         "texto": "Agora um minijogo! Por enquanto é de mentirinha: você escolhe se ganhou.",
+         "gestos": [
+          "talk2",
+          "point"
+         ]
+        },
+        {
+         "minijogo": "teste",
+         "guardar": "ganhou_teste"
+        },
+        {
+         "se": "ganhou_teste",
+         "entao": [
+          {
+           "pular": "lucas",
+           "vezes": 2
+          },
+          {
+           "quem": "lucas",
+           "texto": "Ganhou! Olha a festa!",
+           "gestos": [
+            "laugh",
+            "wave"
+           ]
+          }
+         ],
+         "senao": [
+          {
+           "balao": "lucas",
+           "icone": "T_T"
+          },
+          {
+           "quem": "lucas",
+           "texto": "Perdeu... faz parte.",
+           "gestos": [
+            "shrug"
+           ]
+          }
+         ]
+        },
+        {
+         "quem": "lucas",
+         "texto": "Por último: trocar de mapa no meio da cena. Bora pra Presidência!",
+         "gestos": [
+          "point",
+          "wave"
+         ]
+        },
+        {
+         "mapa": "presidencia",
+         "x": 230,
+         "y": 410,
+         "dir": "cima"
+        },
+        {
+         "aparecer": "lucas",
+         "x": 410,
+         "y": 410,
+         "dir": "cima"
+        },
+        {
+         "andar": "lucas",
+         "x": 410,
+         "y": 215,
+         "esperar": false
+        },
+        {
+         "andar": "jogador",
+         "x": 230,
+         "y": 215
+        },
+        {
+         "balao": "breno",
+         "icone": "!"
+        },
+        {
+         "quem": "breno",
+         "texto": "A cadeira vermelha do presidente...",
+         "gestos": [
+          "think",
+          "point"
+         ]
+        },
+        {
+         "escolha": "Sentar na cadeira?",
+         "quem": "breno",
+         "opcoes": [
+          {
+           "texto": "Sentar",
+           "marcar": "sentou_na_cadeira",
+           "passos": [
+            {
+             "andar": "jogador",
+             "x": 320,
+             "y": 182
+            },
+            {
+             "tremer": 0.5,
+             "forca": 3
+            },
+            {
+             "narrar": "Uma voz ecoa pela sala: \"QUEM SENTOU NA MINHA CADEIRA?!\""
+            },
+            {
+             "andar": "jogador",
+             "x": 230,
+             "y": 215,
+             "velocidade": 140
+            },
+            {
+             "balao": "breno",
+             "icone": "!!!"
+            }
+           ]
+          },
+          {
+           "texto": "Melhor não",
+           "passos": [
+            {
+             "quem": "lucas",
+             "texto": "Sábia decisão.",
+             "gestos": [
+              "cross"
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "fade": "preto",
+         "tempo": 0.6
+        },
+        {
+         "narrar": "Mais tarde..."
+        },
+        {
+         "mapa": "laboratorio",
+         "x": 340,
+         "y": 214,
+         "dir": "esquerda"
+        },
+        {
+         "aparecer": "lucas",
+         "no_mapa": "laboratorio",
+         "x": 300,
+         "y": 214,
+         "dir": "direita",
+         "cenas": [
+          "teste_cenas",
+          "teste_de_novo"
+         ]
+        },
+        {
+         "quem": "lucas",
+         "texto": "Pronto! Tudo isso se escreve no cairu.json. Ah, e o João agora tá no pátio.",
+         "gestos": [
+          "wave",
+          "laugh"
+         ]
+        },
+        {
+         "marcar": "teste_feito"
+        }
+       ]
+      },
+      {
+       "texto": "Agora não",
+       "passos": [
+        {
+         "quem": "lucas",
+         "texto": "Beleza. Quando quiser, é só falar comigo.",
+         "gestos": [
+          "shrug"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "teste_de_novo": {
+   "requer": [
+    "teste_feito"
+   ],
+   "passos": [
+    {
+     "quem": "lucas",
+     "texto": "Quer ver o teste de novo?",
+     "gestos": [
+      "talk1"
+     ]
+    },
+    {
+     "escolha": "Repetir o teste?",
+     "quem": "breno",
+     "opcoes": [
+      {
+       "texto": "Quero",
+       "desmarcar": [
+        "teste_feito",
+        "ganhou_teste",
+        "sentou_na_cadeira"
+       ],
+       "passos": [
+        {
+         "aparecer": "joao",
+         "no_mapa": "laboratorio",
+         "x": 80,
+         "y": 204,
+         "dir": "baixo",
+         "cena": "joao",
+         "cenas": []
+        },
+        {
+         "cena": "teste_cenas"
+        }
+       ]
+      },
+      {
+       "texto": "Não",
+       "passos": []
+      }
+     ]
+    }
+   ]
+  },
+  "joao_cafe": [
+   {
+    "quem": "joao",
+    "texto": "Shhh. Tô em horário de café. Volta daqui a quarenta minutos.",
+    "gestos": [
+     "cross",
+     "shrug"
+    ]
+   }
+  ],
+  "aviso_lab": {
+   "uma_vez": true,
+   "passos": [
+    {
+     "balao": "breno",
+     "icone": "!"
+    },
+    {
+     "narrar": "Dica: fale com o Lucas (perto dos computadores) pra testar o sistema de cenas."
+    }
+   ]
+  },
+  "teste_animacoes": {
+   "uma_vez": true,
+   "cinema": true,
+   "passos": [
+    "// Mostra o motor de animação (veja ANIMAÇÕES no LEIA-ME).",
+    "!camera beto 0.6",
+    "!zoom 1.5 0.5",
+    "beto: Breno! Chegou o motor de animação *novo*. Se liga. #wave #talk1",
+    "!anim beto pose_heroi",
+    "beto: Pose de herói. #cross",
+    "!anim beto dancar",
+    "!anim beto girar",
+    "!anim beto comemorar",
+    "fabio: Beto, sai do meio do caminho, ~rapaz~! #point",
+    "!correr fabio 284 300",
+    "!anim fabio empurrar beto",
+    "!anim beto cair",
+    "beto: ...",
+    "!anim beto levantar",
+    "beto: Ah, é assim, é? #point #talk2",
+    "!briga beto fabio 2.2 fabio",
+    "!esperar 0.5",
+    "> O Fábio descobriu que *não sabia brigar*.",
+    "!anim fabio levantar",
+    "!anim fabio zonzo",
+    "!anim fabio envergonhado",
+    "!anim eu chorar_de_rir",
+    "!anim beto,fabio assustar",
+    "beto: QUE FOI?! #shrug",
+    "!zoom 1 0.5",
+    "> Dica: as portas do corredor agora abrem de verdade."
+   ]
+  },
+  "mj_digitar": [
+   "!minijogo digitar ganhou_digitar 1",
+   "!se ganhou_digitar -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_esquiva": [
+   "!minijogo esquiva ganhou_esquiva 1",
+   "!se ganhou_esquiva -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_cabos": [
+   "!minijogo cabos ganhou_cabos 2",
+   "!se ganhou_cabos -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_impressora": [
+   "!minijogo impressora ganhou_impressora 2",
+   "!se ganhou_impressora -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_abas": [
+   "!minijogo abas ganhou_abas 2",
+   "!se ganhou_abas -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_qw": [
+   "!minijogo qw ganhou_qw 2",
+   "!se ganhou_qw -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_mangueio": [
+   "!minijogo mangueio ganhou_mangueio 2",
+   "!se ganhou_mangueio -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_lista1": [
+   "? Qual? | Consertar o PC -> mj_pc | Decorar a sequência -> mj_memoria | Reflexo -> mj_reflexo | Digitar rápido -> mj_digitar | Corredor lotado -> mj_esquiva | Voltar"
+  ],
+  "mj_lista2": [
+   "? Qual? | Religar cabos (Lukako) -> mj_cabos | Impressora (Fábio) -> mj_impressora | Fechar abas (Lucas) -> mj_abas | QW (Lukako) -> mj_qw | Manguear (Beto) -> mj_mangueio | Mais -> mj_lista3 | Voltar"
+  ],
+  "mj_virus": [
+   "!minijogo virus ganhou_virus 2",
+   "!se ganhou_virus -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_violao": [
+   "!minijogo violao ganhou_violao 2",
+   "!se ganhou_violao -> mj_ganhou | mj_perdeu"
+  ],
+  "mj_lista3": [
+   "? Qual? | Vírus no celular (Seu Mauro) -> mj_virus | Violão (Seu Mauro) -> mj_violao | Voltar"
+  ],
+  "teste_video": [
+   "n: Bora ver um videozinho, Breno. #point",
+   "!video teste",
+   "n: Massa, né? E se o arquivo sumir, o jogo segue normal.",
+   "!video nao_existe",
+   "b: Oxe, seguiu mesmo."
+  ]
+ },
+ "sempre_liberado": true,
+ "descricao": "Demonstrações de tudo que o jogo sabe fazer (cenas, animações, minijogos).",
+ "proximo": ""
+}

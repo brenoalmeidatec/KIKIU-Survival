@@ -1,0 +1,154 @@
+{
+ "_ajuda": "custo = quanto o diretor paga pra criar; peso = chance; desde = minuto em que começa a aparecer; grupo = quantos nascem juntos. Comportamentos extras: atira (segundos), investida (segundos), anel (segundos, tiros em círculo), invoca {tipo, a_cada, quantos}. raio = tamanho do corpo.",
+ "bug": {
+  "nome": "Bug",
+  "sprite": "inimigo_bug",
+  "vida": 9,
+  "dano": 5,
+  "velocidade": 48,
+  "xp": 1,
+  "custo": 1,
+  "peso": 10,
+  "desde": 0,
+  "grupo": [
+   1,
+   3
+  ],
+  "raio": 12
+ },
+ "popup": {
+  "nome": "Pop-up",
+  "sprite": "inimigo_popup",
+  "vida": 5,
+  "dano": 3,
+  "velocidade": 80,
+  "xp": 1,
+  "custo": 1,
+  "peso": 7,
+  "desde": 1,
+  "grupo": [
+   3,
+   6
+  ],
+  "raio": 10
+ },
+ "spam": {
+  "nome": "Spam",
+  "sprite": "inimigo_spam",
+  "vida": 14,
+  "dano": 6,
+  "velocidade": 42,
+  "xp": 2,
+  "custo": 4,
+  "peso": 4,
+  "desde": 2,
+  "grupo": [
+   1,
+   2
+  ],
+  "raio": 12,
+  "atira": 3.0,
+  "tiro": {
+   "sprite": "proj_email",
+   "velocidade": 130,
+   "dano": 7
+  },
+  "distancia": 170
+ },
+ "trojan": {
+  "nome": "Trojan",
+  "sprite": "inimigo_trojan",
+  "vida": 70,
+  "dano": 12,
+  "velocidade": 34,
+  "xp": 5,
+  "custo": 8,
+  "peso": 3,
+  "desde": 3,
+  "grupo": [
+   1,
+   1
+  ],
+  "raio": 20,
+  "pesado": true
+ },
+ "minerador": {
+  "nome": "Minerador de Cripto",
+  "sprite": "inimigo_minerador",
+  "vida": 30,
+  "dano": 10,
+  "velocidade": 95,
+  "xp": 3,
+  "custo": 5,
+  "peso": 3,
+  "desde": 5,
+  "grupo": [
+   2,
+   4
+  ],
+  "raio": 12
+ },
+ "ransomware": {
+  "nome": "Ransomware",
+  "sprite": "inimigo_ransomware",
+  "vida": 600,
+  "dano": 16,
+  "velocidade": 40,
+  "xp": 40,
+  "custo": 0,
+  "peso": 0,
+  "raio": 18,
+  "pesado": true,
+  "chefe": true,
+  "anel": 3.5,
+  "tiro": {
+   "sprite": "proj_cadeado",
+   "velocidade": 110,
+   "dano": 10,
+   "quantos": 12
+  },
+  "bau": true
+ },
+ "trojan_gigante": {
+  "nome": "Trojan Gigante",
+  "sprite": "inimigo_trojan_gigante",
+  "vida": 450,
+  "dano": 20,
+  "velocidade": 36,
+  "xp": 40,
+  "custo": 0,
+  "peso": 0,
+  "raio": 38,
+  "pesado": true,
+  "chefe": true,
+  "investida": 4.0,
+  "bau": true
+ },
+ "tela_azul": {
+  "nome": "Tela Azul da Morte",
+  "sprite": "inimigo_tela_azul",
+  "vida": 4000,
+  "dano": 25,
+  "velocidade": 40,
+  "xp": 0,
+  "custo": 0,
+  "peso": 0,
+  "raio": 40,
+  "pesado": true,
+  "chefe": true,
+  "final": true,
+  "anel": 3.0,
+  "investida": 6.0,
+  "tiro": {
+   "sprite": "proj_email",
+   "velocidade": 120,
+   "dano": 12,
+   "quantos": 16
+  },
+  "invoca": {
+   "tipo": "popup",
+   "a_cada": 5.0,
+   "quantos": 8
+  }
+ }
+}

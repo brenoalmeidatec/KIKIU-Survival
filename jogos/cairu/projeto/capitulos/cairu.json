@@ -1,0 +1,1132 @@
+{
+  "titulo": "Capítulo 1: Cairu",
+  "descricao": "As histórias da Faculdade Cairu, em Salvador.",
+  "jogador": "breno",
+  "mapa_inicial": "recepcao",
+  "inicio": {
+    "x": 400,
+    "y": 424,
+    "dir": "cima"
+  },
+  "abertura": "abertura",
+  "musica": "cairu",
+  "apelidos": {
+    "n": "nicao",
+    "b": "breno",
+    "luk": "lukako",
+    "mau": "mauro"
+  },
+  "diario": [
+    {
+      "texto": "Falar com o Lukako na recepção",
+      "feito": "viu_h1_chegada"
+    },
+    {
+      "texto": "Achar o Nicão no Núcleo de Informática",
+      "requer": "viu_h1_chegada",
+      "feito": "viu_h2_nicao"
+    },
+    {
+      "texto": "Ver o Lucas no Laboratório",
+      "requer": "viu_h1_chegada",
+      "feito": "viu_h3_lucas"
+    },
+    {
+      "texto": "Encontrar o Matheus na Sala 204",
+      "requer": "viu_h1_chegada",
+      "feito": "viu_h4_matheus"
+    },
+    {
+      "texto": "Ir ao pátio ver o Beto e o Fábio",
+      "requer": "viu_h1_chegada",
+      "feito": "viu_h5_patio"
+    },
+    {
+      "texto": "Ir à Presidência",
+      "requer": [
+        "viu_h2_nicao",
+        "viu_h3_lucas",
+        "viu_h4_matheus",
+        "viu_h5_patio"
+      ],
+      "feito": "viu_h6_final"
+    }
+  ],
+  "npcs": [
+    {
+      "personagem": "lukako",
+      "mapa": "recepcao",
+      "x": 470,
+      "y": 200,
+      "dir": "baixo",
+      "cenas": [
+        "h1_chegada",
+        "lukako_ideia",
+        "lukako_desenho",
+        "lukako_qw",
+        "lukako_depois"
+      ],
+      "dica": "Falar"
+    },
+    {
+      "personagem": "nicao",
+      "mapa": "nucleo",
+      "x": 208,
+      "y": 366,
+      "dir": "baixo",
+      "cenas": [
+        "espera_recepcao",
+        "h2_nicao",
+        "nicao_oi",
+        "nicao_triste",
+        "nicao_lucas",
+        "nicao_depois"
+      ],
+      "comportamento": "olhar"
+    },
+    {
+      "personagem": "lucas",
+      "mapa": "laboratorio",
+      "x": 204,
+      "y": 252,
+      "dir": "direita",
+      "cenas": [
+        "espera_recepcao",
+        "h3_lucas",
+        "lucas_pc",
+        "lucas_banheiro",
+        "lucas_hd",
+        "lucas_depois"
+      ],
+      "comportamento": "pc"
+    },
+    {
+      "personagem": "joao",
+      "mapa": "laboratorio",
+      "x": 80,
+      "y": 222,
+      "dir": "baixo",
+      "cenas": [
+        "espera_recepcao",
+        "joao_dor",
+        "joao_filho",
+        "joao_trabalho",
+        "joao_depois"
+      ]
+    },
+    {
+      "personagem": "matheus",
+      "mapa": "sala_aula",
+      "x": 235,
+      "y": 320,
+      "dir": "cima",
+      "cenas": [
+        "espera_recepcao",
+        "h4_matheus",
+        "matheus_gastar",
+        "matheus_games",
+        "matheus_anime",
+        "matheus_depois"
+      ]
+    },
+    {
+      "personagem": "beto",
+      "mapa": "patio",
+      "x": 260,
+      "y": 300,
+      "dir": "esquerda",
+      "raio": 50,
+      "cenas": [
+        "espera_recepcao",
+        "h5_patio",
+        "beto_cismado",
+        "beto_mangueiro",
+        "beto_dedo",
+        "beto_lucia",
+        "beto_aposta",
+        "beto_depois"
+      ],
+      "comportamento": "passear"
+    },
+    {
+      "personagem": "fabio",
+      "mapa": "patio",
+      "x": 420,
+      "y": 330,
+      "dir": "cima",
+      "cenas": [
+        "espera_recepcao",
+        "h5_patio",
+        "fabio_anime",
+        "fabio_marra",
+        "fabio_respeito",
+        "fabio_depois"
+      ],
+      "comportamento": "olhar"
+    },
+    {
+      "personagem": "mauro",
+      "mapa": "patio",
+      "x": 560,
+      "y": 330,
+      "dir": "direita",
+      "cenas": [
+        "mauro_oi",
+        "mauro_violao",
+        "mauro_kawaii",
+        "mauro_cana",
+        "mauro_roca",
+        "mauro_cantada",
+        "mauro_depois"
+      ],
+      "dica": "Falar",
+      "comportamento": "acao",
+      "acoes": [
+        "tocando_violao",
+        "chupando_cana"
+      ],
+      "troca": 25,
+      "rotina": [
+        {
+          "mapa": "patio",
+          "x": 560,
+          "y": 330,
+          "dir": "direita",
+          "comportamento": "acao",
+          "acoes": [
+            "tocando_violao",
+            "chupando_cana"
+          ],
+          "tempo": 120
+        },
+        {
+          "mapa": "sala_aula",
+          "x": 610,
+          "y": 300,
+          "dir": "esquerda",
+          "comportamento": "varrer",
+          "tempo": 40
+        },
+        {
+          "mapa": "corredor",
+          "x": 330,
+          "y": 190,
+          "dir": "direita",
+          "comportamento": "varrer",
+          "tempo": 30
+        },
+        {
+          "mapa": "laboratorio",
+          "x": 520,
+          "y": 390,
+          "dir": "esquerda",
+          "comportamento": "varrer",
+          "tempo": 40
+        }
+      ]
+    }
+  ],
+  "gatilhos": [
+    {
+      "mapa": "presidencia",
+      "ao_entrar": true,
+      "cenas": [
+        "h6_final",
+        "presidencia_cedo"
+      ]
+    }
+  ],
+  "cenas": {
+    "balcao": [
+      {
+        "quem": "*",
+        "texto": "O balcão do laboratório. Tem uma fila invisível que só o atendente enxerga."
+      }
+    ],
+    "divisoria": [
+      {
+        "quem": "*",
+        "texto": "A divisória cheia de avisos. Um deles é de 2019."
+      }
+    ],
+    "recepcao_balcao": [
+      {
+        "quem": "*",
+        "texto": "O balcão da recepção. Tem uma campainha que ninguém tem coragem de apertar."
+      }
+    ],
+    "retrato_presidente": [
+      {
+        "quem": "*",
+        "texto": "O retrato do presidente atual. A moldura é maior que as outras, claro."
+      }
+    ],
+    "armario_antigo": [
+      {
+        "quem": "*",
+        "texto": "Armário cheio de taças, livros e caixinhas. Tudo com cara de 1905."
+      }
+    ],
+    "cartazes_corredor": [
+      {
+        "quem": "*",
+        "texto": "Cartazes: \"Semana Acadêmica\", \"Grupo de estudos\", \"Perdeu um pendrive?\""
+      }
+    ],
+    "quadro": [
+      {
+        "quem": "*",
+        "texto": "No quadro: \"Aula 3: Custos\". Alguém desenhou um bonequinho no canto."
+      }
+    ],
+    "cantina": [
+      {
+        "quem": "*",
+        "texto": "A cantina. O cheiro de coxinha chega até a sala 204."
+      }
+    ],
+    "cadeira_presidente": [
+      {
+        "quem": "breno",
+        "texto": "A cadeira vermelha do presidente. Combina comigo... mas melhor nem sentar.",
+        "gestos": [
+          "think",
+          "cross"
+        ]
+      }
+    ],
+    "computadores": [
+      {
+        "quem": "breno",
+        "texto": "Um computador livre no laboratório! ...Não, tá escrito \"NÃO USAR\".",
+        "gestos": [
+          "point",
+          "think"
+        ]
+      }
+    ],
+    "janela_sala": [
+      {
+        "quem": "*",
+        "texto": "Pela janela dá pra ver o pátio. E a cantina. Foco na aula."
+      }
+    ],
+    "retratos": [
+      {
+        "quem": "*",
+        "texto": "A galeria dos presidentes. Todos olhando pra você ao mesmo tempo."
+      }
+    ],
+    "mesa_museu1": [
+      {
+        "quem": "*",
+        "texto": "Uma máquina de escrever, um telefone de disco e livros mais velhos que a faculdade."
+      }
+    ],
+    "mesa_museu3": [
+      {
+        "quem": "*",
+        "texto": "Um gramofone, um relógio parado e um pergaminho. Parece museu, mas é a sala do presidente."
+      }
+    ],
+    "mural": [
+      {
+        "quem": "*",
+        "texto": "Mural de avisos: \"Prova remarcada\", \"Vende-se bicicleta\", \"Achou um guarda-chuva?\""
+      }
+    ],
+    "ar_condicionado": [
+      {
+        "quem": "breno",
+        "texto": "Esse ar-condicionado tá no modo Polo Norte.",
+        "gestos": [
+          "cross",
+          "shrug"
+        ]
+      }
+    ],
+    "relogio": [
+      {
+        "quem": "breno",
+        "texto": "Ainda faltam quarenta minutos de aula...",
+        "gestos": [
+          "think"
+        ]
+      }
+    ],
+    "nucleo_balcao": [
+      {
+        "quem": "*",
+        "texto": "O balcão branco do Núcleo. Do lado de cá, quem pede ajuda. Do lado de lá, quem conserta."
+      }
+    ],
+    "rua": [
+      {
+        "quem": "breno",
+        "texto": "Lá fora tá um sol de rachar. Melhor ficar aqui dentro.",
+        "gestos": [
+          "think",
+          "shrug"
+        ]
+      }
+    ],
+    "portinhola": [
+      {
+        "quem": "*",
+        "texto": "A portinhola. Só passa quem é do Núcleo... ou quem finge que é."
+      }
+    ],
+    "placa_cairu": [
+      {
+        "quem": "breno",
+        "texto": "Faculdade Cairu. Desde 1905, segundo o João.",
+        "gestos": [
+          "point",
+          "talk1"
+        ]
+      }
+    ],
+    "maquina": [
+      {
+        "quem": "breno",
+        "texto": "A máquina engoliu minha moeda de novo.",
+        "gestos": [
+          "point",
+          "cross"
+        ]
+      }
+    ],
+    "mesa_museu2": [
+      {
+        "quem": "*",
+        "texto": "Um globo, um troféu sem placa e um vaso que ninguém tem coragem de tirar do lugar."
+      }
+    ],
+    "divisoria_cartazes": [
+      {
+        "quem": "*",
+        "texto": "A divisória cheia de anotações: senhas de wi-fi antigas, ramais e um \"NÃO MEXER\" sublinhado três vezes."
+      }
+    ],
+    "nucleo_pc": [
+      {
+        "quem": "*",
+        "texto": "O computador do balcão do Núcleo. Abre o sistema de chamados... devagarzinho."
+      }
+    ],
+    "janelas": [
+      {
+        "quem": "*",
+        "texto": "As janelas pretas. Ninguém sabe se é dia ou noite lá fora."
+      }
+    ],
+    "bebedouro": [
+      {
+        "quem": "*",
+        "texto": "O bebedouro. Água gelada, fila quente."
+      }
+    ],
+    "ar_condicionado_sala": [
+      {
+        "quem": "breno",
+        "texto": "Esse ar-condicionado tá no modo Polo Norte.",
+        "gestos": [
+          "cross",
+          "shrug"
+        ]
+      }
+    ],
+    "mesa_professor": [
+      {
+        "quem": "*",
+        "texto": "A mesa do professor. A caneca diz \"Melhor professor do mundo\"."
+      }
+    ],
+    "cardapio": [
+      {
+        "quem": "*",
+        "texto": "Cardápio: café, salgado, suco e o PF do dia. O preço muda sem aviso."
+      }
+    ],
+    "armario_materiais": [
+      {
+        "quem": "*",
+        "texto": "Armário de materiais diversos. Trancado, claro."
+      }
+    ],
+    "arvore": [
+      {
+        "quem": "*",
+        "texto": "A única sombra do pátio. Sempre ocupada."
+      }
+    ],
+    "mesa": [
+      {
+        "quem": "*",
+        "texto": "Uma mesa com meio salgado esquecido. Ninguém sabe de quem é."
+      }
+    ],
+    "banner": [
+      {
+        "quem": "*",
+        "texto": "Banner do vestibular. O modelo da foto nunca foi visto na faculdade."
+      }
+    ],
+    "banheiro": [
+      {
+        "quem": "*",
+        "texto": "Os banheiros. Melhor não comentar."
+      }
+    ],
+    "armario_ti": [
+      {
+        "quem": "*",
+        "texto": "Armário de TI: cabos, mouses e um teclado sem a tecla A."
+      }
+    ],
+    "computadores_quebrados": [
+      {
+        "quem": "breno",
+        "texto": "Esse armário é um cemitério de computador. Uns têm conserto. Outros, só reza.",
+        "gestos": [
+          "point",
+          "shrug"
+        ]
+      }
+    ],
+    "abertura": {
+      "cinema": true,
+      "passos": [
+        "!barras sim",
+        "!camera 400 260 0.01",
+        "!zoom 1.3 0.01",
+        "> Salvador. Faculdade Cairu.",
+        "!camera lukako 1.5",
+        "> [ABERTURA] Aqui entra como o Breno quer começar o capítulo.",
+        "!zoom 1 0.6",
+        "!camera eu 0.8",
+        "!barras nao",
+        "> Dica: aperte J pra ver o diário (o que falta fazer)."
+      ]
+    },
+    "presidencia_cedo": {
+      "uma_vez": true,
+      "passos": [
+        "b pensa: A Presidência... melhor voltar aqui depois de ver todo mundo."
+      ]
+    },
+    "espera_recepcao": {
+      "requer": [
+        "!viu_h1_chegada"
+      ],
+      "passos": [
+        "b pensa: Melhor passar na recepção primeiro e falar com o Lukako."
+      ]
+    },
+    "nicao_depois": [
+      "!virar nicao eu",
+      "n: De boa, pivete... de boa. #talk1",
+      "n: Ó... o Lukako levou os cabo de novo. Me ajuda a religar? Na manha...",
+      "? Religar os cabos com o Nicão? | Bora -> mj_cabos | Depois"
+    ],
+    "lucas_depois": [
+      "!virar lucas eu",
+      "lucas: Tô de boa, véi... relaxa. Ninguém viu nada não. #talk1",
+      "lucas: Ó... ó... o João tá vindo, pivete! Me ajuda aqui! #point",
+      "? Ajudar o Lucas a fechar as abas? | Ajudar -> mj_abas | Deixa ele se virar"
+    ],
+    "joao_depois": [
+      "!virar joao eu",
+      "joao: Ai... e esse ar-condicionado gelado? Quer me matar, é? #talk1",
+      "joao: E vocês aí vendo desenho japonês em vez de trabalhar. Oxe. #shrug",
+      "joao: Ô Breno, o PC da sala tá ruim. Dá uma olhada aí, que meu joelho...",
+      "? Consertar o PC pro João? | Consertar -> mj_pc_joao | Hoje não"
+    ],
+    "matheus_depois": [
+      "!virar matheus eu",
+      "matheus: Tu tropeçou na porta quando entrou, né? Kkkkkkkk #laugh"
+    ],
+    "beto_depois": [
+      "!virar beto eu",
+      "beto: Resenha boa, viu? Agora deixa eu ir ali... resolver um negócio. #talk1",
+      "b pensa: O negócio é conferir a aposta no celular, escondido no banheiro.",
+      "? Ajudar o Beto a sair de fininho? | Ajudar -> mj_mangueio | Deixa ele"
+    ],
+    "lukako_depois": [
+      "!virar lukako eu",
+      "luk: Véi... tá vendo aquele pombo ali? #point",
+      "luk: ...Nada não. Deixa quieto. #shrug",
+      "luk: Bora um QW? Só uma. #talk2",
+      "? Jogar QW com o Lukako? | Bora -> mj_qw | Hoje não"
+    ],
+    "fabio_depois": [
+      "!virar fabio eu",
+      "fabio: Pergunta qualquer coisa aí, véi. Qualquer coisa. Eu sei. #talk1",
+      "b: Então diz aí: quem é o mais gostoso da Cairu?",
+      "fabio: Eu, ué. #shrug",
+      "b: ERRADO! EU SOU GOSTOSO!!",
+      "fabio: Aposto que tu não destrava a impressora lá de cima. #point",
+      "? Mostrar pro Fábio quem sabe? | Destravar a impressora -> mj_impressora | Deixa pra lá"
+    ],
+    "joao_lab": [
+      "> [JOÃO: fala solta, depois das personalidades]"
+    ],
+    "lucas_pc": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h3_lucas"
+      ],
+      "passos": [
+        "!virar lucas eu",
+        "lucas: Colé, pivete... qual foi? #talk1",
+        "b: Tá fazendo o que nesse PC, Lucas?",
+        "lucas: Eu? Nada não, véi... pesquisa. #shrug",
+        "lucas: Pesquisa de... anatomia, tá ligado. Pra faculdade. #talk2",
+        "b: Sei... e essa pesquisa é teórica ou prática?",
+        "lucas: Prática, véi. Bem prática. #shrug",
+        "b pensa: Tem uma aba minimizada piscando. Melhor nem perguntar."
+      ]
+    },
+    "lucas_banheiro": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h3_lucas"
+      ],
+      "passos": [
+        "!virar lucas eu",
+        "lucas: Ó... nunca mais eu mijo no banheiro lá de cima, véi. #talk1",
+        "b: Qual foi?",
+        "lucas: Tava eu lá mijando... gemendo, né... que mijar é bom demais. #talk2",
+        "lucas: Aí do box do lado vem um barulho. Era o presidente, pivete. #point",
+        "lucas: O homem tava ~cagando~. E eu do lado gemendo altão.",
+        "b: Lá ele! Porra é essa, Lucas?",
+        "lucas: E eu ia parar no meio? Nunca. É desgraça, véi. #shrug"
+      ]
+    },
+    "lucas_hd": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h3_lucas"
+      ],
+      "passos": [
+        "!virar lucas eu",
+        "lucas: Véi... meu SSD lotou. #talk1",
+        "b: Lotou de quê?",
+        "lucas: ...",
+        "lucas: De trabalho, pivete. Quinhentos giga de... *trabalho*. #shrug",
+        "b pensa: Sei. Trabalho manual."
+      ]
+    },
+    "nicao_oi": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h2_nicao"
+      ],
+      "passos": [
+        "!virar nicao eu",
+        "n: Qual foi... pivete. #talk1",
+        "b: Colé, Nicão. Tudo na paz?",
+        "n: Tudo na manha, véi... tudo na manha. #talk2",
+        "n: Chamado tem... mas chamado não foge não. Hehehe... he... #laugh",
+        "b pensa: Nunca vi o Nicão com pressa. Nem quando o servidor caiu."
+      ]
+    },
+    "nicao_triste": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h2_nicao"
+      ],
+      "passos": [
+        "!virar nicao eu",
+        "b: Nicão... hoje o dia tá pesado, véi. Nada dá certo.",
+        "n: Oxe... #talk1",
+        "n: Tranquilo... tranquilo. Senta aí um pouquinho.",
+        "n: Amanhã é outro dia, pivete. E se amanhã for ruim também... #talk2",
+        "n: ...depois de amanhã é outro dia. Hehehe... #laugh",
+        "b pensa: Não resolveu nada. Mas melhorou."
+      ]
+    },
+    "nicao_lucas": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h2_nicao",
+        "viu_h3_lucas"
+      ],
+      "passos": [
+        "!virar nicao eu",
+        "b: Tu viu o que o Lucas aprontou?",
+        "n: Vi não... e nem quero ver, véi. #shrug",
+        "n: Eu não procuro nada com ninguém... #talk1",
+        "n: Mas aquele ali procura com todo mundo. Hehehe... hehe... #laugh"
+      ]
+    },
+    "lukako_ideia": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar lukako eu",
+        "luk: Véi... véi... tive uma ideia. #point",
+        "b: Lá ele... lá vem.",
+        "luk: Vou subir no telhado da Cairu e descer de rapel até a janela da Presidência. #talk2",
+        "b: Com que corda, Lukako?",
+        "luk: Com os cabo de rede do Núcleo, pivete. Já tá tudo separado. #shrug",
+        "b pensa: Isso explica a internet caindo desde segunda."
+      ]
+    },
+    "lukako_desenho": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar lukako eu",
+        "luk: Ó o que eu fiz na hora do almoço. #point",
+        "> Um desenho perfeito do presidente, de caneta Bic, no verso de um boleto.",
+        "b: KIKIUU!! Porra, Lukako, tá bonito demais!",
+        "b: Faz um meu depois. Vai sair mais bonito, porque o modelo é melhor.",
+        "luk: Tá não, véi... errei a sombra do nariz. Vou rasgar. #talk2",
+        "b: NÃO RASGA!"
+      ]
+    },
+    "lukako_qw": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar lukako eu",
+        "luk: Bora jogar um QW hoje de noite? #talk1",
+        "b: QW, Lukako? Quem é que joga QW hoje em dia, véi?",
+        "luk: Eu. E mais quatro no servidor. #shrug",
+        "luk: Ó paí ó... dois deles é eu mesmo, em outra conta. #talk2"
+      ]
+    },
+    "matheus_gastar": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h4_matheus"
+      ],
+      "passos": [
+        "!virar matheus eu",
+        "b: Ô Matheus, jogando em horário de trabalho, é?",
+        "matheus: Tô não, véi. Tô testando o PC da sala. #talk1",
+        "matheus: Que nem tu testou a paciência da coordenação ontem. Ficou massa aquilo, viu? #point",
+        "b: Valeu, véi!",
+        "b pensa: ...Pera. Isso foi elogio?",
+        "matheus: Kkkkkkkkkk #laugh",
+        "b: Ri não, véi! EU SOU GOSTOSO!!"
+      ]
+    },
+    "matheus_games": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h4_matheus"
+      ],
+      "passos": [
+        "!virar matheus eu",
+        "matheus: Colé, Breno. Já zerou aquele jogo que tu comprou? #talk1",
+        "b: Tô travado no chefe do segundo mundo ainda.",
+        "matheus: Eu zerei no difícil. Sem tomar dano. Com o controle de cabeça pra baixo. #shrug",
+        "b: Mentira, véi.",
+        "matheus: Kkkkkk é mentira mesmo. O controle tava normal. #laugh",
+        "b pensa: O resto era verdade. O cara é barril."
+      ]
+    },
+    "matheus_anime": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h4_matheus"
+      ],
+      "passos": [
+        "!virar matheus eu",
+        "matheus: Viu o episódio novo? #point",
+        "b: Vi! Aquela luta no final... KIKIUU!! Quase chorei, véi.",
+        "matheus: Eu chorei. Mas não conta pro Beto nem pro João não. #talk2",
+        "matheus: Senão os coroa vão dizer que é *desenho de criança* de novo. Kkkkkk #laugh"
+      ]
+    },
+    "joao_dor": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar joao eu",
+        "joao: Ai... ai, ai, ai... #talk1",
+        "b: Que foi, João?",
+        "joao: O joelho, rapaz. Acordei com uma fisgada aqui que sobe até a orelha. #point",
+        "b: Ontem não era a coluna?",
+        "joao: Ontem era a coluna. Hoje é o joelho. Amanhã só Deus sabe. #shrug",
+        "joao: E ninguém nessa Cairu se preocupa comigo, viu?"
+      ]
+    },
+    "joao_filho": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar joao eu",
+        "joao: Rapaz... o menino passou mal de novo essa noite. #talk1",
+        "b: De novo, João? Foi o quê dessa vez?",
+        "joao: Febre, dor de barriga, unha encravada... sei lá, véi. Tudo. #shrug",
+        "joao: Vou ter que sair mais cedo. *De novo*.",
+        "b pensa: Terceira vez essa semana. Hoje é segunda."
+      ]
+    },
+    "joao_trabalho": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar joao eu",
+        "joao: Ô Breno, chega aqui. Tá fazendo alguma coisa agora? #point",
+        "b: Tô sim, tô terminando um...",
+        "joao: Ótimo, então já tá no ritmo. #talk2",
+        "joao: Pega esses vinte chamados aí pra mim. É rapidinho, coisa boba.",
+        "b: VINTE, João?!",
+        "joao: Eu mesmo ia fazer, viu? Mas esse joelho... #shrug",
+        "b pensa: Ontem era a coluna.",
+        "b: Tá bom, João, eu faço. Mas fica sabendo: EU SOU GOSTOSO!!"
+      ]
+    },
+    "beto_mangueiro": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h5_patio"
+      ],
+      "passos": [
+        "!virar beto eu",
+        "b: Beto, o coordenador tá te procurando desde cedo.",
+        "beto: Me procurando? Pra quê? Eu tava aqui o tempo todo, rapaz. #cismado",
+        "b: Ele disse que passou aqui três vezes.",
+        "beto: Então foi nas três vezes que eu fui no banheiro. #talk2",
+        "beto: Eu já fiz três coisas hoje, viu? TRÊS! Esse lugar só explora a gente.",
+        "b pensa: As três coisas: chegar, tomar café e reclamar."
+      ]
+    },
+    "beto_dedo": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h5_patio"
+      ],
+      "passos": [
+        "!virar beto eu",
+        "b: Beto, me ajuda a carregar umas caixas ali rapidinho?",
+        "!anim beto cismado",
+        "beto: Caixa? Que caixa? Pesada? #cismado",
+        "beto: Claro, meu querido! Pode ir na frente que eu já vou. #talk1",
+        "!virar eu baixo",
+        "!esperar 0.5",
+        "!camera beto 0.4",
+        "!zoom 1.6 0.4",
+        "!dizer beto Vai tomar no seu cu, rapaz...",
+        "> Pelas costas do Breno, o Beto dá o dedo. Bem escondidinho, do lado da perna.",
+        "!zoom 1 0.4",
+        "!camera eu 0.4",
+        "!virar eu beto",
+        "beto: Tô indo, tô indo! #talk2",
+        "b pensa: Ele não foi."
+      ]
+    },
+    "beto_lucia": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h5_patio"
+      ],
+      "passos": [
+        "!virar beto eu",
+        "beto: Ô Lúcia... ô Lúcia... #point",
+        "b: Quem é Lúcia, Beto?",
+        "beto: Passou ali agora, rapaz. Meu Deus do céu... #talk2",
+        "!pular beto 2",
+        "beto: Fiquei doido, doido, doido, doido!",
+        "b: Tu não tava com dor nas costas pra carregar caixa?",
+        "beto: Isso é outra coisa, pivete. Isso aqui é *emoção*. #shrug"
+      ]
+    },
+    "beto_aposta": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h5_patio"
+      ],
+      "passos": [
+        "!virar beto eu",
+        "beto: Psiu! Breno, chega aqui. Tem dez conto aí? #point",
+        "b: Pra quê, Beto?",
+        "beto: Tô com um palpite *certeiro*, rapaz. Escanteio aos 37 do segundo tempo, jogo da segunda divisão da Bulgária. #talk2",
+        "b: Tu nem sabe onde fica a Bulgária.",
+        "beto: Tá me zoando, é? Não preciso saber onde fica, preciso que tenha escanteio. #cismado",
+        "beto: Me empresta que amanhã eu te devolvo quinze. É garantido!",
+        "b pensa: Ele disse a mesma coisa semana passada. E na outra."
+      ]
+    },
+    "fabio_anime": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h5_patio"
+      ],
+      "passos": [
+        "!virar fabio eu",
+        "fabio: Qual foi, Breno? Tá vendo o quê aí no celular? #point",
+        "b: O episódio novo do anime.",
+        "fabio: Esse aí? Já assisti tudo, véi. Já li tudo também. Tô três temporadas na tua frente. #talk2",
+        "b pensa: Se achando melhor que eu? Odeio isso. Vamos ver.",
+        "b: Massa. E o que tu achou da morte do protagonista no capítulo 50?",
+        "fabio: Pô, cena pesada. Mas eu já sabia que ia acontecer, tá ligado? #shrug",
+        "b: Ninguém morre no capítulo 50, Fábio. Nem tem capítulo 50.",
+        "fabio: ...",
+        "fabio: Na versão que EU li tem!",
+        "b pensa: Gastei."
+      ]
+    },
+    "fabio_marra": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h5_patio"
+      ],
+      "passos": [
+        "!virar fabio eu",
+        "fabio: Ó, essa Cairu só funciona por causa de mim, tá ligado? #point",
+        "b: Por quê, Fábio?",
+        "fabio: Porque eu sei de tudo, véi. Rede, servidor, impressora... tudo. #talk2",
+        "b: Então resolve a impressora do segundo andar, que tá travada desde ontem.",
+        "fabio: Aí não é comigo não. Isso aí é... hardware. Eu sou mais da *estratégia*. #shrug",
+        "b pensa: Ninguém sabe o que isso quer dizer. Nem ele."
+      ]
+    },
+    "fabio_respeito": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h5_patio"
+      ],
+      "passos": [
+        "!virar fabio eu",
+        "fabio: Tu tá ligado que eu sou respeitado, né? Chego e o povo abre caminho. #talk2",
+        "b: Ontem tu chegou e a moça da recepção perguntou se tu era aluno novo.",
+        "fabio: Porque ela é nova, pivete! Não sabe com quem tá falando. #point",
+        "!balao fabio raiva",
+        "b pensa: Ela trabalha aqui faz doze anos."
+      ]
+    },
+    "mj_qw": [
+      "!minijogo qw qw_ganhou 2",
+      "!se qw_ganhou -> mj_qw_ganhou | mj_qw_perdeu"
+    ],
+    "mj_qw_ganhou": [
+      "!desmarcar qw_ganhou",
+      "luk: Oxe! Tu joga, pivete! #point",
+      "b: KIKIUU!!"
+    ],
+    "mj_qw_perdeu": [
+      "luk: Hehe... treina mais, véi. #shrug"
+    ],
+    "mj_cabos": [
+      "!minijogo cabos cabos_ganhou 2",
+      "!se cabos_ganhou -> mj_cabos_ganhou | mj_cabos_perdeu"
+    ],
+    "mj_cabos_ganhou": [
+      "!desmarcar cabos_ganhou",
+      "n: Aí sim... internet voltou. Hehehe... #laugh"
+    ],
+    "mj_cabos_perdeu": [
+      "n: Tranquilo... tranquilo. Amanhã a gente liga. #talk1"
+    ],
+    "mj_abas": [
+      "!minijogo abas abas_ganhou 2",
+      "!se abas_ganhou -> mj_abas_ganhou | mj_abas_perdeu"
+    ],
+    "mj_abas_ganhou": [
+      "!desmarcar abas_ganhou",
+      "lucas: Salvou minha vida, véi. Tô te devendo uma... pesquisa. #shrug",
+      "b pensa: Dispenso."
+    ],
+    "mj_abas_perdeu": [
+      "!dizer joao Lucas... que porra é essa nessa tela?",
+      "lucas: É desgraça, véi... #shrug"
+    ],
+    "mj_impressora": [
+      "!minijogo impressora impressora_ganhou 2",
+      "!se impressora_ganhou -> mj_impressora_ganhou | mj_impressora_perdeu"
+    ],
+    "mj_impressora_ganhou": [
+      "!desmarcar impressora_ganhou",
+      "b: KIKIUU!!",
+      "b: Destravada. Cadê a estratégia agora, Fábio?",
+      "fabio: ...Eu ia fazer isso. #shrug",
+      "b pensa: Gastei de novo."
+    ],
+    "mj_impressora_perdeu": [
+      "fabio: Tá vendo? É hardware, véi. Não é pra qualquer um. #talk2"
+    ],
+    "mj_mangueio": [
+      "!minijogo mangueio mangueio_ganhou 2",
+      "!se mangueio_ganhou -> mj_mangueio_ganhou | mj_mangueio_perdeu"
+    ],
+    "mj_mangueio_ganhou": [
+      "!desmarcar mangueio_ganhou",
+      "beto: Valeu, meu querido! Se der green, tu leva dez por cento. #point",
+      "beto: Mas por que tu me ajudou, hein? Tá querendo o quê? #cismado",
+      "b pensa: Nunca vai dar green."
+    ],
+    "mj_mangueio_perdeu": [
+      "!dizer beto Vai tomar no seu cu, coordenador..."
+    ],
+    "mj_pc_joao": [
+      "!minijogo consertar_pc pc_joao_ganhou 2",
+      "!se pc_joao_ganhou -> mj_pc_joao_ganhou | mj_pc_joao_perdeu"
+    ],
+    "mj_pc_joao_ganhou": [
+      "!desmarcar pc_joao_ganhou",
+      "joao: Hum. Demorou, mas foi. #shrug",
+      "b pensa: Nem um obrigado."
+    ],
+    "mj_pc_joao_perdeu": [
+      "joao: Tá vendo? Ninguém resolve nada aqui. Ai, meu joelho..."
+    ],
+    "beto_cismado": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h5_patio"
+      ],
+      "passos": [
+        "!virar beto eu",
+        "!anim beto cismado",
+        "beto: Hum... chegou de mansinho, foi? Tá querendo o quê? #cismado",
+        "b: Nada não, Beto. Só passando.",
+        "beto: Ninguém passa à toa, rapaz. Ninguém. #cismado",
+        "b pensa: Ele vai ficar me olhando assim até eu sumir."
+      ]
+    },
+    "mauro_oi": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar mauro eu",
+        "mau: Ô, boa tarde, seu Breno! Desculpe incomodar o senhor, viu? #talk1",
+        "b: Diga, Seu Mauro. Que foi?",
+        "mau: É o celular, meu fi. Tá apitando sozinho e aparecendo umas moça na tela. #point",
+        "b: Umas moça... aparecendo sozinhas.",
+        "mau: Sozinhas! Juro por Nossa Senhora. Eu só cliquei num gatinho fofo. #shrug",
+        "b pensa: Clássico. O gatinho fofo é sempre a porta de entrada.",
+        "mau: Tira esses vírus pra mim? Lá na roça o celular só pegava em cima do pé de manga. #talk2",
+        "? Tirar o vírus do celular do Seu Mauro? | Bora -> mj_virus | Depois"
+      ]
+    },
+    "mauro_kawaii": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!anim mauro celular",
+        "mau: Seu Breno, olhe que coisa mais linda! #point",
+        "mau: Baixei cento e vinte figurinha de gatinho kawaii. Kawaii é fofo em japonês, sabia? #laugh",
+        "b: Sei, Seu Mauro. O Matheus ia adorar.",
+        "mau: Só que agora toda vez que eu abro o zap aparece \"SOLTEIRAS PERTO DE VOCÊ\". #shrug",
+        "mau: Eu nem sabia que tinha solteira lá perto de casa. Só tem jegue. #talk2",
+        "b pensa: Ele tá falando sério. Isso que é o pior."
+      ]
+    },
+    "mauro_roca": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar mauro eu",
+        "mau: Seu Breno, me tire uma dúvida... #talk1",
+        "mau: Esse tal de \"salvar na nuvem\"... se chover, as foto molha? #talk2",
+        "b: ...Não, Seu Mauro. A nuvem é na internet.",
+        "mau: Ah, bom! Porque lá na roça, quando armava chuva, a gente tirava as foto do varal. #laugh",
+        "b: Lá ele, viu."
+      ]
+    },
+    "mauro_cantada": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "!virar mauro eu",
+        "mau: Seu Breno, cê viu a moça de rosa que passou? #point",
+        "b: Vi. O senhor chamou ela de \"flor do mandacaru\".",
+        "mau: Ué, é elogio! Mandacaru só dá flor de vez em quando. É raridade! #shrug",
+        "b: E ela?",
+        "mau: Ela disse \"respeite, Seu Mauro\". Eu respeito! Respeito muito. De longe. #laugh",
+        "b pensa: Seu Mauro é inofensivo. Inofensivo e insistente."
+      ]
+    },
+    "mauro_depois": [
+      "!virar mauro eu",
+      "mau: Ô, seu Breno! Bora uma resenha? Ou o celular de novo... apareceu mais um gatinho aqui. #point",
+      "? O que fazer com o Seu Mauro? | Tocar violão -> mj_violao | Tirar o vírus -> mj_virus | Hoje não"
+    ],
+    "mj_virus": [
+      "!minijogo virus virus_ganhou 2",
+      "!se virus_ganhou -> mj_virus_ganhou | mj_virus_perdeu"
+    ],
+    "mj_virus_ganhou": [
+      "!desmarcar virus_ganhou",
+      "mau: Vixe Maria! Ficou limpinho que nem chão que eu acabei de passar pano! #laugh",
+      "b: KIKIUU!!",
+      "mau: Deus lhe pague, meu fi. Agora vou baixar só uns gatinho. Só uns. #talk1",
+      "b pensa: Semana que vem tem mais."
+    ],
+    "mj_virus_perdeu": [
+      "mau: Travou numa foto de gatinho de óculos escuro... mas ó que lindo, seu Breno. #laugh",
+      "b: Lindo, Seu Mauro. Lindíssimo."
+    ],
+    "mauro_violao": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "mau: Chegue, seu Breno! Senta aí que hoje tem moda de viola. #talk1",
+        "b: O senhor toca desde quando, Seu Mauro?",
+        "mau: Desde menino, lá na roça. Tocava pras vaca dormir. #laugh",
+        "b: E elas dormiam?",
+        "mau: Dormia não. Fugia. Mas era de emoção! #shrug",
+        "? Fazer uma resenha no violão com o Seu Mauro? | Bora -> mj_violao | Depois"
+      ]
+    },
+    "mauro_cana": {
+      "uma_vez": true,
+      "requer": [
+        "viu_h1_chegada"
+      ],
+      "passos": [
+        "mau: Quer um pedaço de cana, seu Breno? Trouxe da roça. #point",
+        "b: Cana no pátio da faculdade, Seu Mauro?",
+        "mau: Ué, aqui tem coxinha de seis conto. A cana é de graça e não tem vírus. #talk2",
+        "b pensa: Ele tem um ponto.",
+        "mau: Só não conta pro coordenador, que eu tô no intervalo desde as duas. #laugh"
+      ]
+    },
+    "mj_violao": [
+      "!minijogo violao violao_ganhou 2",
+      "!se violao_ganhou -> mj_violao_ganhou | mj_violao_perdeu"
+    ],
+    "mj_violao_ganhou": [
+      "!desmarcar violao_ganhou",
+      "mau: Ê, lê, lê! Até as menina do pátio cantaram junto! #laugh",
+      "b: KIKIUU!!",
+      "mau: Cê leva jeito, seu Breno. Semana que vem a gente toca no São João da roça. #talk1"
+    ],
+    "mj_violao_perdeu": [
+      "mau: Desafinou feio, hein? Mas foi bonito do mesmo jeito. Igual eu. #laugh",
+      "b: Lá ele, Seu Mauro."
+    ]
+  },
+  "musicas": {
+    "recepcao": "recepcao",
+    "nucleo": "nucleo",
+    "corredor": "corredor"
+  }
+}

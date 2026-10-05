@@ -1,0 +1,30 @@
+ENGINE (o que serve pra qualquer jogo) x CONTEÚDO (o que é só da Cairu)
+=======================================================================
+A ideia: a pasta projeto/scripts + projeto/minijogos/base.gd é a engine. Um jogo novo
+copia o projeto, troca o conteúdo (capitulos/, assets/, fonte_mapas/) e reaproveita o resto.
+
+ENGINE (genérico, guiado por dados)
+  jogo.gd        opções, save em slots, música/sons, vozes            (autoload Jogo)
+  rede.gd        jogo online até N pessoas, sem servidor               (autoload Rede)
+                 elenco/porta/limite em capitulos/online.json
+  mundo.gd       anda no mapa, NPCs, portas, gatilhos, câmera, cenas, F5/F6
+  diretor.gd     roda as cenas passo a passo        roteiro.gd  sintaxe curta das cenas (.txt)
+  historia.gd    lê os .txt de cenas e valida      dialogo.gd  caixa de diálogo com rostos
+  personagem.gd  boneco, poses, balões             animacao.gd poses de capitulos/animacoes.json
+  palco_lateral.gd / close_rosto.gd   cutscene de lado e quadrinho do rosto
+  mapa.gd, movel.gd, animado.gd, visual.gd, controles*.gd, opcoes.gd, pausa.gd, painel.gd
+  menu.gd, teste_menu.gd, main.gd, minijogo.gd + minijogos/base.gd
+  minijogos/*.gd genéricos: reflexo, memoria, digitar, esquiva, impressora, cabos, consertar_pc
+
+CONTEÚDO DA CAIRU (dados, não código)
+  capitulos/*.json, *.txt, mapas/, online.json, animacoes.json, figurantes.json, vozes.json
+  assets/ (personagens, rostos, sons, vozes), fonte_mapas/, fonte_poses/, fonte_audio/
+
+AINDA AMARRADO À CAIRU DENTRO DO CÓDIGO (pra separar depois)
+  dados.gd       lista de nomes do elenco (NOMES) escrita no código -> ir pra um personagens.json
+  menu.gd        título "JOGO", subtítulo e créditos padrão; cidade de Salvador no fundo
+  mapa.gd        dois cenários desenhados no código (sala_cairu, corredor_cairu)
+  dialogo.gd     "passinho do Jamal" do Breno no palco
+  figurantes.gd  rotina do Seu Mauro (sair varrendo)
+  minijogos      escada, violao, virus, mangueio, abas, qw: textos e personagens da Cairu
+  "breno" / "recepcao" como padrão quando o capítulo não diz quem joga / onde começa

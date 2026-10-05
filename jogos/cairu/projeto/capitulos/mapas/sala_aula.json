@@ -1,0 +1,467 @@
+{
+  "musica": "sala",
+  "nome": "Sala 204",
+  "tamanho": [
+    720,
+    448
+  ],
+  "fundo": {
+    "imagem": "sala_aula.png"
+  },
+  "area_andavel": [
+    12,
+    110,
+    696,
+    330
+  ],
+  "colisoes": [],
+  "objetos": [
+    {
+      "imagem": "sala204_mesa_prof.png",
+      "x": 320,
+      "y": 168,
+      "solido": [
+        92,
+        24
+      ]
+    },
+    {
+      "imagem": "sala204_planta.png",
+      "x": 112,
+      "y": 128,
+      "solido": [
+        18,
+        8
+      ],
+      "balanco": 1.0
+    },
+    {
+      "imagem": "sala204_estante.png",
+      "x": 42,
+      "y": 300,
+      "solido": [
+        48,
+        26
+      ]
+    },
+    {
+      "imagem": "sala204_lixeira.png",
+      "x": 616,
+      "y": 132,
+      "solido": [
+        16,
+        8
+      ]
+    },
+    {
+      "imagem": "sala204_papel.png",
+      "x": 600,
+      "y": 136
+    },
+    {
+      "imagem": "sala204_planta.png",
+      "x": 690,
+      "y": 430,
+      "solido": [
+        18,
+        8
+      ],
+      "balanco": 1.0
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 137,
+      "y": 236,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 204,
+      "y": 235,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 274,
+      "y": 238,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 385,
+      "y": 237,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 447,
+      "y": 234,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 514,
+      "y": 238,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 141,
+      "y": 295,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_caderno.png",
+      "x": 204,
+      "y": 297,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_mochila.png",
+      "x": 275,
+      "y": 294,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 386,
+      "y": 297,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_caderno.png",
+      "x": 449,
+      "y": 295,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 519,
+      "y": 296,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 137,
+      "y": 357,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 205,
+      "y": 356,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_mochila.png",
+      "x": 275,
+      "y": 354,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_casaco.png",
+      "x": 385,
+      "y": 354,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_caderno.png",
+      "x": 447,
+      "y": 358,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_mochila.png",
+      "x": 519,
+      "y": 358,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_caderno.png",
+      "x": 141,
+      "y": 415,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 203,
+      "y": 415,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_mochila.png",
+      "x": 269,
+      "y": 415,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 384,
+      "y": 416,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira_casaco.png",
+      "x": 452,
+      "y": 416,
+      "solido": [
+        26,
+        10
+      ]
+    },
+    {
+      "imagem": "sala204_carteira.png",
+      "x": 515,
+      "y": 416,
+      "solido": [
+        26,
+        10
+      ]
+    }
+  ],
+  "pontos": [
+    {
+      "x": 176,
+      "y": 96,
+      "w": 288,
+      "h": 16,
+      "cena": "quadro"
+    },
+    {
+      "x": 274,
+      "y": 160,
+      "w": 92,
+      "h": 10,
+      "cena": "mesa_professor"
+    },
+    {
+      "x": 502,
+      "y": 96,
+      "w": 88,
+      "h": 16,
+      "cena": "ar_condicionado_sala"
+    },
+    {
+      "x": 104,
+      "y": 96,
+      "w": 32,
+      "h": 16,
+      "cena": "relogio"
+    },
+    {
+      "x": 18,
+      "y": 96,
+      "w": 78,
+      "h": 16,
+      "cena": "janela_sala"
+    }
+  ],
+  "portas": [
+    {
+      "x": 644,
+      "y": 96,
+      "w": 40,
+      "h": 14,
+      "para": "corredor",
+      "chegada": {
+        "x": 128,
+        "y": 124,
+        "dir": "baixo"
+      }
+    }
+  ],
+  "luzes": [
+    {
+      "tipo": "faixa",
+      "x": 20,
+      "y": 110,
+      "w": 76,
+      "h": 150,
+      "inclinacao": 50,
+      "cor": "#fff6d0",
+      "forca": 0.16
+    },
+    {
+      "tipo": "luz",
+      "x": 220,
+      "y": 120,
+      "w": 200,
+      "h": 90,
+      "cor": "#ffffff",
+      "forca": 0.08
+    }
+  ],
+  "visual": {
+    "ambiente": "#ffffff",
+    "tinta": "#fff8f0",
+    "saturacao": 1.04,
+    "contraste": 1.04,
+    "brilho": 0.3,
+    "vinheta": 0.32,
+    "limiar": 0.88
+  },
+  "particulas": [
+    {
+      "tipo": "poeira",
+      "x": 0,
+      "y": 100,
+      "w": 720,
+      "h": 340,
+      "quantidade": 26
+    }
+  ],
+  "animados": [
+    {
+      "tipo": "papel",
+      "x": 506,
+      "y": 48,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.6
+    },
+    {
+      "tipo": "papel",
+      "x": 520,
+      "y": 52,
+      "w": 14,
+      "h": 18,
+      "ritmo": 1.9500000000000002
+    },
+    {
+      "tipo": "papel",
+      "x": 534,
+      "y": 48,
+      "w": 14,
+      "h": 18,
+      "ritmo": 2.3
+    },
+    {
+      "tipo": "papel",
+      "x": 549,
+      "y": 52,
+      "w": 14,
+      "h": 18,
+      "ritmo": 2.65
+    },
+    {
+      "tipo": "papel",
+      "x": 563,
+      "y": 48,
+      "w": 14,
+      "h": 18,
+      "ritmo": 3.0
+    },
+    {
+      "tipo": "led",
+      "x": 574,
+      "y": 17,
+      "w": 5,
+      "h": 2,
+      "cor": "#63c74d",
+      "base": 40,
+      "ritmo": 0.5,
+      "ligado": 0.85
+    },
+    {
+      "tipo": "relogio",
+      "x": 124,
+      "y": 32,
+      "r": 10,
+      "base": 45
+    },
+    {
+      "tipo": "nuvens",
+      "x": 24,
+      "y": 27,
+      "w": 68,
+      "h": 17,
+      "colunas": [
+        46,
+        69
+      ],
+      "velocidade": 2.5,
+      "base": 60
+    },
+    {
+      "tipo": "brilho",
+      "x": 678,
+      "y": 66,
+      "base": 104,
+      "periodo": 5
+    },
+    {
+      "tipo": "brilho",
+      "x": 458,
+      "y": 12,
+      "base": 90,
+      "periodo": 6.5,
+      "tam": 5
+    }
+  ]
+}

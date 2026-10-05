@@ -1,0 +1,298 @@
+{
+  "musica": "presidencia",
+  "nome": "Sala da Presidência",
+  "tamanho": [
+    640,
+    448
+  ],
+  "fundo": {
+    "imagem": "presidencia.png"
+  },
+  "area_andavel": [
+    12,
+    110,
+    616,
+    330
+  ],
+  "colisoes": [],
+  "objetos": [
+    {
+      "imagem": "presidencia_cadeira.png",
+      "x": 320,
+      "y": 150,
+      "solido": [
+        24,
+        6
+      ]
+    },
+    {
+      "imagem": "presidencia_mesa_pres.png",
+      "x": 320,
+      "y": 184,
+      "solido": [
+        76,
+        12
+      ]
+    },
+    {
+      "imagem": "presidencia_mesa1.png",
+      "x": 170,
+      "y": 270,
+      "solido": [
+        96,
+        26
+      ]
+    },
+    {
+      "imagem": "presidencia_mesa2.png",
+      "x": 470,
+      "y": 270,
+      "solido": [
+        96,
+        26
+      ]
+    },
+    {
+      "imagem": "presidencia_mesa3.png",
+      "x": 320,
+      "y": 350,
+      "solido": [
+        96,
+        26
+      ]
+    },
+    {
+      "imagem": "presidencia_armario1.png",
+      "x": 56,
+      "y": 214,
+      "solido": [
+        56,
+        14
+      ]
+    },
+    {
+      "imagem": "presidencia_armario2.png",
+      "x": 584,
+      "y": 214,
+      "solido": [
+        56,
+        14
+      ]
+    }
+  ],
+  "pontos": [
+    {
+      "x": 16,
+      "y": 96,
+      "w": 250,
+      "h": 16,
+      "cena": "retratos"
+    },
+    {
+      "x": 392,
+      "y": 96,
+      "w": 240,
+      "h": 16,
+      "cena": "retratos"
+    },
+    {
+      "x": 284,
+      "y": 96,
+      "w": 72,
+      "h": 16,
+      "cena": "retrato_presidente"
+    },
+    {
+      "x": 282,
+      "y": 180,
+      "w": 76,
+      "h": 10,
+      "cena": "cadeira_presidente"
+    },
+    {
+      "x": 122,
+      "y": 266,
+      "w": 96,
+      "h": 10,
+      "cena": "mesa_museu1"
+    },
+    {
+      "x": 422,
+      "y": 266,
+      "w": 96,
+      "h": 10,
+      "cena": "mesa_museu2"
+    },
+    {
+      "x": 272,
+      "y": 346,
+      "w": 96,
+      "h": 10,
+      "cena": "mesa_museu3"
+    },
+    {
+      "x": 18,
+      "y": 210,
+      "w": 76,
+      "h": 10,
+      "cena": "armario_antigo"
+    },
+    {
+      "x": 546,
+      "y": 210,
+      "w": 76,
+      "h": 10,
+      "cena": "armario_antigo"
+    }
+  ],
+  "portas": [
+    {
+      "x": 288,
+      "y": 436,
+      "w": 64,
+      "h": 12,
+      "para": "corredor",
+      "chegada": {
+        "x": 656,
+        "y": 124,
+        "dir": "baixo"
+      }
+    }
+  ],
+  "luzes": [
+    {
+      "tipo": "luz",
+      "x": 230,
+      "y": 110,
+      "w": 180,
+      "h": 130,
+      "cor": "#ffc870",
+      "forca": 0.16
+    },
+    {
+      "tipo": "luz",
+      "x": 40,
+      "y": 130,
+      "w": 120,
+      "h": 120,
+      "cor": "#ffc870",
+      "forca": 0.1
+    },
+    {
+      "tipo": "luz",
+      "x": 480,
+      "y": 130,
+      "w": 120,
+      "h": 120,
+      "cor": "#ffc870",
+      "forca": 0.1
+    }
+  ],
+  "visual": {
+    "ambiente": "#f6ece2",
+    "tinta": "#fff0d8",
+    "saturacao": 1.04,
+    "contraste": 1.06,
+    "brilho": 0.32,
+    "limiar": 0.8,
+    "vinheta": 0.45,
+    "sombras": "#1a0e0a"
+  },
+  "particulas": [
+    {
+      "tipo": "brilhos",
+      "x": 0,
+      "y": 60,
+      "w": 640,
+      "h": 360,
+      "quantidade": 14
+    },
+    {
+      "tipo": "poeira",
+      "x": 0,
+      "y": 80,
+      "w": 640,
+      "h": 360,
+      "quantidade": 14
+    }
+  ],
+  "animados": [
+    {
+      "tipo": "brilho",
+      "x": 351,
+      "y": 11,
+      "base": 51.6,
+      "periodo": 3.0
+    },
+    {
+      "tipo": "brilho",
+      "x": 323,
+      "y": 201,
+      "base": 209.6,
+      "periodo": 4.1
+    },
+    {
+      "tipo": "brilho",
+      "x": 323,
+      "y": 285,
+      "base": 293.6,
+      "periodo": 5.199999999999999
+    },
+    {
+      "tipo": "brilho",
+      "x": 362,
+      "y": 352,
+      "base": 433.6,
+      "periodo": 6.299999999999999
+    },
+    {
+      "tipo": "brilho",
+      "x": 309,
+      "y": 111,
+      "base": 150.6,
+      "periodo": 3.3999999999999986
+    },
+    {
+      "tipo": "brilho",
+      "x": 356,
+      "y": 166,
+      "base": 184.6,
+      "periodo": 4.5
+    },
+    {
+      "tipo": "brilho",
+      "x": 478,
+      "y": 225,
+      "base": 270.6,
+      "periodo": 5.599999999999998
+    },
+    {
+      "tipo": "brilho",
+      "x": 82,
+      "y": 147,
+      "base": 214.6,
+      "periodo": 6.699999999999996
+    },
+    {
+      "tipo": "brilho",
+      "x": 40,
+      "y": 158,
+      "base": 214.6,
+      "periodo": 3.799999999999997
+    },
+    {
+      "tipo": "brilho",
+      "x": 590,
+      "y": 152,
+      "base": 214.6,
+      "periodo": 4.899999999999999
+    },
+    {
+      "tipo": "globo",
+      "x": 441,
+      "y": 228,
+      "r": 11,
+      "base": 270.5
+    }
+  ]
+}

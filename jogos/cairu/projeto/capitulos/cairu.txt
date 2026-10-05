@@ -1,0 +1,150 @@
+// =====================================================================
+// CAPÍTULO 1 — AS HISTÓRIAS (Faculdade Cairu)
+// =====================================================================
+// Aqui ficam as cenas das histórias de verdade. Edite à vontade com o
+// Bloco de Notas, salve e aperte F5 no jogo pra recarregar (sem fechar).
+// Erros aparecem na tela e em ERROS_HISTORIA.txt, com o número da linha.
+// O jeito de escrever está explicado em MODELO_HISTORIA.txt.
+// As outras cenas (objetos, conversas soltas) continuam no cairu.json.
+// Uma cena aqui com o mesmo nome de uma do cairu.json vale mais que a de lá.
+// =====================================================================
+
+=== h1_chegada | uma_vez | cinema
+!camera lukako 0.6
+!zoom 1.4 0.5
+!balao lukako !
+> [HISTÓRIA 1: A chegada (Recepção), com o Lukako] Aqui entra a história que o Breno vai contar.
+!anim lukako bracos_cruzados_um_pouco
+!zoom 1 0.5
+!camera eu 0.5
+> Agora dá pra andar pela Cairu. Os outros estão espalhados pelos andares.
+
+=== h2_nicao | uma_vez | cinema | requer: viu_h1_chegada
+!camera nicao 0.6
+!zoom 1.4 0.5
+!anim nicao bocejar
+> [HISTÓRIA 2: Núcleo de Informática, com o Nicão] Aqui entra a história que o Breno vai contar.
+!zoom 1 0.5
+!camera eu 0.5
+
+=== h3_lucas | uma_vez | cinema | requer: viu_h1_chegada
+!camera lucas 0.6
+!zoom 1.4 0.5
+!anim lucas levantar_cadeira
+!virar lucas eu
+> [HISTÓRIA 3: Laboratório, com o Lucas e o João] Aqui entra a história que o Breno vai contar.
+!zoom 1 0.5
+!camera eu 0.5
+
+=== h4_matheus | uma_vez | cinema | requer: viu_h1_chegada
+!camera matheus 0.6
+!zoom 1.4 0.5
+!balao matheus ideia
+> [HISTÓRIA 4: Sala 204, com o Matheus] Aqui entra a história que o Breno vai contar.
+> [MINIJOGO] Se a história tiver um desafio, ele entra aqui. Exemplo:
+!minijogo digitar h4_ganhou 1
+!se h4_ganhou -> h4_ganhou | h4_perdeu
+!zoom 1 0.5
+!camera eu 0.5
+
+=== h4_ganhou
+!anim matheus comemorar
+> [Resultado se ganhar]
+
+=== h4_perdeu
+!anim matheus cocar_cabeca
+> [Resultado se perder]
+
+=== h5_patio | uma_vez | cinema | requer: viu_h1_chegada
+!camera beto 0.6
+!zoom 1.3 0.5
+!virar beto fabio
+!virar fabio beto
+!anim eu passinho_jamal &
+> [HISTÓRIA 5: Pátio e cantina, com o Beto e o Fábio] Aqui entra a história que o Breno vai contar.
+!zoom 1 0.5
+!camera eu 0.5
+
+=== h6_final | uma_vez | cinema | requer: viu_h2_nicao viu_h3_lucas viu_h4_matheus viu_h5_patio
+!barras sim
+!musica festa
+!aparecer nicao 200 300 cima
+!aparecer lucas 250 330 cima
+!aparecer joao 330 330 cima
+!aparecer matheus 380 300 cima
+!aparecer beto 160 340 cima
+!aparecer fabio 420 340 cima
+!aparecer lukako 300 290 cima
+!camera 300 260 1
+!zoom 1.2 0.6
+> [HISTÓRIA 6: O final (Presidência), com todo mundo] Aqui entra a história que o Breno vai contar.
+!anim eu passinho_jamal &
+!anim nicao,lucas,joao,matheus,beto,fabio,lukako comemorar
+b: KIKIUU!!
+!zoom 1 0.6
+!barras nao
+> [FIM DO CAPÍTULO] Uma frase de despedida do Breno entra aqui.
+!fim_capitulo
+
+
+// =====================================================================
+// CENA DE TESTE da câmera lateral (não está ligada a nenhum NPC ainda).
+// Pra ver: F6 > primeira da lista "★ João passando mal (cutscene lateral)". A história de verdade vem depois.
+// =====================================================================
+
+=== teste_joao_passando_mal | cinema | teste: João passando mal (cutscene lateral)
+!lateral presidencia 140
+!aparecer joao 215 0 direita
+!anim joao passando_mal &
+!aparecer eu 48 0 direita
+!som porta_abrir
+!andar eu 125
+!camera 170 0 0.8
+!susto eu
+eu: João?! Que foi isso, véi?!
+!rosto joao chorando 2.5
+joão: Breno... *snif*... não consigo respirar... #think
+!anim joao solucar
+joão: É o coração... dessa vez é o coração mesmo... *hic*
+!close joao 2 0.3
+eu pensa: Ontem foi o rim. Anteontem, o joelho.
+!tela normal
+!camera 170 0 0.4
+eu: Bora, eu te levo pro banco do pátio. Devagar, apoia em mim.
+!andar eu 190
+!anim joao levantar
+!virar joao esquerda
+!virar eu esquerda
+!sair joao esquerda &
+!sair eu esquerda
+!minijogo escada desceu_com_joao 2
+!se desceu_com_joao -> teste_joao_banco | teste_joao_tombo
+
+=== teste_joao_banco
+!lateral patio 300
+!entrar joao 300 0 esquerda &
+!entrar eu 268 0 esquerda
+!virar joao direita
+!anim joao sentar_banco
+!camera 290 0 0.6
+joão: Ai... *snif*... melhorou um pouco. #think
+eu: Quer que eu chame alguém? Teu filho?
+!balao joao suor
+joão: Meu filho? Ele que me deixa assim, véi.
+!rosto joao normal 1.5 esquerda
+joão: ...Acho que era gases.
+!rosto eu rindo 2
+eu: GASES, João?!
+!balao joao 😳
+joão: Não conta pra ninguém. #shrug
+!lateral fim
+
+=== teste_joao_tombo
+!lateral patio 300
+!entrar joao 300 0 esquerda &
+!entrar eu 268 0 esquerda
+!anim joao sentar_banco
+!camera 290 0 0.6
+> Vocês chegaram no pátio do jeito que deu: rolando o último lance de escada.
+joão: Pronto. Agora dói o coração E a bunda.
+!lateral fim

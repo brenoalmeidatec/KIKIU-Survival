@@ -1,0 +1,13 @@
+{
+  "_ajuda": "Heróis jogáveis. sprite = pasta em assets/personagens. arma = id em armas.json. bonus = atributos somados no começo (veja atributos em passivos.json).",
+  "lista": ["breno", "nicao", "lucas"],
+  "breno": {"nome": "Breno", "sprite": "breno", "arma": "cabo_rede",
+            "descricao": "Chicoteia vírus com o cabo de rede. Anda um pouco mais rápido.",
+            "bonus": {"velocidade": 0.1}},
+  "nicao": {"nome": "Nicão", "sprite": "nicao", "arma": "ventoinha",
+            "descricao": "Grandão e calmo. Mais vida e área, mas anda devagar.",
+            "bonus": {"vida_max": 40, "area": 0.1, "velocidade": -0.1}},
+  "lucas": {"nome": "Lucas", "sprite": "lucas", "arma": "pendrive",
+            "descricao": "Caótico. Joga pendrives e tem mais sorte nas cartas.",
+            "bonus": {"sorte": 0.3, "dano": 0.1, "vida_max": -10}}
+}

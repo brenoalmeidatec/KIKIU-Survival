@@ -1,0 +1,73 @@
+{
+ "_ajuda": "Fase: duracao em segundos. Ao fim do tempo chega o chefe final e começa o Enxame Final (fica cada vez mais difícil até ele morrer). O diretor ganha créditos por segundo = creditos_base x coeficiente^expoente e compra inimigos. coeficiente = 1 + minutos x por_minuto. eventos: chefe, anel (vírus em volta de você), enxame (vírus vindo de um lado). santuarios = tomadas no mapa (fique dentro pra carregar e ganhar uma carta).",
+ "nome": "Faculdade infectada",
+ "musica": "minijogo_tenso",
+ "duracao": 600,
+ "chefe_final": "tela_azul",
+ "dificuldade": {
+  "por_minuto": 0.38,
+  "creditos_base": 1.0,
+  "expoente": 1.35,
+  "vida_por_nivel": 0.15,
+  "dano_por_nivel": 0.08,
+  "minimo_vivos_base": 8,
+  "minimo_vivos_por_minuto": 18,
+  "limite_vivos": 500,
+  "chance_elite_por_minuto": 0.004,
+  "enxame_final_multiplicador": 3.0
+ },
+ "eventos": [
+  {
+   "tempo": 75,
+   "tipo": "anel",
+   "inimigo": "bug",
+   "quantos": 24
+  },
+  {
+   "tempo": 150,
+   "tipo": "enxame",
+   "inimigo": "popup",
+   "quantos": 40
+  },
+  {
+   "tempo": 180,
+   "tipo": "chefe",
+   "inimigo": "trojan_gigante"
+  },
+  {
+   "tempo": 270,
+   "tipo": "anel",
+   "inimigo": "popup",
+   "quantos": 36
+  },
+  {
+   "tempo": 360,
+   "tipo": "chefe",
+   "inimigo": "ransomware"
+  },
+  {
+   "tempo": 420,
+   "tipo": "enxame",
+   "inimigo": "minerador",
+   "quantos": 40
+  },
+  {
+   "tempo": 480,
+   "tipo": "chefe",
+   "inimigo": "trojan_gigante"
+  },
+  {
+   "tempo": 540,
+   "tipo": "anel",
+   "inimigo": "trojan",
+   "quantos": 20
+  }
+ ],
+ "santuarios": 6,
+ "santuario_tempo": 4.0,
+ "drops": {
+  "marmita": 0.006,
+  "wifi": 0.0015,
+  "cura_marmita": 30
+ }
+}

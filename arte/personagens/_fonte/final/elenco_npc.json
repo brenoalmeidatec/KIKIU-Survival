@@ -1,0 +1,1110 @@
+{
+ "aluno1": {
+  "pal": {
+   "S": [
+    190,
+    132,
+    96
+   ],
+   "s": [
+    152,
+    105,
+    76
+   ],
+   "L": [
+    209,
+    145,
+    105
+   ],
+   "H": [
+    26,
+    22,
+    24
+   ],
+   "h": [
+    36,
+    30,
+    33
+   ],
+   "B": [
+    28,
+    24,
+    26
+   ],
+   "b": [
+    33,
+    28,
+    31
+   ]
+  },
+  "frente": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHssssssssHK.",
+   "KHHHHSSSSHHHHK",
+   "KssWESSSSEWssK",
+   "KsSSSSSsSSSSsK",
+   ".KsSSSSSSSSsK.",
+   ".KsSSmMMmSSsK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHHHHHHHHHHK.",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KHHHHHHHHHHK.",
+   ".KssssssssssK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "lado": [
+   "...KKHhKK.....",
+   "..KHHhHHhK....",
+   ".KHHhHHhHHK...",
+   "KHHHHHHHHHHK..",
+   "KHHHHHsssssK..",
+   "KHHHHHSSSHHsK.",
+   "KHHHHHSSSEWsK.",
+   "KHHHHHSSSSSSsK",
+   "KsssssSSSSsKK.",
+   ".KKKKsSSSSmMK.",
+   ".....KsSSsKK..",
+   "......KKsK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno2": {
+  "pal": {
+   "S": [
+    122,
+    78,
+    54
+   ],
+   "s": [
+    97,
+    62,
+    43
+   ],
+   "L": [
+    134,
+    85,
+    59
+   ],
+   "H": [
+    26,
+    22,
+    24
+   ],
+   "h": [
+    36,
+    30,
+    33
+   ],
+   "B": [
+    28,
+    24,
+    26
+   ],
+   "b": [
+    33,
+    28,
+    31
+   ]
+  },
+  "frente": [
+   "..KhHHhHHhHK..",
+   ".KhHHhHHhHHhK.",
+   "KhHHhHHhHHhHHK",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH",
+   "KHHWEHHHHEWHHK",
+   "KHHHHHHsHHHHHK",
+   ".KsHHHHHHHHsK.",
+   ".KsssmMMmsssK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "..KhHHhHHhHK..",
+   ".KhHHhHHhHHhK.",
+   "KhHHhHHhHHhHHK",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KHHHHHHHHHHK.",
+   ".KHHHHHHHHHHK.",
+   "..KssssssssK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "lado": [
+   "KKHhHHhHHhK...",
+   "HHhHHhHHhHHK..",
+   "HhHHhHHhHHhHK.",
+   "HHHHHHHHHHHHHK",
+   "HHHHHHHHHHHHHK",
+   "HHHHHHHHHHHHHK",
+   "HHHHHHHHHEWHK.",
+   "HHHHHHHHHHHHsK",
+   "KHHHHHHHHHsKK.",
+   ".KKKHHHsssmMK.",
+   "....KKsSSsKK..",
+   "......KKsK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno3": {
+  "pal": {
+   "S": [
+    160,
+    106,
+    74
+   ],
+   "s": [
+    128,
+    84,
+    59
+   ],
+   "L": [
+    176,
+    116,
+    81
+   ],
+   "H": [
+    26,
+    22,
+    24
+   ],
+   "h": [
+    36,
+    30,
+    33
+   ],
+   "B": [
+    28,
+    24,
+    26
+   ],
+   "b": [
+    33,
+    28,
+    31
+   ]
+  },
+  "frente": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KssSssSssSsK.",
+   ".KsSSSSSSSSsK.",
+   "KsSHHSSSSHHSsK",
+   "KsSWESSSSEWSsK",
+   "KsSSSSSsSSSSsK",
+   ".KsSSSSSSSSsK.",
+   ".KsSSmMMmSSsK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHHHHHHHHHHK.",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KssssssssssK.",
+   ".KsSSSSSSSSsK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "lado": [
+   "...KKHhKK.....",
+   "..KHHhHHhK....",
+   ".KHHhHHhHHK...",
+   "KHHHHssSsssK..",
+   "KHHHHSSSSSsK..",
+   "KHHHHSSSSHHsK.",
+   "KHHHHSSSSEWsK.",
+   "KsssssSSSSSSsK",
+   "KsSSSSSSSSsKK.",
+   ".KKKKsSSSSmMK.",
+   ".....KsSSsKK..",
+   "......KKsK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno4": {
+  "pal": {
+   "S": [
+    232,
+    186,
+    150
+   ],
+   "s": [
+    185,
+    148,
+    120
+   ],
+   "L": [
+    255,
+    204,
+    165
+   ],
+   "H": [
+    206,
+    166,
+    92
+   ],
+   "h": [
+    236,
+    190,
+    105
+   ],
+   "B": [
+    226,
+    182,
+    101
+   ],
+   "b": [
+    255,
+    215,
+    119
+   ]
+  },
+  "frente": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHssssssssHK.",
+   "KHHHHSSSSHHHHK",
+   "KssWESSSSEWssK",
+   "KsSSSSSsSSSSsK",
+   ".KsSSSSSSSSsK.",
+   ".KsSSmMMmSSsK.",
+   "..KBBBBBBBBK..",
+   "...KBBBBBBK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHHHHHHHHHHK.",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KHHHHHHHHHHK.",
+   ".KssssssssssK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "lado": [
+   "...KKHhKK.....",
+   "..KHHhHHhK....",
+   ".KHHhHHhHHK...",
+   "KHHHHHHHHHHK..",
+   "KHHHHHsssssK..",
+   "KHHHHHSSSHHsK.",
+   "KHHHHHSSSEWsK.",
+   "KHHHHHSSSSSSsK",
+   "KsssssSSSSsKK.",
+   ".KKKKsSSSSmMK.",
+   ".....KBBBBKK..",
+   "......KKBK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno5": {
+  "pal": {
+   "S": [
+    214,
+    160,
+    120
+   ],
+   "s": [
+    171,
+    128,
+    96
+   ],
+   "L": [
+    235,
+    176,
+    132
+   ],
+   "H": [
+    82,
+    52,
+    34
+   ],
+   "h": [
+    114,
+    72,
+    47
+   ],
+   "B": [
+    90,
+    57,
+    37
+   ],
+   "b": [
+    106,
+    67,
+    44
+   ]
+  },
+  "frente": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   ".KKHhHHhHHhKK.",
+   "KHHHHHHHHHHHHK",
+   "KHHssssssssHHK",
+   "KHHHHSSSSHHHHK",
+   "KHHWESSSSEWHHK",
+   "KHHSSSSsSSSHHK",
+   "KHHSSSSSSSSHHK",
+   "KHHSSmMMmSSHHK",
+   "KHKSSSSSSSSKHK",
+   "KHKKSSSSSSKKHK",
+   "KHK.KKKKKK.KHK",
+   ".K..........K.",
+   ".............."
+  ],
+  "costas": [
+   "....KKKKKK....",
+   ".KKKHhHHhHKKK.",
+   "KhHHhHHhHHhHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KKKKKKKKKKKK.",
+   ".............."
+  ],
+  "lado": [
+   "...KKHhKK.....",
+   ".KKHHhHHhK....",
+   "KhHHhHHhHHK...",
+   "KHHHHHHHHHHK..",
+   "KHHHHHHssssK..",
+   "KHHHHHHSSHHsK.",
+   "KHHHHHHSSEWsK.",
+   "KHHHHHHSSSSSsK",
+   "KHHHHHHSSSsKK.",
+   "KHHHHHHSSSmMK.",
+   "KHHHHHHSSsKK..",
+   "KHHHHHKKsK....",
+   "KHHHHHK.K.....",
+   ".KKKKK........",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno6": {
+  "pal": {
+   "S": [
+    160,
+    106,
+    74
+   ],
+   "s": [
+    128,
+    84,
+    59
+   ],
+   "L": [
+    176,
+    116,
+    81
+   ],
+   "H": [
+    26,
+    22,
+    24
+   ],
+   "h": [
+    36,
+    30,
+    33
+   ],
+   "B": [
+    28,
+    24,
+    26
+   ],
+   "b": [
+    33,
+    28,
+    31
+   ]
+  },
+  "frente": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHssssssssHK.",
+   "KHHHHSSSSHHHHK",
+   "KsKWESSSSEWKsK",
+   "KsSSSSSsSSSSsK",
+   ".KsSSSSSSSSsK.",
+   ".KsSSmMMmSSsK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHHHHHHHHHHK.",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KHHHHHHHHHHK.",
+   ".KsssHHHHsssK.",
+   "..KsSHHHHSsK..",
+   "...KsHHHHsK...",
+   "....KKHHKK....",
+   "......KK......",
+   ".............."
+  ],
+  "lado": [
+   "...KKHhKK.....",
+   "..KHHhHHhK....",
+   ".KHHhHHhHHK...",
+   "KHHHHHHHHHHK..",
+   "HHHHHHsssssK..",
+   "HHHHHHSSSHHsK.",
+   "HHHHHHSSSEWsK.",
+   "HHHHHHSSSSSSsK",
+   "HHssssSSSSsKK.",
+   "KKKKKsSSSSmMK.",
+   ".....KsSSsKK..",
+   "......KKsK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno7": {
+  "pal": {
+   "S": [
+    96,
+    60,
+    42
+   ],
+   "s": [
+    76,
+    48,
+    33
+   ],
+   "L": [
+    105,
+    66,
+    46
+   ],
+   "H": [
+    26,
+    22,
+    24
+   ],
+   "h": [
+    36,
+    30,
+    33
+   ],
+   "B": [
+    28,
+    24,
+    26
+   ],
+   "b": [
+    33,
+    28,
+    31
+   ]
+  },
+  "frente": [
+   "....KHhHHK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHssssssssHK.",
+   "KHHHHSSSSHHHHK",
+   "KsKWESSSSEWKsK",
+   "KsSSSSSsSSSSsK",
+   ".KsSSSSSSSSsK.",
+   ".KsSSmMMmSSsK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "....KHhHHK....",
+   "...KHhHHhHK...",
+   "..KHhHHhHHhK..",
+   ".KHHHHHHHHHHK.",
+   ".KHHHHHHHHHHK.",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KHHHHHHHHHHK.",
+   ".KssssssssssK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "lado": [
+   ".KHhHHhKK.....",
+   ".KhHHhHHhK....",
+   ".KHHhHHhHHK...",
+   "KHHHHHHHHHHK..",
+   "KHHHHHsssssK..",
+   "KHHHHHSSSHHsK.",
+   "KHHHHHSSSEWsK.",
+   "KHHHHHSSSSSSsK",
+   "KsssssSSSSsKK.",
+   ".KKKKsSSSSmMK.",
+   ".....KsSSsKK..",
+   "......KKsK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno8": {
+  "pal": {
+   "S": [
+    232,
+    186,
+    150
+   ],
+   "s": [
+    185,
+    148,
+    120
+   ],
+   "L": [
+    255,
+    204,
+    165
+   ],
+   "H": [
+    160,
+    70,
+    36
+   ],
+   "h": [
+    184,
+    80,
+    41
+   ],
+   "B": [
+    176,
+    77,
+    39
+   ],
+   "b": [
+    208,
+    91,
+    46
+   ]
+  },
+  "frente": [
+   "....KKKKKK....",
+   "...KHhHHhHK...",
+   ".KKHhHHhHHhKK.",
+   "KHHHHHHHHHHHHK",
+   "KHHssssssssHHK",
+   "KHHHHSSSSHHHHK",
+   "KHHWESSSSEWHHK",
+   "KHHSSSSsSSSHHK",
+   "KHHSSSSSSSSHHK",
+   "KHHSSmMMmSSHHK",
+   "KHKSSSSSSSSKHK",
+   "KHKKSSSSSSKKHK",
+   "KHK.KKKKKK.KHK",
+   ".K..........K.",
+   ".............."
+  ],
+  "costas": [
+   "....KKKKKK....",
+   ".KKKHhHHhHKKK.",
+   "KhHHhHHhHHhHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KKKKKKKKKKKK.",
+   ".............."
+  ],
+  "lado": [
+   "...KKHhKK.....",
+   ".KKHHhHHhK....",
+   "KhHHhHHhHHK...",
+   "KHHHHHHHHHHK..",
+   "KHHHHHHssssK..",
+   "KHHHHHHSSHHsK.",
+   "KHHHHHHSSEWsK.",
+   "KHHHHHHSSSSSsK",
+   "KHHHHHHSSSsKK.",
+   "KHHHHHHSSSmMK.",
+   "KHHHHHHSSsKK..",
+   "KHHHHHKKsK....",
+   "KHHHHHK.K.....",
+   ".KKKKK........",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno9": {
+  "pal": {
+   "S": [
+    190,
+    132,
+    96
+   ],
+   "s": [
+    152,
+    105,
+    76
+   ],
+   "L": [
+    209,
+    145,
+    105
+   ],
+   "H": [
+    82,
+    52,
+    34
+   ],
+   "h": [
+    114,
+    72,
+    47
+   ],
+   "B": [
+    90,
+    57,
+    37
+   ],
+   "b": [
+    106,
+    67,
+    44
+   ]
+  },
+  "frente": [
+   "..KhHHhHHhHK..",
+   ".KhHHhHHhHHhK.",
+   "KhHHhHHhHHhHHK",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH",
+   "KHHWEHHHHEWHHK",
+   "KHHHHHHsHHHHHK",
+   ".KsHHHHHHHHsK.",
+   ".KsssmMMmsssK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "..KhHHhHHhHK..",
+   ".KhHHhHHhHHhK.",
+   "KhHHhHHhHHhHHK",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH",
+   "HHHHHHHHHHHHHH",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KHHHHHHHHHHK.",
+   ".KHHHHHHHHHHK.",
+   "..KssssssssK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "lado": [
+   "KKHhHHhHHhK...",
+   "HHhHHhHHhHHK..",
+   "HhHHhHHhHHhHK.",
+   "HHHHHHHHHHHHHK",
+   "HHHHHHHHHHHHHK",
+   "HHHHHHHHHHHHHK",
+   "HHHHHHHHHEWHK.",
+   "HHHHHHHHHHHHsK",
+   "KHHHHHHHHHsKK.",
+   ".KKKHHHsssmMK.",
+   "....KKsSSsKK..",
+   "......KKsK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "aluno10": {
+  "pal": {
+   "S": [
+    122,
+    78,
+    54
+   ],
+   "s": [
+    97,
+    62,
+    43
+   ],
+   "L": [
+    134,
+    85,
+    59
+   ],
+   "H": [
+    26,
+    22,
+    24
+   ],
+   "h": [
+    36,
+    30,
+    33
+   ],
+   "B": [
+    28,
+    24,
+    26
+   ],
+   "b": [
+    33,
+    28,
+    31
+   ],
+   "C": [
+    40,
+    40,
+    46
+   ],
+   "c": [
+    28,
+    28,
+    32
+   ],
+   "k": [
+    20,
+    20,
+    23
+   ]
+  },
+  "frente": [
+   "....KKKKKK....",
+   "...KCCCCCCK...",
+   "..KCCCCCCCCK..",
+   ".KCCCCCCCCCCK.",
+   ".KHccccccccHK.",
+   "KHHHHssssHHHHK",
+   "KssWESSSSEWssK",
+   "KsSSSSSsSSSSsK",
+   ".KsSSSSSSSSsK.",
+   ".KsSSmMMmSSsK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "....KKKKKK....",
+   "...KCCCCCCK...",
+   "..KCCCCCCCCK..",
+   ".KCCCCCCCCCCK.",
+   ".KHHccccccHHK.",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KHHHHHHHHHHK.",
+   ".KssssssssssK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "lado": [
+   "...KKCCKK.....",
+   "..KCCCCCCK....",
+   ".KCCCCCCCCK...",
+   "KCCCCCCCCCCKKK",
+   "KHHHHHcccccccc",
+   "KHHHHHsssHHsKK",
+   "KHHHHHSSSEWsK.",
+   "KHHHHHSSSSSSsK",
+   "KsssssSSSSsKK.",
+   ".KKKKsSSSSmMK.",
+   ".....KsSSsKK..",
+   "......KKsK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ },
+ "mauro": {
+  "pal": {
+   "S": [
+    132,
+    86,
+    66
+   ],
+   "s": [
+    105,
+    68,
+    52
+   ],
+   "L": [
+    160,
+    112,
+    92
+   ],
+   "H": [
+    96,
+    90,
+    88
+   ],
+   "h": [
+    130,
+    124,
+    120
+   ],
+   "B": [
+    150,
+    144,
+    138
+   ],
+   "b": [
+    120,
+    114,
+    108
+   ],
+   "C": [
+    224,
+    194,
+    112
+   ],
+   "c": [
+    182,
+    150,
+    80
+   ],
+   "k": [
+    120,
+    60,
+    40
+   ]
+  },
+  "frente": [
+   "....KKKKKK....",
+   "...KsSSSSsK...",
+   "..KsSSSSSSsK..",
+   ".KsSSSSSSSSsK.",
+   ".KsSSSSSSSSsK.",
+   "KHSHHSSSSHHSHK",
+   "KHSWESSSSEWSHK",
+   "KHSSSSSsSSSSHK",
+   ".KsSSBBBBSSsK.",
+   ".KsSSmMMmSSsK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "costas": [
+   "....KKKKKK....",
+   "...KsSSSSsK...",
+   "..KsSSSSSSsK..",
+   ".KsSSSSSSSSsK.",
+   ".KsSSSSSSSSsK.",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   "KHHHHHHHHHHHHK",
+   ".KHHHHHHHHHHK.",
+   ".KssssssssssK.",
+   "..KsSSSSSSsK..",
+   "...KsSSSSsK...",
+   "....KKKKKK....",
+   "..............",
+   ".............."
+  ],
+  "lado": [
+   "...KKssKK.....",
+   "..KsSSSSsK....",
+   ".KsSSSSSSsK...",
+   "KsSSSSSSSSsK..",
+   "KsSSSSSSSSsK..",
+   "KHHHSSSSSHHsK.",
+   "KHHHSSSSSEWsK.",
+   "KHHHSsSSSSSSsK",
+   "KHHHSSSSSSBBK.",
+   ".KKKKsSSSSmMK.",
+   ".....KsSSsKK..",
+   "......KKsK....",
+   "........K.....",
+   "..............",
+   ".............."
+  ],
+  "boca": [
+   9,
+   5,
+   8
+  ],
+  "olhos": [
+   6
+  ]
+ }
+}

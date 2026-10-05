@@ -1,0 +1,150 @@
+// =====================================================================
+// MODELO DE HISTÓRIA — copie, cole e troque pelo que aconteceu de verdade
+// =====================================================================
+// Este arquivo é só exemplo (o jogo não lê ele). As histórias de verdade
+// ficam no .txt com o mesmo nome do capítulo: cairu.txt pro cairu.json,
+// cap2.txt pro cap2.json, e assim por diante.
+//
+// Linhas que começam com // são comentários: o jogo ignora.
+// Linhas em branco também são ignoradas, use pra separar os pedaços.
+//
+// COMO TESTAR SEM JOGAR TUDO
+//   F5  recarrega os .txt e mostra os erros (sem fechar o jogo)
+//   F6  modo teste: escolhe uma cena pra tocar ou um mapa pra ir direto
+//   validar_historia.bat  confere tudo e abre ERROS_HISTORIA.txt
+//   testar_cena.bat h3_lucas  abre o jogo já tocando a cena h3_lucas
+// =====================================================================
+
+
+// ---------------------------------------------------------------------
+// 1) TODA CENA COMEÇA COM "===" E UM NOME (sem espaço, sem acento)
+// ---------------------------------------------------------------------
+// Depois do nome, separado por |, dá pra colocar opções:
+//   uma_vez            só toca uma vez
+//   vezes: 3           toca no máximo 3 vezes
+//   cinema             barras pretas de cinema em cima e embaixo
+//   teste: Nome fácil  a cena aparece no topo do F6 (modo teste) com esse nome, em qualquer capítulo
+//   requer: viu_h1_chegada        só toca se já viu a cena h1_chegada
+//   requer: viu_h1_chegada !viu_h2_nicao   e o ! quer dizer "NÃO pode ter"
+//   depois: lucas_depois          depois de vista, vira esta outra cena
+//
+// Quem chama a cena (o NPC, o objeto ou o lugar do mapa) é definido no
+// .json do capítulo. Pra trocar a história de alguém que já existe, use o
+// mesmo nome da cena que está lá (h1_chegada, h2_nicao, h3_lucas...).
+
+=== exemplo_cafe | uma_vez | cinema | requer: viu_h1_chegada
+
+
+// ---------------------------------------------------------------------
+// 2) FALAS:  quem: o que ele diz
+// ---------------------------------------------------------------------
+// Nomes: breno (ou eu), nicao, lucas, joao, matheus, beto, lukako, fabio,
+// mauro. Acento e maiúscula tanto faz: "Nicão" = "nicao".
+// Apelidos curtos (n = nicao, l = lucas...) estão em "apelidos" no .json.
+//
+// No FIM da fala, dá pra colocar:
+//   #gesto    o corpo dele na conversa: talk1 talk2 point shrug think
+//             cross laugh wave cismado (pode pôr mais de um, ele alterna)
+//   @gesto    o que o OUTRO faz enquanto escuta (ex.: @laugh)
+//   ^nome     quem fica em destaque (por padrão, quem fala)
+
+lucas: Breno, bora tomar um café na cantina? #point
+eu: Agora? Tô no meio de um chamado. #shrug
+nicao: Calma... o café não vai fugir. #talk1 @laugh
+
+
+// ---------------------------------------------------------------------
+// 3) PENSAMENTO E NARRADOR
+// ---------------------------------------------------------------------
+breno pensa: Esse café vai virar uma hora de resenha, eu conheço.
+> Meia hora depois, ninguém tinha voltado pro laboratório.
+
+
+// ---------------------------------------------------------------------
+// 4) PERGUNTA COM ESCOLHAS
+// ---------------------------------------------------------------------
+//   ? pergunta | opção -> cena | opção -> cena | opção sem cena
+//   +marca na opção = marca que ela foi escolhida (pra usar no requer/!se)
+//   Opção sem "->" só fecha a pergunta e a cena continua.
+
+? Ir com o Lucas? | Bora! -> exemplo_cafe_sim +foi_cafe | Fico aqui
+
+
+// ---------------------------------------------------------------------
+// 5) COMANDOS (começam com !)  — a lista completa está no LEIA-ME
+// ---------------------------------------------------------------------
+// Mexer nas pessoas:
+//   !andar lucas 300 200          anda até x=300 y=200 (& no fim = não espera)
+//   !correr lucas 300 200
+//   !virar lucas eu               vira pra alguém, ou: baixo cima esquerda direita
+//   !pular nicao 2
+//   !balao nicao suor             balãozinho de emoção em cima da cabeça. Vale o
+//                                 nome ou o próprio emoji:
+//         😳 vergonha   💀 caveira (morri)   😭 choro   😱 susto   😂 risada
+//         ⚡ raio       🔥 fogo              ❤ coracao  💡 ideia   💤 zzz
+//         ⭐ estrela    💧 suor              😡 raiva   🎵 musica  ! ? !! ?! ...
+//         Ex.: !balao eu 😳     !balao lucas 💀     !balao nicao morri
+//         Outro texto vira balão de texto: !balao lucas oxe
+//   ATENÇÃO: emoji dentro da fala ("lucas: mano 💀") não aparece na tela.
+//   Ponha o balão na linha de baixo. O verificador avisa.
+//   !dizer lucas Oxe!             balão de fala no mapa (sem abrir a conversa)
+//   !pensar nicao Será que desliguei o ferro?
+//   !anim lucas cair              animações: cair rir comemorar dancar soco...
+//   !aparecer joao 120 220        aparece do nada
+//   !entrar joao 120 220          entra andando pela porta mais perto
+//   !sair joao                    sai andando pela porta mais perto
+//   !sumir joao
+// Câmera e tela:
+//   !camera lucas 0.6     !camera eu 0.5     !zoom 1.5 0.5     !zoom 1 0.5
+//   !tremer 0.5 4         tela treme (segundos, força), com som
+//   !flash 0.3            clarão (ou !flash 0.3 red)
+//   !fade preto 0.5       escurece    !fade branco 0.5  clareia até branco
+//   !fade volta 0.5       volta ao normal (se a cena acabar escura, o jogo volta sozinho)
+//   !esperar 1.5          !barras sim / !barras nao (faixas de cinema)
+// Efeitos prontos (vários de uma vez):
+//   !susto lucas          pula, balão !!, tela treme um pouco, som (ou !susto lucas 😱)
+//   !impacto 6            clarão + tremor forte + som de soco (número = força)
+//   !close lucas          câmera corre e dá zoom rápido na cara dele (!close lucas 2 0.3)
+//   !tela normal          câmera volta pro Breno, zoom 1, sem barras, cor normal
+// Pra ver todos funcionando: F6 > Cenas > teste_efeitos (capítulo Sala de testes).
+// Cutscene de lado (câmera de cinema, terceira pessoa, bonecos em dobro):
+//   !lateral presidencia 140   troca pra sala vista de lado (fundo mapas/lado_presidencia.png),
+//                              câmera em x=140. Tem: presidencia, patio. !lateral fim = volta pro mapa
+//   No palco lateral só conta o x: !aparecer joao 215 0 esquerda / !andar eu 190 (y é opcional)
+//   !rosto joao chorando 2.5   quadrinho com o rosto pixelado no canto (& = não espera)
+//                              normal, fala, rindo, chorando, dor, susto, pensando, cismado
+//                              (!rosto eu rindo 2 esquerda = quadro do lado esquerdo)
+//   !anim joao passando_mal &  agachado, mão no peito, soluçando (fica assim até outra anim)
+//   !anim joao solucar         !anim joao sentar_banco &      !anim joao levantar
+//   !minijogo escada desceu_com_joao 2   descer a escada segurando alguém
+// Exemplo inteiro: cena teste_joao_passando_mal no cairu.txt (F6 > Cenas).
+// Som, música e vídeo:
+//   !musica festa         !musica mapa (volta a do lugar)      !som plim
+//   !video cutscenes/videos/prontos/teste_5s.ogv     (E pula o vídeo)
+// História:
+//   !marcar tomou_cafe    !desmarcar tomou_cafe
+//   !se tomou_cafe -> cena_com_cafe | cena_sem_cafe
+//   !cena outra_cena      (pula pra outra)    !enfileirar outra (toca depois)
+//   !minijogo reflexo ganhou_reflexo 2       (nome, marca se ganhar, dificuldade)
+//   !mapa patio 400 300 baixo                (leva o Breno pra outro mapa)
+//   !salvar               !fim_capitulo
+
+!camera lucas 0.6
+!anim lucas comemorar
+lucas: É isso, meu rei! #laugh
+!camera eu 0.5
+
+
+// Cena que a escolha "Bora!" chama:
+=== exemplo_cafe_sim
+!correr lucas 300 260 &
+!correr eu 320 260
+> E lá se foi mais um chamado esperando...
+
+// ---------------------------------------------------------------------
+// VOZ GRAVADA (teste)
+// ---------------------------------------------------------------------
+// Não precisa escrever nada aqui: se existir o áudio da fala em audio/vozes/,
+// o jogo toca sozinho. O nome de cada áudio sai no VOZES_BRENO.txt
+// (dois cliques em listar_vozes.bat). Mudou o texto da fala = grava de novo.
+

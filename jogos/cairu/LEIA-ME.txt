@@ -1,0 +1,585 @@
+JOGO - protótipo
+
+COMO JOGAR
+  Abra o JOGO.exe (se o Windows avisar "o Windows protegeu o computador",
+  clique em "Mais informações" e depois "Executar assim mesmo").
+
+  Setas ou WASD ... andar
+  E / Enter / Espaço ... conversar e passar o texto
+  X ou Ctrl (segurar) ... acelerar a cena (passa as falas sozinho)
+  J ou Tab ... diário (o que falta fazer no capítulo)
+  H ... histórico de tudo que foi falado
+  Esc ... pausa (continuar, salvar, diário, histórico, opções, menu, sair)
+  F11 ... tela cheia
+  F3 ou M ... modo de teste: paredes, portas, posição, marcas ligadas e a cena atual
+
+SALVAR E CAPÍTULOS
+  O jogo salva sozinho toda vez que você troca de sala e quando uma cena termina
+  (aparece "salvo" no canto). Também dá pra salvar na pausa (Esc).
+  No menu: "Continuar" volta de onde parou; "Novo jogo" começa do zero (pergunta antes
+  de apagar o jogo salvo); "Capítulos" mostra os capítulos (os bloqueados aparecem como ???).
+  Opções: volume da música e dos efeitos, tela cheia, velocidade do texto,
+  "Qualidade" (Alta = tudo ligado; Média = brilho mais leve e metade da poeira no ar;
+  Baixa = sem efeitos de tela, sem poeira e menos alunos, pra PC fraco; num PC sem placa
+  de vídeo deu uns 94 / 136 / 220 quadros por segundo), "Controles" (trocar teclas) e
+  "Personagens: arte nova / arte antiga" (pra comparar a arte final com a primeira).
+  Os arquivos ficam em %APPDATA%\Godot\app_userdata\JOGO (apagar = começar do zero).
+
+  Para terminar um capítulo, use o passo "!fim_capitulo" numa cena: aparece a tela
+  de fim e o próximo capítulo da lista (indice.json) é liberado. Ou diga qual no capítulo:
+  "proximo": "cap3.json". Teste: fale com o Lukako na recepção e escolha terminar.
+  Capítulo novo = um arquivo .json novo na pasta capitulos + o nome dele no indice.json.
+  "sempre_liberado": true deixa um capítulo aberto mesmo sem terminar o anterior.
+
+COMO OS CAPÍTULOS ESTÃO MONTADOS
+  cairu.json (Capítulo 1) já roda do começo ao fim: abertura, cinco histórias e o final.
+    História 1: Recepção, com o Lukako (libera o resto)
+    História 2: Núcleo, com o Nicão
+    História 3: Laboratório, com o Lucas
+    História 4: Sala 204, com o Matheus (tem o minijogo "Digita rápido")
+    História 5: Pátio, com o Beto e o Fábio
+    Final: entrar na Presidência depois das quatro do meio (todo mundo aparece e comemora)
+  Cada história tem uma linha marcada assim:
+    "> [HISTÓRIA 2: Núcleo, com o Nicão] Aqui entra a história que o Breno vai contar."
+  É só trocar essa linha pelas falas de verdade. O diário (J) já acompanha as seis etapas.
+  cap2.json é o modelo do Capítulo 2 (três histórias + final), liberado ao terminar o 1.
+  extras_testes.json é a sala de testes antiga (minijogos, animações), sempre aberta.
+
+VOZ GRAVADA NAS FALAS (teste)
+  Quando existe um áudio pra fala, o jogo toca a voz junto com o texto (o texto anda no
+  ritmo da voz e o "blip" fica quieto). Sem áudio, continua o blip de sempre.
+  Opções > Voz: Ligada / Desligada (desligada = só blip, como antes).
+  Onde ficam: audio/vozes/<arquivo>.ogg (ou .wav) ao lado do JOGO.exe.
+  O nome do arquivo sai do próprio texto da fala: dê dois cliques em listar_vozes.bat
+  e abre o VOZES_BRENO.txt com "arquivo | cena | texto" de cada fala do Breno.
+  Se a fala mudar, o nome muda também (é preciso gravar de novo aquela fala).
+
+CRÉDITOS
+  Menu > Créditos. Para trocar o texto, crie capitulos/creditos.txt
+  (aceita [color=#ffd34e]cor[/color]).
+
+MÚSICA E SONS
+  Música por lugar no capítulo: "musicas": {"nucleo": "nucleo", "recepcao": "recepcao"}.
+  Músicas prontas: menu, cairu, recepcao, corredor, patio, sala, lab, nucleo, presidencia,
+  cap2, festa (o final do capítulo 1), fim, minijogo, minijogo_tenso, minijogo_retro,
+  violao_mauro (a base do Seu Mauro no minijogo do violão; feita por fonte_audio/violao.py,
+  música original, com as notas violao_<nota>.wav que o jogador toca).
+  Todas são geradas por fonte_audio/gerar_audio.py (python3 gerar_audio.py).
+  Todas as músicas e efeitos foram feitos do zero (sintetizados), sem nada de terceiros.
+  Cada mapa diz a música dele:  "musica": "patio"  (no capitulos/mapas/<mapa>.json).
+  Músicas: menu, cairu, patio, sala, lab, presidencia, minijogo, fim.
+  Na cena: "!musica minijogo" troca a música até a cena acabar; "!musica mapa" volta pra
+  do lugar; "!som porta" toca um efeito.
+  Efeitos: blip, cursor, confirmar, abrir, fechar, passo, porta, tremor, acerto, erro,
+  vitoria, derrota, nota_cima, nota_baixo, nota_esquerda, nota_direita,
+  porta_abrir, porta_fechar, soco, queda, whoosh, pulo, plim.
+
+  PRA TROCAR UM SOM: ponha o arquivo novo (.ogg ou .wav) com o MESMO nome na pasta
+  audio/musica ou audio/efeitos ao lado do JOGO.exe. Ele passa na frente do que veio
+  dentro do jogo. Música nova = arquivo novo + o nome dele no "musica" do mapa.
+
+COMO EDITAR AS HISTÓRIAS (sem precisar do Godot)
+  A pasta "capitulos" ao lado do JOGO.exe tem as histórias.
+  Abra o cairu.json no Bloco de Notas, troque os textos e abra o jogo de novo.
+
+  Cada fala é assim:
+    { "quem": "nicao", "texto": "O que ele fala", "gestos": ["talk1", "point"], "ouvinte": "laugh" }
+
+  quem    : breno, nicao, lucas, joao, matheus, beto, lukako, fabio, ou "*" (narrador)
+  gestos  : idle, talk1, talk2, point, shrug, think, cross, wave, laugh
+  ouvinte : o que o outro faz enquanto escuta (idle, laugh, think...)
+
+  Se o jogo abrir sem as falas, provavelmente faltou uma vírgula ou aspas no arquivo.
+  Se apagar a pasta "capitulos", o jogo usa as histórias que vieram dentro dele.
+
+MAPAS
+  Cada mapa é um arquivo em capitulos/mapas/<nome>.json. Dá pra usar uma
+  imagem desenhada por você como mapa:
+
+    "fundo": { "imagem": "patio.png" }           <- a imagem do mapa (ex.: 640x400)
+    "mascara": "patio_colisao.png"               <- mesma medida: branco = chão, outra cor = parede
+    "area_andavel": [x, y, largura, altura]      <- retângulo onde dá pra andar
+    "colisoes": [[x, y, largura, altura], ...]   <- paredes extras em retângulo (opcional)
+    "objetos": [{"imagem": "arvore.png", "x": 100, "y": 200, "solido": [20, 8]}]
+    ("desce": 3 desenha a imagem 3 px abaixo do "y" que decide quem fica na frente.)
+                                                 <- coisas que o personagem passa na frente/atrás
+    "pontos": [{"x":.., "y":.., "w":.., "h":.., "cena": "quadro"}]
+                                                 <- lugares que dão cena ao apertar E
+    "portas": [{"x":.., "y":.., "w":.., "h":.., "para": "corredor_cairu",
+                "chegada": {"x": 320, "y": 120, "dir": "baixo"}}]
+
+    "luzes": [{"tipo": "faixa", "x": 20, "y": 110, "w": 76, "h": 150, "forca": 0.16},
+              {"tipo": "sombra", "x": 660, "y": 266, "w": 84, "h": 34, "forca": 0.35},
+              {"tipo": "luz", "x": 230, "y": 110, "w": 180, "h": 130, "cor": "#ffc870"}]
+                                                 <- luz de janela (faixa, com poeirinha no feixe),
+                                                    sombra no chão e "luz" de verdade (ilumina
+                                                    também quem passa embaixo)
+    "musica": "patio"                            <- música do lugar
+    "visual": {"ambiente": "#fff8ec", "tinta": "#ffefd2", "saturacao": 1.18,
+               "contraste": 1.08, "brilho": 0.4, "limiar": 0.7, "vinheta": 0.3,
+               "sombras": "#0a0c1e"}
+                                                 <- cor do lugar: ambiente escurece/tinge tudo,
+                                                    tinta pinta a tela, brilho = glow nas partes
+                                                    claras (limiar = a partir de quão claro),
+                                                    vinheta = cantos escuros, sombras = cor do escuro
+    "particulas": [{"tipo": "folhas", "x": 0, "y": 0, "w": 864, "h": 420, "quantidade": 12}]
+                                                 <- coisas no ar: poeira, folhas, vapor, brilhos,
+                                                    faiscas, estrelas (x/y/w/h = onde aparecem)
+
+  Ponha as imagens dentro de capitulos/mapas/. No capítulo (cairu.json), cada
+  NPC diz em qual mapa está com "mapa": "sala_cairu".
+
+  Dentro do jogo (andando no mapa, não no menu), aperte F3 ou M: aparecem as paredes (vermelho), pontos (amarelo),
+  portas (azul) e a posição x/y do Breno, pra facilitar achar as coordenadas.
+  Cada personagem ocupa uns 44x60 pixels; o "x, y" de alguém é o pé.
+
+CENAS (o que acontece quando aperta E)
+  As cenas ficam em "cenas" no cairu.json. Uma cena pode ser só uma lista de
+  falas (como as antigas) ou um bloco com regras:
+
+    "minha_cena": {
+      "uma_vez": true,               <- só acontece uma vez (opcional)
+      "requer": ["chegou", "!brigou"],  <- só aparece se tiver "chegou" e NÃO tiver "brigou"
+      "passos": [ ...um passo por linha... ]
+    }
+
+  Quem usa a cena: NPC, ponto do mapa ou gatilho, com "cena": "id" ou
+  "cenas": ["primeira", "segunda"] (vale a primeira que estiver liberada).
+  Toda cena que termina ganha a marca "viu_<id>" (ex.: "viu_minha_cena").
+
+  PASSOS (cada linha faz uma coisa):
+    {"quem": "lucas", "texto": "Oi!", "gestos": ["wave","talk1"], "ouvinte": "laugh"}   fala (tela de diálogo)
+    {"narrar": "Mais tarde..."}                        caixa de texto por cima do mapa, sem rosto
+    {"escolha": "Vai sentar?", "quem": "breno", "opcoes": [
+        {"texto": "Sim", "marcar": "sentou", "passos": [ ...o que acontece... ]},
+        {"texto": "Não", "passos": [ ... ]} ]}         escolha (setas + E); cada opção tem seus passos
+    {"andar": "lucas", "x": 580, "y": 200}             anda até o ponto (use "jogador" pro Breno)
+          + "velocidade": 120  (mais rápido)   + "esperar": false (não espera chegar)
+    {"virar": "lucas", "dir": "esquerda"}  ou  {"virar": "lucas", "para": "breno"}
+    {"pular": "lucas", "vezes": 2}
+    {"balao": "breno", "icone": "?!"}                  balãozinho em cima da cabeça
+    {"tremer": 0.8, "forca": 5}                        tela treme (segundos)
+    {"flash": 0.4}  ou  {"flash": 0.4, "cor": "red"}   clarão
+    {"fade": "preto"} / {"fade": "volta"}              escurece / clareia a tela
+    {"esperar": 1.5}                                   pausa (segundos)
+    {"marcar": "chegou"} / {"desmarcar": "chegou"}     liga/desliga uma marca
+    {"sumir": "joao"}                                  NPC some (continua sumido depois)
+    {"aparecer": "joao", "no_mapa": "patio", "x": 420, "y": 220, "dir": "baixo", "cenas": ["joao_cafe"]}
+                                                       NPC aparece/muda de lugar (e de cena)
+    {"mapa": "presidencia", "x": 230, "y": 410, "dir": "cima"}   troca de mapa no meio da cena
+    {"minijogo": "nome", "guardar": "ganhou_nome"}     abre um minijogo; se ganhar, liga a marca
+    {"se": "ganhou_nome", "entao": [ ... ], "senao": [ ... ]}    caminho diferente por marca
+    {"cena": "outra_cena"}                             roda outra cena aqui dentro
+    {"fim": true}                                      termina a cena na hora
+
+  GATILHOS (cena ao pisar num lugar), no cairu.json:
+    "gatilhos": [ {"mapa": "laboratorio", "x": 792, "y": 330, "w": 124, "h": 40, "cena": "aviso_lab"},
+                  {"mapa": "patio", "ao_entrar": true, "cena": "chegou_no_patio"} ]
+
+  NPC que só aparece com uma marca: no NPC, "requer": "marca".
+
+  MAIS PASSOS:
+    {"pensar": "nicao", "texto": "Será que..."}         balão de pensamento no mapa (espera E)
+    {"dizer": "breno", "texto": "Nicão?"}               balão de fala no mapa (espera E)
+    {"quem": "breno", "pensa": true, "texto": "..."}    fala de pensamento (caixa roxa, sem mexer a boca)
+    {"entrar": "lucas", "x": 300, "y": 420, "de": "porta"}   chega andando pela porta mais perto
+                                                       (ou "de": "esquerda"/"direita"/"cima"/"baixo")
+    {"sair": "lucas", "por": "porta"}                  sai andando e some
+    {"camera": "nicao", "tempo": 0.8}                  câmera vai até alguém e segue ele
+    {"camera": [360, 260], "tempo": 1}                 câmera vai até um ponto e fica lá
+    {"zoom": 1.6, "tempo": 0.6}                        aproxima (1 = normal)
+    {"barras": true} / {"barras": false}               faixas pretas de cinema
+    {"tom": "noite"}                                   cor da tela: normal, tarde, entardecer, noite,
+                                                       escuro, sepia, lembranca ou "#rrggbb"
+    {"enfileirar": "outra"}                            deixa a cena "outra" pra rodar logo depois desta
+    {"balao": "breno", "icone": "coracao"}             ícones: ! ? !! ?! ... coracao raiva suor gota
+                                                       nota ideia zzz estrela vergonha caveira choro
+                                                       susto risada raio fogo, ou o emoji (😳 💀 😭 😱
+                                                       😂 ⚡ 🔥 ❤ 💡 💤 ⭐ 💧 😡 🎵); outro texto vira
+                                                       balão de texto
+  Ao fim de toda cena a câmera volta pro Breno, o zoom volta ao normal e as barras somem.
+
+  REGRAS DE REPETIÇÃO (na cena):
+    "uma_vez": true        só uma vez
+    "vezes": 3             no máximo 3 vezes
+    "depois": "outra"      depois de vista, quem chamava esta passa a chamar "outra"
+    "cinema": true         já começa com as faixas pretas
+  No NPC: "aleatorio": true sorteia entre as cenas liberadas da lista "cenas".
+  Se uma cena for chamada enquanto outra roda (gatilho, porta), ela entra na fila.
+
+JEITO CURTO DE ESCREVER (recomendado)
+  Cada passo pode ser só uma linha de texto. Pode misturar com o formato antigo.
+
+    "nicão: Bom dia... eu acho. #think #talk1 @laugh"    fala (#gestos e @ouvinte no fim, opcionais)
+    "breno pensa: Isso não vai dar certo."              pensamento
+    "> Mais tarde..."                                   narrador
+    "? Sentar na cadeira? | Sentar -> cena_sentar +sentou | Melhor não"
+                                                        escolha: "texto -> cena +liga_marca -desliga_marca"
+    "// isto é um comentário, o jogo ignora"
+
+  Nomes sem acento ou com acento, maiúscula ou não, tanto faz. "eu" = o Breno.
+  Apelidos no capítulo:  "apelidos": {"n": "nicao", "b": "breno"}   ->  "n: Fala!"
+  Sem #gestos, o jogo escolhe pela pontuação (pergunta, exclamação, "...", kkkk).
+
+  COMANDOS (começam com !):
+    !andar lucas 300 200            !correr lucas 300 200      (& no fim = não espera chegar)
+    !virar lucas esquerda           !virar lucas breno         !pular lucas 2
+    !balao lucas coracao            !pensar nicao texto...     !dizer breno texto...
+    !entrar lucas 300 420 [porta|esquerda|direita|cima|baixo]  !sair lucas [porta|...]
+    !aparecer joao 420 220 baixo [mapa]                        !sumir joao
+    !camera nicao [tempo]           !camera 360 260 [tempo]    !camera eu
+    !zoom 1.6 [tempo]               !barras sim / !barras nao  !tom noite [tempo]
+    !tremer 0.8 [forca]             !flash 0.4 [cor]           !fade preto / branco / volta
+    !susto lucas [emoji]            !impacto [forca]           !close lucas [zoom] [tempo]
+    !tela normal                    (volta câmera, zoom, barras e cor ao normal)
+    !lateral presidencia [x]        !lateral fim  (cutscene vista de lado; veja CUTSCENE DE LADO)
+    !rosto joao chorando [seg] [esquerda|direita]   (quadrinho com o rosto no canto)
+    !esperar 1.5                    !marcar a b c              !desmarcar a
+    !mapa presidencia 230 410 cima  !cena outra                !enfileirar outra
+    !se marca -> cena_sim | cena_nao                           !minijogo nome [marca] [dificuldade]
+    !fim
+
+ROTAS NAS CENAS
+  Quem anda numa cena ("andar", "!andar", "entrar", "sair") desvia sozinho de mesas,
+  paredes e móveis: o jogo acha o caminho numa grade do mapa. Se o destino for uma
+  porta ou fora do mapa, vai até o ponto livre mais perto e sai por ali. Quem sai de cena
+  ("sair": "joao") é acompanhado pela câmera até a porta, e depois ela volta.
+  Depois de cada caminhada há uma pausa curtinha antes do próximo passo.
+
+DIÁRIO (tecla J)
+  No capítulo: "diario": [ {"texto": "Achar o Nicão", "requer": "marca", "feito": "viu_nicao"} ]
+  Aparece quando "requer" está ligado e fica riscado (V) quando "feito" está ligado.
+
+NPC PARADO OU ANDANDO
+  No NPC: "comportamento": "parado" (padrão), "olhar" (olha em volta), "passear"
+  (anda por perto; "raio": 50 diz até onde) ou "pc" (sentado de lado no computador, digitando;
+  se uma cena faz "!anim <quem> levantar_cadeira", ele levanta, fica em pé enquanto o Breno
+  está perto e depois senta de novo sozinho). Os outros viram pro Breno quando ele chega perto.
+  "dica": "Puxar papo" muda o texto do balão amarelo (padrão: "E Falar" / "E Ver").
+
+  EXEMPLOS: fale com o Nicão no Núcleo de Informática (cena "teste_novidades", no jeito curto)
+  e com o Lucas no Laboratório de Informática (cena "teste_cenas", no formato antigo).
+
+CENÁRIOS NO ESTILO GBA (piloto: Sala 204)
+  A Sala 204 foi redesenhada em perspectiva 3/4 (parede de frente com lambri e rodapé,
+  janela, quadro e móveis com volume), com contorno escuro, sombra de contato embaixo
+  de cada móvel e uma paleta única: Endesga 32 (32 cores, de ENDESGA, publicada no
+  Lospec, livre para usar). A sombra não é preta: cada cor escurece para a vizinha
+  mais escura da mesma família, como nos jogos de GBA.
+  Os geradores ficam em fonte_mapas/: paleta.py (a paleta e as funções de sombra,
+  contorno e conversão) e sala204_gba.py (desenha a sala e atualiza os "objetos" do
+  sala_aula.json). Para refazer:  python3 sala204_gba.py
+  Nenhuma arte de terceiros foi usada (nem Kenney, nem Modern Interiors).
+
+ANIMAÇÕES (motor próprio do jogo)
+  Na cena:
+    !anim lucas cair                cai no chão e fica caído
+    !anim lucas levantar            levanta
+    !anim nicao soco lucas          o Nicão dá um soco e o Lucas leva (vira pra ele sozinho)
+    !anim lucas,nicao comemorar     vários ao mesmo tempo (separe com vírgula, sem espaço)
+    !anim beto dancar &             o "&" no fim não espera acabar (a cena segue)
+    !anim eu cocar_cabeca           "eu" é o jogador
+    !briga lucas nicao 2 nicao      briga de desenho animado: o Lucas corre até o Nicão,
+                                    os dois somem numa nuvem de poeira por 2 segundos e o
+                                    Nicão (o último nome, opcional) sai nocauteado
+    !porta abrir laboratorio        abre a porta que leva ao laboratório ("fechar" fecha;
+                                    sem o lugar, usa a porta mais perto do jogador)
+
+  Animações prontas:
+    cair, tropecar, levantar, desmaiar, nocaute, soco, chute, empurrar, apanhar,
+    cambalear, esquivar, zonzo, medo, assustar, comemorar, pose_heroi, bracos_cruzados,
+    sentar, girar, dancar, rir, pular, apontar, cocar_cabeca, abrir_porta,
+    abrir_porta_cima, espreguicar, bocejar, balancar, bater_pe, assobiar, digitar,
+    levantar_cadeira, pegar, beber, chorar_de_rir, bravo, envergonhado, recuar,
+    olhar_lados, piscar, normal (volta ao jeito de sempre)
+  As que terminam paradas (cair, tropecar, desmaiar, nocaute, pose_heroi, bracos_cruzados,
+  sentar) ficam assim até um "!anim <quem> levantar" ou "normal", ou até ele andar.
+  No fim da cena o jogador sempre levanta sozinho.
+
+  As portas de parede abrem de verdade: o Breno põe a mão na maçaneta, a porta gira e
+  ele entra; do outro lado, a porta fecha atrás dele. Quem entra/sai de cena "pela porta"
+  (!entrar / !sair) também abre e fecha. O jogo acha a porta no desenho do mapa sozinho;
+  se errar, diga onde ela está na porta do mapa: "folha": [x, y, largura, altura]
+  ("folha": false desliga).
+
+  CRIAR OU MUDAR UMA ANIMAÇÃO: capitulos/animacoes.json. Cada animação tem "passos":
+    {"t": 0.2, "rot": -90, "y": -4, "mover": [-6, 0], "ease": "in", "som": "queda",
+     "tremer": [0.2, 3], "particulas": "poeira", "balao": "estrela", "quadro": "caido"}
+    t          segundos que o passo demora
+    x, y       empurra o desenho (x é espelhado quando ele olha pra esquerda)
+    rot        inclina em graus (gira pelo pé; 90 = deitado)
+    sx, sy     estica/achata (sy 0.8 = agachado, sx -1 = virado)
+    mover      anda de verdade [x, y] (pra frente/trás de quem olha)
+    ease       in, out, back (passa e volta), quica, elastico, linear
+    som, tremer [segundos, força], flash "#ffffff", balao, particulas (poeira, estrelas,
+    brilhos, suor, pancada), acerta "apanhar" (o alvo faz essa animação), de_costas true
+    quadro     uma linha da folha acoes.png: "cair" toca a linha toda, "cair:3" só o quadro 3,
+               "caido" fica repetindo; "andar" volta pro desenho normal
+    "manter": true faz a animação terminar parada (ex.: caído).
+  "passos" funciona com qualquer personagem; "arte" é a versão com os quadros desenhados
+  e é usada quando o personagem tem assets/personagens/<id>/acoes.png. A folha tem 14
+  linhas (abrir_porta_cima, abrir_porta_lado, cair, caido, levantar, soco, empurrao,
+  apanhar, correr, comemorar, cocar_cabeca, bracos_cruzados, apontar, assustado), listadas
+  em "folha_acoes" no mesmo arquivo. Quem corre de lado (!correr) usa a linha "correr".
+  A segunda folha, acoes2.png (17 linhas: respirar, piscar, olhar_lados, bocejar, sentar,
+  digitar, levantar_cadeira, pegar_objeto, beber, rir_alto, chorar_de_rir, bravo,
+  envergonhado, andar_de_costas, comemorar_lado, rir_lado, assustado_lado), entra do mesmo
+  jeito: a linha diz "folha": "acoes2".
+  Teste: fale com o Beto no Pátio (cena "teste_animacoes").
+
+  VIDA NOS PERSONAGENS
+    Parados, todos respiram e piscam sozinhos. De vez em quando cada um faz uma "mania"
+    (o Nicão boceja, o Lucas dança do nada...): lista "manias" no animacoes.json,
+    por personagem, e "intervalo": [7, 16] segundos. "manias": false no NPC desliga.
+    O Breno também faz uma mania se ficar uns 9 segundos parado.
+
+VIDA NO CENÁRIO
+  Cada mapa tem uma lista "animados" (capitulos/mapas/<mapa>.json). Tipos:
+    tela      tela de PC: "estilo": codigo (código rolando), brilho, chiado (sem sinal), verde
+    led       luzinha piscando: "cor", "ritmo" (segundos), "ligado" (0 a 1, quanto fica acesa)
+    relogio   ponteiros com a hora de verdade do computador: "r" (raio)
+    bolhas    bolhas subindo (bebedouro)
+    nuvens    nuvens passando na janela: "colunas" (onde redesenha a esquadria), "velocidade"
+    papel     papel do mural balançando com o vento: "ritmo", "cor"
+    brilho    brilhinho em coisa dourada: "periodo", "tam", "cor"
+    tremeluz  lâmpada tremendo: "cor", "forca", "periodo"
+    letreiro  lampadinhas correndo em volta do letreiro: "cor"
+    globo     globo da mesa girando: "r"
+  Todos têm "x", "y", "w", "h" e "base" (a linha do chão que diz quem fica na frente).
+  Nos "objetos", "balanco": 1.6 faz árvore/planta balançar no vento (graus).
+  O fonte_mapas/animados_mapas.py acha sozinho telas, LEDs e dourados nos desenhos e
+  reescreve as listas; rode de novo se redesenhar um mapa:  python3 animados_mapas.py
+
+  Ao apertar E: o balão amarelo nasce com um pulinho e flutua; a pessoa dá um pulinho
+  e o móvel que você usou treme e solta brilho. Menus: a opção escolhida pulsa e as
+  janelas abrem com mola.
+
+  ROSTOS NOS DIÁLOGOS
+    Cada personagem tem assets/personagens/<id>/rosto_gemini.png: 12 quadros de 144x192
+    lado a lado (boca fechada, entreaberta, aberta, "o", sorriso, cabeça inclinada pra
+    esquerda e pra direita, três quartos pra esquerda e pra direita, piscando, rindo,
+    olhando pra cima). Enquanto fala, a boca alterna, a cabeça inclina ou vira pro outro
+    de vez em quando, e ele pisca. Com o gesto "laugh" ele ri, com "think" (ou pensando)
+    olha pra cima, com "point" vira pro outro. Pra trocar um rosto, troque o arquivo.
+
+  JEITO DE FALAR (capitulos/vozes.json)
+    Cada personagem tem velocidade do texto, tom do "blip", quanto o tom varia e o
+    tamanho das pausas na vírgula, ponto e reticências. Ex.: o Nicão fala devagar, grave
+    e com pausa longa; o Lucas fala rápido e agudo. Valores provisórios.
+
+  DESTAQUE NAS FALAS
+    *palavra*      fica amarela e ondulando
+    ~palavra~      fica vermelha e tremendo (grito, susto)
+    Numa fala com "!", palavra TODA EM MAIÚSCULAS treme sozinha, e "!!" sacode a caixa.
+  Opções > "Efeitos tela: Não" desliga tudo isso (fica só a cor no texto).
+    Fala com "!!" (grito): as palavras em MAIÚSCULAS ficam com o dobro do tamanho
+    ("b: EU SOU GOSTOSO!!").
+    vozes.json "tremer": 0 a 1 faz a fala tremer e o rosto balançar (o Lukako usa).
+    Gesto #cismado (Beto): olho apertado no rosto e no bonequinho. No mapa: "!anim beto cismado".
+    Fala com "KIKIUU" toca o grito do Breno (som kikiuu). Ex.: "b: KIKIUU!!"
+    Passinho do Jamal: "!anim eu passinho_jamal". No diálogo, o Breno dança sozinho de vez
+    em quando enquanto os outros falam (mais vezes quando duas falas seguidas não são dele).
+
+MINIJOGOS
+  Na cena:  "!minijogo consertar_pc ganhou_pc 2"   (nome, marca se ganhar, dificuldade 1 a 3)
+  ou        {"minijogo": "reflexo", "guardar": "pegou_cafe", "dificuldade": 2,
+             "titulo": "Segura o café!", "instrucoes": "...", "tentar_de_novo": false}
+  Depois use "!se ganhou_pc -> cena_ganhou | cena_perdeu" pra continuar a história.
+  Se perder, o jogador pode tentar de novo (a não ser com "tentar_de_novo": false).
+
+  consertar_pc  aparece o defeito do PC, escolha a peça certa antes do tempo acabar.
+                Dá pra trocar os defeitos: "casos": [{"sintoma": "Não liga", "peca": "fonte"}]
+                (peças: fonte, ram, ssd, rede, cooler, video, teclado, mouse)
+  memoria       as setas piscam numa ordem; repita. A sequência vai crescendo.
+  reflexo       aparece uma tecla, aperte antes da barra acabar.
+                "frases": ["Desvia do professor!", ...] troca os textos de cima.
+  digitar       aparece uma palavra, digite antes do tempo; letra errada tira 1 segundo.
+                "palavras": ["boleto", "matricula"] troca a lista.
+  esquiva       atravesse o corredor trocando de faixa (cima/baixo), 3 vidas.
+                "coisas": ["CAFÉ", "PAPEL"] e "distancia": 1200 mudam o que vem e o tamanho.
+  Minijogos das histórias (cada um oferecido na conversa solta do personagem):
+  cabos         religue cada cabo de rede na porta da mesma cor (Nicão, culpa do Lukako).
+  impressora    aperte E quando o marcador passar na faixa verde (Fábio desafia).
+  abas          feche as abas suspeitas do PC do Lucas antes do João chegar; não feche a PLANILHA.
+  qw            navinha das antigas: esquerda/direita move, E atira (Lukako).
+  mangueio      segure a seta direita e pare quando o coordenador virar (Beto foge pro banheiro).
+  Cada minijogo tem sua música; dá pra trocar na cena com "musica": "nome".
+  Nome que não existe abre uma tela provisória pra escolher se ganhou ou perdeu.
+  Teste: Capítulos > Extras: Sala de testes, fale com o Matheus na Sala 204.
+
+TAMANHO DAS COISAS NOS MAPAS
+  Medida base: o personagem tem uns 18 x 45 px (1,75 m), então 1 metro = 26 px.
+  Balcão de atendimento: tampo de 10 px + frente de 22 px. Quem atende fica 10 px acima
+  do "y" do balcão e aparece da cintura pra cima. Monitor: 16 x 12; gabinete: 6 x 12.
+  Computador de quem fica atrás de um balcão ou mesa aparece DE COSTAS (tela virada pra pessoa),
+  sempre do lado dela, nunca na frente do rosto. Ajudantes em fonte_mapas/laboratorio.py:
+  monitor_costas, monitor_frente, gabinete, cadeira_escritorio.
+  Depois de redesenhar um mapa: python3 animados_mapas.py (acha as telas de novo).
+
+ALUNOS DE FUNDO E SEU MAURO
+  capitulos/figurantes.json diz quantos alunos aparecem em cada mapa e o que fazem:
+  andar, grupo (em roda), parado, sentado (nas carteiras da Sala 204) e pc (de costas nos PCs
+  do laboratório). Também guarda as falinhas (E perto de um aluno) e as cantadas do Seu Mauro.
+  Eles não bloqueiam ninguém e param durante as cenas. Num capítulo, "figurantes": false desliga.
+  Arte: assets/personagens/aluno1..aluno10 (5 a 8 são alunas) e mauro (com extras.png:
+  varrendo, celular, parado com a vassoura). NPC "comportamento": "varrer" = fica varrendo.
+  Seu Mauro (pátio): cenas mauro_oi, mauro_kawaii, mauro_roca, mauro_cantada e mauro_depois;
+  minijogo "virus" (tirar vírus do celular). Ele não tem retrato de diálogo ainda.
+  Atualização: o Seu Mauro fica no pátio tocando violão e chupando cana ("comportamento": "acao",
+  "acoes": [...], "troca": segundos) e de tempos em tempos sai pra varrer as salas: a "rotina" do NPC
+  lista as paradas (mapa, x, y, comportamento, tempo em segundos de jogo livre); ele sai pela porta
+  e entra no outro mapa andando. Minijogo "violao" (resenha). Sem retrato: a conversa mostra só
+  o nome, o texto e o boneco no palco.
+
+CUTSCENE DE LADO (!lateral)
+  Pra cenas fortes a câmera sai de cima e mostra a sala de lado, na altura das pessoas, com os
+  mesmos bonecos do jogo em dobro de tamanho. Fundos: capitulos/mapas/lado_<nome>.png (480x135,
+  chão em y 110, pé de quem está em pé em y 126); se existir lado_<nome>_frente.png, ele fica na
+  frente dos bonecos (o assento do banco). Prontos: presidencia e patio (fonte_mapas/lado_gba.py).
+  No palco lateral só o x importa; !camera 170 move a câmera; !close e !tela normal funcionam.
+  !rosto quem expressao: normal, fala, rindo, chorando (com lágrimas), dor (com suor), susto,
+  pensando, cismado. Poses novas: passando_mal (agachado, mão no peito), solucar, sentar_banco.
+  Quando a cena acaba, o jogo volta sozinho pro mapa. Exemplo: cena teste_joao_passando_mal.
+  Minijogo "escada": descer a escada com alguém apoiado no ombro do Breno. Aparece uma tecla
+  em cima dos dois (seta ou E = RESPIRA!): aperte antes do círculo acabar e vocês descem um
+  degrau. Tecla errada ou atrasada = tropeço; 3 tropeços = perde.
+  Parâmetros: "quem": "joao", "ajuda": "breno", "degraus": 10.
+
+
+=====================================================================
+VÍDEO NO MEIO DA HISTÓRIA  (!video)
+=====================================================================
+Numa cena, escreva uma linha assim:
+
+    !video teste
+    !video cutscenes/videos/prontos/teste_5s.ogv
+
+O vídeo toca em tela cheia (com faixas pretas se a proporção for outra),
+a música do jogo pausa, e quando o vídeo acaba a cena continua da linha
+seguinte. E ou Esc pulam o vídeo (a dica "E: pular" aparece depois de 1 s).
+Pra um vídeo que não pode ser pulado:  !video abertura nao_pula
+
+Onde o jogo procura o arquivo (nesta ordem):
+  1. o caminho escrito, a partir da pasta onde está o JOGO.exe
+     (ex.: JOGO\cutscenes\videos\prontos\teste_5s.ogv)
+  2. a pasta "videos" ao lado do JOGO.exe
+  3. a pasta projeto/videos/ (vai dentro do .exe quando você exporta)
+Sem ".ogv" no nome, o jogo põe sozinho. Se não achar, aparece
+"(vídeo não encontrado: nome)" por 1,5 s e a cena segue normal.
+
+FORMATO: só .ogv (Theora + Vorbis), é o único que o Godot toca sozinho.
+Pra converter um .mp4 (com o ffmpeg instalado):
+
+    ffmpeg -i meu_video.mp4 -c:v libtheora -q:v 7 -c:a libvorbis -q:a 5 meu_video.ogv
+
+Dica: 480x270 ou 960x540 já fica ótimo (o jogo é 480x270), e o arquivo
+fica pequeno. Exemplo de teste: cena "teste_video" em extras_testes.json.
+
+
+=====================================================================
+ESCREVER AS HISTÓRIAS (arquivo de texto) E TESTAR RÁPIDO
+=====================================================================
+As histórias de verdade ficam em capitulos\cairu.txt (Capítulo 1).
+Abra com o Bloco de Notas. Cada cena começa com uma linha "===":
+
+    === h3_lucas | uma_vez | cinema | requer: viu_h1_chegada
+    lucas: Bora testar! #point
+    eu: Isso não vai dar certo... #shrug
+    > Não deu certo.
+
+Tudo explicado, com exemplo de cada coisa: capitulos\MODELO_HISTORIA.txt
+Cena no .txt com o mesmo nome de uma do .json vale mais que a do .json.
+Pra um capítulo novo "cap2.json", as histórias vão em "cap2.txt".
+
+TESTAR SEM JOGAR TUDO
+  F5   (no jogo) relê os .txt/.json na hora e mostra a lista de erros
+  F6   (no jogo) MODO TESTE: escolha uma cena pra tocar já, ou um mapa
+       pra ir direto (esquerda/direita troca entre cenas e mapas).
+       No modo teste o jogo NÃO grava o save, pra não bagunçar.
+  validar_historia.bat      confere tudo e abre ERROS_HISTORIA.txt
+  testar_cena.bat h3_lucas  abre o jogo já tocando a cena h3_lucas
+  JOGO.exe --mapa patio     abre o jogo já no pátio (modo teste)
+
+O VERIFICADOR AVISA (com o número da linha):
+  - nome de personagem errado (ex.: "lucs:")
+  - gesto que não existe (#pont)
+  - comando que não existe (!andra -> "era !andar?")
+  - comando sem as coisas que ele precisa (!andar lucas sem x e y)
+  - cena, mapa, minijogo, animação, música ou som que não existe
+  - pergunta sem opções, cena vazia, texto fora de cena
+Quando abre o capítulo com erro, aparece um aviso vermelho embaixo.
+
+
+=====================================================================
+CENÁRIOS NO ESTILO GBA (todos os mapas)
+=====================================================================
+Todos os mapas agora seguem o estilo da Sala 204: parede em 3/4 com
+lambri e rodapé, sombras pontilhadas, contorno escuro nos móveis e só as
+32 cores da paleta (fonte_mapas/paleta.py). Posições, colisões, portas e
+tamanhos continuam os mesmos de antes.
+Pra gerar tudo de novo:   cd fonte_mapas   e   python3 gerar_mapas.py
+(cada mapa tem o seu gerador: recepcao_gba.py, patio_gba.py, ...)
+
+
+=====================================================================
+TROCAR TECLAS E JOGAR NO CONTROLE
+=====================================================================
+Opções > Controles: escolha a ação, aperte E e depois a tecla nova
+(Esc cancela). Se a tecla já era de outra ação, as duas trocam.
+"Voltar as teclas de fábrica" desfaz tudo. Fica salvo sozinho.
+
+Controle (Xbox; no PlayStation A = X, B = O, X = quadrado, Y = triângulo):
+  alavanca ou setinhas  andar / escolher
+  A                     falar / confirmar
+  B ou Start            voltar / pausa
+  X ou RB               acelerar cena
+  Y ou Select           diário
+  LB                    histórico de falas
+As dicas na tela ("E: pular", "A: pular") mudam sozinhas pro que você
+está usando. No minijogo de digitar, no controle, cada A é uma letra.
+
+
+=====================================================================
+JOGOS SALVOS (3) E CONTINUAR CADA CAPÍTULO
+=====================================================================
+São 3 jogos salvos (Jogo 1, 2 e 3), cada um com o seu progresso.
+  Novo jogo       escolhe em qual dos 3 começar (avisa se for apagar um)
+  Jogos salvos    escolhe qual usar, ou apaga um
+  Continuar       volta pro último capítulo jogado, de onde parou
+  Capítulos       cada capítulo lembra onde você parou (marcado com >):
+                  "Continuar de onde parou" ou "Começar do zero"
+O jogo salva sozinho ao trocar de mapa e no fim de cada cena (e no
+Esc > Salvar). Os arquivos ficam em %APPDATA%\Godot\app_userdata\JOGO\saves.
+O save antigo (de antes desta versão) vira o Jogo 1 sozinho.
+
+
+=====================================================================
+JOGAR ONLINE (até 6 pessoas, grátis)
+=====================================================================
+Menu > Jogar online. Todo mundo precisa do MESMO zip do jogo.
+Um de vocês é o ANFITRIÃO: o jogo dele vira a sala (não tem servidor pago).
+
+  Anfitrião:  Jogar online > Criar sala > escolhe o capítulo > escolhe o personagem.
+              (o jogo continua do save dele naquele capítulo; só o jogo dele salva)
+  Amigos:     Jogar online > Entrar na sala de um amigo > digita o endereço > Enter
+              > escolhe o personagem (quem já foi pego aparece apagado).
+              "Figurante" = entra como um aluno.
+
+  Mesma casa (mesmo Wi-Fi): o endereço é o IP do anfitrião + :7777
+    (ex.: 192.168.0.10:7777). Se não conectar, o Windows pode perguntar se libera o
+    JOGO.exe no firewall: marque "Redes privadas" e permita.
+
+  Cada um na sua casa: túnel grátis do playit.gg (o anfitrião faz uma vez):
+    1. Abre abrir_tunel_playit.bat (na pasta do jogo). Na 1a vez ele baixa o playit.
+    2. O playit mostra um link: abre, cria a conta grátis e liga este PC.
+    3. No site do playit: Add Tunnel > tipo UDP > porta local 7777.
+    4. O site mostra um endereço tipo abc-123.gl.at.ply.gg:45678: passe pros amigos.
+    5. Abre o jogo e cria a sala. A janela do playit fica aberta enquanto jogam.
+    Nas próximas vezes é só abrir o .bat e criar a sala (o endereço continua o mesmo).
+
+  Como funciona:
+    - Todo mundo anda junto pelos mapas e vê os outros (nome em verde em cima).
+    - Só o anfitrião puxa conversa. Quando ele começa uma cena, todo mundo vai pro
+      lugar dele e vê a mesma cena (nela, o protagonista aparece no lugar de cada um).
+    - Escolhas e minijogos são do anfitrião; os outros esperam e veem o resultado.
+    - Se o anfitrião sair, a sala fecha e todo mundo volta pro menu.

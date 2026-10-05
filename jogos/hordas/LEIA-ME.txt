@@ -1,0 +1,67 @@
+CAIRU x VIRUS  (protótipo do jogo de hordas)
+=============================================
+
+COMO JOGAR
+  Abra CairuVirus.exe. Escolha o herói e sobreviva por 10 minutos. No fim do tempo chega
+  a Tela Azul da Morte; derrote ela pra vencer. Enquanto ela viver, o Enxame Final só piora.
+
+  WASD ou setas ....... andar (as armas atiram sozinhas)
+  Espaço ou Shift ..... dash (corrida rápida, você fica invencível por um instante)
+  Enter ou E .......... confirmar / escolher carta (1, 2, 3, 4 também escolhem)
+  R ................... sortear as cartas de novo (3 vezes por partida)
+  Esc ................. pausa
+  F11 ................. tela cheia
+  Controle de videogame também funciona.
+
+O QUE TEM (o melhor dos três jogos)
+  Vampire Survivors  armas automáticas, XP e cartas ao subir de nível, 4 armas + 5 passivos,
+                     EVOLUÇÕES (arma no nível máximo + passivo certo + abrir um baú).
+  Megabonk           dash, e as TOMADAS no mapa: fique dentro do círculo até carregar e ganhe
+                     uma carta grátis (a setinha amarela na borda da tela aponta a mais perto).
+  Risk of Rain 2     o DIRETOR: a dificuldade é um número que sobe com o tempo; ele ganha
+                     "créditos" e compra vírus (fraco = barato, forte = caro). Os vírus ficam
+                     com mais vida e dano conforme o nível sobe.
+
+  Heróis: Breno (Cabo de Rede), Nicão (Ventoinha), Lucas (Pendrive).
+  Armas: Pendrive, Cabo de Rede, Ventoinha, Café Derramado, Sinal de Wi-Fi.
+  Evoluções:
+    Pendrive    + Ctrl+C Ctrl+V      = SSD de 500GB
+    Cabo de Rede + Energético        = Fibra Óptica
+    Ventoinha   + Overclock          = Water Cooler RGB
+    Café        + Monitor Ultrawide  = Garrafa Térmica
+    Wi-Fi       + Antena             = Roteador 5G
+  Vírus: Bug, Pop-up, Spam (atira e-mails), Trojan, Minerador de Cripto.
+  Chefes: Trojan Gigante (3:00 e 8:00, dá investida), Ransomware (6:00, cadeados em círculo),
+          Tela Azul da Morte (10:00, chefe final). Chefes soltam baú.
+  Vírus dourados são elites: muita vida, às vezes soltam baú.
+
+EDITAR SEM PROGRAMAR
+  A pasta "dados" ao lado do .exe manda no jogo. Abra no Bloco de Notas, salve e jogue de novo:
+    herois.json     heróis, arma inicial e bônus
+    armas.json      dano, recarga, quantidade, o que cada nível dá
+    passivos.json   itens passivos
+    evolucoes.json  receitas de evolução
+    inimigos.json   vida, velocidade, dano, quando começam a aparecer, chefes
+    fase.json       duração, curva de dificuldade, eventos (chefe/anel/enxame), tomadas
+  Se o jogo parar de funcionar depois de mexer, provavelmente faltou uma vírgula ou aspas.
+  Apague a pasta "dados" pra voltar ao original.
+
+AINDA NÃO TEM (próximos passos sugeridos)
+  Arte final dos vírus (a atual é provisória, desenhada por código), mais heróis (os sprites
+  do João, Matheus, Beto, Lukako e Fábio já estão no projeto), baús e ouro no mapa, loja de
+  melhorias permanentes entre partidas, jogo online com amigos (a engine já tem sala até 6).
+
+PARA QUEM MEXE NO CÓDIGO
+  Projeto Godot 4.4: hordas/projeto. Tudo em scripts/hordas/:
+    main.gd            telas (título, herói, partida, resultado) e teclas
+    arena.gd           a partida: atributos, XP, cartas, baú, fim
+    jogador.gd         herói, dash, vida (usa as folhas andando_8.png da Cairu)
+    inimigos.gd        todos os vírus sem um nó por inimigo (grade espacial), tiros deles
+    armas.gd           5 tipos de arma: projetil, chicote, orbita, poca, aura
+    diretor_hordas.gd  coeficiente, créditos, eventos, enxame final
+    coleta.gd          XP, marmita, Wi-Fi, baú;  chao.gd  chão infinito e tomadas
+    hud.gd / cartas.gd / efeitos.gd / dados.gd / som.gd
+  Arte provisória: hordas/fonte_arte/gerar_arte.py (gera assets/gerado/).
+  Teste automático (um robô joga sozinho):
+    godot --headless -- --bot --heroi=nicao --sair=700 --rapido=4
+    --estresse=500 cria 500 vírus de uma vez; --pular=300 começa no minuto 5.
