@@ -1,12 +1,17 @@
 extends Node
 ## Telas do jogo: título -> escolher herói -> partida -> resultado.
+## Online: título -> criar sala / entrar (endereço) -> sala (cada um escolhe o herói) -> partida.
 ## Opções de linha de comando (pra teste): --bot  --heroi=lucas  --pular=300 (começa no segundo 300)
 ##   --sair=60 (fecha depois de 60 s de partida)  --fotos=pasta (salva prints a cada 20 s)
+##   --online=host [--jogadores=2] (abre a sala e começa sozinho quando tiver 2)
+##   --online=join --endereco=127.0.0.1:7777  (entra na sala)
 
 const Arena := preload("res://scripts/hordas/arena.gd")
 const W := 640.0
 const H := 360.0
 const SAVE := "user://recordes.json"
+const SAVE_ONLINE := "user://online.json"
+const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Sair"]
 
 const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
@@ -28,6 +33,10 @@ var _recordes := {}
 var _t := 0.0
 var _args := {}
 var _novo_recorde := false
+var _endereco := ""          # último endereço digitado (fica salvo)
+var _msg := ""               # aviso nas telas do online (erro, conectando...)
+var _comecou_teste := false
+var _caiu_teste := false
 
 
 func _ready() -> void:
@@ -40,10 +49,17 @@ func _ready() -> void:
 	_tela.draw.connect(_desenhar)
 	_camada.add_child(_tela)
 	_recordes = _ler_recordes()
+	_endereco = _ler_endereco()
+	Rede.mudou.connect(_rede_mudou)
+	Rede.conectou.connect(_rede_conectou)
+	Rede.comecou.connect(func(op): _comecar(Rede.heroi_de(Rede.eu()), op, true))
+	Rede.caiu.connect(_rede_caiu)
 	if _args.has("rapido"):
 		Engine.time_scale = float(_args.rapido)
 	if _args.has("print_tela"):
 		_print_tela(str(_args.print_tela))
+	elif _args.has("online"):
+		_online_teste()
 	elif _args.has("bot") or _args.has("heroi"):
 		_comecar(str(_args.get("heroi", "breno")))
 	else:
@@ -101,16 +117,33 @@ func _process(dt: float) -> void:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if cheia else DisplayServer.WINDOW_MODE_FULLSCREEN)
 	match _estado:
 		"titulo":
-			if Input.is_action_just_pressed("cima") or Input.is_action_just_pressed("baixo"):
-				_sel = 1 - _sel
+			if Input.is_action_just_pressed("cima"):
+				_sel = (_sel - 1 + OPCOES.size()) % OPCOES.size()
+				Som.tocar("cursor")
+			elif Input.is_action_just_pressed("baixo"):
+				_sel = (_sel + 1) % OPCOES.size()
 				Som.tocar("cursor")
 			elif Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("dash"):
 				Som.tocar("confirmar")
-				if _sel == 0:
-					_estado = "herois"
-					_sel = 0
-				else:
-					get_tree().quit()
+				_msg = ""
+				match _sel:
+					0:
+						_estado = "herois"
+						_sel = 0
+					1:
+						_criar_sala()
+					2:
+						_estado = "endereco"
+					3:
+						get_tree().quit()
+		"endereco":
+			pass   # o teclado é lido em _input (campo de texto)
+		"conectando":
+			if Input.is_action_just_pressed("voltar"):
+				Rede.sair()
+				_estado = "endereco"
+		"sala":
+			_sala()
 		"herois":
 			var n := _herois().size()
 			if Input.is_action_just_pressed("esquerda"):
@@ -130,37 +163,178 @@ func _process(dt: float) -> void:
 		"fim":
 			if _t > 1.0 and (Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("voltar")):
 				Som.tocar("confirmar")
+				Rede.sair()
 				_estado = "titulo"
 				_sel = 0
 				Som.musica("menu")
 
 
-func _comecar(heroi: String) -> void:
+## Online: as opções de teste (fase, pular, build) vêm do anfitrião, iguais pra todos.
+func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	Dados.recarregar()
+	var o: Dictionary = opcoes if online else _args
 	_arena = Arena.new()
 	_arena.heroi_id = heroi
 	_arena.bot = _args.has("bot")
+	_arena.eh_online = online
 	_arena.terminou.connect(_terminou)
 	add_child(_arena)
-	if _args.has("estresse"):
-		for i in int(_args.estresse):
+	if o.has("estresse") and not online:
+		for i in int(o.estresse):
 			_arena.inimigos.criar(["bug", "popup", "spam", "trojan"].pick_random(), Vector2.from_angle(randf() * TAU) * randf_range(150, 420))
-	if _args.has("fase"):
-		for _i in int(_args.fase) - 1:
+	if o.has("fase"):
+		for _i in int(o.fase) - 1:
 			_arena.diretor.proxima_fase()
 		_arena.chao.nova_fase()
-	if _args.has("pular"):
-		_arena.diretor.tempo = float(_args.pular)
-		_arena.diretor.t_fase = float(_args.pular)
-	if _args.has("build"):
-		_arena.dar_build_teste(int(_args.build))
-	if _args.has("duelo"):
-		_arena.iniciar_duelo_teste(int(_args.duelo))
+	if o.has("pular"):
+		_arena.diretor.tempo = float(o.pular)
+		_arena.diretor.t_fase = float(o.pular)
+	if o.has("build"):
+		_arena.dar_build_teste(int(o.build))
+	if o.has("duelo") and not online:
+		_arena.iniciar_duelo_teste(int(o.duelo))
 	_estado = "partida"
 	_t = 0.0
 
 
+# ---------- online: sala ----------
+
+func _ler_endereco() -> String:
+	if not FileAccess.file_exists(SAVE_ONLINE):
+		return ""
+	var d = JSON.parse_string(FileAccess.get_file_as_string(SAVE_ONLINE))
+	return str(d.get("endereco", "")) if d is Dictionary else ""
+
+
+func _salvar_endereco() -> void:
+	var f := FileAccess.open(SAVE_ONLINE, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"endereco": _endereco}))
+
+
+func _criar_sala() -> void:
+	var err := Rede.criar_sala(Rede.heroi_livre(str(_args.get("heroi", ""))), int(_args.get("porta", Rede.PORTA)))
+	if err != "":
+		_msg = err
+		return
+	_estado = "sala"
+
+
+func _entrar() -> void:
+	var err := Rede.entrar(_endereco)
+	if err != "":
+		_msg = err
+		return
+	_salvar_endereco()
+	_msg = "Conectando em %s..." % _endereco
+	_estado = "conectando"
+
+
+## Chegou a lista da sala: o cliente pede o primeiro herói livre.
+func _rede_mudou() -> void:
+	if _estado == "conectando" and Rede.cliente() and not Rede.jogadores.is_empty() and not Rede.jogadores.has(Rede.eu()):
+		Rede.escolher(Rede.heroi_livre(str(_args.get("heroi", ""))))
+
+
+func _rede_conectou(ok: bool, msg: String) -> void:
+	if ok:
+		_estado = "sala"
+		_msg = ""
+	elif _estado == "sala":
+		_msg = msg   # trocou pra um herói ocupado: continua na sala
+	else:
+		Rede.sair()
+		_msg = msg
+		_estado = "endereco"
+		if _args.has("online"):
+			print("ONLINE recusado: ", msg)
+			get_tree().quit(1)
+
+
+func _rede_caiu(msg: String) -> void:
+	if _arena and _arena.acabou:
+		return   # a partida já acabou: deixa o resultado aparecer (a sala fechar agora é normal)
+	if _arena:
+		_arena.queue_free()
+		_arena = null
+	get_tree().paused = false
+	_estado = "titulo"
+	_sel = 0
+	_msg = msg
+	Som.musica("menu")
+	if _args.has("sair"):
+		print("ONLINE caiu: ", msg)
+		get_tree().quit()
+
+
+func _sala() -> void:
+	if not Rede.online():
+		_estado = "titulo"
+		return
+	if Input.is_action_just_pressed("esquerda") or Input.is_action_just_pressed("direita"):
+		var passo := -1 if Input.is_action_just_pressed("esquerda") else 1
+		var tomados := Rede.ocupados(Rede.eu())
+		var i := Rede.ELENCO.find(Rede.heroi_de(Rede.eu()))
+		for _k in Rede.ELENCO.size():
+			i = (i + passo + Rede.ELENCO.size()) % Rede.ELENCO.size()
+			if not Rede.ELENCO[i] in tomados:
+				Rede.escolher(Rede.ELENCO[i])
+				Som.tocar("cursor")
+				break
+	elif Input.is_action_just_pressed("confirmar") and Rede.anfitriao():
+		Som.tocar("confirmar")
+		Rede.comecar()
+	elif Input.is_action_just_pressed("voltar"):
+		Rede.sair()
+		_estado = "titulo"
+		_sel = 0
+	# teste: o anfitrião começa sozinho quando a sala enche
+	if _args.has("online") and Rede.anfitriao() and not _comecou_teste \
+			and Rede.jogadores.size() >= int(_args.get("jogadores", 2)):
+		_comecou_teste = true
+		var op := {}
+		for k in ["fase", "pular", "build"]:
+			if _args.has(k):
+				op[k] = _args[k]
+		Rede.comecar(op)
+
+
+func _online_teste() -> void:
+	if str(_args.online) == "host":
+		_criar_sala()
+	else:
+		_endereco = str(_args.get("endereco", "127.0.0.1:%d" % Rede.PORTA))
+		_entrar()
+	if _msg != "" and _estado != "conectando":
+		print("ONLINE erro: ", _msg)
+		get_tree().quit(1)
+
+
+## Campo de texto do endereço: digita, apaga, Ctrl+V cola, Enter conecta, Esc volta.
+func _input(e: InputEvent) -> void:
+	if _estado != "endereco" or not e is InputEventKey or not e.pressed:
+		return
+	var k: InputEventKey = e
+	get_viewport().set_input_as_handled()
+	if k.keycode == KEY_V and k.ctrl_pressed:
+		_endereco = (_endereco + DisplayServer.clipboard_get().strip_edges()).left(80)
+	elif k.keycode == KEY_BACKSPACE:
+		_endereco = _endereco.left(-1)
+	elif k.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+		Som.tocar("confirmar")
+		_entrar()
+	elif k.keycode == KEY_ESCAPE:
+		_estado = "titulo"
+		_msg = ""
+	elif k.unicode > 32 and k.unicode < 127 and _endereco.length() < 80:
+		var c := char(k.unicode)
+		if c.is_valid_identifier() or c.is_valid_int() or c in [".", ":", "-", "_"]:
+			_endereco += c
+
+
 func _terminou(res: Dictionary) -> void:
+	if _arena == null:
+		return
 	_resumo = res
 	_novo_recorde = false
 	var h: String = res.heroi
@@ -207,6 +381,9 @@ func _teste() -> void:
 		for v in _arena.inimigos.lista:
 			if v.d.get("final", false) or (v.chefe and v.tipo == _arena.diretor.chefe_fase):
 				v.hp = minf(v.hp, 1.0)
+	if _args.has("cair") and _t >= float(_args.cair) and _arena.eh_online and not _arena.caido and not _caiu_teste:
+		_caiu_teste = true   # teste do reviver: cai uma vez no segundo N (--cair=N)
+		_arena.morrer("teste")
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
 		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s" % [
@@ -214,6 +391,10 @@ func _teste() -> void:
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,
 			_arena.armas.lista.map(func(a): return "%s:%d" % [a.id, a.nivel]), _arena.passivos,
 			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-"])
+		if _arena.online:
+			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
+				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
+				_arena.duelo.estado if _arena.duelo_ativo else "-"])
 		if _t >= float(_args.sair):
 			get_tree().quit()
 	if _args.has("fotos") and _t >= _prox_foto:
@@ -249,11 +430,46 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 100), "K.I.K.I.U", 32, Color(0.4, 0.65, 1))
 			_txt(Vector2(0, 142), "Knights In Kaos, Infinite Upgrades", 10, Color(0.5, 1, 0.5))
 			_txt(Vector2(0, 165), "sobreviva à horda e vença o duelo final", 8, Color(0.75, 0.75, 0.85))
-			var ops := ["Jogar", "Sair"]
-			for i in 2:
+			for i in OPCOES.size():
 				var sel := i == _sel
-				_txt(Vector2(0, 215 + i * 20), ("> " + ops[i] + " <") if sel else ops[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+				_txt(Vector2(0, 205 + i * 20), ("> " + OPCOES[i] + " <") if sel else OPCOES[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+			if _msg != "":
+				_txt(Vector2(0, 295), _msg, 8, Color(1, 0.6, 0.5))
 			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
+		"endereco", "conectando":
+			_fundo()
+			_txt(Vector2(0, 70), "Entrar em sala", 16, Color.WHITE)
+			_txt(Vector2(0, 110), "Endereço que o anfitrião mandou (ex.: nome.gl.at.ply.gg:12345)", 8, Color(0.75, 0.78, 0.85))
+			_tela.draw_rect(Rect2(120, 130, 400, 28), Color(0.1, 0.11, 0.18))
+			_tela.draw_rect(Rect2(120, 130, 400, 28), Color(1, 0.85, 0.3) if _estado == "endereco" else Color(0.3, 0.35, 0.5), false, 2.0)
+			var cursor := "_" if _estado == "endereco" and int(_t * 2) % 2 == 0 else ""
+			_txt(Vector2(130, 149), _endereco + cursor, 8, Color.WHITE, 380, HORIZONTAL_ALIGNMENT_LEFT)
+			if _msg != "":
+				_txt(Vector2(0, 190), _msg, 8, Color(1, 0.6, 0.5) if _estado == "endereco" else Color(0.6, 0.9, 1))
+			_txt(Vector2(0, 330), "Ctrl+V: colar   Enter: conectar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
+		"sala":
+			_fundo()
+			_txt(Vector2(0, 40), "Sala online", 16, Color.WHITE)
+			if Rede.anfitriao():
+				_txt(Vector2(0, 62), "Você é o anfitrião (porta %d). Abra o abrir_tunel_playit.bat e mande o endereço pro pessoal." % Rede.PORTA, 8, Color(0.6, 0.9, 1))
+			else:
+				_txt(Vector2(0, 62), "Esperando o anfitrião começar...", 8, Color(0.6, 0.9, 1))
+			var y0 := 90.0
+			for p in Rede.jogadores:
+				var h: Dictionary = Dados.json("herois").get(Rede.heroi_de(p), {})
+				var eu: bool = p == Rede.eu()
+				_tela.draw_rect(Rect2(170, y0, 300, 34), Color(0.1, 0.11, 0.18))
+				_tela.draw_rect(Rect2(170, y0, 300, 34), Color(1, 0.85, 0.3) if eu else Color(0.3, 0.35, 0.5), false, 1.0)
+				var rosto := Dados.tex_personagem(str(h.get("sprite", Rede.heroi_de(p))), "rosto")
+				if rosto:
+					_tela.draw_texture_rect_region(rosto, Rect2(174, y0 + 3, 28, 28), Rect2(0, 0, 52, 52))
+				var quem: String = ("Você" if eu else "Jogador") + (" (anfitrião)" if p == 1 else "")
+				_txt(Vector2(210, y0 + 15), str(h.get("nome", "?")), 8, Color.WHITE, 250, HORIZONTAL_ALIGNMENT_LEFT)
+				_txt(Vector2(210, y0 + 28), quem, 8, Color(0.6, 0.65, 0.75), 250, HORIZONTAL_ALIGNMENT_LEFT)
+				y0 += 40
+			if _msg != "":
+				_txt(Vector2(0, 314), _msg, 8, Color(1, 0.6, 0.5))
+			_txt(Vector2(0, 330), "Setas: trocar herói   " + ("Enter: começar   " if Rede.anfitriao() else "") + "Esc: sair da sala", 8, Color(0.6, 0.6, 0.7))
 		"herois":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)

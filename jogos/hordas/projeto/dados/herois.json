@@ -1,5 +1,5 @@
 {
- "_ajuda": "Heróis jogáveis. 'lista' = os que aparecem na escolha; os outros só aparecem como rivais no duelo (veja pvp.json). sprite = pasta em assets/personagens. arma = id em armas.json. bonus = atributos somados no começo.",
+ "_ajuda": "Heróis jogáveis. 'lista' = os que aparecem na escolha; os outros só aparecem como rivais no duelo (veja pvp.json). sprite = pasta em assets/personagens. arma = id em armas.json. bonus = atributos somados no começo. reviver = rapidez pra levantar um amigo caído no online (1 = normal, 2 = o dobro).",
  "lista": [
   "breno",
   "nicao",
@@ -8,6 +8,7 @@
  "breno": {
   "nome": "Breno",
   "sprite": "breno",
+  "reviver": 1.0,
   "arma": "cabo_rede",
   "descricao": "Chicoteia vírus com o cabo de rede. Anda um pouco mais rápido.",
   "bonus": {
@@ -17,6 +18,7 @@
  "nicao": {
   "nome": "Nicão",
   "sprite": "nicao",
+  "reviver": 2.0,
   "arma": "ventoinha",
   "descricao": "Grandão e calmo. Mais vida e área, mas anda devagar.",
   "bonus": {
@@ -28,6 +30,7 @@
  "lucas": {
   "nome": "Lucas",
   "sprite": "lucas",
+  "reviver": 1.0,
   "arma": "pendrive",
   "descricao": "Caótico. Joga pendrives e tem mais sorte nas cartas.",
   "bonus": {
@@ -39,6 +42,7 @@
  "joao": {
   "nome": "João",
   "sprite": "joao",
+  "reviver": 1.0,
   "arma": "cafe",
   "descricao": "Derrama café pra todo lado.",
   "bonus": {
@@ -49,6 +53,7 @@
  "matheus": {
   "nome": "Matheus",
   "sprite": "matheus",
+  "reviver": 1.0,
   "arma": "wifi",
   "descricao": "Sinal forte em volta dele.",
   "bonus": {
@@ -58,6 +63,7 @@
  "beto": {
   "nome": "Beto",
   "sprite": "beto",
+  "reviver": 1.0,
   "arma": "cabo_rede",
   "descricao": "Cabo na mão e paciência zero.",
   "bonus": {
@@ -67,6 +73,7 @@
  "lukako": {
   "nome": "Lukako",
   "sprite": "lukako",
+  "reviver": 1.0,
   "arma": "pendrive",
   "descricao": "Pendrive em rajada.",
   "bonus": {
@@ -77,6 +84,7 @@
  "fabio": {
   "nome": "Fábio",
   "sprite": "fabio",
+  "reviver": 1.0,
   "arma": "ventoinha",
   "descricao": "Ventoinha na velocidade máxima.",
   "bonus": {

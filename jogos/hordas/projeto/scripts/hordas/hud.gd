@@ -48,7 +48,7 @@ func pausar() -> void:
 	_pausado = true
 	_op_pausa = 0
 	_quadro_pausa = Engine.get_process_frames()
-	get_tree().paused = true
+	get_tree().paused = not arena.eh_online   # no online o jogo dos outros não para
 	Som.tocar("abrir")
 	_tela.queue_redraw()
 
@@ -68,7 +68,7 @@ func _process(_dt: float) -> void:
 	elif Input.is_action_just_pressed("confirmar") and _op_pausa == 1:
 		_pausado = false
 		get_tree().paused = false
-		arena.morrer("desistiu")
+		arena.desistir()
 
 
 func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, alinhar := HORIZONTAL_ALIGNMENT_LEFT, largura := -1.0) -> void:

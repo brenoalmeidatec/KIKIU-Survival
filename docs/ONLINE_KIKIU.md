@@ -44,3 +44,18 @@ Reaproveitar `duelo.gd`: no lugar dos robôs (`rival.gd`), cada outra pessoa vir
 - CPU do anfitrião com 6 jogadores e 500 vírus: hoje o laço leva 3 a 5 ms com 1 jogador, precisa medir.
 - Tráfego do anfitrião: ~60 KB/s por cliente com a foto de vírus; limitar a ~120 vírus por cliente se a internet de casa não aguentar.
 - As armas dos outros jogadores não aparecem na tela de quem assiste (só o dano nos vírus). Ver depois se vale mandar eventos leves de tiro.
+
+## 7. Estado (2026-10-05, Claude do Alisson)
+Feito, seguindo as seções 1 a 4 (código em `scripts/hordas/rede.gd`, `online.gd` e `remoto.gd`, mais ganchos em arena, inimigos, diretor, duelo, jogador, cartas, hud e main):
+- Sala, menu (Jogar sozinho / Criar sala / Entrar em sala), campo de endereço com Ctrl+V que lembra o último, flags `--online=host|join`.
+- Horda junta: só o anfitrião roda diretor e IA, foto a 15 Hz só dos vírus perto de cada um, acertos em lote, mortes avisadas e recompensa pessoal, dano de vírus em remoto pelo anfitrião (intervalo mínimo de 0,45 s).
+- Fases: descanso local, `pronto`, `proxima_fase` quando todos terminam (ou 60 s).
+- Reviver: segurar Enter/E perto do corpo, `reviver` em `herois.json` (Nicão 2.0), volta no fim da fase, todos caídos = fim.
+- Duelo entre pessoas: forças → `luta`, golpe de quem bate e decisão de quem apanha, anel local, anfitrião dá lugares e ranking.
+
+Decisões que não estavam no desenho:
+- No online, cartas e Esc **não pausam** (os outros continuam). Quem está escolhendo carta fica invencível e parado.
+- A lentidão que as armas causam nos vírus (aura) só vale no computador do anfitrião.
+- Se a sala tiver só o anfitrião, o duelo é contra robôs, como no solo.
+
+Testado com 2 instâncias na mesma máquina: fase 9 → 10 → Tela Azul → duelo, reviver, todos caídos e anfitrião saindo no meio. **Falta**: teste real pelo túnel do playit em 2 casas, e com mais de 2 pessoas.
