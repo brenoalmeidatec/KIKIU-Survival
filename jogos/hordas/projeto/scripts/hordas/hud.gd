@@ -4,6 +4,8 @@ extends CanvasLayer
 
 const W := 640.0
 const H := 360.0
+const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
+const OPS_PAUSA := ["Continuar", "Opções", "Desistir da partida"]
 
 var arena: Node
 var _tela := Control.new()
@@ -13,6 +15,7 @@ var _pausado := false
 var _op_pausa := 0
 var _t := 0.0
 var _quadro_pausa := -1
+var _opcoes: Node = null     # tela de Opções aberta pela pausa
 
 
 func _ready() -> void:
@@ -53,19 +56,39 @@ func pausar() -> void:
 	_tela.queue_redraw()
 
 
-func _process(_dt: float) -> void:
-	if not _pausado or Engine.get_process_frames() == _quadro_pausa:
+## Opção "Pausar ao sair da janela": trocou de janela (alt-tab) no meio da partida, pausa sozinho.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_APPLICATION_FOCUS_OUT or not Config.v("pausar_fora") or arena == null:
 		return
-	if Input.is_action_just_pressed("cima") or Input.is_action_just_pressed("baixo"):
-		_op_pausa = 1 - _op_pausa
+	if not arena.bot and not arena.eh_online and not _pausado and not arena.cartas.aberto() and arena.jogador and arena.jogador.hp > 0:
+		pausar()
+
+
+func _process(_dt: float) -> void:
+	if not _pausado or _opcoes or Engine.get_process_frames() == _quadro_pausa:
+		return
+	var n := OPS_PAUSA.size()
+	if Input.is_action_just_pressed("cima"):
+		_op_pausa = (_op_pausa - 1 + n) % n
 		Som.tocar("cursor")
 		_tela.queue_redraw()
-	elif Input.is_action_just_pressed("voltar") or (Input.is_action_just_pressed("confirmar") and _op_pausa == 0):
+	elif Input.is_action_just_pressed("baixo"):
+		_op_pausa = (_op_pausa + 1) % n
+		Som.tocar("cursor")
+		_tela.queue_redraw()
+	elif Input.is_action_just_pressed("voltar") or (Input.is_action_just_pressed("confirmar") and OPS_PAUSA[_op_pausa] == "Continuar"):
 		_pausado = false
 		get_tree().paused = false
 		Som.tocar("fechar")
 		_tela.queue_redraw()
-	elif Input.is_action_just_pressed("confirmar") and _op_pausa == 1:
+	elif Input.is_action_just_pressed("confirmar") and OPS_PAUSA[_op_pausa] == "Opções":
+		Som.tocar("confirmar")
+		_opcoes = TelaOpcoes.new()
+		add_child(_opcoes)
+		_opcoes.fechou.connect(func():
+			_opcoes = null
+			_quadro_pausa = Engine.get_process_frames())   # o Esc que fechou as Opções não fecha a pausa junto
+	elif Input.is_action_just_pressed("confirmar") and OPS_PAUSA[_op_pausa] == "Desistir da partida":
 		_pausado = false
 		get_tree().paused = false
 		arena.desistir()
@@ -101,6 +124,7 @@ func _desenhar() -> void:
 		else:
 			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(W - 120, 24), "Abates %d" % arena.abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, 112)
+		_energia_forma()
 	_icones_build()
 	if not arena.duelo_ativo:
 		# vida do chefe
@@ -132,14 +156,42 @@ func _desenhar() -> void:
 		var a := clampf(_anuncio.t, 0, 1)
 		var esc := 16
 		_txt(Vector2(0, 110), _anuncio.txt, esc, Color(_anuncio.cor, a), HORIZONTAL_ALIGNMENT_CENTER, W)
+	if Config.v("mostrar_fps"):
+		_txt(Vector2(4, H - 4), "%d FPS" % Engine.get_frames_per_second(), 8, Color(0.6, 1, 0.6))
 	if _pausado:
 		_tela.draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, 0.6))
 		_txt(Vector2(0, 130), "PAUSADO", 16, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, W)
-		var ops := ["Continuar", "Desistir da partida"]
-		for i in 2:
+		for i in OPS_PAUSA.size():
 			var sel := i == _op_pausa
-			_txt(Vector2(0, 170 + i * 18), ("> " if sel else "") + ops[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
-		_txt(Vector2(0, 240), "WASD/setas: andar   Espaço/Shift: dash   Esc: pausa", 8, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+			_txt(Vector2(0, 170 + i * 18), ("> " if sel else "") + OPS_PAUSA[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+		_txt(Vector2(0, 250), "WASD/setas: andar   Espaço/Shift: dash   Esc: pausa", 8, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+
+
+## Energia da transformação (dragão do Hazaki), embaixo do "Abates": enchendo, pronta (pisca "Q") ou o tempo que
+## resta transformado. Só aparece depois de desbloqueada.
+func _energia_forma() -> void:
+	var h = arena.habilidades
+	if h == null or not h.tem() or not h.desbloqueada:
+		return
+	var cor := Color(0.25, 0.45, 1.0)
+	var x := W - 112.0
+	var y := 31.0
+	var ic := Dados.icone(str(h.d().get("icone", "")))
+	if ic:
+		_tela.draw_texture_rect(ic, Rect2(x - 20, y - 3, 16, 16), false)
+	var frac: float = h.energia / h.energia_max()
+	_tela.draw_rect(Rect2(x, y, 104, 7), Color(0.05, 0.05, 0.1, 0.85))
+	_tela.draw_rect(Rect2(x + 1, y + 1, 102 * clampf(frac, 0, 1), 5), cor)
+	_tela.draw_rect(Rect2(x + 1, y + 1, 102 * clampf(frac, 0, 1), 1), Color(0.55, 0.85, 1.0))
+	var txt := "ENERGIA %d%%" % roundi(frac * 100.0)
+	var cor_t := Color(0.6, 0.7, 0.9)
+	if h.ativa:
+		txt = "DRAGÃO  %ds" % ceili(h.restante())
+		cor_t = Color(0.55, 0.85, 1.0)
+	elif h.pronta():
+		txt = "Q: DRAGÃO!"
+		cor_t = Color(1, 0.9, 0.4) if int(_t * 4) % 2 == 0 else Color(0.55, 0.85, 1.0)
+	_txt(Vector2(x, y + 17), txt, 8, cor_t, HORIZONTAL_ALIGNMENT_RIGHT, 104)
 
 
 func _icones_build() -> void:
@@ -151,6 +203,11 @@ func _icones_build() -> void:
 	x = 6.0
 	for id in arena.passivos:
 		_icone(Vector2(x, 33), str(Dados.item(id).get("icone", id)), arena.passivos[id], false)
+		x += 20
+	x = 6.0
+	for slot in arena.equipamentos:   # equipamentos vestidos (sem número de nível)
+		var eid: String = arena.equipamentos[slot]
+		_icone(Vector2(x, 53), str(Dados.item(eid).get("icone", eid)), 0, false)
 		x += 20
 
 
@@ -207,4 +264,4 @@ func _icone(p: Vector2, icone: String, nv: int, evo: bool) -> void:
 	var t := Dados.icone(icone)
 	if t:
 		_tela.draw_texture(t, p)
-	_txt(p + Vector2(10, 19), str(nv) if not evo else "", 8, Color(1, 1, 0.6))
+	_txt(p + Vector2(10, 19), str(nv) if not evo and nv > 0 else "", 8, Color(1, 1, 0.6))

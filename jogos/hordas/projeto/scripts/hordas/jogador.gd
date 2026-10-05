@@ -27,15 +27,51 @@ var _bot_ang := 0.0
 var kb := Vector2.ZERO
 var _ia := {}
 var _pref := 120.0
+var camadas := {}                # nome -> Sprite2D (personagem em camadas; veja definir_camadas)
+var _sprite := ""
+var forma: Node2D = null         # corpo da forma transformada (dragão, habilidades.gd); null = humano
+var humano := 1.0                # 0..1: quanto do corpo humano aparece (some na transformação, volta no fim)
 
 
 func configurar(sprite: String) -> void:
+	_sprite = sprite
 	spr.texture = Dados.tex_personagem(sprite, "andando_8")
 	spr.hframes = 9
 	spr.vframes = 4
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
 	add_child(spr)
+
+
+## Personagem em camadas: desenha por cima do corpo as camadas pedidas (equipamentos e armas na mão),
+## na ordem da lista. Cada camada é filha do sprite do corpo: herda rotação, piscar e cor; só o quadro
+## da animação é copiado (em _animar). Arquivos em assets/personagens/<sprite>/camadas/.
+func definir_camadas(nomes: Array) -> void:
+	# em camadas, o corpo é o corpo.png (sem cabelo); o andando_8.png completo fica pra quem não usa camadas
+	var corpo := Dados.tex_personagem(_sprite, "corpo")
+	if corpo and spr.texture != corpo:
+		spr.texture = corpo
+	for n in camadas.keys():
+		if not n in nomes:
+			camadas[n].queue_free()
+			camadas.erase(n)
+	for n in nomes:
+		if not camadas.has(n):
+			var tex := Dados.tex_personagem(_sprite, "camadas/" + str(n))
+			if tex == null:
+				continue
+			var c := Sprite2D.new()
+			c.texture = tex
+			c.hframes = spr.hframes
+			c.vframes = spr.vframes
+			c.centered = false
+			c.offset = spr.offset
+			c.frame = spr.frame
+			spr.add_child(c)
+			camadas[n] = c
+	for i in nomes.size():
+		if camadas.has(nomes[i]):
+			spr.move_child(camadas[nomes[i]], -1)   # a ordem da lista é a ordem de desenho
 
 
 func centro() -> Vector2:
@@ -69,7 +105,7 @@ func atualizar(dt: float) -> void:
 		position += entrada * VEL_BASE * arena.stat("velocidade") * dt
 		if _quer_dash() and dash_recarga <= 0:
 			_dir_dash = entrada if entrada != Vector2.ZERO else Vector2(lado, 0)
-			dash_t = DASH_TEMPO
+			dash_t = DASH_TEMPO + (0.12 if forma else 0.0)   # transformado, o dash vira investida: vai mais longe
 			dash_recarga = DASH_RECARGA
 			invencivel = maxf(invencivel, DASH_TEMPO + 0.1)
 			Som.tocar("whoosh", 0.1, 1.2)
@@ -175,16 +211,24 @@ func _animar(entrada: Vector2) -> void:
 		spr.frame = LINHA[_dir] * 9 + 1 + int(_t * 12.0) % 8
 	else:
 		spr.frame = LINHA[_dir] * 9
+	for c in camadas.values():
+		c.frame = spr.frame
 	# pisca quando está invencível depois de apanhar
 	var piscar := invencivel > 0 and dash_t <= 0 and int(_t * 20) % 2 == 0
 	spr.modulate = Color(1, 0.4, 0.4) if _vermelho > 0 else Color.WHITE
-	spr.visible = not piscar
+	if humano < 1.0:
+		# transformando: o corpo (e o equipamento, que é filho dele) clareia em luz cobalto e some
+		var g := 1.0 - humano
+		spr.modulate = Color(1.0 + g * 1.2, 1.0 + g * 1.6, 1.0 + g * 2.2, humano)
+	spr.visible = not piscar and humano > 0.01
 
 
 ## Dano de vírus (fonte = tipo) ou de outro lutador no duelo. Retorna true se caiu.
 func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) -> bool:
 	if invencivel > 0 or hp <= 0:
 		return false
+	if arena.habilidades:
+		dano *= arena.habilidades.mult_dano()   # transformado, aguenta mais
 	hp -= dano
 	arena.dano_recebido[fonte] = float(arena.dano_recebido.get(fonte, 0.0)) + dano
 	invencivel = iframes
@@ -222,9 +266,9 @@ func curar(valor: float) -> void:
 
 
 func _draw() -> void:
-	if not (arena.caido and arena.online):
-		Visual.sombra_boneco(self, spr)
-	for r in _rastro:
+	if not (arena.caido and arena.online) and humano > 0.5:
+		Visual.sombra_boneco(self, spr)   # o dragão desenha a própria sombra
+	for r in (_rastro if forma == null else []):
 		var tex := spr.texture
 		var w := tex.get_width() / 9.0
 		var h := tex.get_height() / 4.0

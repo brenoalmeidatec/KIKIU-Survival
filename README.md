@@ -145,6 +145,7 @@ Executáveis e zips **não** ficam no Git (são grandes). Pra gerar:
 │       └── fonte_*/            fontes de mapas, áudios e poses
 ├── 🎨 arte/                    personagens, prompts dos retratos e vozes
 ├── 📚 docs/                    desenho, online, visual e pesquisas
+├── 🤖 CLAUDE.md                rotina dos Claudes (PC, notebook, Breno) ao começar e terminar
 └── 📓 LOGBOOK.md               diário do projeto (o que foi feito, o que falta)
 ```
 
@@ -179,7 +180,9 @@ Executáveis e zips **não** ficam no Git (são grandes). Pra gerar:
 | 🌐 [`docs/ONLINE_KIKIU.md`](docs/ONLINE_KIKIU.md) | Como funciona o online (sala, horda junta, reviver, duelo) |
 | 🎨 [`docs/VISUAL_KIKIU.md`](docs/VISUAL_KIKIU.md) | Direção de arte, profundidade e pipeline 3D → pixel art |
 | 🔬 [`docs/analise_jogos_de_hordas.md`](docs/analise_jogos_de_hordas.md) | Análise de Vampire Survivors, Risk of Rain 2 e Megabonk |
+| 🎮 [`docs/ANALISE_10_JOGOS_HORDAS.md`](docs/ANALISE_10_JOGOS_HORDAS.md) | Mais 10 jogos parecidos e ideias pro K.I.K.I.U |
 | 🆓 [`docs/assets_gratis.md`](docs/assets_gratis.md) · [`docs/ideias_visual_gba.md`](docs/ideias_visual_gba.md) | Pesquisas de assets e de visual |
+| 🤖 [`CLAUDE.md`](CLAUDE.md) | Rotina dos Claudes: sincronia PC ↔ notebook só pelo GitHub |
 | 📓 [`LOGBOOK.md`](LOGBOOK.md) | Diário do projeto e recados entre os Claudes |
 
 ---

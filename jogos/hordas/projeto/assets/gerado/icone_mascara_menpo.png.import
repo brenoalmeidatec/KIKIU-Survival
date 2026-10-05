@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://biyruw0qyqpyg"
-path="res://.godot/imported/andando_8.png-8143455bfb11226e645e0f2b1dbc5c36.ctex"
+uid="uid://dmf0wq3xp3dr5"
+path="res://.godot/imported/icone_mascara_menpo.png-46885fd0b8ec1884f0546bc97d5b110b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/personagens/breno/andando_8.png"
-dest_files=["res://.godot/imported/andando_8.png-8143455bfb11226e645e0f2b1dbc5c36.ctex"]
+source_file="res://assets/gerado/icone_mascara_menpo.png"
+dest_files=["res://.godot/imported/icone_mascara_menpo.png-46885fd0b8ec1884f0546bc97d5b110b.ctex"]
 
 [params]
 

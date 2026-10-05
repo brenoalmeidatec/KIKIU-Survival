@@ -1,0 +1,32 @@
+{
+ "_ajuda": "Habilidades descobríveis (DiscoverableAbility, seção 31 do design): transformações e poderes especiais de cada personagem. characterId = de quem é ('' = qualquer um). raridade, chance_surgir (spawnChance) e fragmentos (requiredFragments) são usados pelas descobertas da #21 (santuários). desbloqueio = como fica disponível NA PARTIDA: {tipo: nivel, valor} (chegou no nível) ou {tipo: fragmentos} (juntou os fragmentos, #21). ativacao = energia: enche com abates (energia_abate, energia_elite, energia_chefe) e com o tempo (energia_segundo) até energia_max (que cresce energia_cresce a cada uso: 100, 160, 220...); cheia, a tecla Q (ou X no controle) transforma; transformado, a energia esvazia em 'duracao' segundos (vezes o atributo duração do jogador, entre duracao_min e duracao_max) e ele volta sozinho. recarga = segundos depois de voltar antes de começar a encher de novo. bonus = atributos somados enquanto transformado; reducao_dano = fração do dano que não pega. armas = habilidades da forma (armas.json com classe transformacao), no nível 1 + nivel_jogador / nivel_armas_cada. investida = o dash vira um avanço que machuca. visual = o corpo da forma (dragao = scripts/hordas/dragao.gd).",
+ "dragao": {
+  "nome": "Dragão Cobalto",
+  "descricao": "Hazaki libera a energia da aura e vira um dragão oriental de escamas cobalto.",
+  "characterId": "hazaki",
+  "tipo": "transformacao",
+  "raridade": "lendaria",
+  "chance_surgir": 0.0,
+  "fragmentos": 3,
+  "desbloqueio": {"tipo": "nivel", "valor": 8},
+  "ativacao": "energia",
+  "energia_max": 100,
+  "energia_cresce": 0.6,
+  "energia_abate": 0.6,
+  "energia_elite": 5.0,
+  "energia_chefe": 20.0,
+  "energia_segundo": 0.4,
+  "duracao": 18,
+  "duracao_min": 15,
+  "duracao_max": 30,
+  "recarga": 3,
+  "bonus": {"velocidade": 0.2, "dano": 0.25},
+  "reducao_dano": 0.4,
+  "armas": ["baforada", "garras_dragao", "energia_draconica", "rugido"],
+  "nivel_armas_cada": 6,
+  "investida": {"dano": 30, "raio": 28, "empurra": 220},
+  "visual": "dragao",
+  "icone": "dragao",
+  "cor": [0.25, 0.45, 1.0]
+ }
+}

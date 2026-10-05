@@ -241,7 +241,7 @@ func _forca(l: Lutador) -> float:
 	var st: Dictionary
 	var armas_l: Array
 	if l.jogador:
-		st = Construcao.stats(arena.heroi, arena.passivos)
+		st = Construcao.stats(arena.heroi, arena.passivos, arena.equipamentos)
 		armas_l = arena.armas.lista
 	else:
 		st = l.no.stats

@@ -5,22 +5,25 @@ extends Node
 ##   --sair=60 (fecha depois de 60 s de partida)  --fotos=pasta (salva prints a cada 20 s)
 ##   --online=host [--jogadores=2] (abre a sala e começa sozinho quando tiver 2)
 ##   --online=join --endereco=127.0.0.1:7777  (entra na sala)
+##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
 
 const Arena := preload("res://scripts/hordas/arena.gd")
 const W := 640.0
 const H := 360.0
 const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
-const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Sair"]
+const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
+const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Opções", "Créditos", "Sair"]
+const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
 
 const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
 	"dash": [KEY_SPACE, KEY_SHIFT], "confirmar": [KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_Z], "voltar": [KEY_ESCAPE],
-	"resortear": [KEY_R], "tela_cheia": [KEY_F11],
+	"resortear": [KEY_R], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F],
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP], "baixo": [JOY_BUTTON_DPAD_DOWN], "esquerda": [JOY_BUTTON_DPAD_LEFT], "direita": [JOY_BUTTON_DPAD_RIGHT],
-	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y],
+	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y], "transformar": [JOY_BUTTON_X],
 }
 
 var _tela := Control.new()
@@ -61,7 +64,7 @@ func _ready() -> void:
 	elif _args.has("online"):
 		_online_teste()
 	elif _args.has("bot") or _args.has("heroi"):
-		_comecar(str(_args.get("heroi", "breno")))
+		_comecar(str(_args.get("heroi", "hazaki")))
 	else:
 		Som.musica("menu")
 
@@ -113,8 +116,10 @@ func _process(dt: float) -> void:
 	_t += dt
 	_tela.queue_redraw()
 	if Input.is_action_just_pressed("tela_cheia"):
-		var cheia := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if cheia else DisplayServer.WINDOW_MODE_FULLSCREEN)
+		# vira a opção "Tela cheia" (o Config troca a janela e lembra pra próxima vez)
+		var modo := DisplayServer.window_get_mode()
+		var cheia := modo == DisplayServer.WINDOW_MODE_FULLSCREEN or modo == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
+		Config.definir("tela_cheia", not cheia)
 	match _estado:
 		"titulo":
 			if Input.is_action_just_pressed("cima"):
@@ -126,16 +131,25 @@ func _process(dt: float) -> void:
 			elif Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("dash"):
 				Som.tocar("confirmar")
 				_msg = ""
-				match _sel:
-					0:
+				match OPCOES[_sel]:
+					"Jogar sozinho":
 						_estado = "herois"
 						_sel = 0
-					1:
+					"Criar sala":
 						_criar_sala()
-					2:
+					"Entrar em sala":
 						_estado = "endereco"
-					3:
+					"Opções":
+						_abrir_opcoes()
+					"Créditos":
+						_estado = "creditos"
+					"Sair":
 						get_tree().quit()
+		"creditos":
+			if Input.is_action_just_pressed("voltar") or Input.is_action_just_pressed("confirmar"):
+				Som.tocar("confirmar")
+				_estado = "titulo"
+				_sel = OPCOES.find("Créditos")
 		"endereco":
 			pass   # o teclado é lido em _input (campo de texto)
 		"conectando":
@@ -191,6 +205,9 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 		_arena.diretor.t_fase = float(o.pular)
 	if o.has("build"):
 		_arena.dar_build_teste(int(o.build))
+	if o.has("dragao") and not online:   # teste: transformação liberada e com a energia cheia
+		_arena.habilidades.desbloquear()
+		_arena.habilidades.energia = _arena.habilidades.energia_max()
 	if o.has("duelo") and not online:
 		_arena.iniciar_duelo_teste(int(o.duelo))
 	_estado = "partida"
@@ -210,6 +227,15 @@ func _salvar_endereco() -> void:
 	var f := FileAccess.open(SAVE_ONLINE, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify({"endereco": _endereco}))
+
+
+func _abrir_opcoes() -> void:
+	_estado = "opcoes"   # a tela de Opções cuida das teclas; o título fica parado atrás
+	var t := TelaOpcoes.new()
+	add_child(t)
+	t.fechou.connect(func():
+		_estado = "titulo"
+		_sel = OPCOES.find("Opções"))
 
 
 func _criar_sala() -> void:
@@ -386,11 +412,12 @@ func _teste() -> void:
 		_arena.morrer("teste")
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
-		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s" % [
+		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s forma=%s" % [
 			_t, _arena.diretor.fase_idx + 1, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,
 			_arena.armas.lista.map(func(a): return "%s:%d" % [a.id, a.nivel]), _arena.passivos,
-			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-"])
+			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-",
+			("%s energia=%.0f vezes=%d armas=%s" % ["DRAGAO" if _arena.habilidades.ativa else "humano", _arena.habilidades.energia, _arena.habilidades.vezes, _arena.armas.forma_lista.map(func(a): return "%s:%d" % [a.id, a.nivel])]) if _arena.habilidades.desbloqueada else "-"])
 		if _arena.online:
 			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
@@ -409,6 +436,15 @@ func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := W, alinha
 	var f: Font = Dados.fonte
 	_tela.draw_string(f, p + Vector2(1, 1), s, alinhar, larg, tam, Color(0, 0, 0, 0.8))
 	_tela.draw_string(f, p, s, alinhar, larg, tam, cor)
+
+
+## Selo "BETA" ao lado de uma opção do menu (p = canto esquerdo, na linha de base do texto).
+func _selo_beta(p: Vector2) -> void:
+	var larg := Dados.fonte.get_string_size("BETA", HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 6
+	var r := Rect2(p + Vector2(0, -9), Vector2(larg, 12))
+	_tela.draw_rect(r, Color(0.3, 0.15, 0.45))
+	_tela.draw_rect(r, Color(0.85, 0.6, 1.0), false, 1.0)
+	_txt(p + Vector2(0, 0), "BETA", 8, Color(0.95, 0.85, 1.0), larg)
 
 
 func _fundo() -> void:
@@ -432,10 +468,32 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 165), "sobreviva à horda e vença o duelo final", 8, Color(0.75, 0.75, 0.85))
 			for i in OPCOES.size():
 				var sel := i == _sel
-				_txt(Vector2(0, 205 + i * 20), ("> " + OPCOES[i] + " <") if sel else OPCOES[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+				var rotulo: String = ("> " + OPCOES[i] + " <") if sel else OPCOES[i]
+				_txt(Vector2(0, 190 + i * 18), rotulo, 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+				if i in BETA:
+					var meia := Dados.fonte.get_string_size(rotulo, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x / 2
+					_selo_beta(Vector2(W / 2 + meia + 6, 190 + i * 18))
+			if _sel in BETA and _msg == "":
+				_txt(Vector2(0, 302), "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho.", 8, Color(0.85, 0.6, 1.0))
 			if _msg != "":
-				_txt(Vector2(0, 295), _msg, 8, Color(1, 0.6, 0.5))
+				_txt(Vector2(0, 302), _msg, 8, Color(1, 0.6, 0.5))
 			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
+		"opcoes":
+			_fundo()   # a tela de Opções desenha por cima (tela_opcoes.gd)
+		"creditos":
+			_fundo()
+			_txt(Vector2(0, 50), "Créditos", 16, Color.WHITE)
+			_txt(Vector2(0, 76), "K.I.K.I.U nasceu de uma ideia e virou jogo a quatro mãos.", 8, Color(0.75, 0.75, 0.85))
+			_txt(Vector2(0, 110), "BRENO", 10, Color(0.4, 0.65, 1))
+			_txt(Vector2(0, 125), "criador: ideia, história, personagens, mecânicas e o motor", 8, Color.WHITE)
+			_txt(Vector2(0, 152), "ALISSON", 10, Color(0.5, 1, 0.5))
+			_txt(Vector2(0, 167), "arte do Blender virando pixel art, cenários, visual e online", 8, Color.WHITE)
+			_txt(Vector2(0, 198), "FEITO COM", 8, Color(1, 0.85, 0.3))
+			_txt(Vector2(0, 213), "Godot 4  ·  Blender  ·  Claude Code (um Claude de cada lado)", 8, Color.WHITE)
+			_txt(Vector2(0, 240), "Fonte Press Start 2P, de CodeMan38 (licença OFL)", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 254), "Músicas e efeitos gerados por código, no próprio projeto", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 290), "E valeu a você, que está jogando!", 10, Color(1, 0.6, 0.75))
+			_txt(Vector2(0, 335), "Enter/Esc: voltar", 8, Color(0.5, 0.5, 0.6))
 		"endereco", "conectando":
 			_fundo()
 			_txt(Vector2(0, 70), "Entrar em sala", 16, Color.WHITE)
@@ -550,6 +608,15 @@ func _print_tela(qual: String) -> void:
 	match qual:
 		"herois":
 			_estado = "herois"
+		"titulo_beta":
+			_sel = BETA[0]
+		"creditos":
+			_estado = "creditos"
+		"opcoes":
+			_abrir_opcoes()
+		"dragao":   # com --bot --dragao (e --estresse=N pra ter vírus): --espera=0.6 pega o meio da transformação
+			_comecar("hazaki")
+			await get_tree().create_timer(float(_args.get("espera", 5.0))).timeout
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout

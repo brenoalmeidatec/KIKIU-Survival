@@ -1,0 +1,16 @@
+{
+ "_ajuda": "Cenários das fases (arte em assets/cenarios/<nome>/, gerada pelo Blender em fonte_arte/modelos3d/cenarios.py). por_fase = o cenário de cada fase da corrida, na ordem (se tiver menos itens que fases, a última se repete). densidade = chance de ter enfeite em cada pedaço do mapa (0 a 1). Cenários: laboratorio, masmorra, cidade. Lista vazia = chão antigo.",
+ "por_fase": [
+  "laboratorio",
+  "laboratorio",
+  "laboratorio",
+  "masmorra",
+  "masmorra",
+  "masmorra",
+  "masmorra",
+  "cidade",
+  "cidade",
+  "cidade"
+ ],
+ "densidade": 0.3
+}

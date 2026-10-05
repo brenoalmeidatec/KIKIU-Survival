@@ -1,0 +1,5 @@
+# Fim de linha fixo em LF: o Godot grava LF, e sem isso o Windows com core.autocrlf=true
+# mostra ~120 .import "modificados" depois de cada importação.
+* text=auto eol=lf
+# Os .bat já estão com CRLF no repositório; ficam como estão.
+*.bat -text

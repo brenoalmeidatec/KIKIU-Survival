@@ -1,5 +1,70 @@
 {
- "_ajuda": "tipo: projetil (atira no vírus mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução.",
+ "_ajuda": "tipo: projetil (atira no vírus mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio: katana, pistolas, marcial, aura_energia, elemental (scripts/hordas/armas/). visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos).",
+ "_config": {
+  "limite_exclusivas": 2
+ },
+ "katana": {
+  "nome": "Katana Samurai",
+  "icone": "katana",
+  "tipo": "katana",
+  "familia": "chicote",
+  "visual": {"camada": "katana_mao", "maos": ["arma_dir"], "senao": "katana_bainha", "prioridade": 1},
+  "classe": "character_exclusive",
+  "characterId": "hazaki",
+  "peso_carta": 8,
+  "descricao": "Saca a katana e corta rápido na frente. Exclusiva do Hazaki.",
+  "base": {"dano": 18, "recarga": 0.85, "quantidade": 1, "area": 1.0, "alcance": 70, "arco": 110},
+  "niveis": [{"dano": 6}, {"recarga": -0.12}, {"quantidade": 1}, {"alcance": 16, "arco": 30}, {"corte_energia": 1}, {"dano": 10, "recarga": -0.1}]
+ },
+ "desert_eagles": {
+  "nome": "Duas Desert Eagles",
+  "icone": "desert_eagles",
+  "tipo": "pistolas",
+  "familia": "projetil",
+  "visual": {"camada": "pistolas", "maos": ["arma_dir", "arma_esq"], "prioridade": 2},
+  "classe": "character_exclusive",
+  "characterId": "hazaki",
+  "peso_carta": 8,
+  "descricao": "Atira com as duas pistolas ao mesmo tempo. Exclusiva do Hazaki.",
+  "base": {"dano": 9, "recarga": 0.55, "quantidade": 2, "velocidade": 560, "perfura": 1, "area": 1.0, "duracao": 0.9},
+  "niveis": [{"dano": 4}, {"recarga": -0.1}, {"perfura": 1}, {"ricochete": 1}, {"quantidade": 2}, {"explosivo": 1, "dano": 6}]
+ },
+ "arte_marcial": {
+  "nome": "Arte Marcial",
+  "icone": "arte_marcial",
+  "tipo": "marcial",
+  "familia": "chicote",
+  "classe": "character_exclusive",
+  "characterId": "hazaki",
+  "peso_carta": 8,
+  "descricao": "Socos e chutes rápidos, sem arma na mão. Exclusiva do Hazaki.",
+  "base": {"dano": 13, "recarga": 0.42, "area": 1.0, "alcance": 46},
+  "niveis": [{"dano": 4}, {"recarga": -0.06}, {"alcance": 10}, {"giro": 1}, {"dano": 6}, {"onda": 1, "dano": 6}]
+ },
+ "aura_hazaki": {
+  "nome": "Aura",
+  "icone": "aura_hazaki",
+  "tipo": "aura_energia",
+  "familia": "aura",
+  "classe": "character_exclusive",
+  "characterId": "hazaki",
+  "peso_carta": 8,
+  "descricao": "Libera energia em volta do corpo: machuca e empurra. Exclusiva do Hazaki.",
+  "base": {"dano": 5, "recarga": 0, "area": 1.0, "raio": 56, "tique": 0.5, "empurra": 50, "pulso": 3.0},
+  "niveis": [{"raio": 10}, {"dano": 3}, {"pulso": -0.6}, {"empurra": 40}, {"raio": 12, "dano": 4}]
+ },
+ "poder_elemental": {
+  "nome": "Poder Elemental do Mago",
+  "icone": "poder_elemental",
+  "tipo": "elemental",
+  "familia": "projetil",
+  "classe": "character_exclusive",
+  "characterId": "hazaki",
+  "peso_carta": 8,
+  "descricao": "Projéteis mágicos de fogo, raio e gelo. Exclusiva do Hazaki.",
+  "base": {"dano": 12, "recarga": 0.9, "quantidade": 1, "velocidade": 300, "perfura": 1, "area": 1.0, "duracao": 1.6},
+  "niveis": [{"quantidade": 1}, {"dano": 5}, {"cadeia": 2}, {"explosao": 1}, {"velocidade": 80, "dano": 6}, {"combina": 1}]
+ },
  "pendrive": {
   "nome": "Pendrive",
   "icone": "pendrive",
@@ -248,5 +313,49 @@
    "empurra": 60,
    "lentidao": 0.5
   }
+ },
+ "baforada": {
+  "nome": "Baforada de Fogo",
+  "icone": "dragao",
+  "tipo": "baforada",
+  "familia": "aura",
+  "classe": "transformacao",
+  "characterId": "hazaki",
+  "descricao": "Forma de dragão: rajada de fogo em cone pela boca. Evolui: alcance, largura, dano, queimadura e explosão no fim.",
+  "base": {"dano": 4, "recarga": 1.4, "area": 1.0, "alcance": 95, "largura": 40, "sopro": 1.1, "tique": 0.15, "queimadura": 0, "explosao": 0},
+  "niveis": [{"alcance": 15}, {"largura": 10, "dano": 1}, {"queimadura": 4}, {"explosao": 45}, {"alcance": 20, "largura": 12, "dano": 2}]
+ },
+ "garras_dragao": {
+  "nome": "Garras",
+  "icone": "dragao",
+  "tipo": "garras",
+  "familia": "chicote",
+  "classe": "transformacao",
+  "characterId": "hazaki",
+  "descricao": "Forma de dragão: as patas rasgam vários inimigos perto do corpo.",
+  "base": {"dano": 14, "recarga": 0.8, "area": 1.0, "raio": 30, "quantidade": 2},
+  "niveis": [{"dano": 4}, {"raio": 6}, {"recarga": -0.15}, {"quantidade": 1}, {"dano": 6}]
+ },
+ "energia_draconica": {
+  "nome": "Energia Dracônica",
+  "icone": "dragao",
+  "tipo": "energia_draconica",
+  "familia": "projetil",
+  "classe": "transformacao",
+  "characterId": "hazaki",
+  "descricao": "Forma de dragão: orbes de energia cobalto que explodem em área.",
+  "base": {"dano": 12, "recarga": 1.2, "area": 1.0, "quantidade": 1, "velocidade": 260, "explosao": 30},
+  "niveis": [{"quantidade": 1}, {"dano": 4}, {"explosao": 10}, {"quantidade": 1}, {"recarga": -0.3}]
+ },
+ "rugido": {
+  "nome": "Rugido do Dragão",
+  "icone": "dragao",
+  "tipo": "rugido",
+  "familia": "aura",
+  "classe": "transformacao",
+  "characterId": "hazaki",
+  "descricao": "Forma de dragão: onda de energia que machuca, empurra e atordoa os mais fracos.",
+  "base": {"dano": 20, "recarga": 5.0, "area": 1.0, "raio": 110, "empurra": 260, "atordoa": 1.2},
+  "niveis": [{"raio": 15}, {"atordoa": 0.4}, {"dano": 10}, {"recarga": -1.0}, {"raio": 20, "dano": 10}]
  }
 }

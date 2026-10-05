@@ -9,6 +9,8 @@ var particulas: Array = []   # {pos, vel, t, cor, tam}
 
 
 func numero(pos: Vector2, valor: float, cor := Color.WHITE, crit := false) -> void:
+	if not Config.v("numeros_dano"):   # opção "Números de dano"
+		return
 	if numeros.size() >= MAX_NUMEROS:
 		numeros.pop_front()
 	numeros.append({"pos": pos + Vector2(randf_range(-6, 6), -10), "txt": str(int(round(valor))) + ("!" if crit else ""),

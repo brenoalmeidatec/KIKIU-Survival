@@ -126,6 +126,8 @@ func _desenhar() -> void:
 		var borda := Color(1, 0.85, 0.3) if sel else Color(0.35, 0.4, 0.55)
 		if c.tipo == "evolucao":
 			borda = Color(1, 0.4, 0.9).lerp(Color(0.4, 0.9, 1), 0.5 + 0.5 * sin(_t * 6))
+		elif c.has("exclusiva") and not sel:
+			borda = Color(0.78, 0.6, 0.25)   # exclusiva do personagem: moldura de ouro velho
 		_tela.draw_rect(Rect2(p - Vector2(2, 2), Vector2(LARG + 4, ALT + 4)), borda)
 		_tela.draw_rect(Rect2(p, Vector2(LARG, ALT)), Color(0.1, 0.11, 0.18))
 		var tex := Dados.icone(str(c.icone))
@@ -139,9 +141,15 @@ func _desenhar() -> void:
 				cor_e = Color(1, 0.5, 0.9)
 			"cura":
 				etiqueta = ""
+			"equipamento":
+				etiqueta = "EQUIPAMENTO"
+				cor_e = Color(0.55, 0.85, 1.0)
 			_:
 				etiqueta = "NOVO!" if c.nivel == 1 else "Nível %d" % c.nivel
 				cor_e = Color(0.5, 1, 0.5) if c.nivel == 1 else Color(1, 0.9, 0.5)
+				if c.has("exclusiva") and c.nivel == 1:
+					etiqueta = "EXCLUSIVA " + str(c.exclusiva)
+					cor_e = Color(0.85, 0.6, 1.0)
 		_txt(p + Vector2(0, 58), etiqueta, 8, cor_e, LARG)
 		_tela.draw_multiline_string(Dados.fonte, p + Vector2(6, 76), str(c.nome), HORIZONTAL_ALIGNMENT_CENTER, LARG - 12, 8, 2, Color.WHITE)
 		_tela.draw_multiline_string(Dados.fonte, p + Vector2(6, 106), str(c.desc), HORIZONTAL_ALIGNMENT_CENTER, LARG - 12, 8, 6, Color(0.75, 0.78, 0.85))

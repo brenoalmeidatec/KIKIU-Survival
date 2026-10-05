@@ -9,3 +9,6 @@ __pycache__/
 *.import.bak
 *.tmp
 .DS_Store
+
+# Notas locais de cada máquina (caminho do Godot etc.), lidas pelo Claude Code e fora do Git.
+CLAUDE.local.md

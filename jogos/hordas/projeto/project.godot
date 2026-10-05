@@ -13,6 +13,7 @@ config/features=PackedStringArray("4.4", "GL Compatibility")
 Dados="*res://scripts/hordas/dados.gd"
 Som="*res://scripts/hordas/som.gd"
 Rede="*res://scripts/hordas/rede.gd"
+Config="*res://scripts/hordas/config.gd"
 
 [display]
 

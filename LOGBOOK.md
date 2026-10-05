@@ -96,5 +96,98 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 **Próximo**
 - Cenário dark fantasy (piso e enfeites de masmorra) pelo mesmo pipeline, depois monstros no lugar dos vírus, e só então trocar o elenco no `herois.json`.
 
+## 2026-10-05 · Claude do Alisson (poça de café)
+- Poça do Café Derramado / Garrafa Térmica refeita em pixel art (`scripts/hordas/poca.gd`): forma de líquido irregular com gotinhas, borda clara e centro fundo (plano, não "monte"), contorno, reflexo do lado da luz, bolhas que estouram e vapor. Agora fica numa camada de chão (abaixo de personagens, gemas e números; antes cobria o jogador).
+- Cada tamanho vira uma textura em cache (pior caso ~30 ms pra gerar), gerada antes, com as cartas abertas (pegar/subir arma ou passivo), pra não engasgar na horda. 500 vírus: 173–306 fps; 0 erro de script.
+## 2026-10-05 · Claude do Alisson (cenários)
+**Feito**
+- 3 cenários dark fantasy gerados no Blender (`fonte_arte/modelos3d/cenarios.py`): laboratório de alquimia, masmorra e **cidade à noite como cruzamento de ruas em loop** (referência do Alisson). Piso pré-renderizado (Cycles + redução + pontilhado), enfeites em atlas, halos de luz.
+- Jogo: `scripts/hordas/cenario.gd` (novo) + ganchos no `chao.gd` (o azulejo pode ter qualquer tamanho; enfeites fixos por azulejo; tom de ambiente; camada de luz ADD). Fase → cenário em `dados/cenarios.json`: 1–3 laboratório, 4–7 masmorra, 8–10 cidade. `export_presets.cfg` agora inclui `assets/cenarios/*/cenario.json` no .exe.
+- Testado: fases 1, 4 e 8 com janela, 0 erro de script, 500 vírus ~160–300 fps.
+
+**Para o Claude do Breno:** os santuários no `chao.gd` não mudaram; `nova_fase()` só ganhou a linha `_aplicar_cenario()` no começo. Se quiser outra ordem de cenários, é só editar `dados/cenarios.json`.
+
+**Próximo:** monstros dark fantasy no lugar dos vírus; elenco de heróis novo; refinar o laboratório (piso ainda simples).
+
+## 2026-10-05 · Claude do Alisson (#19, PR 1: Hazaki e armas exclusivas)
+**Feito**
+- Breno → **Hazaki** no jogo de horda (id `hazaki`, nome, arte em `assets/personagens/hazaki/`, elenco do duelo, herói padrão). A Cairu não mudou.
+- Armas com `classe` (`global` padrão / `character_exclusive`) e `characterId`; limite em `dados/armas.json` → `_config.limite_exclusivas` (2). Regra única em `construcao.gd` (`arma_permitida`, `exclusiva`, `dono`, `n_exclusivas`), usada pelas cartas do jogador (`arena.sortear_cartas`, baú incluso) e pela build dos rivais (`construcao.gerar`).
+- 5 exclusivas do Hazaki jogáveis (katana, desert_eagles, arte_marcial, aura_hazaki, poder_elemental) com ícones 16x16 (`fonte_arte/icones_hazaki.gd`); comportamento ainda emprestado dos tipos existentes (PR 2 dá o próprio).
+- Carta de exclusiva mostra "EXCLUSIVA n/2" e moldura dourada.
+- Teste automático: `godot --headless --path jogos/hordas/projeto res://testes/regras_armas.tscn` → "REGRAS falhas=0" (fora do .exe pelo exclude_filter).
+
+**Próximo:** PR 2 (comportamento próprio das 5 armas), PR 3 (equipamentos visuais modulares + arte do Hazaki).
+
+## 2026-10-05 · Claude do Alisson (#19, PR 2: as 5 armas do Hazaki)
+**Feito**
+- Comportamentos novos em arquivos próprios (`scripts/hordas/armas/<tipo>.gd`), registrados em `armas.gd` (`MODULOS`): **katana** (corte em arco, lua de energia), **pistolas** (duas mãos alternando, ricochete, tiro explosivo), **marcial** (combo soco-soco-chute, chute giratório, onda de impacto), **aura_energia** (chamas cobalto e faíscas douradas no corpo, pulso que empurra; dourada no alto), **elemental** (fogo explode, raio encadeia, gelo desacelera; no fim os três juntos).
+- `familia` no `armas.json` diz como o duelo estima o dano de um tipo novo (`construcao.dps_por_tipo`, `ia_luta`).
+- Testado: cada arma com fotos disparadas no quadro do efeito; regras (falhas=0), solo, duelo, online (acertos 51 = 51); 500 vírus com 4 armas novas no nível 7: 271–388 fps (antigas: 258–345).
+
+**Para o Claude do Breno:** arma com comportamento novo = um arquivo em `scripts/hordas/armas/` com `atualizar/passo/pintar/fundo` (copie o `katana.gd`) + uma linha em `MODULOS` + a arma no `armas.json` com `tipo` e `familia`.
+
+## 2026-10-05 · Claude do Alisson (#19, PR 3: equipamentos visuais modulares)
+**Feito**
+- Hazaki no Blender em camadas (`fonte_arte/modelos3d/hazaki.py`): corpo + cabelo, Cabeça do Guerreiro, máscara, Armadura Samurai, braçadeiras, botas, katana na mão, katana na bainha e pistolas. Cada camada é renderizada com o corpo como máscara invisível (holdout), então encaixa.
+- `dados/equipamentos.json` + `scripts/hordas/equipamento.gd` (regras, bônus, montador de camadas); cartas de equipamento; HUD com os vestidos; jogador empilha camadas (`definir_camadas`); aura desenhada atrás do corpo.
+- `andando_8.png` do Hazaki tem o cabelo junto (pra rival e online); `corpo.png` é o corpo sem cabelo, pro jogador em camadas.
+- Respostas da seção 15 em `docs/HAZAKI_ARMAS_EQUIPAMENTOS.md`.
+- Testes: `testes/equipamentos.tscn` (falhas=0), `testes/regras_armas.tscn` (falhas=0), solo, duelo, online (46 = 46), 500 vírus 171–180 fps.
+
+**Pendente:** equipamentos não vão pela rede (outros jogadores veem só o corpo com cabelo). Próximo: #20 (dragão).
+
+## 2026-10-05 · Claude do Alisson (F11 tela cheia sem barras)
+**Feito**
+- Bug confirmado antes do conserto: no Windows, `WINDOW_MODE_FULLSCREEN` deixa a janela com 1px a menos (1918x1078). Com `scale_mode="integer"`, a escala cai de 3x pra 2x, e o jogo fica pequeno no meio, com barras pretas (deslocamento 319,179).
+- `main.gd`: o F11 agora usa `WINDOW_MODE_EXCLUSIVE_FULLSCREEN`. Medido: janela 1920x1080, escala 3x, deslocamento 0. Ele também volta pra janela vindo de qualquer um dos dois modos de tela cheia.
+
+**Pendente:** a Cairu (`jogos/cairu/projeto/scripts/jogo.gd`) tem o mesmo padrão, mas não mexi porque está fora do escopo. Próximo: menu com multiplayer em beta, Opções, Créditos e depois o #20.
+
+## 2026-10-05 · Claude do Alisson (menu: multiplayer em BETA)
+**Feito:** "Criar sala" e "Entrar em sala" ganharam um selo roxo **BETA** no título. Com uma delas selecionada, aparece o aviso "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho." Pra testar: `--print_tela=titulo_beta --fotos=pasta`.
+**Próximo:** Créditos, depois Opções.
+
+## 2026-10-05 · Claude do Alisson (tela de Créditos)
+**Feito:** opção "Créditos" no título (antes de "Sair"), com uma tela curta: Breno (criador: ideia, história, personagens, mecânicas, motor), Alisson (arte Blender→pixel art, cenários, visual, online), feito com Godot, Blender e Claude Code, a fonte Press Start 2P (CodeMan38, OFL) e o áudio gerado por código. Enter/Esc voltam.
+- O menu do título agora escolhe pelo NOME da opção (`match OPCOES[_sel]`), não pelo índice, então dá pra pôr opção nova sem renumerar nada. O espaçamento foi pra 18px pra caber mais uma (Opções).
+- Print: `--print_tela=creditos --fotos=pasta`.
+**Próximo:** tela de Opções.
+
+## 2026-10-05 · Claude do Alisson (tela de Opções)
+**Feito**
+- Autoload novo **`Config`** (`scripts/hordas/config.gd`): opções salvas em `user://opcoes.cfg` e aplicadas na hora. Lista única em `Config.ITENS`; pra ler, `Config.v("chave")`. Com argumentos de teste (`--bot`, `--print_tela`...), só o som é aplicado: janela, V-Sync e limite de FPS ficam de fora.
+- **Tela de Opções** (`scripts/hordas/tela_opcoes.gd`), reaproveitada no título (nova opção "Opções") e na pausa ("Continuar / Opções / Desistir").
+  - Jogabilidade: tremer a tela (Não/Pouco/Normal), números de dano, pausar ao sair da janela (alt-tab no solo).
+  - Gráfico: tela cheia, V-Sync, limite de FPS (30/60/120/144/sem), mostrar FPS (canto inferior esquerdo).
+  - Som: música e efeitos de 0 a 100%.
+- O F11 agora vira a opção "Tela cheia": continua exclusiva, e fica lembrada pra próxima vez.
+- Teste novo: `testes/opcoes.tscn` (OPCOES falhas=0). Ele mexe nas opções e devolve tudo no fim.
+- Conferido: pausa → Opções → Esc fecha só as Opções e o segundo Esc volta pro jogo; F11 = 1920x1080 em 3x e volta pra 1280x720; 266 vírus a 145 fps (headless); EQUIP e REGRAS sem falhas.
+
+**Próximo:** #20 (transformação em dragão).
+
+## 2026-10-05 · Claude do Alisson (#20: transformação em Dragão Cobalto)
+**Feito**
+- **Arte:** `fonte_arte/modelos3d/dragao.py` (Blender) gera um dragão oriental próprio: escamas cobalto (a energia da aura), ventre e chifres de ouro, juba de chamas e bigodes ciano. Cada peça (cabeça 64px com boca fechada e aberta, gomo em 4 tamanhos, patas da frente e de trás com 4 quadros, cauda) sai em 16 direções, com e sem contorno. Nova rampa `cobalto` no `pixel3d.py`.
+- **Corpo no jogo:** `scripts/hordas/dragao.gd`, uma corrente que segue o rastro da cabeça, serpenteia, ondula no ar e projeta sombra. É desenhada em duas passadas (silhueta com contorno, depois o corpo sem contorno), pra virar um tubo contínuo. A cabeça vira pro alvo da baforada.
+- **Motor:** `scripts/hordas/habilidades.gd` + `dados/habilidades.json` (DiscoverableAbility genérica, seção 31). Bloqueada → desbloqueia no nível 8 (vira fragmentos na #21) → Energia Dracônica enche com abates e tempo → Q/X transforma → esvazia em 15–30 s → volta sozinho → recarga. A energia pedida cresce a cada uso (100, 160, 220...).
+- **Armas da forma:** `armas.forma_lista` (as humanas param intactas; as cartas continuam evoluindo a build humana). Módulos `baforada`, `garras`, `energia_draconica` e `rugido` em `scripts/hordas/armas/`. No `armas.json` têm `classe: "transformacao"`: nunca viram carta e não contam como exclusiva. O dash vira investida. Inimigos ganharam `atordoado` (rugido).
+- HUD com a barra de energia (embaixo dos Abates), animação de transformação (redemoinho e coluna cobalto, o humano clareia e some, o dragão se desenrola), `--dragao` e `--print_tela=dragao` pra teste.
+- **Testes:** `testes/transformacao.tscn` (DRAGAO falhas=0, conferido que falha quando quebro a regra), opcoes, equip e regras sem falhas; desbloqueio natural no nível 8 numa partida de 5 min; duelo não transforma; online com 2 instâncias (34 = 34 abates); cerca de 300 vírus com o dragão em 4–6 ms.
+
+**Pendente:** online (a transformação fica desligada lá, porque não vai pela rede); ajuste fino de equilíbrio (tudo no `habilidades.json` e no `armas.json`). Próximo: #21 (santuários e fragmentos, que trocam o desbloqueio por nível).
+
+## 2026-10-05 · Claude do Alisson (PC)
+**Feito**
+- O Alisson agora usa duas máquinas (PC e notebook), e cada uma tem um Claude. A sincronia é só pelo GitHub: o `CLAUDE.md` novo na raiz (o Claude Code lê sozinho) diz o que fazer ao começar (pull, LOGBOOK, PRs/issues, reservar a tarefa) e ao terminar (push mesmo pela metade, PR em rascunho, LOGBOOK). As entradas passam a ser assinadas `Claude do Alisson (PC)` ou `(notebook)`.
+- `.gitattributes` com LF fixo. No Windows com `core.autocrlf=true`, cada importação do Godot deixava cerca de 120 `.import` "modificados" só por fim de linha. Os `.bat` ficam como estão (CRLF).
+- `testes/transformacao.gd.uid` não estava no Git. Entrou aqui.
+- Testes no Godot 4.4.1 (PC): OPCOES, EQUIP e REGRAS sem falhas. **DRAGAO é instável:** 0 numa rodada e 1 na outra, com `FALHOU: equipamento visual volta igual (["botas", "cabeca_guerreiro", "katana_mao"])`. Parece que o robô pega uma carta de equipamento durante as esperas do teste (`time_scale = 3`), ou seja, defeito do teste e não do jogo. Ainda não foi mexido.
+
+**Para o Claude do Alisson (notebook):** antes de tudo, faça commit e push do que estiver solto aí e leia o `CLAUDE.md`. Daqui pra frente, reserve a tarefa na issue antes de começar.
+
+**Próximo:** decidir entre a #21 (o que diz a última entrada) e a #32 item 1 (Hazaki com a folha do Breno, sugestão da própria #32).
+
 ## 2026-10-05 · Claude do Alisson (README)
-- README principal refeito no padrão GitHub: selos, sumário, seções com ícones, prints novos do K.I.K.I.U em `docs/imagens/` (título, horda, heróis, duelo, cavaleiro) e imagens da Cairu que já estavam em `jogos/cairu/referencias/`. Todas as regras de colaboração mantidas. Pedido de aprovação ao Breno no PR.
+- README principal refeito no padrão GitHub: selos, sumário, seções com ícones, prints novos do K.I.K.I.U em `docs/imagens/` (título, horda, heróis, duelo, cavaleiro) e imagens da Cairu que já estavam em `jogos/cairu/referencias/`. Todas as regras de colaboração mantidas. (Entrada movida pro fim ao juntar com a `main`, PC.)

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dgwtxhsguxh46"
-path="res://.godot/imported/rosto.png-b18b499c2a15ce1ae7645f86db37c8cc.ctex"
+uid="uid://k5nvjrfkx4ko"
+path="res://.godot/imported/pernas_frente.png-4e9bf67aefe8d759d2a01cb26de962d4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/personagens/breno/rosto.png"
-dest_files=["res://.godot/imported/rosto.png-b18b499c2a15ce1ae7645f86db37c8cc.ctex"]
+source_file="res://assets/personagens/hazaki/dragao/pernas_frente.png"
+dest_files=["res://.godot/imported/pernas_frente.png-4e9bf67aefe8d759d2a01cb26de962d4.ctex"]
 
 [params]
 

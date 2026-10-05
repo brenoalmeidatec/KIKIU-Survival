@@ -48,3 +48,18 @@ Armadilhas que custaram tempo (já resolvidas no código):
 2. **Pendurar peça mantendo o lugar** (`pendurar()`), senão a posição soma duas vezes e a peça flutua.
 3. **Sombra própria desligada** nas luzes: em 44 px ela vira chiado.
 4. **Sinal do `shift_y`:** a linha da imagem cresce pra baixo, e o `shift_y` pra cima.
+
+## Cenários (Blender → pixel art)
+Três cenários, gerados por `jogos/hordas/fonte_arte/modelos3d/cenarios.py` (`blender -b -P cenarios.py [-- nome]`, ~2 min os três):
+
+| Cenário | Piso | Enfeites | Luz |
+|---|---|---|---|
+| 🧪 **Laboratório** (alquimia) | ladrilhos escuros com respingos de poção | mesa de poções, caldeirão, estante, jarra com espécime, candelabro | verde (poções) e vela |
+| 🏰 **Masmorra** | lajes de pedra com musgo e trincas | tocha, barril, ossos, caixote, coluna quebrada, grilhão | tocha |
+| 🌃 **Cidade** (à noite) | **cruzamento de 512 px** que repete: asfalto, faixa de pedestre, faixa tracejada, calçada, bueiro | poste (fixo nas 4 esquinas), lixeira, hidrante, cone, caixote, barril | lâmpada de sódio |
+
+- **Piso "pré-renderizado"** (técnica de Donkey Kong Country / Diablo): Cycles com luz e sombra reais, 4× maior, reduzido pela média e posto na paleta com pontilhado ordenado. O azulejo é renderizado cercado de 8 cópias dele, então a sombra também repete sem emenda.
+- **Enfeites** no mesmo estilo do cavaleiro (toon + paleta + contorno + luz de borda), num atlas com o ponto do pé de cada um.
+- **No jogo** (`scripts/hordas/cenario.gd` + `chao.gd`): tom de ambiente (`CanvasModulate`) e halos de luz somados (blend ADD), com cintilação. Só sprites: roda em qualquer PC. 500 vírus: ~160–300 fps nos três.
+- **Qual cenário em qual fase:** `dados/cenarios.json` (`por_fase`). Lista vazia volta pro chão antigo.
+- Enfeite com `peso` 0 só aparece nos lugares fixos do cenário (`fixos` no `cenario.json`, ex.: postes nas esquinas).

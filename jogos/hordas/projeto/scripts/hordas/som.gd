@@ -55,6 +55,11 @@ func parar_musica() -> void:
 	_musica.stop()
 
 
+## Volume mudou nas Opções: a música que já está tocando acompanha na hora.
+func atualizar_volume() -> void:
+	_musica.volume_db = linear_to_db(volume_musica)
+
+
 func _stream(caminho: String) -> AudioStream:
 	if not _streams.has(caminho):
 		_streams[caminho] = load(caminho) if ResourceLoader.exists(caminho) else null

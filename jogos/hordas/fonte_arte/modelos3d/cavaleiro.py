@@ -10,61 +10,18 @@ import os
 import sys
 
 import bpy
-from mathutils import Matrix, Vector
+
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import pixel3d as px3  # noqa: E402
+from pixel3d import caixa, cilindro, esfera  # noqa: E402
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SAIDA = os.path.normpath(os.path.join(AQUI, "..", "..", "projeto", "assets", "personagens", "cavaleiro"))
 QW, QH = 44, 60              # quadro da folha
 PE_Y = 57                    # linha do pé dentro do quadro (o jogo desenha com offset (-22, -58))
 DIRECOES = [0.0, -90.0, 90.0, 180.0]   # baixo, esquerda, direita, cima (rotação em Z, de frente = -Y)
-PAL = px3.paleta_sem("1f2a24", "35473a", "566e55", "a89e86", "d6ccb2")   # sem musgo e osso
-
-
-def pendurar(filho, pai):
-    """Prende o filho no pai SEM mudar a posição no mundo (senão a posição soma duas vezes)."""
-    bpy.context.view_layer.update()
-    filho.parent = pai
-    filho.matrix_parent_inverse = pai.matrix_world.inverted()
-
-
-def caixa(nome, tam, pos, mat, pai=None, pivo=None):
-    """Caixa de tamanho 'tam'. Se 'pivo' vier, a origem do objeto fica no pivô (pra girar membro no ombro/quadril)."""
-    bpy.ops.mesh.primitive_cube_add(size=1.0)
-    o = bpy.context.active_object
-    o.name = nome
-    o.scale = tam
-    bpy.ops.object.transform_apply(scale=True)
-    if pivo is not None:
-        o.data.transform(Matrix.Translation(Vector(pos) - Vector(pivo)))
-        o.location = pivo
-    else:
-        o.location = pos
-    o.data.materials.append(mat)
-    if pai is not None:
-        pendurar(o, pai)
-    return o
-
-
-def esfera(nome, raio, pos, mat, pai, escala=(1, 1, 1)):
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=raio, segments=12, ring_count=8, location=pos)
-    o = bpy.context.active_object
-    o.name = nome
-    o.scale = escala
-    o.data.materials.append(mat)
-    pendurar(o, pai)
-    return o
-
-
-def cilindro(nome, raio, altura, pos, mat, pai, rot=(0, 0, 0), vertices=12):
-    bpy.ops.mesh.primitive_cylinder_add(radius=raio, depth=altura, vertices=vertices, location=pos, rotation=rot)
-    o = bpy.context.active_object
-    o.name = nome
-    o.data.materials.append(mat)
-    pendurar(o, pai)
-    return o
+PAL = px3.paleta_de("aco", "sangue", "couro", "ouro")
 
 
 def montar():

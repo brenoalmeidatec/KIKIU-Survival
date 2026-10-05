@@ -12,7 +12,7 @@ static func alcance_preferido(armas: Array) -> float:
 	var peso := 0.0
 	var d: Dictionary = Dados.json("armas")
 	for a in armas:
-		var tipo := str(d.get(a.id, {}).get("tipo", "projetil"))
+		var tipo := str(d.get(a.id, {}).get("familia", d.get(a.id, {}).get("tipo", "projetil")))
 		soma += float(ALCANCE_TIPO.get(tipo, 120.0)) * a.nivel
 		peso += a.nivel
 	return soma / maxf(1.0, peso)

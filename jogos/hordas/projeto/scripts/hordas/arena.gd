@@ -15,18 +15,21 @@ const Hud := preload("res://scripts/hordas/hud.gd")
 const Cartas := preload("res://scripts/hordas/cartas.gd")
 const Duelo := preload("res://scripts/hordas/duelo.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
+const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Online := preload("res://scripts/hordas/online.gd")
+const Habilidades := preload("res://scripts/hordas/habilidades.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
 
-var heroi_id := "breno"
+var heroi_id := "hazaki"
 var heroi: Dictionary
 var bot := false
 
 var jogador: Node2D
 var inimigos: Node2D
 var armas: Node2D
+var habilidades: Node2D        # transformação (dragão do Hazaki), habilidades.gd
 var coleta: Node2D
 var efeitos: Node2D
 var chao: Node2D
@@ -43,6 +46,7 @@ var online: Node             # online.gd, só no online
 var caido := false           # online: caiu na horda e espera alguém levantar
 
 var passivos := {}          # id -> nível
+var equipamentos := {}      # slot -> id do equipamento vestido (aparece no personagem; veja equipamento.gd)
 var _stats := {}
 var xp := 0.0
 var nivel := 1
@@ -80,6 +84,9 @@ func _ready() -> void:
 	armas.dono = jogador
 	armas.campo = inimigos
 	armas.statf = stat
+	habilidades = Habilidades.new()
+	add_child(habilidades)
+	habilidades.configurar(self)
 	efeitos = Efeitos.new()
 	add_child(efeitos)
 	duelo = Duelo.new()
@@ -97,6 +104,7 @@ func _ready() -> void:
 	diretor.iniciar(self)
 	_recalcular()
 	jogador.configurar(str(heroi.get("sprite", heroi_id)))
+	atualizar_visual.call_deferred()   # personagem em camadas: cabelo e arma inicial
 	jogador.hp = stat("vida_max")
 	armas.adicionar(str(heroi.get("arma", "pendrive")))
 	chao.criar_santuarios()
@@ -118,6 +126,8 @@ func jogadores() -> int:
 
 func stat(k: String) -> float:
 	var v := float(_stats.get(k, Construcao.BASE.get(k, 0.0)))
+	if habilidades:
+		v += habilidades.bonus(k)   # transformado (dragão): mais rápido e mais forte
 	if duelo_ativo:
 		# no duelo: a vida vem da regra do pvp.json, a regeneração é menor e a aura de lentidão pega
 		if k == "vida_max":
@@ -131,7 +141,7 @@ func stat(k: String) -> float:
 
 func _recalcular() -> void:
 	var antes := stat("vida_max")
-	_stats = Construcao.stats(heroi, passivos)
+	_stats = Construcao.stats(heroi, passivos, equipamentos)
 	if jogador and stat("vida_max") > antes:
 		jogador.curar(stat("vida_max") - antes)
 
@@ -160,6 +170,7 @@ func _process(dt: float) -> void:
 		inimigos.atualizar(dt, jogador)
 	var t2 := Time.get_ticks_usec()
 	if not parado:
+		habilidades.atualizar(dt)
 		armas.atualizar(dt)
 	if online:
 		online.atualizar(dt)
@@ -180,7 +191,7 @@ func _process(dt: float) -> void:
 # ---------- chamados pelos outros ----------
 
 func tremer(forca: float) -> void:
-	_tremor = maxf(_tremor, forca)
+	_tremor = maxf(_tremor, forca * float(Config.v("tremor")))
 
 
 func mensagem(txt: String, cor := Color.WHITE) -> void:
@@ -200,6 +211,7 @@ func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> 
 
 func inimigo_morreu(v) -> void:
 	recompensa(v.pos, v.tipo, v.elite)
+	habilidades.abate(v)   # enche a Energia da transformação
 	if online:
 		online.morreu(v)   # anfitrião: cada um dos outros pega a própria recompensa
 	if v.d.get("final", false):
@@ -399,13 +411,26 @@ func aplicar(c: Dictionary) -> void:
 				armas.subir(c.id)
 			else:
 				armas.adicionar(c.id)
+			atualizar_visual()
 		"passivo":
 			passivos[c.id] = int(passivos.get(c.id, 0)) + 1
 			_recalcular()
+			armas.preaquecer()   # passivo de área muda o tamanho da poça: gera agora, com as cartas abertas
 		"cura":
 			jogador.curar(40)
 		"evolucao":
 			armas.trocar(c.de, c.id)
+			atualizar_visual()
+		"equipamento":
+			equipamentos[str(Dados.item(c.id).get("slot", c.id))] = c.id
+			_recalcular()
+			atualizar_visual()
+
+
+## Personagem em camadas (herois.json "camadas": true): o que ele veste e segura aparece nele.
+func atualizar_visual() -> void:
+	if heroi.get("camadas", false) and jogador:
+		jogador.definir_camadas(Equipamento.camadas(armas.lista.map(func(a): return a.id), equipamentos))
 
 
 func pode_resortear() -> bool:
@@ -429,15 +454,23 @@ func sortear_cartas() -> Array:
 		if passivos[id] < int(pas_d[id].get("max", 5)):
 			cand.append([8.0, _carta("passivo", id, passivos[id] + 1)])
 	if armas.lista.size() < MAX_ARMAS:
+		var ids: Array = armas.lista.map(func(a): return a.id)
 		for id in armas_d:
-			if id.begins_with("_") or armas_d[id].get("evolucao", false) or armas.tem(id) or _tem_evolucao_de(id):
+			# global ou exclusiva deste herói (até o limite): nunca oferece carta impossível
+			if not Construcao.arma_permitida(id, heroi_id, ids) or _tem_evolucao_de(id):
 				continue
-			cand.append([6.0, _carta("arma", id, 1)])
+			cand.append([float(armas_d[id].get("peso_carta", 6.0)), _carta("arma", id, 1)])
 	if passivos.size() < MAX_PASSIVOS:
 		for id in pas_d:
 			if id.begins_with("_") or passivos.has(id):
 				continue
 			cand.append([5.0, _carta("passivo", id, 1)])
+	# equipamentos visuais: só slot livre e do próprio personagem (por enquanto só quem tem modelo em camadas)
+	if heroi.get("camadas", false):
+		var eq_d: Dictionary = Dados.json("equipamentos")
+		for id in eq_d:
+			if Equipamento.permitido(id, heroi_id, equipamentos):
+				cand.append([float(eq_d.get("_config", {}).get("peso_carta", 5.0)), _carta("equipamento", id, 1)])
 	var n := 3
 	if randf() < 0.1 + stat("sorte") * 0.35:
 		n = 4
@@ -470,7 +503,12 @@ func _carta(tipo: String, id: String, nv: int) -> Dictionary:
 	var desc := str(d.get("descricao", ""))
 	if tipo == "arma" and nv > 1:
 		desc = _texto_nivel(d.get("niveis", [])[nv - 2])
-	return {"tipo": tipo, "id": id, "nome": str(d.get("nome", id)), "desc": desc, "icone": str(d.get("icone", id)), "nivel": nv}
+	var c := {"tipo": tipo, "id": id, "nome": str(d.get("nome", id)), "desc": desc, "icone": str(d.get("icone", id)), "nivel": nv}
+	if tipo == "arma" and Construcao.exclusiva(id):
+		# carta de arma exclusiva mostra quantas ele terá de quantas pode ter (ex.: EXCLUSIVA 1/2)
+		var ids: Array = armas.lista.map(func(a): return a.id)
+		c["exclusiva"] = "%d/%d" % [Construcao.n_exclusivas(ids, heroi_id) + (1 if nv == 1 else 0), Construcao.limite_exclusivas()]
+	return c
 
 
 func _texto_nivel(n: Dictionary) -> String:
@@ -574,6 +612,7 @@ func iniciar_duelo() -> void:
 		return
 	if cartas.aberto():
 		cartas._fechar()
+	habilidades.cancelar()   # o duelo é entre humanos: volta na hora
 	duelo.iniciar(self)
 
 
@@ -600,6 +639,7 @@ func dar_build_teste(nv: int) -> void:
 	nivel = nv
 	_recalcular()
 	jogador.hp = stat("vida_max")
+	atualizar_visual()
 
 
 ## Teste: build de nível N e vai direto pro duelo (--duelo=N).
@@ -614,6 +654,7 @@ func fim_duelo(res: Dictionary) -> void:
 
 func _fim(vitoria: bool, extra := {}) -> void:
 	acabou = true
+	habilidades.cancelar()
 	Som.parar_musica()
 	Som.tocar("vitoria" if vitoria else "derrota")
 	var lista_dano := []

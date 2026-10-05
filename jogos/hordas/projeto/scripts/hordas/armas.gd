@@ -5,9 +5,26 @@ extends Node2D
 ##   orbita    coisas girando em volta por um tempo
 ##   poca      poça no chão que machuca quem pisa
 ##   aura      círculo em volta do jogador que machuca e empurra
+## e os tipos com arquivo próprio em MODULOS (katana, pistolas, marcial, aura_energia, elemental).
 ## Os atributos do jogador (dano, área, quantidade...) multiplicam os da arma na hora de atirar.
 
 const ESCALA := 2.0
+const Poca := preload("res://scripts/hordas/poca.gd")
+## Comportamentos que moram no próprio arquivo (scripts/hordas/armas/<tipo>.gd). Pra criar arma nova com
+## comportamento próprio (ex.: exclusiva de outro personagem): escreva o arquivo com atualizar/passo/pintar/fundo
+## (veja katana.gd) e registre aqui. atras() desenha o que fica atrás do personagem. Os tipos antigos (projetil, chicote...) continuam neste arquivo.
+const MODULOS := {
+	"katana": preload("res://scripts/hordas/armas/katana.gd"),
+	"pistolas": preload("res://scripts/hordas/armas/pistolas.gd"),
+	"marcial": preload("res://scripts/hordas/armas/marcial.gd"),
+	"aura_energia": preload("res://scripts/hordas/armas/aura_energia.gd"),
+	"elemental": preload("res://scripts/hordas/armas/elemental.gd"),
+	# forma de dragão do Hazaki (habilidades.gd): só atacam enquanto ele está transformado
+	"baforada": preload("res://scripts/hordas/armas/baforada.gd"),
+	"garras": preload("res://scripts/hordas/armas/garras.gd"),
+	"energia_draconica": preload("res://scripts/hordas/armas/energia_draconica.gd"),
+	"rugido": preload("res://scripts/hordas/armas/rugido.gd"),
+}
 
 var arena: Node
 ## Quem usa a arma e contra quem ela bate. O jogador usa os vírus (inimigos.gd); no duelo final,
@@ -16,11 +33,17 @@ var dono: Node2D                 # precisa de centro(), lado e curar()
 var campo: Object                # precisa de no_circulo, n_mais_perto, aleatorio_na_tela, ferir
 var statf: Callable              # nome do atributo -> valor (dano, recarga, area...)
 var lista: Array = []        # {id, nivel, t, ativo, acertos{}}
+## Armas da forma transformada (ex.: dragão, habilidades.gd). Enquanto tiver alguma, SÓ elas atacam; as de `lista`
+## ficam paradas e intactas (as cartas continuam evoluindo a build humana), e voltam como estavam no fim.
+var forma_lista: Array = []
 var projeteis: Array = []    # {pos, vel, dano, perfura, vida, tex, esc, acertou[], arma}
 var pocas: Array = []        # {pos, raio, vida, dano, tique, t, segue, arma}
 var golpes: Array = []       # desenho do chicote {pos, lado, alcance, largura, t, arma}
 var _fila: Array = []        # golpes atrasados do chicote {t, arma}
+var especiais: Array = []    # efeitos das armas de MODULOS (cada um tem "tipo"; o módulo cuida do resto)
 var _t := 0.0
+var _chao_pocas := Node2D.new()   # poças ficam no chão: abaixo de quem pisa nelas, acima do piso
+var _atras := Node2D.new()        # atrás do personagem (ex.: chamas da aura saindo de trás do corpo)
 
 
 func limpar_tiros() -> void:
@@ -28,9 +51,14 @@ func limpar_tiros() -> void:
 	pocas.clear()
 	golpes.clear()
 	_fila.clear()
-	for a in lista:
+	especiais.clear()
+	for a in lista + forma_lista:
 		a.ativo = 0.0
 		a.acertos = {}
+
+
+func ativas() -> Array:
+	return forma_lista if not forma_lista.is_empty() else lista
 
 
 func tem(id: String) -> bool:
@@ -46,6 +74,7 @@ func achar(id: String):
 
 func adicionar(id: String) -> void:
 	lista.append({"id": id, "nivel": 1, "t": 0.3, "ativo": 0.0, "acertos": {}, "tique": 0.0})
+	preaquecer()
 
 
 func nivel_max(id: String) -> int:
@@ -57,6 +86,7 @@ func subir(id: String) -> void:
 	var a = achar(id)
 	if a:
 		a.nivel = mini(a.nivel + 1, nivel_max(id))
+	preaquecer()
 
 
 func trocar(de: String, para: String) -> void:
@@ -66,6 +96,7 @@ func trocar(de: String, para: String) -> void:
 		a.nivel = 1
 		a.t = 0.1
 		a.ativo = 0.0
+	preaquecer()
 
 
 ## Atributos da arma no nível atual (sem os bônus do jogador).
@@ -94,7 +125,7 @@ func _s(a: Dictionary) -> Dictionary:
 func atualizar(dt: float) -> void:
 	_t += dt
 	var jog: Node2D = dono
-	for a in lista:
+	for a in ativas():
 		var d := Dados.item(a.id)
 		var s := _s(a)
 		match str(d.get("tipo", "")):
@@ -130,6 +161,12 @@ func atualizar(dt: float) -> void:
 				if a.tique <= 0:
 					a.tique = maxf(0.15, float(s.get("tique", 0.5)))
 					_aura(a, s)
+			var outro:
+				if MODULOS.has(outro):
+					MODULOS[outro].atualizar(self, a, d, s, dt)
+	for e in especiais.duplicate():
+		if not MODULOS[e.tipo].passo(self, e, dt):
+			especiais.erase(e)
 	_chicotes(dt)
 	_projeteis(dt)
 	_pocas(dt)
@@ -138,6 +175,8 @@ func atualizar(dt: float) -> void:
 		if g.t <= 0:
 			golpes.erase(g)
 	queue_redraw()
+	_chao_pocas.queue_redraw()
+	_atras.queue_redraw()
 
 
 # ---------- projétil ----------
@@ -231,7 +270,7 @@ func _derramar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 		var p: Vector2 = alvo.pos if alvo else jog.centro() + Vector2.from_angle(randf() * TAU) * randf_range(40, 140)
 		pocas.append({"pos": p, "raio": float(s.get("raio", 40)) * s.area, "vida": s.duracao, "total": s.duracao,
 			"dano": s.dano, "tique": float(s.get("tique", 0.4)), "t": 0.0, "segue": bool(d.get("base", {}).get("segue", false)),
-			"arma": a.id})
+			"arma": a.id, "variante": randi() % 3, "semente": randf() * 10.0})
 	Som.tocar("queda", 0.2, 1.5, -10)
 
 
@@ -264,21 +303,12 @@ func _aura(a: Dictionary, s: Dictionary) -> void:
 
 func _draw() -> void:
 	var jog: Node2D = dono
-	for p in pocas:
-		var alfa: float = clampf(p.vida / 0.4, 0.0, 1.0) * 0.55
-		var cresce: float = clampf((p.total - p.vida) / 0.15, 0.3, 1.0)
-		var cor := Color(0.45, 0.25, 0.1, alfa) if p.arma == "cafe" else Color(0.75, 0.2, 0.25, alfa)
-		draw_set_transform(p.pos, 0, Vector2(1, 0.6))
-		draw_circle(Vector2.ZERO, p.raio * cresce, cor)
-		draw_arc(Vector2.ZERO, p.raio * cresce, 0, TAU, 24, Color(0.3, 0.15, 0.05, alfa), 2)
-		for i in 3:
-			var ang := _t * 1.5 + i * 2.1
-			draw_circle(Vector2.from_angle(ang) * p.raio * 0.5 + Vector2(0, -fmod(_t * 30 + i * 10, 30)), 2, Color(1, 1, 1, alfa * 0.6))
-	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
-	for a in lista:
+	for a in ativas():
 		var d := Dados.item(a.id)
 		var tipo := str(d.get("tipo", ""))
-		if tipo == "aura":
+		if MODULOS.has(tipo):
+			MODULOS[tipo].fundo(self, a, _s(a))
+		elif tipo == "aura":
 			var s := _s(a)
 			var r: float = float(s.get("raio", 50)) * s.area
 			var pulso := 0.5 + 0.5 * sin(_t * 4.0)
@@ -321,3 +351,60 @@ func _draw() -> void:
 		draw_set_transform(p.pos, p.vel.angle(), Vector2.ONE)
 		draw_texture_rect(tex, Rect2(-sz / 2, sz), false)
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+	for e in especiais:
+		MODULOS[e.tipo].pintar(self, e)
+
+
+## Gera antes as texturas das poças (o pior tamanho leva ~30 ms): chamado ao pegar/subir arma e passivo,
+## quando a tela de cartas está aberta e o jogo parado, pra não dar engasgo no meio da horda.
+func preaquecer() -> void:
+	if not statf.is_valid():
+		return
+	for a in lista:
+		if str(Dados.item(a.id).get("tipo", "")) == "poca":
+			var s := _s(a)
+			for v in 3:
+				Poca.textura(float(s.get("raio", 40)) * s.area, v)
+
+
+func _ready() -> void:
+	_chao_pocas.z_index = -5
+	_chao_pocas.draw.connect(func():
+		for p in pocas:
+			_desenhar_poca(_chao_pocas, p))
+	add_child(_chao_pocas)
+	_atras.z_index = -1
+	_atras.draw.connect(func():
+		for a in ativas():
+			var tipo := str(Dados.item(a.id).get("tipo", ""))
+			if MODULOS.has(tipo):
+				MODULOS[tipo].atras(self, _atras, a, _s(a)))
+	add_child(_atras)
+
+
+## Poça em pixel art (poca.gd) + bolhas que estouram e vapor subindo, tudo alinhado ao pixel.
+func _desenhar_poca(ci: CanvasItem, p: Dictionary) -> void:
+	var alfa: float = clampf(p.vida / 0.4, 0.0, 1.0)
+	var cresce: float = clampf((p.total - p.vida) / 0.15, 0.3, 1.0)
+	var r: float = p.raio * cresce
+	var var_: int = p.get("variante", 0)
+	var s: float = p.get("semente", 0.0)
+	# só a textura do tamanho final; os 0,15 s em que ela "cai" e cresce são uma escala rápida dela
+	var tex := Poca.textura(p.raio, var_)
+	var tam_poca: Vector2 = tex.get_size() * cresce
+	ci.draw_texture_rect(tex, Rect2((p.pos - tam_poca / 2.0).floor(), tam_poca.floor()), false, Color(1, 1, 1, alfa))
+	var bolha := Color(Poca.CAFE[4])
+	for i in 3:
+		var fase := fmod(_t * 0.9 + i * 0.37 + s, 1.0)
+		if fase > 0.8:
+			continue   # estourou
+		var a := i * 2.3 + s
+		var pb: Vector2 = (p.pos + Vector2(cos(a) * r * 0.45, sin(a) * r * 0.45 * Poca.ACHATA)).floor()
+		var tam := 1.0 if fase < 0.45 else 2.0
+		ci.draw_rect(Rect2(pb, Vector2(tam, tam)), Color(bolha, alfa * 0.9))
+		ci.draw_rect(Rect2(pb, Vector2.ONE), Color(1, 0.95, 0.85, alfa * 0.8))   # brilho da bolha
+	var fios := 4 if p.segue else 2   # garrafa térmica: café mais quente, mais vapor
+	for i in fios:
+		var fv := fmod(_t * 0.55 + i * 0.5 / fios * 2.0 + s, 1.0)
+		var pv: Vector2 = (p.pos + Vector2((i - (fios - 1) / 2.0) * r * 0.35 + sin(fv * 7.0 + i) * 2.0, -r * 0.2 - fv * 26.0)).floor()
+		ci.draw_rect(Rect2(pv, Vector2(1, 2)), Color(1, 1, 1, alfa * 0.35 * (1.0 - fv)))

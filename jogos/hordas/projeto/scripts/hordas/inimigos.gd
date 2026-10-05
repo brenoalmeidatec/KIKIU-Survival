@@ -24,6 +24,7 @@ class V:
 	var kb := Vector2.ZERO
 	var flash := 0.0
 	var lento := 0.0
+	var atordoado := 0.0         # parado no lugar (rugido do dragão)
 	var elite := false
 	var chefe := false
 	var t_atira := 0.0
@@ -273,6 +274,7 @@ func atualizar(dt: float, jog: Node2D) -> void:
 			continue
 		v.flash = maxf(0.0, v.flash - dt)
 		v.lento = maxf(0.0, v.lento - dt)
+		v.atordoado = maxf(0.0, v.atordoado - dt)
 		if alvos.size() > 1:
 			var md := INF
 			for a in alvos:
@@ -284,7 +286,7 @@ func atualizar(dt: float, jog: Node2D) -> void:
 		var para: Vector2 = alvo - v.pos
 		var dist: float = para.length()
 		var dir: Vector2 = para / dist if dist > 0.01 else Vector2.ZERO
-		var vel: float = v.vel * (0.45 if v.lento > 0 else 1.0)
+		var vel: float = 0.0 if v.atordoado > 0 else v.vel * (0.45 if v.lento > 0 else 1.0)
 		var mov: Vector2 = dir * vel
 
 		# quem atira mantém distância
@@ -461,6 +463,8 @@ func _draw() -> void:
 		var cor := Color.WHITE
 		if v.elite:
 			draw_circle(v.pos, s.x * 0.55, Color(1.0, 0.85, 0.3, 0.25 + 0.15 * sin(_t * 8.0)))
+		elif v.atordoado > 0:
+			cor = Color(1.0, 0.95, 0.6)   # atordoado: amarelado, piscando de leve
 		elif v.lento > 0:
 			cor = Color(0.6, 0.85, 1.0)
 		draw_texture_rect_region(v.tex, r, Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
