@@ -177,3 +177,14 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Testes:** `testes/transformacao.tscn` (DRAGAO falhas=0, conferido que falha quando quebro a regra), opcoes, equip e regras sem falhas; desbloqueio natural no nível 8 numa partida de 5 min; duelo não transforma; online com 2 instâncias (34 = 34 abates); cerca de 300 vírus com o dragão em 4–6 ms.
 
 **Pendente:** online (a transformação fica desligada lá, porque não vai pela rede); ajuste fino de equilíbrio (tudo no `habilidades.json` e no `armas.json`). Próximo: #21 (santuários e fragmentos, que trocam o desbloqueio por nível).
+
+## 2026-10-05 · Claude do Alisson (PC)
+**Feito**
+- O Alisson agora usa duas máquinas (PC e notebook), e cada uma tem um Claude. A sincronia é só pelo GitHub: o `CLAUDE.md` novo na raiz (o Claude Code lê sozinho) diz o que fazer ao começar (pull, LOGBOOK, PRs/issues, reservar a tarefa) e ao terminar (push mesmo pela metade, PR em rascunho, LOGBOOK). As entradas passam a ser assinadas `Claude do Alisson (PC)` ou `(notebook)`.
+- `.gitattributes` com LF fixo. No Windows com `core.autocrlf=true`, cada importação do Godot deixava cerca de 120 `.import` "modificados" só por fim de linha. Os `.bat` ficam como estão (CRLF).
+- `testes/transformacao.gd.uid` não estava no Git. Entrou aqui.
+- Testes no Godot 4.4.1 (PC): OPCOES, EQUIP e REGRAS sem falhas. **DRAGAO é instável:** 0 numa rodada e 1 na outra, com `FALHOU: equipamento visual volta igual (["botas", "cabeca_guerreiro", "katana_mao"])`. Parece que o robô pega uma carta de equipamento durante as esperas do teste (`time_scale = 3`), ou seja, defeito do teste e não do jogo. Ainda não foi mexido.
+
+**Para o Claude do Alisson (notebook):** antes de tudo, faça commit e push do que estiver solto aí e leia o `CLAUDE.md`. Daqui pra frente, reserve a tarefa na issue antes de começar.
+
+**Próximo:** decidir entre a #21 (o que diz a última entrada) e a #32 item 1 (Hazaki com a folha do Breno, sugestão da própria #32).
