@@ -12,6 +12,7 @@ const H := 360.0
 const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
 const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Sair"]
+const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
 
 const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
@@ -414,6 +415,15 @@ func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := W, alinha
 	_tela.draw_string(f, p, s, alinhar, larg, tam, cor)
 
 
+## Selo "BETA" ao lado de uma opção do menu (p = canto esquerdo, na linha de base do texto).
+func _selo_beta(p: Vector2) -> void:
+	var larg := Dados.fonte.get_string_size("BETA", HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 6
+	var r := Rect2(p + Vector2(0, -9), Vector2(larg, 12))
+	_tela.draw_rect(r, Color(0.3, 0.15, 0.45))
+	_tela.draw_rect(r, Color(0.85, 0.6, 1.0), false, 1.0)
+	_txt(p + Vector2(0, 0), "BETA", 8, Color(0.95, 0.85, 1.0), larg)
+
+
 func _fundo() -> void:
 	_tela.draw_rect(Rect2(0, 0, W, H), Color(0.08, 0.07, 0.12))
 	# vírus passeando no fundo
@@ -435,7 +445,13 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 165), "sobreviva à horda e vença o duelo final", 8, Color(0.75, 0.75, 0.85))
 			for i in OPCOES.size():
 				var sel := i == _sel
-				_txt(Vector2(0, 205 + i * 20), ("> " + OPCOES[i] + " <") if sel else OPCOES[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+				var rotulo: String = ("> " + OPCOES[i] + " <") if sel else OPCOES[i]
+				_txt(Vector2(0, 205 + i * 20), rotulo, 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8))
+				if i in BETA:
+					var meia := Dados.fonte.get_string_size(rotulo, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x / 2
+					_selo_beta(Vector2(W / 2 + meia + 6, 205 + i * 20))
+			if _sel in BETA and _msg == "":
+				_txt(Vector2(0, 295), "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho.", 8, Color(0.85, 0.6, 1.0))
 			if _msg != "":
 				_txt(Vector2(0, 295), _msg, 8, Color(1, 0.6, 0.5))
 			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
@@ -553,6 +569,8 @@ func _print_tela(qual: String) -> void:
 	match qual:
 		"herois":
 			_estado = "herois"
+		"titulo_beta":
+			_sel = BETA[0]
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout
