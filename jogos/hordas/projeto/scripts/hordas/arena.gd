@@ -257,6 +257,7 @@ func tela_azul_caiu() -> void:
 		efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
 	inimigos.limpar()
 	await get_tree().create_timer(2.0, true, false, true).timeout
+	await _esperar_cartas()
 	if acabou:
 		return
 	if not eh_online:
@@ -290,6 +291,13 @@ func chefe_final_chegou(final := true) -> void:
 		hud.mensagem("Derrote o chefe pra fechar a fase!", Color(1, 0.75, 0.6))
 
 
+## Espera as escolhas de carta (nível, tomada, baú) acabarem, sem perder nenhuma.
+func _esperar_cartas() -> void:
+	await get_tree().process_frame
+	while not acabou and (cartas.aberto() or _niveis_pendentes > 0 or _cartas_tomada > 0):
+		await get_tree().process_frame
+
+
 ## O chefe da fase caiu: limpa a tela, junta o XP, dá um baú e uma cura, e começa a próxima fase.
 ## No online todo mundo faz isso ao mesmo tempo, cada um no seu computador, e avisa o anfitrião quando
 ## terminou as cartas; a próxima fase começa quando todos terminarem (ou depois de 60 s).
@@ -307,13 +315,12 @@ func fase_completa() -> void:
 	inimigos.limpar()
 	coleta.puxar_tudo()
 	await get_tree().create_timer(2.2, true, false, true).timeout
+	await _esperar_cartas()
 	if acabou:
 		return
 	jogador.curar(stat("vida_max") * 0.5)
 	abrir_bau()
-	await get_tree().process_frame
-	while not acabou and (cartas.aberto() or _niveis_pendentes > 0 or _cartas_tomada > 0):
-		await get_tree().process_frame
+	await _esperar_cartas()
 	if acabou:
 		return
 	if eh_online:
@@ -558,7 +565,7 @@ func desistir() -> void:
 		Rede.sair()
 		_fim(false)
 	else:
-		morrer()
+		morrer("desistiu")
 
 
 ## Começa o duelo final (depois do chefe final, ou direto no teste).
@@ -574,8 +581,9 @@ func iniciar_duelo() -> void:
 func iniciar_duelo_online(d: Dictionary) -> void:
 	if duelo_ativo or acabou:
 		return
-	if cartas.aberto():
-		cartas._fechar()
+	await _esperar_cartas()   # quem ainda escolhe carta entra quando terminar
+	if duelo_ativo or acabou:
+		return
 	if caido:
 		levantar(1.0)
 	duelo.iniciar_online(self, d)
