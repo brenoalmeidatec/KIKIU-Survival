@@ -183,7 +183,7 @@ func _process(dt: float) -> void:
 # ---------- chamados pelos outros ----------
 
 func tremer(forca: float) -> void:
-	_tremor = maxf(_tremor, forca)
+	_tremor = maxf(_tremor, forca * float(Config.v("tremor")))
 
 
 func mensagem(txt: String, cor := Color.WHITE) -> void:

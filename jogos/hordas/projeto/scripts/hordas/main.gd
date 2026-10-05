@@ -11,7 +11,8 @@ const W := 640.0
 const H := 360.0
 const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
-const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Créditos", "Sair"]
+const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
+const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Opções", "Créditos", "Sair"]
 const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
 
 const TECLAS := {
@@ -114,11 +115,10 @@ func _process(dt: float) -> void:
 	_t += dt
 	_tela.queue_redraw()
 	if Input.is_action_just_pressed("tela_cheia"):
-		# tela cheia EXCLUSIVA: a "normal" do Windows deixa a janela 1px menor que o monitor (1918x1078),
-		# a escala inteira cai de 3x pra 2x e o jogo fica pequeno no meio com barras pretas
+		# vira a opção "Tela cheia" (o Config troca a janela e lembra pra próxima vez)
 		var modo := DisplayServer.window_get_mode()
 		var cheia := modo == DisplayServer.WINDOW_MODE_FULLSCREEN or modo == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if cheia else DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+		Config.definir("tela_cheia", not cheia)
 	match _estado:
 		"titulo":
 			if Input.is_action_just_pressed("cima"):
@@ -138,6 +138,8 @@ func _process(dt: float) -> void:
 						_criar_sala()
 					"Entrar em sala":
 						_estado = "endereco"
+					"Opções":
+						_abrir_opcoes()
 					"Créditos":
 						_estado = "creditos"
 					"Sair":
@@ -221,6 +223,15 @@ func _salvar_endereco() -> void:
 	var f := FileAccess.open(SAVE_ONLINE, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify({"endereco": _endereco}))
+
+
+func _abrir_opcoes() -> void:
+	_estado = "opcoes"   # a tela de Opções cuida das teclas; o título fica parado atrás
+	var t := TelaOpcoes.new()
+	add_child(t)
+	t.fechou.connect(func():
+		_estado = "titulo"
+		_sel = OPCOES.find("Opções"))
 
 
 func _criar_sala() -> void:
@@ -462,6 +473,8 @@ func _desenhar() -> void:
 			if _msg != "":
 				_txt(Vector2(0, 302), _msg, 8, Color(1, 0.6, 0.5))
 			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
+		"opcoes":
+			_fundo()   # a tela de Opções desenha por cima (tela_opcoes.gd)
 		"creditos":
 			_fundo()
 			_txt(Vector2(0, 50), "Créditos", 16, Color.WHITE)
@@ -594,6 +607,8 @@ func _print_tela(qual: String) -> void:
 			_sel = BETA[0]
 		"creditos":
 			_estado = "creditos"
+		"opcoes":
+			_abrir_opcoes()
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout

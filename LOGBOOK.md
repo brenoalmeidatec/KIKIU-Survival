@@ -153,3 +153,16 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - O menu do título agora escolhe pelo NOME da opção (`match OPCOES[_sel]`), não pelo índice, então dá pra pôr opção nova sem renumerar nada. O espaçamento foi pra 18px pra caber mais uma (Opções).
 - Print: `--print_tela=creditos --fotos=pasta`.
 **Próximo:** tela de Opções.
+
+## 2026-10-05 · Claude do Alisson (tela de Opções)
+**Feito**
+- Autoload novo **`Config`** (`scripts/hordas/config.gd`): opções salvas em `user://opcoes.cfg` e aplicadas na hora. Lista única em `Config.ITENS`; pra ler, `Config.v("chave")`. Com argumentos de teste (`--bot`, `--print_tela`...), só o som é aplicado: janela, V-Sync e limite de FPS ficam de fora.
+- **Tela de Opções** (`scripts/hordas/tela_opcoes.gd`), reaproveitada no título (nova opção "Opções") e na pausa ("Continuar / Opções / Desistir").
+  - Jogabilidade: tremer a tela (Não/Pouco/Normal), números de dano, pausar ao sair da janela (alt-tab no solo).
+  - Gráfico: tela cheia, V-Sync, limite de FPS (30/60/120/144/sem), mostrar FPS (canto inferior esquerdo).
+  - Som: música e efeitos de 0 a 100%.
+- O F11 agora vira a opção "Tela cheia": continua exclusiva, e fica lembrada pra próxima vez.
+- Teste novo: `testes/opcoes.tscn` (OPCOES falhas=0). Ele mexe nas opções e devolve tudo no fim.
+- Conferido: pausa → Opções → Esc fecha só as Opções e o segundo Esc volta pro jogo; F11 = 1920x1080 em 3x e volta pra 1280x720; 266 vírus a 145 fps (headless); EQUIP e REGRAS sem falhas.
+
+**Próximo:** #20 (transformação em dragão).
