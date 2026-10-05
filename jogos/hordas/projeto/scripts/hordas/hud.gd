@@ -159,10 +159,14 @@ func _duelo_hud() -> void:
 	# vida do duelo (no lugar da barra de XP)
 	var hpmax: float = arena.stat("vida_max")
 	var fr := clampf(arena.jogador.hp / hpmax, 0.0, 1.0)
-	_tela.draw_rect(Rect2(0, 0, W, 9), Color(0.05, 0.05, 0.1, 0.85))
-	_tela.draw_rect(Rect2(1, 1, (W - 2) * fr, 7), Color(0.9, 0.25, 0.3))
-	_txt(Vector2(6, 8), "%d / %d" % [ceili(arena.jogador.hp), int(hpmax)], 8, Color.WHITE)
+	_tela.draw_rect(Rect2(0, 0, W, 11), Color(0.05, 0.05, 0.1, 0.85))
+	_tela.draw_rect(Rect2(1, 1, (W - 2) * fr, 9), Color(0.9, 0.25, 0.3))
+	_tela.draw_rect(Rect2(1, 1, (W - 2) * fr, 1), Color(1, 0.6, 0.6))   # brilho em cima, igual à barra de XP
+	_txt(Vector2(6, 10), "%d / %d" % [ceili(arena.jogador.hp), int(hpmax)], 8, Color.WHITE)
 	var vivos: int = d.vivos().size()
+	# placa escura atrás do bloco de cima: o texto do HUD não se mistura com nome e número de quem passa embaixo
+	_tela.draw_rect(Rect2(W / 2 - 120, 13, 240, 50), Color(0.03, 0.02, 0.06, 0.55))
+	_tela.draw_rect(Rect2(W / 2 - 120, 13, 240, 50), Color(1, 0.5, 0.45, 0.25), false, 1.0)
 	_txt(Vector2(0, 21), "DUELO FINAL", 8, Color(1, 0.5, 0.45), HORIZONTAL_ALIGNMENT_CENTER, W)
 	_txt(Vector2(0, 42), "Vivos: %d" % vivos, 16, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, W)
 	var f: float = d.fracao_anel()
