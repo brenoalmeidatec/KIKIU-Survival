@@ -122,7 +122,7 @@ static func dps_por_tipo(armas: Array, st: Dictionary) -> Dictionary:
 	var crit := 1.0 + float(st.get("critico", 0.0)) * (float(st.get("critico_mult", 1.5)) - 1.0)
 	for w in armas:
 		var def: Dictionary = d.get(w.id, {})
-		var tipo := str(def.get("tipo", "projetil"))
+		var tipo := str(def.get("familia", def.get("tipo", "projetil")))   # arma de tipo novo diz a família
 		var a := atributos_arma(w.id, w.nivel)
 		var dano := float(a.get("dano", 1)) * float(st.get("dano", 1.0)) * crit
 		var rec := maxf(0.1, float(a.get("recarga", 1)) * float(st.get("recarga", 1.0)))
