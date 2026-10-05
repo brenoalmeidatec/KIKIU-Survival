@@ -18,7 +18,8 @@ func _ready() -> void:
 	z_index = -10
 	_fundo.texture = Dados.tex("chao")
 	_fundo.stretch_mode = TextureRect.STRETCH_TILE
-	_fundo.size = Vector2(1024, 768) / ESCALA
+	# tela 640x360 + passo de 256 da posição + folga: com 1280x1024 nunca sobra borda preta
+	_fundo.size = Vector2(1280, 1024) / ESCALA
 	_fundo.scale = Vector2(ESCALA, ESCALA)
 	_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fundo.show_behind_parent = true
