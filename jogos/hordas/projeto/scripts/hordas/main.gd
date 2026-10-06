@@ -42,6 +42,7 @@ var _apelido_txt := ""       # campo de texto do apelido (lobby, tecla N)
 var _calor := {}              # calor escolhido pra próxima corrida {id: nível} (tela_calor.gd)
 var _criado := ""             # último herói criado (#72): vira a carta depois dos heróis fixos
 var _aviso_heroi := ""        # "fulano morreu de vez" na escolha de heróis (o jogo fechou no meio da corrida)
+var _fundo_tipos: Array = []  # monstros comuns das regiões que passeiam no fundo dos menus
 var _sel_carta := 0           # carta onde estava antes de descer pro botão "Criar herói"
 var _sel_sala := 0            # tela da lista de salas
 var _publico_txt := ""        # anfitrião: campo do endereço público (tecla E no lobby)
@@ -341,6 +342,10 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 		_arena.diretor.t_fase = float(o.pular)
 	if o.has("build"):
 		_arena.dar_build_teste(int(o.build))
+	if o.has("armas"):   # teste: --armas=cabo_rede,cafe,wifi entra com essas armas (no lugar das do herói)
+		_arena.armas.lista.clear()
+		for id in str(o.armas).split(","):
+			_arena.armas.adicionar(id)
 	if o.has("dragao") and not online:   # teste: transformação liberada e com a energia cheia
 		_arena.habilidades.desbloquear()
 		_arena.habilidades.energia = _arena.habilidades.energia_max()
@@ -826,14 +831,24 @@ func _selo_beta(p: Vector2) -> void:
 
 func _fundo() -> void:
 	_tela.draw_rect(Rect2(0, 0, W, H), Color(0.08, 0.07, 0.12))
-	# vírus passeando no fundo
-	var nomes := ["inimigo_bug", "inimigo_popup", "inimigo_spam", "inimigo_trojan", "inimigo_minerador"]
+	# monstros comuns das regiões passeando no fundo, de perfil (a vista 2 da folha de 5 vistas)
+	if _fundo_tipos.is_empty():
+		var inim: Dictionary = Dados.json("inimigos")
+		for k in inim:
+			var d = inim[k]
+			if d is Dictionary and int(d.get("vistas", 1)) == 5 and float(d.get("peso", 0)) > 0 and not d.get("elite", false) and not d.get("chefe", false):
+				_fundo_tipos.append(k)
+	if _fundo_tipos.is_empty():
+		return
 	for i in 14:
-		var tex := Dados.tex(nomes[i % nomes.size()])
+		var tex := Dados.tex(str(Dados.json("inimigos").get(_fundo_tipos[(i * 7) % _fundo_tipos.size()], {}).get("sprite", "")))
+		if tex == null:
+			continue
 		var w := tex.get_width() / 3.0
-		var x := fmod(i * 97.0 + _t * (20 + i * 3), W + 80) - 40
-		var y := 40 + fmod(i * 53.0, H - 80) + sin(_t * 2 + i) * 6
-		_tela.draw_texture_rect_region(tex, Rect2(x, y, w * 2, tex.get_height() * 2), Rect2(w * (int(_t * 4 + i) % 2), 0, w, tex.get_height()), Color(1, 1, 1, 0.25))
+		var h := tex.get_height() / 5.0
+		var x := fmod(i * 97.0 + _t * (20 + i * 3), W + 120) - 60
+		var y := 30 + fmod(i * 53.0, H - 80) + sin(_t * 2 + i) * 6
+		_tela.draw_texture_rect_region(tex, Rect2(x, y, w, h), Rect2(w * (int(_t * 4 + i) % 2), h * 2, w, h), Color(1, 1, 1, 0.25))
 
 
 func _desenhar() -> void:

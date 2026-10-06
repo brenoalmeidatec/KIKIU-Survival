@@ -751,7 +751,7 @@ func _abrir_proxima() -> void:
 	elif _cartas_tomada > 0:
 		_cartas_tomada -= 1
 		Som.tocar("plim", 0.05, 1.2)
-		cartas.escolher("Tomada carregada!", sortear_cartas())
+		cartas.escolher(str(Descobertas.cfg().get("santuarios", {}).get("titulo_tomada", "Carregou!")), sortear_cartas())
 
 
 ## Chamado pelas cartas quando o jogador escolhe uma.

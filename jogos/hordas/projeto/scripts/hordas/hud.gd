@@ -8,6 +8,7 @@ const H := 360.0
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
+const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const OPS_PAUSA := ["Continuar", "Opções", "Desistir da partida"]
 
 var arena: Node
@@ -215,7 +216,7 @@ func _desenhar() -> void:
 			if b != null:
 				var pulso := 0.6 + 0.4 * sin(_t * 5)
 				_seta(b, 9.0, 6.0, Color(1, 0.85, 0.3, pulso))
-				_tela.draw_texture_rect(Dados.tex("tomada"), Rect2(b.p - b.dir * 18 - Vector2(8, 9), Vector2(16, 18)), false, Color(1, 1, 1, pulso))
+				_tela.draw_texture_rect(Dados.tex(str(Descobertas.cfg().get("santuarios", {}).get("sprite", "tomada"))), Rect2(b.p - b.dir * 18 - Vector2(8, 9), Vector2(16, 18)), false, Color(1, 1, 1, pulso))
 	# mensagens
 	var y := H - 50.0
 	for i in range(_msgs.size() - 1, -1, -1):

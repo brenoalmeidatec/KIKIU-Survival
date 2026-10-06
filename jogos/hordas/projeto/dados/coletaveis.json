@@ -1,0 +1,6 @@
+{
+ "_ajuda": "O que cai no chão (#65). As chaves são os tipos internos dos drops (os mesmos de fase.json > drops e do online): aqui muda só o que o jogador vê. sprite = assets/gerado/<sprite>.png; msg e cor [r,g,b] = a mensagem ao pegar. loja_cura = a carta de cura completa da loja do mapa (nome, desc e ícone em assets/gerado/icone_<icone>.png).",
+ "marmita": {"nome": "Coxa Assada", "sprite": "drop_comida", "msg": "Coxa assada! +vida", "cor": [1.0, 0.6, 0.5]},
+ "wifi": {"nome": "Berrante", "sprite": "drop_berrante", "msg": "Berrante! Todo o XP veio até você", "cor": [1.0, 0.85, 0.55]},
+ "loja_cura": {"nome": "Banquete", "desc": "Recupera toda a vida.", "icone": "feijao"}
+}

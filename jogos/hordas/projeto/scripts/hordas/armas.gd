@@ -288,7 +288,7 @@ func _derramar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 		var p: Vector2 = alvo.pos if alvo else jog.centro() + Vector2.from_angle(randf() * TAU) * randf_range(40, 140)
 		pocas.append({"pos": p, "raio": float(s.get("raio", 40)) * s.area, "vida": s.duracao, "total": s.duracao,
 			"dano": s.dano, "tique": float(s.get("tique", 0.4)), "t": 0.0, "segue": bool(d.get("base", {}).get("segue", false)),
-			"arma": a.id, "variante": randi() % 3, "semente": randf() * 10.0})
+			"arma": a.id, "variante": randi() % 3, "semente": randf() * 10.0, "rampa": rampa_de(d)})
 	Som.tocar("queda", 0.2, 1.5, -10)
 
 
@@ -336,7 +336,7 @@ func _draw_i() -> void:
 			var s := _s(a)
 			var r: float = float(s.get("raio", 50)) * s.area
 			var pulso := 0.5 + 0.5 * sin(_t * 4.0)
-			var cor := Color(0.3, 0.75, 1.0) if a.id == "wifi" else Color(0.5, 1.0, 0.6)
+			var cor := cor_de(d, Color(0.5, 1.0, 0.6))
 			draw_circle(jog.centro(), r, Color(cor, 0.08 + 0.04 * pulso))
 			for k in 3:
 				var rr := fmod(_t * 40.0 + k * r / 3.0, r)
@@ -358,15 +358,16 @@ func _draw_i() -> void:
 		for i in 13:
 			var f := i / 12.0
 			pts.append(Vector2(x0 + g.lado * g.alcance * f, g.pos.y + sin(f * 9.0 + _t * 30.0) * g.largura * 0.25 * (1.0 - absf(f - 0.5))))
-		if g.arma == "fibra_optica":
-			for k in 3:
-				var cores := [Color(1, 0.3, 0.8), Color(0.4, 0.9, 1), Color(1, 0.95, 0.4)]
+		var dg := Dados.item(str(g.arma))
+		var fios: Array = dg.get("fios", [])   # evolução: várias linhas coloridas lado a lado (armas.json)
+		if not fios.is_empty():
+			for k in fios.size():
 				var desl := PackedVector2Array()
 				for p in pts:
-					desl.append(p + Vector2(0, (k - 1) * 3))
-				draw_polyline(desl, Color(cores[k], alfa), 2)
+					desl.append(p + Vector2(0, (k - (fios.size() - 1) / 2.0) * 3))
+				draw_polyline(desl, Color(cor_de({"cor": fios[k]}, Color.WHITE), alfa), 2)
 		else:
-			draw_polyline(pts, Color(0.95, 0.8, 0.25, alfa), 3)
+			draw_polyline(pts, Color(cor_de(dg, Color(0.95, 0.8, 0.25)), alfa), 3)
 			draw_polyline(pts, Color(1, 1, 0.8, alfa), 1)
 		draw_rect(Rect2(Vector2(minf(x0, x0 + g.lado * g.alcance), g.pos.y - g.largura / 2), Vector2(g.alcance, g.largura)), Color(1, 1, 0.7, alfa * 0.12))
 	for p in projeteis:
@@ -379,16 +380,29 @@ func _draw_i() -> void:
 		MODULOS[e.tipo].pintar(self, e)
 
 
+## Cor [r, g, b] de uma arma no armas.json ("cor"), ou o padrão (#65: as cores dos efeitos moram nos dados).
+static func cor_de(d: Dictionary, padrao: Color) -> Color:
+	var c = d.get("cor")
+	return Color(float(c[0]), float(c[1]), float(c[2])) if c is Array and c.size() >= 3 else padrao
+
+
+## Rampa de tons da poça de uma arma ("rampa" no armas.json, do escuro ao reflexo); sem ela, a do café.
+static func rampa_de(d: Dictionary) -> Array:
+	var r = d.get("rampa")
+	return r if r is Array and r.size() >= 6 else Poca.CAFE
+
+
 ## Gera antes as texturas das poças (o pior tamanho leva ~30 ms): chamado ao pegar/subir arma e passivo,
 ## quando a tela de cartas está aberta e o jogo parado, pra não dar engasgo no meio da horda.
 func preaquecer() -> void:
 	if not statf.is_valid():
 		return
 	for a in lista:
-		if str(Dados.item(a.id).get("tipo", "")) == "poca":
+		var d := Dados.item(a.id)
+		if str(d.get("tipo", "")) == "poca":
 			var s := _s(a)
 			for v in 3:
-				Poca.textura(float(s.get("raio", 40)) * s.area, v)
+				Poca.textura(float(s.get("raio", 40)) * s.area, v, rampa_de(d))
 
 
 func _ready() -> void:
@@ -414,10 +428,12 @@ func _desenhar_poca(ci: CanvasItem, p: Dictionary) -> void:
 	var var_: int = p.get("variante", 0)
 	var s: float = p.get("semente", 0.0)
 	# só a textura do tamanho final; os 0,15 s em que ela "cai" e cresce são uma escala rápida dela
-	var tex := Poca.textura(p.raio, var_)
+	var rampa: Array = p.get("rampa", Poca.CAFE)
+	var tex := Poca.textura(p.raio, var_, rampa)
 	var tam_poca: Vector2 = tex.get_size() * cresce
 	ci.draw_texture_rect(tex, Rect2((p.pos - tam_poca / 2.0).floor(), tam_poca.floor()), false, Color(1, 1, 1, alfa))
-	var bolha := Color(Poca.CAFE[4])
+	var bolha := Color(rampa[4])
+	var vapor := Color(rampa[5]).lerp(Color.WHITE, 0.5)   # café: vapor branco; fogo: fagulha clara
 	for i in 3:
 		var fase := fmod(_t * 0.9 + i * 0.37 + s, 1.0)
 		if fase > 0.8:
@@ -431,4 +447,4 @@ func _desenhar_poca(ci: CanvasItem, p: Dictionary) -> void:
 	for i in fios:
 		var fv := fmod(_t * 0.55 + i * 0.5 / fios * 2.0 + s, 1.0)
 		var pv: Vector2 = (p.pos + Vector2((i - (fios - 1) / 2.0) * r * 0.35 + sin(fv * 7.0 + i) * 2.0, -r * 0.2 - fv * 26.0)).floor()
-		ci.draw_rect(Rect2(pv, Vector2(1, 2)), Color(1, 1, 1, alfa * 0.35 * (1.0 - fv)))
+		ci.draw_rect(Rect2(pv, Vector2(1, 2)), Color(vapor, alfa * 0.35 * (1.0 - fv)))

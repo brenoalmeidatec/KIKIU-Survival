@@ -9,6 +9,9 @@
   "tempo_carga": 5.0,
   "tempo_carga_tomada": 4.0,
   "raio_interacao": 48,
+  "nomes": {"tomada": "Pira Antiga", "dadiva": "Santuário de Dádivas", "maldito": "Santuário Amaldiçoado"},
+  "titulo_tomada": "A pira acendeu!",
+  "sprite": "pira",
   "variacoes": {
    "simples": {"peso": 5, "nome": "Santuário"},
    "combate": {"peso": 3, "nome": "Santuário do Combate", "duracao": 14, "inimigos": 14, "raio": 190},
