@@ -1,4 +1,5 @@
 extends Node2D
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## Números de dano e partículas (pedacinhos quando um vírus explode).
 
 const MAX_NUMEROS := 70
@@ -57,6 +58,12 @@ func limpar() -> void:
 
 
 func atualizar(dt: float) -> void:
+	var _pp := Perf.ini()
+	atualizar_i(dt)
+	Perf.fim("efe_a", _pp)
+
+
+func atualizar_i(dt: float) -> void:
 	for n in numeros.duplicate():
 		n.t -= dt
 		n.idade += dt
@@ -73,6 +80,12 @@ func atualizar(dt: float) -> void:
 
 
 func _draw() -> void:
+	var _pp := Perf.ini()
+	_draw_i()
+	Perf.fim("efe_d", _pp)
+
+
+func _draw_i() -> void:
 	for p in particulas:
 		draw_rect(Rect2(p.pos, Vector2(p.tam, p.tam)), Color(p.cor, clampf(p.t * 3, 0, 1)))
 	var f: Font = Dados.fonte

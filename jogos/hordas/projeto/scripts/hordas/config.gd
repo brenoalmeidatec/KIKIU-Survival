@@ -87,3 +87,6 @@ func aplicar(janela := true) -> void:
 		DisplayServer.window_set_mode(modo)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if v("vsync") else DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = int(v("fps_max"))
+	if "--sem_limite" in OS.get_cmdline_user_args():   # medição de desempenho: sem V-Sync e sem teto de fps (não grava na opção)
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		Engine.max_fps = 0

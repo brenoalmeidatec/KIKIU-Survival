@@ -1,4 +1,5 @@
 extends Node2D
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## As armas do jogador. Todas atiram sozinhas. O jeito de cada uma vem do "tipo" no armas.json:
 ##   projetil  atira no vírus mais perto
 ##   chicote   golpe reto na frente (e atrás, com mais quantidade)
@@ -123,6 +124,12 @@ func _s(a: Dictionary) -> Dictionary:
 
 
 func atualizar(dt: float) -> void:
+	var _pp := Perf.ini()
+	atualizar_i(dt)
+	Perf.fim("arm_a", _pp)
+
+
+func atualizar_i(dt: float) -> void:
 	_t += dt
 	var jog: Node2D = dono
 	for a in ativas():
@@ -309,6 +316,12 @@ func _aura(a: Dictionary, s: Dictionary) -> void:
 # ---------- desenho ----------
 
 func _draw() -> void:
+	var _pp := Perf.ini()
+	_draw_i()
+	Perf.fim("arm_d", _pp)
+
+
+func _draw_i() -> void:
 	var jog: Node2D = dono
 	for a in ativas():
 		var d := Dados.item(a.id)

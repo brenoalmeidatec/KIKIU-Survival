@@ -1,4 +1,5 @@
 extends Node2D
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## Finalização de chefe (#32): quando o chefe morre, o golpe final depende da arma que deu a última pancada
 ## (dados/finalizacoes.json): katana = corte em X que parte o chefe, pistolas = rajada que fura, arte marcial =
 ## soco que lança e quebra, aura = coluna cobalto que desintegra, elemental = fogo + gelo + raio, o resto = explosão.
@@ -205,6 +206,12 @@ func _eventos() -> void:
 # ---------- desenho ----------
 
 func _draw() -> void:
+	var _pp := Perf.ini()
+	_draw_i()
+	Perf.fim("fin_d", _pp)
+
+
+func _draw_i() -> void:
 	if not _ativo or _rec.is_empty():
 		return
 	var golpe := str(_cfg.golpe)

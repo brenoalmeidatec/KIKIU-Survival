@@ -1,4 +1,5 @@
 extends Node2D
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## Mortes violentas (#32): o inimigo morre de um jeito que depende do que deu o golpe final (dados/mortes.json):
 ## queimado até virar cinza, congelado e estilhaçado, eletrocutado, cortado em duas metades, em pedaços, furado
 ## a tiro, desintegrado pela aura; sem causa conhecida, a morte simples. Tudo é DESENHO (`_draw`), sem nó por efeito
@@ -143,6 +144,12 @@ func particulas() -> int:
 
 
 func atualizar(dt: float) -> void:
+	var _pp := Perf.ini()
+	atualizar_i(dt)
+	Perf.fim("mor_a", _pp)
+
+
+func atualizar_i(dt: float) -> void:
 	if ativas.is_empty() and simples.is_empty() and manchas.is_empty():
 		return
 	var i := ativas.size() - 1
@@ -170,6 +177,12 @@ func atualizar(dt: float) -> void:
 # ---------- desenho ----------
 
 func _draw() -> void:
+	var _pp := Perf.ini()
+	_draw_i()
+	Perf.fim("mor_d", _pp)
+
+
+func _draw_i() -> void:
 	for m in manchas:
 		if m.t < 0.0:
 			continue

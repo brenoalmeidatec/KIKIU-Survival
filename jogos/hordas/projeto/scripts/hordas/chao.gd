@@ -1,4 +1,5 @@
 extends Node2D
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## Chão infinito (azulejos que se repetem), enfeites espalhados e os santuários (tomadas).
 ## Santuário (ideia do Megabonk): fique dentro do círculo até carregar e ganhe uma carta.
 
@@ -80,6 +81,12 @@ func mais_perto_livre(p: Vector2):
 
 
 func atualizar(dt: float) -> void:
+	var _pp := Perf.ini()
+	atualizar_i(dt)
+	Perf.fim("chao_a", _pp)
+
+
+func atualizar_i(dt: float) -> void:
 	_t += dt
 	var cam: Vector2 = arena.camera.position
 	_fundo.position = Vector2(floorf((cam.x - _desloc.x) / _bloco) * _bloco, floorf((cam.y - _desloc.y) / _bloco) * _bloco)
@@ -124,25 +131,42 @@ func _aplicar_cenario() -> void:
 	_amb.configurar(c, arena)
 
 
+var _enf_cen = null
+var _enf_a := Vector2i.ZERO
+var _enf_b := Vector2i.ZERO
+var _enf_ta := Vector2i.ZERO
+var _enf_tb := Vector2i.ZERO
+var _enf_lista: Array = []
+
+
 ## Enfeites na tela: [pé no mundo, item, número sorteado]. Espalhados por célula (sempre iguais no mesmo lugar)
 ## e, se o cenário tiver, os fixos de cada azulejo (ex.: postes nas esquinas da cidade).
 func _enfeites_na_tela() -> Array:
-	var res := []
 	var cam: Vector2 = arena.camera.position
 	var a := Vector2i(floori((cam.x - 380) / Cenario.CEL), floori((cam.y - 260) / Cenario.CEL))
 	var b := Vector2i(floori((cam.x + 380) / Cenario.CEL), floori((cam.y + 260) / Cenario.CEL))
+	var ta := Vector2i(floori((cam.x - 400) / _bloco), floori((cam.y - 300) / _bloco))
+	var tb := Vector2i(floori((cam.x + 400) / _bloco), floori((cam.y + 300) / _bloco))
+	# a lista só muda quando a câmera entra em célula nova (a cada ~150 px): guarda e reaproveita (era refeita e ordenada 2x por quadro)
+	if _enf_cen == cenario and _enf_a == a and _enf_b == b and _enf_ta == ta and _enf_tb == tb:
+		return _enf_lista
+	var res := []
 	for cy in range(a.y, b.y + 1):
 		for cx in range(a.x, b.x + 1):
 			for p in cenario.celula(cx, cy).props:   # sorteados pela semente da corrida (Cenario.celula)
 				res.append([p.pos, p.item, p.k])
 	if not cenario.fixos.is_empty():
-		var ta := Vector2i(floori((cam.x - 400) / _bloco), floori((cam.y - 300) / _bloco))
-		var tb := Vector2i(floori((cam.x + 400) / _bloco), floori((cam.y + 300) / _bloco))
 		for ty in range(ta.y, tb.y + 1):
 			for tx in range(ta.x, tb.x + 1):
 				for f in cenario.fixos:
 					res.append([Vector2(tx, ty) * _bloco + f.pos, f.item, hash(Vector2i(tx, ty)) + int(f.pos.x)])
 	res.sort_custom(func(p, q): return p[0].y < q[0].y)   # quem está mais embaixo fica na frente
+	_enf_cen = cenario
+	_enf_a = a
+	_enf_b = b
+	_enf_ta = ta
+	_enf_tb = tb
+	_enf_lista = res
 	return res
 
 
@@ -167,11 +191,22 @@ func _desenhar_luzes() -> void:
 
 
 func _draw() -> void:
+	var _pp := Perf.ini()
+	_draw_i()
+	Perf.fim("chao_d", _pp)
+
+
+func _draw_i() -> void:
 	if cenario:
+		var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()   # só desenha o que cai na tela (com folga pro tamanho)
 		for e in _enfeites_na_tela():
 			var it: Dictionary = e[1]
 			var reg: Rect2 = it.regiao
 			var pe: Vector2 = it.pe
+			var ep: Vector2 = e[0]
+			var folga := maxf(reg.size.x, reg.size.y) * 1.6 + 24.0
+			if ep.x < vis.position.x - folga or ep.x > vis.end.x + folga or ep.y < vis.position.y - folga or ep.y > vis.end.y + folga:
+				continue
 			Visual.contato(self, e[0], reg.size.x * 0.8)
 			Visual.sombra(self, cenario.atlas, Rect2(-pe, reg.size), reg, e[0])
 			draw_texture_rect_region(cenario.atlas, Rect2(e[0] - pe, reg.size), reg)

@@ -1,4 +1,5 @@
 extends Node2D
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## Vida do cenário (#32 item 2): detalhes de chão (rachaduras, manchas, poças, folhas...), partículas ambientes com teto
 ## baixo (poeira, cinzas, névoa, vaga-lumes, chuva fina) e bichos (ratos, morcegos, corvos) que fogem do herói.
 ## Tudo é desenho barato (primitivas no _draw, sem nó por partícula) e só visual: nada tem colisão nem muda o jogo.
@@ -75,6 +76,12 @@ static func _nova(tipo: String, r: RandomNumberGenerator, cor: Color) -> Diction
 
 
 func atualizar(dt: float) -> void:
+	var _pp := Perf.ini()
+	atualizar_i(dt)
+	Perf.fim("amb_a", _pp)
+
+
+func atualizar_i(dt: float) -> void:
 	_t += dt
 	if cen == null or arena == null:
 		return
@@ -134,6 +141,12 @@ func _mexer(b: Dictionary, jp: Vector2, fuga: float, dt: float) -> void:
 # ---------------------------------------------------------------- desenho: chão e bichos
 
 func _desenhar_sob() -> void:
+	var _pp := Perf.ini()
+	_desenhar_sob_i()
+	Perf.fim("amb_sob", _pp)
+
+
+func _desenhar_sob_i() -> void:
 	if cen == null:
 		return
 	for c in _vis:
@@ -254,6 +267,12 @@ func _bicho(b: Dictionary) -> void:
 # ---------------------------------------------------------------- desenho: partículas
 
 func _desenhar_alto() -> void:
+	var _pp := Perf.ini()
+	_desenhar_alto_i()
+	Perf.fim("amb_alto", _pp)
+
+
+func _desenhar_alto_i() -> void:
 	if cen == null or _part.is_empty() or arena == null:
 		return
 	var origem := _cam - DOMINIO * 0.5

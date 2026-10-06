@@ -1,4 +1,5 @@
 extends Node2D
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## O que cai no chão: gemas de XP, marmita (cura), Wi-Fi (puxa todo o XP) e baú.
 ## O ímã do jogador puxa tudo que está perto.
 
@@ -37,6 +38,12 @@ func limpar() -> void:
 
 
 func atualizar(dt: float) -> void:
+	var _pp := Perf.ini()
+	atualizar_i(dt)
+	Perf.fim("col_a", _pp)
+
+
+func atualizar_i(dt: float) -> void:
 	_t += dt
 	var jog: Node2D = arena.jogador
 	var alvo: Vector2 = jog.centro()
@@ -97,6 +104,12 @@ func _textura(it: Dictionary) -> Texture2D:
 
 
 func _draw() -> void:
+	var _pp := Perf.ini()
+	_draw_i()
+	Perf.fim("col_d", _pp)
+
+
+func _draw_i() -> void:
 	for it in itens:
 		var tex := _textura(it)
 		if tex == null:
