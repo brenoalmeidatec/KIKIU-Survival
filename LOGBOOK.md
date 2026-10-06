@@ -374,3 +374,7 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 **Pendente / fraco**
 - Não ouvi/joguei na mão; os sons dos golpes são os existentes (soco, tremor, queda, acerto). Aura vira um retângulo de luz simples. Online: quem mata pelo anfitrião vê o efeito, quem só vê o inimigo sumir da foto não (efeito local só no `ferir` do próprio cliente).
 - Gerar uma versão "fria" (menos polígonos) pro estilhaço se o pico de mortes pesar.
+
+## 2026-10-06 · Claude do Alisson (PC) · "andando de costas", segunda causa: o besouro
+- Quando o Alisson relatou, os inimigos de horror (#46) ainda nem estavam na `main`. O que ele via era o **Bug**: a arte é um besouro visto de cima com a cabeça pra cima, e o jogo só espelha na horizontal, então ele descia na direção do herói de ré.
+- `inimigos.gd`: campo `gira` (dados) para bicho visto de cima. Ele gira suave pra direção do passo desenhado (vale no solo e no cliente online); parado mantém o ângulo e teleporte não gira. `dados/inimigos.json`: `"gira": true` no bug. Conferido no print: o besouro aponta os olhos pro herói.
