@@ -202,3 +202,8 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Nenhum arquivo dentro de `jogos/` mudou.
 
 **Pendente:** os outros scripts antigos de `_fonte/` (sprites4–7, traco, rosto2...) ficaram, porque não dá pra provar pelo código qual cadeia gerou a arte final. Se o Breno souber, sai num PR à parte. Apagar arquivo não diminui o clone, porque o histórico guarda tudo, e reescrever a `main` está fora dos limites.
+
+## 2026-10-05 · Claude do Alisson (PC) · LOGBOOK sem conflito e teste do dragão estável
+- `.gitattributes`: `LOGBOOK.md merge=union`. Como todo mundo acrescenta no fim, o git junta as duas pontas sozinho em vez de marcar conflito (foi o único conflito do #16 e do #37).
+- `testes/transformacao.gd`: o robô ganhava XP nas esperas e escolhia cartas (equipamento novo ou nível de arma), o que mudava a build no meio do teste. Agora o teste zera a XP do robô. DRAGAO deu falhas=0 em 10 de 10 rodadas (antes, 1 falha em cerca de 1 de cada 3).
+- #3 fechada (#37). A #2 ficou estacionada, porque a Cairu fica como está (regra do #36); explicação na issue.

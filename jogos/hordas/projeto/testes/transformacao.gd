@@ -37,6 +37,7 @@ func _ready() -> void:
 	a.armas.adicionar("katana")
 	a.armas.subir("katana")
 	a.equipamentos["cabeca"] = "cabeca_guerreiro"
+	a.xp = -1.0e12   # sem subir de nível: o robô escolheria cartas nas esperas e mudaria a build no meio do teste
 	a.atualizar_visual()
 	await esperar(0.1)
 	var antes := JSON.stringify(a.armas.lista.map(func(x): return [x.id, x.nivel]))

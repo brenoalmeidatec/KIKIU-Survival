@@ -3,3 +3,6 @@
 * text=auto eol=lf
 # Os .bat já estão com CRLF no repositório; ficam como estão.
 *.bat -text
+
+# O LOGBOOK só recebe entradas no fim: no merge, junta as duas pontas em vez de dar conflito.
+LOGBOOK.md merge=union
