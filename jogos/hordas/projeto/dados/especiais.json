@@ -1,0 +1,44 @@
+{
+ "_ajuda": "Especial de cada herói (#63): um golpe com a cara do amigo (docs/HISTORIA_GRUPO_AMIGOS.md), na tecla E (Y no controle), com recarga em segundos (vezes o atributo recarga do jogador). tipo = módulo em scripts/hordas/especiais/<tipo>.gd (registrado em armas.MODULOS). frase = o que ele grita (aparece em cima da cabeça). dano é multiplicado pelo atributo dano do jogador e cresce escala_nivel por nível. bonus = atributos somados por duracao_bonus segundos depois de usar. Regra de conteúdo do Breno: humor só na insinuação, sem piada de deficiência, cor ou classe.",
+ "hazaki": {
+  "nome": "Sou Gostoso!",
+  "descricao": "Perdeu a discussão? Grita que é gostoso: atordoa e empurra quem está perto, e por uns segundos ele crita mais e bate mais forte.",
+  "tipo": "pose",
+  "frase": "SOU GOSTOSO!",
+  "recarga": 30,
+  "raio": 130,
+  "dano": 30,
+  "escala_nivel": 0.06,
+  "empurra": 300,
+  "atordoa": 2.0,
+  "bonus": {"critico": 0.3, "dano": 0.25},
+  "duracao_bonus": 6
+ },
+ "nicao": {
+  "nome": "Na Manha",
+  "descricao": "Tranquilo, tranquilo: fica de boa, ninguém encosta nele por uns segundos, ele se cura, e quem chega perto também se acalma.",
+  "tipo": "manha",
+  "frase": "TRANQUILO, TRANQUILO...",
+  "recarga": 34,
+  "duracao": 4.0,
+  "cura": 0.35,
+  "raio": 125,
+  "dano": 6,
+  "escala_nivel": 0.05,
+  "lento": 1.5
+ },
+ "lucas": {
+  "nome": "Pegou Onda",
+  "descricao": "Chama uma onda gigante e surfa nela pra frente: atropela e arrasta tudo no caminho.",
+  "tipo": "onda",
+  "frase": "PEGOU ONDA, PIVETE!",
+  "recarga": 24,
+  "largura": 130,
+  "alcance": 560,
+  "velocidade": 560,
+  "dano": 45,
+  "escala_nivel": 0.07,
+  "empurra": 420,
+  "surfe": 0.42
+ }
+}

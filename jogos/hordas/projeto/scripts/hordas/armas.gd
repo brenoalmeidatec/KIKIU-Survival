@@ -25,6 +25,10 @@ const MODULOS := {
 	"garras": preload("res://scripts/hordas/armas/garras.gd"),
 	"energia_draconica": preload("res://scripts/hordas/armas/energia_draconica.gd"),
 	"rugido": preload("res://scripts/hordas/armas/rugido.gd"),
+	# especiais dos heróis (especial.gd, tecla E): efeitos que só nascem quando o jogador usa o especial
+	"pose": preload("res://scripts/hordas/especiais/pose.gd"),
+	"manha": preload("res://scripts/hordas/especiais/manha.gd"),
+	"onda": preload("res://scripts/hordas/especiais/onda.gd"),
 }
 
 var arena: Node

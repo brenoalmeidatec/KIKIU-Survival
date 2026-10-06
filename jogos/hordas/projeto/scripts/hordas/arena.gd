@@ -18,6 +18,7 @@ const Construcao := preload("res://scripts/hordas/construcao.gd")
 const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Online := preload("res://scripts/hordas/online.gd")
 const Habilidades := preload("res://scripts/hordas/habilidades.gd")
+const Especial := preload("res://scripts/hordas/especial.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
@@ -41,6 +42,7 @@ var jogador: Node2D
 var inimigos: Node2D
 var armas: Node2D
 var habilidades: Node2D        # transformação (dragão do Hazaki), habilidades.gd
+var especial: Node2D           # especial do herói (tecla E), especial.gd
 var descobertas: Node          # santuários, fragmentos, dádivas e eventos (#21), descobertas.gd
 var semente := 0               # semente da corrida (0 = sorteia; no online vem do anfitrião, igual pra todos)
 var coleta: Node2D
@@ -138,6 +140,9 @@ func _ready() -> void:
 	add_child(descobertas)
 	descobertas.iniciar(self)
 	habilidades.configurar(self)
+	especial = Especial.new()
+	add_child(especial)
+	especial.configurar(self)
 	efeitos = Efeitos.new()
 	add_child(efeitos)
 	finalizacao = Finalizacao.new()
@@ -208,6 +213,8 @@ func stat(k: String) -> float:
 	var v := float(_stats.get(k, Construcao.BASE.get(k, 0.0)))
 	if habilidades:
 		v += habilidades.bonus(k)   # transformado (dragão): mais rápido e mais forte
+	if especial:
+		v += especial.bonus(k)   # depois do especial (ex.: o "Sou Gostoso!" do Hazaki)
 	if duelo_ativo:
 		# no duelo: a vida vem da regra do pvp.json, a regeneração é menor e a aura de lentidão pega
 		if k == "vida_max":
@@ -253,6 +260,7 @@ func _process(dt: float) -> void:
 	var t2 := Time.get_ticks_usec()
 	if not parado:
 		habilidades.atualizar(dt)
+		especial.atualizar(dt)
 		descobertas.atualizar(dt)
 		armas.atualizar(dt)
 	if online:
