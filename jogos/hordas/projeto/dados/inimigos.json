@@ -3,6 +3,7 @@
  "bug": {
   "nome": "Bug",
   "sprite": "inimigo_bug",
+  "gira": true,
   "vida": 9,
   "dano": 5,
   "velocidade": 48,

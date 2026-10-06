@@ -51,6 +51,9 @@ class V:
 	var ppx := 2.0               # pixels da tela por pixel do sprite (2 = vírus, 1 = arte de horror)
 	var ritmo := 4.0             # quadros de andar por segundo
 	var balanco := 0.0           # pulinho de andar, em px da tela
+	var gira := false            # arte vista de cima com a cabeça pra cima (bug): gira pra onde anda em vez de espelhar
+	var ang := 0.0               # ângulo atual do desenho (só com gira)
+	var pos_ant := Vector2.INF   # posição no último desenho (só com gira): vale no solo e no cliente online
 	var flutua := 0.0            # px acima do chão (a sombra fica no chão)
 	var aura := Color(0, 0, 0, 0)   # brilho em volta (a > 0)
 	var sz := Vector2.ZERO       # tamanho na tela (tam x escala x esc), calculado uma vez
@@ -137,6 +140,7 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.sz = v.tam * v.ppx * v.esc
 	v.ritmo = float(dd.get("ritmo", 4.0))
 	v.balanco = float(dd.get("balanco", 0.0))
+	v.gira = bool(dd.get("gira", false))
 	v.flutua = float(dd.get("flutua", 0.0))
 	if dd.get("aura") is Array:
 		v.aura = Color(dd.aura[0], dd.aura[1], dd.aura[2], 1.0)
@@ -704,7 +708,18 @@ func _draw() -> void:
 			var w := roundf(s.x * sx * maxf(absf(v.flip), 0.08))
 			var h := roundf(s.y * sy)
 			r = Rect2(roundf(v.pos.x + jit) - roundf(w * 0.5), roundf(v.pos.y + s.y * 0.4 - lift) - h, -w if v.flip < 0.0 else w, h)
-		draw_texture_rect_region(v.tex, r, Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
+		if v.gira:
+			# visto de cima: a cabeça aponta pra onde ele anda (antes vinha de ré quando descia na direção do herói)
+			var passo: Vector2 = v.pos - v.pos_ant if v.pos_ant != Vector2.INF else Vector2.ZERO
+			v.pos_ant = v.pos
+			if passo.length_squared() > 0.04 and passo.length_squared() < 400.0:   # parado mantém; teleporte não gira
+				v.ang = lerp_angle(v.ang, passo.angle() + PI * 0.5, minf(1.0, _dt * 10.0))
+			var gw := absf(r.size.x)
+			draw_set_transform(r.position + Vector2(gw, r.size.y) * 0.5, v.ang)
+			draw_texture_rect_region(v.tex, Rect2(-gw * 0.5, -r.size.y * 0.5, gw, r.size.y), Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
+			draw_set_transform(Vector2.ZERO, 0.0)
+		else:
+			draw_texture_rect_region(v.tex, r, Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
 	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
 		var u: float = f.t / NASC_T
 		var fs: Vector2 = f.sz * (1.0 - 0.6 * u)
