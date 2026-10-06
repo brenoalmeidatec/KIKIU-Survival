@@ -41,6 +41,9 @@ RAMPA_EXTRA = {
     "hz_neutro": ["0d0d10", "1a1618", "2a2426", "3d3335", "5e504b", "7d6e65", "a89a8e", "d0c4b6"],   # preto -> cinza encardido -> faixa suja
     "hz_pele": ["3e261e", "6d4332", "b16e52", "d29a78", "e8bb9c"],                                   # pele bronzeada
     "hz_sangue": ["3a0c0d", "75191a", "a52a26"],                                                     # pano vermelho, sangue
+    "areia": ["2a2015", "4a3a24", "7a6038", "a8884e", "cdb06e", "e6d3a0"],                           # areia, linho velho (deserto, #64)
+    "lapis": ["0f1f3a", "1d3a6a", "2f63a0", "4f9ac8", "8fd0e0"],                                     # azul de faiança (escaravelhos)
+    "gelo": ["16202e", "2a3d52", "4a6a88", "7fa6c4", "b8d8ec", "e8f6ff"],                           # gelo, neve e geada (pico, #64)
 }
 PALETA_HEX = [h for r in RAMPA.values() for h in r]
 PALETA = np.array([[int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)] for h in PALETA_HEX])
