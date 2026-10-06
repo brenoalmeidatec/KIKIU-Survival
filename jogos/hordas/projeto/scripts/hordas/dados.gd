@@ -5,6 +5,7 @@ extends Node
 var _cache := {}
 var _tex := {}
 var fonte: Font
+var herois_extra := {}   # heróis montados em tempo de execução (criação de personagem, #72): entram na tabela "herois"
 
 
 func _ready() -> void:
@@ -35,12 +36,21 @@ func json(nome: String) -> Dictionary:
 	if not d is Dictionary:
 		push_error("Arquivo com erro: " + caminho)
 		d = {}
+	if nome == "herois":
+		d.merge(herois_extra, true)   # os criados continuam na tabela depois de recarregar()
 	_cache[nome] = d
 	return d
 
 
 func recarregar() -> void:
 	_cache.clear()
+
+
+## Põe um herói montado em tempo de execução na tabela "herois" (mesmo formato do herois.json).
+func registrar_heroi(id: String, h: Dictionary) -> void:
+	herois_extra[id] = h
+	if _cache.has("herois"):
+		_cache["herois"][id] = h
 
 
 func tex(nome: String) -> Texture2D:

@@ -1,0 +1,49 @@
+{
+ "_ajuda": "Raças da criação de personagem (#72). 'lista' = as que aparecem na tela, na ordem. bonus e fraquezas somam nos atributos do herói, com os nomes de Construcao.BASE: dano, recarga (MENOS é mais rápido), area, quantidade, velocidade_proj, duracao, vida_max, regen, velocidade, ima, sorte, xp, critico, critico_mult. curto = nome que vai no nome do herói ('Orc Guerreiro'). sprite = corpo (por enquanto todas usam o do Hazaki, em camadas). tom = cor [r,g,b] que tinge o corpo: provisório, a paleta de verdade vem no marco 2. Raça com regra nova (gancho: aura, voar, reviver sozinho...) entra num marco seguinte.",
+ "lista": ["humano", "anao", "elfo_sombrio", "orc", "goblin"],
+ "humano": {
+  "nome": "Humano",
+  "curto": "Humano",
+  "descricao": "Não é o mais forte nem o mais rápido, mas aprende mais rápido que todo mundo.",
+  "bonus": {"xp": 0.1, "sorte": 0.1},
+  "fraquezas": {},
+  "sprite": "hazaki",
+  "tom": [1.0, 1.0, 1.0]
+ },
+ "anao": {
+  "nome": "Anão Encouraçado",
+  "curto": "Anão",
+  "descricao": "Uma bigorna com pernas. Aguenta tudo, mas não corre de nada.",
+  "bonus": {"vida_max": 30, "regen": 0.3},
+  "fraquezas": {"velocidade": -0.15, "area": -0.1},
+  "sprite": "hazaki",
+  "tom": [1.0, 0.84, 0.72]
+ },
+ "elfo_sombrio": {
+  "nome": "Elfo Sombrio",
+  "curto": "Elfo",
+  "descricao": "Rápido e certeiro. Quebra com um sopro.",
+  "bonus": {"critico": 0.15, "velocidade": 0.1},
+  "fraquezas": {"vida_max": -25},
+  "sprite": "hazaki",
+  "tom": [0.78, 0.76, 1.0]
+ },
+ "orc": {
+  "nome": "Orc Cabeçudo",
+  "curto": "Orc",
+  "descricao": "Bate forte e não tem pressa nenhuma.",
+  "bonus": {"dano": 0.2},
+  "fraquezas": {"recarga": 0.1},
+  "sprite": "hazaki",
+  "tom": [0.76, 1.0, 0.72]
+ },
+ "goblin": {
+  "nome": "Goblin Sortudo",
+  "curto": "Goblin",
+  "descricao": "Pequeno, frágil e com uma sorte absurda. Tudo cai perto dele.",
+  "bonus": {"sorte": 0.5, "ima": 0.4},
+  "fraquezas": {"vida_max": -30, "dano": -0.15},
+  "sprite": "hazaki",
+  "tom": [0.92, 1.0, 0.6]
+ }
+}
