@@ -3,8 +3,10 @@
 Roda (Blender 4.5 LTS):
     blender -b -P horror.py            # todos
     blender -b -P horror.py carnical   # só um (carnical, cavaleiro_oco, espectro, cao_ossos, abominacao, arauto)
-Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (folha de 3 quadros lado a lado: andar A, andar B, branco
-de dano; o mesmo formato dos vírus, em 1x: o jogo lê "escala" em dados/inimigos.json) e proj_<nome>.png.
+Saída: ../../projeto/assets/gerado/inimigo_<nome>.png e proj_<nome>.png. A folha tem 3 colunas (andar A, andar B, branco
+de dano) x 5 linhas, uma por VISTA: 0 frente (olhando pra câmera), 1 3/4 frente-direita, 2 perfil direito, 3 3/4 costas-direita,
+4 costas. O lado esquerdo é o espelho das vistas 1-3 (o jogo espelha; "vistas": 5 em dados/inimigos.json). Mesma câmera nas 5
+vistas: escala e pé iguais; o tamanho do quadro cresce se o corpo (ex.: a espada pra frente) não couber.
 Os bichos olham pra DIREITA, como os vírus: o jogo espelha quando o bicho está à direita do herói
 (inimigos.gd, `vira = v.pos.x > jx`), e aí ele olha pro herói. O render sai olhando pra esquerda, então cada quadro é espelhado. Olhos e chamas são emissivos: a cor
 precisa existir na paleta passada ao pixelar, senão o brilho some.
@@ -350,7 +352,13 @@ def paleta(nomes):
     return np.vstack([base, vermelho])
 
 
+VISTAS = 5                          # 0 frente, 1 3/4 frente, 2 perfil, 3 3/4 costas, 4 costas (o jogo espelha pro lado esquerdo)
+ANG_VISTA = (0.0, 45.0, 90.0, 135.0, 180.0)   # graus que o corpo gira da frente (olhando pra câmera) até cada vista
+
+
 def gerar(nome):
+    """Folha: 3 colunas (andar A, andar B, branco do flash) x 5 linhas (as vistas). Mesma câmera nas 5 vistas: a escala e
+    o pé (a origem do modelo) caem no mesmo pixel em todas; a câmera é calibrada pela união dos retângulos de todas."""
     modelo, W, H, giro, ramps = INIMIGOS[nome]
     px3.limpar_cena()
     px3.preparar_render(W, H)
@@ -358,19 +366,47 @@ def gerar(nome):
     px3.luz()
     m = mats()
     raiz, corpo, p, pose = modelo(m)
-    raiz.rotation_euler = (0, 0, math.radians(giro))
-    pose(0.0, 0)
-    px3.calibrar_pe(cam, H - 2, W, H)
+    cam.data.shift_x = 0.0
+    cam.data.shift_y = 0.0
+    cena = bpy.context.scene
+    esc0 = cam.data.ortho_scale
+    cena.render.resolution_x, cena.render.resolution_y = W * 2, H * 2   # medir numa tela de dobro do tamanho (a mesma densidade de pixels): nada é cortado
+    cam.data.ortho_scale = esc0 * 2.0
+    uniao = None
+    for v in range(VISTAS):
+        raiz.rotation_euler = (0, 0, -math.radians(ANG_VISTA[v]))
+        for fase in (0.0, math.pi):
+            pose(fase, 0)
+            cx = px3.caixa_alfa(px3.render_rgba())
+            if cx is None:
+                raise RuntimeError("o modelo não apareceu no render")
+            uniao = list(cx) if uniao is None else [min(uniao[0], cx[0]), min(uniao[1], cx[1]), max(uniao[2], cx[2]), max(uniao[3], cx[3])]
+    # a folha cresce se o corpo não couber (a espada pra frente, o perfil comprido): a densidade de pixels é a mesma,
+    # então o bicho não muda de tamanho na tela; o fundo do quadro é o ponto mais baixo (como antes) e o centro, o do conjunto
+    uw, uh = uniao[2] - uniao[0] + 1, uniao[3] - uniao[1] + 1
+    Wn, Hn = max(W, int(math.ceil(uw)) + 2), max(H, int(math.ceil(uh)) + 3)
+    cx_n = (uniao[0] + uniao[2]) / 2.0 - W + Wn / 2.0
+    by_n = uniao[3] - H + Hn / 2.0
+    W, H = Wn, Hn
+    cena.render.resolution_x, cena.render.resolution_y = W, H
+    maior = max(W, H)
+    cam.data.ortho_scale = maior / PPU
+    cam.data.shift_x = (cx_n - (W - 1) / 2.0) / maior
+    cam.data.shift_y = -(by_n - (H - 2)) / maior
+    print("HORROR quadro", nome, W, H)
     pal = paleta(ramps)
-    folha = np.zeros((H, W * 3, 4), dtype=np.float32)
-    for q, fase in enumerate((0.0, math.pi)):
-        pose(fase, q)
-        folha[:, q * W:(q + 1) * W] = px3.pixelar(px3.render_rgba(), paleta=pal)[:, ::-1]   # olhando pra direita
-    branco = folha[:, :W].copy()
-    branco[branco[:, :, 3] > 0.5, :3] = 1.0
-    folha[:, 2 * W:] = branco
+    folha = np.zeros((H * VISTAS, W * 3, 4), dtype=np.float32)
+    for v in range(VISTAS):
+        raiz.rotation_euler = (0, 0, -math.radians(ANG_VISTA[v]))
+        y0 = v * H
+        for q, fase in enumerate((0.0, math.pi)):
+            pose(fase, q)
+            folha[y0:y0 + H, q * W:(q + 1) * W] = px3.pixelar(px3.render_rgba(), paleta=pal)[:, ::-1]   # olhando pra direita
+        branco = folha[y0:y0 + H, :W].copy()
+        branco[branco[:, :, 3] > 0.5, :3] = 1.0
+        folha[y0:y0 + H, 2 * W:] = branco
     px3.salvar_png(folha, os.path.join(SAIDA, "inimigo_%s.png" % nome))
-    print("HORROR OK", nome, W, H)
+    print("HORROR OK", nome, W, H, "vistas", VISTAS)
 
 
 def orbe(nome, n, rampa):

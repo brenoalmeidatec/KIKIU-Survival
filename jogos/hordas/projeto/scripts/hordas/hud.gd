@@ -1,4 +1,5 @@
 extends CanvasLayer
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## Tela da partida: barra de XP, nível, tempo, abates, armas e passivos, vida do chefe,
 ## seta pra tomada mais perto, mensagens e o menu de pausa.
 
@@ -40,6 +41,12 @@ func anunciar(txt: String, cor := Color.WHITE) -> void:
 
 
 func atualizar(dt: float) -> void:
+	var _pp := Perf.ini()
+	atualizar_i(dt)
+	Perf.fim("hud_a", _pp)
+
+
+func atualizar_i(dt: float) -> void:
 	_t += dt
 	for m in _msgs.duplicate():
 		m.t -= dt
@@ -99,6 +106,12 @@ func _pausa_confirmar() -> void:
 
 
 func _process(_dt: float) -> void:
+	var _pp := Perf.ini()
+	_process_i(_dt)
+	Perf.fim("hud_p", _pp)
+
+
+func _process_i(_dt: float) -> void:
 	if not _pausado or _opcoes or Engine.get_process_frames() == _quadro_pausa:
 		return
 	var n := OPS_PAUSA.size()

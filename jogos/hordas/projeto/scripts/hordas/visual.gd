@@ -44,6 +44,17 @@ static func sombra(ci: CanvasItem, tex: Texture2D, rect: Rect2, src: Rect2, pe: 
 	ci.draw_set_transform_matrix(Transform2D.IDENTITY)
 
 
+## Região do atlas com a sombra assada deste quadro (Rect2 vazio = não coube: use `sombra`). Quem desenha muita sombra
+## (inimigos) guarda o resultado e chama `carimbar`, sem refazer a chave de busca todo quadro.
+static func sombra_regiao(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
+	return _assada(tex, src, espelho)
+
+
+## Carimba uma sombra já assada (ver `sombra_regiao`). `escala` = largura na tela / largura do quadro; `fundo` = y da base do sprite.
+static func carimbar(ci: CanvasItem, r: Rect2, escala: float, x: float, y: float) -> void:
+	ci.draw_texture_rect_region(_atlas_tex, Rect2(x, y - escala, r.size.x * escala, r.size.y * escala), r)
+
+
 ## Mancha escura no pé (oclusão de contato). largura em pixels da tela.
 static func contato(ci: CanvasItem, pe: Vector2, largura: float, altura := 0.0) -> void:
 	_preparar()

@@ -8,6 +8,7 @@ extends Node
 ##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
 
 const Arena := preload("res://scripts/hordas/arena.gd")
+const Perf := preload("res://scripts/hordas/perf.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
 const W := 640.0
@@ -49,6 +50,7 @@ var _mouse_ult := Vector2(-1, -1)
 func _ready() -> void:
 	_teclas()
 	_ler_args()
+	Perf.ligado = _args.has("sair")   # relatório de custo por sistema no log do --sair (perf.gd)
 	_camada.layer = 20
 	add_child(_camada)
 	_tela.size = Vector2(W, H)
@@ -494,6 +496,7 @@ func _teste() -> void:
 	if _arena == null:
 		return
 	_quadros += 1
+	Perf.quadros += 1
 	_t_quadros += get_process_delta_time()
 	if _args.has("facil") and not _arena.duelo_ativo:
 		# teste: o chefe final nasce quase morto, pra chegar logo no duelo
@@ -505,6 +508,7 @@ func _teste() -> void:
 		_arena.morrer("teste")
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
+		print("  perf_us: ", Perf.relatorio())
 		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s forma=%s" % [
 			_t, _arena.diretor.fase_idx + 1, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,
@@ -589,9 +593,12 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 167), "arte do Blender virando pixel art, cenários, visual e online", 8, Color.WHITE)
 			_txt(Vector2(0, 198), "FEITO COM", 8, Color(1, 0.85, 0.3))
 			_txt(Vector2(0, 213), "Godot 4  ·  Blender  ·  Claude Code (um Claude de cada lado)", 8, Color.WHITE)
-			_txt(Vector2(0, 240), "Fonte Press Start 2P, de CodeMan38 (licença OFL)", 8, Color(0.6, 0.6, 0.7))
-			_txt(Vector2(0, 254), "Músicas e efeitos gerados por código, no próprio projeto", 8, Color(0.6, 0.6, 0.7))
-			_txt(Vector2(0, 290), "E valeu a você, que está jogando!", 10, Color(1, 0.6, 0.75))
+			_txt(Vector2(0, 236), "Fonte Press Start 2P, de CodeMan38 (licença OFL)", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 248), "Efeitos sonoros gerados por código, no próprio projeto", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 260), "Música: Kevin MacLeod (incompetech.com), CC BY 4.0", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 272), "Oppressive Gloom, Crypto, Giant Wyrm, Ignosi,", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 284), "Crusade, Wounded, Long Note Four (cortadas p/ laço)", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 302), "E valeu a você, que está jogando!", 10, Color(1, 0.6, 0.75))
 			_txt(Vector2(0, 335), "Enter/Esc: voltar", 8, Color(0.5, 0.5, 0.6))
 		"endereco", "conectando":
 			_fundo()
@@ -725,6 +732,20 @@ func _tabela_armas(x: float, y: float, linhas: Array) -> void:
 
 
 ## Teste: abre uma tela, tira um print e fecha (--print_tela=titulo|herois|cartas|bau|fim|hazaki --fotos=pasta).
+## Prints em vários instantes (segundos reais desde agora, separados por vírgula): tela_<nome>_1.png, _2.png...
+func _fotos_seq(nome: String, seq: String) -> void:
+	var pasta := str(_args.get("fotos", "user://"))
+	var ult := 0.0
+	var n := 0
+	for tk in seq.split(","):
+		var alvo := float(tk)
+		await get_tree().create_timer(maxf(0.01, alvo - ult), true, false, true).timeout
+		ult = alvo
+		await RenderingServer.frame_post_draw
+		n += 1
+		get_viewport().get_texture().get_image().save_png(pasta.path_join("tela_%s_%d.png" % [nome, n]))
+
+
 func _print_tela(qual: String) -> void:
 	Config.temporario("pausar_fora", false)   # a janela perde o foco enquanto o print espera: não pode pausar
 	if _args.has("grande"):
@@ -838,6 +859,104 @@ func _print_tela(qual: String) -> void:
 			for v in _arena.inimigos.lista:
 				v.vel = 0.0   # parados, pra a foto
 			await get_tree().create_timer(float(_args.get("espera", 2.0)), true, false, true).timeout
+		"mortes":   # #32: 8 inimigos morrem de 8 causas; prints no meio dos efeitos (--seq=0.15,0.4,0.7 em segundos reais, --reduzida, --conj=virus)
+			if not _args.has("fase") and str(_args.get("conj", "horror")) != "virus":
+				_args["fase"] = "6"
+			Config.temporario("numeros_dano", false)   # números de 1e9 sujariam o print
+			if _args.has("reduzida"):
+				Config.temporario("mortes", "reduzida")
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.armas.lista.clear()
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			var jm: Vector2 = _arena.jogador.position
+			var tipos_m: Array = ["carnical", "cao_ossos", "cavaleiro_oco", "espectro", "carnical", "cao_ossos", "abominacao", "cavaleiro_oco"]
+			if str(_args.get("conj", "horror")) == "virus":
+				tipos_m = ["bug", "popup", "spam", "trojan", "minerador", "spam", "bug", "trojan"]
+			var causas_m: Array = [["baforada", ""], ["poder_elemental", "gelo"], ["wifi", ""], ["katana", ""], ["arte_marcial", ""], ["desert_eagles", ""], ["aura_hazaki", ""], ["energia_draconica", ""]]
+			var posm: Array = [Vector2(-225, -70), Vector2(-75, -70), Vector2(75, -70), Vector2(225, -70), Vector2(-225, 70), Vector2(-75, 70), Vector2(75, 70), Vector2(225, 70)]
+			var alvos_m: Array = []
+			for i in 8:
+				var vm = _arena.inimigos.criar(tipos_m[i], jm + posm[i], 1)
+				vm.vel = 0.0
+				vm.t_nasc = 0.0
+				alvos_m.append(vm)
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			for i in 8:
+				alvos_m[i].causa_pend = causas_m[i][1]
+				_arena.inimigos.ferir(alvos_m[i], 1.0e9, Vector2(60, -10), causas_m[i][0])
+			await _fotos_seq(qual, str(_args.get("seq", "0.15,0.35,0.6")))
+			get_tree().quit()
+			return
+		"virada":   # monstros virando com sprites de verdade: um monstro (--bicho=cavaleiro_oco|cao_ossos...) dá meia volta em torno do herói, da esquerda pra direita, e tira um print a cada passo
+			_args["fase"] = str(_args.get("fase", "6"))
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.armas.lista.clear()
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			var jv: Vector2 = _arena.jogador.position
+			var bv = _arena.inimigos.criar(str(_args.get("bicho", "cavaleiro_oco")), jv + Vector2(-80, 0), 1)
+			bv.vel = 0.0
+			bv.t_nasc = 0.0
+			var pasta_v := str(_args.get("fotos", "user://"))
+			await get_tree().create_timer(0.4, true, false, true).timeout
+			for n in 11:
+				var ang := -PI * 0.5 + PI * n / 10.0   # -90 (esquerda) ... 0 (embaixo, de frente pra câmera) ... +90 (direita)
+				bv.pos = jv + Vector2(sin(ang), cos(ang) * (-1.0 if _args.has("frente") else 1.0)) * 80.0   # sem --frente: ele passa embaixo do herói e mostra as costas; com --frente passa em cima e mostra a frente
+				bv.t_nasc = 0.0
+				await get_tree().create_timer(0.22, true, false, true).timeout
+				await RenderingServer.frame_post_draw
+				get_viewport().get_texture().get_image().save_png(pasta_v.path_join("virada%s_%s_%02d.png" % ["_frente" if _args.has("frente") else "", str(_args.get("bicho", "cavaleiro_oco")), n]))
+			get_tree().quit()
+			return
+		"cerco":   # fase 6: monstros de horror cercando o herói, cada um olhando pra ele
+			_args["fase"] = "6"
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.armas.lista.clear()
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			var jc: Vector2 = _arena.jogador.position
+			var tipos_c := ["carnical", "cao_ossos", "cavaleiro_oco", "espectro", "carnical", "cao_ossos", "cavaleiro_oco", "espectro", "abominacao", "carnical", "cao_ossos", "cavaleiro_oco"]
+			for i in tipos_c.size():
+				var ac := TAU * i / tipos_c.size() + 0.2
+				var bc = _arena.inimigos.criar(tipos_c[i], jc + Vector2(cos(ac) * 130.0, sin(ac) * 85.0), 1)
+				bc.vel = 0.0
+				bc.t_nasc = 0.0
+			await get_tree().create_timer(1.0, true, false, true).timeout
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png(str(_args.get("fotos", "user://")).path_join("cerco_fase6.png"))
+			get_tree().quit()
+			return
+		"finalizacao":   # #32: chefe morto por --arma=katana|desert_eagles|arte_marcial|aura_hazaki|poder_elemental|pendrive (--chefe=, --seq=, --reduzida)
+			Config.temporario("numeros_dano", false)   # números de 1e9 sujariam o print
+			if _args.has("reduzida"):
+				Config.temporario("mortes", "reduzida")
+			if _args.has("fase") == false and str(_args.get("chefe", "trojan_gigante")) == "arauto":
+				_args["fase"] = "6"
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.armas.lista.clear()
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			var bm = _arena.inimigos.criar(str(_args.get("chefe", "trojan_gigante")), _arena.jogador.position + Vector2(130, -10), 1)
+			bm.vel = 0.0
+			bm.t_nasc = 0.0
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			_arena.inimigos.ferir(bm, 1.0e9, Vector2(60, 0), str(_args.get("arma", "katana")))
+			await _fotos_seq(qual + "_" + str(_args.get("arma", "katana")), str(_args.get("seq", "0.2,0.5,0.8,1.1,1.5")))
+			get_tree().quit()
+			return
 		"cartas4":   # 4 cartas de tipos diferentes: arma exclusiva nova, equipamento, arma em nível alto e passivo (--daltonico / --grande testam as opções)
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3).timeout

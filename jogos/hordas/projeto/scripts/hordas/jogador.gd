@@ -1,4 +1,5 @@
 extends Node2D
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## O herói: anda em 8 direções, dá dash (invencível por um instante) e leva dano.
 ## Usa a mesma folha de andar dos personagens da Cairu (andando_8.png: 9 colunas x 4 direções, 44x60).
 
@@ -207,6 +208,12 @@ func vida_max() -> float:
 
 
 func atualizar(dt: float) -> void:
+	var _pp := Perf.ini()
+	atualizar_i(dt)
+	Perf.fim("jog_a", _pp)
+
+
+func atualizar_i(dt: float) -> void:
 	_t += dt
 	_dt = dt
 	invencivel = maxf(0.0, invencivel - dt)
@@ -487,6 +494,12 @@ func curar(valor: float) -> void:
 
 
 func _draw() -> void:
+	var _pp := Perf.ini()
+	_draw_i()
+	Perf.fim("jog_d", _pp)
+
+
+func _draw_i() -> void:
 	if _ent_t > 0.0 or _nome_t > 0.0:
 		Visual.chegada(self, 1.0 - _ent_t / Visual.CHEGADA_TEMPO, _ent_nome, clampf(_nome_t / 0.6, 0.0, 1.0), Color(0.6, 0.85, 1.0))
 	if not (arena.caido and arena.online) and humano > 0.5:
