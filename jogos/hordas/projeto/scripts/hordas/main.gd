@@ -243,11 +243,12 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	_arena.semente = int(o.get("semente", 0)) if online else int(_args.get("semente", 0))
 	_arena.terminou.connect(_terminou)
 	add_child(_arena)
-	if o.has("estresse") and not online:
-		for i in int(o.estresse):
-			_arena.inimigos.criar(["bug", "popup", "spam", "trojan"].pick_random(), Vector2.from_angle(randf() * TAU) * randf_range(150, 420))
 	if o.has("fase"):
 		_arena.saltar_para_andar(int(o.fase) - 1)
+	if o.has("estresse") and not online:   # os bichos do conjunto da fase (vírus ou horror)
+		var tabela := _tipos_do_conjunto(_arena.diretor.conjunto())
+		for i in int(o.estresse):
+			_arena.inimigos.criar(tabela.pick_random(), Vector2.from_angle(randf() * TAU) * randf_range(150, 420))
 	if o.has("pular"):
 		_arena.diretor.tempo = float(o.pular)
 		_arena.diretor.t_fase = float(o.pular)
@@ -260,6 +261,18 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 		_arena.iniciar_duelo_teste(int(o.duelo))
 	_estado = "partida"
 	_t = 0.0
+
+
+## Tipos comuns (que o diretor sorteia) de um conjunto de inimigos: "virus" ou "horror".
+func _tipos_do_conjunto(conjunto: String) -> Array:
+	var res := []
+	var inim: Dictionary = Dados.json("inimigos")
+	for k in inim:
+		if k.begins_with("_") or not inim[k] is Dictionary:
+			continue
+		if str(inim[k].get("conjunto", "virus")) == conjunto and float(inim[k].get("peso", 0)) > 0 and not inim[k].get("elite", false):
+			res.append(k)
+	return res
 
 
 # ---------- online: sala ----------
@@ -710,6 +723,7 @@ func _tabela_armas(x: float, y: float, linhas: Array) -> void:
 
 ## Teste: abre uma tela, tira um print e fecha (--print_tela=titulo|herois|cartas|bau|fim|hazaki --fotos=pasta).
 func _print_tela(qual: String) -> void:
+	Config.temporario("pausar_fora", false)   # a janela perde o foco enquanto o print espera: não pode pausar
 	if _args.has("grande"):
 		Config.temporario("texto_hud", "grande")
 	if _args.has("daltonico"):
@@ -794,9 +808,28 @@ func _print_tela(qual: String) -> void:
 		"entrada_chefe":   # placa do chefe no meio da entrada: --espera=N segundos reais depois que ele nasce (padrão 1)
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3, true, false, true).timeout
-			_arena.inimigos.criar("trojan_gigante", _arena.jogador.position + Vector2(260, -40), 1)
-			_arena.chefe_final_chegou(false, "trojan_gigante")
+			var chefe_id := str(_args.get("chefe", "trojan_gigante"))   # --chefe=arauto pra ver o chefe de horror
+			_arena.inimigos.criar(chefe_id, _arena.jogador.position + Vector2(260, -40), 1)
+			_arena.chefe_final_chegou(false, chefe_id)
 			await get_tree().create_timer(float(_args.get("espera", 1.0)), true, false, true).timeout
+		"horror":   # fase de horror (--fase=6 é o padrão): bichos perto e longe do herói, --espera=N segundos antes do print
+			if not _args.has("fase"):
+				_args["fase"] = "6"
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			var jp2: Vector2 = _arena.jogador.position
+			var elenco := [["carnical", Vector2(-70, 40)], ["carnical", Vector2(-95, 62)], ["cao_ossos", Vector2(110, 50)],
+				["cavaleiro_oco", Vector2(60, -85)], ["espectro", Vector2(-150, -50)], ["abominacao", Vector2(185, -20)],
+				["carnical", Vector2(-230, 110)], ["cao_ossos", Vector2(250, 130)], ["espectro", Vector2(-260, -120)], ["cavaleiro_oco", Vector2(-120, 140)]]
+			if _args.has("so"):   # --so=abominacao: um bicho só, a 130 px do herói
+				elenco = [[str(_args.so), Vector2(130, 0)]]
+				_arena.inimigos.limpar()
+				_arena.diretor.bonus_minutos = -100.0   # sem nascer nada além dele
+			for e in elenco:
+				_arena.inimigos.criar(e[0], jp2 + e[1], 1)
+			for v in _arena.inimigos.lista:
+				v.vel = 0.0   # parados, pra a foto
+			await get_tree().create_timer(float(_args.get("espera", 2.0)), true, false, true).timeout
 		"cartas4":   # 4 cartas de tipos diferentes: arma exclusiva nova, equipamento, arma em nível alto e passivo (--daltonico / --grande testam as opções)
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3).timeout

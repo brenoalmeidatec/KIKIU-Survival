@@ -112,27 +112,35 @@
    ]
   },
   {
-   "nome": "Porão",
+   "nome": "Catacumbas",
    "duracao": 140,
-   "chefe": "ransomware",
+   "chefe": "arauto",
+   "conjunto": "horror",
+   "_escuro": "Fase de horror (escuridao.gd): luz só em volta do herói, das tochas e dos santuários. forca = quão preto fica longe da luz (0-1), raio_heroi/raio_tocha em pixels, nevoa 0-1, tom = cor da sombra. Só vale onde existe este campo.",
+   "escuro": {"forca": 0.9, "raio_heroi": 150, "raio_tocha": 115, "nevoa": 0.3, "tom": [0.03, 0.025, 0.07]},
    "santuarios": 3,
    "cor": [
-    0.75,
-    0.75,
-    0.85
+    0.62,
+    0.58,
+    0.72
    ],
    "eventos": [
     {
-     "tempo": 49,
-     "tipo": "enxame",
-     "inimigo": "popup",
-     "quantos": 50
+     "tempo": 40,
+     "tipo": "anel",
+     "inimigo": "carnical",
+     "quantos": 22
     },
     {
-     "tempo": 98,
-     "tipo": "anel",
-     "inimigo": "trojan",
-     "quantos": 44
+     "tempo": 70,
+     "tipo": "chefe",
+     "inimigo": "abominacao"
+    },
+    {
+     "tempo": 100,
+     "tipo": "enxame",
+     "inimigo": "cao_ossos",
+     "quantos": 16
     }
    ]
   },

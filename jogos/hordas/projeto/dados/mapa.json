@@ -6,7 +6,7 @@
  "inicios_distintos_min": 2,
  "tentativas": 50,
  "espera_voto": 40,
- "fixos": {"1": "fase", "10": "chefe"},
+ "fixos": {"1": "fase", "6": "fase", "10": "chefe"},
  "pesos": {"fase": 14, "elite": 4, "descanso": 4, "loja": 3, "evento": 5, "santuario": 2.5},
  "regras": {
   "elite": {"andar_min": 3, "pai_igual_proibido": true},

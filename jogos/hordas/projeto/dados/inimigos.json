@@ -1,5 +1,5 @@
 {
- "_ajuda": "custo = quanto o diretor paga pra criar; peso = chance; desde = minuto em que começa a aparecer; grupo = quantos nascem juntos. Comportamentos extras: atira (segundos), investida (segundos), anel (segundos, tiros em círculo), invoca {tipo, a_cada, quantos}. raio = tamanho do corpo.",
+ "_ajuda": "custo = quanto o diretor paga pra criar; peso = chance; desde = minuto em que começa a aparecer; grupo = quantos nascem juntos. Comportamentos extras: atira (segundos), investida (segundos), anel (segundos, tiros em círculo), invoca {tipo, a_cada, quantos}. raio = tamanho do corpo. Campos extras: conjunto (qual fase usa: padrão 'virus'; a fase de corrida.json tem o mesmo campo e só sorteia inimigos do seu conjunto), escala (pixels do sprite na tela: 2 = vírus, 1 = arte nova em tamanho real), ritmo (quadros de andar por segundo), balanco (px do pulinho de andar), flutua (px acima do chão, com sombra no chão), aura [r,g,b] (brilho em volta, elite natural), elite (nasce como elite, sem multiplicar vida), cor_morte [r,g,b], luz [raio px, intensidade] (ilumina a escuridão da fase de horror).",
  "bug": {
   "nome": "Bug",
   "sprite": "inimigo_bug",
@@ -153,5 +153,203 @@
    "a_cada": 5.0,
    "quantos": 8
   }
+ },
+ "carnical": {
+  "nome": "Carniçal",
+  "sprite": "inimigo_carnical",
+  "vida": 14,
+  "dano": 6,
+  "velocidade": 58,
+  "xp": 1,
+  "custo": 1,
+  "peso": 10,
+  "desde": 0,
+  "grupo": [
+   2,
+   4
+  ],
+  "raio": 11,
+  "ritmo": 7,
+  "balanco": 1.5,
+  "cor_morte": [
+   0.45,
+   0.6,
+   0.4
+  ],
+  "conjunto": "horror",
+  "escala": 1
+ },
+ "cao_ossos": {
+  "nome": "Cão de Ossos",
+  "sprite": "inimigo_cao_ossos",
+  "vida": 24,
+  "dano": 8,
+  "velocidade": 66,
+  "xp": 2,
+  "custo": 3,
+  "peso": 5,
+  "desde": 0.5,
+  "grupo": [
+   2,
+   3
+  ],
+  "raio": 12,
+  "investida": 3.4,
+  "ritmo": 8,
+  "balanco": 1.2,
+  "cor_morte": [
+   0.85,
+   0.8,
+   0.65
+  ],
+  "conjunto": "horror",
+  "escala": 1
+ },
+ "cavaleiro_oco": {
+  "nome": "Cavaleiro Oco",
+  "sprite": "inimigo_cavaleiro_oco",
+  "vida": 90,
+  "dano": 14,
+  "velocidade": 36,
+  "xp": 5,
+  "custo": 8,
+  "peso": 3,
+  "desde": 1.5,
+  "grupo": [
+   1,
+   1
+  ],
+  "raio": 15,
+  "pesado": true,
+  "investida": 4.6,
+  "ritmo": 2.5,
+  "balanco": 1.0,
+  "cor_morte": [
+   0.5,
+   0.48,
+   0.62
+  ],
+  "conjunto": "horror",
+  "escala": 1
+ },
+ "espectro": {
+  "nome": "Espectro",
+  "sprite": "inimigo_espectro",
+  "vida": 20,
+  "dano": 7,
+  "velocidade": 44,
+  "xp": 3,
+  "custo": 4,
+  "peso": 4,
+  "desde": 1,
+  "grupo": [
+   1,
+   2
+  ],
+  "raio": 11,
+  "atira": 2.8,
+  "distancia": 160,
+  "tiro": {
+   "sprite": "proj_orbe_espectral",
+   "velocidade": 105,
+   "dano": 8
+  },
+  "flutua": 7,
+  "ritmo": 3,
+  "luz": [
+   46,
+   0.55
+  ],
+  "cor_morte": [
+   0.6,
+   1.0,
+   0.6
+  ],
+  "conjunto": "horror",
+  "escala": 1
+ },
+ "abominacao": {
+  "nome": "Abominação",
+  "subtitulo": "Carne que não sabe morrer",
+  "sprite": "inimigo_abominacao",
+  "vida": 420,
+  "dano": 18,
+  "velocidade": 30,
+  "xp": 6,
+  "custo": 30,
+  "peso": 0.8,
+  "desde": 2,
+  "grupo": [
+   1,
+   1
+  ],
+  "raio": 28,
+  "pesado": true,
+  "elite": true,
+  "invoca": {
+   "tipo": "carnical",
+   "a_cada": 7.0,
+   "quantos": 3
+  },
+  "aura": [
+   0.75,
+   0.15,
+   0.1
+  ],
+  "ritmo": 2,
+  "balanco": 2.0,
+  "luz": [
+   60,
+   0.5
+  ],
+  "cor_morte": [
+   0.8,
+   0.15,
+   0.15
+  ],
+  "conjunto": "horror",
+  "escala": 1
+ },
+ "arauto": {
+  "nome": "O Arauto Sem Rosto",
+  "subtitulo": "Anuncia o fim dos cavaleiros",
+  "sprite": "inimigo_arauto",
+  "vida": 1100,
+  "dano": 22,
+  "velocidade": 38,
+  "xp": 60,
+  "custo": 0,
+  "peso": 0,
+  "raio": 30,
+  "pesado": true,
+  "chefe": true,
+  "anel": 3.8,
+  "investida": 5.5,
+  "tiro": {
+   "sprite": "proj_orbe_arauto",
+   "velocidade": 100,
+   "dano": 11,
+   "quantos": 10
+  },
+  "invoca": {
+   "tipo": "espectro",
+   "a_cada": 9.0,
+   "quantos": 2
+  },
+  "bau": true,
+  "ritmo": 2,
+  "balanco": 2.0,
+  "flutua": 4,
+  "luz": [
+   130,
+   0.8
+  ],
+  "cor_morte": [
+   0.9,
+   0.3,
+   0.15
+  ],
+  "conjunto": "horror",
+  "escala": 1
  }
 }
