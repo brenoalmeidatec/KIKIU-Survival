@@ -361,3 +361,7 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Desempenho** (`--estresse=500 --fase=4` com janela, ruído enorme porque outros agentes usavam a máquina): base 103-112 fps, novo 96-112 fps; `inimigos.atualizar` ~3,0-3,3 ms contra ~3,6-4,3 ms (cerca de +10%, uns 0,4 ms). Não piorou de forma clara mas não deu pra provar que ficou igual; reconferir numa máquina parada.
 - **Pontos fracos**: não vi o quadro do meio da animação de nuvem num print (só pelo teste lógico e 0 erro de desenho); a reciclagem acontece fora da tela, então o jogador quase nunca a vê (a animação só aparece se o bicho estiver perto da borda); empurrões do cliente online ainda aparecem em ~15 Hz interpolados (suave, mas com uma foto de atraso); o que o Alisson via "teleportar" era provavelmente o tranco da separação e o pop-in do anel de nascimento a 230 px, não a reciclagem.
 - Tocado fora do pedido: `main.gd` (flag `--saltos`), `online.gd` (`_enviar_fotos`). Não toquei em `jogador.gd`, `rival.gd`, `remoto.gd`.
+
+## 2026-10-06 · Claude do Alisson (PC) · nome do projeto: KIKIU-Survival
+- Pedido do Alisson: o repositório passa a se chamar **KIKIU-Survival**. Quem renomeia é o Breno (Settings → General → Repository name), porque exige admin. Este PR só atualiza o título do README, a raiz da árvore de pastas e o `CLAUDE.md`. Mergear **depois** de renomear.
+- Depois do rename, cada máquina pode atualizar o remoto (opcional, porque o GitHub redireciona): `git remote set-url origin https://github.com/brenoalmeidatec/KIKIU-Survival.git`.
