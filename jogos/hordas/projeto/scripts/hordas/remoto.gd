@@ -3,7 +3,8 @@ extends Node2D
 ## Quem controla é o computador dela; aqui é só desenho, nome, vida e o corpo caído.
 
 const Visual := preload("res://scripts/hordas/visual.gd")
-const LINHA := {"baixo": 0, "esquerda": 1, "direita": 2, "cima": 3}
+const Direcao := preload("res://scripts/hordas/direcao.gd")
+const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
 
 var peer := 0
 var nome := ""
@@ -17,6 +18,7 @@ var spr := Sprite2D.new()
 var _alvo := Vector2.ZERO
 var _mov := Vector2.ZERO
 var _dir := "baixo"
+var _olhar := Direcao.new()
 var _t := 0.0
 var _novo := true
 var _ent_t := 0.0                # chegada no começo da fase (veja visual.gd chegada_*)
@@ -37,7 +39,7 @@ func configurar(p: int, heroi_: String, nome_: String) -> void:
 	var h: Dictionary = Dados.json("herois").get(heroi, {})
 	spr.texture = Dados.tex_personagem(str(h.get("sprite", heroi)), "andando_8")
 	spr.hframes = maxi(1, int(spr.texture.get_width()) / 44)
-	spr.vframes = 4
+	spr.vframes = Direcao.linhas_da_altura(spr.texture.get_height())
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
 	add_child(spr)
@@ -61,11 +63,10 @@ func atualizar(dt: float, d: Dictionary) -> void:
 			entrar()
 	# suaviza entre um pacote e outro; se pulou longe (dash, reaparecer), vai direto
 	position = _alvo if position.distance_to(_alvo) > 160.0 else position.lerp(_alvo, minf(1.0, dt * 14.0))
-	if _mov.length() > 0.1 and not caido:
-		if absf(_mov.x) > absf(_mov.y) * 0.9:
-			_dir = "direita" if _mov.x > 0 else "esquerda"
-		else:
-			_dir = "baixo" if _mov.y > 0 else "cima"
+	var andando := _mov.length() > 0.1 and not caido
+	_olhar.atualizar(_mov if andando else Vector2.ZERO, dt, spr.vframes)
+	_dir = _olhar.dir
+	if andando:
 		spr.frame = LINHA[_dir] * spr.hframes + 1 + int(_t * 12.0) % 8
 	else:
 		spr.frame = LINHA[_dir] * spr.hframes

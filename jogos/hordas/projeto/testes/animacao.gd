@@ -11,7 +11,7 @@ func ok(cond: bool, msg: String) -> void:
 		print("FALHOU: ", msg)
 
 func tex(w: int) -> ImageTexture:
-	return ImageTexture.create_from_image(Image.create(w, 240, false, Image.FORMAT_RGBA8))
+	return ImageTexture.create_from_image(Image.create(w, 480, false, Image.FORMAT_RGBA8))
 
 func faixa(f: int, hf: int, d: String, c0: int, c1: int) -> bool:
 	return f / hf == J.LINHA[d] and f % hf >= c0 and f % hf <= c1
@@ -58,6 +58,9 @@ func _ready() -> void:
 	j._atk_cool = 0.0
 	j.invencivel = 0.0
 	j.dash_t = 0.0
+	j._olhar.angulo = -90.0
+	j._olhar.alvo = -90.0
+	j._olhar.dir = "esquerda"
 	j._dir = "esquerda"
 	for i in 10:
 		j.atualizar(0.05)
