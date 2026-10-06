@@ -138,8 +138,8 @@ func _desenhar() -> void:
 	if not disponivel():
 		return
 	var f: Font = Dados.fonte
-	var y := H - 48.0 if digitando else H - 26.0
 	var lobby := _no_lobby()
+	var y := (H - 48.0 if digitando else H - 26.0) - (12.0 if lobby else 0.0)   # no lobby, as dicas têm 2 linhas
 	var n := 4 if lobby else MOSTRAR   # no lobby os cartões dos jogadores ocupam o meio da tela
 	var vis := mensagens.slice(maxi(0, mensagens.size() - n))
 	vis.reverse()
@@ -152,8 +152,13 @@ func _desenhar() -> void:
 		_tela.draw_rect(Rect2(6, y - 9, minf(larg + 6, W - 12), 12), Color(0, 0, 0, 0.5 * a))
 		_tela.draw_string(f, Vector2(9, y), linha, HORIZONTAL_ALIGNMENT_LEFT, W - 18, 8, Color(m.cor, a))
 		y -= 13.0
+	# quem está falando no chat de voz (voz.gd), em cima das mensagens
+	var falando: Array = Rede.jogadores.keys().filter(func(p): return Voz.esta_falando(p) and not Voz.silenciados.has(p))
+	if not falando.is_empty():
+		var nomes := ", ".join(falando.map(func(p): return "você" if p == Rede.eu() else Rede.nome_de(p)))
+		_tela.draw_string(f, Vector2(9, y), "))) " + nomes, HORIZONTAL_ALIGNMENT_LEFT, W - 18, 8, Color(0.5, 1, 0.6))
 	if digitando:
-		var r := Rect2(6, H - 42, W - 12, 16)
+		var r := Rect2(6, H - 42 - (12.0 if lobby else 0.0), W - 12, 16)
 		_tela.draw_rect(r, Color(0.04, 0.04, 0.08, 0.92))
 		_tela.draw_rect(r, Color(1, 0.85, 0.3), false, 1.0)
 		var cursor := "_" if int(_t * 2) % 2 == 0 else " "

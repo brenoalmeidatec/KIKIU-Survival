@@ -475,3 +475,18 @@ func chat_aviso(txt: String) -> void:
 func _chat(quem, txt, sistema) -> void:
 	if typeof(quem) == TYPE_STRING and typeof(txt) == TYPE_STRING and typeof(sistema) == TYPE_BOOL:
 		Chat.receber(limpar_nome(quem), Chat.limpar_texto(txt), sistema)
+
+
+# ======================================================== chat de voz (voz.gd captura, comprime e toca)
+
+func voz_enviar(pacote: PackedByteArray) -> void:
+	if online():
+		_voz.rpc(pacote)   # do cliente, o anfitrião repassa pros outros (relay da SceneMultiplayer)
+
+
+@rpc("any_peer", "unreliable")
+func _voz(pacote) -> void:
+	var quem := multiplayer.get_remote_sender_id()
+	if typeof(pacote) != TYPE_PACKED_BYTE_ARRAY or pacote.is_empty() or pacote.size() > 1200 or not jogadores.has(quem):
+		return
+	Voz.tocar(quem, pacote)

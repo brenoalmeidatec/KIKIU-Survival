@@ -79,5 +79,15 @@ func _ready() -> void:
 	Chat._devolver_teclas()
 	ok(InputMap.action_get_events("esquerda").size() == antes_n, "fechou: as teclas voltam iguais")
 	ok(Chat.limpar_texto("oi\nlinha\u0007 ok" + "x".repeat(200)).length() == Chat.MAX_TXT and not "\n" in Chat.limpar_texto("a\nb"), "texto do chat limpo e cortado")
+	# voz (#13): mu-law em 8 bits, ida e volta (erro relativo pequeno, mais detalhe nos sons baixos)
+	var V := preload("res://scripts/hordas/voz.gd")
+	var pior_rel := 0.0
+	for x in [-1.0, -0.5, -0.1, -0.01, 0.0, 0.003, 0.02, 0.2, 0.7, 1.0]:
+		var y: float = V.expandir(V.comprimir(x))
+		ok(signf(y) == signf(x) or absf(x) < 0.001, "voz: sinal mantido em %.3f" % x)
+		if absf(x) >= 0.01:
+			pior_rel = maxf(pior_rel, absf(y - x) / absf(x))
+	ok(pior_rel < 0.05, "voz: erro relativo < 5%% (%.3f)" % pior_rel)
+	ok(V.comprimir(2.0) == V.comprimir(1.0) and V.comprimir(-2.0) <= 255, "voz: saturação sem estourar o byte")
 	print("REDE falhas=", falhas)
 	get_tree().quit()

@@ -20,6 +20,8 @@ const ITENS := [
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{"chave": "musica", "grupo": "Som", "nome": "Música", "valores": VOLUMES, "formato": "pct", "padrao": 0.6},
 	{"chave": "efeitos", "grupo": "Som", "nome": "Efeitos", "valores": VOLUMES, "formato": "pct", "padrao": 0.8},
+	{"chave": "voz", "grupo": "Som", "nome": "Voz no online", "valores": ["desligada", "apertar", "aberta"], "rotulos": ["Desligada", "Segurar V", "Sempre aberta"], "padrao": "apertar"},
+	{"chave": "voz_volume", "grupo": "Som", "nome": "Volume das vozes", "valores": VOLUMES, "formato": "pct", "padrao": 1.0},
 ]
 
 var _cfg := ConfigFile.new()

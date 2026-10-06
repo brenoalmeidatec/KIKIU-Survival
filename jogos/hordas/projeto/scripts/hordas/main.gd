@@ -23,7 +23,7 @@ const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo
 const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
 	"dash": [KEY_SPACE, KEY_SHIFT], "confirmar": [KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_Z], "voltar": [KEY_ESCAPE],
-	"resortear": [KEY_R], "pular": [KEY_X], "banir": [KEY_B], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F],
+	"resortear": [KEY_R], "pular": [KEY_X], "banir": [KEY_B], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F], "falar": [KEY_V],
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP], "baixo": [JOY_BUTTON_DPAD_DOWN], "esquerda": [JOY_BUTTON_DPAD_LEFT], "direita": [JOY_BUTTON_DPAD_RIGHT],
@@ -484,6 +484,14 @@ func _input(e: InputEvent) -> void:
 	if Interface.clique(e) or (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_RIGHT):
 		_clique_menu(e)
 		return
+	if _estado == "sala" and e is InputEventKey and e.pressed and not e.echo and e.physical_keycode >= KEY_1 and e.physical_keycode <= KEY_6:
+		var peers: Array = Rede.jogadores.keys()
+		var i: int = e.physical_keycode - KEY_1
+		if i < peers.size() and peers[i] != Rede.eu():   # 1-6: silencia (ou volta a ouvir) a voz de quem está naquele cartão
+			Voz.silenciar(peers[i])
+			Som.ui("cursor")
+		get_viewport().set_input_as_handled()
+		return
 	if _estado == "sala" and e is InputEventKey and e.pressed and e.physical_keycode == KEY_N:
 		_apelido_txt = Rede.apelido   # N no lobby: trocar o apelido
 		_estado = "apelido"
@@ -667,7 +675,7 @@ func _teste() -> void:
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
 				_arena.duelo.estado if _arena.duelo_ativo else "-"])
 			var b: Vector2 = Rede.banda()
-			print("  banda: envia=%.1f KB/s recebe=%.1f KB/s" % [b.x, b.y])
+			print("  banda: envia=%.1f KB/s recebe=%.1f KB/s  voz: enviou=%d recebeu=%d bytes" % [b.x, b.y, Voz.enviados, Voz.recebidos])
 		if _t >= float(_args.sair):
 			if _args.has("saltos"):
 				print("SALTOS ", _arena.inimigos.med_relatorio())
@@ -810,6 +818,15 @@ func _desenhar() -> void:
 					_tela.draw_texture_rect_region(rosto, Rect2(174, y0 + 3, 28, 28), Rect2(0, 0, 52, 52))
 				_txt(Vector2(210, y0 + 15), Rede.nome_de(p) + (" (você)" if eu else ""), 8, Color(1, 0.95, 0.7) if eu else Color.WHITE, 200, HORIZONTAL_ALIGNMENT_LEFT)
 				_txt(Vector2(210, y0 + 28), str(h.get("nome", "?")) + ("  ·  anfitrião" if p == 1 else ""), 8, Color(0.6, 0.65, 0.75), 200, HORIZONTAL_ALIGNMENT_LEFT)
+				# voz: número do cartão (tecla pra silenciar), MUDO, e ondas verdes quando a pessoa está falando
+				var idx: int = Rede.jogadores.keys().find(p)
+				_txt(Vector2(152, y0 + 21), str(idx + 1), 8, Color(0.45, 0.47, 0.55), 14, HORIZONTAL_ALIGNMENT_RIGHT)
+				if Voz.silenciados.has(p):
+					_tela.draw_rect(Rect2(362, y0 + 10, 36, 14), Color(0.45, 0.12, 0.12))
+					_txt(Vector2(362, y0 + 21), "MUDO", 8, Color(1, 0.7, 0.7), 36)
+				elif Voz.esta_falando(p):
+					for k in 3:
+						_tela.draw_arc(Vector2(372, y0 + 17), 3.0 + k * 3.0, -0.8, 0.8, 6, Color(0.5, 1, 0.6, 1.0 - k * 0.25), 1.0)
 				# pronto (verde) ou esperando (cinza), à direita do cartão
 				var pronto := Rede.pronto_de(p)
 				var r := Rect2(404, y0 + 10, 60, 14)
@@ -833,8 +850,9 @@ func _desenhar() -> void:
 			var aviso: String = _msg if _msg != "" else (Salas.erro_net if Rede.anfitriao() and Salas.publica else "")
 			if aviso != "":
 				_txt(Vector2(0, 86), aviso, 8, Color(1, 0.6, 0.5))   # em cima dos cartões: embaixo é do chat
-			var dica := "Setas: herói  N: nome  T: chat  " + ("L/E: lista  Enter: começar  " if Rede.anfitriao() else "Enter: pronto  ")
-			_txt(Vector2(0, 352), dica + "Esc: sair", 8, Color(0.6, 0.6, 0.7))
+			var dica := "Setas: herói   N: nome   " + ("Enter: começar   L/E: lista pública   " if Rede.anfitriao() else "Enter: pronto   ") + "Esc: sair"
+			_txt(Vector2(0, 340), dica, 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 353), "T: chat   V (segurar): falar   1-6: silenciar alguém", 8, Color(0.5, 0.52, 0.62))
 		"herois":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)
