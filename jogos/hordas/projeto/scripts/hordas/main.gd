@@ -710,6 +710,10 @@ func _tabela_armas(x: float, y: float, linhas: Array) -> void:
 
 ## Teste: abre uma tela, tira um print e fecha (--print_tela=titulo|herois|cartas|bau|fim|hazaki --fotos=pasta).
 func _print_tela(qual: String) -> void:
+	if _args.has("grande"):
+		Config.temporario("texto_hud", "grande")
+	if _args.has("daltonico"):
+		Config.temporario("daltonico", true)
 	match qual:
 		"herois":
 			_estado = "herois"
@@ -765,6 +769,33 @@ func _print_tela(qual: String) -> void:
 			_arena.inimigos.criar("trojan_gigante", _arena.jogador.position + Vector2(260, -40), 1)
 			_arena.chefe_final_chegou(false, "trojan_gigante")
 			await get_tree().create_timer(float(_args.get("espera", 1.0)), true, false, true).timeout
+		"cartas4":   # 4 cartas de tipos diferentes: arma exclusiva nova, equipamento, arma em nível alto e passivo (--daltonico / --grande testam as opções)
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.armas.adicionar("pendrive")
+			_arena.passivos["overclock"] = 1
+			var kat: Dictionary = _arena._carta("arma", "katana", 1)
+			var mesa: Array = [kat, _arena._carta("equipamento", "cabeca_guerreiro", 1), _arena._carta("arma", "pendrive", 3), _arena._carta("passivo", "overclock", 2)]
+			_arena.cartas.escolher("Subiu pro nível 12!", mesa)
+			_arena.cartas._sel = 2
+		"dadivas4":   # dádivas (raridade) + evolução na mesma tela
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.cartas.escolher("Dádiva do santuário", _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva")))
+		"pausa":
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.hud.pausar()
+		"hud_chefe":   # chefe fora da tela (seta vermelha com a distância) e dano agrupado: --grande testa o texto do HUD
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.inimigos.criar("trojan_gigante", _arena.jogador.position + Vector2(420, -150), 1)
+			for i in 6:
+				_arena.efeitos.numero(_arena.jogador.position + Vector2(40, -30), 7.0 + i)
+			_arena.efeitos.numero(_arena.jogador.position + Vector2(-50, -20), 33.0, Color.WHITE, true)
+			_arena.efeitos.numero(_arena.jogador.position + Vector2(0, -50), 12.0, Color(1, 0.6, 0.55))
+			_arena.mensagem("Dádiva: Fúria (RARA)", Color(0.4, 0.7, 1))
+			await get_tree().create_timer(0.1).timeout
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout

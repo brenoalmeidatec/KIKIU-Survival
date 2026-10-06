@@ -1,10 +1,11 @@
 extends CanvasLayer
 ## Tela de resultados da fase (#32 item 7): para o jogo e mostra os ganhos DA FASE (arena.fase_stat),
 ## linha por linha, com contagem animada e um "plim" por linha.
-## Qualquer tecla pula a contagem; Enter/E/Z segue. Com --bot segue sozinha em ~1 s; no online ela
+## Qualquer tecla (ou clique) pula a contagem; Enter/E/Z, A do controle ou clique segue. Com --bot segue sozinha em ~1 s; no online ela
 ## fecha sozinha em ~8 s (cada um vê a própria tela e ninguém espera ninguém).
 ## A contagem usa tempo REAL (Time.get_ticks_msec), então não depende de pausa nem de Engine.time_scale.
 
+const Interface := preload("res://scripts/hordas/interface.gd")
 const W := 640.0
 const H := 360.0
 const PASSO := 0.42        # segundos entre uma linha e a próxima
@@ -112,8 +113,8 @@ func _input(e: InputEvent) -> void:
 	if _agora() < _final and not _pulou:
 		_pulou = true   # qualquer tecla acelera: mostra tudo na hora
 		Som.tocar("blip", 0.0, 1.3, -6)
-	elif e.is_action_pressed("confirmar") or e.is_action_pressed("dash") or e.is_action_pressed("voltar"):
-		Som.tocar("confirmar")
+	elif e.is_action_pressed("confirmar") or e.is_action_pressed("dash") or e.is_action_pressed("voltar") or Interface.clique(e):
+		Som.ui("confirmar")
 		fechar()
 
 

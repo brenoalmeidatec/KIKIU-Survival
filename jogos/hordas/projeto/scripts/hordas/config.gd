@@ -41,6 +41,11 @@ func v(chave: String) -> Variant:
 	return _cfg.get_value("opcoes", chave, item(chave).get("padrao"))
 
 
+## Só na memória (não grava no arquivo): usado pelos prints de teste (--grande, --daltonico) pra não mexer nas opções do jogador.
+func temporario(chave: String, valor: Variant) -> void:
+	_cfg.set_value("opcoes", chave, valor)
+
+
 func definir(chave: String, valor: Variant) -> void:
 	_cfg.set_value("opcoes", chave, valor)
 	_cfg.save(ARQUIVO)

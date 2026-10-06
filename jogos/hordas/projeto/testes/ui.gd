@@ -35,6 +35,7 @@ func _ready() -> void:
 	_comparacao()
 	_opcoes()
 	_mouse()
+	await _mouse_cartas()
 	print("UI falhas=", falhas)
 	get_tree().quit()
 
@@ -173,3 +174,60 @@ func _opcoes() -> void:
 func _mouse() -> void:
 	var rs := [Rect2(0, 0, 10, 10), Rect2(20, 0, 10, 10)]
 	ok(Interface.quem(rs, Vector2(25, 5)) == 1 and Interface.quem(rs, Vector2(15, 5)) == -1 and Interface.quem(rs, Vector2(1, 1)) == 0, "hit-test do mouse")
+
+
+## Mouse de verdade nas cartas: mover escolhe, clique pega, clique em "Pular" fecha sem pegar. (Eventos injetados no Input.)
+func _mouse_cartas() -> void:
+	var a := Arena.new()
+	a.heroi_id = "hazaki"
+	a.bot = false
+	add_child(a)
+	await esperar(0.2)
+	a.xp = -1.0e12
+	var mesa: Array = a.sortear_cartas()
+	var ct = a.cartas
+	ct.escolher("Teste", mesa.duplicate())
+	await esperar(0.7)
+	ok(ct.aberto() and get_tree().paused, "cartas abertas e jogo pausado")
+	var mov := InputEventMouseMotion.new()
+	var alvo: Rect2 = ct._rect_carta(1)
+	mov.position = alvo.get_center()
+	mov.global_position = mov.position
+	Input.parse_input_event(mov)
+	await esperar(0.1)
+	ok(ct._sel == 1, "passar o mouse na carta 2 escolhe ela (sel=%d)" % ct._sel)
+	# clique no botão Pular: fecha sem pegar nada e gasta a carga
+	var btns: Array = ct._botoes()
+	var rp: Rect2 = ct._rect_botao(1, btns.size())
+	var mv2 := InputEventMouseMotion.new()
+	mv2.position = rp.get_center()
+	mv2.global_position = mv2.position
+	Input.parse_input_event(mv2)
+	await esperar(0.1)
+	var clique := InputEventMouseButton.new()
+	clique.button_index = MOUSE_BUTTON_LEFT
+	clique.pressed = true
+	clique.position = rp.get_center()
+	clique.global_position = clique.position
+	Input.parse_input_event(clique)
+	await esperar(0.1)
+	ok(not ct.aberto() and a.pular == 1 and a.resortear == 4, "clicar em Pular fecha as cartas e gasta a carga (pular=%d)" % a.pular)
+	var armas_antes: int = a.armas.lista.size()
+	ct.escolher("Teste 2", mesa.duplicate())
+	await esperar(0.7)
+	var m3 := InputEventMouseMotion.new()
+	m3.position = ct._rect_carta(0).get_center()
+	m3.global_position = m3.position
+	Input.parse_input_event(m3)
+	await esperar(0.1)
+	var c3 := InputEventMouseButton.new()
+	c3.button_index = MOUSE_BUTTON_LEFT
+	c3.pressed = true
+	c3.position = m3.position
+	c3.global_position = m3.position
+	Input.parse_input_event(c3)
+	await esperar(0.1)
+	ok(not ct.aberto(), "clicar numa carta pega e fecha")
+	ok(a.armas.lista.size() >= armas_antes and not get_tree().paused, "jogo despausa")
+	a.queue_free()
+	await esperar(0.1)
