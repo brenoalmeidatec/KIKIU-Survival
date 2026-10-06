@@ -202,6 +202,8 @@ func _mouse() -> void:
 
 
 func _input(e: InputEvent) -> void:
+	if Chat.digitando:   # o teclado é do chat (chat.gd)
+		return
 	if _modo == "" or _espera > 0 or arena.bot:
 		return
 	if not (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT):
@@ -225,6 +227,8 @@ func _input(e: InputEvent) -> void:
 
 
 func _unhandled_key_input(e: InputEvent) -> void:
+	if Chat.digitando:
+		return
 	if _modo != "escolher" or _espera > 0 or not e.is_pressed():
 		return
 	var k: int = e.physical_keycode - KEY_1

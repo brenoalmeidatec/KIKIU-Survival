@@ -448,3 +448,11 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Segurança:** todo anúncio é validado (`Salas.validar`: versão, tamanhos, tipos, endereço só `[letras números . -]:porta`, nome limpo até 20); no máximo 30 salas. O lobby avisa que o endereço público fica visível.
 - Testado: lista mostrando a sala local, anúncio chegando no ntfy, cliente entrando pela lista (lobby com 2), 8 anúncios tortos recusados (`testes/rede.tscn`), online com 4 (157 = 157 abates). Testes ui/opcoes/rede/mapa sem falhas.
 - **Pendente:** ver uma sala da internet aparecer em outra casa (precisa de duas redes). Próximo: PR 3, chat de texto.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #13 PR 3: chat de texto
+- Autoload novo `Chat` (`scripts/hordas/chat.gd`): no lobby e na partida online. **T** abre, Enter manda, Esc fecha; mensagens somem em 9 s (abertas, aparecem todas). No lobby, 4 linhas embaixo à esquerda.
+- **Pelo anfitrião** (`Rede.chat_*`): limpa o texto (só o que a fonte desenha, sem quebra de linha, até 80), segura quem manda mais de uma a cada 0,4 s, e avisa "fulano entrou na sala" / "fulano saiu".
+- **Teclado:** enquanto digita, as teclas saem do `InputMap` e voltam ao fechar (o Godot registra a ação antes de qualquer `_input` poder impedir: "e" seria confirmar, espaço seria dash). Os `_input` de main, cartas, loja, resultado e mapa ignoram tecla com o chat aberto.
+- Lobby reorganizado: dicas mais curtas embaixo (cabem na tela), aviso em cima dos cartões, cartões encostam com 5–6 pessoas.
+- Testado: print do lobby com 6 pessoas conversando, texto com controle e quebra de linha chegando limpo, `testes/rede.tscn` (teclas saem e voltam, texto cortado), online com 4 (109 = 109 abates). ui/mapa/resultado sem falhas.
+- **Próximo:** PR 4, chat de voz.

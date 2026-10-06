@@ -66,5 +66,18 @@ func _ready() -> void:
 	var nome_feio: Dictionary = S.validar(JSON.stringify({"v": S.VERSAO, "id": "s123456", "nome": "\u0007Sala\n" + "z".repeat(50), "jogadores": 1, "max": 6, "porta": 7777, "endereco": "a.b:7"}), "")
 	ok(nome_feio.get("nome", "").length() <= 20 and not "\n" in nome_feio.get("nome", ""), "nome limpo e curto (%s)" % nome_feio.get("nome"))
 	ok(S.endereco_valido("1.2.3.4:7777") and not S.endereco_valido("1.2.3.4") and not S.endereco_valido("a b:1"), "formato de endereço")
+	# chat (#13): enquanto digita, as teclas saem do mapa de ações (digitar "e" não é confirmar, WASD não anda)
+	if not InputMap.has_action("esquerda"):
+		InputMap.add_action("esquerda")
+	var tecla_a := InputEventKey.new()
+	tecla_a.physical_keycode = KEY_A
+	InputMap.action_add_event("esquerda", tecla_a)
+	var antes_n := InputMap.action_get_events("esquerda").size()
+	Chat.digitando = false
+	Chat._suspender_teclas()
+	ok(InputMap.action_get_events("esquerda").filter(func(e): return e is InputEventKey).is_empty(), "digitando: A não é mais 'esquerda'")
+	Chat._devolver_teclas()
+	ok(InputMap.action_get_events("esquerda").size() == antes_n, "fechou: as teclas voltam iguais")
+	ok(Chat.limpar_texto("oi\nlinha\u0007 ok" + "x".repeat(200)).length() == Chat.MAX_TXT and not "\n" in Chat.limpar_texto("a\nb"), "texto do chat limpo e cortado")
 	print("REDE falhas=", falhas)
 	get_tree().quit()
