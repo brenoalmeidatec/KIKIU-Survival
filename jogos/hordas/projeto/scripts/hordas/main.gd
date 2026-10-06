@@ -34,8 +34,10 @@ var _tela := Control.new()
 var _camada := CanvasLayer.new()
 var _estado := "titulo"      # titulo, herois, partida, fim
 var _estado_antes := "titulo"  # pra perceber a troca de tela e tocar a transição
+var _apelido_txt := ""       # campo de texto do apelido (lobby, tecla N)
+var _forcar_t := -10.0       # anfitrião: Enter com gente não pronta avisa; outro Enter em 3 s começa assim mesmo
 ## telas que são a mesma tela pro jogador (só muda o texto): trocar entre elas não tem transição
-const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"]]
+const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"]]
 var _sel := 0
 var _arena: Node2D
 var _resumo := {}
@@ -287,17 +289,24 @@ func _tipos_do_conjunto(conjunto: String) -> Array:
 
 # ---------- online: sala ----------
 
+## Lê o online.json: devolve o endereço da última sala e põe o apelido salvo em Rede.apelido
+## (sem apelido ainda: sorteia um e já grava).
 func _ler_endereco() -> String:
-	if not FileAccess.file_exists(SAVE_ONLINE):
-		return ""
-	var d = JSON.parse_string(FileAccess.get_file_as_string(SAVE_ONLINE))
-	return str(d.get("endereco", "")) if d is Dictionary else ""
+	var d = JSON.parse_string(FileAccess.get_file_as_string(SAVE_ONLINE)) if FileAccess.file_exists(SAVE_ONLINE) else null
+	if not d is Dictionary:
+		d = {}
+	Rede.apelido = Rede.limpar_nome(str(d.get("nome", "")))
+	if Rede.apelido == "":
+		Rede.apelido = Rede.nome_sorteado()
+		_endereco = str(d.get("endereco", ""))
+		_salvar_endereco()
+	return str(d.get("endereco", ""))
 
 
 func _salvar_endereco() -> void:
 	var f := FileAccess.open(SAVE_ONLINE, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"endereco": _endereco}))
+		f.store_string(JSON.stringify({"endereco": _endereco, "nome": Rede.apelido}))
 
 
 func _abrir_opcoes() -> void:
@@ -337,6 +346,8 @@ func _rede_conectou(ok: bool, msg: String) -> void:
 	if ok:
 		_estado = "sala"
 		_msg = ""
+		if _args.has("pronto"):   # teste: o cliente já entra pronto
+			Rede.marcar_pronto(true)
 	elif _estado == "sala":
 		_msg = msg   # trocou pra um herói ocupado: continua na sala
 	else:
@@ -379,8 +390,18 @@ func _sala() -> void:
 				Som.ui("cursor")
 				break
 	elif Input.is_action_just_pressed("confirmar") and Rede.anfitriao():
+		if Rede.todos_prontos() or _t - _forcar_t < 3.0:
+			Som.ui("confirmar")
+			Rede.comecar()
+		else:
+			# alguém ainda não está pronto: avisa quem, e um segundo Enter em 3 s começa assim mesmo
+			var faltam: Array = Rede.jogadores.keys().filter(func(p): return not Rede.pronto_de(p)).map(func(p): return Rede.nome_de(p))
+			_msg = "Ainda não estão prontos: %s. Enter de novo começa assim mesmo." % ", ".join(faltam)
+			_forcar_t = _t
+			Som.ui("erro")
+	elif (Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("dash")) and Rede.cliente():
+		Rede.marcar_pronto(not Rede.pronto_de(Rede.eu()))
 		Som.ui("confirmar")
-		Rede.comecar()
 	elif Input.is_action_just_pressed("voltar"):
 		Rede.sair()
 		_estado = "titulo"
@@ -397,8 +418,15 @@ func _sala() -> void:
 
 
 func _online_teste() -> void:
+	if _args.has("nome"):
+		Rede.apelido = Rede.limpar_nome(str(_args.nome))
 	if str(_args.online) == "host":
 		_criar_sala()
+		if _args.has("foto_sala"):   # print do lobby depois de N s (--fotos=pasta) e fecha
+			await get_tree().create_timer(float(_args.foto_sala)).timeout
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png(str(_args.get("fotos", "user://")).path_join("tela_sala.png"))
+			get_tree().quit()
 	else:
 		_endereco = str(_args.get("endereco", "127.0.0.1:%d" % Rede.PORTA))
 		_entrar()
@@ -411,6 +439,14 @@ func _online_teste() -> void:
 func _input(e: InputEvent) -> void:
 	if Interface.clique(e) or (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_RIGHT):
 		_clique_menu(e)
+		return
+	if _estado == "sala" and e is InputEventKey and e.pressed and e.physical_keycode == KEY_N:
+		_apelido_txt = Rede.apelido   # N no lobby: trocar o apelido
+		_estado = "apelido"
+		get_viewport().set_input_as_handled()
+		return
+	if _estado == "apelido" and e is InputEventKey and e.pressed:
+		_editar_apelido(e)
 		return
 	if _estado != "endereco" or not e is InputEventKey or not e.pressed:
 		return
@@ -430,6 +466,23 @@ func _input(e: InputEvent) -> void:
 		var c := char(k.unicode)
 		if c.is_valid_identifier() or c.is_valid_int() or c in [".", ":", "-", "_"]:
 			_endereco += c
+
+
+## Campo de texto do apelido (lobby, tecla N). Enter grava, Esc desiste.
+func _editar_apelido(k: InputEventKey) -> void:
+	get_viewport().set_input_as_handled()
+	if k.keycode == KEY_BACKSPACE:
+		_apelido_txt = _apelido_txt.left(-1)
+	elif k.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+		if Rede.limpar_nome(_apelido_txt) != "":
+			Rede.trocar_apelido(_apelido_txt)
+			_salvar_endereco()
+			Som.ui("confirmar")
+		_estado = "sala"
+	elif k.keycode == KEY_ESCAPE:
+		_estado = "sala"
+	elif k.unicode >= 32 and _apelido_txt.length() < 16:
+		_apelido_txt = Rede.limpar_nome(_apelido_txt + char(k.unicode)) if k.unicode != 32 else _apelido_txt + " "
 
 
 func _clique_menu(e: InputEventMouseButton) -> void:
@@ -620,14 +673,15 @@ func _desenhar() -> void:
 			if _msg != "":
 				_txt(Vector2(0, 190), _msg, 8, Color(1, 0.6, 0.5) if _estado == "endereco" else Color(0.6, 0.9, 1))
 			_txt(Vector2(0, 330), "Ctrl+V: colar   Enter: conectar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
-		"sala":
+		"sala", "apelido":
 			_fundo()
 			_txt(Vector2(0, 40), "Sala online", 16, Color.WHITE)
 			if Rede.anfitriao():
-				_txt(Vector2(0, 62), "Você é o anfitrião (porta %d). Abra o abrir_tunel_playit.bat e mande o endereço pro pessoal." % Rede.PORTA, 8, Color(0.6, 0.9, 1))
+				_txt(Vector2(0, 60), "Você é o anfitrião (porta %d)." % Rede.porta_aberta, 8, Color(0.6, 0.9, 1))
+				_txt(Vector2(0, 72), "Pra jogar pela internet: abra o abrir_tunel_playit.bat e mande o endereço.", 8, Color(0.6, 0.9, 1))
 			else:
 				_txt(Vector2(0, 62), "Esperando o anfitrião começar...", 8, Color(0.6, 0.9, 1))
-			var y0 := 90.0
+			var y0 := 92.0
 			for p in Rede.jogadores:
 				var h: Dictionary = Dados.json("herois").get(Rede.heroi_de(p), {})
 				var eu: bool = p == Rede.eu()
@@ -636,13 +690,25 @@ func _desenhar() -> void:
 				var rosto := Dados.tex_personagem(str(h.get("sprite", Rede.heroi_de(p))), "rosto")
 				if rosto:
 					_tela.draw_texture_rect_region(rosto, Rect2(174, y0 + 3, 28, 28), Rect2(0, 0, 52, 52))
-				var quem: String = ("Você" if eu else "Jogador") + (" (anfitrião)" if p == 1 else "")
-				_txt(Vector2(210, y0 + 15), str(h.get("nome", "?")), 8, Color.WHITE, 250, HORIZONTAL_ALIGNMENT_LEFT)
-				_txt(Vector2(210, y0 + 28), quem, 8, Color(0.6, 0.65, 0.75), 250, HORIZONTAL_ALIGNMENT_LEFT)
+				_txt(Vector2(210, y0 + 15), Rede.nome_de(p) + (" (você)" if eu else ""), 8, Color(1, 0.95, 0.7) if eu else Color.WHITE, 200, HORIZONTAL_ALIGNMENT_LEFT)
+				_txt(Vector2(210, y0 + 28), str(h.get("nome", "?")) + ("  ·  anfitrião" if p == 1 else ""), 8, Color(0.6, 0.65, 0.75), 200, HORIZONTAL_ALIGNMENT_LEFT)
+				# pronto (verde) ou esperando (cinza), à direita do cartão
+				var pronto := Rede.pronto_de(p)
+				var r := Rect2(404, y0 + 10, 60, 14)
+				_tela.draw_rect(r, Color(0.15, 0.4, 0.2) if pronto else Color(0.16, 0.16, 0.22))
+				_tela.draw_rect(r, Color(0.5, 1, 0.6) if pronto else Color(0.35, 0.37, 0.45), false, 1.0)
+				_txt(r.position + Vector2(0, 11), "PRONTO" if pronto else "...", 8, Color(0.75, 1, 0.8) if pronto else Color(0.55, 0.57, 0.65), r.size.x)
 				y0 += 40
+			if _estado == "apelido":
+				_tela.draw_rect(Rect2(150, 140, 340, 70), Color(0.04, 0.04, 0.08, 0.95))
+				_tela.draw_rect(Rect2(150, 140, 340, 70), Color(1, 0.85, 0.3), false, 2.0)
+				_txt(Vector2(0, 160), "Seu nome na sala", 8, Color(0.75, 0.78, 0.85))
+				_txt(Vector2(0, 186), _apelido_txt + ("_" if int(_t * 2) % 2 == 0 else " "), 16, Color.WHITE)
+				_txt(Vector2(0, 204), "Enter: salvar   Esc: cancelar", 8, Color(0.55, 0.57, 0.65))
 			if _msg != "":
 				_txt(Vector2(0, 314), _msg, 8, Color(1, 0.6, 0.5))
-			_txt(Vector2(0, 330), "Setas: trocar herói   " + ("Enter: começar   " if Rede.anfitriao() else "") + "Esc: sair da sala", 8, Color(0.6, 0.6, 0.7))
+			var dica := "Setas: herói   N: nome   " + ("Enter: começar   " if Rede.anfitriao() else "Enter: pronto   ")
+			_txt(Vector2(0, 330), dica + "Esc: sair da sala", 8, Color(0.6, 0.6, 0.7))
 		"herois":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)
