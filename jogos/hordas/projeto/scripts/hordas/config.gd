@@ -78,7 +78,14 @@ func aplicar(janela := true) -> void:
 	Som.volume_musica = float(v("musica"))
 	Som.volume_efeitos = float(v("efeitos"))
 	Som.atualizar_volume()
-	if not janela or DisplayServer.get_name() == "headless":
+	if DisplayServer.get_name() == "headless":
+		return
+	if "--sem_limite" in OS.get_cmdline_user_args():   # medição de desempenho: sem V-Sync e sem teto de fps (não grava na opção)
+		# antes ficava no fim, DEPOIS do "return" dos testes: como a medição sempre roda com argumentos, nunca valia
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		Engine.max_fps = 0
+		return
+	if not janela:
 		return
 	# tela cheia EXCLUSIVA: a "normal" do Windows deixa a janela 1px menor que o monitor (1918x1078),
 	# a escala inteira cai de 3x pra 2x e o jogo fica pequeno no meio com barras pretas
@@ -87,6 +94,3 @@ func aplicar(janela := true) -> void:
 		DisplayServer.window_set_mode(modo)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if v("vsync") else DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = int(v("fps_max"))
-	if "--sem_limite" in OS.get_cmdline_user_args():   # medição de desempenho: sem V-Sync e sem teto de fps (não grava na opção)
-		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
-		Engine.max_fps = 0
