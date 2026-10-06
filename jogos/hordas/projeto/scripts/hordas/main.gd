@@ -736,6 +736,22 @@ func _print_tela(qual: String) -> void:
 				_arena.equipamentos["peitoral"] = "armadura_samurai"
 				_arena.atualizar_visual()
 			await get_tree().create_timer(float(_args.get("espera", 6.0))).timeout
+		"cenario":   # #32 item 2: cenário da fase --fase=N (1 laboratório, 4 masmorra, 8 cidade); --espera=N s de jogo
+			_comecar("hazaki")
+			await get_tree().create_timer(float(_args.get("espera", 3.0))).timeout
+			if _args.has("bichos"):   # bichos do cenário bem perto do herói parado, pra ver a fuga (--espera=0.4 pega no meio dela)
+				_arena.bot = false
+				var cel: Dictionary = _arena.chao.cenario.celula(floori(_arena.jogador.position.x / 150.0), floori(_arena.jogador.position.y / 150.0))
+				var i := 0
+				for tipo in ["rato", "morcego", "corvo", "rato", "corvo"]:
+					cel.bichos.append({"tipo": tipo, "pos": _arena.jogador.position + Vector2(28 + i * 14, -20 + i * 14), "estado": 0, "t": 0.0, "dir": Vector2.ZERO,
+						"alt": 0.0, "ph": float(i), "lado": 1.0})
+					i += 1
+				_arena.inimigos.limpar()
+				await get_tree().create_timer(0.3).timeout
+			if _args.has("limpo"):   # sem vírus em campo, pra ver só o cenário (props, detalhes, bichos)
+				_arena.inimigos.limpar()
+				_arena.diretor.tempo = 0.0
 		"santuario":   # #21: Santuário do Dragão (combate) e de dádivas por perto, HUD com 2 de 3 fragmentos; "dadivas" mostra a escolha
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3).timeout
