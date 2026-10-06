@@ -1138,6 +1138,21 @@ func _print_tela(qual: String) -> void:
 			_abrir_opcoes()
 		"calor":   # tela do Calor (use --calor=couro:2,garras:1 pra ver níveis ligados)
 			_abrir_calor("hazaki")
+		"aviso":   # marcas de aviso no chão (#68): um jacaré preparando a investida e um chefe prestes a soltar o anel
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			_arena.bot = false
+			var jp: Vector2 = _arena.jogador.position
+			var jac = _arena.inimigos.criar("jacare_lodo", jp + Vector2(-150, -40))
+			var che = _arena.inimigos.criar(str(_args.get("chefe", "rainha_sapo")), jp + Vector2(150, 40))
+			await get_tree().create_timer(0.05, true, false, true).timeout
+			if jac:
+				jac.estado = 1
+				jac.t_estado = 0.25
+				jac.dir_inv = (jp - jac.pos).normalized()
+			if che:
+				che.t_anel = 0.2
+			Engine.time_scale = 0.05   # quase parado: o print sai 0,6 s (tempo real) depois, ainda no meio do aviso
 		"criacao":   # tela de criar herói (#72): --raca=N e --classe=N escolhem as opções (índice nas listas)
 			_estado = "criacao"
 			var tc := TelaCriacao.new()

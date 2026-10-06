@@ -9,6 +9,7 @@ const VOLUMES := [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 const ITENS := [
 	{"chave": "pausar_fora", "grupo": "Jogabilidade", "nome": "Pausar ao sair da janela", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "tremor", "grupo": "Acessibilidade", "nome": "Tremer a tela", "valores": [0.0, 0.5, 1.0], "rotulos": ["Não", "Pouco", "Normal"], "padrao": 1.0},
+	{"chave": "camera_frente", "grupo": "Acessibilidade", "nome": "Câmera olha à frente", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "flash_dano", "grupo": "Acessibilidade", "nome": "Flash ao levar dano", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mortes", "grupo": "Acessibilidade", "nome": "Mortes violentas", "valores": ["normal", "reduzida"], "rotulos": ["Normal", "Reduzida"], "padrao": "normal"},
 	{"chave": "numeros_dano", "grupo": "Acessibilidade", "nome": "Números de dano", "valores": [false, true], "formato": "sim_nao", "padrao": true},

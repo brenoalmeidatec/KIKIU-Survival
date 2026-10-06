@@ -443,7 +443,9 @@ func _animar(entrada: Vector2) -> void:
 		var p := 1.0 - _ent_t / Visual.CHEGADA_TEMPO
 		var g := Visual.chegada_flash(p) * 2.0
 		spr.modulate = Color(spr.modulate.r + g, spr.modulate.g + g, spr.modulate.b + g, spr.modulate.a * clampf(p * 6.0, 0.0, 1.0))
-	spr.visible = not piscar and humano > 0.01
+	if piscar:   # pisca em meia transparência: sumir de vez fazia o herói desaparecer no meio da horda (#68)
+		spr.modulate.a *= 0.35
+	spr.visible = humano > 0.01
 
 
 ## Dano de vírus (fonte = tipo) ou de outro lutador no duelo. Retorna true se caiu.
