@@ -1,0 +1,115 @@
+{
+ "_ajuda": "Regiões do mundo (#64). A corrida atravessa as regiões na ordem; cada uma tem 'fases_por_regiao' andares no mapa: os primeiros saem sorteados (com a semente, Sorte) do repertório 'fases' da região pelo 'peso', sem repetir, e o último é sempre a fase 'chefe' da região. Cada fase herda da região: conjunto (que inimigos o diretor sorteia, campo 'conjunto' do inimigos.json), cenario (dados/cenarios.json), musica (nome ou lista), musica_chefe, cor (tom do chão) e calor (modificadores de dados/calor.json que a região soma por cima do que o jogador escolheu: a dificuldade sobe de região em região). Uma fase pode sobrescrever qualquer um desses campos. Campos da fase: nome, peso, duracao (s até o chefe da fase nascer), chefe (tipo em inimigos.json; a fase acaba quando ele cai), eventos (anel, enxame, chefe), santuarios, escuro (fase de horror, escuridao.gd). O chefe da última região precisa ter final=true no inimigos.json (leva ao duelo). 'mapa' = regras do mapa de nós DENTRO de cada região (as mesmas chaves do dados/mapa.json; andares é sempre fases_por_regiao). minutos_por_fase = quanto a dificuldade base (dados/fase.json) avança por fase.",
+ "fases_por_regiao": 5,
+ "minutos_por_fase": 0.55,
+ "mapa": {
+  "faixas": 4,
+  "caminhos": 3,
+  "inicios_distintos_min": 2,
+  "fixos": {"1": "fase", "5": "chefe"},
+  "pesos": {"fase": 12, "elite": 4, "descanso": 3, "loja": 3, "evento": 5, "santuario": 2},
+  "regras": {
+   "elite": {"andar_min": 2, "pai_igual_proibido": true},
+   "descanso": {"andar_min": 2, "andar_max": 4, "apos_proibido": ["descanso", "loja"], "pai_igual_proibido": true},
+   "loja": {"andar_min": 2, "max_por_mapa": 1, "apos_proibido": ["descanso", "loja"], "pai_igual_proibido": true},
+   "evento": {"andar_min": 2},
+   "santuario": {"andar_min": 3, "max_por_mapa": 1, "pai_igual_proibido": true}
+  }
+ },
+ "regioes": [
+  {
+   "id": "floresta",
+   "nome": "Floresta Sombria",
+   "descricao": "Árvores retorcidas e coisas que andam entre elas.",
+   "conjunto": "virus",
+   "cenario": "laboratorio",
+   "musica": ["minijogo_tenso", "minijogo_tenso_b"],
+   "cor": [0.85, 1.0, 0.85],
+   "calor": {},
+   "fases": [
+    {"nome": "Trilha Torta", "peso": 3, "duracao": 66, "chefe": "trojan_gigante", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "bug", "quantos": 16}]},
+    {"nome": "Clareira dos Enforcados", "peso": 2, "duracao": 70, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "popup", "quantos": 26}]},
+    {"nome": "Bosque dos Sussurros", "peso": 2, "duracao": 70, "chefe": "trojan_gigante", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "popup", "quantos": 22}]},
+    {"nome": "Raízes Podres", "peso": 2, "duracao": 72, "chefe": "ransomware", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "bug", "quantos": 30}]},
+    {"nome": "Ninho das Aranhas", "peso": 1, "duracao": 72, "chefe": "trojan_gigante", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "bug", "quantos": 28}]},
+    {"nome": "Riacho Negro", "peso": 2, "duracao": 68, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "spam", "quantos": 14}]}
+   ],
+   "chefe": {"nome": "Coração da Floresta", "duracao": 80, "chefe": "trojan_gigante", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "bug", "quantos": 30}, {"tempo": 60, "tipo": "enxame", "inimigo": "popup", "quantos": 30}]}
+  },
+  {
+   "id": "pantano",
+   "nome": "Pântano Pútrido",
+   "descricao": "Lama, névoa verde e afogados que não ficaram no fundo.",
+   "conjunto": "virus",
+   "cenario": "laboratorio",
+   "musica": ["minijogo_tenso_b", "minijogo_tenso"],
+   "cor": [0.8, 0.95, 0.75],
+   "calor": {"couro": 1},
+   "fases": [
+    {"nome": "Lodaçal", "peso": 3, "duracao": 70, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "minerador", "quantos": 22}]},
+    {"nome": "Ponte Afundada", "peso": 2, "duracao": 72, "chefe": "trojan_gigante", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "popup", "quantos": 26}]},
+    {"nome": "Vila dos Afogados", "peso": 2, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "bug", "quantos": 28}]},
+    {"nome": "Névoa Verde", "peso": 2, "duracao": 72, "chefe": "trojan_gigante", "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "spam", "quantos": 16}]},
+    {"nome": "Brejo das Velas", "peso": 1, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "minerador", "quantos": 20}]},
+    {"nome": "Árvore Oca", "peso": 2, "duracao": 70, "chefe": "trojan_gigante", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "trojan", "quantos": 10}]}
+   ],
+   "chefe": {"nome": "Trono do Lodo", "duracao": 84, "chefe": "ransomware", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "minerador", "quantos": 30}, {"tempo": 64, "tipo": "anel", "inimigo": "spam", "quantos": 18}]}
+  },
+  {
+   "id": "deserto",
+   "nome": "Deserto de Ossos",
+   "descricao": "Sol que não se põe, caravanas mortas e tumbas abertas.",
+   "conjunto": "virus",
+   "cenario": "cidade",
+   "musica": ["minijogo_tenso", "minijogo_tenso_b"],
+   "cor": [1.0, 0.93, 0.8],
+   "calor": {"couro": 1, "garras": 1},
+   "fases": [
+    {"nome": "Dunas Vermelhas", "peso": 3, "duracao": 72, "chefe": "trojan_gigante", "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "trojan", "quantos": 12}]},
+    {"nome": "Oásis Seco", "peso": 2, "duracao": 72, "chefe": "ransomware", "eventos": [{"tempo": 32, "tipo": "enxame", "inimigo": "minerador", "quantos": 26}]},
+    {"nome": "Cemitério de Caravanas", "peso": 2, "duracao": 76, "chefe": "trojan_gigante", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "popup", "quantos": 30}]},
+    {"nome": "Ruínas do Sol", "peso": 2, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "spam", "quantos": 18}]},
+    {"nome": "Vale dos Escorpiões", "peso": 1, "duracao": 76, "chefe": "trojan_gigante", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "bug", "quantos": 34}]},
+    {"nome": "Templo Soterrado", "peso": 2, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "trojan", "quantos": 12}]}
+   ],
+   "chefe": {"nome": "Tumba do Rei Escaravelho", "duracao": 88, "chefe": "trojan_gigante", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "trojan", "quantos": 14}, {"tempo": 66, "tipo": "enxame", "inimigo": "minerador", "quantos": 36}]}
+  },
+  {
+   "id": "gelo",
+   "nome": "Pico Congelado",
+   "descricao": "Vento que corta, gelo que não derrete e gigantes enterrados.",
+   "conjunto": "virus",
+   "cenario": "cidade",
+   "musica": ["minijogo_tenso_b", "minijogo_tenso"],
+   "cor": [0.85, 0.92, 1.0],
+   "calor": {"couro": 2, "garras": 1, "horda": 1},
+   "fases": [
+    {"nome": "Passo Gelado", "peso": 3, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "popup", "quantos": 34}]},
+    {"nome": "Caverna de Cristal", "peso": 2, "duracao": 76, "chefe": "trojan_gigante", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "minerador", "quantos": 26}]},
+    {"nome": "Lago Partido", "peso": 2, "duracao": 76, "chefe": "ransomware", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "bug", "quantos": 40}]},
+    {"nome": "Forte Abandonado", "peso": 2, "duracao": 78, "chefe": "trojan_gigante", "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "trojan", "quantos": 14}]},
+    {"nome": "Escadaria do Vento", "peso": 1, "duracao": 76, "chefe": "ransomware", "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "spam", "quantos": 22}]},
+    {"nome": "Cemitério de Gigantes", "peso": 2, "duracao": 78, "chefe": "trojan_gigante", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "popup", "quantos": 36}]}
+   ],
+   "chefe": {"nome": "Cume da Tempestade", "duracao": 90, "chefe": "ransomware", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "trojan", "quantos": 16}, {"tempo": 66, "tipo": "anel", "inimigo": "minerador", "quantos": 34}]}
+  },
+  {
+   "id": "reino",
+   "nome": "Reino Sombrio",
+   "descricao": "Onde o caos começou. O mais cabuloso de todos.",
+   "conjunto": "horror",
+   "cenario": "masmorra",
+   "musica": "horror",
+   "cor": [0.62, 0.58, 0.72],
+   "calor": {"couro": 2, "garras": 2, "horda": 1, "nobres": 1},
+   "fases": [
+    {"nome": "Portões Caídos", "peso": 3, "duracao": 76, "chefe": "arauto", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "carnical", "quantos": 22}]},
+    {"nome": "Catacumbas", "peso": 3, "duracao": 80, "chefe": "arauto", "escuro": {"forca": 0.9, "raio_heroi": 150, "raio_tocha": 115, "nevoa": 0.3, "tom": [0.03, 0.025, 0.07]}, "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "carnical", "quantos": 22}, {"tempo": 56, "tipo": "chefe", "inimigo": "abominacao"}, {"tempo": 70, "tipo": "enxame", "inimigo": "cao_ossos", "quantos": 16}]},
+    {"nome": "Salão dos Ecos", "peso": 2, "duracao": 78, "chefe": "arauto", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "espectro", "quantos": 14}]},
+    {"nome": "Jardim de Espinhos", "peso": 2, "duracao": 78, "chefe": "arauto", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "cao_ossos", "quantos": 20}]},
+    {"nome": "Ponte das Almas", "peso": 2, "duracao": 80, "chefe": "arauto", "escuro": {"forca": 0.8, "raio_heroi": 160, "raio_tocha": 120, "nevoa": 0.4, "tom": [0.03, 0.03, 0.08]}, "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "espectro", "quantos": 16}]}
+   ],
+   "chefe": {"nome": "Trono do Caos", "duracao": 96, "chefe": "tela_azul", "santuarios": 4, "musica_chefe": "chefe", "eventos": [{"tempo": 34, "tipo": "chefe", "inimigo": "abominacao"}, {"tempo": 60, "tipo": "anel", "inimigo": "cavaleiro_oco", "quantos": 12}]}
+  }
+ ]
+}

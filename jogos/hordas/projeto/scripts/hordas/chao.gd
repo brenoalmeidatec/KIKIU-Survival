@@ -115,6 +115,11 @@ func atualizar_i(dt: float) -> void:
 ## Sem cenário configurado, fica o chão antigo.
 func _aplicar_cenario() -> void:
 	var n := Cenario.da_fase(arena.diretor.fase_idx if arena and arena.diretor else 0)
+	if arena and arena.diretor:   # regiões (#64): a fase diz o cenário (o da região dela)
+		var fs: Array = arena.diretor.fases()
+		var f: Dictionary = fs[clampi(arena.diretor.fase_idx, 0, fs.size() - 1)] if not fs.is_empty() else {}
+		if f.has("cenario"):
+			n = str(f.cenario)
 	if n == "" or (cenario and cenario.nome == n):
 		return
 	var c = Cenario.new()

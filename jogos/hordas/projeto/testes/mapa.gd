@@ -4,6 +4,7 @@ extends Node
 const Arena := preload("res://scripts/hordas/arena.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
+const Regioes := preload("res://scripts/hordas/regioes.gd")
 var falhas := 0
 
 
@@ -43,8 +44,13 @@ func ate(cond: Callable, limite: float) -> bool:
 
 
 func _ready() -> void:
-	var c: Dictionary = Mapa.cfg()
-	var andares := int(c.andares)
+	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
+		if not InputMap.has_action(acao):   # sem o main.gd, ninguém registrou as teclas
+			InputMap.add_action(acao)
+	# com regiões (#64) as regras valem DENTRO de cada região (andar local) e o mapa é a costura das regiões
+	var c: Dictionary = Regioes.mapa_cfg() if Regioes.ativo() else Mapa.cfg()
+	var k := int(c.andares)               # andares de uma região (ou do mapa todo, sem regiões)
+	var andares := int(gerar(1).andares)   # andares do mapa inteiro
 
 	# --- mesma semente = mesmo mapa; semente diferente = (quase sempre) outro
 	ok(gerar(7).hash() == gerar(7).hash() and Mapa.resumo(gerar(7)) == Mapa.resumo(gerar(7)), "mesma semente dá o mesmo mapa")
@@ -64,15 +70,20 @@ func _ready() -> void:
 		var cont := {}
 		for n in nos:
 			tipos_vistos[str(n.tipo)] = true
-			cont[str(n.tipo)] = int(cont.get(str(n.tipo), 0)) + 1
-			var andar := int(n.andar) + 1
+			var chave := "%d:%s" % [int(n.andar) / k, n.tipo]   # limites contam por região
+			cont[chave] = int(cont.get(chave, 0)) + 1
+			var andar := int(n.andar) % k + 1      # andar dentro da região (1-based)
 			var r: Dictionary = c.regras.get(str(n.tipo), {})
 			ok(andar >= int(r.get("andar_min", 1)) and andar <= int(r.get("andar_max", 999)) or str(n.tipo) in ["fase", "chefe"], "semente %d: %s no andar %d fora das regras" % [s, n.tipo, andar])
 			for p in n.prox:
 				var filho := Mapa.no(m, int(n.andar) + 1, int(p))
 				ok(not (str(n.tipo) in ["descanso", "loja"] and str(filho.tipo) in ["descanso", "loja"]), "semente %d: descanso/loja seguidos (andar %d)" % [s, andar])
+		for reg in andares / k:
+			var fim_reg := nos.filter(func(n): return int(n.andar) == reg * k + k - 1)
+			ok(fim_reg.size() == 1 and str(fim_reg[0].tipo) == "chefe", "semente %d: região %d termina num chefe só" % [s, reg + 1])
 		for t in c.regras:
-			ok(int(cont.get(t, 0)) <= int(c.regras[t].get("max_por_mapa", 9999)), "semente %d: limite de %s" % [s, t])
+			for reg in andares / k:
+				ok(int(cont.get("%d:%s" % [reg, t], 0)) <= int(c.regras[t].get("max_por_mapa", 9999)), "semente %d: limite de %s na região %d" % [s, t, reg + 1])
 		var a1 := nos.filter(func(n): return int(n.andar) == 0)
 		max_iniciais = maxi(max_iniciais, a1.size())
 		ok(a1.size() >= 2 and a1.all(func(n): return str(n.tipo) == "fase" and Mapa.alcanca_chefe(m, 0, int(n.faixa))), "semente %d: andar 1 com 2+ nós de fase que chegam ao chefe" % s)
@@ -162,6 +173,7 @@ func _ready() -> void:
 	ok(e.no_tipo == "elite" and not e.entre_fases and e.diretor.fase_idx == 1, "elite: começa a fase do andar 2")
 	ok(is_equal_approx(e.diretor.bonus_minutos, 1.5) and e.diretor.xp_mult == 1.5 and e.diretor.mult_elite == 3.0, "elite: dificuldade e XP a mais")
 	e.entre_fases = true
+	e.mapa.nos[2][e.mapa_acessiveis()[0]].tipo = "fase"   # o próximo é uma fase normal (o sorteio podia dar loja ou evento)
 	e.escolher_no(e.mapa_acessiveis()[0])
 	await esperar(0.1)
 	ok(e.diretor.bonus_minutos == 0.0 and e.diretor.xp_mult == 1.0, "fase normal zera o bônus da elite")
@@ -173,7 +185,7 @@ func _ready() -> void:
 	r.entre_fases = true
 	r.abrir_mapa()
 	var t := 0.0
-	while r.mapa_pos.x < andares - 1 and t < 120.0:
+	while r.mapa_pos.x < andares - 1 and t < 400.0:
 		await esperar(0.1)
 		t += 0.1
 		if not r.entre_fases and not r.tela_mapa.aberto():   # entrou numa fase de combate: dá por vencida
