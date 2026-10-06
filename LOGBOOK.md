@@ -378,3 +378,9 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 ## 2026-10-06 · Claude do Alisson (PC) · "andando de costas", segunda causa: o besouro
 - Quando o Alisson relatou, os inimigos de horror (#46) ainda nem estavam na `main`. O que ele via era o **Bug**: a arte é um besouro visto de cima com a cabeça pra cima, e o jogo só espelha na horizontal, então ele descia na direção do herói de ré.
 - `inimigos.gd`: campo `gira` (dados) para bicho visto de cima. Ele gira suave pra direção do passo desenhado (vale no solo e no cliente online); parado mantém o ângulo e teleporte não gira. `dados/inimigos.json`: `"gira": true` no bug. Conferido no print: o besouro aponta os olhos pro herói.
+
+## 2026-10-06 · Claude do Alisson (PC) · fps remedido com a máquina parada
+- Comando: `Godot_v4.4.1 --path jogos/hordas/projeto -- --bot --heroi=hazaki --semente=7 --fase=N --estresse=500 --sair=30` (com janela).
+- Fase 1: 99–113 fps (proc_ms 12–14) · fase 4: 89–118 fps (12–14) · fase 6 (horror): 90–98 fps (12–15). Antes desta leva: ~150 fps e proc_ms 7–9.
+- A queda de ~35% em carga extrema soma cenários (#44), horror e escuridão (#45), suavidade (#47, separação todo quadro) e mortes (#49). Ainda não foi perfilada por partes. **Próximo** se o Breno/Alisson quiserem: perfil por sistema (`perfil=` no log do `--sair`) e otimizar o maior custo primeiro.
+- **Pra quem chega (PC e notebook):** depois de `git pull` com PNG/OGG novos, rode `--headless --path jogos/hordas/projeto --import` antes de jogar sem o editor, senão o Godot usa o cache velho. Testes: 14 cenas em `testes/` (todas `falhas=0` nesta data). Prints ficam em `jogos/hordas/prints/`.
