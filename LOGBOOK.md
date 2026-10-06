@@ -456,3 +456,11 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Lobby reorganizado: dicas mais curtas embaixo (cabem na tela), aviso em cima dos cartões, cartões encostam com 5–6 pessoas.
 - Testado: print do lobby com 6 pessoas conversando, texto com controle e quebra de linha chegando limpo, `testes/rede.tscn` (teclas saem e voltam, texto cortado), online com 4 (109 = 109 abates). ui/mapa/resultado sem falhas.
 - **Próximo:** PR 4, chat de voz.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #13 PR 4: chat de voz
+- Autoload novo `Voz` (`scripts/hordas/voz.gd`), no caminho que a issue sugeriu. Microfone → bus "Microfone" mudo com `AudioEffectCapture` → 8 kHz mono (média, filtro barato) → **mu-law 8 bits** → pacotes de 60 ms sem garantia de entrega (`Rede._voz`, o anfitrião repassa) → um `AudioStreamGenerator` por jogador. ~8 KB/s por quem fala; pacote atrasado é jogado fora (não acumula atraso).
+- **Opções → Som:** "Voz no online" (Desligada / **Segurar V**, o padrão / Sempre aberta, que só manda quando tem som) e "Volume das vozes". O microfone **só liga quando precisa** (segurando V, ou sempre aberta) e só online. `project.godot`: `audio/driver/enable_input=true`.
+- **Lobby:** número em cada cartão, **1–6** silencia quem está nele (aparece MUDO), ondinhas verdes em quem está falando; dicas em 2 linhas. Na partida, o chat mostra "))) fulano" acima das mensagens.
+- Opções compactadas (12 px por linha): com acessibilidade e voz, a tela passava das dicas.
+- Testado sem microfone com `--voz_teste` (um tom de 3 s no lugar da voz): o anfitrião recebeu 100% e o outro cliente, pelo repasse, 100%, 96% e uma vez 61% (perda pontual no começo da partida; voz sem garantia de entrega, como telefone). mu-law em `testes/rede.tscn` (erro < 5%). 17 testes sem falhas; online com 4 (113 = 113).
+- **Não testado:** microfone de verdade e ouvido humano (o notebook não fala com ele mesmo). **Para o Alisson:** testem os dois numa sala, segurando V.

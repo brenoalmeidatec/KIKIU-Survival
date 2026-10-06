@@ -17,6 +17,11 @@ Config="*res://scripts/hordas/config.gd"
 Transicao="*res://scripts/hordas/transicao.gd"
 Salas="*res://scripts/hordas/salas.gd"
 Chat="*res://scripts/hordas/chat.gd"
+Voz="*res://scripts/hordas/voz.gd"
+
+[audio]
+
+driver/enable_input=true
 
 [display]
 

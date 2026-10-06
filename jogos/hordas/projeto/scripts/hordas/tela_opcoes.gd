@@ -34,24 +34,24 @@ func _n() -> int:
 func _layout() -> Dictionary:
 	var ys := []
 	var grupos := []   # {y, nome}
-	var y := 58.0
+	var y := 50.0
 	var grupo := ""
 	for it in Config.ITENS:
 		if it.grupo != grupo:
 			grupo = it.grupo
-			y += 6.0
+			y += 4.0
 			grupos.append({"y": y, "nome": grupo})
-			y += 14.0
+			y += 12.0
 		ys.append(y)
-		y += 14.0
-	return {"ys": ys, "grupos": grupos, "voltar": y + 10.0}
+		y += 12.0   # 12 px por linha: com os itens de acessibilidade e de voz, 14 passava da tela
+	return {"ys": ys, "grupos": grupos, "voltar": y + 8.0}
 
 
 func _rects() -> Array:
 	var l := _layout()
 	var r := []
 	for y in l.ys:
-		r.append(Rect2(146, y - 10, 348, 13))
+		r.append(Rect2(146, y - 9, 348, 12))
 	r.append(Rect2(250, l.voltar - 10, 140, 13))
 	return r
 
@@ -124,13 +124,13 @@ func _desenhar() -> void:
 	if sel_v:
 		_tela.draw_rect(Rect2(250, l.voltar - 10, 140, 13), Color(0.3, 0.35, 0.6, 0.35))
 	_txt(Vector2(0, l.voltar), "> Voltar <" if sel_v else "Voltar", 8, Color(1, 0.9, 0.4) if sel_v else Color(0.8, 0.8, 0.8))
-	_txt(Vector2(0, 340), "Cima/baixo: escolher   Esq/dir: mudar   Esc: voltar   Mouse: clique", 8, Color(0.5, 0.5, 0.6))
+	_txt(Vector2(0, 350), "Cima/baixo: escolher   Esq/dir: mudar   Esc: voltar   Mouse: clique", 8, Color(0.5, 0.5, 0.6))
 
 
 func _linha(i: int, y: float, nome: String, valor: String) -> void:
 	var sel := i == _sel
 	if sel:
-		_tela.draw_rect(Rect2(146, y - 10, 348, 13), Color(0.3, 0.35, 0.6, 0.35))
+		_tela.draw_rect(Rect2(146, y - 9, 348, 12), Color(0.3, 0.35, 0.6, 0.35))
 	var cor := Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8)
 	_txt(Vector2(158, y), nome, 8, cor, 330, HORIZONTAL_ALIGNMENT_LEFT)
 	_txt(Vector2(158, y), ("< %s >" % valor) if sel else valor, 8, Color.WHITE if sel else Color(0.6, 0.85, 1), 324, HORIZONTAL_ALIGNMENT_RIGHT)
