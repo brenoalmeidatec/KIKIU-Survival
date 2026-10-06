@@ -59,20 +59,20 @@
    "id": "deserto",
    "nome": "Deserto de Ossos",
    "descricao": "Sol que não se põe, caravanas mortas e tumbas abertas.",
-   "conjunto": "virus",
-   "cenario": "cidade",
+   "conjunto": "deserto",
+   "cenario": "deserto",
    "musica": ["minijogo_tenso", "minijogo_tenso_b"],
-   "cor": [1.0, 0.93, 0.8],
+   "cor": [1.0, 0.95, 0.85],
    "calor": {"couro": 1, "garras": 1},
    "fases": [
-    {"nome": "Dunas Vermelhas", "peso": 3, "duracao": 72, "chefe": "trojan_gigante", "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "trojan", "quantos": 12}]},
-    {"nome": "Oásis Seco", "peso": 2, "duracao": 72, "chefe": "ransomware", "eventos": [{"tempo": 32, "tipo": "enxame", "inimigo": "minerador", "quantos": 26}]},
-    {"nome": "Cemitério de Caravanas", "peso": 2, "duracao": 76, "chefe": "trojan_gigante", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "popup", "quantos": 30}]},
-    {"nome": "Ruínas do Sol", "peso": 2, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "spam", "quantos": 18}]},
-    {"nome": "Vale dos Escorpiões", "peso": 1, "duracao": 76, "chefe": "trojan_gigante", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "bug", "quantos": 34}]},
-    {"nome": "Templo Soterrado", "peso": 2, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "trojan", "quantos": 12}]}
+    {"nome": "Dunas Vermelhas", "peso": 3, "duracao": 72, "chefe": "sacerdote_areia", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "escaravelho", "quantos": 32}]},
+    {"nome": "Oásis Seco", "peso": 2, "duracao": 72, "chefe": "sacerdote_areia", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "naja", "quantos": 10}]},
+    {"nome": "Cemitério de Caravanas", "peso": 2, "duracao": 76, "chefe": "sacerdote_areia", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "esqueleto_areia", "quantos": 24}, {"tempo": 58, "tipo": "chefe", "inimigo": "escorpiao_gigante"}]},
+    {"nome": "Ruínas do Sol", "peso": 2, "duracao": 74, "chefe": "sacerdote_areia", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "abutre", "quantos": 22}]},
+    {"nome": "Vale dos Escorpiões", "peso": 1, "duracao": 76, "chefe": "sacerdote_areia", "eventos": [{"tempo": 30, "tipo": "chefe", "inimigo": "escorpiao_gigante"}, {"tempo": 56, "tipo": "chefe", "inimigo": "escorpiao_gigante"}]},
+    {"nome": "Templo Soterrado", "peso": 2, "duracao": 74, "chefe": "sacerdote_areia", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "mumia", "quantos": 16}]}
    ],
-   "chefe": {"nome": "Tumba do Rei Escaravelho", "duracao": 88, "chefe": "trojan_gigante", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "trojan", "quantos": 14}, {"tempo": 66, "tipo": "enxame", "inimigo": "minerador", "quantos": 36}]}
+   "chefe": {"nome": "Tumba do Rei Escaravelho", "duracao": 88, "chefe": "rei_escaravelho", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "mumia", "quantos": 14}, {"tempo": 50, "tipo": "chefe", "inimigo": "escorpiao_gigante"}, {"tempo": 66, "tipo": "enxame", "inimigo": "escaravelho", "quantos": 40}]}
   },
   {
    "id": "gelo",

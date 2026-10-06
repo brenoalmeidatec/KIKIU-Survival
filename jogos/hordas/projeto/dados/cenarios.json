@@ -14,6 +14,20 @@
  ],
  "densidade": 0.3,
  "cenarios": {
+  "deserto": {
+   "densidade": 0.42,
+   "segundo": 0.3,
+   "detalhes_chance": 0.8,
+   "detalhes_max": 3,
+   "detalhes": [
+    {"tipo": "rachadura", "peso": 4, "cor": [0.3, 0.2, 0.1, 0.55]},
+    {"tipo": "mancha", "peso": 2, "cor": [0.45, 0.33, 0.18, 0.35]}
+   ],
+   "particulas": [
+    {"tipo": "poeira", "n": 34, "cor": [0.95, 0.85, 0.6, 0.5]}
+   ],
+   "vida": {"chance": 0.08, "grupo": 2, "fuga": 80, "bichos": [{"tipo": "corvo", "peso": 2}, {"tipo": "rato", "peso": 1}]}
+  },
   "pantano": {
    "densidade": 0.55,
    "segundo": 0.4,
