@@ -72,6 +72,8 @@ static func _nova(tipo: String, r: RandomNumberGenerator, cor: Color) -> Diction
 		"chuva":
 			p.v = Vector2(-34.0, 230.0) * r.randf_range(0.9, 1.15)
 			p.par = 1.0
+		"neve":   # floco caindo de lado, empurrado pelo vento
+			p.v = Vector2(r.randf_range(14.0, 26.0), r.randf_range(26.0, 44.0))
 	return p
 
 
@@ -299,3 +301,7 @@ func _desenhar_alto_i() -> void:
 				_alto.draw_rect(Rect2(pos - Vector2(0.5, 0.5), Vector2(1.5, 1.5)), Color(cor, cor.a * luz))
 			"chuva":
 				_alto.draw_line(pos, pos + Vector2(-1.2, 5.0), cor, 1.0)
+			"neve":
+				pos.x += sin(_t * 1.6 + p.ph) * 4.0
+				var gn := 1.0 + float(int(p.ph * 5.0) % 2)   # metade dos flocos com 2 px
+				_alto.draw_rect(Rect2(pos, Vector2(gn, gn)), cor)

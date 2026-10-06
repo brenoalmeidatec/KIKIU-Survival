@@ -1,5 +1,5 @@
 {
- "_ajuda": "Cenários das fases (arte em assets/cenarios/<nome>/, gerada pelo Blender em fonte_arte/modelos3d/cenarios.py). Com regiões (dados/regioes.json) o cenário vem da região (campo cenario) e por_fase só vale sem elas. por_fase = o cenário de cada fase da corrida, na ordem (se tiver menos itens que fases, a última se repete). densidade = chance padrão de ter enfeite em cada célula de 150 px do mapa (0 a 1). Cenários: laboratorio, masmorra, cidade. Lista vazia = chão antigo. Em 'cenarios' cada um pode ter: densidade e segundo (chance de um 2º enfeite na célula); detalhes (rachadura, mancha, poca, folha, papel, cabo; peso e cor [r,g,b,a]) com detalhes_chance e detalhes_max por célula; particulas (poeira, cinza, nevoa, vagalume, chuva; n = quantas, cor [r,g,b,a]; o total é limitado a 70); vida (bichos rato, morcego, corvo que fogem do herói: chance por célula, grupo, fuga em px, peso de cada). Tudo é sorteado pela semente da corrida (Sorte) e é só desenho: nada bloqueia o movimento.",
+ "_ajuda": "Cenários das fases (arte em assets/cenarios/<nome>/, gerada pelo Blender em fonte_arte/modelos3d/cenarios.py). Com regiões (dados/regioes.json) o cenário vem da região (campo cenario) e por_fase só vale sem elas. por_fase = o cenário de cada fase da corrida, na ordem (se tiver menos itens que fases, a última se repete). densidade = chance padrão de ter enfeite em cada célula de 150 px do mapa (0 a 1). Cenários: laboratorio, masmorra, cidade. Lista vazia = chão antigo. Em 'cenarios' cada um pode ter: densidade e segundo (chance de um 2º enfeite na célula); detalhes (rachadura, mancha, poca, folha, papel, cabo; peso e cor [r,g,b,a]) com detalhes_chance e detalhes_max por célula; particulas (poeira, cinza, nevoa, vagalume, chuva, neve; n = quantas, cor [r,g,b,a]; o total é limitado a 70); vida (bichos rato, morcego, corvo que fogem do herói: chance por célula, grupo, fuga em px, peso de cada). Tudo é sorteado pela semente da corrida (Sorte) e é só desenho: nada bloqueia o movimento.",
  "por_fase": [
   "laboratorio",
   "laboratorio",
@@ -14,6 +14,22 @@
  ],
  "densidade": 0.3,
  "cenarios": {
+  "gelo": {
+   "densidade": 0.45,
+   "segundo": 0.3,
+   "detalhes_chance": 0.75,
+   "detalhes_max": 3,
+   "detalhes": [
+    {"tipo": "rachadura", "peso": 3, "cor": [0.16, 0.24, 0.34, 0.5]},
+    {"tipo": "mancha", "peso": 2, "cor": [0.45, 0.6, 0.75, 0.3]},
+    {"tipo": "poca", "peso": 1, "cor": [0.3, 0.45, 0.6, 0.35]}
+   ],
+   "particulas": [
+    {"tipo": "neve", "n": 62, "cor": [0.95, 0.98, 1.0, 0.9]},
+    {"tipo": "nevoa", "n": 4, "cor": [0.85, 0.92, 1.0, 0.06]}
+   ],
+   "vida": {"chance": 0.06, "grupo": 2, "fuga": 80, "bichos": [{"tipo": "corvo", "peso": 1}]}
+  },
   "deserto": {
    "densidade": 0.42,
    "segundo": 0.3,
