@@ -891,6 +891,51 @@ func _print_tela(qual: String) -> void:
 			await _fotos_seq(qual, str(_args.get("seq", "0.15,0.35,0.6")))
 			get_tree().quit()
 			return
+		"virada":   # monstros virando com sprites de verdade: um monstro (--bicho=cavaleiro_oco|cao_ossos...) dá meia volta em torno do herói, da esquerda pra direita, e tira um print a cada passo
+			_args["fase"] = str(_args.get("fase", "6"))
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.armas.lista.clear()
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			var jv: Vector2 = _arena.jogador.position
+			var bv = _arena.inimigos.criar(str(_args.get("bicho", "cavaleiro_oco")), jv + Vector2(-80, 0), 1)
+			bv.vel = 0.0
+			bv.t_nasc = 0.0
+			var pasta_v := str(_args.get("fotos", "user://"))
+			await get_tree().create_timer(0.4, true, false, true).timeout
+			for n in 11:
+				var ang := -PI * 0.5 + PI * n / 10.0   # -90 (esquerda) ... 0 (embaixo, de frente pra câmera) ... +90 (direita)
+				bv.pos = jv + Vector2(sin(ang), cos(ang) * (-1.0 if _args.has("frente") else 1.0)) * 80.0   # sem --frente: ele passa embaixo do herói e mostra as costas; com --frente passa em cima e mostra a frente
+				bv.t_nasc = 0.0
+				await get_tree().create_timer(0.22, true, false, true).timeout
+				await RenderingServer.frame_post_draw
+				get_viewport().get_texture().get_image().save_png(pasta_v.path_join("virada%s_%s_%02d.png" % ["_frente" if _args.has("frente") else "", str(_args.get("bicho", "cavaleiro_oco")), n]))
+			get_tree().quit()
+			return
+		"cerco":   # fase 6: monstros de horror cercando o herói, cada um olhando pra ele
+			_args["fase"] = "6"
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.armas.lista.clear()
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			var jc: Vector2 = _arena.jogador.position
+			var tipos_c := ["carnical", "cao_ossos", "cavaleiro_oco", "espectro", "carnical", "cao_ossos", "cavaleiro_oco", "espectro", "abominacao", "carnical", "cao_ossos", "cavaleiro_oco"]
+			for i in tipos_c.size():
+				var ac := TAU * i / tipos_c.size() + 0.2
+				var bc = _arena.inimigos.criar(tipos_c[i], jc + Vector2(cos(ac) * 130.0, sin(ac) * 85.0), 1)
+				bc.vel = 0.0
+				bc.t_nasc = 0.0
+			await get_tree().create_timer(1.0, true, false, true).timeout
+			await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_png(str(_args.get("fotos", "user://")).path_join("cerco_fase6.png"))
+			get_tree().quit()
+			return
 		"finalizacao":   # #32: chefe morto por --arma=katana|desert_eagles|arte_marcial|aura_hazaki|poder_elemental|pendrive (--chefe=, --seq=, --reduzida)
 			Config.temporario("numeros_dano", false)   # números de 1e9 sujariam o print
 			if _args.has("reduzida"):
