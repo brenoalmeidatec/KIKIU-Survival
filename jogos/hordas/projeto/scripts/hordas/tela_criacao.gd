@@ -103,7 +103,7 @@ func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := W, alinha
 func _desenhar() -> void:
 	_tela.draw_rect(Rect2(0, 0, W, H), Color(0.04, 0.04, 0.07, 0.99))
 	_txt(Vector2(0, 26), "Criar herói", 16, Color(1, 0.85, 0.45))
-	_txt(Vector2(0, 42), "Escolha a raça e a classe. Nome e aparência chegam na próxima versão.", 8, Color(0.6, 0.62, 0.7))
+	_txt(Vector2(0, 42), "Escolha a raça e a classe. Atenção: se ele morrer, morre de vez.", 8, Color(1, 0.6, 0.5))
 	if Criacao.lista_racas().is_empty() or Criacao.lista_classes().is_empty():
 		return
 	var rid := str(Criacao.lista_racas()[raca])
