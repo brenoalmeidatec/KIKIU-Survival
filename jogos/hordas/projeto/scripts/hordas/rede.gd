@@ -240,23 +240,24 @@ func _process(delta: float) -> void:
 
 
 @rpc("any_peer", "unreliable_ordered")
-func _pos(d: Dictionary) -> void:
-	# vem de qualquer peer: só guarda os campos esperados, com o tipo certo
+func _pos(b: PackedByteArray) -> void:
+	# vem de qualquer peer: só aceita o formato certo (12 bytes, veja online.estado_rede) e números de verdade
 	var quem := multiplayer.get_remote_sender_id()
-	if not jogadores.has(quem):
+	if not jogadores.has(quem) or b.size() != 12:
 		return
-	var x = d.get("x", 0.0)
-	var y = d.get("y", 0.0)
-	if not _num(x) or not _num(y):
+	var x := b.decode_float(0)
+	var y := b.decode_float(4)
+	if not is_finite(x) or not is_finite(y):
 		return
+	var flags := b.decode_u8(11)
 	remotos[quem] = {
-		"x": float(x), "y": float(y),
-		"mx": clampf(float(d.get("mx", 0.0)) if _num(d.get("mx")) else 0.0, -1.0, 1.0),
-		"my": clampf(float(d.get("my", 0.0)) if _num(d.get("my")) else 0.0, -1.0, 1.0),
-		"hp": clampf(float(d.get("hp", 1.0)) if _num(d.get("hp")) else 1.0, 0.0, 1.0),
-		"caido": typeof(d.get("caido")) == TYPE_BOOL and d.caido,
-		"ajuda": typeof(d.get("ajuda")) == TYPE_BOOL and d.ajuda,
-		"lado": -1.0 if _num(d.get("lado")) and float(d.lado) < 0 else 1.0,
+		"x": x, "y": y,
+		"mx": b.decode_s8(8) / 127.0,
+		"my": b.decode_s8(9) / 127.0,
+		"hp": b.decode_u8(10) / 255.0,
+		"caido": (flags & 1) != 0,
+		"ajuda": (flags & 2) != 0,
+		"lado": -1.0 if (flags & 4) != 0 else 1.0,
 	}
 
 
@@ -267,14 +268,14 @@ static func _num(v) -> bool:
 # ======================================================== partida: anfitrião -> clientes
 
 ## Foto dos vírus (e tiros deles) perto de um cliente.
-func enviar_foto(peer: int, virus: PackedFloat32Array, tiros: PackedFloat32Array) -> void:
-	_foto.rpc_id(peer, virus, tiros)
+func enviar_foto(peer: int, compacta: PackedByteArray) -> void:
+	_foto.rpc_id(peer, compacta)
 
 
 @rpc("authority", "unreliable_ordered")
-func _foto(virus: PackedFloat32Array, tiros: PackedFloat32Array) -> void:
+func _foto(compacta: PackedByteArray) -> void:
 	if online_no and is_instance_valid(online_no):
-		online_no.foto(virus, tiros)
+		online_no.foto(compacta)
 
 
 ## Vírus que morreram: [id, x, y, tipo_idx, elite] por vírus.
@@ -357,3 +358,15 @@ func _golpe(dano: float, ex: float, ey: float) -> void:
 	var quem := multiplayer.get_remote_sender_id()
 	if jogadores.has(quem) and _num(dano) and _num(ex) and _num(ey) and online_no and is_instance_valid(online_no):
 		online_no.golpe(quem, clampf(dano, 0.0, 100000.0), Vector2(ex, ey).limit_length(600.0))
+
+
+var _banda_t := 0
+## KB/s enviados e recebidos desde a última chamada, pelas estatísticas do ENet (só pra medir; o log do --sair usa).
+func banda() -> Vector2:
+	var p = multiplayer.multiplayer_peer
+	if not p is ENetMultiplayerPeer or p.host == null:
+		return Vector2.ZERO
+	var agora := Time.get_ticks_msec()
+	var seg := maxf(0.001, (agora - _banda_t) / 1000.0)
+	_banda_t = agora
+	return Vector2(p.host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA), p.host.pop_statistic(ENetConnection.HOST_TOTAL_RECEIVED_DATA)) / 1024.0 / seg
