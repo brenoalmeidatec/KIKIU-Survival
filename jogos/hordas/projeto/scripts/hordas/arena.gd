@@ -86,6 +86,8 @@ var tempo_arma := {}        # id -> segundos com a arma ativa (DPS da tela final
 var nivel_arma := {}        # id -> último nível visto (tela final)
 var acabou := false
 var _tremor := 0.0
+var _hitstop_ate := 0   # Time.get_ticks_msec() até quando o jogo fica "congelado" (só solo)
+var _hitstop_crit_ate := 0
 var _chefes_vivos := []
 var perfil := [0, 0, 0, 0]   # microssegundos: jogador+diretor, inimigos, armas, resto
 
@@ -215,6 +217,8 @@ func _process(dt: float) -> void:
 	if acabou:
 		return
 	dt = minf(dt, 1.0 / 30.0)
+	if Time.get_ticks_msec() < _hitstop_ate:   # hitstop: tempo real, não depende de Engine.time_scale
+		dt *= Jogador.HITSTOP_ESCALA
 	var t0 := Time.get_ticks_usec()
 	var parado: bool = caido or (duelo_ativo and (duelo.estado == "contagem" or not duelo.lut_jogador.vivo))
 	if eh_online and cartas.aberto():
@@ -279,11 +283,24 @@ func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> 
 		d[arma] = float(d.get(arma, 0.0)) + valor
 	efeitos.numero(pos, valor, Color.WHITE, crit)
 	Som.tocar("acerto", 0.07, randf_range(0.9, 1.2), -14)
+	if crit and Time.get_ticks_msec() >= _hitstop_crit_ate:
+		_hitstop_crit_ate = Time.get_ticks_msec() + int(Jogador.HITSTOP_CRIT_ESPERA * 1000.0)
+		hitstop(Jogador.HITSTOP_CRIT)
+
+
+## Congela o jogo por `seg` segundos REAIS (Time.get_ticks_msec, ignora Engine.time_scale). Só no solo, e só pra crítico e chefe
+## (hitstop em tudo cansa). O teto é o do HITSTOP_CHEFE.
+func hitstop(seg: float) -> void:
+	if eh_online or acabou:
+		return
+	_hitstop_ate = maxi(_hitstop_ate, Time.get_ticks_msec() + int(minf(seg, Jogador.HITSTOP_CHEFE) * 1000.0))
 
 
 func inimigo_morreu(v) -> void:
 	recompensa(v.pos, v.tipo, v.elite)
 	habilidades.abate(v)   # enche a Energia da transformação
+	if v.chefe:
+		hitstop(Jogador.HITSTOP_CHEFE)
 	if online:
 		online.morreu(v)   # anfitrião: cada um dos outros pega a própria recompensa
 	if v.d.get("final", false):

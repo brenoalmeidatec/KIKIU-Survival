@@ -8,6 +8,7 @@ const BLOCO := 256.0          # tamanho da textura do chão na tela (128 px x 2)
 const CEL_DECO := 150.0
 const Cenario := preload("res://scripts/hordas/cenario.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
+const Ambiente := preload("res://scripts/hordas/ambiente.gd")
 ## cor do anel de cada tipo de santuário
 const COR_TIPO := {"tomada": Color(1.0, 0.85, 0.3), "dadiva": Color(0.4, 0.9, 1.0), "fragmento": Color(0.45, 0.55, 1.0), "maldito": Color(0.85, 0.35, 0.8)}
 
@@ -22,6 +23,7 @@ var _bloco := BLOCO             # lado do azulejo na tela
 var _desloc := Vector2(512, 384)  # o azulejo começa até isso à esquerda/acima da câmera
 var _luzes := Node2D.new()      # halos das luzes do cenário, somados (blend ADD) por cima de tudo
 var _ambiente := CanvasModulate.new()
+var _amb := Ambiente.new()      # detalhes de chão, partículas e bichos do cenário (#32 item 2)
 
 
 func _ready() -> void:
@@ -42,6 +44,7 @@ func _ready() -> void:
 	_luzes.draw.connect(_desenhar_luzes)
 	add_child(_luzes)
 	add_child(_ambiente)
+	add_child(_amb)
 	_aplicar_cenario.call_deferred()
 
 
@@ -97,6 +100,7 @@ func atualizar(dt: float) -> void:
 		else:
 			s.carga = maxf(0.0, s.carga - dt / tempo * 0.5)
 	_luzes.queue_redraw()
+	_amb.atualizar(dt)
 	queue_redraw()
 
 
@@ -117,6 +121,7 @@ func _aplicar_cenario() -> void:
 	_desloc = Vector2(ceilf(330.0 / _bloco) * _bloco, ceilf(190.0 / _bloco) * _bloco)
 	_fundo.size = _desloc + Vector2(_bloco, _bloco) + Vector2(330, 190)
 	_ambiente.color = c.ambiente
+	_amb.configurar(c, arena)
 
 
 ## Enfeites na tela: [pé no mundo, item, número sorteado]. Espalhados por célula (sempre iguais no mesmo lugar)
@@ -124,17 +129,12 @@ func _aplicar_cenario() -> void:
 func _enfeites_na_tela() -> Array:
 	var res := []
 	var cam: Vector2 = arena.camera.position
-	var a := Vector2i(floori((cam.x - 380) / CEL_DECO), floori((cam.y - 260) / CEL_DECO))
-	var b := Vector2i(floori((cam.x + 380) / CEL_DECO), floori((cam.y + 260) / CEL_DECO))
+	var a := Vector2i(floori((cam.x - 380) / Cenario.CEL), floori((cam.y - 260) / Cenario.CEL))
+	var b := Vector2i(floori((cam.x + 380) / Cenario.CEL), floori((cam.y + 260) / Cenario.CEL))
 	for cy in range(a.y, b.y + 1):
 		for cx in range(a.x, b.x + 1):
-			var h := hash(Vector2i(cx, cy))
-			if h % 100 >= int(cenario.densidade * 100):
-				continue
-			var it: Dictionary = cenario.item_por(h / 100)
-			if it.peso <= 0:
-				continue
-			res.append([Vector2(cx * CEL_DECO + (h / 7) % 110, cy * CEL_DECO + (h / 13) % 110), it, h])
+			for p in cenario.celula(cx, cy).props:   # sorteados pela semente da corrida (Cenario.celula)
+				res.append([p.pos, p.item, p.k])
 	if not cenario.fixos.is_empty():
 		var ta := Vector2i(floori((cam.x - 400) / _bloco), floori((cam.y - 300) / _bloco))
 		var tb := Vector2i(floori((cam.x + 400) / _bloco), floori((cam.y + 300) / _bloco))
@@ -155,10 +155,14 @@ func _desenhar_luzes() -> void:
 		if l.is_empty():
 			continue
 		var k: int = e[2]
-		var f: float = 1.0 - float(l.pisca) * (0.5 + 0.5 * sin(_t * 11.0 + k % 97) * sin(_t * 7.3 + k % 53))
+		# chama que treme: três senos de períodos diferentes (não repete na vista) e a poça respira junto
+		var ruido := sin(_t * 11.0 + k % 97) * sin(_t * 7.3 + k % 53) + 0.5 * sin(_t * 23.0 + k % 31)
+		var f: float = clampf(1.0 - float(l.pisca) * (0.5 + 0.4 * ruido), 0.0, 1.0)
 		var poca: Rect2 = l.poca
 		var halo: Rect2 = l.halo
-		_luzes.draw_texture_rect_region(cenario.atlas, Rect2(e[0] + Vector2(l.fonte.x, 0) - poca.size / 2, poca.size), poca, Color(1, 1, 1, f))   # poça embaixo da lâmpada
+		var respira := 1.0 + float(l.pisca) * 0.12 * ruido
+		var ps: Vector2 = poca.size * respira
+		_luzes.draw_texture_rect_region(cenario.atlas, Rect2(e[0] + Vector2(l.fonte.x, 0) - ps / 2, ps), poca, Color(1, 1, 1, f))   # poça embaixo da lâmpada
 		_luzes.draw_texture_rect_region(cenario.atlas, Rect2(e[0] + l.fonte - halo.size / 2, halo.size), halo, Color(1, 1, 1, f))
 
 

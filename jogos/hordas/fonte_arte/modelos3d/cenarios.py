@@ -338,6 +338,116 @@ def cone_transito():
     return None
 
 
+# ---- enfeites baixos e escuros da #32 item 2 (enchem o mapa sem competir com personagens: contraste menor, nada passa de ~1 u)
+
+def vela_chao(r):
+    """Toco de vela derretida num pires: uma chama pequena (luz fraca e trêmula)."""
+    cera, ferro = toon("a89e86"), toon("2e2a40")
+    cilindro("pires", 0.16, 0.04, (0, 0, 0.02), ferro, vertices=8)
+    cilindro("cera", 0.07, 0.16, (0, 0, 0.12), cera, vertices=7)
+    cone("chama", 0.05, 0.0, 0.12, (0, 0, 0.26), brilha("ffd060", 1.0), vertices=6)
+    return {"ponto": (0, 0, 0.26), "rampa": "fogo", "raio": 30, "pisca": 0.3}
+
+
+def livros_chao(r):
+    cores = [toon(h) for h in ("7e2027", "35473a", "8f6a2e", "223566", "4a3324")]
+    for k in range(4):
+        caixa("livro", (0.34, 0.24, 0.07), (r.uniform(-0.1, 0.1), r.uniform(-0.08, 0.08), 0.04 + 0.075 * k), r.choice(cores),
+              rot=(0, 0, r.uniform(-0.5, 0.5)), chanfro=0.01)
+    caixa("solto", (0.3, 0.22, 0.06), (0.4, 0.2, 0.03), r.choice(cores), rot=(0, 0, 0.8), chanfro=0.01)
+    return None
+
+
+def tubo_quebrado(r):
+    """Tubo de ensaio grande caído, com um resto de poção brilhando."""
+    vidro, poca = toon("a89e86"), brilha("56b04a", 0.9)
+    cilindro("tubo", 0.13, 0.8, (0, 0, 0.13), vidro, rot=(0, math.pi / 2, 0.4), vertices=8)
+    cilindro("poca", 0.3, 0.02, (0.25, 0.1, 0.01), poca, vertices=10)
+    for k in range(3):
+        caixa("caco", (0.1, 0.07, 0.03), (-0.2 + 0.2 * k, r.uniform(-0.2, 0.2), 0.02), vidro, rot=(0, 0, r.uniform(0, 3)))
+    return {"ponto": (0.25, 0.1, 0.1), "rampa": "veneno", "raio": 26, "pisca": 0.1}
+
+
+def cadeira_tombada(r):
+    madeira = toon("4a3324")
+    caixa("assento", (0.4, 0.4, 0.05), (0, 0, 0.14), madeira, rot=(0.0, 1.2, 0.3))
+    caixa("encosto", (0.4, 0.05, 0.45), (-0.15, 0.1, 0.3), madeira, rot=(0.2, 0.1, 0.3))
+    for x, y in ((0.18, 0.18), (0.18, -0.18), (-0.18, 0.18), (-0.18, -0.18)):
+        caixa("perna", (0.05, 0.05, 0.4), (x + 0.3, y, 0.1), madeira, rot=(0, 1.3, 0.3))
+    return None
+
+
+def pilha_pedras(r):
+    pedra = [toon(h) for h in ("5e544a", "675c50", "4a423a")]
+    for k in range(7):
+        a = r.uniform(0, 6.28)
+        d = r.uniform(0.0, 0.32)
+        caixa("pedra", (r.uniform(0.14, 0.3), r.uniform(0.14, 0.26), r.uniform(0.1, 0.22)), (math.cos(a) * d, math.sin(a) * d, 0.08 + 0.05 * (k > 4)),
+              r.choice(pedra), rot=(r.uniform(-0.3, 0.3), r.uniform(-0.3, 0.3), r.uniform(0, 3)), chanfro=0.04)
+    return None
+
+
+def braseiro_baixo(r):
+    ferro, brasa = toon("2e2a40"), brilha("f0921e", 1.0)
+    cilindro("bojo", 0.3, 0.12, (0, 0, 0.32), ferro, vertices=10, chanfro=0.02)
+    cone("perna", 0.2, 0.06, 0.3, (0, 0, 0.15), ferro, vertices=8)
+    cilindro("brasa", 0.26, 0.03, (0, 0, 0.4), brasa, vertices=10)
+    cone("chama", 0.14, 0.0, 0.3, (0, 0, 0.55), brasa, vertices=7)
+    return {"ponto": (0, 0, 0.5), "rampa": "fogo", "raio": 58, "pisca": 0.22}
+
+
+def jarro_barro(r):
+    barro, escuro = toon("8c5a3c"), toon("4a3324")
+    esfera("bojo", 0.24, (0, 0, 0.26), barro, escala=(1, 1, 1.1))
+    cilindro("gargalo", 0.11, 0.14, (0, 0, 0.5), barro, vertices=8)
+    cilindro("boca", 0.14, 0.04, (0, 0, 0.58), escuro, vertices=8)
+    return None
+
+
+def cranio_vela(r):
+    osso, cera = toon("d6ccb2"), toon("a89e86")
+    esfera("cranio", 0.17, (0, 0, 0.17), osso, escala=(1, 1.05, 0.95))
+    caixa("mandibula", (0.14, 0.1, 0.06), (0, -0.1, 0.05), osso)
+    cilindro("cera", 0.05, 0.18, (0, 0.02, 0.4), cera, vertices=6)
+    cone("chama", 0.04, 0.0, 0.11, (0, 0.02, 0.54), brilha("ffd060", 1.0), vertices=6)
+    return {"ponto": (0, 0.02, 0.54), "rampa": "fogo", "raio": 34, "pisca": 0.3}
+
+
+def saco_lixo(r):
+    saco = toon("1f2a24")
+    for k, (x, y, s) in enumerate(((0, 0, 0.3), (0.32, 0.1, 0.24), (-0.1, 0.3, 0.22))):
+        esfera("saco", s, (x, y, s * 0.8), saco, escala=(1, 1, 0.85))
+        cone("laco", 0.05, 0.0, 0.14, (x, y, s * 1.5), saco, vertices=5)
+    return None
+
+
+def banco_praca(r):
+    madeira, ferro = toon("6e4c32"), toon("2e2a40")
+    for z in (0.34, 0.42, 0.5):
+        caixa("ripa", (1.0, 0.1, 0.04), (0, -0.14 + (z - 0.34) * 0.6, z), madeira)
+    caixa("encosto", (1.0, 0.04, 0.3), (0, 0.16, 0.62), madeira, rot=(-0.2, 0, 0))
+    for x in (-0.42, 0.42):
+        caixa("pe", (0.05, 0.4, 0.34), (x, 0, 0.17), ferro)
+    return None
+
+
+def barril_fogo(r):
+    ferro, brasa = toon("45405c"), brilha("f0921e", 1.0)
+    cilindro("barril", 0.3, 0.7, (0, 0, 0.35), ferro, vertices=12, chanfro=0.03)
+    cilindro("brasa", 0.26, 0.03, (0, 0, 0.72), brasa, vertices=10)
+    cone("chama", 0.17, 0.0, 0.4, (0, 0, 0.9), brasa, vertices=8)
+    cone("miolo", 0.08, 0.0, 0.25, (0, -0.03, 0.86), brilha("ffd060", 1.0), vertices=6)
+    return {"ponto": (0, 0, 0.85), "rampa": "fogo", "raio": 66, "pisca": 0.25}
+
+
+def caixa_correio(r):
+    azul, metal = toon("223566"), toon("2e2a40")
+    caixa("poste", (0.08, 0.08, 0.5), (0, 0, 0.25), metal)
+    caixa("caixa", (0.42, 0.3, 0.28), (0, 0, 0.62), azul, chanfro=0.03)
+    caixa("aba", (0.42, 0.04, 0.12), (0, -0.16, 0.7), toon("1d1a2b"))
+    return None
+
+
 def fixos_cidade():
     """Postes nas 4 esquinas do cruzamento, na calçada junto do meio-fio (em pixels do azulejo, com o pé)."""
     c = L / 2
@@ -351,19 +461,23 @@ CENARIOS = {
         "piso": piso_masmorra, "ambiente": [0.62, 0.58, 0.7],
         "paleta": ("pedra", "musgo", "osso", "fogo", "couro", "aco"),
         "enfeites": [("tocha", tocha_em_pe, 2), ("barril", barril, 2), ("ossos", pilha_ossos, 3),
-                     ("caixote", caixote, 2), ("coluna", coluna_quebrada, 1), ("grilhao", grilhao, 1)],
+                     ("caixote", caixote, 2), ("coluna", coluna_quebrada, 1), ("grilhao", grilhao, 1),
+                     ("pedras", pilha_pedras, 3), ("braseiro", braseiro_baixo, 1), ("jarro", jarro_barro, 2),
+                     ("cranio_vela", cranio_vela, 1)],
     },
     "laboratorio": {
         "piso": piso_laboratorio, "ambiente": [0.7, 0.76, 0.82],
         "paleta": ("aco", "veneno", "couro", "ouro", "fogo", "osso", "sangue", "noite", "musgo"),
         "enfeites": [("mesa", mesa_alquimia, 2), ("caldeirao", caldeirao, 1), ("estante", estante, 2),
-                     ("jarra", jarra_grande, 2), ("candelabro", candelabro, 2)],
+                     ("jarra", jarra_grande, 2), ("candelabro", candelabro, 2),
+                     ("vela", vela_chao, 2), ("livros", livros_chao, 3), ("tubo", tubo_quebrado, 2), ("cadeira", cadeira_tombada, 2)],
     },
     "cidade": {
         "piso": piso_cidade, "piso_px": 512, "ambiente": [0.5, 0.55, 0.78], "fixos": fixos_cidade,
         "paleta": ("pedra", "noite", "fogo", "aco", "ouro", "osso", "sangue", "musgo"),
         "enfeites": [("poste", poste_rua, 0), ("lixeira", lixeira, 2), ("hidrante", hidrante, 1), ("cone", cone_transito, 2),
-                     ("caixote", caixote, 1), ("barril", barril, 1)],
+                     ("caixote", caixote, 1), ("barril", barril, 1),
+                     ("sacos", saco_lixo, 3), ("banco", banco_praca, 1), ("barril_fogo", barril_fogo, 1), ("correio", caixa_correio, 1)],
     },
 }
 

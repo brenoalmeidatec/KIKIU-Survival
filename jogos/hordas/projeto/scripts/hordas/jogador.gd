@@ -21,6 +21,26 @@ const VEL_BASE := 100.0
 const DASH_VEL := 3.4
 const DASH_TEMPO := 0.18
 const DASH_RECARGA := 1.4
+## ---- Sensação de movimento e de impacto (#32 item 4): tudo se ajusta aqui ----
+const ACEL_TEMPO := 0.06           # s do parado até a velocidade máxima (arranque curto, sem escorregar)
+const FREIO_TEMPO := 0.07          # s da velocidade máxima até parar (precisa ficar abaixo de 0,1)
+const SQUASH_INICIO := Vector2(-0.06, 0.08)   # ao começar a andar: estica um pouco
+const SQUASH_PARADA := Vector2(0.07, -0.07)   # ao parar: achata um pouco
+const SQUASH_POUSO := Vector2(0.20, -0.22)    # pouso da entrada na fase
+const SQUASH_VOLTA := 16.0         # velocidade com que a forma volta ao normal
+const PASSO_DIST := 26.0           # px andados entre um passo e outro (poeira e som)
+const PASSO_SOM := true            # som baixinho de passo
+const PASSO_SOM_DB := -24.0
+const POEIRA_MAX := 14             # teto de partículas de poeira vivas (desenhadas no _draw)
+const POEIRA_VIDA := 0.38
+const DANO_FLASH := 0.09           # s de flash branco ao levar dano (opção "Flash de dano")
+const DANO_EMPURRAO := 110.0       # empurrãozinho quando o golpe não diz pra onde (decai com exp(-9 t): ~12 px)
+const HITSTOP_CRIT := 0.04         # s reais de congelada ao acertar crítico (só solo)
+const HITSTOP_CRIT_ESPERA := 1.2   # s mínimos entre dois hitstops de crítico
+const HITSTOP_CHEFE := 0.14        # s reais ao derrubar um chefe (só solo)
+const HITSTOP_ESCALA := 0.04       # velocidade do jogo durante o hitstop (1 = sem efeito)
+const SHADER_FLASH := "shader_type canvas_item;\nuniform float flash = 1.0;\nvoid fragment() { COLOR.rgb = mix(COLOR.rgb, vec3(1.0), flash * COLOR.a); }\n"
+static var _mat_flash: ShaderMaterial
 
 var arena: Node
 var spr := Sprite2D.new()
@@ -53,6 +73,12 @@ var _ent_t := 0.0                # chegada no começo da fase: tempo que falta d
 var _nome_t := 0.0               # tempo que falta do nome em cima da cabeça
 var _ent_nome := ""
 var _ent_poeira := false
+var _vel := Vector2.ZERO          # velocidade real (acelera e freia; _mov continua sendo a intenção, o que as armas e o online leem)
+var _sq := Vector2.ZERO           # squash/stretch atual (soma a ONE na escala do sprite)
+var _andava := false
+var _passo_dist := 0.0
+var _poeira: Array = []           # {pos (mundo), t, r}
+var _flash_t := 0.0
 
 
 func configurar(sprite: String) -> void:
@@ -88,6 +114,7 @@ func definir_camadas(nomes: Array) -> void:
 			c.hframes = _colunas(tex)
 			c.vframes = spr.vframes
 			c.centered = false
+			c.use_parent_material = true   # o flash de dano (shader no corpo) vale pras camadas também
 			c.offset = spr.offset
 			c.frame = spr.frame
 			spr.add_child(c)
@@ -144,6 +171,7 @@ func _chegando() -> void:
 	if not _ent_poeira and p >= Visual.CHEGADA_POUSO:
 		_ent_poeira = true
 		Som.tocar("queda", 0.0, 1.2, -8)
+		_sq = SQUASH_POUSO
 		if arena and arena.efeitos:
 			arena.efeitos.explodir(position + Vector2(0, -2), Color(0.82, 0.78, 0.68), 10, 95.0)
 	queue_redraw()
@@ -188,21 +216,26 @@ func atualizar(dt: float) -> void:
 	_mov = entrada
 	if entrada.x != 0:
 		lado = signf(entrada.x)
+	var vmax: float = VEL_BASE * arena.stat("velocidade")
 	if dash_t > 0:
 		dash_t -= dt
-		position += _dir_dash * VEL_BASE * arena.stat("velocidade") * DASH_VEL * dt
+		position += _dir_dash * vmax * DASH_VEL * dt
+		_vel = entrada * vmax   # ao sair do dash já anda na velocidade pedida, sem solavanco
 		if int(_t * 60) % 2 == 0:
 			_rastro.append({"pos": position, "frame": spr.frame, "t": 0.25})
 	else:
-		position += entrada * VEL_BASE * arena.stat("velocidade") * dt
+		_vel = passo_vel(_vel, entrada * vmax, vmax, dt)
+		position += _vel * dt
 		if _quer_dash() and dash_recarga <= 0:
 			_dir_dash = entrada if entrada != Vector2.ZERO else Vector2(lado, 0)
 			dash_t = DASH_TEMPO + (0.12 if forma else 0.0)   # transformado, o dash vira investida: vai mais longe
 			dash_recarga = DASH_RECARGA
 			invencivel = maxf(invencivel, DASH_TEMPO + 0.1)
 			Som.tocar("whoosh", 0.1, 1.2)
+			_poeira_em(3, 18.0)
 	position += kb * dt
 	kb *= exp(-9.0 * dt)
+	_efeitos_movimento(entrada, dt)
 	# regeneração
 	hp = minf(vida_max(), hp + arena.stat("regen") * dt)
 	_animar(entrada)
@@ -211,6 +244,74 @@ func atualizar(dt: float) -> void:
 		if r.t <= 0:
 			_rastro.erase(r)
 	queue_redraw()
+
+
+## Função pura: um passo da velocidade em direção ao alvo (acelera em ACEL_TEMPO, freia em FREIO_TEMPO, sem escorregar).
+static func passo_vel(vel: Vector2, alvo: Vector2, vmax: float, dt: float) -> Vector2:
+	var tempo := ACEL_TEMPO if alvo != Vector2.ZERO else FREIO_TEMPO
+	return vel.move_toward(alvo, maxf(vmax, 1.0) / tempo * dt)
+
+
+## Só visual: squash/stretch, passos (poeira e som baixinho) e o flash de dano.
+func _efeitos_movimento(entrada: Vector2, dt: float) -> void:
+	_flash_t = maxf(0.0, _flash_t - dt)
+	var anda := entrada != Vector2.ZERO
+	if anda and not _andava:
+		_sq = SQUASH_INICIO
+		_poeira_em(1, 10.0)
+	elif not anda and _andava and _vel.length() > 20.0:
+		_sq = SQUASH_PARADA
+	_andava = anda
+	_sq = _sq.lerp(Vector2.ZERO, 1.0 - exp(-SQUASH_VOLTA * dt))
+	if _sq.length_squared() < 0.00001:
+		_sq = Vector2.ZERO
+	spr.scale = Vector2.ONE + _sq
+	if dash_t <= 0.0 and forma == null and _ent_t <= 0.0 and _vel.length_squared() > 400.0:
+		_passo_dist += _vel.length() * dt
+		if _passo_dist >= PASSO_DIST:
+			_passo_dist -= PASSO_DIST
+			_poeira_em(1, 6.0)
+			if PASSO_SOM:
+				Som.tocar("blip", 0.12, randf_range(0.5, 0.62), PASSO_SOM_DB)
+	for i in range(_poeira.size() - 1, -1, -1):
+		_poeira[i].t -= dt
+		if _poeira[i].t <= 0.0:
+			_poeira.remove_at(i)
+	var flash := _flash_t > 0.0
+	if flash != (spr.material != null):
+		spr.material = _material_flash() if flash else null
+
+
+static func _material_flash() -> ShaderMaterial:
+	if _mat_flash == null:
+		var sh := Shader.new()
+		sh.code = SHADER_FLASH
+		_mat_flash = ShaderMaterial.new()
+		_mat_flash.shader = sh
+	return _mat_flash
+
+
+## n nuvenzinhas de poeira nos pés, espalhadas em `abre` px (teto POEIRA_MAX, sem poeira durante a queda da entrada).
+func _poeira_em(n: int, abre: float) -> void:
+	if _ent_t > 0.0 or forma != null:
+		return
+	for i in n:
+		if _poeira.size() >= POEIRA_MAX:
+			_poeira.pop_front()
+		_poeira.append({"pos": position + Vector2(randf_range(-abre, abre) * 0.5, -1.0 + randf_range(-1.0, 1.0)), "t": POEIRA_VIDA, "r": randf_range(1.6, 2.6)})
+
+
+## Empurrão pequeno pra longe do vírus mais perto, quando o golpe não diz de onde veio.
+func _empurrao_padrao() -> Vector2:
+	var c := centro()
+	var melhor := INF
+	var dir := Vector2.ZERO
+	for v in arena.inimigos.no_circulo(c, 40.0):
+		var d: float = v.pos.distance_squared_to(c)
+		if d < melhor:
+			melhor = d
+			dir = c - v.pos
+	return dir.normalized() * DANO_EMPURRAO if dir != Vector2.ZERO else Vector2.ZERO
 
 
 var _dash_ia := false
@@ -344,7 +445,11 @@ func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) 
 	_vermelho = 0.15
 	if _dano_t <= 0.0:
 		_dano_t = DANO_TEMPO
+	if empurrao == Vector2.ZERO and arena.inimigos != null:
+		empurrao = _empurrao_padrao()
 	kb += empurrao
+	if Config.v("flash_dano"):
+		_flash_t = DANO_FLASH   # flash branco curto só no jogador (opção de acessibilidade)
 	Som.tocar("erro", 0.15, 1.0, -4)
 	arena.tremer(3.0)
 	if hp <= 0:
@@ -381,6 +486,9 @@ func _draw() -> void:
 		Visual.chegada(self, 1.0 - _ent_t / Visual.CHEGADA_TEMPO, _ent_nome, clampf(_nome_t / 0.6, 0.0, 1.0), Color(0.6, 0.85, 1.0))
 	if not (arena.caido and arena.online) and humano > 0.5:
 		Visual.sombra_boneco(self, spr)   # o dragão desenha a própria sombra
+	for p in _poeira:   # poeira dos passos: bolinha que cresce e some
+		var k: float = 1.0 - p.t / POEIRA_VIDA
+		draw_circle(p.pos - position + Vector2(0, -k * 4.0), p.r * (1.0 + k), Color(0.78, 0.74, 0.66, 0.38 * (1.0 - k)))
 	for r in (_rastro if forma == null else []):
 		var tex := spr.texture
 		var w := tex.get_width() / float(spr.hframes)
