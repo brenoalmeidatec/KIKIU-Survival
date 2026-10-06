@@ -959,7 +959,7 @@ func _desenhar() -> void:
 			else:
 				if r.get("vitoria", false):
 					_txt(Vector2(0, 60), "VOCÊ SOBREVIVEU!", 24, Color(0.5, 1, 0.5))
-					_txt(Vector2(0, 80), "A Tela Azul caiu. A faculdade está salva.", 8, Color(0.8, 0.9, 0.8))
+					_txt(Vector2(0, 80), "%s caiu. A faculdade está salva." % str(r.get("chefe_final", "O chefe final")), 8, Color(0.8, 0.9, 0.8))
 				else:
 					_txt(Vector2(0, 60), "A CORRIDA ACABOU", 24, Color(1, 0.4, 0.4))
 					_txt(Vector2(0, 80), "Você chegou até a fase %d de %d. Tenta de novo!" % [r.get("fase", 1), r.get("fases", 1)], 8, Color(0.9, 0.8, 0.8))

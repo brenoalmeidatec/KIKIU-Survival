@@ -1070,7 +1070,174 @@ def pedra_runa(r):
     return None
 
 
+# ================================================================ reino sombrio (#64, região 5)
+
+def piso_reino(r):
+    """Lajes negras de um castelo corrompido, vistas de cima: rachadas, com veios do caos acesos nas frestas, manchas de
+    sangue seco, cinza, ossos e pedaços de armadura. Escuro de propósito: duas fases da região são de escuridão."""
+    caixa("fundo", (L, L, 0.1), (L / 2, L / 2, -0.05), toon("1f1b19"))   # a fresta entre as lajes
+    lajes = [chao(h) for h in ("4a423b", "5e544a", "534a43")]   # cinza médio: o escuro da região vem da luz, não do chão
+    n = 7
+    lado = L / n
+    for i in range(n):
+        for j in range(n):
+            if r.random() < 0.06:   # laje que falta (buraco escuro)
+                continue
+            caixa("laje", (lado - 0.07, lado - 0.07, 0.08), (i * lado + lado / 2 + r.uniform(-0.02, 0.02), j * lado + lado / 2 + r.uniform(-0.02, 0.02),
+                  r.uniform(-0.03, 0.0)), r.choice(lajes), rot=(r.uniform(-0.02, 0.02), r.uniform(-0.02, 0.02), r.uniform(-0.03, 0.03)), chanfro=0.03)
+    veio = brilha("a62a8f", 0.9)
+    for _ in range(7):   # veios do caos: linhas acesas correndo pelas frestas (largas o bastante pra virar 1-2 px)
+        x, y = r.randint(1, n - 1) * lado, r.uniform(0.5, L - 0.5)
+        comp = r.uniform(1.0, 2.4)
+        if r.random() < 0.5:
+            caixa("veio", (comp, 0.07, 0.02), (r.uniform(0.5, L - 0.5), r.randint(1, n - 1) * lado, 0.01), veio)
+        else:
+            caixa("veio", (0.07, comp, 0.02), (x, y, 0.01), veio)
+    sangue = toon("4f1520")
+    for _ in range(3):
+        x, y = r.uniform(1.0, L - 1.0), r.uniform(1.0, L - 1.0)
+        for _k in range(r.randint(3, 6)):
+            esfera("sangue", r.uniform(0.08, 0.22), (x + r.uniform(-0.3, 0.3), y + r.uniform(-0.3, 0.3), 0.02), sangue, escala=(1, 1, 0.1))
+    cinza = toon("5e544a")
+    for _ in range(20):
+        esfera("cinza", r.uniform(0.03, 0.07), (r.uniform(0.2, L - 0.2), r.uniform(0.2, L - 0.2), 0.03), cinza, escala=(1, 1, 0.3))
+    osso = toon("a89e86")
+    for _ in range(5):
+        cilindro("osso", 0.025, r.uniform(0.2, 0.32), (r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5), 0.05), osso,
+                 rot=(math.pi / 2, 0, r.uniform(0, math.pi)), vertices=5)
+    aco = toon("45405c")
+    for _ in range(3):   # pedaços de armadura
+        caixa("placa", (0.18, 0.12, 0.03), (r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5), 0.05), aco, rot=(0.2, 0.1, r.uniform(0, 3)), chanfro=0.02)
+
+
+def trono_quebrado(r):
+    """O trono que sobrou: pedra negra de espaldar alto e pontudo, rachado ao meio, com um cristal do caos aceso no topo."""
+    pedra, pedra_e = toon("3a3430"), toon("2c2724")
+    caixa("degrau", (1.2, 0.9, 0.16), (0, 0.05, 0.08), pedra_e, chanfro=0.03)
+    caixa("assento", (0.8, 0.6, 0.3), (0, 0.1, 0.31), pedra, chanfro=0.04)
+    caixa("espaldar", (0.8, 0.18, 1.3), (0, 0.38, 1.1), pedra, chanfro=0.04)
+    for lado in (1, -1):
+        caixa("braco", (0.14, 0.6, 0.3), (0.4 * lado, 0.1, 0.55), pedra_e, chanfro=0.03)
+        cone("ponta", 0.12, 0.0, 0.45, (0.3 * lado, 0.38, 1.95), pedra, vertices=4)
+    cone("ponta_meio", 0.15, 0.0, 0.6, (0, 0.38, 2.05), pedra, vertices=4)
+    caixa("racha", (0.04, 0.2, 0.9), (0.08, 0.37, 1.0), toon("141211"), rot=(0, 0.15, 0))
+    esfera("cristal", 0.13, (0, 0.28, 1.6), brilha("e04aa8", 1.0), escala=(0.8, 0.8, 1.3))
+    return {"ponto": (0, 0.28, 1.6), "rampa": "sangue", "raio": 60, "pisca": 0.12}
+
+
+def braseiro_caos(r):
+    """Braseiro de ferro numa coluna curta, queimando o fogo magenta do caos."""
+    ferro = toon("2e2a40")
+    cilindro("coluna", 0.14, 0.6, (0, 0, 0.3), toon("3a3430"), vertices=8)
+    cone("bacia", 0.18, 0.34, 0.24, (0, 0, 0.72), ferro, vertices=10)
+    esfera("brasa", 0.26, (0, 0, 0.84), brilha("a62a8f", 1.0), escala=(1, 1, 0.3))
+    for k in range(5):
+        cone("chama", 0.09, 0.0, r.uniform(0.3, 0.45), (r.uniform(-0.14, 0.14), r.uniform(-0.14, 0.14), 1.0), brilha("e04aa8", 1.0), vertices=5)
+    cone("miolo", 0.08, 0.0, 0.28, (0, -0.04, 0.98), brilha("ff9ad8", 1.0), vertices=5)
+    return {"ponto": (0, 0, 1.0), "rampa": "sangue", "raio": 72, "pisca": 0.25}
+
+
+def cristal_caos(r):
+    """Cristais escuros furando o chão, com o caos aceso por dentro."""
+    escuro, aceso = toon("3d1046"), brilha("e04aa8", 1.0)
+    for k, (x, y, h, inc) in enumerate(((0, 0, 1.0, 0.0), (0.22, 0.05, 0.65, 0.4), (-0.2, 0.08, 0.6, -0.45), (0.05, -0.18, 0.42, 0.25))):
+        cilindro("cristal", 0.11, h, (x, y, h / 2), escuro, rot=(0, inc, 0), vertices=6)
+        cilindro("veio", 0.04, h * 0.8, (x, y - 0.08, h / 2), aceso, rot=(0, inc, 0), vertices=4)
+        cone("ponta", 0.11, 0.0, 0.22, (x + math.sin(inc) * h / 2, y, h + 0.09), escuro, vertices=6)
+    return {"ponto": (0, 0, 0.6), "rampa": "sangue", "raio": 52, "pisca": 0.1}
+
+
+def estatua_decapitada(r):
+    """Estátua de cavaleiro sem cabeça num pedestal: a espada de pedra apontada pro chão."""
+    pedra, pedra_e = toon("5e544a"), toon("3a3430")
+    caixa("pedestal", (0.7, 0.7, 0.4), (0, 0, 0.2), pedra_e, chanfro=0.04)
+    caixa("pernas", (0.36, 0.24, 0.6), (0, 0, 0.7), pedra, chanfro=0.03)
+    caixa("tronco", (0.46, 0.3, 0.6), (0, 0, 1.3), pedra, chanfro=0.05)
+    for lado in (1, -1):
+        esfera("ombro", 0.14, (0.28 * lado, 0, 1.55), pedra, escala=(1.1, 1, 0.8))
+        caixa("braco", (0.12, 0.12, 0.5), (0.26 * lado, -0.12, 1.25), pedra, rot=(-0.35, 0, 0))
+    caixa("pescoco", (0.14, 0.14, 0.08), (0, 0, 1.64), pedra_e)   # o toco onde era a cabeça
+    caixa("espada", (0.06, 0.04, 0.9), (0, -0.26, 0.85), pedra_e)
+    caixa("guarda", (0.3, 0.05, 0.05), (0, -0.26, 1.18), pedra_e)
+    return None
+
+
+def espada_cravada(r):
+    """Túmulo de cavaleiro: espada cravada no chão com o elmo pendurado no punho e um monte de terra."""
+    aco, couro = toon("6b6585"), toon("4a3324")
+    esfera("monte", 0.42, (0, 0, 0.0), toon("2c2724"), escala=(1.2, 0.8, 0.35))
+    caixa("lamina", (0.07, 0.03, 0.8), (0, 0, 0.45), aco)
+    caixa("guarda", (0.34, 0.06, 0.06), (0, 0, 0.88), aco)
+    cilindro("punho", 0.03, 0.2, (0, 0, 1.0), couro, vertices=6)
+    esfera("pomo", 0.045, (0, 0, 1.12), toon("8f6a2e"))
+    esfera("elmo", 0.15, (0.0, -0.06, 0.98), toon("45405c"), escala=(1, 1, 1.1))
+    caixa("fresta", (0.16, 0.03, 0.03), (0.0, -0.2, 1.0), toon("141211"))
+    return None
+
+
+def armadura_caida(r):
+    """O que sobrou de um cavaleiro: peitoral, escudo rachado e elmo espalhados."""
+    aco, aco_e = toon("6b6585"), toon("45405c")
+    caixa("peitoral", (0.42, 0.3, 0.2), (0, 0, 0.12), aco, rot=(0.3, 0, 0.4), chanfro=0.05)
+    cilindro("escudo", 0.3, 0.05, (0.42, -0.1, 0.06), aco_e, rot=(0.2, 0.1, 0), vertices=12)
+    caixa("racha", (0.04, 0.4, 0.02), (0.42, -0.1, 0.1), toon("141211"), rot=(0.2, 0.1, 0.5))
+    esfera("elmo", 0.14, (-0.35, -0.2, 0.12), aco, escala=(1, 1.1, 0.95))
+    for k in range(3):
+        caixa("peca", (0.12, 0.08, 0.04), (r.uniform(-0.5, 0.5), r.uniform(-0.4, 0.3), 0.03), aco_e, rot=(0, 0, r.uniform(0, 3)))
+    return None
+
+
+def espinhos_negros(r):
+    """Moita de espinhos negros (o Jardim de Espinhos)."""
+    galho_ = toon("1a0a1f")
+    for k in range(12):
+        a = k * math.tau / 12 + r.uniform(-0.2, 0.2)
+        h = r.uniform(0.5, 0.95)
+        cone("espinho", 0.05, 0.0, h, (math.cos(a) * 0.18, math.sin(a) * 0.15, h / 2), galho_, vertices=4)
+    for k in range(6):
+        a = r.uniform(0, math.tau)
+        cilindro("rama", 0.03, 0.6, (math.cos(a) * 0.25, math.sin(a) * 0.2, 0.25), galho_, rot=(math.cos(a) * 0.9, math.sin(a) * 0.9, 0), vertices=4)
+    return None
+
+
+def bandeira_negra(r):
+    """Estandarte negro do caos num mastro de ferro, com o sinal aceso em magenta."""
+    ferro, pano = toon("2e2a40"), toon("1a0a1f")
+    cilindro("mastro", 0.04, 2.0, (0, 0, 1.0), ferro, vertices=6)
+    caixa("travessa", (0.62, 0.04, 0.04), (0.28, 0, 1.85), ferro)
+    caixa("pano", (0.56, 0.03, 0.95), (0.3, 0, 1.36), pano)
+    for k in range(3):
+        caixa("tira%d" % k, (0.14, 0.03, 0.22 + k * 0.06), (0.1 + k * 0.19, 0, 0.8 - k * 0.03), pano)
+    sinal = brilha("e04aa8", 1.0)
+    for k in range(4):   # sinal do caos: losango vazado com um ponto no meio
+        a = k * math.pi / 2 + math.pi / 4   # meio de cada lado; o lado fica perpendicular ao raio
+        caixa("sinal%d" % k, (0.2, 0.02, 0.04), (0.3 + math.cos(a) * 0.1, -0.02, 1.42 + math.sin(a) * 0.1), sinal,
+              rot=(0, -(a + math.pi / 2), 0))
+    esfera("ponto", 0.04, (0.3, -0.03, 1.42), sinal)
+    cone("topo", 0.06, 0.0, 0.16, (0, 0, 2.08), ferro, vertices=4)
+    return None
+
+
+def altar_velas(r):
+    """Altar de pedra com velas derretidas e um crânio no meio: luz quente no meio do frio do caos."""
+    pedra, cera = toon("3a3430"), toon("d6ccb2")
+    caixa("altar", (0.9, 0.5, 0.5), (0, 0, 0.25), pedra, chanfro=0.04)
+    caixa("tampo", (1.0, 0.6, 0.08), (0, 0, 0.54), toon("2c2724"), chanfro=0.02)
+    esfera("cranio", 0.1, (0, -0.05, 0.66), toon("d6ccb2"), escala=(1, 1.1, 0.95))
+    for k, (x, y, h) in enumerate(((-0.35, 0.1, 0.22), (-0.22, -0.12, 0.14), (0.3, 0.08, 0.26), (0.38, -0.12, 0.12), (0.15, 0.15, 0.18))):
+        cilindro("vela", 0.04, h, (x, y, 0.58 + h / 2), cera, vertices=6)
+        cone("chama", 0.035, 0.0, 0.09, (x, y, 0.58 + h + 0.04), brilha("ffd060", 1.0), vertices=5)
+    return {"ponto": (0, 0, 0.8), "rampa": "fogo", "raio": 58, "pisca": 0.2}
+
+
 CENARIOS = {
+    "reino": {
+        "piso": piso_reino, "ambiente": [0.62, 0.56, 0.7],
+        "paleta": ("pedra", "aco", "sangue", "osso", "ouro", "fogo", "couro", "caos"),
+        "enfeites": [("trono", trono_quebrado, 1), ("braseiro", braseiro_caos, 2), ("cristal", cristal_caos, 2), ("tocha", tocha_em_pe, 2),
+                     ("estatua", estatua_decapitada, 1), ("tumulo", espada_cravada, 2), ("armadura", armadura_caida, 2),
+                     ("espinhos", espinhos_negros, 3), ("bandeira", bandeira_negra, 1), ("altar", altar_velas, 1), ("ossos", ossos_lodo, 2)],
+    },
     "gelo": {
         "piso": piso_gelo, "ambiente": [0.86, 0.92, 1.0],
         "paleta": ("gelo", "pedra", "folha", "couro", "osso", "sangue", "fogo", "noite"),   # sem "aco": puxava a neve pro lilás
