@@ -47,6 +47,7 @@ class V:
 	var balanco := 0.0           # pulinho de andar, em px da tela
 	var flutua := 0.0            # px acima do chão (a sombra fica no chão)
 	var aura := Color(0, 0, 0, 0)   # brilho em volta (a > 0)
+	var sz := Vector2.ZERO       # tamanho na tela (tam x escala x esc), calculado uma vez
 	var luz := Vector2.ZERO      # x = raio, y = intensidade: ilumina a escuridão da fase de horror
 
 var arena: Node
@@ -99,6 +100,7 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.invoca = dd.get("invoca", {}) if dd.get("invoca") is Dictionary else {}
 	v.pesado = bool(dd.get("pesado", false))
 	v.ppx = float(dd.get("escala", ESCALA))
+	v.sz = v.tam * v.ppx * v.esc
 	v.ritmo = float(dd.get("ritmo", 4.0))
 	v.balanco = float(dd.get("balanco", 0.0))
 	v.flutua = float(dd.get("flutua", 0.0))
@@ -448,18 +450,6 @@ func _novo_tiro(pos: Vector2, vel: Vector2, dano: float, sprite: String) -> void
 
 # ---------- desenho ----------
 
-## Retângulo de um inimigo na tela (pés em v.pos + 0,4 da altura), já com squash, pulinho e voo. Usado pelo _draw.
-func _retangulo(v: V, sx: float, sy: float, jit: float, lift: float, vira: bool) -> Rect2:
-	var s0: Vector2 = v.tam * v.ppx * v.esc
-	var w := roundf(s0.x * sx)
-	var h := roundf(s0.y * sy)
-	var px := roundf(v.pos.x + jit)
-	var py := roundf(v.pos.y + s0.y * 0.4 - lift)
-	# Rect2 de largura negativa vira o sprite, mas o Godot desenha a partir da posição pra DIREITA (não normaliza):
-	# por isso a posição é a borda esquerda nos dois casos (antes o bicho à direita do herói saía deslocado 1 largura).
-	return Rect2(px - roundf(w / 2.0), py - h, -w if vira else w, h)
-
-
 func _draw() -> void:
 	var jx: float = arena.jogador.position.x if arena and arena.jogador else 0.0
 	# ordenar por altura (quem está mais embaixo fica na frente) custa caro: refaz a cada 4 quadros
@@ -470,7 +460,7 @@ func _draw() -> void:
 	for v: V in _ordem:
 		if v.hp <= 0:
 			continue
-		var s: Vector2 = v.tam * v.ppx * v.esc
+		var s: Vector2 = v.sz
 		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
 		var quadro := int(_t * v.ritmo + v.id) % 2
 		var src := Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y)
@@ -480,14 +470,10 @@ func _draw() -> void:
 	for v: V in _ordem:
 		if v.hp <= 0:
 			continue
-		var s: Vector2 = v.tam * v.ppx * v.esc
-		var fase_a: float = (_t * v.ritmo + v.id) * PI     # o pulinho acompanha a troca de quadro
+		var s: Vector2 = v.sz
+		var vira: bool = v.pos.x > jx
 		var quadro := 2 if v.flash > 0 else (int(_t * v.ritmo + v.id) % 2)
 		var cor := Color.WHITE
-		var sx := 1.0
-		var sy := 1.0
-		var jit := 0.0
-		var lift := 0.0
 		if v.aura.a > 0.0:
 			draw_circle(v.pos, s.x * 0.5, Color(v.aura.r, v.aura.g, v.aura.b, 0.16 + 0.08 * sin(_t * 5.0 + v.id)))
 		elif v.elite:
@@ -496,31 +482,45 @@ func _draw() -> void:
 			cor = Color(1.0, 0.95, 0.6)   # atordoado: amarelado, piscando de leve
 		elif v.lento > 0:
 			cor = Color(0.6, 0.85, 1.0)
-		if v.estado == 1:
-			# telegrafa a investida: agacha, treme e avermelha; nos últimos 35% pisca branco
-			var u := clampf(1.0 - v.t_estado / 0.7, 0.0, 1.0)
-			sx = 1.0 + 0.18 * u
-			sy = 1.0 - 0.24 * u
-			jit = sin(_t * 90.0 + v.id) * 1.5 * u
-			cor = Color(1.0, 1.0 - 0.55 * u, 1.0 - 0.6 * u)
-			if u > 0.65 and int(_t * 20.0) % 2 == 0:
-				quadro = 2
-		elif v.estado == 2:
-			sx = 1.22      # em disparada: esticado no sentido da corrida
-			sy = 0.86
+		# Rect2 de largura negativa vira o sprite, mas o Godot desenha a partir da posição pra DIREITA (não normaliza):
+		# por isso a posição é a borda esquerda nos dois casos (antes o bicho à direita do herói saía deslocado 1 largura).
+		var r: Rect2
+		if v.estado == 0 and v.flash <= 0.0 and v.balanco <= 0.0 and v.flutua <= 0.0:
+			r = Rect2(v.pos.x - s.x * 0.5, v.pos.y - s.y * 0.6, -s.x if vira else s.x, s.y)   # caminho rápido (vírus)
 		else:
-			if v.balanco > 0.0:
-				lift = absf(sin(fase_a)) * v.balanco
-			var respira := cos(fase_a * 2.0)
-			sx = 1.0 + 0.045 * respira
-			sy = 1.0 - 0.045 * respira
-		if v.flutua > 0.0:
-			lift += v.flutua * (1.0 + 0.25 * sin(_t * 3.0 + v.id))
-		if v.flash > 0.0:
-			var k := v.flash / 0.09      # squash ao levar dano: achata e alarga, voltando em ~0,1 s
-			sx *= 1.0 + 0.3 * k
-			sy *= 1.0 - 0.24 * k
-		var r := _retangulo(v, sx, sy, jit, lift, v.pos.x > jx)
+			var fase_a: float = (_t * v.ritmo + v.id) * PI     # o pulinho acompanha a troca de quadro
+			var sx := 1.0
+			var sy := 1.0
+			var jit := 0.0
+			var lift := 0.0
+			if v.estado == 1:
+				# telegrafa a investida: agacha, treme e avermelha; nos últimos 35% pisca branco
+				var u := clampf(1.0 - v.t_estado / 0.7, 0.0, 1.0)
+				sx = 1.0 + 0.18 * u
+				sy = 1.0 - 0.24 * u
+				jit = sin(_t * 90.0 + v.id) * 1.5 * u
+				cor = Color(1.0, 1.0 - 0.55 * u, 1.0 - 0.6 * u)
+				if u > 0.65 and int(_t * 20.0) % 2 == 0:
+					quadro = 2
+			elif v.estado == 2:
+				sx = 1.22      # em disparada: esticado no sentido da corrida
+				sy = 0.86
+			else:
+				var sn := sin(fase_a)
+				if v.balanco > 0.0:
+					lift = absf(sn) * v.balanco
+				var respira := 1.0 - 2.0 * sn * sn      # = cos(2 x fase), sem outra chamada trigonométrica
+				sx = 1.0 + 0.045 * respira
+				sy = 1.0 - 0.045 * respira
+			if v.flutua > 0.0:
+				lift += v.flutua * (1.0 + 0.25 * sin(_t * 3.0 + v.id))
+			if v.flash > 0.0:
+				var k := v.flash / 0.09      # squash ao levar dano: achata e alarga, voltando em ~0,1 s
+				sx *= 1.0 + 0.3 * k
+				sy *= 1.0 - 0.24 * k
+			var w := roundf(s.x * sx)
+			var h := roundf(s.y * sy)
+			r = Rect2(roundf(v.pos.x + jit) - roundf(w * 0.5), roundf(v.pos.y + s.y * 0.4 - lift) - h, -w if vira else w, h)
 		draw_texture_rect_region(v.tex, r, Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
 	for t in tiros:
 		var tx: Texture2D = t.tex

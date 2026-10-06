@@ -112,6 +112,14 @@ func _ready() -> void:
 	ok(bug.ppx == 2.0, "vírus continuam em escala 2")
 	await esperar(1.0)   # alguns quadros de desenho, IA, tiros e investida com todos vivos
 	ok(a.inimigos.vivos() > 0, "inimigos seguem vivos e desenhando")
+	# --- a entrada do chefe de horror dispara (placa com nome e subtítulo)
+	a.inimigos.criar(CHEFE, a.jogador.position + Vector2(260, -40), 1)
+	a.chefe_final_chegou(false, CHEFE)
+	await esperar(0.1)
+	ok(a.entradas.ativo(), "entrada do Arauto dispara")
+	ok(a.entradas._nome == "O ARAUTO SEM ROSTO" and a.entradas._sub == str(ch.subtitulo), "placa com nome e subtítulo do Arauto")
+	a.entradas.restaurar_tempo()
+	Engine.time_scale = 1.0
 	a.free()
 
 	print("HORROR falhas=", falhas)

@@ -178,7 +178,7 @@ func _atualizar_luzes() -> void:
 	for v in arena.inimigos.lista:
 		if v.luz.x <= 0.0 or v.hp <= 0.0:
 			continue
-		var sv: Vector2 = ct * (v.pos + Vector2(0, -v.tam.y * v.ppx * 0.3))
+		var sv: Vector2 = ct * (v.pos + Vector2(0, -v.sz.y * 0.3))
 		if sv.x > -140 and sv.x < W + 140 and sv.y > -140 and sv.y < H + 140:
 			_luzes[n] = Vector4(sv.x, sv.y, v.luz.x, v.luz.y)
 			n += 1
