@@ -432,3 +432,10 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Medido** (localhost, robôs): 4 jogadores na fase 4, o anfitrião enviava 233–263 KB/s e passou a 62–81 KB/s com MAIS vírus. 6 jogadores: cliente envia 14 → 2,3 KB/s; anfitrião envia 87 → 37 KB/s (~0,3 Mbit/s) e recebe 70 → 11,5 KB/s. 0 erros, abates iguais nos 6.
 - Conferido que o cliente mostra o que veio na foto (contagem da foto e vivos batendo). Teste novo `testes/rede.tscn` (ida e volta: id, tipo e flags exatos, posição com erro ≤ 1/4 px).
 - **Pendente:** latência alta e perda de pacote de verdade só dá pra ver jogando pela internet. Próximo: #13 (lista de salas, lobby, chat).
+
+## 2026-10-06 · Claude do Alisson (notebook) · #13 PR 1: lobby com apelido e "pronto"
+- Cada jogador tem um **apelido**: salvo no `user://online.json` (campo `nome`), sorteado na primeira vez ("Corvo 42"; nunca o usuário do Windows), trocado com **N** no lobby. O anfitrião limpa o que chega (`Rede.limpar_nome`: só o que a fonte desenha, até 16). `Rede.nome_de()` agora devolve o apelido, então ele aparece também no duelo e em cima dos avatares.
+- **Pronto:** o cliente aperta Enter ou Espaço; o cartão mostra PRONTO (verde) ou "...". O anfitrião começa quando todos estão prontos; senão avisa quem falta, e um segundo Enter em 3 s começa assim mesmo.
+- A linha do anfitrião estourava a largura da tela e mostrava 7777 mesmo com outra porta: agora são duas linhas e `Rede.porta_aberta`.
+- Teste: `--nome=X`, `--pronto` (o cliente entra pronto) e `--foto_sala=N` (print do lobby). Conferido em print com 3 pessoas e online com 4 (150 = 150 abates).
+- **Próximo:** PR 2, lista de salas. Proposta na #13: rede local por broadcast UDP + internet pelo ntfy.sh (HTTPS, grátis, sem conta). O MQTT público não serve: a rede do notebook bloqueia as portas dele, e muita rede de jogador também.

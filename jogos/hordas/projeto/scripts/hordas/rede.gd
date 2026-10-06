@@ -20,7 +20,9 @@ var MAX := 6
 var ELENCO: Array = []
 
 var modo := ""               # "", "anfitriao" ou "cliente"
-var jogadores := {}          # peer -> {"heroi": "nicao"}
+var jogadores := {}          # peer -> {"heroi": "nicao", "nome": "Corvo 42", "pronto": false}
+var apelido := ""            # meu nome nas salas (main.gd lê e salva em user://online.json)
+var porta_aberta := 7777     # porta em que a sala deste computador abriu (a lista de salas e o lobby mostram)
 var em_partida := false
 var remotos := {}            # peer -> {x, y, mx, my, hp, caido, lado}  (o pé do boneco, como jogador.position)
 var online_no: Node = null   # online.gd da partida aberta (avisa quando abre e fecha)
@@ -59,9 +61,39 @@ func heroi_de(peer: int) -> String:
 	return str(jogadores.get(peer, {}).get("heroi", ""))
 
 
+## Como o jogador aparece pros outros: o apelido dele; sem apelido, o nome do herói.
 func nome_de(peer: int) -> String:
+	var a := str(jogadores.get(peer, {}).get("nome", ""))
+	if a != "":
+		return a
 	var h := heroi_de(peer)
 	return str(Dados.json("herois").get(h, {}).get("nome", h))
+
+
+func pronto_de(peer: int) -> bool:
+	return peer == 1 or bool(jogadores.get(peer, {}).get("pronto", false))   # o anfitrião está sempre pronto
+
+
+func todos_prontos() -> bool:
+	for p in jogadores:
+		if not pronto_de(p):
+			return false
+	return true
+
+
+## Apelido que vem pela rede ou do teclado: só o que a fonte desenha (ASCII e acentos do português), até 16 letras.
+static func limpar_nome(s: String) -> String:
+	var out := ""
+	for ch in s:
+		var c := ch.unicode_at(0)
+		if (c >= 32 and c < 127) or "áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ".contains(ch):
+			out += ch
+	return out.strip_edges().left(16)
+
+
+## Apelido sorteado pra quem ainda não escolheu (nunca o nome de usuário do computador: pode ser o nome real).
+static func nome_sorteado() -> String:
+	return ["Cavaleiro", "Andarilho", "Corvo", "Lobo", "Brasa", "Névoa", "Sombra", "Vigia"].pick_random() + " " + str(randi_range(10, 99))
 
 
 func ocupados(menos := -1) -> Array:
@@ -93,7 +125,8 @@ func criar_sala(heroi: String, porta := PORTA) -> String:
 		return "Não deu pra abrir a sala na porta %d. Outro programa (ou outro jogo aberto) já está usando ela?" % porta
 	multiplayer.multiplayer_peer = p
 	modo = "anfitriao"
-	jogadores = {1: {"heroi": heroi}}
+	porta_aberta = porta
+	jogadores = {1: {"heroi": heroi, "nome": apelido, "pronto": true}}
 	mudou.emit()
 	return ""
 
@@ -168,15 +201,38 @@ func _lista(j: Dictionary) -> void:
 func escolher(heroi: String) -> void:
 	if anfitriao():
 		if heroi in ELENCO and not heroi in ocupados(1):
-			jogadores[1] = {"heroi": heroi}
+			jogadores[1]["heroi"] = heroi
+			jogadores[1]["nome"] = apelido
 			_lista.rpc(jogadores)
 			mudou.emit()
 	elif cliente():
-		_escolher.rpc_id(1, heroi)
+		_escolher.rpc_id(1, heroi, apelido)
+
+
+## Cliente: marca (ou desmarca) que está pronto pra começar. O anfitrião confere e avisa todo mundo.
+func marcar_pronto(sim: bool) -> void:
+	if cliente() and jogadores.has(eu()):
+		_pronto.rpc_id(1, sim)
 
 
 @rpc("any_peer", "reliable")
-func _escolher(heroi: String) -> void:
+func _pronto(sim) -> void:
+	var quem := multiplayer.get_remote_sender_id()
+	if anfitriao() and not em_partida and jogadores.has(quem) and typeof(sim) == TYPE_BOOL:
+		jogadores[quem]["pronto"] = sim
+		_lista.rpc(jogadores)
+		mudou.emit()
+
+
+## Troca o apelido no meio da sala (tecla N no lobby).
+func trocar_apelido(nome: String) -> void:
+	apelido = limpar_nome(nome)
+	if online() and jogadores.has(eu()):
+		escolher(heroi_de(eu()))   # reenvia herói + apelido
+
+
+@rpc("any_peer", "reliable")
+func _escolher(heroi: String, nome := "") -> void:
 	if not anfitriao():
 		return
 	var quem := multiplayer.get_remote_sender_id()
@@ -193,7 +249,10 @@ func _escolher(heroi: String) -> void:
 		_recusado.rpc_id(quem, "Alguém já pegou esse herói. Escolha outro.")
 		return
 	var novo := not jogadores.has(quem)
-	jogadores[quem] = {"heroi": heroi}
+	if novo:
+		jogadores[quem] = {"heroi": heroi, "nome": "", "pronto": false}
+	jogadores[quem]["heroi"] = heroi
+	jogadores[quem]["nome"] = limpar_nome(str(nome)) if typeof(nome) == TYPE_STRING else ""
 	_lista.rpc(jogadores)
 	if novo:
 		_bem_vindo.rpc_id(quem)
