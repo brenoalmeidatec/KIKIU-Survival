@@ -81,19 +81,64 @@ static func registrar(id: String) -> bool:
 	return true
 
 
-## O último herói criado (salvo), já registrado; "" se não houver ou se a raça/classe saiu dos dados.
-static func ultimo() -> String:
-	if not FileAccess.file_exists(ARQUIVO):
-		return ""
-	var d = JSON.parse_string(FileAccess.get_file_as_string(ARQUIVO))
-	var id := str(d.get("id", "")) if d is Dictionary else ""
-	return id if registrar(id) else ""
+# --- herói salvo e morte de vez (pedido do Alisson): o herói criado que morre SOME, e é preciso criar outro do zero.
+# Vale no solo e no online; no online a morte é a corrida acabar em derrota (o grupo todo caiu). Desistir conta como
+# morrer, e fechar o jogo no meio da corrida também: a marca "em_corrida" fica no arquivo e mata o herói ao abrir de novo.
+# Perder o duelo final não mata (ele já venceu a corrida), e cair a conexão no online também não.
+
+static var arquivo := ARQUIVO   # os testes trocam, pra não mexer no herói salvo de verdade
+
+
+static func _ler() -> Dictionary:
+	if not FileAccess.file_exists(arquivo):
+		return {}
+	var d = JSON.parse_string(FileAccess.get_file_as_string(arquivo))
+	return d if d is Dictionary else {}
+
+
+static func _gravar(d: Dictionary) -> void:
+	var f := FileAccess.open(arquivo, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(d))
+
+
+## O herói salvo, já registrado: {id, perdido}. id = "" se não há herói. perdido = id do herói que morreu porque o jogo
+## fechou no meio da corrida dele (o arquivo é apagado). matar = false só lê (testes rodando com o jogo aberto).
+static func carregar(matar := true) -> Dictionary:
+	var d := _ler()
+	var id := str(d.get("id", ""))
+	if not registrar(id):
+		return {"id": "", "perdido": ""}
+	if matar and bool(d.get("em_corrida", false)):
+		apagar()
+		return {"id": "", "perdido": id}
+	return {"id": id, "perdido": ""}
 
 
 static func salvar(id: String) -> void:
-	var f := FileAccess.open(ARQUIVO, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify({"id": id}))
+	_gravar({"id": id, "em_corrida": false})
+
+
+## A corrida do herói salvo começou: se o jogo fechar agora, ele morre.
+static func comecou(id: String) -> void:
+	if str(_ler().get("id", "")) == id:
+		_gravar({"id": id, "em_corrida": true})
+
+
+## Venceu (ou caiu a conexão): continua vivo.
+static func sobreviveu(id: String) -> void:
+	if str(_ler().get("id", "")) == id:
+		_gravar({"id": id, "em_corrida": false})
+
+
+static func apagar() -> void:
+	if FileAccess.file_exists(arquivo):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(arquivo))
+
+
+## O resultado de uma corrida mata o herói de vez? Herói criado + corrida sem vitória + sem duelo.
+static func morreu_de_vez(res: Dictionary) -> bool:
+	return eh_criado(str(res.get("heroi", ""))) and not bool(res.get("vitoria", false)) and not res.has("duelo")
 
 
 ## Uma linha legível por atributo, com se é bom pro herói: [[texto, bom], ...].

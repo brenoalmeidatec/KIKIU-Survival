@@ -7,6 +7,7 @@ const W := 640.0
 const H := 360.0
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
+const Criacao := preload("res://scripts/hordas/criacao.gd")
 const OPS_PAUSA := ["Continuar", "Opções", "Desistir da partida"]
 
 var arena: Node
@@ -232,7 +233,10 @@ func _desenhar() -> void:
 		_txt(Vector2(0, 130), "PAUSADO", 16, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, W)
 		for i in OPS_PAUSA.size():
 			var sel := i == _op_pausa
-			_txt(Vector2(0, 170 + i * 18), ("> " if sel else "") + OPS_PAUSA[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+			var rotulo: String = OPS_PAUSA[i]
+			if rotulo == "Desistir da partida" and Criacao.eh_criado(arena.heroi_id):
+				rotulo = "Desistir (o herói morre de vez)"   # herói criado: desistir conta como morrer
+			_txt(Vector2(0, 170 + i * 18), ("> " if sel else "") + rotulo, 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(0, 250), "WASD/setas: andar   Espaço/Shift: dash   Esc/Start: pausa   Mouse: clicar", 8, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
 
 

@@ -41,6 +41,7 @@ var _estado_antes := "titulo"  # pra perceber a troca de tela e tocar a transiç
 var _apelido_txt := ""       # campo de texto do apelido (lobby, tecla N)
 var _calor := {}              # calor escolhido pra próxima corrida {id: nível} (tela_calor.gd)
 var _criado := ""             # último herói criado (#72): vira a carta depois dos heróis fixos
+var _aviso_heroi := ""        # "fulano morreu de vez" na escolha de heróis (o jogo fechou no meio da corrida)
 var _sel_carta := 0           # carta onde estava antes de descer pro botão "Criar herói"
 var _sel_sala := 0            # tela da lista de salas
 var _publico_txt := ""        # anfitrião: campo do endereço público (tecla E no lobby)
@@ -73,7 +74,12 @@ func _ready() -> void:
 	_tela.draw.connect(_desenhar)
 	_camada.add_child(_tela)
 	_recordes = _ler_recordes()
-	_criado = Criacao.ultimo()
+	if _args.has("morte_teste"):   # teste do permadeath (--morte_teste): arquivo próprio, longe do herói salvo de verdade
+		Criacao.arquivo = "user://teste_morte_heroi.json"
+	var cr := Criacao.carregar(_persistir())
+	_criado = str(cr.id)
+	if str(cr.perdido) != "":
+		_aviso_heroi = "%s morreu de vez: o jogo fechou no meio da corrida." % str(Dados.json("herois").get(cr.perdido, {}).get("nome", "Seu herói"))
 	_endereco = _ler_endereco()
 	_calor = Calor.de_texto(str(_args.calor)) if _args.has("calor") else Calor.ler()   # a última escolha de calor (ou a do teste)
 	Rede.mudou.connect(_rede_mudou)
@@ -130,6 +136,11 @@ func _salvar_recordes() -> void:
 	var f := FileAccess.open(SAVE, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(_recordes, " "))
+
+
+## Partida de verdade (não é robô, print nem teste com --sair): só ela grava o herói criado e a morte dele.
+func _persistir() -> bool:
+	return _args.has("morte_teste") or not (_args.has("bot") or _args.has("sair") or _args.has("print_tela"))
 
 
 ## Os heróis da escolha: os fixos do herois.json e, no fim, o último herói criado (#72).
@@ -303,6 +314,11 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	Dados.recarregar()
 	if Criacao.eh_criado(heroi):   # herói criado (#72), também pelo --heroi=c:raça:classe: monta e põe na tabela
 		Criacao.registrar(heroi)
+		if _persistir():
+			if _args.has("morte_teste"):
+				Criacao.salvar(heroi)   # o teste começa com o herói já salvo, como quem acabou de criar
+			Criacao.comecou(heroi)   # se o jogo fechar no meio da corrida, ele morre de vez
+	_aviso_heroi = ""
 	var o: Dictionary = opcoes if online else _args
 	_arena = Arena.new()
 	_arena.heroi_id = heroi
@@ -453,6 +469,8 @@ func _rede_caiu(msg: String) -> void:
 	if _arena and _arena.acabou:
 		return   # a partida já acabou: deixa o resultado aparecer (a sala fechar agora é normal)
 	if _arena:
+		if Criacao.eh_criado(_arena.heroi_id) and _persistir():
+			Criacao.sobreviveu(_arena.heroi_id)   # cair a conexão não é morrer
 		_arena.queue_free()
 		_arena = null
 	get_tree().paused = false
@@ -696,20 +714,30 @@ func _terminou(res: Dictionary) -> void:
 	_resumo = res
 	_novo_recorde = false
 	var h: String = res.heroi
-	var rec: Dictionary = _recordes.get(h, {})
-	if res.tempo > float(rec.get("tempo", 0)):
-		rec["tempo"] = res.tempo
-		_novo_recorde = true
-	rec["abates"] = maxi(int(rec.get("abates", 0)), res.abates)
-	rec["melhor_fase"] = maxi(int(rec.get("melhor_fase", 0)), int(res.get("fase", 1)))
-	if res.vitoria:
-		rec["vitorias"] = int(rec.get("vitorias", 0)) + 1
-	if res.has("duelo"):
-		var lg: int = res.duelo.lugar
-		rec["melhor_lugar"] = mini(int(rec.get("melhor_lugar", 99)), lg)
-		if lg == 1:
-			rec["campeao"] = int(rec.get("campeao", 0)) + 1
-	_recordes[h] = rec
+	if Criacao.eh_criado(h) and _persistir():
+		if Criacao.morreu_de_vez(res):   # herói criado morreu: some de vez, junto com os recordes dele
+			res["heroi_perdido"] = str(Dados.json("herois").get(h, {}).get("nome", "Seu herói"))
+			Criacao.apagar()
+			if _criado == h:
+				_criado = ""
+			_recordes.erase(h)
+		else:
+			Criacao.sobreviveu(h)
+	if not res.has("heroi_perdido"):
+		var rec: Dictionary = _recordes.get(h, {})
+		if res.tempo > float(rec.get("tempo", 0)):
+			rec["tempo"] = res.tempo
+			_novo_recorde = true
+		rec["abates"] = maxi(int(rec.get("abates", 0)), res.abates)
+		rec["melhor_fase"] = maxi(int(rec.get("melhor_fase", 0)), int(res.get("fase", 1)))
+		if res.vitoria:
+			rec["vitorias"] = int(rec.get("vitorias", 0)) + 1
+		if res.has("duelo"):
+			var lg: int = res.duelo.lugar
+			rec["melhor_lugar"] = mini(int(rec.get("melhor_lugar", 99)), lg)
+			if lg == 1:
+				rec["campeao"] = int(rec.get("campeao", 0)) + 1
+		_recordes[h] = rec
 	_salvar_recordes()
 	_arena.queue_free()
 	_arena = null
@@ -952,6 +980,8 @@ func _desenhar() -> void:
 		"herois", "calor", "criacao":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)
+			if _aviso_heroi != "":
+				_txt(Vector2(0, 56), _aviso_heroi, 8, Color(1, 0.45, 0.4))
 			var lista := _herois()
 			var larg := _larg_carta(lista.size())
 			var x0 := (W - lista.size() * larg - (lista.size() - 1) * 12) / 2
@@ -1017,6 +1047,8 @@ func _desenhar() -> void:
 				else:
 					_txt(Vector2(0, 60), "A CORRIDA ACABOU", 24, Color(1, 0.4, 0.4))
 					_txt(Vector2(0, 80), "Você chegou até a fase %d de %d. Tenta de novo!" % [r.get("fase", 1), r.get("fases", 1)], 8, Color(0.9, 0.8, 0.8))
+					if r.has("heroi_perdido"):   # herói criado morre de vez
+						_txt(Vector2(0, 96), "%s morreu de vez. Crie outro herói na escolha de heróis." % str(r.heroi_perdido), 8, Color(1, 0.45, 0.4))
 				var tempo := float(r.get("tempo", 0))
 				_txt(Vector2(0, 112), "Tempo %02d:%02d   Nível %d   Abates %d" % [int(tempo) / 60, int(tempo) % 60, r.get("nivel", 1), r.get("abates", 0)], 8)
 				if _novo_recorde:
@@ -1350,6 +1382,9 @@ func _print_tela(qual: String) -> void:
 				"armas": Interface.tabela_armas({"water_cooler": 52000.0, "cafe": 21000.0, "pendrive": 9000.0, "katana": 15000.0},
 					{"water_cooler": 6, "cafe": 4, "pendrive": 8, "katana": 3}, {"water_cooler": 410.0, "cafe": 560.0, "pendrive": 642.0, "katana": 90.0}, 642.0)}
 			_novo_recorde = true
+			if _args.has("perdido"):   # --perdido: a derrota de um herói criado, que morre de vez
+				_resumo.merge({"vitoria": false, "fase": 7, "fases": 25, "heroi_perdido": "Orc Guerreiro"}, true)
+				_novo_recorde = false
 			_estado = "fim"
 	await get_tree().create_timer(0.6, true, false, true).timeout
 	await RenderingServer.frame_post_draw
