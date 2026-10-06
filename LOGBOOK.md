@@ -418,3 +418,9 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - PR #48 (rename) atualizado com a main: está pronto e espera o Breno renomear o repo.
 
 **Próximo:** marco 3 (desempenho: pooling, limites, culling, carregamento), marco 4 (online, banda com 4–6 jogadores), depois a #13.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #55 marco 3: desempenho
+- **Bug:** o `--sem_limite` nunca funcionou (ficava depois do `return` dos argumentos de teste em `Config.aplicar`). Consertado. Com ele valendo: notebook a 130–186 fps com ~250 vírus e build de fim de jogo.
+- **Medido** (detalhes em `docs/PERF_2026-10-06.md`): carregamento (motor 0,19 s em headless; com janela, 4–5 s são o OpenGL do notebook; título 0,63 s porque pré-carrega tudo; partida abre em 15–50 ms), memória (33 MB + 18 MB de textura, sem vazamento) e o maior custo por sistema (desenho das mortes, 0,74 ms, já com teto).
+- Partida inteira com o robô (10 fases + duelo) sem nenhum erro de script.
+- **Próximo:** marco 4 (online: banda com 4–6 jogadores).
