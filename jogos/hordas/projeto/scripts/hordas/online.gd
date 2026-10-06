@@ -14,7 +14,8 @@ const MAX_TIROS := 120
 const CD_DANO := 0.45               # anfitrião: intervalo mínimo entre danos de vírus no mesmo cliente
 const REVIVER_BASE := 3.0           # segundos pra levantar alguém, divididos pelo "reviver" de quem ajuda
 const REVIVER_DIST := 40.0
-const ESPERA_PRONTOS := 60.0        # descanso entre fases: espera todo mundo terminar as cartas, até 60 s
+const Mapa := preload("res://scripts/hordas/mapa.gd")
+const ESPERA_PRONTOS := 60.0        # fim da fase: espera todo mundo terminar as cartas e votar no mapa, até 60 s (depois de nó sem combate, "espera_voto" de dados/mapa.json)
 const TODOS_CAIDOS := 1.0           # todo mundo caído por 1 s = fim da corrida
 
 var arena: Node
@@ -29,7 +30,7 @@ var _t_envio := 0.0
 var _acertos := PackedFloat32Array()  # cliente: acertos ainda não mandados
 var _mortes := PackedFloat32Array()   # anfitrião: mortes ainda não mandadas
 var _cd_dano := {}
-var _prontos := {}
+var _prontos := {}              # anfitrião, votação do mapa: peer -> faixa votada
 var _t_prontos := -1.0
 var _t_caidos := 0.0
 var n_tx := 0                     # teste: acertos mandados (cliente) / recebidos (anfitrião)
@@ -294,9 +295,14 @@ func _checar_prontos() -> void:
 		if not _prontos.has(p):
 			todos = false
 	if todos or _t_prontos < 0.0:
+		# votação do mapa: maioria, empate = voto do anfitrião, sem voto = primeira opção (nunca trava)
+		var faixa := Mapa.resolver_votos(_prontos, Rede.eu(), arena.mapa_acessiveis())
 		_t_prontos = -1.0
 		_prontos = {}
-		Rede.evento("proxima_fase")
+		var combate := Mapa.combate(arena.mapa_tipo_de(faixa))   # antes do evento: ele já move o mapa no anfitrião
+		Rede.evento("proxima_fase", {"no": faixa})
+		if not combate:   # nó sem combate: já abre a votação do andar seguinte
+			_t_prontos = float(Mapa.cfg().get("espera_voto", 40.0))
 
 
 # ---------- mensagens ----------
@@ -316,7 +322,7 @@ func evento(nome: String, d: Dictionary) -> void:
 				_t_prontos = ESPERA_PRONTOS
 			arena.fase_completa()
 		"proxima_fase":
-			arena.proxima_fase()
+			arena.escolher_no(int(d.get("no", -1)))
 		"tela_azul_caiu":
 			arena.tela_azul_caiu()
 		"fim_corrida":
@@ -333,9 +339,9 @@ func evento(nome: String, d: Dictionary) -> void:
 
 func aviso(quem: int, nome: String, valor: float, peer: int) -> void:
 	match nome:
-		"pronto":
-			if _t_prontos >= 0.0:
-				_prontos[quem] = true
+		"voto":   # valor = (andar de destino) * 10 + faixa; voto de outro andar (atrasado) não conta
+			if _t_prontos >= 0.0 and int(valor) / 10 == arena.mapa_pos.x + 1:
+				_prontos[quem] = int(valor) % 10
 		"forca":
 			if arena.duelo_ativo:
 				forcas[quem] = clampf(valor, 0.5, 1.0e7)

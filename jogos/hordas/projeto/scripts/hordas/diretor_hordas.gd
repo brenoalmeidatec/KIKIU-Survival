@@ -12,6 +12,9 @@ var fase_idx := 0
 var chefe_fase := ""          # tipo do chefe que fecha esta fase (depois que ele nasce)
 var creditos := 0.0
 var final_chamado := false
+var bonus_minutos := 0.0      # fase elite do mapa: dificuldade a mais (ir_para)
+var mult_elite := 1.0         # fase elite do mapa: multiplica a chance de vírus elite
+var xp_mult := 1.0            # fase elite do mapa: multiplica o XP das gemas
 var enxame_final := false
 var _feitos := {}
 var _fase: Dictionary
@@ -46,6 +49,9 @@ func _ir_para_fase(i: int) -> void:
 	final_chamado = false
 	enxame_final = false
 	chefe_fase = ""
+	bonus_minutos = 0.0
+	mult_elite = 1.0
+	xp_mult = 1.0
 	_feitos.clear()
 
 
@@ -53,9 +59,19 @@ func proxima_fase() -> void:
 	_ir_para_fase(fase_idx + 1)
 
 
+## Vai pra fase do andar escolhido no mapa (pode pular fases: nós sem combate). O tipo do nó ajusta a dificuldade:
+## "elite" soma minutos de dificuldade, multiplica a chance de vírus elite e o XP (valores em dados/mapa.json).
+func ir_para(i: int, tipo := "fase") -> void:
+	_ir_para_fase(clampi(i, 0, fases().size() - 1))
+	var t: Dictionary = Dados.json("mapa").get("tipos", {}).get(tipo, {})
+	bonus_minutos = float(t.get("minutos_extra", 0.0))
+	mult_elite = float(t.get("elite_mult", 1.0))
+	xp_mult = float(t.get("xp_mult", 1.0))
+
+
 ## "Minutos de dificuldade": avança com o tempo e também a cada fase concluída.
 func minutos() -> float:
-	return fase_idx * float(Dados.json("corrida").get("minutos_por_fase", 0.0)) + t_fase / 60.0
+	return fase_idx * float(Dados.json("corrida").get("minutos_por_fase", 0.0)) + t_fase / 60.0 + bonus_minutos
 
 
 func coeficiente() -> float:
@@ -182,7 +198,7 @@ func _sortear(tabela: Array) -> String:
 
 func _criar_grupo(tipo: String, n: int) -> void:
 	var p := _ponto_fora()
-	var chance_elite := minutos() * float(_dif.get("chance_elite_por_minuto", 0.004))
+	var chance_elite := minutos() * float(_dif.get("chance_elite_por_minuto", 0.004)) * mult_elite
 	for i in n:
 		arena.inimigos.criar(tipo, p + Vector2(randf_range(-20, 20), randf_range(-20, 20)), nivel(), randf() < chance_elite)
 
