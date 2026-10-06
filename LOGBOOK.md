@@ -409,3 +409,12 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Desempenho** (sem janela, `--estresse=500 --sair=25`, 3 repetições, base = HEAD antes x novo; máquina com ruído): fase 1 proc_ms 4,6-5,7 (base) x 5,2-5,8 (novo); fase 6 4,9-8,3 x 5,2-9,0. Sombra+sprite do desenho dos inimigos ~600-1000 µs nos dois. Dentro do ruído; não vi piora clara (> 10%).
 - **Prints com janela** (`--print_tela=virada --bicho=cavaleiro_oco|cao_ossos [--frente]` e `--print_tela=cerco`, `--fotos=pasta`): `jogos/hordas/prints/virada_frente_cavaleiro_oco.png`, `virada_frente_cao_ossos.png`, `virada_costas_cavaleiro_oco.png`, `cerco_fase6_vistas.png`. Nenhum quadro "linha".
 - **Pontos fracos**: o cão de frente é naturalmente fino (cabeça de frente, ~12 px de largura num quadro de 50); o cavaleiro oco tem a espada apontando pra câmera nas vistas de frente e o fundo do quadro fica ~12 px abaixo dos pés (a ponta da lâmina; a sombra de contato sai ali); esquerda = espelho, então a espada troca de mão do lado esquerdo; o olhar solo é sempre pro herói (não pro sentido do passo), então bicho que recua (`distancia`) olha pra frente andando de ré.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #55 marcos 1 e 2: qualidade e transições
+**Feito**
+- **Marco 1 (qualidade):** os 15 testes de `testes/` rodaram 3 vezes cada (45 rodadas) e não tem nenhum instável. Partida inteira com o robô (`--bot --facil --rapido=4`) até a fase 7+ sem nenhum erro de script. Online com **4 jogadores** por 60 s, sem erros e com os abates batendo nos 4 (212).
+- **Marco 2 (transições):** autoload `Transicao` (`scripts/hordas/transicao.gd`), uma cortina de losangos de pixel art que encolhem varrendo na diagonal (0,42 s, em tempo real). Toca sozinha em toda troca de tela do `main.gd` (menos entre telas que são a mesma pro jogador, `MESMA_TELA`) e ao abrir e fechar o mapa entre fases. É só desenho: não segura lógica nem teste.
+- O resto da lista de sensação de golpe já existia (hitstop em crítico e chefe, tremor, flash, partículas, som de acerto, entradas, finalizações, cartas escalonadas), então não mexi.
+- PR #48 (rename) atualizado com a main: está pronto e espera o Breno renomear o repo.
+
+**Próximo:** marco 3 (desempenho: pooling, limites, culling, carregamento), marco 4 (online, banda com 4–6 jogadores), depois a #13.
