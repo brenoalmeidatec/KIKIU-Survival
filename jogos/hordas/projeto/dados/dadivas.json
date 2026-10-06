@@ -1,0 +1,24 @@
+{
+ "_ajuda": "Dádivas dos santuários (estilo Hades). O santuário oferece 3 dádivas diferentes; a raridade de cada uma é sorteada depois (peso) e multiplica o efeito. efeito = atributos somados (como os passivos: dano, recarga (menos = mais rápido), area, velocidade, vida_max, regen, ima, sorte, xp, critico). formato: pct (valor x100 com %) ou mais (valor puro).",
+ "_config": {
+  "oferta": 3,
+  "raridades": {
+   "comum": {"nome": "COMUM", "peso": 60, "mult": 1.0, "cor": [0.8, 0.82, 0.9]},
+   "rara": {"nome": "RARA", "peso": 28, "mult": 1.6, "cor": [0.4, 0.7, 1.0]},
+   "epica": {"nome": "ÉPICA", "peso": 10, "mult": 2.4, "cor": [0.75, 0.45, 1.0]},
+   "heroica": {"nome": "HEROICA", "peso": 2, "mult": 3.5, "cor": [1.0, 0.7, 0.25]}
+  }
+ },
+ "lista": {
+  "furia": {"nome": "Fúria Antiga", "icone": "energetico", "efeito": {"dano": 0.1}, "formato": "pct", "rotulo": "de dano"},
+  "vento": {"nome": "Passo do Vento", "icone": "tenis", "efeito": {"velocidade": 0.08}, "formato": "pct", "rotulo": "de velocidade"},
+  "pedra": {"nome": "Pele de Pedra", "icone": "vida", "efeito": {"vida_max": 18}, "formato": "mais", "rotulo": "de vida máxima"},
+  "brasa": {"nome": "Coração de Brasa", "icone": "marmita", "efeito": {"regen": 0.6}, "formato": "mais", "rotulo": "de vida por segundo"},
+  "olho": {"nome": "Olho Atento", "icone": "mouse", "efeito": {"critico": 0.05}, "formato": "pct", "rotulo": "de chance crítica"},
+  "sopro": {"nome": "Sopro Ágil", "icone": "overclock", "efeito": {"recarga": -0.06}, "formato": "pct", "rotulo": "de recarga mais rápida"},
+  "alcance": {"nome": "Mão Longa", "icone": "monitor", "efeito": {"area": 0.1}, "formato": "pct", "rotulo": "de área"},
+  "fortuna": {"nome": "Fortuna Silenciosa", "icone": "moeda", "efeito": {"sorte": 0.06}, "formato": "pct", "rotulo": "de sorte"},
+  "alma": {"nome": "Ímã de Almas", "icone": "fitinha", "efeito": {"ima": 0.25}, "formato": "pct", "rotulo": "de alcance do ímã"},
+  "sabedoria": {"nome": "Sabedoria Antiga", "icone": "apostila", "efeito": {"xp": 0.08}, "formato": "pct", "rotulo": "de XP"}
+ }
+}

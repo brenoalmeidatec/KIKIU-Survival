@@ -78,7 +78,7 @@ func _process(dt: float) -> void:
 		Som.tocar("cursor")
 	elif Input.is_action_just_pressed("confirmar"):
 		_confirmar()
-	elif Input.is_action_just_pressed("resortear") and arena.pode_resortear():
+	elif Input.is_action_just_pressed("resortear") and arena.pode_resortear() and _cartas[0].tipo != "dadiva":   # dádiva não re-sorteia
 		_cartas = arena.gastar_resortear()
 		_sel = 0
 		Som.tocar("whoosh")
@@ -126,6 +126,8 @@ func _desenhar() -> void:
 		var borda := Color(1, 0.85, 0.3) if sel else Color(0.35, 0.4, 0.55)
 		if c.tipo == "evolucao":
 			borda = Color(1, 0.4, 0.9).lerp(Color(0.4, 0.9, 1), 0.5 + 0.5 * sin(_t * 6))
+		elif c.tipo == "dadiva" and not sel:
+			borda = c.cor   # a moldura mostra a raridade da dádiva
 		elif c.has("exclusiva") and not sel:
 			borda = Color(0.78, 0.6, 0.25)   # exclusiva do personagem: moldura de ouro velho
 		_tela.draw_rect(Rect2(p - Vector2(2, 2), Vector2(LARG + 4, ALT + 4)), borda)
@@ -141,6 +143,9 @@ func _desenhar() -> void:
 				cor_e = Color(1, 0.5, 0.9)
 			"cura":
 				etiqueta = ""
+			"dadiva":
+				etiqueta = str(c.rar_nome)
+				cor_e = c.cor
 			"equipamento":
 				etiqueta = "EQUIPAMENTO"
 				cor_e = Color(0.55, 0.85, 1.0)
@@ -157,8 +162,8 @@ func _desenhar() -> void:
 			_txt(p + Vector2(4, ALT - 6), str(i + 1), 8, Color(0.5, 0.5, 0.6), -1, HORIZONTAL_ALIGNMENT_LEFT)
 	if _modo == "escolher":
 		var dica := "Setas: escolher   Enter/E: pegar"
-		if arena.pode_resortear():
-			dica += "   R: sortear de novo (%d)" % arena.resortear
+		if arena.pode_resortear() and _cartas[0].tipo != "dadiva":
+			dica +="   R: sortear de novo (%d)" % arena.resortear
 		_txt(Vector2(0, 280), dica, 8, Color(0.7, 0.7, 0.8), W)
 	else:
 		_txt(Vector2(0, 280), "Enter: continuar", 8, Color(0.7, 0.7, 0.8), W)

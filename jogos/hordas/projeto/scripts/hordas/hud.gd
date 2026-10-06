@@ -125,6 +125,7 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(W - 120, 24), "Abates %d" % arena.abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, 112)
 		_energia_forma()
+		_dicas_santuario()
 	_icones_build()
 	if not arena.duelo_ativo:
 		# vida do chefe
@@ -171,6 +172,9 @@ func _desenhar() -> void:
 ## resta transformado. Só aparece depois de desbloqueada.
 func _energia_forma() -> void:
 	var h = arena.habilidades
+	if h != null and h.tem() and not h.desbloqueada and str(h.d().get("desbloqueio", {}).get("tipo", "")) == "fragmentos":
+		_fragmentos(h)
+		return
 	if h == null or not h.tem() or not h.desbloqueada:
 		return
 	var cor := Color(0.25, 0.45, 1.0)
@@ -194,6 +198,42 @@ func _energia_forma() -> void:
 	_txt(Vector2(x, y + 17), txt, 8, cor_t, HORIZONTAL_ALIGNMENT_RIGHT, 104)
 
 
+## Fragmentos da transformação (#21): um losango por fragmento, cheio quando já achou. Some quando a forma desperta.
+func _fragmentos(h) -> void:
+	var total: int = arena.descobertas.precisa(h.atual)
+	var tem: int = arena.descobertas.tem_fragmentos(h.atual)
+	var x := W - 112.0
+	var y := 31.0
+	var ic := Dados.icone(str(h.d().get("icone", "")))
+	if ic:
+		_tela.draw_texture_rect(ic, Rect2(x - 20, y - 3, 16, 16), false, Color(1, 1, 1, 1.0 if tem > 0 else 0.45))
+	for i in total:
+		var c := Vector2(x + 8 + i * 22, y + 4)
+		var pts := PackedVector2Array([c + Vector2(0, -8), c + Vector2(6, 0), c + Vector2(0, 8), c + Vector2(-6, 0)])
+		if i < tem:
+			_tela.draw_colored_polygon(pts, Color(0.45, 0.7, 1.0))
+		else:
+			pts.append(pts[0])
+			_tela.draw_polyline(pts, Color(0.4, 0.45, 0.6, 0.8), 1.0)
+	_txt(Vector2(x - 12, y + 21), "FRAGMENTOS %d/%d" % [tem, total], 8, Color(0.6, 0.75, 1.0) if tem > 0 else Color(0.55, 0.58, 0.7), HORIZONTAL_ALIGNMENT_RIGHT, 116)
+
+
+## Indicação sutil (seção 21): uma setinha fraca na borda da tela apontando santuário especial que ainda não foi usado.
+func _dicas_santuario() -> void:
+	var cam: Vector2 = arena.camera.position
+	for s in arena.chao.santuarios:
+		if s.usado or s.tipo == "tomada":
+			continue
+		var rel: Vector2 = s.pos - cam
+		if absf(rel.x) < W / 2 - 14 and absf(rel.y) < H / 2 - 14:
+			continue
+		var dir := rel.normalized()
+		var borda := Vector2(W / 2, H / 2) + dir * minf((W / 2 - 18) / maxf(absf(dir.x), 0.01), (H / 2 - 18) / maxf(absf(dir.y), 0.01))
+		var cor: Color = arena.chao.COR_TIPO.get(s.tipo, Color.WHITE)
+		var a := 0.3 + 0.2 * sin(_t * 3.0)
+		_tela.draw_colored_polygon(PackedVector2Array([borda + dir * 8, borda + dir.orthogonal() * 5 - dir * 3, borda - dir.orthogonal() * 5 - dir * 3]), Color(cor, a))
+
+
 func _icones_build() -> void:
 	var x := 6.0
 	for a in arena.armas.lista:
@@ -208,6 +248,15 @@ func _icones_build() -> void:
 	for slot in arena.equipamentos:   # equipamentos vestidos (sem número de nível)
 		var eid: String = arena.equipamentos[slot]
 		_icone(Vector2(x, 53), str(Dados.item(eid).get("icone", eid)), 0, false)
+		x += 20
+	x = 6.0
+	var defs: Dictionary = Dados.json("dadivas").get("lista", {})
+	for dd in arena.descobertas.dadivas:   # dádivas dos santuários: moldura na cor da raridade
+		var cor: Array = Dados.json("dadivas").get("_config", {}).get("raridades", {}).get(dd.raridade, {}).get("cor", [1, 1, 1])
+		_tela.draw_rect(Rect2(x - 1, 72, 18, 18), Color(cor[0], cor[1], cor[2], 0.9))
+		var t := Dados.icone(str(defs.get(dd.id, {}).get("icone", "")))
+		if t:
+			_tela.draw_texture(t, Vector2(x, 73))
 		x += 20
 
 

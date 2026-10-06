@@ -1,0 +1,38 @@
+{
+ "_ajuda": "Descobertas do mundo (#21, seções 16 a 29 do design). Tudo sorteado por streams com a semente da corrida (scripts/hordas/sorte.gd): mesma semente, mesmo mundo. santuarios.fragmento_por_corrida = pesos de quantos Santuários do Dragão a corrida tem (chave = quantidade, valor = peso; 0 é possível), espalhados em fases diferentes; as tomadas por fase vêm de corrida.json ('santuarios'); dadiva_por_fase = pesos de quantos santuários de dádiva cada fase tem. variacoes do Santuário do Dragão: simples (segurar), combate (sobreviver ao desafio perto dele) e sacrificio (paga vida). pity = chance de fragmento que sobe a cada falha (base + passo x falhas) e é garantida na tentativa 'limite'. eventos = pool de eventos aleatórios do mundo: peso, fase_min, cooldown (s), acao (baus, elites, santuario) e o resto lido pela ação; peso_recente_mult encolhe o peso de quem saiu há pouco (RNG controlado, seção 29).",
+ "santuarios": {
+  "fragmento_por_corrida": {"0": 2, "1": 4, "2": 3, "3": 2},
+  "dadiva_por_fase": {"0": 5, "1": 4, "2": 1},
+  "raio_min": 380,
+  "raio_max": 1000,
+  "dist_min_entre": 420,
+  "tempo_carga": 5.0,
+  "tempo_carga_tomada": 4.0,
+  "raio_interacao": 48,
+  "variacoes": {
+   "simples": {"peso": 5, "nome": "Santuário"},
+   "combate": {"peso": 3, "nome": "Santuário do Combate", "duracao": 14, "inimigos": 14, "raio": 190},
+   "sacrificio": {"peso": 2, "nome": "Santuário do Sacrifício", "custo_vida": 0.35}
+  },
+  "maldito": {"inimigos": 4, "raridade_min": "rara"}
+ },
+ "pity": {
+  "elite": {"base": 0.02, "passo": 0.03, "limite": 20},
+  "evento": {"base": 0.3, "passo": 0.25, "limite": 4}
+ },
+ "eventos": {
+  "primeiro": [45, 75],
+  "intervalo": [55, 95],
+  "peso_recente_mult": 0.4,
+  "lista": {
+   "chuva_baus": {"nome": "Chuva de baús", "peso": 4, "fase_min": 2, "cooldown": 240, "acao": "baus", "qtd": [3, 5], "raio": [90, 230],
+    "msg": "Chuva de baús! Eles caíram por perto"},
+   "horda_elite": {"nome": "Horda de elite", "peso": 3, "fase_min": 2, "cooldown": 200, "acao": "elites", "qtd": [3, 5], "raio": [260, 340],
+    "tipos": ["trojan", "spam", "bug"], "msg": "Elites cercam você! Vença todos"},
+   "santuario_maldito": {"nome": "Santuário amaldiçoado", "peso": 3, "fase_min": 1, "cooldown": 300, "acao": "santuario", "tipo": "maldito",
+    "msg": "Algo sombrio surgiu no mapa..."},
+   "santuario_errante": {"nome": "Santuário errante", "peso": 2, "fase_min": 3, "cooldown": 360, "acao": "santuario", "tipo": "fragmento",
+    "msg": "Uma energia antiga surgiu no mapa"}
+  }
+ }
+}

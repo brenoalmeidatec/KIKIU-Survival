@@ -12,7 +12,7 @@ const MAX_PASSIVOS := 5
 
 
 ## equip = slot -> id dos equipamentos vestidos (somam bônus como os passivos).
-static func stats(heroi: Dictionary, passivos: Dictionary, equip := {}) -> Dictionary:
+static func stats(heroi: Dictionary, passivos: Dictionary, equip := {}, extra := {}) -> Dictionary:
 	var s := BASE.duplicate()
 	var eb := Equipamento.bonus(equip)
 	for k in eb:
@@ -25,6 +25,8 @@ static func stats(heroi: Dictionary, passivos: Dictionary, equip := {}) -> Dicti
 		var ef: Dictionary = pas.get(id, {}).get("efeito", {})
 		for k in ef:
 			s[k] = float(s.get(k, 0)) + float(ef[k]) * passivos[id]
+	for k in extra:   # dádivas dos santuários (#21)
+		s[k] = float(s.get(k, 0)) + float(extra[k])
 	s["recarga"] = maxf(0.35, s.recarga)
 	s["velocidade"] = maxf(0.4, s.velocidade)
 	s["critico"] = clampf(s.critico, 0.0, 0.8)

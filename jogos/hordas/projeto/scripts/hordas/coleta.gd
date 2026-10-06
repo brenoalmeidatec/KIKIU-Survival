@@ -73,6 +73,8 @@ func _pegar(it: Dictionary) -> void:
 			arena.mensagem("Wi-Fi grátis! Puxou todo o XP", Color(0.5, 0.85, 1))
 		"bau":
 			arena.abrir_bau()
+		"fragmento":
+			arena.descobertas.pegou_fragmento()
 
 
 func _textura(it: Dictionary) -> Texture2D:
@@ -89,6 +91,8 @@ func _textura(it: Dictionary) -> Texture2D:
 			return Dados.tex("wifi")
 		"bau":
 			return Dados.tex("bau")
+		"fragmento":
+			return Dados.tex("gema_3")   # só pra passar no teste de nulo; o losango é desenhado à mão em _draw
 	return null
 
 
@@ -103,4 +107,13 @@ func _draw() -> void:
 			flutua = sin(_t * 4.0 + it.pos.x) * 2.0
 		if it.tipo == "bau":
 			draw_circle(it.pos, 18 + sin(_t * 5.0) * 3, Color(1, 0.85, 0.3, 0.18))
+		if it.tipo == "fragmento":   # losango cobalto que pulsa (sem PNG novo)
+			var c := Vector2(it.pos.x, it.pos.y + flutua - 6.0)
+			var r := 9.0 + sin(_t * 6.0) * 1.5
+			var pts := PackedVector2Array([c + Vector2(0, -r), c + Vector2(r * 0.7, 0), c + Vector2(0, r), c + Vector2(-r * 0.7, 0)])
+			draw_circle(it.pos, 20 + sin(_t * 5.0) * 3, Color(0.4, 0.6, 1.0, 0.2))
+			draw_colored_polygon(pts, Color(0.45, 0.7, 1.0))
+			pts.append(pts[0])
+			draw_polyline(pts, Color(0.9, 0.97, 1.0), 1.5)
+			continue
 		draw_texture_rect(tex, Rect2(it.pos - sz / 2 + Vector2(0, flutua), sz), false)

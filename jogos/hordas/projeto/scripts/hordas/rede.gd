@@ -9,6 +9,7 @@ signal conectou(ok: bool, msg: String)       # cliente: chegou na sala (ou foi r
 signal comecou(opcoes: Dictionary)           # todos: o anfitrião começou a partida
 signal caiu(msg: String)                     # a sala acabou (anfitrião saiu, internet caiu...)
 
+const Sorte := preload("res://scripts/hordas/sorte.gd")
 const ENVIO := 1.0 / 15.0     # posições por segundo
 # eventos que o anfitrião pode mandar (o resto é ignorado)
 const EVENTOS := ["anuncio", "chefe_final", "fase_completa", "proxima_fase", "tela_azul_caiu", "fim_corrida",
@@ -212,6 +213,9 @@ func _bem_vindo() -> void:
 ## Anfitrião: todo mundo na sala, começa a partida (opcoes vai igual pra todos, ex.: fase inicial de teste).
 func comecar(opcoes := {}) -> void:
 	if anfitriao() and not em_partida:
+		# a semente da corrida é sorteada aqui e vai igual pra todos: santuários, eventos e drops saem das streams dela (sorte.gd)
+		opcoes = opcoes.duplicate()
+		opcoes["semente"] = Sorte.nova_semente()
 		_comecar.rpc(jogadores, opcoes)
 
 

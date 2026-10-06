@@ -114,8 +114,11 @@ func atualizar(dt: float) -> void:
 	_t += dt
 	if not desbloqueada:
 		var cond: Dictionary = d().get("desbloqueio", {})
-		if str(cond.get("tipo", "")) == "nivel" and arena.nivel >= int(cond.get("valor", 1)):
+		var tipo := str(cond.get("tipo", ""))
+		if tipo == "nivel" and arena.nivel >= int(cond.get("valor", 1)):
 			desbloquear()
+		elif tipo == "fragmentos" and arena.descobertas.completo(atual):
+			desbloquear()   # juntou todos os fragmentos (santuários, elites e eventos, #21)
 		return
 	if ativa:
 		_atualizar_forma(dt)

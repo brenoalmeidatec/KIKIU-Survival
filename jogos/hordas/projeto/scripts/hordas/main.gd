@@ -8,6 +8,7 @@ extends Node
 ##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
 
 const Arena := preload("res://scripts/hordas/arena.gd")
+const Sorte := preload("res://scripts/hordas/sorte.gd")
 const W := 640.0
 const H := 360.0
 const SAVE := "user://recordes.json"
@@ -191,6 +192,8 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	_arena.heroi_id = heroi
 	_arena.bot = _args.has("bot")
 	_arena.eh_online = online
+	# semente da corrida: online vem do anfitrião (igual pra todos); solo sorteia, ou --semente=N pra repetir uma partida
+	_arena.semente = int(o.get("semente", 0)) if online else int(_args.get("semente", 0))
 	_arena.terminou.connect(_terminou)
 	add_child(_arena)
 	if o.has("estresse") and not online:
@@ -418,6 +421,9 @@ func _teste() -> void:
 			_arena.armas.lista.map(func(a): return "%s:%d" % [a.id, a.nivel]), _arena.passivos,
 			("%s luta=%.0f vivos=%d raio=%.0f" % [_arena.duelo.estado, _arena.duelo.t_luta, _arena.duelo.vivos().size(), _arena.duelo.raio]) if _arena.duelo_ativo else "-",
 			("%s energia=%.0f vezes=%d armas=%s" % ["DRAGAO" if _arena.habilidades.ativa else "humano", _arena.habilidades.energia, _arena.habilidades.vezes, _arena.armas.forma_lista.map(func(a): return "%s:%d" % [a.id, a.nivel])]) if _arena.habilidades.desbloqueada else "-"])
+		print("  sorte: semente=%d santuarios=%d(hash %d) fragmentos=%s dadivas=%d eventos=%s" % [Sorte.semente, _arena.chao.santuarios.size(),
+			hash(str(_arena.chao.santuarios.map(func(s): return [snappedf(s.pos.x, 0.01), snappedf(s.pos.y, 0.01), s.tipo, s.variacao]))),
+			_arena.descobertas.fragmentos, _arena.descobertas.dadivas.size(), _arena.descobertas.eventos_vistos])
 		if _arena.online:
 			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
@@ -627,6 +633,19 @@ func _print_tela(qual: String) -> void:
 				_arena.equipamentos["peitoral"] = "armadura_samurai"
 				_arena.atualizar_visual()
 			await get_tree().create_timer(float(_args.get("espera", 6.0))).timeout
+		"santuario":   # #21: Santuário do Dragão (combate) e de dádivas por perto, HUD com 2 de 3 fragmentos; "dadivas" mostra a escolha
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			var jp: Vector2 = _arena.jogador.position
+			_arena.descobertas.fragmentos["dragao"] = 2
+			_arena.descobertas.dadivas.append({"id": "furia", "raridade": "rara"})
+			_arena.descobertas.dadivas.append({"id": "olho", "raridade": "epica"})
+			_arena.chao.santuarios.append({"pos": jp + Vector2(75, -35), "tipo": "fragmento", "variacao": "combate", "carga": 0.55, "usado": false})
+			_arena.chao.santuarios.append({"pos": jp + Vector2(-120, 20), "tipo": "dadiva", "variacao": "", "carga": 0.0, "usado": false})
+			_arena.chao.santuarios.append({"pos": jp + Vector2(420, -60), "tipo": "maldito", "variacao": "", "carga": 0.0, "usado": false})
+			if _args.has("dadivas"):
+				_arena.cartas.escolher("Dádiva do santuário", _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva")))
+			await get_tree().create_timer(0.5, true, false, true).timeout
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout
