@@ -7,6 +7,7 @@ const Visual := preload("res://scripts/hordas/visual.gd")
 const Perf := preload("res://scripts/hordas/perf.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
+const AVISO_ANEL := 0.6   # segundos de aviso (anel vermelho no chão) antes dos tiros em anel (#68)
 const LONGE := 720.0       # mais longe que isso do jogador = reaparece do outro lado
 const NASC_T := 0.26       # animação de nascer / reaparecer (teleporte): some e volta numa nuvem escura
 const ACEL_VEL := 14.0     # suavização do andar: 1/ACEL_VEL s (~70 ms) pra chegar na velocidade pedida
@@ -766,6 +767,19 @@ func _draw() -> void:
 			var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if esp else Rect2(-s.x / 2, -s.y, s.x, s.y)
 			Visual.sombra(self, v.tex, rs, src2, pe)
 	Perf.fim("ini_d_sombra", _d1)
+	# marcas de aviso no chão (#68): a faixa por onde a investida vai passar e o anel antes dos tiros em anel.
+	# No online os clientes não recebem a direção da investida nem o relógio do anel: lá fica só o aviso no corpo.
+	for v: V in _ordem:
+		if v.estado == 1 and v.dir_inv != Vector2.ZERO:
+			var u := clampf(1.0 - v.t_estado / 0.7, 0.0, 1.0)
+			var fim: Vector2 = v.pos + v.dir_inv * v.vel * 5.0 * 0.6   # o que ele corre na investida (5x por 0,6 s)
+			draw_line(v.pos, fim, Color(1.0, 0.15, 0.1, 0.1 + 0.18 * u), maxf(10.0, v.raio * 1.6))
+			draw_line(v.pos, fim, Color(1.0, 0.4, 0.3, 0.45 + 0.4 * u), 1.0)
+		if v.anel > 0 and v.t_anel > 0.0 and v.t_anel < AVISO_ANEL:
+			var u2 := 1.0 - v.t_anel / AVISO_ANEL
+			draw_set_transform(v.pos, 0, Vector2(1, 0.55))
+			draw_arc(Vector2.ZERO, v.raio + 26.0 - 12.0 * u2, 0, TAU, 28, Color(1.0, 0.25, 0.2, 0.25 + 0.55 * u2), 2.0)
+			draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 	var _d2 := Perf.ini()
 	for v: V in _ordem:
 		var s: Vector2 = v.sz

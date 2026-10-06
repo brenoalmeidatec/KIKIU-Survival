@@ -98,6 +98,8 @@ var tempo_arma := {}        # id -> segundos com a arma ativa (DPS da tela final
 var nivel_arma := {}        # id -> último nível visto (tela final)
 var acabou := false
 var _tremor := 0.0
+const OLHAR_MAX := 36.0          # px que a câmera adianta na direção em que o herói anda (#68)
+var _olhar := Vector2.ZERO      # quanto ela está adiantada agora (vai até lá com suavidade)
 var _hitstop_ate := 0   # Time.get_ticks_msec() até quando o jogo fica "congelado" (só solo)
 var _hitstop_crit_ate := 0
 var _chefes_vivos := []
@@ -306,7 +308,10 @@ func _process(dt: float) -> void:
 	var t4 := Time.get_ticks_usec()
 	perfil = [t1 - t0, t2 - t1, t3 - t2, t4 - t3]
 	_tremor = maxf(0.0, _tremor - dt * 20.0)
-	var foco: Vector2 = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro()
+	# a câmera olha um pouco à frente pra onde o herói anda (#68), com suavidade; dá pra desligar nas Opções
+	var olhar_alvo: Vector2 = (jogador._vel * 0.22).limit_length(OLHAR_MAX) if Config.v("camera_frente") else Vector2.ZERO
+	_olhar = _olhar.lerp(olhar_alvo, minf(1.0, dt * 2.5))
+	var foco: Vector2 = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro() + _olhar
 	camera.position = finalizacao.camera(entradas.camera(foco))   # a entrada do chefe leva a câmera até ele e traz de volta; a finalização aproxima
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
 	if Input.is_action_just_pressed("voltar") and not cartas.aberto() and not hud._pausado:

@@ -578,3 +578,10 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Desempenho** na fase 25 com 500 no estresse e quatro evoluções juntas: novas, de 79 a 168 fps; antigas, de 83 a 99 fps. O custo das armas por quadro é parecido (update 243 contra 265 µs). O duelo com as armas novas rodou sem erro.
 - Arte: 12 ícones e 2 sprites de machado no `icones_tema.gd`. Os corvos são desenhados por código, cinza-azulados com borda clara, porque o preto sumia nos chãos escuros. Teste novo `testes/armas_novas.tscn`: cada arma machuca de verdade e as evoluções estão bem ligadas. São 22 testes, todos sem falhas.
 - **Próximo:** #68 (movimento e ambientação estilo Dimraeth).
+
+## 2026-10-06 · Claude do Alisson (notebook) · #68 marco 1: legibilidade (piscar, aviso no chão, câmera)
+- **O herói não some mais no piscar de dano:** em vez de ficar 100% invisível em metade dos quadros (`spr.visible = not piscar`), pisca em 35% de opacidade. No escuro do pântano e do reino ele sumia da tela no meio da horda.
+- **Marcas de aviso no chão** (`inimigos.gd`, numa passada antes dos sprites): durante os 0,7 s em que o bicho se prepara para a investida aparece uma **faixa vermelha** por onde ele vai passar, do tamanho do que ele corre. Nos 0,6 s antes dos **tiros em anel** (guardiões e chefes) aparece um **anel vermelho** no chão em volta dele (`AVISO_ANEL`). É o "telegrafar" do Dimraeth adaptado à horda. No online os clientes não recebem a direção da investida nem o relógio do anel, então lá fica só o aviso que já existia no corpo (agachar e avermelhar).
+- **Câmera olha à frente:** adianta até 36 px na direção em que o herói anda, com suavidade (a partir da velocidade real, que acelera e freia). Dá para desligar em Opções > Acessibilidade > "Câmera olha à frente".
+- `--print_tela=aviso` mostra as duas marcas: um jacaré na preparação da investida e um chefe a 0,2 s do anel (`--chefe=X` troca o chefe). São 22 testes, todos sem falhas.
+- **Próximo:** #68 marco 2, rolamento de esquiva com fôlego (2 cargas).
