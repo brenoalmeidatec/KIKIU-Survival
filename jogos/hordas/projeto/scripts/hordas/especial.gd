@@ -22,7 +22,7 @@ func configurar(a: Node) -> void:
 	arena = a
 	z_index = 3
 	var tudo: Dictionary = Dados.json("especiais")
-	var e = tudo.get(arena.heroi_id, {})
+	var e = tudo.get(str(arena.heroi.get("especial", arena.heroi_id)), {})   # herói criado (#72): o especial vem da classe
 	d = e if e is Dictionary else {}
 	recarga = 4.0   # não sai logo no primeiro segundo
 

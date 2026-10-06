@@ -46,6 +46,7 @@ static var _mat_flash: ShaderMaterial
 
 var arena: Node
 var spr := Sprite2D.new()
+var tom := Color.WHITE        # cor base do corpo (herói criado, #72: a raça tinge; os fixos ficam brancos)
 var hp := 100.0
 var invencivel := 0.0
 var dash_t := 0.0
@@ -433,7 +434,7 @@ func _animar(entrada: Vector2) -> void:
 		c.frame = spr.frame
 	# pisca quando está invencível depois de apanhar
 	var piscar := invencivel > 0 and dash_t <= 0 and int(_t * 20) % 2 == 0
-	spr.modulate = Color(1, 0.4, 0.4) if _vermelho > 0 else Color.WHITE
+	spr.modulate = Color(1, 0.4, 0.4) if _vermelho > 0 else tom
 	if humano < 1.0:
 		# transformando: o corpo (e o equipamento, que é filho dele) clareia em luz cobalto e some
 		var g := 1.0 - humano

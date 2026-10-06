@@ -1,0 +1,44 @@
+{
+ "_ajuda": "Classes da criação de personagem (#72). 'lista' = as que aparecem na tela, na ordem. arma_inicial = id GLOBAL de armas.json (nunca uma exclusiva de herói). especial = de qual amigo a classe pega o especial da tecla E (chave de especiais.json: hazaki, nicao ou lucas). bonus soma nos atributos, como nas raças. reviver = rapidez pra levantar um amigo caído no online (1 = normal).",
+ "lista": ["guerreiro", "mago", "atirador", "ladino", "clerigo"],
+ "guerreiro": {
+  "nome": "Guerreiro",
+  "descricao": "Na frente de todo mundo, batendo em tudo que chega perto.",
+  "arma_inicial": "cabo_rede",
+  "especial": "hazaki",
+  "reviver": 1.0,
+  "bonus": {"vida_max": 25, "area": 0.05}
+ },
+ "mago": {
+  "nome": "Mago",
+  "descricao": "Gira magia em volta de si e cobre muita área. Frágil de perto.",
+  "arma_inicial": "ventoinha",
+  "especial": "lucas",
+  "reviver": 1.0,
+  "bonus": {"area": 0.15, "duracao": 0.1, "vida_max": -15}
+ },
+ "atirador": {
+  "nome": "Atirador",
+  "descricao": "Acerta de longe e com força. Melhor manter a distância.",
+  "arma_inicial": "pendrive",
+  "especial": "lucas",
+  "reviver": 1.0,
+  "bonus": {"velocidade_proj": 0.15, "critico": 0.05}
+ },
+ "ladino": {
+  "nome": "Ladino",
+  "descricao": "Rápido e traiçoeiro. Machuca quem fica perto e some antes do troco.",
+  "arma_inicial": "wifi",
+  "especial": "hazaki",
+  "reviver": 1.0,
+  "bonus": {"critico": 0.1, "velocidade": 0.1, "vida_max": -10}
+ },
+ "clerigo": {
+  "nome": "Clérigo",
+  "descricao": "Cura e protege. Levanta os amigos caídos na metade do tempo.",
+  "arma_inicial": "cafe",
+  "especial": "nicao",
+  "reviver": 2.0,
+  "bonus": {"regen": 0.4, "vida_max": 10}
+ }
+}

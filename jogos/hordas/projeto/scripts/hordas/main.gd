@@ -18,6 +18,8 @@ const SAVE_ONLINE := "user://online.json"
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
 const TelaCalor := preload("res://scripts/hordas/tela_calor.gd")
 const Calor := preload("res://scripts/hordas/calor.gd")
+const TelaCriacao := preload("res://scripts/hordas/tela_criacao.gd")
+const Criacao := preload("res://scripts/hordas/criacao.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
 const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Opções", "Créditos", "Sair"]
 const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
@@ -38,11 +40,14 @@ var _estado := "titulo"      # titulo, herois, partida, fim
 var _estado_antes := "titulo"  # pra perceber a troca de tela e tocar a transição
 var _apelido_txt := ""       # campo de texto do apelido (lobby, tecla N)
 var _calor := {}              # calor escolhido pra próxima corrida {id: nível} (tela_calor.gd)
+var _criado := ""             # último herói criado (#72): vira a carta depois dos heróis fixos
+var _sel_carta := 0           # carta onde estava antes de descer pro botão "Criar herói"
 var _sel_sala := 0            # tela da lista de salas
 var _publico_txt := ""        # anfitrião: campo do endereço público (tecla E no lobby)
 var _forcar_t := -10.0       # anfitrião: Enter com gente não pronta avisa; outro Enter em 3 s começa assim mesmo
 ## telas que são a mesma tela pro jogador (só muda o texto): trocar entre elas não tem transição
-const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"], ["sala", "publico"], ["herois", "calor"], ["sala", "calor_sala"]]
+const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"], ["sala", "publico"], ["herois", "calor"], ["sala", "calor_sala"],
+	["herois", "criacao"], ["criacao", "calor"]]
 var _sel := 0
 var _arena: Node2D
 var _resumo := {}
@@ -68,6 +73,7 @@ func _ready() -> void:
 	_tela.draw.connect(_desenhar)
 	_camada.add_child(_tela)
 	_recordes = _ler_recordes()
+	_criado = Criacao.ultimo()
 	_endereco = _ler_endereco()
 	_calor = Calor.de_texto(str(_args.calor)) if _args.has("calor") else Calor.ler()   # a última escolha de calor (ou a do teste)
 	Rede.mudou.connect(_rede_mudou)
@@ -126,8 +132,30 @@ func _salvar_recordes() -> void:
 		f.store_string(JSON.stringify(_recordes, " "))
 
 
+## Os heróis da escolha: os fixos do herois.json e, no fim, o último herói criado (#72).
 func _herois() -> Array:
-	return Dados.json("herois").get("lista", [])
+	var l: Array = Dados.json("herois").get("lista", []).duplicate()
+	if _criado != "":
+		l.append(_criado)
+	return l
+
+
+## Carta i: joga com aquele herói. O índice logo depois da última carta é o botão "Criar herói" (#72).
+func _escolher_heroi(i: int) -> void:
+	var lista := _herois()
+	if i < lista.size():
+		_abrir_calor(lista[i])
+		return
+	_estado = "criacao"
+	var t := TelaCriacao.new()
+	add_child(t)
+	t.fechou.connect(func(ok: bool, id: String):
+		if ok:
+			_criado = id
+			_sel = _herois().find(id)
+			_abrir_calor(id)
+		else:
+			_estado = "herois")
 
 
 func _process(dt: float) -> void:
@@ -169,16 +197,23 @@ func _process(dt: float) -> void:
 		"sala":
 			_sala()
 		"herois":
-			var n := _herois().size()
-			if Input.is_action_just_pressed("esquerda"):
+			var n := _herois().size()   # _sel == n: o botão "Criar herói", embaixo das cartas
+			if Input.is_action_just_pressed("esquerda") and _sel < n:
 				_sel = (_sel - 1 + n) % n
 				Som.ui("cursor")
-			elif Input.is_action_just_pressed("direita"):
+			elif Input.is_action_just_pressed("direita") and _sel < n:
 				_sel = (_sel + 1) % n
+				Som.ui("cursor")
+			elif Input.is_action_just_pressed("baixo") and _sel < n:
+				_sel_carta = _sel
+				_sel = n
+				Som.ui("cursor")
+			elif Input.is_action_just_pressed("cima") and _sel == n:
+				_sel = mini(_sel_carta, n - 1)
 				Som.ui("cursor")
 			elif Input.is_action_just_pressed("confirmar"):
 				Som.ui("confirmar")
-				_abrir_calor(_herois()[_sel])
+				_escolher_heroi(_sel)
 			elif Input.is_action_just_pressed("voltar"):
 				_estado = "titulo"
 				_sel = 0
@@ -229,11 +264,21 @@ func _rects_titulo() -> Array:
 func _rects_herois() -> Array:
 	var r := []
 	var n := _herois().size()
-	var larg := 170.0
+	var larg := _larg_carta(n)
 	var x0 := (W - n * larg - (n - 1) * 12) / 2
 	for i in n:
 		r.append(Rect2(x0 + i * (larg + 12), 64, larg, 230))
+	r.append(_botao_criar())   # índice n: o botão "Criar herói"
 	return r
+
+
+## Largura das cartas de herói: 170 px, e menos quando não cabem (com o herói criado são 4).
+func _larg_carta(n: int) -> float:
+	return minf(170.0, (W - 40.0 - (n - 1) * 12.0) / maxf(1.0, n))
+
+
+func _botao_criar() -> Rect2:
+	return Rect2(W / 2 - 80, 304, 160, 18)
 
 
 ## Mouse: passar por cima escolhe (só se ele se mexeu); clique esquerdo confirma, direito volta.
@@ -256,6 +301,8 @@ func _mouse_menu() -> void:
 ## Online: as opções de teste (fase, pular, build) vêm do anfitrião, iguais pra todos.
 func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	Dados.recarregar()
+	if Criacao.eh_criado(heroi):   # herói criado (#72), também pelo --heroi=c:raça:classe: monta e põe na tabela
+		Criacao.registrar(heroi)
 	var o: Dictionary = opcoes if online else _args
 	_arena = Arena.new()
 	_arena.heroi_id = heroi
@@ -629,7 +676,7 @@ func _clique_menu(e: InputEventMouseButton) -> void:
 			if esq and q >= 0:
 				_sel = q
 				Som.ui("confirmar")
-				_abrir_calor(_herois()[_sel])
+				_escolher_heroi(_sel)
 			elif not esq:
 				Som.ui("voltar")
 				_estado = "titulo"
@@ -902,32 +949,39 @@ func _desenhar() -> void:
 			var dica := "Setas: herói  N: nome  " + ("Enter: começar  C: calor  L/E: lista  " if Rede.anfitriao() else "Enter: pronto  ") + "Esc: sair"
 			_txt(Vector2(0, 340), dica, 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 353), "T: chat   V (segurar): falar   1-6: silenciar alguém", 8, Color(0.5, 0.52, 0.62))
-		"herois", "calor":
+		"herois", "calor", "criacao":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)
 			var lista := _herois()
-			var larg := 170.0
+			var larg := _larg_carta(lista.size())
 			var x0 := (W - lista.size() * larg - (lista.size() - 1) * 12) / 2
 			for i in lista.size():
 				var h: Dictionary = Dados.json("herois").get(lista[i], {})
 				var sel := i == _sel
 				var p := Vector2(x0 + i * (larg + 12), 70 - (6.0 if sel else 0.0))
-				_tela.draw_rect(Rect2(p - Vector2(2, 2), Vector2(larg + 4, 224)), Color(1, 0.85, 0.3) if sel else Color(0.3, 0.35, 0.5))
-				_tela.draw_rect(Rect2(p, Vector2(larg, 220)), Color(0.1, 0.11, 0.18))
+				_tela.draw_rect(Rect2(p - Vector2(2, 2), Vector2(larg + 4, 232)), Color(1, 0.85, 0.3) if sel else Color(0.3, 0.35, 0.5))
+				_tela.draw_rect(Rect2(p, Vector2(larg, 228)), Color(0.1, 0.11, 0.18))
 				var rosto := Dados.tex_personagem(str(h.get("sprite", lista[i])), "rosto")
 				if rosto:
-					_tela.draw_texture_rect_region(rosto, Rect2(p + Vector2(larg / 2 - 39, 10), Vector2(78, 78)), Rect2(0, 0, 52, 52))
+					var tom: Array = h.get("tom", [1.0, 1.0, 1.0])   # herói criado (#72): a raça tinge
+					_tela.draw_texture_rect_region(rosto, Rect2(p + Vector2(larg / 2 - 39, 10), Vector2(78, 78)), Rect2(0, 0, 52, 52),
+						Color(float(tom[0]), float(tom[1]), float(tom[2])))
 				_txt(p + Vector2(0, 104), str(h.get("nome", lista[i])), 16 if sel else 8, Color.WHITE, larg)
 				var arma := Dados.item(str(h.get("arma", "")))
 				var ic := Dados.icone(str(arma.get("icone", "")))
 				if ic:
-					_tela.draw_texture_rect(ic, Rect2(p + Vector2(10, 116), Vector2(32, 32)), false)
-				_tela.draw_string(Dados.fonte, p + Vector2(48, 135), str(arma.get("nome", "")), HORIZONTAL_ALIGNMENT_LEFT, larg - 52, 8, Color(1, 0.9, 0.5))
-				_tela.draw_multiline_string(Dados.fonte, p + Vector2(8, 164), str(h.get("descricao", "")), HORIZONTAL_ALIGNMENT_LEFT, larg - 16, 8, 5, Color(0.75, 0.78, 0.85))
+					_tela.draw_texture_rect(ic, Rect2(p + Vector2(10, 116), Vector2(32, 32) if larg >= 160 else Vector2(24, 24)), false)
+				_tela.draw_string(Dados.fonte, p + Vector2(48 if larg >= 160 else 38, 135), str(arma.get("nome", "")), HORIZONTAL_ALIGNMENT_LEFT, larg - (52 if larg >= 160 else 40), 8, Color(1, 0.9, 0.5))
+				_tela.draw_multiline_string(Dados.fonte, p + Vector2(8, 164), str(h.get("descricao", "")), HORIZONTAL_ALIGNMENT_LEFT, larg - 16, 8, 5 if larg >= 160 else 6, Color(0.75, 0.78, 0.85))
 				var rec: Dictionary = _recordes.get(lista[i], {})
 				if rec.has("tempo"):
-					_txt(p + Vector2(0, 214), "Recorde %02d:%02d" % [int(rec.tempo) / 60, int(rec.tempo) % 60], 8, Color(0.6, 0.9, 0.6), larg)
-			_txt(Vector2(0, 330), "Setas: escolher   Enter: jogar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
+					_txt(p + Vector2(0, 222), "Recorde %02d:%02d" % [int(rec.tempo) / 60, int(rec.tempo) % 60], 8, Color(0.6, 0.9, 0.6), larg)
+			var bc := _botao_criar()
+			var bsel := _sel == lista.size()
+			_tela.draw_rect(bc.grow(2), Color(1, 0.85, 0.3) if bsel else Color(0.3, 0.35, 0.5))
+			_tela.draw_rect(bc, Color(0.2, 0.15, 0.06) if bsel else Color(0.1, 0.11, 0.18))
+			_txt(Vector2(bc.position.x, bc.position.y + 13), "+ Criar herói", 8, Color(1, 0.9, 0.6) if bsel else Color(0.8, 0.82, 0.9), bc.size.x)
+			_txt(Vector2(0, 342), "Setas: escolher   Baixo: criar herói   Enter: jogar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
 		"fim":
 			_fundo()
 			var r := _resumo
@@ -1037,6 +1091,12 @@ func _print_tela(qual: String) -> void:
 			_abrir_opcoes()
 		"calor":   # tela do Calor (use --calor=couro:2,garras:1 pra ver níveis ligados)
 			_abrir_calor("hazaki")
+		"criacao":   # tela de criar herói (#72): --raca=N e --classe=N escolhem as opções (índice nas listas)
+			_estado = "criacao"
+			var tc := TelaCriacao.new()
+			tc.raca = int(_args.get("raca", 0))
+			tc.classe = int(_args.get("classe", 0))
+			add_child(tc)
 		"especial":   # --heroi=X --estresse=N: usa o especial no meio dos inimigos e tira o print depois de --espera s
 			_comecar(str(_args.get("heroi", "hazaki")))
 			await get_tree().create_timer(1.0).timeout
