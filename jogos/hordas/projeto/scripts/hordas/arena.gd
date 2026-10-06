@@ -22,6 +22,7 @@ const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
 const Entradas := preload("res://scripts/hordas/entradas.gd")
+const Interface := preload("res://scripts/hordas/interface.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
@@ -64,7 +65,12 @@ var fase_stat := _stat_novo()  # números DESTA fase (zera a cada fase; a tela d
 var resultado: CanvasLayer     # tela de resultados da fase (resultado.gd)
 var entradas: CanvasLayer      # entrada dos personagens e do chefe (entradas.gd)
 var dano_recebido := {}     # de quem o jogador apanhou (pra equilibrar)
-var resortear := 3
+var resortear := 3          # cargas de "sortear de novo", "pular" e "banir" (dados/corrida.json > cartas)
+var pular := 2
+var banir := 2
+var banidos := {}           # id -> true: carta banida some do sorteio até o fim da corrida
+var tempo_arma := {}        # id -> segundos com a arma ativa (DPS da tela final)
+var nivel_arma := {}        # id -> último nível visto (tela final)
 var acabou := false
 var _tremor := 0.0
 var _chefes_vivos := []
@@ -77,6 +83,10 @@ func _ready() -> void:
 		semente = Sorte.nova_semente()
 	Sorte.iniciar(semente)   # tudo que afeta o mundo compartilhado sai das streams dessa semente (sorte.gd)
 	heroi = Dados.json("herois").get(heroi_id, {})
+	var cc: Dictionary = Dados.json("corrida").get("cartas", {})   # cargas de sortear de novo / pular / banir
+	resortear = int(cc.get("resortear", 3))
+	pular = int(cc.get("pular", 2))
+	banir = int(cc.get("banir", 2))
 	chao = Chao.new()
 	chao.arena = self
 	add_child(chao)
@@ -203,6 +213,9 @@ func _process(dt: float) -> void:
 		armas.atualizar(dt)
 	if online:
 		online.atualizar(dt)
+	for a in armas.ativas():   # tempo e nível de cada arma, pro DPS da tela final (poucas armas: custo desprezível)
+		tempo_arma[a.id] = float(tempo_arma.get(a.id, 0.0)) + dt
+		nivel_arma[a.id] = a.nivel
 	var t3 := Time.get_ticks_usec()
 	coleta.atualizar(dt)
 	efeitos.atualizar(dt)
@@ -506,6 +519,36 @@ func pode_resortear() -> bool:
 	return resortear > 0
 
 
+## Pular (VS/HoloCure "Skip"): fecha as cartas sem pegar nenhuma, gasta 1 carga e devolve parte do sortear de novo
+## (corrida.json > cartas > pular_devolve). Retorna false (sem gastar) se não há carga.
+func gastar_pular() -> bool:
+	if pular <= 0:
+		return false
+	pular -= 1
+	resortear += int(Dados.json("corrida").get("cartas", {}).get("pular_devolve", 0))
+	return true
+
+
+## Só arma, passivo e equipamento podem ser banidos (evolução, cura e dádiva não).
+static func carta_banivel(c: Dictionary) -> bool:
+	return str(c.get("tipo", "")) in ["arma", "passivo", "equipamento"]
+
+
+## Banir (VS/HoloCure "Banish"): a carta some do sorteio até o fim da corrida. Troca a carta por outra que ainda
+## não está na mesa; retorna essa carta nova, ou {} se não sobrou nenhuma (aí a carta só sai da mesa). Sem carga: {"erro": true}.
+func gastar_banir(c: Dictionary, mesa: Array) -> Dictionary:
+	if banir <= 0 or not carta_banivel(c):
+		return {"erro": true}
+	banir -= 1
+	banidos[str(c.id)] = true
+	var mostradas := mesa.map(func(x): return str(x.get("id", "")))
+	for _i in 12:
+		for n in sortear_cartas():
+			if not str(n.id) in mostradas and not (n.tipo == "cura"):
+				return n
+	return {}
+
+
 func gastar_resortear() -> Array:
 	resortear -= 1
 	return sortear_cartas()
@@ -517,28 +560,28 @@ func sortear_cartas(rng: RandomNumberGenerator = null) -> Array:   # com rng (ba
 	var armas_d: Dictionary = Dados.json("armas")
 	var pas_d: Dictionary = Dados.json("passivos")
 	for a in armas.lista:
-		if a.nivel < armas.nivel_max(a.id):
+		if a.nivel < armas.nivel_max(a.id) and not banidos.has(a.id):
 			cand.append([10.0, _carta("arma", a.id, a.nivel + 1)])
 	for id in passivos:
-		if passivos[id] < int(pas_d[id].get("max", 5)):
+		if passivos[id] < int(pas_d[id].get("max", 5)) and not banidos.has(id):
 			cand.append([8.0, _carta("passivo", id, passivos[id] + 1)])
 	if armas.lista.size() < MAX_ARMAS:
 		var ids: Array = armas.lista.map(func(a): return a.id)
 		for id in armas_d:
 			# global ou exclusiva deste herói (até o limite): nunca oferece carta impossível
-			if not Construcao.arma_permitida(id, heroi_id, ids) or _tem_evolucao_de(id):
+			if not Construcao.arma_permitida(id, heroi_id, ids) or _tem_evolucao_de(id) or banidos.has(id):
 				continue
 			cand.append([float(armas_d[id].get("peso_carta", 6.0)), _carta("arma", id, 1)])
 	if passivos.size() < MAX_PASSIVOS:
 		for id in pas_d:
-			if id.begins_with("_") or passivos.has(id):
+			if id.begins_with("_") or passivos.has(id) or banidos.has(id):
 				continue
 			cand.append([5.0, _carta("passivo", id, 1)])
 	# equipamentos visuais: só slot livre e do próprio personagem (por enquanto só quem tem modelo em camadas)
 	if heroi.get("camadas", false):
 		var eq_d: Dictionary = Dados.json("equipamentos")
 		for id in eq_d:
-			if Equipamento.permitido(id, heroi_id, equipamentos):
+			if Equipamento.permitido(id, heroi_id, equipamentos) and not banidos.has(id):
 				cand.append([float(eq_d.get("_config", {}).get("peso_carta", 5.0)), _carta("equipamento", id, 1)])
 	var n := 3
 	if _rf(rng) < 0.1 + stat("sorte") * 0.35:
@@ -576,7 +619,8 @@ func _carta(tipo: String, id: String, nv: int) -> Dictionary:
 	var desc := str(d.get("descricao", ""))
 	if tipo == "arma" and nv > 1:
 		desc = _texto_nivel(d.get("niveis", [])[nv - 2])
-	var c := {"tipo": tipo, "id": id, "nome": str(d.get("nome", id)), "desc": desc, "icone": str(d.get("icone", id)), "nivel": nv}
+	var c := {"tipo": tipo, "id": id, "nome": str(d.get("nome", id)), "desc": desc, "icone": str(d.get("icone", id)), "nivel": nv,
+		"max": (1 + d.get("niveis", []).size()) if tipo == "arma" else int(d.get("max", 1)), "cmp": Interface.comparacao(tipo, id, nv)}
 	if tipo == "arma" and Construcao.exclusiva(id):
 		# carta de arma exclusiva mostra quantas ele terá de quantas pode ter (ex.: EXCLUSIVA 1/2)
 		var ids: Array = armas.lista.map(func(a): return a.id)
@@ -737,7 +781,8 @@ func _fim(vitoria: bool, extra := {}) -> void:
 		lista_dano.append([a, dano_por_arma[a]])
 	lista_dano.sort_custom(func(x, y): return x[1] > y[1])
 	var res := {"vitoria": vitoria, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
-		"heroi": heroi_id, "dano": lista_dano, "apanhou": dano_recebido}
+		"heroi": heroi_id, "dano": lista_dano, "apanhou": dano_recebido,
+		"armas": Interface.tabela_armas(dano_por_arma, nivel_arma, tempo_arma, diretor.tempo)}
 	res.merge(extra)
 	await get_tree().create_timer(1.2, true, false, true).timeout
 	terminou.emit(res)

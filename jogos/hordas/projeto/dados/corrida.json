@@ -1,6 +1,8 @@
 {
  "_ajuda": "A corrida: lista de fases em sequência. Cada fase dura 'duracao' segundos; no fim nasce o 'chefe' e a fase acaba quando ele cai (o chefe com final=true leva ao duelo). 'minutos_por_fase' diz quanto a dificuldade (dados/fase.json) avança por fase. 'cor' tinge o chão. Para ter só uma fase longa, apague este arquivo.",
  "minutos_por_fase": 1.2,
+ "_cartas": "Cargas por corrida das ações da tela de cartas: resortear = sortear de novo (R), pular = fechar sem pegar nada (X), banir = tirar a carta escolhida do sorteio até o fim da corrida (B). pular_devolve = quantas cargas de resortear o pular devolve.",
+ "cartas": {"resortear": 3, "pular": 2, "banir": 2, "pular_devolve": 1},
  "fases": [
   {
    "nome": "Portão",

@@ -3,18 +3,44 @@ extends Node2D
 
 const MAX_NUMEROS := 70
 const MAX_PARTICULAS := 400
+## Números de dano agrupados (HoloCure / 20MTD: um número só em vez de uma chuva deles): acertos a até RAIO_JUNTA px
+## de um número nascido há menos de JANELA s SOMAM nele (o número cresce e a cor de crítico vence). Com 500 vírus e
+## uma arma de área isso é a diferença entre 40 textos por segundo e 6.
+const JANELA := 0.15
+const RAIO_JUNTA := 28.0
+const VIDA := 0.6
+const VIDA_CRIT := 0.9
 
-var numeros: Array = []      # {pos, txt, t, cor}
+var numeros: Array = []      # {pos, valor, txt, t, idade, cor, base, tam, crit}
 var particulas: Array = []   # {pos, vel, t, cor, tam}
 
 
 func numero(pos: Vector2, valor: float, cor := Color.WHITE, crit := false) -> void:
 	if not Config.v("numeros_dano"):   # opção "Números de dano"
 		return
+	# a lista está em ordem de nascimento: só os últimos (mais novos que a janela) podem receber a soma
+	for i in range(numeros.size() - 1, -1, -1):
+		var n: Dictionary = numeros[i]
+		if n.idade >= JANELA:
+			break
+		if n.base == cor:   # só soma com a mesma "família" (dano causado, dano recebido...); crítico entra na soma e pinta o total
+			if n.pos.distance_to(pos) <= RAIO_JUNTA:
+				n.valor += valor
+				n.txt = texto(n.valor, n.crit or crit)
+				if crit and not n.crit:
+					n.crit = true
+					n.cor = Color(1, 0.9, 0.3)
+					n.tam = 16
+					n.t = VIDA_CRIT
+				return
 	if numeros.size() >= MAX_NUMEROS:
 		numeros.pop_front()
-	numeros.append({"pos": pos + Vector2(randf_range(-6, 6), -10), "txt": str(int(round(valor))) + ("!" if crit else ""),
-		"t": 0.9 if crit else 0.6, "cor": Color(1, 0.9, 0.3) if crit else cor, "tam": 16 if crit else 8})
+	numeros.append({"pos": pos + Vector2(randf_range(-6, 6), -10), "valor": valor, "txt": texto(valor, crit), "idade": 0.0, "crit": crit, "base": cor,
+		"t": VIDA_CRIT if crit else VIDA, "cor": Color(1, 0.9, 0.3) if crit else cor, "tam": 16 if crit else 8})
+
+
+static func texto(valor: float, crit: bool) -> String:
+	return str(int(round(valor))) + ("!" if crit else "")
 
 
 func explodir(pos: Vector2, cor: Color, n := 6, forca := 80.0) -> void:
@@ -33,6 +59,7 @@ func limpar() -> void:
 func atualizar(dt: float) -> void:
 	for n in numeros.duplicate():
 		n.t -= dt
+		n.idade += dt
 		n.pos.y -= 24 * dt
 		if n.t <= 0:
 			numeros.erase(n)

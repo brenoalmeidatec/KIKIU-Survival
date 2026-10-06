@@ -7,9 +7,11 @@ const ARQUIVO := "user://opcoes.cfg"
 const VOLUMES := [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 ## formato: "sim_nao" (false/true), "pct" (0..1 vira 0%..100%) ou rotulos (um texto por valor)
 const ITENS := [
-	{"chave": "tremor", "grupo": "Jogabilidade", "nome": "Tremer a tela", "valores": [0.0, 0.5, 1.0], "rotulos": ["Não", "Pouco", "Normal"], "padrao": 1.0},
-	{"chave": "numeros_dano", "grupo": "Jogabilidade", "nome": "Números de dano", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "pausar_fora", "grupo": "Jogabilidade", "nome": "Pausar ao sair da janela", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "tremor", "grupo": "Acessibilidade", "nome": "Tremer a tela", "valores": [0.0, 0.5, 1.0], "rotulos": ["Não", "Pouco", "Normal"], "padrao": 1.0},
+	{"chave": "numeros_dano", "grupo": "Acessibilidade", "nome": "Números de dano", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "texto_hud", "grupo": "Acessibilidade", "nome": "Texto do HUD", "valores": ["normal", "grande"], "rotulos": ["Normal", "Grande"], "padrao": "normal"},
+	{"chave": "daltonico", "grupo": "Acessibilidade", "nome": "Modo daltônico", "valores": [false, true], "rotulos": ["Não", "Paleta segura"], "padrao": false},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{"chave": "vsync", "grupo": "Gráfico", "nome": "V-Sync", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "fps_max", "grupo": "Gráfico", "nome": "Limite de FPS", "valores": [30, 60, 120, 144, 0], "rotulos": ["30", "60", "120", "144", "Sem limite"], "padrao": 0},
