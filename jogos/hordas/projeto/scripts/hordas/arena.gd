@@ -18,6 +18,8 @@ const Construcao := preload("res://scripts/hordas/construcao.gd")
 const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Online := preload("res://scripts/hordas/online.gd")
 const Habilidades := preload("res://scripts/hordas/habilidades.gd")
+const Resultado := preload("res://scripts/hordas/resultado.gd")
+const Entradas := preload("res://scripts/hordas/entradas.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
@@ -54,6 +56,9 @@ var abates := 0
 var _niveis_pendentes := 0
 var _cartas_tomada := 0
 var dano_por_arma := {}
+var fase_stat := _stat_novo()  # números DESTA fase (zera a cada fase; a tela de resultados mostra isso)
+var resultado: CanvasLayer     # tela de resultados da fase (resultado.gd)
+var entradas: CanvasLayer      # entrada dos personagens e do chefe (entradas.gd)
 var dano_recebido := {}     # de quem o jogador apanhou (pra equilibrar)
 var resortear := 3
 var acabou := false
@@ -114,10 +119,23 @@ func _ready() -> void:
 	cartas = Cartas.new()
 	cartas.arena = self
 	add_child(cartas)
+	resultado = Resultado.new()
+	resultado.arena = self
+	add_child(resultado)
+	entradas = Entradas.new()
+	entradas.arena = self
+	add_child(entradas)
+	_zerar_fase_stat()
 	Som.musica(str(Dados.json("fase").get("musica", "minijogo_tenso")))
 	var f0: Dictionary = diretor.fases()[0]
 	anunciar("Fase 1: %s" % f0.get("nome", ""), Color(0.7, 0.9, 1))
 	camera.position = jogador.centro()
+	entradas.chegada()   # o herói "cai" no começo da fase 1
+
+
+func _exit_tree() -> void:
+	if entradas:
+		entradas.restaurar_tempo()   # o slow-motion da entrada do chefe nunca pode ficar preso
 
 
 func jogadores() -> int:
@@ -182,7 +200,8 @@ func _process(dt: float) -> void:
 	var t4 := Time.get_ticks_usec()
 	perfil = [t1 - t0, t2 - t1, t3 - t2, t4 - t3]
 	_tremor = maxf(0.0, _tremor - dt * 20.0)
-	camera.position = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro()
+	var foco: Vector2 = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro()
+	camera.position = entradas.camera(foco)   # a entrada do chefe leva a câmera até ele e traz de volta
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
 	if Input.is_action_just_pressed("voltar") and not cartas.aberto() and not hud._pausado:
 		hud.pausar()
@@ -205,6 +224,8 @@ func anunciar(txt: String, cor := Color.WHITE) -> void:
 func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> void:
 	if arma != "":
 		dano_por_arma[arma] = float(dano_por_arma.get(arma, 0.0)) + valor
+		var d: Dictionary = fase_stat.dano
+		d[arma] = float(d.get(arma, 0.0)) + valor
 	efeitos.numero(pos, valor, Color.WHITE, crit)
 	Som.tocar("acerto", 0.07, randf_range(0.9, 1.2), -14)
 
@@ -232,6 +253,9 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	var d: Dictionary = Dados.json("inimigos").get(tipo, {})
 	var chefe := bool(d.get("chefe", false))
 	abates += 1
+	fase_stat.abates += 1
+	if chefe:
+		fase_stat.chefes += 1
 	var xp_v := float(d.get("xp", 1))
 	if elite:
 		xp_v *= 6.0
@@ -294,9 +318,11 @@ func anunciar_todos(txt: String, cor := Color.WHITE) -> void:
 		Rede.evento("anuncio", {"txt": txt, "cor": cor.to_html()})
 
 
-func chefe_final_chegou(final := true) -> void:
+func chefe_final_chegou(final := true, tipo := "") -> void:
 	if online and Rede.anfitriao():
-		Rede.evento("chefe_final", {"final": final})
+		Rede.evento("chefe_final", {"final": final, "chefe": tipo})
+	if Dados.json("inimigos").get(tipo, {}).get("chefe", false):   # só vale chefe que existe nos dados
+		entradas.chefe(tipo)
 	if final:
 		hud.mensagem("Derrote a Tela Azul pra vencer!", Color(0.6, 0.75, 1))
 	else:
@@ -318,6 +344,7 @@ func fase_completa() -> void:
 		return
 	entre_fases = true
 	var n: int = diretor.fase_idx + 1
+	fase_stat.tempo = diretor.t_fase   # congela o tempo da fase antes do descanso
 	anunciar("Fase %d completa!" % n, Color(1, 0.9, 0.4))
 	Som.tocar("vitoria", 0.1, 1.0, -8)
 	if caido:
@@ -329,6 +356,13 @@ func fase_completa() -> void:
 	await get_tree().create_timer(2.2, true, false, true).timeout
 	await _esperar_cartas()
 	if acabou:
+		return
+	# tela de resultados: cada um vê a sua; no online ela fecha sozinha em ~8 s e ninguém espera ninguém
+	fase_stat.nivel_fim = nivel
+	resultado.abrir(fase_stat)
+	while resultado.aberto() and not acabou:
+		await get_tree().process_frame
+	if acabou or not entre_fases:   # (no online o anfitrião pode já ter mandado seguir)
 		return
 	jogador.curar(stat("vida_max") * 0.5)
 	abrir_bau()
@@ -347,9 +381,23 @@ func proxima_fase() -> void:
 		return
 	diretor.proxima_fase()
 	chao.nova_fase()
+	_zerar_fase_stat()
+	if resultado.aberto():
+		resultado.fechar()   # online: o anfitrião mandou seguir
 	var f: Dictionary = diretor.fases()[diretor.fase_idx]
 	anunciar("Fase %d: %s" % [diretor.fase_idx + 1, f.get("nome", "")], Color(0.7, 0.9, 1))
 	entre_fases = false
+	entradas.chegada()   # herói (e aliados no online) chegam na fase nova
+
+
+static func _stat_novo() -> Dictionary:
+	return {"tempo": 0.0, "abates": 0, "chefes": 0, "xp": 0.0, "nivel_ini": 1, "nivel_fim": 1, "dano": {}, "itens": []}
+
+
+## Estatísticas da fase: zeram aqui, no começo de cada fase (e na primeira, no _ready).
+func _zerar_fase_stat() -> void:
+	fase_stat = _stat_novo()
+	fase_stat.nivel_ini = nivel
 
 
 func chefes() -> Array:
@@ -369,18 +417,19 @@ func xp_para(n: int) -> float:
 
 
 func ganhar_xp(valor: float) -> void:
+	fase_stat.xp += valor * stat("xp")
 	xp += valor * stat("xp")
 	while xp >= xp_para(nivel):
 		xp -= xp_para(nivel)
 		nivel += 1
 		_niveis_pendentes += 1
-	if _niveis_pendentes > 0 and not cartas.aberto():
+	if _niveis_pendentes > 0 and not cartas.aberto() and not resultado.aberto():
 		_abrir_proxima()
 
 
 func ganhar_carta_tomada() -> void:
 	_cartas_tomada += 1
-	if not cartas.aberto():
+	if not cartas.aberto() and not resultado.aberto():
 		_abrir_proxima()
 
 
@@ -405,6 +454,10 @@ func escolheu(c: Dictionary) -> void:
 
 
 func aplicar(c: Dictionary) -> void:
+	if str(c.tipo) in ["arma", "passivo", "evolucao", "equipamento"]:
+		var d := Dados.item(str(c.id))
+		fase_stat.itens.append({"tipo": str(c.tipo), "id": str(c.id), "nome": str(c.get("nome", d.get("nome", c.id))),
+			"icone": str(c.get("icone", d.get("icone", c.id))), "nivel": int(c.get("nivel", 0))})
 	match str(c.tipo):
 		"arma":
 			if armas.tem(c.id):

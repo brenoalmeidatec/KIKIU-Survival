@@ -119,7 +119,7 @@ func _eventos() -> void:
 		enxame_final = bool(Dados.json("inimigos").get(chefe, {}).get("final", false))
 		arena.inimigos.criar(chefe, _ponto_fora(), nivel())
 		arena.anunciar_todos(str(Dados.json("inimigos").get(chefe, {}).get("nome", chefe)).to_upper() + "!", Color(0.4, 0.6, 1))
-		arena.chefe_final_chegou(enxame_final)
+		arena.chefe_final_chegou(enxame_final, chefe)
 		Som.tocar("tremor")
 		arena.tremer(10)
 

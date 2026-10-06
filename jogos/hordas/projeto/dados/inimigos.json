@@ -90,6 +90,7 @@
  },
  "ransomware": {
   "nome": "Ransomware",
+  "subtitulo": "Sequestrador de arquivos",
   "sprite": "inimigo_ransomware",
   "vida": 600,
   "dano": 16,
@@ -111,6 +112,7 @@
  },
  "trojan_gigante": {
   "nome": "Trojan Gigante",
+  "subtitulo": "O presente de grego",
   "sprite": "inimigo_trojan_gigante",
   "vida": 450,
   "dano": 20,
@@ -126,6 +128,7 @@
  },
  "tela_azul": {
   "nome": "Tela Azul da Morte",
+  "subtitulo": "O fim de todo sistema",
   "sprite": "inimigo_tela_azul",
   "vida": 4000,
   "dano": 25,
