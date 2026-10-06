@@ -7,6 +7,9 @@ const ESCALA := 2.0
 const BLOCO := 256.0          # tamanho da textura do chão na tela (128 px x 2)
 const CEL_DECO := 150.0
 const Cenario := preload("res://scripts/hordas/cenario.gd")
+const Descobertas := preload("res://scripts/hordas/descobertas.gd")
+## cor do anel de cada tipo de santuário
+const COR_TIPO := {"tomada": Color(1.0, 0.85, 0.3), "dadiva": Color(0.4, 0.9, 1.0), "fragmento": Color(0.45, 0.55, 1.0), "maldito": Color(0.85, 0.35, 0.8)}
 
 var arena: Node
 var _fundo := TextureRect.new()
@@ -43,12 +46,12 @@ func _ready() -> void:
 
 
 func criar_santuarios() -> void:
-	var fase: Dictionary = arena.diretor.fases()[arena.diretor.fase_idx]
-	var n := int(fase.get("santuarios", 6))
-	var c: Vector2 = Vector2.ZERO if arena.jogador == null else arena.jogador.position
-	for i in n:
-		var a := TAU * i / float(n) + randf_range(-0.3, 0.3)
-		santuarios.append({"pos": c + Vector2.from_angle(a) * randf_range(350, 900), "carga": 0.0, "usado": false})
+	var di = arena.diretor
+	var fase: Dictionary = di.fases()[di.fase_idx]
+	# posições e tipos vêm da semente da corrida (descobertas.gd): no online os dois lados veem os mesmos santuários.
+	# Online a âncora é a origem do mapa (cada jogador está num lugar); solo, onde o jogador está.
+	var c: Vector2 = Vector2.ZERO if arena.jogador == null or arena.eh_online else arena.jogador.position
+	santuarios.append_array(Descobertas.planejar_fase(di.fase_idx, di.fases().size(), int(fase.get("santuarios", 6)), c))
 	var cor: Array = fase.get("cor", [1, 1, 1])
 	_fundo.modulate = Color(cor[0], cor[1], cor[2])
 
@@ -77,15 +80,20 @@ func atualizar(dt: float) -> void:
 	_t += dt
 	var cam: Vector2 = arena.camera.position
 	_fundo.position = Vector2(floorf((cam.x - _desloc.x) / _bloco) * _bloco, floorf((cam.y - _desloc.y) / _bloco) * _bloco)
-	var tempo := float(Dados.json("fase").get("santuario_tempo", 4.0))
+	var cfg: Dictionary = Descobertas.cfg().get("santuarios", {})
+	var raio := float(cfg.get("raio_interacao", 48.0))
+	var tempo_tomada := float(Dados.json("fase").get("santuario_tempo", cfg.get("tempo_carga_tomada", 4.0)))
+	var tempo_outros := float(cfg.get("tempo_carga", 5.0))
+	var jp: Vector2 = arena.jogador.position
 	for s in santuarios:
 		if s.usado:
 			continue
-		if s.pos.distance_to(arena.jogador.position) < 48:
+		var tempo := tempo_tomada if s.tipo == "tomada" else tempo_outros
+		if s.pos.distance_to(jp) < raio:
 			s.carga += dt / tempo
 			if s.carga >= 1.0:
-				s.usado = true
-				arena.ganhar_carta_tomada()
+				s.carga = 1.0
+				arena.descobertas.ativar(s)   # tipo decide: carta, dádiva, fragmento (com variação) ou maldição
 		else:
 			s.carga = maxf(0.0, s.carga - dt / tempo * 0.5)
 	_luzes.queue_redraw()
@@ -167,19 +175,42 @@ func _draw() -> void:
 		_draw_enfeites_antigos()
 	var tex := Dados.tex("tomada")
 	for s in santuarios:
-		var cor := Color(0.4, 0.6, 0.7, 0.5) if s.usado else Color(1.0, 0.85, 0.3, 0.8)
+		var base: Color = COR_TIPO.get(s.tipo, Color.WHITE)
+		var cor := Color(0.4, 0.6, 0.7, 0.5) if s.usado else Color(base, 0.8)
 		draw_set_transform(s.pos, 0, Vector2(1, 0.55))
 		draw_circle(Vector2.ZERO, 48, Color(cor, 0.12))
 		draw_arc(Vector2.ZERO, 48, 0, TAU, 40, cor, 2)
 		if s.carga > 0 and not s.usado:
 			draw_arc(Vector2.ZERO, 44, -PI / 2, -PI / 2 + TAU * s.carga, 40, Color(0.5, 1.0, 0.5), 4)
+		if s.get("prog", 0.0) > 0.0:   # desafio em andamento (santuário do combate): anel que enche
+			draw_arc(Vector2.ZERO, 44, -PI / 2, -PI / 2 + TAU * s.prog, 40, Color(1.0, 0.6, 0.25), 4)
 		draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 		var sz := tex.get_size() * ESCALA
 		var flut := 0.0 if s.usado else sin(_t * 3.0) * 2.0
 		var alt := 2.0 - flut   # flutuando: a sombra fica no chão e encolhe quando sobe
 		Visual.contato(self, s.pos, sz.x * 0.8, alt)
 		Visual.sombra(self, tex, Rect2(-sz.x / 2, -sz.y, sz.x, sz.y), Rect2(Vector2.ZERO, tex.get_size()), s.pos, alt)
-		draw_texture_rect(tex, Rect2(s.pos - Vector2(sz.x / 2, sz.y) + Vector2(0, flut), sz), false, Color(0.6, 0.6, 0.6) if s.usado else Color.WHITE)
+		var tinta := Color.WHITE if s.tipo == "tomada" else Color.WHITE.lerp(base, 0.55)
+		draw_texture_rect(tex, Rect2(s.pos - Vector2(sz.x / 2, sz.y) + Vector2(0, flut), sz), false, Color(0.6, 0.6, 0.6) if s.usado else tinta)
+		if s.usado:
+			continue
+		if s.tipo != "tomada":   # energia girando em volta e, no do dragão, o fragmento flutuando em cima
+			for k in 4:
+				var ang := _t * 1.6 + k * TAU / 4.0
+				draw_circle(s.pos + Vector2(cos(ang) * 30.0, sin(ang) * 16.0 - sz.y * 0.45), 1.8, Color(base, 0.9))
+		if s.tipo == "fragmento":
+			var c: Vector2 = s.pos + Vector2(0, -sz.y - 14.0 + flut)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(0, -8), c + Vector2(6, 0), c + Vector2(0, 8), c + Vector2(-6, 0)]), Color(0.55, 0.8, 1.0))
+		if s.pos.distance_to(arena.jogador.position) < 150.0:   # dica de interação
+			var nome := str(Descobertas.cfg().get("santuarios", {}).get("variacoes", {}).get(str(s.variacao), {}).get("nome", ""))
+			if s.tipo == "dadiva":
+				nome = "Santuário de Dádivas"
+			elif s.tipo == "maldito":
+				nome = "Santuário Amaldiçoado"
+			elif s.tipo == "tomada":
+				nome = "Tomada"
+			draw_string(Dados.fonte, s.pos + Vector2(-130, 22), nome, HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(base, 1.0))
+			draw_string(Dados.fonte, s.pos + Vector2(-130, 33), "fique perto", HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(0.85, 0.85, 0.9, 0.8))
 
 
 ## Enfeites do chão antigo (sem cenário configurado).

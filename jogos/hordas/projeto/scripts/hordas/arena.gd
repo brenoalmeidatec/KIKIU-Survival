@@ -18,6 +18,8 @@ const Construcao := preload("res://scripts/hordas/construcao.gd")
 const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Online := preload("res://scripts/hordas/online.gd")
 const Habilidades := preload("res://scripts/hordas/habilidades.gd")
+const Descobertas := preload("res://scripts/hordas/descobertas.gd")
+const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
 const Entradas := preload("res://scripts/hordas/entradas.gd")
 
@@ -32,6 +34,8 @@ var jogador: Node2D
 var inimigos: Node2D
 var armas: Node2D
 var habilidades: Node2D        # transformação (dragão do Hazaki), habilidades.gd
+var descobertas: Node          # santuários, fragmentos, dádivas e eventos (#21), descobertas.gd
+var semente := 0               # semente da corrida (0 = sorteia; no online vem do anfitrião, igual pra todos)
 var coleta: Node2D
 var efeitos: Node2D
 var chao: Node2D
@@ -69,6 +73,9 @@ var perfil := [0, 0, 0, 0]   # microssegundos: jogador+diretor, inimigos, armas,
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
+	if semente == 0:
+		semente = Sorte.nova_semente()
+	Sorte.iniciar(semente)   # tudo que afeta o mundo compartilhado sai das streams dessa semente (sorte.gd)
 	heroi = Dados.json("herois").get(heroi_id, {})
 	chao = Chao.new()
 	chao.arena = self
@@ -91,6 +98,9 @@ func _ready() -> void:
 	armas.statf = stat
 	habilidades = Habilidades.new()
 	add_child(habilidades)
+	descobertas = Descobertas.new()
+	add_child(descobertas)
+	descobertas.iniciar(self)
 	habilidades.configurar(self)
 	efeitos = Efeitos.new()
 	add_child(efeitos)
@@ -159,7 +169,7 @@ func stat(k: String) -> float:
 
 func _recalcular() -> void:
 	var antes := stat("vida_max")
-	_stats = Construcao.stats(heroi, passivos, equipamentos)
+	_stats = Construcao.stats(heroi, passivos, equipamentos, descobertas.bonus() if descobertas else {})
 	if jogador and stat("vida_max") > antes:
 		jogador.curar(stat("vida_max") - antes)
 
@@ -189,6 +199,7 @@ func _process(dt: float) -> void:
 	var t2 := Time.get_ticks_usec()
 	if not parado:
 		habilidades.atualizar(dt)
+		descobertas.atualizar(dt)
 		armas.atualizar(dt)
 	if online:
 		online.atualizar(dt)
@@ -267,12 +278,15 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 		cor = Color(0.9, 0.3, 0.3)
 	efeitos.explodir(pos, cor, 14 if chefe else 5, 160.0 if chefe else 80.0)
 	var drops: Dictionary = Dados.json("fase").get("drops", {})
-	if d.get("bau", false) or (elite and randf() < 0.25):
+	var sd := Sorte.fluxo("drop")   # drops saem de uma stream: com a mesma semente e os mesmos abates, caem iguais
+	if d.get("bau", false) or (elite and sd.randf() < 0.25):
 		coleta.soltar(pos, "bau")
-	elif randf() < float(drops.get("marmita", 0.004)):
+	elif sd.randf() < float(drops.get("marmita", 0.004)):
 		coleta.soltar(pos, "marmita")
-	elif randf() < float(drops.get("wifi", 0.0015)):
+	elif sd.randf() < float(drops.get("wifi", 0.0015)):
 		coleta.soltar(pos, "wifi")
+	if elite:
+		descobertas.elite_morreu(pos)   # fragmento da transformação, com pity
 	if chefe:
 		tremer(8)
 		Som.tocar("soco", 0.1, 0.7)
@@ -478,6 +492,8 @@ func aplicar(c: Dictionary) -> void:
 			equipamentos[str(Dados.item(c.id).get("slot", c.id))] = c.id
 			_recalcular()
 			atualizar_visual()
+		"dadiva":
+			descobertas.aplicar_dadiva(c)
 
 
 ## Personagem em camadas (herois.json "camadas": true): o que ele veste e segura aparece nele.
@@ -496,7 +512,7 @@ func gastar_resortear() -> Array:
 
 
 ## Sorteia 3 cartas (às vezes 4, com sorte) entre: subir arma/passivo que já tem, ou pegar novos.
-func sortear_cartas() -> Array:
+func sortear_cartas(rng: RandomNumberGenerator = null) -> Array:   # com rng (baú) o sorteio sai da stream dele; sem, é pessoal
 	var cand := []   # [peso, carta]
 	var armas_d: Dictionary = Dados.json("armas")
 	var pas_d: Dictionary = Dados.json("passivos")
@@ -525,14 +541,14 @@ func sortear_cartas() -> Array:
 			if Equipamento.permitido(id, heroi_id, equipamentos):
 				cand.append([float(eq_d.get("_config", {}).get("peso_carta", 5.0)), _carta("equipamento", id, 1)])
 	var n := 3
-	if randf() < 0.1 + stat("sorte") * 0.35:
+	if _rf(rng) < 0.1 + stat("sorte") * 0.35:
 		n = 4
 	var res := []
 	while res.size() < n and not cand.is_empty():
 		var total := 0.0
 		for c in cand:
 			total += c[0]
-		var r := randf() * total
+		var r := _rf(rng) * total
 		for i in cand.size():
 			r -= cand[i][0]
 			if r <= 0:
@@ -542,6 +558,10 @@ func sortear_cartas() -> Array:
 	if res.is_empty():
 		res.append({"tipo": "cura", "id": "vida", "nome": "Café da tarde", "desc": "Recupera 40 de vida.", "icone": "vida", "nivel": 0})
 	return res
+
+
+func _rf(rng: RandomNumberGenerator) -> float:
+	return rng.randf() if rng else randf()
 
 
 func _tem_evolucao_de(base: String) -> bool:
@@ -593,17 +613,18 @@ func abrir_bau() -> void:
 				"desc": "EVOLUIU! " + str(d.get("descricao", "")), "icone": str(d.get("icone", e.vira)), "nivel": 0})
 			break
 	if premios.is_empty():
+		var rb := Sorte.fluxo("bau")
 		var n := 1
-		var r := randf()
+		var r := rb.randf()
 		if r < 0.1 + stat("sorte") * 0.1:
 			n = 5
 		elif r < 0.35 + stat("sorte") * 0.2:
 			n = 3
 		for i in n:
 			# baú prefere subir o que você já tem
-			var opcoes := sortear_cartas()
+			var opcoes := sortear_cartas(rb)
 			var ja_tem := opcoes.filter(func(c): return c.nivel > 1)
-			var c: Dictionary = (ja_tem if not ja_tem.is_empty() else opcoes).pick_random()
+			var c: Dictionary = Sorte.escolher(rb, ja_tem if not ja_tem.is_empty() else opcoes)
 			premios.append(c)
 			aplicar(c)
 	else:

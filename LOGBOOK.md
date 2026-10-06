@@ -219,6 +219,22 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 **Pendente / fraco:** é um boneco de caixas (sem a textura e o desgaste da folha), as pernas não têm joelho e a mochila de perfil vira um volume escuro. Rival e online usam a folha nova, mas só andam (sem os estados novos). Lembrete: depois de trocar PNG, rode `--import` antes de jogar sem o editor, senão o Godot usa a imagem velha do cache.
 **Próximo:** #32 itens 7 e 6 (tela de resultado da fase e entradas).
 
+## 2026-10-05 · Claude do Alisson (PC) · #21: descobertas do mundo (santuários, fragmentos, dádivas, eventos, sorte controlada)
+**Feito**
+- **Sorte controlada** (`scripts/hordas/sorte.gd`): streams `RandomNumberGenerator` por sistema com `seed = hash(semente + nome)`; inteiro/real/ponderado/embaralhar (Fisher-Yates semeado), shuffle bag e pity (`base + passo x falhas`, garantido na tentativa `limite`). `Sorte.criar(nome, indice)` dá stream independente de ordem (os santuários da fase N não dependem do que foi sorteado antes). A arena chama `Sorte.iniciar(semente)`; solo sorteia (ou `--semente=N` repete a partida) e, no online, `Rede.comecar` sorteia e manda a semente junto das opções. Santuários, baú (`abrir_bau` + `sortear_cartas(rng)`), drops e eventos saem de streams; o que é só visual/local continua `randf()`.
+- **Santuários** (`scripts/hordas/descobertas.gd`, `dados/descobertas.json`): `chao.santuarios` agora tem `tipo` (tomada, dadiva, fragmento, maldito) e `variacao`. Santuário do Dragão = 0 a 3 por corrida (pesos no JSON), em fases diferentes, com distância mínima e nunca colado na âncora; variações simples, combate (sobreviver perto dele) e sacrifício (paga vida). Setinha fraca na borda da tela aponta os especiais ainda não usados.
+- **Fragmentos:** o dragão agora desbloqueia por `fragmentos: 3` (`habilidades.json`, `desbloqueio: {tipo: fragmentos}`; o nível 8 acabou). Fragmentos caem de santuário, de elite (pity 2% + 3% por elite, garantido na 20ª) e de horda de elite de evento (pity). HUD mostra 3 losangos "FRAGMENTOS n/3" até a forma despertar.
+- **Dádivas** (`dados/dadivas.json`, 10 dádivas, 4 raridades que multiplicam o efeito): santuário de dádiva oferece 3 (a raridade é sorteada depois da dádiva). Soma nos atributos via `Construcao.stats(..., extra)`; ícones na linha 4 do HUD com moldura da raridade.
+- **Eventos aleatórios** (pool em dados: chuva de baús, horda de elite, santuário amaldiçoado, santuário errante) com peso, `fase_min`, cooldown e peso menor para quem saiu há pouco (seção 29).
+- **Teste novo** `testes/descobertas.tscn` (`DESCOB falhas=0`): mesma semente = mesmos santuários, eventos, dádivas e drops; semente diferente = diferente; pity nunca passa do limite; 0..3 santuários do dragão; dragão desbloqueia com 3 fragmentos e NÃO por nível. Todos os outros testes seguem em 0 falhas; robô sem SCRIPT ERROR; 500 vírus sem custo novo (o único gancho por abate é `Sorte.fluxo("drop")`).
+- **Online com 2 instâncias** (`--online=host`/`join`, 40 s, robô): mesma semente e mesmo hash dos santuários nos dois lados (a linha `sorte:` do log de `--sair`).
+
+**Pendente / fraco**
+- No online a âncora dos santuários é a origem do mapa (cada jogador está num lugar). Eventos usam a mesma stream, mas nascem em volta de cada jogador e a horda de elite só o anfitrião cria; o dragão ainda não vai pela rede (`habilidades.configurar` sai cedo), então fragmento só vale no solo.
+- O robô quase nunca usa os santuários de dádiva (não foi ensinado). Santuário de prova (mini-chefe), de "achar outro elemento antes" e dádivas "duo" (`requer`) ficaram de fora. Números (pesos, pity, vida do sacrifício) são palpite, falta jogar pra calibrar.
+- Sem arte nova: santuário é a tomada tingida com anéis/partículas e losango desenhados à mão.
+
+**Próximo:** calibrar pesos jogando, depois mapa de nós / tela de resultado (#32 itens 7 e 6).
 ## 2026-10-05 · Claude do Alisson (PC) · #32 itens 7 e 6: tela de resultados da fase e entradas
 **Feito**
 - **Item 7:** `arena.fase_stat` guarda os números DA FASE (tempo, abates, chefes, XP ganho, nível inicial/final, dano por arma, itens pegos) e zera em `proxima_fase()`. No fim da fase, depois do XP e das cartas e antes do baú, `resultado.gd` para o jogo e conta linha por linha (tempo real, "plim" por linha, top 3 armas com ícone, ícones dos itens). Qualquer tecla pula a contagem; Enter/E/Z segue. Com `--bot` fecha em ~1 s; no online fecha sozinha em ~8 s e cada um vê a sua (o fluxo "pronto"/60 s do anfitrião não mudou, e se o anfitrião mandar seguir antes, a tela fecha).
