@@ -33,6 +33,9 @@ const CONTROLE := {
 var _tela := Control.new()
 var _camada := CanvasLayer.new()
 var _estado := "titulo"      # titulo, herois, partida, fim
+var _estado_antes := "titulo"  # pra perceber a troca de tela e tocar a transição
+## telas que são a mesma tela pro jogador (só muda o texto): trocar entre elas não tem transição
+const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"]]
 var _sel := 0
 var _arena: Node2D
 var _resumo := {}
@@ -121,6 +124,10 @@ func _herois() -> Array:
 func _process(dt: float) -> void:
 	_t += dt
 	_tela.queue_redraw()
+	if _estado != _estado_antes:
+		if not ([_estado_antes, _estado] in MESMA_TELA or [_estado, _estado_antes] in MESMA_TELA):
+			Transicao.revelar()
+		_estado_antes = _estado
 	if Input.is_action_just_pressed("tela_cheia"):
 		# vira a opção "Tela cheia" (o Config troca a janela e lembra pra próxima vez)
 		var modo := DisplayServer.window_get_mode()

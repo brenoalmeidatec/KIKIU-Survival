@@ -486,6 +486,7 @@ func abrir_mapa() -> void:
 	if acabou or not entre_fases or mapa_acessiveis().is_empty():
 		return
 	tela_mapa.abrir()
+	Transicao.revelar()   # sai da fase pro mapa
 
 
 func mapa_acessiveis() -> Array:
@@ -510,6 +511,7 @@ func escolher_no(faixa: int) -> void:
 	_no_seq += 1
 	var seq := _no_seq
 	tela_mapa.fechar()
+	Transicao.revelar()   # do mapa pra fase nova
 	if resultado.aberto():
 		resultado.fechar()
 	loja.fechar()   # o anfitrião fechou a votação com alguém ainda na loja
