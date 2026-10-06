@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎮 JOGÃO GAMER
+# 🎮 KIKIU-Survival
 
 **Uma engine em Godot para contar histórias em pixel art, e os jogos feitos com ela.**
 
@@ -134,7 +134,7 @@ Executáveis e zips **não** ficam no Git (são grandes). Pra gerar:
 ## 📂 Estrutura do repositório
 
 ```text
-📦 Jogao-gamer
+📦 KIKIU-Survival
 ├── 🎮 jogos/
 │   ├── hordas/                 K.I.K.I.U
 │   │   ├── projeto/            projeto Godot (scripts/, dados/*.json, assets/)

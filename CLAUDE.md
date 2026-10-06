@@ -8,7 +8,7 @@ As regras gerais estão no `README.md` (seção "Regras para manter o repositór
 1. `git fetch --all --prune` e `git switch main && git pull --ff-only`.
 2. Leia no fim do `LOGBOOK.md` as entradas novas desde a última com a sua assinatura e procure linhas
    **"Para o Claude do Alisson:"** / **"Para o Claude do Breno:"**.
-3. `gh pr list` e `gh issue list` (repo `brenoalmeidatec/Jogao-gamer`): veja PRs abertos, issues novas e comentários recentes.
+3. `gh pr list` e `gh issue list` (repo `brenoalmeidatec/KIKIU-Survival`, antigo `Jogao-gamer`: o GitHub redireciona o nome velho): veja PRs abertos, issues novas e comentários recentes.
 4. Antes de pegar uma tarefa, **reserve**: comente na issue ("pegando o item X, máquina PC") ou abra logo um PR em rascunho.
    Se a outra máquina já reservou, escolha outra coisa ou continue na branch dela (`git switch <branch>` e `git pull`).
 
