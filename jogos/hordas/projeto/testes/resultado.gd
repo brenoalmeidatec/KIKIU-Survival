@@ -75,7 +75,12 @@ func _ready() -> void:
 		await esperar(0.25)
 		t += 0.25
 	ok(a.mapa_pos.x == x0 + 1, "a corrida segue pelo mapa sozinha: resultado, baú e o robô escolhe o próximo nó (%.1f s)" % t)
-	ok(a.fase_stat.abates == 0, "estatísticas zeradas na fase nova")
+	# o nó pode ser sem combate (evento/descanso/loja abrem outra tela antes): espera a fase nova começar de fato
+	while t < 30.0 and a.entre_fases:
+		await esperar(0.25)
+		t += 0.25
+	ok(not a.entre_fases, "uma fase nova começou depois do mapa (%.1f s)" % t)
+	ok(a.fase_stat.abates <= 3, "estatísticas zeradas na fase nova (%d abates logo no começo)" % a.fase_stat.abates)
 	a.queue_free()
 	await esperar(0.1)
 

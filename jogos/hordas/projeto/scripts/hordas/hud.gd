@@ -5,6 +5,7 @@ extends CanvasLayer
 const W := 640.0
 const H := 360.0
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
+const Interface := preload("res://scripts/hordas/interface.gd")
 const OPS_PAUSA := ["Continuar", "Opções", "Desistir da partida"]
 
 var arena: Node
@@ -16,6 +17,7 @@ var _op_pausa := 0
 var _t := 0.0
 var _quadro_pausa := -1
 var _opcoes: Node = null     # tela de Opções aberta pela pausa
+var _mouse_ult := Vector2(-1, -1)
 
 
 func _ready() -> void:
@@ -51,8 +53,9 @@ func pausar() -> void:
 	_pausado = true
 	_op_pausa = 0
 	_quadro_pausa = Engine.get_process_frames()
+	_mouse_ult = _tela.get_local_mouse_position()
 	get_tree().paused = not arena.eh_online   # no online o jogo dos outros não para
-	Som.tocar("abrir")
+	Som.ui("abrir")
 	_tela.queue_redraw()
 
 
@@ -64,37 +67,77 @@ func _notification(what: int) -> void:
 		pausar()
 
 
+func _pausa_rects() -> Array:
+	var r := []
+	for i in OPS_PAUSA.size():
+		r.append(Rect2(W / 2 - 100, 170 + i * 18 - 11, 200, 15))
+	return r
+
+
+func _retomar() -> void:
+	_pausado = false
+	get_tree().paused = false
+	Som.ui("voltar")
+	_tela.queue_redraw()
+
+
+func _pausa_confirmar() -> void:
+	match OPS_PAUSA[_op_pausa]:
+		"Continuar":
+			_retomar()
+		"Opções":
+			Som.ui("confirmar")
+			_opcoes = TelaOpcoes.new()
+			add_child(_opcoes)
+			_opcoes.fechou.connect(func():
+				_opcoes = null
+				_quadro_pausa = Engine.get_process_frames())   # o Esc que fechou as Opções não fecha a pausa junto
+		"Desistir da partida":
+			_pausado = false
+			get_tree().paused = false
+			arena.desistir()
+
+
 func _process(_dt: float) -> void:
 	if not _pausado or _opcoes or Engine.get_process_frames() == _quadro_pausa:
 		return
 	var n := OPS_PAUSA.size()
+	var mp := _tela.get_local_mouse_position()
+	if mp != _mouse_ult:   # passar o mouse por cima escolhe (só se ele se mexeu)
+		_mouse_ult = mp
+		var q := Interface.quem(_pausa_rects(), mp)
+		if q >= 0 and q != _op_pausa:
+			_op_pausa = q
+			Som.ui("cursor")
+			_tela.queue_redraw()
 	if Input.is_action_just_pressed("cima"):
 		_op_pausa = (_op_pausa - 1 + n) % n
-		Som.tocar("cursor")
+		Som.ui("cursor")
 		_tela.queue_redraw()
 	elif Input.is_action_just_pressed("baixo"):
 		_op_pausa = (_op_pausa + 1) % n
-		Som.tocar("cursor")
+		Som.ui("cursor")
 		_tela.queue_redraw()
-	elif Input.is_action_just_pressed("voltar") or (Input.is_action_just_pressed("confirmar") and OPS_PAUSA[_op_pausa] == "Continuar"):
-		_pausado = false
-		get_tree().paused = false
-		Som.tocar("fechar")
-		_tela.queue_redraw()
-	elif Input.is_action_just_pressed("confirmar") and OPS_PAUSA[_op_pausa] == "Opções":
-		Som.tocar("confirmar")
-		_opcoes = TelaOpcoes.new()
-		add_child(_opcoes)
-		_opcoes.fechou.connect(func():
-			_opcoes = null
-			_quadro_pausa = Engine.get_process_frames())   # o Esc que fechou as Opções não fecha a pausa junto
-	elif Input.is_action_just_pressed("confirmar") and OPS_PAUSA[_op_pausa] == "Desistir da partida":
-		_pausado = false
-		get_tree().paused = false
-		arena.desistir()
+	elif Input.is_action_just_pressed("voltar"):
+		_retomar()
+	elif Input.is_action_just_pressed("confirmar"):
+		_pausa_confirmar()
 
 
-func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, alinhar := HORIZONTAL_ALIGNMENT_LEFT, largura := -1.0) -> void:
+func _input(e: InputEvent) -> void:
+	if not _pausado or _opcoes or Engine.get_process_frames() == _quadro_pausa or not Interface.clique(e):
+		return
+	var q := Interface.quem(_pausa_rects(), _tela.get_local_mouse_position())
+	if q >= 0:
+		_op_pausa = q
+		get_viewport().set_input_as_handled()
+		_pausa_confirmar()
+
+
+## esc = true: o texto obedece à opção "Texto do HUD" (Grande = 1,5x). Só os textos com espaço sobrando usam (fase, abates, avisos).
+func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, alinhar := HORIZONTAL_ALIGNMENT_LEFT, largura := -1.0, esc := false) -> void:
+	if esc:
+		tam = Interface.tam_hud(tam)
 	var f: Font = Dados.fonte
 	_tela.draw_string(f, p + Vector2(1, 1), s, alinhar, largura, tam, Color(0, 0, 0, cor.a * 0.8))
 	_tela.draw_string(f, p, s, alinhar, largura, tam, cor)
@@ -117,14 +160,17 @@ func _desenhar() -> void:
 		var df = arena.diretor
 		var fa: Dictionary = df.fases()[df.fase_idx]
 		var resta := maxf(0.0, float(fa.get("duracao", 0)) - df.t_fase)
-		var cor_t := Color(1, 0.4, 0.4) if df.enxame_final else Color.WHITE
-		_txt(Vector2(0, 21), "FASE %d/%d  %s" % [df.fase_idx + 1, df.fases().size(), str(fa.get("nome", "")).to_upper()], 8, Color(0.7, 0.9, 1), HORIZONTAL_ALIGNMENT_CENTER, W)
+		var cor_t: Color = Interface.cor("alerta") if df.enxame_final else Color.WHITE
+		_txt(Vector2(0, 21), "FASE %d/%d  %s" % [df.fase_idx + 1, df.fases().size(), str(fa.get("nome", "")).to_upper()], 8, Color(0.7, 0.9, 1), HORIZONTAL_ALIGNMENT_CENTER, W, true)
 		if df.final_chamado:
-			_txt(Vector2(0, 42), "CHEFE!", 16, Color(1, 0.4, 0.4), HORIZONTAL_ALIGNMENT_CENTER, W)
+			_txt(Vector2(0, 42), "CHEFE!", 16, Interface.cor("alerta"), HORIZONTAL_ALIGNMENT_CENTER, W)
 		else:
 			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
-		_txt(Vector2(W - 120, 24), "Abates %d" % arena.abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, 112)
-		_txt(Vector2(W - 120, 36), "Ouro %d" % arena.ouro, 8, Color(1, 0.85, 0.35), HORIZONTAL_ALIGNMENT_RIGHT, 112)
+		var abates := "Abates %d" % arena.abates
+		_txt(Vector2(0, 24), abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, W - 8, true)
+		# ouro (mapa, #32) na mesma linha, à esquerda dos abates: embaixo ficam os fragmentos/energia do dragão
+		var larg_ab: float = Dados.fonte.get_string_size(abates, HORIZONTAL_ALIGNMENT_LEFT, -1, Interface.tam_hud(8)).x
+		_txt(Vector2(0, 24), "Ouro %d" % arena.ouro, 8, Color(1, 0.85, 0.35), HORIZONTAL_ALIGNMENT_RIGHT, W - 8 - larg_ab - 12, true)
 		_energia_forma()
 		_dicas_santuario()
 	_icones_build()
@@ -135,25 +181,25 @@ func _desenhar() -> void:
 			var c = chefes[0]
 			var fr: float = c.hp / c.hpmax
 			_tela.draw_rect(Rect2(170, H - 22, 300, 10), Color(0.05, 0.02, 0.05, 0.9))
-			_tela.draw_rect(Rect2(171, H - 21, 298 * fr, 8), Color(0.85, 0.15, 0.25))
+			_tela.draw_rect(Rect2(171, H - 21, 298 * fr, 8), Interface.cor("vida_chefe"))
 			_txt(Vector2(0, H - 26), str(c.d.get("nome", "")), 8, Color(1, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+			# seta na borda apontando o chefe que está fora da tela (Death Must Die / 20MTD): vermelha, com a distância em metros (px/10)
+			for k in mini(chefes.size(), 2):
+				_seta_chefe(chefes[k])
 		# seta pra tomada
 		var s = arena.chao.mais_perto_livre(arena.jogador.position)
 		if s:
-			var rel: Vector2 = s.pos - arena.camera.position
-			if absf(rel.x) > W / 2 - 10 or absf(rel.y) > H / 2 - 10:
-				var dir := rel.normalized()
-				var borda := Vector2(W / 2, H / 2) + dir * minf((W / 2 - 24) / maxf(absf(dir.x), 0.01), (H / 2 - 24) / maxf(absf(dir.y), 0.01))
+			var b = _borda(s.pos, 24.0)
+			if b != null:
 				var pulso := 0.6 + 0.4 * sin(_t * 5)
-				var pts := PackedVector2Array([borda + dir * 9, borda + dir.orthogonal() * 6 - dir * 4, borda - dir.orthogonal() * 6 - dir * 4])
-				_tela.draw_colored_polygon(pts, Color(1, 0.85, 0.3, pulso))
-				_tela.draw_texture_rect(Dados.tex("tomada"), Rect2(borda - dir * 18 - Vector2(8, 9), Vector2(16, 18)), false, Color(1, 1, 1, pulso))
+				_seta(b, 9.0, 6.0, Color(1, 0.85, 0.3, pulso))
+				_tela.draw_texture_rect(Dados.tex("tomada"), Rect2(b.p - b.dir * 18 - Vector2(8, 9), Vector2(16, 18)), false, Color(1, 1, 1, pulso))
 	# mensagens
 	var y := H - 50.0
 	for i in range(_msgs.size() - 1, -1, -1):
 		var m: Dictionary = _msgs[i]
-		_txt(Vector2(0, y), m.txt, 8, Color(m.cor, clampf(m.t * 2, 0, 1)), HORIZONTAL_ALIGNMENT_CENTER, W)
-		y -= 12
+		_txt(Vector2(0, y), m.txt, 8, Color(m.cor, clampf(m.t * 2, 0, 1)), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+		y -= Interface.tam_hud(8) + 4
 	if _anuncio.t > 0:
 		var a := clampf(_anuncio.t, 0, 1)
 		var esc := 16
@@ -166,7 +212,36 @@ func _desenhar() -> void:
 		for i in OPS_PAUSA.size():
 			var sel := i == _op_pausa
 			_txt(Vector2(0, 170 + i * 18), ("> " if sel else "") + OPS_PAUSA[i], 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
-		_txt(Vector2(0, 250), "WASD/setas: andar   Espaço/Shift: dash   Esc: pausa", 8, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+		_txt(Vector2(0, 250), "WASD/setas: andar   Espaço/Shift: dash   Esc/Start: pausa   Mouse: clicar", 8, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+
+
+## Ponto na borda da tela na direção de `pos` (mundo), a `margem` px da beirada; null se `pos` está visível.
+## Devolve {p, dir, rel}. As setas da tomada, dos santuários, dos rivais do duelo e do chefe usam esta conta.
+func _borda(pos: Vector2, margem: float, folga := 10.0):
+	var rel: Vector2 = pos - arena.camera.position
+	if absf(rel.x) <= W / 2 - folga and absf(rel.y) <= H / 2 - folga:
+		return null
+	var dir := rel.normalized()
+	var p := Vector2(W / 2, H / 2) + dir * minf((W / 2 - margem) / maxf(absf(dir.x), 0.01), (H / 2 - margem) / maxf(absf(dir.y), 0.01))
+	return {"p": p, "dir": dir, "rel": rel}
+
+
+func _seta(b: Dictionary, ponta: float, lado: float, cor: Color) -> void:
+	var p: Vector2 = b.p
+	var d: Vector2 = b.dir
+	_tela.draw_colored_polygon(PackedVector2Array([p + d * ponta, p + d.orthogonal() * lado - d * (ponta * 0.45), p - d.orthogonal() * lado - d * (ponta * 0.45)]), cor)
+
+
+func _seta_chefe(c) -> void:
+	var b = _borda(c.pos, 22.0)
+	if b == null:
+		return
+	var cor: Color = Interface.cor("alerta")
+	var pulso := 0.7 + 0.3 * sin(_t * 8)
+	_seta(b, 12.0, 8.0, Color(cor, pulso))
+	_seta(b, 7.0, 4.0, Color(0.1, 0.0, 0.0, 0.8))   # miolo escuro: a seta vira um contorno e se destaca de qualquer fundo
+	var metros := int(b.rel.length() / 10.0)
+	_txt(b.p - b.dir * 24.0 - Vector2(20, -3), "%dm" % metros, 8, Color(cor, pulso), HORIZONTAL_ALIGNMENT_CENTER, 40)
 
 
 ## Energia da transformação (dragão do Hazaki), embaixo do "Abates": enchendo, pronta (pisca "Q") ou o tempo que
@@ -221,18 +296,14 @@ func _fragmentos(h) -> void:
 
 ## Indicação sutil (seção 21): uma setinha fraca na borda da tela apontando santuário especial que ainda não foi usado.
 func _dicas_santuario() -> void:
-	var cam: Vector2 = arena.camera.position
 	for s in arena.chao.santuarios:
 		if s.usado or s.tipo == "tomada":
 			continue
-		var rel: Vector2 = s.pos - cam
-		if absf(rel.x) < W / 2 - 14 and absf(rel.y) < H / 2 - 14:
+		var b = _borda(s.pos, 18.0, 14.0)
+		if b == null:
 			continue
-		var dir := rel.normalized()
-		var borda := Vector2(W / 2, H / 2) + dir * minf((W / 2 - 18) / maxf(absf(dir.x), 0.01), (H / 2 - 18) / maxf(absf(dir.y), 0.01))
 		var cor: Color = arena.chao.COR_TIPO.get(s.tipo, Color.WHITE)
-		var a := 0.3 + 0.2 * sin(_t * 3.0)
-		_tela.draw_colored_polygon(PackedVector2Array([borda + dir * 8, borda + dir.orthogonal() * 5 - dir * 3, borda - dir.orthogonal() * 5 - dir * 3]), Color(cor, a))
+		_seta(b, 8.0, 5.0, Color(cor, 0.3 + 0.2 * sin(_t * 3.0)))
 
 
 func _icones_build() -> void:
@@ -254,7 +325,7 @@ func _icones_build() -> void:
 	var defs: Dictionary = Dados.json("dadivas").get("lista", {})
 	for dd in arena.descobertas.dadivas:   # dádivas dos santuários: moldura na cor da raridade
 		var cor: Array = Dados.json("dadivas").get("_config", {}).get("raridades", {}).get(dd.raridade, {}).get("cor", [1, 1, 1])
-		_tela.draw_rect(Rect2(x - 1, 72, 18, 18), Color(cor[0], cor[1], cor[2], 0.9))
+		_tela.draw_rect(Rect2(x - 1, 72, 18, 18), Color(Interface.cor_raridade(str(dd.raridade), Color(cor[0], cor[1], cor[2])), 0.9))
 		var t := Dados.icone(str(defs.get(dd.id, {}).get("icone", "")))
 		if t:
 			_tela.draw_texture(t, Vector2(x, 73))
@@ -267,7 +338,7 @@ func _duelo_hud() -> void:
 	var hpmax: float = arena.stat("vida_max")
 	var fr := clampf(arena.jogador.hp / hpmax, 0.0, 1.0)
 	_tela.draw_rect(Rect2(0, 0, W, 11), Color(0.05, 0.05, 0.1, 0.85))
-	_tela.draw_rect(Rect2(1, 1, (W - 2) * fr, 9), Color(0.9, 0.25, 0.3))
+	_tela.draw_rect(Rect2(1, 1, (W - 2) * fr, 9), Interface.cor("vida_duelo"))
 	_tela.draw_rect(Rect2(1, 1, (W - 2) * fr, 1), Color(1, 0.6, 0.6))   # brilho em cima, igual à barra de XP
 	_txt(Vector2(6, 10), "%d / %d" % [ceili(arena.jogador.hp), int(hpmax)], 8, Color.WHITE)
 	var vivos: int = d.vivos().size()
@@ -288,16 +359,13 @@ func _duelo_hud() -> void:
 	for l in d.vivos():
 		if l.jogador:
 			continue
-		var rel: Vector2 = l.pos - arena.camera.position
 		var cor: Color = l.cor
-		if absf(rel.x) > W / 2 - 14 or absf(rel.y) > H / 2 - 14:
-			var dir := rel.normalized()
-			var borda := Vector2(W / 2, H / 2) + dir * minf((W / 2 - 26) / maxf(absf(dir.x), 0.01), (H / 2 - 26) / maxf(absf(dir.y), 0.01))
-			var pts := PackedVector2Array([borda + dir * 10, borda + dir.orthogonal() * 6 - dir * 4, borda - dir.orthogonal() * 6 - dir * 4])
-			_tela.draw_colored_polygon(pts, cor)
+		var b = _borda(l.pos, 26.0, 14.0)
+		if b != null:
+			_seta(b, 10.0, 6.0, cor)
 			var hf: float = d._hp_frac(l)
-			_tela.draw_rect(Rect2(borda - dir * 14 - Vector2(10, 2), Vector2(20, 4)), Color(0, 0, 0, 0.7))
-			_tela.draw_rect(Rect2(borda - dir * 14 - Vector2(9, 1), Vector2(18 * hf, 2)), cor)
+			_tela.draw_rect(Rect2(b.p - b.dir * 14 - Vector2(10, 2), Vector2(20, 4)), Color(0, 0, 0, 0.7))
+			_tela.draw_rect(Rect2(b.p - b.dir * 14 - Vector2(9, 1), Vector2(18 * hf, 2)), cor)
 	# lista de lutadores (canto direito)
 	var y := 24.0
 	for l in d.lutadores:

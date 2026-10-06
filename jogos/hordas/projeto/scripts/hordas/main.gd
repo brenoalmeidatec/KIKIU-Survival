@@ -15,17 +15,18 @@ const H := 360.0
 const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
+const Interface := preload("res://scripts/hordas/interface.gd")
 const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Opções", "Créditos", "Sair"]
 const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
 
 const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
 	"dash": [KEY_SPACE, KEY_SHIFT], "confirmar": [KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_Z], "voltar": [KEY_ESCAPE],
-	"resortear": [KEY_R], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F],
+	"resortear": [KEY_R], "pular": [KEY_X], "banir": [KEY_B], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F],
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP], "baixo": [JOY_BUTTON_DPAD_DOWN], "esquerda": [JOY_BUTTON_DPAD_LEFT], "direita": [JOY_BUTTON_DPAD_RIGHT],
-	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y], "transformar": [JOY_BUTTON_X],
+	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y], "pular": [JOY_BUTTON_LEFT_SHOULDER], "banir": [JOY_BUTTON_BACK], "transformar": [JOY_BUTTON_X],
 }
 
 var _tela := Control.new()
@@ -42,6 +43,7 @@ var _endereco := ""          # último endereço digitado (fica salvo)
 var _msg := ""               # aviso nas telas do online (erro, conectando...)
 var _comecou_teste := false
 var _caiu_teste := false
+var _mouse_ult := Vector2(-1, -1)
 
 
 func _ready() -> void:
@@ -122,34 +124,20 @@ func _process(dt: float) -> void:
 		var modo := DisplayServer.window_get_mode()
 		var cheia := modo == DisplayServer.WINDOW_MODE_FULLSCREEN or modo == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
 		Config.definir("tela_cheia", not cheia)
+	_mouse_menu()
 	match _estado:
 		"titulo":
 			if Input.is_action_just_pressed("cima"):
 				_sel = (_sel - 1 + OPCOES.size()) % OPCOES.size()
-				Som.tocar("cursor")
+				Som.ui("cursor")
 			elif Input.is_action_just_pressed("baixo"):
 				_sel = (_sel + 1) % OPCOES.size()
-				Som.tocar("cursor")
+				Som.ui("cursor")
 			elif Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("dash"):
-				Som.tocar("confirmar")
-				_msg = ""
-				match OPCOES[_sel]:
-					"Jogar sozinho":
-						_estado = "herois"
-						_sel = 0
-					"Criar sala":
-						_criar_sala()
-					"Entrar em sala":
-						_estado = "endereco"
-					"Opções":
-						_abrir_opcoes()
-					"Créditos":
-						_estado = "creditos"
-					"Sair":
-						get_tree().quit()
+				_titulo_confirmar()
 		"creditos":
 			if Input.is_action_just_pressed("voltar") or Input.is_action_just_pressed("confirmar"):
-				Som.tocar("confirmar")
+				Som.ui("confirmar")
 				_estado = "titulo"
 				_sel = OPCOES.find("Créditos")
 		"endereco":
@@ -164,12 +152,12 @@ func _process(dt: float) -> void:
 			var n := _herois().size()
 			if Input.is_action_just_pressed("esquerda"):
 				_sel = (_sel - 1 + n) % n
-				Som.tocar("cursor")
+				Som.ui("cursor")
 			elif Input.is_action_just_pressed("direita"):
 				_sel = (_sel + 1) % n
-				Som.tocar("cursor")
+				Som.ui("cursor")
 			elif Input.is_action_just_pressed("confirmar"):
-				Som.tocar("confirmar")
+				Som.ui("confirmar")
 				_comecar(_herois()[_sel])
 			elif Input.is_action_just_pressed("voltar"):
 				_estado = "titulo"
@@ -178,11 +166,69 @@ func _process(dt: float) -> void:
 			_teste()
 		"fim":
 			if _t > 1.0 and (Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("voltar")):
-				Som.tocar("confirmar")
-				Rede.sair()
-				_estado = "titulo"
-				_sel = 0
-				Som.musica("menu")
+				_fim_voltar()
+
+
+func _titulo_confirmar() -> void:
+	Som.ui("confirmar")
+	_msg = ""
+	match OPCOES[_sel]:
+		"Jogar sozinho":
+			_estado = "herois"
+			_sel = 0
+		"Criar sala":
+			_criar_sala()
+		"Entrar em sala":
+			_estado = "endereco"
+		"Opções":
+			_abrir_opcoes()
+		"Créditos":
+			_estado = "creditos"
+		"Sair":
+			get_tree().quit()
+
+
+func _fim_voltar() -> void:
+	Som.ui("confirmar")
+	Rede.sair()
+	_estado = "titulo"
+	_sel = 0
+	Som.musica("menu")
+
+
+## Retângulos clicáveis do título e da escolha de herói (o desenho usa as mesmas contas: mouse e tela nunca divergem).
+func _rects_titulo() -> Array:
+	var r := []
+	for i in OPCOES.size():
+		r.append(Rect2(W / 2 - 110, 190 + i * 18 - 11, 220, 15))
+	return r
+
+
+func _rects_herois() -> Array:
+	var r := []
+	var n := _herois().size()
+	var larg := 170.0
+	var x0 := (W - n * larg - (n - 1) * 12) / 2
+	for i in n:
+		r.append(Rect2(x0 + i * (larg + 12), 64, larg, 230))
+	return r
+
+
+## Mouse: passar por cima escolhe (só se ele se mexeu); clique esquerdo confirma, direito volta.
+func _mouse_menu() -> void:
+	var mp := _tela.get_local_mouse_position()
+	if mp == _mouse_ult:
+		return
+	_mouse_ult = mp
+	var q := -1
+	match _estado:
+		"titulo":
+			q = Interface.quem(_rects_titulo(), mp)
+		"herois":
+			q = Interface.quem(_rects_herois(), mp)
+	if q >= 0 and q != _sel:
+		_sel = q
+		Som.ui("cursor")
 
 
 ## Online: as opções de teste (fase, pular, build) vêm do anfitrião, iguais pra todos.
@@ -307,10 +353,10 @@ func _sala() -> void:
 			i = (i + passo + Rede.ELENCO.size()) % Rede.ELENCO.size()
 			if not Rede.ELENCO[i] in tomados:
 				Rede.escolher(Rede.ELENCO[i])
-				Som.tocar("cursor")
+				Som.ui("cursor")
 				break
 	elif Input.is_action_just_pressed("confirmar") and Rede.anfitriao():
-		Som.tocar("confirmar")
+		Som.ui("confirmar")
 		Rede.comecar()
 	elif Input.is_action_just_pressed("voltar"):
 		Rede.sair()
@@ -340,6 +386,9 @@ func _online_teste() -> void:
 
 ## Campo de texto do endereço: digita, apaga, Ctrl+V cola, Enter conecta, Esc volta.
 func _input(e: InputEvent) -> void:
+	if Interface.clique(e) or (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_RIGHT):
+		_clique_menu(e)
+		return
 	if _estado != "endereco" or not e is InputEventKey or not e.pressed:
 		return
 	var k: InputEventKey = e
@@ -349,7 +398,7 @@ func _input(e: InputEvent) -> void:
 	elif k.keycode == KEY_BACKSPACE:
 		_endereco = _endereco.left(-1)
 	elif k.keycode in [KEY_ENTER, KEY_KP_ENTER]:
-		Som.tocar("confirmar")
+		Som.ui("confirmar")
 		_entrar()
 	elif k.keycode == KEY_ESCAPE:
 		_estado = "titulo"
@@ -358,6 +407,34 @@ func _input(e: InputEvent) -> void:
 		var c := char(k.unicode)
 		if c.is_valid_identifier() or c.is_valid_int() or c in [".", ":", "-", "_"]:
 			_endereco += c
+
+
+func _clique_menu(e: InputEventMouseButton) -> void:
+	var esq: bool = e.button_index == MOUSE_BUTTON_LEFT
+	var mp := _tela.get_local_mouse_position()
+	match _estado:
+		"titulo":
+			var q := Interface.quem(_rects_titulo(), mp)
+			if esq and q >= 0:
+				_sel = q
+				_titulo_confirmar()
+		"herois":
+			var q := Interface.quem(_rects_herois(), mp)
+			if esq and q >= 0:
+				_sel = q
+				Som.ui("confirmar")
+				_comecar(_herois()[_sel])
+			elif not esq:
+				Som.ui("voltar")
+				_estado = "titulo"
+				_sel = 0
+		"creditos":
+			Som.ui("confirmar")
+			_estado = "titulo"
+			_sel = OPCOES.find("Créditos")
+		"fim":
+			if _t > 1.0:
+				_fim_voltar()
 
 
 func _terminou(res: Dictionary) -> void:
@@ -584,8 +661,8 @@ func _desenhar() -> void:
 					_txt(Vector2(60, ry), "%dº" % e.lugar, 8, cor, 40, HORIZONTAL_ALIGNMENT_LEFT)
 					_txt(Vector2(100, ry), "Você" if e.jogador else str(e.nome), 8, cor, 140, HORIZONTAL_ALIGNMENT_LEFT)
 					ry += 20
-				x_dano = 340.0
-				_txt(Vector2(x_dano, 156), "Dano por arma", 8, Color(0.7, 0.8, 1), 240, HORIZONTAL_ALIGNMENT_LEFT)
+				x_dano = 200.0
+				y = 156.0
 			else:
 				if r.get("vitoria", false):
 					_txt(Vector2(0, 60), "VOCÊ SOBREVIVEU!", 24, Color(0.5, 1, 0.5))
@@ -597,20 +674,46 @@ func _desenhar() -> void:
 				_txt(Vector2(0, 112), "Tempo %02d:%02d   Nível %d   Abates %d" % [int(tempo) / 60, int(tempo) % 60, r.get("nivel", 1), r.get("abates", 0)], 8)
 				if _novo_recorde:
 					_txt(Vector2(0, 128), "NOVO RECORDE!", 8, Color(1, 0.85, 0.3).lerp(Color.WHITE, 0.5 + 0.5 * sin(_t * 8)))
-				_txt(Vector2(0, 156), "Dano por arma", 8, Color(0.7, 0.8, 1))
-			for par in r.get("dano", []):
-				var d := Dados.item(str(par[0]))
-				var ic := Dados.icone(str(d.get("icone", "")))
-				if ic:
-					_tela.draw_texture(ic, Vector2(x_dano, y - 12))
-				_txt(Vector2(x_dano + 22, y), str(d.get("nome", par[0])), 8, Color.WHITE, 200, HORIZONTAL_ALIGNMENT_LEFT)
-				_txt(Vector2(x_dano + 140, y), str(int(par[1])), 8, Color(1, 0.9, 0.5), 100, HORIZONTAL_ALIGNMENT_RIGHT)
-				y += 20
-			_txt(Vector2(0, 330), "Enter: voltar ao título", 8, Color(0.6, 0.6, 0.7))
+				x_dano = 115.0
+				y = 150.0
+			_tabela_armas(x_dano, y, r.get("armas", []))
+			_txt(Vector2(0, 340), "Enter, clique ou A: voltar ao título", 8, Color(0.6, 0.6, 0.7))
+
+
+## Tabela de dano por arma do fim da corrida (estilo tela "Results" do Vampire Survivors): ícone, nome, nível, dano total,
+## DPS e tempo com a arma. O maior dano e o maior DPS ficam em amarelo. Até 6 linhas (as de mais dano); 410 px de largura.
+func _tabela_armas(x: float, y: float, linhas: Array) -> void:
+	var cab := Color(0.7, 0.8, 1)
+	_tela.draw_rect(Rect2(x - 8, y - 14, 426, 36 + 20.0 * maxi(1, mini(linhas.size(), 6))), Color(0.03, 0.03, 0.08, 0.78))   # placa: o fundo animado não atrapalha a leitura
+	_txt(Vector2(x, y), "Arma", 8, cab, 100, HORIZONTAL_ALIGNMENT_LEFT)
+	_txt(Vector2(x + 190, y), "Nv", 8, cab, 28, HORIZONTAL_ALIGNMENT_RIGHT)
+	_txt(Vector2(x + 222, y), "Dano", 8, cab, 66, HORIZONTAL_ALIGNMENT_RIGHT)
+	_txt(Vector2(x + 292, y), "DPS", 8, cab, 56, HORIZONTAL_ALIGNMENT_RIGHT)
+	_txt(Vector2(x + 352, y), "Tempo", 8, cab, 58, HORIZONTAL_ALIGNMENT_RIGHT)
+	_tela.draw_rect(Rect2(x, y + 4, 410, 1), Color(0.35, 0.4, 0.55))
+	y += 22.0
+	if linhas.is_empty():
+		_txt(Vector2(x, y), "Nenhuma arma causou dano.", 8, Color(0.6, 0.6, 0.7), 410, HORIZONTAL_ALIGNMENT_LEFT)
+	var ouro: Color = Interface.cor("destaque")
+	for i in mini(linhas.size(), 6):
+		var l: Dictionary = linhas[i]
+		var ic := Dados.icone(str(l.icone))
+		if ic:
+			_tela.draw_texture(ic, Vector2(x, y - 12))
+		_txt(Vector2(x + 20, y), str(l.nome).left(18), 8, Color.WHITE, 164, HORIZONTAL_ALIGNMENT_LEFT)
+		_txt(Vector2(x + 190, y), "EVO" if l.evo else str(l.nivel), 8, Color(0.8, 0.85, 0.95), 28, HORIZONTAL_ALIGNMENT_RIGHT)
+		_txt(Vector2(x + 222, y), Interface.texto_dano(l.dano), 8, ouro if l.top_dano else Color(0.9, 0.9, 0.95), 66, HORIZONTAL_ALIGNMENT_RIGHT)
+		_txt(Vector2(x + 292, y), Interface.texto_dano(l.dps), 8, ouro if l.top_dps else Color(0.9, 0.9, 0.95), 56, HORIZONTAL_ALIGNMENT_RIGHT)
+		_txt(Vector2(x + 352, y), Interface.texto_tempo(l.tempo), 8, Color(0.7, 0.75, 0.85), 58, HORIZONTAL_ALIGNMENT_RIGHT)
+		y += 20.0
 
 
 ## Teste: abre uma tela, tira um print e fecha (--print_tela=titulo|herois|cartas|bau|fim|hazaki --fotos=pasta).
 func _print_tela(qual: String) -> void:
+	if _args.has("grande"):
+		Config.temporario("texto_hud", "grande")
+	if _args.has("daltonico"):
+		Config.temporario("daltonico", true)
 	match qual:
 		"herois":
 			_estado = "herois"
@@ -678,6 +781,33 @@ func _print_tela(qual: String) -> void:
 			_arena.inimigos.criar("trojan_gigante", _arena.jogador.position + Vector2(260, -40), 1)
 			_arena.chefe_final_chegou(false, "trojan_gigante")
 			await get_tree().create_timer(float(_args.get("espera", 1.0)), true, false, true).timeout
+		"cartas4":   # 4 cartas de tipos diferentes: arma exclusiva nova, equipamento, arma em nível alto e passivo (--daltonico / --grande testam as opções)
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.armas.adicionar("pendrive")
+			_arena.passivos["overclock"] = 1
+			var kat: Dictionary = _arena._carta("arma", "katana", 1)
+			var mesa: Array = [kat, _arena._carta("equipamento", "cabeca_guerreiro", 1), _arena._carta("arma", "pendrive", 3), _arena._carta("passivo", "overclock", 2)]
+			_arena.cartas.escolher("Subiu pro nível 12!", mesa)
+			_arena.cartas._sel = 2
+		"dadivas4":   # dádivas (raridade) + evolução na mesma tela
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.cartas.escolher("Dádiva do santuário", _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva")))
+		"pausa":
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.hud.pausar()
+		"hud_chefe":   # chefe fora da tela (seta vermelha com a distância) e dano agrupado: --grande testa o texto do HUD
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.inimigos.criar("trojan_gigante", _arena.jogador.position + Vector2(420, -150), 1)
+			for i in 6:
+				_arena.efeitos.numero(_arena.jogador.position + Vector2(40, -30), 7.0 + i)
+			_arena.efeitos.numero(_arena.jogador.position + Vector2(-50, -20), 33.0, Color.WHITE, true)
+			_arena.efeitos.numero(_arena.jogador.position + Vector2(0, -50), 12.0, Color(1, 0.6, 0.55))
+			_arena.mensagem("Dádiva: Fúria (RARA)", Color(0.4, 0.7, 1))
+			await get_tree().create_timer(0.1).timeout
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout
@@ -697,7 +827,9 @@ func _print_tela(qual: String) -> void:
 			Engine.time_scale = 1.0
 		"fim":
 			_resumo = {"vitoria": true, "tempo": 642.0, "nivel": 41, "abates": 5230, "heroi": "nicao",
-				"dano": [["water_cooler", 52000], ["cafe", 21000], ["pendrive", 9000]]}
+				"dano": [["water_cooler", 52000], ["cafe", 21000], ["pendrive", 9000]],
+				"armas": Interface.tabela_armas({"water_cooler": 52000.0, "cafe": 21000.0, "pendrive": 9000.0, "katana": 15000.0},
+					{"water_cooler": 6, "cafe": 4, "pendrive": 8, "katana": 3}, {"water_cooler": 410.0, "cafe": 560.0, "pendrive": 642.0, "katana": 90.0}, 642.0)}
 			_novo_recorde = true
 			_estado = "fim"
 	await get_tree().create_timer(0.6, true, false, true).timeout

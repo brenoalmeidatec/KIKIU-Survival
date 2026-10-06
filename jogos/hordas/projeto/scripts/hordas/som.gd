@@ -40,6 +40,23 @@ func tocar(nome: String, intervalo := 0.05, tom := 1.0, vol_db := 0.0) -> void:
 			return
 
 
+## Sons de interface (#7, conjunto mínimo hover/click/buy/deny dos survivors): cursor, confirmar, voltar, erro, abrir.
+## Os arquivos têm volume parecido (RMS ~0,2); o ajuste em dB só compensa o "abrir", que é mais forte. O cursor varia
+## o tom em +-5% pra não cansar. Menus e cartas chamam Som.ui(...) em vez de escolher arquivo e tom um por um.
+func ui(nome: String) -> void:
+	match nome:
+		"cursor":
+			tocar("cursor", 0.03, randf_range(0.95, 1.05), -6.0)
+		"confirmar":
+			tocar("confirmar", 0.08, 1.0, -4.0)
+		"voltar":
+			tocar("blip", 0.08, 0.7, -2.0)
+		"erro":
+			tocar("erro", 0.12, 1.0, -4.0)
+		"abrir":
+			tocar("abrir", 0.1, 1.0, -4.0)
+
+
 func musica(nome: String) -> void:
 	var s := _stream("res://assets/audio/musica/%s.ogg" % nome)
 	if s == null or (_musica.stream == s and _musica.playing):
