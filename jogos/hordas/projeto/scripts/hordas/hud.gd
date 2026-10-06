@@ -40,6 +40,10 @@ func anunciar(txt: String, cor := Color.WHITE) -> void:
 	_anuncio = {"txt": txt, "cor": cor, "t": 2.5}
 
 
+func limpar_mensagens() -> void:
+	_msgs.clear()
+
+
 func atualizar(dt: float) -> void:
 	var _pp := Perf.ini()
 	atualizar_i(dt)

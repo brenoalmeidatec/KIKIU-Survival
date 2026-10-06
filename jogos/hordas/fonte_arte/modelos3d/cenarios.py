@@ -602,7 +602,147 @@ def fogueira(r):
     return {"ponto": (0, 0, 0.35), "rampa": "fogo", "raio": 70, "pisca": 0.2}
 
 
+# ================================================================ pântano pútrido (#64, região 2)
+
+def piso_pantano(r):
+    """Lama vista de cima: poças d'água escura, limo verde, vitórias-régias e juncos."""
+    caixa("lama", (L, L, 0.1), (L / 2, L / 2, -0.05), toon("2b2a20"))
+    lamas = [chao(h) for h in ("3a3a2a", "35473a", "33301f")]
+    for _ in range(16):
+        x, y = r.uniform(0.8, L - 0.8), r.uniform(0.8, L - 0.8)
+        esfera("torrao", r.uniform(0.5, 1.2), (x, y, -0.28), r.choice(lamas), escala=(1, r.uniform(0.6, 1.4), 0.4))
+    agua = px3.material_suave("agua_pantano", px3.cor("152a26"), rugosidade=0.15, relevo=0.0, variacao=0.05, escala=2.0)
+    for _ in range(5):   # poças: água parada e escura, quase espelhada
+        x, y = r.uniform(1.4, L - 1.4), r.uniform(1.4, L - 1.4)
+        esfera("poca", r.uniform(0.7, 1.2), (x, y, -0.32), agua, escala=(1, r.uniform(0.6, 1.0), 0.4))
+        vit = toon("466a2c")
+        for _k in range(r.randint(1, 3)):
+            cilindro("vitoria", r.uniform(0.12, 0.2), 0.02, (x + r.uniform(-0.5, 0.5), y + r.uniform(-0.4, 0.4), 0.06), vit, vertices=10)
+    limo = toon("566e55")
+    for _ in range(10):
+        x, y = r.uniform(0.6, L - 0.6), r.uniform(0.6, L - 0.6)
+        for _k in range(6):
+            esfera("limo", r.uniform(0.07, 0.15), (x + r.uniform(-0.3, 0.3), y + r.uniform(-0.3, 0.3), 0.02), limo, escala=(1, 1, 0.3))
+    junco = toon("6a943d")
+    for _ in range(14):   # juncos vistos de cima: pontinhos verdes em tufo
+        x, y = r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5)
+        for _k in range(r.randint(5, 9)):
+            cilindro("junco", 0.02, 0.4, (x + r.uniform(-0.15, 0.15), y + r.uniform(-0.15, 0.15), 0.2), junco, vertices=4)
+    tabua = toon("4a3324")
+    for _ in range(2):
+        x, y = r.uniform(1.5, L - 1.5), r.uniform(1.5, L - 1.5)
+        caixa("tabua", (0.9, 0.18, 0.05), (x, y, 0.03), tabua, rot=(0, 0, r.uniform(0, math.pi)), chanfro=0.02)
+
+
+def arvore_pantano(r):
+    """Árvore do pântano: tronco torto, raízes em arco saindo da lama e barba de musgo pendurada nos galhos."""
+    casca, musgo = toon("4a3324"), toon("566e55")
+    cilindro("tronco", 0.22, 1.8, (0, 0, 1.1), casca, rot=(0.08, 0.06, 0), vertices=8)
+    for k in range(4):
+        a = k * math.tau / 4 + 0.3
+        cilindro("raiz", 0.08, 0.8, (math.cos(a) * 0.4, math.sin(a) * 0.4, 0.3), casca, rot=(0.8 * math.sin(a), -0.8 * math.cos(a), 0), vertices=6)
+    for i, (a, z) in enumerate(((0.3, 1.7), (2.5, 1.9), (4.4, 1.6))):
+        cilindro("galho", 0.06, 0.9, (math.cos(a) * 0.45, math.sin(a) * 0.45, z + 0.2), casca, rot=(1.0 * math.sin(a), -1.0 * math.cos(a), 0), vertices=6)
+        for k in range(3):
+            caixa("barba", (0.04, 0.04, 0.5 + k * 0.1), (math.cos(a) * (0.6 + k * 0.12), math.sin(a) * (0.6 + k * 0.12), z - 0.05), musgo)
+    return None
+
+
+def juncos(r):
+    verde, ponta = toon("6a943d"), toon("6e4c32")
+    for k in range(10):
+        x, y, h = r.uniform(-0.3, 0.3), r.uniform(-0.2, 0.2), r.uniform(0.6, 1.1)
+        cilindro("junco", 0.025, h, (x, y, h / 2), verde, rot=(r.uniform(-0.12, 0.12), r.uniform(-0.12, 0.12), 0), vertices=4)
+        if k % 3 == 0:
+            cilindro("taboa", 0.045, 0.16, (x, y, h - 0.05), ponta, vertices=6)
+    return None
+
+
+def poca_vitorias(r):
+    agua, vit, flor = toon("152a26"), toon("466a2c"), toon("d6ccb2")
+    cilindro("poca", 0.75, 0.03, (0, 0, 0.015), agua, vertices=16)
+    for k in range(4):
+        a = k * math.tau / 4 + 0.5
+        cilindro("vitoria", 0.17, 0.02, (math.cos(a) * 0.4, math.sin(a) * 0.35, 0.04), vit, vertices=10)
+    esfera("flor", 0.06, (0.4, 0.0, 0.08), flor, escala=(1, 1, 0.6))
+    return None
+
+
+def passarela(r):
+    madeira, madeira_e = toon("6e4c32"), toon("4a3324")
+    for k in range(5):
+        caixa("tabua", (0.22, 0.9, 0.05), (-0.5 + k * 0.25, 0, 0.32 + r.uniform(-0.04, 0.04)), madeira if k % 2 else madeira_e,
+              rot=(0, r.uniform(-0.08, 0.08), r.uniform(-0.05, 0.05)), chanfro=0.01)
+    for x in (-0.6, 0.6):
+        for y in (-0.38, 0.38):
+            cilindro("estaca", 0.05, 0.42, (x, y, 0.15), madeira_e, vertices=6)
+    return None
+
+
+def lanterna_poste(r):
+    """Lanterna de pântano num poste torto: luz verde-fria (o fogo-fátuo preso numa gaiola)."""
+    madeira, ferro = toon("4a3324"), toon("2e2a40")
+    cilindro("poste", 0.05, 1.5, (0, 0, 0.75), madeira, rot=(0.05, 0.08, 0), vertices=6)
+    caixa("braco", (0.4, 0.05, 0.05), (0.18, 0, 1.45), madeira)
+    caixa("gaiola", (0.16, 0.16, 0.2), (0.36, 0, 1.3), ferro, chanfro=0.02)
+    esfera("chama", 0.07, (0.36, -0.02, 1.3), brilha("a6e070", 1.0))
+    return {"ponto": (0.36, 0, 1.3), "rampa": "veneno", "raio": 60, "pisca": 0.12}
+
+
+def barco_podre(r):
+    madeira, agua = toon("4a3324"), toon("152a26")
+    cilindro("agua", 0.7, 0.02, (0, 0, 0.01), agua, vertices=14)
+    esfera("casco", 0.45, (0, 0, 0.05), madeira, escala=(0.6, 1.4, 0.45))
+    caixa("banco", (0.5, 0.08, 0.04), (0, 0.1, 0.22), toon("6e4c32"))
+    cilindro("remo", 0.025, 0.8, (0.25, -0.2, 0.25), toon("6e4c32"), rot=(0.4, 0.9, 0), vertices=5)
+    return None
+
+
+def lapide_torta(r):
+    pedra, musgo = toon("5e544a"), toon("566e55")
+    caixa("lapide", (0.36, 0.1, 0.55), (0, 0, 0.26), pedra, rot=(0.25, 0, 0.15), chanfro=0.05)
+    esfera("topo", 0.18, (0, 0.04, 0.5), pedra, escala=(1, 0.3, 0.6))
+    for k in range(4):
+        esfera("musgo", 0.08, (r.uniform(-0.15, 0.15), -0.06, r.uniform(0.1, 0.4)), musgo, escala=(1, 0.4, 1))
+    return None
+
+
+def ossos_lodo(r):
+    osso = toon("a89e86")
+    esfera("cranio", 0.12, (0, 0, 0.08), toon("d6ccb2"), escala=(1, 1.1, 0.9))
+    for k in range(4):
+        a = r.uniform(0, math.pi)
+        cilindro("osso", 0.03, 0.4, (r.uniform(-0.3, 0.3), r.uniform(-0.2, 0.2), 0.03), osso, rot=(math.pi / 2, 0, a), vertices=5)
+    return None
+
+
+def raizes_arco(r):
+    casca = toon("4a3324")
+    for k in range(3):
+        a = k * 0.5 - 0.5
+        for s in (-1, 1):
+            cilindro("arco", 0.07, 0.7, (s * 0.25 + a * 0.2, a * 0.3, 0.3), casca, rot=(0, s * 0.7, a), vertices=6)
+    return None
+
+
+def velas_toco(r):
+    """Velas derretidas num toco: alguém deixou oferendas pro que mora na água. Luz quente."""
+    casca, cera = toon("4a3324"), toon("d6ccb2")
+    cilindro("toco", 0.26, 0.3, (0, 0, 0.15), casca, vertices=10)
+    for k, (x, y, h) in enumerate(((0.0, 0.0, 0.22), (0.12, 0.08, 0.16), (-0.1, 0.06, 0.12))):
+        cilindro("vela", 0.04, h, (x, y, 0.3 + h / 2), cera, vertices=6)
+        cone("chama", 0.035, 0.0, 0.09, (x, y, 0.3 + h + 0.04), brilha("ffd060", 1.0), vertices=5)
+    return {"ponto": (0, 0, 0.6), "rampa": "fogo", "raio": 50, "pisca": 0.22}
+
+
 CENARIOS = {
+    "pantano": {
+        "piso": piso_pantano, "ambiente": [0.56, 0.68, 0.6],
+        "paleta": ("musgo", "folha", "couro", "pedra", "osso", "veneno", "fogo", "noite"),
+        "enfeites": [("arvore", arvore_pantano, 2), ("juncos", juncos, 4), ("vitorias", poca_vitorias, 2), ("passarela", passarela, 1),
+                     ("lanterna", lanterna_poste, 2), ("barco", barco_podre, 1), ("lapide", lapide_torta, 2), ("ossos", ossos_lodo, 2),
+                     ("raizes", raizes_arco, 2), ("velas", velas_toco, 1)],
+    },
     "floresta": {
         "piso": piso_floresta, "ambiente": [0.6, 0.7, 0.62],
         "paleta": ("couro", "folha", "musgo", "pedra", "osso", "veneno", "fogo", "sangue", "noite"),
