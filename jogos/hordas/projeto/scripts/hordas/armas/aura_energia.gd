@@ -55,23 +55,42 @@ static func atras(w, ci: CanvasItem, a: Dictionary, s: Dictionary) -> void:
 	ci.draw_arc(Vector2.ZERO, r, 0, TAU, 40, Color(COBALTO, 0.25 + 0.1 * sin(t * 5.0)), 2.0)
 	ci.draw_circle(Vector2.ZERO, 16.0, Color(CIANO, 0.18))
 	ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
-	# chamas: línguas de energia em volta do corpo, subindo e tremendo (mais e mais altas a cada nível);
-	# como ficam atrás, saem pelos lados e por cima do boneco, que nem aura de verdade
+	_chamas(w, ci, a, false)
+
+
+## Anel de chamas (cones) em volta do corpo, em perspectiva: o herói fica DENTRO do anel. A metade de trás (y menor
+## que o pé) vai no nó de trás e a da frente por cima do boneco, mais transparente pra não esconder o herói.
+const ALFA_TRAS := 0.62
+const ALFA_FRENTE := 0.42
+const RAIO_ANEL := Vector2(24.0, 7.0)
+
+
+static func _chamas(w, ci, a: Dictionary, frente: bool) -> void:
+	var t: float = w._t
+	var pe: Vector2 = w.dono.position
+	var nv: int = int(a.nivel)
+	var k: float = ALFA_FRENTE if frente else ALFA_TRAS
 	var n := 6 + nv * 2
 	for i in n:
 		var ang := TAU * i / n + t * 1.5
-		var base := pe + Vector2(cos(ang) * 15.0, sin(ang) * 4.0 - 4.0)
+		var sn := sin(ang)
+		if (sn >= 0.0) != frente:   # sin>0 = lado do olhador (pé pra baixo na tela)
+			continue
+		var base := pe + Vector2(cos(ang) * RAIO_ANEL.x, sn * RAIO_ANEL.y - 2.0)
 		var alt := (34.0 + nv * 5.0) * (0.6 + 0.4 * absf(sin(t * 9.0 + i * 1.7)))
+		if frente:
+			alt *= 0.8
 		var topo := base + Vector2(sin(t * 6.0 + i) * 3.0, -alt)
 		var larg := 3.0 + nv * 0.5
 		if nv >= 4:   # no alto, uma camada dourada por fora
-			ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg - 1.5, 0), base + Vector2(larg + 1.5, 0), topo + Vector2(0, -4)]), Color(OURO, 0.4))
-		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg, 0), base + Vector2(larg, 0), topo]), Color(COBALTO, 0.6))
-		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg * 0.4, 0), base + Vector2(larg * 0.4, 0), base.lerp(topo, 0.6)]), Color(CIANO, 0.75))
+			ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg - 1.5, 0), base + Vector2(larg + 1.5, 0), topo + Vector2(0, -4)]), Color(OURO, 0.4 * k / 0.6))
+		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg, 0), base + Vector2(larg, 0), topo]), Color(COBALTO, k))
+		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg * 0.4, 0), base + Vector2(larg * 0.4, 0), base.lerp(topo, 0.6)]), Color(CIANO, k * 1.2))
 
 
-## Na frente do personagem: só as faíscas douradas subindo (pixels), que não escondem nada.
+## Na frente do personagem: a metade da frente do anel de chamas (transparente) e as faíscas douradas subindo.
 static func fundo(w, a: Dictionary, _s: Dictionary) -> void:
+	_chamas(w, w, a, true)
 	var t: float = w._t
 	var c: Vector2 = w.dono.centro()
 	var nv: int = int(a.nivel)
