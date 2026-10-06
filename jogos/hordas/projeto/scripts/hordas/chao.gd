@@ -217,7 +217,7 @@ func _draw_i() -> void:
 			draw_texture_rect_region(cenario.atlas, Rect2(e[0] - pe, reg.size), reg)
 	else:
 		_draw_enfeites_antigos()
-	var tex := Dados.tex("tomada")
+	var tex := Dados.tex(str(Descobertas.cfg().get("santuarios", {}).get("sprite", "tomada")))   # a pira (#65)
 	for s in santuarios:
 		var base: Color = COR_TIPO.get(s.tipo, Color.WHITE)
 		var cor := Color(0.4, 0.6, 0.7, 0.5) if s.usado else Color(base, 0.8)
@@ -246,13 +246,9 @@ func _draw_i() -> void:
 			var c: Vector2 = s.pos + Vector2(0, -sz.y - 14.0 + flut)
 			draw_colored_polygon(PackedVector2Array([c + Vector2(0, -8), c + Vector2(6, 0), c + Vector2(0, 8), c + Vector2(-6, 0)]), Color(0.55, 0.8, 1.0))
 		if s.pos.distance_to(arena.jogador.position) < 150.0:   # dica de interação
-			var nome := str(Descobertas.cfg().get("santuarios", {}).get("variacoes", {}).get(str(s.variacao), {}).get("nome", ""))
-			if s.tipo == "dadiva":
-				nome = "Santuário de Dádivas"
-			elif s.tipo == "maldito":
-				nome = "Santuário Amaldiçoado"
-			elif s.tipo == "tomada":
-				nome = "Tomada"
+			var cs: Dictionary = Descobertas.cfg().get("santuarios", {})
+			var nome := str(cs.get("variacoes", {}).get(str(s.variacao), {}).get("nome", ""))
+			nome = str(cs.get("nomes", {}).get(str(s.tipo), nome))   # dádiva, maldito, tomada: o nome do tipo (#65)
 			draw_string(Dados.fonte, s.pos + Vector2(-130, 22), nome, HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(base, 1.0))
 			draw_string(Dados.fonte, s.pos + Vector2(-130, 33), "fique perto", HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(0.85, 0.85, 0.9, 0.8))
 

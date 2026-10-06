@@ -47,7 +47,9 @@ static func montar_ofertas(cartas: Array) -> Array:
 			continue
 		var base := float(precos.get(str(c.tipo), 150))
 		res.append({"carta": c, "preco": int(base * (1.0 + 0.25 * maxi(0, int(c.get("nivel", 1)) - 1))), "comprado": false})
-	res.append({"carta": {"tipo": "cura", "id": "vida", "nome": "Marmita grande", "desc": "Recupera toda a vida.", "icone": "marmita", "nivel": 0},
+	var cura: Dictionary = Dados.json("coletaveis").get("loja_cura", {})   # nome, texto e ícone no coletaveis.json (#65)
+	res.append({"carta": {"tipo": "cura", "id": "vida", "nome": str(cura.get("nome", "Cura")), "desc": str(cura.get("desc", "Recupera toda a vida.")),
+		"icone": str(cura.get("icone", "marmita")), "nivel": 0},
 		"preco": int(precos.get("cura", 90)), "comprado": false, "completa": true})
 	return res
 

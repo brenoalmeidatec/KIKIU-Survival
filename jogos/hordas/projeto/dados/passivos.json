@@ -1,68 +1,68 @@
 {
  "_ajuda": "Itens passivos. efeito = quanto soma em cada nível. Atributos: dano, recarga (menos = atira mais), area, quantidade, velocidade_proj, duracao, vida_max, regen, velocidade, ima, sorte, xp. peso_ia = o quanto os rivais controlados pela IA gostam desse item (0 a 1).",
  "energetico": {
-  "nome": "Energético",
-  "icone": "energetico",
+  "nome": "Pedra de Amolar",
+  "icone": "pedra_amolar",
   "max": 5,
-  "descricao": "+10% de dano.",
+  "descricao": "Fio novo nas armas: +10% de dano.",
   "efeito": {
    "dano": 0.1
   },
   "peso_ia": 1.0
  },
  "overclock": {
-  "nome": "Overclock",
-  "icone": "overclock",
+  "nome": "Ampulheta Rachada",
+  "icone": "ampulheta",
   "max": 5,
-  "descricao": "Armas recarregam 8% mais rápido.",
+  "descricao": "O tempo corre diferente pra você: armas recarregam 8% mais rápido.",
   "efeito": {
    "recarga": -0.08
   },
   "peso_ia": 1.0
  },
  "monitor": {
-  "nome": "Monitor Ultrawide",
-  "icone": "monitor",
+  "nome": "Grimório Aberto",
+  "icone": "grimorio",
   "max": 5,
-  "descricao": "+10% de área.",
+  "descricao": "Feitiços que se espalham: +10% de área.",
   "efeito": {
    "area": 0.1
   },
   "peso_ia": 1.0
  },
  "ctrl_c_v": {
-  "nome": "Ctrl+C Ctrl+V",
-  "icone": "ctrl_c_v",
+  "nome": "Espelho Gêmeo",
+  "icone": "espelho",
   "max": 2,
-  "descricao": "+1 projétil em todas as armas.",
+  "descricao": "Tudo sai em dobro (quase): +1 projétil em todas as armas.",
   "efeito": {
    "quantidade": 1
   },
   "peso_ia": 1.0
  },
  "tenis": {
-  "nome": "Tênis Novo",
-  "icone": "tenis",
+  "nome": "Pena de Corvo",
+  "icone": "pena",
   "max": 5,
-  "descricao": "+10% de velocidade.",
+  "descricao": "Leve como o corvo: +10% de velocidade.",
   "efeito": {
    "velocidade": 0.1
   },
   "peso_ia": 1.0
  },
  "marmita": {
-  "nome": "Marmita",
-  "icone": "marmita",
+  "nome": "Feijão Tropeiro",
+  "icone": "feijao",
   "max": 5,
-  "descricao": "+20 de vida máxima.",
+  "descricao": "Comida de quem viaja longe: +20 de vida máxima.",
   "efeito": {
    "vida_max": 20
   },
   "peso_ia": 1.0
  },
  "antena": {
-  "nome": "Antena",
-  "icone": "antena",
+  "nome": "Pedra-Ímã",
+  "icone": "pedra_ima",
   "max": 5,
   "descricao": "Puxa o XP de mais longe.",
   "efeito": {
@@ -71,40 +71,40 @@
   "peso_ia": 0.15
  },
  "fitinha": {
-  "nome": "Fitinha do Bonfim",
-  "icone": "fitinha",
+  "nome": "Figa de Arruda",
+  "icone": "figa",
   "max": 5,
-  "descricao": "+20% de sorte (cartas melhores).",
+  "descricao": "Contra o azar e o olho gordo: +20% de sorte (cartas melhores).",
   "efeito": {
    "sorte": 0.2
   },
   "peso_ia": 0.3
  },
  "agua_coco": {
-  "nome": "Água de Coco",
-  "icone": "agua_coco",
+  "nome": "Garrafada",
+  "icone": "garrafada",
   "max": 5,
-  "descricao": "Recupera 0,4 de vida por segundo.",
+  "descricao": "Remédio do mato que fecha ferida sozinho: recupera 0,4 de vida por segundo.",
   "efeito": {
    "regen": 0.4
   },
   "peso_ia": 0.7
  },
  "apostila": {
-  "nome": "Apostila",
-  "icone": "apostila",
+  "nome": "Pergaminho Antigo",
+  "icone": "pergaminho",
   "max": 5,
-  "descricao": "+10% de XP.",
+  "descricao": "O saber de quem veio antes: +10% de XP.",
   "efeito": {
    "xp": 0.1
   },
   "peso_ia": 0.15
  },
  "mouse": {
-  "nome": "Mouse Gamer",
-  "icone": "mouse",
+  "nome": "Olho de Falcão",
+  "icone": "olho_falcao",
   "max": 5,
-  "descricao": "+7% de chance de acerto crítico (dano 1,5x).",
+  "descricao": "Acha o ponto fraco: +7% de chance de acerto crítico (dano 1,5x).",
   "efeito": {
    "critico": 0.07
   },

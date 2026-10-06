@@ -33,7 +33,7 @@
   "sprite": "lucas",
   "reviver": 1.0,
   "arma": "pendrive",
-  "descricao": "Caótico. Joga pendrives e tem mais sorte nas cartas.",
+  "descricao": "Caótico. Joga adagas e tem mais sorte nas cartas.",
   "bonus": {
    "sorte": 0.3,
    "dano": 0.1,
@@ -45,7 +45,7 @@
   "sprite": "joao",
   "reviver": 1.0,
   "arma": "cafe",
-  "descricao": "Derrama café pra todo lado.",
+  "descricao": "Espalha fogo grego pra todo lado.",
   "bonus": {
    "area": 0.1,
    "regen": 0.3
@@ -56,7 +56,7 @@
   "sprite": "matheus",
   "reviver": 1.0,
   "arma": "wifi",
-  "descricao": "Sinal forte em volta dele.",
+  "descricao": "Onde ele passa, o sino dobra.",
   "bonus": {
    "critico": 0.05
   }
@@ -66,7 +66,7 @@
   "sprite": "beto",
   "reviver": 1.0,
   "arma": "cabo_rede",
-  "descricao": "Cabo na mão e paciência zero.",
+  "descricao": "Corrente na mão e paciência zero.",
   "bonus": {
    "dano": 0.1
   }
@@ -76,7 +76,7 @@
   "sprite": "lukako",
   "reviver": 1.0,
   "arma": "pendrive",
-  "descricao": "Pendrive em rajada.",
+  "descricao": "Adagas em rajada.",
   "bonus": {
    "recarga": -0.1,
    "vida_max": -10
@@ -87,7 +87,7 @@
   "sprite": "fabio",
   "reviver": 1.0,
   "arma": "ventoinha",
-  "descricao": "Ventoinha na velocidade máxima.",
+  "descricao": "Lâminas na velocidade máxima.",
   "bonus": {
    "velocidade": 0.05,
    "duracao": 0.1

@@ -73,15 +73,22 @@ func _pegar(it: Dictionary) -> void:
 		"marmita":
 			arena.jogador.curar(float(Dados.json("fase").get("drops", {}).get("cura_marmita", 30)))
 			Som.tocar("plim", 0.1, 1.2)
-			arena.mensagem("Marmita! +vida", Color(1, 0.6, 0.5))
+			_avisar("marmita")
 		"wifi":
 			puxar_tudo()
 			Som.tocar("plim", 0.1, 1.5)
-			arena.mensagem("Wi-Fi grátis! Puxou todo o XP", Color(0.5, 0.85, 1))
+			_avisar("wifi")
 		"bau":
 			arena.abrir_bau()
 		"fragmento":
 			arena.descobertas.pegou_fragmento()
+
+
+## A mensagem de quando pega um coletável (texto e cor no coletaveis.json).
+func _avisar(tipo: String) -> void:
+	var c: Dictionary = Dados.json("coletaveis").get(tipo, {})
+	var cor: Array = c.get("cor", [1.0, 1.0, 1.0])
+	arena.mensagem(str(c.get("msg", tipo)), Color(float(cor[0]), float(cor[1]), float(cor[2])))
 
 
 func _textura(it: Dictionary) -> Texture2D:
@@ -92,10 +99,8 @@ func _textura(it: Dictionary) -> Texture2D:
 			elif it.valor >= 4:
 				return Dados.tex("gema_2")
 			return Dados.tex("gema_1")
-		"marmita":
-			return Dados.tex("marmita")
-		"wifi":
-			return Dados.tex("wifi")
+		"marmita", "wifi":   # o que aparece no chão vem do coletaveis.json (#65); o tipo interno continua o mesmo
+			return Dados.tex(str(Dados.json("coletaveis").get(it.tipo, {}).get("sprite", it.tipo)))
 		"bau":
 			return Dados.tex("bau")
 		"fragmento":
