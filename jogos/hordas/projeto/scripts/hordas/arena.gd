@@ -19,6 +19,7 @@ const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Online := preload("res://scripts/hordas/online.gd")
 const Habilidades := preload("res://scripts/hordas/habilidades.gd")
 const Especial := preload("res://scripts/hordas/especial.gd")
+const Calor := preload("res://scripts/hordas/calor.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
@@ -87,6 +88,9 @@ var dano_recebido := {}     # de quem o jogador apanhou (pra equilibrar)
 var resortear := 3          # cargas de "sortear de novo", "pular" e "banir" (dados/corrida.json > cartas)
 var pular := 2
 var banir := 2
+var calor := {}             # modificadores de calor desta corrida {id: nível} (calor.gd, dados/calor.json)
+var calor_ef := {}          # efeitos somados do calor (ef() lê)
+var calor_pts := 0
 var banidos := {}           # id -> true: carta banida some do sorteio até o fim da corrida
 var tempo_arma := {}        # id -> segundos com a arma ativa (DPS da tela final)
 var nivel_arma := {}        # id -> último nível visto (tela final)
@@ -111,6 +115,12 @@ func _ready() -> void:
 	resortear = int(cc.get("resortear", 3))
 	pular = int(cc.get("pular", 2))
 	banir = int(cc.get("banir", 2))
+	calor = Calor.validar(calor)      # o main.gd põe a escolha antes de abrir a arena (no online, a do anfitrião)
+	calor_ef = Calor.efeitos(calor)
+	calor_pts = Calor.pontos(calor)
+	if ef("sem_cartas") > 0.0:          # "Destino Selado": sem sortear de novo e sem pular
+		resortear = 0
+		pular = 0
 	chao = Chao.new()
 	chao.arena = self
 	add_child(chao)
@@ -223,7 +233,19 @@ func stat(k: String) -> float:
 			return v * duelo.regen_mult
 		elif k == "velocidade" and duelo.lut_jogador.lento > 0:
 			return v * 0.55
+	# calor (#63): só na horda; o duelo entre pessoas não leva calor
+	if k == "xp":
+		v += calor_pts * Calor.recompensa("xp")      # cada ponto de calor rende mais XP
+	elif k == "vida_max":
+		v *= maxf(0.2, 1.0 + ef("vida_heroi"))       # "Corpo Frágil"
+	elif k == "regen":
+		v *= maxf(0.0, 1.0 + ef("cura"))             # "Feridas Abertas"
 	return v
+
+
+## Efeito somado do calor desta corrida (0 se o jogador não ligou o modificador). Veja dados/calor.json.
+func ef(k: String) -> float:
+	return float(calor_ef.get(k, 0.0))
 
 
 func _recalcular() -> void:
@@ -344,7 +366,8 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	var chefe := bool(d.get("chefe", false))
 	abates += 1
 	var og: Dictionary = Mapa.cfg().get("ouro", {})
-	ouro += int(og.get("chefe", 40)) if chefe else (int(og.get("elite", 4)) if elite else int(og.get("abate", 1)))
+	var ganho: int = int(og.get("chefe", 40)) if chefe else (int(og.get("elite", 4)) if elite else int(og.get("abate", 1)))
+	ouro += int(round(ganho * (1.0 + calor_pts * Calor.recompensa("ouro"))))   # cada ponto de calor rende mais ouro
 	fase_stat.abates += 1
 	if chefe:
 		fase_stat.chefes += 1
@@ -1008,7 +1031,7 @@ func _fim(vitoria: bool, extra := {}) -> void:
 	for a in dano_por_arma:
 		lista_dano.append([a, dano_por_arma[a]])
 	lista_dano.sort_custom(func(x, y): return x[1] > y[1])
-	var res := {"vitoria": vitoria, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
+	var res := {"vitoria": vitoria, "calor": calor_pts, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
 		"heroi": heroi_id, "dano": lista_dano, "apanhou": dano_recebido,
 		"armas": Interface.tabela_armas(dano_por_arma, nivel_arma, tempo_arma, diretor.tempo)}
 	res.merge(extra)

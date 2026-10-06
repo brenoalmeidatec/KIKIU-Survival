@@ -477,3 +477,12 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Dano cresce com o atributo dano e com o nível (`escala_nivel`). Os 5 heróis que só aparecem no duelo ainda não têm especial (é só pôr no JSON).
 - Teste novo `testes/especiais.tscn` (ESPECIAL falhas=0, 3 rodadas). Prints com `--print_tela=especial --heroi=X --estresse=N`. Robô: 2 usos por herói em 60 s, 0 erros; online com 4 (160 = 160). Os 18 testes sem falhas.
 - **Próximo:** #63 marco 2, calor.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #63 marco 2: calor
+- `dados/calor.json` + `scripts/hordas/calor.gd` (escolha `{id: nível}` validada, pontos, efeitos somados, recompensa, salvo em `user://calor.json`) + `scripts/hordas/tela_calor.gd` (a tela). Como o Pacto de Punição do Hades: 9 modificadores (Couro de Pedra, Garras Afiadas, Fome de Sangue, Horda sem Fim, Sangue Nobre, Ira dos Senhores, Feridas Abertas, Corpo Frágil, Destino Selado), até 22 pontos. Cada ponto rende +8% de ouro e +4% de XP.
+- **Onde vale:** vida/dano/velocidade dos inimigos e vida extra dos chefes (`inimigos.criar`), tiros deles, orçamento e elites do diretor, cura e regeneração, vida máxima do herói e cargas de cartas (`arena.ef()`, `arena.stat`). No duelo entre pessoas, não.
+- **Fluxo:** solo, herói → **Calor** → corrida (Esc volta pros heróis). Online, o anfitrião aperta **C** no lobby; o total aparece pra todos ("Calor N") e a escolha vai nas opções do começo (os clientes usam a do anfitrião, não a deles). Resultado mostra o calor.
+- **Bug achado:** a fonte (Press Start 2P) trocava "fi" por "ñ" (ligadura): "Afiadas" saía "Añadas", e qualquer texto com "fi" estava errado. Ligaduras desligadas em `Dados._ready` (vale pro jogo todo).
+- Os prints de teste (`--print_tela`) desligam a transição (a cortina saía na foto; no jogo de verdade ela some em 0,43 s, medido).
+- Teste novo `testes/calor.tscn` (CALOR falhas=0); online com 4 e `--calor=couro:2,garras:1` no anfitrião (os 4 com calor 3 e 142 abates). Os 19 testes sem falhas. `--print_tela=calor` mostra a tela.
+- **Próximo:** #64, estrutura das regiões.

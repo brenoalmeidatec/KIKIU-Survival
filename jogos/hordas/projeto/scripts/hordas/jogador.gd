@@ -490,6 +490,7 @@ func dano_direto(dano: float, fonte: String) -> bool:
 
 
 func curar(valor: float) -> void:
+	valor *= maxf(0.0, 1.0 + arena.ef("cura")) if arena and arena.has_method("ef") and not arena.duelo_ativo else 1.0   # calor: "Feridas Abertas" (no duelo não)
 	hp = minf(vida_max(), hp + valor)
 
 

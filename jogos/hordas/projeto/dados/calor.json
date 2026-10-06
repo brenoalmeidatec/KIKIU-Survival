@@ -1,0 +1,15 @@
+{
+ "_ajuda": "Calor (#63, como o Pacto de Punição do Hades): antes da corrida o jogador liga modificadores que deixam tudo mais difícil. Cada nível de um modificador soma 'calor' pontos e o 'efeito' (multiplicado pelo nível). Efeitos que o jogo entende: inimigo_vida, inimigo_dano, inimigo_velocidade, chefe_vida (frações a mais: 0.2 = +20%), horda (mais créditos pro diretor criar inimigos), elites (mais chance de elite), cura (fração da cura: -0.3 = 30% menos), vida_heroi (fração da vida máxima do herói), sem_cartas (1 = sem sortear de novo e sem pular). recompensa = o que cada ponto de calor dá a mais (ouro e xp, frações). As regiões (#64) podem somar calor por cima (calor_base).",
+ "recompensa": {"ouro": 0.08, "xp": 0.04},
+ "modificadores": [
+  {"id": "couro", "nome": "Couro de Pedra", "descricao": "Inimigos com +20% de vida por nível.", "niveis": 3, "calor": 1, "efeito": {"inimigo_vida": 0.2}},
+  {"id": "garras", "nome": "Garras Afiadas", "descricao": "Inimigos batem +20% mais forte por nível (tiros também).", "niveis": 3, "calor": 1, "efeito": {"inimigo_dano": 0.2}},
+  {"id": "fome", "nome": "Fome de Sangue", "descricao": "Inimigos +8% mais rápidos por nível.", "niveis": 2, "calor": 1, "efeito": {"inimigo_velocidade": 0.08}},
+  {"id": "horda", "nome": "Horda sem Fim", "descricao": "+20% de inimigos por nível.", "niveis": 3, "calor": 1, "efeito": {"horda": 0.2}},
+  {"id": "nobres", "nome": "Sangue Nobre", "descricao": "Elites aparecem 60% mais por nível.", "niveis": 2, "calor": 1, "efeito": {"elites": 0.6}},
+  {"id": "senhores", "nome": "Ira dos Senhores", "descricao": "Chefes com +35% de vida por nível.", "niveis": 2, "calor": 2, "efeito": {"chefe_vida": 0.35}},
+  {"id": "feridas", "nome": "Feridas Abertas", "descricao": "Toda cura e regeneração 30% menor por nível.", "niveis": 2, "calor": 1, "efeito": {"cura": -0.3}},
+  {"id": "fragil", "nome": "Corpo Frágil", "descricao": "Herói com 15% menos vida máxima por nível.", "niveis": 2, "calor": 1, "efeito": {"vida_heroi": -0.15}},
+  {"id": "destino", "nome": "Destino Selado", "descricao": "Sem sortear de novo e sem pular cartas.", "niveis": 1, "calor": 1, "efeito": {"sem_cartas": 1}}
+ ]
+}

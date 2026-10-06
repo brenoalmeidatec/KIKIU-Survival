@@ -490,3 +490,18 @@ func _voz(pacote) -> void:
 	if typeof(pacote) != TYPE_PACKED_BYTE_ARRAY or pacote.is_empty() or pacote.size() > 1200 or not jogadores.has(quem):
 		return
 	Voz.tocar(quem, pacote)
+
+
+# ======================================================== calor da sala (o anfitrião escolhe; vai nas opções do começo)
+
+## Anfitrião: guarda o total de calor no próprio cartão da sala, pra todos verem no lobby.
+func definir_calor_sala(pontos: int) -> void:
+	if anfitriao() and jogadores.has(1):
+		jogadores[1]["calor"] = pontos
+		_lista.rpc(jogadores)
+		mudou.emit()
+
+
+func calor_sala() -> int:
+	var c = jogadores.get(1, {}).get("calor", 0)
+	return clampi(int(c), 0, 999) if (c is int or c is float) else 0

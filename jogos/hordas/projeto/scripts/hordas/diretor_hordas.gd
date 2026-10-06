@@ -97,7 +97,7 @@ func atualizar(dt: float) -> void:
 	if enxame_final:
 		var depois := t_fase - float(_fase.get("duracao", 600))
 		mult = float(_dif.get("enxame_final_multiplicador", 3.0)) * (1.0 + depois / 30.0)
-	creditos += float(_dif.get("creditos_base", 1.5)) * pow(coeficiente(), float(_dif.get("expoente", 1.3))) * mult * dt
+	creditos += float(_dif.get("creditos_base", 1.5)) * pow(coeficiente(), float(_dif.get("expoente", 1.3))) * mult * dt * (1.0 + arena.ef("horda"))   # calor: "Horda sem Fim"
 	_eventos()
 	_gastar()
 
@@ -205,7 +205,7 @@ func _sortear(tabela: Array) -> String:
 
 func _criar_grupo(tipo: String, n: int) -> void:
 	var p := _ponto_fora()
-	var chance_elite := minutos() * float(_dif.get("chance_elite_por_minuto", 0.004)) * mult_elite
+	var chance_elite: float = minutos() * float(_dif.get("chance_elite_por_minuto", 0.004)) * mult_elite * (1.0 + arena.ef("elites"))   # calor: "Sangue Nobre"
 	for i in n:
 		arena.inimigos.criar(tipo, p + Vector2(randf_range(-20, 20), randf_range(-20, 20)), nivel(), randf() < chance_elite)
 

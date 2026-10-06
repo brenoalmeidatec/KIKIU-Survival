@@ -16,6 +16,8 @@ const H := 360.0
 const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
+const TelaCalor := preload("res://scripts/hordas/tela_calor.gd")
+const Calor := preload("res://scripts/hordas/calor.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
 const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Opções", "Créditos", "Sair"]
 const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
@@ -35,11 +37,12 @@ var _camada := CanvasLayer.new()
 var _estado := "titulo"      # titulo, herois, partida, fim
 var _estado_antes := "titulo"  # pra perceber a troca de tela e tocar a transição
 var _apelido_txt := ""       # campo de texto do apelido (lobby, tecla N)
+var _calor := {}              # calor escolhido pra próxima corrida {id: nível} (tela_calor.gd)
 var _sel_sala := 0            # tela da lista de salas
 var _publico_txt := ""        # anfitrião: campo do endereço público (tecla E no lobby)
 var _forcar_t := -10.0       # anfitrião: Enter com gente não pronta avisa; outro Enter em 3 s começa assim mesmo
 ## telas que são a mesma tela pro jogador (só muda o texto): trocar entre elas não tem transição
-const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"], ["sala", "publico"]]
+const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"], ["sala", "publico"], ["herois", "calor"], ["sala", "calor_sala"]]
 var _sel := 0
 var _arena: Node2D
 var _resumo := {}
@@ -66,6 +69,7 @@ func _ready() -> void:
 	_camada.add_child(_tela)
 	_recordes = _ler_recordes()
 	_endereco = _ler_endereco()
+	_calor = Calor.de_texto(str(_args.calor)) if _args.has("calor") else Calor.ler()   # a última escolha de calor (ou a do teste)
 	Rede.mudou.connect(_rede_mudou)
 	Rede.conectou.connect(_rede_conectou)
 	Rede.comecou.connect(func(op): _comecar(Rede.heroi_de(Rede.eu()), op, true))
@@ -73,6 +77,7 @@ func _ready() -> void:
 	if _args.has("rapido"):
 		Engine.time_scale = float(_args.rapido)
 	if _args.has("print_tela"):
+		Transicao.ligada = false   # a foto é da tela pedida, não da cortina da transição
 		_print_tela(str(_args.print_tela))
 	elif _args.has("online"):
 		_online_teste()
@@ -173,7 +178,7 @@ func _process(dt: float) -> void:
 				Som.ui("cursor")
 			elif Input.is_action_just_pressed("confirmar"):
 				Som.ui("confirmar")
-				_comecar(_herois()[_sel])
+				_abrir_calor(_herois()[_sel])
 			elif Input.is_action_just_pressed("voltar"):
 				_estado = "titulo"
 				_sel = 0
@@ -258,6 +263,7 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	_arena.eh_online = online
 	# semente da corrida: online vem do anfitrião (igual pra todos); solo sorteia, ou --semente=N pra repetir uma partida
 	_arena.semente = int(o.get("semente", 0)) if online else int(_args.get("semente", 0))
+	_arena.calor = o.get("calor", {}) if online else _calor   # calor: no online, o que o anfitrião escolheu (a arena valida)
 	_arena.terminou.connect(_terminou)
 	add_child(_arena)
 	_arena.inimigos.medir = _args.has("saltos")   # --saltos: conta saltos de posição dos vírus (relatório no fim do --sair)
@@ -316,6 +322,33 @@ func _salvar_endereco() -> void:
 		f.store_string(JSON.stringify({"endereco": _endereco, "nome": Rede.apelido, "publico": Salas.endereco_publico}))
 
 
+## Depois de escolher o herói: a tela do Calor. Enter começa a corrida com o calor escolhido, Esc volta pros heróis.
+func _abrir_calor(heroi: String) -> void:
+	_estado = "calor"
+	var t := TelaCalor.new()
+	t.escolha = _calor.duplicate()
+	add_child(t)
+	t.fechou.connect(func(ok: bool, escolha: Dictionary):
+		_calor = escolha
+		if ok:
+			_comecar(heroi)
+		else:
+			_estado = "herois")
+
+
+## Anfitrião no lobby (tecla C): escolhe o calor da sala. Os outros veem o total no lobby.
+func _abrir_calor_sala() -> void:
+	_estado = "calor_sala"
+	var t := TelaCalor.new()
+	t.escolha = _calor.duplicate()
+	t.titulo_confirmar = "salvar"
+	add_child(t)
+	t.fechou.connect(func(_ok: bool, escolha: Dictionary):
+		_calor = escolha
+		Rede.definir_calor_sala(Calor.pontos(_calor))
+		_estado = "sala")
+
+
 func _abrir_opcoes() -> void:
 	_estado = "opcoes"   # a tela de Opções cuida das teclas; o título fica parado atrás
 	var t := TelaOpcoes.new()
@@ -331,6 +364,7 @@ func _criar_sala() -> void:
 		_msg = err
 		return
 	_estado = "sala"
+	Rede.definir_calor_sala(Calor.pontos(_calor))   # o lobby mostra o calor da sala pra todos
 
 
 func _entrar() -> void:
@@ -401,7 +435,7 @@ func _sala() -> void:
 	elif Input.is_action_just_pressed("confirmar") and Rede.anfitriao():
 		if Rede.todos_prontos() or _t - _forcar_t < 3.0:
 			Som.ui("confirmar")
-			Rede.comecar()
+			Rede.comecar({"calor": _calor})
 		else:
 			# alguém ainda não está pronto: avisa quem, e um segundo Enter em 3 s começa assim mesmo
 			var faltam: Array = Rede.jogadores.keys().filter(func(p): return not Rede.pronto_de(p)).map(func(p): return Rede.nome_de(p))
@@ -423,6 +457,7 @@ func _sala() -> void:
 		for k in ["fase", "pular", "build", "semente"]:
 			if _args.has(k):
 				op[k] = _args[k]
+		op["calor"] = _calor
 		Rede.comecar(op)
 
 
@@ -501,6 +536,10 @@ func _input(e: InputEvent) -> void:
 		_editar_apelido(e)
 		return
 	if _estado == "sala" and Rede.anfitriao() and e is InputEventKey and e.pressed and not e.echo:
+		if e.physical_keycode == KEY_C:   # calor da sala (vale pra todos)
+			_abrir_calor_sala()
+			get_viewport().set_input_as_handled()
+			return
 		if e.physical_keycode == KEY_L:   # lista pública: liga/desliga
 			Salas.publica = not Salas.publica
 			_msg = "" if Salas.publica == false or Salas.endereco_valido(Salas.endereco_publico) else "Aperte E e cole o endereço do túnel (playit) pra sala aparecer na internet."
@@ -590,7 +629,7 @@ func _clique_menu(e: InputEventMouseButton) -> void:
 			if esq and q >= 0:
 				_sel = q
 				Som.ui("confirmar")
-				_comecar(_herois()[_sel])
+				_abrir_calor(_herois()[_sel])
 			elif not esq:
 				Som.ui("voltar")
 				_estado = "titulo"
@@ -670,6 +709,8 @@ func _teste() -> void:
 			hash(str(_arena.chao.santuarios.map(func(s): return [snappedf(s.pos.x, 0.01), snappedf(s.pos.y, 0.01), s.tipo, s.variacao]))),
 			_arena.descobertas.fragmentos, _arena.descobertas.dadivas.size(), _arena.descobertas.eventos_vistos])
 		print("  mapa: hash=%s pos=%s no=%s ouro=%d trilha=%s" % [Mapa.resumo(_arena.mapa), _arena.mapa_pos, _arena.no_tipo, _arena.ouro, _arena.mapa_trilha.map(func(p): return "%d.%d" % [p.x, p.y])])
+		if _arena.calor_pts > 0:
+			print("  calor: %d %s" % [_arena.calor_pts, _arena.calor])
 		if _arena.especial.tem():
 			print("  especial: %s usos=%d recarga=%.0f" % [_arena.especial.d.get("nome", ""), _arena.especial.usos, _arena.especial.recarga])
 		if _arena.online:
@@ -795,11 +836,11 @@ func _desenhar() -> void:
 			if _msg != "":
 				_txt(Vector2(0, 190), _msg, 8, Color(1, 0.6, 0.5) if _estado == "endereco" else Color(0.6, 0.9, 1))
 			_txt(Vector2(0, 330), "Ctrl+V: colar   Enter: conectar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
-		"sala", "apelido", "publico":
+		"sala", "apelido", "publico", "calor_sala":
 			_fundo()
 			_txt(Vector2(0, 40), "Sala online", 16, Color.WHITE)
 			if Rede.anfitriao():
-				_txt(Vector2(0, 60), "Você é o anfitrião (porta %d). Na rede local, a sala já aparece na lista." % Rede.porta_aberta, 8, Color(0.6, 0.9, 1))
+				_txt(Vector2(0, 60), "Você é o anfitrião (porta %d). Na rede local, a sala já está na lista." % Rede.porta_aberta, 8, Color(0.6, 0.9, 1))
 				var pub := "Lista pública: desligada  (L liga; pela internet precisa do túnel playit)"
 				var cor_pub := Color(0.6, 0.62, 0.72)
 				if Salas.publica:
@@ -852,10 +893,13 @@ func _desenhar() -> void:
 			var aviso: String = _msg if _msg != "" else (Salas.erro_net if Rede.anfitriao() and Salas.publica else "")
 			if aviso != "":
 				_txt(Vector2(0, 86), aviso, 8, Color(1, 0.6, 0.5))   # em cima dos cartões: embaixo é do chat
-			var dica := "Setas: herói   N: nome   " + ("Enter: começar   L/E: lista pública   " if Rede.anfitriao() else "Enter: pronto   ") + "Esc: sair"
+			# calor da sala, pra todos (o anfitrião escolhe com C)
+			var cs := Rede.calor_sala()
+			_txt(Vector2(W - 110, 36), "Calor %d" % cs, 8, Color(1, 0.7, 0.35) if cs > 0 else Color(0.55, 0.55, 0.6), 100, HORIZONTAL_ALIGNMENT_RIGHT)
+			var dica := "Setas: herói  N: nome  " + ("Enter: começar  C: calor  L/E: lista  " if Rede.anfitriao() else "Enter: pronto  ") + "Esc: sair"
 			_txt(Vector2(0, 340), dica, 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 353), "T: chat   V (segurar): falar   1-6: silenciar alguém", 8, Color(0.5, 0.52, 0.62))
-		"herois":
+		"herois", "calor":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)
 			var lista := _herois()
@@ -884,6 +928,8 @@ func _desenhar() -> void:
 		"fim":
 			_fundo()
 			var r := _resumo
+			if int(r.get("calor", 0)) > 0:   # calor da corrida (#63), no canto
+				_txt(Vector2(W - 110, 20), "Calor %d" % int(r.calor), 8, Color(1, 0.7, 0.35), 100, HORIZONTAL_ALIGNMENT_RIGHT)
 			var y := 176.0
 			var x_dano := 200.0
 			if r.has("duelo"):
@@ -986,6 +1032,8 @@ func _print_tela(qual: String) -> void:
 			_estado = "creditos"
 		"opcoes":
 			_abrir_opcoes()
+		"calor":   # tela do Calor (use --calor=couro:2,garras:1 pra ver níveis ligados)
+			_abrir_calor("hazaki")
 		"especial":   # --heroi=X --estresse=N: usa o especial no meio dos inimigos e tira o print depois de --espera s
 			_comecar(str(_args.get("heroi", "hazaki")))
 			await get_tree().create_timer(1.0).timeout
