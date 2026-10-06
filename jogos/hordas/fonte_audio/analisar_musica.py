@@ -94,7 +94,7 @@ if __name__ == "__main__":
     os.makedirs(saida, exist_ok=True)
     rel = {}
     for a in sorted(os.listdir(pasta)):
-        if a.endswith(".ogg"):
+        if a.endswith((".ogg", ".mp3")):
             rel[a[:-4]] = analisar(os.path.join(pasta, a), saida, f"{rot}_{a[:-4]}")
             print(a[:-4], rel[a[:-4]])
     json.dump(rel, open(os.path.join(saida, f"relatorio_{rot}.json"), "w"), indent=1, ensure_ascii=False)
