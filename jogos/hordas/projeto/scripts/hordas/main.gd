@@ -725,6 +725,20 @@ func _tabela_armas(x: float, y: float, linhas: Array) -> void:
 
 
 ## Teste: abre uma tela, tira um print e fecha (--print_tela=titulo|herois|cartas|bau|fim|hazaki --fotos=pasta).
+## Prints em vários instantes (segundos reais desde agora, separados por vírgula): tela_<nome>_1.png, _2.png...
+func _fotos_seq(nome: String, seq: String) -> void:
+	var pasta := str(_args.get("fotos", "user://"))
+	var ult := 0.0
+	var n := 0
+	for tk in seq.split(","):
+		var alvo := float(tk)
+		await get_tree().create_timer(maxf(0.01, alvo - ult), true, false, true).timeout
+		ult = alvo
+		await RenderingServer.frame_post_draw
+		n += 1
+		get_viewport().get_texture().get_image().save_png(pasta.path_join("tela_%s_%d.png" % [nome, n]))
+
+
 func _print_tela(qual: String) -> void:
 	Config.temporario("pausar_fora", false)   # a janela perde o foco enquanto o print espera: não pode pausar
 	if _args.has("grande"):
@@ -838,6 +852,59 @@ func _print_tela(qual: String) -> void:
 			for v in _arena.inimigos.lista:
 				v.vel = 0.0   # parados, pra a foto
 			await get_tree().create_timer(float(_args.get("espera", 2.0)), true, false, true).timeout
+		"mortes":   # #32: 8 inimigos morrem de 8 causas; prints no meio dos efeitos (--seq=0.15,0.4,0.7 em segundos reais, --reduzida, --conj=virus)
+			if not _args.has("fase") and str(_args.get("conj", "horror")) != "virus":
+				_args["fase"] = "6"
+			Config.temporario("numeros_dano", false)   # números de 1e9 sujariam o print
+			if _args.has("reduzida"):
+				Config.temporario("mortes", "reduzida")
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.armas.lista.clear()
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			var jm: Vector2 = _arena.jogador.position
+			var tipos_m: Array = ["carnical", "cao_ossos", "cavaleiro_oco", "espectro", "carnical", "cao_ossos", "abominacao", "cavaleiro_oco"]
+			if str(_args.get("conj", "horror")) == "virus":
+				tipos_m = ["bug", "popup", "spam", "trojan", "minerador", "spam", "bug", "trojan"]
+			var causas_m: Array = [["baforada", ""], ["poder_elemental", "gelo"], ["wifi", ""], ["katana", ""], ["arte_marcial", ""], ["desert_eagles", ""], ["aura_hazaki", ""], ["energia_draconica", ""]]
+			var posm: Array = [Vector2(-225, -70), Vector2(-75, -70), Vector2(75, -70), Vector2(225, -70), Vector2(-225, 70), Vector2(-75, 70), Vector2(75, 70), Vector2(225, 70)]
+			var alvos_m: Array = []
+			for i in 8:
+				var vm = _arena.inimigos.criar(tipos_m[i], jm + posm[i], 1)
+				vm.vel = 0.0
+				vm.t_nasc = 0.0
+				alvos_m.append(vm)
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			for i in 8:
+				alvos_m[i].causa_pend = causas_m[i][1]
+				_arena.inimigos.ferir(alvos_m[i], 1.0e9, Vector2(60, -10), causas_m[i][0])
+			await _fotos_seq(qual, str(_args.get("seq", "0.15,0.35,0.6")))
+			get_tree().quit()
+			return
+		"finalizacao":   # #32: chefe morto por --arma=katana|desert_eagles|arte_marcial|aura_hazaki|poder_elemental|pendrive (--chefe=, --seq=, --reduzida)
+			Config.temporario("numeros_dano", false)   # números de 1e9 sujariam o print
+			if _args.has("reduzida"):
+				Config.temporario("mortes", "reduzida")
+			if _args.has("fase") == false and str(_args.get("chefe", "trojan_gigante")) == "arauto":
+				_args["fase"] = "6"
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.armas.lista.clear()
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			var bm = _arena.inimigos.criar(str(_args.get("chefe", "trojan_gigante")), _arena.jogador.position + Vector2(130, -10), 1)
+			bm.vel = 0.0
+			bm.t_nasc = 0.0
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			_arena.inimigos.ferir(bm, 1.0e9, Vector2(60, 0), str(_args.get("arma", "katana")))
+			await _fotos_seq(qual + "_" + str(_args.get("arma", "katana")), str(_args.get("seq", "0.2,0.5,0.8,1.1,1.5")))
+			get_tree().quit()
+			return
 		"cartas4":   # 4 cartas de tipos diferentes: arma exclusiva nova, equipamento, arma em nível alto e passivo (--daltonico / --grande testam as opções)
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3).timeout

@@ -63,10 +63,16 @@ class V:
 	var p_ini := Vector2.ZERO    # cliente online: de onde o deslize da foto parte
 	var p_fim := Vector2.ZERO    # ... e pra onde vai (posição da foto do anfitrião)
 	var t_foto := 0.0            # ... e há quanto tempo a foto chegou
-	var t_ausente := 0.0         # ... e quanto tempo faz que ficou fora das fotos (some só depois de AUSENTE_T)
+	# causa do golpe final (mortes violentas): cada dano grava a arma e a direção; `causa_pend` é o elemento da bola (Poder Elemental)
+	var arma_ult := ""
+	var causa_pend := ""
+	var causa_ult := ""
+	var dir_ult := Vector2.ZERO
+	var t_ausente := 0.0        # ... e quanto tempo faz que ficou fora das fotos (some só depois de AUSENTE_T)
 
 var arena: Node
-var online: Node = null      # online.gd (só na partida online)
+var mortes: Node = null        # mortes.gd: desenha como o inimigo morreu (criado pela arena)
+var online: Node = null     # online.gd (só na partida online)
 var espelho := false         # cliente online: os vírus vêm do anfitrião, aqui não roda IA
 var por_id := {}             # id -> V
 var lista: Array = []
@@ -194,12 +200,18 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 		valor *= arena.stat("critico_mult")
 	v.hp -= valor
 	v.flash = 0.09
+	v.arma_ult = arma   # causa do golpe final (mortes violentas)
+	v.causa_ult = v.causa_pend
+	v.causa_pend = ""
+	if empurrao.length_squared() > 1.0:
+		v.dir_ult = empurrao
 	arena.registrar_dano(arma, valor, v.pos, crit)
 	if espelho:
 		# cliente: o anfitrião aplica de verdade (e avisa se morreu); aqui só some até a confirmação
 		online.acerto(v.id, valor, empurrao)
 		if v.hp <= 0:
 			_remover(v)
+			_morte_visual(v)   # efeito só local: a morte em si o anfitrião já sincroniza
 			return true
 		return false
 	var peso := 4.0 if v.pesado else 1.0
@@ -208,6 +220,7 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 	v.kb = (v.kb + empurrao / peso).limit_length(KB_MAX)
 	if v.hp <= 0:
 		_remover(v)
+		_morte_visual(v)
 		arena.inimigo_morreu(v)
 		return true
 	return false
@@ -219,10 +232,22 @@ func ferir_remoto(v: V, valor: float, empurrao: Vector2) -> void:
 		return
 	v.hp -= valor
 	v.flash = 0.09
+	v.arma_ult = ""   # a arma do outro jogador não vem na rede: morte padrão
+	v.causa_ult = ""
 	v.kb = (v.kb + empurrao / (12.0 if v.chefe else (4.0 if v.pesado else 1.0))).limit_length(KB_MAX)
 	if v.hp <= 0:
 		_remover(v)
+		_morte_visual(v)
 		arena.inimigo_morreu(v)
+
+
+## Como o inimigo morre na tela. Chefe: a finalização (finalizacao.gd) cuida; os outros: mortes.gd.
+func _morte_visual(v: V) -> void:
+	if v.chefe:
+		if arena.finalizacao:
+			arena.finalizacao.iniciar(v)
+	elif mortes:
+		mortes.nova(v)
 
 
 func remover_id(id: int) -> void:
