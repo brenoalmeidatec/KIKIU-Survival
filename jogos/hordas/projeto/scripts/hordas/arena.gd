@@ -394,6 +394,7 @@ func anunciar_todos(txt: String, cor := Color.WHITE) -> void:
 
 
 func chefe_final_chegou(final := true, tipo := "") -> void:
+	_musica_da_fase(true)
 	if online and Rede.anfitriao():
 		Rede.evento("chefe_final", {"final": final, "chefe": tipo})
 	if Dados.json("inimigos").get(tipo, {}).get("chefe", false):   # só vale chefe que existe nos dados
@@ -557,6 +558,16 @@ func _evento_no(c: Dictionary, andar: int) -> void:
 			cartas.escolher(str(v.get("titulo", "")), Descobertas.oferta_dadivas(rng, ""))
 
 
+## Música da fase: "musica" da fase em corrida.json (ex.: horror), senão a de fase.json; no chefe, "musica_chefe" ou "chefe".
+func _musica_da_fase(chefe: bool) -> void:
+	var fs: Array = diretor.fases()
+	var f: Dictionary = fs[clampi(diretor.fase_idx, 0, fs.size() - 1)] if fs.size() > 0 else {}
+	if chefe:
+		Som.musica(str(f.get("musica_chefe", "chefe")))
+	else:
+		Som.musica(str(f.get("musica", Dados.json("fase").get("musica", "minijogo_tenso"))))
+
+
 ## Começa a fase do andar (índice em corrida.json); o tipo do nó (fase, elite, chefe) ajusta a dificuldade.
 func _iniciar_andar(idx: int) -> void:
 	diretor.ir_para(idx, no_tipo)
@@ -568,6 +579,7 @@ func _iniciar_andar(idx: int) -> void:
 	var marca := "  (ELITE)" if no_tipo == "elite" else ""
 	anunciar("Fase %d: %s%s" % [diretor.fase_idx + 1, f.get("nome", ""), marca], Color(1, 0.55, 0.45) if no_tipo == "elite" else Color(0.7, 0.9, 1))
 	entre_fases = false
+	_musica_da_fase(false)
 	entradas.chegada()   # herói (e aliados no online) chegam na fase nova
 
 
