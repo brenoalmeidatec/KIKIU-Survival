@@ -309,7 +309,7 @@ func evento(nome: String, d: Dictionary) -> void:
 				arena.anunciar(str(d.get("txt", "")), Color.from_string(str(d.get("cor", "#ffffff")), Color.WHITE))
 		"chefe_final":
 			if not host:
-				arena.chefe_final_chegou(bool(d.get("final", false)))
+				arena.chefe_final_chegou(bool(d.get("final", false)), str(d.get("chefe", "")))
 		"fase_completa":
 			if host:
 				_prontos = {}

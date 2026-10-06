@@ -49,6 +49,10 @@ var _atk_t := 0.0
 var _atk_cool := 0.0
 var _dano_t := 0.0
 var humano := 1.0                # 0..1: quanto do corpo humano aparece (some na transformação, volta no fim)
+var _ent_t := 0.0                # chegada no começo da fase: tempo que falta da queda (0 = acabou)
+var _nome_t := 0.0               # tempo que falta do nome em cima da cabeça
+var _ent_nome := ""
+var _ent_poeira := false
 
 
 func configurar(sprite: String) -> void:
@@ -125,7 +129,31 @@ func atacou() -> void:
 		_atk_cool = ATAQUE_INTERVALO
 
 
+## Começo da fase: o herói cai do alto (~0,6 s) com poeira e um flash, e o nome fica em cima por um instante.
+func entrar(nome: String) -> void:
+	_ent_t = Visual.CHEGADA_TEMPO
+	_nome_t = 2.0
+	_ent_nome = nome
+	_ent_poeira = false
+	Som.tocar("whoosh", 0.0, 1.3, -8)
+
+
+func _chegando() -> void:
+	var p := 1.0 - _ent_t / Visual.CHEGADA_TEMPO
+	spr.position.y = -Visual.chegada_altura(p)
+	if not _ent_poeira and p >= Visual.CHEGADA_POUSO:
+		_ent_poeira = true
+		Som.tocar("queda", 0.0, 1.2, -8)
+		if arena and arena.efeitos:
+			arena.efeitos.explodir(position + Vector2(0, -2), Color(0.82, 0.78, 0.68), 10, 95.0)
+	queue_redraw()
+
+
 func _process(dt: float) -> void:
+	if _ent_t > 0.0 or _nome_t > 0.0:
+		_ent_t = maxf(0.0, _ent_t - dt)
+		_nome_t -= dt
+		_chegando()
 	# morto: a arena para de chamar atualizar(); a animação de morte anda aqui
 	if hp <= 0.0 and _tem_anim() and forma == null:
 		_est_t = _est_t + dt if _est == "morte" else 0.0
@@ -297,6 +325,10 @@ func _animar(entrada: Vector2) -> void:
 		# transformando: o corpo (e o equipamento, que é filho dele) clareia em luz cobalto e some
 		var g := 1.0 - humano
 		spr.modulate = Color(1.0 + g * 1.2, 1.0 + g * 1.6, 1.0 + g * 2.2, humano)
+	if _ent_t > 0.0:   # chegando: aparece e brilha branco no pouso
+		var p := 1.0 - _ent_t / Visual.CHEGADA_TEMPO
+		var g := Visual.chegada_flash(p) * 2.0
+		spr.modulate = Color(spr.modulate.r + g, spr.modulate.g + g, spr.modulate.b + g, spr.modulate.a * clampf(p * 6.0, 0.0, 1.0))
 	spr.visible = not piscar and humano > 0.01
 
 
@@ -345,6 +377,8 @@ func curar(valor: float) -> void:
 
 
 func _draw() -> void:
+	if _ent_t > 0.0 or _nome_t > 0.0:
+		Visual.chegada(self, 1.0 - _ent_t / Visual.CHEGADA_TEMPO, _ent_nome, clampf(_nome_t / 0.6, 0.0, 1.0), Color(0.6, 0.85, 1.0))
 	if not (arena.caido and arena.online) and humano > 0.5:
 		Visual.sombra_boneco(self, spr)   # o dragão desenha a própria sombra
 	for r in (_rastro if forma == null else []):
