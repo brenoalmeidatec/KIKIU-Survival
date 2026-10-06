@@ -27,6 +27,8 @@ const Mapa := preload("res://scripts/hordas/mapa.gd")
 const TelaMapa := preload("res://scripts/hordas/tela_mapa.gd")
 const Loja := preload("res://scripts/hordas/loja.gd")
 const Escuridao := preload("res://scripts/hordas/escuridao.gd")
+const Mortes := preload("res://scripts/hordas/mortes.gd")
+const Finalizacao := preload("res://scripts/hordas/finalizacao.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
@@ -43,6 +45,8 @@ var descobertas: Node          # santuários, fragmentos, dádivas e eventos (#2
 var semente := 0               # semente da corrida (0 = sorteia; no online vem do anfitrião, igual pra todos)
 var coleta: Node2D
 var efeitos: Node2D
+var mortes: Node2D            # mortes violentas (mortes.gd)
+var finalizacao: Node2D       # finalização de chefe (finalizacao.gd)
 var chao: Node2D
 var diretor
 var hud: CanvasLayer
@@ -116,6 +120,10 @@ func _ready() -> void:
 	inimigos = Inimigos.new()
 	inimigos.arena = self
 	add_child(inimigos)
+	mortes = Mortes.new()
+	mortes.arena = self
+	inimigos.mortes = mortes
+	add_child(mortes)
 	jogador = Jogador.new()
 	jogador.arena = self
 	jogador.bot = bot
@@ -132,6 +140,9 @@ func _ready() -> void:
 	habilidades.configurar(self)
 	efeitos = Efeitos.new()
 	add_child(efeitos)
+	finalizacao = Finalizacao.new()
+	finalizacao.arena = self
+	add_child(finalizacao)
 	duelo = Duelo.new()
 	duelo.arena = self
 	add_child(duelo)
@@ -183,6 +194,8 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if entradas:
 		entradas.restaurar_tempo()   # o slow-motion da entrada do chefe nunca pode ficar preso
+	if finalizacao:
+		finalizacao.restaurar()      # idem a câmera lenta e o zoom da finalização de chefe
 	if is_inside_tree():
 		get_tree().paused = false   # arena fechada com carta/mapa/loja aberta não deixa o jogo pausado
 
@@ -250,13 +263,14 @@ func _process(dt: float) -> void:
 	var t3 := Time.get_ticks_usec()
 	coleta.atualizar(dt)
 	efeitos.atualizar(dt)
+	mortes.atualizar(dt)
 	chao.atualizar(dt)
 	hud.atualizar(dt)
 	var t4 := Time.get_ticks_usec()
 	perfil = [t1 - t0, t2 - t1, t3 - t2, t4 - t3]
 	_tremor = maxf(0.0, _tremor - dt * 20.0)
 	var foco: Vector2 = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro()
-	camera.position = entradas.camera(foco)   # a entrada do chefe leva a câmera até ele e traz de volta
+	camera.position = finalizacao.camera(entradas.camera(foco))   # a entrada do chefe leva a câmera até ele e traz de volta; a finalização aproxima
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
 	if Input.is_action_just_pressed("voltar") and not cartas.aberto() and not hud._pausado:
 		hud.pausar()

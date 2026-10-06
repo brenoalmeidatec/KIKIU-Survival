@@ -12,6 +12,14 @@ const COR := {"fogo": Color(1.0, 0.5, 0.15), "raio": Color(0.6, 0.85, 1.0), "gel
 const MIOLO := {"fogo": Color(1.0, 0.9, 0.4), "raio": Color(1, 1, 1), "gelo": Color(1, 1, 1)}
 
 
+## Dano que diz qual elemento acertou (a morte do inimigo fica queimada, congelada ou eletrocutada: mortes.gd).
+## No duelo o alvo é um lutador (sem `causa_pend`), então só marca quem tem o campo.
+static func _ferir(w, e: Dictionary, v, dano: float, empurrao: Vector2) -> void:
+	if v.get("causa_pend") != null:
+		v.causa_pend = e.elem
+	w.campo.ferir(v, dano, empurrao, e.arma)
+
+
 static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
 	a.t -= dt
 	if a.t > 0:
@@ -52,14 +60,14 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		e.acertou.append(v.id)
 		match e.elem:
 			"fogo":
-				w.campo.ferir(v, e.dano * 1.25, e.vel.normalized() * 60.0, e.arma)
+				_ferir(w, e, v, e.dano * 1.25, e.vel.normalized() * 60.0)
 				if e.explosao:
 					for o in w.campo.no_circulo(e.pos, 30.0):
 						if o != v:
-							w.campo.ferir(o, e.dano * 0.6, (o.pos - e.pos).normalized() * 120.0, e.arma)
+							_ferir(w, e, o, e.dano * 0.6, (o.pos - e.pos).normalized() * 120.0)
 					w.especiais.append({"tipo": "elemental", "boom": true, "pos": e.pos, "t": 0.25})
 			"raio":
-				w.campo.ferir(v, e.dano, Vector2.ZERO, e.arma)
+				_ferir(w, e, v, e.dano, Vector2.ZERO)
 				var pontos := [v.pos]
 				var ja := [v.id]
 				var atual: Vector2 = v.pos
@@ -74,13 +82,13 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 					if prox == null:
 						break
 					ja.append(prox.id)
-					w.campo.ferir(prox, e.dano * 0.7, Vector2.ZERO, e.arma)
+					_ferir(w, e, prox, e.dano * 0.7, Vector2.ZERO)
 					atual = prox.pos
 					pontos.append(atual)
 				if pontos.size() > 1:
 					w.especiais.append({"tipo": "elemental", "raio_vis": true, "pontos": pontos, "t": 0.12})
 			"gelo":
-				w.campo.ferir(v, e.dano, e.vel.normalized() * 30.0, e.arma)
+				_ferir(w, e, v, e.dano, e.vel.normalized() * 30.0)
 				if "lento" in v:
 					v.lento = maxf(float(v.lento), 1.5)
 		e.perfura -= 1

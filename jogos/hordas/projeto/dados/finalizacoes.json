@@ -1,0 +1,16 @@
+{
+ "_ajuda": "Finalização de chefe (#32): quando o chefe morre o golpe final depende da arma que deu a última pancada. por_arma: id da arma -> chave de `finalizacoes`. Sem entrada, por_causa (a causa vem do mortes.json) decide; sem nada, global. Cada finalização: golpe = qual desenho (x_katana, rajada, soco, coluna, elemental, global); dur = segundos REAIS; lento = velocidade do jogo na câmera lenta (só solo; 1 = sem câmera lenta) até lento_ate s; zoom = quanto a câmera aproxima (1 = nada); tremor = força passada pra arena.tremer (respeita a opção); cor = tom do golpe. Online: sem câmera lenta e sem zoom, só o desenho. Com a opção Mortes violentas = Reduzida o golpe vira uma coluna de luz (sem sangue e sem partes).",
+ "por_arma": {
+  "katana": "katana", "desert_eagles": "pistolas", "arte_marcial": "marcial", "aura_hazaki": "aura", "poder_elemental": "elemental",
+  "baforada": "elemental", "garras_dragao": "katana", "energia_draconica": "global", "rugido": "marcial"
+ },
+ "por_causa": {"corte": "katana", "tiro": "pistolas", "impacto": "marcial", "aura": "aura", "fogo": "elemental", "gelo": "elemental", "raio": "elemental", "explosao": "global", "padrao": "global"},
+ "finalizacoes": {
+  "katana": {"nome": "Corte em X", "golpe": "x_katana", "dur": 1.7, "lento": 0.18, "lento_ate": 0.95, "zoom": 1.5, "tremor": 7, "cor": [0.9, 0.95, 1.0]},
+  "pistolas": {"nome": "Rajada", "golpe": "rajada", "dur": 1.6, "lento": 0.2, "lento_ate": 0.9, "zoom": 1.4, "tremor": 6, "cor": [1.0, 0.85, 0.4]},
+  "marcial": {"nome": "Soco que quebra", "golpe": "soco", "dur": 1.7, "lento": 0.2, "lento_ate": 0.8, "zoom": 1.45, "tremor": 9, "cor": [1.0, 0.8, 0.6]},
+  "aura": {"nome": "Coluna cobalto", "golpe": "coluna", "dur": 1.8, "lento": 0.22, "lento_ate": 1.0, "zoom": 1.5, "tremor": 5, "cor": [0.3, 0.6, 1.0]},
+  "elemental": {"nome": "Fogo, gelo e raio", "golpe": "elemental", "dur": 1.9, "lento": 0.2, "lento_ate": 1.1, "zoom": 1.45, "tremor": 6, "cor": [1.0, 0.6, 0.3]},
+  "global": {"nome": "Explosão", "golpe": "global", "dur": 1.5, "lento": 0.25, "lento_ate": 0.8, "zoom": 1.35, "tremor": 7, "cor": [1.0, 0.9, 0.7]}
+ }
+}
