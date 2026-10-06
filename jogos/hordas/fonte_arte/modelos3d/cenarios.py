@@ -456,7 +456,160 @@ def fixos_cidade():
             for x in (c - d, c + d) for y in (c - d, c + d)]
 
 
+# ================================================================ floresta sombria (#64, região 1; clima #68)
+
+def piso_floresta(r):
+    """Chão de mata fechada visto de cima: terra escura, tufos de capim, folhas caídas, raízes, musgo e pedrinhas."""
+    caixa("terra", (L, L, 0.1), (L / 2, L / 2, -0.05), toon("2b1d18"))
+    terras = [chao(h) for h in ("3a2a20", "33261d", "42302a")]
+    for _ in range(14):   # manchas de terra com relevo (o "chão" de verdade)
+        x, y = r.uniform(0.8, L - 0.8), r.uniform(0.8, L - 0.8)
+        esfera("torrao", r.uniform(0.5, 1.1), (x, y, -0.25), r.choice(terras), escala=(1, r.uniform(0.6, 1.4), 0.4))
+    capins = [chao(h) for h in ("2d4721", "1d2e17", "35473a")]
+    for _ in range(26):   # tufos de capim: bolinhas de verde amontoadas
+        x, y = r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5)
+        mat = r.choice(capins)
+        for _k in range(r.randint(4, 8)):
+            esfera("capim", r.uniform(0.06, 0.13), (x + r.uniform(-0.25, 0.25), y + r.uniform(-0.25, 0.25), r.uniform(0.0, 0.08)), mat, escala=(1, 1, 1.6))
+    folhas = [toon(h) for h in ("6e4c32", "7e2027", "8f6a2e", "4a3324")]
+    for _ in range(70):   # folhas caídas: plaquinhas rotacionadas
+        caixa("folha", (0.12, 0.07, 0.02), (r.uniform(0.3, L - 0.3), r.uniform(0.3, L - 0.3), 0.02), r.choice(folhas),
+              rot=(r.uniform(-0.3, 0.3), r.uniform(-0.3, 0.3), r.uniform(0, math.pi)))
+    raizes = toon("4a3324")
+    for _ in range(4):    # raízes atravessando o chão
+        x, y = r.uniform(1.5, L - 1.5), r.uniform(1.5, L - 1.5)
+        a = r.uniform(0, math.pi)
+        for k in range(5):
+            cilindro("raiz", 0.09 - k * 0.012, 0.6, (x + math.cos(a) * k * 0.5, y + math.sin(a) * k * 0.5, 0.05), raizes,
+                     rot=(math.pi / 2, 0, a + math.pi / 2 + r.uniform(-0.3, 0.3)), vertices=6)
+    musgo = toon("566e55")
+    for _ in range(6):
+        x, y = r.uniform(1, L - 1), r.uniform(1, L - 1)
+        for _k in range(7):
+            esfera("musgo", r.uniform(0.07, 0.14), (x + r.uniform(-0.3, 0.3), y + r.uniform(-0.3, 0.3), 0.02), musgo, escala=(1, 1, 0.3))
+    pedras = [chao(h) for h in ("4a423b", "5e544a")]
+    for _ in range(8):
+        esfera("pedrinha", r.uniform(0.08, 0.18), (r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5), 0.03), r.choice(pedras), escala=(1, 0.8, 0.5))
+
+
+def arvore_viva(r):
+    """Árvore de copa escura: tronco grosso com raízes saindo, copa em bolhas de folha (o marco da floresta)."""
+    casca, casca_e = toon("6e4c32"), toon("4a3324")
+    folhas = [toon(h) for h in ("2d4721", "466a2c", "1d2e17")]
+    cilindro("tronco", 0.28, 2.2, (0, 0, 1.1), casca, vertices=10, chanfro=0.03)
+    for k in range(4):
+        a = k * math.tau / 4 + 0.4
+        cilindro("raiz", 0.1, 0.7, (math.cos(a) * 0.35, math.sin(a) * 0.35, 0.12), casca_e, rot=(0.5 * math.sin(a), -0.5 * math.cos(a), 0), vertices=6)
+    for i, (x, y, z, rr) in enumerate(((0, 0, 2.7, 0.95), (0.6, 0.2, 2.45, 0.6), (-0.6, 0.1, 2.5, 0.65), (0.1, -0.5, 2.4, 0.55), (-0.2, 0.55, 2.6, 0.6))):
+        esfera("copa", rr, (x, y, z), folhas[i % 3], escala=(1, 1, 0.8))
+    return None
+
+
+def arvore_morta(r):
+    """Árvore morta: tronco cinza retorcido, galhos secos apontando pro céu."""
+    madeira = toon("5e544a")
+    cilindro("tronco", 0.2, 1.9, (0, 0, 0.95), madeira, vertices=8, rot=(0.06, -0.05, 0))
+    for i, (a, z, comp) in enumerate(((0.4, 1.5, 0.8), (2.2, 1.2, 0.7), (4.0, 1.75, 0.6), (5.2, 1.0, 0.5))):
+        cilindro("galho", 0.05, comp, (math.cos(a) * comp * 0.45, math.sin(a) * comp * 0.45, z + comp * 0.3), madeira,
+                 rot=(0.9 * math.sin(a), -0.9 * math.cos(a), 0), vertices=6)
+    return None
+
+
+def toco(r):
+    casca, miolo = toon("6e4c32"), toon("9a6d45")
+    cilindro("toco", 0.32, 0.45, (0, 0, 0.22), casca, vertices=10, chanfro=0.03)
+    cilindro("aneis", 0.27, 0.02, (0, 0, 0.455), miolo, vertices=10)
+    for k in range(3):
+        a = k * math.tau / 3
+        cilindro("raiz", 0.07, 0.4, (math.cos(a) * 0.32, math.sin(a) * 0.32, 0.06), casca, rot=(0.6 * math.sin(a), -0.6 * math.cos(a), 0), vertices=6)
+    for k in range(3):
+        esfera("cogu", 0.06, (0.2 + k * 0.08, -0.22, 0.32 + k * 0.03), toon("7e2027"), escala=(1, 1, 0.5))
+    return None
+
+
+def tronco_caido(r):
+    casca, miolo, musgo = toon("4a3324"), toon("9a6d45"), toon("566e55")
+    cilindro("tronco", 0.24, 1.6, (0, 0, 0.24), casca, rot=(0, math.pi / 2, 0.3), vertices=10, chanfro=0.02)
+    cilindro("ponta", 0.2, 0.02, (0.77, 0.24, 0.24), miolo, rot=(0, math.pi / 2, 0.3), vertices=10)
+    for k in range(5):
+        esfera("musgo", 0.1, (-0.5 + k * 0.25, k * 0.07, 0.44), musgo, escala=(1.2, 1, 0.4))
+    return None
+
+
+def arbusto(r):
+    folhas = [toon(h) for h in ("2d4721", "466a2c", "1d2e17")]
+    for i in range(6):
+        esfera("moita", r.uniform(0.25, 0.38), (r.uniform(-0.3, 0.3), r.uniform(-0.2, 0.2), 0.25 + r.uniform(0, 0.2)), folhas[i % 3], escala=(1, 1, 0.85))
+    for i in range(3):
+        esfera("fruta", 0.04, (r.uniform(-0.3, 0.3), -0.32, 0.3 + r.uniform(0, 0.25)), toon("b0342f"))
+    return None
+
+
+def pedra_musgo(r):
+    pedra, musgo = toon("5e544a"), toon("566e55")
+    esfera("pedra", 0.42, (0, 0, 0.25), pedra, escala=(1.2, 0.9, 0.75))
+    esfera("pedra2", 0.22, (0.4, 0.15, 0.12), pedra, escala=(1, 1, 0.8))
+    for k in range(6):
+        esfera("musgo", 0.12, (r.uniform(-0.3, 0.3), r.uniform(-0.2, 0.2), 0.5), musgo, escala=(1.2, 1, 0.35))
+    return None
+
+
+def cogumelos_luz(r):
+    """Cogumelos que brilham: a luz verde-fria da floresta à noite."""
+    caule = toon("d6ccb2")
+    for i, (x, y, h) in enumerate(((0, 0, 0.32), (0.18, 0.08, 0.22), (-0.16, 0.1, 0.18), (0.06, -0.16, 0.14))):
+        cilindro("caule", 0.035, h, (x, y, h / 2), caule, vertices=6)
+        esfera("chapeu", 0.1 - i * 0.012, (x, y, h), brilha("a6e070", 0.9), escala=(1, 1, 0.55))
+    return {"ponto": (0, 0, 0.3), "rampa": "veneno", "raio": 46, "pisca": 0.08}
+
+
+def cranio_cervo(r):
+    osso, osso_e = toon("d6ccb2"), toon("a89e86")
+    caixa("cranio", (0.22, 0.34, 0.18), (0, 0, 0.12), osso, chanfro=0.04, rot=(0, 0, 0.4))
+    for lado in (1, -1):
+        for k in range(3):
+            cone("chifre", 0.03, 0.0, 0.45 - k * 0.1, (lado * (0.12 + k * 0.14), 0.12 + k * 0.05, 0.3 + k * 0.12), osso_e)
+    caixa("orbita", (0.05, 0.03, 0.04), (0.05, -0.17, 0.16), toon("0d0b14"))
+    return None
+
+
+def teia(r):
+    madeira, fio = toon("4a3324"), toon("d6ccb2")
+    cilindro("estaca", 0.04, 1.0, (-0.45, 0, 0.5), madeira, rot=(0, 0.15, 0), vertices=6)
+    cilindro("estaca", 0.04, 0.9, (0.45, 0, 0.45), madeira, rot=(0, -0.2, 0), vertices=6)
+    for k in range(6):
+        a = k * math.tau / 6
+        cilindro("raio", 0.008, 0.5, (math.cos(a) * 0.22, -0.02, 0.6 + math.sin(a) * 0.22), fio, rot=(0, -a + math.pi / 2, 0), vertices=4)
+    for rr in (0.12, 0.24):
+        for k in range(6):
+            a = k * math.tau / 6 + math.tau / 12
+            cilindro("anel", 0.006, rr * 1.0, (math.cos(a) * rr, -0.02, 0.6 + math.sin(a) * rr), fio, rot=(0, -a, 0), vertices=4)
+    esfera("aranha", 0.06, (0.08, -0.04, 0.64), toon("2e2a40"))
+    return None
+
+
+def fogueira(r):
+    """Fogueira de acampamento abandonado: a única luz quente da floresta."""
+    pedra, lenha = toon("4a423b"), toon("4a3324")
+    for k in range(7):
+        a = k * math.tau / 7
+        esfera("pedra", 0.1, (math.cos(a) * 0.32, math.sin(a) * 0.32, 0.06), pedra, escala=(1, 1, 0.7))
+    for k in range(3):
+        a = k * math.tau / 3
+        cilindro("lenha", 0.05, 0.5, (math.cos(a) * 0.1, math.sin(a) * 0.1, 0.12), lenha, rot=(0.9 * math.sin(a), -0.9 * math.cos(a), 0), vertices=6)
+    cone("chama", 0.17, 0.0, 0.42, (0, 0, 0.32), brilha("f0921e", 1.0), vertices=8)
+    cone("miolo", 0.08, 0.0, 0.28, (0, -0.04, 0.26), brilha("ffd060", 1.0), vertices=6)
+    return {"ponto": (0, 0, 0.35), "rampa": "fogo", "raio": 70, "pisca": 0.2}
+
+
 CENARIOS = {
+    "floresta": {
+        "piso": piso_floresta, "ambiente": [0.6, 0.7, 0.62],
+        "paleta": ("couro", "folha", "musgo", "pedra", "osso", "veneno", "fogo", "sangue", "noite"),
+        "enfeites": [("arvore", arvore_viva, 1), ("arvore_morta", arvore_morta, 2), ("toco", toco, 3), ("tronco", tronco_caido, 2),
+                     ("arbusto", arbusto, 4), ("pedra", pedra_musgo, 2), ("cogumelos", cogumelos_luz, 2),
+                     ("cranio", cranio_cervo, 1), ("teia", teia, 1), ("fogueira", fogueira, 1)],
+    },
     "masmorra": {
         "piso": piso_masmorra, "ambiente": [0.62, 0.58, 0.7],
         "paleta": ("pedra", "musgo", "osso", "fogo", "couro", "aco"),

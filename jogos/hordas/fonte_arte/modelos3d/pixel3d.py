@@ -33,6 +33,7 @@ RAMPA = {
     "noite": ["0b1020", "152040", "223566", "3a5794", "6f8fc8"],                               # cidade à noite
     "pele": ["3b2219", "6b3f2a", "9c6444", "c98e62", "e8b98e"],                               # pele (Hazaki)
     "cobalto": ["0a1030", "142a6e", "2a4fc0", "4073ff", "8cd9ff", "e0f6ff"],                  # energia do Hazaki (aura, dragão)
+    "folha": ["11190e", "1d2e17", "2d4721", "466a2c", "6a943d"],                            # copa de árvore, mato (floresta, #64)
 }
 # Rampas extras (só entram numa paleta se pedidas por nome em paleta_de; NÃO fazem parte de PALETA global,
 # então cavaleiro/dragão/cenários não mudam). Usadas pelo Hazaki de regata preta e calça cargo.

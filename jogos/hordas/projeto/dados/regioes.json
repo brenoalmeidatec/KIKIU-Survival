@@ -21,20 +21,20 @@
    "id": "floresta",
    "nome": "Floresta Sombria",
    "descricao": "Árvores retorcidas e coisas que andam entre elas.",
-   "conjunto": "virus",
-   "cenario": "laboratorio",
+   "conjunto": "floresta",
+   "cenario": "floresta",
    "musica": ["minijogo_tenso", "minijogo_tenso_b"],
    "cor": [0.85, 1.0, 0.85],
    "calor": {},
    "fases": [
-    {"nome": "Trilha Torta", "peso": 3, "duracao": 66, "chefe": "trojan_gigante", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "bug", "quantos": 16}]},
-    {"nome": "Clareira dos Enforcados", "peso": 2, "duracao": 70, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "popup", "quantos": 26}]},
-    {"nome": "Bosque dos Sussurros", "peso": 2, "duracao": 70, "chefe": "trojan_gigante", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "popup", "quantos": 22}]},
-    {"nome": "Raízes Podres", "peso": 2, "duracao": 72, "chefe": "ransomware", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "bug", "quantos": 30}]},
-    {"nome": "Ninho das Aranhas", "peso": 1, "duracao": 72, "chefe": "trojan_gigante", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "bug", "quantos": 28}]},
-    {"nome": "Riacho Negro", "peso": 2, "duracao": 68, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "spam", "quantos": 14}]}
+    {"nome": "Trilha Torta", "peso": 3, "duracao": 66, "chefe": "bruxa_do_mato", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "lobo_sombrio", "quantos": 14}]},
+    {"nome": "Clareira dos Enforcados", "peso": 2, "duracao": 70, "chefe": "bruxa_do_mato", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "corvo_carniceiro", "quantos": 24}]},
+    {"nome": "Bosque dos Sussurros", "peso": 2, "duracao": 70, "chefe": "bruxa_do_mato", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "cogumelo_errante", "quantos": 26}]},
+    {"nome": "Raízes Podres", "peso": 2, "duracao": 72, "chefe": "bruxa_do_mato", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "cogumelo_errante", "quantos": 34}, {"tempo": 56, "tipo": "chefe", "inimigo": "galhudo"}]},
+    {"nome": "Ninho das Aranhas", "peso": 1, "duracao": 72, "chefe": "bruxa_do_mato", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "aranha_tecela", "quantos": 12}]},
+    {"nome": "Riacho Negro", "peso": 2, "duracao": 68, "chefe": "bruxa_do_mato", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "lobo_sombrio", "quantos": 20}]}
    ],
-   "chefe": {"nome": "Coração da Floresta", "duracao": 80, "chefe": "trojan_gigante", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "bug", "quantos": 30}, {"tempo": 60, "tipo": "enxame", "inimigo": "popup", "quantos": 30}]}
+   "chefe": {"nome": "Coração da Floresta", "duracao": 80, "chefe": "velho_carvalho", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "lobo_sombrio", "quantos": 18}, {"tempo": 50, "tipo": "chefe", "inimigo": "galhudo"}, {"tempo": 64, "tipo": "enxame", "inimigo": "corvo_carniceiro", "quantos": 30}]}
   },
   {
    "id": "pantano",
