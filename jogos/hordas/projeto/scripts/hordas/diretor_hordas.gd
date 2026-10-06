@@ -171,6 +171,11 @@ func _gastar() -> void:
 		vivos += n
 
 
+## Conjunto de inimigos da fase atual (campo "conjunto" em corrida.json; sem ele, "virus").
+func conjunto() -> String:
+	return str(_fase.get("conjunto", "virus"))
+
+
 func _disponiveis() -> Array:
 	var res := []
 	var inim: Dictionary = Dados.json("inimigos")
@@ -178,6 +183,8 @@ func _disponiveis() -> Array:
 		if k.begins_with("_") or not inim[k] is Dictionary:
 			continue
 		var d: Dictionary = inim[k]
+		if str(d.get("conjunto", "virus")) != conjunto():
+			continue   # fase de horror só sorteia os tenebrosos; as outras só os vírus
 		if float(d.get("peso", 0)) > 0 and minutos() >= float(d.get("desde", 0)):
 			res.append(k)
 	return res

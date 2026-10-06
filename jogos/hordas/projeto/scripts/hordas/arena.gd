@@ -26,6 +26,7 @@ const Interface := preload("res://scripts/hordas/interface.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
 const TelaMapa := preload("res://scripts/hordas/tela_mapa.gd")
 const Loja := preload("res://scripts/hordas/loja.gd")
+const Escuridao := preload("res://scripts/hordas/escuridao.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
@@ -67,6 +68,7 @@ var dano_por_arma := {}
 var fase_stat := _stat_novo()  # números DESTA fase (zera a cada fase; a tela de resultados mostra isso)
 var resultado: CanvasLayer     # tela de resultados da fase (resultado.gd)
 var entradas: CanvasLayer      # entrada dos personagens e do chefe (entradas.gd)
+var escuridao: CanvasLayer     # escuridão da fase de horror (escuridao.gd)
 var mapa: Dictionary            # mapa de progressão da corrida (mapa.gd), igual em todos os clientes (mesma semente)
 var mapa_pos := Vector2i(0, 0)  # nó atual: x = andar (0 = fase 1), y = faixa
 var mapa_trilha: Array = []     # nós já percorridos (Vector2i)
@@ -165,6 +167,9 @@ func _ready() -> void:
 	entradas = Entradas.new()
 	entradas.arena = self
 	add_child(entradas)
+	escuridao = Escuridao.new()   # fase de horror: só liga quando a fase tem "escuro" em corrida.json
+	escuridao.arena = self
+	add_child(escuridao)
 	_zerar_fase_stat()
 	Som.musica(str(Dados.json("fase").get("musica", "minijogo_tenso")))
 	var f0: Dictionary = diretor.fases()[0]
@@ -313,6 +318,8 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 		cor = Color(0.65, 0.4, 0.85)
 	elif tipo in ["ransomware"]:
 		cor = Color(0.9, 0.3, 0.3)
+	if d.get("cor_morte") is Array:
+		cor = Color(d.cor_morte[0], d.cor_morte[1], d.cor_morte[2])
 	efeitos.explodir(pos, cor, 14 if chefe else 5, 160.0 if chefe else 80.0)
 	var drops: Dictionary = Dados.json("fase").get("drops", {})
 	var sd := Sorte.fluxo("drop")   # drops saem de uma stream: com a mesma semente e os mesmos abates, caem iguais
