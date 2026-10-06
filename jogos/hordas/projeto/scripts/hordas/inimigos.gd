@@ -7,6 +7,12 @@ const Visual := preload("res://scripts/hordas/visual.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
 const LONGE := 720.0       # mais longe que isso do jogador = reaparece do outro lado
+const NASC_T := 0.26       # animação de nascer / reaparecer (teleporte): some e volta numa nuvem escura
+const ACEL_VEL := 14.0     # suavização do andar: 1/ACEL_VEL s (~70 ms) pra chegar na velocidade pedida
+const SEP_MAX := 1.2       # empurrão de separação: no máximo 1,2x a velocidade do bicho, por segundo
+const KB_MAX := 360.0      # teto do empurrão (px/s): o knockback desliza, não teleporta
+const AUSENTE_T := 0.45    # cliente online: bicho que some da foto fica mais um pouco (foto cheia / borda) antes de sair
+const SNAP_ONLINE := 150.0 # cliente online: foto mais longe que isso do que se vê = teleporte (anima), não deslize
 
 class V:
 	var id := 0
@@ -49,6 +55,15 @@ class V:
 	var aura := Color(0, 0, 0, 0)   # brilho em volta (a > 0)
 	var sz := Vector2.ZERO       # tamanho na tela (tam x escala x esc), calculado uma vez
 	var luz := Vector2.ZERO      # x = raio, y = intensidade: ilumina a escuridão da fase de horror
+	# suavidade do movimento
+	var vm := Vector2.ZERO       # velocidade de andar atual (acelera até a desejada, não troca de uma vez)
+	var sepv := Vector2.ZERO     # último empurrão de separação calculado (aplicado aos poucos, todo quadro)
+	var t_nasc := 0.0            # > 0: nascendo / reaparecendo (animação de teleporte)
+	var flip := 0.0              # -1 virado pra esquerda .. +1 pra direita: vira girando, não de uma vez
+	var p_ini := Vector2.ZERO    # cliente online: de onde o deslize da foto parte
+	var p_fim := Vector2.ZERO    # ... e pra onde vai (posição da foto do anfitrião)
+	var t_foto := 0.0            # ... e há quanto tempo a foto chegou
+	var t_ausente := 0.0         # ... e quanto tempo faz que ficou fora das fotos (some só depois de AUSENTE_T)
 
 var arena: Node
 var online: Node = null      # online.gd (só na partida online)
@@ -61,6 +76,19 @@ var _prox_id := 1
 var _t := 0.0
 var _quadro := 0
 var _ordem: Array = []
+var _dt := 0.016
+var fantasmas: Array = []     # quem acabou de sumir (teleporte): {pos, tex, tam, sz, vira, quadro, t}
+var tp_n := 0                 # quantos teleportes (reaparecimentos) já tocaram: o teste lê
+# --- medição de saltos (--saltos): por inimigo, deslocamento por quadro contra a velocidade dele ---
+var medir := false
+var med_tempo := 0.0
+var med_quadros := 0
+var med_saltos := {}          # causa -> quantidade (passo > 2,5x a velocidade)
+var med_grandes := {}         # causa -> quantidade (passo > 12 px num quadro)
+var med_nasc_vis := 0         # nascimentos dentro da tela
+var med_vistos := {}          # online (cliente): ids já vistos; recriar um id = o bicho piscou (saiu da foto e voltou)
+var med_recriados := 0
+var med_ex := {}              # causa -> até 3 exemplos
 
 
 func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
@@ -112,9 +140,30 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.t_anel = float(dd.get("anel", 0.0))
 	v.t_inv = float(dd.get("investida", 0.0))
 	v.t_invoca = float(dd.get("invoca", {}).get("a_cada", 0.0)) if dd.get("invoca") is Dictionary else 0.0
+	v.t_nasc = NASC_T
+	v.p_ini = pos
+	v.p_fim = pos
 	lista.append(v)
 	por_id[v.id] = v
+	if medir and arena and arena.jogador and absf(pos.x - arena.jogador.position.x) < 330 and absf(pos.y - arena.jogador.position.y) < 190:
+		med_nasc_vis += 1
 	return v
+
+
+func _med_reg(v: V, dt: float, passo: float, causa: String, vmax: float) -> void:
+	if passo > 2.5 * vmax * dt and passo > 0.5:
+		med_saltos[causa] = int(med_saltos.get(causa, 0)) + 1
+		if passo > 12.0:
+			med_grandes[causa] = int(med_grandes.get(causa, 0)) + 1
+		var ex: Array = med_ex.get(causa, [])
+		if ex.size() < 3:
+			ex.append("%s passo=%.1f vmax*dt=%.2f" % [v.tipo, passo, vmax * dt])
+			med_ex[causa] = ex
+
+
+func med_relatorio() -> String:
+	return "quadros=%d tempo=%.1fs saltos_sem_animacao(>2,5x vel)=%s  grandes(>12px)=%s  teleportes_animados=%d  nascimentos_na_tela=%d  recriados_online=%d  exemplos=%s" % [
+		med_quadros, med_tempo, str(med_saltos), str(med_grandes), tp_n, med_nasc_vis, med_recriados, str(med_ex)]
 
 
 func vivos() -> int:
@@ -156,7 +205,7 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 	var peso := 4.0 if v.pesado else 1.0
 	if v.chefe:
 		peso = 12.0
-	v.kb += empurrao / peso
+	v.kb = (v.kb + empurrao / peso).limit_length(KB_MAX)
 	if v.hp <= 0:
 		_remover(v)
 		arena.inimigo_morreu(v)
@@ -170,7 +219,7 @@ func ferir_remoto(v: V, valor: float, empurrao: Vector2) -> void:
 		return
 	v.hp -= valor
 	v.flash = 0.09
-	v.kb += empurrao / (12.0 if v.chefe else (4.0 if v.pesado else 1.0))
+	v.kb = (v.kb + empurrao / (12.0 if v.chefe else (4.0 if v.pesado else 1.0))).limit_length(KB_MAX)
 	if v.hp <= 0:
 		_remover(v)
 		arena.inimigo_morreu(v)
@@ -197,10 +246,22 @@ func aplicar_foto(vir: PackedFloat32Array, tir: PackedFloat32Array, onl: Node) -
 			v = criar(onl.tipos[ti], Vector2(vir[i + 2], vir[i + 3]), 1, (flags & 1) != 0)
 			if v == null:
 				continue
+			if medir:
+				if med_vistos.has(id):
+					med_recriados += 1
+				med_vistos[id] = true
 			por_id.erase(v.id)
 			v.id = id
 			por_id[id] = v
-		v.set_meta("alvo", Vector2(vir[i + 2], vir[i + 3]))
+		var np := Vector2(vir[i + 2], vir[i + 3])
+		if v.pos.distance_squared_to(np) > SNAP_ONLINE * SNAP_ONLINE:
+			_teleportar(v, np)   # salto grande (reciclagem no anfitrião, volta de longe): anima em vez de deslizar
+			v.p_ini = np
+		else:
+			v.p_ini = v.pos
+		v.p_fim = np
+		v.t_foto = 0.0
+		v.t_ausente = 0.0
 		v.hp = clampf(vir[i + 4], 0.01, 1.0) * v.hpmax
 		v.chefe = (flags & 2) != 0
 		if (flags & 4) != 0:
@@ -210,7 +271,9 @@ func aplicar_foto(vir: PackedFloat32Array, tir: PackedFloat32Array, onl: Node) -
 		vistos[id] = true
 	for v in lista.duplicate():
 		if not vistos.has(v.id):
-			_remover(v)
+			v.t_ausente += onl.ENVIO
+			if v.t_ausente > AUSENTE_T:
+				_remover(v)
 	tiros.clear()
 	for i in range(0, tir.size(), 5):
 		var si := int(tir[i + 4])
@@ -269,6 +332,11 @@ func aleatorio_na_tela(centro: Vector2) -> V:
 func atualizar(dt: float, jog: Node2D) -> void:
 	_t += dt
 	_quadro += 1
+	_dt = dt
+	_fantasmas_passo(dt)
+	if medir:
+		med_tempo += dt
+		med_quadros += 1
 	# grade
 	_grade.clear()
 	for v: V in lista:
@@ -287,6 +355,8 @@ func atualizar(dt: float, jog: Node2D) -> void:
 	var alvo: Vector2 = alvos[0][0]
 	var dono: int = alvos[0][1]
 	var local: int = Rede.eu() if online else 0
+	var k_vm := minf(1.0, dt * ACEL_VEL)   # suavização do andar (constante de tempo ~0,1 s); a investida arranca de uma vez
+	var k_sep := dt * 12.0
 
 	for v: V in lista.duplicate():
 		if v.hp <= 0:
@@ -294,6 +364,8 @@ func atualizar(dt: float, jog: Node2D) -> void:
 		v.flash = maxf(0.0, v.flash - dt)
 		v.lento = maxf(0.0, v.lento - dt)
 		v.atordoado = maxf(0.0, v.atordoado - dt)
+		if v.t_nasc > 0.0:
+			v.t_nasc = maxf(0.0, v.t_nasc - dt)
 		if alvos.size() > 1:
 			var md := INF
 			for a in alvos:
@@ -359,7 +431,8 @@ func atualizar(dt: float, jog: Node2D) -> void:
 		# separação dos vizinhos (não empilham); cada inimigo calcula a cada 2 quadros
 		var sep := Vector2.ZERO
 		var c := _celula(v.pos)
-		var checados := 0 if (v.id + _quadro) % 2 == 0 else 99
+		var calcula: bool = (v.id + _quadro) % 2 == 0
+		var checados := 0 if calcula else 99
 		for oy in range(-1, 2):
 			for ox in range(-1, 2):
 				var cel = _grade.get(c + Vector2i(ox, oy))
@@ -377,10 +450,29 @@ func atualizar(dt: float, jog: Node2D) -> void:
 					if d2 < rr * rr and d2 > 0.0001:
 						var dl := sqrt(d2)
 						sep += dif / dl * (rr - dl)
-		if v.chefe:
-			sep *= 0.1
-		v.pos += (mov + v.kb) * dt + sep * minf(1.0, dt * 24.0)
+		if calcula:
+			v.sepv = sep * (0.1 if v.chefe else 1.0)
+		# anda: a velocidade acelera até a desejada (sem trocar de uma vez), a separação entra aos poucos todo quadro
+		# (antes entrava inteira a cada 2 quadros: o bicho dava tranco) e o empurrão tem teto
+		v.vm += (mov - v.vm) * (1.0 if v.estado == 2 else k_vm)
+		var push := Vector2.ZERO
+		if v.sepv.x != 0.0 or v.sepv.y != 0.0:
+			push = v.sepv * k_sep
+			var lim_s: float = maxf(v.vel * SEP_MAX, 24.0) * dt
+			if push.length_squared() > lim_s * lim_s:
+				push = push.normalized() * lim_s
+		var p_ant: Vector2 = v.pos
+		v.pos += (v.vm + v.kb) * dt + push
 		v.kb *= exp(-9.0 * dt)
+		if medir:
+			var comp := {"movimento": (v.vm * dt).length(), "knockback": (v.kb * dt).length(), "separacao": push.length()}
+			var causa := "movimento"
+			var mx := 0.0
+			for k in comp:
+				if comp[k] > mx:
+					mx = comp[k]
+					causa = k
+			_med_reg(v, dt, p_ant.distance_to(v.pos), causa, v.vel * (5.0 if v.estado == 2 else 1.0))
 
 		# encostou no jogador
 		if dist < v.raio + 8:
@@ -391,7 +483,8 @@ func atualizar(dt: float, jog: Node2D) -> void:
 			var a: float = mov_j.angle() + randf_range(-1.0, 1.0)
 			if mov_j == Vector2.ZERO:
 				a = randf() * TAU
-			v.pos = alvo + Vector2.from_angle(a) * randf_range(380, 440)
+			var destino: Vector2 = alvo + Vector2.from_angle(a) * randf_range(380, 440)
+			_teleportar(v, destino)
 
 	# tiros dos inimigos
 	for t in tiros.duplicate():
@@ -408,6 +501,47 @@ func atualizar(dt: float, jog: Node2D) -> void:
 	queue_redraw()
 
 
+## Teleporte de propósito (reciclagem de quem ficou longe, salto grande no online): o bicho some numa nuvem escura onde
+## estava e reaparece em outra, no sentido contrário, em NASC_T s. Só vira desenho se estiver perto da tela; fora dela
+## fica só o contador. Custo zero pra quem anda normal.
+func _teleportar(v: V, destino: Vector2) -> void:
+	tp_n += 1   # (o relatório do --saltos conta esses à parte: são saltos de propósito, com animação)
+	if _na_tela(v.pos) and fantasmas.size() < 24:
+		fantasmas.append({"pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.flip < 0.0,
+			"quadro": int(_t * v.ritmo + v.id) % 2, "t": 0.0, "id": v.id})
+	v.pos = destino
+	v.vm = Vector2.ZERO
+	v.kb = Vector2.ZERO
+	v.t_nasc = NASC_T
+
+
+func _na_tela(p: Vector2) -> bool:
+	if not (arena and arena.jogador):
+		return false
+	var c: Vector2 = arena.jogador.position
+	return absf(p.x - c.x) < 340.0 and absf(p.y - c.y) < 200.0
+
+
+func _fantasmas_passo(dt: float) -> void:
+	var i := fantasmas.size() - 1
+	while i >= 0:
+		fantasmas[i].t += dt
+		if fantasmas[i].t >= NASC_T:
+			fantasmas.remove_at(i)
+		i -= 1
+
+
+## Nuvem escura de fumaça (4 bolhas): u = 0 (começo) a 1 (fim); nasce densa e se esvai subindo.
+func _nuvem(p: Vector2, larg: float, u: float, semente: int) -> void:
+	var a := 0.6 * (1.0 - u)
+	if a <= 0.01:
+		return
+	var raio := larg * (0.3 + 0.4 * u)
+	for j in 4:
+		var ang := float(semente * 7 + j) * 1.7 + u * 1.5
+		draw_circle(p + Vector2.from_angle(ang) * raio * 0.5 + Vector2(0, -u * 8.0), raio * (0.55 + 0.1 * j), Color(0.09, 0.06, 0.14, a))
+
+
 ## Dano de vírus: no jogador daqui, ou (anfitrião online) manda pro computador de quem foi acertado.
 func _ferir_jogador(jog: Node2D, quem: int, local: int, dano: float, fonte: String) -> void:
 	if quem == local and quem >= 0:
@@ -418,10 +552,24 @@ func _ferir_jogador(jog: Node2D, quem: int, local: int, dano: float, fonte: Stri
 
 ## Cliente online: os vírus só deslizam até a posição da última foto e os tiros seguem reto.
 func _atualizar_espelho(dt: float) -> void:
+	var dur: float = online.ENVIO if online else 1.0 / 15.0
+	_dt = dt
+	_fantasmas_passo(dt)
 	for v: V in lista:
 		v.flash = maxf(0.0, v.flash - dt)
-		var alvo: Vector2 = v.get_meta("alvo", v.pos)
-		v.pos = alvo if v.pos.distance_squared_to(alvo) > 120.0 * 120.0 else v.pos.lerp(alvo, minf(1.0, dt * 12.0))
+		if v.t_nasc > 0.0:
+			v.t_nasc = maxf(0.0, v.t_nasc - dt)
+		# anda em linha reta da posição de antes até a da foto (uma foto de atraso); se a próxima atrasar, segue na mesma
+		# direção por até meia foto e para: nunca dá o puxão de "pular pra última posição"
+		v.t_foto += dt
+		var k: float = v.t_foto / dur
+		var p_ant: Vector2 = v.pos
+		if k <= 1.0:
+			v.pos = v.p_ini.lerp(v.p_fim, k)
+		else:
+			v.pos = v.p_fim + (v.p_fim - v.p_ini) * (minf(k, 1.5) - 1.0)
+		if medir:
+			_med_reg(v, dt, p_ant.distance_to(v.pos), "espelho", v.vel)
 	for t in tiros:
 		t.pos += t.vel * dt
 	queue_redraw()
@@ -458,7 +606,7 @@ func _draw() -> void:
 		_ordem.sort_custom(func(a, b): return a.pos.y < b.pos.y)
 	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus)
 	for v: V in _ordem:
-		if v.hp <= 0:
+		if v.hp <= 0 or v.t_nasc > NASC_T * 0.4:
 			continue
 		var s: Vector2 = v.sz
 		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
@@ -472,6 +620,9 @@ func _draw() -> void:
 			continue
 		var s: Vector2 = v.sz
 		var vira: bool = v.pos.x > jx
+		var alvo_f := -1.0 if vira else 1.0
+		if v.flip != alvo_f:
+			v.flip = alvo_f if v.flip == 0.0 else move_toward(v.flip, alvo_f, _dt * 9.0)   # vira girando (~0,2 s), não de uma vez
 		var quadro := 2 if v.flash > 0 else (int(_t * v.ritmo + v.id) % 2)
 		var cor := Color.WHITE
 		if v.aura.a > 0.0:
@@ -485,7 +636,7 @@ func _draw() -> void:
 		# Rect2 de largura negativa vira o sprite, mas o Godot desenha a partir da posição pra DIREITA (não normaliza):
 		# por isso a posição é a borda esquerda nos dois casos (antes o bicho à direita do herói saía deslocado 1 largura).
 		var r: Rect2
-		if v.estado == 0 and v.flash <= 0.0 and v.balanco <= 0.0 and v.flutua <= 0.0:
+		if v.estado == 0 and v.flash <= 0.0 and v.balanco <= 0.0 and v.flutua <= 0.0 and v.t_nasc <= 0.0 and v.flip == alvo_f:
 			r = Rect2(v.pos.x - s.x * 0.5, v.pos.y - s.y * 0.6, -s.x if vira else s.x, s.y)   # caminho rápido (vírus)
 		else:
 			var fase_a: float = (_t * v.ritmo + v.id) * PI     # o pulinho acompanha a troca de quadro
@@ -518,10 +669,25 @@ func _draw() -> void:
 				var k := v.flash / 0.09      # squash ao levar dano: achata e alarga, voltando em ~0,1 s
 				sx *= 1.0 + 0.3 * k
 				sy *= 1.0 - 0.24 * k
-			var w := roundf(s.x * sx)
+			if v.t_nasc > 0.0:
+				# nasce / reaparece (teleporte): sai de uma nuvem escura, crescendo e ficando opaco
+				var u := 1.0 - v.t_nasc / NASC_T
+				sx *= 0.45 + 0.55 * u
+				sy *= 0.3 + 0.7 * u
+				cor.a = u
+				_nuvem(v.pos + Vector2(0, s.y * 0.35), s.x, u, v.id)
+			var w := roundf(s.x * sx * maxf(absf(v.flip), 0.08))
 			var h := roundf(s.y * sy)
-			r = Rect2(roundf(v.pos.x + jit) - roundf(w * 0.5), roundf(v.pos.y + s.y * 0.4 - lift) - h, -w if vira else w, h)
+			r = Rect2(roundf(v.pos.x + jit) - roundf(w * 0.5), roundf(v.pos.y + s.y * 0.4 - lift) - h, -w if v.flip < 0.0 else w, h)
 		draw_texture_rect_region(v.tex, r, Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
+	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
+		var u: float = f.t / NASC_T
+		var fs: Vector2 = f.sz * (1.0 - 0.6 * u)
+		var fp: Vector2 = f.pos
+		var fe := fp + Vector2(0, f.sz.y * 0.4)
+		_nuvem(fe + Vector2(0, -f.sz.y * 0.05), f.sz.x, u, f.id)
+		draw_texture_rect_region(f.tex, Rect2(fp.x - fs.x * 0.5, fe.y - fs.y, -fs.x if f.vira else fs.x, fs.y),
+			Rect2(f.tam.x * f.quadro, 0, f.tam.x, f.tam.y), Color(1, 1, 1, 1.0 - u))
 	for t in tiros:
 		var tx: Texture2D = t.tex
 		var sz := tx.get_size() * ESCALA

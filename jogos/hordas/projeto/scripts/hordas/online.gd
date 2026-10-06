@@ -167,11 +167,18 @@ func _enviar_fotos() -> void:
 		var r2 := RAIO_FOTO * RAIO_FOTO
 		var vir := PackedFloat32Array()
 		var n := 0
+		# quem entra na foto: chefes e os mais perto (com mais que MAX_FOTO no raio, cortar por ordem da lista fazia
+		# bicho entrar e sair da foto o tempo todo: piscava na tela do cliente)
+		var cand: Array = []
 		for v in lista:
-			if n >= MAX_FOTO:
-				break
-			if not v.chefe and v.pos.distance_squared_to(c) > r2:
-				continue
+			var d2: float = v.pos.distance_squared_to(c)
+			if v.chefe or d2 <= r2:
+				cand.append([-1.0 if v.chefe else d2, v])
+		if cand.size() > MAX_FOTO:
+			cand.sort_custom(func(a, b): return a[0] < b[0])
+			cand.resize(MAX_FOTO)
+		for ce in cand:
+			var v = ce[1]
 			var flags := (1 if v.elite else 0) | (2 if v.chefe else 0) | (4 if v.flash > 0 else 0) \
 				| (8 if v.estado == 1 else 0) | (16 if v.lento > 0 else 0)
 			vir.append_array([v.id, tipo_idx(v.tipo), v.pos.x, v.pos.y, clampf(v.hp / v.hpmax, 0.0, 1.0), flags])
