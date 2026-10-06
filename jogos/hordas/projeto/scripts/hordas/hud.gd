@@ -174,7 +174,10 @@ func _desenhar() -> void:
 		var fa: Dictionary = df.fases()[df.fase_idx]
 		var resta := maxf(0.0, float(fa.get("duracao", 0)) - df.t_fase)
 		var cor_t: Color = Interface.cor("alerta") if df.enxame_final else Color.WHITE
-		_txt(Vector2(0, 21), "FASE %d/%d  %s" % [df.fase_idx + 1, df.fases().size(), str(fa.get("nome", "")).to_upper()], 8, Color(0.7, 0.9, 1), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+		var rotulo_fase := "FASE %d/%d  %s" % [df.fase_idx + 1, df.fases().size(), str(fa.get("nome", "")).to_upper()]
+		if fa.has("regiao"):   # regiões (#64): "FLORESTA SOMBRIA 2/5  TRILHA TORTA"
+			rotulo_fase = "%s %d/%d  %s" % [str(fa.regiao_nome).to_upper(), int(fa.andar_regiao) + 1, int(Dados.json("regioes").get("fases_por_regiao", 5)), str(fa.get("nome", "")).to_upper()]
+		_txt(Vector2(0, 21), rotulo_fase, 8, Color(0.7, 0.9, 1), HORIZONTAL_ALIGNMENT_CENTER, W, true)
 		if df.final_chamado:
 			_txt(Vector2(0, 42), "CHEFE!", 16, Interface.cor("alerta"), HORIZONTAL_ALIGNMENT_CENTER, W)
 		else:

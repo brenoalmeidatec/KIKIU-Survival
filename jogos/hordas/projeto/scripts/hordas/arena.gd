@@ -20,6 +20,7 @@ const Online := preload("res://scripts/hordas/online.gd")
 const Habilidades := preload("res://scripts/hordas/habilidades.gd")
 const Especial := preload("res://scripts/hordas/especial.gd")
 const Calor := preload("res://scripts/hordas/calor.gd")
+const Regioes := preload("res://scripts/hordas/regioes.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
@@ -91,6 +92,7 @@ var banir := 2
 var calor := {}             # modificadores de calor desta corrida {id: nível} (calor.gd, dados/calor.json)
 var calor_ef := {}          # efeitos somados do calor (ef() lê)
 var calor_pts := 0
+var fases_corrida: Array = []   # regiões (#64): as fases da corrida inteira, na ordem dos andares (regioes.gd)
 var banidos := {}           # id -> true: carta banida some do sorteio até o fim da corrida
 var tempo_arma := {}        # id -> segundos com a arma ativa (DPS da tela final)
 var nivel_arma := {}        # id -> último nível visto (tela final)
@@ -107,6 +109,8 @@ func _ready() -> void:
 	if semente == 0:
 		semente = Sorte.nova_semente()
 	Sorte.iniciar(semente)   # tudo que afeta o mundo compartilhado sai das streams dessa semente (sorte.gd)
+	if Regioes.ativo():      # regiões (#64): a corrida inteira sorteada agora, igual em todos os clientes
+		fases_corrida = Regioes.gerar_fases(Sorte.fluxo("regioes"))
 	mapa = Mapa.gerar()      # stream "mapa": mesma semente, mesmo mapa em todos os clientes
 	mapa_pos = Vector2i(0, Mapa.inicio(mapa))
 	mapa_trilha = [mapa_pos]
@@ -171,6 +175,7 @@ func _ready() -> void:
 		inimigos.espelho = Rede.cliente()
 	diretor = Diretor.new()
 	diretor.iniciar(self)
+	_atualizar_calor()
 	_recalcular()
 	jogador.configurar(str(heroi.get("sprite", heroi_id)))
 	atualizar_visual.call_deferred()   # personagem em camadas: cabelo e arma inicial
@@ -199,9 +204,9 @@ func _ready() -> void:
 	escuridao.arena = self
 	add_child(escuridao)
 	_zerar_fase_stat()
-	Som.musica(_nome_musica(Dados.json("fase").get("musica", "minijogo_tenso"), 0))
+	Som.musica(_nome_musica(diretor.fases()[0].get("musica", Dados.json("fase").get("musica", "minijogo_tenso")), 0))
 	var f0: Dictionary = diretor.fases()[0]
-	anunciar("Fase 1: %s" % f0.get("nome", ""), Color(0.7, 0.9, 1))
+	_anunciar_fase(0, "")
 	camera.position = jogador.centro()
 	entradas.chegada()   # o herói "cai" no começo da fase 1
 
@@ -467,7 +472,14 @@ func fase_completa() -> void:
 	var seq := _no_seq   # se o nó seguinte for escolhido antes de terminar (online), este fluxo se descarta
 	var n: int = diretor.fase_idx + 1
 	fase_stat.tempo = diretor.t_fase   # congela o tempo da fase antes do descanso
-	anunciar("Fase %d completa!" % n, Color(1, 0.9, 0.4))
+	var ff: Dictionary = diretor.fases()[diretor.fase_idx]
+	if ff.get("chefe_regiao", false):   # regiões (#64): derrubou o chefe da região
+		anunciar("REGIÃO CONQUISTADA!", Color(1, 0.85, 0.4))
+		mensagem(str(ff.get("regiao_nome", "")), Color(1, 0.9, 0.6))
+	elif ff.has("regiao"):
+		anunciar("%s completa!" % ff.get("nome", ""), Color(1, 0.9, 0.4))
+	else:
+		anunciar("Fase %d completa!" % n, Color(1, 0.9, 0.4))
 	Som.tocar("vitoria", 0.1, 1.0, -8)
 	if caido:
 		levantar(0.5)   # quem caiu volta no fim da fase
@@ -625,13 +637,14 @@ func _nome_musica(m, andar: int) -> String:
 ## Começa a fase do andar (índice em corrida.json); o tipo do nó (fase, elite, chefe) ajusta a dificuldade.
 func _iniciar_andar(idx: int) -> void:
 	diretor.ir_para(idx, no_tipo)
+	_atualizar_calor()   # região nova: o calor dela soma por cima
 	chao.nova_fase()
 	_zerar_fase_stat()
 	if resultado.aberto():
 		resultado.fechar()
 	var f: Dictionary = diretor.fases()[diretor.fase_idx]
 	var marca := "  (ELITE)" if no_tipo == "elite" else ""
-	anunciar("Fase %d: %s%s" % [diretor.fase_idx + 1, f.get("nome", ""), marca], Color(1, 0.55, 0.45) if no_tipo == "elite" else Color(0.7, 0.9, 1))
+	_anunciar_fase(diretor.fase_idx, marca)
 	entre_fases = false
 	_musica_da_fase(false)
 	entradas.chegada()   # herói (e aliados no online) chegam na fase nova
@@ -648,6 +661,7 @@ func saltar_para_andar(idx: int) -> void:
 		mapa_trilha.append(mapa_pos)
 	no_tipo = "fase"
 	diretor.ir_para(mapa_pos.x)
+	_atualizar_calor()
 	chao.nova_fase()
 
 
@@ -1037,3 +1051,32 @@ func _fim(vitoria: bool, extra := {}) -> void:
 	res.merge(extra)
 	await get_tree().create_timer(1.2, true, false, true).timeout
 	terminou.emit(res)
+
+
+## Calor que vale agora: o que o jogador escolheu + o da região atual (regioes.json "calor": a dificuldade sobe
+## de região em região). A recompensa (calor_pts) conta só o do jogador.
+func _atualizar_calor() -> void:
+	calor_ef = Calor.efeitos(calor)
+	if Regioes.ativo() and diretor:
+		var extra := Calor.efeitos(Regioes.calor(Regioes.do_andar(diretor.fase_idx)))
+		for k in extra:
+			calor_ef[k] = float(calor_ef.get(k, 0.0)) + float(extra[k])
+
+
+## Anúncio no começo de cada fase. Com regiões: "Floresta Sombria 2/5: Trilha Torta"; na entrada de uma região
+## nova, o nome dela aparece grande e a descrição embaixo.
+func _anunciar_fase(idx: int, marca: String) -> void:
+	var f: Dictionary = diretor.fases()[clampi(idx, 0, diretor.fases().size() - 1)]
+	var cor := Color(1, 0.55, 0.45) if marca != "" else Color(0.7, 0.9, 1)
+	if not f.has("regiao"):
+		anunciar("Fase %d: %s%s" % [idx + 1, f.get("nome", ""), marca], cor)
+		return
+	var k := Regioes.por_regiao()
+	if int(f.get("andar_regiao", 0)) == 0:
+		anunciar(str(f.regiao_nome).to_upper(), Color(1, 0.85, 0.5))
+		mensagem("Região %d de %d: %s" % [int(f.regiao) + 1, Regioes.n(), str(Regioes.regiao(int(f.regiao)).get("descricao", ""))], Color(0.8, 0.85, 1))
+	var titulo := "CHEFE DA REGIÃO: %s" % f.get("nome", "") if f.get("chefe_regiao", false) else "%d/%d: %s" % [int(f.andar_regiao) + 1, k, f.get("nome", "")]
+	if int(f.get("andar_regiao", 0)) == 0:
+		mensagem(titulo + marca, cor)       # entrada de região: o nome dela já está grande
+	else:
+		anunciar(titulo + marca, cor)

@@ -142,7 +142,11 @@ func _desenhar() -> void:
 	_tela.draw_rect(Rect2(px - 2, 22, pw + 4, 316), Color(0.35, 0.4, 0.55))
 	_tela.draw_rect(Rect2(px, 24, pw, 312), Color(0.1, 0.11, 0.18))
 	var n: int = arena.diretor.fase_idx + 1
-	_txt(Vector2(px, 52), "FASE %d COMPLETA!" % n, 16, Color(1, 0.9, 0.4), pw, HORIZONTAL_ALIGNMENT_CENTER)
+	var titulo := "FASE %d COMPLETA!" % n
+	var fr: Dictionary = arena.diretor.fases()[arena.diretor.fase_idx]
+	if fr.has("regiao"):   # regiões (#64)
+		titulo = "REGIÃO CONQUISTADA!" if fr.get("chefe_regiao", false) else "FASE %d/%d COMPLETA!" % [int(fr.andar_regiao) + 1, int(Dados.json("regioes").get("fases_por_regiao", 5))]
+	_txt(Vector2(px, 52), titulo, 16, Color(1, 0.9, 0.4), pw, HORIZONTAL_ALIGNMENT_CENTER)
 	var fa: Dictionary = arena.diretor.fases()[arena.diretor.fase_idx]
 	_txt(Vector2(px, 70), str(fa.get("nome", "")), 8, Color(0.7, 0.9, 1), pw, HORIZONTAL_ALIGNMENT_CENTER)
 	var y := 104.0

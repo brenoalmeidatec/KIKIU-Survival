@@ -55,50 +55,52 @@ func _ready() -> void:
 	for k in ["bug", "popup", "spam", "trojan", "minerador"]:
 		ok(str(inim[k].get("conjunto", "virus")) == "virus", "%s segue sendo vírus" % k)
 
-	# --- fases: só uma é de horror e só ela tem escuridão
-	var fases: Array = Dados.json("corrida").get("fases", [])
-	var horror_idx := []
-	for i in fases.size():
-		var f: Dictionary = fases[i]
-		var h: bool = str(f.get("conjunto", "virus")) == "horror"
-		ok(h == not Escuridao.da_fase(f).is_empty(), "fase %d: escuridão só onde o conjunto é horror" % (i + 1))
-		if h:
-			horror_idx.append(i)
-			ok(i >= 4 and i <= 8, "a fase de horror é uma entre 5 e 9 (é a %d)" % (i + 1))
-			ok(str(f.get("chefe", "")) == CHEFE, "o chefe da fase de horror é o arauto")
-			for ev in f.get("eventos", []):
-				var ti: Dictionary = inim.get(str(ev.get("inimigo", "")), {})
-				ok(str(ti.get("conjunto", "virus")) == "horror", "evento da fase de horror usa só tenebrosos (%s)" % ev.get("inimigo", ""))
-		else:
-			ok(str(inim.get(str(f.get("chefe", "")), {}).get("conjunto", "virus")) == "virus", "fase %d clara não tem chefe de horror" % (i + 1))
-			for ev in f.get("eventos", []):
-				ok(str(inim.get(str(ev.get("inimigo", "")), {}).get("conjunto", "virus")) == "virus", "fase %d clara só tem vírus nos eventos" % (i + 1))
-	ok(horror_idx.size() == 1, "exatamente uma fase de horror (%d)" % horror_idx.size())
-	var hi: int = horror_idx[0] if not horror_idx.is_empty() else 5
-
-	# --- o diretor sorteia só o conjunto da fase
+	# --- fases (regiões, #64): a corrida sorteada. Escuridão só onde a fase tem "escuro", e essas são de horror;
+	# o horror (tenebrosos, Arauto) mora no Reino Sombrio, a última região.
 	var a := await nova()
 	a.xp = -1.0e12
+	var fases: Array = a.diretor.fases()
+	var escuras := []
+	var horror := []
+	for i in fases.size():
+		var f: Dictionary = fases[i]
+		var conj := str(f.get("conjunto", "virus"))
+		if not Escuridao.da_fase(f).is_empty():
+			escuras.append(i)
+			ok(conj == "horror", "fase %d escura é de horror" % (i + 1))
+		if conj == "horror":
+			horror.append(i)
+			ok(str(f.get("regiao_nome", "")) == "Reino Sombrio", "horror só no Reino Sombrio (fase %d é de %s)" % [i + 1, f.get("regiao_nome", "?")])
+			if not f.get("chefe_regiao", false):
+				ok(str(f.get("chefe", "")) == CHEFE, "o chefe das fases do Reino é o arauto (fase %d)" % (i + 1))
+			for ev in f.get("eventos", []):
+				var ti: Dictionary = inim.get(str(ev.get("inimigo", "")), {})
+				ok(str(ti.get("conjunto", "virus")) == "horror", "evento de fase de horror usa só tenebrosos (%s)" % ev.get("inimigo", ""))
+	ok(not horror.is_empty(), "a corrida tem fases de horror (%d)" % horror.size())
+	var hi: int = escuras[0] if not escuras.is_empty() else (horror[0] if not horror.is_empty() else 0)
+
+	# --- o diretor sorteia só o conjunto da fase
 	for i in fases.size():
 		a.diretor.ir_para(i)
 		a.diretor.t_fase = 200.0
 		var disp: Array = a.diretor._disponiveis()
 		ok(not disp.is_empty(), "fase %d tem inimigos pra sortear" % (i + 1))
-		var conj := "horror" if i == hi else "virus"
+		var conj := str(fases[i].get("conjunto", "virus"))
 		for k in disp:
 			ok(str(inim[k].get("conjunto", "virus")) == conj, "fase %d só sorteia %s (veio %s)" % [i + 1, conj, k])
-		if i == hi:
+		if conj == "horror":
 			for k in COMUNS + [ELITE]:
 				ok(k in disp, "fase de horror sorteia %s" % k)
 	a.diretor.ir_para(0)
 	await esperar(0.4)
 	ok(not a.escuridao.ligada(), "fase 1: escuridão desligada")
-	a.diretor.ir_para(hi)
-	await esperar(0.4)
-	ok(a.escuridao.ligada(), "fase de horror: escuridão ligada")
-	a.diretor.ir_para(0)
-	await esperar(0.4)
-	ok(not a.escuridao.ligada(), "voltou pra uma fase clara: escuridão desligada")
+	if not escuras.is_empty():
+		a.diretor.ir_para(hi)
+		await esperar(0.4)
+		ok(a.escuridao.ligada(), "fase escura: escuridão ligada")
+		a.diretor.ir_para(0)
+		await esperar(0.4)
+		ok(not a.escuridao.ligada(), "voltou pra uma fase clara: escuridão desligada")
 
 	# --- criar cada um: tamanho real (escala 1), elite de fábrica sem vida multiplicada, desenho sem erro
 	a.diretor.ir_para(hi)

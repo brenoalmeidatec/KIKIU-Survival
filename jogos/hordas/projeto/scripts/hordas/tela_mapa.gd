@@ -25,6 +25,8 @@ var _sel := 0               # índice em _opcoes
 var _opcoes: Array = []     # faixas acessíveis a partir do nó atual
 var _voto := -1             # online: faixa em que já votei
 var _espera := 0.0          # online: segundos que faltam pro anfitrião fechar a votação
+var _a0 := 0                # primeiro andar mostrado (veja _janela)
+var _na := 10               # quantos andares mostrar
 
 
 func _ready() -> void:
@@ -46,6 +48,7 @@ func _agora() -> float:
 
 func abrir() -> void:
 	_opcoes = Mapa.acessiveis(arena.mapa, arena.mapa_pos.x, arena.mapa_pos.y)
+	_janela()
 	_sel = 0
 	_voto = -1
 	_espera = float(Mapa.cfg().get("espera_voto", 40.0))
@@ -109,8 +112,25 @@ func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := -1.0, ali
 	_tela.draw_string(f, p, s, alinhar, larg, tam, cor)
 
 
-static func centro_no(andar: int, faixa: int) -> Vector2:
-	return Vector2(X0 + andar * DX, Y0 + faixa * DY)
+## Andares que a tela mostra: com regiões (#64), só os da região do PRÓXIMO andar (o mapa costurado tem 25);
+## sem regiões, o mapa inteiro. Centralizados, mais espaçados quando são poucos.
+func _janela() -> void:
+	var m: Dictionary = arena.mapa
+	var k := int(m.get("por_regiao", m.andares))
+	_a0 = ((arena.mapa_pos.x + 1) / k) * k
+	if _a0 >= int(m.andares):
+		_a0 = maxi(0, int(m.andares) - k)
+	_na = k
+
+
+func centro_no(andar: int, faixa: int) -> Vector2:
+	var dx := DX if _na >= 8 else minf(120.0, (W - 2.0 * X0) / maxf(1.0, _na - 1.0))
+	var x0 := (W - dx * (_na - 1)) / 2.0
+	return Vector2(x0 + (andar - _a0) * dx, Y0 + faixa * DY)
+
+
+func _na_janela(andar: int) -> bool:
+	return andar >= _a0 and andar < _a0 + _na
 
 
 static func cor_tipo(tipo: String) -> Color:
@@ -159,13 +179,21 @@ func _desenhar() -> void:
 	var tt := Time.get_ticks_msec() / 1000.0
 	var pulso := 0.6 + 0.4 * sin(tt * 6.0)
 	_tela.draw_rect(Rect2(0, 0, W, H), Color(0.03, 0.03, 0.08, 1.0))
-	_txt(Vector2(0, 30), "MAPA", 16, Color(1, 0.9, 0.4), W, HORIZONTAL_ALIGNMENT_CENTER)
-	_txt(Vector2(0, 50), "Andar %d de %d" % [pos.x + 1, int(m.andares)], 8, Color(0.7, 0.9, 1), W, HORIZONTAL_ALIGNMENT_CENTER)
+	var fases: Array = arena.diretor.fases()
+	var prox_f: Dictionary = fases[clampi(pos.x + 1, 0, fases.size() - 1)] if not fases.is_empty() else {}
+	if prox_f.has("regiao"):   # regiões (#64): o nome da região no lugar de "MAPA"
+		_txt(Vector2(0, 30), str(prox_f.regiao_nome).to_upper(), 16, Color(1, 0.9, 0.4), W, HORIZONTAL_ALIGNMENT_CENTER)
+		_txt(Vector2(0, 50), "Região %d de %d   ·   andar %d de %d" % [int(prox_f.regiao) + 1, int(m.andares) / _na, pos.x + 2 - _a0, _na], 8, Color(0.7, 0.9, 1), W, HORIZONTAL_ALIGNMENT_CENTER)
+	else:
+		_txt(Vector2(0, 30), "MAPA", 16, Color(1, 0.9, 0.4), W, HORIZONTAL_ALIGNMENT_CENTER)
+		_txt(Vector2(0, 50), "Andar %d de %d" % [pos.x + 1, int(m.andares)], 8, Color(0.7, 0.9, 1), W, HORIZONTAL_ALIGNMENT_CENTER)
 	_txt(Vector2(W - 150, 24), "OURO %d" % arena.ouro, 8, Color(1, 0.85, 0.35), 138.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	var trilha: Array = arena.mapa_trilha
 	var alvo := -1 if _opcoes.is_empty() else int(_opcoes[_sel])
 	# ligações: apagadas, e acesas as do caminho percorrido e as que saem do nó atual
 	for a in int(m.andares) - 1:
+		if not (_na_janela(a) and _na_janela(a + 1)):
+			continue
 		for x in int(m.faixas):
 			var n := Mapa.no(m, a, x)
 			for p in n.get("prox", []):
@@ -182,6 +210,8 @@ func _desenhar() -> void:
 				_tela.draw_line(de, para, cor, larg)
 	# nós
 	for a in int(m.andares):
+		if not _na_janela(a):
+			continue
 		for x in int(m.faixas):
 			var n := Mapa.no(m, a, x)
 			if n.is_empty():
@@ -217,9 +247,9 @@ func _desenhar() -> void:
 			if escolhido:
 				_tela.draw_colored_polygon(PackedVector2Array([c + Vector2(-5, -raio - 8), c + Vector2(5, -raio - 8), c + Vector2(0, -raio - 2)]), Color(1, 1, 1, pulso))
 	# números dos andares embaixo
-	for a in int(m.andares):
-		var cor_n := Color(1, 0.9, 0.4) if a == pos.x else Color(0.45, 0.5, 0.65)
-		_txt(Vector2(X0 + a * DX - 14, 72.0), "%d" % (a + 1), 8, cor_n, 28.0, HORIZONTAL_ALIGNMENT_CENTER)
+	for a in range(_a0, mini(_a0 + _na, int(m.andares))):
+		var cor_n := Color(1, 0.9, 0.4) if a == pos.x + 1 else Color(0.45, 0.5, 0.65)
+		_txt(Vector2(centro_no(a, 0).x - 14, 72.0), "%d" % (a - _a0 + 1), 8, cor_n, 28.0, HORIZONTAL_ALIGNMENT_CENTER)
 	# painel de informação do nó selecionado
 	var py := 258.0
 	_tela.draw_rect(Rect2(38, py - 2, W - 76, 84), Color(0.35, 0.4, 0.55))
@@ -234,9 +264,13 @@ func _desenhar() -> void:
 		_icone(Vector2(66, py + 26), tipo, cor_t)
 		_txt(Vector2(92, py + 24), str(tc.get("nome", tipo)), 16, cor_t)
 		_tela.draw_multiline_string(Dados.fonte, Vector2(92, py + 44), str(tc.get("info", "")), HORIZONTAL_ALIGNMENT_LEFT, W - 150, 8, 3, Color(0.8, 0.84, 0.95))
-		if Mapa.combate(tipo) and tipo != "chefe":
+		if Mapa.combate(tipo):
 			var fa: Dictionary = arena.diretor.fases()[pos.x + 1]
-			_txt(Vector2(92, py + 74), "Fase: " + str(fa.get("nome", "")), 8, Color(0.6, 0.7, 0.9))
+			if tipo == "chefe":   # quem espera no fim da região
+				var ch := str(fa.get("chefe", ""))
+				_txt(Vector2(92, py + 74), "%s  ·  chefe: %s" % [fa.get("nome", ""), Dados.json("inimigos").get(ch, {}).get("nome", ch)], 8, Color(1, 0.6, 0.55))
+			else:
+				_txt(Vector2(92, py + 74), "Fase: " + str(fa.get("nome", "")), 8, Color(0.6, 0.7, 0.9))
 	else:
 		_txt(Vector2(40, py + 44), "Sem caminho adiante.", 8, Color(1, 0.6, 0.6), W - 80, HORIZONTAL_ALIGNMENT_CENTER)
 	# dica

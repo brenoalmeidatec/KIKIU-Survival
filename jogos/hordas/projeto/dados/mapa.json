@@ -22,7 +22,7 @@
   "loja": {"nome": "LOJA", "cor": [1.0, 0.85, 0.35], "info": "Sem combate. Troque o ouro dos abates por itens e cura.", "ofertas": 3, "preco": {"arma": 500, "passivo": 350, "equipamento": 450, "cura": 200}},
   "evento": {"nome": "EVENTO", "cor": [0.85, 0.6, 1.0], "info": "Sem combate. Algo acontece: dádiva, risco ou um baú.", "variacoes": {"dadiva": {"peso": 5, "titulo": "Encruzilhada: uma dádiva"}, "sombria": {"peso": 3, "titulo": "Pacto sombrio (custa vida)", "raridade_min": "rara", "custo_vida": 0.25}, "bau": {"peso": 2, "titulo": "Um baú esquecido"}}},
   "santuario": {"nome": "SANTUÁRIO RARO", "cor": [1.0, 0.7, 0.25], "info": "Sem combate. Uma dádiva épica ou heroica à escolha.", "raridade_min": "epica"},
-  "chefe": {"nome": "CHEFE FINAL", "cor": [1.0, 0.3, 0.3], "info": "A Tela Azul espera. Depois dela, o duelo."}
+  "chefe": {"nome": "CHEFE", "cor": [1.0, 0.3, 0.3], "info": "O chefe da região. Derrube ele pra seguir; o da última região leva ao duelo."}
  },
  "ouro": {"abate": 1, "elite": 4, "chefe": 40}
 }

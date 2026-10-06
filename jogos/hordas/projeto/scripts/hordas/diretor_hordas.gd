@@ -5,6 +5,8 @@ extends RefCounted
 ## Ideia do Vampire Survivors: um mínimo de vivos por minuto e eventos marcados (chefe, anel, enxame).
 ## Tudo configurado em dados/fase.json.
 
+const Regioes := preload("res://scripts/hordas/regioes.gd")
+
 var arena: Node
 var tempo := 0.0              # tempo total da corrida
 var t_fase := 0.0             # tempo desta fase
@@ -29,6 +31,8 @@ func iniciar(a: Node) -> void:
 
 ## Lista de fases da corrida (dados/corrida.json). Sem esse arquivo, vale a fase única do fase.json.
 func fases() -> Array:
+	if arena and "fases_corrida" in arena and not arena.fases_corrida.is_empty():
+		return arena.fases_corrida   # regiões (#64): a corrida sorteada no começo (regioes.gd)
 	var lista: Array = Dados.json("corrida").get("fases", [])
 	if lista.is_empty():
 		var f: Dictionary = Dados.json("fase")
@@ -71,7 +75,8 @@ func ir_para(i: int, tipo := "fase") -> void:
 
 ## "Minutos de dificuldade": avança com o tempo e também a cada fase concluída.
 func minutos() -> float:
-	return fase_idx * float(Dados.json("corrida").get("minutos_por_fase", 0.0)) + t_fase / 60.0 + bonus_minutos
+	var por_fase := float(Dados.json("regioes").get("minutos_por_fase", 0.0)) if Regioes.ativo() else float(Dados.json("corrida").get("minutos_por_fase", 0.0))
+	return fase_idx * por_fase + t_fase / 60.0 + bonus_minutos
 
 
 func coeficiente() -> float:

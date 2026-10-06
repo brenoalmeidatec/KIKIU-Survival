@@ -688,6 +688,9 @@ func _teste() -> void:
 	_quadros += 1
 	Perf.quadros += 1
 	_t_quadros += get_process_delta_time()
+	if _args.has("imortal") and not _arena.duelo_ativo:   # teste: o robô não morre na horda (pra chegar no fim)
+		_arena.jogador.invencivel = maxf(_arena.jogador.invencivel, 0.2)
+		_arena.jogador.hp = maxf(_arena.jogador.hp, 1.0)
 	if _args.has("facil") and not _arena.duelo_ativo:
 		# teste: o chefe final nasce quase morto, pra chegar logo no duelo
 		for v in _arena.inimigos.lista:

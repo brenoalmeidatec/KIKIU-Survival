@@ -12,6 +12,7 @@ extends RefCounted
 ## (andar e faixa são índices a partir de 0; nos textos pro jogador o andar começa em 1).
 
 const Sorte := preload("res://scripts/hordas/sorte.gd")
+const Regioes := preload("res://scripts/hordas/regioes.gd")
 
 const TIPOS_COMBATE := ["fase", "elite", "chefe"]   # os que rodam a fase do andar; os outros pulam a fase e abrem a própria tela
 
@@ -31,14 +32,52 @@ static func combate(tipo: String) -> bool:
 # ---------- geração ----------
 
 ## Gera o mapa desta corrida. Chame depois de Sorte.iniciar(semente): usa a stream "mapa".
+## Com regiões (#64, dados/regioes.json): um mapa por região, com as regras da região, costurados num só.
 static func gerar() -> Dictionary:
-	var c := cfg()
 	var rng := Sorte.fluxo("mapa")
+	if Regioes.ativo():
+		var c := Regioes.mapa_cfg()
+		var partes := []
+		for _r in Regioes.n():
+			partes.append(_gerar_um(rng, c))
+		return costurar(partes)
+	return _gerar_um(rng, cfg())
+
+
+static func _gerar_um(rng: RandomNumberGenerator, c: Dictionary) -> Dictionary:
 	for _t in int(c.get("tentativas", 50)):
 		var m := _tentar(rng, c)
 		if not m.is_empty() and erros(m).is_empty():
 			return m
 	return _linear(c)
+
+
+## Junta os mapas das regiões na ordem: o andar a da região r vira o andar r*k + a, e o chefe de cada região
+## leva a todos os nós do primeiro andar da próxima (depois do chefe, o grupo escolhe por onde entra na região).
+static func costurar(partes: Array) -> Dictionary:
+	var k := int(partes[0].andares)
+	var f := int(partes[0].faixas)
+	var m := _vazio(k * partes.size(), f)
+	for r in partes.size():
+		var p: Dictionary = partes[r]
+		for a in k:
+			for x in f:
+				var orig = p.nos[a][x]
+				if orig == null:
+					continue
+				var novo: Dictionary = orig.duplicate(true)
+				novo.andar = r * k + a
+				m.nos[r * k + a][x] = novo
+		if r + 1 < partes.size():
+			var entradas := []
+			for x in f:
+				if partes[r + 1].nos[0][x] != null:
+					entradas.append(x)
+			for x in f:
+				if m.nos[r * k + k - 1][x] != null:
+					m.nos[r * k + k - 1][x].prox = entradas.duplicate()
+	m["por_regiao"] = k
+	return m
 
 
 static func _vazio(andares: int, faixas: int) -> Dictionary:
