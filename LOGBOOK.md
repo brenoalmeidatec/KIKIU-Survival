@@ -384,3 +384,12 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Fase 1: 99–113 fps (proc_ms 12–14) · fase 4: 89–118 fps (12–14) · fase 6 (horror): 90–98 fps (12–15). Antes desta leva: ~150 fps e proc_ms 7–9.
 - A queda de ~35% em carga extrema soma cenários (#44), horror e escuridão (#45), suavidade (#47, separação todo quadro) e mortes (#49). Ainda não foi perfilada por partes. **Próximo** se o Breno/Alisson quiserem: perfil por sistema (`perfil=` no log do `--sair`) e otimizar o maior custo primeiro.
 - **Pra quem chega (PC e notebook):** depois de `git pull` com PNG/OGG novos, rode `--headless --path jogos/hordas/projeto --import` antes de jogar sem o editor, senão o Godot usa o cache velho. Testes: 14 cenas em `testes/` (todas `falhas=0` nesta data). Prints ficam em `jogos/hordas/prints/`.
+
+## 2026-10-06 · Claude do Alisson (PC) · músicas de licença aberta: 7 faixas de Kevin MacLeod (CC BY 4.0) no lugar das geradas
+- Pedido: "músicas de licença aberta e livre de uso, mais SOMBRIAS". Todas de **Kevin MacLeod / incompetech.com, CC BY 4.0** (créditos e tabela em `docs/LICENCAS_AUDIO.md`; tela de Créditos do jogo atualizada, conferida em print). Não achei CC0 sombria com a mesma qualidade sem gastar muito tempo; OpenGameArt/FMA/Freesound não foram usados.
+- Mapa: menu = Oppressive Gloom · fases = Crypto (`minijogo_tenso`) e Giant Wyrm (`minijogo_tenso_b`, NOVA) · chefe = Ignosi · duelo = Crusade · fim = Wounded · horror = Long Note Four (trecho). Nomes de arquivo mantidos.
+- **Gancho:** `dados/fase.json` `"musica"` agora é lista e `arena._nome_musica(m, andar)` escolhe por rodízio (andar % tamanho); `musica` em corrida.json também aceita lista ou texto. As fases alternam Crypto/Giant Wyrm.
+- `fonte_audio/preparar_musica_cc.py` refaz os OGG a partir dos MP3 (corte, crossfade de potência igual no fim=começo pro laço, ganho até RMS alvo, limitador suave acima de -1,5 dBFS, OGG q4 44,1 kHz). `analisar_musica.py` agora também lê .mp3. Os MP3 não estão no repo.
+- Medido (OGG finais): 144-186 s, 1,7-2,8 MB cada; pico -0,9 a -8 dBFS, 0 clipadas, RMS -19 a -24 dBFS; centróide menu 809, fases 656/486, chefe 863, fim 591, horror 482, **duelo 1312 Hz (o mais claro)**; salto no laço 0,1-3,9x o típico.
+- As faixas geradas por código ficam só no histórico do Git; `gerar_musica.py` segue como plano B.
+- Testes (14) `falhas=0`, partida do robô 0 SCRIPT ERROR. **Ninguém ouviu ainda.** Pendente: ouvir (Crusade pode ser clara demais pro duelo; Ignosi pode não soar "coral"), crossfade entre faixas em `Som.musica` (troca seca).

@@ -1,7 +1,7 @@
 {
  "_ajuda": "Fase: duracao em segundos. Ao fim do tempo chega o chefe final e começa o Enxame Final (fica cada vez mais difícil até ele morrer). O diretor ganha créditos por segundo = creditos_base x coeficiente^expoente e compra inimigos. coeficiente = 1 + minutos x por_minuto. eventos: chefe, anel (vírus em volta de você), enxame (vírus vindo de um lado). santuarios = tomadas no mapa (fique dentro pra carregar e ganhar uma carta).",
  "nome": "Faculdade infectada",
- "musica": "minijogo_tenso",
+ "musica": ["minijogo_tenso", "minijogo_tenso_b"],
  "duracao": 600,
  "chefe_final": "tela_azul",
  "dificuldade": {

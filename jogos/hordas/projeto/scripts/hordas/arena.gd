@@ -184,7 +184,7 @@ func _ready() -> void:
 	escuridao.arena = self
 	add_child(escuridao)
 	_zerar_fase_stat()
-	Som.musica(str(Dados.json("fase").get("musica", "minijogo_tenso")))
+	Som.musica(_nome_musica(Dados.json("fase").get("musica", "minijogo_tenso"), 0))
 	var f0: Dictionary = diretor.fases()[0]
 	anunciar("Fase 1: %s" % f0.get("nome", ""), Color(0.7, 0.9, 1))
 	camera.position = jogador.centro()
@@ -579,7 +579,14 @@ func _musica_da_fase(chefe: bool) -> void:
 	if chefe:
 		Som.musica(str(f.get("musica_chefe", "chefe")))
 	else:
-		Som.musica(str(f.get("musica", Dados.json("fase").get("musica", "minijogo_tenso"))))
+		Som.musica(_nome_musica(f.get("musica", Dados.json("fase").get("musica", "minijogo_tenso")), diretor.fase_idx))
+
+
+## "musica" pode ser um nome ou uma lista de nomes; com lista, o andar escolhe por rodízio (andar % tamanho).
+func _nome_musica(m, andar: int) -> String:
+	if m is Array and not m.is_empty():
+		return str(m[maxi(andar, 0) % m.size()])
+	return str(m)
 
 
 ## Começa a fase do andar (índice em corrida.json); o tipo do nó (fase, elite, chefe) ajusta a dificuldade.
