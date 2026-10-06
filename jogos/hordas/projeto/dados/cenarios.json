@@ -14,6 +14,22 @@
  ],
  "densidade": 0.3,
  "cenarios": {
+  "floresta": {
+   "densidade": 0.62,
+   "segundo": 0.45,
+   "detalhes_chance": 0.85,
+   "detalhes_max": 3,
+   "detalhes": [
+    {"tipo": "folha", "peso": 5, "cor": [0.32, 0.2, 0.1, 0.85]},
+    {"tipo": "mancha", "peso": 3, "cor": [0.05, 0.1, 0.05, 0.45]},
+    {"tipo": "poca", "peso": 1, "cor": [0.08, 0.12, 0.1, 0.45]}
+   ],
+   "particulas": [
+    {"tipo": "vagalume", "n": 18, "cor": [0.75, 1.0, 0.45, 0.85]},
+    {"tipo": "nevoa", "n": 6, "cor": [0.55, 0.7, 0.6, 0.06]}
+   ],
+   "vida": {"chance": 0.14, "grupo": 3, "fuga": 80, "bichos": [{"tipo": "corvo", "peso": 3}, {"tipo": "rato", "peso": 1}]}
+  },
   "laboratorio": {
    "densidade": 0.65,
    "segundo": 0.4,
