@@ -166,7 +166,11 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 42), "CHEFE!", 16, Interface.cor("alerta"), HORIZONTAL_ALIGNMENT_CENTER, W)
 		else:
 			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
-		_txt(Vector2(0, 24), "Abates %d" % arena.abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, W - 8, true)
+		var abates := "Abates %d" % arena.abates
+		_txt(Vector2(0, 24), abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, W - 8, true)
+		# ouro (mapa, #32) na mesma linha, à esquerda dos abates: embaixo ficam os fragmentos/energia do dragão
+		var larg_ab: float = Dados.fonte.get_string_size(abates, HORIZONTAL_ALIGNMENT_LEFT, -1, Interface.tam_hud(8)).x
+		_txt(Vector2(0, 24), "Ouro %d" % arena.ouro, 8, Color(1, 0.85, 0.35), HORIZONTAL_ALIGNMENT_RIGHT, W - 8 - larg_ab - 12, true)
 		_energia_forma()
 		_dicas_santuario()
 	_icones_build()

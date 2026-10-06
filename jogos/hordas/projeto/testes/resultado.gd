@@ -67,15 +67,20 @@ func _ready() -> void:
 	ok(not a.resultado.aberto(), "fecha sozinha com o robô")
 	ok(not get_tree().paused, "o jogo volta a andar")
 
-	# --- fim de fase inteiro, solo com robô: resultado -> baú -> próxima fase, sem ninguém apertar nada
-	var f0: int = a.diretor.fase_idx
+	# --- fim de fase inteiro, solo com robô: resultado -> baú -> mapa -> próximo nó, sem ninguém apertar nada
+	var x0: int = a.mapa_pos.x
 	a.fase_completa()
 	var t := 0.0
-	while t < 14.0 and a.diretor.fase_idx == f0:
+	while t < 14.0 and a.mapa_pos.x == x0:
 		await esperar(0.25)
 		t += 0.25
-	ok(a.diretor.fase_idx == f0 + 1, "a corrida segue pra próxima fase sozinha (%.1f s)" % t)
-	ok(a.fase_stat.abates == 0, "estatísticas zeradas na fase nova")
+	ok(a.mapa_pos.x == x0 + 1, "a corrida segue pelo mapa sozinha: resultado, baú e o robô escolhe o próximo nó (%.1f s)" % t)
+	# o nó pode ser sem combate (evento/descanso/loja abrem outra tela antes): espera a fase nova começar de fato
+	while t < 30.0 and a.entre_fases:
+		await esperar(0.25)
+		t += 0.25
+	ok(not a.entre_fases, "uma fase nova começou depois do mapa (%.1f s)" % t)
+	ok(a.fase_stat.abates <= 3, "estatísticas zeradas na fase nova (%d abates logo no começo)" % a.fase_stat.abates)
 	a.queue_free()
 	await esperar(0.1)
 

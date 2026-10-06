@@ -9,6 +9,7 @@ extends Node
 
 const Arena := preload("res://scripts/hordas/arena.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
+const Mapa := preload("res://scripts/hordas/mapa.gd")
 const W := 640.0
 const H := 360.0
 const SAVE := "user://recordes.json"
@@ -246,9 +247,7 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 		for i in int(o.estresse):
 			_arena.inimigos.criar(["bug", "popup", "spam", "trojan"].pick_random(), Vector2.from_angle(randf() * TAU) * randf_range(150, 420))
 	if o.has("fase"):
-		for _i in int(o.fase) - 1:
-			_arena.diretor.proxima_fase()
-		_arena.chao.nova_fase()
+		_arena.saltar_para_andar(int(o.fase) - 1)
 	if o.has("pular"):
 		_arena.diretor.tempo = float(o.pular)
 		_arena.diretor.t_fase = float(o.pular)
@@ -368,7 +367,7 @@ func _sala() -> void:
 			and Rede.jogadores.size() >= int(_args.get("jogadores", 2)):
 		_comecou_teste = true
 		var op := {}
-		for k in ["fase", "pular", "build"]:
+		for k in ["fase", "pular", "build", "semente"]:
 			if _args.has(k):
 				op[k] = _args[k]
 		Rede.comecar(op)
@@ -501,6 +500,7 @@ func _teste() -> void:
 		print("  sorte: semente=%d santuarios=%d(hash %d) fragmentos=%s dadivas=%d eventos=%s" % [Sorte.semente, _arena.chao.santuarios.size(),
 			hash(str(_arena.chao.santuarios.map(func(s): return [snappedf(s.pos.x, 0.01), snappedf(s.pos.y, 0.01), s.tipo, s.variacao]))),
 			_arena.descobertas.fragmentos, _arena.descobertas.dadivas.size(), _arena.descobertas.eventos_vistos])
+		print("  mapa: hash=%s pos=%s no=%s ouro=%d trilha=%s" % [Mapa.resumo(_arena.mapa), _arena.mapa_pos, _arena.no_tipo, _arena.ouro, _arena.mapa_trilha.map(func(p): return "%d.%d" % [p.x, p.y])])
 		if _arena.online:
 			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
@@ -763,6 +763,18 @@ func _print_tela(qual: String) -> void:
 			st.itens = [{"icone": "katana"}, {"icone": "aura_hazaki"}, {"icone": "energetico"}, {"icone": "cafe"}]
 			_arena.resultado.abrir(st)
 			await get_tree().create_timer(float(_args.get("espera", 4.0)), true, false, true).timeout
+		"mapa", "loja":   # #32 item 8: tela do mapa no andar --andar=N (padrão 4) com a trilha do robô; "loja" mostra a vitrine
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			_arena.bot = false
+			_arena.entre_fases = true
+			_arena.saltar_para_andar(int(_args.get("andar", 4)) - 1)
+			_arena.ouro = 260
+			if qual == "mapa":
+				_arena.tela_mapa.abrir()
+			else:
+				_arena.loja.abrir(_arena.sortear_cartas(Sorte.criar("loja", 3)))
+			await get_tree().create_timer(float(_args.get("espera", 0.5)), true, false, true).timeout
 		"entrada_chefe":   # placa do chefe no meio da entrada: --espera=N segundos reais depois que ele nasce (padrão 1)
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3, true, false, true).timeout
