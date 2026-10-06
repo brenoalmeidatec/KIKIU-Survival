@@ -9,6 +9,10 @@ var fonte: Font
 
 func _ready() -> void:
 	fonte = load("res://assets/fonte/PressStart2P.ttf")
+	# sem ligaduras: a ligadura "fi" da Press Start 2P desenha um "ñ" ("Afiadas" saía "Añadas", "final" saía "ñnal")
+	var ts := TextServerManager.get_primary_interface()
+	if fonte is FontFile:
+		(fonte as FontFile).opentype_feature_overrides = {ts.name_to_tag("liga"): 0, ts.name_to_tag("clig"): 0}
 	ThemeDB.get_default_theme().default_font = fonte
 	ThemeDB.get_default_theme().default_font_size = 8
 	# carrega tudo antes pra não engasgar no meio da partida

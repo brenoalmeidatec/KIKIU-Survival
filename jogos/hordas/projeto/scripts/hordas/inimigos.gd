@@ -143,6 +143,10 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.hpmax = float(dd.get("vida", 10)) * mult_vida
 	v.dano = float(dd.get("dano", 5)) * (1.0 + float(fase.get("dano_por_nivel", 0.08)) * (nivel - 1))
 	v.vel = float(dd.get("velocidade", 40)) * randf_range(0.9, 1.1)
+	if arena and arena.has_method("ef"):   # calor (#63): modificadores que o jogador ligou antes da corrida
+		v.hpmax *= 1.0 + arena.ef("inimigo_vida") + (arena.ef("chefe_vida") if v.chefe else 0.0)
+		v.dano *= 1.0 + arena.ef("inimigo_dano")
+		v.vel *= 1.0 + arena.ef("inimigo_velocidade")
 	v.raio = float(dd.get("raio", 8))
 	if bool(dd.get("elite", false)) and not v.chefe:
 		v.elite = true               # elite "de fábrica" (Abominação): vida e tamanho já vêm do json
@@ -646,7 +650,7 @@ func _atualizar_espelho(dt: float) -> void:
 
 func _atirar(v: V, dir: Vector2) -> void:
 	var tiro: Dictionary = v.d.get("tiro", {})
-	_novo_tiro(v.pos, dir * float(tiro.get("velocidade", 100)), float(tiro.get("dano", 6)), str(tiro.get("sprite", "proj_email")))
+	_novo_tiro(v.pos, dir * float(tiro.get("velocidade", 100)), float(tiro.get("dano", 6)) * _mult_tiro(), str(tiro.get("sprite", "proj_email")))
 
 
 func _anel(v: V) -> void:
@@ -655,7 +659,7 @@ func _anel(v: V) -> void:
 	var giro := randf() * TAU
 	for i in n:
 		var dir := Vector2.from_angle(giro + TAU * i / n)
-		_novo_tiro(v.pos, dir * float(tiro.get("velocidade", 90)), float(tiro.get("dano", 8)), str(tiro.get("sprite", "proj_email")))
+		_novo_tiro(v.pos, dir * float(tiro.get("velocidade", 90)), float(tiro.get("dano", 8)) * _mult_tiro(), str(tiro.get("sprite", "proj_email")))
 	Som.tocar("tremor", 0.3, 1.3, -6)
 
 
@@ -851,3 +855,8 @@ func _draw() -> void:
 		draw_set_transform(t.pos, t.vel.angle(), Vector2.ONE)
 		draw_texture_rect(tx, Rect2(-sz / 2, sz), false)
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
+
+## Dano dos tiros dos inimigos com o calor ("Garras Afiadas" vale pros tiros também).
+func _mult_tiro() -> float:
+	return 1.0 + (arena.ef("inimigo_dano") if arena and arena.has_method("ef") else 0.0)

@@ -12,6 +12,7 @@ const ATRASO := 0.55         # fração da duração gasta no atraso da varredur
 const COR := Color(0.03, 0.025, 0.05)
 
 var _t := DUR
+var ligada := true          # os prints de teste (--print_tela) desligam: a foto é da tela, não da cortina
 var _tela := Control.new()
 
 
@@ -25,6 +26,8 @@ func _ready() -> void:
 
 
 func revelar() -> void:
+	if not ligada:
+		return
 	_t = 0.0
 	_tela.queue_redraw()
 
