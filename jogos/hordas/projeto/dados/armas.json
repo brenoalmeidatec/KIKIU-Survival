@@ -1,5 +1,5 @@
 {
- "_ajuda": "tipo: projetil (atira no inimigo mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio: katana, pistolas, marcial, aura_energia, elemental (scripts/hordas/armas/). visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos).",
+ "_ajuda": "tipo: projetil (atira no inimigo mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio (scripts/hordas/armas/): katana, pistolas, marcial, aura_energia, elemental e os globais bumerangue, raio, lanca, corvos, runas e sismo (#65). visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos).",
  "_config": {
   "limite_exclusivas": 2
  },
@@ -363,5 +363,115 @@
   "descricao": "Forma de dragão: onda de energia que machuca, empurra e atordoa os mais fracos.",
   "base": {"dano": 20, "recarga": 5.0, "area": 1.0, "raio": 110, "empurra": 260, "atordoa": 1.2},
   "niveis": [{"raio": 15}, {"atordoa": 0.4}, {"dano": 10}, {"recarga": -1.0}, {"raio": 20, "dano": 10}]
+ },
+ "machado": {
+  "nome": "Machado Bumerangue",
+  "icone": "machado",
+  "tipo": "bumerangue",
+  "familia": "projetil",
+  "sprite": "proj_machado",
+  "descricao": "Arremessa um machado que vai e volta. Acerta na ida e na volta.",
+  "base": {"dano": 16, "recarga": 2.2, "quantidade": 1, "velocidade": 300, "alcance": 160, "area": 1.0},
+  "niveis": [{"quantidade": 1}, {"dano": 6}, {"alcance": 30}, {"quantidade": 1}, {"dano": 10, "recarga": -0.3}]
+ },
+ "machados_brasa": {
+  "nome": "Machados em Brasa",
+  "icone": "machados_brasa",
+  "tipo": "bumerangue",
+  "familia": "projetil",
+  "sprite": "proj_machado_brasa",
+  "evolucao": true,
+  "descricao": "Quatro machados em brasa que vão longe e sempre voltam.",
+  "base": {"dano": 34, "recarga": 1.4, "quantidade": 4, "velocidade": 360, "alcance": 210, "area": 1.3}
+ },
+ "raio": {
+  "nome": "Raio",
+  "icone": "raio",
+  "tipo": "raio",
+  "familia": "projetil",
+  "descricao": "Um raio cai num inimigo qualquer da tela.",
+  "base": {"dano": 20, "recarga": 1.6, "quantidade": 1, "raio": 18, "area": 1.0},
+  "niveis": [{"quantidade": 1}, {"dano": 8}, {"recarga": -0.2}, {"quantidade": 1}, {"dano": 12}]
+ },
+ "furia_ceus": {
+  "nome": "Fúria dos Céus",
+  "icone": "furia_ceus",
+  "tipo": "raio",
+  "familia": "projetil",
+  "evolucao": true,
+  "descricao": "Raios que pulam de inimigo em inimigo.",
+  "base": {"dano": 36, "recarga": 0.9, "quantidade": 3, "raio": 26, "cadeia": 4, "area": 1.2}
+ },
+ "lanca": {
+  "nome": "Lança",
+  "icone": "lanca",
+  "tipo": "lanca",
+  "familia": "chicote",
+  "descricao": "Estocada longa no inimigo mais perto. Atravessa a fila inteira.",
+  "base": {"dano": 30, "recarga": 1.5, "quantidade": 1, "alcance": 140, "largura": 14, "area": 1.0},
+  "niveis": [{"dano": 8}, {"alcance": 30}, {"quantidade": 1}, {"dano": 10}, {"recarga": -0.3, "largura": 6}]
+ },
+ "lanca_ardente": {
+  "nome": "Lança Ardente",
+  "icone": "lanca_ardente",
+  "tipo": "lanca",
+  "familia": "chicote",
+  "evolucao": true,
+  "descricao": "Três estocadas de ponta em brasa, longas e largas.",
+  "base": {"dano": 60, "recarga": 1.0, "quantidade": 3, "alcance": 210, "largura": 26, "area": 1.3}
+ },
+ "corvos": {
+  "nome": "Corvos Famintos",
+  "icone": "corvos",
+  "tipo": "corvos",
+  "familia": "orbita",
+  "descricao": "Chama corvos que caçam os inimigos e bicam até cansar.",
+  "base": {"dano": 5, "recarga": 4.0, "quantidade": 2, "duracao": 3.5, "velocidade": 220, "tique": 0.5, "area": 1.0},
+  "niveis": [{"quantidade": 1}, {"dano": 3}, {"duracao": 1.0}, {"quantidade": 2}, {"dano": 4, "tique": -0.1}]
+ },
+ "revoada": {
+  "nome": "Revoada Negra",
+  "icone": "revoada",
+  "tipo": "corvos",
+  "familia": "orbita",
+  "evolucao": true,
+  "descricao": "Um bando inteiro de corvos de olho em brasa.",
+  "base": {"dano": 11, "recarga": 2.5, "quantidade": 9, "duracao": 5.0, "velocidade": 280, "tique": 0.35, "area": 1.3}
+ },
+ "runas": {
+  "nome": "Runas Explosivas",
+  "icone": "runas",
+  "tipo": "runas",
+  "familia": "poca",
+  "descricao": "Risca runas no chão que explodem quando alguém pisa.",
+  "base": {"dano": 30, "recarga": 2.5, "quantidade": 2, "duracao": 8.0, "raio": 16, "explosao": 42, "area": 1.0},
+  "niveis": [{"quantidade": 1}, {"dano": 10}, {"explosao": 10}, {"quantidade": 1}, {"dano": 15, "recarga": -0.4}]
+ },
+ "circulo_runico": {
+  "nome": "Círculo Rúnico",
+  "icone": "circulo_runico",
+  "tipo": "runas",
+  "familia": "poca",
+  "evolucao": true,
+  "descricao": "Muitas runas, estouros maiores, e quem sobra fica lento.",
+  "base": {"dano": 60, "recarga": 1.5, "quantidade": 6, "duracao": 9.0, "raio": 20, "explosao": 64, "lentidao": 1.2, "area": 1.2}
+ },
+ "martelo": {
+  "nome": "Martelo Sísmico",
+  "icone": "martelo",
+  "tipo": "sismo",
+  "familia": "aura",
+  "descricao": "Bate no chão e solta uma onda que empurra tudo pra longe.",
+  "base": {"dano": 18, "recarga": 3.0, "raio": 85, "empurra": 260, "area": 1.0},
+  "niveis": [{"dano": 6}, {"area": 0.15}, {"recarga": -0.4}, {"dano": 8}, {"area": 0.2}]
+ },
+ "terremoto": {
+  "nome": "Terremoto",
+  "icone": "terremoto",
+  "tipo": "sismo",
+  "familia": "aura",
+  "evolucao": true,
+  "descricao": "Duas ondas seguidas. Quem não voa longe fica lento.",
+  "base": {"dano": 40, "recarga": 2.0, "raio": 120, "empurra": 360, "ondas": 2, "lentidao": 1.0, "area": 1.2}
  }
 }

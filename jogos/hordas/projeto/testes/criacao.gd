@@ -49,7 +49,7 @@ func _ready() -> void:
 	ok(is_equal_approx(float(h.bonus.vida_max), 30.0 + 10.0), "anão clérigo: vida +40 (%s)" % h.bonus.get("vida_max"))
 	ok(is_equal_approx(float(h.bonus.regen), 0.3 + 0.4), "anão clérigo: regen +0,7 (%s)" % h.bonus.get("regen"))
 	ok(is_equal_approx(float(h.bonus.velocidade), -0.15), "anão clérigo: velocidade -15%% (%s)" % h.bonus.get("velocidade"))
-	ok(str(h.arma) == "cafe" and str(h.especial) == "nicao" and is_equal_approx(float(h.reviver), 2.0), "anão clérigo: arma, especial e reviver da classe")
+	ok(str(h.arma) == "wifi" and str(h.especial) == "nicao" and is_equal_approx(float(h.reviver), 2.0), "anão clérigo: arma, especial e reviver da classe")
 	ok(str(h.nome) == "Anão Clérigo", "nome do herói criado (%s)" % h.nome)
 	var s := Construcao.stats(Criacao.montar("goblin", "ladino"), {}, {})
 	ok(is_equal_approx(float(s.vida_max), 100.0 - 30.0 - 10.0), "goblin ladino: vida 60 na ficha (%s)" % s.vida_max)
@@ -69,7 +69,7 @@ func _ready() -> void:
 	a.heroi_id = id
 	add_child(a)
 	await esperar(0.3)
-	ok(a.armas.achar("cabo_rede") != null, "orc guerreiro começa com a arma do guerreiro")
+	ok(a.armas.achar("lanca") != null, "orc guerreiro começa com a arma do guerreiro")
 	ok(a.especial.tem(), "orc guerreiro tem o especial do guerreiro")
 	ok(a.jogador.tom.is_equal_approx(Color(0.76, 1.0, 0.72)), "orc guerreiro: o corpo tem o tom da raça (%s)" % a.jogador.tom)
 	ok(is_equal_approx(a.stat("dano"), 1.2), "orc guerreiro: +20%% de dano na partida (%s)" % a.stat("dano"))

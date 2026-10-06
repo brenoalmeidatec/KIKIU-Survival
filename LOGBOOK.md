@@ -563,3 +563,18 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Arte:** `fonte_arte/icones_tema.gd` (roda no Godot, sem Python) desenha 21 ícones e 7 sprites pixel a pixel, com contorno automático e troca de cor (as evoluções reaproveitam o desenho da base). Os ícones antigos (`icone_pendrive` etc.) ficaram na pasta, sem uso.
 - Teste novo `testes/tema.tscn`: tudo o que os dados citam existe, as cores estão nos dados e nenhum nome visível voltou a ser de informática. Novo atalho de teste `--armas=a,b,c` (entra com essas armas). São 21 testes, todos sem falhas. Prints da tela de cartas, do título e dos efeitos das armas base e evoluídas.
 - **Próximo:** #65 marco 2, armas públicas novas.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #65 marco 2: seis armas públicas novas (com evolução)
+- **Armas novas, globais, cada uma com comportamento próprio** (módulos em `scripts/hordas/armas/`, no mesmo contrato do `pistolas.gd`; só usam `no_circulo`, `n_mais_perto`, `aleatorio_na_tela` e `ferir`, então também funcionam no duelo):
+  - **Machado Bumerangue** (`bumerangue`): vai até o alcance, freia e volta, e acerta na ida e na volta. Evolução **Machados em Brasa**, com o Feijão Tropeiro.
+  - **Raio** (`raio`): cai do céu num inimigo qualquer da tela. Evolução **Fúria dos Céus**, que pula de inimigo em inimigo, com o Pergaminho Antigo.
+  - **Lança** (`lanca`): estocada longa em linha que atravessa a fila. Evolução **Lança Ardente**, com o Olho de Falcão.
+  - **Corvos Famintos** (`corvos`, invocação): corvos que caçam, bicam e trocam de presa. Evolução **Revoada Negra**, com a Pena de Corvo.
+  - **Runas Explosivas** (`runas`): minas que explodem quando pisam. Evolução **Círculo Rúnico**, que deixa lento, com a Figa de Arruda.
+  - **Martelo Sísmico** (`sismo`): onda de choque que empurra forte. Evolução **Terremoto**, com duas ondas e lentidão, com a Garrafada.
+- Cada evolução usa um dos 6 passivos que estavam sem evolução, então agora **todo passivo abre exatamente uma evolução** (11 no total). Todas têm `familia` (o duelo e a IA estimam o tipo novo por ela).
+- **Classes (#72) casadas com as armas novas:** Guerreiro começa com a Lança, Mago com o Raio, Atirador com o Machado, Ladino com a Adaga e Clérigo com o Sino.
+- **Equilíbrio medido** (DPS no nível máximo, 16 inimigos parados, 10 s): armas base antigas de 101 a 307, novas de 97 a 330; evoluções antigas de 99 a 1130, novas de 222 a 1209. A lança estava na lanterna e subiu de 26 para 30 de dano. A Ciclone de Aço (antiga, 99) parece fraca: fica pro equilíbrio da #63.
+- **Desempenho** na fase 25 com 500 no estresse e quatro evoluções juntas: novas, de 79 a 168 fps; antigas, de 83 a 99 fps. O custo das armas por quadro é parecido (update 243 contra 265 µs). O duelo com as armas novas rodou sem erro.
+- Arte: 12 ícones e 2 sprites de machado no `icones_tema.gd`. Os corvos são desenhados por código, cinza-azulados com borda clara, porque o preto sumia nos chãos escuros. Teste novo `testes/armas_novas.tscn`: cada arma machuca de verdade e as evoluções estão bem ligadas. São 22 testes, todos sem falhas.
+- **Próximo:** #68 (movimento e ambientação estilo Dimraeth).
