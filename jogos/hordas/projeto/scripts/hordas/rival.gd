@@ -54,7 +54,7 @@ func configurar(d: Node2D, l, nome_: String, heroi: String, build_: Dictionary, 
 	hp = hpmax
 	_pref = IA.alcance_preferido(build.armas)
 	spr.texture = Dados.tex_personagem(str(h.get("sprite", heroi)), "andando_8")
-	spr.hframes = 9
+	spr.hframes = maxi(1, int(spr.texture.get_width()) / 44)
 	spr.vframes = 4
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
@@ -128,9 +128,9 @@ func _animar() -> void:
 			_dir = "direita" if _mov.x > 0 else "esquerda"
 		else:
 			_dir = "baixo" if _mov.y > 0 else "cima"
-		spr.frame = LINHA[_dir] * 9 + 1 + int(_t * 12.0) % 8
+		spr.frame = LINHA[_dir] * spr.hframes + 1 + int(_t * 12.0) % 8
 	else:
-		spr.frame = LINHA[_dir] * 9
+		spr.frame = LINHA[_dir] * spr.hframes
 	var piscar := invencivel > 0 and dash_t <= 0 and int(_t * 20) % 2 == 0
 	spr.modulate = Color(1, 0.4, 0.4) if _vermelho > 0 else Color.WHITE
 	spr.visible = not piscar
@@ -165,11 +165,11 @@ func _draw() -> void:
 	Visual.sombra_boneco(self, spr)
 	for r in _rastro:
 		var tex := spr.texture
-		var w := tex.get_width() / 9.0
+		var w := tex.get_width() / float(spr.hframes)
 		var h := tex.get_height() / 4.0
 		var f: int = r.frame
 		draw_texture_rect_region(tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)),
-			Rect2((f % 9) * w, (f / 9) * h, w, h), Color(cor, r.t * 2.0))
+			Rect2((f % spr.hframes) * w, (f / spr.hframes) * h, w, h), Color(cor, r.t * 2.0))
 	draw_set_transform(Vector2.ZERO, 0, Vector2(1, 0.4))
 	draw_circle(Vector2.ZERO, 12, Color(cor, 0.5))
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)

@@ -15,6 +15,7 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	if a.t > 0:
 		return
 	a.t = maxf(0.2, float(s.recarga))
+	w.golpe_corpo()
 	var c: Vector2 = w.dono.centro()
 	var alcance: float = float(s.get("alcance", 70)) * float(s.area)
 	var alvo = w.campo.mais_perto(c, alcance * 1.6)

@@ -34,11 +34,26 @@ RAMPA = {
     "pele": ["3b2219", "6b3f2a", "9c6444", "c98e62", "e8b98e"],                               # pele (Hazaki)
     "cobalto": ["0a1030", "142a6e", "2a4fc0", "4073ff", "8cd9ff", "e0f6ff"],                  # energia do Hazaki (aura, dragão)
 }
+# Rampas extras (só entram numa paleta se pedidas por nome em paleta_de; NÃO fazem parte de PALETA global,
+# então cavaleiro/dragão/cenários não mudam). Usadas pelo Hazaki de regata preta e calça cargo.
+RAMPA_EXTRA = {
+    "hz_neutro": ["0d0d10", "1a1618", "2a2426", "3d3335", "5e504b", "7d6e65", "a89a8e", "d0c4b6"],   # preto -> cinza encardido -> faixa suja
+    "hz_pele": ["3e261e", "6d4332", "b16e52", "d29a78", "e8bb9c"],                                   # pele bronzeada
+    "hz_sangue": ["3a0c0d", "75191a", "a52a26"],                                                     # pano vermelho, sangue
+}
 PALETA_HEX = [h for r in RAMPA.values() for h in r]
 PALETA = np.array([[int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)] for h in PALETA_HEX])
 CONTORNO = PALETA[0]
 RAMPAS = list(RAMPA.values())
 DEGRAU_ACIMA = {PALETA_HEX.index(r[k]): PALETA_HEX.index(r[k + 1]) for r in RAMPAS for k in range(len(r) - 1)}
+
+
+def _rgb(h):
+    return np.array([int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)])
+
+
+# degraus de "luz de borda" das rampas extras: (cor, cor um degrau acima)
+DEGRAU_EXTRA = [(_rgb(r[k]), _rgb(r[k + 1])) for r in RAMPA_EXTRA.values() for k in range(len(r) - 1)]
 
 
 def paleta_sem(*hexas):
@@ -48,8 +63,10 @@ def paleta_sem(*hexas):
 
 def paleta_de(*rampas):
     """Só as rampas pedidas, mais o preto do contorno (ex.: paleta_de("pedra", "fogo", "osso"))."""
-    hexas = {"0d0b14"} | {h for r in rampas for h in RAMPA[r]}
-    return np.array([c for h, c in zip(PALETA_HEX, PALETA) if h in hexas])
+    hexas = {"0d0b14"} | {h for r in rampas for h in (RAMPA[r] if r in RAMPA else RAMPA_EXTRA[r])}
+    base = [c for h, c in zip(PALETA_HEX, PALETA) if h in hexas]
+    extra = [_rgb(h) for r in RAMPA_EXTRA.values() for h in r if h in hexas]
+    return np.array(base + extra)
 
 
 def linear(v):
@@ -287,6 +304,9 @@ def pixelar(px, contorno=True, paleta=None, luz_borda=True, pontilhado=0.0):
         for i, j in DEGRAU_ACIMA.items():
             mesmo = alvo & np.all(np.abs(antes - PALETA[i]) < 1e-4, axis=2)
             out[:, :, :3][mesmo] = PALETA[j]
+        for de, para in DEGRAU_EXTRA:
+            mesmo = alvo & np.all(np.abs(antes - de) < 1e-4, axis=2)
+            out[:, :, :3][mesmo] = para
     if contorno:
         viz = np.zeros_like(cheio)
         viz[1:, :] |= cheio[:-1, :]

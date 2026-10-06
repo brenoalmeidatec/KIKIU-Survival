@@ -578,8 +578,9 @@ func _cair() -> void:
 		return
 	caido = true
 	jogador.hp = 0
-	jogador.spr.rotation = PI / 2
-	jogador.spr.position = Vector2(-30, -10)
+	if not jogador._tem_anim():   # folha de 23 colunas tem quadros de morte: não precisa deitar o sprite
+		jogador.spr.rotation = PI / 2
+		jogador.spr.position = Vector2(-30, -10)
 	jogador.spr.modulate = Color(0.45, 0.45, 0.5, 0.8)
 	online.reviver_prog = 0.0
 	anunciar("Você caiu!", Color(1, 0.4, 0.4))

@@ -19,6 +19,7 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	if a.t > 0:
 		return
 	a.t = maxf(0.12, float(s.recarga))
+	w.golpe_corpo()
 	var seq := ["soco", "soco", "chute"]
 	if float(s.get("giro", 0)) > 0:
 		seq.append("giro")
