@@ -23,11 +23,11 @@ const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo
 const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
 	"dash": [KEY_SPACE, KEY_SHIFT], "confirmar": [KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_Z], "voltar": [KEY_ESCAPE],
-	"resortear": [KEY_R], "pular": [KEY_X], "banir": [KEY_B], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F], "falar": [KEY_V],
+	"resortear": [KEY_R], "pular": [KEY_X], "banir": [KEY_B], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F], "falar": [KEY_V], "especial": [KEY_E],
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP], "baixo": [JOY_BUTTON_DPAD_DOWN], "esquerda": [JOY_BUTTON_DPAD_LEFT], "direita": [JOY_BUTTON_DPAD_RIGHT],
-	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y], "pular": [JOY_BUTTON_LEFT_SHOULDER], "banir": [JOY_BUTTON_BACK], "transformar": [JOY_BUTTON_X],
+	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y], "pular": [JOY_BUTTON_LEFT_SHOULDER], "banir": [JOY_BUTTON_BACK], "transformar": [JOY_BUTTON_X], "especial": [JOY_BUTTON_Y],
 }
 
 var _tela := Control.new()
@@ -670,6 +670,8 @@ func _teste() -> void:
 			hash(str(_arena.chao.santuarios.map(func(s): return [snappedf(s.pos.x, 0.01), snappedf(s.pos.y, 0.01), s.tipo, s.variacao]))),
 			_arena.descobertas.fragmentos, _arena.descobertas.dadivas.size(), _arena.descobertas.eventos_vistos])
 		print("  mapa: hash=%s pos=%s no=%s ouro=%d trilha=%s" % [Mapa.resumo(_arena.mapa), _arena.mapa_pos, _arena.no_tipo, _arena.ouro, _arena.mapa_trilha.map(func(p): return "%d.%d" % [p.x, p.y])])
+		if _arena.especial.tem():
+			print("  especial: %s usos=%d recarga=%.0f" % [_arena.especial.d.get("nome", ""), _arena.especial.usos, _arena.especial.recarga])
 		if _arena.online:
 			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
@@ -984,6 +986,13 @@ func _print_tela(qual: String) -> void:
 			_estado = "creditos"
 		"opcoes":
 			_abrir_opcoes()
+		"especial":   # --heroi=X --estresse=N: usa o especial no meio dos inimigos e tira o print depois de --espera s
+			_comecar(str(_args.get("heroi", "hazaki")))
+			await get_tree().create_timer(1.0).timeout
+			_arena.especial.recarga = 0.0
+			_arena.especial.usar()
+			await get_tree().create_timer(float(_args.get("espera", 0.25))).timeout
+			Engine.time_scale = 0.03   # o print sai 0,6 s (tempo real) depois: o efeito curto quase para, pra caber na foto
 		"dragao":   # com --bot --dragao (e --estresse=N pra ter vírus): --espera=0.6 pega o meio da transformação
 			_comecar("hazaki")
 			await get_tree().create_timer(float(_args.get("espera", 5.0))).timeout

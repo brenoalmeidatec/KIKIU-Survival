@@ -467,3 +467,13 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Opções compactadas (12 px por linha): com acessibilidade e voz, a tela passava das dicas.
 - Testado sem microfone com `--voz_teste` (um tom de 3 s no lugar da voz): o anfitrião recebeu 100% e o outro cliente, pelo repasse, 100%, 96% e uma vez 61% (perda pontual no começo da partida; voz sem garantia de entrega, como telefone). mu-law em `testes/rede.tscn` (erro < 5%). 17 testes sem falhas; online com 4 (113 = 113).
 - **Não testado:** microfone de verdade e ouvido humano (o notebook não fala com ele mesmo). **Para o Alisson:** testem os dois numa sala, segurando V.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #63 marco 1: especial por herói (tecla E)
+- `dados/especiais.json` + `scripts/hordas/especial.gd` (nó da arena: recarga, tecla **E** / **Y** no controle, robô usa com 6+ inimigos perto, grito em cima da cabeça, bônus temporário que `arena.stat` soma). O efeito de cada um é um módulo no padrão das armas (`scripts/hordas/especiais/`, registrado em `armas.MODULOS`).
+  - **Hazaki — "Sou Gostoso!"** (`pose`): o Breno grita que é gostoso quando perde a discussão. Anel dourado com raios: dano, empurrão, atordoa os de perto (chefe/elite só lentos) e +30% crítico +25% dano por 6 s. Recarga 30 s.
+  - **Nicão — "Na Manha"** (`manha`): "tranquilo, tranquilo". Invencível 4 s, cura 35% da vida, bolha calma que deixa lento e machuca de leve quem chega perto. Recarga 34 s.
+  - **Lucas — "Pegou Onda"** (`onda`): pegada de surfista. Onda gigante que ele surfa (dash de 0,42 s): atropela e arrasta tudo na faixa. Recarga 24 s.
+- HUD: rosto do herói no canto de baixo à direita, recarga escurecendo como relógio, segundos, pisca dourado quando está pronto, "E: nome" em cima. Aviso na primeira vez que fica pronto.
+- Dano cresce com o atributo dano e com o nível (`escala_nivel`). Os 5 heróis que só aparecem no duelo ainda não têm especial (é só pôr no JSON).
+- Teste novo `testes/especiais.tscn` (ESPECIAL falhas=0, 3 rodadas). Prints com `--print_tela=especial --heroi=X --estresse=N`. Robô: 2 usos por herói em 60 s, 0 erros; online com 4 (160 = 160). Os 18 testes sem falhas.
+- **Próximo:** #63 marco 2, calor.

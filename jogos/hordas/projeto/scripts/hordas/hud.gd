@@ -187,6 +187,7 @@ func _desenhar() -> void:
 		_energia_forma()
 		_dicas_santuario()
 	_icones_build()
+	_especial()
 	if not arena.duelo_ativo:
 		# vida do chefe
 		var chefes: Array = arena.chefes()
@@ -259,6 +260,43 @@ func _seta_chefe(c) -> void:
 
 ## Energia da transformação (dragão do Hazaki), embaixo do "Abates": enchendo, pronta (pisca "Q") ou o tempo que
 ## resta transformado. Só aparece depois de desbloqueada.
+## Especial do herói (especial.gd) no canto de baixo à direita: o rosto dele num quadro, a recarga escurecendo
+## o rosto como um relógio e os segundos; pronto, o quadro pisca em dourado. Em cima, o nome e a tecla.
+func _especial() -> void:
+	var e = arena.especial
+	if e == null or not e.tem():
+		return
+	var lado := 30.0
+	var r := Rect2(W - lado - 10.0, H - lado - 12.0, lado, lado)
+	var pronto: bool = e.pronto()
+	var borda := Color(0.35, 0.38, 0.5)
+	if pronto:
+		borda = Color(1, 0.85, 0.35).lerp(Color(1, 1, 0.8), 0.5 + 0.5 * sin(_t * 6.0))
+	_tela.draw_rect(r.grow(2.0), borda)
+	_tela.draw_rect(r, Color(0.06, 0.06, 0.1))
+	var rosto := Dados.tex_personagem(str(arena.heroi.get("sprite", arena.heroi_id)), "rosto")
+	if rosto:
+		_tela.draw_texture_rect(rosto, r, false, Color.WHITE if pronto else Color(0.55, 0.55, 0.6))
+	if not pronto:
+		# relógio: a parte que falta da recarga fica escura, girando no sentido horário a partir do topo
+		var falta: float = clampf(e.recarga / e.recarga_total(), 0.0, 1.0)
+		var c := r.get_center()
+		var pts := PackedVector2Array([c])
+		var passos := 24
+		for i in passos + 1:
+			var a := -PI / 2 + TAU * (1.0 - falta) + TAU * falta * i / passos
+			var dir := Vector2.from_angle(a)
+			# até a borda do quadro (não um círculo): o raio para onde a reta encosta no lado do quadrado
+			var ate := (lado * 0.5) / maxf(absf(dir.x), absf(dir.y))
+			pts.append(c + dir * ate)
+		if falta > 0.01:
+			_tela.draw_colored_polygon(pts, Color(0, 0, 0, 0.55))
+		_txt(Vector2(r.position.x, r.position.y + 19), str(ceili(e.recarga)), 8, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER, lado)
+	var pad := not Input.get_connected_joypads().is_empty()
+	_txt(Vector2(W - 214, r.position.y - 5), ("Y" if pad else "E") + ": " + str(e.d.get("nome", "")), 8,
+		Color(1, 0.9, 0.5) if pronto else Color(0.65, 0.68, 0.78), HORIZONTAL_ALIGNMENT_RIGHT, 206)
+
+
 func _energia_forma() -> void:
 	var h = arena.habilidades
 	if h != null and h.tem() and not h.desbloqueada and str(h.d().get("desbloqueio", {}).get("tipo", "")) == "fragmentos":
