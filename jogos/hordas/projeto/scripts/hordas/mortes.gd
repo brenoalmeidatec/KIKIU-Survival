@@ -78,7 +78,7 @@ static func registro(v, causa: String, ef: String, dur_mult := 1.0) -> Dictionar
 	var cfg: Dictionary = dm.get("efeitos", {}).get(ef, {})
 	var sd: int = v.id * 7919 + 13
 	var dir: Vector2 = v.dir_ult if v.dir_ult.length() > 1.0 else Vector2(-1.0 if _h(sd, 99) < 0.5 else 1.0, -0.15)
-	return {"ef": ef, "causa": causa, "pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.flip < 0.0,
+	return {"ef": ef, "causa": causa, "pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.espelho, "y0": v.tam.y * v.vista,
 		"quadro": v.id % 2, "t": 0.0, "dur": float(cfg.get("dur", 0.5)) * dur_mult, "dir": dir.normalized(), "seed": sd,
 		"cor": cor, "sangue": sangue, "part": int(cfg.get("part", 0)), "tipo": v.tipo}
 
@@ -221,7 +221,7 @@ static func _corpo(c, r: Dictionary, off: Vector2, rot: float, sx: float, sy: fl
 	var s: Vector2 = r.sz
 	var q: int = int(r.quadro) if quadro < 0 else quadro
 	c.draw_set_transform(_pe(r) + off, rot, Vector2(-sx if r.vira else sx, sy))
-	c.draw_texture_rect_region(r.tex, Rect2(-s.x * 0.5, -s.y, s.x, s.y), Rect2(r.tam.x * q, 0, r.tam.x, r.tam.y), cor)
+	c.draw_texture_rect_region(r.tex, Rect2(-s.x * 0.5, -s.y, s.x, s.y), Rect2(r.tam.x * q, r.y0, r.tam.x, r.tam.y), cor)
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -231,7 +231,7 @@ static func _uv(r: Dictionary, p: Vector2) -> Vector2:
 	var fx := clampf((p.x + s.x * 0.5) / s.x, 0.0, 1.0)
 	if r.vira:
 		fx = 1.0 - fx
-	return Vector2(float(r.tam.x) * (float(r.quadro) + fx) / float(r.tex.get_width()), clampf((p.y + s.y) / s.y, 0.0, 1.0))
+	return Vector2(float(r.tam.x) * (float(r.quadro) + fx) / float(r.tex.get_width()), (float(r.y0) + clampf((p.y + s.y) / s.y, 0.0, 1.0) * float(r.tam.y)) / float(r.tex.get_height()))
 
 
 static func _poligono(c, r: Dictionary, pts_local: PackedVector2Array, centro_local: Vector2, pos_centro: Vector2, rot: float, cor: Color) -> void:
@@ -480,7 +480,7 @@ static func _pedacos(c, r: Dictionary) -> void:
 			var col := (2 - i) if r.vira else i
 			c.draw_set_transform(pos, rot, Vector2(-1.0 if r.vira else 1.0, 1.0))
 			c.draw_texture_rect_region(r.tex, Rect2(-cw * 0.5, -ch * 0.5, cw, ch),
-				Rect2(r.tam.x * (int(r.quadro)) + r.tam.x * col / 3.0, r.tam.y * j / 3.0, r.tam.x / 3.0, r.tam.y / 3.0), Color(0.82, 0.72, 0.72, al))
+				Rect2(r.tam.x * (int(r.quadro)) + r.tam.x * col / 3.0, r.y0 + r.tam.y * j / 3.0, r.tam.x / 3.0, r.tam.y / 3.0), Color(0.82, 0.72, 0.72, al))
 			idx += 1
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	_gotas(c, r, pe + centro, 14, 130.0 * forca, r.t, al, 200)
@@ -506,7 +506,7 @@ static func _furo(c, r: Dictionary) -> void:
 	if r.t < 0.06:
 		q = 2
 	c.draw_set_transform(pe + Vector2(sinal * 10.0 * k, 0), sinal * 1.4 * queda, Vector2(-1.0 if r.vira else 1.0, 1.0))
-	c.draw_texture_rect_region(r.tex, Rect2(-s.x * 0.5, -s.y, s.x, s.y), Rect2(r.tam.x * q, 0, r.tam.x, r.tam.y), cor)
+	c.draw_texture_rect_region(r.tex, Rect2(-s.x * 0.5, -s.y, s.x, s.y), Rect2(r.tam.x * q, r.y0, r.tam.x, r.tam.y), cor)
 	if r.t > 0.02:
 		for i in 3:   # buracos: escuros com borda vermelha
 			var hp := Vector2((_h(sd, i) - 0.5) * s.x * 0.5, -s.y * (0.25 + 0.5 * _h(sd, i + 5)))
@@ -539,7 +539,7 @@ static func _desintegrar(c, r: Dictionary) -> void:
 		if cor.a <= 0.0:
 			continue
 		c.draw_texture_rect_region(r.tex, Rect2(-s.x * 0.5 * wk + dx, -s.y + i * sh - w * 20.0, s.x * wk, sh),
-			Rect2(r.tam.x * int(r.quadro), r.tam.y * i / N, r.tam.x, r.tam.y / N), cor)
+			Rect2(r.tam.x * int(r.quadro), r.y0 + r.tam.y * i / N, r.tam.x, r.tam.y / N), cor)
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var ga := sin(clampf(u, 0.0, 1.0) * PI) * 0.3
 	var cw := s.x * 0.3

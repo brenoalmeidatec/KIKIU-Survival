@@ -178,7 +178,8 @@
    0.4
   ],
   "conjunto": "horror",
-  "escala": 1
+  "escala": 1,
+  "vistas": 5
  },
  "cao_ossos": {
   "nome": "Cão de Ossos",
@@ -204,7 +205,8 @@
    0.65
   ],
   "conjunto": "horror",
-  "escala": 1
+  "escala": 1,
+  "vistas": 5
  },
  "cavaleiro_oco": {
   "nome": "Cavaleiro Oco",
@@ -231,7 +233,8 @@
    0.62
   ],
   "conjunto": "horror",
-  "escala": 1
+  "escala": 1,
+  "vistas": 5
  },
  "espectro": {
   "nome": "Espectro",
@@ -267,7 +270,8 @@
    0.6
   ],
   "conjunto": "horror",
-  "escala": 1
+  "escala": 1,
+  "vistas": 5
  },
  "abominacao": {
   "nome": "Abominação",
@@ -309,7 +313,8 @@
    0.15
   ],
   "conjunto": "horror",
-  "escala": 1
+  "escala": 1,
+  "vistas": 5
  },
  "arauto": {
   "nome": "O Arauto Sem Rosto",
@@ -351,6 +356,7 @@
    0.15
   ],
   "conjunto": "horror",
-  "escala": 1
+  "escala": 1,
+  "vistas": 5
  }
 }

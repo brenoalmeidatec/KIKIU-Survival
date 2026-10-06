@@ -17,6 +17,8 @@ const SEP_PERIODO_LONGE := 0.1  # ... e a cada ~100 ms se está longe do alvo (f
 const SEP_PERTO := 380.0
 const SEP_VIZ: Array[int] = [-65537, -65536, -65535, -1, 0, 1, 65535, 65536, 65537]   # 3x3 células na chave inteira (x << 16) + y
 const AUSENTE_T := 0.45    # cliente online: bicho que some da foto fica mais um pouco (foto cheia / borda) antes de sair
+const GIRO_OLHAR := 9.42478   # velocidade máxima de giro do olhar: 540 graus/s
+const HIST_OLHAR := 0.12      # folga (rad) além da divisa do setor antes de trocar de vista
 const SNAP_ONLINE := 150.0 # cliente online: foto mais longe que isso do que se vê = teleporte (anima), não deslize
 
 class V:
@@ -67,7 +69,16 @@ class V:
 	var vm := Vector2.ZERO       # velocidade de andar atual (acelera até a desejada, não troca de uma vez)
 	var sepv := Vector2.ZERO     # último empurrão de separação calculado (aplicado aos poucos, todo quadro)
 	var t_nasc := 0.0            # > 0: nascendo / reaparecendo (animação de teleporte)
-	var flip := 0.0              # -1 virado pra esquerda .. +1 pra direita: vira girando, não de uma vez
+	# vistas (a folha tem uma linha por vista): vistas = 1 é o vírus, sempre de frente pra câmera (sem espelhar nem achatar);
+	# vistas = 5 é o monstro de horror: 0 frente, 1 3/4 frente, 2 perfil, 3 3/4 costas, 4 costas (esquerda = espelho)
+	var vistas := 1
+	var olhar := 0.0             # pra onde olha, em rad a partir da frente (pra baixo): +PI/2 = direita, PI = costas
+	var setor := 0               # setor de 45° escolhido (com histerese): -3..4, negativo = lado esquerdo (espelhado)
+	var vista := 0               # linha da folha em uso
+	var espelho := false         # desenhado espelhado (olhando pra esquerda)
+	var orientar := true         # primeira vez ou voltou de fora da tela: o olhar vai direto pro alvo, sem girar
+	var pos_olho := Vector2.INF  # cliente online: posição no último desenho (o olhar vem do deslocamento desenhado)
+	var dr := Rect2()            # último retângulo desenhado (os testes conferem a largura)
 	var p_ini := Vector2.ZERO    # cliente online: de onde o deslize da foto parte
 	var p_fim := Vector2.ZERO    # ... e pra onde vai (posição da foto do anfitrião)
 	var t_foto := 0.0            # ... e há quanto tempo a foto chegou
@@ -118,7 +129,12 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.tipo = tipo
 	v.d = dd
 	v.tex = Dados.tex(str(dd.get("sprite", "inimigo_bug")))
-	v.tam = Vector2(v.tex.get_width() / 3.0, v.tex.get_height())
+	v.vistas = maxi(1, int(dd.get("vistas", 1)))
+	v.tam = Vector2(v.tex.get_width() / 3.0, v.tex.get_height() / float(v.vistas))
+	if v.vistas > 1:
+		v.sombra_reg = []
+		for _i in 4 * v.vistas:
+			v.sombra_reg.append(Rect2())
 	v.pos = pos
 	v.chefe = bool(dd.get("chefe", false))
 	var mult_vida := 1.0 + float(fase.get("vida_por_nivel", 0.2)) * (nivel - 1)
@@ -560,8 +576,8 @@ func atualizar(dt: float, jog: Node2D) -> void:
 func _teleportar(v: V, destino: Vector2) -> void:
 	tp_n += 1   # (o relatório do --saltos conta esses à parte: são saltos de propósito, com animação)
 	if _na_tela(v.pos) and fantasmas.size() < 24:
-		fantasmas.append({"pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.flip < 0.0,
-			"quadro": int(_t * v.ritmo + v.id) % 2, "t": 0.0, "id": v.id})
+		fantasmas.append({"pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.espelho,
+			"y0": v.tam.y * v.vista, "quadro": int(_t * v.ritmo + v.id) % 2, "t": 0.0, "id": v.id})
 	v.pos = destino
 	v.vm = Vector2.ZERO
 	v.kb = Vector2.ZERO
@@ -651,9 +667,49 @@ func _novo_tiro(pos: Vector2, vel: Vector2, dano: float, sprite: String) -> void
 
 # ---------- desenho ----------
 
+## Pra onde o monstro olha: gira com velocidade limitada (GIRO_OLHAR) até o alvo e escolhe a vista da folha por setores de
+## 45° (com histerese pra não piscar na divisa). Solo: o alvo é o herói. Cliente online: o deslocamento desenhado (como o
+## `gira` do besouro), porque a IA roda no anfitrião. Vírus (vistas = 1) não entram: ficam sempre de frente, sem espelho.
+func _orientar(v: V, jx: float, jy: float) -> void:
+	if v.vistas <= 1:
+		return
+	var alvo := v.olhar
+	var tem := false
+	if espelho:
+		if v.pos_olho != Vector2.INF:
+			var d: Vector2 = v.pos - v.pos_olho
+			var l2 := d.length_squared()
+			if l2 > 0.04 and l2 < 400.0:   # parado mantém; teleporte não gira
+				alvo = atan2(d.x, d.y)
+				tem = true
+		v.pos_olho = v.pos
+	else:
+		var dx := jx - v.pos.x
+		var dy := jy - v.pos.y
+		if dx * dx + dy * dy > 4.0:
+			alvo = atan2(dx, dy)
+			tem = true
+	if v.orientar:
+		v.orientar = false
+		if tem:
+			v.olhar = alvo
+			v.setor = roundi(alvo / (PI * 0.25))
+			if v.setor == -4:
+				v.setor = 4
+	elif tem:
+		var passo := GIRO_OLHAR * _dt
+		v.olhar = wrapf(v.olhar + clampf(angle_difference(v.olhar, alvo), -passo, passo), -PI, PI)
+	if absf(angle_difference(v.setor * (PI * 0.25), v.olhar)) > PI * 0.125 + HIST_OLHAR:
+		var k := roundi(v.olhar / (PI * 0.25))
+		v.setor = 4 if k == -4 else k
+	v.vista = absi(v.setor) if v.vistas > 1 else 0
+	v.espelho = v.setor < 0
+
+
 func _draw() -> void:
 	var _d0 := Perf.ini()
 	var jx: float = arena.jogador.position.x if arena and arena.jogador else 0.0
+	var jy: float = arena.jogador.position.y if arena and arena.jogador else 0.0
 	# só entra no desenho quem está na tela (com folga pro tamanho do sprite e da sombra): com 500 bichos, a maioria fica fora.
 	# `_ordem` = os visíveis, do mais alto pro mais baixo (quem está embaixo fica na frente). Ordena uma lista de números
 	# (y e posição na lista juntos numa chave só) com o sort nativo, todo quadro: bem mais barato que sort_custom.
@@ -671,8 +727,8 @@ func _draw() -> void:
 		if v.hp <= 0 or p.x < x0 - m or p.x > x1 + m or p.y < y0 - m or p.y > y1 + m:
 			if v.gira:
 				v.pos_ant = p   # fora da tela não gira (e não conta o passo como teleporte quando voltar)
-			if v.hp > 0:
-				v.flip = -1.0 if p.x > jx else 1.0   # ninguém vê: já fica virado pro herói
+			v.orientar = true   # ninguém vê: ao reaparecer já olha pro alvo (não gira de longe)
+			v.pos_olho = Vector2.INF
 			continue
 		_chaves.append(float((int(p.y * 2.0) + 4194304) << 16) + float(i))
 	_chaves.sort()
@@ -683,35 +739,33 @@ func _draw() -> void:
 	var _d1 := Perf.ini()
 	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus)
 	for v: V in _ordem:
+		_orientar(v, jx, jy)   # (antes das sombras: elas dependem da vista e do espelho)
 		if v.t_nasc > NASC_T * 0.4:
 			continue
 		var s: Vector2 = v.sz
 		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
 		var quadro := int(_t * v.ritmo + v.id) % 2
-		var espelho: bool = v.pos.x > jx
-		var ic := quadro * 2 + (1 if espelho else 0)
+		var esp: bool = v.espelho
+		var ic := (v.vista * 2 + quadro) * 2 + (1 if esp else 0)
 		var reg: Rect2 = v.sombra_reg[ic]
 		var esc_s := s.x / v.tam.x
 		if reg.size.x <= 0.0:
-			var src := Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y)
-			reg = Visual.sombra_regiao(v.tex, src, espelho)
+			var src := Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y)
+			reg = Visual.sombra_regiao(v.tex, src, esp)
 			v.sombra_reg[ic] = reg
 		Visual.contato(self, pe, s.x * 0.75)
 		if reg.size.x > 0.0:
 			# mesma conta de Visual.sombra: a base do sprite fica em pe.y + (-s.y + s.y) e a esquerda em pe.x - s.x/2 (ou pe.x + s.x/2 - s.x se espelhado = igual)
 			Visual.carimbar(self, reg, esc_s, pe.x - s.x * 0.5, pe.y + 0.0)
 		else:
-			var src2 := Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y)
-			var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if espelho else Rect2(-s.x / 2, -s.y, s.x, s.y)
+			var src2 := Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y)
+			var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if esp else Rect2(-s.x / 2, -s.y, s.x, s.y)
 			Visual.sombra(self, v.tex, rs, src2, pe)
 	Perf.fim("ini_d_sombra", _d1)
 	var _d2 := Perf.ini()
 	for v: V in _ordem:
 		var s: Vector2 = v.sz
-		var vira: bool = v.pos.x > jx
-		var alvo_f := -1.0 if vira else 1.0
-		if v.flip != alvo_f:
-			v.flip = alvo_f if v.flip == 0.0 else move_toward(v.flip, alvo_f, _dt * 9.0)   # vira girando (~0,2 s), não de uma vez
+		var vira: bool = v.espelho
 		var quadro := 2 if v.flash > 0 else (int(_t * v.ritmo + v.id) % 2)
 		var cor := Color.WHITE
 		if v.aura.a > 0.0:
@@ -725,7 +779,7 @@ func _draw() -> void:
 		# Rect2 de largura negativa vira o sprite, mas o Godot desenha a partir da posição pra DIREITA (não normaliza):
 		# por isso a posição é a borda esquerda nos dois casos (antes o bicho à direita do herói saía deslocado 1 largura).
 		var r: Rect2
-		if v.estado == 0 and v.flash <= 0.0 and v.balanco <= 0.0 and v.flutua <= 0.0 and v.t_nasc <= 0.0 and v.flip == alvo_f:
+		if v.estado == 0 and v.flash <= 0.0 and v.balanco <= 0.0 and v.flutua <= 0.0 and v.t_nasc <= 0.0:
 			r = Rect2(v.pos.x - s.x * 0.5, v.pos.y - s.y * 0.6, -s.x if vira else s.x, s.y)   # caminho rápido (vírus)
 		else:
 			var fase_a: float = (_t * v.ritmo + v.id) * PI     # o pulinho acompanha a troca de quadro
@@ -765,9 +819,11 @@ func _draw() -> void:
 				sy *= 0.3 + 0.7 * u
 				cor.a = u
 				_nuvem(v.pos + Vector2(0, s.y * 0.35), s.x, u, v.id)
-			var w := roundf(s.x * sx * maxf(absf(v.flip), 0.08))
+			var w := roundf(s.x * sx)   # a largura nunca vai a ~0: virar é trocar de vista, não achatar
 			var h := roundf(s.y * sy)
-			r = Rect2(roundf(v.pos.x + jit) - roundf(w * 0.5), roundf(v.pos.y + s.y * 0.4 - lift) - h, -w if v.flip < 0.0 else w, h)
+			r = Rect2(roundf(v.pos.x + jit) - roundf(w * 0.5), roundf(v.pos.y + s.y * 0.4 - lift) - h, -w if vira else w, h)
+		v.dr = r
+		var fonte := Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y)
 		if v.gira:
 			# visto de cima: a cabeça aponta pra onde ele anda (antes vinha de ré quando descia na direção do herói)
 			var passo: Vector2 = v.pos - v.pos_ant if v.pos_ant != Vector2.INF else Vector2.ZERO
@@ -776,10 +832,10 @@ func _draw() -> void:
 				v.ang = lerp_angle(v.ang, passo.angle() + PI * 0.5, minf(1.0, _dt * 10.0))
 			var gw := absf(r.size.x)
 			draw_set_transform(r.position + Vector2(gw, r.size.y) * 0.5, v.ang)
-			draw_texture_rect_region(v.tex, Rect2(-gw * 0.5, -r.size.y * 0.5, gw, r.size.y), Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
+			draw_texture_rect_region(v.tex, Rect2(-gw * 0.5, -r.size.y * 0.5, gw, r.size.y), fonte, cor)
 			draw_set_transform(Vector2.ZERO, 0.0)
 		else:
-			draw_texture_rect_region(v.tex, r, Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
+			draw_texture_rect_region(v.tex, r, fonte, cor)
 	Perf.fim("ini_d_sprite", _d2)
 	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
 		var u: float = f.t / NASC_T
@@ -788,7 +844,7 @@ func _draw() -> void:
 		var fe := fp + Vector2(0, f.sz.y * 0.4)
 		_nuvem(fe + Vector2(0, -f.sz.y * 0.05), f.sz.x, u, f.id)
 		draw_texture_rect_region(f.tex, Rect2(fp.x - fs.x * 0.5, fe.y - fs.y, -fs.x if f.vira else fs.x, fs.y),
-			Rect2(f.tam.x * f.quadro, 0, f.tam.x, f.tam.y), Color(1, 1, 1, 1.0 - u))
+			Rect2(f.tam.x * f.quadro, f.y0, f.tam.x, f.tam.y), Color(1, 1, 1, 1.0 - u))
 	for t in tiros:
 		var tx: Texture2D = t.tex
 		var sz := tx.get_size() * ESCALA
