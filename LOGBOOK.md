@@ -585,3 +585,12 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Câmera olha à frente:** adianta até 36 px na direção em que o herói anda, com suavidade (a partir da velocidade real, que acelera e freia). Dá para desligar em Opções > Acessibilidade > "Câmera olha à frente".
 - `--print_tela=aviso` mostra as duas marcas: um jacaré na preparação da investida e um chefe a 0,2 s do anel (`--chefe=X` troca o chefe). São 22 testes, todos sem falhas.
 - **Próximo:** #68 marco 2, rolamento de esquiva com fôlego (2 cargas).
+
+## 2026-10-06 · Claude do Alisson (notebook) · #68 marco 2: rolamento de esquiva com fôlego (no lugar do dash)
+- **A tecla do dash agora rola** (`jogador.rolar(dir)`): rola na direção, invencível o rolamento todo, e o corpo (com o equipamento, que é filho dele) dá uma volta inteira em torno do meio. Vai uns 30% mais longe que o dash antigo (2,7× a velocidade por 0,3 s, contra 3,4× por 0,18 s). No fim tem **0,14 s de recuperação** andando a 45%, o compromisso da esquiva.
+- **Fôlego:** 2 cargas no lugar da recarga fixa. Cada rolamento gasta 1 e uma carga volta a cada 1,6 s, então dá para encadear dois e depois é preciso respirar. Aparecem como duas barrinhas embaixo da vida (somem quando estão cheias).
+- Tudo no `dados/movimento.json` (novo). Transformado em dragão, a tecla continua sendo a investida dele (sem rolar, gastando fôlego igual). A onda do Lucas (especial) continua usando o dash por dentro, e os rivais do duelo têm o dash próprio, que não mudou.
+- **Online:** o estado do herói ganhou o bit 8 (rolando), e os outros jogadores giram no lugar certo também (`remoto.gd`). Uma partida de 2 com robôs rodou sem erro.
+- **Bug achado na medição:** o corpo girava em volta do pé, e não do meio. O `_chegando()` roda até o nome do herói sumir, alguns segundos depois do pouso, e zerava `spr.position.y` a cada quadro. Agora ele só mexe na posição durante a queda.
+- Teste novo `testes/rolamento.tscn`: cargas, recusa sem fôlego, invencibilidade, giro, distância maior que o dash antigo, recuperação e recarga. `--print_tela=rolamento --espera=s` mostra o herói no meio da volta. São 23 testes, todos sem falhas.
+- **Próximo:** #68 marco 3, a luz que escurece andar a andar até o chefe.

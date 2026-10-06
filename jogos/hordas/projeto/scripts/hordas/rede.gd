@@ -320,6 +320,7 @@ func _pos(b: PackedByteArray) -> void:
 		"caido": (flags & 1) != 0,
 		"ajuda": (flags & 2) != 0,
 		"lado": -1.0 if (flags & 4) != 0 else 1.0,
+		"rola": (flags & 8) != 0,
 	}
 
 

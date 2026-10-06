@@ -1138,6 +1138,14 @@ func _print_tela(qual: String) -> void:
 			_abrir_opcoes()
 		"calor":   # tela do Calor (use --calor=couro:2,garras:1 pra ver níveis ligados)
 			_abrir_calor("hazaki")
+		"rolamento":   # rolamento de esquiva (#68): o herói no meio da volta (--espera=s de rolamento) e as barrinhas de fôlego
+			_comecar(str(_args.get("heroi", "hazaki")))
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.bot = false
+			_arena.jogador.rolar(Vector2.RIGHT)
+			await get_tree().create_timer(float(_args.get("espera", 0.1)), true, false, true).timeout
+			Engine.time_scale = 0.02
 		"aviso":   # marcas de aviso no chão (#68): um jacaré preparando a investida e um chefe prestes a soltar o anel
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3, true, false, true).timeout

@@ -13,6 +13,8 @@ var cor := Color(0.6, 1.0, 0.7)
 var hp_frac := 1.0
 var caido := false
 var ajuda := false               # está segurando o botão de levantar alguém
+var _rola := false               # está rolando (bit 8 do estado; #68)
+const CENTRO_CORPO := Vector2(0, -29)   # o meio do corpo em relação ao pé: o giro do rolamento é em volta dele
 var fora := false               # duelo: já foi eliminado
 var spr := Sprite2D.new()
 var _alvo := Vector2.ZERO
@@ -73,6 +75,12 @@ func atualizar(dt: float, d: Dictionary) -> void:
 	spr.modulate = Color(0.45, 0.45, 0.5, 0.8) if caido else Color.WHITE
 	spr.rotation = PI / 2 if caido else 0.0
 	spr.position = Vector2(-30, -10) if caido else Vector2.ZERO
+	if not d.is_empty():
+		_rola = bool(d.get("rola", false))
+	if _rola and not caido:   # rolamento (#68): gira em volta do meio do corpo, como o herói local
+		var ang := fmod(_t * TAU / 0.3, TAU) * (-1.0 if _mov.x < 0 else 1.0)
+		spr.rotation = ang
+		spr.position = CENTRO_CORPO - CENTRO_CORPO.rotated(ang)
 	if _ent_t > 0.0:
 		_ent_t = maxf(0.0, _ent_t - dt)
 		var p := 1.0 - _ent_t / Visual.CHEGADA_TEMPO

@@ -1,0 +1,5 @@
+{
+ "_ajuda": "Movimento do herói (#68, adaptado do Dimraeth). rolamento = a esquiva da tecla do dash: velocidade (vezes a de andar) e tempo (segundos; invencível o tempo todo) dão a distância; recuperacao = segundos andando devagar depois de rolar (o compromisso) e lento = quanto da velocidade sobra nela. folego = cargas de rolamento (dá pra encadear essa quantidade) e recarga = segundos pra voltar UMA carga. Transformado em dragão, a tecla continua sendo a investida dele (gasta fôlego igual).",
+ "rolamento": {"velocidade": 2.7, "tempo": 0.3, "recuperacao": 0.14, "lento": 0.45},
+ "folego": {"cargas": 2, "recarga": 1.6}
+}

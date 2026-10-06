@@ -85,7 +85,7 @@ func estado_rede() -> PackedByteArray:
 	b.encode_s8(8, clampi(roundi(m.x * 127.0), -127, 127))
 	b.encode_s8(9, clampi(roundi(m.y * 127.0), -127, 127))
 	b.encode_u8(10, roundi(clampf(j.hp / maxf(1.0, j.vida_max()), 0.0, 1.0) * 255.0))
-	b.encode_u8(11, (1 if arena.caido else 0) | (2 if ajudando() else 0) | (4 if j.lado < 0 else 0))
+	b.encode_u8(11, (1 if arena.caido else 0) | (2 if ajudando() else 0) | (4 if j.lado < 0 else 0) | (8 if j._rolando > 0.0 else 0))   # 8 = rolando (#68)
 	return b
 
 

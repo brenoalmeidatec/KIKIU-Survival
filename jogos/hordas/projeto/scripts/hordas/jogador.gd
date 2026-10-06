@@ -22,7 +22,6 @@ const DANO_TEMPO := 0.2
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
 const DASH_TEMPO := 0.18
-const DASH_RECARGA := 1.4
 ## ---- Sensação de movimento e de impacto (#32 item 4): tudo se ajusta aqui ----
 const ACEL_TEMPO := 0.06           # s do parado até a velocidade máxima (arranque curto, sem escorregar)
 const FREIO_TEMPO := 0.07          # s da velocidade máxima até parar (precisa ficar abaixo de 0,1)
@@ -50,7 +49,12 @@ var tom := Color.WHITE        # cor base do corpo (herói criado, #72: a raça t
 var hp := 100.0
 var invencivel := 0.0
 var dash_t := 0.0
-var dash_recarga := 0.0
+var folego := 2.0               # cargas de rolamento (#68): gasta 1 por rolamento e volta com o tempo (dados/movimento.json)
+var _rolando := 0.0             # quanto falta do rolamento em curso (o corpo gira; 0 = não está rolando)
+var _rola_lado := 1.0           # pra que lado o corpo gira
+var _recupera := 0.0            # depois de rolar: um instante andando devagar (o compromisso da esquiva)
+var _vel_dash := DASH_VEL       # vezes a velocidade de andar no dash em curso (rolamento, investida do dragão, onda do Lucas)
+const CENTRO_CORPO := Vector2(0, -29)   # o meio do corpo em relação ao pé (a origem do sprite): o giro é em volta dele
 var lado := 1.0                 # 1 = olhando pra direita, -1 = esquerda (o chicote usa)
 var _mov := Vector2.ZERO
 var _dir_dash := Vector2.RIGHT
@@ -172,7 +176,10 @@ func entrar(nome: String) -> void:
 
 func _chegando() -> void:
 	var p := 1.0 - _ent_t / Visual.CHEGADA_TEMPO
-	spr.position.y = -Visual.chegada_altura(p)
+	if _ent_t > 0.0:   # só durante a queda: depois dela isto roda até o nome sumir e zerava o giro do rolamento (#68)
+		spr.position.y = -Visual.chegada_altura(p)
+	elif _rolando <= 0.0 and spr.position.y != 0.0:
+		spr.position.y = 0.0   # pousou: o corpo fica no chão
 	if not _ent_poeira and p >= Visual.CHEGADA_POUSO:
 		_ent_poeira = true
 		Som.tocar("queda", 0.0, 1.2, -8)
@@ -218,7 +225,8 @@ func atualizar_i(dt: float) -> void:
 	_t += dt
 	_dt = dt
 	invencivel = maxf(0.0, invencivel - dt)
-	dash_recarga = maxf(0.0, dash_recarga - dt)
+	folego = minf(_folego_cfg("cargas", 2.0), folego + dt / maxf(0.1, _folego_cfg("recarga", 1.6)))
+	_recupera = maxf(0.0, _recupera - dt)
 	_vermelho = maxf(0.0, _vermelho - dt)
 	_atk_t = maxf(0.0, _atk_t - dt)
 	_atk_cool = maxf(0.0, _atk_cool - dt)
@@ -228,22 +236,24 @@ func atualizar_i(dt: float) -> void:
 	if entrada.x != 0:
 		lado = signf(entrada.x)
 	var vmax: float = VEL_BASE * arena.stat("velocidade")
+	if _recupera > 0.0:
+		vmax *= float(Dados.json("movimento").get("rolamento", {}).get("lento", 0.45))
 	if dash_t > 0:
 		dash_t -= dt
-		position += _dir_dash * vmax * DASH_VEL * dt
+		position += _dir_dash * vmax * _vel_dash * dt
 		_vel = entrada * vmax   # ao sair do dash já anda na velocidade pedida, sem solavanco
-		if int(_t * 60) % 2 == 0:
+		if _rolando > 0.0:
+			_rolando = maxf(0.0, dash_t)
+			if _rolando <= 0.0:   # acabou de rolar: um instante mais lento antes de poder correr de novo
+				_recupera = float(Dados.json("movimento").get("rolamento", {}).get("recuperacao", 0.14))
+		elif int(_t * 60) % 2 == 0:
 			_rastro.append({"pos": position, "frame": spr.frame, "t": 0.25})
 	else:
+		_vel_dash = DASH_VEL   # a onda do Lucas (especial) liga o dash_t de fora e usa a velocidade padrão
 		_vel = passo_vel(_vel, entrada * vmax, vmax, dt)
 		position += _vel * dt
-		if _quer_dash() and dash_recarga <= 0:
-			_dir_dash = entrada if entrada != Vector2.ZERO else Vector2(lado, 0)
-			dash_t = DASH_TEMPO + (0.12 if forma else 0.0)   # transformado, o dash vira investida: vai mais longe
-			dash_recarga = DASH_RECARGA
-			invencivel = maxf(invencivel, DASH_TEMPO + 0.1)
-			Som.tocar("whoosh", 0.1, 1.2)
-			_poeira_em(3, 18.0)
+		if _quer_dash():
+			rolar(entrada if entrada != Vector2.ZERO else Vector2(lado, 0))
 	position += kb * dt
 	kb *= exp(-9.0 * dt)
 	_efeitos_movimento(entrada, dt)
@@ -349,6 +359,32 @@ func _entrada() -> Vector2:
 	return Input.get_vector("esquerda", "direita", "cima", "baixo")
 
 
+## Rolamento de esquiva (#68): gasta 1 de fôlego, rola na direção dada (invencível o tempo todo) e o corpo dá uma volta.
+## Transformado em dragão, vira a investida dele (vai mais longe, sem rolar). Devolve false se não tem fôlego.
+func rolar(dir: Vector2) -> bool:
+	if folego < 1.0 or dash_t > 0:
+		return false
+	folego -= 1.0
+	_dir_dash = dir.normalized() if dir != Vector2.ZERO else Vector2(lado, 0)
+	if forma:
+		dash_t = DASH_TEMPO + 0.12
+		_vel_dash = DASH_VEL
+	else:
+		var r: Dictionary = Dados.json("movimento").get("rolamento", {})
+		dash_t = float(r.get("tempo", 0.3))
+		_vel_dash = float(r.get("velocidade", 2.7))
+		_rolando = dash_t
+		_rola_lado = signf(_dir_dash.x) if absf(_dir_dash.x) > 0.01 else lado
+	invencivel = maxf(invencivel, dash_t + (0.1 if forma else 0.0))
+	Som.tocar("whoosh", 0.1, 1.2)
+	_poeira_em(3, 18.0)
+	return true
+
+
+func _folego_cfg(chave: String, padrao: float) -> float:
+	return float(Dados.json("movimento").get("folego", {}).get(chave, padrao))
+
+
 func _quer_dash() -> bool:
 	if _no_menu():
 		return false
@@ -365,7 +401,7 @@ func _bot_duelo() -> Vector2:
 	if d.estado != "luta":
 		return Vector2.ZERO
 	_pref = d.IA.alcance_preferido(arena.armas.lista)
-	var eu := {"pos": centro(), "hp_frac": hp / maxf(1.0, vida_max()), "pref": _pref, "dash_pronto": dash_recarga <= 0}
+	var eu := {"pos": centro(), "hp_frac": hp / maxf(1.0, vida_max()), "pref": _pref, "dash_pronto": folego >= 1.0}
 	var dec: Dictionary = d.IA.decidir(eu, d.alvos_de(d.lut_jogador), d.centro, d.raio, _ia, 0.9, _dt)
 	_dash_ia = dec.dash
 	return dec.dir
@@ -446,6 +482,15 @@ func _animar(entrada: Vector2) -> void:
 	if piscar:   # pisca em meia transparência: sumir de vez fazia o herói desaparecer no meio da horda (#68)
 		spr.modulate.a *= 0.35
 	spr.visible = humano > 0.01
+	# rolamento (#68): o corpo (com o equipamento, que é filho dele) dá uma volta inteira em torno do meio do corpo
+	if _rolando > 0.0:
+		var total := maxf(0.05, float(Dados.json("movimento").get("rolamento", {}).get("tempo", 0.3)))
+		var ang := (1.0 - _rolando / total) * TAU * _rola_lado
+		spr.rotation = ang
+		spr.position = CENTRO_CORPO - CENTRO_CORPO.rotated(ang)   # a origem do sprite é o pé: compensa pra girar no meio
+	elif spr.rotation != 0.0:
+		spr.rotation = 0.0
+		spr.position = Vector2.ZERO
 
 
 ## Dano de vírus (fonte = tipo) ou de outro lutador no duelo. Retorna true se caiu.
@@ -527,5 +572,10 @@ func _draw_i() -> void:
 	var frac := hp / maxf(1.0, vida_max())
 	draw_rect(Rect2(-14, 5, 28, 4), Color(0.1, 0.05, 0.1))
 	draw_rect(Rect2(-13, 6, 26 * frac, 2), Color(0.9, 0.2, 0.25))
-	if dash_recarga > 0:
-		draw_rect(Rect2(-13, 10, 26 * (1.0 - dash_recarga / DASH_RECARGA), 1), Color(0.5, 0.8, 1.0))
+	var cargas := int(_folego_cfg("cargas", 2.0))
+	if cargas > 0 and folego < cargas:   # fôlego (#68): uma barrinha por carga de rolamento; some quando estão todas cheias
+		var larg := (26.0 - (cargas - 1) * 2.0) / cargas
+		for k in cargas:
+			var f := clampf(folego - k, 0.0, 1.0)
+			draw_rect(Rect2(-13 + k * (larg + 2), 10, larg, 2), Color(0.1, 0.05, 0.1))
+			draw_rect(Rect2(-13 + k * (larg + 2), 10, larg * f, 2), Color(0.55, 0.85, 1.0) if f >= 1.0 else Color(0.3, 0.45, 0.65))
