@@ -439,3 +439,12 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - A linha do anfitrião estourava a largura da tela e mostrava 7777 mesmo com outra porta: agora são duas linhas e `Rede.porta_aberta`.
 - Teste: `--nome=X`, `--pronto` (o cliente entra pronto) e `--foto_sala=N` (print do lobby). Conferido em print com 3 pessoas e online com 4 (150 = 150 abates).
 - **Próximo:** PR 2, lista de salas. Proposta na #13: rede local por broadcast UDP + internet pelo ntfy.sh (HTTPS, grátis, sem conta). O MQTT público não serve: a rede do notebook bloqueia as portas dele, e muita rede de jogador também.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #13 PR 2: lista de salas (rede local + internet grátis)
+- Autoload novo `Salas` (`scripts/hordas/salas.gd`). "Entrar em sala" abre a **lista**: escolhe e Enter entra, sem digitar endereço. "Digitar endereço..." continua no fim.
+- **Rede local:** o anfitrião anuncia por broadcast UDP (porta 7778) a cada 2 s; o endereço é o IP de quem anunciou + a porta da sala.
+- **Internet:** só se o anfitrião ligar (**L** no lobby) e colar o endereço do túnel playit (**E**, salvo no `online.json` em `publico`). O anúncio vai por HTTPS pro **ntfy.sh** (grátis, sem conta, porta 443), tópico `kikiu-survival-salas-v1`, a cada 30 s; a lista lê os últimos 2 min a cada 10 s. Os testes usam `--topico=` pra não sujar o tópico real.
+- **Por que ntfy:** a rede do notebook bloqueia MQTT público (1883 e WebSocket 8083/8084, testado com e sem sandbox), e a 443 passa em qualquer lugar.
+- **Segurança:** todo anúncio é validado (`Salas.validar`: versão, tamanhos, tipos, endereço só `[letras números . -]:porta`, nome limpo até 20); no máximo 30 salas. O lobby avisa que o endereço público fica visível.
+- Testado: lista mostrando a sala local, anúncio chegando no ntfy, cliente entrando pela lista (lobby com 2), 8 anúncios tortos recusados (`testes/rede.tscn`), online com 4 (157 = 157 abates). Testes ui/opcoes/rede/mapa sem falhas.
+- **Pendente:** ver uma sala da internet aparecer em outra casa (precisa de duas redes). Próximo: PR 3, chat de texto.

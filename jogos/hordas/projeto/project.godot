@@ -15,6 +15,7 @@ Som="*res://scripts/hordas/som.gd"
 Rede="*res://scripts/hordas/rede.gd"
 Config="*res://scripts/hordas/config.gd"
 Transicao="*res://scripts/hordas/transicao.gd"
+Salas="*res://scripts/hordas/salas.gd"
 
 [display]
 

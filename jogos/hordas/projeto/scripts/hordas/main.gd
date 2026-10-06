@@ -35,9 +35,11 @@ var _camada := CanvasLayer.new()
 var _estado := "titulo"      # titulo, herois, partida, fim
 var _estado_antes := "titulo"  # pra perceber a troca de tela e tocar a transição
 var _apelido_txt := ""       # campo de texto do apelido (lobby, tecla N)
+var _sel_sala := 0            # tela da lista de salas
+var _publico_txt := ""        # anfitrião: campo do endereço público (tecla E no lobby)
 var _forcar_t := -10.0       # anfitrião: Enter com gente não pronta avisa; outro Enter em 3 s começa assim mesmo
 ## telas que são a mesma tela pro jogador (só muda o texto): trocar entre elas não tem transição
-const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"]]
+const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"], ["sala", "publico"]]
 var _sel := 0
 var _arena: Node2D
 var _resumo := {}
@@ -151,6 +153,8 @@ func _process(dt: float) -> void:
 				Som.ui("confirmar")
 				_estado = "titulo"
 				_sel = OPCOES.find("Créditos")
+		"salas":
+			_lista_salas()
 		"endereco":
 			pass   # o teclado é lido em _input (campo de texto)
 		"conectando":
@@ -190,7 +194,9 @@ func _titulo_confirmar() -> void:
 		"Criar sala":
 			_criar_sala()
 		"Entrar em sala":
-			_estado = "endereco"
+			_estado = "salas"
+			_sel_sala = 0
+			Salas.procurar()
 		"Opções":
 			_abrir_opcoes()
 		"Créditos":
@@ -296,6 +302,7 @@ func _ler_endereco() -> String:
 	if not d is Dictionary:
 		d = {}
 	Rede.apelido = Rede.limpar_nome(str(d.get("nome", "")))
+	Salas.endereco_publico = str(d.get("publico", "")) if Salas.endereco_valido(str(d.get("publico", ""))) else ""
 	if Rede.apelido == "":
 		Rede.apelido = Rede.nome_sorteado()
 		_endereco = str(d.get("endereco", ""))
@@ -306,7 +313,7 @@ func _ler_endereco() -> String:
 func _salvar_endereco() -> void:
 	var f := FileAccess.open(SAVE_ONLINE, FileAccess.WRITE)
 	if f:
-		f.store_string(JSON.stringify({"endereco": _endereco, "nome": Rede.apelido}))
+		f.store_string(JSON.stringify({"endereco": _endereco, "nome": Rede.apelido, "publico": Salas.endereco_publico}))
 
 
 func _abrir_opcoes() -> void:
@@ -417,11 +424,44 @@ func _sala() -> void:
 		Rede.comecar(op)
 
 
+## As salas que cabem na tela (rede local primeiro, depois as mais novas da internet).
+func _salas_vis() -> Array:
+	return Salas.lista().slice(0, 6)
+
+
+## Tela "Entrar em sala": as salas que o Salas achou (rede local e internet) e, no fim, "Digitar endereço".
+func _lista_salas() -> void:
+	var n: int = _salas_vis().size() + 1
+	_sel_sala = clampi(_sel_sala, 0, n - 1)
+	if Input.is_action_just_pressed("cima"):
+		_sel_sala = (_sel_sala - 1 + n) % n
+		Som.ui("cursor")
+	elif Input.is_action_just_pressed("baixo"):
+		_sel_sala = (_sel_sala + 1) % n
+		Som.ui("cursor")
+	elif Input.is_action_just_pressed("confirmar"):
+		Som.ui("confirmar")
+		Salas.parar_procura()
+		if _sel_sala >= n - 1:
+			_estado = "endereco"
+		else:
+			_endereco = str(_salas_vis()[_sel_sala].endereco)
+			_entrar()
+			if _estado != "conectando":
+				Salas.procurar()   # endereço com erro: continua na lista (a mensagem aparece embaixo)
+	elif Input.is_action_just_pressed("voltar"):
+		Salas.parar_procura()
+		_estado = "titulo"
+
+
 func _online_teste() -> void:
 	if _args.has("nome"):
 		Rede.apelido = Rede.limpar_nome(str(_args.nome))
 	if str(_args.online) == "host":
 		_criar_sala()
+		if _args.has("publica"):   # teste da lista pública (use --topico=algo_de_teste)
+			Salas.publica = true
+			Salas.endereco_publico = str(_args.publica)
 		if _args.has("foto_sala"):   # print do lobby depois de N s (--fotos=pasta) e fecha
 			await get_tree().create_timer(float(_args.foto_sala)).timeout
 			await RenderingServer.frame_post_draw
@@ -448,6 +488,21 @@ func _input(e: InputEvent) -> void:
 	if _estado == "apelido" and e is InputEventKey and e.pressed:
 		_editar_apelido(e)
 		return
+	if _estado == "sala" and Rede.anfitriao() and e is InputEventKey and e.pressed and not e.echo:
+		if e.physical_keycode == KEY_L:   # lista pública: liga/desliga
+			Salas.publica = not Salas.publica
+			_msg = "" if Salas.publica == false or Salas.endereco_valido(Salas.endereco_publico) else "Aperte E e cole o endereço do túnel (playit) pra sala aparecer na internet."
+			Som.ui("confirmar")
+			get_viewport().set_input_as_handled()
+			return
+		if e.physical_keycode == KEY_E:   # endereço público (o do playit)
+			_publico_txt = Salas.endereco_publico
+			_estado = "publico"
+			get_viewport().set_input_as_handled()
+			return
+	if _estado == "publico" and e is InputEventKey and e.pressed:
+		_editar_publico(e)
+		return
 	if _estado != "endereco" or not e is InputEventKey or not e.pressed:
 		return
 	var k: InputEventKey = e
@@ -466,6 +521,30 @@ func _input(e: InputEvent) -> void:
 		var c := char(k.unicode)
 		if c.is_valid_identifier() or c.is_valid_int() or c in [".", ":", "-", "_"]:
 			_endereco += c
+
+
+## Campo do endereço público (lobby do anfitrião, tecla E): o endereço do túnel playit, que vai no anúncio da internet.
+func _editar_publico(k: InputEventKey) -> void:
+	get_viewport().set_input_as_handled()
+	if k.keycode == KEY_V and k.ctrl_pressed:
+		_publico_txt = (_publico_txt + DisplayServer.clipboard_get().strip_edges()).left(80)
+	elif k.keycode == KEY_BACKSPACE:
+		_publico_txt = _publico_txt.left(-1)
+	elif k.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+		var e := _publico_txt.strip_edges().trim_prefix("udp://").trim_prefix("http://").trim_prefix("https://")
+		if e == "" or Salas.endereco_valido(e):
+			Salas.endereco_publico = e
+			_salvar_endereco()
+			_msg = ""
+			Som.ui("confirmar")
+			_estado = "sala"
+		else:
+			_msg = "Endereço no formato nome.do.tunel:porta (ex.: abc.gl.at.ply.gg:12345)."
+			Som.ui("erro")
+	elif k.keycode == KEY_ESCAPE:
+		_estado = "sala"
+	elif k.unicode > 32 and k.unicode < 127 and _publico_txt.length() < 80:
+		_publico_txt += char(k.unicode)
 
 
 ## Campo de texto do apelido (lobby, tecla N). Enter grava, Esc desiste.
@@ -662,6 +741,35 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 284), "Crusade, Wounded, Long Note Four (cortadas p/ laço)", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 302), "E valeu a você, que está jogando!", 10, Color(1, 0.6, 0.75))
 			_txt(Vector2(0, 335), "Enter/Esc: voltar", 8, Color(0.5, 0.5, 0.6))
+		"salas":
+			_fundo()
+			_txt(Vector2(0, 40), "Salas abertas", 16, Color.WHITE)
+			_txt(Vector2(0, 58), "Rede local aparece sozinha; internet, só as da lista pública.", 8, Color(0.6, 0.65, 0.75))
+			var salas: Array = _salas_vis()
+			var y := 74.0
+			for i in salas.size() + 1:
+				var sel := i == _sel_sala
+				var r := Rect2(110, y, 420, 26)
+				_tela.draw_rect(r, Color(0.14, 0.15, 0.24) if sel else Color(0.08, 0.09, 0.15, 0.9))
+				_tela.draw_rect(r, Color(1, 0.85, 0.3) if sel else Color(0.3, 0.35, 0.5), false, 1.0)
+				if i == salas.size():
+					_txt(r.position + Vector2(0, 17), "Digitar endereço...", 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), r.size.x)
+					break
+				var s: Dictionary = salas[i]
+				var lan: bool = s.origem == "lan"
+				var tag := Rect2(r.position + Vector2(6, 7), Vector2(52, 12))
+				_tela.draw_rect(tag, Color(0.15, 0.35, 0.2) if lan else Color(0.18, 0.22, 0.45))
+				_txt(tag.position + Vector2(0, 10), "LOCAL" if lan else "INTERNET", 8, Color(0.75, 1, 0.8) if lan else Color(0.7, 0.8, 1), tag.size.x)
+				_txt(r.position + Vector2(66, 17), str(s.nome), 8, Color.WHITE, 260, HORIZONTAL_ALIGNMENT_LEFT)
+				var cheia: bool = int(s.jogadores) >= int(s.max)
+				_txt(r.position + Vector2(0, 17), "%d/%d" % [s.jogadores, s.max], 8, Color(1, 0.6, 0.5) if cheia else Color(0.6, 1, 0.65), r.size.x - 8, HORIZONTAL_ALIGNMENT_RIGHT)
+				y += 30
+			if salas.is_empty():
+				_txt(Vector2(0, 130), "Procurando salas" + ".".repeat(int(_t * 2) % 4), 8, Color(0.7, 0.75, 0.85))
+			var aviso: String = _msg if _msg != "" else Salas.erro_net
+			if aviso != "":
+				_txt(Vector2(0, 314), aviso, 8, Color(1, 0.7, 0.5))
+			_txt(Vector2(0, 330), "Setas: escolher   Enter: entrar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
 		"endereco", "conectando":
 			_fundo()
 			_txt(Vector2(0, 70), "Entrar em sala", 16, Color.WHITE)
@@ -673,12 +781,18 @@ func _desenhar() -> void:
 			if _msg != "":
 				_txt(Vector2(0, 190), _msg, 8, Color(1, 0.6, 0.5) if _estado == "endereco" else Color(0.6, 0.9, 1))
 			_txt(Vector2(0, 330), "Ctrl+V: colar   Enter: conectar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
-		"sala", "apelido":
+		"sala", "apelido", "publico":
 			_fundo()
 			_txt(Vector2(0, 40), "Sala online", 16, Color.WHITE)
 			if Rede.anfitriao():
-				_txt(Vector2(0, 60), "Você é o anfitrião (porta %d)." % Rede.porta_aberta, 8, Color(0.6, 0.9, 1))
-				_txt(Vector2(0, 72), "Pra jogar pela internet: abra o abrir_tunel_playit.bat e mande o endereço.", 8, Color(0.6, 0.9, 1))
+				_txt(Vector2(0, 60), "Você é o anfitrião (porta %d). Na rede local, a sala já aparece na lista." % Rede.porta_aberta, 8, Color(0.6, 0.9, 1))
+				var pub := "Lista pública: desligada  (L liga; pela internet precisa do túnel playit)"
+				var cor_pub := Color(0.6, 0.62, 0.72)
+				if Salas.publica:
+					var ok_end: bool = Salas.endereco_valido(Salas.endereco_publico)
+					pub = "Lista pública: LIGADA  ·  " + (Salas.endereco_publico if ok_end else "falta o endereço do túnel (E)")
+					cor_pub = Color(0.6, 1, 0.65) if ok_end else Color(1, 0.8, 0.45)
+				_txt(Vector2(0, 72), pub, 8, cor_pub)
 			else:
 				_txt(Vector2(0, 62), "Esperando o anfitrião começar...", 8, Color(0.6, 0.9, 1))
 			var y0 := 92.0
@@ -705,9 +819,17 @@ func _desenhar() -> void:
 				_txt(Vector2(0, 160), "Seu nome na sala", 8, Color(0.75, 0.78, 0.85))
 				_txt(Vector2(0, 186), _apelido_txt + ("_" if int(_t * 2) % 2 == 0 else " "), 16, Color.WHITE)
 				_txt(Vector2(0, 204), "Enter: salvar   Esc: cancelar", 8, Color(0.55, 0.57, 0.65))
-			if _msg != "":
-				_txt(Vector2(0, 314), _msg, 8, Color(1, 0.6, 0.5))
-			var dica := "Setas: herói   N: nome   " + ("Enter: começar   " if Rede.anfitriao() else "Enter: pronto   ")
+			if _estado == "publico":
+				_tela.draw_rect(Rect2(110, 136, 420, 82), Color(0.04, 0.04, 0.08, 0.95))
+				_tela.draw_rect(Rect2(110, 136, 420, 82), Color(1, 0.85, 0.3), false, 2.0)
+				_txt(Vector2(0, 154), "Endereço do túnel (playit) pra lista pública", 8, Color(0.75, 0.78, 0.85))
+				_txt(Vector2(0, 176), _publico_txt + ("_" if int(_t * 2) % 2 == 0 else " "), 8, Color.WHITE)
+				_txt(Vector2(0, 196), "Ctrl+V: colar   Enter: salvar   Esc: cancelar", 8, Color(0.55, 0.57, 0.65))
+				_txt(Vector2(0, 210), "Esse endereço fica visível pra quem abrir a lista de salas.", 8, Color(1, 0.8, 0.45))
+			var aviso: String = _msg if _msg != "" else (Salas.erro_net if Rede.anfitriao() and Salas.publica else "")
+			if aviso != "":
+				_txt(Vector2(0, 314), aviso, 8, Color(1, 0.6, 0.5))
+			var dica := "Setas: herói   N: nome   " + ("L/E: lista pública   Enter: começar   " if Rede.anfitriao() else "Enter: pronto   ")
 			_txt(Vector2(0, 330), dica + "Esc: sair da sala", 8, Color(0.6, 0.6, 0.7))
 		"herois":
 			_fundo()
@@ -832,6 +954,10 @@ func _print_tela(qual: String) -> void:
 			_estado = "herois"
 		"titulo_beta":
 			_sel = BETA[0]
+		"salas":   # lista de salas depois de --espera s (abra antes um --online=host, de preferência com --topico=teste)
+			_estado = "salas"
+			Salas.procurar()
+			await get_tree().create_timer(float(_args.get("espera", 4.0))).timeout
 		"creditos":
 			_estado = "creditos"
 		"opcoes":

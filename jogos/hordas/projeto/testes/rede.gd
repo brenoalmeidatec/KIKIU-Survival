@@ -45,5 +45,26 @@ func _ready() -> void:
 	ok(Online.descompactar(PackedByteArray([1, 2, 3])).is_empty(), "foto torta é ignorada")
 	var vazia := Online.compactar(c, PackedFloat32Array(), PackedFloat32Array())
 	ok(Online.descompactar(vazia).size() == 2, "foto vazia vai e volta")
+	# lista de salas (#13): o tópico é público, então todo anúncio que chega é conferido
+	var S := preload("res://scripts/hordas/salas.gd")
+	var bom := JSON.stringify({"v": S.VERSAO, "id": "s123456", "nome": "Sala de Breno", "anfitriao": "Breno", "jogadores": 2, "max": 6, "porta": 7777, "endereco": "abc.gl.at.ply.gg:12345"})
+	var s: Dictionary = S.validar(bom, "")
+	ok(s.get("endereco") == "abc.gl.at.ply.gg:12345" and s.get("jogadores") == 2 and s.get("nome") == "Sala de Breno", "anúncio da internet válido (%s)" % [s])
+	ok(S.validar(bom, "192.168.0.7").get("endereco") == "192.168.0.7:7777", "na rede local o endereço é o IP de quem anunciou")
+	var ruins := [
+		"isso não é json",
+		JSON.stringify({"v": S.VERSAO + 1, "id": "s123456", "jogadores": 1, "max": 6, "porta": 7777, "endereco": "a.b:1"}),
+		JSON.stringify({"v": S.VERSAO, "id": "s1", "jogadores": 1, "max": 6, "porta": 7777, "endereco": "a.b:1"}),
+		JSON.stringify({"v": S.VERSAO, "id": "s123456", "jogadores": 9, "max": 6, "porta": 7777, "endereco": "a.b:1"}),
+		JSON.stringify({"v": S.VERSAO, "id": "s123456", "jogadores": 1, "max": 6, "porta": 80, "endereco": "a.b:1"}),
+		JSON.stringify({"v": S.VERSAO, "id": "s123456", "jogadores": 1, "max": 6, "porta": 7777, "endereco": "evil.com/x?y:80"}),
+		JSON.stringify({"v": S.VERSAO, "id": "s123456", "jogadores": "1", "max": 6, "porta": 7777, "endereco": "a.b:1"}),
+		"x".repeat(700),
+	]
+	for i in ruins.size():
+		ok(S.validar(ruins[i], "").is_empty(), "anúncio torto %d é ignorado" % i)
+	var nome_feio: Dictionary = S.validar(JSON.stringify({"v": S.VERSAO, "id": "s123456", "nome": "\u0007Sala\n" + "z".repeat(50), "jogadores": 1, "max": 6, "porta": 7777, "endereco": "a.b:7"}), "")
+	ok(nome_feio.get("nome", "").length() <= 20 and not "\n" in nome_feio.get("nome", ""), "nome limpo e curto (%s)" % nome_feio.get("nome"))
+	ok(S.endereco_valido("1.2.3.4:7777") and not S.endereco_valido("1.2.3.4") and not S.endereco_valido("a b:1"), "formato de endereço")
 	print("REDE falhas=", falhas)
 	get_tree().quit()
