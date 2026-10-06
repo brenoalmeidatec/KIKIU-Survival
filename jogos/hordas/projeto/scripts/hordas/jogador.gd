@@ -3,7 +3,8 @@ extends Node2D
 ## Usa a mesma folha de andar dos personagens da Cairu (andando_8.png: 9 colunas x 4 direções, 44x60).
 
 const Visual := preload("res://scripts/hordas/visual.gd")
-const LINHA := {"baixo": 0, "esquerda": 1, "direita": 2, "cima": 3}
+const Direcao := preload("res://scripts/hordas/direcao.gd")
+const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
 const LARG_QUADRO := 44            # largura de um quadro na folha; hframes = largura da textura / isto
 const COLS_ANIM := 23              # folhas com 23+ colunas têm os estados extras abaixo (Hazaki); com menos, só parado/andar
 ## Tabela de ações da folha de 23 colunas: coluna inicial, nº de quadros, quadros por segundo, se repete.
@@ -53,6 +54,7 @@ var _mov := Vector2.ZERO
 var _dir_dash := Vector2.RIGHT
 var _t := 0.0
 var _dir := "baixo"
+var _olhar := Direcao.new()     # ângulo de olhar que gira suave (8 direções)
 var _rastro: Array = []          # imagens fantasmas do dash
 var _vermelho := 0.0
 var bot := false                 # modo demonstração (anda sozinho)
@@ -85,7 +87,7 @@ func configurar(sprite: String) -> void:
 	_sprite = sprite
 	spr.texture = Dados.tex_personagem(sprite, "andando_8")
 	spr.hframes = _colunas()
-	spr.vframes = 4
+	spr.vframes = Direcao.linhas_da_altura(spr.texture.get_height() if spr.texture else 0)
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
 	add_child(spr)
@@ -100,6 +102,7 @@ func definir_camadas(nomes: Array) -> void:
 	if corpo and spr.texture != corpo:
 		spr.texture = corpo
 		spr.hframes = _colunas()
+		spr.vframes = Direcao.linhas_da_altura(corpo.get_height())
 	for n in camadas.keys():
 		if not n in nomes:
 			camadas[n].queue_free()
@@ -323,9 +326,14 @@ func _no_menu() -> bool:
 	return arena.eh_online and (arena.cartas.aberto() or arena.hud._pausado)
 
 
+var entrada_forcada := Vector2.ZERO   # só para prints/testes (--andar=x,y): anda nessa direção como se fosse o teclado
+
+
 func _entrada() -> Vector2:
 	if _no_menu():
 		return Vector2.ZERO
+	if entrada_forcada != Vector2.ZERO:
+		return entrada_forcada.normalized()
 	if bot and arena.duelo_ativo:
 		return _bot_duelo()
 	if bot:
@@ -396,11 +404,8 @@ func _bot_dir() -> Vector2:
 
 
 func _animar(entrada: Vector2) -> void:
-	if entrada != Vector2.ZERO:
-		if absf(entrada.x) > absf(entrada.y) * 0.9:
-			_dir = "direita" if entrada.x > 0 else "esquerda"
-		else:
-			_dir = "baixo" if entrada.y > 0 else "cima"
+	_olhar.atualizar(entrada, _dt, spr.vframes)
+	_dir = _olhar.dir
 	var novo := "andando" if entrada != Vector2.ZERO else "parado"
 	if _tem_anim() and forma == null:
 		if hp <= 0.0:
@@ -492,7 +497,7 @@ func _draw() -> void:
 	for r in (_rastro if forma == null else []):
 		var tex := spr.texture
 		var w := tex.get_width() / float(spr.hframes)
-		var h := tex.get_height() / 4.0
+		var h := tex.get_height() / float(spr.vframes)
 		var f: int = r.frame
 		draw_texture_rect_region(tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)),
 			Rect2((f % spr.hframes) * w, (f / spr.hframes) * h, w, h), Color(0.5, 0.8, 1.0, r.t * 2.0))

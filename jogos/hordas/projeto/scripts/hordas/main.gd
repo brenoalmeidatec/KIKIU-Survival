@@ -243,6 +243,7 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	_arena.semente = int(o.get("semente", 0)) if online else int(_args.get("semente", 0))
 	_arena.terminou.connect(_terminou)
 	add_child(_arena)
+	_arena.inimigos.medir = _args.has("saltos")   # --saltos: conta saltos de posição dos vírus (relatório no fim do --sair)
 	if o.has("fase"):
 		_arena.saltar_para_andar(int(o.fase) - 1)
 	if o.has("estresse") and not online:   # os bichos do conjunto da fase (vírus ou horror)
@@ -519,6 +520,8 @@ func _teste() -> void:
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
 				_arena.duelo.estado if _arena.duelo_ativo else "-"])
 		if _t >= float(_args.sair):
+			if _args.has("saltos"):
+				print("SALTOS ", _arena.inimigos.med_relatorio())
 			get_tree().quit()
 	if _args.has("fotos") and _t >= _prox_foto:
 		_prox_foto += 20.0
@@ -749,6 +752,11 @@ func _print_tela(qual: String) -> void:
 				_arena.equipamentos["cabeca"] = "cabeca_guerreiro"
 				_arena.equipamentos["peitoral"] = "armadura_samurai"
 				_arena.atualizar_visual()
+			if _args.has("andar"):   # --andar=1,1: anda nessa direção (print das 8 direções)
+				var xy := str(_args.andar).split(",")
+				_arena.bot = false
+				_arena.jogador.bot = false
+				_arena.jogador.entrada_forcada = Vector2(float(xy[0]), float(xy[1]))
 			await get_tree().create_timer(float(_args.get("espera", 6.0))).timeout
 		"cenario":   # #32 item 2: cenário da fase --fase=N (1 laboratório, 4 masmorra, 8 cidade); --espera=N s de jogo
 			_comecar("hazaki")
