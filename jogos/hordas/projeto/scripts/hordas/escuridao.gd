@@ -1,4 +1,5 @@
 extends CanvasLayer
+const Perf := preload("res://scripts/hordas/perf.gd")
 ## Escuridão da fase de horror (#32 item 5). Só liga nas fases de corrida.json que têm o campo "escuro".
 ## Como funciona (GL Compatibility, um draw call): um ColorRect em tela cheia, ENTRE o mundo e o HUD (layer 1),
 ## com um shader que lê a tela já desenhada e a escurece, deixando luz em volta do herói, das tochas, dos santuários
@@ -123,6 +124,12 @@ func ligada() -> bool:
 
 
 func _process(dt: float) -> void:
+	var _pp := Perf.ini()
+	_process_i(dt)
+	Perf.fim("esc_p", _pp)
+
+
+func _process_i(dt: float) -> void:
 	if arena == null or arena.diretor == null:
 		return
 	var fases: Array = arena.diretor.fases()

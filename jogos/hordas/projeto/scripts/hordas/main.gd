@@ -8,6 +8,7 @@ extends Node
 ##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
 
 const Arena := preload("res://scripts/hordas/arena.gd")
+const Perf := preload("res://scripts/hordas/perf.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
 const W := 640.0
@@ -49,6 +50,7 @@ var _mouse_ult := Vector2(-1, -1)
 func _ready() -> void:
 	_teclas()
 	_ler_args()
+	Perf.ligado = _args.has("sair")   # relatório de custo por sistema no log do --sair (perf.gd)
 	_camada.layer = 20
 	add_child(_camada)
 	_tela.size = Vector2(W, H)
@@ -494,6 +496,7 @@ func _teste() -> void:
 	if _arena == null:
 		return
 	_quadros += 1
+	Perf.quadros += 1
 	_t_quadros += get_process_delta_time()
 	if _args.has("facil") and not _arena.duelo_ativo:
 		# teste: o chefe final nasce quase morto, pra chegar logo no duelo
@@ -505,6 +508,7 @@ func _teste() -> void:
 		_arena.morrer("teste")
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
+		print("  perf_us: ", Perf.relatorio())
 		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s forma=%s" % [
 			_t, _arena.diretor.fase_idx + 1, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,

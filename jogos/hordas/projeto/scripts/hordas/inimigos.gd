@@ -4,6 +4,7 @@ extends Node2D
 ## Também cuida dos tiros dos inimigos.
 
 const Visual := preload("res://scripts/hordas/visual.gd")
+const Perf := preload("res://scripts/hordas/perf.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
 const LONGE := 720.0       # mais longe que isso do jogador = reaparece do outro lado
@@ -11,6 +12,10 @@ const NASC_T := 0.26       # animação de nascer / reaparecer (teleporte): some
 const ACEL_VEL := 14.0     # suavização do andar: 1/ACEL_VEL s (~70 ms) pra chegar na velocidade pedida
 const SEP_MAX := 1.2       # empurrão de separação: no máximo 1,2x a velocidade do bicho, por segundo
 const KB_MAX := 360.0      # teto do empurrão (px/s): o knockback desliza, não teleporta
+const SEP_PERIODO := 0.04       # a separação de cada bicho é recalculada a cada ~40 ms (em quadros: 40 ms / dt) e aplicada suave TODO quadro
+const SEP_PERIODO_LONGE := 0.1  # ... e a cada ~100 ms se está longe do alvo (fora da tela)
+const SEP_PERTO := 380.0
+const SEP_VIZ: Array[int] = [-65537, -65536, -65535, -1, 0, 1, 65535, 65536, 65537]   # 3x3 células na chave inteira (x << 16) + y
 const AUSENTE_T := 0.45    # cliente online: bicho que some da foto fica mais um pouco (foto cheia / borda) antes de sair
 const SNAP_ONLINE := 150.0 # cliente online: foto mais longe que isso do que se vê = teleporte (anima), não deslize
 
@@ -71,6 +76,7 @@ class V:
 	var causa_pend := ""
 	var causa_ult := ""
 	var dir_ult := Vector2.ZERO
+	var sombra_reg: Array = [Rect2(), Rect2(), Rect2(), Rect2()]   # sombra assada por (quadro, espelho): ver Visual.sombra_regiao
 	var t_ausente := 0.0        # ... e quanto tempo faz que ficou fora das fotos (some só depois de AUSENTE_T)
 
 var arena: Node
@@ -84,7 +90,8 @@ var _grade := {}
 var _prox_id := 1
 var _t := 0.0
 var _quadro := 0
-var _ordem: Array = []
+var _ordem: Array = []         # visíveis, do mais alto pro mais baixo (refeita todo quadro no _draw)
+var _chaves := PackedFloat64Array()
 var _dt := 0.016
 var fantasmas: Array = []     # quem acabou de sumir (teleporte): {pos, tex, tam, sz, vira, quadro, t}
 var tp_n := 0                 # quantos teleportes (reaparecimentos) já tocaram: o teste lê
@@ -323,7 +330,7 @@ func no_circulo(c: Vector2, r: float) -> Array:
 	var b := _celula(c + Vector2(r + 40, r + 40))
 	for cy in range(a.y, b.y + 1):
 		for cx in range(a.x, b.x + 1):
-			var cel = _grade.get(Vector2i(cx, cy))
+			var cel = _grade.get(((cx + 32768) << 16) + cy + 32768)
 			if cel == null:
 				continue
 			for v: V in cel:
@@ -359,6 +366,7 @@ func aleatorio_na_tela(centro: Vector2) -> V:
 # ---------- atualização ----------
 
 func atualizar(dt: float, jog: Node2D) -> void:
+	var _p0 := Perf.ini()
 	_t += dt
 	_quadro += 1
 	_dt = dt
@@ -367,13 +375,16 @@ func atualizar(dt: float, jog: Node2D) -> void:
 		med_tempo += dt
 		med_quadros += 1
 	# grade
+	var _p1 := Perf.ini()
 	_grade.clear()
 	for v: V in lista:
-		var c := _celula(v.pos)
-		if _grade.has(c):
-			_grade[c].append(v)
+		var k: int = ((floori(v.pos.x / CELULA) + 32768) << 16) + floori(v.pos.y / CELULA) + 32768   # chave inteira: bem mais barata que Vector2i
+		var cel = _grade.get(k)
+		if cel == null:
+			_grade[k] = [v]
 		else:
-			_grade[c] = [v]
+			cel.append(v)
+	Perf.fim("ini_grade", _p1)
 	if espelho:
 		_atualizar_espelho(dt)
 		return
@@ -386,13 +397,20 @@ func atualizar(dt: float, jog: Node2D) -> void:
 	var local: int = Rede.eu() if online else 0
 	var k_vm := minf(1.0, dt * ACEL_VEL)   # suavização do andar (constante de tempo ~0,1 s); a investida arranca de uma vez
 	var k_sep := dt * 12.0
+	var k_kb := exp(-9.0 * dt)   # o knockback some em ~0,1 s (calculado uma vez por quadro, não por bicho)
+	var cad_perto := clampi(roundi(SEP_PERIODO / maxf(dt, 0.0001)), 1, 12)   # quadros entre dois cálculos de separação
+	var cad_longe := clampi(roundi(SEP_PERIODO_LONGE / maxf(dt, 0.0001)), 1, 24)
 
+	var _p2 := Perf.ini()
 	for v: V in lista.duplicate():
 		if v.hp <= 0:
 			continue
-		v.flash = maxf(0.0, v.flash - dt)
-		v.lento = maxf(0.0, v.lento - dt)
-		v.atordoado = maxf(0.0, v.atordoado - dt)
+		if v.flash > 0.0:
+			v.flash = maxf(0.0, v.flash - dt)
+		if v.lento > 0.0:
+			v.lento = maxf(0.0, v.lento - dt)
+		if v.atordoado > 0.0:
+			v.atordoado = maxf(0.0, v.atordoado - dt)
 		if v.t_nasc > 0.0:
 			v.t_nasc = maxf(0.0, v.t_nasc - dt)
 		if alvos.size() > 1:
@@ -457,14 +475,16 @@ func atualizar(dt: float, jog: Node2D) -> void:
 					var a := TAU * i / float(inv.get("quantos", 4))
 					criar(str(inv.get("tipo", "bug")), v.pos + Vector2.from_angle(a) * (v.raio + 20), arena.diretor.nivel())
 
-		# separação dos vizinhos (não empilham); cada inimigo calcula a cada 2 quadros
-		var sep := Vector2.ZERO
-		var c := _celula(v.pos)
-		var calcula: bool = (v.id + _quadro) % 2 == 0
-		var checados := 0 if calcula else 99
-		for oy in range(-1, 2):
-			for ox in range(-1, 2):
-				var cel = _grade.get(c + Vector2i(ox, oy))
+		# separação dos vizinhos (não empilham): cada inimigo recalcula a cada SEP_PERIODO s (SEP_PERIODO_LONGE
+		# se está longe do alvo, onde ninguém vê) e o resultado (`sepv`) é aplicado aos poucos TODO quadro, então não dá tranco
+		if (v.id + _quadro) % (cad_perto if dist < SEP_PERTO else cad_longe) == 0:
+			var sep := Vector2.ZERO
+			var px := v.pos.x
+			var py := v.pos.y
+			var kc: int = ((floori(px / CELULA) + 32768) << 16) + floori(py / CELULA) + 32768
+			var checados := 0
+			for ko in SEP_VIZ:
+				var cel = _grade.get(kc + ko)
 				if cel == null or checados > 20:
 					continue
 				for o: V in cel:
@@ -473,13 +493,15 @@ func atualizar(dt: float, jog: Node2D) -> void:
 						break
 					if o == v:
 						continue
-					var dif: Vector2 = v.pos - o.pos
+					var dx: float = px - o.pos.x
+					var dy: float = py - o.pos.y
 					var rr: float = v.raio + o.raio
-					var d2 := dif.length_squared()
+					var d2 := dx * dx + dy * dy
 					if d2 < rr * rr and d2 > 0.0001:
 						var dl := sqrt(d2)
-						sep += dif / dl * (rr - dl)
-		if calcula:
+						var f := (rr - dl) / dl
+						sep.x += dx * f
+						sep.y += dy * f
 			v.sepv = sep * (0.1 if v.chefe else 1.0)
 		# anda: a velocidade acelera até a desejada (sem trocar de uma vez), a separação entra aos poucos todo quadro
 		# (antes entrava inteira a cada 2 quadros: o bicho dava tranco) e o empurrão tem teto
@@ -492,7 +514,7 @@ func atualizar(dt: float, jog: Node2D) -> void:
 				push = push.normalized() * lim_s
 		var p_ant: Vector2 = v.pos
 		v.pos += (v.vm + v.kb) * dt + push
-		v.kb *= exp(-9.0 * dt)
+		v.kb *= k_kb
 		if medir:
 			var comp := {"movimento": (v.vm * dt).length(), "knockback": (v.kb * dt).length(), "separacao": push.length()}
 			var causa := "movimento"
@@ -515,6 +537,7 @@ func atualizar(dt: float, jog: Node2D) -> void:
 			var destino: Vector2 = alvo + Vector2.from_angle(a) * randf_range(380, 440)
 			_teleportar(v, destino)
 
+	Perf.fim("ini_laco", _p2)
 	# tiros dos inimigos
 	for t in tiros.duplicate():
 		t.pos += t.vel * dt
@@ -528,6 +551,7 @@ func atualizar(dt: float, jog: Node2D) -> void:
 		if acertou or t.vida <= 0:
 			tiros.erase(t)
 	queue_redraw()
+	Perf.fim("ini_atualizar", _p0)
 
 
 ## Teleporte de propósito (reciclagem de quem ficou longe, salto grande no online): o bicho some numa nuvem escura onde
@@ -628,25 +652,61 @@ func _novo_tiro(pos: Vector2, vel: Vector2, dano: float, sprite: String) -> void
 # ---------- desenho ----------
 
 func _draw() -> void:
+	var _d0 := Perf.ini()
 	var jx: float = arena.jogador.position.x if arena and arena.jogador else 0.0
-	# ordenar por altura (quem está mais embaixo fica na frente) custa caro: refaz a cada 4 quadros
-	if _quadro % 4 == 0 or _ordem.size() < lista.size() / 2:
-		_ordem = lista.duplicate()
-		_ordem.sort_custom(func(a, b): return a.pos.y < b.pos.y)
+	# só entra no desenho quem está na tela (com folga pro tamanho do sprite e da sombra): com 500 bichos, a maioria fica fora.
+	# `_ordem` = os visíveis, do mais alto pro mais baixo (quem está embaixo fica na frente). Ordena uma lista de números
+	# (y e posição na lista juntos numa chave só) com o sort nativo, todo quadro: bem mais barato que sort_custom.
+	var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()
+	var x0 := vis.position.x
+	var x1 := vis.end.x
+	var y0 := vis.position.y
+	var y1 := vis.end.y
+	_chaves.clear()
+	var n := lista.size()
+	for i in n:
+		var v: V = lista[i]
+		var m: float = maxf(v.sz.x, v.sz.y) + 28.0
+		var p: Vector2 = v.pos
+		if v.hp <= 0 or p.x < x0 - m or p.x > x1 + m or p.y < y0 - m or p.y > y1 + m:
+			if v.gira:
+				v.pos_ant = p   # fora da tela não gira (e não conta o passo como teleporte quando voltar)
+			if v.hp > 0:
+				v.flip = -1.0 if p.x > jx else 1.0   # ninguém vê: já fica virado pro herói
+			continue
+		_chaves.append(float((int(p.y * 2.0) + 4194304) << 16) + float(i))
+	_chaves.sort()
+	_ordem.clear()
+	for k in _chaves:
+		_ordem.append(lista[int(k) & 65535])
+	Perf.fim("ini_d_ordem", _d0)
+	var _d1 := Perf.ini()
 	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus)
 	for v: V in _ordem:
-		if v.hp <= 0 or v.t_nasc > NASC_T * 0.4:
+		if v.t_nasc > NASC_T * 0.4:
 			continue
 		var s: Vector2 = v.sz
 		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
 		var quadro := int(_t * v.ritmo + v.id) % 2
-		var src := Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y)
-		var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if v.pos.x > jx else Rect2(-s.x / 2, -s.y, s.x, s.y)
+		var espelho: bool = v.pos.x > jx
+		var ic := quadro * 2 + (1 if espelho else 0)
+		var reg: Rect2 = v.sombra_reg[ic]
+		var esc_s := s.x / v.tam.x
+		if reg.size.x <= 0.0:
+			var src := Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y)
+			reg = Visual.sombra_regiao(v.tex, src, espelho)
+			v.sombra_reg[ic] = reg
 		Visual.contato(self, pe, s.x * 0.75)
-		Visual.sombra(self, v.tex, rs, src, pe)
+		if reg.size.x > 0.0:
+			# mesma conta de Visual.sombra: a base do sprite fica em pe.y + (-s.y + s.y) e a esquerda em pe.x - s.x/2 (ou pe.x + s.x/2 - s.x se espelhado = igual)
+			Visual.carimbar(self, reg, esc_s, pe.x - s.x * 0.5, pe.y + 0.0)
+		else:
+			var src2 := Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y)
+			var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if espelho else Rect2(-s.x / 2, -s.y, s.x, s.y)
+			Visual.sombra(self, v.tex, rs, src2, pe)
+	Perf.fim("ini_d_sombra", _d1)
+	var _d2 := Perf.ini()
 	for v: V in _ordem:
-		if v.hp <= 0:
-			continue
 		var s: Vector2 = v.sz
 		var vira: bool = v.pos.x > jx
 		var alvo_f := -1.0 if vira else 1.0
@@ -720,6 +780,7 @@ func _draw() -> void:
 			draw_set_transform(Vector2.ZERO, 0.0)
 		else:
 			draw_texture_rect_region(v.tex, r, Rect2(v.tam.x * quadro, 0, v.tam.x, v.tam.y), cor)
+	Perf.fim("ini_d_sprite", _d2)
 	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
 		var u: float = f.t / NASC_T
 		var fs: Vector2 = f.sz * (1.0 - 0.6 * u)
