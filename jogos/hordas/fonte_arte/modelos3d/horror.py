@@ -5,7 +5,8 @@ Roda (Blender 4.5 LTS):
     blender -b -P horror.py carnical   # só um (carnical, cavaleiro_oco, espectro, cao_ossos, abominacao, arauto)
 Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (folha de 3 quadros lado a lado: andar A, andar B, branco
 de dano; o mesmo formato dos vírus, em 1x: o jogo lê "escala" em dados/inimigos.json) e proj_<nome>.png.
-Os bichos olham pra ESQUERDA (o jogo espelha quando o herói está à direita). Olhos e chamas são emissivos: a cor
+Os bichos olham pra DIREITA, como os vírus: o jogo espelha quando o bicho está à direita do herói
+(inimigos.gd, `vira = v.pos.x > jx`), e aí ele olha pro herói. O render sai olhando pra esquerda, então cada quadro é espelhado. Olhos e chamas são emissivos: a cor
 precisa existir na paleta passada ao pixelar, senão o brilho some.
 """
 import math
@@ -364,7 +365,7 @@ def gerar(nome):
     folha = np.zeros((H, W * 3, 4), dtype=np.float32)
     for q, fase in enumerate((0.0, math.pi)):
         pose(fase, q)
-        folha[:, q * W:(q + 1) * W] = px3.pixelar(px3.render_rgba(), paleta=pal)
+        folha[:, q * W:(q + 1) * W] = px3.pixelar(px3.render_rgba(), paleta=pal)[:, ::-1]   # olhando pra direita
     branco = folha[:, :W].copy()
     branco[branco[:, :, 3] > 0.5, :3] = 1.0
     folha[:, 2 * W:] = branco
