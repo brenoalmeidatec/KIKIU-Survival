@@ -174,6 +174,8 @@ func _acabou(msg: String) -> void:
 
 
 func _peer_saiu(id: int) -> void:
+	if anfitriao() and jogadores.has(id):
+		chat_aviso("%s saiu." % nome_de(id))
 	jogadores.erase(id)
 	remotos.erase(id)
 	if anfitriao():
@@ -256,6 +258,7 @@ func _escolher(heroi: String, nome := "") -> void:
 	_lista.rpc(jogadores)
 	if novo:
 		_bem_vindo.rpc_id(quem)
+		chat_aviso("%s entrou na sala." % nome_de(quem))
 	mudou.emit()
 
 
@@ -429,3 +432,46 @@ func banda() -> Vector2:
 	var seg := maxf(0.001, (agora - _banda_t) / 1000.0)
 	_banda_t = agora
 	return Vector2(p.host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA), p.host.pop_statistic(ENetConnection.HOST_TOTAL_RECEIVED_DATA)) / 1024.0 / seg
+
+
+# ======================================================== chat de texto (chat.gd desenha e lê o teclado)
+
+var _chat_ult := {}         # anfitrião: peer -> ms da última mensagem (segura quem manda rápido demais)
+const CHAT_INTERVALO := 400
+
+
+func chat_enviar(txt: String) -> void:
+	if anfitriao():
+		_chat_distribuir(1, txt)
+	elif cliente():
+		_chat_pedir.rpc_id(1, txt)
+
+
+@rpc("any_peer", "reliable")
+func _chat_pedir(txt) -> void:
+	if anfitriao() and typeof(txt) == TYPE_STRING:
+		_chat_distribuir(multiplayer.get_remote_sender_id(), txt)
+
+
+func _chat_distribuir(quem: int, txt: String) -> void:
+	if not jogadores.has(quem):
+		return
+	var agora := Time.get_ticks_msec()
+	if agora - int(_chat_ult.get(quem, -CHAT_INTERVALO)) < CHAT_INTERVALO:
+		return
+	_chat_ult[quem] = agora
+	var t := Chat.limpar_texto(txt)
+	if t != "":
+		_chat.rpc(nome_de(quem), t, false)
+
+
+## Anfitrião: aviso da sala pra todo mundo ("fulano entrou").
+func chat_aviso(txt: String) -> void:
+	if anfitriao():
+		_chat.rpc("", Chat.limpar_texto(txt), true)
+
+
+@rpc("authority", "call_local", "reliable")
+func _chat(quem, txt, sistema) -> void:
+	if typeof(quem) == TYPE_STRING and typeof(txt) == TYPE_STRING and typeof(sistema) == TYPE_BOOL:
+		Chat.receber(limpar_nome(quem), Chat.limpar_texto(txt), sistema)

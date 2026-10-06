@@ -105,6 +105,8 @@ func _process(_dt: float) -> void:
 
 
 func _input(e: InputEvent) -> void:
+	if Chat.digitando:   # o teclado é do chat (chat.gd)
+		return
 	if not _aberto or _agora() < TRAVA or not e.is_pressed() or e.is_echo():
 		return
 	if not (e is InputEventKey or e is InputEventJoypadButton or e is InputEventMouseButton):

@@ -353,6 +353,8 @@ func _rede_conectou(ok: bool, msg: String) -> void:
 	if ok:
 		_estado = "sala"
 		_msg = ""
+		if _args.has("chat"):   # teste: manda uma mensagem no chat ao entrar
+			Rede.chat_enviar(str(_args.chat))
 		if _args.has("pronto"):   # teste: o cliente já entra pronto
 			Rede.marcar_pronto(true)
 	elif _estado == "sala":
@@ -477,6 +479,8 @@ func _online_teste() -> void:
 
 ## Campo de texto do endereço: digita, apaga, Ctrl+V cola, Enter conecta, Esc volta.
 func _input(e: InputEvent) -> void:
+	if Chat.digitando:   # o teclado é do chat (chat.gd)
+		return
 	if Interface.clique(e) or (e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_RIGHT):
 		_clique_menu(e)
 		return
@@ -812,7 +816,7 @@ func _desenhar() -> void:
 				_tela.draw_rect(r, Color(0.15, 0.4, 0.2) if pronto else Color(0.16, 0.16, 0.22))
 				_tela.draw_rect(r, Color(0.5, 1, 0.6) if pronto else Color(0.35, 0.37, 0.45), false, 1.0)
 				_txt(r.position + Vector2(0, 11), "PRONTO" if pronto else "...", 8, Color(0.75, 1, 0.8) if pronto else Color(0.55, 0.57, 0.65), r.size.x)
-				y0 += 40
+				y0 += 40 if Rede.jogadores.size() <= 4 else 34   # com 5 ou 6, os cartões encostam pra sobrar lugar pro chat
 			if _estado == "apelido":
 				_tela.draw_rect(Rect2(150, 140, 340, 70), Color(0.04, 0.04, 0.08, 0.95))
 				_tela.draw_rect(Rect2(150, 140, 340, 70), Color(1, 0.85, 0.3), false, 2.0)
@@ -828,9 +832,9 @@ func _desenhar() -> void:
 				_txt(Vector2(0, 210), "Esse endereço fica visível pra quem abrir a lista de salas.", 8, Color(1, 0.8, 0.45))
 			var aviso: String = _msg if _msg != "" else (Salas.erro_net if Rede.anfitriao() and Salas.publica else "")
 			if aviso != "":
-				_txt(Vector2(0, 314), aviso, 8, Color(1, 0.6, 0.5))
-			var dica := "Setas: herói   N: nome   " + ("L/E: lista pública   Enter: começar   " if Rede.anfitriao() else "Enter: pronto   ")
-			_txt(Vector2(0, 330), dica + "Esc: sair da sala", 8, Color(0.6, 0.6, 0.7))
+				_txt(Vector2(0, 86), aviso, 8, Color(1, 0.6, 0.5))   # em cima dos cartões: embaixo é do chat
+			var dica := "Setas: herói  N: nome  T: chat  " + ("L/E: lista  Enter: começar  " if Rede.anfitriao() else "Enter: pronto  ")
+			_txt(Vector2(0, 352), dica + "Esc: sair", 8, Color(0.6, 0.6, 0.7))
 		"herois":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)
