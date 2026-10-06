@@ -78,20 +78,20 @@
    "id": "gelo",
    "nome": "Pico Congelado",
    "descricao": "Vento que corta, gelo que não derrete e gigantes enterrados.",
-   "conjunto": "virus",
-   "cenario": "cidade",
+   "conjunto": "gelo",
+   "cenario": "gelo",
    "musica": ["minijogo_tenso_b", "minijogo_tenso"],
    "cor": [0.85, 0.92, 1.0],
    "calor": {"couro": 2, "garras": 1, "horda": 1},
    "fases": [
-    {"nome": "Passo Gelado", "peso": 3, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "popup", "quantos": 34}]},
-    {"nome": "Caverna de Cristal", "peso": 2, "duracao": 76, "chefe": "trojan_gigante", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "minerador", "quantos": 26}]},
-    {"nome": "Lago Partido", "peso": 2, "duracao": 76, "chefe": "ransomware", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "bug", "quantos": 40}]},
-    {"nome": "Forte Abandonado", "peso": 2, "duracao": 78, "chefe": "trojan_gigante", "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "trojan", "quantos": 14}]},
-    {"nome": "Escadaria do Vento", "peso": 1, "duracao": 76, "chefe": "ransomware", "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "spam", "quantos": 22}]},
-    {"nome": "Cemitério de Gigantes", "peso": 2, "duracao": 78, "chefe": "trojan_gigante", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "popup", "quantos": 36}]}
+    {"nome": "Passo Gelado", "peso": 3, "duracao": 74, "chefe": "jarl_congelado", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "diabrete_gelo", "quantos": 34}]},
+    {"nome": "Caverna de Cristal", "peso": 2, "duracao": 76, "chefe": "jarl_congelado", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "sentinela_cristal", "quantos": 10}]},
+    {"nome": "Lago Partido", "peso": 2, "duracao": 76, "chefe": "jarl_congelado", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "espirito_nevasca", "quantos": 12}]},
+    {"nome": "Forte Abandonado", "peso": 2, "duracao": 78, "chefe": "jarl_congelado", "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "guerreiro_congelado", "quantos": 22}, {"tempo": 58, "tipo": "chefe", "inimigo": "troll_gelo"}]},
+    {"nome": "Escadaria do Vento", "peso": 1, "duracao": 76, "chefe": "jarl_congelado", "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "diabrete_gelo", "quantos": 26}, {"tempo": 52, "tipo": "anel", "inimigo": "espirito_nevasca", "quantos": 10}]},
+    {"nome": "Cemitério de Gigantes", "peso": 2, "duracao": 78, "chefe": "jarl_congelado", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "urso_gelo", "quantos": 6}, {"tempo": 60, "tipo": "chefe", "inimigo": "troll_gelo"}]}
    ],
-   "chefe": {"nome": "Cume da Tempestade", "duracao": 90, "chefe": "ransomware", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "trojan", "quantos": 16}, {"tempo": 66, "tipo": "anel", "inimigo": "minerador", "quantos": 34}]}
+   "chefe": {"nome": "Cume da Tempestade", "duracao": 90, "chefe": "gigante_tempestade", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "guerreiro_congelado", "quantos": 16}, {"tempo": 50, "tipo": "chefe", "inimigo": "troll_gelo"}, {"tempo": 66, "tipo": "enxame", "inimigo": "diabrete_gelo", "quantos": 40}]}
   },
   {
    "id": "reino",

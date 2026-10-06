@@ -934,7 +934,150 @@ def roda_carroca(r):
     return None
 
 
+# ================================================================ pico congelado (#64, região 4)
+
+def piso_gelo(r):
+    """Neve vista de cima: montes de neve fofa, placas de gelo rachado, pedras com capa de neve, capim seco furando a neve
+    e uma trilha de pegadas. Claro, como a areia do deserto: os bichos escuros se leem por cima."""
+    caixa("neve", (L, L, 0.1), (L / 2, L / 2, -0.05), toon("e8f6ff"))
+    neves = [chao(h) for h in ("e8f6ff", "d4e6f2", "f4faff")]
+    for _ in range(10):
+        x, y = r.uniform(0.8, L - 0.8), r.uniform(0.8, L - 0.8)
+        esfera("monte", r.uniform(0.8, 1.5), (x, y, -0.3), r.choice(neves), escala=(1, r.uniform(0.5, 1.2), 0.25))
+    terra = [chao(h) for h in ("4a423b", "3a3430")]
+    for _ in range(4):   # terra congelada aparecendo onde o vento varreu a neve (dá contraste ao chão)
+        x, y = r.uniform(1.0, L - 1.0), r.uniform(1.0, L - 1.0)
+        for _k in range(r.randint(3, 5)):
+            esfera("terra", r.uniform(0.25, 0.45), (x + r.uniform(-0.4, 0.4), y + r.uniform(-0.3, 0.3), -0.02), r.choice(terra),
+                   escala=(1, r.uniform(0.6, 1.0), 0.3))
+    gelo = px3.material_suave("gelo_lago", px3.cor("5a7fa0"), rugosidade=0.1, relevo=0.0, variacao=0.08, escala=2.0)
+    racha = toon("16202e")
+    for _ in range(3):   # placas de gelo liso e escuro, com rachaduras
+        x, y = r.uniform(1.5, L - 1.5), r.uniform(1.5, L - 1.5)
+        esfera("placa_gelo", r.uniform(0.9, 1.3), (x, y, -0.33), gelo, escala=(1, r.uniform(0.6, 0.9), 0.36))
+        for _k in range(r.randint(2, 4)):
+            caixa("racha", (r.uniform(0.4, 0.8), 0.025, 0.02), (x + r.uniform(-0.3, 0.3), y + r.uniform(-0.25, 0.25), 0.0), racha,
+                  rot=(0, 0, r.uniform(0, math.pi)))
+    pedras = [chao(h) for h in ("4a423b", "5e544a")]
+    capa = toon("f4faff")
+    for _ in range(5):   # pedras furando a neve (poucas e chatas: muitas bolas escuras pareciam projéteis no jogo)
+        x, y, rr = r.uniform(0.4, L - 0.4), r.uniform(0.4, L - 0.4), r.uniform(0.15, 0.3)
+        esfera("pedra", rr, (x, y, 0.0), r.choice(pedras), escala=(1.2, r.uniform(0.7, 1.1), 0.35))
+        esfera("capa", rr * 0.6, (x - rr * 0.25, y + rr * 0.3, rr * 0.4), capa, escala=(1, 0.8, 0.35))   # neve só no alto da pedra
+    capim = toon("8f6a2e")
+    for _ in range(8):
+        x, y = r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5)
+        for _k in range(r.randint(3, 6)):
+            cilindro("capim", 0.014, 0.22, (x + r.uniform(-0.1, 0.1), y + r.uniform(-0.1, 0.1), 0.08), capim,
+                     rot=(r.uniform(-0.5, 0.5), r.uniform(-0.5, 0.5), 0), vertices=4)
+    pegada = toon("b8d8ec")
+    x, y, a = r.uniform(1.0, L - 1.0), r.uniform(1.0, 2.0), r.uniform(1.2, 1.9)   # trilha de pegadas (alguém passou)
+    for k in range(9):
+        lado = 0.09 if k % 2 else -0.09
+        px_, py_ = x + math.cos(a) * k * 0.32 - math.sin(a) * lado, y + math.sin(a) * k * 0.32 + math.cos(a) * lado
+        esfera("pegada", 0.07, (px_ % L, py_ % L, 0.0), pegada, escala=(1, 1.5, 0.2))
+
+
+def pinheiro_nevado(r):
+    """Pinheiro escuro em três andares, cada um com neve em cima."""
+    agulha, neve, casca = toon("1d2e17"), toon("f4faff"), toon("4a3324")
+    cilindro("tronco", 0.1, 0.5, (0, 0, 0.25), casca, vertices=6)
+    for k, (rr, z) in enumerate(((0.6, 0.45), (0.46, 0.95), (0.32, 1.4))):
+        cone("copa%d" % k, rr, 0.0, 0.75, (0, 0, z + 0.37), agulha, vertices=9)
+        cone("neve%d" % k, rr * 0.7, 0.0, 0.42, (0, 0.02, z + 0.62), neve, vertices=9)
+    return None
+
+
+def rocha_neve(r):
+    pedra, pedra_e, neve = toon("5e544a"), toon("4a423b"), toon("f4faff")
+    esfera("rocha", 0.55, (0, 0, 0.3), pedra, escala=(1.1, 0.9, 0.7))
+    esfera("rocha2", 0.35, (0.45, -0.15, 0.2), pedra_e, escala=(1, 0.9, 0.7))
+    esfera("neve", 0.5, (0, 0.02, 0.52), neve, escala=(1.0, 0.8, 0.3))
+    esfera("neve2", 0.28, (0.45, -0.13, 0.35), neve, escala=(1.0, 0.8, 0.3))
+    return None
+
+
+def cristal_gelo(r):
+    """Cristais de gelo que brilham azul: a luz fria do pico."""
+    claro, fundo = brilha("b8d8ec", 1.0), toon("4a6a88")
+    for k, (x, y, h, inc) in enumerate(((0, 0, 0.9, 0.0), (0.2, 0.05, 0.6, 0.35), (-0.18, 0.08, 0.55, -0.4), (0.06, -0.15, 0.4, 0.2))):
+        cilindro("cristal", 0.1, h, (x, y, h / 2), fundo if k % 2 else claro, rot=(0, inc, 0), vertices=6)
+        cone("ponta", 0.1, 0.0, 0.2, (x + math.sin(inc) * h / 2, y, h + 0.08), claro, vertices=6)
+    return {"ponto": (0, 0, 0.6), "rampa": "noite", "raio": 55, "pisca": 0.08}
+
+
+def estatua_congelada(r):
+    """Guerreiro preso num bloco de gelo: o elmo e o braço com a espada ainda saem do bloco."""
+    gelo, aco, neve = toon("b8d8ec"), toon("2e2a40"), toon("f4faff")
+    caixa("bloco", (0.7, 0.55, 1.2), (0, 0, 0.6), gelo, rot=(0, 0, 0.1), chanfro=0.08)
+    esfera("elmo", 0.17, (0.05, -0.05, 1.28), aco)
+    for lado in (1, -1):
+        cone("chifre", 0.04, 0.0, 0.2, (0.05 + 0.14 * lado, -0.05, 1.4), toon("a89e86"), vertices=5)
+    caixa("braco", (0.12, 0.12, 0.4), (0.38, -0.1, 0.95), aco, rot=(0, 0.6, 0))
+    caixa("espada", (0.05, 0.04, 0.6), (0.6, -0.1, 1.2), toon("766a5d"), rot=(0, 0.6, 0))
+    esfera("neve", 0.4, (0, 0, 1.2), neve, escala=(0.9, 0.7, 0.2))
+    return None
+
+
+def mao_gigante(r):
+    """Mão de pedra de um gigante enterrado, saindo da neve com os dedos curvados."""
+    pedra, neve = toon("4a423b"), toon("f4faff")
+    esfera("palma", 0.4, (0, 0, 0.15), pedra, escala=(1.1, 0.8, 0.6))
+    for k in range(4):
+        x = -0.27 + k * 0.18
+        h = 0.75 + (0.1 if k in (1, 2) else 0.0)
+        cilindro("dedo%d" % k, 0.075, h * 0.6, (x, 0.0, 0.2 + h * 0.3), pedra, rot=(-0.15, 0, 0), vertices=7)
+        esfera("ponta%d" % k, 0.075, (x, -0.12, 0.2 + h * 0.6), pedra)
+        esfera("neve%d" % k, 0.06, (x, -0.1, 0.27 + h * 0.6), neve, escala=(1, 1, 0.5))
+    cilindro("polegar", 0.08, 0.4, (0.45, -0.1, 0.35), pedra, rot=(0, 0.7, 0), vertices=7)
+    esfera("monte", 0.75, (0, 0.05, 0.0), toon("e8f6ff"), escala=(1.1, 0.9, 0.25))
+    return None
+
+
+def muralha_quebrada(r):
+    """Pedaço da muralha do forte abandonado: pedras empilhadas, um lado desmoronado e neve em cima."""
+    pedras, neve = [toon(h) for h in ("766a5d", "5e544a")], toon("f4faff")
+    for linha in range(4):
+        for k in range(4 - (linha // 2)):
+            caixa("pedra", (0.32, 0.3, 0.2), (-0.5 + k * 0.34 + (linha % 2) * 0.17, 0, 0.1 + linha * 0.21), pedras[(k + linha) % 2], chanfro=0.03)
+    for k in range(3):
+        caixa("caida", (0.26, 0.24, 0.16), (0.45 + r.uniform(-0.1, 0.25), r.uniform(-0.3, 0.2), 0.08), pedras[k % 2], rot=(0, 0, r.uniform(0, 3)), chanfro=0.03)
+    caixa("neve", (0.9, 0.34, 0.06), (-0.25, 0, 0.85), neve, chanfro=0.03)
+    return None
+
+
+def bandeira_rasgada(r):
+    """Estandarte rasgado do forte, num mastro torto com neve na ponta."""
+    madeira, pano, pano_e = toon("4a3324"), toon("7e2027"), toon("4f1520")
+    cilindro("mastro", 0.04, 1.9, (0, 0, 0.95), madeira, rot=(0.05, 0.08, 0), vertices=6)
+    caixa("travessa", (0.6, 0.04, 0.04), (0.28, 0, 1.75), madeira)
+    caixa("pano", (0.5, 0.03, 0.75), (0.3, 0, 1.36), pano)
+    for k in range(3):   # a ponta esfarrapada
+        caixa("tira%d" % k, (0.12, 0.03, 0.2 + k * 0.08), (0.12 + k * 0.17, 0, 0.9 - k * 0.04), pano_e)
+    esfera("neve", 0.06, (0.0, 0, 1.92), toon("f4faff"), escala=(1, 1, 0.6))
+    return None
+
+
+def pedra_runa(r):
+    """Pedra em pé com uma runa entalhada que ainda brilha."""
+    pedra = toon("5e544a")
+    caixa("pedra", (0.42, 0.24, 0.95), (0, 0, 0.47), pedra, rot=(0, 0.05, 0), chanfro=0.06)
+    runa = brilha("b8d8ec", 1.0)
+    caixa("runa_v", (0.05, 0.02, 0.4), (0, -0.125, 0.55), runa)
+    for k in (-1, 1):
+        caixa("runa_d", (0.04, 0.02, 0.18), (0.06 * k, -0.125, 0.62), runa, rot=(0, 0.6 * k, 0))
+    esfera("neve", 0.24, (0, 0, 0.95), toon("f4faff"), escala=(1, 0.6, 0.3))
+    return None
+
+
 CENARIOS = {
+    "gelo": {
+        "piso": piso_gelo, "ambiente": [0.86, 0.92, 1.0],
+        "paleta": ("gelo", "pedra", "folha", "couro", "osso", "sangue", "fogo", "noite"),   # sem "aco": puxava a neve pro lilás
+        "enfeites": [("pinheiro", pinheiro_nevado, 4), ("rocha", rocha_neve, 3), ("cristal", cristal_gelo, 2), ("estatua", estatua_congelada, 1),
+                     ("mao", mao_gigante, 1), ("muralha", muralha_quebrada, 2), ("bandeira", bandeira_rasgada, 1), ("runa", pedra_runa, 1),
+                     ("fogueira", fogueira, 1), ("arvore_morta", arvore_morta, 2), ("ossos", ossos_lodo, 1)],
+    },
     "deserto": {
         "piso": piso_deserto, "ambiente": [1.0, 0.94, 0.84],
         "paleta": ("areia", "pedra", "osso", "ouro", "sangue", "fogo", "noite", "lapis", "aco"),   # sem "couro": puxava a areia pro laranja
