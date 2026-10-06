@@ -7,7 +7,8 @@ const Visual := preload("res://scripts/hordas/visual.gd")
 const Armas := preload("res://scripts/hordas/armas.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 const IA := preload("res://scripts/hordas/ia_luta.gd")
-const LINHA := {"baixo": 0, "esquerda": 1, "direita": 2, "cima": 3}
+const Direcao := preload("res://scripts/hordas/direcao.gd")
+const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
 const DASH_TEMPO := 0.18
@@ -31,6 +32,7 @@ var dash_recarga := 0.0
 var invencivel := 0.0
 var spr := Sprite2D.new()
 var _dir := "baixo"
+var _olhar := Direcao.new()
 var _t := randf() * 10.0
 var _mov := Vector2.ZERO
 var _dir_dash := Vector2.RIGHT
@@ -55,7 +57,7 @@ func configurar(d: Node2D, l, nome_: String, heroi: String, build_: Dictionary, 
 	_pref = IA.alcance_preferido(build.armas)
 	spr.texture = Dados.tex_personagem(str(h.get("sprite", heroi)), "andando_8")
 	spr.hframes = maxi(1, int(spr.texture.get_width()) / 44)
-	spr.vframes = 4
+	spr.vframes = Direcao.linhas_da_altura(spr.texture.get_height())
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
 	add_child(spr)
@@ -113,7 +115,7 @@ func atualizar(dt: float) -> void:
 	position += kb * dt
 	kb *= exp(-9.0 * dt)
 	hp = minf(hpmax, hp + stat("regen") * dt)
-	_animar()
+	_animar(dt)
 	for r in _rastro.duplicate():
 		r.t -= dt
 		if r.t <= 0:
@@ -122,12 +124,10 @@ func atualizar(dt: float) -> void:
 	queue_redraw()
 
 
-func _animar() -> void:
+func _animar(dt: float) -> void:
+	_olhar.atualizar(_mov, dt, spr.vframes)
+	_dir = _olhar.dir
 	if _mov != Vector2.ZERO:
-		if absf(_mov.x) > absf(_mov.y) * 0.9:
-			_dir = "direita" if _mov.x > 0 else "esquerda"
-		else:
-			_dir = "baixo" if _mov.y > 0 else "cima"
 		spr.frame = LINHA[_dir] * spr.hframes + 1 + int(_t * 12.0) % 8
 	else:
 		spr.frame = LINHA[_dir] * spr.hframes
@@ -166,7 +166,7 @@ func _draw() -> void:
 	for r in _rastro:
 		var tex := spr.texture
 		var w := tex.get_width() / float(spr.hframes)
-		var h := tex.get_height() / 4.0
+		var h := tex.get_height() / float(spr.vframes)
 		var f: int = r.frame
 		draw_texture_rect_region(tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)),
 			Rect2((f % spr.hframes) * w, (f / spr.hframes) * h, w, h), Color(cor, r.t * 2.0))

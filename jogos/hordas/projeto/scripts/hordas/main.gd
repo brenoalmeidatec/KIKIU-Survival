@@ -749,6 +749,11 @@ func _print_tela(qual: String) -> void:
 				_arena.equipamentos["cabeca"] = "cabeca_guerreiro"
 				_arena.equipamentos["peitoral"] = "armadura_samurai"
 				_arena.atualizar_visual()
+			if _args.has("andar"):   # --andar=1,1: anda nessa direção (print das 8 direções)
+				var xy := str(_args.andar).split(",")
+				_arena.bot = false
+				_arena.jogador.bot = false
+				_arena.jogador.entrada_forcada = Vector2(float(xy[0]), float(xy[1]))
 			await get_tree().create_timer(float(_args.get("espera", 6.0))).timeout
 		"cenario":   # #32 item 2: cenário da fase --fase=N (1 laboratório, 4 masmorra, 8 cidade); --espera=N s de jogo
 			_comecar("hazaki")

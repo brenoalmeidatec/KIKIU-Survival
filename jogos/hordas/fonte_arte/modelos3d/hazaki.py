@@ -1,5 +1,6 @@
 """Hazaki MODULAR: corpo base + uma camada por equipamento/arma, todas no formato de folha que o jogo usa:
-23 colunas x 4 linhas de quadros 44x60 (folha 1012x240). Linhas: baixo, esquerda, direita, cima.
+23 colunas x 8 linhas de quadros 44x60 (folha 1012x480). Linhas: 0 baixo, 1 esquerda, 2 direita, 3 cima,
+4 baixo-esquerda, 5 baixo-direita, 6 cima-esquerda, 7 cima-direita (as 4 primeiras iguais às folhas antigas).
 Colunas (mesmo boneco, mesma câmera, pé sempre em PE_Y=57):
     0       parado
     1-8     andando (ciclo de 8 quadros)
@@ -37,7 +38,8 @@ SAIDA = os.path.normpath(os.path.join(AQUI, "..", "..", "projeto", "assets", "pe
 QW, QH = 44, 60
 PE_Y = 57
 COLUNAS = 23
-DIRECOES = [0.0, -90.0, 90.0, 180.0]   # baixo, esquerda, direita, cima
+DIRECOES = [0.0, -90.0, 90.0, 180.0, -45.0, 45.0, -135.0, 135.0]   # baixo, esquerda, direita, cima, e as 4 diagonais
+LINHAS = len(DIRECOES)
 PAL = px3.paleta_de("hz_neutro", "hz_pele", "hz_sangue", "ouro")
 
 CAMADAS = {}          # nome -> [objetos]
@@ -294,7 +296,7 @@ def pose(corpo, p, acao, q):
         z("cab", 0.2)
         z("braco_e", 0.3, 0.0, -0.3 * k)
         z("braco_d", -0.2, 0.0, 0.3 * k)
-        lado = p.get("linha", 0) in (1, 2)
+        lado = p.get("linha", 0) in (1, 2, 4, 5, 6, 7)   # perfil e diagonais caem deitando de lado
         if lado:    # de perfil: cai deitando na horizontal da tela (diagonal), um pouco menor para caber
             z("queda", 0.0, roll, 0.9 * roll / 1.57)
             e = 0.9 if q else 1.0
@@ -323,7 +325,7 @@ def main():
     pose(corpo, p, "parado", 0)
     mostrar("base")
     px3.calibrar_pe(cam, PE_Y, QW, QH)
-    folhas = {n: np.zeros((QH * 4, QW * COLUNAS, 4), dtype=np.float32) for n in CAMADAS}
+    folhas = {n: np.zeros((QH * LINHAS, QW * COLUNAS, 4), dtype=np.float32) for n in CAMADAS}
     for linha, ang in enumerate(DIRECOES):
         raiz.rotation_euler = (0, 0, math.radians(ang))
         p["linha"] = linha
