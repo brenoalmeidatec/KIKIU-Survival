@@ -29,6 +29,13 @@ const MODULOS := {
 	"pose": preload("res://scripts/hordas/especiais/pose.gd"),
 	"manha": preload("res://scripts/hordas/especiais/manha.gd"),
 	"onda": preload("res://scripts/hordas/especiais/onda.gd"),
+	# armas globais com comportamento próprio (#65)
+	"bumerangue": preload("res://scripts/hordas/armas/bumerangue.gd"),
+	"raio": preload("res://scripts/hordas/armas/raio.gd"),
+	"lanca": preload("res://scripts/hordas/armas/lanca.gd"),
+	"corvos": preload("res://scripts/hordas/armas/corvos.gd"),
+	"runas": preload("res://scripts/hordas/armas/runas.gd"),
+	"sismo": preload("res://scripts/hordas/armas/sismo.gd"),
 }
 
 var arena: Node

@@ -5,6 +5,12 @@
     {"arma": "cabo_rede", "passivo": "energetico", "vira": "fibra_optica"},
     {"arma": "ventoinha", "passivo": "overclock", "vira": "water_cooler"},
     {"arma": "cafe", "passivo": "monitor", "vira": "garrafa_termica"},
-    {"arma": "wifi", "passivo": "antena", "vira": "roteador_5g"}
+    {"arma": "wifi", "passivo": "antena", "vira": "roteador_5g"},
+    {"arma": "machado", "passivo": "marmita", "vira": "machados_brasa"},
+    {"arma": "raio", "passivo": "apostila", "vira": "furia_ceus"},
+    {"arma": "lanca", "passivo": "mouse", "vira": "lanca_ardente"},
+    {"arma": "corvos", "passivo": "tenis", "vira": "revoada"},
+    {"arma": "runas", "passivo": "fitinha", "vira": "circulo_runico"},
+    {"arma": "martelo", "passivo": "agua_coco", "vira": "terremoto"}
   ]
 }
