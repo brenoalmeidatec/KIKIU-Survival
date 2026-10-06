@@ -19,6 +19,14 @@ var _mov := Vector2.ZERO
 var _dir := "baixo"
 var _t := 0.0
 var _novo := true
+var _ent_t := 0.0                # chegada no começo da fase (veja visual.gd chegada_*)
+var _ent_poeira := false
+
+
+## Começo da fase (ou primeiro pacote): o boneco cai do alto com poeira e flash, como o herói.
+func entrar() -> void:
+	_ent_t = Visual.CHEGADA_TEMPO
+	_ent_poeira = false
 
 
 func configurar(p: int, heroi_: String, nome_: String) -> void:
@@ -50,6 +58,7 @@ func atualizar(dt: float, d: Dictionary) -> void:
 		if _novo:
 			position = _alvo
 			_novo = false
+			entrar()
 	# suaviza entre um pacote e outro; se pulou longe (dash, reaparecer), vai direto
 	position = _alvo if position.distance_to(_alvo) > 160.0 else position.lerp(_alvo, minf(1.0, dt * 14.0))
 	if _mov.length() > 0.1 and not caido:
@@ -63,11 +72,23 @@ func atualizar(dt: float, d: Dictionary) -> void:
 	spr.modulate = Color(0.45, 0.45, 0.5, 0.8) if caido else Color.WHITE
 	spr.rotation = PI / 2 if caido else 0.0
 	spr.position = Vector2(-30, -10) if caido else Vector2.ZERO
+	if _ent_t > 0.0:
+		_ent_t = maxf(0.0, _ent_t - dt)
+		var p := 1.0 - _ent_t / Visual.CHEGADA_TEMPO
+		var g := Visual.chegada_flash(p) * 2.0
+		spr.position.y -= Visual.chegada_altura(p)
+		spr.modulate = Color(spr.modulate.r + g, spr.modulate.g + g, spr.modulate.b + g, spr.modulate.a * clampf(p * 6.0, 0.0, 1.0))
+		if not _ent_poeira and p >= Visual.CHEGADA_POUSO:
+			_ent_poeira = true
+			if get_parent() and get_parent().efeitos:
+				get_parent().efeitos.explodir(position + Vector2(0, -2), Color(0.82, 0.78, 0.68), 8, 85.0)
 	visible = not fora
 	queue_redraw()
 
 
 func _draw() -> void:
+	if _ent_t > 0.0:
+		Visual.chegada(self, 1.0 - _ent_t / Visual.CHEGADA_TEMPO, "", 0.0, cor)
 	if not caido:
 		Visual.sombra_boneco(self, spr)
 	draw_set_transform(Vector2.ZERO, 0, Vector2(1, 0.4))

@@ -235,3 +235,12 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Sem arte nova: santuário é a tomada tingida com anéis/partículas e losango desenhados à mão.
 
 **Próximo:** calibrar pesos jogando, depois mapa de nós / tela de resultado (#32 itens 7 e 6).
+## 2026-10-05 · Claude do Alisson (PC) · #32 itens 7 e 6: tela de resultados da fase e entradas
+**Feito**
+- **Item 7:** `arena.fase_stat` guarda os números DA FASE (tempo, abates, chefes, XP ganho, nível inicial/final, dano por arma, itens pegos) e zera em `proxima_fase()`. No fim da fase, depois do XP e das cartas e antes do baú, `resultado.gd` para o jogo e conta linha por linha (tempo real, "plim" por linha, top 3 armas com ícone, ícones dos itens). Qualquer tecla pula a contagem; Enter/E/Z segue. Com `--bot` fecha em ~1 s; no online fecha sozinha em ~8 s e cada um vê a sua (o fluxo "pronto"/60 s do anfitrião não mudou, e se o anfitrião mandar seguir antes, a tela fecha).
+- **Item 6a:** herói e aliados "caem" no começo de cada fase (0,6 s, coluna de luz, poeira, flash no pouso, nome em cima ~2 s). Desenho em `visual.gd` (`chegada_*`), gatilho em `entradas.gd`.
+- **Item 6b:** entrada do chefe em `entradas.gd`: câmera vai até ele e volta, barras de cinema, placa ~1,5 s com nome + subtítulo (campo `subtitulo` em `dados/inimigos.json`), tremida via `Config.v("tremor")`. Sozinho tem câmera lenta (0,25x); `Engine.time_scale` volta ao valor de antes no fim e no `_exit_tree` da arena. No online não mexe no tempo, só câmera/placa locais. O evento `chefe_final` agora leva o tipo do chefe.
+- `main.gd _print_tela`: modos `resultado` e `entrada_chefe`. Teste novo `testes/resultado.tscn` (RESULT falhas=0); os outros 5 testes e a partida com robô seguem sem falha/SCRIPT ERROR.
+
+**Pendente / fraco:** não há ouro no jogo, então a tela só mostra o que existe; itens do baú de fim de fase aparecem na fase seguinte (a tela vem antes do baú). Online só testado sem rede (sem 2 máquinas): a entrada do chefe no cliente depende do chefe já ter chegado pelo espelho (senão só a placa, sem câmera). Chefes de evento no meio da fase (`tipo: chefe`) não têm entrada.
+**Próximo:** #32 item 8 (mapa de progressão) pode ler `fase_stat` pra mostrar o resumo.

@@ -646,6 +646,26 @@ func _print_tela(qual: String) -> void:
 			if _args.has("dadivas"):
 				_arena.cartas.escolher("Dádiva do santuário", _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva")))
 			await get_tree().create_timer(0.5, true, false, true).timeout
+		"resultado":   # tela de resultados da fase (#32): --espera=N segundos de contagem (padrão 4)
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			var st: Dictionary = _arena.fase_stat
+			st.tempo = 98.0
+			st.abates = 412
+			st.chefes = 1
+			st.xp = 380.0
+			st.nivel_ini = 3
+			st.nivel_fim = 6
+			st.dano = {"katana": 5230.0, "aura_hazaki": 2100.0, "pendrive": 900.0, "cafe": 150.0}
+			st.itens = [{"icone": "katana"}, {"icone": "aura_hazaki"}, {"icone": "energetico"}, {"icone": "cafe"}]
+			_arena.resultado.abrir(st)
+			await get_tree().create_timer(float(_args.get("espera", 4.0)), true, false, true).timeout
+		"entrada_chefe":   # placa do chefe no meio da entrada: --espera=N segundos reais depois que ele nasce (padrão 1)
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			_arena.inimigos.criar("trojan_gigante", _arena.jogador.position + Vector2(260, -40), 1)
+			_arena.chefe_final_chegou(false, "trojan_gigante")
+			await get_tree().create_timer(float(_args.get("espera", 1.0)), true, false, true).timeout
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout

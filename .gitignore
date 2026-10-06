@@ -12,3 +12,6 @@ __pycache__/
 
 # Notas locais de cada máquina (caminho do Godot etc.), lidas pelo Claude Code e fora do Git.
 CLAUDE.local.md
+
+# Cópias de trabalho temporárias dos agentes do Claude Code
+.claude/worktrees/
