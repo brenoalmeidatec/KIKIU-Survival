@@ -124,6 +124,7 @@ func _desenhar() -> void:
 		else:
 			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(W - 120, 24), "Abates %d" % arena.abates, 8, Color(0.9, 0.9, 0.9), HORIZONTAL_ALIGNMENT_RIGHT, 112)
+		_txt(Vector2(W - 120, 36), "Ouro %d" % arena.ouro, 8, Color(1, 0.85, 0.35), HORIZONTAL_ALIGNMENT_RIGHT, 112)
 		_energia_forma()
 		_dicas_santuario()
 	_icones_build()

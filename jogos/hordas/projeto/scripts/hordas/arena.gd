@@ -22,6 +22,9 @@ const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
 const Entradas := preload("res://scripts/hordas/entradas.gd")
+const Mapa := preload("res://scripts/hordas/mapa.gd")
+const TelaMapa := preload("res://scripts/hordas/tela_mapa.gd")
+const Loja := preload("res://scripts/hordas/loja.gd")
 
 const MAX_ARMAS := Construcao.MAX_ARMAS
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
@@ -63,6 +66,14 @@ var dano_por_arma := {}
 var fase_stat := _stat_novo()  # números DESTA fase (zera a cada fase; a tela de resultados mostra isso)
 var resultado: CanvasLayer     # tela de resultados da fase (resultado.gd)
 var entradas: CanvasLayer      # entrada dos personagens e do chefe (entradas.gd)
+var mapa: Dictionary            # mapa de progressão da corrida (mapa.gd), igual em todos os clientes (mesma semente)
+var mapa_pos := Vector2i(0, 0)  # nó atual: x = andar (0 = fase 1), y = faixa
+var mapa_trilha: Array = []     # nós já percorridos (Vector2i)
+var tela_mapa: CanvasLayer      # tela do mapa (tela_mapa.gd)
+var loja: CanvasLayer           # loja do mapa (loja.gd)
+var ouro := 0                   # moeda da corrida: 1 por abate (dados/mapa.json), gasta na loja
+var no_tipo := "fase"           # tipo do nó em que o grupo está
+var _no_seq := 0                # conta os nós escolhidos: a resolução atrasada de um nó antigo se descarta
 var dano_recebido := {}     # de quem o jogador apanhou (pra equilibrar)
 var resortear := 3
 var acabou := false
@@ -76,6 +87,9 @@ func _ready() -> void:
 	if semente == 0:
 		semente = Sorte.nova_semente()
 	Sorte.iniciar(semente)   # tudo que afeta o mundo compartilhado sai das streams dessa semente (sorte.gd)
+	mapa = Mapa.gerar()      # stream "mapa": mesma semente, mesmo mapa em todos os clientes
+	mapa_pos = Vector2i(0, Mapa.inicio(mapa))
+	mapa_trilha = [mapa_pos]
 	heroi = Dados.json("herois").get(heroi_id, {})
 	chao = Chao.new()
 	chao.arena = self
@@ -132,6 +146,12 @@ func _ready() -> void:
 	resultado = Resultado.new()
 	resultado.arena = self
 	add_child(resultado)
+	tela_mapa = TelaMapa.new()
+	tela_mapa.arena = self
+	add_child(tela_mapa)
+	loja = Loja.new()
+	loja.arena = self
+	add_child(loja)
 	entradas = Entradas.new()
 	entradas.arena = self
 	add_child(entradas)
@@ -264,10 +284,12 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	var d: Dictionary = Dados.json("inimigos").get(tipo, {})
 	var chefe := bool(d.get("chefe", false))
 	abates += 1
+	var og: Dictionary = Mapa.cfg().get("ouro", {})
+	ouro += int(og.get("chefe", 40)) if chefe else (int(og.get("elite", 4)) if elite else int(og.get("abate", 1)))
 	fase_stat.abates += 1
 	if chefe:
 		fase_stat.chefes += 1
-	var xp_v := float(d.get("xp", 1))
+	var xp_v: float = float(d.get("xp", 1)) * diretor.xp_mult
 	if elite:
 		xp_v *= 6.0
 	coleta.gema(pos, xp_v)
@@ -357,6 +379,7 @@ func fase_completa() -> void:
 	if entre_fases or acabou:
 		return
 	entre_fases = true
+	var seq := _no_seq   # se o nó seguinte for escolhido antes de terminar (online), este fluxo se descarta
 	var n: int = diretor.fase_idx + 1
 	fase_stat.tempo = diretor.t_fase   # congela o tempo da fase antes do descanso
 	anunciar("Fase %d completa!" % n, Color(1, 0.9, 0.4))
@@ -376,32 +399,168 @@ func fase_completa() -> void:
 	resultado.abrir(fase_stat)
 	while resultado.aberto() and not acabou:
 		await get_tree().process_frame
-	if acabou or not entre_fases:   # (no online o anfitrião pode já ter mandado seguir)
+	if acabou or not entre_fases or seq != _no_seq:   # (no online o anfitrião pode já ter mandado seguir)
 		return
 	jogador.curar(stat("vida_max") * 0.5)
 	abrir_bau()
 	await _esperar_cartas()
-	if acabou:
+	if no_tipo == "elite" and not acabou:
+		await _bonus_elite()
+	if acabou or seq != _no_seq:
 		return
-	if eh_online:
-		anunciar("Esperando os outros...", Color(0.7, 0.9, 1))
-		Rede.avisar("pronto")
-	else:
-		proxima_fase()
+	abrir_mapa()   # depois do baú vem o mapa: o grupo escolhe o próximo nó (solo: na hora; online: voto)
 
 
-func proxima_fase() -> void:
+## Prêmio extra da fase elite: baús a mais e um fragmento da transformação (com pity), se ainda falta algum.
+func _bonus_elite() -> void:
+	var t: Dictionary = Mapa.tipo_cfg("elite")
+	for _i in int(t.get("baus_extra", 1)):
+		abrir_bau()
+		await _esperar_cartas()
+		if acabou:
+			return
+	var alvo: String = descobertas.alvo_fragmento()
+	var p: Dictionary = t.get("fragmento_pity", {})
+	if alvo != "" and Sorte.pity("elite_no", float(p.get("base", 0.35)), float(p.get("passo", 0.3)), int(p.get("limite", 3))):
+		descobertas.dar_fragmento(alvo)
+
+
+# ---------- mapa de progressão (#32 item 8) ----------
+
+## Abre a tela do mapa (se ainda há pra onde ir).
+func abrir_mapa() -> void:
+	if acabou or not entre_fases or mapa_acessiveis().is_empty():
+		return
+	tela_mapa.abrir()
+
+
+func mapa_acessiveis() -> Array:
+	return Mapa.acessiveis(mapa, mapa_pos.x, mapa_pos.y)
+
+
+func mapa_tipo_de(faixa: int) -> String:
+	return str(Mapa.no(mapa, mapa_pos.x + 1, faixa).get("tipo", "fase"))
+
+
+## O grupo escolheu o próximo nó. Solo: a tela do mapa chama direto. Online: só o anfitrião decide (depois da votação)
+## e manda o evento "proxima_fase" com a faixa; todo mundo (ele também) cai aqui ao mesmo tempo.
+## Nó de combate começa a fase do andar; os outros (descanso, loja, evento, santuário) resolvem na hora e voltam ao mapa.
+func escolher_no(faixa: int) -> void:
 	if not entre_fases or acabou:
 		return
-	diretor.proxima_fase()
+	var ac := mapa_acessiveis()
+	if ac.is_empty():
+		return
+	if not faixa in ac:
+		faixa = ac[0]
+	_no_seq += 1
+	var seq := _no_seq
+	tela_mapa.fechar()
+	if resultado.aberto():
+		resultado.fechar()
+	loja.fechar()   # o anfitrião fechou a votação com alguém ainda na loja
+	while cartas.aberto() and not acabou:   # uma escolha de carta em andamento termina antes (não se perde nenhuma)
+		await get_tree().process_frame
+	if acabou or seq != _no_seq or not entre_fases:
+		return
+	mapa_pos = Vector2i(mapa_pos.x + 1, faixa)
+	mapa_trilha.append(mapa_pos)
+	no_tipo = str(Mapa.no(mapa, mapa_pos.x, mapa_pos.y).get("tipo", "fase"))
+	if Mapa.combate(no_tipo):
+		_iniciar_andar(mapa_pos.x)
+	else:
+		_resolver_no(no_tipo, seq)
+
+
+## Nós sem combate: acontecem aqui, sem fase. Depois volta pro mapa (a menos que um novo nó já tenha sido escolhido).
+func _resolver_no(tipo: String, seq: int) -> void:
+	var c: Dictionary = Mapa.tipo_cfg(tipo)
+	var andar := mapa_pos.x
+	match tipo:
+		"descanso":
+			jogador.curar(stat("vida_max") * float(c.get("cura", 1.0)))
+			efeitos.explodir(jogador.centro(), Color(0.5, 0.95, 0.6), 12, 90.0)
+			anunciar("Descanso: vida recuperada!", Color(0.5, 0.95, 0.6))
+			Som.tocar("vitoria", 0.1, 1.1, -8)
+			await get_tree().create_timer(1.8, true, false, true).timeout
+		"loja":
+			loja.abrir(sortear_cartas(Sorte.criar("loja", andar)))
+			while loja.aberto() and not acabou and seq == _no_seq:
+				await get_tree().process_frame
+		"evento":
+			_evento_no(c, andar)
+		"santuario":
+			Som.tocar("plim", 0.05, 1.2)
+			anunciar("Santuário raro!", Color(1, 0.7, 0.25))
+			cartas.escolher("Santuário raro", Descobertas.oferta_dadivas(Sorte.criar("mapa_santuario", andar), str(c.get("raridade_min", "epica"))))
+	await _esperar_cartas()
+	if acabou or seq != _no_seq or not entre_fases:
+		return
+	abrir_mapa()
+
+
+## Evento do mapa: sorteado com a semente (igual pra todos): dádiva, pacto sombrio (custa vida) ou baú.
+func _evento_no(c: Dictionary, andar: int) -> void:
+	var vars: Dictionary = c.get("variacoes", {})
+	var chaves := vars.keys()
+	var rng := Sorte.criar("mapa_evento", andar)
+	var i := Sorte.ponderado(rng, chaves.map(func(k): return float(vars[k].get("peso", 1))))
+	var k: String = "dadiva" if i < 0 else str(chaves[i])
+	var v: Dictionary = vars.get(k, {})
+	anunciar(str(v.get("titulo", "Evento")), Color(0.85, 0.6, 1))
+	match k:
+		"bau":
+			abrir_bau()
+		"sombria":
+			jogador.hp = maxf(1.0, jogador.hp - stat("vida_max") * float(v.get("custo_vida", 0.25)))
+			cartas.escolher(str(v.get("titulo", "")), Descobertas.oferta_dadivas(rng, str(v.get("raridade_min", "rara"))))
+		_:
+			cartas.escolher(str(v.get("titulo", "")), Descobertas.oferta_dadivas(rng, ""))
+
+
+## Começa a fase do andar (índice em corrida.json); o tipo do nó (fase, elite, chefe) ajusta a dificuldade.
+func _iniciar_andar(idx: int) -> void:
+	diretor.ir_para(idx, no_tipo)
 	chao.nova_fase()
 	_zerar_fase_stat()
 	if resultado.aberto():
-		resultado.fechar()   # online: o anfitrião mandou seguir
+		resultado.fechar()
 	var f: Dictionary = diretor.fases()[diretor.fase_idx]
-	anunciar("Fase %d: %s" % [diretor.fase_idx + 1, f.get("nome", "")], Color(0.7, 0.9, 1))
+	var marca := "  (ELITE)" if no_tipo == "elite" else ""
+	anunciar("Fase %d: %s%s" % [diretor.fase_idx + 1, f.get("nome", ""), marca], Color(1, 0.55, 0.45) if no_tipo == "elite" else Color(0.7, 0.9, 1))
 	entre_fases = false
 	entradas.chegada()   # herói (e aliados no online) chegam na fase nova
+
+
+## Teste e depuração (--fase=N): vai direto pra um andar, andando pelo mapa com a política do robô.
+func saltar_para_andar(idx: int) -> void:
+	idx = clampi(idx, 0, int(mapa.andares) - 1)
+	while mapa_pos.x < idx:
+		var f := Mapa.escolha_bot(mapa, mapa_pos.x, mapa_pos.y)
+		if f < 0:
+			break
+		mapa_pos = Vector2i(mapa_pos.x + 1, f)
+		mapa_trilha.append(mapa_pos)
+	no_tipo = "fase"
+	diretor.ir_para(mapa_pos.x)
+	chao.nova_fase()
+
+
+## Segue direto pra fase seguinte, sem passar pelo mapa (testes e atalhos de depuração).
+func proxima_fase() -> void:
+	if not entre_fases or acabou:
+		return
+	_no_seq += 1
+	var idx: int = mini(diretor.fase_idx + 1, diretor.fases().size() - 1)
+	var faixa := mapa_pos.y
+	for x in int(mapa.faixas):
+		if Mapa.no(mapa, idx, x).size() > 0:
+			faixa = x
+			break
+	mapa_pos = Vector2i(idx, faixa)
+	mapa_trilha.append(mapa_pos)
+	no_tipo = "fase"
+	_iniciar_andar(idx)
 
 
 static func _stat_novo() -> Dictionary:

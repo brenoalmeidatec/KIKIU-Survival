@@ -338,7 +338,7 @@ func avisar(nome: String, valor := 0.0, peer := 0) -> void:
 @rpc("any_peer", "reliable")
 func _aviso(nome: String, valor: float, peer: int) -> void:
 	var quem := multiplayer.get_remote_sender_id()
-	if anfitriao() and jogadores.has(quem) and nome in ["pronto", "forca", "caiu"] and _num(valor) \
+	if anfitriao() and jogadores.has(quem) and nome in ["voto", "pronto", "forca", "caiu"] and _num(valor) \
 			and online_no and is_instance_valid(online_no):
 		online_no.aviso(quem, nome, valor, peer)
 
