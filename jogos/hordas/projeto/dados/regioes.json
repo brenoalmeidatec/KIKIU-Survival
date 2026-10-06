@@ -40,20 +40,20 @@
    "id": "pantano",
    "nome": "Pântano Pútrido",
    "descricao": "Lama, névoa verde e afogados que não ficaram no fundo.",
-   "conjunto": "virus",
-   "cenario": "laboratorio",
+   "conjunto": "pantano",
+   "cenario": "pantano",
    "musica": ["minijogo_tenso_b", "minijogo_tenso"],
    "cor": [0.8, 0.95, 0.75],
    "calor": {"couro": 1},
    "fases": [
-    {"nome": "Lodaçal", "peso": 3, "duracao": 70, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "minerador", "quantos": 22}]},
-    {"nome": "Ponte Afundada", "peso": 2, "duracao": 72, "chefe": "trojan_gigante", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "popup", "quantos": 26}]},
-    {"nome": "Vila dos Afogados", "peso": 2, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "bug", "quantos": 28}]},
-    {"nome": "Névoa Verde", "peso": 2, "duracao": 72, "chefe": "trojan_gigante", "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "spam", "quantos": 16}]},
-    {"nome": "Brejo das Velas", "peso": 1, "duracao": 74, "chefe": "ransomware", "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "minerador", "quantos": 20}]},
-    {"nome": "Árvore Oca", "peso": 2, "duracao": 70, "chefe": "trojan_gigante", "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "trojan", "quantos": 10}]}
+    {"nome": "Lodaçal", "peso": 3, "duracao": 70, "chefe": "rainha_sapo", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "sanguessuga", "quantos": 30}]},
+    {"nome": "Ponte Afundada", "peso": 2, "duracao": 72, "chefe": "rainha_sapo", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "jacare_lodo", "quantos": 8}]},
+    {"nome": "Vila dos Afogados", "peso": 2, "duracao": 74, "chefe": "rainha_sapo", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "afogado", "quantos": 22}, {"tempo": 58, "tipo": "chefe", "inimigo": "golem_lodo"}]},
+    {"nome": "Névoa Verde", "peso": 2, "duracao": 72, "chefe": "rainha_sapo", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "fogo_fatuo", "quantos": 12}]},
+    {"nome": "Brejo das Velas", "peso": 1, "duracao": 74, "chefe": "rainha_sapo", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "fogo_fatuo", "quantos": 16}, {"tempo": 56, "tipo": "anel", "inimigo": "afogado", "quantos": 16}]},
+    {"nome": "Árvore Oca", "peso": 2, "duracao": 70, "chefe": "rainha_sapo", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "sapo_podre", "quantos": 20}]}
    ],
-   "chefe": {"nome": "Trono do Lodo", "duracao": 84, "chefe": "ransomware", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "enxame", "inimigo": "minerador", "quantos": 30}, {"tempo": 64, "tipo": "anel", "inimigo": "spam", "quantos": 18}]}
+   "chefe": {"nome": "Trono do Lodo", "duracao": 84, "chefe": "mae_do_lodo", "santuarios": 3, "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "sapo_podre", "quantos": 18}, {"tempo": 50, "tipo": "chefe", "inimigo": "golem_lodo"}, {"tempo": 64, "tipo": "enxame", "inimigo": "sanguessuga", "quantos": 34}]}
   },
   {
    "id": "deserto",

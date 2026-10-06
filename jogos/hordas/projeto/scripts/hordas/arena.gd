@@ -663,6 +663,9 @@ func saltar_para_andar(idx: int) -> void:
 	diretor.ir_para(mapa_pos.x)
 	_atualizar_calor()
 	chao.nova_fase()
+	hud.limpar_mensagens()   # o anúncio da fase 1 já tinha saído: troca pelo do andar de destino
+	_anunciar_fase(diretor.fase_idx, "")
+	_musica_da_fase(false)
 
 
 ## Segue direto pra fase seguinte, sem passar pelo mapa (testes e atalhos de depuração).
