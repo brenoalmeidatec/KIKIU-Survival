@@ -207,3 +207,14 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - `.gitattributes`: `LOGBOOK.md merge=union`. Como todo mundo acrescenta no fim, o git junta as duas pontas sozinho em vez de marcar conflito (foi o único conflito do #16 e do #37).
 - `testes/transformacao.gd`: o robô ganhava XP nas esperas e escolhia cartas (equipamento novo ou nível de arma), o que mudava a build no meio do teste. Agora o teste zera a XP do robô. DRAGAO deu falhas=0 em 10 de 10 rodadas (antes, 1 falha em cerca de 1 de cada 3).
 - #3 fechada (#37). A #2 ficou estacionada, porque a Cairu fica como está (regra do #36); explicação na issue.
+
+## 2026-10-05 · Claude do Alisson (PC) · #32 item 1: Hazaki com o visual da folha do Breno
+**Feito**
+- A grade de animação da `arte/hazaki/hazaki_folha.png` veio de IA com as **4 direções iguais** (ele olha pra direita em todas, não há costas), então recortar daria um boneco que anda de lado pra cima. A folha virou **referência de visual**, e o Hazaki foi refeito no pipeline Blender → pixel art (`fonte_arte/modelos3d/hazaki.py`): cabelo curto em degradê, cavanhaque, regata preta com braços à mostra, faixas nos punhos, luvas, cinto, pano vermelho, calça cargo, botas, mochila e a paleta da folha (rampas `hz_*` no `pixel3d.py`, que só entram quando pedidas, então cavaleiro, dragão e cenários não mudam).
+- **Folhas de 23 colunas** (corpo, andando_8 e as 9 camadas): 0 parado, 1–8 andar, 9–11 respirando, 12–14 ataque, 15–16 defesa, 17–18 dano, 19–22 morte. As camadas de equipamento continuam encaixando (mesmos ossos + holdout).
+- **Código:** jogador, rival e remoto calculam `hframes` pela largura da textura (os outros heróis, com 9 colunas, ficam idênticos). `jogador.gd` ganhou a tabela `ANIM` e a função pura `quadro_de()`. Prioridade: morte > dano > defesa (dash) > ataque > andar/parado. O gancho de ataque é `Armas.golpe_corpo()` → `jogador.atacou()` (chicote, katana, marcial), com intervalo de 0,6 s. Na morte, a folha de 23 colunas mostra a queda em vez de girar o sprite.
+- Print novo: `--print_tela=hazaki --bot [--equip] --espera=N --fotos=pasta`. As imagens estão em `docs/imagens/hazaki_novo_jogo.png` e `hazaki_novo_folha.png`.
+- Testes: OPCOES, EQUIP, REGRAS, DRAGAO e ANIM (novo) sem falhas; partida com robô sem erro de script.
+
+**Pendente / fraco:** é um boneco de caixas (sem a textura e o desgaste da folha), as pernas não têm joelho e a mochila de perfil vira um volume escuro. Rival e online usam a folha nova, mas só andam (sem os estados novos). Lembrete: depois de trocar PNG, rode `--import` antes de jogar sem o editor, senão o Godot usa a imagem velha do cache.
+**Próximo:** #32 itens 7 e 6 (tela de resultado da fase e entradas).

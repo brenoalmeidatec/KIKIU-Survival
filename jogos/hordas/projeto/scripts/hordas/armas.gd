@@ -179,6 +179,12 @@ func atualizar(dt: float) -> void:
 	_atras.queue_redraw()
 
 
+## Ponto comum dos golpes corpo a corpo (chicote, katana, marcial): avisa o dono pra animar o ataque.
+func golpe_corpo() -> void:
+	if dono and dono.has_method("atacou"):
+		dono.atacou()
+
+
 # ---------- projétil ----------
 
 func _atirar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
@@ -241,6 +247,7 @@ func _chicotes(dt: float) -> void:
 				if s.has("rouba_vida") and curou < 5:
 					jog.curar(float(s.rouba_vida))
 					curou += 1
+		golpe_corpo()
 		golpes.append({"pos": jog.centro(), "lado": f.lado, "alcance": alcance, "largura": larg, "t": 0.16, "arma": a.id})
 		Som.tocar("whoosh", 0.05, 1.6, -8)
 

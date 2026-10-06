@@ -28,7 +28,7 @@ func configurar(p: int, heroi_: String, nome_: String) -> void:
 	nome = nome_
 	var h: Dictionary = Dados.json("herois").get(heroi, {})
 	spr.texture = Dados.tex_personagem(str(h.get("sprite", heroi)), "andando_8")
-	spr.hframes = 9
+	spr.hframes = maxi(1, int(spr.texture.get_width()) / 44)
 	spr.vframes = 4
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
@@ -57,9 +57,9 @@ func atualizar(dt: float, d: Dictionary) -> void:
 			_dir = "direita" if _mov.x > 0 else "esquerda"
 		else:
 			_dir = "baixo" if _mov.y > 0 else "cima"
-		spr.frame = LINHA[_dir] * 9 + 1 + int(_t * 12.0) % 8
+		spr.frame = LINHA[_dir] * spr.hframes + 1 + int(_t * 12.0) % 8
 	else:
-		spr.frame = LINHA[_dir] * 9
+		spr.frame = LINHA[_dir] * spr.hframes
 	spr.modulate = Color(0.45, 0.45, 0.5, 0.8) if caido else Color.WHITE
 	spr.rotation = PI / 2 if caido else 0.0
 	spr.position = Vector2(-30, -10) if caido else Vector2.ZERO

@@ -4,6 +4,19 @@ extends Node2D
 
 const Visual := preload("res://scripts/hordas/visual.gd")
 const LINHA := {"baixo": 0, "esquerda": 1, "direita": 2, "cima": 3}
+const LARG_QUADRO := 44            # largura de um quadro na folha; hframes = largura da textura / isto
+const COLS_ANIM := 23              # folhas com 23+ colunas têm os estados extras abaixo (Hazaki); com menos, só parado/andar
+## Tabela de ações da folha de 23 colunas: coluna inicial, nº de quadros, quadros por segundo, se repete.
+const ANIM := {
+	"parado": {"col": 9, "n": 3, "fps": 4.0, "repete": true},
+	"ataque": {"col": 12, "n": 3, "fps": 12.0, "repete": false},    # 3 quadros em 0,25 s
+	"defesa": {"col": 15, "n": 2, "fps": 10.0, "repete": false},    # durante o dash
+	"dano": {"col": 17, "n": 2, "fps": 10.0, "repete": false},
+	"morte": {"col": 19, "n": 4, "fps": 8.0, "repete": false},      # fica no último quadro
+}
+const ATAQUE_TEMPO := 0.25
+const ATAQUE_INTERVALO := 0.6
+const DANO_TEMPO := 0.2
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
 const DASH_TEMPO := 0.18
@@ -30,13 +43,18 @@ var _pref := 120.0
 var camadas := {}                # nome -> Sprite2D (personagem em camadas; veja definir_camadas)
 var _sprite := ""
 var forma: Node2D = null         # corpo da forma transformada (dragão, habilidades.gd); null = humano
+var _est := "parado"             # estado de animação atual (só muda o quadro em folhas de 23+ colunas)
+var _est_t := 0.0                # tempo dentro do estado
+var _atk_t := 0.0
+var _atk_cool := 0.0
+var _dano_t := 0.0
 var humano := 1.0                # 0..1: quanto do corpo humano aparece (some na transformação, volta no fim)
 
 
 func configurar(sprite: String) -> void:
 	_sprite = sprite
 	spr.texture = Dados.tex_personagem(sprite, "andando_8")
-	spr.hframes = 9
+	spr.hframes = _colunas()
 	spr.vframes = 4
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
@@ -51,6 +69,7 @@ func definir_camadas(nomes: Array) -> void:
 	var corpo := Dados.tex_personagem(_sprite, "corpo")
 	if corpo and spr.texture != corpo:
 		spr.texture = corpo
+		spr.hframes = _colunas()
 	for n in camadas.keys():
 		if not n in nomes:
 			camadas[n].queue_free()
@@ -62,7 +81,7 @@ func definir_camadas(nomes: Array) -> void:
 				continue
 			var c := Sprite2D.new()
 			c.texture = tex
-			c.hframes = spr.hframes
+			c.hframes = _colunas(tex)
 			c.vframes = spr.vframes
 			c.centered = false
 			c.offset = spr.offset
@@ -72,6 +91,48 @@ func definir_camadas(nomes: Array) -> void:
 	for i in nomes.size():
 		if camadas.has(nomes[i]):
 			spr.move_child(camadas[nomes[i]], -1)   # a ordem da lista é a ordem de desenho
+
+
+## Colunas da folha (largura da textura / largura do quadro). Com 9 colunas tudo é como antes.
+func _colunas(tex: Texture2D = null) -> int:
+	if tex == null:
+		tex = spr.texture
+	return maxi(1, int(tex.get_width()) / LARG_QUADRO) if tex else 9
+
+
+func _tem_anim() -> bool:
+	return spr.hframes >= COLS_ANIM
+
+
+## Função pura: quadro da folha para um estado, direção e tempo (andando usa o tempo global; os outros, o tempo no estado).
+## Folha sem os estados extras (hframes < 23): parado = coluna 0 e qualquer ação cai em parado.
+static func quadro_de(estado: String, dir: String, t: float, hframes: int) -> int:
+	var base: int = LINHA[dir] * hframes
+	if estado == "andando":
+		return base + 1 + int(t * 12.0) % 8
+	if hframes < COLS_ANIM or not ANIM.has(estado):
+		return base
+	var a: Dictionary = ANIM[estado]
+	var i := int(maxf(t, 0.0) * float(a.fps))
+	i = i % int(a.n) if a.repete else mini(i, int(a.n) - 1)
+	return base + int(a.col) + i
+
+
+## Chamado pelas armas corpo a corpo (armas.gd golpe_corpo) a cada golpe; toca o ataque se já passou o intervalo.
+func atacou() -> void:
+	if _tem_anim() and forma == null and _atk_cool <= 0.0 and hp > 0.0:
+		_atk_t = ATAQUE_TEMPO
+		_atk_cool = ATAQUE_INTERVALO
+
+
+func _process(dt: float) -> void:
+	# morto: a arena para de chamar atualizar(); a animação de morte anda aqui
+	if hp <= 0.0 and _tem_anim() and forma == null:
+		_est_t = _est_t + dt if _est == "morte" else 0.0
+		_est = "morte"
+		spr.frame = quadro_de("morte", _dir, _est_t, spr.hframes)
+		for c in camadas.values():
+			c.frame = spr.frame
 
 
 func centro() -> Vector2:
@@ -92,6 +153,9 @@ func atualizar(dt: float) -> void:
 	invencivel = maxf(0.0, invencivel - dt)
 	dash_recarga = maxf(0.0, dash_recarga - dt)
 	_vermelho = maxf(0.0, _vermelho - dt)
+	_atk_t = maxf(0.0, _atk_t - dt)
+	_atk_cool = maxf(0.0, _atk_cool - dt)
+	_dano_t = maxf(0.0, _dano_t - dt)
 	var entrada := _entrada()
 	_mov = entrada
 	if entrada.x != 0:
@@ -208,9 +272,22 @@ func _animar(entrada: Vector2) -> void:
 			_dir = "direita" if entrada.x > 0 else "esquerda"
 		else:
 			_dir = "baixo" if entrada.y > 0 else "cima"
-		spr.frame = LINHA[_dir] * 9 + 1 + int(_t * 12.0) % 8
+	var novo := "andando" if entrada != Vector2.ZERO else "parado"
+	if _tem_anim() and forma == null:
+		if hp <= 0.0:
+			novo = "morte"
+		elif _dano_t > 0.0:
+			novo = "dano"
+		elif dash_t > 0.0:
+			novo = "defesa"
+		elif _atk_t > 0.0:
+			novo = "ataque"
+	if novo != _est:
+		_est = novo
+		_est_t = 0.0
 	else:
-		spr.frame = LINHA[_dir] * 9
+		_est_t += _dt
+	spr.frame = quadro_de(_est, _dir, _t if _est == "andando" else _est_t, spr.hframes)
 	for c in camadas.values():
 		c.frame = spr.frame
 	# pisca quando está invencível depois de apanhar
@@ -233,6 +310,8 @@ func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) 
 	arena.dano_recebido[fonte] = float(arena.dano_recebido.get(fonte, 0.0)) + dano
 	invencivel = iframes
 	_vermelho = 0.15
+	if _dano_t <= 0.0:
+		_dano_t = DANO_TEMPO
 	kb += empurrao
 	Som.tocar("erro", 0.15, 1.0, -4)
 	arena.tremer(3.0)
@@ -270,11 +349,11 @@ func _draw() -> void:
 		Visual.sombra_boneco(self, spr)   # o dragão desenha a própria sombra
 	for r in (_rastro if forma == null else []):
 		var tex := spr.texture
-		var w := tex.get_width() / 9.0
+		var w := tex.get_width() / float(spr.hframes)
 		var h := tex.get_height() / 4.0
 		var f: int = r.frame
 		draw_texture_rect_region(tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)),
-			Rect2((f % 9) * w, (f / 9) * h, w, h), Color(0.5, 0.8, 1.0, r.t * 2.0))
+			Rect2((f % spr.hframes) * w, (f / spr.hframes) * h, w, h), Color(0.5, 0.8, 1.0, r.t * 2.0))
 	# barra de vida e recarga do dash embaixo do pé
 	if arena.caido and arena.online:
 		# caído: anel mostrando quanto falta pra levantar

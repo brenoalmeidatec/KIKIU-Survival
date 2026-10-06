@@ -603,7 +603,7 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 330), "Enter: voltar ao título", 8, Color(0.6, 0.6, 0.7))
 
 
-## Teste: abre uma tela, tira um print e fecha (--print_tela=titulo|herois|cartas|bau|fim --fotos=pasta).
+## Teste: abre uma tela, tira um print e fecha (--print_tela=titulo|herois|cartas|bau|fim|hazaki --fotos=pasta).
 func _print_tela(qual: String) -> void:
 	match qual:
 		"herois":
@@ -617,6 +617,16 @@ func _print_tela(qual: String) -> void:
 		"dragao":   # com --bot --dragao (e --estresse=N pra ter vírus): --espera=0.6 pega o meio da transformação
 			_comecar("hazaki")
 			await get_tree().create_timer(float(_args.get("espera", 5.0))).timeout
+		"hazaki":   # Hazaki em ação (#32): --bot --espera=N; com --equip ele já entra com katana, aura e equipamentos
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			if _args.has("equip"):
+				_arena.armas.adicionar("katana")
+				_arena.armas.adicionar("aura_hazaki")
+				_arena.equipamentos["cabeca"] = "cabeca_guerreiro"
+				_arena.equipamentos["peitoral"] = "armadura_samurai"
+				_arena.atualizar_visual()
+			await get_tree().create_timer(float(_args.get("espera", 6.0))).timeout
 		"cartas", "bau":
 			_comecar("lucas")
 			await get_tree().create_timer(0.3).timeout
