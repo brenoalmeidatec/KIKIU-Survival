@@ -424,3 +424,11 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Medido** (detalhes em `docs/PERF_2026-10-06.md`): carregamento (motor 0,19 s em headless; com janela, 4–5 s são o OpenGL do notebook; título 0,63 s porque pré-carrega tudo; partida abre em 15–50 ms), memória (33 MB + 18 MB de textura, sem vazamento) e o maior custo por sistema (desenho das mortes, 0,74 ms, já com teto).
 - Partida inteira com o robô (10 fases + duelo) sem nenhum erro de script.
 - **Próximo:** marco 4 (online: banda com 4–6 jogadores).
+
+## 2026-10-06 · Claude do Alisson (notebook) · #55 marco 4: online leve com 4 a 6 jogadores
+- **Medidor:** `Rede.banda()` (estatísticas do ENet); o log do `--sair` no online imprime `banda: envia=… recebe=… KB/s`.
+- **Foto dos vírus compacta** (`online.compactar/descompactar`): 11 bytes por vírus (eram 24) e 9 por tiro (eram 20), com posição relativa ao cliente em meio pixel. A foto típica caiu de vários KB pra 600–1000 bytes, então cabe num pacote só (antes fragmentava, e um fragmento perdido derrubava a foto inteira, porque ela é não confiável).
+- **Posição dos jogadores** em 12 bytes (era um Dictionary de ~150).
+- **Medido** (localhost, robôs): 4 jogadores na fase 4, o anfitrião enviava 233–263 KB/s e passou a 62–81 KB/s com MAIS vírus. 6 jogadores: cliente envia 14 → 2,3 KB/s; anfitrião envia 87 → 37 KB/s (~0,3 Mbit/s) e recebe 70 → 11,5 KB/s. 0 erros, abates iguais nos 6.
+- Conferido que o cliente mostra o que veio na foto (contagem da foto e vivos batendo). Teste novo `testes/rede.tscn` (ida e volta: id, tipo e flags exatos, posição com erro ≤ 1/4 px).
+- **Pendente:** latência alta e perda de pacote de verdade só dá pra ver jogando pela internet. Próximo: #13 (lista de salas, lobby, chat).

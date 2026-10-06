@@ -73,11 +73,20 @@ func sprite_idx(sprite: String) -> int:
 
 
 ## O que este computador manda pros outros ~15 vezes por segundo.
-func estado_rede() -> Dictionary:
+## Posição deste jogador pros outros, 15 vezes por segundo, em 12 bytes (era um Dictionary de ~150 bytes):
+## x, y (float), direção do movimento (s8 em 1/127), vida (u8 em 1/255) e flags (1 caído, 2 ajudando, 4 olhando pra esquerda).
+func estado_rede() -> PackedByteArray:
 	var j: Node2D = arena.jogador
 	var m: Vector2 = j.direcao_mov()
-	return {"x": j.position.x, "y": j.position.y, "mx": m.x, "my": m.y,
-		"hp": clampf(j.hp / maxf(1.0, j.vida_max()), 0.0, 1.0), "caido": arena.caido, "lado": j.lado, "ajuda": ajudando()}
+	var b := PackedByteArray()
+	b.resize(12)
+	b.encode_float(0, j.position.x)
+	b.encode_float(4, j.position.y)
+	b.encode_s8(8, clampi(roundi(m.x * 127.0), -127, 127))
+	b.encode_s8(9, clampi(roundi(m.y * 127.0), -127, 127))
+	b.encode_u8(10, roundi(clampf(j.hp / maxf(1.0, j.vida_max()), 0.0, 1.0) * 255.0))
+	b.encode_u8(11, (1 if arena.caido else 0) | (2 if ajudando() else 0) | (4 if j.lado < 0 else 0))
+	return b
 
 
 ## Jogadores em pé que os vírus podem perseguir: [centro, peer]. O local vem primeiro.
@@ -191,7 +200,74 @@ func _enviar_fotos() -> void:
 			if t.pos.distance_squared_to(c) <= r2:
 				ti.append_array([t.pos.x, t.pos.y, t.vel.x, t.vel.y, sprite_idx(t.get("sprite", ""))])
 				n += 1
-		Rede.enviar_foto(p, vir, ti)
+		Rede.enviar_foto(p, compactar(c, vir, ti))
+
+
+## Foto compacta (#55, banda): 11 bytes por vírus em vez de 24 e 9 por tiro em vez de 20 (floats de 32 bits viravam
+## a maior parte do upload do anfitrião). Cabeçalho: centro da foto (2 floats) e as quantidades. Posições relativas ao
+## centro em meio pixel (s16: ±16 mil px), vida em 1/255, tipo/flags/sprite em 1 byte, id em u32.
+static func compactar(c: Vector2, vir: PackedFloat32Array, ti: PackedFloat32Array) -> PackedByteArray:
+	var nv := vir.size() / 6
+	var nt := ti.size() / 5
+	var b := PackedByteArray()
+	b.resize(12 + nv * 11 + nt * 9)
+	b.encode_float(0, c.x)
+	b.encode_float(4, c.y)
+	b.encode_u16(8, nv)
+	b.encode_u16(10, nt)
+	var o := 12
+	for i in nv:
+		var k := i * 6
+		b.encode_u32(o, int(vir[k]))
+		b.encode_u8(o + 4, int(vir[k + 1]))
+		b.encode_s16(o + 5, clampi(roundi((vir[k + 2] - c.x) * 2.0), -32767, 32767))
+		b.encode_s16(o + 7, clampi(roundi((vir[k + 3] - c.y) * 2.0), -32767, 32767))
+		b.encode_u8(o + 9, roundi(clampf(vir[k + 4], 0.0, 1.0) * 255.0))
+		b.encode_u8(o + 10, int(vir[k + 5]))
+		o += 11
+	for i in nt:
+		var k := i * 5
+		b.encode_s16(o, clampi(roundi((ti[k] - c.x) * 2.0), -32767, 32767))
+		b.encode_s16(o + 2, clampi(roundi((ti[k + 1] - c.y) * 2.0), -32767, 32767))
+		b.encode_s16(o + 4, clampi(roundi(ti[k + 2]), -32767, 32767))
+		b.encode_s16(o + 6, clampi(roundi(ti[k + 3]), -32767, 32767))
+		b.encode_u8(o + 8, int(ti[k + 4]))
+		o += 9
+	return b
+
+
+## O contrário de compactar: devolve os mesmos arrays de floats que o resto do código usa ([] se veio torto).
+static func descompactar(b: PackedByteArray) -> Array:
+	if b.size() < 12:
+		return []
+	var c := Vector2(b.decode_float(0), b.decode_float(4))
+	var nv := b.decode_u16(8)
+	var nt := b.decode_u16(10)
+	if b.size() != 12 + nv * 11 + nt * 9:
+		return []
+	var vir := PackedFloat32Array()
+	vir.resize(nv * 6)
+	var ti := PackedFloat32Array()
+	ti.resize(nt * 5)
+	var o := 12
+	for i in nv:
+		var k := i * 6
+		vir[k] = b.decode_u32(o)
+		vir[k + 1] = b.decode_u8(o + 4)
+		vir[k + 2] = c.x + b.decode_s16(o + 5) * 0.5
+		vir[k + 3] = c.y + b.decode_s16(o + 7) * 0.5
+		vir[k + 4] = b.decode_u8(o + 9) / 255.0
+		vir[k + 5] = b.decode_u8(o + 10)
+		o += 11
+	for i in nt:
+		var k := i * 5
+		ti[k] = c.x + b.decode_s16(o) * 0.5
+		ti[k + 1] = c.y + b.decode_s16(o + 2) * 0.5
+		ti[k + 2] = b.decode_s16(o + 4)
+		ti[k + 3] = b.decode_s16(o + 6)
+		ti[k + 4] = b.decode_u8(o + 8)
+		o += 9
+	return [vir, ti]
 
 
 ## Um vírus encostou (ou um tiro acertou) um jogador de outro computador.
@@ -222,10 +298,11 @@ func acertos(_quem: int, a: PackedFloat32Array) -> void:
 
 # ---------- vírus: cliente ----------
 
-func foto(vir: PackedFloat32Array, tiros: PackedFloat32Array) -> void:
-	if vir.size() % 6 != 0 or tiros.size() % 5 != 0 or arena.duelo_ativo:
+func foto(compacta: PackedByteArray) -> void:
+	var f := descompactar(compacta)
+	if f.is_empty() or arena.duelo_ativo:
 		return
-	arena.inimigos.aplicar_foto(vir, tiros, self)
+	arena.inimigos.aplicar_foto(f[0], f[1], self)
 
 
 func mortes(m: PackedFloat32Array) -> void:

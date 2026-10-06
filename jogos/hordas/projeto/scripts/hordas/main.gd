@@ -530,6 +530,8 @@ func _teste() -> void:
 			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
 				_arena.duelo.estado if _arena.duelo_ativo else "-"])
+			var b: Vector2 = Rede.banda()
+			print("  banda: envia=%.1f KB/s recebe=%.1f KB/s" % [b.x, b.y])
 		if _t >= float(_args.sair):
 			if _args.has("saltos"):
 				print("SALTOS ", _arena.inimigos.med_relatorio())
