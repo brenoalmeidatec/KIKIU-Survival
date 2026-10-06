@@ -98,18 +98,19 @@
    "nome": "Reino Sombrio",
    "descricao": "Onde o caos começou. O mais cabuloso de todos.",
    "conjunto": "horror",
-   "cenario": "masmorra",
+   "cenario": "reino",
    "musica": "horror",
-   "cor": [0.62, 0.58, 0.72],
+   "cor": [0.82, 0.76, 0.9],
    "calor": {"couro": 2, "garras": 2, "horda": 1, "nobres": 1},
    "fases": [
-    {"nome": "Portões Caídos", "peso": 3, "duracao": 76, "chefe": "arauto", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "carnical", "quantos": 22}]},
+    {"nome": "Portões Caídos", "peso": 3, "duracao": 76, "chefe": "arauto", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "carnical", "quantos": 22}, {"tempo": 58, "tipo": "chefe", "inimigo": "cavaleiro_caos"}]},
     {"nome": "Catacumbas", "peso": 3, "duracao": 80, "chefe": "arauto", "escuro": {"forca": 0.9, "raio_heroi": 150, "raio_tocha": 115, "nevoa": 0.3, "tom": [0.03, 0.025, 0.07]}, "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "carnical", "quantos": 22}, {"tempo": 56, "tipo": "chefe", "inimigo": "abominacao"}, {"tempo": 70, "tipo": "enxame", "inimigo": "cao_ossos", "quantos": 16}]},
-    {"nome": "Salão dos Ecos", "peso": 2, "duracao": 78, "chefe": "arauto", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "espectro", "quantos": 14}]},
+    {"nome": "Salão dos Ecos", "peso": 2, "duracao": 78, "chefe": "arauto", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "espectro", "quantos": 14}, {"tempo": 56, "tipo": "anel", "inimigo": "cultista", "quantos": 10}]},
+    {"nome": "Capela Profanada", "peso": 2, "duracao": 78, "chefe": "arauto", "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "cultista", "quantos": 14}, {"tempo": 58, "tipo": "chefe", "inimigo": "cavaleiro_caos"}]},
     {"nome": "Jardim de Espinhos", "peso": 2, "duracao": 78, "chefe": "arauto", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "cao_ossos", "quantos": 20}]},
     {"nome": "Ponte das Almas", "peso": 2, "duracao": 80, "chefe": "arauto", "escuro": {"forca": 0.8, "raio_heroi": 160, "raio_tocha": 120, "nevoa": 0.4, "tom": [0.03, 0.03, 0.08]}, "eventos": [{"tempo": 36, "tipo": "enxame", "inimigo": "espectro", "quantos": 16}]}
    ],
-   "chefe": {"nome": "Trono do Caos", "duracao": 96, "chefe": "tela_azul", "santuarios": 4, "musica_chefe": "chefe", "eventos": [{"tempo": 34, "tipo": "chefe", "inimigo": "abominacao"}, {"tempo": 60, "tipo": "anel", "inimigo": "cavaleiro_oco", "quantos": 12}]}
+   "chefe": {"nome": "Trono do Caos", "duracao": 96, "chefe": "soberano_caos", "santuarios": 4, "musica_chefe": "chefe", "eventos": [{"tempo": 34, "tipo": "chefe", "inimigo": "abominacao"}, {"tempo": 48, "tipo": "chefe", "inimigo": "cavaleiro_caos"}, {"tempo": 60, "tipo": "anel", "inimigo": "cavaleiro_oco", "quantos": 12}, {"tempo": 76, "tipo": "anel", "inimigo": "cultista", "quantos": 12}]}
   }
  ]
 }

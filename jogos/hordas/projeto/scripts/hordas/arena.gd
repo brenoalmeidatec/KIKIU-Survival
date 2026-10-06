@@ -410,7 +410,7 @@ func tela_azul_caiu() -> void:
 	if not bool(Dados.json("pvp").get("ativo", true)):
 		_fim(true)
 		return
-	anunciar("A Tela Azul caiu...", Color(0.6, 0.8, 1))
+	anunciar("%s caiu..." % nome_chefe_final(), Color(0.6, 0.8, 1))
 	pre_duelo = true
 	if caido:
 		levantar(1.0)
@@ -450,9 +450,20 @@ func chefe_final_chegou(final := true, tipo := "") -> void:
 	if Dados.json("inimigos").get(tipo, {}).get("chefe", false):   # só vale chefe que existe nos dados
 		entradas.chefe(tipo)
 	if final:
-		hud.mensagem("Derrote a Tela Azul pra vencer!", Color(0.6, 0.75, 1))
+		hud.mensagem("Derrote %s pra vencer!" % nome_chefe_final(true), Color(0.6, 0.75, 1))
 	else:
 		hud.mensagem("Derrote o chefe pra fechar a fase!", Color(1, 0.75, 0.6))
+
+
+## Nome do chefe final da corrida (o chefe da última fase): os textos não dependem de quem ele é.
+## no_meio: artigo em minúscula, pro meio da frase ("Derrote o Soberano do Caos", não "Derrote O Soberano").
+func nome_chefe_final(no_meio := false) -> String:
+	var fs: Array = diretor.fases()
+	var id := str(fs[fs.size() - 1].get("chefe", "")) if fs.size() > 0 else ""
+	var nome := str(Dados.json("inimigos").get(id, {}).get("nome", "o chefe final"))
+	if no_meio and (nome.begins_with("O ") or nome.begins_with("A ")):
+		nome = nome[0].to_lower() + nome.substr(1)
+	return nome
 
 
 ## Espera as escolhas de carta (nível, tomada, baú) acabarem, sem perder nenhuma.
@@ -1049,7 +1060,7 @@ func _fim(vitoria: bool, extra := {}) -> void:
 		lista_dano.append([a, dano_por_arma[a]])
 	lista_dano.sort_custom(func(x, y): return x[1] > y[1])
 	var res := {"vitoria": vitoria, "calor": calor_pts, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
-		"heroi": heroi_id, "dano": lista_dano, "apanhou": dano_recebido,
+		"heroi": heroi_id, "dano": lista_dano, "apanhou": dano_recebido, "chefe_final": nome_chefe_final(),
 		"armas": Interface.tabela_armas(dano_por_arma, nivel_arma, tempo_arma, diretor.tempo)}
 	res.merge(extra)
 	await get_tree().create_timer(1.2, true, false, true).timeout

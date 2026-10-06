@@ -44,6 +44,7 @@ RAMPA_EXTRA = {
     "areia": ["2a2015", "4a3a24", "7a6038", "a8884e", "cdb06e", "e6d3a0"],                           # areia, linho velho (deserto, #64)
     "lapis": ["0f1f3a", "1d3a6a", "2f63a0", "4f9ac8", "8fd0e0"],                                     # azul de faiança (escaravelhos)
     "gelo": ["16202e", "2a3d52", "4a6a88", "7fa6c4", "b8d8ec", "e8f6ff"],                           # gelo, neve e geada (pico, #64)
+    "caos": ["1a0a1f", "3d1046", "6e1a6e", "a62a8f", "e04aa8", "ff9ad8"],                           # energia do caos (reino sombrio)
 }
 PALETA_HEX = [h for r in RAMPA.values() for h in r]
 PALETA = np.array([[int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)] for h in PALETA_HEX])
