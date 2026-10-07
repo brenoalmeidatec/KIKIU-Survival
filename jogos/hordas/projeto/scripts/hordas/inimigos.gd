@@ -282,7 +282,7 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 	arena.registrar_dano(arma, valor, v.pos, crit)
 	if espelho:
 		# cliente: o anfitrião aplica de verdade (e avisa se morreu); aqui só some até a confirmação
-		online.acerto(v.id, valor, empurrao)
+		online.acerto(v.id, valor, empurrao, arma)
 		if v.hp <= 0:
 			_remover(v)
 			_morte_visual(v)   # efeito só local: a morte em si o anfitrião já sincroniza
@@ -310,19 +310,21 @@ func aplicar_elemento(v: V, el: String, n := 1.0, fonte := "") -> void:
 
 
 ## Anfitrião: acerto que veio de outro computador (o dano e o crítico já foram calculados lá).
-func ferir_remoto(v: V, valor: float, empurrao: Vector2) -> void:
+func ferir_remoto(v: V, valor: float, empurrao: Vector2, arma := "") -> void:
 	if v.hp <= 0:
 		return
 	v.hp -= valor
 	v.flash = 0.09
 	v.t_golpe = _t
-	v.arma_ult = ""   # a arma do outro jogador não vem na rede: morte padrão
+	v.arma_ult = arma   # a arma do cliente, já conferida pelo anfitrião ("" = não declarou ou inválida: morte padrão)
 	v.causa_ult = ""
 	v.kb = (v.kb + empurrao / (12.0 if v.chefe else (4.0 if v.pesado else 1.0))).limit_length(KB_MAX)
 	if v.hp <= 0:
 		_remover(v)
 		_morte_visual(v)
 		arena.inimigo_morreu(v)
+	elif arma != "":
+		elementos.golpe_remoto(v, arma)   # só o elemento da arma dele (a `chance` de elemento é do anfitrião)
 
 
 ## Como o inimigo morre na tela. Chefe: a finalização (finalizacao.gd) cuida; os outros: mortes.gd.

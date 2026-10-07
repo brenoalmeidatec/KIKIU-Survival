@@ -944,6 +944,8 @@ func _teste() -> void:
 				print("  jogador: peer=%d%s heroi=%s nome=%s paleta=%s vida=%d dano=%d%% vel=%d%% defeito=%s boneco_recolorido=%s" % [p, " (eu)" if p == Rede.eu() else "", hid,
 					Rede.nome_de(p), str(hh.get("paleta", {})), roundi(st.vida_max), roundi(st.dano * 100.0), roundi(st.velocidade * 100.0),
 					str(hh.get("ficha", {}).get("defeito", "")), recolorido if p != Rede.eu() else "-"])
+			if Rede.anfitriao():
+				print("  golpes_remotos: recebidos=%d com_arma=%d elemento_do_cliente=%d" % [_arena.online.n_tx, _arena.online.n_arma, _arena.inimigos.elementos.remotos])
 			var b: Vector2 = Rede.banda()
 			print("  banda: envia=%.1f KB/s recebe=%.1f KB/s  voz: enviou=%d recebeu=%d bytes" % [b.x, b.y, Voz.enviados, Voz.recebidos])
 		if _t >= float(_args.sair):
