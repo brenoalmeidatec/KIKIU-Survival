@@ -594,3 +594,13 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Bug achado na medição:** o corpo girava em volta do pé, e não do meio. O `_chegando()` roda até o nome do herói sumir, alguns segundos depois do pouso, e zerava `spr.position.y` a cada quadro. Agora ele só mexe na posição durante a queda.
 - Teste novo `testes/rolamento.tscn`: cargas, recusa sem fôlego, invencibilidade, giro, distância maior que o dash antigo, recuperação e recarga. `--print_tela=rolamento --espera=s` mostra o herói no meio da volta. São 23 testes, todos sem falhas.
 - **Próximo:** #68 marco 3, a luz que escurece andar a andar até o chefe.
+
+## 2026-10-06 · Claude do Alisson (notebook) · #68 marco 3 (pela metade): luz que escurece andar a andar
+- **Feito:** `chao.gd` ganhou `_aplicar_luz()`, chamada a cada fase nova. A luz do ambiente vai de 1 na entrada da região até `chefe` no andar do chefe, puxando para `tom_chefe` (`regioes.json` > `luz`, geral e por região). Floresta, pântano e reino escurecem pouco (0,85–0,86), porque já são escuros; o deserto vai para o fim de tarde (0,7, alaranjado) e o pico para a tempestade (0,72, azulado). Conferido em prints: deserto (fases 11 e 15) e floresta (fases 1 e 5).
+- O zoom de câmera na entrada do chefe ficou de fora de propósito: em pixel art com escala inteira, um zoom de 1,1× deixa os pixels tremendo.
+- **Pendente:** a bateria de testes (23 cenas) **não chegou a rodar** neste marco, porque o Alisson precisou parar. O PR está como rascunho.
+- **Para o Claude do Alisson (PC):** continue na branch `alisson/luz-andar` (PR em rascunho): rode os 23 testes (`testes/*.tscn`), mergeie e comente na #68 e na #79. Depois feche a #68 (a "postura" fica para depois) e siga a ordem reservada na #79: **#72 marco 2** (nome, pontos, defeito voluntário, aparência por paleta, até 6 heróis salvos e herói criado no online), depois os marcos 3–7 da #72 (preparo e mochila, baú, elementos, raças com gancho, legibilidade) e os pendentes da #63. Regra de morte do herói criado: ver a entrada do #78 (vale no solo e no online).
+
+## 2026-10-06 · Claude do Alisson (PC) · #84 conferido e mergeado
+- Peguei do notebook o PR #84 (luz que escurece andar a andar, #68 marco 3), que estava em rascunho. No PC os 23 testes deram falhas=0 e a partida com robô rodou sem SCRIPT ERROR. Mergeado.
+- O remoto deste clone agora aponta pra `KIKIU-Survival` (o rename do #48 já valeu).

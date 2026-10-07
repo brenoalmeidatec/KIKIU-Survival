@@ -1,7 +1,8 @@
 {
- "_ajuda": "Regiões do mundo (#64). A corrida atravessa as regiões na ordem; cada uma tem 'fases_por_regiao' andares no mapa: os primeiros saem sorteados (com a semente, Sorte) do repertório 'fases' da região pelo 'peso', sem repetir, e o último é sempre a fase 'chefe' da região. Cada fase herda da região: conjunto (que inimigos o diretor sorteia, campo 'conjunto' do inimigos.json), cenario (dados/cenarios.json), musica (nome ou lista), musica_chefe, cor (tom do chão) e calor (modificadores de dados/calor.json que a região soma por cima do que o jogador escolheu: a dificuldade sobe de região em região). Uma fase pode sobrescrever qualquer um desses campos. Campos da fase: nome, peso, duracao (s até o chefe da fase nascer), chefe (tipo em inimigos.json; a fase acaba quando ele cai), eventos (anel, enxame, chefe), santuarios, escuro (fase de horror, escuridao.gd). O chefe da última região precisa ter final=true no inimigos.json (leva ao duelo). 'mapa' = regras do mapa de nós DENTRO de cada região (as mesmas chaves do dados/mapa.json; andares é sempre fases_por_regiao). minutos_por_fase = quanto a dificuldade base (dados/fase.json) avança por fase.",
+ "_ajuda": "Regiões do mundo (#64). A corrida atravessa as regiões na ordem; cada uma tem 'fases_por_regiao' andares no mapa: os primeiros saem sorteados (com a semente, Sorte) do repertório 'fases' da região pelo 'peso', sem repetir, e o último é sempre a fase 'chefe' da região. Cada fase herda da região: conjunto (que inimigos o diretor sorteia, campo 'conjunto' do inimigos.json), cenario (dados/cenarios.json), musica (nome ou lista), musica_chefe, cor (tom do chão) e calor (modificadores de dados/calor.json que a região soma por cima do que o jogador escolheu: a dificuldade sobe de região em região). Uma fase pode sobrescrever qualquer um desses campos. Campos da fase: nome, peso, duracao (s até o chefe da fase nascer), chefe (tipo em inimigos.json; a fase acaba quando ele cai), eventos (anel, enxame, chefe), santuarios, escuro (fase de horror, escuridao.gd). O chefe da última região precisa ter final=true no inimigos.json (leva ao duelo). 'mapa' = regras do mapa de nós DENTRO de cada região (as mesmas chaves do dados/mapa.json; andares é sempre fases_por_regiao). minutos_por_fase = quanto a dificuldade base (dados/fase.json) avança por fase. luz (#68): a luz do ambiente vai de 1 (entrada da região) até 'chefe' (no andar do chefe), puxando pro 'tom_chefe' [r,g,b]; cada região pode ter a sua 'luz', que sobrescreve a geral.",
  "fases_por_regiao": 5,
  "minutos_por_fase": 0.55,
+ "luz": {"chefe": 0.78, "tom_chefe": [1.0, 0.86, 0.82]},
  "mapa": {
   "faixas": 4,
   "caminhos": 3,
@@ -26,6 +27,7 @@
    "musica": ["minijogo_tenso", "minijogo_tenso_b"],
    "cor": [0.85, 1.0, 0.85],
    "calor": {},
+   "luz": {"chefe": 0.86},
    "fases": [
     {"nome": "Trilha Torta", "peso": 3, "duracao": 66, "chefe": "bruxa_do_mato", "eventos": [{"tempo": 30, "tipo": "anel", "inimigo": "lobo_sombrio", "quantos": 14}]},
     {"nome": "Clareira dos Enforcados", "peso": 2, "duracao": 70, "chefe": "bruxa_do_mato", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "corvo_carniceiro", "quantos": 24}]},
@@ -45,6 +47,7 @@
    "musica": ["minijogo_tenso_b", "minijogo_tenso"],
    "cor": [0.8, 0.95, 0.75],
    "calor": {"couro": 1},
+   "luz": {"chefe": 0.86},
    "fases": [
     {"nome": "Lodaçal", "peso": 3, "duracao": 70, "chefe": "rainha_sapo", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "sanguessuga", "quantos": 30}]},
     {"nome": "Ponte Afundada", "peso": 2, "duracao": 72, "chefe": "rainha_sapo", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "jacare_lodo", "quantos": 8}]},
@@ -64,6 +67,7 @@
    "musica": ["minijogo_tenso", "minijogo_tenso_b"],
    "cor": [1.0, 0.95, 0.85],
    "calor": {"couro": 1, "garras": 1},
+   "luz": {"chefe": 0.7, "tom_chefe": [1.0, 0.8, 0.7]},
    "fases": [
     {"nome": "Dunas Vermelhas", "peso": 3, "duracao": 72, "chefe": "sacerdote_areia", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "escaravelho", "quantos": 32}]},
     {"nome": "Oásis Seco", "peso": 2, "duracao": 72, "chefe": "sacerdote_areia", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "naja", "quantos": 10}]},
@@ -83,6 +87,7 @@
    "musica": ["minijogo_tenso_b", "minijogo_tenso"],
    "cor": [0.85, 0.92, 1.0],
    "calor": {"couro": 2, "garras": 1, "horda": 1},
+   "luz": {"chefe": 0.72, "tom_chefe": [0.82, 0.88, 1.0]},
    "fases": [
     {"nome": "Passo Gelado", "peso": 3, "duracao": 74, "chefe": "jarl_congelado", "eventos": [{"tempo": 34, "tipo": "enxame", "inimigo": "diabrete_gelo", "quantos": 34}]},
     {"nome": "Caverna de Cristal", "peso": 2, "duracao": 76, "chefe": "jarl_congelado", "eventos": [{"tempo": 32, "tipo": "anel", "inimigo": "sentinela_cristal", "quantos": 10}]},
@@ -102,6 +107,7 @@
    "musica": "horror",
    "cor": [0.82, 0.76, 0.9],
    "calor": {"couro": 2, "garras": 2, "horda": 1, "nobres": 1},
+   "luz": {"chefe": 0.85, "tom_chefe": [1.0, 0.8, 0.85]},
    "fases": [
     {"nome": "Portões Caídos", "peso": 3, "duracao": 76, "chefe": "arauto", "eventos": [{"tempo": 36, "tipo": "anel", "inimigo": "carnical", "quantos": 22}, {"tempo": 58, "tipo": "chefe", "inimigo": "cavaleiro_caos"}]},
     {"nome": "Catacumbas", "peso": 3, "duracao": 80, "chefe": "arauto", "escuro": {"forca": 0.9, "raio_heroi": 150, "raio_tocha": 115, "nevoa": 0.3, "tom": [0.03, 0.025, 0.07]}, "eventos": [{"tempo": 34, "tipo": "anel", "inimigo": "carnical", "quantos": 22}, {"tempo": 56, "tipo": "chefe", "inimigo": "abominacao"}, {"tempo": 70, "tipo": "enxame", "inimigo": "cao_ossos", "quantos": 16}]},
