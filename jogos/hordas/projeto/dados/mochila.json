@@ -1,0 +1,13 @@
+{
+ "_ajuda": "Regras da mochila e do baú pessoal (#72, marcos 3 e 4). capacidade = espaços da mochila, somando base + bonus_raca + bonus_classe; cada item ocupa 'espacos' (itens.json) por unidade. max_consumiveis = quantos TIPOS de consumível cabem (cada um vira uma tecla 1, 2, 3). max_comida = unidades de comida de viagem. O amuleto vai no pescoço e não ocupa espaço. bau_max = espaços do baú pessoal (o que não cabe ao trazer pra casa se perde). kit_inicial = o que todo herói criado ganha no baú (e os heróis salvos antes do marco 3). trazer_max = itens achados na corrida que voltam pro baú se o herói vencer. achado_bau = chance de achar um item ao abrir um baú da corrida; achados = o que pode ser achado. Ao morrer, herói, mochila e baú somem juntos (regra do #78). Heróis fixos (Hazaki, Nicão, Lucas) não têm baú e pulam o Preparo.",
+ "capacidade": 5,
+ "bonus_raca": {"humano": 1, "anao": 2, "elfo_sombrio": 0, "orc": 1, "goblin": 0},
+ "bonus_classe": {"guerreiro": 0, "mago": 0, "atirador": 1, "ladino": 2, "clerigo": 1},
+ "max_consumiveis": 3,
+ "max_comida": 2,
+ "bau_max": 24,
+ "trazer_max": 3,
+ "achado_bau": 0.4,
+ "achados": ["pocao_cura", "pocao_vigor", "bomba", "pergaminho_gelo", "pergaminho_ima", "elixir_ferro", "pao_duro", "carne_seca", "amuleto_trevo", "amuleto_corvo", "amuleto_lobo", "amuleto_fenix"],
+ "kit_inicial": {"pao_duro": 1, "ensopado": 1, "pocao_cura": 2, "bomba": 1, "pergaminho_ima": 1, "amuleto_corvo": 1, "amuleto_ferro": 1}
+}

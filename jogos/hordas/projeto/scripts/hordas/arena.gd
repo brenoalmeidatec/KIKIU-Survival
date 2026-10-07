@@ -19,6 +19,8 @@ const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Online := preload("res://scripts/hordas/online.gd")
 const Habilidades := preload("res://scripts/hordas/habilidades.gd")
 const Especial := preload("res://scripts/hordas/especial.gd")
+const Provisoes := preload("res://scripts/hordas/provisoes.gd")
+const Mochila := preload("res://scripts/hordas/mochila.gd")
 const Calor := preload("res://scripts/hordas/calor.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
@@ -47,6 +49,8 @@ var inimigos: Node2D
 var armas: Node2D
 var habilidades: Node2D        # transformação (dragão do Hazaki), habilidades.gd
 var especial: Node2D           # especial do herói (tecla E), especial.gd
+var provisoes: Node            # mochila em ação: comida, amuleto e consumíveis (#72, marcos 3 e 4), provisoes.gd; null = sem mochila
+var mochila_cfg := {}          # a mochila que o herói leva (o main.gd põe antes de abrir a arena; no online, a que o anfitrião aceitou)
 var descobertas: Node          # santuários, fragmentos, dádivas e eventos (#21), descobertas.gd
 var semente := 0               # semente da corrida (0 = sorteia; no online vem do anfitrião, igual pra todos)
 var coleta: Node2D
@@ -174,6 +178,10 @@ func _ready() -> void:
 	especial = Especial.new()
 	add_child(especial)
 	especial.configurar(self)
+	if not Mochila.vazio(mochila_cfg):   # heróis fixos e corridas de teste sem mochila: nada muda
+		provisoes = Provisoes.new()
+		add_child(provisoes)
+		provisoes.configurar(self, mochila_cfg)
 	efeitos = Efeitos.new()
 	add_child(efeitos)
 	finalizacao = Finalizacao.new()
@@ -251,6 +259,8 @@ func stat(k: String) -> float:
 		v += habilidades.bonus(k)   # transformado (dragão): mais rápido e mais forte
 	if especial:
 		v += especial.bonus(k)   # depois do especial (ex.: o "Sou Gostoso!" do Hazaki)
+	if provisoes:
+		v += provisoes.bonus(k)   # comida de viagem, amuleto e poções (#72)
 	if duelo_ativo:
 		# no duelo: a vida vem da regra do pvp.json, a regeneração é menor e a aura de lentidão pega
 		if k == "vida_max":
@@ -334,6 +344,8 @@ func _process(dt: float) -> void:
 	if not parado:
 		habilidades.atualizar(dt)
 		especial.atualizar(dt)
+		if provisoes:
+			provisoes.atualizar(dt)
 		descobertas.atualizar(dt)
 		armas.atualizar(dt)
 	if online:
@@ -1094,12 +1106,29 @@ func abrir_bau() -> void:
 			aplicar(c)
 	else:
 		aplicar(premios[0])
+	_achar_item_no_bau()
 	cartas.mostrar_bau(premios)
+
+
+## Chance de achar um item da mochila dentro do baú da corrida (dados/mochila.json). Só o herói criado com mochila acha: o item
+## vai pra bolsa de achados e só vem pra casa se ele vencer. Sorteio pessoal (não mexe nas streams da semente).
+func _achar_item_no_bau() -> void:
+	if provisoes == null:
+		return
+	var c := Mochila.cfg()
+	var ids: Array = c.get("achados", [])
+	if ids.is_empty() or randf() >= float(c.get("achado_bau", 0.4)):
+		return
+	var id: String = ids[randi() % ids.size()]
+	if provisoes.achar(id):
+		mensagem("Achou: %s (vai pro baú se você vencer)" % Mochila.nome(id), Color(1, 0.9, 0.5))
 
 
 # ---------- fim ----------
 
 func morrer(quem := "") -> void:
+	if provisoes and not duelo_ativo and not acabou and provisoes.fenix():
+		return   # Pena de Fênix (#72): levanta uma vez
 	if acabou:
 		return
 	if duelo_ativo:
@@ -1204,6 +1233,10 @@ func _fim(vitoria: bool, extra := {}) -> void:
 	var res := {"vitoria": vitoria, "calor": calor_pts, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
 		"heroi": heroi_id, "conjuntos": conj_resumo, "dano": lista_dano, "apanhou": dano_recebido, "chefe_final": nome_chefe_final(),
 		"armas": Interface.tabela_armas(dano_por_arma, nivel_arma, tempo_arma, diretor.tempo)}
+	if provisoes:   # o que sobrou da mochila e o que achou: o main.gd leva pro baú se o herói sobreviver (#72)
+		res["mochila"] = provisoes.sobra()
+		res["achados"] = provisoes.achados
+		res["usos"] = provisoes.usos
 	res.merge(extra)
 	await get_tree().create_timer(1.2, true, false, true).timeout
 	terminou.emit(res)
