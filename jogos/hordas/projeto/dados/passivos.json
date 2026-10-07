@@ -1,6 +1,7 @@
 {
  "_ajuda": "Itens passivos. efeito = quanto soma em cada nível. Atributos: dano, recarga (menos = atira mais), area, quantidade, velocidade_proj, duracao, vida_max, regen, velocidade, ima, sorte, xp. peso_ia = o quanto os rivais controlados pela IA gostam desse item (0 a 1).",
  "energetico": {
+  "etiquetas": ["lamina"],
   "nome": "Pedra de Amolar",
   "icone": "pedra_amolar",
   "max": 5,
@@ -11,6 +12,7 @@
   "peso_ia": 1.0
  },
  "overclock": {
+  "etiquetas": ["sombra"],
   "nome": "Ampulheta Rachada",
   "icone": "ampulheta",
   "max": 5,
@@ -21,6 +23,7 @@
   "peso_ia": 1.0
  },
  "monitor": {
+  "etiquetas": ["sagrado"],
   "nome": "Grimório Aberto",
   "icone": "grimorio",
   "max": 5,
@@ -31,6 +34,7 @@
   "peso_ia": 1.0
  },
  "ctrl_c_v": {
+  "etiquetas": ["invocacao"],
   "nome": "Espelho Gêmeo",
   "icone": "espelho",
   "max": 2,
@@ -41,6 +45,7 @@
   "peso_ia": 1.0
  },
  "tenis": {
+  "etiquetas": ["sombra"],
   "nome": "Pena de Corvo",
   "icone": "pena",
   "max": 5,
@@ -51,6 +56,7 @@
   "peso_ia": 1.0
  },
  "marmita": {
+  "etiquetas": ["pesado"],
   "nome": "Feijão Tropeiro",
   "icone": "feijao",
   "max": 5,
@@ -61,6 +67,7 @@
   "peso_ia": 1.0
  },
  "antena": {
+  "etiquetas": ["trovao"],
   "nome": "Pedra-Ímã",
   "icone": "pedra_ima",
   "max": 5,
@@ -71,6 +78,7 @@
   "peso_ia": 0.15
  },
  "fitinha": {
+  "etiquetas": ["sagrado"],
   "nome": "Figa de Arruda",
   "icone": "figa",
   "max": 5,
@@ -81,6 +89,7 @@
   "peso_ia": 0.3
  },
  "agua_coco": {
+  "etiquetas": ["sangue"],
   "nome": "Garrafada",
   "icone": "garrafada",
   "max": 5,
@@ -91,6 +100,7 @@
   "peso_ia": 0.7
  },
  "apostila": {
+  "etiquetas": ["sagrado"],
   "nome": "Pergaminho Antigo",
   "icone": "pergaminho",
   "max": 5,
@@ -101,6 +111,7 @@
   "peso_ia": 0.15
  },
  "mouse": {
+  "etiquetas": ["arremesso"],
   "nome": "Olho de Falcão",
   "icone": "olho_falcao",
   "max": 5,

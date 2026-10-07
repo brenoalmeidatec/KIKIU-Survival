@@ -794,6 +794,10 @@ func _teste() -> void:
 		print("  mapa: hash=%s pos=%s no=%s ouro=%d trilha=%s" % [Mapa.resumo(_arena.mapa), _arena.mapa_pos, _arena.no_tipo, _arena.ouro, _arena.mapa_trilha.map(func(p): return "%d.%d" % [p.x, p.y])])
 		if _arena.calor_pts > 0:
 			print("  calor: %d %s" % [_arena.calor_pts, _arena.calor])
+		if _arena.objetivo.id != "":
+			print("  objetivo: %s" % [_arena.objetivo.snapshot()])
+		if not _arena.conj_resumo.is_empty():
+			print("  conjuntos: %s ef=%s" % [_arena.conj_contagem, _arena._conj_ef])
 		if _arena.especial.tem():
 			print("  especial: %s usos=%d recarga=%.0f" % [_arena.especial.d.get("nome", ""), _arena.especial.usos, _arena.especial.recarga])
 		if _arena.online:
@@ -1272,6 +1276,33 @@ func _print_tela(qual: String) -> void:
 			for v in _arena.inimigos.lista:
 				v.vel = 0.0   # parados, pra a foto
 			await get_tree().create_timer(float(_args.get("espera", 2.0)), true, false, true).timeout
+		"conjuntos", "objetivo":   # #63: HUD com os conjuntos da build e (objetivo) um objetivo em andamento (--objetivo=pira|totens|fugitivo, --pronto=0..1 de quanto já foi)
+			_args["fase"] = str(_args.get("fase", "2"))
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.inimigos.limpar()
+			_arena.armas.lista.clear()
+			for id in ["pendrive", "machado", "lanca", "cafe"]:
+				_arena.armas.adicionar(id)
+			_arena.passivos = {"energetico": 2, "mouse": 1, "marmita": 1, "monitor": 1}
+			_arena.equipamentos = {"cabeca": "cabeca_guerreiro", "peitoral": "armadura_samurai", "pes": "botas_guerra"}
+			_arena.build_mudou()
+			if qual == "objetivo":
+				var ob = _arena.objetivo
+				ob._zerar()
+				ob._iniciar(str(_args.get("objetivo", "pira")))
+				var alvo_ob: float = ob.alvo
+				if ob.id == "pira":
+					_arena.jogador.position = ob.pos + Vector2(60, 40)
+					ob.prog = alvo_ob * float(_args.get("pronto", 0.55))
+				else:
+					ob.prog = floorf(alvo_ob * float(_args.get("pronto", 0.0)))
+				ob.resta -= 20.0
+				ob._marcas()
+				await get_tree().create_timer(2.4, true, false, true).timeout   # o anúncio grande some
+			await get_tree().create_timer(0.5, true, false, true).timeout
 		"mortes":   # #32: 8 inimigos morrem de 8 causas; prints no meio dos efeitos (--seq=0.15,0.4,0.7 em segundos reais, --reduzida, --conj=virus)
 			if not _args.has("fase") and str(_args.get("conj", "horror")) != "virus":
 				_args["fase"] = "6"

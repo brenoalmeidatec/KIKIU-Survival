@@ -21,6 +21,8 @@ const Habilidades := preload("res://scripts/hordas/habilidades.gd")
 const Especial := preload("res://scripts/hordas/especial.gd")
 const Calor := preload("res://scripts/hordas/calor.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
+const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
+const Objetivos := preload("res://scripts/hordas/objetivos.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
@@ -92,6 +94,12 @@ var banir := 2
 var calor := {}             # modificadores de calor desta corrida {id: nível} (calor.gd, dados/calor.json)
 var calor_ef := {}          # efeitos somados do calor (ef() lê)
 var calor_pts := 0
+var conj_contagem := {}     # etiquetas da build (#63): {etiqueta: quantos itens} (conjuntos.gd)
+var conj_resumo: Array = [] # o que o HUD e a tela de fim mostram (Conjuntos.resumo)
+var _conj_ef := {}          # comportamentos ligados pelos conjuntos (conj() lê)
+var _conj_bonus := {}       # atributos que os conjuntos somam
+var _conj_explodindo := false
+var objetivo: Node2D        # objetivo próprio do andar (objetivos.gd)
 var fases_corrida: Array = []   # regiões (#64): as fases da corrida inteira, na ordem dos andares (regioes.gd)
 var banidos := {}           # id -> true: carta banida some do sorteio até o fim da corrida
 var tempo_arma := {}        # id -> segundos com a arma ativa (DPS da tela final)
@@ -130,6 +138,9 @@ func _ready() -> void:
 	chao = Chao.new()
 	chao.arena = self
 	add_child(chao)
+	objetivo = Objetivos.new()   # objetivo do andar (#63): desenha a pira no chão, embaixo de tudo
+	objetivo.arena = self
+	add_child(objetivo)
 	coleta = Coleta.new()
 	coleta.arena = self
 	add_child(coleta)
@@ -252,6 +263,26 @@ func stat(k: String) -> float:
 	return v
 
 
+## Efeito de comportamento ligado pelos conjuntos de etiquetas (0 se nenhum degrau o liga). Veja dados/conjuntos.json.
+func conj(k: String) -> float:
+	return float(_conj_ef.get(k, 0.0))
+
+
+## Recontagem das etiquetas (chamada a cada mudança de build: armas.adicionar/trocar, passivo, equipamento).
+func _conj_atualizar() -> void:
+	var ids: Array = armas.lista.map(func(a): return a.id) if armas else []
+	conj_contagem = Conjuntos.contar(ids, passivos, equipamentos)
+	_conj_bonus = Conjuntos.bonus(conj_contagem)
+	_conj_ef = Conjuntos.efeitos(conj_contagem)
+	conj_resumo = Conjuntos.resumo(conj_contagem)
+
+
+## Armas.adicionar/trocar avisam aqui: a etiqueta da arma nova (ou evoluída) liga ou desliga o conjunto na hora.
+func build_mudou() -> void:
+	if descobertas and jogador:
+		_recalcular()
+
+
 ## Efeito somado do calor desta corrida (0 se o jogador não ligou o modificador). Veja dados/calor.json.
 func ef(k: String) -> float:
 	return float(calor_ef.get(k, 0.0))
@@ -259,7 +290,11 @@ func ef(k: String) -> float:
 
 func _recalcular() -> void:
 	var antes := stat("vida_max")
-	_stats = Construcao.stats(heroi, passivos, equipamentos, descobertas.bonus() if descobertas else {})
+	_conj_atualizar()
+	var extra: Dictionary = descobertas.bonus().duplicate() if descobertas else {}
+	for k in _conj_bonus:   # conjuntos de etiquetas (#63) somam junto das dádivas
+		extra[k] = float(extra.get(k, 0.0)) + float(_conj_bonus[k])
+	_stats = Construcao.stats(heroi, passivos, equipamentos, extra)
 	if jogador and stat("vida_max") > antes:
 		jogador.curar(stat("vida_max") - antes)
 
@@ -285,6 +320,7 @@ func _process(dt: float) -> void:
 			diretor.so_relogio(dt)   # cliente: quem cria os vírus é o anfitrião
 		else:
 			diretor.atualizar(dt)
+		objetivo.atualizar(dt)
 	var t1 := Time.get_ticks_usec()
 	if not duelo_ativo and not pre_duelo and not entre_fases:
 		inimigos.atualizar(dt, jogador)
@@ -354,6 +390,7 @@ func hitstop(seg: float) -> void:
 
 func inimigo_morreu(v) -> void:
 	recompensa(v.pos, v.tipo, v.elite)
+	objetivo.abate(v)   # totem ou fugitivo do objetivo do andar (#63)
 	habilidades.abate(v)   # enche a Energia da transformação
 	if v.chefe:
 		hitstop(Jogador.HITSTOP_CHEFE)
@@ -395,6 +432,7 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	if d.get("cor_morte") is Array:
 		cor = Color(d.cor_morte[0], d.cor_morte[1], d.cor_morte[2])
 	efeitos.explodir(pos, cor, 14 if chefe else 5, 160.0 if chefe else 80.0)
+	_conj_ao_abater(pos)
 	var drops: Dictionary = Dados.json("fase").get("drops", {})
 	var sd := Sorte.fluxo("drop")   # drops saem de uma stream: com a mesma semente e os mesmos abates, caem iguais
 	if d.get("bau", false) or (elite and sd.randf() < 0.25):
@@ -408,6 +446,25 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	if chefe:
 		tremer(8)
 		Som.tocar("soco", 0.1, 0.7)
+
+
+## Comportamentos dos conjuntos de etiquetas (#63) a cada abate (cada jogador roda o seu: no online vale a build de quem vê).
+func _conj_ao_abater(pos: Vector2) -> void:
+	var cura := conj("cura_abate")
+	if cura > 0.0 and jogador and not caido and not duelo_ativo:
+		jogador.curar(cura)
+	if conj("explosao_morte") > 0.0 and not _conj_explodindo and not duelo_ativo:
+		_conj_explodindo = true   # a explosão não encadeia outra explosão (e não vira laço no 500 de estresse)
+		var dano := 6.0 * stat("dano") * (1.0 + 0.08 * nivel)
+		var n := 0
+		for v in inimigos.no_circulo(pos, 54.0):
+			if v.hp > 0.0:
+				inimigos.ferir(v, dano, (v.pos - pos).normalized() * 60.0)
+				n += 1
+				if n >= 8:
+					break
+		efeitos.explodir(pos, Color(1.0, 0.5, 0.15), 6, 70.0)
+		_conj_explodindo = false
 
 
 ## O chefe final caiu: limpa a tela e, depois de 2 s, começa o duelo (no online quem decide é o anfitrião).
@@ -487,6 +544,7 @@ func fase_completa() -> void:
 	if entre_fases or acabou:
 		return
 	entre_fases = true
+	objetivo.encerrar()   # objetivo ainda aberto: falha sem castigo (o anfitrião manda o estado final)
 	var seq := _no_seq   # se o nó seguinte for escolhido antes de terminar (online), este fluxo se descarta
 	var n: int = diretor.fase_idx + 1
 	fase_stat.tempo = diretor.t_fase   # congela o tempo da fase antes do descanso
@@ -511,6 +569,7 @@ func fase_completa() -> void:
 		return
 	# tela de resultados: cada um vê a sua; no online ela fecha sozinha em ~8 s e ninguém espera ninguém
 	fase_stat.nivel_fim = nivel
+	fase_stat.conjuntos = conj_resumo
 	resultado.abrir(fase_stat)
 	while resultado.aberto() and not acabou:
 		await get_tree().process_frame
@@ -661,6 +720,7 @@ func _iniciar_andar(idx: int) -> void:
 	if resultado.aberto():
 		resultado.fechar()
 	var f: Dictionary = diretor.fases()[diretor.fase_idx]
+	objetivo.nova_fase(f, no_tipo, diretor.fase_idx)
 	var marca := "  (ELITE)" if no_tipo == "elite" else ""
 	_anunciar_fase(diretor.fase_idx, marca)
 	entre_fases = false
@@ -681,6 +741,7 @@ func saltar_para_andar(idx: int) -> void:
 	diretor.ir_para(mapa_pos.x)
 	_atualizar_calor()
 	chao.nova_fase()
+	objetivo.nova_fase(diretor.fases()[diretor.fase_idx], no_tipo, diretor.fase_idx)
 	hud.limpar_mensagens()   # o anúncio da fase 1 já tinha saído: troca pelo do andar de destino
 	_anunciar_fase(diretor.fase_idx, "")
 	_musica_da_fase(false)
@@ -704,7 +765,7 @@ func proxima_fase() -> void:
 
 
 static func _stat_novo() -> Dictionary:
-	return {"tempo": 0.0, "abates": 0, "chefes": 0, "xp": 0.0, "nivel_ini": 1, "nivel_fim": 1, "dano": {}, "itens": []}
+	return {"tempo": 0.0, "abates": 0, "chefes": 0, "xp": 0.0, "nivel_ini": 1, "nivel_fim": 1, "dano": {}, "itens": [], "objetivo": {}, "conjuntos": []}
 
 
 ## Estatísticas da fase: zeram aqui, no começo de cada fase (e na primeira, no _ready).
@@ -907,6 +968,12 @@ func _carta(tipo: String, id: String, nv: int) -> Dictionary:
 		desc = _texto_nivel(d.get("niveis", [])[nv - 2])
 	var c := {"tipo": tipo, "id": id, "nome": str(d.get("nome", id)), "desc": desc, "icone": str(d.get("icone", id)), "nivel": nv,
 		"max": (1 + d.get("niveis", []).size()) if tipo == "arma" else int(d.get("max", 1)), "cmp": Interface.comparacao(tipo, id, nv)}
+	if tipo in ["arma", "passivo", "equipamento", "evolucao"] and not Conjuntos.etiquetas_de(id).is_empty():
+		# gancho pra tela de cartas (#63): etiquetas do item e o que elas mudam na build ("Lâmina 2>3  Fogo 0>1").
+		# Só vale pra carta nova: subir de nível o que já se tem não muda a contagem.
+		var novo: bool = (tipo == "arma" and nv == 1) or (tipo == "passivo" and not passivos.has(id)) or tipo == "equipamento" or tipo == "evolucao"
+		c["etiquetas"] = Conjuntos.etiquetas_de(id)
+		c["etiquetas_txt"] = Conjuntos.rotulo_carta(id, conj_contagem) if novo else ""
 	if tipo == "arma" and Construcao.exclusiva(id):
 		# carta de arma exclusiva mostra quantas ele terá de quantas pode ter (ex.: EXCLUSIVA 1/2)
 		var ids: Array = armas.lista.map(func(a): return a.id)
@@ -1067,7 +1134,7 @@ func _fim(vitoria: bool, extra := {}) -> void:
 		lista_dano.append([a, dano_por_arma[a]])
 	lista_dano.sort_custom(func(x, y): return x[1] > y[1])
 	var res := {"vitoria": vitoria, "calor": calor_pts, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
-		"heroi": heroi_id, "dano": lista_dano, "apanhou": dano_recebido, "chefe_final": nome_chefe_final(),
+		"heroi": heroi_id, "conjuntos": conj_resumo, "dano": lista_dano, "apanhou": dano_recebido, "chefe_final": nome_chefe_final(),
 		"armas": Interface.tabela_armas(dano_por_arma, nivel_arma, tempo_arma, diretor.tempo)}
 	res.merge(extra)
 	await get_tree().create_timer(1.2, true, false, true).timeout

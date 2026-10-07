@@ -232,6 +232,8 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 		valor *= arena.stat("critico_mult")
 	v.hp -= valor
 	v.flash = 0.09
+	if not espelho and v.lento < 0.6:   # conjunto Gelo (#63): o golpe deixa o bicho lento (só quem roda a IA vê)
+		v.lento = maxf(v.lento, arena.conj("lento_acerto"))
 	v.arma_ult = arma   # causa do golpe final (mortes violentas)
 	v.causa_ult = v.causa_pend
 	v.causa_pend = ""
@@ -550,7 +552,7 @@ func atualizar(dt: float, jog: Node2D) -> void:
 		if dist < v.raio + 8:
 			_ferir_jogador(jog, dono, local, v.dano, v.tipo)
 		# muito longe: volta pra perto (do lado de onde o jogador está indo)
-		if dist > LONGE and not v.chefe:
+		if dist > LONGE and not v.chefe and not v.d.has("fixo"):   # "fixo" (totem do objetivo) não reaparece perto do jogador
 			var mov_j: Vector2 = jog.direcao_mov() if dono == local else Vector2.ZERO
 			var a: float = mov_j.angle() + randf_range(-1.0, 1.0)
 			if mov_j == Vector2.ZERO:

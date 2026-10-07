@@ -1,0 +1,72 @@
+{
+ "_ajuda": "Etiquetas e bônus de conjunto (#63, estilo Brotato/Soulstone). Cada arma (armas.json), passivo (passivos.json) e equipamento (equipamentos.json) tem 'etiquetas': [ids de 'etiquetas' abaixo]. Conta 1 por item que o jogador TEM (arma na lista, passivo de qualquer nível, equipamento vestido; as armas da forma de dragão não contam). Em 'limiares' cada etiqueta tem os degraus (2, 4, 6...): bater o degrau liga o bônus dele, e os degraus de baixo continuam ligados (cumulativo). 'bonus' soma nos atributos do herói como um passivo (dano, recarga, area, quantidade, velocidade_proj, duracao, vida_max, regen, velocidade, ima, sorte, xp, critico, critico_mult). 'efeito' liga comportamentos que o código lê com arena.conj(chave): explosao_morte (inimigo que morre explode: dano em área), lento_acerto (segundos de lentidão a cada golpe), cura_abate (vida que volta a cada abate). 'texto' é o que o jogador lê.'etiqueta' com 'conjunto' (ex.: guerreiro, as 5 peças do Hazaki = Panóplia do Shogun) tem nome próprio e degraus próprios (3 e 5). Perder o item desliga o bônus no mesmo instante (tudo é recalculado a cada mudança de build).",
+ "etiquetas": {
+  "lamina": {"nome": "Lâmina", "cor": [0.78, 0.84, 0.95]},
+  "fogo": {"nome": "Fogo", "cor": [1.0, 0.55, 0.2]},
+  "gelo": {"nome": "Gelo", "cor": [0.55, 0.85, 1.0]},
+  "trovao": {"nome": "Trovão", "cor": [1.0, 0.92, 0.35]},
+  "sangue": {"nome": "Sangue", "cor": [0.85, 0.2, 0.25]},
+  "sombra": {"nome": "Sombra", "cor": [0.65, 0.5, 0.9]},
+  "sagrado": {"nome": "Sagrado", "cor": [1.0, 0.95, 0.7]},
+  "arremesso": {"nome": "Arremesso", "cor": [0.6, 0.9, 0.55]},
+  "invocacao": {"nome": "Invocação", "cor": [0.5, 0.75, 0.8]},
+  "pesado": {"nome": "Pesado", "cor": [0.8, 0.65, 0.45]},
+  "guerreiro": {"nome": "Guerreiro", "conjunto": "Panóplia do Shogun", "cor": [0.9, 0.7, 0.3]}
+ },
+ "limiares": {
+  "lamina": {
+   "2": {"bonus": {"critico": 0.08}, "texto": "+8% de crítico"},
+   "4": {"bonus": {"dano": 0.15}, "texto": "+15% de dano"},
+   "6": {"bonus": {"critico_mult": 0.5, "critico": 0.07}, "texto": "crítico +50% de dano e +7% de chance"}
+  },
+  "fogo": {
+   "2": {"bonus": {"area": 0.1}, "texto": "+10% de área"},
+   "4": {"bonus": {"dano": 0.15}, "texto": "+15% de dano"},
+   "6": {"efeito": {"explosao_morte": 1.0}, "texto": "quem morre explode e queima os vizinhos"}
+  },
+  "gelo": {
+   "2": {"bonus": {"duracao": 0.15}, "texto": "+15% de duração"},
+   "4": {"efeito": {"lento_acerto": 0.6}, "texto": "cada golpe deixa o inimigo lento"},
+   "6": {"bonus": {"recarga": -0.1}, "efeito": {"lento_acerto": 0.6}, "texto": "armas 10% mais rápidas e lentidão mais longa"}
+  },
+  "trovao": {
+   "2": {"bonus": {"velocidade": 0.06}, "texto": "+6% de velocidade"},
+   "4": {"bonus": {"recarga": -0.1}, "texto": "armas 10% mais rápidas"},
+   "6": {"bonus": {"velocidade_proj": 0.3, "dano": 0.1}, "texto": "projéteis 30% mais rápidos e +10% de dano"}
+  },
+  "sangue": {
+   "2": {"bonus": {"regen": 0.3}, "texto": "+0,3 de vida por segundo"},
+   "4": {"efeito": {"cura_abate": 0.5}, "texto": "cada abate devolve 0,5 de vida"},
+   "6": {"bonus": {"dano": 0.12}, "efeito": {"cura_abate": 1.0}, "texto": "+12% de dano e cada abate devolve mais vida"}
+  },
+  "sombra": {
+   "2": {"bonus": {"velocidade": 0.05}, "texto": "+5% de velocidade"},
+   "4": {"bonus": {"critico": 0.1}, "texto": "+10% de crítico"},
+   "6": {"bonus": {"critico_mult": 0.5, "ima": 0.3}, "texto": "crítico +50% de dano e puxa o XP de mais longe"}
+  },
+  "sagrado": {
+   "2": {"bonus": {"regen": 0.3}, "texto": "+0,3 de vida por segundo"},
+   "4": {"bonus": {"vida_max": 25}, "texto": "+25 de vida máxima"},
+   "6": {"bonus": {"regen": 0.7, "sorte": 0.2}, "texto": "+0,7 de vida por segundo e +20% de sorte"}
+  },
+  "arremesso": {
+   "2": {"bonus": {"velocidade_proj": 0.15}, "texto": "projéteis 15% mais rápidos"},
+   "4": {"bonus": {"quantidade": 1}, "texto": "+1 projétil em todas as armas"},
+   "6": {"bonus": {"critico": 0.1, "dano": 0.1}, "texto": "+10% de crítico e +10% de dano"}
+  },
+  "invocacao": {
+   "2": {"bonus": {"duracao": 0.15}, "texto": "+15% de duração"},
+   "4": {"bonus": {"dano": 0.15}, "texto": "+15% de dano"},
+   "6": {"bonus": {"quantidade": 1, "area": 0.1}, "texto": "+1 projétil e +10% de área"}
+  },
+  "guerreiro": {
+   "3": {"bonus": {"dano": 0.1, "regen": 0.3}, "texto": "+10% de dano e +0,3 de vida por segundo"},
+   "5": {"bonus": {"critico": 0.1, "critico_mult": 0.4}, "efeito": {"cura_abate": 1.0}, "texto": "crítico mais forte e cada abate devolve vida"}
+  },
+  "pesado": {
+   "2": {"bonus": {"vida_max": 20}, "texto": "+20 de vida máxima"},
+   "4": {"bonus": {"dano": 0.12, "vida_max": 15}, "texto": "+12% de dano e +15 de vida"},
+   "6": {"bonus": {"dano": 0.2, "vida_max": 30}, "texto": "+20% de dano e +30 de vida"}
+  }
+ }
+}

@@ -6,6 +6,7 @@ extends CanvasLayer
 ## A contagem usa tempo REAL (Time.get_ticks_msec), então não depende de pausa nem de Engine.time_scale.
 
 const Interface := preload("res://scripts/hordas/interface.gd")
+const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
 const W := 640.0
 const H := 360.0
 const PASSO := 0.42        # segundos entre uma linha e a próxima
@@ -74,6 +75,11 @@ static func montar_linhas(stat: Dictionary) -> Array:
 	l.append({"tipo": "num", "rotulo": "Abates", "valor": float(stat.get("abates", 0)), "extra": extra})
 	l.append({"tipo": "xp", "rotulo": "XP ganho", "valor": float(stat.get("xp", 0.0)),
 		"extra": "  NV %d > %d" % [int(stat.get("nivel_ini", 1)), int(stat.get("nivel_fim", 1))]})
+	var ob: Dictionary = stat.get("objetivo", {})
+	if not ob.is_empty():   # objetivo do andar (#63): cumprido ou falhou, e o que rendeu
+		var cumprido: bool = int(ob.get("est", 0)) == 2
+		l.append({"tipo": "objetivo", "rotulo": str(ob.get("nome", "Objetivo")), "valor": 0.0, "cumprido": cumprido,
+			"txt": ("CUMPRIDO  +%d ouro  +%d XP" % [int(ob.get("ouro", 0)), int(ob.get("xp", 0))]) if cumprido else ("FALHOU  %d ouro" % int(ob.get("ouro", 0)))})
 	var dano: Dictionary = stat.get("dano", {})
 	var ordem := dano.keys()
 	ordem.sort_custom(func(a, b): return dano[a] > dano[b])
@@ -83,6 +89,9 @@ static func montar_linhas(stat: Dictionary) -> Array:
 		l.append({"tipo": "arma", "rotulo": str(d.get("nome", ordem[i])), "icone": str(d.get("icone", ordem[i])), "valor": float(dano[ordem[i]])})
 	var itens: Array = stat.get("itens", [])
 	l.append({"tipo": "itens", "rotulo": "Novos itens" if not itens.is_empty() else "Nenhum item novo", "itens": itens, "valor": 0.0})
+	var conj: Array = stat.get("conjuntos", [])
+	if not conj.is_empty():   # etiquetas da build e o degrau de cada conjunto (#63)
+		l.append({"tipo": "conjuntos", "rotulo": "Conjuntos", "lin": conj, "valor": 0.0})
 	return l
 
 
@@ -171,6 +180,27 @@ func _desenhar() -> void:
 				_txt(Vector2(x + 34, y), str(l.rotulo), 8, Color(1, 1, 1, a), 180)
 				_txt(Vector2(px + pw - 140, y), texto_valor(l, v), 8, Color(1, 0.9, 0.5, a), 116, HORIZONTAL_ALIGNMENT_RIGHT)
 				y += 20
+			"objetivo":
+				var co := Color(0.5, 1.0, 0.6, a) if l.cumprido else Color(1.0, 0.5, 0.45, a)
+				_txt(Vector2(x, y), "Objetivo", 8, Color(0.85, 0.9, 1, a))
+				_txt(Vector2(x + 90, y), str(l.rotulo), 8, co, 160)
+				_txt(Vector2(px + pw - 260, y + 11), str(l.txt), 8, co, 236, HORIZONTAL_ALIGNMENT_RIGHT)
+				y += 28
+			"conjuntos":
+				_txt(Vector2(x, y), str(l.rotulo), 8, Color(0.7, 0.8, 1, a))
+				var xc := x + 100.0
+				var yc := y
+				for c in l.lin:
+					var lig: bool = int(c.ativo) > 0
+					var cc: Color = c.cor if lig else Color(0.55, 0.55, 0.62)
+					var s2 := "%s %s" % [str(c.nome).left(12), Conjuntos.progresso_txt(c)]
+					var w2: float = Dados.fonte.get_string_size(s2, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x + 10.0
+					if xc + w2 > px + pw - 16:
+						xc = x + 100.0
+						yc += 11.0
+					_txt(Vector2(xc, yc), s2, 8, Color(cc, a))
+					xc += w2
+				y = yc + 20.0
 			"itens":
 				_txt(Vector2(x, y), str(l.rotulo), 8, Color(0.7, 0.8, 1, a))
 				var xi := x + 150.0
