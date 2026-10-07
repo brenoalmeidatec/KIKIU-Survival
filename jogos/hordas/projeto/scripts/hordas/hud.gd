@@ -252,6 +252,7 @@ func _desenhar() -> void:
 				rotulo = "Desistir (o herói morre de vez)"   # herói criado: desistir conta como morrer
 			_txt(Vector2(0, 170 + i * 18), ("> " if sel else "") + rotulo, 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(0, 250), "WASD/setas: andar   Espaço/Shift: dash   Esc/Start: pausa   Mouse: clicar", 8, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+		_txt(Vector2(0, H - 14), Dados.texto_versao(), 8, Color(0.72, 0.74, 0.86, 0.85), HORIZONTAL_ALIGNMENT_CENTER, W)
 
 
 ## Ponto na borda da tela na direção de `pos` (mundo), a `margem` px da beirada; null se `pos` está visível.

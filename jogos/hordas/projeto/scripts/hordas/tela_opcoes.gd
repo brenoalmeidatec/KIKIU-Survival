@@ -125,6 +125,7 @@ func _desenhar() -> void:
 		_tela.draw_rect(Rect2(250, l.voltar - 10, 140, 13), Color(0.3, 0.35, 0.6, 0.35))
 	_txt(Vector2(0, l.voltar), "> Voltar <" if sel_v else "Voltar", 8, Color(1, 0.9, 0.4) if sel_v else Color(0.8, 0.8, 0.8))
 	_txt(Vector2(0, 350), "Cima/baixo: escolher   Esq/dir: mudar   Esc: voltar   Mouse: clique", 8, Color(0.5, 0.5, 0.6))
+	_txt(Vector2(0, 14), Dados.texto_versao(), 8, Color(0.72, 0.74, 0.86, 0.85), W - 6, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 func _linha(i: int, y: float, nome: String, valor: String) -> void:

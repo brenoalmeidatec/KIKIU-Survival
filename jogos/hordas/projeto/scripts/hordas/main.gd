@@ -68,26 +68,15 @@ var _t := 0.0
 var _args := {}
 var _novo_recorde := false
 var _endereco := ""          # último endereço digitado (fica salvo)
-var _versao := ""            # carimbo do título: "v0.1.0 · 2026-10-07 · a3d5e4b" (ou "v0.1.0 · dev" sem dados/versao.json)
+var _versao := ""            # carimbo do título: "Versão 0.1.0 · 07/10/2026 · a3d5e4b" (ou "· dev" sem dados/versao.json), vem de Dados.texto_versao()
 var _msg := ""               # aviso nas telas do online (erro, conectando...)
 var _comecou_teste := false
 var _caiu_teste := false
 var _mouse_ult := Vector2(-1, -1)
 
 
-## Carimbo de versão: o número vem do project.godot (application/config/version, mexe à mão) e a data e o commit, do
-## dados/versao.json que o gerar_versao.sh escreve antes de exportar. Sem o arquivo (rodando pelo editor) fica "dev".
-static func texto_versao() -> String:
-	var v := "v" + str(ProjectSettings.get_setting("application/config/version", "?"))
-	var f := FileAccess.open("res://dados/versao.json", FileAccess.READ)
-	var d = JSON.parse_string(f.get_as_text()) if f else null
-	if d is Dictionary and str(d.get("data", "")) != "" and str(d.get("commit", "")) != "":
-		return "%s · %s · %s" % [v, d.data, d.commit]
-	return v + " · dev"
-
-
 func _ready() -> void:
-	_versao = texto_versao()
+	_versao = Dados.texto_versao()
 	_teclas()
 	_ler_args()
 	if _args.has("qualidade"):   # teste: --qualidade=alta|media|baixa vale só nesta execução (não grava nas opções)
@@ -1040,7 +1029,7 @@ func _desenhar() -> void:
 			if _msg != "":
 				_txt(Vector2(0, 302), _msg, 8, Color(1, 0.6, 0.5))
 			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
-			_txt(Vector2(0, 354), _versao, 8, Color(0.4, 0.4, 0.5, 0.7), W - 4, HORIZONTAL_ALIGNMENT_RIGHT)
+			_txt(Vector2(0, 354), _versao, 8, Color(0.72, 0.74, 0.86, 0.85), W - 4, HORIZONTAL_ALIGNMENT_RIGHT)
 		"opcoes":
 			_fundo()   # a tela de Opções desenha por cima (tela_opcoes.gd)
 		"creditos":
