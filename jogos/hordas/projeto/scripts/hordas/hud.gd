@@ -10,6 +10,7 @@ const Interface := preload("res://scripts/hordas/interface.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
+const Mochila := preload("res://scripts/hordas/mochila.gd")
 const OPS_PAUSA := ["Continuar", "Opções", "Desistir da partida"]
 
 var arena: Node
@@ -201,6 +202,7 @@ func _desenhar() -> void:
 	if not arena.duelo_ativo:
 		_conjuntos()
 	_especial()
+	_provisoes()
 	if not arena.duelo_ativo:
 		# vida do chefe
 		var chefes: Array = arena.chefes()
@@ -311,6 +313,40 @@ func _especial() -> void:
 	var pad := not Input.get_connected_joypads().is_empty()
 	_txt(Vector2(W - 214, r.position.y - 5), ("Y" if pad else "E") + ": " + str(e.d.get("nome", "")), 8,
 		Color(1, 0.9, 0.5) if pronto else Color(0.65, 0.68, 0.78), HORIZONTAL_ALIGNMENT_RIGHT, 206)
+
+
+## Consumíveis da mochila (#72) no canto de baixo à esquerda: um quadro por item com o ícone, a tecla e quantos restam; a poção
+## ativa mostra uma barrinha com o tempo; a comida e o amuleto aparecem pequenos em cima. No controle, L3 usa o escolhido e R3 troca.
+func _provisoes() -> void:
+	var p = arena.provisoes
+	if p == null:
+		return
+	var lado := 24.0
+	var y := H - lado - 12.0
+	var pad := not Input.get_connected_joypads().is_empty()
+	for i in p.slots.size():
+		var id := str(p.slots[i])
+		var n := int(p.restantes.get(id, 0))
+		var r := Rect2(8.0 + i * (lado + 8.0), y, lado, lado)
+		var escolhido: bool = pad and i == p.sel
+		_tela.draw_rect(r.grow(2.0), Color(1, 0.85, 0.35) if escolhido else (Color(0.4, 0.45, 0.6) if n > 0 else Color(0.2, 0.2, 0.26)))
+		_tela.draw_rect(r, Color(0.06, 0.06, 0.1))
+		Mochila.desenhar_icone(_tela, id, r.grow(-2.0), n <= 0)
+		_txt(Vector2(r.position.x + 1, r.position.y + lado + 9), "%s" % ("L3" if escolhido else str(i + 1)), 8, Color(0.8, 0.82, 0.9) if n > 0 else Color(0.4, 0.4, 0.45))
+		_txt(Vector2(r.position.x, r.position.y + 9), "x%d" % n, 8, Color(1, 1, 1) if n > 0 else Color(0.5, 0.5, 0.55), HORIZONTAL_ALIGNMENT_RIGHT, lado - 1.0)
+	var x := 8.0
+	var y2 := y - 20.0
+	for b in p.buffs:
+		var d: Dictionary = Mochila.item(str(b.id))
+		Mochila.desenhar_icone(_tela, str(b.id), Rect2(x, y2, 14.0, 14.0))
+		_tela.draw_rect(Rect2(x, y2 + 15.0, 14.0, 2.0), Color(0, 0, 0, 0.7))
+		_tela.draw_rect(Rect2(x, y2 + 15.0, 14.0 * clampf(b.t / b.tmax, 0.0, 1.0), 2.0), Color(float(d.cor[0]), float(d.cor[1]), float(d.cor[2])))
+		x += 18.0
+	for id in p.comidas_ativas():
+		Mochila.desenhar_icone(_tela, str(id), Rect2(x, y2, 14.0, 14.0))
+		x += 18.0
+	if p.amuleto != "":
+		Mochila.desenhar_icone(_tela, p.amuleto, Rect2(x, y2, 14.0, 14.0), p.fenix_gasta)
 
 
 func _energia_forma() -> void:

@@ -15,6 +15,7 @@ const CD_DANO := 0.45               # anfitrião: intervalo mínimo entre danos 
 const REVIVER_BASE := 3.0           # segundos pra levantar alguém, divididos pelo "reviver" de quem ajuda
 const REVIVER_DIST := 40.0
 const Mapa := preload("res://scripts/hordas/mapa.gd")
+const Mochila := preload("res://scripts/hordas/mochila.gd")
 const ESPERA_PRONTOS := 60.0        # fim da fase: espera todo mundo terminar as cartas e votar no mapa, até 60 s (depois de nó sem combate, "espera_voto" de dados/mapa.json)
 const TODOS_CAIDOS := 1.0           # todo mundo caído por 1 s = fim da corrida
 
@@ -30,6 +31,7 @@ var _t_envio := 0.0
 var _acertos := PackedFloat32Array()  # cliente: acertos ainda não mandados
 var _mortes := PackedFloat32Array()   # anfitrião: mortes ainda não mandadas
 var _cd_dano := {}
+var _usos := {}                 # anfitrião: peer -> {consumível: quantos já usou}, pra conferir com a mochila que ele declarou
 var _prontos := {}              # anfitrião, votação do mapa: peer -> faixa votada
 var _t_prontos := -1.0
 var _t_caidos := 0.0
@@ -410,6 +412,22 @@ func evento(nome: String, d: Dictionary) -> void:
 		"objetivo":   # estado do objetivo do andar (objetivos.gd): o anfitrião roda, o cliente só mostra e paga a própria parte
 			if not host and arena.objetivo:
 				arena.objetivo.aplicar(d)
+		"consumivel":   # alguém usou um consumível (o anfitrião já conferiu): quem usou aplica no corpo, os outros veem
+			var id := str(d.get("id", ""))
+			var peer := int(d.get("peer", 0))
+			if Mochila.tipo(id) != "consumivel":
+				return
+			if peer == Rede.eu():
+				if arena.provisoes:
+					arena.provisoes.consumir(id)
+			else:
+				Mochila.ver_outro(arena, peer, id)
+			if host and not arena.duelo_ativo:   # o gelo mexe na IA dos vírus: só o anfitrião aplica, em volta de quem usou
+				var c: Vector2 = arena.jogador.centro()
+				if peer != Rede.eu():
+					var r: Dictionary = Rede.remotos.get(peer, {})
+					c = Vector2(float(r.get("x", c.x)), float(r.get("y", c.y + 22.0)) - 22.0)
+				Mochila.aplicar_mundo(arena, id, c)
 		"tela_azul_caiu":
 			arena.tela_azul_caiu()
 		"fim_corrida":
@@ -436,6 +454,31 @@ func aviso(quem: int, nome: String, valor: float, peer: int) -> void:
 		"caiu":
 			if arena.duelo_ativo:
 				arena.duelo.caiu_online(quem, peer)
+		"usar":
+			_usar_consumivel(quem, int(valor))
+
+
+## Anfitrião: um jogador (ou o próprio anfitrião) pede pra usar o consumível do slot dele. Confere contra a mochila que o anfitrião
+## aceitou na sala (itens que existem, na ordem do catálogo) e conta os usos: não passa do que ele declarou. Só então manda o evento
+## "consumivel" a todos; quem usou aplica o efeito no corpo dele quando o evento chega.
+func _usar_consumivel(quem: int, slot: int) -> void:
+	if not anfitriao() or arena.duelo_ativo or arena.acabou:
+		return
+	var m := Rede.mochila_de(quem)
+	var sl := Mochila.slots(m)
+	if slot < 0 or slot >= sl.size():
+		print("CONSUMIVEL recusado: peer=%d slot=%d (não tem)" % [quem, slot])
+		return
+	var id: String = sl[slot]
+	var gastos: Dictionary = _usos.get(quem, {})
+	var tem := int(m.itens[id])
+	if int(gastos.get(id, 0)) >= tem:
+		print("CONSUMIVEL recusado: peer=%d %s (já usou os %d que declarou)" % [quem, id, tem])
+		return
+	gastos[id] = int(gastos.get(id, 0)) + 1
+	_usos[quem] = gastos
+	print("CONSUMIVEL ok: peer=%d usou %s (%d de %d)" % [quem, id, gastos[id], tem])
+	Rede.evento("consumivel", {"peer": quem, "id": id})
 
 
 func golpe(quem: int, dano_: float, empurrao: Vector2) -> void:

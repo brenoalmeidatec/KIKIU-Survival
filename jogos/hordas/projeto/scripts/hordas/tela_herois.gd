@@ -10,6 +10,8 @@ const Criacao := preload("res://scripts/hordas/criacao.gd")
 const Paleta := preload("res://scripts/hordas/paleta.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 const TelaCriacao := preload("res://scripts/hordas/tela_criacao.gd")
+const TelaPreparo := preload("res://scripts/hordas/tela_preparo.gd")
+const Mochila := preload("res://scripts/hordas/mochila.gd")
 const W := 640.0
 const H := 360.0
 const COLUNAS := 3
@@ -77,6 +79,8 @@ func _input(e: InputEvent) -> void:
 				_ir(0, 1)
 			KEY_ENTER, KEY_KP_ENTER, KEY_Z, KEY_E:
 				_escolher()
+			KEY_B:
+				_abrir_bau()
 			KEY_DELETE, KEY_X:
 				_apagar()
 			KEY_ESCAPE:
@@ -118,6 +122,23 @@ func _escolher() -> void:
 			queue_free()
 		else:
 			_recarregar())
+
+
+## B: o baú pessoal do herói da vaga (só olhar e descartar). O baú morre junto com o herói.
+func _abrir_bau() -> void:
+	if sel >= _ids.size():
+		return
+	var id := str(_ids[sel])
+	_criando = true   # a tela do baú é que escuta as teclas agora
+	var t := TelaPreparo.new()
+	t.modo = "bau"
+	t.heroi_id = id
+	t.bau = Mochila.bau_limpo(Criacao.bau_de(id))
+	add_child(t)
+	t.descartou.connect(func(_i: String): Criacao.definir_bau(id, t.bau))
+	t.fechou.connect(func(_ok: bool, _m: Dictionary):
+		_criando = false
+		_quadro = Engine.get_process_frames())
 
 
 func _apagar() -> void:
@@ -165,7 +186,7 @@ func _desenhar() -> void:
 			_txt(q.position + Vector2(8, 106), "Defeito: " + str(Criacao.defeitos().get(def, {}).get("nome", def)), 8, Color(1, 0.65, 0.5), 190, HORIZONTAL_ALIGNMENT_LEFT)
 		else:
 			_txt(q.position + Vector2(8, 106), "Sem defeito", 8, Color(0.5, 0.52, 0.62), 190, HORIZONTAL_ALIGNMENT_LEFT)
-	_txt(Vector2(0, 346), "Setas: vaga   Enter: jogar ou criar   Delete: apagar   Esc: voltar", 8, Color(0.55, 0.55, 0.62))
+	_txt(Vector2(0, 346), "Setas: vaga   Enter: jogar ou criar   B: baú   Delete: apagar   Esc: voltar", 8, Color(0.55, 0.55, 0.62))
 	if confirmando != "":
 		var nome := str(Dados.json("herois").get(confirmando, {}).get("nome", "o herói"))
 		_tela.draw_rect(Rect2(0, 0, W, H), Color(0, 0, 0, 0.75))

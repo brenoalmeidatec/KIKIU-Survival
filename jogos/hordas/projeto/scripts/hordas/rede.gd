@@ -11,10 +11,11 @@ signal caiu(msg: String)                     # a sala acabou (anfitrião saiu, i
 
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
+const Mochila := preload("res://scripts/hordas/mochila.gd")
 const ENVIO := 1.0 / 15.0     # posições por segundo
 # eventos que o anfitrião pode mandar (o resto é ignorado)
 const EVENTOS := ["anuncio", "chefe_final", "fase_completa", "proxima_fase", "tela_azul_caiu", "fim_corrida",
-	"duelo_iniciar", "luta", "eliminado", "duelo_fim", "objetivo"]
+	"duelo_iniciar", "luta", "eliminado", "duelo_fim", "objetivo", "consumivel"]
 
 var PORTA := 7777
 var MAX := 6
@@ -27,6 +28,7 @@ var porta_aberta := 7777     # porta em que a sala deste computador abriu (a lis
 var em_partida := false
 var remotos := {}            # peer -> {x, y, mx, my, hp, caido, lado}  (o pé do boneco, como jogador.position)
 var online_no: Node = null   # online.gd da partida aberta (avisa quando abre e fecha)
+var mochilas_locais := {}    # teste: herói -> mochila que ESTA máquina declara (--mochila=); normalmente vale a última montada no Preparo (criacao.gd)
 var _envio_t := 0.0
 
 
@@ -261,7 +263,48 @@ func escolher(heroi: String) -> void:
 			_lista.rpc(jogadores)
 			mudou.emit()
 	elif cliente():
-		_escolher.rpc_id(1, heroi, apelido, ficha)
+		_escolher.rpc_id(1, heroi, apelido, ficha, _mochila_local(heroi))
+
+
+## Por que o anfitrião recusa a mochila que esse jogador declarou ("" = aceita). Herói do elenco não leva mochila (pula o Preparo);
+## herói criado leva só o que cabe nos espaços da raça e da classe dele, com itens que existem no itens.json e dentro dos limites.
+func erro_mochila(m, heroi, ficha) -> String:
+	if not m is Dictionary:
+		return "Mochila recusada: formato inválido."
+	if m.is_empty() or (m.get("itens", {}) is Dictionary and m.get("itens", {}).is_empty() and str(m.get("amuleto", "")) == ""):
+		return ""
+	if not heroi is String or not Criacao.eh_criado(heroi):
+		return "Mochila recusada: esse herói não leva mochila."
+	var rc := _raca_classe(heroi, ficha)
+	var e := Mochila.erro(m, rc[0], rc[1])
+	return "" if e == "" else "Mochila recusada: " + e + "."
+
+
+func _raca_classe(heroi: String, ficha) -> Array:
+	var p := Criacao.partes(heroi)
+	if not p.is_empty():
+		return p
+	if ficha is Dictionary:
+		return [str(ficha.get("raca", "")), str(ficha.get("classe", ""))]
+	return ["", ""]
+
+
+## A mochila que ESTA máquina declara pro herói: a do teste (--mochila=), ou a última do Preparo ajustada ao que há no baú.
+func _mochila_local(heroi: String) -> Dictionary:
+	if not Criacao.eh_criado(heroi):
+		return {}
+	if mochilas_locais.has(heroi):
+		return mochilas_locais[heroi]
+	var ult := Criacao.mochila_de(heroi)
+	if ult.is_empty():
+		return {}
+	return Mochila.ajustar_ao_bau(ult, Mochila.bau_limpo(Criacao.bau_de(heroi)), heroi)
+
+
+## A mochila do jogador, a que o anfitrião aceitou (todos recebem na lista de jogadores). {} = sem mochila.
+func mochila_de(peer: int) -> Dictionary:
+	var m = jogadores.get(peer, {}).get("mochila", {})
+	return m if m is Dictionary else {}
 
 
 ## A ficha do herói criado que EU escolhi (a tabela local guarda a ficha de cada herói salvo); {} pra herói fixo.
@@ -277,6 +320,11 @@ func _entrada_propria(heroi: String, pronto: bool) -> Dictionary:
 	var f := _ficha_local(heroi)
 	if not f.is_empty():
 		e["ficha"] = f
+	var m := _mochila_local(heroi)
+	if not m.is_empty() and erro_mochila(m, heroi, f) == "":   # a minha própria mochila passa pela mesma conferência
+		var rc := _raca_classe(heroi, f)
+		e["mochila"] = Mochila.limpar(m, rc[0], rc[1])
+		print("MOCHILA aceita: peer=%d heroi=%s itens=%s amuleto=%s" % [eu(), heroi, JSON.stringify(e.mochila.itens), e.mochila.amuleto])
 	return e
 
 
@@ -303,7 +351,7 @@ func trocar_apelido(nome: String) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _escolher(heroi: String, nome := "", ficha = {}) -> void:
+func _escolher(heroi: String, nome := "", ficha = {}, mochila = {}) -> void:
 	if not anfitriao():
 		return
 	var quem := multiplayer.get_remote_sender_id()
@@ -316,6 +364,11 @@ func _escolher(heroi: String, nome := "", ficha = {}) -> void:
 	var erro := erro_heroi(heroi, ficha)   # herói criado: a ficha vem de fora, cada número é conferido aqui
 	if erro != "":
 		_recusado.rpc_id(quem, erro)
+		return
+	var erro_m := erro_mochila(mochila, heroi, ficha)   # a mochila vem de fora: ids, limites e espaços conferidos aqui
+	if erro_m != "":
+		print("MOCHILA recusada: peer=%d %s" % [quem, erro_m])
+		_recusado.rpc_id(quem, erro_m)
 		return
 	var criado := Criacao.eh_criado(heroi)
 	if criado and _id_criado_em_uso(quem, heroi):
@@ -330,10 +383,17 @@ func _escolher(heroi: String, nome := "", ficha = {}) -> void:
 	jogadores[quem]["heroi"] = heroi
 	jogadores[quem]["nome"] = limpar_nome(str(nome)) if typeof(nome) == TYPE_STRING else ""
 	jogadores[quem].erase("ficha")
+	jogadores[quem].erase("mochila")
 	if criado and not Criacao.partes(heroi).is_empty():
 		pass   # id "c:raça:classe": sem ficha
 	elif criado:
 		jogadores[quem]["ficha"] = Criacao.validar_ficha(ficha)   # a ficha limpa, que o anfitrião reenvia a todos
+	if criado and mochila is Dictionary and not mochila.is_empty():
+		var rc := _raca_classe(heroi, jogadores[quem].get("ficha", ficha))
+		var limpa := Mochila.limpar(mochila, rc[0], rc[1])
+		if not limpa.is_empty() and not Mochila.vazio(limpa):
+			jogadores[quem]["mochila"] = limpa   # a mochila limpa, que o anfitrião reenvia a todos
+			print("MOCHILA aceita: peer=%d heroi=%s itens=%s amuleto=%s" % [quem, heroi, JSON.stringify(limpa.itens), limpa.amuleto])
 	_registrar_criados()
 	_lista.rpc(jogadores)
 	if novo:
@@ -483,7 +543,7 @@ func avisar(nome: String, valor := 0.0, peer := 0) -> void:
 @rpc("any_peer", "reliable")
 func _aviso(nome: String, valor: float, peer: int) -> void:
 	var quem := multiplayer.get_remote_sender_id()
-	if anfitriao() and jogadores.has(quem) and nome in ["voto", "pronto", "forca", "caiu"] and _num(valor) \
+	if anfitriao() and jogadores.has(quem) and nome in ["voto", "pronto", "forca", "caiu", "usar"] and _num(valor) \
 			and online_no and is_instance_valid(online_no):
 		online_no.aviso(quem, nome, valor, peer)
 

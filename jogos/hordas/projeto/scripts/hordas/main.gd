@@ -17,6 +17,8 @@ const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
 const TelaCalor := preload("res://scripts/hordas/tela_calor.gd")
+const TelaPreparo := preload("res://scripts/hordas/tela_preparo.gd")
+const Mochila := preload("res://scripts/hordas/mochila.gd")
 const Calor := preload("res://scripts/hordas/calor.gd")
 const TelaCriacao := preload("res://scripts/hordas/tela_criacao.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
@@ -31,10 +33,12 @@ const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
 	"dash": [KEY_SPACE, KEY_SHIFT], "confirmar": [KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_Z], "voltar": [KEY_ESCAPE],
 	"resortear": [KEY_R], "pular": [KEY_X], "banir": [KEY_B], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F], "falar": [KEY_V], "especial": [KEY_E],
+	"consumivel1": [KEY_1], "consumivel2": [KEY_2], "consumivel3": [KEY_3], "consumivel_usar": [], "consumivel_trocar": [],
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP], "baixo": [JOY_BUTTON_DPAD_DOWN], "esquerda": [JOY_BUTTON_DPAD_LEFT], "direita": [JOY_BUTTON_DPAD_RIGHT],
 	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y], "pular": [JOY_BUTTON_LEFT_SHOULDER], "banir": [JOY_BUTTON_BACK], "transformar": [JOY_BUTTON_X], "especial": [JOY_BUTTON_Y],
+	"consumivel_usar": [JOY_BUTTON_LEFT_STICK], "consumivel_trocar": [JOY_BUTTON_RIGHT_STICK],
 }
 
 var _tela := Control.new()
@@ -43,6 +47,7 @@ var _estado := "titulo"      # titulo, herois, partida, fim
 var _estado_antes := "titulo"  # pra perceber a troca de tela e tocar a transição
 var _apelido_txt := ""       # campo de texto do apelido (lobby, tecla N)
 var _calor := {}              # calor escolhido pra próxima corrida {id: nível} (tela_calor.gd)
+var _mochila := {}            # mochila escolhida no Preparo pra próxima corrida do herói criado (tela_preparo.gd)
 var _criados: Array = []     # heróis criados salvos (#72, até 6): vão pra tela "Meus heróis"
 var _aviso_heroi := ""        # "fulano morreu de vez" na escolha de heróis (o jogo fechou no meio da corrida)
 var _fundo_tipos: Array = []  # monstros comuns das regiões que passeiam no fundo dos menus
@@ -51,8 +56,8 @@ var _sel_sala := 0            # tela da lista de salas
 var _publico_txt := ""        # anfitrião: campo do endereço público (tecla E no lobby)
 var _forcar_t := -10.0       # anfitrião: Enter com gente não pronta avisa; outro Enter em 3 s começa assim mesmo
 ## telas que são a mesma tela pro jogador (só muda o texto): trocar entre elas não tem transição
-const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"], ["sala", "publico"], ["herois", "calor"], ["sala", "calor_sala"],
-	["herois", "criacao"], ["criacao", "calor"]]
+const MESMA_TELA := [["endereco", "conectando"], ["titulo", "opcoes"], ["sala", "apelido"], ["sala", "publico"], ["herois", "calor"], ["sala", "calor_sala"], ["sala", "preparo_sala"],
+	["herois", "criacao"], ["criacao", "calor"], ["herois", "preparo"], ["criacao", "preparo"], ["preparo", "calor"]]
 var _sel := 0
 var _arena: Node2D
 var _resumo := {}
@@ -88,6 +93,8 @@ func _ready() -> void:
 		var fid := _ficha_de_args(str(_args.ficha))
 		if fid != "":
 			_args["heroi"] = fid
+	if _args.has("mochila") and _args.has("heroi"):   # teste: --mochila=pocao_cura:2,bomba,amuleto_corvo,pao_duro (a que esta máquina declara no online, ou leva no solo)
+		Rede.mochilas_locais[str(_args.heroi)] = Mochila.de_texto(str(_args.mochila))
 	_endereco = _ler_endereco()
 	_calor = Calor.de_texto(str(_args.calor)) if _args.has("calor") else Calor.ler()   # a última escolha de calor (ou a do teste)
 	Rede.mudou.connect(_rede_mudou)
@@ -197,7 +204,7 @@ func _escolher_heroi(i: int) -> void:
 	add_child(t)
 	t.jogar.connect(func(id: String):
 		_criados = Criacao.carregar(false).ids
-		_abrir_calor(id))
+		_abrir_preparo(id))
 	t.fechou.connect(func():
 		_criados = Criacao.carregar(false).ids
 		_estado = "herois")
@@ -356,6 +363,7 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	var o: Dictionary = opcoes if online else _args
 	_arena = Arena.new()
 	_arena.heroi_id = heroi
+	_arena.mochila_cfg = _mochila_da_corrida(heroi, online)
 	_arena.bot = _args.has("bot")
 	_arena.eh_online = online
 	# semente da corrida: online vem do anfitrião (igual pra todos); solo sorteia, ou --semente=N pra repetir uma partida
@@ -386,6 +394,32 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 		_arena.iniciar_duelo_teste(int(o.duelo))
 	_estado = "partida"
 	_t = 0.0
+
+
+## A mochila que o herói leva nesta corrida (#72). Herói fixo: nenhuma. Online: a que o anfitrião aceitou. Solo: a do Preparo (ou a do
+## teste, --mochila=). Numa partida de verdade, o que ela leva SAI do baú agora (volta se ele vencer, e some se ele morrer).
+func _mochila_da_corrida(heroi: String, online: bool) -> Dictionary:
+	var m := {}
+	if online:
+		m = Rede.mochila_de(Rede.eu())
+	elif Criacao.eh_criado(heroi):
+		if _args.has("mochila"):
+			m = Mochila.de_texto(str(_args.mochila))
+		else:
+			m = _mochila
+	_mochila = {}
+	if m.is_empty():
+		return {}
+	var h: Dictionary = Dados.json("herois").get(heroi, {})
+	if Mochila.erro(m, str(h.get("raca", "")), str(h.get("classe", ""))) != "":
+		print("MOCHILA recusada: ", Mochila.erro(m, str(h.get("raca", "")), str(h.get("classe", ""))))
+		return {}
+	if _persistir() and Criacao.salvo(heroi):
+		var bau := Mochila.bau_limpo(Criacao.bau_de(heroi))
+		if not Mochila.cabe_no_bau(bau, m):   # o baú mudou desde que ela foi montada: leva só o que há
+			m = Mochila.ajustar_ao_bau(m, bau, heroi)
+		Criacao.definir_bau(heroi, Mochila.retirar(bau, m))
+	return m
 
 
 ## Tipos comuns (que o diretor sorteia) de um conjunto de inimigos: "virus" ou "horror".
@@ -421,6 +455,47 @@ func _salvar_endereco() -> void:
 	var f := FileAccess.open(SAVE_ONLINE, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify({"endereco": _endereco, "nome": Rede.apelido, "publico": Salas.endereco_publico}))
+
+
+## Depois de escolher o herói CRIADO: a tela de Preparo (#72, marcos 3 e 4), onde ele monta a mochila com o que tem no baú.
+## Enter segue pro Calor, Esc volta pros heróis. Os heróis fixos (Hazaki, Nicão, Lucas) não têm baú: pulam o Preparo e vão direto pro Calor.
+func _abrir_preparo(heroi: String) -> void:
+	if not Criacao.eh_criado(heroi) or not _persistir() or not Criacao.salvo(heroi):
+		_abrir_calor(heroi)
+		return
+	_estado = "preparo"
+	var t := TelaPreparo.new()
+	t.heroi_id = heroi
+	t.bau = Mochila.bau_limpo(Criacao.bau_de(heroi))
+	t.mochila = Criacao.mochila_de(heroi)
+	add_child(t)
+	t.fechou.connect(func(ok: bool, escolha: Dictionary):
+		if ok:
+			_mochila = escolha
+			Criacao.definir_mochila(heroi, escolha)
+			_abrir_calor(heroi)
+		else:
+			_estado = "herois")
+
+
+## Lobby online (tecla P): monta a mochila do herói criado que está na sala. O anfitrião confere e aceita (ou recusa) ao reenviar o herói.
+func _abrir_preparo_sala() -> void:
+	var heroi := Rede.heroi_de(Rede.eu())
+	if not Criacao.eh_criado(heroi) or not Criacao.salvo(heroi):
+		_msg = "Só herói criado e salvo leva mochila."
+		Som.ui("erro")
+		return
+	_estado = "preparo_sala"
+	var t := TelaPreparo.new()
+	t.heroi_id = heroi
+	t.bau = Mochila.bau_limpo(Criacao.bau_de(heroi))
+	t.mochila = Criacao.mochila_de(heroi)
+	add_child(t)
+	t.fechou.connect(func(ok: bool, escolha: Dictionary):
+		_estado = "sala"
+		if ok:
+			Criacao.definir_mochila(heroi, escolha)
+			Rede.escolher(heroi))   # reenvia o herói com a mochila nova
 
 
 ## Depois de escolher o herói: a tela do Calor. Enter começa a corrida com o calor escolhido, Esc volta pros heróis.
@@ -509,6 +584,8 @@ func _rede_caiu(msg: String) -> void:
 	if _arena:
 		if Criacao.eh_criado(_arena.heroi_id) and _persistir():
 			Criacao.sobreviveu(_arena.heroi_id)   # cair a conexão não é morrer
+			if _arena.provisoes:   # e o que não foi usado da mochila volta pro baú (o que achou fica pra lá: a corrida não acabou)
+				_trazer_pra_casa(_arena.heroi_id, {"mochila": _arena.provisoes.sobra(), "achados": []})
 		_arena.queue_free()
 		_arena = null
 	get_tree().paused = false
@@ -636,6 +713,10 @@ func _input(e: InputEvent) -> void:
 		_estado = "apelido"
 		get_viewport().set_input_as_handled()
 		return
+	if _estado == "sala" and e is InputEventKey and e.pressed and not e.echo and e.physical_keycode == KEY_P:
+		_abrir_preparo_sala()   # P no lobby: a mochila do herói criado (o anfitrião confere)
+		get_viewport().set_input_as_handled()
+		return
 	if _estado == "apelido" and e is InputEventKey and e.pressed:
 		_editar_apelido(e)
 		return
@@ -747,6 +828,17 @@ func _clique_menu(e: InputEventMouseButton) -> void:
 				_fim_voltar()
 
 
+## "Trazer pra casa" (#72, marco 4): o herói criado sobreviveu, então o que sobrou da mochila (consumíveis não usados e o amuleto) e o que
+## ele achou na corrida voltam pro baú. O que não couber nos espaços do baú se perde (a tela de fim conta o que foi e o que ficou).
+func _trazer_pra_casa(h: String, res: Dictionary) -> void:
+	if not res.has("mochila") or not Criacao.salvo(h):
+		return
+	var r := Mochila.trazer(Mochila.bau_limpo(Criacao.bau_de(h)), res.mochila, res.get("achados", []))
+	Criacao.definir_bau(h, r.bau)
+	res["trazido"] = r.trazidos
+	res["perdido_bau"] = r.perdidos
+
+
 func _terminou(res: Dictionary) -> void:
 	if _arena == null:
 		return
@@ -761,6 +853,7 @@ func _terminou(res: Dictionary) -> void:
 			_recordes.erase(h)
 		else:
 			Criacao.sobreviveu(h)
+			_trazer_pra_casa(h, res)
 	if not res.has("heroi_perdido"):
 		var rec: Dictionary = _recordes.get(h, {})
 		if res.tempo > float(rec.get("tempo", 0)):
@@ -975,7 +1068,7 @@ func _desenhar() -> void:
 			if _msg != "":
 				_txt(Vector2(0, 190), _msg, 8, Color(1, 0.6, 0.5) if _estado == "endereco" else Color(0.6, 0.9, 1))
 			_txt(Vector2(0, 330), "Ctrl+V: colar   Enter: conectar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
-		"sala", "apelido", "publico", "calor_sala":
+		"sala", "apelido", "publico", "calor_sala", "preparo_sala":
 			_fundo()
 			_txt(Vector2(0, 40), "Sala online", 16, Color.WHITE)
 			if Rede.anfitriao():
@@ -1035,10 +1128,10 @@ func _desenhar() -> void:
 			# calor da sala, pra todos (o anfitrião escolhe com C)
 			var cs := Rede.calor_sala()
 			_txt(Vector2(W - 110, 36), "Calor %d" % cs, 8, Color(1, 0.7, 0.35) if cs > 0 else Color(0.55, 0.55, 0.6), 100, HORIZONTAL_ALIGNMENT_RIGHT)
-			var dica := "Setas: herói  N: nome  " + ("Enter: começar  C: calor  L/E: lista  " if Rede.anfitriao() else "Enter: pronto  ") + "Esc: sair"
+			var dica := "Setas: herói  N: nome  P: mochila  " +("Enter: começar  C: calor  L/E: lista  " if Rede.anfitriao() else "Enter: pronto  ") + "Esc: sair"
 			_txt(Vector2(0, 340), dica, 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 353), "T: chat   V (segurar): falar   1-6: silenciar alguém", 8, Color(0.5, 0.52, 0.62))
-		"herois", "calor", "criacao":
+		"herois", "calor", "criacao", "preparo":
 			_fundo()
 			_txt(Vector2(0, 40), "Escolha o herói", 16, Color.WHITE)
 			if _aviso_heroi != "":
@@ -1091,6 +1184,8 @@ func _desenhar() -> void:
 					_txt(Vector2(0, 80), "de %d lutadores. Tenta de novo!" % du.total, 8, Color(0.9, 0.8, 0.8))
 				_txt(Vector2(0, 104), "Duelo %ds   Derrubou %d   Dano %d" % [int(du.duracao), du.abates, int(du.dano)], 8)
 				_txt(Vector2(0, 120), "Corrida: %02d:%02d  %d fases  Nível %d  Abates %d" % [int(r.tempo) / 60, int(r.tempo) % 60, r.get("fase", 1), r.nivel, r.abates], 8, Color(0.7, 0.75, 0.85))
+				if r.has("trazido"):
+					_txt(Vector2(0, 138), "Trouxe pra casa: " + Mochila.resumo(r.trazido), 8, Color(0.6, 0.9, 0.7))
 				# ranking à esquerda, dano por arma à direita
 				_txt(Vector2(60, 156), "Ranking", 8, Color(0.7, 0.8, 1), 200, HORIZONTAL_ALIGNMENT_LEFT)
 				var ry := 176.0
@@ -1110,6 +1205,10 @@ func _desenhar() -> void:
 					_txt(Vector2(0, 80), "Você chegou até a fase %d de %d. Tenta de novo!" % [r.get("fase", 1), r.get("fases", 1)], 8, Color(0.9, 0.8, 0.8))
 					if r.has("heroi_perdido"):   # herói criado morre de vez
 						_txt(Vector2(0, 96), "%s morreu de vez. Crie outro herói na escolha de heróis." % str(r.heroi_perdido), 8, Color(1, 0.45, 0.4))
+				if r.has("trazido"):   # herói criado vivo: o que voltou pro baú (#72)
+					_txt(Vector2(0, 92), "Trouxe pra casa: " + Mochila.resumo(r.trazido), 8, Color(0.6, 0.9, 0.7))
+					if not r.get("perdido_bau", {}).is_empty():
+						_txt(Vector2(0, 102), "Sem lugar no baú: " + Mochila.resumo(r.perdido_bau), 8, Color(1, 0.7, 0.45))
 				var tempo := float(r.get("tempo", 0))
 				_txt(Vector2(0, 112), "Tempo %02d:%02d   Nível %d   Abates %d" % [int(tempo) / 60, int(tempo) % 60, r.get("nivel", 1), r.get("abates", 0)], 8)
 				if _novo_recorde:
@@ -1252,6 +1351,29 @@ func _print_tela(qual: String) -> void:
 			if _args.has("apagar"):
 				await get_tree().process_frame
 				th.confirmando = str(Criacao.carregar(false).ids[th.sel])
+		"preparo", "bau":   # Preparo e Baú (#72, marcos 3 e 4): um herói de teste (arquivo próprio) com o kit inicial; --mochila= já deixa itens escolhidos
+			Criacao.arquivo = "user://teste_preparo.json"
+			Criacao.apagar()
+			var pid := Criacao.salvar_ficha(_ficha_de_texto("Brutus/orc/guerreiro/manco/3,2,0,0,0/4,1,2"))
+			var bau := Mochila.bau_limpo(Criacao.bau_de(pid))
+			for k in ["carne_seca", "pocao_vigor", "pergaminho_gelo", "amuleto_trevo", "amuleto_fenix"]:   # uns itens a mais pra lista ter o que mostrar
+				bau[k] = 1
+			bau["pocao_cura"] = 3
+			Criacao.definir_bau(pid, bau)
+			_estado = "preparo"
+			var tp := TelaPreparo.new()
+			tp.heroi_id = pid
+			tp.bau = bau
+			tp.modo = qual
+			if qual == "preparo":
+				tp.mochila = Mochila.de_texto(str(_args.get("mochila", "pao_duro,pocao_cura:2,bomba,amuleto_corvo")))
+			add_child(tp)
+			await get_tree().process_frame
+			tp._sel = int(_args.get("vaga", 0))
+			tp._rolar()
+		"mochila_hud":   # HUD com a mochila (#72): uma corrida com o herói criado de teste e a mochila de --mochila=
+			_comecar(str(_args.get("heroi", "c:orc:guerreiro")))
+			await get_tree().create_timer(float(_args.get("espera", 3.0))).timeout
 		"especial":   # --heroi=X --estresse=N: usa o especial no meio dos inimigos e tira o print depois de --espera s
 			_comecar(str(_args.get("heroi", "hazaki")))
 			await get_tree().create_timer(1.0).timeout
@@ -1571,6 +1693,9 @@ func _print_tela(qual: String) -> void:
 			if _args.has("perdido"):   # --perdido: a derrota de um herói criado, que morre de vez
 				_resumo.merge({"vitoria": false, "fase": 7, "fases": 25, "heroi_perdido": "Orc Guerreiro"}, true)
 				_novo_recorde = false
+			if _args.has("trazido"):   # --trazido: o que voltou pro baú de um herói criado que venceu (#72)
+				_resumo["trazido"] = {"pocao_cura": 1, "bomba": 1, "amuleto_corvo": 1, "carne_seca": 1}
+				_resumo["perdido_bau"] = {"pao_duro": 1}
 			_estado = "fim"
 	await get_tree().create_timer(0.6, true, false, true).timeout
 	await RenderingServer.frame_post_draw
