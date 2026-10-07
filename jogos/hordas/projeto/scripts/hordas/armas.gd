@@ -87,6 +87,8 @@ func achar(id: String):
 func adicionar(id: String) -> void:
 	lista.append({"id": id, "nivel": 1, "t": 0.3, "ativo": 0.0, "acertos": {}, "tique": 0.0})
 	preaquecer()
+	if arena:
+		arena.build_mudou()   # etiquetas da arma nova: o conjunto liga na hora (#63)
 
 
 func nivel_max(id: String) -> int:
@@ -109,6 +111,8 @@ func trocar(de: String, para: String) -> void:
 		a.t = 0.1
 		a.ativo = 0.0
 	preaquecer()
+	if arena:
+		arena.build_mudou()   # a evolução tem etiquetas próprias
 
 
 ## Atributos da arma no nível atual (sem os bônus do jogador).

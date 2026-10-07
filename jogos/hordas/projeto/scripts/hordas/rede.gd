@@ -14,7 +14,7 @@ const Criacao := preload("res://scripts/hordas/criacao.gd")
 const ENVIO := 1.0 / 15.0     # posições por segundo
 # eventos que o anfitrião pode mandar (o resto é ignorado)
 const EVENTOS := ["anuncio", "chefe_final", "fase_completa", "proxima_fase", "tela_azul_caiu", "fim_corrida",
-	"duelo_iniciar", "luta", "eliminado", "duelo_fim"]
+	"duelo_iniciar", "luta", "eliminado", "duelo_fim", "objetivo"]
 
 var PORTA := 7777
 var MAX := 6
