@@ -6,6 +6,7 @@ extends Node
 ## Todos: mostram os outros jogadores, cuidam do próprio XP/baú e do próprio corpo caído (reviver).
 ## Desenho em docs/ONLINE_KIKIU.md; o transporte e a validação ficam em rede.gd.
 
+const Elementos := preload("res://scripts/hordas/elementos.gd")
 const Remoto := preload("res://scripts/hordas/remoto.gd")
 const ENVIO := 1.0 / 15.0
 const RAIO_FOTO := 420.0
@@ -191,7 +192,7 @@ func _enviar_fotos() -> void:
 		for ce in cand:
 			var v = ce[1]
 			var flags := (1 if v.elite else 0) | (2 if v.chefe else 0) | (4 if v.flash > 0 else 0) \
-				| (8 if v.estado == 1 else 0) | (16 if v.lento > 0 else 0)
+				| (8 if v.estado == 1 else 0) | (16 if v.lento > 0 else 0) | Elementos.flags_de(v.el_vis)   # 32 congelado, 64 queimando, 128 envenenado (#72)
 			vir.append_array([v.id, tipo_idx(v.tipo), v.pos.x, v.pos.y, clampf(v.hp / v.hpmax, 0.0, 1.0), flags])
 			n += 1
 		var ti := PackedFloat32Array()

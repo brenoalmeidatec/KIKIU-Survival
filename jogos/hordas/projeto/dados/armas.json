@@ -72,6 +72,7 @@
  },
  "pendrive": {
   "etiquetas": ["lamina", "arremesso"],
+  "elemento": "veneno",
   "nome": "Adaga de Arremesso",
   "icone": "adaga",
   "tipo": "projetil",
@@ -107,6 +108,7 @@
  },
  "ssd": {
   "etiquetas": ["lamina", "arremesso", "trovao"],
+  "elemento": "veneno",
   "nome": "Tempestade de Lâminas",
   "icone": "tempestade_laminas",
   "tipo": "projetil",
@@ -231,6 +233,7 @@
  },
  "cafe": {
   "etiquetas": ["fogo"],
+  "elemento": "fogo",
   "nome": "Fogo Grego",
   "icone": "fogo_grego",
   "rampa": ["1a0805", "3a1408", "7a2c0c", "c45a14", "f0921e", "ffd060"],
@@ -264,8 +267,20 @@
    }
   ]
  },
+ "geada": {
+  "etiquetas": ["gelo"],
+  "elemento": "gelo",
+  "nome": "Geada Rachada",
+  "icone": "geada",
+  "rampa": ["0b1a2e", "21507c", "4f98c4", "a3d9ee", "e0f6ff", "ffffff"],
+  "tipo": "poca",
+  "descricao": "Racha o chão em gelo. Quem pisa fica lento e, de tanto gelo, congela.",
+  "base": {"dano": 3, "recarga": 3.4, "quantidade": 1, "area": 1.0, "raio": 44, "duracao": 3.5, "tique": 0.4},
+  "niveis": [{"area": 0.15}, {"quantidade": 1}, {"dano": 3, "duracao": 1.0}, {"area": 0.2}, {"quantidade": 1, "dano": 3}]
+ },
  "garrafa_termica": {
   "etiquetas": ["fogo", "pesado"],
+  "elemento": "fogo",
   "nome": "Inferno Engarrafado",
   "icone": "inferno",
   "rampa": ["2a0d14", "7e2027", "c45a14", "f0921e", "ffd060", "fff2b0"],
@@ -319,6 +334,7 @@
  },
  "roteador_5g": {
   "etiquetas": ["sagrado", "gelo"],
+  "elemento": "gelo",
   "nome": "Sino do Juízo",
   "icone": "sino_juizo",
   "cor": [1.0, 0.92, 0.65],
@@ -337,6 +353,7 @@
  },
  "baforada": {
   "etiquetas": ["fogo"],
+  "elemento": "fogo",
   "nome": "Baforada de Fogo",
   "icone": "dragao",
   "tipo": "baforada",
@@ -396,6 +413,7 @@
  },
  "machados_brasa": {
   "etiquetas": ["lamina", "arremesso", "fogo"],
+  "elemento": "fogo",
   "nome": "Machados em Brasa",
   "icone": "machados_brasa",
   "tipo": "bumerangue",
@@ -407,6 +425,7 @@
  },
  "raio": {
   "etiquetas": ["trovao"],
+  "elemento": "raio",
   "nome": "Raio",
   "icone": "raio",
   "tipo": "raio",
@@ -417,6 +436,7 @@
  },
  "furia_ceus": {
   "etiquetas": ["trovao", "sagrado"],
+  "elemento": "raio",
   "nome": "Fúria dos Céus",
   "icone": "furia_ceus",
   "tipo": "raio",
@@ -437,6 +457,7 @@
  },
  "lanca_ardente": {
   "etiquetas": ["lamina", "fogo"],
+  "elemento": "fogo",
   "nome": "Lança Ardente",
   "icone": "lanca_ardente",
   "tipo": "lanca",

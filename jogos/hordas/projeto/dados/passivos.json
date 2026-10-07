@@ -120,5 +120,41 @@
    "critico": 0.07
   },
   "peso_ia": 1.0
+ },
+ "brasa_viva": {
+  "etiquetas": ["fogo"],
+  "nome": "Brasa Viva",
+  "icone": "brasa_viva",
+  "max": 5,
+  "descricao": "Um carvão que não esfria: +8% de chance de cada golpe pôr fogo no inimigo.",
+  "efeito": {"el_fogo": 0.08},
+  "peso_ia": 0.3
+ },
+ "cristal_geada": {
+  "etiquetas": ["gelo"],
+  "nome": "Cristal de Geada",
+  "icone": "cristal_geada",
+  "max": 5,
+  "descricao": "Frio de outro lugar: +8% de chance de cada golpe pôr gelo no inimigo.",
+  "efeito": {"el_gelo": 0.08},
+  "peso_ia": 0.3
+ },
+ "centelha": {
+  "etiquetas": ["trovao"],
+  "nome": "Centelha Presa",
+  "icone": "centelha",
+  "max": 5,
+  "descricao": "Uma faísca de tempestade num caco de pedra: +8% de chance de cada golpe eletrificar o inimigo.",
+  "efeito": {"el_raio": 0.08},
+  "peso_ia": 0.3
+ },
+ "presa_peconhenta": {
+  "etiquetas": ["sombra"],
+  "nome": "Presa Peçonhenta",
+  "icone": "presa_peconhenta",
+  "max": 5,
+  "descricao": "Ainda pinga: +10% de chance de cada golpe envenenar o inimigo.",
+  "efeito": {"el_veneno": 0.1},
+  "peso_ia": 0.3
  }
 }

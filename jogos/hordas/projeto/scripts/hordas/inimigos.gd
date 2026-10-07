@@ -5,6 +5,7 @@ extends Node2D
 
 const Visual := preload("res://scripts/hordas/visual.gd")
 const Perf := preload("res://scripts/hordas/perf.gd")
+const Elementos := preload("res://scripts/hordas/elementos.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
 const AVISO_ANEL := 0.6   # segundos de aviso (anel vermelho no chão) antes dos tiros em anel (#68)
@@ -38,6 +39,8 @@ class V:
 	var kb := Vector2.ZERO
 	var flash := 0.0
 	var lento := 0.0
+	var el_vis := 0              # estado de elemento pra pintar (bits: 1 fogo, 2 gelo, 4 raio, 8 veneno, 16 congelado); quem manda é elementos.gd
+	var resist: Dictionary = {}  # resistência a elementos (inimigos.json > resist), lida uma vez
 	var atordoado := 0.0         # parado no lugar (rugido do dragão)
 	var elite := false
 	var chefe := false
@@ -112,6 +115,7 @@ const SHADER_BRANCO := "shader_type canvas_item;
 void fragment() { COLOR.rgb = vec3(1.0); }
 "
 var _flash_no := Node2D.new()
+var elementos: Node2D = preload("res://scripts/hordas/elementos.gd").new()   # estados de elemento (#72): fogo, gelo, raio, veneno
 var _flashes: Array = []        # [tex, rect, fonte, alfa], refeito todo quadro no _draw
 
 
@@ -122,6 +126,8 @@ func _ready() -> void:
 	_flash_no.material = m
 	_flash_no.draw.connect(_draw_flashes)
 	add_child(_flash_no)
+	elementos.ino = self
+	add_child(elementos)
 
 
 func _draw_flashes() -> void:
@@ -187,6 +193,8 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.anel = float(dd.get("anel", 0.0))
 	v.invoca = dd.get("invoca", {}) if dd.get("invoca") is Dictionary else {}
 	v.pesado = bool(dd.get("pesado", false))
+	if dd.get("resist") is Dictionary:
+		v.resist = dd.resist
 	v.ppx = float(dd.get("escala", ESCALA))
 	v.sz = v.tam * v.ppx * v.esc
 	v.ritmo = float(dd.get("ritmo", 4.0))
@@ -233,6 +241,8 @@ func vivos() -> int:
 
 func _remover(v: V) -> void:
 	por_id.erase(v.id)
+	if v.el_vis != 0:
+		elementos.vis.erase(v.id)   # cliente: o estado pintado some junto (no anfitrião, elementos.passo solta o registro)
 	var i := lista.find(v)
 	if i >= 0:
 		lista[i] = lista[lista.size() - 1]
@@ -240,6 +250,7 @@ func _remover(v: V) -> void:
 
 
 func limpar() -> void:
+	elementos.limpar()
 	lista.clear()
 	por_id.clear()
 	tiros.clear()
@@ -258,6 +269,7 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 	if not espelho and v.lento < 0.6:   # conjunto Gelo (#63): o golpe deixa o bicho lento (só quem roda a IA vê)
 		v.lento = maxf(v.lento, arena.conj("lento_acerto"))
 	v.arma_ult = arma   # causa do golpe final (mortes violentas)
+	var el_bola: String = v.causa_pend   # o Poder Elemental (#72) põe o elemento da bola aqui
 	v.causa_ult = v.causa_pend
 	v.causa_pend = ""
 	if empurrao.length_squared() > 1.0:
@@ -276,11 +288,20 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 		peso = 12.0
 	v.kb = (v.kb + empurrao / peso).limit_length(KB_MAX)
 	if v.hp <= 0:
+		if (v.el_vis & 16) != 0:   # morreu congelado: estilhaça
+			v.causa_ult = "gelo"
 		_remover(v)
 		_morte_visual(v)
 		arena.inimigo_morreu(v)
 		return true
+	elementos.golpe(v, arma, el_bola)   # sobreviveu: o golpe soma acúmulos de elemento (fogo, gelo, raio, veneno)
 	return false
+
+
+## Põe acúmulos de um elemento (poças com elemento, reações). No duelo o campo não é este nó: quem chama confere has_method.
+func aplicar_elemento(v: V, el: String, n := 1.0, fonte := "") -> void:
+	if not espelho:
+		elementos.aplicar(v, el, n, fonte)
 
 
 ## Anfitrião: acerto que veio de outro computador (o dano e o crítico já foram calculados lá).
@@ -350,6 +371,8 @@ func aplicar_foto(vir: PackedFloat32Array, tir: PackedFloat32Array, onl: Node) -
 			v.flash = maxf(v.flash, 0.05)
 		v.estado = 1 if (flags & 8) != 0 else 0
 		v.lento = 0.1 if (flags & 16) != 0 else 0.0
+		if (flags & 240) != 0 or v.el_vis != 0:
+			elementos.aplicar_vis(v, flags)
 		vistos[id] = true
 	for v in lista.duplicate():
 		if not vistos.has(v.id):
@@ -433,7 +456,10 @@ func atualizar(dt: float, jog: Node2D) -> void:
 	Perf.fim("ini_grade", _p1)
 	if espelho:
 		_atualizar_espelho(dt)
+		if not elementos.vis.is_empty():
+			elementos.queue_redraw()
 		return
+	elementos.passo(dt)   # só quem tem estado (dicionário próprio); o laço abaixo nem olha
 	# quem os vírus perseguem: o jogador local ou, no online, o jogador em pé mais perto
 	var alvos: Array = online.alvos() if online else [[jog.centro(), 0]]
 	if alvos.is_empty():
@@ -502,12 +528,12 @@ func atualizar(dt: float, jog: Node2D) -> void:
 					if v.t_estado <= 0:
 						v.estado = 0
 						v.t_inv = v.investida
-		if v.atira > 0:
+		if v.atira > 0 and v.atordoado <= 0.0:   # atordoado ou congelado não atira
 			v.t_atira -= dt
 			if v.t_atira <= 0 and dist < 330:
 				v.t_atira = v.atira
 				_atirar(v, dir)
-		if v.anel > 0:
+		if v.anel > 0 and v.atordoado <= 0.0:
 			v.t_anel -= dt
 			if v.t_anel <= 0 and dist < 400:
 				v.t_anel = v.anel
@@ -820,6 +846,8 @@ func _draw() -> void:
 			cor = Color(1.0, 0.95, 0.6)   # atordoado: amarelado, piscando de leve
 		elif v.lento > 0:
 			cor = Color(0.6, 0.85, 1.0)
+		if v.el_vis != 0:   # estado de elemento (#72): tinta por estado, uma comparação por inimigo
+			cor = Elementos.tinta(v.el_vis, _t, v.id) * Color(1, 1, 1, cor.a)
 		# Rect2 de largura negativa vira o sprite, mas o Godot desenha a partir da posição pra DIREITA (não normaliza):
 		# por isso a posição é a borda esquerda nos dois casos (antes o bicho à direita do herói saía deslocado 1 largura).
 		var r: Rect2
