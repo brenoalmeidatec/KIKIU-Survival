@@ -75,9 +75,9 @@ static func fx(t: int) -> Dictionary:
 	return lista[clampi(t, 0, lista.size() - 1)]
 
 
-## Quanto dos efeitos extras fica ligado (1 = tudo). Aponta pro perfil gráfico do jogo quando ele existe (config.gd).
+## Quanto dos efeitos extras fica ligado (1 = tudo): vem do perfil gráfico (dados/qualidade.json, chave arma_efeitos).
 static func fator() -> float:
-	return 1.0
+	return float(Config.q("arma_efeitos"))
 
 
 ## Atributos da arma no nível (soma dos bônus de cada nível) com a curva de área e de dano por cima, sem os bônus do jogador.
