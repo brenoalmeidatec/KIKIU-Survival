@@ -20,6 +20,7 @@ const Online := preload("res://scripts/hordas/online.gd")
 const Habilidades := preload("res://scripts/hordas/habilidades.gd")
 const Especial := preload("res://scripts/hordas/especial.gd")
 const Provisoes := preload("res://scripts/hordas/provisoes.gd")
+const Ganchos := preload("res://scripts/hordas/ganchos.gd")
 const Mochila := preload("res://scripts/hordas/mochila.gd")
 const Calor := preload("res://scripts/hordas/calor.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
@@ -50,6 +51,7 @@ var armas: Node2D
 var habilidades: Node2D        # transformação (dragão do Hazaki), habilidades.gd
 var especial: Node2D           # especial do herói (tecla E), especial.gd
 var provisoes: Node            # mochila em ação: comida, amuleto e consumíveis (#72, marcos 3 e 4), provisoes.gd; null = sem mochila
+var ganchos: Node              # regras próprias da raça/classe do herói (#72 marco 6), ganchos.gd; null = herói sem gancho
 var mochila_cfg := {}          # a mochila que o herói leva (o main.gd põe antes de abrir a arena; no online, a que o anfitrião aceitou)
 var descobertas: Node          # santuários, fragmentos, dádivas e eventos (#21), descobertas.gd
 var semente := 0               # semente da corrida (0 = sorteia; no online vem do anfitrião, igual pra todos)
@@ -182,6 +184,11 @@ func _ready() -> void:
 		provisoes = Provisoes.new()
 		add_child(provisoes)
 		provisoes.configurar(self, mochila_cfg)
+	var gs: Array = Ganchos.de_heroi(heroi_id)   # raça/classe com gancho (#72 marco 6); herói fixo ou save antigo: nenhum
+	if not gs.is_empty() or (eh_online and Ganchos.cliente_com_aura()):   # o anfitrião aplica as auras dos clientes mesmo sem gancho dele
+		ganchos = Ganchos.new()
+		add_child(ganchos)
+		ganchos.configurar(self, gs)
 	efeitos = Efeitos.new()
 	add_child(efeitos)
 	finalizacao = Finalizacao.new()
@@ -261,6 +268,8 @@ func stat(k: String) -> float:
 		v += especial.bonus(k)   # depois do especial (ex.: o "Sou Gostoso!" do Hazaki)
 	if provisoes:
 		v += provisoes.bonus(k)   # comida de viagem, amuleto e poções (#72)
+	if ganchos:
+		v += ganchos.bonus(k)   # fúria, regeneração no escuro... (#72 marco 6)
 	if duelo_ativo:
 		# no duelo: a vida vem da regra do pvp.json, a regeneração é menor e a aura de lentidão pega
 		if k == "vida_max":
@@ -348,6 +357,8 @@ func _process(dt: float) -> void:
 		especial.atualizar(dt)
 		if provisoes:
 			provisoes.atualizar(dt)
+		if ganchos:
+			ganchos.atualizar(dt)
 		descobertas.atualizar(dt)
 		armas.atualizar(dt)
 	if online:
@@ -399,6 +410,8 @@ func creditar_dano(arma: String, valor: float) -> void:
 
 func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> void:
 	creditar_dano(arma, valor)
+	if ganchos:
+		ganchos.ao_acertar(valor)   # roubo de vida (#72 marco 6)
 	efeitos.numero(pos, valor, Color.WHITE, crit)
 	if _tem_impacto(arma):
 		efeitos.impacto(pos + Vector2(0, -6), Color(1.0, 0.8, 0.35) if crit else Color(0.7, 0.85, 1.0), crit)
@@ -1136,6 +1149,8 @@ func _achar_item_no_bau() -> void:
 # ---------- fim ----------
 
 func morrer(quem := "") -> void:
+	if ganchos and not acabou and quem != "desistiu" and ganchos.reviver():
+		return   # Sete Vidas (#72 marco 6): levanta de novo
 	if provisoes and not duelo_ativo and not acabou and provisoes.fenix():
 		return   # Pena de Fênix (#72): levanta uma vez
 	if acabou:

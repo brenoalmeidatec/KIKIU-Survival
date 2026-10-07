@@ -910,6 +910,8 @@ func _teste() -> void:
 		print("  perf_us: ", Perf.relatorio())
 		var ele = _arena.inimigos.elementos
 		print("  elementos: estados=%d vistos=%d marcados=%d congelados=%d reacoes=%d" % [ele.estados.size(), ele.vis.size(), ele.contagem.qualquer, ele.contagem.congelados, ele.contagem.reacoes])
+		if _arena.ganchos:
+			print("  ganchos: %s auras_tocadas=%s pilhas=%d vidas_gastas=%d" % [_arena.ganchos.lista.map(func(g): return g.tipo), _arena.ganchos.aura_tocados, _arena.ganchos.pilhas, _arena.ganchos.vidas_gastas])
 		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s forma=%s" % [
 			_t, _arena.diretor.fase_idx + 1, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,

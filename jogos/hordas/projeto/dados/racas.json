@@ -1,6 +1,6 @@
 {
- "_ajuda": "Raças da criação de personagem (#72). 'lista' = as que aparecem na tela, na ordem. bonus e fraquezas somam nos atributos do herói, com os nomes de Construcao.BASE: dano, recarga (MENOS é mais rápido), area, quantidade, velocidade_proj, duracao, vida_max, regen, velocidade, ima, sorte, xp, critico, critico_mult. curto = nome que vai no nome do herói ('Orc Guerreiro'). sprite = corpo (por enquanto todas usam o do Hazaki, em camadas). tom = cor [r,g,b] que tinge o corpo: provisório, a paleta de verdade vem no marco 2. Raça com regra nova (gancho: aura, voar, reviver sozinho...) entra num marco seguinte.",
- "lista": ["humano", "anao", "elfo_sombrio", "orc", "goblin"],
+ "_ajuda": "Raças da criação de personagem (#72). 'lista' = as que aparecem na tela, na ordem. bonus e fraquezas somam nos atributos do herói, com os nomes de Construcao.BASE: dano, recarga (MENOS é mais rápido), area, quantidade, velocidade_proj, duracao, vida_max, regen, velocidade, ima, sorte, xp, critico, critico_mult, e el_<elemento> (chance por golpe de pôr o elemento, elementos.json). curto = nome que vai no nome do herói ('Orc Guerreiro'). sprite = corpo (por enquanto todas usam o do Hazaki, em camadas). tom = cor [r,g,b] que tinge o corpo de herói SEM ficha (bot, id c:raca:classe); com ficha vale a paleta (aparencia.json > paleta_raca). ganchos (marco 6) = regras próprias da raça: lista de {tipo, nome, texto, ...parâmetros}. Cada tipo tem UM ponto de código em scripts/hordas/ganchos.gd: aura_lento, aura_veneno (mundo, só o anfitrião aplica), fragil, pedra, etereo (dano recebido), roubo_vida (ao acertar), luz (ambiente), vidas (reviver), rolamento (esquiva), furia (pilhas ao apanhar). 'texto' aparece na tela de criação. Classes também aceitam 'ganchos'.",
+ "lista": ["humano", "anao", "elfo_sombrio", "orc", "goblin", "capivara", "cogumelo", "gargula", "vampiro", "gato", "pombo", "meio_dragao", "fantasma"],
  "humano": {
   "nome": "Humano",
   "curto": "Humano",
@@ -45,5 +45,91 @@
   "fraquezas": {"vida_max": -30, "dano": -0.15},
   "sprite": "hazaki",
   "tom": [0.92, 1.0, 0.6]
+ },
+ "capivara": {
+  "nome": "Capivara Zen",
+  "curto": "Capivara",
+  "descricao": "Nada tira a paz dela. Quem chega perto desacelera sem saber por quê.",
+  "bonus": {"regen": 0.6},
+  "fraquezas": {"velocidade": -0.2},
+  "ganchos": [{"tipo": "aura_lento", "nome": "Aura Calma", "raio": 70, "lento": 0.45, "tique": 0.25, "texto": "Aura Calma: inimigos perto de você ficam lentos."}],
+  "sprite": "hazaki",
+  "tom": [0.95, 0.88, 0.72]
+ },
+ "cogumelo": {
+  "nome": "Cogumelo Andante",
+  "curto": "Cogumelo",
+  "descricao": "Solta esporos o tempo todo. Venenoso pra quem chega perto.",
+  "bonus": {},
+  "fraquezas": {"velocidade": -0.25},
+  "ganchos": [
+   {"tipo": "aura_veneno", "nome": "Esporos", "raio": 62, "acumulos": 1, "tique": 0.8, "texto": "Esporos: quem chega perto fica envenenado."},
+   {"tipo": "fragil", "nome": "Carne Mole", "mult": 1.2, "texto": "Carne Mole: leva 20% a mais de dano."}
+  ],
+  "sprite": "hazaki",
+  "tom": [1.0, 0.76, 0.74]
+ },
+ "gargula": {
+  "nome": "Gárgula",
+  "curto": "Gárgula",
+  "descricao": "Pedra viva. Parada, quase nada a machuca.",
+  "bonus": {"vida_max": 20},
+  "fraquezas": {"velocidade": -0.1},
+  "ganchos": [{"tipo": "pedra", "nome": "Pele de Pedra", "parado_s": 1.2, "reducao": 0.4, "texto": "Pele de Pedra: parado por 1,2 s, leva 40% menos dano."}],
+  "sprite": "hazaki",
+  "tom": [0.82, 0.84, 0.92]
+ },
+ "vampiro": {
+  "nome": "Vampiro",
+  "curto": "Vampiro",
+  "descricao": "Vive do sangue alheio e das sombras. A luz forte o queima.",
+  "bonus": {"critico": 0.05},
+  "fraquezas": {"vida_max": -10},
+  "ganchos": [
+   {"tipo": "roubo_vida", "nome": "Sede", "pct": 0.03, "teto_s": 0.12, "texto": "Sede: cura 3% do dano que causa."},
+   {"tipo": "luz", "nome": "Filho da Noite", "limite": 0.8, "claro_min": 0.93, "escuro": {"regen": 1.0}, "claro": {"dano_s": 0.35}, "texto": "Filho da Noite: regenera no escuro e arde na luz forte."}
+  ],
+  "sprite": "hazaki",
+  "tom": [0.95, 0.85, 1.0]
+ },
+ "gato": {
+  "nome": "Gato de Sete Vidas",
+  "curto": "Gato",
+  "descricao": "Já morreu mais vezes do que lembra. Frágil, mas teimoso.",
+  "bonus": {},
+  "fraquezas": {"vida_max": -40},
+  "ganchos": [{"tipo": "vidas", "nome": "Sete Vidas", "n": 3, "frac": 0.4, "explode": {"raio": 90, "dano": 40}, "texto": "Sete Vidas: levanta sozinho até 3 vezes, soltando uma explosão."}],
+  "sprite": "hazaki",
+  "tom": [1.0, 0.86, 0.66]
+ },
+ "pombo": {
+  "nome": "Pombo Mutante",
+  "curto": "Pombo",
+  "descricao": "Rápido como ninguém e sem um pingo de juízo. Rola longe, aguenta pouco.",
+  "bonus": {"velocidade": 0.3},
+  "fraquezas": {"vida_max": -50, "xp": -0.2},
+  "ganchos": [{"tipo": "rolamento", "nome": "Asas Tortas", "dist": 1.5, "cargas": 1, "texto": "Asas Tortas: o rolamento vai 50% mais longe e ganha uma carga a mais."}],
+  "sprite": "hazaki",
+  "tom": [0.8, 0.86, 1.0]
+ },
+ "meio_dragao": {
+  "nome": "Meio-Dragão",
+  "curto": "Dragão",
+  "descricao": "Sangue de fogo. Cada pancada que leva só o deixa mais furioso.",
+  "bonus": {"area": 0.2, "el_fogo": 0.25},
+  "fraquezas": {"sorte": -0.3},
+  "ganchos": [{"tipo": "furia", "nome": "Fúria de Dragão", "bonus": {"dano": 0.07}, "max": 5, "dura": 5.0, "texto": "Fúria de Dragão: cada golpe que leva dá +7% de dano por 5 s (até 5 vezes)."}],
+  "sprite": "hazaki",
+  "tom": [1.0, 0.72, 0.62]
+ },
+ "fantasma": {
+  "nome": "Fantasma",
+  "curto": "Fantasma",
+  "descricao": "Meio presente, meio não. Os bichos passam por ele, mas os tiros não perdoam.",
+  "bonus": {},
+  "fraquezas": {"vida_max": -10},
+  "ganchos": [{"tipo": "etereo", "nome": "Corpo Etéreo", "contato": 0.5, "tiro": 1.25, "texto": "Corpo Etéreo: andando, o toque dos bichos dói 50% menos; os tiros doem 25% a mais."}],
+  "sprite": "hazaki",
+  "tom": [0.78, 0.92, 1.0]
  }
 }

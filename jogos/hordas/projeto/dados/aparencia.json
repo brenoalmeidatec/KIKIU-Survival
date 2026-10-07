@@ -1,11 +1,12 @@
 {
- "_ajuda": "Aparência por paleta (#72, marco 2). Cada canal lista as cores [r,g,b] que o jogador escolhe (a primeira de cada canal é a cor original do corpo do Hazaki). O corpo é recolorido por tom (paleta.gd): pele, cabelo e roupa. 'pele_raca' = qual pele a raça escolhe de início. A ficha guarda só o ÍNDICE de cada canal; o anfitrião online recusa índice fora da lista.",
+ "_ajuda": "Aparência por paleta (#72, marco 2). Cada canal lista as cores [r,g,b] que o jogador escolhe (a primeira de cada canal é a cor original do corpo do Hazaki). O corpo é recolorido por tom (paleta.gd): pele, cabelo e roupa. 'pele_raca' = qual pele a raça escolhe de início. paleta_raca = pele, cabelo e roupa que as raças do marco 6 escolhem de início (o resto cai em pele_raca). A ficha guarda só o ÍNDICE de cada canal; o anfitrião online recusa índice fora da lista.",
  "nome_min": 2,
  "nome_max": 12,
  "canais": ["pele", "cabelo", "roupa"],
  "rotulos": {"pele": "Pele", "cabelo": "Cabelo", "roupa": "Roupa"},
- "pele": [[0.694, 0.431, 0.322], [0.93, 0.74, 0.6], [0.52, 0.32, 0.22], [0.34, 0.2, 0.14], [0.45, 0.62, 0.38], [0.6, 0.55, 0.75], [0.62, 0.66, 0.36], [0.62, 0.6, 0.58]],
+ "pele": [[0.694, 0.431, 0.322], [0.93, 0.74, 0.6], [0.52, 0.32, 0.22], [0.34, 0.2, 0.14], [0.45, 0.62, 0.38], [0.6, 0.55, 0.75], [0.62, 0.66, 0.36], [0.62, 0.6, 0.58], [0.66, 0.48, 0.3], [0.82, 0.32, 0.28], [0.45, 0.46, 0.5], [0.86, 0.82, 0.88], [0.88, 0.58, 0.26], [0.55, 0.62, 0.74], [0.72, 0.22, 0.18], [0.7, 0.86, 0.96]],
  "cabelo": [[0.102, 0.086, 0.094], [0.55, 0.32, 0.16], [0.85, 0.7, 0.3], [0.7, 0.18, 0.12], [0.8, 0.8, 0.85], [0.2, 0.3, 0.6], [0.3, 0.55, 0.3], [0.5, 0.25, 0.55]],
  "roupa": [[0.165, 0.141, 0.149], [0.5, 0.15, 0.15], [0.18, 0.28, 0.55], [0.18, 0.4, 0.22], [0.5, 0.38, 0.14], [0.4, 0.2, 0.5], [0.55, 0.55, 0.58], [0.55, 0.3, 0.12]],
- "pele_raca": {"humano": 0, "anao": 2, "elfo_sombrio": 5, "orc": 4, "goblin": 6}
+ "pele_raca": {"humano": 0, "anao": 2, "elfo_sombrio": 5, "orc": 4, "goblin": 6},
+ "paleta_raca": {"capivara": {"pele": 8, "cabelo": 1, "roupa": 4}, "cogumelo": {"pele": 9, "cabelo": 3, "roupa": 3}, "gargula": {"pele": 10, "cabelo": 0, "roupa": 6}, "vampiro": {"pele": 11, "cabelo": 0, "roupa": 1}, "gato": {"pele": 12, "cabelo": 1, "roupa": 7}, "pombo": {"pele": 13, "cabelo": 4, "roupa": 2}, "meio_dragao": {"pele": 14, "cabelo": 3, "roupa": 1}, "fantasma": {"pele": 15, "cabelo": 4, "roupa": 6}}
 }

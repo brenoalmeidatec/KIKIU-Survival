@@ -14,6 +14,7 @@ const MAX_HEROIS := 6
 const Paleta := preload("res://scripts/hordas/paleta.gd")
 const ROTULO := {"dano": "dano", "area": "área", "duracao": "duração", "velocidade_proj": "velocidade dos tiros",
 	"velocidade": "velocidade", "ima": "alcance do ímã", "xp": "XP", "critico": "chance de crítico", "critico_mult": "dano crítico"}
+const VERBO_EL := {"fogo": "queimar", "gelo": "congelar", "raio": "eletrocutar", "veneno": "envenenar"}
 
 
 static func racas() -> Dictionary:
@@ -190,6 +191,7 @@ static func montar(raca: String, classe: String, ficha := {}) -> Dictionary:
 		"tom": r.get("tom", [1.0, 1.0, 1.0]),
 		"raca": raca,
 		"classe": classe,
+		"ganchos": r.get("ganchos", []) + c.get("ganchos", []),   # marco 6: regras próprias (ganchos.gd); raça antiga sem o campo = nenhum
 	}
 	if not ficha.is_empty():
 		h["nome"] = str(ficha.get("nome", titulo))
@@ -441,6 +443,9 @@ static func descrever(bonus: Dictionary) -> Array:
 				bom = v < 0.0
 				txt = "ataques %d%% mais %s" % [roundi(absf(v) * 100.0), "rápidos" if v < 0.0 else "lentos"]
 			_:
-				txt = "%+d%% de %s" % [roundi(v * 100.0), ROTULO.get(k, k)]
+				if str(k).begins_with("el_"):   # afinidade elemental (marco 5/6): chance por golpe de pôr o elemento
+					txt = "%+d%% de chance de %s" % [roundi(v * 100.0), VERBO_EL.get(str(k).substr(3), "marcar")]
+				else:
+					txt = "%+d%% de %s" % [roundi(v * 100.0), ROTULO.get(k, k)]
 		res.append([txt, bom])
 	return res

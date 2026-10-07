@@ -185,7 +185,7 @@ func _trocar(passo: int) -> void:
 			var n := Criacao.lista_racas().size()
 			raca = (raca + passo + n) % n
 			if not _pele_manual:
-				ficha.paleta["pele"] = Paleta.padrao(_raca_id()).pele
+				ficha.paleta = Paleta.padrao(_raca_id())   # a raça escolhe pele, cabelo e roupa (enquanto você não mexer nas cores)
 		"classe":
 			var n := Criacao.lista_classes().size()
 			classe = (classe + passo + n) % n
@@ -218,8 +218,7 @@ func _trocar(passo: int) -> void:
 			var c := str(l.k)
 			var n := Paleta.cores(c).size()
 			ficha.paleta[c] = (int(ficha.paleta[c]) + passo + n) % n
-			if c == "pele":
-				_pele_manual = true
+			_pele_manual = true
 		_:
 			return
 	_atualizar()
@@ -265,11 +264,10 @@ func _clique(mp: Vector2) -> void:
 		var t: String = _linhas[i].t
 		if t == "pal":   # clicar numa cor escolhe ela
 			var c := str(_linhas[i].k)
-			var j := int((mp.x - COL_VALOR) / 28.0)
+			var j := int((mp.x - COL_VALOR) / _passo_pal(c))
 			if mp.x >= COL_VALOR and j >= 0 and j < Paleta.cores(c).size():
 				ficha.paleta[c] = j
-				if c == "pele":
-					_pele_manual = true
+				_pele_manual = true
 				Som.ui("cursor")
 		elif t != "nome":
 			if mp.x < COL_VALOR + 30:
@@ -302,9 +300,9 @@ func _desenhar() -> void:
 	_desenhar_previa(heroi)
 	# descrição da linha escolhida
 	var d := _descricao(_linhas[linha], r, c)
-	_tela.draw_rect(Rect2(362, 228, 268, 50), Color(0.08, 0.08, 0.13))
-	_tela.draw_rect(Rect2(362, 228, 268, 50), Color(0.3, 0.33, 0.48), false, 1.0)
-	_tela.draw_multiline_string(Dados.fonte, Vector2(368, 241), d, HORIZONTAL_ALIGNMENT_LEFT, 256, 8, 4, Color(0.78, 0.8, 0.88))
+	_tela.draw_rect(Rect2(362, 182, 268, 102), Color(0.08, 0.08, 0.13))
+	_tela.draw_rect(Rect2(362, 182, 268, 102), Color(0.3, 0.33, 0.48), false, 1.0)
+	_tela.draw_multiline_string(Dados.fonte, Vector2(368, 195), d, HORIZONTAL_ALIGNMENT_LEFT, 256, 8, 8, Color(0.78, 0.8, 0.88))
 	# ficha final
 	var s := Construcao.stats(heroi, {}, {})
 	_txt(Vector2(0, 294), "Vida %d   Dano %d%%   Velocidade %d%%   Área %d%%   Crítico %d%%" % [roundi(s.vida_max), roundi(s.dano * 100.0),
@@ -379,7 +377,7 @@ func _desenhar_linha(i: int, l: Dictionary, r: Dictionary, c: Dictionary) -> voi
 	elif str(l.t) == "pal":
 		var cs := Paleta.cores(str(l.k))
 		for j in cs.size():
-			var q := Rect2(COL_VALOR + j * 28, y - 9, 24, 11)
+			var q := Rect2(COL_VALOR + j * _passo_pal(str(l.k)), y - 9, _passo_pal(str(l.k)) - 4.0, 11)
 			_tela.draw_rect(q, Paleta.cor(str(l.k), j))
 			var marcado: bool = j == int(ficha.paleta[l.k])
 			_tela.draw_rect(q.grow(1) if marcado else q, Color.WHITE if marcado else Color(0.1, 0.1, 0.14), false, 2.0 if marcado else 1.0)
@@ -388,13 +386,13 @@ func _desenhar_linha(i: int, l: Dictionary, r: Dictionary, c: Dictionary) -> voi
 
 
 func _desenhar_previa(heroi: Dictionary) -> void:
-	_tela.draw_rect(Rect2(362, 40, 268, 184), Color(0.1, 0.1, 0.17))
-	_tela.draw_rect(Rect2(362, 40, 268, 184), Color(0.3, 0.33, 0.48), false, 1.0)
+	_tela.draw_rect(Rect2(362, 40, 268, 138), Color(0.1, 0.1, 0.17))
+	_tela.draw_rect(Rect2(362, 40, 268, 138), Color(0.3, 0.33, 0.48), false, 1.0)
 	var pal: Dictionary = ficha.paleta
 	var corpo := Paleta.textura(str(heroi.sprite), "corpo", pal)
 	var cab := Paleta.textura(str(heroi.sprite), "camadas/cabelo", pal)
 	if corpo:
-		var dst := Rect2(362 + 134 - 66, 46, 132, 174)
+		var dst := Rect2(362 + 134 - 46, 48, 92, 121)
 		_tela.draw_texture_rect_region(corpo, dst, Rect2(0, 0, 44, 58))
 		if cab:
 			_tela.draw_texture_rect_region(cab, dst, Rect2(0, 0, 44, 58))
@@ -403,7 +401,7 @@ func _desenhar_previa(heroi: Dictionary) -> void:
 		_tela.draw_texture_rect_region(rosto, Rect2(568, 46, 56, 56), Rect2(0, 0, 52, 52))
 	_txt(Vector2(366, 56), str(heroi.nome) if str(ficha.nome) != "" else "Sem nome", 8, Color(1, 0.95, 0.7), 190, HORIZONTAL_ALIGNMENT_LEFT)
 	_txt(Vector2(366, 68), str(Criacao.racas().get(_raca_id(), {}).get("curto", "")) + " " + str(Criacao.classes().get(_classe_id(), {}).get("nome", "")), 8, Color(0.6, 0.85, 1), 190, HORIZONTAL_ALIGNMENT_LEFT)
-	_txt(Vector2(0, 216), "prévia ao vivo", 8, Color(0.5, 0.52, 0.62), 360 + 268 - 6, HORIZONTAL_ALIGNMENT_RIGHT)
+	_txt(Vector2(0, 173), "prévia ao vivo", 8, Color(0.5, 0.52, 0.62), 360 + 268 - 6, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
 ## Texto de ajuda da linha escolhida: o que ela dá e tira.
@@ -412,7 +410,10 @@ func _descricao(l: Dictionary, r: Dictionary, c: Dictionary) -> String:
 		"nome":
 			return "Até %d letras. É o nome que os outros jogadores veem." % int(Dados.json("aparencia").get("nome_max", 12))
 		"raca":
-			return str(r.get("descricao", "")) + "\n" + _linhas_de(Criacao.descrever(r.get("bonus", {})) + Criacao.descrever(r.get("fraquezas", {})))
+			var gs := ""
+			for g in r.get("ganchos", []):   # marco 6: a regra própria da raça, uma linha por gancho
+				gs += "\n" + str(g.get("texto", ""))
+			return str(r.get("descricao", "")) + "\n" + _linhas_de(Criacao.descrever(r.get("bonus", {})) + Criacao.descrever(r.get("fraquezas", {}))) + gs
 		"classe":
 			return str(c.get("descricao", "")) + "\n" + _linhas_de(Criacao.descrever(c.get("bonus", {})))
 		"attr":
@@ -429,6 +430,11 @@ func _descricao(l: Dictionary, r: Dictionary, c: Dictionary) -> String:
 		"pal":
 			return "Troca as cores do corpo. A prévia ao lado muda na hora."
 	return "Enter cria o herói e já começa a corrida."
+
+
+## Largura de cada amostra de cor: 28 px, ou menos se a lista (as raças novas trouxeram peles) não cabe na coluna.
+func _passo_pal(canal: String) -> float:
+	return minf(28.0, COL_VALOR_W / maxf(1.0, float(Paleta.cores(canal).size())))
 
 
 func _linhas_de(l: Array) -> String:

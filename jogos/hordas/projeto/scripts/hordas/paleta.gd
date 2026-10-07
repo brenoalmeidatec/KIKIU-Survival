@@ -29,9 +29,13 @@ static func cor(canal: String, i: int) -> Color:
 	return Color(float(c[0]), float(c[1]), float(c[2]))
 
 
-## A paleta de uma raça: a pele que ela escolhe, e o cabelo e a roupa originais.
+## A paleta de uma raça: o que ela escolhe de início (paleta_raca, marco 6) ou, se não diz, a pele de pele_raca com cabelo e roupa originais.
 static func padrao(raca: String) -> Dictionary:
-	return {"pele": int(Dados.json("aparencia").get("pele_raca", {}).get(raca, 0)), "cabelo": 0, "roupa": 0}
+	var cfg: Dictionary = Dados.json("aparencia")
+	var p = cfg.get("paleta_raca", {}).get(raca)
+	if p is Dictionary:
+		return {"pele": int(p.get("pele", 0)), "cabelo": int(p.get("cabelo", 0)), "roupa": int(p.get("roupa", 0))}
+	return {"pele": int(cfg.get("pele_raca", {}).get(raca, 0)), "cabelo": 0, "roupa": 0}
 
 
 ## Índices válidos (cada canal dentro da lista)? Aceita int ou float inteiro (vem de JSON e da rede).
