@@ -15,3 +15,6 @@ CLAUDE.local.md
 
 # Cópias de trabalho temporárias dos agentes do Claude Code
 .claude/worktrees/
+
+# Carimbo de versão do .exe, gerado por jogos/hordas/gerar_versao.sh antes de exportar
+jogos/hordas/projeto/dados/versao.json
