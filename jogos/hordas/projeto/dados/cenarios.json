@@ -1,4 +1,5 @@
 {
+ "_ajuda_variantes": "variantes (#112 item 7): <cenário-base> -> lista de cenários, um por andar da região. O andar 0 usa o primeiro; os outros andares seguem uma ordem embaralhada pela semente da corrida (igual em todos os jogadores). Cada variante é uma pasta em assets/cenarios/ (piso e pesos próprios, gerada por cenarios.py) e, se não tiver entrada em 'cenarios', usa a do cenário-base. Região sem entrada aqui = cenário único.",
  "_ajuda": "Cenários das fases (arte em assets/cenarios/<nome>/, gerada pelo Blender em fonte_arte/modelos3d/cenarios.py). Com regiões (dados/regioes.json) o cenário vem da região (campo cenario) e por_fase só vale sem elas. por_fase = o cenário de cada fase da corrida, na ordem (se tiver menos itens que fases, a última se repete). densidade = chance padrão de ter enfeite em cada célula de 150 px do mapa (0 a 1). Cenários: laboratorio, masmorra, cidade e os das regiões (floresta, pantano, deserto, gelo, reino). Lista vazia = chão antigo. Em 'cenarios' cada um pode ter: densidade e segundo (chance de um 2º enfeite na célula); detalhes (rachadura, mancha, poca, folha, papel, cabo; peso e cor [r,g,b,a]) com detalhes_chance e detalhes_max por célula; particulas (poeira, cinza, nevoa, vagalume, chuva, neve; n = quantas, cor [r,g,b,a]; o total é limitado a 70); vida (bichos rato, morcego, corvo que fogem do herói: chance por célula, grupo, fuga em px, peso de cada). Tudo é sorteado pela semente da corrida (Sorte) e é só desenho: nada bloqueia o movimento.",
  "por_fase": [
   "laboratorio",
@@ -12,6 +13,9 @@
   "cidade",
   "cidade"
  ],
+ "variantes": {
+  "floresta": ["floresta", "floresta_clareira", "floresta_pantano", "floresta_ruina", "floresta_fungos"]
+ },
  "densidade": 0.3,
  "cenarios": {
   "reino": {
@@ -92,6 +96,69 @@
     {"tipo": "nevoa", "n": 6, "cor": [0.55, 0.7, 0.6, 0.06]}
    ],
    "vida": {"chance": 0.14, "grupo": 3, "fuga": 80, "bichos": [{"tipo": "corvo", "peso": 3}, {"tipo": "rato", "peso": 1}]}
+  },
+  "floresta_clareira": {
+   "densidade": 0.5,
+   "segundo": 0.3,
+   "detalhes_chance": 0.7,
+   "detalhes_max": 3,
+   "detalhes": [
+    {"tipo": "folha", "peso": 4, "cor": [0.4, 0.3, 0.12, 0.8]},
+    {"tipo": "rachadura", "peso": 2, "cor": [0.1, 0.08, 0.06, 0.5]}
+   ],
+   "particulas": [
+    {"tipo": "poeira", "n": 16, "cor": [0.95, 0.9, 0.7, 0.35]},
+    {"tipo": "vagalume", "n": 6, "cor": [0.9, 1.0, 0.5, 0.8]}
+   ],
+   "vida": {"chance": 0.12, "grupo": 3, "fuga": 80, "bichos": [{"tipo": "corvo", "peso": 4}, {"tipo": "rato", "peso": 1}]}
+  },
+  "floresta_pantano": {
+   "densidade": 0.58,
+   "segundo": 0.4,
+   "detalhes_chance": 0.9,
+   "detalhes_max": 3,
+   "detalhes": [
+    {"tipo": "poca", "peso": 5, "cor": [0.06, 0.14, 0.13, 0.55]},
+    {"tipo": "mancha", "peso": 3, "cor": [0.05, 0.1, 0.05, 0.5]},
+    {"tipo": "folha", "peso": 2, "cor": [0.2, 0.22, 0.1, 0.8]}
+   ],
+   "particulas": [
+    {"tipo": "nevoa", "n": 12, "cor": [0.5, 0.7, 0.62, 0.09]},
+    {"tipo": "vagalume", "n": 14, "cor": [0.7, 1.0, 0.6, 0.8]}
+   ],
+   "vida": {"chance": 0.14, "grupo": 3, "fuga": 80, "bichos": [{"tipo": "rato", "peso": 3}, {"tipo": "corvo", "peso": 1}]}
+  },
+  "floresta_ruina": {
+   "densidade": 0.55,
+   "segundo": 0.4,
+   "detalhes_chance": 0.8,
+   "detalhes_max": 3,
+   "detalhes": [
+    {"tipo": "rachadura", "peso": 5, "cor": [0.04, 0.05, 0.04, 0.65]},
+    {"tipo": "mancha", "peso": 3, "cor": [0.1, 0.18, 0.1, 0.5]},
+    {"tipo": "folha", "peso": 2, "cor": [0.3, 0.2, 0.1, 0.8]}
+   ],
+   "particulas": [
+    {"tipo": "poeira", "n": 14, "cor": [0.7, 0.8, 0.7, 0.3]},
+    {"tipo": "nevoa", "n": 6, "cor": [0.55, 0.7, 0.6, 0.06]}
+   ],
+   "vida": {"chance": 0.12, "grupo": 2, "fuga": 80, "bichos": [{"tipo": "morcego", "peso": 3}, {"tipo": "rato", "peso": 2}]}
+  },
+  "floresta_fungos": {
+   "densidade": 0.6,
+   "segundo": 0.45,
+   "detalhes_chance": 0.8,
+   "detalhes_max": 3,
+   "detalhes": [
+    {"tipo": "mancha", "peso": 4, "cor": [0.1, 0.25, 0.4, 0.4]},
+    {"tipo": "poca", "peso": 2, "cor": [0.15, 0.3, 0.5, 0.4]},
+    {"tipo": "folha", "peso": 2, "cor": [0.3, 0.15, 0.4, 0.8]}
+   ],
+   "particulas": [
+    {"tipo": "vagalume", "n": 34, "cor": [0.45, 0.85, 1.0, 0.9]},
+    {"tipo": "nevoa", "n": 8, "cor": [0.4, 0.5, 0.85, 0.08]}
+   ],
+   "vida": {"chance": 0.08, "grupo": 2, "fuga": 80, "bichos": [{"tipo": "morcego", "peso": 2}]}
   },
   "laboratorio": {
    "densidade": 0.65,
