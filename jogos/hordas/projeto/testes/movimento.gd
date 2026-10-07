@@ -75,10 +75,11 @@ func _ready() -> void:
 		j.atualizar(1.0 / 60.0)
 		n += 1
 	ok(n / 60.0 <= 0.1, "herói para em até 0,1 s (%d quadros)" % n)
-	ok(j.spr.scale.is_equal_approx(Vector2.ONE + j._sq), "squash aplicado no sprite")
+	ok(j.spr.scale.is_equal_approx(Vector2.ONE + j._sq + j._corpo.escala()), "squash aplicado no sprite")
 	for i in 40:
 		j.atualizar(1.0 / 60.0)
-	ok(j.spr.scale.is_equal_approx(Vector2.ONE), "squash volta ao normal parado (%s)" % j.spr.scale)
+	ok(j._sq == Vector2.ZERO and j.spr.scale.is_equal_approx(Vector2.ONE + j._corpo.escala()), "squash volta ao normal parado (%s)" % j.spr.scale)
+	ok(absf(j.spr.scale.y - 1.0) <= 0.05, "parado só respira (escala %s)" % j.spr.scale)
 	# poeira com teto
 	for i in 200:
 		j._poeira_em(3, 10.0)

@@ -21,6 +21,7 @@ const HISTERESE := 8.0      # graus além da fronteira do setor antes de trocar 
 var angulo := 0.0           # para onde o boneco está olhando agora (gira com velocidade limitada)
 var alvo := 0.0             # para onde quer olhar (última direção de movimento)
 var dir := "baixo"          # nome da direção atual (chave de LINHA)
+var _andou := false         # já andou alguma vez (a histerese de 4 direções só vale depois do primeiro passo)
 
 
 ## Número de linhas de direção de uma folha: altura / 60; 8 ou mais -> 8, senão 4.
@@ -56,9 +57,17 @@ static func direcao_de(angulo_: float, n: int, atual: String = "") -> String:
 	return nomes[int(roundf(wrapf(angulo_, 0.0, 360.0) / passo)) % n]
 
 
-## Regra antiga das 4 direções (eixo dominante), usada pelas folhas de 4 linhas.
-static func direcao4(v: Vector2) -> String:
-	if absf(v.x) > absf(v.y) * 0.9:
+## Regra das 4 direções (eixo dominante), usada pelas folhas de 4 linhas. Com `atual`, o eixo só troca quando o outro
+## passa da fronteira com folga (HISTERESE4): manche analógico ou robô oscilando em volta da diagonal não faz o boneco
+## piscar entre de lado e de frente. Sem `atual` (ou parado) vale a regra seca de antes.
+const HISTERESE4 := 0.25    # fração da razão x/y da fronteira (0,9) que o eixo atual ganha de folga
+static func direcao4(v: Vector2, atual: String = "") -> String:
+	var lim := 0.9
+	if atual == "direita" or atual == "esquerda":
+		lim *= 1.0 - HISTERESE4   # já de lado: continua de lado até y mandar de verdade
+	elif atual == "baixo" or atual == "cima":
+		lim *= 1.0 + HISTERESE4   # já de frente/costas: só vira de lado quando x mandar de verdade
+	if absf(v.x) > absf(v.y) * lim:
 		return "direita" if v.x > 0 else "esquerda"
 	return "baixo" if v.y > 0 else "cima"
 
@@ -70,7 +79,8 @@ func atualizar(mov: Vector2, dt: float, n: int) -> void:
 		alvo = angulo_de(mov)
 	if n < 8:
 		if tem:
-			dir = direcao4(mov)
+			dir = direcao4(mov, dir if _andou else "")
+			_andou = true
 			angulo = alvo
 		return
 	angulo = girar(angulo, alvo, dt)
