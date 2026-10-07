@@ -6,6 +6,7 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 const Visual := preload("res://scripts/hordas/visual.gd")
 const Direcao := preload("res://scripts/hordas/direcao.gd")
 const Paleta := preload("res://scripts/hordas/paleta.gd")
+const Anim := preload("res://scripts/hordas/animacao_heroi.gd")
 const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
 const LARG_QUADRO := 44            # largura de um quadro na folha; hframes = largura da textura / isto
 const COLS_ANIM := 23              # folhas com 23+ colunas têm os estados extras abaixo (Hazaki); com menos, só parado/andar
@@ -21,11 +22,8 @@ const ATAQUE_TEMPO := 0.25
 const ATAQUE_INTERVALO := 0.6
 ## Golpe do corpo (todos os heróis, com ou sem quadros de ataque): recua, avança na direção do golpe e volta.
 ## Não são quadros novos: é o sprite inteiro se mexendo (posição, escala e inclinação), igual pra qualquer folha.
-const GOLPE_TEMPO := 0.2
+## A curva (antecipação, golpe, passa do alvo e assenta) e os números ficam em dados/animacao.json (animacao_heroi.gd).
 const GOLPE_INTERVALO := 0.28      # heróis sem quadros de ataque: no máximo um golpe do corpo a cada isto
-const GOLPE_AVANCO := 8.0          # px que o corpo avança
-const GOLPE_RECUO := 2.0           # px que recua na antecipação
-const GOLPE_INCLINA := 0.2         # rad de inclinação pra frente no auge
 const DANO_TEMPO := 0.2
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
@@ -100,10 +98,17 @@ var _andava := false
 var _passo_dist := 0.0
 var _poeira: Array = []           # {pos (mundo), t, r}
 var _flash_t := 0.0
+var _imp := Vector2.ZERO          # alvo do squash (o impulso de começar/parar/pousar): _sq o segue suave, sem estalo
+var _corpo := Anim.new()          # respiração, balanço do passo e inclinação (animacao_heroi.gd)
+var _dano_pose_t := 0.0           # recuo visual ao apanhar: tempo que falta
+var _dano_dir := Vector2.LEFT     # para onde o corpo escorrega no recuo (longe do golpe)
+var _morte_sinal := 1.0
+var _morte_t := 0.0              # folhas sem quadros de morte: tempo da queda procedural
 
 
 func configurar(sprite: String) -> void:
 	_sprite = sprite
+	_corpo.fase = Anim.fase_de(sprite + "|eu")   # cada herói respira com uma defasagem própria
 	spr.texture = Dados.tex_personagem(sprite, "andando_8")
 	spr.hframes = _colunas()
 	spr.vframes = Direcao.linhas_da_altura(spr.texture.get_height() if spr.texture else 0)
@@ -178,25 +183,12 @@ func atacou(dir := Vector2.ZERO) -> void:
 		return
 	_golpe_vira = dir.length_squared() > 0.0001
 	_golpe_dir = dir.normalized() if _golpe_vira else Vector2(lado, 0)
-	_golpe_t = GOLPE_TEMPO
+	_golpe_t = float(Anim.sec("golpe").tempo)
 	if _tem_anim():
 		_atk_t = ATAQUE_TEMPO
 		_atk_cool = ATAQUE_INTERVALO
 	else:
 		_atk_cool = GOLPE_INTERVALO
-
-
-## Pose do golpe do corpo em u (0..1): [deslocamento ao longo da direção em px, estica (>0) ou achata, inclinação 0..1].
-## Antecipação (recua e encolhe) até 0,2, avanço esticado até 0,4, e volta suave até 1.
-static func pose_golpe(u: float) -> Vector3:
-	if u < 0.2:
-		var k := u / 0.2
-		return Vector3(-GOLPE_RECUO * k, -0.08 * k, -0.3 * k)
-	if u < 0.4:
-		var k := (u - 0.2) / 0.2
-		return Vector3(lerpf(-GOLPE_RECUO, GOLPE_AVANCO, k), lerpf(-0.08, 0.14, k), lerpf(-0.3, 1.0, k))
-	var k := 1.0 - pow(1.0 - (u - 0.4) / 0.6, 2.0)
-	return Vector3(lerpf(GOLPE_AVANCO, 0.0, k), lerpf(0.14, 0.0, k), lerpf(1.0, 0.0, k))
 
 
 ## Começo da fase: o herói cai do alto (~0,6 s) com poeira e um flash, e o nome fica em cima por um instante.
@@ -217,7 +209,7 @@ func _chegando() -> void:
 	if not _ent_poeira and p >= Visual.CHEGADA_POUSO:
 		_ent_poeira = true
 		Som.tocar("queda", 0.0, 1.2, -8)
-		_sq = SQUASH_POUSO
+		_imp = SQUASH_POUSO
 		if arena and arena.efeitos:
 			arena.efeitos.explodir(position + Vector2(0, -2), Color(0.82, 0.78, 0.68), 10, 95.0)
 	queue_redraw()
@@ -235,6 +227,20 @@ func _process(dt: float) -> void:
 		spr.frame = quadro_de("morte", _dir, _est_t, spr.hframes)
 		for c in camadas.values():
 			c.frame = spr.frame
+	elif hp <= 0.0 and forma == null:
+		# folhas sem quadros de morte (as de 9 colunas): tropeça, cai acelerando, quica e fica deitado (pose igual à de antes)
+		var mc := Anim.sec("morte")
+		if _morte_t <= 0.0:
+			_morte_sinal = -1.0 if lado >= 0.0 else 1.0   # cai pra trás (pra longe do lado em que olhava)
+		_morte_t += dt
+		var pm := Anim.pose_morte(_morte_t / maxf(float(mc.tempo), 0.05), _morte_sinal, mc)
+		spr.rotation = pm.rot
+		spr.position = pm.pos
+		spr.skew = 0.0
+		spr.scale = Vector2.ONE
+		spr.modulate = tom.lerp(Color(0.45, 0.45, 0.5, float(mc.alpha)), float(pm.mix))
+	elif _morte_t > 0.0:
+		_morte_t = 0.0   # levantou (online): _animar volta a mandar no corpo
 
 
 func centro() -> Vector2:
@@ -266,6 +272,7 @@ func atualizar_i(dt: float) -> void:
 	_atk_cool = maxf(0.0, _atk_cool - dt)
 	_golpe_t = maxf(0.0, _golpe_t - dt)
 	_dano_t = maxf(0.0, _dano_t - dt)
+	_dano_pose_t = maxf(0.0, _dano_pose_t - dt)
 	var entrada := _entrada()
 	_mov = entrada
 	if entrada.x != 0:
@@ -313,15 +320,21 @@ func _efeitos_movimento(entrada: Vector2, dt: float) -> void:
 	_flash_t = maxf(0.0, _flash_t - dt)
 	var anda := entrada != Vector2.ZERO
 	if anda and not _andava:
-		_sq = SQUASH_INICIO
+		_imp = SQUASH_INICIO
 		_poeira_em(1, 10.0)
 	elif not anda and _andava and _vel.length() > 20.0:
-		_sq = SQUASH_PARADA
+		_imp = SQUASH_PARADA
 	_andava = anda
-	_sq = _sq.lerp(Vector2.ZERO, 1.0 - exp(-SQUASH_VOLTA * dt))
-	if _sq.length_squared() < 0.00001:
+	# o impulso volta ao normal (SQUASH_VOLTA) e o squash o segue suave (animacao.json squash.entrada): sem estalo na primeira imagem
+	_imp = _imp.lerp(Vector2.ZERO, 1.0 - exp(-SQUASH_VOLTA * dt))
+	_sq = _sq.lerp(_imp, 1.0 - exp(-float(Anim.sec("squash").entrada) * dt))
+	if _imp.length_squared() < 0.00001 and _sq.length_squared() < 0.00001:
+		_imp = Vector2.ZERO
 		_sq = Vector2.ZERO
-	spr.scale = Vector2.ONE + _sq
+	# respiração, balanço do passo e inclinação (fica quieto no rolamento, na queda da entrada e transformado)
+	var ativo := dash_t <= 0.0 and forma == null and _ent_t <= 0.0 and hp > 0.0
+	_corpo.atualizar(dt, _vel, anda, ativo, _tem_anim())
+	spr.scale = Vector2.ONE + _sq + _corpo.escala()
 	if dash_t <= 0.0 and forma == null and _ent_t <= 0.0 and _vel.length_squared() > 400.0:
 		_passo_dist += _vel.length() * dt
 		if _passo_dist >= PASSO_DIST:
@@ -507,7 +520,8 @@ func _animar(entrada: Vector2) -> void:
 		_est_t = 0.0
 	else:
 		_est_t += _dt
-	spr.frame = quadro_de(_est, _dir, _t if _est == "andando" else _est_t, spr.hframes)
+	# andando: o quadro segue a distância andada (_corpo.ciclo), não o relógio: o pé não patina com o herói lento ou rápido
+	spr.frame = quadro_de(_est, _dir, _corpo.ciclo * (8.0 / 12.0) + 0.0001 if _est == "andando" else _est_t, spr.hframes)
 	for c in camadas.values():
 		c.frame = spr.frame
 	# pisca quando está invencível depois de apanhar
@@ -529,16 +543,37 @@ func _animar(entrada: Vector2) -> void:
 		var total := maxf(0.05, float(Dados.json("movimento").get("rolamento", {}).get("tempo", 0.3)))
 		var ang := (1.0 - _rolando / total) * TAU * _rola_lado
 		spr.rotation = ang
+		spr.skew = 0.0
 		spr.position = CENTRO_CORPO - CENTRO_CORPO.rotated(ang)   # a origem do sprite é o pé: compensa pra girar no meio
-	elif _golpe_t > 0.0 and _ent_t <= 0.0 and forma == null:
-		var pose := pose_golpe(1.0 - _golpe_t / GOLPE_TEMPO)
-		var d := _golpe_dir
-		spr.position = (Vector2(d.x, d.y * 0.6) * pose.x).round()   # câmera em 3/4: avançar pra cima/baixo anda menos na tela
-		spr.rotation = d.x * GOLPE_INCLINA * pose.z
-		var horiz := absf(d.x) >= absf(d.y)
-		spr.scale *= Vector2(1.0 + pose.y, 1.0 - pose.y * 0.6) if horiz else Vector2(1.0 - pose.y * 0.6, 1.0 + pose.y)
-	elif spr.rotation != 0.0 or (spr.position != Vector2.ZERO and _ent_t <= 0.0):
+	elif _ent_t <= 0.0 and hp > 0.0:
+		# o corpo inteiro se mexe: balanço do passo + golpe (antecipa, bate, passa e assenta) + recuo ao apanhar
+		var pos := Vector2.ZERO
+		var sk := 0.0
+		var esc := Vector2.ONE
+		if forma == null:
+			pos = _corpo.desloc()
+			sk = _corpo.inclina()
+			if _golpe_t > 0.0:
+				var gc := Anim.sec("golpe")
+				var pose := Anim.pose_golpe(1.0 - _golpe_t / float(gc.tempo), gc)
+				var d := _golpe_dir
+				pos += (Vector2(d.x, d.y * 0.6) * pose.x).round()   # câmera em 3/4: avançar pra cima/baixo anda menos na tela
+				sk += d.x * float(gc.inclina) * pose.z   # inclinar = cisalhamento com o pé fixo: o pixel art continua nítido
+				var horiz := absf(d.x) >= absf(d.y)
+				esc *= Vector2(1.0 + pose.y, 1.0 - pose.y * 0.6) if horiz else Vector2(1.0 - pose.y * 0.6, 1.0 + pose.y)
+			if _dano_pose_t > 0.0:
+				var dc := Anim.sec("dano")
+				var pd := Anim.pose_dano(1.0 - _dano_pose_t / float(dc.tempo), dc)
+				pos += (Vector2(_dano_dir.x, _dano_dir.y * 0.6) * pd.x).round()
+				sk += _dano_dir.x * float(dc.inclina) * pd.z
+				esc *= Vector2(1.0 + pd.y, 1.0 - pd.y)
+		spr.position = pos
 		spr.rotation = 0.0
+		spr.skew = sk
+		spr.scale *= esc
+	elif hp > 0.0 and (spr.rotation != 0.0 or spr.skew != 0.0 or (spr.position != Vector2.ZERO and _ent_t <= 0.0)):
+		spr.rotation = 0.0
+		spr.skew = 0.0
 		spr.position = Vector2.ZERO
 
 
@@ -559,6 +594,8 @@ func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) 
 	if empurrao == Vector2.ZERO and arena.inimigos != null:
 		empurrao = _empurrao_padrao()
 	kb += empurrao
+	_dano_pose_t = float(Anim.sec("dano").tempo)   # recuo visual (animacao.json): escorrega pra longe do golpe
+	_dano_dir = empurrao.normalized() if empurrao.length_squared() > 1.0 else Vector2(-lado, 0.0)
 	if Config.v("flash_dano"):
 		_flash_t = DANO_FLASH   # flash branco curto só no jogador (opção de acessibilidade)
 	Som.tocar("erro", 0.15, 1.0, -4)

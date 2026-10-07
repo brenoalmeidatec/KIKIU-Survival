@@ -1269,6 +1269,31 @@ func _fotos_seq(nome: String, seq: String) -> void:
 		get_viewport().get_texture().get_image().save_png(pasta.path_join("tela_%s_%d.png" % [nome, n]))
 
 
+## Tira de recortes do herói (#97): a cada instante da --seq (s reais) corta ~80x88 px em volta dele, amplia 2x sem
+## filtro e emenda lado a lado num PNG só (tela_<nome>.png). Dá pra ver respiração, balanço e golpe de uma vez.
+func _tira_animacao(nome: String, seq: String) -> void:
+	var pasta := str(_args.get("fotos", "user://"))
+	var ult := 0.0
+	var cortes: Array = []
+	var zoom := int(_args.get("zoom", 3))
+	for tk in seq.split(","):
+		var alvo := float(tk)
+		await get_tree().create_timer(maxf(0.01, alvo - ult), true, false, true).timeout
+		ult = alvo
+		await RenderingServer.frame_post_draw
+		var img := get_viewport().get_texture().get_image()
+		var c: Vector2 = get_viewport().get_canvas_transform() * (_arena.jogador.global_position + Vector2(0, -28))
+		var r := Rect2i(int(c.x) - 32, int(c.y) - 46, 64, 76).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+		cortes.append(img.get_region(r))
+	var tira := Image.create(cortes.size() * 64 * zoom, 76 * zoom, false, Image.FORMAT_RGBA8)
+	tira.fill(Color(0.2, 0.2, 0.25))
+	for i in cortes.size():
+		var im: Image = cortes[i]
+		im.resize(im.get_width() * zoom, im.get_height() * zoom, Image.INTERPOLATE_NEAREST)
+		tira.blit_rect(im, Rect2i(Vector2i.ZERO, im.get_size()), Vector2i(i * 64 * zoom, 0))
+	tira.save_png(pasta.path_join("tela_%s.png" % nome))
+
+
 func _print_tela(qual: String) -> void:
 	Config.temporario("pausar_fora", false)   # a janela perde o foco enquanto o print espera: não pode pausar
 	if _args.has("grande"):
@@ -1354,6 +1379,37 @@ func _print_tela(qual: String) -> void:
 				"segue": false, "arma": "", "variante": 1, "semente": 2.0, "rampa": Poca.CAFE, "explode": {"raio_mult": 1.8, "dano_mult": 4.0}})
 			_arena.armas.adicionar("wifi")
 			Engine.time_scale = 0.05
+		"animacao":   # #97: tira do herói (recortes ampliados lado a lado): --heroi=X --cena=parado|andar|golpe|dano|morte --seq=t1,t2,.. (s reais) --lento=N
+			_comecar(str(_args.get("heroi", "nicao")))
+			await get_tree().create_timer(0.5, true, false, true).timeout
+			var _espera := 0
+			while _arena.jogador._nome_t <= 0.0 and _espera < 600:   # a chegada ainda não começou
+				_espera += 1
+				await get_tree().process_frame
+			while _arena.jogador._nome_t > 0.0 or _arena.jogador._ent_t > 0.0:   # e agora espera acabar (queda e nome)
+				await get_tree().process_frame
+			_arena.bot = false
+			_arena.jogador.bot = false
+			_arena.jogador.hp = 1.0e9
+			_arena.inimigos.limpar()
+			_arena.diretor.bonus_minutos = -100.0
+			var cena := str(_args.get("cena", "parado"))
+			var jg2 = _arena.jogador
+			Engine.time_scale = float(_args.get("lento", 1.0))
+			match cena:
+				"andar":
+					var xy2 := str(_args.get("andar", "1,0")).split(",")
+					jg2.entrada_forcada = Vector2(float(xy2[0]), float(xy2[1]))
+				"golpe":
+					jg2.atacou(Vector2.RIGHT)
+				"dano":
+					jg2.sofrer(1.0, "teste", 0.5, Vector2(-110, 0))
+				"morte":
+					jg2.hp = 0.0
+					_arena.morrer("teste")
+			await _tira_animacao(qual + "_" + str(_args.get("heroi", "nicao")) + "_" + cena, str(_args.get("seq", "0.0,0.15,0.3,0.45,0.6,0.75,0.9,1.05")))
+			get_tree().quit()
+			return
 		"golpe":   # combate estilo Dimraeth: --heroi=X --arma=Y (katana, arte_marcial, cabo_rede, lanca, martelo) num grupo
 			# de --inimigo parado à direita; o golpe sai já em câmera lenta (--lento) e as fotos seguem o --seq
 			_comecar(str(_args.get("heroi", "beto")))

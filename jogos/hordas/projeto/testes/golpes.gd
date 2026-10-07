@@ -6,6 +6,7 @@ extends Node
 const Arena := preload("res://scripts/hordas/arena.gd")
 const Jogador := preload("res://scripts/hordas/jogador.gd")
 const Efeitos := preload("res://scripts/hordas/efeitos.gd")
+const Anim := preload("res://scripts/hordas/animacao_heroi.gd")
 var falhas := 0
 
 func ok(cond: bool, msg: String) -> void:
@@ -67,12 +68,18 @@ func _numeros() -> void:
 
 
 func _pose() -> void:
-	var p0 := Jogador.pose_golpe(0.0)
-	var p1 := Jogador.pose_golpe(1.0)
-	var pico := Jogador.pose_golpe(0.4)
+	var c: Dictionary = Anim.sec("golpe")
+	var pico_px: float = float(c.avanco) * (1.0 + float(c.passa))
+	var p0 := Anim.pose_golpe(0.0)
+	var p1 := Anim.pose_golpe(1.0)
+	var pico := Anim.pose_golpe(float(c.bate))
 	ok(p0.length() < 0.001 and p1.length() < 0.001, "o golpe do corpo começa e termina no lugar")
-	ok(is_equal_approx(pico.x, Jogador.GOLPE_AVANCO), "no auge o corpo avança %.0f px (%.2f)" % [Jogador.GOLPE_AVANCO, pico.x])
-	ok(Jogador.pose_golpe(0.15).x < 0.0, "antecipação: recua antes de avançar")
+	ok(is_equal_approx(pico.x, pico_px) and pico.x > float(c.avanco), "no auge o corpo passa do alvo: %.1f px (alvo %.0f)" % [pico.x, c.avanco])
+	ok(Anim.pose_golpe(float(c.antecipa) * 0.75).x < 0.0, "antecipação: recua antes de avançar")
+	var maxx := 0.0
+	for i in 101:
+		maxx = maxf(maxx, Anim.pose_golpe(i / 100.0).x)
+	ok(is_equal_approx(maxx, pico_px), "o ponto mais longe é o do auge (%.2f)" % maxx)
 
 
 func _katana() -> void:
@@ -101,7 +108,7 @@ func _katana() -> void:
 	ok(j._golpe_t > 0.0, "o herói sem quadros de ataque também golpeia (golpe do corpo)")
 	ok(j._golpe_vira and j._golpe_dir.x > 0.5, "o golpe vai na direção do inimigo (%s)" % j._golpe_dir)
 	ok(j.spr.position.x != 0.0 or j.spr.scale != Vector2.ONE, "o corpo se mexe no golpe (pos %s, escala %s)" % [j.spr.position, j.spr.scale])
-	await esperar(Jogador.GOLPE_TEMPO + 0.05)
+	await esperar(float(Anim.sec("golpe").tempo) + 0.05)
 	ok(j.spr.position.x == 0.0 and j.spr.rotation == 0.0, "depois do golpe o corpo volta ao lugar")
 	var antes: int = a._golpe_ate
 	a.golpe_pesado(1.0)
