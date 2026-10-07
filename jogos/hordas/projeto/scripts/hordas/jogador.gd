@@ -408,6 +408,8 @@ func rolar(dir: Vector2) -> bool:
 		var r: Dictionary = Dados.json("movimento").get("rolamento", {})
 		dash_t = float(r.get("tempo", 0.3))
 		_vel_dash = float(r.get("velocidade", 2.7))
+		if arena.ganchos:
+			dash_t *= arena.ganchos.rolamento_mult()   # Pombo: rola mais longe (#72 marco 6)
 		_rolando = dash_t
 		_rola_lado = signf(_dir_dash.x) if absf(_dir_dash.x) > 0.01 else lado
 	invencivel = maxf(invencivel, dash_t + (0.1 if forma else 0.0))
@@ -419,7 +421,10 @@ func rolar(dir: Vector2) -> bool:
 
 
 func _folego_cfg(chave: String, padrao: float) -> float:
-	return float(Dados.json("movimento").get("folego", {}).get(chave, padrao))
+	var v := float(Dados.json("movimento").get("folego", {}).get(chave, padrao))
+	if chave == "cargas" and arena != null and arena.get("ganchos") != null:
+		v += arena.ganchos.rolamento_cargas()   # Pombo: uma carga a mais (#72 marco 6)
+	return v
 
 
 func _quer_dash() -> bool:
@@ -543,6 +548,8 @@ func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) 
 		return false
 	if arena.habilidades:
 		dano *= arena.habilidades.mult_dano()   # transformado, aguenta mais
+	if arena.ganchos:
+		dano = arena.ganchos.dano_recebido(dano, fonte)   # pedra, frágil, etéreo, fúria (#72 marco 6)
 	hp -= dano
 	arena.dano_recebido[fonte] = float(arena.dano_recebido.get(fonte, 0.0)) + dano
 	invencivel = iframes

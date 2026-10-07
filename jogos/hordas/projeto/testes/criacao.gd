@@ -22,13 +22,13 @@ func _ready() -> void:
 	# --- os dados: 5 raças e 5 classes, tudo o que elas apontam existe
 	var racas := Criacao.lista_racas()
 	var classes := Criacao.lista_classes()
-	ok(racas.size() == 5, "5 raças na primeira versão (%d)" % racas.size())
+	ok(racas.size() >= 13, "13 raças com os ganchos do marco 6 (%d)" % racas.size())
 	ok(classes.size() >= 5, "pelo menos 5 classes (%d)" % classes.size())
 	for rid in racas:
 		var r: Dictionary = Criacao.racas().get(rid, {})
 		ok(not r.is_empty() and r.has("nome") and r.has("curto"), "raça %s tem nome e nome curto" % rid)
 		for k in r.get("bonus", {}).keys() + r.get("fraquezas", {}).keys():
-			ok(Construcao.BASE.has(k), "raça %s: atributo %s existe em Construcao.BASE" % [rid, k])
+			ok(Construcao.BASE.has(k) or str(k).begins_with("el_"), "raça %s: atributo %s existe em Construcao.BASE (ou é el_<elemento>)" % [rid, k])
 		ok(Dados.tex_personagem(str(r.get("sprite", "")), "rosto") != null, "raça %s: o corpo tem rosto" % rid)
 	for cid in classes:
 		var c: Dictionary = Criacao.classes().get(cid, {})
