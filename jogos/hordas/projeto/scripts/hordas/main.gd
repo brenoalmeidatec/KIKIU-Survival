@@ -20,6 +20,9 @@ const TelaCalor := preload("res://scripts/hordas/tela_calor.gd")
 const Calor := preload("res://scripts/hordas/calor.gd")
 const TelaCriacao := preload("res://scripts/hordas/tela_criacao.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
+const Paleta := preload("res://scripts/hordas/paleta.gd")
+const Construcao := preload("res://scripts/hordas/construcao.gd")
+const TelaHerois := preload("res://scripts/hordas/tela_herois.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
 const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Opções", "Créditos", "Sair"]
 const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
@@ -40,7 +43,7 @@ var _estado := "titulo"      # titulo, herois, partida, fim
 var _estado_antes := "titulo"  # pra perceber a troca de tela e tocar a transição
 var _apelido_txt := ""       # campo de texto do apelido (lobby, tecla N)
 var _calor := {}              # calor escolhido pra próxima corrida {id: nível} (tela_calor.gd)
-var _criado := ""             # último herói criado (#72): vira a carta depois dos heróis fixos
+var _criados: Array = []     # heróis criados salvos (#72, até 6): vão pra tela "Meus heróis"
 var _aviso_heroi := ""        # "fulano morreu de vez" na escolha de heróis (o jogo fechou no meio da corrida)
 var _fundo_tipos: Array = []  # monstros comuns das regiões que passeiam no fundo dos menus
 var _sel_carta := 0           # carta onde estava antes de descer pro botão "Criar herói"
@@ -78,9 +81,13 @@ func _ready() -> void:
 	if _args.has("morte_teste"):   # teste do permadeath (--morte_teste): arquivo próprio, longe do herói salvo de verdade
 		Criacao.arquivo = "user://teste_morte_heroi.json"
 	var cr := Criacao.carregar(_persistir())
-	_criado = str(cr.id)
-	if str(cr.perdido) != "":
-		_aviso_heroi = "%s morreu de vez: o jogo fechou no meio da corrida." % str(Dados.json("herois").get(cr.perdido, {}).get("nome", "Seu herói"))
+	_criados = cr.ids
+	if not cr.perdidos.is_empty():
+		_aviso_heroi = "%s morreu de vez: o jogo fechou no meio da corrida." % ", ".join(cr.perdidos.map(func(i): return str(Dados.json("herois").get(i, {}).get("nome", "Um herói"))))
+	if _args.has("ficha"):   # teste: --ficha=Nome/raça/classe/defeito/f,v,a,m,s/pele,cabelo,roupa monta um herói criado sem salvar (vira --heroi=)
+		var fid := _ficha_de_args(str(_args.ficha))
+		if fid != "":
+			_args["heroi"] = fid
 	_endereco = _ler_endereco()
 	_calor = Calor.de_texto(str(_args.calor)) if _args.has("calor") else Calor.ler()   # a última escolha de calor (ou a do teste)
 	Rede.mudou.connect(_rede_mudou)
@@ -144,30 +151,56 @@ func _persistir() -> bool:
 	return _args.has("morte_teste") or not (_args.has("bot") or _args.has("sair") or _args.has("print_tela"))
 
 
-## Os heróis da escolha: os fixos do herois.json e, no fim, o último herói criado (#72).
+## Os heróis da escolha: só os fixos do herois.json. Os criados (até 6) ficam na tela "Meus heróis" (#72).
 func _herois() -> Array:
-	var l: Array = Dados.json("herois").get("lista", []).duplicate()
-	if _criado != "":
-		l.append(_criado)
-	return l
+	return Dados.json("herois").get("lista", []).duplicate()
 
 
-## Carta i: joga com aquele herói. O índice logo depois da última carta é o botão "Criar herói" (#72).
+## --ficha=Nome/raça/classe/defeito/f,v,a,m,s/pele,cabelo,roupa: registra um herói criado sem salvar (testes, online com 2 instâncias).
+## Devolve o id (c:h<código do nome>) ou "" se a ficha não vale.
+func _ficha_de_texto(txt: String) -> Dictionary:
+	var p := txt.split("/")
+	if p.size() < 6:
+		print("FICHA inválida (esperado Nome/raça/classe/defeito/f,v,a,m,s/pele,cabelo,roupa): ", txt)
+		return {}
+	var ficha := Criacao.ficha_nova(p[1], p[2])
+	ficha["nome"] = p[0]
+	ficha["defeito"] = p[3]
+	var n := p[4].split(",")
+	for i in mini(n.size(), Criacao.lista_atributos().size()):
+		ficha.pontos[Criacao.lista_atributos()[i]] = int(n[i])
+	var c := p[5].split(",")
+	for i in mini(c.size(), Paleta.canais().size()):
+		ficha.paleta[Paleta.canais()[i]] = int(c[i])
+	return ficha
+
+
+func _ficha_de_args(txt: String) -> String:
+	var ficha := _ficha_de_texto(txt)
+	if ficha.is_empty():
+		return ""
+	var id := "c:h%x" % absi(str(ficha.nome).hash())
+	if not Criacao.registrar_ficha(id, ficha):
+		print("FICHA recusada: ", Criacao.erro_ficha(ficha))
+		return ""
+	return id
+
+
+## Carta i: joga com aquele herói. O índice logo depois da última carta é o botão "Meus heróis" (#72).
 func _escolher_heroi(i: int) -> void:
 	var lista := _herois()
 	if i < lista.size():
 		_abrir_calor(lista[i])
 		return
 	_estado = "criacao"
-	var t := TelaCriacao.new()
+	var t := TelaHerois.new()
 	add_child(t)
-	t.fechou.connect(func(ok: bool, id: String):
-		if ok:
-			_criado = id
-			_sel = _herois().find(id)
-			_abrir_calor(id)
-		else:
-			_estado = "herois")
+	t.jogar.connect(func(id: String):
+		_criados = Criacao.carregar(false).ids
+		_abrir_calor(id))
+	t.fechou.connect(func():
+		_criados = Criacao.carregar(false).ids
+		_estado = "herois")
 
 
 func _process(dt: float) -> void:
@@ -495,11 +528,12 @@ func _sala() -> void:
 	if Input.is_action_just_pressed("esquerda") or Input.is_action_just_pressed("direita"):
 		var passo := -1 if Input.is_action_just_pressed("esquerda") else 1
 		var tomados := Rede.ocupados(Rede.eu())
-		var i := Rede.ELENCO.find(Rede.heroi_de(Rede.eu()))
-		for _k in Rede.ELENCO.size():
-			i = (i + passo + Rede.ELENCO.size()) % Rede.ELENCO.size()
-			if not Rede.ELENCO[i] in tomados:
-				Rede.escolher(Rede.ELENCO[i])
+		var opcoes: Array = Rede.ELENCO + _criados   # os heróis criados salvos também entram na sala (a ficha viaja, o anfitrião valida)
+		var i := opcoes.find(Rede.heroi_de(Rede.eu()))
+		for _k in opcoes.size():
+			i = (i + passo + opcoes.size()) % opcoes.size()
+			if not opcoes[i] in tomados:
+				Rede.escolher(opcoes[i])
 				Som.ui("cursor")
 				break
 	elif Input.is_action_just_pressed("confirmar") and Rede.anfitriao():
@@ -722,9 +756,8 @@ func _terminou(res: Dictionary) -> void:
 	if Criacao.eh_criado(h) and _persistir():
 		if Criacao.morreu_de_vez(res):   # herói criado morreu: some de vez, junto com os recordes dele
 			res["heroi_perdido"] = str(Dados.json("herois").get(h, {}).get("nome", "Seu herói"))
-			Criacao.apagar()
-			if _criado == h:
-				_criado = ""
+			Criacao.apagar(h)
+			_criados.erase(h)
 			_recordes.erase(h)
 		else:
 			Criacao.sobreviveu(h)
@@ -794,12 +827,25 @@ func _teste() -> void:
 		print("  mapa: hash=%s pos=%s no=%s ouro=%d trilha=%s" % [Mapa.resumo(_arena.mapa), _arena.mapa_pos, _arena.no_tipo, _arena.ouro, _arena.mapa_trilha.map(func(p): return "%d.%d" % [p.x, p.y])])
 		if _arena.calor_pts > 0:
 			print("  calor: %d %s" % [_arena.calor_pts, _arena.calor])
+		if _arena.objetivo.id != "":
+			print("  objetivo: %s" % [_arena.objetivo.snapshot()])
+		if not _arena.conj_resumo.is_empty():
+			print("  conjuntos: %s ef=%s" % [_arena.conj_contagem, _arena._conj_ef])
 		if _arena.especial.tem():
 			print("  especial: %s usos=%d recarga=%.0f" % [_arena.especial.d.get("nome", ""), _arena.especial.usos, _arena.especial.recarga])
 		if _arena.online:
 			print("  online: %s peers=%d acertos=%d caido=%s fase=%d entre=%s duelo=%s" % ["anfitriao" if Rede.anfitriao() else "cliente",
 				Rede.jogadores.size(), _arena.online.n_tx, _arena.caido, _arena.diretor.fase_idx + 1, _arena.entre_fases,
 				_arena.duelo.estado if _arena.duelo_ativo else "-"])
+			for p in Rede.jogadores:   # como ESTA máquina enxerga cada jogador da sala (herói criado: nome, paleta, stats e se o boneco está recolorido)
+				var hid := Rede.heroi_de(p)
+				var hh: Dictionary = Dados.json("herois").get(hid, {})
+				var st := Construcao.stats(hh, {}, {})
+				var av = _arena.online.avatares.get(p)
+				var recolorido: bool = av != null and not hh.get("paleta", {}).is_empty() and av.spr.texture == Paleta.textura(str(hh.get("sprite", "")), "corpo", hh.paleta) and av._cab != null
+				print("  jogador: peer=%d%s heroi=%s nome=%s paleta=%s vida=%d dano=%d%% vel=%d%% defeito=%s boneco_recolorido=%s" % [p, " (eu)" if p == Rede.eu() else "", hid,
+					Rede.nome_de(p), str(hh.get("paleta", {})), roundi(st.vida_max), roundi(st.dano * 100.0), roundi(st.velocidade * 100.0),
+					str(hh.get("ficha", {}).get("defeito", "")), recolorido if p != Rede.eu() else "-"])
 			var b: Vector2 = Rede.banda()
 			print("  banda: envia=%.1f KB/s recebe=%.1f KB/s  voz: enviou=%d recebeu=%d bytes" % [b.x, b.y, Voz.enviados, Voz.recebidos])
 		if _t >= float(_args.sair):
@@ -949,7 +995,7 @@ func _desenhar() -> void:
 				var eu: bool = p == Rede.eu()
 				_tela.draw_rect(Rect2(170, y0, 300, 34), Color(0.1, 0.11, 0.18))
 				_tela.draw_rect(Rect2(170, y0, 300, 34), Color(1, 0.85, 0.3) if eu else Color(0.3, 0.35, 0.5), false, 1.0)
-				var rosto := Dados.tex_personagem(str(h.get("sprite", Rede.heroi_de(p))), "rosto")
+				var rosto := Paleta.textura(str(h.get("sprite", Rede.heroi_de(p))), "rosto", h.get("paleta", {}))   # herói criado: com a paleta dele
 				if rosto:
 					_tela.draw_texture_rect_region(rosto, Rect2(174, y0 + 3, 28, 28), Rect2(0, 0, 52, 52))
 				_txt(Vector2(210, y0 + 15), Rede.nome_de(p) + (" (você)" if eu else ""), 8, Color(1, 0.95, 0.7) if eu else Color.WHITE, 200, HORIZONTAL_ALIGNMENT_LEFT)
@@ -1025,8 +1071,8 @@ func _desenhar() -> void:
 			var bsel := _sel == lista.size()
 			_tela.draw_rect(bc.grow(2), Color(1, 0.85, 0.3) if bsel else Color(0.3, 0.35, 0.5))
 			_tela.draw_rect(bc, Color(0.2, 0.15, 0.06) if bsel else Color(0.1, 0.11, 0.18))
-			_txt(Vector2(bc.position.x, bc.position.y + 13), "+ Criar herói", 8, Color(1, 0.9, 0.6) if bsel else Color(0.8, 0.82, 0.9), bc.size.x)
-			_txt(Vector2(0, 342), "Setas: escolher   Baixo: criar herói   Enter: jogar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(bc.position.x, bc.position.y + 13), "Meus heróis (%d/%d)" % [_criados.size(), Criacao.MAX_HEROIS], 8, Color(1, 0.9, 0.6) if bsel else Color(0.8, 0.82, 0.9), bc.size.x)
+			_txt(Vector2(0, 342), "Setas: escolher   Baixo: meus heróis criados   Enter: jogar   Esc: voltar", 8, Color(0.6, 0.6, 0.7))
 		"fim":
 			_fundo()
 			var r := _resumo
@@ -1190,7 +1236,22 @@ func _print_tela(qual: String) -> void:
 			var tc := TelaCriacao.new()
 			tc.raca = int(_args.get("raca", 0))
 			tc.classe = int(_args.get("classe", 0))
+			tc.linha = int(_args.get("linha", 0))
+			if _args.has("ficha"):   # --ficha=Nome/raça/classe/defeito/f,v,a,m,s/pele,cabelo,roupa: a tela já com tudo preenchido
+				tc.ficha = _ficha_de_texto(str(_args.ficha))
 			add_child(tc)
+		"herois_lista":   # tela "Meus heróis" (#72): cria 3 heróis num arquivo de teste e abre a lista (--vaga=N escolhe a vaga, --apagar abre a confirmação)
+			Criacao.arquivo = "user://teste_lista.json"
+			Criacao.apagar()
+			for f in ["Brutus/orc/guerreiro/manco/3,2,0,0,0/4,1,2", "Lyra/elfo_sombrio/mago//0,1,2,3,2/5,2,5", "Pip/goblin/ladino/azarado/1,0,3,0,2/6,6,3"]:
+				Criacao.salvar_ficha(_ficha_de_texto(f))
+			_estado = "criacao"
+			var th := TelaHerois.new()
+			th.sel = int(_args.get("vaga", 0))
+			add_child(th)
+			if _args.has("apagar"):
+				await get_tree().process_frame
+				th.confirmando = str(Criacao.carregar(false).ids[th.sel])
 		"especial":   # --heroi=X --estresse=N: usa o especial no meio dos inimigos e tira o print depois de --espera s
 			_comecar(str(_args.get("heroi", "hazaki")))
 			await get_tree().create_timer(1.0).timeout
@@ -1245,6 +1306,42 @@ func _print_tela(qual: String) -> void:
 			if _args.has("dadivas"):
 				_arena.cartas.escolher("Dádiva do santuário", _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva")))
 			await get_tree().create_timer(0.5, true, false, true).timeout
+		"santuario2":   # #63: prova em andamento (mini-chefe + anel de tempo), santuário selado (pré-requisito 1/2) e relíquia por perto
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			var jq: Vector2 = _arena.jogador.position
+			_arena.chao.santuarios.clear()
+			var prova := {"pos": jq + Vector2(95, -25), "tipo": "prova", "variacao": "", "carga": 1.0, "usado": false}
+			_arena.chao.santuarios.append(prova)
+			_arena.chao.santuarios.append({"pos": jq + Vector2(-110, 25), "tipo": "selado", "variacao": "", "carga": 0.0, "usado": false, "requisito": "piras", "qtd": 2})
+			_arena.chao.santuarios.append({"pos": jq + Vector2(-230, -60), "tipo": "tomada", "variacao": "", "carga": 0.0, "usado": true})
+			_arena.chao.santuarios.append({"pos": jq + Vector2(-230, 100), "tipo": "tomada", "variacao": "", "carga": 0.0, "usado": false})
+			_arena.chao.santuarios.append({"pos": jq + Vector2(10, 130), "tipo": "reliquia", "variacao": "", "carga": 0.0, "usado": false})
+			_arena.descobertas.ativar(prova)
+			await get_tree().create_timer(2.0, true, false, true).timeout
+		"dupla":   # #63: oferta de dádivas com a dádiva em dupla (Fúria Antiga + Passo do Vento)
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.descobertas.dadivas.append({"id": "furia", "raridade": "rara"})
+			_arena.descobertas.dadivas.append({"id": "vento", "raridade": "comum"})
+			var ofer: Array = []
+			for _i in 12:
+				ofer = _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva"), "", ["furia", "vento"])
+				if ofer.size() > 3:
+					break
+			_arena.cartas.escolher("Dádiva do santuário", ofer)
+			_arena.cartas._sel = ofer.size() - 1
+		"comp":   # #63: cartas de comportamento ao lado de uma arma e um passivo comuns
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.armas.adicionar("pendrive")
+			_arena.armas.lista[_arena.armas.lista.size() - 1].nivel = 3
+			_arena.armas.adicionar("wifi")
+			_arena.armas.lista[_arena.armas.lista.size() - 1].nivel = 4
+			var pm: Array = [_arena._carta_comp(_arena.armas.achar("pendrive"), "ricochete"), _arena._carta_comp(_arena.armas.achar("wifi"), "pulso"),
+				_arena._carta("arma", "pendrive", 4), _arena._carta("passivo", "overclock", 1)]
+			_arena.cartas.escolher("Subiu pro nível 9!", pm)
+			_arena.cartas._sel = 0
 		"resultado":   # tela de resultados da fase (#32): --espera=N segundos de contagem (padrão 4)
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3, true, false, true).timeout
@@ -1296,6 +1393,33 @@ func _print_tela(qual: String) -> void:
 			for v in _arena.inimigos.lista:
 				v.vel = 0.0   # parados, pra a foto
 			await get_tree().create_timer(float(_args.get("espera", 2.0)), true, false, true).timeout
+		"conjuntos", "objetivo":   # #63: HUD com os conjuntos da build e (objetivo) um objetivo em andamento (--objetivo=pira|totens|fugitivo, --pronto=0..1 de quanto já foi)
+			_args["fase"] = str(_args.get("fase", "2"))
+			_comecar("hazaki")
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.inimigos.limpar()
+			_arena.armas.lista.clear()
+			for id in ["pendrive", "machado", "lanca", "cafe"]:
+				_arena.armas.adicionar(id)
+			_arena.passivos = {"energetico": 2, "mouse": 1, "marmita": 1, "monitor": 1}
+			_arena.equipamentos = {"cabeca": "cabeca_guerreiro", "peitoral": "armadura_samurai", "pes": "botas_guerra"}
+			_arena.build_mudou()
+			if qual == "objetivo":
+				var ob = _arena.objetivo
+				ob._zerar()
+				ob._iniciar(str(_args.get("objetivo", "pira")))
+				var alvo_ob: float = ob.alvo
+				if ob.id == "pira":
+					_arena.jogador.position = ob.pos + Vector2(60, 40)
+					ob.prog = alvo_ob * float(_args.get("pronto", 0.55))
+				else:
+					ob.prog = floorf(alvo_ob * float(_args.get("pronto", 0.0)))
+				ob.resta -= 20.0
+				ob._marcas()
+				await get_tree().create_timer(2.4, true, false, true).timeout   # o anúncio grande some
+			await get_tree().create_timer(0.5, true, false, true).timeout
 		"mortes":   # #32: 8 inimigos morrem de 8 causas; prints no meio dos efeitos (--seq=0.15,0.4,0.7 em segundos reais, --reduzida, --conj=virus)
 			if not _args.has("fase") and str(_args.get("conj", "horror")) != "virus":
 				_args["fase"] = "6"

@@ -5,6 +5,7 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 
 const Visual := preload("res://scripts/hordas/visual.gd")
 const Direcao := preload("res://scripts/hordas/direcao.gd")
+const Paleta := preload("res://scripts/hordas/paleta.gd")
 const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
 const LARG_QUADRO := 44            # largura de um quadro na folha; hframes = largura da textura / isto
 const COLS_ANIM := 23              # folhas com 23+ colunas têm os estados extras abaixo (Hazaki); com menos, só parado/andar
@@ -54,6 +55,7 @@ static var _mat_flash: ShaderMaterial
 var arena: Node
 var spr := Sprite2D.new()
 var tom := Color.WHITE        # cor base do corpo (herói criado, #72: a raça tinge; os fixos ficam brancos)
+var paleta := {}               # aparência por paleta do herói criado (#72, marco 2): {pele, cabelo, roupa} em índices; vazio = cores originais
 var hp := 100.0
 var invencivel := 0.0
 var dash_t := 0.0
@@ -115,7 +117,7 @@ func configurar(sprite: String) -> void:
 ## da animação é copiado (em _animar). Arquivos em assets/personagens/<sprite>/camadas/.
 func definir_camadas(nomes: Array) -> void:
 	# em camadas, o corpo é o corpo.png (sem cabelo); o andando_8.png completo fica pra quem não usa camadas
-	var corpo := Dados.tex_personagem(_sprite, "corpo")
+	var corpo := Paleta.textura(_sprite, "corpo", paleta)
 	if corpo and spr.texture != corpo:
 		spr.texture = corpo
 		spr.hframes = _colunas()
@@ -126,7 +128,7 @@ func definir_camadas(nomes: Array) -> void:
 			camadas.erase(n)
 	for n in nomes:
 		if not camadas.has(n):
-			var tex := Dados.tex_personagem(_sprite, "camadas/" + str(n))
+			var tex := Paleta.textura(_sprite, "camadas/" + str(n), paleta) if n == "cabelo" else Dados.tex_personagem(_sprite, "camadas/" + str(n))
 			if tex == null:
 				continue
 			var c := Sprite2D.new()
@@ -411,6 +413,8 @@ func rolar(dir: Vector2) -> bool:
 	invencivel = maxf(invencivel, dash_t + (0.1 if forma else 0.0))
 	Som.tocar("whoosh", 0.1, 1.2)
 	_poeira_em(3, 18.0)
+	if arena and arena.get("armas") != null and not forma:   # #63: "Aura Pulsante" solta um pulso ao rolar
+		arena.armas.ao_rolar()
 	return true
 
 

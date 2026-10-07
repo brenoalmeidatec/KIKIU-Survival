@@ -1,0 +1,10 @@
+{
+ "_ajuda": "Pontos de atributo da criação de herói (#72, marco 2). 'total' = pontos que todo herói começa com (o defeito voluntário soma mais). 'lista' = ordem na tela. Cada ponto gasto soma 'efeito' (nomes de Construcao.BASE; recarga MENOS é mais rápido) nos bônus do herói. 'max' = teto de pontos em um atributo só. Mexer aqui muda o jogo e a validação do online (o anfitrião confere pelos mesmos números).",
+ "total": 8,
+ "lista": ["forca", "vigor", "agilidade", "mente", "sorte"],
+ "forca": {"nome": "Força", "descricao": "Cada golpe pesa mais.", "efeito": {"dano": 0.05}, "max": 6},
+ "vigor": {"nome": "Vigor", "descricao": "Mais vida e um pouco de regeneração.", "efeito": {"vida_max": 10, "regen": 0.03}, "max": 6},
+ "agilidade": {"nome": "Agilidade", "descricao": "Anda mais depressa e ataca mais rápido.", "efeito": {"velocidade": 0.03, "recarga": -0.015}, "max": 6},
+ "mente": {"nome": "Mente", "descricao": "Golpes que cobrem mais área e duram mais.", "efeito": {"area": 0.04, "duracao": 0.03}, "max": 6},
+ "sorte": {"nome": "Sorte", "descricao": "Mais sorte nos baús e chance de crítico.", "efeito": {"sorte": 0.08, "critico": 0.01}, "max": 6}
+}

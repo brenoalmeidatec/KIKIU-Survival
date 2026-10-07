@@ -12,7 +12,8 @@ const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Ambiente := preload("res://scripts/hordas/ambiente.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 ## cor do anel de cada tipo de santuário
-const COR_TIPO := {"tomada": Color(1.0, 0.85, 0.3), "dadiva": Color(0.4, 0.9, 1.0), "fragmento": Color(0.45, 0.55, 1.0), "maldito": Color(0.85, 0.35, 0.8)}
+const COR_TIPO := {"tomada": Color(1.0, 0.85, 0.3), "dadiva": Color(0.4, 0.9, 1.0), "fragmento": Color(0.45, 0.55, 1.0), "maldito": Color(0.85, 0.35, 0.8),
+	"prova": Color(1.0, 0.45, 0.25), "selado": Color(0.7, 0.85, 1.0), "reliquia": Color(1.0, 0.9, 0.5)}
 
 var arena: Node
 var _fundo := TextureRect.new()
@@ -100,7 +101,7 @@ func atualizar_i(dt: float) -> void:
 	for s in santuarios:
 		if s.usado:
 			continue
-		var tempo := tempo_tomada if s.tipo == "tomada" else tempo_outros
+		var tempo := tempo_tomada if s.tipo == "tomada" else float(cfg.get("tempo_carga_tipo", {}).get(str(s.tipo), tempo_outros))
 		if s.pos.distance_to(jp) < raio:
 			s.carga += dt / tempo
 			if s.carga >= 1.0:
@@ -271,7 +272,7 @@ func _draw_i() -> void:
 			var nome := str(cs.get("variacoes", {}).get(str(s.variacao), {}).get("nome", ""))
 			nome = str(cs.get("nomes", {}).get(str(s.tipo), nome))   # dádiva, maldito, tomada: o nome do tipo (#65)
 			draw_string(Dados.fonte, s.pos + Vector2(-130, 22), nome, HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(base, 1.0))
-			draw_string(Dados.fonte, s.pos + Vector2(-130, 33), "fique perto", HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(0.85, 0.85, 0.9, 0.8))
+			draw_string(Dados.fonte, s.pos + Vector2(-130, 33), Descobertas.dica(s, santuarios), HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(0.85, 0.85, 0.9, 0.8))
 
 
 ## Enfeites do chão antigo (sem cenário configurado).

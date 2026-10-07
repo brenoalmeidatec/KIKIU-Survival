@@ -4,6 +4,7 @@
   "limite_exclusivas": 2
  },
  "katana": {
+  "etiquetas": ["lamina"],
   "nome": "Katana Samurai",
   "icone": "katana",
   "tipo": "katana",
@@ -17,6 +18,7 @@
   "niveis": [{"dano": 6}, {"recarga": -0.12}, {"quantidade": 1}, {"alcance": 16, "arco": 30}, {"corte_energia": 1}, {"dano": 10, "recarga": -0.1}]
  },
  "desert_eagles": {
+  "etiquetas": ["arremesso", "pesado"],
   "nome": "Duas Desert Eagles",
   "icone": "desert_eagles",
   "tipo": "pistolas",
@@ -30,6 +32,7 @@
   "niveis": [{"dano": 4}, {"recarga": -0.1}, {"perfura": 1}, {"ricochete": 1}, {"quantidade": 2}, {"explosivo": 1, "dano": 6}]
  },
  "arte_marcial": {
+  "etiquetas": ["pesado"],
   "nome": "Arte Marcial",
   "icone": "arte_marcial",
   "tipo": "marcial",
@@ -42,6 +45,7 @@
   "niveis": [{"dano": 4}, {"recarga": -0.06}, {"alcance": 10}, {"giro": 1}, {"dano": 6}, {"onda": 1, "dano": 6}]
  },
  "aura_hazaki": {
+  "etiquetas": ["sagrado"],
   "nome": "Aura",
   "icone": "aura_hazaki",
   "tipo": "aura_energia",
@@ -54,6 +58,7 @@
   "niveis": [{"raio": 10}, {"dano": 3}, {"pulso": -0.6}, {"empurra": 40}, {"raio": 12, "dano": 4}]
  },
  "poder_elemental": {
+  "etiquetas": ["fogo", "gelo", "trovao"],
   "nome": "Poder Elemental do Mago",
   "icone": "poder_elemental",
   "tipo": "elemental",
@@ -66,6 +71,7 @@
   "niveis": [{"quantidade": 1}, {"dano": 5}, {"cadeia": 2}, {"explosao": 1}, {"velocidade": 80, "dano": 6}, {"combina": 1}]
  },
  "pendrive": {
+  "etiquetas": ["lamina", "arremesso"],
   "nome": "Adaga de Arremesso",
   "icone": "adaga",
   "tipo": "projetil",
@@ -100,6 +106,7 @@
   ]
  },
  "ssd": {
+  "etiquetas": ["lamina", "arremesso", "trovao"],
   "nome": "Tempestade de Lâminas",
   "icone": "tempestade_laminas",
   "tipo": "projetil",
@@ -117,6 +124,7 @@
   }
  },
  "cabo_rede": {
+  "etiquetas": ["sangue", "pesado"],
   "nome": "Corrente Farpada",
   "icone": "corrente",
   "cor": [0.75, 0.75, 0.82],
@@ -150,6 +158,7 @@
   ]
  },
  "fibra_optica": {
+  "etiquetas": ["sangue", "fogo"],
   "nome": "Corrente do Carrasco",
   "icone": "corrente_carrasco",
   "fios": [[1.0, 0.35, 0.1], [1.0, 0.62, 0.2], [1.0, 0.9, 0.5]],
@@ -167,6 +176,7 @@
   }
  },
  "ventoinha": {
+  "etiquetas": ["lamina"],
   "nome": "Lâminas Rodopiantes",
   "icone": "laminas",
   "tipo": "orbita",
@@ -202,6 +212,7 @@
   ]
  },
  "water_cooler": {
+  "etiquetas": ["lamina", "pesado"],
   "nome": "Ciclone de Aço",
   "icone": "ciclone",
   "tipo": "orbita",
@@ -219,6 +230,7 @@
   }
  },
  "cafe": {
+  "etiquetas": ["fogo"],
   "nome": "Fogo Grego",
   "icone": "fogo_grego",
   "rampa": ["1a0805", "3a1408", "7a2c0c", "c45a14", "f0921e", "ffd060"],
@@ -253,6 +265,7 @@
   ]
  },
  "garrafa_termica": {
+  "etiquetas": ["fogo", "pesado"],
   "nome": "Inferno Engarrafado",
   "icone": "inferno",
   "rampa": ["2a0d14", "7e2027", "c45a14", "f0921e", "ffd060", "fff2b0"],
@@ -271,6 +284,7 @@
   }
  },
  "wifi": {
+  "etiquetas": ["sagrado", "sombra"],
   "nome": "Sino Fúnebre",
   "icone": "sino",
   "cor": [0.95, 0.78, 0.42],
@@ -304,6 +318,7 @@
   ]
  },
  "roteador_5g": {
+  "etiquetas": ["sagrado", "gelo"],
   "nome": "Sino do Juízo",
   "icone": "sino_juizo",
   "cor": [1.0, 0.92, 0.65],
@@ -321,6 +336,7 @@
   }
  },
  "baforada": {
+  "etiquetas": ["fogo"],
   "nome": "Baforada de Fogo",
   "icone": "dragao",
   "tipo": "baforada",
@@ -332,6 +348,7 @@
   "niveis": [{"alcance": 15}, {"largura": 10, "dano": 1}, {"queimadura": 4}, {"explosao": 45}, {"alcance": 20, "largura": 12, "dano": 2}]
  },
  "garras_dragao": {
+  "etiquetas": ["sangue"],
   "nome": "Garras",
   "icone": "dragao",
   "tipo": "garras",
@@ -343,6 +360,7 @@
   "niveis": [{"dano": 4}, {"raio": 6}, {"recarga": -0.15}, {"quantidade": 1}, {"dano": 6}]
  },
  "energia_draconica": {
+  "etiquetas": ["trovao"],
   "nome": "Energia Dracônica",
   "icone": "dragao",
   "tipo": "energia_draconica",
@@ -354,6 +372,7 @@
   "niveis": [{"quantidade": 1}, {"dano": 4}, {"explosao": 10}, {"quantidade": 1}, {"recarga": -0.3}]
  },
  "rugido": {
+  "etiquetas": ["pesado"],
   "nome": "Rugido do Dragão",
   "icone": "dragao",
   "tipo": "rugido",
@@ -365,6 +384,7 @@
   "niveis": [{"raio": 15}, {"atordoa": 0.4}, {"dano": 10}, {"recarga": -1.0}, {"raio": 20, "dano": 10}]
  },
  "machado": {
+  "etiquetas": ["lamina", "arremesso"],
   "nome": "Machado Bumerangue",
   "icone": "machado",
   "tipo": "bumerangue",
@@ -375,6 +395,7 @@
   "niveis": [{"quantidade": 1}, {"dano": 6}, {"alcance": 30}, {"quantidade": 1}, {"dano": 10, "recarga": -0.3}]
  },
  "machados_brasa": {
+  "etiquetas": ["lamina", "arremesso", "fogo"],
   "nome": "Machados em Brasa",
   "icone": "machados_brasa",
   "tipo": "bumerangue",
@@ -385,6 +406,7 @@
   "base": {"dano": 34, "recarga": 1.4, "quantidade": 4, "velocidade": 360, "alcance": 210, "area": 1.3}
  },
  "raio": {
+  "etiquetas": ["trovao"],
   "nome": "Raio",
   "icone": "raio",
   "tipo": "raio",
@@ -394,6 +416,7 @@
   "niveis": [{"quantidade": 1}, {"dano": 8}, {"recarga": -0.2}, {"quantidade": 1}, {"dano": 12}]
  },
  "furia_ceus": {
+  "etiquetas": ["trovao", "sagrado"],
   "nome": "Fúria dos Céus",
   "icone": "furia_ceus",
   "tipo": "raio",
@@ -403,6 +426,7 @@
   "base": {"dano": 36, "recarga": 0.9, "quantidade": 3, "raio": 26, "cadeia": 4, "area": 1.2}
  },
  "lanca": {
+  "etiquetas": ["lamina"],
   "nome": "Lança",
   "icone": "lanca",
   "tipo": "lanca",
@@ -412,6 +436,7 @@
   "niveis": [{"dano": 8}, {"alcance": 30}, {"quantidade": 1}, {"dano": 10}, {"recarga": -0.3, "largura": 6}]
  },
  "lanca_ardente": {
+  "etiquetas": ["lamina", "fogo"],
   "nome": "Lança Ardente",
   "icone": "lanca_ardente",
   "tipo": "lanca",
@@ -421,6 +446,7 @@
   "base": {"dano": 60, "recarga": 1.0, "quantidade": 3, "alcance": 210, "largura": 26, "area": 1.3}
  },
  "corvos": {
+  "etiquetas": ["invocacao", "sombra"],
   "nome": "Corvos Famintos",
   "icone": "corvos",
   "tipo": "corvos",
@@ -430,6 +456,7 @@
   "niveis": [{"quantidade": 1}, {"dano": 3}, {"duracao": 1.0}, {"quantidade": 2}, {"dano": 4, "tique": -0.1}]
  },
  "revoada": {
+  "etiquetas": ["invocacao", "sombra"],
   "nome": "Revoada Negra",
   "icone": "revoada",
   "tipo": "corvos",
@@ -439,6 +466,7 @@
   "base": {"dano": 11, "recarga": 2.5, "quantidade": 9, "duracao": 5.0, "velocidade": 280, "tique": 0.35, "area": 1.3}
  },
  "runas": {
+  "etiquetas": ["sagrado", "invocacao"],
   "nome": "Runas Explosivas",
   "icone": "runas",
   "tipo": "runas",
@@ -448,6 +476,7 @@
   "niveis": [{"quantidade": 1}, {"dano": 10}, {"explosao": 10}, {"quantidade": 1}, {"dano": 15, "recarga": -0.4}]
  },
  "circulo_runico": {
+  "etiquetas": ["sagrado", "gelo"],
   "nome": "Círculo Rúnico",
   "icone": "circulo_runico",
   "tipo": "runas",
@@ -457,6 +486,7 @@
   "base": {"dano": 60, "recarga": 1.5, "quantidade": 6, "duracao": 9.0, "raio": 20, "explosao": 64, "lentidao": 1.2, "area": 1.2}
  },
  "martelo": {
+  "etiquetas": ["pesado"],
   "nome": "Martelo Sísmico",
   "icone": "martelo",
   "tipo": "sismo",
@@ -466,6 +496,7 @@
   "niveis": [{"dano": 6}, {"area": 0.15}, {"recarga": -0.4}, {"dano": 8}, {"area": 0.2}]
  },
  "terremoto": {
+  "etiquetas": ["pesado", "gelo"],
   "nome": "Terremoto",
   "icone": "terremoto",
   "tipo": "sismo",
