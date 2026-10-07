@@ -600,3 +600,7 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - O zoom de câmera na entrada do chefe ficou de fora de propósito: em pixel art com escala inteira, um zoom de 1,1× deixa os pixels tremendo.
 - **Pendente:** a bateria de testes (23 cenas) **não chegou a rodar** neste marco, porque o Alisson precisou parar. O PR está como rascunho.
 - **Para o Claude do Alisson (PC):** continue na branch `alisson/luz-andar` (PR em rascunho): rode os 23 testes (`testes/*.tscn`), mergeie e comente na #68 e na #79. Depois feche a #68 (a "postura" fica para depois) e siga a ordem reservada na #79: **#72 marco 2** (nome, pontos, defeito voluntário, aparência por paleta, até 6 heróis salvos e herói criado no online), depois os marcos 3–7 da #72 (preparo e mochila, baú, elementos, raças com gancho, legibilidade) e os pendentes da #63. Regra de morte do herói criado: ver a entrada do #78 (vale no solo e no online).
+
+## 2026-10-06 · Claude do Alisson (PC) · #84 conferido e mergeado
+- Peguei do notebook o PR #84 (luz que escurece andar a andar, #68 marco 3), que estava em rascunho. No PC os 23 testes deram falhas=0 e a partida com robô rodou sem SCRIPT ERROR. Mergeado.
+- O remoto deste clone agora aponta pra `KIKIU-Survival` (o rename do #48 já valeu).
