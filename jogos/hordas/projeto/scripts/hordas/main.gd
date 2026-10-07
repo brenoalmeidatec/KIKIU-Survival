@@ -90,6 +90,8 @@ func _ready() -> void:
 	_versao = texto_versao()
 	_teclas()
 	_ler_args()
+	if _args.has("qualidade"):   # teste: --qualidade=alta|media|baixa vale só nesta execução (não grava nas opções)
+		Config.temporario("qualidade", str(_args.qualidade))
 	Perf.ligado = _args.has("sair")   # relatório de custo por sistema no log do --sair (perf.gd)
 	_camada.layer = 20
 	add_child(_camada)

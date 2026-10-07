@@ -17,6 +17,7 @@ const BICHO := {   # velocidade de fuga (px/s) e quanto tempo até sumir (s)
 var arena: Node
 var cen = null                    # Cenario
 var _sob := Node2D.new()          # detalhes de chão e bichos: por baixo dos enfeites (o chão é show_behind_parent)
+var _bs := Node2D.new()           # ratos, morcegos e corvos (mesma camada de _sob)
 var _alto := Node2D.new()         # partículas: por cima de tudo, bem fracas
 var _part: Array = []             # {tipo, q, v, par, ph, r, cor}
 var _vis: Array = []              # células na tela (muda só quando a câmera passa pra outra célula)
@@ -31,7 +32,10 @@ var _bichos := true               # perfil de qualidade baixa: sem ratos, morceg
 func _ready() -> void:
 	_sob.show_behind_parent = true
 	_sob.draw.connect(_desenhar_sob)
+	_bs.show_behind_parent = true
+	_bs.draw.connect(_desenhar_bichos)
 	add_child(_sob)
+	add_child(_bs)
 	_alto.z_index = 70
 	_alto.draw.connect(_desenhar_alto)
 	add_child(_alto)
@@ -98,6 +102,7 @@ func atualizar_i(dt: float) -> void:
 	var b := Vector2i(floori((_cam.x + 380.0) / Cenario.CEL), floori((_cam.y + 260.0) / Cenario.CEL))
 	var fuga := float(cen.cfg.get("vida", {}).get("fuga", 70.0))
 	var sujo := a != _a or b != _b   # só redesenha o chão quando entra célula nova ou tem bicho se mexendo (polígonos custam)
+	var cel_mudou := sujo   # os detalhes do chão só mudam quando a câmera entra em célula nova; os bichos têm nó próprio (redesenha mais vezes e não arrasta os polígonos)
 	if sujo:
 		_a = a
 		_b = b
@@ -118,8 +123,10 @@ func atualizar_i(dt: float) -> void:
 					parados += 1
 				if bi.estado != antes:
 					sujo = true
-	if sujo or fugindo > 0 or (parados > 0 and Engine.get_process_frames() % 4 == 0):
+	if cel_mudou:
 		_sob.queue_redraw()
+	if sujo or fugindo > 0 or (parados > 0 and Engine.get_process_frames() % 4 == 0):
+		_bs.queue_redraw()
 	_alto.queue_redraw()
 
 
@@ -159,10 +166,16 @@ func _desenhar_sob_i() -> void:
 	for c in _vis:
 		for d in c.detalhes:
 			_detalhe(d)
-	for c in _vis:
-		for b in (c.bichos if _bichos else []):
-			if b.estado != 2:
-				_bicho(b)
+
+
+func _desenhar_bichos() -> void:
+	var _pp := Perf.ini()
+	if cen != null and _bichos:
+		for c in _vis:
+			for b in c.bichos:
+				if b.estado != 2:
+					_bicho(b)
+	Perf.fim("amb_bicho", _pp)
 
 
 func _detalhe(d: Dictionary) -> void:
@@ -231,44 +244,44 @@ func _bicho(b: Dictionary) -> void:
 	var p: Vector2 = b.pos
 	var l: float = b.lado
 	var tic: float = _t * 14.0 + b.ph
-	_sob.draw_colored_polygon(PackedVector2Array([p + Vector2(-4, 0), p + Vector2(0, -1.5), p + Vector2(4, 0), p + Vector2(0, 1.5)]), Color(0, 0, 0, 0.22 * a))
+	_bs.draw_colored_polygon(PackedVector2Array([p + Vector2(-4, 0), p + Vector2(0, -1.5), p + Vector2(4, 0), p + Vector2(0, 1.5)]), Color(0, 0, 0, 0.22 * a))
 	match b.tipo:
 		"rato":
 			var cor := Color(0.3, 0.26, 0.27, a)
 			var pe := 0.0 if not fuga else sin(tic * 1.6)
-			_sob.draw_rect(Rect2(p + Vector2(-3, -3.5), Vector2(6, 3)), cor)
-			_sob.draw_rect(Rect2(p + Vector2(3.0 * l - (0.0 if l > 0 else 2.0), -3), Vector2(2, 2)), cor)   # cabeça
-			_sob.draw_rect(Rect2(p + Vector2(2.0 * l - 0.5, -4.5), Vector2(1, 1)), Color(0.42, 0.26, 0.3, a))   # orelha
-			_sob.draw_line(p + Vector2(-3 * l, -2.5), p + Vector2(-7 * l, -2.5 + sin(_t * 5.0 + b.ph) * 1.5 + pe), Color(0.34, 0.24, 0.26, a), 1.0)   # rabo
+			_bs.draw_rect(Rect2(p + Vector2(-3, -3.5), Vector2(6, 3)), cor)
+			_bs.draw_rect(Rect2(p + Vector2(3.0 * l - (0.0 if l > 0 else 2.0), -3), Vector2(2, 2)), cor)   # cabeça
+			_bs.draw_rect(Rect2(p + Vector2(2.0 * l - 0.5, -4.5), Vector2(1, 1)), Color(0.42, 0.26, 0.3, a))   # orelha
+			_bs.draw_line(p + Vector2(-3 * l, -2.5), p + Vector2(-7 * l, -2.5 + sin(_t * 5.0 + b.ph) * 1.5 + pe), Color(0.34, 0.24, 0.26, a), 1.0)   # rabo
 			if fuga:
-				_sob.draw_rect(Rect2(p + Vector2(-2 + pe * 1.5, -0.5), Vector2(1, 1)), cor)
-				_sob.draw_rect(Rect2(p + Vector2(1 - pe * 1.5, -0.5), Vector2(1, 1)), cor)
+				_bs.draw_rect(Rect2(p + Vector2(-2 + pe * 1.5, -0.5), Vector2(1, 1)), cor)
+				_bs.draw_rect(Rect2(p + Vector2(1 - pe * 1.5, -0.5), Vector2(1, 1)), cor)
 		"morcego":
 			var cor := Color(0.15, 0.11, 0.2, a)
 			if not fuga:   # dormindo: asas dobradas
-				_sob.draw_colored_polygon(PackedVector2Array([p + Vector2(-3, -1), p + Vector2(0, -6), p + Vector2(3, -1)]), cor)
+				_bs.draw_colored_polygon(PackedVector2Array([p + Vector2(-3, -1), p + Vector2(0, -6), p + Vector2(3, -1)]), cor)
 			else:
 				var q := p + Vector2(0, -3.0 - b.alt)
 				var bat := sin(tic * 2.2) * 3.5
-				_sob.draw_rect(Rect2(q + Vector2(-1.5, -1.5), Vector2(3, 3)), cor)
+				_bs.draw_rect(Rect2(q + Vector2(-1.5, -1.5), Vector2(3, 3)), cor)
 				for s in [-1.0, 1.0]:
-					_sob.draw_colored_polygon(PackedVector2Array([q + Vector2(s * 1.5, -1), q + Vector2(s * 8.0, -3.5 + bat), q + Vector2(s * 6.0, 1.0), q + Vector2(s * 3.0, 0.5)]), cor)
+					_bs.draw_colored_polygon(PackedVector2Array([q + Vector2(s * 1.5, -1), q + Vector2(s * 8.0, -3.5 + bat), q + Vector2(s * 6.0, 1.0), q + Vector2(s * 3.0, 0.5)]), cor)
 		"corvo":
 			var cor := Color(0.07, 0.07, 0.11, a)
 			if not fuga or b.t < 0.35:   # parado, bicando o chão
 				var bico := absf(sin(_t * 2.0 + b.ph)) * 1.5 if not fuga else 0.0
-				_sob.draw_rect(Rect2(p + Vector2(-3, -6), Vector2(6, 4)), cor)
-				_sob.draw_rect(Rect2(p + Vector2(2.0 * l - 1.0 + (1.0 if l > 0 else -1.0), -7 + bico), Vector2(2, 2)), cor)
-				_sob.draw_rect(Rect2(p + Vector2(4.0 * l - (0.0 if l > 0 else 1.0), -6 + bico), Vector2(2, 1)), Color(0.4, 0.3, 0.16, a))
-				_sob.draw_line(p + Vector2(-1, -2), p + Vector2(-1, 0), cor, 1.0)
-				_sob.draw_line(p + Vector2(1, -2), p + Vector2(1, 0), cor, 1.0)
+				_bs.draw_rect(Rect2(p + Vector2(-3, -6), Vector2(6, 4)), cor)
+				_bs.draw_rect(Rect2(p + Vector2(2.0 * l - 1.0 + (1.0 if l > 0 else -1.0), -7 + bico), Vector2(2, 2)), cor)
+				_bs.draw_rect(Rect2(p + Vector2(4.0 * l - (0.0 if l > 0 else 1.0), -6 + bico), Vector2(2, 1)), Color(0.4, 0.3, 0.16, a))
+				_bs.draw_line(p + Vector2(-1, -2), p + Vector2(-1, 0), cor, 1.0)
+				_bs.draw_line(p + Vector2(1, -2), p + Vector2(1, 0), cor, 1.0)
 			else:
 				var q := p + Vector2(0, -5.0 - b.alt)
 				var bat := sin(tic * 1.6) * 5.0
-				_sob.draw_rect(Rect2(q + Vector2(-3, -1.5), Vector2(6, 3)), cor)
-				_sob.draw_rect(Rect2(q + Vector2(3.0 * l - (0.0 if l > 0 else 2.0), -2.5), Vector2(2, 2)), cor)
+				_bs.draw_rect(Rect2(q + Vector2(-3, -1.5), Vector2(6, 3)), cor)
+				_bs.draw_rect(Rect2(q + Vector2(3.0 * l - (0.0 if l > 0 else 2.0), -2.5), Vector2(2, 2)), cor)
 				for s in [-1.0, 1.0]:
-					_sob.draw_colored_polygon(PackedVector2Array([q + Vector2(s * 1.0, -1), q + Vector2(s * 4.0, -6.0 + bat), q + Vector2(s * 8.0, -3.0 + bat), q + Vector2(s * 4.0, 1.5)]), cor)
+					_bs.draw_colored_polygon(PackedVector2Array([q + Vector2(s * 1.0, -1), q + Vector2(s * 4.0, -6.0 + bat), q + Vector2(s * 8.0, -3.0 + bat), q + Vector2(s * 4.0, 1.5)]), cor)
 
 
 # ---------------------------------------------------------------- desenho: partículas

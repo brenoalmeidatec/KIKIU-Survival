@@ -20,6 +20,7 @@ func _ready() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
 	Config.temporario("qualidade", str(_args.get("qualidade", "alta")))
+	Config.temporario("pausar_fora", false)   # sem foco (outra janela na frente) a partida pausaria e a rodada ficaria inválida (logica < 1)
 	var m = load("res://main.tscn").instantiate()
 	m._args["fase"] = str(_args.get("fase", 4))
 	m._args["estresse"] = str(n)
