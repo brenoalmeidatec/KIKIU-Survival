@@ -74,7 +74,7 @@ func corte(pos: Vector2, ang: float, arco: float, raio: float, cor: Color, larg 
 
 ## Estrela de impacto no ponto do acerto: raios finos que estouram pra fora e um clarão no meio.
 func impacto(pos: Vector2, cor := Color(0.75, 0.9, 1.0), forte := false) -> void:
-	if _impactos_quadro >= IMPACTOS_QUADRO or not _na_tela(pos):
+	if _impactos_quadro >= IMPACTOS_QUADRO or (_vis.has_area() and not _vis.grow(24.0).has_point(pos)):
 		return
 	_impactos_quadro += 1
 	if impactos.size() >= MAX_IMPACTOS:
@@ -96,12 +96,6 @@ func faisca(pos: Vector2, dir: Vector2, cor: Color, n := 3, forca := 170.0) -> v
 		var a: float = dir.angle() + randf_range(-0.7, 0.7) if dir != Vector2.ZERO else randf() * TAU
 		faiscas.append({"pos": pos, "vel": Vector2.from_angle(a) * randf_range(forca * 0.4, forca), "t": randf_range(0.14, 0.28), "cor": cor})
 
-
-func _na_tela(pos: Vector2) -> bool:
-	if not is_inside_tree():
-		return true
-	var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()
-	return vis.grow(24.0).has_point(pos)
 
 
 func numero(pos: Vector2, valor: float, cor := Color.WHITE, crit := false) -> void:
