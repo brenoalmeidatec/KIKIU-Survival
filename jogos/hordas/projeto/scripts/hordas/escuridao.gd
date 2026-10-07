@@ -24,6 +24,7 @@ uniform float forca = 0.9;
 uniform vec3 tom = vec3(0.03, 0.025, 0.07);
 uniform float nevoa = 0.5;
 uniform float t = 0.0;
+uniform int halo_n = 8;   // leituras da tela do halo (perfil de qualidade: 8 alta, 4 média, 0 baixa)
 uniform float aparece = 1.0;
 uniform vec3 ambiente = vec3(1.0);   // tom do cenário (CanvasModulate do chão): desfeito pra medir o brilho de verdade
 const vec2 OFS[8] = vec2[8](vec2(2.0, 0.0), vec2(-2.0, 0.0), vec2(0.0, 2.0), vec2(0.0, -2.0), vec2(3.0, 3.0), vec2(-3.0, 3.0), vec2(3.0, -3.0), vec2(-3.0, -3.0));
@@ -64,9 +65,10 @@ void fragment() {
 	vec3 claro = c * mix(vec3(1.0), vec3(1.1, 0.97, 0.82), l * 0.7);
 	vec3 res = mix(escuro, claro, vis);
 	// halo: o que brilha "sangra" um pouco de luz em volta (olhos, chamas e tiros no escuro); só onde está escuro
-	if (vis < 0.99) {
+	if (halo_n > 0 && vis < 0.99) {
 		vec3 halo = vec3(0.0);
 		for (int i = 0; i < 8; i++) {
+			if (i >= halo_n) { break; }
 			vec3 cc = textureLod(tela, SCREEN_UV + OFS[i] * SCREEN_PIXEL_SIZE, 0.0).rgb;
 			float g = smoothstep(0.86, 0.96, max(cc.r / amb.r, max(cc.g / amb.g, cc.b / amb.b)));
 			halo += cc * g * (i < 4 ? 0.15 : 0.1);
@@ -148,6 +150,7 @@ func _process_i(dt: float) -> void:
 		return
 	_t += dt
 	_mat.set_shader_parameter("t", _t)
+	_mat.set_shader_parameter("halo_n", int(Config.q("escuro_halo")))
 	_mat.set_shader_parameter("aparece", _aparece)
 	var amb: Color = arena.chao._ambiente.color if arena.chao and "_ambiente" in arena.chao else Color.WHITE
 	_mat.set_shader_parameter("ambiente", Vector3(amb.r, amb.g, amb.b))
@@ -164,19 +167,20 @@ func _process_i(dt: float) -> void:
 func _atualizar_luzes() -> void:
 	var ct: Transform2D = get_viewport().get_canvas_transform()
 	var n := 0
+	var max_l := mini(MAX_LUZES, int(Config.q("escuro_luzes")))   # perfil de qualidade
 	var jog: Vector2 = ct * arena.jogador.centro()
 	var pisca := 1.0 + 0.035 * sin(_t * 9.0) + 0.02 * sin(_t * 23.0)
 	_luzes[n] = Vector4(jog.x, jog.y, float(_cfg.get("raio_heroi", 130.0)) * pisca, 1.0)
 	n += 1
 	var rt := float(_cfg.get("raio_tocha", 100.0))
 	for tc in _tochas_perto():
-		if n >= MAX_LUZES - 4:
+		if n >= max_l - 4:
 			break
 		var sp: Vector2 = ct * (tc[0] + Vector2(0, -12))
 		_luzes[n] = Vector4(sp.x, sp.y, rt * (1.0 + 0.07 * sin(_t * 11.0 + tc[1]) + 0.04 * sin(_t * 27.0 + tc[1] * 2.0)), 0.95)
 		n += 1
 	for s in arena.chao.santuarios:
-		if n >= MAX_LUZES - 2:
+		if n >= max_l - 2:
 			break
 		var sp2: Vector2 = ct * s.pos
 		if sp2.x > -80 and sp2.x < W + 80 and sp2.y > -80 and sp2.y < H + 80:
@@ -189,7 +193,7 @@ func _atualizar_luzes() -> void:
 		if sv.x > -140 and sv.x < W + 140 and sv.y > -140 and sv.y < H + 140:
 			_luzes[n] = Vector4(sv.x, sv.y, v.luz.x, v.luz.y)
 			n += 1
-			if n >= MAX_LUZES:
+			if n >= max_l:
 				break
 	luzes_ativas = n
 	_mat.set_shader_parameter("luzes", _luzes)

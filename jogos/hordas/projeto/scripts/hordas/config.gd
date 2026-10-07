@@ -16,6 +16,7 @@ const ITENS := [
 	{"chave": "texto_hud", "grupo": "Acessibilidade", "nome": "Texto do HUD", "valores": ["normal", "grande"], "rotulos": ["Normal", "Grande"], "padrao": "normal"},
 	{"chave": "daltonico", "grupo": "Acessibilidade", "nome": "Modo daltônico", "valores": [false, true], "rotulos": ["Não", "Paleta segura"], "padrao": false},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
+	{"chave": "qualidade", "grupo": "Gráfico", "nome": "Qualidade (partículas, sombras, luz)", "valores": ["alta", "media", "baixa"], "rotulos": ["Alta", "Média", "Baixa"], "padrao": "alta"},
 	{"chave": "vinheta", "grupo": "Gráfico", "nome": "Vinheta (bordas escuras)", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "vsync", "grupo": "Gráfico", "nome": "V-Sync", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "fps_max", "grupo": "Gráfico", "nome": "Limite de FPS", "valores": [30, 60, 120, 144, 0], "rotulos": ["30", "60", "120", "144", "Sem limite"], "padrao": 0},
@@ -32,8 +33,35 @@ var _cfg := ConfigFile.new()
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_cfg.load(ARQUIVO)
+	if OS.get_cmdline_user_args().is_empty() and DisplayServer.get_name() != "headless" and not _cfg.has_section_key("opcoes", "qualidade"):
+		_cfg.set_value("opcoes", "qualidade", qualidade_sugerida())   # 1ª vez: máquina fraca já começa em Média ou Baixa (só em memória até o jogador mexer em alguma opção)
 	# com opções de teste (--bot, --online, --print_tela...) só o som vale: os testes rodam em janela e sem limite de FPS
 	aplicar(OS.get_cmdline_user_args().is_empty())
+
+
+var _perfil_nome := ""
+var _perfil := {}
+
+
+## Valor de uma chave do perfil de qualidade escolhido (dados/qualidade.json). Chave que o perfil não tem vale o de "alta".
+func q(chave: String) -> Variant:
+	var nome := str(v("qualidade"))
+	if nome != _perfil_nome:
+		_perfil_nome = nome
+		var ps: Dictionary = Dados.json("qualidade").get("perfis", {})
+		_perfil = ps.get(nome, ps.get("alta", {}))
+	return _perfil.get(chave, Dados.json("qualidade").get("perfis", {}).get("alta", {}).get(chave))
+
+
+## Perfil de partida pela máquina: até 4 processadores lógicos e vídeo integrado da Intel (HD/UHD, sem Iris/Arc) = baixa;
+## só um dos dois = média; o resto = alta. O jogador muda em Opções > Gráfico.
+static func qualidade_sugerida() -> String:
+	var placa := RenderingServer.get_video_adapter_name().to_lower()
+	var integrada := placa.contains("intel") and not placa.contains("iris") and not placa.contains("arc")
+	var poucos := OS.get_processor_count() <= 4
+	if integrada and poucos:
+		return "baixa"
+	return "media" if integrada or poucos else "alta"
 
 
 func item(chave: String) -> Dictionary:

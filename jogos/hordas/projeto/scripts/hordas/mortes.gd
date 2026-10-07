@@ -104,10 +104,12 @@ func nova(v, forcar := false) -> String:
 	var dm: Dictionary = Dados.json("mortes")
 	var teto: Dictionary = dm.get("teto", {})
 	var part := int(dm.get("efeitos", {}).get(ef, {}).get("part", 0))
-	if ef != "simples" and (ativas.size() >= int(teto.get("mortes", 24)) or part_usadas + part > int(teto.get("particulas", 600))):
+	var max_g := maxi(1, roundi(float(teto.get("mortes", 24)) * float(Config.q("mortes_grandes"))))   # perfil de qualidade: tetos menores
+	var max_p := maxi(20, roundi(float(teto.get("particulas", 600)) * float(Config.q("mortes_part"))))
+	if ef != "simples" and (ativas.size() >= max_g or part_usadas + part > max_p):
 		ef = "simples"   # sem vaga: morte simples
 	if ef == "simples":
-		if simples.size() >= int(teto.get("simples", 48)):
+		if simples.size() >= roundi(float(teto.get("simples", 48)) * float(Config.q("mortes_simples"))):
 			return ""
 		simples.append(registro(v, causa, "simples"))
 	else:

@@ -25,6 +25,7 @@ var _b := Vector2i.ZERO
 static var _tex_nevoa: ImageTexture
 var _t := 0.0
 var _cam := Vector2.ZERO
+var _bichos := true               # perfil de qualidade baixa: sem ratos, morcegos e corvos
 
 
 func _ready() -> void:
@@ -47,9 +48,13 @@ func configurar(c, a: Node) -> void:
 		return
 	var r := RandomNumberGenerator.new()
 	r.seed = hash("amb|" + c.nome)
+	var mult := float(Config.q("amb_particulas"))   # perfil de qualidade: menos partículas; "baixa" também tira a névoa (as manchas grandes custam mais)
+	_bichos = bool(Config.q("amb_bichos"))
 	for e in c.cfg.get("particulas", []):
+		if str(e.tipo) == "nevoa" and not bool(Config.q("amb_nevoa")):
+			continue
 		var cor: Array = e.get("cor", [1, 1, 1, 0.4])
-		for i in int(e.get("n", 0)):
+		for i in ceili(float(e.get("n", 0)) * mult):
 			if _part.size() >= MAX_PARTICULAS:
 				return
 			_part.append(_nova(str(e.tipo), r, Color(cor[0], cor[1], cor[2], cor[3])))
@@ -104,7 +109,7 @@ func atualizar_i(dt: float) -> void:
 			var c: Dictionary = cen.celula(cx, cy)
 			if sujo:
 				_vis.append(c)
-			for bi in c.bichos:
+			for bi in (c.bichos if _bichos else []):
 				var antes: int = bi.estado
 				_mexer(bi, jp, fuga, dt)
 				if bi.estado == 1:
@@ -155,7 +160,7 @@ func _desenhar_sob_i() -> void:
 		for d in c.detalhes:
 			_detalhe(d)
 	for c in _vis:
-		for b in c.bichos:
+		for b in (c.bichos if _bichos else []):
 			if b.estado != 2:
 				_bicho(b)
 
