@@ -1,0 +1,10 @@
+{
+ "_ajuda": "Defeito voluntário (#72, marco 2): o jogador escolhe UM (ou nenhum) e ganha 'pontos' extras de atributo em troca de 'efeito', que soma nos bônus do herói (nomes de Construcao.BASE; recarga MAIS é mais lento). O anfitrião online valida pelos pontos daqui.",
+ "lista": ["manco", "ossos_de_vidro", "vista_curta", "mao_tremula", "azarado", "cabeca_dura"],
+ "manco": {"nome": "Manco", "descricao": "Uma perna que não obedece. Anda mais devagar.", "pontos": 3, "efeito": {"velocidade": -0.15}},
+ "ossos_de_vidro": {"nome": "Ossos de Vidro", "descricao": "Qualquer tombo dói em dobro. Muito menos vida.", "pontos": 4, "efeito": {"vida_max": -35, "regen": -0.1}},
+ "vista_curta": {"nome": "Vista Curta", "descricao": "Não enxerga o ponto fraco. Menos crítico e menos área.", "pontos": 3, "efeito": {"critico": -0.06, "area": -0.1}},
+ "mao_tremula": {"nome": "Mão Trêmula", "descricao": "Ataca devagar e sem firmeza.", "pontos": 3, "efeito": {"recarga": 0.12, "dano": -0.05}},
+ "azarado": {"nome": "Azarado", "descricao": "Nada cai perto dele. Menos sorte e ímã curto.", "pontos": 2, "efeito": {"sorte": -0.4, "ima": -0.3}},
+ "cabeca_dura": {"nome": "Cabeça-Dura", "descricao": "Demora a aprender: ganha menos XP.", "pontos": 2, "efeito": {"xp": -0.2}}
+}

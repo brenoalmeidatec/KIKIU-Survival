@@ -4,6 +4,7 @@ extends Node2D
 
 const Visual := preload("res://scripts/hordas/visual.gd")
 const Direcao := preload("res://scripts/hordas/direcao.gd")
+const Paleta := preload("res://scripts/hordas/paleta.gd")
 const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
 
 var peer := 0
@@ -17,6 +18,7 @@ var _rola := false               # está rolando (bit 8 do estado; #68)
 const CENTRO_CORPO := Vector2(0, -29)   # o meio do corpo em relação ao pé: o giro do rolamento é em volta dele
 var fora := false               # duelo: já foi eliminado
 var spr := Sprite2D.new()
+var _cab: Sprite2D = null        # cabelo do herói criado (camada por cima do corpo)
 var _alvo := Vector2.ZERO
 var _mov := Vector2.ZERO
 var _dir := "baixo"
@@ -39,12 +41,26 @@ func configurar(p: int, heroi_: String, nome_: String) -> void:
 	heroi = heroi_
 	nome = nome_
 	var h: Dictionary = Dados.json("herois").get(heroi, {})
-	spr.texture = Dados.tex_personagem(str(h.get("sprite", heroi)), "andando_8")
+	var paleta: Dictionary = h.get("paleta", {})
+	if paleta.is_empty():
+		spr.texture = Dados.tex_personagem(str(h.get("sprite", heroi)), "andando_8")
+	else:   # herói criado (#72, marco 2): corpo e cabelo recoloridos pela paleta, em duas camadas como o herói local
+		spr.texture = Paleta.textura(str(h.get("sprite", heroi)), "corpo", paleta)
 	spr.hframes = maxi(1, int(spr.texture.get_width()) / 44)
 	spr.vframes = Direcao.linhas_da_altura(spr.texture.get_height())
 	spr.centered = false
 	spr.offset = Vector2(-22, -58)
 	add_child(spr)
+	if not paleta.is_empty():
+		var cab := Paleta.textura(str(h.get("sprite", heroi)), "camadas/cabelo", paleta)
+		if cab:
+			_cab = Sprite2D.new()
+			_cab.texture = cab
+			_cab.hframes = spr.hframes
+			_cab.vframes = spr.vframes
+			_cab.centered = false
+			_cab.offset = spr.offset
+			spr.add_child(_cab)
 
 
 func centro() -> Vector2:
@@ -72,6 +88,8 @@ func atualizar(dt: float, d: Dictionary) -> void:
 		spr.frame = LINHA[_dir] * spr.hframes + 1 + int(_t * 12.0) % 8
 	else:
 		spr.frame = LINHA[_dir] * spr.hframes
+	if _cab:
+		_cab.frame = spr.frame
 	spr.modulate = Color(0.45, 0.45, 0.5, 0.8) if caido else Color.WHITE
 	spr.rotation = PI / 2 if caido else 0.0
 	spr.position = Vector2(-30, -10) if caido else Vector2.ZERO
