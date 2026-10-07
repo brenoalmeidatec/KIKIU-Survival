@@ -1,5 +1,5 @@
 {
- "_ajuda": "tipo: projetil (atira no inimigo mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio (scripts/hordas/armas/): katana, pistolas, marcial, aura_energia, elemental e os globais bumerangue, raio, lanca, corvos, runas e sismo (#65). visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos).",
+ "_ajuda": "tipo: projetil (atira no inimigo mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio (scripts/hordas/armas/): katana, pistolas, marcial, aura_energia, elemental e os globais bumerangue, raio, lanca, corvos, runas e sismo (#65). visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos). crescimento = (opcional) troca a curva de crescimento só desta arma (area, dano, evoluida, desligado); a curva geral que faz toda arma começar pequena e fraca e crescer com o nível fica em dados/crescimento_armas.json.",
  "_config": {
   "limite_exclusivas": 2
  },
@@ -131,6 +131,7 @@
   "icone": "corrente",
   "cor": [0.75, 0.75, 0.82],
   "tipo": "chicote",
+  "crescimento": {"area": [[0.0, 0.86], [0.5, 1.0], [1.0, 1.25]], "dano": [[0.0, 0.95], [0.5, 1.02], [1.0, 1.12]]},
   "descricao": "Açoita pros dois lados com uma corrente farpada.",
   "base": {
    "dano": 14,
@@ -148,14 +149,13 @@
     "dano": 6
    },
    {
-    "area": 0.2
+    "dano": 4
    },
    {
     "dano": 8
    },
    {
-    "recarga": -0.25,
-    "area": 0.2
+    "recarga": -0.25
    }
   ]
  },
@@ -205,7 +205,7 @@
     "quantidade": 1
    },
    {
-    "area": 0.25
+    "giro": 0.5
    },
    {
     "dano": 8,
@@ -253,8 +253,7 @@
     "quantidade": 1
    },
    {
-    "dano": 3,
-    "area": 0.2
+    "dano": 3
    },
    {
     "duracao": 1.0
@@ -276,7 +275,7 @@
   "tipo": "poca",
   "descricao": "Racha o chão em gelo. Quem pisa fica lento e, de tanto gelo, congela.",
   "base": {"dano": 3, "recarga": 3.4, "quantidade": 1, "area": 1.0, "raio": 44, "duracao": 3.5, "tique": 0.4},
-  "niveis": [{"area": 0.15}, {"quantidade": 1}, {"dano": 3, "duracao": 1.0}, {"area": 0.2}, {"quantidade": 1, "dano": 3}]
+  "niveis": [{"dano": 2}, {"quantidade": 1}, {"dano": 3, "duracao": 1.0}, {"tique": -0.05}, {"quantidade": 1, "dano": 3}]
  },
  "garrafa_termica": {
   "etiquetas": ["fogo", "pesado"],
@@ -315,20 +314,19 @@
   },
   "niveis": [
    {
-    "area": 0.2
+    "empurra": 15
    },
    {
     "dano": 2
    },
    {
-    "area": 0.2,
     "tique": -0.1
    },
    {
     "dano": 3
    },
    {
-    "area": 0.2
+    "dano": 2
    }
   ]
  },
@@ -514,7 +512,7 @@
   "familia": "aura",
   "descricao": "Bate no chão e solta uma onda que empurra tudo pra longe.",
   "base": {"dano": 18, "recarga": 3.0, "raio": 85, "empurra": 260, "area": 1.0},
-  "niveis": [{"dano": 6}, {"area": 0.15}, {"recarga": -0.4}, {"dano": 8}, {"area": 0.2}]
+  "niveis": [{"dano": 6}, {"empurra": 30}, {"recarga": -0.4}, {"dano": 8}, {"dano": 6}]
  },
  "terremoto": {
   "etiquetas": ["pesado", "gelo"],

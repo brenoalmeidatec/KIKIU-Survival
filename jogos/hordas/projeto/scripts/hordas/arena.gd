@@ -876,11 +876,16 @@ func chefes() -> Array:
 # ---------- XP e nível ----------
 
 func xp_para(n: int) -> float:
+	var base := 519.0 + (n - 40) * 40.0
 	if n < 20:
-		return 5.0 + (n - 1) * 6.0
-	if n < 40:
-		return 119.0 + (n - 20) * 20.0
-	return 519.0 + (n - 40) * 40.0
+		base = 5.0 + (n - 1) * 6.0
+	elif n < 40:
+		base = 119.0 + (n - 20) * 20.0
+	# as armas nascem fracas (dados/crescimento_armas.json): os primeiros níveis custam menos XP pra a build crescer logo
+	var ini: Dictionary = Dados.json("crescimento_armas").get("xp_inicial", {})
+	if n <= int(ini.get("ate", 0)):
+		base *= float(ini.get("fator", 1.0))
+	return base
 
 
 func ganhar_xp(valor: float) -> void:

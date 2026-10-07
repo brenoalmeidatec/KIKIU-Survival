@@ -1461,12 +1461,19 @@ func _print_tela(qual: String) -> void:
 			_arena.armas.lista.clear()
 			var arma_g := str(_args.get("arma", "katana"))
 			_arena.armas.adicionar(arma_g)
+			if _args.has("nivel_arma"):   # --nivel_arma=N: nível da arma no print (99 = o máximo), pra comparar a curva de crescimento
+				_arena.armas.achar(arma_g).nivel = clampi(int(_args.nivel_arma), 1, _arena.armas.nivel_max(arma_g))
+				_arena.armas.preaquecer()
+				Config.temporario("numeros_dano", false)   # sem números por cima do golpe
 			var jg: Vector2 = _arena.jogador.position
 			for i in 6:
 				var vg = _arena.inimigos.criar(str(_args.get("inimigo", "jacare_lodo")), jg + Vector2(34 + (i % 3) * 14, -22 + int(i / 3.0) * 30), 1)
 				if vg:
 					vg.vel = 0.0
 					vg.t_nasc = 0.0
+					if _args.has("nivel_arma"):   # alvos que aguentam todos os golpes: a comparação dos níveis fica na área do golpe, não em quem morreu
+						vg.hp = 1.0e9
+						vg.hpmax = 1.0e9
 			await get_tree().create_timer(0.1, true, false, true).timeout
 			_arena.armas.achar(arma_g).t = 0.0
 			Engine.time_scale = float(_args.get("lento", 0.08))

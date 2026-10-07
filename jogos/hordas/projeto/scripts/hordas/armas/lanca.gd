@@ -4,6 +4,7 @@ extends RefCounted
 ## Atributos: alcance, largura, dano, quantidade, area. Módulo de comportamento de arma (veja armas.gd e pistolas.gd).
 
 const DUR := 0.22   # quanto tempo a lança fica esticada (vai e volta)
+const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
 static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -42,9 +43,10 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		Som.tocar("whoosh", 0.05, 1.3, -8)
 		var ef = w.fx()
 		if ef:   # faíscas saindo da ponta na direção da estocada
-			ef.faisca(fim, e.dir, Color(1.0, 0.75, 0.4) if e.evo else Color(0.8, 0.9, 1.0), 5, 220.0)
+			ef.faisca(fim, e.dir, Color(1.0, 0.75, 0.4) if e.evo else Color(0.8, 0.9, 1.0), 3, 220.0)
+			Cresc.fagulhas(w, fim, e.dir, Color(1.0, 0.75, 0.4) if e.evo else Color(0.8, 0.9, 1.0), e.get("tier", 0), 230.0)
 		if n > 0:
-			w.golpe_acertou(0.8)
+			Cresc.acerto(w, 0.8, e.get("tier", 0))
 	return e.t > 0
 
 
@@ -57,11 +59,19 @@ static func pintar(w, e: Dictionary) -> void:
 	var ponta: Vector2 = c + e.dir * e.alcance * ext
 	var haste := Color(0.8, 0.5, 0.25) if e.evo else Color(0.45, 0.32, 0.2)
 	var metal := Color(1.0, 0.7, 0.3) if e.evo else Color(0.85, 0.85, 0.92)
-	w.draw_line(base, c + e.dir * e.alcance, Color(metal, 0.12 * ext), e.largura)   # a faixa que a estocada varre
-	w.draw_line(base.floor(), ponta.floor(), Color(0.05, 0.04, 0.08, 0.7), 4.0)
-	w.draw_line(base.floor(), ponta.floor(), haste, 2.0)
+	var t: int = e.get("tier", 0)
+	var g := Cresc.grossura(t)
+	metal = Cresc.cor(metal, t)
+	w.draw_line(base, c + e.dir * e.alcance, Color(metal, 0.12 * ext * g), e.largura)   # a faixa que a estocada varre
+	if t >= 2:   # imagem fantasma da lança, um pouco atrás na estocada, e luz na ponta
+		for k in range(int(round(float(Cresc.fx(t).imagens) * Cresc.fator())), 0, -1):
+			var pk: Vector2 = c + e.dir * e.alcance * ext * (1.0 - 0.12 * k)
+			w.draw_line(base.floor(), pk.floor(), Color(metal, 0.3 / k), 2.0 * g)
+		Cresc.halo(w, ponta, 16.0 + e.largura, metal, t)
+	w.draw_line(base.floor(), ponta.floor(), Color(0.05, 0.04, 0.08, 0.7), 4.0 * g)
+	w.draw_line(base.floor(), ponta.floor(), haste, 2.0 * g)
 	var lado: Vector2 = e.dir.orthogonal() * maxf(4.0, e.largura * 0.35)
-	w.draw_colored_polygon(PackedVector2Array([ponta + e.dir * 10.0, ponta + lado, ponta - lado]), metal)
+	w.draw_colored_polygon(PackedVector2Array([ponta + e.dir * 10.0 * g, ponta + lado, ponta - lado]), metal)
 
 
 static func fundo(_w, _a: Dictionary, _s: Dictionary) -> void:

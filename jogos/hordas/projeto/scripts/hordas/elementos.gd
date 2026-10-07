@@ -324,6 +324,8 @@ func passo(dt: float) -> void:
 			aneis.remove_at(i)
 	var fim: Array = []
 	for id in estados.keys():
+		if not estados.has(id):   # uma reação anterior deste mesmo laço já tirou este estado (SCRIPT ERROR visto em partidas longas do robô)
+			continue
 		var rec: Dictionary = estados[id]
 		var v = rec.v
 		if v.hp <= 0.0 or ino.por_id.get(id) != v:
