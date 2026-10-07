@@ -27,6 +27,20 @@ func _ready() -> void:
 		tex_personagem(pasta, "rosto")
 
 
+## Linha de versão (título, Opções e pausa): "Versão 0.1.0 · 07/10/2026 · 20bf57a". A versão é a de project.godot
+## (application/config/version, à mão); data e commit vêm de dados/versao.json, que o addon kikiu_versao escreve a cada
+## exportação (o gerar_versao.sh também). Sem o arquivo (rodando pelo editor, sem exportar) fica "· dev".
+static func texto_versao() -> String:
+	var v := "Versão " + str(ProjectSettings.get_setting("application/config/version", "?"))
+	var f := FileAccess.open("res://dados/versao.json", FileAccess.READ)
+	var d = JSON.parse_string(f.get_as_text()) if f else null
+	if d is Dictionary and str(d.get("data", "")) != "" and str(d.get("commit", "")) != "":
+		var p := str(d.data).split("-")   # "2026-10-07" vira 07/10/2026
+		var data: String = "%s/%s/%s" % [p[2], p[1], p[0]] if p.size() == 3 else str(d.data)
+		return "%s · %s · %s" % [v, data, d.commit]
+	return v + " · dev"
+
+
 func json(nome: String) -> Dictionary:
 	if _cache.has(nome):
 		return _cache[nome]

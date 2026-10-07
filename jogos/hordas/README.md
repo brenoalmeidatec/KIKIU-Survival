@@ -38,7 +38,9 @@ Outras opções (`--fase`, `--build`, `--estresse`, `--imortal`, `--print_tela`.
 
 Executáveis e zips **não** ficam no Git. No Godot: **Projeto › Exportar › Windows Desktop** (o preset já está em `projeto/export_presets.cfg`; precisa dos modelos de exportação do 4.4.1).
 
-**Antes de exportar, rode `./gerar_versao.sh`** (nesta pasta). Ele escreve `projeto/dados/versao.json` (data e commit atuais, fora do Git) e o título do jogo mostra no canto de baixo, em cinza, `v0.1.0 · 2026-10-07 · a3d5e4b` (um `+` depois do commit = havia mudança sem commit). Assim dá pra saber de que build é o .exe de quem testa. Sem o arquivo (rodando pelo editor) aparece `v0.1.0 · dev`. O número da versão é o `application/config/version` do `project.godot`: sobe à mão quando o Breno disser.
+**Instalador de uma vez:** `./gerar_instalador.sh` (nesta pasta) gera o `.exe` e o instalador Windows e deixa tudo em `build/` (fora do Git): `build/KIKIU.exe` e `build/instalador/KIKIU-Setup-<versão>-<commit>.exe`. Antes, instale o Inno Setup 6 (`winget install --id JRSoftware.InnoSetup -e`) e os modelos de exportação do 4.4.1 em `%APPDATA%/Godot/export_templates/4.4.1.stable/`. Caminhos de outra máquina: variáveis `GODOT` e `ISCC`. O instalador é por usuário (sem administrador), com atalhos no menu Iniciar e opcional na área de trabalho, e tem o ícone e a arte do cavaleiro (`instalador/gerar_arte.sh`).
+
+**Versão no jogo:** cada exportação, até pelo editor, escreve `projeto/dados/versao.json` (data e commit), pelo addon `projeto/addons/kikiu_versao`. Por isso o título, as Opções e o menu de pausa mostram `Versão 0.1.0 · 07/10/2026 · 20bf57a` (um `+` depois do commit = havia mudança sem commit). Sem git no PATH o arquivo anterior fica como está; sem arquivo (rodando pelo editor e sem exportar) aparece `· dev`. O número da versão é o `application/config/version` do `project.godot`: sobe à mão quando o Breno disser. O `gerar_versao.sh` continua valendo, mas já não é preciso rodá-lo antes de exportar.
 
 ## 📂 Estrutura
 
