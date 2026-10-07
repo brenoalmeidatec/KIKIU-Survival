@@ -30,7 +30,7 @@ godot --headless --path jogos/hordas/projeto -- --online=host --bot --heroi=nica
 godot --headless --path jogos/hordas/projeto -- --online=join --endereco=127.0.0.1:7777 --bot --heroi=lucas --sair=300 --rapido=4
 ```
 
-Outras opções (`--fase`, `--build`, `--estresse`, `--imortal`, `--print_tela`...) estão comentadas no começo de `projeto/scripts/hordas/main.gd` (as de foto, junto da função `_print_tela`).
+Outras opções (`--fase`, `--build`, `--estresse`, `--imortal`, `--print_tela`...) estão comentadas no começo de `projeto/scripts/hordas/main.gd` (as de foto, junto da função `_print_tela`). A animação dos heróis (respiração, passo, golpe, recuo e queda) se ajusta em `projeto/dados/animacao.json` (a `_ajuda` explica cada chave); `--print_tela=animacao --heroi=X --cena=parado|andar|golpe|dano|morte --seq=...` tira uma tira de recortes pra conferir.
 
 ## 📦 Gerar o executável (.exe)
 
