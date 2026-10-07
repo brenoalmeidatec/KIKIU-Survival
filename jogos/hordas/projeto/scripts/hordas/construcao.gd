@@ -110,15 +110,10 @@ static func _evoluida(armas: Array, base: String) -> bool:
 	return false
 
 
-## Atributos de uma arma num nível (base + soma dos níveis), sem os bônus do jogador.
+## Atributos de uma arma num nível (base + soma dos níveis + curva de crescimento de dano e área), sem os bônus do jogador.
+## É a mesma conta do jogo (crescimento.gd), então o dano "de catálogo" do duelo concorda com o da horda.
 static func atributos_arma(id: String, nivel: int) -> Dictionary:
-	var d: Dictionary = Dados.json("armas").get(id, {})
-	var a: Dictionary = d.get("base", {}).duplicate()
-	var niveis: Array = d.get("niveis", [])
-	for i in mini(nivel - 1, niveis.size()):
-		for k in niveis[i]:
-			a[k] = float(a.get(k, 0)) + float(niveis[i][k])
-	return a
+	return preload("res://scripts/hordas/crescimento.gd").atributos(id, nivel)
 
 
 ## Dano por segundo "de catálogo" de cada tipo de arma da build (se todo golpe acertasse um alvo).

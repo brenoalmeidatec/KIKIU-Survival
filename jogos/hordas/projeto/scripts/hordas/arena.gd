@@ -30,6 +30,7 @@ const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
 const Entradas := preload("res://scripts/hordas/entradas.gd")
+const Abertura := preload("res://scripts/hordas/abertura.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
 const TelaMapa := preload("res://scripts/hordas/tela_mapa.gd")
@@ -84,6 +85,8 @@ var dano_por_arma := {}
 var fase_stat := _stat_novo()  # números DESTA fase (zera a cada fase; a tela de resultados mostra isso)
 var resultado: CanvasLayer     # tela de resultados da fase (resultado.gd)
 var entradas: CanvasLayer      # entrada dos personagens e do chefe (entradas.gd)
+var abertura: CanvasLayer      # abertura cinematográfica da fase (abertura.gd, dados/entrada.json)
+var com_abertura := false      # o main.gd liga numa partida de verdade (ou com --entrada); robô, testes e capturas ficam sem
 var escuridao: CanvasLayer     # escuridão da fase de horror (escuridao.gd)
 var mapa: Dictionary            # mapa de progressão da corrida (mapa.gd), igual em todos os clientes (mesma semente)
 var mapa_pos := Vector2i(0, 0)  # nó atual: x = andar (0 = fase 1), y = faixa
@@ -235,6 +238,9 @@ func _ready() -> void:
 	entradas = Entradas.new()
 	entradas.arena = self
 	add_child(entradas)
+	abertura = Abertura.new()
+	abertura.arena = self
+	add_child(abertura)
 	add_child(preload("res://scripts/hordas/vinheta.gd").new())
 	escuridao = Escuridao.new()   # fase de horror: só liga quando a fase tem "escuro" em corrida.json
 	escuridao.arena = self
@@ -242,9 +248,8 @@ func _ready() -> void:
 	_zerar_fase_stat()
 	Som.musica(_nome_musica(diretor.fases()[0].get("musica", Dados.json("fase").get("musica", "minijogo_tenso")), 0))
 	var f0: Dictionary = diretor.fases()[0]
-	_anunciar_fase(0, "")
 	camera.position = jogador.centro()
-	entradas.chegada()   # o herói "cai" no começo da fase 1
+	_comeco_de_fase(0, "")   # abertura cinematográfica (ou, sem ela, o anúncio e o herói "cai" no começo da fase 1)
 
 
 func _exit_tree() -> void:
@@ -333,7 +338,8 @@ func _process(dt: float) -> void:
 	if Time.get_ticks_msec() < _hitstop_ate:   # hitstop: tempo real, não depende de Engine.time_scale
 		dt *= Jogador.HITSTOP_ESCALA
 	var t0 := Time.get_ticks_usec()
-	var parado: bool = caido or (duelo_ativo and (duelo.estado == "contagem" or not duelo.lut_jogador.vivo))
+	var parado: bool = caido or (duelo_ativo and (duelo.estado == "contagem" or not duelo.lut_jogador.vivo)) or abertura.heroi_preso()
+	var mundo_espera: bool = abertura.mundo_preso()   # abertura da fase: diretor, inimigos e relógio esperam (todos os clientes, mesma duração)
 	if eh_online and cartas.aberto():
 		jogador.invencivel = maxf(jogador.invencivel, 0.1)   # no online o jogo não pausa: escolhendo carta, não apanha
 	if not parado:
@@ -342,14 +348,14 @@ func _process(dt: float) -> void:
 		jogador.queue_redraw()
 	if duelo_ativo:
 		duelo.atualizar(dt)
-	elif not pre_duelo and not entre_fases:
+	elif not pre_duelo and not entre_fases and not mundo_espera:
 		if inimigos.espelho:
 			diretor.so_relogio(dt)   # cliente: quem cria os vírus é o anfitrião
 		else:
 			diretor.atualizar(dt)
 		objetivo.atualizar(dt)
 	var t1 := Time.get_ticks_usec()
-	if not duelo_ativo and not pre_duelo and not entre_fases:
+	if not duelo_ativo and not pre_duelo and not entre_fases and not mundo_espera:
 		inimigos.atualizar(dt, jogador)
 	var t2 := Time.get_ticks_usec()
 	if not parado:
@@ -380,7 +386,7 @@ func _process(dt: float) -> void:
 	var olhar_alvo: Vector2 = (jogador._vel * 0.22).limit_length(OLHAR_MAX) if Config.v("camera_frente") else Vector2.ZERO
 	_olhar = _olhar.lerp(olhar_alvo, minf(1.0, dt * 2.5))
 	var foco: Vector2 = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro() + _olhar
-	camera.position = finalizacao.camera(entradas.camera(foco))   # a entrada do chefe leva a câmera até ele e traz de volta; a finalização aproxima
+	camera.position = finalizacao.camera(entradas.camera(abertura.camera(foco)))   # a entrada do chefe leva a câmera até ele e traz de volta; a finalização aproxima
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
 
 
@@ -800,10 +806,17 @@ func _iniciar_andar(idx: int) -> void:
 	var f: Dictionary = diretor.fases()[diretor.fase_idx]
 	objetivo.nova_fase(f, no_tipo, diretor.fase_idx)
 	var marca := "  (ELITE)" if no_tipo == "elite" else ""
-	_anunciar_fase(diretor.fase_idx, marca)
 	entre_fases = false
 	_musica_da_fase(false)
-	entradas.chegada()   # herói (e aliados no online) chegam na fase nova
+	_comeco_de_fase(diretor.fase_idx, marca)   # abertura da fase (ou o anúncio e a chegada simples): herói e aliados chegam
+
+
+## Começo de um andar: a abertura cinematográfica (abertura.gd) se estiver ligada; senão o anúncio do HUD e a chegada simples do herói.
+func _comeco_de_fase(idx: int, marca: String) -> void:
+	if abertura.comecar(idx, marca):
+		return   # o título e a queda do herói são dela
+	_anunciar_fase(idx, marca)
+	entradas.chegada()
 
 
 ## Teste e depuração (--fase=N): vai direto pra um andar, andando pelo mapa com a política do robô.
@@ -822,7 +835,8 @@ func saltar_para_andar(idx: int) -> void:
 	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
 	objetivo.nova_fase(diretor.fases()[diretor.fase_idx], no_tipo, diretor.fase_idx)
 	hud.limpar_mensagens()   # o anúncio da fase 1 já tinha saído: troca pelo do andar de destino
-	_anunciar_fase(diretor.fase_idx, "")
+	if not abertura.comecar(diretor.fase_idx, ""):
+		_anunciar_fase(diretor.fase_idx, "")
 	_musica_da_fase(false)
 
 
@@ -862,11 +876,16 @@ func chefes() -> Array:
 # ---------- XP e nível ----------
 
 func xp_para(n: int) -> float:
+	var base := 519.0 + (n - 40) * 40.0
 	if n < 20:
-		return 5.0 + (n - 1) * 6.0
-	if n < 40:
-		return 119.0 + (n - 20) * 20.0
-	return 519.0 + (n - 40) * 40.0
+		base = 5.0 + (n - 1) * 6.0
+	elif n < 40:
+		base = 119.0 + (n - 20) * 20.0
+	# as armas nascem fracas (dados/crescimento_armas.json): os primeiros níveis custam menos XP pra a build crescer logo
+	var ini: Dictionary = Dados.json("crescimento_armas").get("xp_inicial", {})
+	if n <= int(ini.get("ate", 0)):
+		base *= float(ini.get("fator", 1.0))
+	return base
 
 
 func ganhar_xp(valor: float) -> void:

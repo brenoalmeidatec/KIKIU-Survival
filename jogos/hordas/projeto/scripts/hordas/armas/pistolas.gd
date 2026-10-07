@@ -7,6 +7,7 @@ extends RefCounted
 
 const MAO := Vector2(9, 3)       # onde fica cada mão em relação ao centro do corpo
 const OURO := Color(1.0, 0.85, 0.4)
+const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
 static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -51,11 +52,12 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 	e.vida -= dt
 	if e.vida <= 0:
 		return false
-	for v in w.campo.no_circulo(e.pos, 5.0):
+	for v in w.campo.no_circulo(e.pos, 5.0 * e.get("area", 1.0)):
 		if v.id in e.acertou:
 			continue
 		e.acertou.append(v.id)
 		w.campo.ferir(v, e.dano, e.dir * 70.0, e.arma)
+		Cresc.fagulhas(w, e.pos, e.dir, OURO, e.get("tier", 0), 130.0)
 		if e.ricochete > 0:
 			# pula pro inimigo mais perto que ainda não levou essa bala
 			var prox = null
@@ -73,7 +75,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		e.perfura -= 1
 		if e.perfura <= 0:
 			if e.explosivo:
-				w.especiais.append({"tipo": "pistolas", "boom": true, "pos": e.pos, "r": 30.0, "t": 0.22,
+				w.especiais.append({"tipo": "pistolas", "boom": true, "pos": e.pos, "r": 30.0 * e.get("area", 1.0), "t": 0.22,
 					"dano": e.dano * 0.6, "arma": e.arma, "feito": false})
 			return false
 	return true
@@ -95,9 +97,14 @@ static func pintar(w, e: Dictionary) -> void:
 	if e.espera > 0:
 		return
 	# bala: risco curto dourado com miolo branco (rastro de 6 px)
-	var cauda: Vector2 = e.pos - e.dir * 6.0
-	w.draw_line(cauda.floor(), e.pos.floor(), Color(OURO, 0.9), 2.0)
+	var t: int = e.get("tier", 0)
+	var ar: float = e.get("area", 1.0)
+	var cauda: Vector2 = e.pos - e.dir * 6.0 * ar * (1.0 + 0.6 * t)   # bala maior = rastro mais comprido e grosso
+	w.draw_line(cauda.floor(), e.pos.floor(), Color(Cresc.cor(OURO, t), 0.9), 2.0 * Cresc.grossura(t) * minf(1.0, 0.5 + ar * 0.5))
 	w.draw_line((e.pos - e.dir * 2.0).floor(), e.pos.floor(), Color.WHITE, 1.0)
+	if t >= 2:
+		for k in range(int(round(float(Cresc.fx(t).imagens) * Cresc.fator())), 0, -1):
+			w.draw_line((cauda - e.dir * 7.0 * k).floor(), (cauda - e.dir * 7.0 * (k - 0.6)).floor(), Color(OURO, 0.5 / k), 1.0)
 
 
 static func fundo(_w, _a: Dictionary, _s: Dictionary) -> void:

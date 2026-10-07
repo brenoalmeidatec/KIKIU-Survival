@@ -89,6 +89,8 @@ var _golpe_vira := false        # o golpe trouxe direção: o herói se vira pra
 var _dano_t := 0.0
 var humano := 1.0                # 0..1: quanto do corpo humano aparece (some na transformação, volta no fim)
 var _ent_t := 0.0                # chegada no começo da fase: tempo que falta da queda (0 = acabou)
+var _ent_dur := Visual.CHEGADA_TEMPO   # duração e altura da queda desta chegada (a abertura da fase usa uma maior)
+var _ent_alt := Visual.CHEGADA_ALTURA
 var _nome_t := 0.0               # tempo que falta do nome em cima da cabeça
 var _ent_nome := ""
 var _ent_poeira := false
@@ -192,8 +194,10 @@ func atacou(dir := Vector2.ZERO) -> void:
 
 
 ## Começo da fase: o herói cai do alto (~0,6 s) com poeira e um flash, e o nome fica em cima por um instante.
-func entrar(nome: String) -> void:
-	_ent_t = Visual.CHEGADA_TEMPO
+func entrar(nome: String, dur := Visual.CHEGADA_TEMPO, alt := Visual.CHEGADA_ALTURA) -> void:
+	_ent_dur = dur
+	_ent_alt = alt
+	_ent_t = dur
 	_nome_t = 2.0
 	_ent_nome = nome
 	_ent_poeira = false
@@ -201,9 +205,9 @@ func entrar(nome: String) -> void:
 
 
 func _chegando() -> void:
-	var p := 1.0 - _ent_t / Visual.CHEGADA_TEMPO
+	var p := 1.0 - _ent_t / _ent_dur
 	if _ent_t > 0.0:   # só durante a queda: depois dela isto roda até o nome sumir e zerava o giro do rolamento (#68)
-		spr.position.y = -Visual.chegada_altura(p)
+		spr.position.y = -Visual.chegada_altura(p, _ent_alt)
 	elif _rolando <= 0.0 and spr.position.y != 0.0:
 		spr.position.y = 0.0   # pousou: o corpo fica no chão
 	if not _ent_poeira and p >= Visual.CHEGADA_POUSO:
@@ -532,7 +536,7 @@ func _animar(entrada: Vector2) -> void:
 		var g := 1.0 - humano
 		spr.modulate = Color(1.0 + g * 1.2, 1.0 + g * 1.6, 1.0 + g * 2.2, humano)
 	if _ent_t > 0.0:   # chegando: aparece e brilha branco no pouso
-		var p := 1.0 - _ent_t / Visual.CHEGADA_TEMPO
+		var p := 1.0 - _ent_t / _ent_dur
 		var g := Visual.chegada_flash(p) * 2.0
 		spr.modulate = Color(spr.modulate.r + g, spr.modulate.g + g, spr.modulate.b + g, spr.modulate.a * clampf(p * 6.0, 0.0, 1.0))
 	if piscar:   # pisca em meia transparência: sumir de vez fazia o herói desaparecer no meio da horda (#68)
@@ -638,7 +642,7 @@ func _draw() -> void:
 
 func _draw_i() -> void:
 	if _ent_t > 0.0 or _nome_t > 0.0:
-		Visual.chegada(self, 1.0 - _ent_t / Visual.CHEGADA_TEMPO, _ent_nome, clampf(_nome_t / 0.6, 0.0, 1.0), Color(0.6, 0.85, 1.0))
+		Visual.chegada(self, 1.0 - _ent_t / _ent_dur, _ent_nome, clampf(_nome_t / 0.6, 0.0, 1.0), Color(0.6, 0.85, 1.0), _ent_alt)
 	if not (arena.caido and arena.online) and humano > 0.5:
 		Visual.sombra_boneco(self, spr)   # o dragão desenha a própria sombra
 	for p in _poeira:   # poeira dos passos: bolinha que cresce e some

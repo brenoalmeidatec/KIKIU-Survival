@@ -122,6 +122,12 @@ static func comparacao(tipo: String, id: String, nv: int) -> Array:
 					var novo := acum + float(delta[k])
 					var melhor := novo < acum if k in MENOR_MELHOR else novo > acum
 					res.append({"rot": _rot(str(k)), "antes": _num(acum), "depois": _num(novo), "bom": melhor})
+			# a arma também cresce de tamanho a cada nível (curva de dados/crescimento_armas.json): linha própria, sempre à vista
+			if not d.is_empty() and d.has("niveis") and not d.get("evolucao", false) and nv > 1 and nv - 2 < niveis.size() and not Dados.json("crescimento_armas").is_empty():
+				var cr := preload("res://scripts/hordas/crescimento.gd")
+				if res.size() >= MAX_LINHAS_CMP:
+					res.resize(MAX_LINHAS_CMP - 1)
+				res.append({"rot": "Tamanho", "antes": "%d%%" % roundi(cr.mult(id, nv - 1, "area") * 100.0), "depois": "%d%%" % roundi(cr.mult(id, nv, "area") * 100.0), "bom": true})
 		"passivo":
 			var ef: Dictionary = d.get("efeito", {})
 			for k in ef:

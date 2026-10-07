@@ -8,6 +8,7 @@ extends RefCounted
 const COBALTO := Color(0.25, 0.45, 1.0)
 const CIANO := Color(0.55, 0.85, 1.0)
 const OURO := Color(1.0, 0.82, 0.35)
+const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
 static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -39,7 +40,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 
 static func pintar(w, e: Dictionary) -> void:
 	var f: float = e.t / 0.45
-	w.draw_arc(e.pos.floor(), e.r, 0, TAU, 40, Color(CIANO, 0.75 * f), 3.0)
+	w.draw_arc(e.pos.floor(), e.r, 0, TAU, 40, Color(Cresc.cor(CIANO, e.get("tier", 0)), 0.75 * f), 3.0 * Cresc.grossura(e.get("tier", 0)))
 	w.draw_arc(e.pos.floor(), e.r - 3.0, 0, TAU, 40, Color(1, 1, 1, 0.6 * f), 1.0)
 	w.draw_arc(e.pos.floor(), e.r + 3.0, 0, TAU, 40, Color(OURO, 0.4 * f), 1.0)
 
@@ -70,18 +71,19 @@ static func _chamas(w, ci, a: Dictionary, frente: bool) -> void:
 	var pe: Vector2 = w.dono.position
 	var nv: int = int(a.nivel)
 	var k: float = ALFA_FRENTE if frente else ALFA_TRAS
+	var ar: float = Cresc.mult(str(a.get("id", "aura_hazaki")), int(a.get("nivel", 1)), "area")   # a chama cresce com a curva de crescimento da arma
 	var n := 6 + nv * 2
 	for i in n:
 		var ang := TAU * i / n + t * 1.5
 		var sn := sin(ang)
 		if (sn >= 0.0) != frente:   # sin>0 = lado do olhador (pé pra baixo na tela)
 			continue
-		var base := pe + Vector2(cos(ang) * RAIO_ANEL.x, sn * RAIO_ANEL.y - 2.0)
-		var alt := (34.0 + nv * 5.0) * (0.6 + 0.4 * absf(sin(t * 9.0 + i * 1.7)))
+		var base := pe + Vector2(cos(ang) * RAIO_ANEL.x * maxf(ar, 0.9), sn * RAIO_ANEL.y * maxf(ar, 0.9) - 2.0)   # o anel nunca fica mais estreito que o herói
+		var alt := (34.0 + nv * 5.0) * ar * (0.6 + 0.4 * absf(sin(t * 9.0 + i * 1.7)))
 		if frente:
 			alt *= 0.8
 		var topo := base + Vector2(sin(t * 6.0 + i) * 3.0, -alt)
-		var larg := 3.0 + nv * 0.5
+		var larg := (3.0 + nv * 0.5) * ar
 		if nv >= 4:   # no alto, uma camada dourada por fora
 			ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg - 1.5, 0), base + Vector2(larg + 1.5, 0), topo + Vector2(0, -4)]), Color(OURO, 0.4 * k / 0.6))
 		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg, 0), base + Vector2(larg, 0), topo]), Color(COBALTO, k))
@@ -94,6 +96,7 @@ static func fundo(w, a: Dictionary, _s: Dictionary) -> void:
 	var t: float = w._t
 	var c: Vector2 = w.dono.centro()
 	var nv: int = int(a.nivel)
+	Cresc.brasas(w, c, 26.0 * Cresc.mult(str(a.get("id", "aura_hazaki")), nv, "area"), OURO, Cresc.tier(str(a.get("id", "aura_hazaki")), nv), t)
 	for i in 3 + nv:
 		var fase := fmod(t * 0.9 + i * 0.37, 1.0)
 		var px := c + Vector2(sin(i * 2.7 + t) * 14.0, 18.0 - fase * 46.0)
