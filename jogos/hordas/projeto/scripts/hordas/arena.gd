@@ -102,6 +102,10 @@ const OLHAR_MAX := 36.0          # px que a câmera adianta na direção em que 
 var _olhar := Vector2.ZERO      # quanto ela está adiantada agora (vai até lá com suavidade)
 var _hitstop_ate := 0   # Time.get_ticks_msec() até quando o jogo fica "congelado" (só solo)
 var _hitstop_crit_ate := 0
+var _golpe_ate := 0       # Time.get_ticks_msec() até quando um golpe corpo a corpo não treme/congela de novo
+var _impacto_arma := {}   # arma -> se o acerto dela solta estrela de impacto (cache)
+const SEM_IMPACTO := ["poca", "aura", "aura_energia", "baforada"]   # dano contínuo: estrela a cada tique vira ruído
+const GOLPE_ESPERA := 0.3  # s mínimos entre dois "golpes pesados" (tremidinha + congelada do corpo a corpo)
 var _chefes_vivos := []
 var perfil := [0, 0, 0, 0]   # microssegundos: jogador+diretor, inimigos, armas, resto
 
@@ -204,6 +208,7 @@ func _ready() -> void:
 	entradas = Entradas.new()
 	entradas.arena = self
 	add_child(entradas)
+	add_child(preload("res://scripts/hordas/vinheta.gd").new())
 	escuridao = Escuridao.new()   # fase de horror: só liga quando a fase tem "escuro" em corrida.json
 	escuridao.arena = self
 	add_child(escuridao)
@@ -302,6 +307,7 @@ func _process(dt: float) -> void:
 	var t3 := Time.get_ticks_usec()
 	coleta.atualizar(dt)
 	efeitos.atualizar(dt)
+	_luzes_quadro()
 	mortes.atualizar(dt)
 	chao.atualizar(dt)
 	hud.atualizar(dt)
@@ -338,10 +344,50 @@ func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> 
 		var d: Dictionary = fase_stat.dano
 		d[arma] = float(d.get(arma, 0.0)) + valor
 	efeitos.numero(pos, valor, Color.WHITE, crit)
+	if _tem_impacto(arma):
+		efeitos.impacto(pos + Vector2(0, -6), Color(1.0, 0.8, 0.35) if crit else Color(0.7, 0.85, 1.0), crit)
 	Som.tocar("acerto", 0.07, randf_range(0.9, 1.2), -14)
 	if crit and Time.get_ticks_msec() >= _hitstop_crit_ate:
 		_hitstop_crit_ate = Time.get_ticks_msec() + int(Jogador.HITSTOP_CRIT_ESPERA * 1000.0)
 		hitstop(Jogador.HITSTOP_CRIT)
+
+
+## Luz do quadro (estilo Dimraeth: o que brilha acende o chão em volta). Halos aditivos baratos no efeitos.gd, sem Light2D:
+## o herói leva uma luz quente (mais forte quanto mais escuro o andar), os projéteis dele a cor da arma e os tiros
+## dos inimigos um vermelho que ajuda a ver o perigo no escuro.
+const LUZ_HEROI := Color(1.0, 0.82, 0.55)
+const LUZ_TIRO := Color(1.0, 0.25, 0.15, 0.45)
+var _cor_luz_arma := {}
+
+func _luzes_quadro() -> void:
+	if jogador and jogador.visible:
+		var amb: float = chao._ambiente.color.v if chao and "_ambiente" in chao else 1.0
+		efeitos.luz(jogador.centro() + Vector2(0, 10), 78.0, Color(LUZ_HEROI, clampf(0.06 + (1.0 - amb) * 0.5, 0.06, 0.3)))
+	if armas:
+		for p in armas.projeteis:
+			if not _cor_luz_arma.has(p.arma):
+				_cor_luz_arma[p.arma] = Color(armas.cor_de(Dados.item(str(p.arma)), Color(1.0, 0.85, 0.6)), 0.3)
+			efeitos.luz(p.pos, 26.0, _cor_luz_arma[p.arma])
+	if inimigos:
+		for t in inimigos.tiros:
+			efeitos.luz(t.pos, 22.0, LUZ_TIRO)
+
+
+func _tem_impacto(arma: String) -> bool:
+	if not _impacto_arma.has(arma):
+		_impacto_arma[arma] = arma == "" or not str(Dados.item(arma).get("tipo", "")) in SEM_IMPACTO
+	return _impacto_arma[arma]
+
+
+## Golpe corpo a corpo do herói que acertou (armas.gd golpe_acertou): tremidinha e congelada bem curta, no máximo
+## uma a cada GOLPE_ESPERA (com duas armas de corpo a corpo, congelar em todo golpe cansa).
+func golpe_pesado(forca: float) -> void:
+	var agora := Time.get_ticks_msec()
+	if agora < _golpe_ate:
+		return
+	_golpe_ate = agora + int(GOLPE_ESPERA * 1000.0)
+	tremer(1.2 * forca)
+	hitstop(Jogador.HITSTOP_GOLPE * minf(forca, 1.5))
 
 
 ## Congela o jogo por `seg` segundos REAIS (Time.get_ticks_msec, ignora Engine.time_scale). Só no solo, e só pra crítico e chefe

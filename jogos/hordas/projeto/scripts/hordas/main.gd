@@ -1161,6 +1161,30 @@ func _print_tela(qual: String) -> void:
 			if che:
 				che.t_anel = 0.2
 			Engine.time_scale = 0.05   # quase parado: o print sai 0,6 s (tempo real) depois, ainda no meio do aviso
+		"golpe":   # combate estilo Dimraeth: --heroi=X --arma=Y (katana, arte_marcial, cabo_rede, lanca, martelo) num grupo
+			# de --inimigo parado à direita; o golpe sai já em câmera lenta (--lento) e as fotos seguem o --seq
+			_comecar(str(_args.get("heroi", "beto")))
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.bot = false
+			_arena.jogador.hp = 1.0e9   # sem invencível: invencível pisca e enganava no print
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			_arena.armas.lista.clear()
+			var arma_g := str(_args.get("arma", "katana"))
+			_arena.armas.adicionar(arma_g)
+			var jg: Vector2 = _arena.jogador.position
+			for i in 6:
+				var vg = _arena.inimigos.criar(str(_args.get("inimigo", "jacare_lodo")), jg + Vector2(34 + (i % 3) * 14, -22 + int(i / 3.0) * 30), 1)
+				if vg:
+					vg.vel = 0.0
+					vg.t_nasc = 0.0
+			await get_tree().create_timer(0.1, true, false, true).timeout
+			_arena.armas.achar(arma_g).t = 0.0
+			Engine.time_scale = float(_args.get("lento", 0.08))
+			await _fotos_seq(qual + "_" + arma_g, str(_args.get("seq", "0.1,0.4,0.7,1.0,1.3,1.6")))
+			get_tree().quit()
+			return
 		"criacao":   # tela de criar herói (#72): --raca=N e --classe=N escolhem as opções (índice nas listas)
 			_estado = "criacao"
 			var tc := TelaCriacao.new()

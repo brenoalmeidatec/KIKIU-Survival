@@ -18,6 +18,8 @@ var arena: Node
 var ativas: Array = []        # registros (veja `registro`) dos efeitos grandes em andamento
 var simples: Array = []       # mortes simples em andamento
 var manchas: Array = []       # sangue e cinza no chão: {pos, t, r, cor}
+## s que a mancha fica no chão (mortes.json > teto > vida_mancha); o Dimraeth deixa a luta marcada no chão por um tempo
+var _vida_mancha: float = float(Dados.json("mortes").get("teto", {}).get("vida_mancha", 4.0))
 var part_usadas := 0          # soma de `part` das ativas (teto de partículas)
 var ult_efeito := ""          # o último efeito escolhido (o teste lê)
 var contagem := {}            # efeito -> quantas vezes foi escolhido (o teste lê)
@@ -168,7 +170,7 @@ func atualizar_i(dt: float) -> void:
 	i = manchas.size() - 1
 	while i >= 0:
 		manchas[i].t += dt
-		if manchas[i].t > 4.0:
+		if manchas[i].t > _vida_mancha:
 			manchas.remove_at(i)
 		i -= 1
 	queue_redraw()
@@ -187,7 +189,7 @@ func _draw_i() -> void:
 		if m.t < 0.0:
 			continue
 		var k := clampf(m.t / 0.4, 0.0, 1.0)
-		var a := 0.62 * (1.0 - smoothstep(2.4, 4.0, m.t))
+		var a := 0.62 * (1.0 - smoothstep(_vida_mancha * 0.6, _vida_mancha, m.t))
 		draw_set_transform(m.pos, 0.0, Vector2(1.0, 0.36))
 		draw_circle(Vector2.ZERO, float(m.r) * (0.4 + 0.6 * k), Color(m.cor.r, m.cor.g, m.cor.b, a))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

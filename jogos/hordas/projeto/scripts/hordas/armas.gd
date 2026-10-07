@@ -197,10 +197,27 @@ func atualizar_i(dt: float) -> void:
 	_atras.queue_redraw()
 
 
-## Ponto comum dos golpes corpo a corpo (chicote, katana, marcial): avisa o dono pra animar o ataque.
-func golpe_corpo() -> void:
+## Ponto comum dos golpes corpo a corpo (chicote, katana, marcial): avisa o dono pra animar o ataque na direção do golpe.
+func golpe_corpo(dir := Vector2.ZERO) -> void:
 	if dono and dono.has_method("atacou"):
-		dono.atacou()
+		dono.atacou(dir)
+
+
+## Os efeitos de golpe (meia-lua, impacto, faíscas) ficam no efeitos.gd da arena. O rival do duelo não tem `arena`,
+## mas é filho do duelo, que tem. null = sem efeitos (os módulos continuam funcionando só com o `campo`).
+func fx() -> Node2D:
+	if arena and arena.efeitos:
+		return arena.efeitos
+	var p := get_parent()
+	if p and "arena" in p and p.arena and p.arena.efeitos:
+		return p.arena.efeitos
+	return null
+
+
+## Golpe corpo a corpo do herói que acertou alguém: tremidinha e congelada curtinha (o arena limita a frequência).
+func golpe_acertou(forca := 1.0) -> void:
+	if arena and dono == arena.jogador and arena.has_method("golpe_pesado"):
+		arena.golpe_pesado(forca)
 
 
 # ---------- projétil ----------
@@ -259,13 +276,22 @@ func _chicotes(dt: float) -> void:
 		var larg: float = float(s.get("largura", 30)) * s.area
 		var c: Vector2 = jog.centro() + Vector2(f.lado * (alcance / 2 + 6), 0)
 		var curou := 0
+		var n := 0
 		for v in campo.no_circulo(c, alcance / 2):
 			if absf(v.pos.y - c.y) <= larg / 2 + v.raio:
 				campo.ferir(v, s.dano, Vector2(f.lado * 120, 0), a.id)
+				n += 1
 				if s.has("rouba_vida") and curou < 5:
 					jog.curar(float(s.rouba_vida))
 					curou += 1
-		golpe_corpo()
+		golpe_corpo(Vector2(f.lado, 0))
+		var ef := fx()
+		if ef:   # a chicotada vira uma meia-lua baixa e larga, da cor do chicote
+			var dg := Dados.item(str(a.id))
+			ef.corte(jog.centro() + Vector2(f.lado * 6, 4), 0.0 if f.lado > 0 else PI, 1.7, alcance * 0.62,
+				cor_de(dg, Color(0.95, 0.8, 0.25)), larg * 0.7, 0.16, -f.lado)
+		if n > 0:
+			golpe_acertou(0.6)
 		golpes.append({"pos": jog.centro(), "lado": f.lado, "alcance": alcance, "largura": larg, "t": 0.16, "arma": a.id})
 		Som.tocar("whoosh", 0.05, 1.6, -8)
 

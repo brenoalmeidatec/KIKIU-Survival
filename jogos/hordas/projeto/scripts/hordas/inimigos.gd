@@ -104,6 +104,29 @@ var _t := 0.0
 var _quadro := 0
 var _ordem: Array = []         # visíveis, do mais alto pro mais baixo (refeita todo quadro no _draw)
 var _chaves := PackedFloat64Array()
+## Flash branco de acerto: quem acabou de apanhar é desenhado de novo, por cima, como silhueta branca (shader).
+## Um nó só pra todos; antes o acerto só trocava o quadro e achatava, e bicho escuro em chão escuro não "piscava".
+const FLASH_BRANCO := 0.035     # s do flash (a primeira parte dos 0,09 s de v.flash)
+const FLASH_MAX := 64
+const SHADER_BRANCO := "shader_type canvas_item;
+void fragment() { COLOR.rgb = vec3(1.0); }
+"
+var _flash_no := Node2D.new()
+var _flashes: Array = []        # [tex, rect, fonte, alfa], refeito todo quadro no _draw
+
+
+func _ready() -> void:
+	var m := ShaderMaterial.new()
+	m.shader = Shader.new()
+	m.shader.code = SHADER_BRANCO
+	_flash_no.material = m
+	_flash_no.draw.connect(_draw_flashes)
+	add_child(_flash_no)
+
+
+func _draw_flashes() -> void:
+	for f in _flashes:
+		_flash_no.draw_texture_rect_region(f[0], f[1], f[2], Color(1, 1, 1, f[3]))
 var _dt := 0.016
 var fantasmas: Array = []     # quem acabou de sumir (teleporte): {pos, tex, tam, sz, vira, quadro, t}
 var tp_n := 0                 # quantos teleportes (reaparecimentos) já tocaram: o teste lê
@@ -781,6 +804,7 @@ func _draw() -> void:
 			draw_arc(Vector2.ZERO, v.raio + 26.0 - 12.0 * u2, 0, TAU, 28, Color(1.0, 0.25, 0.2, 0.25 + 0.55 * u2), 2.0)
 			draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 	var _d2 := Perf.ini()
+	_flashes.clear()
 	for v: V in _ordem:
 		var s: Vector2 = v.sz
 		var vira: bool = v.espelho
@@ -854,6 +878,9 @@ func _draw() -> void:
 			draw_set_transform(Vector2.ZERO, 0.0)
 		else:
 			draw_texture_rect_region(v.tex, r, fonte, cor)
+			if v.flash > 0.09 - FLASH_BRANCO and _flashes.size() < FLASH_MAX:
+				_flashes.append([v.tex, r, fonte, 0.9 * cor.a])
+	_flash_no.queue_redraw()
 	Perf.fim("ini_d_sprite", _d2)
 	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
 		var u: float = f.t / NASC_T

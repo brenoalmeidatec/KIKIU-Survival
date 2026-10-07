@@ -8,6 +8,7 @@ extends RefCounted
 const DUR := 0.14          # quanto tempo o rastro do corte fica na tela
 const COR := Color(0.85, 0.9, 1.0)
 const BRILHO := Color(1, 1, 1)
+const COR_CORTE := Color(0.45, 0.7, 1.0)   # azul-aço: no aditivo vira branco no fio e azul na borda
 
 
 static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -15,14 +16,15 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	if a.t > 0:
 		return
 	a.t = maxf(0.2, float(s.recarga))
-	w.golpe_corpo()
 	var c: Vector2 = w.dono.centro()
 	var alcance: float = float(s.get("alcance", 70)) * float(s.area)
 	var alvo = w.campo.mais_perto(c, alcance * 1.6)
 	var dir: Vector2 = (alvo.pos - c).normalized() if alvo else Vector2(w.dono.lado, 0)
+	w.golpe_corpo(dir)
+	a["vira"] = -float(a.get("vira", -1.0))   # golpes alternam o sentido: ida e volta, como no Dimraeth
 	var q := int(s.quantidade)
 	for i in q:
-		w.especiais.append({"tipo": "katana", "corte": true, "espera": i * 0.07,
+		w.especiais.append({"tipo": "katana", "corte": true, "espera": i * 0.07, "lado": float(a.vira) * (1.0 if i % 2 == 0 else -1.0),
 			"dir": dir.rotated(TAU * i / q), "alcance": alcance, "arco": deg_to_rad(float(s.get("arco", 110))),
 			"dano": float(s.dano), "energia": float(s.get("corte_energia", 0)) > 0, "t": DUR, "feito": false,
 			"pos": c, "arma": a.id})
@@ -38,11 +40,18 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		e.feito = true
 		e.pos = w.dono.centro()
 		var ang: float = e.dir.angle()
+		var n := 0
 		for v in w.campo.no_circulo(e.pos, e.alcance):
 			var dif: Vector2 = v.pos - e.pos
 			if absf(angle_difference(ang, dif.angle())) <= e.arco / 2 or dif.length() < 14.0:
 				w.campo.ferir(v, e.dano, e.dir * 130.0, e.arma)
+				n += 1
 		Som.tocar("whoosh", 0.05, 1.9, -7)
+		var ef = w.fx()
+		if ef:   # a meia-lua sai um pouco à frente do corpo e passa do alcance (o golpe parece maior que o herói)
+			ef.corte(e.pos + e.dir * 6.0, ang, e.arco * 1.15, e.alcance * 0.9, COR_CORTE, -1.0, DUR + 0.04, e.lado)
+		if n > 0:
+			w.golpe_acertou(1.0)
 		if e.energia:
 			w.especiais.append({"tipo": "katana", "lua": true, "pos": e.pos + e.dir * 10.0, "vel": e.dir * 380.0, "vida": 0.55,
 				"dano": e.dano * 0.7, "acertou": [], "arma": e.arma})
@@ -68,18 +77,7 @@ static func pintar(w, e: Dictionary) -> void:
 		w.draw_arc(e.pos.floor(), 12.0, a - 1.2, a + 1.2, 10, Color(0.55, 0.8, 1.0, alfa * 0.8), 4.0)
 		w.draw_arc(e.pos.floor(), 12.0, a - 1.0, a + 1.0, 10, Color(BRILHO, alfa), 1.0)
 		return
-	if not e.feito:
-		return
-	var f: float = e.t / DUR                     # 1 no começo do corte, 0 no fim
-	var ang: float = e.dir.angle()
-	var r: float = e.alcance * 0.8
-	# "swoosh" cheio, da mão até a ponta da lâmina: camadas mais fortes pra fora, fio branco na borda
-	for k in 4:
-		var rk: float = lerpf(r * 0.4, r, k / 3.0)
-		w.draw_arc(e.pos.floor(), rk, ang - e.arco / 2, ang + e.arco / 2, 16, Color(COR, (0.15 + 0.15 * k) * f), r * 0.2)
-	w.draw_arc(e.pos.floor(), r + r * 0.1, ang - e.arco / 2 * f, ang + e.arco / 2, 16, Color(BRILHO, 0.9 * f), 1.0)
-	var ponta: Vector2 = e.pos + Vector2.from_angle(ang + e.arco / 2) * r
-	w.draw_rect(Rect2(ponta.floor() - Vector2(1, 1), Vector2(3, 3)), Color(BRILHO, f))
+	# o corte em si é a meia-lua do efeitos.gd (aditiva, com brilho); aqui só a lua de energia acima
 
 
 static func fundo(_w, _a: Dictionary, _s: Dictionary) -> void:
