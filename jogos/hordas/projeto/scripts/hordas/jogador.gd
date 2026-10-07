@@ -470,6 +470,9 @@ func _bot_duelo() -> Vector2:
 func _bot_dir() -> Vector2:
 	_bot_ang += 0.4 * _dt
 	var c := centro()
+	if arena.saida and arena.saida.aberta:   # chefe morto (#112): o robô vai sozinho ao portal e sai (segurar é automático pro robô)
+		var ate: Vector2 = arena.saida.pos - c
+		return ate.normalized() * minf(1.0, ate.length() / 12.0)
 	var fuga := Vector2.ZERO
 	for v in arena.inimigos.no_circulo(c, 110):
 		var dif: Vector2 = c - v.pos

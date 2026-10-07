@@ -1,0 +1,18 @@
+{
+ "_ajuda": "Prorrogação e saída da fase (#112). O chefe da fase nasce quando o tempo da fase (duracao) acaba; o jogador tem 'janela_chefe' segundos pra derrubá-lo. Passou disso sem o chefe morto, começa a PRORROGAÇÃO: um cronômetro que sobe (aparece no HUD). A cada 'degrau_s' segundos a dificuldade sobe um degrau: +'minutos_por_degrau' minutos de dificuldade do diretor, +'ouro_por_degrau' no ouro de cada abate (soma: x1.25, x1.5...) e +'creditos_por_degrau' nos créditos do diretor (mais vírus). Para no degrau 'max_degraus' (muito difícil). A última fase da corrida (chefe final com Enxame Final) não tem prorrogação. Saída: com o chefe morto abre-se um portal onde ele caiu; o jogador sai quando quiser, entrando no portal (raio, em px) e segurando CONFIRMAR por 'segurar' s. Enquanto isso a horda continua mais leve: 'horda_leve' multiplica os créditos e 'minimo_leve' o mínimo de vivos. Online: o anfitrião libera a saída quando todos os vivos estão prontos no portal, ou 'espera_online' s depois do primeiro que ficou pronto. A transição: 'succao' s do herói sendo puxado pelo portal, depois o clarão branco ('clarao' s) e a cortina.",
+ "janela_chefe": 120.0,
+ "degrau_s": 5.0,
+ "max_degraus": 40,
+ "minutos_por_degrau": 0.35,
+ "ouro_por_degrau": 0.25,
+ "creditos_por_degrau": 0.12,
+ "saida": {
+  "raio": 34.0,
+  "segurar": 1.0,
+  "horda_leve": 0.35,
+  "minimo_leve": 0.4,
+  "espera_online": 45.0,
+  "succao": 0.8,
+  "clarao": 0.35
+ }
+}
