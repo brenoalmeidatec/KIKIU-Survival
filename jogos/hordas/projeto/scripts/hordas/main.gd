@@ -367,6 +367,7 @@ func _comecar(heroi: String, opcoes := {}, online := false) -> void:
 	_arena.heroi_id = heroi
 	_arena.mochila_cfg = _mochila_da_corrida(heroi, online)
 	_arena.bot = _args.has("bot")
+	_arena.com_abertura = _args.has("entrada") or (get_tree().current_scene == self and not (_args.has("bot") or _args.has("sair") or _args.has("print_tela") or _args.has("rapido")))   # abertura cinematográfica: só em partida de verdade, na cena principal (testes que montam o main por conta própria ficam sem; --entrada força, pra captura)
 	_arena.eh_online = online
 	# semente da corrida: online vem do anfitrião (igual pra todos); solo sorteia, ou --semente=N pra repetir uma partida
 	_arena.semente = int(o.get("semente", 0)) if online else int(_args.get("semente", 0))
@@ -1303,6 +1304,22 @@ func _print_tela(qual: String) -> void:
 	if _args.has("daltonico"):
 		Config.temporario("daltonico", true)
 	match qual:
+		"entrada":   # abertura da fase (abertura.gd): --fase=1 (começo da corrida) | 6 (2ª região) | 2 (andar comum) --heroi=X --seq=0.5,1.2,... (s reais) [--pular=T pula em T s]
+			_args["entrada"] = true
+			_comecar(str(_args.get("heroi", "hazaki")))
+			if _args.has("pular_em"):
+				get_tree().create_timer(float(_args.pular_em), true, false, true).timeout.connect(func(): _arena.abertura.pular())
+			# os instantes da --seq são do RELÓGIO DA ABERTURA (não do real): a primeira troca de região trava uns quadros carregando arte
+			var pasta_e := str(_args.get("fotos", "user://"))
+			var n_e := 0
+			for tk in str(_args.get("seq", "0.3,0.8,1.3,1.7,1.9,2.2,2.8,3.5")).split(","):
+				while _arena.abertura.ativa() and _arena.abertura._t < float(tk):
+					await get_tree().process_frame
+				await RenderingServer.frame_post_draw
+				n_e += 1
+				get_viewport().get_texture().get_image().save_png(pasta_e.path_join("tela_%s_%s_%d.png" % [qual, str(_args.get("fase", "1")), n_e]))
+			get_tree().quit()
+			return
 		"herois":
 			_estado = "herois"
 		"titulo_beta":
