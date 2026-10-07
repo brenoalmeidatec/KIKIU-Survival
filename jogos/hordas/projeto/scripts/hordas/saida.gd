@@ -92,7 +92,8 @@ func _process(dt: float) -> void:
 		_succao(dt, j)
 	elif not arena.caido and not arena.duelo_ativo:
 		var dentro := dentro_do_portal(j.centro(), pos, float(cfg().get("raio", 34.0)))
-		var segurando: bool = arena.bot or Input.is_action_pressed("confirmar")		seg = avancar(seg, dentro, segurando, dt, float(cfg().get("segurar", 1.0)))
+		var segurando: bool = arena.bot or Input.is_action_pressed("confirmar")
+		seg =avancar(seg, dentro, segurando, dt, float(cfg().get("segurar", 1.0)))
 		if seg >= float(cfg().get("segurar", 1.0)):
 			saindo = true
 			_suc = 0.0

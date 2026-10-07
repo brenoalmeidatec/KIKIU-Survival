@@ -838,3 +838,13 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Testes:** instalador gerado de commit limpo (`KIKIU-Setup-0.1.0-<commit>.exe`, sem "-mod"), instalação e desinstalação silenciosas ok, jogo instalado abre (`--print_tela=titulo`); `--import`, 41 cenas `testes/*.tscn` com falhas=0 e 0 SCRIPT ERROR; robô de 40 s sem SCRIPT ERROR.
 - **Pendente (olho humano):** ver o assistente de verdade rodando (não tirei foto da tela do usuário): se as BMP ficam bem nas telas de boas-vindas e de fim e se a miniatura do canto combina com o cabeçalho claro do estilo moderno.
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-07 - Fase (#112, marco A): prorrogação, portal de saída e transição
+- **Prorrogação:** `dados/prorrogacao.json` (com `_ajuda`). O chefe nasce no fim de `duracao`; o jogador tem `janela_chefe` (120 s) pra derrubá-lo. Passou disso, o HUD mostra o cronômetro subindo (`+MM:SS`, "PRORROGAÇÃO nível N  ouro xN"). A cada 5 s (`degrau_s`) sobe um degrau: +0,35 min de dificuldade no diretor, +25% de ouro por abate e +12% de créditos, até `max_degraus` (40). Sem prorrogação na última fase (Enxame Final). Funções em `diretor_hordas.gd` (`pror_t`, `pror_degrau`, `mult_ouro`, `janela_resta`); o ouro entra em `arena.recompensa`. Online: cada cliente deriva o degrau do próprio `t_fase`, sem mensagem nova.
+- **Saída voluntária:** matar o chefe da fase não leva mais sozinho pra próxima fase. `arena.abrir_saida` abre um portal (`saida.gd`) onde ele caiu; entra no raio e segura CONFIRMAR 1 s (`prorrogacao.json > saida`). A horda continua leve (`diretor.saida_leve`: créditos x0,35, mínimo x0,4). Ao sair: herói sugado, clarão branco, cortina (`Transicao.revelar`) e só então `fase_completa` (resultados, baú, mapa) como antes.
+- **Online:** evento novo `saida_aberta` (x, y) do anfitrião (em `Rede.EVENTOS`); cada jogador avisa `saida` ao ser sugado e fica parado no portal; o anfitrião (`online.gd _checar_saida`) manda `fase_completa` quando todos os vivos estão prontos ou 45 s depois do primeiro. NÃO testado com duas instâncias reais.
+- **Robô:** `jogador._bot_dir` anda até o portal quando ele abre e o robô segura confirmar sozinho.
+- **Teste:** `testes/prorrogacao.tscn` ("PROR falhas=0"); mapa, regioes, abertura e pausa também com falhas=0.
+- Não mexi em `cenarios.py`, `cenarios.json`, `assets/cenarios` nem `chao.gd` (outro agente).
+- Para o Claude do Alisson (PC): falta ver o portal e a sucção/clarão com olho humano (nada foi visto em tela), testar online com 2 instâncias, e os itens 1, 2, 5, 6, 7 da #112 (missões do boss, loja por jogador, cenários) seguem em aberto.
+- Assinado: Claude do Alisson (notebook)
