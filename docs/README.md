@@ -8,6 +8,7 @@
 | 🌐 [`ONLINE_KIKIU.md`](ONLINE_KIKIU.md) | Como funciona o online (sala, horda junta, reviver, duelo) |
 | 🎨 [`VISUAL_KIKIU.md`](VISUAL_KIKIU.md) | Direção de arte, profundidade e pipeline 3D → pixel art |
 | ⚡ [`PERF_2026-10-06.md`](PERF_2026-10-06.md) | Medição de desempenho com 500 inimigos |
+| ⚡ [`PERF_2026-10-07.md`](PERF_2026-10-07.md) | PC antigo: perfil de qualidade, núcleos, primeiros quadros, shaders e histórico de fps |
 | 📖 [`HISTORIA_GRUPO_AMIGOS.md`](HISTORIA_GRUPO_AMIGOS.md) | Os amigos do jogo, como o Breno contou |
 | 🔬 [`analise_jogos_de_hordas.md`](analise_jogos_de_hordas.md) | Análise de Vampire Survivors, Risk of Rain 2 e Megabonk |
 | 🎮 [`ANALISE_10_JOGOS_HORDAS.md`](ANALISE_10_JOGOS_HORDAS.md) | Mais 10 jogos parecidos e ideias pro K.I.K.I.U |

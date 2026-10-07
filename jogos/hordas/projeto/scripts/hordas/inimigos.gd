@@ -827,6 +827,8 @@ func _draw() -> void:
 	# só entra no desenho quem está na tela (com folga pro tamanho do sprite e da sombra): com 500 bichos, a maioria fica fora.
 	# `_ordem` = os visíveis, do mais alto pro mais baixo (quem está embaixo fica na frente). Ordena uma lista de números
 	# (y e posição na lista juntos numa chave só) com o sort nativo, todo quadro: bem mais barato que sort_custom.
+	var sombra_proj := bool(Config.q("sombra_projetada"))   # perfil de qualidade (dados/qualidade.json)
+	var lod_x := float(Config.q("lod_x"))
 	var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()
 	var x0 := vis.position.x
 	var x1 := vis.end.x
@@ -888,6 +890,9 @@ func _draw() -> void:
 			continue
 		var s: Vector2 = v.sz
 		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
+		if not sombra_proj:   # perfil de qualidade baixa: só a mancha de contato no pé (a sombra inclinada é uma textura a mais por bicho)
+			Visual.contato(self, pe, s.x * 0.75)
+			continue
 		var esp: bool = v.espelho
 		var ic := (v.vista * 2 + (1 if quadro > 0 else 0)) * 2 + (1 if esp else 0)
 		var reg: Rect2 = v.sombra_reg[ic]
@@ -921,7 +926,7 @@ func _draw() -> void:
 	_barras.clear()
 	# movimento secundário dos monstros (animacao_monstros.json): inclinação e quique só pra quem está perto do herói (LOD);
 	# com horda enorme na tela o círculo encolhe. O aperto de golpe e o preparo de investida valem pra todos (são raros).
-	var lod_d2: float = ac.lod_dist * ac.lod_dist * (0.25 if _ordem.size() > ac.lod_max else 1.0)
+	var lod_d2: float = ac.lod_dist * ac.lod_dist * lod_x * lod_x * (0.25 if _ordem.size() > ac.lod_max else 1.0)
 	var a_inclina: float = ac.inclina
 	var a_topo: float = ac.inclina_topo
 	var a_passo: float = ac.passo_aperto

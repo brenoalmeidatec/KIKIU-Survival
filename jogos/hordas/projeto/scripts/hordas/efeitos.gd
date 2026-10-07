@@ -35,7 +35,21 @@ var _brilho := Node2D.new()  # filho aditivo, desenhado ATRÁS dos números (sho
 var _impactos_quadro := 0
 
 
+var _max_luz := MAX_LUZES        # tetos pelo perfil de qualidade (dados/qualidade.json): alta = as constantes de cima
+var _imp_quadro := IMPACTOS_QUADRO
+var _max_fai := MAX_FAISCAS
+var _max_part := MAX_PARTICULAS
+var _k_fai := 1.0                # quantas faíscas/pedacinhos por efeito, em relação à alta
+var _k_part := 1.0
+
+
 func _ready() -> void:
+	_max_luz = maxi(8, roundi(MAX_LUZES * float(Config.q("efe_luzes"))))
+	_imp_quadro = maxi(1, roundi(IMPACTOS_QUADRO * float(Config.q("efe_impactos"))))
+	_k_fai = float(Config.q("efe_faiscas"))
+	_k_part = float(Config.q("efe_particulas"))
+	_max_fai = maxi(20, roundi(MAX_FAISCAS * _k_fai))
+	_max_part = maxi(40, roundi(MAX_PARTICULAS * _k_part))
 	var m := CanvasItemMaterial.new()
 	m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_brilho.material = m
@@ -58,7 +72,7 @@ func _ready() -> void:
 
 ## Halo de luz neste quadro (mistura aditiva, achatado no chão). `cor.a` = força. Chame todo quadro enquanto brilhar.
 func luz(pos: Vector2, raio: float, cor: Color) -> void:
-	if luzes.size() >= MAX_LUZES or (_vis.has_area() and not _vis.grow(raio).has_point(pos)):
+	if luzes.size() >= _max_luz or (_vis.has_area() and not _vis.grow(raio).has_point(pos)):
 		return
 	luzes.append([pos, raio, cor])
 
@@ -74,7 +88,7 @@ func corte(pos: Vector2, ang: float, arco: float, raio: float, cor: Color, larg 
 
 ## Estrela de impacto no ponto do acerto: raios finos que estouram pra fora e um clarão no meio.
 func impacto(pos: Vector2, cor := Color(0.75, 0.9, 1.0), forte := false) -> void:
-	if _impactos_quadro >= IMPACTOS_QUADRO or (_vis.has_area() and not _vis.grow(24.0).has_point(pos)):
+	if _impactos_quadro >= _imp_quadro or (_vis.has_area() and not _vis.grow(24.0).has_point(pos)):
 		return
 	_impactos_quadro += 1
 	if impactos.size() >= MAX_IMPACTOS:
@@ -90,8 +104,8 @@ func impacto(pos: Vector2, cor := Color(0.75, 0.9, 1.0), forte := false) -> void
 
 ## Faíscas em risquinho (rastro na direção do voo). `dir` zero = pra todo lado.
 func faisca(pos: Vector2, dir: Vector2, cor: Color, n := 3, forca := 170.0) -> void:
-	for i in n:
-		if faiscas.size() >= MAX_FAISCAS:
+	for i in (n if _k_fai >= 1.0 else maxi(1, roundi(n * _k_fai))):
+		if faiscas.size() >= _max_fai:
 			faiscas.pop_front()
 		var a: float = dir.angle() + randf_range(-0.7, 0.7) if dir != Vector2.ZERO else randf() * TAU
 		faiscas.append({"pos": pos, "vel": Vector2.from_angle(a) * randf_range(forca * 0.4, forca), "t": randf_range(0.14, 0.28), "cor": cor})
@@ -129,8 +143,8 @@ static func texto(valor: float, crit: bool) -> String:
 
 
 func explodir(pos: Vector2, cor: Color, n := 6, forca := 80.0) -> void:
-	for i in n:
-		if particulas.size() >= MAX_PARTICULAS:
+	for i in (n if _k_part >= 1.0 else maxi(1, roundi(n * _k_part))):
+		if particulas.size() >= _max_part:
 			particulas.pop_front()
 		particulas.append({"pos": pos, "vel": Vector2.from_angle(randf() * TAU) * randf_range(forca * 0.3, forca),
 			"t": randf_range(0.25, 0.5), "cor": cor, "tam": randf_range(2, 4)})
@@ -151,20 +165,24 @@ func atualizar(dt: float) -> void:
 
 
 func atualizar_i(dt: float) -> void:
-	for n in numeros.duplicate():
+	var k_num := exp(-7.0 * dt)
+	var k_par := exp(-5.0 * dt)
+	for i in range(numeros.size() - 1, -1, -1):   # de trás pra frente: remove sem copiar a lista nem procurar o item (erase é O(n))
+		var n: Dictionary = numeros[i]
 		n.t -= dt
 		n.idade += dt
 		n.pop = maxf(0.0, n.pop - dt)
 		n.pos.y += n.vy * dt   # sobe rápido e freia (antes subia sempre a 24 px/s)
-		n.vy *= exp(-7.0 * dt)
+		n.vy *= k_num
 		if n.t <= 0:
-			numeros.erase(n)
-	for p in particulas.duplicate():
+			numeros.remove_at(i)
+	for i in range(particulas.size() - 1, -1, -1):
+		var p: Dictionary = particulas[i]
 		p.t -= dt
 		p.pos += p.vel * dt
-		p.vel *= exp(-5 * dt)
+		p.vel *= k_par
 		if p.t <= 0:
-			particulas.erase(p)
+			particulas.remove_at(i)
 	_impactos_quadro = 0
 	if is_inside_tree():
 		_vis = get_canvas_transform().affine_inverse() * get_viewport_rect()

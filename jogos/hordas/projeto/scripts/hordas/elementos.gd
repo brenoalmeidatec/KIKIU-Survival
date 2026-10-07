@@ -469,7 +469,7 @@ func _draw() -> void:
 	var _p := Perf.ini()
 	_desenhadas = 0
 	var tt := float(Time.get_ticks_msec()) * 0.001
-	var teto := int(_tv.get("particulas", 150))
+	var teto := roundi(float(_tv.get("particulas", 150)) * float(Config.q("elem_part")))   # perfil de qualidade
 	for id in fonte:
 		var rec = fonte[id]
 		var v = rec if ino.espelho else rec.v
