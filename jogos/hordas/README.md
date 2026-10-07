@@ -36,6 +36,8 @@ Outras opções (`--fase`, `--build`, `--estresse`, `--imortal`, `--print_tela`.
 
 Executáveis e zips **não** ficam no Git. No Godot: **Projeto › Exportar › Windows Desktop** (o preset já está em `projeto/export_presets.cfg`; precisa dos modelos de exportação do 4.4.1).
 
+**Antes de exportar, rode `./gerar_versao.sh`** (nesta pasta). Ele escreve `projeto/dados/versao.json` (data e commit atuais, fora do Git) e o título do jogo mostra no canto de baixo, em cinza, `v0.1.0 · 2026-10-07 · a3d5e4b` (um `+` depois do commit = havia mudança sem commit). Assim dá pra saber de que build é o .exe de quem testa. Sem o arquivo (rodando pelo editor) aparece `v0.1.0 · dev`. O número da versão é o `application/config/version` do `project.godot`: sobe à mão quando o Breno disser.
+
 ## 📂 Estrutura
 
 | Pasta | O que é |

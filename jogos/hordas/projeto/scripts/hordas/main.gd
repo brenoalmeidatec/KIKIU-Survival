@@ -68,13 +68,26 @@ var _t := 0.0
 var _args := {}
 var _novo_recorde := false
 var _endereco := ""          # último endereço digitado (fica salvo)
+var _versao := ""            # carimbo do título: "v0.1.0 · 2026-10-07 · a3d5e4b" (ou "v0.1.0 · dev" sem dados/versao.json)
 var _msg := ""               # aviso nas telas do online (erro, conectando...)
 var _comecou_teste := false
 var _caiu_teste := false
 var _mouse_ult := Vector2(-1, -1)
 
 
+## Carimbo de versão: o número vem do project.godot (application/config/version, mexe à mão) e a data e o commit, do
+## dados/versao.json que o gerar_versao.sh escreve antes de exportar. Sem o arquivo (rodando pelo editor) fica "dev".
+static func texto_versao() -> String:
+	var v := "v" + str(ProjectSettings.get_setting("application/config/version", "?"))
+	var f := FileAccess.open("res://dados/versao.json", FileAccess.READ)
+	var d = JSON.parse_string(f.get_as_text()) if f else null
+	if d is Dictionary and str(d.get("data", "")) != "" and str(d.get("commit", "")) != "":
+		return "%s · %s · %s" % [v, d.data, d.commit]
+	return v + " · dev"
+
+
 func _ready() -> void:
+	_versao = texto_versao()
 	_teclas()
 	_ler_args()
 	Perf.ligado = _args.has("sair")   # relatório de custo por sistema no log do --sair (perf.gd)
@@ -268,9 +281,6 @@ func _process(dt: float) -> void:
 			elif Input.is_action_just_pressed("confirmar"):
 				Som.ui("confirmar")
 				_escolher_heroi(_sel)
-			elif Input.is_action_just_pressed("voltar"):
-				_estado = "titulo"
-				_sel = 0
 		"partida":
 			_teste()
 		"fim":
@@ -696,6 +706,15 @@ func _online_teste() -> void:
 		get_tree().quit(1)
 
 
+## Esc na escolha de herói volta pro título. Fica aqui (e não no _process, que lê a tecla por polling) para só pegar o Esc
+## que ninguém consumiu: o que fecha "Meus heróis" (tela_herois.gd lê em _input) não volta duas telas de uma vez.
+func _unhandled_input(e: InputEvent) -> void:
+	if _estado == "herois" and e.is_action_pressed("voltar") and not e.is_echo():
+		get_viewport().set_input_as_handled()
+		_estado = "titulo"
+		_sel = 0
+
+
 ## Campo de texto do endereço: digita, apaga, Ctrl+V cola, Enter conecta, Esc volta.
 func _input(e: InputEvent) -> void:
 	if Chat.digitando:   # o teclado é do chat (chat.gd)
@@ -1019,6 +1038,7 @@ func _desenhar() -> void:
 			if _msg != "":
 				_txt(Vector2(0, 302), _msg, 8, Color(1, 0.6, 0.5))
 			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
+			_txt(Vector2(0, 354), _versao, 8, Color(0.4, 0.4, 0.5, 0.7), W - 4, HORIZONTAL_ALIGNMENT_RIGHT)
 		"opcoes":
 			_fundo()   # a tela de Opções desenha por cima (tela_opcoes.gd)
 		"creditos":
