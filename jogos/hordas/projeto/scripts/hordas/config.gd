@@ -91,10 +91,12 @@ func aplicar(janela := true) -> void:
 		return
 	if not janela:
 		return
-	# tela cheia EXCLUSIVA: a "normal" do Windows deixa a janela 1px menor que o monitor (1918x1078),
-	# a escala inteira cai de 3x pra 2x e o jogo fica pequeno no meio com barras pretas
-	var modo := DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN if v("tela_cheia") else DisplayServer.WINDOW_MODE_WINDOWED
-	if DisplayServer.window_get_mode() != modo:
-		DisplayServer.window_set_mode(modo)
+	# a escala é fracionária (project.godot): janela maximizada, 1918x1078 ou qualquer tamanho preenche sem barras.
+	# Só mexe no modo ao entrar/sair da tela cheia: janela maximizada não pode ser "corrigida" de volta pra normal.
+	var cheia := DisplayServer.window_get_mode() in [DisplayServer.WINDOW_MODE_FULLSCREEN, DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN]
+	if v("tela_cheia") and not cheia:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	elif not v("tela_cheia") and cheia:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if v("vsync") else DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = int(v("fps_max"))
