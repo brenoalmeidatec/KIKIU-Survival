@@ -121,6 +121,7 @@ const ARTE := {
 		"................",
 		"................"]},
 	"inferno": {"tipo": "icone", "base": "fogo_grego", "troca": {"f": "r", "y": "f", "c": "R", "C": "f"}},
+	"geada": {"tipo": "icone", "base": "fogo_grego", "troca": {"f": "c", "y": "w", "R": "g", "b": "g"}},
 	"sino": {"tipo": "icone", "grade": [
 		"................",
 		".......oo.......",
@@ -259,6 +260,10 @@ const ARTE := {
 		"................",
 		"................",
 		"................"]},
+	"brasa_viva": {"tipo": "icone", "base": "pedra_ima", "troca": {"s": "f", "w": "y", "e": "R", "E": "P"}},
+	"cristal_geada": {"tipo": "icone", "base": "pedra_ima", "troca": {"s": "C", "w": "w", "e": "c", "E": "g"}},
+	"centelha": {"tipo": "icone", "base": "pedra_ima", "troca": {"s": "Y", "w": "w", "e": "o", "E": "b"}},
+	"presa_peconhenta": {"tipo": "icone", "base": "pedra_ima", "troca": {"s": "l", "w": "l", "e": "v", "E": "V"}},
 	"figa": {"tipo": "icone", "grade": [
 		"................",
 		".......o........",

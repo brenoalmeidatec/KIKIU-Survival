@@ -272,7 +272,7 @@ func _draw_i() -> void:
 			var nome := str(cs.get("variacoes", {}).get(str(s.variacao), {}).get("nome", ""))
 			nome = str(cs.get("nomes", {}).get(str(s.tipo), nome))   # dádiva, maldito, tomada: o nome do tipo (#65)
 			draw_string(Dados.fonte, s.pos + Vector2(-130, 22), nome, HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(base, 1.0))
-			draw_string(Dados.fonte, s.pos + Vector2(-130, 33), Descobertas.dica(s, santuarios), HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(0.85, 0.85, 0.9, 0.8))
+			draw_string(Dados.fonte, s.pos + Vector2(-130, 33), Descobertas.dica(s, santuarios, arena.inimigos.elementos.contagem), HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(0.85, 0.85, 0.9, 0.8))
 
 
 ## Enfeites do chão antigo (sem cenário configurado).

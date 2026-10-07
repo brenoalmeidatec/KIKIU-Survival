@@ -311,6 +311,8 @@ func _recalcular() -> void:
 	for k in _conj_bonus:   # conjuntos de etiquetas (#63) somam junto das dádivas
 		extra[k] = float(extra.get(k, 0.0)) + float(_conj_bonus[k])
 	_stats = Construcao.stats(heroi, passivos, equipamentos, extra)
+	if inimigos:
+		inimigos.elementos.recalcular(_stats)   # el_<elemento>: chance por golpe de pôr acúmulos (#72)
 	if jogador and stat("vida_max") > antes:
 		jogador.curar(stat("vida_max") - antes)
 
@@ -387,11 +389,16 @@ func anunciar(txt: String, cor := Color.WHITE) -> void:
 	hud.anunciar(txt, cor)
 
 
-func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> void:
+## Soma o dano nas contas da partida (por arma e do andar) sem número nem som: o dano de elemento (#72) entra por aqui.
+func creditar_dano(arma: String, valor: float) -> void:
 	if arma != "":
 		dano_por_arma[arma] = float(dano_por_arma.get(arma, 0.0)) + valor
 		var d: Dictionary = fase_stat.dano
 		d[arma] = float(d.get(arma, 0.0)) + valor
+
+
+func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> void:
+	creditar_dano(arma, valor)
 	efeitos.numero(pos, valor, Color.WHITE, crit)
 	if _tem_impacto(arma):
 		efeitos.impacto(pos + Vector2(0, -6), Color(1.0, 0.8, 0.35) if crit else Color(0.7, 0.85, 1.0), crit)
@@ -775,6 +782,7 @@ func _iniciar_andar(idx: int) -> void:
 	diretor.ir_para(idx, no_tipo)
 	_atualizar_calor()   # região nova: o calor dela soma por cima
 	chao.nova_fase()
+	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
 	_zerar_fase_stat()
 	if resultado.aberto():
 		resultado.fechar()
@@ -800,6 +808,7 @@ func saltar_para_andar(idx: int) -> void:
 	diretor.ir_para(mapa_pos.x)
 	_atualizar_calor()
 	chao.nova_fase()
+	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
 	objetivo.nova_fase(diretor.fases()[diretor.fase_idx], no_tipo, diretor.fase_idx)
 	hud.limpar_mensagens()   # o anúncio da fase 1 já tinha saído: troca pelo do andar de destino
 	_anunciar_fase(diretor.fase_idx, "")

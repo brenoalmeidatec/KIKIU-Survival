@@ -24,7 +24,8 @@
   "prova": {"duracao": 50, "chefe": "trojan", "vida_mult": 2.5, "escoltas": 4, "tipos_escolta": ["bug", "spam"], "raio": [120, 180], "raridade_min": "epica", "bau": true},
   "selado": {"raridade_min": "rara", "requisitos": {
     "piras": {"peso": 5, "qtd": 2, "rotulo": "piras acesas", "dica": "acenda %d piras antes"},
-    "reliquia": {"peso": 4, "qtd": 1, "rotulo": "relíquia", "dica": "traga a relíquia antes"}}}
+    "reliquia": {"peso": 4, "qtd": 1, "rotulo": "relíquia", "dica": "traga a relíquia antes"},
+    "elemento": {"peso": 3, "qtd": 20, "rotulo": "inimigos marcados com elementos", "dica": "marque %d inimigos com fogo, gelo, raio ou veneno"}}}
  },
  "pity": {
   "elite": {"base": 0.02, "passo": 0.03, "limite": 20},

@@ -7,7 +7,7 @@
   "vai_e_volta": {"nome": "Vai e Volta", "desc": "Muda o tiro: atravessa mais um e volta pra você.",
    "tipos": ["projetil"], "nivel_min": 3, "exclui": ["ricochete"], "param": {"perfura_extra": 1, "dano_volta": 0.7}},
   "rastro_fogo": {"nome": "Rastro de Fogo", "desc": "Muda o golpe: deixa poças de fogo no chão.",
-   "tipos": ["chicote"], "nivel_min": 3, "exclui": [], "param": {"dano_pct": 0.3, "duracao": 2.5, "raio": 24, "tique": 0.5, "max": 10,
+   "tipos": ["chicote"], "nivel_min": 3, "exclui": [], "param": {"dano_pct": 0.3, "duracao": 2.5, "raio": 24, "tique": 0.5, "max": 10, "elem": "fogo",
     "rampa": ["1a0805", "3a1408", "7a2c0c", "c45a14", "f0921e", "ffd060"]}},
   "pulso": {"nome": "Aura Pulsante", "desc": "Muda a aura: a cada 3 estalos e ao rolar, solta um pulso forte.",
    "tipos": ["aura"], "nivel_min": 3, "exclui": [], "param": {"cada": 3, "area_mult": 1.8, "dano_mult": 1.6, "recarga_rolar": 1.2}},

@@ -25,7 +25,7 @@
   "investida": "impacto"
  },
  "causa_por_tipo": {"chicote": "corte", "orbita": "impacto", "poca": "fogo", "aura": "raio", "projetil": "tiro", "katana": "corte", "pistolas": "tiro", "marcial": "impacto", "aura_energia": "aura", "baforada": "fogo", "garras": "corte", "energia_draconica": "explosao", "rugido": "impacto"},
- "efeito_por_causa": {"fogo": "cinzas", "gelo": "estilhaco", "raio": "choque", "corte": "corte", "impacto": "pedacos", "explosao": "pedacos", "tiro": "furo", "aura": "desintegrar", "padrao": "simples"},
+ "efeito_por_causa": {"fogo": "cinzas", "gelo": "estilhaco", "raio": "choque", "veneno": "desintegrar", "corte": "corte", "impacto": "pedacos", "explosao": "pedacos", "tiro": "furo", "aura": "desintegrar", "padrao": "simples"},
  "efeitos": {
   "cinzas": {"dur": 1.0, "part": 19},
   "estilhaco": {"dur": 0.95, "part": 20},
@@ -38,7 +38,7 @@
   "simples": {"dur": 0.18, "part": 0}
  },
  "cor_causa": {
-  "fogo": [1.0, 0.5, 0.2], "gelo": [0.6, 0.9, 1.0], "raio": [0.7, 0.85, 1.0], "corte": [0.9, 0.9, 0.95],
+  "fogo": [1.0, 0.5, 0.2], "gelo": [0.6, 0.9, 1.0], "raio": [0.7, 0.85, 1.0], "veneno": [0.55, 0.9, 0.35], "corte": [0.9, 0.9, 0.95],
   "impacto": [0.85, 0.85, 0.85], "explosao": [1.0, 0.7, 0.3], "tiro": [0.95, 0.8, 0.5], "aura": [0.3, 0.6, 1.0], "padrao": [0.6, 0.9, 0.5]
  },
  "sangue": [0.34, 0.03, 0.06]

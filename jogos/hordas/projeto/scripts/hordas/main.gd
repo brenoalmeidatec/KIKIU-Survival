@@ -908,6 +908,8 @@ func _teste() -> void:
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
 		print("  perf_us: ", Perf.relatorio())
+		var ele = _arena.inimigos.elementos
+		print("  elementos: estados=%d vistos=%d marcados=%d congelados=%d reacoes=%d" % [ele.estados.size(), ele.vis.size(), ele.contagem.qualquer, ele.contagem.congelados, ele.contagem.reacoes])
 		print("t=%.0f fase=%d partida=%.0f fps=%d vivos=%d nivel=%d abates=%d hp=%.0f proc_ms=%.2f perfil=%s armas=%s passivos=%s duelo=%s forma=%s" % [
 			_t, _arena.diretor.fase_idx + 1, _arena.diretor.tempo, Engine.get_frames_per_second(), _arena.inimigos.vivos(), _arena.nivel, _arena.abates,
 			_arena.jogador.hp, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.perfil,
@@ -1328,6 +1330,60 @@ func _print_tela(qual: String) -> void:
 			_arena.armas.achar(arma_g).t = 0.0
 			Engine.time_scale = float(_args.get("lento", 0.08))
 			await _fotos_seq(qual + "_" + arma_g, str(_args.get("seq", "0.1,0.4,0.7,1.0,1.3,1.6")))
+			get_tree().quit()
+			return
+		"elementos":   # estados de elemento (#72 marco 5): --heroi=X --cena=estados|reacao|poca; fotos pela --seq (câmera lenta com --lento)
+			_comecar(str(_args.get("heroi", "beto")))
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.bot = false
+			_arena.jogador.hp = 1.0e9
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			_arena.armas.lista.clear()
+			var ie = _arena.inimigos
+			var el_e = ie.elementos
+			var jp: Vector2 = _arena.jogador.position
+			var cena := str(_args.get("cena", "estados"))
+			_arena.hud.limpar_mensagens()
+			var lote: Array = []
+			if cena == "estados":   # uma fileira: queimando, gelado, congelado, envenenado, eletrificado, e dois elites com tudo
+				var pares := [["fogo", 5.0], ["gelo", 2.0], ["gelo", 4.0], ["veneno", 8.0], ["raio", 3.0]]
+				for i in pares.size():
+					var ve = ie.criar("carnical", jp + Vector2(-100 + i * 50, 40), 1)
+					lote.append(ve)
+					el_e.aplicar(ve, pares[i][0], pares[i][1])
+				for k in 2:
+					var vl = ie.criar("galhudo", jp + Vector2(-60 + k * 120, 100), 1, true)
+					lote.append(vl)
+					for e2 in ["fogo", "veneno", "raio"]:
+						el_e.aplicar(vl, e2, 1.5 + 1.5 * k if e2 != "veneno" else 1.5)
+			elif cena == "reacao":   # vapor e descarga ao lado um do outro, num grupo de vizinhos
+				for i in 8:
+					var vr = ie.criar("jacare_lodo", jp + Vector2(-70 + (i % 4) * 34, -50 + int(i / 4.0) * 40), 1)
+					lote.append(vr)
+				await get_tree().create_timer(0.1, true, false, true).timeout
+				el_e.aplicar(lote[1], "fogo", 2.0)
+				el_e.aplicar(lote[1], "gelo", 2.0)
+			elif cena == "poca":   # a Geada Rachada no chão com bichos dentro, um já congelado
+				_arena.armas.adicionar("geada")
+				for i in 5:
+					var vp = ie.criar("jacare_lodo", jp + Vector2(40 + (i % 3) * 26, -26 + int(i / 3.0) * 36), 1)
+					lote.append(vp)
+				_arena.armas.pocas.append({"pos": jp + Vector2(66, -8), "raio": 70.0, "vida": 30.0, "total": 30.0, "dano": 3.0, "tique": 0.4, "t": 0.0,
+					"segue": false, "arma": "geada", "variante": 1, "semente": 2.0, "rampa": _arena.armas.rampa_de(Dados.item("geada")), "gelo": true})
+			for ve in lote:
+				if ve:
+					ve.vel = 0.0
+					ve.t_nasc = 0.0
+					ve.hp = 1.0e6
+					ve.hpmax = 1.0e6
+			await get_tree().create_timer(0.1, true, false, true).timeout
+			if cena == "poca":
+				for i in 4:
+					_arena.armas._pocas(0.4)
+			Engine.time_scale = float(_args.get("lento", 0.5))
+			await _fotos_seq("elementos_" + cena, str(_args.get("seq", "0.3,0.8")))
 			get_tree().quit()
 			return
 		"criacao":   # tela de criar herói (#72): --raca=N e --classe=N escolhem as opções (índice nas listas)

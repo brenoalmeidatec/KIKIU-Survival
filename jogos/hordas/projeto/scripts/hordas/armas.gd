@@ -423,7 +423,7 @@ func _rastro_fogo(a: Dictionary, s: Dictionary, origem: Vector2, lado: int, alca
 	for f in [0.5, 0.9]:
 		pocas.append({"pos": origem + Vector2(lado * alcance * f, 0), "raio": float(p.get("raio", 24)) * s.area, "vida": dur, "total": dur,
 			"dano": s.dano * float(p.get("dano_pct", 0.3)), "tique": float(p.get("tique", 0.5)), "t": 0.0, "segue": false,
-			"arma": a.id, "variante": randi() % 3, "semente": randf() * 10.0, "rampa": p.get("rampa", Poca.CAFE), "rastro": true})
+			"arma": a.id, "variante": randi() % 3, "semente": randf() * 10.0, "rampa": p.get("rampa", Poca.CAFE), "rastro": true, "elem": str(p.get("elem", ""))})
 	var n := 0
 	for q in pocas:
 		if q.get("rastro", false):
@@ -472,7 +472,7 @@ func _derramar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 		pocas.append({"pos": p, "raio": float(s.get("raio", 40)) * s.area, "vida": s.duracao, "total": s.duracao,
 			"dano": s.dano, "tique": float(s.get("tique", 0.4)), "t": 0.0, "segue": bool(d.get("base", {}).get("segue", false)),
 			"arma": a.id, "variante": randi() % 3, "semente": randf() * 10.0, "rampa": rampa_de(d),
-			"explode": s.comp.get("explosao_final", {})})
+			"explode": s.comp.get("explosao_final", {}), "gelo": str(d.get("elemento", "")) == "gelo"})
 	Som.tocar("queda", 0.2, 1.5, -10)
 
 
@@ -484,8 +484,11 @@ func _pocas(dt: float) -> void:
 			p.pos = p.pos.move_toward(dono.centro(), 40.0 * dt)
 		if p.t <= 0:
 			p.t = p.tique
+			var el: String = p.get("elem", "")   # poça com elemento (rastro de fogo, #72): cada tique soma acúmulos
 			for v in campo.no_circulo(p.pos, p.raio * 0.85):
 				campo.ferir(v, p.dano, Vector2.ZERO, p.arma)
+				if el != "" and campo.has_method("aplicar_elemento") and v.hp > 0.0:
+					campo.aplicar_elemento(v, el, 1.0, p.arma)
 		if p.vida <= 0:
 			pocas.erase(p)
 			if not p.get("explode", {}).is_empty():   # "Poça Instável": explode ao sumir
@@ -632,6 +635,21 @@ func _desenhar_poca(ci: CanvasItem, p: Dictionary) -> void:
 	var tex := Poca.textura(p.raio, var_, rampa)
 	var tam_poca: Vector2 = tex.get_size() * cresce
 	ci.draw_texture_rect(tex, Rect2((p.pos - tam_poca / 2.0).floor(), tam_poca.floor()), false, Color(1, 1, 1, alfa))
+	if p.get("gelo", false):   # poça de gelo (#72): rachaduras claras saindo do centro e cristais no lugar do vapor
+		var cr := Color(rampa[5], alfa * 0.75)
+		for i in 5:
+			var ang := i * 1.25 + s
+			var d0 := Vector2(cos(ang), sin(ang) * Poca.ACHATA)
+			var m0: Vector2 = p.pos + d0 * r * 0.15
+			var m1: Vector2 = p.pos + d0 * r * (0.55 + 0.25 * fmod(s * 3.0 + i * 0.37, 1.0))
+			ci.draw_line(m0.floor(), m1.floor(), cr, 1.0)
+			ci.draw_line(m1.floor(), (m1 + Vector2(d0.y, -d0.x) * r * 0.18).floor(), Color(cr, cr.a * 0.7), 1.0)
+		for i in 2:
+			if int(_t * 4.0 + i * 3 + s * 7.0) % 4 == 0:
+				var pc: Vector2 = (p.pos + Vector2(cos(s * 5.0 + i * 2.1) * r * 0.5, sin(s * 5.0 + i * 2.1) * r * 0.5 * Poca.ACHATA)).floor()
+				ci.draw_rect(Rect2(pc.x - 1, pc.y, 3, 1), Color(1, 1, 1, alfa))
+				ci.draw_rect(Rect2(pc.x, pc.y - 1, 1, 3), Color(1, 1, 1, alfa))
+		return
 	var bolha := Color(rampa[4])
 	var vapor := Color(rampa[5]).lerp(Color.WHITE, 0.5)   # café: vapor branco; fogo: fagulha clara
 	for i in 3:
