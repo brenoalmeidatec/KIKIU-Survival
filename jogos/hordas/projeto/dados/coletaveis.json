@@ -2,5 +2,16 @@
  "_ajuda": "O que cai no chão (#65). As chaves são os tipos internos dos drops (os mesmos de fase.json > drops e do online): aqui muda só o que o jogador vê. sprite = assets/gerado/<sprite>.png; msg e cor [r,g,b] = a mensagem ao pegar. loja_cura = a carta de cura completa da loja do mapa (nome, desc e ícone em assets/gerado/icone_<icone>.png).",
  "marmita": {"nome": "Coxa Assada", "sprite": "drop_comida", "msg": "Coxa assada! +vida", "cor": [1.0, 0.6, 0.5]},
  "wifi": {"nome": "Berrante", "sprite": "drop_berrante", "msg": "Berrante! Todo o XP veio até você", "cor": [1.0, 0.85, 0.55]},
- "loja_cura": {"nome": "Banquete", "desc": "Recupera toda a vida.", "icone": "feijao"}
+ "loja_cura": {"nome": "Banquete", "desc": "Recupera toda a vida.", "icone": "feijao"},
+ "legibilidade": {
+  "_ajuda": "Etiqueta de drop (#72 marco 7): nome curto sobre o item no chão. 'cor' = chave de Interface.cor (respeita o modo daltônico); 'forma' é o ícone (a forma vale mais que a cor pra quem não distingue). Aparece nos primeiros 'nasce' segundos do drop, ou quando o herói chega a 'perto' px; some ao se afastar. 'so_perto' = só pelo critério da distância. 'max' = teto de etiquetas por quadro. Barra de elite: aparece sempre em elite e chefe; o nome só 'nome_seg' segundos depois de levar um golpe.",
+  "perto": 110.0, "nasce": 4.0, "max": 8, "nome_seg": 2.5,
+  "etiquetas": {
+   "bau": {"nome": "Baú", "cor": "destaque", "forma": "quadrado"},
+   "marmita": {"nome": "Coxa Assada", "cor": "cura", "forma": "cruz"},
+   "wifi": {"nome": "Berrante", "cor": "exclusiva", "forma": "triangulo"},
+   "fragmento": {"nome": "Fragmento", "cor": "arma", "forma": "losango"},
+   "gema": {"nome": "XP grande", "cor": "equipamento", "forma": "circulo", "so_perto": true, "min_valor": 20}
+  }
+ }
 }

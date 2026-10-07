@@ -6,6 +6,7 @@ extends Node2D
 const Visual := preload("res://scripts/hordas/visual.gd")
 const Perf := preload("res://scripts/hordas/perf.gd")
 const Elementos := preload("res://scripts/hordas/elementos.gd")
+const Legib := preload("res://scripts/hordas/legibilidade.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
 const AVISO_ANEL := 0.6   # segundos de aviso (anel vermelho no chão) antes dos tiros em anel (#68)
@@ -39,6 +40,7 @@ class V:
 	var kb := Vector2.ZERO
 	var flash := 0.0
 	var lento := 0.0
+	var t_golpe := -99.0         # relógio do desenho (_t) no último golpe: a barra de elite mostra o nome logo depois
 	var el_vis := 0              # estado de elemento pra pintar (bits: 1 fogo, 2 gelo, 4 raio, 8 veneno, 16 congelado); quem manda é elementos.gd
 	var resist: Dictionary = {}  # resistência a elementos (inimigos.json > resist), lida uma vez
 	var atordoado := 0.0         # parado no lugar (rugido do dragão)
@@ -134,6 +136,8 @@ func _draw_flashes() -> void:
 	for f in _flashes:
 		_flash_no.draw_texture_rect_region(f[0], f[1], f[2], Color(1, 1, 1, f[3]))
 var _dt := 0.016
+var _barras: Array = []      # elites/chefes visíveis no quadro (legibilidade.gd)
+var barras_n := 0            # quantas barras foram desenhadas no último quadro (o teste lê)
 var fantasmas: Array = []     # quem acabou de sumir (teleporte): {pos, tex, tam, sz, vira, quadro, t}
 var tp_n := 0                 # quantos teleportes (reaparecimentos) já tocaram: o teste lê
 # --- medição de saltos (--saltos): por inimigo, deslocamento por quadro contra a velocidade dele ---
@@ -266,6 +270,7 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 		valor *= arena.stat("critico_mult")
 	v.hp -= valor
 	v.flash = 0.09
+	v.t_golpe = _t
 	if not espelho and v.lento < 0.6:   # conjunto Gelo (#63): o golpe deixa o bicho lento (só quem roda a IA vê)
 		v.lento = maxf(v.lento, arena.conj("lento_acerto"))
 	v.arma_ult = arma   # causa do golpe final (mortes violentas)
@@ -310,6 +315,7 @@ func ferir_remoto(v: V, valor: float, empurrao: Vector2) -> void:
 		return
 	v.hp -= valor
 	v.flash = 0.09
+	v.t_golpe = _t
 	v.arma_ult = ""   # a arma do outro jogador não vem na rede: morte padrão
 	v.causa_ult = ""
 	v.kb = (v.kb + empurrao / (12.0 if v.chefe else (4.0 if v.pesado else 1.0))).limit_length(KB_MAX)
@@ -828,12 +834,13 @@ func _draw() -> void:
 			draw_line(v.pos, fim, Color(1.0, 0.4, 0.3, 0.45 + 0.4 * u), 1.0)
 		if v.anel > 0 and v.t_anel > 0.0 and v.t_anel < AVISO_ANEL:
 			var u2 := 1.0 - v.t_anel / AVISO_ANEL
-			draw_set_transform(v.pos, 0, Vector2(1, 0.55))
-			draw_arc(Vector2.ZERO, v.raio + 26.0 - 12.0 * u2, 0, TAU, 28, Color(1.0, 0.25, 0.2, 0.25 + 0.55 * u2), 2.0)
-			draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+			Legib.marca_perigo(self, v.pos, v.raio + 26.0 - 12.0 * u2, u2)   # o mesmo anel de aviso das outras áreas (#72 marco 7)
 	var _d2 := Perf.ini()
 	_flashes.clear()
+	_barras.clear()
 	for v: V in _ordem:
+		if v.elite or v.chefe:
+			_barras.append(v)   # barra de vida: só elite e chefe (os comuns só pagam este teste)
 		var s: Vector2 = v.sz
 		var vira: bool = v.espelho
 		var quadro := 2 if v.flash > 0 else (int(_t * v.ritmo + v.id) % 2)
@@ -912,6 +919,12 @@ func _draw() -> void:
 				_flashes.append([v.tex, r, fonte, 0.9 * cor.a])
 	_flash_no.queue_redraw()
 	Perf.fim("ini_d_sprite", _d2)
+	for v: V in _barras:   # barra fina de elite/chefe, com o nome curto logo depois de um golpe
+		var topo: float = v.pos.y - v.sz.y * 0.6
+		Legib.barra(self, v.pos.x, topo, v.sz.x * 0.8, v.hp / maxf(v.hpmax, 1.0), v.chefe)
+		if Legib.mostra_nome(_t, v.t_golpe):
+			Legib.nome_sobre(self, v.pos.x, topo - 14.0, Legib.nome_curto(str(v.d.get("nome", ""))))
+	barras_n = _barras.size()
 	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
 		var u: float = f.t / NASC_T
 		var fs: Vector2 = f.sz * (1.0 - 0.6 * u)

@@ -1,5 +1,6 @@
 extends Node2D
 const Perf := preload("res://scripts/hordas/perf.gd")
+const Legib := preload("res://scripts/hordas/legibilidade.gd")
 ## O que cai no chão: gemas de XP, marmita (cura), Wi-Fi (puxa todo o XP) e baú.
 ## O ímã do jogador puxa tudo que está perto.
 
@@ -9,6 +10,10 @@ const MAX_GEMAS := 450
 var arena: Node
 var itens: Array = []      # {pos, tipo, valor, puxando, vel}
 var _t := 0.0
+var _rotulos := Node2D.new()   # etiquetas de drop (#72 marco 7): por cima dos bichos
+var _cand: Array = []          # itens com direito a etiqueta, juntados no desenho das gemas
+var _rot: Array = []           # o que será desenhado neste quadro
+var rotulos_n := 0             # quantas etiquetas foram desenhadas no último quadro (o teste lê)
 
 
 func gema(pos: Vector2, valor: float) -> void:
@@ -24,7 +29,7 @@ func gema(pos: Vector2, valor: float) -> void:
 
 
 func soltar(pos: Vector2, tipo: String) -> void:
-	itens.append({"pos": pos, "tipo": tipo, "valor": 0, "puxando": false, "vel": 0.0})
+	itens.append({"pos": pos, "tipo": tipo, "valor": 0, "puxando": false, "vel": 0.0, "t0": _t})
 
 
 func puxar_tudo() -> void:
@@ -48,7 +53,10 @@ func atualizar_i(dt: float) -> void:
 	var jog: Node2D = arena.jogador
 	var alvo: Vector2 = jog.centro()
 	var ima: float = 70.0 * arena.stat("ima")
+	_cand.clear()
 	for it in itens.duplicate():
+		if it.tipo != "gema" or it.valor >= 20.0:
+			_cand.append(it)   # só quem pode ter etiqueta (as gemas pequenas, a maioria, só pagam este teste)
 		var dist: float = it.pos.distance_to(alvo)
 		if not it.puxando and dist < ima and it.tipo != "bau":
 			it.puxando = true
@@ -62,7 +70,10 @@ func atualizar_i(dt: float) -> void:
 		if dist < 14:
 			itens.erase(it)
 			_pegar(it)
+	_rot = rotulos_do_quadro(alvo)
+	rotulos_n = _rot.size()
 	queue_redraw()
+	_rotulos.queue_redraw()
 
 
 func _pegar(it: Dictionary) -> void:
@@ -112,6 +123,43 @@ func _draw() -> void:
 	var _pp := Perf.ini()
 	_draw_i()
 	Perf.fim("col_d", _pp)
+
+
+func _ready() -> void:
+	_rotulos.z_index = 10
+	_rotulos.draw.connect(_desenhar_rotulos)
+	add_child(_rotulos)
+
+
+## Etiquetas: só dos itens que valem (baú, comida, berrante, fragmento, gema grande), e só perto ou logo que caem.
+## Devolve [item, etiqueta, opacidade] (no máximo `max`). Pura: o teste chama sem desenhar.
+func rotulos_do_quadro(alvo: Vector2) -> Array:
+	var r: Array = []
+	var c := Legib.cfg()
+	var lim := int(c.get("max", 8))
+	var perto := float(c.get("perto", 110.0))
+	for it in _cand:
+		var e: Dictionary = Legib.etiqueta(str(it.tipo), float(it.valor))
+		var idade: float = _t - float(it.get("t0", -99.0))
+		var dist: float = it.pos.distance_to(alvo)
+		if Legib.etiqueta_visivel(e, idade, dist):
+			var fim: float = 1.0 if dist <= perto else clampf((float(c.get("nasce", 4.0)) - idade) * 2.0, 0.0, 1.0)   # a de "recém-caído" esmaece
+			r.append([it, e, fim])
+			if r.size() >= lim:
+				break
+	return r
+
+
+func _desenhar_rotulos() -> void:
+	var usados: Array = []   # etiquetas juntas sobem uma sobre a outra em vez de se sobrepor (poucas: no máximo `max`)
+	for r in _rot:
+		var p: Vector2 = r[0].pos
+		var subir := 0.0
+		for q: Vector2 in usados:
+			if absf(q.x - p.x) < 70.0 and absf(q.y - (p.y - subir)) < 11.0:
+				subir += 11.0
+		usados.append(Vector2(p.x, p.y - subir))
+		Legib.desenhar_etiqueta(_rotulos, p - Vector2(0, subir), r[1], _t, r[2])
 
 
 func _draw_i() -> void:

@@ -11,6 +11,7 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 
 const ESCALA := 2.0
 const Poca := preload("res://scripts/hordas/poca.gd")
+const Legib := preload("res://scripts/hordas/legibilidade.gd")
 ## Comportamentos que moram no próprio arquivo (scripts/hordas/armas/<tipo>.gd). Pra criar arma nova com
 ## comportamento próprio (ex.: exclusiva de outro personagem): escreva o arquivo com atualizar/passo/pintar/fundo
 ## (veja katana.gd) e registre aqui. atras() desenha o que fica atrás do personagem. Os tipos antigos (projetil, chicote...) continuam neste arquivo.
@@ -532,6 +533,7 @@ func _draw_i() -> void:
 			var pulso := 0.5 + 0.5 * sin(_t * 4.0)
 			var cor := cor_de(d, Color(0.5, 1.0, 0.6))
 			draw_circle(jog.centro(), r, Color(cor, 0.08 + 0.04 * pulso))
+			Legib.marca_aliada(self, jog.centro(), r, 1.0, false, 0.0, false)   # borda do alcance da aura
 			for k in 3:
 				var rr := fmod(_t * 40.0 + k * r / 3.0, r)
 				draw_arc(jog.centro(), rr, 0, TAU, 32, Color(cor, 0.35 * (1.0 - rr / r)), 1.5)
@@ -635,6 +637,10 @@ func _desenhar_poca(ci: CanvasItem, p: Dictionary) -> void:
 	var tex := Poca.textura(p.raio, var_, rampa)
 	var tam_poca: Vector2 = tex.get_size() * cresce
 	ci.draw_texture_rect(tex, Rect2((p.pos - tam_poca / 2.0).floor(), tam_poca.floor()), false, Color(1, 1, 1, alfa))
+	# borda da área que machuca (raio real do golpe = 85% do raio) e, na "Poça Instável", o alcance da explosão que vem
+	Legib.marca_aliada(ci, p.pos, p.raio * 0.85 * cresce, alfa)
+	if not p.get("explode", {}).is_empty() and p.vida < 0.8:
+		Legib.marca_aliada(ci, p.pos, p.raio * float(p.explode.get("raio_mult", 1.5)), 1.0 - p.vida / 0.8, true, _t)
 	if p.get("gelo", false):   # poça de gelo (#72): rachaduras claras saindo do centro e cristais no lugar do vapor
 		var cr := Color(rampa[5], alfa * 0.75)
 		for i in 5:

@@ -25,6 +25,7 @@ const Criacao := preload("res://scripts/hordas/criacao.gd")
 const Paleta := preload("res://scripts/hordas/paleta.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 const TelaHerois := preload("res://scripts/hordas/tela_herois.gd")
+const Poca := preload("res://scripts/hordas/poca.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
 const OPCOES := ["Jogar sozinho", "Criar sala", "Entrar em sala", "Opções", "Créditos", "Sair"]
 const BETA := [1, 2]         # opções do online: ainda em teste, ganham o selo BETA no menu
@@ -1310,6 +1311,47 @@ func _print_tela(qual: String) -> void:
 			if che:
 				che.t_anel = 0.2
 			Engine.time_scale = 0.05   # quase parado: o print sai 0,6 s (tempo real) depois, ainda no meio do aviso
+		"legibilidade":   # legibilidade (#72 marco 7): elite e chefe com barra, drops com etiqueta, áreas do herói e do inimigo marcadas
+			_comecar(str(_args.get("heroi", "hazaki")))
+			await get_tree().create_timer(1.8, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.bot = false
+			_arena.jogador.hp = 1.0e9
+			_arena.diretor.bonus_minutos = -100.0
+			_arena.inimigos.limpar()
+			_arena.armas.lista.clear()
+			_arena.coleta.limpar()
+			var jl: Vector2 = _arena.jogador.position
+			var eli = _arena.inimigos.criar("jacare_lodo", jl + Vector2(120, -70), 1, true)
+			var che2 = _arena.inimigos.criar(str(_args.get("chefe", "rainha_sapo")), jl + Vector2(150, 60))
+			for i in 8:   # alguns comuns de companhia: sem barra
+				var cm = _arena.inimigos.criar("sapo_podre", jl + Vector2(-140 + i * 12, -90 + (i % 3) * 14))
+				if cm:
+					cm.vel = 0.0
+			await get_tree().create_timer(0.05, true, false, true).timeout
+			for q in [eli, che2]:
+				if q:
+					q.vel = 0.0
+					q.t_nasc = 0.0
+			if eli:
+				eli.hp = eli.hpmax * 0.6
+				eli.t_golpe = _arena.inimigos._t   # acabou de levar um golpe: o nome aparece
+			if che2:
+				che2.hp = che2.hpmax * 0.8
+				che2.t_anel = 0.25   # anel de aviso do chefe (perigo, vermelho)
+			_arena.coleta.soltar(jl + Vector2(-60, 40), "bau")
+			_arena.coleta.soltar(jl + Vector2(-10, 60), "marmita")
+			_arena.coleta.soltar(jl + Vector2(40, 40), "wifi")
+			_arena.coleta.soltar(jl + Vector2(-100, 70), "fragmento")
+			_arena.coleta.gema(jl + Vector2(-60, 90), 30.0)
+			# áreas do herói (azul, discretas): uma poça que machuca, uma que vai explodir logo, e a aura
+			var raio_p := 36.0
+			_arena.armas.pocas.append({"pos": jl + Vector2(-110, -10), "raio": raio_p, "vida": 5.0, "total": 6.0, "dano": 1.0, "tique": 0.5, "t": 0.5,
+				"segue": false, "arma": "", "variante": 0, "semente": 1.0, "rampa": Poca.CAFE})
+			_arena.armas.pocas.append({"pos": jl + Vector2(-20, -90), "raio": raio_p, "vida": 0.5, "total": 6.0, "dano": 1.0, "tique": 0.5, "t": 0.5,
+				"segue": false, "arma": "", "variante": 1, "semente": 2.0, "rampa": Poca.CAFE, "explode": {"raio_mult": 1.8, "dano_mult": 4.0}})
+			_arena.armas.adicionar("wifi")
+			Engine.time_scale = 0.05
 		"golpe":   # combate estilo Dimraeth: --heroi=X --arma=Y (katana, arte_marcial, cabo_rede, lanca, martelo) num grupo
 			# de --inimigo parado à direita; o golpe sai já em câmera lenta (--lento) e as fotos seguem o --seq
 			_comecar(str(_args.get("heroi", "beto")))

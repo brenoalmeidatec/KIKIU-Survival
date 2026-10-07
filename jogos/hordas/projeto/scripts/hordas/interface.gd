@@ -13,6 +13,7 @@ const PADRAO := {
 	"bom": Color(0.5, 1, 0.5), "ruim": Color(1, 0.45, 0.4), "vida_chefe": Color(0.85, 0.15, 0.25),
 	"vida_duelo": Color(0.9, 0.25, 0.3), "alerta": Color(1, 0.4, 0.4), "destaque": Color(1, 0.9, 0.4),
 	"comportamento": Color(1.0, 0.55, 0.2),
+	"perigo": Color(1.0, 0.25, 0.2), "area_aliada": Color(0.55, 0.85, 1.0),
 }
 const SEGURA := {
 	"arma": Color(0.34, 0.7, 0.91), "passivo": Color(0.94, 0.89, 0.26), "equipamento": Color(0.8, 0.47, 0.65),
@@ -20,6 +21,7 @@ const SEGURA := {
 	"bom": Color(0.34, 0.7, 0.91), "ruim": Color(0.9, 0.45, 0.05), "vida_chefe": Color(0.9, 0.45, 0.05),
 	"vida_duelo": Color(0.9, 0.45, 0.05), "alerta": Color(0.9, 0.5, 0.1), "destaque": Color(0.94, 0.89, 0.26),
 	"comportamento": Color(0.0, 0.62, 0.45),
+	"perigo": Color(0.9, 0.45, 0.05), "area_aliada": Color(0.34, 0.7, 0.91),
 }
 ## raridade da dádiva (dadivas.json) -> cor segura (vale só no modo daltônico; no normal vale a cor do JSON)
 const RARIDADE_SEGURA := {
