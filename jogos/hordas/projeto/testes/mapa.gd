@@ -61,7 +61,6 @@ func _ready() -> void:
 
 	# --- 300 sementes: estrutura e regras
 	var tipos_vistos := {}
-	var max_iniciais := 0
 	for s in range(1, 301):
 		var m := gerar(s)
 		var e := Mapa.erros(m)
@@ -84,9 +83,24 @@ func _ready() -> void:
 		for t in c.regras:
 			for reg in andares / k:
 				ok(int(cont.get("%d:%s" % [reg, t], 0)) <= int(c.regras[t].get("max_por_mapa", 9999)), "semente %d: limite de %s na região %d" % [s, t, reg + 1])
-		var a1 := nos.filter(func(n): return int(n.andar) == 0)
-		max_iniciais = maxi(max_iniciais, a1.size())
-		ok(a1.size() >= 2 and a1.all(func(n): return str(n.tipo) == "fase" and Mapa.alcanca_chefe(m, 0, int(n.faixa))), "semente %d: andar 1 com 2+ nós de fase que chegam ao chefe" % s)
+		for reg in andares / k:   # #96: cada região começa num nó só, que abre 2+ caminhos, e todo nó da região sai dele
+			var ini := nos.filter(func(n): return int(n.andar) == reg * k)
+			ok(ini.size() == 1 and str(ini[0].tipo) == "fase" and ini[0].prox.size() >= 2, "semente %d: região %d começa num nó de fase só, com 2+ caminhos" % [s, reg + 1])
+			if ini.size() != 1:
+				continue
+			var vistos := {Vector2i(reg * k, int(ini[0].faixa)): true}
+			var fila := [ini[0]]
+			while not fila.is_empty():
+				var n0: Dictionary = fila.pop_front()
+				if int(n0.andar) >= reg * k + k - 1:
+					continue
+				for p in n0.prox:
+					var v := Vector2i(int(n0.andar) + 1, int(p))
+					if not vistos.has(v):
+						vistos[v] = true
+						fila.append(Mapa.no(m, v.x, v.y))
+			var da_regiao := nos.filter(func(n): return int(n.andar) >= reg * k and int(n.andar) < reg * k + k)
+			ok(vistos.size() == da_regiao.size(), "semente %d: região %d sem trilha morta (%d de %d nós alcançáveis)" % [s, reg + 1, vistos.size(), da_regiao.size()])
 		ok(nos.filter(func(n): return int(n.andar) == andares - 1).size() == 1, "semente %d: um chefe só no último andar" % s)
 		ok(Mapa.inicio(m) >= 0 and not Mapa.no(m, 0, Mapa.inicio(m)).is_empty(), "semente %d: início é um nó do andar 1" % s)
 	for t in ["fase", "elite", "descanso", "loja", "evento", "santuario", "chefe"]:
