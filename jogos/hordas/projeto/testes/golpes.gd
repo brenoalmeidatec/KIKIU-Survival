@@ -93,6 +93,8 @@ func _katana() -> void:
 		v.vel = 0.0
 		v.t_nasc = 0.0
 	a.efeitos.limpar()
+	await esperar(0.35)    # a arma inicial do herói pode ter golpeado agora há pouco: deixa passar o golpe dela
+	j._atk_cool = 0.0      # e o intervalo entre golpes do corpo (senão o da katana é ignorado de propósito)
 	a.armas.achar("katana").t = 0.0
 	await esperar(0.06)
 	ok(not a.efeitos.cortes.is_empty(), "a katana solta a meia-lua no efeitos.gd")
