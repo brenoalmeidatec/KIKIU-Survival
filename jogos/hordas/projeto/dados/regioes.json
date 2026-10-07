@@ -4,9 +4,11 @@
  "minutos_por_fase": 0.55,
  "luz": {"chefe": 0.78, "tom_chefe": [1.0, 0.86, 0.82]},
  "mapa": {
-  "faixas": 4,
-  "caminhos": 3,
-  "inicios_distintos_min": 2,
+  "faixas": 5,
+  "caminhos": 5,
+  "inicio_unico": true,
+  "ramos_min": 2,
+  "ligacoes_extra": 0.75,
   "fixos": {"1": "fase", "5": "chefe"},
   "pesos": {"fase": 12, "elite": 4, "descanso": 3, "loja": 3, "evento": 5, "santuario": 2},
   "regras": {

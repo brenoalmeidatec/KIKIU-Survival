@@ -77,6 +77,8 @@ static func costurar(partes: Array) -> Dictionary:
 				if m.nos[r * k + k - 1][x] != null:
 					m.nos[r * k + k - 1][x].prox = entradas.duplicate()
 	m["por_regiao"] = k
+	if partes[0].get("inicio_unico", false):
+		m["inicio_unico"] = true
 	return m
 
 
@@ -95,10 +97,14 @@ static func _tentar(rng: RandomNumberGenerator, c: Dictionary) -> Dictionary:
 	var m := _vazio(n, f)
 	var boss := f / 2
 	m.nos[n - 1][boss] = _no(n - 1, boss, "chefe")
-	# faixas iniciais: pelo menos "inicios_distintos_min" diferentes (limite de tentativas)
-	var qtd := clampi(int(c.get("caminhos", 3)), 1, f)
+	var unico := bool(c.get("inicio_unico", false))
+	if unico:
+		m["inicio_unico"] = true
+	# faixas iniciais: com "inicio_unico" (#96) todos os caminhos partem do nó do meio e se abrem dali;
+	# senão, pelo menos "inicios_distintos_min" faixas diferentes (limite de tentativas)
+	var qtd := clampi(int(c.get("caminhos", 3)), 1, f + 2)
 	var inicios: Array = []
-	for _t in int(c.get("tentativas", 50)):
+	for _t in (0 if unico else int(c.get("tentativas", 50))):
 		inicios = []
 		for _i in qtd:
 			inicios.append(rng.randi_range(0, f - 1))
@@ -107,6 +113,9 @@ static func _tentar(rng: RandomNumberGenerator, c: Dictionary) -> Dictionary:
 			distintos[x] = true
 		if distintos.size() >= mini(int(c.get("inicios_distintos_min", 2)), qtd):
 			break
+	if unico:
+		for _i in qtd:
+			inicios.append(boss)
 	var arestas: Array = []   # arestas[andar] = [[de, para], ...] do andar ao seguinte
 	for _a in n - 1:
 		arestas.append([])
@@ -138,8 +147,55 @@ static func _tentar(rng: RandomNumberGenerator, c: Dictionary) -> Dictionary:
 		for x in f:
 			if m.nos[a][x] != null:
 				m.nos[a][x].prox.sort()
+	if unico and not _ramifica(m, int(c.get("ramos_min", 2))):
+		return {}   # pouca escolha (os caminhos sorteados ficaram quase juntos): sorteia de novo
+	_ligar_extras(m, rng, float(c.get("ligacoes_extra", 0.0)))
 	_sortear_tipos(m, rng, c)
 	return m
+
+
+## Mais escolha (#96): um nó do meio com uma saída só ganha, com chance "chance", uma ligação a um vizinho (faixa ±1)
+## que já existe no andar seguinte, se não cruzar nenhuma outra. Os nós não mudam, então todos seguem chegando ao chefe.
+static func _ligar_extras(m: Dictionary, rng: RandomNumberGenerator, chance: float) -> void:
+	if chance <= 0.0:
+		return
+	var n := int(m.andares)
+	for a in range(1, n - 2):   # o penúltimo andar só liga no chefe
+		var arestas := []
+		for x in int(m.faixas):
+			if m.nos[a][x] != null:
+				for p in m.nos[a][x].prox:
+					arestas.append([x, p])
+		for x in int(m.faixas):
+			var no_ = m.nos[a][x]
+			if no_ == null or no_.prox.size() != 1 or rng.randf() >= chance:
+				continue
+			var cand := []
+			for p in [x - 1, x, x + 1]:
+				if p >= 0 and p < int(m.faixas) and m.nos[a + 1][p] != null and not p in no_.prox and not _cruza(arestas, x, p):
+					cand.append(p)
+			if cand.is_empty():
+				continue
+			var p: int = cand[rng.randi_range(0, cand.size() - 1)]
+			no_.prox.append(p)
+			no_.prox.sort()
+			arestas.append([x, p])
+
+
+## Com início único: o nó inicial abre pelo menos "ramos" saídas e cada andar do meio tem pelo menos "ramos" nós.
+static func _ramifica(m: Dictionary, ramos: int) -> bool:
+	var n := int(m.andares)
+	for a in range(1, n - 1):
+		var qtd := 0
+		for x in int(m.faixas):
+			if m.nos[a][x] != null:
+				qtd += 1
+		if qtd < ramos:
+			return false
+	for x in int(m.faixas):
+		if m.nos[0][x] != null and m.nos[0][x].prox.size() < ramos:
+			return false
+	return true
 
 
 static func _no(andar: int, faixa: int, tipo: String) -> Dictionary:
@@ -261,8 +317,15 @@ static func erros(m: Dictionary) -> Array:
 	var ultimo := todos(m).filter(func(x): return int(x.andar) == n - 1)
 	if ultimo.size() != 1 or str(ultimo[0].tipo) != "chefe":
 		res.append("o último andar deve ter só o chefe")
-	var iniciais := todos(m).filter(func(x): return int(x.andar) == 0)
-	if iniciais.size() < 2:
+	if m.get("inicio_unico", false):   # #96: cada região começa num nó só, que abre 2+ caminhos
+		var k := int(m.get("por_regiao", n))
+		for a0 in range(0, n, k):
+			var ini := todos(m).filter(func(x): return int(x.andar) == a0)
+			if ini.size() != 1:
+				res.append("andar %d devia ter um nó só (tem %d)" % [a0 + 1, ini.size()])
+			elif ini[0].prox.size() < 2:
+				res.append("o nó inicial do andar %d não se abre em caminhos" % (a0 + 1))
+	elif todos(m).filter(func(x): return int(x.andar) == 0).size() < 2:
 		res.append("menos de 2 nós no andar 1")
 	for no_ in todos(m):
 		if int(no_.andar) < n - 1 and no_.prox.is_empty():

@@ -7,13 +7,16 @@ extends CanvasLayer
 ## Os dados e a geração ficam em mapa.gd; aqui só desenho e entrada.
 
 const Mapa := preload("res://scripts/hordas/mapa.gd")
+const Regioes := preload("res://scripts/hordas/regioes.gd")
+const Cenario := preload("res://scripts/hordas/cenario.gd")
+const Sorte := preload("res://scripts/hordas/sorte.gd")
 
 const W := 640.0
 const H := 360.0
 const X0 := 54.0           # centro do andar 1
 const DX := 58.0           # distância entre andares
-const Y0 := 92.0           # centro da faixa 0
-const DY := 46.0           # distância entre faixas
+const AREA := Rect2(16, 60, 608, 186)   # o mapa desenhado (chão e enfeites da região); o painel de informação fica embaixo
+const MARGEM_Y := 20.0     # do topo/fundo da área até o centro da primeira/última faixa
 const TRAVA := 0.35        # ignora teclas logo ao abrir (o botão que o jogador já estava apertando)
 const AUTO_BOT := 1.0
 
@@ -126,7 +129,144 @@ func _janela() -> void:
 func centro_no(andar: int, faixa: int) -> Vector2:
 	var dx := DX if _na >= 8 else minf(120.0, (W - 2.0 * X0) / maxf(1.0, _na - 1.0))
 	var x0 := (W - dx * (_na - 1)) / 2.0
-	return Vector2(x0 + (andar - _a0) * dx, Y0 + faixa * DY)
+	var f := maxf(2.0, float(arena.mapa.faixas))
+	var dy := (AREA.size.y - 2.0 * MARGEM_Y) / (f - 1.0)
+	return Vector2(x0 + (andar - _a0) * dx, AREA.position.y + MARGEM_Y + faixa * dy)
+
+
+# ---------- arte da região (#96): chão e enfeites do cenário da região, sem arte nova pra manter ----------
+
+var _cenarios := {}         # nome -> Cenario carregado (ou null)
+var _enfeites_de := ""      # chave do mapa/região dos enfeites já espalhados
+var _enfeites: Array = []   # {item, pos (onde fica o pé)}
+
+
+## Configuração de arte da região mostrada (dados/mapa.json > arte), com o "padrao" por baixo.
+func _arte() -> Dictionary:
+	var a: Dictionary = Mapa.cfg().get("arte", {})
+	var res: Dictionary = a.get("padrao", {}).duplicate()
+	var reg := _regiao()
+	res.merge(a.get(str(reg.get("id", "")), {}), true)
+	return res
+
+
+func _regiao() -> Dictionary:
+	return Regioes.regiao(Regioes.do_andar(_a0)) if Regioes.ativo() else {}
+
+
+func _cenario() -> Cenario:
+	var nome := str(_regiao().get("cenario", Cenario.da_fase(_a0)))
+	if nome == "":
+		return null
+	if not _cenarios.has(nome):
+		var c := Cenario.new()
+		_cenarios[nome] = c if c.carregar(nome) else null
+	return _cenarios[nome]
+
+
+static func _cor(a, padrao := Color.WHITE) -> Color:
+	return Color(a[0], a[1], a[2]) if a is Array and a.size() >= 3 else padrao
+
+
+## Espalha os enfeites da região na área do mapa, longe dos nós e das trilhas (pra não esconder nada).
+## Sorteio fixo pela semente e pela região: o mesmo mapa mostra sempre os mesmos enfeites.
+func _espalhar(cen: Cenario, qtd: int) -> void:
+	_enfeites = []
+	if cen == null or cen.itens.is_empty():
+		return
+	var m: Dictionary = arena.mapa
+	var centros := []
+	var segs := []
+	for a in range(_a0, mini(_a0 + _na, int(m.andares))):
+		for x in int(m.faixas):
+			var n := Mapa.no(m, a, x)
+			if n.is_empty():
+				continue
+			centros.append(centro_no(a, x))
+			if _na_janela(a + 1):
+				for p in n.get("prox", []):
+					segs.append([centro_no(a, x), centro_no(a + 1, int(p))])
+	var r := Sorte.criar("mapa_arte", Regioes.do_andar(_a0))
+	var dentro := AREA.grow(-3.0)
+	for _i in qtd:
+		var it: Dictionary = cen._item_sorteado(r)
+		var tam: Vector2 = it.regiao.size
+		var pe := Vector2(r.randf_range(dentro.position.x, dentro.end.x), r.randf_range(dentro.position.y, dentro.end.y))
+		var ret := Rect2(pe - it.pe, tam)
+		if not dentro.encloses(ret):
+			continue
+		var livre := true
+		var folga := ret.grow(5.0)
+		for c in centros:
+			if folga.grow(12.0).has_point(c):
+				livre = false
+				break
+		if livre:
+			for s in segs:
+				if _seg_toca(s[0], s[1], folga):
+					livre = false
+					break
+		if livre:
+			for e in _enfeites:
+				if e.pos.distance_to(pe) < 14.0:
+					livre = false
+					break
+		if livre:
+			_enfeites.append({"item": it, "pos": pe})
+	_enfeites.sort_custom(func(p, q): return p.pos.y < q.pos.y)
+
+
+static func _seg_toca(de: Vector2, para: Vector2, r: Rect2) -> bool:
+	var passos := maxi(1, int(de.distance_to(para) / 4.0))
+	for i in passos + 1:
+		if r.has_point(de.lerp(para, float(i) / passos)):
+			return true
+	return false
+
+
+func _desenhar_regiao(arte: Dictionary) -> void:
+	var tom := _cor(arte.get("tom"))
+	var cen := _cenario()
+	var chave := "%s|%d|%s" % [Mapa.resumo(arena.mapa), _a0, str(cen.nome if cen else "")]
+	if chave != _enfeites_de:
+		_enfeites_de = chave
+		_espalhar(cen, int(arte.get("enfeites", 40)))
+	var moldura := _cor(arte.get("moldura"), Color(0.45, 0.5, 0.65))
+	_tela.draw_rect(AREA.grow(3.0), Color(0, 0, 0))
+	_tela.draw_rect(AREA.grow(2.0), moldura)
+	_tela.draw_rect(AREA.grow(1.0), moldura.darkened(0.55))
+	var b := float(arte.get("piso", 0.5))
+	if cen != null and cen.piso != null:
+		_tela.draw_texture_rect(cen.piso, AREA, true, Color(tom.r * b, tom.g * b, tom.b * b))
+	else:
+		_tela.draw_rect(AREA, Color(0.1, 0.11, 0.16))
+	if cen != null:
+		var te := tom.lerp(Color.WHITE, 0.3) * Color(b + 0.25, b + 0.25, b + 0.25)
+		for e in _enfeites:
+			_tela.draw_texture_rect_region(cen.atlas, Rect2(e.pos - e.item.pe, e.item.regiao.size), e.item.regiao, te)
+	# borda escurecida (vinheta) para o mapa parecer pintado e os nós saltarem
+	for i in 10:
+		var al := 0.32 * (1.0 - i / 10.0)
+		var faixa := Rect2(AREA.position + Vector2(i, i), AREA.size - Vector2(i, i) * 2.0)
+		_tela.draw_rect(faixa, Color(0, 0, 0, al), false, 1.0)
+	# cantos da moldura
+	for c in [AREA.position, Vector2(AREA.end.x, AREA.position.y), Vector2(AREA.position.x, AREA.end.y), AREA.end]:
+		_tela.draw_rect(Rect2(c - Vector2(4, 4), Vector2(8, 8)), Color(0, 0, 0))
+		_tela.draw_rect(Rect2(c - Vector2(3, 3), Vector2(6, 6)), moldura)
+		_tela.draw_rect(Rect2(c - Vector2(1, 1), Vector2(2, 2)), moldura.lightened(0.5))
+
+
+## Trilha pontilhada (contorno escuro + traços), como num mapa desenhado.
+func _trilha(de: Vector2, para: Vector2, cor: Color, larg: float) -> void:
+	var d := de.distance_to(para)
+	var dir := (para - de) / maxf(1.0, d)
+	var t := 14.0
+	while t < d - 14.0:
+		var a := de + dir * t
+		var b := de + dir * minf(t + 5.0, d - 14.0)
+		_tela.draw_line(a, b, Color(0, 0, 0, cor.a * 0.8), larg + 2.0)
+		_tela.draw_line(a, b, cor, larg)
+		t += 9.0
 
 
 func _na_janela(andar: int) -> bool:
@@ -178,7 +318,10 @@ func _desenhar() -> void:
 	var pos: Vector2i = arena.mapa_pos
 	var tt := Time.get_ticks_msec() / 1000.0
 	var pulso := 0.6 + 0.4 * sin(tt * 6.0)
-	_tela.draw_rect(Rect2(0, 0, W, H), Color(0.03, 0.03, 0.08, 1.0))
+	var arte := _arte()
+	_tela.draw_rect(Rect2(0, 0, W, H), _cor(arte.get("fundo"), Color(0.03, 0.03, 0.08)))
+	_desenhar_regiao(arte)
+	var cor_trilha := _cor(arte.get("trilha"), Color(0.7, 0.72, 0.85))
 	var fases: Array = arena.diretor.fases()
 	var prox_f: Dictionary = fases[clampi(pos.x + 1, 0, fases.size() - 1)] if not fases.is_empty() else {}
 	if prox_f.has("regiao"):   # regiões (#64): o nome da região no lugar de "MAPA"
@@ -199,15 +342,13 @@ func _desenhar() -> void:
 			for p in n.get("prox", []):
 				var de := centro_no(a, x)
 				var para := centro_no(a + 1, int(p))
-				var cor := Color(0.3, 0.33, 0.45, 0.6)
-				var larg := 1.0
-				if Vector2i(a, x) in trilha and Vector2i(a + 1, int(p)) in trilha:
-					cor = Color(0.95, 0.85, 0.4)
-					larg = 3.0
-				elif a == pos.x and x == pos.y:
-					cor = Color(1, 1, 1, 0.5 + 0.4 * pulso) if int(p) == alvo else Color(0.75, 0.8, 1, 0.55)
-					larg = 3.0 if int(p) == alvo else 2.0
-				_tela.draw_line(de, para, cor, larg)
+				if Vector2i(a, x) in trilha and Vector2i(a + 1, int(p)) in trilha:   # caminho já feito: linha cheia dourada
+					_tela.draw_line(de, para, Color(0, 0, 0, 0.8), 5.0)
+					_tela.draw_line(de, para, Color(0.95, 0.85, 0.4), 3.0)
+				elif a == pos.x and x == pos.y:   # as opções de agora: a escolhida pisca
+					_trilha(de, para, Color(1, 1, 1, 0.55 + 0.45 * pulso) if int(p) == alvo else Color(cor_trilha.lightened(0.3), 0.95), 3.0 if int(p) == alvo else 2.0)
+				else:
+					_trilha(de, para, Color(cor_trilha, 0.75), 1.0)
 	# nós
 	for a in int(m.andares):
 		if not _na_janela(a):
@@ -223,7 +364,7 @@ func _desenhar() -> void:
 			var atual := a == pos.x and x == pos.y
 			var acessivel := a == pos.x + 1 and x in _opcoes
 			var escolhido := acessivel and x == alvo
-			var fundo := Color(0.12, 0.13, 0.2)
+			var fundo := Color(0.07, 0.07, 0.11, 0.92)
 			var borda := Color(0.25, 0.28, 0.4)
 			var cor_i := Color(cor_t.r, cor_t.g, cor_t.b, 0.4)
 			if visitado:
@@ -246,13 +387,9 @@ func _desenhar() -> void:
 				_txt(c + Vector2(4, -7), "v", 8, Color(0.5, 1, 0.5))
 			if escolhido:
 				_tela.draw_colored_polygon(PackedVector2Array([c + Vector2(-5, -raio - 8), c + Vector2(5, -raio - 8), c + Vector2(0, -raio - 2)]), Color(1, 1, 1, pulso))
-	# números dos andares embaixo
-	for a in range(_a0, mini(_a0 + _na, int(m.andares))):
-		var cor_n := Color(1, 0.9, 0.4) if a == pos.x + 1 else Color(0.45, 0.5, 0.65)
-		_txt(Vector2(centro_no(a, 0).x - 14, 72.0), "%d" % (a - _a0 + 1), 8, cor_n, 28.0, HORIZONTAL_ALIGNMENT_CENTER)
 	# painel de informação do nó selecionado
 	var py := 258.0
-	_tela.draw_rect(Rect2(38, py - 2, W - 76, 84), Color(0.35, 0.4, 0.55))
+	_tela.draw_rect(Rect2(38, py - 2, W - 76, 84), _cor(arte.get("moldura"), Color(0.35, 0.4, 0.55)))
 	_tela.draw_rect(Rect2(40, py, W - 80, 80), Color(0.1, 0.11, 0.18))
 	if alvo >= 0:
 		var n := Mapa.no(m, pos.x + 1, alvo)
