@@ -101,6 +101,16 @@ func golpe(v, arma: String, el := "") -> void:
 				aplicar(v, e, 1.0, arma)
 
 
+var remotos := 0   # teste/log: golpes de clientes que puseram elemento pela arma deles
+
+
+## Golpe de arma de outro jogador (cliente online): só o elemento da própria arma, sem a `chance` do anfitrião.
+func golpe_remoto(v, arma: String) -> void:
+	var ae := _de_arma(arma)
+	if ae[0] != "" and aplicar(v, ae[0], ae[1], arma) > 0.0:
+		remotos += 1
+
+
 ## Soma `n` acúmulos de `el` em `v` (com resistência, chefe/elite e teto). Devolve quanto realmente entrou.
 func aplicar(v, el: String, n := 1.0, _fonte := "") -> float:
 	if not _els.has(el) or v.hp <= 0.0 or n <= 0.0:

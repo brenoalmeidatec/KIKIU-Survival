@@ -518,7 +518,7 @@ func _evento(nome: String, d: Dictionary) -> void:
 
 # ======================================================== partida: clientes -> anfitrião
 
-## Acertos de um cliente nos vírus dele: [id, dano, kx, ky] por acerto.
+## Acertos de um cliente nos vírus dele: [id, dano, kx, ky, índice da arma] por acerto.
 func enviar_acertos(a: PackedFloat32Array) -> void:
 	_acertos.rpc_id(1, a)
 
@@ -526,7 +526,7 @@ func enviar_acertos(a: PackedFloat32Array) -> void:
 @rpc("any_peer", "reliable")
 func _acertos(a: PackedFloat32Array) -> void:
 	var quem := multiplayer.get_remote_sender_id()
-	if anfitriao() and jogadores.has(quem) and a.size() % 4 == 0 and online_no and is_instance_valid(online_no):
+	if anfitriao() and jogadores.has(quem) and a.size() % 5 == 0 and online_no and is_instance_valid(online_no):
 		online_no.acertos(quem, a)
 
 

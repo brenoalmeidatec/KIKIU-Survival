@@ -26,6 +26,8 @@ var tipos: Array = []               # índice <-> tipo de vírus (mesma ordem em
 var _tipo_idx := {}
 var sprites_tiro: Array = []
 var _sprite_idx := {}
+var armas_ids: Array = []           # índice <-> id de arma (dados/armas.json em ordem alfabética; 0 = sem arma, então índice = posição + 1)
+var _arma_idx := {}
 var reviver_prog := 0.0
 var forcas := {}                    # anfitrião: peer -> força no duelo
 var _t_envio := 0.0
@@ -36,7 +38,9 @@ var _usos := {}                 # anfitrião: peer -> {consumível: quantos já 
 var _prontos := {}              # anfitrião, votação do mapa: peer -> faixa votada
 var _t_prontos := -1.0
 var _t_caidos := 0.0
-var n_tx := 0                     # teste: acertos mandados (cliente) / recebidos (anfitrião)
+const ACERTO_N := 5               # floats por acerto: id do vírus, dano, empurrão x e y, índice da arma
+var n_arma := 0                   # teste: acertos recebidos com arma válida (anfitrião)
+var n_tx := 0                   # teste: acertos mandados (cliente) / recebidos (anfitrião)
 
 
 func _ready() -> void:
@@ -52,6 +56,13 @@ func _ready() -> void:
 	tipos.sort()
 	for i in tipos.size():
 		_tipo_idx[tipos[i]] = i
+	var arm: Dictionary = Dados.json("armas")
+	for k in arm:
+		if not k.begins_with("_") and arm[k] is Dictionary:
+			armas_ids.append(k)
+	armas_ids.sort()
+	for i in armas_ids.size():
+		_arma_idx[armas_ids[i]] = i + 1
 	sprites_tiro = spr.keys()
 	sprites_tiro.sort()
 	for i in sprites_tiro.size():
@@ -69,6 +80,24 @@ func anfitriao() -> bool:
 
 func tipo_idx(tipo: String) -> int:
 	return int(_tipo_idx.get(tipo, 0))
+
+
+## Índice (1..N) do id da arma na tabela fixa; 0 se não é arma (investida, bomba, especial...).
+func arma_idx(arma: String) -> int:
+	return int(_arma_idx.get(arma, 0))
+
+
+## Anfitrião: o id da arma que o cliente `quem` declarou no golpe, ou "" se o índice não existe ou a arma não pode ser dele
+## (arma exclusiva/transformação de outro herói). Quem não passa na conferência cai no golpe sem arma, como antes.
+## Armas que sobem por carta não estão na mochila, então "build declarada" = o herói que ele escolheu na sala.
+func arma_do_cliente(quem: int, idx: int) -> String:
+	if idx < 1 or idx > armas_ids.size():
+		return ""
+	var id: String = armas_ids[idx - 1]
+	var d: Dictionary = Dados.json("armas")[id]
+	if str(d.get("classe", "global")) in ["character_exclusive", "transformacao"] and str(d.get("characterId", "")) != Rede.heroi_de(quem):
+		return ""
+	return id
 
 
 func sprite_idx(sprite: String) -> int:
@@ -127,7 +156,7 @@ func atualizar(dt: float) -> void:
 			Rede.enviar_mortes(_mortes)
 			_mortes = PackedFloat32Array()
 	elif not _acertos.is_empty():
-		n_tx += _acertos.size() / 4
+		n_tx += _acertos.size() / ACERTO_N
 		Rede.enviar_acertos(_acertos)
 		_acertos = PackedFloat32Array()
 
@@ -286,9 +315,9 @@ func morreu(v) -> void:
 	_mortes.append_array([v.id, v.pos.x, v.pos.y, tipo_idx(v.tipo), 1.0 if v.elite else 0.0])
 
 
-func acertos(_quem: int, a: PackedFloat32Array) -> void:
-	n_tx += a.size() / 4
-	for i in range(0, a.size(), 4):
+func acertos(quem: int, a: PackedFloat32Array) -> void:
+	n_tx += a.size() / ACERTO_N
+	for i in range(0, a.size(), ACERTO_N):
 		var dano := a[i + 1]
 		if not is_finite(dano) or dano <= 0.0:
 			continue
@@ -296,7 +325,11 @@ func acertos(_quem: int, a: PackedFloat32Array) -> void:
 		if v == null:
 			continue
 		var kb := Vector2(a[i + 2], a[i + 3])
-		arena.inimigos.ferir_remoto(v, minf(dano, 100000.0), kb.limit_length(400.0) if kb.is_finite() else Vector2.ZERO)
+		var ia := a[i + 4]
+		var arma := arma_do_cliente(quem, int(ia)) if is_finite(ia) else ""
+		if arma != "":
+			n_arma += 1
+		arena.inimigos.ferir_remoto(v, minf(dano, 100000.0), kb.limit_length(400.0) if kb.is_finite() else Vector2.ZERO, arma)
 
 
 # ---------- vírus: cliente ----------
@@ -320,8 +353,8 @@ func mortes(m: PackedFloat32Array) -> void:
 
 
 ## A arma deste cliente acertou um vírus: guarda pra mandar ao anfitrião no próximo pacote.
-func acerto(id: int, valor: float, empurrao: Vector2) -> void:
-	_acertos.append_array([id, valor, empurrao.x, empurrao.y])
+func acerto(id: int, valor: float, empurrao: Vector2, arma := "") -> void:
+	_acertos.append_array([id, valor, empurrao.x, empurrao.y, arma_idx(arma)])
 
 
 func dano(valor: float, fonte: String) -> void:
