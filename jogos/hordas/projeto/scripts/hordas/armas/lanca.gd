@@ -22,7 +22,7 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 		w.especiais.append({"tipo": "lanca", "espera": i * 0.12, "t": DUR, "dir": dir, "alcance": alcance,
 			"largura": float(s.get("largura", 14)) * float(s.area), "dano": float(s.dano), "arma": a.id, "feito": false,
 			"evo": bool(d.get("evolucao", false))})
-	w.golpe_corpo()
+	w.golpe_corpo((alvos[0].pos - c).normalized() if not alvos.is_empty() else Vector2(w.dono.lado, 0))
 
 
 static func passo(w, e: Dictionary, dt: float) -> bool:
@@ -34,10 +34,17 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		e.feito = true
 		var c: Vector2 = w.dono.centro()
 		var fim: Vector2 = c + e.dir * e.alcance
+		var n := 0
 		for v in w.campo.no_circulo((c + fim) / 2.0, e.alcance / 2.0 + e.largura):
 			if Geometry2D.get_closest_point_to_segment(v.pos, c, fim).distance_to(v.pos) <= e.largura / 2.0 + 8.0:
 				w.campo.ferir(v, e.dano, e.dir * 120.0, e.arma)
+				n += 1
 		Som.tocar("whoosh", 0.05, 1.3, -8)
+		var ef = w.fx()
+		if ef:   # faíscas saindo da ponta na direção da estocada
+			ef.faisca(fim, e.dir, Color(1.0, 0.75, 0.4) if e.evo else Color(0.8, 0.9, 1.0), 5, 220.0)
+		if n > 0:
+			w.golpe_acertou(0.8)
 	return e.t > 0
 
 

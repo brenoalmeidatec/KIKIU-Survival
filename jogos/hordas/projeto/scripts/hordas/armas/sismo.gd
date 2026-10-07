@@ -27,6 +27,10 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		e.saiu = true
 		e.centro = w.dono.centro()
 		Som.tocar("tremor", 0.1, 0.8, -6)
+		var ef = w.fx()
+		if ef:   # pedrinhas e poeira quente saindo do chão onde o martelo bateu
+			ef.faisca(e.centro + Vector2(0, 8), Vector2.ZERO, Color(1.0, 0.7, 0.35), 10, 200.0)
+		w.golpe_acertou(1.6)   # a martelada pesa mesmo sem ninguém perto
 	e.t += dt
 	var f: float = e.t / CRESCE
 	if f >= 1.0:

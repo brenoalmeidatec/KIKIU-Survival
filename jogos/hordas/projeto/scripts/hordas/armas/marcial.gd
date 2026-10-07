@@ -19,7 +19,6 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	if a.t > 0:
 		return
 	a.t = maxf(0.12, float(s.recarga))
-	w.golpe_corpo()
 	var seq := ["soco", "soco", "chute"]
 	if float(s.get("giro", 0)) > 0:
 		seq.append("giro")
@@ -31,6 +30,7 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	var alvo = w.campo.mais_perto(c, alcance * 2.2)
 	var dir: Vector2 = (alvo.pos - c).normalized() if alvo else Vector2(w.dono.lado, 0)
 	var g: Array = GOLPES[golpe]
+	w.golpe_corpo(dir)
 	var e := {"tipo": "marcial", "golpe": golpe, "pos": c, "dir": dir, "alcance": alcance * g[0], "arco": deg_to_rad(g[1]),
 		"t": g[4], "dur": g[4], "impactos": []}
 	for v in w.campo.no_circulo(c, e.alcance):
@@ -40,6 +40,12 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 			if e.impactos.size() < 4:
 				e.impactos.append(v.pos)
 	w.especiais.append(e)
+	var ef = w.fx()
+	if ef and golpe != "soco":   # chute e giro: meia-lua de energia (o soco fica com as linhas de velocidade)
+		var arco: float = TAU * 0.95 if golpe == "giro" else e.arco * 1.2
+		ef.corte(c, dir.angle(), arco, e.alcance * 0.95, ENERGIA, -1.0, g[4] + 0.06, 1.0 if k % 2 == 0 else -1.0)
+	if not e.impactos.is_empty():
+		w.golpe_acertou(1.3 if golpe != "soco" else 0.5)
 	Som.tocar("soco", 0.04, 1.6 if golpe == "soco" else 1.2, -8)
 	# fim do combo com upgrade de onda: uma onda de impacto que se espalha e acerta cada um uma vez
 	if k == seq.size() - 1 and float(s.get("onda", 0)) > 0:

@@ -18,6 +18,13 @@ const ANIM := {
 }
 const ATAQUE_TEMPO := 0.25
 const ATAQUE_INTERVALO := 0.6
+## Golpe do corpo (todos os heróis, com ou sem quadros de ataque): recua, avança na direção do golpe e volta.
+## Não são quadros novos: é o sprite inteiro se mexendo (posição, escala e inclinação), igual pra qualquer folha.
+const GOLPE_TEMPO := 0.2
+const GOLPE_INTERVALO := 0.28      # heróis sem quadros de ataque: no máximo um golpe do corpo a cada isto
+const GOLPE_AVANCO := 6.0          # px que o corpo avança
+const GOLPE_RECUO := 2.0           # px que recua na antecipação
+const GOLPE_INCLINA := 0.16        # rad de inclinação pra frente no auge
 const DANO_TEMPO := 0.2
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
@@ -38,6 +45,7 @@ const DANO_FLASH := 0.09           # s de flash branco ao levar dano (opção "F
 const DANO_EMPURRAO := 110.0       # empurrãozinho quando o golpe não diz pra onde (decai com exp(-9 t): ~12 px)
 const HITSTOP_CRIT := 0.04         # s reais de congelada ao acertar crítico (só solo)
 const HITSTOP_CRIT_ESPERA := 1.2   # s mínimos entre dois hitstops de crítico
+const HITSTOP_GOLPE := 0.025       # s reais ao acertar um golpe corpo a corpo (arena.golpe_pesado limita a frequência)
 const HITSTOP_CHEFE := 0.14        # s reais ao derrubar um chefe (só solo)
 const HITSTOP_ESCALA := 0.04       # velocidade do jogo durante o hitstop (1 = sem efeito)
 const SHADER_FLASH := "shader_type canvas_item;\nuniform float flash = 1.0;\nvoid fragment() { COLOR.rgb = mix(COLOR.rgb, vec3(1.0), flash * COLOR.a); }\n"
@@ -75,6 +83,9 @@ var _est := "parado"             # estado de animação atual (só muda o quadro
 var _est_t := 0.0                # tempo dentro do estado
 var _atk_t := 0.0
 var _atk_cool := 0.0
+var _golpe_t := 0.0
+var _golpe_dir := Vector2.RIGHT
+var _golpe_vira := false        # o golpe trouxe direção: o herói se vira pra ela
 var _dano_t := 0.0
 var humano := 1.0                # 0..1: quanto do corpo humano aparece (some na transformação, volta no fim)
 var _ent_t := 0.0                # chegada no começo da fase: tempo que falta da queda (0 = acabou)
@@ -159,10 +170,31 @@ static func quadro_de(estado: String, dir: String, t: float, hframes: int) -> in
 
 
 ## Chamado pelas armas corpo a corpo (armas.gd golpe_corpo) a cada golpe; toca o ataque se já passou o intervalo.
-func atacou() -> void:
-	if _tem_anim() and forma == null and _atk_cool <= 0.0 and hp > 0.0:
+## `dir` = para onde o golpe vai (o herói se vira e avança pra lá).
+func atacou(dir := Vector2.ZERO) -> void:
+	if forma != null or _atk_cool > 0.0 or hp <= 0.0:
+		return
+	_golpe_vira = dir.length_squared() > 0.0001
+	_golpe_dir = dir.normalized() if _golpe_vira else Vector2(lado, 0)
+	_golpe_t = GOLPE_TEMPO
+	if _tem_anim():
 		_atk_t = ATAQUE_TEMPO
 		_atk_cool = ATAQUE_INTERVALO
+	else:
+		_atk_cool = GOLPE_INTERVALO
+
+
+## Pose do golpe do corpo em u (0..1): [deslocamento ao longo da direção em px, estica (>0) ou achata, inclinação 0..1].
+## Antecipação (recua e encolhe) até 0,2, avanço esticado até 0,4, e volta suave até 1.
+static func pose_golpe(u: float) -> Vector3:
+	if u < 0.2:
+		var k := u / 0.2
+		return Vector3(-GOLPE_RECUO * k, -0.08 * k, -0.3 * k)
+	if u < 0.4:
+		var k := (u - 0.2) / 0.2
+		return Vector3(lerpf(-GOLPE_RECUO, GOLPE_AVANCO, k), lerpf(-0.08, 0.14, k), lerpf(-0.3, 1.0, k))
+	var k := 1.0 - pow(1.0 - (u - 0.4) / 0.6, 2.0)
+	return Vector3(lerpf(GOLPE_AVANCO, 0.0, k), lerpf(0.14, 0.0, k), lerpf(1.0, 0.0, k))
 
 
 ## Começo da fase: o herói cai do alto (~0,6 s) com poeira e um flash, e o nome fica em cima por um instante.
@@ -230,6 +262,7 @@ func atualizar_i(dt: float) -> void:
 	_vermelho = maxf(0.0, _vermelho - dt)
 	_atk_t = maxf(0.0, _atk_t - dt)
 	_atk_cool = maxf(0.0, _atk_cool - dt)
+	_golpe_t = maxf(0.0, _golpe_t - dt)
 	_dano_t = maxf(0.0, _dano_t - dt)
 	var entrada := _entrada()
 	_mov = entrada
@@ -448,7 +481,7 @@ func _bot_dir() -> Vector2:
 
 
 func _animar(entrada: Vector2) -> void:
-	_olhar.atualizar(entrada, _dt, spr.vframes)
+	_olhar.atualizar(_golpe_dir if _golpe_t > 0.0 and _golpe_vira and forma == null else entrada, _dt, spr.vframes)   # golpeando: vira pro golpe
 	_dir = _olhar.dir
 	var novo := "andando" if entrada != Vector2.ZERO else "parado"
 	if _tem_anim() and forma == null:
@@ -488,7 +521,14 @@ func _animar(entrada: Vector2) -> void:
 		var ang := (1.0 - _rolando / total) * TAU * _rola_lado
 		spr.rotation = ang
 		spr.position = CENTRO_CORPO - CENTRO_CORPO.rotated(ang)   # a origem do sprite é o pé: compensa pra girar no meio
-	elif spr.rotation != 0.0:
+	elif _golpe_t > 0.0 and _ent_t <= 0.0 and forma == null:
+		var pose := pose_golpe(1.0 - _golpe_t / GOLPE_TEMPO)
+		var d := _golpe_dir
+		spr.position = (Vector2(d.x, d.y * 0.6) * pose.x).round()   # câmera em 3/4: avançar pra cima/baixo anda menos na tela
+		spr.rotation = d.x * GOLPE_INCLINA * pose.z
+		var horiz := absf(d.x) >= absf(d.y)
+		spr.scale *= Vector2(1.0 + pose.y, 1.0 - pose.y * 0.6) if horiz else Vector2(1.0 - pose.y * 0.6, 1.0 + pose.y)
+	elif spr.rotation != 0.0 or (spr.position != Vector2.ZERO and _ent_t <= 0.0):
 		spr.rotation = 0.0
 		spr.position = Vector2.ZERO
 
