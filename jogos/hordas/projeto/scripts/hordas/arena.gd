@@ -382,8 +382,6 @@ func _process(dt: float) -> void:
 	var foco: Vector2 = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro() + _olhar
 	camera.position = finalizacao.camera(entradas.camera(foco))   # a entrada do chefe leva a câmera até ele e traz de volta; a finalização aproxima
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
-	if Input.is_action_just_pressed("voltar") and not cartas.aberto() and not hud._pausado:
-		hud.pausar()
 
 
 # ---------- chamados pelos outros ----------
