@@ -151,6 +151,9 @@ static func tabela_armas(dano: Dictionary, nivel: Dictionary, tempo: Dictionary,
 	var linhas := []
 	for id in ids:
 		var d := Dados.item(str(id))
+		if str(id).begins_with("elem_"):   # dano de elemento (#72): queimadura, veneno, saltos e reações aparecem como uma linha com nome e ícone próprios
+			d = Dados.json("elementos").get("elementos", {}).get(str(id).substr(5), {}).duplicate()
+			d["nome"] = d.get("nome_dano", id)
 		var t := float(tempo.get(id, tempo_total))
 		var dn := float(dano.get(id, 0.0))
 		linhas.append({"id": str(id), "nome": str(d.get("nome", id)), "icone": str(d.get("icone", id)),

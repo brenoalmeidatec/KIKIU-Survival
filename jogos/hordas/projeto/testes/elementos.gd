@@ -7,6 +7,7 @@ const Elementos := preload("res://scripts/hordas/elementos.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Mortes := preload("res://scripts/hordas/mortes.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
+const Interface := preload("res://scripts/hordas/interface.gd")
 var falhas := 0
 var a
 var ino
@@ -274,6 +275,10 @@ func _ready() -> void:
 	avancar(1.2)
 	ok(v.hp <= 0.0 and v.causa_ult == "veneno" and Mortes.efeito_de("veneno") == "desintegrar", "morrer envenenado desintegra (causa %s)" % v.causa_ult)
 	ok(Mortes.causa_de("", "veneno") == "veneno" and Mortes.causa_de("", "raio") == "raio", "causa_de lê o elemento")
+	ok(Mortes.causa_de("geada") == "gelo", "quem morre na Geada Rachada morre de gelo, não de fogo (%s)" % Mortes.causa_de("geada"))
+	var tab: Array = Interface.tabela_armas({"elem_fogo": 40.0, "cafe": 10.0}, {}, {}, 30.0)
+	var l_fogo: Dictionary = tab.filter(func(l): return l.id == "elem_fogo")[0]
+	ok(l_fogo.nome == "Queimadura" and Dados.icone(str(l_fogo.icone)) != null, "o dano de elemento tem nome e ícone na tela de resultados (%s / %s)" % [l_fogo.nome, l_fogo.icone])
 	limpar_tudo()
 
 	# poça de gelo: desacelera, depois congela

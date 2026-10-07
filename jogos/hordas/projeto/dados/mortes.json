@@ -4,6 +4,7 @@
  "tela": {"x": 360, "y": 210},
  "causa_por_arma": {
   "katana": "corte",
+  "geada": "gelo",
   "desert_eagles": "tiro",
   "arte_marcial": "impacto",
   "aura_hazaki": "aura",
