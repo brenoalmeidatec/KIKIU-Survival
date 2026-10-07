@@ -186,6 +186,7 @@ func _ready() -> void:
 	jogador.configurar(str(heroi.get("sprite", heroi_id)))
 	var tom: Array = heroi.get("tom", [1.0, 1.0, 1.0])   # herói criado (#72): a raça tinge o corpo
 	jogador.tom = Color(float(tom[0]), float(tom[1]), float(tom[2]))
+	jogador.paleta = heroi.get("paleta", {})   # herói criado (#72, marco 2): pele, cabelo e roupa da ficha
 	atualizar_visual.call_deferred()   # personagem em camadas: cabelo e arma inicial
 	jogador.hp = stat("vida_max")
 	armas.adicionar(str(heroi.get("arma", "pendrive")))

@@ -10,6 +10,7 @@ signal comecou(opcoes: Dictionary)           # todos: o anfitrião começou a pa
 signal caiu(msg: String)                     # a sala acabou (anfitrião saiu, internet caiu...)
 
 const Sorte := preload("res://scripts/hordas/sorte.gd")
+const Criacao := preload("res://scripts/hordas/criacao.gd")
 const ENVIO := 1.0 / 15.0     # posições por segundo
 # eventos que o anfitrião pode mandar (o resto é ignorado)
 const EVENTOS := ["anuncio", "chefe_final", "fase_completa", "proxima_fase", "tela_azul_caiu", "fim_corrida",
@@ -63,10 +64,12 @@ func heroi_de(peer: int) -> String:
 
 ## Como o jogador aparece pros outros: o apelido dele; sem apelido, o nome do herói.
 func nome_de(peer: int) -> String:
+	var h := heroi_de(peer)
+	if Criacao.eh_criado(h) and Dados.herois_extra.has(h):   # herói criado (#72): aparece com o nome que o jogador deu a ele
+		return str(Dados.herois_extra[h].get("nome", h))
 	var a := str(jogadores.get(peer, {}).get("nome", ""))
 	if a != "":
 		return a
-	var h := heroi_de(peer)
 	return str(Dados.json("herois").get(h, {}).get("nome", h))
 
 
@@ -99,14 +102,58 @@ static func nome_sorteado() -> String:
 func ocupados(menos := -1) -> Array:
 	var l := []
 	for p in jogadores:
-		if p != menos and heroi_de(p) != "":
+		if p != menos and heroi_de(p) != "" and not Criacao.eh_criado(heroi_de(p)):   # herói criado não ocupa vaga do elenco
 			l.append(heroi_de(p))
 	return l
+
+
+## Por que o anfitrião recusa esse herói ("" = aceita). Herói do elenco passa; herói criado só com ficha válida
+## (cada número conferido contra os JSON, em Criacao.erro_ficha) e id no formato "c:h<código>" (ou "c:raça:classe").
+func erro_heroi(heroi, ficha) -> String:
+	if not heroi is String:
+		return "Esse herói não existe nesta sala."
+	if heroi in ELENCO:
+		return ""
+	if not Criacao.eh_criado(heroi):
+		return "Esse herói não existe nesta sala."
+	if not Criacao.partes(heroi).is_empty():
+		return ""
+	var cod: String = heroi.substr(2)
+	if cod.length() < 2 or cod.length() > 20 or not cod.begins_with("h") or not cod.substr(1).is_valid_hex_number(false):
+		return "Herói criado com id inválido."
+	var e := Criacao.erro_ficha(ficha)
+	if e != "":
+		return "Herói criado recusado: " + e + "."
+	return ""
+
+
+## O mesmo id de herói criado já está em uso por outra pessoa? (o id é a chave da tabela de heróis em todas as máquinas)
+func _id_criado_em_uso(quem: int, heroi: String) -> bool:
+	for p in jogadores:
+		if p != quem and heroi_de(p) == heroi:
+			return true
+	return false
+
+
+## Põe na tabela de heróis os heróis criados da sala (a ficha viaja na lista de jogadores; cada máquina monta o mesmo herói).
+func _registrar_criados() -> void:
+	for p in jogadores:
+		var e: Dictionary = jogadores[p]
+		var h := str(e.get("heroi", ""))
+		if Criacao.eh_criado(h):
+			if Criacao.partes(h).is_empty():
+				Criacao.registrar_ficha(h, e.get("ficha"))
+			else:
+				Criacao.registrar(h)
 
 
 ## Primeiro herói do elenco que ninguém pegou.
 func heroi_livre(preferido := "") -> String:
 	var tomados := ocupados(eu())
+	if preferido != "" and Criacao.eh_criado(preferido) and Dados.herois_extra.has(preferido):
+		return preferido   # herói criado meu (já registrado): não disputa vaga
+	if preferido in ELENCO and not preferido in tomados:
+		return preferido
 	if preferido in ELENCO and not preferido in tomados:
 		return preferido
 	for h in ELENCO:
@@ -126,7 +173,8 @@ func criar_sala(heroi: String, porta := PORTA) -> String:
 	multiplayer.multiplayer_peer = p
 	modo = "anfitriao"
 	porta_aberta = porta
-	jogadores = {1: {"heroi": heroi, "nome": apelido, "pronto": true}}
+	jogadores = {1: _entrada_propria(heroi, true)}
+	_registrar_criados()
 	mudou.emit()
 	return ""
 
@@ -196,19 +244,40 @@ func _pedir_lista() -> void:
 @rpc("authority", "reliable")
 func _lista(j: Dictionary) -> void:
 	jogadores = j
+	_registrar_criados()
 	mudou.emit()
 
 
 ## Escolhe (ou troca) o herói. Cliente pede ao anfitrião; o anfitrião confere.
 func escolher(heroi: String) -> void:
+	var ficha := _ficha_local(heroi)
 	if anfitriao():
-		if heroi in ELENCO and not heroi in ocupados(1):
-			jogadores[1]["heroi"] = heroi
-			jogadores[1]["nome"] = apelido
+		var ok := heroi in ELENCO and not heroi in ocupados(1)
+		if Criacao.eh_criado(heroi):
+			ok = erro_heroi(heroi, ficha) == "" and not _id_criado_em_uso(1, heroi)
+		if ok:
+			jogadores[1] = _entrada_propria(heroi, true)
+			_registrar_criados()
 			_lista.rpc(jogadores)
 			mudou.emit()
 	elif cliente():
-		_escolher.rpc_id(1, heroi, apelido)
+		_escolher.rpc_id(1, heroi, apelido, ficha)
+
+
+## A ficha do herói criado que EU escolhi (a tabela local guarda a ficha de cada herói salvo); {} pra herói fixo.
+func _ficha_local(heroi: String) -> Dictionary:
+	if Criacao.eh_criado(heroi) and Criacao.partes(heroi).is_empty():
+		var f = Dados.herois_extra.get(heroi, {}).get("ficha", {})
+		return f if f is Dictionary else {}
+	return {}
+
+
+func _entrada_propria(heroi: String, pronto: bool) -> Dictionary:
+	var e := {"heroi": heroi, "nome": apelido, "pronto": pronto}
+	var f := _ficha_local(heroi)
+	if not f.is_empty():
+		e["ficha"] = f
+	return e
 
 
 ## Cliente: marca (ou desmarca) que está pronto pra começar. O anfitrião confere e avisa todo mundo.
@@ -234,7 +303,7 @@ func trocar_apelido(nome: String) -> void:
 
 
 @rpc("any_peer", "reliable")
-func _escolher(heroi: String, nome := "") -> void:
+func _escolher(heroi: String, nome := "", ficha = {}) -> void:
 	if not anfitriao():
 		return
 	var quem := multiplayer.get_remote_sender_id()
@@ -244,10 +313,15 @@ func _escolher(heroi: String, nome := "") -> void:
 	if jogadores.size() >= MAX and not jogadores.has(quem):
 		_recusado.rpc_id(quem, "A sala está cheia (%d pessoas)." % MAX)
 		return
-	if not heroi in ELENCO:
-		_recusado.rpc_id(quem, "Esse herói não existe nesta sala.")
+	var erro := erro_heroi(heroi, ficha)   # herói criado: a ficha vem de fora, cada número é conferido aqui
+	if erro != "":
+		_recusado.rpc_id(quem, erro)
 		return
-	if heroi in ocupados(quem):
+	var criado := Criacao.eh_criado(heroi)
+	if criado and _id_criado_em_uso(quem, heroi):
+		_recusado.rpc_id(quem, "Alguém já está usando esse herói criado.")
+		return
+	if not criado and heroi in ocupados(quem):
 		_recusado.rpc_id(quem, "Alguém já pegou esse herói. Escolha outro.")
 		return
 	var novo := not jogadores.has(quem)
@@ -255,6 +329,12 @@ func _escolher(heroi: String, nome := "") -> void:
 		jogadores[quem] = {"heroi": heroi, "nome": "", "pronto": false}
 	jogadores[quem]["heroi"] = heroi
 	jogadores[quem]["nome"] = limpar_nome(str(nome)) if typeof(nome) == TYPE_STRING else ""
+	jogadores[quem].erase("ficha")
+	if criado and not Criacao.partes(heroi).is_empty():
+		pass   # id "c:raça:classe": sem ficha
+	elif criado:
+		jogadores[quem]["ficha"] = Criacao.validar_ficha(ficha)   # a ficha limpa, que o anfitrião reenvia a todos
+	_registrar_criados()
 	_lista.rpc(jogadores)
 	if novo:
 		_bem_vindo.rpc_id(quem)
@@ -284,6 +364,7 @@ func comecar(opcoes := {}) -> void:
 @rpc("authority", "call_local", "reliable")
 func _comecar(j: Dictionary, opcoes: Dictionary) -> void:
 	jogadores = j
+	_registrar_criados()
 	em_partida = true
 	remotos = {}
 	comecou.emit(opcoes)
