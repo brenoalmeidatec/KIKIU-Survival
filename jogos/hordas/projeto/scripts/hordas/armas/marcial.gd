@@ -11,6 +11,7 @@ const GOLPES := {
 	"giro": [1.45, 360.0, 1.25, 230.0, 0.2],
 }
 const PELE := Color(0.85, 0.63, 0.4)
+const Cresc := preload("res://scripts/hordas/crescimento.gd")
 const ENERGIA := Color(0.55, 0.8, 1.0)
 
 
@@ -33,6 +34,7 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	w.golpe_corpo(dir)
 	var e := {"tipo": "marcial", "golpe": golpe, "pos": c, "dir": dir, "alcance": alcance * g[0], "arco": deg_to_rad(g[1]),
 		"t": g[4], "dur": g[4], "impactos": []}
+	var tier: int = s.tier
 	for v in w.campo.no_circulo(c, e.alcance):
 		var dif: Vector2 = v.pos - c
 		if g[1] >= 360.0 or absf(angle_difference(dir.angle(), dif.angle())) <= e.arco / 2 or dif.length() < 12.0:
@@ -43,9 +45,14 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	var ef = w.fx()
 	if ef and golpe != "soco":   # chute e giro: meia-lua de energia (o soco fica com as linhas de velocidade)
 		var arco: float = TAU * 0.95 if golpe == "giro" else e.arco * 1.2
-		ef.corte(c, dir.angle(), arco, e.alcance * 0.95, ENERGIA, -1.0, g[4] + 0.06, 1.0 if k % 2 == 0 else -1.0)
+		ef.corte(c, dir.angle(), arco, e.alcance * 0.95, Cresc.cor(ENERGIA, tier), e.alcance * 0.285 * Cresc.grossura(tier), g[4] + 0.06, 1.0 if k % 2 == 0 else -1.0)
+		if Cresc.fx(tier).arco_extra and Cresc.fator() >= 0.5:
+			ef.corte(c, dir.angle(), arco * 1.1, e.alcance * 1.15, Cresc.cor(ENERGIA, tier), e.alcance * 0.12, g[4] + 0.1, 1.0 if k % 2 == 0 else -1.0)
+	if ef and golpe == "soco" and tier >= 1:   # a partir do nível 3 o soco solta uma onda de energia fina no ar, mais larga a cada tier
+		ef.corte(c + dir * 4.0, dir.angle(), e.arco * (1.0 + 0.2 * tier), e.alcance * 0.9, Cresc.cor(ENERGIA, tier), e.alcance * 0.18 * Cresc.grossura(tier), g[4] + 0.05, 1.0 if k % 2 == 0 else -1.0)
 	if not e.impactos.is_empty():
-		w.golpe_acertou(1.3 if golpe != "soco" else 0.5)
+		Cresc.acerto(w, 1.3 if golpe != "soco" else 0.5, tier)
+		Cresc.fagulhas(w, e.impactos[0], dir, Color(1.0, 0.95, 0.7), tier, 150.0)
 	Som.tocar("soco", 0.04, 1.6 if golpe == "soco" else 1.2, -8)
 	# fim do combo com upgrade de onda: uma onda de impacto que se espalha e acerta cada um uma vez
 	if k == seq.size() - 1 and float(s.get("onda", 0)) > 0:
@@ -75,19 +82,23 @@ static func pintar(w, e: Dictionary) -> void:
 	match e.golpe:
 		"soco":
 			# punho perto do corpo (não um braço de 50 px) + linhas de velocidade atrás dele
-			var ponta: Vector2 = (e.pos + e.dir * minf(24.0, e.alcance * 0.5)).floor()
+			# o punho (e o rastro dele) cresce com a curva da arma: soco pequeno no nível 1, punho grande e rastro comprido no máximo
+			var ar: float = e.get("area", 1.0)
+			var ts: int = e.get("tier", 0)
+			var h: int = 1 + roundi(2.4 * ar * (1.0 + 0.15 * ts))   # meia largura do punho em px: 2 no nível 1, 5 no máximo
+			var ponta: Vector2 = (e.pos + e.dir * minf(36.0, e.alcance * 0.55)).floor()
 			var lado: Vector2 = e.dir.orthogonal()
 			for k in 3:
-				var o: Vector2 = lado * (k - 1) * 3.0
-				w.draw_line((ponta - e.dir * (8.0 + k * 3.0) + o).floor(), (ponta - e.dir * 4.0 + o).floor(), Color(1, 1, 1, 0.6 * f), 1.0)
-			w.draw_rect(Rect2(ponta - Vector2(3, 3), Vector2(7, 7)), Color(0.05, 0.04, 0.08, f))   # contorno do punho
-			w.draw_rect(Rect2(ponta - Vector2(2, 2), Vector2(5, 5)), Color(PELE, f))
-			w.draw_rect(Rect2(ponta - Vector2(2, 2), Vector2(5, 1)), Color(1, 0.85, 0.65, f))       # brilho dos nós dos dedos
+				var o: Vector2 = lado * (k - 1) * (2.0 + h * 0.5)
+				w.draw_line((ponta - e.dir * ((8.0 + k * 3.0) * (0.6 + ar)) + o).floor(), (ponta - e.dir * 4.0 + o).floor(), Color(Cresc.cor(Color(1, 1, 1), ts), 0.6 * f), 1.0 + floorf(ts / 2.0))
+			w.draw_rect(Rect2(ponta - Vector2(h + 1, h + 1), Vector2(2 * h + 3, 2 * h + 3)), Color(0.05, 0.04, 0.08, f))   # contorno do punho
+			w.draw_rect(Rect2(ponta - Vector2(h, h), Vector2(2 * h + 1, 2 * h + 1)), Color(PELE, f))
+			w.draw_rect(Rect2(ponta - Vector2(h, h), Vector2(2 * h + 1, 1)), Color(1, 0.85, 0.65, f))       # brilho dos nós dos dedos
 		"chute":
-			w.draw_arc(e.pos.floor(), e.alcance * 0.85, ang - e.arco / 2, ang + e.arco / 2, 14, Color(PELE, 0.6 * f), 4.0)
+			w.draw_arc(e.pos.floor(), e.alcance * 0.85, ang - e.arco / 2, ang + e.arco / 2, 14, Color(PELE, 0.6 * f), 4.0 * Cresc.grossura(e.get("tier", 0)))
 			w.draw_arc(e.pos.floor(), e.alcance * 0.85 + 2.0, ang - e.arco / 2, ang + e.arco / 2, 14, Color(1, 1, 1, 0.7 * f), 1.0)
 		"giro":
-			w.draw_arc(e.pos.floor(), e.alcance * 0.8, ang, ang + TAU * (1.0 - f * 0.3), 28, Color(ENERGIA, 0.6 * f), 4.0)
+			w.draw_arc(e.pos.floor(), e.alcance * 0.8, ang, ang + TAU * (1.0 - f * 0.3), 28, Color(ENERGIA, 0.6 * f), 4.0 * Cresc.grossura(e.get("tier", 0)))
 	# estrelinha de impacto onde o golpe pegou
 	for p in e.impactos:
 		var q: Vector2 = p.floor()

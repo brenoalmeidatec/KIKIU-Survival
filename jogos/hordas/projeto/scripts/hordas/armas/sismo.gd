@@ -5,6 +5,7 @@ extends RefCounted
 ## Módulo de comportamento de arma (veja armas.gd e pistolas.gd).
 
 const CRESCE := 0.35   # tempo da onda ir do herói até o raio
+const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
 static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -30,7 +31,8 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		var ef = w.fx()
 		if ef:   # pedrinhas e poeira quente saindo do chão onde o martelo bateu
 			ef.faisca(e.centro + Vector2(0, 8), Vector2.ZERO, Color(1.0, 0.7, 0.35), 10, 200.0)
-		w.golpe_acertou(1.6)   # a martelada pesa mesmo sem ninguém perto
+		Cresc.fagulhas(w, e.centro + Vector2(0, 6), Vector2.ZERO, Color(1.0, 0.8, 0.5), e.get("tier", 0), 230.0)
+		Cresc.acerto(w, 1.6, e.get("tier", 0))   # a martelada pesa mesmo sem ninguém perto
 	e.t += dt
 	var f: float = e.t / CRESCE
 	if f >= 1.0:
@@ -53,9 +55,15 @@ static func pintar(w, e: Dictionary) -> void:
 	var r: float = 10.0 + (e.raio - 10.0) * f
 	var p: Vector2 = e.centro.floor()
 	w.draw_set_transform(p, 0, Vector2(1, 0.6))   # anel achatado: a onda corre pelo chão
-	w.draw_arc(Vector2.ZERO, r, 0, TAU, 32, Color(0.75, 0.62, 0.45, 0.85 * (1.0 - f)), 3.0)
-	w.draw_arc(Vector2.ZERO, r * 0.85, 0, TAU, 32, Color(0.45, 0.36, 0.26, 0.6 * (1.0 - f)), 2.0)
+	var t: int = e.get("tier", 0)
+	var g := Cresc.grossura(t)
+	w.draw_arc(Vector2.ZERO, r, 0, TAU, 32, Color(Cresc.cor(Color(0.75, 0.62, 0.45), t), 0.85 * (1.0 - f)), 3.0 * g)
+	w.draw_arc(Vector2.ZERO, r * 0.85, 0, TAU, 32, Color(0.45, 0.36, 0.26, 0.6 * (1.0 - f)), 2.0 * g)
+	if Cresc.fx(t).arco_extra and Cresc.fator() >= 0.5:   # tier máximo/evoluída: segunda onda de choque atrasada, mais clara
+		w.draw_arc(Vector2.ZERO, r * 0.7, 0, TAU, 28, Color(1.0, 0.85, 0.6, 0.5 * (1.0 - f)), 2.0)
 	w.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+	if t >= 2 and f < 0.9:   # poeira/brasas na borda da onda
+		Cresc.brasas(w, e.centro, r * 0.9, Color(1.0, 0.75, 0.4), t, w._t, fmod(e.centro.x * 0.01, 1.0), 1.0 - f)
 
 
 static func fundo(_w, _a: Dictionary, _s: Dictionary) -> void:

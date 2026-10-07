@@ -4,6 +4,7 @@ extends RefCounted
 ## Atributos: quantidade, dano, duracao, velocidade, tique, area. Módulo de comportamento de arma (veja armas.gd).
 
 const PERTO := 10.0   # distância em que o corvo alcança a presa
+const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
 static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -16,7 +17,7 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 		var ang := TAU * i / maxf(1.0, float(s.quantidade))
 		w.especiais.append({"tipo": "corvos", "pos": c + Vector2.from_angle(ang) * 14.0, "vel": Vector2.from_angle(ang) * 60.0,
 			"alvo": null, "busca": 0.0, "bica": 0.0, "vida": float(s.duracao), "dano": float(s.dano), "rapidez": float(s.velocidade),
-			"tique": float(s.get("tique", 0.5)), "esc": float(s.area), "arma": a.id, "fase": randf() * TAU,
+			"tique": float(s.get("tique", 0.5)), "esc": float(s.area), "arma": a.id, "fase": randf() * TAU, "sem": randf(),
 			"negro": bool(d.get("evolucao", false))})
 
 
@@ -43,6 +44,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 	if _viva(e.alvo) and falta.length() < PERTO * e.esc and e.bica <= 0:
 		e.bica = e.tique
 		w.campo.ferir(e.alvo, e.dano, e.vel.normalized() * 40.0, e.arma)
+		Cresc.fagulhas(w, e.alvo.pos, e.vel.normalized(), Color(0.75, 0.5, 1.0) if e.negro else Color(0.8, 0.8, 1.0), e.get("tier", 0), 110.0)
 	return true
 
 
@@ -54,6 +56,10 @@ static func pintar(w, e: Dictionary) -> void:
 	var envergadura: float = 6.0 * e.esc
 	var corpo := Color(0.22, 0.2, 0.3)
 	var borda := Color(0.6, 0.3, 0.7) if e.negro else Color(0.62, 0.62, 0.75)
+	var t: int = e.get("tier", 0)
+	if t >= 2:   # bando mais forte deixa uma trilha de brasas/penugem roxa atrás
+		Cresc.brasas(w, p, 7.0 * e.esc + 4.0, borda, t, w._t, e.sem)
+	borda = Cresc.cor(borda, t)
 	for lado in [-1.0, 1.0]:
 		var ponta := p + Vector2(envergadura * lado, -asa)
 		w.draw_line(p, ponta, corpo, 3.0)

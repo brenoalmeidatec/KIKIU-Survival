@@ -148,14 +148,13 @@
     "dano": 6
    },
    {
-    "area": 0.2
+    "dano": 4
    },
    {
     "dano": 8
    },
    {
-    "recarga": -0.25,
-    "area": 0.2
+    "recarga": -0.25
    }
   ]
  },
@@ -205,7 +204,7 @@
     "quantidade": 1
    },
    {
-    "area": 0.25
+    "giro": 0.5
    },
    {
     "dano": 8,
@@ -253,8 +252,7 @@
     "quantidade": 1
    },
    {
-    "dano": 3,
-    "area": 0.2
+    "dano": 3
    },
    {
     "duracao": 1.0
@@ -276,7 +274,7 @@
   "tipo": "poca",
   "descricao": "Racha o chão em gelo. Quem pisa fica lento e, de tanto gelo, congela.",
   "base": {"dano": 3, "recarga": 3.4, "quantidade": 1, "area": 1.0, "raio": 44, "duracao": 3.5, "tique": 0.4},
-  "niveis": [{"area": 0.15}, {"quantidade": 1}, {"dano": 3, "duracao": 1.0}, {"area": 0.2}, {"quantidade": 1, "dano": 3}]
+  "niveis": [{"dano": 2}, {"quantidade": 1}, {"dano": 3, "duracao": 1.0}, {"tique": -0.05}, {"quantidade": 1, "dano": 3}]
  },
  "garrafa_termica": {
   "etiquetas": ["fogo", "pesado"],
@@ -315,20 +313,19 @@
   },
   "niveis": [
    {
-    "area": 0.2
+    "empurra": 15
    },
    {
     "dano": 2
    },
    {
-    "area": 0.2,
     "tique": -0.1
    },
    {
     "dano": 3
    },
    {
-    "area": 0.2
+    "dano": 2
    }
   ]
  },
@@ -514,7 +511,7 @@
   "familia": "aura",
   "descricao": "Bate no chão e solta uma onda que empurra tudo pra longe.",
   "base": {"dano": 18, "recarga": 3.0, "raio": 85, "empurra": 260, "area": 1.0},
-  "niveis": [{"dano": 6}, {"area": 0.15}, {"recarga": -0.4}, {"dano": 8}, {"area": 0.2}]
+  "niveis": [{"dano": 6}, {"empurra": 30}, {"recarga": -0.4}, {"dano": 8}, {"dano": 6}]
  },
  "terremoto": {
   "etiquetas": ["pesado", "gelo"],
