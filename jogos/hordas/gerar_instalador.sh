@@ -21,6 +21,25 @@ if [ -z "$ISCC" ] || [ ! -f "$ISCC" ]; then
 	exit 1
 fi
 
+
+# O ícone e os metadados (nome do produto, versão) entram no .exe pelo rcedit (application/modify_resources=true no
+# export_presets.cfg). Sem o rcedit o Godot NÃO falha: só avisa e entrega um .exe com o ícone do Godot. Aqui a gente confere
+# antes e avisa alto. Como instalar: README, seção "Gerar o executável" (rcedit-x64.exe + Editor > Configurações do editor >
+# Exportar > Windows > rcedit).
+RCEDIT=""
+CFG="${APPDATA:-$HOME/AppData/Roaming}/Godot/editor_settings-4.4.tres"
+if [ -f "$CFG" ]; then
+	RCEDIT=$(grep -E '^export/windows/rcedit *=' "$CFG" | head -1 | cut -d'"' -f2)
+fi
+if { [ -z "$RCEDIT" ] || [ ! -f "$RCEDIT" ]; } && ! command -v rcedit >/dev/null 2>&1; then
+	cat >&2 <<AVISO
+!!! ATENÇÃO: rcedit não configurado neste computador.
+!!! O .exe e o instalador vão sair SEM o ícone do K.I.K.I.U (com o ícone do Godot) e sem nome/versão nos detalhes do arquivo.
+!!! Baixe o rcedit-x64.exe em https://github.com/electron/rcedit/releases e aponte o Godot pra ele em
+!!! Editor > Configurações do editor > Exportar > Windows > rcedit. Detalhes no jogos/hordas/README.md.
+AVISO
+	sleep 3
+fi
 VERSAO=$(grep -E '^config/version=' projeto/project.godot | cut -d'"' -f2)
 echo "Versão: $VERSAO"
 
