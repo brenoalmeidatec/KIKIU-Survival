@@ -5,6 +5,7 @@
   "peso_carta": 5
  },
  "cabeca_guerreiro": {
+  "etiquetas": ["pesado", "guerreiro"],
   "nome": "Cabeça do Guerreiro",
   "slot": "cabeca",
   "camada": "cabeca_guerreiro",
@@ -15,6 +16,7 @@
   "bonus": {"vida_max": 25}
  },
  "armadura_samurai": {
+  "etiquetas": ["lamina", "guerreiro"],
   "nome": "Armadura Samurai",
   "slot": "peitoral",
   "camada": "armadura_samurai",
@@ -24,6 +26,7 @@
   "bonus": {"vida_max": 40, "regen": 0.3, "velocidade": -0.04}
  },
  "mascara_menpo": {
+  "etiquetas": ["sombra", "guerreiro"],
   "nome": "Máscara Menpo",
   "slot": "rosto",
   "camada": "mascara",
@@ -33,6 +36,7 @@
   "bonus": {"critico": 0.06}
  },
  "bracadeiras_ferro": {
+  "etiquetas": ["pesado", "guerreiro"],
   "nome": "Braçadeiras de Ferro",
   "slot": "bracos",
   "camada": "bracadeiras",
@@ -42,6 +46,7 @@
   "bonus": {"dano": 0.08}
  },
  "botas_guerra": {
+  "etiquetas": ["lamina", "guerreiro"],
   "nome": "Botas de Guerra",
   "slot": "pes",
   "camada": "botas",

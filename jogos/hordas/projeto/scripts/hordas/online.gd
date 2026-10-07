@@ -407,6 +407,9 @@ func evento(nome: String, d: Dictionary) -> void:
 			arena.fase_completa()
 		"proxima_fase":
 			arena.escolher_no(int(d.get("no", -1)))
+		"objetivo":   # estado do objetivo do andar (objetivos.gd): o anfitrião roda, o cliente só mostra e paga a própria parte
+			if not host and arena.objetivo:
+				arena.objetivo.aplicar(d)
 		"tela_azul_caiu":
 			arena.tela_azul_caiu()
 		"fim_corrida":

@@ -9,6 +9,7 @@ const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
+const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
 const OPS_PAUSA := ["Continuar", "Opções", "Desistir da partida"]
 
 var arena: Node
@@ -195,7 +196,10 @@ func _desenhar() -> void:
 		_txt(Vector2(0, 24), "Ouro %d" % arena.ouro, 8, Color(1, 0.85, 0.35), HORIZONTAL_ALIGNMENT_RIGHT, W - 8 - larg_ab - 12, true)
 		_energia_forma()
 		_dicas_santuario()
+		_objetivo()
 	_icones_build()
+	if not arena.duelo_ativo:
+		_conjuntos()
 	_especial()
 	if not arena.duelo_ativo:
 		# vida do chefe
@@ -385,14 +389,76 @@ func _icones_build() -> void:
 		_icone(Vector2(x, 53), str(Dados.item(eid).get("icone", eid)), 0, false)
 		x += 20
 	x = 6.0
-	var defs: Dictionary = Dados.json("dadivas").get("lista", {})
-	for dd in arena.descobertas.dadivas:   # dádivas dos santuários: moldura na cor da raridade
-		var cor: Array = Dados.json("dadivas").get("_config", {}).get("raridades", {}).get(dd.raridade, {}).get("cor", [1, 1, 1])
+	var defs: Dictionary = Dados.json("dadivas").get("lista", {}).merged(Dados.json("dadivas").get("duplas", {}))
+	for dd in arena.descobertas.dadivas:   # dádivas dos santuários: moldura na cor da raridade (dupla: cor própria)
+		var cfg_d: Dictionary = Dados.json("dadivas").get("_config", {})
+		var cor: Array = cfg_d.get("dupla", {}).get("cor", [1, 1, 1]) if dd.raridade == "dupla" else cfg_d.get("raridades", {}).get(dd.raridade, {}).get("cor", [1, 1, 1])
 		_tela.draw_rect(Rect2(x - 1, 72, 18, 18), Color(Interface.cor_raridade(str(dd.raridade), Color(cor[0], cor[1], cor[2])), 0.9))
 		var t := Dados.icone(str(defs.get(dd.id, {}).get("icone", "")))
 		if t:
 			_tela.draw_texture(t, Vector2(x, 73))
 		x += 20
+
+
+## Etiquetas da build e quanto falta pro próximo degrau do conjunto (#63), embaixo dos ícones à esquerda: ligado = cor da
+## etiqueta, ainda não = apagado. Na pausa, mostra também o que cada degrau ligado dá.
+func _conjuntos() -> void:
+	var lin: Array = arena.conj_resumo
+	if lin.is_empty():
+		return
+	var tam: int = Interface.tam_hud(8)
+	var passo := float(tam) + 3.0
+	var y := 98.0
+	for i in mini(lin.size(), 7):
+		var l: Dictionary = lin[i]
+		var lig: bool = int(l.ativo) > 0
+		var cor: Color = l.cor if lig else Color(l.cor, 0.5).lerp(Color(0.6, 0.6, 0.65, 0.6), 0.5)
+		_tela.draw_rect(Rect2(6, y - tam + 1, 5, 5), cor)
+		_txt(Vector2(14, y), "%s %s" % [str(l.nome), Conjuntos.progresso_txt(l)], tam, cor)
+		if _pausado and lig:
+			_txt(Vector2(150, y), str(l.texto), tam, Color(0.85, 0.9, 1.0))
+		y += passo
+
+
+## Objetivo do andar (#63): nome, barra de progresso, tempo que sobra, e setas pros alvos. Fica embaixo do relógio.
+func _objetivo() -> void:
+	var ob = arena.objetivo
+	if ob == null or not ob.visivel():
+		return
+	var d: Dictionary = ob.tipo_def(ob.id)
+	var cor: Color = ob.cor_de(ob.id)
+	var fim: bool = ob.est >= ob.CUMPRIDO
+	var tit := str(d.get("nome", ""))
+	var det := ""
+	match str(ob.id):
+		"pira":
+			det = "%d/%d s" % [int(ob.prog), int(ob.alvo)]
+		_:
+			det = "%d/%d" % [int(ob.prog), int(ob.alvo)]
+	if ob.est == ob.CUMPRIDO:
+		cor = Color(0.5, 1.0, 0.6)
+		det = "CUMPRIDO"
+	elif ob.est == ob.FALHOU:
+		cor = Color(1.0, 0.45, 0.4)
+		det = "FALHOU"
+	else:
+		det += "   %02d:%02d" % [int(ob.resta) / 60, int(ob.resta) % 60]
+	var pulso := 0.8 + 0.2 * sin(_t * 5.0) if not fim else 1.0
+	_txt(Vector2(0, 68), tit, 8, Color(cor, pulso), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+	var bw := 150.0
+	var bx := (W - bw) * 0.5
+	var fr: float = clampf(ob.prog / maxf(ob.alvo, 0.01), 0.0, 1.0)
+	_tela.draw_rect(Rect2(bx - 1, 80, bw + 2, 8), Color(0.05, 0.03, 0.08, 0.85))
+	_tela.draw_rect(Rect2(bx, 81, bw * fr, 6), Color(cor, 0.9))
+	_txt(Vector2(0, 98), det, 8, Color(0.92, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+	if ob.est == ob.ANDAMENTO:
+		for p in ob.marcas:
+			var b = _borda(p, 22.0)
+			if b == null:
+				continue
+			var pl := 0.65 + 0.35 * sin(_t * 6.0)
+			_seta(b, 11.0, 7.0, Color(cor, pl))
+			_seta(b, 6.0, 3.5, Color(0.08, 0.04, 0.1, 0.8))
 
 
 func _duelo_hud() -> void:

@@ -1,7 +1,20 @@
 {
- "_ajuda": "Dádivas dos santuários (estilo Hades). O santuário oferece 3 dádivas diferentes; a raridade de cada uma é sorteada depois (peso) e multiplica o efeito. efeito = atributos somados (como os passivos: dano, recarga (menos = mais rápido), area, velocidade, vida_max, regen, ima, sorte, xp, critico). formato: pct (valor x100 com %) ou mais (valor puro).",
+ "_ajuda": "DÁDIVAS EM DUPLA (#63, estilo Hades): em 'duplas', cada uma tem 'requer' (2 ids de 'lista' que o jogador já tem); com os dois requisitos cumpridos, a oferta de dádivas ganha uma carta a mais (chance = _config.dupla.chance) com a dádiva combinada, mais forte que as duas (efeito já final, sem multiplicador de raridade). Dádivas dos santuários (estilo Hades). O santuário oferece 3 dádivas diferentes; a raridade de cada uma é sorteada depois (peso) e multiplica o efeito. efeito = atributos somados (como os passivos: dano, recarga (menos = mais rápido), area, velocidade, vida_max, regen, ima, sorte, xp, critico). formato: pct (valor x100 com %) ou mais (valor puro).",
  "_config": {
   "oferta": 3,
+  "dupla": {"nome": "DUPLA", "cor": [1.0, 0.55, 0.8], "chance": 0.8},
+  "atributos": {
+   "dano": {"formato": "pct", "rotulo": "de dano"},
+   "velocidade": {"formato": "pct", "rotulo": "de velocidade"},
+   "vida_max": {"formato": "mais", "rotulo": "de vida máxima"},
+   "regen": {"formato": "mais", "rotulo": "de vida por segundo"},
+   "critico": {"formato": "pct", "rotulo": "de chance crítica"},
+   "recarga": {"formato": "pct", "rotulo": "de recarga mais rápida"},
+   "area": {"formato": "pct", "rotulo": "de área"},
+   "sorte": {"formato": "pct", "rotulo": "de sorte"},
+   "ima": {"formato": "pct", "rotulo": "de alcance do ímã"},
+   "xp": {"formato": "pct", "rotulo": "de XP"}
+  },
   "raridades": {
    "comum": {"nome": "COMUM", "peso": 60, "mult": 1.0, "cor": [0.8, 0.82, 0.9]},
    "rara": {"nome": "RARA", "peso": 28, "mult": 1.6, "cor": [0.4, 0.7, 1.0]},
@@ -20,5 +33,14 @@
   "fortuna": {"nome": "Fortuna Silenciosa", "icone": "moeda", "efeito": {"sorte": 0.06}, "formato": "pct", "rotulo": "de sorte"},
   "alma": {"nome": "Ímã de Almas", "icone": "fitinha", "efeito": {"ima": 0.25}, "formato": "pct", "rotulo": "de alcance do ímã"},
   "sabedoria": {"nome": "Sabedoria Antiga", "icone": "apostila", "efeito": {"xp": 0.08}, "formato": "pct", "rotulo": "de XP"}
+ },
+ "duplas": {
+  "tormenta": {"nome": "Tormenta Carmesim", "requer": ["furia", "vento"], "icone": "energetico", "efeito": {"dano": 0.16, "velocidade": 0.12}},
+  "mira": {"nome": "Golpe Certeiro", "requer": ["furia", "olho"], "icone": "mouse", "efeito": {"dano": 0.12, "critico": 0.10}},
+  "coracao": {"nome": "Coração de Pedra", "requer": ["pedra", "brasa"], "icone": "vida", "efeito": {"vida_max": 30, "regen": 1.0}},
+  "onda": {"nome": "Onda Longa", "requer": ["sopro", "alcance"], "icone": "overclock", "efeito": {"recarga": -0.10, "area": 0.15}},
+  "destino": {"nome": "Destino Sábio", "requer": ["fortuna", "sabedoria"], "icone": "apostila", "efeito": {"sorte": 0.10, "xp": 0.15}},
+  "chuva": {"nome": "Chuva de Almas", "requer": ["alma", "fortuna"], "icone": "moeda", "efeito": {"sorte": 0.08, "ima": 0.40}},
+  "fantasma": {"nome": "Passo Fantasma", "requer": ["vento", "sopro"], "icone": "tenis", "efeito": {"velocidade": 0.12, "recarga": -0.08}}
  }
 }
