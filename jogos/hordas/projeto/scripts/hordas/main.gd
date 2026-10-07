@@ -1167,7 +1167,7 @@ func _print_tela(qual: String) -> void:
 			await get_tree().create_timer(1.8, true, false, true).timeout
 			_arena.bot = false
 			_arena.jogador.bot = false
-			_arena.jogador.invencivel = 999.0
+			_arena.jogador.hp = 1.0e9   # sem invencível: invencível pisca e enganava no print
 			_arena.diretor.bonus_minutos = -100.0
 			_arena.inimigos.limpar()
 			_arena.armas.lista.clear()

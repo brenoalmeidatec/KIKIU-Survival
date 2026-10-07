@@ -22,9 +22,9 @@ const ATAQUE_INTERVALO := 0.6
 ## Não são quadros novos: é o sprite inteiro se mexendo (posição, escala e inclinação), igual pra qualquer folha.
 const GOLPE_TEMPO := 0.2
 const GOLPE_INTERVALO := 0.28      # heróis sem quadros de ataque: no máximo um golpe do corpo a cada isto
-const GOLPE_AVANCO := 6.0          # px que o corpo avança
+const GOLPE_AVANCO := 8.0          # px que o corpo avança
 const GOLPE_RECUO := 2.0           # px que recua na antecipação
-const GOLPE_INCLINA := 0.16        # rad de inclinação pra frente no auge
+const GOLPE_INCLINA := 0.2         # rad de inclinação pra frente no auge
 const DANO_TEMPO := 0.2
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
