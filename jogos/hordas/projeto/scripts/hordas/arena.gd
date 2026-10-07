@@ -208,6 +208,7 @@ func _ready() -> void:
 	entradas = Entradas.new()
 	entradas.arena = self
 	add_child(entradas)
+	add_child(preload("res://scripts/hordas/vinheta.gd").new())
 	escuridao = Escuridao.new()   # fase de horror: só liga quando a fase tem "escuro" em corrida.json
 	escuridao.arena = self
 	add_child(escuridao)
@@ -306,6 +307,7 @@ func _process(dt: float) -> void:
 	var t3 := Time.get_ticks_usec()
 	coleta.atualizar(dt)
 	efeitos.atualizar(dt)
+	_luzes_quadro()
 	mortes.atualizar(dt)
 	chao.atualizar(dt)
 	hud.atualizar(dt)
@@ -348,6 +350,27 @@ func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> 
 	if crit and Time.get_ticks_msec() >= _hitstop_crit_ate:
 		_hitstop_crit_ate = Time.get_ticks_msec() + int(Jogador.HITSTOP_CRIT_ESPERA * 1000.0)
 		hitstop(Jogador.HITSTOP_CRIT)
+
+
+## Luz do quadro (estilo Dimraeth: o que brilha acende o chão em volta). Halos aditivos baratos no efeitos.gd, sem Light2D:
+## o herói leva uma luz quente (mais forte quanto mais escuro o andar), os projéteis dele a cor da arma e os tiros
+## dos inimigos um vermelho que ajuda a ver o perigo no escuro.
+const LUZ_HEROI := Color(1.0, 0.82, 0.55)
+const LUZ_TIRO := Color(1.0, 0.25, 0.15, 0.45)
+var _cor_luz_arma := {}
+
+func _luzes_quadro() -> void:
+	if jogador and jogador.visible:
+		var amb: float = chao._ambiente.color.v if chao and "_ambiente" in chao else 1.0
+		efeitos.luz(jogador.centro() + Vector2(0, 10), 78.0, Color(LUZ_HEROI, clampf(0.06 + (1.0 - amb) * 0.5, 0.06, 0.3)))
+	if armas:
+		for p in armas.projeteis:
+			if not _cor_luz_arma.has(p.arma):
+				_cor_luz_arma[p.arma] = Color(armas.cor_de(Dados.item(str(p.arma)), Color(1.0, 0.85, 0.6)), 0.3)
+			efeitos.luz(p.pos, 26.0, _cor_luz_arma[p.arma])
+	if inimigos:
+		for t in inimigos.tiros:
+			efeitos.luz(t.pos, 22.0, LUZ_TIRO)
 
 
 func _tem_impacto(arma: String) -> bool:

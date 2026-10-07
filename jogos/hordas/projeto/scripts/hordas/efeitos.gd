@@ -27,6 +27,10 @@ var particulas: Array = []   # {pos, vel, t, cor, tam}
 var cortes: Array = []       # {pos, ang, arco, raio, larg, cor, t, dur, lado}
 var impactos: Array = []     # {pos, cor, t, raios[], tam}
 var faiscas: Array = []      # {pos, vel, t, cor}
+var luzes: Array = []        # halos deste quadro {pos, raio, cor}: quem ilumina chama luz() todo quadro; some depois do desenho
+const MAX_LUZES := 96
+static var _tex_luz: Texture2D   # um degradê radial só, pra todo halo (um draw_texture_rect por luz)
+var _vis := Rect2()              # a tela em coordenadas do mundo, do último atualizar (luz fora dela nem entra)
 var _brilho := Node2D.new()  # filho aditivo, desenhado ATRÁS dos números (show_behind_parent)
 var _impactos_quadro := 0
 
@@ -38,6 +42,25 @@ func _ready() -> void:
 	_brilho.show_behind_parent = true
 	_brilho.draw.connect(_draw_brilho)
 	add_child(_brilho)
+	if _tex_luz == null:
+		var g := Gradient.new()
+		g.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+		g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.35), Color(1, 1, 1, 0)])
+		var t := GradientTexture2D.new()
+		t.gradient = g
+		t.fill = GradientTexture2D.FILL_RADIAL
+		t.fill_from = Vector2(0.5, 0.5)
+		t.fill_to = Vector2(1.0, 0.5)
+		t.width = 64
+		t.height = 64
+		_tex_luz = t
+
+
+## Halo de luz neste quadro (mistura aditiva, achatado no chão). `cor.a` = força. Chame todo quadro enquanto brilhar.
+func luz(pos: Vector2, raio: float, cor: Color) -> void:
+	if luzes.size() >= MAX_LUZES or (_vis.has_area() and not _vis.grow(raio).has_point(pos)):
+		return
+	luzes.append([pos, raio, cor])
 
 
 ## Meia-lua de corte: a lâmina varre de um lado ao outro do arco e o rabo vem comendo atrás (não some por igual).
@@ -149,6 +172,8 @@ func atualizar_i(dt: float) -> void:
 		if p.t <= 0:
 			particulas.erase(p)
 	_impactos_quadro = 0
+	if is_inside_tree():
+		_vis = get_canvas_transform().affine_inverse() * get_viewport_rect()
 	for i in range(cortes.size() - 1, -1, -1):
 		cortes[i].t += dt
 		if cortes[i].t >= cortes[i].dur:
@@ -198,8 +223,21 @@ static func tamanho_numero(base: int, pop: float) -> int:
 
 func _draw_brilho() -> void:
 	var b := _brilho
+	for l in luzes:   # halos primeiro: ficam por baixo dos golpes
+		var r: float = l[1]
+		b.draw_texture_rect(_tex_luz, Rect2(l[0] - Vector2(r, r * 0.7), Vector2(r * 2.0, r * 1.4)), false, l[2])
+	luzes.clear()
+	for im in impactos:   # o acerto acende o chão um instante
+		var ui: float = im.t / IMPACTO_VIDA
+		var ri: float = im.tam * 2.2
+		b.draw_texture_rect(_tex_luz, Rect2(im.pos - Vector2(ri, ri * 0.7), Vector2(ri * 2.0, ri * 1.4)), false, Color(im.cor, 0.35 * (1.0 - ui)))
 	for c in cortes:
 		_pintar_corte(b, c)
+		var uc: float = c.t / c.dur   # a cabeça da lâmina acende o chão por onde passa
+		var cab := 1.0 - pow(1.0 - minf(1.0, uc / 0.45), 3.0)
+		var hp: Vector2 = c.pos + Vector2.from_angle(c.ang - c.lado * c.arco * 0.5 + c.lado * c.arco * cab) * float(c.raio) * Vector2(0.8, CORTE_ACHATA * 0.8)
+		var rc: float = c.raio * 0.9
+		b.draw_texture_rect(_tex_luz, Rect2(hp - Vector2(rc, rc * 0.7), Vector2(rc * 2.0, rc * 1.4)), false, Color(c.cor, 0.3 * (1.0 - uc)))
 	for im in impactos:
 		var u: float = im.t / IMPACTO_VIDA
 		var cresce := 1.0 - pow(1.0 - minf(1.0, u / 0.35), 3.0)   # estoura rápido
