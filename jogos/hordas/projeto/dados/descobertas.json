@@ -1,15 +1,18 @@
 {
- "_ajuda": "Descobertas do mundo (#21, seções 16 a 29 do design). Tudo sorteado por streams com a semente da corrida (scripts/hordas/sorte.gd): mesma semente, mesmo mundo. santuarios.fragmento_por_corrida = pesos de quantos Santuários do Dragão a corrida tem (chave = quantidade, valor = peso; 0 é possível), espalhados em fases diferentes; as tomadas por fase vêm de corrida.json ('santuarios'); dadiva_por_fase = pesos de quantos santuários de dádiva cada fase tem. variacoes do Santuário do Dragão: simples (segurar), combate (sobreviver ao desafio perto dele) e sacrificio (paga vida). pity = chance de fragmento que sobe a cada falha (base + passo x falhas) e é garantida na tentativa 'limite'. eventos = pool de eventos aleatórios do mundo: peso, fase_min, cooldown (s), acao (baus, elites, santuario) e o resto lido pela ação; peso_recente_mult encolhe o peso de quem saiu há pouco (RNG controlado, seção 29).",
+ "_ajuda": "Santuário da PROVA (#63): ao ativar, nasce um mini-chefe (elite com vida_mult a mais) e escoltas; vença todos dentro de duracao (s) e ganha dádiva de raridade_min pra cima mais um baú; estourou o tempo, perdeu (os inimigos ficam). Online o anfitrião cria os vírus; no cliente vale sobreviver o tempo perto do santuário. Santuário SELADO: só libera a dádiva quando o pré-requisito da fase estiver cumprido: piras = N santuários-tomada já acesos, reliquia = pegar a Relíquia Antiga (tipo reliquia, nasce em outro ponto do mapa). O requisito vem da semente (selado_por_fase e prova_por_fase = pesos de quantos por fase). Descobertas (#21) do mundo (#21, seções 16 a 29 do design). Tudo sorteado por streams com a semente da corrida (scripts/hordas/sorte.gd): mesma semente, mesmo mundo. santuarios.fragmento_por_corrida = pesos de quantos Santuários do Dragão a corrida tem (chave = quantidade, valor = peso; 0 é possível), espalhados em fases diferentes; as tomadas por fase vêm de corrida.json ('santuarios'); dadiva_por_fase = pesos de quantos santuários de dádiva cada fase tem. variacoes do Santuário do Dragão: simples (segurar), combate (sobreviver ao desafio perto dele) e sacrificio (paga vida). pity = chance de fragmento que sobe a cada falha (base + passo x falhas) e é garantida na tentativa 'limite'. eventos = pool de eventos aleatórios do mundo: peso, fase_min, cooldown (s), acao (baus, elites, santuario) e o resto lido pela ação; peso_recente_mult encolhe o peso de quem saiu há pouco (RNG controlado, seção 29).",
  "santuarios": {
   "fragmento_por_corrida": {"0": 2, "1": 4, "2": 3, "3": 2},
   "dadiva_por_fase": {"0": 5, "1": 4, "2": 1},
+  "prova_por_fase": {"0": 7, "1": 3},
+  "selado_por_fase": {"0": 7, "1": 3},
+  "tempo_carga_tipo": {"reliquia": 1.5},
   "raio_min": 380,
   "raio_max": 1000,
   "dist_min_entre": 420,
   "tempo_carga": 5.0,
   "tempo_carga_tomada": 4.0,
   "raio_interacao": 48,
-  "nomes": {"tomada": "Pira Antiga", "dadiva": "Santuário de Dádivas", "maldito": "Santuário Amaldiçoado"},
+  "nomes": {"tomada": "Pira Antiga", "dadiva": "Santuário de Dádivas", "maldito": "Santuário Amaldiçoado", "prova": "Santuário da Prova", "selado": "Santuário Selado", "reliquia": "Relíquia Antiga"},
   "titulo_tomada": "A pira acendeu!",
   "sprite": "pira",
   "variacoes": {
@@ -17,7 +20,11 @@
    "combate": {"peso": 3, "nome": "Santuário do Combate", "duracao": 14, "inimigos": 14, "raio": 190},
    "sacrificio": {"peso": 2, "nome": "Santuário do Sacrifício", "custo_vida": 0.35}
   },
-  "maldito": {"inimigos": 4, "raridade_min": "rara"}
+  "maldito": {"inimigos": 4, "raridade_min": "rara"},
+  "prova": {"duracao": 50, "chefe": "trojan", "vida_mult": 2.5, "escoltas": 4, "tipos_escolta": ["bug", "spam"], "raio": [120, 180], "raridade_min": "epica", "bau": true},
+  "selado": {"raridade_min": "rara", "requisitos": {
+    "piras": {"peso": 5, "qtd": 2, "rotulo": "piras acesas", "dica": "acenda %d piras antes"},
+    "reliquia": {"peso": 4, "qtd": 1, "rotulo": "relíquia", "dica": "traga a relíquia antes"}}}
  },
  "pity": {
   "elite": {"base": 0.02, "passo": 0.03, "limite": 20},

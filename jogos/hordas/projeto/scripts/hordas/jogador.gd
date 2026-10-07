@@ -413,6 +413,8 @@ func rolar(dir: Vector2) -> bool:
 	invencivel = maxf(invencivel, dash_t + (0.1 if forma else 0.0))
 	Som.tocar("whoosh", 0.1, 1.2)
 	_poeira_em(3, 18.0)
+	if arena and arena.get("armas") != null and not forma:   # #63: "Aura Pulsante" solta um pulso ao rolar
+		arena.armas.ao_rolar()
 	return true
 
 

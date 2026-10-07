@@ -1306,6 +1306,42 @@ func _print_tela(qual: String) -> void:
 			if _args.has("dadivas"):
 				_arena.cartas.escolher("Dádiva do santuário", _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva")))
 			await get_tree().create_timer(0.5, true, false, true).timeout
+		"santuario2":   # #63: prova em andamento (mini-chefe + anel de tempo), santuário selado (pré-requisito 1/2) e relíquia por perto
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			var jq: Vector2 = _arena.jogador.position
+			_arena.chao.santuarios.clear()
+			var prova := {"pos": jq + Vector2(95, -25), "tipo": "prova", "variacao": "", "carga": 1.0, "usado": false}
+			_arena.chao.santuarios.append(prova)
+			_arena.chao.santuarios.append({"pos": jq + Vector2(-110, 25), "tipo": "selado", "variacao": "", "carga": 0.0, "usado": false, "requisito": "piras", "qtd": 2})
+			_arena.chao.santuarios.append({"pos": jq + Vector2(-230, -60), "tipo": "tomada", "variacao": "", "carga": 0.0, "usado": true})
+			_arena.chao.santuarios.append({"pos": jq + Vector2(-230, 100), "tipo": "tomada", "variacao": "", "carga": 0.0, "usado": false})
+			_arena.chao.santuarios.append({"pos": jq + Vector2(10, 130), "tipo": "reliquia", "variacao": "", "carga": 0.0, "usado": false})
+			_arena.descobertas.ativar(prova)
+			await get_tree().create_timer(2.0, true, false, true).timeout
+		"dupla":   # #63: oferta de dádivas com a dádiva em dupla (Fúria Antiga + Passo do Vento)
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.descobertas.dadivas.append({"id": "furia", "raridade": "rara"})
+			_arena.descobertas.dadivas.append({"id": "vento", "raridade": "comum"})
+			var ofer: Array = []
+			for _i in 12:
+				ofer = _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva"), "", ["furia", "vento"])
+				if ofer.size() > 3:
+					break
+			_arena.cartas.escolher("Dádiva do santuário", ofer)
+			_arena.cartas._sel = ofer.size() - 1
+		"comp":   # #63: cartas de comportamento ao lado de uma arma e um passivo comuns
+			_comecar("hazaki")
+			await get_tree().create_timer(0.3).timeout
+			_arena.armas.adicionar("pendrive")
+			_arena.armas.lista[_arena.armas.lista.size() - 1].nivel = 3
+			_arena.armas.adicionar("wifi")
+			_arena.armas.lista[_arena.armas.lista.size() - 1].nivel = 4
+			var pm: Array = [_arena._carta_comp(_arena.armas.achar("pendrive"), "ricochete"), _arena._carta_comp(_arena.armas.achar("wifi"), "pulso"),
+				_arena._carta("arma", "pendrive", 4), _arena._carta("passivo", "overclock", 1)]
+			_arena.cartas.escolher("Subiu pro nível 9!", pm)
+			_arena.cartas._sel = 0
 		"resultado":   # tela de resultados da fase (#32): --espera=N segundos de contagem (padrão 4)
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3, true, false, true).timeout

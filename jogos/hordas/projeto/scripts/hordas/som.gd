@@ -3,7 +3,11 @@ extends Node
 
 const VOZES := 12
 var _players: Array[AudioStreamPlayer] = []
-var _musica := AudioStreamPlayer.new()
+var _atual := AudioStreamPlayer.new()   # a faixa que toca (ou que está entrando)
+var _saida := AudioStreamPlayer.new()   # a faixa que está saindo no crossfade
+var _g_atual := 1.0
+var _g_saida := 0.0
+var duracao_fade := 1.5
 var _ultimo := {}
 var _streams := {}
 var volume_efeitos := 0.8
@@ -16,7 +20,8 @@ func _ready() -> void:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		_players.append(p)
-	add_child(_musica)
+	add_child(_atual)
+	add_child(_saida)
 	for f in DirAccess.get_files_at("res://assets/audio/efeitos"):
 		if f.ends_with(".wav.import") or f.ends_with(".wav"):
 			_stream("res://assets/audio/efeitos/" + f.trim_suffix(".import"))
@@ -57,24 +62,71 @@ func ui(nome: String) -> void:
 			tocar("abrir", 0.1, 1.0, -4.0)
 
 
+## Troca de faixa com crossfade (#63): a nova entra enquanto a velha sai, em potência igual (sem buraco e sem estouro),
+## respeitando o volume das Opções. Mesma faixa já tocando: nada acontece. Sem nada tocando, entra direto.
 func musica(nome: String) -> void:
 	var s := _stream("res://assets/audio/musica/%s.ogg" % nome)
-	if s == null or (_musica.stream == s and _musica.playing):
+	if s == null or (_atual.stream == s and _atual.playing):
 		return
 	if s is AudioStreamOggVorbis:
 		s.loop = true
-	_musica.stream = s
-	_musica.volume_db = linear_to_db(volume_musica)
-	_musica.play()
+	if not _atual.playing or duracao_fade <= 0.0:
+		_saida.stop()
+		_atual.stream = s
+		_g_atual = 1.0
+		_atual.play()
+		_aplicar_ganhos()
+		return
+	# já tem música: a que toca vira "saída" e a outra entra. Se já havia uma saída no meio do fade, ela é cortada.
+	var antiga := _saida
+	_saida = _atual
+	_g_saida = _g_atual
+	_atual = antiga
+	_atual.stop()
+	_atual.stream = s
+	_g_atual = 0.0
+	_atual.play()
+	_aplicar_ganhos()
 
 
 func parar_musica() -> void:
-	_musica.stop()
+	_atual.stop()
+	_saida.stop()
+	_g_atual = 1.0
+	_g_saida = 0.0
 
 
 ## Volume mudou nas Opções: a música que já está tocando acompanha na hora.
 func atualizar_volume() -> void:
-	_musica.volume_db = linear_to_db(volume_musica)
+	_aplicar_ganhos()
+
+
+## Estado do crossfade (teste e depuração): se está rolando e o ganho 0..1 de quem entra e de quem sai.
+func fade_estado() -> Dictionary:
+	return {"ativo": _saida.playing or _g_atual < 1.0, "entra": _g_atual, "sai": _g_saida if _saida.playing else 0.0}
+
+
+func _process(dt: float) -> void:
+	if _g_atual >= 1.0 and not _saida.playing:
+		return
+	var passo := dt / maxf(duracao_fade, 0.01)
+	_g_atual = minf(1.0, _g_atual + passo)
+	if _saida.playing:
+		_g_saida = maxf(0.0, _g_saida - passo)
+		if _g_saida <= 0.0:
+			_saida.stop()
+	_aplicar_ganhos()
+
+
+func _aplicar_ganhos() -> void:
+	_atual.volume_db = _db(_g_atual)
+	_saida.volume_db = _db(_g_saida)
+
+
+## Ganho 0..1 do fade (curva de potência igual: seno) vezes o volume das Opções, em dB (nunca -inf).
+func _db(g: float) -> float:
+	var amp := sin(clampf(g, 0.0, 1.0) * PI * 0.5) * volume_musica
+	return -80.0 if amp <= 0.0001 else linear_to_db(amp)
 
 
 func _stream(caminho: String) -> AudioStream:

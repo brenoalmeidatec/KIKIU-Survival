@@ -308,6 +308,8 @@ static func estilo(c: Dictionary, t := 0.0) -> Dictionary:
 			return {"cor": Interface.cor("cura"), "glifo": "cruz", "rotulo": "CURA"}
 		"dadiva":
 			return {"cor": Interface.cor_raridade(str(c.get("raridade", "")), c.get("cor", Color.WHITE)), "glifo": "losango", "rotulo": str(c.get("rar_nome", "DÁDIVA"))}
+		"comportamento":
+			return {"cor": Interface.cor("comportamento"), "glifo": "estrela", "rotulo": "COMPORTAMENTO"}
 		"equipamento":
 			return {"cor": Interface.cor("equipamento"), "glifo": "quadrado", "rotulo": "EQUIPAMENTO"}
 		"passivo":
@@ -426,6 +428,8 @@ func _carta(i: int, ti_total: float) -> void:
 					_tela.draw_rect(pr, Color(0.25, 0.27, 0.36))
 	elif tipo == "dadiva":
 		_txt(Vector2(o.x, o.y + 80), str(c.get("rar_nome", "")), 8, cor, larg)
+	elif tipo == "comportamento":   # carta rara: deixa claro que muda o jeito da arma, não só um número
+		_txt(Vector2(o.x, o.y + 80), str(c.get("arma_nome", "")), 8, Interface.cor("destaque"), larg)
 	_tela.draw_multiline_string(Dados.fonte, o + Vector2(4, 104), str(c.nome), HORIZONTAL_ALIGNMENT_CENTER, larg - 8, 8, 2, Color.WHITE)
 	# antes > depois (o atributo que muda, com o valor novo em destaque)
 	var y := o.y + 132.0

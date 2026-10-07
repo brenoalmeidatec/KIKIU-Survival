@@ -631,3 +631,16 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Testes:** `conjuntos.tscn` (CONJ), `objetivos.tscn` (OBJ, com anfitrião e cliente em memória) e `testes/online_objetivo.sh`, que sobe 2 instâncias reais (`--online=host` e `--online=join`, `--fase=2`) e compara o estado do objetivo nos dois logs (idêntico). 26 cenas com falhas=0; partida com robô sem SCRIPT ERROR; `--estresse=500` ~5-6 ms de proc.
 - **Gancho para as cartas (não mexi em `cartas.gd`):** `arena._carta()` já devolve `etiquetas` (lista) e `etiquetas_txt` (ex.: "Lâmina 2>3  Fogo 0>1") em cada carta de arma/passivo/equipamento/evolução. Falta só `cartas.gd` desenhar esse texto.
 - **Pendente:** objetivos dos demais andares (só 2 e 4 por região), balanceamento dos degraus, o "sobreviver na névoa" do plano, e a tela de cartas usar o gancho. Prints em `scratchpad/fotos_q`.
+## 2026-10-06 · Claude do Alisson (PC) · #63: santuários, cartas de comportamento e crossfade: feito
+
+**Feito (worktree agent-ad7784d839d628498, sem push/PR):**
+- **Santuário da Prova** (`descobertas.json` > `santuarios.prova`): ativar faz nascer um mini-chefe (`trojan`, vida x2.5) + escoltas; vencer todos em 50 s dá dádiva épica+ e um baú; estourou o tempo, perdeu. Online o anfitrião cria os vírus.
+- **Santuário Selado** ("achar outro elemento antes"): só libera a dádiva com o pré-requisito da fase cumprido: `piras` (N piras acesas) ou `reliquia` (pegar a Relíquia Antiga, que nasce em outro ponto). Sorteado pela semente (`prova_por_fase`, `selado_por_fase`). **Pendente:** elementos mágicos como pré-requisito chegam com a #72; basta somar uma entrada em `selado.requisitos` e tratar o tipo em `descobertas.gd`.
+- **Dádivas em dupla** (`dadivas.json` > `duplas`, com `requer`): com as 2 dádivas exigidas já no jogador, a oferta ganha uma 4ª carta "DUPLA" (chance 0.8, efeito fixo mais forte). 7 duplas.
+- **Cartas de comportamento** (`dados/comportamentos.json`, 6 cartas: ricochete, vai e volta, rastro de fogo, aura pulsante, poça instável, giro em espiral): raras, a partir do nível 3 da arma, lidas como modificadores genéricos em `armas.gd` (`s.comp`); carta com rótulo COMPORTAMENTO e descrição "Muda ...".
+- **Música:** crossfade de 1,5 s em `Som.musica` (potência igual, respeita volume das Opções). Faixa do duelo intocada.
+- Testes novos: `testes/santuarios2.tscn` (SANT2) e `testes/cartas_comp.tscn` (CARTCOMP). Prints de teste: `--print_tela=santuario2|dupla|comp`.
+- Todas as 25 cenas com falhas=0; partida bot hazaki semente 7 com 0 SCRIPT ERROR.
+
+**Pontos fracos:** crossfade e rede online (2 instâncias) não foram conferidos de ouvido/na prática: só por teste de estado; a prova no cliente online vale por tempo perto do santuário.
+**Próximo:** #72 (elementos mágicos como requisito do selado); balancear cartas de comportamento jogando.

@@ -21,6 +21,8 @@ var _cd := {}                # id do evento -> segundos de cooldown que faltam
 var _hist: Array = []        # últimos eventos (o peso de quem saiu há pouco encolhe)
 var _desafios: Array = []    # santuários de combate em andamento
 var _hordas: Array = []      # hordas de elite de evento em andamento
+var _provas: Array = []      # santuários de prova em andamento (#63)
+var _premios: Array = []     # ofertas de dádiva que esperam a tela de cartas liberar: [{titulo, min}]
 
 
 static func cfg() -> Dictionary:
@@ -68,11 +70,65 @@ static func planejar_fase(fase_idx: int, n_fases: int, n_tomadas: int, ancora: V
 		var chaves := vs.keys()
 		var k := Sorte.ponderado(rng, chaves.map(func(x): return float(vs[x].get("peso", 1))))
 		res.append(_novo(p, "fragmento", "simples" if k < 0 else str(chaves[k])))
+	# #63: prova e selado vêm DEPOIS de tudo, então os santuários antigos de cada semente continuam nos mesmos lugares
+	for _i in _contagem(rng, c.get("prova_por_fase", {})):
+		var p := _posicao_livre(rng, ancora, usados, c)
+		usados.append(p)
+		res.append(_novo(p, "prova"))
+	for _i in _contagem(rng, c.get("selado_por_fase", {})):
+		var p := _posicao_livre(rng, ancora, usados, c)
+		usados.append(p)
+		var req := _requisito_sorteado(rng, c, n_tomadas)
+		res.append(_novo(p, "selado", "", {"requisito": req.id, "qtd": req.qtd}))
+		if req.id == "reliquia":   # "achar outro elemento antes": a relíquia nasce em outro ponto do mapa
+			var q := _posicao_livre(rng, ancora, usados, c)
+			usados.append(q)
+			res.append(_novo(q, "reliquia"))
 	return res
 
 
-static func _novo(pos: Vector2, tipo: String, variacao := "") -> Dictionary:
-	return {"pos": pos, "tipo": tipo, "variacao": variacao, "carga": 0.0, "usado": false}
+## Pré-requisito do santuário selado: peso por tipo; "piras" precisa de tomadas suficientes na fase, senão vira relíquia.
+static func _requisito_sorteado(rng: RandomNumberGenerator, c: Dictionary, n_tomadas: int) -> Dictionary:
+	var reqs: Dictionary = c.get("selado", {}).get("requisitos", {})
+	var ids := reqs.keys()
+	var i := Sorte.ponderado(rng, ids.map(func(k): return float(reqs[k].get("peso", 1))))
+	var id := "reliquia" if i < 0 else str(ids[i])
+	var qtd := int(reqs.get(id, {}).get("qtd", 1))
+	if id == "piras" and n_tomadas < qtd:
+		id = "reliquia"
+		qtd = int(reqs.get(id, {}).get("qtd", 1))
+	return {"id": id, "qtd": qtd}
+
+
+## Quanto do pré-requisito de um santuário selado já foi cumprido: Vector2i(tem, precisa). Outros tipos: sempre cumprido.
+static func progresso(s: Dictionary, lista: Array) -> Vector2i:
+	if str(s.get("tipo", "")) != "selado":
+		return Vector2i(1, 1)
+	var alvo := "tomada" if str(s.get("requisito", "")) == "piras" else "reliquia"
+	var tem := 0
+	for o in lista:
+		if str(o.tipo) == alvo and o.usado:
+			tem += 1
+	var precisa := int(s.get("qtd", 1))
+	return Vector2i(mini(tem, precisa), precisa)
+
+
+## Texto embaixo do nome do santuário perto do jogador (chão).
+static func dica(s: Dictionary, lista: Array) -> String:
+	if str(s.get("tipo", "")) == "selado":
+		var pr := progresso(s, lista)
+		if pr.x < pr.y:
+			var rq: Dictionary = cfg().get("santuarios", {}).get("selado", {}).get("requisitos", {}).get(str(s.get("requisito", "")), {})
+			var d := str(rq.get("dica", "cumpra o pré-requisito"))
+			return "%s (%d/%d)" % [d % pr.y if "%d" in d else d, pr.x, pr.y]
+		return "selo quebrado: fique perto"
+	return "fique perto"
+
+
+static func _novo(pos: Vector2, tipo: String, variacao := "", extra := {}) -> Dictionary:
+	var r := {"pos": pos, "tipo": tipo, "variacao": variacao, "carga": 0.0, "usado": false}
+	r.merge(extra)
+	return r
 
 
 static func _posicao_livre(rng: RandomNumberGenerator, ancora: Vector2, usados: Array, c: Dictionary) -> Vector2:
@@ -107,7 +163,9 @@ static func escolher_evento(rng: RandomNumberGenerator, fase_num: int, cd: Dicti
 
 
 ## 3 dádivas diferentes, cada uma com a raridade sorteada depois (a raridade multiplica o efeito).
-static func oferta_dadivas(rng: RandomNumberGenerator, raridade_min := "") -> Array:
+## "tenho" = ids das dádivas que o jogador já tem: com os dois requisitos de uma dádiva em dupla (dadivas.json > duplas),
+## a oferta ganha uma carta a mais com a combinada (estilo Hades). Sem os requisitos ela nunca aparece.
+static func oferta_dadivas(rng: RandomNumberGenerator, raridade_min := "", tenho := []) -> Array:
 	var d: Dictionary = Dados.json("dadivas")
 	var raras: Dictionary = d.get("_config", {}).get("raridades", {})
 	var nomes := raras.keys()
@@ -121,7 +179,45 @@ static func oferta_dadivas(rng: RandomNumberGenerator, raridade_min := "") -> Ar
 			pesos.append(float(raras[nomes[i]].get("peso", 1)) if i >= minimo else 0.0)
 		var r := Sorte.ponderado(rng, pesos)
 		res.append(_carta_dadiva(str(id), str(nomes[maxi(r, 0)])))
+	var duo := duplas_disponiveis(tenho)
+	if not duo.is_empty() and rng.randf() < float(d.get("_config", {}).get("dupla", {}).get("chance", 1.0)):
+		res.append(_carta_dupla(str(duo[rng.randi_range(0, duo.size() - 1)])))
 	return res
+
+
+## Ids das duplas que o jogador pode pegar agora: tem as duas dádivas exigidas e ainda não pegou essa dupla.
+static func duplas_disponiveis(tenho: Array) -> Array:
+	var res := []
+	var duplas: Dictionary = Dados.json("dadivas").get("duplas", {})
+	for id in duplas:
+		var req: Array = duplas[id].get("requer", [])
+		if not req.is_empty() and req.all(func(r): return r in tenho) and not id in tenho:
+			res.append(id)
+	return res
+
+
+static func _texto_efeito(efeito: Dictionary) -> String:
+	var attrs: Dictionary = Dados.json("dadivas").get("_config", {}).get("atributos", {})
+	var partes := []
+	for k in efeito:
+		var v := absf(float(efeito[k]))
+		var a: Dictionary = attrs.get(k, {})
+		var txt := "+%d%%" % roundi(v * 100.0) if str(a.get("formato", "pct")) == "pct" else ("+%d" % roundi(v) if absf(v - roundf(v)) < 0.05 else "+%.1f" % v)
+		partes.append("%s %s" % [txt, str(a.get("rotulo", k))])
+	return ", ".join(partes)
+
+
+static func _carta_dupla(id: String) -> Dictionary:
+	var d: Dictionary = Dados.json("dadivas")
+	var def: Dictionary = d.get("duplas", {}).get(id, {})
+	var cfg_d: Dictionary = d.get("_config", {}).get("dupla", {})
+	var cor: Array = cfg_d.get("cor", [1, 0.55, 0.8])
+	var nomes := []
+	for r in def.get("requer", []):
+		nomes.append(str(d.get("lista", {}).get(r, {}).get("nome", r)))
+	return {"tipo": "dadiva", "id": id, "raridade": "dupla", "rar_nome": str(cfg_d.get("nome", "DUPLA")), "cor": Color(cor[0], cor[1], cor[2]),
+		"nome": str(def.get("nome", id)), "desc": _texto_efeito(def.get("efeito", {})), "requer_nomes": nomes,
+		"icone": str(def.get("icone", id)), "nivel": 0, "dupla": true}
 
 
 static func _carta_dadiva(id: String, raridade: String) -> Dictionary:
@@ -201,7 +297,7 @@ func bonus() -> Dictionary:
 	var d: Dictionary = Dados.json("dadivas")
 	var mult: Dictionary = d.get("_config", {}).get("raridades", {})
 	for x in dadivas:
-		var ef: Dictionary = d.get("lista", {}).get(x.id, {}).get("efeito", {})
+		var ef: Dictionary = d.get("lista", {}).get(x.id, d.get("duplas", {}).get(x.id, {})).get("efeito", {})
 		for k in ef:
 			res[k] = float(res.get(k, 0.0)) + float(ef[k]) * float(mult.get(x.raridade, {}).get("mult", 1.0))
 	return res
@@ -215,7 +311,7 @@ func aplicar_dadiva(c: Dictionary) -> void:
 
 func _oferecer(titulo: String, raridade_min := "") -> void:
 	Som.tocar("plim", 0.05, 1.2)
-	arena.cartas.escolher(titulo, oferta_dadivas(Sorte.fluxo("dadiva"), raridade_min))
+	arena.cartas.escolher(titulo, oferta_dadivas(Sorte.fluxo("dadiva"), raridade_min, dadivas.map(func(x): return x.id)))
 
 
 # ---------- santuários ----------
@@ -237,6 +333,22 @@ func ativar(s: Dictionary) -> bool:
 			_oferecer("Dádiva sombria", str(m.get("raridade_min", "rara")))
 		"fragmento":
 			return _ativar_fragmento(s, c)
+		"prova":
+			_ativar_prova(s, c.get("prova", {}))
+		"reliquia":
+			s.usado = true
+			Som.tocar("plim", 0.1, 1.5)
+			arena.mensagem("Relíquia Antiga recolhida!", Color(1, 0.85, 0.5))
+		"selado":
+			var pr := progresso(s, arena.chao.santuarios)
+			if pr.x < pr.y:   # selo ainda fechado: zera a carga e diz o que falta
+				s.carga = 0.0
+				Som.ui("erro")
+				arena.mensagem("Santuário selado! " + dica(s, arena.chao.santuarios), Color(1, 0.6, 0.45))
+				return true
+			s.usado = true
+			arena.anunciar("SELO QUEBRADO", Color(0.7, 0.9, 1.0))
+			_oferecer("Dádiva do santuário selado", str(c.get("selado", {}).get("raridade_min", "rara")))
 		_:
 			s.usado = true
 			arena.ganhar_carta_tomada()
@@ -274,6 +386,64 @@ func _ativar_fragmento(s: Dictionary, c: Dictionary) -> bool:
 	return true
 
 
+## Prova (#63): nasce um mini-chefe (elite com vida a mais) e escoltas; vença todos antes do tempo acabar.
+func _ativar_prova(s: Dictionary, p: Dictionary) -> void:
+	s.usado = true
+	s["prog"] = 0.001
+	var ids := []
+	var r: Array = p.get("raio", [120, 180])
+	var rr := Vector2(float(r[0]), float(r[1]))
+	for v in _cercar(s.pos, 1, [str(p.get("chefe", "trojan"))], true, rr):
+		v.hpmax *= float(p.get("vida_mult", 2.5))
+		v.hp = v.hpmax
+		ids.append(v.id)
+	for v in _cercar(s.pos, int(p.get("escoltas", 4)), p.get("tipos_escolta", ["bug"]), false, rr):
+		ids.append(v.id)
+	var dur := float(p.get("duracao", 50.0))
+	# cliente online (sem vírus próprios): vale sobreviver o tempo perto do santuário (como o do combate)
+	_provas.append({"s": s, "t": dur, "total": dur, "ids": ids, "local": ids.is_empty(), "avisou": false})
+	arena.anunciar("PROVA!", Color(1, 0.55, 0.3))
+	arena.mensagem("Vença o mini-chefe antes do tempo acabar", Color(1, 0.8, 0.5))
+
+
+func _atualizar_provas(dt: float) -> void:
+	var cp: Dictionary = cfg().get("santuarios", {}).get("prova", {})
+	for pv in _provas.duplicate():
+		var s: Dictionary = pv.s
+		if not s in arena.chao.santuarios:   # mudou de andar
+			_provas.erase(pv)
+			continue
+		var vitoria := false
+		if pv.local:
+			if arena.jogador.position.distance_to(s.pos) < 300.0:
+				pv.t -= dt
+			vitoria = pv.t <= 0.0
+		else:
+			pv.t -= dt
+			var vivo := false
+			for id in pv.ids:
+				if arena.inimigos.por_id.get(id):
+					vivo = true
+					break
+			vitoria = not vivo
+		s["prog"] = clampf(1.0 - pv.t / pv.total, 0.001, 1.0)
+		if not pv.avisou and pv.t < 10.0 and not vitoria:
+			pv.avisou = true
+			arena.mensagem("Faltam 10 segundos!", Color(1, 0.5, 0.4))
+		if vitoria:
+			_provas.erase(pv)
+			s["prog"] = 1.0
+			arena.anunciar("PROVA VENCIDA", Color(0.6, 1, 0.6))
+			if bool(cp.get("bau", true)):
+				arena.coleta.soltar(s.pos + Vector2(0, 14), "bau")
+			_premios.append({"titulo": "Recompensa da prova", "min": str(cp.get("raridade_min", "epica"))})
+		elif pv.t <= 0.0:
+			_provas.erase(pv)
+			s["prog"] = 0.0
+			arena.anunciar("PROVA FALHOU", Color(1, 0.4, 0.4))
+			arena.mensagem("O tempo acabou: sem recompensa", Color(1, 0.6, 0.5))
+
+
 ## Inimigos em volta de um ponto (só quem cria vírus: no online, o anfitrião). Devolve os criados.
 func _cercar(centro: Vector2, n: int, tipos: Array, elite: bool, raio := Vector2(110, 170)) -> Array:
 	var res := []
@@ -303,6 +473,11 @@ func atualizar(dt: float) -> void:
 		_atualizar_desafios(dt)
 	if not _hordas.is_empty():
 		_atualizar_hordas()
+	if not _provas.is_empty():
+		_atualizar_provas(dt)
+	if not _premios.is_empty() and not arena.cartas.aberto():
+		var pr: Dictionary = _premios.pop_front()
+		_oferecer(str(pr.titulo), str(pr.min))
 
 
 ## Sorteia e executa um evento do pool (chamado pelo relógio; público pro teste).
