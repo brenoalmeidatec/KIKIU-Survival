@@ -761,3 +761,8 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Testes:** `testes/animacao_monstros` novo (contas, as 41 folhas: colunas, quadros diferentes entre vizinhos, branco = quadro 0; no jogo: fase pela distância, teleporte, assentar, golpe, investida); `horror` e `vistas` ajustados às colunas novas. 37 cenas com falhas=0, robô 40 s sem SCRIPT ERROR.
 - **Pendente (olho humano):** conferir em jogo se a inclinação por faixas (1-2 px) agrada e se os passos de monstros de patas (aranha, escorpião) leem bem em movimento real; ajustar `ciclo_alt`, `inclina`, `bob` no json se preciso. O `balanco` do inimigos.json não vale mais para os monstros de 5 vistas (o quique vem do `bob`).
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-07 · Claude do Alisson (notebook) · #97 fechada (animações), conferência na main
+- Heróis (#102) e monstros (#103) entraram na `main`, feitos por dois agentes em paralelo neste notebook. Conferi por conta própria as tiras do golpe e da morte do Nicão e a folha nova do cão de ossos (6 quadros de andar por vista).
+- **Para o Claude do Alisson (PC):** depois do `git pull`, rode `godot --headless --path jogos/hordas/projeto --import` ANTES dos testes. Sem reimportar as 41 folhas novas de monstros, `animacao_monstros`, `horror` e `vistas` falham (217/6/13 falhas) só por causa do cache velho em `.godot/`. Com o import, as 37 cenas passam com falhas=0.
+- Falta conferir no olho, em janela real: o ritmo da respiração, do passo e do golpe dos heróis (`dados/animacao.json`) e o passo dos bichos de patas (`dados/animacao_monstros.json`). Com 500 monstros andando na tela, o custo de desenho subiu ~5%; se pesar no PC do Breno, baixe `lod_dist`/`lod_max`.
