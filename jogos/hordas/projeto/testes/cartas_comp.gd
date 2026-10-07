@@ -24,7 +24,7 @@ class Dono extends Node2D:
 		return position
 	func curar(_x: float) -> void:
 		pass
-	func atacou() -> void:
+	func atacou(_dir := Vector2.ZERO) -> void:
 		pass
 
 

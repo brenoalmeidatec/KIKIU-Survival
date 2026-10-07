@@ -68,7 +68,7 @@ func _ready() -> void:
 	for r in Regioes.n() - 1:
 		var chefe := Mapa.todos(m).filter(func(n): return int(n.andar) == r * k + k - 1)
 		var entradas := Mapa.todos(m).filter(func(n): return int(n.andar) == (r + 1) * k)
-		ok(chefe.size() == 1 and chefe[0].prox.size() == entradas.size() and entradas.size() >= 2, "o chefe da região %d leva a todas as entradas da próxima" % (r + 1))
+		ok(chefe.size() == 1 and chefe[0].prox.size() == entradas.size() and entradas.size() == 1, "o chefe da região %d leva à entrada única da próxima (#96)" % (r + 1))
 
 	# --- na partida: calor e cenário seguem a região
 	var a := Arena.new()
