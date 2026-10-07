@@ -145,6 +145,13 @@ func _process_i(_dt: float) -> void:
 		_pausa_confirmar()
 
 
+## Esc/Start abre a pausa. Só chega aqui o Esc que ninguém consumiu: o que fecha o chat, a loja, o mapa ou o resultado não abre a pausa junto.
+func _unhandled_input(e: InputEvent) -> void:
+	if arena and e.is_action_pressed("voltar") and not e.is_echo() and not _pausado and not arena.acabou and not arena.cartas.aberto():
+		get_viewport().set_input_as_handled()
+		pausar()
+
+
 func _input(e: InputEvent) -> void:
 	if not _pausado or _opcoes or Engine.get_process_frames() == _quadro_pausa or not Interface.clique(e):
 		return

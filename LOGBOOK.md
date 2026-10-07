@@ -724,6 +724,10 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Pendente:** `jogos/hordas/LEIA-ME.txt` ainda descreve o tema antigo (Cairu x vírus, Tela Azul, tomada) e precisa ser reescrito para o jogo atual. Falta uma foto boa do duelo final para o README (o modo `--print_tela=duelo` pega só a contagem inicial).
 - **Regra nova:** o README da raiz é só vitrine; qualquer mudança técnica vai no README da pasta.
 
+## 2026-10-07 · Claude do Alisson (notebook) · Esc pausa (só singleplayer)
+- **Pedido:** "botão de pause: ESC para abrir o menu e pausar. No singleplayer, claro." Medido antes de mexer: o menu de pausa (Continuar / Opções / Desistir) **já existia** e Esc/Start já pausavam sozinho (árvore pausada, herói parado) e no online abriam o menu sem pausar. O defeito real: o Esc era lido por polling na `arena.gd`, então o Esc que **fecha a loja** (ou o chat, no online) abria a pausa junto no mesmo quadro.
+- **Feito:** a leitura do Esc saiu da `arena.gd` e foi para `hud._unhandled_input` (só pega Esc que ninguém consumiu); sem camada nova. Teste novo `testes/pausa.tscn` (imprime `PAUSA falhas=0`): solo abre/pausa/retoma por Esc e por Continuar, Esc fecha a loja sem pausar, online abre sem pausar. Sem a correção, o teste falha 2 verificações da loja.
+- **Pendente:** conferir à mão com teclado real e controle (Start) numa janela; o `--print_tela=pausa` só chama `pausar()` direto.
 ## 2026-10-07 · Claude do Alisson (notebook) · janela maximizada sem barras pretas
 - **Relato do Breno:** maximizar a janela deixava barras pretas em volta; no F11 "às vezes" o zoom ficava certo.
 - **Causa:** `window/stretch/scale_mode="integer"` com viewport 640x360. Maximizada num monitor 1920x1080 a área útil é ~1920x1009 (barra de título e de tarefas), então a escala inteira cai de 3x para 2x (1280x720 no meio, barras enormes). A tela cheia exclusiva tem 1080 exato = 3x e enche. Além disso o `Config.aplicar` forçava `WINDOW_MODE_WINDOWED` sempre que a opção "Tela cheia" estava desligada, desfazendo a janela maximizada.
