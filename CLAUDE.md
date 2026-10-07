@@ -2,7 +2,8 @@
 
 Este repo é trabalhado por várias sessões do Claude ao mesmo tempo: o Claude do Breno e o Claude do Alisson, que roda em
 **duas máquinas** (PC e notebook). Elas não compartilham conversa nem memória, e **o único canal entre elas é o GitHub**.
-As regras gerais estão no `README.md` (seção "Regras para manter o repositório atualizado") e o histórico, no `LOGBOOK.md`.
+As regras gerais estão no `CONTRIBUTING.md` e o histórico, no `LOGBOOK.md`. O `README.md` da raiz é só a vitrine do jogo
+(sem detalhe técnico nem processo interno); o técnico fica no README de cada pasta.
 
 ## Ao começar uma sessão
 1. `git fetch --all --prune` e `git switch main && git pull --ff-only`.
