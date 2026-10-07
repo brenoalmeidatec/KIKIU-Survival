@@ -1,0 +1,30 @@
+{
+ "_ajuda": "Abertura da fase (abertura.gd): a entrada cinematográfica do herói no mundo. Dois jeitos: 'regiao' (começo da corrida e entrada em região nova: ~3,8 s, com título grande) e 'andar' (os outros andares: ~2 s, faixa curta). Tempos em segundos desde o começo da abertura. barras = altura (px) das tarjas de cinema; barras_entra = quanto levam pra descer; guindaste = a câmera começa deslocada (dx, dy em px) e desce até o herói em 'ate' s; queda = o herói cai do alto (inicio, duracao, altura em px); o pouso é em inicio + 0,65 * duracao (veja visual.gd CHEGADA_POUSO). libera = quando o herói volta a mandar e o diretor/relógio da fase começam (as tarjas saem um pouco antes); duracao = fim total (título e brasas somem). titulo_em / titulo_some = quando o título entra (letra por letra, 'letra_atraso' s entre elas) e quando começa a sumir. tremor = força da tremida no pouso (respeita a opção 'Tremer a tela'); escuro = quanto o mundo começa escurecido (0 a 1; clareia até o pouso); preto = fade do preto no começo; brasas = quantas partículas sobem (ou caem, na região de neve) e flash = brilho branco do pouso. 'invulneravel_extra' = segundos de invulnerabilidade depois de liberar. 'ligada': false desliga tudo. A abertura NÃO roda no robô (--bot), em --sair, --rapido e --print_tela, e nos testes que montam a arena à mão; --entrada força (captura). Pular: confirmar ou Esc. Online: todo mundo toca a sua, com a mesma duração; o relógio e o diretor ficam parados até 'libera' em todos (pular no online só adianta o seu herói, o mundo espera). 'tema' = cores por região (id de regioes.json): titulo, brasa, faixa [r,g,b]; neve: true = as partículas caem. 'padrao' vale pra região sem tema.",
+ "ligada": true,
+ "invulneravel_extra": 0.8,
+ "pular_rotulo": "ENTER/ESC: PULAR",
+ "regiao": {
+  "duracao": 3.8, "libera": 3.0,
+  "barras": 36, "barras_entra": 0.4, "preto": 0.7, "escuro": 0.55,
+  "guindaste": {"dx": -120, "dy": -190, "ate": 1.7},
+  "queda": {"inicio": 1.2, "duracao": 0.85, "altura": 280},
+  "titulo_em": 1.78, "titulo_some": 3.4, "letra_atraso": 0.03, "tamanho": 32,
+  "tremor": 10.0, "flash": 0.55, "brasas": 38, "onda": 330.0
+ },
+ "andar": {
+  "duracao": 2.0, "libera": 1.25,
+  "barras": 26, "barras_entra": 0.25, "preto": 0.0, "escuro": 0.3,
+  "guindaste": {"dx": 0, "dy": -100, "ate": 0.7},
+  "queda": {"inicio": 0.2, "duracao": 0.55, "altura": 190},
+  "titulo_em": 0.58, "titulo_some": 1.7, "letra_atraso": 0.0, "tamanho": 16,
+  "tremor": 5.0, "flash": 0.3, "brasas": 18, "onda": 190.0
+ },
+ "padrao": {"titulo": [1.0, 0.88, 0.5], "brasa": [1.0, 0.65, 0.3], "faixa": [0.9, 0.3, 0.3]},
+ "tema": {
+  "floresta": {"titulo": [0.62, 1.0, 0.55], "brasa": [0.55, 1.0, 0.4], "faixa": [0.35, 0.8, 0.35]},
+  "pantano": {"titulo": [0.82, 0.95, 0.4], "brasa": [0.65, 0.9, 0.3], "faixa": [0.5, 0.7, 0.25]},
+  "deserto": {"titulo": [1.0, 0.82, 0.4], "brasa": [1.0, 0.7, 0.25], "faixa": [0.95, 0.6, 0.2]},
+  "gelo": {"titulo": [0.75, 0.93, 1.0], "brasa": [0.9, 0.97, 1.0], "faixa": [0.45, 0.7, 0.95], "neve": true},
+  "reino": {"titulo": [1.0, 0.5, 0.6], "brasa": [0.95, 0.3, 0.5], "faixa": [0.75, 0.2, 0.45]}
+ }
+}
