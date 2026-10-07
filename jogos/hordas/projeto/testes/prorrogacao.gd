@@ -99,7 +99,9 @@ func _ready() -> void:
 	a.jogador.invencivel = 99.0
 	await esperar(0.5)
 	ok(not a.entre_fases and a.saida.seg == 0.0, "dentro do portal mas sem segurar confirmar: não sai")
-	a.bot = true   # o robô segura confirmar sozinho
+	a.jogador.position = a.saida.pos + Vector2(160, 8)   # longe: o robô precisa andar até o portal sozinho
+	a.bot = true   # o robô anda até o portal e segura confirmar sozinho
+	a.jogador.bot = true
 	var n := 0
 	while a.saida.seg <= 0.0 and n < 40:   # (o tempo do jogo pode andar mais devagar que o relógio: câmera lenta da entrada do chefe)
 		await esperar(0.1)
