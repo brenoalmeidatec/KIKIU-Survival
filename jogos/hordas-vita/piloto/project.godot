@@ -1,0 +1,38 @@
+; Piloto do port para PS Vita (Godot 3.5-rc5-vita1, GLES2). Ver ../STATUS.md.
+
+config_version=4
+
+[application]
+
+config/name="KIKIU Vita Piloto"
+run/main_scene="res://main.tscn"
+
+[display]
+
+window/size/width=480
+window/size/height=272
+window/size/test_width=960
+window/size/test_height=544
+window/vsync/use_vsync=true
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
+
+[importer_defaults]
+
+texture={
+"compress/mode": 0,
+"flags/filter": false,
+"flags/mipmaps": false,
+"flags/repeat": 0,
+"process/fix_alpha_border": true
+}
+
+[rendering]
+
+quality/driver/driver_name="GLES2"
+quality/driver/fallback_to_gles2=true
+2d/snapping/use_gpu_pixel_snap=true
+environment/default_clear_color=Color( 0, 0, 0, 1 )
+batching/options/use_batching=true
+vram_compression/import_etc=true
+vram_compression/import_etc2=true

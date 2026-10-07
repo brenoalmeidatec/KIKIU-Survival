@@ -1,0 +1,86 @@
+# Port do KIKIU Survival para PS Vita — status
+
+Projeto paralelo, iniciado em 2026-10-06 pelo Claude do Alisson (PC). Alvo: Vita **desbloqueado** (HENkaku/Ensō +
+VitaShell), distribuído como `.vpk` homebrew. Não existe caminho oficial: a Sony fechou o programa de desenvolvimento e a loja.
+
+## Por que não dá para levar o projeto atual direto
+
+- **Não existe Godot 4 para Vita.** O renderer *Compatibility* do Godot 4 exige GLES3; o Vita só tem GLES2 (drivers
+  não oficiais PVR_PSP2) ou vitaGL. O único port vivo é o [godot-vita](https://github.com/SonicMastr/godot-vita) do
+  SonicMastr, base **Godot 3**.
+- Portanto o port é um **backport para Godot 3** com adaptação ao hardware: CPU Cortex-A9 444 MHz, 512 MB RAM,
+  128 MB VRAM, tela 960×544.
+- O que pesa no backport (medido em `jogos/hordas/projeto`, 95 scripts / ~19,4 mil linhas): 217 `await`, 106 lambdas,
+  25 cenas `.tscn` formato 3 (o 3.x não lê), online com `@rpc`/ENet, e o shader `escuridao.gd` (usa `uniform vec4 luzes[16]`,
+  arrays `const` e `hint_screen_texture` — nada disso existe no GLES2 do 3.x).
+
+## O piloto (`piloto/`)
+
+Antes de converter 19 mil linhas, medir no aparelho se o jogo cabe no Vita. O piloto é um projeto Godot 3 pequeno com
+**sprites reais do jogo** (10 inimigos, o João, o chão) e as técnicas que o port vai usar:
+
+- **Horda orientada a dados** (`horda.gd`): nenhum nó por inimigo; arrays paralelos e um único `_draw`.
+- **Proteções de desempenho**: lógica completa só perto da tela; longe, 1 quadro a cada `lod_longe` e sem separação;
+  separação por grade espacial com teto de 6 vizinhos, recalculada 1 quadro em 3; desenho só do que está na tela, com
+  teto `max_desenho`; ordem por Y com baldes (linear, sem `sort_custom`); quem se perde longe renasce no anel em volta.
+- **Atlas único** montado na carga (corpos + sombra + sangue): o batching do GLES2 junta tudo. No PC, 300 inimigos =
+  ~78 draw calls com atlas contra ~195 sem.
+- **Luz compatível com GLES2** (`luz.gd`), dois jeitos: BUFFER (viewport de 1/4 da área, gradientes somados, multiplica a
+  cena; aguenta 24 luzes) e SHADER (`escuridao.shader`, 8 luzes em uniforms escalares). Nenhum usa `Light2D` (multi-pass
+  no GLES2) nem lê a tela.
+- **480×272** = metade exata de 960×544 → escala 2× inteira (o 3.5 não tem stretch inteiro; 640×360 fica 1,5× torto)
+  e 1/4 do fill-rate da tela nativa. A rampa também mede 640×360 para comparar.
+- **Governador** no modo livre: mira 30 fps; abaixo de 29 corta `max_desenho` e aumenta o LOD; acima de 50 devolve.
+- **Sombras**: blob (elipse) por inimigo, no mesmo lote do atlas.
+
+Folha de inimigo do jogo: 3 colunas × N linhas (vistas: 1 ou 5). **A 3ª coluna é a silhueta branca do flash de dano**;
+o andar tem só 2 quadros.
+
+### Rampa automática
+
+Ao abrir, o piloto roda sozinho 22 passos (~2 min): N = 50/100/200/300/450/600 × luz SEM/BUFFER/SHADER, mais 4 variantes
+com 300 (sem atlas, sem ordem Y, 640×360 com buffer e com shader). Cada passo: 1,5 s de aquecimento + 4 s medindo.
+No fim mostra a tabela na tela e grava o CSV em `ux0:data/kikiu_piloto.csv` (e em `user://`). Colunas: fps, quadro
+médio/pior (ms), lógica e desenho da horda (ms de CPU), draw calls 2D, inimigos perto/desenhados, memória.
+
+No PC (só para ver se roda e o visual; o fps do PC não diz nada do Vita):
+`Godot_v3.5-rc5-vita.exe --path piloto --bench-rapido` (rampa curta, imprime o CSV, salva fotos dos passos com 300).
+
+### Controles (modo livre, depois da rampa)
+
+Analógico: mover · D-pad ↑/↓: ±50 inimigos · △: modo de luz · □: atlas · ○: ordem Y · L: 480×272↔640×360 ·
+R: governador · Start: refaz a rampa. O HUD mostra o índice do último botão (confere o mapa do Vita no aparelho:
+pelo código do fork, Cross=0, Circle=1, Square=2, Triangle=3, L=6, R=7, Select=10, Start=11, D-pad=12–15).
+
+## Ferramentas (fora do Git)
+
+- Editor: `Godot_v3.5-rc5-vita.exe` (70 178 304 bytes) e template `vita_template_3.5.rc5.tpz` (18 561 647 bytes) do
+  release [3.5-rc5-vita1](https://github.com/SonicMastr/godot-vita/releases/tag/3.5-rc5-vita1).
+- No PC do Alisson: `E:\Dev\KIKIU-Vita\ferramentas\`, em modo autocontido (`._sc_` ao lado do exe; o template fica
+  extraído em `editor_data/templates/3.5.rc5/` com `version.txt` e `vita_release.zip`).
+- Exportar: `GODOT_VITA=<caminho do exe> ./exportar.sh` → `build/kikiu_piloto.vpk`. Pegadinhas que o script resolve:
+  o exportador ignora o caminho pedido e grava `<título>.vpk` no diretório atual (que o `--path` troca para o projeto);
+  o projeto precisa de `vram_compression/import_etc=true` e `import_etc2=true`, senão dá "configuration errors" sem
+  detalhe; o LiveArea (`piloto/vita/`, PNG 8 bits com paleta) é obrigatório porque o `template.xml` aponta para
+  `bg.png`/`startup.png`.
+- Fase 2 possível: a branch `3.x` do fork virou Godot **3.7-dev com vitaGL** (CI até 2026-03, artefatos expirados).
+  Só vale compilar (VitaSDK no WSL) se o rc5 ficar no limite. vitaGL exige o `libshacccg.suprx` extraído no Vita.
+
+## Protocolo de teste no Vita
+
+1. Copiar `build/kikiu_piloto.vpk` para o Vita (VitaShell: USB ou FTP com Select) e instalar.
+2. Abrir "KIKIU Piloto" e **não tocar em nada** por ~2 min, até a tabela aparecer.
+3. Mandar uma foto da tabela **ou** o arquivo `ux0:data/kikiu_piloto.csv`. Se travar ou fechar, anotar em que passo
+   estava (o HUD mostra "RAMPA passo N/22").
+
+## Critério de decisão
+
+- **Segue para o backport** se, em 480×272 com luz BUFFER ou SHADER, 300 inimigos ficarem ≥ 30 fps.
+- **Fase 2 (vitaGL / 3.7)** se ficar entre 20 e 30 fps.
+- **Propor abandonar** se 100 inimigos não segurarem 30 fps.
+
+## Próximo
+
+- [ ] Resultado do piloto no Vita (Alisson).
+- [ ] Se seguir: plano do backport por sistema (horda e combate primeiro, depois HUD/cartas/loja, online por último ou
+      fora da v1), conversão das cenas, troca do `escuridao.gd` pela luz BUFFER.
