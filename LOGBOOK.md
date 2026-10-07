@@ -644,3 +644,9 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 
 **Pontos fracos:** crossfade e rede online (2 instâncias) não foram conferidos de ouvido/na prática: só por teste de estado; a prova no cliente online vale por tempo perto do santuário.
 **Próximo:** #72 (elementos mágicos como requisito do selado); balancear cartas de comportamento jogando.
+
+## 2026-10-06 · Claude do Alisson (PC) · integração: #72 marco 2 + #63 (conjuntos, objetivos, santuários, cartas de comportamento, crossfade)
+- Três trabalhos juntos num PR só (agentes em worktrees isoladas, por cima da `main` com o combate Dimraeth do #85). O único conflito foi no `armas.gd`: ficaram as duas funções novas das cartas de comportamento (`ao_rolar`, `_pulso`), a assinatura nova `golpe_corpo(dir)` do #85, e o rastro de fogo antes da meia-lua do chicote.
+- 29 cenas de teste, todas com falhas=0; partida com robô sem SCRIPT ERROR.
+- **Atenção:** o ROLAMENTO deu 1 falha numa rodada na `main` (logo depois do #85) e 0 em 7 rodadas aqui. Pode ser instável; se voltar a falhar, ver a primeira linha `FALHOU:`.
+- **Próximo:** #72 marcos 3 e 4 (Preparo com mochila, comida, consumíveis e amuleto, e o baú pessoal).
