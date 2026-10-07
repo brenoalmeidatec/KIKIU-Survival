@@ -3,7 +3,7 @@
 Roda (Blender 4.5 LTS):
     blender -b -P deserto.py               # todos
     blender -b -P deserto.py -- mumia      # só um
-Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (3 colunas x 5 vistas, veja monstros.py) e proj_<nome>.png.
+Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (N+1 colunas x 5 vistas: ciclo de andar + branco, veja monstros.py) e proj_<nome>.png.
 Clima (#68): sol que não se põe, caravanas mortas e tumbas abertas. O chão é CLARO (areia), ao contrário da floresta e do
 pântano: os bichos são escuros ou de sombra forte (casco azul-faiança quase preto, quitina negra, linho com sombra marrom)
 e os projéteis fogem da cor da areia (azul, sol negro).

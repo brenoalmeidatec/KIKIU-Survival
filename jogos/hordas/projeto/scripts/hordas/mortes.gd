@@ -81,7 +81,7 @@ static func registro(v, causa: String, ef: String, dur_mult := 1.0) -> Dictionar
 	var sd: int = v.id * 7919 + 13
 	var dir: Vector2 = v.dir_ult if v.dir_ult.length() > 1.0 else Vector2(-1.0 if _h(sd, 99) < 0.5 else 1.0, -0.15)
 	return {"ef": ef, "causa": causa, "pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.espelho, "y0": v.tam.y * v.vista,
-		"quadro": v.id % 2, "t": 0.0, "dur": float(cfg.get("dur", 0.5)) * dur_mult, "dir": dir.normalized(), "seed": sd,
+		"quadro": v.qd, "t": 0.0, "dur": float(cfg.get("dur", 0.5)) * dur_mult, "dir": dir.normalized(), "seed": sd,
 		"cor": cor, "sangue": sangue, "part": int(cfg.get("part", 0)), "tipo": v.tipo}
 
 

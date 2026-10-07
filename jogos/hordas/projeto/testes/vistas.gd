@@ -47,7 +47,7 @@ func _ready() -> void:
 		var w := int(v.tam.x)
 		var h := int(v.tam.y)
 		for fila in 5:
-			for col in 3:
+			for col in v.cols:
 				var n := 0
 				for y in range(0, h, 2):
 					for x in range(0, w, 2):

@@ -31,13 +31,14 @@ func nova() -> Node:
 func _ready() -> void:
 	var inim: Dictionary = Dados.json("inimigos")
 	var todos: Array = COMUNS + [ELITE, CHEFE]
-	# --- cada inimigo novo existe nos dados, com sprite de 3 quadros carregável e conjunto horror
+	# --- cada inimigo novo existe nos dados, com sprite de colunas do ciclo de andar + branco carregável e conjunto horror
 	for id in todos:
 		var d: Dictionary = inim.get(id, {})
 		ok(not d.is_empty(), "%s existe em inimigos.json" % id)
 		ok(str(d.get("conjunto", "")) == "horror", "%s é do conjunto horror" % id)
 		var tex: Texture2D = Dados.tex(str(d.get("sprite", "")))
-		ok(tex != null and tex.get_width() % 3 == 0 and tex.get_width() >= 3 * 16, "%s: sprite carrega e tem 3 quadros" % id)
+		var cols := preload("res://scripts/hordas/animacao_monstros.gd").colunas(str(d.get("sprite", "")))
+		ok(tex != null and tex.get_width() % cols == 0 and tex.get_width() >= cols * 16, "%s: sprite carrega e tem %d colunas (andar + branco)" % [id, cols])
 		ok(str(d.get("nome", "")) != "", "%s tem nome" % id)
 		if d.get("tiro") is Dictionary:
 			ok(Dados.tex(str(d.tiro.get("sprite", ""))) != null, "%s: sprite do tiro carrega" % id)

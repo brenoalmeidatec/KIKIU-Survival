@@ -3,7 +3,7 @@
 Roda (Blender 4.5 LTS):
     blender -b -P pantano.py               # todos
     blender -b -P pantano.py -- afogado    # só um
-Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (3 colunas x 5 vistas, veja monstros.py) e proj_<nome>.png.
+Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (N+1 colunas x 5 vistas: ciclo de andar + branco, veja monstros.py) e proj_<nome>.png.
 Clima (#68): lama, névoa verde e afogados que não ficaram no fundo. Tons de lodo, pele inchada azulada, brilho de veneno.
 """
 import math
@@ -87,12 +87,12 @@ def sapo_podre(m):
         p[nome] = j
 
     def pose(fase, q):
-        pulo = fase > 1.0   # quadro B (fase pi) é o pulo: a calibração do quadro mede as duas fases
-        corpo.location = (0, 0, 0.18 if pulo else 0.0)
+        pulo = 0.5 - 0.5 * math.cos(fase)   # 0 agachado (fase 0), 1 no ar (fase pi): o pulo sobe e desce suave pelo ciclo todo
+        corpo.location = (0, 0, 0.18 * pulo)
         for nome in ("tras_e", "tras_d"):
-            p[nome].rotation_euler = (-0.7 if pulo else 0.0, 0, 0)
+            p[nome].rotation_euler = (-0.7 * pulo, 0, 0)
         for nome in ("frente_e", "frente_d"):
-            p[nome].rotation_euler = (0.5 if pulo else -0.1, 0, 0)
+            p[nome].rotation_euler = (0.5 * pulo - 0.1 * (1.0 - pulo), 0, 0)
     return raiz, corpo, p, pose
 
 
@@ -256,11 +256,11 @@ def rainha_sapo(m):
         p[nome] = j
 
     def pose(fase, q):
-        pulo = fase > 1.0   # quadro B (fase pi) é o pulo: a calibração do quadro mede as duas fases
-        corpo.location = (0, 0, 0.14 if pulo else 0.0)
-        corpo.scale = (1.0, 1.0, 1.06 if pulo else 0.96)   # papo inflando
+        pulo = 0.5 - 0.5 * math.cos(fase)   # 0 agachado (fase 0), 1 no ar (fase pi): o pulo sobe e desce suave pelo ciclo todo
+        corpo.location = (0, 0, 0.14 * pulo)
+        corpo.scale = (1.0, 1.0, 0.96 + 0.10 * pulo)   # papo inflando
         for nome in ("tras_e", "tras_d"):
-            p[nome].rotation_euler = (-0.5 if pulo else 0.0, 0, 0)
+            p[nome].rotation_euler = (-0.5 * pulo, 0, 0)
     return raiz, corpo, p, pose
 
 

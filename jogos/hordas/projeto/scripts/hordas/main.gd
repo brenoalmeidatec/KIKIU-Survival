@@ -9,6 +9,7 @@ extends Node
 
 const Arena := preload("res://scripts/hordas/arena.gd")
 const Perf := preload("res://scripts/hordas/perf.gd")
+const AnimMonstros := preload("res://scripts/hordas/animacao_monstros.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
 const W := 640.0
@@ -990,11 +991,12 @@ func _fundo() -> void:
 		var tex := Dados.tex(str(Dados.json("inimigos").get(_fundo_tipos[(i * 7) % _fundo_tipos.size()], {}).get("sprite", "")))
 		if tex == null:
 			continue
-		var w := tex.get_width() / 3.0
+		var cols := AnimMonstros.colunas(str(Dados.json("inimigos").get(_fundo_tipos[(i * 7) % _fundo_tipos.size()], {}).get("sprite", "")))
+		var w := tex.get_width() / float(cols)
 		var h := tex.get_height() / 5.0
 		var x := fmod(i * 97.0 + _t * (20 + i * 3), W + 120) - 60
 		var y := 30 + fmod(i * 53.0, H - 80) + sin(_t * 2 + i) * 6
-		_tela.draw_texture_rect_region(tex, Rect2(x, y, w, h), Rect2(w * (int(_t * 4 + i) % 2), h * 2, w, h), Color(1, 1, 1, 0.25))
+		_tela.draw_texture_rect_region(tex, Rect2(x, y, w, h), Rect2(w * (int(_t * 2.0 * (cols - 1) + i) % (cols - 1)), h * 2, w, h), Color(1, 1, 1, 0.25))
 
 
 func _desenhar() -> void:

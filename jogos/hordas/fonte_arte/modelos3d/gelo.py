@@ -3,7 +3,7 @@
 Roda (Blender 4.5 LTS):
     blender -b -P gelo.py                # todos
     blender -b -P gelo.py -- urso_gelo   # só um
-Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (3 colunas x 5 vistas, veja monstros.py) e proj_<nome>.png.
+Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (N+1 colunas x 5 vistas: ciclo de andar + branco, veja monstros.py) e proj_<nome>.png.
 Clima (#68): vento que corta, gelo que não derrete e gigantes enterrados. O chão é CLARO (neve), como no deserto: os
 corpos são escuros (pele azul-noite, aço, pelo pardo, pedra) e o gelo claro fica nos detalhes (chifres, barba, placas).
 """
