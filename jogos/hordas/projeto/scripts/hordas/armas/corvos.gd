@@ -52,8 +52,8 @@ static func pintar(w, e: Dictionary) -> void:
 	# corvo de pixel: corpo de 3 px e duas asas que batem; a evolução tem olho de brasa
 	# corpo cinza-azulado e borda de asa clara: corvo preto sumia nos chãos escuros (floresta, pântano, reino)
 	var p: Vector2 = e.pos.floor()
-	var asa: float = sin(e.fase) * 3.0 * e.esc
-	var envergadura: float = 6.0 * e.esc
+	var asa: float = sin(e.fase) * 3.0 * maxf(e.esc, 0.85)   # corvo pequeno do nível 1 ainda tem que dar pra ver
+	var envergadura: float = 6.0 * maxf(e.esc, 0.85)
 	var corpo := Color(0.22, 0.2, 0.3)
 	var borda := Color(0.6, 0.3, 0.7) if e.negro else Color(0.62, 0.62, 0.75)
 	var t: int = e.get("tier", 0)

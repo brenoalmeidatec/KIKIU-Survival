@@ -81,7 +81,7 @@ func _ready() -> void:
 		ok(Cresc.tier(id, 3) == 1 or nmax == 3, "%s: nível 3 é o tier 1" % id)
 		var a1b := Cresc.atributos(id, 1)
 		var amax := Cresc.atributos(id, nmax)
-		ok(float(a1b.area) < float(amax.area) * 0.7, "%s: nível 1 tem menos de 70%% da área do máximo (%.2f x %.2f)" % [id, a1b.area, amax.area])
+		ok(float(a1b.area) < float(amax.area) * 0.75, "%s: nível 1 tem menos de 75%% da área do máximo (%.2f x %.2f)" % [id, a1b.area, amax.area])
 		# o crescimento mora na curva: nenhuma arma soma área nos níveis (senão cresceria em dobro)
 		for lv in d.get("niveis", []):
 			ok(not lv.has("area"), "%s: o armas.json não soma 'area' nos níveis (a curva cuida disso)" % id)

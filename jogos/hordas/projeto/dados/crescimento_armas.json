@@ -1,9 +1,9 @@
 {
  "_ajuda": "Curva de crescimento das armas (o jogo fica envolvente: arma fraca e pequena no começo, grande e cheia de efeitos no fim). Vale pra TODA arma, de qualquer tipo e de qualquer herói. progresso p = (nivel - 1) / (nivel_max - 1), de 0 (nível 1) a 1 (nível máximo), então armas com 6 ou 7 níveis crescem na mesma proporção. 'area' multiplica o tamanho/raio/alcance/largura (tudo que o armas.gd multiplica por s.area) e 'dano' multiplica o dano, os dois POR CIMA dos bônus de cada nível do armas.json. Cada curva é uma lista de pontos [p, multiplicador] com interpolação linear. 'evoluida' vale pras armas com 'evolucao': true (que ficam no nível 1 mas já são o topo). Uma arma pode ter o próprio bloco 'crescimento' no armas.json com as mesmas chaves ('area', 'dano', 'evoluida') pra trocar só o que quiser; 'desligado': true tira a curva dela. 'tiers' = faixa visual: 'niveis' diz a partir de qual nível da arma entra o tier 1, 2, ...; o nível máximo é sempre o tier 3 e a evolução o tier 4. 'efeitos' = o que cada tier acrescenta (índice = tier): faiscas (faíscas por golpe), grossura (multiplica a espessura do traço), halo (força do brilho aditivo), tremor (multiplica o tremor e a congelada de tela num acerto; 1 = como era), brilho (mistura da cor com branco), imagens (cópias fantasma atrás de projétil/lâmina), brasas (pontinhos de brasa em volta, desenhados por tempo, sem estado), arco_extra (segundo arco/anel por cima). Tudo isso é barato: ao todo no máximo ~2 dezenas de pixels extras por ataque e respeita o perfil gráfico do jogo.",
- "area": [[0.0, 0.7], [0.5, 0.97], [1.0, 1.22]],
- "dano": [[0.0, 0.88], [0.5, 1.0], [1.0, 1.08]],
+ "area": [[0.0, 0.7], [0.5, 1.0], [1.0, 1.25]],
+ "dano": [[0.0, 0.88], [0.5, 1.02], [1.0, 1.12]],
  "xp_inicial": {"ate": 10, "fator": 0.5},
- "evoluida": {"area": 1.1, "dano": 1.1},
+ "evoluida": {"area": 1.12, "dano": 1.12},
  "tiers": {"niveis": [3, 5]},
  "efeitos": [
   {"nome": "fraca",   "faiscas": 0, "grossura": 1.0,  "halo": 0.0, "tremor": 0.7,  "brilho": 0.0,  "imagens": 0, "brasas": 0, "arco_extra": false},
