@@ -432,7 +432,7 @@ static func flags_de(el_vis: int) -> int:
 ## Tinta do inimigo conforme o estado (prioridade: congelado, fogo, veneno, raio, gelo), ou Color.WHITE se não tem.
 static func tinta(bits: int, t: float, id: int) -> Color:
 	if (bits & BIT_CONG) != 0:
-		return Color(0.5, 0.8, 1.0)
+		return Color(0.62, 0.88, 1.0, 0.88)
 	if (bits & 1) != 0:
 		return Color(1.0, 0.72, 0.5) if int(t * 9.0 + id) % 2 == 0 else Color(1.0, 0.85, 0.65)
 	if (bits & 8) != 0:
@@ -485,14 +485,18 @@ func _desenhar_v(v, cliente: bool, rec, tt: float, teto: int) -> void:
 	var s: Vector2 = v.sz
 	var c: Vector2 = v.pos + Vector2(0, -s.y * 0.1)
 	var b: int = v.el_vis
-	if (b & BIT_CONG) != 0:   # bloco de gelo: véu azul, borda clara e um brilho que atravessa
-		var r: Rect2 = v.dr
-		if r.size.x != 0.0:
-			var rr := Rect2(r.position, Vector2(absf(r.size.x), r.size.y))
-			draw_rect(rr, Color(0.6, 0.9, 1.0, 0.28))
-			draw_rect(rr, Color(0.85, 0.97, 1.0, 0.9), false, 1.0)
-			var gx := fposmod(tt * 40.0 + v.id * 7.0, rr.size.x + 12.0) - 6.0
-			draw_line(rr.position + Vector2(gx, rr.size.y), rr.position + Vector2(gx + 8.0, 0.0), Color(1, 1, 1, 0.5), 1.0)
+	if (b & BIT_CONG) != 0:   # gelo que segue a forma: o próprio sprite já sai tingido (tinta); aqui só brilhos e cristais nos pés
+		var fy: float = v.pos.y + s.y * 0.38
+		for k in 3:   # brilhos brancos que piscam sobre o corpo
+			if int(tt * 6.0 + k * 2 + v.id) % 3 == 0:
+				continue
+			var gp: Vector2 = c + Vector2((_h(v.id, k + 20) - 0.5) * s.x * 0.6, (_h(v.id, k + 30) - 0.5) * s.y * 0.5)
+			draw_rect(Rect2(roundf(gp.x) - 1, roundf(gp.y), 3, 1), Color(1, 1, 1, 0.95))
+			draw_rect(Rect2(roundf(gp.x), roundf(gp.y) - 1, 1, 3), Color(1, 1, 1, 0.95))
+		for k in 4:   # estilhaços curtos espetados no chão
+			var sx: float = v.pos.x + (_h(v.id, k + 40) - 0.5) * s.x * 0.8
+			var alt: float = 3.0 + _h(v.id, k + 50) * 4.0
+			draw_colored_polygon(PackedVector2Array([Vector2(roundf(sx) - 2, fy), Vector2(roundf(sx) + 2, fy), Vector2(roundf(sx) + (k - 1.5), fy - alt)]), Color(0.8, 0.95, 1.0, 0.9))
 	if _desenhadas >= teto:
 		_pips(v, cliente, rec)
 		return
