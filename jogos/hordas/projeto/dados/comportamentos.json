@@ -1,0 +1,19 @@
+{
+ "_ajuda": "Cartas de COMPORTAMENTO (#63, estilo 20 Minutes Till Dawn): cartas raras que mudam COMO uma arma funciona, em vez de só subir números. Cada uma só aparece para uma arma cujo 'tipo' (armas.json) esteja em 'tipos' e que já esteja no nivel_min (ou acima); a mesma arma não ganha o mesmo comportamento duas vezes nem dois que se excluem ('exclui'). 'param' é lido pelos módulos de arma (scripts/hordas/armas.gd: _atirar/_projeteis, _chicotes, _aura, _derramar/_pocas, _orbita) como modificador genérico: quem tem o comportamento no s.comp aplica o efeito. O peso é baixo de propósito (raras): peso_carta em _config. nome/desc aparecem na carta, que mostra o rótulo COMPORTAMENTO, o nome da arma e uma descrição que começa com 'Muda ...' (até ~60 caracteres, senão a carta corta).",
+ "_config": {"peso_carta": 2.5, "preco_equilibrio": "efeitos cobrem dano extra moderado: o ganho vem do jeito de acertar, não de multiplicar o dano"},
+ "lista": {
+  "ricochete": {"nome": "Ricochete", "desc": "Muda o tiro: ao acertar, pula para outro vírus (até 2x).",
+   "tipos": ["projetil"], "nivel_min": 3, "exclui": ["vai_e_volta"], "param": {"ricochetes": 2, "alcance": 170, "dano_mult": 0.85}},
+  "vai_e_volta": {"nome": "Vai e Volta", "desc": "Muda o tiro: atravessa mais um e volta pra você.",
+   "tipos": ["projetil"], "nivel_min": 3, "exclui": ["ricochete"], "param": {"perfura_extra": 1, "dano_volta": 0.7}},
+  "rastro_fogo": {"nome": "Rastro de Fogo", "desc": "Muda o golpe: deixa poças de fogo no chão.",
+   "tipos": ["chicote"], "nivel_min": 3, "exclui": [], "param": {"dano_pct": 0.3, "duracao": 2.5, "raio": 24, "tique": 0.5, "max": 10,
+    "rampa": ["1a0805", "3a1408", "7a2c0c", "c45a14", "f0921e", "ffd060"]}},
+  "pulso": {"nome": "Aura Pulsante", "desc": "Muda a aura: a cada 3 estalos e ao rolar, solta um pulso forte.",
+   "tipos": ["aura"], "nivel_min": 3, "exclui": [], "param": {"cada": 3, "area_mult": 1.8, "dano_mult": 1.6, "recarga_rolar": 1.2}},
+  "explosao_final": {"nome": "Poça Instável", "desc": "Muda a poça: ao sumir, ela explode em volta.",
+   "tipos": ["poca"], "nivel_min": 3, "exclui": [], "param": {"raio_mult": 1.5, "dano_mult": 4.0}},
+  "respiracao": {"nome": "Giro em Espiral", "desc": "Muda a órbita: abre e fecha em espiral, cobrindo mais chão.",
+   "tipos": ["orbita"], "nivel_min": 3, "exclui": [], "param": {"amplitude": 0.45, "freq": 2.2}}
+ }
+}

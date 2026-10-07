@@ -609,7 +609,7 @@ func _resolver_no(tipo: String, seq: int) -> void:
 		"santuario":
 			Som.tocar("plim", 0.05, 1.2)
 			anunciar("Santuário raro!", Color(1, 0.7, 0.25))
-			cartas.escolher("Santuário raro", Descobertas.oferta_dadivas(Sorte.criar("mapa_santuario", andar), str(c.get("raridade_min", "epica"))))
+			cartas.escolher("Santuário raro", Descobertas.oferta_dadivas(Sorte.criar("mapa_santuario", andar), str(c.get("raridade_min", "epica")), _ids_dadivas()))
 	await _esperar_cartas()
 	if acabou or seq != _no_seq or not entre_fases:
 		return
@@ -630,9 +630,9 @@ func _evento_no(c: Dictionary, andar: int) -> void:
 			abrir_bau()
 		"sombria":
 			jogador.hp = maxf(1.0, jogador.hp - stat("vida_max") * float(v.get("custo_vida", 0.25)))
-			cartas.escolher(str(v.get("titulo", "")), Descobertas.oferta_dadivas(rng, str(v.get("raridade_min", "rara"))))
+			cartas.escolher(str(v.get("titulo", "")), Descobertas.oferta_dadivas(rng, str(v.get("raridade_min", "rara")), _ids_dadivas()))
 		_:
-			cartas.escolher(str(v.get("titulo", "")), Descobertas.oferta_dadivas(rng, ""))
+			cartas.escolher(str(v.get("titulo", "")), Descobertas.oferta_dadivas(rng, "", _ids_dadivas()))
 
 
 ## Música da fase: "musica" da fase em corrida.json (ex.: horror), senão a de fase.json; no chefe, "musica_chefe" ou "chefe".
@@ -791,6 +791,9 @@ func aplicar(c: Dictionary) -> void:
 			equipamentos[str(Dados.item(c.id).get("slot", c.id))] = c.id
 			_recalcular()
 			atualizar_visual()
+		"comportamento":
+			armas.dar_comportamento(str(c.arma), str(c.id))
+			mensagem("%s: %s" % [str(c.get("arma_nome", c.arma)), str(c.nome)], Color(1.0, 0.65, 0.3))
 		"dadiva":
 			descobertas.aplicar_dadiva(c)
 
@@ -858,6 +861,11 @@ func sortear_cartas(rng: RandomNumberGenerator = null) -> Array:   # com rng (ba
 			if not Construcao.arma_permitida(id, heroi_id, ids) or _tem_evolucao_de(id) or banidos.has(id):
 				continue
 			cand.append([float(armas_d[id].get("peso_carta", 6.0)), _carta("arma", id, 1)])
+	# #63: cartas raras que mudam o COMPORTAMENTO de uma arma que já está no nível mínimo (comportamentos.json)
+	var peso_comp := float(Dados.json("comportamentos").get("_config", {}).get("peso_carta", 2.5))
+	for a in armas.lista:
+		for cid in armas.comportamentos_disponiveis(a):
+			cand.append([peso_comp, _carta_comp(a, str(cid))])
 	if passivos.size() < MAX_PASSIVOS:
 		for id in pas_d:
 			if id.begins_with("_") or passivos.has(id) or banidos.has(id):
@@ -889,6 +897,11 @@ func sortear_cartas(rng: RandomNumberGenerator = null) -> Array:   # com rng (ba
 	return res
 
 
+## Ids das dádivas que o jogador já tem (a dádiva em dupla só aparece com as duas exigidas).
+func _ids_dadivas() -> Array:
+	return descobertas.dadivas.map(func(x): return x.id)
+
+
 func _rf(rng: RandomNumberGenerator) -> float:
 	return rng.randf() if rng else randf()
 
@@ -912,6 +925,14 @@ func _carta(tipo: String, id: String, nv: int) -> Dictionary:
 		var ids: Array = armas.lista.map(func(a): return a.id)
 		c["exclusiva"] = "%d/%d" % [Construcao.n_exclusivas(ids, heroi_id) + (1 if nv == 1 else 0), Construcao.limite_exclusivas()]
 	return c
+
+
+## Carta de comportamento: muda COMO a arma funciona (dados/comportamentos.json); o rótulo da carta diz isso.
+func _carta_comp(a: Dictionary, cid: String) -> Dictionary:
+	var def: Dictionary = armas.comp_def(cid)
+	var d := Dados.item(a.id)
+	return {"tipo": "comportamento", "id": cid, "arma": str(a.id), "arma_nome": str(d.get("nome", a.id)), "nome": str(def.get("nome", cid)),
+		"desc": str(def.get("desc", "")), "icone": str(d.get("icone", a.id)), "nivel": 0, "max": 1, "cmp": []}
 
 
 func _texto_nivel(n: Dictionary) -> String:

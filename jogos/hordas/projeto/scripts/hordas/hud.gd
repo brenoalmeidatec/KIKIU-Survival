@@ -385,9 +385,10 @@ func _icones_build() -> void:
 		_icone(Vector2(x, 53), str(Dados.item(eid).get("icone", eid)), 0, false)
 		x += 20
 	x = 6.0
-	var defs: Dictionary = Dados.json("dadivas").get("lista", {})
-	for dd in arena.descobertas.dadivas:   # dádivas dos santuários: moldura na cor da raridade
-		var cor: Array = Dados.json("dadivas").get("_config", {}).get("raridades", {}).get(dd.raridade, {}).get("cor", [1, 1, 1])
+	var defs: Dictionary = Dados.json("dadivas").get("lista", {}).merged(Dados.json("dadivas").get("duplas", {}))
+	for dd in arena.descobertas.dadivas:   # dádivas dos santuários: moldura na cor da raridade (dupla: cor própria)
+		var cfg_d: Dictionary = Dados.json("dadivas").get("_config", {})
+		var cor: Array = cfg_d.get("dupla", {}).get("cor", [1, 1, 1]) if dd.raridade == "dupla" else cfg_d.get("raridades", {}).get(dd.raridade, {}).get("cor", [1, 1, 1])
 		_tela.draw_rect(Rect2(x - 1, 72, 18, 18), Color(Interface.cor_raridade(str(dd.raridade), Color(cor[0], cor[1], cor[2])), 0.9))
 		var t := Dados.icone(str(defs.get(dd.id, {}).get("icone", "")))
 		if t:

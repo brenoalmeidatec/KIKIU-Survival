@@ -604,3 +604,17 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 ## 2026-10-06 · Claude do Alisson (PC) · #84 conferido e mergeado
 - Peguei do notebook o PR #84 (luz que escurece andar a andar, #68 marco 3), que estava em rascunho. No PC os 23 testes deram falhas=0 e a partida com robô rodou sem SCRIPT ERROR. Mergeado.
 - O remoto deste clone agora aponta pra `KIKIU-Survival` (o rename do #48 já valeu).
+
+## 2026-10-06 · Claude do Alisson (PC) · #63: santuários, cartas de comportamento e crossfade: feito
+
+**Feito (worktree agent-ad7784d839d628498, sem push/PR):**
+- **Santuário da Prova** (`descobertas.json` > `santuarios.prova`): ativar faz nascer um mini-chefe (`trojan`, vida x2.5) + escoltas; vencer todos em 50 s dá dádiva épica+ e um baú; estourou o tempo, perdeu. Online o anfitrião cria os vírus.
+- **Santuário Selado** ("achar outro elemento antes"): só libera a dádiva com o pré-requisito da fase cumprido: `piras` (N piras acesas) ou `reliquia` (pegar a Relíquia Antiga, que nasce em outro ponto). Sorteado pela semente (`prova_por_fase`, `selado_por_fase`). **Pendente:** elementos mágicos como pré-requisito chegam com a #72; basta somar uma entrada em `selado.requisitos` e tratar o tipo em `descobertas.gd`.
+- **Dádivas em dupla** (`dadivas.json` > `duplas`, com `requer`): com as 2 dádivas exigidas já no jogador, a oferta ganha uma 4ª carta "DUPLA" (chance 0.8, efeito fixo mais forte). 7 duplas.
+- **Cartas de comportamento** (`dados/comportamentos.json`, 6 cartas: ricochete, vai e volta, rastro de fogo, aura pulsante, poça instável, giro em espiral): raras, a partir do nível 3 da arma, lidas como modificadores genéricos em `armas.gd` (`s.comp`); carta com rótulo COMPORTAMENTO e descrição "Muda ...".
+- **Música:** crossfade de 1,5 s em `Som.musica` (potência igual, respeita volume das Opções). Faixa do duelo intocada.
+- Testes novos: `testes/santuarios2.tscn` (SANT2) e `testes/cartas_comp.tscn` (CARTCOMP). Prints de teste: `--print_tela=santuario2|dupla|comp`.
+- Todas as 25 cenas com falhas=0; partida bot hazaki semente 7 com 0 SCRIPT ERROR.
+
+**Pontos fracos:** crossfade e rede online (2 instâncias) não foram conferidos de ouvido/na prática: só por teste de estado; a prova no cliente online vale por tempo perto do santuário.
+**Próximo:** #72 (elementos mágicos como requisito do selado); balancear cartas de comportamento jogando.
