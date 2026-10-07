@@ -61,4 +61,6 @@ A arte sai de **modelos 3D renderizados como pixel art** no Blender 4.5 LTS: ren
 blender -b -P jogos/hordas/fonte_arte/modelos3d/cavaleiro.py
 ```
 
+Os monstros de 5 vistas (`horror.py`, `floresta.py`, `pantano.py`, `deserto.py`, `gelo.py`, `reino.py`) saem com um ciclo de andar de 6 quadros mais o branco de dano; o jogo anda o ciclo pela distância percorrida. Quadros por folha, inclinação, quique, aperto de golpe e preparo de investida ficam em `projeto/dados/animacao_monstros.json`. Para regerar: `blender -b -P jogos/hordas/fonte_arte/modelos3d/<regiao>.py` (as 6 regiões podem rodar em paralelo; atualiza `dados/quadros_monstros.json`).
+
 Técnicas e referências em [`docs/VISUAL_KIKIU.md`](../../docs/VISUAL_KIKIU.md); o resto da documentação está no [índice de `docs/`](../../docs/README.md).

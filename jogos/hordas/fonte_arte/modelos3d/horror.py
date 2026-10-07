@@ -3,7 +3,7 @@
 Roda (Blender 4.5 LTS):
     blender -b -P horror.py            # todos
     blender -b -P horror.py carnical   # só um (carnical, cavaleiro_oco, espectro, cao_ossos, abominacao, arauto)
-Saída: ../../projeto/assets/gerado/inimigo_<nome>.png e proj_<nome>.png. A folha tem 3 colunas (andar A, andar B, branco
+Saída: ../../projeto/assets/gerado/inimigo_<nome>.png e proj_<nome>.png. A folha tem N+1 colunas (N quadros do ciclo de andar, branco
 de dano) x 5 linhas, uma por VISTA: 0 frente (olhando pra câmera), 1 3/4 frente-direita, 2 perfil direito, 3 3/4 costas-direita,
 4 costas. O lado esquerdo é o espelho das vistas 1-3 (o jogo espelha; "vistas": 5 em dados/inimigos.json). Mesma câmera nas 5
 vistas: escala e pé iguais; o tamanho do quadro cresce se o corpo (ex.: a espada pra frente) não couber.

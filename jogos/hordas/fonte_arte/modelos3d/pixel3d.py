@@ -262,7 +262,7 @@ def material_toon(nome, cor_base, faixas=(0.35, 0.62, 1.0), limites=(0.22, 0.55)
 
 def render_rgba():
     """Renderiza o quadro atual e devolve um array (altura, largura, 4), com a linha 0 em CIMA."""
-    caminho = os.path.join(tempfile.gettempdir(), "pixel3d_quadro.png")
+    caminho = os.path.join(tempfile.gettempdir(), "pixel3d_quadro_%d.png" % os.getpid())
     bpy.context.scene.render.filepath = caminho
     bpy.ops.render.render(write_still=True)
     img = bpy.data.images.load(caminho, check_existing=False)
