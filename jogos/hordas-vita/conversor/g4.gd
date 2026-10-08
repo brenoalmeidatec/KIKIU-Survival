@@ -85,6 +85,39 @@ func is_same(a, b) -> bool:
 	return a == b
 
 
+func nada(_a = null, _b = null) -> void:
+	pass
+
+
+func merged(a: Dictionary, b: Dictionary, sobrescrever = false) -> Dictionary:
+	var r = a.duplicate()
+	for k in b:
+		if sobrescrever or not r.has(k):
+			r[k] = b[k]
+	return r
+
+
+# No Godot 3, get_pixel/set_pixel exigem Image.lock(). lock() de novo numa imagem já travada é inofensivo.
+func px_set(img: Image, x, y, c) -> void:
+	img.lock()
+	img.set_pixel(int(x), int(y), c)
+
+
+func px_setv(img: Image, p, c) -> void:
+	img.lock()
+	img.set_pixel(int(p.x), int(p.y), c)
+
+
+func px_get(img: Image, x, y) -> Color:
+	img.lock()
+	return img.get_pixel(int(x), int(y))
+
+
+func px_getv(img: Image, p) -> Color:
+	img.lock()
+	return img.get_pixel(int(p.x), int(p.y))
+
+
 func centro(r: Rect2) -> Vector2:
 	return r.position + r.size * 0.5
 
@@ -114,6 +147,7 @@ func imagem_de_dados(w, h, mip, fmt, dados) -> Image:
 
 
 func textura(img, flags = 0) -> ImageTexture:
+	img.unlock()
 	var t = ImageTexture.new()
 	t.create_from_image(img, flags)
 	return t
@@ -383,6 +417,28 @@ func texto_contorno_em(ci: CanvasItem, fonte, pos: Vector2, texto, alinh = 0, la
 	var d = max(1, int(contorno / 2))
 	for o in [Vector2(-d, 0), Vector2(d, 0), Vector2(0, -d), Vector2(0, d)]:
 		texto_em(ci, fonte, pos + o, texto, alinh, larg, tam, cor)
+
+
+## draw_multiline_string do Godot 4: (fonte, pos, texto, alinh, largura, tamanho, max_linhas, cor, ...)
+func texto_multilinha_em(ci: CanvasItem, fonte, pos: Vector2, texto, alinh = 0, larg = -1.0, tam = 16, max_l = -1,
+		cor = Color.white, _b = 0, _j = 0, _d = 0, _o = 0) -> void:
+	var f = fonte_tam(fonte, tam)
+	var linhas = []
+	for par in str(texto).split("\n"):
+		var atual = ""
+		for p in par.split(" "):
+			var teste = p if atual == "" else atual + " " + p
+			if larg > 0 and f.get_string_size(teste).x > larg and atual != "":
+				linhas.append(atual)
+				atual = p
+			else:
+				atual = teste
+		linhas.append(atual)
+	var alt = f.get_height()
+	for i in linhas.size():
+		if max_l > 0 and i >= max_l:
+			break
+		texto_em(ci, fonte, pos + Vector2(0, alt * i), linhas[i], alinh, larg, tam, cor)
 
 
 ## font.get_string_size(texto, alinh, largura, tamanho) do Godot 4.

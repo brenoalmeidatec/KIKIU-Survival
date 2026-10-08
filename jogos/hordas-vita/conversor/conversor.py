@@ -123,7 +123,7 @@ TIPOS = {
     "NOTIFICATION_WM_CLOSE_REQUEST": "NOTIFICATION_WM_QUIT_REQUEST",
     "NOTIFICATION_APPLICATION_PAUSED": "NOTIFICATION_APP_PAUSED",
     "NOTIFICATION_APPLICATION_RESUMED": "NOTIFICATION_APP_RESUMED",
-    "ENetMultiplayerPeer": "NetworkedMultiplayerENet", "OfflineMultiplayerPeer": "Reference",
+    "PRESET_FULL_RECT": "PRESET_WIDE", "ENetMultiplayerPeer": "NetworkedMultiplayerENet", "OfflineMultiplayerPeer": "Reference",
 }
 
 FUNCOES = {  # nome( -> nome(
@@ -143,8 +143,14 @@ FUNCOES = {  # nome( -> nome(
     "intersect_polygons": "intersect_polygons_2d", "convex_hull": "convex_hull_2d",
 }
 
+SO_GLOBAIS = {"randf_range", "deg_to_rad", "rad_to_deg", "snapped", "snappedf", "lerpf", "remap", "clampi", "clampf",
+              "maxi", "maxf", "mini", "minf", "absi", "absf", "signi", "signf", "roundf", "floorf", "ceilf", "sqrtf",
+              "fmodf", "linear_to_db", "db_to_linear"}
+
 G4_FUNCOES = ["roundi", "floori", "ceili", "randi_range", "pingpong", "posmod_g4", "angle_difference", "is_same",
               "is_finite", "is_inf_g4"]   # f(x) -> G4.f(x)
+
+AUTOLOADS = []        # preenchido pelo main() com os autoloads do project.godot do Godot 4
 
 COR_CONST = re.compile(r"\bColor\.([A-Z][A-Z_]+)\b")
 
@@ -164,7 +170,10 @@ def renomear_codigo(c, avisos):
             c = re.sub(r"\b%s\b" % k, v, c)
     for k, v in FUNCOES.items():
         if k in c:
-            c = re.sub(r"\b%s\s*\(" % k, v + "(", c)
+            if k in SO_GLOBAIS:
+                c = re.sub(r"(?<![\.\w])%s\s*\(" % k, v + "(", c)
+            else:
+                c = re.sub(r"\b%s\s*\(" % k, v + "(", c)
     for k in G4_FUNCOES:
         c = re.sub(r"(?<![\.\w])%s\s*\(" % k, "G4.%s(" % k, c)
     c = COR_CONST.sub(lambda m: "Color." + m.group(1).lower(), c)
@@ -200,6 +209,14 @@ def renomear_codigo(c, avisos):
     c = re.sub(r"\.multiplayer_peer\b", ".network_peer", c)
     c = re.sub(r"\.path_join\(", ".plus_file(", c)
     c = re.sub(r"\.intersection\(", ".clip(", c)
+    c = re.sub(r"\.remove_at\(", ".remove(", c)
+    c = re.sub(r"\.orthogonal\(\)", ".tangent()", c)
+    c = re.sub(r"^(\s*)([\w\.\[\]]*?)\.?texture_(filter|repeat)\s*=\s*.*$", r"\1pass  # texture_\3 (Godot 4): no 3 o filtro é da textura", c)
+    c = re.sub(r"\.expand_mode\s*=\s*TextureRect\.EXPAND_IGNORE_SIZE", ".expand = true", c)
+    c = re.sub(r"\.expand_mode\s*=\s*TextureRect\.\w+", ".expand = false", c)
+    c = re.sub(r"\.get_image\(\)", ".get_data()", c)
+    c = re.sub(r"\.unicode_at\(", ".ord_at(", c)
+    c = re.sub(r"\.set_pixel\(", ".set_pixel(", c)
     c = re.sub(r"\bcustom_minimum_size\b", "rect_min_size", c)
     c = re.sub(r"\bpivot_offset\b", "rect_pivot_offset", c)
     c = re.sub(r"\bOS\.get_cmdline_user_args\(\)", "G4.args_usuario()", c)
@@ -834,9 +851,18 @@ def converter_arquivo(texto, info, globais, avisos):
             linha = trocar_call_deferred(linha)
             linha = trocar_rpc(linha, info["funcoes"])
             linha = metodo_como_valor(linha, info["funcoes"] - locais, estatica, info["caminho"])
+            if globais.get("so_funcoes") and info["objs"]:
+                linha = re.sub(r"(?<![\w\.\"'])(%s)\.(%s)\b(?=\s*[,)])" % ("|".join(sorted(info["objs"])), globais["so_funcoes_re"]),
+                               lambda m: 'funcref(%s, "%s")' % (m.group(1), m.group(2)), linha)
             linha = trocar_set_transform(linha)
             linha = cortar_args(linha, "create_timer", 2)
             linha = props_controle(linha, info, locais)
+            linha = re.sub(r"^(\s*)([\w\.\[\]]+)\.skew\s*[-+*/]?=\s*(.+)$", r"\1G4.nada(\2, \3)  # skew do Godot 4", linha)
+            linha = re.sub(r"\.skew\b", ".rotation * 0.0", linha)
+            for nome in info["pools"]:
+                linha = re.sub(r"(?<![\.\w])%s\.clear\(\)" % re.escape(nome), nome + ".resize(0)", linha)
+            for nome in info["callables"]:
+                linha = re.sub(r"(?<![\w])(%s)\.call\(" % re.escape(nome), r"\1.call_func(", linha)
             linha = re.sub(r'("(?:[^"\\]|\\.)*")\.contains\(', r"G4.contains(\1, ", linha)
             linha = re.sub(r"(\w+\(\)(?:\.\w+\(\))*)\s*\*\s*(get_viewport_rect\(\)|get_rect\(\))", r"\1.xform(\2)", linha)
             linha = trocar_join(linha)
@@ -845,12 +871,17 @@ def converter_arquivo(texto, info, globais, avisos):
                             ("any", "algum"), ("all", "todos"), ("reduce", "reduzir"), ("count", "contar"),
                             ("add_theme_font_size_override", "tamanho_fonte"), ("draw_string", "texto_em"),
                             ("draw_string_outline", "texto_contorno_em"), ("get_string_size", "medir"),
-                            ("get_center", "centro"), ("has_area", "tem_area")):
+                            ("get_center", "centro"), ("has_area", "tem_area"), ("merged", "merged"),
+                            ("set_pixel", "px_set"), ("get_pixel", "px_get"), ("set_pixelv", "px_setv"),
+                            ("get_pixelv", "px_getv"), ("draw_multiline_string", "texto_multilinha_em")):
                 if "." + met + "(" in linha:
                     linha = trocar_metodo_por_g4(linha, met, g4)
             # draw_string(...) sem objeto = self
             linha = re.sub(r"(?<![\.\w])draw_string\(", "G4.texto_em(self, ", linha)
             linha = re.sub(r"(?<![\.\w])draw_string_outline\(", "G4.texto_contorno_em(self, ", linha)
+            linha = re.sub(r"(?<![\.\w])draw_multiline_string\(", "G4.texto_multilinha_em(self, ", linha)
+            # ImageTexture.update(img) do Godot 4 -> set_data(img) (CanvasItem.update() não tem argumentos)
+            linha = re.sub(r"\.update\((?=\s*[^\s)])", ".set_data(", linha)
             # static var -> dicionário compartilhado _SV
             ms = re.match(r"^(\s*)static\s+var\s+(\w+)\s*(?:=\s*(.*))?$", linha)
             if ms:
@@ -903,6 +934,18 @@ def coletar_info(caminho_res, texto):
     cls = "|".join(sorted(CONTROLES, key=len, reverse=True))
     for m in re.finditer(r"\bvar\s+(\w+)\s*(?::\s*(%s)\b|:?=\s*(%s)\.new\()" % (cls, cls), texto):
         info["controles"].add(m.group(1))
+    info["pools"] = set(re.findall(r"\bvar\s+(\w+)\s*(?::\s*Packed\w+Array\b|:?=\s*Packed\w+Array\()", texto))
+    info["callables"] = set(re.findall(r"\bvar\s+(\w+)\s*:\s*Callable\b", texto)) | \
+        set(re.findall(r"\bfunc\s+\w+\s*\([^)]*?\b(\w+)\s*:\s*Callable\b", texto))
+    # objetos de script conhecidos: aliases de preload, autoloads e variáveis criadas com Alias.new()
+    aliases = set(re.findall(r'(?m)^const\s+(\w+)\s*(?::\s*\w+)?\s*:?=\s*preload\("res://[^"]+\.gd"\)', texto))
+    info["objs"] = aliases | set(AUTOLOADS) | set(
+        re.findall(r"\b(\w+)\s*:?=\s*(?:%s)\.new\(" % "|".join(aliases), texto) if aliases else [])
+    # variável de laço sobre lista de Controls: "for c in [_tela, _topo]:"
+    for m in re.finditer(r"\bfor\s+(\w+)\s+in\s+\[([^\]]+)\]", texto):
+        itens = [x.strip() for x in m.group(2).split(",")]
+        if any(x in info["controles"] for x in itens):
+            info["controles"].add(m.group(1))
     me = re.search(r"(?m)^extends\s+(\w+)", texto)
     info["e_controle"] = bool(me and me.group(1) in CONTROLES)
     for linha in texto.replace("\r\n", "\n").split("\n"):
@@ -930,9 +973,26 @@ def main():
                 p = os.path.join(raiz, a)
                 res = "res://" + os.path.relpath(p, orig).replace("\\", "/")
                 scripts[res] = open(p, encoding="utf-8").read()
+    proj4 = os.path.join(orig, "project.godot")
+    if os.path.exists(proj4):
+        em = False
+        for l in open(proj4, encoding="utf-8").read().split("\n"):
+            if l.startswith("["):
+                em = l.strip() == "[autoload]"
+            elif em and "=" in l:
+                AUTOLOADS.append(l.split("=")[0].strip())
     infos = {res: coletar_info(res, t) for res, t in scripts.items()}
     sv_por_script = {res: list(i["static_vars"].keys()) for res, i in infos.items() if i["static_vars"]}
     globais = {"sv_por_alias": {}}
+    todas_funcs = set()
+    todas_vars = set()
+    for t in scripts.values():
+        todas_funcs |= set(re.findall(r"(?m)^\s*(?:static\s+)?func\s+(\w+)", t))
+        # só membros de classe (nível 0): parâmetros com o mesmo nome de uma função não impedem a troca
+        todas_vars |= set(re.findall(r"(?m)^(?:@\w+(?:\([^)]*\))?\s+)*(?:static\s+)?(?:var|const|signal)\s+(\w+)", t))
+    so = sorted(todas_funcs - todas_vars - {"new", "get", "set", "call", "free"}, key=len, reverse=True)
+    globais["so_funcoes"] = so
+    globais["so_funcoes_re"] = "|".join(re.escape(x) for x in so)
     for res, i in infos.items():
         m = {}
         for alias, alvo in i["aliases"].items():
