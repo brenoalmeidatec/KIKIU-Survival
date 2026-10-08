@@ -914,3 +914,9 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Feito:** piloto alinhado com a main de hoje (monstros de 6 quadros, fase pela distância; perfil `baixa` do #109 anotado como base do perfil `vita`) e otimização 2a no GDScript (decisão revezada, sombra assada no atlas, arrays por tipo, chão/sangue retidos, luzes por lista). Projéteis entraram na rampa. Detalhes em `jogos/hordas-vita/STATUS.md` ("Piloto v2"). Vpk validado rodando a rampa a partir do `game.pck` exportado.
 - **Pendente:** medir a v2 no Vita (o FTP do aparelho estava desligado na hora do envio).
 - **Próximo:** se a v2 der ~200 inimigos na tela a 30 fps, plano do backport; se não, fase 2b (módulo C++ da horda num template próprio).
+
+## 2026-10-08 · Claude do Alisson (PC) · Piloto Vita: erro 0xF0030000 ao instalar a v2 (consertado)
+- **Causa:** bug do exportador do godot-vita 3.5-rc5 (`vita-mksfoex.cpp` guarda o TITLE_ID com ponteiro para string temporária). Às vezes o `param.sfo` sai com `TITLE_ID = "KIKIU Piloto"` e o VitaShell recusa (`VITASHELL_ERROR_INVALID_TITLEID`). É aleatório: a v1 passou por sorte.
+- **Conserto:** `jogos/hordas-vita/conserta_sfo.py`, chamado pelo `exportar.sh`, regrava TITLE_ID/TITLE/STITLE e falha se não conferir. Detalhes no `STATUS.md`.
+- Envio por FTP: tela do Vita apagada derruba o Wi-Fi e o vpk chega truncado; conferir o tamanho na listagem.
+- **Pendente:** instalar e medir a v2 no Vita.
