@@ -141,7 +141,7 @@ func _aplicar_cenario() -> void:
 		var fs: Array = arena.diretor.fases()
 		var f: Dictionary = fs[clampi(arena.diretor.fase_idx, 0, fs.size() - 1)] if not fs.is_empty() else {}
 		if f.has("cenario"):
-			n = str(f.cenario)
+			n = Cenario.variante(str(f.cenario), int(f.get("andar_regiao", 0)))   # varia por andar (#112)
 	if n == "" or (cenario and cenario.nome == n):
 		return
 	var c = Cenario.new()

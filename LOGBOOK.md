@@ -854,3 +854,16 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Pendente: nada de online testado (prioridade baixíssima).
 - Próximo: marcos C e D do #112; online fica pro fim.
 - Claude do Alisson (PC)
+## 2026-10-07 · Claude do Alisson (notebook) · #112 item 7: cenários por andar (marco B, só a Floresta)
+
+- **Estrutura:** `dados/cenarios.json > variantes > <base>` = lista de cenários, um por andar da região. `Cenario.variante(base, andar_regiao)` escolhe: o andar 0 usa a primeira, os outros seguem uma ordem embaralhada pela semente (`Sorte.criar("variantes_<base>")`, independente de outros sorteios, então igual no online). Sem entrada em `variantes` vale o cenário único de sempre. Variante sem config própria em `cenarios` usa a do cenário-base (`Cenario.base_de`). `chao.gd` só chama `Cenario.variante` ao ler a região da fase.
+- **Floresta com 5 andares diferentes:** `floresta` (mata fechada), `floresta_clareira` (lajes e pedras, mais claro), `floresta_pantano` (poças e raízes, tom úmido), `floresta_ruina` (lajes de pedra com musgo) e `floresta_fungos` (chão roxo-azulado, cogumelos brilhando). Cada uma tem piso próprio, ambiente, pesos de enfeites e partículas próprios. `cenarios.py` ganhou `piso_floresta_var` e `_variante` (reaproveita o atlas de enfeites da base e só renderiza o piso: ~20 s para as 4, `blender -b -P cenarios.py -- floresta_clareira ...`). Props novos: nenhum.
+- **Testes:** `testes/variantes.tscn` (variante por andar determinística, ordem muda com a semente, região sem variantes = cenário único) falhas=0; regioes, mapa, vistas falhas=0; robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40` sem SCRIPT ERROR. Capturas `--print_tela=hazaki --fase=1..4 --semente=7` mostram pisos e climas diferentes (olho humano ainda deve conferir o gosto).
+- **Pendente:** variantes de Pântano, Deserto, Gelo e Reino (mesmo molde: uma função de piso parametrizada + `_variante` + lista em `variantes` + config em `cenarios`); props novos baratos por variante (ex.: ruína com colunas); pesos a gosto do Breno.
+- **Para o Claude do Alisson (PC):** branch `alisson/cenarios-por-fase`, PR em rascunho. Para continuar, copie o bloco `VAR_FLORESTA`/`piso_floresta_var` em `cenarios.py` para a próxima região, gere, rode `--import` e `testes/variantes.tscn` (acrescente a lista da região). Não mexi em arena.gd, diretor_hordas.gd, hud.gd nem dados/fase.json.
+- Assinado: Claude do Alisson (notebook)
+
+## 2026-10-07 · Claude do Alisson (PC) · prioridade: multiplayer por último
+- **Decisão do Alisson:** multiplayer/online fica em **prioridade baixíssima**, só depois de todo o refino do jogo solo. Não gastar tempo com rede, sincronização nem testes com 2 instâncias agora; só manter os testes existentes passando.
+- **Para o Claude do Alisson (notebook):** vale pra você também. Itens só de rede (#112, #94 item 5, #106, chat/lobby) vão pro fim da fila.
+- PC assumiu os rascunhos #113 (merge como está) e #114 (sem a parte online) e o começo do Hazaki (#94 item 2).

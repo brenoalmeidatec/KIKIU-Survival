@@ -492,6 +492,68 @@ def piso_floresta(r):
         esfera("pedrinha", r.uniform(0.08, 0.18), (r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5), 0.03), r.choice(pedras), escala=(1, 0.8, 0.5))
 
 
+# ---- variantes da floresta (#112 item 7): mesmo conjunto de props, piso e pesos diferentes por andar da região
+
+def piso_floresta_var(p):
+    """Piso de uma variante. p: base, terras, capins, folhas (cores hex) e contagens n_capim, n_folha, n_raiz, n_musgo, n_pedra, lajes, pocas, fungos."""
+    def f(r):
+        caixa("terra", (L, L, 0.1), (L / 2, L / 2, -0.05), toon(p["base"]))
+        terras = [chao(h) for h in p["terras"]]
+        for _ in range(14):
+            x, y = r.uniform(0.8, L - 0.8), r.uniform(0.8, L - 0.8)
+            esfera("torrao", r.uniform(0.5, 1.1), (x, y, -0.25), r.choice(terras), escala=(1, r.uniform(0.6, 1.4), 0.4))
+        capins = [chao(h) for h in p["capins"]]
+        for _ in range(p.get("n_capim", 26)):
+            x, y = r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5)
+            mat = r.choice(capins)
+            for _k in range(r.randint(4, 8)):
+                esfera("capim", r.uniform(0.06, 0.13), (x + r.uniform(-0.25, 0.25), y + r.uniform(-0.25, 0.25), r.uniform(0.0, 0.08)), mat, escala=(1, 1, 1.6))
+        lajes = [chao(h) for h in p.get("laje_cores", ("5e544a", "4a423b"))]
+        for _ in range(p.get("lajes", 0)):   # lajes de pedra chatas (clareira de pedras, ruína)
+            caixa("laje", (r.uniform(0.9, 1.7), r.uniform(0.9, 1.7), 0.08), (r.uniform(0.8, L - 0.8), r.uniform(0.8, L - 0.8), 0.03), r.choice(lajes),
+                  rot=(0, 0, r.uniform(0, math.pi)), chanfro=0.02)
+        folhas = [toon(h) for h in p["folhas"]]
+        for _ in range(p.get("n_folha", 70)):
+            caixa("folha", (0.12, 0.07, 0.02), (r.uniform(0.3, L - 0.3), r.uniform(0.3, L - 0.3), 0.04), r.choice(folhas),
+                  rot=(r.uniform(-0.3, 0.3), r.uniform(-0.3, 0.3), r.uniform(0, math.pi)))
+        raizes = toon(p.get("raiz", "4a3324"))
+        for _ in range(p.get("n_raiz", 4)):
+            x, y = r.uniform(1.5, L - 1.5), r.uniform(1.5, L - 1.5)
+            a = r.uniform(0, math.pi)
+            for k in range(5):
+                cilindro("raiz", 0.09 - k * 0.012, 0.6, (x + math.cos(a) * k * 0.5, y + math.sin(a) * k * 0.5, 0.05), raizes,
+                         rot=(math.pi / 2, 0, a + math.pi / 2 + r.uniform(-0.3, 0.3)), vertices=6)
+        musgo = toon(p.get("musgo", "566e55"))
+        for _ in range(p.get("n_musgo", 6)):
+            x, y = r.uniform(1, L - 1), r.uniform(1, L - 1)
+            for _k in range(7):
+                esfera("musgo", r.uniform(0.07, 0.14), (x + r.uniform(-0.3, 0.3), y + r.uniform(-0.3, 0.3), 0.06), musgo, escala=(1, 1, 0.3))
+        pedras = [chao(h) for h in ("4a423b", "5e544a")]
+        for _ in range(p.get("n_pedra", 8)):
+            esfera("pedrinha", r.uniform(0.08, 0.18), (r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5), 0.05), r.choice(pedras), escala=(1, 0.8, 0.5))
+        agua = toon(p.get("agua", "1d2a2a"))
+        for _ in range(p.get("pocas", 0)):   # poças rasas
+            esfera("poca", r.uniform(0.5, 1.0), (r.uniform(1, L - 1), r.uniform(1, L - 1), 0.0), agua, escala=(1, r.uniform(0.6, 1.0), 0.1))
+        luz = brilha(p.get("brilho", "9be08a"), 0.8)
+        for _ in range(p.get("fungos", 0)):   # cogumelinhos brilhantes no chão
+            x, y = r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5)
+            for _k in range(r.randint(2, 4)):
+                esfera("fungo", r.uniform(0.04, 0.08), (x + r.uniform(-0.15, 0.15), y + r.uniform(-0.15, 0.15), 0.06), luz, escala=(1, 1, 0.7))
+    return f
+
+
+VAR_FLORESTA = {
+    "floresta_clareira": dict(base="4a3a2a", terras=("5e4a36", "54422f", "6a5540"), capins=("5a6a30", "6e7a3a", "4a5a2a"), folhas=("8f6a2e", "a07a3a", "6e4c32"),
+                              n_capim=14, n_folha=24, n_raiz=1, n_musgo=3, n_pedra=22, lajes=7),
+    "floresta_pantano": dict(base="1e2a22", terras=("26352b", "2b3a30", "1d2a22"), capins=("2d4721", "1d3a2a", "35473a"), folhas=("3a4a2a", "4a3324"),
+                             n_capim=20, n_folha=24, n_raiz=9, n_musgo=8, n_pedra=3, raiz="3a2a20", pocas=9, agua="15302e"),
+    "floresta_ruina": dict(base="2c2a24", terras=("3a352c", "33301f", "403a30"), capins=("2d4721", "35473a"), folhas=("4a3324", "6e4c32"),
+                           n_capim=12, n_folha=30, n_raiz=2, n_musgo=16, musgo="4f6a4a", n_pedra=6, lajes=14, laje_cores=("6a6458", "5e5a50", "4a4a44")),
+    "floresta_fungos": dict(base="1d1830", terras=("2a2240", "241d38", "30284a"), capins=("23305a", "2a3a6a", "1d2a4a"), folhas=("4a2a5a", "3a2a4a"),
+                            n_capim=16, n_folha=26, n_raiz=4, raiz="3a2a4a", n_musgo=10, musgo="3f5a7a", n_pedra=4, fungos=46, brilho="7ae0ff"),
+}
+
+
 def arvore_viva(r):
     """Árvore de copa escura: tronco grosso com raízes saindo, copa em bolhas de folha (o marco da floresta)."""
     casca, casca_e = toon("6e4c32"), toon("4a3324")
@@ -1291,6 +1353,39 @@ CENARIOS = {
 }
 
 
+# Variantes: reaproveitam o atlas de enfeites do cenário-base (sem renderizar de novo); mudam piso, ambiente e o peso de cada enfeite.
+def _variante(base, piso, ambiente, pesos):
+    cfg = dict(CENARIOS[base])
+    cfg.update({"piso": piso, "ambiente": ambiente, "base": base, "pesos": pesos})
+    return cfg
+
+
+CENARIOS["floresta_clareira"] = _variante("floresta", piso_floresta_var(VAR_FLORESTA["floresta_clareira"]), [0.78, 0.8, 0.66],
+    {"arvore": 0, "arvore_morta": 1, "toco": 2, "tronco": 1, "arbusto": 2, "pedra": 8, "cogumelos": 1, "cranio": 2, "teia": 0, "fogueira": 2})
+CENARIOS["floresta_pantano"] = _variante("floresta", piso_floresta_var(VAR_FLORESTA["floresta_pantano"]), [0.5, 0.64, 0.6],
+    {"arvore": 0, "arvore_morta": 5, "toco": 3, "tronco": 5, "arbusto": 2, "pedra": 1, "cogumelos": 2, "cranio": 2, "teia": 2, "fogueira": 0})
+CENARIOS["floresta_ruina"] = _variante("floresta", piso_floresta_var(VAR_FLORESTA["floresta_ruina"]), [0.62, 0.68, 0.62],
+    {"arvore": 1, "arvore_morta": 1, "toco": 1, "tronco": 1, "arbusto": 2, "pedra": 7, "cogumelos": 1, "cranio": 3, "teia": 2, "fogueira": 1})
+CENARIOS["floresta_fungos"] = _variante("floresta", piso_floresta_var(VAR_FLORESTA["floresta_fungos"]), [0.5, 0.56, 0.78],
+    {"arvore": 1, "arvore_morta": 2, "toco": 2, "tronco": 1, "arbusto": 1, "pedra": 1, "cogumelos": 9, "cranio": 1, "teia": 1, "fogueira": 0})
+
+
+def _atlas_do_base(nome, cfg, pasta):
+    """Variante: copia o atlas e os itens do cenário-base, trocando só o peso de cada enfeite."""
+    import shutil
+    pb = os.path.join(SAIDA, cfg["base"])
+    with open(os.path.join(pb, "cenario.json"), encoding="utf-8") as fp:
+        d = json.load(fp)
+    shutil.copyfile(os.path.join(pb, "enfeites.png"), os.path.join(pasta, "enfeites.png"))
+    for it in d["itens"]:
+        it["peso"] = cfg["pesos"].get(it["nome"], it["peso"])
+    d["ambiente"] = cfg["ambiente"]
+    d["_gerado_por"] = "fonte_arte/modelos3d/cenarios.py (variante de %s; não edite à mão)" % cfg["base"]
+    with open(os.path.join(pasta, "cenario.json"), "w", encoding="utf-8") as fp:
+        json.dump(d, fp, ensure_ascii=False, indent=1)
+    print("CENARIO OK (variante)", nome, "base", cfg["base"])
+
+
 def chamar(f, r):
     return f(r) if f.__code__.co_argcount == 1 else f()
 
@@ -1315,6 +1410,9 @@ def gerar(nome, cfg):
     piso = px3.pixelar(bruto, contorno=False, paleta=pal, luz_borda=False, pontilhado=0.03)
     piso[:, :, 3] = 1.0
     px3.salvar_png(piso, os.path.join(pasta, "piso.png"))
+    if cfg.get("base"):
+        _atlas_do_base(nome, cfg, pasta)
+        return
     # ---- enfeites
     imagens, itens = [], []
     for nome_e, f, peso in cfg["enfeites"]:
