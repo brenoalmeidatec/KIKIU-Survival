@@ -8,6 +8,7 @@
 - escreve project.godot no formato do 3.x (GLES2 + fallback, 480x272, autoload G4 antes dos do jogo);
 - roda conversor.py nos scripts.
 """
+import json
 import os
 import re
 import shutil
@@ -66,6 +67,22 @@ def main():
     os.makedirs(dest, exist_ok=True)
     for pasta in ("assets", "dados"):
         copiar_arvore(os.path.join(orig, pasta), os.path.join(dest, pasta))
+
+    # ajustes de dados só do Vita (conversor/dados_vita.json), mesclados por cima dos JSON copiados
+    def mesclar(a, b):
+        for k, v in b.items():
+            if isinstance(v, dict) and isinstance(a.get(k), dict):
+                mesclar(a[k], v)
+            else:
+                a[k] = v
+    ajustes = json.load(open(os.path.join(AQUI, "dados_vita.json"), encoding="utf-8"))
+    for arq, aj in ajustes.items():
+        if arq.startswith("_"):
+            continue
+        base = json.load(open(os.path.join(orig, "dados", arq), encoding="utf-8"))
+        mesclar(base, aj)
+        open(os.path.join(dest, "dados", arq), "w", encoding="utf-8", newline="\n").write(
+            json.dumps(base, ensure_ascii=False, indent=1))
     open(os.path.join(dest, "main.tscn"), "w", encoding="utf-8", newline="\n").write(
         converter_tscn(open(os.path.join(orig, "main.tscn"), encoding="utf-8").read()))
     open(os.path.join(dest, "g4_fonte.tres"), "w", encoding="utf-8", newline="\n").write(
