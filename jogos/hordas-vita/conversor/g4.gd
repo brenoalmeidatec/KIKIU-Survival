@@ -695,6 +695,10 @@ func _ready() -> void:
 			_sair_t = float(a.split("=")[1])
 		elif a == "--g4-fps":
 			fps = true
+		elif a.begins_with("--g4-botoes="):   # depuração: "3:0,5.5:0" = aperta o botão 0 (Cross) aos 3 s e aos 5,5 s
+			for par in a.split("=")[1].split(","):
+				var tb = par.split(":")
+				_botoes.append([float(tb[0]), int(tb[1])])
 	if OS.has_feature("Vita"):
 		call_deferred("_perfil_vita")
 		_log_arq = "ux0:data/kikiu_vita_log.txt"
@@ -716,7 +720,7 @@ func _ready() -> void:
 		_fps_label.add_color_override("font_color_shadow", Color(0, 0, 0))
 		_fps_label.add_constant_override("shadow_as_outline", 1)
 		camada.add_child(_fps_label)
-	set_process(_foto_t > 0.0 or _sair_t > 0.0 or _fps_label != null or _log_arq != "")
+	set_process(_foto_t > 0.0 or _sair_t > 0.0 or _fps_label != null or _log_arq != "" or not _botoes.empty())
 
 
 ## No Vita: perfil de qualidade "baixa" (dados/qualidade.json) só nesta execução, hardware e som.
@@ -793,8 +797,35 @@ func _hardware_vita() -> void:
 	_tras_antes = tras
 
 
+var _botoes = []
+var _botoes_t = 0.0
+
+
+var _soltar = []
+
+
+func _botoes_passo(dt: float) -> void:
+	_botoes_t += dt
+	for idx in _soltar:      # solta no quadro seguinte (um dedo de verdade não aperta e solta no mesmo quadro)
+		var e = InputEventJoypadButton.new()
+		e.button_index = idx
+		e.pressed = false
+		Input.parse_input_event(e)
+	_soltar = []
+	while not _botoes.empty() and _botoes_t >= _botoes[0][0]:
+		var idx = _botoes.pop_front()[1]
+		var e = InputEventJoypadButton.new()
+		e.button_index = idx
+		e.pressed = true
+		Input.parse_input_event(e)
+		_soltar.append(idx)
+		print("G4: botão ", idx, " aos ", _botoes_t, " s")
+
+
 func _process(dt: float) -> void:
 	_timers_passo()
+	if not _botoes.empty() or not _soltar.empty():
+		_botoes_passo(dt)
 	_log_passo(dt)
 	if _hw != null or _dash_solta:
 		_hardware_vita()

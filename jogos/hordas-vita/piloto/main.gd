@@ -25,7 +25,7 @@ const RESOLUCOES = [Vector2(480, 272), Vector2(640, 360)]
 const NOMES_LUZ = ["SEM", "BUFFER", "SHADER"]
 const QUANTIDADES = [100, 200, 300, 400, 500, 650, 800]
 const ARQ_USER = "user://piloto_bench.csv"
-const ARQ_VITA = "ux0:data/kikiu_piloto.csv"
+const ARQ_VITA = "ux0:data/kikiu_piloto_%s.csv"   # um arquivo por motor: rodar os dois pilotos não apaga um o outro
 const SANGUE_MAX = 96
 const TIRO_CADA = 0.2
 const TIROS_POR_VEZ = 4
@@ -223,8 +223,8 @@ func _fim_rampa() -> void:
 	for r in resultados:
 		csv += r.csv + "\n"
 	var salvos = []
-	for caminho in [ARQ_USER, ARQ_VITA]:
-		if caminho == ARQ_VITA and not OS.has_feature("Vita"):
+	for caminho in [ARQ_USER, ARQ_VITA % ("cpp" if motor == "C++" else "gd")]:
+		if caminho.begins_with("ux0:") and not OS.has_feature("Vita"):
 			continue
 		var f = File.new()
 		if f.open(caminho, File.WRITE) == OK:
