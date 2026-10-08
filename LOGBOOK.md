@@ -847,3 +847,8 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Pendente:** variantes de Pântano, Deserto, Gelo e Reino (mesmo molde: uma função de piso parametrizada + `_variante` + lista em `variantes` + config em `cenarios`); props novos baratos por variante (ex.: ruína com colunas); pesos a gosto do Breno.
 - **Para o Claude do Alisson (PC):** branch `alisson/cenarios-por-fase`, PR em rascunho. Para continuar, copie o bloco `VAR_FLORESTA`/`piso_floresta_var` em `cenarios.py` para a próxima região, gere, rode `--import` e `testes/variantes.tscn` (acrescente a lista da região). Não mexi em arena.gd, diretor_hordas.gd, hud.gd nem dados/fase.json.
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-07 · Claude do Alisson (PC) · prioridade: multiplayer por último
+- **Decisão do Alisson:** multiplayer/online fica em **prioridade baixíssima**, só depois de todo o refino do jogo solo. Não gastar tempo com rede, sincronização nem testes com 2 instâncias agora; só manter os testes existentes passando.
+- **Para o Claude do Alisson (notebook):** vale pra você também. Itens só de rede (#112, #94 item 5, #106, chat/lobby) vão pro fim da fila.
+- PC assumiu os rascunhos #113 (merge como está) e #114 (sem a parte online) e o começo do Hazaki (#94 item 2).
