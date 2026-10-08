@@ -710,15 +710,46 @@ func _ready() -> void:
 	set_process(_foto_t > 0.0 or _sair_t > 0.0 or _fps_label != null)
 
 
-## No Vita: perfil de qualidade "baixa" (dados/qualidade.json) só nesta execução.
+## No Vita: perfil de qualidade "baixa" (dados/qualidade.json) só nesta execução, hardware e som.
+var _hw = null              # VitaHW (módulo C++ do template próprio)
+var _tras_antes = false
+var _dash_solta = false
+
+
 func _perfil_vita() -> void:
 	var cfg = get_node_or_null("/root/Config")
 	if cfg and cfg.has_method("temporario"):
 		cfg.temporario("qualidade", "baixa")
+	if ClassDB.class_exists("VitaHW"):
+		_hw = ClassDB.instance("VitaHW")
+		_hw.iniciar()
+		set_process(true)
+	# o Vita só tem saída estéreo: alargamento (atraso Haas) para os lados "saírem" da cabeça no fone + limiter
+	var largo = AudioEffectStereoEnhance.new()
+	largo.pan_pullout = 1.2
+	largo.time_pullout_ms = 6.0
+	AudioServer.add_bus_effect(0, largo)
+	AudioServer.add_bus_effect(0, AudioEffectLimiter.new())
+
+
+## Touch traseiro = rolamento (ação "dash" do jogo): encostou atrás, rola; solta a ação no quadro seguinte.
+func _hardware_vita() -> void:
+	if _dash_solta:
+		Input.action_release("dash")
+		_dash_solta = false
+	if _hw == null:
+		return
+	var tras = _hw.toques_tras().size() > 0
+	if tras and not _tras_antes and InputMap.has_action("dash"):
+		Input.action_press("dash")
+		_dash_solta = true
+	_tras_antes = tras
 
 
 func _process(dt: float) -> void:
 	_timers_passo()
+	if _hw != null or _dash_solta:
+		_hardware_vita()
 	if _fps_label:
 		_fps_t += dt
 		_fps_n += 1
