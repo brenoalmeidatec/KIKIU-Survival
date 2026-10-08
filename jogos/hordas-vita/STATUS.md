@@ -130,3 +130,20 @@ GDScript** (~30–45× mais lento que no PC), não a GPU. Cabem ~100 inimigos na
   (`VITASHELL_ERROR_INVALID_TITLEID`: 9 caracteres, maiúsculos). É aleatório (a v1 passou por sorte). O `exportar.sh`
   agora roda `conserta_sfo.py`, que regrava TITLE_ID/TITLE/STITLE e falha se não conferir.
 - Envio por FTP: se a tela do Vita apagar, o Wi-Fi para e o arquivo chega truncado. Conferir o tamanho na listagem.
+
+## Resultado 2 — Vita real, piloto v2 (2026-10-08) · `medicoes/vita_v2_2026-10-08.csv`
+
+| N (480×272, com projéteis) | sem luz | buffer |
+|---|---|---|
+| 100 | 59,2 | 48,7 |
+| 200 | 44,9 | 39,7 |
+| 300 | 36,4 | **30,4** |
+| 400 | 29,4 | 25,7 |
+| 500 | 24,0 | 22,0 |
+
+**Regressão, v1 → v2:** desenho 0,093 → **0,045 ms** por inimigo (metade: 1 draw por inimigo, sem Dictionary);
+lógica 0,088 → 0,064 ms (-27%, menos que o esperado: virou o custo dominante); fixo 13,3 → 10,7 ms.
+**Cabem ~185 inimigos na tela a 30 fps** (eram 100) e ~49 a 60 fps. Projéteis custam 0,13–0,26 ms (barato).
+GPU continua sobrando (640×360 segue a mesma reta). Pior quadro ~1,2× a média (a grade refeita 1 em 2 alterna o custo).
+**Critério:** 300 inimigos com luz a ≥ 30 fps → **passou, no limite** (30,4 com buffer). Viável a 30 fps com orçamento
+de ~150–180 na tela; sobra pouco para o resto do jogo em GDScript (armas, efeitos, HUD), que o piloto não tem.

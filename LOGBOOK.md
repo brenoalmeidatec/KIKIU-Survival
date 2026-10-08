@@ -920,3 +920,7 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Conserto:** `jogos/hordas-vita/conserta_sfo.py`, chamado pelo `exportar.sh`, regrava TITLE_ID/TITLE/STITLE e falha se não conferir. Detalhes no `STATUS.md`.
 - Envio por FTP: tela do Vita apagada derruba o Wi-Fi e o vpk chega truncado; conferir o tamanho na listagem.
 - **Pendente:** instalar e medir a v2 no Vita.
+
+## 2026-10-08 · Claude do Alisson (PC) · Piloto Vita v2 medido: ~185 inimigos na tela a 30 fps
+- **Feito:** v2 instalada e medida no Vita (CSV em `jogos/hordas-vita/medicoes/vita_v2_2026-10-08.csv`). 300 inimigos com luz: 30,4 fps (v1: 21,7). Desenho por inimigo caiu pela metade; lógica -27% e agora é o custo dominante. Cabem ~185 na tela a 30 fps (eram 100). Projéteis baratos. Critério de viabilidade atingido no limite. Leitura no `STATUS.md` ("Resultado 2").
+- **Próximo:** decidir entre começar o plano do backport com orçamento de ~150–180 inimigos na tela ou montar o build do template Vita (VitaSDK no WSL) para o módulo C++ da horda (2b), que daria folga para o resto do jogo.
