@@ -37,6 +37,8 @@ var _cd_dano := {}
 var _usos := {}                 # anfitrião: peer -> {consumível: quantos já usou}, pra conferir com a mochila que ele declarou
 var _prontos := {}              # anfitrião, votação do mapa: peer -> faixa votada
 var _t_prontos := -1.0
+var _saida := {}                # anfitrião, saída da fase (#112): peer -> já entrou no portal
+var _t_saida := -1.0
 var _t_caidos := 0.0
 const ACERTO_N := 5               # floats por acerto: id do vírus, dano, empurrão x e y, índice da arma
 var n_arma := 0                   # teste: acertos recebidos com arma válida (anfitrião)
@@ -143,6 +145,7 @@ func atualizar(dt: float) -> void:
 		for p in _cd_dano.keys():
 			_cd_dano[p] -= dt
 		_checar_caidos(dt)
+		_checar_saida(dt)
 		if _t_prontos >= 0.0:
 			_t_prontos -= dt
 			_checar_prontos()
@@ -409,6 +412,24 @@ func _checar_caidos(dt: float) -> void:
 
 # ---------- fases ----------
 
+## Anfitrião, saída da fase: todos os vivos prontos no portal (ou a espera do primeiro acabou) e a fase fecha pra todo mundo.
+func _checar_saida(dt: float) -> void:
+	if _saida.is_empty() or not arena.saida.aberta or arena.entre_fases:
+		return
+	_t_saida -= dt
+	var todos := true
+	for p in Rede.jogadores:
+		if _saida.has(p):
+			continue
+		var caido: bool = arena.caido if p == Rede.eu() else bool(Rede.remotos.get(p, {}).get("caido", false))
+		if not caido:
+			todos = false
+	if todos or _t_saida <= 0.0:
+		_saida = {}
+		_t_saida = -1.0
+		Rede.evento("fase_completa")
+
+
 func _checar_prontos() -> void:
 	var todos := true
 	for p in Rede.jogadores:
@@ -441,6 +462,10 @@ func evento(nome: String, d: Dictionary) -> void:
 				_prontos = {}
 				_t_prontos = ESPERA_PRONTOS
 			arena.fase_completa()
+		"saida_aberta":   # #112: o chefe da fase caiu; o portal abre no mesmo lugar pra todo mundo
+			_saida = {}
+			_t_saida = -1.0
+			arena.abrir_saida(Vector2(float(d.get("x", 0.0)), float(d.get("y", 0.0))))
 		"proxima_fase":
 			arena.escolher_no(int(d.get("no", -1)))
 		"objetivo":   # estado do objetivo do andar (objetivos.gd): o anfitrião roda, o cliente só mostra e paga a própria parte
@@ -481,6 +506,11 @@ func aviso(quem: int, nome: String, valor: float, peer: int) -> void:
 		"voto":   # valor = (andar de destino) * 10 + faixa; voto de outro andar (atrasado) não conta
 			if _t_prontos >= 0.0 and int(valor) / 10 == arena.mapa_pos.x + 1:
 				_prontos[quem] = int(valor) % 10
+		"saida":   # #112: este jogador entrou no portal e foi sugado
+			if arena.saida.aberta and not arena.entre_fases:
+				if _saida.is_empty():
+					_t_saida = float(Dados.json("prorrogacao").get("saida", {}).get("espera_online", 45.0))
+				_saida[quem] = true
 		"forca":
 			if arena.duelo_ativo:
 				forcas[quem] = clampf(valor, 0.5, 1.0e7)

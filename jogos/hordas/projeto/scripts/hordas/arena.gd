@@ -26,6 +26,7 @@ const Calor := preload("res://scripts/hordas/calor.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
 const Objetivos := preload("res://scripts/hordas/objetivos.gd")
+const Saida := preload("res://scripts/hordas/saida.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
@@ -109,6 +110,8 @@ var _conj_ef := {}          # comportamentos ligados pelos conjuntos (conj() lê
 var _conj_bonus := {}       # atributos que os conjuntos somam
 var _conj_explodindo := false
 var objetivo: Node2D        # objetivo próprio do andar (objetivos.gd)
+var saida: Node2D           # portal de saída da fase (saida.gd, #112)
+var _saida_pedida := false  # online: o anfitrião já mandou abrir a saída deste andar
 var fases_corrida: Array = []   # regiões (#64): as fases da corrida inteira, na ordem dos andares (regioes.gd)
 var banidos := {}           # id -> true: carta banida some do sorteio até o fim da corrida
 var tempo_arma := {}        # id -> segundos com a arma ativa (DPS da tela final)
@@ -154,6 +157,9 @@ func _ready() -> void:
 	objetivo = Objetivos.new()   # objetivo do andar (#63): desenha a pira no chão, embaixo de tudo
 	objetivo.arena = self
 	add_child(objetivo)
+	saida = Saida.new()
+	saida.arena = self
+	add_child(saida)
 	coleta = Coleta.new()
 	coleta.arena = self
 	add_child(coleta)
@@ -485,10 +491,26 @@ func inimigo_morreu(v) -> void:
 		else:
 			tela_azul_caiu()
 	elif v.chefe and diretor.final_chamado and v.tipo == diretor.chefe_fase:
+		# #112: o chefe morrer não leva mais pra próxima fase; abre-se a saída e o jogador sai quando quiser
 		if online:
-			Rede.evento("fase_completa")
+			if not _saida_pedida:
+				_saida_pedida = true
+				Rede.evento("saida_aberta", {"x": v.pos.x, "y": v.pos.y})   # só o anfitrião manda; todos abrem o portal no mesmo lugar
 		else:
-			fase_completa()
+			abrir_saida(v.pos)
+
+
+## Abre o portal de saída onde o chefe caiu e deixa a horda mais leve. A fase acaba quando o jogador entra nele (saida.gd).
+func abrir_saida(p: Vector2) -> void:
+	if saida.aberta or entre_fases or acabou:
+		return
+	fase_stat.tempo = diretor.t_fase   # o tempo da fase para de contar aqui; ficar coletando depois não pesa
+	diretor.saida_leve = true
+	saida.abrir(p)
+	anunciar("CHEFE DERROTADO!", Color(1, 0.9, 0.4))
+	mensagem("Entre no portal e segure CONFIRMAR para sair", Color(0.75, 0.65, 1))
+	Som.tocar("vitoria", 0.1, 1.0, -8)
+	tremer(4)
 
 
 ## O que cada jogador ganha quando um vírus morre: abate, gema de XP, efeito e sorteio de drop
@@ -499,7 +521,7 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	abates += 1
 	var og: Dictionary = Mapa.cfg().get("ouro", {})
 	var ganho: int = int(og.get("chefe", 40)) if chefe else (int(og.get("elite", 4)) if elite else int(og.get("abate", 1)))
-	ouro += int(round(ganho * (1.0 + calor_pts * Calor.recompensa("ouro"))))   # cada ponto de calor rende mais ouro
+	ouro += int(round(ganho * (1.0 + calor_pts * Calor.recompensa("ouro")) * diretor.mult_ouro()))   # prorrogação (#112): cada degrau paga mais   # cada ponto de calor rende mais ouro
 	fase_stat.abates += 1
 	if chefe:
 		fase_stat.chefes += 1
@@ -630,7 +652,8 @@ func fase_completa() -> void:
 	objetivo.encerrar()   # objetivo ainda aberto: falha sem castigo (o anfitrião manda o estado final)
 	var seq := _no_seq   # se o nó seguinte for escolhido antes de terminar (online), este fluxo se descarta
 	var n: int = diretor.fase_idx + 1
-	fase_stat.tempo = diretor.t_fase   # congela o tempo da fase antes do descanso
+	if not saida.aberta:
+		fase_stat.tempo = diretor.t_fase   # congela o tempo da fase antes do descanso (com a saída aberta já foi congelado)
 	var ff: Dictionary = diretor.fases()[diretor.fase_idx]
 	if ff.get("chefe_regiao", false):   # regiões (#64): derrubou o chefe da região
 		anunciar("REGIÃO CONQUISTADA!", Color(1, 0.85, 0.4))
@@ -798,6 +821,8 @@ func _nome_musica(m, andar: int) -> String:
 func _iniciar_andar(idx: int) -> void:
 	diretor.ir_para(idx, no_tipo)
 	_atualizar_calor()   # região nova: o calor dela soma por cima
+	saida.fechar()
+	_saida_pedida = false
 	chao.nova_fase()
 	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
 	_zerar_fase_stat()
@@ -830,6 +855,7 @@ func saltar_para_andar(idx: int) -> void:
 		mapa_trilha.append(mapa_pos)
 	no_tipo = "fase"
 	diretor.ir_para(mapa_pos.x)
+	saida.fechar()
 	_atualizar_calor()
 	chao.nova_fase()
 	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar

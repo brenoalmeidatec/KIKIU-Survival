@@ -18,6 +18,7 @@ var bonus_minutos := 0.0      # fase elite do mapa: dificuldade a mais (ir_para)
 var mult_elite := 1.0         # fase elite do mapa: multiplica a chance de vírus elite
 var xp_mult := 1.0            # fase elite do mapa: multiplica o XP das gemas
 var enxame_final := false
+var saida_leve := false       # chefe da fase morto, saída aberta: a horda continua mais leve (prorrogacao.json)
 var _feitos := {}
 var _fase: Dictionary
 var _dif: Dictionary
@@ -52,6 +53,7 @@ func _ir_para_fase(i: int) -> void:
 	creditos = 0.0
 	final_chamado = false
 	enxame_final = false
+	saida_leve = false
 	chefe_fase = ""
 	bonus_minutos = 0.0
 	mult_elite = 1.0
@@ -76,7 +78,46 @@ func ir_para(i: int, tipo := "fase") -> void:
 ## "Minutos de dificuldade": avança com o tempo e também a cada fase concluída.
 func minutos() -> float:
 	var por_fase := float(Dados.json("regioes").get("minutos_por_fase", 0.0)) if Regioes.ativo() else float(Dados.json("corrida").get("minutos_por_fase", 0.0))
-	return fase_idx * por_fase + t_fase / 60.0 + bonus_minutos
+	return fase_idx * por_fase + t_fase / 60.0 + bonus_minutos + pror_degrau() * float(pror_cfg().get("minutos_por_degrau", 0.35))
+
+
+# ---------- prorrogação (#112, dados/prorrogacao.json) ----------
+
+static func pror_cfg() -> Dictionary:
+	return Dados.json("prorrogacao")
+
+
+## Degrau da prorrogação pra `t` segundos depois de ela começar (0 = ainda no primeiro). Pura: o teste usa.
+static func degrau_de(t: float, cfg: Dictionary) -> int:
+	if t < 0.0:
+		return 0
+	return mini(int(floorf(t / maxf(0.1, float(cfg.get("degrau_s", 5.0))))), int(cfg.get("max_degraus", 40)))
+
+
+## Segundos de prorrogação (cronômetro que sobe); negativo = ainda não começou.
+func pror_t() -> float:
+	return t_fase - float(_fase.get("duracao", 600)) - float(pror_cfg().get("janela_chefe", 120.0))
+
+
+## A prorrogação está rolando: passou o tempo do chefe e ele não morreu. A última fase (Enxame Final) não tem.
+func pror_ativa() -> bool:
+	return final_chamado and not saida_leve and not enxame_final and pror_t() >= 0.0
+
+
+func pror_degrau() -> int:
+	return degrau_de(pror_t(), pror_cfg()) if pror_ativa() else 0
+
+
+## Quanto falta (s) pra prorrogação começar, com o chefe vivo; 0 fora da janela.
+func janela_resta() -> float:
+	if not final_chamado or saida_leve or enxame_final:
+		return 0.0
+	return maxf(0.0, -pror_t())
+
+
+## Multiplicador do ouro de cada abate: sobe a cada degrau da prorrogação.
+func mult_ouro() -> float:
+	return 1.0 + pror_degrau() * float(pror_cfg().get("ouro_por_degrau", 0.25))
 
 
 func coeficiente() -> float:
@@ -102,6 +143,9 @@ func atualizar(dt: float) -> void:
 	if enxame_final:
 		var depois := t_fase - float(_fase.get("duracao", 600))
 		mult = float(_dif.get("enxame_final_multiplicador", 3.0)) * (1.0 + depois / 30.0)
+	mult *= 1.0 + pror_degrau() * float(pror_cfg().get("creditos_por_degrau", 0.12))
+	if saida_leve:
+		mult *= float(pror_cfg().get("saida", {}).get("horda_leve", 0.35))
 	creditos += float(_dif.get("creditos_base", 1.5)) * pow(coeficiente(), float(_dif.get("expoente", 1.3))) * mult * dt * (1.0 + arena.ef("horda"))   # calor: "Horda sem Fim"
 	_eventos()
 	_gastar()
@@ -155,6 +199,8 @@ func _gastar() -> void:
 		return
 	# mínimo de vivos: se a tela está vazia demais, cria de graça
 	var minimo := int(float(_dif.get("minimo_vivos_base", 12)) + minutos() * float(_dif.get("minimo_vivos_por_minuto", 20)))
+	if saida_leve:
+		minimo = int(minimo * float(pror_cfg().get("saida", {}).get("minimo_leve", 0.4)))
 	var criados := 0
 	while vivos < mini(minimo, limite) and criados < 8:
 		_criar_grupo(_sortear(tabela), 1)

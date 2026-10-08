@@ -850,3 +850,31 @@ Só o primeiro ponto das curvas `area` e `dano` de `dados/crescimento_armas.json
 | média | 32,3 / 133 | 44,7 / 176 |
 
 Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_armas` com falhas=0; 0 SCRIPT ERROR. Pendente: se ficar fácil demais, tentar 0.8 / 0.92. Sem push/PR (worktree).
+## 2026-10-07 - Fase (#112, marco A): prorrogação, portal de saída e transição
+- **Prorrogação:** `dados/prorrogacao.json` (com `_ajuda`). O chefe nasce no fim de `duracao`; o jogador tem `janela_chefe` (120 s) pra derrubá-lo. Passou disso, o HUD mostra o cronômetro subindo (`+MM:SS`, "PRORROGAÇÃO nível N  ouro xN"). A cada 5 s (`degrau_s`) sobe um degrau: +0,35 min de dificuldade no diretor, +25% de ouro por abate e +12% de créditos, até `max_degraus` (40). Sem prorrogação na última fase (Enxame Final). Funções em `diretor_hordas.gd` (`pror_t`, `pror_degrau`, `mult_ouro`, `janela_resta`); o ouro entra em `arena.recompensa`. Online: cada cliente deriva o degrau do próprio `t_fase`, sem mensagem nova.
+- **Saída voluntária:** matar o chefe da fase não leva mais sozinho pra próxima fase. `arena.abrir_saida` abre um portal (`saida.gd`) onde ele caiu; entra no raio e segura CONFIRMAR 1 s (`prorrogacao.json > saida`). A horda continua leve (`diretor.saida_leve`: créditos x0,35, mínimo x0,4). Ao sair: herói sugado, clarão branco, cortina (`Transicao.revelar`) e só então `fase_completa` (resultados, baú, mapa) como antes.
+- **Online:** evento novo `saida_aberta` (x, y) do anfitrião (em `Rede.EVENTOS`); cada jogador avisa `saida` ao ser sugado e fica parado no portal; o anfitrião (`online.gd _checar_saida`) manda `fase_completa` quando todos os vivos estão prontos ou 45 s depois do primeiro. NÃO testado com duas instâncias reais.
+- **Robô:** `jogador._bot_dir` anda até o portal quando ele abre e o robô segura confirmar sozinho.
+- **Teste:** `testes/prorrogacao.tscn` ("PROR falhas=0"); mapa, regioes, abertura e pausa também com falhas=0.
+- Não mexi em `cenarios.py`, `cenarios.json`, `assets/cenarios` nem `chao.gd` (outro agente).
+- Para o Claude do Alisson (PC): falta ver o portal e a sucção/clarão com olho humano (nada foi visto em tela), testar online com 2 instâncias, e os itens 1, 2, 5, 6, 7 da #112 (missões do boss, loja por jogador, cenários) seguem em aberto.
+- Assinado: Claude do Alisson (notebook)
+
+## 2026-10-07 · Claude do Alisson (PC) · #112 marco A (#114): cronômetro de fase, prorrogação e portal de saída
+- Feito: prints com janela (`--print_tela=saida|prorrogacao`, com `--pror=N`, `--entrar --seq=`) conferidos: HUD do cronômetro/prorrogação e portal de saída legíveis, sem ajuste. Testes `prorrogacao`, `mapa`, `regioes`, `transicao`, `pausa`, `rede` com falhas=0; partida `--bot --heroi=hazaki --semente=7` sem SCRIPT ERROR.
+- Pendente: nada de online testado (prioridade baixíssima).
+- Próximo: marcos C e D do #112; online fica pro fim.
+- Claude do Alisson (PC)
+## 2026-10-07 · Claude do Alisson (notebook) · #112 item 7: cenários por andar (marco B, só a Floresta)
+
+- **Estrutura:** `dados/cenarios.json > variantes > <base>` = lista de cenários, um por andar da região. `Cenario.variante(base, andar_regiao)` escolhe: o andar 0 usa a primeira, os outros seguem uma ordem embaralhada pela semente (`Sorte.criar("variantes_<base>")`, independente de outros sorteios, então igual no online). Sem entrada em `variantes` vale o cenário único de sempre. Variante sem config própria em `cenarios` usa a do cenário-base (`Cenario.base_de`). `chao.gd` só chama `Cenario.variante` ao ler a região da fase.
+- **Floresta com 5 andares diferentes:** `floresta` (mata fechada), `floresta_clareira` (lajes e pedras, mais claro), `floresta_pantano` (poças e raízes, tom úmido), `floresta_ruina` (lajes de pedra com musgo) e `floresta_fungos` (chão roxo-azulado, cogumelos brilhando). Cada uma tem piso próprio, ambiente, pesos de enfeites e partículas próprios. `cenarios.py` ganhou `piso_floresta_var` e `_variante` (reaproveita o atlas de enfeites da base e só renderiza o piso: ~20 s para as 4, `blender -b -P cenarios.py -- floresta_clareira ...`). Props novos: nenhum.
+- **Testes:** `testes/variantes.tscn` (variante por andar determinística, ordem muda com a semente, região sem variantes = cenário único) falhas=0; regioes, mapa, vistas falhas=0; robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40` sem SCRIPT ERROR. Capturas `--print_tela=hazaki --fase=1..4 --semente=7` mostram pisos e climas diferentes (olho humano ainda deve conferir o gosto).
+- **Pendente:** variantes de Pântano, Deserto, Gelo e Reino (mesmo molde: uma função de piso parametrizada + `_variante` + lista em `variantes` + config em `cenarios`); props novos baratos por variante (ex.: ruína com colunas); pesos a gosto do Breno.
+- **Para o Claude do Alisson (PC):** branch `alisson/cenarios-por-fase`, PR em rascunho. Para continuar, copie o bloco `VAR_FLORESTA`/`piso_floresta_var` em `cenarios.py` para a próxima região, gere, rode `--import` e `testes/variantes.tscn` (acrescente a lista da região). Não mexi em arena.gd, diretor_hordas.gd, hud.gd nem dados/fase.json.
+- Assinado: Claude do Alisson (notebook)
+
+## 2026-10-07 · Claude do Alisson (PC) · prioridade: multiplayer por último
+- **Decisão do Alisson:** multiplayer/online fica em **prioridade baixíssima**, só depois de todo o refino do jogo solo. Não gastar tempo com rede, sincronização nem testes com 2 instâncias agora; só manter os testes existentes passando.
+- **Para o Claude do Alisson (notebook):** vale pra você também. Itens só de rede (#112, #94 item 5, #106, chat/lobby) vão pro fim da fila.
+- PC assumiu os rascunhos #113 (merge como está) e #114 (sem a parte online) e o começo do Hazaki (#94 item 2).

@@ -193,8 +193,17 @@ func _desenhar() -> void:
 		if fa.has("regiao"):   # regiões (#64): "FLORESTA SOMBRIA 2/5  TRILHA TORTA"
 			rotulo_fase = "%s %d/%d  %s" % [str(fa.regiao_nome).to_upper(), int(fa.andar_regiao) + 1, int(Dados.json("regioes").get("fases_por_regiao", 5)), str(fa.get("nome", "")).to_upper()]
 		_txt(Vector2(0, 21), rotulo_fase, 8, Color(0.7, 0.9, 1), HORIZONTAL_ALIGNMENT_CENTER, W, true)
-		if df.final_chamado:
+		if df.saida_leve:
+			_txt(Vector2(0, 42), "PORTAL ABERTO", 12, Color(0.75, 0.65, 1), HORIZONTAL_ALIGNMENT_CENTER, W)
+		elif df.pror_ativa():   # prorrogação (#112): o cronômetro sobe e a cada degrau fica mais difícil e paga mais ouro
+			var pt: float = df.pror_t()
+			_txt(Vector2(0, 42), "+%02d:%02d" % [int(pt) / 60, int(pt) % 60], 16, Interface.cor("alerta"), HORIZONTAL_ALIGNMENT_CENTER, W)
+			_txt(Vector2(0, 54), "PRORROGAÇÃO  nível %d  ouro x%.2f" % [df.pror_degrau(), df.mult_ouro()], 8, Color(1, 0.75, 0.35), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+		elif df.final_chamado:
 			_txt(Vector2(0, 42), "CHEFE!", 16, Interface.cor("alerta"), HORIZONTAL_ALIGNMENT_CENTER, W)
+			var jr: float = df.janela_resta()
+			if jr > 0.0 and not df.enxame_final:
+				_txt(Vector2(0, 54), "derrote em %02d:%02d" % [int(jr) / 60, int(jr) % 60], 8, Color(1, 0.75, 0.6), HORIZONTAL_ALIGNMENT_CENTER, W, true)
 		else:
 			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
 		var abates := "Abates %d" % arena.abates
