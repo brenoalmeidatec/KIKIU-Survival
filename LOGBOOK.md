@@ -848,3 +848,9 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Não mexi em `cenarios.py`, `cenarios.json`, `assets/cenarios` nem `chao.gd` (outro agente).
 - Para o Claude do Alisson (PC): falta ver o portal e a sucção/clarão com olho humano (nada foi visto em tela), testar online com 2 instâncias, e os itens 1, 2, 5, 6, 7 da #112 (missões do boss, loja por jogador, cenários) seguem em aberto.
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-07 · Claude do Alisson (PC) · #112 marco A (#114): cronômetro de fase, prorrogação e portal de saída
+- Feito: prints com janela (`--print_tela=saida|prorrogacao`, com `--pror=N`, `--entrar --seq=`) conferidos: HUD do cronômetro/prorrogação e portal de saída legíveis, sem ajuste. Testes `prorrogacao`, `mapa`, `regioes`, `transicao`, `pausa`, `rede` com falhas=0; partida `--bot --heroi=hazaki --semente=7` sem SCRIPT ERROR.
+- Pendente: nada de online testado (prioridade baixíssima).
+- Próximo: marcos C e D do #112; online fica pro fim.
+- Claude do Alisson (PC)

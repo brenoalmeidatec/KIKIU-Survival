@@ -12,6 +12,7 @@ var aberta := false
 var pos := Vector2.ZERO
 var seg := 0.0               # quanto já segurou (0 a segurar)
 var saindo := false          # a sucção começou
+var bot_segurar := false     # teste de imagem: segura sozinho sem ser robô
 var pronto := false          # online: já fui sugado e espero os outros
 var _t := 0.0
 var _suc := 0.0
@@ -92,8 +93,8 @@ func _process(dt: float) -> void:
 		_succao(dt, j)
 	elif not arena.caido and not arena.duelo_ativo:
 		var dentro := dentro_do_portal(j.centro(), pos, float(cfg().get("raio", 34.0)))
-		var segurando: bool = arena.bot or Input.is_action_pressed("confirmar")
-		seg =avancar(seg, dentro, segurando, dt, float(cfg().get("segurar", 1.0)))
+		var segurando: bool = arena.bot or bot_segurar or Input.is_action_pressed("confirmar")
+		seg = avancar(seg, dentro, segurando, dt, float(cfg().get("segurar", 1.0)))
 		if seg >= float(cfg().get("segurar", 1.0)):
 			saindo = true
 			_suc = 0.0
@@ -121,11 +122,11 @@ func _terminou_succao(j: Node2D) -> void:
 	_flash = float(cfg().get("clarao", 0.35))
 	_cobre.color.a = 1.0
 	Transicao.revelar()   # o clarão abre na cortina de losangos
+	pronto = true   # parado no portal, escondido, até a fase fechar (sem isso, o progresso cheio sugaria o herói de novo)
+	saindo = false
 	if arena.online:
-		pronto = true
 		Rede.avisar("saida", 1.0)
 	else:
-		saindo = false
 		arena.fase_completa()
 
 
@@ -135,8 +136,9 @@ func _draw() -> void:
 	if not aberta or pronto:
 		return
 	var pulso := 0.5 + 0.5 * sin(_t * 3.0)
-	var r := 22.0 + 2.0 * pulso
-	draw_circle(pos, r * 1.9, Color(0.35, 0.15, 0.7, 0.18))
+	var r := 28.0 + 2.5 * pulso
+	draw_circle(pos, r * 2.4, Color(0.35, 0.15, 0.7, 0.14))
+	draw_circle(pos, r * 1.9, Color(0.4, 0.2, 0.8, 0.22))
 	draw_circle(pos, r * 1.35, Color(0.45, 0.25, 0.9, 0.28))
 	draw_circle(pos, r, Color(0.05, 0.02, 0.12, 0.95))
 	for i in 4:

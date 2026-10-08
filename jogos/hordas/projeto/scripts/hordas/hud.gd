@@ -194,7 +194,7 @@ func _desenhar() -> void:
 			rotulo_fase = "%s %d/%d  %s" % [str(fa.regiao_nome).to_upper(), int(fa.andar_regiao) + 1, int(Dados.json("regioes").get("fases_por_regiao", 5)), str(fa.get("nome", "")).to_upper()]
 		_txt(Vector2(0, 21), rotulo_fase, 8, Color(0.7, 0.9, 1), HORIZONTAL_ALIGNMENT_CENTER, W, true)
 		if df.saida_leve:
-			_txt(Vector2(0, 42), "SAÍDA ABERTA", 12, Color(0.75, 0.65, 1), HORIZONTAL_ALIGNMENT_CENTER, W)
+			_txt(Vector2(0, 42), "PORTAL ABERTO", 12, Color(0.75, 0.65, 1), HORIZONTAL_ALIGNMENT_CENTER, W)
 		elif df.pror_ativa():   # prorrogação (#112): o cronômetro sobe e a cada degrau fica mais difícil e paga mais ouro
 			var pt: float = df.pror_t()
 			_txt(Vector2(0, 42), "+%02d:%02d" % [int(pt) / 60, int(pt) % 60], 16, Interface.cor("alerta"), HORIZONTAL_ALIGNMENT_CENTER, W)

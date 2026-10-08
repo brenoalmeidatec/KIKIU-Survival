@@ -1685,6 +1685,33 @@ func _print_tela(qual: String) -> void:
 			else:
 				_arena.loja.abrir(_arena.sortear_cartas(Sorte.criar("loja", 3)))
 			await get_tree().create_timer(float(_args.get("espera", 0.5)), true, false, true).timeout
+		"prorrogacao", "saida":   # #112: HUD do cronômetro (--pror=N segundos de prorrogação, 0 = janela do chefe) e o portal de saída; "saida" aceita --seq=t1,t2 (s reais) com --entrar pra ver a sucção e o clarão
+			_comecar("hazaki")
+			await get_tree().create_timer(0.5, true, false, true).timeout
+			_arena.bot = false
+			_arena.jogador.bot = false
+			_arena.jogador.invencivel = 999.0
+			_arena.inimigos.limpar()
+			var dr = _arena.diretor
+			var fa: Dictionary = dr.fases()[dr.fase_idx]
+			dr.final_chamado = true
+			dr.chefe_fase = str(fa.get("chefe", ""))
+			var base_t := float(fa.get("duracao", 600)) + float(Dados.json("prorrogacao").get("janela_chefe", 120.0))
+			if qual == "prorrogacao":
+				dr.t_fase = base_t + float(_args.get("pror", 23.0)) if _args.has("pror") else base_t - 95.0
+				for i in 25:
+					_arena.inimigos.criar("trojan", _arena.jogador.position + Vector2(randf_range(-200, 200), randf_range(-120, 120)), 1)
+			else:
+				dr.t_fase = base_t - 20.0
+				_arena.abrir_saida(_arena.jogador.position + Vector2(70, -10))
+				if _args.has("entrar"):
+					_arena.jogador.position += _arena.saida.pos - _arena.jogador.centro() + Vector2(0, 6)
+					_arena.saida.bot_segurar = true
+				if _args.has("seq"):
+					await _fotos_seq("saida", str(_args.seq))
+					get_tree().quit()
+					return
+			await get_tree().create_timer(float(_args.get("espera", 0.8)), true, false, true).timeout
 		"entrada_chefe":   # placa do chefe no meio da entrada: --espera=N segundos reais depois que ele nasce (padrão 1)
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3, true, false, true).timeout
