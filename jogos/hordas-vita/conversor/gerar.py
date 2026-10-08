@@ -88,8 +88,8 @@ run/main_scene="res://main.tscn"
 
 [display]
 
-window/size/width=480
-window/size/height=272
+window/size/width=640
+window/size/height=360
 window/size/test_width=960
 window/size/test_height=544
 window/vsync/use_vsync=true

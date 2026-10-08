@@ -306,6 +306,20 @@ func servidor_texto():
 	return _servidor_texto
 
 
+## OS.get_cmdline_user_args() do Godot 4: o que vem depois de "--" (ou tudo, se não houver "--").
+func args_usuario() -> PoolStringArray:
+	var a = Array(OS.get_cmdline_args())
+	var i = a.find("--")
+	if i < 0:
+		return PoolStringArray(a)
+	return PoolStringArray(a.slice(i + 1, a.size() - 1)) if i < a.size() - 1 else PoolStringArray()
+
+
+## static var vista de fora: Alias._SV.nome = valor (sem regravar a constante no script).
+func sv_def(dic: Dictionary, nome: String, valor) -> void:
+	dic[nome] = valor
+
+
 ## ProjectSettings.get_setting(nome, padrão) do Godot 4 (no 3 não tem padrão).
 func config(nome: String, padrao = null):
 	if ProjectSettings.has_setting(nome):
@@ -484,3 +498,32 @@ func cor_de_texto(s, padrao = Color.black) -> Color:
 func cor(c, alfa) -> Color:
 	var r = Color(c) if typeof(c) == TYPE_STRING else c
 	return Color(r.r, r.g, r.b, alfa)
+
+
+# ---------------------------------------------------------------- depuração no PC: --g4-foto=N (salva a tela) e --g4-sair=N
+var _foto_t = -1.0
+var _sair_t = -1.0
+
+
+func _ready() -> void:
+	pause_mode = Node.PAUSE_MODE_PROCESS
+	for a in OS.get_cmdline_args():
+		if a.begins_with("--g4-foto="):
+			_foto_t = float(a.split("=")[1])
+		elif a.begins_with("--g4-sair="):
+			_sair_t = float(a.split("=")[1])
+	set_process(_foto_t > 0.0 or _sair_t > 0.0)
+
+
+func _process(dt: float) -> void:
+	if _foto_t > 0.0:
+		_foto_t -= dt
+		if _foto_t <= 0.0:
+			var img = get_viewport().get_texture().get_data()
+			img.flip_y()
+			img.save_png("user://g4_foto.png")
+			print("G4: foto salva em ", ProjectSettings.globalize_path("user://g4_foto.png"))
+	if _sair_t > 0.0:
+		_sair_t -= dt
+		if _sair_t <= 0.0:
+			get_tree().quit()

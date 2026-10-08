@@ -148,6 +148,15 @@ G4_FUNCOES = ["roundi", "floori", "ceili", "randi_range", "pingpong", "posmod_g4
 
 COR_CONST = re.compile(r"\bColor\.([A-Z][A-Z_]+)\b")
 
+# Classes Control: no Godot 3 o tamanho/posição delas é rect_size/rect_position/... (Node2D continua position/scale).
+CONTROLES = set("""Control Label Button TextureRect ColorRect Panel PanelContainer VBoxContainer HBoxContainer LineEdit
+RichTextLabel MarginContainer CenterContainer ScrollContainer TextureButton NinePatchRect ProgressBar HSlider VSlider
+CheckBox CheckButton OptionButton ItemList GridContainer TabContainer Container ReferenceRect SpinBox TextEdit
+VideoStreamPlayer AspectRatioContainer FlowContainer HFlowContainer VFlowContainer BoxContainer SubViewportContainer
+ViewportContainer TextureProgressBar LinkButton MenuButton ColorPickerButton Tree GraphEdit HSeparator VSeparator""".split())
+PROP_CONTROLE = {"size": "rect_size", "position": "rect_position", "global_position": "rect_global_position",
+                 "scale": "rect_scale"}
+
 
 def renomear_codigo(c, avisos):
     for k, v in TIPOS.items():
@@ -191,6 +200,11 @@ def renomear_codigo(c, avisos):
     c = re.sub(r"\.multiplayer_peer\b", ".network_peer", c)
     c = re.sub(r"\.path_join\(", ".plus_file(", c)
     c = re.sub(r"\.intersection\(", ".clip(", c)
+    c = re.sub(r"\bcustom_minimum_size\b", "rect_min_size", c)
+    c = re.sub(r"\bpivot_offset\b", "rect_pivot_offset", c)
+    c = re.sub(r"\bOS\.get_cmdline_user_args\(\)", "G4.args_usuario()", c)
+    c = re.sub(r"\bmultiplayer\.peer_connected\b", "multiplayer.network_peer_connected", c)
+    c = re.sub(r"\bmultiplayer\.peer_disconnected\b", "multiplayer.network_peer_disconnected", c)
     c = re.sub(r"\bVector4i\(", "G4.v4i(", c)
     c = re.sub(r"\bColor\.from_string\(", "G4.cor_de_texto(", c)
     c = re.sub(r"\bColor\.html\(", "Color(", c)
@@ -350,6 +364,22 @@ def metodo_como_valor(linha, funcoes, estatica, caminho):
                 return 'funcref(%s, "%s")' % (obj, m.group(1))
             tx = re.sub(r"(?<![\.\w\"'])(%s)\b(?!\s*\()(?!\s*[:=](?!=))" % "|".join(sorted(funcoes, key=len, reverse=True)),
                         troca, tx)
+        novos.append((tp, tx))
+    return juntar(novos)
+
+
+def props_controle(linha, info, locais):
+    segs, _ = segmentar(linha, False)
+    novos = []
+    for tp, tx in segs:
+        if tp == "c":
+            for nome in info["controles"]:
+                if nome in tx:
+                    tx = re.sub(r"(?<![\.\w])(%s)\.(size|position|global_position|scale)\b" % re.escape(nome),
+                                lambda m: m.group(1) + "." + PROP_CONTROLE[m.group(2)], tx)
+            if info["e_controle"]:
+                tx = re.sub(r"(?<![\.\w\"'])(size|position|global_position|scale)\b(?!\s*\()",
+                            lambda m: m.group(1) if m.group(1) in locais else PROP_CONTROLE[m.group(1)], tx)
         novos.append((tp, tx))
     return juntar(novos)
 
@@ -806,6 +836,7 @@ def converter_arquivo(texto, info, globais, avisos):
             linha = metodo_como_valor(linha, info["funcoes"] - locais, estatica, info["caminho"])
             linha = trocar_set_transform(linha)
             linha = cortar_args(linha, "create_timer", 2)
+            linha = props_controle(linha, info, locais)
             linha = re.sub(r'("(?:[^"\\]|\\.)*")\.contains\(', r"G4.contains(\1, ", linha)
             linha = re.sub(r"(\w+\(\)(?:\.\w+\(\))*)\s*\*\s*(get_viewport_rect\(\)|get_rect\(\))", r"\1.xform(\2)", linha)
             linha = trocar_join(linha)
@@ -838,6 +869,13 @@ def converter_arquivo(texto, info, globais, avisos):
                 segs2 = [(tp, re.sub(r"\b%s\.(%s)\b" % (re.escape(alias), "|".join(nomes)), alias + r"._SV.\1", tx)
                           if tp == "c" else tx) for tp, tx in segs2]
                 linha = juntar(segs2)
+            # Alias._SV.nome = valor  (de fora): o Godot 3 tentaria regravar a constante _SV no script
+            msv = re.match(r"^(\s*)(\w+\._SV)\.(\w+)\s*(=|\+=|-=|\*=|/=)\s*(.+)$", linha)
+            if msv:
+                ind, dic, nome, op, val = msv.groups()
+                if op != "=":
+                    val = "%s.%s %s (%s)" % (dic, nome, op[0], val)
+                linha = '%sG4.sv_def(%s, "%s", %s)' % (ind, dic, nome, val)
             if re.search(r"\bfunc\s*\(", linha) and not re.match(r"^\s*(static\s+)?func\s+\w", linha):
                 avisos.append("lambda: " + linha.strip()[:90])
                 linha += "  # G4? lambda"
@@ -861,7 +899,12 @@ def converter_arquivo(texto, info, globais, avisos):
 
 def coletar_info(caminho_res, texto):
     info = {"caminho": caminho_res, "static_vars": {}, "aliases": {},
-            "funcoes": set(re.findall(r"(?m)^(?:static\s+)?func\s+(\w+)", texto))}
+            "funcoes": set(re.findall(r"(?m)^(?:static\s+)?func\s+(\w+)", texto)), "controles": set()}
+    cls = "|".join(sorted(CONTROLES, key=len, reverse=True))
+    for m in re.finditer(r"\bvar\s+(\w+)\s*(?::\s*(%s)\b|:?=\s*(%s)\.new\()" % (cls, cls), texto):
+        info["controles"].add(m.group(1))
+    me = re.search(r"(?m)^extends\s+(\w+)", texto)
+    info["e_controle"] = bool(me and me.group(1) in CONTROLES)
     for linha in texto.replace("\r\n", "\n").split("\n"):
         ms = re.match(r"^static\s+var\s+(\w+)\s*(?::\s*[^=]+)?(?:(?::)?=\s*(.*))?$", linha.strip())
         if ms and not linha.startswith((" ", "\t")):
