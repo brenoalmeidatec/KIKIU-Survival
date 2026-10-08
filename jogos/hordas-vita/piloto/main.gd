@@ -156,11 +156,22 @@ func _montar_passos() -> void:
 	passos.clear()
 	for l in [0, 1]:
 		for n in QUANTIDADES:
-			passos.append({"n": n, "luz": l, "proj": true, "som": true, "res": 0})
-	passos.append({"n": 300, "luz": 2, "proj": true, "som": true, "res": 0})
-	passos.append({"n": 300, "luz": 1, "proj": true, "som": false, "res": 0})
-	passos.append({"n": 300, "luz": 1, "proj": true, "som": true, "res": 1})
-	passos.append({"n": 500, "luz": 1, "proj": true, "som": true, "res": 1})
+			passos.append(_passo(n, l))
+	passos.append(_passo(300, 2))
+	passos.append(_passo(300, 1, {"som": false}))
+	passos.append(_passo(300, 1, {"res": 1}))
+	passos.append(_passo(500, 1, {"res": 1}))
+	passos.append(_passo(300, 1, {"vsync": false}))     # capacidade real acima de 60 fps
+	passos.append(_passo(800, 1, {"vsync": false}))
+	passos.append(_passo(300, 1, {"hud": false}))       # custo do texto do HUD
+	passos.append(_passo(300, 1, {"luz_q": 4}))         # buffer de luz com 1/4 da resolução por eixo
+
+
+func _passo(n: int, l: int, extra: Dictionary = {}) -> Dictionary:
+	var p = {"n": n, "luz": l, "proj": true, "som": true, "res": 0, "vsync": true, "hud": true, "luz_q": 2}
+	for k in extra:
+		p[k] = extra[k]
+	return p
 
 
 func _iniciar_rampa() -> void:
@@ -184,6 +195,9 @@ func _proximo_passo() -> void:
 	luz.definir_modo(p.luz)
 	projeteis = p.proj
 	som.definir(p.som)
+	OS.vsync_enabled = p.vsync
+	hud.visible = p.hud
+	luz.definir_divisor(p.luz_q)
 	horda.ordenar_y = true
 	horda.lod_longe = 4
 	horda.max_desenho = 2000
@@ -202,7 +216,10 @@ func _aplicar_res(r: int) -> void:
 
 func _fim_rampa() -> void:
 	passo = -1
-	var csv = "versao,motor,passo,n,luz,proj,som,res,fps,quadro_ms,pior_ms,logica_ms,desenho_ms,proj_ms,main_ms,n_proj,draw_calls,perto,desenhados,arm_mhz\n"
+	OS.vsync_enabled = true
+	hud.visible = true
+	luz.definir_divisor(2)
+	var csv = "versao,motor,passo,n,luz,proj,som,res,vsync,hud,luz_q,fps,quadro_ms,pior_ms,logica_ms,desenho_ms,proj_ms,main_ms,n_proj,draw_calls,perto,desenhados,arm_mhz\n"
 	for r in resultados:
 		csv += r.csv + "\n"
 	var salvos = []
@@ -222,12 +239,13 @@ func _fim_rampa() -> void:
 		resumo += "%-8s" % NOMES_LUZ[l]
 		for n in QUANTIDADES:
 			for r in resultados:
-				if r.luz == l and r.n == n and r.som and r.res == 0:
+				if r.luz == l and r.n == n and r.som and r.res == 0 and r.vsync and r.hud and r.luz_q == 2:
 					resumo += "%5.0f" % r.fps
 		resumo += "\n"
 	for r in resultados.slice(QUANTIDADES.size() * 2, resultados.size() - 1):
-		resumo += "%d luz=%s som=%s %dx%d: %.0f fps\n" % [r.n, NOMES_LUZ[r.luz], "S" if r.som else "N",
-			RESOLUCOES[r.res].x, RESOLUCOES[r.res].y, r.fps]
+		resumo += "%d luz=%s som=%s %dx%d vsync=%s hud=%s luz/%d: %.0f fps\n" % [r.n, NOMES_LUZ[r.luz],
+			"S" if r.som else "N", RESOLUCOES[r.res].x, RESOLUCOES[r.res].y, "S" if r.vsync else "N",
+			"S" if r.hud else "N", r.luz_q, r.fps]
 	resumo += "CSV: " + PoolStringArray(salvos).join("  ")
 	if rapido:
 		print(csv)
@@ -445,10 +463,11 @@ func _medir(dt: float, us_quadro: int) -> void:
 		var p: Dictionary = passos[passo]
 		var q = float(max(med.q, 1))
 		var seg = (OS.get_ticks_usec() - med.t0) / 1000000.0
-		var r = {"n": p.n, "luz": p.luz, "som": p.som, "res": p.res, "fps": (med.q - 1) / max(seg, 0.001)}
-		r.csv = "%d,%s,%d,%d,%s,%d,%d,%dx%d,%.1f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.0f,%.0f,%.0f,%d" % [VERSAO, motor,
+		var r = {"n": p.n, "luz": p.luz, "som": p.som, "res": p.res, "vsync": p.vsync, "hud": p.hud, "luz_q": p.luz_q,
+			"fps": (med.q - 1) / max(seg, 0.001)}
+		r.csv = "%d,%s,%d,%d,%s,%d,%d,%dx%d,%d,%d,%d,%.1f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.1f,%.0f,%.0f,%.0f,%d" % [VERSAO, motor,
 			passo + 1, p.n, NOMES_LUZ[p.luz], int(p.proj), int(p.som), RESOLUCOES[p.res].x, RESOLUCOES[p.res].y,
-			r.fps, med.us / q / 1000.0, med.pior / 1000.0, med.log / q / 1000.0, med.des / q / 1000.0,
+			int(p.vsync), int(p.hud), p.luz_q, r.fps, med.us / q / 1000.0, med.pior / 1000.0, med.log / q / 1000.0, med.des / q / 1000.0,
 			med.prj / q / 1000.0, med.main / q / 1000.0, med.np / q, med.dc / q, med.perto / q, med.desen / q, arm_mhz]
 		resultados.append(r)
 		if rapido and p.n == 300:     # foto da tela pra conferir o visual no PC (user://foto_passoN.png)

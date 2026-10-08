@@ -12,6 +12,7 @@
 # - o exportador grava TITLE_ID com ponteiro solto (às vezes sai o título): conserta_sfo.py regrava e confere;
 # - o 1º `-e -q` pode sair antes de importar arquivo novo: roda duas vezes.
 set -euo pipefail
+unset MSYS_NO_PATHCONV   # o editor é .exe do Windows: precisa que o Git Bash converta /e/... para E:/...
 aqui="$(cd "$(dirname "$0")" && pwd)"
 proj="$aqui/piloto"
 godot="${GODOT_VITA:-/e/Dev/KIKIU-Vita/ferramentas/Godot_v3.5-rc5-vita.exe}"

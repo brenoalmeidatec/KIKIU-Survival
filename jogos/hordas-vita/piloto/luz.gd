@@ -18,6 +18,7 @@ var _tela_buffer: TextureRect
 var _tela_shader: ColorRect
 var _grad: ImageTexture
 var _base = Vector2(480, 272)
+var _divisor = 2           # o buffer de luz tem base / _divisor (2 = metade por eixo = 1/4 da área)
 
 
 func _ready() -> void:
@@ -58,10 +59,16 @@ func _ready() -> void:
 
 func definir_base(base: Vector2) -> void:
 	_base = base
-	_vp.size = (base / 2.0).floor()
+	_vp.size = (base / float(_divisor)).floor()
 	_vp.get_texture().flags = Texture.FLAG_FILTER
 	_tela_buffer.rect_size = base
 	_tela_shader.rect_size = base
+
+
+func definir_divisor(d: int) -> void:
+	if d != _divisor:
+		_divisor = d
+		definir_base(_base)
 
 
 func definir_modo(m: int) -> void:
