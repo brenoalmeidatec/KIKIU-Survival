@@ -188,3 +188,34 @@ de ~150–180 na tela; sobra pouco para o resto do jogo em GDScript (armas, efei
 - **Ainda não está no Vita:** a horda do jogo continua em GDScript (o `HordaVita` do piloto ainda não está ligado ao
   `inimigos.gd`); o shader da escuridão do horror usa recursos do Godot 4 (fases de horror podem dar erro de shader);
   online desligado (sem conexão).
+
+## Testes do jogo no Godot 3 e o que falta para jogável (madrugada de 2026-10-08)
+
+- **Suíte do jogo convertida:** `conversor/testar.py` roda as 48 cenas de `testes/` no projeto gerado. **41/48 passam**
+  (falhas=0). Os 7 restantes: `rede` e `golpe_remoto` (online, fora da v1); `bench_horda`, `bench_inicio`, `transicao`
+  (medem tempo com limites calibrados para o Godot 4 no PC); `animacao_heroi` (a inclinação do herói usa `skew`, que o
+  Godot 3 não tem: some no Vita); `armas_universais` (só no teste: método passado como valor por um objeto que a
+  heurística não reconhece).
+- **Bugs de comportamento que os testes acharam e o conversor agora trata:** `==` entre dicionários (identidade no 3,
+  conteúdo no 4) → `G4.igual`; `create_timer(t, a, b, true)` (ignora `time_scale`) → `G4.timer_real` (hitstop e câmera
+  lenta esticavam esperas 20–50×); `Input.get_vector` lia força crua (o herói não andava com `action_press`) →
+  `G4.vetor`; `PackedFloat64Array` virava float de 32 bits (a ordem de desenho da horda repetia inimigos e escondia
+  outros) → `Array`; arquivo escrito e lido em seguida; `move_child(x, -1)`; nomes reservados do GDScript 1 (`ord`…).
+- **Hardware no jogo convertido (pelo G4, sem mexer no código do jogo):** touch traseiro = rolamento (ação `dash`);
+  touch frontal = mouse (menus e cartas aceitam mouse); alargamento estéreo + limiter no Master. Não verificado no
+  aparelho (o PC não tem esse hardware).
+- **Registro de desempenho no Vita:** `ux0:data/kikiu_vita_log.txt` (a cada 5 s: fps, pior quadro, vivos, estado).
+
+### Decisão pendente: a horda do jogo em C++
+
+Conta: no PC o jogo convertido gasta ~40 µs por inimigo na horda (GDScript); com o fator ~35× medido no piloto, ~1,4 ms
+por inimigo no Vita. O teto de 60 vivos (`conversor/dados_vita.json`) ainda deixa ~80 ms só de horda (~12 fps). O piloto
+provou o C++ (0,02 ms para 300 inimigos). Mas o `inimigos.gd` é lógica de jogo de verdade (79 campos por inimigo usados
+em 31 arquivos; investida, ataques, elementos, sons), não só física. Opções:
+1. **Portar `class V` + `atualizar` + `_draw` para o módulo C++** (V vira objeto C++ com propriedades, o resto do
+   GDScript não muda). Ganho grande, mas cada mudança no `inimigos.gd` da main precisa ser repetida no C++.
+2. **Propor à main uma horda orientada a dados** (arrays, como o piloto), que no Vita troca pelo C++ sem duplicar
+   lógica. Melhor a longo prazo; depende do Breno/Alisson aceitarem mudar o jogo principal.
+3. **Aceitar pouca horda no Vita** (teto 20–30) e investir no resto.
+Padrão sugerido, se ninguém decidir: começar pela 1 só para movimento/separação/desenho (o grosso do custo), deixando os
+comportamentos raros (investida, ataques) em GDScript chamados pelo C++.

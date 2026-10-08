@@ -934,3 +934,8 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Feito:** conversor GDScript 4 → 3 em `jogos/hordas-vita/conversor/` (+ autoload de compatibilidade `G4`). Os 88 scripts da main carregam no Godot 3 e o jogo roda no PC (título, partida com bot, chefe, cartas, loja) sem erros, inclusive a partir do pck exportado. `exportar_jogo.sh` gera `build/kikiu_vita.vpk` (KIKU00004) direto da main. Patches do motor: L/R e touch. Jogo em 640×360 com perfil `baixa` no Vita.
 - **Pendente (Alisson, de manhã):** instalar `kikiu_vita.vpk` e ver se abre/roda e a que fps (contador no canto superior esquerdo).
 - **Próximo:** ligar o `HordaVita` (C++) ao `inimigos.gd` convertido (é o que o piloto mostrou ser o gargalo) e converter o shader da escuridão.
+
+## 2026-10-08 · Claude do Alisson (PC) · Vita: suíte de testes do jogo no Godot 3 (41/48) e hardware no jogo convertido
+- **Feito:** os 48 testes do jogo rodam no projeto convertido (`conversor/testar.py`): 41 passam. Quatro agentes haiku acharam as causas das falhas; o conversor agora trata `==` de dicionário, timers que ignoram `time_scale`, `Input.get_vector`, `PackedFloat64Array` (a horda desenhava inimigos repetidos), arquivos, `move_child(-1)` e nomes reservados. No Vita, o G4 liga touch traseiro = rolamento, estéreo alargado e um log de fps em `ux0:data/kikiu_vita_log.txt`. `kikiu_vita.vpk` reexportado.
+- **Decisão pendente (Alisson):** como levar a horda do jogo para C++ (STATUS.md, "Decisão pendente"). Sem isso o jogo convertido deve rodar lento no Vita quando a horda encher.
+- **Próximo:** medir o `kikiu_vita.vpk` no aparelho (log por FTP) e decidir a horda em C++.

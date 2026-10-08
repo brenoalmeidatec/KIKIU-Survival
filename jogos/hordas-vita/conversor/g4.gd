@@ -697,6 +697,15 @@ func _ready() -> void:
 			fps = true
 	if OS.has_feature("Vita"):
 		call_deferred("_perfil_vita")
+		_log_arq = "ux0:data/kikiu_vita_log.txt"
+	elif Array(OS.get_cmdline_args()).has("--g4-log"):
+		_log_arq = "user://kikiu_vita_log.txt"
+	if _log_arq != "":
+		_log_ini = OS.get_ticks_msec()
+		var f = File.new()
+		if f.open(_log_arq, File.WRITE) == OK:      # um arquivo novo por execução
+			f.store_line("seg,fps,pior_ms,vivos,estado")
+			f.close()
 	if fps:
 		var camada = CanvasLayer.new()
 		camada.layer = 128
@@ -707,7 +716,7 @@ func _ready() -> void:
 		_fps_label.add_color_override("font_color_shadow", Color(0, 0, 0))
 		_fps_label.add_constant_override("shadow_as_outline", 1)
 		camada.add_child(_fps_label)
-	set_process(_foto_t > 0.0 or _sair_t > 0.0 or _fps_label != null)
+	set_process(_foto_t > 0.0 or _sair_t > 0.0 or _fps_label != null or _log_arq != "")
 
 
 ## No Vita: perfil de qualidade "baixa" (dados/qualidade.json) só nesta execução, hardware e som.
@@ -732,6 +741,44 @@ func _perfil_vita() -> void:
 	AudioServer.add_bus_effect(0, AudioEffectLimiter.new())
 
 
+## Registro de desempenho no Vita (ux0:data/kikiu_vita_log.txt, ou user:// com --g4-log no PC): a cada 5 s,
+## fps médio, pior quadro, inimigos vivos e estado da tela. Para analisar depois pelo FTP do VitaShell.
+var _log_t = 0.0
+var _log_n = 0
+var _log_pior = 0.0
+var _log_ini = 0
+var _log_arq = ""
+
+
+func _log_passo(dt: float) -> void:
+	if _log_arq == "":
+		return
+	_log_t += dt
+	_log_n += 1
+	_log_pior = max(_log_pior, dt)
+	if _log_t < 5.0:
+		return
+	var vivos = -1
+	var estado = ""
+	var main = get_tree().current_scene
+	if main and "_arena" in main and is_instance_valid(main._arena) and main._arena.get("inimigos"):
+		vivos = main._arena.inimigos.vivos()
+	if main and "_estado" in main:
+		estado = str(main._estado)
+	var f = File.new()
+	var existe_arq = f.file_exists(_log_arq)
+	if f.open(_log_arq, File.READ_WRITE if existe_arq else File.WRITE) == OK:
+		f.seek_end()
+		if not existe_arq:
+			f.store_line("seg,fps,pior_ms,vivos,estado")
+		f.store_line("%d,%.1f,%.1f,%d,%s" % [(OS.get_ticks_msec() - _log_ini) / 1000, _log_n / _log_t, _log_pior * 1000.0,
+			vivos, estado])
+		f.close()
+	_log_t = 0.0
+	_log_n = 0
+	_log_pior = 0.0
+
+
 ## Touch traseiro = rolamento (ação "dash" do jogo): encostou atrás, rola; solta a ação no quadro seguinte.
 func _hardware_vita() -> void:
 	if _dash_solta:
@@ -748,6 +795,7 @@ func _hardware_vita() -> void:
 
 func _process(dt: float) -> void:
 	_timers_passo()
+	_log_passo(dt)
 	if _hw != null or _dash_solta:
 		_hardware_vita()
 	if _fps_label:
