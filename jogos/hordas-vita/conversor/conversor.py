@@ -150,7 +150,7 @@ SO_GLOBAIS = {"var_to_bytes", "bytes_to_var", "var_to_str", "str_to_var", "randf
               "maxi", "maxf", "mini", "minf", "absi", "absf", "signi", "signf", "roundf", "floorf", "ceilf", "sqrtf",
               "fmodf", "linear_to_db", "db_to_linear"}
 
-G4_FUNCOES = ["roundi", "floori", "ceili", "randi_range", "pingpong", "posmod_g4", "angle_difference", "is_same",
+G4_FUNCOES = ["randi_range", "pingpong", "posmod_g4", "angle_difference", "is_same",
               "is_finite", "is_inf_g4"]   # f(x) -> G4.f(x)
 
 # Funções embutidas do GDScript 1: no Godot 3 são palavras reservadas e não podem ser nome de variável.
@@ -650,6 +650,24 @@ def strings_multilinha(texto):
     return "".join(out)
 
 
+def inteiro_inline(linha):
+    """roundi(x) -> int(round(x)), floori -> int(floor()), ceili -> int(ceil()): conta inline em vez de chamar o
+    autoload G4 (chamada de autoload custa caro no Godot 3, e estas aparecem nos laços por inimigo)."""
+    for nome, f in (("roundi", "round"), ("floori", "floor"), ("ceili", "ceil")):
+        pos = 0
+        while True:
+            m = re.compile(r"(?<![\.\w])%s\(" % nome).search(linha, pos)
+            if not m:
+                break
+            b = fechar(linha, m.end() - 1)
+            if b < 0:
+                break
+            novo = "int(%s(%s))" % (f, linha[m.end():b])
+            linha = linha[:m.start()] + novo + linha[b + 1:]
+            pos = m.start() + len(novo)
+    return linha
+
+
 def abs_inteiro(linha):
     """No Godot 3 abs/max/min/clamp/round/floor/ceil/sign devolvem float; ao lado de % ou de operador de bits o
     Godot 4 tinha inteiro. Envolve a chamada em int() quando ela está à esquerda OU à direita desses operadores."""
@@ -1015,6 +1033,7 @@ def converter_arquivo(texto, info, globais, avisos):
             linha = re.sub(r"\.call\(\)", ".call_func()", linha)
             linha = re.sub(r"\.callv\((?=\s*[^\s\"'])", ".call_funcv(", linha)
             linha = trocar_cor_alfa(linha)
+            linha = inteiro_inline(linha)
             linha = abs_inteiro(linha)
             linha = trocar_call_deferred(linha)
             linha = trocar_rpc(linha, info["funcoes"])
