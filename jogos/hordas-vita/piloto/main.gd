@@ -110,7 +110,10 @@ func _ready() -> void:
 		mede = 0.7
 	if ClassDB.class_exists("VitaHW"):
 		hw = ClassDB.instance("VitaHW")
-		hw.iniciar()
+		if hw.no_vita():
+			hw.iniciar()
+		else:
+			hw = null                     # módulo compilado fora do Vita (build Linux de teste): sem hardware
 	tex_chao = ImageTexture.new()
 	tex_chao.create_from_image(load("res://sprites/chao.png").get_data(), Texture.FLAG_REPEAT)
 	tex_heroi = load("res://sprites/heroi.png")
