@@ -3,6 +3,16 @@ extends Node
 ## Tudo aqui é chamado como G4.nome(...). Manter barato: o Vita roda GDScript ~30-45x mais devagar que o PC.
 
 const FONTE_PADRAO = "res://assets/fonte/PressStart2P.ttf"
+# DisplayServer.* do Godot 4 (o conversor troca DisplayServer. por G4.)
+const WINDOW_MODE_WINDOWED = 0
+const WINDOW_MODE_MINIMIZED = 1
+const WINDOW_MODE_MAXIMIZED = 2
+const WINDOW_MODE_FULLSCREEN = 3
+const WINDOW_MODE_EXCLUSIVE_FULLSCREEN = 4
+const VSYNC_DISABLED = 0
+const VSYNC_ENABLED = 1
+const VSYNC_ADAPTIVE = 2
+const VSYNC_MAILBOX = 3
 # ENetConnection.HOST_* do Godot 4 (estatística do online, fora da v1 no Vita)
 const HOST_TOTAL_SENT_DATA = 0
 const HOST_TOTAL_SENT_PACKETS = 1
@@ -83,6 +93,86 @@ func is_same(a, b) -> bool:
 	if typeof(a) == TYPE_OBJECT:
 		return a == b
 	return a == b
+
+
+## "==" do Godot 4 para Dictionary/Array (conteúdo, recursivo; número compara como float, 1 == 1.0).
+func igual(a, b) -> bool:
+	var ta = typeof(a)
+	var tb = typeof(b)
+	if (ta == TYPE_INT or ta == TYPE_REAL) and (tb == TYPE_INT or tb == TYPE_REAL):
+		return float(a) == float(b)
+	if ta != tb:
+		return false
+	if ta == TYPE_DICTIONARY:
+		if a.size() != b.size():
+			return false
+		for k in a:
+			if not b.has(k) or not igual(a[k], b[k]):
+				return false
+		return true
+	if ta == TYPE_ARRAY:
+		if a.size() != b.size():
+			return false
+		for i in a.size():
+			if not igual(a[i], b[i]):
+				return false
+		return true
+	return a == b
+
+
+## move_child(filho, -1) do Godot 4 = por último (no 3 índice negativo é erro).
+func mover_filho(pai: Node, filho: Node, pos: int) -> void:
+	pai.move_child(filho, pai.get_child_count() + pos if pos < 0 else pos)
+
+
+## get_window().get_final_transform() do Godot 4 (stretch viewport + keep): viewport -> janela.
+func transformada_final(vp: Viewport) -> Transform2D:
+	var k = min(OS.window_size.x / vp.size.x, OS.window_size.y / vp.size.y)
+	var off = (OS.window_size - vp.size * k) / 2.0
+	return Transform2D(Vector2(k, 0), Vector2(0, k), off)
+
+
+# ---------------------------------------------------------------- timers em tempo real (ignore_time_scale do Godot 4)
+class TimerReal:
+	extends Reference
+	signal timeout
+	var fim = 0
+
+
+var _timers_reais = []
+
+
+func timer_real(seg) -> Reference:
+	var t = TimerReal.new()
+	t.fim = OS.get_ticks_msec() + int(float(seg) * 1000.0)
+	_timers_reais.append(t)
+	set_process(true)
+	return t
+
+
+func _timers_passo() -> void:
+	if _timers_reais.empty():
+		return
+	var agora = OS.get_ticks_msec()
+	var i = _timers_reais.size() - 1
+	while i >= 0:
+		var t = _timers_reais[i]
+		if agora >= t.fim:
+			_timers_reais.remove(i)
+			t.emit_signal("timeout")
+		i -= 1
+
+
+## Input.get_vector/get_axis do Godot 4. No 3.5 eles leem a força "crua" da ação, que Input.action_press não
+## preenche (o teste de movimento andava 0 px); get_action_strength funciona com eventos e com action_press.
+func vetor(nx, px, ny, py, _zona = -1.0) -> Vector2:
+	var v = Vector2(Input.get_action_strength(px) - Input.get_action_strength(nx),
+		Input.get_action_strength(py) - Input.get_action_strength(ny))
+	return v.limit_length(1.0)
+
+
+func eixo(neg, pos) -> float:
+	return Input.get_action_strength(pos) - Input.get_action_strength(neg)
 
 
 func nada(_a = null, _b = null) -> void:
@@ -243,18 +333,35 @@ func json_texto(v, recuo = "", _ordenar = false, _precisao = false) -> String:
 	return JSON.print(v, recuo)
 
 
+var _escrevendo = []
+
+
+## Godot 4 descarrega o arquivo quando a referência some; no 3 só no close(). Quem lê depois chama _descarregar().
+func _descarregar() -> void:
+	for w in _escrevendo:
+		var f = w.get_ref()
+		if f and f.is_open():
+			f.flush()
+	_escrevendo = []
+
+
 func abrir(caminho: String, modo: int):
+	_descarregar()
 	var f = File.new()
 	if f.open(caminho, modo) != OK:
 		return null
+	if modo != File.READ:
+		_escrevendo.append(weakref(f))
 	return f
 
 
 func existe(caminho: String) -> bool:
+	_descarregar()
 	return File.new().file_exists(caminho)
 
 
 func ler_texto(caminho: String) -> String:
+	_descarregar()
 	var f = File.new()
 	if f.open(caminho, File.READ) != OK:
 		return ""
@@ -457,6 +564,18 @@ func window_set_mode(modo, _id = 0) -> void:
 	OS.window_maximized = modo == 2
 
 
+func window_set_vsync_mode(modo, _id = 0) -> void:
+	OS.vsync_enabled = modo != VSYNC_DISABLED
+
+
+func window_get_vsync_mode(_id = 0) -> int:
+	return VSYNC_ENABLED if OS.vsync_enabled else VSYNC_DISABLED
+
+
+func screen_get_refresh_rate(_tela = -1) -> float:
+	return 60.0
+
+
 func window_get_mode(_id = 0) -> int:
 	return 3 if OS.window_fullscreen else (2 if OS.window_maximized else 0)
 
@@ -599,6 +718,7 @@ func _perfil_vita() -> void:
 
 
 func _process(dt: float) -> void:
+	_timers_passo()
 	if _fps_label:
 		_fps_t += dt
 		_fps_n += 1

@@ -124,7 +124,7 @@ TIPOS = {
     "NOTIFICATION_WM_CLOSE_REQUEST": "NOTIFICATION_WM_QUIT_REQUEST",
     "NOTIFICATION_APPLICATION_PAUSED": "NOTIFICATION_APP_PAUSED",
     "NOTIFICATION_APPLICATION_RESUMED": "NOTIFICATION_APP_RESUMED",
-    "PRESET_FULL_RECT": "PRESET_WIDE", "ENetMultiplayerPeer": "NetworkedMultiplayerENet", "OfflineMultiplayerPeer": "Reference",
+    "PRESET_FULL_RECT": "PRESET_WIDE", "NavigationRegion2D": "NavigationPolygonInstance", "ENetMultiplayerPeer": "NetworkedMultiplayerENet", "OfflineMultiplayerPeer": "Reference",
 }
 
 FUNCOES = {  # nome( -> nome(
@@ -138,18 +138,54 @@ FUNCOES = {  # nome( -> nome(
     "get_process_frames": "get_idle_frames", "is_zero_approx": "is_zero_approx",
     "roundf": "round", "floorf": "floor", "ceilf": "ceil", "sqrtf": "sqrt", "fmodf": "fmod",
     "linear_to_db": "linear2db", "db_to_linear": "db2linear", "horizontal_alignment": "align",
+    "var_to_bytes": "var2bytes", "bytes_to_var": "bytes2var", "var_to_str": "var2str", "str_to_var": "str2var",
     "get_closest_point_to_segment": "get_closest_point_to_segment_2d",
     "segment_intersects_segment": "segment_intersects_segment_2d", "line_intersects_line": "line_intersects_line_2d",
     "offset_polygon": "offset_polygon_2d", "clip_polygons": "clip_polygons_2d", "merge_polygons": "merge_polygons_2d",
     "intersect_polygons": "intersect_polygons_2d", "convex_hull": "convex_hull_2d",
 }
 
-SO_GLOBAIS = {"randf_range", "deg_to_rad", "rad_to_deg", "snapped", "snappedf", "lerpf", "remap", "clampi", "clampf",
+SO_GLOBAIS = {"var_to_bytes", "bytes_to_var", "var_to_str", "str_to_var", "randf_range", "deg_to_rad", "rad_to_deg", "snapped", "snappedf", "lerpf", "remap", "clampi", "clampf",
               "maxi", "maxf", "mini", "minf", "absi", "absf", "signi", "signf", "roundf", "floorf", "ceilf", "sqrtf",
               "fmodf", "linear_to_db", "db_to_linear"}
 
 G4_FUNCOES = ["roundi", "floori", "ceili", "randi_range", "pingpong", "posmod_g4", "angle_difference", "is_same",
               "is_finite", "is_inf_g4"]   # f(x) -> G4.f(x)
+
+# Funções embutidas do GDScript 1: no Godot 3 são palavras reservadas e não podem ser nome de variável.
+BUILTINS_GD3 = set("""sin cos tan sinh cosh tanh asin acos atan atan2 sqrt fmod fposmod posmod floor ceil round abs sign
+pow log exp is_nan is_inf is_equal_approx is_zero_approx ease decimals step_decimals stepify lerp lerp_angle inverse_lerp
+range_lerp smoothstep move_toward dectime randomize randi randf rand_range seed rand_seed deg2rad rad2deg linear2db
+db2linear polar2cartesian cartesian2polar wrapi wrapf max min clamp nearest_po2 weakref funcref convert typeof
+type_exists char ord str print printt prints printerr printraw print_debug push_error push_warning var2str str2var
+var2bytes bytes2var range load inst2dict dict2inst validate_json parse_json to_json hash Color8 ColorN print_stack
+get_stack instance_from_id len""".split())
+
+
+def renomear_reservados(texto):
+    """Variáveis/parâmetros/laços com nome de função embutida do GDScript 1 ganham "_" (ord -> ord_)."""
+    nomes = set(re.findall(r"\bvar\s+(\w+)", texto)) | set(re.findall(r"\bfor\s+(\w+)\s+in\b", texto))
+    for sig in re.findall(r"\bfunc\s*\w*\s*\(([^)]*)\)", texto):
+        for prm in sig.split(","):
+            mp = re.match(r"\s*(\w+)", prm)
+            if mp:
+                nomes.add(mp.group(1))
+    alvo = sorted(nomes & BUILTINS_GD3)
+    if not alvo:
+        return texto
+    linhas = []
+    em_tripla = False
+    for linha in texto.split("\n"):
+        segs, prox = segmentar(linha, em_tripla)
+        novos = []
+        for tp, tx in segs:
+            if tp == "c":
+                tx = re.sub(r"(?<![\.\w])(%s)\b(?!\s*\()" % "|".join(alvo), r"\1_", tx)
+            novos.append((tp, tx))
+        linhas.append(juntar(novos))
+        em_tripla = prox
+    return "\n".join(linhas)
+
 
 AUTOLOADS = []        # preenchido pelo main() com os autoloads do project.godot do Godot 4
 
@@ -212,6 +248,11 @@ def renomear_codigo(c, avisos):
     c = re.sub(r"\.intersection\(", ".clip(", c)
     c = re.sub(r"\.remove_at\(", ".remove(", c)
     c = re.sub(r"\.orthogonal\(\)", ".tangent()", c)
+    c = re.sub(r"\.is_valid_int\(", ".is_valid_integer(", c)
+    c = re.sub(r"\bInput\.get_vector\(", "G4.vetor(", c)
+    c = re.sub(r"\bInput\.get_axis\(", "G4.eixo(", c)
+    c = re.sub(r"\bEngine\.max_fps\b", "Engine.target_fps", c)
+    c = re.sub(r"\bget_window\(\)\.get_final_transform\(\)", "G4.transformada_final(get_viewport())", c)
     c = re.sub(r"\.get_screen_center_position\(\)", ".get_camera_screen_center()", c)
     c = re.sub(r"^(\s*)([\w\.\[\]]*?)\.?texture_(filter|repeat)\s*=\s*.*$", r"\1pass  # texture_\3 (Godot 4): no 3 o filtro é da textura", c)
     c = re.sub(r"\.expand_mode\s*=\s*TextureRect\.EXPAND_IGNORE_SIZE", ".expand = true", c)
@@ -401,6 +442,115 @@ def props_controle(linha, info, locais):
                             lambda m: m.group(1) if m.group(1) in locais else PROP_CONTROLE[m.group(1)], tx)
         novos.append((tp, tx))
     return juntar(novos)
+
+
+def timer_tempo_real(linha):
+    """get_tree().create_timer(T, a, b, true) -> G4.timer_real(T): o 4º argumento do Godot 4 (ignore_time_scale) não
+    existe no 3; sem ele o timer anda na escala de Engine.time_scale (hitstop/câmera lenta esticavam as esperas)."""
+    pos = 0
+    while True:
+        m = re.compile(r"(?:\bget_tree\(\)|\b[\w\.]+)\.create_timer\(").search(linha, pos)
+        if not m:
+            return linha
+        a = m.end() - 1
+        b = fechar(linha, a)
+        if b < 0:
+            return linha
+        args = [x.strip() for x in dividir_args(linha[a + 1:b])]
+        if len(args) >= 4 and args[3] == "true":
+            novo = "G4.timer_real(%s)" % args[0]
+            linha = linha[:m.start()] + novo + linha[b + 1:]
+            pos = m.start() + len(novo)
+        else:
+            pos = m.end()
+
+
+# ---- igualdade de Dictionary: no Godot 3 "==" compara identidade, no 4 compara conteúdo
+def _operando_esq(texto, fim):
+    """Início do operando à esquerda de texto[fim]: volta pulando parênteses e strings até um delimitador
+    (vírgula, abre-parêntese, =, <, >, !, :) ou uma palavra-chave (and, or, not, if, elif, while, return, in, else)."""
+    j = fim
+    prof = 0
+    while j > 0:
+        ch = texto[j - 1]
+        if ch in "\"'":
+            k = j - 2
+            while k >= 0 and texto[k] != ch:
+                k -= 1
+            j = max(k, 0)
+            continue
+        if ch in ")]}":
+            prof += 1
+        elif ch in "([{":
+            if prof == 0:
+                break
+            prof -= 1
+        elif prof == 0:
+            if ch in ",=<>!:":
+                break
+            if ch in " \t" and re.search(r"(?:^|\W)(and|or|not|if|elif|while|return|in|else)$", texto[:j - 1]):
+                break
+        j -= 1
+    return j
+
+
+def _operando_dir(texto, ini):
+    j = ini
+    prof = 0
+    while j < len(texto):
+        ch = texto[j]
+        if ch in "\"'":
+            k = j + 1
+            while k < len(texto) and texto[k] != ch:
+                k += 2 if texto[k] == "\\" else 1
+            j = k + 1
+            continue
+        if ch in "([{":
+            prof += 1
+        elif ch in ")]}":
+            if prof == 0:
+                break
+            prof -= 1
+        elif prof == 0:
+            if ch in ",:#":
+                break
+            if re.match(r"\s+(and|or|if|else)\b", texto[j:]):
+                break
+        j += 1
+    return j
+
+
+def _parece_dict(expr, globais, info):
+    e = expr.strip()
+    if e.startswith("{") or e == "{}":
+        return True
+    m = re.search(r"([A-Za-z_]\w*)\s*\([^()]*\)\s*$", e)
+    if m and m.group(1) in globais.get("funcs_dict", ()):
+        return True
+    m = re.search(r"(?:^|\.)([A-Za-z_]\w*)$", e)
+    if m and m.group(1) in globais.get("vars_dict", ()):
+        return True
+    return False
+
+
+def igualdade_dict(linha, globais, info):
+    if "==" not in linha and "!=" not in linha:
+        return linha
+    pos = 0
+    while True:
+        m = re.compile(r"\s*(==|!=)\s*").search(linha, pos)
+        if not m:
+            return linha
+        e0 = _operando_esq(linha, m.start())
+        d1 = _operando_dir(linha, m.end())
+        esq, dir_ = linha[e0:m.start()], linha[m.end():d1]
+        if esq.strip() and dir_.strip() and (_parece_dict(esq, globais, info) or _parece_dict(dir_, globais, info)):
+            novo = "%sG4.igual(%s, %s)" % ("not " if m.group(1) == "!=" else "", esq.strip(), dir_.strip())
+            pre = linha[:e0]
+            linha = pre + novo + linha[d1:]
+            pos = len(pre) + len(novo)
+        else:
+            pos = m.end()
 
 
 def cortar_args(linha, nome, maximo):
@@ -700,8 +850,8 @@ def trocar_await(linha, avisos):
     if not m:
         return linha
     resto = linha[m.end():]
-    # await get_tree().create_timer(t).timeout
-    mt = re.match(r"(.*?\.create_timer\(.*\))\.timeout\b", resto)
+    # await G4.timer_real(t).timeout  /  await get_tree().create_timer(t).timeout
+    mt = re.match(r"(G4\.timer_real\(.*\))\.timeout\b", resto) or re.match(r"(.*?\.create_timer\(.*\))\.timeout\b", resto)
     if mt:
         return linha[:m.start()] + 'yield(%s, "timeout")' % mt.group(1) + resto[mt.end():]
     # await X.sinal (termina num identificador sem parênteses)
@@ -798,6 +948,7 @@ def tirar_tipos_resto(c):
 
 def converter_arquivo(texto, info, globais, avisos):
     texto = strings_multilinha(texto.replace("\r\n", "\n"))
+    texto = renomear_reservados(texto)
     texto = lambdas.icar(texto, info["caminho"], avisos)
     texto = dobrar_preload(texto)
     linhas = texto.replace("\r\n", "\n").split("\n")
@@ -871,10 +1022,13 @@ def converter_arquivo(texto, info, globais, avisos):
                 linha = re.sub(r"(?<![\w\.\"'])(%s)\.(%s)\b(?=\s*[,)])" % ("|".join(sorted(info["objs"])), globais["so_funcoes_re"]),
                                lambda m: 'funcref(%s, "%s")' % (m.group(1), m.group(2)), linha)
             linha = trocar_set_transform(linha)
+            linha = timer_tempo_real(linha)
             linha = cortar_args(linha, "create_timer", 2)
+            linha = trocar_metodo_por_g4(linha, "move_child", "mover_filho") if ".move_child(" in linha and "-1)" in linha else linha
+            linha = igualdade_dict(linha, globais, info)
             linha = props_controle(linha, info, locais)
             linha = re.sub(r"^(\s*)([\w\.\[\]]+)\.skew\s*[-+*/]?=\s*(.+)$", r"\1G4.nada(\2, \3)  # skew do Godot 4", linha)
-            linha = re.sub(r"\.skew\b", ".rotation * 0.0", linha)
+            linha = re.sub(r"[\w\.\[\]]+\.skew\b", "(0.0)", linha)
             for nome in info["pools"]:
                 linha = re.sub(r"(?<![\.\w])%s\.clear\(\)" % re.escape(nome), nome + ".resize(0)", linha)
             for nome in info["callables"]:
@@ -994,7 +1148,7 @@ def main():
     manual = os.path.join(AQUI, "..", "jogo_vita_manual")
     os.makedirs(dest, exist_ok=True)
     scripts = {}
-    for raiz, _, arqs in os.walk(os.path.join(orig, "scripts")):
+    for raiz, _, arqs in [w for pasta in ("scripts", "testes") for w in os.walk(os.path.join(orig, pasta))]:
         for a in arqs:
             if a.endswith(".gd"):
                 p = os.path.join(raiz, a)
@@ -1018,6 +1172,12 @@ def main():
         # só membros de classe (nível 0): parâmetros com o mesmo nome de uma função não impedem a troca
         todas_vars |= set(re.findall(r"(?m)^(?:@\w+(?:\([^)]*\))?\s+)*(?:static\s+)?(?:var|const|signal)\s+(\w+)", t))
     so = sorted(todas_funcs - todas_vars - {"new", "get", "set", "call", "free"}, key=len, reverse=True)
+    globais["funcs_dict"] = set()
+    globais["vars_dict"] = set()
+    for t in scripts.values():
+        globais["funcs_dict"] |= set(re.findall(r"func\s+(\w+)\s*\([^)]*\)\s*->\s*Dictionary", t))
+        globais["vars_dict"] |= set(re.findall(r"\bvar\s+(\w+)\s*:\s*Dictionary\b", t))
+        globais["vars_dict"] |= set(re.findall(r"\bvar\s+(\w+)\s*:?=\s*\{", t))
     globais["so_funcoes"] = so
     globais["so_funcoes_re"] = "|".join(re.escape(x) for x in so)
     for res, i in infos.items():

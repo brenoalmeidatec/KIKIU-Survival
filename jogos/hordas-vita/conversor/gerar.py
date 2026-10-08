@@ -85,6 +85,13 @@ def main():
             json.dumps(base, ensure_ascii=False, indent=1))
     open(os.path.join(dest, "main.tscn"), "w", encoding="utf-8", newline="\n").write(
         converter_tscn(open(os.path.join(orig, "main.tscn"), encoding="utf-8").read()))
+    # cenas de teste (testes/*.tscn): os scripts delas são convertidos pelo conversor.py
+    if os.path.isdir(os.path.join(orig, "testes")):
+        os.makedirs(os.path.join(dest, "testes"), exist_ok=True)
+        for a in os.listdir(os.path.join(orig, "testes")):
+            if a.endswith(".tscn"):
+                open(os.path.join(dest, "testes", a), "w", encoding="utf-8", newline="\n").write(
+                    converter_tscn(open(os.path.join(orig, "testes", a), encoding="utf-8").read()))
     open(os.path.join(dest, "g4_fonte.tres"), "w", encoding="utf-8", newline="\n").write(
         '[gd_resource type="DynamicFont" load_steps=2 format=2]\n\n'
         '[ext_resource path="res://assets/fonte/PressStart2P.ttf" type="DynamicFontData" id=1]\n\n'
