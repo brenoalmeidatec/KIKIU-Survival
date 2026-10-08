@@ -125,3 +125,8 @@ GDScript** (~30–45× mais lento que no PC), não a GPU. Cabem ~100 inimigos na
   comparável à medição 1 (só o golpe mata, como na v1). Coluna `proj_ms` no CSV.
 - Rampa v2: 13 passos (~75 s): N 100–500 × luz SEM/BUFFER, + 300 shader, 300 sem projéteis, 300 em 640×360.
 - Pegadinha: o 1º `-e -q` pode sair antes de importar arquivo novo; o `exportar.sh` roda duas vezes.
+- **Bug do exportador (0xF0030000 no VitaShell):** `vita-mksfoex.cpp` guarda o TITLE_ID com ponteiro para string
+  temporária já liberada; às vezes o `param.sfo` sai com `TITLE_ID = "KIKIU Piloto"` e o VitaShell recusa
+  (`VITASHELL_ERROR_INVALID_TITLEID`: 9 caracteres, maiúsculos). É aleatório (a v1 passou por sorte). O `exportar.sh`
+  agora roda `conserta_sfo.py`, que regrava TITLE_ID/TITLE/STITLE e falha se não conferir.
+- Envio por FTP: se a tela do Vita apagar, o Wi-Fi para e o arquivo chega truncado. Conferir o tamanho na listagem.

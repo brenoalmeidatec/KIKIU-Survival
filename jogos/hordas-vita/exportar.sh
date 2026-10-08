@@ -14,4 +14,7 @@ for _ in 1 2; do "$godot" --no-window -e -q --path "$proj" >/dev/null 2>&1 || tr
 "$godot" --no-window --path "$proj" --export "PlayStation Vita" "$proj/$titulo.vpk"
 mkdir -p "$(dirname "$saida")"
 mv -f "$proj/$titulo.vpk" "$saida"
+# o exportador grava TITLE_ID com ponteiro solto (às vezes sai o título): regrava e confere (ver conserta_sfo.py)
+title_id="$(sed -n 's/^param_sfo\/title_id="\(.*\)"/\1/p' "$proj/export_presets.cfg")"
+python "$aqui/conserta_sfo.py" "$saida" "$title_id" "$titulo"
 ls -l "$saida"
