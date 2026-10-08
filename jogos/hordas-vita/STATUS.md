@@ -170,3 +170,21 @@ de ~150–180 na tela; sobra pouco para o resto do jogo em GDScript (armas, efei
 - **Três vpks** (convivem): `kikiu_piloto.vpk` (KIKU00001, template oficial, GDScript), `kikiu_piloto_cpp.vpk`
   (KIKU00002, C++ + hardware), `kikiu_diag.vpk` (KIKU00003, template novo sem módulo: se o C++ não abrir e o diag abrir,
   o problema é o módulo; se nenhum abrir, é o SDK novo).
+
+## O jogo de verdade convertido (noite de 2026-10-08) · `kikiu_vita.vpk` (KIKU00004) aguardando teste no Vita
+
+- **Conversor automático** (`conversor/`): `exportar_jogo.sh` pega a `main` (`git archive`), converte os 88 scripts
+  GDScript 4 → 3 (`conversor.py` + `lambdas.py`), monta o projeto Godot 3 (`gerar.py`), confere (`verificar.py`:
+  88/88 carregam com os autoloads ativos) e exporta com o template próprio. Rodar de novo a cada atualização da main.
+  O que não tem tradução direta está no autoload `G4` (`conversor/g4.gd`). Detalhes do que existe/não existe no 3.5
+  em `PLANO_BACKPORT.md`.
+- **No PC (Godot 3.5 do fork, GLES2):** tela de título, partida com bot (`--bot --heroi=lucas`), chefe, cartas de
+  nível, HUD, loja: 40 s de partida sem nenhum erro, inclusive rodando o `game.pck` exportado. `rodar.py` itera:
+  roda N segundos, tira foto (`--g4-foto=N`), agrupa erros.
+- **Resolução do jogo: 640×360** (a interface foi desenhada para isso; no Vita escala 1,5× com faixa fina; o piloto
+  mostrou que a GPU aguenta). No Vita o `G4` liga o perfil de qualidade `baixa` e um contador de fps no canto.
+- **Patches do motor** (`compilar/patches_motor.py`, aplicados pelo `build_vita.sh`): L/R do Vita = JOY_L/JOY_R (4/5);
+  posição do "soltar" do touch corrigida. O touch frontal já vira mouse em 960×544 no fork.
+- **Ainda não está no Vita:** a horda do jogo continua em GDScript (o `HordaVita` do piloto ainda não está ligado ao
+  `inimigos.gd`); o shader da escuridão do horror usa recursos do Godot 4 (fases de horror podem dar erro de shader);
+  online desligado (sem conexão).

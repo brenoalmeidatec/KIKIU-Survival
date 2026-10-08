@@ -561,17 +561,51 @@ var _foto_t = -1.0
 var _sair_t = -1.0
 
 
+var _fps_label: Label = null
+var _fps_t = 0.0
+var _fps_n = 0
+
+
 func _ready() -> void:
 	pause_mode = Node.PAUSE_MODE_PROCESS
+	var fps = OS.has_feature("Vita")
 	for a in OS.get_cmdline_args():
 		if a.begins_with("--g4-foto="):
 			_foto_t = float(a.split("=")[1])
 		elif a.begins_with("--g4-sair="):
 			_sair_t = float(a.split("=")[1])
-	set_process(_foto_t > 0.0 or _sair_t > 0.0)
+		elif a == "--g4-fps":
+			fps = true
+	if OS.has_feature("Vita"):
+		call_deferred("_perfil_vita")
+	if fps:
+		var camada = CanvasLayer.new()
+		camada.layer = 128
+		add_child(camada)
+		_fps_label = Label.new()
+		_fps_label.rect_position = Vector2(2, 2)
+		_fps_label.add_color_override("font_color", Color(1, 1, 0.6))
+		_fps_label.add_color_override("font_color_shadow", Color(0, 0, 0))
+		_fps_label.add_constant_override("shadow_as_outline", 1)
+		camada.add_child(_fps_label)
+	set_process(_foto_t > 0.0 or _sair_t > 0.0 or _fps_label != null)
+
+
+## No Vita: perfil de qualidade "baixa" (dados/qualidade.json) só nesta execução.
+func _perfil_vita() -> void:
+	var cfg = get_node_or_null("/root/Config")
+	if cfg and cfg.has_method("temporario"):
+		cfg.temporario("qualidade", "baixa")
 
 
 func _process(dt: float) -> void:
+	if _fps_label:
+		_fps_t += dt
+		_fps_n += 1
+		if _fps_t >= 0.5:
+			_fps_label.text = "%d fps  %.1f ms" % [round(_fps_n / _fps_t), _fps_t * 1000.0 / _fps_n]
+			_fps_t = 0.0
+			_fps_n = 0
 	if _foto_t > 0.0:
 		_foto_t -= dt
 		if _foto_t <= 0.0:

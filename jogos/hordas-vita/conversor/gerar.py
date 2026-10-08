@@ -128,7 +128,7 @@ vram_compression/import_etc2=true
         shutil.copy(os.path.join(AQUI, "..", "piloto", "vita", n), os.path.join(vita, n))
     open(os.path.join(dest, "export_presets.cfg"), "w", encoding="utf-8", newline="\n").write(
         '[preset.0]\n\nname="PlayStation Vita"\nplatform="PlayStation Vita"\nrunnable=true\ncustom_features=""\n'
-        'export_filter="all_resources"\ninclude_filter="dados/*.json"\nexclude_filter=""\n'
+        'export_filter="all_resources"\ninclude_filter="*.json"\nexclude_filter=""\n'
         'export_path="../build/kikiu_vita.vpk"\nscript_export_mode=1\nscript_encryption_key=""\n\n[preset.0.options]\n\n'
         'param_sfo/title="KIKIU Vita"\nparam_sfo/title_id="KIKU00004"\nparam_sfo/parental_level=1\nparam_sfo/version="01.00"\n'
         'assets/bubble_icon_128x128="vita/icon0.png"\nassets/app_splash_960x544="vita/pic0.png"\n'

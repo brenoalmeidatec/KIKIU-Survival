@@ -532,8 +532,8 @@ func _input(e: InputEvent) -> void:
 			3: cmd = "luz"
 			2: cmd = "proj"
 			1: cmd = "som"
-			6: cmd = "res"
-			7: cmd = "gov"
+			4, 6: cmd = "res"           # L: 6 no template oficial, 4 no template próprio (patch do motor)
+			5, 7: cmd = "gov"           # R
 			10: cmd = "inclina"
 			11: cmd = "rampa"
 			12: cmd = "mais"

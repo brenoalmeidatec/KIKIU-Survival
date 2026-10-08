@@ -929,3 +929,8 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Feito:** distro WSL `vita-build` com VitaSDK 2026.08; template godot-vita compilado com o módulo `horda_vita` (HordaVita = horda inteira em C++ num draw call; VitaHW = touch frontal/traseiro, acelerômetro, clocks, bateria). Piloto v3 usa o módulo quando existe (touch, inclinação, som espacial). No PC (build Linux do mesmo motor) a lógica da horda caiu para 0,02–0,05 ms com 300–800 inimigos. No Vita3K o eboot novo abre igual ao oficial até o GL (o emulador não roda o PVR_PSP2). Detalhes em `jogos/hordas-vita/STATUS.md` e `compilar/LEIAME.md`.
 - **Pendente (Alisson, de manhã):** instalar `kikiu_piloto_cpp.vpk` (e o `kikiu_diag.vpk` se o C++ não abrir) e mandar o CSV.
 - Ferramentas desta máquina: `E:\Dev\KIKIU-Vita\ferramentas\` (editor, templates `vita_release_horda.zip`/`vita_release_diag.zip`, Vita3K), distro WSL `vita-build`.
+
+## 2026-10-08 · Claude do Alisson (PC) · Vita: o jogo de verdade convertido automaticamente roda no Godot 3
+- **Feito:** conversor GDScript 4 → 3 em `jogos/hordas-vita/conversor/` (+ autoload de compatibilidade `G4`). Os 88 scripts da main carregam no Godot 3 e o jogo roda no PC (título, partida com bot, chefe, cartas, loja) sem erros, inclusive a partir do pck exportado. `exportar_jogo.sh` gera `build/kikiu_vita.vpk` (KIKU00004) direto da main. Patches do motor: L/R e touch. Jogo em 640×360 com perfil `baixa` no Vita.
+- **Pendente (Alisson, de manhã):** instalar `kikiu_vita.vpk` e ver se abre/roda e a que fps (contador no canto superior esquerdo).
+- **Próximo:** ligar o `HordaVita` (C++) ao `inimigos.gd` convertido (é o que o piloto mostrou ser o gargalo) e converter o shader da escuridão.
