@@ -1686,6 +1686,8 @@ func _print_tela(qual: String) -> void:
 				_arena.tela_mapa.abrir()
 			else:
 				_arena.loja.abrir(_arena.sortear_cartas(Sorte.criar("loja", 3)))
+				_arena.loja._pos = Vector2(250, 190)   # a sala da loja (#112); --vitrine abre a lista de compras
+				_arena.loja._vitrine = _args.has("vitrine")
 			await get_tree().create_timer(float(_args.get("espera", 0.5)), true, false, true).timeout
 		"prorrogacao", "saida":   # #112: HUD do cronômetro (--pror=N segundos de prorrogação, 0 = janela do chefe) e o portal de saída; "saida" aceita --seq=t1,t2 (s reais) com --entrar pra ver a sucção e o clarão
 			_comecar("hazaki")
