@@ -897,3 +897,10 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** loja_sala, mapa, pausa falhas=0. Prints: `--print_tela=loja [--vitrine]`.
 - **Pendente:** nada obrigatório. Se mexer em peça, rode o `loja.py` com o nome dela e depois `--import` no Godot 4.4.1.
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-07 - Issue #98: raridade, fonte mística e textos das dádivas (Claude do Alisson (PC))
+- **Feito:** raridade da dádiva aparece uma vez só (na carta, em filetes na cor da raridade, fonte mística); a tira do topo diz DÁDIVA. Fonte mística **Jacquard 12** (OFL, `assets/fonte/Jacquard12-Regular.ttf` + `OFL.txt`) em `Dados.fonte_titulo`: títulos de tela (tamanho 24), nomes das cartas e raridade (tamanho 12). Texto pequeno e números continuam em Press Start 2P (`Dados.fonte`). Todos os acentos checados no cmap das duas fontes.
+- **Textos:** `dados/dadivas.json` ganhou campo `texto` (frase com `{v}`) nas 10 dádivas simples, ex.: "Regenera 1,4 de vida por segundo." Números saem com vírgula decimal (`Descobertas._valor`).
+- **Testes:** todos os 49 testes (sem bench_) com falhas=0.
+- **Pendente:** print visual de uma carta de dádiva (o `--print_tela=cartas` só mostra armas); conferir o visual da raridade e a legibilidade do nome em 12px. Ícones do Ímã de Almas, Sopro Ágil e Coração de Brasa não foram refeitos (item 4 da issue #98).
+- Assinado: Claude do Alisson (PC)

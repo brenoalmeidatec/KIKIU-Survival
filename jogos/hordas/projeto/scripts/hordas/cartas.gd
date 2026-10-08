@@ -289,8 +289,9 @@ func _confirmar() -> void:
 
 # ---------- desenho ----------
 
-func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := -1.0, alinhar := HORIZONTAL_ALIGNMENT_CENTER) -> void:
-	var f: Font = Dados.fonte
+func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := -1.0, alinhar := HORIZONTAL_ALIGNMENT_CENTER, f: Font = null) -> void:
+	if f == null:
+		f = Dados.fonte
 	_tela.draw_string(f, p + Vector2(1, 1), s, alinhar, larg, tam, Color(0, 0, 0, 0.8))
 	_tela.draw_string(f, p, s, alinhar, larg, tam, cor)
 
@@ -307,7 +308,7 @@ static func estilo(c: Dictionary, t := 0.0) -> Dictionary:
 		"cura":
 			return {"cor": Interface.cor("cura"), "glifo": "cruz", "rotulo": "CURA"}
 		"dadiva":
-			return {"cor": Interface.cor_raridade(str(c.get("raridade", "")), c.get("cor", Color.WHITE)), "glifo": "losango", "rotulo": str(c.get("rar_nome", "DÁDIVA"))}
+			return {"cor": Interface.cor_raridade(str(c.get("raridade", "")), c.get("cor", Color.WHITE)), "glifo": "losango", "rotulo": "DÁDIVA"}
 		"comportamento":
 			return {"cor": Interface.cor("comportamento"), "glifo": "estrela", "rotulo": "COMPORTAMENTO"}
 		"equipamento":
@@ -351,7 +352,7 @@ func _desenhar() -> void:
 	var fade := clampf((agora - (_inicio[0] if not _inicio.is_empty() else agora)) / 120.0, 0.0, 1.0)
 	_tela.draw_rect(Rect2(0, 0, W, H), Color(0.02, 0.02, 0.06, 0.84 * maxf(fade, 0.35)))
 	var cor_t: Color = Interface.cor("destaque") if _modo == "bau" else Color(0.6, 0.85, 1)
-	_txt(Vector2(0, 36), _titulo, 16, cor_t, W)
+	_txt(Vector2(0, 28), _titulo, 24, cor_t, W, HORIZONTAL_ALIGNMENT_CENTER, Dados.fonte_titulo)
 	var n := _cartas.size()
 	for i in n:
 		_carta(i, (agora - int(_inicio[i])) / 1000.0)
@@ -427,10 +428,14 @@ func _carta(i: int, ti_total: float) -> void:
 				else:
 					_tela.draw_rect(pr, Color(0.25, 0.27, 0.36))
 	elif tipo == "dadiva":
-		_txt(Vector2(o.x, o.y + 80), str(c.get("rar_nome", "")), 8, cor, larg)
+		# raridade aparece só aqui (a tira do topo diz DÁDIVA): filetes na cor da raridade e o nome em destaque
+		var rar := str(c.get("rar_nome", ""))
+		_tela.draw_rect(Rect2(o + Vector2(10, 76), Vector2(larg - 20, 1)), cor)
+		_txt(Vector2(o.x, o.y + 78), rar, 12, cor, larg, HORIZONTAL_ALIGNMENT_CENTER, Dados.fonte_titulo)
+		_tela.draw_rect(Rect2(o + Vector2(10, 94), Vector2(larg - 20, 1)), cor)
 	elif tipo == "comportamento":   # carta rara: deixa claro que muda o jeito da arma, não só um número
 		_txt(Vector2(o.x, o.y + 80), str(c.get("arma_nome", "")), 8, Interface.cor("destaque"), larg)
-	_tela.draw_multiline_string(Dados.fonte, o + Vector2(4, 104), str(c.nome), HORIZONTAL_ALIGNMENT_CENTER, larg - 8, 8, 2, Color.WHITE)
+	_tela.draw_multiline_string(Dados.fonte_titulo, o + Vector2(4, 104), str(c.nome), HORIZONTAL_ALIGNMENT_CENTER, larg - 8, 12, 1, Color.WHITE)
 	# antes > depois (o atributo que muda, com o valor novo em destaque)
 	var y := o.y + 132.0
 	var cmp: Array = c.get("cmp", [])
