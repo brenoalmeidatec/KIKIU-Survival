@@ -125,7 +125,8 @@ TIPOS = {
     "NOTIFICATION_WM_CLOSE_REQUEST": "NOTIFICATION_WM_QUIT_REQUEST",
     "NOTIFICATION_APPLICATION_PAUSED": "NOTIFICATION_APP_PAUSED",
     "NOTIFICATION_APPLICATION_RESUMED": "NOTIFICATION_APP_RESUMED",
-    "PRESET_FULL_RECT": "PRESET_WIDE", "NavigationRegion2D": "NavigationPolygonInstance", "ENetMultiplayerPeer": "NetworkedMultiplayerENet", "OfflineMultiplayerPeer": "Reference",
+    "PRESET_FULL_RECT": "PRESET_WIDE", "RENDER_TOTAL_DRAW_CALLS_IN_FRAME": "RENDER_2D_DRAW_CALLS_IN_FRAME",
+    "RENDER_TOTAL_OBJECTS_IN_FRAME": "RENDER_2D_ITEMS_IN_FRAME", "RENDER_TOTAL_PRIMITIVES_IN_FRAME": "RENDER_2D_ITEMS_IN_FRAME", "NavigationRegion2D": "NavigationPolygonInstance", "ENetMultiplayerPeer": "NetworkedMultiplayerENet", "OfflineMultiplayerPeer": "Reference",
 }
 
 FUNCOES = {  # nome( -> nome(

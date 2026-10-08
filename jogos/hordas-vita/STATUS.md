@@ -208,8 +208,10 @@ de ~150–180 na tela; sobra pouco para o resto do jogo em GDScript (armas, efei
 
 ### Decisão pendente: a horda do jogo em C++
 
-Conta: no PC o jogo convertido gasta ~40 µs por inimigo na horda (GDScript); com o fator ~35× medido no piloto, ~1,4 ms
-por inimigo no Vita. O teto de 60 vivos (`conversor/dados_vita.json`) ainda deixa ~80 ms só de horda (~12 fps). O piloto
+Medido com o `testes/bench_horda.tscn` do jogo no projeto convertido (PC, Godot 3, 500 inimigos): horda = 15,6 ms por
+quadro (lógica 9,2 + desenho 6,4) = **~31 µs por inimigo**; jogo a 50 fps (o original no Godot 4: 77). Com o fator ~35×
+medido no piloto, ~1,1 ms por inimigo no Vita: o teto de 60 vivos (`conversor/dados_vita.json`) ainda deixa ~65 ms só de
+horda (~15 fps). O piloto
 provou o C++ (0,02 ms para 300 inimigos). Mas o `inimigos.gd` é lógica de jogo de verdade (79 campos por inimigo usados
 em 31 arquivos; investida, ataques, elementos, sons), não só física. Opções:
 1. **Portar `class V` + `atualizar` + `_draw` para o módulo C++** (V vira objeto C++ com propriedades, o resto do
