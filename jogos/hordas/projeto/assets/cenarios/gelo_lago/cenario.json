@@ -1,0 +1,207 @@
+{
+ "_gerado_por": "fonte_arte/modelos3d/cenarios.py (variante de gelo; não edite à mão)",
+ "piso": "piso.png",
+ "enfeites": "enfeites.png",
+ "ambiente": [
+  0.8,
+  0.9,
+  1.0
+ ],
+ "itens": [
+  {
+   "nome": "pinheiro",
+   "peso": 1,
+   "pe": [
+    16,
+    46
+   ],
+   "regiao": [
+    0,
+    0,
+    32,
+    49
+   ]
+  },
+  {
+   "nome": "rocha",
+   "peso": 1,
+   "pe": [
+    16,
+    18
+   ],
+   "regiao": [
+    33,
+    0,
+    37,
+    24
+   ]
+  },
+  {
+   "nome": "cristal",
+   "peso": 1,
+   "pe": [
+    11,
+    23
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -12
+    ],
+    "pisca": 0.08,
+    "raio": 55,
+    "poca": [
+     94,
+     0,
+     111,
+     111
+    ],
+    "halo": [
+     206,
+     0,
+     27,
+     27
+    ]
+   },
+   "regiao": [
+    71,
+    0,
+    22,
+    28
+   ]
+  },
+  {
+   "nome": "estatua",
+   "peso": 2,
+   "pe": [
+    11,
+    31
+   ],
+   "regiao": [
+    234,
+    0,
+    32,
+    36
+   ]
+  },
+  {
+   "nome": "mao",
+   "peso": 1,
+   "pe": [
+    21,
+    17
+   ],
+   "regiao": [
+    267,
+    0,
+    42,
+    28
+   ]
+  },
+  {
+   "nome": "muralha",
+   "peso": 0,
+   "pe": [
+    18,
+    21
+   ],
+   "regiao": [
+    310,
+    0,
+    40,
+    25
+   ]
+  },
+  {
+   "nome": "bandeira",
+   "peso": 0,
+   "pe": [
+    5,
+    41
+   ],
+   "regiao": [
+    351,
+    0,
+    21,
+    43
+   ]
+  },
+  {
+   "nome": "runa",
+   "peso": 2,
+   "pe": [
+    7,
+    23
+   ],
+   "regiao": [
+    373,
+    0,
+    14,
+    26
+   ]
+  },
+  {
+   "nome": "fogueira",
+   "peso": 0,
+   "pe": [
+    11,
+    12
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -7
+    ],
+    "pisca": 0.2,
+    "raio": 70,
+    "poca": [
+     0,
+     112,
+     141,
+     141
+    ],
+    "halo": [
+     142,
+     112,
+     35,
+     35
+    ]
+   },
+   "regiao": [
+    388,
+    0,
+    23,
+    19
+   ]
+  },
+  {
+   "nome": "arvore_morta",
+   "peso": 1,
+   "pe": [
+    10,
+    45
+   ],
+   "regiao": [
+    178,
+    112,
+    27,
+    49
+   ]
+  },
+  {
+   "nome": "ossos",
+   "peso": 3,
+   "pe": [
+    7,
+    6
+   ],
+   "regiao": [
+    206,
+    112,
+    20,
+    12
+   ]
+  }
+ ],
+ "fixos": []
+}
