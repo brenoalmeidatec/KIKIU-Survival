@@ -473,6 +473,7 @@ func _bot_dir() -> Vector2:
 	if arena.saida and arena.saida.aberta:   # chefe morto (#112): o robô vai sozinho ao portal e sai (segurar é automático pro robô)
 		var ate: Vector2 = arena.saida.pos - c
 		return ate.normalized() * minf(1.0, ate.length() / 12.0)
+	var alvo_m = arena.missao.alvo_bot(c) if arena.missao else null   # missão do chefe (#112): o robô vai ao ponto de interesse mais perto
 	var fuga := Vector2.ZERO
 	for v in arena.inimigos.no_circulo(c, 110):
 		var dif: Vector2 = c - v.pos
@@ -494,6 +495,9 @@ func _bot_dir() -> Vector2:
 		var s = arena.chao.mais_perto_livre(position)
 		if s and s.pos.distance_to(position) < 700:
 			quer = (s.pos - position).normalized()
+	if alvo_m != null:
+		var ate_m: Vector2 = alvo_m - c
+		quer = ate_m.normalized() * minf(1.0, ate_m.length() / 12.0)
 	# chefe da fase em campo: o robô vai atrás dele (com a build na mão) em vez de só fugir
 	var ch: Array = arena.chefes()
 	if not ch.is_empty() and not melhor and ch[0].pos.distance_to(c) > 70.0:

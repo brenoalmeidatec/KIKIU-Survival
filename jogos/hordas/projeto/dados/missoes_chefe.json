@@ -1,0 +1,62 @@
+{
+ "_ajuda": "Missão do chefe (#112, item 2). Cada fase tem um chefe final e ele não cai do céu: o jogador o chama cumprindo uma missão em pontos de interesse do mapa (marcador no mundo, setas e texto no HUD). 'por_chefe' diz, pra cada chefe (id do inimigos.json), a lista de tipos de missão possíveis; a fase sorteia um com Sorte.criar('missao_chefe', andar): igual em todo cliente. Uma fase do regioes.json pode forçar com \"missao\": \"pilares\" ou apagar com \"missao\": false (aí o chefe só vem no fim do tempo, como antes). 'padrao' vale pra chefe que não está na lista. A missão aparece 'inicio' s depois da chegada (a fase tem ~70 s: sobra tempo de farmar antes); cumprida, o chefe nasce NA HORA, perto do ponto de invocação (pode ser antes do fim do tempo da fase). NUNCA trava a corrida: se a missão não for cumprida até 'duracao' + 'tolerancia' s, ela falha e o chefe vem sozinho, de fora da tela, como sempre veio. Tipos: fragmentos (colete 'quantos' fragmentos espalhados, tocando neles, e leve-os ao altar), pilares (fique perto de cada pilar por 'segundos' pra ativá-lo; longe dele a carga cai 'decai' por segundo), selos (derrote 'quantos' elites que carregam selos; 'inimigo' fixa o tipo, sem ele sai do conjunto da fase), invocar (só um portal/altar: entre e segure CONFIRMAR por 'segurar' s, sem coleta). 'distancia' = [min, max] px a partir do jogador no começo da missão; 'raio' = alcance do toque/da zona. No online só o anfitrião roda a missão (TODO: mandar o estado aos clientes, como o objetivo.gd faz com o evento 'objetivo').",
+ "inicio": 24.0,
+ "tolerancia": 75.0,
+ "padrao": ["invocar"],
+ "por_chefe": {
+  "bruxa_do_mato": ["fragmentos", "invocar"],
+  "velho_carvalho": ["invocar"],
+  "rainha_sapo": ["selos", "fragmentos"],
+  "mae_do_lodo": ["pilares"],
+  "sacerdote_areia": ["pilares", "invocar"],
+  "rei_escaravelho": ["fragmentos"],
+  "jarl_congelado": ["selos", "pilares"],
+  "gigante_tempestade": ["invocar"],
+  "arauto": ["fragmentos", "selos"],
+  "soberano_caos": ["invocar"]
+ },
+ "tipos": {
+  "fragmentos": {
+   "nome": "Reunir os fragmentos",
+   "dica": "Fragmentos de um selo antigo estão espalhados. Junte todos e leve ao altar!",
+   "cor": [0.4, 0.9, 1.0],
+   "quantos": 4,
+   "distancia": [200, 430],
+   "raio": 18,
+   "altar": {"distancia": [160, 260], "raio": 34, "nome": "ALTAR"},
+   "texto": "Fragmentos %d/%d",
+   "texto_entrega": "Leve ao altar"
+  },
+  "pilares": {
+   "nome": "Despertar os pilares",
+   "dica": "Fique perto de cada pilar até ele despertar!",
+   "cor": [1.0, 0.8, 0.35],
+   "quantos": 3,
+   "distancia": [200, 400],
+   "raio": 46,
+   "segundos": 3.5,
+   "decai": 0.5,
+   "texto": "Pilares %d/%d",
+   "texto_entrega": "Fique perto do pilar"
+  },
+  "selos": {
+   "nome": "Quebrar os selos",
+   "dica": "Elites carregam os selos que prendem o chefe. Derrote todos!",
+   "cor": [1.0, 0.45, 0.55],
+   "quantos": 3,
+   "distancia": [230, 360],
+   "texto": "Selos %d/%d",
+   "texto_entrega": "Cace os elites marcados"
+  },
+  "invocar": {
+   "nome": "Invocar o chefe",
+   "dica": "Vá ao altar e segure CONFIRMAR para invocar o chefe.",
+   "cor": [0.75, 0.5, 1.0],
+   "distancia": [170, 260],
+   "raio": 34,
+   "segurar": 1.5,
+   "texto": "Altar de invocação",
+   "texto_entrega": "Segure CONFIRMAR no altar"
+  }
+ }
+}

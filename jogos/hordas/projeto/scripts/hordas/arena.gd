@@ -27,6 +27,7 @@ const Regioes := preload("res://scripts/hordas/regioes.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
 const Objetivos := preload("res://scripts/hordas/objetivos.gd")
 const Saida := preload("res://scripts/hordas/saida.gd")
+const MissaoChefe := preload("res://scripts/hordas/missao_chefe.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Resultado := preload("res://scripts/hordas/resultado.gd")
@@ -111,6 +112,7 @@ var _conj_bonus := {}       # atributos que os conjuntos somam
 var _conj_explodindo := false
 var objetivo: Node2D        # objetivo próprio do andar (objetivos.gd)
 var saida: Node2D           # portal de saída da fase (saida.gd, #112)
+var missao: Node2D          # missão que chama o chefe da fase (missao_chefe.gd, #112)
 var _saida_pedida := false  # online: o anfitrião já mandou abrir a saída deste andar
 var fases_corrida: Array = []   # regiões (#64): as fases da corrida inteira, na ordem dos andares (regioes.gd)
 var banidos := {}           # id -> true: carta banida some do sorteio até o fim da corrida
@@ -157,6 +159,9 @@ func _ready() -> void:
 	objetivo = Objetivos.new()   # objetivo do andar (#63): desenha a pira no chão, embaixo de tudo
 	objetivo.arena = self
 	add_child(objetivo)
+	missao = MissaoChefe.new()
+	missao.arena = self
+	add_child(missao)
 	saida = Saida.new()
 	saida.arena = self
 	add_child(saida)
@@ -216,6 +221,7 @@ func _ready() -> void:
 		inimigos.espelho = Rede.cliente()
 	diretor = Diretor.new()
 	diretor.iniciar(self)
+	missao.nova_fase(diretor.fases()[0], 0)   # missão do chefe do primeiro andar (os outros começam em _iniciar_andar)
 	_atualizar_calor()
 	_recalcular()
 	jogador.configurar(str(heroi.get("sprite", heroi_id)))
@@ -360,6 +366,7 @@ func _process(dt: float) -> void:
 		else:
 			diretor.atualizar(dt)
 		objetivo.atualizar(dt)
+		missao.atualizar(dt)
 	var t1 := Time.get_ticks_usec()
 	if not duelo_ativo and not pre_duelo and not entre_fases and not mundo_espera:
 		inimigos.atualizar(dt, jogador)
@@ -649,6 +656,7 @@ func fase_completa() -> void:
 	if entre_fases or acabou:
 		return
 	entre_fases = true
+	missao.encerrar()
 	objetivo.encerrar()   # objetivo ainda aberto: falha sem castigo (o anfitrião manda o estado final)
 	var seq := _no_seq   # se o nó seguinte for escolhido antes de terminar (online), este fluxo se descarta
 	var n: int = diretor.fase_idx + 1
@@ -830,6 +838,7 @@ func _iniciar_andar(idx: int) -> void:
 		resultado.fechar()
 	var f: Dictionary = diretor.fases()[diretor.fase_idx]
 	objetivo.nova_fase(f, no_tipo, diretor.fase_idx)
+	missao.nova_fase(f, diretor.fase_idx)
 	var marca := "  (ELITE)" if no_tipo == "elite" else ""
 	entre_fases = false
 	_musica_da_fase(false)
@@ -860,6 +869,7 @@ func saltar_para_andar(idx: int) -> void:
 	chao.nova_fase()
 	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
 	objetivo.nova_fase(diretor.fases()[diretor.fase_idx], no_tipo, diretor.fase_idx)
+	missao.nova_fase(diretor.fases()[diretor.fase_idx], diretor.fase_idx)
 	hud.limpar_mensagens()   # o anúncio da fase 1 já tinha saído: troca pelo do andar de destino
 	if not abertura.comecar(diretor.fase_idx, ""):
 		_anunciar_fase(diretor.fase_idx, "")

@@ -939,6 +939,8 @@ func _teste() -> void:
 			print("  calor: %d %s" % [_arena.calor_pts, _arena.calor])
 		if _arena.objetivo.id != "":
 			print("  objetivo: %s" % [_arena.objetivo.snapshot()])
+		if _arena.missao.id != "":
+			print("  missao: %s est=%d etapa=%d t_fase=%.0f chefe_chamado=%s" % [_arena.missao.id, _arena.missao.est, _arena.missao.etapa, _arena.diretor.t_fase, _arena.diretor.final_chamado])
 		if not _arena.conj_resumo.is_empty():
 			print("  conjuntos: %s ef=%s" % [_arena.conj_contagem, _arena._conj_ef])
 		if _arena.especial.tem():
@@ -1684,6 +1686,8 @@ func _print_tela(qual: String) -> void:
 				_arena.tela_mapa.abrir()
 			else:
 				_arena.loja.abrir(_arena.sortear_cartas(Sorte.criar("loja", 3)))
+				_arena.loja._pos = Vector2(250, 190)   # a sala da loja (#112); --vitrine abre a lista de compras
+				_arena.loja._vitrine = _args.has("vitrine")
 			await get_tree().create_timer(float(_args.get("espera", 0.5)), true, false, true).timeout
 		"prorrogacao", "saida":   # #112: HUD do cronômetro (--pror=N segundos de prorrogação, 0 = janela do chefe) e o portal de saída; "saida" aceita --seq=t1,t2 (s reais) com --entrar pra ver a sucção e o clarão
 			_comecar("hazaki")
@@ -1737,7 +1741,7 @@ func _print_tela(qual: String) -> void:
 			for v in _arena.inimigos.lista:
 				v.vel = 0.0   # parados, pra a foto
 			await get_tree().create_timer(float(_args.get("espera", 2.0)), true, false, true).timeout
-		"conjuntos", "objetivo":   # #63: HUD com os conjuntos da build e (objetivo) um objetivo em andamento (--objetivo=pira|totens|fugitivo, --pronto=0..1 de quanto já foi)
+		"conjuntos", "objetivo", "missao":   # #112 (missao): missão do chefe em andamento (--tipo=fragmentos|pilares|selos|invocar). #63: HUD com os conjuntos da build e (objetivo) um objetivo em andamento (--objetivo=pira|totens|fugitivo, --pronto=0..1 de quanto já foi)
 			_args["fase"] = str(_args.get("fase", "2"))
 			_comecar("hazaki")
 			await get_tree().create_timer(1.8, true, false, true).timeout
@@ -1763,6 +1767,16 @@ func _print_tela(qual: String) -> void:
 				ob.resta -= 20.0
 				ob._marcas()
 				await get_tree().create_timer(2.4, true, false, true).timeout   # o anúncio grande some
+			if qual == "missao":
+				var ms = _arena.missao
+				ms._zerar()
+				ms._iniciar(str(_args.get("tipo", "fragmentos")))
+				if not ms.pontos.is_empty():
+					ms.pontos[0].ok = true
+					_arena.jogador.position = ms.pontos[-1].pos + Vector2(40, 30)
+				elif ms.tem_altar:
+					_arena.jogador.position = ms.altar + Vector2(50, 30)
+				await get_tree().create_timer(2.4, true, false, true).timeout
 			await get_tree().create_timer(0.5, true, false, true).timeout
 		"mortes":   # #32: 8 inimigos morrem de 8 causas; prints no meio dos efeitos (--seq=0.15,0.4,0.7 em segundos reais, --reduzida, --conj=virus)
 			if not _args.has("fase") and str(_args.get("conj", "horror")) != "virus":

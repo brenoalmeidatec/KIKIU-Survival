@@ -177,16 +177,33 @@ func _eventos() -> void:
 					arena.inimigos.criar(tipo, base + lado.orthogonal() * randf_range(-180, 180) + lado * randf_range(0, 80), nivel())
 				arena.anunciar_todos("Enxame!", Color(1, 0.8, 0.4))
 	var dur := float(_fase.get("duracao", 600))
-	if t_fase >= dur and not final_chamado:
-		final_chamado = true
-		var chefe := str(_fase.get("chefe", "tela_azul"))
-		chefe_fase = chefe
-		enxame_final = bool(Dados.json("inimigos").get(chefe, {}).get("final", false))
-		arena.inimigos.criar(chefe, _ponto_fora(), nivel())
-		arena.anunciar_todos(str(Dados.json("inimigos").get(chefe, {}).get("nome", chefe)).to_upper() + "!", Color(0.4, 0.6, 1))
-		arena.chefe_final_chegou(enxame_final, chefe)
-		Som.tocar("tremor")
-		arena.tremer(10)
+	if t_fase >= dur and not final_chamado and not arena.missao.segura_chefe():   # missão do chefe (#112) ainda segura o chefe: ele vem quando ela fecha
+		chamar_chefe()
+
+
+## O chefe da fase nasce (fim do tempo, ou a missão do chefe cumprida, missao_chefe.gd). `onde` = ponto do mundo (o altar); sem ele, fora da tela.
+func chamar_chefe(onde := Vector2.INF) -> void:
+	if final_chamado:
+		return
+	final_chamado = true
+	var chefe := str(_fase.get("chefe", "tela_azul"))
+	chefe_fase = chefe
+	enxame_final = bool(Dados.json("inimigos").get(chefe, {}).get("final", false))
+	arena.inimigos.criar(chefe, _ponto_fora() if onde == Vector2.INF else onde, nivel())
+	arena.anunciar_todos(str(Dados.json("inimigos").get(chefe, {}).get("nome", chefe)).to_upper() + "!", Color(0.4, 0.6, 1))
+	arena.chefe_final_chegou(enxame_final, chefe)
+	Som.tocar("tremor")
+	arena.tremer(10)
+
+
+## Duração (s) da fase atual: quando o chefe nasce sozinho.
+func duracao() -> float:
+	return float(_fase.get("duracao", 600))
+
+
+## A fase atual (dicionário do regioes.json / corrida.json).
+func fase_atual() -> Dictionary:
+	return _fase
 
 
 func _gastar() -> void:

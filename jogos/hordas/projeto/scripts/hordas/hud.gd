@@ -214,6 +214,7 @@ func _desenhar() -> void:
 		_energia_forma()
 		_dicas_santuario()
 		_objetivo()
+		_missao()
 	_icones_build()
 	if not arena.duelo_ativo:
 		_conjuntos()
@@ -512,6 +513,36 @@ func _objetivo() -> void:
 			var pl := 0.65 + 0.35 * sin(_t * 6.0)
 			_seta(b, 11.0, 7.0, Color(cor, pl))
 			_seta(b, 6.0, 3.5, Color(0.08, 0.04, 0.1, 0.8))
+
+
+## Missão do chefe (#112): nome, barra, texto curto ("Fragmentos 2/4", "Leve ao altar") e setas pros pontos de interesse. Abaixo do objetivo.
+func _missao() -> void:
+	var ms = arena.missao
+	if ms == null or not ms.visivel():
+		return
+	var cor: Color = ms.cor_de(ms.id)
+	if ms.est == ms.CUMPRIDO:
+		cor = Color(0.5, 1.0, 0.6)
+	elif ms.est == ms.FALHOU:
+		cor = Color(1.0, 0.45, 0.4)
+	var tx: Array = ms.texto()
+	var pulso := 0.8 + 0.2 * sin(_t * 5.0) if ms.est == ms.ANDAMENTO else 1.0
+	var y0 := 112.0 if arena.objetivo.visivel() else 68.0
+	_txt(Vector2(0, y0), str(tx[0]), 8, Color(cor, pulso), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+	var bw := 120.0
+	var bx := (W - bw) * 0.5
+	_tela.draw_rect(Rect2(bx - 1, y0 + 12, bw + 2, 8), Color(0.05, 0.03, 0.08, 0.85))
+	_tela.draw_rect(Rect2(bx, y0 + 13, bw * float(tx[2]), 6), Color(cor, 0.9))
+	_txt(Vector2(0, y0 + 30), str(tx[1]), 8, Color(0.92, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+	if ms.est == ms.ANDAMENTO:
+		for p in ms.marcas():
+			var b = _borda(p, 22.0)
+			if b == null:
+				continue
+			var pl := 0.65 + 0.35 * sin(_t * 6.0)
+			_seta(b, 11.0, 7.0, Color(cor, pl))
+			_seta(b, 6.0, 3.5, Color(0.08, 0.04, 0.1, 0.8))
+			_txt(b.p - b.dir * 24.0 - Vector2(20, -3), "%dm" % int(b.rel.length() / 10.0), 8, Color(cor, pl), HORIZONTAL_ALIGNMENT_CENTER, 40)
 
 
 func _duelo_hud() -> void:
