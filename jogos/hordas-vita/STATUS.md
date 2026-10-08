@@ -84,3 +84,29 @@ pelo código do fork, Cross=0, Circle=1, Square=2, Triangle=3, L=6, R=7, Select=
 - [ ] Resultado do piloto no Vita (Alisson).
 - [ ] Se seguir: plano do backport por sistema (horda e combate primeiro, depois HUD/cartas/loja, online por último ou
       fora da v1), conversão das cenas, troca do `escuridao.gd` pela luz BUFFER.
+
+## Resultado 1 — Vita real, 3.5-rc5 (2026-10-07) · `medicoes/vita_rc5_2026-10-07.csv`
+
+| N (480×272, atlas) | sem luz | buffer | shader |
+|---|---|---|---|
+| 50 | 59,5 | 47,9 | 46,6 |
+| 100 | 47,5 | 39,2 | 39,9 |
+| 200 | 31,9 | 28,5 | 29,1 |
+| 300 | 23,8 | 21,7 | 22,7 |
+| 450 | 17,9 | 17,0 | 16,5 |
+| 600 | 13,2 | 13,6 | 13,1 |
+
+Rodou os 22 passos sem travar; pior quadro sempre perto da média (sem soluço de GC/carga).
+**Leitura (regressão sobre os passos):** quadro ≈ 13 ms fixos + **0,20 ms por inimigo na tela**, metade lógica
+(0,088 ms por inimigo perto) e metade `_draw` (0,093 ms por inimigo desenhado). Ou seja: **o gargalo é CPU em
+GDScript** (~30–45× mais lento que no PC), não a GPU. Cabem ~100 inimigos na tela a 30 fps, ~17 a 60 fps.
+- **GPU sobra:** 640×360 não aumentou o custo fixo (15,2 ms contra 14,8); o quadro só piorou porque mais inimigos
+  ficam na tela. Luz custa ~2 ms; buffer e shader empatam.
+- **Draw call é caro no PVR_PSP2:** sem atlas (241 draw calls contra 77) o custo fixo subiu 7,5 ms (~45 µs por draw call).
+  O atlas fica obrigatório.
+- `mem_mb` = 0: o template release não conta memória estática (ignorar a coluna).
+- Pelo critério, caiu na faixa **20–30 fps → fase 2**. Mas a fase 2 certa não é vitaGL (que ataca driver/GPU, que não
+  são o gargalo), e sim tirar o laço quente da horda do GDScript. Plano: **2a** otimizar o GDScript do piloto e medir de
+  novo (barato, mesmo template); **2b** se não chegar a ~200 na tela a 30 fps, módulo C++ da horda compilado no template
+  (exige montar o build do Vita: VitaSDK no WSL, o mesmo trabalho da 3.7/vitaGL).
+- Risco que o piloto ainda não mede: o resto do jogo (armas, projéteis, coletáveis, HUD) também é GDScript por quadro.

@@ -658,3 +658,7 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - Pegadinhas registradas no STATUS: o exportador grava `<título>.vpk` no diretório atual (o `exportar.sh` resolve); precisa de `import_etc`/`import_etc2`; LiveArea em PNG 8 bits é obrigatório; a 3ª coluna das folhas de inimigo é a silhueta branca do flash.
 - Ferramentas fora do Git, nesta máquina: `E:\Dev\KIKIU-Vita\ferramentas\` (editor + template, modo autocontido). Worktree da branch `alisson/vita-piloto` em `E:\Dev\KIKIU-Vita\repo`.
 - **Próximo:** resultado do piloto no Vita decide entre backport (≥ 30 fps com 300 inimigos), fase 2 com vitaGL/3.7 (20–30) ou abandonar (< 30 com 100).
+
+## 2026-10-07 · Claude do Alisson (PC) · Piloto Vita: primeira medição no aparelho
+- **Feito:** o Alisson rodou o piloto no Vita (vpk enviado por FTP do VitaShell, 192.168.0.202:1337 na rede dele); CSV em `jogos/hordas-vita/medicoes/vita_rc5_2026-10-07.csv`, leitura no `STATUS.md` (seção "Resultado 1"). 300 inimigos com luz: ~22 fps; 200: ~29; 100: ~40. Custo ≈ 13 ms fixos + 0,2 ms por inimigo na tela, metade lógica e metade `_draw`: **gargalo é GDScript na CPU**, a GPU sobra (640×360 não custa mais) e draw call é caro (atlas obrigatório).
+- **Próximo:** fase 2a, otimizar o GDScript do piloto (lógica dos de perto a 30 Hz escalonada, sombra embutida no atlas = 1 draw por inimigo, sem Dictionary no laço quente, varredura de luzes sem percorrer a horda) e medir de novo. Se não chegar a ~200 na tela a 30 fps, fase 2b: módulo C++ da horda num template próprio.
