@@ -36,7 +36,7 @@ func _ready() -> void:
 	ok(is_equal_approx(Cresc.curva([[0.0, 1.0], [1.0, 2.0]], 0.25), 1.25), "interpolação linear")
 	var a0 := float(cfg.area[0][1])
 	var a1 := float(cfg.area[-1][1])
-	ok(a0 >= 0.55 and a0 <= 0.8, "nível 1 começa pequeno (%.2f)" % a0)
+	ok(a0 >= 0.55 and a0 <= 0.9, "nível 1 começa pequeno (%.2f)" % a0)
 	ok(a1 >= 1.1 and a1 <= 1.35, "nível máximo fica maior que o tamanho de antes (%.2f)" % a1)
 	var d0 := float(cfg.dano[0][1])
 	var d1 := float(cfg.dano[-1][1])

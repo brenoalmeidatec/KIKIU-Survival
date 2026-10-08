@@ -384,4 +384,4 @@ func _desenhar() -> void:
 		y += LINHA
 	if _t_aviso > 0.0 and _aviso != "":
 		_txt(Vector2(0, 326), _aviso, 8, Color(1, 0.5, 0.5), W, HORIZONTAL_ALIGNMENT_CENTER)
-	_txt(Vector2(0, 346), "Setas: escolher   Enter: comprar   Esc: voltar   (preço sobe a cada compra sua: %d feitas)" % compras_de(id), 8, Color(0.6, 0.65, 0.8), W, HORIZONTAL_ALIGNMENT_CENTER)
+	_txt(Vector2(0, 346), "Setas: escolher   Enter: comprar   Esc: voltar   Compras: %d" % compras_de(id), 8, Color(0.6, 0.65, 0.8), W, HORIZONTAL_ALIGNMENT_CENTER)
