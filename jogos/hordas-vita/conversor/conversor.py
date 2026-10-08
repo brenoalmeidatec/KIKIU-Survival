@@ -15,6 +15,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lambdas  # noqa: E402
+import ajustes_vita  # noqa: E402
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 
@@ -211,6 +212,7 @@ def renomear_codigo(c, avisos):
     c = re.sub(r"\.intersection\(", ".clip(", c)
     c = re.sub(r"\.remove_at\(", ".remove(", c)
     c = re.sub(r"\.orthogonal\(\)", ".tangent()", c)
+    c = re.sub(r"\.get_screen_center_position\(\)", ".get_camera_screen_center()", c)
     c = re.sub(r"^(\s*)([\w\.\[\]]*?)\.?texture_(filter|repeat)\s*=\s*.*$", r"\1pass  # texture_\3 (Godot 4): no 3 o filtro é da textura", c)
     c = re.sub(r"\.expand_mode\s*=\s*TextureRect\.EXPAND_IGNORE_SIZE", ".expand = true", c)
     c = re.sub(r"\.expand_mode\s*=\s*TextureRect\.\w+", ".expand = false", c)
@@ -498,16 +500,22 @@ def strings_multilinha(texto):
 
 
 def abs_inteiro(linha):
+    """No Godot 3 abs/max/min/clamp/round/floor/ceil/sign devolvem float; ao lado de % ou de operador de bits o
+    Godot 4 tinha inteiro. Envolve a chamada em int() quando ela está à esquerda OU à direita desses operadores."""
+    ops_dir = re.compile(r"^(%|&(?!&)|\^|\|(?!\|)|<<|>>)")
+    ops_esq = re.compile(r"(%|&(?!&)|\^|\|(?!\|)|<<|>>)\s*$")
     pos = 0
     while True:
-        m = re.compile(r"(?<![\.\w])abs\(").search(linha, pos)
+        m = re.compile(r"(?<![\.\w])(abs|max|min|clamp|round|floor|ceil|sign)\(").search(linha, pos)
         if not m:
             return linha
         b = fechar(linha, m.end() - 1)
         if b < 0:
             return linha
         depois = linha[b + 1:].lstrip()
-        if re.match(r"^(%|&(?!&)|\^|\|(?!\|)|<<|>>)", depois):
+        antes = linha[:m.start()]
+        ja_int = antes.rstrip().endswith("int(")
+        if not ja_int and (ops_dir.match(depois) or ops_esq.search(antes)):
             novo = "int(%s)" % linha[m.start():b + 1]
             linha = linha[:m.start()] + novo + linha[b + 1:]
             pos = m.start() + len(novo)
@@ -732,6 +740,11 @@ def tirar_tipo_var(c):
     if sep == ":=":
         return "%s = %s" % (cab, resto.lstrip())
     # resto = "Tipo = valor" ou "Tipo" (ou "Tipo = valor: set = ..." tratado em outro lugar)
+    # Tipos primitivos ficam: no Godot 3 a variável tipada converte float <-> int na atribuição, como no Godot 4
+    # (sem isso, coordenadas de Vector2i, que viram Vector2, quebram "%" e índices).
+    mt = re.match(r"^(int|float|bool|String)\s*(=\s*(.*))?$", resto.strip())
+    if mt and not cab.lstrip().startswith("const"):
+        return "%s: %s%s" % (cab, mt.group(1), (" = " + mt.group(3)) if mt.group(2) else "")
     prof = 0
     for i, ch in enumerate(resto):
         if ch in "([{":
@@ -758,6 +771,9 @@ def tirar_tipos_func(c):
             continue
         nome = mp.group(1)
         padrao = mp.group(2) or mp.group(4) or mp.group(5)
+        tipo = (mp.group(3) or "").strip()
+        if tipo in ("int", "float", "bool", "String"):
+            nome += ": " + tipo        # o Godot 3 converte o argumento (float -> int) como o Godot 4 fazia
         params.append(nome + (" = " + padrao.strip() if padrao is not None else ""))
     resto = m.group(4)
     return "%s(%s):%s" % (m.group(1).rstrip(), ", ".join(params), (" " + resto) if resto else "")
@@ -928,6 +944,17 @@ def converter_arquivo(texto, info, globais, avisos):
     return texto
 
 
+def shaders_godot3(texto):
+    """Shaders canvas_item em strings: no Godot 3 o COLOR do fragment começa só com a cor do vértice (sem a textura).
+    Se o fragment não amostra TEXTURE, a textura é aplicada no começo (senão "COLOR.rgb = branco" vira retângulo)."""
+    def corrigir(m):
+        s = m.group(0)
+        if "canvas_item" not in s or "texture(TEXTURE" in s or "blend_mul" in s:
+            return s
+        return re.sub(r"(void\s+fragment\s*\(\s*\)\s*\{)", r"\1 COLOR *= texture(TEXTURE, UV);", s, count=1)
+    return re.sub(r'"""shader_type[\s\S]*?"""|"shader_type(?:[^"\\]|\\.)*"', corrigir, texto)
+
+
 def coletar_info(caminho_res, texto):
     info = {"caminho": caminho_res, "static_vars": {}, "aliases": {},
             "funcoes": set(re.findall(r"(?m)^(?:static\s+)?func\s+(\w+)", texto)), "controles": set()}
@@ -1012,6 +1039,9 @@ def main():
             shutil.copy(mp, alvo)
             avisos = ["(arquivo manual)"]
         else:
+            if rel in ajustes_vita.AJUSTES:
+                novo = ajustes_vita.AJUSTES[rel](novo, avisos)
+            novo = shaders_godot3(novo)
             open(alvo, "w", encoding="utf-8", newline="\n").write(novo)
         relatorio[rel] = avisos
     shutil.copy(os.path.join(AQUI, "g4.gd"), os.path.join(dest, "g4.gd"))
