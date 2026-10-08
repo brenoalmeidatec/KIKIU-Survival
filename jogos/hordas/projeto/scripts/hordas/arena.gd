@@ -41,7 +41,7 @@ const Escuridao := preload("res://scripts/hordas/escuridao.gd")
 const Mortes := preload("res://scripts/hordas/mortes.gd")
 const Finalizacao := preload("res://scripts/hordas/finalizacao.gd")
 
-const MAX_ARMAS := Construcao.MAX_ARMAS
+const Universais := preload("res://scripts/hordas/universais.gd")
 const MAX_PASSIVOS := Construcao.MAX_PASSIVOS
 
 var heroi_id := "hazaki"
@@ -986,6 +986,30 @@ func aplicar(c: Dictionary) -> void:
 			equipamentos[str(Dados.item(c.id).get("slot", c.id))] = c.id
 			_recalcular()
 			atualizar_visual()
+		"ascensao":
+			var aa = armas.achar(c.id)
+			if aa:
+				aa["asc"] = int(aa.get("asc", 0)) + 1
+				armas.preaquecer()
+			mensagem("%s: ascensão %d" % [str(c.get("nome", c.id)), int(aa.get("asc", 0)) if aa else 0], Color(1.0, 0.85, 0.3))
+		"reforja":
+			var ar = armas.achar(c.de)
+			if ar:
+				ar.id = str(c.id)   # mesma arma, outra variação: o nível e a ascensão ficam
+				armas.preaquecer()
+				build_mudou()
+				atualizar_visual()
+		"fusao":
+			for i in c.get("consome", []):
+				var k := -1
+				for j in armas.lista.size():
+					if armas.lista[j].id == i:
+						k = j
+				if k >= 0:
+					armas.lista.remove_at(k)
+			armas.adicionar(str(c.id))   # sem herdar nível: a fundida já nasce no topo (evolucao: true)
+			atualizar_visual()
+			mensagem("Fusão: " + str(c.get("nome", c.id)), Color(1.0, 0.5, 0.9))
 		"comportamento":
 			armas.dar_comportamento(str(c.arma), str(c.id))
 			mensagem("%s: %s" % [str(c.get("arma_nome", c.arma)), str(c.nome)], Color(1.0, 0.65, 0.3))
@@ -1049,7 +1073,8 @@ func sortear_cartas(rng: RandomNumberGenerator = null) -> Array:   # com rng (ba
 	for id in passivos:
 		if passivos[id] < int(pas_d[id].get("max", 5)) and not banidos.has(id):
 			cand.append([8.0, _carta("passivo", id, passivos[id] + 1)])
-	if armas.lista.size() < MAX_ARMAS:
+	_cartas_universais(cand)
+	if armas.lista.size() < Universais.max_total():
 		var ids: Array = armas.lista.map(func(a): return a.id)
 		for id in armas_d:
 			# global ou exclusiva deste herói (até o limite): nunca oferece carta impossível
@@ -1090,6 +1115,44 @@ func sortear_cartas(rng: RandomNumberGenerator = null) -> Array:   # com rng (ba
 	if res.is_empty():
 		res.append({"tipo": "cura", "id": "vida", "nome": "Café da tarde", "desc": "Recupera 40 de vida.", "icone": "vida", "nivel": 0})
 	return res
+
+
+## #115: cartas das armas universais: nova (variação sorteada pela semente), ascensão (depois do nível máximo),
+## reforja (troca a variação) e fusão (consome as armas da receita e libera slots). Isso é o que mantém o jogo com
+## escolhas de melhoria depois do nível 30: a cura só sai se não sobrar nenhuma carta.
+func _cartas_universais(cand: Array) -> void:
+	var ids: Array = armas.lista.map(func(a): return a.id)
+	var tenho_bases: Array = ids.map(func(i): return Universais.base_de(i))
+	var rodada: int = armas.lista.size() + banidos.size()
+	if Universais.cabe(ids, false):
+		var armas_d: Dictionary = Dados.json("armas")
+		for b in Universais.bases_sorteaveis():
+			if b in tenho_bases:
+				continue
+			var id := Universais.id_de(b, Universais.variacao_para(b, semente, rodada))
+			if banidos.has(id) or banidos.has(b):
+				continue
+			cand.append([float(armas_d[id].get("peso_carta", 6.0)), _carta("arma", id, 1)])
+	var asc_cfg: Dictionary = Universais.cfg().get("ascensao", {})
+	for a in armas.lista:
+		var d := Dados.item(a.id)
+		if d.get("classe", "") == "transformacao" or banidos.has(a.id):
+			continue
+		if int(a.nivel) >= armas.nivel_max(a.id) and int(a.get("asc", 0)) < Universais.asc_max():
+			var n := int(a.get("asc", 0)) + 1
+			cand.append([float(asc_cfg.get("peso", 14.0)), {"tipo": "ascensao", "id": str(a.id), "nome": "%s (ascensão %d)" % [str(d.get("nome", a.id)), n],
+				"desc": "+%d%% de dano e +%d%% de área, de novo." % [roundi(float(asc_cfg.get("dano", 0.12)) * 100.0), roundi(float(asc_cfg.get("area", 0.05)) * 100.0)],
+				"icone": str(d.get("icone", a.id)), "nivel": n, "max": Universais.asc_max(), "cmp": []}])
+		if Universais.eh_universal(a.id) and not Universais.eh_fusao(a.id) and int(a.nivel) >= 2:
+			var b := Universais.base_de(a.id)
+			var nv_id := Universais.id_de(b, Universais.outra_variacao(b, str(d.get("variacao", "puro")), semente, rodada))
+			var nd := Dados.item(nv_id)
+			cand.append([float(Universais.cfg().get("reforja", {}).get("peso", 3.0)), {"tipo": "reforja", "id": nv_id, "de": str(a.id),
+				"nome": "Reforjar: " + str(nd.get("nome", nv_id)), "desc": str(nd.get("descricao", "")), "icone": str(nd.get("icone", nv_id)), "nivel": 0, "max": 1, "cmp": []}])
+	for f in Universais.fusoes_possiveis(armas.lista, armas.nivel_max):
+		var fd := Dados.item(f.vira)
+		cand.append([float(Universais.cfg().get("fusao", {}).get("peso", 40.0)), {"tipo": "fusao", "id": f.vira, "consome": f.ids,
+			"nome": str(fd.get("nome", f.vira)), "desc": str(fd.get("descricao", "")), "icone": str(fd.get("icone", f.vira)), "nivel": 0, "max": 1, "cmp": []}])
 
 
 ## Ids das dádivas que o jogador já tem (a dádiva em dupla só aparece com as duas exigidas).

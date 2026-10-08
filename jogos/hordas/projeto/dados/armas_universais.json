@@ -1,0 +1,2388 @@
+{
+ "_ajuda": "Armas UNIVERSAIS (#115): qualquer herói pega. 'armas' tem a arma base; o jogo gera uma entrada por variação ('u_<id>' puro, 'u_<id>__<variacao>'), injetada em armas.json na leitura (scripts/hordas/universais.gd). A variação é sorteada pela semente da corrida (Sorte.criar) quando a carta aparece: muda nome, cor, elemento e números (variacoes: dano/area/recarga = multiplicadores, peso = raridade). 'limites': total de armas na mão e máximo de únicas (exclusivas do herói): 2 únicas + 3 universais, ou 5 universais. 'ascensao': depois do nível máximo a arma ainda ganha degraus (+dano e +área por degrau). 'fusoes': ingredientes (ids base, qualquer variação) no nível máximo viram 1 arma fundida ('fusao': true, já no topo) e liberam slots. Armas com 'fusao': true nunca saem em carta.",
+ "limites": {
+  "total": 5,
+  "unicas": 2
+ },
+ "ascensao": {
+  "max": 5,
+  "dano": 0.12,
+  "area": 0.05,
+  "peso": 14.0
+ },
+ "reforja": {
+  "peso": 3.0
+ },
+ "fusao": {
+  "peso": 40.0
+ },
+ "variacoes": {
+  "puro": {
+   "nome": [
+    "",
+    ""
+   ],
+   "peso": 40,
+   "cor": null,
+   "elemento": null,
+   "etiqueta": null,
+   "dano": 1.0,
+   "area": 1.0,
+   "recarga": 1.0,
+   "desc": ""
+  },
+  "sangue": {
+   "nome": [
+    "de Sangue",
+    "de Sangue"
+   ],
+   "peso": 12,
+   "cor": [
+    0.8,
+    0.1,
+    0.15
+   ],
+   "elemento": "veneno",
+   "etiqueta": "sangue",
+   "dano": 1.12,
+   "area": 1.0,
+   "recarga": 1.0,
+   "desc": "Variação de Sangue: +12% de dano e deixa sangramento."
+  },
+  "gelida": {
+   "nome": [
+    "Gélido",
+    "Gélida"
+   ],
+   "peso": 12,
+   "cor": [
+    0.65,
+    0.9,
+    1.0
+   ],
+   "elemento": "gelo",
+   "etiqueta": "gelo",
+   "dano": 1.0,
+   "area": 1.05,
+   "recarga": 1.05,
+   "desc": "Variação Gélida: congela os inimigos acertados."
+  },
+  "lunar": {
+   "nome": [
+    "Lunar",
+    "Lunar"
+   ],
+   "peso": 10,
+   "cor": [
+    0.75,
+    0.8,
+    1.0
+   ],
+   "elemento": "gelo",
+   "etiqueta": "sagrado",
+   "dano": 1.0,
+   "area": 1.18,
+   "recarga": 1.0,
+   "desc": "Variação Lunar: +18% de área."
+  },
+  "peconhenta": {
+   "nome": [
+    "Peçonhento",
+    "Peçonhenta"
+   ],
+   "peso": 10,
+   "cor": [
+    0.55,
+    0.9,
+    0.4
+   ],
+   "elemento": "veneno",
+   "etiqueta": "sombra",
+   "dano": 0.95,
+   "area": 1.0,
+   "recarga": 0.92,
+   "desc": "Variação Peçonhenta: recarrega 8% mais rápido e envenena."
+  },
+  "ardente": {
+   "nome": [
+    "Ardente",
+    "Ardente"
+   ],
+   "peso": 10,
+   "cor": [
+    1.0,
+    0.55,
+    0.2
+   ],
+   "elemento": "fogo",
+   "etiqueta": "fogo",
+   "dano": 1.08,
+   "area": 1.0,
+   "recarga": 1.0,
+   "desc": "Variação Ardente: queima os inimigos acertados."
+  },
+  "astral": {
+   "nome": [
+    "Astral",
+    "Astral"
+   ],
+   "peso": 4,
+   "cor": [
+    0.6,
+    0.85,
+    1.0
+   ],
+   "elemento": "raio",
+   "etiqueta": "trovao",
+   "dano": 1.12,
+   "area": 1.12,
+   "recarga": 0.95,
+   "desc": "Variação Astral (rara): +12% de dano e área, eletrifica."
+  },
+  "draconica": {
+   "nome": [
+    "Dracônico",
+    "Dracônica"
+   ],
+   "peso": 2,
+   "cor": [
+    1.0,
+    0.4,
+    0.15
+   ],
+   "elemento": "fogo",
+   "etiqueta": "fogo",
+   "dano": 1.25,
+   "area": 1.1,
+   "recarga": 0.95,
+   "desc": "Variação Dracônica (muito rara): +25% de dano, +10% de área, queima."
+  }
+ },
+ "armas": {
+  "espada_treino": {
+   "nome": "Espada de Treino",
+   "genero": "f",
+   "classe_arma": "espada",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "katana",
+   "etiquetas": [
+    "lamina"
+   ],
+   "peso_carta": 10,
+   "descricao": "Lâmina cega de quem ainda não sangrou ninguém. Corta na frente.",
+   "base": {
+    "dano": 14,
+    "recarga": 1.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "alcance": 80,
+    "largura": 30
+   },
+   "niveis": [
+    {
+     "dano": 4
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "alcance": 14
+    },
+    {
+     "dano": 5,
+     "recarga": -0.15
+    },
+    {
+     "dano": 7
+    }
+   ]
+  },
+  "lamina_alvorecer": {
+   "nome": "Lâmina do Alvorecer",
+   "genero": "f",
+   "classe_arma": "espada",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "katana",
+   "etiquetas": [
+    "lamina",
+    "sagrado"
+   ],
+   "peso_carta": 3,
+   "descricao": "Aço pálido que brilha antes do sol nascer.",
+   "base": {
+    "dano": 20,
+    "recarga": 1.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "alcance": 80,
+    "largura": 30
+   },
+   "niveis": [
+    {
+     "dano": 6
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "alcance": 14
+    },
+    {
+     "dano": 8,
+     "recarga": -0.15
+    },
+    {
+     "dano": 10
+    }
+   ]
+  },
+  "montante_lascado": {
+   "nome": "Montante Lascado",
+   "genero": "m",
+   "classe_arma": "espada grande",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "laminas",
+   "etiquetas": [
+    "lamina",
+    "pesado"
+   ],
+   "peso_carta": 6,
+   "descricao": "Espadão rachado, lento e cruel.",
+   "base": {
+    "dano": 18,
+    "recarga": 1.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "alcance": 80,
+    "largura": 30
+   },
+   "niveis": [
+    {
+     "dano": 6
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "alcance": 14
+    },
+    {
+     "dano": 7,
+     "recarga": -0.15
+    },
+    {
+     "dano": 9
+    }
+   ]
+  },
+  "montante_carmesim": {
+   "nome": "Montante Carmesim",
+   "genero": "m",
+   "classe_arma": "espada grande",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "laminas",
+   "etiquetas": [
+    "lamina",
+    "sangue",
+    "pesado"
+   ],
+   "peso_carta": 2,
+   "descricao": "Já bebeu tanto que a lâmina não reflete mais nada.",
+   "base": {
+    "dano": 22,
+    "recarga": 1.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "alcance": 80,
+    "largura": 30
+   },
+   "niveis": [
+    {
+     "dano": 7
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "alcance": 14
+    },
+    {
+     "dano": 8,
+     "recarga": -0.15
+    },
+    {
+     "dano": 11
+    }
+   ]
+  },
+  "machadinha_enferrujada": {
+   "nome": "Machadinha Enferrujada",
+   "genero": "f",
+   "classe_arma": "machado",
+   "tipo": "bumerangue",
+   "familia": "projetil",
+   "icone": "machado",
+   "etiquetas": [
+    "lamina",
+    "arremesso"
+   ],
+   "peso_carta": 10,
+   "descricao": "Vai e volta, deixando tétano no caminho.",
+   "base": {
+    "dano": 13,
+    "recarga": 2.0,
+    "quantidade": 1,
+    "velocidade": 300,
+    "alcance": 150,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 5
+    },
+    {
+     "alcance": 25
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 8,
+     "recarga": -0.25
+    }
+   ],
+   "sprite": "proj_machado"
+  },
+  "machado_guerra": {
+   "nome": "Machado de Guerra",
+   "genero": "m",
+   "classe_arma": "machado",
+   "tipo": "bumerangue",
+   "familia": "projetil",
+   "icone": "machado",
+   "etiquetas": [
+    "lamina",
+    "arremesso",
+    "pesado"
+   ],
+   "peso_carta": 6,
+   "descricao": "Arremesso pesado de um guerreiro de verdade.",
+   "base": {
+    "dano": 16,
+    "recarga": 2.0,
+    "quantidade": 1,
+    "velocidade": 300,
+    "alcance": 150,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 7
+    },
+    {
+     "alcance": 25
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 10,
+     "recarga": -0.25
+    }
+   ],
+   "sprite": "proj_machado"
+  },
+  "retalhador_sangrento": {
+   "nome": "Retalhador Sangrento",
+   "genero": "m",
+   "classe_arma": "machado grande",
+   "tipo": "bumerangue",
+   "familia": "projetil",
+   "icone": "machados_brasa",
+   "etiquetas": [
+    "lamina",
+    "sangue",
+    "arremesso"
+   ],
+   "peso_carta": 2,
+   "descricao": "Gira em arcos largos e volta mais vermelho.",
+   "base": {
+    "dano": 20,
+    "recarga": 2.0,
+    "quantidade": 1,
+    "velocidade": 300,
+    "alcance": 150,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 8
+    },
+    {
+     "alcance": 25
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 13,
+     "recarga": -0.25
+    }
+   ],
+   "sprite": "proj_machado"
+  },
+  "machado_carrasco": {
+   "nome": "Machado do Carrasco",
+   "genero": "m",
+   "classe_arma": "machado grande",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "corrente_carrasco",
+   "etiquetas": [
+    "lamina",
+    "pesado"
+   ],
+   "peso_carta": 4,
+   "descricao": "O último som que muitos ouviram.",
+   "base": {
+    "dano": 19,
+    "recarga": 1.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "alcance": 80,
+    "largura": 30
+   },
+   "niveis": [
+    {
+     "dano": 6
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "alcance": 14
+    },
+    {
+     "dano": 7,
+     "recarga": -0.15
+    },
+    {
+     "dano": 10
+    }
+   ]
+  },
+  "arco_tosco": {
+   "nome": "Arco Tosco",
+   "genero": "m",
+   "classe_arma": "arco",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "pena",
+   "etiquetas": [
+    "arremesso"
+   ],
+   "peso_carta": 10,
+   "descricao": "Galho, tripa e esperança.",
+   "base": {
+    "dano": 10,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 4
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 8
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "arco_cacador": {
+   "nome": "Arco de Caçador",
+   "genero": "m",
+   "classe_arma": "arco",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "olho_falcao",
+   "etiquetas": [
+    "arremesso"
+   ],
+   "peso_carta": 7,
+   "descricao": "Flechas certeiras para presas que fogem.",
+   "base": {
+    "dano": 12,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 10
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "arco_lua_rubra": {
+   "nome": "Arco da Lua Rubra",
+   "genero": "m",
+   "classe_arma": "arco",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "pena",
+   "etiquetas": [
+    "arremesso",
+    "sangue"
+   ],
+   "peso_carta": 2,
+   "descricao": "Folhas secas e uma lua cor de ferida.",
+   "base": {
+    "dano": 15,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 7
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 12
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "arco_sussurro": {
+   "nome": "Arco do Sussurro",
+   "genero": "m",
+   "classe_arma": "arco",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "olho_falcao",
+   "etiquetas": [
+    "arremesso",
+    "sombra"
+   ],
+   "peso_carta": 3,
+   "descricao": "Ninguém ouve a flecha. Só o depois.",
+   "base": {
+    "dano": 14,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 11
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "faca_silex": {
+   "nome": "Faca de Sílex",
+   "genero": "f",
+   "classe_arma": "adaga",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "adaga",
+   "etiquetas": [
+    "lamina",
+    "arremesso"
+   ],
+   "peso_carta": 10,
+   "descricao": "Pedra lascada, ainda corta.",
+   "base": {
+    "dano": 9,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 4
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 8
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "espinho_alvorada": {
+   "nome": "Espinho da Alvorada",
+   "genero": "m",
+   "classe_arma": "adaga",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "adaga",
+   "etiquetas": [
+    "lamina",
+    "arremesso",
+    "sagrado"
+   ],
+   "peso_carta": 3,
+   "descricao": "Adaga roxa que fura mais de um.",
+   "base": {
+    "dano": 14,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 12
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "punhal_peconhento": {
+   "nome": "Punhal Peçonhento",
+   "genero": "m",
+   "classe_arma": "adaga",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "presa_peconhenta",
+   "etiquetas": [
+    "lamina",
+    "arremesso"
+   ],
+   "peso_carta": 6,
+   "descricao": "Um arranhão e a noite fica longa.",
+   "base": {
+    "dano": 12,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 10
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "adaga_sombria": {
+   "nome": "Adaga Sombria",
+   "genero": "f",
+   "classe_arma": "adaga",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "adaga",
+   "etiquetas": [
+    "lamina",
+    "sombra"
+   ],
+   "peso_carta": 4,
+   "descricao": "Some no escuro e reaparece em você.",
+   "base": {
+    "dano": 13,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 11
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "escudo_couro": {
+   "nome": "Escudo de Couro",
+   "genero": "m",
+   "classe_arma": "escudo",
+   "tipo": "aura",
+   "familia": "aura",
+   "icone": "figa",
+   "etiquetas": [
+    "pesado"
+   ],
+   "peso_carta": 9,
+   "descricao": "Empurra quem chega perto demais.",
+   "base": {
+    "dano": 4,
+    "recarga": 0,
+    "area": 1.0,
+    "raio": 50,
+    "tique": 0.6,
+    "empurra": 40
+   },
+   "niveis": [
+    {
+     "empurra": 15
+    },
+    {
+     "dano": 2
+    },
+    {
+     "tique": -0.1
+    },
+    {
+     "dano": 3
+    },
+    {
+     "dano": 2
+    }
+   ]
+  },
+  "baluarte_espinhoso": {
+   "nome": "Baluarte Espinhoso",
+   "genero": "m",
+   "classe_arma": "escudo",
+   "tipo": "aura",
+   "familia": "aura",
+   "icone": "figa",
+   "etiquetas": [
+    "pesado",
+    "sangue"
+   ],
+   "peso_carta": 3,
+   "descricao": "Dourado, rubro e cheio de pontas.",
+   "base": {
+    "dano": 5,
+    "recarga": 0,
+    "area": 1.0,
+    "raio": 50,
+    "tique": 0.6,
+    "empurra": 40
+   },
+   "niveis": [
+    {
+     "empurra": 15
+    },
+    {
+     "dano": 2
+    },
+    {
+     "tique": -0.1
+    },
+    {
+     "dano": 4
+    },
+    {
+     "dano": 2
+    }
+   ]
+  },
+  "egide_dourada": {
+   "nome": "Égide Dourada",
+   "genero": "f",
+   "classe_arma": "escudo",
+   "tipo": "aura",
+   "familia": "aura",
+   "icone": "sino_juizo",
+   "etiquetas": [
+    "sagrado",
+    "pesado"
+   ],
+   "peso_carta": 3,
+   "descricao": "Luz em forma de proteção.",
+   "base": {
+    "dano": 5,
+    "recarga": 0,
+    "area": 1.0,
+    "raio": 50,
+    "tique": 0.6,
+    "empurra": 40
+   },
+   "niveis": [
+    {
+     "empurra": 15
+    },
+    {
+     "dano": 3
+    },
+    {
+     "tique": -0.1
+    },
+    {
+     "dano": 4
+    },
+    {
+     "dano": 3
+    }
+   ]
+  },
+  "escudo_vigia": {
+   "nome": "Escudo do Vigia",
+   "genero": "m",
+   "classe_arma": "escudo",
+   "tipo": "aura",
+   "familia": "aura",
+   "icone": "espelho",
+   "etiquetas": [
+    "pesado"
+   ],
+   "peso_carta": 6,
+   "descricao": "Quem vigia nunca dorme, e bate.",
+   "base": {
+    "dano": 4,
+    "recarga": 0,
+    "area": 1.0,
+    "raio": 50,
+    "tique": 0.6,
+    "empurra": 40
+   },
+   "niveis": [
+    {
+     "empurra": 15
+    },
+    {
+     "dano": 2
+    },
+    {
+     "tique": -0.1
+    },
+    {
+     "dano": 3
+    },
+    {
+     "dano": 2
+    }
+   ]
+  },
+  "cajado_galho": {
+   "nome": "Cajado de Galho",
+   "genero": "m",
+   "classe_arma": "cajado",
+   "tipo": "raio",
+   "familia": "projetil",
+   "icone": "centelha",
+   "etiquetas": [
+    "trovao"
+   ],
+   "peso_carta": 9,
+   "descricao": "Madeira de deriva com uma fagulha presa.",
+   "base": {
+    "dano": 16,
+    "recarga": 1.6,
+    "quantidade": 1,
+    "raio": 18,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 7
+    },
+    {
+     "recarga": -0.2
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 11
+    }
+   ]
+  },
+  "cetro_astral": {
+   "nome": "Cetro Astral",
+   "genero": "m",
+   "classe_arma": "cajado",
+   "tipo": "raio",
+   "familia": "projetil",
+   "icone": "furia_ceus",
+   "etiquetas": [
+    "trovao",
+    "sagrado"
+   ],
+   "peso_carta": 2,
+   "descricao": "Cristais girando em torno de um anel dourado.",
+   "base": {
+    "dano": 25,
+    "recarga": 1.6,
+    "quantidade": 1,
+    "raio": 18,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 11
+    },
+    {
+     "recarga": -0.2
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 17
+    }
+   ]
+  },
+  "cajado_eremita": {
+   "nome": "Cajado do Eremita",
+   "genero": "m",
+   "classe_arma": "cajado",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "poder_elemental",
+   "etiquetas": [
+    "sagrado"
+   ],
+   "peso_carta": 6,
+   "descricao": "Cada orbe é um pensamento solitário.",
+   "base": {
+    "dano": 12,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 10
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "bastao_cristal": {
+   "nome": "Bastão de Cristal",
+   "genero": "m",
+   "classe_arma": "cajado",
+   "tipo": "raio",
+   "familia": "projetil",
+   "icone": "cristal_geada",
+   "etiquetas": [
+    "trovao",
+    "gelo"
+   ],
+   "peso_carta": 4,
+   "descricao": "Estala quando o ar fica pesado.",
+   "base": {
+    "dano": 22,
+    "recarga": 1.6,
+    "quantidade": 1,
+    "raio": 18,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 10
+    },
+    {
+     "recarga": -0.2
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 14
+    }
+   ]
+  },
+  "marreta_enferrujada": {
+   "nome": "Marreta Enferrujada",
+   "genero": "f",
+   "classe_arma": "martelo",
+   "tipo": "sismo",
+   "familia": "aura",
+   "icone": "martelo",
+   "etiquetas": [
+    "pesado"
+   ],
+   "peso_carta": 9,
+   "descricao": "O chão treme, a marreta também.",
+   "base": {
+    "dano": 14,
+    "recarga": 3.0,
+    "raio": 80,
+    "empurra": 240,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "dano": 5
+    },
+    {
+     "empurra": 30
+    },
+    {
+     "recarga": -0.4
+    },
+    {
+     "dano": 7
+    },
+    {
+     "dano": 5
+    }
+   ]
+  },
+  "martelo_forjagelo": {
+   "nome": "Martelo Forjagelo",
+   "genero": "m",
+   "classe_arma": "martelo",
+   "tipo": "sismo",
+   "familia": "aura",
+   "icone": "terremoto",
+   "etiquetas": [
+    "pesado",
+    "gelo"
+   ],
+   "peso_carta": 2,
+   "descricao": "Forjado em frio eterno.",
+   "base": {
+    "dano": 22,
+    "recarga": 3.0,
+    "raio": 80,
+    "empurra": 240,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "dano": 8
+    },
+    {
+     "empurra": 30
+    },
+    {
+     "recarga": -0.4
+    },
+    {
+     "dano": 11
+    },
+    {
+     "dano": 8
+    }
+   ]
+  },
+  "martelo_ferreiro": {
+   "nome": "Martelo do Ferreiro",
+   "genero": "m",
+   "classe_arma": "martelo",
+   "tipo": "sismo",
+   "familia": "aura",
+   "icone": "martelo",
+   "etiquetas": [
+    "pesado"
+   ],
+   "peso_carta": 6,
+   "descricao": "Faz o chão cantar a cada pancada.",
+   "base": {
+    "dano": 18,
+    "recarga": 3.0,
+    "raio": 80,
+    "empurra": 240,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "dano": 7
+    },
+    {
+     "empurra": 30
+    },
+    {
+     "recarga": -0.4
+    },
+    {
+     "dano": 9
+    },
+    {
+     "dano": 7
+    }
+   ]
+  },
+  "maca_estrelada": {
+   "nome": "Maça Estrelada",
+   "genero": "f",
+   "classe_arma": "maça",
+   "tipo": "sismo",
+   "familia": "aura",
+   "icone": "martelo",
+   "etiquetas": [
+    "pesado"
+   ],
+   "peso_carta": 4,
+   "descricao": "Uma estrela de ferro presa a um cabo.",
+   "base": {
+    "dano": 20,
+    "recarga": 3.0,
+    "raio": 80,
+    "empurra": 240,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "dano": 8
+    },
+    {
+     "empurra": 30
+    },
+    {
+     "recarga": -0.4
+    },
+    {
+     "dano": 10
+    },
+    {
+     "dano": 8
+    }
+   ]
+  },
+  "dardo_primitivo": {
+   "nome": "Dardo Primitivo",
+   "genero": "m",
+   "classe_arma": "lança",
+   "tipo": "lanca",
+   "familia": "chicote",
+   "icone": "lanca",
+   "etiquetas": [
+    "lamina"
+   ],
+   "peso_carta": 9,
+   "descricao": "Pau afiado, boa vontade.",
+   "base": {
+    "dano": 23,
+    "recarga": 1.5,
+    "quantidade": 1,
+    "alcance": 130,
+    "largura": 14,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "dano": 7
+    },
+    {
+     "alcance": 28
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 9
+    },
+    {
+     "recarga": -0.3,
+     "largura": 6
+    }
+   ]
+  },
+  "lanca_cacada": {
+   "nome": "Lança de Caça",
+   "genero": "f",
+   "classe_arma": "lança",
+   "tipo": "lanca",
+   "familia": "chicote",
+   "icone": "lanca",
+   "etiquetas": [
+    "lamina"
+   ],
+   "peso_carta": 7,
+   "descricao": "Atravessa o que vier pela frente.",
+   "base": {
+    "dano": 29,
+    "recarga": 1.5,
+    "quantidade": 1,
+    "alcance": 130,
+    "largura": 14,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "dano": 9
+    },
+    {
+     "alcance": 28
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 11
+    },
+    {
+     "recarga": -0.3,
+     "largura": 6
+    }
+   ]
+  },
+  "lanca_dragao": {
+   "nome": "Lança do Dragão",
+   "genero": "f",
+   "classe_arma": "lança",
+   "tipo": "lanca",
+   "familia": "chicote",
+   "icone": "lanca_ardente",
+   "etiquetas": [
+    "lamina",
+    "fogo"
+   ],
+   "peso_carta": 2,
+   "descricao": "Escama azul, ponta de fôlego antigo.",
+   "base": {
+    "dano": 38,
+    "recarga": 1.5,
+    "quantidade": 1,
+    "alcance": 130,
+    "largura": 14,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "dano": 12
+    },
+    {
+     "alcance": 28
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 14
+    },
+    {
+     "recarga": -0.3,
+     "largura": 6
+    }
+   ]
+  },
+  "pique_real": {
+   "nome": "Pique Real",
+   "genero": "m",
+   "classe_arma": "lança",
+   "tipo": "lanca",
+   "familia": "chicote",
+   "icone": "lanca",
+   "etiquetas": [
+    "lamina",
+    "pesado"
+   ],
+   "peso_carta": 3,
+   "descricao": "Alcança o inimigo antes que ele pense.",
+   "base": {
+    "dano": 32,
+    "recarga": 1.5,
+    "quantidade": 1,
+    "alcance": 130,
+    "largura": 14,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "dano": 10
+    },
+    {
+     "alcance": 28
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 12
+    },
+    {
+     "recarga": -0.3,
+     "largura": 6
+    }
+   ]
+  },
+  "clava_espinhos": {
+   "nome": "Clava de Espinhos",
+   "genero": "f",
+   "classe_arma": "maça",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "martelo",
+   "etiquetas": [
+    "pesado"
+   ],
+   "peso_carta": 9,
+   "descricao": "Pau com unhas.",
+   "base": {
+    "dano": 15,
+    "recarga": 1.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "alcance": 80,
+    "largura": 30
+   },
+   "niveis": [
+    {
+     "dano": 5
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "alcance": 14
+    },
+    {
+     "dano": 6,
+     "recarga": -0.15
+    },
+    {
+     "dano": 8
+    }
+   ]
+  },
+  "maca_lua_sangue": {
+   "nome": "Maça da Lua de Sangue",
+   "genero": "f",
+   "classe_arma": "maça",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "martelo",
+   "etiquetas": [
+    "pesado",
+    "sangue"
+   ],
+   "peso_carta": 2,
+   "descricao": "Pulsa em sincronia com a lua.",
+   "base": {
+    "dano": 22,
+    "recarga": 1.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "alcance": 80,
+    "largura": 30
+   },
+   "niveis": [
+    {
+     "dano": 7
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "alcance": 14
+    },
+    {
+     "dano": 8,
+     "recarga": -0.15
+    },
+    {
+     "dano": 11
+    }
+   ]
+  },
+  "foice_giratoria": {
+   "nome": "Foice Giratória",
+   "genero": "f",
+   "classe_arma": "foice",
+   "tipo": "orbita",
+   "familia": "orbita",
+   "icone": "laminas",
+   "etiquetas": [
+    "lamina",
+    "sombra"
+   ],
+   "peso_carta": 6,
+   "descricao": "Colhe em círculos.",
+   "base": {
+    "dano": 9,
+    "recarga": 3.5,
+    "quantidade": 2,
+    "area": 1.0,
+    "raio": 60,
+    "giro": 3.0,
+    "duracao": 3.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6,
+     "duracao": 0.5
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "giro": 0.5
+    },
+    {
+     "dano": 9,
+     "duracao": 1.0
+    }
+   ],
+   "sprite": "proj_lamina"
+  },
+  "disco_cortante": {
+   "nome": "Disco Cortante",
+   "genero": "m",
+   "classe_arma": "chakram",
+   "tipo": "orbita",
+   "familia": "orbita",
+   "icone": "laminas",
+   "etiquetas": [
+    "lamina"
+   ],
+   "peso_carta": 8,
+   "descricao": "Gira. Corta. Não se cansa.",
+   "base": {
+    "dano": 8,
+    "recarga": 3.5,
+    "quantidade": 2,
+    "area": 1.0,
+    "raio": 60,
+    "giro": 3.0,
+    "duracao": 3.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 5,
+     "duracao": 0.5
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "giro": 0.5
+    },
+    {
+     "dano": 8,
+     "duracao": 1.0
+    }
+   ],
+   "sprite": "proj_lamina"
+  },
+  "chakram_alvorada": {
+   "nome": "Chakram da Alvorada",
+   "genero": "m",
+   "classe_arma": "chakram",
+   "tipo": "orbita",
+   "familia": "orbita",
+   "icone": "ventoinha",
+   "etiquetas": [
+    "lamina",
+    "sagrado"
+   ],
+   "peso_carta": 3,
+   "descricao": "Anel de luz afiada.",
+   "base": {
+    "dano": 10,
+    "recarga": 3.5,
+    "quantidade": 2,
+    "area": 1.0,
+    "raio": 60,
+    "giro": 3.0,
+    "duracao": 3.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6,
+     "duracao": 0.5
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "giro": 0.5
+    },
+    {
+     "dano": 10,
+     "duracao": 1.0
+    }
+   ],
+   "sprite": "proj_lamina"
+  },
+  "sino_ferro": {
+   "nome": "Sino de Ferro",
+   "genero": "m",
+   "classe_arma": "sino",
+   "tipo": "aura",
+   "familia": "aura",
+   "icone": "sino",
+   "etiquetas": [
+    "sagrado",
+    "pesado"
+   ],
+   "peso_carta": 6,
+   "descricao": "Cada badalada afasta um pouco o mundo.",
+   "base": {
+    "dano": 4,
+    "recarga": 0,
+    "area": 1.0,
+    "raio": 50,
+    "tique": 0.6,
+    "empurra": 40
+   },
+   "niveis": [
+    {
+     "empurra": 15
+    },
+    {
+     "dano": 2
+    },
+    {
+     "tique": -0.1
+    },
+    {
+     "dano": 3
+    },
+    {
+     "dano": 2
+    }
+   ]
+  },
+  "tocha_ardente": {
+   "nome": "Tocha Ardente",
+   "genero": "f",
+   "classe_arma": "tocha",
+   "tipo": "poca",
+   "familia": "poca",
+   "icone": "fogo_grego",
+   "etiquetas": [
+    "fogo"
+   ],
+   "peso_carta": 8,
+   "descricao": "Deixa chão queimado por onde passa.",
+   "base": {
+    "dano": 6,
+    "recarga": 3.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "raio": 38,
+    "duracao": 2.5,
+    "tique": 0.35
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 3
+    },
+    {
+     "duracao": 1.0
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 5
+    }
+   ]
+  },
+  "frasco_incendiario": {
+   "nome": "Frasco Incendiário",
+   "genero": "m",
+   "classe_arma": "frasco",
+   "tipo": "poca",
+   "familia": "poca",
+   "icone": "fogo_grego",
+   "etiquetas": [
+    "fogo",
+    "arremesso"
+   ],
+   "peso_carta": 6,
+   "descricao": "Quebra, espalha, queima.",
+   "base": {
+    "dano": 7,
+    "recarga": 3.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "raio": 38,
+    "duracao": 2.5,
+    "tique": 0.35
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 3
+    },
+    {
+     "duracao": 1.0
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    }
+   ]
+  },
+  "pocao_corrosiva": {
+   "nome": "Poção Corrosiva",
+   "genero": "f",
+   "classe_arma": "frasco",
+   "tipo": "poca",
+   "familia": "poca",
+   "icone": "garrafada",
+   "etiquetas": [
+    "arremesso"
+   ],
+   "peso_carta": 6,
+   "descricao": "Verde, espessa e sem remédio.",
+   "base": {
+    "dano": 7,
+    "recarga": 3.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "raio": 38,
+    "duracao": 2.5,
+    "tique": 0.35
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 3
+    },
+    {
+     "duracao": 1.0
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    }
+   ]
+  },
+  "totem_ossos": {
+   "nome": "Totem de Ossos",
+   "genero": "m",
+   "classe_arma": "totem",
+   "tipo": "aura",
+   "familia": "aura",
+   "icone": "figa",
+   "etiquetas": [
+    "sombra",
+    "invocacao"
+   ],
+   "peso_carta": 5,
+   "descricao": "Ossos de quem veio antes.",
+   "base": {
+    "dano": 5,
+    "recarga": 0,
+    "area": 1.0,
+    "raio": 50,
+    "tique": 0.6,
+    "empurra": 40
+   },
+   "niveis": [
+    {
+     "empurra": 15
+    },
+    {
+     "dano": 2
+    },
+    {
+     "tique": -0.1
+    },
+    {
+     "dano": 3
+    },
+    {
+     "dano": 2
+    }
+   ]
+  },
+  "grimorio_rachado": {
+   "nome": "Grimório Rachado",
+   "genero": "m",
+   "classe_arma": "livro",
+   "tipo": "raio",
+   "familia": "projetil",
+   "icone": "grimorio",
+   "etiquetas": [
+    "trovao",
+    "sombra"
+   ],
+   "peso_carta": 4,
+   "descricao": "Páginas que mordem.",
+   "base": {
+    "dano": 22,
+    "recarga": 1.6,
+    "quantidade": 1,
+    "raio": 18,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 10
+    },
+    {
+     "recarga": -0.2
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 14
+    }
+   ]
+  },
+  "pergaminho_runico": {
+   "nome": "Pergaminho Rúnico",
+   "genero": "m",
+   "classe_arma": "livro",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "pergaminho",
+   "etiquetas": [
+    "sagrado"
+   ],
+   "peso_carta": 7,
+   "descricao": "Letras que cortam a quem as lê errado.",
+   "base": {
+    "dano": 11,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 5
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 9
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "corrente_farpada": {
+   "nome": "Corrente Farpada",
+   "genero": "f",
+   "classe_arma": "corrente",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "corrente",
+   "etiquetas": [
+    "sangue",
+    "pesado"
+   ],
+   "peso_carta": 6,
+   "descricao": "Chicoteia em arco, arrancando o que encontra.",
+   "base": {
+    "dano": 18,
+    "recarga": 1.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "alcance": 80,
+    "largura": 30
+   },
+   "niveis": [
+    {
+     "dano": 6
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "alcance": 14
+    },
+    {
+     "dano": 7,
+     "recarga": -0.15
+    },
+    {
+     "dano": 9
+    }
+   ]
+  },
+  "estrela_matutina": {
+   "nome": "Estrela Matutina",
+   "genero": "f",
+   "classe_arma": "maça",
+   "tipo": "orbita",
+   "familia": "orbita",
+   "icone": "pedra_amolar",
+   "etiquetas": [
+    "pesado"
+   ],
+   "peso_carta": 5,
+   "descricao": "Bola de ferro que gira e esmaga.",
+   "base": {
+    "dano": 9,
+    "recarga": 3.5,
+    "quantidade": 2,
+    "area": 1.0,
+    "raio": 60,
+    "giro": 3.0,
+    "duracao": 3.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6,
+     "duracao": 0.5
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "giro": 0.5
+    },
+    {
+     "dano": 9,
+     "duracao": 1.0
+    }
+   ],
+   "sprite": "proj_lamina"
+  },
+  "lamina_tempestade": {
+   "nome": "Lâmina da Tempestade",
+   "genero": "f",
+   "classe_arma": "espada",
+   "tipo": "raio",
+   "familia": "projetil",
+   "icone": "furia_ceus",
+   "etiquetas": [
+    "lamina",
+    "trovao"
+   ],
+   "peso_carta": 3,
+   "descricao": "Quando cai, o raio cai junto.",
+   "base": {
+    "dano": 23,
+    "recarga": 1.6,
+    "quantidade": 1,
+    "raio": 18,
+    "area": 1.0
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 10
+    },
+    {
+     "recarga": -0.2
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 16
+    }
+   ]
+  },
+  "besta_pesada": {
+   "nome": "Besta Pesada",
+   "genero": "f",
+   "classe_arma": "arco",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "desert_eagles",
+   "etiquetas": [
+    "arremesso",
+    "pesado"
+   ],
+   "peso_carta": 4,
+   "descricao": "Um virote, um buraco, uma fila inteira.",
+   "base": {
+    "dano": 14,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 12
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "lanterna_fantasma": {
+   "nome": "Lanterna Fantasma",
+   "genero": "f",
+   "classe_arma": "tocha",
+   "tipo": "poca",
+   "familia": "poca",
+   "icone": "brasa_viva",
+   "etiquetas": [
+    "fogo",
+    "sombra"
+   ],
+   "peso_carta": 5,
+   "descricao": "A chama azul que guia os perdidos.",
+   "base": {
+    "dano": 7,
+    "recarga": 3.0,
+    "quantidade": 1,
+    "area": 1.0,
+    "raio": 38,
+    "duracao": 2.5,
+    "tique": 0.35
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 3
+    },
+    {
+     "duracao": 1.0
+    },
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 6
+    }
+   ]
+  },
+  "kunai_corvo": {
+   "nome": "Kunai do Corvo",
+   "genero": "m",
+   "classe_arma": "adaga",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "icone": "adaga",
+   "etiquetas": [
+    "lamina",
+    "sombra",
+    "arremesso"
+   ],
+   "peso_carta": 6,
+   "descricao": "Seu voo é um aviso.",
+   "base": {
+    "dano": 11,
+    "recarga": 0.9,
+    "quantidade": 1,
+    "velocidade": 340,
+    "perfura": 1,
+    "area": 1.0,
+    "duracao": 1.5
+   },
+   "niveis": [
+    {
+     "quantidade": 1
+    },
+    {
+     "dano": 5
+    },
+    {
+     "perfura": 1
+    },
+    {
+     "recarga": -0.15,
+     "quantidade": 1
+    },
+    {
+     "dano": 9
+    }
+   ],
+   "sprite": "proj_adaga"
+  },
+  "fusao_aurora_rubra": {
+   "nome": "Aurora Rubra",
+   "genero": "f",
+   "classe_arma": "fusão",
+   "tipo": "chicote",
+   "familia": "chicote",
+   "icone": "laminas",
+   "etiquetas": [
+    "lamina",
+    "sagrado",
+    "sangue"
+   ],
+   "elemento": "veneno",
+   "evolucao": true,
+   "fusao": true,
+   "descricao": "Fusão: o alvorecer sangra. Golpes largos que atravessam fileiras.",
+   "base": {
+    "dano": 49,
+    "recarga": 1.0,
+    "quantidade": 3,
+    "area": 1.0,
+    "alcance": 120,
+    "largura": 50
+   },
+   "cor": [
+    0.9,
+    0.2,
+    0.25
+   ]
+  },
+  "fusao_chuva_estrelas": {
+   "nome": "Chuva de Estrelas",
+   "genero": "f",
+   "classe_arma": "fusão",
+   "tipo": "raio",
+   "familia": "projetil",
+   "icone": "furia_ceus",
+   "etiquetas": [
+    "trovao",
+    "sagrado"
+   ],
+   "elemento": "raio",
+   "evolucao": true,
+   "fusao": true,
+   "descricao": "Fusão: o cetro chama o céu. Raios caem em vários pontos de uma vez.",
+   "base": {
+    "dano": 51,
+    "recarga": 1.6,
+    "quantidade": 5,
+    "raio": 18,
+    "area": 1.0
+   },
+   "cor": [
+    0.7,
+    0.8,
+    1.0
+   ]
+  },
+  "fusao_martelo_glacial": {
+   "nome": "Martelo Glacial",
+   "genero": "m",
+   "classe_arma": "fusão",
+   "tipo": "sismo",
+   "familia": "aura",
+   "icone": "terremoto",
+   "etiquetas": [
+    "pesado",
+    "gelo"
+   ],
+   "elemento": "gelo",
+   "evolucao": true,
+   "fusao": true,
+   "descricao": "Fusão: cada pancada congela o chão em volta. Onda de gelo enorme.",
+   "base": {
+    "dano": 53,
+    "recarga": 3.0,
+    "raio": 130,
+    "empurra": 240,
+    "area": 1.0
+   },
+   "cor": [
+    0.65,
+    0.9,
+    1.0
+   ]
+  },
+  "fusao_lanca_sanguessuga": {
+   "nome": "Lança Sanguessuga",
+   "genero": "f",
+   "classe_arma": "fusão",
+   "tipo": "lanca",
+   "familia": "chicote",
+   "icone": "lanca_ardente",
+   "etiquetas": [
+    "lamina",
+    "sangue"
+   ],
+   "elemento": "veneno",
+   "evolucao": true,
+   "fusao": true,
+   "descricao": "Fusão: perfura em fila e deixa um rastro de sangramento.",
+   "base": {
+    "dano": 86,
+    "recarga": 1.5,
+    "quantidade": 3,
+    "alcance": 190,
+    "largura": 14,
+    "area": 1.0
+   },
+   "cor": [
+    0.8,
+    0.1,
+    0.2
+   ]
+  },
+  "fusao_tempestade_laminas": {
+   "nome": "Ciclone de Lâminas",
+   "genero": "m",
+   "classe_arma": "fusão",
+   "tipo": "orbita",
+   "familia": "orbita",
+   "icone": "tempestade_laminas",
+   "etiquetas": [
+    "lamina",
+    "trovao"
+   ],
+   "elemento": "raio",
+   "evolucao": true,
+   "fusao": true,
+   "descricao": "Fusão: um anel de aço e raios que gira ao seu redor sem parar.",
+   "base": {
+    "dano": 23,
+    "recarga": 3.5,
+    "quantidade": 7,
+    "area": 1.0,
+    "raio": 80,
+    "giro": 3.0,
+    "duracao": 3.0
+   },
+   "cor": [
+    0.6,
+    0.85,
+    1.0
+   ],
+   "sprite": "proj_lamina"
+  },
+  "fusao_lua_veneno": {
+   "nome": "Lua Peçonhenta",
+   "genero": "f",
+   "classe_arma": "fusão",
+   "tipo": "poca",
+   "familia": "poca",
+   "icone": "garrafada",
+   "etiquetas": [
+    "sombra",
+    "arremesso"
+   ],
+   "elemento": "veneno",
+   "evolucao": true,
+   "fusao": true,
+   "descricao": "Fusão: poças enormes de veneno lunar que se espalham pela horda.",
+   "base": {
+    "dano": 17,
+    "recarga": 3.0,
+    "quantidade": 4,
+    "area": 1.0,
+    "raio": 70,
+    "duracao": 2.5,
+    "tique": 0.35
+   },
+   "cor": [
+    0.55,
+    0.9,
+    0.4
+   ]
+  }
+ },
+ "fusoes": [
+  {
+   "vira": "fusao_aurora_rubra",
+   "ingredientes": [
+    "lamina_alvorecer",
+    "retalhador_sangrento"
+   ]
+  },
+  {
+   "vira": "fusao_chuva_estrelas",
+   "ingredientes": [
+    "cetro_astral",
+    "bastao_cristal"
+   ]
+  },
+  {
+   "vira": "fusao_martelo_glacial",
+   "ingredientes": [
+    "martelo_forjagelo",
+    "martelo_ferreiro",
+    "marreta_enferrujada"
+   ]
+  },
+  {
+   "vira": "fusao_lanca_sanguessuga",
+   "ingredientes": [
+    "lanca_cacada",
+    "pique_real",
+    "montante_carmesim"
+   ]
+  },
+  {
+   "vira": "fusao_tempestade_laminas",
+   "ingredientes": [
+    "disco_cortante",
+    "chakram_alvorada",
+    "lamina_tempestade"
+   ]
+  },
+  {
+   "vira": "fusao_lua_veneno",
+   "ingredientes": [
+    "pocao_corrosiva",
+    "frasco_incendiario"
+   ]
+  }
+ ]
+}

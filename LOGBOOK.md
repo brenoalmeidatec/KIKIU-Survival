@@ -897,3 +897,12 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** loja_sala, mapa, pausa falhas=0. Prints: `--print_tela=loja [--vitrine]`.
 - **Pendente:** nada obrigatório. Se mexer em peça, rode o `loja.py` com o nome dela e depois `--import` no Godot 4.4.1.
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-07 (issue #115): armas universais, variações, limite de slots e fusões — Claude do Alisson (PC)
+- **Feito:** `dados/armas_universais.json` (50 armas base em 11+ classes: espada, machado, arco, adaga, escudo, cajado, martelo, lança, maça etc., mais 6 armas fundidas) e `scripts/hordas/universais.gd`. Cada base gera 8 variações (puro, de Sangue, Gélida, Lunar, Peçonhenta, Ardente, Astral, Dracônica) injetadas em `armas.json` na leitura (`Dados.json("armas")`), sem editar o conteúdo existente. A variação sai da semente da corrida (arma + rodada), com raridade por peso.
+- **Limite:** total 5 armas, no máximo 2 únicas (2 únicas + 3 universais ou 5 universais), em `limites` do JSON; `Construcao.max_armas()` e `Universais.cabe()`.
+- **30 a 40:** cartas novas `ascensao` (até 5 degraus depois do nível máximo: +12% dano, +5% área), `reforja` (troca a variação mantendo o nível) e `fusao`; a cura só sai se não sobrar nenhuma carta.
+- **Fusões:** 6 receitas (2 ou 3 armas no nível máximo, qualquer variação) viram 1 arma fundida e liberam slots.
+- **Testes:** `testes/armas_universais` (falhas=0); suíte inteira falhas=0; bot hazaki semente 7 sem SCRIPT ERROR.
+- **Pendente:** ícones/sprites próprios (hoje reaproveita os existentes, cor e elemento diferenciam a variação); mecânicas de fusão ainda são só tipo/elemento/números, falta ligar `comportamentos.json`; rivais não usam universais; HUD com 5 slots não foi conferido visualmente; balanceamento com o robô de partida longa e fps com 500 inimigos.
+- **Próximo:** conferir HUD dos 5 slots, mais receitas de fusão, ícones em pixel por variação.

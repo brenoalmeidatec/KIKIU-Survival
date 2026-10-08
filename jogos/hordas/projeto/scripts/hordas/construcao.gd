@@ -7,7 +7,8 @@ const BASE := {"dano": 1.0, "recarga": 1.0, "area": 1.0, "quantidade": 0.0, "vel
 	"vida_max": 100.0, "regen": 0.0, "velocidade": 1.0, "ima": 1.0, "sorte": 0.0, "xp": 1.0,
 	"critico": 0.05, "critico_mult": 1.5}
 const Equipamento := preload("res://scripts/hordas/equipamento.gd")
-const MAX_ARMAS := 4
+const Universais := preload("res://scripts/hordas/universais.gd")
+const MAX_ARMAS := 4   # (só de reserva: o limite de verdade é Universais.max_total(), dados/armas_universais.json)
 const MAX_PASSIVOS := 5
 
 
@@ -52,7 +53,7 @@ static func gerar(heroi_id: String, nivel: int, rng: RandomNumberGenerator) -> D
 		for id in passivos:
 			if passivos[id] < int(pas_d[id].get("max", 5)):
 				cand.append([6.0 * float(pas_d[id].get("peso_ia", 1.0)), "sobe_passivo", id])
-		if armas.size() < MAX_ARMAS:
+		if armas.size() < max_armas():
 			var ids: Array = armas.map(func(a): return a.id)
 			for id in armas_d:
 				if not arma_permitida(id, heroi_id, ids) or _evoluida(armas, id):
@@ -150,6 +151,10 @@ static func dps_por_tipo(armas: Array, st: Dictionary) -> Dictionary:
 # "character_exclusive" com "characterId" (só aquele personagem). Por partida, cada um pega no máximo
 # _config.limite_exclusivas armas exclusivas (2 por padrão). Evolução de arma exclusiva também é exclusiva.
 
+static func max_armas() -> int:
+	return Universais.max_total()
+
+
 static func limite_exclusivas() -> int:
 	return int(Dados.json("armas").get("_config", {}).get("limite_exclusivas", 2))
 
@@ -176,8 +181,8 @@ static func n_exclusivas(ids: Array, heroi_id: String) -> int:
 ## A arma pode ser oferecida/pega como NOVA por este personagem agora? (nunca oferecer carta impossível)
 static func arma_permitida(id: String, heroi_id: String, ids: Array) -> bool:
 	var d := _def(id)
-	if d.is_empty() or d.get("evolucao", false) or id in ids:
-		return false
+	if d.is_empty() or d.get("evolucao", false) or id in ids or d.get("universal", false):
+		return false   # universais saem por carta própria (arena.gd, variação sorteada); rivais não as usam
 	if str(d.get("classe", "")) == "transformacao":   # arma da forma (dragão): vem da transformação, nunca de carta
 		return false
 	if exclusiva(id):

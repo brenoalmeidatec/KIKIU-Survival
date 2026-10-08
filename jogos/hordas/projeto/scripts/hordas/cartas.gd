@@ -306,6 +306,12 @@ static func estilo(c: Dictionary, t := 0.0) -> Dictionary:
 			return {"cor": a.lerp(b, 0.5 + 0.5 * sin(t * 6)), "glifo": "estrela", "rotulo": "EVOLUÇÃO"}
 		"cura":
 			return {"cor": Interface.cor("cura"), "glifo": "cruz", "rotulo": "CURA"}
+		"fusao":
+			return {"cor": Interface.cor("evolucao"), "glifo": "estrela", "rotulo": "FUSÃO"}
+		"ascensao":
+			return {"cor": Interface.cor("comportamento"), "glifo": "triangulo", "rotulo": "ASCENSÃO"}
+		"reforja":
+			return {"cor": Interface.cor("comportamento"), "glifo": "quadrado", "rotulo": "REFORJA"}
 		"dadiva":
 			return {"cor": Interface.cor_raridade(str(c.get("raridade", "")), c.get("cor", Color.WHITE)), "glifo": "losango", "rotulo": str(c.get("rar_nome", "DÁDIVA"))}
 		"comportamento":

@@ -1,4 +1,5 @@
 extends Node
+const Universais := preload("res://scripts/hordas/universais.gd")
 ## Lê os arquivos de conteúdo (dados/*.json) e guarda texturas.
 ## Uma pasta "dados" ao lado do .exe tem prioridade: dá pra editar armas, inimigos e a fase no Bloco de Notas.
 
@@ -50,6 +51,8 @@ func json(nome: String) -> Dictionary:
 	if not d is Dictionary:
 		push_error("Arquivo com erro: " + caminho)
 		d = {}
+	if nome == "armas":
+		Universais.injetar(d)   # #115: armas universais e suas variações entram na mesma tabela
 	if nome == "herois":
 		d.merge(herois_extra, true)   # os criados continuam na tabela depois de recarregar()
 	_cache[nome] = d
