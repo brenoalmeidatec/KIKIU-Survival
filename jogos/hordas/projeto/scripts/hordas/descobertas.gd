@@ -205,8 +205,7 @@ static func _texto_efeito(efeito: Dictionary) -> String:
 	for k in efeito:
 		var v := absf(float(efeito[k]))
 		var a: Dictionary = attrs.get(k, {})
-		var txt := "+%d%%" % roundi(v * 100.0) if str(a.get("formato", "pct")) == "pct" else ("+%d" % roundi(v) if absf(v - roundf(v)) < 0.05 else "+%.1f" % v)
-		partes.append("%s %s" % [txt, str(a.get("rotulo", k))])
+		partes.append("+%s %s" % [_valor(v, str(a.get("formato", "pct"))), str(a.get("rotulo", k))])
 	return ", ".join(partes)
 
 
@@ -223,19 +222,33 @@ static func _carta_dupla(id: String) -> Dictionary:
 		"icone": str(def.get("icone", id)), "nivel": 0, "dupla": true}
 
 
+## Número no texto: "10%", "18", "1,4" (vírgula decimal, como em português).
+static func _valor(v: float, formato: String) -> String:
+	if formato == "pct":
+		return "%d%%" % roundi(v * 100.0)
+	if absf(v - roundf(v)) < 0.05:
+		return "%d" % roundi(v)
+	return ("%.1f" % v).replace(".", ",")
+
+
 static func _carta_dadiva(id: String, raridade: String) -> Dictionary:
 	var d: Dictionary = Dados.json("dadivas")
 	var def: Dictionary = d.get("lista", {}).get(id, {})
 	var rar: Dictionary = d.get("_config", {}).get("raridades", {}).get(raridade, {})
 	var cor: Array = rar.get("cor", [1, 1, 1])
-	var partes := []
 	var efeito: Dictionary = def.get("efeito", {})
-	for k in efeito:
-		var v := absf(float(efeito[k]) * float(rar.get("mult", 1.0)))
-		var txt := "+%d%%" % roundi(v * 100.0) if str(def.get("formato", "pct")) == "pct" else ("+%d" % roundi(v) if absf(v - roundf(v)) < 0.05 else "+%.1f" % v)
-		partes.append("%s %s" % [txt, str(def.get("rotulo", k))])
+	var fmt := str(def.get("formato", "pct"))
+	var mult := float(rar.get("mult", 1.0))
+	var desc := ""
+	if def.has("texto") and not efeito.is_empty():   # frase pronta, com {v} no lugar do número
+		desc = str(def.texto).replace("{v}", _valor(absf(float(efeito.values()[0]) * mult), fmt))
+	else:
+		var partes := []
+		for k in efeito:
+			partes.append("+%s %s" % [_valor(absf(float(efeito[k]) * mult), fmt), str(def.get("rotulo", k))])
+		desc = ", ".join(partes)
 	return {"tipo": "dadiva", "id": id, "raridade": raridade, "rar_nome": str(rar.get("nome", raridade)), "cor": Color(cor[0], cor[1], cor[2]),
-		"nome": str(def.get("nome", id)), "desc": ", ".join(partes), "icone": str(def.get("icone", id)), "nivel": 0}
+		"nome": str(def.get("nome", id)), "desc": desc, "icone": str(def.get("icone", id)), "nivel": 0}
 
 
 # ---------- fragmentos ----------

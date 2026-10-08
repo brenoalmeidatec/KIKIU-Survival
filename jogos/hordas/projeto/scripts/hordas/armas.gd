@@ -14,6 +14,7 @@ const Poca := preload("res://scripts/hordas/poca.gd")
 const Legib := preload("res://scripts/hordas/legibilidade.gd")
 ## Curva de crescimento (#armas-crescem): a arma nasce fraca e pequena e cresce de nível em nível (dados/crescimento_armas.json).
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
+const Universais := preload("res://scripts/hordas/universais.gd")
 ## Comportamentos que moram no próprio arquivo (scripts/hordas/armas/<tipo>.gd). Pra criar arma nova com
 ## comportamento próprio (ex.: exclusiva de outro personagem): escreva o arquivo com atualizar/passo/pintar/fundo
 ## (veja katana.gd) e registre aqui. atras() desenha o que fica atrás do personagem. Os tipos antigos (projetil, chicote...) continuam neste arquivo.
@@ -181,6 +182,10 @@ func _s(a: Dictionary) -> Dictionary:
 	s["duracao"] = float(s.get("duracao", 1)) * statf.call("duracao")
 	s["velocidade"] = float(s.get("velocidade", 200)) * statf.call("velocidade_proj")
 	s["comp"] = _comp_de(a)
+	var asc := int(a.get("asc", 0))   # #115: ascensão (degraus depois do nível máximo)
+	if asc > 0:
+		s["dano"] = float(s.dano) * Universais.fator_dano(asc)
+		s["area"] = float(s.area) * Universais.fator_area(asc)
 	return s
 
 

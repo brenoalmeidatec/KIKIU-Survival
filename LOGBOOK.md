@@ -897,3 +897,22 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** loja_sala, mapa, pausa falhas=0. Prints: `--print_tela=loja [--vitrine]`.
 - **Pendente:** nada obrigatório. Se mexer em peça, rode o `loja.py` com o nome dela e depois `--import` no Godot 4.4.1.
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-07 (issue #115): armas universais, variações, limite de slots e fusões — Claude do Alisson (PC)
+- **Feito:** `dados/armas_universais.json` (50 armas base em 11+ classes: espada, machado, arco, adaga, escudo, cajado, martelo, lança, maça etc., mais 6 armas fundidas) e `scripts/hordas/universais.gd`. Cada base gera 8 variações (puro, de Sangue, Gélida, Lunar, Peçonhenta, Ardente, Astral, Dracônica) injetadas em `armas.json` na leitura (`Dados.json("armas")`), sem editar o conteúdo existente. A variação sai da semente da corrida (arma + rodada), com raridade por peso.
+- **Limite:** total 5 armas, no máximo 2 únicas (2 únicas + 3 universais ou 5 universais), em `limites` do JSON; `Construcao.max_armas()` e `Universais.cabe()`.
+- **30 a 40:** cartas novas `ascensao` (até 5 degraus depois do nível máximo: +12% dano, +5% área), `reforja` (troca a variação mantendo o nível) e `fusao`; a cura só sai se não sobrar nenhuma carta.
+- **Fusões:** 6 receitas (2 ou 3 armas no nível máximo, qualquer variação) viram 1 arma fundida e liberam slots.
+- **Testes:** `testes/armas_universais` (falhas=0); suíte inteira falhas=0; bot hazaki semente 7 sem SCRIPT ERROR.
+- **Pendente:** ícones/sprites próprios (hoje reaproveita os existentes, cor e elemento diferenciam a variação); mecânicas de fusão ainda são só tipo/elemento/números, falta ligar `comportamentos.json`; rivais não usam universais; HUD com 5 slots não foi conferido visualmente; balanceamento com o robô de partida longa e fps com 500 inimigos.
+- **Próximo:** conferir HUD dos 5 slots, mais receitas de fusão, ícones em pixel por variação.
+## 2026-10-07 - #112 item 7: variantes de cenario das outras regioes (Claude do Alisson, PC)
+- **Feito:** Pantano (base, lago, fogo-fatuo, cemiterio), Deserto (base, dunas, oasis, ruina, canion), Gelo (base, lago congelado, cristais, nevasca), Reino (base, praca, catacumba, jardim morto). Mesma ideia do #113: variante = piso novo + pesos/ambiente proprios, reaproveitando o atlas de enfeites do cenario-base. Codigo: `piso_var`/`VAR_REGIOES`/`PESOS_VAR` em `fonte_arte/modelos3d/cenarios.py` (gerar so as novas: `blender -b -P cenarios.py -- pantano_lago ...`, ~25 s cada). Lista por regiao em `dados/cenarios.json` > `variantes`. `testes/variantes.tscn` cobre as 4 regioes. Prints: `--print_tela=entrada --fase=1 --seq=3.5 --cenario=<nome>` (a opcao `--cenario=` em `chao.gd` so serve pra print), saida em `jogos/hordas/prints/variantes_regioes/`.
+- **Pendente:** loja obrigatoria entre fases (parte 2: `loja_entre_fases` em `dados/fase.json` + `saida.gd`) nao foi feita. Pisos novos sao simples (sem enfeites novos por variante, ex.: palmeira no oasis). O oasis sai oliva por causa da paleta quantizada.
+- **Proximo:** loja entre fases; enfeites proprios por variante.
+## 2026-10-07 - Issue #98: raridade, fonte mística e textos das dádivas (Claude do Alisson (PC))
+- **Feito:** raridade da dádiva aparece uma vez só (na carta, em filetes na cor da raridade, fonte mística); a tira do topo diz DÁDIVA. Fonte mística **Jacquard 12** (OFL, `assets/fonte/Jacquard12-Regular.ttf` + `OFL.txt`) em `Dados.fonte_titulo`: títulos de tela (tamanho 24), nomes das cartas e raridade (tamanho 12). Texto pequeno e números continuam em Press Start 2P (`Dados.fonte`). Todos os acentos checados no cmap das duas fontes.
+- **Textos:** `dados/dadivas.json` ganhou campo `texto` (frase com `{v}`) nas 10 dádivas simples, ex.: "Regenera 1,4 de vida por segundo." Números saem com vírgula decimal (`Descobertas._valor`).
+- **Testes:** todos os 49 testes (sem bench_) com falhas=0.
+- **Pendente:** print visual de uma carta de dádiva (o `--print_tela=cartas` só mostra armas); conferir o visual da raridade e a legibilidade do nome em 12px. Ícones do Ímã de Almas, Sopro Ágil e Coração de Brasa não foram refeitos (item 4 da issue #98).
+- Assinado: Claude do Alisson (PC)

@@ -14,7 +14,11 @@
   "cidade"
  ],
  "variantes": {
-  "floresta": ["floresta", "floresta_clareira", "floresta_pantano", "floresta_ruina", "floresta_fungos"]
+  "floresta": ["floresta", "floresta_clareira", "floresta_pantano", "floresta_ruina", "floresta_fungos"],
+  "pantano": ["pantano", "pantano_lago", "pantano_fogofatuo", "pantano_cemiterio"],
+  "deserto": ["deserto", "deserto_dunas", "deserto_oasis", "deserto_ruina", "deserto_canion"],
+  "gelo": ["gelo", "gelo_lago", "gelo_cristais", "gelo_nevasca"],
+  "reino": ["reino", "reino_praca", "reino_catacumba", "reino_jardim"]
  },
  "densidade": 0.3,
  "cenarios": {
