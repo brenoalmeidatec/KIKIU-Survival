@@ -66,6 +66,7 @@ var us_logica = 0
 var us_desenho = 0
 var us_proj = 0
 var acertos = 0
+var n_proj = 0
 
 
 func carregar(lista: Array, arq_proj: String) -> void:
@@ -187,6 +188,22 @@ func definir_quantidade(n: int) -> void:
 		if tp[i] == idx_luz:
 			fogos.append(i)
 	grade.clear()
+
+
+func quantidade() -> int:
+	return pos.size()
+
+
+## Posições dos inimigos que emitem luz dentro da área (no máximo `maximo`).
+func luzes_visiveis(area: Rect2, maximo: int) -> Array:
+	var r = []
+	for i in fogos:
+		var p: Vector2 = pos[i]
+		if area.has_point(p):
+			r.append(p)
+			if r.size() >= maximo:
+				break
+	return r
 
 
 ## Ponto fora da tela, num anel em volta do alvo (onde a horda nasce e renasce).
@@ -330,6 +347,7 @@ func atualizar_proj(dt: float) -> Array:
 			p_pos[k] = p
 		k -= 1
 	us_proj = OS.get_ticks_usec() - t0
+	n_proj = p_pos.size()
 	return mortes
 
 
