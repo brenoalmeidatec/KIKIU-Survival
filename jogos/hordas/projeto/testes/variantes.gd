@@ -37,8 +37,20 @@ func _ready() -> void:
 		Sorte.iniciar(s)
 		ordens[str(Cenario.ordem_variantes("floresta", lista.size()))] = true
 	ok(ordens.size() > 1, "a semente muda a ordem dos andares")
+	# as outras regiões também têm variantes (3 a 5, a primeira é o cenário-base)
+	for base in ["pantano", "deserto", "gelo", "reino"]:
+		var lr: Array = Dados.json("cenarios").get("variantes", {}).get(base, [])
+		ok(lr.size() >= 3 and lr[0] == base, "%s tem variantes (%d)" % [base, lr.size()])
+		for v in lr:
+			ok(FileAccess.file_exists("res://assets/cenarios/%s/cenario.json" % v) and FileAccess.file_exists("res://assets/cenarios/%s/piso.png.import" % v), "a variante %s tem arte" % v)
+		Sorte.iniciar(7)
+		var vistos_r := {}
+		for andar in lr.size():
+			vistos_r[Cenario.variante(base, andar)] = true
+		ok(vistos_r.size() == lr.size(), "%s: cada andar tem uma variante diferente" % base)
+		ok(Cenario.variante(base, 0) == base, "%s: o andar 0 é o cenário-base" % base)
 	# região sem variantes = cenário único de hoje
-	ok(Cenario.variante("gelo", 3) == "gelo", "sem variantes vale o cenário único")
+	ok(Cenario.variante("cidade", 3) == "cidade", "sem variantes vale o cenário único")
 	ok(Cenario.base_de("floresta_ruina") == "floresta" and Cenario.base_de("gelo") == "gelo", "base_de acha o cenário-base")
 	print("VARIANTES falhas=", falhas)
 	get_tree().quit()

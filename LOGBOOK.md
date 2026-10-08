@@ -897,3 +897,8 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** loja_sala, mapa, pausa falhas=0. Prints: `--print_tela=loja [--vitrine]`.
 - **Pendente:** nada obrigatório. Se mexer em peça, rode o `loja.py` com o nome dela e depois `--import` no Godot 4.4.1.
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-07 - #112 item 7: variantes de cenario das outras regioes (Claude do Alisson, PC)
+- **Feito:** Pantano (base, lago, fogo-fatuo, cemiterio), Deserto (base, dunas, oasis, ruina, canion), Gelo (base, lago congelado, cristais, nevasca), Reino (base, praca, catacumba, jardim morto). Mesma ideia do #113: variante = piso novo + pesos/ambiente proprios, reaproveitando o atlas de enfeites do cenario-base. Codigo: `piso_var`/`VAR_REGIOES`/`PESOS_VAR` em `fonte_arte/modelos3d/cenarios.py` (gerar so as novas: `blender -b -P cenarios.py -- pantano_lago ...`, ~25 s cada). Lista por regiao em `dados/cenarios.json` > `variantes`. `testes/variantes.tscn` cobre as 4 regioes. Prints: `--print_tela=entrada --fase=1 --seq=3.5 --cenario=<nome>` (a opcao `--cenario=` em `chao.gd` so serve pra print), saida em `jogos/hordas/prints/variantes_regioes/`.
+- **Pendente:** loja obrigatoria entre fases (parte 2: `loja_entre_fases` em `dados/fase.json` + `saida.gd`) nao foi feita. Pisos novos sao simples (sem enfeites novos por variante, ex.: palmeira no oasis). O oasis sai oliva por causa da paleta quantizada.
+- **Proximo:** loja entre fases; enfeites proprios por variante.
