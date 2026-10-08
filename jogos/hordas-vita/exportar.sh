@@ -2,6 +2,7 @@
 # Exporta o piloto para .vpk.
 #   ./exportar.sh              -> build/kikiu_piloto.vpk     (template oficial do godot-vita; horda em GDScript; KIKU00001)
 #   VARIANTE=cpp ./exportar.sh -> build/kikiu_piloto_cpp.vpk (template próprio com o módulo C++ HordaVita/VitaHW; KIKU00002)
+#   VARIANTE=diag ./exportar.sh -> build/kikiu_diag.vpk      (template próprio SEM o módulo; KIKU00003; só diagnóstico)
 # Os dois têm TITLE_ID diferente e convivem no Vita.
 # GODOT_VITA = editor godot-vita 3.5-rc5-vita1 com o template oficial instalado (ver STATUS.md).
 # TEMPLATE_CPP = zip do template próprio (compilar/build_vita.sh + compilar/empacotar.sh).
@@ -23,6 +24,13 @@ if [ "$variante" = "cpp" ]; then
 	title_id="KIKU00002"
 	titulo="KIKIU Piloto C++"
 	cp -f "${TEMPLATE_CPP:-$(dirname "$godot")/vita_release_horda.zip}" "$tpl_dir/vita_release.zip"
+	trap 'cp -f "$tpl_dir/vita_release_oficial.zip" "$tpl_dir/vita_release.zip"' EXIT
+elif [ "$variante" = "diag" ]; then
+	# diagnóstico: template compilado com o SDK novo mas SEM o módulo (separa problema do SDK de problema do módulo)
+	saida="${1:-$aqui/build/kikiu_diag.vpk}"
+	title_id="KIKU00003"
+	titulo="KIKIU Diag"
+	cp -f "${TEMPLATE_DIAG:-$(dirname "$godot")/vita_release_diag.zip}" "$tpl_dir/vita_release.zip"
 	trap 'cp -f "$tpl_dir/vita_release_oficial.zip" "$tpl_dir/vita_release.zip"' EXIT
 else
 	saida="${1:-$aqui/build/kikiu_piloto.vpk}"

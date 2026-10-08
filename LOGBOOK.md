@@ -924,3 +924,8 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 ## 2026-10-08 · Claude do Alisson (PC) · Piloto Vita v2 medido: ~185 inimigos na tela a 30 fps
 - **Feito:** v2 instalada e medida no Vita (CSV em `jogos/hordas-vita/medicoes/vita_v2_2026-10-08.csv`). 300 inimigos com luz: 30,4 fps (v1: 21,7). Desenho por inimigo caiu pela metade; lógica -27% e agora é o custo dominante. Cabem ~185 na tela a 30 fps (eram 100). Projéteis baratos. Critério de viabilidade atingido no limite. Leitura no `STATUS.md` ("Resultado 2").
 - **Próximo:** decidir entre começar o plano do backport com orçamento de ~150–180 inimigos na tela ou montar o build do template Vita (VitaSDK no WSL) para o módulo C++ da horda (2b), que daria folga para o resto do jogo.
+
+## 2026-10-08 · Claude do Alisson (PC) · Vita fase 2b: template próprio com módulo C++ compilado (noite)
+- **Feito:** distro WSL `vita-build` com VitaSDK 2026.08; template godot-vita compilado com o módulo `horda_vita` (HordaVita = horda inteira em C++ num draw call; VitaHW = touch frontal/traseiro, acelerômetro, clocks, bateria). Piloto v3 usa o módulo quando existe (touch, inclinação, som espacial). No PC (build Linux do mesmo motor) a lógica da horda caiu para 0,02–0,05 ms com 300–800 inimigos. No Vita3K o eboot novo abre igual ao oficial até o GL (o emulador não roda o PVR_PSP2). Detalhes em `jogos/hordas-vita/STATUS.md` e `compilar/LEIAME.md`.
+- **Pendente (Alisson, de manhã):** instalar `kikiu_piloto_cpp.vpk` (e o `kikiu_diag.vpk` se o C++ não abrir) e mandar o CSV.
+- Ferramentas desta máquina: `E:\Dev\KIKIU-Vita\ferramentas\` (editor, templates `vita_release_horda.zip`/`vita_release_diag.zip`, Vita3K), distro WSL `vita-build`.

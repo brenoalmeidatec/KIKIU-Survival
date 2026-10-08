@@ -147,3 +147,26 @@ lógica 0,088 → 0,064 ms (-27%, menos que o esperado: virou o custo dominante)
 GPU continua sobrando (640×360 segue a mesma reta). Pior quadro ~1,2× a média (a grade refeita 1 em 2 alterna o custo).
 **Critério:** 300 inimigos com luz a ≥ 30 fps → **passou, no limite** (30,4 com buffer). Viável a 30 fps com orçamento
 de ~150–180 na tela; sobra pouco para o resto do jogo em GDScript (armas, efeitos, HUD), que o piloto não tem.
+
+## Fase 2b — template próprio com módulo C++ (noite de 2026-10-08) · aguardando teste no Vita
+
+- **Build:** distro WSL `vita-build` (Ubuntu 24.04), VitaSDK 2026.08 / GCC 15.2, godot-vita `7ca87562` + `modulo/horda_vita`,
+  `module_bullet_enabled=no`. Passo a passo e pegadinhas em `compilar/LEIAME.md`. Do zero ~17 min; incremental ~30 s.
+- **`HordaVita` (C++):** simulação, grade por contagem + prefixos, separação (teto 8 vizinhos), LOD dos distantes,
+  projéteis, golpe, ordem por Y (sort de chaves 64 bits) e desenho de todos os inimigos + projéteis numa triangle
+  array (no GLES2 do fork = 1 `glDrawElements`; lotes de 1800 quads cabem no buffer padrão de 128 KB).
+  `horda_nativa.gd` mantém a interface da `horda.gd`; sem o módulo (editor do PC) o piloto cai na horda em GDScript.
+- **`VitaHW` (C++):** touch frontal e **traseiro** normalizados (o fork só lê o frontal, cru), acelerômetro/giroscópio
+  (`SceMotion_stub` linkado pelo SCsub do módulo), clocks reais (confirma 444 MHz) e bateria.
+- **Piloto v3:** stick virtual no touch frontal esquerdo, especial no direito, rolamento no traseiro, câmera que inclina
+  (Select), som espacial (pan/atenuação por posição, reverb, alargamento Haas, limiter; o Vita só tem saída estéreo,
+  então não existe Dolby de verdade), clocks/bateria no HUD, rampa 100–800 inimigos, coluna `main_ms`.
+- **Verificado no PC:** build Linux (x11) do mesmo commit com o módulo, rodando o piloto pelo WSLg: lógica da horda
+  0,02–0,05 ms com 300–800 inimigos (GDScript no mesmo PC: 0,8–1,7 ms), `_process` inteiro ~0,1 ms, visual certo
+  (`medicoes/pc_x11/`).
+- **Vita3K:** não roda o driver PVR_PSP2 (até o template oficial para no "OpenGL ES 2.0 Initialization Failed"), então
+  não prova a tela. Mas o eboot próprio se comporta igual ao oficial até esse ponto (carrega, resolve imports, inicia
+  libc/fios, lê o projeto): o SDK novo não quebra a abertura.
+- **Três vpks** (convivem): `kikiu_piloto.vpk` (KIKU00001, template oficial, GDScript), `kikiu_piloto_cpp.vpk`
+  (KIKU00002, C++ + hardware), `kikiu_diag.vpk` (KIKU00003, template novo sem módulo: se o C++ não abrir e o diag abrir,
+  o problema é o módulo; se nenhum abrir, é o SDK novo).
