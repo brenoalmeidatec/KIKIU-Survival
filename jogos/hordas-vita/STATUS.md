@@ -220,3 +220,20 @@ em 31 arquivos; investida, ataques, elementos, sons), não só física. Opções
 Padrão, se ninguém decidir: primeiro medir o `kikiu_vita.vpk` no aparelho (log `ux0:data/kikiu_vita_log.txt`: fps por
 número de vivos, é barato e diz o tamanho real do problema); depois começar pela 1 só para movimento/separação/desenho
 (o grosso do custo), deixando os comportamentos raros (investida, ataques) em GDScript chamados pelo C++.
+
+## Protocolo de teste no Vita (manhã de 2026-10-08)
+
+Pacotes em `jogos/hordas-vita/build/` (fora do Git; gerar com `exportar.sh` / `exportar_jogo.sh`). Instalar pelo
+VitaShell; eles convivem (TITLE_IDs diferentes). Ordem e o que cada resultado quer dizer:
+1. **`kikiu_diag.vpk`** (KIKU00003, template novo sem módulo): se não abrir, o problema é o SDK novo (GCC 15 / VitaSDK
+   2026.08), não o módulo.
+2. **`kikiu_piloto_cpp.vpk`** (KIKU00002, piloto com a horda em C++): rampa v3, 18 passos (~100 s), sem tocar em nada.
+   Grava `ux0:data/kikiu_piloto_cpp.csv`. Se o diag abre e este não, o problema é o módulo. Depois da rampa: touch
+   frontal esquerdo = stick, direito = especial, traseiro = rolamento, Select = câmera que inclina.
+3. **`kikiu_vita.vpk`** (KIKU00004, o jogo de verdade convertido): menu e partida pelo controle (Cross confirma; L/R já
+   são os índices 4/5 do Godot no template próprio), touch frontal = mouse, traseiro = rolamento. Contador de fps no
+   canto. Grava `ux0:data/kikiu_vita_log.txt` (fps, pior quadro, vivos a cada 5 s). Esperado: abre, mas fica lento
+   quando a horda encher (a estimativa de ~1,4 ms por inimigo é conta, não medição). Se morrer na carga: primeiro
+   suspeito é memória de vídeo (o jogo pré-carrega ~230 PNGs em RGBA8; o Vita tem 128 MB de VRAM); o ajuste é o
+   `compress/mode` do `importer_defaults` no `conversor/gerar.py`.
+4. Ligar o FTP do VitaShell para puxar `kikiu_piloto_cpp.csv` e `kikiu_vita_log.txt`.
