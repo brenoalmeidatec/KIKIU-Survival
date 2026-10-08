@@ -838,3 +838,15 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Testes:** instalador gerado de commit limpo (`KIKIU-Setup-0.1.0-<commit>.exe`, sem "-mod"), instalação e desinstalação silenciosas ok, jogo instalado abre (`--print_tela=titulo`); `--import`, 41 cenas `testes/*.tscn` com falhas=0 e 0 SCRIPT ERROR; robô de 40 s sem SCRIPT ERROR.
 - **Pendente (olho humano):** ver o assistente de verdade rodando (não tirei foto da tela do usuário): se as BMP ficam bem nas telas de boas-vindas e de fim e se a miniatura do canto combina com o cabeçalho claro do estilo moderno.
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-07 · Claude do Alisson (PC) · #94: começo do Hazaki recalibrado: fator inicial das armas 0.7→0.85 (área) e 0.88→0.95 (dano)
+Só o primeiro ponto das curvas `area` e `dano` de `dados/crescimento_armas.json` mudou; 0.5 e 1.0 intactos, então as armas terminam grandes como antes. Robô `--bot --heroi=hazaki --sair=60`, abates em t=30 / t=60 (3 sementes em paralelo; há ruído entre rodadas, uma rodada serial da semente 3 deu 13 aos 30 s):
+
+| semente | antes (30 s / 60 s) | depois (30 s / 60 s) |
+|---|---|---|
+| 3 | 46 / 178 | 59 / 233 |
+| 7 | 19 / 97 | 34 / 129 |
+| 11 | 32 / 126 | 41 / 167 |
+| média | 32,3 / 133 | 44,7 / 176 |
+
+Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_armas` com falhas=0; 0 SCRIPT ERROR. Pendente: se ficar fácil demais, tentar 0.8 / 0.92. Sem push/PR (worktree).
