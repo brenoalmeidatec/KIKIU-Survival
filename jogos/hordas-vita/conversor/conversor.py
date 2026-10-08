@@ -90,8 +90,9 @@ TIPOS = {
     "CharacterBody2D": "KinematicBody2D", "RenderingServer": "VisualServer", "PhysicsServer2D": "Physics2DServer",
     "PackedStringArray": "PoolStringArray", "PackedVector2Array": "PoolVector2Array",
     "PackedVector3Array": "PoolVector3Array", "PackedColorArray": "PoolColorArray",
-    "PackedInt32Array": "PoolIntArray", "PackedInt64Array": "PoolIntArray", "PackedFloat32Array": "PoolRealArray",
-    "PackedFloat64Array": "PoolRealArray", "PackedByteArray": "PoolByteArray",
+    "PackedInt32Array": "PoolIntArray", "PackedFloat32Array": "PoolRealArray",
+    # 64 bits: os Pool*Array do Godot 3 são de 32 bits (chaves empacotadas perdiam o índice); Array guarda 64 bits
+    "PackedInt64Array": "Array", "PackedFloat64Array": "Array", "PackedByteArray": "PoolByteArray",
     "Vector2i": "Vector2", "Rect2i": "Rect2", "Vector3i": "Vector3", "StringName": "String",
     "TileMapLayer": "TileMap", "GPUParticles2D": "Particles2D", "Node3D": "Spatial", "Texture2D": "Texture",
     "CompressedTexture2D": "StreamTexture", "AudioStreamWAV": "AudioStreamSample",
