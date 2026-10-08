@@ -1370,6 +1370,137 @@ CENARIOS["floresta_fungos"] = _variante("floresta", piso_floresta_var(VAR_FLORES
     {"arvore": 1, "arvore_morta": 2, "toco": 2, "tronco": 1, "arbusto": 1, "pedra": 1, "cogumelos": 9, "cranio": 1, "teia": 1, "fogueira": 0})
 
 
+# ---- variantes das outras regiões (#112 item 7): piso montado por uma lista de operações + pesos próprios dos enfeites do base
+
+def piso_var(p):
+    """Piso de variante. p: base (hex) e ops = lista de tuplas:
+    ("blobs", cores, n, rmin, rmax, z, esc_z)  montes/poças achatados · ("lajes", cores, n, tmin, tmax)  placas chatas
+    ("grade", cores, n, fresta_hex)  lajes lado a lado · ("riscos", hex, n, comp)  riscos finos (vento, rachadura)
+    ("tufos", hex, n)  tufos de capim/junco · ("pontos", cores, n, rmin, rmax)  pedrinhas/cinza · ("brilho", hex, n)  luzinhas acesas
+    ("cristais", hex, n)  cones pontudos · ("ossos", hex, n) · ("agua", hex, n, rmin, rmax)  poça lisa"""
+    def f(r):
+        caixa("fundo", (L, L, 0.1), (L / 2, L / 2, -0.05), toon(p["base"]))
+        for op in p["ops"]:
+            k = op[0]
+            if k == "blobs":
+                _, cores, n, rmin, rmax, z, ez = op
+                mats = [chao(h) for h in cores]
+                for _ in range(n):
+                    esfera("monte", r.uniform(rmin, rmax), (r.uniform(0.6, L - 0.6), r.uniform(0.6, L - 0.6), z), r.choice(mats), escala=(1, r.uniform(0.5, 1.3), ez))
+            elif k == "lajes":
+                _, cores, n, tmin, tmax = op
+                mats = [chao(h) for h in cores]
+                for _ in range(n):
+                    caixa("laje", (r.uniform(tmin, tmax), r.uniform(tmin, tmax), 0.08), (r.uniform(0.8, L - 0.8), r.uniform(0.8, L - 0.8), 0.03), r.choice(mats),
+                          rot=(0, 0, r.uniform(0, math.pi)), chanfro=0.02)
+            elif k == "grade":
+                _, cores, n, fresta = op
+                mats = [chao(h) for h in cores]
+                lado = L / n
+                for i in range(n):
+                    for j in range(n):
+                        if r.random() < 0.08:
+                            continue
+                        caixa("laje", (lado - 0.07, lado - 0.07, 0.08), (i * lado + lado / 2 + r.uniform(-0.02, 0.02), j * lado + lado / 2 + r.uniform(-0.02, 0.02), r.uniform(-0.03, 0.0)),
+                              r.choice(mats), rot=(0, 0, r.uniform(-0.04, 0.04)), chanfro=0.03)
+            elif k == "riscos":
+                _, hexa, n, comp = op
+                m = toon(hexa)
+                a0 = r.uniform(-0.3, 0.3)
+                for _ in range(n):
+                    caixa("risco", (r.uniform(comp * 0.6, comp), 0.035, 0.02), (r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5), 0.01), m, rot=(0, 0, a0 + r.uniform(-0.15, 0.15)))
+            elif k == "tufos":
+                _, hexa, n = op
+                m = toon(hexa)
+                for _ in range(n):
+                    x, y = r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5)
+                    for _k in range(r.randint(4, 8)):
+                        cilindro("tufo", 0.018, r.uniform(0.2, 0.4), (x + r.uniform(-0.15, 0.15), y + r.uniform(-0.15, 0.15), 0.15), m,
+                                 rot=(r.uniform(-0.4, 0.4), r.uniform(-0.4, 0.4), 0), vertices=4)
+            elif k == "pontos":
+                _, cores, n, rmin, rmax = op
+                mats = [chao(h) for h in cores]
+                for _ in range(n):
+                    esfera("ponto", r.uniform(rmin, rmax), (r.uniform(0.3, L - 0.3), r.uniform(0.3, L - 0.3), 0.04), r.choice(mats), escala=(1, r.uniform(0.7, 1.2), 0.5))
+            elif k == "brilho":
+                _, hexa, n = op
+                m = brilha(hexa, 0.9)
+                for _ in range(n):
+                    x, y = r.uniform(0.4, L - 0.4), r.uniform(0.4, L - 0.4)
+                    for _k in range(r.randint(1, 3)):
+                        esfera("luz", r.uniform(0.04, 0.08), (x + r.uniform(-0.15, 0.15), y + r.uniform(-0.15, 0.15), 0.06), m, escala=(1, 1, 0.7))
+            elif k == "cristais":
+                _, hexa, n = op
+                m = brilha(hexa, 0.7)
+                for _ in range(n):
+                    x, y = r.uniform(0.6, L - 0.6), r.uniform(0.6, L - 0.6)
+                    for _k in range(r.randint(2, 4)):
+                        cone("cristal", r.uniform(0.05, 0.1), 0.0, r.uniform(0.15, 0.35), (x + r.uniform(-0.15, 0.15), y + r.uniform(-0.15, 0.15), 0.08), m, vertices=5)
+            elif k == "ossos":
+                _, hexa, n = op
+                m = toon(hexa)
+                for _ in range(n):
+                    cilindro("osso", 0.025, r.uniform(0.2, 0.35), (r.uniform(0.5, L - 0.5), r.uniform(0.5, L - 0.5), 0.04), m, rot=(math.pi / 2, 0, r.uniform(0, math.pi)), vertices=5)
+            elif k == "agua":
+                _, hexa, n, rmin, rmax = op
+                m = px3.material_suave("agua_" + hexa, px3.cor(hexa), rugosidade=0.15, relevo=0.0, variacao=0.05, escala=2.0)
+                for _ in range(n):
+                    esfera("poca", r.uniform(rmin, rmax), (r.uniform(1.2, L - 1.2), r.uniform(1.2, L - 1.2), -0.3), m, escala=(1, r.uniform(0.6, 1.0), 0.4))
+    return f
+
+
+VAR_REGIOES = {
+    # ---- pântano
+    "pantano_lago": dict(base="1d2a26", ops=[("blobs", ("26352b", "2b3a30"), 8, 0.6, 1.2, -0.28, 0.4), ("agua", "122826", 9, 1.0, 1.7),
+                         ("blobs", ("466a2c", "3a5a2a"), 10, 0.15, 0.3, 0.03, 0.2), ("tufos", "6a943d", 12), ("pontos", ("3a3a2a",), 6, 0.08, 0.15)]),
+    "pantano_fogofatuo": dict(base="18201c", ops=[("blobs", ("232d26", "1d2a22", "2a3a30"), 16, 0.5, 1.1, -0.28, 0.4), ("agua", "0f1f22", 3, 0.7, 1.1),
+                              ("brilho", "7af0c0", 30), ("brilho", "9be08a", 14), ("tufos", "35473a", 10), ("ossos", "a89e86", 4)]),
+    "pantano_cemiterio": dict(base="2b2a20", ops=[("blobs", ("3a3a2a", "33301f"), 14, 0.5, 1.1, -0.28, 0.4), ("lajes", ("5e5a50", "4a4a44", "6a6458"), 10, 0.5, 1.0),
+                              ("blobs", ("566e55",), 10, 0.1, 0.25, 0.05, 0.3), ("ossos", "a89e86", 10), ("tufos", "6a943d", 6), ("agua", "152a26", 2, 0.6, 0.9)]),
+    # ---- deserto
+    "deserto_dunas": dict(base="d8bb78", ops=[("blobs", ("c4a468", "d4b878", "e0c888"), 12, 1.1, 2.0, -0.3, 0.2), ("riscos", "ecdcae", 26, 1.4),
+                          ("riscos", "a88a50", 10, 1.1), ("pontos", ("766a5d",), 4, 0.06, 0.12), ("ossos", "d6ccb2", 3)]),
+    "deserto_oasis": dict(base="cdb06e", ops=[("blobs", ("c4a468", "b8975a", "d4b878"), 6, 0.9, 1.5, -0.3, 0.22), ("agua", "5aa0a8", 2, 1.3, 1.9),
+                          ("blobs", ("466a2c", "3a5a2a", "5a7a34"), 14, 0.25, 0.5, 0.03, 0.2), ("tufos", "5a7a34", 18), ("pontos", ("766a5d",), 6, 0.06, 0.14)]),
+    "deserto_ruina": dict(base="c8aa68", ops=[("blobs", ("c4a468", "d4b878"), 8, 0.9, 1.5, -0.3, 0.22), ("lajes", ("a08a60", "8a7650", "b09a6a"), 12, 0.8, 1.5),
+                          ("grade", ("9a8458", "8a7650"), 3, "6a5a3a"), ("riscos", "e6d3a0", 12, 1.0), ("ossos", "d6ccb2", 5), ("pontos", ("766a5d", "5e544a"), 8, 0.06, 0.14)]),
+    "deserto_canion": dict(base="a05a34", ops=[("blobs", ("8a4a2a", "b06a40", "9a5230"), 12, 0.7, 1.4, -0.28, 0.3), ("lajes", ("7a4028", "6a3a24", "8a5030"), 12, 0.6, 1.3),
+                           ("riscos", "3a2018", 18, 1.0), ("pontos", ("5a3a28", "6a4a34"), 16, 0.07, 0.18), ("tufos", "8f6a2e", 5)]),
+    # ---- gelo
+    "gelo_lago": dict(base="dcecf8", ops=[("blobs", ("e8f6ff", "d4e6f2"), 6, 0.8, 1.4, -0.3, 0.25), ("agua", "a8c8de", 3, 1.6, 2.4), ("riscos", "16202e", 22, 1.2),
+                      ("pontos", ("4a423b", "5e544a"), 4, 0.1, 0.2), ("riscos", "f4faff", 8, 1.0)]),
+    "gelo_cristais": dict(base="cfe2f2", ops=[("blobs", ("e8f6ff", "c4dcee", "d4e6f2"), 8, 0.7, 1.3, -0.3, 0.25), ("cristais", "7ad4ff", 12), ("cristais", "b49bff", 4),
+                          ("lajes", ("7aa0c0", "5a7fa0"), 6, 0.6, 1.2), ("riscos", "16202e", 10, 1.0), ("pontos", ("4a423b",), 3, 0.1, 0.2)]),
+    "gelo_nevasca": dict(base="eef6fc", ops=[("blobs", ("f4faff", "e8f6ff", "dcecf8"), 16, 0.9, 1.7, -0.3, 0.25), ("riscos", "ffffff", 34, 1.5), ("riscos", "b8d8ec", 12, 1.0),
+                         ("pontos", ("4a423b", "5e544a"), 3, 0.15, 0.28), ("tufos", "8f6a2e", 3)]),
+    # ---- reino
+    "reino_praca": dict(base="1f1b19", ops=[("grade", ("4a423b", "5e544a", "534a43"), 5, "1f1b19"), ("lajes", ("3a3430", "2c2724"), 6, 0.6, 1.1), ("riscos", "a62a8f", 6, 1.6),
+                        ("blobs", ("4f1520",), 4, 0.2, 0.4, 0.02, 0.1), ("pontos", ("5e544a",), 18, 0.03, 0.07), ("ossos", "a89e86", 4)]),
+    "reino_catacumba": dict(base="14110f", ops=[("grade", ("3a3430", "2c2724", "453d37"), 9, "14110f"), ("riscos", "a62a8f", 4, 1.0), ("ossos", "a89e86", 22),
+                           ("pontos", ("a89e86",), 8, 0.05, 0.1), ("blobs", ("2c2724",), 6, 0.3, 0.6, 0.02, 0.15), ("brilho", "d33a5c", 6)]),
+    "reino_jardim": dict(base="1a1a16", ops=[("blobs", ("2a2a22", "33301f", "26261c"), 12, 0.6, 1.2, -0.28, 0.35), ("lajes", ("4a423b", "3a3430"), 7, 0.7, 1.3),
+                        ("tufos", "4a3a52", 22), ("tufos", "2d2a3a", 14), ("brilho", "d65ac0", 12), ("blobs", ("4f1520", "3a1020"), 5, 0.15, 0.35, 0.03, 0.2), ("ossos", "a89e86", 3)]),
+}
+
+PESOS_VAR = {
+    "pantano_lago": ("pantano", [0.5, 0.66, 0.66], {"arvore": 1, "juncos": 6, "vitorias": 6, "passarela": 2, "lanterna": 1, "barco": 3, "lapide": 0, "ossos": 1, "raizes": 1, "velas": 0}),
+    "pantano_fogofatuo": ("pantano", [0.42, 0.6, 0.58], {"arvore": 3, "juncos": 2, "vitorias": 1, "passarela": 0, "lanterna": 5, "barco": 0, "lapide": 1, "ossos": 3, "raizes": 4, "velas": 3}),
+    "pantano_cemiterio": ("pantano", [0.54, 0.6, 0.58], {"arvore": 1, "juncos": 1, "vitorias": 0, "passarela": 1, "lanterna": 2, "barco": 0, "lapide": 8, "ossos": 5, "raizes": 1, "velas": 3}),
+    "deserto_dunas": ("deserto", [1.0, 0.95, 0.8], {"costelas": 2, "cranio": 1, "pilar": 0, "obelisco": 0, "cabeca": 0, "braseiro": 0, "rocha": 4, "jarros": 0, "tenda": 1, "roda": 1, "ossos": 4}),
+    "deserto_oasis": ("deserto", [0.94, 0.98, 0.84], {"costelas": 0, "cranio": 0, "pilar": 1, "obelisco": 0, "cabeca": 0, "braseiro": 2, "rocha": 2, "jarros": 4, "tenda": 4, "roda": 3, "ossos": 1}),
+    "deserto_ruina": ("deserto", [0.96, 0.9, 0.8], {"costelas": 0, "cranio": 1, "pilar": 6, "obelisco": 3, "cabeca": 3, "braseiro": 1, "rocha": 1, "jarros": 3, "tenda": 0, "roda": 0, "ossos": 2}),
+    "deserto_canion": ("deserto", [1.0, 0.82, 0.7], {"costelas": 1, "cranio": 2, "pilar": 0, "obelisco": 1, "cabeca": 0, "braseiro": 1, "rocha": 8, "jarros": 0, "tenda": 0, "roda": 2, "ossos": 3}),
+    "gelo_lago": ("gelo", [0.8, 0.9, 1.0], {"pinheiro": 1, "rocha": 1, "cristal": 1, "estatua": 2, "mao": 1, "muralha": 0, "bandeira": 0, "runa": 2, "fogueira": 0, "arvore_morta": 1, "ossos": 3}),
+    "gelo_cristais": ("gelo", [0.7, 0.86, 1.0], {"pinheiro": 0, "rocha": 2, "cristal": 9, "estatua": 1, "mao": 0, "muralha": 0, "bandeira": 0, "runa": 3, "fogueira": 0, "arvore_morta": 0, "ossos": 1}),
+    "gelo_nevasca": ("gelo", [0.9, 0.94, 1.0], {"pinheiro": 5, "rocha": 3, "cristal": 0, "estatua": 0, "mao": 0, "muralha": 3, "bandeira": 3, "runa": 0, "fogueira": 3, "arvore_morta": 3, "ossos": 2}),
+    "reino_praca": ("reino", [0.62, 0.56, 0.7], {"trono": 0, "braseiro": 3, "cristal": 1, "tocha": 2, "estatua": 4, "tumulo": 1, "armadura": 3, "espinhos": 1, "bandeira": 4, "altar": 0, "ossos": 1}),
+    "reino_catacumba": ("reino", [0.5, 0.46, 0.6], {"trono": 0, "braseiro": 1, "cristal": 1, "tocha": 5, "estatua": 0, "tumulo": 4, "armadura": 1, "espinhos": 0, "bandeira": 0, "altar": 2, "ossos": 8}),
+    "reino_jardim": ("reino", [0.6, 0.54, 0.7], {"trono": 0, "braseiro": 1, "cristal": 4, "tocha": 1, "estatua": 2, "tumulo": 2, "armadura": 1, "espinhos": 8, "bandeira": 0, "altar": 1, "ossos": 2}),
+}
+for _n, (_b, _amb, _pesos) in PESOS_VAR.items():
+    CENARIOS[_n] = _variante(_b, piso_var(VAR_REGIOES[_n]), _amb, _pesos)
+
+
 def _atlas_do_base(nome, cfg, pasta):
     """Variante: copia o atlas e os itens do cenário-base, trocando só o peso de cada enfeite."""
     import shutil

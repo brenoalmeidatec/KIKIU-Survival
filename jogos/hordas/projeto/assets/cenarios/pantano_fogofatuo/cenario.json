@@ -1,0 +1,193 @@
+{
+ "_gerado_por": "fonte_arte/modelos3d/cenarios.py (variante de pantano; não edite à mão)",
+ "piso": "piso.png",
+ "enfeites": "enfeites.png",
+ "ambiente": [
+  0.42,
+  0.6,
+  0.58
+ ],
+ "itens": [
+  {
+   "nome": "arvore",
+   "peso": 3,
+   "pe": [
+    18,
+    52
+   ],
+   "regiao": [
+    0,
+    0,
+    39,
+    62
+   ]
+  },
+  {
+   "nome": "juncos",
+   "peso": 2,
+   "pe": [
+    10,
+    24
+   ],
+   "regiao": [
+    40,
+    0,
+    17,
+    29
+   ]
+  },
+  {
+   "nome": "vitorias",
+   "peso": 1,
+   "pe": [
+    20,
+    12
+   ],
+   "regiao": [
+    58,
+    0,
+    40,
+    23
+   ]
+  },
+  {
+   "nome": "passarela",
+   "peso": 0,
+   "pe": [
+    17,
+    15
+   ],
+   "regiao": [
+    99,
+    0,
+    34,
+    23
+   ]
+  },
+  {
+   "nome": "lanterna",
+   "peso": 5,
+   "pe": [
+    4,
+    32
+   ],
+   "luz": {
+    "fonte": [
+     8,
+     -26
+    ],
+    "pisca": 0.12,
+    "raio": 60,
+    "poca": [
+     151,
+     0,
+     121,
+     121
+    ],
+    "halo": [
+     273,
+     0,
+     31,
+     31
+    ]
+   },
+   "regiao": [
+    134,
+    0,
+    16,
+    34
+   ]
+  },
+  {
+   "nome": "barco",
+   "peso": 0,
+   "pe": [
+    18,
+    12
+   ],
+   "regiao": [
+    305,
+    0,
+    36,
+    23
+   ]
+  },
+  {
+   "nome": "lapide",
+   "peso": 1,
+   "pe": [
+    7,
+    15
+   ],
+   "regiao": [
+    342,
+    0,
+    14,
+    17
+   ]
+  },
+  {
+   "nome": "ossos",
+   "peso": 3,
+   "pe": [
+    13,
+    7
+   ],
+   "regiao": [
+    357,
+    0,
+    19,
+    12
+   ]
+  },
+  {
+   "nome": "raizes",
+   "peso": 4,
+   "pe": [
+    16,
+    17
+   ],
+   "regiao": [
+    377,
+    0,
+    32,
+    22
+   ]
+  },
+  {
+   "nome": "velas",
+   "peso": 3,
+   "pe": [
+    8,
+    13
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -12
+    ],
+    "pisca": 0.22,
+    "raio": 50,
+    "poca": [
+     0,
+     122,
+     101,
+     101
+    ],
+    "halo": [
+     102,
+     122,
+     25,
+     25
+    ]
+   },
+   "regiao": [
+    410,
+    0,
+    16,
+    18
+   ]
+  }
+ ],
+ "fixos": []
+}

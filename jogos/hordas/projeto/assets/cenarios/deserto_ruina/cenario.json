@@ -1,0 +1,207 @@
+{
+ "_gerado_por": "fonte_arte/modelos3d/cenarios.py (variante de deserto; não edite à mão)",
+ "piso": "piso.png",
+ "enfeites": "enfeites.png",
+ "ambiente": [
+  0.96,
+  0.9,
+  0.8
+ ],
+ "itens": [
+  {
+   "nome": "costelas",
+   "peso": 0,
+   "pe": [
+    24,
+    43
+   ],
+   "regiao": [
+    0,
+    0,
+    48,
+    65
+   ]
+  },
+  {
+   "nome": "cranio",
+   "peso": 1,
+   "pe": [
+    30,
+    25
+   ],
+   "regiao": [
+    49,
+    0,
+    60,
+    39
+   ]
+  },
+  {
+   "nome": "pilar",
+   "peso": 6,
+   "pe": [
+    10,
+    45
+   ],
+   "regiao": [
+    110,
+    0,
+    20,
+    56
+   ]
+  },
+  {
+   "nome": "obelisco",
+   "peso": 3,
+   "pe": [
+    10,
+    56
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -22
+    ],
+    "pisca": 0.1,
+    "raio": 45,
+    "poca": [
+     152,
+     0,
+     91,
+     91
+    ],
+    "halo": [
+     244,
+     0,
+     23,
+     23
+    ]
+   },
+   "regiao": [
+    131,
+    0,
+    20,
+    62
+   ]
+  },
+  {
+   "nome": "cabeca",
+   "peso": 3,
+   "pe": [
+    28,
+    26
+   ],
+   "regiao": [
+    268,
+    0,
+    56,
+    40
+   ]
+  },
+  {
+   "nome": "braseiro",
+   "peso": 1,
+   "pe": [
+    9,
+    26
+   ],
+   "luz": {
+    "fonte": [
+     0,
+     -21
+    ],
+    "pisca": 0.22,
+    "raio": 75,
+    "poca": [
+     345,
+     0,
+     151,
+     151
+    ],
+    "halo": [
+     0,
+     152,
+     37,
+     37
+    ]
+   },
+   "regiao": [
+    325,
+    0,
+    19,
+    32
+   ]
+  },
+  {
+   "nome": "rocha",
+   "peso": 1,
+   "pe": [
+    15,
+    34
+   ],
+   "regiao": [
+    38,
+    152,
+    31,
+    36
+   ]
+  },
+  {
+   "nome": "jarros",
+   "peso": 3,
+   "pe": [
+    13,
+    16
+   ],
+   "regiao": [
+    70,
+    152,
+    25,
+    26
+   ]
+  },
+  {
+   "nome": "tenda",
+   "peso": 0,
+   "pe": [
+    18,
+    27
+   ],
+   "regiao": [
+    96,
+    152,
+    36,
+    34
+   ]
+  },
+  {
+   "nome": "roda",
+   "peso": 0,
+   "pe": [
+    15,
+    15
+   ],
+   "regiao": [
+    133,
+    152,
+    37,
+    25
+   ]
+  },
+  {
+   "nome": "ossos",
+   "peso": 2,
+   "pe": [
+    9,
+    8
+   ],
+   "regiao": [
+    171,
+    152,
+    14,
+    12
+   ]
+  }
+ ],
+ "fixos": []
+}

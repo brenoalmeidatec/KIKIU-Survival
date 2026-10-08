@@ -1,10 +1,12 @@
 extends Node
+const Universais := preload("res://scripts/hordas/universais.gd")
 ## Lê os arquivos de conteúdo (dados/*.json) e guarda texturas.
 ## Uma pasta "dados" ao lado do .exe tem prioridade: dá pra editar armas, inimigos e a fase no Bloco de Notas.
 
 var _cache := {}
 var _tex := {}
-var fonte: Font
+var fonte: Font          # pixel legível (Press Start 2P): texto corrido, números, HUD
+var fonte_titulo: Font   # mística em pixel (Jacquard 12, OFL): títulos de tela, nomes e raridade das cartas. Tamanhos múltiplos de 12
 var herois_extra := {}   # heróis montados em tempo de execução (criação de personagem, #72): entram na tabela "herois"
 
 
@@ -14,6 +16,9 @@ func _ready() -> void:
 	var ts := TextServerManager.get_primary_interface()
 	if fonte is FontFile:
 		(fonte as FontFile).opentype_feature_overrides = {ts.name_to_tag("liga"): 0, ts.name_to_tag("clig"): 0}
+	fonte_titulo = load("res://assets/fonte/Jacquard12-Regular.ttf")
+	if fonte_titulo is FontFile:
+		(fonte_titulo as FontFile).opentype_feature_overrides = {ts.name_to_tag("liga"): 0, ts.name_to_tag("clig"): 0}
 	ThemeDB.get_default_theme().default_font = fonte
 	ThemeDB.get_default_theme().default_font_size = 8
 	# carrega tudo antes pra não engasgar no meio da partida
@@ -50,6 +55,8 @@ func json(nome: String) -> Dictionary:
 	if not d is Dictionary:
 		push_error("Arquivo com erro: " + caminho)
 		d = {}
+	if nome == "armas":
+		Universais.injetar(d)   # #115: armas universais e suas variações entram na mesma tabela
 	if nome == "herois":
 		d.merge(herois_extra, true)   # os criados continuam na tabela depois de recarregar()
 	_cache[nome] = d
