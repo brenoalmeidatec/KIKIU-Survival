@@ -958,3 +958,7 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Feito:** os 48 testes do jogo rodam no projeto convertido (`conversor/testar.py`): 41 passam. Quatro agentes haiku acharam as causas das falhas; o conversor agora trata `==` de dicionário, timers que ignoram `time_scale`, `Input.get_vector`, `PackedFloat64Array` (a horda desenhava inimigos repetidos), arquivos, `move_child(-1)` e nomes reservados. No Vita, o G4 liga touch traseiro = rolamento, estéreo alargado e um log de fps em `ux0:data/kikiu_vita_log.txt`. `kikiu_vita.vpk` reexportado.
 - **Decisão pendente (Alisson):** como levar a horda do jogo para C++ (STATUS.md, "Decisão pendente"). Sem isso o jogo convertido deve rodar lento no Vita quando a horda encher.
 - **Próximo:** medir o `kikiu_vita.vpk` no aparelho (log por FTP) e decidir a horda em C++.
+
+## 2026-10-08 · Claude do Alisson (PC) · Piloto Vita v3 com C++ medido: 60 fps com até 800 inimigos
+- **Feito:** Alisson rodou os pacotes da noite. Piloto C++: 60 fps (teto do VSync) de 100 a 800 inimigos, com luz, som e projéteis; GDScript no mesmo aparelho: 15 fps com 800. CSVs em `jogos/hordas-vita/medicoes/vita_v3_*`. Leitura no STATUS ("Resultado 3").
+- **Próximo:** levar a horda do jogo de verdade para C++ (opção 1 do STATUS) e medir o `kikiu_vita.vpk`.

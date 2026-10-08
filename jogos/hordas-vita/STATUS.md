@@ -239,3 +239,13 @@ VitaShell; eles convivem (TITLE_IDs diferentes). Ordem e o que cada resultado qu
    suspeito é memória de vídeo (o jogo pré-carrega ~230 PNGs em RGBA8; o Vita tem 128 MB de VRAM); o ajuste é o
    `compress/mode` do `importer_defaults` no `conversor/gerar.py`.
 4. Ligar o FTP do VitaShell para puxar `kikiu_piloto_cpp.csv` e `kikiu_vita_log.txt`.
+
+## Resultado 3 — Vita real, piloto v3 com C++ (2026-10-08) · `medicoes/vita_v3_cpp_2026-10-08.csv` / `..._gd_...`
+
+**C++: 60 fps (teto do VSync) em praticamente todos os passos**, de 100 a 800 inimigos, com luz, projéteis, som e em
+640×360 (piores: 800 com luz 56,4; 300 shader 58,7). O Alisson confirmou no olho: "60 fps em todos os testes, com folga".
+Mesmo aparelho e mesma rampa, GDScript: 54 fps com 100, 32 com 300, 15 com 800.
+- Lógica da horda: 300 inimigos 0,59 ms em C++ contra 11,7 ms em GDScript (~20×); desenho 0,21 contra 8,1 ms (~39×).
+- `_process` inteiro (main_ms) com 800 inimigos: 2,7 ms. Clock confirmado: CPU 444 MHz.
+- VSync desligado não destrava o fps no Vita (o fork ignora): a folga real vem do main_ms, não do fps.
+- Conclusão: o caminho C++ resolve a horda com sobra; o gargalo do jogo convertido passa a ser todo o resto em GDScript.
