@@ -1,0 +1,18 @@
+{
+ "_ajuda": "Elementos e estados (#72 marco 5). Cada golpe de uma arma com 'elemento' (armas.json; o Poder Elemental decide pela bola) ou de um passivo/equipamento/raça/classe com o atributo el_<elemento> (chance de pôr 1 acúmulo por golpe) soma ACÚMULOS no inimigo, até 'teto'; cada acúmulo renova a 'duracao' (s). fogo/veneno: dano no tempo = acúmulos x dps x dano do herói, a cada 'tique' s. gelo: qualquer acúmulo deixa o bicho lento; ao chegar em 'congela_em' ele CONGELA por 'congela_dur' s (parado e sem atirar) e fica imune a congelar de novo por 'congela_imune' s; golpe que mata congelado estilhaça. raio: eletrificado; a cada 'tique' s salta 'dano' x acúmulos pra até 'alvos' vizinhos num raio 'raio'. Resistência por inimigo: inimigos.json > resist {elemento: 0..1} (0,5 = recebe metade dos acúmulos, 1 = imune, negativo = vulnerável); 'mult_chefe'/'mult_elite' multiplicam os acúmulos que chefes/elites recebem. Reações: quando um elemento é aplicado e o outro já tem pelo menos 'min' acúmulos, dispara UMA vez (a reação CONSOME os acúmulos de 'consome', então não repete) uma explosão de 'raio' px com 'dano' (x dano do herói; 'por_acumulo' = x os acúmulos consumidos), com espera 'cd' s por inimigo. 'causa' é a morte violenta (mortes.json). Visual: 'teto_visual' limita partículas, arcos e números (as partículas são calculadas na hora, sem estado por partícula). Estados que pesam no jogo (congelado, lento) viajam na foto do anfitrião (online.gd, bits 32/64/128); o resto do visual é local.",
+ "elementos": {
+  "fogo": {"nome": "Fogo", "cor": [1.0, 0.52, 0.16], "teto": 5, "duracao": 3.0, "tique": 0.5, "dps": 3.0, "causa": "fogo", "pip": "queimando", "nome_dano": "Queimadura", "icone": "fogo_grego"},
+  "gelo": {"nome": "Gelo", "cor": [0.62, 0.9, 1.0], "teto": 4, "duracao": 4.0, "congela_em": 4, "congela_dur": 1.6, "congela_imune": 3.0, "causa": "gelo", "pip": "gelado", "nome_dano": "Gelo", "icone": "geada"},
+  "raio": {"nome": "Raio", "cor": [0.78, 0.88, 1.0], "teto": 3, "duracao": 3.0, "tique": 0.8, "salto": {"raio": 70, "alvos": 2, "dano": 4.0}, "causa": "raio", "pip": "eletrificado", "nome_dano": "Eletricidade", "icone": "raio"},
+  "veneno": {"nome": "Veneno", "cor": [0.55, 0.92, 0.38], "teto": 10, "duracao": 5.0, "tique": 0.5, "dps": 1.3, "causa": "veneno", "pip": "envenenado", "nome_dano": "Veneno", "icone": "adaga"}
+ },
+ "reacoes": [
+  {"id": "vapor", "nome": "Vapor", "a": "fogo", "b": "gelo", "min": 1.0, "raio": 58, "dano": 12.0, "consome": ["fogo", "gelo"], "cd": 1.2, "causa": "fogo", "cor": [0.86, 0.93, 1.0]},
+  {"id": "descarga", "nome": "Descarga Gélida", "a": "raio", "b": "gelo", "min": 1.0, "raio": 92, "dano": 9.0, "consome": ["gelo"], "cd": 1.2, "causa": "raio", "cor": [0.7, 0.85, 1.0]},
+  {"id": "miasma", "nome": "Miasma em Chamas", "a": "fogo", "b": "veneno", "min": 2.0, "raio": 50, "dano": 2.2, "por_acumulo": true, "consome": ["veneno"], "cd": 1.2, "causa": "fogo", "cor": [0.7, 1.0, 0.3]}
+ ],
+ "por_tipo": {"mult_chefe": 0.5, "mult_elite": 0.8},
+ "congelado": {"cor": [0.5, 0.8, 1.0]},
+ "teto_visual": {"particulas": 150, "arcos": 20, "reacoes": 8, "numeros_quadro": 3, "numero_cada": 1.0, "saltos_quadro": 8},
+ "selado": {"rotulo": "inimigos marcados com elementos"}
+}

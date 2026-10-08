@@ -28,4 +28,4 @@ func _ready() -> void:
 
 
 func _process(_dt: float) -> void:
-	visible = bool(Config.v("vinheta"))
+	visible = bool(Config.v("vinheta")) and bool(Config.q("vinheta"))

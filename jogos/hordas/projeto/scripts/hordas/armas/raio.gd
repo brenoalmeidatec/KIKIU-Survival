@@ -4,6 +4,8 @@ extends RefCounted
 ## Atributos: quantidade, dano, raio, cadeia, area. Módulo de comportamento de arma (veja armas.gd e pistolas.gd).
 
 const VIDA := 0.18   # quanto tempo o risco do raio fica na tela
+const Cresc := preload("res://scripts/hordas/crescimento.gd")
+const COR := Color(0.6, 0.85, 1.0)
 
 
 static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -43,7 +45,13 @@ static func _cair(w, p: Vector2, dano: float, r: float, cadeia: int, arma: Strin
 		_cair(w, prox.pos, dano * 0.7, r * 0.85, cadeia - 1, arma, ja, p)
 
 
-static func passo(_w, e: Dictionary, dt: float) -> bool:
+static func passo(w, e: Dictionary, dt: float) -> bool:
+	if not e.get("fez", false):   # no instante da queda: faíscas e um tremorzinho, mais fortes a cada tier
+		e["fez"] = true
+		var t: int = e.get("tier", 0)
+		Cresc.fagulhas(w, e.pos, Vector2.ZERO, COR, t, 190.0)
+		if t >= 3:
+			Cresc.acerto(w, 0.35, t)
 	e.t -= dt
 	return e.t > 0
 
@@ -57,9 +65,17 @@ static func pintar(w, e: Dictionary) -> void:
 		if k > 0 and k < n:   # zigue-zague fixo por raio (a semente), sem sortear a cada quadro
 			q += Vector2(sin(e.semente + k * 7.3) * 7.0, cos(e.semente * 1.7 + k * 3.1) * 4.0)
 		pts.append(q.floor())
-	w.draw_polyline(pts, Color(0.55, 0.8, 1.0, 0.55 * f), 4.0)
-	w.draw_polyline(pts, Color(1, 1, 1, f), 1.5)
+	var t: int = e.get("tier", 0)
+	var g := Cresc.grossura(t)
+	w.draw_polyline(pts, Color(Cresc.cor(Color(0.55, 0.8, 1.0), t), 0.55 * f), 4.0 * g)
+	w.draw_polyline(pts, Color(1, 1, 1, f), 1.5 * (1.0 + 0.4 * floorf(t / 2.0)))
 	w.draw_circle(e.pos.floor(), e.r * (1.3 - 0.3 * f), Color(0.6, 0.85, 1.0, 0.25 * f))
+	if Cresc.fx(t).arco_extra and Cresc.fator() >= 0.5:   # tier alto: segundo traço trêmulo ao lado e anel de choque
+		var pts2 := PackedVector2Array()
+		for p in pts:
+			pts2.append(p + Vector2(3.0, 0.0))
+		w.draw_polyline(pts2, Color(1, 1, 1, 0.45 * f), 1.0)
+		Cresc.anel(w, e.pos, e.r * (1.3 - 0.3 * f), COR, t, f, 0.8)
 
 
 static func fundo(_w, _a: Dictionary, _s: Dictionary) -> void:

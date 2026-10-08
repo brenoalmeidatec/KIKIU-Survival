@@ -10,6 +10,7 @@ const Interface := preload("res://scripts/hordas/interface.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
+const Mochila := preload("res://scripts/hordas/mochila.gd")
 const OPS_PAUSA := ["Continuar", "Opções", "Desistir da partida"]
 
 var arena: Node
@@ -144,6 +145,13 @@ func _process_i(_dt: float) -> void:
 		_pausa_confirmar()
 
 
+## Esc/Start abre a pausa. Só chega aqui o Esc que ninguém consumiu: o que fecha o chat, a loja, o mapa ou o resultado não abre a pausa junto.
+func _unhandled_input(e: InputEvent) -> void:
+	if arena and e.is_action_pressed("voltar") and not e.is_echo() and not _pausado and not arena.acabou and not arena.cartas.aberto():
+		get_viewport().set_input_as_handled()
+		pausar()
+
+
 func _input(e: InputEvent) -> void:
 	if not _pausado or _opcoes or Engine.get_process_frames() == _quadro_pausa or not Interface.clique(e):
 		return
@@ -185,8 +193,17 @@ func _desenhar() -> void:
 		if fa.has("regiao"):   # regiões (#64): "FLORESTA SOMBRIA 2/5  TRILHA TORTA"
 			rotulo_fase = "%s %d/%d  %s" % [str(fa.regiao_nome).to_upper(), int(fa.andar_regiao) + 1, int(Dados.json("regioes").get("fases_por_regiao", 5)), str(fa.get("nome", "")).to_upper()]
 		_txt(Vector2(0, 21), rotulo_fase, 8, Color(0.7, 0.9, 1), HORIZONTAL_ALIGNMENT_CENTER, W, true)
-		if df.final_chamado:
+		if df.saida_leve:
+			_txt(Vector2(0, 42), "PORTAL ABERTO", 12, Color(0.75, 0.65, 1), HORIZONTAL_ALIGNMENT_CENTER, W)
+		elif df.pror_ativa():   # prorrogação (#112): o cronômetro sobe e a cada degrau fica mais difícil e paga mais ouro
+			var pt: float = df.pror_t()
+			_txt(Vector2(0, 42), "+%02d:%02d" % [int(pt) / 60, int(pt) % 60], 16, Interface.cor("alerta"), HORIZONTAL_ALIGNMENT_CENTER, W)
+			_txt(Vector2(0, 54), "PRORROGAÇÃO  nível %d  ouro x%.2f" % [df.pror_degrau(), df.mult_ouro()], 8, Color(1, 0.75, 0.35), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+		elif df.final_chamado:
 			_txt(Vector2(0, 42), "CHEFE!", 16, Interface.cor("alerta"), HORIZONTAL_ALIGNMENT_CENTER, W)
+			var jr: float = df.janela_resta()
+			if jr > 0.0 and not df.enxame_final:
+				_txt(Vector2(0, 54), "derrote em %02d:%02d" % [int(jr) / 60, int(jr) % 60], 8, Color(1, 0.75, 0.6), HORIZONTAL_ALIGNMENT_CENTER, W, true)
 		else:
 			_txt(Vector2(0, 42), "%02d:%02d" % [int(resta) / 60, int(resta) % 60], 16, cor_t, HORIZONTAL_ALIGNMENT_CENTER, W)
 		var abates := "Abates %d" % arena.abates
@@ -197,10 +214,12 @@ func _desenhar() -> void:
 		_energia_forma()
 		_dicas_santuario()
 		_objetivo()
+		_missao()
 	_icones_build()
 	if not arena.duelo_ativo:
 		_conjuntos()
 	_especial()
+	_provisoes()
 	if not arena.duelo_ativo:
 		# vida do chefe
 		var chefes: Array = arena.chefes()
@@ -243,6 +262,7 @@ func _desenhar() -> void:
 				rotulo = "Desistir (o herói morre de vez)"   # herói criado: desistir conta como morrer
 			_txt(Vector2(0, 170 + i * 18), ("> " if sel else "") + rotulo, 8, Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
 		_txt(Vector2(0, 250), "WASD/setas: andar   Espaço/Shift: dash   Esc/Start: pausa   Mouse: clicar", 8, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_CENTER, W)
+		_txt(Vector2(0, H - 14), Dados.texto_versao(), 8, Color(0.72, 0.74, 0.86, 0.85), HORIZONTAL_ALIGNMENT_CENTER, W)
 
 
 ## Ponto na borda da tela na direção de `pos` (mundo), a `margem` px da beirada; null se `pos` está visível.
@@ -311,6 +331,40 @@ func _especial() -> void:
 	var pad := not Input.get_connected_joypads().is_empty()
 	_txt(Vector2(W - 214, r.position.y - 5), ("Y" if pad else "E") + ": " + str(e.d.get("nome", "")), 8,
 		Color(1, 0.9, 0.5) if pronto else Color(0.65, 0.68, 0.78), HORIZONTAL_ALIGNMENT_RIGHT, 206)
+
+
+## Consumíveis da mochila (#72) no canto de baixo à esquerda: um quadro por item com o ícone, a tecla e quantos restam; a poção
+## ativa mostra uma barrinha com o tempo; a comida e o amuleto aparecem pequenos em cima. No controle, L3 usa o escolhido e R3 troca.
+func _provisoes() -> void:
+	var p = arena.provisoes
+	if p == null:
+		return
+	var lado := 24.0
+	var y := H - lado - 12.0
+	var pad := not Input.get_connected_joypads().is_empty()
+	for i in p.slots.size():
+		var id := str(p.slots[i])
+		var n := int(p.restantes.get(id, 0))
+		var r := Rect2(8.0 + i * (lado + 8.0), y, lado, lado)
+		var escolhido: bool = pad and i == p.sel
+		_tela.draw_rect(r.grow(2.0), Color(1, 0.85, 0.35) if escolhido else (Color(0.4, 0.45, 0.6) if n > 0 else Color(0.2, 0.2, 0.26)))
+		_tela.draw_rect(r, Color(0.06, 0.06, 0.1))
+		Mochila.desenhar_icone(_tela, id, r.grow(-2.0), n <= 0)
+		_txt(Vector2(r.position.x + 1, r.position.y + lado + 9), "%s" % ("L3" if escolhido else str(i + 1)), 8, Color(0.8, 0.82, 0.9) if n > 0 else Color(0.4, 0.4, 0.45))
+		_txt(Vector2(r.position.x, r.position.y + 9), "x%d" % n, 8, Color(1, 1, 1) if n > 0 else Color(0.5, 0.5, 0.55), HORIZONTAL_ALIGNMENT_RIGHT, lado - 1.0)
+	var x := 8.0
+	var y2 := y - 20.0
+	for b in p.buffs:
+		var d: Dictionary = Mochila.item(str(b.id))
+		Mochila.desenhar_icone(_tela, str(b.id), Rect2(x, y2, 14.0, 14.0))
+		_tela.draw_rect(Rect2(x, y2 + 15.0, 14.0, 2.0), Color(0, 0, 0, 0.7))
+		_tela.draw_rect(Rect2(x, y2 + 15.0, 14.0 * clampf(b.t / b.tmax, 0.0, 1.0), 2.0), Color(float(d.cor[0]), float(d.cor[1]), float(d.cor[2])))
+		x += 18.0
+	for id in p.comidas_ativas():
+		Mochila.desenhar_icone(_tela, str(id), Rect2(x, y2, 14.0, 14.0))
+		x += 18.0
+	if p.amuleto != "":
+		Mochila.desenhar_icone(_tela, p.amuleto, Rect2(x, y2, 14.0, 14.0), p.fenix_gasta)
 
 
 func _energia_forma() -> void:
@@ -459,6 +513,36 @@ func _objetivo() -> void:
 			var pl := 0.65 + 0.35 * sin(_t * 6.0)
 			_seta(b, 11.0, 7.0, Color(cor, pl))
 			_seta(b, 6.0, 3.5, Color(0.08, 0.04, 0.1, 0.8))
+
+
+## Missão do chefe (#112): nome, barra, texto curto ("Fragmentos 2/4", "Leve ao altar") e setas pros pontos de interesse. Abaixo do objetivo.
+func _missao() -> void:
+	var ms = arena.missao
+	if ms == null or not ms.visivel():
+		return
+	var cor: Color = ms.cor_de(ms.id)
+	if ms.est == ms.CUMPRIDO:
+		cor = Color(0.5, 1.0, 0.6)
+	elif ms.est == ms.FALHOU:
+		cor = Color(1.0, 0.45, 0.4)
+	var tx: Array = ms.texto()
+	var pulso := 0.8 + 0.2 * sin(_t * 5.0) if ms.est == ms.ANDAMENTO else 1.0
+	var y0 := 112.0 if arena.objetivo.visivel() else 68.0
+	_txt(Vector2(0, y0), str(tx[0]), 8, Color(cor, pulso), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+	var bw := 120.0
+	var bx := (W - bw) * 0.5
+	_tela.draw_rect(Rect2(bx - 1, y0 + 12, bw + 2, 8), Color(0.05, 0.03, 0.08, 0.85))
+	_tela.draw_rect(Rect2(bx, y0 + 13, bw * float(tx[2]), 6), Color(cor, 0.9))
+	_txt(Vector2(0, y0 + 30), str(tx[1]), 8, Color(0.92, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER, W, true)
+	if ms.est == ms.ANDAMENTO:
+		for p in ms.marcas():
+			var b = _borda(p, 22.0)
+			if b == null:
+				continue
+			var pl := 0.65 + 0.35 * sin(_t * 6.0)
+			_seta(b, 11.0, 7.0, Color(cor, pl))
+			_seta(b, 6.0, 3.5, Color(0.08, 0.04, 0.1, 0.8))
+			_txt(b.p - b.dir * 24.0 - Vector2(20, -3), "%dm" % int(b.rel.length() / 10.0), 8, Color(cor, pl), HORIZONTAL_ALIGNMENT_CENTER, 40)
 
 
 func _duelo_hud() -> void:

@@ -6,6 +6,7 @@ extends RefCounted
 
 const ARMA := 0.4    # tempo até a runa armar
 const BOOM := 0.25   # duração do estouro na tela
+const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
 static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -40,6 +41,8 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 				v.lento = e.lento
 			w.campo.ferir(v, e.dano, (v.pos - e.pos).normalized() * 200.0, e.arma)
 		Som.tocar("soco", 0.06, 0.7, -8)
+		Cresc.fagulhas(w, e.pos, Vector2.ZERO, e.cor, e.get("tier", 0), 150.0)
+		Cresc.acerto(w, 0.4, e.get("tier", 0))
 	return true
 
 
@@ -47,13 +50,18 @@ static func pintar(w, e: Dictionary) -> void:
 	var p: Vector2 = e.pos.floor()
 	if e.boom >= 0:
 		var f: float = e.boom / BOOM
+		var tb: int = e.get("tier", 0)
 		w.draw_circle(p, e.explosao * (1.15 - 0.5 * f), Color(e.cor, 0.3 * f))
-		w.draw_arc(p, e.explosao * (1.15 - 0.5 * f), 0, TAU, 24, Color(e.cor.lightened(0.4), f), 2.0)
+		w.draw_arc(p, e.explosao * (1.15 - 0.5 * f), 0, TAU, 24, Color(Cresc.cor(e.cor.lightened(0.4), tb), f), 2.0 * Cresc.grossura(tb))
+		Cresc.anel(w, p, e.explosao * (1.15 - 0.5 * f), e.cor, tb, f)
 		return
 	# runa no chão: círculo achatado (perspectiva) com um traço em X; pisca devagar quando armada
 	var armada: bool = e.arma_t <= 0
 	var a: float = (0.55 + 0.3 * sin(e.vida * 6.0)) if armada else 0.3
 	var r: float = e.gatilho
+	var tr: int = e.get("tier", 0)
+	if armada:   # runa de tier alto brilha e solta brasas
+		Cresc.brasas(w, p, r, e.cor, tr, w._t, fmod(e.giro, 1.0))
 	w.draw_set_transform(p, 0, Vector2(1, 0.55))
 	w.draw_arc(Vector2.ZERO, r, 0, TAU, 18, Color(e.cor, a), 1.5)
 	var k := Vector2.from_angle(e.giro) * r * 0.6

@@ -5,6 +5,9 @@ extends Node2D
 
 const Visual := preload("res://scripts/hordas/visual.gd")
 const Perf := preload("res://scripts/hordas/perf.gd")
+const Elementos := preload("res://scripts/hordas/elementos.gd")
+const Legib := preload("res://scripts/hordas/legibilidade.gd")
+const Anim := preload("res://scripts/hordas/animacao_monstros.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
 const AVISO_ANEL := 0.6   # segundos de aviso (anel vermelho no chão) antes dos tiros em anel (#68)
@@ -38,6 +41,9 @@ class V:
 	var kb := Vector2.ZERO
 	var flash := 0.0
 	var lento := 0.0
+	var t_golpe := -99.0         # relógio do desenho (_t) no último golpe: a barra de elite mostra o nome logo depois
+	var el_vis := 0              # estado de elemento pra pintar (bits: 1 fogo, 2 gelo, 4 raio, 8 veneno, 16 congelado); quem manda é elementos.gd
+	var resist: Dictionary = {}  # resistência a elementos (inimigos.json > resist), lida uma vez
 	var atordoado := 0.0         # parado no lugar (rugido do dragão)
 	var elite := false
 	var chefe := false
@@ -73,6 +79,21 @@ class V:
 	# vistas (a folha tem uma linha por vista): vistas = 1 é o vírus, sempre de frente pra câmera (sem espelhar nem achatar);
 	# vistas = 5 é o monstro de horror: 0 frente, 1 3/4 frente, 2 perfil, 3 3/4 costas, 4 costas (esquerda = espelho)
 	var vistas := 1
+	var cols := 3                # colunas da folha: quadros de andar + 1 de branco (a última). Folha antiga: 3
+	var nq := 2                  # quadros de andar (cols - 1)
+	var anim := false            # ciclo de andar de verdade (vistas > 1 e mais de 2 quadros): a fase avança pela distância andada
+	var fase := 0.0              # fase do passo, 0..1 (só com anim)
+	var parado := 0.0            # há quanto tempo não anda (assenta nos pés juntos)
+	var pos_f := Vector2.INF     # posição no último desenho (a distância andada vem daqui; INF = fora da tela, não conta)
+	var lean := 0.0              # inclinação suavizada pro lado em que anda: -1..1 (só com anim)
+	var ciclo := 40.0            # px da tela por ciclo de andar
+	var inv_ciclo := 0.025       # 1 / ciclo
+	var inv_vel := 0.02          # 1 / max(velocidade, 20): a inclinação é a fração da velocidade que ele anda de lado
+	var q_ini := 1               # sombra: quadros de q_ini a q_ini + q_meio - 1 usam a sombra do meio do ciclo (ver Anim.coluna_sombra)
+	var q_meio := 3
+	var q_sh := 0                # coluna da sombra assada neste quadro
+	var bob_px := 1.0            # quique do passo em px da tela (bob x altura, com piso)
+	var qd := 0                  # quadro de andar mostrado no último desenho (a morte e o fantasma do teleporte congelam este)
 	var olhar := 0.0             # pra onde olha, em rad a partir da frente (pra baixo): +PI/2 = direita, PI = costas
 	var setor := 0               # setor de 45° escolhido (com histerese): -3..4, negativo = lado esquerdo (espelhado)
 	var vista := 0               # linha da folha em uso
@@ -112,6 +133,7 @@ const SHADER_BRANCO := "shader_type canvas_item;
 void fragment() { COLOR.rgb = vec3(1.0); }
 "
 var _flash_no := Node2D.new()
+var elementos: Node2D = preload("res://scripts/hordas/elementos.gd").new()   # estados de elemento (#72): fogo, gelo, raio, veneno
 var _flashes: Array = []        # [tex, rect, fonte, alfa], refeito todo quadro no _draw
 
 
@@ -122,12 +144,16 @@ func _ready() -> void:
 	_flash_no.material = m
 	_flash_no.draw.connect(_draw_flashes)
 	add_child(_flash_no)
+	elementos.ino = self
+	add_child(elementos)
 
 
 func _draw_flashes() -> void:
 	for f in _flashes:
 		_flash_no.draw_texture_rect_region(f[0], f[1], f[2], Color(1, 1, 1, f[3]))
 var _dt := 0.016
+var _barras: Array = []      # elites/chefes visíveis no quadro (legibilidade.gd)
+var barras_n := 0            # quantas barras foram desenhadas no último quadro (o teste lê)
 var fantasmas: Array = []     # quem acabou de sumir (teleporte): {pos, tex, tam, sz, vira, quadro, t}
 var tp_n := 0                 # quantos teleportes (reaparecimentos) já tocaram: o teste lê
 # --- medição de saltos (--saltos): por inimigo, deslocamento por quadro contra a velocidade dele ---
@@ -154,7 +180,10 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.d = dd
 	v.tex = Dados.tex(str(dd.get("sprite", "inimigo_bug")))
 	v.vistas = maxi(1, int(dd.get("vistas", 1)))
-	v.tam = Vector2(v.tex.get_width() / 3.0, v.tex.get_height() / float(v.vistas))
+	v.cols = Anim.colunas(str(dd.get("sprite", "inimigo_bug"))) if v.vistas > 1 else 3
+	v.nq = v.cols - 1
+	v.anim = v.vistas > 1 and v.nq > 2
+	v.tam = Vector2(v.tex.get_width() / float(v.cols), v.tex.get_height() / float(v.vistas))
 	if v.vistas > 1:
 		v.sombra_reg = []
 		for _i in 4 * v.vistas:
@@ -187,8 +216,19 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	v.anel = float(dd.get("anel", 0.0))
 	v.invoca = dd.get("invoca", {}) if dd.get("invoca") is Dictionary else {}
 	v.pesado = bool(dd.get("pesado", false))
+	if dd.get("resist") is Dictionary:
+		v.resist = dd.resist
 	v.ppx = float(dd.get("escala", ESCALA))
 	v.sz = v.tam * v.ppx * v.esc
+	if v.anim:
+		var ac := _cfg()
+		v.ciclo = Anim.ciclo_px(v.sz.y, ac.ciclo_alt, ac.ciclo_min, float(Dados.json("animacao_monstros").get("ciclo_por_tipo", {}).get(tipo, -1.0)))
+		v.inv_ciclo = 1.0 / v.ciclo
+		v.inv_vel = 1.0 / maxf(v.vel, 20.0)
+		v.q_ini = v.nq / 4
+		v.q_meio = v.nq / 2
+		v.bob_px = maxf(ac.bob_min_px, ac.bob * v.sz.y)
+		v.fase = fmod(v.id * 0.618034, 1.0)   # a horda não anda em coro
 	v.ritmo = float(dd.get("ritmo", 4.0))
 	v.balanco = float(dd.get("balanco", 0.0))
 	v.gira = bool(dd.get("gira", false))
@@ -233,6 +273,8 @@ func vivos() -> int:
 
 func _remover(v: V) -> void:
 	por_id.erase(v.id)
+	if v.el_vis != 0:
+		elementos.vis.erase(v.id)   # cliente: o estado pintado some junto (no anfitrião, elementos.passo solta o registro)
 	var i := lista.find(v)
 	if i >= 0:
 		lista[i] = lista[lista.size() - 1]
@@ -240,6 +282,7 @@ func _remover(v: V) -> void:
 
 
 func limpar() -> void:
+	elementos.limpar()
 	lista.clear()
 	por_id.clear()
 	tiros.clear()
@@ -255,9 +298,11 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 		valor *= arena.stat("critico_mult")
 	v.hp -= valor
 	v.flash = 0.09
+	v.t_golpe = _t
 	if not espelho and v.lento < 0.6:   # conjunto Gelo (#63): o golpe deixa o bicho lento (só quem roda a IA vê)
 		v.lento = maxf(v.lento, arena.conj("lento_acerto"))
 	v.arma_ult = arma   # causa do golpe final (mortes violentas)
+	var el_bola: String = v.causa_pend   # o Poder Elemental (#72) põe o elemento da bola aqui
 	v.causa_ult = v.causa_pend
 	v.causa_pend = ""
 	if empurrao.length_squared() > 1.0:
@@ -265,7 +310,7 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 	arena.registrar_dano(arma, valor, v.pos, crit)
 	if espelho:
 		# cliente: o anfitrião aplica de verdade (e avisa se morreu); aqui só some até a confirmação
-		online.acerto(v.id, valor, empurrao)
+		online.acerto(v.id, valor, empurrao, arma)
 		if v.hp <= 0:
 			_remover(v)
 			_morte_visual(v)   # efeito só local: a morte em si o anfitrião já sincroniza
@@ -276,26 +321,38 @@ func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 		peso = 12.0
 	v.kb = (v.kb + empurrao / peso).limit_length(KB_MAX)
 	if v.hp <= 0:
+		if (v.el_vis & 16) != 0:   # morreu congelado: estilhaça
+			v.causa_ult = "gelo"
 		_remover(v)
 		_morte_visual(v)
 		arena.inimigo_morreu(v)
 		return true
+	elementos.golpe(v, arma, el_bola)   # sobreviveu: o golpe soma acúmulos de elemento (fogo, gelo, raio, veneno)
 	return false
 
 
+## Põe acúmulos de um elemento (poças com elemento, reações). No duelo o campo não é este nó: quem chama confere has_method.
+func aplicar_elemento(v: V, el: String, n := 1.0, fonte := "") -> void:
+	if not espelho:
+		elementos.aplicar(v, el, n, fonte)
+
+
 ## Anfitrião: acerto que veio de outro computador (o dano e o crítico já foram calculados lá).
-func ferir_remoto(v: V, valor: float, empurrao: Vector2) -> void:
+func ferir_remoto(v: V, valor: float, empurrao: Vector2, arma := "") -> void:
 	if v.hp <= 0:
 		return
 	v.hp -= valor
 	v.flash = 0.09
-	v.arma_ult = ""   # a arma do outro jogador não vem na rede: morte padrão
+	v.t_golpe = _t
+	v.arma_ult = arma   # a arma do cliente, já conferida pelo anfitrião ("" = não declarou ou inválida: morte padrão)
 	v.causa_ult = ""
 	v.kb = (v.kb + empurrao / (12.0 if v.chefe else (4.0 if v.pesado else 1.0))).limit_length(KB_MAX)
 	if v.hp <= 0:
 		_remover(v)
 		_morte_visual(v)
 		arena.inimigo_morreu(v)
+	elif arma != "":
+		elementos.golpe_remoto(v, arma)   # só o elemento da arma dele (a `chance` de elemento é do anfitrião)
 
 
 ## Como o inimigo morre na tela. Chefe: a finalização (finalizacao.gd) cuida; os outros: mortes.gd.
@@ -350,6 +407,8 @@ func aplicar_foto(vir: PackedFloat32Array, tir: PackedFloat32Array, onl: Node) -
 			v.flash = maxf(v.flash, 0.05)
 		v.estado = 1 if (flags & 8) != 0 else 0
 		v.lento = 0.1 if (flags & 16) != 0 else 0.0
+		if (flags & 240) != 0 or v.el_vis != 0:
+			elementos.aplicar_vis(v, flags)
 		vistos[id] = true
 	for v in lista.duplicate():
 		if not vistos.has(v.id):
@@ -433,7 +492,10 @@ func atualizar(dt: float, jog: Node2D) -> void:
 	Perf.fim("ini_grade", _p1)
 	if espelho:
 		_atualizar_espelho(dt)
+		if not elementos.vis.is_empty():
+			elementos.queue_redraw()
 		return
+	elementos.passo(dt)   # só quem tem estado (dicionário próprio); o laço abaixo nem olha
 	# quem os vírus perseguem: o jogador local ou, no online, o jogador em pé mais perto
 	var alvos: Array = online.alvos() if online else [[jog.centro(), 0]]
 	if alvos.is_empty():
@@ -502,12 +564,12 @@ func atualizar(dt: float, jog: Node2D) -> void:
 					if v.t_estado <= 0:
 						v.estado = 0
 						v.t_inv = v.investida
-		if v.atira > 0:
+		if v.atira > 0 and v.atordoado <= 0.0:   # atordoado ou congelado não atira
 			v.t_atira -= dt
 			if v.t_atira <= 0 and dist < 330:
 				v.t_atira = v.atira
 				_atirar(v, dir)
-		if v.anel > 0:
+		if v.anel > 0 and v.atordoado <= 0.0:
 			v.t_anel -= dt
 			if v.t_anel <= 0 and dist < 400:
 				v.t_anel = v.anel
@@ -607,7 +669,7 @@ func _teleportar(v: V, destino: Vector2) -> void:
 	tp_n += 1   # (o relatório do --saltos conta esses à parte: são saltos de propósito, com animação)
 	if _na_tela(v.pos) and fantasmas.size() < 24:
 		fantasmas.append({"pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.espelho,
-			"y0": v.tam.y * v.vista, "quadro": int(_t * v.ritmo + v.id) % 2, "t": 0.0, "id": v.id})
+			"y0": v.tam.y * v.vista, "quadro": v.qd, "t": 0.0, "id": v.id})
 	v.pos = destino
 	v.vm = Vector2.ZERO
 	v.kb = Vector2.ZERO
@@ -736,13 +798,37 @@ func _orientar(v: V, jx: float, jy: float) -> void:
 	v.espelho = v.setor < 0
 
 
+var _ac: Dictionary = {}       # dados/animacao_monstros.json por cima dos padrões (lido uma vez)
+var _fr_d := 0                 # quadros desenhados (os bichos animados atualizam o passo um quadro sim, outro não)
+var _dt2 := 0.033
+var _inv_dt2 := 30.0
+var _lean_dt := 0.16
+var _parado_seg := 0.12
+var _parado_vel := 1.5
+
+
+func _cfg() -> Dictionary:
+	if _ac.is_empty():
+		_ac = Anim.config()
+	return _ac
+
+
 func _draw() -> void:
 	var _d0 := Perf.ini()
+	var ac := _cfg()
+	_fr_d += 1
+	_dt2 = _dt * 2.0
+	_inv_dt2 = 1.0 / maxf(_dt2, 0.0002)
+	_lean_dt = minf(1.0, _dt2 * float(ac.inclina_suave))
+	_parado_seg = ac.parado_seg
+	_parado_vel = ac.parado_vel
 	var jx: float = arena.jogador.position.x if arena and arena.jogador else 0.0
 	var jy: float = arena.jogador.position.y if arena and arena.jogador else 0.0
 	# só entra no desenho quem está na tela (com folga pro tamanho do sprite e da sombra): com 500 bichos, a maioria fica fora.
 	# `_ordem` = os visíveis, do mais alto pro mais baixo (quem está embaixo fica na frente). Ordena uma lista de números
 	# (y e posição na lista juntos numa chave só) com o sort nativo, todo quadro: bem mais barato que sort_custom.
+	var sombra_proj := bool(Config.q("sombra_projetada"))   # perfil de qualidade (dados/qualidade.json)
+	var lod_x := float(Config.q("lod_x"))
 	var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()
 	var x0 := vis.position.x
 	var x1 := vis.end.x
@@ -759,6 +845,7 @@ func _draw() -> void:
 				v.pos_ant = p   # fora da tela não gira (e não conta o passo como teleporte quando voltar)
 			v.orientar = true   # ninguém vê: ao reaparecer já olha pro alvo (não gira de longe)
 			v.pos_olho = Vector2.INF
+			v.pos_f = Vector2.INF
 			continue
 		_chaves.append(float((int(p.y * 2.0) + 4194304) << 16) + float(i))
 	_chaves.sort()
@@ -770,13 +857,44 @@ func _draw() -> void:
 	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus)
 	for v: V in _ordem:
 		_orientar(v, jx, jy)   # (antes das sombras: elas dependem da vista e do espelho)
+		var quadro: int
+		if v.anim:
+			# anda o ciclo pela distância percorrida desde o último desenho (conta inline: roda por bicho por quadro).
+			# pos_f = INF (veio de fora da tela) dá l2 infinito: não conta; salto grande (teleporte) também não.
+			# (um quadro sim, outro não, por bicho: a distância se acumula em pos_f e o dt vale o dobro; ninguém vê o quadro do
+			# passo mudar 1 quadro de tela depois, e a conta sai pela metade do custo)
+			if ((v.id + _fr_d) & 1) == 0:
+				var ddx: float = v.pos.x - v.pos_f.x
+				var ddy: float = v.pos.y - v.pos_f.y
+				var l2: float = ddx * ddx + ddy * ddy
+				v.pos_f = v.pos
+				if l2 > 0.0004 and l2 < 1600.0:
+					v.fase += sqrt(l2) * v.inv_ciclo
+					if v.fase >= 1.0:
+						v.fase -= 1.0
+					v.parado = 0.0
+					v.lean += (clampf(ddx * _inv_dt2 * v.inv_vel, -1.0, 1.0) - v.lean) * _lean_dt
+				else:
+					v.parado += _dt2
+					v.lean -= v.lean * _lean_dt
+					if v.parado > _parado_seg:
+						v.fase = Anim.assentar(v.fase, _dt2, _parado_vel)
+				v.qd = mini(int(v.fase * v.nq), v.nq - 1)
+				# a sombra assada é a de 2 quadros do ciclo (o atlas de sombras não comporta todos)
+				v.q_sh = v.q_meio if v.qd >= v.q_ini and v.qd < v.q_ini + v.q_meio else 0
+			quadro = v.q_sh
+		else:
+			quadro = int(_t * v.ritmo + v.id) % 2
+			v.qd = quadro
 		if v.t_nasc > NASC_T * 0.4:
 			continue
 		var s: Vector2 = v.sz
 		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
-		var quadro := int(_t * v.ritmo + v.id) % 2
+		if not sombra_proj:   # perfil de qualidade baixa: só a mancha de contato no pé (a sombra inclinada é uma textura a mais por bicho)
+			Visual.contato(self, pe, s.x * 0.75)
+			continue
 		var esp: bool = v.espelho
-		var ic := (v.vista * 2 + quadro) * 2 + (1 if esp else 0)
+		var ic := (v.vista * 2 + (1 if quadro > 0 else 0)) * 2 + (1 if esp else 0)
 		var reg: Rect2 = v.sombra_reg[ic]
 		var esc_s := s.x / v.tam.x
 		if reg.size.x <= 0.0:
@@ -802,15 +920,32 @@ func _draw() -> void:
 			draw_line(v.pos, fim, Color(1.0, 0.4, 0.3, 0.45 + 0.4 * u), 1.0)
 		if v.anel > 0 and v.t_anel > 0.0 and v.t_anel < AVISO_ANEL:
 			var u2 := 1.0 - v.t_anel / AVISO_ANEL
-			draw_set_transform(v.pos, 0, Vector2(1, 0.55))
-			draw_arc(Vector2.ZERO, v.raio + 26.0 - 12.0 * u2, 0, TAU, 28, Color(1.0, 0.25, 0.2, 0.25 + 0.55 * u2), 2.0)
-			draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+			Legib.marca_perigo(self, v.pos, v.raio + 26.0 - 12.0 * u2, u2)   # o mesmo anel de aviso das outras áreas (#72 marco 7)
 	var _d2 := Perf.ini()
 	_flashes.clear()
+	_barras.clear()
+	# movimento secundário dos monstros (animacao_monstros.json): inclinação e quique só pra quem está perto do herói (LOD);
+	# com horda enorme na tela o círculo encolhe. O aperto de golpe e o preparo de investida valem pra todos (são raros).
+	var lod_d2: float = ac.lod_dist * ac.lod_dist * lod_x * lod_x * (0.25 if _ordem.size() > ac.lod_max else 1.0)
+	var a_inclina: float = ac.inclina
+	var a_topo: float = ac.inclina_topo
+	var a_passo: float = ac.passo_aperto
+	var a_respira: float = ac.respira
+	var a_golpe: float = ac.aperto_golpe
+	var a_golpe_seg: float = ac.aperto_golpe_seg
+	var a_quique: float = ac.aperto_golpe_quique
 	for v: V in _ordem:
+		if v.elite or v.chefe:
+			_barras.append(v)   # barra de vida: só elite e chefe (os comuns só pagam este teste)
 		var s: Vector2 = v.sz
 		var vira: bool = v.espelho
-		var quadro := 2 if v.flash > 0 else (int(_t * v.ritmo + v.id) % 2)
+		var quadro: int = v.cols - 1 if v.flash > 0 else v.qd
+		var th: float = _t - v.t_golpe if v.anim else 99.0
+		var mexe := false     # anim e pertinho: ganha bob, inclinação e passo (senão desenha pelo caminho rápido)
+		if v.anim:
+			var ddx: float = v.pos.x - jx
+			var ddy: float = v.pos.y - jy
+			mexe = ddx * ddx + ddy * ddy < lod_d2
 		var cor := Color.WHITE
 		if v.aura.a > 0.0:
 			draw_circle(v.pos, s.x * 0.5, Color(v.aura.r, v.aura.g, v.aura.b, 0.16 + 0.08 * sin(_t * 5.0 + v.id)))
@@ -820,10 +955,12 @@ func _draw() -> void:
 			cor = Color(1.0, 0.95, 0.6)   # atordoado: amarelado, piscando de leve
 		elif v.lento > 0:
 			cor = Color(0.6, 0.85, 1.0)
+		if v.el_vis != 0:   # estado de elemento (#72): tinta por estado, uma comparação por inimigo
+			cor = Elementos.tinta(v.el_vis, _t, v.id) * Color(1, 1, 1, cor.a)
 		# Rect2 de largura negativa vira o sprite, mas o Godot desenha a partir da posição pra DIREITA (não normaliza):
 		# por isso a posição é a borda esquerda nos dois casos (antes o bicho à direita do herói saía deslocado 1 largura).
 		var r: Rect2
-		if v.estado == 0 and v.flash <= 0.0 and v.balanco <= 0.0 and v.flutua <= 0.0 and v.t_nasc <= 0.0:
+		if v.estado == 0 and v.flash <= 0.0 and (v.anim or v.balanco <= 0.0) and v.flutua <= 0.0 and v.t_nasc <= 0.0 and not mexe and th >= a_golpe_seg:
 			r = Rect2(v.pos.x - s.x * 0.5, v.pos.y - s.y * 0.6, -s.x if vira else s.x, s.y)   # caminho rápido (vírus)
 		else:
 			var fase_a: float = (_t * v.ritmo + v.id) * PI     # o pulinho acompanha a troca de quadro
@@ -834,15 +971,37 @@ func _draw() -> void:
 			if v.estado == 1:
 				# telegrafa a investida: agacha, treme e avermelha; nos últimos 35% pisca branco
 				var u := clampf(1.0 - v.t_estado / 0.7, 0.0, 1.0)
-				sx = 1.0 + 0.18 * u
-				sy = 1.0 - 0.24 * u
-				jit = sin(_t * 90.0 + v.id) * 1.5 * u
+				var e := u
+				var cl := 0.18
+				var ca := 0.24
+				if v.anim:   # monstros de 5 vistas: curva devagar-e-depois-rápido, puxa o corpo pra trás antes de disparar
+					e = Anim.carga(u, ac.carga_curva)
+					cl = ac.carga_largura
+					ca = ac.carga_altura
+					if v.dir_inv.x != 0.0:
+						jit = -signf(v.dir_inv.x) * ac.carga_recuo * e
+				sx = 1.0 + cl * e
+				sy = 1.0 - ca * e
+				jit += sin(_t * 90.0 + v.id) * 1.5 * u
 				cor = Color(1.0, 1.0 - 0.55 * u, 1.0 - 0.6 * u)
 				if u > 0.65 and int(_t * 20.0) % 2 == 0:
-					quadro = 2
+					quadro = v.cols - 1
 			elif v.estado == 2:
 				sx = 1.22      # em disparada: esticado no sentido da corrida
 				sy = 0.86
+			elif v.anim:
+				# andando de verdade: o corpo sobe e desce com o passo (um quique por passo) e aperta de leve a cada pisada;
+				# parado, só respira. Longe do herói (LOD) fica reto, desenhado como antes.
+				if mexe:
+					if v.parado < _parado_seg:
+						var sub := 0.5 + 0.5 * cos(12.566371 * v.fase)   # = Anim.subida(fase), inline: roda por bicho por quadro
+						lift = v.bob_px * sub
+						sx = 1.0 + a_passo * (1.0 - sub)
+						sy = 1.0 - a_passo * (1.0 - sub)
+					else:
+						var rs := a_respira * sin(_t * 2.5 + v.id)
+						sx = 1.0 + rs
+						sy = 1.0 - rs
 			else:
 				var sn := sin(fase_a)
 				if v.balanco > 0.0:
@@ -852,7 +1011,12 @@ func _draw() -> void:
 				sy = 1.0 - 0.045 * respira
 			if v.flutua > 0.0:
 				lift += v.flutua * (1.0 + 0.25 * sin(_t * 3.0 + v.id))
-			if v.flash > 0.0:
+			if v.anim:
+				if th < a_golpe_seg:   # aperto ao levar golpe: achata e alarga, volta com um quique (aperto_golpe*)
+					var ka := Anim.aperto(th, a_golpe_seg, a_quique)
+					sx *= 1.0 + a_golpe * 1.15 * ka
+					sy *= 1.0 - a_golpe * ka
+			elif v.flash > 0.0:
 				var k := v.flash / 0.09      # squash ao levar dano: achata e alarga, voltando em ~0,1 s
 				sx *= 1.0 + 0.3 * k
 				sy *= 1.0 - 0.24 * k
@@ -879,11 +1043,30 @@ func _draw() -> void:
 			draw_texture_rect_region(v.tex, Rect2(-gw * 0.5, -r.size.y * 0.5, gw, r.size.y), fonte, cor)
 			draw_set_transform(Vector2.ZERO, 0.0)
 		else:
-			draw_texture_rect_region(v.tex, r, fonte, cor)
+			var inc := 0
+			if mexe and v.parado < _parado_seg:
+				inc = roundi(v.lean * a_inclina * s.y)
+			if inc != 0:
+				# inclinação pro lado em que anda: a faixa de cima do sprite se adianta `inc` px (cisalhamento por faixas:
+				# o pixel continua nítido, o que girar o sprite não dá). `inclina_topo` = fração de cima que se desloca.
+				var corte := maxi(1, roundi(v.tam.y * a_topo))
+				var hc := roundf(r.size.y * corte / v.tam.y)
+				draw_texture_rect_region(v.tex, Rect2(r.position.x + inc, r.position.y, r.size.x, hc),
+					Rect2(fonte.position, Vector2(fonte.size.x, corte)), cor)
+				draw_texture_rect_region(v.tex, Rect2(r.position.x, r.position.y + hc, r.size.x, r.size.y - hc),
+					Rect2(fonte.position.x, fonte.position.y + corte, fonte.size.x, fonte.size.y - corte), cor)
+			else:
+				draw_texture_rect_region(v.tex, r, fonte, cor)
 			if v.flash > 0.09 - FLASH_BRANCO and _flashes.size() < FLASH_MAX:
 				_flashes.append([v.tex, r, fonte, 0.9 * cor.a])
 	_flash_no.queue_redraw()
 	Perf.fim("ini_d_sprite", _d2)
+	for v: V in _barras:   # barra fina de elite/chefe, com o nome curto logo depois de um golpe
+		var topo: float = v.pos.y - v.sz.y * 0.6
+		Legib.barra(self, v.pos.x, topo, v.sz.x * 0.8, v.hp / maxf(v.hpmax, 1.0), v.chefe)
+		if Legib.mostra_nome(_t, v.t_golpe):
+			Legib.nome_sobre(self, v.pos.x, topo - 14.0, Legib.nome_curto(str(v.d.get("nome", ""))))
+	barras_n = _barras.size()
 	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
 		var u: float = f.t / NASC_T
 		var fs: Vector2 = f.sz * (1.0 - 0.6 * u)

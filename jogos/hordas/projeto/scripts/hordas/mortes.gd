@@ -81,7 +81,7 @@ static func registro(v, causa: String, ef: String, dur_mult := 1.0) -> Dictionar
 	var sd: int = v.id * 7919 + 13
 	var dir: Vector2 = v.dir_ult if v.dir_ult.length() > 1.0 else Vector2(-1.0 if _h(sd, 99) < 0.5 else 1.0, -0.15)
 	return {"ef": ef, "causa": causa, "pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.espelho, "y0": v.tam.y * v.vista,
-		"quadro": v.id % 2, "t": 0.0, "dur": float(cfg.get("dur", 0.5)) * dur_mult, "dir": dir.normalized(), "seed": sd,
+		"quadro": v.qd, "t": 0.0, "dur": float(cfg.get("dur", 0.5)) * dur_mult, "dir": dir.normalized(), "seed": sd,
 		"cor": cor, "sangue": sangue, "part": int(cfg.get("part", 0)), "tipo": v.tipo}
 
 
@@ -104,10 +104,12 @@ func nova(v, forcar := false) -> String:
 	var dm: Dictionary = Dados.json("mortes")
 	var teto: Dictionary = dm.get("teto", {})
 	var part := int(dm.get("efeitos", {}).get(ef, {}).get("part", 0))
-	if ef != "simples" and (ativas.size() >= int(teto.get("mortes", 24)) or part_usadas + part > int(teto.get("particulas", 600))):
+	var max_g := maxi(1, roundi(float(teto.get("mortes", 24)) * float(Config.q("mortes_grandes"))))   # perfil de qualidade: tetos menores
+	var max_p := maxi(20, roundi(float(teto.get("particulas", 600)) * float(Config.q("mortes_part"))))
+	if ef != "simples" and (ativas.size() >= max_g or part_usadas + part > max_p):
 		ef = "simples"   # sem vaga: morte simples
 	if ef == "simples":
-		if simples.size() >= int(teto.get("simples", 48)):
+		if simples.size() >= roundi(float(teto.get("simples", 48)) * float(Config.q("mortes_simples"))):
 			return ""
 		simples.append(registro(v, causa, "simples"))
 	else:

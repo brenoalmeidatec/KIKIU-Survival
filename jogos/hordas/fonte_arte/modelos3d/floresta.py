@@ -3,7 +3,7 @@
 Roda (Blender 4.5 LTS):
     blender -b -P floresta.py              # todos
     blender -b -P floresta.py lobo_sombrio # só um
-Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (3 colunas x 5 vistas, veja monstros.py) e proj_<nome>.png.
+Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (N+1 colunas x 5 vistas: ciclo de andar + branco, veja monstros.py) e proj_<nome>.png.
 Clima (#68, Dimraeth): floresta que vai de convidativa a ameaçadora. Musgo, casca podre, olhos que brilham no escuro.
 """
 import math

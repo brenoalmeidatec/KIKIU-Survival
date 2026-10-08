@@ -13,6 +13,7 @@ const PADRAO := {
 	"bom": Color(0.5, 1, 0.5), "ruim": Color(1, 0.45, 0.4), "vida_chefe": Color(0.85, 0.15, 0.25),
 	"vida_duelo": Color(0.9, 0.25, 0.3), "alerta": Color(1, 0.4, 0.4), "destaque": Color(1, 0.9, 0.4),
 	"comportamento": Color(1.0, 0.55, 0.2),
+	"perigo": Color(1.0, 0.25, 0.2), "area_aliada": Color(0.55, 0.85, 1.0),
 }
 const SEGURA := {
 	"arma": Color(0.34, 0.7, 0.91), "passivo": Color(0.94, 0.89, 0.26), "equipamento": Color(0.8, 0.47, 0.65),
@@ -20,6 +21,7 @@ const SEGURA := {
 	"bom": Color(0.34, 0.7, 0.91), "ruim": Color(0.9, 0.45, 0.05), "vida_chefe": Color(0.9, 0.45, 0.05),
 	"vida_duelo": Color(0.9, 0.45, 0.05), "alerta": Color(0.9, 0.5, 0.1), "destaque": Color(0.94, 0.89, 0.26),
 	"comportamento": Color(0.0, 0.62, 0.45),
+	"perigo": Color(0.9, 0.45, 0.05), "area_aliada": Color(0.34, 0.7, 0.91),
 }
 ## raridade da dádiva (dadivas.json) -> cor segura (vale só no modo daltônico; no normal vale a cor do JSON)
 const RARIDADE_SEGURA := {
@@ -120,6 +122,12 @@ static func comparacao(tipo: String, id: String, nv: int) -> Array:
 					var novo := acum + float(delta[k])
 					var melhor := novo < acum if k in MENOR_MELHOR else novo > acum
 					res.append({"rot": _rot(str(k)), "antes": _num(acum), "depois": _num(novo), "bom": melhor})
+			# a arma também cresce de tamanho a cada nível (curva de dados/crescimento_armas.json): linha própria, sempre à vista
+			if not d.is_empty() and d.has("niveis") and not d.get("evolucao", false) and nv > 1 and nv - 2 < niveis.size() and not Dados.json("crescimento_armas").is_empty():
+				var cr := preload("res://scripts/hordas/crescimento.gd")
+				if res.size() >= MAX_LINHAS_CMP:
+					res.resize(MAX_LINHAS_CMP - 1)
+				res.append({"rot": "Tamanho", "antes": "%d%%" % roundi(cr.mult(id, nv - 1, "area") * 100.0), "depois": "%d%%" % roundi(cr.mult(id, nv, "area") * 100.0), "bom": true})
 		"passivo":
 			var ef: Dictionary = d.get("efeito", {})
 			for k in ef:
@@ -151,6 +159,9 @@ static func tabela_armas(dano: Dictionary, nivel: Dictionary, tempo: Dictionary,
 	var linhas := []
 	for id in ids:
 		var d := Dados.item(str(id))
+		if str(id).begins_with("elem_"):   # dano de elemento (#72): queimadura, veneno, saltos e reações aparecem como uma linha com nome e ícone próprios
+			d = Dados.json("elementos").get("elementos", {}).get(str(id).substr(5), {}).duplicate()
+			d["nome"] = d.get("nome_dano", id)
 		var t := float(tempo.get(id, tempo_total))
 		var dn := float(dano.get(id, 0.0))
 		linhas.append({"id": str(id), "nome": str(d.get("nome", id)), "icone": str(d.get("icone", id)),

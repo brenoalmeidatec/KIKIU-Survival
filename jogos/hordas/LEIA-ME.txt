@@ -69,6 +69,8 @@ EDITAR SEM PROGRAMAR
   A pasta "dados" ao lado do .exe manda no jogo. Abra no Bloco de Notas, salve e jogue de novo:
     herois.json     heróis, arma inicial e bônus (os fora de "lista" só aparecem como rivais)
     armas.json      dano, recarga, quantidade, o que cada nível dá
+    crescimento_armas.json  a arma cresce com o nível: começa pequena e fraca (nível 1) e fica maior, mais forte
+                    e com mais efeitos (faíscas, brilho, 2º arco, tremor) até o máximo e a evolução
     passivos.json   itens passivos
     evolucoes.json  receitas de evolução
     inimigos.json   vida, velocidade, dano, quando começam a aparecer, chefes

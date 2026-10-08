@@ -4,7 +4,7 @@ Um atirador comum, uma elite e O Soberano do Caos, o chefe final (no lugar da Te
 Roda (Blender 4.5 LTS):
     blender -b -P reino.py                    # todos
     blender -b -P reino.py -- soberano_caos   # só um
-Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (3 colunas x 5 vistas, veja monstros.py) e proj_<nome>.png.
+Saída: ../../projeto/assets/gerado/inimigo_<nome>.png (N+1 colunas x 5 vistas: ciclo de andar + branco, veja monstros.py) e proj_<nome>.png.
 Clima (#68): onde o caos começou. Armadura negra rachada com o caos aceso por dentro (magenta), mantos vinho e roxo-noite.
 Duas fases da região são escuras (escuridao.gd): os olhos e as rachaduras acesas são o que se vê de longe.
 """

@@ -191,7 +191,7 @@ func _mouse_cartas() -> void:
 	ok(ct.aberto() and get_tree().paused, "cartas abertas e jogo pausado")
 	var mov := InputEventMouseMotion.new()
 	var alvo: Rect2 = ct._rect_carta(1)
-	mov.position = alvo.get_center()
+	mov.position = _na_janela(alvo.get_center())
 	mov.global_position = mov.position
 	Input.parse_input_event(mov)
 	await esperar(0.1)
@@ -200,14 +200,14 @@ func _mouse_cartas() -> void:
 	var btns: Array = ct._botoes()
 	var rp: Rect2 = ct._rect_botao(1, btns.size())
 	var mv2 := InputEventMouseMotion.new()
-	mv2.position = rp.get_center()
+	mv2.position = _na_janela(rp.get_center())
 	mv2.global_position = mv2.position
 	Input.parse_input_event(mv2)
 	await esperar(0.1)
 	var clique := InputEventMouseButton.new()
 	clique.button_index = MOUSE_BUTTON_LEFT
 	clique.pressed = true
-	clique.position = rp.get_center()
+	clique.position = _na_janela(rp.get_center())
 	clique.global_position = clique.position
 	Input.parse_input_event(clique)
 	await esperar(0.1)
@@ -216,7 +216,7 @@ func _mouse_cartas() -> void:
 	ct.escolher("Teste 2", mesa.duplicate())
 	await esperar(0.7)
 	var m3 := InputEventMouseMotion.new()
-	m3.position = ct._rect_carta(0).get_center()
+	m3.position = _na_janela(ct._rect_carta(0).get_center())
 	m3.global_position = m3.position
 	Input.parse_input_event(m3)
 	await esperar(0.1)
@@ -231,3 +231,9 @@ func _mouse_cartas() -> void:
 	ok(a.armas.lista.size() >= armas_antes and not get_tree().paused, "jogo despausa")
 	a.queue_free()
 	await esperar(0.1)
+
+
+## O Input leva o evento do espaço da JANELA para o do jogo (640x360) desfazendo a escala; aqui vai o caminho inverso,
+## senão o teste só acerta quando a janela (no headless fica 64x64) tem escala exata de 1x.
+func _na_janela(p: Vector2) -> Vector2:
+	return get_window().get_final_transform() * p

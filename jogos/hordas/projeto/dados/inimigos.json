@@ -128,6 +128,7 @@
   "bau": true
  },
  "tela_azul": {
+  "resist": {"raio": 1.0},
   "nome": "Tela Azul da Morte",
   "subtitulo": "O fim de todo sistema",
   "sprite": "inimigo_tela_azul",
@@ -156,6 +157,7 @@
   }
  },
  "carnical": {
+  "resist": {"veneno": 0.5},
   "nome": "Carniçal",
   "sprite": "inimigo_carnical",
   "vida": 14,
@@ -182,6 +184,7 @@
   "vistas": 5
  },
  "cao_ossos": {
+  "resist": {"veneno": 1.0},
   "nome": "Cão de Ossos",
   "sprite": "inimigo_cao_ossos",
   "vida": 24,
@@ -209,6 +212,7 @@
   "vistas": 5
  },
  "cavaleiro_oco": {
+  "resist": {"veneno": 1.0, "raio": -0.25},
   "nome": "Cavaleiro Oco",
   "sprite": "inimigo_cavaleiro_oco",
   "vida": 90,
@@ -237,6 +241,7 @@
   "vistas": 5
  },
  "espectro": {
+  "resist": {"veneno": 1.0, "fogo": -0.25},
   "nome": "Espectro",
   "sprite": "inimigo_espectro",
   "vida": 20,
@@ -439,6 +444,7 @@
   "vistas": 5
  },
  "espantalho": {
+  "resist": {"fogo": -0.5},
   "nome": "Espantalho Podre",
   "sprite": "inimigo_espantalho",
   "vida": 70,
@@ -506,6 +512,7 @@
   "vistas": 5
  },
  "velho_carvalho": {
+  "resist": {"fogo": -0.5, "veneno": 0.5},
   "nome": "O Velho Carvalho",
   "subtitulo": "O coração podre da floresta",
   "sprite": "inimigo_velho_carvalho",
@@ -549,6 +556,7 @@
   "vistas": 5
  },
  "sapo_podre": {
+  "resist": {"veneno": 1.0},
   "nome": "Sapo Podre",
   "sprite": "inimigo_sapo_podre",
   "vida": 16,
@@ -568,6 +576,7 @@
   "vistas": 5
  },
  "afogado": {
+  "resist": {"fogo": 0.5},
   "nome": "Afogado",
   "sprite": "inimigo_afogado",
   "vida": 24,
@@ -587,6 +596,7 @@
   "vistas": 5
  },
  "fogo_fatuo": {
+  "resist": {"fogo": 1.0, "gelo": -0.5},
   "nome": "Fogo-Fátuo",
   "sprite": "inimigo_fogo_fatuo",
   "vida": 12,
@@ -630,6 +640,7 @@
   "vistas": 5
  },
  "golem_lodo": {
+  "resist": {"raio": 0.5, "veneno": 1.0},
   "nome": "Golem de Lodo",
   "sprite": "inimigo_golem_lodo",
   "vida": 300,
@@ -738,6 +749,7 @@
   "vistas": 5
  },
  "esqueleto_areia": {
+  "resist": {"veneno": 1.0},
   "nome": "Esqueleto das Areias",
   "sprite": "inimigo_esqueleto_areia",
   "vida": 24,
@@ -757,6 +769,7 @@
   "vistas": 5
  },
  "mumia": {
+  "resist": {"fogo": -0.5, "gelo": 0.5},
   "nome": "Múmia",
   "sprite": "inimigo_mumia",
   "vida": 44,
@@ -777,6 +790,7 @@
   "vistas": 5
  },
  "naja": {
+  "resist": {"veneno": 1.0},
   "nome": "Naja Cuspideira",
   "sprite": "inimigo_naja",
   "vida": 18,
@@ -798,6 +812,7 @@
   "vistas": 5
  },
  "escorpiao_gigante": {
+  "resist": {"veneno": 1.0},
   "nome": "Escorpião Gigante",
   "sprite": "inimigo_escorpiao_gigante",
   "vida": 340,

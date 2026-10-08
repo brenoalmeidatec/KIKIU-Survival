@@ -1,9 +1,11 @@
 {
- "_ajuda": "Mapa de progressão entre as fases (#32 item 8). O andar N do mapa é a fase N de corrida.json (o nó 'fase' roda a fase do andar; os outros tipos pulam a fase daquele andar e abrem a própria tela). Gerado com Sorte.fluxo('mapa'): a mesma semente dá o mesmo mapa em todos os clientes. 'faixas' = quantas linhas o mapa tem na tela; 'caminhos' = quantos caminhos partem do andar 1 (sem cruzar). 'pesos' sorteia o tipo dos andares do meio; 'fixos' trava o tipo de um andar (1-based). 'regras' por tipo: andar_min/andar_max (1-based), max_por_mapa, apos_proibido (tipos que não podem estar no andar anterior ligado a ele), pai_igual_proibido. Depois de 'tentativas' re-sorteios o nó vira 'fase'. Votação online: maioria, empate = voto do anfitrião, 'espera_voto' s e o anfitrião fecha sozinho.",
+ "_ajuda": "Mapa de progressão entre as fases (#32 item 8). O andar N do mapa é a fase N de corrida.json (o nó 'fase' roda a fase do andar; os outros tipos pulam a fase daquele andar e abrem a própria tela). Gerado com Sorte.fluxo('mapa'): a mesma semente dá o mesmo mapa em todos os clientes. 'faixas' = quantas linhas o mapa tem na tela; 'caminhos' = quantos caminhos partem do andar 1 (sem cruzar; podem se separar e se juntar). 'inicio_unico' = cada mapa (cada região) começa num nó só, no meio, e o jogador monta o caminho escolhendo ramo a ramo (#96); sem ele, os caminhos partem de faixas sorteadas ('inicios_distintos_min' diferentes) e a corrida começa num deles. 'ramos_min' = mínimo de nós em cada andar do meio (e de saídas do nó inicial). 'ligacoes_extra' = chance de um nó do meio com uma saída só ganhar outra, para um vizinho, sem cruzar (mais escolha a cada andar). 'pesos' sorteia o tipo dos andares do meio; 'fixos' trava o tipo de um andar (1-based). 'regras' por tipo: andar_min/andar_max (1-based), max_por_mapa, apos_proibido (tipos que não podem estar no andar anterior ligado a ele), pai_igual_proibido. Depois de 'tentativas' re-sorteios o nó vira 'fase'. Votação online: maioria, empate = voto do anfitrião, 'espera_voto' s e o anfitrião fecha sozinho.",
  "andares": 10,
- "faixas": 4,
- "caminhos": 4,
- "inicios_distintos_min": 2,
+ "faixas": 5,
+ "caminhos": 5,
+ "inicio_unico": true,
+ "ramos_min": 2,
+ "ligacoes_extra": 0.75,
  "tentativas": 50,
  "espera_voto": 40,
  "fixos": {"1": "fase", "6": "fase", "10": "chefe"},
@@ -19,10 +21,19 @@
   "fase": {"nome": "FASE", "cor": [0.55, 0.8, 1.0], "info": "Combate normal. Aguente até o chefe cair."},
   "elite": {"nome": "ELITE", "cor": [1.0, 0.45, 0.35], "info": "Fase mais dura: mais vírus e mais fortes. Dá um baú extra e chance de fragmento.", "minutos_extra": 1.5, "elite_mult": 3.0, "xp_mult": 1.5, "baus_extra": 1, "fragmento_pity": {"base": 0.35, "passo": 0.3, "limite": 3}},
   "descanso": {"nome": "DESCANSO", "cor": [0.5, 0.95, 0.6], "info": "Sem combate. Recupera toda a vida.", "cura": 1.0},
-  "loja": {"nome": "LOJA", "cor": [1.0, 0.85, 0.35], "info": "Sem combate. Troque o ouro dos abates por itens e cura.", "ofertas": 3, "preco": {"arma": 500, "passivo": 350, "equipamento": 450, "cura": 200}},
+  "loja": {"nome": "LOJA", "cor": [1.0, 0.85, 0.35], "info": "Sala com vendedor. Troque o ouro dos abates por itens e cura; o preço sobe a cada compra sua.", "_ajuda_sala": "curva: preço = base * (1 + aumento * compras do jogador), no máximo base * teto (compras valem pra corrida toda, uma conta por jogador). vendedor = pasta em assets/personagens; velocidade = px/s do herói na sala.", "ofertas": 3, "preco": {"arma": 500, "passivo": 350, "equipamento": 450, "cura": 200}, "curva": {"aumento": 0.25, "teto": 4.0}, "vendedor": "fabio", "velocidade": 120.0},
   "evento": {"nome": "EVENTO", "cor": [0.85, 0.6, 1.0], "info": "Sem combate. Algo acontece: dádiva, risco ou um baú.", "variacoes": {"dadiva": {"peso": 5, "titulo": "Encruzilhada: uma dádiva"}, "sombria": {"peso": 3, "titulo": "Pacto sombrio (custa vida)", "raridade_min": "rara", "custo_vida": 0.25}, "bau": {"peso": 2, "titulo": "Um baú esquecido"}}},
   "santuario": {"nome": "SANTUÁRIO RARO", "cor": [1.0, 0.7, 0.25], "info": "Sem combate. Uma dádiva épica ou heroica à escolha.", "raridade_min": "epica"},
   "chefe": {"nome": "CHEFE", "cor": [1.0, 0.3, 0.3], "info": "O chefe da região. Derrube ele pra seguir; o da última região leva ao duelo."}
  },
- "ouro": {"abate": 1, "elite": 4, "chefe": 40}
+ "ouro": {"abate": 1, "elite": 4, "chefe": 40},
+ "arte": {
+  "_ajuda": "Arte do mapa por região (#96): o chão e os enfeites vêm do cenário da região (assets/cenarios/<cenario>, os mesmos da fase). fundo = cor fora do mapa; piso = brilho do chão (0-1, menor deixa os nós mais legíveis); tom = cor multiplicada no chão e nos enfeites; moldura = cor da borda; trilha = cor das trilhas ainda não percorridas; enfeites = quantos enfeites tentar espalhar (os que encostam em nó ou trilha são descartados). 'padrao' vale para região sem entrada aqui.",
+  "padrao": {"fundo": [0.03, 0.03, 0.08], "piso": 0.5, "tom": [1, 1, 1], "moldura": [0.45, 0.5, 0.65], "trilha": [0.7, 0.72, 0.85], "enfeites": 40},
+  "floresta": {"fundo": [0.03, 0.06, 0.04], "piso": 0.55, "tom": [0.85, 1.0, 0.85], "moldura": [0.42, 0.58, 0.32], "trilha": [0.82, 0.7, 0.48], "enfeites": 80},
+  "pantano": {"fundo": [0.03, 0.06, 0.05], "piso": 0.55, "tom": [0.8, 0.95, 0.78], "moldura": [0.38, 0.55, 0.42], "trilha": [0.7, 0.82, 0.55], "enfeites": 60},
+  "deserto": {"fundo": [0.09, 0.06, 0.03], "piso": 0.62, "tom": [1.0, 0.92, 0.8], "moldura": [0.82, 0.64, 0.38], "trilha": [0.42, 0.26, 0.16], "enfeites": 36},
+  "gelo": {"fundo": [0.04, 0.06, 0.1], "piso": 0.6, "tom": [0.85, 0.92, 1.0], "moldura": [0.68, 0.8, 0.96], "trilha": [0.3, 0.42, 0.6], "enfeites": 40},
+  "reino": {"fundo": [0.07, 0.03, 0.07], "piso": 0.6, "tom": [0.9, 0.8, 0.95], "moldura": [0.66, 0.3, 0.36], "trilha": [0.85, 0.62, 0.7], "enfeites": 40}
+ }
 }

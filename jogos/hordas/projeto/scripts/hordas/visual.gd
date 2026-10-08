@@ -20,7 +20,17 @@ static var _atlas_tex: ImageTexture
 static var _atlas_sujo := false
 static var _assadas := {}                     # Vector4i(textura, x, y, largura*2+espelho) -> região no atlas
 static var _imagens := {}                     # textura -> Image (pra não copiar a folha inteira a cada quadro)
-static var _cursor := Vector2i.ZERO           # empacotamento em prateleiras
+static var _bytes := {}                       # textura -> bytes RGBA8 da folha (ler o alfa por índice custa bem menos que get_pixel)
+static var _quadro_assado := -1               # quadro do motor em que o orçamento abaixo começou
+static var _us_assado := 0                    # microssegundos gastos assando sombras neste quadro
+static var _enviar_ligado := false
+## No máximo ~2,5 ms por quadro assando sombras. Antes, cada sombra nova (cada vista x quadro x espelho de cada monstro)
+## assava na hora E reenviava o atlas inteiro (1024x1024 RGBA = 4 MB) pra placa de vídeo: com a horda entrando, era o
+## engasgo dos primeiros quadros de cada partida, que "estabilizava" quando tudo já estava assado. Agora o excedente
+## usa a sombra calculada na hora (barata, só uma textura com transformação) e vira assada nos quadros seguintes;
+## o envio do atlas é um só por quadro, logo antes de desenhar.
+const ORCAMENTO_US := 2500
+static var _cursor := Vector2i.ZERO          # empacotamento em prateleiras
 static var _prateleira := 0
 
 
@@ -90,9 +100,6 @@ static func _preparar() -> void:
 		_atlas_tex = ImageTexture.create_from_image(_atlas)
 		_cursor = Vector2i(25, 0)
 		_prateleira = 8
-	if _atlas_sujo:
-		_atlas_tex.update(_atlas)
-		_atlas_sujo = false
 
 
 ## A sombra de um quadro, calculada uma vez: cada pixel opaco do sprite vai pra linha "altura x ACHATA"
@@ -102,6 +109,13 @@ static func _assada(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
 	var pronta = _assadas.get(chave)
 	if pronta != null:
 		return pronta
+	var quadro := Engine.get_process_frames()
+	if quadro != _quadro_assado:
+		_quadro_assado = quadro
+		_us_assado = 0
+	if _us_assado > ORCAMENTO_US:
+		return Rect2()   # sem orçamento neste quadro: não registra, tenta de novo no próximo
+	var t0 := Time.get_ticks_usec()
 	_preparar()
 	_assadas[chave] = Rect2()
 	var img: Image = _imagens.get(tex)
@@ -111,7 +125,12 @@ static func _assada(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
 			return Rect2()
 		if img.is_compressed():
 			img.decompress()
+		if img.get_format() != Image.FORMAT_RGBA8:
+			img.convert(Image.FORMAT_RGBA8)
 		_imagens[tex] = img
+		_bytes[tex] = img.get_data()
+	var dados: PackedByteArray = _bytes[tex]
+	var larg_img := img.get_width()
 	var w := int(src.size.x)
 	var h := int(src.size.y)
 	var tam := Vector2i(w + int(ceil(h * INCLINA)) + 1, int(ceil(h * ACHATA)) + 1)
@@ -127,29 +146,39 @@ static func _assada(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
 		var dx := int(round(alt * INCLINA))
 		for x in w:
 			var sx := int(src.position.x) + (w - 1 - x if espelho else x)
-			if img.get_pixel(sx, int(src.position.y) + y).a > 0.5:
+			if dados[((int(src.position.y) + y) * larg_img + sx) * 4 + 3] >= 128:   # alfa > 0,5
 				_atlas.set_pixel(o.x + x + dx, o.y + dy, COR)
 	_cursor.x += tam.x + 1
 	_prateleira = maxi(_prateleira, tam.y)
-	_atlas_sujo = true
-	_atlas_tex.update(_atlas)
-	_atlas_sujo = false
+	_atlas_sujo = true   # o envio pra placa é um só por quadro (_enviar)
+	if not _enviar_ligado:
+		_enviar_ligado = true
+		RenderingServer.frame_pre_draw.connect(_enviar)
 	_assadas[chave] = Rect2(o, tam)
+	_us_assado += Time.get_ticks_usec() - t0
 	return _assadas[chave]
+
+
+## Manda o atlas pra placa de vídeo, uma vez por quadro, antes de desenhar (se alguma sombra nova foi assada).
+static func _enviar() -> void:
+	if _atlas_sujo and _atlas_tex:
+		_atlas_tex.update(_atlas)
+		_atlas_sujo = false
 
 
 # ---------- chegada do personagem no começo da fase (#32 item 6) ----------
 const CHEGADA_TEMPO := 0.6      # segundos de queda + pouso
 const CHEGADA_POUSO := 0.65     # em que ponto (0..1) da chegada ele encosta no chão
+const CHEGADA_ALTURA := 110.0   # px de onde ele cai (a abertura de fase cai de mais alto)
 
 
 ## Altura (px acima do chão) do personagem no ponto p (0..1) da chegada: cai acelerando, pousa e quica de leve.
-static func chegada_altura(p: float) -> float:
+static func chegada_altura(p: float, alt := CHEGADA_ALTURA) -> float:
 	if p >= 1.0:
 		return 0.0
 	if p < CHEGADA_POUSO:
 		var q := 1.0 - p / CHEGADA_POUSO
-		return 110.0 * q * q
+		return alt * q * q
 	return 5.0 * sin((p - CHEGADA_POUSO) / (1.0 - CHEGADA_POUSO) * PI)
 
 
@@ -160,11 +189,11 @@ static func chegada_flash(p: float) -> float:
 
 ## Desenha (em coordenadas do boneco, pés em 0,0): coluna de luz na queda, anel do pouso e o nome em cima.
 ## p = progresso da chegada (1 = acabou); nome_a = opacidade do nome (0..1).
-static func chegada(no: CanvasItem, p: float, nome: String, nome_a: float, cor: Color) -> void:
+static func chegada(no: CanvasItem, p: float, nome: String, nome_a: float, cor: Color, alt := CHEGADA_ALTURA) -> void:
 	if p < CHEGADA_POUSO:
 		var q := p / CHEGADA_POUSO
-		no.draw_rect(Rect2(-9, -210, 18, 210), Color(cor.r, cor.g, cor.b, 0.10 + 0.25 * q))
-		no.draw_rect(Rect2(-3, -210, 6, 210), Color(1, 1, 1, 0.25 + 0.4 * q))
+		no.draw_rect(Rect2(-9, -alt - 100.0, 18, alt + 100.0), Color(cor.r, cor.g, cor.b, 0.10 + 0.25 * q))
+		no.draw_rect(Rect2(-3, -alt - 100.0, 6, alt + 100.0), Color(1, 1, 1, 0.25 + 0.4 * q))
 	elif p < 1.0:
 		var k := (p - CHEGADA_POUSO) / (1.0 - CHEGADA_POUSO)
 		no.draw_set_transform(Vector2.ZERO, 0, Vector2(1, 0.45))

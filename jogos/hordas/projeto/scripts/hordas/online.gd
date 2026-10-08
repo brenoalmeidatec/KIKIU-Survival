@@ -6,6 +6,7 @@ extends Node
 ## Todos: mostram os outros jogadores, cuidam do próprio XP/baú e do próprio corpo caído (reviver).
 ## Desenho em docs/ONLINE_KIKIU.md; o transporte e a validação ficam em rede.gd.
 
+const Elementos := preload("res://scripts/hordas/elementos.gd")
 const Remoto := preload("res://scripts/hordas/remoto.gd")
 const ENVIO := 1.0 / 15.0
 const RAIO_FOTO := 420.0
@@ -15,6 +16,7 @@ const CD_DANO := 0.45               # anfitrião: intervalo mínimo entre danos 
 const REVIVER_BASE := 3.0           # segundos pra levantar alguém, divididos pelo "reviver" de quem ajuda
 const REVIVER_DIST := 40.0
 const Mapa := preload("res://scripts/hordas/mapa.gd")
+const Mochila := preload("res://scripts/hordas/mochila.gd")
 const ESPERA_PRONTOS := 60.0        # fim da fase: espera todo mundo terminar as cartas e votar no mapa, até 60 s (depois de nó sem combate, "espera_voto" de dados/mapa.json)
 const TODOS_CAIDOS := 1.0           # todo mundo caído por 1 s = fim da corrida
 
@@ -24,16 +26,23 @@ var tipos: Array = []               # índice <-> tipo de vírus (mesma ordem em
 var _tipo_idx := {}
 var sprites_tiro: Array = []
 var _sprite_idx := {}
+var armas_ids: Array = []           # índice <-> id de arma (dados/armas.json em ordem alfabética; 0 = sem arma, então índice = posição + 1)
+var _arma_idx := {}
 var reviver_prog := 0.0
 var forcas := {}                    # anfitrião: peer -> força no duelo
 var _t_envio := 0.0
 var _acertos := PackedFloat32Array()  # cliente: acertos ainda não mandados
 var _mortes := PackedFloat32Array()   # anfitrião: mortes ainda não mandadas
 var _cd_dano := {}
+var _usos := {}                 # anfitrião: peer -> {consumível: quantos já usou}, pra conferir com a mochila que ele declarou
 var _prontos := {}              # anfitrião, votação do mapa: peer -> faixa votada
 var _t_prontos := -1.0
+var _saida := {}                # anfitrião, saída da fase (#112): peer -> já entrou no portal
+var _t_saida := -1.0
 var _t_caidos := 0.0
-var n_tx := 0                     # teste: acertos mandados (cliente) / recebidos (anfitrião)
+const ACERTO_N := 5               # floats por acerto: id do vírus, dano, empurrão x e y, índice da arma
+var n_arma := 0                   # teste: acertos recebidos com arma válida (anfitrião)
+var n_tx := 0                   # teste: acertos mandados (cliente) / recebidos (anfitrião)
 
 
 func _ready() -> void:
@@ -49,6 +58,13 @@ func _ready() -> void:
 	tipos.sort()
 	for i in tipos.size():
 		_tipo_idx[tipos[i]] = i
+	var arm: Dictionary = Dados.json("armas")
+	for k in arm:
+		if not k.begins_with("_") and arm[k] is Dictionary:
+			armas_ids.append(k)
+	armas_ids.sort()
+	for i in armas_ids.size():
+		_arma_idx[armas_ids[i]] = i + 1
 	sprites_tiro = spr.keys()
 	sprites_tiro.sort()
 	for i in sprites_tiro.size():
@@ -66,6 +82,24 @@ func anfitriao() -> bool:
 
 func tipo_idx(tipo: String) -> int:
 	return int(_tipo_idx.get(tipo, 0))
+
+
+## Índice (1..N) do id da arma na tabela fixa; 0 se não é arma (investida, bomba, especial...).
+func arma_idx(arma: String) -> int:
+	return int(_arma_idx.get(arma, 0))
+
+
+## Anfitrião: o id da arma que o cliente `quem` declarou no golpe, ou "" se o índice não existe ou a arma não pode ser dele
+## (arma exclusiva/transformação de outro herói). Quem não passa na conferência cai no golpe sem arma, como antes.
+## Armas que sobem por carta não estão na mochila, então "build declarada" = o herói que ele escolheu na sala.
+func arma_do_cliente(quem: int, idx: int) -> String:
+	if idx < 1 or idx > armas_ids.size():
+		return ""
+	var id: String = armas_ids[idx - 1]
+	var d: Dictionary = Dados.json("armas")[id]
+	if str(d.get("classe", "global")) in ["character_exclusive", "transformacao"] and str(d.get("characterId", "")) != Rede.heroi_de(quem):
+		return ""
+	return id
 
 
 func sprite_idx(sprite: String) -> int:
@@ -111,6 +145,7 @@ func atualizar(dt: float) -> void:
 		for p in _cd_dano.keys():
 			_cd_dano[p] -= dt
 		_checar_caidos(dt)
+		_checar_saida(dt)
 		if _t_prontos >= 0.0:
 			_t_prontos -= dt
 			_checar_prontos()
@@ -124,7 +159,7 @@ func atualizar(dt: float) -> void:
 			Rede.enviar_mortes(_mortes)
 			_mortes = PackedFloat32Array()
 	elif not _acertos.is_empty():
-		n_tx += _acertos.size() / 4
+		n_tx += _acertos.size() / ACERTO_N
 		Rede.enviar_acertos(_acertos)
 		_acertos = PackedFloat32Array()
 
@@ -189,7 +224,7 @@ func _enviar_fotos() -> void:
 		for ce in cand:
 			var v = ce[1]
 			var flags := (1 if v.elite else 0) | (2 if v.chefe else 0) | (4 if v.flash > 0 else 0) \
-				| (8 if v.estado == 1 else 0) | (16 if v.lento > 0 else 0)
+				| (8 if v.estado == 1 else 0) | (16 if v.lento > 0 else 0) | Elementos.flags_de(v.el_vis)   # 32 congelado, 64 queimando, 128 envenenado (#72)
 			vir.append_array([v.id, tipo_idx(v.tipo), v.pos.x, v.pos.y, clampf(v.hp / v.hpmax, 0.0, 1.0), flags])
 			n += 1
 		var ti := PackedFloat32Array()
@@ -283,9 +318,9 @@ func morreu(v) -> void:
 	_mortes.append_array([v.id, v.pos.x, v.pos.y, tipo_idx(v.tipo), 1.0 if v.elite else 0.0])
 
 
-func acertos(_quem: int, a: PackedFloat32Array) -> void:
-	n_tx += a.size() / 4
-	for i in range(0, a.size(), 4):
+func acertos(quem: int, a: PackedFloat32Array) -> void:
+	n_tx += a.size() / ACERTO_N
+	for i in range(0, a.size(), ACERTO_N):
 		var dano := a[i + 1]
 		if not is_finite(dano) or dano <= 0.0:
 			continue
@@ -293,7 +328,11 @@ func acertos(_quem: int, a: PackedFloat32Array) -> void:
 		if v == null:
 			continue
 		var kb := Vector2(a[i + 2], a[i + 3])
-		arena.inimigos.ferir_remoto(v, minf(dano, 100000.0), kb.limit_length(400.0) if kb.is_finite() else Vector2.ZERO)
+		var ia := a[i + 4]
+		var arma := arma_do_cliente(quem, int(ia)) if is_finite(ia) else ""
+		if arma != "":
+			n_arma += 1
+		arena.inimigos.ferir_remoto(v, minf(dano, 100000.0), kb.limit_length(400.0) if kb.is_finite() else Vector2.ZERO, arma)
 
 
 # ---------- vírus: cliente ----------
@@ -317,8 +356,8 @@ func mortes(m: PackedFloat32Array) -> void:
 
 
 ## A arma deste cliente acertou um vírus: guarda pra mandar ao anfitrião no próximo pacote.
-func acerto(id: int, valor: float, empurrao: Vector2) -> void:
-	_acertos.append_array([id, valor, empurrao.x, empurrao.y])
+func acerto(id: int, valor: float, empurrao: Vector2, arma := "") -> void:
+	_acertos.append_array([id, valor, empurrao.x, empurrao.y, arma_idx(arma)])
 
 
 func dano(valor: float, fonte: String) -> void:
@@ -373,6 +412,24 @@ func _checar_caidos(dt: float) -> void:
 
 # ---------- fases ----------
 
+## Anfitrião, saída da fase: todos os vivos prontos no portal (ou a espera do primeiro acabou) e a fase fecha pra todo mundo.
+func _checar_saida(dt: float) -> void:
+	if _saida.is_empty() or not arena.saida.aberta or arena.entre_fases:
+		return
+	_t_saida -= dt
+	var todos := true
+	for p in Rede.jogadores:
+		if _saida.has(p):
+			continue
+		var caido: bool = arena.caido if p == Rede.eu() else bool(Rede.remotos.get(p, {}).get("caido", false))
+		if not caido:
+			todos = false
+	if todos or _t_saida <= 0.0:
+		_saida = {}
+		_t_saida = -1.0
+		Rede.evento("fase_completa")
+
+
 func _checar_prontos() -> void:
 	var todos := true
 	for p in Rede.jogadores:
@@ -405,11 +462,31 @@ func evento(nome: String, d: Dictionary) -> void:
 				_prontos = {}
 				_t_prontos = ESPERA_PRONTOS
 			arena.fase_completa()
+		"saida_aberta":   # #112: o chefe da fase caiu; o portal abre no mesmo lugar pra todo mundo
+			_saida = {}
+			_t_saida = -1.0
+			arena.abrir_saida(Vector2(float(d.get("x", 0.0)), float(d.get("y", 0.0))))
 		"proxima_fase":
 			arena.escolher_no(int(d.get("no", -1)))
 		"objetivo":   # estado do objetivo do andar (objetivos.gd): o anfitrião roda, o cliente só mostra e paga a própria parte
 			if not host and arena.objetivo:
 				arena.objetivo.aplicar(d)
+		"consumivel":   # alguém usou um consumível (o anfitrião já conferiu): quem usou aplica no corpo, os outros veem
+			var id := str(d.get("id", ""))
+			var peer := int(d.get("peer", 0))
+			if Mochila.tipo(id) != "consumivel":
+				return
+			if peer == Rede.eu():
+				if arena.provisoes:
+					arena.provisoes.consumir(id)
+			else:
+				Mochila.ver_outro(arena, peer, id)
+			if host and not arena.duelo_ativo:   # o gelo mexe na IA dos vírus: só o anfitrião aplica, em volta de quem usou
+				var c: Vector2 = arena.jogador.centro()
+				if peer != Rede.eu():
+					var r: Dictionary = Rede.remotos.get(peer, {})
+					c = Vector2(float(r.get("x", c.x)), float(r.get("y", c.y + 22.0)) - 22.0)
+				Mochila.aplicar_mundo(arena, id, c)
 		"tela_azul_caiu":
 			arena.tela_azul_caiu()
 		"fim_corrida":
@@ -429,6 +506,11 @@ func aviso(quem: int, nome: String, valor: float, peer: int) -> void:
 		"voto":   # valor = (andar de destino) * 10 + faixa; voto de outro andar (atrasado) não conta
 			if _t_prontos >= 0.0 and int(valor) / 10 == arena.mapa_pos.x + 1:
 				_prontos[quem] = int(valor) % 10
+		"saida":   # #112: este jogador entrou no portal e foi sugado
+			if arena.saida.aberta and not arena.entre_fases:
+				if _saida.is_empty():
+					_t_saida = float(Dados.json("prorrogacao").get("saida", {}).get("espera_online", 45.0))
+				_saida[quem] = true
 		"forca":
 			if arena.duelo_ativo:
 				forcas[quem] = clampf(valor, 0.5, 1.0e7)
@@ -436,6 +518,31 @@ func aviso(quem: int, nome: String, valor: float, peer: int) -> void:
 		"caiu":
 			if arena.duelo_ativo:
 				arena.duelo.caiu_online(quem, peer)
+		"usar":
+			_usar_consumivel(quem, int(valor))
+
+
+## Anfitrião: um jogador (ou o próprio anfitrião) pede pra usar o consumível do slot dele. Confere contra a mochila que o anfitrião
+## aceitou na sala (itens que existem, na ordem do catálogo) e conta os usos: não passa do que ele declarou. Só então manda o evento
+## "consumivel" a todos; quem usou aplica o efeito no corpo dele quando o evento chega.
+func _usar_consumivel(quem: int, slot: int) -> void:
+	if not anfitriao() or arena.duelo_ativo or arena.acabou:
+		return
+	var m := Rede.mochila_de(quem)
+	var sl := Mochila.slots(m)
+	if slot < 0 or slot >= sl.size():
+		print("CONSUMIVEL recusado: peer=%d slot=%d (não tem)" % [quem, slot])
+		return
+	var id: String = sl[slot]
+	var gastos: Dictionary = _usos.get(quem, {})
+	var tem := int(m.itens[id])
+	if int(gastos.get(id, 0)) >= tem:
+		print("CONSUMIVEL recusado: peer=%d %s (já usou os %d que declarou)" % [quem, id, tem])
+		return
+	gastos[id] = int(gastos.get(id, 0)) + 1
+	_usos[quem] = gastos
+	print("CONSUMIVEL ok: peer=%d usou %s (%d de %d)" % [quem, id, gastos[id], tem])
+	Rede.evento("consumivel", {"peer": quem, "id": id})
 
 
 func golpe(quem: int, dano_: float, empurrao: Vector2) -> void:

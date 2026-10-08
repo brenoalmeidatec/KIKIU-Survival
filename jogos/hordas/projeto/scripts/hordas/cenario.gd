@@ -21,6 +21,40 @@ static func da_fase(i: int) -> String:
 	return str(lista[clampi(i, 0, lista.size() - 1)])
 
 
+## Variante do cenário para o andar da região (#112 item 7): dados/cenarios.json > variantes > <base> = lista de cenários.
+## O primeiro andar usa a primeira variante; os outros andares seguem uma ordem embaralhada pela semente da corrida
+## (Sorte.criar, independente de quantos sorteios vieram antes), então todos os jogadores veem o mesmo cenário em cada andar.
+## Sem variantes para a base, vale o cenário único de sempre.
+static func variante(base: String, andar_regiao: int) -> String:
+	var lista = Dados.json("cenarios").get("variantes", {}).get(base, [])
+	if not lista is Array or lista.size() <= 1:
+		return base
+	return str(lista[ordem_variantes(base, lista.size())[posmod(andar_regiao, lista.size())]])
+
+
+## Ordem dos andares: 0 fica na entrada (a primeira variante), o resto é embaralhado pela semente.
+static func ordem_variantes(base: String, n: int) -> Array:
+	var ordem := []
+	for i in range(1, n):
+		ordem.append(i)
+	var r := Sorte.criar("variantes_" + base, 0)
+	for i in range(ordem.size() - 1, 0, -1):   # Fisher-Yates
+		var j := r.randi_range(0, i)
+		var t = ordem[i]
+		ordem[i] = ordem[j]
+		ordem[j] = t
+	return [0] + ordem
+
+
+## A que cenário-base uma variante pertence (a própria, se não for variante de ninguém).
+static func base_de(nome: String) -> String:
+	var v: Dictionary = Dados.json("cenarios").get("variantes", {})
+	for b in v:
+		if nome in v[b]:
+			return str(b)
+	return nome
+
+
 func carregar(n: String) -> bool:
 	var pasta := "res://assets/cenarios/%s/" % n
 	if not FileAccess.file_exists(pasta + "cenario.json"):
@@ -82,7 +116,8 @@ var _semente_cache := -1
 
 ## Config deste cenário em dados/cenarios.json (densidade, detalhes, particulas, vida). Vazio = só o que já existia.
 func carregar_cfg() -> void:
-	cfg = Dados.json("cenarios").get("cenarios", {}).get(nome, {})
+	var todos: Dictionary = Dados.json("cenarios").get("cenarios", {})
+	cfg = todos.get(nome, todos.get(base_de(nome), {}))   # variante sem config própria usa a do cenário-base
 	densidade = float(cfg.get("densidade", densidade))
 	_cache.clear()
 	Sorte.criar("cenario_" + nome, 0)   # garante a semente da corrida (Sorte.semente) antes da primeira célula

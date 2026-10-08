@@ -14,6 +14,7 @@ const MAX_HEROIS := 6
 const Paleta := preload("res://scripts/hordas/paleta.gd")
 const ROTULO := {"dano": "dano", "area": "área", "duracao": "duração", "velocidade_proj": "velocidade dos tiros",
 	"velocidade": "velocidade", "ima": "alcance do ímã", "xp": "XP", "critico": "chance de crítico", "critico_mult": "dano crítico"}
+const VERBO_EL := {"fogo": "queimar", "gelo": "congelar", "raio": "eletrocutar", "veneno": "envenenar"}
 
 
 static func racas() -> Dictionary:
@@ -190,6 +191,7 @@ static func montar(raca: String, classe: String, ficha := {}) -> Dictionary:
 		"tom": r.get("tom", [1.0, 1.0, 1.0]),
 		"raca": raca,
 		"classe": classe,
+		"ganchos": r.get("ganchos", []) + c.get("ganchos", []),   # marco 6: regras próprias (ganchos.gd); raça antiga sem o campo = nenhum
 	}
 	if not ficha.is_empty():
 		h["nome"] = str(ficha.get("nome", titulo))
@@ -304,7 +306,7 @@ static func salvar_ficha(ficha) -> String:
 	var id := "c:h%x" % (int(Time.get_unix_time_from_system() * 1000.0) + randi() % 4096)
 	while _achar(l, id) >= 0:
 		id += "0"
-	l.append({"id": id, "ficha": f, "em_corrida": false})
+	l.append({"id": id, "ficha": f, "em_corrida": false, "bau": _kit()})
 	_gravar(l)
 	registrar_ficha(id, f)
 	return id
@@ -318,9 +320,63 @@ static func salvar(id: String) -> bool:
 	if _achar(l, id) < 0:
 		if l.size() >= MAX_HEROIS:
 			return false
-		l.append({"id": id, "em_corrida": false})
+		l.append({"id": id, "em_corrida": false, "bau": _kit()})
 	_gravar(l)
 	return true
+
+
+# --- baú pessoal e mochila (#72, marcos 3 e 4): ficam NA ENTRADA do herói, então somem junto com ele (apagar remove a entrada toda).
+# Entrada: {"id", "ficha", "em_corrida", "bau": {id: n}, "mochila": {"itens": {...}, "amuleto": ""}}. A mochila guardada é a última
+# que ele montou (vem pré-escolhida no Preparo). Herói salvo antes do marco 3 não tem "bau": ganha o kit inicial na primeira leitura.
+# As regras (capacidade, validação, contas) ficam no mochila.gd; aqui só se guarda.
+
+static func _kit() -> Dictionary:
+	var k = Dados.json("mochila").get("kit_inicial", {})
+	return k.duplicate() if k is Dictionary else {}
+
+
+## O herói está salvo no arquivo (tem baú)? Herói fixo e herói de teste (--ficha, --heroi=) não estão.
+static func salvo(id: String) -> bool:
+	return _achar(_ler(), id) >= 0
+
+
+## O baú do herói ({id: n}); {} se o herói não está salvo (morreu, ou é fixo). Herói antigo, sem baú: recebe o kit inicial e grava.
+static func bau_de(id: String) -> Dictionary:
+	var l := _ler()
+	var i := _achar(l, id)
+	if i < 0:
+		return {}
+	if not l[i].get("bau") is Dictionary:
+		l[i]["bau"] = _kit()
+		_gravar(l)
+	return l[i]["bau"].duplicate()
+
+
+static func definir_bau(id: String, bau: Dictionary) -> bool:
+	var l := _ler()
+	var i := _achar(l, id)
+	if i < 0:
+		return false
+	l[i]["bau"] = bau
+	_gravar(l)
+	return true
+
+
+## A última mochila que o herói montou ({} se nunca montou).
+static func mochila_de(id: String) -> Dictionary:
+	var l := _ler()
+	var i := _achar(l, id)
+	if i < 0 or not l[i].get("mochila") is Dictionary:
+		return {}
+	return l[i]["mochila"].duplicate(true)
+
+
+static func definir_mochila(id: String, m: Dictionary) -> void:
+	var l := _ler()
+	var i := _achar(l, id)
+	if i >= 0:
+		l[i]["mochila"] = m
+		_gravar(l)
 
 
 ## A corrida do herói começou: se o jogo fechar agora, ele morre.
@@ -387,6 +443,9 @@ static func descrever(bonus: Dictionary) -> Array:
 				bom = v < 0.0
 				txt = "ataques %d%% mais %s" % [roundi(absf(v) * 100.0), "rápidos" if v < 0.0 else "lentos"]
 			_:
-				txt = "%+d%% de %s" % [roundi(v * 100.0), ROTULO.get(k, k)]
+				if str(k).begins_with("el_"):   # afinidade elemental (marco 5/6): chance por golpe de pôr o elemento
+					txt = "%+d%% de chance de %s" % [roundi(v * 100.0), VERBO_EL.get(str(k).substr(3), "marcar")]
+				else:
+					txt = "%+d%% de %s" % [roundi(v * 100.0), ROTULO.get(k, k)]
 		res.append([txt, bom])
 	return res

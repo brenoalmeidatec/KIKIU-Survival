@@ -101,9 +101,12 @@ static func _requisito_sorteado(rng: RandomNumberGenerator, c: Dictionary, n_tom
 
 
 ## Quanto do pré-requisito de um santuário selado já foi cumprido: Vector2i(tem, precisa). Outros tipos: sempre cumprido.
-static func progresso(s: Dictionary, lista: Array) -> Vector2i:
+static func progresso(s: Dictionary, lista: Array, contagem := {}) -> Vector2i:
 	if str(s.get("tipo", "")) != "selado":
 		return Vector2i(1, 1)
+	if str(s.get("requisito", "")) == "elemento":   # #72: marcar N inimigos com algum elemento neste andar (inimigos.elementos.contagem)
+		var q := int(s.get("qtd", 1))
+		return Vector2i(mini(int(contagem.get("qualquer", 0)), q), q)
 	var alvo := "tomada" if str(s.get("requisito", "")) == "piras" else "reliquia"
 	var tem := 0
 	for o in lista:
@@ -114,9 +117,9 @@ static func progresso(s: Dictionary, lista: Array) -> Vector2i:
 
 
 ## Texto embaixo do nome do santuário perto do jogador (chão).
-static func dica(s: Dictionary, lista: Array) -> String:
+static func dica(s: Dictionary, lista: Array, contagem := {}) -> String:
 	if str(s.get("tipo", "")) == "selado":
-		var pr := progresso(s, lista)
+		var pr := progresso(s, lista, contagem)
 		if pr.x < pr.y:
 			var rq: Dictionary = cfg().get("santuarios", {}).get("selado", {}).get("requisitos", {}).get(str(s.get("requisito", "")), {})
 			var d := str(rq.get("dica", "cumpra o pré-requisito"))
@@ -340,11 +343,12 @@ func ativar(s: Dictionary) -> bool:
 			Som.tocar("plim", 0.1, 1.5)
 			arena.mensagem("Relíquia Antiga recolhida!", Color(1, 0.85, 0.5))
 		"selado":
-			var pr := progresso(s, arena.chao.santuarios)
+			var cont: Dictionary = arena.inimigos.elementos.contagem
+			var pr := progresso(s, arena.chao.santuarios, cont)
 			if pr.x < pr.y:   # selo ainda fechado: zera a carga e diz o que falta
 				s.carga = 0.0
 				Som.ui("erro")
-				arena.mensagem("Santuário selado! " + dica(s, arena.chao.santuarios), Color(1, 0.6, 0.45))
+				arena.mensagem("Santuário selado! " + dica(s, arena.chao.santuarios, cont), Color(1, 0.6, 0.45))
 				return true
 			s.usado = true
 			arena.anunciar("SELO QUEBRADO", Color(0.7, 0.9, 1.0))

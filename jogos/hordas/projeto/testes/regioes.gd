@@ -5,6 +5,7 @@ const Arena := preload("res://scripts/hordas/arena.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
+const Cenario := preload("res://scripts/hordas/cenario.gd")
 var falhas := 0
 
 func ok(cond: bool, msg: String) -> void:
@@ -68,7 +69,7 @@ func _ready() -> void:
 	for r in Regioes.n() - 1:
 		var chefe := Mapa.todos(m).filter(func(n): return int(n.andar) == r * k + k - 1)
 		var entradas := Mapa.todos(m).filter(func(n): return int(n.andar) == (r + 1) * k)
-		ok(chefe.size() == 1 and chefe[0].prox.size() == entradas.size() and entradas.size() >= 2, "o chefe da região %d leva a todas as entradas da próxima" % (r + 1))
+		ok(chefe.size() == 1 and chefe[0].prox.size() == entradas.size() and entradas.size() == 1, "o chefe da região %d leva à entrada única da próxima (#96)" % (r + 1))
 
 	# --- na partida: calor e cenário seguem a região
 	var a := Arena.new()
@@ -89,7 +90,7 @@ func _ready() -> void:
 	ok(a.calor_pts == 1, "a recompensa conta só o calor do jogador (%d)" % a.calor_pts)
 	var f3: Dictionary = a.diretor.fases()[a.diretor.fase_idx]
 	ok(int(f3.regiao) == 2, "o diretor está na região 3")
-	ok(a.chao.cenario == null or a.chao.cenario.nome == str(f3.cenario), "o cenário é o da região (%s)" % f3.cenario)
+	ok(a.chao.cenario == null or a.chao.cenario.nome == Cenario.variante(str(f3.cenario), int(f3.andar_regiao)), "o cenário é o da região (%s), na variante do andar" % f3.cenario)
 	a.diretor.ir_para(0)   # (o saltar só anda pra frente no mapa)
 	a._atualizar_calor()
 	await esperar(0.1)
