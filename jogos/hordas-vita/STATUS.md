@@ -217,5 +217,6 @@ em 31 arquivos; investida, ataques, elementos, sons), não só física. Opções
 2. **Propor à main uma horda orientada a dados** (arrays, como o piloto), que no Vita troca pelo C++ sem duplicar
    lógica. Melhor a longo prazo; depende do Breno/Alisson aceitarem mudar o jogo principal.
 3. **Aceitar pouca horda no Vita** (teto 20–30) e investir no resto.
-Padrão sugerido, se ninguém decidir: começar pela 1 só para movimento/separação/desenho (o grosso do custo), deixando os
-comportamentos raros (investida, ataques) em GDScript chamados pelo C++.
+Padrão, se ninguém decidir: primeiro medir o `kikiu_vita.vpk` no aparelho (log `ux0:data/kikiu_vita_log.txt`: fps por
+número de vivos, é barato e diz o tamanho real do problema); depois começar pela 1 só para movimento/separação/desenho
+(o grosso do custo), deixando os comportamentos raros (investida, ataques) em GDScript chamados pelo C++.
