@@ -1,103 +1,155 @@
 extends Node2D
-## Horda orientada a dados para o Vita: nenhum nó por inimigo, arrays paralelos e um único _draw.
-## Proteções de desempenho (cada uma pode ser medida ligando/desligando no main.gd):
-## - perto da tela: lógica completa; longe: anda 1 quadro a cada `lod_longe` (com dt multiplicado) e sem separação;
-## - separação por grade espacial, recalculada 1 quadro em 3 por bicho e com teto de vizinhos olhados;
-## - desenho só do que está na tela (+ margem) e no máximo `max_desenho` bichos;
-## - ordem por Y com baldes (linear), sem sort_custom (que chamaria GDScript n·log n vezes por quadro);
-## - atlas único (corpos + sombra + sangue): o batching do GLES2 junta retângulos seguidos da mesma textura.
+## Horda orientada a dados para o Vita (v2, depois da 1ª medição no aparelho: o gargalo é GDScript na CPU,
+## ~0,09 ms por inimigo de lógica e ~0,09 ms de _draw). Nenhum nó por inimigo, arrays paralelos, um único _draw.
+## Proteções de desempenho:
+## - perto da tela, TODO quadro só soma pos += vel*dt e a fase; direção/vista são refeitas 1 quadro em 2 e a
+##   separação 1 em 4 (revezado pelo índice); a grade espacial é refeita 1 quadro em 2;
+## - longe: anda 1 quadro a cada `lod_longe` (dt multiplicado), sem separação; perdido longe demais renasce no anel;
+## - separação com teto de VIZ_MAX vizinhos olhados;
+## - desenho só do que está na tela (+ margem), no máximo `max_desenho`, ordem por Y com baldes (sem sort_custom);
+## - atlas único com a SOMBRA JÁ ASSADA em cada quadro: 1 draw_texture_rect_region por inimigo, recortes prontos;
+## - dados por tipo em arrays (nada de Dictionary no laço quente);
+## - projéteis e golpe usam a grade (não varrem a horda).
+## Folha do jogo: `cols` colunas (quadros de andar + a última, silhueta branca do flash) x `vistas` linhas.
 
 const CELULA = 32.0
-const VIZ_MAX = 6              # teto de vizinhos olhados na separação (multidão densa não explode o custo)
+const VIZ_MAX = 6
 const MARGEM = 48.0
-const ATLAS_LADO = 1024
+const ATLAS_LARG = 1024
+const PAD = 4                   # px a mais embaixo de cada quadro no atlas, onde cabe a sombra
+const PROJ_MAX = 64
 
-var usar_atlas = true
-var ordenar_y = true
 var lod_longe = 4
 var max_desenho = 400
+var ordenar_y = true
 
-var tipos = []                 # {tex, src0 (Vector2), q (Vector2), vistas, vel, raio, ritmo}
 var tex_atlas: ImageTexture
-var tex_sombra: ImageTexture
-var tex_sangue: ImageTexture
-var src_sombra = Rect2()
 var src_sangue = Rect2()
+var src_proj = Rect2()
 
-var pos = []                   # Vector2
-var tp = []                    # int
-var fase = []                  # float
-var sep = []                   # Vector2 (empurrão de separação guardado entre recálculos)
-var linha = []                 # int (vista)
-var vira = []                  # bool (espelha)
+# por tipo (índice = tipo)
+var t_vel = []
+var t_raio = []
+var t_nq = []                   # quadros de andar
+var t_qx = []
+var t_qy = []                   # altura do quadro no atlas (já com PAD)
+var t_vistas = []
+var t_quadro_px = []            # quadros de andar por px andado (nq / ciclo)
+var t_src = []                  # Array de Rect2: [linha * nq + coluna]
+
+# por inimigo
+var pos = []
+var vel = []
+var vel_esc = []                # |vel| (pra fase pela distância)
+var tp = []
+var fase = []                   # em quadros de andar
+var sep = []
+var linha = []
+var vira = []
+var fogos = []                  # índices dos inimigos que emitem luz (fogo-fátuo)
+
+# projéteis
+var p_pos = []
+var p_vel = []
+var p_vida = []
 
 var alvo = Vector2.ZERO
 var visivel = Rect2()
 var quadro = 0
+var grade = {}
+var idx_luz = -1
 
 # medições do último quadro
 var n_perto = 0
 var n_desenhados = 0
 var us_logica = 0
 var us_desenho = 0
+var us_proj = 0
+var acertos = 0
 
 
-func carregar(lista: Array) -> void:
-	var img_sombra = _imagem_sombra()
-	var img_sangue = _imagem_sangue()
-	tex_sombra = _textura(img_sombra)
-	tex_sangue = _textura(img_sangue)
-	var atlas = Image.new()
-	atlas.create(ATLAS_LADO, ATLAS_LADO, false, Image.FORMAT_RGBA8)
-	var x = 0
-	var y = 0
-	var alt_prateleira = 0
-	var blocos = []
+func carregar(lista: Array, arq_proj: String) -> void:
+	var blocos = []             # [Image, posição no atlas]
+	var celulas = []            # por tipo: [img, vistas, nq, qx, qy_sprite]
 	for d in lista:
 		var img: Image = load("res://sprites/" + d.arquivo).get_data()
 		img.convert(Image.FORMAT_RGBA8)
-		blocos.append(img)
-	blocos.append(img_sombra)
-	blocos.append(img_sangue)
-	var posicoes = []
-	for img in blocos:
-		if x + img.get_width() > ATLAS_LADO:
-			x = 0
-			y += alt_prateleira + 2
-			alt_prateleira = 0
-		atlas.blit_rect(img, Rect2(Vector2.ZERO, img.get_size()), Vector2(x, y))
-		posicoes.append(Vector2(x, y))
-		x += img.get_width() + 2
-		alt_prateleira = max(alt_prateleira, img.get_height())
-	tex_atlas = _textura(atlas)
-	for i in lista.size():
-		var d: Dictionary = lista[i]
-		var img: Image = blocos[i]
+		var cols = int(d.cols)
 		var vistas = int(d.vistas)
-		tipos.append({
-			"tex_solta": _textura(img), "src0": posicoes[i],
-			"q": Vector2(img.get_width() / 3, img.get_height() / vistas), "vistas": vistas,
-			"vel": float(d.velocidade), "raio": float(d.raio), "ritmo": float(d.ritmo)})
-	src_sombra = Rect2(posicoes[lista.size()], img_sombra.get_size())
-	src_sangue = Rect2(posicoes[lista.size() + 1], img_sangue.get_size())
+		var qx = img.get_width() / cols
+		var qy = img.get_height() / vistas
+		celulas.append([img, vistas, cols - 1, qx, qy])
+		blocos.append(Vector2((cols - 1) * qx, vistas * (qy + PAD)))
+	var img_sangue = _imagem_sangue()
+	var img_proj: Image = load("res://sprites/" + arq_proj).get_data()
+	img_proj.convert(Image.FORMAT_RGBA8)
+	blocos.append(img_sangue.get_size())
+	blocos.append(img_proj.get_size())
+	# prateleiras
+	var x = 0
+	var y = 0
+	var alt = 0
+	var onde = []
+	for b in blocos:
+		if x + b.x > ATLAS_LARG:
+			x = 0
+			y += alt + 2
+			alt = 0
+		onde.append(Vector2(x, y))
+		x += b.x + 2
+		alt = max(alt, b.y)
+	var altura = 256
+	while altura < y + alt:
+		altura *= 2
+	var atlas = Image.new()
+	atlas.create(ATLAS_LARG, altura, false, Image.FORMAT_RGBA8)
+	for i in lista.size():
+		var c = celulas[i]
+		var img: Image = c[0]
+		var vistas = c[1]
+		var nq = c[2]
+		var qx = c[3]
+		var qy = c[4]
+		var sombra = _imagem_sombra(qx, 8)
+		var srcs = []
+		for l in vistas:
+			for q in nq:
+				var dst = onde[i] + Vector2(q * qx, l * (qy + PAD))
+				atlas.blend_rect(sombra, Rect2(0, 0, qx, 8), dst + Vector2(0, qy - 6))
+				atlas.blend_rect(img, Rect2(q * qx, l * qy, qx, qy), dst)
+				srcs.append(Rect2(dst, Vector2(qx, qy + PAD)))
+		var d: Dictionary = lista[i]
+		t_vel.append(float(d.velocidade))
+		t_raio.append(float(d.raio))
+		t_nq.append(nq)
+		t_qx.append(float(qx))
+		t_qy.append(float(qy + PAD))
+		t_vistas.append(vistas)
+		t_quadro_px.append(nq / max(qy * 0.7, 12.0))      # um ciclo a cada ~0,7 altura do bicho
+		t_src.append(srcs)
+		if d.id == "fogo_fatuo":
+			idx_luz = i
+	var n = lista.size()
+	atlas.blit_rect(img_sangue, Rect2(Vector2.ZERO, img_sangue.get_size()), onde[n])
+	atlas.blit_rect(img_proj, Rect2(Vector2.ZERO, img_proj.get_size()), onde[n + 1])
+	src_sangue = Rect2(onde[n], img_sangue.get_size())
+	src_proj = Rect2(onde[n + 1], img_proj.get_size())
+	tex_atlas = ImageTexture.new()
+	tex_atlas.create_from_image(atlas, 0)
 
 
-func _textura(img: Image) -> ImageTexture:
-	var t = ImageTexture.new()
-	t.create_from_image(img, 0)   # sem filtro, sem mipmap, sem repetição
-	return t
-
-
-func _imagem_sombra() -> Image:
+func _imagem_sombra(larg: int, alt: int) -> Image:
 	var img = Image.new()
-	img.create(24, 8, false, Image.FORMAT_RGBA8)
+	img.create(larg, alt, false, Image.FORMAT_RGBA8)
 	img.lock()
-	for yy in 8:
-		for xx in 24:
-			var dx = (xx - 11.5) / 12.0
-			var dy = (yy - 3.5) / 4.0
-			var d = dx * dx + dy * dy
-			img.set_pixel(xx, yy, Color(0, 0, 0, 0.45 * clamp(1.0 - d, 0.0, 1.0)))
+	var rx = larg * 0.4
+	var cx = (larg - 1) * 0.5
+	var cy = (alt - 1) * 0.5
+	for yy in alt:
+		for xx in larg:
+			var dx = (xx - cx) / rx
+			var dy = (yy - cy) / (alt * 0.4)
+			img.set_pixel(xx, yy, Color(0, 0, 0, 0.45 * clamp(1.0 - dx * dx - dy * dy, 0.0, 1.0)))
 	img.unlock()
 	return img
 
@@ -118,19 +170,23 @@ func _imagem_sangue() -> Image:
 
 func definir_quantidade(n: int) -> void:
 	while pos.size() < n:
+		var t = randi() % t_vel.size()
 		pos.append(_ponto_no_anel())
-		tp.append(randi() % tipos.size())
-		fase.append(randf() * 3.0)
+		vel.append(Vector2.ZERO)
+		vel_esc.append(0.0)
+		tp.append(t)
+		fase.append(randf() * 6.0)
 		sep.append(Vector2.ZERO)
 		linha.append(0)
 		vira.append(false)
 	if pos.size() > n:
-		pos.resize(n)
-		tp.resize(n)
-		fase.resize(n)
-		sep.resize(n)
-		linha.resize(n)
-		vira.resize(n)
+		for a in [pos, vel, vel_esc, tp, fase, sep, linha, vira]:
+			a.resize(n)
+	fogos.clear()
+	for i in tp.size():
+		if tp[i] == idx_luz:
+			fogos.append(i)
+	grade.clear()
 
 
 ## Ponto fora da tela, num anel em volta do alvo (onde a horda nasce e renasce).
@@ -140,14 +196,9 @@ func _ponto_no_anel() -> Vector2:
 	return alvo + Vector2(r, 0).rotated(randf() * TAU)
 
 
-func atualizar(dt: float) -> void:
-	var t0 = OS.get_ticks_usec()
-	quadro += 1
-	var perto = visivel.grow(MARGEM)
-	var longe2 = pow(visivel.size.length() * 1.6, 2)
-	var n = pos.size()
-	var grade = {}
-	for i in n:
+func _montar_grade(perto: Rect2) -> void:
+	grade = {}
+	for i in pos.size():
 		var p: Vector2 = pos[i]
 		if perto.has_point(p):
 			var c = int(floor(p.x / CELULA)) + int(floor(p.y / CELULA)) * 4096
@@ -155,35 +206,47 @@ func atualizar(dt: float) -> void:
 				grade[c].append(i)
 			else:
 				grade[c] = [i]
+
+
+func atualizar(dt: float) -> void:
+	var t0 = OS.get_ticks_usec()
+	quadro += 1
+	var perto = visivel.grow(MARGEM)
+	var longe2 = pow(visivel.size.length() * 1.6, 2)
+	if quadro % 2 == 0 or grade.empty():
+		_montar_grade(perto)
 	n_perto = 0
-	for i in n:
+	for i in pos.size():
 		var p: Vector2 = pos[i]
-		var t: Dictionary = tipos[tp[i]]
 		if perto.has_point(p):
 			n_perto += 1
-			var d = alvo - p
-			var dist = d.length()
-			var dir = d / dist if dist > 1.0 else Vector2.ZERO
-			if (i + quadro) % 3 == 0:
-				sep[i] = _separacao(i, p, grade, t.raio)
-			var v: Vector2 = dir * t.vel + sep[i] * 90.0
-			pos[i] = p + v * dt
-			fase[i] += dt
-			if (i + quadro) % 4 == 0 and t.vistas > 1:
-				var ang = rad2deg(atan2(abs(v.x), v.y))     # 0 = de frente (descendo), 180 = de costas
-				linha[i] = int(clamp(round(ang / 45.0), 0, 4))
-				vira[i] = v.x < 0.0
+			var k = (i + quadro) % 4
+			if k == 0:
+				sep[i] = _separacao(i, p, t_raio[tp[i]])
+			if k == 0 or k == 2:
+				var t = tp[i]
+				var d = alvo - p
+				var dist = d.length()
+				var v = sep[i] * 90.0
+				if dist > 1.0:
+					v += d * (t_vel[t] / dist)
+				vel[i] = v
+				vel_esc[i] = v.length()
+				if t_vistas[t] > 1:
+					linha[i] = int(clamp(round(rad2deg(atan2(abs(v.x), v.y)) / 45.0), 0, 4))   # 0 frente .. 4 costas
+					vira[i] = v.x < 0.0
+			pos[i] = p + vel[i] * dt
+			fase[i] += vel_esc[i] * dt * t_quadro_px[tp[i]]
 		elif (i + quadro) % lod_longe == 0:
 			var d = alvo - p
 			if d.length_squared() > longe2:
-				pos[i] = _ponto_no_anel()                   # perdido longe demais: renasce no anel
+				pos[i] = _ponto_no_anel()
 			else:
-				pos[i] = p + d.normalized() * t.vel * dt * lod_longe
-			fase[i] += dt * lod_longe
+				pos[i] = p + d.normalized() * t_vel[tp[i]] * dt * lod_longe
 	us_logica = OS.get_ticks_usec() - t0
 
 
-func _separacao(i: int, p: Vector2, grade: Dictionary, raio: float) -> Vector2:
+func _separacao(i: int, p: Vector2, raio: float) -> Vector2:
 	var cx = int(floor(p.x / CELULA))
 	var cy = int(floor(p.y / CELULA))
 	var empurra = Vector2.ZERO
@@ -209,64 +272,102 @@ func _separacao(i: int, p: Vector2, grade: Dictionary, raio: float) -> Vector2:
 	return empurra
 
 
-## Mata quem está a menos de `raio` do ponto e renasce no anel. Devolve as posições das mortes (pro sangue).
+func _matar(i: int, mortes: Array) -> void:
+	mortes.append(pos[i])
+	pos[i] = _ponto_no_anel()
+	sep[i] = Vector2.ZERO
+
+
+## Mata quem está a menos de `raio` do ponto (pela grade). Devolve as posições das mortes (pro sangue).
 func golpe(centro: Vector2, raio: float) -> Array:
 	var mortes = []
 	var r2 = raio * raio
-	for i in pos.size():
-		var p: Vector2 = pos[i]
-		if p.distance_squared_to(centro) < r2:
-			mortes.append(p)
-			pos[i] = _ponto_no_anel()
-			sep[i] = Vector2.ZERO
+	var alc = int(ceil(raio / CELULA))
+	var cx = int(floor(centro.x / CELULA))
+	var cy = int(floor(centro.y / CELULA))
+	for oy in range(-alc, alc + 1):
+		for ox in range(-alc, alc + 1):
+			var c = cx + ox + (cy + oy) * 4096
+			if grade.has(c):
+				for i in grade[c]:
+					var p: Vector2 = pos[i]
+					if p.distance_squared_to(centro) < r2:
+						_matar(i, mortes)
+	return mortes
+
+
+func disparar(origem: Vector2, v: Vector2, vida: float) -> void:
+	if p_pos.size() >= PROJ_MAX:
+		return
+	p_pos.append(origem)
+	p_vel.append(v)
+	p_vida.append(vida)
+
+
+## Move os projéteis e acerta pela grade (só a célula onde o projétil está). Devolve as mortes (hoje nenhuma).
+func atualizar_proj(dt: float) -> Array:
+	var t0 = OS.get_ticks_usec()
+	var mortes = []
+	var k = p_pos.size() - 1
+	while k >= 0:
+		var p: Vector2 = p_pos[k] + p_vel[k] * dt
+		p_vida[k] -= dt
+		var morreu = p_vida[k] <= 0.0
+		if not morreu:
+			var c = int(floor(p.x / CELULA)) + int(floor(p.y / CELULA)) * 4096
+			if grade.has(c):
+				for i in grade[c]:
+					var r = t_raio[tp[i]] + 4.0
+					if p.distance_squared_to(pos[i] - Vector2(0, 10)) < r * r:
+						acertos += 1     # acerta e some, sem matar (inimigo com vida): a densidade na tela fica comparável à 1ª medição
+						morreu = true
+						break
+		if morreu:
+			p_pos.remove(k)
+			p_vel.remove(k)
+			p_vida.remove(k)
+		else:
+			p_pos[k] = p
+		k -= 1
+	us_proj = OS.get_ticks_usec() - t0
 	return mortes
 
 
 func _draw() -> void:
 	var t0 = OS.get_ticks_usec()
 	var vis = visivel.grow(32.0)
+	var nb = int(vis.size.y / 4.0) + 1 if ordenar_y else 1
 	var baldes = []
-	var nb = 1
-	if ordenar_y:
-		nb = int(vis.size.y / 4.0) + 1
 	baldes.resize(nb)
 	for b in nb:
 		baldes[b] = []
 	var cont = 0
+	var y0 = vis.position.y
 	for i in pos.size():
 		var p: Vector2 = pos[i]
 		if vis.has_point(p):
 			if cont >= max_desenho:
 				break
 			cont += 1
-			var b = 0
 			if ordenar_y:
-				b = int(clamp((p.y - vis.position.y) / 4.0, 0, nb - 1))
-			baldes[b].append(i)
+				baldes[int(clamp((p.y - y0) * 0.25, 0, nb - 1))].append(i)
+			else:
+				baldes[0].append(i)
 	n_desenhados = cont
-	var tex_s: Texture = tex_atlas if usar_atlas else tex_sombra
-	var src_s = src_sombra if usar_atlas else Rect2(Vector2.ZERO, src_sombra.size)
-	# 1) todas as sombras (um lote só)
+	var atlas = tex_atlas
 	for bl in baldes:
 		for i in bl:
 			var p: Vector2 = pos[i]
-			var q: Vector2 = tipos[tp[i]].q
-			draw_texture_rect_region(tex_s, Rect2(p.x - q.x * 0.4, p.y - 3.0, q.x * 0.8, 6.0), src_s)
-	# 2) corpos, de cima pra baixo
-	for bl in baldes:
-		for i in bl:
-			var p: Vector2 = pos[i]
-			var t: Dictionary = tipos[tp[i]]
-			var q: Vector2 = t.q
-			var col = int(fase[i] * t.ritmo) % 2     # a folha tem 3 colunas: 2 de andar + a silhueta branca do flash de dano
-			var src = Rect2(Vector2(col * q.x, linha[i] * q.y), q)
-			var tex: Texture = t.tex_solta
-			if usar_atlas:
-				src.position += t.src0
-				tex = tex_atlas
-			var dst = Rect2(p.x - q.x * 0.5, p.y - q.y + 2.0, q.x, q.y)
+			var t = tp[i]
+			var nq = t_nq[t]
+			var src: Rect2 = t_src[t][linha[i] * nq + int(fase[i]) % nq]
+			var qx = t_qx[t]
+			var qy = t_qy[t]
 			if vira[i]:
-				dst.position.x += q.x
-				dst.size.x = -q.x
-			draw_texture_rect_region(tex, dst, src)
+				draw_texture_rect_region(atlas, Rect2(p.x + qx * 0.5, p.y - qy + 6.0, -qx, qy), src)
+			else:
+				draw_texture_rect_region(atlas, Rect2(p.x - qx * 0.5, p.y - qy + 6.0, qx, qy), src)
+	var ps = src_proj.size
+	for k in p_pos.size():
+		draw_texture_rect_region(atlas, Rect2(p_pos[k] - ps * 0.5 - Vector2(0, 10), ps), src_proj)
 	us_desenho = OS.get_ticks_usec() - t0

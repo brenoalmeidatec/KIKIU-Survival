@@ -10,7 +10,7 @@ saida="${1:-$aqui/build/kikiu_piloto.vpk}"
 godot="${GODOT_VITA:-/e/Dev/KIKIU-Vita/ferramentas/Godot_v3.5-rc5-vita.exe}"
 titulo="$(sed -n 's/^param_sfo\/title="\(.*\)"/\1/p' "$proj/export_presets.cfg")"
 rm -f "$proj/$titulo.vpk"
-"$godot" --no-window -e -q --path "$proj" >/dev/null 2>&1 || true    # garante os .import
+for _ in 1 2; do "$godot" --no-window -e -q --path "$proj" >/dev/null 2>&1 || true; done   # garante os .import (a 1ª vez pode sair antes de importar arquivo novo)
 "$godot" --no-window --path "$proj" --export "PlayStation Vita" "$proj/$titulo.vpk"
 mkdir -p "$(dirname "$saida")"
 mv -f "$proj/$titulo.vpk" "$saida"

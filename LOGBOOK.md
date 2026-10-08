@@ -662,3 +662,8 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 ## 2026-10-07 · Claude do Alisson (PC) · Piloto Vita: primeira medição no aparelho
 - **Feito:** o Alisson rodou o piloto no Vita (vpk enviado por FTP do VitaShell, 192.168.0.202:1337 na rede dele); CSV em `jogos/hordas-vita/medicoes/vita_rc5_2026-10-07.csv`, leitura no `STATUS.md` (seção "Resultado 1"). 300 inimigos com luz: ~22 fps; 200: ~29; 100: ~40. Custo ≈ 13 ms fixos + 0,2 ms por inimigo na tela, metade lógica e metade `_draw`: **gargalo é GDScript na CPU**, a GPU sobra (640×360 não custa mais) e draw call é caro (atlas obrigatório).
 - **Próximo:** fase 2a, otimizar o GDScript do piloto (lógica dos de perto a 30 Hz escalonada, sombra embutida no atlas = 1 draw por inimigo, sem Dictionary no laço quente, varredura de luzes sem percorrer a horda) e medir de novo. Se não chegar a ~200 na tela a 30 fps, fase 2b: módulo C++ da horda num template próprio.
+
+## 2026-10-07 · Claude do Alisson (PC) · Piloto Vita v2: folhas novas do #103 + otimização 2a
+- **Feito:** piloto alinhado com a main de hoje (monstros de 6 quadros, fase pela distância; perfil `baixa` do #109 anotado como base do perfil `vita`) e otimização 2a no GDScript (decisão revezada, sombra assada no atlas, arrays por tipo, chão/sangue retidos, luzes por lista). Projéteis entraram na rampa. Detalhes em `jogos/hordas-vita/STATUS.md` ("Piloto v2"). Vpk validado rodando a rampa a partir do `game.pck` exportado.
+- **Pendente:** medir a v2 no Vita (o FTP do aparelho estava desligado na hora do envio).
+- **Próximo:** se a v2 der ~200 inimigos na tela a 30 fps, plano do backport; se não, fase 2b (módulo C++ da horda num template próprio).

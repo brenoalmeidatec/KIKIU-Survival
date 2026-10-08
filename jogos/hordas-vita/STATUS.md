@@ -110,3 +110,18 @@ GDScript** (~30–45× mais lento que no PC), não a GPU. Cabem ~100 inimigos na
   novo (barato, mesmo template); **2b** se não chegar a ~200 na tela a 30 fps, módulo C++ da horda compilado no template
   (exige montar o build do Vita: VitaSDK no WSL, o mesmo trabalho da 3.7/vitaGL).
 - Risco que o piloto ainda não mede: o resto do jogo (armas, projéteis, coletáveis, HUD) também é GDScript por quadro.
+
+## Piloto v2 (2026-10-07) — alinhado com a main de hoje + otimização 2a · aguardando medição no Vita
+
+- **Folhas novas do #103:** monstros com 6 quadros de andar + 1 de flash (7 colunas; bug/spam continuam com 3).
+  Fase pela distância andada (um ciclo a cada ~0,7 da altura do bicho). `tipos.gd` agora tem `cols`.
+- **#109 (qualidade gráfica):** o perfil `baixa` de `dados/qualidade.json` já é quase o que o Vita precisa
+  (`escuro_luzes: 8` = o shader do piloto, sem halo/névoa/sombra projetada/vinheta). No backport, criar um perfil
+  `vita` derivado dele em vez de inventar chaves novas.
+- **2a aplicada:** movimento todo quadro, direção/vista 1 em 2, separação 1 em 4, grade 1 em 2; sombra assada em cada
+  quadro do atlas (1 draw por inimigo); dados por tipo em arrays; chão e sangue só redesenham quando mudam (desenho
+  retido do CanvasItem); luzes dos fogos por lista pronta; golpe pela grade.
+- **Projéteis** (4 a cada 0,2 s, colisão pela grade): acertam e somem sem matar, para a densidade na tela ficar
+  comparável à medição 1 (só o golpe mata, como na v1). Coluna `proj_ms` no CSV.
+- Rampa v2: 13 passos (~75 s): N 100–500 × luz SEM/BUFFER, + 300 shader, 300 sem projéteis, 300 em 640×360.
+- Pegadinha: o 1º `-e -q` pode sair antes de importar arquivo novo; o `exportar.sh` roda duas vezes.
