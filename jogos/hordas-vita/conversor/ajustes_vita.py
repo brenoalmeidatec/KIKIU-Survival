@@ -90,6 +90,9 @@ def escuridao(texto, avisos):
     return texto
 
 
+import ajustes_inimigos  # noqa: E402
+
 AJUSTES = {
     "scripts/hordas/escuridao.gd": escuridao,
+    "scripts/hordas/inimigos.gd": ajustes_inimigos.inimigos,
 }

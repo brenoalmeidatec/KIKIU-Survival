@@ -249,3 +249,21 @@ Mesmo aparelho e mesma rampa, GDScript: 54 fps com 100, 32 com 300, 15 com 800.
 - `_process` inteiro (main_ms) com 800 inimigos: 2,7 ms. Clock confirmado: CPU 444 MHz.
 - VSync desligado não destrava o fps no Vita (o fork ignora): a folga real vem do main_ms, não do fps.
 - Conclusão: o caminho C++ resolve a horda com sobra; o gargalo do jogo convertido passa a ser todo o resto em GDScript.
+
+## Horda do jogo em C++ — etapa 1: movimento (2026-10-08)
+
+**`NucleoHorda`** (`modulo/horda_vita/nucleo_horda.*`) é dono do estado de movimento de cada inimigo do jogo de verdade e
+roda o laço do `inimigos.gd` (`atualizar`: timers, investida, separação com grade, suavização, knockback, integração) em
+C++, com a mesma ordem de operações e a mesma aritmética float32 do `Vector2` do Godot. O que é raro ou é regra de jogo
+(tiro, anel, invocação, dano ao jogador, teleporte com sorteio) sai como evento e o GDScript resolve na ordem em que
+aconteceu; o contato e o teleporte são pontos de pausa (o dano pode disparar a explosão do "Sete Vidas").
+- **Como entra no jogo sem copiar arquivo:** `conversor/ajustes_inimigos.py` troca só os trechos do `inimigos.gd` gerado
+  (ponte `setget` dos campos do `class V`, `criar`/`_remover`/`limpar`, novo `atualizar`, `no_circulo`/`mais_perto`).
+  O resto do jogo (31 arquivos) lê e escreve `v.pos`, `v.hp`... como antes. Se a main mudar esses trechos, o
+  `conversao.json` avisa. Sem o módulo (editor do PC) tudo cai no GDScript. `--sem-nucleo` desliga o C++ para comparar.
+- **Verificação:** suíte do jogo no motor com o módulo = mesma da linha de base (41/48; `cartas_comp` falha por áudio do
+  Linux de teste, igual com e sem o núcleo). Revisão do C++ contra a especificação por agente: 3 bugs reais achados e
+  corrigidos (contato como ponto de pausa, `limpar` no meio da drenagem, slot reaproveitado).
+- **Medido (`bench_horda`, 500 inimigos, mesmo motor, PC):** laço de movimento 19,6 ms → 0,11 ms; quadro 47,9 → 25,9 ms
+  (**23 → 46 fps**). O que sobra é desenho (sombra, sprite, ordenação ≈ 9 ms no PC), que é a **etapa 2** (levar o `_draw`
+  para o C++ num draw call, como o piloto). No Vita o teto de 60 vivos continua até a etapa 2.

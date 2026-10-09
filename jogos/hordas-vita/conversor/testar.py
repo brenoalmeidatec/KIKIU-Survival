@@ -11,6 +11,8 @@ import os
 import re
 import subprocess
 import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import rodador
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 from concurrent.futures import ThreadPoolExecutor
 
@@ -21,7 +23,7 @@ cenas = sorted(a for a in os.listdir(os.path.join(proj, "testes")) if a.endswith
 
 def rodar(cena):
     try:
-        r = subprocess.run([godot, "--no-window", "--path", proj, "res://testes/" + cena], capture_output=True,
+        r = subprocess.run(rodador.comando(godot, ["--no-window", "--path", proj, "res://testes/" + cena]), capture_output=True,
                            text=True, timeout=240, encoding="utf-8", errors="replace")
         out = r.stdout + "\n" + r.stderr
     except subprocess.TimeoutExpired as e:

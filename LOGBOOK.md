@@ -962,3 +962,7 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 ## 2026-10-08 · Claude do Alisson (PC) · Piloto Vita v3 com C++ medido: 60 fps com até 800 inimigos
 - **Feito:** Alisson rodou os pacotes da noite. Piloto C++: 60 fps (teto do VSync) de 100 a 800 inimigos, com luz, som e projéteis; GDScript no mesmo aparelho: 15 fps com 800. CSVs em `jogos/hordas-vita/medicoes/vita_v3_*`. Leitura no STATUS ("Resultado 3").
 - **Próximo:** levar a horda do jogo de verdade para C++ (opção 1 do STATUS) e medir o `kikiu_vita.vpk`.
+
+## 2026-10-08 · Claude do Alisson (PC) · Vita: horda do jogo de verdade em C++ (movimento)
+- **Feito:** `NucleoHorda` roda o movimento da horda do `inimigos.gd` em C++ no jogo convertido (ajuste automático, sem copiar arquivo). 500 inimigos no PC: 23 → 46 fps, laço de movimento 19,6 → 0,11 ms. Suíte do jogo igual à linha de base (41/48). Detalhes no `STATUS.md`. `kikiu_vita.vpk` reexportado.
+- **Próximo:** etapa 2 (desenho da horda em C++) e medir no Vita; depois avaliar a mesma ideia como GDExtension para o jogo do PC (estudo em `jogos/hordas-vita/PC_GDEXTENSION.md`).

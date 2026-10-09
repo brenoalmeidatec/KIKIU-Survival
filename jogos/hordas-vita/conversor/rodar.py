@@ -9,11 +9,13 @@ import collections
 import re
 import subprocess
 import sys
+sys.path.insert(0, __import__("os").path.dirname(__import__("os").path.abspath(__file__)))
+import rodador
 
 godot, proj = sys.argv[1], sys.argv[2]
 seg = float(sys.argv[3]) if len(sys.argv) > 3 else 8.0
 extras = sys.argv[4:]
-cmd = [godot, "--path", proj, "--g4-foto=%g" % (seg - 1.5), "--g4-sair=%g" % seg] + extras
+cmd = rodador.comando(godot, ["--path", proj, "--g4-foto=%g" % (seg - 1.5), "--g4-sair=%g" % seg] + extras)
 try:
     r = subprocess.run(cmd, capture_output=True, text=True, timeout=seg + 60, encoding="utf-8", errors="replace")
     out = r.stdout + "\n" + r.stderr
