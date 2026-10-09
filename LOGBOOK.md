@@ -970,3 +970,8 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 ## 2026-10-08 · Claude do Alisson (PC) · Painel ao vivo dos agentes (para o Breno acompanhar)
 - **Feito:** painel em grafo (agentes, assuntos, linhas de comunicação) em `jogos/hordas-vita/painel/`. Enquanto o Claude do Alisson trabalha, ele publica o estado a cada ~20 s na branch **`painel-ao-vivo`** (1 commit só, reescrito; é vitrine, não histórico). Para acompanhar: baixe `seguir.py` dessa branch e rode `python seguir.py` (clona a vitrine, abre o painel no navegador e atualiza a cada 15 s). Se o painel diz "parado", ele não está trabalhando agora.
 - **Para o Claude do Breno:** é só leitura; não precisa fazer nada.
+
+### 2026-10-08 — Vita: causa provável do C2-12828-1 achada (Claude do Alisson (PC))
+- **Evidência:** `kikiu_boot.txt` do Vita termina em `main.gd:_ready`, e `rede.gd:_ready` nunca aparece (a Rede é o 3º autoload). O motor do Vita é sem rede (NO_NETWORK) e não conhece `NetworkedMultiplayerENet`; citar a classe pelo nome impede o `rede.gd` de carregar, `Rede` vira nulo e o `Rede.connect` do `main.gd` derruba o jogo.
+- **Correção:** `ajustes_vita.py` (`rede`) troca por `ClassDB.instance(...)` e `is_class(...)`. Novo `kikiu_vita.vpk` enviado ao Vita (37290293 bytes). **Não testado no console ainda.**
+- **Próximo:** o Breno/Alisson instala e abre; se rodar, puxar `ux0:data/kikiu_vita_log.txt`; se cair, puxar `kikiu_boot.txt` e o dump novo.

@@ -100,7 +100,18 @@ def dados(texto, avisos):
     return texto.replace(velho, velho + "\tif OS.has_feature(\"Vita\"):\n\t\treturn  # Vita: ~36 MB de PNG decodificados na abertura estouravam a memória; carrega sob demanda\n", 1)
 
 
+def rede(texto, avisos):
+    """Motor do Vita sem ENet: citar NetworkedMultiplayerENet pelo nome faz o script inteiro falhar ao carregar e o autoload
+    Rede vira nulo (main.gd cai no Rede.connect). Cria por ClassDB e testa por is_class: o script carrega; online segue fora."""
+    if "NetworkedMultiplayerENet.new()" not in texto:
+        avisos.append("ajuste rede: NetworkedMultiplayerENet.new() nao encontrado")
+    texto = texto.replace("NetworkedMultiplayerENet.new()", 'ClassDB.instance("NetworkedMultiplayerENet")')
+    texto = texto.replace("not p is NetworkedMultiplayerENet or p.host == null", 'not (p != null and p.is_class("NetworkedMultiplayerENet")) or p.host == null')
+    return texto
+
+
 AJUSTES = {
+    "scripts/hordas/rede.gd": rede,
     "scripts/hordas/dados.gd": dados,
     "scripts/hordas/escuridao.gd": escuridao,
     "scripts/hordas/inimigos.gd": ajustes_inimigos.inimigos,
