@@ -725,6 +725,50 @@ func _ready() -> void:
 	set_process(_foto_t > 0.0 or _sair_t > 0.0 or _fps_label != null or _log_arq != "" or not _botoes.empty())
 
 
+## Marcos de abertura: cada _ready/_init/_enter_tree do jogo grava uma linha ANTES de rodar (o conversor insere a
+## chamada). Se o jogo cair, o último marco do arquivo aponta o script. Só nos primeiros 20 s.
+var _marcas_ligado = -1
+var _marcas_arq = ""
+var _marcas_zero = 0
+
+
+func marca(txt: String) -> void:
+	if _marcas_ligado < 0:
+		_marcas_ligado = 1 if (OS.has_feature("Vita") or Array(OS.get_cmdline_args()).has("--g4-log")) else 0
+		_marcas_arq = "ux0:data/kikiu_boot.txt" if OS.has_feature("Vita") else "user://kikiu_boot.txt"
+		_marcas_zero = OS.get_ticks_msec()
+		var f0 = File.new()
+		if _marcas_ligado == 1 and f0.open(_marcas_arq, File.WRITE) == OK:
+			f0.store_line("ms,marco")
+			f0.close()
+	if _marcas_ligado != 1 or OS.get_ticks_msec() - _marcas_zero > 20000:
+		return
+	var f = File.new()
+	if f.open(_marcas_arq, File.READ_WRITE) == OK:
+		f.seek_end()
+		f.store_line("%d,%s" % [OS.get_ticks_msec() - _marcas_zero, txt])
+		f.close()
+
+
+## Modo de segurança (bits): 1 sem VitaHW/touch traseiro, 2 sem efeitos de áudio, 4 sem núcleo C++ da horda,
+## 8 sem os autoloads online (Salas, Chat, Voz, Rede). No Vita lê ux0:data/kikiu_modo.txt (um número); sem o arquivo
+## vale 8 (online fora da v1). No PC vale 0 (ou --g4-modo=N).
+var _modo = -1
+
+
+func modo(bit: int) -> bool:
+	if _modo < 0:
+		_modo = 8 if OS.has_feature("Vita") else 0
+		for a in OS.get_cmdline_args():
+			if a.begins_with("--g4-modo="):
+				_modo = int(a.split("=")[1])
+		var f = File.new()
+		if OS.has_feature("Vita") and f.open("ux0:data/kikiu_modo.txt", File.READ) == OK:
+			_modo = int(f.get_as_text().strip_edges())
+			f.close()
+	return (_modo & bit) != 0
+
+
 ## No Vita: perfil de qualidade "baixa" (dados/qualidade.json) só nesta execução, hardware e som.
 var _hw = null              # VitaHW (módulo C++ do template próprio)
 var _tras_antes = false
@@ -735,16 +779,21 @@ func _perfil_vita() -> void:
 	var cfg = get_node_or_null("/root/Config")
 	if cfg and cfg.has_method("temporario"):
 		cfg.temporario("qualidade", "baixa")
-	if ClassDB.class_exists("VitaHW"):
+	marca("g4:_perfil_vita")
+	if ClassDB.class_exists("VitaHW") and not modo(1):
 		_hw = ClassDB.instance("VitaHW")
-		_hw.iniciar()
-		set_process(true)
+		if _hw != null:
+			_hw.iniciar()
+			set_process(true)
+	marca("g4:vitahw_ok")
 	# o Vita só tem saída estéreo: alargamento (atraso Haas) para os lados "saírem" da cabeça no fone + limiter
-	var largo = AudioEffectStereoEnhance.new()
-	largo.pan_pullout = 1.2
-	largo.time_pullout_ms = 6.0
-	AudioServer.add_bus_effect(0, largo)
-	AudioServer.add_bus_effect(0, AudioEffectLimiter.new())
+	if not modo(2):
+		var largo = AudioEffectStereoEnhance.new()
+		largo.pan_pullout = 1.2
+		largo.time_pullout_ms = 6.0
+		AudioServer.add_bus_effect(0, largo)
+		AudioServer.add_bus_effect(0, AudioEffectLimiter.new())
+	marca("g4:audio_ok")
 
 
 ## Registro de desempenho no Vita (ux0:data/kikiu_vita_log.txt, ou user:// com --g4-log no PC): a cada 5 s,

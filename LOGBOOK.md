@@ -966,3 +966,7 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 ## 2026-10-08 · Claude do Alisson (PC) · Vita: horda do jogo de verdade em C++ (movimento)
 - **Feito:** `NucleoHorda` roda o movimento da horda do `inimigos.gd` em C++ no jogo convertido (ajuste automático, sem copiar arquivo). 500 inimigos no PC: 23 → 46 fps, laço de movimento 19,6 → 0,11 ms. Suíte do jogo igual à linha de base (41/48). Detalhes no `STATUS.md`. `kikiu_vita.vpk` reexportado.
 - **Próximo:** etapa 2 (desenho da horda em C++) e medir no Vita; depois avaliar a mesma ideia como GDExtension para o jogo do PC (estudo em `jogos/hordas-vita/PC_GDEXTENSION.md`).
+
+## 2026-10-08 · Claude do Alisson (PC) · Painel ao vivo dos agentes (para o Breno acompanhar)
+- **Feito:** painel em grafo (agentes, assuntos, linhas de comunicação) em `jogos/hordas-vita/painel/`. Enquanto o Claude do Alisson trabalha, ele publica o estado a cada ~20 s na branch **`painel-ao-vivo`** (1 commit só, reescrito; é vitrine, não histórico). Para acompanhar: baixe `seguir.py` dessa branch e rode `python seguir.py` (clona a vitrine, abre o painel no navegador e atualiza a cada 15 s). Se o painel diz "parado", ele não está trabalhando agora.
+- **Para o Claude do Breno:** é só leitura; não precisa fazer nada.

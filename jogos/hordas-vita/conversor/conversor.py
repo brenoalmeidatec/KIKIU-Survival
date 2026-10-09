@@ -1130,6 +1130,27 @@ def shaders_godot3(texto):
     return re.sub(r'"""shader_type[\s\S]*?"""|"shader_type(?:[^"\\]|\\.)*"', corrigir, texto)
 
 
+ONLINE_AUTOLOADS = ("scripts/hordas/salas.gd", "scripts/hordas/chat.gd", "scripts/hordas/voz.gd", "scripts/hordas/rede.gd")
+
+
+def info_por_rel(rel):
+    return "res://" + rel
+
+
+def marcos_de_abertura(texto, caminho_res):
+    """Insere G4.marca("<script>:<função>") como 1ª linha de _init/_enter_tree/_ready de nível 0 (diagnóstico de queda na
+    abertura no Vita) e, nos autoloads online, o corte de segurança G4.modo(8)."""
+    rel = caminho_res.replace("res://", "")
+    nome = rel.split("/")[-1]
+
+    def troca(m):
+        corpo = "\tG4.marca(\"%s:%s\")\n" % (nome, m.group(1))
+        if m.group(1) == "_ready" and rel in ONLINE_AUTOLOADS:
+            corpo += "\tif G4.modo(8):\n\t\treturn  # online fora da v1 no Vita (kikiu_modo.txt)\n"
+        return m.group(0) + corpo
+    return re.sub(r"(?m)^func (_init|_enter_tree|_ready)\([^)]*\):[ \t]*(?:#[^\n]*)?\n", troca, texto)
+
+
 def coletar_info(caminho_res, texto):
     info = {"caminho": caminho_res, "static_vars": {}, "aliases": {},
             "funcoes": set(re.findall(r"(?m)^(?:static\s+)?func\s+(\w+)", texto)), "controles": set()}
@@ -1223,6 +1244,8 @@ def main():
             if rel in ajustes_vita.AJUSTES:
                 novo = ajustes_vita.AJUSTES[rel](novo, avisos)
             novo = shaders_godot3(novo)
+            if rel.startswith("scripts/"):
+                novo = marcos_de_abertura(novo, info_por_rel(rel))
             open(alvo, "w", encoding="utf-8", newline="\n").write(novo)
         relatorio[rel] = avisos
     shutil.copy(os.path.join(AQUI, "g4.gd"), os.path.join(dest, "g4.gd"))

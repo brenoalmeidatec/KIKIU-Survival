@@ -1,0 +1,6 @@
+status.js
+status.json
+*.tmp
+publicar.log
+publicar.err
+parar.txt

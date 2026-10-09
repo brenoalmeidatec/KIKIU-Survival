@@ -193,7 +193,7 @@ def inimigos(texto, avisos):
 
     # --- variáveis do node
     texto = _trocar(texto, "var lista = []\n",
-                    "var lista = []\nvar _nuc = ClassDB.instance(\"NucleoHorda\") if ClassDB.class_exists(\"NucleoHorda\") and not Array(OS.get_cmdline_args()).has(\"--sem-nucleo\") else null\n"
+                    "var lista = []\nvar _nuc = ClassDB.instance(\"NucleoHorda\") if ClassDB.class_exists(\"NucleoHorda\") and not Array(OS.get_cmdline_args()).has(\"--sem-nucleo\") and not G4.modo(4) else null\n"
                     "var _slots = []  # slot do núcleo -> V\n", avisos, "var lista")
 
     # --- criar
