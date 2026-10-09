@@ -28,6 +28,7 @@ var tarde := false           # falhou porque a fase acabou antes (sem horda de c
 var seq := 0                 # conta os objetivos da corrida (o cliente descarta estado velho)
 var _seq_limpo := 0          # cliente: estado de seq <= isso é de um andar que já passou
 var _pago := -1
+var _topo := Node2D.new()    # camada por cima de inimigos, poderes e baús (#123): marca de cada alvo
 var _ids: Array = []         # anfitrião: ids dos inimigos do objetivo que ainda vivem
 var _espera := -1.0          # anfitrião: segundos até o objetivo aparecer neste andar
 var _pendente := ""
@@ -80,6 +81,39 @@ static func cor_de(tid: String) -> Color:
 	return Color(float(c[0]), float(c[1]), float(c[2]))
 
 
+func _ready() -> void:
+	_topo.z_index = 50
+	_topo.draw.connect(_desenhar_topo)
+	add_child(_topo)
+
+
+## Marcador de objetivo (#123): halo, anel escuro de contorno e anel colorido pulsante, com 4 pontas girando. Desenhado em `c`
+## (camada de z_index alto), então inimigos, efeitos e baús não cobrem. O contorno escuro garante contraste em todas as regiões.
+static func marca_topo(c: CanvasItem, p: Vector2, cor: Color, t: float, r := 20.0, a := 1.0) -> void:
+	var pulso := 0.5 + 0.5 * sin(t * 5.0)
+	var rr := r + 2.0 * pulso
+	c.draw_circle(p, rr + 3.0, Color(cor, (0.10 + 0.08 * pulso) * a))
+	c.draw_arc(p, rr, 0.0, TAU, 40, Color(0.04, 0.02, 0.06, 0.85 * a), 5.0)
+	c.draw_arc(p, rr, 0.0, TAU, 40, Color(cor.lightened(0.25), (0.75 + 0.25 * pulso) * a), 2.5)
+	for i in 4:
+		var ang := t * 1.2 + i * PI / 2
+		var d := Vector2.from_angle(ang)
+		c.draw_line(p + d * (rr + 1.0), p + d * (rr + 7.0), Color(0.04, 0.02, 0.06, 0.85 * a), 5.0)
+		c.draw_line(p + d * (rr + 1.0), p + d * (rr + 7.0), Color(1, 1, 1, 0.9 * a), 2.0)
+
+
+func _desenhar_topo() -> void:
+	if id == "" or est != ANDAMENTO:
+		return
+	var cor := cor_de(id)
+	if id == "pira":
+		var r := float(tipo_def(id).get("raio", 70))
+		_topo.draw_arc(pos, r, 0.0, TAU, 48, Color(0.04, 0.02, 0.06, 0.6), 4.0)
+		_topo.draw_arc(pos, r, 0.0, TAU, 48, Color(cor.lightened(0.2), 0.55 + 0.25 * sin(_t * 4.0)), 2.0)
+	for p in marcas:
+		marca_topo(_topo, p, cor, _t, 22.0)
+
+
 func _host() -> bool:
 	return not arena.inimigos.espelho
 
@@ -121,6 +155,7 @@ func _zerar() -> void:
 	_pendente = ""
 	_linger = 0.0
 	queue_redraw()
+	_topo.queue_redraw()
 
 
 func atualizar(dt: float) -> void:
@@ -129,6 +164,7 @@ func atualizar(dt: float) -> void:
 		_linger = maxf(0.0, _linger - dt)
 	if est != NENHUM:
 		queue_redraw()
+		_topo.queue_redraw()
 	if not _host():
 		if est == ANDAMENTO:
 			resta = maxf(0.0, resta - dt)   # entre um estado e outro o relógio anda sozinho; o próximo estado acerta
@@ -358,6 +394,7 @@ func aplicar(d: Dictionary) -> void:
 		_linger = LINGER
 		_pagar()
 	queue_redraw()
+	_topo.queue_redraw()
 
 
 static func _num(v) -> float:

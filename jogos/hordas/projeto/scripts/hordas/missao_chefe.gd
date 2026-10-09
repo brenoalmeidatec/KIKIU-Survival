@@ -9,6 +9,7 @@ extends Node2D
 ## TODO online: mandar o estado aos clientes (evento como o "objetivo" do objetivos.gd) pra eles verem os marcadores e ajudarem.
 
 const Sorte := preload("res://scripts/hordas/sorte.gd")
+const Objetivos := preload("res://scripts/hordas/objetivos.gd")
 
 const NENHUM := 0
 const ANDAMENTO := 1
@@ -93,6 +94,23 @@ func visivel() -> bool:
 # ---------- ciclo de vida ----------
 
 ## Andar novo (todo mundo chama). O anfitrião decide se há missão e a missão aparece 'inicio' s depois.
+var _topo := Node2D.new()    # camada por cima de inimigos, poderes e baús (#123)
+
+
+func _ready() -> void:
+	_topo.z_index = 50
+	_topo.draw.connect(_desenhar_topo)
+	add_child(_topo)
+
+
+func _desenhar_topo() -> void:
+	if id == "" or est != ANDAMENTO:
+		return
+	var cor := cor_de(id)
+	for p in marcas():
+		Objetivos.marca_topo(_topo, p, cor, _t, 24.0 if p == altar else 20.0)
+
+
 func nova_fase(f: Dictionary, andar_global: int) -> void:
 	_zerar()
 	_pendente = escolher(f, andar_global)   # (só o anfitrião/solo a inicia, em atualizar: o espelho do online ainda não existe aqui)
@@ -120,6 +138,7 @@ func atualizar(dt: float) -> void:
 		_linger = maxf(0.0, _linger - dt)
 	if est != NENHUM:
 		queue_redraw()
+		_topo.queue_redraw()
 	if not _host():
 		return
 	var df = arena.diretor

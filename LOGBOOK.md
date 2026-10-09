@@ -916,3 +916,7 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** todos os 49 testes (sem bench_) com falhas=0.
 - **Pendente:** print visual de uma carta de dádiva (o `--print_tela=cartas` só mostra armas); conferir o visual da raridade e a legibilidade do nome em 12px. Ícones do Ímã de Almas, Sopro Ágil e Coração de Brasa não foram refeitos (item 4 da issue #98).
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-09 — Claude do Alisson (PC): #123 objetivo legível
+- Feito: marcadores de objetivo (pira, totens, fugitivo, selos, fragmentos, pilares, altar) numa camada própria `z_index=50` (`objetivos.marca_topo`: halo + anel escuro de contorno + anel colorido pulsante + 4 pontas girando), por cima de inimigos, poderes e baús. Setas da borda do objetivo do andar agora mostram a distância em metros (a da missão do chefe já mostrava). Baús (`coleta.soltar`) são empurrados pra fora de 90 px dos alvos do objetivo/missão. `main.gd`: `--muitos=N` no print de `objetivo`/`missao` (horda + baú em volta do jogador).
+- Pendente: reduzir opacidade de efeitos/baús em cima do objetivo e ponto no minimapa (#122); conferir visualmente as outras regiões e qualidades gráficas.
