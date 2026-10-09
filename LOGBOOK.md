@@ -616,6 +616,7 @@ Se faltar qualquer um desses itens, ou houver dúvida, deixe o PR aberto e peça
 - **Online:** o golpe do corpo é só local (os outros não veem o avanço), igual ao ataque da Hazaki hoje. Fica pra depois, se valer a pena, um bit de estado como o do rolamento.
 - **Medido:** 24 testes com falhas=0 (novo: `testes/golpes.tscn`). Fase 25 com 500 inimigos: 85–138 fps com 4 armas corpo a corpo e 97–134 com projéteis (antes 79–168); efeitos novos custam ~20 µs (update) e ~50 µs (draw). `--print_tela=golpe --arma=X --heroi=Y --lento=0.25 --seq=...` mostra o golpe em câmera lenta.
 - **Próximo (ideias, sem reserva):** quadros de ataque desenhados para os outros heróis (a folha de 23 colunas da Hazaki é o molde); rastro de movimento no rolamento; depois volto à ordem da #79 (#72 marco 2).
+
 ## 2026-10-06 · Claude do Alisson (PC) · #72 marco 2: criação completa (atributos, defeito, paleta, 6 heróis, online)
 - **Criação** (`tela_criacao.gd`, `criacao.gd`): nome com limite e validação, 11 pontos em 5 atributos (`dados/atributos.json`, teto por atributo, efeito real nos stats via `Construcao`), **defeito voluntário** opcional (6 em `dados/defeitos.json`: dá pontos extras e cobra um efeito), **aparência por paleta** (`dados/aparencia.json` + `paleta.gd`: recolore pele/cabelo/roupa por código, sem arte nova, com prévia ao vivo na tela; recolorir o corpo inteiro leva ~60 ms e fica em cache).
 - **Meus heróis** (`tela_herois.gd`): até 6 salvos; escolher, criar em vaga livre, apagar com confirmação (Enter/Esc). O 7º é recusado. Herói que morre some de vez (regra do #78).
@@ -916,3 +917,61 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** todos os 49 testes (sem bench_) com falhas=0.
 - **Pendente:** print visual de uma carta de dádiva (o `--print_tela=cartas` só mostra armas); conferir o visual da raridade e a legibilidade do nome em 12px. Ícones do Ímã de Almas, Sopro Ágil e Coração de Brasa não foram refeitos (item 4 da issue #98).
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-06 · Claude do Alisson (PC) · Port para PS Vita: viabilidade e piloto de desempenho
+- **Feito:** projeto paralelo pedido pelo Alisson. Não existe Godot 4 para Vita (o Compatibility exige GLES3; o Vita só tem GLES2 via PVR_PSP2 ou vitaGL), então o port é **backport para Godot 3** com o [godot-vita](https://github.com/SonicMastr/godot-vita) 3.5-rc5. Antes de converter as ~19 mil linhas, montei um **piloto** em `jogos/hordas-vita/piloto/` com sprites reais (10 inimigos, João, chão): horda orientada a dados (sem nó por inimigo), LOD da lógica pra quem está longe, separação por grade com teto de vizinhos, desenho só do que está na tela, ordem Y por baldes, atlas único, sombra blob, luz GLES2 em dois jeitos (buffer de 1/4 de área e shader de 8 luzes), 480×272 (2× inteiro no 960×544) e governador que mira 30 fps.
+- Ao abrir, o piloto roda uma **rampa de 22 passos (~2 min)** e grava `ux0:data/kikiu_piloto.csv` + tabela na tela. No PC: roda de ponta a ponta, visual conferido por foto; draw calls não crescem com a horda (~78 com atlas, ~195 sem com 300 inimigos); lógica de 600 inimigos ~1 ms no PC. **O fps no Vita ainda não foi medido** — é com o Alisson (protocolo e critério de decisão em `jogos/hordas-vita/STATUS.md`).
+- Pegadinhas registradas no STATUS: o exportador grava `<título>.vpk` no diretório atual (o `exportar.sh` resolve); precisa de `import_etc`/`import_etc2`; LiveArea em PNG 8 bits é obrigatório; a 3ª coluna das folhas de inimigo é a silhueta branca do flash.
+- Ferramentas fora do Git, nesta máquina: `E:\Dev\KIKIU-Vita\ferramentas\` (editor + template, modo autocontido). Worktree da branch `alisson/vita-piloto` em `E:\Dev\KIKIU-Vita\repo`.
+- **Próximo:** resultado do piloto no Vita decide entre backport (≥ 30 fps com 300 inimigos), fase 2 com vitaGL/3.7 (20–30) ou abandonar (< 30 com 100).
+
+## 2026-10-07 · Claude do Alisson (PC) · Piloto Vita: primeira medição no aparelho
+- **Feito:** o Alisson rodou o piloto no Vita (vpk enviado por FTP do VitaShell, 192.168.0.202:1337 na rede dele); CSV em `jogos/hordas-vita/medicoes/vita_rc5_2026-10-07.csv`, leitura no `STATUS.md` (seção "Resultado 1"). 300 inimigos com luz: ~22 fps; 200: ~29; 100: ~40. Custo ≈ 13 ms fixos + 0,2 ms por inimigo na tela, metade lógica e metade `_draw`: **gargalo é GDScript na CPU**, a GPU sobra (640×360 não custa mais) e draw call é caro (atlas obrigatório).
+- **Próximo:** fase 2a, otimizar o GDScript do piloto (lógica dos de perto a 30 Hz escalonada, sombra embutida no atlas = 1 draw por inimigo, sem Dictionary no laço quente, varredura de luzes sem percorrer a horda) e medir de novo. Se não chegar a ~200 na tela a 30 fps, fase 2b: módulo C++ da horda num template próprio.
+
+## 2026-10-07 · Claude do Alisson (PC) · Piloto Vita v2: folhas novas do #103 + otimização 2a
+- **Feito:** piloto alinhado com a main de hoje (monstros de 6 quadros, fase pela distância; perfil `baixa` do #109 anotado como base do perfil `vita`) e otimização 2a no GDScript (decisão revezada, sombra assada no atlas, arrays por tipo, chão/sangue retidos, luzes por lista). Projéteis entraram na rampa. Detalhes em `jogos/hordas-vita/STATUS.md` ("Piloto v2"). Vpk validado rodando a rampa a partir do `game.pck` exportado.
+- **Pendente:** medir a v2 no Vita (o FTP do aparelho estava desligado na hora do envio).
+- **Próximo:** se a v2 der ~200 inimigos na tela a 30 fps, plano do backport; se não, fase 2b (módulo C++ da horda num template próprio).
+
+## 2026-10-08 · Claude do Alisson (PC) · Piloto Vita: erro 0xF0030000 ao instalar a v2 (consertado)
+- **Causa:** bug do exportador do godot-vita 3.5-rc5 (`vita-mksfoex.cpp` guarda o TITLE_ID com ponteiro para string temporária). Às vezes o `param.sfo` sai com `TITLE_ID = "KIKIU Piloto"` e o VitaShell recusa (`VITASHELL_ERROR_INVALID_TITLEID`). É aleatório: a v1 passou por sorte.
+- **Conserto:** `jogos/hordas-vita/conserta_sfo.py`, chamado pelo `exportar.sh`, regrava TITLE_ID/TITLE/STITLE e falha se não conferir. Detalhes no `STATUS.md`.
+- Envio por FTP: tela do Vita apagada derruba o Wi-Fi e o vpk chega truncado; conferir o tamanho na listagem.
+- **Pendente:** instalar e medir a v2 no Vita.
+
+## 2026-10-08 · Claude do Alisson (PC) · Piloto Vita v2 medido: ~185 inimigos na tela a 30 fps
+- **Feito:** v2 instalada e medida no Vita (CSV em `jogos/hordas-vita/medicoes/vita_v2_2026-10-08.csv`). 300 inimigos com luz: 30,4 fps (v1: 21,7). Desenho por inimigo caiu pela metade; lógica -27% e agora é o custo dominante. Cabem ~185 na tela a 30 fps (eram 100). Projéteis baratos. Critério de viabilidade atingido no limite. Leitura no `STATUS.md` ("Resultado 2").
+- **Próximo:** decidir entre começar o plano do backport com orçamento de ~150–180 inimigos na tela ou montar o build do template Vita (VitaSDK no WSL) para o módulo C++ da horda (2b), que daria folga para o resto do jogo.
+
+## 2026-10-08 · Claude do Alisson (PC) · Vita fase 2b: template próprio com módulo C++ compilado (noite)
+- **Feito:** distro WSL `vita-build` com VitaSDK 2026.08; template godot-vita compilado com o módulo `horda_vita` (HordaVita = horda inteira em C++ num draw call; VitaHW = touch frontal/traseiro, acelerômetro, clocks, bateria). Piloto v3 usa o módulo quando existe (touch, inclinação, som espacial). No PC (build Linux do mesmo motor) a lógica da horda caiu para 0,02–0,05 ms com 300–800 inimigos. No Vita3K o eboot novo abre igual ao oficial até o GL (o emulador não roda o PVR_PSP2). Detalhes em `jogos/hordas-vita/STATUS.md` e `compilar/LEIAME.md`.
+- **Pendente (Alisson, de manhã):** instalar `kikiu_piloto_cpp.vpk` (e o `kikiu_diag.vpk` se o C++ não abrir) e mandar o CSV.
+- Ferramentas desta máquina: `E:\Dev\KIKIU-Vita\ferramentas\` (editor, templates `vita_release_horda.zip`/`vita_release_diag.zip`, Vita3K), distro WSL `vita-build`.
+
+## 2026-10-08 · Claude do Alisson (PC) · Vita: o jogo de verdade convertido automaticamente roda no Godot 3
+- **Feito:** conversor GDScript 4 → 3 em `jogos/hordas-vita/conversor/` (+ autoload de compatibilidade `G4`). Os 88 scripts da main carregam no Godot 3 e o jogo roda no PC (título, partida com bot, chefe, cartas, loja) sem erros, inclusive a partir do pck exportado. `exportar_jogo.sh` gera `build/kikiu_vita.vpk` (KIKU00004) direto da main. Patches do motor: L/R e touch. Jogo em 640×360 com perfil `baixa` no Vita.
+- **Pendente (Alisson, de manhã):** instalar `kikiu_vita.vpk` e ver se abre/roda e a que fps (contador no canto superior esquerdo).
+- **Próximo:** ligar o `HordaVita` (C++) ao `inimigos.gd` convertido (é o que o piloto mostrou ser o gargalo) e converter o shader da escuridão.
+
+## 2026-10-08 · Claude do Alisson (PC) · Vita: suíte de testes do jogo no Godot 3 (41/48) e hardware no jogo convertido
+- **Feito:** os 48 testes do jogo rodam no projeto convertido (`conversor/testar.py`): 41 passam. Quatro agentes haiku acharam as causas das falhas; o conversor agora trata `==` de dicionário, timers que ignoram `time_scale`, `Input.get_vector`, `PackedFloat64Array` (a horda desenhava inimigos repetidos), arquivos, `move_child(-1)` e nomes reservados. No Vita, o G4 liga touch traseiro = rolamento, estéreo alargado e um log de fps em `ux0:data/kikiu_vita_log.txt`. `kikiu_vita.vpk` reexportado.
+- **Decisão pendente (Alisson):** como levar a horda do jogo para C++ (STATUS.md, "Decisão pendente"). Sem isso o jogo convertido deve rodar lento no Vita quando a horda encher.
+- **Próximo:** medir o `kikiu_vita.vpk` no aparelho (log por FTP) e decidir a horda em C++.
+
+## 2026-10-08 · Claude do Alisson (PC) · Piloto Vita v3 com C++ medido: 60 fps com até 800 inimigos
+- **Feito:** Alisson rodou os pacotes da noite. Piloto C++: 60 fps (teto do VSync) de 100 a 800 inimigos, com luz, som e projéteis; GDScript no mesmo aparelho: 15 fps com 800. CSVs em `jogos/hordas-vita/medicoes/vita_v3_*`. Leitura no STATUS ("Resultado 3").
+- **Próximo:** levar a horda do jogo de verdade para C++ (opção 1 do STATUS) e medir o `kikiu_vita.vpk`.
+
+## 2026-10-08 · Claude do Alisson (PC) · Vita: horda do jogo de verdade em C++ (movimento)
+- **Feito:** `NucleoHorda` roda o movimento da horda do `inimigos.gd` em C++ no jogo convertido (ajuste automático, sem copiar arquivo). 500 inimigos no PC: 23 → 46 fps, laço de movimento 19,6 → 0,11 ms. Suíte do jogo igual à linha de base (41/48). Detalhes no `STATUS.md`. `kikiu_vita.vpk` reexportado.
+- **Próximo:** etapa 2 (desenho da horda em C++) e medir no Vita; depois avaliar a mesma ideia como GDExtension para o jogo do PC (estudo em `jogos/hordas-vita/PC_GDEXTENSION.md`).
+
+## 2026-10-08 · Claude do Alisson (PC) · Painel ao vivo dos agentes (para o Breno acompanhar)
+- **Feito:** painel em grafo (agentes, assuntos, linhas de comunicação) em `jogos/hordas-vita/painel/`. Enquanto o Claude do Alisson trabalha, ele publica o estado a cada ~20 s na branch **`painel-ao-vivo`** (1 commit só, reescrito; é vitrine, não histórico). Para acompanhar: baixe `seguir.py` dessa branch e rode `python seguir.py` (clona a vitrine, abre o painel no navegador e atualiza a cada 15 s). Se o painel diz "parado", ele não está trabalhando agora.
+- **Para o Claude do Breno:** é só leitura; não precisa fazer nada.
+
+### 2026-10-08 — Vita: causa provável do C2-12828-1 achada (Claude do Alisson (PC))
+- **Evidência:** `kikiu_boot.txt` do Vita termina em `main.gd:_ready`, e `rede.gd:_ready` nunca aparece (a Rede é o 3º autoload). O motor do Vita é sem rede (NO_NETWORK) e não conhece `NetworkedMultiplayerENet`; citar a classe pelo nome impede o `rede.gd` de carregar, `Rede` vira nulo e o `Rede.connect` do `main.gd` derruba o jogo.
+- **Correção:** `ajustes_vita.py` (`rede`) troca por `ClassDB.instance(...)` e `is_class(...)`. Novo `kikiu_vita.vpk` enviado ao Vita (37290293 bytes). **Não testado no console ainda.**
+- **Próximo:** o Breno/Alisson instala e abre; se rodar, puxar `ux0:data/kikiu_vita_log.txt`; se cair, puxar `kikiu_boot.txt` e o dump novo.

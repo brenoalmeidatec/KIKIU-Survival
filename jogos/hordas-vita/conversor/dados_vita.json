@@ -1,0 +1,4 @@
+{
+ "_ajuda": "Ajustes de dados só do Vita: cada chave é um arquivo de dados/ e o valor é mesclado por cima (dicionários em profundidade). Aplicado pelo gerar.py. A horda do jogo ainda é GDScript (~1,4 ms por inimigo no Vita), então o teto de vivos é baixo até o HordaVita (C++) ser ligado ao inimigos.gd.",
+ "fase.json": {"dificuldade": {"limite_vivos": 60}}
+}

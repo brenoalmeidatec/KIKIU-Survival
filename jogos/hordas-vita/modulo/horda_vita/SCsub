@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+Import("env")
+Import("env_modules")
+
+env_horda = env_modules.Clone()
+env_horda.add_source_files(env.modules_sources, "*.cpp")
+
+# o godot-vita deste commit nao linka o sensor de movimento
+if env["platform"] == "vita":
+    env.Append(LIBS=["SceMotion_stub"])
