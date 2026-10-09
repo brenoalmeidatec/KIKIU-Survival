@@ -708,7 +708,9 @@ func _ready() -> void:
 		_log_ini = OS.get_ticks_msec()
 		var f = File.new()
 		if f.open(_log_arq, File.WRITE) == OK:      # um arquivo novo por execução
-			f.store_line("seg,fps,pior_ms,vivos,estado")
+			f.store_line("seg,fps,pior_ms,vivos,estado,mem_mb,mem_pico_mb")
+			f.store_line("0,0,0,0,boot,%.1f,%.1f" % [OS.get_static_memory_usage() / 1048576.0,
+				OS.get_static_memory_peak_usage() / 1048576.0])
 			f.close()
 	if fps:
 		var camada = CanvasLayer.new()
@@ -760,7 +762,7 @@ func _log_passo(dt: float) -> void:
 	_log_t += dt
 	_log_n += 1
 	_log_pior = max(_log_pior, dt)
-	if _log_t < 5.0:
+	if _log_t < (2.0 if OS.get_ticks_msec() - _log_ini < 30000 else 5.0):
 		return
 	var vivos = -1
 	var estado = ""
@@ -774,9 +776,10 @@ func _log_passo(dt: float) -> void:
 	if f.open(_log_arq, File.READ_WRITE if existe_arq else File.WRITE) == OK:
 		f.seek_end()
 		if not existe_arq:
-			f.store_line("seg,fps,pior_ms,vivos,estado")
-		f.store_line("%d,%.1f,%.1f,%d,%s" % [(OS.get_ticks_msec() - _log_ini) / 1000, _log_n / _log_t, _log_pior * 1000.0,
-			vivos, estado])
+			f.store_line("seg,fps,pior_ms,vivos,estado,mem_mb,mem_pico_mb")
+		f.store_line("%d,%.1f,%.1f,%d,%s,%.1f,%.1f" % [(OS.get_ticks_msec() - _log_ini) / 1000, _log_n / _log_t,
+			_log_pior * 1000.0, vivos, estado, OS.get_static_memory_usage() / 1048576.0,
+			OS.get_static_memory_peak_usage() / 1048576.0])
 		f.close()
 	_log_t = 0.0
 	_log_n = 0

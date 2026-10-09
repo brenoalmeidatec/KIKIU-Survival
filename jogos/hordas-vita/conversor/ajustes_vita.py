@@ -92,7 +92,16 @@ def escuridao(texto, avisos):
 
 import ajustes_inimigos  # noqa: E402
 
+def dados(texto, avisos):
+    velho = "\t# carrega tudo antes pra não engasgar no meio da partida\n"
+    if velho not in texto:
+        avisos.append("ajuste dados: comentario da pre-carga nao encontrado")
+        return texto
+    return texto.replace(velho, velho + "\tif OS.has_feature(\"Vita\"):\n\t\treturn  # Vita: ~36 MB de PNG decodificados na abertura estouravam a memória; carrega sob demanda\n", 1)
+
+
 AJUSTES = {
+    "scripts/hordas/dados.gd": dados,
     "scripts/hordas/escuridao.gd": escuridao,
     "scripts/hordas/inimigos.gd": ajustes_inimigos.inimigos,
 }

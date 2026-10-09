@@ -267,3 +267,15 @@ aconteceu; o contato e o teleporte são pontos de pausa (o dano pode disparar a 
 - **Medido (`bench_horda`, 500 inimigos, mesmo motor, PC):** laço de movimento 19,6 ms → 0,11 ms; quadro 47,9 → 25,9 ms
   (**23 → 46 fps**). O que sobra é desenho (sombra, sprite, ordenação ≈ 9 ms no PC), que é a **etapa 2** (levar o `_draw`
   para o C++ num draw call, como o piloto). No Vita o teto de 60 vivos continua até a etapa 2.
+
+## Crash C2-12828-1 na abertura do jogo no Vita (2026-10-08) · `crash/crash_2026-10-08_C2-12828-1.md`
+
+`kikiu_vita.vpk` (1ª versão) caiu antes de 5 s: data abort na thread principal, ponteiro nulo (`ldr r3,[r3,#28]`, r3=0) dentro de
+`Variant::call_ptr`, chamado de `GDScriptFunction::call`; o rastro (parte duvidosa) tem `_malloc_r` e `SceneTree::tree_changed`.
+O executável não tinha símbolos de linha, então não deu pra nomear o script.
+Hipótese de trabalho (não provada): **falta de memória na abertura** (heap fixo do motor = 100 MB; o jogo pré-carregava
+179 PNGs ≈ 36 MB decodificados antes do título; no PC o Godot só usa ~45 MB, então pode ser memória do driver gráfico).
+Correções (seguro duplo): `dados.gd` não pré-carrega no Vita (carrega sob demanda) e o heap do motor sobe para 200 MB
+(`compilar/patches_motor.py`). O log (`ux0:data/kikiu_vita_log.txt`) agora grava um marco `boot` logo no início e a memória do
+Godot a cada 2 s. Se cair de novo: ler o dump com `crash/` (parser Python 3 consertado em `vita-parse-core`) e, se preciso,
+recompilar o template com `debug_symbols=yes` para ter arquivo:linha.

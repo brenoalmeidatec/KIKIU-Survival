@@ -2,6 +2,7 @@
 """Patches do port no motor godot-vita (7ca87562). Idempotente: pode rodar antes de todo build.
     python3 patches_motor.py ~/godot-vita
 1. joypad_vita.cpp: L/R do Vita nos índices 4/5 (JOY_L/JOY_R do Godot), não 6/7 (que o Godot usa para L2/R2).
+0. godot_vita.cpp: heap newlib de 100 para 200 MB (o jogo de verdade passava dos 100 MB ao abrir e o malloc devolvia nulo).
 2. os_vita.cpp: ao encostar o dedo, guarda a posição (o "soltar" saía com a posição do toque anterior).
 """
 import sys
@@ -21,6 +22,7 @@ def trocar(rel, velho, novo):
     print("aplicado:", rel)
 
 
+trocar("platform/vita/godot_vita.cpp", "#define MEMORY_NEWLIB_MB 100", "#define MEMORY_NEWLIB_MB 200 // KIKIU: o jogo estourava os 100 MB ao abrir (C2-12828-1)")
 trocar("platform/vita/joypad_vita.cpp",
        "SCE_CTRL_L2, SCE_CTRL_R2, SCE_CTRL_L1, SCE_CTRL_R1,",
        "SCE_CTRL_L1, SCE_CTRL_R1, SCE_CTRL_L2, SCE_CTRL_R2, // KIKIU: L/R = JOY_L/JOY_R (4/5)")
