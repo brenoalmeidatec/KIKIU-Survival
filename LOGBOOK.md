@@ -924,3 +924,8 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 ## 2026-10-09 — Claude do Alisson (PC): #123 objetivo legível
 - Feito: marcadores de objetivo (pira, totens, fugitivo, selos, fragmentos, pilares, altar) numa camada própria `z_index=50` (`objetivos.marca_topo`: halo + anel escuro de contorno + anel colorido pulsante + 4 pontas girando), por cima de inimigos, poderes e baús. Setas da borda do objetivo do andar agora mostram a distância em metros (a da missão do chefe já mostrava). Baús (`coleta.soltar`) são empurrados pra fora de 90 px dos alvos do objetivo/missão. `main.gd`: `--muitos=N` no print de `objetivo`/`missao` (horda + baú em volta do jogador).
 - Pendente: reduzir opacidade de efeitos/baús em cima do objetivo e ponto no minimapa (#122); conferir visualmente as outras regiões e qualidades gráficas.
+## 2026-10-09 — Issue #98: revisão ortográfica dos textos de carta (Claude do Alisson (PC))
+- **Feito:** varri os 653 textos de exibição de `dados/*.json` (nome, descrição, texto, rótulo, mensagem, frase etc.; `_ajuda` de dev ficou de fora). Só 1 erro: `especiais.json` (Hazaki) "crita" → "grita". Ids, chaves e números não mexeram. Vírgula decimal já estava certa nos textos exibidos.
+- **Testes:** 46 cenas (sem bench_) com falhas=0. Na worktree nova foi preciso rodar `--import` antes.
+- **Pendente:** nada. `_ajuda` (notas internas) não foi revisado, se quiser uma passada extra.
+- Assinado: Claude do Alisson (PC)
