@@ -513,6 +513,7 @@ func _objetivo() -> void:
 			var pl := 0.65 + 0.35 * sin(_t * 6.0)
 			_seta(b, 11.0, 7.0, Color(cor, pl))
 			_seta(b, 6.0, 3.5, Color(0.08, 0.04, 0.1, 0.8))
+			_txt(b.p - b.dir * 24.0 - Vector2(20, -3), "%dm" % int(b.rel.length() / 10.0), 8, Color(cor, pl), HORIZONTAL_ALIGNMENT_CENTER, 40)
 
 
 ## Missão do chefe (#112): nome, barra, texto curto ("Fragmentos 2/4", "Leve ao altar") e setas pros pontos de interesse. Abaixo do objetivo.

@@ -1777,6 +1777,12 @@ func _print_tela(qual: String) -> void:
 				elif ms.tem_altar:
 					_arena.jogador.position = ms.altar + Vector2(50, 30)
 				await get_tree().create_timer(2.4, true, false, true).timeout
+			if _args.has("muitos"):   # #123: horda em volta do jogador e um baú no meio, pra conferir que o marcador do objetivo continua legível
+				_arena.armas.lista.clear()
+				var jc: Vector2 = _arena.jogador.position
+				for k in int(_args.get("muitos", 40)):
+					_arena.inimigos.criar("carnical", jc + Vector2.from_angle(k * 0.9) * (20.0 + float(k) * 4.0), 1)
+				_arena.coleta.itens.append({"pos": jc + Vector2(30, 0), "tipo": "bau", "valor": 0, "puxando": false, "vel": 0.0, "t0": 0.0})
 			await get_tree().create_timer(0.5, true, false, true).timeout
 		"mortes":   # #32: 8 inimigos morrem de 8 causas; prints no meio dos efeitos (--seq=0.15,0.4,0.7 em segundos reais, --reduzida, --conj=virus)
 			if not _args.has("fase") and str(_args.get("conj", "horror")) != "virus":
