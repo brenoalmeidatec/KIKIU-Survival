@@ -42,6 +42,11 @@ window/stretch/scale_mode="fractional"
 
 theme/custom_font="res://assets/fonte/PressStart2P.ttf"
 
+[internationalization]
+
+locale/fallback="pt_BR"
+locale/translations=PackedStringArray("res://assets/traducao/textos.pt_BR.translation")
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

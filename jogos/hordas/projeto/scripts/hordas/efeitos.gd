@@ -104,7 +104,10 @@ func impacto(pos: Vector2, cor := Color(0.75, 0.9, 1.0), forte := false) -> void
 
 ## Faíscas em risquinho (rastro na direção do voo). `dir` zero = pra todo lado.
 func faisca(pos: Vector2, dir: Vector2, cor: Color, n := 3, forca := 170.0) -> void:
-	for i in (n if _k_fai >= 1.0 else maxi(1, roundi(n * _k_fai))):
+	var k := _k_fai * Config.particulas()   # opção "Partículas": Nenhuma = sem faíscas
+	if k <= 0.0:
+		return
+	for i in (n if k >= 1.0 else maxi(1, roundi(n * k))):
 		if faiscas.size() >= _max_fai:
 			faiscas.pop_front()
 		var a: float = dir.angle() + randf_range(-0.7, 0.7) if dir != Vector2.ZERO else randf() * TAU
@@ -143,7 +146,10 @@ static func texto(valor: float, crit: bool) -> String:
 
 
 func explodir(pos: Vector2, cor: Color, n := 6, forca := 80.0) -> void:
-	for i in (n if _k_part >= 1.0 else maxi(1, roundi(n * _k_part))):
+	var k := _k_part * Config.particulas()
+	if k <= 0.0:
+		return
+	for i in (n if k >= 1.0 else maxi(1, roundi(n * k))):
 		if particulas.size() >= _max_part:
 			particulas.pop_front()
 		particulas.append({"pos": pos, "vel": Vector2.from_angle(randf() * TAU) * randf_range(forca * 0.3, forca),

@@ -105,7 +105,7 @@ func nova(v, forcar := false) -> String:
 	var teto: Dictionary = dm.get("teto", {})
 	var part := int(dm.get("efeitos", {}).get(ef, {}).get("part", 0))
 	var max_g := maxi(1, roundi(float(teto.get("mortes", 24)) * float(Config.q("mortes_grandes"))))   # perfil de qualidade: tetos menores
-	var max_p := maxi(20, roundi(float(teto.get("particulas", 600)) * float(Config.q("mortes_part"))))
+	var max_p := maxi(20, roundi(float(teto.get("particulas", 600)) * float(Config.q("mortes_part")))) if Config.particulas() > 0.0 else 0   # opção "Partículas: Nenhuma"
 	if ef != "simples" and (ativas.size() >= max_g or part_usadas + part > max_p):
 		ef = "simples"   # sem vaga: morte simples
 	if ef == "simples":
