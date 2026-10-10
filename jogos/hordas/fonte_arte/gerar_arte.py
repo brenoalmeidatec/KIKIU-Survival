@@ -492,9 +492,37 @@ def i_antena(d):
 
 
 def i_fitinha(d):
-    for i, cor in enumerate(((240, 60, 60), (60, 160, 240), (250, 220, 60))):
-        d.line([2 + i * 4, 1, 5 + i * 4, 14], fill=cor + (255,), width=2)
-    d.text((2, 5), "", fill=K)
+    """Ímã de Almas: ímã em U (vermelho e azul, pontas prateadas) com almas azuis em volta."""
+    d.rectangle([2, 2, 13, 12], fill=(200, 50, 50, 255))
+    d.rectangle([10, 2, 13, 12], fill=(50, 110, 220, 255))
+    d.rectangle([6, 2, 9, 9], fill=(0, 0, 0, 0))   # o vão do U
+    d.rectangle([2, 2, 5, 3], fill=(200, 200, 210, 255))
+    d.rectangle([10, 2, 13, 3], fill=(200, 200, 210, 255))
+    d.ellipse([0, 8, 2, 10], fill=(170, 240, 255, 255))
+    d.ellipse([14, 4, 15, 6], fill=(170, 240, 255, 255))
+    d.point((7, 14), fill=(170, 240, 255, 255))
+
+
+def i_vento_sopro(d):
+    """Sopro Ágil: três rajadas de vento com a ponta enrolada."""
+    c = (170, 235, 255, 255)
+    d.line([1, 4, 10, 4], fill=c, width=1)
+    d.arc([9, 2, 14, 7], 270, 90, fill=c, width=1)
+    d.line([3, 8, 12, 8], fill=c, width=1)
+    d.arc([11, 6, 15, 10], 270, 90, fill=c, width=1)
+    d.line([1, 12, 8, 12], fill=c, width=1)
+    d.arc([6, 10, 11, 14], 270, 90, fill=c, width=1)
+    d.point((2, 2), fill=(255, 230, 90, 255))   # faíscas de velocidade
+
+
+def i_brasa_coracao(d):
+    """Coração de Brasa: coração vermelho com miolo de brasa e fagulhas."""
+    d.polygon([(8, 14), (1, 6), (3, 2), (6, 2), (8, 4), (10, 2), (13, 2), (15, 6)], fill=(205, 50, 45, 255))
+    d.polygon([(8, 12), (4, 7), (5, 5), (7, 5), (8, 6), (9, 5), (11, 5), (12, 7)], fill=(255, 140, 40, 255))
+    d.polygon([(8, 10), (6, 8), (8, 7), (10, 8)], fill=(255, 220, 90, 255))
+    d.point((1, 0), fill=(255, 200, 60, 255))
+    d.point((14, 1), fill=(255, 200, 60, 255))
+    d.point((15, 11), fill=(255, 200, 60, 255))
 
 
 def i_coco(d):
@@ -536,6 +564,7 @@ ICONES = {
     "energetico": i_energetico, "overclock": i_overclock, "monitor": i_monitor, "ctrl_c_v": i_ctrlc,
     "tenis": i_tenis, "marmita": i_marmita, "antena": i_antena, "fitinha": i_fitinha,
     "agua_coco": i_coco, "mouse": i_mouse, "apostila": i_apostila, "vida": i_vida, "moeda": i_moeda,
+    "vento_sopro": i_vento_sopro, "brasa_coracao": i_brasa_coracao,
 }
 for nome, fn in ICONES.items():
     salvar(icone(fn), "icone_" + nome)
