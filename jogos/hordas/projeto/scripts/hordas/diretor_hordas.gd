@@ -208,7 +208,7 @@ func fase_atual() -> Dictionary:
 
 func _gastar() -> void:
 	var vivos: int = arena.inimigos.vivos()
-	var limite := int(_dif.get("limite_vivos", 500))
+	var limite := mini(int(_dif.get("limite_vivos", 500)), int(Config.q("limite_vivos")))
 	if vivos >= limite:
 		return
 	var tabela := _disponiveis()

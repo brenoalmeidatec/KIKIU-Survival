@@ -17,6 +17,7 @@ const ITENS := [
 	{"chave": "daltonico", "grupo": "Acessibilidade", "nome": "Modo daltônico", "valores": [false, true], "rotulos": ["Não", "Paleta segura"], "padrao": false},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{"chave": "qualidade", "grupo": "Gráfico", "nome": "Qualidade gráfica", "valores": ["alta", "media", "baixa"], "rotulos": ["Alta", "Média", "Baixa"], "padrao": "alta"},
+	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Baixar a qualidade se travar", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "vinheta", "grupo": "Gráfico", "nome": "Vinheta (bordas escuras)", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "vsync", "grupo": "Gráfico", "nome": "V-Sync", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "fps_max", "grupo": "Gráfico", "nome": "Limite de FPS", "valores": [30, 60, 120, 144, 0], "rotulos": ["30", "60", "120", "144", "Sem limite"], "padrao": 0},
