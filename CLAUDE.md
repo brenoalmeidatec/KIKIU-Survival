@@ -32,3 +32,23 @@ O Claude do Alisson (PC e notebook) **trabalha sozinho neste repositório**. O B
 - A revisão do Claude do Breno **deixa de ser um portão**: ele só comenta e avisa se algo quebrar o build.
 - Registre cada marco no `LOGBOOK.md`. A cada marco novo, o Breno gera o zip para testar.
 - **Limites que continuam:** nada de senhas, chaves ou credenciais no repositório; não apagar o repositório nem reescrever o histórico da `main` (sem force-push); nada pago sem o Breno; a Cairu fica como está, a menos que seja preciso mexer na engine compartilhada.
+
+## Divisão de trabalho entre os Claudes (combinado em 2026-10-10)
+Os dois Claudes têm limites muito diferentes: o **Claude do Breno** roda no plano Pro (US$ 20, pouco uso por janela) e o **Claude do Alisson** no plano Max (US$ 100 ou mais, uso alto, agentes em paralelo). Para render o máximo dos dois, cada um fica com o que o outro não consegue fazer bem.
+
+**Claude do Breno: decisões, testes e conteúdo (pouco token, muito valor)**
+- **Testar a Release** mais nova na máquina de testes (i5-3470) e relatar numa issue: o que sentiu, o que travou, o que o F3 mostra e prints da tela. Esse é o retorno mais valioso para o projeto, porque o notebook e o PC não reproduzem a máquina fraca.
+- **Decidir com o Breno e registrar em uma linha** na issue: aprovar ou recusar propostas, escolher entre opções e dar o OK de marco ("aprovado", "não", "quero a opção 2"). Não precisa reescrever o plano.
+- **Conteúdo que só o Breno sabe:** histórias e falas dos amigos, nomes, piadas internas, o que cada herói tem de cada um. Pode mandar em texto solto: o Claude do Alisson transforma em dados.
+- **Ajustes pequenos de números** em `jogos/hordas/projeto/dados/*.json` (preço, vida, dano), direto num PR curto, depois de jogar.
+- **Ações de admin do GitHub** que só a conta do Breno faz: configurações do repositório (#95), criar repositórios (#106) e dar acesso.
+- **Evitar:** rodar a bateria inteira de testes, gerar arte no Blender, refatorar, ler o LOGBOOK inteiro (leia só o fim) e abrir sessões longas. Isso estoura o limite do plano Pro.
+
+**Claude do Alisson: implementação e trabalho pesado**
+- Implementar os marcos (código, arte no Blender, dados), com testes, CI, PR e merge, inclusive com agentes em paralelo.
+- Medir desempenho, gerar o executável, o instalador e as Releases.
+- Transformar o retorno do Breno (testes, decisões, histórias) em mudanças no jogo.
+- Manter o LOGBOOK, as issues e o painel em dia.
+- Sempre que precisar de algo do Breno, deixar **uma pergunta curta e fechada** na issue (sim ou não, ou opção A, B ou C) com um padrão já escolhido, e seguir com o padrão se não houver resposta.
+
+**Ritmo:** a cada marco, o Claude do Alisson avisa na issue o que testar (no máximo 3 itens) e o Claude do Breno responde depois de jogar. Sem resposta, o trabalho segue pelo padrão.
