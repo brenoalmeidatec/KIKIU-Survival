@@ -1,5 +1,5 @@
 {
- "_ajuda": "Fase: duracao em segundos. Ao fim do tempo chega o chefe final e começa o Enxame Final (fica cada vez mais difícil até ele morrer). O diretor ganha créditos por segundo = creditos_base x coeficiente^expoente e compra inimigos. coeficiente = 1 + minutos x por_minuto. eventos: chefe, anel (vírus em volta de você), enxame (vírus vindo de um lado). santuarios = tomadas no mapa (fique dentro pra carregar e ganhar uma carta).",
+ "_ajuda": "Fase: duracao em segundos. Ao fim do tempo chega o chefe final e começa o Enxame Final (fica cada vez mais difícil até ele morrer). O diretor ganha créditos por segundo = creditos_base x coeficiente^expoente e compra inimigos. coeficiente = 1 + minutos x por_minuto. eventos: chefe, anel (vírus em volta de você), enxame (vírus vindo de um lado). limite_vivos = teto de inimigos vivos no jogo normal (padrão 250; uma fase do regioes.json pode ter o seu); limite_vivos_pror = o teto da prorrogação e do Enxame Final (500); vale o menor entre o teto da fase e o do perfil de qualidade (qualidade.json). santuarios = tomadas no mapa (fique dentro pra carregar e ganhar uma carta).",
  "nome": "Faculdade infectada",
  "musica": ["minijogo_tenso", "minijogo_tenso_b"],
  "loja_entre_fases": true,
@@ -13,7 +13,8 @@
   "dano_por_nivel": 0.08,
   "minimo_vivos_base": 8,
   "minimo_vivos_por_minuto": 18,
-  "limite_vivos": 500,
+  "limite_vivos": 250,
+  "limite_vivos_pror": 500,
   "chance_elite_por_minuto": 0.004,
   "enxame_final_multiplicador": 3.0
  },
