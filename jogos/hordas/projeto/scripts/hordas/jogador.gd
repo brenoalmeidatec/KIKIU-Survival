@@ -549,6 +549,17 @@ func _bot_mira() -> Vector2:
 	if arena == null or arena.get("inimigos") == null or arena.inimigos == null:
 		return Vector2.ZERO
 	var c := centro()
+	if arena.duelo_ativo:   # duelo final: mira no rival mais perto (a IA do rival segue no cérebro dela, ia_luta.gd)
+		if arena.duelo.estado != "luta":
+			return Vector2.ZERO
+		var melhor := INF
+		var alvo := Vector2.ZERO
+		for r in arena.duelo.alvos_de(arena.duelo.lut_jogador):
+			var dd: float = c.distance_squared_to(r.pos)
+			if dd < melhor:
+				melhor = dd
+				alvo = r.pos - c
+		return alvo.normalized() if alvo != Vector2.ZERO else Vector2.ZERO
 	var perto: Array = arena.inimigos.no_circulo(c, 240.0)
 	if perto.is_empty():
 		return Vector2.ZERO

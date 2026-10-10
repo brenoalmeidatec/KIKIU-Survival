@@ -112,6 +112,11 @@ func _na_arena() -> void:
 	longe.pos = j.centro() + Vector2(140, 0)   # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
+	longe.kb = Vector2.ZERO
+	perto.kb = Vector2.ZERO
+	for v in a.inimigos.lista:   # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
+		if v != longe and v != perto:
+			v.pos = j.centro() + Vector2(3000, 3000)
 	await quadros(2)
 	a.armas.projeteis.clear()
 	p.t = 0.0
@@ -123,6 +128,11 @@ func _na_arena() -> void:
 	longe.pos = j.centro() + Vector2(140, 0)   # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
+	longe.kb = Vector2.ZERO
+	perto.kb = Vector2.ZERO
+	for v in a.inimigos.lista:   # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
+		if v != longe and v != perto:
+			v.pos = j.centro() + Vector2(3000, 3000)
 	await quadros(2)
 	a.armas.projeteis.clear()
 	p.t = 0.0
@@ -134,6 +144,11 @@ func _na_arena() -> void:
 	longe.pos = j.centro() + Vector2(140, 0)   # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
+	longe.kb = Vector2.ZERO
+	perto.kb = Vector2.ZERO
+	for v in a.inimigos.lista:   # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
+		if v != longe and v != perto:
+			v.pos = j.centro() + Vector2(3000, 3000)
 	await quadros(2)
 	a.armas.projeteis.clear()
 	p.t = 0.0
@@ -146,6 +161,11 @@ func _na_arena() -> void:
 	longe.pos = j.centro() + Vector2(140, 0)   # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
+	longe.kb = Vector2.ZERO
+	perto.kb = Vector2.ZERO
+	for v in a.inimigos.lista:   # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
+		if v != longe and v != perto:
+			v.pos = j.centro() + Vector2(3000, 3000)
 	await quadros(2)
 	a.armas.projeteis.clear()
 	p.t = 0.0

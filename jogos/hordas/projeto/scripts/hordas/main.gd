@@ -1663,7 +1663,7 @@ func _print_tela(qual: String) -> void:
 			Engine.time_scale = 0.03   # o print sai 0,6 s (tempo real) depois: o efeito curto quase para, pra caber na foto
 		"esquiva":   # #126: retículo da mira (--mira=x,y) e uma esquiva com vírus colados (esquiva perfeita): --estresse=N --equip --espera=0.15 --sem_rolar (só o retículo)
 			_comecar("hazaki")
-			await get_tree().create_timer(1.6, true, false, true).timeout
+			await get_tree().create_timer(float(_args.get("antes", 5.5)), true, false, true).timeout
 			_arena.diretor.xp_mult = 0.0
 			if _arena.cartas.aberto():
 				_arena.cartas._fechar()
@@ -1671,7 +1671,7 @@ func _print_tela(qual: String) -> void:
 			_arena.jogador.bot = false
 			_arena.jogador.invencivel = 999.0
 			if _args.has("equip"):
-				for id in ["lanca", "pendrive", "katana"]:
+				for id in ["lanca", "pendrive"]:
 					_arena.armas.adicionar(id)
 			var mxy := str(_args.get("mira", "1,-0.35")).split(",")
 			_arena.jogador.mira_forcada = Vector2(float(mxy[0]), float(mxy[1]))
