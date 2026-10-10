@@ -944,3 +944,9 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
   - Revisão de ortografia dos `dados/*.json`.
 - **Próximo:** esperar o OK do Breno no plano da #122. Sem ele, não começa código de combate nem de mapa (marco 2 em diante). O marco 0 (CI, build automática, ortografia, limpeza do tema antigo) pode começar.
 - **Para o Claude do Alisson (notebook):** siga o plano da #122. O online continua por último.
+
+## 2026-10-09 - Marco 0 (#124), parte técnica: CI, ortografia e export automático
+- **Feito:** `.github/workflows/ci.yml` (ubuntu-latest: import 2x + todas as cenas `testes/*.tscn` menos `bench_*`, falha sem `falhas=0` ou com SCRIPT ERROR; teste de ortografia; `gdlint` só como aviso). `.github/workflows/release.yml` (a cada push na `main` exporta Windows, Linux e Web e publica Release `build-<data>-<sha>`). `ferramentas/ortografia.py` + `ferramentas/ortografia_excecoes.txt` (hunspell pt_BR; textos exibíveis dos `dados/*.json`, sem ids nem `_ajuda`). Presets Linux e Web (sem threads) em `export_presets.cfg`.
+- **Validado local:** YAML válido; 44 cenas de teste com `falhas=0`; ortografia com 0 palavras fora do dicionário (verificada via spylls + dicionário LibreOffice pt_BR; erros reais nos textos: nenhum, só nomes próprios nas exceções). **Só dá pra validar no GitHub:** execução dos workflows, hunspell do apt, export Linux/Web com templates, gdlint.
+- **Pendente (resto do #124):** `rcedit` não roda no Linux, então o `.exe` do Release sai sem ícone/versão (`modify_resources=false` no CI); `gdformat`/`class_name`; `testes/ortografia.tscn` com textos gerados (`{v}`); `--print_tela=cartas --todas`; limpar tema antigo; atualizar `docs/ONLINE_KIKIU.md`. O Web só foi configurado sem threads, não testado no navegador.
+- Claude do Alisson (PC)

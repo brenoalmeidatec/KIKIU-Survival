@@ -1,0 +1,69 @@
+name: Release
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: release
+  cancel-in-progress: false
+env:
+  GODOT_VERSION: "4.4.1"
+  PROJETO: jogos/hordas/projeto
+jobs:
+  exportar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache do Godot e dos templates
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-linux-templates
+      - name: Baixar Godot e export templates
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          B="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot && cd ~/godot
+          curl -fsSL -o g.zip "$B/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q g.zip && rm g.zip
+          mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot && chmod +x godot
+          curl -fsSL -o t.tpz "$B/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          mkdir -p ~/.local/share/godot/export_templates
+          unzip -q t.tpz -d tmp && mv tmp/templates ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          rm -rf t.tpz tmp
+      - name: Preparar versao
+        id: v
+        run: |
+          echo "tag=build-$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          cd "$PROJETO"
+          # rcedit/Wine nao existem no Linux: o .exe sai sem recursos editados (icone/versao)
+          sed -i 's/^application\/modify_resources=true/application\/modify_resources=false/' export_presets.cfg
+          for i in 1 2; do ~/godot/godot --headless --path . --import || true; done
+      - name: Exportar Windows, Linux e Web
+        run: |
+          cd "$PROJETO"
+          mkdir -p ../build/win ../build/linux ../build/web
+          ~/godot/godot --headless --path . --export-release "Windows Desktop" ../build/win/KIKIU.exe
+          ~/godot/godot --headless --path . --export-release "Linux" ../build/linux/KIKIU.x86_64
+          ~/godot/godot --headless --path . --export-release "Web" ../build/web/index.html
+          ls -la ../build/*
+      - name: Compactar
+        run: |
+          cd "$PROJETO/../build"
+          T=${{ steps.v.outputs.tag }}
+          (cd win && zip -qr ../KIKIU-windows-$T.zip .)
+          (cd linux && chmod +x KIKIU.x86_64 && zip -qr ../KIKIU-linux-$T.zip .)
+          (cd web && zip -qr ../KIKIU-web-$T.zip .)
+      - name: Publicar Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          T=${{ steps.v.outputs.tag }}
+          gh release create "$T" "$PROJETO"/../build/KIKIU-*.zip --target "$GITHUB_SHA" \
+            --title "$T" --notes "Build automatico do commit $GITHUB_SHA na main."
