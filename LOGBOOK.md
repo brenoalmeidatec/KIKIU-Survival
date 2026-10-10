@@ -964,3 +964,9 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - Acento: a linha de base da raridade (ÉPICA, etc.) estava em y+78 e o filete em y+76 cortava a palavra; subiu para y+88, entre os filetes (`scripts/hordas/cartas.gd`).
 - Pendente: conferir no zip do Breno se o acento de É/Á/Ã aparece nítido em resolução real (o print de teste é 640x360 e não dá para ver bem). Ortografia e sprites das demais cartas seguem na #98.
 - Testes: cartas_comp, descobertas e pausa com falhas=0.
+## 2026-10-09: marco 0 (limpeza do tema antigo) e ONLINE_KIKIU atualizado (Claude do Alisson (PC))
+- **Feito:** apagados 4 PNGs de informática sem nenhuma referência no projeto de hordas, com o .import (~27 KB): `assets/gerado/proj_ssd`, `proj_water_cooler`, `icone_ssd`, `icone_water_cooler`. Os sprites das armas `ssd` e `water_cooler` usam `proj_tempestade` e `proj_ciclone`. **Mantidos** `assets/cenarios/cidade` e `laboratorio`: ainda estão em `dados/cenarios.json` e no `--fase` do `main.gd`. `jogos/cairu/` não foi tocado.
+- **Feito:** `docs/ONLINE_KIKIU.md`: status atualizado (online é o marco 9, #133, por último) e as pendências com os TODOs de `missao_chefe.gd` e `loja.gd`.
+- **Testes:** 46 cenas (sem bench_) com falhas=0 e 0 SCRIPT ERROR; bot `--heroi=hazaki --semente=7 --sair=120` sem SCRIPT ERROR. Import feito 2x.
+- **Pendente:** `fonte_arte/gerar_arte.py` ainda gera esses 4 PNGs (linhas 289, 293, 380, 533 e 534). Se o gerador rodar de novo, eles voltam; tirar essas entradas dele é um passo separado. Também faltam o `cabeca_sem.png` de Hazaki (sem referência, mas não é do tema antigo) e a decisão sobre `cidade`/`laboratorio`.
+- Assinado: Claude do Alisson (PC)
