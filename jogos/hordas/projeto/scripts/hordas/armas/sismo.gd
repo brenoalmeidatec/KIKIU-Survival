@@ -13,9 +13,14 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	if a.t > 0:
 		return
 	a.t = maxf(0.5, float(s.recarga))
-	for k in int(s.get("ondas", 1)):
+	var g: Dictionary = s.get("comp", {}).get("onda_gelida", {})   # fusão Martelo Glacial: congela e a onda-eco puxa
+	var n := int(s.get("ondas", 1))
+	for k in n + int(g.get("ondas_extra", 0)):
+		var eco := k >= n
 		w.especiais.append({"tipo": "sismo", "espera": k * 0.28, "t": 0.0, "raio": float(s.get("raio", 85)) * float(s.area),
-			"dano": float(s.dano), "empurra": float(s.get("empurra", 260)), "lento": float(s.get("lentidao", 0.0)),
+			"dano": float(s.dano) * (float(g.get("eco_dano_mult", 1.0)) if eco else 1.0),
+			"empurra": float(s.get("empurra", 260)) * (-float(g.get("eco_puxa", 0.5)) if eco else 1.0),
+			"lento": maxf(float(s.get("lentidao", 0.0)), float(g.get("lento", 0.0))), "eco": eco,
 			"acertou": [], "arma": a.id, "centro": Vector2.ZERO, "saiu": false})
 	w.golpe_corpo()
 

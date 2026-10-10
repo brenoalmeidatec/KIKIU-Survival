@@ -98,5 +98,41 @@ func _ready() -> void:
 	var d0: float = float(a.armas._s(w0).dano)
 	a.aplicar({"tipo": "ascensao", "id": w0.id, "nome": "x", "nivel": 1})
 	ok(float(a.armas._s(w0).dano) > d0 * 1.1, "ascensão soma dano")
+	# mecânica própria de cada fusão: a receita manda ids de comportamentos.json e a arma os entrega em s.comp
+	var receitas: Array = Univ.cfg().fusoes
+	ok(receitas.size() == 6, "6 fusões")
+	for f in receitas:
+		var fid := Univ.id_de(str(f.vira), "puro")
+		ok(not f.get("mecanica", {}).is_empty() and str(f.get("desc", "")) != "" and Dados.json("armas")[fid].descricao == f.desc, "fusão com mecânica e descrição: " + fid)
+		a.armas.lista.clear()
+		a.armas.adicionar(fid)
+		var wf: Dictionary = a.armas.lista[0]
+		var sf: Dictionary = a.armas._s(wf)
+		for cid in f.mecanica:
+			ok(sf.comp.has(cid), "%s aplica %s" % [fid, cid])
+			for k in f.mecanica[cid]:
+				ok(sf.comp[cid].get(k) == f.mecanica[cid][k], "%s: ajuste %s.%s" % [fid, cid, k])
+		ok(Univ.mecanica_de(fid) == f.mecanica, "mecanica_de " + fid)
+		ok(a.armas.comportamentos_disponiveis(wf).is_empty() or not a.armas.comportamentos_disponiveis(wf).any(func(x): return Dados.json("comportamentos").lista[x].get("so_fusao", false)), "so_fusao não vira carta")
+	# efeitos que mudam o comportamento de verdade
+	a.armas.lista.clear()
+	a.armas.adicionar("u_fusao_lanca_sanguessuga")
+	var wl: Dictionary = a.armas.lista[0]
+	var sl: Dictionary = a.armas._s(wl)
+	a.armas.especiais.clear()
+	a.armas.MODULOS["lanca"].atualizar(a.armas, wl, Dados.item(wl.id), sl, 100.0)
+	ok(a.armas.especiais.size() == int(sl.quantidade) * 3, "lança sanguessuga: 3 pontas por estocada (%d)" % a.armas.especiais.size())
+	ok(a.armas.especiais.any(func(e): return e.cura > 0), "lança sanguessuga: estocada cura")
+	a.armas.lista.clear()
+	a.armas.adicionar("u_fusao_martelo_glacial")
+	var wm: Dictionary = a.armas.lista[0]
+	var sm: Dictionary = a.armas._s(wm)
+	a.armas.especiais.clear()
+	a.armas.MODULOS["sismo"].atualizar(a.armas, wm, Dados.item(wm.id), sm, 100.0)
+	ok(a.armas.especiais.size() == int(sm.get("ondas", 1)) + 1, "martelo glacial: onda + eco (%d)" % a.armas.especiais.size())
+	ok(a.armas.especiais.all(func(e): return e.lento >= 2.5) and a.armas.especiais[-1].empurra < 0 and a.armas.especiais[0].empurra > 0, "martelo glacial: congela e o eco puxa")
+	a.armas.lista.clear()
+	a.armas.adicionar("u_fusao_aurora_rubra")
+	ok(a.armas._comp_de(a.armas.lista[0]).has("rastro_fogo"), "aurora rubra deixa rastro")
 	print("ARMASUNIV falhas=", falhas)
 	get_tree().quit(1 if falhas > 0 else 0)

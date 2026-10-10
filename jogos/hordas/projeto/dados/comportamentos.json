@@ -14,6 +14,9 @@
   "explosao_final": {"nome": "Poça Instável", "desc": "Muda a poça: ao sumir, ela explode em volta.",
    "tipos": ["poca"], "nivel_min": 3, "exclui": [], "param": {"raio_mult": 1.5, "dano_mult": 4.0}},
   "respiracao": {"nome": "Giro em Espiral", "desc": "Muda a órbita: abre e fecha em espiral, cobrindo mais chão.",
-   "tipos": ["orbita"], "nivel_min": 3, "exclui": [], "param": {"amplitude": 0.45, "freq": 2.2}}
+   "tipos": ["orbita"], "nivel_min": 3, "exclui": [], "param": {"amplitude": 0.45, "freq": 2.2}},
+  "corrente_raio": {"nome": "Corrente de Raios", "desc": "Muda o raio: salta em corrente para outros inimigos.", "so_fusao": true, "tipos": ["raio"], "nivel_min": 3, "param": {"saltos": 3, "alcance": 130, "dano_mult": 0.8}},
+  "onda_gelida": {"nome": "Onda Gélida", "desc": "Muda a onda: congela, e um eco puxa os inimigos.", "so_fusao": true, "tipos": ["sismo"], "nivel_min": 3, "param": {"lento": 2.0, "ondas_extra": 1, "eco_puxa": 0.4, "eco_dano_mult": 0.7}},
+  "lanca_ramos": {"nome": "Estocada Tripla", "desc": "Muda a estocada: se divide em pontas e rouba vida.", "so_fusao": true, "tipos": ["lanca"], "nivel_min": 3, "param": {"ramos": 2, "angulo": 0.5, "alcance_mult": 0.75, "dano_mult": 0.6, "cura": 1, "cura_max": 4}}
  }
 }

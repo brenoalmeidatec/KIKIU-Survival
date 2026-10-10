@@ -2344,14 +2344,39 @@
    "ingredientes": [
     "lamina_alvorecer",
     "retalhador_sangrento"
-   ]
+   ],
+   "desc": "Fusão: o alvorecer sangra. Cada golpe largo deixa um rastro de sangue em brasa pelo chão, que corrói quem pisa.",
+   "mecanica": {
+    "rastro_fogo": {
+     "dano_pct": 0.45,
+     "duracao": 3.0,
+     "max": 14,
+     "elem": "veneno",
+     "rampa": [
+      "1a0508",
+      "3a0810",
+      "7a0c1c",
+      "c4142e",
+      "f02a4a",
+      "ff7080"
+     ]
+    }
+   }
   },
   {
    "vira": "fusao_chuva_estrelas",
    "ingredientes": [
     "cetro_astral",
     "bastao_cristal"
-   ]
+   ],
+   "desc": "Fusão: o cetro chama o céu. Cada estrela que cai salta em corrente para até 4 sombras próximas.",
+   "mecanica": {
+    "corrente_raio": {
+     "saltos": 4,
+     "alcance": 150,
+     "dano_mult": 0.8
+    }
+   }
   },
   {
    "vira": "fusao_martelo_glacial",
@@ -2359,7 +2384,16 @@
     "martelo_forjagelo",
     "martelo_ferreiro",
     "marreta_enferrujada"
-   ]
+   ],
+   "desc": "Fusão: a pancada congela o chão. A onda gélida prende a horda e um eco logo atrás a puxa para o centro.",
+   "mecanica": {
+    "onda_gelida": {
+     "lento": 2.5,
+     "ondas_extra": 1,
+     "eco_puxa": 0.4,
+     "eco_dano_mult": 0.7
+    }
+   }
   },
   {
    "vira": "fusao_lanca_sanguessuga",
@@ -2367,7 +2401,18 @@
     "lanca_cacada",
     "pique_real",
     "montante_carmesim"
-   ]
+   ],
+   "desc": "Fusão: a estocada se parte em três pontas e sorve o sangue de quem atravessa, devolvendo vida a quem a empunha.",
+   "mecanica": {
+    "lanca_ramos": {
+     "ramos": 2,
+     "angulo": 0.5,
+     "alcance_mult": 0.75,
+     "dano_mult": 0.6,
+     "cura": 1,
+     "cura_max": 4
+    }
+   }
   },
   {
    "vira": "fusao_tempestade_laminas",
@@ -2375,14 +2420,28 @@
     "disco_cortante",
     "chakram_alvorada",
     "lamina_tempestade"
-   ]
+   ],
+   "desc": "Fusão: um anel de aço e raios que respira. Abre-se como uma boca faminta e se fecha, ceifando tudo o que ronda.",
+   "mecanica": {
+    "respiracao": {
+     "amplitude": 0.6,
+     "freq": 2.6
+    }
+   }
   },
   {
    "vira": "fusao_lua_veneno",
    "ingredientes": [
     "pocao_corrosiva",
     "frasco_incendiario"
-   ]
+   ],
+   "desc": "Fusão: poças de veneno lunar que, ao secar, estouram numa explosão sombria sobre a horda.",
+   "mecanica": {
+    "explosao_final": {
+     "raio_mult": 2.0,
+     "dano_mult": 5.0
+    }
+   }
   }
  ]
 }
