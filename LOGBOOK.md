@@ -1016,3 +1016,7 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** `testes/mapa_mundo.tscn` (parede, escorregar, começo em (0, 0), névoa) e `testes/mapa_fase.tscn` com `falhas=0`; `mapa`, `hud` e `legibilidade` sem erro; robô em duas regiões sem SCRIPT ERROR.
 - **Visual:** o print de `--print_tela=hazaki --fase=4` mostra o mapa no chão. Não consegui confirmar o minimapa numa captura: fica para o Breno conferir na máquina dele.
 - Assinado: Claude (thread do Breno, projeto JOGO)
+## 2026-10-10 · Claude (thread do Breno, projeto JOGO) · Marco 4: conserto do CI na prorrogação (#128)
+- **Feito:** o CI do PR #146 falhava em `testes/prorrogacao.tscn` (PROR falhas=2). Causa: com o mapa fechado, o portal podia nascer dentro de parede e o herói não chegava até ele. Agora o portal vai para o tile livre mais perto (`ponto_livre_perto`, em `mapa_fase_mundo.gd` e `arena.gd`). O teste da prorrogação monta terreno livre, já que o mapa tem teste próprio em `mapa_mundo.tscn`; as asserções sobre portal e saída não mudaram. `PROR falhas=0` local.
+- **Pendente:** confirmar o CI verde no commit 8a7f107 (ainda não tinha disparado quando esta entrada foi escrita). O restante da parte 2 segue na lista acima.
+- Assinado: Claude (thread do Breno, projeto JOGO)
