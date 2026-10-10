@@ -16,13 +16,19 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 	var q := int(s.quantidade)
 	var alcance := float(s.get("alcance", 140)) * float(s.area)
 	var alvos: Array = w.campo.n_mais_perto(c, q, alcance + 60.0)
+	var rm: Dictionary = s.get("comp", {}).get("lanca_ramos", {})   # fusão Lança Sanguessuga: pontas laterais e roubo de vida
 	for i in q:
 		var dir := Vector2(w.dono.lado, 0)
 		if not alvos.is_empty():
 			dir = (alvos[i % alvos.size()].pos - c).normalized()
-		w.especiais.append({"tipo": "lanca", "espera": i * 0.12, "t": DUR, "dir": dir, "alcance": alcance,
-			"largura": float(s.get("largura", 14)) * float(s.area), "dano": float(s.dano), "arma": a.id, "feito": false,
-			"evo": bool(d.get("evolucao", false))})
+		var dirs := [[dir, 1.0, 1.0]]
+		for r in int(rm.get("ramos", 0)):
+			var ang := float(rm.get("angulo", 0.5)) * (1.0 if r % 2 == 0 else -1.0) * (1 + r / 2)
+			dirs.append([dir.rotated(ang), float(rm.get("alcance_mult", 0.75)), float(rm.get("dano_mult", 0.6))])
+		for dd in dirs:
+			w.especiais.append({"tipo": "lanca", "espera": i * 0.12, "t": DUR, "dir": dd[0], "alcance": alcance * dd[1],
+				"largura": float(s.get("largura", 14)) * float(s.area), "dano": float(s.dano) * dd[2], "arma": a.id, "feito": false,
+				"evo": bool(d.get("evolucao", false)), "cura": int(rm.get("cura", 0)), "cura_max": int(rm.get("cura_max", 0))})
 	w.golpe_corpo((alvos[0].pos - c).normalized() if not alvos.is_empty() else Vector2(w.dono.lado, 0))
 
 
@@ -41,6 +47,8 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 				w.campo.ferir(v, e.dano, e.dir * 120.0, e.arma)
 				n += 1
 		Som.tocar("whoosh", 0.05, 1.3, -8)
+		if e.cura > 0 and n > 0:
+			w.dono.curar(float(e.cura * mini(n, e.cura_max)))
 		var ef = w.fx()
 		if ef:   # faíscas saindo da ponta na direção da estocada
 			ef.faisca(fim, e.dir, Color(1.0, 0.75, 0.4) if e.evo else Color(0.8, 0.9, 1.0), 3, 220.0)

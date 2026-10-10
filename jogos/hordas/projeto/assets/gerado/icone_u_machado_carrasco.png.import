@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c5j83qbh7b8fr"
-path="res://.godot/imported/icone_ssd.png-f1a9cc62d48623c7589bf546421112e3.ctex"
+uid="uid://m1wp1qohupv5"
+path="res://.godot/imported/icone_u_machado_carrasco.png-5e2aa4789152f6e0ea50c60da5609763.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/gerado/icone_ssd.png"
-dest_files=["res://.godot/imported/icone_ssd.png-f1a9cc62d48623c7589bf546421112e3.ctex"]
+source_file="res://assets/gerado/icone_u_machado_carrasco.png"
+dest_files=["res://.godot/imported/icone_u_machado_carrasco.png-5e2aa4789152f6e0ea50c60da5609763.ctex"]
 
 [params]
 

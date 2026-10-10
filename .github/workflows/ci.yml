@@ -1,0 +1,70 @@
+name: CI
+on:
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  GODOT_VERSION: "4.4.1"
+  PROJETO: jogos/hordas/projeto
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache do Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux
+      - name: Baixar Godot ${{ env.GODOT_VERSION }}
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot && cd ~/godot
+          curl -fsSL -o g.zip "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q g.zip && rm g.zip
+          mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot && chmod +x godot
+      - name: Importar o projeto (2x; segfault no fim e normal)
+        run: |
+          cd "$PROJETO"
+          for i in 1 2; do ~/godot/godot --headless --path . --import || true; done
+      - name: Rodar as cenas de testes
+        run: |
+          cd "$PROJETO"
+          falhou=0
+          for t in testes/*.tscn; do
+            n=$(basename "$t" .tscn)
+            case "$n" in bench_*) continue;; esac
+            saida=$(timeout 120 ~/godot/godot --headless --path . "res://$t" 2>&1) || true
+            if echo "$saida" | grep -q "SCRIPT ERROR"; then
+              echo "::error::$n: SCRIPT ERROR"; echo "$saida" | grep -A3 "SCRIPT ERROR" | head -20; falhou=1; continue
+            fi
+            if echo "$saida" | grep -q "falhas=0"; then
+              echo "ok   $n"
+            else
+              echo "::error::$n: sem 'falhas=0'"; echo "$saida" | tail -25; falhou=1
+            fi
+          done
+          exit $falhou
+  ortografia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar hunspell pt_BR
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq hunspell hunspell-pt-br
+      - run: python3 -I ferramentas/ortografia.py
+  gdlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true   # so aviso: o codigo ainda nao foi formatado (Marco 0)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "gdtoolkit==4.*"
+      - run: gdlint jogos/hordas/projeto/scripts jogos/hordas/projeto/testes || echo "::warning::gdlint achou problemas de estilo (so aviso ate o codigo ser formatado)"

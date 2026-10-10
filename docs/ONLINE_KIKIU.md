@@ -1,6 +1,6 @@
 # K.I.K.I.U online: o que fazer (para o Alisson)
 
-O Breno quer testar o online do K.I.K.I.U com o Alisson, de casas diferentes. Esta é a tarefa, com o desenho que já pensei depois de ler o código. **Nada disso foi construído ainda**; o que existe hoje é a corrida de 10 fases e o duelo final contra robôs (PR #1).
+O Breno quer testar o online do K.I.K.I.U com o Alisson, de casas diferentes. Esta é a tarefa, com o desenho que já pensei depois de ler o código. **Status (2026-10-09):** o online já foi construído em boa parte (seção 7), mas está em prioridade baixíssima: é o **marco 9 (#133)**, o último da fila, depois dos marcos 0 a 8 (decisão de 07/10). O jogo solo (corrida de 10 fases e duelo final contra robôs) vem antes.
 
 Código do jogo: `jogos/hordas/projeto/scripts/hordas/`. Rede pronta para reaproveitar (com a sua validação): `jogos/cairu/projeto/scripts/rede.gd`. Túnel: `abrir_tunel_playit.bat` (está em `jogos/cairu/ferramentas/` e deve ir junto do .exe do K.I.K.I.U). Meta: até 6 jogadores, o anfitrião é o servidor (ENet, UDP 7777).
 
@@ -45,7 +45,7 @@ Reaproveitar `duelo.gd`: no lugar dos robôs (`rival.gd`), cada outra pessoa vir
 - Tráfego do anfitrião: ~60 KB/s por cliente com a foto de vírus; limitar a ~120 vírus por cliente se a internet de casa não aguentar.
 - As armas dos outros jogadores não aparecem na tela de quem assiste (só o dano nos vírus). Ver depois se vale mandar eventos leves de tiro.
 
-## 7. Estado (2026-10-05, Claude do Alisson)
+## 7. Estado (2026-10-05, Claude do Alisson; revisado em 2026-10-09)
 Feito, seguindo as seções 1 a 4 (código em `scripts/hordas/rede.gd`, `online.gd` e `remoto.gd`, mais ganchos em arena, inimigos, diretor, duelo, jogador, cartas, hud e main):
 - Sala, menu (Jogar sozinho / Criar sala / Entrar em sala), campo de endereço com Ctrl+V que lembra o último, flags `--online=host|join`.
 - Horda junta: só o anfitrião roda diretor e IA, foto a 15 Hz só dos vírus perto de cada um, acertos em lote, mortes avisadas e recompensa pessoal, dano de vírus em remoto pelo anfitrião (intervalo mínimo de 0,45 s).
@@ -59,3 +59,8 @@ Decisões que não estavam no desenho:
 - Se a sala tiver só o anfitrião, o duelo é contra robôs, como no solo.
 
 Testado com 2 instâncias na mesma máquina: fase 9 → 10 → Tela Azul → duelo, reviver, todos caídos e anfitrião saindo no meio. **Falta**: teste real pelo túnel do playit em 2 casas, e com mais de 2 pessoas.
+
+**Pendências do marco 9 (#133)**, que ainda não estão no código:
+- Mapa, baús, relíquias e missão sincronizados pela semente. O TODO de `scripts/hordas/missao_chefe.gd` (linha 9) quer mandar o estado da missão aos clientes, para os marcadores aparecerem para todos.
+- A loja online. O TODO de `scripts/hordas/loja.gd` (linha 9) quer que cada cliente sorteie e gaste a própria loja (hoje só o jogador local tem ouro de verdade), e o da linha 153 pede uma rodada de sorteio por jogador.
+- Testes com 2 instâncias (os scripts `online_*.sh` do checklist da #133) e uma partida real de 4 pessoas de casas diferentes.

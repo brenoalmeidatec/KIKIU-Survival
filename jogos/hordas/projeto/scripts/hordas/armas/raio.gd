@@ -14,35 +14,37 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 		return
 	a.t = maxf(0.2, float(s.recarga))
 	var c: Vector2 = w.dono.centro()
+	var corr: Dictionary = s.get("comp", {}).get("corrente_raio", {})   # fusão Chuva de Estrelas: o raio salta em corrente
 	var caiu := false
 	for i in int(s.quantidade):
 		var alvo = w.campo.aleatorio_na_tela(c)
 		if alvo == null:
 			break
 		var r := float(s.get("raio", 18)) * float(s.area)
-		_cair(w, alvo.pos, float(s.dano), r, int(s.get("cadeia", 0)), a.id, [alvo.id], alvo.pos + Vector2(randf_range(-30, 30), -360))
+		_cair(w, alvo.pos, float(s.dano), r, int(s.get("cadeia", 0)) + int(corr.get("saltos", 0)), a.id, [alvo.id],
+			alvo.pos + Vector2(randf_range(-30, 30), -360), float(corr.get("alcance", 110.0)), float(corr.get("dano_mult", 0.7)))
 		caiu = true
 	if caiu:
 		Som.tocar("tremor", 0.1, 1.9, -12)
 
 
 ## Machuca em volta de p e desenha o risco de "de" até p; com cadeia, pula pro vizinho mais perto que ainda não levou.
-static func _cair(w, p: Vector2, dano: float, r: float, cadeia: int, arma: String, ja: Array, de: Vector2) -> void:
+static func _cair(w, p: Vector2, dano: float, r: float, cadeia: int, arma: String, ja: Array, de: Vector2, alc := 110.0, mult := 0.7) -> void:
 	for v in w.campo.no_circulo(p, r):
 		w.campo.ferir(v, dano, Vector2.ZERO, arma)
 	w.especiais.append({"tipo": "raio", "pos": p, "de": de, "t": VIDA, "r": r, "semente": randf() * 100.0})
 	if cadeia <= 0:
 		return
 	var prox = null
-	var md := 110.0 * 110.0
-	for o in w.campo.no_circulo(p, 110.0):
+	var md := alc * alc
+	for o in w.campo.no_circulo(p, alc):
 		var dd: float = o.pos.distance_squared_to(p)
 		if not o.id in ja and dd < md:
 			md = dd
 			prox = o
 	if prox:
 		ja.append(prox.id)
-		_cair(w, prox.pos, dano * 0.7, r * 0.85, cadeia - 1, arma, ja, p)
+		_cair(w, prox.pos, dano * mult, r * 0.85, cadeia - 1, arma, ja, p, alc, mult)
 
 
 static func passo(w, e: Dictionary, dt: float) -> bool:

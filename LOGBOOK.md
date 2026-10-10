@@ -944,3 +944,29 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
   - Revisão de ortografia dos `dados/*.json`.
 - **Próximo:** esperar o OK do Breno no plano da #122. Sem ele, não começa código de combate nem de mapa (marco 2 em diante). O marco 0 (CI, build automática, ortografia, limpeza do tema antigo) pode começar.
 - **Para o Claude do Alisson (notebook):** siga o plano da #122. O online continua por último.
+
+## 2026-10-09 - Marco 0 (#124), parte técnica: CI, ortografia e export automático
+- **Feito:** `.github/workflows/ci.yml` (ubuntu-latest: import 2x + todas as cenas `testes/*.tscn` menos `bench_*`, falha sem `falhas=0` ou com SCRIPT ERROR; teste de ortografia; `gdlint` só como aviso). `.github/workflows/release.yml` (a cada push na `main` exporta Windows, Linux e Web e publica Release `build-<data>-<sha>`). `ferramentas/ortografia.py` + `ferramentas/ortografia_excecoes.txt` (hunspell pt_BR; textos exibíveis dos `dados/*.json`, sem ids nem `_ajuda`). Presets Linux e Web (sem threads) em `export_presets.cfg`.
+- **Validado local:** YAML válido; 44 cenas de teste com `falhas=0`; ortografia com 0 palavras fora do dicionário (verificada via spylls + dicionário LibreOffice pt_BR; erros reais nos textos: nenhum, só nomes próprios nas exceções). **Só dá pra validar no GitHub:** execução dos workflows, hunspell do apt, export Linux/Web com templates, gdlint.
+- **Pendente (resto do #124):** `rcedit` não roda no Linux, então o `.exe` do Release sai sem ícone/versão (`modify_resources=false` no CI); `gdformat`/`class_name`; `testes/ortografia.tscn` com textos gerados (`{v}`); `--print_tela=cartas --todas`; limpar tema antigo; atualizar `docs/ONLINE_KIKIU.md`. O Web só foi configurado sem threads, não testado no navegador.
+## 2026-10-09 - Fusões de armas universais com mecânica própria (#115)
+- **Feito:** cada receita em `fusoes` (`dados/armas_universais.json`) ganhou `mecanica` (comportamento de `comportamentos.json` -> ajustes de parâmetro) e `desc`. `universais.gd` injeta ambos na arma fundida; `armas.gd` (`_comp_de`) entrega em `s.comp`. Aurora Rubra: rastro de sangue em brasa; Chuva de Estrelas: raio salta em corrente (+4); Martelo Glacial: congela e onda-eco puxa; Lança Sanguessuga: 3 pontas e rouba vida; Ciclone: órbita que respira; Lua Peçonhenta: poça explode ao secar. Novos comportamentos `so_fusao` (nunca saem em carta). Teste `armas_universais` estendido.
+- **Pendente:** conferir visualmente (pontas da lança, eco do martelo).
+- Claude do Alisson (PC)
+## 2026-10-09: ícones próprios das armas universais (#115) (Claude do Alisson (PC))
+- **Feito:** 50 ícones 16x16 em pixel art para as armas universais (`armas` sem `fusao`), gerados em `jogos/hordas/fonte_arte/icones_tema.gd` (`molde_*` por classe + `u_<id>` com `base`/`troca` de cores). `icone` de cada arma em `armas_universais.json` aponta para `u_<id>`. Saída em `assets/gerado/icone_u_*.png`.
+- **Pendente:** as 6 armas de fusão (`fusao_*`, em `armas` com `fusao: true`) continuam com ícones antigos; ficaram de fora porque a tarefa pedia só as 50 e a seção de fusões é de outro agente.
+- **Testes:** `armas_universais`, `regras_armas` e `cartas_comp` com falhas=0.
+- **Próximo:** conferir a legibilidade no jogo, em tela, e decidir o ícone das fusões.
+- Assinado: Claude do Alisson (PC)
+## 2026-10-09 - Claude do Alisson (PC)
+- Issue #98: ícones redesenhados no `gerar_arte.py`: Ímã de Almas (ímã em U com almas), Sopro Ágil (rajadas de vento, chave `vento_sopro`) e Coração de Brasa (coração de brasa, chave `brasa_coracao`). As dádivas `brasa` e `sopro` apontam para as chaves novas; a marmita (drop de cura) e o overclock (passivo) ficaram como estavam.
+- Acento: a linha de base da raridade (ÉPICA, etc.) estava em y+78 e o filete em y+76 cortava a palavra; subiu para y+88, entre os filetes (`scripts/hordas/cartas.gd`).
+- Pendente: conferir no zip do Breno se o acento de É/Á/Ã aparece nítido em resolução real (o print de teste é 640x360 e não dá para ver bem). Ortografia e sprites das demais cartas seguem na #98.
+- Testes: cartas_comp, descobertas e pausa com falhas=0.
+## 2026-10-09: marco 0 (limpeza do tema antigo) e ONLINE_KIKIU atualizado (Claude do Alisson (PC))
+- **Feito:** apagados 4 PNGs de informática sem nenhuma referência no projeto de hordas, com o .import (~27 KB): `assets/gerado/proj_ssd`, `proj_water_cooler`, `icone_ssd`, `icone_water_cooler`. Os sprites das armas `ssd` e `water_cooler` usam `proj_tempestade` e `proj_ciclone`. **Mantidos** `assets/cenarios/cidade` e `laboratorio`: ainda estão em `dados/cenarios.json` e no `--fase` do `main.gd`. `jogos/cairu/` não foi tocado.
+- **Feito:** `docs/ONLINE_KIKIU.md`: status atualizado (online é o marco 9, #133, por último) e as pendências com os TODOs de `missao_chefe.gd` e `loja.gd`.
+- **Testes:** 46 cenas (sem bench_) com falhas=0 e 0 SCRIPT ERROR; bot `--heroi=hazaki --semente=7 --sair=120` sem SCRIPT ERROR. Import feito 2x.
+- **Pendente:** `fonte_arte/gerar_arte.py` ainda gera esses 4 PNGs (linhas 289, 293, 380, 533 e 534). Se o gerador rodar de novo, eles voltam; tirar essas entradas dele é um passo separado. Também faltam o `cabeca_sem.png` de Hazaki (sem referência, mas não é do tema antigo) e a decisão sobre `cidade`/`laboratorio`.
+- Assinado: Claude do Alisson (PC)

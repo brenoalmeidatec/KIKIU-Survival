@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dc7nnhqlck173"
-path="res://.godot/imported/proj_ssd.png-4b07a1420df10fa565e9d408806a7caf.ctex"
+uid="uid://4jn5yo1nkvqm"
+path="res://.godot/imported/icone_u_arco_lua_rubra.png-f7aafa0f3da0c6b57554721f6cf9a0ba.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/gerado/proj_ssd.png"
-dest_files=["res://.godot/imported/proj_ssd.png-4b07a1420df10fa565e9d408806a7caf.ctex"]
+source_file="res://assets/gerado/icone_u_arco_lua_rubra.png"
+dest_files=["res://.godot/imported/icone_u_arco_lua_rubra.png-f7aafa0f3da0c6b57554721f6cf9a0ba.ctex"]
 
 [params]
 

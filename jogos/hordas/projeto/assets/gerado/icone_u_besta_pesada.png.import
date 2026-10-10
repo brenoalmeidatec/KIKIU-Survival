@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b2cacul0x2etl"
-path="res://.godot/imported/icone_water_cooler.png-14c580ffdaf890cfa629e6a3a87c9f8f.ctex"
+uid="uid://dqv0hmc17i67s"
+path="res://.godot/imported/icone_u_besta_pesada.png-63ea3dc862094d8f1d0df34d3eb83bfa.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/gerado/icone_water_cooler.png"
-dest_files=["res://.godot/imported/icone_water_cooler.png-14c580ffdaf890cfa629e6a3a87c9f8f.ctex"]
+source_file="res://assets/gerado/icone_u_besta_pesada.png"
+dest_files=["res://.godot/imported/icone_u_besta_pesada.png-63ea3dc862094d8f1d0df34d3eb83bfa.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxas4d31qa1vs"
-path="res://.godot/imported/proj_water_cooler.png-61cb2b641425e0be0b0efde023217c4b.ctex"
+uid="uid://dk4u1dsmunu18"
+path="res://.godot/imported/icone_u_espinho_alvorada.png-fe93efce78a40398b75e8ba79dfb4cf0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/gerado/proj_water_cooler.png"
-dest_files=["res://.godot/imported/proj_water_cooler.png-61cb2b641425e0be0b0efde023217c4b.ctex"]
+source_file="res://assets/gerado/icone_u_espinho_alvorada.png"
+dest_files=["res://.godot/imported/icone_u_espinho_alvorada.png-fe93efce78a40398b75e8ba79dfb4cf0.ctex"]
 
 [params]
 
