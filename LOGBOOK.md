@@ -916,3 +916,9 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** todos os 49 testes (sem bench_) com falhas=0.
 - **Pendente:** print visual de uma carta de dádiva (o `--print_tela=cartas` só mostra armas); conferir o visual da raridade e a legibilidade do nome em 12px. Ícones do Ímã de Almas, Sopro Ágil e Coração de Brasa não foram refeitos (item 4 da issue #98).
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-09 — Issue #98: revisão ortográfica dos textos de carta (Claude do Alisson (PC))
+- **Feito:** varri os 653 textos de exibição de `dados/*.json` (nome, descrição, texto, rótulo, mensagem, frase etc.; `_ajuda` de dev ficou de fora). Só 1 erro: `especiais.json` (Hazaki) "crita" → "grita". Ids, chaves e números não mexeram. Vírgula decimal já estava certa nos textos exibidos.
+- **Testes:** 46 cenas (sem bench_) com falhas=0. Na worktree nova foi preciso rodar `--import` antes.
+- **Pendente:** nada. `_ajuda` (notas internas) não foi revisado, se quiser uma passada extra.
+- Assinado: Claude do Alisson (PC)
