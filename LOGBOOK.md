@@ -1027,3 +1027,12 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** novo `testes/desenho_lote.tscn`; as 49 cenas passaram, robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40` exit 0 sem SCRIPT ERROR. Nenhum teste antigo precisou mudar.
 - **Pendente / olho humano (PC do Breno):** F3 na Release nova com 500 bichos e a GPU dele (shader com `varying flat` e `INSTANCE_CUSTOM`: só testei Intel e headless; se um monstro sumir ou vier com o recorte trocado, é isso). Decidir se 250 vivos na alta nas fases normais é o equilíbrio certo (o bench não passa pelo diretor, então o efeito do limite em partida real não foi medido). A #127 fica aberta até o Breno confirmar.
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-10 · Claude do Alisson (notebook) · direção visual 2.5D confirmada (fase V0, preparo)
+- **Decisão do Alisson:** o jogo segue a direção visual 2.5D da imagem de referência (`docs/imagens/referencia_2_5d.webp`). Ela substitui a ideia de chibi estilo Tiny RPG da #132 e fecha a #145, que agora é 2.5D com luz e relevo.
+- **Feito (V0):**
+  - `docs/visual_2_5d/README.md` com as regras e as fases V1 a V6 encaixadas nos marcos;
+  - análise da referência por 3 agentes: `hud_menus.md` (layout medido em %, molduras, fontes, tema no Godot), `mundo.md` (escala, câmera, ~15 fontes de luz, efeitos, custo por perfil) e `lacunas.md` (o que muda em cada sistema, com o tamanho do trabalho e um rascunho de issue por fase);
+  - `paleta.json` e a imagem `docs/imagens/comparacao_atual_vs_2_5d.png`.
+- **Recomendações da análise (a decidir):** mundo em 960x540 com herói menor (~32x44, mais detalhe por pixel); câmera mais de cima nos sprites (~45° em vez de 32°); luz fixa do cenário assada e poucas luzes dinâmicas; relevo (normal map) só em herói e elite, e só depois de gerar os sprites sem sombra pintada; HUD em resolução nativa com molduras 9-patch e uma fonte lisa no lugar da pixelada.
+- **Próximo:** V1 (escala, câmera e HUD novo), depois da aba Gráficos (#150) e da 2ª rodada da luz. Perguntas fechadas ao Breno na issue-épico.
