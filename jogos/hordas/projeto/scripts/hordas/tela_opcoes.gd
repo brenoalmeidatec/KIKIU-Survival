@@ -14,6 +14,12 @@ var _tela := Control.new()
 var _sel := 0
 var _quadro := 0
 var _mouse_ult := Vector2(-1, -1)
+var _rolagem := 0.0
+var _fim_lista := 0.0
+const FORA := -1000.0
+const JANELA_TOPO := 50.0   # primeira linha de baixo do título
+const JANELA_BASE := 322.0
+const VOLTAR_Y := 336.0
 
 
 func _ready() -> void:
@@ -31,6 +37,8 @@ func _n() -> int:
 
 
 ## Posição (y da linha de base) de cada item e do "Voltar", mais os cabeçalhos de grupo. Desenho e mouse usam esta conta.
+## A lista rola quando não cabe (são mais de 20 itens): `_rolagem` sobe o que passou do topo; o que fica fora da janela
+## visível vai para y = FORA e não é desenhado nem clicável. "Voltar" fica sempre no pé da tela.
 func _layout() -> Dictionary:
 	var ys := []
 	var grupos := []   # {y, nome}
@@ -40,11 +48,47 @@ func _layout() -> Dictionary:
 		if it.grupo != grupo:
 			grupo = it.grupo
 			y += 4.0
-			grupos.append({"y": y, "nome": grupo})
+			grupos.append({"y": y - _rolagem, "nome": grupo})
 			y += 12.0
 		ys.append(y)
 		y += 12.0   # 12 px por linha: com os itens de acessibilidade e de voz, 14 passava da tela
-	return {"ys": ys, "grupos": grupos, "voltar": y + 8.0}
+	_fim_lista = y
+	for i in ys.size():
+		ys[i] -= _rolagem
+	for g in grupos:
+		if g.y < JANELA_TOPO or g.y > JANELA_BASE:
+			g.y = FORA
+	for i in ys.size():
+		if ys[i] < JANELA_TOPO or ys[i] > JANELA_BASE:
+			ys[i] = FORA
+	return {"ys": ys, "grupos": grupos, "voltar": VOLTAR_Y}
+
+
+## Rola a lista o mínimo para o item escolhido aparecer inteiro (e o cabeçalho do grupo, se for o 1º dele).
+func _seguir_selecao() -> void:
+	if _sel >= Config.ITENS.size():
+		return
+	var y := 50.0
+	var grupo := ""
+	var y_sel := 0.0
+	var y_topo := 0.0
+	for i in Config.ITENS.size():
+		var it: Dictionary = Config.ITENS[i]
+		if it.grupo != grupo:
+			grupo = it.grupo
+			y += 4.0
+			y_topo = y
+			y += 12.0
+		if i == _sel:
+			y_sel = y
+			break
+		y += 12.0
+	var primeiro: bool = _sel == 0 or Config.ITENS[_sel - 1].grupo != Config.ITENS[_sel].grupo
+	var topo := y_topo if primeiro else y_sel
+	if topo - _rolagem < JANELA_TOPO:
+		_rolagem = maxf(0.0, topo - JANELA_TOPO)
+	elif y_sel - _rolagem > JANELA_BASE:
+		_rolagem = y_sel - JANELA_BASE
 
 
 func _rects() -> Array:
@@ -63,6 +107,7 @@ func _sair() -> void:
 
 
 func _process(_dt: float) -> void:
+	_seguir_selecao()
 	_tela.queue_redraw()
 	if Engine.get_process_frames() == _quadro:
 		return
@@ -116,10 +161,17 @@ func _desenhar() -> void:
 	_txt(Vector2(0, 36), "Opções", 16, Color.WHITE)
 	var l := _layout()
 	for g in l.grupos:
-		_txt(Vector2(150, g.y), str(g.nome).to_upper(), 8, Color(1, 0.85, 0.3), 340, HORIZONTAL_ALIGNMENT_LEFT)
+		if g.y != FORA:
+			_txt(Vector2(150, g.y), tr(str(g.nome)).to_upper(), 8, Color(1, 0.85, 0.3), 340, HORIZONTAL_ALIGNMENT_LEFT)
 	for i in Config.ITENS.size():
 		var it: Dictionary = Config.ITENS[i]
-		_linha(i, l.ys[i], str(it.nome), Config.rotulo(it.chave))
+		if l.ys[i] != FORA:
+			_linha(i, l.ys[i], tr(str(it.nome)), Config.rotulo(it.chave))
+	var cor_seta := Color(1, 0.85, 0.3, 0.8)
+	if _rolagem > 0.5:   # tem mais opções acima/abaixo: triângulo na margem
+		_tela.draw_colored_polygon(PackedVector2Array([Vector2(500, 48), Vector2(506, 56), Vector2(494, 56)]), cor_seta)
+	if _fim_lista - _rolagem > JANELA_BASE + 8.0:
+		_tela.draw_colored_polygon(PackedVector2Array([Vector2(494, 318), Vector2(506, 318), Vector2(500, 326)]), cor_seta)
 	var sel_v := _sel == _n() - 1
 	if sel_v:
 		_tela.draw_rect(Rect2(250, l.voltar - 10, 140, 13), Color(0.3, 0.35, 0.6, 0.35))

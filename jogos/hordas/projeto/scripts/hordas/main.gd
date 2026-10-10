@@ -752,7 +752,7 @@ vivos %d  qualidade %s  %dx%d" % [Engine.get_frames_per_second(), _diag_soma * 1
 func _alternar_diag() -> void:
 	if _diag_lbl == null:
 		_diag_lbl = Label.new()
-		_diag_lbl.position = Vector2(6, 40)
+		_diag_lbl.position = Vector2(6, 236)   # embaixo da faixa de ícones do HUD novo (esquerda), sem cobrir retrato e relógio
 		_diag_lbl.add_theme_font_size_override("font_size", 10)
 		_diag_lbl.add_theme_color_override("font_color", Color(0.7, 1, 0.7))
 		_diag_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -1389,6 +1389,8 @@ func _tira_animacao(nome: String, seq: String) -> void:
 
 func _print_tela(qual: String) -> void:
 	Config.temporario("pausar_fora", false)   # a janela perde o foco enquanto o print espera: não pode pausar
+	if _args.has("fonte"):   # --fonte=normal, medio ou grande (opção "Tamanho da fonte do HUD")
+		Config.temporario("texto_hud", str(_args.fonte))
 	if _args.has("grande"):
 		Config.temporario("texto_hud", "grande")
 	if _args.has("daltonico"):
