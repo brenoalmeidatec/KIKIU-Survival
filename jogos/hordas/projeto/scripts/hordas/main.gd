@@ -218,6 +218,7 @@ func _escolher_heroi(i: int) -> void:
 
 func _process(dt: float) -> void:
 	_t += dt
+	_diagnostico(dt)
 	_tela.queue_redraw()
 	if _estado != _estado_antes:
 		if not ([_estado_antes, _estado] in MESMA_TELA or [_estado, _estado_antes] in MESMA_TELA):
@@ -699,7 +700,75 @@ func _online_teste() -> void:
 
 ## Esc na escolha de herói volta pro título. Fica aqui (e não no _process, que lê a tecla por polling) para só pegar o Esc
 ## que ninguém consumiu: o que fecha "Meus heróis" (tela_herois.gd lê em _input) não volta duas telas de uma vez.
+## Diagnóstico (F3 ou Select do controle na partida): fps, vivos, tempos, qualidade e os maiores custos. Desligado por padrão.
+var _diag_lbl: Label
+var _diag_t := 0.0
+var _diag_q := 0
+var _diag_soma := 0.0
+var _lento_t := 0.0
+
+func _diagnostico(dt: float) -> void:
+	if _arena == null or _estado != "partida":
+		_lento_t = 0.0
+		if _diag_lbl:
+			_diag_lbl.visible = false
+		return
+	# qualidade automática: fps < 40 por 8 s seguidos desce um degrau (nunca sobe sozinha); só em memória, não grava nas opções
+	if Config.v("qualidade_auto") and not _args.has("sair") and not get_tree().paused:
+		_lento_t = _lento_t + dt if Engine.get_frames_per_second() < 40 else 0.0
+		if _lento_t >= 8.0:
+			_lento_t = 0.0
+			var ordem := ["alta", "media", "baixa"]
+			var i := ordem.find(str(Config.v("qualidade")))
+			if i >= 0 and i < 2:
+				Config.temporario("qualidade", ordem[i + 1])
+				_arena.mensagem("FPS baixo: qualidade gráfica %s" % ["média" if i == 0 else "baixa"], Color(1, 0.8, 0.4))
+	if _diag_lbl == null or not _diag_lbl.visible:
+		return
+	_diag_t += dt
+	_diag_q += 1
+	_diag_soma += dt
+	if _diag_t < 0.5:
+		return
+	var us: Dictionary = Perf.us.duplicate()
+	var top := us.keys()
+	top.sort_custom(func(a, b): return us[a] > us[b])
+	var q := maxi(Perf.quadros, 1)
+	var linhas := "fps %d  quadro %.1f ms  proc %.1f ms
+vivos %d  qualidade %s  %dx%d" % [Engine.get_frames_per_second(), _diag_soma * 1000.0 / _diag_q,
+		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.inimigos.vivos(), Config.v("qualidade"), get_window().size.x, get_window().size.y]
+	for k in mini(3, top.size()):
+		linhas += "
+%s %d us" % [top[k], int(us[top[k]]) / q]
+	_diag_lbl.text = linhas
+	_diag_t = 0.0
+	_diag_q = 0
+	_diag_soma = 0.0
+	if Perf.quadros > 60:   # janela de medida curta: zera o acumulado do Perf
+		Perf.us.clear()
+		Perf.quadros = 0
+
+
+func _alternar_diag() -> void:
+	if _diag_lbl == null:
+		_diag_lbl = Label.new()
+		_diag_lbl.position = Vector2(6, 40)
+		_diag_lbl.add_theme_font_size_override("font_size", 10)
+		_diag_lbl.add_theme_color_override("font_color", Color(0.7, 1, 0.7))
+		_diag_lbl.add_theme_color_override("font_outline_color", Color.BLACK)
+		_diag_lbl.add_theme_constant_override("outline_size", 4)
+		_diag_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_camada.add_child(_diag_lbl)
+	_diag_lbl.visible = not _diag_lbl.visible
+	Perf.ligado = _diag_lbl.visible or _args.has("sair")
+	Perf.us.clear()
+	Perf.quadros = 0
+
+
 func _unhandled_input(e: InputEvent) -> void:
+	if _estado == "partida" and ((e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_F3) or (e is InputEventJoypadButton and e.pressed and e.button_index == JOY_BUTTON_BACK and _arena and not _arena.cartas.aberto())):
+		_alternar_diag()
+		return
 	if _estado == "herois" and e.is_action_pressed("voltar") and not e.is_echo():
 		get_viewport().set_input_as_handled()
 		_estado = "titulo"
@@ -921,6 +990,14 @@ func _teste() -> void:
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
 		print("  perf_us: ", Perf.relatorio())
+		var _ef = _arena.efeitos
+		var _ar = _arena.armas
+		print("  contagem: proj=%d pocas=%d golpes=%d esp=%d aneis=%d tiros=%d num=%d part=%d cortes=%d imp=%d fais=%d luzes=%d itens=%d mortes=%d/%d manchas=%d arcos=%d nos=%d quadro_ms=%.2f" % [
+			_ar.projeteis.size(), _ar.pocas.size(), _ar.golpes.size(), _ar.especiais.size(), _ar.aneis.size(), _arena.inimigos.tiros.size(), _ef.numeros.size(), _ef.particulas.size(),
+			_ef.cortes.size(), _ef.impactos.size(), _ef.faiscas.size(), _ef.luzes.size(), _arena.coleta.itens.size(), _arena.mortes.ativas.size(), _arena.mortes.simples.size(),
+			_arena.mortes.manchas.size(), _arena.inimigos.elementos.arcos.size(), int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), _t_quadros * 1000.0 / maxi(_quadros, 1)])
+		_t_quadros = 0.0
+		_quadros = 0
 		var ele = _arena.inimigos.elementos
 		print("  elementos: estados=%d vistos=%d marcados=%d congelados=%d reacoes=%d" % [ele.estados.size(), ele.vis.size(), ele.contagem.qualquer, ele.contagem.congelados, ele.contagem.reacoes])
 		if _arena.ganchos:

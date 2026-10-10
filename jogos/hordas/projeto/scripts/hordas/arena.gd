@@ -1357,7 +1357,9 @@ func iniciar_duelo_online(d: Dictionary) -> void:
 
 ## Teste: dá ao jogador uma build sorteada de nível N (--build=N).
 func dar_build_teste(nv: int) -> void:
-	var b: Dictionary = Construcao.gerar(heroi_id, nv, RandomNumberGenerator.new())
+	var rng_b := RandomNumberGenerator.new()
+	rng_b.seed = hash([semente, heroi_id, nv])   # build repetível com --semente (medir desempenho sempre com as mesmas armas)
+	var b: Dictionary = Construcao.gerar(heroi_id, nv, rng_b)
 	armas.lista.clear()
 	for a in b.armas:
 		armas.adicionar(a.id)

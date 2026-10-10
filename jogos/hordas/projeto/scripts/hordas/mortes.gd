@@ -187,17 +187,25 @@ func _draw() -> void:
 
 
 func _draw_i() -> void:
+	var vm := get_canvas_transform().affine_inverse() * get_viewport_rect() if is_inside_tree() else Rect2()
+	vm = vm.grow(60.0)
 	for m in manchas:
-		if m.t < 0.0:
+		if m.t < 0.0 or (vm.has_area() and not vm.has_point(m.pos)):
 			continue
 		var k := clampf(m.t / 0.4, 0.0, 1.0)
 		var a := 0.62 * (1.0 - smoothstep(_vida_mancha * 0.6, _vida_mancha, m.t))
 		draw_set_transform(m.pos, 0.0, Vector2(1.0, 0.36))
 		draw_circle(Vector2.ZERO, float(m.r) * (0.4 + 0.6 * k), Color(m.cor.r, m.cor.g, m.cor.b, a))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var vis := get_canvas_transform().affine_inverse() * get_viewport_rect() if is_inside_tree() else Rect2()
+	vis = vis.grow(90.0)   # margem: pedaços e chamas passam do ponto da morte
 	for r in ativas:
+		if vis.has_area() and not vis.has_point(r.pos):
+			continue
 		desenhar(self, r)
 	for r in simples:
+		if vis.has_area() and not vis.has_point(r.pos):
+			continue
 		desenhar(self, r)
 
 

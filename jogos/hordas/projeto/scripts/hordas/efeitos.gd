@@ -212,10 +212,16 @@ func _draw() -> void:
 
 
 func _draw_i() -> void:
+	var vis := _vis.grow(48.0)
+	var corta := _vis.has_area()
 	for p in particulas:
+		if corta and not vis.has_point(p.pos):
+			continue
 		draw_rect(Rect2(p.pos, Vector2(p.tam, p.tam)), Color(p.cor, clampf(p.t * 3, 0, 1)))
 	var f: Font = Dados.fonte
 	for n in numeros:
+		if corta and not vis.has_point(n.pos):
+			continue
 		var a := clampf(n.t * 3.0, 0.0, 1.0)
 		var tam: int = tamanho_numero(n.tam, n.pop)
 		var c: Color = Color(1, 1, 1, a) if n.pop > POP * 0.5 else Color(n.cor, a)   # o soco nasce branco e já pega a cor
