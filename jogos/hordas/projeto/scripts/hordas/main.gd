@@ -921,6 +921,14 @@ func _teste() -> void:
 	if _args.has("sair") and _t >= _prox_log:
 		_prox_log += 5.0
 		print("  perf_us: ", Perf.relatorio())
+		var _ef = _arena.efeitos
+		var _ar = _arena.armas
+		print("  contagem: proj=%d pocas=%d golpes=%d esp=%d aneis=%d tiros=%d num=%d part=%d cortes=%d imp=%d fais=%d luzes=%d itens=%d mortes=%d/%d manchas=%d arcos=%d nos=%d quadro_ms=%.2f" % [
+			_ar.projeteis.size(), _ar.pocas.size(), _ar.golpes.size(), _ar.especiais.size(), _ar.aneis.size(), _arena.inimigos.tiros.size(), _ef.numeros.size(), _ef.particulas.size(),
+			_ef.cortes.size(), _ef.impactos.size(), _ef.faiscas.size(), _ef.luzes.size(), _arena.coleta.itens.size(), _arena.mortes.ativas.size(), _arena.mortes.simples.size(),
+			_arena.mortes.manchas.size(), _arena.inimigos.elementos.arcos.size(), int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), _t_quadros * 1000.0 / maxi(_quadros, 1)])
+		_t_quadros = 0.0
+		_quadros = 0
 		var ele = _arena.inimigos.elementos
 		print("  elementos: estados=%d vistos=%d marcados=%d congelados=%d reacoes=%d" % [ele.estados.size(), ele.vis.size(), ele.contagem.qualquer, ele.contagem.congelados, ele.contagem.reacoes])
 		if _arena.ganchos:

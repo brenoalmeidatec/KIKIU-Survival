@@ -13,6 +13,7 @@ var _t := 0.0
 var _rotulos := Node2D.new()   # etiquetas de drop (#72 marco 7): por cima dos bichos
 var _cand: Array = []          # itens com direito a etiqueta, juntados no desenho das gemas
 var _rot: Array = []           # o que será desenhado neste quadro
+var _vis := Rect2()              # a tela em coordenadas do mundo (itens fora dela não são desenhados)
 var rotulos_n := 0             # quantas etiquetas foram desenhadas no último quadro (o teste lê)
 
 
@@ -75,7 +76,11 @@ func atualizar_i(dt: float) -> void:
 	var alvo: Vector2 = jog.centro()
 	var ima: float = 70.0 * arena.stat("ima")
 	_cand.clear()
-	for it in itens.duplicate():
+	_vis = get_canvas_transform().affine_inverse() * get_viewport_rect() if is_inside_tree() else Rect2()
+	var idx := 0
+	while idx < itens.size():   # sem duplicate() nem erase() (O(n) por item, com 450 gemas no chão pesava todo quadro)
+		var it: Dictionary = itens[idx]
+		idx += 1
 		if it.tipo != "gema" or it.valor >= 20.0:
 			_cand.append(it)   # só quem pode ter etiqueta (as gemas pequenas, a maioria, só pagam este teste)
 		var dist: float = it.pos.distance_to(alvo)
@@ -89,7 +94,8 @@ func atualizar_i(dt: float) -> void:
 			else:
 				it.pos = it.pos.move_toward(alvo, it.vel * dt)
 		if dist < 14:
-			itens.erase(it)
+			idx -= 1
+			itens.remove_at(idx)
 			_pegar(it)
 	_rot = rotulos_do_quadro(alvo)
 	rotulos_n = _rot.size()
@@ -184,7 +190,10 @@ func _desenhar_rotulos() -> void:
 
 
 func _draw_i() -> void:
+	var vis := _vis.grow(40.0)
 	for it in itens:
+		if vis.has_area() and not vis.has_point(it.pos):
+			continue   # fora da tela nem desenha (a maioria das gemas acumuladas)
 		var tex := _textura(it)
 		if tex == null:
 			continue
