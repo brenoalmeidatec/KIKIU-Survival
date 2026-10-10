@@ -54,9 +54,9 @@ static func cor_raridade(raridade: String, original: Color) -> Color:
 	return RARIDADE_SEGURA.get(raridade, original) if daltonico() else original
 
 
-## Tamanho de fonte do HUD: a opção "Texto do HUD" (Normal/Grande) multiplica os textos pequenos.
+## Tamanho de fonte do HUD: a opção "Tamanho da fonte do HUD" (1x, 1,5x, 2x) multiplica os textos pequenos.
 static func tam_hud(tam: int) -> int:
-	return tam if tam >= 16 or str(Config.v("texto_hud")) != "grande" else int(round(tam * 1.5))
+	return tam if tam >= 16 else int(round(tam * Config.fator_fonte()))
 
 
 # ---------- mouse ----------

@@ -12,9 +12,13 @@ const ITENS := [
 	{"chave": "camera_frente", "grupo": "Acessibilidade", "nome": "Câmera olha à frente", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "flash_dano", "grupo": "Acessibilidade", "nome": "Flash ao levar dano", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mortes", "grupo": "Acessibilidade", "nome": "Mortes violentas", "valores": ["normal", "reduzida"], "rotulos": ["Normal", "Reduzida"], "padrao": "normal"},
-	{"chave": "numeros_dano", "grupo": "Acessibilidade", "nome": "Números de dano", "valores": [false, true], "formato": "sim_nao", "padrao": true},
-	{"chave": "texto_hud", "grupo": "Acessibilidade", "nome": "Texto do HUD", "valores": ["normal", "grande"], "rotulos": ["Normal", "Grande"], "padrao": "normal"},
 	{"chave": "daltonico", "grupo": "Acessibilidade", "nome": "Modo daltônico", "valores": [false, true], "rotulos": ["Não", "Paleta segura"], "padrao": false},
+	# Leitura da tela (#125). Nome, grupo e rótulos são chaves de tradução (assets/traducao/textos.csv); o texto passa por tr() ao desenhar.
+	# "texto_hud" guarda "normal" (1x), "medio" (1,5x) ou "grande" (2x): "normal" e "grande" já existiam nos arquivos de opções salvos.
+	{"chave": "texto_hud", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_TEXTO_HUD", "valores": ["normal", "medio", "grande"], "rotulos": ["OPC_FONTE_1X", "OPC_FONTE_15X", "OPC_FONTE_2X"], "padrao": "normal"},
+	{"chave": "numeros_dano", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_NUMEROS_DANO", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "nomes_inimigo", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_NOMES_INIMIGO", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "particulas", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_PARTICULAS", "valores": [1.0, 0.5, 0.0], "rotulos": ["OPC_PART_TODAS", "OPC_PART_POUCAS", "OPC_PART_NENHUMA"], "padrao": 1.0},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{"chave": "qualidade", "grupo": "Gráfico", "nome": "Qualidade gráfica", "valores": ["alta", "media", "baixa"], "rotulos": ["Alta", "Média", "Baixa"], "padrao": "alta"},
 	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Baixar a qualidade se travar", "valores": [false, true], "formato": "sim_nao", "padrao": true},
@@ -51,7 +55,29 @@ func q(chave: String) -> Variant:
 		_perfil_nome = nome
 		var ps: Dictionary = Dados.json("qualidade").get("perfis", {})
 		_perfil = ps.get(nome, ps.get("alta", {}))
-	return _perfil.get(chave, Dados.json("qualidade").get("perfis", {}).get("alta", {}).get(chave))
+	var val = _perfil.get(chave, Dados.json("qualidade").get("perfis", {}).get("alta", {}).get(chave))
+	if chave in PART_CHAVES:   # opção "Partículas" (Todas, Poucas, Nenhuma) vale por cima do perfil de qualidade
+		return float(val) * particulas()
+	return val
+
+
+## As quantidades de partícula do perfil de qualidade que a opção "Partículas" também reduz (efeitos.gd e mortes.gd usam particulas() direto).
+const PART_CHAVES := ["amb_particulas", "elem_part"]
+
+
+## Opção "Partículas": 1.0 (todas), 0.5 (poucas) ou 0.0 (nenhuma).
+func particulas() -> float:
+	return float(v("particulas"))
+
+
+## Opção "Tamanho da fonte do HUD": 1.0, 1.5 ou 2.0. O Theme do HUD e os textos pequenos das outras telas multiplicam por isto.
+func fator_fonte() -> float:
+	match str(v("texto_hud")):
+		"grande":
+			return 2.0
+		"medio":
+			return 1.5
+	return 1.0
 
 
 ## Perfil de partida pela máquina: até 4 processadores lógicos e vídeo integrado da Intel (HD/UHD, sem Iris/Arc) = baixa;
@@ -97,7 +123,7 @@ func rotulo(chave: String) -> String:
 		"pct":
 			return "%d%%" % roundi(float(val) * 100.0)
 	var i: int = it.valores.find(val)
-	return str(it.rotulos[i]) if i >= 0 else str(val)
+	return tr(str(it.rotulos[i])) if i >= 0 else str(val)
 
 
 ## Passa pro próximo (passo 1) ou anterior (passo -1) valor da lista, dando a volta.

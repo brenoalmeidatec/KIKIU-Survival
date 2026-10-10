@@ -1,0 +1,553 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/hordas/hud.gd" id="1"]
+[ext_resource type="Theme" path="res://cenas/tema_hud.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/hordas/hud_setas.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/hordas/hud_slot.gd" id="4"]
+
+[node name="Hud" type="CanvasLayer"]
+layer = 5
+script = ExtResource("1")
+
+[node name="Raiz" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme = ExtResource("2")
+
+[node name="Setas" type="Control" parent="Raiz"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("3")
+
+[node name="Xp" type="ProgressBar" parent="Raiz"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 9.0
+max_value = 1.0
+step = 0.0001
+show_percentage = false
+
+[node name="Nivel" type="Label" parent="Raiz"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -80.0
+offset_top = 1.0
+offset_right = -4.0
+offset_bottom = 9.0
+grow_horizontal = 0
+text = "NV 1"
+horizontal_alignment = 2
+
+[node name="Esq" type="VBoxContainer" parent="Raiz"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 6.0
+offset_top = 13.0
+offset_right = 160.0
+offset_bottom = 60.0
+theme_override_constants/separation = 3
+
+[node name="Heroi" type="PanelContainer" parent="Raiz/Esq"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Linha" type="HBoxContainer" parent="Raiz/Esq/Heroi"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Retrato" type="TextureRect" parent="Raiz/Esq/Heroi/Linha"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Coluna" type="VBoxContainer" parent="Raiz/Esq/Heroi/Linha"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="HeroiNome" type="Label" parent="Raiz/Esq/Heroi/Linha/Coluna"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Herói"
+
+[node name="HeroiVida" type="ProgressBar" parent="Raiz/Esq/Heroi/Linha/Coluna"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(116, 10)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+show_percentage = false
+
+[node name="HeroiVidaTxt" type="Label" parent="Raiz/Esq/Heroi/Linha/Coluna/HeroiVida"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 1.0
+text = "0/0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Carga" type="ProgressBar" parent="Raiz/Esq/Heroi/Linha/Coluna"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(116, 10)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+show_percentage = false
+
+[node name="CargaTxt" type="Label" parent="Raiz/Esq/Heroi/Linha/Coluna/Carga"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 1.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Build" type="HFlowContainer" parent="Raiz/Esq"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_override_constants/h_separation = 2
+theme_override_constants/v_separation = 2
+
+[node name="Dir" type="PanelContainer" parent="Raiz"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -80.0
+offset_top = 13.0
+offset_right = -6.0
+offset_bottom = 40.0
+grow_horizontal = 0
+
+[node name="Linhas" type="VBoxContainer" parent="Raiz/Dir"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Ouro" type="Label" parent="Raiz/Dir/Linhas"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Ouro 0"
+horizontal_alignment = 2
+
+[node name="Almas" type="Label" parent="Raiz/Dir/Linhas"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Almas 0"
+horizontal_alignment = 2
+
+[node name="Topo" type="VBoxContainer" parent="Raiz"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -140.0
+offset_top = 12.0
+offset_right = 140.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_constants/separation = 2
+
+[node name="Regiao" type="Label" parent="Raiz/Topo"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "FLORESTA 1/5"
+horizontal_alignment = 1
+
+[node name="Tempo" type="Label" parent="Raiz/Topo"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"LabelGrande"
+text = "00:00"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="Raiz/Topo"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Objetivo" type="VBoxContainer" parent="Raiz/Topo"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ObjNome" type="Label" parent="Raiz/Topo/Objetivo"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="ObjBarra" type="ProgressBar" parent="Raiz/Topo/Objetivo"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 8)
+layout_mode = 2
+size_flags_horizontal = 4
+max_value = 1.0
+step = 0.001
+show_percentage = false
+
+[node name="ObjDet" type="Label" parent="Raiz/Topo/Objetivo"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Missao" type="VBoxContainer" parent="Raiz/Topo"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="MisNome" type="Label" parent="Raiz/Topo/Missao"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="MisBarra" type="ProgressBar" parent="Raiz/Topo/Missao"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 8)
+layout_mode = 2
+size_flags_horizontal = 4
+max_value = 1.0
+step = 0.001
+show_percentage = false
+
+[node name="MisDet" type="Label" parent="Raiz/Topo/Missao"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Chefe" type="VBoxContainer" parent="Raiz"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -34.0
+offset_right = 150.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 2
+
+[node name="ChefeNome" type="Label" parent="Raiz/Chefe"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="ChefeBarra" type="ProgressBar" parent="Raiz/Chefe"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 10)
+layout_mode = 2
+max_value = 1.0
+step = 0.001
+show_percentage = false
+
+[node name="Msgs" type="VBoxContainer" parent="Raiz"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -48.0
+offset_right = 200.0
+offset_bottom = -48.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 3
+alignment = 2
+
+[node name="Anuncio" type="Label" parent="Raiz"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 104.0
+offset_bottom = 124.0
+theme_type_variation = &"LabelGrande"
+horizontal_alignment = 1
+
+[node name="Banner" type="PanelContainer" parent="Raiz"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -140.0
+offset_top = 150.0
+offset_right = 140.0
+offset_bottom = 180.0
+grow_horizontal = 2
+
+[node name="Textos" type="VBoxContainer" parent="Raiz/Banner"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="BannerTitulo" type="Label" parent="Raiz/Banner/Textos"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="BannerEfeito" type="Label" parent="Raiz/Banner/Textos"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+custom_minimum_size = Vector2(260, 0)
+
+[node name="Inferior" type="VBoxContainer" parent="Raiz"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -60.0
+offset_right = 160.0
+offset_bottom = -8.0
+grow_vertical = 0
+theme_override_constants/separation = 3
+
+[node name="Buffs" type="HBoxContainer" parent="Raiz/Inferior"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="HabNome" type="Label" parent="Raiz/Inferior"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Linha" type="HBoxContainer" parent="Raiz/Inferior"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Habilidades" type="HBoxContainer" parent="Raiz/Inferior/Linha"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Hab1" type="Control" parent="Raiz/Inferior/Linha/Habilidades"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+script = ExtResource("4")
+
+[node name="Hab2" type="Control" parent="Raiz/Inferior/Linha/Habilidades"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+script = ExtResource("4")
+
+[node name="Provisoes" type="HBoxContainer" parent="Raiz/Inferior/Linha"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 2
+
+[node name="Minimapa" type="Panel" parent="Raiz"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -78.0
+offset_top = -88.0
+offset_right = -6.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Fps" type="Label" parent="Raiz"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -90.0
+offset_top = -12.0
+offset_right = -6.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+horizontal_alignment = 2
+
+[node name="Duelo" type="Control" parent="Raiz"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="DueloVida" type="ProgressBar" parent="Raiz/Duelo"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 9.0
+max_value = 1.0
+step = 0.001
+show_percentage = false
+
+[node name="DueloVidaTxt" type="Label" parent="Raiz/Duelo/DueloVida"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 1.0
+
+[node name="Placa" type="PanelContainer" parent="Raiz/Duelo"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 13.0
+offset_right = 120.0
+offset_bottom = 63.0
+grow_horizontal = 2
+
+[node name="Textos" type="VBoxContainer" parent="Raiz/Duelo/Placa"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="DueloTitulo" type="Label" parent="Raiz/Duelo/Placa/Textos"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Vivos" type="Label" parent="Raiz/Duelo/Placa/Textos"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"LabelGrande"
+horizontal_alignment = 1
+
+[node name="Anel" type="Label" parent="Raiz/Duelo/Placa/Textos"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Aviso" type="Label" parent="Raiz/Duelo"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 90.0
+offset_bottom = 110.0
+theme_type_variation = &"LabelGrande"
+horizontal_alignment = 1
+
+[node name="Lutadores" type="VBoxContainer" parent="Raiz/Duelo"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -112.0
+offset_top = 22.0
+offset_right = -6.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_constants/separation = 3
+
+[node name="Pausa" type="Control" parent="Raiz"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Escuro" type="ColorRect" parent="Raiz/Pausa"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Menu" type="VBoxContainer" parent="Raiz/Pausa"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -60.0
+offset_right = 150.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="PausaTitulo" type="Label" parent="Raiz/Pausa/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"LabelGrande"
+horizontal_alignment = 1
+
+[node name="Opcoes" type="VBoxContainer" parent="Raiz/Pausa/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PausaDica" type="Label" parent="Raiz/Pausa/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+custom_minimum_size = Vector2(300, 0)
+
+[node name="Versao" type="Label" parent="Raiz/Pausa"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -14.0
+offset_bottom = -4.0
+grow_vertical = 0
+horizontal_alignment = 1
