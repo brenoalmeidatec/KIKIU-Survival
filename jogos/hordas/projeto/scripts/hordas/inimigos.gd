@@ -157,7 +157,7 @@ void fragment() {
 "
 const MM_CAP_INI := 256        # instâncias de cada MultiMesh no começo (dobra quando falta)
 const AtlasInimigos := preload("res://scripts/hordas/atlas_inimigos.gd")
-static var _quad_mesh: ArrayMesh
+var _quad_mesh: ArrayMesh
 var _atlas := AtlasInimigos.new()
 var _mm_som: MultiMeshInstance2D
 var _mm_spr: MultiMeshInstance2D
@@ -180,6 +180,7 @@ func _ready() -> void:
 	# ordem dos filhos = ordem de desenho: sombras, marcas no chão, sprites, barras/tiros, flash branco, elementos
 	_mm_som = _novo_mm(Visual.textura_sombras())
 	_bs.resize(MM_CAP_INI * 16)
+	_cor_branca_bs(0, MM_CAP_INI)
 	add_child(_no_marcas)
 	_mm_spr = _novo_mm(_atlas.textura)
 	_bi.resize(MM_CAP_INI * 16)
@@ -226,25 +227,25 @@ func _enviar_mm(mi: MultiMeshInstance2D, buf: PackedFloat32Array, n: int) -> voi
 	mm.visible_instance_count = n
 
 
-## Uma instância de sombra (retângulo + recorte no atlas de sombras).
-func _is(x: float, y: float, w: float, h: float, rx: float, ry: float, rw: float, rh: float) -> void:
-	var o := _ns << 4
-	if o + 16 > _bs.size():
-		_bs.resize(_bs.size() * 2)
-	_ns += 1
-	var b := _bs
-	b[o] = w
-	b[o + 3] = x
-	b[o + 5] = h
-	b[o + 7] = y
-	b[o + 8] = 1.0
-	b[o + 9] = 1.0
-	b[o + 10] = 1.0
-	b[o + 11] = 1.0
-	b[o + 12] = rx
-	b[o + 13] = ry
-	b[o + 14] = rw
-	b[o + 15] = rh
+## O buffer das sombras dobra de tamanho (as sombras são sempre brancas e sem giro: cor e eixos ficam gravados, só se escreve o retângulo e o recorte).
+func _crescer_bs() -> void:
+	var antes := _bs.size() >> 4
+	_bs.resize(_bs.size() * 2)
+	_cor_branca_bs(antes, antes * 2)
+
+
+func _cor_branca_bs(de: int, ate: int) -> void:
+	for i in range(de, ate):
+		var o := i << 4
+		_bs[o + 8] = 1.0
+		_bs[o + 9] = 1.0
+		_bs[o + 10] = 1.0
+		_bs[o + 11] = 1.0
+
+
+## O buffer dos sprites dobra de tamanho.
+func _crescer_bi() -> void:
+	_bi.resize(_bi.size() * 2)
 
 
 ## Uma instância de sprite sem giro: retângulo (x, y, w, h) na tela, recorte (rx, ry, rw, rh) em pixels do atlas e cor.
@@ -1020,6 +1021,9 @@ func _draw() -> void:
 	var _d1 := Perf.ini()
 	_ns = 0
 	_ni = 0
+	var bs := _bs            # (escritas inline nas MultiMesh: roda por bicho por quadro; o buffer é por referência)
+	var ns := 0
+	var cap_s := bs.size() >> 4
 	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus). Vão pra MultiMesh das sombras
 	# (a mancha de contato e o carimbo da sombra assada); só a sombra calculada na hora (sem orçamento de assar) sai direto no _draw.
 	for v: V in _ordem:
@@ -1059,7 +1063,19 @@ func _draw() -> void:
 		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
 		var cw := s.x * 0.75    # mancha de contato (Visual.contato): largura cw, altura 0,32 cw, centrada no pé
 		if not sombra_proj:   # perfil de qualidade baixa: só a mancha de contato no pé (a sombra inclinada é uma textura a mais por bicho)
-			_is(pe.x - cw * 0.5, pe.y - cw * 0.16, cw, cw * 0.32, 0.0, 0.0, 24.0, 8.0)
+			if ns + 2 > cap_s:
+				_crescer_bs()
+				cap_s = bs.size() >> 4
+			var o1 := ns << 4
+			bs[o1] = cw
+			bs[o1 + 3] = pe.x - cw * 0.5
+			bs[o1 + 5] = cw * 0.32
+			bs[o1 + 7] = pe.y - cw * 0.16
+			bs[o1 + 12] = 0.0
+			bs[o1 + 13] = 0.0
+			bs[o1 + 14] = 24.0
+			bs[o1 + 15] = 8.0
+			ns += 1
 			continue
 		var esp: bool = v.espelho
 		var ic := (v.vista * 2 + (1 if quadro > 0 else 0)) * 2 + (1 if esp else 0)
@@ -1069,14 +1085,36 @@ func _draw() -> void:
 			var src := Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y)
 			reg = Visual.sombra_regiao(v.tex, src, esp)
 			v.sombra_reg[ic] = reg
-		_is(pe.x - cw * 0.5, pe.y - cw * 0.16, cw, cw * 0.32, 0.0, 0.0, 24.0, 8.0)
+		if ns + 2 > cap_s:
+			_crescer_bs()
+			cap_s = bs.size() >> 4
+		var o1 := ns << 4
+		bs[o1] = cw
+		bs[o1 + 3] = pe.x - cw * 0.5
+		bs[o1 + 5] = cw * 0.32
+		bs[o1 + 7] = pe.y - cw * 0.16
+		bs[o1 + 12] = 0.0
+		bs[o1 + 13] = 0.0
+		bs[o1 + 14] = 24.0
+		bs[o1 + 15] = 8.0
+		ns += 1
 		if reg.size.x > 0.0:
 			# mesma conta de Visual.sombra: a base do sprite fica em pe.y + (-s.y + s.y) e a esquerda em pe.x - s.x/2 (ou pe.x + s.x/2 - s.x se espelhado = igual)
-			_is(pe.x - s.x * 0.5, pe.y - esc_s, reg.size.x * esc_s, reg.size.y * esc_s, reg.position.x, reg.position.y, reg.size.x, reg.size.y)
+			var o2 := ns << 4
+			bs[o2] = reg.size.x * esc_s
+			bs[o2 + 3] = pe.x - s.x * 0.5
+			bs[o2 + 5] = reg.size.y * esc_s
+			bs[o2 + 7] = pe.y - esc_s
+			bs[o2 + 12] = reg.position.x
+			bs[o2 + 13] = reg.position.y
+			bs[o2 + 14] = reg.size.x
+			bs[o2 + 15] = reg.size.y
+			ns += 1
 		else:
 			var src2 := Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y)
 			var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if esp else Rect2(-s.x / 2, -s.y, s.x, s.y)
 			Visual.sombra(self, v.tex, rs, src2, pe)
+	_ns = ns
 	_enviar_mm(_mm_som, _bs, _ns)
 	Perf.fim("ini_d_sombra", _d1)
 	_no_marcas.queue_redraw()   # marcas de aviso no chão: ver _desenhar_marcas
@@ -1094,6 +1132,7 @@ func _draw() -> void:
 	var a_golpe_seg: float = ac.aperto_golpe_seg
 	var a_quique: float = ac.aperto_golpe_quique
 	var ger: int = _atlas.geracao
+	var bi := _bi
 	for v: V in _ordem:
 		if v.elite or v.chefe:
 			_barras.append(v)   # barra de vida: só elite e chefe (os comuns só pagam este teste)
@@ -1227,7 +1266,25 @@ func _draw() -> void:
 				_ii(r.position.x + inc, r.position.y, aw, hc, rx, fy, rcw, corte, cor)
 				_ii(r.position.x, r.position.y + hc, aw, r.size.y - hc, rx, fy + corte, rcw, fh - corte, cor)
 			else:
-				_ii(r.position.x, r.position.y, aw, r.size.y, rx, fy, rcw, fh, cor)
+				# (o caso comum, escrito inline: um sprite inteiro, sem faixas)
+				var o3 := _ni << 4
+				if o3 + 16 > bi.size():
+					_crescer_bi()
+				bi[o3] = aw
+				bi[o3 + 1] = 0.0
+				bi[o3 + 3] = r.position.x
+				bi[o3 + 4] = 0.0
+				bi[o3 + 5] = r.size.y
+				bi[o3 + 7] = r.position.y
+				bi[o3 + 8] = cor.r
+				bi[o3 + 9] = cor.g
+				bi[o3 + 10] = cor.b
+				bi[o3 + 11] = cor.a
+				bi[o3 + 12] = rx
+				bi[o3 + 13] = fy
+				bi[o3 + 14] = rcw
+				bi[o3 + 15] = fh
+				_ni += 1
 			if v.flash > 0.09 - FLASH_BRANCO and _flashes.size() < FLASH_MAX:
 				_flashes.append([v.tex, r, Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y), 0.9 * cor.a])
 	if _mm_spr.texture != _atlas.textura:
