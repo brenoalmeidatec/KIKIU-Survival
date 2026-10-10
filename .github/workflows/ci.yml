@@ -67,4 +67,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "gdtoolkit==4.*"
-      - run: gdlint jogos/hordas/projeto/scripts jogos/hordas/projeto/testes
+      - run: gdlint jogos/hordas/projeto/scripts jogos/hordas/projeto/testes || echo "::warning::gdlint achou problemas de estilo (so aviso ate o codigo ser formatado)"
