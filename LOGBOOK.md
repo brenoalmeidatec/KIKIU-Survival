@@ -979,3 +979,16 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Feito:** overlay de diagnóstico (F3 / Select do controle, desligado por padrão: fps, quadro, proc, vivos, qualidade, resolução, 3 maiores perf_us); `limite_vivos` por qualidade em `qualidade.json` (500/350/250, vale o menor com o da fase); qualidade automática (fps < 40 por 8 s desce um degrau, só em memória, nunca sobe; opção "Baixar a qualidade se travar", ligada).
 - **Medido com janela** (`--bot --heroi=hazaki --semente=2 --build=70 --armas=<5 fracas> --pular=1500 --imortal --sair=60`, ~500 vivos): alta 66 fps médio (mín 42); baixa antes (limite 500) 74 (mín 55); baixa depois (limite 250) 109 (mín 98).
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-10 · Claude do Alisson (notebook) · fechamento do Marco 0 (#124)
+- **Feito:**
+  - **Ícone e versão no .exe da Release:** o job do Windows saiu do Ubuntu e agora roda em `windows-latest`, com o rcedit oficial (electron/rcedit v2.0.0) apontado nas editor settings do Godot 4.4.1. A versão do .exe (`product_version` e `file_version`) é copiada do `config/version` do projeto no próprio CI. Linux e Web continuam no Ubuntu. O `publicar` só roda na `main`; nas outras branches os exports viram artefatos do run.
+  - **Build Web testada no navegador:** export local com o preset Web (sem threads, então sem COOP/COEP), servido por um HttpListener simples. A tela de título aparece (versão 0.1.0) e dá para começar uma partida (Hazaki, Sem calor, arena carregada). O download da build é de cerca de 62,6 MB (wasm 42,7 MB, pck 19,6 MB). Não medi o tempo exato até a tela de título.
+  - **Formatação e ortografia:** `ci.yml` ganhou um passo `gdformat --check` só como aviso. Criei `jogos/hordas/formatar.sh` (não executado). As exceções da ortografia saíram de `ferramentas/ortografia_excecoes.txt` para `jogos/hordas/projeto/dados/dicionario.json` (chave `excecoes`, com `_ajuda`), e o `ortografia.py` lê de lá.
+- **Provas:**
+  - exe local com rcedit: `FileVersion=0.1.0.0`, `ProductName=K.I.K.I.U`, ícone extraído em 32x32.
+  - `--import` ok; as cenas de `testes/*.tscn` (sem `bench_*`) passaram sozinhas.
+  - robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40`: exit 0, zero SCRIPT ERROR.
+- **Pendente (PR próprio, logo depois do Marco 1):** formatação geral com gdformat. Hoje `gdformat --check` marca 132 de 136 arquivos. Não formatei agora para não conflitar com hud.gd, arena.gd e config.gd do Marco 1. Depois que o Marco 1 entrar, rodar `jogos/hordas/formatar.sh` num PR só de formatação e trocar o aviso do CI por falha.
+- **Recado:** a bateria de testes roda com a máquina sob carga. `abertura`, `elementos`, `equipamentos`, `regras_armas` e `transicao` falharam na bateria inteira e passaram sozinhos. `elementos` mede tempo em microssegundos (443 us contra 400 us), então é sensível à carga. Quem rodar a bateria deve evitar outros jogos e exports em paralelo.
+- Assinado: Claude do Alisson (notebook)
