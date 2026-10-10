@@ -102,6 +102,29 @@ static func _preparar() -> void:
 		_prateleira = 8
 
 
+## A folha inteira como Image RGBA8 (guardada: ler o alfa e montar atlas sem copiar a textura a cada vez). null se não deu.
+static func imagem(tex: Texture2D) -> Image:
+	var img: Image = _imagens.get(tex)
+	if img == null:
+		img = tex.get_image()
+		if img == null:
+			return null
+		if img.is_compressed():
+			img.decompress()
+		if img.get_format() != Image.FORMAT_RGBA8:
+			img.convert(Image.FORMAT_RGBA8)
+		_imagens[tex] = img
+		_bytes[tex] = img.get_data()
+	return img
+
+
+## A textura do atlas de sombras (a mesma pra sempre: o ImageTexture só é atualizado). Os inimigos desenham as sombras
+## numa MultiMesh com ela (#127); `MANCHA` é a mancha de contato.
+static func textura_sombras() -> Texture2D:
+	_preparar()
+	return _atlas_tex
+
+
 ## A sombra de um quadro, calculada uma vez: cada pixel opaco do sprite vai pra linha "altura x ACHATA"
 ## abaixo do pé, deslocado "altura x INCLINA" pra direita. A linha de baixo do sprite vira a linha 0.
 static func _assada(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
@@ -118,17 +141,9 @@ static func _assada(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
 	var t0 := Time.get_ticks_usec()
 	_preparar()
 	_assadas[chave] = Rect2()
-	var img: Image = _imagens.get(tex)
+	var img: Image = imagem(tex)
 	if img == null:
-		img = tex.get_image()
-		if img == null:
-			return Rect2()
-		if img.is_compressed():
-			img.decompress()
-		if img.get_format() != Image.FORMAT_RGBA8:
-			img.convert(Image.FORMAT_RGBA8)
-		_imagens[tex] = img
-		_bytes[tex] = img.get_data()
+		return Rect2()
 	var dados: PackedByteArray = _bytes[tex]
 	var larg_img := img.get_width()
 	var w := int(src.size.x)

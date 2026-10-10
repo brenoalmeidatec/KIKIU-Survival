@@ -11,6 +11,7 @@ const Anim := preload("res://scripts/hordas/animacao_monstros.gd")
 const ESCALA := 2.0        # a arte gerada é desenhada 2x
 const CELULA := 48.0
 const AVISO_ANEL := 0.6   # segundos de aviso (anel vermelho no chão) antes dos tiros em anel (#68)
+const TELEGRAFA_T := 0.4  # segundos de piscada avermelhada antes de um inimigo atirar (a investida e o anel já tinham aviso próprio)
 const LONGE := 720.0       # mais longe que isso do jogador = reaparece do outro lado
 const NASC_T := 0.26       # animação de nascer / reaparecer (teleporte): some e volta numa nuvem escura
 const ACEL_VEL := 14.0     # suavização do andar: 1/ACEL_VEL s (~70 ms) pra chegar na velocidade pedida
@@ -110,6 +111,8 @@ class V:
 	var causa_ult := ""
 	var dir_ult := Vector2.ZERO
 	var sombra_reg: Array = [Rect2(), Rect2(), Rect2(), Rect2()]   # sombra assada por (quadro, espelho): ver Visual.sombra_regiao
+	var at := Vector2.ZERO       # canto da folha deste tipo no atlas dos inimigos (atlas_inimigos.gd), em pixels
+	var at_gen := -1             # geração do atlas em que `at` vale (muda se o atlas for refeito)
 	var t_ausente := 0.0        # ... e quanto tempo faz que ficou fora das fotos (some só depois de AUSENTE_T)
 
 var arena: Node
@@ -136,6 +139,35 @@ var _flash_no := Node2D.new()
 var elementos: Node2D = preload("res://scripts/hordas/elementos.gd").new()   # estados de elemento (#72): fogo, gelo, raio, veneno
 var _flashes: Array = []        # [tex, rect, fonte, alfa], refeito todo quadro no _draw
 
+## Desenho em lote (#127): a horda inteira sai por duas MultiMeshInstance2D, uma pras sombras (atlas de sombras do Visual) e uma pros
+## sprites (atlas das folhas, `atlas_inimigos.gd`), na ordem por altura. Cada instância = 16 floats: o retângulo na tela (transform 2D),
+## a cor (modulate) e o recorte em PIXELS do atlas (x, y, largura, altura; largura negativa = espelhado; largura 0 = disco liso, o
+## brilho de aura/elite e a nuvem de nascer). O shader é o único e simples; sem luz nem nada de Forward+.
+const SHADER_MM := "shader_type canvas_item;
+varying flat vec4 reg;
+varying flat vec4 cor;
+void vertex() { reg = INSTANCE_CUSTOM; cor = COLOR; }
+void fragment() {
+	if (reg.z == 0.0) {
+		COLOR = vec4(cor.rgb, cor.a * step(length(UV - vec2(0.5)), 0.5));
+	} else {
+		COLOR = cor * texture(TEXTURE, (reg.xy + UV * reg.zw) / vec2(textureSize(TEXTURE, 0)));
+	}
+}
+"
+const MM_CAP_INI := 256        # instâncias de cada MultiMesh no começo (dobra quando falta)
+const AtlasInimigos := preload("res://scripts/hordas/atlas_inimigos.gd")
+static var _quad_mesh: ArrayMesh
+var _atlas := AtlasInimigos.new()
+var _mm_som: MultiMeshInstance2D
+var _mm_spr: MultiMeshInstance2D
+var _no_marcas := Node2D.new()   # faixas e anéis de aviso no chão: entre as sombras e os sprites
+var _no_topo := Node2D.new()     # barras de elite/chefe, fantasmas do teleporte e tiros: por cima dos sprites
+var _bs := PackedFloat32Array()  # instâncias das sombras (16 floats cada)
+var _ns := 0
+var _bi := PackedFloat32Array()  # instâncias dos sprites
+var _ni := 0
+
 
 func _ready() -> void:
 	var m := ShaderMaterial.new()
@@ -143,9 +175,129 @@ func _ready() -> void:
 	m.shader.code = SHADER_BRANCO
 	_flash_no.material = m
 	_flash_no.draw.connect(_draw_flashes)
+	_no_marcas.draw.connect(_desenhar_marcas)
+	_no_topo.draw.connect(_desenhar_topo)
+	# ordem dos filhos = ordem de desenho: sombras, marcas no chão, sprites, barras/tiros, flash branco, elementos
+	_mm_som = _novo_mm(Visual.textura_sombras())
+	_bs.resize(MM_CAP_INI * 16)
+	add_child(_no_marcas)
+	_mm_spr = _novo_mm(_atlas.textura)
+	_bi.resize(MM_CAP_INI * 16)
+	add_child(_no_topo)
 	add_child(_flash_no)
 	elementos.ino = self
 	add_child(elementos)
+
+
+func _novo_mm(tex: Texture2D) -> MultiMeshInstance2D:
+	if _quad_mesh == null:
+		_quad_mesh = ArrayMesh.new()
+		var arr := []
+		arr.resize(Mesh.ARRAY_MAX)
+		arr[Mesh.ARRAY_VERTEX] = PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)])
+		arr[Mesh.ARRAY_TEX_UV] = PackedVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)])
+		arr[Mesh.ARRAY_INDEX] = PackedInt32Array([0, 1, 2, 0, 2, 3])
+		_quad_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_2D
+	mm.use_colors = true
+	mm.use_custom_data = true
+	mm.mesh = _quad_mesh
+	mm.instance_count = MM_CAP_INI
+	mm.visible_instance_count = 0
+	mm.custom_aabb = AABB(Vector3(-1.0e6, -1.0e6, -1.0), Vector3(2.0e6, 2.0e6, 2.0))   # nunca cortado pelo cálculo de área
+	var mi := MultiMeshInstance2D.new()
+	mi.multimesh = mm
+	mi.texture = tex
+	var mat := ShaderMaterial.new()
+	mat.shader = Shader.new()
+	mat.shader.code = SHADER_MM
+	mi.material = mat
+	add_child(mi)
+	return mi
+
+
+## Manda o lote do quadro: ajusta a capacidade se cresceu, copia o buffer e diz quantas instâncias valem.
+func _enviar_mm(mi: MultiMeshInstance2D, buf: PackedFloat32Array, n: int) -> void:
+	var mm := mi.multimesh
+	if mm.instance_count * 16 != buf.size():
+		mm.instance_count = buf.size() / 16
+	mm.buffer = buf
+	mm.visible_instance_count = n
+
+
+## Uma instância de sombra (retângulo + recorte no atlas de sombras).
+func _is(x: float, y: float, w: float, h: float, rx: float, ry: float, rw: float, rh: float) -> void:
+	var o := _ns << 4
+	if o + 16 > _bs.size():
+		_bs.resize(_bs.size() * 2)
+	_ns += 1
+	var b := _bs
+	b[o] = w
+	b[o + 3] = x
+	b[o + 5] = h
+	b[o + 7] = y
+	b[o + 8] = 1.0
+	b[o + 9] = 1.0
+	b[o + 10] = 1.0
+	b[o + 11] = 1.0
+	b[o + 12] = rx
+	b[o + 13] = ry
+	b[o + 14] = rw
+	b[o + 15] = rh
+
+
+## Uma instância de sprite sem giro: retângulo (x, y, w, h) na tela, recorte (rx, ry, rw, rh) em pixels do atlas e cor.
+func _ii(x: float, y: float, w: float, h: float, rx: float, ry: float, rw: float, rh: float, c: Color) -> void:
+	var o := _ni << 4
+	if o + 16 > _bi.size():
+		_bi.resize(_bi.size() * 2)
+	_ni += 1
+	var b := _bi
+	b[o] = w
+	b[o + 1] = 0.0
+	b[o + 3] = x
+	b[o + 4] = 0.0
+	b[o + 5] = h
+	b[o + 7] = y
+	b[o + 8] = c.r
+	b[o + 9] = c.g
+	b[o + 10] = c.b
+	b[o + 11] = c.a
+	b[o + 12] = rx
+	b[o + 13] = ry
+	b[o + 14] = rw
+	b[o + 15] = rh
+
+
+## Sprite girado em `ang` em torno do centro (cx, cy) do retângulo gw x gh (o bicho visto de cima que aponta pra onde anda).
+func _ig(cx: float, cy: float, gw: float, gh: float, ang: float, rx: float, ry: float, rw: float, rh: float, c: Color) -> void:
+	var o := _ni << 4
+	if o + 16 > _bi.size():
+		_bi.resize(_bi.size() * 2)
+	_ni += 1
+	var cs := cos(ang)
+	var sn := sin(ang)
+	var b := _bi
+	b[o] = cs * gw
+	b[o + 1] = -sn * gh
+	b[o + 3] = cx - 0.5 * (cs * gw - sn * gh)
+	b[o + 4] = sn * gw
+	b[o + 5] = cs * gh
+	b[o + 7] = cy - 0.5 * (sn * gw + cs * gh)
+	b[o + 8] = c.r
+	b[o + 9] = c.g
+	b[o + 10] = c.b
+	b[o + 11] = c.a
+	b[o + 12] = rx
+	b[o + 13] = ry
+	b[o + 14] = rw
+	b[o + 15] = rh
+
+
+## Disco liso (largura de recorte 0): aura, brilho de elite e as bolhas da nuvem de nascer.
+func _id(cx: float, cy: float, raio: float, c: Color) -> void:
+	_ii(cx - raio, cy - raio, raio * 2.0, raio * 2.0, 0.0, 0.0, 0.0, 0.0, c)
 
 
 func _draw_flashes() -> void:
@@ -693,14 +845,26 @@ func _fantasmas_passo(dt: float) -> void:
 
 
 ## Nuvem escura de fumaça (4 bolhas): u = 0 (começo) a 1 (fim); nasce densa e se esvai subindo.
-func _nuvem(p: Vector2, larg: float, u: float, semente: int) -> void:
+func _nuvem(ci: CanvasItem, p: Vector2, larg: float, u: float, semente: int) -> void:
 	var a := 0.6 * (1.0 - u)
 	if a <= 0.01:
 		return
 	var raio := larg * (0.3 + 0.4 * u)
 	for j in 4:
 		var ang := float(semente * 7 + j) * 1.7 + u * 1.5
-		draw_circle(p + Vector2.from_angle(ang) * raio * 0.5 + Vector2(0, -u * 8.0), raio * (0.55 + 0.1 * j), Color(0.09, 0.06, 0.14, a))
+		ci.draw_circle(p + Vector2.from_angle(ang) * raio * 0.5 + Vector2(0, -u * 8.0), raio * (0.55 + 0.1 * j), Color(0.09, 0.06, 0.14, a))
+
+
+## A mesma nuvem, mas como discos na MultiMesh dos sprites (fica na ordem por altura, atrás do bicho que nasce).
+func _nuvem_i(p: Vector2, larg: float, u: float, semente: int) -> void:
+	var a := 0.6 * (1.0 - u)
+	if a <= 0.01:
+		return
+	var raio := larg * (0.3 + 0.4 * u)
+	for j in 4:
+		var ang := float(semente * 7 + j) * 1.7 + u * 1.5
+		var c := p + Vector2.from_angle(ang) * raio * 0.5 + Vector2(0, -u * 8.0)
+		_id(c.x, c.y, raio * (0.55 + 0.1 * j), Color(0.09, 0.06, 0.14, a))
 
 
 ## Dano de vírus: no jogador daqui, ou (anfitrião online) manda pro computador de quem foi acertado.
@@ -854,7 +1018,10 @@ func _draw() -> void:
 		_ordem.append(lista[int(k) & 65535])
 	Perf.fim("ini_d_ordem", _d0)
 	var _d1 := Perf.ini()
-	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus)
+	_ns = 0
+	_ni = 0
+	# 1ª passada: sombras (todas antes dos sprites, pra nenhuma sombra cair por cima de outro vírus). Vão pra MultiMesh das sombras
+	# (a mancha de contato e o carimbo da sombra assada); só a sombra calculada na hora (sem orçamento de assar) sai direto no _draw.
 	for v: V in _ordem:
 		_orientar(v, jx, jy)   # (antes das sombras: elas dependem da vista e do espelho)
 		var quadro: int
@@ -890,8 +1057,9 @@ func _draw() -> void:
 			continue
 		var s: Vector2 = v.sz
 		var pe: Vector2 = v.pos + Vector2(0, s.y * 0.4)
+		var cw := s.x * 0.75    # mancha de contato (Visual.contato): largura cw, altura 0,32 cw, centrada no pé
 		if not sombra_proj:   # perfil de qualidade baixa: só a mancha de contato no pé (a sombra inclinada é uma textura a mais por bicho)
-			Visual.contato(self, pe, s.x * 0.75)
+			_is(pe.x - cw * 0.5, pe.y - cw * 0.16, cw, cw * 0.32, 0.0, 0.0, 24.0, 8.0)
 			continue
 		var esp: bool = v.espelho
 		var ic := (v.vista * 2 + (1 if quadro > 0 else 0)) * 2 + (1 if esp else 0)
@@ -901,26 +1069,17 @@ func _draw() -> void:
 			var src := Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y)
 			reg = Visual.sombra_regiao(v.tex, src, esp)
 			v.sombra_reg[ic] = reg
-		Visual.contato(self, pe, s.x * 0.75)
+		_is(pe.x - cw * 0.5, pe.y - cw * 0.16, cw, cw * 0.32, 0.0, 0.0, 24.0, 8.0)
 		if reg.size.x > 0.0:
 			# mesma conta de Visual.sombra: a base do sprite fica em pe.y + (-s.y + s.y) e a esquerda em pe.x - s.x/2 (ou pe.x + s.x/2 - s.x se espelhado = igual)
-			Visual.carimbar(self, reg, esc_s, pe.x - s.x * 0.5, pe.y + 0.0)
+			_is(pe.x - s.x * 0.5, pe.y - esc_s, reg.size.x * esc_s, reg.size.y * esc_s, reg.position.x, reg.position.y, reg.size.x, reg.size.y)
 		else:
 			var src2 := Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y)
 			var rs := Rect2(s.x / 2, -s.y, -s.x, s.y) if esp else Rect2(-s.x / 2, -s.y, s.x, s.y)
 			Visual.sombra(self, v.tex, rs, src2, pe)
+	_enviar_mm(_mm_som, _bs, _ns)
 	Perf.fim("ini_d_sombra", _d1)
-	# marcas de aviso no chão (#68): a faixa por onde a investida vai passar e o anel antes dos tiros em anel.
-	# No online os clientes não recebem a direção da investida nem o relógio do anel: lá fica só o aviso no corpo.
-	for v: V in _ordem:
-		if v.estado == 1 and v.dir_inv != Vector2.ZERO:
-			var u := clampf(1.0 - v.t_estado / 0.7, 0.0, 1.0)
-			var fim: Vector2 = v.pos + v.dir_inv * v.vel * 5.0 * 0.6   # o que ele corre na investida (5x por 0,6 s)
-			draw_line(v.pos, fim, Color(1.0, 0.15, 0.1, 0.1 + 0.18 * u), maxf(10.0, v.raio * 1.6))
-			draw_line(v.pos, fim, Color(1.0, 0.4, 0.3, 0.45 + 0.4 * u), 1.0)
-		if v.anel > 0 and v.t_anel > 0.0 and v.t_anel < AVISO_ANEL:
-			var u2 := 1.0 - v.t_anel / AVISO_ANEL
-			Legib.marca_perigo(self, v.pos, v.raio + 26.0 - 12.0 * u2, u2)   # o mesmo anel de aviso das outras áreas (#72 marco 7)
+	_no_marcas.queue_redraw()   # marcas de aviso no chão: ver _desenhar_marcas
 	var _d2 := Perf.ini()
 	_flashes.clear()
 	_barras.clear()
@@ -934,9 +1093,14 @@ func _draw() -> void:
 	var a_golpe: float = ac.aperto_golpe
 	var a_golpe_seg: float = ac.aperto_golpe_seg
 	var a_quique: float = ac.aperto_golpe_quique
+	var ger: int = _atlas.geracao
 	for v: V in _ordem:
 		if v.elite or v.chefe:
 			_barras.append(v)   # barra de vida: só elite e chefe (os comuns só pagam este teste)
+		if v.at_gen != ger:
+			v.at = _atlas.deslocamento(v.tex)   # a folha entra no atlas na 1ª vez que o tipo aparece
+			v.at_gen = _atlas.geracao
+			ger = _atlas.geracao
 		var s: Vector2 = v.sz
 		var vira: bool = v.espelho
 		var quadro: int = v.cols - 1 if v.flash > 0 else v.qd
@@ -948,15 +1112,17 @@ func _draw() -> void:
 			mexe = ddx * ddx + ddy * ddy < lod_d2
 		var cor := Color.WHITE
 		if v.aura.a > 0.0:
-			draw_circle(v.pos, s.x * 0.5, Color(v.aura.r, v.aura.g, v.aura.b, 0.16 + 0.08 * sin(_t * 5.0 + v.id)))
+			_id(v.pos.x, v.pos.y, s.x * 0.5, Color(v.aura.r, v.aura.g, v.aura.b, 0.16 + 0.08 * sin(_t * 5.0 + v.id)))
 		elif v.elite:
-			draw_circle(v.pos, s.x * 0.55, Color(1.0, 0.85, 0.3, 0.25 + 0.15 * sin(_t * 8.0)))
+			_id(v.pos.x, v.pos.y, s.x * 0.55, Color(1.0, 0.85, 0.3, 0.25 + 0.15 * sin(_t * 8.0)))
 		elif v.atordoado > 0:
 			cor = Color(1.0, 0.95, 0.6)   # atordoado: amarelado, piscando de leve
 		elif v.lento > 0:
 			cor = Color(0.6, 0.85, 1.0)
 		if v.el_vis != 0:   # estado de elemento (#72): tinta por estado, uma comparação por inimigo
 			cor = Elementos.tinta(v.el_vis, _t, v.id) * Color(1, 1, 1, cor.a)
+		if v.atira > 0.0 and v.t_atira > 0.0 and v.t_atira < TELEGRAFA_T and int(_t * 25.0) % 2 == 0:
+			cor = Color(1.0, 0.55, 0.5, cor.a)   # telegrafa o tiro: pisca avermelhado nos 0,4 s antes de atirar (só no anfitrião/solo, que é quem tem o relógio)
 		# Rect2 de largura negativa vira o sprite, mas o Godot desenha a partir da posição pra DIREITA (não normaliza):
 		# por isso a posição é a borda esquerda nos dois casos (antes o bicho à direita do herói saía deslocado 1 largura).
 		var r: Rect2
@@ -1026,61 +1192,91 @@ func _draw() -> void:
 				sx *= 0.45 + 0.55 * u
 				sy *= 0.3 + 0.7 * u
 				cor.a = u
-				_nuvem(v.pos + Vector2(0, s.y * 0.35), s.x, u, v.id)
+				_nuvem_i(v.pos + Vector2(0, s.y * 0.35), s.x, u, v.id)
 			var w := roundf(s.x * sx)   # a largura nunca vai a ~0: virar é trocar de vista, não achatar
 			var h := roundf(s.y * sy)
 			r = Rect2(roundf(v.pos.x + jit) - roundf(w * 0.5), roundf(v.pos.y + s.y * 0.4 - lift) - h, -w if vira else w, h)
 		v.dr = r
-		var fonte := Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y)
+		# recorte da folha no atlas, em pixels (x, y do quadro; largura, altura de um quadro)
+		var fw: float = v.tam.x
+		var fh: float = v.tam.y
+		var fx: float = v.at.x + fw * quadro
+		var fy: float = v.at.y + fh * v.vista
+		var rw: float = r.size.x
 		if v.gira:
 			# visto de cima: a cabeça aponta pra onde ele anda (antes vinha de ré quando descia na direção do herói)
 			var passo: Vector2 = v.pos - v.pos_ant if v.pos_ant != Vector2.INF else Vector2.ZERO
 			v.pos_ant = v.pos
 			if passo.length_squared() > 0.04 and passo.length_squared() < 400.0:   # parado mantém; teleporte não gira
 				v.ang = lerp_angle(v.ang, passo.angle() + PI * 0.5, minf(1.0, _dt * 10.0))
-			var gw := absf(r.size.x)
-			draw_set_transform(r.position + Vector2(gw, r.size.y) * 0.5, v.ang)
-			draw_texture_rect_region(v.tex, Rect2(-gw * 0.5, -r.size.y * 0.5, gw, r.size.y), fonte, cor)
-			draw_set_transform(Vector2.ZERO, 0.0)
+			var gw := absf(rw)
+			_ig(r.position.x + gw * 0.5, r.position.y + r.size.y * 0.5, gw, r.size.y, v.ang, fx, fy, fw, fh, cor)
 		else:
 			var inc := 0
 			if mexe and v.parado < _parado_seg:
 				inc = roundi(v.lean * a_inclina * s.y)
+			# (largura negativa = espelhado: o recorte começa na borda direita e anda pra esquerda)
+			var rx: float = fx + fw if rw < 0.0 else fx
+			var rcw: float = -fw if rw < 0.0 else fw
+			var aw := absf(rw)
 			if inc != 0:
 				# inclinação pro lado em que anda: a faixa de cima do sprite se adianta `inc` px (cisalhamento por faixas:
 				# o pixel continua nítido, o que girar o sprite não dá). `inclina_topo` = fração de cima que se desloca.
 				var corte := maxi(1, roundi(v.tam.y * a_topo))
 				var hc := roundf(r.size.y * corte / v.tam.y)
-				draw_texture_rect_region(v.tex, Rect2(r.position.x + inc, r.position.y, r.size.x, hc),
-					Rect2(fonte.position, Vector2(fonte.size.x, corte)), cor)
-				draw_texture_rect_region(v.tex, Rect2(r.position.x, r.position.y + hc, r.size.x, r.size.y - hc),
-					Rect2(fonte.position.x, fonte.position.y + corte, fonte.size.x, fonte.size.y - corte), cor)
+				_ii(r.position.x + inc, r.position.y, aw, hc, rx, fy, rcw, corte, cor)
+				_ii(r.position.x, r.position.y + hc, aw, r.size.y - hc, rx, fy + corte, rcw, fh - corte, cor)
 			else:
-				draw_texture_rect_region(v.tex, r, fonte, cor)
+				_ii(r.position.x, r.position.y, aw, r.size.y, rx, fy, rcw, fh, cor)
 			if v.flash > 0.09 - FLASH_BRANCO and _flashes.size() < FLASH_MAX:
-				_flashes.append([v.tex, r, fonte, 0.9 * cor.a])
+				_flashes.append([v.tex, r, Rect2(v.tam.x * quadro, v.tam.y * v.vista, v.tam.x, v.tam.y), 0.9 * cor.a])
+	if _mm_spr.texture != _atlas.textura:
+		_mm_spr.texture = _atlas.textura   # o atlas cresceu (textura nova)
+	_atlas.enviar()
+	_enviar_mm(_mm_spr, _bi, _ni)
 	_flash_no.queue_redraw()
 	Perf.fim("ini_d_sprite", _d2)
-	for v: V in _barras:   # barra fina de elite/chefe, com o nome curto logo depois de um golpe
-		var topo: float = v.pos.y - v.sz.y * 0.6
-		Legib.barra(self, v.pos.x, topo, v.sz.x * 0.8, v.hp / maxf(v.hpmax, 1.0), v.chefe)
-		if Config.v("nomes_inimigo") and Legib.mostra_nome(_t, v.t_golpe):
-			Legib.nome_sobre(self, v.pos.x, topo - 14.0, Legib.nome_curto(str(v.d.get("nome", ""))))
 	barras_n = _barras.size()
+	_no_topo.queue_redraw()   # barras de elite/chefe, fantasmas do teleporte e tiros: ver _desenhar_topo
+
+
+## Marcas de aviso no chão (#68): a faixa por onde a investida vai passar e o anel antes dos tiros em anel. Ficam entre as sombras e
+## os sprites. No online os clientes não recebem a direção da investida nem o relógio do anel: lá fica só o aviso no corpo.
+func _desenhar_marcas() -> void:
+	var c := _no_marcas
+	for v: V in _ordem:
+		if v.estado == 1 and v.dir_inv != Vector2.ZERO:
+			var u := clampf(1.0 - v.t_estado / 0.7, 0.0, 1.0)
+			var fim: Vector2 = v.pos + v.dir_inv * v.vel * 5.0 * 0.6   # o que ele corre na investida (5x por 0,6 s)
+			c.draw_line(v.pos, fim, Color(1.0, 0.15, 0.1, 0.1 + 0.18 * u), maxf(10.0, v.raio * 1.6))
+			c.draw_line(v.pos, fim, Color(1.0, 0.4, 0.3, 0.45 + 0.4 * u), 1.0)
+		if v.anel > 0 and v.t_anel > 0.0 and v.t_anel < AVISO_ANEL:
+			var u2 := 1.0 - v.t_anel / AVISO_ANEL
+			Legib.marca_perigo(c, v.pos, v.raio + 26.0 - 12.0 * u2, u2)   # o mesmo anel de aviso das outras áreas (#72 marco 7)
+
+
+## Por cima dos sprites: barra fina de elite/chefe (com o nome curto logo depois de um golpe), os fantasmas do teleporte e os tiros.
+func _desenhar_topo() -> void:
+	var c := _no_topo
+	for v: V in _barras:
+		var topo: float = v.pos.y - v.sz.y * 0.6
+		Legib.barra(c, v.pos.x, topo, v.sz.x * 0.8, v.hp / maxf(v.hpmax, 1.0), v.chefe)
+		if Config.v("nomes_inimigo") and Legib.mostra_nome(_t, v.t_golpe):
+			Legib.nome_sobre(c, v.pos.x, topo - 14.0, Legib.nome_curto(str(v.d.get("nome", ""))))
 	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
 		var u: float = f.t / NASC_T
 		var fs: Vector2 = f.sz * (1.0 - 0.6 * u)
 		var fp: Vector2 = f.pos
 		var fe := fp + Vector2(0, f.sz.y * 0.4)
-		_nuvem(fe + Vector2(0, -f.sz.y * 0.05), f.sz.x, u, f.id)
-		draw_texture_rect_region(f.tex, Rect2(fp.x - fs.x * 0.5, fe.y - fs.y, -fs.x if f.vira else fs.x, fs.y),
+		_nuvem(c, fe + Vector2(0, -f.sz.y * 0.05), f.sz.x, u, f.id)
+		c.draw_texture_rect_region(f.tex, Rect2(fp.x - fs.x * 0.5, fe.y - fs.y, -fs.x if f.vira else fs.x, fs.y),
 			Rect2(f.tam.x * f.quadro, f.y0, f.tam.x, f.tam.y), Color(1, 1, 1, 1.0 - u))
 	for t in tiros:
 		var tx: Texture2D = t.tex
 		var sz := tx.get_size() * ESCALA
-		draw_set_transform(t.pos, t.vel.angle(), Vector2.ONE)
-		draw_texture_rect(tx, Rect2(-sz / 2, sz), false)
-	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+		c.draw_set_transform(t.pos, t.vel.angle(), Vector2.ONE)
+		c.draw_texture_rect(tx, Rect2(-sz / 2, sz), false)
+	c.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 
 
 ## Dano dos tiros dos inimigos com o calor ("Garras Afiadas" vale pros tiros também).
