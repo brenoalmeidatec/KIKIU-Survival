@@ -1064,7 +1064,7 @@ func _draw() -> void:
 	for v: V in _barras:   # barra fina de elite/chefe, com o nome curto logo depois de um golpe
 		var topo: float = v.pos.y - v.sz.y * 0.6
 		Legib.barra(self, v.pos.x, topo, v.sz.x * 0.8, v.hp / maxf(v.hpmax, 1.0), v.chefe)
-		if Legib.mostra_nome(_t, v.t_golpe):
+		if Config.v("nomes_inimigo") and Legib.mostra_nome(_t, v.t_golpe):
 			Legib.nome_sobre(self, v.pos.x, topo - 14.0, Legib.nome_curto(str(v.d.get("nome", ""))))
 	barras_n = _barras.size()
 	for f in fantasmas:   # quem acabou de teleportar: encolhe e some numa nuvem escura onde estava
