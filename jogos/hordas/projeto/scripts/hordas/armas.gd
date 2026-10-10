@@ -126,7 +126,7 @@ func comportamentos_disponiveis(a: Dictionary) -> Array:
 	var lista_c: Dictionary = Dados.json("comportamentos").get("lista", {})
 	for id in lista_c:
 		var d: Dictionary = lista_c[id]
-		if id in tem or not tipo in d.get("tipos", []) or int(a.nivel) < int(d.get("nivel_min", 3)):
+		if d.get("so_fusao", false) or id in tem or not tipo in d.get("tipos", []) or int(a.nivel) < int(d.get("nivel_min", 3)):
 			continue
 		if d.get("exclui", []).any(func(x): return x in tem):
 			continue
@@ -139,6 +139,10 @@ func _comp_de(a: Dictionary) -> Dictionary:
 	var res := {}
 	for id in a.get("comp", []):
 		res[id] = comp_def(id).get("param", {})
+	for id in Universais.mecanica_de(str(a.id)):   # fusão (#115): a mecânica da receita, com os ajustes dela por cima do padrão
+		var p: Dictionary = comp_def(str(id)).get("param", {}).duplicate(true)
+		p.merge(Universais.mecanica_de(str(a.id))[id], true)
+		res[id] = p
 	return res
 
 
@@ -647,7 +651,7 @@ func preaquecer() -> void:
 			var s := _s(a)
 			for v in 3:
 				Poca.textura(float(s.get("raio", 40)) * s.area, v, rampa_de(d))
-		elif a.get("comp", []).has("rastro_fogo"):   # poças de fogo do rastro (#63)
+		elif _comp_de(a).has("rastro_fogo"):   # poças de fogo do rastro (#63)
 			var s := _s(a)
 			var p: Dictionary = s.comp.rastro_fogo
 			for v in 3:

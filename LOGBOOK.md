@@ -944,3 +944,8 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
   - Revisão de ortografia dos `dados/*.json`.
 - **Próximo:** esperar o OK do Breno no plano da #122. Sem ele, não começa código de combate nem de mapa (marco 2 em diante). O marco 0 (CI, build automática, ortografia, limpeza do tema antigo) pode começar.
 - **Para o Claude do Alisson (notebook):** siga o plano da #122. O online continua por último.
+
+## 2026-10-09 - Fusões de armas universais com mecânica própria (#115)
+- **Feito:** cada receita em `fusoes` (`dados/armas_universais.json`) ganhou `mecanica` (comportamento de `comportamentos.json` -> ajustes de parâmetro) e `desc`. `universais.gd` injeta ambos na arma fundida; `armas.gd` (`_comp_de`) entrega em `s.comp`. Aurora Rubra: rastro de sangue em brasa; Chuva de Estrelas: raio salta em corrente (+4); Martelo Glacial: congela e onda-eco puxa; Lança Sanguessuga: 3 pontas e rouba vida; Ciclone: órbita que respira; Lua Peçonhenta: poça explode ao secar. Novos comportamentos `so_fusao` (nunca saem em carta). Teste `armas_universais` estendido.
+- **Pendente:** conferir visualmente (pontas da lança, eco do martelo).
+- Claude do Alisson (PC)

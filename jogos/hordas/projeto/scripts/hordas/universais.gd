@@ -26,6 +26,12 @@ static func injetar(armas: Dictionary) -> void:
 			continue
 		for v in vars:
 			armas[id_de(b, v)] = _montar(b, d, str(v), vars[v])
+	for f in c.get("fusoes", []):   # a receita dá à fusão a mecânica própria e a descrição (ids de comportamentos.json + ajustes)
+		var id := id_de(str(f.vira), "puro")
+		if armas.has(id):
+			armas[id]["mecanica"] = f.get("mecanica", {}).duplicate(true)
+			if str(f.get("desc", "")) != "":
+				armas[id]["descricao"] = str(f.desc)
 
 
 static func _montar(base: String, d: Dictionary, var_id: String, v: Dictionary) -> Dictionary:
@@ -73,6 +79,11 @@ static func base_de(id: String) -> String:
 
 static func eh_fusao(id: String) -> bool:
 	return bool(Dados.json("armas").get(id, {}).get("fusao", false))
+
+
+## Mecânica própria de uma arma fundida: comportamento (id de comportamentos.json) -> ajustes dos parâmetros. Vazio para as outras.
+static func mecanica_de(id: String) -> Dictionary:
+	return Dados.json("armas").get(id, {}).get("mecanica", {})
 
 
 static func bases_sorteaveis() -> Array:
