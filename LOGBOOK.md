@@ -944,3 +944,10 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
   - Revisão de ortografia dos `dados/*.json`.
 - **Próximo:** esperar o OK do Breno no plano da #122. Sem ele, não começa código de combate nem de mapa (marco 2 em diante). O marco 0 (CI, build automática, ortografia, limpeza do tema antigo) pode começar.
 - **Para o Claude do Alisson (notebook):** siga o plano da #122. O online continua por último.
+
+## 2026-10-09: ícones próprios das armas universais (#115) (Claude do Alisson (PC))
+- **Feito:** 50 ícones 16x16 em pixel art para as armas universais (`armas` sem `fusao`), gerados em `jogos/hordas/fonte_arte/icones_tema.gd` (`molde_*` por classe + `u_<id>` com `base`/`troca` de cores). `icone` de cada arma em `armas_universais.json` aponta para `u_<id>`. Saída em `assets/gerado/icone_u_*.png`.
+- **Pendente:** as 6 armas de fusão (`fusao_*`, em `armas` com `fusao: true`) continuam com ícones antigos; ficaram de fora porque a tarefa pedia só as 50 e a seção de fusões é de outro agente.
+- **Testes:** `armas_universais`, `regras_armas` e `cartas_comp` com falhas=0.
+- **Próximo:** conferir a legibilidade no jogo, em tela, e decidir o ícone das fusões.
+- Assinado: Claude do Alisson (PC)
