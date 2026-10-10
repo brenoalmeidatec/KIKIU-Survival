@@ -1840,14 +1840,15 @@ func _print_tela(qual: String) -> void:
 			if _arena.cartas.aberto():
 				_arena.cartas._fechar()
 			_arena.bot = false
+			_arena.jogador.bot = false
 			_arena.jogador.invencivel = 999.0
 			if _args.has("equip"):
 				for id in ["katana", "aura_hazaki", "cafe"]:
 					_arena.armas.adicionar(id)
 			var jp: Vector2 = _arena.jogador.position
-			_arena.abrir_saida(jp + (Vector2(420, -120) if _args.has("longe") else Vector2(70, 10)))
+			_arena.abrir_saida(jp + (Vector2(700, -200) if _args.has("longe") else Vector2(120, 10)))
 			_arena.coleta.itens.append({"pos": _arena.saida.pos + Vector2(20, 10), "tipo": "bau", "valor": 0, "puxando": false, "vel": 0.0, "t0": 0.0})
-			await get_tree().create_timer(float(_args.get("espera", 1.5)), true, false, true).timeout
+			await get_tree().create_timer(float(_args.get("espera", 3.5)), true, false, true).timeout
 		"conjuntos", "objetivo", "missao":   # #112 (missao): missão do chefe em andamento (--tipo=fragmentos|pilares|selos|invocar). #63: HUD com os conjuntos da build e (objetivo) um objetivo em andamento (--objetivo=pira|totens|fugitivo, --pronto=0..1 de quanto já foi)
 			_args["fase"] = str(_args.get("fase", "2"))
 			_comecar("hazaki")
