@@ -136,9 +136,11 @@ func _montar() -> void:
 		piso.light_mask = mascara
 		grupo.add_child(piso)
 		var heroi := _sprite(grupo, heroi_tex if com_normal else base_heroi, RECORTE_HEROI, Vector2(x0 + 160, 200), mascara)
-		var tocha := _luz(heroi, Color(1.0, 0.62, 0.28), 1.5, 0.5, 10.0, mascara, Vector2(12, -22))
-		var lua := _luz(grupo, Color(0.55, 0.72, 1.0), 0.8, 1.6, 40.0, mascara, Vector2(x0 + 60, 30))
-		var magia := _luz(grupo, Color(0.72, 0.35, 1.0), 1.0, 0.7, 12.0, mascara, Vector2(x0 + 160, 180))
+		# altura da luz: com normal, a face plana recebe N.L = altura / distância (sem normal o Godot não aplica esse
+		# fator), então luz baixa escurece o lado com normal. Altura ~45 deixa a face plana perto do lado sem normal.
+		var tocha := _luz(heroi, Color(1.0, 0.62, 0.28), 1.6, 0.5, 45.0, mascara, Vector2(12, -22))
+		var lua := _luz(grupo, Color(0.55, 0.72, 1.0), 0.9, 1.6, 60.0, mascara, Vector2(x0 + 60, 30))
+		var magia := _luz(grupo, Color(0.72, 0.35, 1.0), 1.2, 0.7, 45.0, mascara, Vector2(x0 + 160, 180))
 		var caes: Array = []
 		var posicoes := [[Vector2(x0 + 70, 150), RECORTE_CAO, false], [Vector2(x0 + 250, 110), Rect2(0, 90, 50, 45), true], [Vector2(x0 + 120, 290), Rect2(0, 45, 50, 45), false]]
 		for p in posicoes:

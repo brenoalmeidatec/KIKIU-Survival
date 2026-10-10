@@ -126,8 +126,23 @@ def pixelar_normal(px, contorno=True, paleta=None, luz_borda=True, pontilhado=0.
     return out
 
 
+ELEVACAO = 32.0   # graus: a câmera dos geradores (px3.camera(elevacao_graus=32.0)) olha de cima
 ESTICA = 2.0   # inclinação exagerada no XY antes de renormalizar: a geometria real é quase toda voltada pra câmera,
                # e sem isso a luz quase não cria relevo (escolha de arte, pixel art pede relevo marcado)
+
+
+def no_plano_do_sprite(px, graus=ELEVACAO):
+    """Desfaz a elevação da câmera na normal: a luz 2D vive no plano do sprite, então uma face vertical voltada pra
+    câmera tem que sair (0, 0, 1), e não (0, -sen, cos) como sai com a câmera de cima (ela aponta pra baixo na tela
+    e escurecia tudo sob uma luz de cima). Conferido: frente vertical -> (0, 0, 1); topo -> (0, 1, 0)."""
+    c, s = np.cos(np.radians(graus)), np.sin(np.radians(graus))
+    n = px[:, :, :3] * 2.0 - 1.0
+    ny = c * n[:, :, 1] + s * n[:, :, 2]
+    nz = -s * n[:, :, 1] + c * n[:, :, 2]
+    alfa = px[:, :, 3] > 0.5
+    v = np.stack([n[:, :, 0], ny, nz], axis=2)
+    px[:, :, :3] = np.where(alfa[:, :, None], v * 0.5 + 0.5, px[:, :, :3])
+    return px
 
 
 def esticar(px):
@@ -195,6 +210,7 @@ def salvar_normal(px, caminho):
     px = px.astype(np.float32).copy()
     branco = (px[:, :, 3] > 0.5) & np.all(px[:, :, :3] > 0.999, axis=2)
     px[branco, :3] = (0.5, 0.5, 1.0)
+    px = no_plano_do_sprite(px)
     px = esticar(px)
     px = biselar_folha(px, GRADE.get(MODO if MODO == "heroi" else ARGS[1] if len(ARGS) > 1 else None))
     h, w = px.shape[:2]

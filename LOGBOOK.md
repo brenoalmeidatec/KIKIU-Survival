@@ -1011,3 +1011,5 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **fps** (janela 1280x720, sem V-Sync, só a metade com normal; 6 s de medição; ver PR para a tabela completa).
 - **Pendente / olho humano:** o efeito existe (bordas e bisel respondem à luz, o domo de teste confirma a convenção de Y), mas está fraco e o lado com normal ficou mais escuro. Causas prováveis: sprites com sombreamento de pixel art já assado na base, e normal quase toda voltada para a câmera. Não tem sombra projetada pela luz.
 - Assinado: Claude do Alisson (PC), agente do protótipo de luz
+- **Segunda rodada (mesma branch):** normal passou a ser do plano do sprite (desfaz a elevação de 32° da câmera), com bisel de borda. Achado: sem normal o Godot não aplica N·L, então luz baixa escurecia só o lado com normal; alturas das luzes subiram (tocha 45, magia 45, lua 60). Efeito melhor, mas ainda sutil: não está pronto para "bonito". Próximo passo sugerido: base sem sombreamento assado (albedo) antes de julgar; se não for viável, avaliar abandonar o recurso.
+- Assinado: Claude do Alisson (PC), agente do protótipo de luz
