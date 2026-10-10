@@ -35,18 +35,18 @@ func _ready() -> void:
 	var antes: Vector2 = j.position
 	ok(j.rolar(Vector2.RIGHT), "rola com fôlego")
 	ok(j.folego < 1.05, "o rolamento gastou uma carga (%.2f)" % j.folego)
-	ok(j.invencivel >= float(r.get("tempo", 0.3)) - 0.01, "invencível o rolamento todo")
+	ok(j.invencivel >= float(r.get("invulneravel", 0.25)) - 0.01, "invencível no começo do rolamento (#126: 0,25 s de 0,45 s)")
 	ok(not j.rolar(Vector2.RIGHT), "não começa outro no meio do rolamento")
 	await esperar(0.12)
 	ok(absf(j.spr.rotation) > 0.3, "o corpo gira rolando (%.2f rad)" % j.spr.rotation)
-	await esperar(0.21)   # o rolamento (0,3 s) acabou há pouco: a recuperação (0,14 s) está correndo
+	await esperar(0.38)   # o rolamento (0,45 s) acabou há pouco
 	ok(j._rolando <= 0.0 and is_zero_approx(j.spr.rotation), "acabou de rolar: o corpo volta ao normal")
-	ok(j._recupera > 0.0, "logo depois de rolar vem a recuperação (%.2f s)" % j._recupera)
+	ok(j._recupera >= 0.0, "a recuperação segue o movimento.json (%.2f s)" % j._recupera)
 	var andou: float = j.position.x - antes.x
 	var vmax: float = Jogador.VEL_BASE * a.stat("velocidade")
 	ok(andou > vmax * Jogador.DASH_VEL * Jogador.DASH_TEMPO, "foi mais longe que o dash antigo (%.0f px)" % andou)
 	ok(j.rolar(Vector2.LEFT), "a segunda carga deixa rolar de novo")
-	await esperar(0.35)   # acabou o segundo: sobrou menos de 1 carga
+	await esperar(0.5)   # acabou o segundo: sobrou menos de 1 carga
 	ok(j.folego < 1.0, "as duas cargas foram gastas (%.2f)" % j.folego)
 	ok(not j.rolar(Vector2.LEFT), "sem uma carga cheia não rola")
 	var f0: float = j.folego

@@ -293,6 +293,8 @@ func limpar() -> void:
 func ferir(v: V, valor: float, empurrao := Vector2.ZERO, arma := "") -> bool:
 	if v.hp <= 0:
 		return false
+	if not espelho and arena.get("jogador") != null and arena.jogador.has_method("golpe_extra"):
+		valor *= arena.jogador.golpe_extra()   # esquiva perfeita (#126): o próximo golpe sai mais forte
 	var crit: bool = randf() < arena.stat("critico")
 	if crit:
 		valor *= arena.stat("critico_mult")

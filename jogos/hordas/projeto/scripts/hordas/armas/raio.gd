@@ -8,7 +8,7 @@ const Cresc := preload("res://scripts/hordas/crescimento.gd")
 const COR := Color(0.6, 0.85, 1.0)
 
 
-static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
+static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:
 	a.t -= dt
 	if a.t > 0:
 		return
@@ -16,11 +16,19 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	var c: Vector2 = w.dono.centro()
 	var corr: Dictionary = s.get("comp", {}).get("corrente_raio", {})   # fusão Chuva de Estrelas: o raio salta em corrente
 	var caiu := false
+	# direcional (#126): o primeiro raio cai onde o jogador aponta (no inimigo mais alinhado, ou 130 px à frente); os outros seguem sorteados
+	var mira: Dictionary = w.mirar_alvo(c, 300.0, d)
 	for i in int(s.quantidade):
+		var r := float(s.get("raio", 18)) * float(s.area)
+		if i == 0 and not mira.is_empty():
+			var onde: Vector2 = mira.alvo if mira.alvo != null else c + mira.dir * 130.0
+			_cair(w, onde, float(s.dano), r, int(s.get("cadeia", 0)) + int(corr.get("saltos", 0)), a.id, [],
+				onde + Vector2(randf_range(-30, 30), -360), float(corr.get("alcance", 110.0)), float(corr.get("dano_mult", 0.7)))
+			caiu = true
+			continue
 		var alvo = w.campo.aleatorio_na_tela(c)
 		if alvo == null:
 			break
-		var r := float(s.get("raio", 18)) * float(s.area)
 		_cair(w, alvo.pos, float(s.dano), r, int(s.get("cadeia", 0)) + int(corr.get("saltos", 0)), a.id, [alvo.id],
 			alvo.pos + Vector2(randf_range(-30, 30), -360), float(corr.get("alcance", 110.0)), float(corr.get("dano_mult", 0.7)))
 		caiu = true

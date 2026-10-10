@@ -10,19 +10,22 @@ const OURO := Color(1.0, 0.85, 0.4)
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
-static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
+static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:
 	a.t -= dt
 	if a.t > 0:
 		return
 	a.t = maxf(0.12, float(s.recarga))
 	var c: Vector2 = w.dono.centro()
 	var q := int(s.quantidade)
-	var alvos: Array = w.campo.n_mais_perto(c, q, 420)
+	var mira: Array = w.mirar(c, q, 420.0, d)   # direcional (#126): vazio = sem entrada de mira, vale o mais perto
+	var alvos: Array = [] if not mira.is_empty() else w.campo.n_mais_perto(c, q, 420)
 	for i in q:
 		var mao := Vector2(MAO.x * (-1 if i % 2 == 0 else 1), MAO.y)
 		var origem := c + mao
 		var dir := Vector2(w.dono.lado, 0)
-		if not alvos.is_empty():
+		if not mira.is_empty():
+			dir = mira[i]
+		elif not alvos.is_empty():
 			dir = (alvos[i % alvos.size()].pos - origem).normalized()
 		w.especiais.append({"tipo": "pistolas", "bala": true, "espera": i * 0.05, "pos": origem, "dir": dir,
 			"vel": float(s.velocidade), "vida": float(s.duracao), "dano": float(s.dano),

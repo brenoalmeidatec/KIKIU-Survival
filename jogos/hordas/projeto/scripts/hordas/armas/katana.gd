@@ -12,15 +12,20 @@ const BRILHO := Color(1, 1, 1)
 const COR_CORTE := Color(0.45, 0.7, 1.0)   # azul-aço: no aditivo vira branco no fio e azul na borda
 
 
-static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float) -> void:
+static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:
 	a.t -= dt
 	if a.t > 0:
 		return
 	a.t = maxf(0.2, float(s.recarga))
 	var c: Vector2 = w.dono.centro()
 	var alcance: float = float(s.get("alcance", 70)) * float(s.area)
-	var alvo = w.campo.mais_perto(c, alcance * 1.6)
-	var dir: Vector2 = (alvo.pos - c).normalized() if alvo else Vector2(w.dono.lado, 0)
+	var mira: Array = w.mirar(c, 1, alcance * 1.6, d)   # direcional (#126): corta pra onde o jogador aponta
+	var dir: Vector2
+	if not mira.is_empty():
+		dir = mira[0]
+	else:
+		var alvo = w.campo.mais_perto(c, alcance * 1.6)
+		dir = (alvo.pos - c).normalized() if alvo else Vector2(w.dono.lado, 0)
 	w.golpe_corpo(dir)
 	a["vira"] = -float(a.get("vira", -1.0))   # golpes alternam o sentido: ida e volta, como no Dimraeth
 	var q := int(s.quantidade)

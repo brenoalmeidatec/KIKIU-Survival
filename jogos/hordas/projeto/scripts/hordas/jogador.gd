@@ -62,6 +62,16 @@ var _rolando := 0.0             # quanto falta do rolamento em curso (o corpo gi
 var _rola_lado := 1.0           # pra que lado o corpo gira
 var _recupera := 0.0            # depois de rolar: um instante andando devagar (o compromisso da esquiva)
 var _vel_dash := DASH_VEL       # vezes a velocidade de andar no dash em curso (rolamento, investida do dragão, onda do Lucas)
+## ---- Esquiva perfeita e mira direcional (#126) ----
+var mira_dir := Vector2.ZERO    # direção da mira deste quadro (analógico direito ou mouse); ZERO = sem entrada: as armas direcionais miram no mais perto
+var mira_forcada := Vector2.ZERO   # só para prints/testes (--mira=x,y): mira nessa direção como se fosse o analógico direito
+var _mouse_ult := Vector2(-1000, -1000)   # onde o mouse estava no quadro anterior (mexeu = quer mirar com ele)
+var _mouse_parado := 99.0       # s sem mexer o mouse
+var _extra_t := 0.0             # esquiva perfeita: quanto falta do +dano no próximo golpe (0 = sem bônus)
+var _extra_frame := -1          # quadro em que o bônus foi gasto (um golpe em área acerta vários de uma vez: todos levam)
+var _perfeita_t := 0.0          # clarão dourado do herói na esquiva perfeita
+var esquivas := 0               # contadores da partida (relatório do robô e testes)
+var perfeitas := 0
 const CENTRO_CORPO := Vector2(0, -29)   # o meio do corpo em relação ao pé (a origem do sprite): o giro é em volta dele
 var lado := 1.0                 # 1 = olhando pra direita, -1 = esquerda (o chicote usa)
 var _mov := Vector2.ZERO
@@ -271,7 +281,10 @@ func atualizar_i(dt: float) -> void:
 	invencivel = maxf(0.0, invencivel - dt)
 	folego = minf(_folego_cfg("cargas", 2.0), folego + dt / maxf(0.1, _folego_cfg("recarga", 1.6)))
 	_recupera = maxf(0.0, _recupera - dt)
+	_extra_t = maxf(0.0, _extra_t - dt)
+	_perfeita_t = maxf(0.0, _perfeita_t - dt)
 	_vermelho = maxf(0.0, _vermelho - dt)
+	_atualizar_mira(dt)
 	_atk_t = maxf(0.0, _atk_t - dt)
 	_atk_cool = maxf(0.0, _atk_cool - dt)
 	_golpe_t = maxf(0.0, _golpe_t - dt)
@@ -429,12 +442,121 @@ func rolar(dir: Vector2) -> bool:
 			dash_t *= arena.ganchos.rolamento_mult()   # Pombo: rola mais longe (#72 marco 6)
 		_rolando = dash_t
 		_rola_lado = signf(_dir_dash.x) if absf(_dir_dash.x) > 0.01 else lado
-	invencivel = maxf(invencivel, dash_t + (0.1 if forma else 0.0))
+		# #126: invulnerável só no começo do rolamento (0,25 s de 0,45 s); o resto é o compromisso da esquiva
+		var inv := minf(dash_t, float(r.get("invulneravel", dash_t)) * (dash_t / maxf(0.01, float(r.get("tempo", dash_t)))))
+		invencivel = maxf(invencivel, inv)
+	if forma:
+		invencivel = maxf(invencivel, dash_t + 0.1)
+	esquivas += 1
+	if not forma and _esquiva_perfeita():
+		_perfeita()
 	Som.tocar("whoosh", 0.1, 1.2)
 	_poeira_em(3, 18.0)
 	if arena and arena.get("armas") != null and not forma:   # #63: "Aura Pulsante" solta um pulso ao rolar
 		arena.armas.ao_rolar()
 	return true
+
+
+func _cfg_perfeita(chave: String, padrao: float) -> float:
+	return float(Dados.json("movimento").get("esquiva_perfeita", {}).get(chave, padrao))
+
+
+## Esquiva perfeita (#126): no instante em que o rolamento começa havia um inimigo (ou tiro) a menos de `distancia` px.
+func _esquiva_perfeita() -> bool:
+	if arena == null or arena.get("inimigos") == null or arena.inimigos == null or arena.duelo_ativo:
+		return false
+	var c := centro()
+	var d := _cfg_perfeita("distancia", 24.0)
+	if not arena.inimigos.no_circulo(c, d).is_empty():
+		return true
+	for t in arena.inimigos.tiros:
+		if t.pos.distance_to(c) < d:
+			return true
+	return false
+
+
+## Som, clarão, anel, câmera lenta LOCAL (os inimigos perto andam devagar por um instante) e +25% no próximo golpe.
+func _perfeita() -> void:
+	perfeitas += 1
+	_extra_t = _cfg_perfeita("bonus_tempo", 4.0)
+	_perfeita_t = 0.35
+	_flash_t = 0.12
+	Som.tocar("plim", 0.1, 1.5, -2)
+	var c := centro()
+	var raio := _cfg_perfeita("lento_raio", 140.0)
+	var lento := _cfg_perfeita("lento_tempo", 0.5)
+	for v in arena.inimigos.no_circulo(c, raio):
+		v.lento = maxf(v.lento, lento)
+	if arena.get("armas") != null:
+		arena.armas.aneis.append({"pos": c, "r": raio * 0.55, "t": 0.4, "total": 0.4, "cor": Color(1.0, 0.9, 0.4)})
+	if arena.get("efeitos") != null and arena.efeitos != null:
+		arena.efeitos.luz(c, 46.0, Color(1.0, 0.85, 0.4, 0.8))
+		arena.efeitos.faisca(c, Vector2.UP, Color(1.0, 0.9, 0.5), 6, 120.0)
+
+
+## Multiplicador do dano do golpe que está saindo: depois de uma esquiva perfeita o PRÓXIMO golpe (e tudo o que ele acerta
+## no mesmo quadro) leva o bônus, uma vez só. O inimigos.gd chama isto em ferir().
+func golpe_extra() -> float:
+	var q := Engine.get_process_frames()
+	if _extra_t > 0.0:
+		_extra_t = 0.0
+		_extra_frame = q
+	if _extra_frame >= 0 and q - _extra_frame <= 1:
+		return 1.0 + _cfg_perfeita("bonus_dano", 0.25)
+	return 1.0
+
+
+func tem_bonus_esquiva() -> bool:
+	return _extra_t > 0.0
+
+
+# ---------- mira direcional (#126) ----------
+
+## Lê a mira do quadro: analógico direito, ou o mouse (se mexeu há pouco ou o botão esquerdo está apertado). Sem nenhum dos
+## dois a mira fica ZERO e as armas direcionais miram no inimigo mais perto (quem só anda continua jogando).
+func _atualizar_mira(dt: float) -> void:
+	var d := Vector2.ZERO
+	if _no_menu():
+		mira_dir = d
+		return
+	if mira_forcada != Vector2.ZERO:
+		d = mira_forcada.normalized()
+	elif bot:
+		d = _bot_mira()
+	elif InputMap.has_action("mira_direita"):
+		var s := Input.get_vector("mira_esquerda", "mira_direita", "mira_cima", "mira_baixo", float(Dados.json("mira").get("deadzone", 0.3)))
+		if s != Vector2.ZERO:
+			d = s.normalized()
+		elif Config.v("mira_mouse") and is_inside_tree() and get_viewport() != null:
+			var mp := get_viewport().get_mouse_position()
+			if _mouse_ult.x < -900.0:
+				_mouse_ult = mp
+			if mp != _mouse_ult:
+				_mouse_ult = mp
+				_mouse_parado = 0.0
+			else:
+				_mouse_parado += dt
+			var tempo := float(Dados.json("mira").get("mouse_tempo", 2.0))
+			if _mouse_parado < tempo or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				var para := get_global_mouse_position() - centro()
+				if para.length() > 10.0:
+					d = para.normalized()
+	mira_dir = d
+
+
+## Robô: mira no meio do bando perto (o assistente de mira gruda no vírus mais alinhado), como um jogador mirando onde tem mais.
+func _bot_mira() -> Vector2:
+	if arena == null or arena.get("inimigos") == null or arena.inimigos == null:
+		return Vector2.ZERO
+	var c := centro()
+	var perto: Array = arena.inimigos.no_circulo(c, 240.0)
+	if perto.is_empty():
+		return Vector2.ZERO
+	var soma := Vector2.ZERO
+	for v in perto:
+		soma += v.pos
+	var para: Vector2 = soma / float(perto.size()) - c
+	return para.normalized() if para.length() > 4.0 else Vector2.ZERO
 
 
 func _folego_cfg(chave: String, padrao: float) -> float:
@@ -450,7 +572,11 @@ func _quer_dash() -> bool:
 	if bot and arena.duelo_ativo:
 		return _dash_ia
 	if bot:
-		return arena.inimigos.no_circulo(centro(), 40).size() > 4
+		# #126: o robô esquiva quando tem gente colada (na janela da esquiva perfeita) e fôlego de sobra, ou quando o bando aperta
+		var c := centro()
+		if folego >= 1.0 and not arena.inimigos.no_circulo(c, _cfg_perfeita("distancia", 24.0)).is_empty() and hp < vida_max():
+			return true
+		return arena.inimigos.no_circulo(c, 40).size() > 4
 	return Input.is_action_just_pressed("dash")
 
 
@@ -678,3 +804,34 @@ func _draw_i() -> void:
 			var f := clampf(folego - k, 0.0, 1.0)
 			draw_rect(Rect2(-13 + k * (larg + 2), 10, larg, 2), Color(0.1, 0.05, 0.1))
 			draw_rect(Rect2(-13 + k * (larg + 2), 10, larg * f, 2), Color(0.55, 0.85, 1.0) if f >= 1.0 else Color(0.3, 0.45, 0.65))
+	if _extra_t > 0.0:   # esquiva perfeita (#126): o próximo golpe sai +25%; a marquinha dourada some quando ele sai (ou em 4 s)
+		var pisca := 0.65 + 0.35 * sin(_t * 14.0)
+		draw_rect(Rect2(-3, 14, 6, 3), Color(0.12, 0.08, 0.02, 0.9))
+		draw_rect(Rect2(-2, 15, 4, 1), Color(1.0, 0.85, 0.3, pisca))
+	if _perfeita_t > 0.0:
+		var k := 1.0 - _perfeita_t / 0.35
+		draw_arc(Vector2(0, -22), 10.0 + 26.0 * k, 0.0, TAU, 28, Color(1.0, 0.9, 0.45, 1.0 - k), 2.0)
+	_desenhar_reticulo()
+
+
+## Retículo da mira direcional (#126): um alvo pequeno a `reticulo_distancia` px do herói, na direção da mira, com contorno
+## escuro pra ler em qualquer chão, e uns pontinhos ligando-o ao herói. Só aparece quando há entrada de mira (analógico ou mouse).
+func _desenhar_reticulo() -> void:
+	if mira_dir == Vector2.ZERO or hp <= 0.0 or forma != null or not Config.v("reticulo"):
+		return
+	var cfg: Dictionary = Dados.json("mira")
+	var dist := float(cfg.get("reticulo_distancia", 52.0))
+	var c := Vector2(0, -22)
+	var p := c + mira_dir * dist
+	var cor := Color(1.0, 0.85, 0.35, 0.95) if _extra_t > 0.0 else Color(0.85, 0.95, 1.0, 0.95)
+	var sombra := Color(0.03, 0.02, 0.06, 0.85)
+	for k in 3:   # pontinhos do herói até o retículo
+		var q := c + mira_dir * (dist * (0.35 + 0.17 * k))
+		draw_rect(Rect2((q - Vector2(1.5, 1.5)).floor(), Vector2(3, 3)), sombra)
+		draw_rect(Rect2((q - Vector2(0.5, 0.5)).floor(), Vector2(1, 1)), cor)
+	draw_arc(p.floor(), 5.5, 0.0, TAU, 20, sombra, 3.0)
+	draw_arc(p.floor(), 5.5, 0.0, TAU, 20, cor, 1.0)
+	for dv in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+		draw_line((p + dv * 3.0).floor(), (p + dv * 8.0).floor(), sombra, 3.0)
+		draw_line((p + dv * 4.0).floor(), (p + dv * 8.0).floor(), cor, 1.0)
+	draw_rect(Rect2((p - Vector2(1, 1)).floor(), Vector2(2, 2)), cor)

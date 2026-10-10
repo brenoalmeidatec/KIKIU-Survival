@@ -1,5 +1,6 @@
 {
- "_ajuda": "Movimento do herói (#68, adaptado do Dimraeth). rolamento = a esquiva da tecla do dash: velocidade (vezes a de andar) e tempo (segundos; invencível o tempo todo) dão a distância; recuperacao = segundos andando devagar depois de rolar (o compromisso) e lento = quanto da velocidade sobra nela. folego = cargas de rolamento (dá pra encadear essa quantidade) e recarga = segundos pra voltar UMA carga. Transformado em dragão, a tecla continua sendo a investida dele (gasta fôlego igual).",
- "rolamento": {"velocidade": 2.7, "tempo": 0.3, "recuperacao": 0.14, "lento": 0.45},
- "folego": {"cargas": 2, "recarga": 1.6}
+ "_ajuda": "Movimento do herói (#68, #126). rolamento = a esquiva da tecla do dash: velocidade (vezes a de andar) e tempo (segundos, o rolamento TODO) dão a distância; invulneravel = quantos segundos do começo do rolamento o herói não leva dano (o resto é o compromisso: ainda rolando, mas vulnerável); recuperacao = segundos andando devagar depois de rolar e lento = quanto da velocidade sobra nela (0 = sem recuperação, o tempo total já é o rolamento). folego = cargas de rolamento (dá pra encadear essa quantidade; o item do Pombo soma uma) e recarga = segundos pra voltar UMA carga. esquiva_perfeita = rolar quando já tem inimigo ou tiro a menos de `distancia` px: os inimigos a menos de `lento_raio` px ficam lentos por `lento_tempo` s (câmera lenta LOCAL: o herói e o resto do jogo andam normal), toca o som, dá o clarão e o PRÓXIMO golpe sai com +`bonus_dano` (0,25 = +25%) se acontecer em até `bonus_tempo` s. Transformado em dragão, a tecla continua sendo a investida dele (gasta fôlego igual, sem esquiva perfeita).",
+ "rolamento": {"velocidade": 1.8, "tempo": 0.45, "invulneravel": 0.25, "recuperacao": 0.0, "lento": 0.45},
+ "folego": {"cargas": 2, "recarga": 1.2},
+ "esquiva_perfeita": {"distancia": 24.0, "lento_raio": 140.0, "lento_tempo": 0.5, "bonus_dano": 0.25, "bonus_tempo": 4.0}
 }

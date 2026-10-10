@@ -1,5 +1,5 @@
 {
- "_ajuda": "tipo: projetil (atira no inimigo mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio (scripts/hordas/armas/): katana, pistolas, marcial, aura_energia, elemental e os globais bumerangue, raio, lanca, corvos, runas e sismo (#65). visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos). crescimento = (opcional) troca a curva de crescimento só desta arma (area, dano, evoluida, desligado); a curva geral que faz toda arma começar pequena e fraca e crescer com o nível fica em dados/crescimento_armas.json.",
+ "_ajuda": "tipo: projetil (atira no inimigo mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio (scripts/hordas/armas/): katana, pistolas, marcial, aura_energia, elemental e os globais bumerangue, raio, lanca, corvos, runas e sismo (#65). mira (#126) = \"auto\" (mira no mais perto) ou \"direcional\" (mira pra onde o jogador aponta, com assistência); sem o campo vale o padrão do tipo em dados/mira.json. visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos). crescimento = (opcional) troca a curva de crescimento só desta arma (area, dano, evoluida, desligado); a curva geral que faz toda arma começar pequena e fraca e crescer com o nível fica em dados/crescimento_armas.json.",
  "_config": {
   "limite_exclusivas": 2
  },
@@ -8,6 +8,7 @@
   "nome": "Katana Samurai",
   "icone": "katana",
   "tipo": "katana",
+  "mira": "direcional",
   "familia": "chicote",
   "visual": {"camada": "katana_mao", "maos": ["arma_dir"], "senao": "katana_bainha", "prioridade": 1},
   "classe": "character_exclusive",
@@ -22,6 +23,7 @@
   "nome": "Duas Desert Eagles",
   "icone": "desert_eagles",
   "tipo": "pistolas",
+  "mira": "direcional",
   "familia": "projetil",
   "visual": {"camada": "pistolas", "maos": ["arma_dir", "arma_esq"], "prioridade": 2},
   "classe": "character_exclusive",

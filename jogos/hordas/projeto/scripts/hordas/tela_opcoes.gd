@@ -13,6 +13,8 @@ const Interface := preload("res://scripts/hordas/interface.gd")
 var _tela := Control.new()
 var _sel := 0
 var _quadro := 0
+var _captando := ""      # ação que espera a nova tecla/botão (remapeamento, #126); "" = não está captando
+var _quadro_cap := -1    # quadro em que a captura terminou: a mesma tecla não vale como comando da tela
 var _mouse_ult := Vector2(-1, -1)
 var _rolagem := 0.0
 var _fim_lista := 0.0
@@ -109,7 +111,7 @@ func _sair() -> void:
 func _process(_dt: float) -> void:
 	_seguir_selecao()
 	_tela.queue_redraw()
-	if Engine.get_process_frames() == _quadro:
+	if Engine.get_process_frames() == _quadro or _captando != "" or Engine.get_process_frames() == _quadro_cap:
 		return
 	var mp := _tela.get_local_mouse_position()
 	if mp != _mouse_ult:   # passar o mouse por cima escolhe (só se ele se mexeu, pra não brigar com o teclado)
@@ -127,6 +129,9 @@ func _process(_dt: float) -> void:
 		Som.ui("cursor")
 	elif Input.is_action_just_pressed("voltar") or (voltar and Input.is_action_just_pressed("confirmar")):
 		_sair()
+	elif not voltar and Config.ITENS[_sel].has("acao"):   # linha de remapeamento: Enter/direita pede a nova tecla ou botão
+		if Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("direita"):
+			_captar(str(Config.ITENS[_sel].acao))
 	elif not voltar and (Input.is_action_just_pressed("direita") or Input.is_action_just_pressed("confirmar")):
 		Config.girar(Config.ITENS[_sel].chave, 1)
 		Som.ui("cursor")
@@ -135,7 +140,35 @@ func _process(_dt: float) -> void:
 		Som.ui("cursor")
 
 
+func _captar(acao: String) -> void:
+	_captando = acao
+	Som.ui("abrir")
+
+
+## Espera a próxima tecla ou botão do controle: Esc cancela; qualquer outra coisa vira a nova tecla da ação.
+func _captura(e: InputEvent) -> void:
+	if not e.is_pressed() or e is InputEventMouseMotion:
+		return
+	if not (e is InputEventKey or e is InputEventJoypadButton):
+		return
+	get_viewport().set_input_as_handled()
+	_quadro_cap = Engine.get_process_frames()
+	if e is InputEventKey and e.echo:
+		return
+	var acao := _captando
+	_captando = ""
+	if e is InputEventKey and (e.physical_keycode == KEY_ESCAPE or e.keycode == KEY_ESCAPE):
+		Som.ui("voltar")
+	elif Config.remapear(acao, e):
+		Som.ui("confirmar")
+	else:
+		Som.ui("erro")
+
+
 func _input(e: InputEvent) -> void:
+	if _captando != "":
+		_captura(e)
+		return
 	if Engine.get_process_frames() == _quadro or not (e is InputEventMouseButton and e.pressed):
 		return
 	var q := Interface.quem(_rects(), _tela.get_local_mouse_position())
@@ -146,6 +179,9 @@ func _input(e: InputEvent) -> void:
 	if q == _n() - 1:
 		if e.button_index == MOUSE_BUTTON_LEFT:
 			_sair()
+	elif Config.ITENS[q].has("acao"):
+		if e.button_index == MOUSE_BUTTON_LEFT:
+			_captar(str(Config.ITENS[q].acao))
 	elif e.button_index == MOUSE_BUTTON_LEFT or e.button_index == MOUSE_BUTTON_RIGHT:
 		Config.girar(Config.ITENS[q].chave, 1 if e.button_index == MOUSE_BUTTON_LEFT else -1)
 		Som.ui("cursor")
@@ -176,7 +212,7 @@ func _desenhar() -> void:
 	if sel_v:
 		_tela.draw_rect(Rect2(250, l.voltar - 10, 140, 13), Color(0.3, 0.35, 0.6, 0.35))
 	_txt(Vector2(0, l.voltar), "> Voltar <" if sel_v else "Voltar", 8, Color(1, 0.9, 0.4) if sel_v else Color(0.8, 0.8, 0.8))
-	_txt(Vector2(0, 350), "Cima/baixo: escolher   Esq/dir: mudar   Esc: voltar   Mouse: clique", 8, Color(0.5, 0.5, 0.6))
+	_txt(Vector2(0, 350), "Cima/baixo: escolher   Esq/dir: mudar   Enter: trocar tecla   Esc: voltar", 8, Color(0.5, 0.5, 0.6))
 	_txt(Vector2(0, 14), Dados.texto_versao(), 8, Color(0.72, 0.74, 0.86, 0.85), W - 6, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
@@ -186,4 +222,7 @@ func _linha(i: int, y: float, nome: String, valor: String) -> void:
 		_tela.draw_rect(Rect2(146, y - 9, 348, 12), Color(0.3, 0.35, 0.6, 0.35))
 	var cor := Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8)
 	_txt(Vector2(158, y), nome, 8, cor, 330, HORIZONTAL_ALIGNMENT_LEFT)
-	_txt(Vector2(158, y), ("< %s >" % valor) if sel else valor, 8, Color.WHITE if sel else Color(0.6, 0.85, 1), 324, HORIZONTAL_ALIGNMENT_RIGHT)
+	if _captando != "" and Config.ITENS[i].get("acao", "") == _captando:
+		_txt(Vector2(158, y), "Aperte a nova tecla ou botão (Esc cancela)", 8, Color(1, 0.85, 0.3), 324, HORIZONTAL_ALIGNMENT_RIGHT)
+		return
+	_txt(Vector2(158, y), ("< %s >" % valor) if sel and not Config.ITENS[i].has("acao") else valor, 8, Color.WHITE if sel else Color(0.6, 0.85, 1), 324, HORIZONTAL_ALIGNMENT_RIGHT)
