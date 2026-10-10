@@ -1003,3 +1003,10 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** `testes/hud.tscn` (elementos e posições, fonte, partículas/números, banner de 2 s, prorrogação, pausa). Prints: `--print_tela=hazaki ... --fonte=medio|grande` nas 5 regiões, Baixa e Alta.
 - **Pendente / olho humano:** o jogo usa a PressStart2P no HUD (a Jacquard 12 só nos títulos), mantive. Com fonte 2x o centro do topo e o painel do herói ficam apertados. O 1B entrega a tela de status (Tab) e a camada dos objetivos; a #125 só fecha quando as duas partes entrarem.
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-10 · Claude (thread do Breno, projeto JOGO) · Marco 4 parte 1: gerador de mapas fechados (#128)
+- **Feito:** `scripts/hordas/mapa_fase.gd` monta, por região e andar, uma grade de 40x24 tiles com 12 a 20 peças pré-desenhadas (`dados/mapa_fase.json`, 28 peças; 15 delas só para uma região), relevo de borda e um portão do chefe com o tema da região (floresta: `v`, pântano: `c`, deserto: `x`, gelo: `k`, reino: `f`) com o portal no centro. Conectividade: o que não alcança o portal é ligado por um corredor em L (água vira ponte). Névoa do minimapa como função pura (`revelar`).
+- **Desvio do plano da #128:** a grade é lógica (texto), sem `TileMapLayer`, colisão, spawn de inimigos nem minimapa desenhado ainda. Isso fica para a parte 2, depois de ver a forma das peças no jogo.
+- **Testes:** `testes/mapa_fase.tscn`: 5 regiões x 6 andares com conectividade, portal livre, herói nascendo longe, portão com o tema, borda fechada, mesma semente = mesmo mapa, névoa. `MAPA_FASE falhas=0`.
+- **Pendente (parte 2):** desenho e colisão no jogo, inimigos nascendo fora da visão nas bordas de áreas alcançáveis, minimapa 96x64 e a parte de santuários distintos por região (hoje todos usam a mesma pira).
+- Assinado: Claude (thread do Breno, projeto JOGO)

@@ -1,0 +1,424 @@
+{
+ "_ajuda": "Mapa fechado de cada fase (#128, marco 4). Cada fase vira uma grade de azulejos (largura x altura) montada com 12 a 20 peças pré-desenhadas: peças sem 'regioes' servem em qualquer região; as com 'regioes' só nelas. Legenda: '.' chão; '#' relevo (bloqueia); '~' água ou fosso (bloqueia; a ponte '=' passa); 'o' pilar (bloqueia); 'j' foco, fumaça ou tocha (bloqueia); 's' espinhos, 'p' veneno ou lava, 'l' lodo, areia ou gelo fino, 'e' gelo escorregadio (andam, mas machucam ou atrasam: o dano vem do chão, não do bloqueio). O portão do chefe ('portao', 'G' vira o tema da região em 'temas_portao') fica sempre com o portal no centro do pátio interno. A conectividade é garantida: depois de montar, o que não alcança o portal é ligado por um corredor cavado em L (água vira ponte). 'distancia_min' = quantos tiles, no mínimo, o herói nasce longe do portal. 'tentativas' = remontagens se algo não fechar (não deve acontecer). Sorteio pela semente da corrida (Sorte): mesma semente, mesmo mapa em todos os clientes.",
+ "largura": 40,
+ "altura": 24,
+ "pecas_min": 12,
+ "pecas_max": 20,
+ "distancia_min": 18,
+ "tentativas": 20,
+ "portal_no_portao": [
+  8,
+  7
+ ],
+ "temas_portao": {
+  "floresta": "v",
+  "pantano": "c",
+  "deserto": "x",
+  "gelo": "k",
+  "reino": "f"
+ },
+ "portao": [
+  "#################",
+  "#################",
+  "#####GGGGGGG#####",
+  "#####GGGGGGG#####",
+  "###...........###",
+  "##.............##",
+  "#...............#",
+  "#...............#",
+  "#...............#",
+  "##.............##",
+  "###...........###",
+  "#####.......#####"
+ ],
+ "pecas": {
+  "ruina_quadrada": {
+   "mapa": [
+    "####...####",
+    "#.........#",
+    "#.o.....o.#",
+    "#.........#",
+    "...........",
+    "...........",
+    "...........",
+    "#.........#",
+    "#.o.....o.#",
+    "#.........#",
+    "####...####"
+   ],
+   "peso": 3
+  },
+  "circulo_pilares": {
+   "mapa": [
+    "....o....",
+    "..o...o..",
+    ".........",
+    ".o.....o.",
+    "o...P...o",
+    ".o.....o.",
+    ".........",
+    "..o...o..",
+    "....o...."
+   ],
+   "peso": 3
+  },
+  "fosso_ponte": {
+   "mapa": [
+    "...........",
+    "...........",
+    "...........",
+    "~~~~===~~~~",
+    "~~~~===~~~~",
+    "~~~~===~~~~",
+    "...........",
+    "...........",
+    "..........."
+   ],
+   "peso": 2
+  },
+  "arena_cercada": {
+   "mapa": [
+    "###.....###",
+    "#.........#",
+    "#.o.....o.#",
+    "..........#",
+    "..........#",
+    "..........#",
+    "#.........#",
+    "#.o.....o.#",
+    "#.........#",
+    "###.....###"
+   ],
+   "peso": 2
+  },
+  "ilha": {
+   "mapa": [
+    ".~~~=~~~.",
+    "~~.....~~",
+    "~.......~",
+    "~...o...~",
+    "=...P...=",
+    "~...o...~",
+    "~.......~",
+    "~~.....~~",
+    ".~~~=~~~."
+   ],
+   "peso": 2
+  },
+  "colunata": {
+   "mapa": [
+    "o.o.o.o.o.o.o",
+    ".............",
+    ".............",
+    ".............",
+    "o.o.o.o.o.o.o"
+   ],
+   "peso": 2
+  },
+  "muralha_quebrada": {
+   "mapa": [
+    "###..####..##",
+    "##..#####...#",
+    "#...###...###"
+   ],
+   "peso": 2
+  },
+  "corredor_espinhos": {
+   "mapa": [
+    "###############",
+    "#.s...s...s...#",
+    "..s.s...s...s..",
+    "#...s...s.s...#",
+    "###############"
+   ],
+   "peso": 2
+  },
+  "clareira_teias": {
+   "mapa": [
+    ".........",
+    ".ll.s.ll.",
+    ".lllllll.",
+    "..lllll..",
+    ".s.lll.s.",
+    "..lllll..",
+    ".lllllll.",
+    ".ll.s.ll.",
+    "........."
+   ],
+   "peso": 3,
+   "regioes": [
+    "floresta"
+   ]
+  },
+  "toca_raizes": {
+   "mapa": [
+    "#.......#",
+    "..j...j..",
+    "....o....",
+    "..j...j..",
+    "#.......#"
+   ],
+   "peso": 2,
+   "regioes": [
+    "floresta"
+   ]
+  },
+  "bosque_denso": {
+   "mapa": [
+    "##.#####.##",
+    "#...###...#",
+    "#.#.###.#.#",
+    "#.#.....#.#",
+    "#...###...#",
+    "##.#####.##"
+   ],
+   "peso": 2,
+   "regioes": [
+    "floresta"
+   ]
+  },
+  "ponte_riacho": {
+   "mapa": [
+    "...~~~...",
+    "...~~~...",
+    "...~~~...",
+    "...===...",
+    "...===...",
+    "...===...",
+    "...~~~...",
+    "...~~~...",
+    "...~~~..."
+   ],
+   "peso": 2,
+   "regioes": [
+    "floresta"
+   ]
+  },
+  "poco_acido": {
+   "mapa": [
+    "..ppppp..",
+    ".ppppppp.",
+    "ppp...ppp",
+    "pp..o..pp",
+    "ppp...ppp",
+    ".ppppppp.",
+    "..ppppp.."
+   ],
+   "peso": 3,
+   "regioes": [
+    "pantano"
+   ]
+  },
+  "palafitas": {
+   "mapa": [
+    "~~~~~~~~~~~",
+    "~=====~~~~~",
+    "~=~~~=~~~~~",
+    "~=~~~=====~",
+    "~=~~~~~~~=~",
+    "~=========~",
+    "~~~~~~~~~~~"
+   ],
+   "peso": 2,
+   "regioes": [
+    "pantano"
+   ]
+  },
+  "fumarolas": {
+   "mapa": [
+    "j...j...j",
+    ".........",
+    "..j...j..",
+    ".........",
+    "j...j...j"
+   ],
+   "peso": 2,
+   "regioes": [
+    "pantano"
+   ]
+  },
+  "ilha_lodo": {
+   "mapa": [
+    "~~~~~~~~~",
+    "~l.....l~",
+    "~..o.o..~",
+    "~...P...~",
+    "~..o.o..~",
+    "~l.....l~",
+    "~~~~=~~~~"
+   ],
+   "peso": 2,
+   "regioes": [
+    "pantano"
+   ]
+  },
+  "poco_areia": {
+   "mapa": [
+    "..lllll..",
+    ".lllllll.",
+    "lllllllll",
+    "lllllllll",
+    "lllllllll",
+    ".lllllll.",
+    "..lllll.."
+   ],
+   "peso": 3,
+   "regioes": [
+    "deserto"
+   ]
+  },
+  "tumba": {
+   "mapa": [
+    "#########",
+    "#.......#",
+    "#.o.P.o.#",
+    "#...o...#",
+    "#.......#",
+    "####.####"
+   ],
+   "peso": 2,
+   "regioes": [
+    "deserto"
+   ]
+  },
+  "armadilha_lancas": {
+   "mapa": [
+    "s.s.s.s.s",
+    ".s.s.s.s.",
+    "s.s.s.s.s",
+    ".s.s.s.s.",
+    "s.s.s.s.s"
+   ],
+   "peso": 2,
+   "regioes": [
+    "deserto"
+   ]
+  },
+  "obeliscos": {
+   "mapa": [
+    "o.......o",
+    ".........",
+    "....o....",
+    ".........",
+    "o.......o"
+   ],
+   "peso": 2,
+   "regioes": [
+    "deserto"
+   ]
+  },
+  "lago_gelado": {
+   "mapa": [
+    "..eeeee..",
+    ".eeeeeee.",
+    "eeeeeeeee",
+    "eeeeeeeee",
+    "eeeeeeeee",
+    ".eeeeeee.",
+    "..eeeee.."
+   ],
+   "peso": 3,
+   "regioes": [
+    "gelo"
+   ]
+  },
+  "pilares_gelo": {
+   "mapa": [
+    "o.o.o.o.o",
+    ".........",
+    "o.o.o.o.o",
+    ".........",
+    "o.o.o.o.o"
+   ],
+   "peso": 2,
+   "regioes": [
+    "gelo"
+   ]
+  },
+  "geiseres": {
+   "mapa": [
+    "j.......j",
+    "....j....",
+    ".j.....j.",
+    "....j....",
+    "j.......j"
+   ],
+   "peso": 2,
+   "regioes": [
+    "gelo"
+   ]
+  },
+  "fenda": {
+   "mapa": [
+    "....~....",
+    "...~~~...",
+    "...~~~...",
+    "...===...",
+    "...===...",
+    "...~~~...",
+    "...~~~...",
+    "....~...."
+   ],
+   "peso": 2,
+   "regioes": [
+    "gelo"
+   ]
+  },
+  "fosso_lava": {
+   "mapa": [
+    "..ppppp..",
+    ".pp===pp.",
+    "pp.....pp",
+    "p===o===p",
+    "pp.....pp",
+    ".pp===pp.",
+    "..ppppp.."
+   ],
+   "peso": 3,
+   "regioes": [
+    "reino"
+   ]
+  },
+  "salao_colunas": {
+   "mapa": [
+    "#########",
+    "#o.o.o.o#",
+    "#.......#",
+    "#o.o.o.o#",
+    "#.......#",
+    "#o.o.o.o#",
+    "####.####"
+   ],
+   "peso": 2,
+   "regioes": [
+    "reino"
+   ]
+  },
+  "jardim_espinhos": {
+   "mapa": [
+    "s.s.s.s.s",
+    "..s...s..",
+    "s...o...s",
+    "..s...s..",
+    "s.s.s.s.s"
+   ],
+   "peso": 2,
+   "regioes": [
+    "reino"
+   ]
+  },
+  "braseiros": {
+   "mapa": [
+    "j.......j",
+    ".........",
+    "....o....",
+    ".........",
+    "j.......j"
+   ],
+   "peso": 2,
+   "regioes": [
+    "reino"
+   ]
+  }
+ }
+}
