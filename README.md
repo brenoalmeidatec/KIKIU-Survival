@@ -58,7 +58,8 @@ Herói criado tem uma regra só: **se ele morrer, morre de vez**. Ele sai com it
 
 - 🗡️ **Dezenas de armas** que atacam sozinhas, de lâminas e machados que voltam até raios, corvos e runas, e que **evoluem** quando encontram o item certo.
 - 🔥 **Elementos que se misturam:** fogo, gelo, raio e veneno, com reações quando dois se encontram.
-- 🌀 **Rolamento de esquiva** com fôlego: dá para rolar através do perigo, mas não o tempo todo.
+- 🌀 **Rolamento de esquiva** com fôlego: dá para rolar através do perigo, mas não o tempo todo. Rolar bem em cima do inimigo é uma **esquiva perfeita**: ele fica lento e o seu próximo golpe sai mais forte.
+- 🎯 **Mira de verdade:** lança, pistolas, katana, raio e tiros vão para onde você aponta (analógico direito ou mouse), com uma ajudinha da mira; sem apontar, miram sozinhos no mais perto.
 - 👹 **Cerca de 50 monstros**, chefes no fim das regiões e um soberano esperando no fim de tudo.
 - 🎯 **Objetivos, santuários e baús** espalhados pelo caminho.
 - 🤝 **Reviver no online:** quem cai vira corpo, e um amigo perto pode levantá-lo.

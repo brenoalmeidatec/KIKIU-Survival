@@ -275,6 +275,75 @@ func atualizar_i(dt: float) -> void:
 	_atras.queue_redraw()
 
 
+## ---------- mira direcional (#126) ----------
+
+## "auto" (mira no mais perto) ou "direcional" (mira onde o jogador aponta). Vale o campo `mira` da arma em armas.json;
+## sem ele, o padrão do tipo em dados/mira.json.
+static func modo_mira(def: Dictionary) -> String:
+	if def.has("mira"):
+		return str(def.mira)
+	return str(Dados.json("mira").get("tipos", {}).get(str(def.get("tipo", "")), "auto"))
+
+
+## Função pura: pra onde a mira aponta. Sem inimigo dentro de `assist_rad` da linha apontada, a direção é a apontada mesma;
+## com inimigo, gruda no mais alinhado. Devolve {dir, alvo}: `alvo` é a posição do inimigo grudado ou null.
+static func resolver_mira(origem: Vector2, mira: Vector2, pontos: Array, assist_rad: float) -> Dictionary:
+	var dir := mira.normalized() if mira != Vector2.ZERO else Vector2.RIGHT
+	var melhor = null
+	var md := assist_rad + 0.0001
+	var base := dir.angle()
+	for p in pontos:
+		var dif: Vector2 = p - origem
+		if dif.length_squared() < 4.0:
+			continue
+		var d := absf(angle_difference(base, dif.angle()))
+		if d <= md:
+			md = d
+			melhor = p
+	if melhor == null:
+		return {"dir": dir, "alvo": null}
+	return {"dir": (melhor - origem).normalized(), "alvo": melhor}
+
+
+## A mira do dono neste quadro (ZERO = sem entrada de mira, ou o dono não mira: rival do duelo).
+func entrada_mira() -> Vector2:
+	if dono == null:
+		return Vector2.ZERO
+	var m = dono.get("mira_dir")
+	return m if m is Vector2 else Vector2.ZERO
+
+
+## `n` direções de tiro da arma `def` saindo de `origem`, se ela é direcional E o jogador está mirando; senão [] (use o
+## mais perto, como antes). Os n tiros abrem em leque pequeno em volta da direção resolvida.
+func mirar(origem: Vector2, n: int, alcance: float, def: Dictionary) -> Array:
+	var m := entrada_mira()
+	if m == Vector2.ZERO or modo_mira(def) != "direcional":
+		return []
+	var r := _resolver(origem, m, alcance)
+	var esp := float(Dados.json("mira").get("espalhamento", 0.14))
+	var dirs := []
+	for i in n:
+		dirs.append(r.dir.rotated((i - (n - 1) / 2.0) * esp))
+	return dirs
+
+
+## Igual a `mirar`, mas devolve {dir, alvo} da mira (alvo = posição do inimigo grudado ou null); {} se não é direcional/sem mira.
+func mirar_alvo(origem: Vector2, alcance: float, def: Dictionary) -> Dictionary:
+	var m := entrada_mira()
+	if m == Vector2.ZERO or modo_mira(def) != "direcional":
+		return {}
+	return _resolver(origem, m, alcance)
+
+
+func _resolver(origem: Vector2, m: Vector2, alcance: float) -> Dictionary:
+	var graus := float(Dados.json("mira").get("assistencia_graus", 20.0)) if Config.v("mira_assistida") else 0.0
+	var pontos := []
+	if graus > 0.0:
+		for v in campo.no_circulo(origem, alcance):
+			pontos.append(v.pos)
+	return resolver_mira(origem, m, pontos, deg_to_rad(graus))
+
+
 ## O jogador rolou: auras com "Aura Pulsante" soltam um pulso na hora (com uma pausa pra não virar spam).
 func ao_rolar() -> void:
 	for a in ativas():
@@ -323,10 +392,13 @@ func golpe_acertou(forca := 1.0) -> void:
 func _atirar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 	var jog: Node2D = dono
 	var origem: Vector2 = jog.centro()
-	var alvos: Array = campo.n_mais_perto(origem, s.quantidade, 380)
+	var mira := mirar(origem, s.quantidade, 380.0, d)   # direcional (#126): vazio = sem entrada de mira, vale o mais perto
+	var alvos: Array = [] if not mira.is_empty() else campo.n_mais_perto(origem, s.quantidade, 380)
 	for i in s.quantidade:
 		var dir: Vector2
-		if alvos.is_empty():
+		if not mira.is_empty():
+			dir = mira[i]
+		elif alvos.is_empty():
 			dir = Vector2(jog.lado, 0).rotated(randf_range(-0.3, 0.3))
 		else:
 			var alvo = alvos[i % alvos.size()]

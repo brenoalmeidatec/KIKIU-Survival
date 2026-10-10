@@ -19,6 +19,8 @@ var _suc := 0.0
 var _flash := 0.0
 var _cl := CanvasLayer.new()
 var _cobre := ColorRect.new()
+var _cl_dica := CanvasLayer.new()   # a dica "Segure CONFIRMAR" fica numa camada de tela, acima dos números de dano
+var _dica := Control.new()
 
 
 func _ready() -> void:
@@ -30,6 +32,12 @@ func _ready() -> void:
 	_cobre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_cl.add_child(_cobre)
 	add_child(_cl)
+	_cl_dica.layer = 8   # acima do mundo (números de dano, efeitos) e do HUD; abaixo das cartas, da loja e dos menus
+	_dica.size = Vector2(640, 360)
+	_dica.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dica.draw.connect(_desenhar_dica)
+	_cl_dica.add_child(_dica)
+	add_child(_cl_dica)
 
 
 # ---------- funções puras (o teste usa) ----------
@@ -77,6 +85,7 @@ func fechar() -> void:
 		j.scale = Vector2.ONE
 		j.rotation = 0.0
 	queue_redraw()
+	_dica.queue_redraw()
 
 
 func _process(dt: float) -> void:
@@ -101,6 +110,7 @@ func _process(dt: float) -> void:
 			_suc = 0.0
 			Som.tocar("plim", 0.05, 0.6)
 	queue_redraw()
+	_dica.queue_redraw()
 
 
 ## O herói é puxado pro centro do portal, encolhendo e girando; no fim o clarão e a cortina.
@@ -152,8 +162,34 @@ func _draw() -> void:
 	var hold := float(cfg().get("segurar", 1.0))
 	if seg > 0.0:
 		draw_arc(pos, r + 6.0, -PI / 2.0, -PI / 2.0 + TAU * clampf(seg / hold, 0.0, 1.0), 40, Color(1, 0.9, 0.4), 3.0)
-	if saindo:
+	# a dica ("Segure CONFIRMAR...") não é desenhada aqui: no mundo ela ficava por baixo dos números de dano e se misturava com eles.
+	# Ela vai numa camada de tela (_dica, acima dos números e dos efeitos), com caixa escura e contorno: veja _desenhar_dica.
+
+
+func _texto_dica() -> String:
+	var perto: bool = arena != null and arena.jogador != null and dentro_do_portal(arena.jogador.centro(), pos, 140.0)
+	return "SAIR DA FASE" if not perto else "Segure CONFIRMAR para sair"
+
+
+## Posição da dica na tela (640x360): em cima do portal, mas sem sair da janela.
+func posicao_dica() -> Vector2:
+	var cam := Vector2.ZERO
+	if arena != null and arena.get("camera") != null:
+		cam = arena.camera.get_screen_center_position()
+	var p := pos - cam + Vector2(320, 180) + Vector2(0, -50)
+	return Vector2(clampf(p.x, 80.0, 560.0), clampf(p.y, 16.0, 344.0))
+
+
+func _desenhar_dica() -> void:
+	if not aberta or pronto or saindo:
 		return
-	var perto: bool = arena.jogador != null and dentro_do_portal(arena.jogador.centro(), pos, 140.0)
-	var txt := "SAIR DA FASE" if not perto else "Segure CONFIRMAR para sair"
-	draw_string(Dados.fonte, pos + Vector2(-110, -r - 14.0), txt, HORIZONTAL_ALIGNMENT_CENTER, 220, 8, Color(0.9, 0.85, 1.0, 0.9))
+	var txt := _texto_dica()
+	var fonte: Font = Dados.fonte
+	var tam := int(round(8.0 * maxf(1.0, Config.fator_fonte() * 0.75)))
+	var larg := fonte.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x
+	var p := posicao_dica()
+	var caixa := Rect2((p + Vector2(-larg / 2.0 - 5.0, -tam - 2.0)).floor(), Vector2(larg + 10.0, tam + 7.0))
+	_dica.draw_rect(caixa, Color(0.04, 0.02, 0.09, 0.82))
+	_dica.draw_rect(caixa, Color(0.7, 0.55, 1.0, 0.8), false, 1.0)
+	_dica.draw_string_outline(fonte, (p + Vector2(-larg / 2.0, 0)).floor(), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, tam, 3, Color(0.03, 0.01, 0.07, 1))
+	_dica.draw_string(fonte, (p + Vector2(-larg / 2.0, 0)).floor(), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, tam, Color(1.0, 0.97, 0.85))

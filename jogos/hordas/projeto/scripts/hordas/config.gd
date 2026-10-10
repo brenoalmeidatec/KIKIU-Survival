@@ -19,6 +19,14 @@ const ITENS := [
 	{"chave": "numeros_dano", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_NUMEROS_DANO", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "nomes_inimigo", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_NOMES_INIMIGO", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "particulas", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_PARTICULAS", "valores": [1.0, 0.5, 0.0], "rotulos": ["OPC_PART_TODAS", "OPC_PART_POUCAS", "OPC_PART_NENHUMA"], "padrao": 1.0},
+	# Controles (#126). "acao" = linha de remapeamento: Enter/clique pede a nova tecla ou botão (Esc cancela); o valor guardado fica em [teclas].
+	{"chave": "reticulo", "grupo": "Controles", "nome": "Retículo da mira", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "mira_assistida", "grupo": "Controles", "nome": "Mira assistida (20 graus)", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "mira_mouse", "grupo": "Controles", "nome": "Mirar com o mouse", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "tecla_dash", "grupo": "Controles", "nome": "Esquivar", "valores": [""], "padrao": "", "acao": "dash"},
+	{"chave": "tecla_especial", "grupo": "Controles", "nome": "Especial", "valores": [""], "padrao": "", "acao": "especial"},
+	{"chave": "tecla_transformar", "grupo": "Controles", "nome": "Transformar", "valores": [""], "padrao": "", "acao": "transformar"},
+	{"chave": "tecla_status", "grupo": "Controles", "nome": "Status (inventário)", "valores": [""], "padrao": "", "acao": "status"},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{"chave": "qualidade", "grupo": "Gráfico", "nome": "Qualidade gráfica", "valores": ["alta", "media", "baixa"], "rotulos": ["Alta", "Média", "Baixa"], "padrao": "alta"},
 	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Baixar a qualidade se travar", "valores": [false, true], "formato": "sim_nao", "padrao": true},
@@ -116,6 +124,8 @@ func definir(chave: String, valor: Variant) -> void:
 ## Texto do valor atual (o que aparece na tela de Opções).
 func rotulo(chave: String) -> String:
 	var it := item(chave)
+	if it.has("acao"):
+		return texto_acao(str(it.acao))
 	var val = v(chave)
 	match str(it.get("formato", "")):
 		"sim_nao":
@@ -124,6 +134,62 @@ func rotulo(chave: String) -> String:
 			return "%d%%" % roundi(float(val) * 100.0)
 	var i: int = it.valores.find(val)
 	return tr(str(it.rotulos[i])) if i >= 0 else str(val)
+
+
+## ---------- remapeamento de teclas e botões (#126) ----------
+
+## Nome curto da tecla/botão que a ação usa agora: "Espaço / Botão 1". Só conta a 1ª tecla e o 1º botão do controle.
+func texto_acao(acao: String) -> String:
+	if not InputMap.has_action(acao):
+		return "-"
+	var tecla := ""
+	var botao := ""
+	for e in InputMap.action_get_events(acao):
+		if e is InputEventKey and tecla == "":
+			tecla = OS.get_keycode_string(e.physical_keycode if e.physical_keycode != KEY_NONE else e.keycode)
+		elif e is InputEventJoypadButton and botao == "":
+			botao = "Botão %d" % e.button_index
+	return " / ".join([tecla, botao].filter(func(s): return s != "")) if (tecla + botao) != "" else "-"
+
+
+## Troca a tecla (InputEventKey) ou o botão do controle (InputEventJoypadButton) da ação e grava. Devolve false se o evento não serve.
+func remapear(acao: String, ev: InputEvent) -> bool:
+	if not (ev is InputEventKey or ev is InputEventJoypadButton) or not InputMap.has_action(acao):
+		return false
+	if ev is InputEventKey:
+		var k: int = ev.physical_keycode if ev.physical_keycode != KEY_NONE else ev.keycode
+		if k == KEY_ESCAPE or k == KEY_NONE:
+			return false
+		_cfg.set_value("teclas", acao + "_teclado", k)
+	else:
+		_cfg.set_value("teclas", acao + "_controle", ev.button_index)
+	_cfg.save(ARQUIVO)
+	aplicar_teclas()
+	return true
+
+
+## Põe no InputMap o que o jogador trocou: troca TODAS as teclas (ou todos os botões) da ação pela escolhida.
+func aplicar_teclas() -> void:
+	for it in ITENS:
+		if not it.has("acao"):
+			continue
+		var acao: String = it.acao
+		if not InputMap.has_action(acao):
+			continue
+		if _cfg.has_section_key("teclas", acao + "_teclado"):
+			for e in InputMap.action_get_events(acao):
+				if e is InputEventKey:
+					InputMap.action_erase_event(acao, e)
+			var ek := InputEventKey.new()
+			ek.physical_keycode = int(_cfg.get_value("teclas", acao + "_teclado")) as Key
+			InputMap.action_add_event(acao, ek)
+		if _cfg.has_section_key("teclas", acao + "_controle"):
+			for e in InputMap.action_get_events(acao):
+				if e is InputEventJoypadButton:
+					InputMap.action_erase_event(acao, e)
+			var ej := InputEventJoypadButton.new()
+			ej.button_index = int(_cfg.get_value("teclas", acao + "_controle")) as JoyButton
+			InputMap.action_add_event(acao, ej)
 
 
 ## Passa pro próximo (passo 1) ou anterior (passo -1) valor da lista, dando a volta.

@@ -36,6 +36,7 @@ const TECLAS := {
 	"dash": [KEY_SPACE, KEY_SHIFT], "confirmar": [KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_Z], "voltar": [KEY_ESCAPE],
 	"resortear": [KEY_R], "pular": [KEY_X], "banir": [KEY_B], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F], "falar": [KEY_V], "especial": [KEY_E],
 	"status": [KEY_TAB], "consumivel1": [KEY_1], "consumivel2": [KEY_2], "consumivel3": [KEY_3], "consumivel_usar": [], "consumivel_trocar": [],
+	"mira_esquerda": [], "mira_direita": [], "mira_cima": [], "mira_baixo": [],   # mira direcional (#126): o analógico direito (eixos abaixo); o mouse é lido direto pelo jogador
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP], "baixo": [JOY_BUTTON_DPAD_DOWN], "esquerda": [JOY_BUTTON_DPAD_LEFT], "direita": [JOY_BUTTON_DPAD_RIGHT],
@@ -132,11 +133,13 @@ func _teclas() -> void:
 			var j := InputEventJoypadButton.new()
 			j.button_index = b
 			InputMap.action_add_event(acao, j)
-	for par in [["esquerda", JOY_AXIS_LEFT_X, -1.0], ["direita", JOY_AXIS_LEFT_X, 1.0], ["cima", JOY_AXIS_LEFT_Y, -1.0], ["baixo", JOY_AXIS_LEFT_Y, 1.0]]:
+	for par in [["esquerda", JOY_AXIS_LEFT_X, -1.0], ["direita", JOY_AXIS_LEFT_X, 1.0], ["cima", JOY_AXIS_LEFT_Y, -1.0], ["baixo", JOY_AXIS_LEFT_Y, 1.0],
+			["mira_esquerda", JOY_AXIS_RIGHT_X, -1.0], ["mira_direita", JOY_AXIS_RIGHT_X, 1.0], ["mira_cima", JOY_AXIS_RIGHT_Y, -1.0], ["mira_baixo", JOY_AXIS_RIGHT_Y, 1.0]]:
 		var m := InputEventJoypadMotion.new()
 		m.axis = par[1]
 		m.axis_value = par[2]
 		InputMap.action_add_event(par[0], m)
+	Config.aplicar_teclas()   # teclas/botões que o jogador trocou em Opções > Controles (#126) valem por cima dos padrões
 
 
 func _ler_args() -> void:
@@ -999,6 +1002,7 @@ func _teste() -> void:
 		_t_quadros = 0.0
 		_quadros = 0
 		var ele = _arena.inimigos.elementos
+		print("  esquiva: rolamentos=%d perfeitas=%d mira=%s" % [_arena.jogador.esquivas, _arena.jogador.perfeitas, "sim" if _arena.jogador.mira_dir != Vector2.ZERO else "nao"])
 		print("  elementos: estados=%d vistos=%d marcados=%d congelados=%d reacoes=%d" % [ele.estados.size(), ele.vis.size(), ele.contagem.qualquer, ele.contagem.congelados, ele.contagem.reacoes])
 		if _arena.ganchos:
 			print("  ganchos: %s auras_tocadas=%s pilhas=%d vidas_gastas=%d" % [_arena.ganchos.lista.map(func(g): return g.tipo), _arena.ganchos.aura_tocados, _arena.ganchos.pilhas, _arena.ganchos.vidas_gastas])
@@ -1657,6 +1661,27 @@ func _print_tela(qual: String) -> void:
 			_arena.especial.usar()
 			await get_tree().create_timer(float(_args.get("espera", 0.25))).timeout
 			Engine.time_scale = 0.03   # o print sai 0,6 s (tempo real) depois: o efeito curto quase para, pra caber na foto
+		"esquiva":   # #126: retículo da mira (--mira=x,y) e uma esquiva com vírus colados (esquiva perfeita): --estresse=N --equip --espera=0.15 --sem_rolar (só o retículo)
+			_comecar("hazaki")
+			await get_tree().create_timer(float(_args.get("antes", 5.5)), true, false, true).timeout
+			_arena.diretor.xp_mult = 0.0
+			if _arena.cartas.aberto():
+				_arena.cartas._fechar()
+			_arena.bot = false
+			_arena.jogador.bot = false
+			_arena.jogador.invencivel = 999.0
+			if _args.has("equip"):
+				for id in ["lanca", "pendrive"]:
+					_arena.armas.adicionar(id)
+			var mxy := str(_args.get("mira", "1,-0.35")).split(",")
+			_arena.jogador.mira_forcada = Vector2(float(mxy[0]), float(mxy[1]))
+			var jq: Vector2 = _arena.jogador.position
+			for k in 5:
+				_arena.inimigos.criar("carnical", jq + Vector2.from_angle(k * 1.3 + 0.4) * 16.0, 1)
+			if not _args.has("sem_rolar"):
+				_arena.jogador.rolar(Vector2.LEFT)
+			await get_tree().create_timer(float(_args.get("espera", 0.15)), true, false, true).timeout
+			Engine.time_scale = 0.03
 		"dragao":   # com --bot --dragao (e --estresse=N pra ter vírus): --espera=0.6 pega o meio da transformação
 			_comecar("hazaki")
 			await get_tree().create_timer(float(_args.get("espera", 5.0))).timeout
