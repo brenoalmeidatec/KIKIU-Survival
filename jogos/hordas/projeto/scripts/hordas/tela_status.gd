@@ -10,9 +10,9 @@ const Interface := preload("res://scripts/hordas/interface.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
+const TEMA := preload("res://cenas/tema_hud.tres")
 const W := 640.0
 const H := 360.0
-const BANNER_SEG := 2.0
 const CINZA := Color(0.62, 0.62, 0.68)
 ## ordem das linhas de atributo na tela
 const ATRIBUTOS := ["vida_max", "regen", "dano", "recarga", "area", "duracao", "quantidade", "velocidade_proj", "velocidade", "ima", "critico", "critico_mult", "sorte", "xp"]
@@ -21,12 +21,8 @@ const ROTULO_EXTRA := {"critico_mult": "Dano crít.", "velocidade_proj": "Vel. t
 var arena: Node
 var aberta := false
 var fixa := false              # teste/print: não fecha sozinha
-var banner_t := 0.0
-var banner_txt := ""
 var _pausei := false
 var _tela := Control.new()
-var _niveis := {}              # etiqueta -> degrau ligado (pra perceber quando sobe)
-var _sincronizou := false
 
 
 func _ready() -> void:
@@ -151,20 +147,15 @@ func fechar() -> void:
 		return
 	aberta = false
 	fixa = false
-	_tela.visible = banner_t > 0.0
+	_tela.visible = false
 	if _pausei:
 		get_tree().paused = false
 	_pausei = false
 
 
-func _process(dt: float) -> void:
+func _process(_dt: float) -> void:
 	if arena == null:
 		return
-	_vigiar_conjuntos()
-	if banner_t > 0.0:
-		banner_t -= dt
-		_tela.visible = aberta or banner_t > 0.0
-		_tela.queue_redraw()
 	var quer: bool = InputMap.has_action("status") and Input.is_action_pressed("status")
 	if not aberta and quer and pode_abrir():
 		abrir()
@@ -174,23 +165,6 @@ func _process(dt: float) -> void:
 		fechar()
 	if aberta:
 		_tela.queue_redraw()
-
-
-## Aviso de 2 s quando um conjunto sobe de degrau (a primeira leitura só guarda o estado, pra não avisar o que já veio de começo).
-func _vigiar_conjuntos() -> void:
-	var lin: Array = arena.get("conj_resumo") if arena.get("conj_resumo") != null else []
-	for l in lin:
-		var at := int(l.ativo)
-		if _sincronizou and at > int(_niveis.get(l.etq, 0)):
-			avisar_conjunto(l)
-		_niveis[l.etq] = at
-	_sincronizou = true
-
-
-func avisar_conjunto(l: Dictionary) -> void:
-	banner_txt = "Conjunto %s ligou: %s" % [str(l.nome), str(l.texto)]
-	banner_t = BANNER_SEG
-	_tela.visible = true
 
 
 # ---------- desenho ----------
@@ -229,19 +203,11 @@ func _desenhar() -> void:
 		return
 	if aberta:
 		_painel()
-	if banner_t > 0.0:
-		var a := clampf(banner_t / 0.4, 0.0, 1.0)
-		var larg := minf(W - 40.0, banner_txt.length() * 8.0 + 24.0)
-		var r := Rect2((W - larg) * 0.5, 40.0 if not aberta else H - 24.0, larg, 16)
-		_tela.draw_rect(r, Color(0.04, 0.03, 0.09, 0.9 * a))
-		_tela.draw_rect(Rect2(r.position, Vector2(r.size.x, 1)), Color(Interface.cor("destaque"), a))
-		_txt(r.position + Vector2(0, 11), banner_txt, 8, Color(1, 0.95, 0.8, a), HORIZONTAL_ALIGNMENT_CENTER, larg)
 
 
 func _painel() -> void:
 	_tela.draw_rect(Rect2(0, 0, W, H), Color(0.02, 0.01, 0.05, 0.96))
-	_tela.draw_rect(Rect2(8, 8, W - 16, H - 16), Color(0.07, 0.05, 0.12, 0.6))
-	_tela.draw_rect(Rect2(8, 8, W - 16, H - 16), Color(0.45, 0.35, 0.65, 0.8), false, 1.0)
+	TEMA.get_stylebox("panel", "PanelContainer").draw(_tela.get_canvas_item(), Rect2(8, 8, W - 16, H - 16))   # painel do tema do HUD (cenas/tema_hud.tres)
 	var nome := str(arena.heroi.get("nome", ""))
 	_titulo(Vector2(20, 34), "Status", 24, Color(1, 0.92, 0.7))
 	_txt(Vector2(150, 32), "%s  Nv %d" % [nome, int(arena.nivel)], 8, CINZA)

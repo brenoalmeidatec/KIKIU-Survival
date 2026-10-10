@@ -78,11 +78,5 @@ func _ready() -> void:
 	var Main := preload("res://scripts/hordas/main.gd")
 	ok(Main.TECLAS.has("status") and KEY_TAB in Main.TECLAS.status, "status = Tab")
 	ok(Main.CONTROLE.has("status") and JOY_BUTTON_BACK in Main.CONTROLE.status, "status = Back no controle")
-	# --- aviso do conjunto (2 s)
-	t.banner_t = 0.0
-	t.avisar_conjunto({"nome": "Lâmina", "texto": "+15% de dano"})
-	ok(t.banner_t == Tela.BANNER_SEG and Tela.BANNER_SEG == 2.0 and t.banner_txt.contains("Lâmina"), "aviso de conjunto dura 2 s")
-	t._process(2.1)
-	ok(t.banner_t <= 0.0, "o aviso some depois de 2 s")
 	print("STATUS falhas=%d" % falhas)
 	get_tree().quit()
