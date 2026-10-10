@@ -1,0 +1,14 @@
+{
+ "_ajuda": "Mira direcional (#126). Cada arma tem um modo: \"auto\" (mira sozinha no inimigo mais perto) ou \"direcional\" (atira pra onde o jogador aponta: analógico direito ou mouse). O modo vem do campo `mira` da própria arma em armas.json; sem o campo vale o padrão do TIPO da arma, na tabela `tipos` daqui (projétil, lança, pistolas, raio e katana são direcionais; órbita, aura, poça, corvos, runas e o resto continuam automáticos). assistencia_graus = o tiro gruda no inimigo que estiver a até tantos graus da linha apontada (a opção \"Mira assistida\" liga/desliga). Sem entrada de mira (jogador só andando) as armas direcionais miram no mais perto, como sempre. espalhamento = abertura em radianos entre os tiros de uma mesma rajada. mouse_tempo = segundos que o mouse conta como mira depois de mexer (segurar o botão esquerdo mira sempre). deadzone = zona morta do analógico direito. reticulo_distancia = px do herói ao retículo.",
+ "assistencia_graus": 20.0,
+ "espalhamento": 0.14,
+ "mouse_tempo": 2.0,
+ "deadzone": 0.3,
+ "reticulo_distancia": 52.0,
+ "tipos": {
+  "projetil": "direcional", "lanca": "direcional", "pistolas": "direcional", "raio": "direcional", "katana": "direcional",
+  "chicote": "auto", "orbita": "auto", "poca": "auto", "aura": "auto", "aura_energia": "auto", "bumerangue": "auto",
+  "corvos": "auto", "runas": "auto", "sismo": "auto", "elemental": "auto", "energia_draconica": "auto", "baforada": "auto",
+  "garras": "auto", "marcial": "auto", "rugido": "auto"
+ }
+}

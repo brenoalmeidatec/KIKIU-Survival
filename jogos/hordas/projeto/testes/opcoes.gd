@@ -37,6 +37,27 @@ func _ready() -> void:
 	ef.numero(Vector2.ZERO, 10)
 	ok(ef.numeros.size() == 1, "com números de dano")
 	ef.free()
+	# remapeamento de teclas (#126): troca a tecla da esquiva, o InputMap acompanha e fica salvo; Esc não vale
+	var tinha := InputMap.has_action("dash")
+	if not tinha:
+		InputMap.add_action("dash")
+	var ev := InputEventKey.new()
+	ev.physical_keycode = KEY_J
+	ok(Config.remapear("dash", ev), "remapear a esquiva pra J")
+	ok(InputMap.action_has_event("dash", ev), "o InputMap passou a ter o J")
+	ok(Config.texto_acao("dash").contains("J"), "o rótulo mostra J (%s)" % Config.texto_acao("dash"))
+	var esc := InputEventKey.new()
+	esc.physical_keycode = KEY_ESCAPE
+	ok(not Config.remapear("dash", esc), "Esc cancela, não vira tecla")
+	var cfg2 := ConfigFile.new()
+	cfg2.load(Config.ARQUIVO)
+	ok(int(cfg2.get_value("teclas", "dash_teclado", 0)) == KEY_J, "a tecla trocada fica no arquivo")
+	Config._cfg.erase_section("teclas")
+	Config._cfg.save(Config.ARQUIVO)
+	if not tinha:
+		InputMap.erase_action("dash")
+	else:
+		InputMap.action_erase_event("dash", ev)
 	for k in antes:
 		Config.definir(k, antes[k])
 	print("OPCOES falhas=", falhas)

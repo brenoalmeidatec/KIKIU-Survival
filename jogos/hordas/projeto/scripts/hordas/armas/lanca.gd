@@ -7,7 +7,7 @@ const DUR := 0.22   # quanto tempo a lança fica esticada (vai e volta)
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
-static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:
+static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:   # `d` = definição da arma (a mira lê o campo `mira` dela)
 	a.t -= dt
 	if a.t > 0:
 		return
@@ -15,11 +15,14 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 	var c: Vector2 = w.dono.centro()
 	var q := int(s.quantidade)
 	var alcance := float(s.get("alcance", 140)) * float(s.area)
-	var alvos: Array = w.campo.n_mais_perto(c, q, alcance + 60.0)
+	var mira: Array = w.mirar(c, q, alcance + 60.0, d)   # direcional (#126): vazio = sem entrada de mira, vale o mais perto
+	var alvos: Array = [] if not mira.is_empty() else w.campo.n_mais_perto(c, q, alcance + 60.0)
 	var rm: Dictionary = s.get("comp", {}).get("lanca_ramos", {})   # fusão Lança Sanguessuga: pontas laterais e roubo de vida
 	for i in q:
 		var dir := Vector2(w.dono.lado, 0)
-		if not alvos.is_empty():
+		if not mira.is_empty():
+			dir = mira[i]
+		elif not alvos.is_empty():
 			dir = (alvos[i % alvos.size()].pos - c).normalized()
 		var dirs := [[dir, 1.0, 1.0]]
 		for r in int(rm.get("ramos", 0)):
@@ -29,7 +32,7 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 			w.especiais.append({"tipo": "lanca", "espera": i * 0.12, "t": DUR, "dir": dd[0], "alcance": alcance * dd[1],
 				"largura": float(s.get("largura", 14)) * float(s.area), "dano": float(s.dano) * dd[2], "arma": a.id, "feito": false,
 				"evo": bool(d.get("evolucao", false)), "cura": int(rm.get("cura", 0)), "cura_max": int(rm.get("cura_max", 0))})
-	w.golpe_corpo((alvos[0].pos - c).normalized() if not alvos.is_empty() else Vector2(w.dono.lado, 0))
+	w.golpe_corpo(mira[0] if not mira.is_empty() else ((alvos[0].pos - c).normalized() if not alvos.is_empty() else Vector2(w.dono.lado, 0)))
 
 
 static func passo(w, e: Dictionary, dt: float) -> bool:
