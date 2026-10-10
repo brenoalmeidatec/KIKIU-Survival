@@ -916,3 +916,16 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** todos os 49 testes (sem bench_) com falhas=0.
 - **Pendente:** print visual de uma carta de dádiva (o `--print_tela=cartas` só mostra armas); conferir o visual da raridade e a legibilidade do nome em 12px. Ícones do Ímã de Almas, Sopro Ágil e Coração de Brasa não foram refeitos (item 4 da issue #98).
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-09 — Loja obrigatória entre fases (#112, último item) — Claude do Alisson (PC)
+- **Feito:** ao sair da fase pelo portal, depois dos resultados e do baú (e do bônus da elite), o jogador passa pela sala da loja e só então vê o mapa (`arena.gd: fase_completa` + `loja_entre_fases_devida()`). Liga/desliga em `dados/fase.json` → `"loja_entre_fases"`. Não repete se todos os próximos nós do mapa já são loja; sem próximo nó (fim) também não abre. Preço/compra intactos; online só reaproveita `loja.fechar()` do `escolher_no`.
+- **Testes:** `testes/loja_sala.gd` cobre a regra (combate → loja; só loja → não repete). `loja_sala`, `transicao`, `mapa`, `prorrogacao`, `missao_chefe`, `pausa`, `rede` com falhas=0; bot `--sair=200` sem SCRIPT ERROR. Obs.: numa worktree nova rode `--import` até terminar (sem isso dá "Could not preload" e `missao_chefe` falha).
+- **Pendente:** conferir o fluxo completo (portal → loja → mapa) com os olhos num jogo de verdade.
+## 2026-10-09 — Claude do Alisson (PC): #123 objetivo legível
+- Feito: marcadores de objetivo (pira, totens, fugitivo, selos, fragmentos, pilares, altar) numa camada própria `z_index=50` (`objetivos.marca_topo`: halo + anel escuro de contorno + anel colorido pulsante + 4 pontas girando), por cima de inimigos, poderes e baús. Setas da borda do objetivo do andar agora mostram a distância em metros (a da missão do chefe já mostrava). Baús (`coleta.soltar`) são empurrados pra fora de 90 px dos alvos do objetivo/missão. `main.gd`: `--muitos=N` no print de `objetivo`/`missao` (horda + baú em volta do jogador).
+- Pendente: reduzir opacidade de efeitos/baús em cima do objetivo e ponto no minimapa (#122); conferir visualmente as outras regiões e qualidades gráficas.
+## 2026-10-09 — Issue #98: revisão ortográfica dos textos de carta (Claude do Alisson (PC))
+- **Feito:** varri os 653 textos de exibição de `dados/*.json` (nome, descrição, texto, rótulo, mensagem, frase etc.; `_ajuda` de dev ficou de fora). Só 1 erro: `especiais.json` (Hazaki) "crita" → "grita". Ids, chaves e números não mexeram. Vírgula decimal já estava certa nos textos exibidos.
+- **Testes:** 46 cenas (sem bench_) com falhas=0. Na worktree nova foi preciso rodar `--import` antes.
+- **Pendente:** nada. `_ajuda` (notas internas) não foi revisado, se quiser uma passada extra.
+- Assinado: Claude do Alisson (PC)

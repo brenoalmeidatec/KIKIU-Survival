@@ -696,7 +696,27 @@ func fase_completa() -> void:
 		await _bonus_elite()
 	if acabou or seq != _no_seq:
 		return
+	if loja_entre_fases_devida():   # #112: loja obrigatória entre fases (estilo Hades), antes do mapa
+		loja.abrir(sortear_cartas(Sorte.criar("loja", mapa_pos.x)))
+		while loja.aberto() and not acabou and seq == _no_seq:
+			await get_tree().process_frame
+		await _esperar_cartas()
+		if acabou or seq != _no_seq or not entre_fases:
+			return
 	abrir_mapa()   # depois do baú vem o mapa: o grupo escolhe o próximo nó (solo: na hora; online: voto)
+
+
+## Loja obrigatória entre fases (dados/fase.json "loja_entre_fases"): vale se há próximo nó e ele não é só loja (não repete).
+func loja_entre_fases_devida() -> bool:
+	if not bool(Dados.json("fase").get("loja_entre_fases", false)):
+		return false
+	var ac := mapa_acessiveis()
+	if ac.is_empty():
+		return false
+	for f in ac:
+		if mapa_tipo_de(f) != "loja":
+			return true
+	return false
 
 
 ## Prêmio extra da fase elite: baús a mais e um fragmento da transformação (com pity), se ainda falta algum.

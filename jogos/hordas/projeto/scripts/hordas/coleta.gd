@@ -28,7 +28,28 @@ func gema(pos: Vector2, valor: float) -> void:
 	itens.append({"pos": pos + Vector2(randf_range(-4, 4), randf_range(-4, 4)), "tipo": "gema", "valor": valor, "puxando": false, "vel": 0.0})
 
 
+const RAIO_BAU_OBJETIVO := 90.0   # baú não nasce a menos disso de um alvo de objetivo (#123)
+
+
+## Afasta `pos` dos alvos do objetivo do andar e da missão do chefe, pra o baú não cobrir o marcador.
+func _longe_do_objetivo(pos: Vector2) -> Vector2:
+	if arena == null or not ("objetivo" in arena) or arena.objetivo == null or arena.missao == null:
+		return pos
+	var alvos: Array = []
+	if arena.objetivo.ativo():
+		alvos.append_array(arena.objetivo.marcas)
+	if arena.missao.ativo():
+		alvos.append_array(arena.missao.marcas())
+	for a in alvos:
+		var d: Vector2 = pos - a
+		if d.length() < RAIO_BAU_OBJETIVO:
+			pos = a + (d.normalized() if d.length() > 0.5 else Vector2.RIGHT) * RAIO_BAU_OBJETIVO
+	return pos
+
+
 func soltar(pos: Vector2, tipo: String) -> void:
+	if tipo == "bau":
+		pos = _longe_do_objetivo(pos)
 	itens.append({"pos": pos, "tipo": tipo, "valor": 0, "puxando": false, "vel": 0.0, "t0": _t})
 
 
