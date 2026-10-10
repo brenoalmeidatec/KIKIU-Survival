@@ -953,3 +953,9 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Feito:** cada receita em `fusoes` (`dados/armas_universais.json`) ganhou `mecanica` (comportamento de `comportamentos.json` -> ajustes de parâmetro) e `desc`. `universais.gd` injeta ambos na arma fundida; `armas.gd` (`_comp_de`) entrega em `s.comp`. Aurora Rubra: rastro de sangue em brasa; Chuva de Estrelas: raio salta em corrente (+4); Martelo Glacial: congela e onda-eco puxa; Lança Sanguessuga: 3 pontas e rouba vida; Ciclone: órbita que respira; Lua Peçonhenta: poça explode ao secar. Novos comportamentos `so_fusao` (nunca saem em carta). Teste `armas_universais` estendido.
 - **Pendente:** conferir visualmente (pontas da lança, eco do martelo).
 - Claude do Alisson (PC)
+## 2026-10-09: ícones próprios das armas universais (#115) (Claude do Alisson (PC))
+- **Feito:** 50 ícones 16x16 em pixel art para as armas universais (`armas` sem `fusao`), gerados em `jogos/hordas/fonte_arte/icones_tema.gd` (`molde_*` por classe + `u_<id>` com `base`/`troca` de cores). `icone` de cada arma em `armas_universais.json` aponta para `u_<id>`. Saída em `assets/gerado/icone_u_*.png`.
+- **Pendente:** as 6 armas de fusão (`fusao_*`, em `armas` com `fusao: true`) continuam com ícones antigos; ficaram de fora porque a tarefa pedia só as 50 e a seção de fusões é de outro agente.
+- **Testes:** `armas_universais`, `regras_armas` e `cartas_comp` com falhas=0.
+- **Próximo:** conferir a legibilidade no jogo, em tela, e decidir o ícone das fusões.
+- Assinado: Claude do Alisson (PC)

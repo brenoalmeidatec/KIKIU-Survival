@@ -165,7 +165,7 @@
    "classe_arma": "espada",
    "tipo": "chicote",
    "familia": "chicote",
-   "icone": "katana",
+   "icone": "u_espada_treino",
    "etiquetas": [
     "lamina"
    ],
@@ -204,7 +204,7 @@
    "classe_arma": "espada",
    "tipo": "chicote",
    "familia": "chicote",
-   "icone": "katana",
+   "icone": "u_lamina_alvorecer",
    "etiquetas": [
     "lamina",
     "sagrado"
@@ -244,7 +244,7 @@
    "classe_arma": "espada grande",
    "tipo": "chicote",
    "familia": "chicote",
-   "icone": "laminas",
+   "icone": "u_montante_lascado",
    "etiquetas": [
     "lamina",
     "pesado"
@@ -284,7 +284,7 @@
    "classe_arma": "espada grande",
    "tipo": "chicote",
    "familia": "chicote",
-   "icone": "laminas",
+   "icone": "u_montante_carmesim",
    "etiquetas": [
     "lamina",
     "sangue",
@@ -325,7 +325,7 @@
    "classe_arma": "machado",
    "tipo": "bumerangue",
    "familia": "projetil",
-   "icone": "machado",
+   "icone": "u_machadinha_enferrujada",
    "etiquetas": [
     "lamina",
     "arremesso"
@@ -366,7 +366,7 @@
    "classe_arma": "machado",
    "tipo": "bumerangue",
    "familia": "projetil",
-   "icone": "machado",
+   "icone": "u_machado_guerra",
    "etiquetas": [
     "lamina",
     "arremesso",
@@ -408,7 +408,7 @@
    "classe_arma": "machado grande",
    "tipo": "bumerangue",
    "familia": "projetil",
-   "icone": "machados_brasa",
+   "icone": "u_retalhador_sangrento",
    "etiquetas": [
     "lamina",
     "sangue",
@@ -450,7 +450,7 @@
    "classe_arma": "machado grande",
    "tipo": "chicote",
    "familia": "chicote",
-   "icone": "corrente_carrasco",
+   "icone": "u_machado_carrasco",
    "etiquetas": [
     "lamina",
     "pesado"
@@ -490,7 +490,7 @@
    "classe_arma": "arco",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "pena",
+   "icone": "u_arco_tosco",
    "etiquetas": [
     "arremesso"
    ],
@@ -531,7 +531,7 @@
    "classe_arma": "arco",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "olho_falcao",
+   "icone": "u_arco_cacador",
    "etiquetas": [
     "arremesso"
    ],
@@ -572,7 +572,7 @@
    "classe_arma": "arco",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "pena",
+   "icone": "u_arco_lua_rubra",
    "etiquetas": [
     "arremesso",
     "sangue"
@@ -614,7 +614,7 @@
    "classe_arma": "arco",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "olho_falcao",
+   "icone": "u_arco_sussurro",
    "etiquetas": [
     "arremesso",
     "sombra"
@@ -656,7 +656,7 @@
    "classe_arma": "adaga",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "adaga",
+   "icone": "u_faca_silex",
    "etiquetas": [
     "lamina",
     "arremesso"
@@ -698,7 +698,7 @@
    "classe_arma": "adaga",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "adaga",
+   "icone": "u_espinho_alvorada",
    "etiquetas": [
     "lamina",
     "arremesso",
@@ -741,7 +741,7 @@
    "classe_arma": "adaga",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "presa_peconhenta",
+   "icone": "u_punhal_peconhento",
    "etiquetas": [
     "lamina",
     "arremesso"
@@ -783,7 +783,7 @@
    "classe_arma": "adaga",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "adaga",
+   "icone": "u_adaga_sombria",
    "etiquetas": [
     "lamina",
     "sombra"
@@ -825,7 +825,7 @@
    "classe_arma": "escudo",
    "tipo": "aura",
    "familia": "aura",
-   "icone": "figa",
+   "icone": "u_escudo_couro",
    "etiquetas": [
     "pesado"
    ],
@@ -863,7 +863,7 @@
    "classe_arma": "escudo",
    "tipo": "aura",
    "familia": "aura",
-   "icone": "figa",
+   "icone": "u_baluarte_espinhoso",
    "etiquetas": [
     "pesado",
     "sangue"
@@ -902,7 +902,7 @@
    "classe_arma": "escudo",
    "tipo": "aura",
    "familia": "aura",
-   "icone": "sino_juizo",
+   "icone": "u_egide_dourada",
    "etiquetas": [
     "sagrado",
     "pesado"
@@ -941,7 +941,7 @@
    "classe_arma": "escudo",
    "tipo": "aura",
    "familia": "aura",
-   "icone": "espelho",
+   "icone": "u_escudo_vigia",
    "etiquetas": [
     "pesado"
    ],
@@ -979,7 +979,7 @@
    "classe_arma": "cajado",
    "tipo": "raio",
    "familia": "projetil",
-   "icone": "centelha",
+   "icone": "u_cajado_galho",
    "etiquetas": [
     "trovao"
    ],
@@ -1016,7 +1016,7 @@
    "classe_arma": "cajado",
    "tipo": "raio",
    "familia": "projetil",
-   "icone": "furia_ceus",
+   "icone": "u_cetro_astral",
    "etiquetas": [
     "trovao",
     "sagrado"
@@ -1054,7 +1054,7 @@
    "classe_arma": "cajado",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "poder_elemental",
+   "icone": "u_cajado_eremita",
    "etiquetas": [
     "sagrado"
    ],
@@ -1095,7 +1095,7 @@
    "classe_arma": "cajado",
    "tipo": "raio",
    "familia": "projetil",
-   "icone": "cristal_geada",
+   "icone": "u_bastao_cristal",
    "etiquetas": [
     "trovao",
     "gelo"
@@ -1133,7 +1133,7 @@
    "classe_arma": "martelo",
    "tipo": "sismo",
    "familia": "aura",
-   "icone": "martelo",
+   "icone": "u_marreta_enferrujada",
    "etiquetas": [
     "pesado"
    ],
@@ -1170,7 +1170,7 @@
    "classe_arma": "martelo",
    "tipo": "sismo",
    "familia": "aura",
-   "icone": "terremoto",
+   "icone": "u_martelo_forjagelo",
    "etiquetas": [
     "pesado",
     "gelo"
@@ -1208,7 +1208,7 @@
    "classe_arma": "martelo",
    "tipo": "sismo",
    "familia": "aura",
-   "icone": "martelo",
+   "icone": "u_martelo_ferreiro",
    "etiquetas": [
     "pesado"
    ],
@@ -1245,7 +1245,7 @@
    "classe_arma": "maça",
    "tipo": "sismo",
    "familia": "aura",
-   "icone": "martelo",
+   "icone": "u_maca_estrelada",
    "etiquetas": [
     "pesado"
    ],
@@ -1282,7 +1282,7 @@
    "classe_arma": "lança",
    "tipo": "lanca",
    "familia": "chicote",
-   "icone": "lanca",
+   "icone": "u_dardo_primitivo",
    "etiquetas": [
     "lamina"
    ],
@@ -1321,7 +1321,7 @@
    "classe_arma": "lança",
    "tipo": "lanca",
    "familia": "chicote",
-   "icone": "lanca",
+   "icone": "u_lanca_cacada",
    "etiquetas": [
     "lamina"
    ],
@@ -1360,7 +1360,7 @@
    "classe_arma": "lança",
    "tipo": "lanca",
    "familia": "chicote",
-   "icone": "lanca_ardente",
+   "icone": "u_lanca_dragao",
    "etiquetas": [
     "lamina",
     "fogo"
@@ -1400,7 +1400,7 @@
    "classe_arma": "lança",
    "tipo": "lanca",
    "familia": "chicote",
-   "icone": "lanca",
+   "icone": "u_pique_real",
    "etiquetas": [
     "lamina",
     "pesado"
@@ -1440,7 +1440,7 @@
    "classe_arma": "maça",
    "tipo": "chicote",
    "familia": "chicote",
-   "icone": "martelo",
+   "icone": "u_clava_espinhos",
    "etiquetas": [
     "pesado"
    ],
@@ -1479,7 +1479,7 @@
    "classe_arma": "maça",
    "tipo": "chicote",
    "familia": "chicote",
-   "icone": "martelo",
+   "icone": "u_maca_lua_sangue",
    "etiquetas": [
     "pesado",
     "sangue"
@@ -1519,7 +1519,7 @@
    "classe_arma": "foice",
    "tipo": "orbita",
    "familia": "orbita",
-   "icone": "laminas",
+   "icone": "u_foice_giratoria",
    "etiquetas": [
     "lamina",
     "sombra"
@@ -1562,7 +1562,7 @@
    "classe_arma": "chakram",
    "tipo": "orbita",
    "familia": "orbita",
-   "icone": "laminas",
+   "icone": "u_disco_cortante",
    "etiquetas": [
     "lamina"
    ],
@@ -1604,7 +1604,7 @@
    "classe_arma": "chakram",
    "tipo": "orbita",
    "familia": "orbita",
-   "icone": "ventoinha",
+   "icone": "u_chakram_alvorada",
    "etiquetas": [
     "lamina",
     "sagrado"
@@ -1647,7 +1647,7 @@
    "classe_arma": "sino",
    "tipo": "aura",
    "familia": "aura",
-   "icone": "sino",
+   "icone": "u_sino_ferro",
    "etiquetas": [
     "sagrado",
     "pesado"
@@ -1686,7 +1686,7 @@
    "classe_arma": "tocha",
    "tipo": "poca",
    "familia": "poca",
-   "icone": "fogo_grego",
+   "icone": "u_tocha_ardente",
    "etiquetas": [
     "fogo"
    ],
@@ -1725,7 +1725,7 @@
    "classe_arma": "frasco",
    "tipo": "poca",
    "familia": "poca",
-   "icone": "fogo_grego",
+   "icone": "u_frasco_incendiario",
    "etiquetas": [
     "fogo",
     "arremesso"
@@ -1765,7 +1765,7 @@
    "classe_arma": "frasco",
    "tipo": "poca",
    "familia": "poca",
-   "icone": "garrafada",
+   "icone": "u_pocao_corrosiva",
    "etiquetas": [
     "arremesso"
    ],
@@ -1804,7 +1804,7 @@
    "classe_arma": "totem",
    "tipo": "aura",
    "familia": "aura",
-   "icone": "figa",
+   "icone": "u_totem_ossos",
    "etiquetas": [
     "sombra",
     "invocacao"
@@ -1843,7 +1843,7 @@
    "classe_arma": "livro",
    "tipo": "raio",
    "familia": "projetil",
-   "icone": "grimorio",
+   "icone": "u_grimorio_rachado",
    "etiquetas": [
     "trovao",
     "sombra"
@@ -1881,7 +1881,7 @@
    "classe_arma": "livro",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "pergaminho",
+   "icone": "u_pergaminho_runico",
    "etiquetas": [
     "sagrado"
    ],
@@ -1922,7 +1922,7 @@
    "classe_arma": "corrente",
    "tipo": "chicote",
    "familia": "chicote",
-   "icone": "corrente",
+   "icone": "u_corrente_farpada",
    "etiquetas": [
     "sangue",
     "pesado"
@@ -1962,7 +1962,7 @@
    "classe_arma": "maça",
    "tipo": "orbita",
    "familia": "orbita",
-   "icone": "pedra_amolar",
+   "icone": "u_estrela_matutina",
    "etiquetas": [
     "pesado"
    ],
@@ -2004,7 +2004,7 @@
    "classe_arma": "espada",
    "tipo": "raio",
    "familia": "projetil",
-   "icone": "furia_ceus",
+   "icone": "u_lamina_tempestade",
    "etiquetas": [
     "lamina",
     "trovao"
@@ -2042,7 +2042,7 @@
    "classe_arma": "arco",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "desert_eagles",
+   "icone": "u_besta_pesada",
    "etiquetas": [
     "arremesso",
     "pesado"
@@ -2084,7 +2084,7 @@
    "classe_arma": "tocha",
    "tipo": "poca",
    "familia": "poca",
-   "icone": "brasa_viva",
+   "icone": "u_lanterna_fantasma",
    "etiquetas": [
     "fogo",
     "sombra"
@@ -2124,7 +2124,7 @@
    "classe_arma": "adaga",
    "tipo": "projetil",
    "familia": "projetil",
-   "icone": "adaga",
+   "icone": "u_kunai_corvo",
    "etiquetas": [
     "lamina",
     "sombra",
