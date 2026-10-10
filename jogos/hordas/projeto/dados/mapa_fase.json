@@ -1,5 +1,5 @@
 {
- "_ajuda": "Mapa fechado de cada fase (#128, marco 4). Cada fase vira uma grade de azulejos (largura x altura) montada com 12 a 20 peças pré-desenhadas: peças sem 'regioes' servem em qualquer região; as com 'regioes' só nelas. Legenda: '.' chão; '#' relevo (bloqueia); '~' água ou fosso (bloqueia; a ponte '=' passa); 'o' pilar (bloqueia); 'j' foco, fumaça ou tocha (bloqueia); 's' espinhos, 'p' veneno ou lava, 'l' lodo, areia ou gelo fino, 'e' gelo escorregadio (andam, mas machucam ou atrasam: o dano vem do chão, não do bloqueio). O portão do chefe ('portao', 'G' vira o tema da região em 'temas_portao') fica sempre com o portal no centro do pátio interno. A conectividade é garantida: depois de montar, o que não alcança o portal é ligado por um corredor cavado em L (água vira ponte). 'distancia_min' = quantos tiles, no mínimo, o herói nasce longe do portal. 'tentativas' = remontagens se algo não fechar (não deve acontecer). Sorteio pela semente da corrida (Sorte): mesma semente, mesmo mapa em todos os clientes.",
+ "_ajuda": "Mapa fechado de cada fase (#128, marco 4). Cada fase vira uma grade de azulejos (largura x altura) montada com 12 a 20 peças pré-desenhadas: peças sem 'regioes' servem em qualquer região; as com 'regioes' só nelas. Legenda: '.' chão; '#' relevo (bloqueia); '~' água ou fosso (bloqueia; a ponte '=' passa); 'o' pilar (bloqueia); 'j' foco, fumaça ou tocha (bloqueia); 's' espinhos, 'p' veneno ou lava, 'l' lodo, areia ou gelo fino, 'e' gelo escorregadio (andam, mas machucam ou atrasam: o dano vem do chão, não do bloqueio). O portão do chefe ('portao', 'G' vira o tema da região em 'temas_portao') fica sempre com o portal no centro do pátio interno. A conectividade é garantida: depois de montar, o que não alcança o portal é ligado por um corredor cavado em L (água vira ponte). 'distancia_min' = quantos tiles, no mínimo, o herói nasce longe do portal. 'tentativas' = remontagens se algo não fechar (não deve acontecer). Sorteio pela semente da corrida (Sorte): mesma semente, mesmo mapa em todos os clientes. 'portoes' = um portão por região (tema, linhas de 17x12, frase_medo para o aviso na entrada); sem entrada para a região, vale 'portao' com 'temas_portao'.",
  "largura": 40,
  "altura": 24,
  "pecas_min": 12,
@@ -678,6 +678,98 @@
     "#.........#",
     "#.........#"
    ]
+  }
+ },
+ "portoes": {
+  "floresta": {
+   "tema": "v",
+   "linhas": [
+    "##GGGGGGGGGGGGG##",
+    "#GGGGGGGGGGGGGGG#",
+    "#o.............o#",
+    "#...............#",
+    "#.......j.......#",
+    "#...............#",
+    "#o.............o#",
+    "#...............#",
+    "#.....j.....j...#",
+    "#...............#",
+    "#...............#",
+    "####.........####"
+   ],
+   "frase_medo": "As raízes se mexem sob seus pés. Ele já te viu."
+  },
+  "pantano": {
+   "tema": "c",
+   "linhas": [
+    "#GG#GGGGG#GG#GGG#",
+    "#GGGGGGGGGGGGGGG#",
+    "#j.............j#",
+    "#...............#",
+    "#...o.......o...#",
+    "#...............#",
+    "#.......j.......#",
+    "#...............#",
+    "#...o.......o...#",
+    "#...............#",
+    "#...............#",
+    "####.........####"
+   ],
+   "frase_medo": "O lodo borbulha. Os sapos já sabem seu nome."
+  },
+  "deserto": {
+   "tema": "x",
+   "linhas": [
+    "#GG#GG#GG#GG#GG##",
+    "#GGGGGGGGGGGGGGG#",
+    "#o.............o#",
+    "#...............#",
+    "#...............#",
+    "#.....o...o.....#",
+    "#...............#",
+    "#...............#",
+    "#...............#",
+    "#o.............o#",
+    "#...............#",
+    "####.........####"
+   ],
+   "frase_medo": "Ossos rangem na areia. O rei não dorme."
+  },
+  "gelo": {
+   "tema": "k",
+   "linhas": [
+    "GG#GG#GG#GG#GG#GG",
+    "#GGGGGGGGGGGGGGG#",
+    "#j.............j#",
+    "#...............#",
+    "#.....o...o.....#",
+    "#...............#",
+    "#...............#",
+    "#.....j.......j.#",
+    "#...............#",
+    "#o.............o#",
+    "#...............#",
+    "####.........####"
+   ],
+   "frase_medo": "O gelo range e os raios caem sobre você."
+  },
+  "reino": {
+   "tema": "f",
+   "linhas": [
+    "#GGG#GGGGGGG#GGG#",
+    "#GGGGGGGGGGGGGGG#",
+    "#o.............o#",
+    "#j.............j#",
+    "#...............#",
+    "#.....o...o.....#",
+    "#...............#",
+    "#...............#",
+    "#j.............j#",
+    "#...............#",
+    "#o.............o#",
+    "####.........####"
+   ],
+   "frase_medo": "Os cultistas cantam e o fogo já te espera."
   }
  }
 }

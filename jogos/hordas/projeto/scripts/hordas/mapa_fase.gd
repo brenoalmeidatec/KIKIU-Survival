@@ -56,10 +56,11 @@ static func _montar(regiao: String, andar: int, tent: int) -> Dictionary:
 		if pw > w - 2 or ph > h - 2:
 			continue
 		_carimbar(g, w, rows, rng.randi_range(1, w - pw - 1), rng.randi_range(1, h - ph - 1))
-	var portao: Array = c.get("portao", [])
+	var por_regiao: Dictionary = c.get("portoes", {}).get(regiao, {})   # um portão por região (dados/mapa_fase.json > portoes)
+	var portao: Array = por_regiao.get("linhas", c.get("portao", []))
 	if portao.is_empty():
 		return {"ok": false}
-	var tema := str(c.get("temas_portao", {}).get(regiao, "x"))
+	var tema := str(por_regiao.get("tema", c.get("temas_portao", {}).get(regiao, "x")))
 	var gw := str(portao[0]).length()
 	var gh := portao.size()
 	var gx := rng.randi_range(1, w - gw - 1)
