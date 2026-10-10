@@ -72,6 +72,22 @@ func parede_em(p: Vector2) -> bool:
 	return not MapaFase.passavel(grade[t.y][t.x])
 
 
+## Ponto livre mais perto de `p`: o portal (e o que mais nasce no chão) não fica dentro de parede. Sem tile livre por perto, devolve `p`.
+func ponto_livre_perto(p: Vector2) -> Vector2:
+	if not parede_em(p):
+		return p
+	var c := tile_de(p)
+	for r in range(1, 12):
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				if maxi(absi(dx), absi(dy)) != r:
+					continue
+				var t := c + Vector2i(dx, dy)
+				if t.x >= 0 and t.y >= 0 and t.x < w and t.y < h and MapaFase.passavel(grade[t.y][t.x]):
+					return origem + (Vector2(t) + Vector2(0.5, 0.5)) * TILE
+	return p
+
+
 ## Caixa de colisão do herói (4 cantos em volta dos pés) bate em alguma parede?
 func bate_heroi(pos: Vector2) -> bool:
 	var pe := pos + PES

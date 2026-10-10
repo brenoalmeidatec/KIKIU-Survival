@@ -41,6 +41,10 @@ func _ready() -> void:
 	a.semente = 7
 	add_child(a)
 	await esperar(0.3)
+	# o mapa fechado (#128) tem teste próprio (mapa_mundo.gd): aqui o terreno é livre, para testar só o portal e a saída
+	if a.mapa_fase_mundo:
+		a.mapa_fase_mundo.free()
+		a.mapa_fase_mundo = null
 	a.bot = false
 	a.jogador.bot = false
 	var d = a.diretor

@@ -550,6 +550,8 @@ func abrir_saida(p: Vector2) -> void:
 		return
 	fase_stat.tempo = diretor.t_fase   # o tempo da fase para de contar aqui; ficar coletando depois não pesa
 	diretor.saida_leve = true
+	if mapa_fase_mundo:
+		p = mapa_fase_mundo.ponto_livre_perto(p)   # o portal não nasce dentro de parede (mapa fechado, #128)
 	saida.abrir(p)
 	anunciar("CHEFE DERROTADO!", Color(1, 0.9, 0.4))
 	mensagem("Entre no portal e segure CONFIRMAR para sair", Color(0.75, 0.65, 1))
