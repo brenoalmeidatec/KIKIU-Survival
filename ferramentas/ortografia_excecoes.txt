@@ -28,3 +28,4 @@ troll
 # ids internos que estao na chave "nome" de crescimento_armas.json (nao sao exibidos)
 evoluida
 maxima
+up

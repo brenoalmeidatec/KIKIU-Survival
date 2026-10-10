@@ -70,10 +70,10 @@ def main():
     ruins = {p for p in checador(dic)(set(onde)) if p.lower() not in exc}
     if "--gerar-excecoes" in sys.argv:
         for p in sorted(ruins, key=str.lower):
-            print(f"{p}\t{onde.get(p, "?")}")
+            print(f"{p}\t{onde.get(p, '?')}")
         return 0
     for p in sorted(ruins, key=str.lower):
-        print(f"ORTOGRAFIA: '{p}' em {onde.get(p, "?")}")
+        print(f"ORTOGRAFIA: '{p}' em {onde.get(p, '?')}")
     print(f"{len(onde)} palavras distintas, {len(ruins)} fora do dicionario/excecoes")
     return 1 if ruins else 0
 
