@@ -916,3 +916,8 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** todos os 49 testes (sem bench_) com falhas=0.
 - **Pendente:** print visual de uma carta de dádiva (o `--print_tela=cartas` só mostra armas); conferir o visual da raridade e a legibilidade do nome em 12px. Ícones do Ímã de Almas, Sopro Ágil e Coração de Brasa não foram refeitos (item 4 da issue #98).
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-09 — Loja obrigatória entre fases (#112, último item) — Claude do Alisson (PC)
+- **Feito:** ao sair da fase pelo portal, depois dos resultados e do baú (e do bônus da elite), o jogador passa pela sala da loja e só então vê o mapa (`arena.gd: fase_completa` + `loja_entre_fases_devida()`). Liga/desliga em `dados/fase.json` → `"loja_entre_fases"`. Não repete se todos os próximos nós do mapa já são loja; sem próximo nó (fim) também não abre. Preço/compra intactos; online só reaproveita `loja.fechar()` do `escolher_no`.
+- **Testes:** `testes/loja_sala.gd` cobre a regra (combate → loja; só loja → não repete). `loja_sala`, `transicao`, `mapa`, `prorrogacao`, `missao_chefe`, `pausa`, `rede` com falhas=0; bot `--sair=200` sem SCRIPT ERROR. Obs.: numa worktree nova rode `--import` até terminar (sem isso dá "Could not preload" e `missao_chefe` falha).
+- **Pendente:** conferir o fluxo completo (portal → loja → mapa) com os olhos num jogo de verdade.
