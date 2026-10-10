@@ -1003,3 +1003,11 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** `testes/hud.tscn` (elementos e posições, fonte, partículas/números, banner de 2 s, prorrogação, pausa). Prints: `--print_tela=hazaki ... --fonte=medio|grande` nas 5 regiões, Baixa e Alta.
 - **Pendente / olho humano:** o jogo usa a PressStart2P no HUD (a Jacquard 12 só nos títulos), mantive. Com fonte 2x o centro do topo e o painel do herói ficam apertados. O 1B entrega a tela de status (Tab) e a camada dos objetivos; a #125 só fecha quando as duas partes entrarem.
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-10: protótipo de luz 2.5D (isolado, sem mexer no jogo)
+- **Feito:** normal map do Hazaki (folha e camadas) e do cão de ossos, gerados pelo próprio gerador em `jogos/hordas/prototipos/luz/gerar_normais.py` (patch só em memória; `pixel3d`, `hazaki`, `horror` e `monstros` intactos, nada em `assets/` nem `dados/`). Alfa das normais = alfa dos sprites base (0 px de diferença).
+- **Cena:** `jogos/hordas/projeto/prototipos/luz.tscn` (+ `luz.gd`): metade sem normal e metade com normal, mesmas luzes, `CanvasModulate` escuro, tocha com tremor, lua fria e magia girando. As imagens são lidas de `jogos/hordas/prototipos/luz/` por caminho, sem duplicar nada dentro de `projeto/assets/`.
+- **Prints:** `jogos/hordas/prints/prototipo_luz_1..4_lado_a_lado.png` (1280x720, janela real).
+- **fps** (janela 1280x720, sem V-Sync, só a metade com normal; 6 s de medição; ver PR para a tabela completa).
+- **Pendente / olho humano:** o efeito existe (bordas e bisel respondem à luz, o domo de teste confirma a convenção de Y), mas está fraco e o lado com normal ficou mais escuro. Causas prováveis: sprites com sombreamento de pixel art já assado na base, e normal quase toda voltada para a câmera. Não tem sombra projetada pela luz.
+- Assinado: Claude do Alisson (PC), agente do protótipo de luz
