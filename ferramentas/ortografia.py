@@ -4,7 +4,7 @@
 Uso:  python ferramentas/ortografia.py            (CI: usa o comando `hunspell -d pt_BR`)
       python ferramentas/ortografia.py --dic CAMINHO/pt_BR   (usa spylls, sem hunspell instalado)
       python ferramentas/ortografia.py --gerar-excecoes      (imprime as palavras desconhecidas)
-Excecoes (nomes proprios, termos do jogo): ferramentas/ortografia_excecoes.txt, uma palavra por linha.
+Excecoes (nomes proprios, termos do jogo): chave "excecoes" de jogos/hordas/projeto/dados/dicionario.json.
 Sai com codigo 1 se sobrar palavra fora do dicionario e das excecoes.
 """
 import json
@@ -15,7 +15,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 DADOS = RAIZ / "jogos/hordas/projeto/dados"
-EXC = Path(__file__).with_name("ortografia_excecoes.txt")
+DICIONARIO = DADOS / "dicionario.json"
 # chaves cujo valor e texto mostrado ao jogador
 CHAVES = {"nome", "descricao", "desc", "texto", "titulo", "subtitulo", "curto", "dica", "rotulo",
           "causa", "info", "msg", "frase", "texto_entrega", "titulo_tomada",
@@ -63,10 +63,8 @@ def main():
             for p in PALAVRA.findall(limpar(t)):
                 if len(p) > 1:
                     onde.setdefault(p, f"{arq}{cam}")
-    exc = set()
-    if EXC.exists():
-        exc = {x.strip().lower() for x in EXC.read_text(encoding="utf-8").splitlines()
-               if x.strip() and not x.startswith("#")}
+    exc = {x.strip().lower() for x in json.loads(DICIONARIO.read_text(encoding="utf-8"))["excecoes"]
+           if x.strip()}
     ruins = {p for p in checador(dic)(set(onde)) if p.lower() not in exc}
     if "--gerar-excecoes" in sys.argv:
         for p in sorted(ruins, key=str.lower):
