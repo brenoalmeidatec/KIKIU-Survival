@@ -53,6 +53,8 @@ func _ready() -> void:
 		var l := Label.new()
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.visible = false
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # mensagem longa (ou fonte grande) quebra em vez de sair da tela
+		l.custom_minimum_size = Vector2(400, 0)
 		%Msgs.add_child(l)
 		_msg_lbl.append(l)
 	for i in 3:
@@ -110,6 +112,12 @@ func _aplicar_fonte() -> void:
 	var th: Theme = raiz.theme
 	th.default_font_size = roundi(FONTE_BASE * _fator)
 	th.set_font_size("font_size", "LabelGrande", roundi(16.0 * (1.0 + (_fator - 1.0) * 0.5)))
+	var larg := roundf(116.0 * (1.0 + (_fator - 1.0) * 0.5))   # as barras crescem junto, mas menos que o texto (o texto fica mais curto)
+	%HeroiVida.custom_minimum_size.x = larg
+	%Carga.custom_minimum_size.x = larg
+	%Build.custom_minimum_size.x = larg + 38.0
+	for b in [%HeroiVida, %Carga]:
+		b.custom_minimum_size.y = roundf(10.0 * _fator)
 
 
 func mensagem(txt: String, cor := Color.WHITE) -> void:
@@ -206,14 +214,14 @@ func _heroi() -> void:
 			var tem: int = arena.descobertas.tem_fragmentos(h.atual)
 			%Carga.max_value = maxf(1.0, total)
 			%Carga.value = tem
-			%CargaTxt.text = tr("HUD_FRAGMENTOS") % [tem, total]
+			%CargaTxt.text = tr("HUD_FRAGMENTOS" if _fator <= 1.0 else "HUD_FRAGMENTOS_CURTO") % [tem, total]
 			_cor_txt(%CargaTxt, Color(0.8, 0.88, 1.0))
 			mostra = true
 		elif h.desbloqueada:
 			var frac: float = clampf(h.energia / h.energia_max(), 0.0, 1.0)
 			%Carga.max_value = 1.0
 			%Carga.value = frac
-			var txt: String = tr("HUD_ENERGIA") % roundi(frac * 100.0)
+			var txt: String = tr("HUD_ENERGIA" if _fator <= 1.0 else "HUD_ENERGIA_CURTO") % roundi(frac * 100.0)
 			var cor := Color(0.8, 0.88, 1.0)
 			if h.ativa:
 				txt = tr("HUD_DRAGAO_ATIVO") % ceili(h.restante())

@@ -1389,6 +1389,8 @@ func _tira_animacao(nome: String, seq: String) -> void:
 
 func _print_tela(qual: String) -> void:
 	Config.temporario("pausar_fora", false)   # a janela perde o foco enquanto o print espera: não pode pausar
+	if _args.has("fonte"):   # --fonte=normal, medio ou grande (opção "Tamanho da fonte do HUD")
+		Config.temporario("texto_hud", str(_args.fonte))
 	if _args.has("grande"):
 		Config.temporario("texto_hud", "grande")
 	if _args.has("daltonico"):
