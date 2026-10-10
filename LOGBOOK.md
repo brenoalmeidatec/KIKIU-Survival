@@ -980,6 +980,11 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Medido com janela** (`--bot --heroi=hazaki --semente=2 --build=70 --armas=<5 fracas> --pular=1500 --imortal --sair=60`, ~500 vivos): alta 66 fps médio (mín 42); baixa antes (limite 500) 74 (mín 55); baixa depois (limite 250) 109 (mín 98).
 - Assinado: Claude do Alisson (PC)
 
+## 2026-10-10 (3) · Claude do Alisson (notebook) · Marco 1B: tela de status e objetivos acima da horda (#125, #123)
+- **Feito:** `tela_status.gd` (segure Tab ou Back; no solo pausa, no online não): armas com nível e tamanho/dano do crescimento, passivos, equipamentos, conjuntos e 14 atributos com base em cinza e variação em verde/vermelho (recarga é o contrário: cair é verde). Usa o `tema_hud.tres` do 1A; o banner de conjunto é o do HUD novo. Ação `status` no `main.gd` (TECLAS/CONTROLE).
+- **Feito:** `camada_objetivos.gd` + `legibilidade.gd`: portal de saída agora z 50 com contorno escuro e pulso; efeitos de arma (armas, poças, atrás) a 40% em cima de um alvo (shader ligado só quando há alvo); baú a 40% em cima de alvo e nunca a menos de 96 px (objetivo, missão e portal); seta do portal na borda com a distância ("SAÍDA 72m"). As setas do objetivo e da missão já eram do HUD (#135).
+- **Testes:** novo `testes/status.tscn`; `testes/legibilidade.tscn` ampliado (camadas, opacidade, seta, distância do baú). Prints: `--print_tela=status|portal` (`--equip --estresse=250 --fase=N --longe`).
+- **Pendente:** a lista de conjuntos continua no `hud.gd` (a 1A cuida do HUD novo e pode tirá-la); nomes de inimigo comum no HUD idem. Efeitos de inimigo (poças deles) e projéteis não ficam a 40% ainda. Texto novo sem `tr()` (o repo ainda não tem dicionário). Precisa de olho humano: Tab/Back no controle de verdade e se os 40% incomodam nas builds com muita poça.
 ## 2026-10-10 · Claude do Alisson (notebook) · fechamento do Marco 0 (#124)
 - **Feito:**
   - **Ícone e versão no .exe da Release:** o job do Windows saiu do Ubuntu e agora roda em `windows-latest`, com o rcedit oficial (electron/rcedit v2.0.0) apontado nas editor settings do Godot 4.4.1. A versão do .exe (`product_version` e `file_version`) é copiada do `config/version` do projeto no próprio CI. Linux e Web continuam no Ubuntu. O `publicar` só roda na `main`; nas outras branches os exports viram artefatos do run.
