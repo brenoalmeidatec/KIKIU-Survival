@@ -37,6 +37,8 @@ const Entradas := preload("res://scripts/hordas/entradas.gd")
 const Abertura := preload("res://scripts/hordas/abertura.gd")
 const Interface := preload("res://scripts/hordas/interface.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
+const MapaFase := preload("res://scripts/hordas/mapa_fase.gd")
+const MapaFaseMundo := preload("res://scripts/hordas/mapa_fase_mundo.gd")
 const TelaMapa := preload("res://scripts/hordas/tela_mapa.gd")
 const Loja := preload("res://scripts/hordas/loja.gd")
 const Escuridao := preload("res://scripts/hordas/escuridao.gd")
@@ -94,6 +96,7 @@ var com_abertura := false      # o main.gd liga numa partida de verdade (ou com 
 var escuridao: CanvasLayer     # escuridão da fase de horror (escuridao.gd)
 var mapa: Dictionary            # mapa de progressão da corrida (mapa.gd), igual em todos os clientes (mesma semente)
 var mapa_pos := Vector2i(0, 0)  # nó atual: x = andar (0 = fase 1), y = faixa
+var mapa_fase_mundo: Node2D     # mapa fechado do andar atual (mapa_fase_mundo.gd, #128); null sem regiões
 var mapa_trilha: Array = []     # nós já percorridos (Vector2i)
 var tela_mapa: CanvasLayer      # tela do mapa (tela_mapa.gd)
 var loja: CanvasLayer           # loja do mapa (loja.gd)
@@ -235,6 +238,7 @@ func _ready() -> void:
 	atualizar_visual.call_deferred()   # personagem em camadas: cabelo e arma inicial
 	jogador.hp = stat("vida_max")
 	armas.adicionar(str(heroi.get("arma", "pendrive")))
+	_montar_mapa_fase()
 	chao.criar_santuarios()
 	hud = Hud.instantiate()
 	hud.arena = self
@@ -365,7 +369,10 @@ func _process(dt: float) -> void:
 	if eh_online and cartas.aberto():
 		jogador.invencivel = maxf(jogador.invencivel, 0.1)   # no online o jogo não pausa: escolhendo carta, não apanha
 	if not parado:
+		var antes := jogador.position
 		jogador.atualizar(dt)
+		if mapa_fase_mundo and not duelo_ativo:
+			mapa_fase_mundo.prender(jogador, antes)   # parede do mapa fechado (#128): o herói não atravessa
 	elif caido:
 		jogador.queue_redraw()
 	if duelo_ativo:
@@ -396,6 +403,8 @@ func _process(dt: float) -> void:
 		tempo_arma[a.id] = float(tempo_arma.get(a.id, 0.0)) + dt
 		nivel_arma[a.id] = a.nivel
 	var t3 := Time.get_ticks_usec()
+	if mapa_fase_mundo:
+		mapa_fase_mundo.marcar_heroi(jogador.position)
 	coleta.atualizar(dt)
 	efeitos.atualizar(dt)
 	_luzes_quadro()
@@ -411,6 +420,24 @@ func _process(dt: float) -> void:
 	var foco: Vector2 = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro() + _olhar
 	camera.position = finalizacao.camera(entradas.camera(abertura.camera(foco)))   # a entrada do chefe leva a câmera até ele e traz de volta; a finalização aproxima
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
+
+
+# ---------- mapa fechado (#128) ----------
+
+## Mapa fechado do andar atual: com regiões, cada andar tem o seu (mapa_fase.gd). O herói nasce no começo do mapa, em (0, 0).
+func _montar_mapa_fase() -> void:
+	if not Regioes.ativo() or diretor == null:
+		return
+	var fs: Array = diretor.fases()
+	var f: Dictionary = fs[clampi(diretor.fase_idx, 0, fs.size() - 1)]
+	var m := MapaFase.gerar(str(Regioes.regiao(int(f.get("regiao", 0))).get("id", "")), int(f.get("andar_regiao", 0)))
+	if not m.get("ok", false):
+		return
+	if mapa_fase_mundo == null:
+		mapa_fase_mundo = MapaFaseMundo.new()
+		add_child(mapa_fase_mundo)
+	mapa_fase_mundo.configurar(m)
+	jogador.position = Vector2.ZERO
 
 
 # ---------- chamados pelos outros ----------
@@ -861,6 +888,7 @@ func _iniciar_andar(idx: int) -> void:
 	_atualizar_calor()   # região nova: o calor dela soma por cima
 	saida.fechar()
 	_saida_pedida = false
+	_montar_mapa_fase()
 	chao.nova_fase()
 	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
 	_zerar_fase_stat()
@@ -896,6 +924,7 @@ func saltar_para_andar(idx: int) -> void:
 	diretor.ir_para(mapa_pos.x)
 	saida.fechar()
 	_atualizar_calor()
+	_montar_mapa_fase()
 	chao.nova_fase()
 	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
 	objetivo.nova_fase(diretor.fases()[diretor.fase_idx], no_tipo, diretor.fase_idx)
