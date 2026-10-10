@@ -22,6 +22,7 @@ var _cobre := ColorRect.new()
 
 
 func _ready() -> void:
+	z_index = 50   # o portal fica acima de inimigos, efeitos e baús (#123, #125)
 	_cl.layer = 58
 	_cl.process_mode = Node.PROCESS_MODE_ALWAYS
 	_cobre.color = Color(1, 1, 1, 0)
@@ -141,6 +142,8 @@ func _draw() -> void:
 	draw_circle(pos, r * 1.9, Color(0.4, 0.2, 0.8, 0.22))
 	draw_circle(pos, r * 1.35, Color(0.45, 0.25, 0.9, 0.28))
 	draw_circle(pos, r, Color(0.05, 0.02, 0.12, 0.95))
+	draw_arc(pos, r + 1.0, 0.0, TAU, 40, Color(0.04, 0.02, 0.06, 0.85), 5.0)   # contorno escuro: lê em qualquer chão
+	draw_arc(pos, r + 1.0, 0.0, TAU, 40, Color(0.85, 0.75, 1.0, 0.6 + 0.4 * pulso), 2.0)
 	for i in 4:
 		var a0 := _t * (1.6 + i * 0.5) * (1.0 if i % 2 == 0 else -1.0) + i * 1.3
 		var rr := r * (1.0 - i * 0.18)

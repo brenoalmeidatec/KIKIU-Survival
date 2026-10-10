@@ -29,23 +29,11 @@ func gema(pos: Vector2, valor: float) -> void:
 	itens.append({"pos": pos + Vector2(randf_range(-4, 4), randf_range(-4, 4)), "tipo": "gema", "valor": valor, "puxando": false, "vel": 0.0})
 
 
-const RAIO_BAU_OBJETIVO := 90.0   # baú não nasce a menos disso de um alvo de objetivo (#123)
-
-
-## Afasta `pos` dos alvos do objetivo do andar e da missão do chefe, pra o baú não cobrir o marcador.
+## Afasta `pos` dos alvos (objetivo do andar, missão do chefe, portal) a pelo menos Legib.BAU_MIN (96 px), pra o baú não cobrir o marcador.
 func _longe_do_objetivo(pos: Vector2) -> Vector2:
 	if arena == null or not ("objetivo" in arena) or arena.objetivo == null or arena.missao == null:
 		return pos
-	var alvos: Array = []
-	if arena.objetivo.ativo():
-		alvos.append_array(arena.objetivo.marcas)
-	if arena.missao.ativo():
-		alvos.append_array(arena.missao.marcas())
-	for a in alvos:
-		var d: Vector2 = pos - a
-		if d.length() < RAIO_BAU_OBJETIVO:
-			pos = a + (d.normalized() if d.length() > 0.5 else Vector2.RIGHT) * RAIO_BAU_OBJETIVO
-	return pos
+	return Legib.longe_dos_alvos(pos, Legib.alvos(arena))
 
 
 func soltar(pos: Vector2, tipo: String) -> void:
@@ -191,6 +179,7 @@ func _desenhar_rotulos() -> void:
 
 func _draw_i() -> void:
 	var vis := _vis.grow(40.0)
+	var alvos_bau = null
 	for it in itens:
 		if vis.has_area() and not vis.has_point(it.pos):
 			continue   # fora da tela nem desenha (a maioria das gemas acumuladas)
@@ -202,7 +191,12 @@ func _draw_i() -> void:
 		if it.tipo != "gema":
 			flutua = sin(_t * 4.0 + it.pos.x) * 2.0
 		if it.tipo == "bau":
-			draw_circle(it.pos, 18 + sin(_t * 5.0) * 3, Color(1, 0.85, 0.3, 0.18))
+			if alvos_bau == null:
+				alvos_bau = Legib.alvos(arena)   # só quando há baú na tela
+			var ab := Legib.alfa_sobre(it.pos, alvos_bau)   # 40% em cima de um objetivo (#125)
+			draw_circle(it.pos, 18 + sin(_t * 5.0) * 3, Color(1, 0.85, 0.3, 0.18 * ab))
+			draw_texture_rect(tex, Rect2(it.pos - sz / 2 + Vector2(0, flutua), sz), false, Color(1, 1, 1, ab))
+			continue
 		if it.tipo == "fragmento":   # losango cobalto que pulsa (sem PNG novo)
 			var c := Vector2(it.pos.x, it.pos.y + flutua - 6.0)
 			var r := 9.0 + sin(_t * 6.0) * 1.5

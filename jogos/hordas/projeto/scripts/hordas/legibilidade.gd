@@ -154,3 +154,63 @@ static func marca_aliada(ci: CanvasItem, centro: Vector2, raio: float, viva := 1
 	ci.draw_set_transform(centro, 0, Vector2(1, ACHATA if achatada else 1.0))
 	ci.draw_arc(Vector2.ZERO, raio, 0, TAU, 32, Color(c, a), 1.0)
 	ci.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
+
+
+# ---------- objetivos acima da horda (#123, #125) ----------
+## Objetivo, altar, portal de saída e baú se leem primeiro: ficam numa camada acima (z_index 50), efeitos e baús ficam a 40% de
+## opacidade quando estão em cima de um alvo, o baú nunca nasce colado num alvo e quem está fora da tela ganha seta na borda.
+
+const BAU_MIN := 96.0       # px: baú nasce pelo menos isso longe de qualquer alvo
+const SOBRE_RAIO := 40.0    # px: efeito/baú a menos disso do centro de um alvo está "em cima" dele
+const SOBRE_ALFA := 0.4     # opacidade de efeitos e baús em cima de um alvo
+const ALVOS_MAX := 8        # o shader da camada guarda no máximo isso
+
+
+## Posições (mundo) de tudo que é "alvo": objetivo do andar, objetivo da missão do chefe (fragmentos, altar) e portal de saída.
+static func alvos(arena) -> Array:
+	var r: Array = []
+	if arena == null:
+		return r
+	if arena.get("objetivo") != null and arena.objetivo.ativo():
+		r.append_array(arena.objetivo.marcas)
+	if arena.get("missao") != null and arena.missao.ativo():
+		r.append_array(arena.missao.marcas())
+	if arena.get("saida") != null and arena.saida.aberta and not arena.saida.pronto:
+		r.append(arena.saida.pos)
+	return r
+
+
+static func sobre_alvo(p: Vector2, lista: Array, raio := SOBRE_RAIO) -> bool:
+	for a in lista:
+		if p.distance_to(a) < raio:
+			return true
+	return false
+
+
+## 1.0 normal; 0.4 quando o ponto está em cima de um alvo.
+static func alfa_sobre(p: Vector2, lista: Array, raio := SOBRE_RAIO) -> float:
+	return SOBRE_ALFA if sobre_alvo(p, lista, raio) else 1.0
+
+
+## Empurra `p` pra fora do raio mínimo de cada alvo (o baú não cobre o marcador).
+static func longe_dos_alvos(p: Vector2, lista: Array, minimo := BAU_MIN) -> Vector2:
+	for _i in 3:   # empurrar de um alvo pode encostar em outro
+		var mexeu := false
+		for a in lista:
+			var d: Vector2 = p - a
+			if d.length() < minimo:
+				p = a + (d.normalized() if d.length() > 0.5 else Vector2.RIGHT) * minimo
+				mexeu = true
+		if not mexeu:
+			break
+	return p
+
+
+## Seta na borda da tela para um alvo fora dela. `rel` = alvo - centro da câmera. Devolve {} se está na tela, senão
+## {p (ponto na borda), dir, metros}. 10 px do mundo = 1 m, a mesma conta das setas do HUD.
+static func seta_borda(rel: Vector2, tela: Vector2, margem := 22.0, folga := 10.0) -> Dictionary:
+	if absf(rel.x) <= tela.x * 0.5 - folga and absf(rel.y) <= tela.y * 0.5 - folga:
+		return {}
+	var dir := rel.normalized()
+	var k := minf((tela.x * 0.5 - margem) / maxf(absf(dir.x), 0.01), (tela.y * 0.5 - margem) / maxf(absf(dir.y), 0.01))
+	return {"p": tela * 0.5 + dir * k, "dir": dir, "metros": int(rel.length() / 10.0)}

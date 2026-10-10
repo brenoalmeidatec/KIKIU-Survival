@@ -27,6 +27,8 @@ const Regioes := preload("res://scripts/hordas/regioes.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
 const Objetivos := preload("res://scripts/hordas/objetivos.gd")
 const Saida := preload("res://scripts/hordas/saida.gd")
+const TelaStatus := preload("res://scripts/hordas/tela_status.gd")
+const CamadaObjetivos := preload("res://scripts/hordas/camada_objetivos.gd")
 const MissaoChefe := preload("res://scripts/hordas/missao_chefe.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
@@ -112,6 +114,8 @@ var _conj_bonus := {}       # atributos que os conjuntos somam
 var _conj_explodindo := false
 var objetivo: Node2D        # objetivo próprio do andar (objetivos.gd)
 var saida: Node2D           # portal de saída da fase (saida.gd, #112)
+var tela_status: CanvasLayer  # Tab / Back: inventário e status (tela_status.gd, #125)
+var camada_objetivos: CanvasLayer  # efeitos a 40% em cima de alvo e seta do portal (camada_objetivos.gd, #125)
 var missao: Node2D          # missão que chama o chefe da fase (missao_chefe.gd, #112)
 var _saida_pedida := false  # online: o anfitrião já mandou abrir a saída deste andar
 var fases_corrida: Array = []   # regiões (#64): as fases da corrida inteira, na ordem dos andares (regioes.gd)
@@ -235,6 +239,12 @@ func _ready() -> void:
 	hud = Hud.new()
 	hud.arena = self
 	add_child(hud)
+	tela_status = TelaStatus.new()
+	tela_status.arena = self
+	add_child(tela_status)
+	camada_objetivos = CamadaObjetivos.new()
+	camada_objetivos.arena = self
+	add_child(camada_objetivos)
 	cartas = Cartas.new()
 	cartas.arena = self
 	add_child(cartas)

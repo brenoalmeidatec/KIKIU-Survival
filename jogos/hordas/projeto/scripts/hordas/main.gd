@@ -35,12 +35,12 @@ const TECLAS := {
 	"cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN], "esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT],
 	"dash": [KEY_SPACE, KEY_SHIFT], "confirmar": [KEY_ENTER, KEY_KP_ENTER, KEY_E, KEY_Z], "voltar": [KEY_ESCAPE],
 	"resortear": [KEY_R], "pular": [KEY_X], "banir": [KEY_B], "tela_cheia": [KEY_F11], "transformar": [KEY_Q, KEY_F], "falar": [KEY_V], "especial": [KEY_E],
-	"consumivel1": [KEY_1], "consumivel2": [KEY_2], "consumivel3": [KEY_3], "consumivel_usar": [], "consumivel_trocar": [],
+	"status": [KEY_TAB], "consumivel1": [KEY_1], "consumivel2": [KEY_2], "consumivel3": [KEY_3], "consumivel_usar": [], "consumivel_trocar": [],
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP], "baixo": [JOY_BUTTON_DPAD_DOWN], "esquerda": [JOY_BUTTON_DPAD_LEFT], "direita": [JOY_BUTTON_DPAD_RIGHT],
 	"dash": [JOY_BUTTON_B, JOY_BUTTON_RIGHT_SHOULDER], "confirmar": [JOY_BUTTON_A], "voltar": [JOY_BUTTON_START], "resortear": [JOY_BUTTON_Y], "pular": [JOY_BUTTON_LEFT_SHOULDER], "banir": [JOY_BUTTON_BACK], "transformar": [JOY_BUTTON_X], "especial": [JOY_BUTTON_Y],
-	"consumivel_usar": [JOY_BUTTON_LEFT_STICK], "consumivel_trocar": [JOY_BUTTON_RIGHT_STICK],
+	"status": [JOY_BUTTON_BACK], "consumivel_usar": [JOY_BUTTON_LEFT_STICK], "consumivel_trocar": [JOY_BUTTON_RIGHT_STICK],
 }
 
 var _tela := Control.new()
@@ -1818,6 +1818,36 @@ func _print_tela(qual: String) -> void:
 			for v in _arena.inimigos.lista:
 				v.vel = 0.0   # parados, pra a foto
 			await get_tree().create_timer(float(_args.get("espera", 2.0)), true, false, true).timeout
+		"status":   # #125: tela de inventário e status aberta (Tab) no meio da partida; --fase=N --estresse=N --bot --equip (build cheia)
+			_comecar("hazaki")
+			await get_tree().create_timer(0.6, true, false, true).timeout
+			if _args.has("equip"):
+				for id in ["katana", "aura_hazaki", "machado", "cafe"]:
+					_arena.armas.adicionar(id)
+				for a in _arena.armas.lista:
+					a.nivel = mini(int(a.nivel) + 2, _arena.armas.nivel_max(str(a.id)))
+				_arena.passivos = {"energetico": 3, "mouse": 1, "marmita": 2, "monitor": 1}
+				_arena.equipamentos = {"cabeca": "cabeca_guerreiro", "peitoral": "armadura_samurai", "pes": "botas_guerra"}
+				_arena.build_mudou()
+			await get_tree().create_timer(float(_args.get("espera", 2.0)), true, false, true).timeout
+			_arena.tela_status.fixa = true
+			_arena.tela_status.abrir()
+			await get_tree().create_timer(0.2, true, false, true).timeout
+		"portal":   # #125: portal de saída aberto perto do herói, com horda, baú em cima do portal e efeitos de arma; --estresse=N --equip --longe (portal fora da tela: seta)
+			_comecar("hazaki")
+			await get_tree().create_timer(0.6, true, false, true).timeout
+			_arena.diretor.xp_mult = 0.0   # sem subir de nível: a carta cobriria o print
+			if _arena.cartas.aberto():
+				_arena.cartas._fechar()
+			_arena.bot = false
+			_arena.jogador.invencivel = 999.0
+			if _args.has("equip"):
+				for id in ["katana", "aura_hazaki", "cafe"]:
+					_arena.armas.adicionar(id)
+			var jp: Vector2 = _arena.jogador.position
+			_arena.abrir_saida(jp + (Vector2(420, -120) if _args.has("longe") else Vector2(70, 10)))
+			_arena.coleta.itens.append({"pos": _arena.saida.pos + Vector2(20, 10), "tipo": "bau", "valor": 0, "puxando": false, "vel": 0.0, "t0": 0.0})
+			await get_tree().create_timer(float(_args.get("espera", 1.5)), true, false, true).timeout
 		"conjuntos", "objetivo", "missao":   # #112 (missao): missão do chefe em andamento (--tipo=fragmentos|pilares|selos|invocar). #63: HUD com os conjuntos da build e (objetivo) um objetivo em andamento (--objetivo=pira|totens|fugitivo, --pronto=0..1 de quanto já foi)
 			_args["fase"] = str(_args.get("fase", "2"))
 			_comecar("hazaki")
