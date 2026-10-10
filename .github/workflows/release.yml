@@ -6,13 +6,14 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: release
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 env:
   GODOT_VERSION: "4.4.1"
   PROJETO: jogos/hordas/projeto
 jobs:
-  exportar:
+  # Linux e Web rodam no Ubuntu.
+  exportar-linux-web:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -37,33 +38,114 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates
           unzip -q t.tpz -d tmp && mv tmp/templates ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           rm -rf t.tpz tmp
-      - name: Preparar versao
-        id: v
+      - name: Importar o projeto (2x; segfault no fim e normal)
         run: |
-          echo "tag=build-$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           cd "$PROJETO"
-          # rcedit/Wine nao existem no Linux: o .exe sai sem recursos editados (icone/versao)
-          sed -i 's/^application\/modify_resources=true/application\/modify_resources=false/' export_presets.cfg
           for i in 1 2; do ~/godot/godot --headless --path . --import || true; done
-      - name: Exportar Windows, Linux e Web
+      - name: Exportar Linux e Web
         run: |
           cd "$PROJETO"
-          mkdir -p ../build/win ../build/linux ../build/web
-          ~/godot/godot --headless --path . --export-release "Windows Desktop" ../build/win/KIKIU.exe
+          mkdir -p ../build/linux ../build/web
           ~/godot/godot --headless --path . --export-release "Linux" ../build/linux/KIKIU.x86_64
           ~/godot/godot --headless --path . --export-release "Web" ../build/web/index.html
-          ls -la ../build/*
-      - name: Compactar
+          test -f ../build/linux/KIKIU.x86_64 && test -f ../build/web/index.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: jogos/hordas/build/linux
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: jogos/hordas/build/web
+          if-no-files-found: error
+
+  # O .exe precisa do rcedit (Windows) para gravar icone e versao: por isso roda num runner Windows.
+  exportar-windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar Godot, export templates e rcedit
         run: |
-          cd "$PROJETO/../build"
-          T=${{ steps.v.outputs.tag }}
-          (cd win && zip -qr ../KIKIU-windows-$T.zip .)
-          (cd linux && chmod +x KIKIU.x86_64 && zip -qr ../KIKIU-linux-$T.zip .)
-          (cd web && zip -qr ../KIKIU-web-$T.zip .)
+          $ErrorActionPreference = 'Stop'
+          $B = "https://github.com/godotengine/godot-builds/releases/download/$env:GODOT_VERSION-stable"
+          $dir = Join-Path $env:RUNNER_TEMP 'godot'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Invoke-WebRequest "$B/Godot_v$env:GODOT_VERSION-stable_win64.exe.zip" -OutFile "$dir\g.zip"
+          Expand-Archive "$dir\g.zip" -DestinationPath $dir -Force
+          Invoke-WebRequest "$B/Godot_v$env:GODOT_VERSION-stable_export_templates.tpz" -OutFile "$dir\t.zip"
+          Expand-Archive "$dir\t.zip" -DestinationPath "$dir\tpl" -Force
+          $tpl = Join-Path $env:APPDATA 'Godot\export_templates'
+          New-Item -ItemType Directory -Force -Path $tpl | Out-Null
+          Move-Item "$dir\tpl\templates" (Join-Path $tpl "$env:GODOT_VERSION.stable") -Force
+          # rcedit oficial (electron/rcedit v2.0.0), usado pelo Godot para gravar icone e VersionInfo
+          Invoke-WebRequest 'https://github.com/electron/rcedit/releases/download/v2.0.0/rcedit-x64.exe' -OutFile "$dir\rcedit-x64.exe"
+          $rc = (Join-Path $dir 'rcedit-x64.exe') -replace '\\', '/'
+          $ed = Join-Path $env:APPDATA 'Godot'
+          New-Item -ItemType Directory -Force -Path $ed | Out-Null
+          Set-Content -Path (Join-Path $ed 'editor_settings-4.4.tres') -Encoding utf8 -Value @(
+            '[gd_resource type="EditorSettings" format=3]', '', '[resource]', "export/windows/rcedit = `"$rc`"")
+      - name: Versao do .exe segue o config/version do projeto
+        working-directory: jogos/hordas/projeto
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $v = [regex]::Match((Get-Content project.godot -Raw), 'config/version="([^"]+)"').Groups[1].Value
+          if (-not $v) { throw 'config/version nao encontrado em project.godot' }
+          $ver = "$v.0"
+          $t = Get-Content export_presets.cfg -Raw
+          $t = $t -replace 'application/product_version="[^"]*"', "application/product_version=`"$ver`""
+          $t = $t -replace 'application/file_version="[^"]*"', "application/file_version=`"$ver`""
+          Set-Content export_presets.cfg -Value $t -NoNewline -Encoding utf8
+          Write-Host "versao do .exe: $ver"
+      - name: Importar e exportar o Windows
+        working-directory: jogos/hordas/projeto
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $godot = Join-Path (Join-Path $env:RUNNER_TEMP 'godot') 'Godot_v4.4.1-stable_win64_console.exe'
+          & $godot --headless --path . --import | Out-Null
+          & $godot --headless --path . --import | Out-Null
+          New-Item -ItemType Directory -Force -Path ..\build\win | Out-Null
+          & $godot --headless --path . --export-release "Windows Desktop" "..\build\win\KIKIU.exe" | Out-Null
+          $exe = Get-Item ..\build\win\KIKIU.exe
+          $vi = $exe.VersionInfo
+          Write-Host "FileVersion=$($vi.FileVersion) ProductVersion=$($vi.ProductVersion) ProductName=$($vi.ProductName)"
+          if (-not $vi.FileVersion -or $vi.FileVersion -eq '0.0.0.0') { throw 'o .exe saiu sem VersionInfo (rcedit nao rodou)' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: jogos/hordas/build/win
+          if-no-files-found: error
+
+  # So publica Release a partir da main; nas branches os exports ficam como artefatos do run.
+  publicar:
+    needs: [exportar-linux-web, exportar-windows]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: baixados
+      - name: Compactar
+        id: v
+        run: |
+          TAG="build-$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD)"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          mkdir -p pacotes
+          chmod +x baixados/linux/KIKIU.x86_64
+          (cd baixados/windows && zip -qr "$GITHUB_WORKSPACE/pacotes/KIKIU-windows-$TAG.zip" .)
+          (cd baixados/linux && zip -qr "$GITHUB_WORKSPACE/pacotes/KIKIU-linux-$TAG.zip" .)
+          (cd baixados/web && zip -qr "$GITHUB_WORKSPACE/pacotes/KIKIU-web-$TAG.zip" .)
+          ls -la pacotes
       - name: Publicar Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           T=${{ steps.v.outputs.tag }}
-          gh release create "$T" "$PROJETO"/../build/KIKIU-*.zip --target "$GITHUB_SHA" \
-            --title "$T" --notes "Build automatico do commit $GITHUB_SHA na main."
+          gh release create "$T" pacotes/KIKIU-*.zip --target "$GITHUB_SHA" \
+            --title "$T" --notes "Build automatico do commit $GITHUB_SHA na main. O .exe traz icone e versao."

@@ -1,0 +1,32 @@
+{
+  "_ajuda": "Dicionario de excecoes da ortografia (ferramentas/ortografia.py). Em excecoes entram so nomes proprios e termos do jogo, ou palavra valida que falta no hunspell. Erro de portugues nao entra: corrija no JSON do conteudo. Uma palavra por item; a comparacao ignora maiuscula.",
+  "excecoes": [
+    "bug",
+    "cabeça-dura",
+    "chakram",
+    "desert",
+    "dracônica",
+    "eagles",
+    "esc",
+    "fogo-fátuo",
+    "forjagelo",
+    "goblin",
+    "hazaki",
+    "jarl",
+    "katana",
+    "kunai",
+    "lukako",
+    "meio-dragão",
+    "menpo",
+    "nicão",
+    "orbes",
+    "orc",
+    "pedra-ímã",
+    "pop-up",
+    "ransomware",
+    "troll",
+    "evoluida",
+    "maxima",
+    "up"
+  ]
+}
