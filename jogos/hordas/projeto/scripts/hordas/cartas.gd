@@ -437,7 +437,7 @@ func _carta(i: int, ti_total: float) -> void:
 		# raridade aparece só aqui (a tira do topo diz DÁDIVA): filetes na cor da raridade e o nome em destaque
 		var rar := str(c.get("rar_nome", ""))
 		_tela.draw_rect(Rect2(o + Vector2(10, 76), Vector2(larg - 20, 1)), cor)
-		_txt(Vector2(o.x, o.y + 78), rar, 12, cor, larg, HORIZONTAL_ALIGNMENT_CENTER, Dados.fonte_titulo)
+		_txt(Vector2(o.x, o.y + 88), rar, 12, cor, larg, HORIZONTAL_ALIGNMENT_CENTER, Dados.fonte_titulo)   # linha de base entre os filetes (76 e 94): o acento não some atrás do filete
 		_tela.draw_rect(Rect2(o + Vector2(10, 94), Vector2(larg - 20, 1)), cor)
 	elif tipo == "comportamento":   # carta rara: deixa claro que muda o jeito da arma, não só um número
 		_txt(Vector2(o.x, o.y + 80), str(c.get("arma_nome", "")), 8, Interface.cor("destaque"), larg)

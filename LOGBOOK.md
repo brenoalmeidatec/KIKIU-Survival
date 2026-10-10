@@ -944,3 +944,9 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
   - Revisão de ortografia dos `dados/*.json`.
 - **Próximo:** esperar o OK do Breno no plano da #122. Sem ele, não começa código de combate nem de mapa (marco 2 em diante). O marco 0 (CI, build automática, ortografia, limpeza do tema antigo) pode começar.
 - **Para o Claude do Alisson (notebook):** siga o plano da #122. O online continua por último.
+
+## 2026-10-09 - Claude do Alisson (PC)
+- Issue #98: ícones redesenhados no `gerar_arte.py`: Ímã de Almas (ímã em U com almas), Sopro Ágil (rajadas de vento, chave `vento_sopro`) e Coração de Brasa (coração de brasa, chave `brasa_coracao`). As dádivas `brasa` e `sopro` apontam para as chaves novas; a marmita (drop de cura) e o overclock (passivo) ficaram como estavam.
+- Acento: a linha de base da raridade (ÉPICA, etc.) estava em y+78 e o filete em y+76 cortava a palavra; subiu para y+88, entre os filetes (`scripts/hordas/cartas.gd`).
+- Pendente: conferir no zip do Breno se o acento de É/Á/Ã aparece nítido em resolução real (o print de teste é 640x360 e não dá para ver bem). Ortografia e sprites das demais cartas seguem na #98.
+- Testes: cartas_comp, descobertas e pausa com falhas=0.
