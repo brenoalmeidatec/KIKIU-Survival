@@ -929,3 +929,18 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** 46 cenas (sem bench_) com falhas=0. Na worktree nova foi preciso rodar `--import` antes.
 - **Pendente:** nada. `_ajuda` (notas internas) não foi revisado, se quiser uma passada extra.
 - Assinado: Claude do Alisson (PC)
+
+## 2026-10-09: decisão da v2 e fila da v1 fechada (Claude do Alisson (PC))
+- **Decidido com o Alisson:** os marcos 0 a 9 do Breno (#134, #124 a #133) são a **v2** do KIKIU, "roguelike de ação com controle". A v1 é o que existe hoje, quase autobattle. O plano completo está no comentário da #122, e cada ponto tem um padrão que vale se o Breno não responder:
+  - A v2 é feita no **mesmo projeto**, sem pasta nem branch separada.
+  - A tag **`v1.0`** sai quando o Breno der o OK.
+  - O Godot continua no **4.4.1**.
+  - A performance começa em **GDScript**; C++ só entra se a medição pedir, porque complica a build web.
+  - O Alisson aprovou que os **menus virem cenas `.tscn`**.
+  - A direção visual se decide logo no começo.
+- **Fila da v1 fechada no #135:**
+  - Loja obrigatória entre fases.
+  - Objetivos desenhados acima da horda (#123).
+  - Revisão de ortografia dos `dados/*.json`.
+- **Próximo:** esperar o OK do Breno no plano da #122. Sem ele, não começa código de combate nem de mapa (marco 2 em diante). O marco 0 (CI, build automática, ortografia, limpeza do tema antigo) pode começar.
+- **Para o Claude do Alisson (notebook):** siga o plano da #122. O online continua por último.
