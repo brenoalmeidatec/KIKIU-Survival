@@ -88,7 +88,7 @@ text = "Herói"
 
 [node name="HeroiVida" type="ProgressBar" parent="Raiz/Esq/Heroi/Linha/Coluna"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(96, 10)
+custom_minimum_size = Vector2(116, 10)
 layout_mode = 2
 max_value = 1.0
 step = 0.01
@@ -107,7 +107,7 @@ vertical_alignment = 1
 
 [node name="Carga" type="ProgressBar" parent="Raiz/Esq/Heroi/Linha/Coluna"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(96, 10)
+custom_minimum_size = Vector2(116, 10)
 layout_mode = 2
 max_value = 1.0
 step = 0.01
