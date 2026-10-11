@@ -1,0 +1,65 @@
+{
+	"_ajuda": "Combate e laço de jogo da v2 (leva 2), lido por v2/combate.gd, heroi.gd, monstro.gd, progresso.gd e diretor.gd. Tempos em segundos, distâncias em px do mundo (960x540 na tela), empurrões em px/s. \"heroi\": vida (inicial), invencivel (s sem levar dano depois de apanhar), pisca_hz (velocidade do pisca), mov_golpe (fração da velocidade de andar durante o golpe: o peso), recuo_dano (empurrão que o herói leva), cura_nivel (fração da vida que volta ao subir de nível), ima_raio (px em que o orbe de alma começa a voar para o herói). \"golpe\": a katana no clique, em \"passos\" (o combo, na ordem): nome (corte ou estocada, muda o desenho), dano, alcance (px a partir do herói), arco (graus do cone que acerta), duracao (s do golpe todo), acerto_em (fração da duração em que o dano é aplicado), avanco (px que o herói avança com o golpe: o lunge), empurrao (px/s no monstro), atordoa (s que o monstro fica sem agir), hit_stop (s de pausa do mundo ao acertar), tremor (px da câmera ao acertar; 0 = nada), lado (1 ou -1: o sentido do corte), som, cor (rgb 0 a 1 do rastro). janela_combo = s depois do fim de um golpe para o clique seguinte virar o próximo passo (passou, volta ao primeiro); pausa_fim_combo = s de folga depois da estocada; buffer = s que um clique adiantado fica guardado; critico {chance, mult, hit_stop, tremor}; variacao = sorteio de +-% no dano. \"esquiva\" (porte do movimento.json da v1): velocidade (vezes a de andar), tempo (s do rolamento), invulneravel (s do começo sem levar dano), gasto (cargas de fôlego por rolamento). \"folego\" (compartilhado por esquiva e corrida): max (cargas), atraso (s sem gastar até começar a recuperar), regen_parado e regen_andando (cargas por segundo, parado recupera mais rápido), cansado_ate (fração do máximo que precisa voltar para sair do cansaço, ~1 rolamento), lento_cansado (fração da velocidade de andar enquanto cansado). Zerar o fôlego, correndo ou esquivando, deixa o herói cansado: não corre nem esquiva até recuperar. \"corrida\" (Shift ou L3): velocidade (vezes a de andar), gasto (cargas por segundo: 160 px/s gastando 1,8 sai a ~89 px por carga, contra ~109 px por carga da esquiva, então correr é mais caro por distância), avanco_camera (px que a câmera adianta na direção da corrida), poeira_cada (s entre as poeirinhas dos pés). Atacar cancela a corrida. \"contato\": monstro encostado tira dano do herói; alcance (px entre os pés), recarga (s entre dois golpes do mesmo monstro). \"monstros\": por tipo vida, dano (contato), xp (por orbe), vel (perseguindo), raio (corpo), peso (resistência ao empurrão: o empurrão é dividido por ele), orbes (quantos fragmentos de alma caem). \"pool\": quantos monstros de cada tipo são criados escondidos na abertura (quem morre volta para cá e renasce, sem criar nó durante a partida; se faltar, cria mais). \"morte\": hit_stop, tremor e partículas do estouro. \"xp\": proximo(n) = base + passo*(n-1) + quad*(n-1)^2 para o nível n; ima_vel = velocidade inicial do orbe voando (px/s) e ima_acel; plim_janela = s entre dois orbes para o \"plim\" subir de tom; plim_passo = quanto o tom sobe por orbe seguido; plim_max = teto do tom. \"combo_abates\": janela (s sem matar até zerar), xp_por_abate (+% de XP por abate seguido, 0,03 = +3%), xp_max (teto do multiplicador). \"nivel\": camera_lenta (s) e escala_lenta (velocidade do mundo) antes da escolha de melhoria. \"melhorias\": cartas da subida de nível: id, nome, desc (usa {v} no valor), stat (dano, vel_ataque, area, vel_mov, vida, ima, critico), valor (por nível da carta), max (quantas vezes). \"diretor\": ondas fora da tela; margem_min e margem_max (px além da borda da tela onde nascem), taxa_ini e taxa_fim (monstros/s no começo e em tempo_taxa s), cap_ini e cap_fim (quantos vivos no máximo, no começo e em tempo_cap s), teto (vivos, no máximo, incluindo a onda forte), onda_cada (s entre ondas fortes), onda_base e onda_mais (monstros na onda forte e quanto cresce por onda), onda_elite (a cada onda, quantos cavaleiros a mais), vida_por_min e dano_por_min (quanto os monstros ficam mais fortes por minuto, 0,25 = +25%), tipos (sprite = folha do monstro em prototipos/cara_nova/sprites, desde = segundo em que passa a nascer, peso).",
+	"heroi": {"vida": 100, "invencivel": 0.9, "pisca_hz": 14, "mov_golpe": 0.55, "recuo_dano": 110, "cura_nivel": 0.12, "ima_raio": 56},
+	"golpe": {
+		"janela_combo": 0.42,
+		"pausa_fim_combo": 0.16,
+		"buffer": 0.18,
+		"variacao": 0.12,
+		"critico": {"chance": 0.1, "mult": 2.0, "hit_stop": 0.07, "tremor": 2},
+		"passos": [
+			{"nome": "corte", "dano": 12, "alcance": 46, "arco": 125, "duracao": 0.26, "acerto_em": 0.34, "avanco": 12, "empurrao": 150, "atordoa": 0.3, "hit_stop": 0.045, "tremor": 0, "lado": 1, "som": "corte1", "cor": [1.0, 0.92, 0.75]},
+			{"nome": "corte", "dano": 13, "alcance": 48, "arco": 130, "duracao": 0.26, "acerto_em": 0.34, "avanco": 12, "empurrao": 160, "atordoa": 0.3, "hit_stop": 0.045, "tremor": 0, "lado": -1, "som": "corte2", "cor": [0.85, 0.95, 1.0]},
+			{"nome": "estocada", "dano": 26, "alcance": 74, "arco": 46, "duracao": 0.36, "acerto_em": 0.4, "avanco": 26, "empurrao": 330, "atordoa": 0.55, "hit_stop": 0.07, "tremor": 2, "lado": 1, "som": "estocada", "cor": [1.0, 0.78, 0.5]}
+		]
+	},
+	"esquiva": {"velocidade": 2.6, "tempo": 0.42, "invulneravel": 0.3, "gasto": 1},
+	"folego": {"max": 3, "atraso": 0.6, "regen_parado": 0.9, "regen_andando": 0.5, "cansado_ate": 0.34, "lento_cansado": 0.8},
+	"corrida": {"velocidade": 1.6, "gasto": 1.8, "avanco_camera": 30, "poeira_cada": 0.07},
+	"contato": {"alcance": 17, "recarga": 0.9},
+	"monstros": {
+		"inimigo_cao_ossos": {"vida": 22, "dano": 6, "xp": 1, "vel": 62, "raio": 7, "peso": 1.0, "orbes": 1},
+		"inimigo_aranha_tecela": {"vida": 16, "dano": 5, "xp": 1, "vel": 74, "raio": 6, "peso": 0.8, "orbes": 1},
+		"inimigo_espantalho": {"vida": 38, "dano": 8, "xp": 2, "vel": 46, "raio": 8, "peso": 1.4, "orbes": 1},
+		"inimigo_lobo_sombrio": {"vida": 30, "dano": 8, "xp": 2, "vel": 90, "raio": 8, "peso": 1.1, "orbes": 1},
+		"inimigo_cavaleiro_oco": {"vida": 96, "dano": 14, "xp": 6, "vel": 52, "raio": 9, "peso": 2.6, "orbes": 3}
+	},
+	"pool": {"inimigo_cao_ossos": 30, "inimigo_aranha_tecela": 30, "inimigo_espantalho": 22, "inimigo_lobo_sombrio": 22, "inimigo_cavaleiro_oco": 12},
+	"morte": {"hit_stop": 0.05, "tremor": 1, "particulas": 16},
+	"xp": {"base": 5, "passo": 3, "quad": 0.7, "ima_vel": 190, "ima_acel": 900, "plim_janela": 0.55, "plim_passo": 0.07, "plim_max": 2.2},
+	"combo_abates": {"janela": 3.0, "xp_por_abate": 0.03, "xp_max": 3.0},
+	"nivel": {"camera_lenta": 0.4, "escala_lenta": 0.2},
+	"melhorias": [
+		{"id": "dano", "nome": "Lâmina afiada", "desc": "+{v}% de dano", "stat": "dano", "valor": 15, "max": 8},
+		{"id": "vel_ataque", "nome": "Punho ligeiro", "desc": "+{v}% de velocidade de ataque", "stat": "vel_ataque", "valor": 12, "max": 6},
+		{"id": "area", "nome": "Arco largo", "desc": "+{v}% de área do corte", "stat": "area", "valor": 12, "max": 6},
+		{"id": "vel_mov", "nome": "Pés de vento", "desc": "+{v}% de velocidade de movimento", "stat": "vel_mov", "valor": 8, "max": 6},
+		{"id": "vida", "nome": "Alma robusta", "desc": "+{v} de vida máxima e cura", "stat": "vida", "valor": 20, "max": 8},
+		{"id": "ima", "nome": "Ímã de almas", "desc": "+{v}% de alcance para pegar almas", "stat": "ima", "valor": 35, "max": 5},
+		{"id": "critico", "nome": "Olho de falcão", "desc": "+{v}% de chance de crítico", "stat": "critico", "valor": 5, "max": 8}
+	],
+	"diretor": {
+		"margem_min": 28,
+		"margem_max": 80,
+		"taxa_ini": 0.9,
+		"taxa_fim": 4.5,
+		"tempo_taxa": 420,
+		"cap_ini": 14,
+		"cap_fim": 70,
+		"tempo_cap": 420,
+		"teto": 84,
+		"onda_cada": 60,
+		"onda_base": 18,
+		"onda_mais": 6,
+		"onda_elite": 1,
+		"vida_por_min": 0.22,
+		"dano_por_min": 0.1,
+		"tipos": [
+			{"sprite": "inimigo_cao_ossos", "desde": 0, "peso": 5},
+			{"sprite": "inimigo_aranha_tecela", "desde": 0, "peso": 4},
+			{"sprite": "inimigo_lobo_sombrio", "desde": 40, "peso": 3},
+			{"sprite": "inimigo_espantalho", "desde": 75, "peso": 3},
+			{"sprite": "inimigo_cavaleiro_oco", "desde": 130, "peso": 1}
+		]
+	}
+}

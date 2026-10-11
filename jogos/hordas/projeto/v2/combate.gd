@@ -1,0 +1,439 @@
+extends RefCounted
+## Combate e laço de jogo da v2 (leva 2). Junta o que faz o golpe PESAR: hit-stop, flash, empurrão, número de dano, tremor de câmera em
+## pixel inteiro, partículas, som; a vida e a morte dos monstros; o contato que tira vida do herói; o combo de abates; os orbes de XP; e o
+## controle do tempo (câmera lenta ao subir de nível, pausa da escolha e da tela de resultado).
+## Os números vêm de dados/v2_combate.json (`cfg`). Quem manda no quadro é o mundo (mundo.avancar); este módulo oferece:
+##   passo_tempo(dt_real) -> dt do mundo (0 no hit-stop e na pausa; fração na câmera lenta)
+##   atualizar(dt_mundo)  -> contato, separação dos monstros, orbes, combo, diretor (tempo do mundo)
+##   efeitos(dt_real)     -> partículas, números, cortes, luzes (continuam durante o hit-stop)
+## O herói chama golpe_comecou/golpear/esquiva_comecou/heroi_apanhou/heroi_morreu; os orbes chamam coletar.
+
+const Efeitos := preload("res://v2/efeitos.gd")
+const Orbes := preload("res://v2/orbes.gd")
+const Progresso := preload("res://v2/progresso.gd")
+const Diretor := preload("res://v2/diretor.gd")
+const Telas := preload("res://v2/telas.gd")
+const AudioV2 := preload("res://v2/audio.gd")
+const COR_NUM := Color(1.0, 0.96, 0.84)
+const COR_CRIT := Color(1.0, 0.74, 0.2)
+const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
+const CEL := 20.0  # célula da grade de separação dos monstros
+
+var mundo
+var cfg: Dictionary = {}
+var fx
+var orbes
+var audio
+var progresso
+var diretor
+var telas
+
+# tempo
+var parada_t := 0.0  # hit-stop que falta (s, relógio real)
+var lento_t := 0.0  # câmera lenta que falta (s, relógio real)
+var lento_escala := 1.0
+var lento_acao := ""  # o que acontece quando a câmera lenta acaba: "nivel" ou "morte"
+var pausado := false  # escolha de melhoria ou tela de resultado aberta
+var jogo := "jogando"  # jogando, escolha, morte
+
+# contadores e estado (testes)
+var combo_t := 0.0
+var acertos := 0
+var criticos := 0
+var mortes := 0
+var hit_stops := 0
+var ultimo_hit_stop := 0.0
+var _plim_t := 0.0
+var _plim_n := 0
+var _grade := {}
+var _usadas: Array = []
+var _q := 0
+
+
+func montar(m) -> void:
+	mundo = m
+	cfg = Dados.json("v2_combate")
+	audio = AudioV2.new()
+	m.add_child(audio)
+	fx = Efeitos.new()
+	fx.montar(m, m.glow, m.sv, m.atm.tex_brilho)
+	orbes = Orbes.new()
+	orbes.montar(self, m.glow, m.atm.tex_brilho)
+	orbes.ima_vel = float(cfg.xp.ima_vel)
+	orbes.ima_acel = float(cfg.xp.ima_acel)
+	progresso = Progresso.new()
+	progresso.montar(self)
+	diretor = Diretor.new()
+	diretor.montar(self)
+	telas = Telas.new()
+	telas.montar(self, m.sv)
+
+
+## Liga o herói às regras dos dados (vida, fôlego, curva de XP). Chamado quando o herói nasce e quando a partida recomeça.
+func iniciar_heroi() -> void:
+	mundo.heroi.iniciar_stats(cfg)
+	progresso.zerar()
+
+
+# ------------------------------------------------------------------ tempo
+
+
+## dt do mundo a partir do dt real: hit-stop e pausa travam o mundo; a câmera lenta o desacelera.
+func passo_tempo(dt: float) -> float:
+	if pausado:
+		return 0.0
+	if parada_t > 0.0:
+		parada_t -= dt
+		return 0.0
+	if lento_t > 0.0:
+		lento_t -= dt
+		if lento_t <= 0.0:
+			_fim_camera_lenta()
+		return dt * lento_escala
+	return dt
+
+
+func hit_stop(s: float) -> void:
+	if s > parada_t:
+		parada_t = s
+		ultimo_hit_stop = s
+	hit_stops += 1
+
+
+func camera_lenta(acao: String, dur: float, escala: float) -> void:
+	lento_t = dur
+	lento_escala = escala
+	lento_acao = acao
+
+
+func _fim_camera_lenta() -> void:
+	lento_t = 0.0
+	lento_escala = 1.0
+	match lento_acao:
+		"nivel":
+			progresso.abrir_escolha()
+		"morte":
+			jogo = "morte"
+			pausado = true
+			telas.mostrar_resultado()
+	lento_acao = ""
+
+
+# ------------------------------------------------------------------ o quadro do mundo
+
+
+func atualizar(dt: float) -> void:
+	_q += 1
+	var h = mundo.heroi
+	if mundo.combo > 0:
+		combo_t -= dt
+		if combo_t <= 0.0:
+			mundo.combo = 0
+	_plim_t -= dt
+	if jogo == "jogando":
+		_separar()
+		_contato(h)
+		diretor.atualizar(dt)
+	orbes.atualizar(dt, h.pos + Vector2(0, -8), float(cfg.heroi.ima_raio) * h.m_ima)
+
+
+## Monstros colados se empurram (uma grade de 20 px; metade deles por quadro): a horda faz uma roda em volta do herói em vez de virar
+## uma pilha em cima dele. O resultado fica em `sep` (px/s) e entra no deslocamento do próprio monstro.
+func _separar() -> void:
+	var ms: Array = mundo.monstros
+	var n := ms.size()
+	if n < 2:
+		return
+	for k in _usadas:
+		(_grade[k] as Array).clear()
+	_usadas.clear()
+	for m in ms:
+		var k := int(m.pos.x / CEL) * 4096 + int(m.pos.y / CEL)
+		var l = _grade.get(k)
+		if l == null:
+			l = []
+			_grade[k] = l
+		if l.is_empty():
+			_usadas.append(k)
+		l.append(m)
+	var i := _q & 1
+	while i < n:
+		var m = ms[i]
+		i += 2
+		if m.atordoa_t > 0.0:
+			m.sep = Vector2.ZERO
+			continue
+		var cx := int(m.pos.x / CEL)
+		var cy := int(m.pos.y / CEL)
+		var empurra := Vector2.ZERO
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				var l = _grade.get((cx + dx) * 4096 + cy + dy)
+				if l == null:
+					continue
+				for o in l:
+					if o == m:
+						continue
+					var d: Vector2 = m.pos - o.pos
+					var lim: float = (m.raio + o.raio) * 1.15
+					var d2 := d.length_squared()
+					if d2 >= lim * lim:
+						continue
+					if d2 < 0.01:
+						d = Vector2(randf() - 0.5, randf() - 0.5)
+						d2 = d.length_squared()
+					var dist := sqrt(d2)
+					empurra += d / dist * (lim - dist)
+		m.sep = (empurra * 14.0).limit_length(46.0)
+
+
+func _contato(h) -> void:
+	if not h.vulneravel():
+		return
+	var alc := float(cfg.contato.alcance)
+	var a2 := alc * alc
+	for m in mundo.monstros:
+		if m.recarga > 0.0 or m.atordoa_t > 0.0:
+			continue
+		var dx: float = m.pos.x - h.pos.x
+		if absf(dx) > alc:
+			continue
+		var dy: float = m.pos.y - h.pos.y
+		if dx * dx + dy * dy > a2:
+			continue
+		if h.levar_dano(m.dano, m.pos):
+			m.recarga = float(cfg.contato.recarga)
+			return  # um golpe por vez: o resto espera a invencibilidade passar
+
+
+## Efeitos visuais no relógio de parede (continuam andando no hit-stop).
+func efeitos(dt: float) -> void:
+	fx.atualizar(dt)
+	telas.atualizar(dt)
+
+
+# ------------------------------------------------------------------ golpe
+
+
+func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
+	var cor := _cor(passo.cor)
+	var alc: float = float(passo.alcance) * h.m_area
+	var arco: float = float(passo.arco) * (1.0 + (h.m_area - 1.0) * 0.5)
+	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
+	fx.corte(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, arco, float(passo.lado), str(passo.nome), cor, vis)
+	audio.tocar(str(passo.som), randf_range(0.96, 1.06), -2.0 if passo.nome != "estocada" else 0.0, 0.02)
+
+
+## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
+func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
+	var alc: float = float(passo.alcance) * h.m_area
+	var arco: float = float(passo.arco) * (1.0 + (h.m_area - 1.0) * 0.5)
+	var cos_meio := cos(deg_to_rad(arco * 0.5))
+	var parada := 0.0
+	var tremor := 0.0
+	var n := 0
+	var morreram: Array = []
+	var cor := _cor(passo.cor)
+	for m in mundo.monstros:
+		var rel: Vector2 = m.pos + Vector2(0, -6) - origem
+		var dist := rel.length()
+		if dist > alc + m.raio:
+			continue
+		if dist > m.raio + 9.0 and rel.dot(dir) < dist * cos_meio:
+			continue
+		n += 1
+		acertos += 1
+		var crit: bool = randf() < float(cfg.golpe.critico.chance) + h.m_critico
+		var d: float = float(passo.dano) * h.m_dano * (1.0 + randf_range(-float(cfg.golpe.variacao), float(cfg.golpe.variacao)))
+		if crit:
+			d *= float(cfg.golpe.critico.mult)
+			criticos += 1
+		var dano := maxi(1, roundi(d))
+		var longe: Vector2 = rel.normalized() if dist > 0.5 else dir
+		var emp: Vector2 = (dir * 0.55 + longe * 0.45).normalized() * float(passo.empurrao) * (1.25 if crit else 1.0)
+		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0))
+		var ponto: Vector2 = m.pos + Vector2(0, -8)
+		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dano), COR_CRIT if crit else COR_NUM, crit)
+		fx.flash(m, 0.1)
+		fx.faiscas(ponto - longe * float(m.raio) * 0.5, dir, 10 if crit else 6, cor, 200.0 if crit else 160.0)
+		audio.tocar("critico" if crit else "impacto", randf_range(0.92, 1.1), 0.0, 0.03)
+		parada = maxf(parada, float(cfg.golpe.critico.hit_stop) if crit else float(passo.hit_stop))
+		tremor = maxf(tremor, float(cfg.golpe.critico.tremor) if crit else float(passo.tremor))
+		if morreu:
+			morreram.append(m)
+	for m in morreram:
+		matar(m)
+		parada = maxf(parada, float(cfg.morte.hit_stop))
+		tremor = maxf(tremor, float(cfg.morte.tremor))
+	if n > 0:
+		hit_stop(parada)
+		if tremor > 0.0:
+			mundo.cam.tremer(tremor, 0.17)
+	return n
+
+
+# ------------------------------------------------------------------ morte, orbes e combo
+
+
+func matar(m) -> void:
+	mortes += 1
+	var c: Vector2 = m.pos + Vector2(0, -8)
+	m.vivo = false
+	m.raiz.visible = false
+	if m.olho != null:
+		m.olho.visible = false
+	mundo.sombras.ativar(m, false)
+	fx.flash(m, 0.24, Color(1, 1, 1), 1)
+	fx.estouro(c, Color(0.9, 0.9, 0.85), int(cfg.morte.particulas))
+	audio.tocar("morte", randf_range(0.9, 1.12), -1.0, 0.03)
+	mundo.abates += 1
+	mundo.combo += 1
+	combo_t = float(cfg.combo_abates.janela)
+	mundo.maior_combo = maxi(mundo.maior_combo, mundo.combo)
+	var mult := minf(1.0 + float(mundo.combo - 1) * float(cfg.combo_abates.xp_por_abate), float(cfg.combo_abates.xp_max))
+	for i in m.n_orbes:
+		orbes.soltar(m.pos, m.xp * mult)
+	mundo.devolver_monstro(m)
+
+
+## Um orbe chegou ao herói: XP, e o "plim" sobe de tom a cada orbe seguido.
+func coletar(valor: float, _de: Vector2) -> void:
+	if _plim_t > 0.0:
+		_plim_n += 1
+	else:
+		_plim_n = 0
+	_plim_t = float(cfg.xp.plim_janela)
+	var tom := minf(1.0 + float(_plim_n) * float(cfg.xp.plim_passo), float(cfg.xp.plim_max))
+	audio.tocar("orbe", tom, -4.0, 0.0)
+	var h = mundo.heroi
+	fx.particula(h.pos + Vector2(randf_range(-4, 4), -18), Vector2(randf_range(-10, 10), -30), 0.28, 9.0, Color(0.5, 0.95, 1.0, 0.7), -10.0, true)
+	progresso.ganhar_xp(valor)
+
+
+# ------------------------------------------------------------------ herói
+
+
+func esquiva_comecou(h) -> void:
+	audio.tocar("esquiva", randf_range(0.95, 1.05), -1.0, 0.05)
+	var p: Vector2 = h.pos
+	for i in maxi(2, roundi(6 * fx.fator_part)):
+		fx.particula(
+			p + Vector2(randf_range(-4, 4), -1),
+			-h.esq_dir * randf_range(20, 70) + Vector2(randf_range(-20, 20), randf_range(-24, -6)),
+			randf_range(0.2, 0.4),
+			2.0,
+			Color(0.7, 0.75, 0.7, 0.8),
+			40.0
+		)
+
+
+## Poeirinha nos pés de quem corre (partículas do pool de efeitos).
+func poeira(h) -> void:
+	var n := maxi(1, roundi(2.0 * fx.fator_part))
+	for i in n:
+		fx.particula(
+			h.pos + Vector2(randf_range(-3, 3), -1),
+			-h.vel.normalized() * randf_range(8, 26) + Vector2(randf_range(-8, 8), randf_range(-16, -4)),
+			randf_range(0.22, 0.4),
+			2.0 if randf() < 0.7 else 3.0,
+			Color(0.62, 0.64, 0.58, 0.5),
+			28.0
+		)
+
+
+func cansou(h) -> void:
+	ofego(h)
+
+
+## Ofego sutil de quem está sem fôlego: um sopro baixinho e duas partículas claras perto da cabeça.
+func ofego(h) -> void:
+	audio.tocar("ofego", randf_range(0.95, 1.05), -7.0, 0.5)
+	for i in 2:
+		fx.particula(
+			h.pos + Vector2(randf_range(-3, 3), -34), Vector2(randf_range(-10, 10), randf_range(-14, -6)), 0.5, 5.0, Color(0.85, 0.9, 0.95, 0.35), -6.0, true
+		)
+
+
+func rastro_esquiva(h) -> void:
+	fx.flash(h, 0.2, Color(0.55, 0.85, 1.0), 2)
+
+
+func heroi_apanhou(valor: float) -> void:
+	var h = mundo.heroi
+	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), COR_DANO_HEROI, false)
+	fx.flash(h, 0.14, Color(1.0, 0.3, 0.3), 0, 0.9)
+	fx.faiscas(h.pos + Vector2(0, -16), h.emp.normalized(), 8, Color(1.0, 0.3, 0.25), 150.0)
+	audio.tocar("dano_heroi", randf_range(0.95, 1.05), 0.0, 0.05)
+	hit_stop(0.06)
+
+
+func heroi_morreu() -> void:
+	var h = mundo.heroi
+	audio.tocar("derrota", 1.0, 0.0, 0.0)
+	fx.onda(h.pos + Vector2(0, -10), Color(1.0, 0.4, 0.35, 0.9), 60.0, 0.5)
+	mundo.cam.tremer(3.0, 0.3)
+	hit_stop(0.18)
+	jogo = "morrendo"
+	camera_lenta("morte", 1.3, 0.25)
+
+
+func nivel_subiu(nivel: int) -> void:
+	var h = mundo.heroi
+	audio.tocar("nivel", 1.0, 0.0, 0.0)
+	fx.onda(h.pos + Vector2(0, -12), Color(0.6, 0.95, 1.0, 0.95), 110.0, 0.45)
+	fx.onda(h.pos + Vector2(0, -12), Color(1.0, 0.95, 0.7, 0.8), 70.0, 0.3)
+	fx.luz_rapida(h.pos + Vector2(0, -12), Color(0.6, 0.95, 1.0), 1.8, 190.0, 0.5)
+	fx.flash(h, 0.3, Color(0.7, 1.0, 1.0), 0, 0.8)
+	orbes.atrair_todos(h.pos, 700.0)
+	mundo.nivel_subiu.emit(nivel)
+
+
+# ------------------------------------------------------------------ partida
+
+
+## Zera a partida: monstros de volta ao pool, orbes e efeitos limpos, contadores e estado.
+func limpar_partida() -> void:
+	for m in mundo.monstros.duplicate():
+		m.vivo = false
+		m.raiz.visible = false
+		if m.olho != null:
+			m.olho.visible = false
+		mundo.sombras.ativar(m, false)
+		mundo.devolver_monstro(m)
+	orbes.limpar()
+	fx.limpar()
+	parada_t = 0.0
+	lento_t = 0.0
+	lento_escala = 1.0
+	lento_acao = ""
+	pausado = false
+	jogo = "jogando"
+	combo_t = 0.0
+	_plim_t = 0.0
+	_plim_n = 0
+	acertos = 0
+	criticos = 0
+	mortes = 0
+	progresso.zerar()
+	diretor.zerar()
+	telas.esconder()
+
+
+## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
+func liberar() -> void:
+	for m in [orbes, progresso, diretor, telas, fx]:
+		if m == null:
+			continue
+		for campo in ["combate", "mundo"]:
+			if campo in m:
+				m.set(campo, null)
+	orbes = null
+	progresso = null
+	diretor = null
+	telas = null
+	fx = null
+	mundo = null
+
+
+func _cor(a: Array) -> Color:
+	return Color(float(a[0]), float(a[1]), float(a[2]))

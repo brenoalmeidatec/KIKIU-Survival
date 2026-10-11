@@ -31,6 +31,7 @@ func _ready() -> void:
 	add_child(w)
 	w.set_process(false)  # os passos são nossos
 	w.heroi.entrada_forcada = Vector2.ZERO  # nenhuma tecla da máquina entra no teste
+	w.heroi.imortal = true  # monstro encostando empurra o herói (combate): aqui o assunto é mapa, câmera e movimento
 
 	# 1. o mapa carregou: dados, objetos, decalques, luzes, monstros e o herói no nascimento
 	ok(str(w.dados.get("_ajuda", "")) != "", "v2_floresta.json tem _ajuda")
