@@ -3,6 +3,7 @@
 Entrada (ao lado deste script, com fundo branco/transparente):
     fonte_vegetacao.webp   9 objetos em 2 linhas (5 + 4)
     fonte_pedras.webp      14 objetos em 3 linhas (5 + 5 + 4)
+    fonte_santuario.webp   5 objetos em 1 linha (torii, torii quebrado, braseiro, fogueira, caixa de oferenda)
 
 Saida, em jogos/hordas/projeto/prototipos/objetos/ (mesmo layout nas duas folhas):
     enfeites.png           albedo: cor chapada, alfa binario, contorno escuro de 1 px
@@ -59,7 +60,18 @@ FOLHAS = [
         ("altar", "L", 46, 1),
         ("cranio", "L", 36, 1),
     ]),
+    ("fonte_santuario.webp", [5], [
+        ("torii", "A", 165, 1),
+        ("torii_quebrado", "A", 140, 1),
+        ("braseiro", "A", 62, 2),
+        ("fogueira", "L", 58, 2),
+        ("caixa_oferenda", "L", 36, 2),
+    ]),
 ]
+
+# Ponto da chama dos objetos com fogo: fracao (x, y) do sprite, o centro da lenha. Vai ao cenario.json como "fogo".
+FOGO = {"braseiro": (0.5, 0.22), "fogueira": (0.48, 0.44)}
+FRACAO_PILAR = 0.75      # linha (fracao da altura) em que o torii so tem os dois pilares: vigas, pano e corda ficam acima
 
 LIMITE_FUNDO = 12        # alfa <= isto conta como fundo (ruido de compressao)
 MIN_RUIDO = 12           # pedacos com menos pixels que isto sao descartados
@@ -292,6 +304,36 @@ def pe_do_objeto(img):
     px = min(xs, key=lambda x: abs(x - media))
     py = max(y for y in range(h) if alfa[y * w + px])
     return [px, py]
+
+
+def pe_do_portal(img):
+    """Torii: pe = meio entre os dois pilares, na base. Os pilares sao as duas faixas opacas mais largas da
+    linha FRACAO_PILAR (ali so ha pilar). pe = meio dos centros; y = media das duas bases (ultima linha opaca)."""
+    w, h = img.size
+    alfa = img.tobytes()[3::4]
+    y = int(FRACAO_PILAR * h)
+    faixas, ini = [], None
+    for x in range(w + 1):
+        on = x < w and alfa[y * w + x] > 0
+        if on and ini is None:
+            ini = x
+        elif not on and ini is not None:
+            faixas.append((ini, x - 1))
+            ini = None
+    pilares = sorted(sorted(faixas, key=lambda f: f[1] - f[0], reverse=True)[:2])
+    if len(pilares) != 2:
+        raise SystemExit("torii: achei %d pilares na linha %d, esperava 2" % (len(pilares), y))
+
+    def base_da_coluna(x):
+        for yy in range(h - 1, -1, -1):
+            if alfa[yy * w + x]:
+                return yy
+        return -1
+
+    bases = [max(base_da_coluna(x) for x in range(a, b + 1)) for a, b in pilares]
+    cx = [(a + b) / 2.0 for a, b in pilares]
+    print("      pilares: colunas %s, bases y %s" % (pilares, bases))
+    return [int(round(sum(cx) / 2.0)), int(round(sum(bases) / 2.0))]
 
 
 # ------------------------------------------------------------------ normal map
@@ -577,7 +619,7 @@ def main():
             nor = normal_do_objeto(alb)
             borda_g, miolo_g = inclinacao_graus(nor, alb)
             print("      inclinacao na borda %.0f graus (mediana), no miolo %.0f (p95)" % (borda_g, miolo_g))
-            pe = pe_do_objeto(alb)
+            pe = pe_do_portal(alb) if nome.startswith("torii") else pe_do_objeto(alb)
             sprites.append((nome, peso, alb, nor, pe))
             itens.append((nome, alb, nor))
             print("  %-15s %3dx%-3d  (alvo %s %d)  pe %s" % (nome, alb.width, alb.height, eixo, alvo, pe))
@@ -597,7 +639,11 @@ def main():
 
     itens = []
     for (x, y), (nome, peso, alb, _nor, pe) in zip(pos, sprites):
-        itens.append({"nome": nome, "peso": peso, "pe": pe, "regiao": [x, y, alb.width, alb.height]})
+        item = {"nome": nome, "peso": peso, "pe": pe, "regiao": [x, y, alb.width, alb.height]}
+        if nome in FOGO:
+            fx, fy = FOGO[nome]
+            item["fogo"] = [int(fx * alb.width), int(fy * alb.height)]
+        itens.append(item)
     cen = {
         "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py (nao edite a mao)",
         "enfeites": "enfeites.png",
