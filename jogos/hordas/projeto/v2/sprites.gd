@@ -5,7 +5,7 @@ extends RefCounted
 ## borrada da sombra média), pe (linha dos pés no quadro)}.
 
 const Sombras := preload("res://v2/sombras.gd")
-const PASTA := "../prototipos/cara_nova/sprites"
+const PASTA := "res://prototipos/cara_nova/sprites"
 
 var com_normal := true
 var ms_blur := 0.0
@@ -14,12 +14,18 @@ var _tipos := {}
 
 
 func _caminho(nome: String) -> String:
-	return ProjectSettings.globalize_path("res://").path_join(PASTA).path_join(nome).simplify_path()
+	return PASTA.path_join(nome)
+
+
+## PNG por load(): no exe exportado o PNG de origem não vai para o pck (vira .ctex importado); get_image() devolve a imagem para os cálculos.
+static func png(caminho: String) -> Image:
+	var tex := load(caminho) as Texture2D
+	return tex.get_image() if tex != null else null
 
 
 func _imagem(nome: String) -> Image:
 	if not _imgs.has(nome):
-		var im := Image.load_from_file(_caminho(nome))
+		var im := png(_caminho(nome))
 		if im == null:
 			push_error("sem imagem: " + _caminho(nome))
 		_imgs[nome] = im
@@ -39,7 +45,7 @@ func tipo(nome: String) -> Dictionary:
 	var t0 := Time.get_ticks_usec()
 	d["blur"] = Sombras.borrar_folha(_imagem(nome + "_albedo.png"), d.w, d.h)
 	ms_blur += (Time.get_ticks_usec() - t0) / 1000.0
-	if FileAccess.file_exists(_caminho(nome + "_emissao.png")):
+	if ResourceLoader.exists(_caminho(nome + "_emissao.png")):
 		d.emissao = ImageTexture.create_from_image(_imagem(nome + "_emissao.png"))
 	d["pe"] = int(info.get("pe_y", info.quadro[1] - 2))
 	_tipos[nome] = d

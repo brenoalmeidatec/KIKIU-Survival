@@ -7,9 +7,10 @@ extends RefCounted
 const Ator := preload("res://v2/ator.gd")
 const Sombras := preload("res://v2/sombras.gd")
 const Colisao := preload("res://v2/colisao.gd")
-const OBJ_DIR := "prototipos/objetos"  # atlas dos objetos: albedo + normal, escala final a 960x540
-const DEC_DIR := "prototipos/decalques"  # decalques de chão: albedo + normal
-const PISO_DIR := "prototipos/piso"
+const Sprites := preload("res://v2/sprites.gd")
+const OBJ_DIR := "res://prototipos/objetos"  # atlas dos objetos: albedo + normal, escala final a 960x540
+const DEC_DIR := "res://prototipos/decalques"  # decalques de chão: albedo + normal
+const PISO_DIR := "res://prototipos/piso"
 const MARGEM := 3  # px transparentes em volta de cada objeto recortado: o blur da sombra não corta na borda
 const CHUNK := 160  # lado do bloco, em px do mundo
 const MARGEM_BLOCO := 200.0  # margem (px) em volta da tela em que os blocos ficam visíveis (decalque grande tem até ~190 px de meia largura)
@@ -68,14 +69,13 @@ func carregar(dados: Dictionary, mundo: Node2D, luzes, sombras, normal := true) 
 
 
 func _chao(c: Dictionary) -> void:
-	var raiz := ProjectSettings.globalize_path("res://")
 	var piso := Sprite2D.new()
 	var nome := str(c.get("piso", "piso"))
 	var ct := CanvasTexture.new()
-	ct.diffuse_texture = ImageTexture.create_from_image(Image.load_from_file(raiz.path_join(PISO_DIR).path_join(nome + ".png")))
-	var nn := raiz.path_join(PISO_DIR).path_join(nome + "_normal.png")
-	if com_normal and FileAccess.file_exists(nn):
-		ct.normal_texture = ImageTexture.create_from_image(Image.load_from_file(nn))
+	ct.diffuse_texture = ImageTexture.create_from_image(Sprites.png(PISO_DIR.path_join(nome + ".png")))
+	var nn := PISO_DIR.path_join(nome + "_normal.png")
+	if com_normal and ResourceLoader.exists(nn):
+		ct.normal_texture = ImageTexture.create_from_image(Sprites.png(nn))
 	piso.texture = ct
 	# sob a luz laranja o musgo ia a amarelo saturado: tira um pouco do verde e dessatura o chão antes da luz
 	var sh := Shader.new()
@@ -104,13 +104,13 @@ func _chao(c: Dictionary) -> void:
 
 
 func _carregar_decalques() -> void:
-	var dir := ProjectSettings.globalize_path("res://").path_join(DEC_DIR)
+	var dir := DEC_DIR
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("decalques.json")))
-	var atlas := Image.load_from_file(dir.path_join("decalques.png"))
+	var atlas := Sprites.png(dir.path_join("decalques.png"))
 	atlas.convert(Image.FORMAT_RGBA8)
 	var norm: Image = null
-	if com_normal and FileAccess.file_exists(dir.path_join("decalques_normal.png")):
-		norm = Image.load_from_file(dir.path_join("decalques_normal.png"))
+	if com_normal and ResourceLoader.exists(dir.path_join("decalques_normal.png")):
+		norm = Sprites.png(dir.path_join("decalques_normal.png"))
 		norm.convert(Image.FORMAT_RGBA8)
 	for it in info.itens:
 		var r := Rect2i(int(it.regiao[0]), int(it.regiao[1]), int(it.regiao[2]), int(it.regiao[3]))
@@ -155,13 +155,12 @@ func _decalque(nome: String, pos: Vector2, espelha := false) -> void:
 ## Atlas de objetos de cenário (prototipos/objetos). Cada item é recortado UMA vez (com margem) e ganha a textura nítida, a borrada para a
 ## sombra do modo médio e a CanvasTexture com normal map, e guarda as formas de "colisao" do item (elipses no chão, v2/colisao.gd).
 func _carregar_itens() -> void:
-	var raiz := ProjectSettings.globalize_path("res://")
-	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(raiz.path_join(OBJ_DIR).path_join("cenario.json")))
-	var atlas := Image.load_from_file(raiz.path_join(OBJ_DIR).path_join(str(info.get("enfeites", "enfeites.png"))))
+	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(OBJ_DIR.path_join("cenario.json")))
+	var atlas := Sprites.png(OBJ_DIR.path_join(str(info.get("enfeites", "enfeites.png"))))
 	atlas.convert(Image.FORMAT_RGBA8)
 	var norm: Image = null
 	if com_normal:
-		norm = Image.load_from_file(raiz.path_join(OBJ_DIR).path_join(str(info.get("enfeites_normal", "enfeites_normal.png"))))
+		norm = Sprites.png(OBJ_DIR.path_join(str(info.get("enfeites_normal", "enfeites_normal.png"))))
 		norm.convert(Image.FORMAT_RGBA8)
 	for it in info.itens:
 		var r := Rect2i(int(it.regiao[0]), int(it.regiao[1]), int(it.regiao[2]), int(it.regiao[3]))
