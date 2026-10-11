@@ -22,10 +22,15 @@ const MEDIA := 2
 const ALTA := 3
 const NOMES_SOMBRA := ["nenhuma", "baixa", "media", "alta"]
 const ACHATA := 0.7071  # câmera a 45 graus: o eixo y do chão aparece comprimido por sen(45)
+const DEC_DIR := "prototipos/decalques"  # decalques de chão (círculo, trilha, raízes, folhas, musgo...)
 const OBJ_DIR := "prototipos/objetos"  # arte nova do cenário (imagegen): albedo + normal, escala final a 960x540
 const POS_POSTE := Vector2(250, 160)  # poste com lanterna (fonte de luz quente fraca)
 const POS_TORO := Vector2(780, 215)  # lanterna de pedra (fonte de luz quente fraca)
 const POS_ALTAR := Vector2(130, 445)  # altar com vela (luz) e o crânio ao lado
+const POS_TORII := Vector2(240, 332)  # torii na borda oeste do círculo, com a trilha passando por baixo
+const POS_BRASEIRO := Vector2(322, 380)  # braseiro com fogo de verdade, do lado do torii
+const POS_FOGUEIRA := Vector2(858, 470)  # fogueira acesa no canto oposto, menor
+const POS_CAIXA := Vector2(86, 492)  # caixa de oferenda perto do altar
 const GRAD_OFF := [0.0, 0.22, 0.55, 1.0]  # queda das luzes: forte no centro e escura de verdade longe (poças contrastadas)
 const GRAD_VAL := [1.0, 0.5, 0.1, 0.0]
 const MARGEM := 3  # px transparentes em volta de cada enfeite recortado: o blur da sombra não corta na borda
@@ -59,6 +64,8 @@ var _blobs: Node2D
 var _mat_sombra: ShaderMaterial
 var _arvores: Array = []  # cenário estático (árvores, pedras, arbustos...): só o transform da sombra muda
 var _itens_cen := {}
+var _decal_itens := {}
+var _chao_deco: Node2D
 var _passo := -1
 var _quadros := 0
 var _us_sombra := 0  # tempo de script das sombras (só para a medição)
@@ -483,6 +490,9 @@ func _montar() -> void:
 	_sombras.z_index = -50
 	_mundo.add_child(_sombras)
 	_chao()
+	_chao_deco = Node2D.new()  # decalques: acima do piso (-100), abaixo das sombras (-51 e -50)
+	_chao_deco.z_index = -90
+	_mundo.add_child(_chao_deco)
 	var heroi_tipo := "hazaki" if _a.has("basico") else "hazaki_samurai"
 	var heroi: Dictionary
 	if _a.has("grade"):
@@ -621,6 +631,7 @@ func _carregar_itens() -> void:
 			"h": r.size.y,
 			"pe": Vector2(float(it.pe[0]), float(it.pe[1])),
 			"nome": it.nome,
+			"fogo": Vector2(float(it.fogo[0]), float(it.fogo[1])) if it.has("fogo") else Vector2.ZERO,
 		}
 
 
@@ -688,11 +699,11 @@ func _cenario_novo() -> void:
 		["pilar", Vector2(578, 232)],
 		["lapide", Vector2(334, 252)],
 		["lapide", Vector2(630, 258)],
-		["muro", Vector2(268, 290)],
+		["muro", Vector2(318, 268)],
 		["muro", Vector2(704, 296)],
 		["runa", Vector2(447, 236)],
-		["coluna", Vector2(330, 340)],
-		["pedestal", Vector2(298, 312)],
+		["coluna", Vector2(352, 352)],
+		["pedestal", Vector2(610, 384)],
 		["lapide", Vector2(652, 338)],
 		["coluna", Vector2(628, 352)],
 		["pilar", Vector2(412, 402)],
@@ -704,6 +715,11 @@ func _cenario_novo() -> void:
 	_objeto("poste_lanterna", POS_POSTE)
 	_objeto("toro", POS_TORO)
 	_objeto("altar", POS_ALTAR)
+	_objeto("caixa_oferenda", POS_CAIXA)
+	_objeto("torii", POS_TORII)
+	_objeto("braseiro", POS_BRASEIRO)
+	_objeto("fogueira", POS_FOGUEIRA)
+	_objeto("torii_quebrado", Vector2(860, 300))
 	_objeto("cranio", POS_ALTAR + Vector2(58, 18))
 	# vegetação e pedras agrupadas em volta
 	for p in [
@@ -741,6 +757,52 @@ func _cenario_novo() -> void:
 		["tronco", Vector2(380, 520)]
 	]:
 		_objeto(p[0], p[1])
+
+
+func _carregar_decalques() -> void:
+	## Decalques de chão (prototipos/decalques: albedo + normal + json com regiao e centro de cada item). Cada um vira uma CanvasTexture.
+	var dir := ProjectSettings.globalize_path("res://").path_join(DEC_DIR)
+	if not FileAccess.file_exists(dir.path_join("decalques.json")):
+		return
+	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("decalques.json")))
+	var atlas := Image.load_from_file(dir.path_join("decalques.png"))
+	atlas.convert(Image.FORMAT_RGBA8)
+	var norm: Image = null
+	if _com_normal and FileAccess.file_exists(dir.path_join("decalques_normal.png")):
+		norm = Image.load_from_file(dir.path_join("decalques_normal.png"))
+		norm.convert(Image.FORMAT_RGBA8)
+	for it in info.itens:
+		var r := Rect2i(int(it.regiao[0]), int(it.regiao[1]), int(it.regiao[2]), int(it.regiao[3]))
+		var ct := CanvasTexture.new()
+		ct.diffuse_texture = ImageTexture.create_from_image(atlas.get_region(r))
+		if norm != null:
+			ct.normal_texture = ImageTexture.create_from_image(norm.get_region(r))
+		_decal_itens[it.nome] = {"tex": ct, "w": r.size.x, "h": r.size.y, "centro": Vector2(float(it.centro[0]), float(it.centro[1]))}
+
+
+func _decalque(nome: String, pos: Vector2, cor := Color.WHITE) -> Sprite2D:
+	## um decalque no chão, com o centro do item em pos. Fica na camada de chão (acima do piso, abaixo das sombras) e recebe luz com normal.
+	if not _decal_itens.has(nome):
+		return null
+	var it: Dictionary = _decal_itens[nome]
+	var s := Sprite2D.new()
+	s.texture = it.tex
+	s.centered = false
+	s.offset = -it.centro
+	s.position = pos
+	s.modulate = cor
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_chao_deco.add_child(s)
+	return s
+
+
+func _grupo(nomes: Array, centro: Vector2, n: int, raio: Vector2, rng: RandomNumberGenerator, cor := Color.WHITE) -> void:
+	## n decalques sorteados de nomes, espalhados numa elipse em volta de centro (manchas naturais)
+	for i in n:
+		var a := rng.randf() * TAU
+		var d := sqrt(rng.randf())
+		var p := centro + Vector2(cos(a) * raio.x * d, sin(a) * raio.y * d)
+		_decalque(nomes[rng.randi() % nomes.size()], p, cor)
 
 
 func _cenario_antigo() -> void:
@@ -916,6 +978,37 @@ func _luzes_cena(heroi: Dictionary) -> void:
 		defs[1].merge({"e": 1.3, "r": 125.0, "h": 40.0, "pos": POS_POSTE + Vector2(23, 2), "orbe": POS_POSTE + Vector2(23, -40)}, true)
 		defs[4].merge({"e": 1.2, "r": 125.0, "h": 35.0, "pos": POS_TORO + Vector2(0, -4), "orbe": POS_TORO + Vector2(0, -30)}, true)
 		defs[6]["orbe"] = POS_ALTAR + Vector2(15, -27)
+		# braseiro (a luz mais forte depois da tocha do herói) e fogueira: a chama fica no ponto "fogo" do item, relativo ao pé
+		var fb: Dictionary = _item_cenario("braseiro")
+		var ff: Dictionary = _item_cenario("fogueira")
+		var chama_b: Vector2 = POS_BRASEIRO + fb.fogo - fb.pe
+		var chama_f: Vector2 = POS_FOGUEIRA + ff.fogo - ff.pe
+		defs.append(
+			{
+				"nome": "braseiro",
+				"cor": Color(1.0, 0.55, 0.2),
+				"e": 2.1,
+				"r": 250.0,
+				"h": 45.0,
+				"pos": POS_BRASEIRO + Vector2(0, -6),
+				"orbe": chama_b,
+				"fesc": 1.0,
+				"tremor": 0.1
+			}
+		)
+		defs.append(
+			{
+				"nome": "fogueira",
+				"cor": Color(1.0, 0.58, 0.22),
+				"e": 1.4,
+				"r": 170.0,
+				"h": 32.0,
+				"pos": POS_FOGUEIRA + Vector2(0, -6),
+				"orbe": chama_f,
+				"fesc": 0.7,
+				"tremor": 0.1
+			}
+		)
 	else:
 		defs.remove_at(6)
 	var n := int(_a.get("luzes", defs.size()))
@@ -943,10 +1036,83 @@ func _luzes_cena(heroi: Dictionary) -> void:
 			orbe.modulate = d.cor.lerp(Color.WHITE, 0.25)
 			orbe.position = d.get("orbe", d.pos)
 			_olhos_raiz.add_child(orbe)
+			if d.has("fesc"):
+				_fogo(orbe.position, d.fesc)
 			if nome.begins_with("magia"):
 				part = _faiscas(d.cor)
 				part.position = orbe.position
 		_luzes.append({"luz": l, "def": d, "orbe": orbe, "part": part, "fase": float(i) * 1.7})
+
+
+func _fogo(pos: Vector2, esc: float) -> void:
+	## fogo de verdade: chama (laranja para amarelo, de baixo para cima), brasas subindo e um pouco de fumaça escura. CPUParticles2D baratas
+	## na camada sem CanvasModulate; no perfil baixo as três caem pela metade (via _particulas).
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	var chama := CPUParticles2D.new()
+	chama.amount = 36
+	chama.lifetime = 0.7
+	chama.preprocess = 0.7
+	chama.local_coords = false
+	chama.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	chama.emission_sphere_radius = 4.0 * esc
+	chama.direction = Vector2(0, -1)
+	chama.spread = 12.0
+	chama.gravity = Vector2(0, -18)
+	chama.initial_velocity_min = 16.0 * esc
+	chama.initial_velocity_max = 30.0 * esc
+	chama.scale_amount_min = 0.05 * esc
+	chama.scale_amount_max = 0.11 * esc
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.15, 0.5, 0.8, 1.0])
+	g.colors = PackedColorArray(
+		[Color(1, 0.95, 0.6, 0.0), Color(1, 0.85, 0.35, 1.0), Color(1, 0.5, 0.1, 0.85), Color(0.8, 0.15, 0.05, 0.45), Color(0.3, 0.05, 0.02, 0.0)]
+	)
+	chama.color_ramp = g
+	chama.texture = _tex_brilho
+	chama.material = add
+	chama.position = pos
+	_olhos_raiz.add_child(chama)
+	_particulas.append({"p": chama, "base": 36})
+	var brasas := CPUParticles2D.new()
+	brasas.amount = 10
+	brasas.lifetime = 2.2
+	brasas.preprocess = 2.2
+	brasas.local_coords = false
+	brasas.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	brasas.emission_sphere_radius = 4.0 * esc
+	brasas.direction = Vector2(0, -1)
+	brasas.spread = 35.0
+	brasas.gravity = Vector2(0, -6)
+	brasas.initial_velocity_min = 22.0
+	brasas.initial_velocity_max = 50.0
+	brasas.scale_amount_min = 0.012
+	brasas.scale_amount_max = 0.026
+	brasas.color = Color(1.0, 0.6, 0.2)
+	brasas.color_ramp = _rampa_alfa([0.0, 0.15, 0.7, 1.0], [0.0, 1.0, 0.7, 0.0])
+	brasas.texture = _tex_brilho
+	brasas.material = add
+	brasas.position = pos
+	_olhos_raiz.add_child(brasas)
+	_particulas.append({"p": brasas, "base": 10})
+	var fumaca := CPUParticles2D.new()
+	fumaca.amount = 8
+	fumaca.lifetime = 2.6
+	fumaca.preprocess = 2.6
+	fumaca.local_coords = false
+	fumaca.direction = Vector2(0.2, -1)
+	fumaca.spread = 15.0
+	fumaca.gravity = Vector2(0, -3)
+	fumaca.initial_velocity_min = 8.0
+	fumaca.initial_velocity_max = 16.0
+	fumaca.scale_amount_min = 0.1 * esc
+	fumaca.scale_amount_max = 0.2 * esc
+	fumaca.color = Color(0.07, 0.07, 0.08)
+	fumaca.color_ramp = _rampa_alfa([0.0, 0.25, 1.0], [0.0, 0.4, 0.0])
+	fumaca.texture = _tex_brilho
+	fumaca.position = pos + Vector2(0, -8 * esc)
+	_olhos_raiz.add_child(fumaca)
+	_particulas.append({"p": fumaca, "base": 8})
 
 
 func _faiscas(cor: Color) -> CPUParticles2D:
@@ -1184,9 +1350,9 @@ func _process(delta: float) -> void:
 		var luz: PointLight2D = l.luz
 		if d.nome == "tocha":
 			luz.energy = d.e + (0.0 if _a.has("grade") else 0.12 * sin(_t * 13.0) + 0.07 * sin(_t * 29.0 + 1.3))
-		elif str(d.nome).begins_with("lanterna") or d.nome == "altar_vela":
+		elif str(d.nome).begins_with("lanterna") or d.nome in ["altar_vela", "braseiro", "fogueira"]:
 			# tremor leve de lanterna e vela (muda pouco a energia: no máximo o alfa da sombra balança)
-			luz.energy = d.e * (1.0 + 0.06 * sin(_t * 9.0 + l.fase) + 0.035 * sin(_t * 23.0 + 2.0 * l.fase))
+			luz.energy = d.e * (1.0 + d.get("tremor", 0.06) * sin(_t * 9.0 + l.fase) + 0.6 * d.get("tremor", 0.06) * sin(_t * 23.0 + 2.0 * l.fase))
 		if _tocha_leva and (d.nome == "tocha" or d.nome == "aura_heroi"):
 			luz.position = _heroi.raiz.position + (d.pos - HEROI_POS)
 		elif d.nome == "magia_azul":
