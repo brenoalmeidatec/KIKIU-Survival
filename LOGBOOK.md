@@ -1036,3 +1036,11 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
   - `paleta.json` e a imagem `docs/imagens/comparacao_atual_vs_2_5d.png`.
 - **Recomendações da análise (a decidir):** mundo em 960x540 com herói menor (~32x44, mais detalhe por pixel); câmera mais de cima nos sprites (~45° em vez de 32°); luz fixa do cenário assada e poucas luzes dinâmicas; relevo (normal map) só em herói e elite, e só depois de gerar os sprites sem sombra pintada; HUD em resolução nativa com molduras 9-patch e uma fonte lisa no lugar da pixelada.
 - **Próximo:** V1 (escala, câmera e HUD novo), depois da aba Gráficos (#150) e da 2ª rodada da luz. Perguntas fechadas ao Breno na issue-épico.
+
+## 2026-10-11 · Claude do Alisson (notebook) · CI mais rápido (E1, issue #152)
+- **Medido antes (run 38096771596, `ci.yml`, job `testes`):** 8m17s no total. Baixar o Godot: ~2 s (já vinha do cache). `--import` (2x): ~22 s. Rodar as 51 cenas em sequência: ~7m44s (quase tudo está aqui).
+- **Feito:** `ferramentas/testes_ci.sh` roda as cenas 4 por vez (`xargs -P 4`), com `timeout 120` por cena e um log por cena. O critério de falha não mudou (`SCRIPT ERROR` ou falta de `falhas=0`). `bench_*` continuam fora. `criacao` e `criacao2` vão na mesma unidade, em sequência (gravam o mesmo arquivo). No fim: cenas, rodadas, ok, falhas e tempo; falha se a contagem não bater.
+- **Não mexi:** o passo do Godot (já tinha cache), o `--import` e o workflow de Release (gatilhos e jobs iguais). Não fiz cache da pasta `.godot`: o import leva ~22 s e a chave mudaria a cada commit, então o ganho seria pequeno.
+- **Checado:** sintaxe do script, YAML do `ci.yml` e um teste com Godot falso (51 cenas, uma com SCRIPT ERROR, exit 1). Não há Godot no notebook: a prova de verdade é o CI do PR.
+- **Pendente:** rodar o CI do PR e comparar o tempo com o de cima; mesclar só com tudo verde.
+- Assinado: Claude do Alisson (notebook)
