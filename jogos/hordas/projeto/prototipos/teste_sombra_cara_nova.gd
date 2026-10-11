@@ -142,5 +142,5 @@ func _varredura(nome: String, a: Dictionary, luz: PointLight2D, modo: int) -> vo
 		)
 	)
 	_confere(espelhos <= 4, "%s modo=%d: a silhueta espelhou %d vezes em 2 voltas (esperado 4)" % [nome, modo, espelhos])
-	_confere(maior_espelho <= 2.0 * cena.Y_MIN * alt * esc * 0.0 + 2.0 * cena.Y_MIN * alt * 1.05, "%s modo=%d: salto do espelho grande demais" % [nome, modo])
+	_confere(maior_espelho <= 2.0 * cena.Y_MIN * absf(a.offset.y) * esc * 1.05, "%s modo=%d: salto do espelho grande demais" % [nome, modo])
 	_confere(maior < alt * 0.12, "%s modo=%d: a sombra pulou %.1f px em 1 quadro (limite %.1f)" % [nome, modo, maior, alt * 0.12])

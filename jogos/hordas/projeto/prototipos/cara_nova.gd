@@ -22,6 +22,12 @@ const MEDIA := 2
 const ALTA := 3
 const NOMES_SOMBRA := ["nenhuma", "baixa", "media", "alta"]
 const ACHATA := 0.7071  # câmera a 45 graus: o eixo y do chão aparece comprimido por sen(45)
+const OBJ_DIR := "prototipos/objetos"  # arte nova do cenário (imagegen): albedo + normal, escala final a 960x540
+const POS_POSTE := Vector2(250, 160)  # poste com lanterna (fonte de luz quente fraca)
+const POS_TORO := Vector2(780, 215)  # lanterna de pedra (fonte de luz quente fraca)
+const POS_ALTAR := Vector2(130, 445)  # altar com vela (luz) e o crânio ao lado
+const GRAD_OFF := [0.0, 0.22, 0.55, 1.0]  # queda das luzes: forte no centro e escura de verdade longe (poças contrastadas)
+const GRAD_VAL := [1.0, 0.5, 0.1, 0.0]
 const MARGEM := 3  # px transparentes em volta de cada enfeite recortado: o blur da sombra não corta na borda
 const SOMBRA_FADE := 140.0  # comprimento (px do sprite) em que a sombra esmaece
 const ALT_LUZ := 2.2  # a altura da luz (espaço do normal map) rende ~2x na tela a 45 graus
@@ -68,6 +74,8 @@ var _tocha_leva := false
 var _rotulo: Label
 var _rotulo_t := 0.0
 var _ms_blur := 0.0
+var _particulas: Array = []  # {"p": CPUParticles2D, "base": amount}: o perfil baixo corta pela metade
+var _tex_brilho: GradientTexture2D
 
 
 func _ready() -> void:
@@ -90,6 +98,7 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color(0.02, 0.03, 0.03))
 	_tex_luz = _textura_luz()
 	_tex_sombra = _textura_sombra()
+	_tex_brilho = _textura_brilho()
 	_montar()
 
 
@@ -144,8 +153,11 @@ func _tipo(nome: String) -> Dictionary:
 
 func _textura_luz() -> GradientTexture2D:
 	var g := Gradient.new()
-	g.offsets = PackedFloat32Array([0.0, 0.3, 0.65, 1.0])
-	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(0.62, 0.62, 0.62, 1), Color(0.2, 0.2, 0.2, 1), Color(0, 0, 0, 1)])
+	g.offsets = PackedFloat32Array(GRAD_OFF)
+	var cores := PackedColorArray()
+	for v in GRAD_VAL:
+		cores.append(Color(v, v, v, 1))
+	g.colors = cores
 	var t := GradientTexture2D.new()
 	t.gradient = g
 	t.fill = GradientTexture2D.FILL_RADIAL
@@ -153,6 +165,21 @@ func _textura_luz() -> GradientTexture2D:
 	t.fill_to = Vector2(1.0, 0.5)
 	t.width = 256
 	t.height = 256
+	return t
+
+
+func _textura_brilho() -> GradientTexture2D:
+	## brilho com queda suave (núcleo claro, halo que some): o corpo das magias e das chamas, no lugar do disco chapado
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.1, 0.3, 0.6, 1.0])
+	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.55), Color(1, 1, 1, 0.2), Color(1, 1, 1, 0.05), Color(1, 1, 1, 0)])
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.fill = GradientTexture2D.FILL_RADIAL
+	t.fill_from = Vector2(0.5, 0.5)
+	t.fill_to = Vector2(1.0, 0.5)
+	t.width = 128
+	t.height = 128
 	return t
 
 
@@ -286,6 +313,8 @@ func _trocar_sombra(m: int) -> void:
 		a.t_ult = -1.0
 		a.blob.visible = m != NENHUMA
 	_sombras.visible = m >= MEDIA
+	for q in _particulas:
+		q.p.amount = maxi(2, int(q.base / 2.0)) if m == BAIXA else q.base
 	if m == BAIXA:
 		for a in _atores + _arvores:
 			_blob(a, 1.0, 0.62)
@@ -300,15 +329,14 @@ func _blob(a: Dictionary, escala: float, alfa: float) -> void:
 
 
 func _atenua(d: float, r: float) -> float:
-	## mesma curva do gradiente da textura das PointLight2D: 1 no centro, 0,62 a 30%, 0,2 a 65%, 0 na borda
+	## mesma curva do gradiente da textura das PointLight2D (GRAD_OFF / GRAD_VAL)
 	var u := d / r
 	if u >= 1.0:
 		return 0.0
-	if u < 0.3:
-		return lerpf(1.0, 0.62, u / 0.3)
-	if u < 0.65:
-		return lerpf(0.62, 0.2, (u - 0.3) / 0.35)
-	return lerpf(0.2, 0.0, (u - 0.65) / 0.35)
+	for i in range(1, GRAD_OFF.size()):
+		if u < GRAD_OFF[i]:
+			return lerpf(GRAD_VAL[i - 1], GRAD_VAL[i], (u - GRAD_OFF[i - 1]) / (GRAD_OFF[i] - GRAD_OFF[i - 1]))
+	return 0.0
 
 
 func _dir_chao(pos: Vector2, luz: Vector2) -> Vector2:
@@ -442,7 +470,7 @@ func _atualizar_sombra(a: Dictionary) -> void:
 
 func _montar() -> void:
 	var escuro := CanvasModulate.new()
-	escuro.color = Color(str(_a.get("amb", "1c2a24")))
+	escuro.color = Color(str(_a.get("amb", "122125")))  # verde-azulado quase preto da arte de entrada
 	add_child(escuro)
 	_mundo = Node2D.new()
 	_mundo.y_sort_enabled = true
@@ -460,11 +488,13 @@ func _montar() -> void:
 	if _a.has("grade"):
 		heroi = _elenco_grade(heroi_tipo)
 	else:
-		_enfeites()
+		if _a.has("cenario_antigo"):
+			_cenario_antigo()
+		else:
+			_cenario_novo()
 		heroi = _ator(heroi_tipo, HEROI_POS, 5, 0, false, true)
 		for m in _lista_monstros():
 			_ator(m.tipo, m.pos, m.linha, m.coluna, m.espelha, false)
-		_primeiro_plano()
 	_heroi = heroi
 	_criar_sombras(_atores + _arvores)
 	_trocar_sombra(_sombra)
@@ -476,6 +506,9 @@ func _montar() -> void:
 	for a in _atores:
 		_criar_olho(a)
 	_luzes_cena(heroi)
+	if not _a.has("sem_atmosfera"):
+		_atmosfera()
+	_trocar_sombra(_sombra)
 	if not _a.has("sem_vinheta"):
 		_vinheta()
 	if _modo == "livre" or _a.has("rotulo"):
@@ -484,12 +517,56 @@ func _montar() -> void:
 
 func _chao() -> void:
 	var piso := Sprite2D.new()
-	# piso SEM sombra assada (gerar_cenario_cara_nova.py); --piso_antigo usa o do jogo de hoje, com a sombra dos tufos presa a sudeste
-	if _a.has("piso_antigo"):
-		piso.texture = load("res://assets/cenarios/floresta/piso.png") as Texture2D
-	else:
-		piso.texture = ImageTexture.create_from_image(_imagem("floresta_piso.png"))
+	var raiz := ProjectSettings.globalize_path("res://")
 	var esc := _num("chao", 2.0)
+	var novo := raiz.path_join("prototipos/piso/piso.png")
+	if not _a.has("piso_antigo") and not _a.has("cenario_antigo") and FileAccess.file_exists(novo):
+		# chão novo (prototipos/piso, aprovado): escala 1 (1 texel = 1 px), com piso_normal.png como normal map
+		var ct := CanvasTexture.new()
+		ct.diffuse_texture = ImageTexture.create_from_image(Image.load_from_file(novo))
+		var nn := raiz.path_join("prototipos/piso/piso_normal.png")
+		if _com_normal and FileAccess.file_exists(nn):
+			ct.normal_texture = ImageTexture.create_from_image(Image.load_from_file(nn))
+		piso.texture = ct
+		esc = 1.0
+		# sob a luz laranja o musgo ia a amarelo saturado: tira um pouco do verde e dessatura o chão antes da luz
+		var m := ShaderMaterial.new()
+		var sh := Shader.new()
+		sh.code = (
+			"shader_type canvas_item;\nuniform float verde = 0.8;\nuniform float dessat = 0.3;\nuniform float ganho = 1.0;\n"
+			+ "void fragment(){ vec4 c = texture(TEXTURE, UV); float l = dot(c.rgb, vec3(0.3, 0.5, 0.2));"
+			+ " vec3 b = mix(c.rgb, vec3(l) * vec3(1.05, 0.95, 0.9), dessat); b.g *= verde;"
+			+ " COLOR = vec4(min(b * ganho, vec3(1.0)), c.a); }\n"
+		)
+		m.shader = sh
+		m.set_shader_parameter("verde", _num("verde_chao", 0.8))
+		m.set_shader_parameter("dessat", _num("dessat_chao", 0.3))
+		m.set_shader_parameter("ganho", _num("ganho_chao", 3.6))
+		piso.material = m
+	else:
+		# chão anterior: o regerado sem sombra assada (gerar_cenario_cara_nova.py) ou, com --piso_antigo, o do jogo de hoje (sombra dos
+		# tufos presa a sudeste). Clareia antes da luz e achata as manchas claras (viravam discos chapados sob a luz colorida das magias).
+		var im: Image
+		if _a.has("piso_antigo"):
+			im = (load("res://assets/cenarios/floresta/piso.png") as Texture2D).get_image()
+		else:
+			im = _imagem("floresta_piso.png")
+		piso.texture = ImageTexture.create_from_image(im)
+		var med := im.duplicate() as Image
+		med.resize(1, 1, Image.INTERPOLATE_LANCZOS)
+		var c := med.get_pixel(0, 0)
+		var m := ShaderMaterial.new()
+		var sh := Shader.new()
+		sh.code = (
+			"shader_type canvas_item;\nuniform float ganho = 2.2;\nuniform float achata = 0.0;\nuniform vec3 media = vec3(0.3);\n"
+			+ "void fragment(){ vec4 c = texture(TEXTURE, UV); vec3 b = mix(c.rgb, media, achata);"
+			+ " COLOR = vec4(min(b * ganho * vec3(0.78, 1.0, 0.8), vec3(1.0)), c.a); }\n"
+		)
+		m.shader = sh
+		m.set_shader_parameter("ganho", _num("ganho_chao", 2.4))
+		m.set_shader_parameter("achata", _num("achata_chao", 0.6))
+		m.set_shader_parameter("media", Vector3(c.r, c.g, c.b))
+		piso.material = m
 	piso.region_enabled = true
 	piso.region_rect = Rect2(0, 0, LARG / esc + 64, ALT / esc + 64)
 	piso.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
@@ -498,54 +575,81 @@ func _chao() -> void:
 	piso.scale = Vector2(esc, esc)
 	piso.position = Vector2(0, 0)
 	piso.z_index = -100
-	# o chão da Floresta é quase preto (o toon já escurecia): clareia antes da luz para a poça de luz aparecer
-	var m := ShaderMaterial.new()
-	var sh := Shader.new()
-	sh.code = "shader_type canvas_item;\nuniform float ganho = 2.2;\nvoid fragment(){ vec4 c = texture(TEXTURE, UV); COLOR = vec4(min(c.rgb * ganho * vec3(0.78, 1.0, 0.8), vec3(1.0)), c.a); }\n"
-	m.shader = sh
-	m.set_shader_parameter("ganho", _num("ganho_chao", 2.4))
-	piso.material = m
 	_mundo.add_child(piso)
 
 
+func _carregar_itens() -> void:
+	## Atlas de objetos de cenário. Padrão: arte nova do imagegen (prototipos/objetos: albedo + normal, escala final). --cenario_antigo:
+	## os enfeites regerados em Blender (sprites/floresta_enfeites_*), só albedo. Cada item é recortado UMA vez (com margem) e ganha a
+	## textura nítida, a borrada para a sombra do modo médio e, quando há, a CanvasTexture com normal map.
+	var raiz := ProjectSettings.globalize_path("res://")
+	var antigo := _a.has("cenario_antigo")
+	var info: Dictionary
+	var atlas: Image
+	var norm: Image = null
+	if antigo:
+		info = JSON.parse_string(FileAccess.get_file_as_string(raiz.path_join(PASTA).path_join("floresta_enfeites.json")))
+		atlas = _imagem("floresta_enfeites_albedo.png")
+	else:
+		info = JSON.parse_string(FileAccess.get_file_as_string(raiz.path_join(OBJ_DIR).path_join("cenario.json")))
+		atlas = Image.load_from_file(raiz.path_join(OBJ_DIR).path_join("enfeites.png"))
+		if _com_normal:
+			norm = Image.load_from_file(raiz.path_join(OBJ_DIR).path_join("enfeites_normal.png"))
+			norm.convert(Image.FORMAT_RGBA8)
+	atlas.convert(Image.FORMAT_RGBA8)
+	for it in info.itens:
+		var r := Rect2i(int(it.regiao[0]), int(it.regiao[1]), int(it.regiao[2]), int(it.regiao[3]))
+		var rec := Image.create(r.size.x + 2 * MARGEM, r.size.y + 2 * MARGEM, false, Image.FORMAT_RGBA8)
+		rec.blit_rect(atlas, r, Vector2i(MARGEM, MARGEM))
+		var tn := ImageTexture.create_from_image(rec)
+		var desenho: Texture2D = tn
+		if norm != null:
+			var rn := Image.create(rec.get_width(), rec.get_height(), false, Image.FORMAT_RGBA8)
+			rn.fill(Color(0.5, 0.5, 1.0, 0.0))
+			rn.blit_rect(norm, r, Vector2i(MARGEM, MARGEM))
+			var ct := CanvasTexture.new()
+			ct.diffuse_texture = tn
+			ct.normal_texture = ImageTexture.create_from_image(rn)
+			desenho = ct
+		_itens_cen[it.nome] = {
+			"tn": tn,
+			"tb": _borrar_folha(rec, rec.get_width(), rec.get_height()),
+			"desenho": desenho,
+			"w": r.size.x,
+			"h": r.size.y,
+			"pe": Vector2(float(it.pe[0]), float(it.pe[1])),
+			"nome": it.nome,
+		}
+
+
 func _item_cenario(nome: String) -> Dictionary:
-	## enfeite do atlas albedo SEM sombra assada (gerar_cenario_cara_nova.py): textura nítida e borrada recortadas uma vez só
 	if _itens_cen.is_empty():
-		var info: Dictionary = JSON.parse_string(
-			FileAccess.get_file_as_string(ProjectSettings.globalize_path("res://").path_join(PASTA).path_join("floresta_enfeites.json"))
-		)
-		var atlas := _imagem("floresta_enfeites_albedo.png")
-		for it in info.itens:
-			var r := Rect2i(int(it.regiao[0]), int(it.regiao[1]), int(it.regiao[2]), int(it.regiao[3]))
-			var rec := Image.create(r.size.x + 2 * MARGEM, r.size.y + 2 * MARGEM, false, Image.FORMAT_RGBA8)
-			rec.blit_rect(atlas, r, Vector2i(MARGEM, MARGEM))
-			_itens_cen[it.nome] = {
-				"tn": ImageTexture.create_from_image(rec),
-				"tb": _borrar_folha(rec, rec.get_width(), rec.get_height()),
-				"w": r.size.x,
-				"h": r.size.y,
-				"pe": Vector2(float(it.pe[0]), float(it.pe[1])),
-				"nome": it.nome,
-			}
+		_carregar_itens()
 	return _itens_cen[nome]
 
 
-func _sprite_cenario(it: Dictionary, pos: Vector2, esc: float, cor: Color, z: int, rmax: float, larg_blob: float) -> void:
-	## o objeto (nítido, só o albedo) + o dono da sombra dinâmica dele
+func _objeto(nome: String, pos: Vector2, esc := 1.0, cor := Color(-1, 0, 0), z := 0) -> void:
+	## um objeto de cenário (escala 1 = escala final do jogo) + o dono da sombra dinâmica dele. Quanto mais alto o objeto, menor o
+	## comprimento máximo da sombra (a árvore de 150 px não deita 200 px de sombra no chão).
+	var it := _item_cenario(nome)
 	var s := Sprite2D.new()
-	s.texture = it.tn
+	s.texture = it.desenho
 	s.centered = false
 	s.offset = Vector2(-it.pe.x - MARGEM, -it.pe.y - MARGEM)
 	s.scale = Vector2(esc, esc)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	s.position = pos
 	s.z_index = z
-	s.modulate = cor
+	var g := _num("obj", 1.7)  # a arte nova é bem escura: levanta antes da luz (o ambiente escuro faz o resto)
+	s.modulate = Color(g, g, g) if cor.r < 0.0 else cor
 	_mundo.add_child(s)
+	var h := float(it.h) * esc
+	var rmax := 0.5 if h > 100.0 else (0.9 if h > 50.0 else 1.6)
+	var largura := float(it.w) * esc * (0.35 if h > 100.0 else 0.6)
 	_arvores.append(
 		{
 			"raiz": s,
-			"alt": it.h * esc,
+			"alt": h,
 			"esc": esc,
 			"rmax": rmax,
 			"offset": s.offset,
@@ -553,38 +657,109 @@ func _sprite_cenario(it: Dictionary, pos: Vector2, esc: float, cor: Color, z: in
 			"espelha": false,
 			"tex_n": it.tn,
 			"tex_b": it.tb,
-			"larg_blob": larg_blob * esc,
+			"larg_blob": largura,
 			"chave": it.nome
 		}
 	)
 
 
-func _enfeites() -> void:
+func _cenario_novo() -> void:
+	## Composição parecida com a arte de entrada: círculo de ruína perto do centro (colunas, pilar, obelisco, lápides, muros), árvores
+	## grandes enquadrando as bordas, vegetação agrupada em volta, altar e crânio num canto, lanternas à direita e no fundo.
+	# árvores nas bordas (enquadram a cena; a y-sort deixa as de baixo na frente de quem passa)
+	for p in [
+		["arvore", Vector2(82, 190)],
+		["arvore", Vector2(884, 178)],
+		["arvore", Vector2(470, 78)],
+		["arvore_pantano", Vector2(62, 536)],
+		["arvore_pantano", Vector2(906, 538)],
+		["arvore_morta", Vector2(330, 92)],
+		["arvore_morta", Vector2(655, 98)],
+		["arvore_morta", Vector2(24, 352)],
+		["arvore_morta", Vector2(940, 360)]
+	]:
+		_objeto(p[0], p[1])
+	# círculo de ruína em volta do herói
+	for p in [
+		["obelisco", Vector2(482, 212)],
+		["coluna", Vector2(392, 226)],
+		["pilar", Vector2(578, 232)],
+		["lapide", Vector2(334, 252)],
+		["lapide", Vector2(630, 258)],
+		["muro", Vector2(268, 290)],
+		["muro", Vector2(704, 296)],
+		["runa", Vector2(447, 236)],
+		["coluna", Vector2(330, 340)],
+		["pedestal", Vector2(298, 312)],
+		["lapide", Vector2(652, 338)],
+		["coluna", Vector2(628, 352)],
+		["pilar", Vector2(412, 402)],
+		["coluna", Vector2(540, 408)],
+		["lapide", Vector2(480, 418)]
+	]:
+		_objeto(p[0], p[1])
+	# lanternas (também são fontes de luz) e o altar com o crânio no canto
+	_objeto("poste_lanterna", POS_POSTE)
+	_objeto("toro", POS_TORO)
+	_objeto("altar", POS_ALTAR)
+	_objeto("cranio", POS_ALTAR + Vector2(58, 18))
+	# vegetação e pedras agrupadas em volta
+	for p in [
+		["arbusto", Vector2(142, 214)],
+		["arbusto", Vector2(160, 524)],
+		["arbusto", Vector2(826, 206)],
+		["arbusto", Vector2(852, 520)],
+		["arbusto", Vector2(372, 118)],
+		["arbusto", Vector2(618, 128)],
+		["arbusto", Vector2(206, 292)],
+		["arbusto", Vector2(752, 468)],
+		["juncos", Vector2(190, 262)],
+		["juncos", Vector2(206, 276)],
+		["juncos", Vector2(742, 432)],
+		["juncos", Vector2(764, 446)],
+		["juncos", Vector2(790, 330)],
+		["raizes", Vector2(58, 206)],
+		["raizes", Vector2(924, 206)],
+		["raizes", Vector2(118, 498)],
+		["raizes", Vector2(884, 504)],
+		["cogumelos", Vector2(170, 312)],
+		["cogumelos", Vector2(808, 300)],
+		["cogumelos", Vector2(560, 486)],
+		["cogumelos", Vector2(304, 456)],
+		["toco", Vector2(222, 424)],
+		["tronco", Vector2(262, 446)],
+		["pedra", Vector2(120, 336)],
+		["rocha", Vector2(862, 410)],
+		["pedras", Vector2(566, 156)],
+		["pedras", Vector2(404, 468)],
+		["pedra", Vector2(700, 476)],
+		["rocha", Vector2(268, 206)],
+		["pedras", Vector2(770, 190)],
+		["toco", Vector2(700, 150)],
+		["tronco", Vector2(380, 520)]
+	]:
+		_objeto(p[0], p[1])
+
+
+func _cenario_antigo() -> void:
+	## --cenario_antigo: os enfeites regerados (sprites/floresta_enfeites_*) como estavam antes: 22 sorteados + 7 árvores ampliadas
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	# arbustos, pedras, troncos e cogumelos espalhados pelo mundo de 960x540; cada um joga sombra dinâmica, como os bichos
 	var chaves := ["arbusto", "pedra", "toco", "tronco", "cogumelos", "cranio"]
 	for i in 22:
-		var it := _item_cenario(chaves[rng.randi() % chaves.size()])
-		var pos := Vector2(rng.randf_range(30, LARG - 30), rng.randf_range(70, ALT - 20))
-		_sprite_cenario(it, pos, 1.0, Color(1.15, 1.15, 1.15), 0, 1.6, it.w * 0.6)
-
-
-func _primeiro_plano() -> void:
-	## árvores nas bordas (primeiro plano), grandes e escuras, cobrindo os cantos como na referência
-	var pontos := [
-		[Vector2(95, 120), 3.0, "arvore"],
-		[Vector2(30, 520), 3.0, "arvore"],
-		[Vector2(900, 100), 3.0, "arvore"],
-		[Vector2(950, 530), 3.0, "arvore"],
-		[Vector2(360, 40), 2.0, "arvore"],
-		[Vector2(610, 34), 2.0, "arvore_morta"],
-		[Vector2(430, 560), 2.0, "arvore_morta"],
-	]
+		var nome: String = chaves[rng.randi() % chaves.size()]
+		_objeto(nome, Vector2(rng.randf_range(30, LARG - 30), rng.randf_range(70, ALT - 20)), 1.0, Color(1.15, 1.15, 1.15))
 	var g := float(_a.get("arv", 1.5))
-	for p in pontos:
-		var it := _item_cenario(p[2])
-		_sprite_cenario(it, p[0], p[1], Color(g * 0.8, g, g * 0.85), 50, 0.8, it.w * 0.4)
+	for p in [
+		["arvore", Vector2(95, 120), 3.0],
+		["arvore", Vector2(30, 520), 3.0],
+		["arvore", Vector2(900, 100), 3.0],
+		["arvore", Vector2(950, 530), 3.0],
+		["arvore", Vector2(360, 40), 2.0],
+		["arvore_morta", Vector2(610, 34), 2.0],
+		["arvore_morta", Vector2(430, 560), 2.0]
+	]:
+		_objeto(p[0], p[1], p[2], Color(g * 0.8, g, g * 0.85), 50)
 
 
 func _elenco_grade(heroi_tipo: String) -> Dictionary:
@@ -594,8 +769,9 @@ func _elenco_grade(heroi_tipo: String) -> Dictionary:
 	_ator("inimigo_cao_ossos", Vector2(470, 300), 1, 0, true, false)
 	_ator("inimigo_lobo_sombrio", Vector2(560, 300), 1, 0, false, false)
 	for x in [["pedra", Vector2(410, 370)], ["arbusto", Vector2(490, 370)], ["toco", Vector2(560, 370)], ["tronco", Vector2(640, 330)]]:
-		_sprite_cenario(_item_cenario(x[0]), x[1], 1.0, Color(1.15, 1.15, 1.15), 0, 1.6, _item_cenario(x[0]).w * 0.6)
-	_sprite_cenario(_item_cenario("arvore"), Vector2(300, 330), 1.4, Color(1.2, 1.2, 1.2), 0, 0.8, _item_cenario("arvore").w * 0.4)
+		_objeto(x[0], x[1])
+	_objeto("arvore", Vector2(300, 330))
+	_objeto("coluna", Vector2(600, 270))
 	return heroi
 
 
@@ -719,9 +895,11 @@ func _luzes_cena(heroi: Dictionary) -> void:
 	var ht := _num("h_tocha", 45.0)
 	var hm := _num("h_magia", 60.0)
 	var hl := _num("h_lanterna", 60.0)
-	var et := _num("e_tocha", 2.5)
+	var et := _num("e_tocha", 2.7)
 	var em := _num("e_magia", 2.3)
-	# ordem importa para a medição (1 = só a tocha, 3 = + lanterna + magia roxa, 6 = todas)
+	var novo := not _a.has("cenario_antigo")
+	# ordem importa para a medição (1 = só a tocha, 3 = + lanterna + magia roxa, 6 = as do protótipo antigo, 7 = + vela do altar).
+	# "orbe" = onde o corpo brilhante aparece (a lanterna pendurada, a janela do toro); "pos" = o ponto no chão que a luz ilumina.
 	var defs := [
 		{"nome": "tocha", "cor": Color(1.0, 0.62, 0.26), "e": et, "r": 200.0, "h": ht, "pos": HEROI_POS + Vector2(-38, -32)},
 		{"nome": "lanterna_a", "cor": Color(1.0, 0.72, 0.3), "e": 2.0, "r": 210.0, "h": hl, "pos": Vector2(230, 130)},
@@ -729,8 +907,16 @@ func _luzes_cena(heroi: Dictionary) -> void:
 		{"nome": "magia_azul", "cor": Color(0.25, 0.65, 1.0), "e": em, "r": 170.0, "h": hm, "pos": Vector2(590, 380)},
 		{"nome": "lanterna_b", "cor": Color(1.0, 0.7, 0.28), "e": 1.9, "r": 190.0, "h": hl, "pos": Vector2(170, 400)},
 		{"nome": "aura_heroi", "cor": Color(0.45, 0.72, 1.0), "e": 1.2, "r": 110.0, "h": hm, "pos": HEROI_POS + Vector2(30, -8)},
+		{"nome": "altar_vela", "cor": Color(1.0, 0.68, 0.32), "e": 1.1, "r": 105.0, "h": 35.0, "pos": POS_ALTAR + Vector2(15, -4)},
 	]
-	var n := int(_a.get("luzes", 6))
+	if novo:
+		# as lanternas do cenário novo são luz quente FRACA e pequena (a luz some rápido), cada uma no seu objeto
+		defs[1].merge({"e": 1.3, "r": 125.0, "h": 40.0, "pos": POS_POSTE + Vector2(23, 2), "orbe": POS_POSTE + Vector2(23, -40)}, true)
+		defs[4].merge({"e": 1.2, "r": 125.0, "h": 35.0, "pos": POS_TORO + Vector2(0, -4), "orbe": POS_TORO + Vector2(0, -30)}, true)
+		defs[6]["orbe"] = POS_ALTAR + Vector2(15, -27)
+	else:
+		defs.remove_at(6)
+	var n := int(_a.get("luzes", defs.size()))
 	if _a.has("grade"):
 		var xy := str(_a.grade).split(",")
 		defs[0].pos = Vector2(float(xy[0]), float(xy[1]))
@@ -740,22 +926,118 @@ func _luzes_cena(heroi: Dictionary) -> void:
 	for i in mini(n, defs.size()):
 		var d: Dictionary = defs[i]
 		var l := _luz(d.cor, d.e, d.r / 128.0, d.h, d.pos)
-		# o corpo da luz (lanterna, orbe da magia) brilha sozinho: sprite aditivo na camada sem CanvasModulate
-		var orbe := Sprite2D.new()
-		orbe.texture = _tex_luz
-		var mat := CanvasItemMaterial.new()
-		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-		orbe.material = mat
-		var tam := 0.1 if str(d.nome).begins_with("magia") else 0.07
-		orbe.scale = Vector2(tam, tam)
-		orbe.modulate = d.cor.lerp(Color.WHITE, 0.4)
-		orbe.position = d.pos
-		if d.nome != "tocha" and d.nome != "aura_heroi":
+		var nome := str(d.nome)
+		# o corpo da luz brilha sozinho: brilho aditivo de queda suave na camada sem CanvasModulate (não é mais um disco chapado)
+		var orbe: Sprite2D = null
+		var part: CPUParticles2D = null
+		if nome != "tocha" and nome != "aura_heroi":
+			orbe = Sprite2D.new()
+			orbe.texture = _tex_brilho
+			var mat := CanvasItemMaterial.new()
+			mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+			orbe.material = mat
+			var tam := 0.55 if nome.begins_with("magia") else 0.2
+			orbe.scale = Vector2(tam, tam)
+			orbe.modulate = d.cor.lerp(Color.WHITE, 0.25)
+			orbe.position = d.get("orbe", d.pos)
 			_olhos_raiz.add_child(orbe)
-		else:
-			orbe.queue_free()
-			orbe = null
-		_luzes.append({"luz": l, "def": d, "orbe": orbe})
+			if nome.begins_with("magia"):
+				part = _faiscas(d.cor)
+				part.position = orbe.position
+		_luzes.append({"luz": l, "def": d, "orbe": orbe, "part": part, "fase": float(i) * 1.7})
+
+
+func _faiscas(cor: Color) -> CPUParticles2D:
+	## poucas partículas subindo do corpo da magia
+	var p := CPUParticles2D.new()
+	p.amount = 10
+	p.lifetime = 1.6
+	p.preprocess = 1.6
+	p.local_coords = false
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 7.0
+	p.direction = Vector2(0, -1)
+	p.spread = 35.0
+	p.gravity = Vector2.ZERO
+	p.initial_velocity_min = 8.0
+	p.initial_velocity_max = 20.0
+	p.color = cor.lerp(Color.WHITE, 0.3)
+	p.color_ramp = _rampa_alfa([0.0, 0.2, 1.0], [0.0, 1.0, 0.0])
+	p.texture = _tex_brilho
+	p.scale_amount_min = 0.02
+	p.scale_amount_max = 0.05
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	p.material = mat
+	_olhos_raiz.add_child(p)
+	_particulas.append({"p": p, "base": 10})
+	return p
+
+
+func _rampa_alfa(offs: Array, alfas: Array) -> Gradient:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array(offs)
+	var cs := PackedColorArray()
+	for a in alfas:
+		cs.append(Color(1, 1, 1, a))
+	g.colors = cs
+	return g
+
+
+func _atmosfera() -> void:
+	## vaga-lumes (pontos aditivos que piscam e vagam) e folhas vermelhas caindo devagar; CPUParticles2D baratas. O perfil "baixa" corta pela metade.
+	var f := CPUParticles2D.new()
+	f.amount = 34
+	f.lifetime = 7.0
+	f.preprocess = 7.0
+	f.local_coords = false
+	f.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	f.emission_rect_extents = Vector2(LARG / 2.0, ALT / 2.0)
+	f.position = Vector2(LARG / 2.0, ALT / 2.0)
+	f.direction = Vector2(0, -1)
+	f.spread = 180.0
+	f.gravity = Vector2(0, -2)
+	f.initial_velocity_min = 3.0
+	f.initial_velocity_max = 11.0
+	f.tangential_accel_min = -6.0
+	f.tangential_accel_max = 6.0
+	f.damping_min = 0.5
+	f.damping_max = 1.5
+	f.color = Color(0.78, 1.0, 0.42)
+	f.color_ramp = _rampa_alfa([0.0, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0], [0.0, 1.0, 0.25, 1.0, 0.3, 1.0, 0.6, 0.0])
+	f.texture = _tex_brilho
+	f.scale_amount_min = 0.03
+	f.scale_amount_max = 0.07
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	f.material = mat
+	_olhos_raiz.add_child(f)
+	_particulas.append({"p": f, "base": 34})
+	var fo := CPUParticles2D.new()
+	fo.amount = 22
+	fo.lifetime = 22.0
+	fo.preprocess = 22.0
+	fo.local_coords = false
+	fo.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	fo.emission_rect_extents = Vector2(LARG / 2.0 + 40.0, 4.0)
+	fo.position = Vector2(LARG / 2.0, -10.0)
+	fo.direction = Vector2(0.25, 1.0)
+	fo.spread = 14.0
+	fo.gravity = Vector2.ZERO
+	fo.initial_velocity_min = 16.0
+	fo.initial_velocity_max = 28.0
+	fo.angular_velocity_min = -90.0
+	fo.angular_velocity_max = 90.0
+	fo.tangential_accel_min = -4.0
+	fo.tangential_accel_max = 4.0
+	fo.color = Color(0.62, 0.16, 0.1, 0.85)
+	var im := Image.create(4, 3, false, Image.FORMAT_RGBA8)
+	im.fill(Color.WHITE)
+	fo.texture = ImageTexture.create_from_image(im)
+	fo.scale_amount_min = 0.8
+	fo.scale_amount_max = 1.4
+	_olhos_raiz.add_child(fo)
+	_particulas.append({"p": fo, "base": 22})
 
 
 func _vinheta() -> void:
@@ -764,7 +1046,7 @@ func _vinheta() -> void:
 	add_child(camada)
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
-	g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0.12), Color(0, 0, 0, 0.78)])
+	g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0.12), Color(0, 0, 0, 0.62)])
 	var t := GradientTexture2D.new()
 	t.gradient = g
 	t.fill = GradientTexture2D.FILL_RADIAL
@@ -887,6 +1169,9 @@ func _process(delta: float) -> void:
 		var luz: PointLight2D = l.luz
 		if d.nome == "tocha":
 			luz.energy = d.e + (0.0 if _a.has("grade") else 0.12 * sin(_t * 13.0) + 0.07 * sin(_t * 29.0 + 1.3))
+		elif str(d.nome).begins_with("lanterna") or d.nome == "altar_vela":
+			# tremor leve de lanterna e vela (muda pouco a energia: no máximo o alfa da sombra balança)
+			luz.energy = d.e * (1.0 + 0.06 * sin(_t * 9.0 + l.fase) + 0.035 * sin(_t * 23.0 + 2.0 * l.fase))
 		if _tocha_leva and (d.nome == "tocha" or d.nome == "aura_heroi"):
 			luz.position = _heroi.raiz.position + (d.pos - HEROI_POS)
 		elif d.nome == "magia_azul":
@@ -899,6 +1184,8 @@ func _process(delta: float) -> void:
 				luz.position = d.pos + Vector2(cos(_t * 0.9) * 60.0, sin(_t * 0.9) * 30.0)
 			if l.orbe != null:
 				l.orbe.position = luz.position
+			if l.part != null:
+				l.part.position = luz.position
 	var t_sombra := Time.get_ticks_usec()
 	if _sombra >= MEDIA:
 		_atualizar_luzes_dados()
@@ -909,8 +1196,9 @@ func _process(delta: float) -> void:
 			if (i + _quadros) % 2 == 1 and not _atores[i].heroi:
 				continue
 			_atualizar_sombra(_atores[i])
-		for a in _arvores:
-			_atualizar_sombra(a)
+		for i in _arvores.size():
+			if (i + _quadros) % 2 == 0:  # cenário parado: só a luz muda, metade por quadro
+				_atualizar_sombra(_arvores[i])
 	_us_sombra += Time.get_ticks_usec() - t_sombra
 	if _rotulo != null:
 		_rotulo_t += delta
