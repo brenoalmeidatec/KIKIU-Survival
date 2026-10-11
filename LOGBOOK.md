@@ -1127,3 +1127,34 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - Ideias para depois: vento nas copas e na grama, e variações de cor por região a partir dos 28 objetos.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-11 (noite, 2): v2 nasce na `main`
+
+**Feito:**
+- **#156:** protótipo mesclado. **#168:** a v1 fica pausada (regra no `CLAUDE.md`).
+- **#169:** `KIKIU.exe -- --prototipo`, `-- --v2` e `-- --cena=res://...` abrem a cena no lugar do menu. O protótipo agora roda no exe: os sprites foram para `projeto/prototipos/cara_nova/sprites` e tudo é lido por `res://`.
+- **#170:** colisão da v2 (`v2/colisao.gd`, com o campo `colisao` no `prototipos/objetos/cenario.json`).
+- **#171:** base jogável em `projeto/v2/`:
+  - mapa de 2880x1620 dirigido por `dados/v2_floresta.json`;
+  - câmera em pixel inteiro;
+  - herói com WASD e mira no mouse;
+  - 20 monstros vagando e perseguindo;
+  - colisão ligada;
+  - luz e sombra só na tela.
+  
+  O teste é `testes/v2_mundo`. Na Iris Xe, ~190 fps no santuário com sombra média.
+- **Atalhos:** no notebook, um só, "KIKIU v2" (baixa a Release e roda `-- --v2`). O Breno recebeu no #153 um prompt para criar o mesmo atalho.
+
+**Pendente:**
+- A colisão pode prender em quina côncava (o resolver só olha a posição).
+- `luz_relevo` e `escala_render` ainda não agem na v2.
+- O i5 não foi medido.
+
+**Próximo (leva 2 da v2):**
+- ataque no clique e combate com vida dos monstros;
+- horda de verdade (MultiMesh com sombra);
+- HUD novo;
+- minimapa;
+- entrada pelo menu do jogo.
+
+_Claude do Alisson (notebook)_
