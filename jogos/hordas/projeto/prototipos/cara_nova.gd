@@ -139,7 +139,7 @@ func _montar() -> void:
 	add_child(_mundo)
 	_chao()
 	_enfeites()
-	var heroi_tipo := "hazaki_samurai" if _a.has("samurai") else "hazaki"
+	var heroi_tipo := "hazaki" if _a.has("basico") else "hazaki_samurai"
 	var heroi := _ator(heroi_tipo, HEROI_POS, 5, 0, false, true)
 	var lista := _lista_monstros()
 	for m in lista:
@@ -174,7 +174,7 @@ func _chao() -> void:
 	# o chão da Floresta é quase preto (o toon já escurecia): clareia antes da luz para a poça de luz aparecer
 	var m := ShaderMaterial.new()
 	var sh := Shader.new()
-	sh.code = "shader_type canvas_item;\nuniform float ganho = 2.2;\nvoid fragment(){ vec4 c = texture(TEXTURE, UV); COLOR = vec4(min(c.rgb * ganho, vec3(1.0)), c.a); }\n"
+	sh.code = "shader_type canvas_item;\nuniform float ganho = 2.2;\nvoid fragment(){ vec4 c = texture(TEXTURE, UV); COLOR = vec4(min(c.rgb * ganho * vec3(0.78, 1.0, 0.8), vec3(1.0)), c.a); }\n"
 	m.shader = sh
 	m.set_shader_parameter("ganho", _num("ganho_chao", 2.4))
 	piso.material = m
@@ -209,9 +209,9 @@ func _primeiro_plano() -> void:
 	var arv := Rect2(0, 0, 61, 76)
 	var morta := Rect2(62, 0, 27, 49)
 	var pontos := [
-		[Vector2(70, 150), 4.0, arv], [Vector2(-10, 470), 4.0, arv], [Vector2(880, 120), 3.0, arv],
-		[Vector2(960, 420), 4.0, arv], [Vector2(330, 56), 2.0, arv], [Vector2(640, 40), 2.0, morta],
-		[Vector2(560, 570), 3.0, arv], [Vector2(190, 575), 2.0, morta],
+		[Vector2(95, 120), 3.0, arv], [Vector2(30, 520), 3.0, arv], [Vector2(900, 100), 3.0, arv],
+		[Vector2(950, 530), 3.0, arv], [Vector2(360, 40), 2.0, arv], [Vector2(610, 34), 2.0, morta],
+		[Vector2(430, 560), 2.0, morta],
 	]
 	for p in pontos:
 		var s := Sprite2D.new()
@@ -231,7 +231,7 @@ func _primeiro_plano() -> void:
 func _lista_monstros() -> Array:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
-	var n := int(_a.get("sprites", 20)) if _modo == "medir" else int(_num("monstros", 22))
+	var n := int(_a.get("sprites", 20)) if _modo == "medir" else int(_num("monstros", 25))
 	var tipos := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
 	var pesos := [4, 4, 3, 3, 1]
 	var lista: Array = []
@@ -274,7 +274,7 @@ func _ator(nome: String, pos: Vector2, linha: int, coluna: int, espelha: bool, h
 	_mundo.add_child(raiz)
 	var sombra := Sprite2D.new()
 	sombra.texture = _tex_sombra
-	sombra.scale = Vector2(t.w / 24.0, t.w / 24.0 * 0.8)
+	sombra.scale = Vector2(t.w * 0.75 / 64.0, t.w * 0.75 / 64.0 * 0.9)
 	sombra.light_mask = 0
 	sombra.z_index = -1
 	sombra.position = Vector2(0, -1)
@@ -334,9 +334,9 @@ func _luz(cor: Color, energia: float, escala: float, altura: float, pos: Vector2
 
 
 func _luzes_cena(heroi: Dictionary) -> void:
-	var ht := _num("h_tocha", 22.0)
-	var hm := _num("h_magia", 26.0)
-	var hl := _num("h_lanterna", 26.0)
+	var ht := _num("h_tocha", 45.0)
+	var hm := _num("h_magia", 60.0)
+	var hl := _num("h_lanterna", 60.0)
 	var et := _num("e_tocha", 2.5)
 	var em := _num("e_magia", 2.3)
 	# ordem importa para a medição (1 = só a tocha, 3 = + lanterna + magia roxa, 6 = todas)
@@ -352,7 +352,22 @@ func _luzes_cena(heroi: Dictionary) -> void:
 	for i in mini(n, defs.size()):
 		var d: Dictionary = defs[i]
 		var l := _luz(d.cor, d.e, d.r / 128.0, d.h, d.pos)
-		_luzes.append({"luz": l, "def": d})
+		# o corpo da luz (lanterna, orbe da magia) brilha sozinho: sprite aditivo na camada sem CanvasModulate
+		var orbe := Sprite2D.new()
+		orbe.texture = _tex_luz
+		var mat := CanvasItemMaterial.new()
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		orbe.material = mat
+		var tam := 0.1 if str(d.nome).begins_with("magia") else 0.07
+		orbe.scale = Vector2(tam, tam)
+		orbe.modulate = d.cor.lerp(Color.WHITE, 0.4)
+		orbe.position = d.pos
+		if d.nome != "tocha" and d.nome != "aura_heroi":
+			_olhos_raiz.add_child(orbe)
+		else:
+			orbe.queue_free()
+			orbe = null
+		_luzes.append({"luz": l, "def": d, "orbe": orbe})
 
 
 func _vinheta() -> void:
@@ -400,6 +415,8 @@ func _process(delta: float) -> void:
 			luz.energy = d.e + 0.12 * sin(_t * 13.0) + 0.07 * sin(_t * 29.0 + 1.3)
 		elif d.nome == "magia_azul":
 			luz.position = d.pos + Vector2(cos(_t * 0.9) * 60.0, sin(_t * 0.9) * 30.0)
+			if l.orbe != null:
+				l.orbe.position = luz.position
 	if _modo == "medir":
 		_medir()
 	elif _proximo < _seq.size() and _t >= float(_seq[_proximo]):
