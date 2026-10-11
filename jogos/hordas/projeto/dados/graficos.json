@@ -1,0 +1,38 @@
+{
+ "_ajuda": "Aba Gráficos das Opções (#150). Cada item de \"opcoes\" vira um controle da tela: tipo slider (min, max, passo; \"unidade\":\"%\" mostra 0 a 100), menu (valores e rotulos) ou sim_nao. \"peso\" (leve, medio, pesado) é o custo de cada opção, para a linha de ajuda. Em \"perfis\", cada perfil dá o valor de TODAS as opções: baixo (i5-3470 do PC do trabalho, prioriza fps), medio (notebook, Iris Xe), alto (3060). Menus de número (lod_monstros, calculo_monstros, escala_render, limite_fps) entregam o próprio número; os demais entregam o texto de \"valores\". Código: Config.g(chave), Config.g_definir(chave, valor) (vira personalizado), Config.g_perfil(), Config.g_aplicar_perfil(nome), Config.g_detectar(), Config.g_opcoes(). Mapas de níveis (partículas por efeito, escuro/halo) ficam em scripts/hordas/config.gd.",
+ "opcoes": [
+  {"chave": "max_inimigos", "secao": "cpu", "nome": "Máximo de inimigos vivos", "tipo": "slider", "min": 150, "max": 500, "passo": 50, "ajuda": "Quantos monstros podem estar vivos ao mesmo tempo. A fase pode ter teto menor (vale o menor).", "peso": "pesado"},
+  {"chave": "particulas_sim", "secao": "cpu", "nome": "Partículas simuladas", "tipo": "menu", "valores": ["poucas", "medias", "muitas"], "rotulos": ["Poucas", "Médias", "Muitas"], "ajuda": "Partículas de morte, fogo, gelo, raio e poeira. Poucas também tira ratos, morcegos e corvos do chão.", "peso": "medio"},
+  {"chave": "calculo_monstros", "secao": "cpu", "nome": "Cálculo dos monstros", "tipo": "menu", "valores": [0.5, 1.0, 2.0], "rotulos": ["Frequente", "Normal", "Espaçado"], "ajuda": "Com que frequência cada monstro recalcula a separação dos vizinhos (não empilhar). Espaçado gasta menos CPU e o empurrão chega mais devagar.", "peso": "medio"},
+  {"chave": "lod_monstros", "secao": "cpu", "nome": "Detalhe do movimento longe da câmera", "tipo": "menu", "valores": [1.0, 0.7, 0.4], "rotulos": ["Alto", "Médio", "Baixo"], "ajuda": "Quanto do quique e da inclinação dos monstros fora da tela é calculado.", "peso": "leve"},
+  {"chave": "restos_chao", "secao": "cpu", "nome": "Tempo dos restos no chão", "tipo": "slider", "min": 3, "max": 15, "passo": 1, "unidade": "s", "ajuda": "Segundos até o sangue e as manchas de morte sumirem do chão.", "peso": "leve"},
+
+  {"chave": "luz_relevo", "secao": "gpu", "nome": "Luz com relevo", "tipo": "menu", "valores": ["desligada", "so_heroi", "tudo"], "rotulos": ["Desligada", "Só herói", "Tudo"], "ajuda": "Luz com relevo nos personagens e no cenário. Por enquanto só guarda o valor; a luz entra na Etapa 3.", "peso": "pesado"},
+  {"chave": "sombras", "secao": "gpu", "nome": "Sombras projetadas", "tipo": "menu", "valores": ["contato", "projetadas"], "rotulos": ["Só o contato no pé", "Projetadas"], "ajuda": "Silhueta inclinada embaixo de cada monstro, além da mancha no pé.", "peso": "medio"},
+  {"chave": "brilhos_halos", "secao": "gpu", "nome": "Brilhos e halos", "tipo": "slider", "min": 0, "max": 100, "passo": 25, "unidade": "%", "ajuda": "Quantidade de halos de luz (armas, impactos, fase de horror). Também define quantas luzes a fase de horror considera.", "peso": "medio"},
+  {"chave": "nevoa", "secao": "gpu", "nome": "Névoa", "tipo": "sim_nao", "ajuda": "Manchas grandes de névoa no chão. São caras para desenhar: custam bastante com a tela cheia.", "peso": "pesado"},
+  {"chave": "vinheta", "secao": "gpu", "nome": "Vinheta (bordas escuras)", "tipo": "sim_nao", "ajuda": "Bordas escuras da tela. Só aparece se a opção Vinheta também estiver ligada na aba de leitura.", "peso": "leve"},
+  {"chave": "efeitos_armas", "secao": "gpu", "nome": "Efeitos das armas que crescem", "tipo": "slider", "min": 0, "max": 100, "passo": 10, "unidade": "%", "ajuda": "Quanto dos efeitos extras das armas que crescem fica ligado (faíscas, halo, imagens, brasas, arco extra).", "peso": "medio"},
+  {"chave": "tremor_clarao", "secao": "gpu", "nome": "Tremor e clarões", "tipo": "slider", "min": 0, "max": 100, "passo": 25, "unidade": "%", "ajuda": "Força do tremor da câmera e dos clarões de golpes fortes. Vale junto com a opção Tremer a tela.", "peso": "leve"},
+  {"chave": "escala_render", "secao": "gpu", "nome": "Escala de renderização", "tipo": "menu", "valores": [50, 75, 100], "rotulos": ["50%", "75%", "100%"], "ajuda": "Resolução de render (50, 75 ou 100%). Ainda não age: falta o SubViewport do jogo. A opção já fica salva.", "peso": "pesado"},
+  {"chave": "limite_fps", "secao": "gpu", "nome": "Limite de FPS", "tipo": "menu", "valores": [30, 60, 120, 144, 0], "rotulos": ["30", "60", "120", "144", "Sem limite"], "ajuda": "Teto de quadros por segundo. Sem limite deixa a máquina trabalhar até o máximo.", "peso": "leve"},
+  {"chave": "vsync", "secao": "gpu", "nome": "V-Sync", "tipo": "sim_nao", "ajuda": "Sincroniza os quadros com a tela: some o rasgo da imagem, mas pode limitar o fps ao da tela e somar um pouco de atraso.", "peso": "leve"}
+ ],
+ "perfis": {
+  "baixo": {
+   "max_inimigos": 250, "particulas_sim": "poucas", "calculo_monstros": 2.0, "lod_monstros": 0.4, "restos_chao": 4,
+   "luz_relevo": "desligada", "sombras": "contato", "brilhos_halos": 25, "nevoa": false, "vinheta": false,
+   "efeitos_armas": 30, "tremor_clarao": 100, "escala_render": 75, "limite_fps": 60, "vsync": false
+  },
+  "medio": {
+   "max_inimigos": 350, "particulas_sim": "medias", "calculo_monstros": 1.0, "lod_monstros": 0.7, "restos_chao": 9,
+   "luz_relevo": "so_heroi", "sombras": "projetadas", "brilhos_halos": 50, "nevoa": true, "vinheta": true,
+   "efeitos_armas": 60, "tremor_clarao": 100, "escala_render": 100, "limite_fps": 0, "vsync": true
+  },
+  "alto": {
+   "max_inimigos": 500, "particulas_sim": "muitas", "calculo_monstros": 1.0, "lod_monstros": 1.0, "restos_chao": 9,
+   "luz_relevo": "tudo", "sombras": "projetadas", "brilhos_halos": 100, "nevoa": true, "vinheta": true,
+   "efeitos_armas": 100, "tremor_clarao": 100, "escala_render": 100, "limite_fps": 0, "vsync": true
+  }
+ }
+}

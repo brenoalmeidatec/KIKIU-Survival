@@ -103,7 +103,7 @@ func _ready() -> void:
 	ef.explodir(Vector2.ZERO, Color.WHITE, 6)
 	ef.faisca(Vector2.ZERO, Vector2.ZERO, Color.WHITE, 3)
 	ok(ef.particulas.is_empty() and ef.faiscas.is_empty(), "partículas Nenhuma: nada nasce")
-	ok(is_zero_approx(float(Config.q("elem_part"))) and is_zero_approx(float(Config.q("amb_particulas"))), "Nenhuma zera as partículas do ambiente e dos elementos")
+	ok(is_zero_approx(Config.fator_particulas("elem_part")) and is_zero_approx(Config.fator_particulas("amb_particulas")), "Nenhuma zera as partículas do ambiente e dos elementos")
 	Config.temporario("particulas", 0.5)
 	ef.explodir(Vector2.ZERO, Color.WHITE, 6)
 	ok(ef.particulas.size() == 3, "partículas Poucas: metade (%d)" % ef.particulas.size())

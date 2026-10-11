@@ -52,10 +52,10 @@ func configurar(c, a: Node) -> void:
 		return
 	var r := RandomNumberGenerator.new()
 	r.seed = hash("amb|" + c.nome)
-	var mult := float(Config.q("amb_particulas"))   # perfil de qualidade: menos partículas; "baixa" também tira a névoa (as manchas grandes custam mais)
-	_bichos = bool(Config.q("amb_bichos"))
+	var mult := Config.fator_particulas("amb_particulas")   # perfil de qualidade: menos partículas; "baixa" também tira a névoa (as manchas grandes custam mais)
+	_bichos = Config.g("particulas_sim") != "poucas"
 	for e in c.cfg.get("particulas", []):
-		if str(e.tipo) == "nevoa" and not bool(Config.q("amb_nevoa")):
+		if str(e.tipo) == "nevoa" and not bool(Config.g("nevoa")):
 			continue
 		var cor: Array = e.get("cor", [1, 1, 1, 0.4])
 		for i in ceili(float(e.get("n", 0)) * mult):

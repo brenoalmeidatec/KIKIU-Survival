@@ -1,10 +1,10 @@
 extends Node
 ## Bench de desempenho determinístico (não é teste de regra: não falha, só mede). Com janela e SEM V-Sync.
-## Roda: godot --path jogos/hordas/projeto res://testes/bench_horda.tscn -- --qualidade=alta|media|baixa --n=500 --seg=12
+## Roda: godot --path jogos/hordas/projeto res://testes/bench_horda.tscn -- --perfil=alto|medio|baixo --n=500 --seg=12
 ##   opções: --aquecer=3 (s ignorados) --fase=4 --pacifico (sem armas: ninguém morre, a conta de bichos não muda)
 ## O herói anda num quadrado (2 s por lado) e é invulnerável; os bichos nascem em posições de uma semente fixa (seed 7),
 ## o diretor repõe até o limite de 500 vivos. Imprime fps médio, tempo por quadro (mediana, p95, pior) e o custo por sistema (perf.gd).
-## Linha final: BENCH qualidade=... n=... fps=... ms_med=... ms_p95=... (use a mediana de várias rodadas: o fps de uma rodada varia ~5%).
+## Linha final: BENCH perfil=... n=... fps=... ms_med=... ms_p95=... (use a mediana de várias rodadas: o fps de uma rodada varia ~5%).
 const Perf := preload("res://scripts/hordas/perf.gd")
 var _args := {}
 
@@ -19,7 +19,7 @@ func _ready() -> void:
 	seed(7)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
-	Config.temporario("qualidade", str(_args.get("qualidade", "alta")))
+	Config.g_perfil_temporario(str(_args.get("perfil", "alto")))
 	Config.temporario("pausar_fora", false)   # sem foco (outra janela na frente) a partida pausaria e a rodada ficaria inválida (logica < 1)
 	var m = load("res://main.tscn").instantiate()
 	m._args["fase"] = str(_args.get("fase", 4))
@@ -83,6 +83,6 @@ func _ready() -> void:
 	var p95 := tempos[int(tempos.size() * 0.95)]
 	var fps := 1000.0 * tempos.size() / soma
 	print("  perf_us: ", Perf.relatorio())
-	print("BENCH qualidade=%s n=%d cpus=%d vivos_ini=%d vivos_fim=%d quadros=%d logica=%.2f chamadas=%d prims=%d proc_ms=%.2f fps=%.1f ms_med=%.2f ms_p95=%.2f ms_max=%.1f" % [
-		str(_args.get("qualidade", "alta")), n, OS.get_processor_count(), vivos_ini, a.inimigos.vivos(), tempos.size(), logica, chamadas / tempos.size(), prims / tempos.size(), proc / tempos.size(), fps, med, p95, tempos[-1]])
+	print("BENCH perfil=%s n=%d cpus=%d vivos_ini=%d vivos_fim=%d quadros=%d logica=%.2f chamadas=%d prims=%d proc_ms=%.2f fps=%.1f ms_med=%.2f ms_p95=%.2f ms_max=%.1f" % [
+		str(_args.get("perfil", "alto")), n, OS.get_processor_count(), vivos_ini, a.inimigos.vivos(), tempos.size(), logica, chamadas / tempos.size(), prims / tempos.size(), proc / tempos.size(), fps, med, p95, tempos[-1]])
 	get_tree().quit()

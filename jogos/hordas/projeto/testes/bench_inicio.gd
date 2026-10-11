@@ -1,6 +1,6 @@
 extends Node
 ## Bench dos primeiros quadros (não é teste de regra: só mede). Janela real, sem V-Sync.
-## Roda: godot --path jogos/hordas/projeto res://testes/bench_inicio.tscn -- [--quadros=120] [--fase=1] [--qualidade=alta]
+## Roda: godot --path jogos/hordas/projeto res://testes/bench_inicio.tscn -- [--quadros=120] [--fase=1] [--perfil=alto]
 ## Mede o tempo de cada quadro (ms) em 3 momentos: abrir o título, trocar de tela (título -> Meus heróis) e começar uma partida.
 ## Imprime por momento: o custo síncrono da chamada, os 12 primeiros quadros "total(script)" (script = todos os _process,
 ## o resto é desenho + troca de buffer + driver), o pior quadro, a mediana do fim, quantos quadros até estabilizar
@@ -21,7 +21,7 @@ func _ready() -> void:
 	var n := int(_args.get("quadros", 120))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
-	Config.temporario("qualidade", str(_args.get("qualidade", "alta")))
+	Config.g_perfil_temporario(str(_args.get("perfil", "alto")))
 	Config.temporario("pausar_fora", false)   # sem foco (outra janela na frente) a partida pausaria e a rodada ficaria inválida (logica < 1)
 	var t0 := Time.get_ticks_usec()
 	var m = load("res://main.tscn").instantiate()

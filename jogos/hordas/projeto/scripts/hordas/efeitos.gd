@@ -35,7 +35,7 @@ var _brilho := Node2D.new()  # filho aditivo, desenhado ATRÁS dos números (sho
 var _impactos_quadro := 0
 
 
-var _max_luz := MAX_LUZES        # tetos pelo perfil de qualidade (dados/qualidade.json): alta = as constantes de cima
+var _max_luz := MAX_LUZES        # tetos pelo perfil da aba Gráficos (dados/graficos.json): alto = as constantes de cima
 var _imp_quadro := IMPACTOS_QUADRO
 var _max_fai := MAX_FAISCAS
 var _max_part := MAX_PARTICULAS
@@ -44,10 +44,10 @@ var _k_part := 1.0
 
 
 func _ready() -> void:
-	_max_luz = maxi(8, roundi(MAX_LUZES * float(Config.q("efe_luzes"))))
-	_imp_quadro = maxi(1, roundi(IMPACTOS_QUADRO * float(Config.q("efe_impactos"))))
-	_k_fai = float(Config.q("efe_faiscas"))
-	_k_part = float(Config.q("efe_particulas"))
+	_max_luz = maxi(8, roundi(MAX_LUZES * Config.fator_brilho()))
+	_imp_quadro = maxi(1, roundi(IMPACTOS_QUADRO * Config.fator_particulas("efe_impactos")))
+	_k_fai = Config.fator_particulas("efe_faiscas")
+	_k_part = Config.fator_particulas("efe_particulas")
 	_max_fai = maxi(20, roundi(MAX_FAISCAS * _k_fai))
 	_max_part = maxi(40, roundi(MAX_PARTICULAS * _k_part))
 	var m := CanvasItemMaterial.new()
