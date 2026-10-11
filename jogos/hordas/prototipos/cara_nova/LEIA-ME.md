@@ -15,7 +15,10 @@ Protótipo **isolado** (nada de `main.gd`, `arena.gd`, `assets/` do jogo ou `dad
 | `sprites/` | Saída: por sprite, `_albedo.png`, `_normal.png`, `_emissao.png` e `.json` (tamanho do quadro, linhas e colunas). |
 | `prever.sh` | Monta a prévia albedo / normal / emissão de uma folha (para olhar). |
 | `medir_fps.sh` e `fps.txt` | Medição de fps na Iris Xe (3 repetições). |
-| `../../projeto/prototipos/cara_nova.tscn` + `.gd` | A cena de teste em 960x540 (só para o print e a medição). |
+| `gerar_cenario_cara_nova.py` | Gerador (Blender 4.5) do chão e dos enfeites da Floresta **sem sombra assada** (ver "Sombras em tempo real"). |
+| `medir_sombras.sh` e `fps_sombras.txt` | Medição de fps por modo de sombra. |
+| `../../projeto/prototipos/cara_nova.tscn` + `.gd` | A cena de teste em 960x540 (janela livre, prints do viewport e medição). |
+| `../../projeto/prototipos/teste_sombra_cara_nova.gd` | Teste automático da direção da sombra (8 posições de luz, varredura sem pulo). |
 
 Para ver: `godot --path jogos/hordas/projeto res://prototipos/cara_nova.tscn` (janela real). Opções após `--`: `--fotos=PASTA --seq=1.2,2.6` (prints do viewport), `--medir --luzes=3 --sprites=250`, `--sem_normal` (compara), `--basico` (herói sem a armadura vermelha), `--amb=1c2a24`, `--h_tocha=45`, `--chao=1`.
 
@@ -69,9 +72,73 @@ O `mundo.md` calcula "herói 16,7% da tela" pelo **quadro** de 60 px, mas a arte
 - Quem tem material escuro (cavaleiro oco de aço, aranha) vira silhueta com borda iluminada fora das poças de luz. É o efeito pretendido, mas na horda isso pede mais luz ou albedo mais claro por família.
 - Luz com normal é **mais escura** que sem normal (N·L = altura/distância na face plana). Compensei com alturas de luz de 45 a 60 px (a 22 a 26 os bichos fora da poça ficavam quase pretos) e energia mais alta. Altura é o botão entre "contraste forte" e "legível".
 - Perto da referência no **clima** (poças de luz colorida sobre fundo escuro, bichos acesos de um lado) e longe em **densidade** (a referência tem 60+ bichos, vegetação verde saturada, efeitos de magia, ruínas e portal) e em **cor do cenário**. O chão da Floresta de hoje é quase preto e marrom, e o enfeite é esparso. Isso é V3 (cenário) e V5 (efeitos), não do gerador de sprites.
-- Sem sombra projetada (sem `LightOccluder2D`, como recomendado).
+- A sombra projetada veio depois (seção "Sombras em tempo real"), sem `LightOccluder2D`, como recomendado.
 
-## Fps (Intel Iris Xe, notebook, janela 1280x720 com viewport 960x540, sem V-Sync)
+## Sombras em tempo real (silhueta projetada no chão, seguindo a luz)
+
+Pedido do Alisson depois de aprovar o protótipo. A câmera é de 45 graus, então a sombra certa é a **silhueta do próprio sprite deitada no chão**, presa aos pés e apontando para longe da luz (não é `LightOccluder2D`, que faz raio infinito e fica errado nessa câmera).
+
+![baixa, média e alta lado a lado](../../prints/prototipo_cara_nova_sombras_modos.png)
+
+**Como é feita (em `cara_nova.gd`):**
+- Um `Sprite2D` de sombra por ator (herói, monstros **e cenário**: árvores, pedras, arbustos, tocos, troncos, cogumelos, crânio) com a mesma textura e o mesmo quadro do albedo, usando só o alfa. Preto, `unshaded`, `light_mask = 0`, numa camada abaixo de todos (`z_index -50`, agrupada por textura para não quebrar lote). O quadro e o `flip_h` acompanham a animação e o espelhamento do sprite.
+- **Cisalhamento a partir dos pés, nunca rotação:** `x_axis = (esc, 0)`, `y_axis = -vec * esc`, `origin = pés`, onde `vec = d * L / H` (d = direção da sombra no chão, com o y achatado por sen 45; L = comprimento; H = altura do sprite). Luz ao norte espelha a silhueta na vertical (certo: a sombra vem para a câmera); sem escala negativa (o espelho dos monstros é o `flip_h`).
+- **Comprimento:** `L = H * dist / max(h_luz * 2,2 - H/2, 8)`, limitado a [0,08 H, 1,5 H] (cenário 1,6 H; árvore 0,8 H). Luz baixa e longe = sombra longa; luz em cima vira mancha. `h_luz` é a altura `h_*` da luz (espaço do normal map); o fator 2,2 converte para a altura que ela rende na tela a 45 graus.
+- **Luz:** o peso de cada luz sobre o ator é `energia x atenuação` (mesma curva do gradiente da `PointLight2D`, dentro do alcance). Fora de qualquer luz só sobra o blob fraco.
+- **Sem pulo:** o vetor e o alfa andam até o alvo com `1 - exp(-12 dt)` (o tremor da tocha mexe no máximo no alfa). No modo alto cada sombra segue a sua luz enquanto ela estiver entre as 2 maiores (a luz nova só ocupa o slot livre).
+- **Fade:** o alfa cai do pé para a ponta (shader, `up = -VERTEX.y`) e com a distância da luz.
+
+| Modo | O que desenha |
+|---|---|
+| **baixa** (tecla 1) | blob oval fixo nos pés, sem direção, quase de graça |
+| **média** (2) | **uma** sombra, soma ponderada dos vetores de todas as luzes (a direção gira com os pesos, luzes opostas se anulam em mancha), **borrada**: o alfa das folhas é borrado **uma vez no carregamento** (2 passes de caixa 3x3 em GDScript, ~0,25 s no total), então em tempo de execução é só outra textura. Atualiza metade dos atores por quadro (30 Hz, o herói sempre) |
+| **alta** (3) | silhueta **nítida**, até **2 luzes** (duas sombras, cada uma a 70% do alfa), mais sombra de contato escura e pequena nos pés; também atualiza metade dos atores por quadro |
+| nenhuma (0) | só para comparar (a medição "nenhuma" é o custo do resto da cena) |
+
+Fora de qualquer luz, nos três modos, fica um blob fraco sem direção.
+
+### Para testar ao vivo
+Sem `--fotos` e sem `--medir` a cena **fica aberta** (modo livre); `--seq=...` é aceito e ignorado:
+`godot --path <projeto> res://prototipos/cara_nova.tscn -- --seq=999999`
+Teclas: **1, 2, 3** trocam baixo, médio e alto (0 desliga), com rótulo no canto (modo e fps). **WASD** anda com o herói (as luzes ficam no mundo; a tocha e a aura só vão junto com ele se apertar **T**). **L** liga e desliga a luz azul seguindo o mouse. Argumentos: `--sombra=baixa|media|alta|nenhuma` (padrão `media`), `--sem_vsync` (solta o fps no rótulo), `--rotulo` (rótulo também nas fotos), `--azul=x,y` (fixa a luz azul), `--grade=x,y` (cena de teste com uma luz só nesse ponto, ver abaixo), `--piso_antigo`.
+
+### Sombra assada no cenário (achado e correção)
+O Alisson viu a sombra do cenário **parada numa direção**. Confirmado com evidência, e a causa era arte, não código:
+1. **`piso.png` (o chão):** é renderizado no Cycles com um sol rasante **com sombra**. Cada tufo de capim, cogumelo, pedrinha e galho caído leva uma sombra escura para sudeste, presa ao pixel (visível no `piso.png` com o brilho aumentado).
+2. **`enfeites.png` (árvores, pedras, arbustos...):** o atlas tem alfa só 0 ou 255 (nenhuma sombra projetada solta), mas foi renderizado com `material_toon` em 3 faixas e luz fixa de cima e da esquerda: o lado escuro de cada objeto está **assado** sempre do mesmo lado.
+
+Correção: `gerar_cenario_cara_nova.py` (Blender 4.5) reaproveita os modelos 3D de `fonte_arte/modelos3d/cenarios.py` (lido por `exec` sem o `main()`, nada de `assets/` é regravado) e gera `sprites/floresta_piso.png` (mesma semente e mesmos objetos do piso de hoje, com o **sol sem sombra projetada**) e `sprites/floresta_enfeites_albedo.png` + `.json` (cor chapada, câmera a 45 graus, como os monstros). O protótipo usa os dois; `--piso_antigo` volta ao chão de hoje para comparar. A sombra do cenário agora é a mesma dos bichos: a silhueta (nítida e borrada) é recortada **uma vez** e só o transform é recalculado por quadro.
+
+![luz azul à esquerda e à direita: a sombra do cenário troca de lado](../../prints/prototipo_cara_nova_sombras_cenario_luz.png)
+
+Limitação honesta: a árvore de primeiro plano (escala 2 a 3) cobre boa parte da própria sombra, então ela aparece mais como mancha ao lado do tronco do que como silhueta inteira.
+
+### Prova de direção (grade 3x3 e teste automático)
+Uma luz em 8 posições em volta do herói, de um cão **espelhado**, de um lobo e do cenário (pedra, arbusto, toco, tronco, árvore). A ponta da sombra fica sempre do lado oposto ao da luz, os pés não saem do lugar, e nenhuma silhueta aparece de cabeça para baixo sem motivo (só espelhada quando a luz está ao norte, o que é certo fisicamente).
+
+![grade 3x3, modo alto](../../prints/prototipo_cara_nova_sombras_grade_alta.png)
+![grade 3x3, modo médio](../../prints/prototipo_cara_nova_sombras_grade_media.png)
+
+Teste automático (`projeto/prototipos/teste_sombra_cara_nova.gd`, ~1,2 mil checagens, sem Blender nem janela):
+`godot --headless --path jogos/hordas/projeto -s res://prototipos/teste_sombra_cara_nova.gd`
+Para cada ator (herói, espelhado, não espelhado e 8 itens de cenário) e nos modos médio e alto, com a luz em N, NE, L, SE, S, SO, O, NO: origem do transform = pés, `x_axis = (esc, 0)`, `flip_h` igual ao do sprite, ponta do lado oposto ao da luz, espelhado na vertical só com a luz ao norte, espessura nunca abaixo de `Y_MIN`. E uma varredura de 2 voltas da luz (60 quadros por s): no máximo 4 espelhamentos e, fora deles, nenhum quadro move a ponta mais que 0,12 da altura (medido: no máximo 0,6 px no herói).
+
+**O que ainda estala:** quando a luz cruza exatamente a linha leste-oeste a silhueta troca de espelhada para em pé (um sprite visto de perfil vira um fio: é a física do billboard). Para a sombra não virar uma linha ela tem espessura mínima (`Y_MIN` = 0,2 H), então nesse instante a ponta salta uns 0,4 H uma vez; o alfa cai para 45% nessa faixa para quase não aparecer.
+
+### Fps por modo de sombra (Intel Iris Xe, notebook, 6 luzes, sem V-Sync)
+
+Mediana de 3 rodadas de 6 s intercaladas (mínimo a máximo entre parênteses), `medir_sombras.sh`. "26 sprites" = herói + 25 monstros; "251" = herói + 250. Mais 29 sprites de cenário (22 enfeites e 7 árvores) com sombra em todos os casos. Carga de fundo da máquina durante a medição: 10 a 25% de CPU (outros agentes e o navegador; não consegui pará-los), então os números têm ruído de até uns 25% e valem como ordem de grandeza.
+
+| Modo | 26 sprites | 251 sprites |
+|---|---|---|
+| nenhuma | 948 (758 a 1055) | 458 (443 a 510) |
+| baixa (blob) | 857 (799 a 899) | 449 (381 a 492) |
+| média (1 sombra borrada) | 650 (636 a 753) | 265 (243 a 273) |
+| alta (até 2 sombras + contato) | 584 (531 a 614) | 199 (192 a 223) |
+
+O custo de script das sombras (`SCRIPT_SOMBRA` na saída da medição) com 251 sprites é de ~1,2 ms por quadro na média e ~1,8 ms na alta nesta máquina; o resto da diferença é desenho (cada ator vira até 3 itens a mais). **Não medi no i5-3470** (o Breno precisa conferir com o F3): o custo de script deve pesar mais numa CPU de 3ª geração, então com a horda toda em tela a média é a candidata a padrão e a alta fica para máquina melhor. A horda do jogo real é MultiMesh, então lá a sombra teria de ser outro MultiMesh só da silhueta (o protótipo usa `Sprite2D`, como o resto).
+
+## Fps do protótipo sem sombra projetada (Intel Iris Xe, notebook, janela 1280x720 com viewport 960x540, sem V-Sync)
 
 Mediana de 3 rodadas de 6 s (mínimo a máximo entre parênteses). "Sprites" = herói + N monstros, cada um com sombra de contato; os olhos são outro sprite aditivo. Cena completa: chão, enfeites, árvores, vinheta, `CanvasModulate`.
 
