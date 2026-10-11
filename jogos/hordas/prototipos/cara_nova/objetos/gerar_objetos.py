@@ -363,9 +363,13 @@ COLISAO_FRACAO_BASE = 0.10   # faixa de base = fracao da altura do sprite...
 COLISAO_MIN_LINHAS = 4       # ...limitada a este intervalo de linhas
 COLISAO_MAX_LINHAS = 12
 # Base arredondada (a linha do pe e a mais estreita, e o corpo largo fica uns px acima): faixa mais funda.
-COLISAO_FRACAO_ESPECIAL = {"toco": 0.30, "tronco": 0.30, "fogueira": 0.30, "caixa_oferenda": 0.30,
-                           "lapide": 0.50, "cranio": 0.50}
-COLISAO_LARGA = {"muro", "tronco"}   # objeto longo: uma elipse larga cobre o trecho de base (lisa: sem quina)
+COLISAO_FRACAO_ESPECIAL = {"fogueira": 0.30, "caixa_oferenda": 0.30, "lapide": 0.50, "cranio": 0.50}
+# Arvores, tocos e tronco caido: a PEGADA cobre a base visual inteira (tronco, raizes principais, faixa do chao),
+# com todos os pixels opacos das COLISAO_LINHAS_BASE linhas de baixo (pe incluso), trechos separados das raizes incluidos.
+PEGADA = {"arvore", "arvore_pantano", "arvore_morta", "toco", "tronco"}
+COLISAO_LINHAS_BASE = 12     # a faixa visual que o corpo nao pode invadir (o mesmo corte do teste v2_arvores)
+COLISAO_RAIO_CIRCULO = 16.0  # raio maximo de um circulo da pegada: base mais larga que 2x isto vira mais de um circulo
+COLISAO_LARGA = {"muro"}     # objeto longo: uma elipse larga cobre o trecho de base (lisa: sem quina)
 COLISAO_RX_MIN = 3.0         # raio minimo em x (poste fino ainda ganha um disco)
 COLISAO_RY_RX = 0.5          # ry = 0,5 * rx
 
@@ -438,6 +442,96 @@ def _elipses_do_torii(img, pe):
             for (a, b), base in zip(pilares, bases)]
 
 
+def _circulo_minimo(pontos):
+    """Menor circulo que cobre os pontos (Welzl iterativo; ordem embaralhada com semente fixa). Devolve (cx, cy, r)."""
+    import random
+    P = list(pontos)
+    random.Random(7).shuffle(P)
+
+    def dist(a, b):
+        return math.hypot(a[0] - b[0], a[1] - b[1])
+
+    def circ2(a, b):
+        return ((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0, dist(a, b) / 2.0)
+
+    def circ3(a, b, c):
+        ax, ay = a
+        bx, by = b
+        cx, cy = c
+        d = 2.0 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+        if abs(d) < 1e-9:  # colineares: o circulo do par mais afastado cobre os tres
+            return max((circ2(a, b), circ2(b, c), circ2(a, c)), key=lambda t: t[2])
+        a2, b2, c2 = ax * ax + ay * ay, bx * bx + by * by, cx * cx + cy * cy
+        ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d
+        uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d
+        return (ux, uy, dist((ux, uy), a))
+
+    def dentro(c, p):
+        return dist((c[0], c[1]), p) <= c[2] + 1e-7
+
+    c = None
+    for i, p in enumerate(P):
+        if c is None or not dentro(c, p):
+            c = (p[0], p[1], 0.0)
+            for j in range(i):
+                q = P[j]
+                if not dentro(c, q):
+                    c = circ2(p, q)
+                    for k in range(j):
+                        r = P[k]
+                        if not dentro(c, r):
+                            c = circ3(p, q, r)
+    return c
+
+
+def _pegada_de_base(img, pe, nome):
+    """Pegada da arvore, do toco e do tronco caido: a base visual inteira, no chao.
+
+    Os pontos sao os pixels opacos das COLISAO_LINHAS_BASE linhas de baixo (pe incluso), em (x, 2 * dy): o chao do
+    corpo, que e a escala em que a elipse vira circulo (ry = rx / 2, a base vista a 45 graus). Quando a base e larga
+    (raizes que se abrem), ela e dividida em faixas de no maximo 2 * COLISAO_RAIO_CIRCULO, e cada faixa ganha o menor
+    circulo que cobre os seus pontos. Assim nenhum pixel visual da base fica de fora: o corpo para a r px de qualquer um.
+    """
+    w, h = img.size
+    alfa = img.tobytes()[3::4]
+    px, py = pe
+    pontos = []
+    for dy in range(0, -COLISAO_LINHAS_BASE, -1):
+        y = py + dy
+        if not 0 <= y < h:
+            continue
+        for x in range(w):
+            if alfa[y * w + x]:
+                pontos.append((float(x - px), 2.0 * dy))
+    if not pontos:
+        raise SystemExit("pegada: %s sem pixel opaco na base (pe %s)" % (nome, pe))
+    x0 = min(p[0] for p in pontos)
+    largura = max(p[0] for p in pontos) - x0 + 1.0
+    k = max(1, int(math.ceil(largura / (2.0 * COLISAO_RAIO_CIRCULO))))
+    faixas = [[] for _ in range(k)]
+    for p in pontos:
+        faixas[min(k - 1, int((p[0] - x0) / (largura / k)))].append(p)
+    formas = []
+    for faixa in faixas:
+        cx, cy, r = _circulo_minimo(faixa)
+        # arredondado para o json (centro a 0,1 px, raio com 0,1 px de folga para o arredondamento nao deixar ponto de fora)
+        cx_j, cy_j = round(cx, 1), round(cy / 2.0, 1)
+        # raio para cima, com 0,1 px de folga, num multiplo de 0,2: ry = rx / 2 sai exato com uma casa decimal
+        r_j = round(math.ceil((max(r, COLISAO_RX_MIN) + 0.1) / 0.2 - 1e-9) * 0.2, 1)
+        ry_j = round(r_j * COLISAO_RY_RX, 1)
+        # confere com os numeros que vao ao json, na mesma conta do resolver (y * rx / ry): todo pixel da faixa cabe
+        k = r_j / ry_j
+        pior = max(dist_ponto((p[0], p[1] / 2.0 * k), cx_j, cy_j * k) for p in faixa) - r_j
+        if pior > 1e-6:
+            raise SystemExit("pegada: %s, ponto fora do circulo por %.3f px" % (nome, pior))
+        formas.append({"tipo": "elipse", "centro": [cx_j, cy_j], "raio": [r_j, ry_j]})
+    return formas
+
+
+def dist_ponto(p, cx, cy):
+    return math.hypot(p[0] - cx, p[1] - cy)
+
+
 def formas_de_colisao(nome, img, pe):
     if nome in PASSAVEIS:
         return []
@@ -445,6 +539,8 @@ def formas_de_colisao(nome, img, pe):
         raise SystemExit("colisao: %s nao esta em SOLIDOS nem em PASSAVEIS" % nome)
     if nome.startswith("torii"):
         return _elipses_do_torii(img, pe)
+    if nome in PEGADA:
+        return _pegada_de_base(img, pe, nome)
     if nome in COLISAO_LARGA:
         return _elipse_larga(img, pe, nome)
     return _elipse_da_base(img, pe, nome)

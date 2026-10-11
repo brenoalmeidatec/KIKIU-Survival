@@ -293,11 +293,9 @@ func _atualizar() -> void:
 	_desenho.queue_redraw()
 
 
-## Monstros do mundo: a lista de vivos (combate) se existir; senão, a lista de monstros de hoje.
+## Monstros do mundo: `mundo.monstros` é a lista dos VIVOS (o combate tira quem morre). `monstros_vivos` é só a contagem, para o HUD.
 func _monstros() -> Array:
-	var lista = mundo.get("monstros_vivos")
-	if lista == null:
-		lista = mundo.get("monstros")
+	var lista = mundo.get("monstros")
 	return lista if lista is Array else []
 
 
