@@ -15,8 +15,9 @@ Rodar: `godot --path jogos/hordas/projeto res://v2/mundo.tscn` (ou `-- --v2` no 
 | `atmosfera.gd` | Vaga-lumes, folhas, fogo e faíscas; quantidade pela opção "particulas_sim". Fogo fora da tela fica parado. |
 | `ator.gd`, `heroi.gd`, `monstro.gd`, `sprites.gd`, `entrada.gd` | Herói (8 direções, mira no mouse, tocha), monstros (vagam e perseguem) e as folhas de sprites. `Heroi.atacar()` é o gancho do golpe (ação `atacar`), vazio. |
 | `colisao.gd` | Grade estática, círculo contra elipse, deslizando (outro agente, PR #170). |
+| `minimapa.gd/.tscn` | Minimapa no canto superior direito (150x84 px, moldura `hud/minimapa_moldura.png`, gerada por `hud/gerar_minimapa_moldura.py`). Fundo pintado uma vez a partir do JSON, névoa que revela em volta do herói, marcadores a 10 Hz (herói, monstros a 600 px, braseiro e fogueira). Tab alterna para o mapa grande. Instanciado pelo `mundo.gd` (uma linha no `_ready`). `--minimapa=grande`, `--sem_minimapa`. |
 | `medir_fps.sh`, `fps.txt` | Mede o fps parado no santuário (sombra média e alta, 3 repetições, sem V-Sync). |
 
 Dados: `dados/v2_floresta.json` (mapa 2880x1620). Foi montado por `fonte_arte/gerar_v2_floresta.py` (semente fixa) como ponto de partida; depois disso o JSON é a fonte e pode ser editado à mão.
 
-Teste: `testes/v2_mundo.tscn` (imprime `v2_mundo falhas=0`).
+Teste: `testes/v2_mundo.tscn` (imprime `v2_mundo falhas=0`) e `testes/v2_minimapa.tscn` (imprime `v2_minimapa falhas=0`).
