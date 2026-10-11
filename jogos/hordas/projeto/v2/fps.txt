@@ -1,0 +1,15 @@
+MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=190.2 frames=1142 seg=6.00
+SCRIPT ms/quadro=1.949 (sombras 1.295)
+MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=214.4 frames=1287 seg=6.00
+SCRIPT ms/quadro=1.676 (sombras 1.170)
+MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=203.7 frames=1222 seg=6.00
+SCRIPT ms/quadro=1.794 (sombras 1.183)
+MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=182.7 frames=1096 seg=6.00
+SCRIPT ms/quadro=2.169 (sombras 1.569)
+MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=190.7 frames=1144 seg=6.00
+SCRIPT ms/quadro=1.913 (sombras 1.300)
+MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=173.3 frames=1040 seg=6.00
+SCRIPT ms/quadro=2.113 (sombras 1.520)
+--- mediana de 3 (minimo a maximo) ---
+sombra=media mediana=191 (190 a 204)
+sombra=alta mediana=183 (173 a 214)
