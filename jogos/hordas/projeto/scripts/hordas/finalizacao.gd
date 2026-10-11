@@ -233,7 +233,8 @@ func _corpo_parado(cor: Color, quadro := -1, off := Vector2.ZERO) -> void:
 	Mortes._corpo(self, _rec, off, 0.0, 1.0, 1.0, cor, quadro)
 
 
-func _clarao(forca: float) -> void:
+func _clarao(forca_base: float) -> void:
+	var forca := forca_base * float(Config.g("tremor_clarao")) / 100.0   # aba Gráficos: 0 a 100% dos clarões
 	if forca <= 0.0:
 		return
 	var c: Vector2 = arena.camera.position if arena and arena.camera else _pos
