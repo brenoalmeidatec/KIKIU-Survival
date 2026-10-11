@@ -22,6 +22,7 @@ var _anim := 0.0
 func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
 	mundo = m
 	chave = "hazaki"
+	raio = 6.0
 	montar_animado(pai, t, p, 0, 0, false)
 
 

@@ -6,6 +6,7 @@ extends RefCounted
 
 const Ator := preload("res://v2/ator.gd")
 const Sombras := preload("res://v2/sombras.gd")
+const Colisao := preload("res://v2/colisao.gd")
 const OBJ_DIR := "prototipos/objetos"  # atlas dos objetos: albedo + normal, escala final a 960x540
 const DEC_DIR := "prototipos/decalques"  # decalques de chão: albedo + normal
 const PISO_DIR := "prototipos/piso"
@@ -35,6 +36,7 @@ var _faixa := Rect2i(1, 1, -1, -1)  # blocos visíveis (x0, y0, x1, y1 em pos/si
 ## dados = dados/v2_floresta.json já lido. `mundo` é o nó com y-sort onde ficam os objetos; `luzes` e `sombras` são os módulos.
 func carregar(dados: Dictionary, mundo: Node2D, luzes, sombras, normal := true) -> void:
 	var t0 := Time.get_ticks_usec()
+	Colisao.limpar()
 	_mundo = mundo
 	_luzes = luzes
 	_sombras = sombras
@@ -151,7 +153,7 @@ func _decalque(nome: String, pos: Vector2, espelha := false) -> void:
 
 
 ## Atlas de objetos de cenário (prototipos/objetos). Cada item é recortado UMA vez (com margem) e ganha a textura nítida, a borrada para a
-## sombra do modo médio e a CanvasTexture com normal map. O campo "colisao" do cenario.json (outro agente) é ignorado aqui.
+## sombra do modo médio e a CanvasTexture com normal map, e guarda as formas de "colisao" do item (elipses no chão, v2/colisao.gd).
 func _carregar_itens() -> void:
 	var raiz := ProjectSettings.globalize_path("res://")
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(raiz.path_join(OBJ_DIR).path_join("cenario.json")))
@@ -179,6 +181,7 @@ func _carregar_itens() -> void:
 			"tn": tn,
 			"tb": Sombras.borrar_folha(rec, rec.get_width(), rec.get_height()),
 			"desenho": desenho,
+			"colisao": it.get("colisao", []),
 			"w": r.size.x,
 			"h": r.size.y,
 			"pe": Vector2(float(it.pe[0]), float(it.pe[1])),
@@ -215,6 +218,7 @@ func _objeto(nome: String, pos: Vector2, luz_obj: Dictionary) -> void:
 	a.larg_blob = float(it.w) * (0.35 if a.alt > 100.0 else 0.6)
 	objetos.append(a)
 	_bloco(pos).obj.append(a)
+	Colisao.adicionar_objeto(pos, it.colisao)
 	if luz_obj.has(nome):
 		var lo: Dictionary = luz_obj[nome]
 		var luz_pos: Vector2 = pos + Vector2(float(lo.luz[0]), float(lo.luz[1]))

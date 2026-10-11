@@ -349,7 +349,7 @@ for _ in range(8):  # poças soltas na região úmida do leste
 AJUDA = (
     "A floresta da v2 (2880x1620 = 3x3 telas, y para baixo), lida por v2/cenario.gd. Foi montada por fonte_arte/gerar_v2_floresta.py (semente fixa) como ponto de partida; "
     "depois disso o JSON é a fonte: edite aqui. \"mapa\": tam (px), chao (piso de prototipos/piso: ganho, verde, dessat), ambiente (cor do CanvasModulate), "
-    "luar (e = energia, h = altura, ang = graus), ganho_objetos e ganho_decalques (levantam a arte escura antes da luz). \"nascimento\": heroi = onde o herói "
+    "luar (e = energia, h = altura, ang = graus), borda_andavel (px da beira do mapa que o herói e os monstros não pisam: as árvores das bordas fecham o mapa), ganho_objetos e ganho_decalques (levantam a arte escura antes da luz). \"nascimento\": heroi = onde o herói "
     "começa; monstros = zonas {centro, raio (onde nascem), n (quantos), vaga (raio em que passeiam)}. \"luz_tipos\": cor (rgb 0 a 1), e (energia), r (raio em px), "
     "h (altura da luz, vale para a sombra), tremor (oscilação relativa), orbe (tamanho do brilho aditivo, 0 = sem), orbita ([rx, ry], gira em volta do ponto), "
     "faiscas (partículas subindo). \"luz_objetos\": o objeto com este nome ganha uma luz do tipo dado: luz = deslocamento do pé ao ponto no chão que ela "
@@ -397,7 +397,7 @@ def escreve():
     linhas.append('\t"semente": 11,')
     linhas.append('\t"mapa": ' + json.dumps({
         "tam": [W, H], "chao": {"piso": "piso", "ganho": 3.6, "verde": 0.8, "dessat": 0.3}, "ambiente": "172a30",
-        "luar": {"e": 0.32, "h": 0.2, "ang": 90}, "ganho_objetos": 1.7, "ganho_decalques": 1.4}, ensure_ascii=False) + ",")
+        "luar": {"e": 0.32, "h": 0.2, "ang": 90}, "ganho_objetos": 1.7, "ganho_decalques": 1.4, "borda_andavel": 150}, ensure_ascii=False) + ",")
     linhas.append('\t"nascimento": ' + json.dumps({"heroi": [CIRC[0] - 10, CIRC[1] - 22], "monstros": MONSTROS}, ensure_ascii=False) + ",")
     linhas.append('\t"luz_tipos": {\n' + ",\n".join("\t\t%s: %s" % (json.dumps(k), json.dumps(v)) for k, v in LUZ_TIPOS.items()) + "\n\t},")
     linhas.append('\t"luz_objetos": {\n' + ",\n".join("\t\t%s: %s" % (json.dumps(k), json.dumps(v)) for k, v in LUZ_OBJETOS.items()) + "\n\t},")

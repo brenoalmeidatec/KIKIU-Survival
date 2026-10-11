@@ -23,7 +23,7 @@ const Entrada := preload("res://v2/entrada.gd")
 const LARG := 960
 const ALT := 540
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
-const BORDA_ANDAVEL := 24.0  # o herói e os monstros não passam disto da beira do mapa
+const Colisao := preload("res://v2/colisao.gd")
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
 const PESOS_MONSTRO := [4, 4, 3, 3, 1]
 
@@ -42,6 +42,7 @@ var sprites
 var heroi
 var monstros: Array = []
 var mapa := Rect2(0, 0, 2880, 1620)
+var limite_andavel := Rect2(150, 150, 2580, 1320)  # onde herói e monstros podem pisar (mapa menos "borda_andavel")
 var t := 0.0
 var quadros := 0
 var args := {}
@@ -70,6 +71,8 @@ func _ready() -> void:
 	dados = Dados.json("v2_floresta")
 	var tm: Array = dados.get("mapa", {}).get("tam", [2880, 1620])
 	mapa = Rect2(0, 0, float(tm[0]), float(tm[1]))
+	var borda := float(dados.get("mapa", {}).get("borda_andavel", 24.0))
+	limite_andavel = mapa.grow(-borda)
 	if not modo_teste:
 		_ajustar_janela()
 	ap = Apresentacao.new()
@@ -275,11 +278,13 @@ func _ler_graficos() -> void:
 # ------------------------------------------------------------------ movimento e mouse
 
 
-## PONTO ÚNICO DE MOVIMENTO: o herói e os monstros pedem aqui o deslocamento que querem (`desejado`, em px) e é aqui que a colisão entra
-## (v2/colisao.gd, branch alisson/v2-colisao: círculo contra elipse, deslizando). Hoje só soma e prende no mapa. Devolve o deslocamento feito.
+## PONTO ÚNICO DE MOVIMENTO: o herói e os monstros pedem aqui o deslocamento que querem (`desejado`, em px) e é aqui que a colisão age
+## (v2/colisao.gd: o corpo é um círculo de raio `a.raio` no chão; contra as elipses dos objetos ele é empurrado e desliza). Depois prende
+## na área andável (o mapa menos "borda_andavel": as árvores das bordas fecham o mapa). Devolve o deslocamento que de fato aconteceu.
 func mover(a, desejado: Vector2) -> Vector2:
 	var antes: Vector2 = a.pos
-	var depois := (antes + desejado).clamp(mapa.position + Vector2.ONE * BORDA_ANDAVEL, mapa.end - Vector2.ONE * BORDA_ANDAVEL)
+	var depois: Vector2 = Colisao.resolver(antes + desejado, a.raio)
+	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
 	a.definir_pos(depois)
 	return depois - antes
 

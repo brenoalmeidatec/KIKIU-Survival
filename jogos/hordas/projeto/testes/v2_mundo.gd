@@ -8,6 +8,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Sombras := preload("res://v2/sombras.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Luzes := preload("res://v2/luzes.gd")
+const Colisao := preload("res://v2/colisao.gd")
 const PASSO := 1.0 / 60.0
 var falhas := 0
 var w
@@ -229,7 +230,41 @@ func _ready() -> void:
 	var feito: Vector2 = w.mover(w.heroi, Vector2(10, 5))
 	ok(feito == Vector2(10, 5) and w.heroi.pos == a_mover + Vector2(10, 5), "mover soma o deslocamento")
 	feito = w.mover(w.heroi, Vector2(-5000, 0))
-	ok(w.heroi.pos.x == 24.0 and feito.x < 0.0, "mover prende no mapa")
+	ok(w.heroi.pos.x == w.limite_andavel.position.x and feito.x < 0.0, "mover prende na área andável (x = %.1f)" % w.heroi.pos.x)
+
+	# 9b. a colisão (v2/colisao.gd) liga em mover: o herói não atravessa um objeto isolado e fica fora das formas
+	var alvo = null
+	var inicio_c := Vector2.ZERO
+	for a in w.cenario.objetos:
+		if not (a.chave in ["muro", "tronco", "toco", "rocha", "coluna", "altar", "pedestal", "obelisco"]):
+			continue
+		var sozinho := true
+		for b in w.cenario.objetos:
+			if b != a and a.pos.distance_to(b.pos) < 100.0:
+				sozinho = false
+				break
+		var formas: Array = w.cenario._itens[a.chave].colisao
+		if formas.is_empty():
+			continue
+		var f: Dictionary = formas[0]
+		inicio_c = a.pos + Vector2(float(f.centro[0]) - float(f.raio[0]) - 50.0, float(f.centro[1]))  # na altura do centro da forma, 50 px antes dela
+		if sozinho and w.limite_andavel.has_point(inicio_c):
+			alvo = a
+			break
+	ok(alvo != null, "há um objeto de cenário isolado para o teste de colisão")
+	if alvo != null:
+		w.heroi.definir_pos(inicio_c)
+		w.heroi.entrada_forcada = Vector2(1, 0)
+		passos(120)
+		w.heroi.entrada_forcada = Vector2.ZERO
+		ok(Colisao.livre(w.heroi.pos, w.heroi.raio), "o herói não fica dentro de %s" % alvo.chave)
+		ok(w.heroi.pos.x < alvo.pos.x, "o herói não atravessou %s (x %.1f contra %.1f)" % [alvo.chave, w.heroi.pos.x, alvo.pos.x])
+		ok(w.heroi.pos.x > inicio_c.x + 20.0, "o herói andou até %s (x %.1f)" % [alvo.chave, w.heroi.pos.x])
+	w.heroi.definir_pos(Vector2(200, 1000))
+	w.heroi.entrada_forcada = Vector2(-1, 0)
+	passos(240)
+	w.heroi.entrada_forcada = Vector2.ZERO
+	ok(w.heroi.pos.x >= w.limite_andavel.position.x - 0.01, "a borda de árvores fecha o mapa: o herói para em x=%.1f" % w.heroi.pos.x)
 
 	# 10. o gancho do golpe principal existe (a ação atacar está no InputMap), sem fazer nada ainda
 	ok(InputMap.has_action("atacar"), "a ação atacar existe")
