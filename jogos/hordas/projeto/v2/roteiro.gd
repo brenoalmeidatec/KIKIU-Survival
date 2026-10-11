@@ -192,7 +192,7 @@ func _correr() -> void:
 			t_passo = 0.0
 		1:
 			if t_passo > 0.9:
-				_foto("05_correr")
+				_foto("06_correr")
 				passo = 2
 		2:
 			mundo.get_tree().quit()

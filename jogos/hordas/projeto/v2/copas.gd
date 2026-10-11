@@ -22,6 +22,9 @@ void fragment() {
 """
 
 var _alfa: Dictionary = {}  # Ator da árvore -> alfa atual (só as que já foram tocadas)
+var _acum := 0.0
+var _n := 0
+var _copa: Dictionary = {}  # Ator da árvore -> retângulo da copa no mundo (a árvore não se mexe: calculado uma vez)
 
 
 ## Dá a cada árvore alta o material de copa (um shader com a alfa e o corte). Chamado uma vez, depois do cenário carregar.
@@ -37,24 +40,40 @@ func montar(objetos: Array) -> void:
 		# o pé está em -offset.y dentro da textura (offset = -pe - margem): o corte sobe COPA_ACIMA_DO_PE a partir dele
 		m.set_shader_parameter("corte", clampf((-a.offset.y - COPA_ACIMA_DO_PE) / altura, 0.0, 1.0))
 		a.sprite.material = m
+		var r: Rect2 = a.sprite.get_rect()
+		_copa[a] = Rect2(a.pos.x + r.position.x, a.pos.y + r.position.y, r.size.x, -a.offset.y - COPA_ACIMA_DO_PE)
 
 
 ## arvores: atores de cenário nos blocos visíveis; atores: herói e monstros. dt = 0 não muda nada (passo fixo dos testes).
 func atualizar(dt: float, arvores: Array, atores: Array) -> void:
 	if dt <= 0.0:
 		return
+	# a conta é cara com a horda (árvores x atores): roda a cada 3 quadros, com o tempo acumulado (a troca de alfa dura ~0,2 s)
+	_acum += dt
+	_n += 1
+	if _n % 3 != 1 and _acum < 0.1:
+		return
+	var passo := _acum
+	_acum = 0.0
 	for a in arvores:
 		if not ALTAS.has(a.chave) or a.sprite.material == null:
 			continue
 		var alvo := 1.0
+		var copa: Rect2 = _copa[a]
+		var ay: float = a.pos.y
+		var x0 := copa.position.x - 40.0
+		var x1 := copa.end.x + 40.0
 		for ator in atores:
+			var p: Vector2 = ator.pos
+			if p.y >= ay or p.x < x0 or p.x > x1:  # descarte barato: só quem está atrás da árvore e na altura da copa
+				continue
 			if _encobre(a, ator):
 				alvo = ALFA
 				break
 		var atual: float = _alfa.get(a, 1.0)
 		if atual == alvo:
 			continue
-		atual = move_toward(atual, alvo, VEL * dt)
+		atual = move_toward(atual, alvo, VEL * passo)
 		_alfa[a] = atual
 		a.sprite.material.set_shader_parameter("alfa", atual)
 
@@ -69,8 +88,10 @@ func alfa_da_copa(a) -> float:
 func _encobre(arvore, ator) -> bool:
 	if ator.pos.y >= arvore.pos.y:
 		return false
-	var r: Rect2 = arvore.sprite.get_rect()
-	var copa := Rect2(arvore.pos.x + r.position.x, arvore.pos.y + r.position.y, r.size.x, -arvore.offset.y - COPA_ACIMA_DO_PE)
+	var copa: Rect2 = _copa[arvore]
+	# descarte barato antes de montar o retângulo do corpo (com 80 monstros são ~2000 pares por quadro)
+	if ator.pos.x < copa.position.x - 40.0 or ator.pos.x > copa.end.x + 40.0:
+		return false
 	var t: Dictionary = ator.tipo
 	var corpo := Rect2(ator.pos + Vector2(-float(t.w) / 2.0, -float(t.pe)), Vector2(float(t.w), float(t.h)))
 	return copa.intersects(corpo)

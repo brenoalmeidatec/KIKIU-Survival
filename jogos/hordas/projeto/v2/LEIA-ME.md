@@ -2,7 +2,7 @@
 
 A v2 cresce sobre o protótipo 2.5D (`prototipos/cara_nova.*`, congelado como referência). A v1 (`main.tscn`, `arena.gd`) está pausada.
 
-Rodar: `godot --path jogos/hordas/projeto res://v2/mundo.tscn` (ou `-- --v2` no jogo). Opções após `--`: `--fotos=PASTA --seq=2.0 --pos=x,y --nome=foto`, `--medir`, `--sombra=baixa|media|alta`, `--particulas=nenhuma|poucas|medias|muitas`, `--sem_vsync`, `--sem_normal`, `--rotulo`, `--colisao`. Modo livre: WASD ou analógico anda, o mouse mira, clique esquerdo golpeia (segurar repete o combo), Espaço esquiva, Shift corre (gasta o mesmo fôlego), 1/2/3 trocam a sombra, F1 esconde a depuração do combate, F4 mostra a colisão, Esc sai.
+Rodar: `godot --path jogos/hordas/projeto res://v2/mundo.tscn` (ou `-- --v2` no jogo). Opções após `--`: `--fotos=PASTA --seq=2.0 --pos=x,y --nome=foto`, `--medir`, `--sombra=baixa|media|alta`, `--particulas=nenhuma|poucas|medias|muitas`, `--sem_vsync`, `--sem_normal`, `--rotulo`, `--colisao`. Modo livre: WASD ou analógico anda, o mouse mira, clique esquerdo golpeia (segurar repete o combo), Espaço esquiva, Shift corre (gasta o mesmo fôlego), 1/2/3 trocam a sombra, F1 liga o texto de depuração do combate, F4 mostra a colisão, Esc sai.
 
 | Arquivo | O que faz |
 |---|---|

@@ -9,10 +9,10 @@ extends Node
 ## Opções (após --): --fotos=PASTA --seq=2.0 --pos=x,y --nome=foto (foto do viewport e sai) | --medir --duracao=6 (fps e sai)
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
-##   --sem_depur (esconde o texto de depuração do combate)
+##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --janela=1280x720 --rotulo (fps na tela) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
-## 0 desliga, F1 esconde o texto de depuração, F4 mostra a colisão, Esc sai.
+## 0 desliga, F1 liga o texto de depuração do combate, F4 mostra a colisão, Esc sai.
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos e o sinal
 ## nivel_subiu(nivel); no herói vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado.
 

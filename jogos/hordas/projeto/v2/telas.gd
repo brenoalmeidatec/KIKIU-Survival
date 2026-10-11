@@ -1,7 +1,7 @@
 extends RefCounted
 ## Telas simples do combate da v2 (o HUD bonito é de outro módulo): a escolha de melhoria ao subir de nível (3 cartas), a tela de resultado
-## ao morrer, um aviso grande no alto ("ONDA FORTE!") e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (desligue com F1 ou
-## --sem_depur; o HUD novo não depende dele). Tudo é desenhado numa CanvasLayer dentro do SubViewport 960x540; o mouse não chega nos
+## ao morrer, um aviso grande no alto ("ONDA FORTE!") e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (DESLIGADO por padrão agora que o
+## HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro do SubViewport 960x540; o mouse não chega nos
 ## Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_na_tela()) e a escolha também aceita 1, 2, 3, setas e Enter.
 
 const LARG := 960
@@ -63,7 +63,7 @@ func montar(c, sv: Node) -> void:
 	_dep.position = Vector2(6, 30)
 	_dep.size = Vector2(500, 40)
 	camada.add_child(_dep)
-	depuracao = not mundo.args.has("sem_depur") and mundo.get_modo() == "livre"
+	depuracao = mundo.args.has("depur")  # o HUD (hud.gd) é o painel de verdade; este texto é só para depurar (--depur ou F1)
 	_dep.visible = depuracao
 
 
@@ -200,10 +200,7 @@ func mostrar_resultado() -> void:
 	_res.visible = true
 	var h = mundo.heroi
 	var seg := int(mundo.tempo_partida)
-	_res_valores.text = "%02d:%02d
-%d
-x%d
-%d" % [floori(seg / 60.0), seg % 60, mundo.abates, mundo.maior_combo, h.nivel]
+	_res_valores.text = "%02d:%02d\n%d\nx%d\n%d" % [floori(seg / 60.0), seg % 60, mundo.abates, mundo.maior_combo, h.nivel]
 	combate.audio.tocar("carta", 0.7, 0.0, 0.0)
 
 
