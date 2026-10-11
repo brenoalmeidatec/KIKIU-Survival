@@ -1025,3 +1025,9 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Pendente:** o gelo fino ('e') ainda não escorrega (só machuca); a colisão dos inimigos segue esperando o merge dos Marcos 2 e 3 do Alisson; a arte de verdade no lugar das formas provisórias; conferir visualmente no PC/notebook (não consegui captura nesta máquina).
 - **Testes:** `MAPA_MUNDO falhas=0` (portal no portão, perigo machuca, chão comum não), `MAPA_FASE falhas=0`, `PROR falhas=0`; robô `--bot --heroi=hazaki --semente=7` sem SCRIPT ERROR.
 - Assinado: Claude (thread do Breno, projeto JOGO)
+## 2026-10-11 · Claude (thread do Breno, projeto JOGO) · Marco 4: fechamento (#128)
+- **Feito:** gelo fino ('e') escorrega: o herói segue um pouco no embalo do último passo e para na parede. Feito em `arena.gd` (sem mexer em `jogador.gd`). `chao_em` em `mapa_fase_mundo.gd`.
+- **Fica com o Alisson (Etapa 4 do #152):** colisão dos inimigos (`inimigos.gd`) e a adaptação do mapa para a câmera 2.5D.
+- **Pendente de arte:** formas e cores dos santuários e do chão são provisórias.
+- **Testes:** `MAPA_MUNDO falhas=0`, `MAPA_FASE falhas=0`, `PROR` (ver commit), robô sem SCRIPT ERROR.
+- Assinado: Claude (thread do Breno, projeto JOGO)

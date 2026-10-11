@@ -97,6 +97,7 @@ var escuridao: CanvasLayer     # escuridão da fase de horror (escuridao.gd)
 var mapa: Dictionary            # mapa de progressão da corrida (mapa.gd), igual em todos os clientes (mesma semente)
 var mapa_pos := Vector2i(0, 0)  # nó atual: x = andar (0 = fase 1), y = faixa
 var mapa_fase_mundo: Node2D     # mapa fechado do andar atual (mapa_fase_mundo.gd, #128); null sem regiões
+var _deslize := Vector2.ZERO    # embalo no gelo fino: o herói escorrega um pouco depois de soltar o movimento (#128)
 var mapa_trilha: Array = []     # nós já percorridos (Vector2i)
 var tela_mapa: CanvasLayer      # tela do mapa (tela_mapa.gd)
 var loja: CanvasLayer           # loja do mapa (loja.gd)
@@ -376,6 +377,21 @@ func _process(dt: float) -> void:
 			var dps: float = mapa_fase_mundo.dano_seg_em(jogador.position + MapaFaseMundo.PES)   # espinho, veneno, lodo, gelo (#128)
 			if dps > 0.0 and jogador.hp > 0.0:
 				jogador.dano_direto(dps * dt, "chao")   # o chão machuca por segundo; sem invencibilidade nem som a cada quadro
+			# gelo fino ('e', #128): o herói segue por um tempo no embalo do último passo, sem mexer em jogador.gd
+			if mapa_fase_mundo.chao_em(jogador.position + MapaFaseMundo.PES) == "e":
+				var andou := jogador.position - antes
+				if andou.length_squared() > 0.01:
+					_deslize = andou
+				else:
+					_deslize *= pow(0.9, dt * 60.0)   # perde embalo aos poucos
+				if _deslize.length_squared() > 0.01:
+					var antes_d := jogador.position
+					jogador.position += _deslize
+					mapa_fase_mundo.prender(jogador, antes_d)
+					if jogador.position == antes_d:
+						_deslize = Vector2.ZERO   # bateu na parede: para
+			else:
+				_deslize = Vector2.ZERO
 	elif caido:
 		jogador.queue_redraw()
 	if duelo_ativo:

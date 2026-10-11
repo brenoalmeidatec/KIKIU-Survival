@@ -87,6 +87,14 @@ func _ready() -> void:
 		ok(mundo.dano_seg_em(perigo) > 0.0, "chão perigoso machuca por segundo")
 	ok(comum != Vector2.INF and mundo.dano_seg_em(comum) == 0.0, "chão comum não machuca")
 	ok(mundo.dano_seg_em(Vector2(-100000, 0)) == 0.0, "fora do mapa não machuca")
+	ok(mundo.chao_em(Vector2(-100000, 0)) == "", "fora do mapa não tem chão")
+	var gelo := Vector2.INF
+	for y in range(1, m.altura - 1):
+		for x in range(1, m.largura - 1):
+			if m.linhas[y][x] == "e" and gelo == Vector2.INF:
+				gelo = mundo.origem + (Vector2(x, y) + Vector2(0.5, 0.5)) * MapaFaseMundo.TILE
+	if gelo != Vector2.INF:
+		ok(mundo.chao_em(gelo) == "e", "chão de gelo fino é reconhecido")
 
 	print("MAPA_MUNDO falhas=%d" % falhas)
 	get_tree().quit()

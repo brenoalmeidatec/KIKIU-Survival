@@ -100,6 +100,14 @@ func portal_mundo() -> Vector2:
 	return origem + (Vector2(portal) + Vector2(0.5, 0.5)) * TILE
 
 
+## Letra do chão no ponto do mundo ("" fora do mapa).
+func chao_em(p: Vector2) -> String:
+	var t := tile_de(p)
+	if t.x < 0 or t.y < 0 or t.x >= w or t.y >= h:
+		return ""
+	return grade[t.y][t.x]
+
+
 ## Dano por segundo do chão perigoso onde o ponto está (espinho, veneno, lodo, gelo fino); 0 no chão comum.
 func dano_seg_em(p: Vector2) -> float:
 	var t := tile_de(p)
