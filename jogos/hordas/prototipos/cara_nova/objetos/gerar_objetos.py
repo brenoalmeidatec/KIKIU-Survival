@@ -68,10 +68,15 @@ LIMIAR_ALFA = 128        # alfa binario: 50%
 COR_MAX = 40             # cores da folha toda (albedo)
 LARGURA_FOLHA = 480      # largura maxima da folha em px (empacotamento em prateleiras)
 PAD = 2                  # espaco entre sprites na folha
-ESTICA = 2.0             # exagero da inclinacao da normal
-ALTURA_LUM = 0.25        # quanto a luminancia entra no relevo (casca, folhas)
-ALTURA_BORDA = 0.30      # raio do domo = este fracao do menor lado (limitado entre 3 e 10 px)
-RAIO_MIN, RAIO_MAX = 3.0, 10.0
+INCLINA = 1.0           # ganho do gradiente (Sobel) da altura -> normal
+ALTURA_DOMO = 4.0        # altura do domo na borda: sqrt(distancia / raio), ~55 graus na borda
+BOJO_AMPLO = 10.0        # bojo amplo (metade do menor lado): o corpo inteiro inclina, e o lado da luz muda
+PESO_DETALHE = 8.0       # peso do passa-alta da luminancia (casca, tufos, tijolos, rachaduras)
+RAIO_DOMO = 0.25         # raio do domo = fracao do menor lado do objeto...
+RAIO_MIN, RAIO_MAX = 6.0, 10.0   # ...limitado entre 6 e 10 px
+RAIO_HP = 3              # raio do borrao do passa-alta (albedo menos borrao)
+AMB_PREVIA = 0.25        # ambiente da previa (Lambert + ambiente)
+COR_QUENTE = (1.0, 0.86, 0.66)   # cor da luz quente da previa
 LUM_CONTORNO = 60        # borda com luminancia acima disto ganha contorno escuro
 AMBIENTE = [0.6, 0.7, 0.62]
 
@@ -290,14 +295,23 @@ def pe_do_objeto(img):
 
 
 # ------------------------------------------------------------------ normal map
-def normal_do_objeto(img):
-    """Domo pela distancia ate a borda do alfa + um pouco da luminancia; suaviza 1 passe."""
-    w0, h0 = img.size
-    base = Image.new("RGBA", (w0 + 2, h0 + 2), (0, 0, 0, 0))
-    base.paste(img, (1, 1))
-    w, h = base.size
-    dados = base.tobytes()
-    alfa = dados[3::4]
+def _borrao(vals, w, h, r):
+    """Borrao de caixa de raio r (separado em x e y). Bordas usam so os vizinhos que existem."""
+    tmp = [0.0] * (w * h)
+    for y in range(h):
+        for x in range(w):
+            ks = range(max(0, x - r), min(w, x + r + 1))
+            tmp[y * w + x] = sum(vals[y * w + k] for k in ks) / len(ks)
+    out = [0.0] * (w * h)
+    for y in range(h):
+        for x in range(w):
+            ks = range(max(0, y - r), min(h, y + r + 1))
+            out[y * w + x] = sum(tmp[k * w + x] for k in ks) / len(ks)
+    return out
+
+
+def _distancia(alfa, w, h):
+    """Distancia (aprox. euclidiana, chamfer 3-4) de cada pixel opaco ate o pixel transparente mais perto."""
     INF = 1e9
     d = [0.0 if a == 0 else INF for a in alfa]
     for y in range(h):
@@ -328,42 +342,69 @@ def normal_do_objeto(img):
                 if x > 0:
                     v = min(v, d[i + w - 1] + 1.414)
             d[i] = v
-    raio = max(RAIO_MIN, min(RAIO_MAX, ALTURA_BORDA * min(w0, h0)))
-    H = [0.0] * (w * h)
-    for i in range(w * h):
-        if alfa[i] == 0:
-            continue
-        j = i * 4
-        lum = (0.299 * dados[j] + 0.587 * dados[j + 1] + 0.114 * dados[j + 2]) / 255.0
-        t = min(d[i] / raio, 1.0)
-        H[i] = math.sqrt(max(0.0, 1.0 - (1.0 - t) ** 2)) + ALTURA_LUM * lum
+    return d
 
-    def h_em(x, y):
+
+def normal_do_objeto(img):
+    """Altura = domo (sqrt da distancia ate a borda do alfa) + passa-alta da luminancia (textura).
+    Normal pelo Sobel dessa altura. Borda do alfa: sem passa-alta (nada de faixa do contorno), e o
+    domo cai a zero na borda, entao a normal vira inclinada e continua, sem degrau. 1 passe 3x3."""
+    w0, h0 = img.size
+    base = Image.new("RGBA", (w0 + 4, h0 + 4), (0, 0, 0, 0))
+    base.paste(img, (2, 2))
+    w, h = base.size
+    dados = base.tobytes()
+    alfa = dados[3::4]
+    n = w * h
+    opaco = [1.0 if a else 0.0 for a in alfa]
+    d = _distancia(alfa, w, h)
+    raio = max(RAIO_MIN, min(RAIO_MAX, RAIO_DOMO * min(w0, h0)))
+    dmax_amplo = max(1.0, 0.5 * min(w0, h0))
+    lum = [0.0] * n
+    for i in range(n):
+        if alfa[i]:
+            j = i * 4
+            lum[i] = (0.299 * dados[j] + 0.587 * dados[j + 1] + 0.114 * dados[j + 2]) / 255.0
+    borr_num = _borrao([lum[i] * opaco[i] for i in range(n)], w, h, RAIO_HP)
+    borr_den = _borrao(opaco, w, h, RAIO_HP)
+    H = [0.0] * n
+    for i in range(n):
+        if not alfa[i]:
+            continue
+        t = min(d[i] / raio, 1.0)
+        hp = 0.0
+        if d[i] > 1.5 and borr_den[i] > 0:
+            hp = lum[i] - borr_num[i] / borr_den[i]
+        bojo = BOJO_AMPLO * math.sqrt(min(d[i] / dmax_amplo, 1.0))
+        H[i] = ALTURA_DOMO * math.sqrt(t) + bojo + PESO_DETALHE * hp
+
+    def hh(x, y):
         return H[y * w + x] if 0 <= x < w and 0 <= y < h else 0.0
 
-    NX = [0.0] * (w * h)
-    NY = [0.0] * (w * h)
-    NZ = [1.0] * (w * h)
+    NX = [0.0] * n
+    NY = [0.0] * n
+    NZ = [1.0] * n
     for y in range(h):
         for x in range(w):
             i = y * w + x
-            if alfa[i] == 0:
+            if not alfa[i]:
                 continue
-            dhx = (h_em(x + 1, y) - h_em(x - 1, y)) / 2.0
-            dhy = (h_em(x, y + 1) - h_em(x, y - 1)) / 2.0
-            nx = -ESTICA * dhx
-            ny = ESTICA * dhy           # y de imagem cresce para baixo; G da normal sobe
+            gx = (hh(x + 1, y - 1) + 2 * hh(x + 1, y) + hh(x + 1, y + 1)
+                  - hh(x - 1, y - 1) - 2 * hh(x - 1, y) - hh(x - 1, y + 1)) / 8.0
+            gy = (hh(x - 1, y + 1) + 2 * hh(x, y + 1) + hh(x + 1, y + 1)
+                  - hh(x - 1, y - 1) - 2 * hh(x, y - 1) - hh(x + 1, y - 1)) / 8.0
+            nx = -INCLINA * gx
+            ny = INCLINA * gy           # y da imagem cresce para baixo; G da normal sobe
             m = math.sqrt(nx * nx + ny * ny + 1.0)
             NX[i], NY[i], NZ[i] = nx / m, ny / m, 1.0 / m
-    # 1 passe de suavizacao 3x3 so entre pixels opacos
     SX, SY, SZ = list(NX), list(NY), list(NZ)
     for y in range(h):
         for x in range(w):
             i = y * w + x
-            if alfa[i] == 0:
+            if not alfa[i]:
                 continue
             ax = ay = az = 0.0
-            n = 0
+            k_n = 0
             for dy in (-1, 0, 1):
                 for dx in (-1, 0, 1):
                     xx, yy = x + dx, y + dy
@@ -372,14 +413,14 @@ def normal_do_objeto(img):
                         ax += NX[k]
                         ay += NY[k]
                         az += NZ[k]
-                        n += 1
-            ax, ay, az = ax / n, ay / n, az / n
+                        k_n += 1
+            ax, ay, az = ax / k_n, ay / k_n, az / k_n
             m = math.sqrt(ax * ax + ay * ay + az * az) or 1.0
             SX[i], SY[i], SZ[i] = ax / m, ay / m, az / m
     out = bytearray(w * h * 4)
-    for i in range(w * h):
+    for i in range(n):
         j = i * 4
-        if alfa[i] == 0:
+        if not alfa[i]:
             out[j:j + 4] = b"\x80\x80\xff\x00"
         else:
             out[j] = max(0, min(255, int(round((SX[i] * 0.5 + 0.5) * 255))))
@@ -387,7 +428,28 @@ def normal_do_objeto(img):
             out[j + 2] = max(0, min(255, int(round((SZ[i] * 0.5 + 0.5) * 255))))
             out[j + 3] = 255
     normal = Image.frombytes("RGBA", (w, h), bytes(out))
-    return normal.crop((1, 1, w0 + 1, h0 + 1))
+    return normal.crop((2, 2, w0 + 2, h0 + 2))
+
+
+def inclinacao_graus(nor, alb):
+    """Diagnostico: inclinacao da normal (graus da vertical) na borda do alfa e no miolo."""
+    w, h = nor.size
+    dn = nor.tobytes()
+    da = alb.tobytes()
+    borda, miolo = [], []
+    for y in range(h):
+        for x in range(w):
+            i = y * w + x
+            if da[i * 4 + 3] == 0:
+                continue
+            nz = dn[i * 4 + 2] / 255.0 * 2 - 1
+            ang = math.degrees(math.acos(max(-1.0, min(1.0, nz))))
+            fronteira = any(not (0 <= xx < w and 0 <= yy < h and da[(yy * w + xx) * 4 + 3])
+                            for xx, yy in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)))
+            (borda if fronteira else miolo).append(ang)
+    borda.sort()
+    miolo.sort()
+    return (borda[len(borda) // 2] if borda else 0.0, miolo[int(len(miolo) * 0.95)] if miolo else 0.0)
 
 
 # ------------------------------------------------------------------ folha
@@ -423,36 +485,78 @@ def quantizar(folha, cores):
     return q
 
 
+def _normaliza(v):
+    m = math.sqrt(sum(c * c for c in v)) or 1.0
+    return tuple(c / m for c in v)
+
+
+def iluminar(alb, nor, lado):
+    """Lambert sobre a normal + ambiente AMB_PREVIA, com luz quente. lado = -1 (esquerda) ou +1 (direita)."""
+    luz = _normaliza((0.95 * lado, 0.3, 0.3))
+    w, h = alb.size
+    da = alb.tobytes()
+    dn = nor.tobytes()
+    out = bytearray(w * h * 4)
+    for i in range(w * h):
+        j = i * 4
+        if da[j + 3] == 0:
+            continue
+        nx = dn[j] / 255.0 * 2 - 1
+        ny = dn[j + 1] / 255.0 * 2 - 1
+        nz = dn[j + 2] / 255.0 * 2 - 1
+        lamb = max(0.0, nx * luz[0] + ny * luz[1] + nz * luz[2])
+        k = AMB_PREVIA + (1.0 - AMB_PREVIA) * lamb
+        for c in range(3):
+            out[j + c] = min(255, int(da[j + c] * k * COR_QUENTE[c]))
+        out[j + 3] = 255
+    return Image.frombytes("RGBA", (w, h), bytes(out))
+
+
 def previa(faixas, caminho):
-    """Faixas (lista de (titulo, [(nome, albedo, normal)])) em escala 3x: albedo em cima, normal embaixo."""
+    """Cada faixa: 3 linhas (albedo, luz da esquerda, luz da direita), escala 3x, objetos lado a lado."""
     ESC = 3
     GAP = 14
     fonte = ImageFont.load_default(size=13)
     cinza = (0x5a, 0x5a, 0x64, 255)
-    alturas = []
-    larguras = []
-    for _, itens in faixas:
-        larg = sum(a.width * ESC + GAP for _, a, _n in itens) + GAP
-        alt = max(a.height for _, a, _n in itens) * ESC
-        larguras.append(larg)
-        alturas.append(alt * 2 + 60)
-    tela = Image.new("RGBA", (max(larguras), sum(alturas) + 20 * len(faixas)), cinza)
+    rotulos = ["albedo", "luz quente da esquerda", "luz quente da direita"]
+    prontas = []
+    for titulo, itens in faixas:
+        linhas = [
+            [alb for _, alb, _n in itens],
+            [iluminar(alb, nor, -1) for _, alb, nor in itens],
+            [iluminar(alb, nor, +1) for _, alb, nor in itens],
+        ]
+        prontas.append((titulo, itens, linhas))
+    largura = 0
+    altura = 0
+    for titulo, itens, linhas in prontas:
+        larg = GAP + sum(a.width * ESC + GAP for a in linhas[0])
+        largura = max(largura, larg)
+        for linha in linhas:
+            altura += 16 + max(a.height for a in linha) * ESC + 12
+        altura += 22 + 30 + 20
+    tela = Image.new("RGBA", (largura, altura + 10), cinza)
     d = ImageDraw.Draw(tela)
     y0 = 10
-    for (titulo, itens), alt in zip(faixas, alturas):
+    for titulo, itens, linhas in prontas:
         d.text((GAP, y0), titulo, fill=(255, 255, 255, 255), font=fonte)
-        y_alb = y0 + 24
-        alt_linha = max(a.height for _, a, _n in itens) * ESC
-        y_nor = y_alb + alt_linha + 14
+        y = y0 + 22
+        for rotulo, linha in zip(rotulos, linhas):
+            d.text((GAP, y), rotulo, fill=(255, 240, 200, 255), font=fonte)
+            y += 16
+            alt_linha = max(a.height for a in linha) * ESC
+            x = GAP
+            for a in linha:
+                a3 = a.resize((a.width * ESC, a.height * ESC), Image.NEAREST)
+                tela.alpha_composite(a3, (x, y + alt_linha - a3.height))
+                x += a3.width + GAP
+            y += alt_linha + 12
         x = GAP
-        for nome, alb, nor in itens:
-            a3 = alb.resize((alb.width * ESC, alb.height * ESC), Image.NEAREST)
-            n3 = nor.resize((nor.width * ESC, nor.height * ESC), Image.NEAREST)
-            tela.alpha_composite(a3, (x, y_alb + alt_linha - a3.height))
-            tela.alpha_composite(n3, (x, y_nor + alt_linha - n3.height))
-            d.text((x, y_nor + alt_linha + 4), nome, fill=(230, 230, 230, 255), font=fonte)
-            x += a3.width + GAP
-        y0 += alt + 20
+        for (nome, _a, _n), a in zip(itens, linhas[0]):
+            d.text((x, y), nome, fill=(230, 230, 230, 255), font=fonte)
+            x += a.width * ESC + GAP
+        y += 30
+        y0 = y + 20
     tela.convert("RGB").save(caminho)
 
 
@@ -471,6 +575,8 @@ def main():
             alb = contorno(binarizar(esc))
             alb = alb.crop(alb.getbbox())      # tira a linha/coluna transparente que sobra do limiar
             nor = normal_do_objeto(alb)
+            borda_g, miolo_g = inclinacao_graus(nor, alb)
+            print("      inclinacao na borda %.0f graus (mediana), no miolo %.0f (p95)" % (borda_g, miolo_g))
             pe = pe_do_objeto(alb)
             sprites.append((nome, peso, alb, nor, pe))
             itens.append((nome, alb, nor))
