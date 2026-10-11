@@ -6,6 +6,9 @@ extends RefCounted
 ##   --roteiro=combate     sequência de fotos do viewport: o corte acertando com número de dano, a estocada, a tela de nível e a de resultado.
 ##                         Usar com --fotos=PASTA --nome=prefixo (as fotos saem como prefixo_01_corte.png ...). Nunca captura a área de trabalho.
 ##   --roteiro=correr      foto do herói correndo com a poeira e a câmera adiantada
+##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
+##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, do mini-chefe e do chefe anunciando
+##                         o ataque, da tela de vitória e da escolha com raridades. Fotos 11_build ... 20_escolha, sempre só do viewport.
 ## Nada disto roda no jogo normal.
 
 var mundo
@@ -32,6 +35,8 @@ func montar(m, a: Dictionary) -> void:
 		mundo.heroi.imortal = true
 	if estresse > 0 or roteiro != "":
 		mundo.combate.diretor.ligado = false
+	if a.has("build"):
+		armar_build()
 	if estresse > 0:
 		reabastecer()
 
@@ -54,6 +59,16 @@ func atualizar(dt: float) -> void:
 				_combate()
 			"correr":
 				_correr()
+			"build":
+				_r_build()
+			"elite":
+				_r_elite()
+			"chefe":
+				_r_chefe()
+			"vitoria":
+				_r_vitoria()
+			"escolha":
+				_r_escolha()
 
 
 # ------------------------------------------------------------------ robô e estresse
@@ -193,6 +208,212 @@ func _correr() -> void:
 		1:
 			if t_passo > 0.9:
 				_foto("06_correr")
+				passo = 2
+		2:
+			mundo.get_tree().quit()
+
+
+# ------------------------------------------------------------------ leva 3: build, elite, baú, chefe, vitória
+
+
+## Uma build cheia sem evoluir: aura 4, lâminas 2, corvos 3, raio 2 e runa 2, em raridades variadas.
+func armar_build() -> void:
+	var cs = mundo.combate.cartas
+	for par in [["aura_fogo", 4], ["laminas", 2], ["corvos", 3], ["raio", 2], ["runa", 2]]:
+		for i in int(par[1]):
+			cs.aplicar(cs.montar_carta(cs.definicao(str(par[0])), 1 + (i % 3)))
+
+
+func _preparar(imortal := true) -> void:
+	var c = mundo.combate
+	c.limpar_partida()
+	c.diretor.ligado = false
+	mundo.heroi.imortal = imortal
+	mundo.heroi.entrada_forcada = Vector2.ZERO
+	mundo.heroi.fonte = mundo.heroi.Fonte.MOUSE
+	mundo.heroi.xp_proximo = 1.0e9  # as fotos não podem abrir a escolha de nível por acidente
+
+
+func _r_build() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			armar_build()
+			estresse = 26
+			robo = true
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 3.0:
+				_foto("11_build")
+				passo = 2
+				t_passo = 0.0
+		2:
+			if t_passo > 0.9:
+				_foto("12_build_b")
+				passo = 3
+		3:
+			mundo.get_tree().quit()
+
+
+func _r_elite() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	match passo:
+		0:
+			_preparar()
+			var e = c.elites.nascer("inimigo_cavaleiro_oco", "explosivo", h.pos + Vector2(120, -10))
+			e.cacador = false
+			e.raio_vaga = 0.0
+			for k in 4:
+				var m = mundo.nascer_monstro("inimigo_cao_ossos", h.pos + Vector2(90 + 22 * k, 24 - 10 * k), true)
+				m.vida_max = 3000.0
+				m.vida = 3000.0
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.9:
+				_foto("13_elite")
+				passo = 2
+				t_passo = 0.0
+		2:
+			var e = c.elites.vivas[0] if not c.elites.vivas.is_empty() else null
+			if e != null:
+				c.ferir(e, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+				c.processar_mortes()
+			passo = 3
+			t_passo = 0.0
+		3:
+			if t_passo > 1.3:
+				_foto("14_bau")
+				passo = 4
+				t_passo = 0.0
+		4:
+			for b in c.baus.lista:
+				if b.ativo:
+					h.definir_pos(b.pos)
+			if c.jogo == "bau":
+				passo = 5
+				t_passo = 0.0
+			elif t_passo > 3.0:
+				passo = 7
+		5:
+			if t_passo > 0.7:
+				_foto("15_roleta")
+				passo = 6
+				t_passo = 0.0
+		6:
+			if c.telas.bau_pronto and t_passo > 0.3:
+				_foto("16_bau_revelado")
+				passo = 7
+			elif t_passo > 12.0:
+				passo = 7
+		7:
+			mundo.get_tree().quit()
+
+
+func _r_chefe() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	var ch = c.chefes
+	match passo:
+		0:
+			_preparar()
+			ch.nascer(ch.cfg.marcas[0], h.pos + Vector2(200, -30))
+			passo = 1
+			t_passo = 0.0
+		1:
+			if c.avisos.ativos() > 0 and c.avisos.t[0] > 0.35 and t_passo > 2.0:
+				_foto("17_minichefe_aviso")
+				passo = 2
+				t_passo = 0.0
+			elif t_passo > 14.0:
+				passo = 2
+		2:
+			if ch.atual != null:
+				c.ferir(ch.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+				c.processar_mortes()
+			c.avisos.limpar()
+			passo = 3
+			t_passo = 0.0
+		3:
+			if t_passo > 1.0:
+				c.jogo = "jogando"
+				c.baus.limpar()
+				ch.nascer(ch.cfg.marcas[2], h.pos + Vector2(220, -30))
+				passo = 4
+				t_passo = 0.0
+		4:
+			if c.avisos.ativos() > 0 and c.avisos.t[0] > 0.35 and t_passo > 2.0:
+				_foto("18_chefe_aviso")
+				passo = 5
+			elif t_passo > 14.0:
+				passo = 5
+		5:
+			mundo.get_tree().quit()
+
+
+func _r_vitoria() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	match passo:
+		0:
+			_preparar()
+			armar_build()
+			mundo.abates = 412
+			mundo.maior_combo = 87
+			mundo.xp_coletado = 2860.0
+			mundo.tempo_partida = 612.0
+			h.nivel = 14
+			c.chefes.nascer(c.chefes.cfg.marcas[2], h.pos + Vector2(160, -20))
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 1.2:
+				c.ferir(c.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+				c.processar_mortes()
+				passo = 2
+				t_passo = 0.0
+		2:
+			if c.jogo == "vitoria" and t_passo > 3.2:
+				_foto("19_vitoria")
+				passo = 3
+			elif t_passo > 12.0:
+				passo = 3
+		3:
+			mundo.get_tree().quit()
+
+
+func _r_escolha() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	match passo:
+		0:
+			_preparar()
+			armar_build()
+			h.nivel = 20
+			# procura uma escolha com épico ou lendário para a foto mostrar as cores
+			var achada := 0
+			for semente in 400:
+				c.cartas.rng.seed = semente
+				var cs: Array = c.cartas.sortear(3, 20)
+				var soma := 0
+				for k in cs:
+					soma += int(k.rar)
+				if soma >= 6:
+					achada = semente
+					break
+			c.cartas.rng.seed = achada
+			c.progresso.cartas = c.cartas.sortear(3, 20)
+			c.jogo = "escolha"
+			c.pausado = true
+			c.telas.mostrar_escolha(c.progresso.cartas, 20)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.8:
+				_foto("20_escolha")
 				passo = 2
 		2:
 			mundo.get_tree().quit()

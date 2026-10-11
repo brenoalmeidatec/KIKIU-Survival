@@ -169,6 +169,13 @@ func curar(v: float) -> void:
 	vida = minf(vida_max, vida + v)
 
 
+## Fôlego que volta (matar com o modificador "Fôlego de caçador"): sai do cansaço se passar do limite.
+func ganhar_folego(x: float) -> void:
+	folego = minf(folego_max, folego + x)
+	if cansado and folego >= float(mundo.combate.cfg.folego.cansado_ate) * folego_max:
+		cansado = false
+
+
 ## Levou `valor` de dano de algo em `de` (mundo). Devolve true se o dano entrou.
 func levar_dano(valor: float, de: Vector2) -> bool:
 	if not vulneravel():

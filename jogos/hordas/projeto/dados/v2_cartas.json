@@ -1,0 +1,289 @@
+{
+	"_ajuda": "Profundidade da partida da v2 (leva 3), lido por v2/cartas.gd, armas.gd, elites.gd, bau.gd e chefe.gd. Tempos em segundos, distâncias em px do mundo (960x540 na tela). \"raridades\": comum, raro, épico e lendário, na ordem; cor (rgb 0 a 1 da carta e do brilho), mult (quanto o número de uma carta de stat ou de modificador é multiplicado), bonus_arma (dano a mais que o golpe secundário ganha por carta dessa raridade, 0,3 = +30%), peso_ini e peso_fim (peso do sorteio no nível 1 e no nivel_fim: a chance de raridade alta SOBE com o nível, andando em linha reta entre os dois). \"escolha\": cartas (quantas na tela), rerrolar_por_tela (quantas vezes por escolha), rerrolar_total e banir_total (usos na partida toda), garantir_golpe_ate (até esse nível a escolha sempre traz pelo menos 1 golpe secundário se o herói ainda não tem nenhum), peso_sinergia (a carta que completa uma evolução pesa mais no sorteio). \"stats\": melhorias simples; stat (dano, vel_ataque, area, vel_mov, vida, ima, critico), valor (por carta, multiplicado pela raridade; o texto usa {v}), max (quantas vezes sai). \"golpes\": golpes secundários AUTOMÁTICOS (o golpe principal é o clique da katana). tipo (orbita, aura, corvos, raio, runa) escolhe o código em v2/armas.gd; base = números do nível 1 (portados de dados/armas.json da v1, com \"dano\", \"recarga\" em s, \"quantidade\", \"tique\" = s entre dois acertos no mesmo monstro, \"raio\"/\"explosao\" em px, \"giro\" em rad/s, \"queima_dps\" e \"queima_t\" = fogo que fica no monstro, \"empurra\" em px/s, \"cadeia\" = saltos do raio, \"alcance\" = até onde o raio e os corvos enxergam); niveis = o que cada nível de 2 a 5 soma (campo \"texto\" aparece na carta). Cada carta de golpe sobe 1 nível, e a lendária sobe 2; o dano do golpe ganha o bonus_arma da raridade. \"modificadores\": mudam a katana: onda (cada corte solta uma onda com valor% do dano), fura (a estocada solta uma lança de luz que atravessa, com valor% do dano), explode (crítico explode em área com valor% do dano) e folego (cada abate devolve valor% de uma carga de fôlego). \"evolucoes\": duas peças viram uma versão evoluída (com aviso grande) assim que as duas chegam ao nível pedido em pecas; consome = as peças que somem (as outras ficam); o campo tipo e os números de \"arma\" valem como um golpe secundário novo; \"katana\" liga a versão evoluída de um modificador. \"elites\": o monstro grande com contorno colorido: primeira (s do primeiro), cada (s entre elites), max_vivos, escala (tamanho), vida_mult, dano_mult, xp_mult, orbes_extra, tipos (quem pode virar elite, com o nome que aparece), modificadores (rapido: vel_mult; blindado: vida_mult e empurrao_mult; explosivo: raio, dano e aviso da explosão ao morrer; invoca: a cada \"cada\" s chama \"n\" monstros, até \"max\"). \"bau\": o baú que a elite e o mini-chefe soltam; alcance (px para abrir), n_pesos (chance de 1, 2 ou 3 melhorias de graça), bonus_raridade (multiplica o peso das raridades acima da comum no baú), roleta (s da roleta de cartas e s de pausa por carta revelada). \"chefes\": mini-chefes aos 3 e aos 6 min e o chefe aos 10 min (vencer o chefe é a vitória); por marca: tempo (s da partida), tipo (sprite do monstro do protótipo), escala, tinta (cor nova do sprite), vida, dano (contato), vel, raio (corpo), xp, orbes, bau (quantos baús solta, 0 no chefe), intervalo (s entre ataques), ataques (na ordem em que ele sorteia). \"ataques\" do chefe são ANUNCIADOS: uma área piscando no chão por \"aviso\" s antes do dano. estouro = círculo (raio, dano) sob o herói; chuva = n círculos pequenos em volta do herói; investida = faixa (compr, larg) e depois o chefe corre por ela a vel px/s. Abaixo de fase2 (fração da vida) o chefe ataca mais rápido. \"anuncios\": textos livres (cor rgb) que vão pelo sinal anuncio(texto, cor) do mundo; ONDA FORTE, ELITE, EVOLUÇÃO, o nível e os marcos de combo o HUD (v2/hud_anuncios.gd) escreve sozinho a partir dos outros sinais.",
+	"raridades": [
+		{"id": "comum", "nome": "Comum", "cor": [0.8, 0.82, 0.86], "mult": 1.0, "bonus_arma": 0.0, "peso_ini": 100, "peso_fim": 36},
+		{"id": "raro", "nome": "Raro", "cor": [0.35, 0.66, 1.0], "mult": 1.5, "bonus_arma": 0.18, "peso_ini": 24, "peso_fim": 34},
+		{"id": "epico", "nome": "Épico", "cor": [0.74, 0.4, 1.0], "mult": 2.2, "bonus_arma": 0.4, "peso_ini": 3.5, "peso_fim": 20},
+		{"id": "lendario", "nome": "Lendário", "cor": [1.0, 0.74, 0.2], "mult": 3.2, "bonus_arma": 0.8, "peso_ini": 0.4, "peso_fim": 9}
+	],
+	"nivel_fim": 20,
+	"escolha": {"cartas": 3, "rerrolar_por_tela": 1, "rerrolar_total": 3, "banir_total": 2, "garantir_golpe_ate": 4, "peso_sinergia": 3.0},
+	"stats": [
+		{"id": "dano", "nome": "Lâmina afiada", "desc": "+{v}% de dano", "stat": "dano", "valor": 15, "max": 8, "peso": 1.0},
+		{"id": "vel_ataque", "nome": "Punho ligeiro", "desc": "+{v}% de velocidade de ataque", "stat": "vel_ataque", "valor": 12, "max": 6, "peso": 1.0},
+		{"id": "area", "nome": "Arco largo", "desc": "+{v}% de área do corte", "stat": "area", "valor": 12, "max": 6, "peso": 0.9},
+		{"id": "vel_mov", "nome": "Pés de vento", "desc": "+{v}% de velocidade de movimento", "stat": "vel_mov", "valor": 8, "max": 6, "peso": 0.9},
+		{"id": "vida", "nome": "Alma robusta", "desc": "+{v} de vida máxima e cura", "stat": "vida", "valor": 20, "max": 8, "peso": 1.0},
+		{"id": "ima", "nome": "Ímã de almas", "desc": "+{v}% de alcance para pegar almas", "stat": "ima", "valor": 35, "max": 5, "peso": 0.8},
+		{"id": "critico", "nome": "Olho de falcão", "desc": "+{v}% de chance de crítico", "stat": "critico", "valor": 5, "max": 8, "peso": 1.0}
+	],
+	"golpes": [
+		{
+			"id": "laminas",
+			"nome": "Lâminas Rodopiantes",
+			"desc": "Lâminas giram em volta de você e cortam quem encosta.",
+			"tipo": "orbita",
+			"max": 5,
+			"peso": 1.4,
+			"cor": [0.7, 0.9, 1.0],
+			"base": {"dano": 9, "quantidade": 2, "raio": 46, "giro": 3.2, "tique": 0.45, "empurra": 30},
+			"niveis": [
+				{"texto": "+1 lâmina", "quantidade": 1},
+				{"texto": "+5 de dano", "dano": 5},
+				{"texto": "+1 lâmina", "quantidade": 1},
+				{"texto": "+8 de dano e mais rápidas", "dano": 8, "giro": 0.6}
+			]
+		},
+		{
+			"id": "aura_fogo",
+			"nome": "Aura de Fogo",
+			"desc": "Um círculo de fogo queima e empurra quem chega perto.",
+			"tipo": "aura",
+			"max": 5,
+			"peso": 1.4,
+			"cor": [1.0, 0.55, 0.2],
+			"base": {"dano": 5, "raio": 58, "tique": 0.6, "empurra": 40, "queima_dps": 3, "queima_t": 2.0},
+			"niveis": [
+				{"texto": "+10 de raio", "raio": 10, "empurra": 15},
+				{"texto": "+3 de dano", "dano": 3},
+				{"texto": "bate mais rápido", "tique": -0.1},
+				{"texto": "+4 de dano e queima mais forte", "dano": 4, "queima_dps": 3}
+			]
+		},
+		{
+			"id": "corvos",
+			"nome": "Corvos Famintos",
+			"desc": "Corvos caçam os inimigos e bicam até cansar.",
+			"tipo": "corvos",
+			"max": 5,
+			"peso": 1.3,
+			"cor": [0.7, 0.45, 1.0],
+			"base": {"dano": 7, "recarga": 4.0, "quantidade": 2, "duracao": 5.0, "velocidade": 220, "tique": 0.5, "alcance": 260},
+			"niveis": [
+				{"texto": "+1 corvo", "quantidade": 1},
+				{"texto": "+3 de dano e dura mais", "dano": 3, "duracao": 1.0},
+				{"texto": "+2 corvos", "quantidade": 2},
+				{"texto": "+4 de dano e bica mais rápido", "dano": 4, "tique": -0.1}
+			]
+		},
+		{
+			"id": "raio",
+			"nome": "Raio em Cadeia",
+			"desc": "Um raio cai no inimigo mais próximo e salta para os vizinhos.",
+			"tipo": "raio",
+			"max": 5,
+			"peso": 1.3,
+			"cor": [0.7, 0.85, 1.0],
+			"base": {"dano": 20, "recarga": 2.0, "quantidade": 1, "cadeia": 2, "raio": 74, "alcance": 230},
+			"niveis": [
+				{"texto": "+1 raio", "quantidade": 1},
+				{"texto": "+8 de dano", "dano": 8},
+				{"texto": "cai mais rápido", "recarga": -0.3},
+				{"texto": "+12 de dano e +1 salto", "dano": 12, "cadeia": 1}
+			]
+		},
+		{
+			"id": "runa",
+			"nome": "Runa Explosiva",
+			"desc": "Risca runas no chão que explodem quando alguém pisa.",
+			"tipo": "runa",
+			"max": 5,
+			"peso": 1.3,
+			"cor": [0.6, 0.95, 0.9],
+			"base": {"dano": 30, "recarga": 2.5, "quantidade": 2, "duracao": 8.0, "raio": 16, "explosao": 42},
+			"niveis": [
+				{"texto": "+1 runa", "quantidade": 1},
+				{"texto": "+10 de dano e explosão maior", "dano": 10, "explosao": 8},
+				{"texto": "+1 runa", "quantidade": 1},
+				{"texto": "+15 de dano e recarrega mais rápido", "dano": 15, "recarga": -0.4}
+			]
+		}
+	],
+	"modificadores": [
+		{
+			"id": "onda",
+			"nome": "Corte ondulante",
+			"desc": "Cada corte solta uma onda com {v}% do dano.",
+			"mod": "onda",
+			"valor": 40,
+			"max": 4,
+			"peso": 1.1,
+			"alcance": 150,
+			"vel": 250
+		},
+		{
+			"id": "fura",
+			"nome": "Estocada perfurante",
+			"desc": "A estocada solta uma lança de luz que atravessa, com {v}% do dano.",
+			"mod": "fura",
+			"valor": 45,
+			"max": 4,
+			"peso": 1.1,
+			"alcance": 190,
+			"vel": 380
+		},
+		{
+			"id": "explode",
+			"nome": "Crítico explosivo",
+			"desc": "O crítico explode em área, com {v}% do dano.",
+			"mod": "explode",
+			"valor": 50,
+			"max": 3,
+			"peso": 1.0,
+			"raio": 38
+		},
+		{
+			"id": "folego",
+			"nome": "Fôlego de caçador",
+			"desc": "Cada abate devolve {v}% de uma carga de fôlego.",
+			"mod": "folego",
+			"valor": 12,
+			"max": 4,
+			"peso": 1.0
+		}
+	],
+	"evolucoes": [
+		{
+			"id": "anel_de_brasas",
+			"nome": "Anel de Brasas",
+			"desc": "Seis lâminas em brasa giram dentro de um anel de fogo.",
+			"pecas": [{"id": "aura_fogo", "nivel": 3}, {"id": "laminas", "nivel": 3}],
+			"consome": ["aura_fogo", "laminas"],
+			"tipo": "orbita",
+			"cor": [1.0, 0.5, 0.15],
+			"arma": {"dano": 17, "quantidade": 6, "raio": 62, "giro": 3.6, "tique": 0.35, "empurra": 45, "queima_dps": 7, "queima_t": 2.5, "aura_raio": 56, "aura_dano": 9}
+		},
+		{
+			"id": "revoada_de_trovoes",
+			"nome": "Revoada de Trovões",
+			"desc": "Sete corvos elétricos: cada bicada solta um raio no vizinho.",
+			"pecas": [{"id": "corvos", "nivel": 3}, {"id": "raio", "nivel": 3}],
+			"consome": ["corvos", "raio"],
+			"tipo": "corvos",
+			"cor": [0.7, 0.8, 1.0],
+			"arma": {"dano": 14, "recarga": 3.0, "quantidade": 7, "duracao": 6.5, "velocidade": 270, "tique": 0.35, "alcance": 300, "eletrico": 0.6}
+		},
+		{
+			"id": "circulo_runico",
+			"nome": "Círculo Rúnico",
+			"desc": "Muitas runas, estouros enormes, e quem sobra fica lento.",
+			"pecas": [{"id": "runa", "nivel": 3}, {"id": "explode", "nivel": 2}],
+			"consome": ["runa"],
+			"tipo": "runa",
+			"cor": [0.55, 1.0, 0.95],
+			"arma": {"dano": 58, "recarga": 1.6, "quantidade": 5, "duracao": 9.0, "raio": 20, "explosao": 66, "lentidao": 1.6}
+		},
+		{
+			"id": "ventania",
+			"nome": "Ventania Cortante",
+			"desc": "A onda fica enorme e a estocada solta três lanças em leque.",
+			"pecas": [{"id": "onda", "nivel": 2}, {"id": "fura", "nivel": 2}],
+			"consome": ["onda", "fura"],
+			"katana": "ventania",
+			"cor": [0.8, 1.0, 0.95],
+			"mult_onda": 1.9,
+			"larg_onda": 1.6
+		}
+	],
+	"elites": {
+		"primeira": 45,
+		"cada": 50,
+		"max_vivos": 2,
+		"escala": 1.5,
+		"vida_mult": 6.0,
+		"dano_mult": 1.5,
+		"xp_mult": 3.0,
+		"orbes_extra": 4,
+		"tipos": [
+			{"sprite": "inimigo_cao_ossos", "nome": "Cão de Ossos", "desde": 0},
+			{"sprite": "inimigo_aranha_tecela", "nome": "Aranha Tecelã", "desde": 0},
+			{"sprite": "inimigo_lobo_sombrio", "nome": "Lobo Sombrio", "desde": 60},
+			{"sprite": "inimigo_espantalho", "nome": "Espantalho", "desde": 100},
+			{"sprite": "inimigo_cavaleiro_oco", "nome": "Cavaleiro Oco", "desde": 160}
+		],
+		"modificadores": [
+			{"id": "rapido", "nome": "Veloz", "cor": [1.0, 0.86, 0.2], "vel_mult": 1.7, "vida_mult": 0.8},
+			{"id": "blindado", "nome": "Blindado", "cor": [0.55, 0.78, 1.0], "vida_mult": 2.2, "empurrao_mult": 0.12},
+			{"id": "explosivo", "nome": "Explosivo", "cor": [1.0, 0.45, 0.12], "raio": 58, "dano": 24, "aviso": 0.75},
+			{"id": "invoca", "nome": "Invocador", "cor": [0.85, 0.4, 1.0], "cada": 4.5, "n": 2, "max": 6}
+		]
+	},
+	"bau": {
+		"alcance": 22,
+		"n_pesos": [55, 33, 12],
+		"bonus_raridade": 2.4,
+		"roleta": {"giro": 1.5, "pausa": 0.45}
+	},
+	"chefes": {
+		"fase2": 0.5,
+		"ataques": {
+			"estouro": {"aviso": 1.1, "raio": 60, "dano": 18},
+			"chuva": {"aviso": 1.0, "n": 5, "raio": 30, "dano": 14, "espalha": 120, "intervalo": 0.18},
+			"investida": {"aviso": 1.0, "compr": 220, "larg": 32, "dano": 22, "vel": 460}
+		},
+		"marcas": [
+			{
+				"id": "mini1",
+				"mini": true,
+				"tempo": 180,
+				"tipo": "inimigo_cavaleiro_oco",
+				"nome": "Cavaleiro Rubro",
+				"escala": 2.3,
+				"tinta": [1.0, 0.55, 0.5],
+				"cor": [1.0, 0.3, 0.25],
+				"vida": 1100,
+				"dano": 20,
+				"vel": 44,
+				"raio": 14,
+				"xp": 30,
+				"orbes": 20,
+				"bau": 1,
+				"intervalo": 3.2,
+				"ataques": ["estouro", "chuva"]
+			},
+			{
+				"id": "mini2",
+				"mini": true,
+				"tempo": 360,
+				"tipo": "inimigo_aranha_tecela",
+				"nome": "Rainha Tecelã",
+				"escala": 3.2,
+				"tinta": [0.6, 1.0, 0.55],
+				"cor": [0.4, 1.0, 0.35],
+				"vida": 3000,
+				"dano": 26,
+				"vel": 54,
+				"raio": 16,
+				"xp": 60,
+				"orbes": 24,
+				"bau": 1,
+				"intervalo": 2.8,
+				"ataques": ["estouro", "investida", "chuva"]
+			},
+			{
+				"id": "chefe",
+				"mini": false,
+				"tempo": 600,
+				"tipo": "inimigo_espantalho",
+				"nome": "Rei Espantalho",
+				"escala": 4.4,
+				"tinta": [1.0, 0.5, 0.85],
+				"cor": [1.0, 0.25, 0.7],
+				"vida": 9000,
+				"dano": 34,
+				"vel": 50,
+				"raio": 20,
+				"xp": 150,
+				"orbes": 30,
+				"bau": 0,
+				"intervalo": 2.5,
+				"ataques": ["estouro", "chuva", "investida", "chuva"]
+			}
+		]
+	},
+	"anuncios": {
+		"minichefe": {"texto": "MINI-CHEFE: {nome}", "cor": [1.0, 0.4, 0.3]},
+		"chefe": {"texto": "CHEFE: {nome}", "cor": [1.0, 0.25, 0.6]},
+		"vitoria": {"texto": "VITÓRIA!", "cor": [1.0, 0.9, 0.4]}
+	}
+}
