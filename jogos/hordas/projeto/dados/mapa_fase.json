@@ -5,6 +5,19 @@
  "pecas_min": 12,
  "pecas_max": 20,
  "distancia_min": 18,
+ "perigos": {
+  "s": {"dano_seg": 5.0},
+  "p": {"dano_seg": 8.0},
+  "l": {"dano_seg": 2.0},
+  "e": {"dano_seg": 1.0}
+ },
+ "santuarios_regiao": {
+  "floresta": {"nome": "Totem do Bosque", "cor": [0.2, 0.8, 0.3], "forma": "totem", "frase": "Toque o totem para afastar o bosque."},
+  "pantano": {"nome": "Orbe da Névoa", "cor": [0.85, 0.85, 0.1], "forma": "orbe", "frase": "Ative o orbe antes que a névoa suba."},
+  "deserto": {"nome": "Pira do Sol Morto", "cor": [1.0, 0.55, 0.1], "forma": "pira", "frase": "Acenda a pira e reze pela sombra."},
+  "gelo": {"nome": "Cristal do Cume", "cor": [0.3, 0.8, 1.0], "forma": "cristal", "frase": "Quebre o cristal para ganhar calor."},
+  "reino": {"nome": "Altar Profano", "cor": [0.6, 0.2, 0.8], "forma": "altar", "frase": "Ofereça ouro ao altar e sobreviva."}
+ },
  "tentativas": 20,
  "portal_no_portao": [
   8,

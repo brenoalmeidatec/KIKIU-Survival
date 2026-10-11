@@ -11,6 +11,7 @@ const Cenario := preload("res://scripts/hordas/cenario.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Ambiente := preload("res://scripts/hordas/ambiente.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
+const MapaFase := preload("res://scripts/hordas/mapa_fase.gd")
 ## cor do anel de cada tipo de santuário
 const COR_TIPO := {"tomada": Color(1.0, 0.85, 0.3), "dadiva": Color(0.4, 0.9, 1.0), "fragmento": Color(0.45, 0.55, 1.0), "maldito": Color(0.85, 0.35, 0.8),
 	"prova": Color(1.0, 0.45, 0.25), "selado": Color(0.7, 0.85, 1.0), "reliquia": Color(1.0, 0.9, 0.5)}
@@ -243,8 +244,9 @@ func _draw_i() -> void:
 	else:
 		_draw_enfeites_antigos()
 	var tex := Dados.tex(str(Descobertas.cfg().get("santuarios", {}).get("sprite", "tomada")))   # a pira (#65)
+	var ident := _identidade_regiao()   # santuário da região (nome, cor, forma): distinto em cada região (#128)
 	for s in santuarios:
-		var base: Color = COR_TIPO.get(s.tipo, Color.WHITE)
+		var base: Color = _cor_regiao(ident) if not ident.is_empty() else COR_TIPO.get(s.tipo, Color.WHITE)
 		var cor := Color(0.4, 0.6, 0.7, 0.5) if s.usado else Color(base, 0.8)
 		draw_set_transform(s.pos, 0, Vector2(1, 0.55))
 		draw_circle(Vector2.ZERO, 48, Color(cor, 0.12))
@@ -260,7 +262,10 @@ func _draw_i() -> void:
 		Visual.contato(self, s.pos, sz.x * 0.8, alt)
 		Visual.sombra(self, tex, Rect2(-sz.x / 2, -sz.y, sz.x, sz.y), Rect2(Vector2.ZERO, tex.get_size()), s.pos, alt)
 		var tinta := Color.WHITE if s.tipo == "tomada" else Color.WHITE.lerp(base, 0.55)
-		draw_texture_rect(tex, Rect2(s.pos - Vector2(sz.x / 2, sz.y) + Vector2(0, flut), sz), false, Color(0.6, 0.6, 0.6) if s.usado else tinta)
+		if ident.is_empty():
+			draw_texture_rect(tex, Rect2(s.pos - Vector2(sz.x / 2, sz.y) + Vector2(0, flut), sz), false, Color(0.6, 0.6, 0.6) if s.usado else tinta)
+		else:
+			_forma_santuario(str(ident.forma), s.pos, sz, Color(0.6, 0.6, 0.6) if s.usado else base, flut)
 		if s.usado:
 			continue
 		if s.tipo != "tomada":   # energia girando em volta e, no do dragão, o fragmento flutuando em cima
@@ -274,8 +279,49 @@ func _draw_i() -> void:
 			var cs: Dictionary = Descobertas.cfg().get("santuarios", {})
 			var nome := str(cs.get("variacoes", {}).get(str(s.variacao), {}).get("nome", ""))
 			nome = str(cs.get("nomes", {}).get(str(s.tipo), nome))   # dádiva, maldito, tomada: o nome do tipo (#65)
+			if not ident.is_empty():
+				nome = str(ident.nome)   # na região, o nome do santuário dela (#128)
 			draw_string(Dados.fonte, s.pos + Vector2(-130, 22), nome, HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(base, 1.0))
 			draw_string(Dados.fonte, s.pos + Vector2(-130, 33), Descobertas.dica(s, santuarios, arena.inimigos.elementos.contagem), HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(0.85, 0.85, 0.9, 0.8))
+
+
+## Santuário da região em que a fase está (dados/mapa_fase.json > santuarios_regiao); vazio sem regiões.
+func _identidade_regiao() -> Dictionary:
+	if not Regioes.ativo() or arena.diretor == null:
+		return {}
+	var fs: Array = arena.diretor.fases()
+	var f: Dictionary = fs[clampi(arena.diretor.fase_idx, 0, fs.size() - 1)]
+	var rid := str(Regioes.regiao(int(f.get("regiao", 0))).get("id", ""))
+	return MapaFase.cfg().get("santuarios_regiao", {}).get(rid, {})
+
+
+func _cor_regiao(ident: Dictionary) -> Color:
+	var c: Array = ident.cor
+	return Color(float(c[0]), float(c[1]), float(c[2]))
+
+
+## Forma do santuário da região, no lugar da pira: totem, orbe, pira, cristal ou altar. `pos` é o pé, `sz` o tamanho da pira.
+func _forma_santuario(forma: String, pos: Vector2, sz: Vector2, cor: Color, flut: float) -> void:
+	var b := pos + Vector2(0, flut)
+	match forma:
+		"totem":
+			draw_rect(Rect2(b + Vector2(-9, -sz.y), Vector2(18, sz.y)), cor)
+			draw_rect(Rect2(b + Vector2(-14, -sz.y * 0.75), Vector2(28, 6)), cor.lightened(0.3))
+			draw_rect(Rect2(b + Vector2(-14, -sz.y * 0.4), Vector2(28, 6)), cor.lightened(0.3))
+		"orbe":
+			draw_rect(Rect2(b + Vector2(-14, -6), Vector2(28, 6)), cor.darkened(0.4))
+			draw_circle(b + Vector2(0, -sz.y * 0.5), 16, cor)
+			draw_circle(b + Vector2(-5, -sz.y * 0.5 - 5), 5, Color(1, 1, 1, 0.6))
+		"pira":
+			draw_colored_polygon(PackedVector2Array([b + Vector2(-14, 0), b + Vector2(14, 0), b + Vector2(6, -sz.y * 0.5), b + Vector2(0, -sz.y), b + Vector2(-6, -sz.y * 0.55)]), cor)
+		"cristal":
+			draw_colored_polygon(PackedVector2Array([b + Vector2(0, -sz.y), b + Vector2(12, -sz.y * 0.5), b + Vector2(0, 0), b + Vector2(-12, -sz.y * 0.5)]), cor)
+		"altar":
+			draw_rect(Rect2(b + Vector2(-18, -10), Vector2(36, 10)), cor.darkened(0.3))
+			draw_rect(Rect2(b + Vector2(-12, -sz.y * 0.6), Vector2(24, sz.y * 0.6 - 10)), cor)
+			draw_circle(b + Vector2(0, -sz.y * 0.6), 6, cor.lightened(0.4))
+		_:
+			draw_circle(b + Vector2(0, -sz.y * 0.5), 14, cor)
 
 
 ## Enfeites do chão antigo (sem cenário configurado).

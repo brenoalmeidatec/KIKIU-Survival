@@ -373,6 +373,9 @@ func _process(dt: float) -> void:
 		jogador.atualizar(dt)
 		if mapa_fase_mundo and not duelo_ativo:
 			mapa_fase_mundo.prender(jogador, antes)   # parede do mapa fechado (#128): o herói não atravessa
+			var dps: float = mapa_fase_mundo.dano_seg_em(jogador.position + MapaFaseMundo.PES)   # espinho, veneno, lodo, gelo (#128)
+			if dps > 0.0 and jogador.hp > 0.0:
+				jogador.dano_direto(dps * dt, "chao")   # o chão machuca por segundo; sem invencibilidade nem som a cada quadro
 	elif caido:
 		jogador.queue_redraw()
 	if duelo_ativo:
@@ -551,7 +554,7 @@ func abrir_saida(p: Vector2) -> void:
 	fase_stat.tempo = diretor.t_fase   # o tempo da fase para de contar aqui; ficar coletando depois não pesa
 	diretor.saida_leve = true
 	if mapa_fase_mundo:
-		p = mapa_fase_mundo.ponto_livre_perto(p)   # o portal não nasce dentro de parede (mapa fechado, #128)
+		p = mapa_fase_mundo.portal_mundo()   # o portal fica no centro do pátio do portão (mapa fechado, #128)
 	saida.abrir(p)
 	anunciar("CHEFE DERROTADO!", Color(1, 0.9, 0.4))
 	mensagem("Entre no portal e segure CONFIRMAR para sair", Color(0.75, 0.65, 1))

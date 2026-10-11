@@ -67,5 +67,26 @@ func _ready() -> void:
 	ok(vistos > 0 and mundo.visto[t.y * m.largura + t.x] == 1, "a névoa revela o tile do herói")
 	ok(mundo.visto[0] == 0 or t.x - 0 <= MapaFaseMundo.RAIO_NEBLINA, "a névoa não passa do raio")
 
+	# --- portal: fica no centro do pátio do portão (chão), e o portal_mundo cai nele
+	var pt := mundo.tile_de(mundo.portal_mundo())
+	ok(pt == m.portal, "o portal sai no tile do portão")
+	ok(not mundo.parede_em(mundo.portal_mundo()), "o portal não nasce em parede")
+
+	# --- perigos: chão de espinho, veneno, lodo ou gelo machuca por segundo; chão comum não
+	var perigo := Vector2.INF
+	var comum := Vector2.INF
+	for y in range(1, m.altura - 1):
+		for x in range(1, m.largura - 1):
+			var ch: String = m.linhas[y][x]
+			var no := mundo.origem + (Vector2(x, y) + Vector2(0.5, 0.5)) * MapaFaseMundo.TILE
+			if ch in ["s", "p", "l", "e"] and perigo == Vector2.INF:
+				perigo = no
+			if ch == "." and comum == Vector2.INF:
+				comum = no
+	if perigo != Vector2.INF:
+		ok(mundo.dano_seg_em(perigo) > 0.0, "chão perigoso machuca por segundo")
+	ok(comum != Vector2.INF and mundo.dano_seg_em(comum) == 0.0, "chão comum não machuca")
+	ok(mundo.dano_seg_em(Vector2(-100000, 0)) == 0.0, "fora do mapa não machuca")
+
 	print("MAPA_MUNDO falhas=%d" % falhas)
 	get_tree().quit()

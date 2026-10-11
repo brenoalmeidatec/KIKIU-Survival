@@ -24,6 +24,8 @@ var origem := Vector2.ZERO     # canto de cima-esquerda do mapa, no mundo (o com
 var visto := PackedByteArray() # névoa do minimapa: 1 = o herói já passou perto
 var _mini_tela: Control
 var _pos_mini := Vector2.ZERO  # onde o herói está, para o ponto do minimapa
+var portal := Vector2i.ZERO    # tile do portal (centro do pátio do portão, #128)
+var _perigos := {}             # letra do chão perigoso -> dano por segundo (dados/mapa_fase.json > perigos)
 
 
 func _ready() -> void:
@@ -53,6 +55,11 @@ func configurar(mapa: Dictionary) -> void:
 	grade = mapa.linhas
 	var inicio: Vector2i = mapa.inicio
 	origem = -(Vector2(inicio) + Vector2(0.5, 0.5)) * TILE
+	portal = mapa.portal
+	_perigos = {}
+	var perigos: Dictionary = MapaFase.cfg().get("perigos", {})
+	for ch in perigos:
+		_perigos[ch] = float(perigos[ch].get("dano_seg", 0.0))
 	visto = PackedByteArray()
 	visto.resize(w * h)
 	visto.fill(0)
@@ -86,6 +93,19 @@ func ponto_livre_perto(p: Vector2) -> Vector2:
 				if t.x >= 0 and t.y >= 0 and t.x < w and t.y < h and MapaFase.passavel(grade[t.y][t.x]):
 					return origem + (Vector2(t) + Vector2(0.5, 0.5)) * TILE
 	return p
+
+
+## Onde o portal de saída abre: o centro do pátio do portão (sempre chão, #128). Todos os clientes chegam ao mesmo ponto.
+func portal_mundo() -> Vector2:
+	return origem + (Vector2(portal) + Vector2(0.5, 0.5)) * TILE
+
+
+## Dano por segundo do chão perigoso onde o ponto está (espinho, veneno, lodo, gelo fino); 0 no chão comum.
+func dano_seg_em(p: Vector2) -> float:
+	var t := tile_de(p)
+	if t.x < 0 or t.y < 0 or t.x >= w or t.y >= h:
+		return 0.0
+	return float(_perigos.get(grade[t.y][t.x], 0.0))
 
 
 ## Caixa de colisão do herói (4 cantos em volta dos pés) bate em alguma parede?
