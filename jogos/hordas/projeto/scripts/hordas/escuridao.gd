@@ -3,8 +3,8 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 ## Escuridão da fase de horror (#32 item 5). Só liga nas fases de corrida.json que têm o campo "escuro".
 ## Como funciona (GL Compatibility, um draw call): um ColorRect em tela cheia, ENTRE o mundo e o HUD (layer 1),
 ## com um shader que lê a tela já desenhada e a escurece, deixando luz em volta do herói, das tochas, dos santuários
-## e dos inimigos com "luz" no json (espectro, abominação, chefe). A luz é em degraus com pontilhado (Bayer), como
-## pixel art de verdade. O que é MUITO claro na tela (olhos e chamas dos bichos, tiros, gemas, números de dano)
+## e dos inimigos com "luz" no json (espectro, abominação, chefe). A luz cai de forma contínua (sem degraus e sem
+## pontilhado: a direção visual 2.5D quer escuro liso). O que é MUITO claro na tela (olhos e chamas dos bichos, tiros, gemas, números de dano)
 ## atravessa a escuridão: é o que faz os olhos brilharem no escuro, sem desenhar nada a mais por inimigo.
 ## As tochas são decoração do mundo (posições sorteadas por hash, iguais em toda máquina), desenhadas por aqui
 ## porque o cenário (cenario.gd/chao.gd) não sabe de horror. Clima: névoa no shader e sons graves de vez em quando.
@@ -28,7 +28,6 @@ uniform int halo_n = 8;   // leituras da tela do halo (perfil de qualidade: 8 al
 uniform float aparece = 1.0;
 uniform vec3 ambiente = vec3(1.0);   // tom do cenário (CanvasModulate do chão): desfeito pra medir o brilho de verdade
 const vec2 OFS[8] = vec2[8](vec2(2.0, 0.0), vec2(-2.0, 0.0), vec2(0.0, 2.0), vec2(0.0, -2.0), vec2(3.0, 3.0), vec2(-3.0, 3.0), vec2(3.0, -3.0), vec2(-3.0, -3.0));
-const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 
 float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float ruido(vec2 p) {
@@ -49,12 +48,7 @@ void fragment() {
 		float k = 1.0 - smoothstep(L.z * 0.2, L.z, d);
 		l = max(l, k * k * (3.0 - 2.0 * k) * L.w);
 	}
-	// degraus de luz com pontilhado: 6 faixas
-	float lq = clamp(l, 0.0, 1.0) * 6.0;
-	float faixa = floor(lq);
-	int bi = int(mod(p.x, 4.0)) + 4 * int(mod(p.y, 4.0));
-	faixa += step((BAYER[bi] + 0.5) / 16.0, lq - faixa);
-	l = faixa / 6.0;
+	l = clamp(l, 0.0, 1.0);   // luz contínua: sem degraus e sem pontilhado (escuro liso, como o resto da direção 2.5D)
 	vec3 amb = max(ambiente, vec3(0.3));
 	float v = max(c.r / amb.r, max(c.g / amb.g, c.b / amb.b));
 	float brilho = smoothstep(0.86, 0.96, v);
@@ -150,7 +144,7 @@ func _process_i(dt: float) -> void:
 		return
 	_t += dt
 	_mat.set_shader_parameter("t", _t)
-	_mat.set_shader_parameter("halo_n", int(Config.q("escuro_halo")))
+	_mat.set_shader_parameter("halo_n", Config.leituras_horror())
 	_mat.set_shader_parameter("aparece", _aparece)
 	var amb: Color = arena.chao._ambiente.color if arena.chao and "_ambiente" in arena.chao else Color.WHITE
 	_mat.set_shader_parameter("ambiente", Vector3(amb.r, amb.g, amb.b))
@@ -167,7 +161,7 @@ func _process_i(dt: float) -> void:
 func _atualizar_luzes() -> void:
 	var ct: Transform2D = get_viewport().get_canvas_transform()
 	var n := 0
-	var max_l := mini(MAX_LUZES, int(Config.q("escuro_luzes")))   # perfil de qualidade
+	var max_l := mini(MAX_LUZES, Config.luzes_horror())   # perfil de qualidade
 	var jog: Vector2 = ct * arena.jogador.centro()
 	var pisca := 1.0 + 0.035 * sin(_t * 9.0) + 0.02 * sin(_t * 23.0)
 	_luzes[n] = Vector4(jog.x, jog.y, float(_cfg.get("raio_heroi", 130.0)) * pisca, 1.0)

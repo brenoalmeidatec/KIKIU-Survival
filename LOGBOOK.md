@@ -1044,6 +1044,23 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **fps (Iris Xe, 960x540, sem V-Sync, mediana de 3):** ~500 a 600 com 26 sprites e ~230 com 251, quase igual de 1 a 6 luzes e com ou sem normal (máquina com ~90% de CPU por outros testes: ruído de até 25%; ordem de grandeza). Não substitui o teste no i5-3470.
 - **Pendente / olho humano:** o Alisson e o Breno decidirem se o clima serve. Perto da referência na luz colorida e nos olhos; **longe** em densidade de bichos, vegetação saturada, efeitos e portal (V3 e V5). Cavaleiro de aço e aranha viram silhueta fora das poças de luz. Os olhos precisam de camada aditiva fora do `CanvasModulate` (ver `LEIA-ME.md`); a horda é MultiMesh e o protótipo usa `Sprite2D`.
 - **Próximo (se aprovado):** aplicar no gerador real o que está na seção "O que muda" do `LEIA-ME.md` (câmera 45, `PPU`, quadros, albedo, normal, emissão), regenerar heróis e monstros e ligar a luz com os limites de `qualidade.json`.
+## 2026-10-11 · Claude do Alisson (notebook) · arrumação de tela e testes instáveis (E1, issue #152)
+- **Feito (tela, conferido com print pelo viewport, antes e depois):** título sem "Protótipo" e com "esquiva" no lugar de "dash"; a dica da pausa também; a abertura da fase (layer 7) cobria o véu da pausa, e agora ela some enquanto a pausa estiver aberta (e o HUD volta ao estado de antes ao retomar); banner "Conjunto … completo!" subiu para y=44 (sem cobrir o herói); nome da arma na escolha de herói quebra em 2 linhas ("Adaga de Arrem…" sumiu); no preparo o subtítulo virou "Comida  ocupa 1 espaço" e a largura ficou em 240 px.
+- **Feito (escuridão, fase de horror):** a luz deixou de ser em 6 degraus com pontilhado Bayer (uma grade de pontos no chão). Agora é contínua, com a mesma força e os mesmos raios. Medido na Ponte das Almas: a linha de pixels passou de 40,36,36,36,40,37… para 34,34,34,35,35,35,36…
+- **Feito (pisos, a causa principal):** o pontilhado estava gravado nas texturas de chão (`pixelar(pontilhado=…)` em `cenarios.py` e `loja.py`). Agora 0 nos pisos e nas paredes da loja. Regenerei os pisos de todas as regiões, variantes e loja com o Blender 4.5 (`blender -b -P cenarios.py -- piso`, depois `loja.py`). A opção `-- piso` foi adicionada para não refazer os enfeites. Só os `piso.png` (e `parede.png` da loja) mudaram de conteúdo.
+- **Feito (testes instáveis):**
+  - `dragao`/`transformacao`: sem robô (ele pegava armas nas esperas); a transformação é disparada pelo teste.
+  - `transicao`: mede a mediana do desenho da cortina, não a média (a média subia com quadros engolidos pelo SO). Limite de 1000 µs mantido.
+  - `criacao`: usa o próprio arquivo de save desde o início.
+  - `esquiva` e `mira`: passam a andar o tempo simulado (passos fixos de 1/60 s, arena com `_process` manual). Antes dependiam do relógio de parede, e sob carga falhavam (`esquiva` 3 de 3 na main; `mira` 1 de 4). Agora `esquiva` passou 5 de 5 sob carga e `mira` 5 de 5.
+  - `status`/`esquiva`: não reproduzi o travamento (5 de 5 cada, 3 a 10 s). Coloquei um vigia de 100 s de relógio real: se um caminho não chegar ao `quit()`, o teste falha em vez de ficar vivo.
+  - `elementos`, `abertura`, `equipamentos`, `regras_armas`: 5 rodadas com 4 em paralelo, 20 execuções, todas `falhas=0`.
+- **Números:** cenas `testes/*.tscn` (51, sem `bench_*`), 2 rodadas com 3 em paralelo: 101 de 102 ok. A falha foi `mira` na rodada 1, antes da troca para tempo simulado. Robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40`: código 0, zero SCRIPT ERROR.
+- **Pendente:**
+  - `regras_armas` leva 113 s a 400 s localmente (no CI passou em menos de 120 s). Não investiguei a causa.
+  - `ortografia.py` não rodou aqui (sem Python utilizável nesta máquina); ele roda no CI.
+  - `gdformat` não rodou (fica para o fechamento da etapa).
+  - Olho humano: conferir a textura de piso nova na máquina de testes do Breno.
 - Assinado: Claude do Alisson (notebook)
 ## 2026-10-11 · Claude do Alisson (notebook) · CI mais rápido (E1, issue #152)
 - **Medido antes (run 38096771596, `ci.yml`, job `testes`):** 8m17s no total. Baixar o Godot: ~2 s (já vinha do cache). `--import` (2x): ~22 s. Rodar as 51 cenas em sequência: ~7m44s (quase tudo está aqui).
@@ -1054,3 +1071,11 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - Assinado: Claude do Alisson (notebook)
 - **Depois (PR #154, run 38103995863, mesmo `ci.yml` com o script):** job `testes` 2m31s (de 8m17s, ~70% a menos); o passo das cenas levou 125 s. Contagem: 51 cenas, 51 rodadas, 51 ok, 0 falhas. `gdlint` e `ortografia` verdes. Uma rodada só: se aparecer cena instável com 4 em paralelo, o `P` do `ci.yml` (padrão 4) é o primeiro ajuste.
 - **Release:** não foi alterado (gatilhos e jobs iguais); o próximo push na `main` (o merge deste PR) roda o export e a publicação como sempre.
+
+## 2026-10-11 · Claude do Alisson (notebook) · aba Gráficos: dados e ligações (#150, E1)
+- **Feito:** `dados/graficos.json` com as 15 opções (CPU: máximo de inimigos, partículas, cálculo dos monstros, detalhe longe da câmera, tempo dos restos; GPU: luz com relevo, sombras, brilhos e halos, névoa, vinheta, efeitos das armas, tremor e clarões, escala de render, limite de fps, V-Sync) e os 3 perfis. Médio e Alto mantêm os números de `qualidade.json` (que saiu); Baixo é o perfil do i5-3470.
+- **API em `config.gd`:** `Config.g(chave)`, `g_definir` (vira personalizado), `g_perfil`, `g_aplicar_perfil`, `g_perfil_temporario` (só memória, para teste), `g_detectar`, `g_opcoes`, `recarregar` e o sinal `graficos_mudou`. Salva na seção `[graficos]` de `opcoes.cfg`. Migra a "Qualidade gráfica" antiga uma vez.
+- **Saíram do ITENS:** qualidade, vsync, fps_max e vinheta. A tela nova da aba deve trazer todas. `qualidade_auto` ficou (baixa de perfil se fps < 40 por 8 s; em personalizado não faz nada).
+- **Pendente:** `escala_render` é salva mas ainda não age. `content_scale_factor` do viewport raiz muda a área visível (zoom), não a resolução, então não serve; falta um SubViewport com a cena do jogo. `luz_relevo` só guarda o valor (Etapa 3). A frequência de "alvo" não tem controle próprio: só a separação entra no `calculo_monstros`.
+- **Testes:** novo `testes/graficos.tscn` (perfis batem com os números de hoje, personalizado, salvar e carregar, detectar, migração, fatores do jogo). 50 de 52 cenas limpas; `transicao` (tempo) passa sozinha e `mapa` passa sozinha (no lote deu saída vazia). Robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40` exit 0, sem SCRIPT ERROR.
+- **Recado para o Claude do Breno:** a tela (outro agente, E2) precisa ler `Config.g_opcoes()` e `g_perfil()`. Olho humano pendente: prints da mesma cena em Baixo, Médio e Alto, e fps real no i5-3470.

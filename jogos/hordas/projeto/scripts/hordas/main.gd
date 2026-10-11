@@ -80,8 +80,8 @@ func _ready() -> void:
 	_versao = Dados.texto_versao()
 	_teclas()
 	_ler_args()
-	if _args.has("qualidade"):   # teste: --qualidade=alta|media|baixa vale só nesta execução (não grava nas opções)
-		Config.temporario("qualidade", str(_args.qualidade))
+	if _args.has("perfil"):   # teste: --perfil=alto|medio|baixo vale só nesta execução (não grava nas opções)
+		Config.g_perfil_temporario(str(_args.perfil))
 	Perf.ligado = _args.has("sair")   # relatório de custo por sistema no log do --sair (perf.gd)
 	_camada.layer = 20
 	add_child(_camada)
@@ -721,10 +721,10 @@ func _diagnostico(dt: float) -> void:
 		_lento_t = _lento_t + dt if Engine.get_frames_per_second() < 40 else 0.0
 		if _lento_t >= 8.0:
 			_lento_t = 0.0
-			var ordem := ["alta", "media", "baixa"]
-			var i := ordem.find(str(Config.v("qualidade")))
+			var ordem := ["alto", "medio", "baixo"]
+			var i := ordem.find(Config.g_perfil())
 			if i >= 0 and i < 2:
-				Config.temporario("qualidade", ordem[i + 1])
+				Config.g_perfil_temporario(ordem[i + 1])
 				_arena.mensagem("FPS baixo: qualidade gráfica %s" % ["média" if i == 0 else "baixa"], Color(1, 0.8, 0.4))
 	if _diag_lbl == null or not _diag_lbl.visible:
 		return
@@ -738,8 +738,8 @@ func _diagnostico(dt: float) -> void:
 	top.sort_custom(func(a, b): return us[a] > us[b])
 	var q := maxi(Perf.quadros, 1)
 	var linhas := "fps %d  quadro %.1f ms  proc %.1f ms
-vivos %d  qualidade %s  %dx%d" % [Engine.get_frames_per_second(), _diag_soma * 1000.0 / _diag_q,
-		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.inimigos.vivos(), Config.v("qualidade"), get_window().size.x, get_window().size.y]
+vivos %d  perfil %s  %dx%d" % [Engine.get_frames_per_second(), _diag_soma * 1000.0 / _diag_q,
+		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.inimigos.vivos(), Config.g_perfil(), get_window().size.x, get_window().size.y]
 	for k in mini(3, top.size()):
 		linhas += "
 %s %d us" % [top[k], int(us[top[k]]) / q]
@@ -1111,7 +1111,7 @@ func _desenhar() -> void:
 				_txt(Vector2(0, 302), "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho.", 8, Color(0.85, 0.6, 1.0))
 			if _msg != "":
 				_txt(Vector2(0, 302), _msg, 8, Color(1, 0.6, 0.5))
-			_txt(Vector2(0, 340), "Protótipo - WASD/setas, Espaço = dash, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
+			_txt(Vector2(0, 340), "WASD/setas = andar, Espaço = esquiva, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
 			_txt(Vector2(0, 354), _versao, 8, Color(0.72, 0.74, 0.86, 0.85), W - 4, HORIZONTAL_ALIGNMENT_RIGHT)
 		"opcoes":
 			_fundo()   # a tela de Opções desenha por cima (tela_opcoes.gd)
@@ -1259,7 +1259,7 @@ func _desenhar() -> void:
 				var ic := Dados.icone(str(arma.get("icone", "")))
 				if ic:
 					_tela.draw_texture_rect(ic, Rect2(p + Vector2(10, 116), Vector2(32, 32) if larg >= 160 else Vector2(24, 24)), false)
-				_tela.draw_string(Dados.fonte, p + Vector2(48 if larg >= 160 else 38, 135), str(arma.get("nome", "")), HORIZONTAL_ALIGNMENT_LEFT, larg - (52 if larg >= 160 else 40), 8, Color(1, 0.9, 0.5))
+				_tela.draw_multiline_string(Dados.fonte, p + Vector2(48 if larg >= 160 else 38, 135), str(arma.get("nome", "")), HORIZONTAL_ALIGNMENT_LEFT, larg - (52 if larg >= 160 else 40), 8, 2, Color(1, 0.9, 0.5))   # quebra em até 2 linhas: "Adaga de Arremesso" cabe, sem reticências
 				_tela.draw_multiline_string(Dados.fonte, p + Vector2(8, 164), str(h.get("descricao", "")), HORIZONTAL_ALIGNMENT_LEFT, larg - 16, 8, 5 if larg >= 160 else 6, Color(0.75, 0.78, 0.85))
 				var rec: Dictionary = _recordes.get(lista[i], {})
 				if rec.has("tempo"):
@@ -2030,9 +2030,9 @@ func _print_tela(qual: String) -> void:
 			_comecar("hazaki")
 			await get_tree().create_timer(0.3).timeout
 			_arena.cartas.escolher("Dádiva do santuário", _arena.descobertas.oferta_dadivas(Sorte.fluxo("dadiva")))
-		"pausa":
+		"pausa":   # --espera=s: quando pausa (padrão 0,3 s; o título da abertura entra em 1,78 s, então --espera=2.2 pega ele)
 			_comecar("hazaki")
-			await get_tree().create_timer(0.3).timeout
+			await get_tree().create_timer(float(_args.get("espera", 0.3))).timeout
 			_arena.hud.pausar()
 		"hud_chefe":   # chefe fora da tela (seta vermelha com a distância) e dano agrupado: --grande testa o texto do HUD
 			_comecar("hazaki")
