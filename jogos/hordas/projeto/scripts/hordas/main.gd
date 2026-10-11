@@ -1428,6 +1428,11 @@ func _print_tela(qual: String) -> void:
 			_estado = "creditos"
 		"opcoes":
 			_abrir_opcoes()
+		"graficos":   # aba Gráficos (#150): --perfil=baixo|medio|alto aplica o perfil antes do print (precisa da API no Config)
+			_estado = "opcoes"
+			var tg := TelaOpcoes.new()
+			add_child(tg)
+			tg.abrir_graficos(str(_args.get("perfil", "")))
 		"calor":   # tela do Calor (use --calor=couro:2,garras:1 pra ver níveis ligados)
 			_abrir_calor("hazaki")
 		"rolamento":   # rolamento de esquiva (#68): o herói no meio da volta (--espera=s de rolamento) e as barrinhas de fôlego
