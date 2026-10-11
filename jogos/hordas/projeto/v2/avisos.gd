@@ -112,8 +112,6 @@ func atualizar(dt: float) -> void:
 	_desenhou = algum
 
 
-
-
 func _disparar(i: int) -> void:
 	disparados += 1
 	var h = mundo.heroi
@@ -168,7 +166,7 @@ func _desenhar() -> void:
 		var k := t[i] / dur[i]
 		var c: Color = cor[i]
 		var pisca := 0.5 + 0.5 * sin(t[i] * (9.0 + 30.0 * k))
-		var al := 0.18 + 0.32 * pisca * (0.4 + 0.6 * k)
+		var al := 0.26 + 0.4 * pisca * (0.4 + 0.6 * k)
 		if tipo[i] == 1:
 			var r := tam[i]
 			var poly := _elipse(pos[i], r, 28)
@@ -177,7 +175,7 @@ func _desenhar() -> void:
 			no.draw_colored_polygon(_elipse(pos[i], r * k, 24), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca))
 			var borda := poly.duplicate()
 			borda.append(poly[0])
-			no.draw_polyline(borda, Color(1.0, 0.9, 0.8, 0.5 + 0.4 * pisca), 1.5)
+			no.draw_polyline(borda, Color(c.r, c.g * 0.8, c.b * 0.8, 0.8 + 0.2 * pisca), 3.0)
 		else:
 			var d: Vector2 = dir[i]
 			var perp := Vector2(-d.y, d.x)
@@ -187,8 +185,14 @@ func _desenhar() -> void:
 			var quad := PackedVector2Array([(a0 + o).round(), (a1 + o).round(), (a1 - o).round(), (a0 - o).round()])
 			no.draw_colored_polygon(quad, Color(c.r, c.g, c.b, al))
 			var fim := a0.lerp(a1, k)
-			no.draw_colored_polygon(PackedVector2Array([(a0 + o).round(), (fim + o).round(), (fim - o).round(), (a0 - o).round()]), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca))
-			no.draw_polyline(PackedVector2Array([(a0 + o).round(), (a1 + o).round(), (a1 - o).round(), (a0 - o).round(), (a0 + o).round()]), Color(1.0, 0.9, 0.8, 0.5 + 0.4 * pisca), 1.5)
+			no.draw_colored_polygon(
+				PackedVector2Array([(a0 + o).round(), (fim + o).round(), (fim - o).round(), (a0 - o).round()]), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca)
+			)
+			no.draw_polyline(
+				PackedVector2Array([(a0 + o).round(), (a1 + o).round(), (a1 - o).round(), (a0 - o).round(), (a0 + o).round()]),
+				Color(1.0, 0.9, 0.8, 0.5 + 0.4 * pisca),
+				1.5
+			)
 
 
 func _g2w(v: Vector2) -> Vector2:

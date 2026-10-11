@@ -231,7 +231,7 @@ func _montar() -> void:
 	atm.ambiente(cam.position)
 	_vinheta()
 	_ler_graficos()
-	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal"):
+	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build"):
 		roteiro = Roteiro.new()
 		roteiro.montar(self, args)
 	avancar(0.0)
@@ -588,6 +588,8 @@ func _medir() -> void:
 		_med["inicio"] = t
 		_us_total = 0
 		sombras.us_script = 0
+		combate.us_armas = 0
+		combate.armas.us_desenho = 0
 		return
 	_med["frames"] = int(_med["frames"]) + 1
 	var dec: float = t - float(_med["inicio"])
@@ -609,7 +611,17 @@ func _medir() -> void:
 				]
 			)
 		)
-		print("SCRIPT ms/quadro=%.3f (sombras %.3f)" % [_us_total / 1000.0 / frames, sombras.us_script / 1000.0 / frames])
+		print(
+			(
+				"SCRIPT ms/quadro=%.3f (sombras %.3f, golpes secundários %.3f, desenho deles %.3f)"
+				% [
+					_us_total / 1000.0 / frames,
+					sombras.us_script / 1000.0 / frames,
+					combate.us_armas / 1000.0 / frames,
+					combate.armas.us_desenho / 1000.0 / frames
+				]
+			)
+		)
 		print(
 			(
 				"COMBATE abates=%d maior_combo=%d nivel=%d vivos=%d ondas=%d tempo_partida=%.1f vida=%d melhorias=%s"

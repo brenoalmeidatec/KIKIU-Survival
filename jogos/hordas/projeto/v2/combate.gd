@@ -63,6 +63,7 @@ var _fila: Array = []  # monstros que morreram no quadro por golpe secundário o
 var anuncios := 0  # quantos anúncios saíram (testes)
 var ultimo_anuncio := ""
 var ferimentos := 0  # golpes secundários que feriram (testes)
+var us_armas := 0  # microssegundos gastos em armas.atualizar (medição)
 var _grade := {}
 var _usadas: Array = []
 var _q := 0
@@ -171,7 +172,9 @@ func atualizar(dt: float) -> void:
 		_separar()
 		_contato(h)
 		diretor.atualizar(dt)
+		var t0 := Time.get_ticks_usec()
 		armas.atualizar(dt)
+		us_armas += Time.get_ticks_usec() - t0
 		elites.atualizar(dt)
 		chefes.atualizar(dt)
 		avisos.atualizar(dt)
@@ -551,7 +554,11 @@ func fim_de_partida(ganhou: bool) -> void:
 	fim_emitido = true
 	venceu = ganhou
 	var r := {
-		"tempo": mundo.tempo_partida, "abates": mundo.abates, "nivel": mundo.heroi.nivel, "maior_combo": mundo.maior_combo, "venceu": ganhou,
+		"tempo": mundo.tempo_partida,
+		"abates": mundo.abates,
+		"nivel": mundo.heroi.nivel,
+		"maior_combo": mundo.maior_combo,
+		"venceu": ganhou,
 		"almas": mundo.almas_partida
 	}
 	mundo.resultado = r

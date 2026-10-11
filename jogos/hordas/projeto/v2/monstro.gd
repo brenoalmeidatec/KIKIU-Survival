@@ -260,7 +260,13 @@ func _queimar(dt: float) -> void:
 	if ativo:
 		for i in maxi(1, roundi(2.0 * c.fx.fator_part)):
 			c.fx.particula(
-				pos + Vector2(randf_range(-4, 4), -float(alt) * randf_range(0.2, 0.7)), Vector2(randf_range(-8, 8), -28.0), 0.4, 3.0, Color(1.0, 0.55, 0.15, 0.8), -20.0, randf() < 0.4
+				pos + Vector2(randf_range(-4, 4), -float(alt) * randf_range(0.2, 0.7)),
+				Vector2(randf_range(-8, 8), -28.0),
+				0.4,
+				3.0,
+				Color(1.0, 0.55, 0.15, 0.8),
+				-20.0,
+				randf() < 0.4
 			)
 
 

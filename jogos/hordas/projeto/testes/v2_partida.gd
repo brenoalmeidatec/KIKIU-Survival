@@ -73,13 +73,42 @@ func _ready() -> void:
 	w.combate.audio.mudo = true
 	for nome in ["onda_forte", "elite_apareceu", "chefe_apareceu", "chefe_vida", "evolucao", "anuncio", "partida_terminou"]:
 		ok(w.has_signal(nome), "sinal %s existe" % nome)
-	w.evolucao.connect(func(n): sinais["evolucao"] = conta("evolucao") + 1; sinais["evolucao_nome"] = n)
-	w.elite_apareceu.connect(func(n): sinais["elite"] = conta("elite") + 1; sinais["elite_nome"] = n)
-	w.chefe_apareceu.connect(func(n, v): sinais["chefe"] = conta("chefe") + 1; sinais["chefe_nome"] = n; sinais["chefe_vida_max"] = v)
-	w.chefe_vida.connect(func(v): sinais["chefe_vida"] = conta("chefe_vida") + 1; sinais["chefe_vida_ultima"] = v)
-	w.anuncio.connect(func(t, _c): sinais["anuncio"] = conta("anuncio") + 1; sinais["anuncio_texto"] = t)
-	w.onda_forte.connect(func(n): sinais["onda"] = conta("onda") + 1; sinais["onda_n"] = n)
-	w.partida_terminou.connect(func(r): sinais["fim"] = conta("fim") + 1; sinais["fim_res"] = r)
+	w.evolucao.connect(
+		func(n):
+			sinais["evolucao"] = conta("evolucao") + 1
+			sinais["evolucao_nome"] = n
+	)
+	w.elite_apareceu.connect(
+		func(n):
+			sinais["elite"] = conta("elite") + 1
+			sinais["elite_nome"] = n
+	)
+	w.chefe_apareceu.connect(
+		func(n, v):
+			sinais["chefe"] = conta("chefe") + 1
+			sinais["chefe_nome"] = n
+			sinais["chefe_vida_max"] = v
+	)
+	w.chefe_vida.connect(
+		func(v):
+			sinais["chefe_vida"] = conta("chefe_vida") + 1
+			sinais["chefe_vida_ultima"] = v
+	)
+	w.anuncio.connect(
+		func(t, _c):
+			sinais["anuncio"] = conta("anuncio") + 1
+			sinais["anuncio_texto"] = t
+	)
+	w.onda_forte.connect(
+		func(n):
+			sinais["onda"] = conta("onda") + 1
+			sinais["onda_n"] = n
+	)
+	w.partida_terminou.connect(
+		func(r):
+			sinais["fim"] = conta("fim") + 1
+			sinais["fim_res"] = r
+	)
 	var cs = w.combate.cartas
 	var cfg: Dictionary = cs.cfg
 
@@ -183,7 +212,10 @@ func _ready() -> void:
 		ok(w.combate.armas.tem(id), "o golpe %s entra pela carta" % id)
 		var v0: float = m.vida
 		ate(func(): return int(w.combate.armas.acertos.get(tipo, 0)) > 0, 900)
-		ok(int(w.combate.armas.acertos.get(tipo, 0)) > 0 and m.vida < v0, "o golpe %s (%s) acerta o monstro (vida %d de %d)" % [id, tipo, roundi(m.vida), roundi(v0)])
+		ok(
+			int(w.combate.armas.acertos.get(tipo, 0)) > 0 and m.vida < v0,
+			"o golpe %s (%s) acerta o monstro (vida %d de %d)" % [id, tipo, roundi(m.vida), roundi(v0)]
+		)
 	# a aura queima, as lâminas passam, o raio salta
 	zerar()
 	var ma = monstro_a(30.0, 0.0)
@@ -265,7 +297,10 @@ func _ready() -> void:
 	ok(cs.evoluidas.is_empty(), "com uma peça só ainda não evolui")
 	pegar("laminas", 0)
 	ok(cs.evoluidas.has("anel_de_brasas"), "aura de fogo 3 + lâminas 3 viram o Anel de Brasas")
-	ok(w.combate.armas.tem("anel_de_brasas") and not w.combate.armas.tem("laminas") and not w.combate.armas.tem("aura_fogo"), "as duas peças somem e fica a evoluída")
+	ok(
+		w.combate.armas.tem("anel_de_brasas") and not w.combate.armas.tem("laminas") and not w.combate.armas.tem("aura_fogo"),
+		"as duas peças somem e fica a evoluída"
+	)
 	ok(conta("evolucao") == 1 and str(sinais.get("evolucao_nome", "")) == "Anel de Brasas", "sinal evolucao(nome) com o nome certo")
 	var me = monstro_a(40.0, 0.0)
 	me.cacador = false
@@ -282,7 +317,10 @@ func _ready() -> void:
 		pegar("runa", 0)
 	for i in 2:
 		pegar("explode", 0)
-	ok(cs.evoluidas.has("circulo_runico") and w.combate.armas.tem("circulo_runico") and cs.ativa("explode"), "runa 3 + crítico explosivo 2 viram o Círculo Rúnico (o modificador fica)")
+	ok(
+		cs.evoluidas.has("circulo_runico") and w.combate.armas.tem("circulo_runico") and cs.ativa("explode"),
+		"runa 3 + crítico explosivo 2 viram o Círculo Rúnico (o modificador fica)"
+	)
 	zerar()
 	for i in 2:
 		pegar("onda", 0)
@@ -295,9 +333,15 @@ func _ready() -> void:
 	zerar()
 	h = w.heroi
 	var el = w.combate.elites.nascer("inimigo_cao_ossos", "blindado", h.pos + Vector2(120, 0))
-	ok(el != null and el.elite and el.escala > 1.3 and el.vida_max > 100.0, "a elite nasce maior e com mais vida (%.1fx, %d de vida)" % [el.escala, roundi(el.vida_max)])
+	ok(
+		el != null and el.elite and el.escala > 1.3 and el.vida_max > 100.0,
+		"a elite nasce maior e com mais vida (%.1fx, %d de vida)" % [el.escala, roundi(el.vida_max)]
+	)
 	ok(el.contorno != null and el.contorno.visible, "a elite tem o contorno colorido")
-	ok(conta("elite") == 1 and str(sinais.get("elite_nome", "")).contains("Cão de Ossos Blindado"), "sinal elite_apareceu(nome): %s" % str(sinais.get("elite_nome", "")))
+	ok(
+		conta("elite") == 1 and str(sinais.get("elite_nome", "")).contains("Cão de Ossos Blindado"),
+		"sinal elite_apareceu(nome): %s" % str(sinais.get("elite_nome", ""))
+	)
 	passos(5)
 	w.combate.ferir(el, 9999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
 	w.combate.processar_mortes()
@@ -368,7 +412,10 @@ func _ready() -> void:
 	var ch = w.combate.chefes.atual
 	ok(ch.chefe and ch.escala > 2.0 and ch.vida_max >= 1000.0, "o mini-chefe é grande e tem muita vida")
 	ok(conta("chefe") == 1 and sinais.get("chefe_vida_max", 0.0) == ch.vida_max, "sinal chefe_apareceu(nome, vida_max)")
-	ok(str(sinais.get("anuncio_texto", "")).contains("MINI-CHEFE"), "anuncio('MINI-CHEFE: ...') junto do chefe_apareceu (%s)" % str(sinais.get("anuncio_texto", "")))
+	ok(
+		str(sinais.get("anuncio_texto", "")).contains("MINI-CHEFE"),
+		"anuncio('MINI-CHEFE: ...') junto do chefe_apareceu (%s)" % str(sinais.get("anuncio_texto", ""))
+	)
 	ate(func(): return w.combate.avisos.ativos() > 0, 900)
 	ok(w.combate.avisos.ativos() > 0 and w.combate.chefes.ataques_feitos > 0, "o chefe anuncia o ataque com uma área piscando no chão")
 	var vida_h: float = w.heroi.vida
@@ -452,6 +499,21 @@ func _ready() -> void:
 	w.combate.fx.n_tam.fill(0)
 	w.combate.ferir(mn, 10.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
 	ok(w.combate.fx.n_tam.has(16), "o número de dano normal tem 16 px")
+
+	# 11. bônus do santuário (mundo.meta_bonus): raridade melhor e rolagem a mais
+	zerar()
+	var base_soma := 0
+	var meta_soma := 0
+	w.meta_bonus = {"raridade": 0.0, "rolagem": 0, "almas": 0.0}
+	for i in 3000:
+		base_soma += cs.sortear_raridade(1)
+	ok(cs.rerrolar_total() == int(cfg.escolha.rerrolar_total), "sem bônus, o total de rerrolar é o dos dados")
+	w.meta_bonus = {"raridade": 0.5, "rolagem": 2, "almas": 0.0}
+	for i in 3000:
+		meta_soma += cs.sortear_raridade(1)
+	ok(meta_soma > base_soma * 2, "o bônus de raridade do santuário melhora as cartas (%d contra %d)" % [meta_soma, base_soma])
+	ok(cs.rerrolar_total() == int(cfg.escolha.rerrolar_total) + 2 and cs.rerrolar_por_tela() == 3, "o bônus de rolagem soma rerrolares")
+	w.meta_bonus = {}
 
 	print("v2_partida falhas=%d" % falhas)
 	get_tree().quit()

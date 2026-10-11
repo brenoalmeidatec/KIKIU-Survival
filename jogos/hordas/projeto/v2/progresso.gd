@@ -72,8 +72,17 @@ func abrir_escolha() -> void:
 
 func _carta_cura() -> Dictionary:
 	return {
-		"id": "cura", "nome": "Alma renovada", "desc": "Cura toda a vida", "cat": "stat", "stat": "cura", "valor": 0, "max": 99, "rar": 0, "rar_nome": "Comum",
-		"cor": Color(0.8, 0.82, 0.86), "extra": ""
+		"id": "cura",
+		"nome": "Alma renovada",
+		"desc": "Cura toda a vida",
+		"cat": "stat",
+		"stat": "cura",
+		"valor": 0,
+		"max": 99,
+		"rar": 0,
+		"rar_nome": "Comum",
+		"cor": Color(0.8, 0.82, 0.86),
+		"extra": ""
 	}
 
 

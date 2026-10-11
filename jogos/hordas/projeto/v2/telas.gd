@@ -10,9 +10,9 @@ const LARG := 960
 const ALT := 540
 const CARTA_L := 224.0
 const CARTA_A := 214.0
-const CARTA_Y := 156.0
+const CARTA_Y := 178.0
 const FOLGA := 24.0
-const BTN_Y := 388.0
+const BTN_Y := 400.0
 
 var combate
 var mundo
@@ -115,11 +115,11 @@ func _montar_escolha() -> void:
 	_escolha.visible = false
 	camada.add_child(_escolha)
 	_titulo = _rotulo("", 48, true, Color(1.0, 0.86, 0.42), HORIZONTAL_ALIGNMENT_CENTER)
-	_titulo.position = Vector2(0, 50)
+	_titulo.position = Vector2(0, 100)
 	_titulo.size = Vector2(LARG, 60)
 	_escolha.add_child(_titulo)
 	_sub = _rotulo("Escolha uma carta", 8, false, Color(0.85, 0.85, 0.95), HORIZONTAL_ALIGNMENT_CENTER)
-	_sub.position = Vector2(0, 124)
+	_sub.position = Vector2(0, 156)
 	_sub.size = Vector2(LARG, 12)
 	_escolha.add_child(_sub)
 	var x0 := (LARG - (3.0 * CARTA_L + 2.0 * FOLGA)) * 0.5
@@ -172,7 +172,7 @@ func _montar_escolha() -> void:
 	_btn_r_txt = _btn_r.get_node("t")
 	_btn_b_txt = _btn_b.get_node("t")
 	_build = _rotulo("", 8, false, Color(0.75, 0.8, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
-	_build.position = Vector2(60, 432)
+	_build.position = Vector2(60, 440)
 	_build.size = Vector2(LARG - 120, 40)
 	_build.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_escolha.add_child(_build)
@@ -199,7 +199,7 @@ func _montar_bau() -> void:
 	_bau.visible = false
 	camada.add_child(_bau)
 	_bau_titulo = _rotulo("BAÚ!", 48, true, Color(1.0, 0.86, 0.42), HORIZONTAL_ALIGNMENT_CENTER)
-	_bau_titulo.position = Vector2(0, 70)
+	_bau_titulo.position = Vector2(0, 104)
 	_bau_titulo.size = Vector2(LARG, 60)
 	_bau.add_child(_bau_titulo)
 	for i in 3:
@@ -229,7 +229,7 @@ func _montar_bau() -> void:
 		_bau.add_child(p)
 		_bau_slots.append(p)
 	_bau_dica = _rotulo("ENTER ou clique para continuar", 8, false, Color(1.0, 0.85, 0.45), HORIZONTAL_ALIGNMENT_CENTER)
-	_bau_dica.position = Vector2(0, 360)
+	_bau_dica.position = Vector2(0, 380)
 	_bau_dica.size = Vector2(LARG, 12)
 	_bau.add_child(_bau_dica)
 
@@ -321,7 +321,7 @@ func _atualizar_botoes() -> void:
 	var cs = combate.cartas
 	var pr: bool = cs.pode_rerrolar()
 	var pb: bool = cs.pode_banir()
-	_btn_r_txt.text = "[R] Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < int(cs.cfg.escolha.rerrolar_por_tela) else "[R] Rerrolar (já usou)"
+	_btn_r_txt.text = "[R] Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "[R] Rerrolar (já usou)"
 	_btn_b_txt.text = "[B] Banir a marcada (%d)" % cs.banimentos_restantes()
 	_btn_r.modulate = Color.WHITE if pr else Color(1, 1, 1, 0.4)
 	_btn_b.modulate = Color.WHITE if pb else Color(1, 1, 1, 0.4)
@@ -337,8 +337,10 @@ func _texto_build() -> void:
 func mostrar_resultado() -> void:
 	resultado_aberto = true
 	mostrada_t = 0.0
-	_fundo.visible = true
 	var venceu: bool = combate.venceu
+	if mundo.get("meta_res") != null:
+		return  # o resultado com as almas (resultado_meta.gd, por cima) mostra tudo; aqui fica só o estado (resultado_aberto)
+	_fundo.visible = true
 	_fundo.color = Color(0.05, 0.04, 0.0, 0.7) if venceu else Color(0.05, 0.0, 0.0, 0.72)
 	_res_titulo.text = "VITÓRIA" if venceu else "VOCÊ CAIU"
 	_res_titulo.add_theme_color_override("font_color", Color(1.0, 0.86, 0.35) if venceu else Color(1.0, 0.38, 0.32))
@@ -387,7 +389,7 @@ func mostrar_bau(cartas: Array) -> void:
 		p.visible = i < n
 		if i >= n:
 			continue
-		p.position = Vector2(x0 + i * (CARTA_L + FOLGA), 180.0)
+		p.position = Vector2(x0 + i * (CARTA_L + FOLGA), 200.0)
 		_limpar_slot(i)
 	combate.audio.tocar("bau", 1.0, 0.0, 0.0)
 

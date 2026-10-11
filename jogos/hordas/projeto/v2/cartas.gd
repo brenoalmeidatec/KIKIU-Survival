@@ -69,11 +69,24 @@ func chance_raridade(i: int, nivel: int, bonus := 1.0) -> float:
 
 func sortear_raridade(nivel: int, bonus := 1.0) -> int:
 	var r := rng.randf()
+	var saiu := 0
 	for j in rar.size():
 		r -= chance_raridade(j, nivel, bonus)
 		if r < 0.0:
-			return j
-	return 0
+			saiu = j
+			break
+	# "Olho para o raro" do santuário (mundo.meta_bonus.raridade, fração): chance de uma comum subir para rara
+	if saiu == 0 and rng.randf() < meta("raridade"):
+		saiu = 1
+	return saiu
+
+
+## Bônus do santuário (v2/meta.gd) lidos do mundo com valor padrão 0: raridade (fração), rolagem (inteiro) e almas (fração).
+func meta(nome: String) -> float:
+	var mb = combate.mundo.get("meta_bonus")
+	if mb == null or not (mb is Dictionary):
+		return 0.0
+	return float(mb.get(nome, 0.0))
 
 
 # ------------------------------------------------------------------ estado e sorteio
@@ -193,8 +206,19 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 	var ra: Dictionary = rar[r]
 	var n := nivel_de(id)
 	var c := {
-		"id": id, "nome": d.nome, "cat": cat, "rar": r, "rar_nome": ra.nome, "cor": Color(ra.cor[0], ra.cor[1], ra.cor[2]), "max": int(d.max),
-		"nivel_atual": n, "nivel_novo": n + 1, "valor": 0.0, "extra": "", "stat": str(d.get("stat", "")), "desc": ""
+		"id": id,
+		"nome": d.nome,
+		"cat": cat,
+		"rar": r,
+		"rar_nome": ra.nome,
+		"cor": Color(ra.cor[0], ra.cor[1], ra.cor[2]),
+		"max": int(d.max),
+		"nivel_atual": n,
+		"nivel_novo": n + 1,
+		"valor": 0.0,
+		"extra": "",
+		"stat": str(d.get("stat", "")),
+		"desc": ""
 	}
 	if cat == "golpe":
 		var sobe := 2 if r == rar.size() - 1 else 1
@@ -312,12 +336,20 @@ func evoluir(ev: Dictionary) -> void:
 # ------------------------------------------------------------------ rerrolar e banir
 
 
+func rerrolar_total() -> int:
+	return int(cfg.escolha.rerrolar_total) + int(meta("rolagem"))
+
+
+func rerrolar_por_tela() -> int:
+	return int(cfg.escolha.rerrolar_por_tela) + int(meta("rolagem"))
+
+
 func pode_rerrolar() -> bool:
-	return rerrolar_usados < int(cfg.escolha.rerrolar_total) and rerrolar_na_tela < int(cfg.escolha.rerrolar_por_tela)
+	return rerrolar_usados < rerrolar_total() and rerrolar_na_tela < rerrolar_por_tela()
 
 
 func rerrolares_restantes() -> int:
-	return int(cfg.escolha.rerrolar_total) - rerrolar_usados
+	return rerrolar_total() - rerrolar_usados
 
 
 func banimentos_restantes() -> int:

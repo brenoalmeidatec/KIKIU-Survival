@@ -38,9 +38,10 @@ func montar(c) -> void:
 		corpo.texture = _tex
 		corpo.centered = false
 		corpo.offset = Vector2(-11, -19)
+		corpo.scale = Vector2(1.5, 1.5)
 		corpo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		corpo.light_mask = 0  # o baú é sempre visível: o brilho dele já é a luz
-		raiz.add_child(corpo)
+		corpo.visible = false
+		mundo.glow.add_child(corpo)  # na camada glow, sem o escurecimento da floresta: o baú sempre aparece, e o brilho dele é a luz
 		var brilho := Sprite2D.new()
 		brilho.texture = c.fx.tex_brilho
 		var mat := CanvasItemMaterial.new()
@@ -108,6 +109,7 @@ func limpar() -> void:
 	for b in lista:
 		b.ativo = false
 		b.raiz.visible = false
+		b.corpo.visible = false
 		b.brilho.visible = false
 		b.luz.enabled = false
 	abertos = 0
@@ -141,6 +143,7 @@ func soltar(p: Vector2, bonus := 1.0, forcar_n := 0) -> void:
 	b.forcar = forcar_n
 	b.raiz.position = q.round()
 	b.raiz.visible = true
+	b.corpo.visible = true
 	b.brilho.visible = true
 	b.luz.enabled = true
 	b.luz.position = (q + Vector2(0, -8)).round()
@@ -158,7 +161,7 @@ func atualizar(dt: float) -> void:
 		b.t += dt
 		var queda := clampf(b.t / 0.4, 0.0, 1.0)
 		var y := -90.0 * (1.0 - queda) * (1.0 - queda)
-		b.corpo.position = Vector2(0, y).round()
+		b.corpo.position = (b.pos + Vector2(0, y)).round()
 		var pulso := 0.8 + 0.2 * sin(b.t * 5.0)
 		b.brilho.position = (b.pos + Vector2(0, -10 + y)).round()
 		var tam := 84.0 * pulso
@@ -181,6 +184,7 @@ func atualizar(dt: float) -> void:
 func abrir(b: Dictionary) -> void:
 	b.ativo = false
 	b.raiz.visible = false
+	b.corpo.visible = false
 	b.brilho.visible = false
 	b.luz.enabled = false
 	abertos += 1
@@ -192,8 +196,17 @@ func abrir(b: Dictionary) -> void:
 	if cartas.is_empty():
 		cartas = [
 			{
-				"id": "cura", "nome": "Alma renovada", "desc": "Cura toda a vida", "cat": "stat", "stat": "cura", "rar": 0, "rar_nome": "Comum",
-				"cor": Color(0.8, 0.82, 0.86), "extra": "", "valor": 0.0, "max": 99
+				"id": "cura",
+				"nome": "Alma renovada",
+				"desc": "Cura toda a vida",
+				"cat": "stat",
+				"stat": "cura",
+				"rar": 0,
+				"rar_nome": "Comum",
+				"cor": Color(0.8, 0.82, 0.86),
+				"extra": "",
+				"valor": 0.0,
+				"max": 99
 			}
 		]
 	for c in cartas:

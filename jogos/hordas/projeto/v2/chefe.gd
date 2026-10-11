@@ -30,16 +30,25 @@ var _idx_ataque := 0
 var _vida_enviada := -1.0
 var _t_vida := 0.0
 var _fase2 := false
+var luz: PointLight2D
 
 
 func montar(c) -> void:
 	combate = c
 	mundo = c.mundo
 	cfg = c.cartas.cfg.chefes
+	luz = PointLight2D.new()  # o chefe é escuro: uma luz da cor dele em volta o deixa legível na floresta
+	luz.texture = c.armas.luz_fogo.texture
+	luz.enabled = false
+	luz.shadow_enabled = false
+	luz.height = 30.0
+	mundo.sv.add_child(luz)
 	zerar()
 
 
 func zerar() -> void:
+	if luz != null:
+		luz.enabled = false
 	atual = null
 	marca = {}
 	vivo = false
@@ -61,6 +70,8 @@ func atualizar(dt: float) -> void:
 		return
 	if not atual.vivo:
 		return
+	luz.position = (atual.pos + Vector2(0, -float(atual.alt) * 0.5)).round()
+	luz.energy = 1.0 + 0.2 * sin(mundo.t * 6.0)
 	_ia(dt)
 	_t_vida -= dt
 	if _t_vida <= 0.0 and atual.vida != _vida_enviada:
@@ -92,8 +103,11 @@ func nascer(mk: Dictionary, onde: Variant = null):
 	m.emp_mult = 0.05
 	m._base_raio = float(mk.raio) / float(mk.escala)
 	m.definir_escala(float(mk.escala))
-	m.tinta = Color(mk.tinta[0], mk.tinta[1], mk.tinta[2])
+	m.tinta = Color(mk.tinta[0] * 1.5, mk.tinta[1] * 1.5, mk.tinta[2] * 1.5)  # >1: clareia o sprite escuro
 	var cor := Color(mk.cor[0], mk.cor[1], mk.cor[2])
+	luz.color = cor
+	luz.texture_scale = (110.0 + 36.0 * float(mk.escala)) / 128.0
+	luz.enabled = true
 	m.cor_elite = cor
 	combate.elites.dar_contorno(m, cor)
 	estado = "andar"
@@ -224,6 +238,7 @@ func ao_morrer(m) -> void:
 	var mk := marca
 	atual = null
 	vivo = false
+	luz.enabled = false
 	derrotados += 1
 	mundo.chefe_vida.emit(0.0)
 	if bool(mk.mini):

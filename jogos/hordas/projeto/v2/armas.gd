@@ -78,6 +78,8 @@ func montar(c, camada: Node, sv: Node, tex: Texture2D) -> void:
 	mundo = c.mundo
 	fx = c.fx
 	tex_brilho = tex
+	_texturas()
+	camada.add_child(_aura_sp)
 	no_corpo = Node2D.new()
 	no_corpo.draw.connect(_desenhar_corpo)
 	camada.add_child(no_corpo)
@@ -159,6 +161,7 @@ func limpar() -> void:
 		r_arma[i] = null
 	luz_fogo.enabled = false
 	luz_lamina.enabled = false
+	_aura_sp.visible = false
 	_desenha = false
 	no_corpo.queue_redraw()
 	no_brilho.queue_redraw()
@@ -179,8 +182,20 @@ func _slot_livre() -> int:
 
 func _nova(id: String, tipo: String, cor: Color) -> Dictionary:
 	return {
-		"id": id, "tipo": tipo, "cor": cor, "slot": _slot_livre(), "nivel": 1, "bonus": 0.0, "st": {}, "t": 0.4, "t2": 0.3, "ang": randf() * TAU,
-		"pulso": 0.0, "pts": PackedVector2Array(), "R": 40.0, "evo": false
+		"id": id,
+		"tipo": tipo,
+		"cor": cor,
+		"slot": _slot_livre(),
+		"nivel": 1,
+		"bonus": 0.0,
+		"st": {},
+		"t": 0.4,
+		"t2": 0.3,
+		"ang": randf() * TAU,
+		"pulso": 0.0,
+		"pts": PackedVector2Array(),
+		"R": 40.0,
+		"evo": false
 	}
 
 
@@ -274,6 +289,7 @@ func atualizar(dt: float) -> void:
 					_runas_gerar(a, h, dt, vel_a)
 	elif _perto.size() > 0 or _tem_pool():
 		_juntar_perto(h.pos, 340.0)
+	_aura_visual(h)
 	_corvos_mover(h, dt)
 	_runas_mover(h, dt)
 	_ondas_mover(dt)
@@ -376,7 +392,17 @@ func _aura(a: Dictionary, h, dt: float, vel_a: float) -> void:
 	var st: Dictionary = a.st
 	var k_area: float = 1.0 + (h.m_area - 1.0) * 0.6
 	a.R = float(st.raio) * k_area
-	_aura_tick(a, h, dt, float(a.R), float(st.dano) * h.m_dano, float(st.tique) / vel_a, float(st.get("empurra", 0.0)), float(st.get("queima_dps", 0.0)), float(st.get("queima_t", 2.0)))
+	_aura_tick(
+		a,
+		h,
+		dt,
+		float(a.R),
+		float(st.dano) * h.m_dano,
+		float(st.tique) / vel_a,
+		float(st.get("empurra", 0.0)),
+		float(st.get("queima_dps", 0.0)),
+		float(st.get("queima_t", 2.0))
+	)
 
 
 func _aura_tick(a: Dictionary, h, dt: float, raio: float, dano: float, tique: float, empurra: float, queima_dps: float, queima_t: float) -> void:
@@ -830,6 +856,139 @@ func _luzes(h, dt: float) -> void:
 
 
 # ------------------------------------------------------------------ desenho
+## Tudo o que dura (lâminas, corvos, runas, aura) é desenhado com TEXTURAS PRONTAS (geradas uma vez na abertura) e um shader para a aura:
+## nada de polígono triangulado por quadro, que custava ~35% do fps com a build cheia. O que dura pouco (raio, onda, lança) usa linhas.
+
+const SHADER_AURA := """
+shader_type canvas_item;
+render_mode blend_add, unshaded;
+uniform vec4 cor : source_color = vec4(1.0, 0.5, 0.15, 1.0);
+uniform float t = 0.0;
+uniform float pulso = 0.0;
+void fragment() {
+	vec2 p = (UV - 0.5) * 2.0;
+	float r = length(p);
+	float a = atan(p.y, p.x);
+	float f = 0.5 + 0.5 * sin(a * 11.0 + t * 7.0);
+	float g = 0.5 + 0.5 * sin(a * 23.0 - t * 11.0 + sin(t * 3.0) * 2.0);
+	float h = 0.05 + 0.12 * (f * 0.6 + g * 0.4) + 0.04 * pulso;
+	float anel = 0.8;
+	float fino = smoothstep(0.035 + 0.02 * pulso, 0.0, abs(r - anel));
+	float chama = smoothstep(anel + h, anel, r) * smoothstep(anel - 0.16, anel, r);
+	float chao = smoothstep(1.0, 0.2, r) * (0.16 + 0.12 * pulso);
+	float k = clamp(fino * 0.9 + chama * 0.75 + chao, 0.0, 1.0);
+	k *= 1.0 - smoothstep(0.93, 1.0, r);
+	vec3 c = mix(cor.rgb, vec3(1.0, 0.9, 0.45), clamp(chama * 0.7 + fino * 0.5, 0.0, 1.0));
+	COLOR = vec4(c * k * 1.5, k);
+}
+"""
+
+var us_desenho := 0
+var _tex_lamina: Texture2D
+var _tex_corvo: Texture2D  # 3 quadros de 22x18: asa para cima, no meio e para baixo
+var _tex_anel: Texture2D  # anel da runa (64x64)
+var _tex_glifo: Texture2D  # triângulo da runa (64x64)
+var _aura_sp: Sprite2D
+
+
+func _texturas() -> void:
+	_tex_lamina = _img_lamina()
+	_tex_corvo = _img_corvo()
+	_tex_anel = _img_anel()
+	_tex_glifo = _img_glifo()
+	var im := Image.create(4, 4, false, Image.FORMAT_RGBA8)
+	im.fill(Color.WHITE)
+	_aura_sp = Sprite2D.new()
+	_aura_sp.texture = ImageTexture.create_from_image(im)
+	var sh := Shader.new()
+	sh.code = SHADER_AURA
+	var mat := ShaderMaterial.new()
+	mat.shader = sh
+	_aura_sp.material = mat
+	_aura_sp.visible = false
+
+
+func _img_lamina() -> Texture2D:
+	var im := Image.create(26, 11, false, Image.FORMAT_RGBA8)
+	for x in 26:
+		var meia := 4.6 * (float(x) / 9.0 if x < 9 else float(25 - x) / 16.0)
+		for y in 11:
+			var dy := absf(float(y) - 5.0)
+			if dy <= meia:
+				im.set_pixel(x, y, Color(1, 1, 1, 1) if dy <= meia - 1.4 else Color(0.8, 0.95, 1.0, 0.85))
+	return ImageTexture.create_from_image(im)
+
+
+func _img_corvo() -> Texture2D:
+	var im := Image.create(66, 18, false, Image.FORMAT_RGBA8)
+	var corpo := Color(0.13, 0.08, 0.21)
+	var asa := Color(0.22, 0.13, 0.33)
+	for f in 3:
+		var ox := f * 22
+		var cima: float = [8.0, 3.0, -3.0][f]
+		for y in 18:
+			for x in 22:
+				var dx := (float(x) - 9.0) / 7.0
+				var dy := (float(y) - 10.0) / 3.6
+				if dx * dx + dy * dy <= 1.0:
+					im.set_pixel(ox + x, y, corpo)
+				var hx := float(x) - 16.5
+				var hy := float(y) - 8.5
+				if hx * hx + hy * hy <= 7.0:
+					im.set_pixel(ox + x, y, corpo)
+				if x >= 2 and x <= 5 and y >= 9 and y <= 11:
+					im.set_pixel(ox + x, y, corpo)  # cauda
+				if x >= 19 and x <= 21 and y >= 8 and y <= 9:
+					im.set_pixel(ox + x, y, Color(0.95, 0.6, 0.2))  # bico
+				if x == 17 and y == 7:
+					im.set_pixel(ox + x, y, Color(1.0, 0.25, 0.2))  # olho
+		# asa: triângulo com a base no corpo e a ponta para cima ou para baixo
+		var ay := 8.0 - cima
+		for y in 18:
+			for x in 22:
+				var px := float(x)
+				var py := float(y)
+				if _no_triangulo(Vector2(px, py), Vector2(7, 9), Vector2(14, 9), Vector2(5, ay)):
+					im.set_pixel(ox + x, y, asa)
+	return ImageTexture.create_from_image(im)
+
+
+static func _no_triangulo(p: Vector2, a: Vector2, b: Vector2, c: Vector2) -> bool:
+	var d1 := (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y)
+	var d2 := (p.x - c.x) * (b.y - c.y) - (b.x - c.x) * (p.y - c.y)
+	var d3 := (p.x - a.x) * (c.y - a.y) - (c.x - a.x) * (p.y - a.y)
+	var neg := d1 < 0.0 or d2 < 0.0 or d3 < 0.0
+	var pos := d1 > 0.0 or d2 > 0.0 or d3 > 0.0
+	return not (neg and pos)
+
+
+func _img_anel() -> Texture2D:
+	var im := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	for y in 64:
+		for x in 64:
+			var r := Vector2(float(x) - 31.5, float(y) - 31.5).length()
+			if absf(r - 29.5) <= 1.2:
+				im.set_pixel(x, y, Color(1, 1, 1, 0.95))
+			elif absf(r - 19.0) <= 0.8:
+				im.set_pixel(x, y, Color(1, 1, 1, 0.6))
+	return ImageTexture.create_from_image(im)
+
+
+func _img_glifo() -> Texture2D:
+	var im := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	var pts: Array = []
+	for k in 3:
+		pts.append(Vector2(31.5, 31.5) + Vector2.from_angle(-PI / 2.0 + TAU * float(k) / 3.0) * 19.0)
+	for k in 3:
+		var p0: Vector2 = pts[k]
+		var p1: Vector2 = pts[(k + 1) % 3]
+		for s in 40:
+			var q := p0.lerp(p1, float(s) / 39.0)
+			im.set_pixel(clampi(roundi(q.x), 0, 63), clampi(roundi(q.y), 0, 63), Color(1, 1, 1, 0.9))
+	for y in range(30, 34):
+		for x in range(30, 34):
+			im.set_pixel(x, y, Color(1, 1, 1, 1))
+	return ImageTexture.create_from_image(im)
 
 
 func _eliptico(centro: Vector2, raio: float, n: int, rot := 0.0) -> PackedVector2Array:
@@ -841,58 +1000,75 @@ func _eliptico(centro: Vector2, raio: float, n: int, rot := 0.0) -> PackedVector
 	return v
 
 
+## A aura de fogo (e o anel do Anel de Brasas): UM sprite com shader, na elipse do chão em volta do herói.
+func _aura_visual(h) -> void:
+	var raio := 0.0
+	var cor := Color.WHITE
+	var pulso := 0.0
+	for id in ativas:
+		var a: Dictionary = ativas[id]
+		if str(a.tipo) == "aura" or (str(a.tipo) == "orbita" and a.st.has("aura_raio")):
+			raio = maxf(raio, float(a.get("RA", a.R)))
+			cor = a.cor
+			pulso = maxf(pulso, float(a.pulso))
+	_aura_sp.visible = raio > 0.0
+	if raio <= 0.0:
+		return
+	_aura_sp.position = (h.pos + Vector2(0, -1)).round()
+	_aura_sp.scale = Vector2(raio * 2.3 / 4.0, raio * 2.3 * ACHATA / 4.0)
+	var mat := _aura_sp.material as ShaderMaterial
+	mat.set_shader_parameter("cor", cor)
+	mat.set_shader_parameter("t", _fase)
+	mat.set_shader_parameter("pulso", pulso)
+
+
 func _desenhar_corpo() -> void:
-	# sombras no chão (lâminas) e corvos
+	var t0 := Time.get_ticks_usec()
+	_desenhar_corpo_i()
+	us_desenho += Time.get_ticks_usec() - t0
+
+
+func _desenhar_corpo_i() -> void:
 	for id in ativas:
 		var a: Dictionary = ativas[id]
 		if str(a.tipo) != "orbita":
 			continue
-		for p in (a.pts as PackedVector2Array):
-			no_corpo.draw_colored_polygon(_eliptico(p + Vector2(0, 2), 5.0, 8), Color(0, 0, 0, 0.3))
+		for p in a.pts as PackedVector2Array:  # sombra de cada lâmina no chão
+			no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-7, -1), Vector2(14, 6)), false, Color(0, 0, 0, 0.45))
 	for i in MAX_CORVOS:
 		if c_vida[i] <= 0.0:
 			continue
 		var p: Vector2 = c_pos[i]
-		no_corpo.draw_colored_polygon(_eliptico(p, 5.0, 8), Color(0, 0, 0, 0.32))
+		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-8, -2), Vector2(16, 7)), false, Color(0, 0, 0, 0.45))
 		var c := (p + Vector2(0, -c_z[i])).round()
 		var lado := 1.0 if c_vel[i].x >= 0.0 else -1.0
-		var f := sin(c_fase[i])
-		var corpo := Color(0.1, 0.06, 0.16)
-		var asa := Color(0.16, 0.1, 0.24)
-		no_corpo.draw_colored_polygon(
-			PackedVector2Array([c + Vector2(-5 * lado, 1), c + Vector2(-2 * lado, -3), c + Vector2(4 * lado, -3), c + Vector2(8 * lado, -1), c + Vector2(4 * lado, 2), c + Vector2(-3 * lado, 3)]),
-			corpo
-		)
-		no_corpo.draw_colored_polygon(PackedVector2Array([c + Vector2(-1 * lado, -2), c + Vector2(4 * lado, -2), c + Vector2(-5 * lado, -3 - 9 * f)]), asa)
-		no_corpo.draw_colored_polygon(PackedVector2Array([c + Vector2(8 * lado, -1), c + Vector2(11 * lado, 0), c + Vector2(8 * lado, 1)]), Color(0.9, 0.55, 0.2))
+		var quadro: int = [0, 1, 2, 1][int(c_fase[i] / 1.57) & 3]
+		var r := Rect2(c + Vector2(-16.5 * lado, -13.5), Vector2(33.0 * lado, 27.0))
+		no_corpo.draw_texture_rect_region(_tex_corvo, r, Rect2(quadro * 22, 0, 22, 18))
 
 
 func _desenhar_brilho() -> void:
-	var cam_pos: Vector2 = mundo.heroi.pos
-	# aura de fogo
+	var t0 := Time.get_ticks_usec()
+	_desenhar_brilho_i()
+	us_desenho += Time.get_ticks_usec() - t0
+
+
+func _desenhar_brilho_i() -> void:
 	for id in ativas:
 		var a: Dictionary = ativas[id]
-		var tipo := str(a.tipo)
-		if tipo == "aura" or (tipo == "orbita" and a.st.has("aura_raio")):
-			_desenhar_aura(a, cam_pos)
-		if tipo == "orbita":
+		if str(a.tipo) == "orbita":
 			_desenhar_laminas(a)
-	# corvos: olhos
-	for i in MAX_CORVOS:
+	for i in MAX_CORVOS:  # um brilho roxo em volta (e azul se for elétrico)
 		if c_vida[i] <= 0.0:
 			continue
 		var c := (c_pos[i] + Vector2(0, -c_z[i])).round()
-		var lado := 1.0 if c_vel[i].x >= 0.0 else -1.0
-		no_brilho.draw_rect(Rect2(c + Vector2(5 * lado - 1, -2), Vector2(2, 2)), Color(1.0, 0.25, 0.2, 1.0))
-		no_brilho.draw_texture_rect(tex_brilho, Rect2(c - Vector2(10, 10), Vector2(20, 20)), false, Color(0.55, 0.3, 1.0, 0.22))
+		var cor := Color(0.6, 0.35, 1.0, 0.3)
 		if c_arma[i] != null and (c_arma[i] as Dictionary).st.has("eletrico"):
-			no_brilho.draw_texture_rect(tex_brilho, Rect2(c - Vector2(14, 14), Vector2(28, 28)), false, Color(0.6, 0.8, 1.0, 0.3))
-	# runas
+			cor = Color(0.6, 0.8, 1.0, 0.4)
+		no_brilho.draw_texture_rect(tex_brilho, Rect2(c - Vector2(15, 15), Vector2(30, 30)), false, cor)
 	for i in MAX_RUNAS:
-		if r_vida[i] <= 0.0:
-			continue
-		_desenhar_runa(i)
-	# raios
+		if r_vida[i] > 0.0:
+			_desenhar_runa(i)
 	for i in MAX_RAIOS:
 		if z_t[i] >= z_dur[i]:
 			continue
@@ -904,7 +1080,6 @@ func _desenhar_brilho() -> void:
 		no_brilho.draw_polyline(pts, Color(0.5, 0.7, 1.0, 0.35 * k), 7.0)
 		no_brilho.draw_polyline(pts, Color(0.75, 0.88, 1.0, 0.9 * k), 3.0)
 		no_brilho.draw_polyline(pts, Color(1, 1, 1, k), 1.0)
-	# ondas e lanças
 	for i in MAX_ONDAS:
 		if w_dist[i] <= 0.0:
 			continue
@@ -920,35 +1095,12 @@ func _desenhar_brilho() -> void:
 				for s in 11:
 					var aa := ang + lerpf(-1.1, 1.1, float(s) / 10.0)
 					arco.append((p - dir * recuo + Vector2.from_angle(aa) * r * (1.0 - 0.25 * absf(lerpf(-1.0, 1.0, float(s) / 10.0)))).round())
-				var al := (0.95 - 0.3 * q) * fade
-				no_brilho.draw_polyline(arco, Color(0.75, 1.0, 0.95, al), 3.0 - q)
+				no_brilho.draw_polyline(arco, Color(0.75, 1.0, 0.95, (0.95 - 0.3 * q) * fade), 3.0 - q)
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(r, r), Vector2(r, r) * 2.0), false, Color(0.5, 1.0, 0.9, 0.18 * fade))
 		else:
-			var cauda := p - dir * 30.0
-			no_brilho.draw_line(cauda.round(), p.round(), Color(0.6, 0.95, 1.0, 0.35 * fade), 7.0)
+			no_brilho.draw_line((p - dir * 30.0).round(), p.round(), Color(0.6, 0.95, 1.0, 0.35 * fade), 7.0)
 			no_brilho.draw_line((p - dir * 22.0).round(), (p + dir * 8.0).round(), Color(1, 1, 1, 0.95 * fade), 2.0)
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(12, 12), Vector2(24, 24)), false, Color(0.6, 1.0, 0.95, 0.4 * fade))
-
-
-func _desenhar_aura(a: Dictionary, _hp: Vector2) -> void:
-	var h = mundo.heroi
-	var raio := float(a.get("RA", a.R))
-	var centro: Vector2 = h.pos + Vector2(0, -1)
-	var pulso := float(a.pulso)
-	var cor: Color = a.cor
-	var flick := 0.85 + 0.15 * sin(_fase * 14.0)
-	no_brilho.draw_texture_rect(
-		tex_brilho, Rect2(centro - Vector2(raio, raio * ACHATA) * 1.25, Vector2(raio, raio * ACHATA) * 2.5), false, Color(cor.r, cor.g * 0.8, cor.b, 0.16 + 0.1 * pulso)
-	)
-	var anel := _eliptico(centro, raio * (1.0 + 0.04 * pulso), 36, _fase * 0.7)
-	no_brilho.draw_polyline(anel, Color(cor.r, cor.g, cor.b, (0.55 + 0.35 * pulso) * flick), 2.0 + pulso)
-	no_brilho.draw_polyline(_eliptico(centro, raio * 0.82, 30, -_fase * 1.1), Color(1.0, 0.8, 0.3, 0.28 * flick), 1.0)
-	# línguas de fogo no anel (quadradinhos que sobem, em fases diferentes)
-	for i in 14:
-		var ang := TAU * float(i) / 14.0 + _fase * 0.7
-		var base := centro + Vector2(cos(ang) * raio, sin(ang) * raio * ACHATA)
-		var alt := 4.0 + 5.0 * (0.5 + 0.5 * sin(_fase * 9.0 + float(i) * 2.1))
-		no_brilho.draw_rect(Rect2((base + Vector2(-1, -alt)).round(), Vector2(2, alt)), Color(1.0, 0.55 + 0.3 * float(i % 3) / 2.0, 0.15, 0.7 * flick))
 
 
 func _desenhar_laminas(a: Dictionary) -> void:
@@ -957,42 +1109,40 @@ func _desenhar_laminas(a: Dictionary) -> void:
 	var cor: Color = a.cor
 	var evo: bool = a.evo
 	var R := float(a.R)
+	var tinta := cor.lerp(Color.WHITE, 0.35)
 	for i in n:
 		var ang := float(a.ang) + TAU * float(i) / float(n)
 		var p := (pts[i] + Vector2(0, -14)).round()
 		var tang := Vector2(-sin(ang) * R, cos(ang) * R * ACHATA).normalized()
-		var perp := tang.orthogonal()
-		# rastro: três posições atrás no círculo
-		for q in 3:
-			var aa := ang - float(q + 1) * 0.16
-			var pp := Vector2(cos(aa) * R, sin(aa) * R * ACHATA) + (pts[i] - Vector2(cos(ang) * R, sin(ang) * R * ACHATA)) + Vector2(0, -14)
-			no_brilho.draw_texture_rect(tex_brilho, Rect2(pp.round() - Vector2(7, 7), Vector2(14, 14)), false, Color(cor.r, cor.g, cor.b, 0.2 - 0.05 * q))
-		var ponta := p + tang * 10.0
-		var cauda := p - tang * 6.0
-		no_brilho.draw_colored_polygon(PackedVector2Array([ponta, p + perp * 3.0, cauda, p - perp * 3.0]), Color(cor.r, cor.g, cor.b, 0.55))
-		no_brilho.draw_colored_polygon(PackedVector2Array([ponta, p + perp * 1.5, cauda * 0.5 + p * 0.5, p - perp * 1.5]), Color(1, 1, 1, 0.95))
-		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(11, 11), Vector2(22, 22)), false, Color(cor.r, cor.g, cor.b, 0.38 if evo else 0.28))
+		for q in 2:  # rastro: duas luzinhas atrás no círculo
+			var aa := ang - float(q + 1) * 0.2
+			var pp := p + Vector2(cos(aa) - cos(ang), (sin(aa) - sin(ang)) * ACHATA) * R
+			no_brilho.draw_texture_rect(tex_brilho, Rect2(pp.round() - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.26 - 0.09 * q))
+		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.55 if evo else 0.42))
+		no_brilho.draw_set_transform(p, tang.angle(), Vector2(1.15, 1.15))
+		no_brilho.draw_texture(_tex_lamina, Vector2(-13, -5.5), tinta)
+		no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _desenhar_runa(i: int) -> void:
 	var a: Dictionary = r_arma[i]
 	var p: Vector2 = r_pos[i]
-	var st: Dictionary = a.st
 	var cor: Color = a.cor
 	var idade := r_t[i]
 	var armada := idade >= 0.5
-	var raio := float(st.explosao) * 0.42
+	var raio := float(a.st.explosao) * 0.42
 	var surge := clampf(idade / 0.3, 0.0, 1.0)
 	var fade := clampf(r_vida[i] / 0.8, 0.0, 1.0)
 	var pulso := 0.7 + 0.3 * sin(_fase * 6.0 + float(i))
 	var al := surge * fade * (pulso if armada else 0.5)
-	no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(raio, raio * ACHATA) * 1.5, Vector2(raio, raio * ACHATA) * 3.0), false, Color(cor.r, cor.g, cor.b, 0.2 * al))
-	no_brilho.draw_polyline(_eliptico(p, raio * surge, 24), Color(cor.r, cor.g, cor.b, 0.85 * al), 1.0)
-	no_brilho.draw_polyline(_eliptico(p, raio * 0.62 * surge, 18, _fase * 1.3), Color(cor.r, cor.g, cor.b, 0.6 * al), 1.0)
-	# três riscos girando (o glifo)
-	for k in 3:
-		var ang := _fase * 1.3 + TAU * float(k) / 3.0
-		var q0 := p + Vector2(cos(ang), sin(ang) * ACHATA) * raio * 0.62
-		var q1 := p + Vector2(cos(ang + 2.1), sin(ang + 2.1) * ACHATA) * raio * 0.62
-		no_brilho.draw_line(q0.round(), q1.round(), Color(1, 1, 1, 0.5 * al), 1.0)
-	no_brilho.draw_rect(Rect2(p.round() - Vector2(1, 1), Vector2(3, 3)), Color(1, 1, 1, al))
+	no_brilho.draw_texture_rect(
+		tex_brilho, Rect2(p - Vector2(raio, raio * ACHATA) * 1.5, Vector2(raio, raio * ACHATA) * 3.0), false, Color(cor.r, cor.g, cor.b, 0.22 * al)
+	)
+	var esc := raio * surge / 29.5
+	var rot := _fase * 1.3
+	# a runa está no chão: roda no plano e depois achata o y (matriz: gira, depois ACHATA)
+	no_brilho.draw_set_transform_matrix(Transform2D(Vector2(cos(rot), sin(rot) * ACHATA) * esc, Vector2(-sin(rot), cos(rot) * ACHATA) * esc, p.round()))
+	no_brilho.draw_texture(_tex_glifo, Vector2(-31.5, -31.5), Color(1, 1, 1, 0.6 * al))
+	no_brilho.draw_set_transform_matrix(Transform2D(Vector2(esc, 0), Vector2(0, esc * ACHATA), p.round()))
+	no_brilho.draw_texture(_tex_anel, Vector2(-31.5, -31.5), Color(cor.r, cor.g, cor.b, 0.9 * al))
+	no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
