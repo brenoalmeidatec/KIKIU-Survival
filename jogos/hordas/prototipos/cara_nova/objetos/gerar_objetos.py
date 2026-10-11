@@ -8,8 +8,9 @@ Entrada (ao lado deste script, com fundo branco/transparente):
 Saida, em jogos/hordas/projeto/prototipos/objetos/ (mesmo layout nas duas folhas):
     enfeites.png           albedo: cor chapada, alfa binario, contorno escuro de 1 px
     enfeites_normal.png    normal map (R = x, G = y para cima, B = z), mesma convencao do gerar_cara_nova.py
-    cenario.json           itens com nome, peso, pe (base dentro da regiao) e regiao [x, y, w, h]
-    e a previa em jogos/hordas/prints/prototipo_objetos_novos.png
+    cenario.json           itens com nome, peso, pe (base dentro da regiao), regiao [x, y, w, h] e colisao
+                           (elipses relativas ao pe; lista vazia = atravessavel)
+    as previas em jogos/hordas/prints/prototipo_objetos_novos.png e v2_colisao_formas.png (elipses por cima)
 
 Uso (so precisa de Pillow):
     python gerar_objetos.py
@@ -28,6 +29,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 HORDAS = os.path.normpath(os.path.join(AQUI, "..", "..", ".."))
 SAIDA = os.path.join(HORDAS, "projeto", "prototipos", "objetos")
 PREVIA = os.path.join(HORDAS, "prints", "prototipo_objetos_novos.png")
+PREVIA_COLISAO = os.path.join(HORDAS, "prints", "v2_colisao_formas.png")
 
 # ------------------------------------------------------------------ escolhas de arte
 # (nome, eixo do alvo, tamanho alvo em px no jogo 960x540, peso do cenario)
@@ -306,21 +308,26 @@ def pe_do_objeto(img):
     return [px, py]
 
 
-def pe_do_portal(img):
-    """Torii: pe = meio entre os dois pilares, na base. Os pilares sao as duas faixas opacas mais largas da
-    linha FRACAO_PILAR (ali so ha pilar). pe = meio dos centros; y = media das duas bases (ultima linha opaca)."""
-    w, h = img.size
-    alfa = img.tobytes()[3::4]
-    y = int(FRACAO_PILAR * h)
-    faixas, ini = [], None
+def _trechos(alfa, w, y):
+    """Trechos opacos de uma linha: lista de (x0, x1), inclusive."""
+    trechos, ini = [], None
     for x in range(w + 1):
         on = x < w and alfa[y * w + x] > 0
         if on and ini is None:
             ini = x
         elif not on and ini is not None:
-            faixas.append((ini, x - 1))
+            trechos.append((ini, x - 1))
             ini = None
-    pilares = sorted(sorted(faixas, key=lambda f: f[1] - f[0], reverse=True)[:2])
+    return trechos
+
+
+def pilares_do_portal(img):
+    """Os dois pilares do torii: as duas faixas opacas mais largas da linha FRACAO_PILAR (ali so ha pilar).
+    Devolve [(x0, x1), ...] e a base de cada pilar (ultima linha opaca da faixa)."""
+    w, h = img.size
+    alfa = img.tobytes()[3::4]
+    y = int(FRACAO_PILAR * h)
+    pilares = sorted(sorted(_trechos(alfa, w, y), key=lambda f: f[1] - f[0], reverse=True)[:2])
     if len(pilares) != 2:
         raise SystemExit("torii: achei %d pilares na linha %d, esperava 2" % (len(pilares), y))
 
@@ -331,9 +338,139 @@ def pe_do_portal(img):
         return -1
 
     bases = [max(base_da_coluna(x) for x in range(a, b + 1)) for a, b in pilares]
+    return pilares, bases
+
+
+def pe_do_portal(img):
+    """Torii: pe = meio entre os dois pilares, na base. pe = meio dos centros; y = media das duas bases."""
+    pilares, bases = pilares_do_portal(img)
     cx = [(a + b) / 2.0 for a, b in pilares]
     print("      pilares: colunas %s, bases y %s" % (pilares, bases))
     return [int(round(sum(cx) / 2.0)), int(round(sum(bases) / 2.0))]
+
+
+# ------------------------------------------------------------------ colisao (formas relativas ao pe)
+# Solido = elipses no chao, em px do jogo e relativas ao pe. A pegada e a base do objeto (linhas opacas de baixo,
+# perto do pe), vista a 45 graus: ry = 0,5 * rx, e a borda de baixo da elipse encosta no pe.
+# Objeto que nao estiver em nenhum dos dois conjuntos faz a geracao parar: classifique o novo aqui.
+SOLIDOS = {
+    "arvore", "arvore_pantano", "arvore_morta", "toco", "tronco", "pedra", "rocha", "pedras", "coluna", "pilar",
+    "obelisco", "pedestal", "muro", "runa", "lapide", "poste_lanterna", "toro", "altar", "braseiro", "fogueira",
+    "caixa_oferenda", "cranio", "torii", "torii_quebrado",
+}
+PASSAVEIS = {"arbusto", "cogumelos", "juncos", "raizes"}
+COLISAO_FRACAO_BASE = 0.10   # faixa de base = fracao da altura do sprite...
+COLISAO_MIN_LINHAS = 4       # ...limitada a este intervalo de linhas
+COLISAO_MAX_LINHAS = 12
+# Base arredondada (a linha do pe e a mais estreita, e o corpo largo fica uns px acima): faixa mais funda.
+COLISAO_FRACAO_ESPECIAL = {"toco": 0.30, "tronco": 0.30, "fogueira": 0.30, "caixa_oferenda": 0.30,
+                           "lapide": 0.50, "cranio": 0.50}
+COLISAO_LARGA = {"muro", "tronco"}   # objeto longo: uma elipse larga cobre o trecho de base (lisa: sem quina)
+COLISAO_RX_MIN = 3.0         # raio minimo em x (poste fino ainda ganha um disco)
+COLISAO_RY_RX = 0.5          # ry = 0,5 * rx
+
+
+def _mediana(v):
+    v = sorted(v)
+    n = len(v)
+    return v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2.0
+
+
+def _percentil(v, q):
+    """Valor de ordem q (0 a 1) de uma lista: com q = 0,75 o raio nao cai na quina da base."""
+    v = sorted(v)
+    return v[int(round(q * (len(v) - 1)))]
+
+
+def _faixa_de_base(img, pe, nome):
+    """Linhas opacas de baixo, perto do pe. Em cada linha, o trecho opaco mais perto do pe.
+    Devolve [(dy, x0, x1), ...] relativos ao pe, da linha do pe para cima."""
+    w, h = img.size
+    alfa = img.tobytes()[3::4]
+    px, py = pe
+    if nome in COLISAO_FRACAO_ESPECIAL:
+        n = max(1, int(round(COLISAO_FRACAO_ESPECIAL[nome] * h)))
+    else:
+        n = max(COLISAO_MIN_LINHAS, min(COLISAO_MAX_LINHAS, int(round(COLISAO_FRACAO_BASE * h))))
+    faixa = []
+    for y in range(py, max(-1, py - n), -1):
+        trechos = _trechos(alfa, w, y)
+        if not trechos:
+            continue
+        l, r = min(trechos, key=lambda t: max(0, t[0] - px, px - t[1]))
+        faixa.append((y - py, l - px, r - px))
+    if not faixa:
+        raise SystemExit("colisao: nenhuma linha opaca perto do pe %s" % (pe,))
+    return faixa
+
+
+def _forma(dx, dy_base, rx):
+    """Elipse com a borda de baixo em dy_base (relativo ao pe) e centro logo acima dela."""
+    ry = COLISAO_RY_RX * rx
+    return {"tipo": "elipse", "centro": [round(dx, 1), round(dy_base - ry, 1)], "raio": [round(rx, 1), round(ry, 1)]}
+
+
+def _elipse_da_base(img, pe, nome):
+    """Um disco com a borda de baixo no pe. Raio = percentil 75 da metade da largura da faixa; centro = mediana
+    do meio da faixa. O percentil 75 tira a raiz que abre na base da arvore, e a mediana, a quina."""
+    faixa = _faixa_de_base(img, pe, nome)
+    rx = max(COLISAO_RX_MIN, _percentil([(r - l + 1) / 2.0 for _, l, r in faixa], 0.75))
+    return [_forma(_mediana([(l + r) / 2.0 for _, l, r in faixa]), 0.0, rx)]
+
+
+def _elipse_larga(img, pe, nome):
+    """Objeto longo (muro, tronco deitado): uma elipse que cobre o trecho de base todo. Uma so e lisa, sem quina
+    entre duas: o corpo desliza ao longo dela. A borda de baixo fica na linha mais baixa de corpo largo
+    (>= 80% da maior largura da faixa), que nem sempre e o pe."""
+    faixa = _faixa_de_base(img, pe, nome)
+    esq = min(l for _, l, _r in faixa)
+    dir_ = max(r for _, _l, r in faixa)
+    maior = max(r - l + 1 for _, l, r in faixa)
+    base = max(dy for dy, l, r in faixa if r - l + 1 >= 0.8 * maior)
+    rx = max(COLISAO_RX_MIN, (dir_ - esq + 1) / 2.0)
+    return [_forma((esq + dir_) / 2.0, base, rx)]
+
+
+def _elipses_do_torii(img, pe):
+    """Torii: uma elipse em cada pilar, na base de cada um. O vao entre elas e a passagem."""
+    pilares, bases = pilares_do_portal(img)
+    return [_forma((a + b) / 2.0 - pe[0], base + 1 - pe[1], max(COLISAO_RX_MIN, (b - a + 1) / 2.0))
+            for (a, b), base in zip(pilares, bases)]
+
+
+def formas_de_colisao(nome, img, pe):
+    if nome in PASSAVEIS:
+        return []
+    if nome not in SOLIDOS:
+        raise SystemExit("colisao: %s nao esta em SOLIDOS nem em PASSAVEIS" % nome)
+    if nome.startswith("torii"):
+        return _elipses_do_torii(img, pe)
+    if nome in COLISAO_LARGA:
+        return _elipse_larga(img, pe, nome)
+    return _elipse_da_base(img, pe, nome)
+
+
+def previa_colisao(folha, pos, sprites, caminho):
+    """Folha de albedo em 2x, com as elipses de colisao por cima e um ponto verde no pe."""
+    ESC = 2
+    fundo = (0x5a, 0x5a, 0x64, 255)
+    tela = Image.new("RGBA", (folha.width * ESC, folha.height * ESC), fundo)
+    tela.alpha_composite(folha.resize((folha.width * ESC, folha.height * ESC), Image.NEAREST))
+    camada = Image.new("RGBA", tela.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(camada)
+    fonte = ImageFont.load_default(size=11)
+    for (x, y), (nome, _peso, _alb, _nor, pe, formas) in zip(pos, sprites):
+        for f in formas:
+            cx = (x + pe[0] + f["centro"][0]) * ESC
+            cy = (y + pe[1] + f["centro"][1]) * ESC
+            rx, ry = f["raio"][0] * ESC, f["raio"][1] * ESC
+            d.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=(255, 40, 40, 90), outline=(255, 40, 40, 255), width=1)
+        ox, oy = (x + pe[0]) * ESC, (y + pe[1]) * ESC
+        d.ellipse([ox - 2, oy - 2, ox + 2, oy + 2], fill=(60, 255, 120, 255))
+        d.rectangle([x * ESC, y * ESC, x * ESC + 6 * len(nome), y * ESC + 12], fill=(0, 0, 0, 170))
+        d.text((x * ESC + 2, y * ESC), nome, fill=(255, 255, 255, 255), font=fonte)
+    tela = Image.alpha_composite(tela, camada)
+    tela.convert("RGB").save(caminho)
 
 
 # ------------------------------------------------------------------ normal map
@@ -605,7 +742,7 @@ def previa(faixas, caminho):
 def main():
     if not os.path.isdir(SAIDA):
         os.makedirs(SAIDA)
-    sprites = []      # (nome, peso, albedo, normal, pe)
+    sprites = []      # (nome, peso, albedo, normal, pe, formas de colisao)
     faixas = []
     for arquivo, linhas, lista in FOLHAS:
         w, h, data = carregar(os.path.join(AQUI, arquivo))
@@ -620,9 +757,11 @@ def main():
             borda_g, miolo_g = inclinacao_graus(nor, alb)
             print("      inclinacao na borda %.0f graus (mediana), no miolo %.0f (p95)" % (borda_g, miolo_g))
             pe = pe_do_portal(alb) if nome.startswith("torii") else pe_do_objeto(alb)
-            sprites.append((nome, peso, alb, nor, pe))
+            formas = formas_de_colisao(nome, alb, pe)
+            sprites.append((nome, peso, alb, nor, pe, formas))
             itens.append((nome, alb, nor))
-            print("  %-15s %3dx%-3d  (alvo %s %d)  pe %s" % (nome, alb.width, alb.height, eixo, alvo, pe))
+            print("  %-15s %3dx%-3d  (alvo %s %d)  pe %s  colisao %d" % (
+                nome, alb.width, alb.height, eixo, alvo, pe, len(formas)))
         faixas.append((arquivo, itens))
 
     pos, largura, altura = empacotar([(s[2].width, s[2].height) for s in sprites])
@@ -636,10 +775,11 @@ def main():
     folha.save(os.path.join(SAIDA, "enfeites.png"))
     folha_n.save(os.path.join(SAIDA, "enfeites_normal.png"))
     print("folha %dx%d, %d cores distintas" % (largura, altura, cores))
+    previa_colisao(folha, pos, sprites, PREVIA_COLISAO)
 
     itens = []
-    for (x, y), (nome, peso, alb, _nor, pe) in zip(pos, sprites):
-        item = {"nome": nome, "peso": peso, "pe": pe, "regiao": [x, y, alb.width, alb.height]}
+    for (x, y), (nome, peso, alb, _nor, pe, formas) in zip(pos, sprites):
+        item = {"nome": nome, "peso": peso, "pe": pe, "regiao": [x, y, alb.width, alb.height], "colisao": formas}
         if nome in FOGO:
             fx, fy = FOGO[nome]
             item["fogo"] = [int(fx * alb.width), int(fy * alb.height)]
@@ -652,7 +792,7 @@ def main():
         "itens": itens,
         "fixos": [],
     }
-    with open(os.path.join(SAIDA, "cenario.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(SAIDA, "cenario.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(cen, f, ensure_ascii=False, indent=1)
         f.write("\n")
     previa([(arq, itens_) for arq, itens_ in faixas], PREVIA)
