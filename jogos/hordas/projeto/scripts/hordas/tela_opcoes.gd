@@ -253,5 +253,5 @@ func _linha(i: int, y: float, nome: String, valor: String) -> void:
 	if _captando != "" and _itens[i].get("acao", "") == _captando:
 		_txt(Vector2(158, y), "Aperte a nova tecla ou botão (Esc cancela)", 8, Color(1, 0.85, 0.3), 324, HORIZONTAL_ALIGNMENT_RIGHT)
 		return
-	var com_setas := sel and not _itens[i].has("acao") and not _itens[i].has("abre")
+	var com_setas: bool = sel and not _itens[i].has("acao") and not _itens[i].has("abre")
 	_txt(Vector2(158, y), ("< %s >" % valor) if com_setas else valor, 8, Color.WHITE if sel else Color(0.6, 0.85, 1), 324, HORIZONTAL_ALIGNMENT_RIGHT)

@@ -106,7 +106,7 @@ func _ready() -> void:
 	ok(t._perfil == "medio" and t._msg.begins_with("Detectado"), "detectar aplica a sugestão (medio) e avisa")
 
 	# rolagem: a última opção aparece inteira
-	var ult := t._foco.size() - 2
+	var ult: int = t._foco.size() - 2
 	t._sel = ult
 	t._garantir_visivel()
 	var f_ult: Dictionary = t._foco[ult]
@@ -122,8 +122,11 @@ func _ready() -> void:
 	ok(t._item_em(Vector2(5, 5)) == -1, "mouse fora de tudo")
 	# clique direito no menu volta um valor
 	t._sel = _idx(t, "luz_relevo")
+	api.g_definir("luz_relevo", "tudo")
 	t._clicar(t._sel, MOUSE_BUTTON_RIGHT)
 	ok(str(api.g("luz_relevo")) == "so_heroi", "clique direito volta um valor no menu")
+	t._clicar(t._sel, MOUSE_BUTTON_LEFT)
+	ok(str(api.g("luz_relevo")) == "tudo", "clique esquerdo avança um valor no menu")
 
 	# Esc (volta) fecha e avisa quem abriu; a tela se apaga e solta o sinal da API
 	t._sel = _achar(t, "voltar")
