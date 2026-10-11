@@ -1,10 +1,11 @@
 extends Node
 # Teste automático (#150, E1): a aba Gráficos. Os 3 perfis (dados/graficos.json) preenchem todas as opções e batem com os
 # números de hoje; mexer numa opção vira "personalizado"; salvar e carregar; o detectar devolve um perfil válido; a migração
-# da "Qualidade gráfica" antiga; e os fatores que o jogo usa (partículas, halos, efeitos das armas, limite de inimigos).
+# da "Qualidade gráfica" antiga; a partícula única (particulas_sim) e os fatores que o jogo usa.
+# Grava num arquivo de teste próprio (Config.arquivo): nunca o opcoes.cfg do jogador nem o de outro teste em paralelo.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/graficos.tscn  (imprime "GRAFICOS falhas=0")
-# Salva e restaura o user://opcoes.cfg do jogador (como testes/opcoes.gd).
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
+const ARQ_TESTE := "user://teste_graficos.cfg"
 var falhas := 0
 var sinais := 0
 
@@ -16,8 +17,10 @@ func ok(cond: bool, msg: String) -> void:
 
 
 func _ready() -> void:
-	var antes := ConfigFile.new()
-	var tinha := antes.load(Config.ARQUIVO) == OK
+	Config.arquivo = ARQ_TESTE
+	var vazio := ConfigFile.new()   # começa sem nada salvo
+	vazio.save(ARQ_TESTE)
+	Config.recarregar()
 	Config.graficos_mudou.connect(func(): sinais += 1)
 	var perfis: Dictionary = Dados.json("graficos").get("perfis", {})
 	var opcoes: Array = Config.g_opcoes()
@@ -33,6 +36,7 @@ func _ready() -> void:
 			ok(perfis.get(p, {}).has(o.chave), "%s: o perfil %s traz a opção" % [o.chave, p])
 	ok(secoes.cpu == 5 and secoes.gpu == 10, "CPU 5 e GPU 10 (deu %s)" % str(secoes))
 	ok(Config.item("qualidade").is_empty() and Config.item("vsync").is_empty() and Config.item("fps_max").is_empty() and Config.item("vinheta").is_empty(), "qualidade, vsync, fps_max e vinheta saíram do ITENS (a aba manda)")
+	ok(Config.item("particulas").is_empty(), "a opção de leitura 'Partículas' saiu: a única é particulas_sim")
 
 	# 2. cada perfil: g() devolve o que o perfil diz, e o valor pertence ao domínio da opção (menu, faixa do slider)
 	for p in ["baixo", "medio", "alto"]:
@@ -63,13 +67,13 @@ func _ready() -> void:
 	ok(Config.g("particulas_sim") == "poucas" and is_equal_approx(float(Config.g("calculo_monstros")), 2.0), "baixo: partículas poucas, monstros espaçados")
 	ok(Config.leituras_horror() == 0 and Config.luzes_horror() == 8 and is_equal_approx(Cresc.fator(), 0.3), "baixo: sem leitura de tela no horror, 8 luzes, efeitos 30%")
 
-	# 4. partículas: a opção "Partículas" (Nenhuma) ainda zera as que ela reduz, por cima do perfil
+	# 4. partículas: uma opção só (particulas_sim). Nenhuma zera tudo; Poucas e Médias seguem a escala antiga
 	Config.g_perfil_temporario("alto")
-	var part_antes = Config.v("particulas")
-	Config.temporario("particulas", 0.0)
-	ok(is_zero_approx(Config.fator_particulas("amb_particulas")) and is_zero_approx(Config.fator_particulas("elem_part")), "Partículas: Nenhuma zera ambiente e elementos")
-	ok(is_equal_approx(Config.fator_particulas("efe_faiscas"), 1.0), "Partículas: Nenhuma não mexe nas faíscas (só ambiente e elementos, como antes)")
-	Config.temporario("particulas", part_antes)
+	Config.g_temporario("particulas_sim", "nenhuma")
+	ok(is_zero_approx(Config.fator_particulas("amb_particulas")) and is_zero_approx(Config.fator_particulas("elem_part")) and is_zero_approx(Config.fator_particulas("efe_faiscas")) and is_zero_approx(Config.fator_particulas("mortes_simples")), "Nenhuma zera todas as partículas")
+	Config.g_temporario("particulas_sim", "medias")
+	ok(is_equal_approx(Config.fator_particulas("amb_particulas"), 0.5) and is_equal_approx(Config.fator_particulas("elem_part"), 0.5), "Médias: metade do ambiente e dos elementos")
+	Config.g_perfil_temporario("alto")
 
 	# 5. mexer numa opção vira personalizado, salva e avisa
 	var n0 := sinais
@@ -82,7 +86,7 @@ func _ready() -> void:
 
 	# 6. salvar e carregar: o arquivo tem o que foi salvo e recarregar devolve o mesmo estado
 	var arq := ConfigFile.new()
-	arq.load(Config.ARQUIVO)
+	arq.load(ARQ_TESTE)
 	ok(arq.get_value("graficos", "max_inimigos", -1) == 300 and arq.get_value("graficos", "perfil", "") == "personalizado", "salvo no arquivo: 300 e personalizado")
 	Config.recarregar()
 	ok(Config.g("max_inimigos") == 300 and Config.g_perfil() == "personalizado", "carregado: 300 e personalizado")
@@ -90,19 +94,16 @@ func _ready() -> void:
 	Config.recarregar()
 	ok(Config.g_perfil() == "baixo" and Config.g("max_inimigos") == 250 and Config.g("sombras") == "contato", "carregado depois de baixo: perfil baixo inteiro")
 
-	# 7. detectar devolve um perfil válido (e a máquina de teste é uma das três)
+	# 7. detectar devolve um perfil válido
 	ok(Config.g_detectar() in ["baixo", "medio", "alto"], "detectar: um perfil válido (%s)" % Config.g_detectar())
 
 	# 8. migração: quem tinha a "Qualidade gráfica" antiga (media) vira o perfil médio, uma vez, e a chave antiga some
 	var velho := ConfigFile.new()
 	velho.set_value("opcoes", "qualidade", "media")
-	velho.save(Config.ARQUIVO)
+	velho.save(ARQ_TESTE)
 	Config.recarregar()
 	ok(Config.g_perfil() == "medio" and Config.g("max_inimigos") == 350, "migração: media antiga vira medio")
 	ok(not Config._cfg.has_section_key("opcoes", "qualidade"), "migração: a chave antiga sai do arquivo")
 
-	# restaura o arquivo do jogador
-	if tinha:
-		antes.save(Config.ARQUIVO)
 	print("GRAFICOS falhas=%d" % falhas)
 	get_tree().quit()

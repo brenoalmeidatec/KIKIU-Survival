@@ -53,7 +53,7 @@ func configurar(c, a: Node) -> void:
 	var r := RandomNumberGenerator.new()
 	r.seed = hash("amb|" + c.nome)
 	var mult := Config.fator_particulas("amb_particulas")   # perfil de qualidade: menos partículas; "baixa" também tira a névoa (as manchas grandes custam mais)
-	_bichos = Config.g("particulas_sim") != "poucas"
+	_bichos = not (Config.g("particulas_sim") in ["poucas", "nenhuma"])
 	for e in c.cfg.get("particulas", []):
 		if str(e.tipo) == "nevoa" and not bool(Config.g("nevoa")):
 			continue

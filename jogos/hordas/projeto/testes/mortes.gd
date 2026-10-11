@@ -86,6 +86,7 @@ func matar(a: Node, arma: String, elem := "", dx := 60.0) -> String:
 
 
 func _ready() -> void:
+	Config.g_perfil_temporario("alto")
 	Config.temporario("mortes", "normal")
 	Config.temporario("tremor", 1.0)
 	var dm: Dictionary = Dados.json("mortes")

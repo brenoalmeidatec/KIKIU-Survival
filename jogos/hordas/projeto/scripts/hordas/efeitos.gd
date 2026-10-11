@@ -104,7 +104,7 @@ func impacto(pos: Vector2, cor := Color(0.75, 0.9, 1.0), forte := false) -> void
 
 ## Faíscas em risquinho (rastro na direção do voo). `dir` zero = pra todo lado.
 func faisca(pos: Vector2, dir: Vector2, cor: Color, n := 3, forca := 170.0) -> void:
-	var k := _k_fai * Config.particulas()   # opção "Partículas": Nenhuma = sem faíscas
+	var k := Config.fator_particulas("efe_faiscas")   # lido na hora: a opção Partículas (particulas_sim) vale com o jogo rodando
 	if k <= 0.0:
 		return
 	for i in (n if k >= 1.0 else maxi(1, roundi(n * k))):
@@ -146,7 +146,7 @@ static func texto(valor: float, crit: bool) -> String:
 
 
 func explodir(pos: Vector2, cor: Color, n := 6, forca := 80.0) -> void:
-	var k := _k_part * Config.particulas()
+	var k := Config.fator_particulas("efe_particulas")
 	if k <= 0.0:
 		return
 	for i in (n if k >= 1.0 else maxi(1, roundi(n * k))):
