@@ -4,8 +4,8 @@ extends RefCounted
 ## queimadura (dano por segundo que fica 2 s em quem pegou fogo), explosao (raio da explosão na ponta, no fim da rajada).
 ## Módulo de comportamento de arma (veja armas.gd e katana.gd).
 
-const VIDA_FOGO := 0.32      # quanto vive cada labareda (pixel de fogo voando)
-const QUEIMA := 2.0          # segundos queimando
+const VIDA_FOGO := 0.32  # quanto vive cada labareda (pixel de fogo voando)
+const QUEIMA := 2.0  # segundos queimando
 ## do mais quente (perto da boca) pro mais frio (fumaça): rampa "fogo" do pixel3d.py
 const CORES := [Color("ffd060"), Color("f0921e"), Color("f0921e"), Color("c45a14"), Color("7a2c0c"), Color(0.15, 0.1, 0.1)]
 
@@ -31,11 +31,27 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	a.t = maxf(0.5, float(s.recarga)) + sopro
 	var alcance := float(s.get("alcance", 95)) * float(s.area)
 	var b := boca(w)
-	w.especiais.append({"tipo": "baforada", "boca": true, "t": sopro, "tique": 0.0, "pos": b,
-		"dir": _mirar(w, b, alcance, Vector2(w.dono.lado, 0)), "alcance": alcance,
-		"largura": deg_to_rad(float(s.get("largura", 40))), "dano": float(s.dano), "tique_s": float(s.get("tique", 0.15)),
-		"queima": float(s.get("queimadura", 0)), "explosao": float(s.get("explosao", 0)) * float(s.area),
-		"arma": a.id, "fogo": [], "queimando": {}, "boom": 0.0, "boom_pos": Vector2.ZERO})
+	w.especiais.append(
+		{
+			"tipo": "baforada",
+			"boca": true,
+			"t": sopro,
+			"tique": 0.0,
+			"pos": b,
+			"dir": _mirar(w, b, alcance, Vector2(w.dono.lado, 0)),
+			"alcance": alcance,
+			"largura": deg_to_rad(float(s.get("largura", 40))),
+			"dano": float(s.dano),
+			"tique_s": float(s.get("tique", 0.15)),
+			"queima": float(s.get("queimadura", 0)),
+			"explosao": float(s.get("explosao", 0)) * float(s.area),
+			"arma": a.id,
+			"fogo": [],
+			"queimando": {},
+			"boom": 0.0,
+			"boom_pos": Vector2.ZERO
+		}
+	)
 	Som.tocar("whoosh", 0.1, 0.55, -2)
 
 
@@ -46,12 +62,13 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		e.dir = e.dir.slerp(_mirar(w, e.pos, e.alcance, e.dir), minf(1.0, dt * 6.0)).normalized()
 		var forma = w.dono.get("forma")
 		if forma:
-			forma.olhar = e.dir if e.t > 0 else Vector2.ZERO   # a cabeça vira pra onde sopra
+			forma.olhar = e.dir if e.t > 0 else Vector2.ZERO  # a cabeça vira pra onde sopra
 		# labaredas: nascem na boca e voam pro cone (o desenho É o alcance do dano)
 		for i in 4:
 			var ang: float = e.dir.angle() + randf_range(-0.5, 0.5) * e.largura
-			e.fogo.append({"pos": e.pos, "vel": Vector2.from_angle(ang) * e.alcance / VIDA_FOGO * randf_range(0.8, 1.05),
-				"t": VIDA_FOGO, "tam": randf_range(2.0, 3.0)})
+			e.fogo.append(
+				{"pos": e.pos, "vel": Vector2.from_angle(ang) * e.alcance / VIDA_FOGO * randf_range(0.8, 1.05), "t": VIDA_FOGO, "tam": randf_range(2.0, 3.0)}
+			)
 		e.tique -= dt
 		if e.tique <= 0:
 			e.tique = e.tique_s
@@ -60,7 +77,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 				var dif: Vector2 = v.pos - e.pos
 				if absf(angle_difference(ang, dif.angle())) <= e.largura / 2 + 0.15 or dif.length() < 12.0:
 					w.campo.ferir(v, e.dano, e.dir * 25.0, e.arma)
-					v.flash = 0.0   # acerto contínuo: sem o piscar branco (amontoados viravam uma nuvem branca)
+					v.flash = 0.0  # acerto contínuo: sem o piscar branco (amontoados viravam uma nuvem branca)
 					if e.queima > 0 and v.hp > 0:
 						e.queimando[v.id] = {"v": v, "t": QUEIMA}
 			Som.tocar("plim", 0.12, 0.35, -16)
@@ -74,7 +91,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		q.t -= dt
 		if q.t <= 0 or q.v.hp <= 0:
 			e.queimando.erase(id)
-		elif int(q.t * 10.0) != int((q.t + dt) * 10.0):   # a cada 0.1 s
+		elif int(q.t * 10.0) != int((q.t + dt) * 10.0):  # a cada 0.1 s
 			w.campo.ferir(q.v, e.queima * 0.1, Vector2.ZERO, e.arma)
 			q.v.flash = 0.0
 	for f in e.fogo.duplicate():

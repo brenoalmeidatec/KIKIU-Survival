@@ -19,24 +19,24 @@ const BANNER_SEG := 2.0
 const MAX_MSGS := 4
 
 var arena: Node
-var _msgs: Array = []        # {txt, cor, t}
+var _msgs: Array = []  # {txt, cor, t}
 var _anuncio := {"txt": "", "cor": Color.WHITE, "t": 0.0}
 var _pausado := false
-var _hud_antes_pausa := true   # o HUD estava visível antes da pausa (a abertura da fase o esconde)
+var _hud_antes_pausa := true  # o HUD estava visível antes da pausa (a abertura da fase o esconde)
 var _op_pausa := 0
 var _t := 0.0
 var _quadro_pausa := -1
-var _opcoes: Node = null     # tela de Opções aberta pela pausa
+var _opcoes: Node = null  # tela de Opções aberta pela pausa
 var _mouse_ult := Vector2(-1, -1)
 var _fator := 0.0
 var _banner_t := 0.0
-var _conj_ult := {}          # etiqueta -> degrau ligado no quadro anterior (para detectar conjunto novo)
+var _conj_ult := {}  # etiqueta -> degrau ligado no quadro anterior (para detectar conjunto novo)
 var _heroi_ult := ""
 var _build_ult: Array = []
-var _prov: Array = []        # slots de consumível
-var _buffs: Array = []       # slots de efeito ativo
+var _prov: Array = []  # slots de consumível
+var _buffs: Array = []  # slots de efeito ativo
 var _lut_n := -1
-var _estilos := {}           # barra -> StyleBoxFlat do preenchimento (a cor muda sem criar recurso novo)
+var _estilos := {}  # barra -> StyleBoxFlat do preenchimento (a cor muda sem criar recurso novo)
 var _msg_lbl: Array = []
 var _op_lbl: Array = []
 
@@ -47,14 +47,14 @@ var _op_lbl: Array = []
 func _ready() -> void:
 	layer = 5
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	raiz.theme = raiz.theme.duplicate()   # a opção de fonte mexe neste Theme: não pode vazar para outra partida
+	raiz.theme = raiz.theme.duplicate()  # a opção de fonte mexe neste Theme: não pode vazar para outra partida
 	_ignorar_mouse(raiz)
 	setas.arena = arena
 	for i in MAX_MSGS:
 		var l := Label.new()
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.visible = false
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # mensagem longa (ou fonte grande) quebra em vez de sair da tela
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # mensagem longa (ou fonte grande) quebra em vez de sair da tela
 		l.custom_minimum_size = Vector2(400, 0)
 		%Msgs.add_child(l)
 		_msg_lbl.append(l)
@@ -113,7 +113,7 @@ func _aplicar_fonte() -> void:
 	var th: Theme = raiz.theme
 	th.default_font_size = roundi(FONTE_BASE * _fator)
 	th.set_font_size("font_size", "LabelGrande", roundi(16.0 * (1.0 + (_fator - 1.0) * 0.5)))
-	var larg := roundf(116.0 * (1.0 + (_fator - 1.0) * 0.5))   # as barras crescem junto, mas menos que o texto (o texto fica mais curto)
+	var larg := roundf(116.0 * (1.0 + (_fator - 1.0) * 0.5))  # as barras crescem junto, mas menos que o texto (o texto fica mais curto)
 	%HeroiVida.custom_minimum_size.x = larg
 	%Carga.custom_minimum_size.x = larg
 	%Build.custom_minimum_size.x = larg + 38.0
@@ -165,6 +165,7 @@ func atualizar_i(dt: float) -> void:
 
 
 # ---------- ligação dos dados do jogo com os nós ----------
+
 
 func _sincronizar() -> void:
 	if arena == null or arena.jogador == null:
@@ -244,11 +245,11 @@ func _xp_e_relogio() -> void:
 	var resta := maxf(0.0, float(fa.get("duracao", 0)) - df.t_fase)
 	var nome_fase := str(fa.get("nome", "")).to_upper()
 	var rotulo: String
-	if fa.has("regiao"):   # regiões (#64): "FLORESTA SOMBRIA 2/5  TRILHA TORTA"
+	if fa.has("regiao"):  # regiões (#64): "FLORESTA SOMBRIA 2/5  TRILHA TORTA"
 		rotulo = "%s %d/%d" % [str(fa.regiao_nome).to_upper(), int(fa.andar_regiao) + 1, int(Dados.json("regioes").get("fases_por_regiao", 5))]
 	else:
 		rotulo = tr("HUD_FASE_N") % [df.fase_idx + 1, df.fases().size()]
-	if nome_fase != "" and _fator <= 1.0:   # com fonte maior o nome do andar não cabe do lado: fica só a região
+	if nome_fase != "" and _fator <= 1.0:  # com fonte maior o nome do andar não cabe do lado: fica só a região
 		rotulo += "  " + nome_fase
 	%Regiao.text = rotulo
 	var sub := ""
@@ -256,7 +257,7 @@ func _xp_e_relogio() -> void:
 	if df.saida_leve:
 		%Tempo.text = tr("HUD_PORTAL_ABERTO")
 		_cor_txt(%Tempo, Color(0.75, 0.65, 1))
-	elif df.pror_ativa():   # prorrogação (#112): o cronômetro sobe e a cada degrau fica mais difícil e paga mais ouro
+	elif df.pror_ativa():  # prorrogação (#112): o cronômetro sobe e a cada degrau fica mais difícil e paga mais ouro
 		var pt: float = df.pror_t()
 		%Tempo.text = "+%02d:%02d" % [int(pt) / 60, int(pt) % 60]
 		_cor_txt(%Tempo, Interface.cor("alerta"))
@@ -278,7 +279,7 @@ func _xp_e_relogio() -> void:
 
 func _ouro() -> void:
 	%Ouro.text = tr("HUD_OURO") % arena.ouro
-	var almas = arena.get("almas")   # ainda não existe (Marco 7): aparece zerado
+	var almas = arena.get("almas")  # ainda não existe (Marco 7): aparece zerado
 	%Almas.text = tr("HUD_ALMAS") % (int(almas) if almas != null else 0)
 
 
@@ -351,7 +352,15 @@ func _duelo() -> void:
 	var f: float = d.fracao_anel()
 	var anel := ""
 	if d.estado == "luta":
-		anel = tr("HUD_DUELO_ANEL_FECHANDO") if f > 0.0 and f < 1.0 else (tr("HUD_DUELO_ANEL_FINAL") if f >= 1.0 else tr("HUD_DUELO_ANEL_COMECA") % maxi(1, ceili(float(d.cfg.get("arena", {}).get("inicio_encolher", 12)) - d.t_luta)))
+		anel = (
+			tr("HUD_DUELO_ANEL_FECHANDO")
+			if f > 0.0 and f < 1.0
+			else (
+				tr("HUD_DUELO_ANEL_FINAL")
+				if f >= 1.0
+				else tr("HUD_DUELO_ANEL_COMECA") % maxi(1, ceili(float(d.cfg.get("arena", {}).get("inicio_encolher", 12)) - d.t_luta))
+			)
+		)
 	%Anel.text = anel
 	_cor_txt(%Anel, Color(1, 0.7, 0.6, 0.8))
 	%Aviso.visible = d.estado == "luta" and arena.jogador.centro().distance_to(d.centro) > d.raio and d.lut_jogador.vivo and int(_t * 6) % 2 == 0
@@ -391,6 +400,7 @@ func _duelo() -> void:
 
 # ---------- build, habilidades e consumíveis ----------
 
+
 func _novo_slot(lado: float) -> Control:
 	var s: Control = Slot.new()
 	s.custom_minimum_size = Vector2(lado, lado)
@@ -404,21 +414,39 @@ func _build() -> void:
 	for a in arena.armas.lista:
 		var d := Dados.item(a.id)
 		var evo: bool = d.get("evolucao", false)
-		itens.append({"tex": Dados.icone(str(d.get("icone", a.id))), "borda": Color(1, 0.8, 0.3, 0.9) if evo else Color(0.2, 0.2, 0.28, 0.9),
-			"sup": str(a.nivel) if not evo and a.nivel > 0 else "", "cor_sup": Color(1, 1, 0.6)})
+		itens.append(
+			{
+				"tex": Dados.icone(str(d.get("icone", a.id))),
+				"borda": Color(1, 0.8, 0.3, 0.9) if evo else Color(0.2, 0.2, 0.28, 0.9),
+				"sup": str(a.nivel) if not evo and a.nivel > 0 else "",
+				"cor_sup": Color(1, 1, 0.6)
+			}
+		)
 	for id in arena.passivos:
-		itens.append({"tex": Dados.icone(str(Dados.item(id).get("icone", id))), "borda": Color(0.2, 0.2, 0.28, 0.9),
-			"sup": str(arena.passivos[id]), "cor_sup": Color(1, 1, 0.6)})
-	for slot in arena.equipamentos:   # equipamentos vestidos (sem número de nível)
+		itens.append(
+			{
+				"tex": Dados.icone(str(Dados.item(id).get("icone", id))),
+				"borda": Color(0.2, 0.2, 0.28, 0.9),
+				"sup": str(arena.passivos[id]),
+				"cor_sup": Color(1, 1, 0.6)
+			}
+		)
+	for slot in arena.equipamentos:  # equipamentos vestidos (sem número de nível)
 		var eid: String = arena.equipamentos[slot]
 		itens.append({"tex": Dados.icone(str(Dados.item(eid).get("icone", eid))), "borda": Color(0.2, 0.2, 0.28, 0.9)})
 	var dad: Dictionary = Dados.json("dadivas")
 	var defs: Dictionary = dad.get("lista", {}).merged(dad.get("duplas", {}))
 	var cfg_d: Dictionary = dad.get("_config", {})
-	for dd in arena.descobertas.dadivas:   # dádivas dos santuários: moldura na cor da raridade (dupla: cor própria)
-		var cor: Array = cfg_d.get("dupla", {}).get("cor", [1, 1, 1]) if dd.raridade == "dupla" else cfg_d.get("raridades", {}).get(dd.raridade, {}).get("cor", [1, 1, 1])
-		itens.append({"tex": Dados.icone(str(defs.get(dd.id, {}).get("icone", ""))),
-			"borda": Color(Interface.cor_raridade(str(dd.raridade), Color(cor[0], cor[1], cor[2])), 0.9)})
+	for dd in arena.descobertas.dadivas:  # dádivas dos santuários: moldura na cor da raridade (dupla: cor própria)
+		var cor: Array = (
+			cfg_d.get("dupla", {}).get("cor", [1, 1, 1]) if dd.raridade == "dupla" else cfg_d.get("raridades", {}).get(dd.raridade, {}).get("cor", [1, 1, 1])
+		)
+		itens.append(
+			{
+				"tex": Dados.icone(str(defs.get(dd.id, {}).get("icone", ""))),
+				"borda": Color(Interface.cor_raridade(str(dd.raridade), Color(cor[0], cor[1], cor[2])), 0.9)
+			}
+		)
 	if itens == _build_ult:
 		return
 	_build_ult = itens
@@ -443,9 +471,16 @@ func _habilidades() -> void:
 			borda = Color(1, 0.85, 0.35).lerp(Color(1, 1, 0.8), 0.5 + 0.5 * sin(_t * 6.0))
 		var pad := not Input.get_connected_joypads().is_empty()
 		var tecla := "Y" if pad else "E"
-		%Hab1.definir({"tex": Dados.tex_personagem(str(arena.heroi.get("sprite", arena.heroi_id)), "rosto"), "borda": borda,
-			"tom": Color.WHITE if pronto else Color(0.55, 0.55, 0.6), "inf": tecla,
-			"recarga": 0.0 if pronto else e.recarga / e.recarga_total(), "sup": "" if pronto else str(ceili(e.recarga))})
+		%Hab1.definir(
+			{
+				"tex": Dados.tex_personagem(str(arena.heroi.get("sprite", arena.heroi_id)), "rosto"),
+				"borda": borda,
+				"tom": Color.WHITE if pronto else Color(0.55, 0.55, 0.6),
+				"inf": tecla,
+				"recarga": 0.0 if pronto else e.recarga / e.recarga_total(),
+				"sup": "" if pronto else str(ceili(e.recarga))
+			}
+		)
 		%HabNome.visible = true
 		%HabNome.text = tecla + ": " + str(e.d.get("nome", ""))
 		_cor_txt(%HabNome, Color(1, 0.9, 0.5) if pronto else Color(0.65, 0.68, 0.78))
@@ -471,10 +506,17 @@ func _provisoes() -> void:
 		var id := str(p.slots[i])
 		var n := int(p.restantes.get(id, 0))
 		var escolhido: bool = pad and i == p.sel
-		_prov[i].definir({"item": id, "apagado": n <= 0,
-			"borda": Color(1, 0.85, 0.35) if escolhido else (Color(0.4, 0.45, 0.6) if n > 0 else Color(0.2, 0.2, 0.26)),
-			"sup": "x%d" % n, "cor_sup": Color(1, 1, 1) if n > 0 else Color(0.5, 0.5, 0.55),
-			"inf": "L3" if escolhido else str(i + 1), "cor_inf": Color(0.8, 0.82, 0.9) if n > 0 else Color(0.4, 0.4, 0.45)})
+		_prov[i].definir(
+			{
+				"item": id,
+				"apagado": n <= 0,
+				"borda": Color(1, 0.85, 0.35) if escolhido else (Color(0.4, 0.45, 0.6) if n > 0 else Color(0.2, 0.2, 0.26)),
+				"sup": "x%d" % n,
+				"cor_sup": Color(1, 1, 1) if n > 0 else Color(0.5, 0.5, 0.55),
+				"inf": "L3" if escolhido else str(i + 1),
+				"cor_inf": Color(0.8, 0.82, 0.9) if n > 0 else Color(0.4, 0.4, 0.45)
+			}
+		)
 	var ef: Array = []
 	for b in p.buffs:
 		var d: Dictionary = Mochila.item(str(b.id))
@@ -495,11 +537,12 @@ func _provisoes() -> void:
 
 # ---------- conjuntos (só o banner), mensagens e anúncio ----------
 
+
 func _conjuntos() -> void:
 	var atual := {}
 	for l in arena.conj_resumo:
 		atual[l.etq] = int(l.ativo)
-	if _t > 0.5:   # nos primeiros instantes a build inicial acende conjuntos sem o jogador ter feito nada
+	if _t > 0.5:  # nos primeiros instantes a build inicial acende conjuntos sem o jogador ter feito nada
 		for l in arena.conj_resumo:
 			if int(l.ativo) > int(_conj_ult.get(l.etq, 0)):
 				banner_conjunto(str(l.nome), str(l.texto), l.cor)
@@ -525,16 +568,17 @@ func _mensagens() -> void:
 
 # ---------- pausa ----------
 
+
 func pausar() -> void:
 	_pausado = true
 	_op_pausa = 0
 	_quadro_pausa = Engine.get_process_frames()
 	_mouse_ult = raiz.get_local_mouse_position()
-	get_tree().paused = not arena.eh_online   # no online o jogo dos outros não para
+	get_tree().paused = not arena.eh_online  # no online o jogo dos outros não para
 	%Versao.text = Dados.texto_versao()
 	%Pausa.visible = true
 	_hud_antes_pausa = visible
-	visible = true   # a abertura da fase esconde o HUD (e com ele o menu da pausa): a pausa tem que aparecer
+	visible = true  # a abertura da fase esconde o HUD (e com ele o menu da pausa): a pausa tem que aparecer
 	_mostra_abertura(false)
 	_pausa_texto()
 	Som.ui("abrir")
@@ -556,7 +600,7 @@ func _notification(what: int) -> void:
 
 
 func _pausa_rotulos() -> Array:
-	var desistir := tr("HUD_DESISTIR_CRIADO") if Criacao.eh_criado(arena.heroi_id) else tr("HUD_DESISTIR")   # herói criado: desistir conta como morrer
+	var desistir := tr("HUD_DESISTIR_CRIADO") if Criacao.eh_criado(arena.heroi_id) else tr("HUD_DESISTIR")  # herói criado: desistir conta como morrer
 	return [tr("HUD_CONTINUAR"), tr("HUD_OPCOES"), desistir]
 
 
@@ -594,9 +638,11 @@ func _pausa_confirmar() -> void:
 			Som.ui("confirmar")
 			_opcoes = TelaOpcoes.new()
 			add_child(_opcoes)
-			_opcoes.fechou.connect(func():
-				_opcoes = null
-				_quadro_pausa = Engine.get_process_frames())   # o Esc que fechou as Opções não fecha a pausa junto
+			_opcoes.fechou.connect(
+				func():
+					_opcoes = null
+					_quadro_pausa = Engine.get_process_frames()
+			)  # o Esc que fechou as Opções não fecha a pausa junto
 		2:
 			_pausado = false
 			%Pausa.visible = false
@@ -611,13 +657,13 @@ func _process(_dt: float) -> void:
 
 
 func _process_i(_dt: float) -> void:
-	if not is_equal_approx(_fator, Config.fator_fonte()):   # a opção mudou (inclusive com o jogo pausado)
+	if not is_equal_approx(_fator, Config.fator_fonte()):  # a opção mudou (inclusive com o jogo pausado)
 		_aplicar_fonte()
 	if not _pausado or _opcoes or Engine.get_process_frames() == _quadro_pausa:
 		return
 	var n := _op_lbl.size()
 	var mp := raiz.get_local_mouse_position()
-	if mp != _mouse_ult:   # passar o mouse por cima escolhe (só se ele se mexeu)
+	if mp != _mouse_ult:  # passar o mouse por cima escolhe (só se ele se mexeu)
 		_mouse_ult = mp
 		var q := Interface.quem(_pausa_rects(), mp)
 		if q >= 0 and q != _op_pausa:

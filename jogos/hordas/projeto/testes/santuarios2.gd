@@ -6,13 +6,16 @@ const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func plano(semente: int, n_fases := 10, tomadas := 3) -> Array:
 	Sorte.iniciar(semente)
@@ -21,16 +24,19 @@ func plano(semente: int, n_fases := 10, tomadas := 3) -> Array:
 		res.append(Descobertas.planejar_fase(f, n_fases, tomadas, Vector2.ZERO))
 	return res
 
+
 func santuario(tipo: String, extra := {}) -> Dictionary:
 	var s := {"pos": Vector2.ZERO, "tipo": tipo, "variacao": "", "carga": 1.0, "usado": false}
 	s.merge(extra)
 	return s
+
 
 func fechar_cartas(a) -> void:
 	if a.cartas.aberto():
 		await esperar(0.8)
 		a.cartas._confirmar()
 		await esperar(0.1)
+
 
 func _ready() -> void:
 	# --- plano: determinístico, prova/selado/relíquia aparecem, regras de posição e consistência do pré-requisito ---
@@ -84,7 +90,10 @@ func _ready() -> void:
 				if c.raridade == "dupla":
 					viu_duo_sem = true
 	ok(not viu_duo_sem, "dádiva em dupla nunca aparece sem as duas dádivas exigidas")
-	ok(Descobertas.duplas_disponiveis(["furia", "vento"]) == ["tormenta"], "furia+vento libera só a Tormenta Carmesim (%s)" % [Descobertas.duplas_disponiveis(["furia", "vento"])])
+	ok(
+		Descobertas.duplas_disponiveis(["furia", "vento"]) == ["tormenta"],
+		"furia+vento libera só a Tormenta Carmesim (%s)" % [Descobertas.duplas_disponiveis(["furia", "vento"])]
+	)
 	ok(Descobertas.duplas_disponiveis(["furia", "vento", "tormenta"]).is_empty(), "dupla já pega não é oferecida de novo")
 	var viu := 0
 	var ruim := false
@@ -126,7 +135,10 @@ func _ready() -> void:
 	var vel0: float = a.stat("velocidade")
 	var carta_duo: Dictionary = Descobertas._carta_dupla("tormenta")
 	a.escolheu(carta_duo)
-	ok(a.stat("dano") > dano0 + 0.1 and a.stat("velocidade") > vel0 + 0.08, "a dupla soma os dois efeitos (dano %.2f>%.2f, vel %.2f>%.2f)" % [a.stat("dano"), dano0, a.stat("velocidade"), vel0])
+	ok(
+		a.stat("dano") > dano0 + 0.1 and a.stat("velocidade") > vel0 + 0.08,
+		"a dupla soma os dois efeitos (dano %.2f>%.2f, vel %.2f>%.2f)" % [a.stat("dano"), dano0, a.stat("velocidade"), vel0]
+	)
 	ok(d.dadivas.size() == 3 and d.dadivas[2].raridade == "dupla", "a dupla entra na lista de dádivas")
 	# o santuário de dádiva passa as dádivas que o jogador já tem pra oferta (a dupla já pega não volta)
 	d.dadivas.append({"id": "olho", "raridade": "comum"})
@@ -183,9 +195,15 @@ func _ready() -> void:
 	d.ativar(p1)
 	var pv: Dictionary = d._provas[0] if not d._provas.is_empty() else {}
 	var cfgp: Dictionary = Descobertas.cfg().santuarios.prova
-	ok(p1.usado and not pv.is_empty() and pv.ids.size() == 1 + int(cfgp.escoltas) and not pv.local, "prova nasce com mini-chefe e %d escoltas" % int(cfgp.escoltas))
+	ok(
+		p1.usado and not pv.is_empty() and pv.ids.size() == 1 + int(cfgp.escoltas) and not pv.local,
+		"prova nasce com mini-chefe e %d escoltas" % int(cfgp.escoltas)
+	)
 	var chefe = a.inimigos.por_id.get(pv.ids[0])
-	ok(chefe != null and chefe.elite and chefe.hpmax > 6.0 * float(Dados.json("inimigos").trojan.vida), "o mini-chefe é um elite com vida extra (%.0f)" % (chefe.hpmax if chefe else 0.0))
+	ok(
+		chefe != null and chefe.elite and chefe.hpmax > 6.0 * float(Dados.json("inimigos").trojan.vida),
+		"o mini-chefe é um elite com vida extra (%.0f)" % (chefe.hpmax if chefe else 0.0)
+	)
 	ok(a.inimigos.lista.size() >= antes + 1 + int(cfgp.escoltas), "os inimigos da prova existem no mundo")
 	for id in pv.ids.duplicate():
 		var v = a.inimigos.por_id.get(id)
@@ -196,7 +214,10 @@ func _ready() -> void:
 	ok(not d._premios.is_empty() or a.cartas.aberto(), "vencer dá recompensa")
 	d.atualizar(0.0)
 	await esperar(0.2)
-	ok(a.cartas.aberto() and a.cartas._cartas.all(func(c): return c.raridade in ["epica", "heroica"] or c.raridade == "dupla"), "recompensa da prova é de raridade rara+ (épica ou melhor)")
+	ok(
+		a.cartas.aberto() and a.cartas._cartas.all(func(c): return c.raridade in ["epica", "heroica"] or c.raridade == "dupla"),
+		"recompensa da prova é de raridade rara+ (épica ou melhor)"
+	)
 	ok(a.coleta.itens.any(func(it): return it.tipo == "bau"), "a prova vencida solta um baú")
 	await fechar_cartas(a)
 

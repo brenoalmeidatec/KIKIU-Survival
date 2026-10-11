@@ -10,8 +10,7 @@ const Rival := preload("res://scripts/hordas/rival.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 const IA := preload("res://scripts/hordas/ia_luta.gd")
 
-const CORES := [Color(1.0, 0.45, 0.4), Color(1.0, 0.75, 0.3), Color(0.75, 0.5, 1.0), Color(0.4, 0.9, 0.6),
-	Color(1.0, 0.55, 0.85), Color(0.6, 0.85, 1.0)]
+const CORES := [Color(1.0, 0.45, 0.4), Color(1.0, 0.75, 0.3), Color(0.75, 0.5, 1.0), Color(0.4, 0.9, 0.6), Color(1.0, 0.55, 0.85), Color(0.6, 0.85, 1.0)]
 
 
 class Lutador:
@@ -26,11 +25,11 @@ class Lutador:
 	var no: Node2D
 	var cor := Color.WHITE
 	var jogador := false
-	var mult := 1.0                  # multiplicador de dano do duelo (equilíbrio)
-	var nom := {}                    # dano de catálogo por tipo de arma (calibragem)
-	var raw := {}                    # dano bruto que acertou, por tipo (calibragem)
+	var mult := 1.0  # multiplicador de dano do duelo (equilíbrio)
+	var nom := {}  # dano de catálogo por tipo de arma (calibragem)
+	var raw := {}  # dano bruto que acertou, por tipo (calibragem)
 	var vivo_ate := 0.0
-	var remoto := false              # online: outra pessoa (id = peer dela)
+	var remoto := false  # online: outra pessoa (id = peer dela)
 
 
 ## O que as armas de UM lutador enxergam: todos os outros lutadores vivos (mesma interface do inimigos.gd).
@@ -70,7 +69,7 @@ class Campo:
 var arena: Node
 var cfg: Dictionary
 var ativo := false
-var estado := ""              # contagem, luta, fim
+var estado := ""  # contagem, luta, fim
 var t_contagem := 0.0
 var t_luta := 0.0
 var centro := Vector2.ZERO
@@ -87,11 +86,11 @@ var _anel := Node2D.new()
 var _fim_em := -1.0
 var _ultimo_numero := 99
 var _t := 0.0
-var abates := 0               # quantos o jogador derrubou
+var abates := 0  # quantos o jogador derrubou
 var dano_causado := 0.0
-var online := false           # duelo entre pessoas (o anfitrião decide luta, quedas e fim)
+var online := false  # duelo entre pessoas (o anfitrião decide luta, quedas e fim)
 var _luta_mandada := false
-var _ultimo_golpe := 0        # online: peer de quem bateu por último (pra dizer quem derrubou)
+var _ultimo_golpe := 0  # online: peer de quem bateu por último (pra dizer quem derrubou)
 var _forca_local := 1.0
 
 
@@ -135,6 +134,7 @@ func vivos() -> Array:
 
 
 # ---------- começo ----------
+
 
 ## Regras do pvp.json e limpeza da arena (igual no solo e no online).
 func _preparar(a: Node, c: Vector2) -> void:
@@ -261,6 +261,7 @@ func _mult(est: float, media: float) -> float:
 
 # ---------- a cada quadro ----------
 
+
 func atualizar(dt: float) -> void:
 	if not ativo or estado == "fim":
 		return
@@ -281,7 +282,7 @@ func atualizar(dt: float) -> void:
 			if not online:
 				_comecar_luta()
 			elif Rede.anfitriao() and not _luta_mandada:
-				checar_forcas(t_contagem < -3.0)   # espera a força de todo mundo, até 3 s a mais
+				checar_forcas(t_contagem < -3.0)  # espera a força de todo mundo, até 3 s a mais
 		_anel.queue_redraw()
 		return
 	t_luta += dt
@@ -319,12 +320,12 @@ func _atualizar_anel(dt: float) -> void:
 	raio = lerpf(raio_ini, float(c.get("raio_final", 70.0)), f * f * (3.0 - 2.0 * f))
 	var pct := float(c.get("dano_anel_pct", 0.04)) * (1.0 + f * float(c.get("dano_anel_cresce", 1.0)))
 	var no_anel: Array = vivos()
-	no_anel.sort_custom(func(a, b): return _hp_frac(a) < _hp_frac(b))   # empate: quem tem menos vida cai primeiro
+	no_anel.sort_custom(func(a, b): return _hp_frac(a) < _hp_frac(b))  # empate: quem tem menos vida cai primeiro
 	for l in no_anel:
 		if not l.vivo:
 			continue
 		if l.remoto:
-			continue   # online: cada um calcula o anel só pra si
+			continue  # online: cada um calcula o anel só pra si
 		if l.pos.distance_to(centro) > raio:
 			var hpmax: float = arena.stat("vida_max") if l.jogador else l.no.hpmax
 			if l.no.dano_direto(pct * hpmax * dt, "anel"):
@@ -332,6 +333,7 @@ func _atualizar_anel(dt: float) -> void:
 
 
 # ---------- dano e eliminação ----------
+
 
 ## Uma arma do lutador "atq" acertou "alvo". Retorna true se o alvo caiu.
 func ferir(atq: Lutador, alvo: Lutador, valor: float, empurrao: Vector2, arma: String, statf: Callable) -> bool:
@@ -378,7 +380,7 @@ func eliminado(l: Lutador, quem: String) -> void:
 	if not l.vivo:
 		return
 	l.vivo_ate = t_luta
-	l.lugar = vivos().size()      # 4 vivos e você caiu = 4º lugar
+	l.lugar = vivos().size()  # 4 vivos e você caiu = 4º lugar
 	l.vivo = false
 	quem = quem.trim_prefix("rival:")
 	arena.efeitos.explodir(l.pos, l.cor, 22, 200.0)
@@ -418,8 +420,7 @@ func _fim() -> void:
 	for l in lutadores:
 		if l.vivo:
 			l.vivo_ate = t_luta
-	var res := {"lugar": lut_jogador.lugar, "total": lutadores.size(), "ranking": ranking, "abates": abates,
-		"dano": dano_causado, "duracao": t_luta}
+	var res := {"lugar": lut_jogador.lugar, "total": lutadores.size(), "ranking": ranking, "abates": abates, "dano": dano_causado, "duracao": t_luta}
 	if OS.get_cmdline_user_args().has("--calibrar"):
 		var calib := []
 		for l in lutadores:
@@ -439,6 +440,7 @@ func _comecar_luta() -> void:
 # Cada pessoa vira um Lutador "remoto" (a posição vem do pacote de posição; o boneco é o remoto.gd).
 # Quem ataca detecta o acerto e manda o golpe; quem apanha decide. O anel cada um calcula pra si.
 # O anfitrião junta as forças (equilíbrio), começa a luta, dá os lugares e encerra.
+
 
 func iniciar_online(a: Node, d: Dictionary) -> void:
 	online = true
@@ -608,8 +610,16 @@ func fim_online(d: Dictionary) -> void:
 	for l in lutadores:
 		ranking.append({"nome": l.nome, "heroi": l.heroi, "lugar": l.lugar, "jogador": l == lut_jogador})
 	ranking.sort_custom(func(a, b): return a.lugar < b.lugar)
-	arena.fim_duelo({"lugar": maxi(1, lut_jogador.lugar), "total": lutadores.size(), "ranking": ranking,
-		"abates": abates, "dano": dano_causado, "duracao": float(d.get("duracao", t_luta))})
+	arena.fim_duelo(
+		{
+			"lugar": maxi(1, lut_jogador.lugar),
+			"total": lutadores.size(),
+			"ranking": ranking,
+			"abates": abates,
+			"dano": dano_causado,
+			"duracao": float(d.get("duracao", t_luta))
+		}
+	)
 
 
 func _lut(peer: int):
@@ -620,6 +630,7 @@ func _lut(peer: int):
 
 
 # ---------- desenho ----------
+
 
 func _desenhar_anel() -> void:
 	if not ativo:

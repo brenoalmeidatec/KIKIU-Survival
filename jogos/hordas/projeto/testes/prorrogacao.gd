@@ -48,7 +48,7 @@ func _ready() -> void:
 	var janela := float(c.janela_chefe)
 	var tipo := str(d.fases()[d.fase_idx].get("chefe", ""))
 	ok(not a.saida.aberta, "a saída começa fechada")
-	d.final_chamado = true   # (o chefe já nasceu)
+	d.final_chamado = true  # (o chefe já nasceu)
 	d.chefe_fase = tipo
 	var ouro_ini := 0
 	var min_base := 0.0
@@ -83,7 +83,7 @@ func _ready() -> void:
 	# --- portal só depois do chefe
 	await esperar(0.2)
 	ok(not a.saida.aberta and not a.entre_fases, "o chefe vivo: sem portal")
-	a.jogador.position = a.jogador.position   # o herói fica onde está
+	a.jogador.position = a.jogador.position  # o herói fica onde está
 	var boss = a.inimigos.criar(tipo, a.jogador.position + Vector2(300, 0), 1)
 	var onde: Vector2 = boss.pos
 	a.inimigos.ferir(boss, 1.0e9, Vector2.ZERO, "teste")
@@ -99,11 +99,11 @@ func _ready() -> void:
 	a.jogador.invencivel = 99.0
 	await esperar(0.5)
 	ok(not a.entre_fases and a.saida.seg == 0.0, "dentro do portal mas sem segurar confirmar: não sai")
-	a.jogador.position = a.saida.pos + Vector2(160, 8)   # longe: o robô precisa andar até o portal sozinho
-	a.bot = true   # o robô anda até o portal e segura confirmar sozinho
+	a.jogador.position = a.saida.pos + Vector2(160, 8)  # longe: o robô precisa andar até o portal sozinho
+	a.bot = true  # o robô anda até o portal e segura confirmar sozinho
 	a.jogador.bot = true
 	var n := 0
-	while a.saida.seg <= 0.0 and n < 40:   # (o tempo do jogo pode andar mais devagar que o relógio: câmera lenta da entrada do chefe)
+	while a.saida.seg <= 0.0 and n < 40:  # (o tempo do jogo pode andar mais devagar que o relógio: câmera lenta da entrada do chefe)
 		await esperar(0.1)
 		n += 1
 	ok(a.saida.seg > 0.0 and not a.entre_fases, "segurando: o progresso sobe (ainda não saiu)")

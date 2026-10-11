@@ -1087,3 +1087,9 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Pendente:** `escala_render` é salva mas ainda não age. `content_scale_factor` do viewport raiz muda a área visível (zoom), não a resolução, então não serve; falta um SubViewport com a cena do jogo. `luz_relevo` só guarda o valor (Etapa 3). A frequência de "alvo" não tem controle próprio: só a separação entra no `calculo_monstros`.
 - **Testes:** novo `testes/graficos.tscn` (perfis batem com os números de hoje, personalizado, salvar e carregar, detectar, migração, fatores do jogo). 50 de 52 cenas limpas; `transicao` (tempo) passa sozinha e `mapa` passa sozinha (no lote deu saída vazia). Robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40` exit 0, sem SCRIPT ERROR.
 - **Recado para o Claude do Breno:** a tela (outro agente, E2) precisa ler `Config.g_opcoes()` e `g_perfil()`. Olho humano pendente: prints da mesma cena em Baixo, Médio e Alto, e fps real no i5-3470.
+
+## 2026-10-11 · Claude do Alisson (notebook) · formatação geral do GDScript (fecha a #124)
+- `gdformat -l 160` aplicado em `jogos/hordas/projeto/scripts` e `testes` (146 arquivos, só formatação, nenhuma mudança de lógica). Limite de 160 escolhido medindo o tamanho da mudança: com 100 (o padrão) seriam +12.600 linhas e as linhas longas com comentário, que são o estilo do projeto, ficariam todas quebradas; com 160, +3.700.
+- O `jogos/hordas/formatar.sh` e o CI usam o mesmo `-l 160`, e o CI agora **reprova** código fora do padrão (antes só avisava). Para corrigir: `jogos/hordas/formatar.sh` (precisa de `pip install "gdtoolkit==4.*"`).
+- Verificação: `--import` sem erro, bateria completa 52 de 53 (só `transformacao` falhou rodando em paralelo; sozinha passa 3 de 3, então ainda é instável sob carga) e robô de 40 s sem SCRIPT ERROR.
+- **Pendente:** `transformacao` ainda instável com carga; o `gdlint` segue só como aviso.

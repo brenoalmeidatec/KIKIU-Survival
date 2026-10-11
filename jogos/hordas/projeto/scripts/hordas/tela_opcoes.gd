@@ -9,19 +9,19 @@ signal fechou
 const W := 640.0
 const H := 360.0
 const Interface := preload("res://scripts/hordas/interface.gd")
-const CENA_GRAFICOS := preload("res://cenas/tela_graficos.tscn")   # aba Gráficos (#150), aberta pelo item "Gráficos"
+const CENA_GRAFICOS := preload("res://cenas/tela_graficos.tscn")  # aba Gráficos (#150), aberta pelo item "Gráficos"
 
-var _itens: Array = []   # os itens de _itens mais o "Gráficos" (no topo), na ordem da tela
+var _itens: Array = []  # os itens de _itens mais o "Gráficos" (no topo), na ordem da tela
 var _tela := Control.new()
 var _sel := 0
 var _quadro := 0
-var _captando := ""      # ação que espera a nova tecla/botão (remapeamento, #126); "" = não está captando
-var _quadro_cap := -1    # quadro em que a captura terminou: a mesma tecla não vale como comando da tela
+var _captando := ""  # ação que espera a nova tecla/botão (remapeamento, #126); "" = não está captando
+var _quadro_cap := -1  # quadro em que a captura terminou: a mesma tecla não vale como comando da tela
 var _mouse_ult := Vector2(-1, -1)
 var _rolagem := 0.0
 var _fim_lista := 0.0
 const FORA := -1000.0
-const JANELA_TOPO := 50.0   # primeira linha de baixo do título
+const JANELA_TOPO := 50.0  # primeira linha de baixo do título
 const JANELA_BASE := 322.0
 const VOLTAR_Y := 336.0
 
@@ -29,7 +29,7 @@ const VOLTAR_Y := 336.0
 func _ready() -> void:
 	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_quadro = Engine.get_process_frames()   # a tecla que abriu a tela não conta aqui
+	_quadro = Engine.get_process_frames()  # a tecla que abriu a tela não conta aqui
 	_itens = Config.ITENS.duplicate()
 	_itens.insert(0, {"chave": "", "grupo": "Visual", "nome": "Gráficos: perfil, CPU e GPU", "abre": true})
 	_tela.size = Vector2(W, H)
@@ -39,7 +39,7 @@ func _ready() -> void:
 
 
 func _n() -> int:
-	return _itens.size() + 1   # + "Voltar"
+	return _itens.size() + 1  # + "Voltar"
 
 
 ## Posição (y da linha de base) de cada item e do "Voltar", mais os cabeçalhos de grupo. Desenho e mouse usam esta conta.
@@ -47,7 +47,7 @@ func _n() -> int:
 ## visível vai para y = FORA e não é desenhado nem clicável. "Voltar" fica sempre no pé da tela.
 func _layout() -> Dictionary:
 	var ys := []
-	var grupos := []   # {y, nome}
+	var grupos := []  # {y, nome}
 	var y := 50.0
 	var grupo := ""
 	for it in _itens:
@@ -57,7 +57,7 @@ func _layout() -> Dictionary:
 			grupos.append({"y": y - _rolagem, "nome": grupo})
 			y += 12.0
 		ys.append(y)
-		y += 12.0   # 12 px por linha: com os itens de acessibilidade e de voz, 14 passava da tela
+		y += 12.0  # 12 px por linha: com os itens de acessibilidade e de voz, 14 passava da tela
 	_fim_lista = y
 	for i in ys.size():
 		ys[i] -= _rolagem
@@ -118,7 +118,7 @@ func _process(_dt: float) -> void:
 	if Engine.get_process_frames() == _quadro or _captando != "" or Engine.get_process_frames() == _quadro_cap:
 		return
 	var mp := _tela.get_local_mouse_position()
-	if mp != _mouse_ult:   # passar o mouse por cima escolhe (só se ele se mexeu, pra não brigar com o teclado)
+	if mp != _mouse_ult:  # passar o mouse por cima escolhe (só se ele se mexeu, pra não brigar com o teclado)
 		_mouse_ult = mp
 		var q := Interface.quem(_rects(), mp)
 		if q >= 0 and q != _sel:
@@ -133,10 +133,10 @@ func _process(_dt: float) -> void:
 		Som.ui("cursor")
 	elif Input.is_action_just_pressed("voltar") or (voltar and Input.is_action_just_pressed("confirmar")):
 		_sair()
-	elif not voltar and _itens[_sel].has("abre"):   # "Gráficos" (#150): Enter/direita abre a aba
+	elif not voltar and _itens[_sel].has("abre"):  # "Gráficos" (#150): Enter/direita abre a aba
 		if Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("direita"):
 			abrir_graficos()
-	elif not voltar and _itens[_sel].has("acao"):   # linha de remapeamento: Enter/direita pede a nova tecla ou botão
+	elif not voltar and _itens[_sel].has("acao"):  # linha de remapeamento: Enter/direita pede a nova tecla ou botão
 		if Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("direita"):
 			_captar(str(_itens[_sel].acao))
 	elif not voltar and (Input.is_action_just_pressed("direita") or Input.is_action_just_pressed("confirmar")):
@@ -162,7 +162,7 @@ func _voltar_de_graficos() -> void:
 	_tela.visible = true
 	set_process(true)
 	set_process_input(true)
-	_quadro = Engine.get_process_frames()   # a tecla que fechou a aba não vale também aqui
+	_quadro = Engine.get_process_frames()  # a tecla que fechou a aba não vale também aqui
 
 
 func _captar(acao: String) -> void:
@@ -232,7 +232,7 @@ func _desenhar() -> void:
 		if l.ys[i] != FORA:
 			_linha(i, l.ys[i], tr(str(it.nome)), "Abrir >" if it.has("abre") else Config.rotulo(it.chave))
 	var cor_seta := Color(1, 0.85, 0.3, 0.8)
-	if _rolagem > 0.5:   # tem mais opções acima/abaixo: triângulo na margem
+	if _rolagem > 0.5:  # tem mais opções acima/abaixo: triângulo na margem
 		_tela.draw_colored_polygon(PackedVector2Array([Vector2(500, 48), Vector2(506, 56), Vector2(494, 56)]), cor_seta)
 	if _fim_lista - _rolagem > JANELA_BASE + 8.0:
 		_tela.draw_colored_polygon(PackedVector2Array([Vector2(494, 318), Vector2(506, 318), Vector2(500, 326)]), cor_seta)

@@ -7,120 +7,120 @@ const Visual := preload("res://scripts/hordas/visual.gd")
 const Direcao := preload("res://scripts/hordas/direcao.gd")
 const Paleta := preload("res://scripts/hordas/paleta.gd")
 const Anim := preload("res://scripts/hordas/animacao_heroi.gd")
-const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
-const LARG_QUADRO := 44            # largura de um quadro na folha; hframes = largura da textura / isto
-const COLS_ANIM := 23              # folhas com 23+ colunas têm os estados extras abaixo (Hazaki); com menos, só parado/andar
+const LINHA := Direcao.LINHA  # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
+const LARG_QUADRO := 44  # largura de um quadro na folha; hframes = largura da textura / isto
+const COLS_ANIM := 23  # folhas com 23+ colunas têm os estados extras abaixo (Hazaki); com menos, só parado/andar
 ## Tabela de ações da folha de 23 colunas: coluna inicial, nº de quadros, quadros por segundo, se repete.
 const ANIM := {
 	"parado": {"col": 9, "n": 3, "fps": 4.0, "repete": true},
-	"ataque": {"col": 12, "n": 3, "fps": 12.0, "repete": false},    # 3 quadros em 0,25 s
-	"defesa": {"col": 15, "n": 2, "fps": 10.0, "repete": false},    # durante o dash
+	"ataque": {"col": 12, "n": 3, "fps": 12.0, "repete": false},  # 3 quadros em 0,25 s
+	"defesa": {"col": 15, "n": 2, "fps": 10.0, "repete": false},  # durante o dash
 	"dano": {"col": 17, "n": 2, "fps": 10.0, "repete": false},
-	"morte": {"col": 19, "n": 4, "fps": 8.0, "repete": false},      # fica no último quadro
+	"morte": {"col": 19, "n": 4, "fps": 8.0, "repete": false},  # fica no último quadro
 }
 const ATAQUE_TEMPO := 0.25
 const ATAQUE_INTERVALO := 0.6
 ## Golpe do corpo (todos os heróis, com ou sem quadros de ataque): recua, avança na direção do golpe e volta.
 ## Não são quadros novos: é o sprite inteiro se mexendo (posição, escala e inclinação), igual pra qualquer folha.
 ## A curva (antecipação, golpe, passa do alvo e assenta) e os números ficam em dados/animacao.json (animacao_heroi.gd).
-const GOLPE_INTERVALO := 0.28      # heróis sem quadros de ataque: no máximo um golpe do corpo a cada isto
+const GOLPE_INTERVALO := 0.28  # heróis sem quadros de ataque: no máximo um golpe do corpo a cada isto
 const DANO_TEMPO := 0.2
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
 const DASH_TEMPO := 0.18
 ## ---- Sensação de movimento e de impacto (#32 item 4): tudo se ajusta aqui ----
-const ACEL_TEMPO := 0.06           # s do parado até a velocidade máxima (arranque curto, sem escorregar)
-const FREIO_TEMPO := 0.07          # s da velocidade máxima até parar (precisa ficar abaixo de 0,1)
-const SQUASH_INICIO := Vector2(-0.06, 0.08)   # ao começar a andar: estica um pouco
-const SQUASH_PARADA := Vector2(0.07, -0.07)   # ao parar: achata um pouco
-const SQUASH_POUSO := Vector2(0.20, -0.22)    # pouso da entrada na fase
-const SQUASH_VOLTA := 16.0         # velocidade com que a forma volta ao normal
-const PASSO_DIST := 26.0           # px andados entre um passo e outro (poeira e som)
-const PASSO_SOM := true            # som baixinho de passo
+const ACEL_TEMPO := 0.06  # s do parado até a velocidade máxima (arranque curto, sem escorregar)
+const FREIO_TEMPO := 0.07  # s da velocidade máxima até parar (precisa ficar abaixo de 0,1)
+const SQUASH_INICIO := Vector2(-0.06, 0.08)  # ao começar a andar: estica um pouco
+const SQUASH_PARADA := Vector2(0.07, -0.07)  # ao parar: achata um pouco
+const SQUASH_POUSO := Vector2(0.20, -0.22)  # pouso da entrada na fase
+const SQUASH_VOLTA := 16.0  # velocidade com que a forma volta ao normal
+const PASSO_DIST := 26.0  # px andados entre um passo e outro (poeira e som)
+const PASSO_SOM := true  # som baixinho de passo
 const PASSO_SOM_DB := -24.0
-const POEIRA_MAX := 14             # teto de partículas de poeira vivas (desenhadas no _draw)
+const POEIRA_MAX := 14  # teto de partículas de poeira vivas (desenhadas no _draw)
 const POEIRA_VIDA := 0.38
-const DANO_FLASH := 0.09           # s de flash branco ao levar dano (opção "Flash de dano")
-const DANO_EMPURRAO := 110.0       # empurrãozinho quando o golpe não diz pra onde (decai com exp(-9 t): ~12 px)
-const HITSTOP_CRIT := 0.04         # s reais de congelada ao acertar crítico (só solo)
-const HITSTOP_CRIT_ESPERA := 1.2   # s mínimos entre dois hitstops de crítico
-const HITSTOP_GOLPE := 0.025       # s reais ao acertar um golpe corpo a corpo (arena.golpe_pesado limita a frequência)
-const HITSTOP_CHEFE := 0.14        # s reais ao derrubar um chefe (só solo)
-const HITSTOP_ESCALA := 0.04       # velocidade do jogo durante o hitstop (1 = sem efeito)
+const DANO_FLASH := 0.09  # s de flash branco ao levar dano (opção "Flash de dano")
+const DANO_EMPURRAO := 110.0  # empurrãozinho quando o golpe não diz pra onde (decai com exp(-9 t): ~12 px)
+const HITSTOP_CRIT := 0.04  # s reais de congelada ao acertar crítico (só solo)
+const HITSTOP_CRIT_ESPERA := 1.2  # s mínimos entre dois hitstops de crítico
+const HITSTOP_GOLPE := 0.025  # s reais ao acertar um golpe corpo a corpo (arena.golpe_pesado limita a frequência)
+const HITSTOP_CHEFE := 0.14  # s reais ao derrubar um chefe (só solo)
+const HITSTOP_ESCALA := 0.04  # velocidade do jogo durante o hitstop (1 = sem efeito)
 const SHADER_FLASH := "shader_type canvas_item;\nuniform float flash = 1.0;\nvoid fragment() { COLOR.rgb = mix(COLOR.rgb, vec3(1.0), flash * COLOR.a); }\n"
 static var _mat_flash: ShaderMaterial
 
 var arena: Node
 var spr := Sprite2D.new()
-var tom := Color.WHITE        # cor base do corpo (herói criado, #72: a raça tinge; os fixos ficam brancos)
-var paleta := {}               # aparência por paleta do herói criado (#72, marco 2): {pele, cabelo, roupa} em índices; vazio = cores originais
+var tom := Color.WHITE  # cor base do corpo (herói criado, #72: a raça tinge; os fixos ficam brancos)
+var paleta := {}  # aparência por paleta do herói criado (#72, marco 2): {pele, cabelo, roupa} em índices; vazio = cores originais
 var hp := 100.0
 var invencivel := 0.0
 var dash_t := 0.0
-var folego := 2.0               # cargas de rolamento (#68): gasta 1 por rolamento e volta com o tempo (dados/movimento.json)
-var _rolando := 0.0             # quanto falta do rolamento em curso (o corpo gira; 0 = não está rolando)
-var _rola_lado := 1.0           # pra que lado o corpo gira
-var _recupera := 0.0            # depois de rolar: um instante andando devagar (o compromisso da esquiva)
-var _vel_dash := DASH_VEL       # vezes a velocidade de andar no dash em curso (rolamento, investida do dragão, onda do Lucas)
+var folego := 2.0  # cargas de rolamento (#68): gasta 1 por rolamento e volta com o tempo (dados/movimento.json)
+var _rolando := 0.0  # quanto falta do rolamento em curso (o corpo gira; 0 = não está rolando)
+var _rola_lado := 1.0  # pra que lado o corpo gira
+var _recupera := 0.0  # depois de rolar: um instante andando devagar (o compromisso da esquiva)
+var _vel_dash := DASH_VEL  # vezes a velocidade de andar no dash em curso (rolamento, investida do dragão, onda do Lucas)
 ## ---- Esquiva perfeita e mira direcional (#126) ----
-var mira_dir := Vector2.ZERO    # direção da mira deste quadro (analógico direito ou mouse); ZERO = sem entrada: as armas direcionais miram no mais perto
-var mira_forcada := Vector2.ZERO   # só para prints/testes (--mira=x,y): mira nessa direção como se fosse o analógico direito
-var _mouse_ult := Vector2(-1000, -1000)   # onde o mouse estava no quadro anterior (mexeu = quer mirar com ele)
-var _mouse_parado := 99.0       # s sem mexer o mouse
-var _extra_t := 0.0             # esquiva perfeita: quanto falta do +dano no próximo golpe (0 = sem bônus)
-var _extra_frame := -1          # quadro em que o bônus foi gasto (um golpe em área acerta vários de uma vez: todos levam)
-var _perfeita_t := 0.0          # clarão dourado do herói na esquiva perfeita
-var esquivas := 0               # contadores da partida (relatório do robô e testes)
+var mira_dir := Vector2.ZERO  # direção da mira deste quadro (analógico direito ou mouse); ZERO = sem entrada: as armas direcionais miram no mais perto
+var mira_forcada := Vector2.ZERO  # só para prints/testes (--mira=x,y): mira nessa direção como se fosse o analógico direito
+var _mouse_ult := Vector2(-1000, -1000)  # onde o mouse estava no quadro anterior (mexeu = quer mirar com ele)
+var _mouse_parado := 99.0  # s sem mexer o mouse
+var _extra_t := 0.0  # esquiva perfeita: quanto falta do +dano no próximo golpe (0 = sem bônus)
+var _extra_frame := -1  # quadro em que o bônus foi gasto (um golpe em área acerta vários de uma vez: todos levam)
+var _perfeita_t := 0.0  # clarão dourado do herói na esquiva perfeita
+var esquivas := 0  # contadores da partida (relatório do robô e testes)
 var perfeitas := 0
-const CENTRO_CORPO := Vector2(0, -29)   # o meio do corpo em relação ao pé (a origem do sprite): o giro é em volta dele
-var lado := 1.0                 # 1 = olhando pra direita, -1 = esquerda (o chicote usa)
+const CENTRO_CORPO := Vector2(0, -29)  # o meio do corpo em relação ao pé (a origem do sprite): o giro é em volta dele
+var lado := 1.0  # 1 = olhando pra direita, -1 = esquerda (o chicote usa)
 var _mov := Vector2.ZERO
 var _dir_dash := Vector2.RIGHT
 var _t := 0.0
 var _dir := "baixo"
-var _olhar := Direcao.new()     # ângulo de olhar que gira suave (8 direções)
-var _rastro: Array = []          # imagens fantasmas do dash
+var _olhar := Direcao.new()  # ângulo de olhar que gira suave (8 direções)
+var _rastro: Array = []  # imagens fantasmas do dash
 var _vermelho := 0.0
-var bot := false                 # modo demonstração (anda sozinho)
+var bot := false  # modo demonstração (anda sozinho)
 var _bot_ang := 0.0
 var kb := Vector2.ZERO
 var _ia := {}
 var _pref := 120.0
-var camadas := {}                # nome -> Sprite2D (personagem em camadas; veja definir_camadas)
+var camadas := {}  # nome -> Sprite2D (personagem em camadas; veja definir_camadas)
 var _sprite := ""
-var forma: Node2D = null         # corpo da forma transformada (dragão, habilidades.gd); null = humano
-var _est := "parado"             # estado de animação atual (só muda o quadro em folhas de 23+ colunas)
-var _est_t := 0.0                # tempo dentro do estado
+var forma: Node2D = null  # corpo da forma transformada (dragão, habilidades.gd); null = humano
+var _est := "parado"  # estado de animação atual (só muda o quadro em folhas de 23+ colunas)
+var _est_t := 0.0  # tempo dentro do estado
 var _atk_t := 0.0
 var _atk_cool := 0.0
 var _golpe_t := 0.0
 var _golpe_dir := Vector2.RIGHT
-var _golpe_vira := false        # o golpe trouxe direção: o herói se vira pra ela
+var _golpe_vira := false  # o golpe trouxe direção: o herói se vira pra ela
 var _dano_t := 0.0
-var humano := 1.0                # 0..1: quanto do corpo humano aparece (some na transformação, volta no fim)
-var _ent_t := 0.0                # chegada no começo da fase: tempo que falta da queda (0 = acabou)
-var _ent_dur := Visual.CHEGADA_TEMPO   # duração e altura da queda desta chegada (a abertura da fase usa uma maior)
+var humano := 1.0  # 0..1: quanto do corpo humano aparece (some na transformação, volta no fim)
+var _ent_t := 0.0  # chegada no começo da fase: tempo que falta da queda (0 = acabou)
+var _ent_dur := Visual.CHEGADA_TEMPO  # duração e altura da queda desta chegada (a abertura da fase usa uma maior)
 var _ent_alt := Visual.CHEGADA_ALTURA
-var _nome_t := 0.0               # tempo que falta do nome em cima da cabeça
+var _nome_t := 0.0  # tempo que falta do nome em cima da cabeça
 var _ent_nome := ""
 var _ent_poeira := false
-var _vel := Vector2.ZERO          # velocidade real (acelera e freia; _mov continua sendo a intenção, o que as armas e o online leem)
-var _sq := Vector2.ZERO           # squash/stretch atual (soma a ONE na escala do sprite)
+var _vel := Vector2.ZERO  # velocidade real (acelera e freia; _mov continua sendo a intenção, o que as armas e o online leem)
+var _sq := Vector2.ZERO  # squash/stretch atual (soma a ONE na escala do sprite)
 var _andava := false
 var _passo_dist := 0.0
-var _poeira: Array = []           # {pos (mundo), t, r}
+var _poeira: Array = []  # {pos (mundo), t, r}
 var _flash_t := 0.0
-var _imp := Vector2.ZERO          # alvo do squash (o impulso de começar/parar/pousar): _sq o segue suave, sem estalo
-var _corpo := Anim.new()          # respiração, balanço do passo e inclinação (animacao_heroi.gd)
-var _dano_pose_t := 0.0           # recuo visual ao apanhar: tempo que falta
-var _dano_dir := Vector2.LEFT     # para onde o corpo escorrega no recuo (longe do golpe)
+var _imp := Vector2.ZERO  # alvo do squash (o impulso de começar/parar/pousar): _sq o segue suave, sem estalo
+var _corpo := Anim.new()  # respiração, balanço do passo e inclinação (animacao_heroi.gd)
+var _dano_pose_t := 0.0  # recuo visual ao apanhar: tempo que falta
+var _dano_dir := Vector2.LEFT  # para onde o corpo escorrega no recuo (longe do golpe)
 var _morte_sinal := 1.0
-var _morte_t := 0.0              # folhas sem quadros de morte: tempo da queda procedural
+var _morte_t := 0.0  # folhas sem quadros de morte: tempo da queda procedural
 
 
 func configurar(sprite: String) -> void:
 	_sprite = sprite
-	_corpo.fase = Anim.fase_de(sprite + "|eu")   # cada herói respira com uma defasagem própria
+	_corpo.fase = Anim.fase_de(sprite + "|eu")  # cada herói respira com uma defasagem própria
 	spr.texture = Dados.tex_personagem(sprite, "andando_8")
 	spr.hframes = _colunas()
 	spr.vframes = Direcao.linhas_da_altura(spr.texture.get_height() if spr.texture else 0)
@@ -153,14 +153,14 @@ func definir_camadas(nomes: Array) -> void:
 			c.hframes = _colunas(tex)
 			c.vframes = spr.vframes
 			c.centered = false
-			c.use_parent_material = true   # o flash de dano (shader no corpo) vale pras camadas também
+			c.use_parent_material = true  # o flash de dano (shader no corpo) vale pras camadas também
 			c.offset = spr.offset
 			c.frame = spr.frame
 			spr.add_child(c)
 			camadas[n] = c
 	for i in nomes.size():
 		if camadas.has(nomes[i]):
-			spr.move_child(camadas[nomes[i]], -1)   # a ordem da lista é a ordem de desenho
+			spr.move_child(camadas[nomes[i]], -1)  # a ordem da lista é a ordem de desenho
 
 
 ## Colunas da folha (largura da textura / largura do quadro). Com 9 colunas tudo é como antes.
@@ -216,10 +216,10 @@ func entrar(nome: String, dur := Visual.CHEGADA_TEMPO, alt := Visual.CHEGADA_ALT
 
 func _chegando() -> void:
 	var p := 1.0 - _ent_t / _ent_dur
-	if _ent_t > 0.0:   # só durante a queda: depois dela isto roda até o nome sumir e zerava o giro do rolamento (#68)
+	if _ent_t > 0.0:  # só durante a queda: depois dela isto roda até o nome sumir e zerava o giro do rolamento (#68)
 		spr.position.y = -Visual.chegada_altura(p, _ent_alt)
 	elif _rolando <= 0.0 and spr.position.y != 0.0:
-		spr.position.y = 0.0   # pousou: o corpo fica no chão
+		spr.position.y = 0.0  # pousou: o corpo fica no chão
 	if not _ent_poeira and p >= Visual.CHEGADA_POUSO:
 		_ent_poeira = true
 		Som.tocar("queda", 0.0, 1.2, -8)
@@ -245,7 +245,7 @@ func _process(dt: float) -> void:
 		# folhas sem quadros de morte (as de 9 colunas): tropeça, cai acelerando, quica e fica deitado (pose igual à de antes)
 		var mc := Anim.sec("morte")
 		if _morte_t <= 0.0:
-			_morte_sinal = -1.0 if lado >= 0.0 else 1.0   # cai pra trás (pra longe do lado em que olhava)
+			_morte_sinal = -1.0 if lado >= 0.0 else 1.0  # cai pra trás (pra longe do lado em que olhava)
 		_morte_t += dt
 		var pm := Anim.pose_morte(_morte_t / maxf(float(mc.tempo), 0.05), _morte_sinal, mc)
 		spr.rotation = pm.rot
@@ -254,7 +254,7 @@ func _process(dt: float) -> void:
 		spr.scale = Vector2.ONE
 		spr.modulate = tom.lerp(Color(0.45, 0.45, 0.5, float(mc.alpha)), float(pm.mix))
 	elif _morte_t > 0.0:
-		_morte_t = 0.0   # levantou (online): _animar volta a mandar no corpo
+		_morte_t = 0.0  # levantou (online): _animar volta a mandar no corpo
 
 
 func centro() -> Vector2:
@@ -300,15 +300,15 @@ func atualizar_i(dt: float) -> void:
 	if dash_t > 0:
 		dash_t -= dt
 		position += _dir_dash * vmax * _vel_dash * dt
-		_vel = entrada * vmax   # ao sair do dash já anda na velocidade pedida, sem solavanco
+		_vel = entrada * vmax  # ao sair do dash já anda na velocidade pedida, sem solavanco
 		if _rolando > 0.0:
 			_rolando = maxf(0.0, dash_t)
-			if _rolando <= 0.0:   # acabou de rolar: um instante mais lento antes de poder correr de novo
+			if _rolando <= 0.0:  # acabou de rolar: um instante mais lento antes de poder correr de novo
 				_recupera = float(Dados.json("movimento").get("rolamento", {}).get("recuperacao", 0.14))
 		elif int(_t * 60) % 2 == 0:
 			_rastro.append({"pos": position, "frame": spr.frame, "t": 0.25})
 	else:
-		_vel_dash = DASH_VEL   # a onda do Lucas (especial) liga o dash_t de fora e usa a velocidade padrão
+		_vel_dash = DASH_VEL  # a onda do Lucas (especial) liga o dash_t de fora e usa a velocidade padrão
 		_vel = passo_vel(_vel, entrada * vmax, vmax, dt)
 		position += _vel * dt
 		if _quer_dash():
@@ -409,7 +409,7 @@ func _no_menu() -> bool:
 	return arena.eh_online and (arena.cartas.aberto() or arena.hud._pausado)
 
 
-var entrada_forcada := Vector2.ZERO   # só para prints/testes (--andar=x,y): anda nessa direção como se fosse o teclado
+var entrada_forcada := Vector2.ZERO  # só para prints/testes (--andar=x,y): anda nessa direção como se fosse o teclado
 
 
 func _entrada() -> Vector2:
@@ -439,7 +439,7 @@ func rolar(dir: Vector2) -> bool:
 		dash_t = float(r.get("tempo", 0.3))
 		_vel_dash = float(r.get("velocidade", 2.7))
 		if arena.ganchos:
-			dash_t *= arena.ganchos.rolamento_mult()   # Pombo: rola mais longe (#72 marco 6)
+			dash_t *= arena.ganchos.rolamento_mult()  # Pombo: rola mais longe (#72 marco 6)
 		_rolando = dash_t
 		_rola_lado = signf(_dir_dash.x) if absf(_dir_dash.x) > 0.01 else lado
 		# #126: invulnerável só no começo do rolamento (0,25 s de 0,45 s); o resto é o compromisso da esquiva
@@ -452,7 +452,7 @@ func rolar(dir: Vector2) -> bool:
 		_perfeita()
 	Som.tocar("whoosh", 0.1, 1.2)
 	_poeira_em(3, 18.0)
-	if arena and arena.get("armas") != null and not forma:   # #63: "Aura Pulsante" solta um pulso ao rolar
+	if arena and arena.get("armas") != null and not forma:  # #63: "Aura Pulsante" solta um pulso ao rolar
 		arena.armas.ao_rolar()
 	return true
 
@@ -512,6 +512,7 @@ func tem_bonus_esquiva() -> bool:
 
 # ---------- mira direcional (#126) ----------
 
+
 ## Lê a mira do quadro: analógico direito, ou o mouse (se mexeu há pouco ou o botão esquerdo está apertado). Sem nenhum dos
 ## dois a mira fica ZERO e as armas direcionais miram no inimigo mais perto (quem só anda continua jogando).
 func _atualizar_mira(dt: float) -> void:
@@ -549,7 +550,7 @@ func _bot_mira() -> Vector2:
 	if arena == null or arena.get("inimigos") == null or arena.inimigos == null:
 		return Vector2.ZERO
 	var c := centro()
-	if arena.duelo_ativo:   # duelo final: mira no rival mais perto (a IA do rival segue no cérebro dela, ia_luta.gd)
+	if arena.duelo_ativo:  # duelo final: mira no rival mais perto (a IA do rival segue no cérebro dela, ia_luta.gd)
 		if arena.duelo.estado != "luta":
 			return Vector2.ZERO
 		var melhor := INF
@@ -573,7 +574,7 @@ func _bot_mira() -> Vector2:
 func _folego_cfg(chave: String, padrao: float) -> float:
 	var v := float(Dados.json("movimento").get("folego", {}).get(chave, padrao))
 	if chave == "cargas" and arena != null and arena.get("ganchos") != null:
-		v += arena.ganchos.rolamento_cargas()   # Pombo: uma carga a mais (#72 marco 6)
+		v += arena.ganchos.rolamento_cargas()  # Pombo: uma carga a mais (#72 marco 6)
 	return v
 
 
@@ -607,10 +608,10 @@ func _bot_duelo() -> Vector2:
 func _bot_dir() -> Vector2:
 	_bot_ang += 0.4 * _dt
 	var c := centro()
-	if arena.saida and arena.saida.aberta:   # chefe morto (#112): o robô vai sozinho ao portal e sai (segurar é automático pro robô)
+	if arena.saida and arena.saida.aberta:  # chefe morto (#112): o robô vai sozinho ao portal e sai (segurar é automático pro robô)
 		var ate: Vector2 = arena.saida.pos - c
 		return ate.normalized() * minf(1.0, ate.length() / 12.0)
-	var alvo_m = arena.missao.alvo_bot(c) if arena.missao else null   # missão do chefe (#112): o robô vai ao ponto de interesse mais perto
+	var alvo_m = arena.missao.alvo_bot(c) if arena.missao else null  # missão do chefe (#112): o robô vai ao ponto de interesse mais perto
 	var fuga := Vector2.ZERO
 	for v in arena.inimigos.no_circulo(c, 110):
 		var dif: Vector2 = c - v.pos
@@ -651,7 +652,7 @@ func _bot_dir() -> Vector2:
 
 
 func _animar(entrada: Vector2) -> void:
-	_olhar.atualizar(_golpe_dir if _golpe_t > 0.0 and _golpe_vira and forma == null else entrada, _dt, spr.vframes)   # golpeando: vira pro golpe
+	_olhar.atualizar(_golpe_dir if _golpe_t > 0.0 and _golpe_vira and forma == null else entrada, _dt, spr.vframes)  # golpeando: vira pro golpe
 	_dir = _olhar.dir
 	var novo := "andando" if entrada != Vector2.ZERO else "parado"
 	if _tem_anim() and forma == null:
@@ -679,11 +680,11 @@ func _animar(entrada: Vector2) -> void:
 		# transformando: o corpo (e o equipamento, que é filho dele) clareia em luz cobalto e some
 		var g := 1.0 - humano
 		spr.modulate = Color(1.0 + g * 1.2, 1.0 + g * 1.6, 1.0 + g * 2.2, humano)
-	if _ent_t > 0.0:   # chegando: aparece e brilha branco no pouso
+	if _ent_t > 0.0:  # chegando: aparece e brilha branco no pouso
 		var p := 1.0 - _ent_t / _ent_dur
 		var g := Visual.chegada_flash(p) * 2.0
 		spr.modulate = Color(spr.modulate.r + g, spr.modulate.g + g, spr.modulate.b + g, spr.modulate.a * clampf(p * 6.0, 0.0, 1.0))
-	if piscar:   # pisca em meia transparência: sumir de vez fazia o herói desaparecer no meio da horda (#68)
+	if piscar:  # pisca em meia transparência: sumir de vez fazia o herói desaparecer no meio da horda (#68)
 		spr.modulate.a *= 0.35
 	spr.visible = humano > 0.01
 	# rolamento (#68): o corpo (com o equipamento, que é filho dele) dá uma volta inteira em torno do meio do corpo
@@ -692,7 +693,7 @@ func _animar(entrada: Vector2) -> void:
 		var ang := (1.0 - _rolando / total) * TAU * _rola_lado
 		spr.rotation = ang
 		spr.skew = 0.0
-		spr.position = CENTRO_CORPO - CENTRO_CORPO.rotated(ang)   # a origem do sprite é o pé: compensa pra girar no meio
+		spr.position = CENTRO_CORPO - CENTRO_CORPO.rotated(ang)  # a origem do sprite é o pé: compensa pra girar no meio
 	elif _ent_t <= 0.0 and hp > 0.0:
 		# o corpo inteiro se mexe: balanço do passo + golpe (antecipa, bate, passa e assenta) + recuo ao apanhar
 		var pos := Vector2.ZERO
@@ -705,8 +706,8 @@ func _animar(entrada: Vector2) -> void:
 				var gc := Anim.sec("golpe")
 				var pose := Anim.pose_golpe(1.0 - _golpe_t / float(gc.tempo), gc)
 				var d := _golpe_dir
-				pos += (Vector2(d.x, d.y * 0.6) * pose.x).round()   # câmera em 3/4: avançar pra cima/baixo anda menos na tela
-				sk += d.x * float(gc.inclina) * pose.z   # inclinar = cisalhamento com o pé fixo: o pixel art continua nítido
+				pos += (Vector2(d.x, d.y * 0.6) * pose.x).round()  # câmera em 3/4: avançar pra cima/baixo anda menos na tela
+				sk += d.x * float(gc.inclina) * pose.z  # inclinar = cisalhamento com o pé fixo: o pixel art continua nítido
 				var horiz := absf(d.x) >= absf(d.y)
 				esc *= Vector2(1.0 + pose.y, 1.0 - pose.y * 0.6) if horiz else Vector2(1.0 - pose.y * 0.6, 1.0 + pose.y)
 			if _dano_pose_t > 0.0:
@@ -730,9 +731,9 @@ func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) 
 	if invencivel > 0 or hp <= 0:
 		return false
 	if arena.habilidades:
-		dano *= arena.habilidades.mult_dano()   # transformado, aguenta mais
+		dano *= arena.habilidades.mult_dano()  # transformado, aguenta mais
 	if arena.ganchos:
-		dano = arena.ganchos.dano_recebido(dano, fonte)   # pedra, frágil, etéreo, fúria (#72 marco 6)
+		dano = arena.ganchos.dano_recebido(dano, fonte)  # pedra, frágil, etéreo, fúria (#72 marco 6)
 	hp -= dano
 	arena.dano_recebido[fonte] = float(arena.dano_recebido.get(fonte, 0.0)) + dano
 	invencivel = iframes
@@ -742,10 +743,10 @@ func sofrer(dano: float, fonte := "", iframes := 0.5, empurrao := Vector2.ZERO) 
 	if empurrao == Vector2.ZERO and arena.inimigos != null:
 		empurrao = _empurrao_padrao()
 	kb += empurrao
-	_dano_pose_t = float(Anim.sec("dano").tempo)   # recuo visual (animacao.json): escorrega pra longe do golpe
+	_dano_pose_t = float(Anim.sec("dano").tempo)  # recuo visual (animacao.json): escorrega pra longe do golpe
 	_dano_dir = empurrao.normalized() if empurrao.length_squared() > 1.0 else Vector2(-lado, 0.0)
 	if Config.v("flash_dano"):
-		_flash_t = DANO_FLASH   # flash branco curto só no jogador (opção de acessibilidade)
+		_flash_t = DANO_FLASH  # flash branco curto só no jogador (opção de acessibilidade)
 	Som.tocar("erro", 0.15, 1.0, -4)
 	arena.tremer(3.0)
 	if hp <= 0:
@@ -774,7 +775,7 @@ func dano_direto(dano: float, fonte: String) -> bool:
 
 
 func curar(valor: float) -> void:
-	valor *= maxf(0.0, 1.0 + arena.ef("cura")) if arena and arena.has_method("ef") and not arena.duelo_ativo else 1.0   # calor: "Feridas Abertas" (no duelo não)
+	valor *= maxf(0.0, 1.0 + arena.ef("cura")) if arena and arena.has_method("ef") and not arena.duelo_ativo else 1.0  # calor: "Feridas Abertas" (no duelo não)
 	hp = minf(vida_max(), hp + valor)
 
 
@@ -788,17 +789,18 @@ func _draw_i() -> void:
 	if _ent_t > 0.0 or _nome_t > 0.0:
 		Visual.chegada(self, 1.0 - _ent_t / _ent_dur, _ent_nome, clampf(_nome_t / 0.6, 0.0, 1.0), Color(0.6, 0.85, 1.0), _ent_alt)
 	if not (arena.caido and arena.online) and humano > 0.5:
-		Visual.sombra_boneco(self, spr)   # o dragão desenha a própria sombra
-	for p in _poeira:   # poeira dos passos: bolinha que cresce e some
+		Visual.sombra_boneco(self, spr)  # o dragão desenha a própria sombra
+	for p in _poeira:  # poeira dos passos: bolinha que cresce e some
 		var k: float = 1.0 - p.t / POEIRA_VIDA
 		draw_circle(p.pos - position + Vector2(0, -k * 4.0), p.r * (1.0 + k), Color(0.78, 0.74, 0.66, 0.38 * (1.0 - k)))
-	for r in (_rastro if forma == null else []):
+	for r in _rastro if forma == null else []:
 		var tex := spr.texture
 		var w := tex.get_width() / float(spr.hframes)
 		var h := tex.get_height() / float(spr.vframes)
 		var f: int = r.frame
-		draw_texture_rect_region(tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)),
-			Rect2((f % spr.hframes) * w, (f / spr.hframes) * h, w, h), Color(0.5, 0.8, 1.0, r.t * 2.0))
+		draw_texture_rect_region(
+			tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)), Rect2((f % spr.hframes) * w, (f / spr.hframes) * h, w, h), Color(0.5, 0.8, 1.0, r.t * 2.0)
+		)
 	# barra de vida e recarga do dash embaixo do pé
 	if arena.caido and arena.online:
 		# caído: anel mostrando quanto falta pra levantar
@@ -809,13 +811,13 @@ func _draw_i() -> void:
 	draw_rect(Rect2(-14, 5, 28, 4), Color(0.1, 0.05, 0.1))
 	draw_rect(Rect2(-13, 6, 26 * frac, 2), Color(0.9, 0.2, 0.25))
 	var cargas := int(_folego_cfg("cargas", 2.0))
-	if cargas > 0 and folego < cargas:   # fôlego (#68): uma barrinha por carga de rolamento; some quando estão todas cheias
+	if cargas > 0 and folego < cargas:  # fôlego (#68): uma barrinha por carga de rolamento; some quando estão todas cheias
 		var larg := (26.0 - (cargas - 1) * 2.0) / cargas
 		for k in cargas:
 			var f := clampf(folego - k, 0.0, 1.0)
 			draw_rect(Rect2(-13 + k * (larg + 2), 10, larg, 2), Color(0.1, 0.05, 0.1))
 			draw_rect(Rect2(-13 + k * (larg + 2), 10, larg * f, 2), Color(0.55, 0.85, 1.0) if f >= 1.0 else Color(0.3, 0.45, 0.65))
-	if _extra_t > 0.0:   # esquiva perfeita (#126): o próximo golpe sai +25%; a marquinha dourada some quando ele sai (ou em 4 s)
+	if _extra_t > 0.0:  # esquiva perfeita (#126): o próximo golpe sai +25%; a marquinha dourada some quando ele sai (ou em 4 s)
 		var pisca := 0.65 + 0.35 * sin(_t * 14.0)
 		draw_rect(Rect2(-3, 14, 6, 3), Color(0.12, 0.08, 0.02, 0.9))
 		draw_rect(Rect2(-2, 15, 4, 1), Color(1.0, 0.85, 0.3, pisca))
@@ -836,7 +838,7 @@ func _desenhar_reticulo() -> void:
 	var p := c + mira_dir * dist
 	var cor := Color(1.0, 0.85, 0.35, 0.95) if _extra_t > 0.0 else Color(0.85, 0.95, 1.0, 0.95)
 	var sombra := Color(0.03, 0.02, 0.06, 0.85)
-	for k in 3:   # pontinhos do herói até o retículo
+	for k in 3:  # pontinhos do herói até o retículo
 		var q := c + mira_dir * (dist * (0.35 + 0.17 * k))
 		draw_rect(Rect2((q - Vector2(1.5, 1.5)).floor(), Vector2(3, 3)), sombra)
 		draw_rect(Rect2((q - Vector2(0.5, 0.5)).floor(), Vector2(1, 1)), cor)

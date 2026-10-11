@@ -10,18 +10,18 @@ extends Node2D
 ## Não conta como arma exclusiva. No online e no duelo final não transforma (ainda não vai pela rede).
 
 const Dragao := preload("res://scripts/hordas/dragao.gd")
-const ENTRAR := 1.1          # segundos da animação de transformação
-const SAIR := 0.7            # e da volta
+const ENTRAR := 1.1  # segundos da animação de transformação
+const SAIR := 0.7  # e da volta
 
 var arena: Node
-var atual := ""              # id da transformação deste personagem no habilidades.json ("" = não tem)
+var atual := ""  # id da transformação deste personagem no habilidades.json ("" = não tem)
 var desbloqueada := false
 var energia := 0.0
-var ativa := false           # em forma transformada (inclui as animações de entrar e sair)
+var ativa := false  # em forma transformada (inclui as animações de entrar e sair)
 var vezes := 0
-var _usos := 0               # transformações que já terminaram (a energia pedida cresce com elas)
-var forma: Node2D            # corpo da forma (dragao.gd), filho do jogador
-var _anim := 0.0             # tempo que falta da animação atual
+var _usos := 0  # transformações que já terminaram (a energia pedida cresce com elas)
+var forma: Node2D  # corpo da forma (dragao.gd), filho do jogador
+var _anim := 0.0  # tempo que falta da animação atual
 var _saindo := false
 var _recarga := 0.0
 var _duracao := 18.0
@@ -34,7 +34,7 @@ func configurar(a: Node) -> void:
 	arena = a
 	z_index = 2
 	if arena.eh_online:
-		return   # ainda não sincroniza pela rede (veja LOGBOOK)
+		return  # ainda não sincroniza pela rede (veja LOGBOOK)
 	var todas: Dictionary = Dados.json("habilidades")
 	for id in todas:
 		var h = todas[id]
@@ -118,7 +118,7 @@ func atualizar(dt: float) -> void:
 		if tipo == "nivel" and arena.nivel >= int(cond.get("valor", 1)):
 			desbloquear()
 		elif tipo == "fragmentos" and arena.descobertas.completo(atual):
-			desbloquear()   # juntou todos os fragmentos (santuários, elites e eventos, #21)
+			desbloquear()  # juntou todos os fragmentos (santuários, elites e eventos, #21)
 		return
 	if ativa:
 		_atualizar_forma(dt)
@@ -182,7 +182,7 @@ func _atualizar_forma(dt: float) -> void:
 	var jog: Node2D = arena.jogador
 	_anim = maxf(0.0, _anim - dt)
 	if _saindo:
-		var f := _anim / SAIR                      # 1 -> 0
+		var f := _anim / SAIR  # 1 -> 0
 		jog.humano = 1.0 - f
 		if forma:
 			forma.surgir = f
@@ -191,10 +191,10 @@ func _atualizar_forma(dt: float) -> void:
 			_fim()
 			return
 	else:
-		var f := 1.0 - _anim / ENTRAR              # 0 -> 1
-		jog.humano = clampf(1.0 - f * 2.0, 0.0, 1.0)   # o corpo humano some na primeira metade...
+		var f := 1.0 - _anim / ENTRAR  # 0 -> 1
+		jog.humano = clampf(1.0 - f * 2.0, 0.0, 1.0)  # o corpo humano some na primeira metade...
 		if forma:
-			forma.surgir = clampf((f - 0.25) / 0.75, 0.0, 1.0)   # ...enquanto o dragão se desenrola de dentro da luz
+			forma.surgir = clampf((f - 0.25) / 0.75, 0.0, 1.0)  # ...enquanto o dragão se desenrola de dentro da luz
 			forma.brilho = maxf(1.0 - f, 0.5 if jog.dash_t > 0 else 0.0)
 		if _anim <= 0:
 			energia -= energia_max() / _duracao * dt
@@ -258,7 +258,7 @@ func _draw() -> void:
 		return
 	# coluna e redemoinho de energia cobalto em volta do Hazaki enquanto ele vira (ou volta de) dragão
 	var c: Vector2 = arena.jogador.position + Vector2(0, -22)
-	var f := _anim / (SAIR if _saindo else ENTRAR)            # 1 no começo, 0 no fim
+	var f := _anim / (SAIR if _saindo else ENTRAR)  # 1 no começo, 0 no fim
 	var cor := Color(0.25, 0.45, 1.0)
 	var ciano := Color(0.55, 0.85, 1.0)
 	var r := lerpf(10.0, 46.0, f)

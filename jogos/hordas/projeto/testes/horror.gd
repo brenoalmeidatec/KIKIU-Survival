@@ -113,7 +113,7 @@ func _ready() -> void:
 			ok(v.luz.x > 0.0, "abominação tem luz")
 	var bug = a.inimigos.criar("bug", a.jogador.position + Vector2(-100, 0), 1)
 	ok(bug.ppx == 2.0, "vírus continuam em escala 2")
-	await esperar(1.0)   # alguns quadros de desenho, IA, tiros e investida com todos vivos
+	await esperar(1.0)  # alguns quadros de desenho, IA, tiros e investida com todos vivos
 	ok(a.inimigos.vivos() > 0, "inimigos seguem vivos e desenhando")
 	# --- a entrada do chefe de horror dispara (placa com nome e subtítulo)
 	a.inimigos.criar(CHEFE, a.jogador.position + Vector2(260, -40), 1)

@@ -9,10 +9,10 @@ const GRITO_T := 1.6
 const Armas := preload("res://scripts/hordas/armas.gd")
 
 var arena: Node
-var d := {}                  # o especial deste herói (vazio = não tem)
-var recarga := 0.0           # segundos até poder usar de novo
+var d := {}  # o especial deste herói (vazio = não tem)
+var recarga := 0.0  # segundos até poder usar de novo
 var usos := 0
-var _bonus_t := 0.0          # bônus de atributo ainda valendo
+var _bonus_t := 0.0  # bônus de atributo ainda valendo
 var _grito_t := 0.0
 var _t := 0.0
 var _avisou := false
@@ -22,9 +22,9 @@ func configurar(a: Node) -> void:
 	arena = a
 	z_index = 3
 	var tudo: Dictionary = Dados.json("especiais")
-	var e = tudo.get(str(arena.heroi.get("especial", arena.heroi_id)), {})   # herói criado (#72): o especial vem da classe
+	var e = tudo.get(str(arena.heroi.get("especial", arena.heroi_id)), {})  # herói criado (#72): o especial vem da classe
 	d = e if e is Dictionary else {}
-	recarga = 4.0   # não sai logo no primeiro segundo
+	recarga = 4.0  # não sai logo no primeiro segundo
 
 
 func tem() -> bool:
@@ -114,7 +114,7 @@ func _draw() -> void:
 		var txt := str(d.get("frase", ""))
 		var fonte: Font = Dados.fonte
 		var larg := fonte.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
-		var p := (c + Vector2(-larg / 2.0, -80.0 - (1.0 - f) * 14.0)).floor()   # acima do nome do herói
+		var p := (c + Vector2(-larg / 2.0, -80.0 - (1.0 - f) * 14.0)).floor()  # acima do nome do herói
 		var cor := Color(1, 0.9, 0.45, clampf(f * 3.0, 0.0, 1.0))
 		for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
 			draw_string(fonte, p + o, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(0.05, 0.03, 0.02, cor.a))

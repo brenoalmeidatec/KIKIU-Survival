@@ -4,10 +4,10 @@ extends RefCounted
 ## (o contorno escuro e o vermelho da faixa ficam como estão). As cores vêm de dados/aparencia.json; a ficha guarda só o
 ## índice de cada canal ({"pele": 4, "cabelo": 0, "roupa": 2}). Resultado em cache por (sprite, textura, paleta).
 
-const PELE_REF := Color(0.694, 0.431, 0.322)     # o tom médio da pele do corpo original
-const ROUPA_REF := Color(0.165, 0.141, 0.149)      # o tom médio da roupa
-const CABELO_REF := Color(0.102, 0.086, 0.094)     # o tom médio do cabelo
-const CONTORNO := [0x0D0B14, 0x0D0D10]     # contorno escuro do corpo: não muda
+const PELE_REF := Color(0.694, 0.431, 0.322)  # o tom médio da pele do corpo original
+const ROUPA_REF := Color(0.165, 0.141, 0.149)  # o tom médio da roupa
+const CABELO_REF := Color(0.102, 0.086, 0.094)  # o tom médio do cabelo
+const CONTORNO := [0x0D0B14, 0x0D0D10]  # contorno escuro do corpo: não muda
 const PELES := [0xB16E52, 0xD29A78, 0x6D4332, 0x3E261E]
 const VERMELHOS := [0x75191A, 0x3A0C0D]
 static var _cache := {}

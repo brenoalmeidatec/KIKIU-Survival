@@ -14,16 +14,27 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	if a.t > 0:
 		return
 	a.t = maxf(0.3, float(s.recarga))
-	var b: Vector2 = Baforada.boca(w)   # sai da boca do dragão
+	var b: Vector2 = Baforada.boca(w)  # sai da boca do dragão
 	var alvos: Array = w.campo.n_mais_perto(b, int(s.quantidade), 340)
 	if alvos.is_empty():
 		a.t = 0.2
 		return
 	for i in alvos.size():
 		var dir: Vector2 = (alvos[i].pos - b).normalized().rotated(randf_range(-0.25, 0.25))
-		w.especiais.append({"tipo": "energia_draconica", "pos": b, "vel": dir * float(s.velocidade), "alvo": alvos[i],
-			"vida": 1.4, "dano": float(s.dano), "raio": float(s.get("explosao", 30)) * float(s.area), "boom": 0.0,
-			"rastro": [], "arma": a.id})
+		w.especiais.append(
+			{
+				"tipo": "energia_draconica",
+				"pos": b,
+				"vel": dir * float(s.velocidade),
+				"alvo": alvos[i],
+				"vida": 1.4,
+				"dano": float(s.dano),
+				"raio": float(s.get("explosao", 30)) * float(s.area),
+				"boom": 0.0,
+				"rastro": [],
+				"arma": a.id
+			}
+		)
 	Som.tocar("blip", 0.08, 0.6, -6)
 
 

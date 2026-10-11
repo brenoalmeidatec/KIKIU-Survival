@@ -7,24 +7,24 @@ extends Node
 ##   qualquer rede (MQTT público, testado, é bloqueado em muitas). O endereço é o do túnel (playit) que o anfitrião colou.
 ## Qualquer um pode publicar no tópico: TODO anúncio é validado (formato, versão, tamanhos) e a lista tem teto.
 
-const VERSAO := 1                       # sobe quando o online mudar de jeito que não conversa com a versão anterior
-const DESCOBERTA := 7778                # porta UDP dos anúncios na rede local
+const VERSAO := 1  # sobe quando o online mudar de jeito que não conversa com a versão anterior
+const DESCOBERTA := 7778  # porta UDP dos anúncios na rede local
 const TOPICO := "kikiu-survival-salas-v1"
 const NTFY := "https://ntfy.sh/"
 const LAN_CADA := 2.0
 const NET_CADA := 30.0
 const LER_CADA := 10.0
-const LAN_VALE := 7.0                   # sala de rede local some se ficar 7 s sem anunciar
+const LAN_VALE := 7.0  # sala de rede local some se ficar 7 s sem anunciar
 const NET_VALE := 95.0
 const MAX_SALAS := 30
 
-var publica := false                    # anfitrião: anunciar também na internet (opção na sala, tecla L)
-var endereco_publico := ""              # anfitrião: endereço do túnel (playit) que vai no anúncio público
-var salas := {}                         # id -> {id, nome, anfitriao, jogadores, max, endereco, origem ("lan"/"net"), visto}
-var topico := TOPICO                    # os testes usam outro (--topico=) pra não sujar a lista de verdade
-var erro_net := ""                      # último problema com a internet (a tela mostra)
+var publica := false  # anfitrião: anunciar também na internet (opção na sala, tecla L)
+var endereco_publico := ""  # anfitrião: endereço do túnel (playit) que vai no anúncio público
+var salas := {}  # id -> {id, nome, anfitriao, jogadores, max, endereco, origem ("lan"/"net"), visto}
+var topico := TOPICO  # os testes usam outro (--topico=) pra não sujar a lista de verdade
+var erro_net := ""  # último problema com a internet (a tela mostra)
 
-var _id := ""                           # id desta sala (sorteado ao abrir)
+var _id := ""  # id desta sala (sorteado ao abrir)
 var _lan_t := 0.0
 var _net_t := 0.0
 var _ler_t := 0.0
@@ -45,10 +45,13 @@ func _ready() -> void:
 	add_child(_http_publica)
 	add_child(_http_le)
 	_http_le.request_completed.connect(_leu)
-	_http_publica.request_completed.connect(func(r, cod, _h, _b): erro_net = "" if r == OK and cod < 300 else "Não deu pra publicar a sala na lista (internet?).")
+	_http_publica.request_completed.connect(
+		func(r, cod, _h, _b): erro_net = "" if r == OK and cod < 300 else "Não deu pra publicar a sala na lista (internet?)."
+	)
 
 
 # ---------------------------------------------------------------- quem procura
+
 
 ## Começa a ouvir a rede local e a ler a lista da internet (tela "Entrar em sala").
 func procurar() -> void:
@@ -70,10 +73,12 @@ func parar_procura() -> void:
 ## Salas pra mostrar: rede local primeiro, depois as da internet, as mais novas no topo.
 func lista() -> Array:
 	var l := salas.values()
-	l.sort_custom(func(a, b):
-		if a.origem != b.origem:
-			return a.origem == "lan"
-		return a.visto > b.visto)
+	l.sort_custom(
+		func(a, b):
+			if a.origem != b.origem:
+				return a.origem == "lan"
+			return a.visto > b.visto
+	)
 	return l
 
 
@@ -134,8 +139,14 @@ static func validar(txt: String, ip_lan: String) -> Dictionary:
 	if not endereco_valido(endereco):
 		return {}
 	var nome := _limpar(str(d.get("nome", "")))
-	return {"id": id, "nome": nome if nome != "" else "Sala", "anfitriao": _limpar(str(d.get("anfitriao", ""))),
-		"jogadores": int(nj), "max": int(mx), "endereco": endereco}
+	return {
+		"id": id,
+		"nome": nome if nome != "" else "Sala",
+		"anfitriao": _limpar(str(d.get("anfitriao", ""))),
+		"jogadores": int(nj),
+		"max": int(mx),
+		"endereco": endereco
+	}
 
 
 ## host:porta com host só de letras, números, ponto e hífen (IP ou nome de túnel).
@@ -164,10 +175,18 @@ static func _limpar(s: String) -> String:
 
 # ---------------------------------------------------------------- anfitrião
 
+
 ## Anúncio desta sala (o que vai pelo ar). publico = inclui o endereço do túnel.
 func anuncio(publico: bool) -> String:
-	var d := {"v": VERSAO, "id": _id, "nome": "Sala de " + Rede.apelido, "anfitriao": Rede.apelido,
-		"jogadores": Rede.jogadores.size(), "max": Rede.MAX, "porta": Rede.porta_aberta}
+	var d := {
+		"v": VERSAO,
+		"id": _id,
+		"nome": "Sala de " + Rede.apelido,
+		"anfitriao": Rede.apelido,
+		"jogadores": Rede.jogadores.size(),
+		"max": Rede.MAX,
+		"porta": Rede.porta_aberta
+	}
 	if publico:
 		d["endereco"] = endereco_publico
 	return JSON.stringify(d)

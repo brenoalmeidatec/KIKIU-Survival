@@ -4,10 +4,12 @@ const D := preload("res://scripts/hordas/direcao.gd")
 const J := preload("res://scripts/hordas/jogador.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 ## Roda o olhar por 'seg' segundos (60 quadros/s) com 'mov' e devolve a sequência de direções distintas.
 func sequencia(o, mov: Vector2, seg: float, n := 8) -> Array:
@@ -18,21 +20,32 @@ func sequencia(o, mov: Vector2, seg: float, n := 8) -> Array:
 			seq.append(o.dir)
 	return seq
 
+
 func antigo4(v: Vector2) -> String:
 	if absf(v.x) > absf(v.y) * 0.9:
 		return "direita" if v.x > 0 else "esquerda"
 	return "baixo" if v.y > 0 else "cima"
 
+
 func _ready() -> void:
 	# tabela e altura da folha
 	ok(D.linhas_da_altura(480) == 8 and D.linhas_da_altura(240) == 4 and D.linhas_da_altura(60) == 4, "linhas pela altura")
 	ok(D.LINHA["baixo"] == 0 and D.LINHA["esquerda"] == 1 and D.LINHA["direita"] == 2 and D.LINHA["cima"] == 3, "linhas 0-3 como antes")
-	ok(D.LINHA["baixo_esquerda"] == 4 and D.LINHA["baixo_direita"] == 5 and D.LINHA["cima_esquerda"] == 6 and D.LINHA["cima_direita"] == 7, "linhas 4-7 diagonais")
+	ok(
+		D.LINHA["baixo_esquerda"] == 4 and D.LINHA["baixo_direita"] == 5 and D.LINHA["cima_esquerda"] == 6 and D.LINHA["cima_direita"] == 7,
+		"linhas 4-7 diagonais"
+	)
 	ok(J.LINHA == D.LINHA, "jogador usa a mesma tabela")
 	# 8 direções: cada vetor cai na linha certa (tela: x para a direita, y para baixo)
 	var casos := {
-		"baixo": Vector2(0, 1), "cima": Vector2(0, -1), "esquerda": Vector2(-1, 0), "direita": Vector2(1, 0),
-		"baixo_esquerda": Vector2(-1, 1), "baixo_direita": Vector2(1, 1), "cima_esquerda": Vector2(-1, -1), "cima_direita": Vector2(1, -1),
+		"baixo": Vector2(0, 1),
+		"cima": Vector2(0, -1),
+		"esquerda": Vector2(-1, 0),
+		"direita": Vector2(1, 0),
+		"baixo_esquerda": Vector2(-1, 1),
+		"baixo_direita": Vector2(1, 1),
+		"cima_esquerda": Vector2(-1, -1),
+		"cima_direita": Vector2(1, -1),
 	}
 	for nome in casos:
 		var o = D.new()

@@ -38,9 +38,23 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 		a["elemento"] = int(a.get("elemento", 0)) + 1
 		for k in lista.size():
 			var dd := dir.rotated((k - (lista.size() - 1) / 2.0) * 0.18)
-			w.especiais.append({"tipo": "elemental", "orbe": true, "elem": lista[k], "pos": c, "vel": dd * float(s.velocidade),
-				"vida": float(s.duracao), "dano": float(s.dano), "perfura": int(s.get("perfura", 1)), "acertou": [],
-				"cadeia": int(s.get("cadeia", 1)), "explosao": float(s.get("explosao", 0)) > 0, "arma": a.id, "rastro": []})
+			w.especiais.append(
+				{
+					"tipo": "elemental",
+					"orbe": true,
+					"elem": lista[k],
+					"pos": c,
+					"vel": dd * float(s.velocidade),
+					"vida": float(s.duracao),
+					"dano": float(s.dano),
+					"perfura": int(s.get("perfura", 1)),
+					"acertou": [],
+					"cadeia": int(s.get("cadeia", 1)),
+					"explosao": float(s.get("explosao", 0)) > 0,
+					"arma": a.id,
+					"rastro": []
+				}
+			)
 	Som.tocar("plim", 0.06, 1.8, -12)
 
 
@@ -49,7 +63,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		e.t -= dt
 		return e.t > 0
 	e.rastro.push_front(e.pos)
-	if e.rastro.size() > 4 + 2 * int(Cresc.fx(e.get("tier", 0)).imagens):   # tier alto: rastro mais longo
+	if e.rastro.size() > 4 + 2 * int(Cresc.fx(e.get("tier", 0)).imagens):  # tier alto: rastro mais longo
 		e.rastro.pop_back()
 	e.pos += e.vel * dt
 	e.vida -= dt
@@ -127,7 +141,7 @@ static func pintar(w, e: Dictionary) -> void:
 		w.draw_rect(Rect2(p.floor() - Vector2(1, 1), Vector2(3, 3)), Color(cor, maxf(0.06, 0.5 - i * 0.08)))
 	w.draw_circle(e.pos.floor(), 4.0 * maxf(0.7, ar), Cresc.cor(cor, t))
 	w.draw_circle(e.pos.floor(), 2.0 * maxf(0.7, ar), MIOLO[e.elem])
-	if e.elem == "gelo":   # cristal: pontinhas em cruz
+	if e.elem == "gelo":  # cristal: pontinhas em cruz
 		w.draw_rect(Rect2(e.pos.floor() + Vector2(-6, 0), Vector2(12, 1)), Color(cor, 0.7))
 		w.draw_rect(Rect2(e.pos.floor() + Vector2(0, -6), Vector2(1, 12)), Color(cor, 0.7))
 

@@ -3,17 +3,22 @@ extends Node
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/conjuntos.tscn  (imprime "CONJ falhas=0")
 const Arena := preload("res://scripts/hordas/arena.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
-const STATS := ["dano", "recarga", "area", "quantidade", "velocidade_proj", "duracao", "vida_max", "regen", "velocidade", "ima", "sorte", "xp", "critico", "critico_mult"]
+const STATS := [
+	"dano", "recarga", "area", "quantidade", "velocidade_proj", "duracao", "vida_max", "regen", "velocidade", "ima", "sorte", "xp", "critico", "critico_mult"
+]
 const EFEITOS := ["explosao_morte", "lento_acerto", "cura_abate"]
 var falhas := 0
+
 
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
@@ -61,7 +66,15 @@ func _ready() -> void:
 	ok(Conjuntos.contar([], {}, {}).is_empty(), "build vazia não tem etiqueta")
 	var eq := {"cabeca": "cabeca_guerreiro", "peitoral": "armadura_samurai", "rosto": "mascara_menpo", "bracos": "bracadeiras_ferro", "pes": "botas_guerra"}
 	ok(Conjuntos.contar([], {}, eq).get("guerreiro", 0) == 5, "as 5 peças do Hazaki dão Guerreiro 5")
-	ok(Conjuntos.nivel_ativo("lamina", 1) == 0 and Conjuntos.nivel_ativo("lamina", 2) == 2 and Conjuntos.nivel_ativo("lamina", 3) == 2 and Conjuntos.nivel_ativo("lamina", 7) == 6, "degrau ativo por contagem")
+	ok(
+		(
+			Conjuntos.nivel_ativo("lamina", 1) == 0
+			and Conjuntos.nivel_ativo("lamina", 2) == 2
+			and Conjuntos.nivel_ativo("lamina", 3) == 2
+			and Conjuntos.nivel_ativo("lamina", 7) == 6
+		),
+		"degrau ativo por contagem"
+	)
 	ok(Conjuntos.proximo("lamina", 1) == 2 and Conjuntos.proximo("lamina", 2) == 4 and Conjuntos.proximo("lamina", 6) == 0, "próximo degrau")
 
 	# --- bônus liga e desliga nos limiares
@@ -69,7 +82,10 @@ func _ready() -> void:
 	ok(is_equal_approx(float(Conjuntos.bonus({"lamina": 2}).get("critico", 0)), 0.08), "2 Lâminas: +8% de crítico")
 	ok(Conjuntos.bonus({"lamina": 3}) == Conjuntos.bonus({"lamina": 2}), "3 Lâminas: o mesmo que 2")
 	var b4 := Conjuntos.bonus({"lamina": 4})
-	ok(is_equal_approx(float(b4.get("critico", 0)), 0.08) and is_equal_approx(float(b4.get("dano", 0)), 0.15), "4 Lâminas: soma os degraus de baixo (%s)" % [b4])
+	ok(
+		is_equal_approx(float(b4.get("critico", 0)), 0.08) and is_equal_approx(float(b4.get("dano", 0)), 0.15),
+		"4 Lâminas: soma os degraus de baixo (%s)" % [b4]
+	)
 	var b6 := Conjuntos.bonus({"lamina": 6})
 	ok(is_equal_approx(float(b6.get("critico", 0)), 0.15) and is_equal_approx(float(b6.get("critico_mult", 0)), 0.5), "6 Lâminas: tudo ligado (%s)" % [b6])
 	var somado := Conjuntos.bonus({"lamina": 2, "pesado": 2})
@@ -77,9 +93,15 @@ func _ready() -> void:
 	ok(Conjuntos.efeitos({"fogo": 5}).is_empty() and float(Conjuntos.efeitos({"fogo": 6}).get("explosao_morte", 0)) == 1.0, "Fogo 6 liga a explosão, 5 não")
 	ok(float(Conjuntos.efeitos({"gelo": 6}).get("lento_acerto", 0)) == 0.6, "lentidão do Gelo não empilha (pega o maior)")
 	var res := Conjuntos.resumo({"lamina": 2, "fogo": 1, "pesado": 4, "gelo": 0})
-	ok(res.size() == 3 and res[0].etq == "pesado" and res[1].etq == "lamina" and res[2].etq == "fogo", "resumo: ligados primeiro, mais cheios antes (%s)" % [res.map(func(l): return l.etq)])
+	ok(
+		res.size() == 3 and res[0].etq == "pesado" and res[1].etq == "lamina" and res[2].etq == "fogo",
+		"resumo: ligados primeiro, mais cheios antes (%s)" % [res.map(func(l): return l.etq)]
+	)
 	ok(Conjuntos.progresso_txt(res[0]) == "4/6" and Conjuntos.progresso_txt(res[2]) == "1/2", "progresso '4/6' e '1/2'")
-	ok(Conjuntos.rotulo_carta("pendrive", {"lamina": 1}) == "Lâmina 1>2  Arremesso 0>1", "texto de carta: %s" % Conjuntos.rotulo_carta("pendrive", {"lamina": 1}))
+	ok(
+		Conjuntos.rotulo_carta("pendrive", {"lamina": 1}) == "Lâmina 1>2  Arremesso 0>1",
+		"texto de carta: %s" % Conjuntos.rotulo_carta("pendrive", {"lamina": 1})
+	)
 
 	# --- dentro da partida: o atributo muda de verdade quando a build muda
 	var a := Arena.new()
@@ -88,23 +110,29 @@ func _ready() -> void:
 	a.semente = 5
 	add_child(a)
 	await esperar(0.2)
-	a.xp = -1.0e12   # sem carta de nível no meio do teste
+	a.xp = -1.0e12  # sem carta de nível no meio do teste
 	a.jogador.invencivel = 999.0
 	a.armas.lista.clear()
 	a.armas.adicionar("pendrive")
 	var crit0: float = a.stat("critico")
 	ok(a.conj_contagem.get("lamina", 0) == 1 and is_equal_approx(a.stat("critico"), crit0), "1 Lâmina na partida: sem bônus")
-	a.armas.adicionar("lanca")   # 2 lâminas
-	ok(a.conj_contagem.get("lamina", 0) == 2 and is_equal_approx(a.stat("critico") - crit0, 0.08), "2 Lâminas: +8%% de crítico na partida (%.3f)" % (a.stat("critico") - crit0))
+	a.armas.adicionar("lanca")  # 2 lâminas
+	ok(
+		a.conj_contagem.get("lamina", 0) == 2 and is_equal_approx(a.stat("critico") - crit0, 0.08),
+		"2 Lâminas: +8%% de crítico na partida (%.3f)" % (a.stat("critico") - crit0)
+	)
 	ok(not a.conj_resumo.is_empty() and a.conj_resumo[0].etq == "lamina", "o resumo do HUD acompanha")
-	a.armas.trocar("lanca", "lanca_ardente")   # evolução também é lâmina (e fogo)
+	a.armas.trocar("lanca", "lanca_ardente")  # evolução também é lâmina (e fogo)
 	ok(a.conj_contagem.get("lamina", 0) == 2 and a.conj_contagem.get("fogo", 0) == 1, "evoluir troca as etiquetas na hora (%s)" % [a.conj_contagem])
 	var dano0: float = a.stat("dano")
-	a.passivos["energetico"] = 1   # + Lâmina
-	a.armas.adicionar("ventoinha")   # + Lâmina = 4
-	ok(a.conj_contagem.get("lamina", 0) == 4 and is_equal_approx(a.stat("dano") - dano0, 0.25), "4 Lâminas: +15%% do conjunto +10%% da Pedra de Amolar (%.3f)" % (a.stat("dano") - dano0))
+	a.passivos["energetico"] = 1  # + Lâmina
+	a.armas.adicionar("ventoinha")  # + Lâmina = 4
+	ok(
+		a.conj_contagem.get("lamina", 0) == 4 and is_equal_approx(a.stat("dano") - dano0, 0.25),
+		"4 Lâminas: +15%% do conjunto +10%% da Pedra de Amolar (%.3f)" % (a.stat("dano") - dano0)
+	)
 	a.armas.lista.clear()
-	a.armas.adicionar("pendrive")   # volta a 1 + passivo = 2
+	a.armas.adicionar("pendrive")  # volta a 1 + passivo = 2
 	ok(a.conj_contagem.get("lamina", 0) == 2, "tirou armas: a contagem cai (%s)" % [a.conj_contagem])
 	a.passivos.clear()
 	a._recalcular()
@@ -155,7 +183,7 @@ func _ready() -> void:
 		v.vel = 0.0
 	vizinho.hpmax = 1.0e6
 	vizinho.hp = 1.0e6
-	a.inimigos.atualizar(0.016, a.jogador)   # reconstrói a grade espacial
+	a.inimigos.atualizar(0.016, a.jogador)  # reconstrói a grade espacial
 	var hp_ant: float = vizinho.hp
 	a.inimigos.ferir(morre, 1.0e6, Vector2.ZERO, "teste")
 	ok(vizinho.hp < hp_ant, "quem morre explode e machuca o vizinho (%.0f -> %.0f)" % [hp_ant, vizinho.hp])
@@ -165,7 +193,10 @@ func _ready() -> void:
 	a.passivos.clear()
 	a.armas.adicionar("pendrive")
 	var carta: Dictionary = a._carta("passivo", "energetico", 1)
-	ok(carta.get("etiquetas", []) == ["lamina"] and str(carta.get("etiquetas_txt", "")) == "Lâmina 1>2", "carta de passivo traz as etiquetas e o 'depois' (%s)" % [carta.get("etiquetas_txt")])
+	ok(
+		carta.get("etiquetas", []) == ["lamina"] and str(carta.get("etiquetas_txt", "")) == "Lâmina 1>2",
+		"carta de passivo traz as etiquetas e o 'depois' (%s)" % [carta.get("etiquetas_txt")]
+	)
 	a.passivos["energetico"] = 1
 	ok(str(a._carta("passivo", "energetico", 2).get("etiquetas_txt", "x")) == "", "subir nível do que já tem não muda a contagem")
 	a.queue_free()

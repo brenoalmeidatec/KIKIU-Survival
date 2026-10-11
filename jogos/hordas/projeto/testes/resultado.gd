@@ -28,7 +28,7 @@ func nova(bot := true) -> Node:
 func _ready() -> void:
 	# --- estatísticas da fase: somam certo e zeram na troca de fase
 	var a := await nova()
-	a.xp = -1.0e12   # sem subir de nível: o robô escolheria carta e mudaria a build no meio do teste
+	a.xp = -1.0e12  # sem subir de nível: o robô escolheria carta e mudaria a build no meio do teste
 	ok(a.fase_stat.abates == 0 and a.fase_stat.dano.is_empty() and a.fase_stat.itens.is_empty(), "fase começa zerada")
 	for i in 3:
 		a.registrar_dano("pendrive", 10.0, Vector2.ZERO)

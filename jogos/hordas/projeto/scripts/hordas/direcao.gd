@@ -7,21 +7,27 @@ extends RefCounted
 
 const ALT_QUADRO := 60
 const LINHA := {
-	"baixo": 0, "esquerda": 1, "direita": 2, "cima": 3,
-	"baixo_esquerda": 4, "baixo_direita": 5, "cima_esquerda": 6, "cima_direita": 7,
+	"baixo": 0,
+	"esquerda": 1,
+	"direita": 2,
+	"cima": 3,
+	"baixo_esquerda": 4,
+	"baixo_direita": 5,
+	"cima_esquerda": 6,
+	"cima_direita": 7,
 }
 ## Nomes na ordem em que o ângulo cresce (cada passo = 360 / n graus). Índice do setor = round(ângulo / passo).
 const SETORES := {
 	8: ["baixo", "baixo_direita", "direita", "cima_direita", "cima", "cima_esquerda", "esquerda", "baixo_esquerda"],
 	4: ["baixo", "direita", "cima", "esquerda"],
 }
-const VEL_GIRO := 800.0     # graus por segundo (180° em ~0,23 s, passando pelas intermediárias)
-const HISTERESE := 8.0      # graus além da fronteira do setor antes de trocar de direção
+const VEL_GIRO := 800.0  # graus por segundo (180° em ~0,23 s, passando pelas intermediárias)
+const HISTERESE := 8.0  # graus além da fronteira do setor antes de trocar de direção
 
-var angulo := 0.0           # para onde o boneco está olhando agora (gira com velocidade limitada)
-var alvo := 0.0             # para onde quer olhar (última direção de movimento)
-var dir := "baixo"          # nome da direção atual (chave de LINHA)
-var _andou := false         # já andou alguma vez (a histerese de 4 direções só vale depois do primeiro passo)
+var angulo := 0.0  # para onde o boneco está olhando agora (gira com velocidade limitada)
+var alvo := 0.0  # para onde quer olhar (última direção de movimento)
+var dir := "baixo"  # nome da direção atual (chave de LINHA)
+var _andou := false  # já andou alguma vez (a histerese de 4 direções só vale depois do primeiro passo)
 
 
 ## Número de linhas de direção de uma folha: altura / 60; 8 ou mais -> 8, senão 4.
@@ -60,13 +66,15 @@ static func direcao_de(angulo_: float, n: int, atual: String = "") -> String:
 ## Regra das 4 direções (eixo dominante), usada pelas folhas de 4 linhas. Com `atual`, o eixo só troca quando o outro
 ## passa da fronteira com folga (HISTERESE4): manche analógico ou robô oscilando em volta da diagonal não faz o boneco
 ## piscar entre de lado e de frente. Sem `atual` (ou parado) vale a regra seca de antes.
-const HISTERESE4 := 0.25    # fração da razão x/y da fronteira (0,9) que o eixo atual ganha de folga
+const HISTERESE4 := 0.25  # fração da razão x/y da fronteira (0,9) que o eixo atual ganha de folga
+
+
 static func direcao4(v: Vector2, atual: String = "") -> String:
 	var lim := 0.9
 	if atual == "direita" or atual == "esquerda":
-		lim *= 1.0 - HISTERESE4   # já de lado: continua de lado até y mandar de verdade
+		lim *= 1.0 - HISTERESE4  # já de lado: continua de lado até y mandar de verdade
 	elif atual == "baixo" or atual == "cima":
-		lim *= 1.0 + HISTERESE4   # já de frente/costas: só vira de lado quando x mandar de verdade
+		lim *= 1.0 + HISTERESE4  # já de frente/costas: só vira de lado quando x mandar de verdade
 	if absf(v.x) > absf(v.y) * lim:
 		return "direita" if v.x > 0 else "esquerda"
 	return "baixo" if v.y > 0 else "cima"

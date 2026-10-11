@@ -57,8 +57,8 @@ func _ready() -> void:
 	m._comecar("hazaki")
 	var a = m._arena
 	var j = a.jogador
-	await get_tree().create_timer(1.0).timeout   # passa a entrada (queda) e o cenário carrega
-	a.set_process(false)                          # os quadros daqui pra frente são do teste
+	await get_tree().create_timer(1.0).timeout  # passa a entrada (queda) e o cenário carrega
+	a.set_process(false)  # os quadros daqui pra frente são do teste
 	j.bot = false
 	j.dash_t = 0.0
 	var vmax: float = J.VEL_BASE * a.stat("velocidade")

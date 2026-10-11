@@ -27,7 +27,10 @@ func _ready() -> void:
 			var d: Dictionary = armas_d.get(id, {})
 			ok(not d.is_empty() and d.has("base") and d.has("niveis") and d.has("tipo") and d.get("classe") == "global", "entrada " + id)
 			ok(Dados.tex("icone_" + str(d.get("icone", ""))) != null, "ícone existe: " + id)
-	ok(armas_d["u_espada_treino__gelida"].nome == "Espada de Treino Gélida" and armas_d["u_marreta_enferrujada__gelida"].nome == "Marreta Enferrujada Gélida", "nome com gênero")
+	ok(
+		armas_d["u_espada_treino__gelida"].nome == "Espada de Treino Gélida" and armas_d["u_marreta_enferrujada__gelida"].nome == "Marreta Enferrujada Gélida",
+		"nome com gênero"
+	)
 	ok(armas_d["u_espada_treino__gelida"].elemento == "gelo", "variação gélida tem elemento gelo")
 	ok(Univ.base_de("u_espada_treino__lunar") == "espada_treino" and Univ.eh_universal("u_espada_treino"), "base_de / eh_universal")
 	var v1 := []
@@ -103,7 +106,10 @@ func _ready() -> void:
 	ok(receitas.size() == 6, "6 fusões")
 	for f in receitas:
 		var fid := Univ.id_de(str(f.vira), "puro")
-		ok(not f.get("mecanica", {}).is_empty() and str(f.get("desc", "")) != "" and Dados.json("armas")[fid].descricao == f.desc, "fusão com mecânica e descrição: " + fid)
+		ok(
+			not f.get("mecanica", {}).is_empty() and str(f.get("desc", "")) != "" and Dados.json("armas")[fid].descricao == f.desc,
+			"fusão com mecânica e descrição: " + fid
+		)
 		a.armas.lista.clear()
 		a.armas.adicionar(fid)
 		var wf: Dictionary = a.armas.lista[0]
@@ -113,7 +119,13 @@ func _ready() -> void:
 			for k in f.mecanica[cid]:
 				ok(sf.comp[cid].get(k) == f.mecanica[cid][k], "%s: ajuste %s.%s" % [fid, cid, k])
 		ok(Univ.mecanica_de(fid) == f.mecanica, "mecanica_de " + fid)
-		ok(a.armas.comportamentos_disponiveis(wf).is_empty() or not a.armas.comportamentos_disponiveis(wf).any(func(x): return Dados.json("comportamentos").lista[x].get("so_fusao", false)), "so_fusao não vira carta")
+		ok(
+			(
+				a.armas.comportamentos_disponiveis(wf).is_empty()
+				or not a.armas.comportamentos_disponiveis(wf).any(func(x): return Dados.json("comportamentos").lista[x].get("so_fusao", false))
+			),
+			"so_fusao não vira carta"
+		)
 	# efeitos que mudam o comportamento de verdade
 	a.armas.lista.clear()
 	a.armas.adicionar("u_fusao_lanca_sanguessuga")
@@ -130,7 +142,10 @@ func _ready() -> void:
 	a.armas.especiais.clear()
 	a.armas.MODULOS["sismo"].atualizar(a.armas, wm, Dados.item(wm.id), sm, 100.0)
 	ok(a.armas.especiais.size() == int(sm.get("ondas", 1)) + 1, "martelo glacial: onda + eco (%d)" % a.armas.especiais.size())
-	ok(a.armas.especiais.all(func(e): return e.lento >= 2.5) and a.armas.especiais[-1].empurra < 0 and a.armas.especiais[0].empurra > 0, "martelo glacial: congela e o eco puxa")
+	ok(
+		a.armas.especiais.all(func(e): return e.lento >= 2.5) and a.armas.especiais[-1].empurra < 0 and a.armas.especiais[0].empurra > 0,
+		"martelo glacial: congela e o eco puxa"
+	)
 	a.armas.lista.clear()
 	a.armas.adicionar("u_fusao_aurora_rubra")
 	ok(a.armas._comp_de(a.armas.lista[0]).has("rastro_fogo"), "aurora rubra deixa rastro")

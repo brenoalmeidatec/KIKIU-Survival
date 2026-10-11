@@ -8,13 +8,13 @@ const ESCALA := 2.0
 const MAX_GEMAS := 450
 
 var arena: Node
-var itens: Array = []      # {pos, tipo, valor, puxando, vel}
+var itens: Array = []  # {pos, tipo, valor, puxando, vel}
 var _t := 0.0
-var _rotulos := Node2D.new()   # etiquetas de drop (#72 marco 7): por cima dos bichos
-var _cand: Array = []          # itens com direito a etiqueta, juntados no desenho das gemas
-var _rot: Array = []           # o que será desenhado neste quadro
-var _vis := Rect2()              # a tela em coordenadas do mundo (itens fora dela não são desenhados)
-var rotulos_n := 0             # quantas etiquetas foram desenhadas no último quadro (o teste lê)
+var _rotulos := Node2D.new()  # etiquetas de drop (#72 marco 7): por cima dos bichos
+var _cand: Array = []  # itens com direito a etiqueta, juntados no desenho das gemas
+var _rot: Array = []  # o que será desenhado neste quadro
+var _vis := Rect2()  # a tela em coordenadas do mundo (itens fora dela não são desenhados)
+var rotulos_n := 0  # quantas etiquetas foram desenhadas no último quadro (o teste lê)
 
 
 func gema(pos: Vector2, valor: float) -> void:
@@ -66,15 +66,15 @@ func atualizar_i(dt: float) -> void:
 	_cand.clear()
 	_vis = get_canvas_transform().affine_inverse() * get_viewport_rect() if is_inside_tree() else Rect2()
 	var idx := 0
-	while idx < itens.size():   # sem duplicate() nem erase() (O(n) por item, com 450 gemas no chão pesava todo quadro)
+	while idx < itens.size():  # sem duplicate() nem erase() (O(n) por item, com 450 gemas no chão pesava todo quadro)
 		var it: Dictionary = itens[idx]
 		idx += 1
 		if it.tipo != "gema" or it.valor >= 20.0:
-			_cand.append(it)   # só quem pode ter etiqueta (as gemas pequenas, a maioria, só pagam este teste)
+			_cand.append(it)  # só quem pode ter etiqueta (as gemas pequenas, a maioria, só pagam este teste)
 		var dist: float = it.pos.distance_to(alvo)
 		if not it.puxando and dist < ima and it.tipo != "bau":
 			it.puxando = true
-			it.vel = -140.0   # dá um pulinho pra trás antes de vir
+			it.vel = -140.0  # dá um pulinho pra trás antes de vir
 		if it.puxando:
 			it.vel += 900.0 * dt
 			if it.vel < 0:
@@ -125,12 +125,12 @@ func _textura(it: Dictionary) -> Texture2D:
 			elif it.valor >= 4:
 				return Dados.tex("gema_2")
 			return Dados.tex("gema_1")
-		"marmita", "wifi":   # o que aparece no chão vem do coletaveis.json (#65); o tipo interno continua o mesmo
+		"marmita", "wifi":  # o que aparece no chão vem do coletaveis.json (#65); o tipo interno continua o mesmo
 			return Dados.tex(str(Dados.json("coletaveis").get(it.tipo, {}).get("sprite", it.tipo)))
 		"bau":
 			return Dados.tex("bau")
 		"fragmento":
-			return Dados.tex("gema_3")   # só pra passar no teste de nulo; o losango é desenhado à mão em _draw
+			return Dados.tex("gema_3")  # só pra passar no teste de nulo; o losango é desenhado à mão em _draw
 	return null
 
 
@@ -158,7 +158,7 @@ func rotulos_do_quadro(alvo: Vector2) -> Array:
 		var idade: float = _t - float(it.get("t0", -99.0))
 		var dist: float = it.pos.distance_to(alvo)
 		if Legib.etiqueta_visivel(e, idade, dist):
-			var fim: float = 1.0 if dist <= perto else clampf((float(c.get("nasce", 4.0)) - idade) * 2.0, 0.0, 1.0)   # a de "recém-caído" esmaece
+			var fim: float = 1.0 if dist <= perto else clampf((float(c.get("nasce", 4.0)) - idade) * 2.0, 0.0, 1.0)  # a de "recém-caído" esmaece
 			r.append([it, e, fim])
 			if r.size() >= lim:
 				break
@@ -166,7 +166,7 @@ func rotulos_do_quadro(alvo: Vector2) -> Array:
 
 
 func _desenhar_rotulos() -> void:
-	var usados: Array = []   # etiquetas juntas sobem uma sobre a outra em vez de se sobrepor (poucas: no máximo `max`)
+	var usados: Array = []  # etiquetas juntas sobem uma sobre a outra em vez de se sobrepor (poucas: no máximo `max`)
 	for r in _rot:
 		var p: Vector2 = r[0].pos
 		var subir := 0.0
@@ -182,7 +182,7 @@ func _draw_i() -> void:
 	var alvos_bau = null
 	for it in itens:
 		if vis.has_area() and not vis.has_point(it.pos):
-			continue   # fora da tela nem desenha (a maioria das gemas acumuladas)
+			continue  # fora da tela nem desenha (a maioria das gemas acumuladas)
 		var tex := _textura(it)
 		if tex == null:
 			continue
@@ -192,12 +192,12 @@ func _draw_i() -> void:
 			flutua = sin(_t * 4.0 + it.pos.x) * 2.0
 		if it.tipo == "bau":
 			if alvos_bau == null:
-				alvos_bau = Legib.alvos(arena)   # só quando há baú na tela
-			var ab := Legib.alfa_sobre(it.pos, alvos_bau)   # 40% em cima de um objetivo (#125)
+				alvos_bau = Legib.alvos(arena)  # só quando há baú na tela
+			var ab := Legib.alfa_sobre(it.pos, alvos_bau)  # 40% em cima de um objetivo (#125)
 			draw_circle(it.pos, 18 + sin(_t * 5.0) * 3, Color(1, 0.85, 0.3, 0.18 * ab))
 			draw_texture_rect(tex, Rect2(it.pos - sz / 2 + Vector2(0, flutua), sz), false, Color(1, 1, 1, ab))
 			continue
-		if it.tipo == "fragmento":   # losango cobalto que pulsa (sem PNG novo)
+		if it.tipo == "fragmento":  # losango cobalto que pulsa (sem PNG novo)
 			var c := Vector2(it.pos.x, it.pos.y + flutua - 6.0)
 			var r := 9.0 + sin(_t * 6.0) * 1.5
 			var pts := PackedVector2Array([c + Vector2(0, -r), c + Vector2(r * 0.7, 0), c + Vector2(0, r), c + Vector2(-r * 0.7, 0)])

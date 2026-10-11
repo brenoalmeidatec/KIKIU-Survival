@@ -17,7 +17,7 @@ const H := 360.0
 const COLUNAS := 3
 
 var sel := 0
-var confirmando := ""        # id do herói que o jogador está prestes a apagar ("" = não está)
+var confirmando := ""  # id do herói que o jogador está prestes a apagar ("" = não está)
 var _ids: Array = []
 var _quadro := 0
 var _t := 0.0
@@ -114,14 +114,16 @@ func _escolher() -> void:
 	_criando = true
 	var t := TelaCriacao.new()
 	add_child(t)
-	t.fechou.connect(func(ok: bool, id: String):
-		_criando = false
-		_quadro = Engine.get_process_frames()
-		if ok:
-			jogar.emit(id)
-			queue_free()
-		else:
-			_recarregar())
+	t.fechou.connect(
+		func(ok: bool, id: String):
+			_criando = false
+			_quadro = Engine.get_process_frames()
+			if ok:
+				jogar.emit(id)
+				queue_free()
+			else:
+				_recarregar()
+	)
 
 
 ## B: o baú pessoal do herói da vaga (só olhar e descartar). O baú morre junto com o herói.
@@ -129,16 +131,18 @@ func _abrir_bau() -> void:
 	if sel >= _ids.size():
 		return
 	var id := str(_ids[sel])
-	_criando = true   # a tela do baú é que escuta as teclas agora
+	_criando = true  # a tela do baú é que escuta as teclas agora
 	var t := TelaPreparo.new()
 	t.modo = "bau"
 	t.heroi_id = id
 	t.bau = Mochila.bau_limpo(Criacao.bau_de(id))
 	add_child(t)
 	t.descartou.connect(func(_i: String): Criacao.definir_bau(id, t.bau))
-	t.fechou.connect(func(_ok: bool, _m: Dictionary):
-		_criando = false
-		_quadro = Engine.get_process_frames())
+	t.fechou.connect(
+		func(_ok: bool, _m: Dictionary):
+			_criando = false
+			_quadro = Engine.get_process_frames()
+	)
 
 
 func _apagar() -> void:
@@ -179,11 +183,25 @@ func _desenhar() -> void:
 			_tela.draw_texture_rect(ic, Rect2(q.position + Vector2(8, 64), Vector2(16, 16)), false)
 		_txt(q.position + Vector2(28, 76), str(arma.get("nome", "")), 8, Color(1, 0.9, 0.5), 168, HORIZONTAL_ALIGNMENT_LEFT)
 		var s := Construcao.stats(h, {}, {})
-		_txt(q.position + Vector2(8, 92), "Vida %d  Dano %d%%" % [roundi(s.vida_max), roundi(s.dano * 100.0)], 8, Color(0.82, 0.85, 0.95), 190, HORIZONTAL_ALIGNMENT_LEFT)
+		_txt(
+			q.position + Vector2(8, 92),
+			"Vida %d  Dano %d%%" % [roundi(s.vida_max), roundi(s.dano * 100.0)],
+			8,
+			Color(0.82, 0.85, 0.95),
+			190,
+			HORIZONTAL_ALIGNMENT_LEFT
+		)
 		var f: Dictionary = h.get("ficha", {})
 		var def := str(f.get("defeito", ""))
 		if def != "":
-			_txt(q.position + Vector2(8, 106), "Defeito: " + str(Criacao.defeitos().get(def, {}).get("nome", def)), 8, Color(1, 0.65, 0.5), 190, HORIZONTAL_ALIGNMENT_LEFT)
+			_txt(
+				q.position + Vector2(8, 106),
+				"Defeito: " + str(Criacao.defeitos().get(def, {}).get("nome", def)),
+				8,
+				Color(1, 0.65, 0.5),
+				190,
+				HORIZONTAL_ALIGNMENT_LEFT
+			)
 		else:
 			_txt(q.position + Vector2(8, 106), "Sem defeito", 8, Color(0.5, 0.52, 0.62), 190, HORIZONTAL_ALIGNMENT_LEFT)
 	_txt(Vector2(0, 346), "Setas: vaga   Enter: jogar ou criar   B: baú   Delete: apagar   Esc: voltar", 8, Color(0.55, 0.55, 0.62))

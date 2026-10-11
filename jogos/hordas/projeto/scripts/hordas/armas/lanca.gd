@@ -3,11 +3,11 @@ extends RefCounted
 ## "quantidade" = estocadas seguidas, cada uma num alvo. A evolução tem ponta de brasa.
 ## Atributos: alcance, largura, dano, quantidade, area. Módulo de comportamento de arma (veja armas.gd e pistolas.gd).
 
-const DUR := 0.22   # quanto tempo a lança fica esticada (vai e volta)
+const DUR := 0.22  # quanto tempo a lança fica esticada (vai e volta)
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
-static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:   # `d` = definição da arma (a mira lê o campo `mira` dela)
+static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:  # `d` = definição da arma (a mira lê o campo `mira` dela)
 	a.t -= dt
 	if a.t > 0:
 		return
@@ -15,9 +15,9 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 	var c: Vector2 = w.dono.centro()
 	var q := int(s.quantidade)
 	var alcance := float(s.get("alcance", 140)) * float(s.area)
-	var mira: Array = w.mirar(c, q, alcance + 60.0, d)   # direcional (#126): vazio = sem entrada de mira, vale o mais perto
+	var mira: Array = w.mirar(c, q, alcance + 60.0, d)  # direcional (#126): vazio = sem entrada de mira, vale o mais perto
 	var alvos: Array = [] if not mira.is_empty() else w.campo.n_mais_perto(c, q, alcance + 60.0)
-	var rm: Dictionary = s.get("comp", {}).get("lanca_ramos", {})   # fusão Lança Sanguessuga: pontas laterais e roubo de vida
+	var rm: Dictionary = s.get("comp", {}).get("lanca_ramos", {})  # fusão Lança Sanguessuga: pontas laterais e roubo de vida
 	for i in q:
 		var dir := Vector2(w.dono.lado, 0)
 		if not mira.is_empty():
@@ -29,9 +29,22 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 			var ang := float(rm.get("angulo", 0.5)) * (1.0 if r % 2 == 0 else -1.0) * (1 + r / 2)
 			dirs.append([dir.rotated(ang), float(rm.get("alcance_mult", 0.75)), float(rm.get("dano_mult", 0.6))])
 		for dd in dirs:
-			w.especiais.append({"tipo": "lanca", "espera": i * 0.12, "t": DUR, "dir": dd[0], "alcance": alcance * dd[1],
-				"largura": float(s.get("largura", 14)) * float(s.area), "dano": float(s.dano) * dd[2], "arma": a.id, "feito": false,
-				"evo": bool(d.get("evolucao", false)), "cura": int(rm.get("cura", 0)), "cura_max": int(rm.get("cura_max", 0))})
+			w.especiais.append(
+				{
+					"tipo": "lanca",
+					"espera": i * 0.12,
+					"t": DUR,
+					"dir": dd[0],
+					"alcance": alcance * dd[1],
+					"largura": float(s.get("largura", 14)) * float(s.area),
+					"dano": float(s.dano) * dd[2],
+					"arma": a.id,
+					"feito": false,
+					"evo": bool(d.get("evolucao", false)),
+					"cura": int(rm.get("cura", 0)),
+					"cura_max": int(rm.get("cura_max", 0))
+				}
+			)
 	w.golpe_corpo(mira[0] if not mira.is_empty() else ((alvos[0].pos - c).normalized() if not alvos.is_empty() else Vector2(w.dono.lado, 0)))
 
 
@@ -53,7 +66,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		if e.cura > 0 and n > 0:
 			w.dono.curar(float(e.cura * mini(n, e.cura_max)))
 		var ef = w.fx()
-		if ef:   # faíscas saindo da ponta na direção da estocada
+		if ef:  # faíscas saindo da ponta na direção da estocada
 			ef.faisca(fim, e.dir, Color(1.0, 0.75, 0.4) if e.evo else Color(0.8, 0.9, 1.0), 3, 220.0)
 			Cresc.fagulhas(w, fim, e.dir, Color(1.0, 0.75, 0.4) if e.evo else Color(0.8, 0.9, 1.0), e.get("tier", 0), 230.0)
 		if n > 0:
@@ -73,8 +86,8 @@ static func pintar(w, e: Dictionary) -> void:
 	var t: int = e.get("tier", 0)
 	var g := Cresc.grossura(t)
 	metal = Cresc.cor(metal, t)
-	w.draw_line(base, c + e.dir * e.alcance, Color(metal, 0.12 * ext * g), e.largura)   # a faixa que a estocada varre
-	if t >= 2:   # imagem fantasma da lança, um pouco atrás na estocada, e luz na ponta
+	w.draw_line(base, c + e.dir * e.alcance, Color(metal, 0.12 * ext * g), e.largura)  # a faixa que a estocada varre
+	if t >= 2:  # imagem fantasma da lança, um pouco atrás na estocada, e luz na ponta
 		for k in range(int(round(float(Cresc.fx(t).imagens) * Cresc.fator())), 0, -1):
 			var pk: Vector2 = c + e.dir * e.alcance * ext * (1.0 - 0.12 * k)
 			w.draw_line(base.floor(), pk.floor(), Color(metal, 0.3 / k), 2.0 * g)

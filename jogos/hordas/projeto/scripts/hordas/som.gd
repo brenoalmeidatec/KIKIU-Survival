@@ -3,8 +3,8 @@ extends Node
 
 const VOZES := 12
 var _players: Array[AudioStreamPlayer] = []
-var _atual := AudioStreamPlayer.new()   # a faixa que toca (ou que está entrando)
-var _saida := AudioStreamPlayer.new()   # a faixa que está saindo no crossfade
+var _atual := AudioStreamPlayer.new()  # a faixa que toca (ou que está entrando)
+var _saida := AudioStreamPlayer.new()  # a faixa que está saindo no crossfade
 var _g_atual := 1.0
 var _g_saida := 0.0
 var duracao_fade := 1.5

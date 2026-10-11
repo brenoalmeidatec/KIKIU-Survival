@@ -30,7 +30,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 
 
 static func pintar(w, e: Dictionary) -> void:
-	var f: float = e.t / DUR                   # 1 no começo, 0 no fim
+	var f: float = e.t / DUR  # 1 no começo, 0 no fim
 	var p: Vector2 = e.pos.floor()
 	var r: float = e.r * (1.0 - f * 0.85)
 	# raios de luz saindo dele (o "brilho" de quem se acha)
@@ -47,8 +47,12 @@ static func pintar(w, e: Dictionary) -> void:
 		var a := TAU * i / 8.0 + (1.0 - f) * 1.5
 		var s := p + Vector2.from_angle(a) * r
 		var t := 2.0 + 3.0 * f
-		w.draw_colored_polygon(PackedVector2Array([s + Vector2(0, -t), s + Vector2(t * 0.35, 0), s + Vector2(0, t), s + Vector2(-t * 0.35, 0)]), Color(BRANCO, f))
-		w.draw_colored_polygon(PackedVector2Array([s + Vector2(-t, 0), s + Vector2(0, t * 0.35), s + Vector2(t, 0), s + Vector2(0, -t * 0.35)]), Color(BRANCO, f))
+		w.draw_colored_polygon(
+			PackedVector2Array([s + Vector2(0, -t), s + Vector2(t * 0.35, 0), s + Vector2(0, t), s + Vector2(-t * 0.35, 0)]), Color(BRANCO, f)
+		)
+		w.draw_colored_polygon(
+			PackedVector2Array([s + Vector2(-t, 0), s + Vector2(0, t * 0.35), s + Vector2(t, 0), s + Vector2(0, -t * 0.35)]), Color(BRANCO, f)
+		)
 
 
 static func fundo(_w, _a: Dictionary, _s: Dictionary) -> void:

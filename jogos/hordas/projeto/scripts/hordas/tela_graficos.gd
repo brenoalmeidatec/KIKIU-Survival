@@ -16,10 +16,10 @@ const W := 640.0
 const H := 360.0
 const ESQ := 40.0
 const DIR := 600.0
-const TOPO_LISTA := 96.0      # y da primeira linha rolável
-const BASE_LISTA := 330.0     # y onde a lista rolável termina (o rodapé fica abaixo)
-const ALT_LISTA := 234.0      # BASE_LISTA - TOPO_LISTA
-const BARRA_X := 400.0        # início da barra do controle deslizante
+const TOPO_LISTA := 96.0  # y da primeira linha rolável
+const BASE_LISTA := 330.0  # y onde a lista rolável termina (o rodapé fica abaixo)
+const ALT_LISTA := 234.0  # BASE_LISTA - TOPO_LISTA
+const BARRA_X := 400.0  # início da barra do controle deslizante
 const BARRA_W := 120.0
 const PERFIS := ["baixo", "medio", "alto"]
 const NOMES_PERFIL := {"baixo": "Baixo", "medio": "Médio", "alto": "Alto", "personalizado": "Personalizado"}
@@ -40,18 +40,18 @@ var api = null
 ## Perfil para aplicar ao abrir (prints: --perfil=baixo). "" não mexe em nada.
 var perfil_inicial := ""
 
-var _opcoes: Array = []        # opções da API, na ordem do json
-var _valores := {}             # chave -> valor atual (lido da API em _recarregar)
+var _opcoes: Array = []  # opções da API, na ordem do json
+var _valores := {}  # chave -> valor atual (lido da API em _recarregar)
 var _perfil := "personalizado"
-var _linhas: Array = []        # o que se desenha no conteúdo rolável: cabeçalhos de seção e opções
-var _foco: Array = []          # o que o teclado percorre: perfil, detectar, opções e voltar
-var _sel := 0                  # índice em _foco
+var _linhas: Array = []  # o que se desenha no conteúdo rolável: cabeçalhos de seção e opções
+var _foco: Array = []  # o que o teclado percorre: perfil, detectar, opções e voltar
+var _sel := 0  # índice em _foco
 var _rolagem := 0.0
 var _rolagem_max := 0.0
-var _quadro := -1              # quadro em que a tela abriu: a tecla ou clique que a abriu não vale aqui
-var _arrastando := -1          # índice em _foco do controle deslizante que o mouse arrasta
+var _quadro := -1  # quadro em que a tela abriu: a tecla ou clique que a abriu não vale aqui
+var _arrastando := -1  # índice em _foco do controle deslizante que o mouse arrasta
 var _mouse_ult := Vector2(-1, -1)
-var _msg := ""                 # aviso curto (detectar)
+var _msg := ""  # aviso curto (detectar)
 var _msg_ate := 0.0
 var _lista: Control
 
@@ -72,7 +72,7 @@ func _ready() -> void:
 	draw.connect(_desenhar)
 	_opcoes = api.g_opcoes()
 	if perfil_inicial != "":
-		api.g_perfil_temporario(perfil_inicial)   # só na memória: o print não grava nas opções do jogador
+		api.g_perfil_temporario(perfil_inicial)  # só na memória: o print não grava nas opções do jogador
 	if api.has_signal("graficos_mudou"):
 		api.graficos_mudou.connect(_recarregar)
 	_montar_layout()
@@ -85,6 +85,7 @@ func _exit_tree() -> void:
 
 
 # ---------- dados ----------
+
 
 ## Lê da API o perfil e o valor de cada opção. Chamado ao abrir e a cada mudança.
 func _recarregar(_x = null) -> void:
@@ -125,9 +126,8 @@ func _montar_layout() -> void:
 			var nl := maxi(1, ceili(alt_ajuda / lh))
 			var h := 22.0 + (nl - 1) * lh + 6.0
 			var li := _linhas.size()
-			_linhas.append({"tipo": "opcao", "y": y, "h": h, "op": i, "peso": peso, "tag_w": tag_w,
-				"x_ajuda": x_ajuda, "larg_ajuda": larg_ajuda})
-			var topo := y_cab if primeira else y   # a 1ª opção de cada seção leva o cabeçalho junto
+			_linhas.append({"tipo": "opcao", "y": y, "h": h, "op": i, "peso": peso, "tag_w": tag_w, "x_ajuda": x_ajuda, "larg_ajuda": larg_ajuda})
+			var topo := y_cab if primeira else y  # a 1ª opção de cada seção leva o cabeçalho junto
 			primeira = false
 			_foco.append({"tipo": "opcao", "linha": li, "top": topo, "bot": y + h})
 			y += h
@@ -160,6 +160,7 @@ func _ajustar(op: Dictionary, v: float) -> Variant:
 
 
 # ---------- ações (teclado, controle e mouse chamam estas) ----------
+
 
 func _mudar_perfil(d: int) -> void:
 	var i := PERFIS.find(_perfil)
@@ -290,13 +291,14 @@ func _clicar(q: int, btn: int) -> void:
 
 # ---------- entrada ----------
 
+
 func _process(_dt: float) -> void:
 	queue_redraw()
 	_lista.queue_redraw()
 	if Engine.get_process_frames() == _quadro:
 		return
 	var mp := get_local_mouse_position()
-	if mp != _mouse_ult:   # passar o mouse por cima escolhe (só se ele se mexeu, pra não brigar com o teclado)
+	if mp != _mouse_ult:  # passar o mouse por cima escolhe (só se ele se mexeu, pra não brigar com o teclado)
 		_mouse_ult = mp
 		var q := _item_em(mp)
 		if q >= 0 and q != _sel:
@@ -374,6 +376,7 @@ func _rect_foco(k: int) -> Rect2:
 
 # ---------- desenho ----------
 
+
 func _txt(ci: CanvasItem, p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := -1.0, alinhar := HORIZONTAL_ALIGNMENT_LEFT) -> void:
 	var f: Font = TEMA.default_font
 	ci.draw_string(f, p + Vector2(1, 1), s, alinhar, larg, tam, SOMBRA)
@@ -446,7 +449,7 @@ func _desenhar_opcao(l: Dictionary, y: float, sel: bool) -> void:
 		_lista.draw_rect(Rect2(BARRA_X, y + 5, BARRA_W, 6), Color(0.27, 0.27, 0.38))
 		_lista.draw_rect(Rect2(BARRA_X, y + 5, BARRA_W * frac, 6), Color(0.3, 0.6, 1.0))
 		_lista.draw_rect(Rect2(BARRA_X + BARRA_W * frac - 2, y + 2, 4, 12), Color.WHITE)
-		var txt_v := _fmt_num(v, float(op.get("passo", 1))) + str(op.get("unidade", ""))   # "%" e "s" vêm do graficos.json
+		var txt_v := _fmt_num(v, float(op.get("passo", 1))) + str(op.get("unidade", ""))  # "%" e "s" vêm do graficos.json
 		_txt(_lista, Vector2(DIR - 56, y + 10), txt_v, 8, cor_v, 56, HORIZONTAL_ALIGNMENT_RIGHT)
 	else:
 		_txt(_lista, Vector2(ESQ, y + 10), "< %s >" % _rotulo(op, valor), 8, cor_v, DIR - ESQ, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -454,7 +457,9 @@ func _desenhar_opcao(l: Dictionary, y: float, sel: bool) -> void:
 	var peso := str(l.peso)
 	_lista.draw_rect(Rect2(ESQ + 4, y + 13, float(l.tag_w), 11), PESO_COR[peso])
 	_lista.draw_string(TEMA.default_font, Vector2(ESQ + 8, y + 22), PESO_NOME[peso], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color(0.08, 0.06, 0.1))
-	_lista.draw_multiline_string(TEMA.default_font, Vector2(float(l.x_ajuda), y + 22), str(op.get("ajuda", "")), HORIZONTAL_ALIGNMENT_LEFT, float(l.larg_ajuda), 8, -1, COR_AJUDA)
+	_lista.draw_multiline_string(
+		TEMA.default_font, Vector2(float(l.x_ajuda), y + 22), str(op.get("ajuda", "")), HORIZONTAL_ALIGNMENT_LEFT, float(l.larg_ajuda), 8, -1, COR_AJUDA
+	)
 
 
 ## Posição de um valor na lista de valores do menu. Número compara por valor (75 e 75.0 são o mesmo).

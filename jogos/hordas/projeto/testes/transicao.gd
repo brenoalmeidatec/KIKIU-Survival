@@ -15,7 +15,7 @@ func ok(cond: bool, msg: String) -> void:
 func medir(atraso_ms: int, quadro_longo_ms := 0) -> float:
 	await get_tree().process_frame
 	if quadro_longo_ms > 0:
-		OS.delay_msec(quadro_longo_ms)   # a troca de tela carregando coisa pesada no mesmo quadro
+		OS.delay_msec(quadro_longo_ms)  # a troca de tela carregando coisa pesada no mesmo quadro
 	var t0 := Time.get_ticks_usec()
 	Transicao.revelar()
 	var n := 0
@@ -48,7 +48,7 @@ func _ready() -> void:
 	# da cortina; a mediana mostra o custo típico e ainda pega uma regressão de verdade (que atinge todos os quadros).
 	var amostras: Array = []
 	var pior := 0
-	for i in 5:   # 5 cortinas inteiras a ~60 fps
+	for i in 5:  # 5 cortinas inteiras a ~60 fps
 		await get_tree().process_frame
 		Transicao.revelar()
 		while Transicao.ativa():

@@ -5,16 +5,16 @@ extends CanvasLayer
 ## "confirmar", espaço seria dash e WASD andaria (o Godot registra a ação antes de qualquer _input poder impedir).
 
 const MAX_TXT := 80
-const MOSTRAR := 6            # linhas visíveis
-const VIDA := 9.0             # segundos que uma mensagem fica na tela (fechado)
+const MOSTRAR := 6  # linhas visíveis
+const VIDA := 9.0  # segundos que uma mensagem fica na tela (fechado)
 const W := 640.0
 const H := 360.0
 
 var digitando := false
-var mensagens: Array = []     # {quem, txt, cor, t}
+var mensagens: Array = []  # {quem, txt, cor, t}
 var _txt := ""
 var _tela := Control.new()
-var _guardadas := {}          # ação -> [InputEventKey] tiradas enquanto digita
+var _guardadas := {}  # ação -> [InputEventKey] tiradas enquanto digita
 var _t := 0.0
 
 
@@ -139,8 +139,8 @@ func _desenhar() -> void:
 		return
 	var f: Font = Dados.fonte
 	var lobby := _no_lobby()
-	var y := (H - 48.0 if digitando else H - 26.0) - (12.0 if lobby else 0.0)   # no lobby, as dicas têm 2 linhas
-	var n := 4 if lobby else MOSTRAR   # no lobby os cartões dos jogadores ocupam o meio da tela
+	var y := (H - 48.0 if digitando else H - 26.0) - (12.0 if lobby else 0.0)  # no lobby, as dicas têm 2 linhas
+	var n := 4 if lobby else MOSTRAR  # no lobby os cartões dos jogadores ocupam o meio da tela
 	var vis := mensagens.slice(maxi(0, mensagens.size() - n))
 	vis.reverse()
 	for m in vis:

@@ -11,7 +11,7 @@ if ! command -v gdformat >/dev/null 2>&1; then
   exit 2
 fi
 if [ "${1:-}" = "--check" ]; then
-  gdformat --check "${ALVO[@]}"
+  gdformat -l 160 --check "${ALVO[@]}"
 else
-  gdformat "${ALVO[@]}"
+  gdformat -l 160 "${ALVO[@]}"
 fi

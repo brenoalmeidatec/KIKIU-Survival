@@ -161,6 +161,7 @@ static func de_texto(txt: String) -> Dictionary:
 
 # ---------------------------------------------------------------- baú
 
+
 ## Baú limpo: só ids que existem, quantidades inteiras e positivas.
 static func bau_limpo(b) -> Dictionary:
 	var r := {}
@@ -218,7 +219,7 @@ static func trazer(b: Dictionary, sobra: Dictionary, achados: Array) -> Dictiona
 	var novo := b.duplicate()
 	var trazidos := {}
 	var perdidos := {}
-	var fila := []   # [id, quantidade]
+	var fila := []  # [id, quantidade]
 	for id in sobra.get("itens", {}):
 		fila.append([str(id), int(sobra.itens[id])])
 	if str(sobra.get("amuleto", "")) != "":
@@ -328,6 +329,7 @@ static func linhas(id: String) -> Array:
 
 # ---------------------------------------------------------------- ícone desenhado no código (sem arte nova)
 
+
 ## Desenha o ícone do item (glifo e cor do itens.json) no retângulo r de qualquer CanvasItem. fraco = apagado (acabou).
 static func desenhar_icone(c: CanvasItem, id: String, r: Rect2, fraco := false) -> void:
 	var d := item(id)
@@ -386,7 +388,9 @@ static func desenhar_icone(c: CanvasItem, id: String, r: Rect2, fraco := false) 
 			c.draw_line(o + Vector2(3, 1) * u, o + Vector2(8, 7) * u, Color(0.7, 0.7, 0.75), maxf(1.0, u * 0.8))
 			c.draw_line(o + Vector2(13, 1) * u, o + Vector2(8, 7) * u, Color(0.7, 0.7, 0.75), maxf(1.0, u * 0.8))
 			c.draw_colored_polygon(PackedVector2Array([o + Vector2(8, 6) * u, o + Vector2(13, 11) * u, o + Vector2(8, 16) * u, o + Vector2(3, 11) * u]), escuro)
-			c.draw_colored_polygon(PackedVector2Array([o + Vector2(8, 7.5) * u, o + Vector2(11.5, 11) * u, o + Vector2(8, 14.5) * u, o + Vector2(4.5, 11) * u]), cor)
+			c.draw_colored_polygon(
+				PackedVector2Array([o + Vector2(8, 7.5) * u, o + Vector2(11.5, 11) * u, o + Vector2(8, 14.5) * u, o + Vector2(4.5, 11) * u]), cor
+			)
 			R.call(7, 9, 2, 2, Color(1, 1, 1, 0.6))
 		_:
 			R.call(3, 3, 10, 10, cor)

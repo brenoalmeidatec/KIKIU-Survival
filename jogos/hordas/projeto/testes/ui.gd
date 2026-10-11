@@ -24,7 +24,7 @@ func nova() -> Node:
 	a.bot = true
 	add_child(a)
 	await esperar(0.2)
-	a.xp = -1.0e12   # sem subir de nível: o robô escolheria carta e mudaria a build no meio do teste
+	a.xp = -1.0e12  # sem subir de nível: o robô escolheria carta e mudaria a build no meio do teste
 	return a
 
 
@@ -84,19 +84,22 @@ func _numeros() -> void:
 	ef.numero(Vector2(0, 0), 10.0)
 	ef.numero(Vector2(5, 3), 7.0)
 	ef.numero(Vector2(-8, 0), 5.0)
-	ok(ef.numeros.size() == 1 and is_equal_approx(ef.numeros[0].valor, 22.0) and ef.numeros[0].txt == "22", "3 acertos juntos viram 1 número de 22 (%d números, txt %s)" % [ef.numeros.size(), ef.numeros[0].txt])
+	ok(
+		ef.numeros.size() == 1 and is_equal_approx(ef.numeros[0].valor, 22.0) and ef.numeros[0].txt == "22",
+		"3 acertos juntos viram 1 número de 22 (%d números, txt %s)" % [ef.numeros.size(), ef.numeros[0].txt]
+	)
 	ef.numero(Vector2(200, 0), 4.0)
 	ok(ef.numeros.size() == 2, "acerto longe não soma")
 	ef.numero(Vector2(3, 0), 6.0, Color.WHITE, true)
 	ok(ef.numeros.size() == 2 and ef.numeros[0].txt == "28!" and ef.numeros[0].tam == 16, "crítico se soma ao grupo e vira crítico (%s)" % ef.numeros[0].txt)
 	ef.numero(Vector2(0, 0), 3.0, Color(1, 0.6, 0.55))
 	ok(ef.numeros.size() == 3, "cor diferente (dano recebido) não soma com o de dano")
-	ef.atualizar(0.2)   # a janela de 0,15 s fechou
+	ef.atualizar(0.2)  # a janela de 0,15 s fechou
 	ef.numero(Vector2(0, 0), 10.0)
 	ok(ef.numeros.size() == 4, "depois da janela nasce número novo (%d)" % ef.numeros.size())
 	ef.limpar()
 	var t0 := Time.get_ticks_usec()
-	for i in 2000:   # 500 vírus apanhando 4x: o agrupamento mantém a lista curta e rápida
+	for i in 2000:  # 500 vírus apanhando 4x: o agrupamento mantém a lista curta e rápida
 		ef.numero(Vector2(randf() * 300, randf() * 200), 3.0)
 	var ms := (Time.get_ticks_usec() - t0) / 1000.0
 	ok(ef.numeros.size() <= Efeitos.MAX_NUMEROS and ms < 150.0, "2000 acertos: %d números, %.1f ms" % [ef.numeros.size(), ms])
@@ -121,7 +124,7 @@ func _dps() -> void:
 	await esperar(1.0)
 	var tm := float(a.tempo_arma.get(id, 0.0))
 	ok(tm > 0.7 and tm < 1.6, "tempo com a arma conta (%.2f s)" % tm)
-	var guarda := []   # lambda copia variáveis locais: o array é o jeito de devolver o resumo
+	var guarda := []  # lambda copia variáveis locais: o array é o jeito de devolver o resumo
 	a.terminou.connect(func(r): guarda.append(r))
 	a._fim(false)
 	await esperar(1.5)
@@ -141,14 +144,24 @@ func _comparacao() -> void:
 	var delta: Dictionary = Dados.item("pendrive").niveis[0]
 	for k in delta:
 		var linha := c.filter(func(l): return l.rot == Interface._rot(str(k)))
-		ok(linha.size() == 1 and linha[0].antes == Interface._num(float(base.get(k, 0))) and linha[0].depois == Interface._num(float(base.get(k, 0)) + float(delta[k])), "pendrive nv2 %s: antes/depois batem com o JSON" % k)
+		ok(
+			(
+				linha.size() == 1
+				and linha[0].antes == Interface._num(float(base.get(k, 0)))
+				and linha[0].depois == Interface._num(float(base.get(k, 0)) + float(delta[k]))
+			),
+			"pendrive nv2 %s: antes/depois batem com o JSON" % k
+		)
 	var p := Interface.comparacao("passivo", "energetico", 2)
 	ok(p.size() == 1 and p[0].antes == "+10%" and p[0].depois == "+20%" and p[0].bom, "energético nv2: +10%% > +20%% (%s)" % [p])
 	var o := Interface.comparacao("passivo", "overclock", 1)
 	ok(o.size() == 1 and o[0].antes == "" and o[0].depois == "-8%" and o[0].bom, "overclock: recarga menor é bom (%s)" % [o])
 	var e := Interface.comparacao("equipamento", "cabeca_guerreiro", 1)
 	ok(e.size() == 1 and e[0].depois == "+25", "equipamento mostra o bônus (%s)" % [e])
-	ok(Interface.comparacao("evolucao", "x", 1).is_empty() and Interface.comparacao("arma", "inexistente", 2).is_empty(), "evolução e id desconhecido: sem linhas, sem erro")
+	ok(
+		Interface.comparacao("evolucao", "x", 1).is_empty() and Interface.comparacao("arma", "inexistente", 2).is_empty(),
+		"evolução e id desconhecido: sem linhas, sem erro"
+	)
 	ok(Interface.comparacao("arma", "pendrive", 99).is_empty(), "nível além do máximo: sem linhas")
 
 

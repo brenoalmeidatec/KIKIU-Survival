@@ -7,17 +7,20 @@ const Criacao := preload("res://scripts/hordas/criacao.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
 
+
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
-		if not InputMap.has_action(acao):   # sem o main.gd, ninguém registrou as teclas
+		if not InputMap.has_action(acao):  # sem o main.gd, ninguém registrou as teclas
 			InputMap.add_action(acao)
 	# arquivo de save PRÓPRIO deste teste desde o começo (o criacao2 roda junto e usa o dele; nunca o heroi_criado.json de verdade)
 	Criacao.arquivo = "user://teste_heroi_criado.json"

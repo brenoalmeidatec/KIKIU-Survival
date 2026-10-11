@@ -87,7 +87,7 @@ func _ready() -> void:
 			if v.espelho or v.dr.size.x < 0.0:
 				espelhou += 1
 		if q == 3:
-			j.position = origem + Vector2(260, 0)   # o herói passa pro outro lado de todos
+			j.position = origem + Vector2(260, 0)  # o herói passa pro outro lado de todos
 	ok(min_l >= 0.9, "vírus: menor largura = %.2f (>= 0.9, nunca uma linha)" % min_l)
 	ok(espelhou == 0, "vírus nunca espelham nem desenham com largura negativa (%d vezes)" % espelhou)
 	j.position = origem
@@ -100,7 +100,7 @@ func _ready() -> void:
 	for q in 4:
 		await _quadro(I)
 	for q in 40:
-		vc.pos += Vector2(2.5, 0)   # anda pra direita no desenho
+		vc.pos += Vector2(2.5, 0)  # anda pra direita no desenho
 		await _quadro(I)
 	ok(vc.vista == 2 and not vc.espelho, "cliente online: andando pra direita mostra o perfil direito (vista %d, espelho %s)" % [vc.vista, str(vc.espelho)])
 	for q in 40:
@@ -118,16 +118,16 @@ func _virada(I, j, centro: Vector2, tipo: String, rota: String) -> Dictionary:
 	I.limpar()
 	var v = I.criar(tipo, centro)
 	v.t_nasc = 0.0
-	var ini := -PI * 0.5   # a = ângulo a partir de "embaixo do monstro" (frente): -90 = esquerda, 0 = embaixo, +90 = direita, 180 = em cima
+	var ini := -PI * 0.5  # a = ângulo a partir de "embaixo do monstro" (frente): -90 = esquerda, 0 = embaixo, +90 = direita, 180 = em cima
 	var passos := 90
 	var res := {"min_larg": 9.0, "pulos": 0, "setores": {}, "trocas": 0}
 	j.position = centro + Vector2(sin(ini), cos(ini)) * 110.0
-	for q in 5:   # na primeira passada ele já olha direto pro herói
+	for q in 5:  # na primeira passada ele já olha direto pro herói
 		await _quadro(I)
 	var ant: int = v.setor
 	for q in passos + 40:
 		var u := minf(1.0, float(q) / passos)
-		var a := ini + u * PI if rota == "frente" else ini - u * PI   # costas: -90 -> -270 (= +90) passando por cima
+		var a := ini + u * PI if rota == "frente" else ini - u * PI  # costas: -90 -> -270 (= +90) passando por cima
 		j.position = centro + Vector2(sin(a), cos(a)) * 110.0
 		v.flash = 0.0
 		await _quadro(I)

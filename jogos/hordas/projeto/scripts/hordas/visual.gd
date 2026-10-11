@@ -8,21 +8,21 @@ extends RefCounted
 ## (degraus limpos, como pixel art desenhado), e guardadas num atlas único. Assim cada sombra é só um
 ## "carimbo" da mesma textura, e o Godot junta todas num lote de desenho.
 
-const ACHATA := 0.42                          # altura da sombra em relação ao sprite
-const INCLINA := 0.55                         # quanto a sombra deita pra direita (luz vem da esquerda)
-const COR := Color(0.13, 0.1, 0.22, 0.4)      # sombra fria e transparente (combina com a paleta clara)
+const ACHATA := 0.42  # altura da sombra em relação ao sprite
+const INCLINA := 0.55  # quanto a sombra deita pra direita (luz vem da esquerda)
+const COR := Color(0.13, 0.1, 0.22, 0.4)  # sombra fria e transparente (combina com a paleta clara)
 const COR_CONTATO := Color(0.1, 0.07, 0.16, 0.38)
 const ATLAS := 1024
-const MANCHA := Rect2(0, 0, 24, 8)            # a mancha de contato fica no canto do atlas
+const MANCHA := Rect2(0, 0, 24, 8)  # a mancha de contato fica no canto do atlas
 
 static var _atlas: Image
 static var _atlas_tex: ImageTexture
 static var _atlas_sujo := false
-static var _assadas := {}                     # Vector4i(textura, x, y, largura*2+espelho) -> região no atlas
-static var _imagens := {}                     # textura -> Image (pra não copiar a folha inteira a cada quadro)
-static var _bytes := {}                       # textura -> bytes RGBA8 da folha (ler o alfa por índice custa bem menos que get_pixel)
-static var _quadro_assado := -1               # quadro do motor em que o orçamento abaixo começou
-static var _us_assado := 0                    # microssegundos gastos assando sombras neste quadro
+static var _assadas := {}  # Vector4i(textura, x, y, largura*2+espelho) -> região no atlas
+static var _imagens := {}  # textura -> Image (pra não copiar a folha inteira a cada quadro)
+static var _bytes := {}  # textura -> bytes RGBA8 da folha (ler o alfa por índice custa bem menos que get_pixel)
+static var _quadro_assado := -1  # quadro do motor em que o orçamento abaixo começou
+static var _us_assado := 0  # microssegundos gastos assando sombras neste quadro
 static var _enviar_ligado := false
 ## No máximo ~2,5 ms por quadro assando sombras. Antes, cada sombra nova (cada vista x quadro x espelho de cada monstro)
 ## assava na hora E reenviava o atlas inteiro (1024x1024 RGBA = 4 MB) pra placa de vídeo: com a horda entrando, era o
@@ -30,7 +30,7 @@ static var _enviar_ligado := false
 ## usa a sombra calculada na hora (barata, só uma textura com transformação) e vira assada nos quadros seguintes;
 ## o envio do atlas é um só por quadro, logo antes de desenhar.
 const ORCAMENTO_US := 2500
-static var _cursor := Vector2i.ZERO          # empacotamento em prateleiras
+static var _cursor := Vector2i.ZERO  # empacotamento em prateleiras
 static var _prateleira := 0
 
 
@@ -75,7 +75,7 @@ static func contato(ci: CanvasItem, pe: Vector2, largura: float, altura := 0.0) 
 
 ## Sombra completa de um boneco com Sprite2D (folha 9 colunas x 4 linhas, pé em (0, 0)).
 static func sombra_boneco(ci: CanvasItem, spr: Sprite2D) -> void:
-	if spr.texture == null:   # (não olha spr.visible: o boneco pisca ao apanhar, a sombra não)
+	if spr.texture == null:  # (não olha spr.visible: o boneco pisca ao apanhar, a sombra não)
 		return
 	var w := spr.texture.get_width() / float(spr.hframes)
 	var h := spr.texture.get_height() / float(spr.vframes)
@@ -137,7 +137,7 @@ static func _assada(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
 		_quadro_assado = quadro
 		_us_assado = 0
 	if _us_assado > ORCAMENTO_US:
-		return Rect2()   # sem orçamento neste quadro: não registra, tenta de novo no próximo
+		return Rect2()  # sem orçamento neste quadro: não registra, tenta de novo no próximo
 	var t0 := Time.get_ticks_usec()
 	_preparar()
 	_assadas[chave] = Rect2()
@@ -153,7 +153,7 @@ static func _assada(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
 		_cursor = Vector2i(0, _cursor.y + _prateleira + 1)
 		_prateleira = 0
 	if _cursor.y + tam.y > ATLAS:
-		return Rect2()   # atlas cheio: sombra() cai no jeito calculado na hora
+		return Rect2()  # atlas cheio: sombra() cai no jeito calculado na hora
 	var o := _cursor
 	for y in h:
 		var alt := h - 1 - y
@@ -161,11 +161,11 @@ static func _assada(tex: Texture2D, src: Rect2, espelho: bool) -> Rect2:
 		var dx := int(round(alt * INCLINA))
 		for x in w:
 			var sx := int(src.position.x) + (w - 1 - x if espelho else x)
-			if dados[((int(src.position.y) + y) * larg_img + sx) * 4 + 3] >= 128:   # alfa > 0,5
+			if dados[((int(src.position.y) + y) * larg_img + sx) * 4 + 3] >= 128:  # alfa > 0,5
 				_atlas.set_pixel(o.x + x + dx, o.y + dy, COR)
 	_cursor.x += tam.x + 1
 	_prateleira = maxi(_prateleira, tam.y)
-	_atlas_sujo = true   # o envio pra placa é um só por quadro (_enviar)
+	_atlas_sujo = true  # o envio pra placa é um só por quadro (_enviar)
 	if not _enviar_ligado:
 		_enviar_ligado = true
 		RenderingServer.frame_pre_draw.connect(_enviar)
@@ -182,9 +182,9 @@ static func _enviar() -> void:
 
 
 # ---------- chegada do personagem no começo da fase (#32 item 6) ----------
-const CHEGADA_TEMPO := 0.6      # segundos de queda + pouso
-const CHEGADA_POUSO := 0.65     # em que ponto (0..1) da chegada ele encosta no chão
-const CHEGADA_ALTURA := 110.0   # px de onde ele cai (a abertura de fase cai de mais alto)
+const CHEGADA_TEMPO := 0.6  # segundos de queda + pouso
+const CHEGADA_POUSO := 0.65  # em que ponto (0..1) da chegada ele encosta no chão
+const CHEGADA_ALTURA := 110.0  # px de onde ele cai (a abertura de fase cai de mais alto)
 
 
 ## Altura (px acima do chão) do personagem no ponto p (0..1) da chegada: cai acelerando, pousa e quica de leve.

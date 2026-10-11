@@ -7,8 +7,8 @@ extends Node
 ## (primeiro quadro depois do qual 10 seguidos ficam abaixo de 1,5x a mediana do fim) e o tempo perdido (soma do que passou da mediana).
 const Perf := preload("res://scripts/hordas/perf.gd")
 var _args := {}
-var _ini := 0          # início do quadro (este nó tem a prioridade mais baixa)
-var _fim_script := 0   # fim dos _process (sinal frame_pre_draw do RenderingServer)
+var _ini := 0  # início do quadro (este nó tem a prioridade mais baixa)
+var _fim_script := 0  # fim dos _process (sinal frame_pre_draw do RenderingServer)
 var _scripts: Array[float] = []
 
 
@@ -22,7 +22,7 @@ func _ready() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
 	Config.g_perfil_temporario(str(_args.get("perfil", "alto")))
-	Config.temporario("pausar_fora", false)   # sem foco (outra janela na frente) a partida pausaria e a rodada ficaria inválida (logica < 1)
+	Config.temporario("pausar_fora", false)  # sem foco (outra janela na frente) a partida pausaria e a rodada ficaria inválida (logica < 1)
 	var t0 := Time.get_ticks_usec()
 	var m = load("res://main.tscn").instantiate()
 	m._args["semente"] = "7"
@@ -40,7 +40,7 @@ func _ready() -> void:
 	await _medir("trocar_tela", n, 0.0)
 	await get_tree().create_timer(0.5).timeout
 	t0 = Time.get_ticks_usec()
-	Perf.ligado = true   # custo por sistema nos primeiros quadros da partida (us acumulados em 4 quadros)
+	Perf.ligado = true  # custo por sistema nos primeiros quadros da partida (us acumulados em 4 quadros)
 	m._comecar("hazaki")
 	var sinc := (Time.get_ticks_usec() - t0) / 1000.0
 	await _medir("partida", n, sinc)
@@ -85,4 +85,9 @@ func _medir(nome: String, n: int, sinc_ms: float) -> void:
 	var primeiros := ""
 	for i in 12:
 		primeiros += "%.1f(%.1f) " % [ts[i], _scripts[i]]
-	print("INICIO %s sinc_ms=%.1f pior_ms=%.1f mediana_fim_ms=%.2f estabiliza_no_quadro=%d tempo_perdido_ms=%.0f total(script)=[%s]" % [nome, sinc_ms, mx, med, estab, perdido, primeiros.strip_edges()])
+	print(
+		(
+			"INICIO %s sinc_ms=%.1f pior_ms=%.1f mediana_fim_ms=%.2f estabiliza_no_quadro=%d tempo_perdido_ms=%.0f total(script)=[%s]"
+			% [nome, sinc_ms, mx, med, estab, perdido, primeiros.strip_edges()]
+		)
+	)

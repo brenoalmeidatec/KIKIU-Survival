@@ -4,8 +4,8 @@ extends RefCounted
 ## os inimigos lentos. Atributos: quantidade, dano, duracao, raio (gatilho), explosao (raio do estouro), area.
 ## Módulo de comportamento de arma (veja armas.gd e pistolas.gd).
 
-const ARMA := 0.4    # tempo até a runa armar
-const BOOM := 0.25   # duração do estouro na tela
+const ARMA := 0.4  # tempo até a runa armar
+const BOOM := 0.25  # duração do estouro na tela
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
@@ -17,15 +17,27 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 	var c: Vector2 = w.dono.centro()
 	for i in int(s.quantidade):
 		var p: Vector2 = c + Vector2.from_angle(randf() * TAU) * randf_range(36.0, 120.0)
-		w.especiais.append({"tipo": "runas", "pos": p, "vida": float(s.duracao), "arma_t": ARMA, "boom": -1.0,
-			"gatilho": float(s.get("raio", 16)) * float(s.area), "explosao": float(s.get("explosao", 42)) * float(s.area),
-			"dano": float(s.dano), "lento": float(s.get("lentidao", 0.0)), "arma": a.id, "giro": randf() * TAU,
-			"cor": Color(1.0, 0.55, 0.9) if bool(d.get("evolucao", false)) else Color(0.95, 0.75, 0.35)})
+		w.especiais.append(
+			{
+				"tipo": "runas",
+				"pos": p,
+				"vida": float(s.duracao),
+				"arma_t": ARMA,
+				"boom": -1.0,
+				"gatilho": float(s.get("raio", 16)) * float(s.area),
+				"explosao": float(s.get("explosao", 42)) * float(s.area),
+				"dano": float(s.dano),
+				"lento": float(s.get("lentidao", 0.0)),
+				"arma": a.id,
+				"giro": randf() * TAU,
+				"cor": Color(1.0, 0.55, 0.9) if bool(d.get("evolucao", false)) else Color(0.95, 0.75, 0.35)
+			}
+		)
 	Som.tocar("queda", 0.1, 1.6, -14)
 
 
 static func passo(w, e: Dictionary, dt: float) -> bool:
-	if e.boom >= 0:   # estourando
+	if e.boom >= 0:  # estourando
 		e.boom -= dt
 		return e.boom > 0
 	e.vida -= dt
@@ -60,7 +72,7 @@ static func pintar(w, e: Dictionary) -> void:
 	var a: float = (0.55 + 0.3 * sin(e.vida * 6.0)) if armada else 0.3
 	var r: float = e.gatilho
 	var tr: int = e.get("tier", 0)
-	if armada:   # runa de tier alto brilha e solta brasas
+	if armada:  # runa de tier alto brilha e solta brasas
 		Cresc.brasas(w, p, r, e.cor, tr, w._t, fmod(e.giro, 1.0))
 	w.draw_set_transform(p, 0, Vector2(1, 0.55))
 	w.draw_arc(Vector2.ZERO, r, 0, TAU, 18, Color(e.cor, a), 1.5)

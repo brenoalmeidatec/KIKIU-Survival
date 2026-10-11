@@ -9,28 +9,43 @@ const DIRS := 16
 ## carregadas junto com o script (no começo da partida), pra transformação não dar engasgo no meio da horda
 const TEX := {
 	"cabeca": preload(PASTA + "cabeca.png"),
-	"corpo": preload(PASTA + "corpo.png"), "corpo_sem": preload(PASTA + "corpo_sem.png"),
-	"pernas_frente": preload(PASTA + "pernas_frente.png"), "pernas_frente_sem": preload(PASTA + "pernas_frente_sem.png"),
-	"pernas_tras": preload(PASTA + "pernas_tras.png"), "pernas_tras_sem": preload(PASTA + "pernas_tras_sem.png"),
-	"cauda": preload(PASTA + "cauda.png"), "cauda_sem": preload(PASTA + "cauda_sem.png"),
+	"corpo": preload(PASTA + "corpo.png"),
+	"corpo_sem": preload(PASTA + "corpo_sem.png"),
+	"pernas_frente": preload(PASTA + "pernas_frente.png"),
+	"pernas_frente_sem": preload(PASTA + "pernas_frente_sem.png"),
+	"pernas_tras": preload(PASTA + "pernas_tras.png"),
+	"pernas_tras_sem": preload(PASTA + "pernas_tras_sem.png"),
+	"cauda": preload(PASTA + "cauda.png"),
+	"cauda_sem": preload(PASTA + "cauda_sem.png"),
 }
 ## [folha, linha da folha] do pescoço à cauda (corpo.png: linhas 0..3 = gomo afinando)
-const CORRENTE := [["pernas_frente", 0], ["corpo", 0], ["corpo", 0], ["corpo", 1], ["pernas_tras", 0],
-	["corpo", 1], ["corpo", 2], ["corpo", 2], ["corpo", 3], ["corpo", 3], ["cauda", 0]]
+const CORRENTE := [
+	["pernas_frente", 0],
+	["corpo", 0],
+	["corpo", 0],
+	["corpo", 1],
+	["pernas_tras", 0],
+	["corpo", 1],
+	["corpo", 2],
+	["corpo", 2],
+	["corpo", 3],
+	["corpo", 3],
+	["cauda", 0]
+]
 const LADO := {"cabeca": 64, "corpo": 48, "pernas_frente": 48, "pernas_tras": 48, "cauda": 48}
-const ESPACO := 10.0         # distância entre peças de tamanho 1 ao longo do rastro (encolhe junto com o gomo)
-const TAM := [1.4, 1.0, 1.0, 1.0, 0.85, 0.85, 0.85, 0.7, 0.7, 0.55, 0.55, 0.5]   # tamanho de cada peça (cabeça + corrente)
-const ALTURA := 20.0         # quanto voa acima do chão
-const SOMBRA_TAM := [11.0, 11.0, 11.0, 10.0, 10.0, 10.0, 9.0, 8.0, 8.0, 7.0, 6.0, 5.0]   # raio da sombra (cabeça + corrente)
+const ESPACO := 10.0  # distância entre peças de tamanho 1 ao longo do rastro (encolhe junto com o gomo)
+const TAM := [1.4, 1.0, 1.0, 1.0, 0.85, 0.85, 0.85, 0.7, 0.7, 0.55, 0.55, 0.5]  # tamanho de cada peça (cabeça + corrente)
+const ALTURA := 20.0  # quanto voa acima do chão
+const SOMBRA_TAM := [11.0, 11.0, 11.0, 10.0, 10.0, 10.0, 9.0, 8.0, 8.0, 7.0, 6.0, 5.0]  # raio da sombra (cabeça + corrente)
 
 var boca_aberta := false
-var surgir := 1.0            # 0..1: quanto da corrente já apareceu (animação da transformação)
-var brilho := 0.0            # 0..1: clarão de energia por cima (transformação, rugido)
-var olhar := Vector2.ZERO     # pra onde a CABEÇA olha (a baforada mira); ZERO = pra onde está indo
-var _rastro: Array = []      # posições da cabeça no mundo (a mais nova primeiro)
+var surgir := 1.0  # 0..1: quanto da corrente já apareceu (animação da transformação)
+var brilho := 0.0  # 0..1: clarão de energia por cima (transformação, rugido)
+var olhar := Vector2.ZERO  # pra onde a CABEÇA olha (a baforada mira); ZERO = pra onde está indo
+var _rastro: Array = []  # posições da cabeça no mundo (a mais nova primeiro)
 var _dir := Vector2.RIGHT
 var _t := 0.0
-var _dist: Array = []       # distância de cada peça até a cabeça, ao longo do rastro
+var _dist: Array = []  # distância de cada peça até a cabeça, ao longo do rastro
 
 
 func _ready() -> void:
@@ -121,7 +136,7 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	# peças de trás pra frente na tela (quem está mais embaixo cobre quem está em cima)
 	lista.sort_custom(func(a, b): return a.chao.y < b.chao.y or (is_equal_approx(a.chao.y, b.chao.y) and a.i > b.i))
-	var cor := Color(1.0 + brilho * 0.6, 1.0 + brilho * 1.0, 1.0 + brilho * 1.4)   # acima de 1 clareia: clarão cobalto
+	var cor := Color(1.0 + brilho * 0.6, 1.0 + brilho * 1.0, 1.0 + brilho * 1.4)  # acima de 1 clareia: clarão cobalto
 	# duas passadas: 1) tudo COM contorno (vira a silhueta de fora); 2) o corpo SEM contorno por cima, que apaga
 	# a costura entre os gomos e o corpo vira um tubo só. A cabeça vai com contorno nas duas, pra se destacar.
 	for passada in 2:

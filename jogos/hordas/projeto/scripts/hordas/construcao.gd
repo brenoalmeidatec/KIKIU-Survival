@@ -3,12 +3,25 @@ extends RefCounted
 ## builds de mentirinha pros rivais do duelo final (sobem de nível sorteando cartas, como um jogador).
 ## Tudo lê dados/*.json, então trocar armas, passivos e heróis muda isso também.
 
-const BASE := {"dano": 1.0, "recarga": 1.0, "area": 1.0, "quantidade": 0.0, "velocidade_proj": 1.0, "duracao": 1.0,
-	"vida_max": 100.0, "regen": 0.0, "velocidade": 1.0, "ima": 1.0, "sorte": 0.0, "xp": 1.0,
-	"critico": 0.05, "critico_mult": 1.5}
+const BASE := {
+	"dano": 1.0,
+	"recarga": 1.0,
+	"area": 1.0,
+	"quantidade": 0.0,
+	"velocidade_proj": 1.0,
+	"duracao": 1.0,
+	"vida_max": 100.0,
+	"regen": 0.0,
+	"velocidade": 1.0,
+	"ima": 1.0,
+	"sorte": 0.0,
+	"xp": 1.0,
+	"critico": 0.05,
+	"critico_mult": 1.5
+}
 const Equipamento := preload("res://scripts/hordas/equipamento.gd")
 const Universais := preload("res://scripts/hordas/universais.gd")
-const MAX_ARMAS := 4   # (só de reserva: o limite de verdade é Universais.max_total(), dados/armas_universais.json)
+const MAX_ARMAS := 4  # (só de reserva: o limite de verdade é Universais.max_total(), dados/armas_universais.json)
 const MAX_PASSIVOS := 5
 
 
@@ -26,7 +39,7 @@ static func stats(heroi: Dictionary, passivos: Dictionary, equip := {}, extra :=
 		var ef: Dictionary = pas.get(id, {}).get("efeito", {})
 		for k in ef:
 			s[k] = float(s.get(k, 0)) + float(ef[k]) * passivos[id]
-	for k in extra:   # dádivas dos santuários (#21)
+	for k in extra:  # dádivas dos santuários (#21)
 		s[k] = float(s.get(k, 0)) + float(extra[k])
 	s["recarga"] = maxf(0.35, s.recarga)
 	s["velocidade"] = maxf(0.4, s.velocidade)
@@ -46,7 +59,7 @@ static func gerar(heroi_id: String, nivel: int, rng: RandomNumberGenerator) -> D
 	var armas := [{"id": str(heroi.get("arma", "pendrive")), "nivel": 1}]
 	var passivos := {}
 	for _i in maxi(0, nivel - 1):
-		var cand := []   # [peso, tipo, id]
+		var cand := []  # [peso, tipo, id]
 		for a in armas:
 			if a.nivel < nivel_max(a.id):
 				cand.append([14.0, "sobe_arma", a.id])
@@ -125,7 +138,7 @@ static func dps_por_tipo(armas: Array, st: Dictionary) -> Dictionary:
 	var crit := 1.0 + float(st.get("critico", 0.0)) * (float(st.get("critico_mult", 1.5)) - 1.0)
 	for w in armas:
 		var def: Dictionary = d.get(w.id, {})
-		var tipo := str(def.get("familia", def.get("tipo", "projetil")))   # arma de tipo novo diz a família
+		var tipo := str(def.get("familia", def.get("tipo", "projetil")))  # arma de tipo novo diz a família
 		var a := atributos_arma(w.id, w.nivel)
 		var dano := float(a.get("dano", 1)) * float(st.get("dano", 1.0)) * crit
 		var rec := maxf(0.1, float(a.get("recarga", 1)) * float(st.get("recarga", 1.0)))
@@ -150,6 +163,7 @@ static func dps_por_tipo(armas: Array, st: Dictionary) -> Dictionary:
 # Cada arma em dados/armas.json tem "classe": "global" (qualquer personagem; é o padrão) ou
 # "character_exclusive" com "characterId" (só aquele personagem). Por partida, cada um pega no máximo
 # _config.limite_exclusivas armas exclusivas (2 por padrão). Evolução de arma exclusiva também é exclusiva.
+
 
 static func max_armas() -> int:
 	return Universais.max_total()
@@ -182,8 +196,8 @@ static func n_exclusivas(ids: Array, heroi_id: String) -> int:
 static func arma_permitida(id: String, heroi_id: String, ids: Array) -> bool:
 	var d := _def(id)
 	if d.is_empty() or d.get("evolucao", false) or id in ids or d.get("universal", false):
-		return false   # universais saem por carta própria (arena.gd, variação sorteada); rivais não as usam
-	if str(d.get("classe", "")) == "transformacao":   # arma da forma (dragão): vem da transformação, nunca de carta
+		return false  # universais saem por carta própria (arena.gd, variação sorteada); rivais não as usam
+	if str(d.get("classe", "")) == "transformacao":  # arma da forma (dragão): vem da transformação, nunca de carta
 		return false
 	if exclusiva(id):
 		return dono(id) == heroi_id and n_exclusivas(ids, heroi_id) < limite_exclusivas()

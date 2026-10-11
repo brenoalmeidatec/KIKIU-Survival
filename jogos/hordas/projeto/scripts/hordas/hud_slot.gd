@@ -54,10 +54,10 @@ func _draw() -> void:
 		for i in passos + 1:
 			var a := -PI / 2 + TAU * (1.0 - falta) + TAU * falta * i / passos
 			var dir := Vector2.from_angle(a)
-			var ate := (area.size.x * 0.5) / maxf(absf(dir.x), absf(dir.y))   # até a borda do quadro, não um círculo
+			var ate := (area.size.x * 0.5) / maxf(absf(dir.x), absf(dir.y))  # até a borda do quadro, não um círculo
 			pts.append(c + dir * ate)
 		draw_colored_polygon(pts, Color(0, 0, 0, 0.55))
-	if _e.has("barra"):   # tempo restante de um efeito: barrinha de 2 px no pé do quadro
+	if _e.has("barra"):  # tempo restante de um efeito: barrinha de 2 px no pé do quadro
 		draw_rect(Rect2(1, size.y - 3.0, size.x - 2.0, 2.0), Color(0, 0, 0, 0.7))
 		draw_rect(Rect2(1, size.y - 3.0, (size.x - 2.0) * clampf(float(_e.barra), 0.0, 1.0), 2.0), _e.get("cor_barra", Color.WHITE))
 	var tam := float(get_theme_default_font_size())

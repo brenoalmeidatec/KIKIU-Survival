@@ -13,23 +13,23 @@ const Sorte := preload("res://scripts/hordas/sorte.gd")
 
 const W := 640.0
 const H := 360.0
-const X0 := 54.0           # centro do andar 1
-const DX := 58.0           # distância entre andares
-const AREA := Rect2(16, 60, 608, 186)   # o mapa desenhado (chão e enfeites da região); o painel de informação fica embaixo
-const MARGEM_Y := 20.0     # do topo/fundo da área até o centro da primeira/última faixa
-const TRAVA := 0.35        # ignora teclas logo ao abrir (o botão que o jogador já estava apertando)
+const X0 := 54.0  # centro do andar 1
+const DX := 58.0  # distância entre andares
+const AREA := Rect2(16, 60, 608, 186)  # o mapa desenhado (chão e enfeites da região); o painel de informação fica embaixo
+const MARGEM_Y := 20.0  # do topo/fundo da área até o centro da primeira/última faixa
+const TRAVA := 0.35  # ignora teclas logo ao abrir (o botão que o jogador já estava apertando)
 const AUTO_BOT := 1.0
 
 var arena: Node
 var _tela := Control.new()
 var _aberto := false
 var _t0 := 0
-var _sel := 0               # índice em _opcoes
-var _opcoes: Array = []     # faixas acessíveis a partir do nó atual
-var _voto := -1             # online: faixa em que já votei
-var _espera := 0.0          # online: segundos que faltam pro anfitrião fechar a votação
-var _a0 := 0                # primeiro andar mostrado (veja _janela)
-var _na := 10               # quantos andares mostrar
+var _sel := 0  # índice em _opcoes
+var _opcoes: Array = []  # faixas acessíveis a partir do nó atual
+var _voto := -1  # online: faixa em que já votei
+var _espera := 0.0  # online: segundos que faltam pro anfitrião fechar a votação
+var _a0 := 0  # primeiro andar mostrado (veja _janela)
+var _na := 10  # quantos andares mostrar
 
 
 func _ready() -> void:
@@ -57,7 +57,7 @@ func abrir() -> void:
 	_espera = float(Mapa.cfg().get("espera_voto", 40.0))
 	_t0 = Time.get_ticks_msec()
 	_aberto = true
-	get_tree().paused = not arena.eh_online   # no online o jogo dos outros não para
+	get_tree().paused = not arena.eh_online  # no online o jogo dos outros não para
 	Som.tocar("plim", 0.0, 0.9, -6)
 	_tela.queue_redraw()
 
@@ -91,7 +91,7 @@ func _process(dt: float) -> void:
 
 
 func _input(e: InputEvent) -> void:
-	if Chat.digitando:   # o teclado é do chat (chat.gd)
+	if Chat.digitando:  # o teclado é do chat (chat.gd)
 		return
 	if not _aberto or _agora() < TRAVA or not e.is_pressed() or e.is_echo() or _voto >= 0 or _opcoes.is_empty():
 		return
@@ -136,9 +136,9 @@ func centro_no(andar: int, faixa: int) -> Vector2:
 
 # ---------- arte da região (#96): chão e enfeites do cenário da região, sem arte nova pra manter ----------
 
-var _cenarios := {}         # nome -> Cenario carregado (ou null)
-var _enfeites_de := ""      # chave do mapa/região dos enfeites já espalhados
-var _enfeites: Array = []   # {item, pos (onde fica o pé)}
+var _cenarios := {}  # nome -> Cenario carregado (ou null)
+var _enfeites_de := ""  # chave do mapa/região dos enfeites já espalhados
+var _enfeites: Array = []  # {item, pos (onde fica o pé)}
 
 
 ## Configuração de arte da região mostrada (dados/mapa.json > arte), com o "padrao" por baixo.
@@ -282,33 +282,50 @@ static func cor_tipo(tipo: String) -> Color:
 func _icone(p: Vector2, tipo: String, cor: Color) -> void:
 	var t := _tela
 	match tipo:
-		"fase":   # duas espadas cruzadas
+		"fase":  # duas espadas cruzadas
 			t.draw_line(p + Vector2(-7, 7), p + Vector2(7, -7), cor, 2.0)
 			t.draw_line(p + Vector2(-7, -7), p + Vector2(7, 7), cor, 2.0)
 			t.draw_rect(Rect2(p + Vector2(-3, 2), Vector2(6, 2)), cor)
-		"elite":   # caveira
+		"elite":  # caveira
 			t.draw_circle(p + Vector2(0, -2), 6.0, cor)
 			t.draw_rect(Rect2(p + Vector2(-3, 3), Vector2(6, 5)), cor)
 			t.draw_rect(Rect2(p + Vector2(-4, -3), Vector2(3, 3)), Color(0.08, 0.08, 0.12))
 			t.draw_rect(Rect2(p + Vector2(1, -3), Vector2(3, 3)), Color(0.08, 0.08, 0.12))
-		"descanso":   # fogueira: chama
+		"descanso":  # fogueira: chama
 			t.draw_colored_polygon(PackedVector2Array([p + Vector2(0, -8), p + Vector2(6, 2), p + Vector2(3, 7), p + Vector2(-3, 7), p + Vector2(-6, 2)]), cor)
-			t.draw_colored_polygon(PackedVector2Array([p + Vector2(0, -1), p + Vector2(3, 3), p + Vector2(0, 7), p + Vector2(-3, 3)]), Color(1, 0.95, 0.6, cor.a))
-		"loja":   # moeda
+			t.draw_colored_polygon(
+				PackedVector2Array([p + Vector2(0, -1), p + Vector2(3, 3), p + Vector2(0, 7), p + Vector2(-3, 3)]), Color(1, 0.95, 0.6, cor.a)
+			)
+		"loja":  # moeda
 			t.draw_circle(p, 8.0, cor)
 			t.draw_circle(p, 5.5, Color(cor.r * 0.6, cor.g * 0.6, cor.b * 0.6, cor.a))
 			_txt(p + Vector2(-4, 4), "$", 8, cor)
 		"evento":
 			_txt(p + Vector2(-5, 6), "?", 16, cor)
-		"santuario":   # losango duplo
+		"santuario":  # losango duplo
 			t.draw_colored_polygon(PackedVector2Array([p + Vector2(0, -9), p + Vector2(7, 0), p + Vector2(0, 9), p + Vector2(-7, 0)]), cor)
-			t.draw_colored_polygon(PackedVector2Array([p + Vector2(0, -4), p + Vector2(3, 0), p + Vector2(0, 4), p + Vector2(-3, 0)]), Color(0.12, 0.1, 0.16, cor.a))
-		"chefe":   # caveira com coroa
+			t.draw_colored_polygon(
+				PackedVector2Array([p + Vector2(0, -4), p + Vector2(3, 0), p + Vector2(0, 4), p + Vector2(-3, 0)]), Color(0.12, 0.1, 0.16, cor.a)
+			)
+		"chefe":  # caveira com coroa
 			t.draw_circle(p + Vector2(0, 1), 8.0, cor)
 			t.draw_rect(Rect2(p + Vector2(-4, 6), Vector2(8, 5)), cor)
 			t.draw_rect(Rect2(p + Vector2(-5, -1), Vector2(4, 4)), Color(0.08, 0.08, 0.12))
 			t.draw_rect(Rect2(p + Vector2(1, -1), Vector2(4, 4)), Color(0.08, 0.08, 0.12))
-			t.draw_colored_polygon(PackedVector2Array([p + Vector2(-8, -6), p + Vector2(-8, -12), p + Vector2(-4, -8), p + Vector2(0, -13), p + Vector2(4, -8), p + Vector2(8, -12), p + Vector2(8, -6)]), cor)
+			t.draw_colored_polygon(
+				PackedVector2Array(
+					[
+						p + Vector2(-8, -6),
+						p + Vector2(-8, -12),
+						p + Vector2(-4, -8),
+						p + Vector2(0, -13),
+						p + Vector2(4, -8),
+						p + Vector2(8, -12),
+						p + Vector2(8, -6)
+					]
+				),
+				cor
+			)
 
 
 func _desenhar() -> void:
@@ -324,9 +341,16 @@ func _desenhar() -> void:
 	var cor_trilha := _cor(arte.get("trilha"), Color(0.7, 0.72, 0.85))
 	var fases: Array = arena.diretor.fases()
 	var prox_f: Dictionary = fases[clampi(pos.x + 1, 0, fases.size() - 1)] if not fases.is_empty() else {}
-	if prox_f.has("regiao"):   # regiões (#64): o nome da região no lugar de "MAPA"
+	if prox_f.has("regiao"):  # regiões (#64): o nome da região no lugar de "MAPA"
 		_txt(Vector2(0, 30), str(prox_f.regiao_nome).to_upper(), 16, Color(1, 0.9, 0.4), W, HORIZONTAL_ALIGNMENT_CENTER)
-		_txt(Vector2(0, 50), "Região %d de %d   ·   andar %d de %d" % [int(prox_f.regiao) + 1, int(m.andares) / _na, pos.x + 2 - _a0, _na], 8, Color(0.7, 0.9, 1), W, HORIZONTAL_ALIGNMENT_CENTER)
+		_txt(
+			Vector2(0, 50),
+			"Região %d de %d   ·   andar %d de %d" % [int(prox_f.regiao) + 1, int(m.andares) / _na, pos.x + 2 - _a0, _na],
+			8,
+			Color(0.7, 0.9, 1),
+			W,
+			HORIZONTAL_ALIGNMENT_CENTER
+		)
 	else:
 		_txt(Vector2(0, 30), "MAPA", 16, Color(1, 0.9, 0.4), W, HORIZONTAL_ALIGNMENT_CENTER)
 		_txt(Vector2(0, 50), "Andar %d de %d" % [pos.x + 1, int(m.andares)], 8, Color(0.7, 0.9, 1), W, HORIZONTAL_ALIGNMENT_CENTER)
@@ -342,11 +366,16 @@ func _desenhar() -> void:
 			for p in n.get("prox", []):
 				var de := centro_no(a, x)
 				var para := centro_no(a + 1, int(p))
-				if Vector2i(a, x) in trilha and Vector2i(a + 1, int(p)) in trilha:   # caminho já feito: linha cheia dourada
+				if Vector2i(a, x) in trilha and Vector2i(a + 1, int(p)) in trilha:  # caminho já feito: linha cheia dourada
 					_tela.draw_line(de, para, Color(0, 0, 0, 0.8), 5.0)
 					_tela.draw_line(de, para, Color(0.95, 0.85, 0.4), 3.0)
-				elif a == pos.x and x == pos.y:   # as opções de agora: a escolhida pisca
-					_trilha(de, para, Color(1, 1, 1, 0.55 + 0.45 * pulso) if int(p) == alvo else Color(cor_trilha.lightened(0.3), 0.95), 3.0 if int(p) == alvo else 2.0)
+				elif a == pos.x and x == pos.y:  # as opções de agora: a escolhida pisca
+					_trilha(
+						de,
+						para,
+						Color(1, 1, 1, 0.55 + 0.45 * pulso) if int(p) == alvo else Color(cor_trilha.lightened(0.3), 0.95),
+						3.0 if int(p) == alvo else 2.0
+					)
 				else:
 					_trilha(de, para, Color(cor_trilha, 0.75), 1.0)
 	# nós
@@ -386,7 +415,9 @@ func _desenhar() -> void:
 			if visitado and not atual:
 				_txt(c + Vector2(4, -7), "v", 8, Color(0.5, 1, 0.5))
 			if escolhido:
-				_tela.draw_colored_polygon(PackedVector2Array([c + Vector2(-5, -raio - 8), c + Vector2(5, -raio - 8), c + Vector2(0, -raio - 2)]), Color(1, 1, 1, pulso))
+				_tela.draw_colored_polygon(
+					PackedVector2Array([c + Vector2(-5, -raio - 8), c + Vector2(5, -raio - 8), c + Vector2(0, -raio - 2)]), Color(1, 1, 1, pulso)
+				)
 	# painel de informação do nó selecionado
 	var py := 258.0
 	_tela.draw_rect(Rect2(38, py - 2, W - 76, 84), _cor(arte.get("moldura"), Color(0.35, 0.4, 0.55)))
@@ -400,19 +431,30 @@ func _desenhar() -> void:
 		_tela.draw_rect(Rect2(54, py + 14, 24, 24), Color(0.12, 0.13, 0.2))
 		_icone(Vector2(66, py + 26), tipo, cor_t)
 		_txt(Vector2(92, py + 24), str(tc.get("nome", tipo)), 16, cor_t)
-		_tela.draw_multiline_string(Dados.fonte, Vector2(92, py + 44), str(tc.get("info", "")), HORIZONTAL_ALIGNMENT_LEFT, W - 150, 8, 3, Color(0.8, 0.84, 0.95))
+		_tela.draw_multiline_string(
+			Dados.fonte, Vector2(92, py + 44), str(tc.get("info", "")), HORIZONTAL_ALIGNMENT_LEFT, W - 150, 8, 3, Color(0.8, 0.84, 0.95)
+		)
 		if Mapa.combate(tipo):
 			var fa: Dictionary = arena.diretor.fases()[pos.x + 1]
-			if tipo == "chefe":   # quem espera no fim da região
+			if tipo == "chefe":  # quem espera no fim da região
 				var ch := str(fa.get("chefe", ""))
-				_txt(Vector2(92, py + 74), "%s  ·  chefe: %s" % [fa.get("nome", ""), Dados.json("inimigos").get(ch, {}).get("nome", ch)], 8, Color(1, 0.6, 0.55))
+				_txt(
+					Vector2(92, py + 74), "%s  ·  chefe: %s" % [fa.get("nome", ""), Dados.json("inimigos").get(ch, {}).get("nome", ch)], 8, Color(1, 0.6, 0.55)
+				)
 			else:
 				_txt(Vector2(92, py + 74), "Fase: " + str(fa.get("nome", "")), 8, Color(0.6, 0.7, 0.9))
 	else:
 		_txt(Vector2(40, py + 44), "Sem caminho adiante.", 8, Color(1, 0.6, 0.6), W - 80, HORIZONTAL_ALIGNMENT_CENTER)
 	# dica
 	if _voto >= 0:
-		_txt(Vector2(0, 352), "Voto enviado. Esperando os outros... %d s" % ceili(maxf(0.0, _espera - _agora())), 8, Color(0.7, 0.9, 1, 0.6 + 0.4 * pulso), W, HORIZONTAL_ALIGNMENT_CENTER)
+		_txt(
+			Vector2(0, 352),
+			"Voto enviado. Esperando os outros... %d s" % ceili(maxf(0.0, _espera - _agora())),
+			8,
+			Color(0.7, 0.9, 1, 0.6 + 0.4 * pulso),
+			W,
+			HORIZONTAL_ALIGNMENT_CENTER
+		)
 	elif arena.eh_online:
 		_txt(Vector2(0, 352), "Setas: escolher   Enter: votar (maioria, empate = anfitrião)", 8, Color(0.6, 0.65, 0.8), W, HORIZONTAL_ALIGNMENT_CENTER)
 	else:

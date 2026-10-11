@@ -8,10 +8,12 @@ const Mochila := preload("res://scripts/hordas/mochila.gd")
 const TelaPreparo := preload("res://scripts/hordas/tela_preparo.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
@@ -32,8 +34,26 @@ func uma_arena(id: String, m: Dictionary) -> Node:
 
 
 func _ready() -> void:
-	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar", "banir", "pular", "resortear",
-			"consumivel1", "consumivel2", "consumivel3", "consumivel_usar", "consumivel_trocar"]:
+	for acao in [
+		"cima",
+		"baixo",
+		"esquerda",
+		"direita",
+		"dash",
+		"especial",
+		"transformar",
+		"voltar",
+		"confirmar",
+		"falar",
+		"banir",
+		"pular",
+		"resortear",
+		"consumivel1",
+		"consumivel2",
+		"consumivel3",
+		"consumivel_usar",
+		"consumivel_trocar"
+	]:
 		if not InputMap.has_action(acao):
 			InputMap.add_action(acao)
 	Criacao.arquivo = "user://teste_preparo.json"
@@ -68,7 +88,10 @@ func _ready() -> void:
 	ok(Mochila.erro({"itens": {"bomba": 2, "pocao_cura": 3}, "amuleto": ""}, "orc", "guerreiro") != "", "7 espaços não cabem em 6")
 	ok(Mochila.erro({"itens": {"bomba": 2, "pocao_cura": 3}, "amuleto": ""}, "anao", "ladino") == "", "os mesmos 7 espaços cabem num anão ladino (9)")
 	ok(Mochila.erro({"itens": {"pao_duro": 1, "ensopado": 1, "carne_seca": 1}, "amuleto": ""}, "anao", "ladino") != "", "3 comidas passam do limite de 2")
-	ok(Mochila.erro({"itens": {"pocao_cura": 1, "pocao_vigor": 1, "bomba": 1, "pergaminho_gelo": 1}, "amuleto": ""}, "anao", "ladino") != "", "4 tipos de consumível passam do limite de 3")
+	ok(
+		Mochila.erro({"itens": {"pocao_cura": 1, "pocao_vigor": 1, "bomba": 1, "pergaminho_gelo": 1}, "amuleto": ""}, "anao", "ladino") != "",
+		"4 tipos de consumível passam do limite de 3"
+	)
 	ok(Mochila.erro({"itens": {"pocao_cura": 4}, "amuleto": ""}, "anao", "ladino") != "", "mais unidades que o máximo do item")
 	ok(Mochila.erro({"itens": {"amuleto_corvo": 1}, "amuleto": ""}, "orc", "guerreiro") != "", "amuleto não vai nos itens")
 	ok(Mochila.erro({"itens": {}, "amuleto": "pocao_cura"}, "orc", "guerreiro") != "", "poção não vai no pescoço")
@@ -86,7 +109,7 @@ func _ready() -> void:
 	t.mochila = {}
 	add_child(t)
 	await esperar(0.1)
-	for i in 12:   # tenta encher a mochila com tudo do baú, item por item
+	for i in 12:  # tenta encher a mochila com tudo do baú, item por item
 		t._sel = i % t._itens.size()
 		t._mudar(1)
 		t._mudar(1)
@@ -130,7 +153,7 @@ func _ready() -> void:
 	ok(is_equal_approx(com.stat("dano"), dano0 + 0.12), "carne seca: +12%% de dano")
 	ok(is_equal_approx(com.stat("critico"), crit0 + 0.1), "amuleto do corvo: +10%% de crítico")
 	ok(is_equal_approx(com.jogador.hp, com.stat("vida_max")), "começa com a vida cheia, já com a comida")
-	com.diretor.fase_idx = 6   # o ensopado vale por 7 andares, a carne seca por 6
+	com.diretor.fase_idx = 6  # o ensopado vale por 7 andares, a carne seca por 6
 	com.provisoes._recalcular()
 	ok(is_equal_approx(com.stat("vida_max"), vida0 + 30.0), "andar 7: o ensopado ainda vale")
 	ok(is_equal_approx(com.stat("dano"), dano0), "andar 7: a carne seca já acabou")
@@ -172,7 +195,7 @@ func _ready() -> void:
 			tipo_inim = k
 			break
 	var v = cons.inimigos.criar(tipo_inim, cons.jogador.position + Vector2(40, 0))
-	await esperar(0.2)   # o bicho entra na grade de busca no próximo quadro
+	await esperar(0.2)  # o bicho entra na grade de busca no próximo quadro
 	var hp_v: float = v.hp
 	p.consumir("bomba")
 	ok(v.hp < hp_v or v.hp <= 0.0, "bomba machuca o bicho perto (%s -> %s)" % [hp_v, v.hp])
@@ -190,10 +213,26 @@ func _ready() -> void:
 	# --- trazer pra casa: o que sobra e o que achou vai pro baú; o que não cabe se perde
 	var b0 := {"pocao_cura": 1}
 	var r := Mochila.trazer(b0, {"itens": {"bomba": 1, "pocao_vigor": 1}, "amuleto": "amuleto_corvo"}, ["carne_seca", "pao_duro"])
-	ok(r.bau.get("bomba", 0) == 1 and r.bau.get("amuleto_corvo", 0) == 1 and r.bau.get("carne_seca", 0) == 1 and r.bau.get("pocao_cura", 0) == 1, "sobra e achados foram pro baú (%s)" % str(r.bau))
+	ok(
+		r.bau.get("bomba", 0) == 1 and r.bau.get("amuleto_corvo", 0) == 1 and r.bau.get("carne_seca", 0) == 1 and r.bau.get("pocao_cura", 0) == 1,
+		"sobra e achados foram pro baú (%s)" % str(r.bau)
+	)
 	ok(r.perdidos.is_empty(), "coube tudo")
 	var cheio := {}
-	for k in ["pocao_cura", "pocao_vigor", "pergaminho_ima", "elixir_ferro", "pao_duro", "ensopado", "carne_seca", "queijo_forte", "hidromel", "amuleto_corvo", "amuleto_ferro", "amuleto_trevo"]:
+	for k in [
+		"pocao_cura",
+		"pocao_vigor",
+		"pergaminho_ima",
+		"elixir_ferro",
+		"pao_duro",
+		"ensopado",
+		"carne_seca",
+		"queijo_forte",
+		"hidromel",
+		"amuleto_corvo",
+		"amuleto_ferro",
+		"amuleto_trevo"
+	]:
 		cheio[k] = 2
 	ok(Mochila.bau_espacos(cheio) == 24, "baú cheio: 24 espaços (%d)" % Mochila.bau_espacos(cheio))
 	var r2 := Mochila.trazer(cheio, {"itens": {"bomba": 2}, "amuleto": ""}, ["pocao_cura"])
@@ -208,13 +247,25 @@ func _ready() -> void:
 	ok(Mochila.cabe_no_bau(bau_h, m), "o baú tem o que a mochila leva")
 	Criacao.definir_bau(id, Mochila.retirar(bau_h, m))
 	var fora := Mochila.bau_limpo(Criacao.bau_de(id))
-	ok(int(fora.get("pocao_cura", 0)) == 0 and int(fora.get("bomba", 0)) == 0 and int(fora.get("amuleto_corvo", 0)) == 0, "saiu da casa: o baú perdeu o que foi na mochila (%s)" % str(fora))
+	ok(
+		int(fora.get("pocao_cura", 0)) == 0 and int(fora.get("bomba", 0)) == 0 and int(fora.get("amuleto_corvo", 0)) == 0,
+		"saiu da casa: o baú perdeu o que foi na mochila (%s)" % str(fora)
+	)
 	ok(int(fora.get("pao_duro", 0)) == 1, "o que ficou em casa continua lá")
 	var vol := Mochila.trazer(fora, {"itens": {"pocao_cura": 1}, "amuleto": "amuleto_corvo"}, [])
 	Criacao.definir_bau(id, vol.bau)
 	var depois := Mochila.bau_limpo(Criacao.bau_de(id))
-	ok(int(depois.get("pocao_cura", 0)) == 1 and int(depois.get("amuleto_corvo", 0)) == 1 and int(depois.get("bomba", 0)) == 0, "venceu: voltou a poção que sobrou e o amuleto; a bomba usada ficou pelo caminho")
-	ok(Mochila.cabe_no_bau(depois, {"itens": {"pocao_cura": 1}, "amuleto": ""}) and not Mochila.cabe_no_bau(depois, {"itens": {"pocao_cura": 2}, "amuleto": ""}), "cabe_no_bau confere as quantidades")
+	ok(
+		int(depois.get("pocao_cura", 0)) == 1 and int(depois.get("amuleto_corvo", 0)) == 1 and int(depois.get("bomba", 0)) == 0,
+		"venceu: voltou a poção que sobrou e o amuleto; a bomba usada ficou pelo caminho"
+	)
+	ok(
+		(
+			Mochila.cabe_no_bau(depois, {"itens": {"pocao_cura": 1}, "amuleto": ""})
+			and not Mochila.cabe_no_bau(depois, {"itens": {"pocao_cura": 2}, "amuleto": ""})
+		),
+		"cabe_no_bau confere as quantidades"
+	)
 	var aj := Mochila.ajustar_ao_bau({"itens": {"pocao_cura": 3, "bomba": 2}, "amuleto": "amuleto_fenix"}, depois, id)
 	ok(aj.itens == {"pocao_cura": 1} and aj.amuleto == "", "ajustar à casa: só leva o que há no baú (%s)" % str(aj))
 
@@ -247,9 +298,9 @@ func _ready() -> void:
 	ok(Mochila.bau_limpo(Criacao.bau_de("c:orc:guerreiro")) == Mochila.kit_inicial(), "herói do marco 1 também")
 	ok(Criacao.mochila_de("c:hab1").is_empty(), "e começa sem mochila guardada")
 	var tx := FileAccess.get_file_as_string(Criacao.arquivo)
-	ok(tx.contains("\"bau\""), "o baú migrado foi gravado no arquivo")
+	ok(tx.contains('"bau"'), "o baú migrado foi gravado no arquivo")
 	var f2 := FileAccess.open(Criacao.arquivo, FileAccess.WRITE)
-	f2.store_string(JSON.stringify({"id": "c:elfo_sombrio:mago"}))   # o formato do marco 1: um herói só
+	f2.store_string(JSON.stringify({"id": "c:elfo_sombrio:mago"}))  # o formato do marco 1: um herói só
 	f2.close()
 	ok(Criacao.carregar(false).ids == ["c:elfo_sombrio:mago"], "o arquivo do marco 1 (um herói) carrega")
 	ok(not Criacao.bau_de("c:elfo_sombrio:mago").is_empty(), "e tem baú")
@@ -273,12 +324,18 @@ func _ready() -> void:
 	ok(Rede.erro_mochila({"itens": {}, "amuleto": "amuleto_corvo", "extra": 1}, hid, fo) != "", "campo desconhecido é recusado")
 	ok(Rede.erro_mochila("mochila", hid, fo) != "", "mochila que não é dicionário é recusada")
 	ok(Rede.erro_mochila({"itens": {"pocao_cura": 2.0}, "amuleto": ""}, hid, fo) == "", "2.0 vindo do JSON/rede vale como 2")
-	ok(Mochila.limpar({"itens": {"pocao_cura": 2.0}, "amuleto": ""}, "orc", "guerreiro") == {"itens": {"pocao_cura": 2}, "amuleto": ""}, "limpar converte pra inteiro")
+	ok(
+		Mochila.limpar({"itens": {"pocao_cura": 2.0}, "amuleto": ""}, "orc", "guerreiro") == {"itens": {"pocao_cura": 2}, "amuleto": ""},
+		"limpar converte pra inteiro"
+	)
 	ok(Mochila.limpar({"itens": {"bomba": 5}, "amuleto": ""}, "orc", "guerreiro").is_empty(), "limpar devolve {} pra mochila inválida")
 	# e o teste de uso no anfitrião: só conta o que foi declarado (o cálculo que o online.gd faz)
 	var declarada := {"itens": {"pocao_cura": 2, "bomba": 1}, "amuleto": ""}
 	ok(Mochila.slots(declarada) == ["pocao_cura", "bomba"], "os slots que cliente e anfitrião calculam são os mesmos (%s)" % str(Mochila.slots(declarada)))
-	ok(Mochila.de_texto("pocao_cura:2,bomba,amuleto_corvo,pao_duro") == {"itens": {"pocao_cura": 2, "bomba": 1, "pao_duro": 1}, "amuleto": "amuleto_corvo"}, "--mochila= vira mochila")
+	ok(
+		Mochila.de_texto("pocao_cura:2,bomba,amuleto_corvo,pao_duro") == {"itens": {"pocao_cura": 2, "bomba": 1, "pao_duro": 1}, "amuleto": "amuleto_corvo"},
+		"--mochila= vira mochila"
+	)
 	Criacao.apagar()
 	Criacao.arquivo = Criacao.ARQUIVO
 	print("PREPARO falhas=%d" % falhas)

@@ -9,19 +9,19 @@ extends CanvasLayer
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 const W := 640.0
 const H := 360.0
-const MIN_QUEDA := 0.65   # = Visual.CHEGADA_POUSO: em que ponto da queda o herói encosta no chão
+const MIN_QUEDA := 0.65  # = Visual.CHEGADA_POUSO: em que ponto da queda o herói encosta no chão
 
 var arena: Node
 var _tela := Control.new()
-var _modo := ""            # "" = parada, "regiao" ou "andar"
-var _c: Dictionary = {}    # configuração do modo atual (entrada.json)
+var _modo := ""  # "" = parada, "regiao" ou "andar"
+var _c: Dictionary = {}  # configuração do modo atual (entrada.json)
 var _tema: Dictionary = {}
-var _t := 0.0              # relógio visual (pular adianta ele)
-var _t_nat := 0.0          # relógio "natural": nunca pula (o online segura o mundo por ele)
+var _t := 0.0  # relógio visual (pular adianta ele)
+var _t_nat := 0.0  # relógio "natural": nunca pula (o online segura o mundo por ele)
 var _fim := 0.0
 var _pulou := false
-var _apos := 0.0           # segundos desde que pulou
-var _sem_titulo := false   # pulou antes do título entrar: ele nem aparece
+var _apos := 0.0  # segundos desde que pulou
+var _sem_titulo := false  # pulou antes do título entrar: ele nem aparece
 var _caiu := false
 var _bateu := false
 var _t_bat := 0.0
@@ -34,7 +34,7 @@ var _cor_b := Color.WHITE
 var _cor_f := Color.WHITE
 var _neve := false
 var _chefe := false
-var _escondidos: Array = []   # avatares do online que esta abertura escondeu (só esses voltam a aparecer)
+var _escondidos: Array = []  # avatares do online que esta abertura escondeu (só esses voltam a aparecer)
 
 
 func _ready() -> void:
@@ -46,6 +46,7 @@ func _ready() -> void:
 
 
 # ---------- o que a arena pergunta ----------
+
 
 ## A abertura está passando (visual).
 func ativa() -> bool:
@@ -145,7 +146,7 @@ func comecar(idx: int, marca := "") -> bool:
 				av.visible = false
 				_escondidos.append(av)
 	arena.hud.visible = false
-	Som.tocar("tremor", 0.0, 0.55, -7)   # o ronco que antecede a chegada
+	Som.tocar("tremor", 0.0, 0.55, -7)  # o ronco que antecede a chegada
 	_tela.queue_redraw()
 	return true
 
@@ -181,7 +182,7 @@ func pular() -> void:
 	_garantir_heroi()
 	var saida: float = float(_c.libera) - 0.3
 	if _t < saida:
-		_t = saida      # a câmera volta de vez ao herói (corte) e as tarjas saem
+		_t = saida  # a câmera volta de vez ao herói (corte) e as tarjas saem
 	else:
 		_t = float(_c.duracao)
 	_fim = _t + 0.3
@@ -195,7 +196,7 @@ func _input(e: InputEvent) -> void:
 	if e.is_echo():
 		return
 	if e.is_action_pressed("confirmar") or e.is_action_pressed("voltar"):
-		get_viewport().set_input_as_handled()   # o Esc que pula não abre a pausa junto
+		get_viewport().set_input_as_handled()  # o Esc que pula não abre a pausa junto
 		pular()
 
 
@@ -210,7 +211,7 @@ func _garantir_heroi() -> void:
 		if is_instance_valid(av):
 			av.visible = true
 	_escondidos.clear()
-	for av in (arena.online.avatares.values() if arena.online else []):
+	for av in arena.online.avatares.values() if arena.online else []:
 		av._ent_t = 0.0
 
 
@@ -273,6 +274,7 @@ func _t_pouso() -> float:
 
 # ---------- câmera ----------
 
+
 ## A câmera desce de cima até o herói (só antes do fim do guindaste; pular corta pro herói).
 func camera(foco: Vector2) -> Vector2:
 	if _modo == "" or _pulou:
@@ -284,6 +286,7 @@ func camera(foco: Vector2) -> Vector2:
 
 
 # ---------- desenho ----------
+
 
 static func _suave(x: float) -> float:
 	x = clampf(x, 0.0, 1.0)
@@ -307,7 +310,7 @@ func _desenhar() -> void:
 	var t := _t
 	var lib := float(_c.libera)
 	var dur := float(_c.duracao)
-	var saida := 1.0 - _suave((t - (lib - 0.3)) / 0.4)   # as tarjas saem um pouco antes de liberar
+	var saida := 1.0 - _suave((t - (lib - 0.3)) / 0.4)  # as tarjas saem um pouco antes de liberar
 	var env := _suave(t / maxf(0.05, float(_c.barras_entra))) * saida
 	# mundo escuro que clareia até o pouso, mais o fade do preto do começo
 	var esc := float(_c.escuro) * (1.0 - _suave(t / _t_pouso())) * saida

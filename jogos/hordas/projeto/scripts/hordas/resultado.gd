@@ -9,9 +9,9 @@ const Interface := preload("res://scripts/hordas/interface.gd")
 const Conjuntos := preload("res://scripts/hordas/conjuntos.gd")
 const W := 640.0
 const H := 360.0
-const PASSO := 0.42        # segundos entre uma linha e a próxima
-const CONTAR := 0.5        # quanto dura a contagem de cada número
-const TRAVA := 0.35        # ignora teclas logo ao abrir (o botão que o jogador já estava apertando)
+const PASSO := 0.42  # segundos entre uma linha e a próxima
+const CONTAR := 0.5  # quanto dura a contagem de cada número
+const TRAVA := 0.35  # ignora teclas logo ao abrir (o botão que o jogador já estava apertando)
 const AUTO_BOT := 1.0
 const AUTO_ONLINE := 8.0
 const MAX_ARMAS := 3
@@ -24,7 +24,7 @@ var _t0 := 0
 var _linhas: Array = []
 var _tocadas := 0
 var _pulou := false
-var _final := 0.0           # instante (em s) em que a última linha termina de contar
+var _final := 0.0  # instante (em s) em que a última linha termina de contar
 
 
 func _ready() -> void:
@@ -51,7 +51,7 @@ func abrir(stat: Dictionary) -> void:
 	_final = (_linhas.size() - 1) * PASSO + CONTAR
 	_t0 = Time.get_ticks_msec()
 	_aberto = true
-	get_tree().paused = not arena.eh_online   # no online o jogo dos outros não para
+	get_tree().paused = not arena.eh_online  # no online o jogo dos outros não para
 	_tela.queue_redraw()
 
 
@@ -62,7 +62,7 @@ func fechar() -> void:
 	get_tree().paused = false
 	_tela.queue_redraw()
 	if arena and not arena.acabou:
-		arena._abrir_proxima.call_deferred()   # carta que ficou esperando enquanto a tela estava aberta
+		arena._abrir_proxima.call_deferred()  # carta que ficou esperando enquanto a tela estava aberta
 
 
 ## As linhas da tela, a partir das estatísticas da fase. Função pura (o teste usa).
@@ -73,13 +73,27 @@ static func montar_linhas(stat: Dictionary) -> Array:
 	if int(stat.get("chefes", 0)) > 0:
 		extra = "  (%d chefe)" % int(stat.chefes)
 	l.append({"tipo": "num", "rotulo": "Abates", "valor": float(stat.get("abates", 0)), "extra": extra})
-	l.append({"tipo": "xp", "rotulo": "XP ganho", "valor": float(stat.get("xp", 0.0)),
-		"extra": "  NV %d > %d" % [int(stat.get("nivel_ini", 1)), int(stat.get("nivel_fim", 1))]})
+	l.append(
+		{
+			"tipo": "xp",
+			"rotulo": "XP ganho",
+			"valor": float(stat.get("xp", 0.0)),
+			"extra": "  NV %d > %d" % [int(stat.get("nivel_ini", 1)), int(stat.get("nivel_fim", 1))]
+		}
+	)
 	var ob: Dictionary = stat.get("objetivo", {})
-	if not ob.is_empty():   # objetivo do andar (#63): cumprido ou falhou, e o que rendeu
+	if not ob.is_empty():  # objetivo do andar (#63): cumprido ou falhou, e o que rendeu
 		var cumprido: bool = int(ob.get("est", 0)) == 2
-		l.append({"tipo": "objetivo", "rotulo": str(ob.get("nome", "Objetivo")), "valor": 0.0, "cumprido": cumprido,
-			"txt": ("CUMPRIDO  +%d ouro  +%d XP" % [int(ob.get("ouro", 0)), int(ob.get("xp", 0))]) if cumprido else ("FALHOU  %d ouro" % int(ob.get("ouro", 0)))})
+		l.append(
+			{
+				"tipo": "objetivo",
+				"rotulo": str(ob.get("nome", "Objetivo")),
+				"valor": 0.0,
+				"cumprido": cumprido,
+				"txt":
+				("CUMPRIDO  +%d ouro  +%d XP" % [int(ob.get("ouro", 0)), int(ob.get("xp", 0))]) if cumprido else ("FALHOU  %d ouro" % int(ob.get("ouro", 0)))
+			}
+		)
 	var dano: Dictionary = stat.get("dano", {})
 	var ordem := dano.keys()
 	ordem.sort_custom(func(a, b): return dano[a] > dano[b])
@@ -90,7 +104,7 @@ static func montar_linhas(stat: Dictionary) -> Array:
 	var itens: Array = stat.get("itens", [])
 	l.append({"tipo": "itens", "rotulo": "Novos itens" if not itens.is_empty() else "Nenhum item novo", "itens": itens, "valor": 0.0})
 	var conj: Array = stat.get("conjuntos", [])
-	if not conj.is_empty():   # etiquetas da build e o degrau de cada conjunto (#63)
+	if not conj.is_empty():  # etiquetas da build e o degrau de cada conjunto (#63)
 		l.append({"tipo": "conjuntos", "rotulo": "Conjuntos", "lin": conj, "valor": 0.0})
 	return l
 
@@ -114,7 +128,7 @@ func _process(_dt: float) -> void:
 
 
 func _input(e: InputEvent) -> void:
-	if Chat.digitando:   # o teclado é do chat (chat.gd)
+	if Chat.digitando:  # o teclado é do chat (chat.gd)
 		return
 	if not _aberto or _agora() < TRAVA or not e.is_pressed() or e.is_echo():
 		return
@@ -122,7 +136,7 @@ func _input(e: InputEvent) -> void:
 		return
 	get_viewport().set_input_as_handled()
 	if _agora() < _final and not _pulou:
-		_pulou = true   # qualquer tecla acelera: mostra tudo na hora
+		_pulou = true  # qualquer tecla acelera: mostra tudo na hora
 		Som.tocar("blip", 0.0, 1.3, -6)
 	elif e.is_action_pressed("confirmar") or e.is_action_pressed("dash") or e.is_action_pressed("voltar") or Interface.clique(e):
 		Som.ui("confirmar")
@@ -153,8 +167,12 @@ func _desenhar() -> void:
 	var n: int = arena.diretor.fase_idx + 1
 	var titulo := "FASE %d COMPLETA!" % n
 	var fr: Dictionary = arena.diretor.fases()[arena.diretor.fase_idx]
-	if fr.has("regiao"):   # regiões (#64)
-		titulo = "REGIÃO CONQUISTADA!" if fr.get("chefe_regiao", false) else "FASE %d/%d COMPLETA!" % [int(fr.andar_regiao) + 1, int(Dados.json("regioes").get("fases_por_regiao", 5))]
+	if fr.has("regiao"):  # regiões (#64)
+		titulo = (
+			"REGIÃO CONQUISTADA!"
+			if fr.get("chefe_regiao", false)
+			else "FASE %d/%d COMPLETA!" % [int(fr.andar_regiao) + 1, int(Dados.json("regioes").get("fases_por_regiao", 5))]
+		)
 	_txt(Vector2(px, 52), titulo, 16, Color(1, 0.9, 0.4), pw, HORIZONTAL_ALIGNMENT_CENTER)
 	var fa: Dictionary = arena.diretor.fases()[arena.diretor.fase_idx]
 	_txt(Vector2(px, 70), str(fa.get("nome", "")), 8, Color(0.7, 0.9, 1), pw, HORIZONTAL_ALIGNMENT_CENTER)
@@ -164,9 +182,9 @@ func _desenhar() -> void:
 		var ti: float = t - i * PASSO
 		if ti < 0.0:
 			break
-		var a := clampf(ti * 6.0, 0.0, 1.0)   # entra rapidinho
+		var a := clampf(ti * 6.0, 0.0, 1.0)  # entra rapidinho
 		var k := clampf(ti / CONTAR, 0.0, 1.0)
-		k = 1.0 - pow(1.0 - k, 3.0)           # a contagem desacelera no fim
+		k = 1.0 - pow(1.0 - k, 3.0)  # a contagem desacelera no fim
 		var v: float = float(l.valor) * k
 		var x := px + 24
 		match str(l.tipo):

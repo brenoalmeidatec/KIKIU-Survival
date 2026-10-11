@@ -5,26 +5,26 @@ extends Node
 ## Opção "Voz" (Config): desligada / apertar V pra falar (padrão) / sempre aberta (só manda quando tem som).
 ## O microfone só liga quando precisa: segurando V, ou na opção sempre aberta, e só online.
 
-const TAXA := 8000                     # amostras por segundo da voz
-const PACOTE := 480                    # amostras por pacote (60 ms)
+const TAXA := 8000  # amostras por segundo da voz
+const PACOTE := 480  # amostras por pacote (60 ms)
 const MU := 255.0
-const LIMIAR := 0.012                  # "sempre aberta": abaixo disso (RMS) é silêncio e não manda
-const FALANDO_T := 0.35                # quanto tempo depois do último pacote a pessoa ainda aparece "falando"
+const LIMIAR := 0.012  # "sempre aberta": abaixo disso (RMS) é silêncio e não manda
+const FALANDO_T := 0.35  # quanto tempo depois do último pacote a pessoa ainda aparece "falando"
 
-var silenciados := {}                  # peer -> true
-var recebidos := 0                     # bytes de voz que chegaram (o teste lê)
+var silenciados := {}  # peer -> true
+var recebidos := 0  # bytes de voz que chegaram (o teste lê)
 var enviados := 0
-var falando := {}                      # peer -> segundos desde o último pacote (o lobby e o chat mostram)
+var falando := {}  # peer -> segundos desde o último pacote (o lobby e o chat mostram)
 var _mic: AudioStreamPlayer
 var _captura: AudioEffectCapture
 var _bus := -1
-var _fila := PackedByteArray()         # amostras mu-law esperando completar um pacote
-var _acc := 0.0                        # reamostragem: soma e contagem do período atual
+var _fila := PackedByteArray()  # amostras mu-law esperando completar um pacote
+var _acc := 0.0  # reamostragem: soma e contagem do período atual
 var _acc_n := 0
 var _passo := 0.0
 var _pos := 0.0
-var _tocadores := {}                   # peer -> AudioStreamPlayer (gerador)
-var _teste_t := -1.0                   # --voz_teste: manda um tom em vez do microfone
+var _tocadores := {}  # peer -> AudioStreamPlayer (gerador)
+var _teste_t := -1.0  # --voz_teste: manda um tom em vez do microfone
 var _fase := 0.0
 
 
@@ -50,7 +50,7 @@ func _ligar_mic(sim: bool) -> void:
 		_bus = AudioServer.bus_count
 		AudioServer.add_bus(_bus)
 		AudioServer.set_bus_name(_bus, "Microfone")
-		AudioServer.set_bus_mute(_bus, true)   # a captura pega antes do mudo: a gente não se ouve no alto-falante
+		AudioServer.set_bus_mute(_bus, true)  # a captura pega antes do mudo: a gente não se ouve no alto-falante
 		_captura = AudioEffectCapture.new()
 		_captura.buffer_length = 0.5
 		AudioServer.add_bus_effect(_bus, _captura)
@@ -123,7 +123,7 @@ func _juntar(amostras: PackedFloat32Array) -> void:
 		var pacote := _fila.slice(0, PACOTE)
 		_fila = _fila.slice(PACOTE)
 		if modo() == "aberta" and _teste_t < 0.0 and _rms(pacote) < LIMIAR:
-			continue   # microfone aberto em silêncio: não gasta rede
+			continue  # microfone aberto em silêncio: não gasta rede
 		enviados += pacote.size()
 		falando[Rede.eu()] = 0.0
 		Rede.voz_enviar(pacote)
@@ -168,7 +168,7 @@ func tocar(peer: int, pacote: PackedByteArray) -> void:
 	p.volume_db = linear_to_db(maxf(0.001, float(Config.v("voz_volume"))))
 	var pb := p.get_stream_playback() as AudioStreamGeneratorPlayback
 	if pb == null or pb.get_frames_available() < pacote.size():
-		return   # atrasou demais: joga fora em vez de acumular atraso
+		return  # atrasou demais: joga fora em vez de acumular atraso
 	var quadros := PackedVector2Array()
 	quadros.resize(pacote.size())
 	for i in pacote.size():

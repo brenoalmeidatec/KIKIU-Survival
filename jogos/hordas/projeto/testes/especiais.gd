@@ -4,13 +4,16 @@ extends Node
 const Arena := preload("res://scripts/hordas/arena.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func arena_de(heroi: String) -> Node:
 	var a := Arena.new()
@@ -18,6 +21,7 @@ func arena_de(heroi: String) -> Node:
 	add_child(a)
 	await esperar(0.2)
 	return a
+
 
 ## Um anel de vírus comuns em volta do herói, a "dist" px.
 func cercar(a: Node, dist: float, n := 8) -> Array:
@@ -30,9 +34,10 @@ func cercar(a: Node, dist: float, n := 8) -> Array:
 			l.append(v)
 	return l
 
+
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
-		if not InputMap.has_action(acao):   # sem o main.gd, ninguém registrou as teclas
+		if not InputMap.has_action(acao):  # sem o main.gd, ninguém registrou as teclas
 			InputMap.add_action(acao)
 	# quem não tem especial no JSON não ganha um
 	var joao = await arena_de("joao")
@@ -44,7 +49,7 @@ func _ready() -> void:
 	ok(h.especial.tem() and not h.especial.pronto(), "Hazaki tem especial e começa recarregando")
 	var perto: Array = cercar(h, 60.0)
 	var longe: Array = cercar(h, 400.0, 4)
-	await esperar(0.05)   # os recém-criados entram na grade (no_circulo) no próximo quadro
+	await esperar(0.05)  # os recém-criados entram na grade (no_circulo) no próximo quadro
 	var crit_antes: float = h.stat("critico")
 	h.especial.recarga = 0.0
 	h.especial.usar()

@@ -115,14 +115,25 @@ static func resumo(contagem: Dictionary) -> Array:
 			continue
 		var at := nivel_ativo(etq, n)
 		var d: Dictionary = cfg().get("etiquetas", {}).get(etq, {})
-		r.append({"etq": etq, "nome": str(d.get("conjunto", nome_etiqueta(etq))), "n": n, "ativo": at, "prox": proximo(etq, n),
-			"cor": cor_etiqueta(etq), "texto": str(_degrau(etq, at).get("texto", "")) if at > 0 else ""})
-	r.sort_custom(func(a, b):
-		if (a.ativo > 0) != (b.ativo > 0):
-			return a.ativo > 0
-		if a.n != b.n:
-			return a.n > b.n
-		return str(a.etq) < str(b.etq))
+		r.append(
+			{
+				"etq": etq,
+				"nome": str(d.get("conjunto", nome_etiqueta(etq))),
+				"n": n,
+				"ativo": at,
+				"prox": proximo(etq, n),
+				"cor": cor_etiqueta(etq),
+				"texto": str(_degrau(etq, at).get("texto", "")) if at > 0 else ""
+			}
+		)
+	r.sort_custom(
+		func(a, b):
+			if (a.ativo > 0) != (b.ativo > 0):
+				return a.ativo > 0
+			if a.n != b.n:
+				return a.n > b.n
+			return str(a.etq) < str(b.etq)
+	)
 	return r
 
 

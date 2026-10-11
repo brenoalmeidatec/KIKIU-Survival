@@ -5,7 +5,7 @@ extends RefCounted
 
 const DUR := 0.16
 const OURO := Color("eccb7a")
-const PECAS_PATAS := [1, 5, 0, 3]   # índices em dragao.pecas(): patas da frente, de trás, cabeça, meio do corpo
+const PECAS_PATAS := [1, 5, 0, 3]  # índices em dragao.pecas(): patas da frente, de trás, cabeça, meio do corpo
 
 
 static func _pontos(w, n: int) -> Array:

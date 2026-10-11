@@ -33,7 +33,9 @@ func borda(pos: Vector2, margem: float, folga := 10.0):
 func _seta(b: Dictionary, ponta: float, lado: float, cor: Color) -> void:
 	var p: Vector2 = b.p
 	var d: Vector2 = b.dir
-	draw_colored_polygon(PackedVector2Array([p + d * ponta, p + d.orthogonal() * lado - d * (ponta * 0.45), p - d.orthogonal() * lado - d * (ponta * 0.45)]), cor)
+	draw_colored_polygon(
+		PackedVector2Array([p + d * ponta, p + d.orthogonal() * lado - d * (ponta * 0.45), p - d.orthogonal() * lado - d * (ponta * 0.45)]), cor
+	)
 
 
 ## Seta com miolo escuro (vira um contorno e se destaca de qualquer fundo) e a distância em metros (px/10).
@@ -62,7 +64,12 @@ func _draw() -> void:
 		if bs != null:
 			var pulso := 0.6 + 0.4 * sin(t * 5)
 			_seta(bs, 9.0, 6.0, Color(1, 0.85, 0.3, pulso))
-			draw_texture_rect(Dados.tex(str(Descobertas.cfg().get("santuarios", {}).get("sprite", "tomada"))), Rect2(bs.p - bs.dir * 18 - Vector2(8, 9), Vector2(16, 18)), false, Color(1, 1, 1, pulso))
+			draw_texture_rect(
+				Dados.tex(str(Descobertas.cfg().get("santuarios", {}).get("sprite", "tomada"))),
+				Rect2(bs.p - bs.dir * 18 - Vector2(8, 9), Vector2(16, 18)),
+				false,
+				Color(1, 1, 1, pulso)
+			)
 
 
 ## Indicação sutil (seção 21): uma setinha fraca na borda apontando santuário especial que ainda não foi usado.

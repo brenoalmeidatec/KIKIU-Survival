@@ -4,10 +4,12 @@ extends Node
 const C := preload("res://scripts/hordas/construcao.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 func excl_hazaki() -> Array:
 	var r := []
@@ -16,6 +18,7 @@ func excl_hazaki() -> Array:
 		if not id.begins_with("_") and C.exclusiva(id) and C.dono(id) == "hazaki":
 			r.append(id)
 	return r
+
 
 func _ready() -> void:
 	var m = load("res://main.tscn").instantiate()
@@ -51,7 +54,12 @@ func _ready() -> void:
 		for c in a.sortear_cartas():
 			if c.tipo == "arma" and c.id in ex and c.nivel == 1:
 				depois += 1
-			if c.tipo == "arma" and c.nivel == 1 and not Dados.json("armas").get(c.id, {}).get("universal", false) and not C.arma_permitida(c.id, "hazaki", a.armas.lista.map(func(x): return x.id)):
+			if (
+				c.tipo == "arma"
+				and c.nivel == 1
+				and not Dados.json("armas").get(c.id, {}).get("universal", false)
+				and not C.arma_permitida(c.id, "hazaki", a.armas.lista.map(func(x): return x.id))
+			):
 				impossivel += 1
 	ok(depois == 0, "Hazaki com 2 exclusivas não vê outra nova (viu %d)" % depois)
 	ok(impossivel == 0, "nenhuma carta nova impossível (%d)" % impossivel)
