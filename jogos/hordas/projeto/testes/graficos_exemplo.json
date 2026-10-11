@@ -1,0 +1,23 @@
+{
+	"_ajuda": "Exemplo para o dublê da API de gráficos (testes/graficos_api_falsa.gd). Não é o dados/graficos.json do jogo.",
+	"opcoes": [
+		{"chave": "max_vivos", "secao": "cpu", "nome": "Máximo de inimigos vivos", "tipo": "slider", "min": 150, "max": 500, "passo": 50, "ajuda": "Quantos monstros podem existir ao mesmo tempo. Menos vivos ganha fps quando a horda aperta.", "peso": "pesado"},
+		{"chave": "particulas", "secao": "cpu", "nome": "Partículas simuladas", "tipo": "menu", "valores": ["poucas", "normal", "todas"], "rotulos": ["Poucas", "Normal", "Todas"], "ajuda": "Poeira, faíscas e restos que são calculados (não só desenhados).", "peso": "medio"},
+		{"chave": "freq_monstros", "secao": "cpu", "nome": "Cálculo dos monstros", "tipo": "menu", "valores": [1, 2, 4], "rotulos": ["Todo quadro", "A cada 2", "A cada 4"], "ajuda": "Com que frequência a separação e o alvo dos monstros são recalculados. Mais espaçado economiza CPU, e os bichos reagem um pouco mais devagar.", "peso": "pesado"},
+		{"chave": "detalhe_longe", "secao": "cpu", "nome": "Detalhe longe da câmera", "tipo": "sim_nao", "valores": [false, true], "ajuda": "Monstros longe da câmera andam com cálculo simplificado.", "peso": "leve"},
+		{"chave": "restos", "secao": "cpu", "nome": "Tempo até sumirem os restos", "tipo": "slider", "min": 5, "max": 60, "passo": 5, "ajuda": "Segundos até os restos no chão sumirem.", "peso": "leve"},
+		{"chave": "luz_relevo", "secao": "gpu", "nome": "Luz com relevo", "tipo": "menu", "valores": ["desligada", "so_heroi", "tudo"], "rotulos": ["Desligada", "Só herói", "Tudo"], "ajuda": "Luz que dá volume ao herói e aos monstros de elite, ou a tudo.", "peso": "pesado"},
+		{"chave": "sombras", "secao": "gpu", "nome": "Sombras projetadas", "tipo": "sim_nao", "valores": [false, true], "ajuda": "Sombra do herói e dos monstros no chão.", "peso": "medio"},
+		{"chave": "brilhos", "secao": "gpu", "nome": "Brilhos e halos", "tipo": "sim_nao", "valores": [false, true], "ajuda": "Brilho em volta das armas e dos golpes.", "peso": "leve"},
+		{"chave": "nevoa", "secao": "gpu", "nome": "Névoa", "tipo": "sim_nao", "valores": [false, true], "ajuda": "Névoa no fundo da arena. Quase não custa nada.", "peso": "leve"},
+		{"chave": "vinheta", "secao": "gpu", "nome": "Vinheta", "tipo": "sim_nao", "valores": [false, true], "ajuda": "Bordas escuras da tela.", "peso": "leve"},
+		{"chave": "escala", "secao": "gpu", "nome": "Escala de renderização", "tipo": "slider", "min": 0.5, "max": 1.0, "passo": 0.05, "ajuda": "Desenha em resolução menor e amplia. Menos pixels, mais fps; a imagem perde nitidez.", "peso": "pesado"},
+		{"chave": "fps_max", "secao": "gpu", "nome": "Limite de FPS", "tipo": "menu", "valores": [30, 60, 120, 144, 0], "rotulos": ["30", "60", "120", "144", "Sem limite"], "ajuda": "Teto de quadros por segundo.", "peso": "leve"},
+		{"chave": "vsync", "secao": "gpu", "nome": "V-Sync", "tipo": "sim_nao", "valores": [false, true], "ajuda": "Sincroniza com a tela: sem rasgos, mas pode travar o fps.", "peso": "leve"}
+	],
+	"perfis": {
+		"baixo": {"max_vivos": 150, "particulas": "poucas", "freq_monstros": 4, "detalhe_longe": false, "restos": 10, "luz_relevo": "desligada", "sombras": false, "brilhos": false, "nevoa": false, "vinheta": false, "escala": 0.75, "fps_max": 60, "vsync": false},
+		"medio": {"max_vivos": 250, "particulas": "normal", "freq_monstros": 2, "detalhe_longe": true, "restos": 20, "luz_relevo": "so_heroi", "sombras": true, "brilhos": true, "nevoa": true, "vinheta": true, "escala": 1.0, "fps_max": 0, "vsync": true},
+		"alto": {"max_vivos": 500, "particulas": "todas", "freq_monstros": 1, "detalhe_longe": true, "restos": 45, "luz_relevo": "tudo", "sombras": true, "brilhos": true, "nevoa": true, "vinheta": true, "escala": 1.0, "fps_max": 0, "vsync": true}
+	}
+}
