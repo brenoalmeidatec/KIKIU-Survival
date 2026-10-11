@@ -88,6 +88,12 @@ func recarregar() -> void:
 		_cfg.set_value("graficos", "base", base)
 		_cfg.erase_section_key("opcoes", "qualidade")
 		_cfg.save(arquivo)
+	# migração, uma vez: "sombras" tinha contato e projetadas (#150); contato vira baixa e projetadas, média (a silhueta de hoje)
+	var sombra_antiga := {"contato": "baixa", "projetadas": "media"}
+	var sombra := str(_cfg.get_value("graficos", "sombras", ""))
+	if sombra_antiga.has(sombra):
+		_cfg.set_value("graficos", "sombras", sombra_antiga[sombra])
+		_cfg.save(arquivo)
 	# 1ª vez no jogo de verdade: a máquina fraca já começa em médio ou baixo (só em memória até o jogador mexer)
 	if OS.get_cmdline_user_args().is_empty() and DisplayServer.get_name() != "headless":
 		_perfil_padrao = g_detectar()

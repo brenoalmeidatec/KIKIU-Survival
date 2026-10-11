@@ -1006,7 +1006,7 @@ func _draw() -> void:
 	# só entra no desenho quem está na tela (com folga pro tamanho do sprite e da sombra): com 500 bichos, a maioria fica fora.
 	# `_ordem` = os visíveis, do mais alto pro mais baixo (quem está embaixo fica na frente). Ordena uma lista de números
 	# (y e posição na lista juntos numa chave só) com o sort nativo, todo quadro: bem mais barato que sort_custom.
-	var sombra_proj: bool = Config.g("sombras") == "projetadas"  # perfil de qualidade (dados/graficos.json)
+	var sombra_proj: bool = Config.g("sombras") != "baixa"  # baixa = só a mancha no pé; média e alta = silhueta inclinada (dados/graficos.json)
 	var lod_x := float(Config.g("lod_monstros"))
 	var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()
 	var x0 := vis.position.x

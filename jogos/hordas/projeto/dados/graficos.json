@@ -1,5 +1,5 @@
 {
- "_ajuda": "Aba Gráficos das Opções (#150). Cada item de \"opcoes\" vira um controle da tela: tipo slider (min, max, passo; \"unidade\":\"%\" mostra 0 a 100), menu (valores e rotulos) ou sim_nao. \"peso\" (leve, medio, pesado) é o custo de cada opção, para a linha de ajuda. Em \"perfis\", cada perfil dá o valor de TODAS as opções: baixo (i5-3470 do PC do trabalho, prioriza fps), medio (notebook, Iris Xe), alto (3060). Menus de número (lod_monstros, calculo_monstros, escala_render, limite_fps) entregam o próprio número; os demais entregam o texto de \"valores\". Código: Config.g(chave), Config.g_definir(chave, valor) (vira personalizado), Config.g_perfil(), Config.g_aplicar_perfil(nome), Config.g_detectar(), Config.g_opcoes(). Mapas de níveis (partículas por efeito, escuro/halo) ficam em scripts/hordas/config.gd.",
+ "_ajuda": "Aba Gráficos das Opções (#150). Cada item de \"opcoes\" vira um controle da tela: tipo slider (min, max, passo; \"unidade\":\"%\" mostra 0 a 100), menu (valores e rotulos) ou sim_nao. \"peso\" (leve, medio, pesado) é o custo de cada opção, para a linha de ajuda. Em \"perfis\", cada perfil dá o valor de TODAS as opções: baixo (i5-3470 do PC do trabalho, prioriza fps), medio (notebook, Iris Xe), alto (3060). Menus de número (lod_monstros, calculo_monstros, escala_render, limite_fps) entregam o próprio número; os demais entregam o texto de \"valores\". Código: Config.g(chave), Config.g_definir(chave, valor) (vira personalizado), Config.g_perfil(), Config.g_aplicar_perfil(nome), Config.g_detectar(), Config.g_opcoes(). Mapas de níveis (partículas por efeito, escuro/halo) ficam em scripts/hordas/config.gd. A opção \"sombras\" (baixa, media, alta) é gravada já e passa a agir quando a luz nova entrar (Etapa 3; o protótipo está no PR #156). Até lá, media e alta seguem a silhueta inclinada de hoje.",
  "opcoes": [
   {"chave": "max_inimigos", "secao": "cpu", "nome": "Máximo de inimigos vivos", "tipo": "slider", "min": 150, "max": 500, "passo": 50, "ajuda": "Quantos monstros podem estar vivos ao mesmo tempo. A fase pode ter teto menor (vale o menor).", "peso": "pesado"},
   {"chave": "particulas_sim", "secao": "cpu", "nome": "Partículas simuladas", "tipo": "menu", "valores": ["nenhuma", "poucas", "medias", "muitas"], "rotulos": ["Nenhuma", "Poucas", "Médias", "Muitas"], "ajuda": "Partículas de morte, fogo, gelo, raio e poeira. Nenhuma e Poucas também tiram ratos, morcegos e corvos do chão.", "peso": "medio"},
@@ -8,7 +8,7 @@
   {"chave": "restos_chao", "secao": "cpu", "nome": "Tempo dos restos no chão", "tipo": "slider", "min": 3, "max": 15, "passo": 1, "unidade": "s", "ajuda": "Segundos até o sangue e as manchas de morte sumirem do chão.", "peso": "leve"},
 
   {"chave": "luz_relevo", "secao": "gpu", "nome": "Luz com relevo", "tipo": "menu", "valores": ["desligada", "so_heroi", "tudo"], "rotulos": ["Desligada", "Só herói", "Tudo"], "ajuda": "Luz com relevo nos personagens e no cenário. Por enquanto só guarda o valor; a luz entra na Etapa 3.", "peso": "pesado"},
-  {"chave": "sombras", "secao": "gpu", "nome": "Sombras projetadas", "tipo": "menu", "valores": ["contato", "projetadas"], "rotulos": ["Só o contato no pé", "Projetadas"], "ajuda": "Silhueta inclinada embaixo de cada monstro, além da mancha no pé.", "peso": "medio"},
+  {"chave": "sombras", "secao": "gpu", "nome": "Sombras", "tipo": "menu", "valores": ["baixa", "media", "alta"], "rotulos": ["Simples", "Suaves", "Detalhadas"], "ajuda": "Baixa: mancha oval fixa nos pés. Média: sombra embaçada que segue a direção da luz. Alta: silhueta detalhada, seguindo até 2 luzes. Gravada já; a sombra nova entra com a luz (Etapa 3). Até lá, média e alta usam a silhueta de hoje.", "peso": "medio"},
   {"chave": "brilhos_halos", "secao": "gpu", "nome": "Brilhos e halos", "tipo": "slider", "min": 0, "max": 100, "passo": 25, "unidade": "%", "ajuda": "Quantidade de halos de luz (armas, impactos, fase de horror). Também define quantas luzes a fase de horror considera.", "peso": "medio"},
   {"chave": "nevoa", "secao": "gpu", "nome": "Névoa", "tipo": "sim_nao", "ajuda": "Manchas grandes de névoa no chão. São caras para desenhar: custam bastante com a tela cheia.", "peso": "pesado"},
   {"chave": "vinheta", "secao": "gpu", "nome": "Vinheta (bordas escuras)", "tipo": "sim_nao", "ajuda": "Bordas escuras da tela. Só aparece se a opção Vinheta também estiver ligada na aba de leitura.", "peso": "leve"},
@@ -21,17 +21,17 @@
  "perfis": {
   "baixo": {
    "max_inimigos": 250, "particulas_sim": "poucas", "calculo_monstros": 2.0, "lod_monstros": 0.4, "restos_chao": 4,
-   "luz_relevo": "desligada", "sombras": "contato", "brilhos_halos": 25, "nevoa": false, "vinheta": false,
+   "luz_relevo": "desligada", "sombras": "baixa", "brilhos_halos": 25, "nevoa": false, "vinheta": false,
    "efeitos_armas": 30, "tremor_clarao": 100, "escala_render": 75, "limite_fps": 60, "vsync": false
   },
   "medio": {
    "max_inimigos": 350, "particulas_sim": "medias", "calculo_monstros": 1.0, "lod_monstros": 0.7, "restos_chao": 9,
-   "luz_relevo": "so_heroi", "sombras": "projetadas", "brilhos_halos": 50, "nevoa": true, "vinheta": true,
+   "luz_relevo": "so_heroi", "sombras": "media", "brilhos_halos": 50, "nevoa": true, "vinheta": true,
    "efeitos_armas": 60, "tremor_clarao": 100, "escala_render": 100, "limite_fps": 0, "vsync": true
   },
   "alto": {
    "max_inimigos": 500, "particulas_sim": "muitas", "calculo_monstros": 1.0, "lod_monstros": 1.0, "restos_chao": 9,
-   "luz_relevo": "tudo", "sombras": "projetadas", "brilhos_halos": 100, "nevoa": true, "vinheta": true,
+   "luz_relevo": "tudo", "sombras": "alta", "brilhos_halos": 100, "nevoa": true, "vinheta": true,
    "efeitos_armas": 100, "tremor_clarao": 100, "escala_render": 100, "limite_fps": 0, "vsync": true
   }
  }
