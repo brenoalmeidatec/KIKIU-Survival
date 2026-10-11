@@ -12,17 +12,17 @@ extends Node
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 
 var arena: Node
-var fragmentos := {}         # id da habilidade -> quantos fragmentos já pegou
-var dadivas: Array = []      # [{id, raridade}] já pegas
-var eventos_vistos: Array = []   # ids dos eventos que já rolaram (teste e depuração)
+var fragmentos := {}  # id da habilidade -> quantos fragmentos já pegou
+var dadivas: Array = []  # [{id, raridade}] já pegas
+var eventos_vistos: Array = []  # ids dos eventos que já rolaram (teste e depuração)
 var _rng_ev: RandomNumberGenerator
 var _prox_evento := 0.0
-var _cd := {}                # id do evento -> segundos de cooldown que faltam
-var _hist: Array = []        # últimos eventos (o peso de quem saiu há pouco encolhe)
-var _desafios: Array = []    # santuários de combate em andamento
-var _hordas: Array = []      # hordas de elite de evento em andamento
-var _provas: Array = []      # santuários de prova em andamento (#63)
-var _premios: Array = []     # ofertas de dádiva que esperam a tela de cartas liberar: [{titulo, min}]
+var _cd := {}  # id do evento -> segundos de cooldown que faltam
+var _hist: Array = []  # últimos eventos (o peso de quem saiu há pouco encolhe)
+var _desafios: Array = []  # santuários de combate em andamento
+var _hordas: Array = []  # hordas de elite de evento em andamento
+var _provas: Array = []  # santuários de prova em andamento (#63)
+var _premios: Array = []  # ofertas de dádiva que esperam a tela de cartas liberar: [{titulo, min}]
 
 
 static func cfg() -> Dictionary:
@@ -30,6 +30,7 @@ static func cfg() -> Dictionary:
 
 
 # ---------- plano do mundo (puro: só semente + dados) ----------
+
 
 ## Em que fases ficam os Santuários do Dragão desta corrida (0, 1, 2 ou 3, pesos configuráveis; fases diferentes).
 static func plano_fragmentos(n_fases: int) -> Array:
@@ -80,7 +81,7 @@ static func planejar_fase(fase_idx: int, n_fases: int, n_tomadas: int, ancora: V
 		usados.append(p)
 		var req := _requisito_sorteado(rng, c, n_tomadas)
 		res.append(_novo(p, "selado", "", {"requisito": req.id, "qtd": req.qtd}))
-		if req.id == "reliquia":   # "achar outro elemento antes": a relíquia nasce em outro ponto do mapa
+		if req.id == "reliquia":  # "achar outro elemento antes": a relíquia nasce em outro ponto do mapa
 			var q := _posicao_livre(rng, ancora, usados, c)
 			usados.append(q)
 			res.append(_novo(q, "reliquia"))
@@ -104,7 +105,7 @@ static func _requisito_sorteado(rng: RandomNumberGenerator, c: Dictionary, n_tom
 static func progresso(s: Dictionary, lista: Array, contagem := {}) -> Vector2i:
 	if str(s.get("tipo", "")) != "selado":
 		return Vector2i(1, 1)
-	if str(s.get("requisito", "")) == "elemento":   # #72: marcar N inimigos com algum elemento neste andar (inimigos.elementos.contagem)
+	if str(s.get("requisito", "")) == "elemento":  # #72: marcar N inimigos com algum elemento neste andar (inimigos.elementos.contagem)
 		var q := int(s.get("qtd", 1))
 		return Vector2i(mini(int(contagem.get("qualquer", 0)), q), q)
 	var alvo := "tomada" if str(s.get("requisito", "")) == "piras" else "reliquia"
@@ -217,9 +218,19 @@ static func _carta_dupla(id: String) -> Dictionary:
 	var nomes := []
 	for r in def.get("requer", []):
 		nomes.append(str(d.get("lista", {}).get(r, {}).get("nome", r)))
-	return {"tipo": "dadiva", "id": id, "raridade": "dupla", "rar_nome": str(cfg_d.get("nome", "DUPLA")), "cor": Color(cor[0], cor[1], cor[2]),
-		"nome": str(def.get("nome", id)), "desc": _texto_efeito(def.get("efeito", {})), "requer_nomes": nomes,
-		"icone": str(def.get("icone", id)), "nivel": 0, "dupla": true}
+	return {
+		"tipo": "dadiva",
+		"id": id,
+		"raridade": "dupla",
+		"rar_nome": str(cfg_d.get("nome", "DUPLA")),
+		"cor": Color(cor[0], cor[1], cor[2]),
+		"nome": str(def.get("nome", id)),
+		"desc": _texto_efeito(def.get("efeito", {})),
+		"requer_nomes": nomes,
+		"icone": str(def.get("icone", id)),
+		"nivel": 0,
+		"dupla": true
+	}
 
 
 ## Número no texto: "10%", "18", "1,4" (vírgula decimal, como em português).
@@ -240,18 +251,28 @@ static func _carta_dadiva(id: String, raridade: String) -> Dictionary:
 	var fmt := str(def.get("formato", "pct"))
 	var mult := float(rar.get("mult", 1.0))
 	var desc := ""
-	if def.has("texto") and not efeito.is_empty():   # frase pronta, com {v} no lugar do número
+	if def.has("texto") and not efeito.is_empty():  # frase pronta, com {v} no lugar do número
 		desc = str(def.texto).replace("{v}", _valor(absf(float(efeito.values()[0]) * mult), fmt))
 	else:
 		var partes := []
 		for k in efeito:
 			partes.append("+%s %s" % [_valor(absf(float(efeito[k]) * mult), fmt), str(def.get("rotulo", k))])
 		desc = ", ".join(partes)
-	return {"tipo": "dadiva", "id": id, "raridade": raridade, "rar_nome": str(rar.get("nome", raridade)), "cor": Color(cor[0], cor[1], cor[2]),
-		"nome": str(def.get("nome", id)), "desc": desc, "icone": str(def.get("icone", id)), "nivel": 0}
+	return {
+		"tipo": "dadiva",
+		"id": id,
+		"raridade": raridade,
+		"rar_nome": str(rar.get("nome", raridade)),
+		"cor": Color(cor[0], cor[1], cor[2]),
+		"nome": str(def.get("nome", id)),
+		"desc": desc,
+		"icone": str(def.get("icone", id)),
+		"nivel": 0
+	}
 
 
 # ---------- fragmentos ----------
+
 
 func iniciar(a: Node) -> void:
 	arena = a
@@ -308,6 +329,7 @@ func pegou_fragmento() -> void:
 
 # ---------- dádivas ----------
 
+
 func bonus() -> Dictionary:
 	var res := {}
 	var d: Dictionary = Dados.json("dadivas")
@@ -331,6 +353,7 @@ func _oferecer(titulo: String, raridade_min := "") -> void:
 
 
 # ---------- santuários ----------
+
 
 ## O jogador carregou o santuário até o fim. false = ainda não dá (ex.: já tem uma escolha aberta); chao tenta de novo.
 func ativar(s: Dictionary) -> bool:
@@ -358,7 +381,7 @@ func ativar(s: Dictionary) -> bool:
 		"selado":
 			var cont: Dictionary = arena.inimigos.elementos.contagem
 			var pr := progresso(s, arena.chao.santuarios, cont)
-			if pr.x < pr.y:   # selo ainda fechado: zera a carga e diz o que falta
+			if pr.x < pr.y:  # selo ainda fechado: zera a carga e diz o que falta
 				s.carga = 0.0
 				Som.ui("erro")
 				arena.mensagem("Santuário selado! " + dica(s, arena.chao.santuarios, cont), Color(1, 0.6, 0.45))
@@ -375,7 +398,7 @@ func ativar(s: Dictionary) -> bool:
 func _ativar_fragmento(s: Dictionary, c: Dictionary) -> bool:
 	var alvo := alvo_fragmento()
 	if alvo == "":
-		s.usado = true   # sem forma pra desbloquear (outro herói, ou já desbloqueou): vira uma dádiva
+		s.usado = true  # sem forma pra desbloquear (outro herói, ou já desbloqueou): vira uma dádiva
 		_oferecer("O santuário reage...")
 		return true
 	var v: Dictionary = c.get("variacoes", {}).get(str(s.variacao), {})
@@ -383,8 +406,17 @@ func _ativar_fragmento(s: Dictionary, c: Dictionary) -> bool:
 		"combate":
 			s.usado = true
 			s["prog"] = 0.001
-			_desafios.append({"s": s, "t": float(v.get("duracao", 14.0)), "total": float(v.get("duracao", 14.0)), "falta": int(v.get("inimigos", 14)),
-				"acc": 0.0, "raio": float(v.get("raio", 190.0)), "avisou": false})
+			_desafios.append(
+				{
+					"s": s,
+					"t": float(v.get("duracao", 14.0)),
+					"total": float(v.get("duracao", 14.0)),
+					"falta": int(v.get("inimigos", 14)),
+					"acc": 0.0,
+					"raio": float(v.get("raio", 190.0)),
+					"avisou": false
+				}
+			)
 			arena.anunciar("SOBREVIVA!", Color(1, 0.6, 0.3))
 			arena.mensagem("Fique perto do santuário até a energia acalmar", Color(1, 0.8, 0.5))
 		"sacrificio":
@@ -427,7 +459,7 @@ func _atualizar_provas(dt: float) -> void:
 	var cp: Dictionary = cfg().get("santuarios", {}).get("prova", {})
 	for pv in _provas.duplicate():
 		var s: Dictionary = pv.s
-		if not s in arena.chao.santuarios:   # mudou de andar
+		if not s in arena.chao.santuarios:  # mudou de andar
 			_provas.erase(pv)
 			continue
 		var vitoria := false
@@ -476,6 +508,7 @@ func _cercar(centro: Vector2, n: int, tipos: Array, elite: bool, raio := Vector2
 
 
 # ---------- eventos aleatórios ----------
+
 
 func atualizar(dt: float) -> void:
 	if arena.duelo_ativo or arena.pre_duelo or arena.acabou:

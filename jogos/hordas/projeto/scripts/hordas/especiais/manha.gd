@@ -12,8 +12,19 @@ static func ativar(w, d: Dictionary, esp) -> void:
 	var dur := float(d.get("duracao", 4.0))
 	jog.invencivel = maxf(jog.invencivel, dur)
 	jog.curar(jog.vida_max() * float(d.get("cura", 0.35)))
-	w.especiais.append({"tipo": "manha", "pos": jog.position, "t": dur, "dur": dur, "r": float(d.get("raio", 125)),
-		"lento": float(d.get("lento", 1.5)), "dano": esp.dano(), "tique": 0.0, "arma": str(d.get("nome", "especial"))})
+	w.especiais.append(
+		{
+			"tipo": "manha",
+			"pos": jog.position,
+			"t": dur,
+			"dur": dur,
+			"r": float(d.get("raio", 125)),
+			"lento": float(d.get("lento", 1.5)),
+			"dano": esp.dano(),
+			"tique": 0.0,
+			"arma": str(d.get("nome", "especial"))
+		}
+	)
 
 
 static func passo(w, e: Dictionary, dt: float) -> bool:
@@ -31,7 +42,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 
 
 static func pintar(w, e: Dictionary) -> void:
-	var f: float = clampf(e.t / 0.4, 0.0, 1.0) * clampf((e.dur - e.t) / 0.25, 0.0, 1.0)   # entra e sai suave
+	var f: float = clampf(e.t / 0.4, 0.0, 1.0) * clampf((e.dur - e.t) / 0.25, 0.0, 1.0)  # entra e sai suave
 	var c: Vector2 = (e.pos as Vector2).floor() + Vector2(0, -2)
 	var tempo: float = e.dur - e.t
 	# bolha calma no chão (elipse) e ondinhas lentas saindo dela

@@ -23,13 +23,19 @@ func _ready() -> void:
 	var c := Legib.cfg()
 	ok(float(c.get("perto", 0)) > 0 and float(c.get("nasce", 0)) > 0 and int(c.get("max", 0)) > 0, "legibilidade no coletaveis.json")
 	ok(Legib.tem_barra(true, false) and Legib.tem_barra(false, true) and not Legib.tem_barra(false, false), "barra só pra elite e chefe")
-	ok(Legib.nome_curto("Bug") == "Bug" and Legib.nome_curto("Sanguessuga Gigante").length() <= 14, "nome curto cabe (%s)" % Legib.nome_curto("Sanguessuga Gigante"))
+	ok(
+		Legib.nome_curto("Bug") == "Bug" and Legib.nome_curto("Sanguessuga Gigante").length() <= 14,
+		"nome curto cabe (%s)" % Legib.nome_curto("Sanguessuga Gigante")
+	)
 	ok(Legib.nome_curto("Tela Azul da Morte do Mundo Inteiro").length() <= 14, "nome longo é cortado")
 	ok(Legib.mostra_nome(10.0, 9.0) and not Legib.mostra_nome(10.0, 5.0), "o nome aparece logo depois do golpe e some")
 	for tipo in ["bau", "marmita", "wifi", "fragmento"]:
 		var e := Legib.etiqueta(tipo)
 		ok(not e.is_empty(), "etiqueta de " + tipo)
-		ok(str(e.get("nome", "")) != "" and e.has("forma") and Interface.cor(str(e.get("cor", ""))) != Color.WHITE, "etiqueta de %s tem nome, forma e cor" % tipo)
+		ok(
+			str(e.get("nome", "")) != "" and e.has("forma") and Interface.cor(str(e.get("cor", ""))) != Color.WHITE,
+			"etiqueta de %s tem nome, forma e cor" % tipo
+		)
 	ok(Legib.etiqueta("gema", 5.0).is_empty() and not Legib.etiqueta("gema", 30.0).is_empty(), "só a gema grande ganha etiqueta")
 	ok(Legib.etiqueta("coisa_que_nao_existe").is_empty(), "item sem etiqueta não ganha")
 	var perto := float(c.perto)
@@ -107,7 +113,10 @@ func _ready() -> void:
 	for _i in 100:
 		a.coleta.atualizar(0.016)
 	var us := Time.get_ticks_usec() - t0
-	ok(ino.lista.filter(func(v): return Legib.tem_barra(v.elite, v.chefe)).is_empty() and a.coleta.rotulos_n == 0 and a.coleta._cand.is_empty(), "400 comuns e 300 gemas pequenas: zero barras, zero etiquetas, zero candidatos")
+	ok(
+		ino.lista.filter(func(v): return Legib.tem_barra(v.elite, v.chefe)).is_empty() and a.coleta.rotulos_n == 0 and a.coleta._cand.is_empty(),
+		"400 comuns e 300 gemas pequenas: zero barras, zero etiquetas, zero candidatos"
+	)
 	print("LEGIB info: 100 atualizações da coleta com 300 gemas = %d us (%.1f us cada)" % [us, us / 100.0])
 	ino.limpar()
 	a.coleta.limpar()
@@ -152,7 +161,10 @@ func _ready() -> void:
 	ok(Legib.alfa_sobre(ob.pos + Vector2(150, 0), alvos) == 1.0, "longe do alvo: opacidade cheia")
 	# o shader dos efeitos liga só enquanto existe alvo
 	a.camada_objetivos._process(0.016)
-	ok(a.armas.material != null and a.armas._chao_pocas.material != null and a.armas._atras.material != null, "com alvo: efeitos de arma usam o material de 40%")
+	ok(
+		a.armas.material != null and a.armas._chao_pocas.material != null and a.armas._atras.material != null,
+		"com alvo: efeitos de arma usam o material de 40%"
+	)
 	ok(a.armas.material.get_shader_parameter("alfa") == 0.4 and int(a.armas.material.get_shader_parameter("n")) >= 2, "o material conhece os alvos e os 40%")
 	a.saida.fechar()
 	ob._zerar()

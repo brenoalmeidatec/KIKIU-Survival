@@ -5,16 +5,20 @@ const J := preload("res://scripts/hordas/jogador.gd")
 const DIRS := ["baixo", "esquerda", "direita", "cima"]
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func tex(w: int) -> ImageTexture:
 	return ImageTexture.create_from_image(Image.create(w, 480, false, Image.FORMAT_RGBA8))
 
+
 func faixa(f: int, hf: int, d: String, c0: int, c1: int) -> bool:
 	return f / hf == J.LINHA[d] and f % hf >= c0 and f % hf <= c1
+
 
 func _ready() -> void:
 	# função pura

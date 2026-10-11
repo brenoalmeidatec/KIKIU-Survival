@@ -18,7 +18,7 @@ func ok(cond: bool, msg: String) -> void:
 
 func _ready() -> void:
 	Config.arquivo = ARQ_TESTE
-	var vazio := ConfigFile.new()   # começa sem nada salvo
+	var vazio := ConfigFile.new()  # começa sem nada salvo
 	vazio.save(ARQ_TESTE)
 	Config.recarregar()
 	Config.graficos_mudou.connect(func(): sinais += 1)
@@ -35,7 +35,10 @@ func _ready() -> void:
 		for p in ["baixo", "medio", "alto"]:
 			ok(perfis.get(p, {}).has(o.chave), "%s: o perfil %s traz a opção" % [o.chave, p])
 	ok(secoes.cpu == 5 and secoes.gpu == 10, "CPU 5 e GPU 10 (deu %s)" % str(secoes))
-	ok(Config.item("qualidade").is_empty() and Config.item("vsync").is_empty() and Config.item("fps_max").is_empty() and Config.item("vinheta").is_empty(), "qualidade, vsync, fps_max e vinheta saíram do ITENS (a aba manda)")
+	ok(
+		Config.item("qualidade").is_empty() and Config.item("vsync").is_empty() and Config.item("fps_max").is_empty() and Config.item("vinheta").is_empty(),
+		"qualidade, vsync, fps_max e vinheta saíram do ITENS (a aba manda)"
+	)
 	ok(Config.item("particulas").is_empty(), "a opção de leitura 'Partículas' saiu: a única é particulas_sim")
 
 	# 2. cada perfil: g() devolve o que o perfil diz, e o valor pertence ao domínio da opção (menu, faixa do slider)
@@ -54,25 +57,65 @@ func _ready() -> void:
 
 	# 3. os números de hoje (dados/qualidade.json antigo): alto = alta, medio = media, baixo = baixa
 	Config.g_perfil_temporario("alto")
-	ok(Config.g("max_inimigos") == 500 and Config.fator_particulas("efe_faiscas") == 1.0 and Config.fator_particulas("elem_part") == 1.0, "alto: 500 vivos e partículas cheias")
-	ok(Config.leituras_horror() == 8 and Config.luzes_horror() == 16 and is_equal_approx(Config.fator_brilho(), 1.0), "alto: horror 8 leituras, 16 luzes, halos 100%")
-	ok(is_equal_approx(Cresc.fator(), 1.0) and Config.g("nevoa") == true and Config.g("vinheta") == true, "alto: efeitos das armas 100%, névoa e vinheta ligadas")
+	ok(
+		Config.g("max_inimigos") == 500 and Config.fator_particulas("efe_faiscas") == 1.0 and Config.fator_particulas("elem_part") == 1.0,
+		"alto: 500 vivos e partículas cheias"
+	)
+	ok(
+		Config.leituras_horror() == 8 and Config.luzes_horror() == 16 and is_equal_approx(Config.fator_brilho(), 1.0),
+		"alto: horror 8 leituras, 16 luzes, halos 100%"
+	)
+	ok(
+		is_equal_approx(Cresc.fator(), 1.0) and Config.g("nevoa") == true and Config.g("vinheta") == true,
+		"alto: efeitos das armas 100%, névoa e vinheta ligadas"
+	)
 	Config.g_perfil_temporario("medio")
-	ok(Config.g("max_inimigos") == 350 and is_equal_approx(Config.fator_particulas("efe_faiscas"), 0.6) and is_equal_approx(Config.fator_particulas("efe_impactos"), 0.67), "médio: 350 vivos, faíscas 0,6 e impactos 0,67 (como a media antiga)")
-	ok(is_equal_approx(Config.fator_particulas("mortes_simples"), 0.6) and Config.leituras_horror() == 4 and Config.luzes_horror() == 12, "médio: mortes simples 0,6, horror 4 leituras e 12 luzes")
+	ok(
+		(
+			Config.g("max_inimigos") == 350
+			and is_equal_approx(Config.fator_particulas("efe_faiscas"), 0.6)
+			and is_equal_approx(Config.fator_particulas("efe_impactos"), 0.67)
+		),
+		"médio: 350 vivos, faíscas 0,6 e impactos 0,67 (como a media antiga)"
+	)
+	ok(
+		is_equal_approx(Config.fator_particulas("mortes_simples"), 0.6) and Config.leituras_horror() == 4 and Config.luzes_horror() == 12,
+		"médio: mortes simples 0,6, horror 4 leituras e 12 luzes"
+	)
 	ok(is_equal_approx(Cresc.fator(), 0.6) and is_equal_approx(Config.fator_brilho(), 0.5), "médio: efeitos das armas 60% e halos 50%")
 	Config.g_perfil_temporario("baixo")
-	ok(Config.g("max_inimigos") == 250 and is_equal_approx(Config.fator_particulas("amb_particulas"), 0.25) and is_equal_approx(Config.fator_particulas("mortes_simples"), 0.4), "baixo: 250 vivos, ambiente 0,25 e mortes simples 0,4 (como a baixa antiga)")
+	ok(
+		(
+			Config.g("max_inimigos") == 250
+			and is_equal_approx(Config.fator_particulas("amb_particulas"), 0.25)
+			and is_equal_approx(Config.fator_particulas("mortes_simples"), 0.4)
+		),
+		"baixo: 250 vivos, ambiente 0,25 e mortes simples 0,4 (como a baixa antiga)"
+	)
 	ok(Config.g("nevoa") == false and Config.g("vinheta") == false and Config.g("sombras") == "contato", "baixo: sem névoa, sem vinheta e só o contato no pé")
 	ok(Config.g("particulas_sim") == "poucas" and is_equal_approx(float(Config.g("calculo_monstros")), 2.0), "baixo: partículas poucas, monstros espaçados")
-	ok(Config.leituras_horror() == 0 and Config.luzes_horror() == 8 and is_equal_approx(Cresc.fator(), 0.3), "baixo: sem leitura de tela no horror, 8 luzes, efeitos 30%")
+	ok(
+		Config.leituras_horror() == 0 and Config.luzes_horror() == 8 and is_equal_approx(Cresc.fator(), 0.3),
+		"baixo: sem leitura de tela no horror, 8 luzes, efeitos 30%"
+	)
 
 	# 4. partículas: uma opção só (particulas_sim). Nenhuma zera tudo; Poucas e Médias seguem a escala antiga
 	Config.g_perfil_temporario("alto")
 	Config.g_temporario("particulas_sim", "nenhuma")
-	ok(is_zero_approx(Config.fator_particulas("amb_particulas")) and is_zero_approx(Config.fator_particulas("elem_part")) and is_zero_approx(Config.fator_particulas("efe_faiscas")) and is_zero_approx(Config.fator_particulas("mortes_simples")), "Nenhuma zera todas as partículas")
+	ok(
+		(
+			is_zero_approx(Config.fator_particulas("amb_particulas"))
+			and is_zero_approx(Config.fator_particulas("elem_part"))
+			and is_zero_approx(Config.fator_particulas("efe_faiscas"))
+			and is_zero_approx(Config.fator_particulas("mortes_simples"))
+		),
+		"Nenhuma zera todas as partículas"
+	)
 	Config.g_temporario("particulas_sim", "medias")
-	ok(is_equal_approx(Config.fator_particulas("amb_particulas"), 0.5) and is_equal_approx(Config.fator_particulas("elem_part"), 0.5), "Médias: metade do ambiente e dos elementos")
+	ok(
+		is_equal_approx(Config.fator_particulas("amb_particulas"), 0.5) and is_equal_approx(Config.fator_particulas("elem_part"), 0.5),
+		"Médias: metade do ambiente e dos elementos"
+	)
 	Config.g_perfil_temporario("alto")
 
 	# 5. mexer numa opção vira personalizado, salva e avisa
@@ -87,7 +130,10 @@ func _ready() -> void:
 	# 6. salvar e carregar: o arquivo tem o que foi salvo e recarregar devolve o mesmo estado
 	var arq := ConfigFile.new()
 	arq.load(ARQ_TESTE)
-	ok(arq.get_value("graficos", "max_inimigos", -1) == 300 and arq.get_value("graficos", "perfil", "") == "personalizado", "salvo no arquivo: 300 e personalizado")
+	ok(
+		arq.get_value("graficos", "max_inimigos", -1) == 300 and arq.get_value("graficos", "perfil", "") == "personalizado",
+		"salvo no arquivo: 300 e personalizado"
+	)
 	Config.recarregar()
 	ok(Config.g("max_inimigos") == 300 and Config.g_perfil() == "personalizado", "carregado: 300 e personalizado")
 	Config.g_aplicar_perfil("baixo")

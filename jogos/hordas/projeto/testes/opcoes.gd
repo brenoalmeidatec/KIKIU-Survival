@@ -4,10 +4,12 @@ extends Node
 const Efeitos := preload("res://scripts/hordas/efeitos.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 func _ready() -> void:
 	var antes := {}

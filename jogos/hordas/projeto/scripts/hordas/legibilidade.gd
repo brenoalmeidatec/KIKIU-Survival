@@ -6,7 +6,7 @@ extends RefCounted
 ## só olha os poucos itens do chão; a marca de área é uma por poça/aura/aviso.
 
 const Interface := preload("res://scripts/hordas/interface.gd")
-const ACHATA := 0.6   # o anel no chão é uma elipse (a mesma conta do aviso de #68 e das poças)
+const ACHATA := 0.6  # o anel no chão é uma elipse (a mesma conta do aviso de #68 e das poças)
 
 
 static func cfg() -> Dictionary:
@@ -14,6 +14,7 @@ static func cfg() -> Dictionary:
 
 
 # ---------- barra de elite ----------
+
 
 ## A barra só existe para elite e chefe (os comuns morrem rápido demais para valer o desenho).
 static func tem_barra(elite: bool, chefe: bool) -> bool:
@@ -46,7 +47,7 @@ static func mostra_nome(agora: float, t_golpe: float) -> bool:
 static func barra(ci: CanvasItem, x: float, topo: float, larg: float, fr: float, chefe: bool) -> void:
 	var w := roundf(clampf(larg, 18.0, 56.0))
 	var x0 := roundf(x - w * 0.5)
-	var y0 := roundf(topo) - 3.0   # os pips de elemento (elementos.gd) ficam logo acima: topo-10 a topo-5
+	var y0 := roundf(topo) - 3.0  # os pips de elemento (elementos.gd) ficam logo acima: topo-10 a topo-5
 	fr = clampf(fr, 0.0, 1.0)
 	ci.draw_rect(Rect2(x0 - 1, y0 - 1, w + 2, 5), Color(0.05, 0.04, 0.08, 0.9))
 	ci.draw_rect(Rect2(x0, y0, w, 3), Color(0.25, 0.05, 0.08))
@@ -71,6 +72,7 @@ static func tam_texto() -> int:
 
 
 # ---------- etiqueta de drop ----------
+
 
 ## Que etiqueta o item leva ({} = nenhuma). `valor` é o valor da gema (só a grande ganha etiqueta).
 static func etiqueta(tipo: String, valor := 0.0) -> Dictionary:
@@ -127,6 +129,7 @@ static func forma(ci: CanvasItem, c: Vector2, nome: String, cor: Color, a := 1.0
 
 # ---------- marca de área ----------
 
+
 ## Cor do perigo (o vermelho do aviso de #68; laranja no modo daltônico) e da área aliada (azul, mais discreta).
 static func cor_perigo() -> Color:
 	return Interface.cor("perigo")
@@ -160,10 +163,10 @@ static func marca_aliada(ci: CanvasItem, centro: Vector2, raio: float, viva := 1
 ## Objetivo, altar, portal de saída e baú se leem primeiro: ficam numa camada acima (z_index 50), efeitos e baús ficam a 40% de
 ## opacidade quando estão em cima de um alvo, o baú nunca nasce colado num alvo e quem está fora da tela ganha seta na borda.
 
-const BAU_MIN := 96.0       # px: baú nasce pelo menos isso longe de qualquer alvo
-const SOBRE_RAIO := 40.0    # px: efeito/baú a menos disso do centro de um alvo está "em cima" dele
-const SOBRE_ALFA := 0.4     # opacidade de efeitos e baús em cima de um alvo
-const ALVOS_MAX := 8        # o shader da camada guarda no máximo isso
+const BAU_MIN := 96.0  # px: baú nasce pelo menos isso longe de qualquer alvo
+const SOBRE_RAIO := 40.0  # px: efeito/baú a menos disso do centro de um alvo está "em cima" dele
+const SOBRE_ALFA := 0.4  # opacidade de efeitos e baús em cima de um alvo
+const ALVOS_MAX := 8  # o shader da camada guarda no máximo isso
 
 
 ## Posições (mundo) de tudo que é "alvo": objetivo do andar, objetivo da missão do chefe (fragmentos, altar) e portal de saída.
@@ -194,7 +197,7 @@ static func alfa_sobre(p: Vector2, lista: Array, raio := SOBRE_RAIO) -> float:
 
 ## Empurra `p` pra fora do raio mínimo de cada alvo (o baú não cobre o marcador).
 static func longe_dos_alvos(p: Vector2, lista: Array, minimo := BAU_MIN) -> Vector2:
-	for _i in 3:   # empurrar de um alvo pode encostar em outro
+	for _i in 3:  # empurrar de um alvo pode encostar em outro
 		var mexeu := false
 		for a in lista:
 			var d: Vector2 = p - a

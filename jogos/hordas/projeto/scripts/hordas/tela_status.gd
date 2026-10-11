@@ -15,12 +15,14 @@ const W := 640.0
 const H := 360.0
 const CINZA := Color(0.62, 0.62, 0.68)
 ## ordem das linhas de atributo na tela
-const ATRIBUTOS := ["vida_max", "regen", "dano", "recarga", "area", "duracao", "quantidade", "velocidade_proj", "velocidade", "ima", "critico", "critico_mult", "sorte", "xp"]
+const ATRIBUTOS := [
+	"vida_max", "regen", "dano", "recarga", "area", "duracao", "quantidade", "velocidade_proj", "velocidade", "ima", "critico", "critico_mult", "sorte", "xp"
+]
 const ROTULO_EXTRA := {"critico_mult": "Dano crít.", "velocidade_proj": "Vel. tiro", "velocidade": "Vel. andar", "vida_max": "Vida", "duracao": "Duração"}
 
 var arena: Node
 var aberta := false
-var fixa := false              # teste/print: não fecha sozinha
+var fixa := false  # teste/print: não fecha sozinha
 var _pausei := false
 var _tela := Control.new()
 
@@ -41,6 +43,7 @@ func _exit_tree() -> void:
 
 
 # ---------- contas puras (o teste chama direto) ----------
+
 
 ## Valor como o jogador lê: porcentagem para os atributos multiplicativos, número cru para os outros.
 static func fmt_valor(k: String, v: float) -> String:
@@ -76,8 +79,17 @@ static func linhas_atributos(base: Dictionary, atual: Dictionary) -> Array:
 			sentido = 1 if d > 0.0 else -1
 			if k in Interface.MENOR_MELHOR:
 				sentido = -sentido
-		r.append({"k": k, "rot": str(ROTULO_EXTRA.get(k, Interface.ROTULOS.get(k, k.capitalize()))), "base": b, "delta": d, "txt_base": fmt_valor(k, b),
-			"txt_delta": fmt_delta(k, d) if sentido != 0 else "", "sentido": sentido})
+		r.append(
+			{
+				"k": k,
+				"rot": str(ROTULO_EXTRA.get(k, Interface.ROTULOS.get(k, k.capitalize()))),
+				"base": b,
+				"delta": d,
+				"txt_base": fmt_valor(k, b),
+				"txt_delta": fmt_delta(k, d) if sentido != 0 else "",
+				"sentido": sentido
+			}
+		)
 	return r
 
 
@@ -98,9 +110,18 @@ static func armas_info(arena) -> Array:
 	var r: Array = []
 	for a in arena.armas.lista:
 		var d := Dados.item(str(a.id))
-		r.append({"id": str(a.id), "nome": str(d.get("nome", a.id)), "nivel": int(a.nivel), "nivel_max": Cresc.nivel_max(str(a.id)),
-			"tamanho": Cresc.mult(str(a.id), int(a.nivel), "area"), "dano": Cresc.mult(str(a.id), int(a.nivel), "dano"),
-			"evoluida": Cresc.evoluida(str(a.id)), "icone": str(d.get("icone", a.id))})
+		r.append(
+			{
+				"id": str(a.id),
+				"nome": str(d.get("nome", a.id)),
+				"nivel": int(a.nivel),
+				"nivel_max": Cresc.nivel_max(str(a.id)),
+				"tamanho": Cresc.mult(str(a.id), int(a.nivel), "area"),
+				"dano": Cresc.mult(str(a.id), int(a.nivel), "dano"),
+				"evoluida": Cresc.evoluida(str(a.id)),
+				"icone": str(d.get("icone", a.id))
+			}
+		)
 	return r
 
 
@@ -109,7 +130,15 @@ static func passivos_info(arena) -> Array:
 	var pas: Dictionary = Dados.json("passivos")
 	for id in arena.passivos:
 		var d: Dictionary = pas.get(id, {})
-		r.append({"id": str(id), "nome": str(d.get("nome", id)), "nivel": int(arena.passivos[id]), "nivel_max": int(d.get("max", 5)), "icone": str(d.get("icone", id))})
+		r.append(
+			{
+				"id": str(id),
+				"nome": str(d.get("nome", id)),
+				"nivel": int(arena.passivos[id]),
+				"nivel_max": int(d.get("max", 5)),
+				"icone": str(d.get("icone", id))
+			}
+		)
 	return r
 
 
@@ -124,6 +153,7 @@ static func equipamentos_info(arena) -> Array:
 
 # ---------- abrir e fechar ----------
 
+
 func pode_abrir() -> bool:
 	if arena == null or get_tree().paused or bool(arena.get("acabou")):
 		return false
@@ -136,7 +166,7 @@ func abrir() -> void:
 	aberta = true
 	_tela.visible = true
 	_pausei = false
-	if not bool(arena.get("eh_online")):   # solo pausa; online o mundo segue
+	if not bool(arena.get("eh_online")):  # solo pausa; online o mundo segue
 		get_tree().paused = true
 		_pausei = true
 	_tela.queue_redraw()
@@ -168,6 +198,7 @@ func _process(_dt: float) -> void:
 
 
 # ---------- desenho ----------
+
 
 func _txt(p: Vector2, s: String, tam: int, cor: Color, al := HORIZONTAL_ALIGNMENT_LEFT, larg := -1.0) -> void:
 	var f: Font = Dados.fonte
@@ -207,7 +238,7 @@ func _desenhar() -> void:
 
 func _painel() -> void:
 	_tela.draw_rect(Rect2(0, 0, W, H), Color(0.02, 0.01, 0.05, 0.96))
-	TEMA.get_stylebox("panel", "PanelContainer").draw(_tela.get_canvas_item(), Rect2(8, 8, W - 16, H - 16))   # painel do tema do HUD (cenas/tema_hud.tres)
+	TEMA.get_stylebox("panel", "PanelContainer").draw(_tela.get_canvas_item(), Rect2(8, 8, W - 16, H - 16))  # painel do tema do HUD (cenas/tema_hud.tres)
 	var nome := str(arena.heroi.get("nome", ""))
 	_titulo(Vector2(20, 34), "Status", 24, Color(1, 0.92, 0.7))
 	_txt(Vector2(150, 32), "%s  Nv %d" % [nome, int(arena.nivel)], 8, CINZA)
@@ -258,7 +289,7 @@ func _painel() -> void:
 		_tela.draw_rect(Rect2(x, y + 2, 5, 5), cor)
 		_txt(Vector2(x + 9, y + 9), "%s %s" % [str(l.nome).left(15), Conjuntos.progresso_txt(l)], 8, cor)
 		y += 11.0
-		if lig:   # o texto do degrau ligado quebra em até 2 linhas
+		if lig:  # o texto do degrau ligado quebra em até 2 linhas
 			var f: Font = Dados.fonte
 			var tx := str(l.texto)
 			_tela.draw_multiline_string(f, Vector2(x + 9, y + 9), tx, HORIZONTAL_ALIGNMENT_LEFT, 176.0, 8, 2, Color(0.85, 0.9, 1.0))

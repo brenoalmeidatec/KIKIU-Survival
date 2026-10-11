@@ -6,27 +6,27 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 ## O que existe e onde vem de Cenario.celula() (semente da corrida); o que cada cenário tem vem de dados/cenarios.json.
 
 const Cenario := preload("res://scripts/hordas/cenario.gd")
-const MAX_PARTICULAS := 70        # teto de partículas ambientes somando todos os tipos
-const DOMINIO := Vector2(704, 424)   # as partículas dão a volta nesta área (tela 640x360 + folga)
-const BICHO := {   # velocidade de fuga (px/s) e quanto tempo até sumir (s)
+const MAX_PARTICULAS := 70  # teto de partículas ambientes somando todos os tipos
+const DOMINIO := Vector2(704, 424)  # as partículas dão a volta nesta área (tela 640x360 + folga)
+const BICHO := {  # velocidade de fuga (px/s) e quanto tempo até sumir (s)
 	"rato": {"vel": 150.0, "dura": 1.8, "sobe": 0.0},
 	"morcego": {"vel": 90.0, "dura": 2.4, "sobe": 80.0},
 	"corvo": {"vel": 110.0, "dura": 2.4, "sobe": 55.0},
 }
 
 var arena: Node
-var cen = null                    # Cenario
-var _sob := Node2D.new()          # detalhes de chão e bichos: por baixo dos enfeites (o chão é show_behind_parent)
-var _bs := Node2D.new()           # ratos, morcegos e corvos (mesma camada de _sob)
-var _alto := Node2D.new()         # partículas: por cima de tudo, bem fracas
-var _part: Array = []             # {tipo, q, v, par, ph, r, cor}
-var _vis: Array = []              # células na tela (muda só quando a câmera passa pra outra célula)
+var cen = null  # Cenario
+var _sob := Node2D.new()  # detalhes de chão e bichos: por baixo dos enfeites (o chão é show_behind_parent)
+var _bs := Node2D.new()  # ratos, morcegos e corvos (mesma camada de _sob)
+var _alto := Node2D.new()  # partículas: por cima de tudo, bem fracas
+var _part: Array = []  # {tipo, q, v, par, ph, r, cor}
+var _vis: Array = []  # células na tela (muda só quando a câmera passa pra outra célula)
 var _a := Vector2i(1 << 30, 0)
 var _b := Vector2i.ZERO
 static var _tex_nevoa: ImageTexture
 var _t := 0.0
 var _cam := Vector2.ZERO
-var _bichos := true               # perfil de qualidade baixa: sem ratos, morcegos e corvos
+var _bichos := true  # perfil de qualidade baixa: sem ratos, morcegos e corvos
 
 
 func _ready() -> void:
@@ -52,7 +52,7 @@ func configurar(c, a: Node) -> void:
 		return
 	var r := RandomNumberGenerator.new()
 	r.seed = hash("amb|" + c.nome)
-	var mult := Config.fator_particulas("amb_particulas")   # perfil de qualidade: menos partículas; "baixa" também tira a névoa (as manchas grandes custam mais)
+	var mult := Config.fator_particulas("amb_particulas")  # perfil de qualidade: menos partículas; "baixa" também tira a névoa (as manchas grandes custam mais)
 	_bichos = not (Config.g("particulas_sim") in ["poucas", "nenhuma"])
 	for e in c.cfg.get("particulas", []):
 		if str(e.tipo) == "nevoa" and not bool(Config.g("nevoa")):
@@ -65,8 +65,15 @@ func configurar(c, a: Node) -> void:
 
 
 static func _nova(tipo: String, r: RandomNumberGenerator, cor: Color) -> Dictionary:
-	var p := {"tipo": tipo, "q": Vector2(r.randf() * DOMINIO.x, r.randf() * DOMINIO.y), "v": Vector2.ZERO, "par": r.randf_range(0.85, 1.15),
-		"ph": r.randf() * TAU, "r": 1.0, "cor": cor}
+	var p := {
+		"tipo": tipo,
+		"q": Vector2(r.randf() * DOMINIO.x, r.randf() * DOMINIO.y),
+		"v": Vector2.ZERO,
+		"par": r.randf_range(0.85, 1.15),
+		"ph": r.randf() * TAU,
+		"r": 1.0,
+		"cor": cor
+	}
 	match tipo:
 		"poeira":
 			p.v = Vector2(r.randf_range(-3.0, 3.0), r.randf_range(-4.0, 1.0))
@@ -81,7 +88,7 @@ static func _nova(tipo: String, r: RandomNumberGenerator, cor: Color) -> Diction
 		"chuva":
 			p.v = Vector2(-34.0, 230.0) * r.randf_range(0.9, 1.15)
 			p.par = 1.0
-		"neve":   # floco caindo de lado, empurrado pelo vento
+		"neve":  # floco caindo de lado, empurrado pelo vento
 			p.v = Vector2(r.randf_range(14.0, 26.0), r.randf_range(26.0, 44.0))
 	return p
 
@@ -101,8 +108,8 @@ func atualizar_i(dt: float) -> void:
 	var a := Vector2i(floori((_cam.x - 380.0) / Cenario.CEL), floori((_cam.y - 260.0) / Cenario.CEL))
 	var b := Vector2i(floori((_cam.x + 380.0) / Cenario.CEL), floori((_cam.y + 260.0) / Cenario.CEL))
 	var fuga := float(cen.cfg.get("vida", {}).get("fuga", 70.0))
-	var sujo := a != _a or b != _b   # só redesenha o chão quando entra célula nova ou tem bicho se mexendo (polígonos custam)
-	var cel_mudou := sujo   # os detalhes do chão só mudam quando a câmera entra em célula nova; os bichos têm nó próprio (redesenha mais vezes e não arrasta os polígonos)
+	var sujo := a != _a or b != _b  # só redesenha o chão quando entra célula nova ou tem bicho se mexendo (polígonos custam)
+	var cel_mudou := sujo  # os detalhes do chão só mudam quando a câmera entra em célula nova; os bichos têm nó próprio (redesenha mais vezes e não arrasta os polígonos)
 	if sujo:
 		_a = a
 		_b = b
@@ -114,7 +121,7 @@ func atualizar_i(dt: float) -> void:
 			var c: Dictionary = cen.celula(cx, cy)
 			if sujo:
 				_vis.append(c)
-			for bi in (c.bichos if _bichos else []):
+			for bi in c.bichos if _bichos else []:
 				var antes: int = bi.estado
 				_mexer(bi, jp, fuga, dt)
 				if bi.estado == 1:
@@ -144,7 +151,7 @@ func _mexer(b: Dictionary, jp: Vector2, fuga: float, dt: float) -> void:
 			b.lado = 1.0 if b.dir.x >= 0.0 else -1.0
 		return
 	b.t += dt
-	var arranque := 0.12 if b.tipo != "corvo" else 0.35   # corvo dá uma olhada antes de voar
+	var arranque := 0.12 if b.tipo != "corvo" else 0.35  # corvo dá uma olhada antes de voar
 	if b.t > arranque:
 		b.pos += b.dir * float(cfg.vel) * dt
 		b.alt += float(cfg.sobe) * dt
@@ -153,6 +160,7 @@ func _mexer(b: Dictionary, jp: Vector2, fuga: float, dt: float) -> void:
 
 
 # ---------------------------------------------------------------- desenho: chão e bichos
+
 
 func _desenhar_sob() -> void:
 	var _pp := Perf.ini()
@@ -184,7 +192,7 @@ func _detalhe(d: Dictionary) -> void:
 	var pts: PackedVector2Array = d.pts
 	match d.tipo:
 		"rachadura":
-			_sob.draw_polyline(_mover(pts, p + Vector2(1, 1)), Color(1, 1, 1, cor.a * 0.12), 1.0)   # beiral claro embaixo
+			_sob.draw_polyline(_mover(pts, p + Vector2(1, 1)), Color(1, 1, 1, cor.a * 0.12), 1.0)  # beiral claro embaixo
 			_sob.draw_polyline(_mover(pts, p), cor, 1.0)
 		"cabo":
 			_sob.draw_polyline(_mover(pts, p), cor, 2.0)
@@ -197,13 +205,15 @@ func _detalhe(d: Dictionary) -> void:
 			_sob.draw_colored_polygon(f, cor)
 			f.append(f[0])
 			_sob.draw_polyline(f, Color(0.75, 0.85, 1.0, 0.16), 1.0)
-			_sob.draw_line(p + Vector2(-4, -1), p + Vector2(1, -1.5), Color(0.9, 0.95, 1.0, 0.2), 1.0)   # reflexo
+			_sob.draw_line(p + Vector2(-4, -1), p + Vector2(1, -1.5), Color(0.9, 0.95, 1.0, 0.2), 1.0)  # reflexo
 		"folha":
 			for i in pts.size():
 				var q: Vector2 = p + pts[i]
 				var tom := 0.75 + 0.25 * float((d.k >> i) & 1)
-				_sob.draw_colored_polygon(PackedVector2Array([q + Vector2(0, -2), q + Vector2(2, 0), q + Vector2(0, 2), q + Vector2(-2, 0)]),
-					Color(cor.r * tom, cor.g * tom, cor.b * tom, cor.a))
+				_sob.draw_colored_polygon(
+					PackedVector2Array([q + Vector2(0, -2), q + Vector2(2, 0), q + Vector2(0, 2), q + Vector2(-2, 0)]),
+					Color(cor.r * tom, cor.g * tom, cor.b * tom, cor.a)
+				)
 		"papel":
 			var u: Vector2 = pts[0]
 			var w: Vector2 = pts[1]
@@ -250,25 +260,28 @@ func _bicho(b: Dictionary) -> void:
 			var cor := Color(0.3, 0.26, 0.27, a)
 			var pe := 0.0 if not fuga else sin(tic * 1.6)
 			_bs.draw_rect(Rect2(p + Vector2(-3, -3.5), Vector2(6, 3)), cor)
-			_bs.draw_rect(Rect2(p + Vector2(3.0 * l - (0.0 if l > 0 else 2.0), -3), Vector2(2, 2)), cor)   # cabeça
-			_bs.draw_rect(Rect2(p + Vector2(2.0 * l - 0.5, -4.5), Vector2(1, 1)), Color(0.42, 0.26, 0.3, a))   # orelha
-			_bs.draw_line(p + Vector2(-3 * l, -2.5), p + Vector2(-7 * l, -2.5 + sin(_t * 5.0 + b.ph) * 1.5 + pe), Color(0.34, 0.24, 0.26, a), 1.0)   # rabo
+			_bs.draw_rect(Rect2(p + Vector2(3.0 * l - (0.0 if l > 0 else 2.0), -3), Vector2(2, 2)), cor)  # cabeça
+			_bs.draw_rect(Rect2(p + Vector2(2.0 * l - 0.5, -4.5), Vector2(1, 1)), Color(0.42, 0.26, 0.3, a))  # orelha
+			_bs.draw_line(p + Vector2(-3 * l, -2.5), p + Vector2(-7 * l, -2.5 + sin(_t * 5.0 + b.ph) * 1.5 + pe), Color(0.34, 0.24, 0.26, a), 1.0)  # rabo
 			if fuga:
 				_bs.draw_rect(Rect2(p + Vector2(-2 + pe * 1.5, -0.5), Vector2(1, 1)), cor)
 				_bs.draw_rect(Rect2(p + Vector2(1 - pe * 1.5, -0.5), Vector2(1, 1)), cor)
 		"morcego":
 			var cor := Color(0.15, 0.11, 0.2, a)
-			if not fuga:   # dormindo: asas dobradas
+			if not fuga:  # dormindo: asas dobradas
 				_bs.draw_colored_polygon(PackedVector2Array([p + Vector2(-3, -1), p + Vector2(0, -6), p + Vector2(3, -1)]), cor)
 			else:
 				var q := p + Vector2(0, -3.0 - b.alt)
 				var bat := sin(tic * 2.2) * 3.5
 				_bs.draw_rect(Rect2(q + Vector2(-1.5, -1.5), Vector2(3, 3)), cor)
 				for s in [-1.0, 1.0]:
-					_bs.draw_colored_polygon(PackedVector2Array([q + Vector2(s * 1.5, -1), q + Vector2(s * 8.0, -3.5 + bat), q + Vector2(s * 6.0, 1.0), q + Vector2(s * 3.0, 0.5)]), cor)
+					_bs.draw_colored_polygon(
+						PackedVector2Array([q + Vector2(s * 1.5, -1), q + Vector2(s * 8.0, -3.5 + bat), q + Vector2(s * 6.0, 1.0), q + Vector2(s * 3.0, 0.5)]),
+						cor
+					)
 		"corvo":
 			var cor := Color(0.07, 0.07, 0.11, a)
-			if not fuga or b.t < 0.35:   # parado, bicando o chão
+			if not fuga or b.t < 0.35:  # parado, bicando o chão
 				var bico := absf(sin(_t * 2.0 + b.ph)) * 1.5 if not fuga else 0.0
 				_bs.draw_rect(Rect2(p + Vector2(-3, -6), Vector2(6, 4)), cor)
 				_bs.draw_rect(Rect2(p + Vector2(2.0 * l - 1.0 + (1.0 if l > 0 else -1.0), -7 + bico), Vector2(2, 2)), cor)
@@ -281,10 +294,16 @@ func _bicho(b: Dictionary) -> void:
 				_bs.draw_rect(Rect2(q + Vector2(-3, -1.5), Vector2(6, 3)), cor)
 				_bs.draw_rect(Rect2(q + Vector2(3.0 * l - (0.0 if l > 0 else 2.0), -2.5), Vector2(2, 2)), cor)
 				for s in [-1.0, 1.0]:
-					_bs.draw_colored_polygon(PackedVector2Array([q + Vector2(s * 1.0, -1), q + Vector2(s * 4.0, -6.0 + bat), q + Vector2(s * 8.0, -3.0 + bat), q + Vector2(s * 4.0, 1.5)]), cor)
+					_bs.draw_colored_polygon(
+						PackedVector2Array(
+							[q + Vector2(s * 1.0, -1), q + Vector2(s * 4.0, -6.0 + bat), q + Vector2(s * 8.0, -3.0 + bat), q + Vector2(s * 4.0, 1.5)]
+						),
+						cor
+					)
 
 
 # ---------------------------------------------------------------- desenho: partículas
+
 
 func _desenhar_alto() -> void:
 	var _pp := Perf.ini()
@@ -321,5 +340,5 @@ func _desenhar_alto_i() -> void:
 				_alto.draw_line(pos, pos + Vector2(-1.2, 5.0), cor, 1.0)
 			"neve":
 				pos.x += sin(_t * 1.6 + p.ph) * 4.0
-				var gn := 1.0 + float(int(p.ph * 5.0) % 2)   # metade dos flocos com 2 px
+				var gn := 1.0 + float(int(p.ph * 5.0) % 2)  # metade dos flocos com 2 px
 				_alto.draw_rect(Rect2(pos, Vector2(gn, gn)), cor)

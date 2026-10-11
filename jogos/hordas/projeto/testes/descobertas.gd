@@ -6,13 +6,16 @@ const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func plano(semente: int, n_fases := 10) -> Array:
 	Sorte.iniciar(semente)
@@ -20,6 +23,7 @@ func plano(semente: int, n_fases := 10) -> Array:
 	for f in n_fases:
 		res.append(Descobertas.planejar_fase(f, n_fases, 3, Vector2.ZERO))
 	return res
+
 
 func sequencia_eventos(semente: int, n: int, fase := 5) -> Array:
 	Sorte.iniciar(semente)
@@ -35,6 +39,7 @@ func sequencia_eventos(semente: int, n: int, fase := 5) -> Array:
 			hist.pop_front()
 	return res
 
+
 func _ready() -> void:
 	# --- streams: mesma semente, mesma sequência; independentes entre si ---
 	Sorte.iniciar(7)
@@ -46,7 +51,7 @@ func _ready() -> void:
 	ok(a1 == a2, "mesma semente, mesmos números")
 	ok(a1 != a3, "semente diferente, números diferentes")
 	Sorte.iniciar(7)
-	Sorte.fluxo("y").randi()   # mexer em outra stream não desloca a "x"
+	Sorte.fluxo("y").randi()  # mexer em outra stream não desloca a "x"
 	ok(Sorte.fluxo("x").randf() == a1[0], "streams independentes")
 	var emb1 := Sorte.embaralhar(Sorte.criar("e"), range(20))
 	var emb2 := Sorte.embaralhar(Sorte.criar("e"), range(20))
@@ -126,9 +131,20 @@ func _ready() -> void:
 	# --- eventos ---
 	ok(sequencia_eventos(5, 30) == sequencia_eventos(5, 30), "mesma semente: mesmos eventos")
 	ok(sequencia_eventos(5, 30) != sequencia_eventos(6, 30), "semente diferente: eventos diferentes")
-	ok(not sequencia_eventos(9, 60, 1).any(func(id): return id in ["chuva_baus", "horda_elite", "santuario_errante"]), "fase_min respeitada (fase 1 só tem o que a fase 1 permite)")
+	ok(
+		not sequencia_eventos(9, 60, 1).any(func(id): return id in ["chuva_baus", "horda_elite", "santuario_errante"]),
+		"fase_min respeitada (fase 1 só tem o que a fase 1 permite)"
+	)
 	Sorte.iniciar(1)
-	ok(Descobertas.escolher_evento(Sorte.fluxo("evento"), 5, {"chuva_baus": 10.0, "horda_elite": 10.0, "santuario_maldito": 10.0, "santuario_errante": 10.0}, []) == "", "cooldown bloqueia o evento")
+	ok(
+		(
+			Descobertas.escolher_evento(
+				Sorte.fluxo("evento"), 5, {"chuva_baus": 10.0, "horda_elite": 10.0, "santuario_maldito": 10.0, "santuario_errante": 10.0}, []
+			)
+			== ""
+		),
+		"cooldown bloqueia o evento"
+	)
 	var seq_ev := sequencia_eventos(11, 400)
 	var tipos := {}
 	var tres_iguais := 0
@@ -143,8 +159,14 @@ func _ready() -> void:
 	var of1 := Descobertas.oferta_dadivas(Sorte.fluxo("dadiva"))
 	Sorte.iniciar(21)
 	var of2 := Descobertas.oferta_dadivas(Sorte.fluxo("dadiva"))
-	ok(of1.size() == 3 and JSON.stringify(of1.map(func(c): return [c.id, c.raridade])) == JSON.stringify(of2.map(func(c): return [c.id, c.raridade])), "3 dádivas, iguais com a mesma semente")
-	ok(of1.map(func(c): return c.id).size() == 3 and of1[0].id != of1[1].id and of1[1].id != of1[2].id and of1[0].id != of1[2].id, "dádivas da oferta são diferentes")
+	ok(
+		of1.size() == 3 and JSON.stringify(of1.map(func(c): return [c.id, c.raridade])) == JSON.stringify(of2.map(func(c): return [c.id, c.raridade])),
+		"3 dádivas, iguais com a mesma semente"
+	)
+	ok(
+		of1.map(func(c): return c.id).size() == 3 and of1[0].id != of1[1].id and of1[1].id != of1[2].id and of1[0].id != of1[2].id,
+		"dádivas da oferta são diferentes"
+	)
 	var raridades := {}
 	for i in 300:
 		for c in Descobertas.oferta_dadivas(Sorte.fluxo("dadiva")):
@@ -216,7 +238,7 @@ func _ready() -> void:
 	var sd := {"pos": Vector2.ZERO, "tipo": "dadiva", "variacao": "", "carga": 1.0, "usado": false}
 	e.descobertas.ativar(sd)
 	ok(sd.usado and e.cartas.aberto() and e.cartas._cartas.size() == 3 and e.cartas._cartas[0].tipo == "dadiva", "santuário de dádiva oferece 3 dádivas")
-	await esperar(1.0)   # o robô não está ligado: fecha a escolha por código
+	await esperar(1.0)  # o robô não está ligado: fecha a escolha por código
 	e.cartas._confirmar()
 	# eventos: todos os do pool rodam sem erro e são iguais com a mesma semente
 	var vistos := []

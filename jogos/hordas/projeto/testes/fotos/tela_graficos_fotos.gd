@@ -11,7 +11,7 @@ func _ready() -> void:
 		print("FOTOS: precisa de janela (rode sem --headless)")
 		get_tree().quit()
 		return
-	for acao in ["cima", "baixo", "esquerda", "direita", "confirmar", "voltar"]:   # o jogo cria as ações em main.gd (_teclas); aqui, sem o jogo
+	for acao in ["cima", "baixo", "esquerda", "direita", "confirmar", "voltar"]:  # o jogo cria as ações em main.gd (_teclas); aqui, sem o jogo
 		if not InputMap.has_action(acao):
 			InputMap.add_action(acao)
 	var args := {}

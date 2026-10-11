@@ -10,21 +10,21 @@ extends Node2D
 var arena: Node
 var aberta := false
 var pos := Vector2.ZERO
-var seg := 0.0               # quanto já segurou (0 a segurar)
-var saindo := false          # a sucção começou
-var bot_segurar := false     # teste de imagem: segura sozinho sem ser robô
-var pronto := false          # online: já fui sugado e espero os outros
+var seg := 0.0  # quanto já segurou (0 a segurar)
+var saindo := false  # a sucção começou
+var bot_segurar := false  # teste de imagem: segura sozinho sem ser robô
+var pronto := false  # online: já fui sugado e espero os outros
 var _t := 0.0
 var _suc := 0.0
 var _flash := 0.0
 var _cl := CanvasLayer.new()
 var _cobre := ColorRect.new()
-var _cl_dica := CanvasLayer.new()   # a dica "Segure CONFIRMAR" fica numa camada de tela, acima dos números de dano
+var _cl_dica := CanvasLayer.new()  # a dica "Segure CONFIRMAR" fica numa camada de tela, acima dos números de dano
 var _dica := Control.new()
 
 
 func _ready() -> void:
-	z_index = 50   # o portal fica acima de inimigos, efeitos e baús (#123, #125)
+	z_index = 50  # o portal fica acima de inimigos, efeitos e baús (#123, #125)
 	_cl.layer = 58
 	_cl.process_mode = Node.PROCESS_MODE_ALWAYS
 	_cobre.color = Color(1, 1, 1, 0)
@@ -32,7 +32,7 @@ func _ready() -> void:
 	_cobre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_cl.add_child(_cobre)
 	add_child(_cl)
-	_cl_dica.layer = 8   # acima do mundo (números de dano, efeitos) e do HUD; abaixo das cartas, da loja e dos menus
+	_cl_dica.layer = 8  # acima do mundo (números de dano, efeitos) e do HUD; abaixo das cartas, da loja e dos menus
 	_dica.size = Vector2(640, 360)
 	_dica.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dica.draw.connect(_desenhar_dica)
@@ -41,6 +41,7 @@ func _ready() -> void:
 
 
 # ---------- funções puras (o teste usa) ----------
+
 
 ## Progresso de segurar: sobe com dt quando está dentro e segurando; senão desce rápido (soltou, não vale). Limitado a [0, total].
 static func avancar(seg_atual: float, dentro: bool, segurando: bool, dt: float, total: float) -> float:
@@ -58,6 +59,7 @@ static func cfg() -> Dictionary:
 
 
 # ---------- fluxo ----------
+
 
 func abrir(p: Vector2) -> void:
 	if aberta:
@@ -97,7 +99,7 @@ func _process(dt: float) -> void:
 	_t += dt
 	var j: Node2D = arena.jogador
 	if pronto:
-		j.position = pos   # parado no portal, escondido, esperando os outros
+		j.position = pos  # parado no portal, escondido, esperando os outros
 		j.invencivel = maxf(j.invencivel, 0.2)
 	elif saindo:
 		_succao(dt, j)
@@ -132,8 +134,8 @@ func _terminou_succao(j: Node2D) -> void:
 	j.rotation = 0.0
 	_flash = float(cfg().get("clarao", 0.35))
 	_cobre.color.a = 1.0
-	Transicao.revelar()   # o clarão abre na cortina de losangos
-	pronto = true   # parado no portal, escondido, até a fase fechar (sem isso, o progresso cheio sugaria o herói de novo)
+	Transicao.revelar()  # o clarão abre na cortina de losangos
+	pronto = true  # parado no portal, escondido, até a fase fechar (sem isso, o progresso cheio sugaria o herói de novo)
 	saindo = false
 	if arena.online:
 		Rede.avisar("saida", 1.0)
@@ -142,6 +144,7 @@ func _terminou_succao(j: Node2D) -> void:
 
 
 # ---------- desenho ----------
+
 
 func _draw() -> void:
 	if not aberta or pronto:
@@ -152,7 +155,7 @@ func _draw() -> void:
 	draw_circle(pos, r * 1.9, Color(0.4, 0.2, 0.8, 0.22))
 	draw_circle(pos, r * 1.35, Color(0.45, 0.25, 0.9, 0.28))
 	draw_circle(pos, r, Color(0.05, 0.02, 0.12, 0.95))
-	draw_arc(pos, r + 1.0, 0.0, TAU, 40, Color(0.04, 0.02, 0.06, 0.85), 5.0)   # contorno escuro: lê em qualquer chão
+	draw_arc(pos, r + 1.0, 0.0, TAU, 40, Color(0.04, 0.02, 0.06, 0.85), 5.0)  # contorno escuro: lê em qualquer chão
 	draw_arc(pos, r + 1.0, 0.0, TAU, 40, Color(0.85, 0.75, 1.0, 0.6 + 0.4 * pulso), 2.0)
 	for i in 4:
 		var a0 := _t * (1.6 + i * 0.5) * (1.0 if i % 2 == 0 else -1.0) + i * 1.3

@@ -98,7 +98,7 @@ func _ready() -> void:
 	a.semente = 5
 	add_child(a)
 	await esperar(0.2)
-	a.set_process(false)       # quem anda com o tempo aqui é o teste
+	a.set_process(false)  # quem anda com o tempo aqui é o teste
 	a.xp = -1.0e12
 	a.jogador.invencivel = 999.0
 	ino = a.inimigos
@@ -118,7 +118,7 @@ func _ready() -> void:
 	ok((v.el_vis & 1) != 0, "el_vis marca o fogo")
 	var hp0: float = v.hp
 	avancar(2.0)
-	var tq: float = 5.0 * 3.0 * 0.5 * a.stat("dano")   # dano de um tique (a cada 0,5 s)
+	var tq: float = 5.0 * 3.0 * 0.5 * a.stat("dano")  # dano de um tique (a cada 0,5 s)
 	var n_tq: float = (hp0 - v.hp) / tq
 	ok(absf(n_tq - roundf(n_tq)) < 0.02 and n_tq >= 3.0 and n_tq <= 4.0, "fogo com 5 acúmulos: 3 a 4 tiques de %.1f em 2 s (%.2f tiques)" % [tq, n_tq])
 	avancar(1.5)
@@ -278,7 +278,10 @@ func _ready() -> void:
 	ok(Mortes.causa_de("geada") == "gelo", "quem morre na Geada Rachada morre de gelo, não de fogo (%s)" % Mortes.causa_de("geada"))
 	var tab: Array = Interface.tabela_armas({"elem_fogo": 40.0, "cafe": 10.0}, {}, {}, 30.0)
 	var l_fogo: Dictionary = tab.filter(func(l): return l.id == "elem_fogo")[0]
-	ok(l_fogo.nome == "Queimadura" and Dados.icone(str(l_fogo.icone)) != null, "o dano de elemento tem nome e ícone na tela de resultados (%s / %s)" % [l_fogo.nome, l_fogo.icone])
+	ok(
+		l_fogo.nome == "Queimadura" and Dados.icone(str(l_fogo.icone)) != null,
+		"o dano de elemento tem nome e ícone na tela de resultados (%s / %s)" % [l_fogo.nome, l_fogo.icone]
+	)
 	limpar_tudo()
 
 	# poça de gelo: desacelera, depois congela
@@ -290,8 +293,23 @@ func _ready() -> void:
 	poca_v.pos = a.jogador.position + Vector2(400, 0)
 	livre.pos = a.jogador.position + Vector2(0, 400)
 	a.armas.pocas.clear()
-	a.armas.pocas.append({"pos": poca_v.pos, "raio": 60.0, "vida": 30.0, "total": 30.0, "dano": 3.0, "tique": 0.4, "t": 0.0, "segue": false,
-		"arma": "geada", "variante": 0, "semente": 1.0, "rampa": a.armas.rampa_de(Dados.item("geada")), "gelo": true})
+	a.armas.pocas.append(
+		{
+			"pos": poca_v.pos,
+			"raio": 60.0,
+			"vida": 30.0,
+			"total": 30.0,
+			"dano": 3.0,
+			"tique": 0.4,
+			"t": 0.0,
+			"segue": false,
+			"arma": "geada",
+			"variante": 0,
+			"semente": 1.0,
+			"rampa": a.armas.rampa_de(Dados.item("geada")),
+			"gelo": true
+		}
+	)
 	var p0: Vector2 = poca_v.pos
 	var l0: Vector2 = livre.pos
 	var parou := false
@@ -334,10 +352,16 @@ func _ready() -> void:
 	limpar_tudo()
 
 	# online: bits e cliente
-	ok(Elementos.flags_de(1) == 64 and Elementos.flags_de(8) == 128 and Elementos.flags_de(16) == 32 and Elementos.flags_de(2) == 0, "bits do online: fogo 64, veneno 128, congelado 32")
+	ok(
+		Elementos.flags_de(1) == 64 and Elementos.flags_de(8) == 128 and Elementos.flags_de(16) == 32 and Elementos.flags_de(2) == 0,
+		"bits do online: fogo 64, veneno 128, congelado 32"
+	)
 	v = novo("bug", Vector2.ZERO)
 	el.aplicar_vis(v, 64 | 16)
-	ok((v.el_vis & 1) != 0 and (v.el_vis & 2) != 0 and el.vis.has(v.id) and int(el.contagem.qualquer) == 1, "cliente: a foto liga fogo e lento e conta o inimigo")
+	ok(
+		(v.el_vis & 1) != 0 and (v.el_vis & 2) != 0 and el.vis.has(v.id) and int(el.contagem.qualquer) == 1,
+		"cliente: a foto liga fogo e lento e conta o inimigo"
+	)
 	el.aplicar_vis(v, 0)
 	ok(v.el_vis == 0 and not el.vis.has(v.id), "cliente: sem bits, sem estado")
 	limpar_tudo()

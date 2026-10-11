@@ -6,7 +6,7 @@ const Visual := preload("res://scripts/hordas/visual.gd")
 const Direcao := preload("res://scripts/hordas/direcao.gd")
 const Paleta := preload("res://scripts/hordas/paleta.gd")
 const Anim := preload("res://scripts/hordas/animacao_heroi.gd")
-const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
+const LINHA := Direcao.LINHA  # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
 
 var peer := 0
 var nome := ""
@@ -14,24 +14,24 @@ var heroi := ""
 var cor := Color(0.6, 1.0, 0.7)
 var hp_frac := 1.0
 var caido := false
-var ajuda := false               # está segurando o botão de levantar alguém
-var _rola := false               # está rolando (bit 8 do estado; #68)
-const CENTRO_CORPO := Vector2(0, -29)   # o meio do corpo em relação ao pé: o giro do rolamento é em volta dele
-var fora := false               # duelo: já foi eliminado
+var ajuda := false  # está segurando o botão de levantar alguém
+var _rola := false  # está rolando (bit 8 do estado; #68)
+const CENTRO_CORPO := Vector2(0, -29)  # o meio do corpo em relação ao pé: o giro do rolamento é em volta dele
+var fora := false  # duelo: já foi eliminado
 var spr := Sprite2D.new()
-var _cab: Sprite2D = null        # cabelo do herói criado (camada por cima do corpo)
+var _cab: Sprite2D = null  # cabelo do herói criado (camada por cima do corpo)
 var _alvo := Vector2.ZERO
 var _mov := Vector2.ZERO
 var _dir := "baixo"
 var _olhar := Direcao.new()
 var _t := 0.0
 var _novo := true
-var _ent_t := 0.0                # chegada no começo da fase (veja visual.gd chegada_*)
+var _ent_t := 0.0  # chegada no começo da fase (veja visual.gd chegada_*)
 var _ent_poeira := false
-var _corpo := Anim.new()         # respiração, balanço do passo e inclinação (animacao_heroi.gd)
+var _corpo := Anim.new()  # respiração, balanço do passo e inclinação (animacao_heroi.gd)
 var _pos_ant := Vector2.ZERO
-var _vel := Vector2.ZERO         # velocidade real medida na posição suavizada (px/s)
-var _lado := 1.0                 # pra que lado olhava por último (movimento em x)
+var _vel := Vector2.ZERO  # velocidade real medida na posição suavizada (px/s)
+var _lado := 1.0  # pra que lado olhava por último (movimento em x)
 var _dano_pose_t := 0.0
 var _dano_dir := Vector2.LEFT
 var _rola_t := 0.0
@@ -45,16 +45,16 @@ func entrar() -> void:
 
 
 func configurar(p: int, heroi_: String, nome_: String) -> void:
-	z_index = -1   # o seu boneco fica sempre por cima dos outros
+	z_index = -1  # o seu boneco fica sempre por cima dos outros
 	peer = p
 	heroi = heroi_
 	nome = nome_
-	_corpo.fase = Anim.fase_de(heroi_ + "|" + str(p))   # cada pessoa respira com a defasagem dela
+	_corpo.fase = Anim.fase_de(heroi_ + "|" + str(p))  # cada pessoa respira com a defasagem dela
 	var h: Dictionary = Dados.json("herois").get(heroi, {})
 	var paleta: Dictionary = h.get("paleta", {})
 	if paleta.is_empty():
 		spr.texture = Dados.tex_personagem(str(h.get("sprite", heroi)), "andando_8")
-	else:   # herói criado (#72, marco 2): corpo e cabelo recoloridos pela paleta, em duas camadas como o herói local
+	else:  # herói criado (#72, marco 2): corpo e cabelo recoloridos pela paleta, em duas camadas como o herói local
 		spr.texture = Paleta.textura(str(h.get("sprite", heroi)), "corpo", paleta)
 	spr.hframes = maxi(1, int(spr.texture.get_width()) / 44)
 	spr.vframes = Direcao.linhas_da_altura(spr.texture.get_height())
@@ -98,11 +98,11 @@ func atualizar(dt: float, d: Dictionary) -> void:
 	if not d.is_empty():
 		var rola_novo := bool(d.get("rola", false))
 		if rola_novo and not _rola:
-			_rola_t = 0.0   # começou a rolar: a volta parte do zero
+			_rola_t = 0.0  # começou a rolar: a volta parte do zero
 		_rola = rola_novo
 	# o que não vem na rede sai da posição: velocidade real (pra o passo casar com o chão) e a vida que caiu (pra o recuo)
 	if not d.is_empty():
-		_lado = -1.0 if float(d.get("lado", 1.0)) < 0.0 else 1.0   # o "lado" que já vai na rede (bit 4 do estado)
+		_lado = -1.0 if float(d.get("lado", 1.0)) < 0.0 else 1.0  # o "lado" que já vai na rede (bit 4 do estado)
 	var v_real := (position - _pos_ant) / maxf(dt, 0.0001) if position.distance_to(_pos_ant) < 60.0 else Vector2.ZERO
 	_pos_ant = position
 	_vel = _vel.lerp(v_real, 1.0 - exp(-12.0 * dt))
@@ -126,18 +126,18 @@ func atualizar(dt: float, d: Dictionary) -> void:
 	spr.position = Vector2.ZERO
 	spr.skew = 0.0
 	spr.scale = Vector2.ONE
-	if caido:   # tropeça, cai e fica deitado (a mesma queda do herói local)
+	if caido:  # tropeça, cai e fica deitado (a mesma queda do herói local)
 		var mc := Anim.sec("morte")
 		var pm := Anim.pose_morte(_cai_t / maxf(float(mc.tempo), 0.05), -_lado, mc)
 		spr.rotation = pm.rot
 		spr.position = pm.pos
 		spr.modulate = Color.WHITE.lerp(Color(0.45, 0.45, 0.5, float(mc.alpha)), float(pm.mix))
-	elif _rola:   # rolamento (#68): gira em volta do meio do corpo, como o herói local
+	elif _rola:  # rolamento (#68): gira em volta do meio do corpo, como o herói local
 		var total := maxf(0.05, float(Dados.json("movimento").get("rolamento", {}).get("tempo", 0.3)))
 		var ang := fmod(_rola_t / total, 1.0) * TAU * (-1.0 if _mov.x < 0 else 1.0)
 		spr.rotation = ang
 		spr.position = CENTRO_CORPO - CENTRO_CORPO.rotated(ang)
-	else:   # respiração, balanço do passo, inclinação e recuo ao apanhar (derivados de posição e vida: o formato da rede não muda)
+	else:  # respiração, balanço do passo, inclinação e recuo ao apanhar (derivados de posição e vida: o formato da rede não muda)
 		var pos := _corpo.desloc()
 		var sk := _corpo.inclina()
 		var esc := Vector2.ONE + _corpo.escala()

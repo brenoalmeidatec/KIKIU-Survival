@@ -26,8 +26,19 @@ func _inst(buf: PackedFloat32Array, n: int) -> Array:
 	var res := []
 	for k in n:
 		var o := k * 16
-		res.append({"x": buf[o + 3], "y": buf[o + 7], "w": buf[o], "h": buf[o + 5], "cor": Color(buf[o + 8], buf[o + 9], buf[o + 10], buf[o + 11]),
-			"rx": buf[o + 12], "ry": buf[o + 13], "rw": buf[o + 14], "rh": buf[o + 15]})
+		res.append(
+			{
+				"x": buf[o + 3],
+				"y": buf[o + 7],
+				"w": buf[o],
+				"h": buf[o + 5],
+				"cor": Color(buf[o + 8], buf[o + 9], buf[o + 10], buf[o + 11]),
+				"rx": buf[o + 12],
+				"ry": buf[o + 13],
+				"rw": buf[o + 14],
+				"rh": buf[o + 15]
+			}
+		)
 	return res
 
 
@@ -95,12 +106,18 @@ func _ready() -> void:
 	var vistos := {}
 	for k in I._ordem.size():
 		var v = I._ordem[k]
-		var s: Dictionary = sp[k]   # a k-ésima instância é a do k-ésimo bicho na ordem por altura
+		var s: Dictionary = sp[k]  # a k-ésima instância é a do k-ésimo bicho na ordem por altura
 		ok(is_equal_approx(s.x, v.dr.position.x) and is_equal_approx(s.y, v.dr.position.y), "%s: posição da instância = a do retângulo desenhado" % v.tipo)
 		ok(is_equal_approx(s.w, absf(v.dr.size.x)) and is_equal_approx(s.h, v.dr.size.y), "%s: tamanho da instância = o do retângulo" % v.tipo)
 		var ex: float = v.at.x + v.tam.x * v.qd + (v.tam.x if v.dr.size.x < 0.0 else 0.0)
-		ok(is_equal_approx(s.rx, ex) and is_equal_approx(s.ry, v.at.y + v.tam.y * v.vista), "%s: recorte no atlas (quadro %d, vista %d, espelho %s)" % [v.tipo, v.qd, v.vista, str(v.dr.size.x < 0.0)])
-		ok(is_equal_approx(absf(s.rw), v.tam.x) and is_equal_approx(s.rh, v.tam.y) and (s.rw < 0.0) == (v.dr.size.x < 0.0), "%s: largura do recorte e espelho" % v.tipo)
+		ok(
+			is_equal_approx(s.rx, ex) and is_equal_approx(s.ry, v.at.y + v.tam.y * v.vista),
+			"%s: recorte no atlas (quadro %d, vista %d, espelho %s)" % [v.tipo, v.qd, v.vista, str(v.dr.size.x < 0.0)]
+		)
+		ok(
+			is_equal_approx(absf(s.rw), v.tam.x) and is_equal_approx(s.rh, v.tam.y) and (s.rw < 0.0) == (v.dr.size.x < 0.0),
+			"%s: largura do recorte e espelho" % v.tipo
+		)
 		ok(s.cor.is_equal_approx(Color.WHITE), "%s: sem tinta (%s)" % [v.tipo, str(s.cor)])
 		# os pixels do atlas são os da folha
 		var folha: Image = v.tex.get_image()
@@ -158,7 +175,7 @@ func _ready() -> void:
 	await _quadro(I)
 	vi.lean = 0.9
 	vi.parado = 0.0
-	vi.pos_f = vi.pos   # anda: o passo não zera a inclinação
+	vi.pos_f = vi.pos  # anda: o passo não zera a inclinação
 	var inc_n := 0
 	for q in 3:
 		vi.lean = 0.9
@@ -194,7 +211,7 @@ func _ready() -> void:
 		for t_atira in [0.5, 0.3, 0.1, 0.0]:
 			var piscou := false
 			var normal := false
-			for t in [1.0, 1.04]:   # int(t * 25) par = pisca, ímpar = normal
+			for t in [1.0, 1.04]:  # int(t * 25) par = pisca, ímpar = normal
 				I.limpar()
 				var vt = I.criar(atirador, origem + Vector2(40, 0))
 				vt.t_nasc = 0.0

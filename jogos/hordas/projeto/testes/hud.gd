@@ -48,7 +48,25 @@ func _ready() -> void:
 
 	# --- elementos e lugares
 	ok(h.get_node("Raiz").theme != null, "o HUD tem um Theme")
-	for nome in ["Retrato", "HeroiNome", "HeroiVida", "Carga", "Ouro", "Almas", "Tempo", "Regiao", "Hab1", "Hab2", "Provisoes", "Minimapa", "Xp", "Msgs", "Banner", "Pausa", "Duelo"]:
+	for nome in [
+		"Retrato",
+		"HeroiNome",
+		"HeroiVida",
+		"Carga",
+		"Ouro",
+		"Almas",
+		"Tempo",
+		"Regiao",
+		"Hab1",
+		"Hab2",
+		"Provisoes",
+		"Minimapa",
+		"Xp",
+		"Msgs",
+		"Banner",
+		"Pausa",
+		"Duelo"
+	]:
 		ok(h.get_node_or_null("%" + nome) != null, "existe o nó " + nome)
 	var heroi := rect(h, "Heroi")
 	ok(heroi.position.x < 20.0 and heroi.position.y < 30.0 and heroi.end.x < 200.0, "retrato, nome e vida ficam em cima à esquerda: %s" % heroi)
@@ -104,7 +122,10 @@ func _ready() -> void:
 	ef.explodir(Vector2.ZERO, Color.WHITE, 6)
 	ef.faisca(Vector2.ZERO, Vector2.ZERO, Color.WHITE, 3)
 	ok(ef.particulas.is_empty() and ef.faiscas.is_empty(), "partículas Nenhuma: nada nasce")
-	ok(is_zero_approx(Config.fator_particulas("elem_part")) and is_zero_approx(Config.fator_particulas("amb_particulas")), "Nenhuma zera as partículas do ambiente e dos elementos")
+	ok(
+		is_zero_approx(Config.fator_particulas("elem_part")) and is_zero_approx(Config.fator_particulas("amb_particulas")),
+		"Nenhuma zera as partículas do ambiente e dos elementos"
+	)
 	Config.g_temporario("particulas_sim", "medias")
 	ef.explodir(Vector2.ZERO, Color.WHITE, 6)
 	ok(ef.particulas.size() == 4, "partículas Médias (60%% do alto, o nível médio de particulas_sim): %d" % ef.particulas.size())
@@ -118,7 +139,10 @@ func _ready() -> void:
 	ef.numero(Vector2.ZERO, 5.0)
 	ok(ef.numeros.is_empty(), "números de dano desligados")
 	Config.temporario("numeros_dano", true)
-	ok(Config.item("nomes_inimigo").get("padrao") == true and not Config.g_opcao("particulas_sim").is_empty() and Config.item("texto_hud").valores.size() == 3, "as opções novas estão na lista")
+	ok(
+		Config.item("nomes_inimigo").get("padrao") == true and not Config.g_opcao("particulas_sim").is_empty() and Config.item("texto_hud").valores.size() == 3,
+		"as opções novas estão na lista"
+	)
 	var it_texto: Dictionary = Config.item("texto_hud")
 	ok(tr(str(it_texto.nome)) == "Tamanho da fonte do HUD" and Config.rotulo("texto_hud") == "1x", "tradução pt_BR das opções: " + tr(str(it_texto.nome)))
 
@@ -164,7 +188,10 @@ func _ready() -> void:
 	ok(h.get_node("%Pausa").visible and get_tree().paused, "pausa abre o menu e para o jogo")
 	var tp: Array = []
 	textos(h.get_node("%Pausa"), tp)
-	ok("PAUSADO" in tp and " ".join(tp).contains("Continuar") and " ".join(tp).contains("Opções") and " ".join(tp).contains("Desistir"), "menu de pausa com as 3 opções: " + str(tp))
+	ok(
+		"PAUSADO" in tp and " ".join(tp).contains("Continuar") and " ".join(tp).contains("Opções") and " ".join(tp).contains("Desistir"),
+		"menu de pausa com as 3 opções: " + str(tp)
+	)
 	h._retomar()
 	ok(not h.get_node("%Pausa").visible and not get_tree().paused, "continuar fecha o menu")
 

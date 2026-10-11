@@ -9,10 +9,12 @@ const Paleta := preload("res://scripts/hordas/paleta.gd")
 const Remoto := preload("res://scripts/hordas/remoto.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
@@ -80,9 +82,15 @@ func _ready() -> void:
 	var def := str(defs[0])
 	var extra := int(Criacao.defeitos()[def].pontos)
 	ok(Criacao.pontos_totais(def) == total + extra and Criacao.pontos_totais("") == total, "o defeito soma %d pontos ao total" % extra)
-	ok(Criacao.erro_ficha(ficha("Brutus", "orc", "guerreiro", {"forca": 5, "vigor": 5, "sorte": total + extra - 10}, def)) == "", "com o defeito dá pra gastar o total + %d" % extra)
+	ok(
+		Criacao.erro_ficha(ficha("Brutus", "orc", "guerreiro", {"forca": 5, "vigor": 5, "sorte": total + extra - 10}, def)) == "",
+		"com o defeito dá pra gastar o total + %d" % extra
+	)
 	ok(Criacao.erro_ficha(ficha("Brutus", "orc", "guerreiro", {"forca": 5, "vigor": 5, "sorte": total + extra - 9}, def)) != "", "e um a mais que isso não")
-	ok(Criacao.erro_ficha(ficha("Brutus", "orc", "guerreiro", {"forca": 5, "vigor": 5, "sorte": total + extra - 10}, "")) != "", "tirando o defeito, os pontos extras viram recusa")
+	ok(
+		Criacao.erro_ficha(ficha("Brutus", "orc", "guerreiro", {"forca": 5, "vigor": 5, "sorte": total + extra - 10}, "")) != "",
+		"tirando o defeito, os pontos extras viram recusa"
+	)
 	ok(Criacao.erro_ficha(ficha("Brutus", "orc", "guerreiro", {}, "defeito_que_nao_existe")) != "", "defeito inexistente é recusado")
 	# --- os números chegam de verdade nos stats do jogo
 	var f1 := ficha("Brutus", "humano", "guerreiro", {"forca": 4, "vigor": 3, "agilidade": 1}, "")
@@ -106,7 +114,9 @@ func _ready() -> void:
 	var ids := []
 	var nomes := ["Brutus", "Lyra", "Pip", "Thorn", "Mira", "Gus"]
 	for i in nomes.size():
-		var id := Criacao.salvar_ficha(ficha(nomes[i], Criacao.lista_racas()[i % 5], Criacao.lista_classes()[i % 5], {"forca": i % 4}, "", {"pele": i, "cabelo": 7 - i, "roupa": i}))
+		var id := Criacao.salvar_ficha(
+			ficha(nomes[i], Criacao.lista_racas()[i % 5], Criacao.lista_classes()[i % 5], {"forca": i % 4}, "", {"pele": i, "cabelo": 7 - i, "roupa": i})
+		)
 		ok(id != "" and not id in ids, "salvou o herói %d (%s)" % [i + 1, nomes[i]])
 		ids.append(id)
 	ok(Criacao.quantos() == 6, "6 heróis salvos")
@@ -221,13 +231,15 @@ func _ready() -> void:
 	# --- cada máquina monta o mesmo herói a partir da lista da sala (o que o cliente faz ao receber _lista)
 	Dados.herois_extra.clear()
 	Dados.recarregar()
-	Rede.jogadores = {1: {"heroi": "hazaki", "nome": "Anfi", "pronto": true},
-		2: {"heroi": "c:h1f3a", "nome": "apelido", "pronto": false, "ficha": limpa}}
+	Rede.jogadores = {1: {"heroi": "hazaki", "nome": "Anfi", "pronto": true}, 2: {"heroi": "c:h1f3a", "nome": "apelido", "pronto": false, "ficha": limpa}}
 	Rede._registrar_criados()
 	var hr: Dictionary = Dados.json("herois").get("c:h1f3a", {})
 	ok(str(hr.get("nome", "")) == "Brutus" and int(hr.get("paleta", {}).get("pele", -1)) == 2, "o cliente monta o herói do outro com nome e paleta")
 	ok(Rede.nome_de(2) == "Brutus", "e na sala ele aparece com o nome do herói (%s)" % Rede.nome_de(2))
-	ok(is_equal_approx(float(Construcao.stats(hr, {}, {}).dano), float(Construcao.stats(Criacao.montar("orc", "guerreiro", limpa), {}, {}).dano)), "os stats batem nas duas máquinas")
+	ok(
+		is_equal_approx(float(Construcao.stats(hr, {}, {}).dano), float(Construcao.stats(Criacao.montar("orc", "guerreiro", limpa), {}, {}).dano)),
+		"os stats batem nas duas máquinas"
+	)
 	ok(Rede.ocupados().is_empty() or not "c:h1f3a" in Rede.ocupados(), "herói criado não ocupa vaga do elenco")
 	ok(Rede._id_criado_em_uso(1, "c:h1f3a") and not Rede._id_criado_em_uso(2, "c:h1f3a"), "o mesmo id criado não pode ser de duas pessoas")
 	Rede.jogadores = {}
@@ -250,7 +262,10 @@ func _ready() -> void:
 	ok(is_equal_approx(a.stat("vida_max"), 145.0), "na partida: 100 + 25 do guerreiro + 20 do vigor (%s)" % a.stat("vida_max"))
 	ok(a.jogador.paleta == {"pele": 4, "cabelo": 5, "roupa": 1}, "o jogador recebeu a paleta")
 	ok(a.jogador.spr.texture == Paleta.textura("hazaki", "corpo", a.jogador.paleta), "o corpo do jogador está recolorido")
-	ok(a.jogador.camadas.has("cabelo") and a.jogador.camadas.cabelo.texture == Paleta.textura("hazaki", "camadas/cabelo", a.jogador.paleta), "o cabelo do jogador está recolorido")
+	ok(
+		a.jogador.camadas.has("cabelo") and a.jogador.camadas.cabelo.texture == Paleta.textura("hazaki", "camadas/cabelo", a.jogador.paleta),
+		"o cabelo do jogador está recolorido"
+	)
 	ok(a.armas.achar("lanca") != null, "arma da classe")
 	a.queue_free()
 	await esperar(0.1)

@@ -5,10 +5,12 @@ extends Node
 const Tela := preload("res://cenas/tela_graficos.tscn")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 ## Índice em _foco da opção com esta chave (-1 se não houver).
 func _idx(t, chave: String) -> int:
@@ -18,14 +20,16 @@ func _idx(t, chave: String) -> int:
 			return k
 	return -1
 
+
 func _achar(t, tipo: String) -> int:
 	for k in t._foco.size():
 		if str(t._foco[k].tipo) == tipo:
 			return k
 	return -1
 
+
 func _ready() -> void:
-	for acao in ["cima", "baixo", "esquerda", "direita", "confirmar", "voltar"]:   # o jogo cria as ações em main.gd (_teclas); aqui, sem o jogo
+	for acao in ["cima", "baixo", "esquerda", "direita", "confirmar", "voltar"]:  # o jogo cria as ações em main.gd (_teclas); aqui, sem o jogo
 		if not InputMap.has_action(acao):
 			InputMap.add_action(acao)
 	# estado de antes, para devolver no fim
@@ -77,7 +81,7 @@ func _ready() -> void:
 	var op_max: Dictionary = t._opcao_de(int(t._foco[_idx(t, "max_inimigos")].linha))
 	t._arrastar(op_max, 400.0 + 120.0)
 	ok(is_equal_approx(float(Config.g("max_inimigos")), 500.0), "arrastar até o fim da barra dá o máximo")
-	t._arrastar(op_max, 400.0 + 120.0 * 0.4)   # 40% da barra: 290 -> arredonda para 300
+	t._arrastar(op_max, 400.0 + 120.0 * 0.4)  # 40% da barra: 290 -> arredonda para 300
 	ok(is_equal_approx(float(Config.g("max_inimigos")), 300.0), "arrastar cai na grade do passo (300)")
 
 	# slider em %: brilhos_halos (0 a 100, passo 25), e em segundos: restos_chao (3 a 15, passo 1)

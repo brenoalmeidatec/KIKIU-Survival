@@ -18,38 +18,49 @@ func esperar(s: float) -> void:
 
 
 ## Dono falso: só o que as armas pedem.
-class Dono extends Node2D:
+class Dono:
+	extends Node2D
 	var lado := 1
+
 	func centro() -> Vector2:
 		return position
+
 	func curar(_x: float) -> void:
 		pass
+
 	func atacou(_dir := Vector2.ZERO) -> void:
 		pass
 
 
 ## Campo falso: vírus são dicionários {id, pos, raio, hp, max}; guarda cada golpe recebido.
-class Campo extends RefCounted:
+class Campo:
+	extends RefCounted
 	var alvos: Array = []
-	var golpes: Array = []   # [id, valor]
+	var golpes: Array = []  # [id, valor]
+
 	func no_circulo(c: Vector2, r: float) -> Array:
 		return alvos.filter(func(v): return v.hp > 0.0 and v.pos.distance_to(c) <= r + v.raio)
+
 	func n_mais_perto(p: Vector2, n: int, maximo := 400.0) -> Array:
 		var l := no_circulo(p, maximo)
 		l.sort_custom(func(a, b): return a.pos.distance_squared_to(p) < b.pos.distance_squared_to(p))
 		return l.slice(0, n)
+
 	func aleatorio_na_tela(_c: Vector2):
 		return alvos[0] if not alvos.is_empty() else null
+
 	func ferir(v, valor: float, _emp := Vector2.ZERO, _arma := "") -> bool:
 		v.hp -= valor
 		golpes.append([v.id, valor])
 		return v.hp <= 0.0
+
 	func total(id := -1) -> float:
 		var t := 0.0
 		for g in golpes:
 			if id < 0 or g[0] == id:
 				t += g[1]
 		return t
+
 	func vezes(id: int) -> int:
 		return golpes.filter(func(g): return g[0] == id).size()
 
@@ -90,7 +101,10 @@ func _ready() -> void:
 	for id in lista:
 		var d: Dictionary = lista[id]
 		ok(d.tipos.all(func(t): return tipos_armas.has(t)), "%s: todo tipo existe em armas.json" % id)
-		ok(str(d.desc).begins_with("Muda ") and str(d.desc).length() <= 64 and str(d.nome) != "" and int(d.nivel_min) >= 2, "%s: texto curto que diz que muda o comportamento, com nível mínimo" % id)
+		ok(
+			str(d.desc).begins_with("Muda ") and str(d.desc).length() <= 64 and str(d.nome) != "" and int(d.nivel_min) >= 2,
+			"%s: texto curto que diz que muda o comportamento, com nível mínimo" % id
+		)
 
 	# --- elegibilidade: tipo certo, nível mínimo, sem repetir nem conflitar ---
 	var m := montar("pendrive", 2, "", [])
@@ -121,10 +135,13 @@ func _ready() -> void:
 	ok(sem_ric[1].vezes(1) >= 1 and sem_ric[1].vezes(2) == 0, "sem comportamento o tiro só acerta o primeiro vírus")
 	var com_ric := montar("pendrive", 1, "ricochete", [vir(1, Vector2(120, 0)), vir(2, Vector2(120, 100))])
 	rodar(com_ric[0], 1.4)
-	ok(com_ric[1].vezes(1) >= 1 and com_ric[1].vezes(2) >= 1, "com Ricochete o tiro pula pro segundo vírus (%d, %d)" % [com_ric[1].vezes(1), com_ric[1].vezes(2)])
+	ok(
+		com_ric[1].vezes(1) >= 1 and com_ric[1].vezes(2) >= 1,
+		"com Ricochete o tiro pula pro segundo vírus (%d, %d)" % [com_ric[1].vezes(1), com_ric[1].vezes(2)]
+	)
 	# --- vai e volta: acerta de novo na volta ---
 	var sem_vv := montar("pendrive", 1, "", [vir(1, Vector2(150, 0))])
-	sem_vv[0].atualizar(0.016)   # só o primeiro tiro (a arma recarrega em ~1 s)
+	sem_vv[0].atualizar(0.016)  # só o primeiro tiro (a arma recarrega em ~1 s)
 	rodar(sem_vv[0], 0.9)
 	var vezes_sem: int = sem_vv[1].vezes(1)
 	var com_vv := montar("pendrive", 1, "vai_e_volta", [vir(1, Vector2(150, 0))])
@@ -184,7 +201,10 @@ func _ready() -> void:
 		com_o[0]._t = i * 0.2
 		rs_sem.append(sem_o[0]._raio_orbita(sem_o[0]._s(sem_o[0].lista[0])))
 		rs_com.append(com_o[0]._raio_orbita(com_o[0]._s(com_o[0].lista[0])))
-	ok(rs_com.max() - rs_com.min() > 0.5 * rs_sem.max() and rs_sem.max() - rs_sem.min() < 0.01, "a órbita em espiral abre e fecha (%.0f..%.0f)" % [rs_com.min(), rs_com.max()])
+	ok(
+		rs_com.max() - rs_com.min() > 0.5 * rs_sem.max() and rs_sem.max() - rs_sem.min() < 0.01,
+		"a órbita em espiral abre e fecha (%.0f..%.0f)" % [rs_com.min(), rs_com.max()]
+	)
 
 	# --- na arena: a carta aparece, mostra que muda o comportamento e aplica o modificador ---
 	Engine.time_scale = 3.0
@@ -217,7 +237,10 @@ func _ready() -> void:
 	ok(vistas > 5 and sempre_certa, "nível 3: aparecem cartas de comportamento da arma certa (%d em 600 sorteios)" % vistas)
 	ok(vistas < 600 * 3 * 0.25, "são raras (%d em 1800 cartas)" % vistas)
 	var est: Dictionary = Cartas.estilo(carta)
-	ok(est.rotulo == "COMPORTAMENTO" and carta.desc.begins_with("Muda ") and carta.arma_nome != "" and carta.desc.length() <= 64, "a carta diz que é comportamento (%s | %s)" % [est.rotulo, carta.nome])
+	ok(
+		est.rotulo == "COMPORTAMENTO" and carta.desc.begins_with("Muda ") and carta.arma_nome != "" and carta.desc.length() <= 64,
+		"a carta diz que é comportamento (%s | %s)" % [est.rotulo, carta.nome]
+	)
 	ok(not Arena.carta_banivel(carta), "carta de comportamento não pode ser banida")
 	var s_antes: Dictionary = a.armas._s(a.armas.lista[0])
 	ok(s_antes.comp.is_empty(), "antes da carta a arma não tem modificador")
@@ -248,7 +271,10 @@ func _ready() -> void:
 	ok(Som._atual.stream == velho and not Som.fade_estado().ativo, "pedir a mesma faixa não reinicia nem faz fade")
 	Som.musica("chefe")
 	var t0 := Time.get_ticks_msec()
-	ok(Som._atual.playing and Som._saida.playing and Som._atual.stream != velho and Som._saida.stream == velho, "troca de faixa: a nova entra e a velha continua tocando")
+	ok(
+		Som._atual.playing and Som._saida.playing and Som._atual.stream != velho and Som._saida.stream == velho,
+		"troca de faixa: a nova entra e a velha continua tocando"
+	)
 	var pior_potencia := 10.0
 	var maior_potencia := 0.0
 	var amostras := 0
@@ -283,7 +309,10 @@ func _ready() -> void:
 	await esperar(0.2)
 	ok(Som._atual.playing and (Som._saida.playing or Som._g_atual >= 1.0), "troca no meio da troca continua tocando")
 	await esperar(2.0)
-	ok(Som._atual.playing and not Som._saida.playing and absf(Som._atual.volume_db - linear_to_db(0.6)) < 0.5, "depois de duas trocas seguidas só uma faixa toca, no volume certo")
+	ok(
+		Som._atual.playing and not Som._saida.playing and absf(Som._atual.volume_db - linear_to_db(0.6)) < 0.5,
+		"depois de duas trocas seguidas só uma faixa toca, no volume certo"
+	)
 	Som.parar_musica()
 	ok(not Som._atual.playing and not Som._saida.playing, "parar_musica silencia as duas")
 	print("CARTCOMP falhas=", falhas)

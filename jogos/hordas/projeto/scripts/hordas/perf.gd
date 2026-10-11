@@ -3,7 +3,7 @@ extends RefCounted
 ## Só liga com `Perf.ligado = true` (o main.gd liga com --sair); desligado, cada ponto custa só um `if`.
 
 static var ligado := false
-static var us := {}      # nome -> microssegundos acumulados desde o último relatório
+static var us := {}  # nome -> microssegundos acumulados desde o último relatório
 static var quadros := 0
 
 

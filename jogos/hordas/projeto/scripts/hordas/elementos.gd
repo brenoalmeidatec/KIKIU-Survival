@@ -14,16 +14,16 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 const BITS := {"fogo": 1, "gelo": 2, "raio": 4, "veneno": 8}
 const BIT_CONG := 16
 
-var ino: Node                      # inimigos.gd
-var estados := {}                  # id -> {v, st{elemento: [acúmulos, resto, tique]}, cong, imune, cd, acc, num}
-var vis := {}                      # cliente: id -> V que a foto marcou com algum estado
+var ino: Node  # inimigos.gd
+var estados := {}  # id -> {v, st{elemento: [acúmulos, resto, tique]}, cong, imune, cd, acc, num}
+var vis := {}  # cliente: id -> V que a foto marcou com algum estado
 var contagem := {"qualquer": 0, "fogo": 0, "gelo": 0, "raio": 0, "veneno": 0, "congelados": 0, "reacoes": 0}
-var reacoes_n := {}                # id da reação -> quantas vezes disparou
-var chance := {}                   # elemento -> chance por golpe de qualquer arma (atributo el_<elemento>)
-var arcos: Array = []              # {a, b, t}: saltos do raio, só desenho
-var aneis: Array = []              # {pos, r, t, total, cor, nome}: reações, só desenho
-var _marc := {}                    # id * 8 + índice -> true (cada inimigo conta uma vez por elemento, por fase)
-var _por_arma := {}                # id da arma -> [elemento, acúmulos por golpe]
+var reacoes_n := {}  # id da reação -> quantas vezes disparou
+var chance := {}  # elemento -> chance por golpe de qualquer arma (atributo el_<elemento>)
+var arcos: Array = []  # {a, b, t}: saltos do raio, só desenho
+var aneis: Array = []  # {pos, r, t, total, cor, nome}: reações, só desenho
+var _marc := {}  # id * 8 + índice -> true (cada inimigo conta uma vez por elemento, por fase)
+var _por_arma := {}  # id da arma -> [elemento, acúmulos por golpe]
 var _els: Dictionary
 var _reacoes: Array
 var _tv: Dictionary
@@ -101,7 +101,7 @@ func golpe(v, arma: String, el := "") -> void:
 				aplicar(v, e, 1.0, arma)
 
 
-var remotos := 0   # teste/log: golpes de clientes que puseram elemento pela arma deles
+var remotos := 0  # teste/log: golpes de clientes que puseram elemento pela arma deles
 
 
 ## Golpe de arma de outro jogador (cliente online): só o elemento da própria arma, sem a `chance` do anfitrião.
@@ -131,7 +131,7 @@ func aplicar(v, el: String, n := 1.0, _fonte := "") -> float:
 		rec = {"v": v, "st": {}, "cong": 0.0, "imune": 0.0, "cd": 0.0, "acc": 0.0, "num": 0.0}
 		estados[v.id] = rec
 	if el == "gelo" and rec.cong > 0.0:
-		return 0.0   # já congelado: o gelo não passa disso
+		return 0.0  # já congelado: o gelo não passa disso
 	var st = rec.st.get(el)
 	if st == null:
 		st = [0.0, 0.0, 0.0]
@@ -195,6 +195,7 @@ func _congelar(rec: Dictionary, cfg: Dictionary) -> void:
 
 # ---------- reações ----------
 
+
 func _reagir(rec: Dictionary, el: String) -> void:
 	if rec.cd > 0.0:
 		return
@@ -228,7 +229,7 @@ func _disparar(rec: Dictionary, r: Dictionary) -> void:
 	var causa := str(r.get("causa", r.a))
 	var c: Array = r.get("cor", [1, 1, 1])
 	var cor := Color(c[0], c[1], c[2])
-	direto(v, dano, causa, Vector2.ZERO, cor)   # o alvo sempre leva, mesmo se a grade ainda não o tem
+	direto(v, dano, causa, Vector2.ZERO, cor)  # o alvo sempre leva, mesmo se a grade ainda não o tem
 	for w in ino.no_circulo(v.pos, raio):
 		if w != v:
 			direto(w, dano, causa, (w.pos - v.pos).normalized() * 60.0, cor)
@@ -244,6 +245,7 @@ func _disparar(rec: Dictionary, r: Dictionary) -> void:
 
 
 # ---------- dano ----------
+
 
 func _mult_dano() -> float:
 	return ino.arena.stat("dano") if ino.arena else 1.0
@@ -324,7 +326,7 @@ func passo(dt: float) -> void:
 			aneis.remove_at(i)
 	var fim: Array = []
 	for id in estados.keys():
-		if not estados.has(id):   # uma reação anterior deste mesmo laço já tirou este estado (SCRIPT ERROR visto em partidas longas do robô)
+		if not estados.has(id):  # uma reação anterior deste mesmo laço já tirou este estado (SCRIPT ERROR visto em partidas longas do robô)
 			continue
 		var rec: Dictionary = estados[id]
 		var v = rec.v
@@ -341,7 +343,7 @@ func passo(dt: float) -> void:
 			if rec.cong <= 0.0:
 				rec.cong = 0.0
 				mudou = true
-		var vivo: bool = rec.cong > 0.0 or rec.imune > 0.0 or rec.cd > 0.0   # imunidade e espera de reação também precisam do registro
+		var vivo: bool = rec.cong > 0.0 or rec.imune > 0.0 or rec.cd > 0.0  # imunidade e espera de reação também precisam do registro
 		for el in rec.st:
 			var st: Array = rec.st[el]
 			if st[0] <= 0.0:
@@ -410,6 +412,7 @@ func _saltar(v, acumulos_n: float, cfg: Dictionary) -> void:
 
 # ---------- cliente ----------
 
+
 ## Cliente online: a foto do anfitrião traz bits 32 (congelado), 64 (queimando), 128 (envenenado) e 16 (lento).
 ## Devolve o el_vis. Conta o primeiro estado de cada inimigo pro santuário selado, igual ao anfitrião.
 func aplicar_vis(v, flags: int) -> void:
@@ -458,6 +461,7 @@ static func tinta(bits: int, t: float, id: int) -> Color:
 
 # ---------- desenho ----------
 
+
 static func _h(a: int, b: int) -> float:
 	return fposmod(sin(float(a) * 12.9898 + float(b) * 78.233) * 43758.5453, 1.0)
 
@@ -469,14 +473,14 @@ func _draw() -> void:
 	var _p := Perf.ini()
 	_desenhadas = 0
 	var tt := float(Time.get_ticks_msec()) * 0.001
-	var teto := roundi(float(_tv.get("particulas", 150)) * Config.fator_particulas("elem_part"))   # perfil de qualidade
+	var teto := roundi(float(_tv.get("particulas", 150)) * Config.fator_particulas("elem_part"))  # perfil de qualidade
 	for id in fonte:
 		var rec = fonte[id]
 		var v = rec if ino.espelho else rec.v
 		if v.el_vis == 0 or not ino._na_tela(v.pos):
 			continue
 		_desenhar_v(v, ino.espelho, rec, tt, teto)
-	for a in arcos:   # saltos do raio: duas pernas tortas, brilho largo e fio branco
+	for a in arcos:  # saltos do raio: duas pernas tortas, brilho largo e fio branco
 		var m: Vector2 = (a.a + a.b) * 0.5 + Vector2(randf_range(-4, 4), randf_range(-4, 4))
 		var c := cor_de("raio")
 		draw_polyline(PackedVector2Array([a.a, m, a.b]), Color(c, 0.3 * a.t / 0.18), 3.0)
@@ -497,29 +501,32 @@ func _desenhar_v(v, cliente: bool, rec, tt: float, teto: int) -> void:
 	var s: Vector2 = v.sz
 	var c: Vector2 = v.pos + Vector2(0, -s.y * 0.1)
 	var b: int = v.el_vis
-	if (b & BIT_CONG) != 0:   # gelo que segue a forma: o próprio sprite já sai tingido (tinta); aqui só brilhos e cristais nos pés
+	if (b & BIT_CONG) != 0:  # gelo que segue a forma: o próprio sprite já sai tingido (tinta); aqui só brilhos e cristais nos pés
 		var fy: float = v.pos.y + s.y * 0.38
-		for k in 3:   # brilhos brancos que piscam sobre o corpo
+		for k in 3:  # brilhos brancos que piscam sobre o corpo
 			if int(tt * 6.0 + k * 2 + v.id) % 3 == 0:
 				continue
 			var gp: Vector2 = c + Vector2((_h(v.id, k + 20) - 0.5) * s.x * 0.6, (_h(v.id, k + 30) - 0.5) * s.y * 0.5)
 			draw_rect(Rect2(roundf(gp.x) - 1, roundf(gp.y), 3, 1), Color(1, 1, 1, 0.95))
 			draw_rect(Rect2(roundf(gp.x), roundf(gp.y) - 1, 1, 3), Color(1, 1, 1, 0.95))
-		for k in 4:   # estilhaços curtos espetados no chão
+		for k in 4:  # estilhaços curtos espetados no chão
 			var sx: float = v.pos.x + (_h(v.id, k + 40) - 0.5) * s.x * 0.8
 			var alt: float = 3.0 + _h(v.id, k + 50) * 4.0
-			draw_colored_polygon(PackedVector2Array([Vector2(roundf(sx) - 2, fy), Vector2(roundf(sx) + 2, fy), Vector2(roundf(sx) + (k - 1.5), fy - alt)]), Color(0.8, 0.95, 1.0, 0.9))
+			draw_colored_polygon(
+				PackedVector2Array([Vector2(roundf(sx) - 2, fy), Vector2(roundf(sx) + 2, fy), Vector2(roundf(sx) + (k - 1.5), fy - alt)]),
+				Color(0.8, 0.95, 1.0, 0.9)
+			)
 	if _desenhadas >= teto:
 		_pips(v, cliente, rec)
 		return
-	if (b & 1) != 0:   # brasas subindo
+	if (b & 1) != 0:  # brasas subindo
 		for k in 3:
 			var ph := fposmod(tt * 1.1 + k * 0.34 + _h(v.id, k), 1.0)
 			var x := c.x + (_h(v.id, k + 9) - 0.5) * s.x * 0.7
 			var y := c.y + s.y * 0.2 - ph * s.y * 0.9
 			draw_rect(Rect2(roundf(x), roundf(y), 2, 2), Color(1.0, 0.85 - 0.5 * ph, 0.2, 1.0 - ph))
 		_desenhadas += 3
-	if (b & 8) != 0:   # bolhas verdes, mais lentas
+	if (b & 8) != 0:  # bolhas verdes, mais lentas
 		for k in 2:
 			var ph := fposmod(tt * 0.6 + k * 0.5 + _h(v.id, k + 3), 1.0)
 			var x := c.x + (_h(v.id, k + 5) - 0.5) * s.x * 0.8
@@ -527,7 +534,7 @@ func _desenhar_v(v, cliente: bool, rec, tt: float, teto: int) -> void:
 			draw_rect(Rect2(roundf(x), roundf(y), 2, 2), Color(0.5, 0.95, 0.3, 1.0 - ph))
 			draw_rect(Rect2(roundf(x), roundf(y), 1, 1), Color(0.85, 1.0, 0.6, 1.0 - ph))
 		_desenhadas += 4
-	if (b & 2) != 0 and (b & BIT_CONG) == 0:   # cristais piscando em volta
+	if (b & 2) != 0 and (b & BIT_CONG) == 0:  # cristais piscando em volta
 		for k in 2:
 			if int(tt * 5.0 + k * 2 + v.id) % 3 != 0:
 				continue
@@ -535,7 +542,7 @@ func _desenhar_v(v, cliente: bool, rec, tt: float, teto: int) -> void:
 			draw_rect(Rect2(roundf(p.x) - 1, roundf(p.y), 3, 1), Color(0.85, 0.97, 1.0))
 			draw_rect(Rect2(roundf(p.x), roundf(p.y) - 1, 1, 3), Color(0.85, 0.97, 1.0))
 		_desenhadas += 2
-	if (b & 4) != 0 and int(tt * 14.0 + v.id) % 3 == 0:   # faíscas curtas
+	if (b & 4) != 0 and int(tt * 14.0 + v.id) % 3 == 0:  # faíscas curtas
 		var p0 := c + Vector2((_h(v.id, int(tt * 14.0)) - 0.5) * s.x, -s.y * 0.35)
 		draw_polyline(PackedVector2Array([p0, p0 + Vector2(3, 4), p0 + Vector2(-1, 6), p0 + Vector2(2, 10)]), Color(0.9, 0.95, 1.0), 1.0)
 		_desenhadas += 2

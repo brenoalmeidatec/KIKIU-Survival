@@ -8,8 +8,8 @@ extends CanvasLayer
 
 const W := 640.0
 const H := 360.0
-const PLACA_TEMPO := 1.5     # quanto a placa fica na tela
-const LENTO := 0.25          # fator do slow-motion (só sozinho)
+const PLACA_TEMPO := 1.5  # quanto a placa fica na tela
+const LENTO := 0.25  # fator do slow-motion (só sozinho)
 
 # [quando a câmera começa a ir (s), quando termina de chegar, quando começa a voltar, quando termina de voltar, quando a placa entra]
 const LINHA_SOLO := [0.0, 0.45, 1.75, 2.2, 0.35]
@@ -24,9 +24,9 @@ var _linha: Array = LINHA_SOLO
 var _tipo := ""
 var _nome := ""
 var _sub := ""
-var _pos := Vector2.ZERO     # onde está o chefe (última posição conhecida)
+var _pos := Vector2.ZERO  # onde está o chefe (última posição conhecida)
 var _tem_pos := false
-var _mix := 0.0              # 0 = câmera no jogador, 1 = no chefe
+var _mix := 0.0  # 0 = câmera no jogador, 1 = no chefe
 var _barras := 0.0
 var _bateu := false
 var _ts_salvo := 1.0
@@ -83,7 +83,7 @@ func _process(_dt: float) -> void:
 	if not _ativo:
 		return
 	var agora := Time.get_ticks_usec()
-	var dt := minf(0.1, (agora - _ultimo) / 1.0e6)   # tempo real; ao pausar (cartas) a cena congela junto
+	var dt := minf(0.1, (agora - _ultimo) / 1.0e6)  # tempo real; ao pausar (cartas) a cena congela junto
 	_ultimo = agora
 	_t += dt
 	if not _tem_pos or _t < 0.6:
@@ -100,7 +100,7 @@ func _process(_dt: float) -> void:
 	_barras = clampf(minf(_t / 0.3, (L[3] + 0.15 - _t) / 0.3), 0.0, 1.0)
 	if not _bateu and _t >= L[4]:
 		_bateu = true
-		arena.tremer(5)   # respeita a opção "Tremer a tela"
+		arena.tremer(5)  # respeita a opção "Tremer a tela"
 		Som.tocar("tremor", 0.0, 1.0, -4)
 	_tempo(_t)
 	if _t >= L[3] + 0.2 or arena.acabou:

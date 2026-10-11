@@ -4,8 +4,8 @@ extends RefCounted
 ## contorno escuro e brilho de reflexo do lado da luz (cima/esquerda, a mesma luz das sombras do jogo).
 ## Cada tamanho vira UMA textura: no jogo é só um carimbo por quadro.
 
-const ACHATA := 0.6                       # perspectiva do chão
-const CAFE := ["170b06", "2e170b", "4a2814", "6b3c1f", "94603a", "d9b48a"]   # escuro -> reflexo
+const ACHATA := 0.6  # perspectiva do chão
+const CAFE := ["170b06", "2e170b", "4a2814", "6b3c1f", "94603a", "d9b48a"]  # escuro -> reflexo
 
 static var _cache := {}
 
@@ -30,8 +30,7 @@ static func textura(r: float, variante: int, rampa: Array = CAFE) -> ImageTextur
 	var gotas := []
 	for i in 3 + variante:
 		var a := rng.randf_range(0, TAU)
-		gotas.append([c + Vector2(cos(a) * rr * rng.randf_range(1.05, 1.2), sin(a) * rr * ACHATA * rng.randf_range(1.05, 1.2)),
-			rng.randf_range(1.5, 3.0)])
+		gotas.append([c + Vector2(cos(a) * rr * rng.randf_range(1.05, 1.2), sin(a) * rr * ACHATA * rng.randf_range(1.05, 1.2)), rng.randf_range(1.5, 3.0)])
 	var dentro := func(x: float, y: float) -> float:
 		# distância normalizada até a borda ondulada (<1 = dentro)
 		var d := Vector2(x - c.x, (y - c.y) / ACHATA)

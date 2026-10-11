@@ -6,10 +6,12 @@ const D := preload("res://scripts/hordas/direcao.gd")
 const Remoto := preload("res://scripts/hordas/remoto.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 func _ready() -> void:
 	# ---- tabela: o arquivo tem todas as chaves dos padrões do código (e _ajuda fala de cada uma)
@@ -45,7 +47,7 @@ func _ready() -> void:
 		var px := v.y * float(r.altura_px)
 		ok(absf(px - roundf(px)) < 0.001, "respiração em passos de 1 px (%.3f)" % px)
 		ok(v.x <= 0.0, "afina quando estica")
-	var teto := ceilf(float(r.altura) * float(r.altura_px)) / float(r.altura_px)   # em px inteiros: 0,03 de 56 px = 2 px
+	var teto := ceilf(float(r.altura) * float(r.altura_px)) / float(r.altura_px)  # em px inteiros: 0,03 de 56 px = 2 px
 	ok(mn == 0.0 and mx > 0.0 and mx <= teto + 0.001, "respiração entre 0 e %.3f (%.3f..%.3f)" % [teto, mn, mx])
 	ok(is_equal_approx(A.respiracao(0.3, 0.0, r).y, A.respiracao(0.3 + 1.0 / float(r.hz), 0.0, r).y), "respiração periódica")
 	var igual := true
@@ -102,7 +104,7 @@ func _ready() -> void:
 	for i in 60:
 		c.atualizar(1.0 / 60.0, Vector2.ZERO, false)
 	ok(c.escala().y >= 0.0 and c.escala().y <= float(r.altura) + 0.001, "parado respira (%s)" % c.escala())
-	var e := A.new()   # folha que já tem quadros de parado respira menos
+	var e := A.new()  # folha que já tem quadros de parado respira menos
 	var f := A.new()
 	var m1 := 0.0
 	var m2 := 0.0
@@ -112,7 +114,7 @@ func _ready() -> void:
 		m1 = maxf(m1, e.escala().y)
 		m2 = maxf(m2, f.escala().y)
 	ok(m1 < m2 and m1 > 0.0, "folha animada respira menos (%.3f < %.3f)" % [m1, m2])
-	f.atualizar(0.02, Vector2(100, 0), true, false)   # inativo (rolando): sem efeito
+	f.atualizar(0.02, Vector2(100, 0), true, false)  # inativo (rolando): sem efeito
 	ok(f.escala() == Vector2.ZERO and f.desloc() == Vector2.ZERO, "inativo: sem respiração nem balanço")
 	var g := A.new()
 	for i in 30:
@@ -145,10 +147,13 @@ func _ready() -> void:
 		var p0 := A.pose_morte(0.0, s)
 		var p1 := A.pose_morte(1.0, s)
 		ok(is_zero_approx(p0.rot) and p0.pos.length() < 0.001 and p0.mix == 0.0, "queda começa em pé (%s)" % s)
-		ok(is_equal_approx(p1.rot, s * PI / 2.0) and p1.pos.is_equal_approx(Vector2(float(mc.x) * s, float(mc.y))) and p1.mix == 1.0, "queda termina deitada (%s)" % s)
+		ok(
+			is_equal_approx(p1.rot, s * PI / 2.0) and p1.pos.is_equal_approx(Vector2(float(mc.x) * s, float(mc.y))) and p1.mix == 1.0,
+			"queda termina deitada (%s)" % s
+		)
 		var topo := 0.0
 		var voltou := 0.0
-		for i in range(13, 101):   # depois do tropeço: o quanto levanta de novo depois de encostar no chão
+		for i in range(13, 101):  # depois do tropeço: o quanto levanta de novo depois de encostar no chão
 			var rr := absf(A.pose_morte(i / 100.0, s).rot)
 			topo = maxf(topo, rr)
 			voltou = maxf(voltou, topo - rr)
@@ -161,10 +166,10 @@ func _ready() -> void:
 	rm.configurar(2, "nicao", "Teste")
 	var est := {"x": 0.0, "y": 0.0, "mx": 1.0, "my": 0.0, "hp": 1.0, "ajuda": false, "caido": false, "lado": 1.0, "rola": false}
 	rm.atualizar(0.016, est)
-	rm._ent_t = 0.0   # sem a queda da chegada
+	rm._ent_t = 0.0  # sem a queda da chegada
 	var cols_ok := true
 	var inclinou := false
-	for i in 90:   # anda pra direita a 100 px/s (a posição vem em pacotes, como na rede)
+	for i in 90:  # anda pra direita a 100 px/s (a posição vem em pacotes, como na rede)
 		est.x = i * 100.0 / 60.0
 		rm.atualizar(1.0 / 60.0, est)
 		var col: int = rm.spr.frame % rm.spr.hframes
@@ -175,14 +180,17 @@ func _ready() -> void:
 	ok(inclinou and rm.spr.skew <= float(a.inclina) * 1.3, "remoto inclina pra frente andando (%.4f)" % rm.spr.skew)
 	ok(rm._corpo.ciclo > 0.0 and rm._vel.x > 60.0, "remoto: velocidade e ciclo vêm da posição (%.0f px/s)" % rm._vel.x)
 	est.mx = 0.0
-	for i in 40:   # para: a posição pára, o corpo volta a respirar sem estalo
+	for i in 40:  # para: a posição pára, o corpo volta a respirar sem estalo
 		rm.atualizar(1.0 / 60.0, est)
 	ok(absf(rm.spr.skew) < 0.005 and rm.spr.frame % rm.spr.hframes == 0, "remoto parado: sem inclinação e no quadro parado")
-	est.hp = 0.6   # perdeu vida: recuo visual (pra longe do lado em que olha)
+	est.hp = 0.6  # perdeu vida: recuo visual (pra longe do lado em que olha)
 	rm.atualizar(1.0 / 60.0, est)
 	for i in 6:
 		rm.atualizar(1.0 / 60.0, est)
-	ok(rm._dano_pose_t > 0.0 and rm.spr.position.x < 0.0 and rm.spr.scale.x > 1.0, "remoto apanhou: recua e achata (pos %s, escala %s)" % [rm.spr.position, rm.spr.scale])
+	ok(
+		rm._dano_pose_t > 0.0 and rm.spr.position.x < 0.0 and rm.spr.scale.x > 1.0,
+		"remoto apanhou: recua e achata (pos %s, escala %s)" % [rm.spr.position, rm.spr.scale]
+	)
 	for i in 30:
 		rm.atualizar(1.0 / 60.0, est)
 	ok(rm.spr.position == Vector2.ZERO, "o recuo do remoto volta ao lugar")
@@ -193,7 +201,10 @@ func _ready() -> void:
 	est.caido = true
 	for i in 70:
 		rm.atualizar(1.0 / 60.0, est)
-	ok(is_equal_approx(rm.spr.rotation, -PI / 2.0) and rm.spr.position.is_equal_approx(Vector2(30.0, -10.0)), "remoto caído deitado pra trás (%s, %s)" % [rm.spr.rotation, rm.spr.position])
+	ok(
+		is_equal_approx(rm.spr.rotation, -PI / 2.0) and rm.spr.position.is_equal_approx(Vector2(30.0, -10.0)),
+		"remoto caído deitado pra trás (%s, %s)" % [rm.spr.rotation, rm.spr.position]
+	)
 	est.caido = false
 	rm.atualizar(1.0 / 60.0, est)
 	ok(is_zero_approx(rm.spr.rotation) and rm.spr.modulate == Color.WHITE, "levantou: corpo de pé outra vez")
@@ -203,7 +214,7 @@ func _ready() -> void:
 	var trocas := 0
 	var ult := ""
 	for i in 120:
-		var ang := deg_to_rad(40.0 + (6.0 if i % 2 == 0 else -6.0))   # em volta da diagonal
+		var ang := deg_to_rad(40.0 + (6.0 if i % 2 == 0 else -6.0))  # em volta da diagonal
 		o.atualizar(Vector2.from_angle(ang), 1.0 / 60.0, 4)
 		if o.dir != ult:
 			trocas += 1

@@ -5,10 +5,26 @@ extends RefCounted
 ## o pé não escorrega, bicho lento passa os quadros devagar e bicho parado congela (e assenta nos pés juntos).
 
 const PADRAO := {
-	"ciclo_alt": 1.1, "ciclo_min": 22.0, "bob": 0.018, "bob_min_px": 1.0, "inclina": 0.05, "inclina_suave": 10.0,
-	"inclina_topo": 0.45, "aperto_golpe": 0.26, "aperto_golpe_seg": 0.28, "aperto_golpe_quique": 0.35,
-	"carga_largura": 0.22, "carga_altura": 0.28, "carga_recuo": 3.0, "carga_curva": 2.0, "lod_dist": 260.0, "lod_max": 220.0,
-	"passo_aperto": 0.03, "respira": 0.02, "parado_seg": 0.12, "parado_vel": 1.5,
+	"ciclo_alt": 1.1,
+	"ciclo_min": 22.0,
+	"bob": 0.018,
+	"bob_min_px": 1.0,
+	"inclina": 0.05,
+	"inclina_suave": 10.0,
+	"inclina_topo": 0.45,
+	"aperto_golpe": 0.26,
+	"aperto_golpe_seg": 0.28,
+	"aperto_golpe_quique": 0.35,
+	"carga_largura": 0.22,
+	"carga_altura": 0.28,
+	"carga_recuo": 3.0,
+	"carga_curva": 2.0,
+	"lod_dist": 260.0,
+	"lod_max": 220.0,
+	"passo_aperto": 0.03,
+	"respira": 0.02,
+	"parado_seg": 0.12,
+	"parado_vel": 1.5,
 }
 
 
@@ -60,7 +76,7 @@ static func aperto(t: float, dur: float, quique: float) -> float:
 		return 0.0
 	var u := t / dur
 	var f := (1.0 - u) * cos(1.5 * PI * u)
-	return f * quique / 0.39 if f < 0.0 else f   # (o lado negativo de f chega a -0,39)
+	return f * quique / 0.39 if f < 0.0 else f  # (o lado negativo de f chega a -0,39)
 
 
 ## Curva do preparo da investida: u = 0..1 (quanto do aviso já passou), `curva` = potência (1 linear, 2 devagar no começo).

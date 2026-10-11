@@ -15,20 +15,20 @@ const LARG := 144.0
 const ALT := 200.0
 const GAP := 8.0
 const Y0 := 58.0
-const ENTRADA := 0.18      # duração da animação de entrada de cada carta (s, tempo real)
-const ESCALONA := 0.06     # atraso entre uma carta e a próxima
+const ENTRADA := 0.18  # duração da animação de entrada de cada carta (s, tempo real)
+const ESCALONA := 0.06  # atraso entre uma carta e a próxima
 const BTN_W := 150.0
 const BTN_H := 16.0
 const BTN_Y := 268.0
 
 var arena: Node
 var _tela := Control.new()
-var _modo := ""          # "", "escolher", "bau"
+var _modo := ""  # "", "escolher", "bau"
 var _titulo := ""
 var _cartas: Array = []
 var _sel := 0
-var _foco := "cartas"    # "cartas" ou "botoes"
-var _bsel := 0           # botão com foco (índice na lista de _botoes())
+var _foco := "cartas"  # "cartas" ou "botoes"
+var _bsel := 0  # botão com foco (índice na lista de _botoes())
 var _espera := 0.0
 var _t := 0.0
 var _inicio: Array = []  # por carta: instante (ms) em que a animação de entrada dela começa
@@ -65,8 +65,8 @@ func _abrir(modo: String, titulo: String, cartas: Array) -> void:
 	_bsel = 0
 	_espera = 0.35
 	_reiniciar_animacao()
-	_mouse_ult = _tela.get_local_mouse_position()   # mouse parado não rouba a seleção do teclado
-	get_tree().paused = not arena.eh_online   # no online o jogo dos outros não para
+	_mouse_ult = _tela.get_local_mouse_position()  # mouse parado não rouba a seleção do teclado
+	get_tree().paused = not arena.eh_online  # no online o jogo dos outros não para
 	if not arena.bot:
 		Som.ui("abrir")
 	_tela.queue_redraw()
@@ -87,8 +87,9 @@ func _fechar() -> void:
 
 # ---------- layout (desenho e mouse usam as mesmas contas) ----------
 
+
 func _larg(n: int) -> float:
-	return minf(LARG, (W - 16.0 - (n - 1) * GAP) / n)   # baú de 5 cartas encolhe pra caber
+	return minf(LARG, (W - 16.0 - (n - 1) * GAP) / n)  # baú de 5 cartas encolhe pra caber
 
 
 func _rect_carta(i: int) -> Rect2:
@@ -119,6 +120,7 @@ func _rect_botao(i: int, n: int) -> Rect2:
 
 
 # ---------- entrada ----------
+
 
 func _process(dt: float) -> void:
 	_t += dt
@@ -202,7 +204,7 @@ func _mouse() -> void:
 
 
 func _input(e: InputEvent) -> void:
-	if Chat.digitando:   # o teclado é do chat (chat.gd)
+	if Chat.digitando:  # o teclado é do chat (chat.gd)
 		return
 	if _modo == "" or _espera > 0 or arena.bot:
 		return
@@ -239,6 +241,7 @@ func _unhandled_key_input(e: InputEvent) -> void:
 
 # ---------- ações ----------
 
+
 func _acao(id: String) -> void:
 	if _modo != "escolher" or _cartas.is_empty() or _cartas[0].tipo == "dadiva":
 		return
@@ -266,8 +269,19 @@ func _acao(id: String) -> void:
 			if r.is_empty():
 				_cartas.remove_at(_sel)
 				_inicio.remove_at(_sel)
-				if _cartas.is_empty():   # nada sobrou no sorteio: a carta de cura nunca deixa a mesa vazia
-					_cartas = [{"tipo": "cura", "id": "vida", "nome": "Café da tarde", "desc": "Recupera 40 de vida.", "icone": "vida", "nivel": 0, "max": 1, "cmp": []}]
+				if _cartas.is_empty():  # nada sobrou no sorteio: a carta de cura nunca deixa a mesa vazia
+					_cartas = [
+						{
+							"tipo": "cura",
+							"id": "vida",
+							"nome": "Café da tarde",
+							"desc": "Recupera 40 de vida.",
+							"icone": "vida",
+							"nivel": 0,
+							"max": 1,
+							"cmp": []
+						}
+					]
 					_inicio = [Time.get_ticks_msec()]
 				_sel = clampi(_sel, 0, _cartas.size() - 1)
 			else:
@@ -288,6 +302,7 @@ func _confirmar() -> void:
 
 
 # ---------- desenho ----------
+
 
 func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := -1.0, alinhar := HORIZONTAL_ALIGNMENT_CENTER, f: Font = null) -> void:
 	if f == null:
@@ -343,7 +358,7 @@ func _glifo(g: String, c: Vector2, r: float, cor: Color) -> void:
 			_tela.draw_rect(Rect2(c + Vector2(-r, -r * 0.3), Vector2(r * 2, r * 0.6)), cor)
 			_tela.draw_rect(Rect2(c + Vector2(-r * 0.3, -r), Vector2(r * 0.6, r * 2)), cor)
 			return
-		_:   # estrela de 5 pontas
+		_:  # estrela de 5 pontas
 			pts = PackedVector2Array()
 			for k in 10:
 				var ang := -PI / 2 + k * PI / 5
@@ -385,17 +400,17 @@ func _desenhar() -> void:
 func _carta(i: int, ti_total: float) -> void:
 	var c: Dictionary = _cartas[i]
 	if ti_total < 0.0:
-		return   # ainda não chegou a vez dessa carta
+		return  # ainda não chegou a vez dessa carta
 	var k := clampf(ti_total / ENTRADA, 0.0, 1.0)
 	var u := k - 1.0
-	var suave := 1.0 + 2.70158 * u * u * u + 1.70158 * u * u   # ease-out-back: passa de 1 e volta
+	var suave := 1.0 + 2.70158 * u * u * u + 1.70158 * u * u  # ease-out-back: passa de 1 e volta
 	var esc := lerpf(0.82, 1.0, suave)
 	var r := _rect_carta(i)
 	var sel := i == _sel and _modo == "escolher" and _foco == "cartas"
 	var larg := r.size.x
 	var centro := r.position + r.size / 2 + Vector2(0, (1.0 - clampf(suave, 0, 1)) * 14.0 - (4.0 if sel else 0.0))
 	_tela.draw_set_transform(centro, 0.0, Vector2(esc, esc))
-	var o := -r.size / 2   # origem da carta no espaço transformado
+	var o := -r.size / 2  # origem da carta no espaço transformado
 	var est := estilo(c, _t)
 	var cor: Color = est.cor
 	var borda: Color = Interface.cor("destaque") if sel else cor.darkened(0.25)
@@ -430,16 +445,16 @@ func _carta(i: int, ti_total: float) -> void:
 				if j < nv - 1:
 					_tela.draw_rect(pr, Interface.cor("destaque"))
 				elif j == nv - 1:
-					_tela.draw_rect(pr, Interface.cor("bom").lerp(Color.WHITE, 0.5 + 0.5 * sin(_t * 8)))   # o pip que você ganha
+					_tela.draw_rect(pr, Interface.cor("bom").lerp(Color.WHITE, 0.5 + 0.5 * sin(_t * 8)))  # o pip que você ganha
 				else:
 					_tela.draw_rect(pr, Color(0.25, 0.27, 0.36))
 	elif tipo == "dadiva":
 		# raridade aparece só aqui (a tira do topo diz DÁDIVA): filetes na cor da raridade e o nome em destaque
 		var rar := str(c.get("rar_nome", ""))
 		_tela.draw_rect(Rect2(o + Vector2(10, 76), Vector2(larg - 20, 1)), cor)
-		_txt(Vector2(o.x, o.y + 88), rar, 12, cor, larg, HORIZONTAL_ALIGNMENT_CENTER, Dados.fonte_titulo)   # linha de base entre os filetes (76 e 94): o acento não some atrás do filete
+		_txt(Vector2(o.x, o.y + 88), rar, 12, cor, larg, HORIZONTAL_ALIGNMENT_CENTER, Dados.fonte_titulo)  # linha de base entre os filetes (76 e 94): o acento não some atrás do filete
 		_tela.draw_rect(Rect2(o + Vector2(10, 94), Vector2(larg - 20, 1)), cor)
-	elif tipo == "comportamento":   # carta rara: deixa claro que muda o jeito da arma, não só um número
+	elif tipo == "comportamento":  # carta rara: deixa claro que muda o jeito da arma, não só um número
 		_txt(Vector2(o.x, o.y + 80), str(c.get("arma_nome", "")), 8, Interface.cor("destaque"), larg)
 	_tela.draw_multiline_string(Dados.fonte_titulo, o + Vector2(4, 104), str(c.nome), HORIZONTAL_ALIGNMENT_CENTER, larg - 8, 12, 1, Color.WHITE)
 	# antes > depois (o atributo que muda, com o valor novo em destaque)

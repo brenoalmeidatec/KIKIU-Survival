@@ -3,7 +3,7 @@ extends RefCounted
 ## a delas morre. Vivem "duracao" segundos e vão embora. Cada um bica a cada "tique" segundos quando está colado.
 ## Atributos: quantidade, dano, duracao, velocidade, tique, area. Módulo de comportamento de arma (veja armas.gd).
 
-const PERTO := 10.0   # distância em que o corvo alcança a presa
+const PERTO := 10.0  # distância em que o corvo alcança a presa
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
 
@@ -15,10 +15,25 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 	var c: Vector2 = w.dono.centro()
 	for i in int(s.quantidade):
 		var ang := TAU * i / maxf(1.0, float(s.quantidade))
-		w.especiais.append({"tipo": "corvos", "pos": c + Vector2.from_angle(ang) * 14.0, "vel": Vector2.from_angle(ang) * 60.0,
-			"alvo": null, "busca": 0.0, "bica": 0.0, "vida": float(s.duracao), "dano": float(s.dano), "rapidez": float(s.velocidade),
-			"tique": float(s.get("tique", 0.5)), "esc": float(s.area), "arma": a.id, "fase": randf() * TAU, "sem": randf(),
-			"negro": bool(d.get("evolucao", false))})
+		w.especiais.append(
+			{
+				"tipo": "corvos",
+				"pos": c + Vector2.from_angle(ang) * 14.0,
+				"vel": Vector2.from_angle(ang) * 60.0,
+				"alvo": null,
+				"busca": 0.0,
+				"bica": 0.0,
+				"vida": float(s.duracao),
+				"dano": float(s.dano),
+				"rapidez": float(s.velocidade),
+				"tique": float(s.get("tique", 0.5)),
+				"esc": float(s.area),
+				"arma": a.id,
+				"fase": randf() * TAU,
+				"sem": randf(),
+				"negro": bool(d.get("evolucao", false))
+			}
+		)
 
 
 static func _viva(alvo) -> bool:
@@ -32,13 +47,13 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		return false
 	e.busca -= dt
 	if not _viva(e.alvo) or e.busca <= 0:
-		e.busca = 0.6   # troca de presa de vez em quando (e na hora, se a dela morreu): espalha o bando
+		e.busca = 0.6  # troca de presa de vez em quando (e na hora, se a dela morreu): espalha o bando
 		var perto: Array = w.campo.n_mais_perto(e.pos, 4, 320)
 		e.alvo = perto[randi() % perto.size()] if not perto.is_empty() else null
 	var destino: Vector2 = e.alvo.pos if _viva(e.alvo) else w.dono.centro() + Vector2(sin(e.fase * 0.1) * 30.0, -26.0)
 	var falta: Vector2 = destino - e.pos
 	var quer: Vector2 = falta.normalized() * e.rapidez if falta.length() > 2.0 else Vector2.ZERO
-	e.vel = e.vel.lerp(quer, clampf(dt * 6.0, 0.0, 1.0))   # curva suave, como ave
+	e.vel = e.vel.lerp(quer, clampf(dt * 6.0, 0.0, 1.0))  # curva suave, como ave
 	e.pos += e.vel * dt
 	e.bica -= dt
 	if _viva(e.alvo) and falta.length() < PERTO * e.esc and e.bica <= 0:
@@ -52,12 +67,12 @@ static func pintar(w, e: Dictionary) -> void:
 	# corvo de pixel: corpo de 3 px e duas asas que batem; a evolução tem olho de brasa
 	# corpo cinza-azulado e borda de asa clara: corvo preto sumia nos chãos escuros (floresta, pântano, reino)
 	var p: Vector2 = e.pos.floor()
-	var asa: float = sin(e.fase) * 3.0 * maxf(e.esc, 0.85)   # corvo pequeno do nível 1 ainda tem que dar pra ver
+	var asa: float = sin(e.fase) * 3.0 * maxf(e.esc, 0.85)  # corvo pequeno do nível 1 ainda tem que dar pra ver
 	var envergadura: float = 6.0 * maxf(e.esc, 0.85)
 	var corpo := Color(0.22, 0.2, 0.3)
 	var borda := Color(0.6, 0.3, 0.7) if e.negro else Color(0.62, 0.62, 0.75)
 	var t: int = e.get("tier", 0)
-	if t >= 2:   # bando mais forte deixa uma trilha de brasas/penugem roxa atrás
+	if t >= 2:  # bando mais forte deixa uma trilha de brasas/penugem roxa atrás
 		Cresc.brasas(w, p, 7.0 * e.esc + 4.0, borda, t, w._t, e.sem)
 	borda = Cresc.cor(borda, t)
 	for lado in [-1.0, 1.0]:

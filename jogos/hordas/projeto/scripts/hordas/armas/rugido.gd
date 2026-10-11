@@ -18,9 +18,21 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 		a.t = 0.3
 		return
 	a.t = maxf(1.5, float(s.recarga))
-	w.especiais.append({"tipo": "rugido", "boca": true, "pos": c, "t": DUR, "r": 0.0,
-		"rmax": float(s.get("raio", 110)) * float(s.area), "dano": float(s.dano), "empurra": float(s.get("empurra", 260)),
-		"atordoa": float(s.get("atordoa", 1.2)), "acertou": [], "arma": a.id})
+	w.especiais.append(
+		{
+			"tipo": "rugido",
+			"boca": true,
+			"pos": c,
+			"t": DUR,
+			"r": 0.0,
+			"rmax": float(s.get("raio", 110)) * float(s.area),
+			"dano": float(s.dano),
+			"empurra": float(s.get("empurra", 260)),
+			"atordoa": float(s.get("atordoa", 1.2)),
+			"acertou": [],
+			"arma": a.id
+		}
+	)
 	Som.tocar("tremor", 0.2, 0.45, 0)
 	w.arena.tremer(5.0)
 

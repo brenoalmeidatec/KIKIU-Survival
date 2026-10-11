@@ -34,7 +34,10 @@ func _ready() -> void:
 	var m := {}
 	for l in Tela.linhas_atributos(base, atual):
 		m[l.k] = l
-	ok(m.dano.sentido == 1 and m.dano.txt_delta == "+20%" and m.dano.txt_base == "100%", "dano subiu: base 100%% e +20%% (%s %s)" % [m.dano.txt_base, m.dano.txt_delta])
+	ok(
+		m.dano.sentido == 1 and m.dano.txt_delta == "+20%" and m.dano.txt_base == "100%",
+		"dano subiu: base 100%% e +20%% (%s %s)" % [m.dano.txt_base, m.dano.txt_delta]
+	)
 	ok(m.vida_max.sentido == -1 and m.vida_max.txt_delta == "-10", "vida desceu: -10 (%s)" % m.vida_max.txt_delta)
 	ok(m.recarga.sentido == 1 and m.recarga.txt_delta == "-10%", "recarga menor é melhor: sentido verde, texto -10%% (%s)" % m.recarga.txt_delta)
 	ok(m.regen.sentido == 1 and m.regen.txt_delta == "+0.5/s", "regen +0.5/s (%s)" % m.regen.txt_delta)

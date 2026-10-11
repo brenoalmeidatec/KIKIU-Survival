@@ -6,10 +6,12 @@ extends Node
 const Arena := preload("res://scripts/hordas/arena.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 ## Tempo SIMULADO: o teste avança a arena em passos fixos de 1/60 s (a própria lógica do jogo, com o _process
 ## automático desligado). Antes esperava relógio de parede, e com a CPU ocupada os quadros longos estouravam as
@@ -19,9 +21,10 @@ func avancar(a: Node, s: float) -> void:
 	while t < s - 0.000001:
 		var d := minf(1.0 / 60.0, s - t)
 		a._process(d)
-		a.jogador._process(d)   # a chegada e o nome do herói andam no mesmo tempo simulado
-		await get_tree().process_frame   # um quadro de verdade por passo: golpe_extra() conta quadros do motor
+		a.jogador._process(d)  # a chegada e o nome do herói andam no mesmo tempo simulado
+		await get_tree().process_frame  # um quadro de verdade por passo: golpe_extra() conta quadros do motor
 		t += d
+
 
 ## Vigia: se um caminho do teste não chega ao quit() (um erro no meio aborta a função e o processo ficaria vivo, parado),
 ## o vigia encerra em 100 s de relógio real, com falha. Teste normal leva uns 10 s.
@@ -34,7 +37,28 @@ func _vigia() -> void:
 
 func _ready() -> void:
 	_vigia()
-	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar", "resortear", "pular", "banir", "status", "tela_cheia", "consumivel1", "consumivel2", "consumivel3", "consumivel_usar", "consumivel_trocar"]:
+	for acao in [
+		"cima",
+		"baixo",
+		"esquerda",
+		"direita",
+		"dash",
+		"especial",
+		"transformar",
+		"voltar",
+		"confirmar",
+		"falar",
+		"resortear",
+		"pular",
+		"banir",
+		"status",
+		"tela_cheia",
+		"consumivel1",
+		"consumivel2",
+		"consumivel3",
+		"consumivel_usar",
+		"consumivel_trocar"
+	]:
 		if not InputMap.has_action(acao):
 			InputMap.add_action(acao)
 	var mov: Dictionary = Dados.json("movimento")
@@ -44,14 +68,21 @@ func _ready() -> void:
 	ok(is_equal_approx(float(r.get("tempo", 0)), 0.45), "0,45 s de rolamento no total (%s)" % str(r.get("tempo")))
 	ok(is_equal_approx(float(mov.get("folego", {}).get("recarga", 0)), 1.2), "recarga de 1,2 s")
 	ok(int(mov.get("folego", {}).get("cargas", 0)) == 2, "2 cargas")
-	ok(is_equal_approx(float(p.get("distancia", 0)), 24.0) and is_equal_approx(float(p.get("lento_tempo", 0)), 0.5) and is_equal_approx(float(p.get("bonus_dano", 0)), 0.25), "esquiva perfeita: 24 px, 0,5 s, +25%%")
+	ok(
+		(
+			is_equal_approx(float(p.get("distancia", 0)), 24.0)
+			and is_equal_approx(float(p.get("lento_tempo", 0)), 0.5)
+			and is_equal_approx(float(p.get("bonus_dano", 0)), 0.25)
+		),
+		"esquiva perfeita: 24 px, 0,5 s, +25%%"
+	)
 	ok(str(mov.get("_ajuda", "")) != "", "movimento.json tem _ajuda")
 	var a := Arena.new()
 	a.heroi_id = "hazaki"
 	add_child(a)
-	a.set_process(false)   # o processo automático (relógio de parede) sai: quem anda o tempo é avancar()
+	a.set_process(false)  # o processo automático (relógio de parede) sai: quem anda o tempo é avancar()
 	a.jogador.set_process(false)
-	await avancar(a, 1.6)   # a chegada termina antes
+	await avancar(a, 1.6)  # a chegada termina antes
 	a.bot = false
 	var j = a.jogador
 	j.bot = false
@@ -88,7 +119,7 @@ func _ready() -> void:
 	ok(j.folego >= 1.0, "a carga volta em 1,2 s (%.2f)" % j.folego)
 	var antes: float = j._folego_cfg("cargas", 2.0)
 	ok(is_equal_approx(antes, 2.0), "2 cargas sem item")
-	var gan = preload("res://scripts/hordas/ganchos.gd").new()   # o item do Pombo: uma carga a mais
+	var gan = preload("res://scripts/hordas/ganchos.gd").new()  # o item do Pombo: uma carga a mais
 	a.add_child(gan)
 	gan.configurar(a, [{"tipo": "rolamento", "dist": 1.0, "cargas": 1}])
 	a.ganchos = gan
@@ -116,7 +147,7 @@ func _ready() -> void:
 	v_media.atordoado = 5.0
 	var v_fora = a.inimigos.criar("carnical", j.centro() + Vector2(300, 0), 1)
 	v_fora.atordoado = 5.0
-	await avancar(a, 3 / 60.0)   # a grade de busca dos vírus se refaz a cada quadro
+	await avancar(a, 3 / 60.0)  # a grade de busca dos vírus se refaz a cada quadro
 	ok(j.rolar(Vector2.UP), "rola com inimigo colado")
 	ok(j.perfeitas == perf0 + 1, "inimigo a 14 px: esquiva perfeita (%d)" % j.perfeitas)
 	ok(j.tem_bonus_esquiva(), "ganhou o bônus do próximo golpe")

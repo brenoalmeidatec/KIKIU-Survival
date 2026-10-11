@@ -5,28 +5,35 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 
 const Visual := preload("res://scripts/hordas/visual.gd")
 const ESCALA := 2.0
-const BLOCO := 256.0          # tamanho da textura do chão na tela (128 px x 2)
+const BLOCO := 256.0  # tamanho da textura do chão na tela (128 px x 2)
 const CEL_DECO := 150.0
 const Cenario := preload("res://scripts/hordas/cenario.gd")
 const Descobertas := preload("res://scripts/hordas/descobertas.gd")
 const Ambiente := preload("res://scripts/hordas/ambiente.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 ## cor do anel de cada tipo de santuário
-const COR_TIPO := {"tomada": Color(1.0, 0.85, 0.3), "dadiva": Color(0.4, 0.9, 1.0), "fragmento": Color(0.45, 0.55, 1.0), "maldito": Color(0.85, 0.35, 0.8),
-	"prova": Color(1.0, 0.45, 0.25), "selado": Color(0.7, 0.85, 1.0), "reliquia": Color(1.0, 0.9, 0.5)}
+const COR_TIPO := {
+	"tomada": Color(1.0, 0.85, 0.3),
+	"dadiva": Color(0.4, 0.9, 1.0),
+	"fragmento": Color(0.45, 0.55, 1.0),
+	"maldito": Color(0.85, 0.35, 0.8),
+	"prova": Color(1.0, 0.45, 0.25),
+	"selado": Color(0.7, 0.85, 1.0),
+	"reliquia": Color(1.0, 0.9, 0.5)
+}
 
 var arena: Node
 var _fundo := TextureRect.new()
-var santuarios: Array = []    # {pos, carga, usado}
+var santuarios: Array = []  # {pos, carga, usado}
 var _t := 0.0
 var _deco: Texture2D
 var _deco_regioes := [Rect2(0, 0, 14, 18), Rect2(15, 6, 10, 12), Rect2(26, 12, 8, 6), Rect2(35, 6, 14, 12)]
-var cenario = null              # cenário da fase (Cenario), ou null = chão antigo
-var _bloco := BLOCO             # lado do azulejo na tela
+var cenario = null  # cenário da fase (Cenario), ou null = chão antigo
+var _bloco := BLOCO  # lado do azulejo na tela
 var _desloc := Vector2(512, 384)  # o azulejo começa até isso à esquerda/acima da câmera
-var _luzes := Node2D.new()      # halos das luzes do cenário, somados (blend ADD) por cima de tudo
+var _luzes := Node2D.new()  # halos das luzes do cenário, somados (blend ADD) por cima de tudo
 var _ambiente := CanvasModulate.new()
-var _amb := Ambiente.new()      # detalhes de chão, partículas e bichos do cenário (#32 item 2)
+var _amb := Ambiente.new()  # detalhes de chão, partículas e bichos do cenário (#32 item 2)
 
 
 func _ready() -> void:
@@ -65,7 +72,7 @@ func criar_santuarios() -> void:
 ## Nova fase: tomadas novas em volta de onde o jogador está e o chão muda de cor.
 func nova_fase() -> void:
 	_aplicar_cenario()
-	_aplicar_luz()   # o cenário pode ser o mesmo do andar anterior (mesma região), mas a luz muda
+	_aplicar_luz()  # o cenário pode ser o mesmo do andar anterior (mesma região), mas a luz muda
 	santuarios.clear()
 	criar_santuarios()
 
@@ -106,7 +113,7 @@ func atualizar_i(dt: float) -> void:
 			s.carga += dt / tempo
 			if s.carga >= 1.0:
 				s.carga = 1.0
-				arena.descobertas.ativar(s)   # tipo decide: carta, dádiva, fragmento (com variação) ou maldição
+				arena.descobertas.ativar(s)  # tipo decide: carta, dádiva, fragmento (com variação) ou maldição
 		else:
 			s.carga = maxf(0.0, s.carga - dt / tempo * 0.5)
 	_luzes.queue_redraw()
@@ -127,7 +134,7 @@ func _aplicar_luz() -> void:
 		var f: Dictionary = fs[clampi(arena.diretor.fase_idx, 0, fs.size() - 1)] if not fs.is_empty() else {}
 		if f.has("andar_regiao"):
 			var luz: Dictionary = Regioes.cfg().get("luz", {}).merged(Regioes.regiao(int(f.get("regiao", 0))).get("luz", {}), true)
-			var u := clampf(float(f.andar_regiao) / maxf(1.0, Regioes.por_regiao() - 1.0), 0.0, 1.0)   # 0 na entrada, 1 no chefe
+			var u := clampf(float(f.andar_regiao) / maxf(1.0, Regioes.por_regiao() - 1.0), 0.0, 1.0)  # 0 na entrada, 1 no chefe
 			var fator := lerpf(1.0, float(luz.get("chefe", 0.8)), u)
 			var tom: Array = luz.get("tom_chefe", [1.0, 1.0, 1.0])
 			var t := Color(float(tom[0]), float(tom[1]), float(tom[2])).lerp(Color.WHITE, 1.0 - u)
@@ -137,12 +144,12 @@ func _aplicar_luz() -> void:
 
 func _aplicar_cenario() -> void:
 	var n := Cenario.da_fase(arena.diretor.fase_idx if arena and arena.diretor else 0)
-	if arena and arena.diretor:   # regiões (#64): a fase diz o cenário (o da região dela)
+	if arena and arena.diretor:  # regiões (#64): a fase diz o cenário (o da região dela)
 		var fs: Array = arena.diretor.fases()
 		var f: Dictionary = fs[clampi(arena.diretor.fase_idx, 0, fs.size() - 1)] if not fs.is_empty() else {}
 		if f.has("cenario"):
-			n = Cenario.variante(str(f.cenario), int(f.get("andar_regiao", 0)))   # varia por andar (#112)
-	for a in OS.get_cmdline_user_args():   # só pra prints de teste: --cenario=pantano_lago força o cenário
+			n = Cenario.variante(str(f.cenario), int(f.get("andar_regiao", 0)))  # varia por andar (#112)
+	for a in OS.get_cmdline_user_args():  # só pra prints de teste: --cenario=pantano_lago força o cenário
 		if a.begins_with("--cenario="):
 			n = a.substr(10)
 	if n == "" or (cenario and cenario.nome == n):
@@ -183,14 +190,14 @@ func _enfeites_na_tela() -> Array:
 	var res := []
 	for cy in range(a.y, b.y + 1):
 		for cx in range(a.x, b.x + 1):
-			for p in cenario.celula(cx, cy).props:   # sorteados pela semente da corrida (Cenario.celula)
+			for p in cenario.celula(cx, cy).props:  # sorteados pela semente da corrida (Cenario.celula)
 				res.append([p.pos, p.item, p.k])
 	if not cenario.fixos.is_empty():
 		for ty in range(ta.y, tb.y + 1):
 			for tx in range(ta.x, tb.x + 1):
 				for f in cenario.fixos:
 					res.append([Vector2(tx, ty) * _bloco + f.pos, f.item, hash(Vector2i(tx, ty)) + int(f.pos.x)])
-	res.sort_custom(func(p, q): return p[0].y < q[0].y)   # quem está mais embaixo fica na frente
+	res.sort_custom(func(p, q): return p[0].y < q[0].y)  # quem está mais embaixo fica na frente
 	_enf_cen = cenario
 	_enf_a = a
 	_enf_b = b
@@ -216,7 +223,7 @@ func _desenhar_luzes() -> void:
 		var halo: Rect2 = l.halo
 		var respira := 1.0 + float(l.pisca) * 0.12 * ruido
 		var ps: Vector2 = poca.size * respira
-		_luzes.draw_texture_rect_region(cenario.atlas, Rect2(e[0] + Vector2(l.fonte.x, 0) - ps / 2, ps), poca, Color(1, 1, 1, f))   # poça embaixo da lâmpada
+		_luzes.draw_texture_rect_region(cenario.atlas, Rect2(e[0] + Vector2(l.fonte.x, 0) - ps / 2, ps), poca, Color(1, 1, 1, f))  # poça embaixo da lâmpada
 		_luzes.draw_texture_rect_region(cenario.atlas, Rect2(e[0] + l.fonte - halo.size / 2, halo.size), halo, Color(1, 1, 1, f))
 
 
@@ -228,7 +235,7 @@ func _draw() -> void:
 
 func _draw_i() -> void:
 	if cenario:
-		var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()   # só desenha o que cai na tela (com folga pro tamanho)
+		var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()  # só desenha o que cai na tela (com folga pro tamanho)
 		for e in _enfeites_na_tela():
 			var it: Dictionary = e[1]
 			var reg: Rect2 = it.regiao
@@ -242,7 +249,7 @@ func _draw_i() -> void:
 			draw_texture_rect_region(cenario.atlas, Rect2(e[0] - pe, reg.size), reg)
 	else:
 		_draw_enfeites_antigos()
-	var tex := Dados.tex(str(Descobertas.cfg().get("santuarios", {}).get("sprite", "tomada")))   # a pira (#65)
+	var tex := Dados.tex(str(Descobertas.cfg().get("santuarios", {}).get("sprite", "tomada")))  # a pira (#65)
 	for s in santuarios:
 		var base: Color = COR_TIPO.get(s.tipo, Color.WHITE)
 		var cor := Color(0.4, 0.6, 0.7, 0.5) if s.usado else Color(base, 0.8)
@@ -251,31 +258,39 @@ func _draw_i() -> void:
 		draw_arc(Vector2.ZERO, 48, 0, TAU, 40, cor, 2)
 		if s.carga > 0 and not s.usado:
 			draw_arc(Vector2.ZERO, 44, -PI / 2, -PI / 2 + TAU * s.carga, 40, Color(0.5, 1.0, 0.5), 4)
-		if s.get("prog", 0.0) > 0.0:   # desafio em andamento (santuário do combate): anel que enche
+		if s.get("prog", 0.0) > 0.0:  # desafio em andamento (santuário do combate): anel que enche
 			draw_arc(Vector2.ZERO, 44, -PI / 2, -PI / 2 + TAU * s.prog, 40, Color(1.0, 0.6, 0.25), 4)
 		draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 		var sz := tex.get_size() * ESCALA
 		var flut := 0.0 if s.usado else sin(_t * 3.0) * 2.0
-		var alt := 2.0 - flut   # flutuando: a sombra fica no chão e encolhe quando sobe
+		var alt := 2.0 - flut  # flutuando: a sombra fica no chão e encolhe quando sobe
 		Visual.contato(self, s.pos, sz.x * 0.8, alt)
 		Visual.sombra(self, tex, Rect2(-sz.x / 2, -sz.y, sz.x, sz.y), Rect2(Vector2.ZERO, tex.get_size()), s.pos, alt)
 		var tinta := Color.WHITE if s.tipo == "tomada" else Color.WHITE.lerp(base, 0.55)
 		draw_texture_rect(tex, Rect2(s.pos - Vector2(sz.x / 2, sz.y) + Vector2(0, flut), sz), false, Color(0.6, 0.6, 0.6) if s.usado else tinta)
 		if s.usado:
 			continue
-		if s.tipo != "tomada":   # energia girando em volta e, no do dragão, o fragmento flutuando em cima
+		if s.tipo != "tomada":  # energia girando em volta e, no do dragão, o fragmento flutuando em cima
 			for k in 4:
 				var ang := _t * 1.6 + k * TAU / 4.0
 				draw_circle(s.pos + Vector2(cos(ang) * 30.0, sin(ang) * 16.0 - sz.y * 0.45), 1.8, Color(base, 0.9))
 		if s.tipo == "fragmento":
 			var c: Vector2 = s.pos + Vector2(0, -sz.y - 14.0 + flut)
 			draw_colored_polygon(PackedVector2Array([c + Vector2(0, -8), c + Vector2(6, 0), c + Vector2(0, 8), c + Vector2(-6, 0)]), Color(0.55, 0.8, 1.0))
-		if s.pos.distance_to(arena.jogador.position) < 150.0:   # dica de interação
+		if s.pos.distance_to(arena.jogador.position) < 150.0:  # dica de interação
 			var cs: Dictionary = Descobertas.cfg().get("santuarios", {})
 			var nome := str(cs.get("variacoes", {}).get(str(s.variacao), {}).get("nome", ""))
-			nome = str(cs.get("nomes", {}).get(str(s.tipo), nome))   # dádiva, maldito, tomada: o nome do tipo (#65)
+			nome = str(cs.get("nomes", {}).get(str(s.tipo), nome))  # dádiva, maldito, tomada: o nome do tipo (#65)
 			draw_string(Dados.fonte, s.pos + Vector2(-130, 22), nome, HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(base, 1.0))
-			draw_string(Dados.fonte, s.pos + Vector2(-130, 33), Descobertas.dica(s, santuarios, arena.inimigos.elementos.contagem), HORIZONTAL_ALIGNMENT_CENTER, 260, 8, Color(0.85, 0.85, 0.9, 0.8))
+			draw_string(
+				Dados.fonte,
+				s.pos + Vector2(-130, 33),
+				Descobertas.dica(s, santuarios, arena.inimigos.elementos.contagem),
+				HORIZONTAL_ALIGNMENT_CENTER,
+				260,
+				8,
+				Color(0.85, 0.85, 0.9, 0.8)
+			)
 
 
 ## Enfeites do chão antigo (sem cenário configurado).

@@ -6,10 +6,10 @@ extends RefCounted
 var nome := ""
 var piso: Texture2D
 var atlas: Texture2D
-var itens: Array = []            # {regiao: Rect2, pe: Vector2, peso: int, luz: {} ou {poca, halo: Rect2, fonte: Vector2, pisca}}
+var itens: Array = []  # {regiao: Rect2, pe: Vector2, peso: int, luz: {} ou {poca, halo: Rect2, fonte: Vector2, pisca}}
 var ambiente := Color.WHITE
-var densidade := 0.3             # chance de ter enfeite em cada célula do mapa
-var fixos: Array = []            # {item, pos: Vector2} enfeites em lugar fixo dentro de cada azulejo (ex.: postes)
+var densidade := 0.3  # chance de ter enfeite em cada célula do mapa
+var fixos: Array = []  # {item, pos: Vector2} enfeites em lugar fixo dentro de cada azulejo (ex.: postes)
 var _peso_total := 0
 
 
@@ -38,7 +38,7 @@ static func ordem_variantes(base: String, n: int) -> Array:
 	for i in range(1, n):
 		ordem.append(i)
 	var r := Sorte.criar("variantes_" + base, 0)
-	for i in range(ordem.size() - 1, 0, -1):   # Fisher-Yates
+	for i in range(ordem.size() - 1, 0, -1):  # Fisher-Yates
 		var j := r.randi_range(0, i)
 		var t = ordem[i]
 		ordem[i] = ordem[j]
@@ -75,8 +75,7 @@ func carregar(n: String) -> bool:
 		var item := {"nome": str(it.get("nome", "")), "regiao": _ret(it.regiao), "pe": Vector2(it.pe[0], it.pe[1]), "peso": int(it.get("peso", 1)), "luz": {}}
 		if it.has("luz"):
 			var l: Dictionary = it.luz
-			item.luz = {"poca": _ret(l.poca), "halo": _ret(l.halo), "fonte": Vector2(l.fonte[0], l.fonte[1]),
-				"pisca": float(l.get("pisca", 0.0))}
+			item.luz = {"poca": _ret(l.poca), "halo": _ret(l.halo), "fonte": Vector2(l.fonte[0], l.fonte[1]), "pisca": float(l.get("pisca", 0.0))}
 		itens.append(item)
 		_peso_total += item.peso
 	fixos.clear()
@@ -105,22 +104,22 @@ static func _ret(a: Array) -> Rect2:
 # ---------- #32 item 2: células do mapa (props, detalhes de chão e bichos), sorteadas pela semente da corrida ----------
 
 const Sorte := preload("res://scripts/hordas/sorte.gd")
-const CEL := 150.0              # lado da célula do mapa, em px
-const AFASTA := 38.0            # distância mínima entre dois props da mesma célula
-const MAX_CACHE := 500          # células guardadas (passou disso, esquece e sorteia de novo: o resultado é o mesmo)
+const CEL := 150.0  # lado da célula do mapa, em px
+const AFASTA := 38.0  # distância mínima entre dois props da mesma célula
+const MAX_CACHE := 500  # células guardadas (passou disso, esquece e sorteia de novo: o resultado é o mesmo)
 
-var cfg := {}                   # dados/cenarios.json > cenarios > <nome>
-var _cache := {}                # Vector2i -> {props, detalhes, bichos}
+var cfg := {}  # dados/cenarios.json > cenarios > <nome>
+var _cache := {}  # Vector2i -> {props, detalhes, bichos}
 var _semente_cache := -1
 
 
 ## Config deste cenário em dados/cenarios.json (densidade, detalhes, particulas, vida). Vazio = só o que já existia.
 func carregar_cfg() -> void:
 	var todos: Dictionary = Dados.json("cenarios").get("cenarios", {})
-	cfg = todos.get(nome, todos.get(base_de(nome), {}))   # variante sem config própria usa a do cenário-base
+	cfg = todos.get(nome, todos.get(base_de(nome), {}))  # variante sem config própria usa a do cenário-base
 	densidade = float(cfg.get("densidade", densidade))
 	_cache.clear()
-	Sorte.criar("cenario_" + nome, 0)   # garante a semente da corrida (Sorte.semente) antes da primeira célula
+	Sorte.criar("cenario_" + nome, 0)  # garante a semente da corrida (Sorte.semente) antes da primeira célula
 
 
 ## Tudo o que mora na célula (cx, cy): sempre igual pra mesma semente da corrida + cenário + célula, em qualquer computador.
@@ -161,8 +160,18 @@ func celula(cx: int, cy: int) -> Dictionary:
 		for i in r.randi_range(1, int(vida.get("grupo", 1))):
 			var tipo := _tipo_sorteado(r, vida.get("bichos", []))
 			if tipo != "":
-				res.bichos.append({"tipo": tipo, "pos": centro + Vector2(r.randf_range(-12.0, 12.0), r.randf_range(-8.0, 8.0)), "estado": 0,
-					"t": 0.0, "dir": Vector2.ZERO, "alt": 0.0, "ph": r.randf() * TAU, "lado": 1.0 if r.randf() < 0.5 else -1.0})
+				res.bichos.append(
+					{
+						"tipo": tipo,
+						"pos": centro + Vector2(r.randf_range(-12.0, 12.0), r.randf_range(-8.0, 8.0)),
+						"estado": 0,
+						"t": 0.0,
+						"dir": Vector2.ZERO,
+						"alt": 0.0,
+						"ph": r.randf() * TAU,
+						"lado": 1.0 if r.randf() < 0.5 else -1.0
+					}
+				)
 	_cache[k] = res
 	return res
 
@@ -199,11 +208,16 @@ static func _detalhe(r: RandomNumberGenerator, lista: Array, o: Vector2) -> Dict
 	for e in lista:
 		if str(e.tipo) == tipo:
 			cor = e.get("cor", cor)
-	var d := {"tipo": tipo, "pos": o + Vector2(r.randf_range(6.0, 144.0), r.randf_range(6.0, 144.0)), "k": r.randi(),
-		"cor": Color(cor[0], cor[1], cor[2], cor[3]), "pts": PackedVector2Array()}
+	var d := {
+		"tipo": tipo,
+		"pos": o + Vector2(r.randf_range(6.0, 144.0), r.randf_range(6.0, 144.0)),
+		"k": r.randi(),
+		"cor": Color(cor[0], cor[1], cor[2], cor[3]),
+		"pts": PackedVector2Array()
+	}
 	var pts := PackedVector2Array()
 	match tipo:
-		"rachadura":   # caminhada torta
+		"rachadura":  # caminhada torta
 			var p := Vector2.ZERO
 			var a := r.randf() * TAU
 			for i in r.randi_range(4, 7):
@@ -211,19 +225,19 @@ static func _detalhe(r: RandomNumberGenerator, lista: Array, o: Vector2) -> Dict
 				a += r.randf_range(-0.7, 0.7)
 				p += Vector2.from_angle(a) * r.randf_range(5.0, 10.0)
 			pts.append(p)
-		"cabo":   # curva suave
+		"cabo":  # curva suave
 			var a := r.randf() * TAU
 			var p := Vector2.ZERO
 			for i in 8:
 				pts.append(p)
 				a += r.randf_range(-0.45, 0.45)
 				p += Vector2.from_angle(a) * 5.0
-		"mancha", "poca":   # elipse irregular achatada (vista de cima em 3/4)
+		"mancha", "poca":  # elipse irregular achatada (vista de cima em 3/4)
 			var rx := r.randf_range(7.0, 16.0) * (1.4 if tipo == "poca" else 1.0)
 			for i in 10:
 				var ang := TAU * i / 10.0
 				pts.append(Vector2(cos(ang) * rx * r.randf_range(0.75, 1.1), sin(ang) * rx * 0.5 * r.randf_range(0.75, 1.1)))
-		"folha":   # 3 a 5 folhinhas espalhadas
+		"folha":  # 3 a 5 folhinhas espalhadas
 			for i in r.randi_range(3, 5):
 				pts.append(Vector2(r.randf_range(-10.0, 10.0), r.randf_range(-5.0, 5.0)))
 		"papel":

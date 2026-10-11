@@ -54,7 +54,10 @@ func _ready() -> void:
 	for i in 12:
 		vistos[Missao.escolher({"chefe": "bruxa_do_mato"}, i)] = true
 	ok(vistos.size() >= 2, "o mesmo chefe varia a missão de uma fase pra outra (%s)" % [vistos.keys()])
-	ok(Missao.escolher({"chefe": "rainha_sapo"}, 0) in ["selos", "fragmentos"] and Missao.escolher({"chefe": "mae_do_lodo"}, 0) == "pilares", "fases de chefes diferentes: missões diferentes")
+	ok(
+		Missao.escolher({"chefe": "rainha_sapo"}, 0) in ["selos", "fragmentos"] and Missao.escolher({"chefe": "mae_do_lodo"}, 0) == "pilares",
+		"fases de chefes diferentes: missões diferentes"
+	)
 	ok(Missao.carregar(0.0, true, 1.0, 3.5, 0.5) == 1.0 and Missao.carregar(3.0, true, 1.0, 3.5, 0.5) == 3.5, "pilar: carga sobe e para no total")
 	ok(Missao.carregar(1.0, false, 1.0, 3.5, 0.5) == 0.5 and Missao.carregar(0.2, false, 1.0, 3.5, 0.5) == 0.0, "pilar: longe, a carga cai e para no zero")
 
@@ -77,7 +80,7 @@ func _ready() -> void:
 
 	for tid in ["fragmentos", "pilares", "selos", "invocar"]:
 		a.inimigos.limpar()
-		d.ir_para(d.fase_idx)   # zera o relógio e o chefe da fase
+		d.ir_para(d.fase_idx)  # zera o relógio e o chefe da fase
 		a.jogador.invencivel = 9999.0
 		var fase := f.duplicate()
 		fase["missao"] = tid

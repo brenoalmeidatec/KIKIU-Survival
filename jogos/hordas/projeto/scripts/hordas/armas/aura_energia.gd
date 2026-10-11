@@ -22,8 +22,19 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 	a["pulso_t"] = float(a.get("pulso_t", 1.0)) - dt
 	if a.pulso_t <= 0:
 		a.pulso_t = maxf(0.8, float(s.get("pulso", 3.0)))
-		w.especiais.append({"tipo": "aura_energia", "pos": c, "r": r * 0.6, "rmax": r * 1.8, "t": 0.45,
-			"dano": float(s.dano) * 2.5, "empurra": float(s.get("empurra", 50)) * 2.0, "acertou": [], "arma": a.id})
+		w.especiais.append(
+			{
+				"tipo": "aura_energia",
+				"pos": c,
+				"r": r * 0.6,
+				"rmax": r * 1.8,
+				"t": 0.45,
+				"dano": float(s.dano) * 2.5,
+				"empurra": float(s.get("empurra", 50)) * 2.0,
+				"acertou": [],
+				"arma": a.id
+			}
+		)
 		Som.tocar("tremor", 0.1, 1.8, -12)
 
 
@@ -71,23 +82,27 @@ static func _chamas(w, ci, a: Dictionary, frente: bool) -> void:
 	var pe: Vector2 = w.dono.position
 	var nv: int = int(a.nivel)
 	var k: float = ALFA_FRENTE if frente else ALFA_TRAS
-	var ar: float = Cresc.mult(str(a.get("id", "aura_hazaki")), int(a.get("nivel", 1)), "area")   # a chama cresce com a curva de crescimento da arma
+	var ar: float = Cresc.mult(str(a.get("id", "aura_hazaki")), int(a.get("nivel", 1)), "area")  # a chama cresce com a curva de crescimento da arma
 	var n := 6 + nv * 2
 	for i in n:
 		var ang := TAU * i / n + t * 1.5
 		var sn := sin(ang)
-		if (sn >= 0.0) != frente:   # sin>0 = lado do olhador (pé pra baixo na tela)
+		if (sn >= 0.0) != frente:  # sin>0 = lado do olhador (pé pra baixo na tela)
 			continue
-		var base := pe + Vector2(cos(ang) * RAIO_ANEL.x * maxf(ar, 0.9), sn * RAIO_ANEL.y * maxf(ar, 0.9) - 2.0)   # o anel nunca fica mais estreito que o herói
+		var base := pe + Vector2(cos(ang) * RAIO_ANEL.x * maxf(ar, 0.9), sn * RAIO_ANEL.y * maxf(ar, 0.9) - 2.0)  # o anel nunca fica mais estreito que o herói
 		var alt := (34.0 + nv * 5.0) * ar * (0.6 + 0.4 * absf(sin(t * 9.0 + i * 1.7)))
 		if frente:
 			alt *= 0.8
 		var topo := base + Vector2(sin(t * 6.0 + i) * 3.0, -alt)
 		var larg := (3.0 + nv * 0.5) * ar
-		if nv >= 4:   # no alto, uma camada dourada por fora
-			ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg - 1.5, 0), base + Vector2(larg + 1.5, 0), topo + Vector2(0, -4)]), Color(OURO, 0.4 * k / 0.6))
+		if nv >= 4:  # no alto, uma camada dourada por fora
+			ci.draw_colored_polygon(
+				PackedVector2Array([base + Vector2(-larg - 1.5, 0), base + Vector2(larg + 1.5, 0), topo + Vector2(0, -4)]), Color(OURO, 0.4 * k / 0.6)
+			)
 		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg, 0), base + Vector2(larg, 0), topo]), Color(COBALTO, k))
-		ci.draw_colored_polygon(PackedVector2Array([base + Vector2(-larg * 0.4, 0), base + Vector2(larg * 0.4, 0), base.lerp(topo, 0.6)]), Color(CIANO, k * 1.2))
+		ci.draw_colored_polygon(
+			PackedVector2Array([base + Vector2(-larg * 0.4, 0), base + Vector2(larg * 0.4, 0), base.lerp(topo, 0.6)]), Color(CIANO, k * 1.2)
+		)
 
 
 ## Na frente do personagem: a metade da frente do anel de chamas (transparente) e as faíscas douradas subindo.

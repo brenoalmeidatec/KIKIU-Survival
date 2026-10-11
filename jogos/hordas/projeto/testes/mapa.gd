@@ -25,7 +25,7 @@ func nova(semente: int) -> Node:
 	a.semente = semente
 	add_child(a)
 	await esperar(0.2)
-	a.xp = -1.0e12   # sem subir de nível: o robô escolheria carta e mudaria a build no meio do teste
+	a.xp = -1.0e12  # sem subir de nível: o robô escolheria carta e mudaria a build no meio do teste
 	return a
 
 
@@ -45,12 +45,12 @@ func ate(cond: Callable, limite: float) -> bool:
 
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
-		if not InputMap.has_action(acao):   # sem o main.gd, ninguém registrou as teclas
+		if not InputMap.has_action(acao):  # sem o main.gd, ninguém registrou as teclas
 			InputMap.add_action(acao)
 	# com regiões (#64) as regras valem DENTRO de cada região (andar local) e o mapa é a costura das regiões
 	var c: Dictionary = Regioes.mapa_cfg() if Regioes.ativo() else Mapa.cfg()
-	var k := int(c.andares)               # andares de uma região (ou do mapa todo, sem regiões)
-	var andares := int(gerar(1).andares)   # andares do mapa inteiro
+	var k := int(c.andares)  # andares de uma região (ou do mapa todo, sem regiões)
+	var andares := int(gerar(1).andares)  # andares do mapa inteiro
 
 	# --- mesma semente = mesmo mapa; semente diferente = (quase sempre) outro
 	ok(gerar(7).hash() == gerar(7).hash() and Mapa.resumo(gerar(7)) == Mapa.resumo(gerar(7)), "mesma semente dá o mesmo mapa")
@@ -69,23 +69,35 @@ func _ready() -> void:
 		var cont := {}
 		for n in nos:
 			tipos_vistos[str(n.tipo)] = true
-			var chave := "%d:%s" % [int(n.andar) / k, n.tipo]   # limites contam por região
+			var chave := "%d:%s" % [int(n.andar) / k, n.tipo]  # limites contam por região
 			cont[chave] = int(cont.get(chave, 0)) + 1
-			var andar := int(n.andar) % k + 1      # andar dentro da região (1-based)
+			var andar := int(n.andar) % k + 1  # andar dentro da região (1-based)
 			var r: Dictionary = c.regras.get(str(n.tipo), {})
-			ok(andar >= int(r.get("andar_min", 1)) and andar <= int(r.get("andar_max", 999)) or str(n.tipo) in ["fase", "chefe"], "semente %d: %s no andar %d fora das regras" % [s, n.tipo, andar])
+			ok(
+				andar >= int(r.get("andar_min", 1)) and andar <= int(r.get("andar_max", 999)) or str(n.tipo) in ["fase", "chefe"],
+				"semente %d: %s no andar %d fora das regras" % [s, n.tipo, andar]
+			)
 			for p in n.prox:
 				var filho := Mapa.no(m, int(n.andar) + 1, int(p))
-				ok(not (str(n.tipo) in ["descanso", "loja"] and str(filho.tipo) in ["descanso", "loja"]), "semente %d: descanso/loja seguidos (andar %d)" % [s, andar])
+				ok(
+					not (str(n.tipo) in ["descanso", "loja"] and str(filho.tipo) in ["descanso", "loja"]),
+					"semente %d: descanso/loja seguidos (andar %d)" % [s, andar]
+				)
 		for reg in andares / k:
 			var fim_reg := nos.filter(func(n): return int(n.andar) == reg * k + k - 1)
 			ok(fim_reg.size() == 1 and str(fim_reg[0].tipo) == "chefe", "semente %d: região %d termina num chefe só" % [s, reg + 1])
 		for t in c.regras:
 			for reg in andares / k:
-				ok(int(cont.get("%d:%s" % [reg, t], 0)) <= int(c.regras[t].get("max_por_mapa", 9999)), "semente %d: limite de %s na região %d" % [s, t, reg + 1])
-		for reg in andares / k:   # #96: cada região começa num nó só, que abre 2+ caminhos, e todo nó da região sai dele
+				ok(
+					int(cont.get("%d:%s" % [reg, t], 0)) <= int(c.regras[t].get("max_por_mapa", 9999)),
+					"semente %d: limite de %s na região %d" % [s, t, reg + 1]
+				)
+		for reg in andares / k:  # #96: cada região começa num nó só, que abre 2+ caminhos, e todo nó da região sai dele
 			var ini := nos.filter(func(n): return int(n.andar) == reg * k)
-			ok(ini.size() == 1 and str(ini[0].tipo) == "fase" and ini[0].prox.size() >= 2, "semente %d: região %d começa num nó de fase só, com 2+ caminhos" % [s, reg + 1])
+			ok(
+				ini.size() == 1 and str(ini[0].tipo) == "fase" and ini[0].prox.size() >= 2,
+				"semente %d: região %d começa num nó de fase só, com 2+ caminhos" % [s, reg + 1]
+			)
 			if ini.size() != 1:
 				continue
 			var vistos := {Vector2i(reg * k, int(ini[0].faixa)): true}
@@ -100,7 +112,10 @@ func _ready() -> void:
 						vistos[v] = true
 						fila.append(Mapa.no(m, v.x, v.y))
 			var da_regiao := nos.filter(func(n): return int(n.andar) >= reg * k and int(n.andar) < reg * k + k)
-			ok(vistos.size() == da_regiao.size(), "semente %d: região %d sem trilha morta (%d de %d nós alcançáveis)" % [s, reg + 1, vistos.size(), da_regiao.size()])
+			ok(
+				vistos.size() == da_regiao.size(),
+				"semente %d: região %d sem trilha morta (%d de %d nós alcançáveis)" % [s, reg + 1, vistos.size(), da_regiao.size()]
+			)
 		ok(nos.filter(func(n): return int(n.andar) == andares - 1).size() == 1, "semente %d: um chefe só no último andar" % s)
 		ok(Mapa.inicio(m) >= 0 and not Mapa.no(m, 0, Mapa.inicio(m)).is_empty(), "semente %d: início é um nó do andar 1" % s)
 	for t in ["fase", "elite", "descanso", "loja", "evento", "santuario", "chefe"]:
@@ -154,7 +169,7 @@ func _ready() -> void:
 		a.inimigos.limpar()
 		var ac: Array = a.mapa_acessiveis()
 		var f: int = ac[0]
-		for x in ac:   # todas as opções viram o tipo testado (o robô escolhe a que quiser)
+		for x in ac:  # todas as opções viram o tipo testado (o robô escolhe a que quiser)
 			a.mapa.nos[a.mapa_pos.x + 1][x].tipo = tipo
 		a.ouro = 1000
 		a.jogador.hp = 10.0
@@ -187,7 +202,7 @@ func _ready() -> void:
 	ok(e.no_tipo == "elite" and not e.entre_fases and e.diretor.fase_idx == 1, "elite: começa a fase do andar 2")
 	ok(is_equal_approx(e.diretor.bonus_minutos, 1.5) and e.diretor.xp_mult == 1.5 and e.diretor.mult_elite == 3.0, "elite: dificuldade e XP a mais")
 	e.entre_fases = true
-	e.mapa.nos[2][e.mapa_acessiveis()[0]].tipo = "fase"   # o próximo é uma fase normal (o sorteio podia dar loja ou evento)
+	e.mapa.nos[2][e.mapa_acessiveis()[0]].tipo = "fase"  # o próximo é uma fase normal (o sorteio podia dar loja ou evento)
 	e.escolher_no(e.mapa_acessiveis()[0])
 	await esperar(0.1)
 	ok(e.diretor.bonus_minutos == 0.0 and e.diretor.xp_mult == 1.0, "fase normal zera o bônus da elite")
@@ -202,7 +217,7 @@ func _ready() -> void:
 	while r.mapa_pos.x < andares - 1 and t < 400.0:
 		await esperar(0.1)
 		t += 0.1
-		if not r.entre_fases and not r.tela_mapa.aberto():   # entrou numa fase de combate: dá por vencida
+		if not r.entre_fases and not r.tela_mapa.aberto():  # entrou numa fase de combate: dá por vencida
 			visitados.append(r.no_tipo)
 			ok(r.diretor.fase_idx == r.mapa_pos.x, "a fase em jogo é a do andar (%d x %d)" % [r.diretor.fase_idx, r.mapa_pos.x])
 			r.inimigos.limpar()
@@ -211,7 +226,10 @@ func _ready() -> void:
 				r.abrir_mapa()
 	ok(r.mapa_pos.x == andares - 1, "o robô chegou ao andar do chefe pelo mapa (andar %d em %.0f s)" % [r.mapa_pos.x + 1, t])
 	await esperar(0.2)
-	ok(r.no_tipo == "chefe" and r.diretor.fase_idx == andares - 1, "o último nó é o chefe e a fase do andar 10 começou (%s, fase %d)" % [r.no_tipo, r.diretor.fase_idx + 1])
+	ok(
+		r.no_tipo == "chefe" and r.diretor.fase_idx == andares - 1,
+		"o último nó é o chefe e a fase do andar 10 começou (%s, fase %d)" % [r.no_tipo, r.diretor.fase_idx + 1]
+	)
 	ok(r.mapa_trilha.size() == andares and r.mapa_trilha[andares - 1].x == andares - 1, "trilha com um nó por andar (%d)" % r.mapa_trilha.size())
 	var ult: Dictionary = r.diretor.fases()[andares - 1] if r.diretor.fases().size() >= andares else {}
 	ok(Dados.json("inimigos").get(str(ult.get("chefe", "")), {}).get("final", false), "o último andar é o chefe final (depois vem o duelo)")

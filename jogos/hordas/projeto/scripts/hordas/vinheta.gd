@@ -2,7 +2,7 @@ extends CanvasLayer
 ## Vinheta (estilo Dimraeth): as bordas da tela escurecem e o olho vai pro meio, onde está o herói.
 ## Entre o mundo e o HUD (acima da escuridão do horror, layer 1; abaixo do HUD, layer 5). Opções > Gráfico > "Vinheta".
 
-const FORCA := 0.55   # opacidade do preto nos cantos
+const FORCA := 0.55  # opacidade do preto nos cantos
 
 var _rect := TextureRect.new()
 
@@ -16,7 +16,7 @@ func _ready() -> void:
 	t.gradient = g
 	t.fill = GradientTexture2D.FILL_RADIAL
 	t.fill_from = Vector2(0.5, 0.5)
-	t.fill_to = Vector2(1.05, 0.5)   # passa um pouco da borda: o meio da tela fica limpo
+	t.fill_to = Vector2(1.05, 0.5)  # passa um pouco da borda: o meio da tela fica limpo
 	t.width = 128
 	t.height = 128
 	_rect.texture = t

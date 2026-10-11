@@ -5,13 +5,16 @@ const Arena := preload("res://scripts/hordas/arena.gd")
 const Calor := preload("res://scripts/hordas/calor.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func arena_com(calor: Dictionary) -> Node:
 	var a := Arena.new()
@@ -21,6 +24,7 @@ func arena_com(calor: Dictionary) -> Node:
 	add_child(a)
 	await esperar(0.15)
 	return a
+
 
 func _ready() -> void:
 	# a escolha que vem de fora (arquivo velho, rede) é limpa

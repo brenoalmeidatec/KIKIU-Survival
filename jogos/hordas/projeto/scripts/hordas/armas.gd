@@ -45,22 +45,22 @@ const MODULOS := {
 var arena: Node
 ## Quem usa a arma e contra quem ela bate. O jogador usa os vírus (inimigos.gd); no duelo final,
 ## o jogador e os rivais usam um "campo" que aponta pros outros lutadores (duelo.gd).
-var dono: Node2D                 # precisa de centro(), lado e curar()
-var campo: Object                # precisa de no_circulo, n_mais_perto, aleatorio_na_tela, ferir
-var statf: Callable              # nome do atributo -> valor (dano, recarga, area...)
-var lista: Array = []        # {id, nivel, t, ativo, acertos{}}
+var dono: Node2D  # precisa de centro(), lado e curar()
+var campo: Object  # precisa de no_circulo, n_mais_perto, aleatorio_na_tela, ferir
+var statf: Callable  # nome do atributo -> valor (dano, recarga, area...)
+var lista: Array = []  # {id, nivel, t, ativo, acertos{}}
 ## Armas da forma transformada (ex.: dragão, habilidades.gd). Enquanto tiver alguma, SÓ elas atacam; as de `lista`
 ## ficam paradas e intactas (as cartas continuam evoluindo a build humana), e voltam como estavam no fim.
 var forma_lista: Array = []
-var projeteis: Array = []    # {pos, vel, dano, perfura, vida, tex, esc, acertou[], arma}
-var pocas: Array = []        # {pos, raio, vida, dano, tique, t, segue, arma}
-var golpes: Array = []       # desenho do chicote {pos, lado, alcance, largura, t, arma}
-var _fila: Array = []        # golpes atrasados do chicote {t, arma}
-var especiais: Array = []    # efeitos das armas de MODULOS (cada um tem "tipo"; o módulo cuida do resto)
-var aneis: Array = []        # ondas visuais de pulso/explosão dos comportamentos (#63): {pos, r, t, total, cor}
+var projeteis: Array = []  # {pos, vel, dano, perfura, vida, tex, esc, acertou[], arma}
+var pocas: Array = []  # {pos, raio, vida, dano, tique, t, segue, arma}
+var golpes: Array = []  # desenho do chicote {pos, lado, alcance, largura, t, arma}
+var _fila: Array = []  # golpes atrasados do chicote {t, arma}
+var especiais: Array = []  # efeitos das armas de MODULOS (cada um tem "tipo"; o módulo cuida do resto)
+var aneis: Array = []  # ondas visuais de pulso/explosão dos comportamentos (#63): {pos, r, t, total, cor}
 var _t := 0.0
-var _chao_pocas := Node2D.new()   # poças ficam no chão: abaixo de quem pisa nelas, acima do piso
-var _atras := Node2D.new()        # atrás do personagem (ex.: chamas da aura saindo de trás do corpo)
+var _chao_pocas := Node2D.new()  # poças ficam no chão: abaixo de quem pisa nelas, acima do piso
+var _atras := Node2D.new()  # atrás do personagem (ex.: chamas da aura saindo de trás do corpo)
 
 
 func limpar_tiros() -> void:
@@ -94,12 +94,13 @@ func adicionar(id: String) -> void:
 	lista.append({"id": id, "nivel": 1, "t": 0.3, "ativo": 0.0, "acertos": {}, "tique": 0.0, "comp": []})
 	preaquecer()
 	if arena:
-		arena.build_mudou()   # etiquetas da arma nova: o conjunto liga na hora (#63)
+		arena.build_mudou()  # etiquetas da arma nova: o conjunto liga na hora (#63)
 
 
 # ---------- comportamentos (#63): cartas raras que mudam COMO a arma funciona ----------
 ## Cada arma guarda em a.comp os ids de dados/comportamentos.json que ela já tem; _s() entrega os parâmetros deles em
 ## s.comp (id -> param) e cada tipo de arma abaixo lê só o que lhe interessa. Sem comportamento, nada muda.
+
 
 static func comp_def(id: String) -> Dictionary:
 	return Dados.json("comportamentos").get("lista", {}).get(id, {})
@@ -114,7 +115,7 @@ func dar_comportamento(arma_id: String, comp_id: String) -> bool:
 	if not a.has("comp"):
 		a["comp"] = []
 	a.comp.append(comp_id)
-	preaquecer()   # o rastro de fogo gera textura de poça: melhor agora, com as cartas abertas
+	preaquecer()  # o rastro de fogo gera textura de poça: melhor agora, com as cartas abertas
 	return true
 
 
@@ -139,7 +140,7 @@ func _comp_de(a: Dictionary) -> Dictionary:
 	var res := {}
 	for id in a.get("comp", []):
 		res[id] = comp_def(id).get("param", {})
-	for id in Universais.mecanica_de(str(a.id)):   # fusão (#115): a mecânica da receita, com os ajustes dela por cima do padrão
+	for id in Universais.mecanica_de(str(a.id)):  # fusão (#115): a mecânica da receita, com os ajustes dela por cima do padrão
 		var p: Dictionary = comp_def(str(id)).get("param", {}).duplicate(true)
 		p.merge(Universais.mecanica_de(str(a.id))[id], true)
 		res[id] = p
@@ -167,7 +168,7 @@ func trocar(de: String, para: String) -> void:
 		a.ativo = 0.0
 	preaquecer()
 	if arena:
-		arena.build_mudou()   # a evolução tem etiquetas próprias
+		arena.build_mudou()  # a evolução tem etiquetas próprias
 
 
 ## Atributos da arma no nível atual (sem os bônus do jogador), já com a curva de crescimento de área e de dano.
@@ -178,7 +179,7 @@ func atributos(id: String, nivel: int) -> Dictionary:
 func _s(a: Dictionary) -> Dictionary:
 	## Atributos finais = arma x jogador.
 	var s := atributos(a.id, a.nivel)
-	s["tier"] = Cresc.tier(a.id, a.nivel)   # faixa visual 0-4: os módulos escolhem os enfeites por ela (crescimento.gd)
+	s["tier"] = Cresc.tier(a.id, a.nivel)  # faixa visual 0-4: os módulos escolhem os enfeites por ela (crescimento.gd)
 	s["dano"] = float(s.get("dano", 1)) * statf.call("dano")
 	s["recarga"] = float(s.get("recarga", 1)) * statf.call("recarga")
 	s["area"] = float(s.get("area", 1)) * statf.call("area")
@@ -186,7 +187,7 @@ func _s(a: Dictionary) -> Dictionary:
 	s["duracao"] = float(s.get("duracao", 1)) * statf.call("duracao")
 	s["velocidade"] = float(s.get("velocidade", 200)) * statf.call("velocidade_proj")
 	s["comp"] = _comp_de(a)
-	var asc := int(a.get("asc", 0))   # #115: ascensão (degraus depois do nível máximo)
+	var asc := int(a.get("asc", 0))  # #115: ascensão (degraus depois do nível máximo)
 	if asc > 0:
 		s["dano"] = float(s.dano) * Universais.fator_dano(asc)
 		s["area"] = float(s.area) * Universais.fator_area(asc)
@@ -246,13 +247,13 @@ func atualizar_i(dt: float) -> void:
 				if MODULOS.has(outro):
 					var n0 := especiais.size()
 					MODULOS[outro].atualizar(self, a, d, s, dt)
-					for i in range(n0, especiais.size()):   # todo efeito novo sabe o tier e o tamanho (area) da arma que o criou
+					for i in range(n0, especiais.size()):  # todo efeito novo sabe o tier e o tamanho (area) da arma que o criou
 						especiais[i]["tier"] = s.tier
 						especiais[i]["area"] = s.area
 	for e in especiais.duplicate():
 		var n1 := especiais.size()
 		var vivo: bool = MODULOS[e.tipo].passo(self, e, dt)
-		for i in range(n1, especiais.size()):   # efeito filho (lua da katana, estouro...) herda o tier e a área do pai
+		for i in range(n1, especiais.size()):  # efeito filho (lua da katana, estouro...) herda o tier e a área do pai
 			var f: Dictionary = especiais[i]
 			if not f.has("tier"):
 				f["tier"] = e.get("tier", 0)
@@ -276,6 +277,7 @@ func atualizar_i(dt: float) -> void:
 
 
 ## ---------- mira direcional (#126) ----------
+
 
 ## "auto" (mira no mais perto) ou "direcional" (mira onde o jogador aponta). Vale o campo `mira` da arma em armas.json;
 ## sem ele, o padrão do tipo em dados/mira.json.
@@ -389,10 +391,11 @@ func golpe_acertou(forca := 1.0) -> void:
 
 # ---------- projétil ----------
 
+
 func _atirar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 	var jog: Node2D = dono
 	var origem: Vector2 = jog.centro()
-	var mira := mirar(origem, s.quantidade, 380.0, d)   # direcional (#126): vazio = sem entrada de mira, vale o mais perto
+	var mira := mirar(origem, s.quantidade, 380.0, d)  # direcional (#126): vazio = sem entrada de mira, vale o mais perto
 	var alvos: Array = [] if not mira.is_empty() else campo.n_mais_perto(origem, s.quantidade, 380)
 	for i in s.quantidade:
 		var dir: Vector2
@@ -405,14 +408,24 @@ func _atirar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 			dir = (alvo.pos - origem).normalized()
 			if i >= alvos.size():
 				dir = dir.rotated(randf_range(-0.25, 0.25))
-		var proj := {"pos": origem, "vel": dir * s.velocidade, "dano": s.dano, "perfura": int(s.get("perfura", 1)),
-			"vida": s.duracao, "tex": Dados.tex(str(d.get("sprite", "proj_pendrive"))), "esc": s.area,
-			"acertou": [], "arma": a.id, "tier": s.tier, "cor": Cresc.cor_arma(d)}
-		if s.comp.has("ricochete"):   # pula pra outro vírus perto ao acertar
+		var proj := {
+			"pos": origem,
+			"vel": dir * s.velocidade,
+			"dano": s.dano,
+			"perfura": int(s.get("perfura", 1)),
+			"vida": s.duracao,
+			"tex": Dados.tex(str(d.get("sprite", "proj_pendrive"))),
+			"esc": s.area,
+			"acertou": [],
+			"arma": a.id,
+			"tier": s.tier,
+			"cor": Cresc.cor_arma(d)
+		}
+		if s.comp.has("ricochete"):  # pula pra outro vírus perto ao acertar
 			proj["ric"] = int(s.comp.ricochete.get("ricochetes", 2))
 			proj["ric_alc"] = float(s.comp.ricochete.get("alcance", 170.0))
 			proj["ric_mult"] = float(s.comp.ricochete.get("dano_mult", 0.85))
-		if s.comp.has("vai_e_volta"):   # vai até metade da vida, volta pro dono acertando de novo
+		if s.comp.has("vai_e_volta"):  # vai até metade da vida, volta pro dono acertando de novo
 			proj["volta_em"] = s.duracao * 0.5
 			proj["perfura"] += int(s.comp.vai_e_volta.get("perfura_extra", 1))
 			proj["volta_mult"] = float(s.comp.vai_e_volta.get("dano_volta", 0.7))
@@ -423,13 +436,13 @@ func _atirar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 func _projeteis(dt: float) -> void:
 	for p in projeteis.duplicate():
 		if p.has("volta_em"):
-			if not p.get("voltou", false) and p.vida <= p.volta_em:   # chegou no fim da ida: vira e volta
+			if not p.get("voltou", false) and p.vida <= p.volta_em:  # chegou no fim da ida: vira e volta
 				p["voltou"] = true
 				p.acertou = []
 				p.dano *= p.volta_mult
 				p.perfura = maxi(int(p.perfura), 2)
 				p.vida = maxf(p.vida, 0.8)
-			if p.get("voltou", false):   # na volta, mira no dono (some ao chegar)
+			if p.get("voltou", false):  # na volta, mira no dono (some ao chegar)
 				var alvo: Vector2 = dono.centro()
 				p.vel = (alvo - p.pos).normalized() * p.vel.length()
 				if p.pos.distance_to(alvo) < 14.0:
@@ -470,6 +483,7 @@ func _ricochetear(p: Dictionary) -> bool:
 
 # ---------- chicote ----------
 
+
 func _chicotes(dt: float) -> void:
 	for f in _fila.duplicate():
 		f.t -= dt
@@ -500,12 +514,19 @@ func _chicotes(dt: float) -> void:
 		var tier: int = s.tier
 		var dg := Dados.item(str(a.id))
 		var cor_g := cor_de(dg, Color(0.95, 0.8, 0.25))
-		if ef:   # a chicotada vira uma meia-lua baixa e larga, da cor do chicote (mais grossa, brilhante e com 2º arco a cada tier)
-			ef.corte(jog.centro() + Vector2(f.lado * 6, 4), 0.0 if f.lado > 0 else PI, 1.7, alcance * 0.62,
-				Cresc.cor(cor_g, tier), larg * 0.7 * Cresc.grossura(tier), 0.16, -f.lado)
+		if ef:  # a chicotada vira uma meia-lua baixa e larga, da cor do chicote (mais grossa, brilhante e com 2º arco a cada tier)
+			ef.corte(
+				jog.centro() + Vector2(f.lado * 6, 4),
+				0.0 if f.lado > 0 else PI,
+				1.7,
+				alcance * 0.62,
+				Cresc.cor(cor_g, tier),
+				larg * 0.7 * Cresc.grossura(tier),
+				0.16,
+				-f.lado
+			)
 			if Cresc.fx(tier).arco_extra and Cresc.fator() >= 0.5:
-				ef.corte(jog.centro() + Vector2(f.lado * 6, 4), 0.0 if f.lado > 0 else PI, 1.4, alcance * 0.8,
-					Cresc.cor(cor_g, tier), larg * 0.4, 0.2, -f.lado)
+				ef.corte(jog.centro() + Vector2(f.lado * 6, 4), 0.0 if f.lado > 0 else PI, 1.4, alcance * 0.8, Cresc.cor(cor_g, tier), larg * 0.4, 0.2, -f.lado)
 			Cresc.fagulhas(self, jog.centro() + Vector2(f.lado * alcance * 0.8, 0), Vector2(f.lado, 0), cor_g, tier)
 		if n > 0:
 			Cresc.acerto(self, 0.6, tier)
@@ -518,9 +539,24 @@ func _rastro_fogo(a: Dictionary, s: Dictionary, origem: Vector2, lado: int, alca
 	var p: Dictionary = s.comp.rastro_fogo
 	var dur := float(p.get("duracao", 2.5))
 	for f in [0.5, 0.9]:
-		pocas.append({"pos": origem + Vector2(lado * alcance * f, 0), "raio": float(p.get("raio", 24)) * s.area, "vida": dur, "total": dur,
-			"dano": s.dano * float(p.get("dano_pct", 0.3)), "tique": float(p.get("tique", 0.5)), "t": 0.0, "segue": false,
-			"arma": a.id, "variante": randi() % 3, "semente": randf() * 10.0, "rampa": p.get("rampa", Poca.CAFE), "rastro": true, "elem": str(p.get("elem", ""))})
+		pocas.append(
+			{
+				"pos": origem + Vector2(lado * alcance * f, 0),
+				"raio": float(p.get("raio", 24)) * s.area,
+				"vida": dur,
+				"total": dur,
+				"dano": s.dano * float(p.get("dano_pct", 0.3)),
+				"tique": float(p.get("tique", 0.5)),
+				"t": 0.0,
+				"segue": false,
+				"arma": a.id,
+				"variante": randi() % 3,
+				"semente": randf() * 10.0,
+				"rampa": p.get("rampa", Poca.CAFE),
+				"rastro": true,
+				"elem": str(p.get("elem", ""))
+			}
+		)
 	var n := 0
 	for q in pocas:
 		if q.get("rastro", false):
@@ -535,6 +571,7 @@ func _rastro_fogo(a: Dictionary, s: Dictionary, origem: Vector2, lado: int, alca
 
 
 # ---------- órbita ----------
+
 
 ## Raio da órbita; "Giro em Espiral" faz ele respirar (abre e fecha).
 func _raio_orbita(s: Dictionary) -> float:
@@ -561,15 +598,31 @@ func _orbita(a: Dictionary, s: Dictionary) -> void:
 
 # ---------- poça ----------
 
+
 func _derramar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 	var jog: Node2D = dono
 	for i in s.quantidade:
 		var alvo = campo.aleatorio_na_tela(jog.centro())
 		var p: Vector2 = alvo.pos if alvo else jog.centro() + Vector2.from_angle(randf() * TAU) * randf_range(40, 140)
-		pocas.append({"pos": p, "raio": float(s.get("raio", 40)) * s.area, "vida": s.duracao, "total": s.duracao,
-			"dano": s.dano, "tique": float(s.get("tique", 0.4)), "t": 0.0, "segue": bool(d.get("base", {}).get("segue", false)),
-			"arma": a.id, "variante": randi() % 3, "semente": randf() * 10.0, "rampa": rampa_de(d),
-			"explode": s.comp.get("explosao_final", {}), "gelo": str(d.get("elemento", "")) == "gelo", "tier": s.tier})
+		pocas.append(
+			{
+				"pos": p,
+				"raio": float(s.get("raio", 40)) * s.area,
+				"vida": s.duracao,
+				"total": s.duracao,
+				"dano": s.dano,
+				"tique": float(s.get("tique", 0.4)),
+				"t": 0.0,
+				"segue": bool(d.get("base", {}).get("segue", false)),
+				"arma": a.id,
+				"variante": randi() % 3,
+				"semente": randf() * 10.0,
+				"rampa": rampa_de(d),
+				"explode": s.comp.get("explosao_final", {}),
+				"gelo": str(d.get("elemento", "")) == "gelo",
+				"tier": s.tier
+			}
+		)
 	Som.tocar("queda", 0.2, 1.5, -10)
 
 
@@ -581,14 +634,14 @@ func _pocas(dt: float) -> void:
 			p.pos = p.pos.move_toward(dono.centro(), 40.0 * dt)
 		if p.t <= 0:
 			p.t = p.tique
-			var el: String = p.get("elem", "")   # poça com elemento (rastro de fogo, #72): cada tique soma acúmulos
+			var el: String = p.get("elem", "")  # poça com elemento (rastro de fogo, #72): cada tique soma acúmulos
 			for v in campo.no_circulo(p.pos, p.raio * 0.85):
 				campo.ferir(v, p.dano, Vector2.ZERO, p.arma)
 				if el != "" and campo.has_method("aplicar_elemento") and v.hp > 0.0:
 					campo.aplicar_elemento(v, el, 1.0, p.arma)
 		if p.vida <= 0:
 			pocas.erase(p)
-			if not p.get("explode", {}).is_empty():   # "Poça Instável": explode ao sumir
+			if not p.get("explode", {}).is_empty():  # "Poça Instável": explode ao sumir
 				var ex: Dictionary = p.explode
 				var re: float = p.raio * float(ex.get("raio_mult", 1.5))
 				for v in campo.no_circulo(p.pos, re):
@@ -598,6 +651,7 @@ func _pocas(dt: float) -> void:
 
 
 # ---------- aura ----------
+
 
 func _aura(a: Dictionary, s: Dictionary) -> void:
 	var jog: Node2D = dono
@@ -609,6 +663,7 @@ func _aura(a: Dictionary, s: Dictionary) -> void:
 
 
 # ---------- desenho ----------
+
 
 func _draw() -> void:
 	var _pp := Perf.ini()
@@ -630,11 +685,11 @@ func _draw_i() -> void:
 			var cor := cor_de(d, Color(0.5, 1.0, 0.6))
 			var tier_a: int = s.tier
 			draw_circle(jog.centro(), r, Color(cor, 0.08 + 0.04 * pulso + 0.02 * tier_a))
-			Legib.marca_aliada(self, jog.centro(), r, 1.0, false, 0.0, false)   # borda do alcance da aura
+			Legib.marca_aliada(self, jog.centro(), r, 1.0, false, 0.0, false)  # borda do alcance da aura
 			for k in 3:
 				var rr := fmod(_t * 40.0 + k * r / 3.0, r)
 				draw_arc(jog.centro(), rr, 0, TAU, 32, Color(Cresc.cor(cor, tier_a), 0.35 * (1.0 - rr / r)), 1.5 * Cresc.grossura(tier_a))
-			Cresc.halo(self, jog.centro(), r, cor, tier_a)   # tiers altos: brilho, brasas subindo e um anel por fora
+			Cresc.halo(self, jog.centro(), r, cor, tier_a)  # tiers altos: brilho, brasas subindo e um anel por fora
 			Cresc.brasas(self, jog.centro(), r, cor, tier_a, _t)
 			Cresc.anel(self, jog.centro(), r, cor, tier_a, 1.0, 0.8)
 		elif tipo == "orbita" and a.ativo > 0:
@@ -666,7 +721,7 @@ func _draw_i() -> void:
 			pts.append(Vector2(x0 + g.lado * g.alcance * f, g.pos.y + sin(f * 9.0 + _t * 30.0) * g.largura * 0.25 * (1.0 - absf(f - 0.5))))
 		var dg := Dados.item(str(g.arma))
 		var tg: int = g.get("tier", 0)
-		var fios: Array = dg.get("fios", [])   # evolução: várias linhas coloridas lado a lado (armas.json)
+		var fios: Array = dg.get("fios", [])  # evolução: várias linhas coloridas lado a lado (armas.json)
 		if not fios.is_empty():
 			for k in fios.size():
 				var desl := PackedVector2Array()
@@ -685,7 +740,7 @@ func _draw_i() -> void:
 		var tex: Texture2D = p.tex
 		var sz: Vector2 = tex.get_size() * ESCALA * p.esc
 		var tp: int = p.get("tier", 0)
-		if tp >= 2:   # tiers altos: imagens fantasma atrás e luz acompanhando
+		if tp >= 2:  # tiers altos: imagens fantasma atrás e luz acompanhando
 			Cresc.fantasmas(self, tex, p.pos, p.vel.angle(), sz, p.vel.normalized() * maxf(5.0, sz.x * 0.45), tp)
 			Cresc.halo(self, p.pos, 14.0 * p.esc, p.cor, tp)
 		draw_set_transform(p.pos, p.vel.angle(), Vector2.ONE)
@@ -694,7 +749,7 @@ func _draw_i() -> void:
 	for e in especiais:
 		MODULOS[e.tipo].pintar(self, e)
 		var te: int = e.get("tier", 0)
-		if te >= 2 and e.has("pos"):   # luz sob o efeito + anel/brasas no tier alto (módulos podem desenhar mais por conta própria)
+		if te >= 2 and e.has("pos"):  # luz sob o efeito + anel/brasas no tier alto (módulos podem desenhar mais por conta própria)
 			var rr: float = Cresc.raio_efeito(e)
 			if rr > 0.0:
 				Cresc.halo(self, e.pos, rr, e.get("cor_fx", Cresc.cor_arma(Dados.item(str(e.get("arma", ""))))), te)
@@ -723,7 +778,7 @@ func preaquecer() -> void:
 			var s := _s(a)
 			for v in 3:
 				Poca.textura(float(s.get("raio", 40)) * s.area, v, rampa_de(d))
-		elif _comp_de(a).has("rastro_fogo"):   # poças de fogo do rastro (#63)
+		elif _comp_de(a).has("rastro_fogo"):  # poças de fogo do rastro (#63)
 			var s := _s(a)
 			var p: Dictionary = s.comp.rastro_fogo
 			for v in 3:
@@ -732,16 +787,20 @@ func preaquecer() -> void:
 
 func _ready() -> void:
 	_chao_pocas.z_index = -5
-	_chao_pocas.draw.connect(func():
-		for p in pocas:
-			_desenhar_poca(_chao_pocas, p))
+	_chao_pocas.draw.connect(
+		func():
+			for p in pocas:
+				_desenhar_poca(_chao_pocas, p)
+	)
 	add_child(_chao_pocas)
 	_atras.z_index = -1
-	_atras.draw.connect(func():
-		for a in ativas():
-			var tipo := str(Dados.item(a.id).get("tipo", ""))
-			if MODULOS.has(tipo):
-				MODULOS[tipo].atras(self, _atras, a, _s(a)))
+	_atras.draw.connect(
+		func():
+			for a in ativas():
+				var tipo := str(Dados.item(a.id).get("tipo", ""))
+				if MODULOS.has(tipo):
+					MODULOS[tipo].atras(self, _atras, a, _s(a))
+	)
 	add_child(_atras)
 
 
@@ -762,13 +821,13 @@ func _desenhar_poca(ci: CanvasItem, p: Dictionary) -> void:
 	if not p.get("explode", {}).is_empty() and p.vida < 0.8:
 		Legib.marca_aliada(ci, p.pos, p.raio * float(p.explode.get("raio_mult", 1.5)), 1.0 - p.vida / 0.8, true, _t)
 	var tp: int = p.get("tier", 0)
-	if tp >= 2:   # tiers altos: brasas subindo da poça, luz e um anel por fora (a poça nasce menor e cresce de nível em nível)
+	if tp >= 2:  # tiers altos: brasas subindo da poça, luz e um anel por fora (a poça nasce menor e cresce de nível em nível)
 		var cp: Color = Color(rampa[5]).lerp(Color(1, 1, 1), 0.2)
 		Cresc.brasas(ci, p.pos, r * 0.8, cp, tp, _t, s, alfa)
 		Cresc.anel(ci, p.pos, r * 0.85, cp, tp, alfa, Poca.ACHATA)
 		if ci == _chao_pocas:
 			Cresc.halo(self, p.pos, r, cp, tp)
-	if p.get("gelo", false):   # poça de gelo (#72): rachaduras claras saindo do centro e cristais no lugar do vapor
+	if p.get("gelo", false):  # poça de gelo (#72): rachaduras claras saindo do centro e cristais no lugar do vapor
 		var cr := Color(rampa[5], alfa * 0.75)
 		for i in 5:
 			var ang := i * 1.25 + s
@@ -784,17 +843,17 @@ func _desenhar_poca(ci: CanvasItem, p: Dictionary) -> void:
 				ci.draw_rect(Rect2(pc.x, pc.y - 1, 1, 3), Color(1, 1, 1, alfa))
 		return
 	var bolha := Color(rampa[4])
-	var vapor := Color(rampa[5]).lerp(Color.WHITE, 0.5)   # café: vapor branco; fogo: fagulha clara
+	var vapor := Color(rampa[5]).lerp(Color.WHITE, 0.5)  # café: vapor branco; fogo: fagulha clara
 	for i in 3:
 		var fase := fmod(_t * 0.9 + i * 0.37 + s, 1.0)
 		if fase > 0.8:
-			continue   # estourou
+			continue  # estourou
 		var a := i * 2.3 + s
 		var pb: Vector2 = (p.pos + Vector2(cos(a) * r * 0.45, sin(a) * r * 0.45 * Poca.ACHATA)).floor()
 		var tam := 1.0 if fase < 0.45 else 2.0
 		ci.draw_rect(Rect2(pb, Vector2(tam, tam)), Color(bolha, alfa * 0.9))
-		ci.draw_rect(Rect2(pb, Vector2.ONE), Color(1, 0.95, 0.85, alfa * 0.8))   # brilho da bolha
-	var fios := 4 if p.segue else 2   # garrafa térmica: café mais quente, mais vapor
+		ci.draw_rect(Rect2(pb, Vector2.ONE), Color(1, 0.95, 0.85, alfa * 0.8))  # brilho da bolha
+	var fios := 4 if p.segue else 2  # garrafa térmica: café mais quente, mais vapor
 	for i in fios:
 		var fv := fmod(_t * 0.55 + i * 0.5 / fios * 2.0 + s, 1.0)
 		var pv: Vector2 = (p.pos + Vector2((i - (fios - 1) / 2.0) * r * 0.35 + sin(fv * 7.0 + i) * 2.0, -r * 0.2 - fv * 26.0)).floor()

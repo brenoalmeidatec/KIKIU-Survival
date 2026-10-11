@@ -164,12 +164,12 @@ func _ready() -> void:
 	ok(longe.lento == 0.0, "capivara: quem está fora do raio não fica lento")
 	var perto2 = bicho(Vector2(30, 20))
 	grade()
-	ino.espelho = true   # cliente online: a IA não roda aqui, quem aplica é o anfitrião
+	ino.espelho = true  # cliente online: a IA não roda aqui, quem aplica é o anfitrião
 	a.ganchos._aura_t.clear()
 	passo(0.6, false)
 	ok(perto2.lento == 0.0, "capivara: no cliente a aura não mexe nos inimigos (o anfitrião aplica)")
 	ino.espelho = false
-	var no_remoto = bicho(Vector2(0, 330))   # o anfitrião aplica a aura do cliente (a raça vem da ficha validada)
+	var no_remoto = bicho(Vector2(0, 330))  # o anfitrião aplica a aura do cliente (a raça vem da ficha validada)
 	grade()
 	a.ganchos._aplicar_auras(Ganchos.de_heroi(a.heroi_id), a.jogador.centro() + Vector2(0, 330), 7, 0.3)
 	ok(no_remoto.lento > 0.0, "capivara: a aura de um cliente (posição remota) pega os inimigos dele no anfitrião")
@@ -200,7 +200,7 @@ func _ready() -> void:
 	# --- vampiro: roubo de vida (com teto por segundo) e luz
 	await nova("vampiro")
 	a.jogador.hp = 50.0
-	a.registrar_dano("x", 100.0, a.jogador.position)   # 3% de 100 = 3 de vida
+	a.registrar_dano("x", 100.0, a.jogador.position)  # 3% de 100 = 3 de vida
 	passo(0.2)
 	ok(absf(a.jogador.hp - 53.0) < 0.6, "vampiro: acertar 100 de dano cura ~3 (%.2f)" % a.jogador.hp)
 	a.jogador.hp = 10.0
@@ -213,13 +213,13 @@ func _ready() -> void:
 	a.registrar_dano("x", 5000.0, a.jogador.position)
 	passo(0.5)
 	ok(is_equal_approx(a.jogador.hp, vmax), "vampiro: com a vida cheia nada acontece")
-	a.chao._ambiente.color = Color(0.5, 0.5, 0.55)   # escuro
+	a.chao._ambiente.color = Color(0.5, 0.5, 0.55)  # escuro
 	a.jogador.hp = 40.0
 	passo(1.0)
 	ok(a.ganchos.escuro and not a.ganchos.claro, "vampiro: ambiente escuro liga o escuro")
 	ok(is_equal_approx(a.ganchos.bonus("regen"), 1.0), "vampiro: no escuro regenera +1")
 	ok(a.stat("regen") >= 1.0, "vampiro: e a regeneração do herói sobe (%.2f)" % a.stat("regen"))
-	a.chao._ambiente.color = Color(1, 1, 1)   # luz forte
+	a.chao._ambiente.color = Color(1, 1, 1)  # luz forte
 	a.jogador.hp = 40.0
 	passo(2.0)
 	ok(a.ganchos.claro and not a.ganchos.escuro, "vampiro: luz forte liga o claro")
@@ -228,7 +228,7 @@ func _ready() -> void:
 	a.jogador.hp = 1.0
 	passo(2.0)
 	ok(a.jogador.hp >= 1.0 and not a.acabou, "vampiro: a luz nunca mata")
-	a.chao._ambiente.color = Color(0.86, 0.86, 0.86)   # meio-termo: nem uma coisa nem outra
+	a.chao._ambiente.color = Color(0.86, 0.86, 0.86)  # meio-termo: nem uma coisa nem outra
 	a.jogador.hp = 40.0
 	passo(1.0)
 	ok(not a.ganchos.escuro and not a.ganchos.claro and is_equal_approx(a.jogador.hp, 40.0), "vampiro: luz média não faz nada (%.2f)" % a.jogador.hp)
@@ -273,7 +273,10 @@ func _ready() -> void:
 	for i in 3:
 		levar(5.0)
 	passo(0.1)
-	ok(a.ganchos.pilhas == 3 and is_equal_approx(a.stat("dano"), d0 + 0.21), "dragão: 3 golpes levados = +21%% de dano (%.2f contra %.2f)" % [a.stat("dano"), d0])
+	ok(
+		a.ganchos.pilhas == 3 and is_equal_approx(a.stat("dano"), d0 + 0.21),
+		"dragão: 3 golpes levados = +21%% de dano (%.2f contra %.2f)" % [a.stat("dano"), d0]
+	)
 	for i in 10:
 		levar(5.0)
 	ok(a.ganchos.pilhas == 5, "dragão: a fúria tem teto de 5 pilhas")

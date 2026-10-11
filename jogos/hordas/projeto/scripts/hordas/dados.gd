@@ -5,9 +5,9 @@ const Universais := preload("res://scripts/hordas/universais.gd")
 
 var _cache := {}
 var _tex := {}
-var fonte: Font          # pixel legível (Press Start 2P): texto corrido, números, HUD
-var fonte_titulo: Font   # mística em pixel (Jacquard 12, OFL): títulos de tela, nomes e raridade das cartas. Tamanhos múltiplos de 12
-var herois_extra := {}   # heróis montados em tempo de execução (criação de personagem, #72): entram na tabela "herois"
+var fonte: Font  # pixel legível (Press Start 2P): texto corrido, números, HUD
+var fonte_titulo: Font  # mística em pixel (Jacquard 12, OFL): títulos de tela, nomes e raridade das cartas. Tamanhos múltiplos de 12
+var herois_extra := {}  # heróis montados em tempo de execução (criação de personagem, #72): entram na tabela "herois"
 
 
 func _ready() -> void:
@@ -26,7 +26,6 @@ func _ready() -> void:
 		if f.ends_with(".png.import") or f.ends_with(".png"):
 			tex(f.get_basename().get_basename() if f.ends_with(".import") else f.get_basename())
 
-
 	for pasta in DirAccess.get_directories_at("res://assets/personagens"):
 		tex_personagem(pasta, "andando_8")
 		tex_personagem(pasta, "rosto")
@@ -40,7 +39,7 @@ static func texto_versao() -> String:
 	var f := FileAccess.open("res://dados/versao.json", FileAccess.READ)
 	var d = JSON.parse_string(f.get_as_text()) if f else null
 	if d is Dictionary and str(d.get("data", "")) != "" and str(d.get("commit", "")) != "":
-		var p := str(d.data).split("-")   # "2026-10-07" vira 07/10/2026
+		var p := str(d.data).split("-")  # "2026-10-07" vira 07/10/2026
 		var data: String = "%s/%s/%s" % [p[2], p[1], p[0]] if p.size() == 3 else str(d.data)
 		return "%s · %s · %s" % [v, data, d.commit]
 	return v + " · dev"
@@ -56,9 +55,9 @@ func json(nome: String) -> Dictionary:
 		push_error("Arquivo com erro: " + caminho)
 		d = {}
 	if nome == "armas":
-		Universais.injetar(d)   # #115: armas universais e suas variações entram na mesma tabela
+		Universais.injetar(d)  # #115: armas universais e suas variações entram na mesma tabela
 	if nome == "herois":
-		d.merge(herois_extra, true)   # os criados continuam na tabela depois de recarregar()
+		d.merge(herois_extra, true)  # os criados continuam na tabela depois de recarregar()
 	_cache[nome] = d
 	return d
 

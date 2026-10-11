@@ -15,27 +15,27 @@ const NENHUM := 0
 const ANDAMENTO := 1
 const CUMPRIDO := 2
 const FALHOU := 3
-const LINGER := 3.0          # s que o resultado fica no HUD
+const LINGER := 3.0  # s que o resultado fica no HUD
 
 var arena: Node
-var id := ""                 # tipo da missão desta fase ("" = sem missão)
+var id := ""  # tipo da missão desta fase ("" = sem missão)
 var est := NENHUM
-var etapa := 0               # fragmentos: 0 coletando, 1 levando ao altar
-var pontos: Array = []       # [{pos: Vector2, ok: bool, prog: float}] fragmentos / pilares
+var etapa := 0  # fragmentos: 0 coletando, 1 levando ao altar
+var pontos: Array = []  # [{pos: Vector2, ok: bool, prog: float}] fragmentos / pilares
 var altar := Vector2.ZERO
 var tem_altar := false
-var seg := 0.0               # invocar / entrega: quanto já segurou
-var bot_segurar := false     # teste de imagem: segura sozinho sem ser robô
-var ultimo := Vector2.ZERO   # último ponto tocado: de onde o chefe sai
-var _ids: Array = []         # selos: ids dos elites que ainda vivem
+var seg := 0.0  # invocar / entrega: quanto já segurou
+var bot_segurar := false  # teste de imagem: segura sozinho sem ser robô
+var ultimo := Vector2.ZERO  # último ponto tocado: de onde o chefe sai
+var _ids: Array = []  # selos: ids dos elites que ainda vivem
 var _selos_total := 0
 var _selos_mortos := 0
 var _pendente := ""
 var _linger := 0.0
 var _t := 0.0
 
-
 # ---------- dados (funções puras: o teste usa) ----------
+
 
 static func cfg() -> Dictionary:
 	return Dados.json("missoes_chefe")
@@ -48,7 +48,7 @@ static func tipo_def(tid: String) -> Dictionary:
 
 ## Que missão esta fase tem pro chefe dela? "" = nenhuma. Igual em todo cliente (a semente é a mesma).
 static func escolher(f: Dictionary, andar_global: int) -> String:
-	if f.has("missao"):   # a fase manda: "tipo" força, false apaga
+	if f.has("missao"):  # a fase manda: "tipo" força, false apaga
 		return str(f.missao) if f.missao is String and not tipo_def(str(f.missao)).is_empty() else ""
 	var c := cfg()
 	var lista: Array = c.get("por_chefe", {}).get(str(f.get("chefe", "")), c.get("padrao", []))
@@ -94,7 +94,7 @@ func visivel() -> bool:
 # ---------- ciclo de vida ----------
 
 ## Andar novo (todo mundo chama). O anfitrião decide se há missão e a missão aparece 'inicio' s depois.
-var _topo := Node2D.new()    # camada por cima de inimigos, poderes e baús (#123)
+var _topo := Node2D.new()  # camada por cima de inimigos, poderes e baús (#123)
 
 
 func _ready() -> void:
@@ -113,7 +113,7 @@ func _desenhar_topo() -> void:
 
 func nova_fase(f: Dictionary, andar_global: int) -> void:
 	_zerar()
-	_pendente = escolher(f, andar_global)   # (só o anfitrião/solo a inicia, em atualizar: o espelho do online ainda não existe aqui)
+	_pendente = escolher(f, andar_global)  # (só o anfitrião/solo a inicia, em atualizar: o espelho do online ainda não existe aqui)
 
 
 func _zerar() -> void:
@@ -149,7 +149,7 @@ func atualizar(dt: float) -> void:
 	if est != ANDAMENTO:
 		return
 	if df.final_chamado:
-		_resolver(FALHOU, true)   # o chefe chegou por outro caminho (tempo, teste): a missão perde o sentido
+		_resolver(FALHOU, true)  # o chefe chegou por outro caminho (tempo, teste): a missão perde o sentido
 		return
 	if df.t_fase >= df.duracao() + float(cfg().get("tolerancia", 75.0)):
 		_resolver(FALHOU)
@@ -290,7 +290,7 @@ func _concluir() -> void:
 	_linger = LINGER
 	var onde := ultimo
 	if id == "selos":
-		onde = arena.jogador.centro() + Vector2.from_angle(randf() * TAU) * 220.0   # sem ponto fixo: fora do alcance do braço, perto do grupo
+		onde = arena.jogador.centro() + Vector2.from_angle(randf() * TAU) * 220.0  # sem ponto fixo: fora do alcance do braço, perto do grupo
 	else:
 		onde = ultimo + Vector2.from_angle(randf() * TAU) * 130.0
 	Som.tocar("vitoria", 0.1, 1.3, -10)
@@ -305,7 +305,7 @@ func _resolver(resultado: int, soft := false) -> void:
 	est = resultado
 	_linger = LINGER
 	for i in _ids:
-		arena.inimigos.remover_id(i)   # o elite com selo some quando a missão falha
+		arena.inimigos.remover_id(i)  # o elite com selo some quando a missão falha
 	_ids = []
 	if not soft:
 		arena.mensagem("O chefe perdeu a paciência e vem sozinho!", Color(1.0, 0.7, 0.6))
@@ -320,6 +320,7 @@ func encerrar() -> void:
 
 
 # ---------- HUD / robô ----------
+
 
 ## Posições dos pontos de interesse que ainda importam (setas do HUD e alvo do robô).
 func marcas() -> Array:
@@ -389,6 +390,7 @@ func alvo_bot(de: Vector2):
 
 # ---------- desenho (no mundo) ----------
 
+
 func _draw() -> void:
 	if id == "" or est == NENHUM:
 		return
@@ -405,7 +407,9 @@ func _draw() -> void:
 				var q: Vector2 = p.pos + Vector2(0, -3.0 * sin(_t * 2.5 + p.pos.x))
 				draw_circle(q, 13.0 + 2.0 * pulso, Color(cor, 0.16 * a))
 				draw_colored_polygon(PackedVector2Array([q + Vector2(0, -8), q + Vector2(5, 0), q + Vector2(0, 8), q + Vector2(-5, 0)]), Color(cor, a))
-				draw_colored_polygon(PackedVector2Array([q + Vector2(0, -4), q + Vector2(2, 0), q + Vector2(0, 4), q + Vector2(-2, 0)]), Color(1, 1, 1, 0.9 * a))
+				draw_colored_polygon(
+					PackedVector2Array([q + Vector2(0, -4), q + Vector2(2, 0), q + Vector2(0, 4), q + Vector2(-2, 0)]), Color(1, 1, 1, 0.9 * a)
+				)
 			_altar(cor, a, pulso, str(d.get("altar", {}).get("nome", "ALTAR")), float(d.get("altar", {}).get("raio", 34)), etapa == 1)
 		"pilares":
 			var total := float(d.get("segundos", 3.5))
@@ -415,7 +419,9 @@ func _draw() -> void:
 				draw_circle(p.pos, r, Color(cor, (0.05 + 0.05 * fr) * a))
 				draw_arc(p.pos, r, 0.0, TAU, 40, Color(cor, (0.25 + 0.2 * pulso * (1.0 - fr)) * a), 1.0)
 				var base: Vector2 = p.pos
-				draw_colored_polygon(PackedVector2Array([base + Vector2(-6, 4), base + Vector2(-4, -22), base + Vector2(4, -22), base + Vector2(6, 4)]), Color(0.3, 0.27, 0.3, a))
+				draw_colored_polygon(
+					PackedVector2Array([base + Vector2(-6, 4), base + Vector2(-4, -22), base + Vector2(4, -22), base + Vector2(6, 4)]), Color(0.3, 0.27, 0.3, a)
+				)
 				var luz := Color(cor, (0.25 + 0.75 * fr) * a)
 				draw_colored_polygon(PackedVector2Array([base + Vector2(-3, -6), base + Vector2(-2, -20), base + Vector2(2, -20), base + Vector2(3, -6)]), luz)
 				draw_circle(base + Vector2(0, -26), 3.0 + 3.0 * fr, Color(cor, (0.4 + 0.6 * fr) * a))

@@ -8,17 +8,21 @@ const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Cenario := preload("res://scripts/hordas/cenario.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func corrida(semente: int) -> Array:
 	Sorte.iniciar(semente)
 	return Regioes.gerar_fases(Sorte.fluxo("regioes"))
+
 
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
@@ -46,7 +50,10 @@ func _ready() -> void:
 			for a in k:
 				var f: Dictionary = fs[r * k + a]
 				ok(int(f.regiao) == r and int(f.andar_regiao) == a, "semente %d: fase %d na região %d andar %d" % [s, r * k + a + 1, r + 1, a + 1])
-				ok(str(f.get("conjunto", "")) == str(f.get("conjunto", reg.get("conjunto"))) and f.has("cenario") and f.has("musica"), "semente %d: a fase herda conjunto, cenário e música da região" % s)
+				ok(
+					str(f.get("conjunto", "")) == str(f.get("conjunto", reg.get("conjunto"))) and f.has("cenario") and f.has("musica"),
+					"semente %d: a fase herda conjunto, cenário e música da região" % s
+				)
 				ok(inim.has(str(f.get("chefe", ""))), "semente %d: o chefe da fase %d existe (%s)" % [s, r * k + a + 1, f.get("chefe", "")])
 				if a < k - 1:
 					ok(not f.get("chefe_regiao", false), "semente %d: só o último andar é o chefe da região" % s)
@@ -69,7 +76,10 @@ func _ready() -> void:
 	for r in Regioes.n() - 1:
 		var chefe := Mapa.todos(m).filter(func(n): return int(n.andar) == r * k + k - 1)
 		var entradas := Mapa.todos(m).filter(func(n): return int(n.andar) == (r + 1) * k)
-		ok(chefe.size() == 1 and chefe[0].prox.size() == entradas.size() and entradas.size() == 1, "o chefe da região %d leva à entrada única da próxima (#96)" % (r + 1))
+		ok(
+			chefe.size() == 1 and chefe[0].prox.size() == entradas.size() and entradas.size() == 1,
+			"o chefe da região %d leva à entrada única da próxima (#96)" % (r + 1)
+		)
 
 	# --- na partida: calor e cenário seguem a região
 	var a := Arena.new()
@@ -82,7 +92,7 @@ func _ready() -> void:
 	a.xp = -1.0e12
 	var vida_r1: float = a.ef("inimigo_vida")
 	ok(is_equal_approx(vida_r1, 0.2), "região 1: só o calor do jogador (%.2f)" % vida_r1)
-	a.saltar_para_andar(2 * k)   # primeira fase da região 3
+	a.saltar_para_andar(2 * k)  # primeira fase da região 3
 	await esperar(0.2)
 	var reg3: Dictionary = Regioes.calor(2)
 	var esperado := 0.2 + 0.2 * int(reg3.get("couro", 0))
@@ -90,8 +100,11 @@ func _ready() -> void:
 	ok(a.calor_pts == 1, "a recompensa conta só o calor do jogador (%d)" % a.calor_pts)
 	var f3: Dictionary = a.diretor.fases()[a.diretor.fase_idx]
 	ok(int(f3.regiao) == 2, "o diretor está na região 3")
-	ok(a.chao.cenario == null or a.chao.cenario.nome == Cenario.variante(str(f3.cenario), int(f3.andar_regiao)), "o cenário é o da região (%s), na variante do andar" % f3.cenario)
-	a.diretor.ir_para(0)   # (o saltar só anda pra frente no mapa)
+	ok(
+		a.chao.cenario == null or a.chao.cenario.nome == Cenario.variante(str(f3.cenario), int(f3.andar_regiao)),
+		"o cenário é o da região (%s), na variante do andar" % f3.cenario
+	)
+	a.diretor.ir_para(0)  # (o saltar só anda pra frente no mapa)
 	a._atualizar_calor()
 	await esperar(0.1)
 	ok(is_equal_approx(a.ef("inimigo_vida"), 0.2), "de volta à região 1, o calor da região 3 sai")

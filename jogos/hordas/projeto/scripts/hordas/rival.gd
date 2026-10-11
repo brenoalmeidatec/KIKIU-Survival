@@ -8,14 +8,14 @@ const Armas := preload("res://scripts/hordas/armas.gd")
 const Construcao := preload("res://scripts/hordas/construcao.gd")
 const IA := preload("res://scripts/hordas/ia_luta.gd")
 const Direcao := preload("res://scripts/hordas/direcao.gd")
-const LINHA := Direcao.LINHA   # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
+const LINHA := Direcao.LINHA  # tabela de linhas da folha (8 direções; folhas de 4 usam só as 4 primeiras)
 const VEL_BASE := 100.0
 const DASH_VEL := 3.4
 const DASH_TEMPO := 0.18
 const DASH_RECARGA := 1.4
 
 var duelo: Node2D
-var lut                         # duelo.Lutador deste rival
+var lut  # duelo.Lutador deste rival
 var nome := ""
 var heroi_id := ""
 var cor := Color.WHITE
@@ -168,8 +168,9 @@ func _draw() -> void:
 		var w := tex.get_width() / float(spr.hframes)
 		var h := tex.get_height() / float(spr.vframes)
 		var f: int = r.frame
-		draw_texture_rect_region(tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)),
-			Rect2((f % spr.hframes) * w, (f / spr.hframes) * h, w, h), Color(cor, r.t * 2.0))
+		draw_texture_rect_region(
+			tex, Rect2(r.pos - position + spr.offset, Vector2(w, h)), Rect2((f % spr.hframes) * w, (f / spr.hframes) * h, w, h), Color(cor, r.t * 2.0)
+		)
 	draw_set_transform(Vector2.ZERO, 0, Vector2(1, 0.4))
 	draw_circle(Vector2.ZERO, 12, Color(cor, 0.5))
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
