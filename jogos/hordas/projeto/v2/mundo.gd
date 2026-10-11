@@ -31,6 +31,8 @@ const Combate := preload("res://v2/combate.gd")
 const Roteiro := preload("res://v2/roteiro.gd")
 const Copas := preload("res://v2/copas.gd")
 const Depuracao := preload("res://v2/depuracao_colisao.gd")
+const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
+const ResultadoMeta := preload("res://v2/resultado_meta.gd")
 const LARG := 960
 const ALT := 540
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
@@ -67,6 +69,8 @@ var heroi
 var monstros: Array = []  # os monstros VIVOS (quem morre volta para o pool e renasce depois)
 var combate
 var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
+var meta_res  # resultado com as almas (resultado_meta.gd); null no modo de teste
+var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, rolagem, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
 var maior_combo := 0
@@ -126,6 +130,10 @@ func _ready() -> void:
 	_montar()
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
 	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
+	if not modo_teste:
+		meta_res = ResultadoMeta.new()
+		sv.add_child(meta_res)
+		meta_res.montar(self)
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
 	if _modo == "livre" or args.has("rotulo"):
@@ -210,6 +218,7 @@ func _montar() -> void:
 	combate.montar(self)
 	_criar_heroi()
 	combate.iniciar_heroi()
+	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
 	_pre_criar_monstros()
 	_popular_inicial()
 	var todos: Array = cenario.objetos.duplicate()
@@ -413,6 +422,9 @@ func mouse_mundo() -> Vector2:
 
 
 func _input(e: InputEvent) -> void:
+	if meta_res != null and meta_res.entrada(e):  # o resultado com as almas vem antes da tela de resultado (telas.gd)
+		get_viewport().set_input_as_handled()
+		return
 	if combate != null and combate.telas.entrada(e):
 		get_viewport().set_input_as_handled()
 		return
@@ -517,6 +529,7 @@ func reiniciar() -> void:
 	var c: Array = dados.get("nascimento", {}).get("heroi", [1440, 820])
 	heroi.resetar(Vector2(float(c[0]), float(c[1])))
 	combate.iniciar_heroi()
+	Meta.aplicar(self)
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_popular_inicial()
 

@@ -1,6 +1,7 @@
 {
   "_ajuda": "Dicionario de excecoes da ortografia (ferramentas/ortografia.py). Em excecoes entram so nomes proprios e termos do jogo, ou palavra valida que falta no hunspell. Erro de portugues nao entra: corrija no JSON do conteudo. Uma palavra por item; a comparacao ignora maiuscula.",
   "excecoes": [
+    "combo",
     "fps",
     "v-sync",
     "sync",

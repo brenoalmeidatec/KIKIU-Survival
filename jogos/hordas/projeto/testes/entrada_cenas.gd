@@ -15,12 +15,12 @@ func ok(cond: bool, msg: String) -> void:
 func _ready() -> void:
 	var existe_tudo := func(_p: String) -> bool: return true
 	var existe_nada := func(_p: String) -> bool: return false
-	var so_v2 := func(p: String) -> bool: return p == "res://v2/mundo.tscn"
+	var so_v2 := func(p: String) -> bool: return p == "res://v2/altar.tscn"
 	var so_cena := func(p: String) -> bool: return p == "res://testes/algo.tscn"
 	ok(Main.cena_de_argumentos({"prototipo": true}, existe_nada) == "res://prototipos/cara_nova.tscn", "--prototipo abre o protótipo")
 	ok(Main.cena_de_argumentos({"v2": true}, existe_nada) == "res://prototipos/cara_nova.tscn", "--v2 sem o arquivo cai no protótipo")
-	ok(Main.cena_de_argumentos({"v2": true}, so_v2) == "res://v2/mundo.tscn", "--v2 com o arquivo abre a v2")
-	ok(Main.cena_de_argumentos({"v2": true, "prototipo": true}, so_v2) == "res://v2/mundo.tscn", "--v2 ganha de --prototipo")
+	ok(Main.cena_de_argumentos({"v2": true}, so_v2) == "res://v2/altar.tscn", "--v2 com o arquivo abre o santuário da v2")
+	ok(Main.cena_de_argumentos({"v2": true, "prototipo": true}, so_v2) == "res://v2/altar.tscn", "--v2 ganha de --prototipo")
 	ok(Main.cena_de_argumentos({"cena": "res://testes/algo.tscn"}, so_cena) == "res://testes/algo.tscn", "--cena abre a cena pedida")
 	ok(Main.cena_de_argumentos({"cena": "res://testes/nao_existe.tscn"}, existe_nada) == "", "--cena sem arquivo fica no menu")
 	ok(Main.cena_de_argumentos({"cena": "res://testes/algo.tscn", "prototipo": true}, existe_tudo) == "res://testes/algo.tscn", "--cena ganha de --prototipo")
