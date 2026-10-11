@@ -19,6 +19,9 @@ func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
 		if not InputMap.has_action(acao):   # sem o main.gd, ninguém registrou as teclas
 			InputMap.add_action(acao)
+	# arquivo de save PRÓPRIO deste teste desde o começo (o criacao2 roda junto e usa o dele; nunca o heroi_criado.json de verdade)
+	Criacao.arquivo = "user://teste_heroi_criado.json"
+	Criacao.apagar()
 	# --- os dados: 5 raças e 5 classes, tudo o que elas apontam existe
 	var racas := Criacao.lista_racas()
 	var classes := Criacao.lista_classes()
@@ -85,9 +88,7 @@ func _ready() -> void:
 	ok(hz.especial.tem() and str(hz.especial.d.get("nome", "")) == "Sou Gostoso!", "Hazaki continua com o especial dele")
 	hz.queue_free()
 	await esperar(0.1)
-	# --- morte de vez (permadeath): num arquivo de teste, pra não mexer no herói salvo de verdade
-	Criacao.arquivo = "user://teste_heroi_criado.json"
-	Criacao.apagar()
+	# --- morte de vez (permadeath): no arquivo de teste deste script (ver o começo), pra não mexer no herói salvo de verdade
 	ok(Criacao.carregar().ids.is_empty(), "sem arquivo, sem herói salvo")
 	Criacao.salvar(id)
 	ok(Criacao.carregar().ids == [id], "herói salvo volta ao abrir o jogo")
