@@ -34,6 +34,7 @@ RUA = 7.0                   # cidade: largura da rua e da calçada (unidades do 
 CALCADA = 2.0
 
 
+PISO_SO = [False]   # True com "-- piso": regrava só o chão de cada cenário
 SUAVE = [False]   # True enquanto monta o piso (render suave no Cycles, onde o toon não funciona)
 
 
@@ -1538,9 +1539,11 @@ def gerar(nome, cfg):
     SUAVE[0] = False
     repetir_3x3()
     bruto = px3.reduzir(px3.render_rgba(), FATOR)
-    piso = px3.pixelar(bruto, contorno=False, paleta=pal, luz_borda=False, pontilhado=0.03)
+    piso = px3.pixelar(bruto, contorno=False, paleta=pal, luz_borda=False, pontilhado=0.0)   # sem pontilhado: num chão quase liso o Bayer vira grade de pontos
     piso[:, :, 3] = 1.0
     px3.salvar_png(piso, os.path.join(pasta, "piso.png"))
+    if PISO_SO[0]:   # -- piso: só regrava o chão (enfeites, atlas e cenario.json ficam como estão)
+        return
     if cfg.get("base"):
         _atlas_do_base(nome, cfg, pasta)
         return
@@ -1583,6 +1586,8 @@ def gerar(nome, cfg):
 
 def main():
     so = [a for a in sys.argv[sys.argv.index("--") + 1:]] if "--" in sys.argv else []
+    PISO_SO[0] = "piso" in so   # blender -b -P cenarios.py -- piso [nomes]: só os pisos
+    so = [a for a in so if a != "piso"]
     for nome, cfg in CENARIOS.items():
         if not so or nome in so:
             gerar(nome, cfg)

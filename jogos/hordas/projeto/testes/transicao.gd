@@ -43,8 +43,10 @@ func _ready() -> void:
 	Engine.time_scale = 1.0
 	ok(s3 >= dur - 0.02 and s3 <= dur + 0.1, "time_scale 3 não muda a duração (%.3f s)" % s3)
 	# custo de desenhar um quadro da cortina (a pior fase, no começo, com os losangos cheios)
-	var soma := 0
-	var n := 0
+	# Mede a MEDIANA dos quadros, não a média: quando a máquina está carregada, o sistema tira a CPU do teste no meio
+	# de um _desenhar e um quadro sai com milissegundos a mais. Isso puxa a média pra cima e não diz nada sobre o custo
+	# da cortina; a mediana mostra o custo típico e ainda pega uma regressão de verdade (que atinge todos os quadros).
+	var amostras: Array = []
 	var pior := 0
 	for i in 5:   # 5 cortinas inteiras a ~60 fps
 		await get_tree().process_frame
@@ -53,11 +55,16 @@ func _ready() -> void:
 			OS.delay_msec(14)
 			await get_tree().process_frame
 			if Transicao.ultimo_us > 0:
-				soma += Transicao.ultimo_us
-				n += 1
+				amostras.append(Transicao.ultimo_us)
 				pior = maxi(pior, Transicao.ultimo_us)
-	var medio := soma / float(maxi(n, 1))
-	print("custo de _desenhar: medio %.0f us, pior %d us (%d quadros)" % [medio, pior, n])
-	ok(n > 20 and medio < 1000.0, "desenhar a cortina custa pouco (%.0f us de média)" % medio)
+	amostras.sort()
+	var n := amostras.size()
+	var mediana: int = amostras[n / 2] if n > 0 else 0
+	var medio := 0.0
+	for v in amostras:
+		medio += v
+	medio /= float(maxi(n, 1))
+	print("custo de _desenhar: mediana %d us, media %.0f us, pior %d us (%d quadros)" % [mediana, medio, pior, n])
+	ok(n > 20 and mediana < 1000, "desenhar a cortina custa pouco (mediana %d us)" % mediana)
 	print("TRANSICAO falhas=", falhas)
 	get_tree().quit()

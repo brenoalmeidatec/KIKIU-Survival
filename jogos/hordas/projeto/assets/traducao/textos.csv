@@ -20,7 +20,7 @@ HUD_CONTINUAR,Continuar
 HUD_OPCOES,Opções
 HUD_DESISTIR,Desistir da partida
 HUD_DESISTIR_CRIADO,Desistir (o herói morre de vez)
-HUD_DICA_PAUSA,WASD/setas: andar   Espaço/Shift: dash   Esc/Start: pausa   Mouse: clicar
+HUD_DICA_PAUSA,WASD/setas: andar   Espaço/Shift: esquiva   Esc/Start: pausa   Mouse: clicar
 HUD_FPS,%d FPS
 HUD_BANNER_CONJUNTO,Conjunto %s completo!
 HUD_DUELO_FINAL,DUELO FINAL

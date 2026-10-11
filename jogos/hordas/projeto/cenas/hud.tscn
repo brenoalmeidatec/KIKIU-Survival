@@ -303,9 +303,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -140.0
-offset_top = 150.0
+offset_top = 44.0
 offset_right = 140.0
-offset_bottom = 180.0
+offset_bottom = 74.0
 grow_horizontal = 2
 
 [node name="Textos" type="VBoxContainer" parent="Raiz/Banner"]

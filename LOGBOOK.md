@@ -1037,6 +1037,24 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Recomendações da análise (a decidir):** mundo em 960x540 com herói menor (~32x44, mais detalhe por pixel); câmera mais de cima nos sprites (~45° em vez de 32°); luz fixa do cenário assada e poucas luzes dinâmicas; relevo (normal map) só em herói e elite, e só depois de gerar os sprites sem sombra pintada; HUD em resolução nativa com molduras 9-patch e uma fonte lisa no lugar da pixelada.
 - **Próximo:** V1 (escala, câmera e HUD novo), depois da aba Gráficos (#150) e da 2ª rodada da luz. Perguntas fechadas ao Breno na issue-épico.
 
+## 2026-10-11 · Claude do Alisson (notebook) · arrumação de tela e testes instáveis (E1, issue #152)
+- **Feito (tela, conferido com print pelo viewport, antes e depois):** título sem "Protótipo" e com "esquiva" no lugar de "dash"; a dica da pausa também; a abertura da fase (layer 7) cobria o véu da pausa, e agora ela some enquanto a pausa estiver aberta (e o HUD volta ao estado de antes ao retomar); banner "Conjunto … completo!" subiu para y=44 (sem cobrir o herói); nome da arma na escolha de herói quebra em 2 linhas ("Adaga de Arrem…" sumiu); no preparo o subtítulo virou "Comida  ocupa 1 espaço" e a largura ficou em 240 px.
+- **Feito (escuridão, fase de horror):** a luz deixou de ser em 6 degraus com pontilhado Bayer (uma grade de pontos no chão). Agora é contínua, com a mesma força e os mesmos raios. Medido na Ponte das Almas: a linha de pixels passou de 40,36,36,36,40,37… para 34,34,34,35,35,35,36…
+- **Feito (pisos, a causa principal):** o pontilhado estava gravado nas texturas de chão (`pixelar(pontilhado=…)` em `cenarios.py` e `loja.py`). Agora 0 nos pisos e nas paredes da loja. Regenerei os pisos de todas as regiões, variantes e loja com o Blender 4.5 (`blender -b -P cenarios.py -- piso`, depois `loja.py`). A opção `-- piso` foi adicionada para não refazer os enfeites. Só os `piso.png` (e `parede.png` da loja) mudaram de conteúdo.
+- **Feito (testes instáveis):**
+  - `dragao`/`transformacao`: sem robô (ele pegava armas nas esperas); a transformação é disparada pelo teste.
+  - `transicao`: mede a mediana do desenho da cortina, não a média (a média subia com quadros engolidos pelo SO). Limite de 1000 µs mantido.
+  - `criacao`: usa o próprio arquivo de save desde o início.
+  - `esquiva` e `mira`: passam a andar o tempo simulado (passos fixos de 1/60 s, arena com `_process` manual). Antes dependiam do relógio de parede, e sob carga falhavam (`esquiva` 3 de 3 na main; `mira` 1 de 4). Agora `esquiva` passou 5 de 5 sob carga e `mira` 5 de 5.
+  - `status`/`esquiva`: não reproduzi o travamento (5 de 5 cada, 3 a 10 s). Coloquei um vigia de 100 s de relógio real: se um caminho não chegar ao `quit()`, o teste falha em vez de ficar vivo.
+  - `elementos`, `abertura`, `equipamentos`, `regras_armas`: 5 rodadas com 4 em paralelo, 20 execuções, todas `falhas=0`.
+- **Números:** cenas `testes/*.tscn` (51, sem `bench_*`), 2 rodadas com 3 em paralelo: 101 de 102 ok. A falha foi `mira` na rodada 1, antes da troca para tempo simulado. Robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40`: código 0, zero SCRIPT ERROR.
+- **Pendente:**
+  - `regras_armas` leva 113 s a 400 s localmente (no CI passou em menos de 120 s). Não investiguei a causa.
+  - `ortografia.py` não rodou aqui (sem Python utilizável nesta máquina); ele roda no CI.
+  - `gdformat` não rodou (fica para o fechamento da etapa).
+  - Olho humano: conferir a textura de piso nova na máquina de testes do Breno.
+- Assinado: Claude do Alisson (notebook)
 ## 2026-10-11 · Claude do Alisson (notebook) · CI mais rápido (E1, issue #152)
 - **Medido antes (run 38096771596, `ci.yml`, job `testes`):** 8m17s no total. Baixar o Godot: ~2 s (já vinha do cache). `--import` (2x): ~22 s. Rodar as 51 cenas em sequência: ~7m44s (quase tudo está aqui).
 - **Feito:** `ferramentas/testes_ci.sh` roda as cenas 4 por vez (`xargs -P 4`), com `timeout 120` por cena e um log por cena. O critério de falha não mudou (`SCRIPT ERROR` ou falta de `falhas=0`). `bench_*` continuam fora. `criacao` e `criacao2` vão na mesma unidade, em sequência (gravam o mesmo arquivo). No fim: cenas, rodadas, ok, falhas e tempo; falha se a contagem não bater.

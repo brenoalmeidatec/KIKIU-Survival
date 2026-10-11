@@ -372,10 +372,10 @@ func _painel_item(id: String) -> void:
 	Mochila.desenhar_icone(_tela, id, Rect2(x, 80, 28, 28))
 	_txt(Vector2(x + 36, 92), Mochila.nome(id), 8, Color(1, 0.93, 0.65), 240)
 	var tipo := str(d.get("tipo", ""))
-	var sub := ("Comida de viagem" if tipo == "comida" else ("Consumível" if tipo == "consumivel" else "Amuleto"))
+	var sub := ("Comida" if tipo == "comida" else ("Consumível" if tipo == "consumivel" else "Amuleto"))   # "Comida de viagem" + "ocupa 1 espaço" passava da borda do painel (~240 px úteis)
 	var esp := int(d.get("espacos", 1))
 	sub += ("  ocupa %d espaço%s" % [esp, "s" if esp != 1 else ""]) if esp > 0 else "  não ocupa espaço"
-	_txt(Vector2(x + 36, 105), sub, 8, Color(0.6, 0.68, 0.9), 250)
+	_txt(Vector2(x + 36, 105), sub, 8, Color(0.6, 0.68, 0.9), 240)
 	_tela.draw_multiline_string(Dados.fonte, Vector2(x, 126), str(d.get("descricao", "")), HORIZONTAL_ALIGNMENT_LEFT, 270, 8, 4, Color(0.82, 0.84, 0.92))
 	var y := 172.0
 	for par in Mochila.linhas(id):
