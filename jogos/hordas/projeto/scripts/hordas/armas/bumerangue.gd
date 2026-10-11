@@ -15,10 +15,13 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 	var c: Vector2 = w.dono.centro()
 	var q := int(s.quantidade)
 	var alvos: Array = w.campo.n_mais_perto(c, q, 380)
+	var mira: Array = w.mirar(c, q, 380.0, d)  # arma de clique (#161): vai pra onde o cursor aponta; vazio = o mais perto
 	for i in q:
 		var leque := (i - (q - 1) / 2.0) * 0.45  # sem alvo pra cada um: abre em leque
 		var dir := Vector2(w.dono.lado, 0).rotated(leque)
-		if not alvos.is_empty():
+		if not mira.is_empty():
+			dir = mira[i]
+		elif not alvos.is_empty():
 			dir = (alvos[i % alvos.size()].pos - c).normalized().rotated(0.0 if i < alvos.size() else leque)
 		w.especiais.append(
 			{

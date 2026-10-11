@@ -2,7 +2,8 @@ extends Node
 # Prints da aba Gráficos (#150) numa janela real (sem --headless). Só o viewport do jogo é salvo, nunca a área de trabalho.
 # Usa a API real, mas só na memória (g_perfil_temporario): não grava nas opções do jogador.
 # Roda: godot --path jogos/hordas/projeto res://testes/fotos/tela_graficos_fotos.tscn -- --fotos=<pasta> --perfis=baixo,medio,alto
-# Salva graficos_<perfil>.png (topo e CPU) e graficos_<perfil>_gpu.png (lista rolada até a GPU).
+# Salva graficos_<perfil>.png (topo e CPU), graficos_<perfil>_gpu.png (lista rolada até o fim) e graficos_<perfil>_sombras.png
+# (rolada até a linha de sombras).
 const Tela := preload("res://cenas/tela_graficos.tscn")
 
 
@@ -30,6 +31,13 @@ func _ready() -> void:
 		await RenderingServer.frame_post_draw
 		await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_png(pasta.path_join("graficos_%s_gpu.png" % p))
+		# a linha de sombras (2ª da GPU) fica no meio da lista: rola até ela e salva, pra conferir o texto e o espaço
+		for f in t._foco:
+			if f.tipo == "opcao" and str(t._opcao_de(f.linha).chave) == "sombras":
+				t._rolagem = clampf(float(f.top) - 20.0, 0.0, t._rolagem_max)
+		await RenderingServer.frame_post_draw
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(pasta.path_join("graficos_%s_sombras.png" % p))
 		t.queue_free()
 		await get_tree().process_frame
 		print("FOTO ok: ", p)

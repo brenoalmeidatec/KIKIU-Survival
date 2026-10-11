@@ -1,5 +1,5 @@
 {
- "_ajuda": "tipo: projetil (atira no inimigo mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio (scripts/hordas/armas/): katana, pistolas, marcial, aura_energia, elemental e os globais bumerangue, raio, lanca, corvos, runas e sismo (#65). mira (#126) = \"auto\" (mira no mais perto) ou \"direcional\" (mira pra onde o jogador aponta, com assistência); sem o campo vale o padrão do tipo em dados/mira.json. visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos). crescimento = (opcional) troca a curva de crescimento só desta arma (area, dano, evoluida, desligado); a curva geral que faz toda arma começar pequena e fraca e crescer com o nível fica em dados/crescimento_armas.json.",
+ "_ajuda": "tipo: projetil (atira no inimigo mais perto), chicote (golpe na frente), orbita (gira em volta), poca (poça no chão), aura (círculo em volta). base = nível 1; niveis = o que cada nível seguinte soma. evolucao = a arma só aparece por evolução. classe: global (qualquer personagem; padrão) ou character_exclusive (ou transformacao: arma da forma transformada, ex.: dragão; nunca vira carta nem conta no limite, veja dados/habilidades.json) (só o personagem characterId; cada um pega no máximo _config.limite_exclusivas por partida; evolução de exclusiva também é exclusiva). peso_carta = chance da carta aparecer (padrão 6). familia = como o duelo estima o dano de um tipo novo (projetil, chicote, orbita, poca ou aura). Tipos com arquivo próprio (scripts/hordas/armas/): katana, pistolas, marcial, aura_energia, elemental e os globais bumerangue, raio, lanca, corvos, runas e sismo (#65). mira (#126) = \"auto\" (mira no mais perto) ou \"direcional\" (mira pra onde o jogador aponta, com assistência); sem o campo vale o padrão do tipo em dados/mira.json. visual = como a arma aparece no personagem em camadas: camada, maos que ocupa, senao (camada quando as mãos já estão ocupadas, ex.: katana na bainha) e prioridade (quem ganha as mãos). disparo (#161) = quando a arma ataca: \"clique\" (só enquanto o jogador ataca: clique esquerdo do mouse, gatilho direito do controle; segurar repete no ritmo da recarga, e clicar não fura a recarga; mira no cursor, no analógico direito ou na direção em que anda) ou \"auto\" (ataca sozinha, para armas passivas e secundárias). Sem o campo, a arma inicial do herói (herois.json) é \"clique\" e as que vêm por carta são \"auto\"; a evolução ou fusão da arma inicial continua sendo clique. A forma transformada usa o campo de cada habilidade (baforada e garras: clique; energia dracônica e rugido: auto). O robô (--bot) segura o clique. crescimento = (opcional) troca a curva de crescimento só desta arma (area, dano, evoluida, desligado); a curva geral que faz toda arma começar pequena e fraca e crescer com o nível fica em dados/crescimento_armas.json.",
  "_config": {
   "limite_exclusivas": 2
  },
@@ -359,6 +359,7 @@
   "tipo": "baforada",
   "familia": "aura",
   "classe": "transformacao",
+  "disparo": "clique",
   "characterId": "hazaki",
   "descricao": "Forma de dragão: rajada de fogo em cone pela boca. Evolui: alcance, largura, dano, queimadura e explosão no fim.",
   "base": {"dano": 4, "recarga": 1.4, "area": 1.0, "alcance": 95, "largura": 40, "sopro": 1.1, "tique": 0.15, "queimadura": 0, "explosao": 0},
@@ -371,6 +372,7 @@
   "tipo": "garras",
   "familia": "chicote",
   "classe": "transformacao",
+  "disparo": "clique",
   "characterId": "hazaki",
   "descricao": "Forma de dragão: as patas rasgam vários inimigos perto do corpo.",
   "base": {"dano": 14, "recarga": 0.8, "area": 1.0, "raio": 30, "quantidade": 2},
@@ -383,6 +385,7 @@
   "tipo": "energia_draconica",
   "familia": "projetil",
   "classe": "transformacao",
+  "disparo": "auto",
   "characterId": "hazaki",
   "descricao": "Forma de dragão: orbes de energia cobalto que explodem em área.",
   "base": {"dano": 12, "recarga": 1.2, "area": 1.0, "quantidade": 1, "velocidade": 260, "explosao": 30},
@@ -395,6 +398,7 @@
   "tipo": "rugido",
   "familia": "aura",
   "classe": "transformacao",
+  "disparo": "auto",
   "characterId": "hazaki",
   "descricao": "Forma de dragão: onda de energia que machuca, empurra e atordoa os mais fracos.",
   "base": {"dano": 20, "recarga": 5.0, "area": 1.0, "raio": 110, "empurra": 260, "atordoa": 1.2},

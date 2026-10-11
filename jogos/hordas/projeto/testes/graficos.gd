@@ -92,7 +92,10 @@ func _ready() -> void:
 		),
 		"baixo: 250 vivos, ambiente 0,25 e mortes simples 0,4 (como a baixa antiga)"
 	)
-	ok(Config.g("nevoa") == false and Config.g("vinheta") == false and Config.g("sombras") == "contato", "baixo: sem névoa, sem vinheta e só o contato no pé")
+	ok(
+		Config.g("nevoa") == false and Config.g("vinheta") == false and Config.g("sombras") == "baixa",
+		"baixo: sem névoa, sem vinheta e sombra baixa (só a mancha no pé)"
+	)
 	ok(Config.g("particulas_sim") == "poucas" and is_equal_approx(float(Config.g("calculo_monstros")), 2.0), "baixo: partículas poucas, monstros espaçados")
 	ok(
 		Config.leituras_horror() == 0 and Config.luzes_horror() == 8 and is_equal_approx(Cresc.fator(), 0.3),
@@ -138,7 +141,7 @@ func _ready() -> void:
 	ok(Config.g("max_inimigos") == 300 and Config.g_perfil() == "personalizado", "carregado: 300 e personalizado")
 	Config.g_aplicar_perfil("baixo")
 	Config.recarregar()
-	ok(Config.g_perfil() == "baixo" and Config.g("max_inimigos") == 250 and Config.g("sombras") == "contato", "carregado depois de baixo: perfil baixo inteiro")
+	ok(Config.g_perfil() == "baixo" and Config.g("max_inimigos") == 250 and Config.g("sombras") == "baixa", "carregado depois de baixo: perfil baixo inteiro")
 
 	# 7. detectar devolve um perfil válido
 	ok(Config.g_detectar() in ["baixo", "medio", "alto"], "detectar: um perfil válido (%s)" % Config.g_detectar())
@@ -150,6 +153,26 @@ func _ready() -> void:
 	Config.recarregar()
 	ok(Config.g_perfil() == "medio" and Config.g("max_inimigos") == 350, "migração: media antiga vira medio")
 	ok(not Config._cfg.has_section_key("opcoes", "qualidade"), "migração: a chave antiga sai do arquivo")
+
+	# 9. sombras (#150 -> baixa, media, alta): os 3 perfis dão o valor certo; a opção é menu na GPU com os rótulos da tela;
+	# quem tinha contato ou projetadas salvo vira baixa ou media (uma vez)
+	var sombra_do_perfil := {"baixo": "baixa", "medio": "media", "alto": "alta"}
+	for p in sombra_do_perfil:
+		Config.g_perfil_temporario(p)
+		ok(Config.g("sombras") == sombra_do_perfil[p], "%s: sombras = %s" % [p, sombra_do_perfil[p]])
+	var op_sombras: Dictionary = Config.g_opcao("sombras")
+	ok(
+		op_sombras.get("tipo") == "menu" and op_sombras.get("secao") == "gpu" and op_sombras.get("valores") == ["baixa", "media", "alta"],
+		"sombras: menu na GPU com baixa, media e alta"
+	)
+	ok(op_sombras.get("rotulos") == ["Simples", "Suaves", "Detalhadas"], "sombras: rótulos Simples, Suaves e Detalhadas")
+	for par in [["contato", "baixa"], ["projetadas", "media"]]:
+		var arq_s := ConfigFile.new()
+		arq_s.set_value("graficos", "sombras", par[0])
+		arq_s.save(ARQ_TESTE)
+		Config.recarregar()
+		ok(Config.g("sombras") == par[1], "migração: sombras %s vira %s" % [par[0], par[1]])
+	Config.g_aplicar_perfil("alto")
 
 	print("GRAFICOS falhas=%d" % falhas)
 	get_tree().quit()

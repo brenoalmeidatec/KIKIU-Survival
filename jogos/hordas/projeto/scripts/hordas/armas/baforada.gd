@@ -15,7 +15,10 @@ static func boca(w) -> Vector2:
 	return f.boca() if f else w.dono.centro()
 
 
-static func _mirar(w, de: Vector2, alcance: float, atual: Vector2) -> Vector2:
+static func _mirar(w, a: Dictionary, de: Vector2, alcance: float, atual: Vector2) -> Vector2:
+	var clique: Vector2 = w.dir_clique(de, alcance * 1.5, a)  # arma de clique (#161): sopra pra onde o cursor aponta
+	if clique != Vector2.ZERO:
+		return clique
 	var alvo = w.campo.mais_perto(de, alcance * 1.5)
 	if alvo:
 		return (alvo.pos - de).normalized()
@@ -38,7 +41,7 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 			"t": sopro,
 			"tique": 0.0,
 			"pos": b,
-			"dir": _mirar(w, b, alcance, Vector2(w.dono.lado, 0)),
+			"dir": _mirar(w, a, b, alcance, Vector2(w.dono.lado, 0)),
 			"alcance": alcance,
 			"largura": deg_to_rad(float(s.get("largura", 40))),
 			"dano": float(s.dano),
@@ -46,6 +49,7 @@ static func atualizar(w, a: Dictionary, _d: Dictionary, s: Dictionary, dt: float
 			"queima": float(s.get("queimadura", 0)),
 			"explosao": float(s.get("explosao", 0)) * float(s.area),
 			"arma": a.id,
+			"clique": a.get("disparo", "auto") == "clique",  # a baforada que dura acompanha o cursor (#161)
 			"fogo": [],
 			"queimando": {},
 			"boom": 0.0,
@@ -59,7 +63,7 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 	if e.t > 0:
 		e.t -= dt
 		e.pos = boca(w)
-		e.dir = e.dir.slerp(_mirar(w, e.pos, e.alcance, e.dir), minf(1.0, dt * 6.0)).normalized()
+		e.dir = e.dir.slerp(_mirar(w, {"disparo": "clique" if e.get("clique", false) else "auto"}, e.pos, e.alcance, e.dir), minf(1.0, dt * 6.0)).normalized()
 		var forma = w.dono.get("forma")
 		if forma:
 			forma.olhar = e.dir if e.t > 0 else Vector2.ZERO  # a cabeça vira pra onde sopra
