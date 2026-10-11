@@ -9,15 +9,15 @@ extends CanvasLayer
 
 const W := 640.0
 const H := 360.0
-const LADO := 20.0           # tamanho de cada losango
-const DUR := 0.42            # segundos até a tela ficar toda à mostra
-const ATRASO := 0.55         # fração da duração gasta no atraso da varredura (o resto é o encolher de cada losango)
+const LADO := 20.0  # tamanho de cada losango
+const DUR := 0.42  # segundos até a tela ficar toda à mostra
+const ATRASO := 0.55  # fração da duração gasta no atraso da varredura (o resto é o encolher de cada losango)
 const COR := Color(0.03, 0.025, 0.05)
 
 var _t := DUR
-var _t0 := -1                # Time.get_ticks_usec() do primeiro quadro com a cortina; -1 = ainda não desenhou nenhum
-var ligada := true          # os prints de teste (--print_tela) desligam: a foto é da tela, não da cortina
-var ultimo_us := 0           # custo do último _desenhar (teste/medição)
+var _t0 := -1  # Time.get_ticks_usec() do primeiro quadro com a cortina; -1 = ainda não desenhou nenhum
+var ligada := true  # os prints de teste (--print_tela) desligam: a foto é da tela, não da cortina
+var ultimo_us := 0  # custo do último _desenhar (teste/medição)
 var _tela := Control.new()
 
 
@@ -47,7 +47,7 @@ func _process(_dt: float) -> void:
 		return
 	var agora := Time.get_ticks_usec()
 	if _t0 < 0:
-		_t0 = agora   # este é o primeiro quadro depois da troca: a cortina começa cheia nele
+		_t0 = agora  # este é o primeiro quadro depois da troca: a cortina começa cheia nele
 	else:
 		_t = (agora - _t0) / 1.0e6
 	_tela.queue_redraw()
@@ -66,7 +66,7 @@ func _desenhar() -> void:
 	var idx := PackedInt32Array()
 	var k := 0
 	var passo := 1.0 / float(colunas + linhas)
-	var feitas := int(floorf((p - (1.0 - ATRASO)) / (passo * ATRASO)))   # diagonais (cx + ly) já varridas: nem entram na conta
+	var feitas := int(floorf((p - (1.0 - ATRASO)) / (passo * ATRASO)))  # diagonais (cx + ly) já varridas: nem entram na conta
 	for ly in linhas:
 		for cx in range(maxi(0, feitas + 1 - ly), colunas):
 			# varre da esquerda-de-cima pra direita-de-baixo

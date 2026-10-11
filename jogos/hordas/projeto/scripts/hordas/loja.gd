@@ -13,37 +13,37 @@ const H := 360.0
 const TRAVA := 0.35
 const AUTO_ONLINE := 30.0
 const LINHA := 48.0
-const CHAO := Rect2(32, 112, 576, 216)       # onde o herói pode andar (pés)
+const CHAO := Rect2(32, 112, 576, 216)  # onde o herói pode andar (pés)
 const BALCAO := Rect2(250, 118, 140, 22)
-const VENDEDOR := Vector2(320, 116)          # os pés do vendedor
-const PORTA := Rect2(290, 322, 60, 30)       # pisar aqui sai da sala
+const VENDEDOR := Vector2(320, 116)  # os pés do vendedor
+const PORTA := Rect2(290, 322, 60, 30)  # pisar aqui sai da sala
 const RAIO_BALCAO := 56.0
 const INICIO := Vector2(320, 290)
-const PASTA := "res://assets/cenarios/loja/"   # arte da sala: fonte_arte/modelos3d/loja.py (Blender) gera piso, parede, objetos e cenario.json
+const PASTA := "res://assets/cenarios/loja/"  # arte da sala: fonte_arte/modelos3d/loja.py (Blender) gera piso, parede, objetos e cenario.json
 const PAREDE_H := 112
 
 var arena: Node
-var _tela := Control.new()      # a sala (piso, parede, objetos, vendedor, herói)
-var _luz_mul := Control.new()   # mapa de luz (multiplica a sala: escuro com poças quentes e vinheta)
-var _luz_add := Control.new()   # halos, feixe de luar e partículas (somados: BLEND ADD)
-var _topo := Control.new()      # textos e vitrine (acima da luz, pra ler bem)
-var _cv: Control                # onde _txt e _boneco desenham agora
+var _tela := Control.new()  # a sala (piso, parede, objetos, vendedor, herói)
+var _luz_mul := Control.new()  # mapa de luz (multiplica a sala: escuro com poças quentes e vinheta)
+var _luz_add := Control.new()  # halos, feixe de luar e partículas (somados: BLEND ADD)
+var _topo := Control.new()  # textos e vitrine (acima da luz, pra ler bem)
+var _cv: Control  # onde _txt e _boneco desenham agora
 var _aberto := false
 var _t0 := 0
-var jogadores := {}         # id -> {compras:int, ofertas:Array [{carta, base, comprado}], ouro:int (só pros que não são o local)}
-var _vitrine := false       # a lista de compras está aberta
+var jogadores := {}  # id -> {compras:int, ofertas:Array [{carta, base, comprado}], ouro:int (só pros que não são o local)}
+var _vitrine := false  # a lista de compras está aberta
 var _sel := 0
 var _aviso := ""
 var _t_aviso := 0.0
-var _pos := INICIO          # pés do herói na sala
+var _pos := INICIO  # pés do herói na sala
 var _bot_fase := 0
-var _cen := {}                  # cenario.json da sala
+var _cen := {}  # cenario.json da sala
 var _t_piso: Texture2D
 var _t_parede: Texture2D
 var _t_obj: Texture2D
-var _pecas := {}                # nome -> {regiao: Rect2, pe: Vector2, luzes: Array}
-var _obst: Array = []           # Rect2: onde o herói não pisa (objetos da sala), além do balcão
-var _luzes: Array = []          # {pos, cor, raio, pisca, forca, par, halo}
+var _pecas := {}  # nome -> {regiao: Rect2, pe: Vector2, luzes: Array}
+var _obst: Array = []  # Rect2: onde o herói não pisa (objetos da sala), além do balcão
+var _luzes: Array = []  # {pos, cor, raio, pisca, forca, par, halo}
 var _glow: Texture2D
 var _mapa_luz: ImageTexture
 
@@ -98,6 +98,7 @@ static func cfg() -> Dictionary:
 
 # ---------- funções puras (o teste usa) ----------
 
+
 ## Preço de um item depois de `compras` compras do jogador: base * (1 + aumento * compras), limitado a base * teto.
 static func preco_atual(base: int, compras: int) -> int:
 	var c: Dictionary = cfg().get("curva", {})
@@ -115,14 +116,28 @@ static func montar_ofertas(cartas: Array) -> Array:
 			continue
 		var base := float(precos.get(str(c.tipo), 150))
 		res.append({"carta": c, "base": int(base * (1.0 + 0.25 * maxi(0, int(c.get("nivel", 1)) - 1))), "comprado": false})
-	var cura: Dictionary = Dados.json("coletaveis").get("loja_cura", {})   # nome, texto e ícone no coletaveis.json (#65)
-	res.append({"carta": {"tipo": "cura", "id": "vida", "nome": str(cura.get("nome", "Cura")), "desc": str(cura.get("desc", "Recupera toda a vida.")),
-		"icone": str(cura.get("icone", "marmita")), "nivel": 0},
-		"base": int(precos.get("cura", 90)), "comprado": false, "completa": true})
+	var cura: Dictionary = Dados.json("coletaveis").get("loja_cura", {})
+	res.append(
+		{
+			"carta":
+			{  # nome, texto e ícone no coletaveis.json (#65)
+				"tipo": "cura",
+				"id": "vida",
+				"nome": str(cura.get("nome", "Cura")),
+				"desc": str(cura.get("desc", "Recupera toda a vida.")),
+				"icone": str(cura.get("icone", "marmita")),
+				"nivel": 0
+			},
+			"base": int(precos.get("cura", 90)),
+			"comprado": false,
+			"completa": true
+		}
+	)
 	return res
 
 
 # ---------- estado por jogador ----------
+
 
 func estado(id: int) -> Dictionary:
 	if not jogadores.has(id):
@@ -220,6 +235,7 @@ func comprar(i: int, id := -1) -> bool:
 
 # ---------- andar pela sala ----------
 
+
 func perto_do_balcao() -> bool:
 	return _pos.distance_to(VENDEDOR + Vector2(0, 38)) <= RAIO_BALCAO
 
@@ -292,11 +308,16 @@ func _robo(dt: float, t: float) -> void:
 			var melhor := -1
 			for i in estado(id).ofertas.size():
 				var o: Dictionary = estado(id).ofertas[i]
-				if not bool(o.comprado) and not bool(o.get("completa", false)) and arena.ouro >= preco_de(id, i) and (melhor < 0 or preco_de(id, i) < preco_de(id, melhor)):
+				if (
+					not bool(o.comprado)
+					and not bool(o.get("completa", false))
+					and arena.ouro >= preco_de(id, i)
+					and (melhor < 0 or preco_de(id, i) < preco_de(id, melhor))
+				):
 					melhor = i
 			if melhor >= 0:
 				comprar(melhor)
-				_t0 += 300   # um pouco de pausa entre compras
+				_t0 += 300  # um pouco de pausa entre compras
 			elif t >= 1.2:
 				_vitrine = false
 				_bot_fase = 2
@@ -305,12 +326,12 @@ func _robo(dt: float, t: float) -> void:
 
 
 func _input(e: InputEvent) -> void:
-	if Chat.digitando:   # o teclado é do chat (chat.gd)
+	if Chat.digitando:  # o teclado é do chat (chat.gd)
 		return
 	if not _aberto or _agora() < TRAVA or not e.is_pressed() or e.is_echo():
 		return
 	var ofertas: Array = estado(id_local()).ofertas
-	var n := ofertas.size() + 1   # + "Voltar"
+	var n := ofertas.size() + 1  # + "Voltar"
 	if not _vitrine:
 		if e.is_action_pressed("confirmar") and perto_do_balcao():
 			_vitrine = true
@@ -342,6 +363,7 @@ func _input(e: InputEvent) -> void:
 
 
 # ---------- desenho ----------
+
 
 func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := -1.0, alinhar := HORIZONTAL_ALIGNMENT_LEFT) -> void:
 	var f: Font = Dados.fonte
@@ -397,8 +419,15 @@ func _carregar_arte() -> void:
 
 static func _nova_luz(pos: Vector2, l: Dictionary, par: bool) -> Dictionary:
 	var c: Array = l.cor
-	return {"pos": pos, "cor": Color(c[0], c[1], c[2]), "raio": float(l.raio), "pisca": float(l.get("pisca", 0.0)), "forca": float(l.get("forca", 1.0)),
-		"par": par, "halo": bool(l.get("halo", true))}
+	return {
+		"pos": pos,
+		"cor": Color(c[0], c[1], c[2]),
+		"raio": float(l.raio),
+		"pisca": float(l.get("pisca", 0.0)),
+		"forca": float(l.get("forca", 1.0)),
+		"par": par,
+		"halo": bool(l.get("halo", true))
+	}
 
 
 ## Mapa de luz: ambiente escuro e frio + a poça de cada luz + vinheta. Fica numa imagem pequena (barato) esticada com filtro suave.
@@ -442,12 +471,12 @@ func _desenhar_sala() -> void:
 		return
 	_tela.draw_texture_rect(_t_piso, Rect2(0, PAREDE_H, W, H - PAREDE_H), true)
 	_tela.draw_texture(_t_parede, Vector2.ZERO)
-	for i in 7:   # sombra da parede no chão
+	for i in 7:  # sombra da parede no chão
 		_tela.draw_rect(Rect2(0, PAREDE_H + i * 2, W, 2), Color(0, 0, 0, 0.4 - i * 0.055))
-	for it in _cen.layout:   # tapete e porta: no chão, antes de tudo
+	for it in _cen.layout:  # tapete e porta: no chão, antes de tudo
 		if str(it.camada) == "chao":
 			_peca_em(it)
-	var fila := []   # [y do pé, tipo, dados]: tudo em ordem de profundidade (quem está mais embaixo na tela vem na frente)
+	var fila := []  # [y do pé, tipo, dados]: tudo em ordem de profundidade (quem está mais embaixo na tela vem na frente)
 	for it in _cen.layout:
 		if str(it.camada) == "obj":
 			if it.has("sombra"):
@@ -580,11 +609,20 @@ func _desenhar_vitrine() -> void:
 			if int(c.get("nivel", 0)) > 0:
 				nome += "  NV %d" % int(c.nivel)
 			_txt(Vector2(px + 44, y + 13), nome, 8, Color(1, 1, 1, a), pw - 150)
-			_cv.draw_multiline_string(Dados.fonte, Vector2(px + 44, y + 25), str(c.get("desc", "")), HORIZONTAL_ALIGNMENT_LEFT, pw - 150, 8, 2, Color(0.7, 0.74, 0.85, a))
+			_cv.draw_multiline_string(
+				Dados.fonte, Vector2(px + 44, y + 25), str(c.get("desc", "")), HORIZONTAL_ALIGNMENT_LEFT, pw - 150, 8, 2, Color(0.7, 0.74, 0.85, a)
+			)
 			var ptxt := "COMPRADO" if comprado else "%d" % preco
 			var cp := Color(0.5, 0.9, 0.5) if comprado else (Color(1, 0.85, 0.35) if pode else Color(0.9, 0.35, 0.35))
 			_txt(Vector2(px + pw - 100, y + 24), ptxt, 8, cp, 92, HORIZONTAL_ALIGNMENT_RIGHT)
 		y += LINHA
 	if _t_aviso > 0.0 and _aviso != "":
 		_txt(Vector2(0, 326), _aviso, 8, Color(1, 0.5, 0.5), W, HORIZONTAL_ALIGNMENT_CENTER)
-	_txt(Vector2(0, 346), "Setas: escolher   Enter: comprar   Esc: voltar   Compras: %d" % compras_de(id), 8, Color(0.6, 0.65, 0.8), W, HORIZONTAL_ALIGNMENT_CENTER)
+	_txt(
+		Vector2(0, 346),
+		"Setas: escolher   Enter: comprar   Esc: voltar   Compras: %d" % compras_de(id),
+		8,
+		Color(0.6, 0.65, 0.8),
+		W,
+		HORIZONTAL_ALIGNMENT_CENTER
+	)

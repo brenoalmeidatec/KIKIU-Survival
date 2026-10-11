@@ -12,7 +12,7 @@ const H := 360.0
 const Y0 := 66.0
 const PASSO := 22.0
 
-var escolha := {}            # {id: nível}
+var escolha := {}  # {id: nível}
 var titulo_confirmar := "começar"
 var _sel := 0
 var _quadro := 0
@@ -24,7 +24,7 @@ func _ready() -> void:
 	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	escolha = Calor.validar(escolha)
-	_quadro = Engine.get_process_frames()   # a tecla que abriu a tela não conta aqui
+	_quadro = Engine.get_process_frames()  # a tecla que abriu a tela não conta aqui
 	_tela.size = Vector2(W, H)
 	_tela.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tela.draw.connect(_desenhar)
@@ -51,7 +51,7 @@ func _process(dt: float) -> void:
 		var id := str(m.id)
 		var maxn := int(m.get("niveis", 1))
 		var passo := 1 if Input.is_action_just_pressed("direita") else -1
-		var nv := (int(escolha.get(id, 0)) + passo + maxn + 1) % (maxn + 1)   # dá a volta: 0..max
+		var nv := (int(escolha.get(id, 0)) + passo + maxn + 1) % (maxn + 1)  # dá a volta: 0..max
 		if nv == 0:
 			escolha.erase(id)
 		else:
@@ -71,7 +71,7 @@ func _process(dt: float) -> void:
 
 func _unhandled_key_input(e: InputEvent) -> void:
 	if e.is_pressed() and not e.is_echo() and e.physical_keycode == KEY_0:
-		escolha.clear()   # 0: zera tudo
+		escolha.clear()  # 0: zera tudo
 		Som.ui("voltar")
 
 
@@ -83,10 +83,21 @@ func _txt(p: Vector2, s: String, tam := 8, cor := Color.WHITE, larg := W, alinha
 ## Chama de pixel (o símbolo do calor), centrada em c, altura h.
 func _chama(c: Vector2, h: float, f: float) -> void:
 	var balanco := sin(_t * 9.0) * h * 0.06
-	var fora := PackedVector2Array([c + Vector2(-h * 0.36, 0), c + Vector2(-h * 0.42, -h * 0.4), c + Vector2(-h * 0.12 + balanco, -h * 0.72),
-		c + Vector2(balanco, -h), c + Vector2(h * 0.2 + balanco, -h * 0.62), c + Vector2(h * 0.4, -h * 0.38), c + Vector2(h * 0.34, 0)])
+	var fora := PackedVector2Array(
+		[
+			c + Vector2(-h * 0.36, 0),
+			c + Vector2(-h * 0.42, -h * 0.4),
+			c + Vector2(-h * 0.12 + balanco, -h * 0.72),
+			c + Vector2(balanco, -h),
+			c + Vector2(h * 0.2 + balanco, -h * 0.62),
+			c + Vector2(h * 0.4, -h * 0.38),
+			c + Vector2(h * 0.34, 0)
+		]
+	)
 	_tela.draw_colored_polygon(fora, Color(0.9, 0.3, 0.08).lerp(Color(1, 0.55, 0.1), f))
-	var dentro := PackedVector2Array([c + Vector2(-h * 0.18, 0), c + Vector2(-h * 0.2, -h * 0.3), c + Vector2(balanco, -h * 0.58), c + Vector2(h * 0.18, -h * 0.3), c + Vector2(h * 0.16, 0)])
+	var dentro := PackedVector2Array(
+		[c + Vector2(-h * 0.18, 0), c + Vector2(-h * 0.2, -h * 0.3), c + Vector2(balanco, -h * 0.58), c + Vector2(h * 0.18, -h * 0.3), c + Vector2(h * 0.16, 0)]
+	)
 	_tela.draw_colored_polygon(dentro, Color(1, 0.85, 0.35))
 
 
@@ -120,5 +131,10 @@ func _desenhar() -> void:
 		_txt(Vector2(0, 274), str(mods[_sel].get("descricao", "")), 8, Color(0.9, 0.86, 0.8))
 	var ouro := roundi(pts * Calor.recompensa("ouro") * 100.0)
 	var xp := roundi(pts * Calor.recompensa("xp") * 100.0)
-	_txt(Vector2(0, 296), "Recompensa: +%d%% de ouro, +%d%% de XP" % [ouro, xp] if pts > 0 else "Sem calor: a corrida normal.", 8, Color(1, 0.8, 0.45) if pts > 0 else Color(0.6, 0.6, 0.65))
+	_txt(
+		Vector2(0, 296),
+		"Recompensa: +%d%% de ouro, +%d%% de XP" % [ouro, xp] if pts > 0 else "Sem calor: a corrida normal.",
+		8,
+		Color(1, 0.8, 0.45) if pts > 0 else Color(0.6, 0.6, 0.65)
+	)
 	_txt(Vector2(0, 340), "Cima/baixo: escolher   Esq/dir: nível   0: zerar   Enter: %s   Esc: voltar" % titulo_confirmar, 8, Color(0.55, 0.52, 0.5))

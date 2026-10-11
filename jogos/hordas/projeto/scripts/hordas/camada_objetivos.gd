@@ -106,4 +106,6 @@ func _desenhar() -> void:
 
 
 func _seta(p: Vector2, d: Vector2, ponta: float, lado: float, cor: Color) -> void:
-	_tela.draw_colored_polygon(PackedVector2Array([p + d * ponta, p + d.orthogonal() * lado - d * (ponta * 0.45), p - d.orthogonal() * lado - d * (ponta * 0.45)]), cor)
+	_tela.draw_colored_polygon(
+		PackedVector2Array([p + d * ponta, p + d.orthogonal() * lado - d * (ponta * 0.45), p - d.orthogonal() * lado - d * (ponta * 0.45)]), cor
+	)

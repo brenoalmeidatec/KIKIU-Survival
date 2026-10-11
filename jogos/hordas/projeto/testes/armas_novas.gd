@@ -4,17 +4,21 @@ extends Node
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/armas_novas.tscn  (imprime "ARMAS_NOVAS falhas=0")
 const Arena := preload("res://scripts/hordas/arena.gd")
 const Armas := preload("res://scripts/hordas/armas.gd")
-const NOVAS := ["machado", "machados_brasa", "raio", "furia_ceus", "lanca", "lanca_ardente", "corvos", "revoada",
-	"runas", "circulo_runico", "martelo", "terremoto"]
+const NOVAS := [
+	"machado", "machados_brasa", "raio", "furia_ceus", "lanca", "lanca_ardente", "corvos", "revoada", "runas", "circulo_runico", "martelo", "terremoto"
+]
 var falhas := 0
+
 
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:

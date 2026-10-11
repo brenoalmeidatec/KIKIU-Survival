@@ -31,7 +31,10 @@ func _ready() -> void:
 	ok(cfg.get("area", []).size() >= 2 and cfg.get("dano", []).size() >= 2, "curvas de area e dano com 2+ pontos")
 	ok(cfg.get("evoluida", {}).has("area") and cfg.get("evoluida", {}).has("dano"), "tem o bloco da arma evoluída")
 	ok(cfg.get("efeitos", []).size() == Cresc.TIER_MAX + 1, "um bloco de efeitos por tier (0 a %d)" % Cresc.TIER_MAX)
-	ok(is_equal_approx(Cresc.curva(cfg.area, 0.0), float(cfg.area[0][1])) and is_equal_approx(Cresc.curva(cfg.area, 1.0), float(cfg.area[-1][1])), "a curva começa e termina nos pontos do json")
+	ok(
+		is_equal_approx(Cresc.curva(cfg.area, 0.0), float(cfg.area[0][1])) and is_equal_approx(Cresc.curva(cfg.area, 1.0), float(cfg.area[-1][1])),
+		"a curva começa e termina nos pontos do json"
+	)
 	ok(Cresc.curva([], 0.5) == 1.0, "curva vazia = multiplicador 1")
 	ok(is_equal_approx(Cresc.curva([[0.0, 1.0], [1.0, 2.0]], 0.25), 1.25), "interpolação linear")
 	var a0 := float(cfg.area[0][1])
@@ -45,12 +48,15 @@ func _ready() -> void:
 	for k in ["faiscas", "grossura", "halo", "tremor", "brilho", "imagens", "brasas"]:
 		for t in range(1, Cresc.TIER_MAX + 1):
 			ok(float(Cresc.fx(t)[k]) >= float(Cresc.fx(t - 1)[k]), "efeito %s não diminui do tier %d pro %d" % [k, t - 1, t])
-	ok(float(Cresc.fx(Cresc.TIER_MAX).brasas) > float(Cresc.fx(0).brasas) and float(Cresc.fx(Cresc.TIER_MAX).halo) > 0.0, "o topo tem mais efeitos que o começo")
+	ok(
+		float(Cresc.fx(Cresc.TIER_MAX).brasas) > float(Cresc.fx(0).brasas) and float(Cresc.fx(Cresc.TIER_MAX).halo) > 0.0,
+		"o topo tem mais efeitos que o começo"
+	)
 	ok(Cresc.fx(0).faiscas == 0 and not Cresc.fx(0).arco_extra, "tier 0 (nível 1-2) é limpo, sem enfeite")
 	ok(Cresc.fx(3).arco_extra and Cresc.fx(4).arco_extra, "máximo e evoluída têm o arco extra")
 
 	# --- cada arma: área e dano sobem a cada nível; nível 1 menor que o máximo; tiers certos
-	var w := Armas.new()   # só pra usar o _s() (atributos finais): jogador sem bônus nenhum
+	var w := Armas.new()  # só pra usar o _s() (atributos finais): jogador sem bônus nenhum
 	w.statf = func(k): return 0 if k == "quantidade" else 1.0
 	var n_base := 0
 	for id in ids():
@@ -86,7 +92,10 @@ func _ready() -> void:
 		for lv in d.get("niveis", []):
 			ok(not lv.has("area"), "%s: o armas.json não soma 'area' nos níveis (a curva cuida disso)" % id)
 		# o duelo (construcao.gd) estima o dano com a mesma conta do jogo
-		ok(is_equal_approx(float(Construcao.atributos_arma(id, nmax).get("dano", 0.0)), float(Cresc.atributos(id, nmax).get("dano", 0.0))), "%s: duelo e jogo usam o mesmo dano" % id)
+		ok(
+			is_equal_approx(float(Construcao.atributos_arma(id, nmax).get("dano", 0.0)), float(Cresc.atributos(id, nmax).get("dano", 0.0))),
+			"%s: duelo e jogo usam o mesmo dano" % id
+		)
 	ok(n_base >= 20, "conferi as armas base (%d)" % n_base)
 
 	# --- evoluções ficam no topo: tier acima do máximo da base, área e dano pelo menos iguais ao nível máximo da base
@@ -98,7 +107,10 @@ func _ready() -> void:
 		var sb: Dictionary = Cresc.atributos(str(e.arma), base_max)
 		var se: Dictionary = Cresc.atributos(str(e.vira), 1)
 		ok(float(se.area) >= float(sb.area), "%s: evolução (%.2f) pelo menos tão grande quanto %s no máximo (%.2f)" % [e.vira, se.area, e.arma, sb.area])
-		ok(_dps(str(e.vira), 1) >= _dps(str(e.arma), base_max), "%s: evolução (DPS %.0f) pelo menos tão forte quanto %s no máximo (%.0f)" % [e.vira, _dps(str(e.vira), 1), e.arma, _dps(str(e.arma), base_max)])
+		ok(
+			_dps(str(e.vira), 1) >= _dps(str(e.arma), base_max),
+			"%s: evolução (DPS %.0f) pelo menos tão forte quanto %s no máximo (%.0f)" % [e.vira, _dps(str(e.vira), 1), e.arma, _dps(str(e.arma), base_max)]
+		)
 		ok(Cresc.mult(str(e.vira), 1, "area") >= 1.0 and Cresc.mult(str(e.vira), 1, "dano") >= 1.0, "%s: evolução não é penalizada pela curva" % e.vira)
 
 	# --- override por arma: bloco "crescimento" no armas.json
@@ -108,7 +120,10 @@ func _ready() -> void:
 	arm[alvo]["crescimento"] = {"desligado": true}
 	ok(Cresc.mult(alvo, 1, "area") == 1.0 and Cresc.mult(alvo, 1, "dano") == 1.0, "crescimento desligado = sem curva")
 	arm[alvo]["crescimento"] = {"area": [[0.0, 0.9], [1.0, 1.0]]}
-	ok(is_equal_approx(Cresc.mult(alvo, 1, "area"), 0.9) and is_equal_approx(Cresc.mult(alvo, Cresc.nivel_max(alvo), "area"), 1.0), "a arma pode trocar só a curva de área")
+	ok(
+		is_equal_approx(Cresc.mult(alvo, 1, "area"), 0.9) and is_equal_approx(Cresc.mult(alvo, Cresc.nivel_max(alvo), "area"), 1.0),
+		"a arma pode trocar só a curva de área"
+	)
 	ok(is_equal_approx(Cresc.mult(alvo, 1, "dano"), d0), "...e continua com a curva padrão de dano")
 	if orig == null:
 		arm[alvo].erase("crescimento")
@@ -126,7 +141,10 @@ func _ready() -> void:
 
 	# --- compensação: os primeiros níveis do jogador custam menos XP (a arma começa fraca), e a curva de XP nunca desce
 	var ini: Dictionary = cfg.get("xp_inicial", {})
-	ok(int(ini.get("ate", 0)) >= 5 and float(ini.get("fator", 1.0)) < 1.0 and float(ini.get("fator", 1.0)) >= 0.3, "xp_inicial: até que nível e fator (%s)" % str(ini))
+	ok(
+		int(ini.get("ate", 0)) >= 5 and float(ini.get("fator", 1.0)) < 1.0 and float(ini.get("fator", 1.0)) >= 0.3,
+		"xp_inicial: até que nível e fator (%s)" % str(ini)
+	)
 	var ar_ := preload("res://scripts/hordas/arena.gd").new()
 	var ant_xp := 0.0
 	for n in range(1, 70):

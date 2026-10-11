@@ -7,13 +7,16 @@ const Arena := preload("res://scripts/hordas/arena.gd")
 const Armas := preload("res://scripts/hordas/armas.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 ## Tempo SIMULADO: passos fixos de 1/60 s com a arena em _process manual, cada passo com um quadro de verdade.
 ## Com o relógio de parede o projétil andava uma distância diferente por quadro (dt real), e o ricochete
@@ -26,8 +29,34 @@ func avancar(a: Node, s: float) -> void:
 		await get_tree().process_frame
 		t += d
 
+
 func _ready() -> void:
-	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar", "resortear", "pular", "banir", "status", "tela_cheia", "consumivel1", "consumivel2", "consumivel3", "consumivel_usar", "consumivel_trocar", "mira_esquerda", "mira_direita", "mira_cima", "mira_baixo"]:
+	for acao in [
+		"cima",
+		"baixo",
+		"esquerda",
+		"direita",
+		"dash",
+		"especial",
+		"transformar",
+		"voltar",
+		"confirmar",
+		"falar",
+		"resortear",
+		"pular",
+		"banir",
+		"status",
+		"tela_cheia",
+		"consumivel1",
+		"consumivel2",
+		"consumivel3",
+		"consumivel_usar",
+		"consumivel_trocar",
+		"mira_esquerda",
+		"mira_direita",
+		"mira_cima",
+		"mira_baixo"
+	]:
 		if not InputMap.has_action(acao):
 			InputMap.add_action(acao)
 	_dados()
@@ -89,7 +118,7 @@ func _na_arena() -> void:
 	var a := Arena.new()
 	a.heroi_id = "hazaki"
 	add_child(a)
-	a.set_process(false)   # tempo simulado: quem anda o jogo é avancar() (passos fixos de 1/60 s), não o relógio de parede
+	a.set_process(false)  # tempo simulado: quem anda o jogo é avancar() (passos fixos de 1/60 s), não o relógio de parede
 	await avancar(a, 1.6)
 	a.bot = false
 	var j = a.jogador
@@ -113,16 +142,16 @@ func _na_arena() -> void:
 	await avancar(a, 3 / 60.0)
 	ok(j.mira_dir == Vector2.ZERO, "soltou o analógico: volta a ZERO")
 	# ---- sem entrada de mira: projétil vai no mais perto ----
-	var perto = a.inimigos.criar("carnical", j.centro() + Vector2(0, 120), 1)   # embaixo
+	var perto = a.inimigos.criar("carnical", j.centro() + Vector2(0, 120), 1)  # embaixo
 	perto.atordoado = 20.0
-	var longe = a.inimigos.criar("carnical", j.centro() + Vector2(140, 0), 1)   # à direita (mais longe)
+	var longe = a.inimigos.criar("carnical", j.centro() + Vector2(140, 0), 1)  # à direita (mais longe)
 	longe.atordoado = 20.0
-	longe.pos = j.centro() + Vector2(140, 0)   # o tiro anterior pode ter empurrado o vírus: volta pro lugar
+	longe.pos = j.centro() + Vector2(140, 0)  # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
 	longe.kb = Vector2.ZERO
 	perto.kb = Vector2.ZERO
-	for v in a.inimigos.lista:   # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
+	for v in a.inimigos.lista:  # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
 		if v != longe and v != perto:
 			v.pos = j.centro() + Vector2(3000, 3000)
 	await avancar(a, 2 / 60.0)
@@ -133,12 +162,12 @@ func _na_arena() -> void:
 	ok(tiro != null and tiro.vel.normalized().dot(Vector2.DOWN) > 0.95, "sem mira: o projétil vai no mais perto (embaixo)")
 	# ---- com mira pra direita: vai pra direita, mesmo o mais perto estando embaixo ----
 	j.mira_forcada = Vector2.RIGHT
-	longe.pos = j.centro() + Vector2(140, 0)   # o tiro anterior pode ter empurrado o vírus: volta pro lugar
+	longe.pos = j.centro() + Vector2(140, 0)  # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
 	longe.kb = Vector2.ZERO
 	perto.kb = Vector2.ZERO
-	for v in a.inimigos.lista:   # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
+	for v in a.inimigos.lista:  # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
 		if v != longe and v != perto:
 			v.pos = j.centro() + Vector2(3000, 3000)
 	await avancar(a, 2 / 60.0)
@@ -146,15 +175,18 @@ func _na_arena() -> void:
 	p.t = 0.0
 	await avancar(a, 2 / 60.0)
 	tiro = _primeiro_tiro(a, "pendrive")
-	ok(tiro != null and tiro.vel.normalized().dot(Vector2.RIGHT) > 0.99, "com mira à direita o projétil vai à direita (%s)" % (str(tiro.vel.normalized()) if tiro else "nenhum"))
+	ok(
+		tiro != null and tiro.vel.normalized().dot(Vector2.RIGHT) > 0.99,
+		"com mira à direita o projétil vai à direita (%s)" % (str(tiro.vel.normalized()) if tiro else "nenhum")
+	)
 	# ---- com assistência: mira 12 graus acima do inimigo da direita -> gruda nele ----
 	j.mira_forcada = Vector2.RIGHT.rotated(deg_to_rad(-12.0))
-	longe.pos = j.centro() + Vector2(140, 0)   # o tiro anterior pode ter empurrado o vírus: volta pro lugar
+	longe.pos = j.centro() + Vector2(140, 0)  # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
 	longe.kb = Vector2.ZERO
 	perto.kb = Vector2.ZERO
-	for v in a.inimigos.lista:   # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
+	for v in a.inimigos.lista:  # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
 		if v != longe and v != perto:
 			v.pos = j.centro() + Vector2(3000, 3000)
 	await avancar(a, 2 / 60.0)
@@ -162,16 +194,19 @@ func _na_arena() -> void:
 	p.t = 0.0
 	await avancar(a, 2 / 60.0)
 	tiro = _primeiro_tiro(a, "pendrive")
-	ok(tiro != null and absf(tiro.vel.normalized().angle()) < deg_to_rad(2.0), "assistência: 12 graus fora, o tiro gruda no inimigo (%.1f graus)" % (rad_to_deg(tiro.vel.angle()) if tiro else 99.0))
+	ok(
+		tiro != null and absf(tiro.vel.normalized().angle()) < deg_to_rad(2.0),
+		"assistência: 12 graus fora, o tiro gruda no inimigo (%.1f graus)" % (rad_to_deg(tiro.vel.angle()) if tiro else 99.0)
+	)
 	# ---- assistência desligada na opção: vai exatamente onde aponta ----
 	var guardado = Config.v("mira_assistida")
 	Config.temporario("mira_assistida", false)
-	longe.pos = j.centro() + Vector2(140, 0)   # o tiro anterior pode ter empurrado o vírus: volta pro lugar
+	longe.pos = j.centro() + Vector2(140, 0)  # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
 	longe.kb = Vector2.ZERO
 	perto.kb = Vector2.ZERO
-	for v in a.inimigos.lista:   # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
+	for v in a.inimigos.lista:  # os que o diretor sortear não podem atrapalhar a conta: vão pra longe
 		if v != longe and v != perto:
 			v.pos = j.centro() + Vector2(3000, 3000)
 	await avancar(a, 2 / 60.0)
@@ -179,7 +214,10 @@ func _na_arena() -> void:
 	p.t = 0.0
 	await avancar(a, 2 / 60.0)
 	tiro = _primeiro_tiro(a, "pendrive")
-	ok(tiro != null and absf(rad_to_deg(tiro.vel.angle()) + 12.0) < 1.0, "sem assistência o tiro vai nos -12 graus (%.1f)" % (rad_to_deg(tiro.vel.angle()) if tiro else 99.0))
+	ok(
+		tiro != null and absf(rad_to_deg(tiro.vel.angle()) + 12.0) < 1.0,
+		"sem assistência o tiro vai nos -12 graus (%.1f)" % (rad_to_deg(tiro.vel.angle()) if tiro else 99.0)
+	)
 	Config.temporario("mira_assistida", guardado)
 	# ---- lança e katana: golpes direcionais ----
 	a.armas.lista.clear()
@@ -234,7 +272,10 @@ func _na_arena() -> void:
 	a.armas.adicionar("ventoinha")
 	j.mira_forcada = Vector2.UP
 	await avancar(a, 3 / 60.0)
-	ok(Armas.modo_mira(Dados.item("ventoinha")) == "auto" and a.armas.mirar(j.centro(), 1, 100.0, Dados.item("ventoinha")).is_empty(), "arma automática não usa a mira")
+	ok(
+		Armas.modo_mira(Dados.item("ventoinha")) == "auto" and a.armas.mirar(j.centro(), 1, 100.0, Dados.item("ventoinha")).is_empty(),
+		"arma automática não usa a mira"
+	)
 	# ---- rival do duelo (dono sem mira_dir): cai no mais perto ----
 	ok(a.armas.mirar(j.centro(), 1, 100.0, Dados.item("pendrive")).size() == 1, "jogador mirando: a arma direcional dá a direção")
 	j.mira_forcada = Vector2.ZERO

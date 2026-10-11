@@ -5,16 +5,21 @@ const Cenario := preload("res://scripts/hordas/cenario.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func _ready() -> void:
 	var lista: Array = Dados.json("cenarios").get("variantes", {}).get("floresta", [])
 	ok(lista.size() >= 5, "a floresta tem 5 variantes (%d)" % lista.size())
 	for v in lista:
-		ok(FileAccess.file_exists("res://assets/cenarios/%s/cenario.json" % v) and FileAccess.file_exists("res://assets/cenarios/%s/piso.png.import" % v), "a variante %s tem arte" % v)
+		ok(
+			FileAccess.file_exists("res://assets/cenarios/%s/cenario.json" % v) and FileAccess.file_exists("res://assets/cenarios/%s/piso.png.import" % v),
+			"a variante %s tem arte" % v
+		)
 	for s in [1, 7, 12345]:
 		Sorte.iniciar(s)
 		var vistos := {}
@@ -42,7 +47,10 @@ func _ready() -> void:
 		var lr: Array = Dados.json("cenarios").get("variantes", {}).get(base, [])
 		ok(lr.size() >= 3 and lr[0] == base, "%s tem variantes (%d)" % [base, lr.size()])
 		for v in lr:
-			ok(FileAccess.file_exists("res://assets/cenarios/%s/cenario.json" % v) and FileAccess.file_exists("res://assets/cenarios/%s/piso.png.import" % v), "a variante %s tem arte" % v)
+			ok(
+				FileAccess.file_exists("res://assets/cenarios/%s/cenario.json" % v) and FileAccess.file_exists("res://assets/cenarios/%s/piso.png.import" % v),
+				"a variante %s tem arte" % v
+			)
 		Sorte.iniciar(7)
 		var vistos_r := {}
 		for andar in lr.size():

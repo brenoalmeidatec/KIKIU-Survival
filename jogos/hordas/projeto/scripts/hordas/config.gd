@@ -13,11 +13,25 @@ const ITENS := [
 	{"chave": "tremor", "grupo": "Acessibilidade", "nome": "Tremer a tela", "valores": [0.0, 0.5, 1.0], "rotulos": ["Não", "Pouco", "Normal"], "padrao": 1.0},
 	{"chave": "camera_frente", "grupo": "Acessibilidade", "nome": "Câmera olha à frente", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "flash_dano", "grupo": "Acessibilidade", "nome": "Flash ao levar dano", "valores": [false, true], "formato": "sim_nao", "padrao": true},
-	{"chave": "mortes", "grupo": "Acessibilidade", "nome": "Mortes violentas", "valores": ["normal", "reduzida"], "rotulos": ["Normal", "Reduzida"], "padrao": "normal"},
+	{
+		"chave": "mortes",
+		"grupo": "Acessibilidade",
+		"nome": "Mortes violentas",
+		"valores": ["normal", "reduzida"],
+		"rotulos": ["Normal", "Reduzida"],
+		"padrao": "normal"
+	},
 	{"chave": "daltonico", "grupo": "Acessibilidade", "nome": "Modo daltônico", "valores": [false, true], "rotulos": ["Não", "Paleta segura"], "padrao": false},
 	# Leitura da tela (#125). Nome, grupo e rótulos são chaves de tradução (assets/traducao/textos.csv); o texto passa por tr() ao desenhar.
 	# "texto_hud" guarda "normal" (1x), "medio" (1,5x) ou "grande" (2x): "normal" e "grande" já existiam nos arquivos de opções salvos.
-	{"chave": "texto_hud", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_TEXTO_HUD", "valores": ["normal", "medio", "grande"], "rotulos": ["OPC_FONTE_1X", "OPC_FONTE_15X", "OPC_FONTE_2X"], "padrao": "normal"},
+	{
+		"chave": "texto_hud",
+		"grupo": "OPC_GRUPO_LEITURA",
+		"nome": "OPC_TEXTO_HUD",
+		"valores": ["normal", "medio", "grande"],
+		"rotulos": ["OPC_FONTE_1X", "OPC_FONTE_15X", "OPC_FONTE_2X"],
+		"padrao": "normal"
+	},
 	{"chave": "numeros_dano", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_NUMEROS_DANO", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "nomes_inimigo", "grupo": "OPC_GRUPO_LEITURA", "nome": "OPC_NOMES_INIMIGO", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	# Controles (#126). "acao" = linha de remapeamento: Enter/clique pede a nova tecla ou botão (Esc cancela); o valor guardado fica em [teclas].
@@ -34,12 +48,18 @@ const ITENS := [
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{"chave": "musica", "grupo": "Som", "nome": "Música", "valores": VOLUMES, "formato": "pct", "padrao": 0.6},
 	{"chave": "efeitos", "grupo": "Som", "nome": "Efeitos", "valores": VOLUMES, "formato": "pct", "padrao": 0.8},
-	{"chave": "voz", "grupo": "Som", "nome": "Voz no online", "valores": ["desligada", "apertar", "aberta"], "rotulos": ["Desligada", "Segurar V", "Sempre aberta"], "padrao": "apertar"},
+	{
+		"chave": "voz",
+		"grupo": "Som",
+		"nome": "Voz no online",
+		"valores": ["desligada", "apertar", "aberta"],
+		"rotulos": ["Desligada", "Segurar V", "Sempre aberta"],
+		"padrao": "apertar"
+	},
 	{"chave": "voz_volume", "grupo": "Som", "nome": "Volume das vozes", "valores": VOLUMES, "formato": "pct", "padrao": 1.0},
 ]
 
 var _cfg := ConfigFile.new()
-
 
 ## ---------- aba Gráficos (#150): perfis e opções de CPU e GPU ----------
 ## Valores e perfis: dados/graficos.json. Salvos na seção [graficos] de opcoes.cfg: "perfil" (baixo, medio, alto ou
@@ -47,7 +67,7 @@ var _cfg := ConfigFile.new()
 
 signal graficos_mudou
 
-var _perfil_padrao := "alto"   # sem nada salvo: o perfil pela máquina (jogo de verdade) ou alto (testes e headless)
+var _perfil_padrao := "alto"  # sem nada salvo: o perfil pela máquina (jogo de verdade) ou alto (testes e headless)
 
 
 func _ready() -> void:
@@ -59,7 +79,7 @@ func _ready() -> void:
 
 ## Lê user://opcoes.cfg de novo (ao abrir o jogo e nos testes de salvar e carregar). Faz a migração da qualidade antiga.
 func recarregar() -> void:
-	_cfg = ConfigFile.new()   # load() não limpa o que já estava na memória: começa de um ConfigFile vazio
+	_cfg = ConfigFile.new()  # load() não limpa o que já estava na memória: começa de um ConfigFile vazio
 	_cfg.load(arquivo)
 	# migração, uma vez: a "Qualidade gráfica" antiga (alta, media, baixa) vira o perfil novo
 	if not _cfg.has_section("graficos") and _cfg.has_section_key("opcoes", "qualidade"):
@@ -153,9 +173,39 @@ func g_opcao(chave: String) -> Dictionary:
 ## Partículas por efeito e nível da opção "particulas_sim" (a ÚNICA opção de partículas): os valores antigos de
 ## dados/qualidade.json (muitas = 1). Nenhuma = tudo zero (inclusive o ambiente e os elementos).
 const PART_NIVEL := {
-	"nenhuma": {"amb_particulas": 0.0, "efe_faiscas": 0.0, "efe_impactos": 0.0, "efe_particulas": 0.0, "mortes_part": 0.0, "mortes_grandes": 0.0, "mortes_simples": 0.0, "elem_part": 0.0},
-	"poucas": {"amb_particulas": 0.25, "efe_faiscas": 0.3, "efe_impactos": 0.34, "efe_particulas": 0.3, "mortes_part": 0.25, "mortes_grandes": 0.25, "mortes_simples": 0.4, "elem_part": 0.25},
-	"medias": {"amb_particulas": 0.5, "efe_faiscas": 0.6, "efe_impactos": 0.67, "efe_particulas": 0.6, "mortes_part": 0.5, "mortes_grandes": 0.5, "mortes_simples": 0.6, "elem_part": 0.5},
+	"nenhuma":
+	{
+		"amb_particulas": 0.0,
+		"efe_faiscas": 0.0,
+		"efe_impactos": 0.0,
+		"efe_particulas": 0.0,
+		"mortes_part": 0.0,
+		"mortes_grandes": 0.0,
+		"mortes_simples": 0.0,
+		"elem_part": 0.0
+	},
+	"poucas":
+	{
+		"amb_particulas": 0.25,
+		"efe_faiscas": 0.3,
+		"efe_impactos": 0.34,
+		"efe_particulas": 0.3,
+		"mortes_part": 0.25,
+		"mortes_grandes": 0.25,
+		"mortes_simples": 0.4,
+		"elem_part": 0.25
+	},
+	"medias":
+	{
+		"amb_particulas": 0.5,
+		"efe_faiscas": 0.6,
+		"efe_impactos": 0.67,
+		"efe_particulas": 0.6,
+		"mortes_part": 0.5,
+		"mortes_grandes": 0.5,
+		"mortes_simples": 0.6,
+		"elem_part": 0.5
+	},
 }
 
 
@@ -233,6 +283,7 @@ func rotulo(chave: String) -> String:
 
 ## ---------- remapeamento de teclas e botões (#126) ----------
 
+
 ## Nome curto da tecla/botão que a ação usa agora: "Espaço / Botão 1". Só conta a 1ª tecla e o 1º botão do controle.
 func texto_acao(acao: String) -> String:
 	if not InputMap.has_action(acao):
@@ -300,7 +351,7 @@ func aplicar(janela := true) -> void:
 	Som.atualizar_volume()
 	if DisplayServer.get_name() == "headless":
 		return
-	if "--sem_limite" in OS.get_cmdline_user_args():   # medição de desempenho: sem V-Sync e sem teto de fps (não grava na opção)
+	if "--sem_limite" in OS.get_cmdline_user_args():  # medição de desempenho: sem V-Sync e sem teto de fps (não grava na opção)
 		# antes ficava no fim, DEPOIS do "return" dos testes: como a medição sempre roda com argumentos, nunca valia
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0

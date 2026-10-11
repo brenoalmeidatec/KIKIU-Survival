@@ -26,7 +26,7 @@ static func injetar(armas: Dictionary) -> void:
 			continue
 		for v in vars:
 			armas[id_de(b, v)] = _montar(b, d, str(v), vars[v])
-	for f in c.get("fusoes", []):   # a receita dá à fusão a mecânica própria e a descrição (ids de comportamentos.json + ajustes)
+	for f in c.get("fusoes", []):  # a receita dá à fusão a mecânica própria e a descrição (ids de comportamentos.json + ajustes)
 		var id := id_de(str(f.vira), "puro")
 		if armas.has(id):
 			armas[id]["mecanica"] = f.get("mecanica", {}).duplicate(true)
@@ -121,6 +121,7 @@ static func outra_variacao(base: String, atual: String, semente: int, rodada: in
 
 # ---------- limite de slots ----------
 
+
 static func max_total() -> int:
 	return int(cfg().get("limites", {}).get("total", 5))
 
@@ -141,6 +142,7 @@ static func cabe(ids: Array, nova_unica: bool) -> bool:
 
 # ---------- ascensão (depois do nível máximo) ----------
 
+
 static func asc_max() -> int:
 	return int(cfg().get("ascensao", {}).get("max", 5))
 
@@ -154,6 +156,7 @@ static func fator_area(asc: int) -> float:
 
 
 # ---------- fusões ----------
+
 
 ## Receitas que dá pra fazer agora: todas as armas base presentes no nível máximo (qualquer variação).
 ## lista = armas.lista; nivel_max = Callable(id) -> int. Retorna [{vira, ids (as armas que serão consumidas)}].

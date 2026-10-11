@@ -4,10 +4,12 @@ extends Node
 const E := preload("res://scripts/hordas/equipamento.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 func _ready() -> void:
 	# montador de camadas
@@ -21,8 +23,14 @@ func _ready() -> void:
 	var c4 := E.camadas(["arte_marcial"], {})
 	ok(c4 == ["cabelo"], "arte marcial: nada nas mãos (%s)" % [c4])
 	var tudo := E.camadas(["katana"], {"pes": "botas_guerra", "peitoral": "armadura_samurai", "cabeca": "cabeca_guerreiro"})
-	ok(tudo.find("botas") < tudo.find("armadura_samurai") and tudo.find("armadura_samurai") < tudo.find("cabeca_guerreiro")
-		and tudo.find("cabeca_guerreiro") < tudo.find("katana_mao"), "ordem de desenho (%s)" % [tudo])
+	ok(
+		(
+			tudo.find("botas") < tudo.find("armadura_samurai")
+			and tudo.find("armadura_samurai") < tudo.find("cabeca_guerreiro")
+			and tudo.find("cabeca_guerreiro") < tudo.find("katana_mao")
+		),
+		"ordem de desenho (%s)" % [tudo]
+	)
 	ok(E.bonus({"cabeca": "cabeca_guerreiro", "peitoral": "armadura_samurai"}).get("vida_max", 0.0) == 65.0, "bônus somam")
 	# todo equipamento tem a camada desenhada
 	for id in Dados.json("equipamentos"):
@@ -60,7 +68,10 @@ func _ready() -> void:
 				cabeca += 1
 	ok(cabeca == 0, "slot da cabeça ocupado: não oferece de novo (%d)" % cabeca)
 	await get_tree().process_frame
-	ok(a.jogador.camadas.has("cabeca_guerreiro") and not a.jogador.camadas.has("cabelo"), "jogador desenha o elmo e esconde o cabelo (%s)" % [a.jogador.camadas.keys()])
+	ok(
+		a.jogador.camadas.has("cabeca_guerreiro") and not a.jogador.camadas.has("cabelo"),
+		"jogador desenha o elmo e esconde o cabelo (%s)" % [a.jogador.camadas.keys()]
+	)
 	ok(a.stat("vida_max") >= 125.0, "elmo deu vida (%s)" % a.stat("vida_max"))
 	print("EQUIP falhas=%d  (Hazaki viu equipamentos %d vezes)" % [falhas, hz])
 	get_tree().quit(1 if falhas > 0 else 0)

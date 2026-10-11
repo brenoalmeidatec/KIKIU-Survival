@@ -12,8 +12,17 @@ const PREFIXO := "c:"
 const ARQUIVO := "user://heroi_criado.json"
 const MAX_HEROIS := 6
 const Paleta := preload("res://scripts/hordas/paleta.gd")
-const ROTULO := {"dano": "dano", "area": "área", "duracao": "duração", "velocidade_proj": "velocidade dos tiros",
-	"velocidade": "velocidade", "ima": "alcance do ímã", "xp": "XP", "critico": "chance de crítico", "critico_mult": "dano crítico"}
+const ROTULO := {
+	"dano": "dano",
+	"area": "área",
+	"duracao": "duração",
+	"velocidade_proj": "velocidade dos tiros",
+	"velocidade": "velocidade",
+	"ima": "alcance do ímã",
+	"xp": "XP",
+	"critico": "chance de crítico",
+	"critico_mult": "dano crítico"
+}
 const VERBO_EL := {"fogo": "queimar", "gelo": "congelar", "raio": "eletrocutar", "veneno": "envenenar"}
 
 
@@ -61,6 +70,7 @@ static func valido(id: String) -> bool:
 # --- ficha (marco 2): {"nome": "Brutus", "raca": "orc", "classe": "guerreiro", "pontos": {"forca": 3, ...},
 #     "defeito": "manco" | "", "paleta": {"pele": 4, "cabelo": 0, "roupa": 2}}
 # Tudo em índices e ids que existem nos JSON, então quem recebe a ficha (o anfitrião) valida pelos mesmos números.
+
 
 static func atributos() -> Dictionary:
 	return Dados.json("atributos")
@@ -154,8 +164,9 @@ static func validar_ficha(f) -> Dictionary:
 	var p := {}
 	for k in lista_atributos():
 		p[k] = int(f.pontos.get(k, 0))
-	return {"nome": str(f.nome), "raca": str(f.raca), "classe": str(f.classe), "pontos": p, "defeito": str(f.get("defeito", "")),
-		"paleta": Paleta.limpar(f.paleta)}
+	return {
+		"nome": str(f.nome), "raca": str(f.raca), "classe": str(f.classe), "pontos": p, "defeito": str(f.get("defeito", "")), "paleta": Paleta.limpar(f.paleta)
+	}
 
 
 ## O herói no formato de herois.json: bônus da raça, fraquezas da raça e bônus da classe somados.
@@ -191,7 +202,7 @@ static func montar(raca: String, classe: String, ficha := {}) -> Dictionary:
 		"tom": r.get("tom", [1.0, 1.0, 1.0]),
 		"raca": raca,
 		"classe": classe,
-		"ganchos": r.get("ganchos", []) + c.get("ganchos", []),   # marco 6: regras próprias (ganchos.gd); raça antiga sem o campo = nenhum
+		"ganchos": r.get("ganchos", []) + c.get("ganchos", []),  # marco 6: regras próprias (ganchos.gd); raça antiga sem o campo = nenhum
 	}
 	if not ficha.is_empty():
 		h["nome"] = str(ficha.get("nome", titulo))
@@ -229,7 +240,7 @@ static func registrar_ficha(id: String, ficha) -> bool:
 # Perder o duelo final não mata (ele já venceu a corrida), e cair a conexão no online também não.
 # Arquivo: {"herois": [{"id": "c:h1a2b", "ficha": {...}, "em_corrida": false}]}. O formato antigo ({"id": ...}, um herói) é lido.
 
-static var arquivo := ARQUIVO   # os testes trocam, pra não mexer nos heróis salvos de verdade
+static var arquivo := ARQUIVO  # os testes trocam, pra não mexer nos heróis salvos de verdade
 
 
 static func _ler() -> Array:
@@ -240,7 +251,7 @@ static func _ler() -> Array:
 		return []
 	if d.has("herois") and d.herois is Array:
 		return d.herois
-	if d.has("id"):   # formato do marco 1: um herói só, só raça e classe
+	if d.has("id"):  # formato do marco 1: um herói só, só raça e classe
 		return [{"id": str(d.id), "em_corrida": bool(d.get("em_corrida", false))}]
 	return []
 
@@ -329,6 +340,7 @@ static func salvar(id: String) -> bool:
 # Entrada: {"id", "ficha", "em_corrida", "bau": {id: n}, "mochila": {"itens": {...}, "amuleto": ""}}. A mochila guardada é a última
 # que ele montou (vem pré-escolhida no Preparo). Herói salvo antes do marco 3 não tem "bau": ganha o kit inicial na primeira leitura.
 # As regras (capacidade, validação, contas) ficam no mochila.gd; aqui só se guarda.
+
 
 static func _kit() -> Dictionary:
 	var k = Dados.json("mochila").get("kit_inicial", {})
@@ -443,7 +455,7 @@ static func descrever(bonus: Dictionary) -> Array:
 				bom = v < 0.0
 				txt = "ataques %d%% mais %s" % [roundi(absf(v) * 100.0), "rápidos" if v < 0.0 else "lentos"]
 			_:
-				if str(k).begins_with("el_"):   # afinidade elemental (marco 5/6): chance por golpe de pôr o elemento
+				if str(k).begins_with("el_"):  # afinidade elemental (marco 5/6): chance por golpe de pôr o elemento
 					txt = "%+d%% de chance de %s" % [roundi(v * 100.0), VERBO_EL.get(str(k).substr(3), "marcar")]
 				else:
 					txt = "%+d%% de %s" % [roundi(v * 100.0), ROTULO.get(k, k)]

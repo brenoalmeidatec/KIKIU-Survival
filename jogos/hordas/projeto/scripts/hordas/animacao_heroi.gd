@@ -9,11 +9,11 @@ extends RefCounted
 
 const PADRAO := {
 	"respiracao": {"hz": 0.65, "altura": 0.03, "largura": 0.35, "pixel": true, "altura_px": 56.0, "folha_animada": 0.5},
-	"andar": {"px_por_ciclo": 66.7, "ciclos_max": 2.6, "balanco_px": 1.5, "fase": 0.0, "inclina": 0.045, "vel_ref": 100.0,
-		"suavidade": 14.0, "suavidade_inclina": 11.0},
+	"andar":
+	{"px_por_ciclo": 66.7, "ciclos_max": 2.6, "balanco_px": 1.5, "fase": 0.0, "inclina": 0.045, "vel_ref": 100.0, "suavidade": 14.0, "suavidade_inclina": 11.0},
 	"squash": {"entrada": 40.0},
-	"golpe": {"tempo": 0.26, "antecipa": 0.24, "bate": 0.36, "avanco": 8.0, "recuo": 3.0, "passa": 0.3, "inclina": 0.2,
-		"estica": 0.16, "agacha": 0.1, "assenta": 0.07},
+	"golpe":
+	{"tempo": 0.26, "antecipa": 0.24, "bate": 0.36, "avanco": 8.0, "recuo": 3.0, "passa": 0.3, "inclina": 0.2, "estica": 0.16, "agacha": 0.1, "assenta": 0.07},
 	"dano": {"tempo": 0.26, "recuo_px": 3.0, "achata": 0.14, "inclina": 0.1},
 	"morte": {"tempo": 0.8, "tropeco": 0.12, "queda": 0.38, "quica": 0.16, "x": -30.0, "y": -10.0, "alpha": 0.8},
 }
@@ -22,12 +22,12 @@ static var _fonte = null
 
 # ---- estado de um boneco ----
 var t := 0.0
-var fase := 0.0            # 0..1: defasagem da respiração (cada boneco respira num ritmo próprio)
-var ciclo := 0.0           # 0..1: ponto do ciclo de andar (8 quadros); avança com a distância andada, não com o relógio
-var mix := 0.0             # 0 parado .. 1 andando (suavizado)
-var incl := 0.0            # inclinação atual (cisalhamento em rad)
-var resp := Vector2.ZERO   # variação de escala da respiração
-var bob := 0.0             # px que o corpo sobe no balanço do passo
+var fase := 0.0  # 0..1: defasagem da respiração (cada boneco respira num ritmo próprio)
+var ciclo := 0.0  # 0..1: ponto do ciclo de andar (8 quadros); avança com a distância andada, não com o relógio
+var mix := 0.0  # 0 parado .. 1 andando (suavizado)
+var incl := 0.0  # inclinação atual (cisalhamento em rad)
+var resp := Vector2.ZERO  # variação de escala da respiração
+var bob := 0.0  # px que o corpo sobe no balanço do passo
 var _andava := false
 
 
@@ -85,7 +85,7 @@ func atualizar(dt: float, vel: Vector2, anda: bool, ativo := true, folha_animada
 	var a := sec("andar")
 	var anda_ef := anda and ativo
 	if anda_ef and not _andava and mix < 0.3:
-		ciclo = 0.0   # saiu do parado: começa o passo no primeiro quadro (apoio), sem pular pra um ponto qualquer
+		ciclo = 0.0  # saiu do parado: começa o passo no primeiro quadro (apoio), sem pular pra um ponto qualquer
 	_andava = anda_ef
 	mix = suave(mix, 1.0 if anda_ef else 0.0, float(a.suavidade), dt)
 	var v := vel.length()
@@ -132,7 +132,7 @@ static func pose_golpe(u: float, c: Dictionary = {}) -> Vector3:
 		return Vector3(-float(c.recuo) * k, -float(c.agacha) * k, -0.35 * k)
 	if u < b:
 		var k := (u - a) / (b - a)
-		k *= k   # acelera: o golpe é rápido
+		k *= k  # acelera: o golpe é rápido
 		return Vector3(lerpf(-float(c.recuo), pico, k), lerpf(-float(c.agacha), float(c.estica), k), lerpf(-0.35, 1.0, k))
 	var k := minf((u - b) / (1.0 - b), 1.0)
 	var f := (1.0 + 6.0 * k) * exp(-6.0 * k) * (1.0 - k * k * k)
@@ -161,16 +161,16 @@ static func pose_morte(u: float, sinal: float, c: Dictionary = {}) -> Dictionary
 	u = clampf(u, 0.0, 1.0)
 	var trop := float(c.tropeco)
 	var queda := float(c.queda)
-	var r := 0.0      # 0 em pé .. 1 deitado
+	var r := 0.0  # 0 em pé .. 1 deitado
 	var rot_extra := 0.0
 	var sobe := 0.0
 	if u < trop:
 		var s := sin(PI * u / maxf(trop, 0.001))
-		rot_extra = -sinal * 0.12 * s   # pra trás
+		rot_extra = -sinal * 0.12 * s  # pra trás
 		sobe = 2.0 * s
 	elif u < trop + queda:
 		var k := (u - trop) / queda
-		r = k * k   # gravidade: acelera
+		r = k * k  # gravidade: acelera
 	else:
 		var b := clampf((u - trop - queda) / maxf(1.0 - trop - queda, 0.001), 0.0, 1.0)
 		r = 1.0 - float(c.quica) * sin(PI * b) * (1.0 - b)

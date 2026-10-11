@@ -7,7 +7,7 @@ extends RefCounted
 ##   (ex.: katana vai pra bainha quando as pistolas estão nas mãos).
 ## Só o personagem com "camadas": true no herois.json tem modelo em camadas (por enquanto, o Hazaki).
 
-const CAMADAS_BASE := ["cabelo"]   # camadas que o personagem sempre tem (podem ser escondidas)
+const CAMADAS_BASE := ["cabelo"]  # camadas que o personagem sempre tem (podem ser escondidas)
 
 
 static func dados(id: String) -> Dictionary:

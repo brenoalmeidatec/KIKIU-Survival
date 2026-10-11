@@ -5,7 +5,7 @@ extends RefCounted
 ## próximo inimigo), explosivo (>0: a bala explode no último acerto).
 ## Módulo de comportamento de arma (veja armas.gd e katana.gd).
 
-const MAO := Vector2(9, 3)       # onde fica cada mão em relação ao centro do corpo
+const MAO := Vector2(9, 3)  # onde fica cada mão em relação ao centro do corpo
 const OURO := Color(1.0, 0.85, 0.4)
 const Cresc := preload("res://scripts/hordas/crescimento.gd")
 
@@ -17,7 +17,7 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 	a.t = maxf(0.12, float(s.recarga))
 	var c: Vector2 = w.dono.centro()
 	var q := int(s.quantidade)
-	var mira: Array = w.mirar(c, q, 420.0, d)   # direcional (#126): vazio = sem entrada de mira, vale o mais perto
+	var mira: Array = w.mirar(c, q, 420.0, d)  # direcional (#126): vazio = sem entrada de mira, vale o mais perto
 	var alvos: Array = [] if not mira.is_empty() else w.campo.n_mais_perto(c, q, 420)
 	for i in q:
 		var mao := Vector2(MAO.x * (-1 if i % 2 == 0 else 1), MAO.y)
@@ -27,10 +27,24 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 			dir = mira[i]
 		elif not alvos.is_empty():
 			dir = (alvos[i % alvos.size()].pos - origem).normalized()
-		w.especiais.append({"tipo": "pistolas", "bala": true, "espera": i * 0.05, "pos": origem, "dir": dir,
-			"vel": float(s.velocidade), "vida": float(s.duracao), "dano": float(s.dano),
-			"perfura": int(s.get("perfura", 1)), "ricochete": int(s.get("ricochete", 0)),
-			"explosivo": float(s.get("explosivo", 0)) > 0, "acertou": [], "arma": a.id, "saiu": false})
+		w.especiais.append(
+			{
+				"tipo": "pistolas",
+				"bala": true,
+				"espera": i * 0.05,
+				"pos": origem,
+				"dir": dir,
+				"vel": float(s.velocidade),
+				"vida": float(s.duracao),
+				"dano": float(s.dano),
+				"perfura": int(s.get("perfura", 1)),
+				"ricochete": int(s.get("ricochete", 0)),
+				"explosivo": float(s.get("explosivo", 0)) > 0,
+				"acertou": [],
+				"arma": a.id,
+				"saiu": false
+			}
+		)
 
 
 static func passo(w, e: Dictionary, dt: float) -> bool:
@@ -78,8 +92,18 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		e.perfura -= 1
 		if e.perfura <= 0:
 			if e.explosivo:
-				w.especiais.append({"tipo": "pistolas", "boom": true, "pos": e.pos, "r": 30.0 * e.get("area", 1.0), "t": 0.22,
-					"dano": e.dano * 0.6, "arma": e.arma, "feito": false})
+				w.especiais.append(
+					{
+						"tipo": "pistolas",
+						"boom": true,
+						"pos": e.pos,
+						"r": 30.0 * e.get("area", 1.0),
+						"t": 0.22,
+						"dano": e.dano * 0.6,
+						"arma": e.arma,
+						"feito": false
+					}
+				)
 			return false
 	return true
 
@@ -102,7 +126,7 @@ static func pintar(w, e: Dictionary) -> void:
 	# bala: risco curto dourado com miolo branco (rastro de 6 px)
 	var t: int = e.get("tier", 0)
 	var ar: float = e.get("area", 1.0)
-	var cauda: Vector2 = e.pos - e.dir * 6.0 * ar * (1.0 + 0.6 * t)   # bala maior = rastro mais comprido e grosso
+	var cauda: Vector2 = e.pos - e.dir * 6.0 * ar * (1.0 + 0.6 * t)  # bala maior = rastro mais comprido e grosso
 	w.draw_line(cauda.floor(), e.pos.floor(), Color(Cresc.cor(OURO, t), 0.9), 2.0 * Cresc.grossura(t) * minf(1.0, 0.5 + ar * 0.5))
 	w.draw_line((e.pos - e.dir * 2.0).floor(), e.pos.floor(), Color.WHITE, 1.0)
 	if t >= 2:

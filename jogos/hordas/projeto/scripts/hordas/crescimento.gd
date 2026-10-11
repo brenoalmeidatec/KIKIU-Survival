@@ -107,6 +107,7 @@ static func cor_arma(d: Dictionary) -> Color:
 		return Color(float(c[0]), float(c[1]), float(c[2]))
 	return COR_ELEMENTO.get(str(d.get("elemento", "")), Color(1.0, 0.9, 0.6))
 
+
 ## Cor mais viva a cada tier (mistura com branco).
 static func cor(c: Color, t: int) -> Color:
 	return c.lerp(Color(1, 1, 1, c.a), float(fx(t).get("brilho", 0.0)))
@@ -132,7 +133,7 @@ static func fagulhas(w, pos: Vector2, dir: Vector2, c: Color, t: int, forca := 1
 static func raio_efeito(e: Dictionary) -> float:
 	if float(e.get("espera", 0.0)) > 0.0:
 		return 0.0
-	if e.has("gatilho"):   # runa: a luz fica em volta do círculo dela, não do tamanho do estouro
+	if e.has("gatilho"):  # runa: a luz fica em volta do círculo dela, não do tamanho do estouro
 		return float(e.gatilho) * 2.0
 	for k in ["r", "raio", "explosao"]:
 		if e.has(k):

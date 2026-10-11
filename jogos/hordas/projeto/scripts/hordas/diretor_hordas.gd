@@ -8,17 +8,17 @@ extends RefCounted
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 
 var arena: Node
-var tempo := 0.0              # tempo total da corrida
-var t_fase := 0.0             # tempo desta fase
+var tempo := 0.0  # tempo total da corrida
+var t_fase := 0.0  # tempo desta fase
 var fase_idx := 0
-var chefe_fase := ""          # tipo do chefe que fecha esta fase (depois que ele nasce)
+var chefe_fase := ""  # tipo do chefe que fecha esta fase (depois que ele nasce)
 var creditos := 0.0
 var final_chamado := false
-var bonus_minutos := 0.0      # fase elite do mapa: dificuldade a mais (ir_para)
-var mult_elite := 1.0         # fase elite do mapa: multiplica a chance de vírus elite
-var xp_mult := 1.0            # fase elite do mapa: multiplica o XP das gemas
+var bonus_minutos := 0.0  # fase elite do mapa: dificuldade a mais (ir_para)
+var mult_elite := 1.0  # fase elite do mapa: multiplica a chance de vírus elite
+var xp_mult := 1.0  # fase elite do mapa: multiplica o XP das gemas
 var enxame_final := false
-var saida_leve := false       # chefe da fase morto, saída aberta: a horda continua mais leve (prorrogacao.json)
+var saida_leve := false  # chefe da fase morto, saída aberta: a horda continua mais leve (prorrogacao.json)
 var _feitos := {}
 var _fase: Dictionary
 var _dif: Dictionary
@@ -33,12 +33,19 @@ func iniciar(a: Node) -> void:
 ## Lista de fases da corrida (dados/corrida.json). Sem esse arquivo, vale a fase única do fase.json.
 func fases() -> Array:
 	if arena and "fases_corrida" in arena and not arena.fases_corrida.is_empty():
-		return arena.fases_corrida   # regiões (#64): a corrida sorteada no começo (regioes.gd)
+		return arena.fases_corrida  # regiões (#64): a corrida sorteada no começo (regioes.gd)
 	var lista: Array = Dados.json("corrida").get("fases", [])
 	if lista.is_empty():
 		var f: Dictionary = Dados.json("fase")
-		lista = [{"nome": f.get("nome", "Fase"), "duracao": f.get("duracao", 600), "chefe": f.get("chefe_final", "tela_azul"),
-			"eventos": f.get("eventos", []), "santuarios": f.get("santuarios", 6)}]
+		lista = [
+			{
+				"nome": f.get("nome", "Fase"),
+				"duracao": f.get("duracao", 600),
+				"chefe": f.get("chefe_final", "tela_azul"),
+				"eventos": f.get("eventos", []),
+				"santuarios": f.get("santuarios", 6)
+			}
+		]
 	return lista
 
 
@@ -82,6 +89,7 @@ func minutos() -> float:
 
 
 # ---------- prorrogação (#112, dados/prorrogacao.json) ----------
+
 
 static func pror_cfg() -> Dictionary:
 	return Dados.json("prorrogacao")
@@ -146,7 +154,7 @@ func atualizar(dt: float) -> void:
 	mult *= 1.0 + pror_degrau() * float(pror_cfg().get("creditos_por_degrau", 0.12))
 	if saida_leve:
 		mult *= float(pror_cfg().get("saida", {}).get("horda_leve", 0.35))
-	creditos += float(_dif.get("creditos_base", 1.5)) * pow(coeficiente(), float(_dif.get("expoente", 1.3))) * mult * dt * (1.0 + arena.ef("horda"))   # calor: "Horda sem Fim"
+	creditos += float(_dif.get("creditos_base", 1.5)) * pow(coeficiente(), float(_dif.get("expoente", 1.3))) * mult * dt * (1.0 + arena.ef("horda"))  # calor: "Horda sem Fim"
 	_eventos()
 	_gastar()
 
@@ -177,7 +185,7 @@ func _eventos() -> void:
 					arena.inimigos.criar(tipo, base + lado.orthogonal() * randf_range(-180, 180) + lado * randf_range(0, 80), nivel())
 				arena.anunciar_todos("Enxame!", Color(1, 0.8, 0.4))
 	var dur := float(_fase.get("duracao", 600))
-	if t_fase >= dur and not final_chamado and not arena.missao.segura_chefe():   # missão do chefe (#112) ainda segura o chefe: ele vem quando ela fecha
+	if t_fase >= dur and not final_chamado and not arena.missao.segura_chefe():  # missão do chefe (#112) ainda segura o chefe: ele vem quando ela fecha
 		chamar_chefe()
 
 
@@ -262,7 +270,7 @@ func _disponiveis() -> Array:
 			continue
 		var d: Dictionary = inim[k]
 		if str(d.get("conjunto", "virus")) != conjunto():
-			continue   # fase de horror só sorteia os tenebrosos; as outras só os vírus
+			continue  # fase de horror só sorteia os tenebrosos; as outras só os vírus
 		if float(d.get("peso", 0)) > 0 and minutos() >= float(d.get("desde", 0)):
 			res.append(k)
 	return res
@@ -283,7 +291,7 @@ func _sortear(tabela: Array) -> String:
 
 func _criar_grupo(tipo: String, n: int) -> void:
 	var p := _ponto_fora()
-	var chance_elite: float = minutos() * float(_dif.get("chance_elite_por_minuto", 0.004)) * mult_elite * (1.0 + arena.ef("elites"))   # calor: "Sangue Nobre"
+	var chance_elite: float = minutos() * float(_dif.get("chance_elite_por_minuto", 0.004)) * mult_elite * (1.0 + arena.ef("elites"))  # calor: "Sangue Nobre"
 	for i in n:
 		arena.inimigos.criar(tipo, p + Vector2(randf_range(-20, 20), randf_range(-20, 20)), nivel(), randf() < chance_elite)
 

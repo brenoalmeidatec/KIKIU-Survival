@@ -54,7 +54,7 @@ static func gerar_fases(rng: RandomNumberGenerator) -> Array:
 		var escolhidas := []
 		for _i in k - 1:
 			if pool.is_empty():
-				pool = (reg.get("fases", []) as Array).duplicate()   # repertório pequeno: pode repetir, mas não seguido
+				pool = (reg.get("fases", []) as Array).duplicate()  # repertório pequeno: pode repetir, mas não seguido
 				if not escolhidas.is_empty():
 					pool.erase(escolhidas[-1])
 			if pool.is_empty():

@@ -18,18 +18,18 @@ const AURAS := ["aura_lento", "aura_veneno"]
 
 var arena: Node
 var lista: Array = []
-var vidas_gastas := 0           # quantas vezes já levantou (vidas)
-var pilhas := 0                 # fúria: golpes recentes que o herói levou
-var escuro := false             # a luz de agora é de "escuro" (luz)
-var claro := false              # luz forte
-var _parado := 0.0              # há quanto tempo o herói não anda
+var vidas_gastas := 0  # quantas vezes já levantou (vidas)
+var pilhas := 0  # fúria: golpes recentes que o herói levou
+var escuro := false  # a luz de agora é de "escuro" (luz)
+var claro := false  # luz forte
+var _parado := 0.0  # há quanto tempo o herói não anda
 var _pilha_t := 0.0
-var _soma := {}                 # bônus dinâmicos já somados (recalculados todo quadro; bonus() só lê)
-var _orc := 0.0                 # roubo de vida: o que ainda pode curar neste segundo (teto_s)
-var _acc := 0.0                 # roubo de vida: fração de vida ainda não curada
-var _aura_t := {}               # relógio de cada aura: "dono:tipo" -> segundos pro próximo tique
+var _soma := {}  # bônus dinâmicos já somados (recalculados todo quadro; bonus() só lê)
+var _orc := 0.0  # roubo de vida: o que ainda pode curar neste segundo (teto_s)
+var _acc := 0.0  # roubo de vida: fração de vida ainda não curada
+var _aura_t := {}  # relógio de cada aura: "dono:tipo" -> segundos pro próximo tique
 
-var aura_tocados := {}           # tipo -> quantos inimigos as auras tocaram até agora (teste e depuração)
+var aura_tocados := {}  # tipo -> quantos inimigos as auras tocaram até agora (teste e depuração)
 
 
 ## Ganchos de um herói da tabela de heróis (herois.json + criados): [] se ele não tem (heróis fixos, saves antigos).
@@ -58,8 +58,18 @@ static func erro(g) -> String:
 		return "tipo de gancho desconhecido: " + t
 	if str(g.get("texto", "")) == "" or str(g.get("nome", "")) == "":
 		return "gancho %s sem nome ou texto" % t
-	var precisa := {"aura_lento": ["raio", "lento"], "aura_veneno": ["raio", "tique"], "fragil": ["mult"], "pedra": ["parado_s", "reducao"],
-		"roubo_vida": ["pct"], "luz": ["limite"], "vidas": ["n", "frac"], "rolamento": ["dist"], "furia": ["bonus", "max", "dura"], "etereo": ["contato", "tiro"]}
+	var precisa := {
+		"aura_lento": ["raio", "lento"],
+		"aura_veneno": ["raio", "tique"],
+		"fragil": ["mult"],
+		"pedra": ["parado_s", "reducao"],
+		"roubo_vida": ["pct"],
+		"luz": ["limite"],
+		"vidas": ["n", "frac"],
+		"rolamento": ["dist"],
+		"furia": ["bonus", "max", "dura"],
+		"etereo": ["contato", "tiro"]
+	}
 	for k in precisa.get(t, []):
 		if not g.has(k):
 			return "gancho %s sem '%s'" % [t, k]
@@ -90,6 +100,7 @@ func _no_duelo() -> bool:
 
 
 # ---------- eventos que o resto do jogo chama ----------
+
 
 ## Atributos a mais agora (a arena.stat soma). Só lê o que atualizar() calculou.
 func bonus(k: String) -> float:
@@ -180,6 +191,7 @@ func rolamento_cargas() -> float:
 
 # ---------- o relógio ----------
 
+
 func atualizar(dt: float) -> void:
 	var _pp := Perf.ini()
 	_atualizar_i(dt)
@@ -211,13 +223,13 @@ func _atualizar_i(dt: float) -> void:
 				if escuro:
 					for k in g.get("escuro", {}):
 						_soma[k] = float(_soma.get(k, 0.0)) + float(g.escuro[k])
-				elif claro and not arena.caido and jog.hp > 1.0:   # a luz queima, mas nunca mata
+				elif claro and not arena.caido and jog.hp > 1.0:  # a luz queima, mas nunca mata
 					jog.hp = maxf(1.0, jog.hp - float(g.get("claro", {}).get("dano_s", 0.0)) * dt)
 			"roubo_vida":
 				var teto: float = vmax * float(g.get("teto_s", 0.1))
 				_orc = minf(teto, _orc + teto * dt)
 				if jog.hp >= vmax:
-					_acc = 0.0   # vida cheia: nada a roubar
+					_acc = 0.0  # vida cheia: nada a roubar
 				elif _acc >= 1.0 and not arena.caido:
 					var c := minf(floorf(_acc), floorf(_orc))
 					if c >= 1.0:
@@ -239,6 +251,7 @@ func _luz_agora() -> float:
 
 # ---------- auras (mundo: só o anfitrião ou o solo) ----------
 
+
 ## Chamada todo quadro; cada aura de cada herói em pé tem o próprio relógio (o 'tique' do JSON), então o custo real
 ## é um no_circulo por aura por tique, nunca uma varredura dos 500 inimigos por quadro.
 func _auras(dt: float) -> void:
@@ -248,7 +261,7 @@ func _auras(dt: float) -> void:
 	if not arena.caido:
 		_aplicar_auras(lista, arena.jogador.centro(), 0, dt)
 	if arena.eh_online and arena.online != null and arena.online.anfitriao():
-		for p in Rede.remotos:   # os clientes: a raça sai da ficha que o anfitrião já validou
+		for p in Rede.remotos:  # os clientes: a raça sai da ficha que o anfitrião já validou
 			var d: Dictionary = Rede.remotos[p]
 			if bool(d.get("caido", false)):
 				continue
@@ -283,6 +296,7 @@ func _aplicar_auras(gs: Array, c: Vector2, dono: int, dt: float) -> void:
 
 
 # ---------- desenho (só o do herói local) ----------
+
 
 func _draw() -> void:
 	if lista.is_empty():

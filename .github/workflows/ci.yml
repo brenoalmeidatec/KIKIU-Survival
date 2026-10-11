@@ -52,5 +52,5 @@ jobs:
           python-version: "3.12"
       - run: pip install "gdtoolkit==4.*"
       - run: gdlint jogos/hordas/projeto/scripts jogos/hordas/projeto/testes || echo "::warning::gdlint achou problemas de estilo (so aviso ate o codigo ser formatado)"
-      - name: gdformat --check (so aviso; a formatacao geral entra num PR proprio depois do Marco 1)
-        run: gdformat --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes || echo "::warning::gdformat ainda acusa formatacao pendente. Rode jogos/hordas/formatar.sh no PR de formatacao"
+      - name: gdformat --check (reprova codigo fora do padrao; para corrigir, rode jogos/hordas/formatar.sh)
+        run: gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes

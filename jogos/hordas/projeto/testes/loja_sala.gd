@@ -102,7 +102,7 @@ func _ready() -> void:
 	ok(l.aberto() and a.no_tipo == "loja" and a.mapa_pos.x == andar0 + 1, "escolher o nó de loja abre a sala")
 	ok(not a.tela_mapa.aberto(), "dentro da sala o mapa não está aberto")
 	await esperar(0.5)
-	l._pos = Loja.PORTA.get_center()   # o herói pisa na porta
+	l._pos = Loja.PORTA.get_center()  # o herói pisa na porta
 	n = 0
 	while l.aberto() and n < 30:
 		await esperar(0.1)

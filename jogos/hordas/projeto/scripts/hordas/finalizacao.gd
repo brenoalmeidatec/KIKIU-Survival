@@ -16,10 +16,10 @@ var _t := 0.0
 var _ultimo := 0
 var _cfg: Dictionary = {}
 var _chave := ""
-var _rec: Dictionary = {}       # registro do corpo do chefe (Mortes.registro)
-var _t0 := 0.0                  # quando o corpo passa do "parado" pro efeito de morte
-var _jog := Vector2.ZERO        # de onde veio o golpe (o jogador)
-var _dir := Vector2.RIGHT       # do jogador pro chefe
+var _rec: Dictionary = {}  # registro do corpo do chefe (Mortes.registro)
+var _t0 := 0.0  # quando o corpo passa do "parado" pro efeito de morte
+var _jog := Vector2.ZERO  # de onde veio o golpe (o jogador)
+var _dir := Vector2.RIGHT  # do jogador pro chefe
 var _pos := Vector2.ZERO
 var _mix := 0.0
 var _zoom := 1.0
@@ -28,15 +28,16 @@ var _ts_salvo := 1.0
 var _ts_preso := false
 var _zoom_salvo := Vector2.ONE
 var _zoom_preso := false
-var iniciadas := 0              # quantas finalizações já começaram (o teste lê)
+var iniciadas := 0  # quantas finalizações já começaram (o teste lê)
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS   # conta o tempo real mesmo com carta/mapa abertos (aí congela e solta o tempo)
+	process_mode = Node.PROCESS_MODE_ALWAYS  # conta o tempo real mesmo com carta/mapa abertos (aí congela e solta o tempo)
 	z_index = 4
 
 
 # ---------- escolha (pura, testada sem desenhar) ----------
+
 
 ## Chave de `finalizacoes` pra uma arma: tabela por arma, senão pela causa (família), senão global.
 static func chave_de(arma: String) -> String:
@@ -62,6 +63,7 @@ func camera(foco: Vector2) -> Vector2:
 
 # ---------- ciclo de vida ----------
 
+
 ## O chefe `v` (V de inimigos.gd, já fora da lista) morreu.
 func iniciar(v) -> void:
 	if arena.acabou or arena.duelo_ativo:
@@ -70,7 +72,7 @@ func iniciar(v) -> void:
 		restaurar()
 	var arma := str(v.arma_ult)
 	if arma == "" and arena.armas and not arena.armas.ativas().is_empty():
-		arma = str(arena.armas.ativas()[0].id)   # kill remoto (online) ou sem arma: a arma que o jogador usa
+		arma = str(arena.armas.ativas()[0].id)  # kill remoto (online) ou sem arma: a arma que o jogador usa
 	var red := Mortes.reduzida()
 	_chave = chave_de(arma)
 	_cfg = Dados.json("finalizacoes").get("finalizacoes", {}).get(_chave, Dados.json("finalizacoes").finalizacoes.global)
@@ -80,19 +82,32 @@ func iniciar(v) -> void:
 	var t0 := 0.3
 	match golpe:
 		"x_katana":
-			ef = "corte"; t0 = 0.3; causa = "corte"
+			ef = "corte"
+			t0 = 0.3
+			causa = "corte"
 		"rajada":
-			ef = "furo"; t0 = 0.85; causa = "tiro"
+			ef = "furo"
+			t0 = 0.85
+			causa = "tiro"
 		"soco":
-			ef = "pedacos"; t0 = 0.55; causa = "explosao"
+			ef = "pedacos"
+			t0 = 0.55
+			causa = "explosao"
 		"coluna":
-			ef = "desintegrar"; t0 = 0.4; causa = "aura"
+			ef = "desintegrar"
+			t0 = 0.4
+			causa = "aura"
 		"elemental":
-			ef = "estilhaco"; t0 = 1.0; causa = "gelo"
+			ef = "estilhaco"
+			t0 = 1.0
+			causa = "gelo"
 		"global":
-			ef = "pedacos"; t0 = 0.22; causa = "explosao"
+			ef = "pedacos"
+			t0 = 0.22
+			causa = "explosao"
 		_:
-			ef = "suave"; t0 = 0.35
+			ef = "suave"
+			t0 = 0.35
 	_t0 = t0
 	var dur: float = float(_cfg.dur)
 	_rec = Mortes.registro(v, causa, ef, 1.0)
@@ -103,7 +118,7 @@ func iniciar(v) -> void:
 	_dir = (v.pos - _jog).normalized() if v.pos.distance_to(_jog) > 1.0 else Vector2.RIGHT
 	_rec.dir = _dir
 	if golpe == "x_katana":
-		_rec.th = -0.62 if _dir.x >= 0.0 else 0.62   # o corte segue a primeira diagonal do X
+		_rec.th = -0.62 if _dir.x >= 0.0 else 0.62  # o corte segue a primeira diagonal do X
 		_rec.n_gotas = 26
 	_t = 0.0
 	_bateu = 0
@@ -136,7 +151,7 @@ func _process(_dt: float) -> void:
 		_tempo(pausado)
 	_rec.t = maxf(0.0, _t - _t0)
 	if _rec.t > 0.0 and str(_cfg.golpe) == "elemental":
-		_rec.t += 0.2 * float(_rec.dur)   # já chegou congelado: pula a fase parada do estilhaço
+		_rec.t += 0.2 * float(_rec.dur)  # já chegou congelado: pula a fase parada do estilhaço
 	_eventos()
 	if _t >= dur or arena.acabou:
 		restaurar()
@@ -192,9 +207,12 @@ func _eventos() -> void:
 		_bateu = 1
 		arena.tremer(fr * 0.5)
 		match str(_cfg.golpe):
-			"x_katana", "rajada": Som.tocar("acerto", 0.0, 1.4, -4)
-			"soco": Som.tocar("soco", 0.0, 0.7)
-			_: Som.tocar("tremor", 0.0, 1.2, -6)
+			"x_katana", "rajada":
+				Som.tocar("acerto", 0.0, 1.4, -4)
+			"soco":
+				Som.tocar("soco", 0.0, 0.7)
+			_:
+				Som.tocar("tremor", 0.0, 1.2, -6)
 	if _bateu < 2 and _t >= _t0:
 		_bateu = 2
 		arena.tremer(fr)
@@ -204,6 +222,7 @@ func _eventos() -> void:
 
 
 # ---------- desenho ----------
+
 
 func _draw() -> void:
 	var _pp := Perf.ini()
@@ -220,12 +239,18 @@ func _draw_i() -> void:
 	var pe: Vector2 = Mortes._pe(_rec)
 	var meio := pe + Vector2(0, -s.y * 0.5)
 	match golpe:
-		"x_katana": _x_katana(cor, s, meio)
-		"rajada": _rajada(cor, s, pe, meio)
-		"soco": _soco(cor, s, pe, meio)
-		"coluna", "coluna_suave": _coluna(cor, s, pe, meio)
-		"elemental": _elemental(s, pe, meio)
-		_: _global(cor, s, pe, meio)
+		"x_katana":
+			_x_katana(cor, s, meio)
+		"rajada":
+			_rajada(cor, s, pe, meio)
+		"soco":
+			_soco(cor, s, pe, meio)
+		"coluna", "coluna_suave":
+			_coluna(cor, s, pe, meio)
+		"elemental":
+			_elemental(s, pe, meio)
+		_:
+			_global(cor, s, pe, meio)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -234,7 +259,7 @@ func _corpo_parado(cor: Color, quadro := -1, off := Vector2.ZERO) -> void:
 
 
 func _clarao(forca_base: float) -> void:
-	var forca := forca_base * float(Config.g("tremor_clarao")) / 100.0   # aba Gráficos: 0 a 100% dos clarões
+	var forca := forca_base * float(Config.g("tremor_clarao")) / 100.0  # aba Gráficos: 0 a 100% dos clarões
 	if forca <= 0.0:
 		return
 	var c: Vector2 = arena.camera.position if arena and arena.camera else _pos
@@ -269,8 +294,8 @@ func _x_katana(cor: Color, s: Vector2, meio: Vector2) -> void:
 		Mortes.desenhar(self, _rec)
 	var L := maxf(s.x, s.y) * 1.1
 	var sg := 1.0 if _dir.x >= 0.0 else -1.0
-	var d1 := Vector2.from_angle(-0.62 * sg)   # mesma diagonal do corte do corpo
-	var d2 := Vector2(-d1.x, d1.y)               # espelhada: forma o X
+	var d1 := Vector2.from_angle(-0.62 * sg)  # mesma diagonal do corte do corpo
+	var d2 := Vector2(-d1.x, d1.y)  # espelhada: forma o X
 	if t < 0.9:
 		_linha_golpe(meio - d1 * L, meio + d1 * L, t / 0.5, cor)
 	if t > 0.1 and t < 1.0:
@@ -290,7 +315,7 @@ func _rajada(cor: Color, s: Vector2, pe: Vector2, meio: Vector2) -> void:
 		var passo := int(t * 30.0)
 		shake = Vector2((Mortes._h(sd, passo) - 0.5) * 5.0, (Mortes._h(sd, passo + 70) - 0.5) * 2.0)
 		_corpo_parado(Color(1.0, 0.85, 0.85) if passo % 3 == 0 else Color(0.9, 0.7, 0.75), -1, shake)
-		for i in tiros:   # buracos que se acumulam
+		for i in tiros:  # buracos que se acumulam
 			if t > 0.06 + i * 0.06:
 				var hp := pe + shake + Vector2((Mortes._h(sd, i + 200) - 0.5) * s.x * 0.6, -s.y * (0.15 + 0.7 * Mortes._h(sd, i + 230)))
 				draw_circle(hp, 2.6, Color(0.55, 0.08, 0.1))
@@ -307,7 +332,7 @@ func _rajada(cor: Color, s: Vector2, pe: Vector2, meio: Vector2) -> void:
 		var a := 1.0 - k / 0.16
 		draw_line(boca, alvo, Color(cor.r, cor.g, cor.b, 0.35 * a), 5.0)
 		draw_line(boca, alvo, Color(1, 1, 0.8, a), 2.0)
-		if k < 0.06:   # fogo na boca da arma e faísca no acerto
+		if k < 0.06:  # fogo na boca da arma e faísca no acerto
 			draw_circle(boca, 5.0 * (1.0 - k / 0.06) + 1.0, Color(1, 0.9, 0.5, 0.9))
 			for j in 4:
 				var ang := Mortes._h(sd, i * 4 + j + 500) * TAU
@@ -324,33 +349,35 @@ func _soco(cor: Color, s: Vector2, _pe: Vector2, meio: Vector2) -> void:
 		var k := smoothstep(0.0, voo, t)
 		var off := _dir * dist * k
 		var rot := 7.0 * k * (1.0 if _dir.x >= 0.0 else -1.0)
-		for g in 4:   # rastro
+		for g in 4:  # rastro
 			var kg := maxf(0.0, k - 0.07 * (g + 1))
 			Mortes._corpo(self, _rec, _dir * dist * kg, 7.0 * kg * (1.0 if _dir.x >= 0.0 else -1.0), 1.0, 1.0, Color(1, 0.9, 0.8, 0.3 - 0.07 * g), 2)
 		Mortes._corpo(self, _rec, off, rot, 1.0 - 0.1 * k, 1.0 - 0.1 * k, Color(1.2, 1.1, 1.1) if t < 0.12 else Color(1, 0.85, 0.85), 2 if t < 0.1 else -1)
-		if t < 0.25:   # o soco: clarão e estrela no ponto de impacto
+		if t < 0.25:  # o soco: clarão e estrela no ponto de impacto
 			var a := 1.0 - t / 0.25
 			draw_circle(meio, s.x * 0.35 * (0.5 + t / 0.25), Color(1, 0.95, 0.8, 0.8 * a))
 			draw_arc(meio, s.x * (0.2 + 1.0 * t / 0.25), 0.0, TAU, 24, Color(1, 1, 1, 0.7 * a), 2.0)
 			for j in 8:
 				var ang := j * TAU / 8.0 + 0.2
 				draw_line(meio + Vector2.from_angle(ang) * s.x * 0.3, meio + Vector2.from_angle(ang) * s.x * (0.5 + 0.5 * t / 0.25), Color(1, 0.9, 0.5, a), 2.0)
-		for p in 5:   # poeira atrás
+		for p in 5:  # poeira atrás
 			draw_circle(meio + _dir * dist * k * 0.5 - _dir * (p * 10.0), 3.0 + p, Color(0.5, 0.45, 0.4, 0.3 * (1.0 - k)))
 	else:
 		var fim := meio + _dir * dist
 		var r2: Dictionary = _rec.duplicate()
 		r2.pos = _rec.pos + _dir * dist
 		Mortes.desenhar(self, r2)
-		var k := (t - _t0)
+		var k := t - _t0
 		if k < 0.35:
 			var a := 1.0 - k / 0.35
 			_clarao(0.5 * a)
 			draw_arc(fim, 20.0 + k * 360.0, 0.0, TAU, 32, Color(1, 1, 1, 0.75 * a), 3.0)
 			draw_arc(fim, 10.0 + k * 220.0, 0.0, TAU, 32, Color(cor.r, cor.g, cor.b, 0.6 * a), 2.0)
-		for p in 8:   # poeira do impacto
+		for p in 8:  # poeira do impacto
 			var ang := p * TAU / 8.0
-			draw_circle(fim + Vector2.from_angle(ang) * (8.0 + k * 70.0) * Vector2(1, 0.5), 4.0 + k * 6.0, Color(0.5, 0.45, 0.4, 0.4 * (1.0 - smoothstep(0.0, 0.8, k))))
+			draw_circle(
+				fim + Vector2.from_angle(ang) * (8.0 + k * 70.0) * Vector2(1, 0.5), 4.0 + k * 6.0, Color(0.5, 0.45, 0.4, 0.4 * (1.0 - smoothstep(0.0, 0.8, k)))
+			)
 
 
 func _coluna(cor: Color, s: Vector2, pe: Vector2, _meio: Vector2) -> void:
@@ -364,10 +391,16 @@ func _coluna(cor: Color, s: Vector2, pe: Vector2, _meio: Vector2) -> void:
 	if k > 0.0:
 		var w := s.x * (0.45 + 0.1 * sin(t * 30.0)) * k
 		var topo := pe.y - 520.0
-		draw_polygon(PackedVector2Array([Vector2(pe.x - w * 1.4, pe.y), Vector2(pe.x + w * 1.4, pe.y), Vector2(pe.x + w * 1.4, topo), Vector2(pe.x - w * 1.4, topo)]),
-			PackedColorArray([Color(cor.r, cor.g, cor.b, 0.35 * k), Color(cor.r, cor.g, cor.b, 0.35 * k), Color(cor.r, cor.g, cor.b, 0.0), Color(cor.r, cor.g, cor.b, 0.0)]))
-		draw_polygon(PackedVector2Array([Vector2(pe.x - w * 0.5, pe.y), Vector2(pe.x + w * 0.5, pe.y), Vector2(pe.x + w * 0.5, topo), Vector2(pe.x - w * 0.5, topo)]),
-			PackedColorArray([Color(0.85, 0.95, 1.0, 0.9 * k), Color(0.85, 0.95, 1.0, 0.9 * k), Color(0.7, 0.9, 1.0, 0.0), Color(0.7, 0.9, 1.0, 0.0)]))
+		draw_polygon(
+			PackedVector2Array([Vector2(pe.x - w * 1.4, pe.y), Vector2(pe.x + w * 1.4, pe.y), Vector2(pe.x + w * 1.4, topo), Vector2(pe.x - w * 1.4, topo)]),
+			PackedColorArray(
+				[Color(cor.r, cor.g, cor.b, 0.35 * k), Color(cor.r, cor.g, cor.b, 0.35 * k), Color(cor.r, cor.g, cor.b, 0.0), Color(cor.r, cor.g, cor.b, 0.0)]
+			)
+		)
+		draw_polygon(
+			PackedVector2Array([Vector2(pe.x - w * 0.5, pe.y), Vector2(pe.x + w * 0.5, pe.y), Vector2(pe.x + w * 0.5, topo), Vector2(pe.x - w * 0.5, topo)]),
+			PackedColorArray([Color(0.85, 0.95, 1.0, 0.9 * k), Color(0.85, 0.95, 1.0, 0.9 * k), Color(0.7, 0.9, 1.0, 0.0), Color(0.7, 0.9, 1.0, 0.0)])
+		)
 		draw_set_transform(pe, 0.0, Vector2(1.0, 0.35))
 		for i in 3:
 			var rk := fposmod(t * 0.9 + i * 0.33, 1.0)
@@ -385,24 +418,29 @@ func _elemental(s: Vector2, pe: Vector2, meio: Vector2) -> void:
 		var gelo := smoothstep(0.5, 0.8, t)
 		var cor := Color.WHITE.lerp(Color(1.0, 0.45, 0.2), fogo * 0.8).lerp(Color(0.6, 0.85, 1.0), gelo)
 		_corpo_parado(cor)
-		if fogo > 0.05:   # chamas em volta
+		if fogo > 0.05:  # chamas em volta
 			for k in 7:
 				var fx := pe.x + (Mortes._h(sd, k) - 0.5) * s.x * 0.9
 				var alt := s.y * (0.5 + 0.5 * Mortes._h(sd, k + 10)) * (1.0 + 0.2 * sin(t * 28.0 + k * 2.0))
 				var w := 4.0 + 4.0 * Mortes._h(sd, k + 20)
 				var sw := sin(t * 12.0 + k) * 4.0
-				draw_polygon(PackedVector2Array([Vector2(fx - w, pe.y), Vector2(fx + w, pe.y), Vector2(fx + sw, pe.y - alt)]),
-					PackedColorArray([Color(1.0, 0.22, 0.05, 0.9 * fogo), Color(1.0, 0.22, 0.05, 0.9 * fogo), Color(1.0, 0.9, 0.3, 0.0)]))
-		if gelo > 0.05:   # cristais de gelo crescendo
+				draw_polygon(
+					PackedVector2Array([Vector2(fx - w, pe.y), Vector2(fx + w, pe.y), Vector2(fx + sw, pe.y - alt)]),
+					PackedColorArray([Color(1.0, 0.22, 0.05, 0.9 * fogo), Color(1.0, 0.22, 0.05, 0.9 * fogo), Color(1.0, 0.9, 0.3, 0.0)])
+				)
+		if gelo > 0.05:  # cristais de gelo crescendo
 			for k in 6:
 				var ang := -PI * 0.5 + (k - 2.5) * 0.45
 				var base := meio + Vector2(cos(ang) * s.x * 0.45, sin(ang) * s.y * 0.5)
 				var ponta := base + Vector2.from_angle(ang) * (10.0 + 14.0 * Mortes._h(sd, k + 40)) * gelo
 				var perp := Vector2.from_angle(ang + PI * 0.5) * 3.0
-				draw_polygon(PackedVector2Array([base - perp, base + perp, ponta]), PackedColorArray([Color(0.8, 0.95, 1.0, 0.9 * gelo), Color(0.8, 0.95, 1.0, 0.9 * gelo), Color(1, 1, 1, 0.9 * gelo)]))
+				draw_polygon(
+					PackedVector2Array([base - perp, base + perp, ponta]),
+					PackedColorArray([Color(0.8, 0.95, 1.0, 0.9 * gelo), Color(0.8, 0.95, 1.0, 0.9 * gelo), Color(1, 1, 1, 0.9 * gelo)])
+				)
 	else:
 		Mortes.desenhar(self, _rec)
-	if t > _t0 - 0.2 and t < _t0 + 0.35:   # raios do céu
+	if t > _t0 - 0.2 and t < _t0 + 0.35:  # raios do céu
 		var passo := int(t * 25.0)
 		for k in 3:
 			var topo := Vector2(pe.x + (k - 1) * 40.0 + (Mortes._h(sd, passo + k) - 0.5) * 30.0, pe.y - 400.0)

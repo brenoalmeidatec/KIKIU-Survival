@@ -5,11 +5,11 @@ extends RefCounted
 ## Módulo de comportamento de arma (veja armas.gd): atualizar() dispara; cada efeito tem "tipo" e o armas.gd
 ## chama passo() (false = acabou) e pintar() do módulo desse tipo; fundo() desenha o que fica sempre na tela.
 
-const Cresc := preload("res://scripts/hordas/crescimento.gd")   # tier da arma: traço grosso, 2º arco, faíscas, tremor
-const DUR := 0.14          # quanto tempo o rastro do corte fica na tela
+const Cresc := preload("res://scripts/hordas/crescimento.gd")  # tier da arma: traço grosso, 2º arco, faíscas, tremor
+const DUR := 0.14  # quanto tempo o rastro do corte fica na tela
 const COR := Color(0.85, 0.9, 1.0)
 const BRILHO := Color(1, 1, 1)
-const COR_CORTE := Color(0.45, 0.7, 1.0)   # azul-aço: no aditivo vira branco no fio e azul na borda
+const COR_CORTE := Color(0.45, 0.7, 1.0)  # azul-aço: no aditivo vira branco no fio e azul na borda
 
 
 static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float) -> void:
@@ -19,7 +19,7 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 	a.t = maxf(0.2, float(s.recarga))
 	var c: Vector2 = w.dono.centro()
 	var alcance: float = float(s.get("alcance", 70)) * float(s.area)
-	var mira: Array = w.mirar(c, 1, alcance * 1.6, d)   # direcional (#126): corta pra onde o jogador aponta
+	var mira: Array = w.mirar(c, 1, alcance * 1.6, d)  # direcional (#126): corta pra onde o jogador aponta
 	var dir: Vector2
 	if not mira.is_empty():
 		dir = mira[0]
@@ -27,13 +27,26 @@ static func atualizar(w, a: Dictionary, d: Dictionary, s: Dictionary, dt: float)
 		var alvo = w.campo.mais_perto(c, alcance * 1.6)
 		dir = (alvo.pos - c).normalized() if alvo else Vector2(w.dono.lado, 0)
 	w.golpe_corpo(dir)
-	a["vira"] = -float(a.get("vira", -1.0))   # golpes alternam o sentido: ida e volta, como no Dimraeth
+	a["vira"] = -float(a.get("vira", -1.0))  # golpes alternam o sentido: ida e volta, como no Dimraeth
 	var q := int(s.quantidade)
 	for i in q:
-		w.especiais.append({"tipo": "katana", "corte": true, "espera": i * 0.07, "lado": float(a.vira) * (1.0 if i % 2 == 0 else -1.0),
-			"dir": dir.rotated(TAU * i / q), "alcance": alcance, "arco": deg_to_rad(float(s.get("arco", 110))),
-			"dano": float(s.dano), "energia": float(s.get("corte_energia", 0)) > 0, "t": DUR, "feito": false,
-			"pos": c, "arma": a.id})
+		w.especiais.append(
+			{
+				"tipo": "katana",
+				"corte": true,
+				"espera": i * 0.07,
+				"lado": float(a.vira) * (1.0 if i % 2 == 0 else -1.0),
+				"dir": dir.rotated(TAU * i / q),
+				"alcance": alcance,
+				"arco": deg_to_rad(float(s.get("arco", 110))),
+				"dano": float(s.dano),
+				"energia": float(s.get("corte_energia", 0)) > 0,
+				"t": DUR,
+				"feito": false,
+				"pos": c,
+				"arma": a.id
+			}
+		)
 
 
 static func passo(w, e: Dictionary, dt: float) -> bool:
@@ -55,17 +68,27 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 		Som.tocar("whoosh", 0.05, 1.9, -7)
 		var ef = w.fx()
 		var t: int = e.get("tier", 0)
-		if ef:   # a meia-lua sai um pouco à frente do corpo e passa do alcance (o golpe parece maior que o herói)
+		if ef:  # a meia-lua sai um pouco à frente do corpo e passa do alcance (o golpe parece maior que o herói)
 			var cc: Color = Cresc.cor(COR_CORTE, t)
 			ef.corte(e.pos + e.dir * 6.0, ang, e.arco * 1.15, e.alcance * 0.9, cc, e.alcance * 0.27 * Cresc.grossura(t), DUR + 0.04, e.lado)
-			if Cresc.fx(t).arco_extra and Cresc.fator() >= 0.5:   # tier máximo/evoluída: segundo arco, mais fino e mais longe, logo atrás do primeiro
+			if Cresc.fx(t).arco_extra and Cresc.fator() >= 0.5:  # tier máximo/evoluída: segundo arco, mais fino e mais longe, logo atrás do primeiro
 				ef.corte(e.pos + e.dir * 6.0, ang, e.arco * 1.3, e.alcance * 1.12, cc, e.alcance * 0.12, DUR + 0.08, e.lado)
 			Cresc.fagulhas(w, e.pos + e.dir * e.alcance * 0.75, e.dir, COR_CORTE, t, 200.0)
 		if n > 0:
 			Cresc.acerto(w, 1.0, t)
 		if e.energia:
-			w.especiais.append({"tipo": "katana", "lua": true, "pos": e.pos + e.dir * 10.0, "vel": e.dir * 380.0, "vida": 0.55,
-				"dano": e.dano * 0.7, "acertou": [], "arma": e.arma})
+			w.especiais.append(
+				{
+					"tipo": "katana",
+					"lua": true,
+					"pos": e.pos + e.dir * 10.0,
+					"vel": e.dir * 380.0,
+					"vida": 0.55,
+					"dano": e.dano * 0.7,
+					"acertou": [],
+					"arma": e.arma
+				}
+			)
 	e.t -= dt
 	return e.t > 0
 
@@ -87,7 +110,7 @@ static func pintar(w, e: Dictionary) -> void:
 		var alfa: float = clampf(e.vida / 0.2, 0.0, 1.0)
 		var t: int = e.get("tier", 0)
 		var r: float = 12.0 * float(e.get("area", 1.0))
-		for k in range(int(round(float(Cresc.fx(t).imagens) * Cresc.fator())), 0, -1):   # luas fantasma atrás da lua de energia
+		for k in range(int(round(float(Cresc.fx(t).imagens) * Cresc.fator())), 0, -1):  # luas fantasma atrás da lua de energia
 			w.draw_arc((e.pos - e.vel.normalized() * 9.0 * k).floor(), r, a - 1.2, a + 1.2, 10, Color(0.55, 0.8, 1.0, alfa * 0.3 / k), 3.0)
 		w.draw_arc(e.pos.floor(), r, a - 1.2, a + 1.2, 10, Color(Cresc.cor(Color(0.55, 0.8, 1.0), t), alfa * 0.8), 4.0 * Cresc.grossura(t))
 		w.draw_arc(e.pos.floor(), r, a - 1.0, a + 1.0, 10, Color(BRILHO, alfa), 1.0)

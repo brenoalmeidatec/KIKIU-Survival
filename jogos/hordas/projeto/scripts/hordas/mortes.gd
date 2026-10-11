@@ -10,23 +10,27 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 ## A finalização de chefe (finalizacao.gd) reaproveita `desenhar` com o registro do chefe.
 ## A física dos pedaços é fechada em função do tempo (sem estado por pedaço): custo só na hora de desenhar.
 
-const PARTES := ["estilhaco", "corte", "pedacos", "desintegrar"]   # efeitos que mostram pedaços do corpo
-const SANGUE := ["corte", "pedacos", "furo"]                       # efeitos com sangue (e mancha no chão)
+const PARTES := ["estilhaco", "corte", "pedacos", "desintegrar"]  # efeitos que mostram pedaços do corpo
+const SANGUE := ["corte", "pedacos", "furo"]  # efeitos com sangue (e mancha no chão)
 const G := 360.0
 
 var arena: Node
-var ativas: Array = []        # registros (veja `registro`) dos efeitos grandes em andamento
-var simples: Array = []       # mortes simples em andamento
-var manchas: Array = []       # sangue e cinza no chão: {pos, t, r, cor}
+var ativas: Array = []  # registros (veja `registro`) dos efeitos grandes em andamento
+var simples: Array = []  # mortes simples em andamento
+var manchas: Array = []  # sangue e cinza no chão: {pos, t, r, cor}
+
+
 ## s que a mancha fica no chão (aba Gráficos > restos_chao); o Dimraeth deixa a luta marcada no chão por um tempo
 func _vida_mancha() -> float:
 	return float(Config.g("restos_chao"))
-var part_usadas := 0          # soma de `part` das ativas (teto de partículas)
-var ult_efeito := ""          # o último efeito escolhido (o teste lê)
-var contagem := {}            # efeito -> quantas vezes foi escolhido (o teste lê)
 
+
+var part_usadas := 0  # soma de `part` das ativas (teto de partículas)
+var ult_efeito := ""  # o último efeito escolhido (o teste lê)
+var contagem := {}  # efeito -> quantas vezes foi escolhido (o teste lê)
 
 # ---------- escolha do efeito (funções puras, testadas sem desenhar) ----------
+
 
 ## Causa do golpe final: o elemento da bola (Poder Elemental) vale mais que a arma; depois a tabela por arma,
 ## depois o tipo da arma (armas.json) e por fim "padrao".
@@ -73,7 +77,7 @@ static func registro(v, causa: String, ef: String, dur_mult := 1.0) -> Dictionar
 	var cor := Color(cc[0], cc[1], cc[2])
 	var sg: Array = dm.get("sangue", [0.34, 0.03, 0.06])
 	var sangue := Color(sg[0], sg[1], sg[2])
-	if v.d.get("cor_morte") is Array:   # "cor da morte" do inimigo: o sangue é essa cor escurecida
+	if v.d.get("cor_morte") is Array:  # "cor da morte" do inimigo: o sangue é essa cor escurecida
 		var cm: Array = v.d.cor_morte
 		sangue = Color(cm[0], cm[1], cm[2]).darkened(0.6)
 		if causa == "padrao":
@@ -81,12 +85,29 @@ static func registro(v, causa: String, ef: String, dur_mult := 1.0) -> Dictionar
 	var cfg: Dictionary = dm.get("efeitos", {}).get(ef, {})
 	var sd: int = v.id * 7919 + 13
 	var dir: Vector2 = v.dir_ult if v.dir_ult.length() > 1.0 else Vector2(-1.0 if _h(sd, 99) < 0.5 else 1.0, -0.15)
-	return {"ef": ef, "causa": causa, "pos": v.pos, "tex": v.tex, "tam": v.tam, "sz": v.sz, "vira": v.espelho, "y0": v.tam.y * v.vista,
-		"quadro": v.qd, "t": 0.0, "dur": float(cfg.get("dur", 0.5)) * dur_mult, "dir": dir.normalized(), "seed": sd,
-		"cor": cor, "sangue": sangue, "part": int(cfg.get("part", 0)), "tipo": v.tipo}
+	return {
+		"ef": ef,
+		"causa": causa,
+		"pos": v.pos,
+		"tex": v.tex,
+		"tam": v.tam,
+		"sz": v.sz,
+		"vira": v.espelho,
+		"y0": v.tam.y * v.vista,
+		"quadro": v.qd,
+		"t": 0.0,
+		"dur": float(cfg.get("dur", 0.5)) * dur_mult,
+		"dir": dir.normalized(),
+		"seed": sd,
+		"cor": cor,
+		"sangue": sangue,
+		"part": int(cfg.get("part", 0)),
+		"tipo": v.tipo
+	}
 
 
 # ---------- criação ----------
+
 
 func _perto(p: Vector2) -> bool:
 	if not (arena and arena.jogador):
@@ -105,10 +126,10 @@ func nova(v, forcar := false) -> String:
 	var dm: Dictionary = Dados.json("mortes")
 	var teto: Dictionary = dm.get("teto", {})
 	var part := int(dm.get("efeitos", {}).get(ef, {}).get("part", 0))
-	var max_g := maxi(1, roundi(float(teto.get("mortes", 24)) * Config.fator_particulas("mortes_grandes")))   # perfil de qualidade: tetos menores
-	var max_p := maxi(20, roundi(float(teto.get("particulas", 600)) * Config.fator_particulas("mortes_part"))) if Config.g("particulas_sim") != "nenhuma" else 0   # particulas_sim: nenhuma = sem partículas
+	var max_g := maxi(1, roundi(float(teto.get("mortes", 24)) * Config.fator_particulas("mortes_grandes")))  # perfil de qualidade: tetos menores
+	var max_p := maxi(20, roundi(float(teto.get("particulas", 600)) * Config.fator_particulas("mortes_part"))) if Config.g("particulas_sim") != "nenhuma" else 0  # particulas_sim: nenhuma = sem partículas
 	if ef != "simples" and (ativas.size() >= max_g or part_usadas + part > max_p):
-		ef = "simples"   # sem vaga: morte simples
+		ef = "simples"  # sem vaga: morte simples
 	if ef == "simples":
 		if simples.size() >= roundi(float(teto.get("simples", 48)) * Config.fator_particulas("mortes_simples")):
 			return ""
@@ -133,7 +154,9 @@ func _mancha(r: Dictionary) -> void:
 	if manchas.size() >= maximo:
 		manchas.pop_front()
 	var cor: Color = Color(0.06, 0.05, 0.05) if ef == "cinzas" else (r.sangue as Color)
-	manchas.append({"pos": r.pos + Vector2(0, s.y * 0.4), "t": -0.15 if ef != "cinzas" else 0.6, "r": s.x * (0.5 if r.causa == "explosao" else 0.34), "cor": cor})
+	manchas.append(
+		{"pos": r.pos + Vector2(0, s.y * 0.4), "t": -0.15 if ef != "cinzas" else 0.6, "r": s.x * (0.5 if r.causa == "explosao" else 0.34), "cor": cor}
+	)
 
 
 func limpar() -> void:
@@ -181,6 +204,7 @@ func atualizar_i(dt: float) -> void:
 
 # ---------- desenho ----------
 
+
 func _draw() -> void:
 	var _pp := Perf.ini()
 	_draw_i()
@@ -199,7 +223,7 @@ func _draw_i() -> void:
 		draw_circle(Vector2.ZERO, float(m.r) * (0.4 + 0.6 * k), Color(m.cor.r, m.cor.g, m.cor.b, a))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var vis := get_canvas_transform().affine_inverse() * get_viewport_rect() if is_inside_tree() else Rect2()
-	vis = vis.grow(90.0)   # margem: pedaços e chamas passam do ponto da morte
+	vis = vis.grow(90.0)  # margem: pedaços e chamas passam do ponto da morte
 	for r in ativas:
 		if vis.has_area() and not vis.has_point(r.pos):
 			continue
@@ -212,15 +236,24 @@ func _draw_i() -> void:
 
 static func desenhar(c, r: Dictionary) -> void:
 	match str(r.ef):
-		"cinzas": _cinzas(c, r)
-		"estilhaco": _estilhaco(c, r)
-		"choque": _choque(c, r)
-		"corte": _corte(c, r)
-		"pedacos": _pedacos(c, r)
-		"furo": _furo(c, r)
-		"desintegrar": _desintegrar(c, r)
-		"suave": _suave(c, r)
-		_: _simples(c, r)
+		"cinzas":
+			_cinzas(c, r)
+		"estilhaco":
+			_estilhaco(c, r)
+		"choque":
+			_choque(c, r)
+		"corte":
+			_corte(c, r)
+		"pedacos":
+			_pedacos(c, r)
+		"furo":
+			_furo(c, r)
+		"desintegrar":
+			_desintegrar(c, r)
+		"suave":
+			_suave(c, r)
+		_:
+			_simples(c, r)
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -244,7 +277,10 @@ static func _uv(r: Dictionary, p: Vector2) -> Vector2:
 	var fx := clampf((p.x + s.x * 0.5) / s.x, 0.0, 1.0)
 	if r.vira:
 		fx = 1.0 - fx
-	return Vector2(float(r.tam.x) * (float(r.quadro) + fx) / float(r.tex.get_width()), (float(r.y0) + clampf((p.y + s.y) / s.y, 0.0, 1.0) * float(r.tam.y)) / float(r.tex.get_height()))
+	return Vector2(
+		float(r.tam.x) * (float(r.quadro) + fx) / float(r.tex.get_width()),
+		(float(r.y0) + clampf((p.y + s.y) / s.y, 0.0, 1.0) * float(r.tam.y)) / float(r.tex.get_height())
+	)
 
 
 static func _poligono(c, r: Dictionary, pts_local: PackedVector2Array, centro_local: Vector2, pos_centro: Vector2, rot: float, cor: Color) -> void:
@@ -305,13 +341,15 @@ static func _cinzas(c, r: Dictionary) -> void:
 			c.draw_polygon(pts, PackedColorArray([Color(1.0, 0.22, 0.05, 0.9 * fa), Color(1.0, 0.22, 0.05, 0.9 * fa), Color(1.0, 0.85, 0.3, 0.0)]))
 			var pi := PackedVector2Array([Vector2(fx - w * 0.5, pe.y), Vector2(fx + w * 0.5, pe.y), Vector2(fx + sway * 0.7, pe.y - alt * 0.6)])
 			c.draw_polygon(pi, PackedColorArray([Color(1.0, 0.75, 0.2, 0.85 * fa), Color(1.0, 0.75, 0.2, 0.85 * fa), Color(1.0, 1.0, 0.7, 0.0)]))
-	for i in 14:   # brasas subindo
+	for i in 14:  # brasas subindo
 		var atraso := _h(sd, i + 30) * 0.45
 		var w := (u - atraso) / 0.5
 		if w <= 0.0 or w >= 1.0:
 			continue
-		var p := Vector2(pe.x + (_h(sd, i + 50) - 0.5) * s.x * 0.7 + sin(w * 6.0 + _h(sd, i + 70) * 6.0) * 5.0,
-			pe.y - s.y * 0.45 * (1.0 - enc * 0.6) - w * (22.0 + _h(sd, i + 90) * 38.0))
+		var p := Vector2(
+			pe.x + (_h(sd, i + 50) - 0.5) * s.x * 0.7 + sin(w * 6.0 + _h(sd, i + 70) * 6.0) * 5.0,
+			pe.y - s.y * 0.45 * (1.0 - enc * 0.6) - w * (22.0 + _h(sd, i + 90) * 38.0)
+		)
 		var ec := Color(1.0, 0.7, 0.2).lerp(Color(0.8, 0.2, 0.1), w).lerp(Color(0.3, 0.3, 0.3), smoothstep(0.7, 1.0, w))
 		c.draw_rect(Rect2(p.floor(), Vector2(2, 2) if _h(sd, i + 110) > 0.4 else Vector2(1, 1)), Color(ec.r, ec.g, ec.b, 1.0 - w))
 
@@ -356,7 +394,7 @@ static func _estilhaco(c, r: Dictionary) -> void:
 				var cl := Color(0.72, 0.93, 1.0, al)
 				_poligono(c, r, PackedVector2Array(tri), c0, pos, (_h(sd, idx + 60) - 0.5) * 16.0 * minf(tt, 0.6), cl)
 				idx += 1
-	for i in 8:   # brilhos de gelo
+	for i in 8:  # brilhos de gelo
 		var ang := _h(sd, i + 100) * TAU
 		var p := _balistico(pe + centro, Vector2.from_angle(ang) * (40.0 + 70.0 * _h(sd, i + 120)), tt, pe.y)
 		c.draw_rect(Rect2(p.floor(), Vector2(2, 2) if i % 2 == 0 else Vector2(1, 1)), Color(0.85, 0.97, 1.0, al))
@@ -393,10 +431,10 @@ static func _choque(c, r: Dictionary) -> void:
 				pts.append(ini + dir * larg * i / 5.0 + perp * (_h(sd, step * 11 + k * 6 + i) - 0.5) * 9.0 * (1.0 if i > 0 else 0.0))
 			c.draw_polyline(pts, Color(0.4, 0.6, 1.0, 0.35), 3.0)
 			c.draw_polyline(pts, Color(0.85, 0.95, 1.0, 0.95), 1.0)
-		for k in 2:   # faíscas no chão
+		for k in 2:  # faíscas no chão
 			var p := pe + Vector2((_h(sd, step + k + 300) - 0.5) * s.x, -_h(sd, step + k + 320) * 4.0)
 			c.draw_rect(Rect2(p.floor(), Vector2(2, 1)), Color(1.0, 0.95, 0.6))
-	for k in 3:   # fumaça depois de cair
+	for k in 3:  # fumaça depois de cair
 		var w := clampf((u - 0.5 - k * 0.07) / 0.4, 0.0, 1.0)
 		if w > 0.0 and w < 1.0:
 			c.draw_circle(pe + Vector2(sin(w * 5.0 + k) * 4.0, -s.y * 0.35 - w * 22.0), 3.0 + w * 3.0, Color(0.2, 0.2, 0.22, 0.4 * (1.0 - w)))
@@ -442,7 +480,7 @@ static func _corte(c, r: Dictionary) -> void:
 		cc /= poly.size()
 		var off: Vector2 = (nrm - tang * 0.9) * lado * sep * s.y * 0.17
 		if lado < 0.0:
-			off.y += minf(0.5 * 220.0 * tt * tt, s.y * 0.28)   # a de cima desaba
+			off.y += minf(0.5 * 220.0 * tt * tt, s.y * 0.28)  # a de cima desaba
 		var rot := lado * 0.55 * smoothstep(0.15, 0.8, u) * (1.0 if th < 0.0 else -1.0)
 		var cl := Color(0.86, 0.76, 0.78, al).lerp(Color(0.7, 0.6, 0.62, al), sep)
 		var sentido: Vector2 = pe + off + cc
@@ -454,14 +492,14 @@ static func _corte(c, r: Dictionary) -> void:
 				borda.append(sentido + (p - cc).rotated(rot))
 		if borda.size() >= 2:
 			c.draw_line(borda[0], borda[1], Color(r.sangue.r, r.sangue.g, r.sangue.b, al), 2.0)
-	if u < 0.35:   # o clarão do golpe
+	if u < 0.35:  # o clarão do golpe
 		var L := maxf(s.x, s.y) * 0.9 * smoothstep(0.0, 0.1, u)
 		var a := 1.0 - smoothstep(0.05, 0.35, u)
 		c.draw_line(pe + cen - tang * L, pe + cen + tang * L, Color(1, 1, 1, a), 2.0 if u < 0.15 else 1.0)
 	var tg := maxf(0.0, r.t - 0.06)
 	if tg > 0.0:
 		var ori := pe + cen
-		for i in int(r.get("n_gotas", 10)):   # sangue esguichando do corte
+		for i in int(r.get("n_gotas", 10)):  # sangue esguichando do corte
 			var vel := nrm * (_h(sd, i + 5) - 0.5) * 90.0 + tang * (_h(sd, i + 25) - 0.5) * 150.0 + Vector2(0, -45.0)
 			var p := _balistico(ori, vel, tg, pe.y + 1.0)
 			var tam := 2.0 if _h(sd, i + 45) > 0.4 else 1.0
@@ -486,18 +524,26 @@ static func _pedacos(c, r: Dictionary) -> void:
 			var rad := c0 - centro
 			if rad.length() < 1.0:
 				rad = Vector2(0, -1)
-			var vel := rad.normalized() * (45.0 + 60.0 * _h(sd, idx)) * forca + (r.dir as Vector2) * 70.0 * forca + Vector2(0, -(50.0 + 70.0 * _h(sd, idx + 20)) * forca)
+			var vel := (
+				rad.normalized() * (45.0 + 60.0 * _h(sd, idx)) * forca
+				+ (r.dir as Vector2) * 70.0 * forca
+				+ Vector2(0, -(50.0 + 70.0 * _h(sd, idx + 20)) * forca)
+			)
 			var tt: float = r.t
 			var pos := _balistico(pe + c0, vel, tt, pe.y - ch * 0.4)
 			var rot := (_h(sd, idx + 40) - 0.5) * 18.0 * minf(tt, 0.45)
 			var col := (2 - i) if r.vira else i
 			c.draw_set_transform(pos, rot, Vector2(-1.0 if r.vira else 1.0, 1.0))
-			c.draw_texture_rect_region(r.tex, Rect2(-cw * 0.5, -ch * 0.5, cw, ch),
-				Rect2(r.tam.x * (int(r.quadro)) + r.tam.x * col / 3.0, r.y0 + r.tam.y * j / 3.0, r.tam.x / 3.0, r.tam.y / 3.0), Color(0.82, 0.72, 0.72, al))
+			c.draw_texture_rect_region(
+				r.tex,
+				Rect2(-cw * 0.5, -ch * 0.5, cw, ch),
+				Rect2(r.tam.x * (int(r.quadro)) + r.tam.x * col / 3.0, r.y0 + r.tam.y * j / 3.0, r.tam.x / 3.0, r.tam.y / 3.0),
+				Color(0.82, 0.72, 0.72, al)
+			)
 			idx += 1
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	_gotas(c, r, pe + centro, 14, 130.0 * forca, r.t, al, 200)
-	if u < 0.3:   # clarão e onda de choque
+	if u < 0.3:  # clarão e onda de choque
 		var k := u / 0.3
 		c.draw_circle(pe + centro, s.x * 0.45 * (1.0 - k) + 2.0, Color(1, 1, 1, 0.55 * (1.0 - k) * (1.0 if u < 0.1 else 0.5)))
 		c.draw_arc(pe + centro, s.x * (0.25 + 0.7 * k) * forca, 0.0, TAU, 24, Color(1, 1, 1, 0.5 * (1.0 - k)), 1.0)
@@ -521,12 +567,12 @@ static func _furo(c, r: Dictionary) -> void:
 	c.draw_set_transform(pe + Vector2(sinal * 10.0 * k, 0), sinal * 1.4 * queda, Vector2(-1.0 if r.vira else 1.0, 1.0))
 	c.draw_texture_rect_region(r.tex, Rect2(-s.x * 0.5, -s.y, s.x, s.y), Rect2(r.tam.x * q, r.y0, r.tam.x, r.tam.y), cor)
 	if r.t > 0.02:
-		for i in 3:   # buracos: escuros com borda vermelha
+		for i in 3:  # buracos: escuros com borda vermelha
 			var hp := Vector2((_h(sd, i) - 0.5) * s.x * 0.5, -s.y * (0.25 + 0.5 * _h(sd, i + 5)))
 			c.draw_circle(hp, 2.2, Color(0.5, 0.06, 0.08, al))
 			c.draw_circle(hp, 1.4, Color(0.04, 0.0, 0.02, al))
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if u < 0.12:   # faíscas de saída
+	if u < 0.12:  # faíscas de saída
 		for i in 3:
 			var o := pe + Vector2(0, -s.y * (0.3 + 0.2 * i)) + dir * 4.0
 			c.draw_line(o, o + dir * (6.0 + 6.0 * _h(sd, i + 9)) + Vector2(0, (_h(sd, i + 13) - 0.5) * 6.0), Color(1.0, 0.9, 0.5, 1.0 - u / 0.12), 1.0)
@@ -551,17 +597,25 @@ static func _desintegrar(c, r: Dictionary) -> void:
 		cor.a = 1.0 - w
 		if cor.a <= 0.0:
 			continue
-		c.draw_texture_rect_region(r.tex, Rect2(-s.x * 0.5 * wk + dx, -s.y + i * sh - w * 20.0, s.x * wk, sh),
-			Rect2(r.tam.x * int(r.quadro), r.y0 + r.tam.y * i / N, r.tam.x, r.tam.y / N), cor)
+		c.draw_texture_rect_region(
+			r.tex,
+			Rect2(-s.x * 0.5 * wk + dx, -s.y + i * sh - w * 20.0, s.x * wk, sh),
+			Rect2(r.tam.x * int(r.quadro), r.y0 + r.tam.y * i / N, r.tam.x, r.tam.y / N),
+			cor
+		)
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var ga := sin(clampf(u, 0.0, 1.0) * PI) * 0.3
 	var cw := s.x * 0.3
-	c.draw_polygon(PackedVector2Array([Vector2(pe.x - cw, pe.y), Vector2(pe.x + cw, pe.y), Vector2(pe.x + cw * 0.5, pe.y - s.y * 1.7), Vector2(pe.x - cw * 0.5, pe.y - s.y * 1.7)]),
-		PackedColorArray([Color(cob.r, cob.g, cob.b, ga), Color(cob.r, cob.g, cob.b, ga), Color(cob.r, cob.g, cob.b, 0.0), Color(cob.r, cob.g, cob.b, 0.0)]))
+	c.draw_polygon(
+		PackedVector2Array(
+			[Vector2(pe.x - cw, pe.y), Vector2(pe.x + cw, pe.y), Vector2(pe.x + cw * 0.5, pe.y - s.y * 1.7), Vector2(pe.x - cw * 0.5, pe.y - s.y * 1.7)]
+		),
+		PackedColorArray([Color(cob.r, cob.g, cob.b, ga), Color(cob.r, cob.g, cob.b, ga), Color(cob.r, cob.g, cob.b, 0.0), Color(cob.r, cob.g, cob.b, 0.0)])
+	)
 	c.draw_set_transform(pe, 0.0, Vector2(1.0, 0.35))
 	c.draw_arc(Vector2.ZERO, s.x * (0.35 + 0.35 * u), 0.0, TAU, 24, Color(cob.r, cob.g, cob.b, 0.7 * (1.0 - u)), 1.0)
 	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	for i in 12:   # faíscas cobalto subindo
+	for i in 12:  # faíscas cobalto subindo
 		var w := fposmod(u * 1.1 + _h(sd, i + 30), 1.0)
 		var p := Vector2(pe.x + (_h(sd, i + 50) - 0.5) * s.x * 0.8, pe.y - _h(sd, i + 70) * s.y - w * 38.0)
 		var cl := cob.lerp(Color.WHITE, 0.5 if i % 3 == 0 else 0.0)

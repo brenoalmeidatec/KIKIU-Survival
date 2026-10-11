@@ -53,17 +53,17 @@ var bot := false
 var jogador: Node2D
 var inimigos: Node2D
 var armas: Node2D
-var habilidades: Node2D        # transformação (dragão do Hazaki), habilidades.gd
-var especial: Node2D           # especial do herói (tecla E), especial.gd
-var provisoes: Node            # mochila em ação: comida, amuleto e consumíveis (#72, marcos 3 e 4), provisoes.gd; null = sem mochila
-var ganchos: Node              # regras próprias da raça/classe do herói (#72 marco 6), ganchos.gd; null = herói sem gancho
-var mochila_cfg := {}          # a mochila que o herói leva (o main.gd põe antes de abrir a arena; no online, a que o anfitrião aceitou)
-var descobertas: Node          # santuários, fragmentos, dádivas e eventos (#21), descobertas.gd
-var semente := 0               # semente da corrida (0 = sorteia; no online vem do anfitrião, igual pra todos)
+var habilidades: Node2D  # transformação (dragão do Hazaki), habilidades.gd
+var especial: Node2D  # especial do herói (tecla E), especial.gd
+var provisoes: Node  # mochila em ação: comida, amuleto e consumíveis (#72, marcos 3 e 4), provisoes.gd; null = sem mochila
+var ganchos: Node  # regras próprias da raça/classe do herói (#72 marco 6), ganchos.gd; null = herói sem gancho
+var mochila_cfg := {}  # a mochila que o herói leva (o main.gd põe antes de abrir a arena; no online, a que o anfitrião aceitou)
+var descobertas: Node  # santuários, fragmentos, dádivas e eventos (#21), descobertas.gd
+var semente := 0  # semente da corrida (0 = sorteia; no online vem do anfitrião, igual pra todos)
 var coleta: Node2D
 var efeitos: Node2D
-var mortes: Node2D            # mortes violentas (mortes.gd)
-var finalizacao: Node2D       # finalização de chefe (finalizacao.gd)
+var mortes: Node2D  # mortes violentas (mortes.gd)
+var finalizacao: Node2D  # finalização de chefe (finalizacao.gd)
 var chao: Node2D
 var diretor
 var hud: CanvasLayer
@@ -71,14 +71,14 @@ var cartas: CanvasLayer
 var camera := Camera2D.new()
 var duelo: Node2D
 var duelo_ativo := false
-var pre_duelo := false       # o chefe final caiu e o duelo ainda não começou
-var entre_fases := false     # a fase acabou: descanso, baú e escolha antes da próxima
-var eh_online := false       # partida online (main.gd liga antes de abrir a arena)
-var online: Node             # online.gd, só no online
-var caido := false           # online: caiu na horda e espera alguém levantar
+var pre_duelo := false  # o chefe final caiu e o duelo ainda não começou
+var entre_fases := false  # a fase acabou: descanso, baú e escolha antes da próxima
+var eh_online := false  # partida online (main.gd liga antes de abrir a arena)
+var online: Node  # online.gd, só no online
+var caido := false  # online: caiu na horda e espera alguém levantar
 
-var passivos := {}          # id -> nível
-var equipamentos := {}      # slot -> id do equipamento vestido (aparece no personagem; veja equipamento.gd)
+var passivos := {}  # id -> nível
+var equipamentos := {}  # slot -> id do equipamento vestido (aparece no personagem; veja equipamento.gd)
 var _stats := {}
 var xp := 0.0
 var nivel := 1
@@ -87,80 +87,80 @@ var _niveis_pendentes := 0
 var _cartas_tomada := 0
 var dano_por_arma := {}
 var fase_stat := _stat_novo()  # números DESTA fase (zera a cada fase; a tela de resultados mostra isso)
-var resultado: CanvasLayer     # tela de resultados da fase (resultado.gd)
-var entradas: CanvasLayer      # entrada dos personagens e do chefe (entradas.gd)
-var abertura: CanvasLayer      # abertura cinematográfica da fase (abertura.gd, dados/entrada.json)
-var com_abertura := false      # o main.gd liga numa partida de verdade (ou com --entrada); robô, testes e capturas ficam sem
-var escuridao: CanvasLayer     # escuridão da fase de horror (escuridao.gd)
-var mapa: Dictionary            # mapa de progressão da corrida (mapa.gd), igual em todos os clientes (mesma semente)
+var resultado: CanvasLayer  # tela de resultados da fase (resultado.gd)
+var entradas: CanvasLayer  # entrada dos personagens e do chefe (entradas.gd)
+var abertura: CanvasLayer  # abertura cinematográfica da fase (abertura.gd, dados/entrada.json)
+var com_abertura := false  # o main.gd liga numa partida de verdade (ou com --entrada); robô, testes e capturas ficam sem
+var escuridao: CanvasLayer  # escuridão da fase de horror (escuridao.gd)
+var mapa: Dictionary  # mapa de progressão da corrida (mapa.gd), igual em todos os clientes (mesma semente)
 var mapa_pos := Vector2i(0, 0)  # nó atual: x = andar (0 = fase 1), y = faixa
-var mapa_trilha: Array = []     # nós já percorridos (Vector2i)
-var tela_mapa: CanvasLayer      # tela do mapa (tela_mapa.gd)
-var loja: CanvasLayer           # loja do mapa (loja.gd)
-var ouro := 0                   # moeda da corrida: 1 por abate (dados/mapa.json), gasta na loja
-var no_tipo := "fase"           # tipo do nó em que o grupo está
-var _no_seq := 0                # conta os nós escolhidos: a resolução atrasada de um nó antigo se descarta
-var dano_recebido := {}     # de quem o jogador apanhou (pra equilibrar)
-var resortear := 3          # cargas de "sortear de novo", "pular" e "banir" (dados/corrida.json > cartas)
+var mapa_trilha: Array = []  # nós já percorridos (Vector2i)
+var tela_mapa: CanvasLayer  # tela do mapa (tela_mapa.gd)
+var loja: CanvasLayer  # loja do mapa (loja.gd)
+var ouro := 0  # moeda da corrida: 1 por abate (dados/mapa.json), gasta na loja
+var no_tipo := "fase"  # tipo do nó em que o grupo está
+var _no_seq := 0  # conta os nós escolhidos: a resolução atrasada de um nó antigo se descarta
+var dano_recebido := {}  # de quem o jogador apanhou (pra equilibrar)
+var resortear := 3  # cargas de "sortear de novo", "pular" e "banir" (dados/corrida.json > cartas)
 var pular := 2
 var banir := 2
-var calor := {}             # modificadores de calor desta corrida {id: nível} (calor.gd, dados/calor.json)
-var calor_ef := {}          # efeitos somados do calor (ef() lê)
+var calor := {}  # modificadores de calor desta corrida {id: nível} (calor.gd, dados/calor.json)
+var calor_ef := {}  # efeitos somados do calor (ef() lê)
 var calor_pts := 0
-var conj_contagem := {}     # etiquetas da build (#63): {etiqueta: quantos itens} (conjuntos.gd)
-var conj_resumo: Array = [] # o que o HUD e a tela de fim mostram (Conjuntos.resumo)
-var _conj_ef := {}          # comportamentos ligados pelos conjuntos (conj() lê)
-var _conj_bonus := {}       # atributos que os conjuntos somam
+var conj_contagem := {}  # etiquetas da build (#63): {etiqueta: quantos itens} (conjuntos.gd)
+var conj_resumo: Array = []  # o que o HUD e a tela de fim mostram (Conjuntos.resumo)
+var _conj_ef := {}  # comportamentos ligados pelos conjuntos (conj() lê)
+var _conj_bonus := {}  # atributos que os conjuntos somam
 var _conj_explodindo := false
-var objetivo: Node2D        # objetivo próprio do andar (objetivos.gd)
-var saida: Node2D           # portal de saída da fase (saida.gd, #112)
+var objetivo: Node2D  # objetivo próprio do andar (objetivos.gd)
+var saida: Node2D  # portal de saída da fase (saida.gd, #112)
 var tela_status: CanvasLayer  # Tab / Back: inventário e status (tela_status.gd, #125)
 var camada_objetivos: CanvasLayer  # efeitos a 40% em cima de alvo e seta do portal (camada_objetivos.gd, #125)
-var missao: Node2D          # missão que chama o chefe da fase (missao_chefe.gd, #112)
+var missao: Node2D  # missão que chama o chefe da fase (missao_chefe.gd, #112)
 var _saida_pedida := false  # online: o anfitrião já mandou abrir a saída deste andar
-var fases_corrida: Array = []   # regiões (#64): as fases da corrida inteira, na ordem dos andares (regioes.gd)
-var banidos := {}           # id -> true: carta banida some do sorteio até o fim da corrida
-var tempo_arma := {}        # id -> segundos com a arma ativa (DPS da tela final)
-var nivel_arma := {}        # id -> último nível visto (tela final)
+var fases_corrida: Array = []  # regiões (#64): as fases da corrida inteira, na ordem dos andares (regioes.gd)
+var banidos := {}  # id -> true: carta banida some do sorteio até o fim da corrida
+var tempo_arma := {}  # id -> segundos com a arma ativa (DPS da tela final)
+var nivel_arma := {}  # id -> último nível visto (tela final)
 var acabou := false
 var _tremor := 0.0
-const OLHAR_MAX := 36.0          # px que a câmera adianta na direção em que o herói anda (#68)
-var _olhar := Vector2.ZERO      # quanto ela está adiantada agora (vai até lá com suavidade)
-var _hitstop_ate := 0   # Time.get_ticks_msec() até quando o jogo fica "congelado" (só solo)
+const OLHAR_MAX := 36.0  # px que a câmera adianta na direção em que o herói anda (#68)
+var _olhar := Vector2.ZERO  # quanto ela está adiantada agora (vai até lá com suavidade)
+var _hitstop_ate := 0  # Time.get_ticks_msec() até quando o jogo fica "congelado" (só solo)
 var _hitstop_crit_ate := 0
-var _golpe_ate := 0       # Time.get_ticks_msec() até quando um golpe corpo a corpo não treme/congela de novo
-var _impacto_arma := {}   # arma -> se o acerto dela solta estrela de impacto (cache)
-const SEM_IMPACTO := ["poca", "aura", "aura_energia", "baforada"]   # dano contínuo: estrela a cada tique vira ruído
+var _golpe_ate := 0  # Time.get_ticks_msec() até quando um golpe corpo a corpo não treme/congela de novo
+var _impacto_arma := {}  # arma -> se o acerto dela solta estrela de impacto (cache)
+const SEM_IMPACTO := ["poca", "aura", "aura_energia", "baforada"]  # dano contínuo: estrela a cada tique vira ruído
 const GOLPE_ESPERA := 0.3  # s mínimos entre dois "golpes pesados" (tremidinha + congelada do corpo a corpo)
 var _chefes_vivos := []
-var perfil := [0, 0, 0, 0]   # microssegundos: jogador+diretor, inimigos, armas, resto
+var perfil := [0, 0, 0, 0]  # microssegundos: jogador+diretor, inimigos, armas, resto
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	if semente == 0:
 		semente = Sorte.nova_semente()
-	Sorte.iniciar(semente)   # tudo que afeta o mundo compartilhado sai das streams dessa semente (sorte.gd)
-	if Regioes.ativo():      # regiões (#64): a corrida inteira sorteada agora, igual em todos os clientes
+	Sorte.iniciar(semente)  # tudo que afeta o mundo compartilhado sai das streams dessa semente (sorte.gd)
+	if Regioes.ativo():  # regiões (#64): a corrida inteira sorteada agora, igual em todos os clientes
 		fases_corrida = Regioes.gerar_fases(Sorte.fluxo("regioes"))
-	mapa = Mapa.gerar()      # stream "mapa": mesma semente, mesmo mapa em todos os clientes
+	mapa = Mapa.gerar()  # stream "mapa": mesma semente, mesmo mapa em todos os clientes
 	mapa_pos = Vector2i(0, Mapa.inicio(mapa))
 	mapa_trilha = [mapa_pos]
 	heroi = Dados.json("herois").get(heroi_id, {})
-	var cc: Dictionary = Dados.json("corrida").get("cartas", {})   # cargas de sortear de novo / pular / banir
+	var cc: Dictionary = Dados.json("corrida").get("cartas", {})  # cargas de sortear de novo / pular / banir
 	resortear = int(cc.get("resortear", 3))
 	pular = int(cc.get("pular", 2))
 	banir = int(cc.get("banir", 2))
-	calor = Calor.validar(calor)      # o main.gd põe a escolha antes de abrir a arena (no online, a do anfitrião)
+	calor = Calor.validar(calor)  # o main.gd põe a escolha antes de abrir a arena (no online, a do anfitrião)
 	calor_ef = Calor.efeitos(calor)
 	calor_pts = Calor.pontos(calor)
-	if ef("sem_cartas") > 0.0:          # "Destino Selado": sem sortear de novo e sem pular
+	if ef("sem_cartas") > 0.0:  # "Destino Selado": sem sortear de novo e sem pular
 		resortear = 0
 		pular = 0
 	chao = Chao.new()
 	chao.arena = self
 	add_child(chao)
-	objetivo = Objetivos.new()   # objetivo do andar (#63): desenha a pira no chão, embaixo de tudo
+	objetivo = Objetivos.new()  # objetivo do andar (#63): desenha a pira no chão, embaixo de tudo
 	objetivo.arena = self
 	add_child(objetivo)
 	missao = MissaoChefe.new()
@@ -198,12 +198,12 @@ func _ready() -> void:
 	especial = Especial.new()
 	add_child(especial)
 	especial.configurar(self)
-	if not Mochila.vazio(mochila_cfg):   # heróis fixos e corridas de teste sem mochila: nada muda
+	if not Mochila.vazio(mochila_cfg):  # heróis fixos e corridas de teste sem mochila: nada muda
 		provisoes = Provisoes.new()
 		add_child(provisoes)
 		provisoes.configurar(self, mochila_cfg)
-	var gs: Array = Ganchos.de_heroi(heroi_id)   # raça/classe com gancho (#72 marco 6); herói fixo ou save antigo: nenhum
-	if not gs.is_empty() or (eh_online and Ganchos.cliente_com_aura()):   # o anfitrião aplica as auras dos clientes mesmo sem gancho dele
+	var gs: Array = Ganchos.de_heroi(heroi_id)  # raça/classe com gancho (#72 marco 6); herói fixo ou save antigo: nenhum
+	if not gs.is_empty() or (eh_online and Ganchos.cliente_com_aura()):  # o anfitrião aplica as auras dos clientes mesmo sem gancho dele
 		ganchos = Ganchos.new()
 		add_child(ganchos)
 		ganchos.configurar(self, gs)
@@ -225,14 +225,14 @@ func _ready() -> void:
 		inimigos.espelho = Rede.cliente()
 	diretor = Diretor.new()
 	diretor.iniciar(self)
-	missao.nova_fase(diretor.fases()[0], 0)   # missão do chefe do primeiro andar (os outros começam em _iniciar_andar)
+	missao.nova_fase(diretor.fases()[0], 0)  # missão do chefe do primeiro andar (os outros começam em _iniciar_andar)
 	_atualizar_calor()
 	_recalcular()
 	jogador.configurar(str(heroi.get("sprite", heroi_id)))
-	var tom: Array = heroi.get("tom", [1.0, 1.0, 1.0])   # herói criado (#72): a raça tinge o corpo
+	var tom: Array = heroi.get("tom", [1.0, 1.0, 1.0])  # herói criado (#72): a raça tinge o corpo
 	jogador.tom = Color(float(tom[0]), float(tom[1]), float(tom[2]))
-	jogador.paleta = heroi.get("paleta", {})   # herói criado (#72, marco 2): pele, cabelo e roupa da ficha
-	atualizar_visual.call_deferred()   # personagem em camadas: cabelo e arma inicial
+	jogador.paleta = heroi.get("paleta", {})  # herói criado (#72, marco 2): pele, cabelo e roupa da ficha
+	atualizar_visual.call_deferred()  # personagem em camadas: cabelo e arma inicial
 	jogador.hp = stat("vida_max")
 	armas.adicionar(str(heroi.get("arma", "pendrive")))
 	chao.criar_santuarios()
@@ -264,23 +264,23 @@ func _ready() -> void:
 	abertura.arena = self
 	add_child(abertura)
 	add_child(preload("res://scripts/hordas/vinheta.gd").new())
-	escuridao = Escuridao.new()   # fase de horror: só liga quando a fase tem "escuro" em corrida.json
+	escuridao = Escuridao.new()  # fase de horror: só liga quando a fase tem "escuro" em corrida.json
 	escuridao.arena = self
 	add_child(escuridao)
 	_zerar_fase_stat()
 	Som.musica(_nome_musica(diretor.fases()[0].get("musica", Dados.json("fase").get("musica", "minijogo_tenso")), 0))
 	var f0: Dictionary = diretor.fases()[0]
 	camera.position = jogador.centro()
-	_comeco_de_fase(0, "")   # abertura cinematográfica (ou, sem ela, o anúncio e o herói "cai" no começo da fase 1)
+	_comeco_de_fase(0, "")  # abertura cinematográfica (ou, sem ela, o anúncio e o herói "cai" no começo da fase 1)
 
 
 func _exit_tree() -> void:
 	if entradas:
-		entradas.restaurar_tempo()   # o slow-motion da entrada do chefe nunca pode ficar preso
+		entradas.restaurar_tempo()  # o slow-motion da entrada do chefe nunca pode ficar preso
 	if finalizacao:
-		finalizacao.restaurar()      # idem a câmera lenta e o zoom da finalização de chefe
+		finalizacao.restaurar()  # idem a câmera lenta e o zoom da finalização de chefe
 	if is_inside_tree():
-		get_tree().paused = false   # arena fechada com carta/mapa/loja aberta não deixa o jogo pausado
+		get_tree().paused = false  # arena fechada com carta/mapa/loja aberta não deixa o jogo pausado
 
 
 func jogadores() -> int:
@@ -290,13 +290,13 @@ func jogadores() -> int:
 func stat(k: String) -> float:
 	var v := float(_stats.get(k, Construcao.BASE.get(k, 0.0)))
 	if habilidades:
-		v += habilidades.bonus(k)   # transformado (dragão): mais rápido e mais forte
+		v += habilidades.bonus(k)  # transformado (dragão): mais rápido e mais forte
 	if especial:
-		v += especial.bonus(k)   # depois do especial (ex.: o "Sou Gostoso!" do Hazaki)
+		v += especial.bonus(k)  # depois do especial (ex.: o "Sou Gostoso!" do Hazaki)
 	if provisoes:
-		v += provisoes.bonus(k)   # comida de viagem, amuleto e poções (#72)
+		v += provisoes.bonus(k)  # comida de viagem, amuleto e poções (#72)
 	if ganchos:
-		v += ganchos.bonus(k)   # fúria, regeneração no escuro... (#72 marco 6)
+		v += ganchos.bonus(k)  # fúria, regeneração no escuro... (#72 marco 6)
 	if duelo_ativo:
 		# no duelo: a vida vem da regra do pvp.json, a regeneração é menor e a aura de lentidão pega
 		if k == "vida_max":
@@ -307,11 +307,11 @@ func stat(k: String) -> float:
 			return v * 0.55
 	# calor (#63): só na horda; o duelo entre pessoas não leva calor
 	if k == "xp":
-		v += calor_pts * Calor.recompensa("xp")      # cada ponto de calor rende mais XP
+		v += calor_pts * Calor.recompensa("xp")  # cada ponto de calor rende mais XP
 	elif k == "vida_max":
-		v *= maxf(0.2, 1.0 + ef("vida_heroi"))       # "Corpo Frágil"
+		v *= maxf(0.2, 1.0 + ef("vida_heroi"))  # "Corpo Frágil"
 	elif k == "regen":
-		v *= maxf(0.0, 1.0 + ef("cura"))             # "Feridas Abertas"
+		v *= maxf(0.0, 1.0 + ef("cura"))  # "Feridas Abertas"
 	return v
 
 
@@ -344,11 +344,11 @@ func _recalcular() -> void:
 	var antes := stat("vida_max")
 	_conj_atualizar()
 	var extra: Dictionary = descobertas.bonus().duplicate() if descobertas else {}
-	for k in _conj_bonus:   # conjuntos de etiquetas (#63) somam junto das dádivas
+	for k in _conj_bonus:  # conjuntos de etiquetas (#63) somam junto das dádivas
 		extra[k] = float(extra.get(k, 0.0)) + float(_conj_bonus[k])
 	_stats = Construcao.stats(heroi, passivos, equipamentos, extra)
 	if inimigos:
-		inimigos.elementos.recalcular(_stats)   # el_<elemento>: chance por golpe de pôr acúmulos (#72)
+		inimigos.elementos.recalcular(_stats)  # el_<elemento>: chance por golpe de pôr acúmulos (#72)
 	if jogador and stat("vida_max") > antes:
 		jogador.curar(stat("vida_max") - antes)
 
@@ -357,13 +357,13 @@ func _process(dt: float) -> void:
 	if acabou:
 		return
 	dt = minf(dt, 1.0 / 30.0)
-	if Time.get_ticks_msec() < _hitstop_ate:   # hitstop: tempo real, não depende de Engine.time_scale
+	if Time.get_ticks_msec() < _hitstop_ate:  # hitstop: tempo real, não depende de Engine.time_scale
 		dt *= Jogador.HITSTOP_ESCALA
 	var t0 := Time.get_ticks_usec()
 	var parado: bool = caido or (duelo_ativo and (duelo.estado == "contagem" or not duelo.lut_jogador.vivo)) or abertura.heroi_preso()
-	var mundo_espera: bool = abertura.mundo_preso()   # abertura da fase: diretor, inimigos e relógio esperam (todos os clientes, mesma duração)
+	var mundo_espera: bool = abertura.mundo_preso()  # abertura da fase: diretor, inimigos e relógio esperam (todos os clientes, mesma duração)
 	if eh_online and cartas.aberto():
-		jogador.invencivel = maxf(jogador.invencivel, 0.1)   # no online o jogo não pausa: escolhendo carta, não apanha
+		jogador.invencivel = maxf(jogador.invencivel, 0.1)  # no online o jogo não pausa: escolhendo carta, não apanha
 	if not parado:
 		jogador.atualizar(dt)
 	elif caido:
@@ -372,7 +372,7 @@ func _process(dt: float) -> void:
 		duelo.atualizar(dt)
 	elif not pre_duelo and not entre_fases and not mundo_espera:
 		if inimigos.espelho:
-			diretor.so_relogio(dt)   # cliente: quem cria os vírus é o anfitrião
+			diretor.so_relogio(dt)  # cliente: quem cria os vírus é o anfitrião
 		else:
 			diretor.atualizar(dt)
 		objetivo.atualizar(dt)
@@ -392,7 +392,7 @@ func _process(dt: float) -> void:
 		armas.atualizar(dt)
 	if online:
 		online.atualizar(dt)
-	for a in armas.ativas():   # tempo e nível de cada arma, pro DPS da tela final (poucas armas: custo desprezível)
+	for a in armas.ativas():  # tempo e nível de cada arma, pro DPS da tela final (poucas armas: custo desprezível)
 		tempo_arma[a.id] = float(tempo_arma.get(a.id, 0.0)) + dt
 		nivel_arma[a.id] = a.nivel
 	var t3 := Time.get_ticks_usec()
@@ -409,11 +409,12 @@ func _process(dt: float) -> void:
 	var olhar_alvo: Vector2 = (jogador._vel * 0.22).limit_length(OLHAR_MAX) if Config.v("camera_frente") else Vector2.ZERO
 	_olhar = _olhar.lerp(olhar_alvo, minf(1.0, dt * 2.5))
 	var foco: Vector2 = duelo.centro if duelo_ativo and not duelo.lut_jogador.vivo else jogador.centro() + _olhar
-	camera.position = finalizacao.camera(entradas.camera(abertura.camera(foco)))   # a entrada do chefe leva a câmera até ele e traz de volta; a finalização aproxima
+	camera.position = finalizacao.camera(entradas.camera(abertura.camera(foco)))  # a entrada do chefe leva a câmera até ele e traz de volta; a finalização aproxima
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * _tremor
 
 
 # ---------- chamados pelos outros ----------
+
 
 func tremer(forca: float) -> void:
 	_tremor = maxf(_tremor, forca * float(Config.v("tremor")) * float(Config.g("tremor_clarao")) / 100.0)
@@ -438,7 +439,7 @@ func creditar_dano(arma: String, valor: float) -> void:
 func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> void:
 	creditar_dano(arma, valor)
 	if ganchos:
-		ganchos.ao_acertar(valor)   # roubo de vida (#72 marco 6)
+		ganchos.ao_acertar(valor)  # roubo de vida (#72 marco 6)
 	efeitos.numero(pos, valor, Color.WHITE, crit)
 	if _tem_impacto(arma):
 		efeitos.impacto(pos + Vector2(0, -6), Color(1.0, 0.8, 0.35) if crit else Color(0.7, 0.85, 1.0), crit)
@@ -454,6 +455,7 @@ func registrar_dano(arma: String, valor: float, pos: Vector2, crit := false) -> 
 const LUZ_HEROI := Color(1.0, 0.82, 0.55)
 const LUZ_TIRO := Color(1.0, 0.25, 0.15, 0.45)
 var _cor_luz_arma := {}
+
 
 func _luzes_quadro() -> void:
 	if jogador and jogador.visible:
@@ -496,12 +498,12 @@ func hitstop(seg: float) -> void:
 
 func inimigo_morreu(v) -> void:
 	recompensa(v.pos, v.tipo, v.elite)
-	objetivo.abate(v)   # totem ou fugitivo do objetivo do andar (#63)
-	habilidades.abate(v)   # enche a Energia da transformação
+	objetivo.abate(v)  # totem ou fugitivo do objetivo do andar (#63)
+	habilidades.abate(v)  # enche a Energia da transformação
 	if v.chefe:
 		hitstop(Jogador.HITSTOP_CHEFE)
 	if online:
-		online.morreu(v)   # anfitrião: cada um dos outros pega a própria recompensa
+		online.morreu(v)  # anfitrião: cada um dos outros pega a própria recompensa
 	if v.d.get("final", false):
 		if online:
 			Rede.evento("tela_azul_caiu")
@@ -512,7 +514,7 @@ func inimigo_morreu(v) -> void:
 		if online:
 			if not _saida_pedida:
 				_saida_pedida = true
-				Rede.evento("saida_aberta", {"x": v.pos.x, "y": v.pos.y})   # só o anfitrião manda; todos abrem o portal no mesmo lugar
+				Rede.evento("saida_aberta", {"x": v.pos.x, "y": v.pos.y})  # só o anfitrião manda; todos abrem o portal no mesmo lugar
 		else:
 			abrir_saida(v.pos)
 
@@ -521,7 +523,7 @@ func inimigo_morreu(v) -> void:
 func abrir_saida(p: Vector2) -> void:
 	if saida.aberta or entre_fases or acabou:
 		return
-	fase_stat.tempo = diretor.t_fase   # o tempo da fase para de contar aqui; ficar coletando depois não pesa
+	fase_stat.tempo = diretor.t_fase  # o tempo da fase para de contar aqui; ficar coletando depois não pesa
 	diretor.saida_leve = true
 	saida.abrir(p)
 	anunciar("CHEFE DERROTADO!", Color(1, 0.9, 0.4))
@@ -538,7 +540,7 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	abates += 1
 	var og: Dictionary = Mapa.cfg().get("ouro", {})
 	var ganho: int = int(og.get("chefe", 40)) if chefe else (int(og.get("elite", 4)) if elite else int(og.get("abate", 1)))
-	ouro += int(round(ganho * (1.0 + calor_pts * Calor.recompensa("ouro")) * diretor.mult_ouro()))   # prorrogação (#112): cada degrau paga mais   # cada ponto de calor rende mais ouro
+	ouro += int(round(ganho * (1.0 + calor_pts * Calor.recompensa("ouro")) * diretor.mult_ouro()))  # prorrogação (#112): cada degrau paga mais   # cada ponto de calor rende mais ouro
 	fase_stat.abates += 1
 	if chefe:
 		fase_stat.chefes += 1
@@ -556,7 +558,7 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	efeitos.explodir(pos, cor, 14 if chefe else 5, 160.0 if chefe else 80.0)
 	_conj_ao_abater(pos)
 	var drops: Dictionary = Dados.json("fase").get("drops", {})
-	var sd := Sorte.fluxo("drop")   # drops saem de uma stream: com a mesma semente e os mesmos abates, caem iguais
+	var sd := Sorte.fluxo("drop")  # drops saem de uma stream: com a mesma semente e os mesmos abates, caem iguais
 	if d.get("bau", false) or (elite and sd.randf() < 0.25):
 		coleta.soltar(pos, "bau")
 	elif sd.randf() < float(drops.get("marmita", 0.004)):
@@ -564,7 +566,7 @@ func recompensa(pos: Vector2, tipo: String, elite: bool) -> void:
 	elif sd.randf() < float(drops.get("wifi", 0.0015)):
 		coleta.soltar(pos, "wifi")
 	if elite:
-		descobertas.elite_morreu(pos)   # fragmento da transformação, com pity
+		descobertas.elite_morreu(pos)  # fragmento da transformação, com pity
 	if chefe:
 		tremer(8)
 		Som.tocar("soco", 0.1, 0.7)
@@ -576,7 +578,7 @@ func _conj_ao_abater(pos: Vector2) -> void:
 	if cura > 0.0 and jogador and not caido and not duelo_ativo:
 		jogador.curar(cura)
 	if conj("explosao_morte") > 0.0 and not _conj_explodindo and not duelo_ativo:
-		_conj_explodindo = true   # a explosão não encadeia outra explosão (e não vira laço no 500 de estresse)
+		_conj_explodindo = true  # a explosão não encadeia outra explosão (e não vira laço no 500 de estresse)
 		var dano := 6.0 * stat("dano") * (1.0 + 0.08 * nivel)
 		var n := 0
 		for v in inimigos.no_circulo(pos, 54.0):
@@ -611,7 +613,7 @@ func tela_azul_caiu() -> void:
 		iniciar_duelo()
 	elif Rede.anfitriao():
 		if Rede.jogadores.size() < 2:
-			iniciar_duelo()   # ficou sozinho na sala: duelo contra robôs, como no solo
+			iniciar_duelo()  # ficou sozinho na sala: duelo contra robôs, como no solo
 		else:
 			var c: Vector2 = jogador.position.snapped(Vector2(32, 32))
 			Rede.evento("duelo_iniciar", {"cx": c.x, "cy": c.y, "ang": randf() * TAU, "ordem": Rede.jogadores.keys()})
@@ -633,7 +635,7 @@ func chefe_final_chegou(final := true, tipo := "") -> void:
 	_musica_da_fase(true)
 	if online and Rede.anfitriao():
 		Rede.evento("chefe_final", {"final": final, "chefe": tipo})
-	if Dados.json("inimigos").get(tipo, {}).get("chefe", false):   # só vale chefe que existe nos dados
+	if Dados.json("inimigos").get(tipo, {}).get("chefe", false):  # só vale chefe que existe nos dados
 		entradas.chefe(tipo)
 	if final:
 		hud.mensagem("Derrote %s pra vencer!" % nome_chefe_final(true), Color(0.6, 0.75, 1))
@@ -667,13 +669,13 @@ func fase_completa() -> void:
 		return
 	entre_fases = true
 	missao.encerrar()
-	objetivo.encerrar()   # objetivo ainda aberto: falha sem castigo (o anfitrião manda o estado final)
-	var seq := _no_seq   # se o nó seguinte for escolhido antes de terminar (online), este fluxo se descarta
+	objetivo.encerrar()  # objetivo ainda aberto: falha sem castigo (o anfitrião manda o estado final)
+	var seq := _no_seq  # se o nó seguinte for escolhido antes de terminar (online), este fluxo se descarta
 	var n: int = diretor.fase_idx + 1
 	if not saida.aberta:
-		fase_stat.tempo = diretor.t_fase   # congela o tempo da fase antes do descanso (com a saída aberta já foi congelado)
+		fase_stat.tempo = diretor.t_fase  # congela o tempo da fase antes do descanso (com a saída aberta já foi congelado)
 	var ff: Dictionary = diretor.fases()[diretor.fase_idx]
-	if ff.get("chefe_regiao", false):   # regiões (#64): derrubou o chefe da região
+	if ff.get("chefe_regiao", false):  # regiões (#64): derrubou o chefe da região
 		anunciar("REGIÃO CONQUISTADA!", Color(1, 0.85, 0.4))
 		mensagem(str(ff.get("regiao_nome", "")), Color(1, 0.9, 0.6))
 	elif ff.has("regiao"):
@@ -682,7 +684,7 @@ func fase_completa() -> void:
 		anunciar("Fase %d completa!" % n, Color(1, 0.9, 0.4))
 	Som.tocar("vitoria", 0.1, 1.0, -8)
 	if caido:
-		levantar(0.5)   # quem caiu volta no fim da fase
+		levantar(0.5)  # quem caiu volta no fim da fase
 	for o in inimigos.lista.duplicate():
 		efeitos.explodir(o.pos, Color(0.5, 0.8, 0.4), 4, 100.0)
 	inimigos.limpar()
@@ -697,7 +699,7 @@ func fase_completa() -> void:
 	resultado.abrir(fase_stat)
 	while resultado.aberto() and not acabou:
 		await get_tree().process_frame
-	if acabou or not entre_fases or seq != _no_seq:   # (no online o anfitrião pode já ter mandado seguir)
+	if acabou or not entre_fases or seq != _no_seq:  # (no online o anfitrião pode já ter mandado seguir)
 		return
 	jogador.curar(stat("vida_max") * 0.5)
 	abrir_bau()
@@ -706,14 +708,14 @@ func fase_completa() -> void:
 		await _bonus_elite()
 	if acabou or seq != _no_seq:
 		return
-	if loja_entre_fases_devida():   # #112: loja obrigatória entre fases (estilo Hades), antes do mapa
+	if loja_entre_fases_devida():  # #112: loja obrigatória entre fases (estilo Hades), antes do mapa
 		loja.abrir(sortear_cartas(Sorte.criar("loja", mapa_pos.x)))
 		while loja.aberto() and not acabou and seq == _no_seq:
 			await get_tree().process_frame
 		await _esperar_cartas()
 		if acabou or seq != _no_seq or not entre_fases:
 			return
-	abrir_mapa()   # depois do baú vem o mapa: o grupo escolhe o próximo nó (solo: na hora; online: voto)
+	abrir_mapa()  # depois do baú vem o mapa: o grupo escolhe o próximo nó (solo: na hora; online: voto)
 
 
 ## Loja obrigatória entre fases (dados/fase.json "loja_entre_fases"): vale se há próximo nó e ele não é só loja (não repete).
@@ -745,12 +747,13 @@ func _bonus_elite() -> void:
 
 # ---------- mapa de progressão (#32 item 8) ----------
 
+
 ## Abre a tela do mapa (se ainda há pra onde ir).
 func abrir_mapa() -> void:
 	if acabou or not entre_fases or mapa_acessiveis().is_empty():
 		return
 	tela_mapa.abrir()
-	Transicao.revelar()   # sai da fase pro mapa
+	Transicao.revelar()  # sai da fase pro mapa
 
 
 func mapa_acessiveis() -> Array:
@@ -775,11 +778,11 @@ func escolher_no(faixa: int) -> void:
 	_no_seq += 1
 	var seq := _no_seq
 	tela_mapa.fechar()
-	Transicao.revelar()   # do mapa pra fase nova
+	Transicao.revelar()  # do mapa pra fase nova
 	if resultado.aberto():
 		resultado.fechar()
-	loja.fechar()   # o anfitrião fechou a votação com alguém ainda na loja
-	while cartas.aberto() and not acabou:   # uma escolha de carta em andamento termina antes (não se perde nenhuma)
+	loja.fechar()  # o anfitrião fechou a votação com alguém ainda na loja
+	while cartas.aberto() and not acabou:  # uma escolha de carta em andamento termina antes (não se perde nenhuma)
 		await get_tree().process_frame
 	if acabou or seq != _no_seq or not entre_fases:
 		return
@@ -812,7 +815,9 @@ func _resolver_no(tipo: String, seq: int) -> void:
 		"santuario":
 			Som.tocar("plim", 0.05, 1.2)
 			anunciar("Santuário raro!", Color(1, 0.7, 0.25))
-			cartas.escolher("Santuário raro", Descobertas.oferta_dadivas(Sorte.criar("mapa_santuario", andar), str(c.get("raridade_min", "epica")), _ids_dadivas()))
+			cartas.escolher(
+				"Santuário raro", Descobertas.oferta_dadivas(Sorte.criar("mapa_santuario", andar), str(c.get("raridade_min", "epica")), _ids_dadivas())
+			)
 	await _esperar_cartas()
 	if acabou or seq != _no_seq or not entre_fases:
 		return
@@ -858,11 +863,11 @@ func _nome_musica(m, andar: int) -> String:
 ## Começa a fase do andar (índice em corrida.json); o tipo do nó (fase, elite, chefe) ajusta a dificuldade.
 func _iniciar_andar(idx: int) -> void:
 	diretor.ir_para(idx, no_tipo)
-	_atualizar_calor()   # região nova: o calor dela soma por cima
+	_atualizar_calor()  # região nova: o calor dela soma por cima
 	saida.fechar()
 	_saida_pedida = false
 	chao.nova_fase()
-	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
+	inimigos.elementos.nova_fase()  # contadores de elemento do santuário selado: por andar
 	_zerar_fase_stat()
 	if resultado.aberto():
 		resultado.fechar()
@@ -872,13 +877,13 @@ func _iniciar_andar(idx: int) -> void:
 	var marca := "  (ELITE)" if no_tipo == "elite" else ""
 	entre_fases = false
 	_musica_da_fase(false)
-	_comeco_de_fase(diretor.fase_idx, marca)   # abertura da fase (ou o anúncio e a chegada simples): herói e aliados chegam
+	_comeco_de_fase(diretor.fase_idx, marca)  # abertura da fase (ou o anúncio e a chegada simples): herói e aliados chegam
 
 
 ## Começo de um andar: a abertura cinematográfica (abertura.gd) se estiver ligada; senão o anúncio do HUD e a chegada simples do herói.
 func _comeco_de_fase(idx: int, marca: String) -> void:
 	if abertura.comecar(idx, marca):
-		return   # o título e a queda do herói são dela
+		return  # o título e a queda do herói são dela
 	_anunciar_fase(idx, marca)
 	entradas.chegada()
 
@@ -897,10 +902,10 @@ func saltar_para_andar(idx: int) -> void:
 	saida.fechar()
 	_atualizar_calor()
 	chao.nova_fase()
-	inimigos.elementos.nova_fase()   # contadores de elemento do santuário selado: por andar
+	inimigos.elementos.nova_fase()  # contadores de elemento do santuário selado: por andar
 	objetivo.nova_fase(diretor.fases()[diretor.fase_idx], no_tipo, diretor.fase_idx)
 	missao.nova_fase(diretor.fases()[diretor.fase_idx], diretor.fase_idx)
-	hud.limpar_mensagens()   # o anúncio da fase 1 já tinha saído: troca pelo do andar de destino
+	hud.limpar_mensagens()  # o anúncio da fase 1 já tinha saído: troca pelo do andar de destino
 	if not abertura.comecar(diretor.fase_idx, ""):
 		_anunciar_fase(diretor.fase_idx, "")
 	_musica_da_fase(false)
@@ -940,6 +945,7 @@ func chefes() -> Array:
 
 
 # ---------- XP e nível ----------
+
 
 func xp_para(n: int) -> float:
 	var base := 519.0 + (n - 40) * 40.0
@@ -994,8 +1000,15 @@ func escolheu(c: Dictionary) -> void:
 func aplicar(c: Dictionary) -> void:
 	if str(c.tipo) in ["arma", "passivo", "evolucao", "equipamento"]:
 		var d := Dados.item(str(c.id))
-		fase_stat.itens.append({"tipo": str(c.tipo), "id": str(c.id), "nome": str(c.get("nome", d.get("nome", c.id))),
-			"icone": str(c.get("icone", d.get("icone", c.id))), "nivel": int(c.get("nivel", 0))})
+		fase_stat.itens.append(
+			{
+				"tipo": str(c.tipo),
+				"id": str(c.id),
+				"nome": str(c.get("nome", d.get("nome", c.id))),
+				"icone": str(c.get("icone", d.get("icone", c.id))),
+				"nivel": int(c.get("nivel", 0))
+			}
+		)
 	match str(c.tipo):
 		"arma":
 			if armas.tem(c.id):
@@ -1006,7 +1019,7 @@ func aplicar(c: Dictionary) -> void:
 		"passivo":
 			passivos[c.id] = int(passivos.get(c.id, 0)) + 1
 			_recalcular()
-			armas.preaquecer()   # passivo de área muda o tamanho da poça: gera agora, com as cartas abertas
+			armas.preaquecer()  # passivo de área muda o tamanho da poça: gera agora, com as cartas abertas
 		"cura":
 			jogador.curar(40)
 		"evolucao":
@@ -1025,7 +1038,7 @@ func aplicar(c: Dictionary) -> void:
 		"reforja":
 			var ar = armas.achar(c.de)
 			if ar:
-				ar.id = str(c.id)   # mesma arma, outra variação: o nível e a ascensão ficam
+				ar.id = str(c.id)  # mesma arma, outra variação: o nível e a ascensão ficam
 				armas.preaquecer()
 				build_mudou()
 				atualizar_visual()
@@ -1037,7 +1050,7 @@ func aplicar(c: Dictionary) -> void:
 						k = j
 				if k >= 0:
 					armas.lista.remove_at(k)
-			armas.adicionar(str(c.id))   # sem herdar nível: a fundida já nasce no topo (evolucao: true)
+			armas.adicionar(str(c.id))  # sem herdar nível: a fundida já nasce no topo (evolucao: true)
 			atualizar_visual()
 			mensagem("Fusão: " + str(c.get("nome", c.id)), Color(1.0, 0.5, 0.9))
 		"comportamento":
@@ -1093,8 +1106,8 @@ func gastar_resortear() -> Array:
 
 
 ## Sorteia 3 cartas (às vezes 4, com sorte) entre: subir arma/passivo que já tem, ou pegar novos.
-func sortear_cartas(rng: RandomNumberGenerator = null) -> Array:   # com rng (baú) o sorteio sai da stream dele; sem, é pessoal
-	var cand := []   # [peso, carta]
+func sortear_cartas(rng: RandomNumberGenerator = null) -> Array:  # com rng (baú) o sorteio sai da stream dele; sem, é pessoal
+	var cand := []  # [peso, carta]
 	var armas_d: Dictionary = Dados.json("armas")
 	var pas_d: Dictionary = Dados.json("passivos")
 	for a in armas.lista:
@@ -1170,19 +1183,63 @@ func _cartas_universais(cand: Array) -> void:
 			continue
 		if int(a.nivel) >= armas.nivel_max(a.id) and int(a.get("asc", 0)) < Universais.asc_max():
 			var n := int(a.get("asc", 0)) + 1
-			cand.append([float(asc_cfg.get("peso", 14.0)), {"tipo": "ascensao", "id": str(a.id), "nome": "%s (ascensão %d)" % [str(d.get("nome", a.id)), n],
-				"desc": "+%d%% de dano e +%d%% de área, de novo." % [roundi(float(asc_cfg.get("dano", 0.12)) * 100.0), roundi(float(asc_cfg.get("area", 0.05)) * 100.0)],
-				"icone": str(d.get("icone", a.id)), "nivel": n, "max": Universais.asc_max(), "cmp": []}])
+			cand.append(
+				[
+					float(asc_cfg.get("peso", 14.0)),
+					{
+						"tipo": "ascensao",
+						"id": str(a.id),
+						"nome": "%s (ascensão %d)" % [str(d.get("nome", a.id)), n],
+						"desc":
+						(
+							"+%d%% de dano e +%d%% de área, de novo."
+							% [roundi(float(asc_cfg.get("dano", 0.12)) * 100.0), roundi(float(asc_cfg.get("area", 0.05)) * 100.0)]
+						),
+						"icone": str(d.get("icone", a.id)),
+						"nivel": n,
+						"max": Universais.asc_max(),
+						"cmp": []
+					}
+				]
+			)
 		if Universais.eh_universal(a.id) and not Universais.eh_fusao(a.id) and int(a.nivel) >= 2:
 			var b := Universais.base_de(a.id)
 			var nv_id := Universais.id_de(b, Universais.outra_variacao(b, str(d.get("variacao", "puro")), semente, rodada))
 			var nd := Dados.item(nv_id)
-			cand.append([float(Universais.cfg().get("reforja", {}).get("peso", 3.0)), {"tipo": "reforja", "id": nv_id, "de": str(a.id),
-				"nome": "Reforjar: " + str(nd.get("nome", nv_id)), "desc": str(nd.get("descricao", "")), "icone": str(nd.get("icone", nv_id)), "nivel": 0, "max": 1, "cmp": []}])
+			cand.append(
+				[
+					float(Universais.cfg().get("reforja", {}).get("peso", 3.0)),
+					{
+						"tipo": "reforja",
+						"id": nv_id,
+						"de": str(a.id),
+						"nome": "Reforjar: " + str(nd.get("nome", nv_id)),
+						"desc": str(nd.get("descricao", "")),
+						"icone": str(nd.get("icone", nv_id)),
+						"nivel": 0,
+						"max": 1,
+						"cmp": []
+					}
+				]
+			)
 	for f in Universais.fusoes_possiveis(armas.lista, armas.nivel_max):
 		var fd := Dados.item(f.vira)
-		cand.append([float(Universais.cfg().get("fusao", {}).get("peso", 40.0)), {"tipo": "fusao", "id": f.vira, "consome": f.ids,
-			"nome": str(fd.get("nome", f.vira)), "desc": str(fd.get("descricao", "")), "icone": str(fd.get("icone", f.vira)), "nivel": 0, "max": 1, "cmp": []}])
+		cand.append(
+			[
+				float(Universais.cfg().get("fusao", {}).get("peso", 40.0)),
+				{
+					"tipo": "fusao",
+					"id": f.vira,
+					"consome": f.ids,
+					"nome": str(fd.get("nome", f.vira)),
+					"desc": str(fd.get("descricao", "")),
+					"icone": str(fd.get("icone", f.vira)),
+					"nivel": 0,
+					"max": 1,
+					"cmp": []
+				}
+			]
+		)
 
 
 ## Ids das dádivas que o jogador já tem (a dádiva em dupla só aparece com as duas exigidas).
@@ -1206,8 +1263,16 @@ func _carta(tipo: String, id: String, nv: int) -> Dictionary:
 	var desc := str(d.get("descricao", ""))
 	if tipo == "arma" and nv > 1:
 		desc = _texto_nivel(d.get("niveis", [])[nv - 2])
-	var c := {"tipo": tipo, "id": id, "nome": str(d.get("nome", id)), "desc": desc, "icone": str(d.get("icone", id)), "nivel": nv,
-		"max": (1 + d.get("niveis", []).size()) if tipo == "arma" else int(d.get("max", 1)), "cmp": Interface.comparacao(tipo, id, nv)}
+	var c := {
+		"tipo": tipo,
+		"id": id,
+		"nome": str(d.get("nome", id)),
+		"desc": desc,
+		"icone": str(d.get("icone", id)),
+		"nivel": nv,
+		"max": (1 + d.get("niveis", []).size()) if tipo == "arma" else int(d.get("max", 1)),
+		"cmp": Interface.comparacao(tipo, id, nv)
+	}
 	if tipo in ["arma", "passivo", "equipamento", "evolucao"] and not Conjuntos.etiquetas_de(id).is_empty():
 		# gancho pra tela de cartas (#63): etiquetas do item e o que elas mudam na build ("Lâmina 2>3  Fogo 0>1").
 		# Só vale pra carta nova: subir de nível o que já se tem não muda a contagem.
@@ -1225,8 +1290,18 @@ func _carta(tipo: String, id: String, nv: int) -> Dictionary:
 func _carta_comp(a: Dictionary, cid: String) -> Dictionary:
 	var def: Dictionary = armas.comp_def(cid)
 	var d := Dados.item(a.id)
-	return {"tipo": "comportamento", "id": cid, "arma": str(a.id), "arma_nome": str(d.get("nome", a.id)), "nome": str(def.get("nome", cid)),
-		"desc": str(def.get("desc", "")), "icone": str(d.get("icone", a.id)), "nivel": 0, "max": 1, "cmp": []}
+	return {
+		"tipo": "comportamento",
+		"id": cid,
+		"arma": str(a.id),
+		"arma_nome": str(d.get("nome", a.id)),
+		"nome": str(def.get("nome", cid)),
+		"desc": str(def.get("desc", "")),
+		"icone": str(d.get("icone", a.id)),
+		"nivel": 0,
+		"max": 1,
+		"cmp": []
+	}
 
 
 func _texto_nivel(n: Dictionary) -> String:
@@ -1234,18 +1309,27 @@ func _texto_nivel(n: Dictionary) -> String:
 	for k in n:
 		var v := float(n[k])
 		match k:
-			"dano": partes.append("+%d de dano" % v)
-			"quantidade": partes.append("+%d projétil" % v)
-			"recarga": partes.append("recarrega %.2fs mais rápido" % -v)
-			"area": partes.append("+%d%% de área" % (v * 100))
-			"perfura": partes.append("atravessa +%d" % v)
-			"duracao": partes.append("+%.1fs de duração" % v)
-			"tique": partes.append("acerta mais rápido")
-			_: partes.append("+%s %s" % [v, k])
+			"dano":
+				partes.append("+%d de dano" % v)
+			"quantidade":
+				partes.append("+%d projétil" % v)
+			"recarga":
+				partes.append("recarrega %.2fs mais rápido" % -v)
+			"area":
+				partes.append("+%d%% de área" % (v * 100))
+			"perfura":
+				partes.append("atravessa +%d" % v)
+			"duracao":
+				partes.append("+%.1fs de duração" % v)
+			"tique":
+				partes.append("acerta mais rápido")
+			_:
+				partes.append("+%s %s" % [v, k])
 	return ", ".join(partes)
 
 
 # ---------- baú ----------
+
 
 func abrir_bau() -> void:
 	Som.tocar("abrir")
@@ -1254,8 +1338,17 @@ func abrir_bau() -> void:
 		var a = armas.achar(e.arma)
 		if a and a.nivel >= armas.nivel_max(e.arma) and passivos.has(e.passivo):
 			var d := Dados.item(e.vira)
-			premios.append({"tipo": "evolucao", "id": e.vira, "de": e.arma, "nome": str(d.get("nome", e.vira)),
-				"desc": "EVOLUIU! " + str(d.get("descricao", "")), "icone": str(d.get("icone", e.vira)), "nivel": 0})
+			premios.append(
+				{
+					"tipo": "evolucao",
+					"id": e.vira,
+					"de": e.arma,
+					"nome": str(d.get("nome", e.vira)),
+					"desc": "EVOLUIU! " + str(d.get("descricao", "")),
+					"icone": str(d.get("icone", e.vira)),
+					"nivel": 0
+				}
+			)
 			break
 	if premios.is_empty():
 		var rb := Sorte.fluxo("bau")
@@ -1294,11 +1387,12 @@ func _achar_item_no_bau() -> void:
 
 # ---------- fim ----------
 
+
 func morrer(quem := "") -> void:
 	if ganchos and not acabou and quem != "desistiu" and ganchos.reviver():
-		return   # Sete Vidas (#72 marco 6): levanta de novo
+		return  # Sete Vidas (#72 marco 6): levanta de novo
 	if provisoes and not duelo_ativo and not acabou and provisoes.fenix():
-		return   # Pena de Fênix (#72): levanta uma vez
+		return  # Pena de Fênix (#72): levanta uma vez
 	if acabou:
 		return
 	if duelo_ativo:
@@ -1316,7 +1410,7 @@ func _cair() -> void:
 		return
 	caido = true
 	jogador.hp = 0
-	if jogador._tem_anim():   # folha de 9 colunas: o jogador.gd faz a queda (tropeça, cai e deita, ficando cinza) em _process
+	if jogador._tem_anim():  # folha de 9 colunas: o jogador.gd faz a queda (tropeça, cai e deita, ficando cinza) em _process
 		jogador.spr.modulate = Color(0.45, 0.45, 0.5, 0.8)
 	online.reviver_prog = 0.0
 	anunciar("Você caiu!", Color(1, 0.4, 0.4))
@@ -1349,7 +1443,7 @@ func iniciar_duelo() -> void:
 		return
 	if cartas.aberto():
 		cartas._fechar()
-	habilidades.cancelar()   # o duelo é entre humanos: volta na hora
+	habilidades.cancelar()  # o duelo é entre humanos: volta na hora
 	duelo.iniciar(self)
 
 
@@ -1357,7 +1451,7 @@ func iniciar_duelo() -> void:
 func iniciar_duelo_online(d: Dictionary) -> void:
 	if duelo_ativo or acabou:
 		return
-	await _esperar_cartas()   # quem ainda escolhe carta entra quando terminar
+	await _esperar_cartas()  # quem ainda escolhe carta entra quando terminar
 	if duelo_ativo or acabou:
 		return
 	if caido:
@@ -1368,7 +1462,7 @@ func iniciar_duelo_online(d: Dictionary) -> void:
 ## Teste: dá ao jogador uma build sorteada de nível N (--build=N).
 func dar_build_teste(nv: int) -> void:
 	var rng_b := RandomNumberGenerator.new()
-	rng_b.seed = hash([semente, heroi_id, nv])   # build repetível com --semente (medir desempenho sempre com as mesmas armas)
+	rng_b.seed = hash([semente, heroi_id, nv])  # build repetível com --semente (medir desempenho sempre com as mesmas armas)
 	var b: Dictionary = Construcao.gerar(heroi_id, nv, rng_b)
 	armas.lista.clear()
 	for a in b.armas:
@@ -1400,10 +1494,22 @@ func _fim(vitoria: bool, extra := {}) -> void:
 	for a in dano_por_arma:
 		lista_dano.append([a, dano_por_arma[a]])
 	lista_dano.sort_custom(func(x, y): return x[1] > y[1])
-	var res := {"vitoria": vitoria, "calor": calor_pts, "fase": diretor.fase_idx + 1, "fases": diretor.fases().size(), "tempo": diretor.tempo, "nivel": nivel, "abates": abates,
-		"heroi": heroi_id, "conjuntos": conj_resumo, "dano": lista_dano, "apanhou": dano_recebido, "chefe_final": nome_chefe_final(),
-		"armas": Interface.tabela_armas(dano_por_arma, nivel_arma, tempo_arma, diretor.tempo)}
-	if provisoes:   # o que sobrou da mochila e o que achou: o main.gd leva pro baú se o herói sobreviver (#72)
+	var res := {
+		"vitoria": vitoria,
+		"calor": calor_pts,
+		"fase": diretor.fase_idx + 1,
+		"fases": diretor.fases().size(),
+		"tempo": diretor.tempo,
+		"nivel": nivel,
+		"abates": abates,
+		"heroi": heroi_id,
+		"conjuntos": conj_resumo,
+		"dano": lista_dano,
+		"apanhou": dano_recebido,
+		"chefe_final": nome_chefe_final(),
+		"armas": Interface.tabela_armas(dano_por_arma, nivel_arma, tempo_arma, diretor.tempo)
+	}
+	if provisoes:  # o que sobrou da mochila e o que achou: o main.gd leva pro baú se o herói sobreviver (#72)
 		res["mochila"] = provisoes.sobra()
 		res["achados"] = provisoes.achados
 		res["usos"] = provisoes.usos
@@ -1436,6 +1542,6 @@ func _anunciar_fase(idx: int, marca: String) -> void:
 		mensagem("Região %d de %d: %s" % [int(f.regiao) + 1, Regioes.n(), str(Regioes.regiao(int(f.regiao)).get("descricao", ""))], Color(0.8, 0.85, 1))
 	var titulo := "CHEFE DA REGIÃO: %s" % f.get("nome", "") if f.get("chefe_regiao", false) else "%d/%d: %s" % [int(f.andar_regiao) + 1, k, f.get("nome", "")]
 	if int(f.get("andar_regiao", 0)) == 0:
-		mensagem(titulo + marca, cor)       # entrada de região: o nome dela já está grande
+		mensagem(titulo + marca, cor)  # entrada de região: o nome dela já está grande
 	else:
 		anunciar(titulo + marca, cor)

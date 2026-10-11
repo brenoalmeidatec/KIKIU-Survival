@@ -20,9 +20,9 @@ const COL_VALOR_W := 224.0
 var raca := 0
 var classe := 0
 var ficha := {}
-var linha := 0                 # a linha escolhida (0 = nome ... LINHAS.size()-1 = botão criar)
+var linha := 0  # a linha escolhida (0 = nome ... LINHAS.size()-1 = botão criar)
 var _nome_txt := ""
-var _defeito := 0              # 0 = nenhum; i = i-ésimo defeito da lista
+var _defeito := 0  # 0 = nenhum; i = i-ésimo defeito da lista
 var _pele_manual := false
 var _msg := ""
 var _msg_t := 0.0
@@ -35,7 +35,7 @@ var _tela := Control.new()
 func _ready() -> void:
 	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_quadro = Engine.get_process_frames()   # a tecla que abriu a tela não conta aqui
+	_quadro = Engine.get_process_frames()  # a tecla que abriu a tela não conta aqui
 	_tela.size = Vector2(W, H)
 	_tela.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tela.draw.connect(_desenhar)
@@ -49,7 +49,7 @@ func _ready() -> void:
 	_linhas.append({"t": "criar"})
 	if ficha.is_empty():
 		ficha = Criacao.ficha_nova(_raca_id(), _classe_id())
-	else:   # ficha pronta (prints de teste): acerta os índices
+	else:  # ficha pronta (prints de teste): acerta os índices
 		raca = maxi(0, Criacao.lista_racas().find(ficha.raca))
 		classe = maxi(0, Criacao.lista_classes().find(ficha.classe))
 		_defeito = 1 + Criacao.lista_defeitos().find(ficha.defeito) if ficha.defeito != "" else 0
@@ -144,7 +144,7 @@ func _tecla(k: InputEventKey) -> void:
 					if ch == " ":
 						if _nome_txt != "" and not _nome_txt.ends_with(" "):
 							_nome_txt = novo
-					elif Criacao.limpar_nome(ch) != "":   # só letras, números, espaço e hífen
+					elif Criacao.limpar_nome(ch) != "":  # só letras, números, espaço e hífen
 						_nome_txt = novo
 					_atualizar()
 			elif k.keycode == KEY_W:
@@ -185,7 +185,7 @@ func _trocar(passo: int) -> void:
 			var n := Criacao.lista_racas().size()
 			raca = (raca + passo + n) % n
 			if not _pele_manual:
-				ficha.paleta = Paleta.padrao(_raca_id())   # a raça escolhe pele, cabelo e roupa (enquanto você não mexer nas cores)
+				ficha.paleta = Paleta.padrao(_raca_id())  # a raça escolhe pele, cabelo e roupa (enquanto você não mexer nas cores)
 		"classe":
 			var n := Criacao.lista_classes().size()
 			classe = (classe + passo + n) % n
@@ -194,7 +194,7 @@ func _trocar(passo: int) -> void:
 			_defeito = (_defeito + passo + n) % n
 			_atualizar()
 			var devolvidos := 0
-			while _sobra() < 0:   # o defeito saiu: devolve os pontos que passaram do novo total (do último atributo pra trás)
+			while _sobra() < 0:  # o defeito saiu: devolve os pontos que passaram do novo total (do último atributo pra trás)
 				var lista: Array = Criacao.lista_atributos()
 				for i in range(lista.size() - 1, -1, -1):
 					if int(ficha.pontos[lista[i]]) > 0:
@@ -262,7 +262,7 @@ func _clique(mp: Vector2) -> void:
 			continue
 		linha = i
 		var t: String = _linhas[i].t
-		if t == "pal":   # clicar numa cor escolhe ela
+		if t == "pal":  # clicar numa cor escolhe ela
 			var c := str(_linhas[i].k)
 			var j := int((mp.x - COL_VALOR) / _passo_pal(c))
 			if mp.x >= COL_VALOR and j >= 0 and j < Paleta.cores(c).size():
@@ -295,8 +295,14 @@ func _desenhar() -> void:
 	_tela.draw_rect(Rect2(10, 40, 340, 238), Color(0.3, 0.33, 0.48), false, 1.0)
 	for i in _linhas.size() - 1:
 		_desenhar_linha(i, _linhas[i], r, c)
-	_txt(Vector2(COL_ROTULO, LINHA_Y + (_linhas.size() - 1) * LINHA_H - 3), "Pontos sobrando: %d de %d" % [_sobra(), Criacao.pontos_totais(str(ficha.defeito))], 8,
-		Color(1, 0.9, 0.5) if _sobra() > 0 else Color(0.6, 0.65, 0.75), 320, HORIZONTAL_ALIGNMENT_LEFT)
+	_txt(
+		Vector2(COL_ROTULO, LINHA_Y + (_linhas.size() - 1) * LINHA_H - 3),
+		"Pontos sobrando: %d de %d" % [_sobra(), Criacao.pontos_totais(str(ficha.defeito))],
+		8,
+		Color(1, 0.9, 0.5) if _sobra() > 0 else Color(0.6, 0.65, 0.75),
+		320,
+		HORIZONTAL_ALIGNMENT_LEFT
+	)
 	_desenhar_previa(heroi)
 	# descrição da linha escolhida
 	var d := _descricao(_linhas[linha], r, c)
@@ -305,8 +311,15 @@ func _desenhar() -> void:
 	_tela.draw_multiline_string(Dados.fonte, Vector2(368, 195), d, HORIZONTAL_ALIGNMENT_LEFT, 256, 8, 8, Color(0.78, 0.8, 0.88))
 	# ficha final
 	var s := Construcao.stats(heroi, {}, {})
-	_txt(Vector2(0, 294), "Vida %d   Dano %d%%   Velocidade %d%%   Área %d%%   Crítico %d%%" % [roundi(s.vida_max), roundi(s.dano * 100.0),
-		roundi(s.velocidade * 100.0), roundi(s.area * 100.0), roundi(s.critico * 100.0)], 8, Color(0.82, 0.85, 0.95))
+	_txt(
+		Vector2(0, 294),
+		(
+			"Vida %d   Dano %d%%   Velocidade %d%%   Área %d%%   Crítico %d%%"
+			% [roundi(s.vida_max), roundi(s.dano * 100.0), roundi(s.velocidade * 100.0), roundi(s.area * 100.0), roundi(s.critico * 100.0)]
+		),
+		8,
+		Color(0.82, 0.85, 0.95)
+	)
 	var arma := Dados.item(str(heroi.arma))
 	var esp: Dictionary = Dados.json("especiais").get(str(heroi.especial), {})
 	_txt(Vector2(0, 308), "Arma: %s   Especial (E): %s" % [str(arma.get("nome", heroi.arma)), str(esp.get("nome", "-"))], 8, Color(1, 0.9, 0.5))
@@ -400,7 +413,14 @@ func _desenhar_previa(heroi: Dictionary) -> void:
 	if rosto:
 		_tela.draw_texture_rect_region(rosto, Rect2(568, 46, 56, 56), Rect2(0, 0, 52, 52))
 	_txt(Vector2(366, 56), str(heroi.nome) if str(ficha.nome) != "" else "Sem nome", 8, Color(1, 0.95, 0.7), 190, HORIZONTAL_ALIGNMENT_LEFT)
-	_txt(Vector2(366, 68), str(Criacao.racas().get(_raca_id(), {}).get("curto", "")) + " " + str(Criacao.classes().get(_classe_id(), {}).get("nome", "")), 8, Color(0.6, 0.85, 1), 190, HORIZONTAL_ALIGNMENT_LEFT)
+	_txt(
+		Vector2(366, 68),
+		str(Criacao.racas().get(_raca_id(), {}).get("curto", "")) + " " + str(Criacao.classes().get(_classe_id(), {}).get("nome", "")),
+		8,
+		Color(0.6, 0.85, 1),
+		190,
+		HORIZONTAL_ALIGNMENT_LEFT
+	)
 	_txt(Vector2(0, 173), "prévia ao vivo", 8, Color(0.5, 0.52, 0.62), 360 + 268 - 6, HORIZONTAL_ALIGNMENT_RIGHT)
 
 
@@ -411,7 +431,7 @@ func _descricao(l: Dictionary, r: Dictionary, c: Dictionary) -> String:
 			return "Até %d letras. É o nome que os outros jogadores veem." % int(Dados.json("aparencia").get("nome_max", 12))
 		"raca":
 			var gs := ""
-			for g in r.get("ganchos", []):   # marco 6: a regra própria da raça, uma linha por gancho
+			for g in r.get("ganchos", []):  # marco 6: a regra própria da raça, uma linha por gancho
 				gs += "\n" + str(g.get("texto", ""))
 			return str(r.get("descricao", "")) + "\n" + _linhas_de(Criacao.descrever(r.get("bonus", {})) + Criacao.descrever(r.get("fraquezas", {}))) + gs
 		"classe":

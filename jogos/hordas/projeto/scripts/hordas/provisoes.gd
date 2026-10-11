@@ -10,21 +10,21 @@ extends Node
 const Mochila := preload("res://scripts/hordas/mochila.gd")
 
 var arena: Node
-var m := {}                  # a mochila (validada) que o herói trouxe
-var restantes := {}          # consumível -> unidades que ainda tem
-var slots: Array = []        # consumíveis na ordem das teclas 1, 2, 3 (fixa a corrida toda)
+var m := {}  # a mochila (validada) que o herói trouxe
+var restantes := {}  # consumível -> unidades que ainda tem
+var slots: Array = []  # consumíveis na ordem das teclas 1, 2, 3 (fixa a corrida toda)
 var amuleto := ""
 var comidas: Array = []
-var buffs: Array = []        # {id, t, tmax, bonus}: poções ativas
-var achados: Array = []      # itens achados na corrida: só voltam pro baú se o herói vencer
-var usos := {}               # consumível -> quantos já usou (tela de fim)
-var sel := 0                 # controle: o consumível escolhido (R3 troca, L3 usa)
+var buffs: Array = []  # {id, t, tmax, bonus}: poções ativas
+var achados: Array = []  # itens achados na corrida: só voltam pro baú se o herói vencer
+var usos := {}  # consumível -> quantos já usou (tela de fim)
+var sel := 0  # controle: o consumível escolhido (R3 troca, L3 usa)
 var fenix_gasta := false
-var _soma := {}              # bônus de atributos já somados (atualiza quando algo muda)
+var _soma := {}  # bônus de atributos já somados (atualiza quando algo muda)
 var _andar := -1
-var _pend := 0.0             # online: espera a resposta do anfitrião antes de pedir de novo
+var _pend := 0.0  # online: espera a resposta do anfitrião antes de pedir de novo
 var _bot_t := 0.0
-var _trapaca := false         # teste (--trapaca): pede consumível mesmo sem ter, pra ver o anfitrião recusar
+var _trapaca := false  # teste (--trapaca): pede consumível mesmo sem ter, pra ver o anfitrião recusar
 var _t := 0.0
 
 
@@ -141,7 +141,7 @@ func _bot() -> int:
 	if _bot_t > 0.0:
 		return -1
 	_bot_t = 0.5
-	if arena.eh_online:   # teste online: usa um consumível a cada 2,5 s pra exercitar o pedido e a conferência do anfitrião
+	if arena.eh_online:  # teste online: usa um consumível a cada 2,5 s pra exercitar o pedido e a conferência do anfitrião
 		if _t < 4.0:
 			return -1
 		_bot_t = 2.5

@@ -13,7 +13,7 @@ const ALT_MAX := 4096
 var textura: ImageTexture
 var geracao := 0
 var _img: Image
-var _pos := {}          # Texture2D -> Vector2 (canto da folha no atlas, em pixels)
+var _pos := {}  # Texture2D -> Vector2 (canto da folha no atlas, em pixels)
 var _x := 0
 var _y := 0
 var _prat := 0
@@ -60,7 +60,7 @@ func _crescer() -> void:
 	var nova := Image.create_empty(LARG, mini(_img.get_height() * 2, ALT_MAX), false, Image.FORMAT_RGBA8)
 	nova.blit_rect(_img, Rect2i(0, 0, LARG, _img.get_height()), Vector2i.ZERO)
 	_img = nova
-	textura = ImageTexture.create_from_image(_img)   # textura nova: quem usa o atlas confere `textura` todo quadro
+	textura = ImageTexture.create_from_image(_img)  # textura nova: quem usa o atlas confere `textura` todo quadro
 	_sujo = false
 
 

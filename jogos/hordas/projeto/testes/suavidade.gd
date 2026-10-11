@@ -19,6 +19,7 @@ func ok(cond: bool, msg: String) -> void:
 ## Finge ser o nó de desenho: guarda cada cone (polígono) com a cor, pra conferir a divisão atrás/frente.
 class Gravador:
 	var polis: Array = []
+
 	func draw_colored_polygon(pts: PackedVector2Array, cor: Color) -> void:
 		polis.append([pts, cor])
 
@@ -47,7 +48,10 @@ func _ready() -> void:
 		var frente := Gravador.new()
 		Aura._chamas(w, atras, a, false)
 		Aura._chamas(w, frente, a, true)
-		ok(atras.polis.size() > 0 and frente.polis.size() > 0, "nível %d: tem chamas atrás (%d) e na frente (%d)" % [nv, atras.polis.size(), frente.polis.size()])
+		ok(
+			atras.polis.size() > 0 and frente.polis.size() > 0,
+			"nível %d: tem chamas atrás (%d) e na frente (%d)" % [nv, atras.polis.size(), frente.polis.size()]
+		)
 		var n_total: int = 6 + int(nv) * 2
 		var por_cone: int = 2 + (1 if nv >= 4 else 0)
 		ok((atras.polis.size() + frente.polis.size()) / por_cone == n_total, "nível %d: as duas metades somam o anel todo (%d)" % [nv, n_total])
@@ -82,7 +86,7 @@ func _ready() -> void:
 	var ar = m._arena
 	var j = ar.jogador
 	await get_tree().create_timer(1.0).timeout
-	ar.set_process(false)                       # os quadros são do teste
+	ar.set_process(false)  # os quadros são do teste
 	j.bot = true
 	var I = ar.inimigos
 	I.limpar()
@@ -96,7 +100,7 @@ func _ready() -> void:
 	var exemplo := ""
 	for q in 600:
 		if q == 300:
-			j.position += Vector2(2600, 0)         # herói some longe: todo mundo passa de LONGE e é reciclado
+			j.position += Vector2(2600, 0)  # herói some longe: todo mundo passa de LONGE e é reciclado
 		if q == 301:
 			var animando := 0
 			for v in I.lista:
@@ -158,11 +162,11 @@ func _ready() -> void:
 			prox_foto += onl.ENVIO
 			if t > 3.0 and salto_t < 0.0:
 				salto_t = t
-				desvio = 400.0               # reciclagem no anfitrião: 400 px adiante de uma foto pra outra
+				desvio = 400.0  # reciclagem no anfitrião: 400 px adiante de uma foto pra outra
 				tp_antes = C.tp_n
 			var x := 3000.0 + vel * t + desvio
 			var foto := PackedFloat32Array([7, 0, x, 500.0, 1.0, 0])
-			if t > 5.0 and t < 5.2:          # foto sem o bicho (foto cheia): não pode piscar
+			if t > 5.0 and t < 5.2:  # foto sem o bicho (foto cheia): não pode piscar
 				foto = PackedFloat32Array()
 			var existia: bool = C.por_id.has(7)
 			C.aplicar_foto(foto, PackedFloat32Array(), onl)
@@ -174,14 +178,14 @@ func _ready() -> void:
 		t += fdt
 		if C.por_id.has(7):
 			var p: Vector2 = C.por_id[7].pos
-			var em_salto: bool = salto_t >= 0.0 and t - salto_t < 0.15   # logo depois do salto, o desvio é o teleporte
+			var em_salto: bool = salto_t >= 0.0 and t - salto_t < 0.15  # logo depois do salto, o desvio é o teleporte
 			if q > 0 and not em_salto:
 				maxpasso = maxf(maxpasso, p.distance_to(ultimo))
 			ultimo = p
 	ok(maxpasso <= 2.5 * vel * fdt + 0.3, "cliente: desliza sem pulo entre as fotos (maior passo %.2f, limite %.2f)" % [maxpasso, 2.5 * vel * fdt + 0.3])
 	ok(C.tp_n == tp_antes + 1 and tp_antes == 0, "cliente: salto de 400 px vira teleporte animado (%d)" % C.tp_n)
 	ok(recriou == 0 and visto, "cliente: bicho que some de uma foto não pisca (recriado %d vezes)" % recriou)
-	for q in 40:                              # sumiu de vez: sai depois do prazo
+	for q in 40:  # sumiu de vez: sai depois do prazo
 		C.aplicar_foto(PackedFloat32Array(), PackedFloat32Array(), onl)
 	ok(not C.por_id.has(7), "cliente: quem some das fotos por muito tempo sai")
 

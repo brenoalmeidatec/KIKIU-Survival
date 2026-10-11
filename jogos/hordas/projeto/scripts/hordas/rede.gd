@@ -4,31 +4,44 @@ extends Node
 ## Aqui só transporta e confere o que chega; as regras de cada mensagem ficam em online.gd, arena.gd e duelo.gd.
 ## Desenho completo em docs/ONLINE_KIKIU.md.
 
-signal mudou                                 # entrou/saiu alguém ou alguém trocou de herói
-signal conectou(ok: bool, msg: String)       # cliente: chegou na sala (ou foi recusado)
-signal comecou(opcoes: Dictionary)           # todos: o anfitrião começou a partida
-signal caiu(msg: String)                     # a sala acabou (anfitrião saiu, internet caiu...)
+signal mudou  # entrou/saiu alguém ou alguém trocou de herói
+signal conectou(ok: bool, msg: String)  # cliente: chegou na sala (ou foi recusado)
+signal comecou(opcoes: Dictionary)  # todos: o anfitrião começou a partida
+signal caiu(msg: String)  # a sala acabou (anfitrião saiu, internet caiu...)
 
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
 const Mochila := preload("res://scripts/hordas/mochila.gd")
-const ENVIO := 1.0 / 15.0     # posições por segundo
+const ENVIO := 1.0 / 15.0  # posições por segundo
 # eventos que o anfitrião pode mandar (o resto é ignorado)
-const EVENTOS := ["anuncio", "chefe_final", "fase_completa", "proxima_fase", "tela_azul_caiu", "fim_corrida",
-	"duelo_iniciar", "luta", "eliminado", "duelo_fim", "objetivo", "consumivel", "saida_aberta"]
+const EVENTOS := [
+	"anuncio",
+	"chefe_final",
+	"fase_completa",
+	"proxima_fase",
+	"tela_azul_caiu",
+	"fim_corrida",
+	"duelo_iniciar",
+	"luta",
+	"eliminado",
+	"duelo_fim",
+	"objetivo",
+	"consumivel",
+	"saida_aberta"
+]
 
 var PORTA := 7777
 var MAX := 6
 var ELENCO: Array = []
 
-var modo := ""               # "", "anfitriao" ou "cliente"
-var jogadores := {}          # peer -> {"heroi": "nicao", "nome": "Corvo 42", "pronto": false}
-var apelido := ""            # meu nome nas salas (main.gd lê e salva em user://online.json)
-var porta_aberta := 7777     # porta em que a sala deste computador abriu (a lista de salas e o lobby mostram)
+var modo := ""  # "", "anfitriao" ou "cliente"
+var jogadores := {}  # peer -> {"heroi": "nicao", "nome": "Corvo 42", "pronto": false}
+var apelido := ""  # meu nome nas salas (main.gd lê e salva em user://online.json)
+var porta_aberta := 7777  # porta em que a sala deste computador abriu (a lista de salas e o lobby mostram)
 var em_partida := false
-var remotos := {}            # peer -> {x, y, mx, my, hp, caido, lado}  (o pé do boneco, como jogador.position)
-var online_no: Node = null   # online.gd da partida aberta (avisa quando abre e fecha)
-var mochilas_locais := {}    # teste: herói -> mochila que ESTA máquina declara (--mochila=); normalmente vale a última montada no Preparo (criacao.gd)
+var remotos := {}  # peer -> {x, y, mx, my, hp, caido, lado}  (o pé do boneco, como jogador.position)
+var online_no: Node = null  # online.gd da partida aberta (avisa quando abre e fecha)
+var mochilas_locais := {}  # teste: herói -> mochila que ESTA máquina declara (--mochila=); normalmente vale a última montada no Preparo (criacao.gd)
 var _envio_t := 0.0
 
 
@@ -38,9 +51,11 @@ func _ready() -> void:
 	multiplayer.peer_connected.connect(func(_id): pass)
 	multiplayer.peer_disconnected.connect(_peer_saiu)
 	multiplayer.connected_to_server.connect(func(): _pedir_lista.rpc_id(1))
-	multiplayer.connection_failed.connect(func():
-		sair()
-		conectou.emit(false, "Não deu pra conectar. Confira o endereço e se a sala está aberta."))
+	multiplayer.connection_failed.connect(
+		func():
+			sair()
+			conectou.emit(false, "Não deu pra conectar. Confira o endereço e se a sala está aberta.")
+	)
 	multiplayer.server_disconnected.connect(func(): _acabou("O anfitrião fechou a sala (ou a internet caiu)."))
 
 
@@ -67,7 +82,7 @@ func heroi_de(peer: int) -> String:
 ## Como o jogador aparece pros outros: o apelido dele; sem apelido, o nome do herói.
 func nome_de(peer: int) -> String:
 	var h := heroi_de(peer)
-	if Criacao.eh_criado(h) and Dados.herois_extra.has(h):   # herói criado (#72): aparece com o nome que o jogador deu a ele
+	if Criacao.eh_criado(h) and Dados.herois_extra.has(h):  # herói criado (#72): aparece com o nome que o jogador deu a ele
 		return str(Dados.herois_extra[h].get("nome", h))
 	var a := str(jogadores.get(peer, {}).get("nome", ""))
 	if a != "":
@@ -76,7 +91,7 @@ func nome_de(peer: int) -> String:
 
 
 func pronto_de(peer: int) -> bool:
-	return peer == 1 or bool(jogadores.get(peer, {}).get("pronto", false))   # o anfitrião está sempre pronto
+	return peer == 1 or bool(jogadores.get(peer, {}).get("pronto", false))  # o anfitrião está sempre pronto
 
 
 func todos_prontos() -> bool:
@@ -104,7 +119,7 @@ static func nome_sorteado() -> String:
 func ocupados(menos := -1) -> Array:
 	var l := []
 	for p in jogadores:
-		if p != menos and heroi_de(p) != "" and not Criacao.eh_criado(heroi_de(p)):   # herói criado não ocupa vaga do elenco
+		if p != menos and heroi_de(p) != "" and not Criacao.eh_criado(heroi_de(p)):  # herói criado não ocupa vaga do elenco
 			l.append(heroi_de(p))
 	return l
 
@@ -153,7 +168,7 @@ func _registrar_criados() -> void:
 func heroi_livre(preferido := "") -> String:
 	var tomados := ocupados(eu())
 	if preferido != "" and Criacao.eh_criado(preferido) and Dados.herois_extra.has(preferido):
-		return preferido   # herói criado meu (já registrado): não disputa vaga
+		return preferido  # herói criado meu (já registrado): não disputa vaga
 	if preferido in ELENCO and not preferido in tomados:
 		return preferido
 	if preferido in ELENCO and not preferido in tomados:
@@ -165,6 +180,7 @@ func heroi_livre(preferido := "") -> String:
 
 
 # ======================================================== abrir, entrar, sair
+
 
 ## Abre a sala neste computador. Devolve "" se deu certo, ou o motivo do erro.
 func criar_sala(heroi: String, porta := PORTA) -> String:
@@ -321,7 +337,7 @@ func _entrada_propria(heroi: String, pronto: bool) -> Dictionary:
 	if not f.is_empty():
 		e["ficha"] = f
 	var m := _mochila_local(heroi)
-	if not m.is_empty() and erro_mochila(m, heroi, f) == "":   # a minha própria mochila passa pela mesma conferência
+	if not m.is_empty() and erro_mochila(m, heroi, f) == "":  # a minha própria mochila passa pela mesma conferência
 		var rc := _raca_classe(heroi, f)
 		e["mochila"] = Mochila.limpar(m, rc[0], rc[1])
 		print("MOCHILA aceita: peer=%d heroi=%s itens=%s amuleto=%s" % [eu(), heroi, JSON.stringify(e.mochila.itens), e.mochila.amuleto])
@@ -347,7 +363,7 @@ func _pronto(sim) -> void:
 func trocar_apelido(nome: String) -> void:
 	apelido = limpar_nome(nome)
 	if online() and jogadores.has(eu()):
-		escolher(heroi_de(eu()))   # reenvia herói + apelido
+		escolher(heroi_de(eu()))  # reenvia herói + apelido
 
 
 @rpc("any_peer", "reliable")
@@ -361,11 +377,11 @@ func _escolher(heroi: String, nome := "", ficha = {}, mochila = {}) -> void:
 	if jogadores.size() >= MAX and not jogadores.has(quem):
 		_recusado.rpc_id(quem, "A sala está cheia (%d pessoas)." % MAX)
 		return
-	var erro := erro_heroi(heroi, ficha)   # herói criado: a ficha vem de fora, cada número é conferido aqui
+	var erro := erro_heroi(heroi, ficha)  # herói criado: a ficha vem de fora, cada número é conferido aqui
 	if erro != "":
 		_recusado.rpc_id(quem, erro)
 		return
-	var erro_m := erro_mochila(mochila, heroi, ficha)   # a mochila vem de fora: ids, limites e espaços conferidos aqui
+	var erro_m := erro_mochila(mochila, heroi, ficha)  # a mochila vem de fora: ids, limites e espaços conferidos aqui
 	if erro_m != "":
 		print("MOCHILA recusada: peer=%d %s" % [quem, erro_m])
 		_recusado.rpc_id(quem, erro_m)
@@ -385,14 +401,14 @@ func _escolher(heroi: String, nome := "", ficha = {}, mochila = {}) -> void:
 	jogadores[quem].erase("ficha")
 	jogadores[quem].erase("mochila")
 	if criado and not Criacao.partes(heroi).is_empty():
-		pass   # id "c:raça:classe": sem ficha
+		pass  # id "c:raça:classe": sem ficha
 	elif criado:
-		jogadores[quem]["ficha"] = Criacao.validar_ficha(ficha)   # a ficha limpa, que o anfitrião reenvia a todos
+		jogadores[quem]["ficha"] = Criacao.validar_ficha(ficha)  # a ficha limpa, que o anfitrião reenvia a todos
 	if criado and mochila is Dictionary and not mochila.is_empty():
 		var rc := _raca_classe(heroi, jogadores[quem].get("ficha", ficha))
 		var limpa := Mochila.limpar(mochila, rc[0], rc[1])
 		if not limpa.is_empty() and not Mochila.vazio(limpa):
-			jogadores[quem]["mochila"] = limpa   # a mochila limpa, que o anfitrião reenvia a todos
+			jogadores[quem]["mochila"] = limpa  # a mochila limpa, que o anfitrião reenvia a todos
 			print("MOCHILA aceita: peer=%d heroi=%s itens=%s amuleto=%s" % [quem, heroi, JSON.stringify(limpa.itens), limpa.amuleto])
 	_registrar_criados()
 	_lista.rpc(jogadores)
@@ -432,6 +448,7 @@ func _comecar(j: Dictionary, opcoes: Dictionary) -> void:
 
 # ======================================================== posições
 
+
 func _process(delta: float) -> void:
 	if not em_partida or online_no == null or not is_instance_valid(online_no):
 		return
@@ -454,7 +471,8 @@ func _pos(b: PackedByteArray) -> void:
 		return
 	var flags := b.decode_u8(11)
 	remotos[quem] = {
-		"x": x, "y": y,
+		"x": x,
+		"y": y,
 		"mx": b.decode_s8(8) / 127.0,
 		"my": b.decode_s8(9) / 127.0,
 		"hp": b.decode_u8(10) / 255.0,
@@ -470,6 +488,7 @@ static func _num(v) -> bool:
 
 
 # ======================================================== partida: anfitrião -> clientes
+
 
 ## Foto dos vírus (e tiros deles) perto de um cliente.
 func enviar_foto(peer: int, compacta: PackedByteArray) -> void:
@@ -518,6 +537,7 @@ func _evento(nome: String, d: Dictionary) -> void:
 
 # ======================================================== partida: clientes -> anfitrião
 
+
 ## Acertos de um cliente nos vírus dele: [id, dano, kx, ky, índice da arma] por acerto.
 func enviar_acertos(a: PackedFloat32Array) -> void:
 	_acertos.rpc_id(1, a)
@@ -543,12 +563,19 @@ func avisar(nome: String, valor := 0.0, peer := 0) -> void:
 @rpc("any_peer", "reliable")
 func _aviso(nome: String, valor: float, peer: int) -> void:
 	var quem := multiplayer.get_remote_sender_id()
-	if anfitriao() and jogadores.has(quem) and nome in ["voto", "pronto", "forca", "caiu", "usar"] and _num(valor) \
-			and online_no and is_instance_valid(online_no):
+	if (
+		anfitriao()
+		and jogadores.has(quem)
+		and nome in ["voto", "pronto", "forca", "caiu", "usar"]
+		and _num(valor)
+		and online_no
+		and is_instance_valid(online_no)
+	):
 		online_no.aviso(quem, nome, valor, peer)
 
 
 # ======================================================== duelo: golpe direto de pessoa pra pessoa
+
 
 ## Quem ataca detecta o acerto e manda; quem apanha decide (vida, invencibilidade, dash).
 func golpe(alvo: int, dano: float, empurrao: Vector2) -> void:
@@ -565,6 +592,8 @@ func _golpe(dano: float, ex: float, ey: float) -> void:
 
 
 var _banda_t := 0
+
+
 ## KB/s enviados e recebidos desde a última chamada, pelas estatísticas do ENet (só pra medir; o log do --sair usa).
 func banda() -> Vector2:
 	var p = multiplayer.multiplayer_peer
@@ -578,7 +607,7 @@ func banda() -> Vector2:
 
 # ======================================================== chat de texto (chat.gd desenha e lê o teclado)
 
-var _chat_ult := {}         # anfitrião: peer -> ms da última mensagem (segura quem manda rápido demais)
+var _chat_ult := {}  # anfitrião: peer -> ms da última mensagem (segura quem manda rápido demais)
 const CHAT_INTERVALO := 400
 
 
@@ -621,9 +650,10 @@ func _chat(quem, txt, sistema) -> void:
 
 # ======================================================== chat de voz (voz.gd captura, comprime e toca)
 
+
 func voz_enviar(pacote: PackedByteArray) -> void:
 	if online():
-		_voz.rpc(pacote)   # do cliente, o anfitrião repassa pros outros (relay da SceneMultiplayer)
+		_voz.rpc(pacote)  # do cliente, o anfitrião repassa pros outros (relay da SceneMultiplayer)
 
 
 @rpc("any_peer", "unreliable")
@@ -635,6 +665,7 @@ func _voz(pacote) -> void:
 
 
 # ======================================================== calor da sala (o anfitrião escolhe; vai nas opções do começo)
+
 
 ## Anfitrião: guarda o total de calor no próprio cartão da sala, pra todos verem no lobby.
 func definir_calor_sala(pontos: int) -> void:

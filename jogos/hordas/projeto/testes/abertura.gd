@@ -5,13 +5,16 @@ const Arena := preload("res://scripts/hordas/arena.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func nova(com: bool) -> Node2D:
 	var a := Arena.new()
@@ -21,6 +24,7 @@ func nova(com: bool) -> Node2D:
 	a.com_abertura = com
 	add_child(a)
 	return a
+
 
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
@@ -35,7 +39,10 @@ func _ready() -> void:
 	ok(float(an.duracao) >= 1.5 and float(an.duracao) <= 2.5, "abertura de andar comum dura ~2 s (%.1f)" % float(an.duracao))
 	for m in [rg, an]:
 		var pouso: float = float(m.queda.inicio) + 0.65 * float(m.queda.duracao)
-		ok(pouso < float(m.libera) and float(m.libera) <= float(m.duracao), "o pouso (%.2f) vem antes de liberar (%.2f) e de acabar (%.2f)" % [pouso, float(m.libera), float(m.duracao)])
+		ok(
+			pouso < float(m.libera) and float(m.libera) <= float(m.duracao),
+			"o pouso (%.2f) vem antes de liberar (%.2f) e de acabar (%.2f)" % [pouso, float(m.libera), float(m.duracao)]
+		)
 		ok(float(m.titulo_em) >= pouso - 0.05 and float(m.titulo_some) <= float(m.duracao), "o título entra no pouso e some antes do fim")
 		ok(float(m.guindaste.ate) <= float(m.queda.inicio) + 0.6, "a câmera já chegou quando o herói cai")
 	for r in Regioes.lista():
@@ -59,14 +66,14 @@ func _ready() -> void:
 	ok(not a.hud.visible, "HUD escondido durante a abertura")
 	ok(a.jogador.invencivel > 0.0, "herói invulnerável durante a abertura")
 	var pos0: Vector2 = a.jogador.position
-	Input.action_press("direita")   # tentar andar: parado
+	Input.action_press("direita")  # tentar andar: parado
 	await esperar(0.8)
 	ok(a.jogador.position.distance_to(pos0) < 0.5, "herói não anda durante a abertura")
 	Input.action_release("direita")
 	ok(a.diretor.t_fase < 0.001, "o relógio da fase espera (%.3f)" % a.diretor.t_fase)
 	ok(a.inimigos.lista.size() == 0, "nenhum inimigo nasce durante a abertura (%d)" % a.inimigos.lista.size())
 	ok(a.jogador.invencivel > 0.0, "ainda invulnerável aos 1,3 s")
-	await esperar(float(rg.libera) - 1.3 + 0.35)   # passou do libera
+	await esperar(float(rg.libera) - 1.3 + 0.35)  # passou do libera
 	ok(not ab.heroi_preso() and not ab.mundo_preso(), "liberou: herói e mundo soltos")
 	ok(a.hud.visible and a.jogador.visible, "HUD e herói de volta")
 	ok(a.jogador.invencivel > 0.0, "tolerância de invulnerabilidade depois de liberar")
@@ -77,7 +84,7 @@ func _ready() -> void:
 
 	# --- pular com confirmar, na abertura de um andar comum
 	a.entre_fases = true
-	a.proxima_fase()   # andar 2 da região 1: versão curta
+	a.proxima_fase()  # andar 2 da região 1: versão curta
 	await esperar(0.2)
 	ok(ab.ativa() and absf(ab.duracao() - float(an.duracao)) < 0.001, "andar comum usa a versão curta")
 	var ev := InputEventAction.new()

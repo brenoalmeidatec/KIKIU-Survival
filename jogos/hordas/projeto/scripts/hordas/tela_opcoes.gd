@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Tela de Opções (abre pelo título e pela pausa). Lista os itens do Config.ITENS por grupo.
+## Tela de Opções (abre pelo título e pela pausa). Lista os itens do _itens por grupo.
 ## Cima/baixo escolhem, esquerda/direita (ou Enter) mudam o valor, Esc volta. Muda e salva na hora.
 ## Mouse: passar por cima escolhe, clique esquerdo avança o valor, clique direito volta, clique em "Voltar" fecha.
 ## Uso: var t := TelaOpcoes.new(); add_child(t); t.fechou.connect(...). Ela mesma se apaga ao fechar.
@@ -9,17 +9,19 @@ signal fechou
 const W := 640.0
 const H := 360.0
 const Interface := preload("res://scripts/hordas/interface.gd")
+const CENA_GRAFICOS := preload("res://cenas/tela_graficos.tscn")  # aba Gráficos (#150), aberta pelo item "Gráficos"
 
+var _itens: Array = []  # os itens de _itens mais o "Gráficos" (no topo), na ordem da tela
 var _tela := Control.new()
 var _sel := 0
 var _quadro := 0
-var _captando := ""      # ação que espera a nova tecla/botão (remapeamento, #126); "" = não está captando
-var _quadro_cap := -1    # quadro em que a captura terminou: a mesma tecla não vale como comando da tela
+var _captando := ""  # ação que espera a nova tecla/botão (remapeamento, #126); "" = não está captando
+var _quadro_cap := -1  # quadro em que a captura terminou: a mesma tecla não vale como comando da tela
 var _mouse_ult := Vector2(-1, -1)
 var _rolagem := 0.0
 var _fim_lista := 0.0
 const FORA := -1000.0
-const JANELA_TOPO := 50.0   # primeira linha de baixo do título
+const JANELA_TOPO := 50.0  # primeira linha de baixo do título
 const JANELA_BASE := 322.0
 const VOLTAR_Y := 336.0
 
@@ -27,7 +29,9 @@ const VOLTAR_Y := 336.0
 func _ready() -> void:
 	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_quadro = Engine.get_process_frames()   # a tecla que abriu a tela não conta aqui
+	_quadro = Engine.get_process_frames()  # a tecla que abriu a tela não conta aqui
+	_itens = Config.ITENS.duplicate()
+	_itens.insert(0, {"chave": "", "grupo": "Visual", "nome": "Gráficos: perfil, CPU e GPU", "abre": true})
 	_tela.size = Vector2(W, H)
 	_tela.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tela.draw.connect(_desenhar)
@@ -35,7 +39,7 @@ func _ready() -> void:
 
 
 func _n() -> int:
-	return Config.ITENS.size() + 1   # + "Voltar"
+	return _itens.size() + 1  # + "Voltar"
 
 
 ## Posição (y da linha de base) de cada item e do "Voltar", mais os cabeçalhos de grupo. Desenho e mouse usam esta conta.
@@ -43,17 +47,17 @@ func _n() -> int:
 ## visível vai para y = FORA e não é desenhado nem clicável. "Voltar" fica sempre no pé da tela.
 func _layout() -> Dictionary:
 	var ys := []
-	var grupos := []   # {y, nome}
+	var grupos := []  # {y, nome}
 	var y := 50.0
 	var grupo := ""
-	for it in Config.ITENS:
+	for it in _itens:
 		if it.grupo != grupo:
 			grupo = it.grupo
 			y += 4.0
 			grupos.append({"y": y - _rolagem, "nome": grupo})
 			y += 12.0
 		ys.append(y)
-		y += 12.0   # 12 px por linha: com os itens de acessibilidade e de voz, 14 passava da tela
+		y += 12.0  # 12 px por linha: com os itens de acessibilidade e de voz, 14 passava da tela
 	_fim_lista = y
 	for i in ys.size():
 		ys[i] -= _rolagem
@@ -68,14 +72,14 @@ func _layout() -> Dictionary:
 
 ## Rola a lista o mínimo para o item escolhido aparecer inteiro (e o cabeçalho do grupo, se for o 1º dele).
 func _seguir_selecao() -> void:
-	if _sel >= Config.ITENS.size():
+	if _sel >= _itens.size():
 		return
 	var y := 50.0
 	var grupo := ""
 	var y_sel := 0.0
 	var y_topo := 0.0
-	for i in Config.ITENS.size():
-		var it: Dictionary = Config.ITENS[i]
+	for i in _itens.size():
+		var it: Dictionary = _itens[i]
 		if it.grupo != grupo:
 			grupo = it.grupo
 			y += 4.0
@@ -85,7 +89,7 @@ func _seguir_selecao() -> void:
 			y_sel = y
 			break
 		y += 12.0
-	var primeiro: bool = _sel == 0 or Config.ITENS[_sel - 1].grupo != Config.ITENS[_sel].grupo
+	var primeiro: bool = _sel == 0 or _itens[_sel - 1].grupo != _itens[_sel].grupo
 	var topo := y_topo if primeiro else y_sel
 	if topo - _rolagem < JANELA_TOPO:
 		_rolagem = maxf(0.0, topo - JANELA_TOPO)
@@ -114,7 +118,7 @@ func _process(_dt: float) -> void:
 	if Engine.get_process_frames() == _quadro or _captando != "" or Engine.get_process_frames() == _quadro_cap:
 		return
 	var mp := _tela.get_local_mouse_position()
-	if mp != _mouse_ult:   # passar o mouse por cima escolhe (só se ele se mexeu, pra não brigar com o teclado)
+	if mp != _mouse_ult:  # passar o mouse por cima escolhe (só se ele se mexeu, pra não brigar com o teclado)
 		_mouse_ult = mp
 		var q := Interface.quem(_rects(), mp)
 		if q >= 0 and q != _sel:
@@ -129,15 +133,36 @@ func _process(_dt: float) -> void:
 		Som.ui("cursor")
 	elif Input.is_action_just_pressed("voltar") or (voltar and Input.is_action_just_pressed("confirmar")):
 		_sair()
-	elif not voltar and Config.ITENS[_sel].has("acao"):   # linha de remapeamento: Enter/direita pede a nova tecla ou botão
+	elif not voltar and _itens[_sel].has("abre"):  # "Gráficos" (#150): Enter/direita abre a aba
 		if Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("direita"):
-			_captar(str(Config.ITENS[_sel].acao))
+			abrir_graficos()
+	elif not voltar and _itens[_sel].has("acao"):  # linha de remapeamento: Enter/direita pede a nova tecla ou botão
+		if Input.is_action_just_pressed("confirmar") or Input.is_action_just_pressed("direita"):
+			_captar(str(_itens[_sel].acao))
 	elif not voltar and (Input.is_action_just_pressed("direita") or Input.is_action_just_pressed("confirmar")):
-		Config.girar(Config.ITENS[_sel].chave, 1)
+		Config.girar(_itens[_sel].chave, 1)
 		Som.ui("cursor")
 	elif not voltar and Input.is_action_just_pressed("esquerda"):
-		Config.girar(Config.ITENS[_sel].chave, -1)
+		Config.girar(_itens[_sel].chave, -1)
 		Som.ui("cursor")
+
+
+## Abre a aba Gráficos (tela_graficos.gd, #150) por cima desta; ao fechar, esta tela volta. perfil: "" ou baixo/medio/alto (prints).
+func abrir_graficos(perfil := "") -> void:
+	var g = CENA_GRAFICOS.instantiate()
+	g.perfil_inicial = perfil
+	g.fechou.connect(_voltar_de_graficos)
+	add_child(g)
+	_tela.visible = false
+	set_process(false)
+	set_process_input(false)
+
+
+func _voltar_de_graficos() -> void:
+	_tela.visible = true
+	set_process(true)
+	set_process_input(true)
+	_quadro = Engine.get_process_frames()  # a tecla que fechou a aba não vale também aqui
 
 
 func _captar(acao: String) -> void:
@@ -179,11 +204,14 @@ func _input(e: InputEvent) -> void:
 	if q == _n() - 1:
 		if e.button_index == MOUSE_BUTTON_LEFT:
 			_sair()
-	elif Config.ITENS[q].has("acao"):
+	elif _itens[q].has("abre"):
 		if e.button_index == MOUSE_BUTTON_LEFT:
-			_captar(str(Config.ITENS[q].acao))
+			abrir_graficos()
+	elif _itens[q].has("acao"):
+		if e.button_index == MOUSE_BUTTON_LEFT:
+			_captar(str(_itens[q].acao))
 	elif e.button_index == MOUSE_BUTTON_LEFT or e.button_index == MOUSE_BUTTON_RIGHT:
-		Config.girar(Config.ITENS[q].chave, 1 if e.button_index == MOUSE_BUTTON_LEFT else -1)
+		Config.girar(_itens[q].chave, 1 if e.button_index == MOUSE_BUTTON_LEFT else -1)
 		Som.ui("cursor")
 
 
@@ -199,12 +227,12 @@ func _desenhar() -> void:
 	for g in l.grupos:
 		if g.y != FORA:
 			_txt(Vector2(150, g.y), tr(str(g.nome)).to_upper(), 8, Color(1, 0.85, 0.3), 340, HORIZONTAL_ALIGNMENT_LEFT)
-	for i in Config.ITENS.size():
-		var it: Dictionary = Config.ITENS[i]
+	for i in _itens.size():
+		var it: Dictionary = _itens[i]
 		if l.ys[i] != FORA:
-			_linha(i, l.ys[i], tr(str(it.nome)), Config.rotulo(it.chave))
+			_linha(i, l.ys[i], tr(str(it.nome)), "Abrir >" if it.has("abre") else Config.rotulo(it.chave))
 	var cor_seta := Color(1, 0.85, 0.3, 0.8)
-	if _rolagem > 0.5:   # tem mais opções acima/abaixo: triângulo na margem
+	if _rolagem > 0.5:  # tem mais opções acima/abaixo: triângulo na margem
 		_tela.draw_colored_polygon(PackedVector2Array([Vector2(500, 48), Vector2(506, 56), Vector2(494, 56)]), cor_seta)
 	if _fim_lista - _rolagem > JANELA_BASE + 8.0:
 		_tela.draw_colored_polygon(PackedVector2Array([Vector2(494, 318), Vector2(506, 318), Vector2(500, 326)]), cor_seta)
@@ -222,7 +250,8 @@ func _linha(i: int, y: float, nome: String, valor: String) -> void:
 		_tela.draw_rect(Rect2(146, y - 9, 348, 12), Color(0.3, 0.35, 0.6, 0.35))
 	var cor := Color(1, 0.9, 0.4) if sel else Color(0.8, 0.8, 0.8)
 	_txt(Vector2(158, y), nome, 8, cor, 330, HORIZONTAL_ALIGNMENT_LEFT)
-	if _captando != "" and Config.ITENS[i].get("acao", "") == _captando:
+	if _captando != "" and _itens[i].get("acao", "") == _captando:
 		_txt(Vector2(158, y), "Aperte a nova tecla ou botão (Esc cancela)", 8, Color(1, 0.85, 0.3), 324, HORIZONTAL_ALIGNMENT_RIGHT)
 		return
-	_txt(Vector2(158, y), ("< %s >" % valor) if sel and not Config.ITENS[i].has("acao") else valor, 8, Color.WHITE if sel else Color(0.6, 0.85, 1), 324, HORIZONTAL_ALIGNMENT_RIGHT)
+	var com_setas: bool = sel and not _itens[i].has("acao") and not _itens[i].has("abre")
+	_txt(Vector2(158, y), ("< %s >" % valor) if com_setas else valor, 8, Color.WHITE if sel else Color(0.6, 0.85, 1), 324, HORIZONTAL_ALIGNMENT_RIGHT)

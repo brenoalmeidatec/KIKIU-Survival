@@ -8,13 +8,16 @@ const Regioes := preload("res://scripts/hordas/regioes.gd")
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func nova_arena(semente: int) -> Node:
 	var a := Arena.new()
@@ -24,9 +27,11 @@ func nova_arena(semente: int) -> Node:
 	add_child(a)
 	return a
 
+
 ## O que o cliente receberia: o dicionário passa por bytes, como no RPC.
 func pela_rede(d: Dictionary) -> Dictionary:
 	return bytes_to_var(var_to_bytes(d))
+
 
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
@@ -43,7 +48,10 @@ func _ready() -> void:
 		ok(d.has("nome") and d.has("dica") and d.has("tempo") and d.has("recompensa") and d.has("falha"), "%s: nome, dica, tempo, recompensa e falha" % tid)
 		ok(float(d.tempo) < 80.0, "%s: o tempo cabe na fase mais curta (%s)" % [tid, d.tempo])
 		if d.has("inimigo"):
-			ok(inim.has(str(d.inimigo)) and str(inim[d.inimigo].get("conjunto", "")) == "objetivo" and float(inim[d.inimigo].get("peso", 1)) == 0.0, "%s: o inimigo existe e o diretor nunca sorteia" % tid)
+			ok(
+				inim.has(str(d.inimigo)) and str(inim[d.inimigo].get("conjunto", "")) == "objetivo" and float(inim[d.inimigo].get("peso", 1)) == 0.0,
+				"%s: o inimigo existe e o diretor nunca sorteia" % tid
+			)
 	for a in c.andares_regiao:
 		ok(int(a) >= 1 and int(a) < k - 1, "andar %s da região nem é o primeiro nem o chefe" % a)
 	var ids_reg := Regioes.lista().map(func(r): return str(r.id))
@@ -68,7 +76,10 @@ func _ready() -> void:
 			tipos_vistos[t] = true
 			ok(t in c.pool[str(Regioes.regiao(int(f.regiao)).id)], "andar %d: o tipo sai do pool da região" % (i + 1))
 			ok(Objetivos.escolher(f, "elite", i) == t, "andar %d: nó de elite também tem" % (i + 1))
-			ok(Objetivos.escolher(f, "loja", i) == "" and Objetivos.escolher(f, "descanso", i) == "" and Objetivos.escolher(f, "evento", i) == "", "andar %d: nó sem combate não tem" % (i + 1))
+			ok(
+				Objetivos.escolher(f, "loja", i) == "" and Objetivos.escolher(f, "descanso", i) == "" and Objetivos.escolher(f, "evento", i) == "",
+				"andar %d: nó sem combate não tem" % (i + 1)
+			)
 			var forcado := f.duplicate()
 			forcado["objetivo"] = "pira"
 			ok(Objetivos.escolher(forcado, "fase", i) == "pira", "a fase pode forçar o objetivo")
@@ -86,21 +97,24 @@ func _ready() -> void:
 	ok(variados.size() == c.tipos.size(), "com várias sementes saem todos os tipos (%s)" % [variados.keys()])
 	var r0 := Objetivos.recompensa("totens", 0)
 	var r3 := Objetivos.recompensa("totens", 3)
-	ok(r3.ouro > r0.ouro and r3.xp > r0.xp and r0.ouro == int(c.tipos.totens.recompensa.ouro), "a recompensa cresce com a região (%d -> %d)" % [r0.ouro, r3.ouro])
+	ok(
+		r3.ouro > r0.ouro and r3.xp > r0.xp and r0.ouro == int(c.tipos.totens.recompensa.ouro),
+		"a recompensa cresce com a região (%d -> %d)" % [r0.ouro, r3.ouro]
+	)
 
 	# --- na partida (solo = anfitrião): totens
 	var a := nova_arena(7)
 	await esperar(0.2)
 	a.xp = -1.0e12
 	a.jogador.invencivel = 999.0
-	a.saltar_para_andar(1)   # 2o andar da região 1: tem objetivo
+	a.saltar_para_andar(1)  # 2o andar da região 1: tem objetivo
 	ok(a.objetivo._pendente != "" and a.objetivo.est == Objetivos.NENHUM, "chegou no andar com objetivo: ele aparece depois do 'inicio'")
 	var tid: String = a.objetivo._pendente
 	a.objetivo._espera = 0.01
 	a.objetivo.atualizar(0.1)
 	ok(a.objetivo.ativo() and a.objetivo.id == tid and a.objetivo.seq == 1, "o objetivo começou (%s)" % tid)
 	ok(a.objetivo.resta > 50.0 and a.objetivo.alvo > 0.0, "tem tempo e meta")
-	a.objetivo.est = Objetivos.NENHUM   # recomeça controlado, um tipo por vez
+	a.objetivo.est = Objetivos.NENHUM  # recomeça controlado, um tipo por vez
 	a.objetivo._ids = []
 	a.ouro = 100
 	a.fase_stat.xp = 0.0
@@ -186,7 +200,7 @@ func _ready() -> void:
 	for x in [h, cl]:
 		x.xp = -1.0e12
 		x.jogador.invencivel = 999.0
-	cl.inimigos.espelho = true   # esta arena é um cliente: não roda IA nem decide nada
+	cl.inimigos.espelho = true  # esta arena é um cliente: não roda IA nem decide nada
 	var fa: Dictionary = h.diretor.fases()[1]
 	h.objetivo.nova_fase(fa, "fase", 1)
 	cl.objetivo.nova_fase(fa, "fase", 1)
@@ -199,7 +213,7 @@ func _ready() -> void:
 	cl.objetivo.aplicar(s1)
 	ok(cl.objetivo.snapshot() == h.objetivo.snapshot(), "início igual nos dois lados (%s)" % [cl.objetivo.snapshot()])
 	ok(cl.objetivo.ativo() and cl.objetivo.id == h.objetivo.id, "o cliente mostra o mesmo objetivo")
-	h.objetivo.atualizar(7.0)   # anda o tempo; o totem ainda vive
+	h.objetivo.atualizar(7.0)  # anda o tempo; o totem ainda vive
 	var s2 := pela_rede(h.objetivo.snapshot())
 	cl.objetivo.aplicar(s2)
 	ok(cl.objetivo.snapshot() == h.objetivo.snapshot(), "meio igual nos dois lados")
@@ -221,10 +235,16 @@ func _ready() -> void:
 	var s3 := pela_rede(h.objetivo.snapshot())
 	cl.objetivo.aplicar(s3)
 	ok(cl.objetivo.snapshot() == h.objetivo.snapshot(), "fim igual nos dois lados")
-	ok(cl.objetivo.est == Objetivos.CUMPRIDO and cl.ouro == ouro_cl + int(Objetivos.recompensa(tipo_h, 0).ouro), "o cliente recebeu a própria recompensa (%d -> %d)" % [ouro_cl, cl.ouro])
+	ok(
+		cl.objetivo.est == Objetivos.CUMPRIDO and cl.ouro == ouro_cl + int(Objetivos.recompensa(tipo_h, 0).ouro),
+		"o cliente recebeu a própria recompensa (%d -> %d)" % [ouro_cl, cl.ouro]
+	)
 	cl.objetivo.aplicar(s3)
-	cl.objetivo.aplicar(s2)   # estado velho chegando atrasado
-	ok(cl.ouro == ouro_cl + int(Objetivos.recompensa(tipo_h, 0).ouro) and cl.objetivo.est == Objetivos.CUMPRIDO, "repetido ou atrasado não paga de novo nem volta atrás")
+	cl.objetivo.aplicar(s2)  # estado velho chegando atrasado
+	ok(
+		cl.ouro == ouro_cl + int(Objetivos.recompensa(tipo_h, 0).ouro) and cl.objetivo.est == Objetivos.CUMPRIDO,
+		"repetido ou atrasado não paga de novo nem volta atrás"
+	)
 	# andar novo no cliente: o estado do andar velho não volta
 	cl.objetivo.nova_fase(h.diretor.fases()[2], "fase", 2)
 	cl.objetivo.aplicar(s3)
@@ -242,7 +262,13 @@ func _ready() -> void:
 	ok(cl.objetivo.snapshot() == h.objetivo.snapshot() and cl.objetivo.est == Objetivos.FALHOU, "falha igual nos dois lados")
 	ok(cl.ouro < 100 and cl.ouro == h.ouro, "os dois perderam o mesmo ouro (%d e %d)" % [h.ouro, cl.ouro])
 	# lixo vindo da rede não derruba nem muda nada
-	for lixo in [{}, {"seq": 99, "id": "nao_existe", "est": 1}, {"seq": 99, "id": "pira", "est": 77}, {"seq": "x", "id": 3}, {"seq": 99, "id": "pira", "est": 1, "prog": INF, "x": NAN, "m": "ruim"}]:
+	for lixo in [
+		{},
+		{"seq": 99, "id": "nao_existe", "est": 1},
+		{"seq": 99, "id": "pira", "est": 77},
+		{"seq": "x", "id": 3},
+		{"seq": 99, "id": "pira", "est": 1, "prog": INF, "x": NAN, "m": "ruim"}
+	]:
 		cl.objetivo.aplicar(lixo)
 	ok(not is_nan(cl.objetivo.pos.x) and not is_inf(cl.objetivo.prog), "estado torto da rede não entra")
 	a.queue_free()

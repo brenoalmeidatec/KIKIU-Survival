@@ -9,13 +9,16 @@ const Efeitos := preload("res://scripts/hordas/efeitos.gd")
 const Anim := preload("res://scripts/hordas/animacao_heroi.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
@@ -42,7 +45,7 @@ func _efeitos() -> void:
 		e.corte(Vector2.ZERO, 0.0, 2.0, 50.0, Color.WHITE)
 	ok(e.cortes.size() == Efeitos.MAX_CORTES, "teto de cortes (%d)" % e.cortes.size())
 	e.limpar()
-	for i in 40:   # arma de área: 40 acertos no mesmo quadro
+	for i in 40:  # arma de área: 40 acertos no mesmo quadro
 		e.impacto(Vector2(i, 0))
 	ok(e.impactos.size() == Efeitos.IMPACTOS_QUADRO, "no máximo %d estrelas novas por quadro (%d)" % [Efeitos.IMPACTOS_QUADRO, e.impactos.size()])
 	e.atualizar(0.01)
@@ -84,7 +87,7 @@ func _pose() -> void:
 
 func _katana() -> void:
 	var a := Arena.new()
-	a.heroi_id = "beto"   # 9 colunas: sem quadros de ataque, só o golpe do corpo
+	a.heroi_id = "beto"  # 9 colunas: sem quadros de ataque, só o golpe do corpo
 	add_child(a)
 	await esperar(1.6)
 	a.bot = false
@@ -100,8 +103,8 @@ func _katana() -> void:
 		v.vel = 0.0
 		v.t_nasc = 0.0
 	a.efeitos.limpar()
-	await esperar(0.35)    # a arma inicial do herói pode ter golpeado agora há pouco: deixa passar o golpe dela
-	j._atk_cool = 0.0      # e o intervalo entre golpes do corpo (senão o da katana é ignorado de propósito)
+	await esperar(0.35)  # a arma inicial do herói pode ter golpeado agora há pouco: deixa passar o golpe dela
+	j._atk_cool = 0.0  # e o intervalo entre golpes do corpo (senão o da katana é ignorado de propósito)
 	a.armas.achar("katana").t = 0.0
 	await esperar(0.06)
 	ok(not a.efeitos.cortes.is_empty(), "a katana solta a meia-lua no efeitos.gd")

@@ -153,11 +153,11 @@ func _ready() -> void:
 			await esperar(atraso)
 			await esc(como)
 			await quadros(3)
-			if como == "tecla":   # a tela de vagas só lê tecla de verdade
+			if como == "tecla":  # a tela de vagas só lê tecla de verdade
 				ok(estado() == "herois", "[%s %.2f] Esc em 'Meus heróis' volta SÓ pros heróis (está em %s)" % [como, atraso, estado()])
 				ok(not _tem_tela_aberta(), "[%s %.2f] 'Meus heróis' fechou" % [como, atraso])
 			else:
-				m._estado = "herois"   # a ação sem tecla não fecha a tela: tira ela do caminho pro próximo giro
+				m._estado = "herois"  # a ação sem tecla não fecha a tela: tira ela do caminho pro próximo giro
 				for f in m.get_children():
 					if f.get_script() and str(f.get_script().resource_path).contains("tela_"):
 						f.queue_free()

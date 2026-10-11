@@ -4,10 +4,12 @@ extends Node
 const Online := preload("res://scripts/hordas/online.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 func _ready() -> void:
 	var c := Vector2(1234.5, -987.25)
@@ -16,9 +18,13 @@ func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	for i in 220:
-		vir.append_array([100000 + i, rng.randi_range(0, 30), c.x + rng.randf_range(-420, 420), c.y + rng.randf_range(-420, 420), rng.randf(), rng.randi_range(0, 31)])
+		vir.append_array(
+			[100000 + i, rng.randi_range(0, 30), c.x + rng.randf_range(-420, 420), c.y + rng.randf_range(-420, 420), rng.randf(), rng.randi_range(0, 31)]
+		)
 	for i in 120:
-		ti.append_array([c.x + rng.randf_range(-420, 420), c.y + rng.randf_range(-420, 420), rng.randf_range(-400, 400), rng.randf_range(-400, 400), rng.randi_range(0, 9)])
+		ti.append_array(
+			[c.x + rng.randf_range(-420, 420), c.y + rng.randf_range(-420, 420), rng.randf_range(-400, 400), rng.randf_range(-400, 400), rng.randi_range(0, 9)]
+		)
 	var b := Online.compactar(c, vir, ti)
 	var antes := (vir.size() + ti.size()) * 4
 	ok(b.size() == 12 + 220 * 11 + 120 * 9, "tamanho da foto compacta (%d)" % b.size())
@@ -47,7 +53,18 @@ func _ready() -> void:
 	ok(Online.descompactar(vazia).size() == 2, "foto vazia vai e volta")
 	# lista de salas (#13): o tópico é público, então todo anúncio que chega é conferido
 	var S := preload("res://scripts/hordas/salas.gd")
-	var bom := JSON.stringify({"v": S.VERSAO, "id": "s123456", "nome": "Sala de Breno", "anfitriao": "Breno", "jogadores": 2, "max": 6, "porta": 7777, "endereco": "abc.gl.at.ply.gg:12345"})
+	var bom := JSON.stringify(
+		{
+			"v": S.VERSAO,
+			"id": "s123456",
+			"nome": "Sala de Breno",
+			"anfitriao": "Breno",
+			"jogadores": 2,
+			"max": 6,
+			"porta": 7777,
+			"endereco": "abc.gl.at.ply.gg:12345"
+		}
+	)
 	var s: Dictionary = S.validar(bom, "")
 	ok(s.get("endereco") == "abc.gl.at.ply.gg:12345" and s.get("jogadores") == 2 and s.get("nome") == "Sala de Breno", "anúncio da internet válido (%s)" % [s])
 	ok(S.validar(bom, "192.168.0.7").get("endereco") == "192.168.0.7:7777", "na rede local o endereço é o IP de quem anunciou")
@@ -63,7 +80,10 @@ func _ready() -> void:
 	]
 	for i in ruins.size():
 		ok(S.validar(ruins[i], "").is_empty(), "anúncio torto %d é ignorado" % i)
-	var nome_feio: Dictionary = S.validar(JSON.stringify({"v": S.VERSAO, "id": "s123456", "nome": "\u0007Sala\n" + "z".repeat(50), "jogadores": 1, "max": 6, "porta": 7777, "endereco": "a.b:7"}), "")
+	var nome_feio: Dictionary = S.validar(
+		JSON.stringify({"v": S.VERSAO, "id": "s123456", "nome": "\u0007Sala\n" + "z".repeat(50), "jogadores": 1, "max": 6, "porta": 7777, "endereco": "a.b:7"}),
+		""
+	)
 	ok(nome_feio.get("nome", "").length() <= 20 and not "\n" in nome_feio.get("nome", ""), "nome limpo e curto (%s)" % nome_feio.get("nome"))
 	ok(S.endereco_valido("1.2.3.4:7777") and not S.endereco_valido("1.2.3.4") and not S.endereco_valido("a b:1"), "formato de endereço")
 	# chat (#13): enquanto digita, as teclas saem do mapa de ações (digitar "e" não é confirmar, WASD não anda)
@@ -78,7 +98,10 @@ func _ready() -> void:
 	ok(InputMap.action_get_events("esquerda").filter(func(e): return e is InputEventKey).is_empty(), "digitando: A não é mais 'esquerda'")
 	Chat._devolver_teclas()
 	ok(InputMap.action_get_events("esquerda").size() == antes_n, "fechou: as teclas voltam iguais")
-	ok(Chat.limpar_texto("oi\nlinha\u0007 ok" + "x".repeat(200)).length() == Chat.MAX_TXT and not "\n" in Chat.limpar_texto("a\nb"), "texto do chat limpo e cortado")
+	ok(
+		Chat.limpar_texto("oi\nlinha\u0007 ok" + "x".repeat(200)).length() == Chat.MAX_TXT and not "\n" in Chat.limpar_texto("a\nb"),
+		"texto do chat limpo e cortado"
+	)
 	# voz (#13): mu-law em 8 bits, ida e volta (erro relativo pequeno, mais detalhe nos sons baixos)
 	var V := preload("res://scripts/hordas/voz.gd")
 	var pior_rel := 0.0

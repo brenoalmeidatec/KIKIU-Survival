@@ -18,9 +18,22 @@ static func ativar(w, d: Dictionary, esp) -> void:
 	jog._dir_dash = dir
 	jog.dash_t = surfe
 	jog.invencivel = maxf(jog.invencivel, surfe + 0.25)
-	w.especiais.append({"tipo": "onda", "pos": jog.position - dir * 24.0, "dir": dir, "larg": float(d.get("largura", 130)),
-		"alcance": float(d.get("alcance", 560)), "vel": float(d.get("velocidade", 560)), "andou": 0.0,
-		"dano": esp.dano(), "empurra": float(d.get("empurra", 420)), "acertou": [], "t": 0.0, "arma": str(d.get("nome", "especial"))})
+	w.especiais.append(
+		{
+			"tipo": "onda",
+			"pos": jog.position - dir * 24.0,
+			"dir": dir,
+			"larg": float(d.get("largura", 130)),
+			"alcance": float(d.get("alcance", 560)),
+			"vel": float(d.get("velocidade", 560)),
+			"andou": 0.0,
+			"dano": esp.dano(),
+			"empurra": float(d.get("empurra", 420)),
+			"acertou": [],
+			"t": 0.0,
+			"arma": str(d.get("nome", "especial"))
+		}
+	)
 
 
 static func passo(w, e: Dictionary, dt: float) -> bool:
@@ -40,8 +53,8 @@ static func passo(w, e: Dictionary, dt: float) -> bool:
 
 
 static func pintar(w, e: Dictionary) -> void:
-	var fim: float = clampf((e.alcance + 60.0 - e.andou) / 120.0, 0.0, 1.0)   # some no fim do alcance
-	var nasc: float = clampf(e.t / 0.12, 0.0, 1.0)                           # e cresce ao nascer
+	var fim: float = clampf((e.alcance + 60.0 - e.andou) / 120.0, 0.0, 1.0)  # some no fim do alcance
+	var nasc: float = clampf(e.t / 0.12, 0.0, 1.0)  # e cresce ao nascer
 	var a := fim * nasc
 	var lado: Vector2 = e.dir.orthogonal()
 	var n := 14
@@ -55,7 +68,9 @@ static func pintar(w, e: Dictionary) -> void:
 		var tras := 30.0 - faixa * 10.0
 		var cor: Color = [AGUA_FUNDA, AGUA, CRISTA][faixa]
 		for i in n:
-			var q := PackedVector2Array([frente[i] - e.dir * tras, frente[i + 1] - e.dir * tras, frente[i + 1] - e.dir * (tras - 10.0), frente[i] - e.dir * (tras - 10.0)])
+			var q := PackedVector2Array(
+				[frente[i] - e.dir * tras, frente[i + 1] - e.dir * tras, frente[i + 1] - e.dir * (tras - 10.0), frente[i] - e.dir * (tras - 10.0)]
+			)
 			w.draw_colored_polygon(q, Color(cor, 0.85 * a))
 	# espuma: a crista branca enrolando na frente e respingos saindo
 	for i in n:

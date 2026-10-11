@@ -14,7 +14,7 @@ extends RefCounted
 const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Regioes := preload("res://scripts/hordas/regioes.gd")
 
-const TIPOS_COMBATE := ["fase", "elite", "chefe"]   # os que rodam a fase do andar; os outros pulam a fase e abrem a própria tela
+const TIPOS_COMBATE := ["fase", "elite", "chefe"]  # os que rodam a fase do andar; os outros pulam a fase e abrem a própria tela
 
 
 static func cfg() -> Dictionary:
@@ -30,6 +30,7 @@ static func combate(tipo: String) -> bool:
 
 
 # ---------- geração ----------
+
 
 ## Gera o mapa desta corrida. Chame depois de Sorte.iniciar(semente): usa a stream "mapa".
 ## Com regiões (#64, dados/regioes.json): um mapa por região, com as regras da região, costurados num só.
@@ -104,7 +105,7 @@ static func _tentar(rng: RandomNumberGenerator, c: Dictionary) -> Dictionary:
 	# senão, pelo menos "inicios_distintos_min" faixas diferentes (limite de tentativas)
 	var qtd := clampi(int(c.get("caminhos", 3)), 1, f + 2)
 	var inicios: Array = []
-	for _t in (0 if unico else int(c.get("tentativas", 50))):
+	for _t in 0 if unico else int(c.get("tentativas", 50)):
 		inicios = []
 		for _i in qtd:
 			inicios.append(rng.randi_range(0, f - 1))
@@ -116,18 +117,18 @@ static func _tentar(rng: RandomNumberGenerator, c: Dictionary) -> Dictionary:
 	if unico:
 		for _i in qtd:
 			inicios.append(boss)
-	var arestas: Array = []   # arestas[andar] = [[de, para], ...] do andar ao seguinte
+	var arestas: Array = []  # arestas[andar] = [[de, para], ...] do andar ao seguinte
 	for _a in n - 1:
 		arestas.append([])
 	for ini in inicios:
 		var j: int = ini
-		for a in n - 2:   # do andar 0 até o penúltimo; o penúltimo liga sempre no chefe
+		for a in n - 2:  # do andar 0 até o penúltimo; o penúltimo liga sempre no chefe
 			var viz: Array = []
 			for p in [j - 1, j, j + 1]:
 				if p >= 0 and p < f and not _cruza(arestas[a], j, p):
 					viz.append(p)
 			if viz.is_empty():
-				return {}   # sem saída sem cruzar: sorteia de novo o mapa inteiro
+				return {}  # sem saída sem cruzar: sorteia de novo o mapa inteiro
 			var para: int = viz[rng.randi_range(0, viz.size() - 1)]
 			if not [j, para] in arestas[a]:
 				arestas[a].append([j, para])
@@ -148,7 +149,7 @@ static func _tentar(rng: RandomNumberGenerator, c: Dictionary) -> Dictionary:
 			if m.nos[a][x] != null:
 				m.nos[a][x].prox.sort()
 	if unico and not _ramifica(m, int(c.get("ramos_min", 2))):
-		return {}   # pouca escolha (os caminhos sorteados ficaram quase juntos): sorteia de novo
+		return {}  # pouca escolha (os caminhos sorteados ficaram quase juntos): sorteia de novo
 	_ligar_extras(m, rng, float(c.get("ligacoes_extra", 0.0)))
 	_sortear_tipos(m, rng, c)
 	return m
@@ -160,7 +161,7 @@ static func _ligar_extras(m: Dictionary, rng: RandomNumberGenerator, chance: flo
 	if chance <= 0.0:
 		return
 	var n := int(m.andares)
-	for a in range(1, n - 2):   # o penúltimo andar só liga no chefe
+	for a in range(1, n - 2):  # o penúltimo andar só liga no chefe
 		var arestas := []
 		for x in int(m.faixas):
 			if m.nos[a][x] != null:
@@ -239,7 +240,9 @@ static func _sortear_tipos(m: Dictionary, rng: RandomNumberGenerator, c: Diction
 
 
 ## Sorteia um tipo e re-sorteia enquanto as regras recusarem; passado o limite de tentativas vira "fase".
-static func _tipo_valido(m: Dictionary, rng: RandomNumberGenerator, c: Dictionary, no: Dictionary, tipos: Array, pesos: Dictionary, contagem: Dictionary) -> String:
+static func _tipo_valido(
+	m: Dictionary, rng: RandomNumberGenerator, c: Dictionary, no: Dictionary, tipos: Array, pesos: Dictionary, contagem: Dictionary
+) -> String:
 	for _t in int(c.get("tentativas", 50)):
 		var i := Sorte.ponderado(rng, tipos.map(func(k): return float(pesos[k])))
 		if i < 0:
@@ -252,7 +255,7 @@ static func _tipo_valido(m: Dictionary, rng: RandomNumberGenerator, c: Dictionar
 
 static func regra_ok(m: Dictionary, c: Dictionary, no: Dictionary, tipo: String, contagem: Dictionary) -> bool:
 	var r: Dictionary = c.get("regras", {}).get(tipo, {})
-	var andar: int = int(no.andar) + 1   # nas regras o andar começa em 1
+	var andar: int = int(no.andar) + 1  # nas regras o andar começa em 1
 	if andar < int(r.get("andar_min", 1)) or andar > int(r.get("andar_max", 999)):
 		return false
 	if int(contagem.get(tipo, 0)) >= int(r.get("max_por_mapa", 9999)):
@@ -279,6 +282,7 @@ static func _linear(c: Dictionary) -> Dictionary:
 
 
 # ---------- consulta ----------
+
 
 static func no(m: Dictionary, andar: int, faixa: int) -> Dictionary:
 	if andar < 0 or andar >= int(m.andares) or faixa < 0 or faixa >= int(m.faixas):
@@ -317,7 +321,7 @@ static func erros(m: Dictionary) -> Array:
 	var ultimo := todos(m).filter(func(x): return int(x.andar) == n - 1)
 	if ultimo.size() != 1 or str(ultimo[0].tipo) != "chefe":
 		res.append("o último andar deve ter só o chefe")
-	if m.get("inicio_unico", false):   # #96: cada região começa num nó só, que abre 2+ caminhos
+	if m.get("inicio_unico", false):  # #96: cada região começa num nó só, que abre 2+ caminhos
 		var k := int(m.get("por_regiao", n))
 		for a0 in range(0, n, k):
 			var ini := todos(m).filter(func(x): return int(x.andar) == a0)
@@ -370,6 +374,7 @@ static func resumo(m: Dictionary) -> String:
 
 # ---------- escolha ----------
 
+
 ## Votação online: maioria; empate = o voto do anfitrião se ele está entre os empatados, senão a menor faixa.
 ## Sem nenhum voto válido vale a primeira opção. votos: {peer: faixa}, opcoes: faixas acessíveis.
 static func resolver_votos(votos: Dictionary, anfitriao: int, opcoes: Array) -> int:
@@ -401,7 +406,11 @@ static func escolha_bot(m: Dictionary, andar: int, faixa: int) -> int:
 	var ac := acessiveis(m, andar, faixa)
 	if ac.is_empty():
 		return -1
-	var prio := ["fase", "evento", "santuario", "descanso", "elite", "loja", "chefe"] if andar % 2 == 0 else ["loja", "evento", "santuario", "descanso", "fase", "elite", "chefe"]
+	var prio := (
+		["fase", "evento", "santuario", "descanso", "elite", "loja", "chefe"]
+		if andar % 2 == 0
+		else ["loja", "evento", "santuario", "descanso", "fase", "elite", "chefe"]
+	)
 	var melhor: int = ac[0]
 	var pm := 99
 	for x in ac:

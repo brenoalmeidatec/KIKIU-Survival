@@ -5,13 +5,16 @@ extends Node
 const Arena := preload("res://scripts/hordas/arena.gd")
 var falhas := 0
 
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
 
+
 func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
+
 
 func tecla(pressionada: bool) -> void:
 	var e := InputEventAction.new()
@@ -19,11 +22,13 @@ func tecla(pressionada: bool) -> void:
 	e.pressed = pressionada
 	Input.parse_input_event(e)
 
+
 func esc() -> void:
 	tecla(true)
 	await esperar(0.1)
 	tecla(false)
 	await esperar(0.1)
+
 
 func _ready() -> void:
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:

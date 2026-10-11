@@ -77,7 +77,10 @@ func _ready() -> void:
 	ok(int(on._acertos[4]) == on.arma_idx("machados_brasa") and on._acertos[9] == 0.0 and on._acertos[14] == 0.0, "índice no quinto float; sem arma = 0")
 
 	# validação do anfitrião
-	ok(on.arma_do_cliente(2, 0) == "" and on.arma_do_cliente(2, -3) == "" and on.arma_do_cliente(2, n + 1) == "" and on.arma_do_cliente(2, 99999) == "", "índice fora da tabela = sem arma")
+	ok(
+		on.arma_do_cliente(2, 0) == "" and on.arma_do_cliente(2, -3) == "" and on.arma_do_cliente(2, n + 1) == "" and on.arma_do_cliente(2, 99999) == "",
+		"índice fora da tabela = sem arma"
+	)
 	ok(on.arma_do_cliente(2, on.arma_idx("katana")) == "", "arma exclusiva do Hazaki: o cliente de João não pode")
 	ok(on.arma_do_cliente(2, on.arma_idx("baforada")) == "", "arma de transformação de outro herói recusada")
 	Rede.jogadores[3] = {"heroi": "hazaki", "nome": "Outro"}

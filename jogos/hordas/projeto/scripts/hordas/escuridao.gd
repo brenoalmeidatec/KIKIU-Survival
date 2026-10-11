@@ -12,7 +12,7 @@ const Perf := preload("res://scripts/hordas/perf.gd")
 const W := 640.0
 const H := 360.0
 const MAX_LUZES := 16
-const CELULA := 340.0          # uma tocha possível por célula do mundo
+const CELULA := 340.0  # uma tocha possível por célula do mundo
 const SOM_CLIMA := [["tremor", 0.38, -13.0], ["tremor", 0.55, -15.0], ["whoosh", 0.28, -15.0], ["whoosh", 0.4, -17.0]]
 
 const SHADER := """
@@ -83,7 +83,7 @@ var _t := 0.0
 var _cfg: Dictionary = {}
 var _luzes := PackedVector4Array()
 var _prox_som := 6.0
-var luzes_ativas := 0          # teste e depuração: quantas luzes foram mandadas no último quadro
+var luzes_ativas := 0  # teste e depuração: quantas luzes foram mandadas no último quadro
 
 
 ## Configuração de escuridão de uma fase (o dicionário "escuro" de corrida.json), ou {} se a fase é clara.
@@ -161,7 +161,7 @@ func _process_i(dt: float) -> void:
 func _atualizar_luzes() -> void:
 	var ct: Transform2D = get_viewport().get_canvas_transform()
 	var n := 0
-	var max_l := mini(MAX_LUZES, Config.luzes_horror())   # perfil de qualidade
+	var max_l := mini(MAX_LUZES, Config.luzes_horror())  # perfil de qualidade
 	var jog: Vector2 = ct * arena.jogador.centro()
 	var pisca := 1.0 + 0.035 * sin(_t * 9.0) + 0.02 * sin(_t * 23.0)
 	_luzes[n] = Vector4(jog.x, jog.y, float(_cfg.get("raio_heroi", 130.0)) * pisca, 1.0)
@@ -196,6 +196,7 @@ func _atualizar_luzes() -> void:
 
 # ---------- tochas ----------
 
+
 static func _hash(cx: int, cy: int, sem: int) -> int:
 	return absi((cx * 73856093) ^ (cy * 19349663) ^ (sem * 83492791 + 12345)) & 0x7fffffff
 
@@ -212,7 +213,7 @@ func _tochas_perto() -> Array:
 			if h % 100 < 34:
 				res.append([Vector2(cx * CELULA + 40 + (h >> 8) % int(CELULA - 80), cy * CELULA + 40 + (h >> 16) % int(CELULA - 80)), h % 97])
 	if absf(cam.x) < 600 and absf(cam.y) < 500:
-		res.append([Vector2(120, -70), 3])    # sempre uma tocha perto de onde o herói nasce
+		res.append([Vector2(120, -70), 3])  # sempre uma tocha perto de onde o herói nasce
 	return res
 
 
@@ -231,6 +232,7 @@ func _desenhar_tochas() -> void:
 
 
 # ---------- clima ----------
+
 
 func _clima(dt: float) -> void:
 	if not _ligada:

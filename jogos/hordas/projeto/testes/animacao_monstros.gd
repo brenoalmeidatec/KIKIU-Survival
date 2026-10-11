@@ -55,7 +55,10 @@ func _puras() -> void:
 			var cs := Anim.coluna_sombra(q, n)
 			ok(cs >= 0 and cs < n and (cs == 0 or cs == n / 2), "coluna_sombra(%d, %d) = %d é 0 ou o meio" % [q, n, cs])
 	ok(is_equal_approx(Anim.avancar(0.9, 11.0, 100.0), 0.01), "avancar dá a volta no ciclo (%f)" % Anim.avancar(0.9, 11.0, 100.0))
-	ok(Anim.ciclo_px(20.0, 1.1, 22.0) == 22.0 and is_equal_approx(Anim.ciclo_px(100.0, 1.1, 22.0), 110.0) and Anim.ciclo_px(100.0, 1.1, 22.0, 2.0) == 200.0, "ciclo_px: piso, proporcional à altura e troca por tipo")
+	ok(
+		Anim.ciclo_px(20.0, 1.1, 22.0) == 22.0 and is_equal_approx(Anim.ciclo_px(100.0, 1.1, 22.0), 110.0) and Anim.ciclo_px(100.0, 1.1, 22.0, 2.0) == 200.0,
+		"ciclo_px: piso, proporcional à altura e troca por tipo"
+	)
 	var f := 0.37
 	for i in 200:
 		f = Anim.assentar(f, 1.0 / 60.0, 1.5)
@@ -65,7 +68,10 @@ func _puras() -> void:
 		f = Anim.assentar(f, 1.0 / 60.0, 1.5)
 	ok(f < 0.001 or f > 0.999, "parado perto de 1 assenta em 0 / 1: %f" % f)
 	var dur := 0.28
-	ok(is_equal_approx(Anim.aperto(0.0, dur, 0.35), 1.0) and Anim.aperto(dur, dur, 0.35) == 0.0 and Anim.aperto(-1.0, dur, 0.35) == 0.0, "aperto: 1 no impacto, 0 no fim e antes do golpe")
+	ok(
+		is_equal_approx(Anim.aperto(0.0, dur, 0.35), 1.0) and Anim.aperto(dur, dur, 0.35) == 0.0 and Anim.aperto(-1.0, dur, 0.35) == 0.0,
+		"aperto: 1 no impacto, 0 no fim e antes do golpe"
+	)
 	var neg := 0.0
 	var pos_meio := 0.0
 	for k in 100:
@@ -74,8 +80,14 @@ func _puras() -> void:
 		pos_meio = maxf(pos_meio, a)
 	ok(neg < -0.05 and neg >= -0.36 and pos_meio <= 1.0, "aperto: quique pro lado oposto de até 0,35 do aperto (%.2f)" % neg)
 	ok(Anim.aperto(dur * 0.5, dur, 0.0) >= 0.0, "aperto: quique 0 = sem estico")
-	ok(Anim.carga(0.0, 2.0) == 0.0 and Anim.carga(1.0, 2.0) == 1.0 and Anim.carga(0.5, 2.0) < 0.5 and Anim.carga(0.5, 1.0) == 0.5, "carga: curva devagar no começo")
-	ok(is_equal_approx(Anim.subida(0.0), 1.0) and is_equal_approx(Anim.subida(0.25), 0.0) and is_equal_approx(Anim.subida(0.5), 1.0), "subida: alto com os pés juntos, baixo com as pernas abertas")
+	ok(
+		Anim.carga(0.0, 2.0) == 0.0 and Anim.carga(1.0, 2.0) == 1.0 and Anim.carga(0.5, 2.0) < 0.5 and Anim.carga(0.5, 1.0) == 0.5,
+		"carga: curva devagar no começo"
+	)
+	ok(
+		is_equal_approx(Anim.subida(0.0), 1.0) and is_equal_approx(Anim.subida(0.25), 0.0) and is_equal_approx(Anim.subida(0.5), 1.0),
+		"subida: alto com os pés juntos, baixo com as pernas abertas"
+	)
 
 
 ## Todas as folhas de monstros de 5 vistas do inimigos.json.
@@ -101,7 +113,7 @@ func _folhas() -> void:
 			img.decompress()
 		var w := tex.get_width() / cols
 		var h := tex.get_height() / 5
-		for vista in [0, 2]:   # frente e perfil bastam (as 5 vistas saem da mesma câmera)
+		for vista in [0, 2]:  # frente e perfil bastam (as 5 vistas saem da mesma câmera)
 			var dif_viz := 0
 			for col in cols - 1:
 				var vizinho := (col + 1) % (cols - 1)

@@ -12,33 +12,33 @@ const NENHUM := 0
 const ANDAMENTO := 1
 const CUMPRIDO := 2
 const FALHOU := 3
-const ENVIO := 0.25          # s entre os estados mandados aos clientes
-const MAX_MARCAS := 4        # setas do HUD por objetivo
-const LINGER := 4.0          # s que o resultado fica no HUD
+const ENVIO := 0.25  # s entre os estados mandados aos clientes
+const MAX_MARCAS := 4  # setas do HUD por objetivo
+const LINGER := 4.0  # s que o resultado fica no HUD
 
 var arena: Node
-var id := ""                 # tipo do objetivo (chave de "tipos" no objetivos.json)
+var id := ""  # tipo do objetivo (chave de "tipos" no objetivos.json)
 var est := NENHUM
-var prog := 0.0              # totens destruídos / segundos de pira acesa / fugitivos mortos
-var alvo := 0.0              # quanto precisa chegar
-var resta := 0.0             # segundos que ainda sobram
-var pos := Vector2.ZERO      # centro da pira
-var marcas: Array = []       # Vector2: onde estão os totens / o fugitivo / a pira (seta do HUD)
-var tarde := false           # falhou porque a fase acabou antes (sem horda de castigo)
-var seq := 0                 # conta os objetivos da corrida (o cliente descarta estado velho)
-var _seq_limpo := 0          # cliente: estado de seq <= isso é de um andar que já passou
+var prog := 0.0  # totens destruídos / segundos de pira acesa / fugitivos mortos
+var alvo := 0.0  # quanto precisa chegar
+var resta := 0.0  # segundos que ainda sobram
+var pos := Vector2.ZERO  # centro da pira
+var marcas: Array = []  # Vector2: onde estão os totens / o fugitivo / a pira (seta do HUD)
+var tarde := false  # falhou porque a fase acabou antes (sem horda de castigo)
+var seq := 0  # conta os objetivos da corrida (o cliente descarta estado velho)
+var _seq_limpo := 0  # cliente: estado de seq <= isso é de um andar que já passou
 var _pago := -1
-var _topo := Node2D.new()    # camada por cima de inimigos, poderes e baús (#123): marca de cada alvo
-var _ids: Array = []         # anfitrião: ids dos inimigos do objetivo que ainda vivem
-var _espera := -1.0          # anfitrião: segundos até o objetivo aparecer neste andar
+var _topo := Node2D.new()  # camada por cima de inimigos, poderes e baús (#123): marca de cada alvo
+var _ids: Array = []  # anfitrião: ids dos inimigos do objetivo que ainda vivem
+var _espera := -1.0  # anfitrião: segundos até o objetivo aparecer neste andar
 var _pendente := ""
 var _regiao := 0
 var _t_envio := 0.0
 var _linger := 0.0
 var _t := 0.0
 
-
 # ---------- dados (funções puras: o teste usa) ----------
+
 
 static func cfg() -> Dictionary:
 	return Dados.json("objetivos")
@@ -51,7 +51,7 @@ static func tipo_def(tid: String) -> Dictionary:
 
 ## Que objetivo (id do tipo) este andar tem? "" = nenhum. Igual em todo cliente (a semente é a mesma).
 static func escolher(f: Dictionary, no_tipo: String, andar_global: int) -> String:
-	if f.has("objetivo"):   # a fase manda: "tipo" força, false apaga
+	if f.has("objetivo"):  # a fase manda: "tipo" força, false apaga
 		return str(f.objetivo) if f.objetivo is String and not tipo_def(str(f.objetivo)).is_empty() else ""
 	if f.get("chefe_regiao", false) or not f.has("regiao"):
 		return ""
@@ -129,6 +129,7 @@ func visivel() -> bool:
 
 # ---------- ciclo de vida ----------
 
+
 ## Andar novo (todo mundo chama). O anfitrião decide se tem objetivo e quando ele aparece.
 func nova_fase(f: Dictionary, no_tipo: String, andar_global: int) -> void:
 	_zerar()
@@ -167,7 +168,7 @@ func atualizar(dt: float) -> void:
 		_topo.queue_redraw()
 	if not _host():
 		if est == ANDAMENTO:
-			resta = maxf(0.0, resta - dt)   # entre um estado e outro o relógio anda sozinho; o próximo estado acerta
+			resta = maxf(0.0, resta - dt)  # entre um estado e outro o relógio anda sozinho; o próximo estado acerta
 		return
 	if _espera >= 0.0:
 		_espera -= dt
@@ -194,7 +195,7 @@ func atualizar(dt: float) -> void:
 	elif resta <= 0.0:
 		_resolver(FALHOU)
 	elif arena.diretor.final_chamado:
-		_resolver(FALHOU, true)   # o chefe da fase chegou: acabou o tempo de objetivo
+		_resolver(FALHOU, true)  # o chefe da fase chegou: acabou o tempo de objetivo
 	else:
 		_t_envio -= dt
 		if _t_envio <= 0.0:
@@ -287,7 +288,7 @@ func _resolver(resultado: int, soft := false) -> void:
 	for i in _ids:
 		var v = arena.inimigos.por_id.get(i)
 		if v and resultado == FALHOU:
-			arena.efeitos.explodir(v.pos, cor_de(id), 6, 70.0)   # o totem racha / o fugitivo escapa
+			arena.efeitos.explodir(v.pos, cor_de(id), 6, 70.0)  # o totem racha / o fugitivo escapa
 		arena.inimigos.remover_id(i)
 	_ids = []
 	marcas = []
@@ -346,14 +347,25 @@ func encerrar() -> void:
 
 # ---------- rede ----------
 
+
 ## O estado inteiro do objetivo, pequeno, pro cliente (e pro teste comparar os dois lados).
 func snapshot() -> Dictionary:
 	var m := []
 	for p in marcas:
 		m.append(roundi((p as Vector2).x))
 		m.append(roundi((p as Vector2).y))
-	return {"seq": seq, "id": id, "est": est, "prog": snappedf(prog, 0.01), "alvo": snappedf(alvo, 0.01), "resta": snappedf(resta, 0.1),
-		"x": roundi(pos.x), "y": roundi(pos.y), "m": m, "tarde": tarde}
+	return {
+		"seq": seq,
+		"id": id,
+		"est": est,
+		"prog": snappedf(prog, 0.01),
+		"alvo": snappedf(alvo, 0.01),
+		"resta": snappedf(resta, 0.1),
+		"x": roundi(pos.x),
+		"y": roundi(pos.y),
+		"m": m,
+		"tarde": tarde
+	}
 
 
 func _mandar() -> void:
@@ -371,7 +383,7 @@ func aplicar(d: Dictionary) -> void:
 	if s <= _seq_limpo or s < seq or tipo_def(tid).is_empty() or e < NENHUM or e > FALHOU:
 		return
 	if s == seq and e < est:
-		return   # o estado só anda pra frente: um pacote velho que chega atrasado não desfaz o que já se viu
+		return  # o estado só anda pra frente: um pacote velho que chega atrasado não desfaz o que já se viu
 	var novo := s > seq
 	seq = s
 	id = tid
@@ -403,6 +415,7 @@ static func _num(v) -> float:
 
 
 # ---------- desenho (no mundo, embaixo dos inimigos: só a pira tem o que desenhar) ----------
+
 
 func _draw() -> void:
 	if id != "pira" or est == NENHUM:

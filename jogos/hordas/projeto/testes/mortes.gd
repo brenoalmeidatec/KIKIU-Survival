@@ -24,9 +24,9 @@ func esperar(s: float) -> void:
 
 ## Canvas de mentira: conta o que o desenho pediu (headless não pinta; é o nível que dá pra observar aqui).
 class Gravador:
-	var regioes := 0          # draw_texture_rect_region (corpo = 1; pedaços/faixas = vários)
-	var poligonos_tex := 0    # draw_polygon com a textura do sprite (metades e cacos)
-	var sangue := 0           # qualquer coisa vermelho-escura (gotas, corte aberto, buracos)
+	var regioes := 0  # draw_texture_rect_region (corpo = 1; pedaços/faixas = vários)
+	var poligonos_tex := 0  # draw_polygon com a textura do sprite (metades e cacos)
+	var sangue := 0  # qualquer coisa vermelho-escura (gotas, corte aberto, buracos)
 	var total := 0
 
 	func _cor(c: Color) -> void:
@@ -108,20 +108,51 @@ func _ready() -> void:
 		ok(causas.has(Mortes.causa_de(str(arma))), "toda arma do armas.json tem causa (%s)" % arma)
 
 	# ---------- causa e efeito (funções puras) ----------
-	var casos := {"katana": "corte", "desert_eagles": "tiro", "arte_marcial": "impacto", "aura_hazaki": "aura", "baforada": "fogo",
-		"wifi": "raio", "energia_draconica": "explosao", "garrafa_termica": "padrao", "cabo_rede": "corte", "": "padrao", "arma_que_nao_existe": "padrao"}
+	var casos := {
+		"katana": "corte",
+		"desert_eagles": "tiro",
+		"arte_marcial": "impacto",
+		"aura_hazaki": "aura",
+		"baforada": "fogo",
+		"wifi": "raio",
+		"energia_draconica": "explosao",
+		"garrafa_termica": "padrao",
+		"cabo_rede": "corte",
+		"": "padrao",
+		"arma_que_nao_existe": "padrao"
+	}
 	for arma in casos:
 		ok(Mortes.causa_de(arma) == casos[arma], "causa de '%s' = %s (deu %s)" % [arma, casos[arma], Mortes.causa_de(arma)])
 	ok(Mortes.causa_de("poder_elemental", "gelo") == "gelo", "elemental gelo")
 	ok(Mortes.causa_de("poder_elemental", "raio") == "raio", "elemental raio")
 	ok(Mortes.causa_de("poder_elemental", "fogo") == "fogo", "elemental fogo")
 	ok(Mortes.causa_de("katana", "") == "corte", "elemento vazio não atrapalha")
-	var efs := {"fogo": "cinzas", "gelo": "estilhaco", "raio": "choque", "corte": "corte", "impacto": "pedacos", "explosao": "pedacos", "tiro": "furo", "aura": "desintegrar", "padrao": "simples"}
+	var efs := {
+		"fogo": "cinzas",
+		"gelo": "estilhaco",
+		"raio": "choque",
+		"corte": "corte",
+		"impacto": "pedacos",
+		"explosao": "pedacos",
+		"tiro": "furo",
+		"aura": "desintegrar",
+		"padrao": "simples"
+	}
 	for c in efs:
 		ok(Mortes.efeito_de(c) == efs[c], "efeito da causa %s = %s" % [c, efs[c]])
 		ok(Mortes.efeito_de(c, true) == ("simples" if c == "padrao" else "suave"), "reduzida: %s vira suave" % c)
-	var fins := {"katana": "katana", "desert_eagles": "pistolas", "arte_marcial": "marcial", "aura_hazaki": "aura", "poder_elemental": "elemental",
-		"pendrive": "pistolas", "cabo_rede": "katana", "garrafa_termica": "global", "arma_que_nao_existe": "global", "": "global"}
+	var fins := {
+		"katana": "katana",
+		"desert_eagles": "pistolas",
+		"arte_marcial": "marcial",
+		"aura_hazaki": "aura",
+		"poder_elemental": "elemental",
+		"pendrive": "pistolas",
+		"cabo_rede": "katana",
+		"garrafa_termica": "global",
+		"arma_que_nao_existe": "global",
+		"": "global"
+	}
 	for arma in fins:
 		ok(Finalizacao.chave_de(arma) == fins[arma], "finalização de '%s' = %s (deu %s)" % [arma, fins[arma], Finalizacao.chave_de(arma)])
 
@@ -129,7 +160,7 @@ func _ready() -> void:
 	var a := await nova()
 	a.bot = false
 	a.jogador.invencivel = 999.0
-	a.diretor.bonus_minutos = -1000.0   # nada nasce sozinho: só o que o teste cria
+	a.diretor.bonus_minutos = -1000.0  # nada nasce sozinho: só o que o teste cria
 	for arma in ["katana", "desert_eagles", "arte_marcial", "aura_hazaki", "baforada", "wifi", "energia_draconica", "garrafa_termica"]:
 		var esperado := str(Mortes.efeito_de(Mortes.causa_de(arma)))
 		ok(matar(a, arma) == esperado, "morrer por %s usa %s" % [arma, esperado])
@@ -181,16 +212,19 @@ func _ready() -> void:
 	ok(a.mortes.ativas.size() == int(teto.mortes), "o teto é mesmo atingido com 500 mortes (%d)" % a.mortes.ativas.size())
 	ok(a.mortes.manchas.size() <= int(teto.manchas), "manchas no chão respeitam o teto")
 	ok(criados.all(func(v): return v.hp <= 0), "os 500 morreram de verdade")
-	for i in 40:   # tudo termina e a contagem de partículas volta a zero
+	for i in 40:  # tudo termina e a contagem de partículas volta a zero
 		a.mortes.atualizar(0.1)
-	ok(a.mortes.ativas.is_empty() and a.mortes.simples.is_empty() and a.mortes.particulas() == 0, "efeitos acabam e liberam as partículas (%d)" % a.mortes.particulas())
+	ok(
+		a.mortes.ativas.is_empty() and a.mortes.simples.is_empty() and a.mortes.particulas() == 0,
+		"efeitos acabam e liberam as partículas (%d)" % a.mortes.particulas()
+	)
 
 	# ---------- o desenho de cada efeito roda e faz o que diz ----------
 	var vd = a.inimigos.criar("bug", a.jogador.position + Vector2(50, 0))
 	for ef in ["cinzas", "estilhaco", "choque", "corte", "pedacos", "furo", "desintegrar", "suave", "simples"]:
 		var r := Mortes.registro(vd, "corte", ef)
 		var viram := {}
-		for k in 11:   # varre o efeito inteiro
+		for k in 11:  # varre o efeito inteiro
 			r.t = r.dur * k / 10.0
 			var g := Gravador.new()
 			Mortes.desenhar(g, r)
@@ -237,11 +271,19 @@ func _ready() -> void:
 	await esperar(0.2)
 	Engine.time_scale = 1.0
 	a = await nova()
-	a.diretor.xp_mult = 0.0   # sem XP dos chefes: nenhuma carta de nível abre no meio (abrir pausa a árvore e congela a finalização)
+	a.diretor.xp_mult = 0.0  # sem XP dos chefes: nenhuma carta de nível abre no meio (abrir pausa a árvore e congela a finalização)
 	a.bot = false
 	a.jogador.invencivel = 999.0
 	a.diretor.bonus_minutos = -1000.0
-	var casos_fin := {"katana": "x_katana", "desert_eagles": "rajada", "arte_marcial": "soco", "aura_hazaki": "coluna", "poder_elemental": "elemental", "pendrive": "rajada", "garrafa_termica": "global"}
+	var casos_fin := {
+		"katana": "x_katana",
+		"desert_eagles": "rajada",
+		"arte_marcial": "soco",
+		"aura_hazaki": "coluna",
+		"poder_elemental": "elemental",
+		"pendrive": "rajada",
+		"garrafa_termica": "global"
+	}
 	for arma in casos_fin:
 		var b = a.inimigos.criar("trojan_gigante", a.jogador.position + Vector2(120, 0))
 		a.inimigos.ferir(b, 1.0e9, Vector2(60, 0), arma)
@@ -262,7 +304,7 @@ func _ready() -> void:
 	ok(is_equal_approx(Engine.time_scale, 1.0), "o tempo volta ao normal no fim (%.3f)" % Engine.time_scale)
 	ok(is_equal_approx(a.camera.zoom.x, 1.0), "o zoom volta ao normal no fim (%.3f)" % a.camera.zoom.x)
 	# a arena fecha no meio (voltou pro menu, fim de jogo): o tempo não pode ficar preso
-	a.cartas._fechar()   # o XP dos chefes anteriores abriu carta de nível e pausou a árvore
+	a.cartas._fechar()  # o XP dos chefes anteriores abriu carta de nível e pausou a árvore
 	var b3 = a.inimigos.criar("trojan_gigante", a.jogador.position + Vector2(120, 0))
 	a.inimigos.ferir(b3, 1.0e9, Vector2(60, 0), "aura_hazaki")
 	await esperar(0.3)
@@ -290,7 +332,10 @@ func _ready() -> void:
 	var b5 = a2.inimigos.criar("trojan_gigante", a2.jogador.position + Vector2(120, 0))
 	a2.inimigos.ferir(b5, 1.0e9, Vector2(60, 0), "katana")
 	ok(str(a2.finalizacao._cfg.golpe) == "coluna_suave", "reduzida: finalização sem sangue e sem partes (%s)" % a2.finalizacao._cfg.golpe)
-	ok(not Mortes.tem_partes(a2.finalizacao._rec.ef) and not Mortes.tem_sangue(a2.finalizacao._rec.ef), "reduzida: corpo do chefe sem partes (%s)" % a2.finalizacao._rec.ef)
+	ok(
+		not Mortes.tem_partes(a2.finalizacao._rec.ef) and not Mortes.tem_sangue(a2.finalizacao._rec.ef),
+		"reduzida: corpo do chefe sem partes (%s)" % a2.finalizacao._rec.ef
+	)
 	Config.temporario("mortes", "normal")
 	a2.finalizacao.restaurar()
 	a2.queue_free()

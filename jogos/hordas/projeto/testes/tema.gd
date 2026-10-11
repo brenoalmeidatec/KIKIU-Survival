@@ -3,15 +3,39 @@ extends Node
 # as cores dos efeitos estão nos dados, e nenhum nome que o jogador vê voltou a ser de informática.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/tema.tscn  (imprime "TEMA falhas=0")
 const Armas := preload("res://scripts/hordas/armas.gd")
-const ANTIGOS := ["pendrive", "ssd", "cabo de rede", "fibra", "ventoinha", "water cooler", "café", "garrafa térmica", "wi-fi",
-	"roteador", "energético", "overclock", "monitor", "ctrl+", "tênis", "marmita", "antena", "fitinha", "água de coco",
-	"apostila", "mouse", "tomada", "vírus"]
+const ANTIGOS := [
+	"pendrive",
+	"ssd",
+	"cabo de rede",
+	"fibra",
+	"ventoinha",
+	"water cooler",
+	"café",
+	"garrafa térmica",
+	"wi-fi",
+	"roteador",
+	"energético",
+	"overclock",
+	"monitor",
+	"ctrl+",
+	"tênis",
+	"marmita",
+	"antena",
+	"fitinha",
+	"água de coco",
+	"apostila",
+	"mouse",
+	"tomada",
+	"vírus"
+]
 var falhas := 0
+
 
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
 
 func antigo(txt: String) -> String:
 	var t := txt.to_lower()
@@ -19,6 +43,7 @@ func antigo(txt: String) -> String:
 		if t.contains(a):
 			return a
 	return ""
+
 
 func _ready() -> void:
 	var globais := ["pendrive", "ssd", "cabo_rede", "fibra_optica", "ventoinha", "water_cooler", "cafe", "garrafa_termica", "wifi", "roteador_5g"]

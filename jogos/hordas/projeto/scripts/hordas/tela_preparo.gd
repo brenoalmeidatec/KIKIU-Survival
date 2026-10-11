@@ -7,7 +7,7 @@ extends CanvasLayer
 ## Uso: var t := TelaPreparo.new(); t.heroi_id = id; t.bau = {...}; t.mochila = {...}; add_child(t); t.fechou.connect(func(ok, mochila): ...)
 
 signal fechou(confirmou: bool, mochila: Dictionary)
-signal descartou(id: String)   # modo baú: o jogador jogou uma unidade fora (quem abriu a tela grava o baú)
+signal descartou(id: String)  # modo baú: o jogador jogou uma unidade fora (quem abriu a tela grava o baú)
 
 const Mochila := preload("res://scripts/hordas/mochila.gd")
 const Criacao := preload("res://scripts/hordas/criacao.gd")
@@ -22,14 +22,14 @@ const ROTULO_TIPO := {"comida": "COMIDA DE VIAGEM", "consumivel": "CONSUMÍVEIS 
 
 var heroi_id := ""
 var modo := "preparo"
-var bau := {}                # {id: n} o que o herói tem em casa
-var mochila := {}            # a escolha atual (preparo)
+var bau := {}  # {id: n} o que o herói tem em casa
+var mochila := {}  # a escolha atual (preparo)
 var _raca := ""
 var _classe := ""
 var _heroi := {}
-var _itens: Array = []       # ids que aparecem (os que há no baú ou que estão na mochila), na ordem do catálogo
+var _itens: Array = []  # ids que aparecem (os que há no baú ou que estão na mochila), na ordem do catálogo
 var _sel := 0
-var _topo := 0               # primeira linha visível
+var _topo := 0  # primeira linha visível
 var _confirma_descartar := ""
 var _msg := ""
 var _msg_t := 0.0
@@ -138,7 +138,7 @@ func _input(e: InputEvent) -> void:
 	if Engine.get_process_frames() == _quadro or _confirma_descartar != "":
 		return
 	if e is InputEventJoypadButton and e.pressed and e.button_index == JOY_BUTTON_X and modo == "bau":
-		_pedir_descarte()   # controle: X descarta (o teclado usa Delete)
+		_pedir_descarte()  # controle: X descarta (o teclado usa Delete)
 		return
 	if e is InputEventMouseButton and e.pressed:
 		var mp := _tela.get_local_mouse_position()
@@ -292,7 +292,16 @@ func _desenhar() -> void:
 			var r := Rect2(172 + i * 9, 55, 7, 9)
 			_tela.draw_rect(r, Color(0.95, 0.75, 0.3) if i < usados else Color(0.18, 0.17, 0.22))
 		var cf := Mochila.cfg()
-		_txt(Vector2(272, 62), "Comida %d/%d   Poções %d/%d" % [Mochila.comida_n(mochila), int(cf.get("max_comida", 2)), Mochila.tipos_consumivel(mochila), int(cf.get("max_consumiveis", 3))], 8, Color(0.75, 0.78, 0.9), 300)
+		_txt(
+			Vector2(272, 62),
+			(
+				"Comida %d/%d   Poções %d/%d"
+				% [Mochila.comida_n(mochila), int(cf.get("max_comida", 2)), Mochila.tipos_consumivel(mochila), int(cf.get("max_consumiveis", 3))]
+			),
+			8,
+			Color(0.75, 0.78, 0.9),
+			300
+		)
 	else:
 		var ocup := Mochila.bau_espacos(bau)
 		_txt(Vector2(10, 62), "Baú %d/%d espaços" % [ocup, Mochila.bau_max()], 8, Color(1, 0.9, 0.55) if ocup < Mochila.bau_max() else Color(1, 0.6, 0.45), 200)
@@ -334,7 +343,13 @@ func _desenhar() -> void:
 	if _itens.is_empty():
 		_txt(Vector2(10, Y0 + 20), "O baú está vazio.", 8, Color(0.6, 0.6, 0.68), 300)
 	if l.size() > VISIVEIS:
-		_txt(Vector2(10, Y0 + VISIVEIS * LIN + 8), ("^ " if _topo > 0 else "  ") + ("v mais abaixo" if _topo + VISIVEIS < l.size() else ""), 8, Color(0.5, 0.52, 0.62), 300)
+		_txt(
+			Vector2(10, Y0 + VISIVEIS * LIN + 8),
+			("^ " if _topo > 0 else "  ") + ("v mais abaixo" if _topo + VISIVEIS < l.size() else ""),
+			8,
+			Color(0.5, 0.52, 0.62),
+			300
+		)
 	# painel do item (direita)
 	_tela.draw_rect(Rect2(342, 72, 290, 236), Color(0.09, 0.085, 0.13))
 	_tela.draw_rect(Rect2(342, 72, 290, 236), Color(0.3, 0.32, 0.45), false, 1.0)
@@ -346,7 +361,11 @@ func _desenhar() -> void:
 	# rodapé
 	if _msg_t > 0.0:
 		_txt_c(322, _msg, 8, Color(1, 0.5, 0.45))
-	var dica := "Cima/baixo: item   Esq/dir: levar   Enter: começar   Esc: voltar" if modo == "preparo" else "Cima/baixo: item   Delete (X no controle): descartar 1   Esc: voltar"
+	var dica := (
+		"Cima/baixo: item   Esq/dir: levar   Enter: começar   Esc: voltar"
+		if modo == "preparo"
+		else "Cima/baixo: item   Delete (X no controle): descartar 1   Esc: voltar"
+	)
 	_txt_c(346, dica, 8, Color(0.55, 0.55, 0.62))
 	if modo == "preparo":
 		_r_ok = Rect2(500, 314, 130, 20)
@@ -372,7 +391,7 @@ func _painel_item(id: String) -> void:
 	Mochila.desenhar_icone(_tela, id, Rect2(x, 80, 28, 28))
 	_txt(Vector2(x + 36, 92), Mochila.nome(id), 8, Color(1, 0.93, 0.65), 240)
 	var tipo := str(d.get("tipo", ""))
-	var sub := ("Comida" if tipo == "comida" else ("Consumível" if tipo == "consumivel" else "Amuleto"))   # "Comida de viagem" + "ocupa 1 espaço" passava da borda do painel (~240 px úteis)
+	var sub := "Comida" if tipo == "comida" else ("Consumível" if tipo == "consumivel" else "Amuleto")  # "Comida de viagem" + "ocupa 1 espaço" passava da borda do painel (~240 px úteis)
 	var esp := int(d.get("espacos", 1))
 	sub += ("  ocupa %d espaço%s" % [esp, "s" if esp != 1 else ""]) if esp > 0 else "  não ocupa espaço"
 	_txt(Vector2(x + 36, 105), sub, 8, Color(0.6, 0.68, 0.9), 240)
@@ -416,7 +435,8 @@ func _ficha() -> void:
 		var b := float(b1[c[1]])
 		var cx := x + (i % 2) * 140.0
 		var cy := y + 13.0 + (i / 2) * 12.0
-		var f := (func(v: float) -> String: return ("%d%%" % roundi(v * 100.0)) if c[2] else (("%.1f" % v).replace(".", ",") if c[1] == "regen" else str(roundi(v))))
+		var f := func(v: float) -> String:
+			return ("%d%%" % roundi(v * 100.0)) if c[2] else (("%.1f" % v).replace(".", ",") if c[1] == "regen" else str(roundi(v)))
 		var txt := "%s %s" % [c[0], f.call(a)]
 		var cor := Color(0.78, 0.8, 0.9)
 		if not is_equal_approx(a, b):
