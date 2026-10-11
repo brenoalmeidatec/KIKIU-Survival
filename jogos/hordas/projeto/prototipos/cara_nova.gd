@@ -470,7 +470,7 @@ func _atualizar_sombra(a: Dictionary) -> void:
 
 func _montar() -> void:
 	var escuro := CanvasModulate.new()
-	escuro.color = Color(str(_a.get("amb", "122125")))  # verde-azulado quase preto da arte de entrada
+	escuro.color = Color(str(_a.get("amb", "172a30")))  # verde-azulado quase preto da arte de entrada
 	add_child(escuro)
 	_mundo = Node2D.new()
 	_mundo.y_sort_enabled = true
@@ -508,6 +508,8 @@ func _montar() -> void:
 	_luzes_cena(heroi)
 	if not _a.has("sem_atmosfera"):
 		_atmosfera()
+	if not _a.has("sem_luar"):
+		_luar()
 	_trocar_sombra(_sombra)
 	if not _a.has("sem_vinheta"):
 		_vinheta()
@@ -895,18 +897,18 @@ func _luzes_cena(heroi: Dictionary) -> void:
 	var ht := _num("h_tocha", 45.0)
 	var hm := _num("h_magia", 60.0)
 	var hl := _num("h_lanterna", 60.0)
-	var et := _num("e_tocha", 2.7)
+	var et := _num("e_tocha", 1.9)
 	var em := _num("e_magia", 2.3)
 	var novo := not _a.has("cenario_antigo")
 	# ordem importa para a medição (1 = só a tocha, 3 = + lanterna + magia roxa, 6 = as do protótipo antigo, 7 = + vela do altar).
 	# "orbe" = onde o corpo brilhante aparece (a lanterna pendurada, a janela do toro); "pos" = o ponto no chão que a luz ilumina.
 	var defs := [
-		{"nome": "tocha", "cor": Color(1.0, 0.62, 0.26), "e": et, "r": 200.0, "h": ht, "pos": HEROI_POS + Vector2(-38, -32)},
+		{"nome": "tocha", "cor": Color(1.0, 0.62, 0.26), "e": et, "r": 290.0, "h": ht, "pos": HEROI_POS + Vector2(-38, -32)},
 		{"nome": "lanterna_a", "cor": Color(1.0, 0.72, 0.3), "e": 2.0, "r": 210.0, "h": hl, "pos": Vector2(230, 130)},
-		{"nome": "magia_roxa", "cor": Color(0.78, 0.25, 1.0), "e": em, "r": 230.0, "h": hm, "pos": Vector2(735, 250)},
+		{"nome": "magia_roxa", "cor": Color(0.7, 0.12, 1.0), "e": em * 1.15, "r": 230.0, "h": hm, "pos": Vector2(735, 250)},
 		{"nome": "magia_azul", "cor": Color(0.25, 0.65, 1.0), "e": em, "r": 170.0, "h": hm, "pos": Vector2(590, 380)},
 		{"nome": "lanterna_b", "cor": Color(1.0, 0.7, 0.28), "e": 1.9, "r": 190.0, "h": hl, "pos": Vector2(170, 400)},
-		{"nome": "aura_heroi", "cor": Color(0.45, 0.72, 1.0), "e": 1.2, "r": 110.0, "h": hm, "pos": HEROI_POS + Vector2(30, -8)},
+		{"nome": "aura_heroi", "cor": Color(0.45, 0.72, 1.0), "e": 0.7, "r": 120.0, "h": hm, "pos": HEROI_POS + Vector2(30, -8)},
 		{"nome": "altar_vela", "cor": Color(1.0, 0.68, 0.32), "e": 1.1, "r": 105.0, "h": 35.0, "pos": POS_ALTAR + Vector2(15, -4)},
 	]
 	if novo:
@@ -984,6 +986,19 @@ func _rampa_alfa(offs: Array, alfas: Array) -> Gradient:
 	return g
 
 
+func _luar() -> void:
+	## Luar: contraluz azulado fraco, de cima, que pega o topo e as bordas dos objetos pelo normal map (o cenário das bordas não vira
+	## silhueta preta). DirectionalLight2D SEM sombra própria e fora de _luzes: não entra na conta das sombras das tochas (a sombra do luar
+	## seria uma direção fixa, o problema da sombra parada).
+	var l := DirectionalLight2D.new()
+	l.color = Color(0.42, 0.58, 1.0)
+	l.energy = _num("luar", 0.32)
+	l.height = _num("h_luar", 0.2)
+	l.rotation = deg_to_rad(_num("ang_luar", 90.0))
+	l.shadow_enabled = false
+	add_child(l)
+
+
 func _atmosfera() -> void:
 	## vaga-lumes (pontos aditivos que piscam e vagam) e folhas vermelhas caindo devagar; CPUParticles2D baratas. O perfil "baixa" corta pela metade.
 	var f := CPUParticles2D.new()
@@ -1014,7 +1029,7 @@ func _atmosfera() -> void:
 	_olhos_raiz.add_child(f)
 	_particulas.append({"p": f, "base": 34})
 	var fo := CPUParticles2D.new()
-	fo.amount = 22
+	fo.amount = 30
 	fo.lifetime = 22.0
 	fo.preprocess = 22.0
 	fo.local_coords = false
@@ -1030,14 +1045,14 @@ func _atmosfera() -> void:
 	fo.angular_velocity_max = 90.0
 	fo.tangential_accel_min = -4.0
 	fo.tangential_accel_max = 4.0
-	fo.color = Color(0.62, 0.16, 0.1, 0.85)
+	fo.color = Color(0.85, 0.1, 0.07, 0.95)
 	var im := Image.create(4, 3, false, Image.FORMAT_RGBA8)
 	im.fill(Color.WHITE)
 	fo.texture = ImageTexture.create_from_image(im)
 	fo.scale_amount_min = 0.8
 	fo.scale_amount_max = 1.4
 	_olhos_raiz.add_child(fo)
-	_particulas.append({"p": fo, "base": 22})
+	_particulas.append({"p": fo, "base": 30})
 
 
 func _vinheta() -> void:
