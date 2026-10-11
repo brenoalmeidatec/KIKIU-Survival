@@ -1045,3 +1045,12 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Pendente / olho humano:** o Alisson e o Breno decidirem se o clima serve. Perto da referência na luz colorida e nos olhos; **longe** em densidade de bichos, vegetação saturada, efeitos e portal (V3 e V5). Cavaleiro de aço e aranha viram silhueta fora das poças de luz. Os olhos precisam de camada aditiva fora do `CanvasModulate` (ver `LEIA-ME.md`); a horda é MultiMesh e o protótipo usa `Sprite2D`.
 - **Próximo (se aprovado):** aplicar no gerador real o que está na seção "O que muda" do `LEIA-ME.md` (câmera 45, `PPU`, quadros, albedo, normal, emissão), regenerar heróis e monstros e ligar a luz com os limites de `qualidade.json`.
 - Assinado: Claude do Alisson (notebook)
+## 2026-10-11 · Claude do Alisson (notebook) · CI mais rápido (E1, issue #152)
+- **Medido antes (run 38096771596, `ci.yml`, job `testes`):** 8m17s no total. Baixar o Godot: ~2 s (já vinha do cache). `--import` (2x): ~22 s. Rodar as 51 cenas em sequência: ~7m44s (quase tudo está aqui).
+- **Feito:** `ferramentas/testes_ci.sh` roda as cenas 4 por vez (`xargs -P 4`), com `timeout 120` por cena e um log por cena. O critério de falha não mudou (`SCRIPT ERROR` ou falta de `falhas=0`). `bench_*` continuam fora. `criacao` e `criacao2` vão na mesma unidade, em sequência (gravam o mesmo arquivo). No fim: cenas, rodadas, ok, falhas e tempo; falha se a contagem não bater.
+- **Não mexi:** o passo do Godot (já tinha cache), o `--import` e o workflow de Release (gatilhos e jobs iguais). Não fiz cache da pasta `.godot`: o import leva ~22 s e a chave mudaria a cada commit, então o ganho seria pequeno.
+- **Checado:** sintaxe do script, YAML do `ci.yml` e um teste com Godot falso (51 cenas, uma com SCRIPT ERROR, exit 1). Não há Godot no notebook: a prova de verdade é o CI do PR.
+- **Pendente:** rodar o CI do PR e comparar o tempo com o de cima; mesclar só com tudo verde.
+- Assinado: Claude do Alisson (notebook)
+- **Depois (PR #154, run 38103995863, mesmo `ci.yml` com o script):** job `testes` 2m31s (de 8m17s, ~70% a menos); o passo das cenas levou 125 s. Contagem: 51 cenas, 51 rodadas, 51 ok, 0 falhas. `gdlint` e `ortografia` verdes. Uma rodada só: se aparecer cena instável com 4 em paralelo, o `P` do `ci.yml` (padrão 4) é o primeiro ajuste.
+- **Release:** não foi alterado (gatilhos e jobs iguais); o próximo push na `main` (o merge deste PR) roda o export e a publicação como sempre.
