@@ -27,6 +27,7 @@ const OBJ_DIR := "prototipos/objetos"  # arte nova do cenário (imagegen): albed
 const POS_POSTE := Vector2(250, 160)  # poste com lanterna (fonte de luz quente fraca)
 const POS_TORO := Vector2(780, 215)  # lanterna de pedra (fonte de luz quente fraca)
 const POS_ALTAR := Vector2(130, 445)  # altar com vela (luz) e o crânio ao lado
+const CIRCULO_POS := Vector2(480, 314)  # centro do círculo ritual (decalque) e da ruína
 const POS_TORII := Vector2(240, 332)  # torii na borda oeste do círculo, com a trilha passando por baixo
 const POS_BRASEIRO := Vector2(322, 380)  # braseiro com fogo de verdade, do lado do torii
 const POS_FOGUEIRA := Vector2(858, 470)  # fogueira acesa no canto oposto, menor
@@ -81,6 +82,9 @@ var _tocha_leva := false
 var _rotulo: Label
 var _rotulo_t := 0.0
 var _ms_blur := 0.0
+var _raiz: Node  # onde vai o mundo: o SubViewport de 960x540 (padrão) ou o próprio nó
+var _sv: SubViewport
+var _tela: TextureRect
 var _particulas: Array = []  # {"p": CPUParticles2D, "base": amount}: o perfil baixo corta pela metade
 var _tex_brilho: GradientTexture2D
 
@@ -96,9 +100,18 @@ func _ready() -> void:
 	_com_normal = not _a.has("sem_normal")
 	_com_olhos = not _a.has("sem_olhos")
 	var janela := get_window()
-	janela.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
-	janela.content_scale_size = Vector2i(LARG, ALT)
-	janela.size = Vector2i(1280, 720)
+	if _a.has("janela"):
+		var wh := str(_a.janela).split("x")
+		janela.size = Vector2i(int(wh[0]), int(wh[1]))
+	elif _modo == "livre":
+		# janela livre: a maior 16:9 que cabe na tela (o sharp bilinear cuida da escala fracionária, sem barras)
+		var util := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+		var k := minf(util.size.x / float(LARG), (util.size.y - 70) / float(ALT))
+		janela.size = Vector2i(int(LARG * k), int(ALT * k))
+		janela.move_to_center()
+	else:
+		janela.size = Vector2i(1280, 720)
+	_preparar_tela(janela)
 	if _modo == "medir" or _a.has("sem_vsync"):
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0
@@ -107,6 +120,69 @@ func _ready() -> void:
 	_tex_sombra = _textura_sombra()
 	_tex_brilho = _textura_brilho()
 	_montar()
+
+
+func _preparar_tela(janela: Window) -> void:
+	## Apresentação. O mundo é desenhado num SubViewport de 960x540 (filtro nearest) e mostrado numa TextureRect do tamanho da janela com
+	## o shader "sharp bilinear": escala inteira em nearest + só 1 px de tela de transição nas bordas dos texels, então com escala
+	## fracionária (1,33x, 1,6x, 1,87x...) todos os pixels têm o mesmo tamanho aparente e não há barras. Em escala exata (2x, 3x) é idêntico ao
+	## nearest puro. --escala_pura mostra o nearest fracionário (a apresentação anterior: pixels de 1 e de 2 px); --sem_subviewport volta
+	## ao content_scale_mode viewport antigo.
+	if _a.has("sem_subviewport"):
+		janela.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+		janela.content_scale_size = Vector2i(LARG, ALT)
+		_raiz = self
+		return
+	janela.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
+	_sv = SubViewport.new()
+	_sv.size = Vector2i(LARG, ALT)
+	_sv.disable_3d = true
+	_sv.transparent_bg = false
+	_sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_sv.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
+	add_child(_sv)
+	_raiz = _sv
+	var camada := CanvasLayer.new()
+	add_child(camada)
+	_tela = TextureRect.new()
+	_tela.texture = _sv.get_texture()
+	_tela.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_tela.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_tela.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tela.set_anchors_preset(Control.PRESET_FULL_RECT)
+	if _a.has("escala_pura"):
+		_tela.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	else:
+		_tela.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		var sh := Shader.new()
+		sh.code = (
+			"shader_type canvas_item;\nuniform vec2 tam = vec2(960.0, 540.0);\nuniform float escala = 1.0;\n"
+			+ "void fragment(){ vec2 texel = UV * tam; vec2 piso = floor(texel); vec2 d = fract(texel) - 0.5;"
+			+ " vec2 r = 0.5 - 0.5 / max(vec2(escala), vec2(1.0)); vec2 f = (d - clamp(d, -r, r)) * escala + 0.5;"
+			+ " COLOR = vec4(texture(TEXTURE, (piso + f) / tam).rgb, 1.0); }\n"
+		)
+		var m := ShaderMaterial.new()
+		m.shader = sh
+		_tela.material = m
+	camada.add_child(_tela)
+	_tela.resized.connect(_ajusta_escala)
+	_ajusta_escala.call_deferred()
+
+
+func _ajusta_escala() -> void:
+	if _tela == null or _tela.material == null:
+		return
+	var m := _tela.material as ShaderMaterial
+	m.set_shader_parameter("escala", maxf(_tela.size.x / LARG, _tela.size.y / ALT))
+
+
+func _mouse_mundo() -> Vector2:
+	## posição do mouse nas coordenadas do mundo (960x540), desfazendo a escala e o corte da TextureRect
+	if _sv == null:
+		return get_global_mouse_position()
+	var r: Vector2 = get_viewport().get_visible_rect().size
+	var k := maxf(r.x / LARG, r.y / ALT)
+	return ((get_viewport().get_mouse_position() - r / 2.0) / k + Vector2(LARG, ALT) / 2.0).clamp(Vector2.ZERO, Vector2(LARG, ALT))
 
 
 func _argumentos() -> Dictionary:
@@ -478,10 +554,10 @@ func _atualizar_sombra(a: Dictionary) -> void:
 func _montar() -> void:
 	var escuro := CanvasModulate.new()
 	escuro.color = Color(str(_a.get("amb", "172a30")))  # verde-azulado quase preto da arte de entrada
-	add_child(escuro)
+	_raiz.add_child(escuro)
 	_mundo = Node2D.new()
 	_mundo.y_sort_enabled = true
-	add_child(_mundo)
+	_raiz.add_child(_mundo)
 	_mat_sombra = _material_sombra()
 	_blobs = Node2D.new()
 	_blobs.z_index = -51
@@ -511,7 +587,7 @@ func _montar() -> void:
 	_olhos_raiz = Node2D.new()
 	var camada_olhos := CanvasLayer.new()  # fora do CanvasModulate: o brilho dos olhos não escurece junto com o resto
 	camada_olhos.layer = 2
-	add_child(camada_olhos)
+	_raiz.add_child(camada_olhos)
 	camada_olhos.add_child(_olhos_raiz)
 	for a in _atores:
 		_criar_olho(a)
@@ -531,12 +607,13 @@ func _chao() -> void:
 	var piso := Sprite2D.new()
 	var raiz := ProjectSettings.globalize_path("res://")
 	var esc := _num("chao", 2.0)
-	var novo := raiz.path_join("prototipos/piso/piso.png")
+	var qual_piso := str(_a.get("piso", "piso_ia" if _a.has("piso_ia") else "piso"))
+	var novo := raiz.path_join("prototipos/piso/%s.png" % qual_piso)
 	if not _a.has("piso_antigo") and not _a.has("cenario_antigo") and FileAccess.file_exists(novo):
 		# chão novo (prototipos/piso, aprovado): escala 1 (1 texel = 1 px), com piso_normal.png como normal map
 		var ct := CanvasTexture.new()
 		ct.diffuse_texture = ImageTexture.create_from_image(Image.load_from_file(novo))
-		var nn := raiz.path_join("prototipos/piso/piso_normal.png")
+		var nn := raiz.path_join("prototipos/piso/%s_normal.png" % qual_piso)
 		if _com_normal and FileAccess.file_exists(nn):
 			ct.normal_texture = ImageTexture.create_from_image(Image.load_from_file(nn))
 		piso.texture = ct
@@ -679,6 +756,7 @@ func _objeto(nome: String, pos: Vector2, esc := 1.0, cor := Color(-1, 0, 0), z :
 func _cenario_novo() -> void:
 	## Composição parecida com a arte de entrada: círculo de ruína perto do centro (colunas, pilar, obelisco, lápides, muros), árvores
 	## grandes enquadrando as bordas, vegetação agrupada em volta, altar e crânio num canto, lanternas à direita e no fundo.
+	_decalques_cena()
 	# árvores nas bordas (enquadram a cena; a y-sort deixa as de baixo na frente de quem passa)
 	for p in [
 		["arvore", Vector2(82, 190)],
@@ -805,6 +883,62 @@ func _grupo(nomes: Array, centro: Vector2, n: int, raio: Vector2, rng: RandomNum
 		_decalque(nomes[rng.randi() % nomes.size()], p, cor)
 
 
+func _decalques_cena() -> void:
+	## Decalques de chão: círculo ritual sob o círculo de ruína, trilha de lajes (reta, diagonal e curva) saindo dele, raízes na base das
+	## árvores grandes, poças perto dos juncos e grupos naturais de folhas, musgo, pedrinhas, galhos e grama. Tudo na camada de chão.
+	if _decal_itens.is_empty():
+		_carregar_decalques()
+	if _decal_itens.is_empty():
+		return
+	var g := _num("dec", 1.4)  # a arte é escura: levanta antes da luz
+	var cor := Color(g, g, g)
+	_decalque("circulo", CIRCULO_POS, cor)
+	# trilha oeste: sai do círculo, passa por baixo do torii e vai até a borda; trilha sudoeste em diagonal; trilha leste curva
+	for p in [
+		["trilha_reta", Vector2(205, 338)], ["trilha_reta", Vector2(40, 342)], ["trilha_diagonal", Vector2(392, 478)], ["trilha_curva", Vector2(742, 392)]
+	]:
+		_decalque(p[0], p[1], cor)
+	# raízes na base das árvores grandes
+	for p in [
+		["raiz_no", Vector2(82, 194)],
+		["raiz_estrela", Vector2(884, 184)],
+		["raiz_forquilha", Vector2(470, 86)],
+		["raiz_longa", Vector2(78, 528)],
+		["raiz_no", Vector2(902, 530)],
+		["raiz_forquilha", Vector2(330, 98)],
+		["raiz_longa", Vector2(655, 104)],
+		["raiz_estrela", Vector2(32, 360)],
+		["raiz_forquilha", Vector2(940, 366)]
+	]:
+		_decalque(p[0], p[1], cor)
+	# poças perto dos juncos
+	for p in [Vector2(176, 282), Vector2(758, 458), Vector2(804, 344)]:
+		_decalque("poca", p, cor)
+	# grupos naturais (sorteio fixo): folhas, musgo, pedrinhas, galhos e grama em manchas
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 21
+	for c in [
+		Vector2(150, 250),
+		Vector2(230, 420),
+		Vector2(360, 140),
+		Vector2(620, 150),
+		Vector2(790, 240),
+		Vector2(840, 420),
+		Vector2(700, 480),
+		Vector2(420, 500),
+		Vector2(110, 420),
+		Vector2(560, 490),
+		Vector2(300, 470),
+		Vector2(760, 130),
+		Vector2(180, 130),
+		Vector2(520, 130)
+	]:
+		_grupo(["folhas_1", "folhas_2", "folhas_3"], c, 3, Vector2(46, 22), rng, cor)
+		_grupo(["musgo_1", "musgo_2", "musgo_3"], c + Vector2(rng.randf_range(-30, 30), rng.randf_range(-14, 14)), 2, Vector2(50, 24), rng, cor)
+		_grupo(["pedrinhas_1", "pedrinhas_2", "grama"], c, 3, Vector2(54, 26), rng, cor)
+		_grupo(["galho_1", "galho_2"], c, 1, Vector2(60, 24), rng, cor)
+
+
 func _cenario_antigo() -> void:
 	## --cenario_antigo: os enfeites regerados (sprites/floresta_enfeites_*) como estavam antes: 22 sorteados + 7 árvores ampliadas
 	var rng := RandomNumberGenerator.new()
@@ -859,6 +993,8 @@ func _lista_monstros() -> Array:
 			pos = HEROI_POS + Vector2(cos(ang) * raio * 1.45, sin(ang) * raio * 0.8)
 			pos.x = clampf(pos.x, 40, LARG - 40)
 			pos.y = clampf(pos.y, 80, ALT - 24)
+		if Rect2(165, 165, 150, 180).has_point(pos):  # nada de bicho em cima do torii e do braseiro: empurra para dentro do círculo
+			pos.x += 170.0
 		var dx := HEROI_POS.x - pos.x
 		var dy := HEROI_POS.y - pos.y
 		var linha := 0 if absf(dx) < absf(dy) * 0.5 else 1
@@ -951,7 +1087,7 @@ func _luz(cor: Color, energia: float, escala: float, altura: float, pos: Vector2
 	l.texture_scale = escala
 	l.height = altura
 	l.position = pos
-	(pai if pai != null else self).add_child(l)
+	(pai if pai != null else _raiz).add_child(l)
 	return l
 
 
@@ -987,7 +1123,7 @@ func _luzes_cena(heroi: Dictionary) -> void:
 			{
 				"nome": "braseiro",
 				"cor": Color(1.0, 0.55, 0.2),
-				"e": 2.1,
+				"e": 2.5,
 				"r": 250.0,
 				"h": 45.0,
 				"pos": POS_BRASEIRO + Vector2(0, -6),
@@ -1061,8 +1197,8 @@ func _fogo(pos: Vector2, esc: float) -> void:
 	chama.gravity = Vector2(0, -18)
 	chama.initial_velocity_min = 16.0 * esc
 	chama.initial_velocity_max = 30.0 * esc
-	chama.scale_amount_min = 0.05 * esc
-	chama.scale_amount_max = 0.11 * esc
+	chama.scale_amount_min = 0.08 * esc
+	chama.scale_amount_max = 0.17 * esc
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.15, 0.5, 0.8, 1.0])
 	g.colors = PackedColorArray(
@@ -1162,7 +1298,7 @@ func _luar() -> void:
 	l.height = _num("h_luar", 0.2)
 	l.rotation = deg_to_rad(_num("ang_luar", 90.0))
 	l.shadow_enabled = false
-	add_child(l)
+	_raiz.add_child(l)
 
 
 func _atmosfera() -> void:
@@ -1224,7 +1360,7 @@ func _atmosfera() -> void:
 func _vinheta() -> void:
 	var camada := CanvasLayer.new()
 	camada.layer = 3
-	add_child(camada)
+	_raiz.add_child(camada)
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
 	g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0.12), Color(0, 0, 0, 0.62)])
@@ -1249,7 +1385,7 @@ func _vinheta() -> void:
 func _montar_rotulo() -> void:
 	var camada := CanvasLayer.new()
 	camada.layer = 4
-	add_child(camada)
+	_raiz.add_child(camada)
 	_rotulo = Label.new()
 	_rotulo.position = Vector2(6, 4)
 	_rotulo.add_theme_font_size_override("font_size", 12)
@@ -1357,7 +1493,7 @@ func _process(delta: float) -> void:
 			luz.position = _heroi.raiz.position + (d.pos - HEROI_POS)
 		elif d.nome == "magia_azul":
 			if _azul_mouse:
-				luz.position = get_global_mouse_position().clamp(Vector2.ZERO, Vector2(LARG, ALT))
+				luz.position = _mouse_mundo()
 			elif _a.has("azul"):
 				var xy := str(_a.azul).split(",")
 				luz.position = Vector2(float(xy[0]), float(xy[1]))
@@ -1415,9 +1551,14 @@ func _medir() -> void:
 
 func _salvar_tela(n: int) -> void:
 	await RenderingServer.frame_post_draw
-	var img := get_viewport().get_texture().get_image()
+	var vp: Viewport = _sv if _sv != null else get_viewport()
+	var img := vp.get_texture().get_image()
 	var caminho := _fotos.path_join("%s_%d.png" % [str(_a.get("nome", "cara_nova")), n])
 	img.save_png(caminho)
 	print("FOTO ", caminho, " ", img.get_size(), " t=%.2f" % _t)
+	if _sv != null and _a.has("janela"):  # o que a janela mostra de verdade (escala, shader e corte), para comparar apresentações
+		var tela := get_viewport().get_texture().get_image()
+		tela.save_png(_fotos.path_join("%s_janela_%d.png" % [str(_a.get("nome", "cara_nova")), n]))
+		print("JANELA ", tela.get_size())
 	if n >= _seq.size():
 		get_tree().quit()

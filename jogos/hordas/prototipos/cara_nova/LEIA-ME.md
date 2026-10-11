@@ -145,16 +145,33 @@ O teste automático continua passando com os objetos novos (`TESTE_SOMBRA OK: 29
 
 **O que ainda destoa da referência:** a cena está bem mais escura e dessaturada (a referência tem o círculo de pedra claro e musgoso iluminando o centro, vermelhos e roxos saturados, água refletindo azul, o torii e a fogueira grande); falta o piso de lajes em círculo (a ruína aqui são só os objetos), a água, o fundo de floresta densa e as folhas vermelhas no chão; as árvores das bordas ficam quase silhuetas pretas fora da luz (na referência elas têm contraluz azulada); a tocha do herói não é uma chama grande e os bichos são menores e menos detalhados.
 
+### Polimento, torii e braseiro, decalques de chão
+
+- **Luz e cor:** ambiente `#172a30` (verde-azulado médio, entre o antigo e o escuro demais), **luar** fraco (`DirectionalLight2D` azulada, energia 0,32, altura 0,2, **sem sombra** e fora da lista de luzes das sombras: só pega topo e bordas pelo normal map, então as árvores das bordas não viram silhueta preta e a sombra continua só vindo das tochas), tocha do herói com menos energia no miolo e mais alcance (brilho quente que se espalha), aura mais fraca, magia roxa e folhas vermelhas mais saturadas. Botões: `--luar=`, `--h_luar=`, `--ang_luar=`, `--sem_luar`.
+- **Objetos novos (28 itens):** `torii` na borda oeste do círculo (a trilha passa por baixo), `torii_quebrado` à direita, `caixa_oferenda` perto do altar, `braseiro` ao lado do torii e `fogueira` (menor) no canto oposto, com **fogo de verdade** no ponto `fogo` do item: partículas de chama (laranja para amarelo, de baixo para cima), brasas subindo e fumaça escura, mais uma `PointLight2D` quente com tremor. O braseiro é a luz mais forte depois da tocha do herói e entra nas sombras como as outras (9 luzes no total). Na sombra "baixa" as partículas caem pela metade.
+- **Decalques de chão** (`projeto/prototipos/decalques/`, outro agente): camada de chão acima do piso e abaixo das sombras (`z_index -90`; blobs e sombras ficam em -51 e -50), com `CanvasTexture` (albedo + normal), então recebem luz e as sombras dos bichos e objetos caem em cima. O `circulo` (380x210) fica sob o círculo de ruína; trilha de lajes (duas retas a oeste passando por baixo do torii, uma diagonal ao sudoeste e uma curva a leste); raízes na base das árvores grandes; poças perto dos juncos; grupos de folhas, musgo, pedrinhas, galhos e grama (sorteio fixo). `--dec=` ajusta o brilho.
+- **Chão:** `piso.png` (padrão) x `piso_ia.png` (`--piso=piso_ia` ou `--piso_ia`). Comparados na cena com a luz real, o `piso.png` leva: mais contraste entre terra e musgo, lê melhor como floresta e deixa o círculo de lajes se destacar; o `piso_ia.png` é mais uniforme e acinzentado e briga menos com os decalques, mas deixa o chão chapado.
+
+### Apresentação: sharp bilinear (sem barras e sem pixels de tamanhos diferentes)
+
+O protótipo usava `CONTENT_SCALE_MODE_VIEWPORT` com a janela de 1280x720, ou seja, escala **1,33x** (e 1,6x, 1,87x... em outras janelas): nearest fracionário deixa uns pixels com 1 px de tela e outros com 2, e a imagem parece serrilhada e "mal recortada" mesmo com os assets limpos. Prova de que o problema é só a apresentação: o viewport 1:1 (960x540) do braseiro e da lanterna está limpo (primeiro painel da imagem abaixo).
+
+Agora o mundo é desenhado num `SubViewport` de 960x540 (nearest) e mostrado numa `TextureRect` do tamanho da janela com o shader sharp bilinear (escala inteira em nearest e só 1 px de tela de transição nas bordas dos texels). Sem barras pretas em janela 16:9 (em outra proporção a imagem é cortada nas bordas em vez de ter barras). Em escala exata (2x, 3x) o resultado é igual ao nearest puro (medido a 1920x1080: diferença máxima de 3 em 255, só o tremor de luz entre dois quadros). Em escala menor que 2 a transição de 1 px é grande em relação ao texel, então a imagem fica um pouco mais macia que o nearest (é o preço de ter todos os pixels com o mesmo tamanho). A luz 2D e as sombras funcionam normalmente dentro do SubViewport (evidência: todos os prints desta seção). O mouse (L) é convertido da janela para as coordenadas do mundo (`_mouse_mundo`) e o WASD não muda (testado injetando teclas).
+
+![viewport 1:1, nearest fracionário e sharp bilinear a 1536x864](../../prints/prototipo_cara_nova_sharp_bilinear.png)
+
+Janela livre: a maior 16:9 que cabe na tela (`--janela=LxA` fixa o tamanho); `--escala_pura` mostra o nearest fracionário de antes e `--sem_subviewport` volta ao modo antigo, para comparar. O padrão do modo de foto continua 1280x720 (1,33x), mas os prints do `LEIA-ME` são do viewport de 960x540.
+
 ### Fps por modo de sombra (Intel Iris Xe, notebook, 6 luzes, sem V-Sync)
 
-Mediana de 3 rodadas de 6 s intercaladas (mínimo a máximo entre parênteses), `medir_sombras.sh`. "26 sprites" = herói + 25 monstros; "251" = herói + 250. Mais ~55 objetos de cenário com sombra e normal map, 7 luzes, vaga-lumes, folhas e faíscas (medido com o cenário novo; as medições anteriores, com 29 objetos e 6 luzes, estão no histórico do git). Carga de fundo da máquina durante a medição: 5 a 40% de CPU (outros agentes e o navegador; não consegui pará-los), então os números têm ruído de até uns 25% e valem como ordem de grandeza.
+Mediana de 3 rodadas de 6 s intercaladas (mínimo a máximo entre parênteses), `medir_sombras.sh`. "26 sprites" = herói + 25 monstros; "251" = herói + 250. Mais ~60 objetos de cenário com sombra e normal map, ~90 decalques de chão com normal, 9 luzes + o luar, fogo, vaga-lumes, folhas e faíscas, tudo dentro do SubViewport do sharp bilinear (que sozinho custa uns 20%). Os números caíram bastante em relação às medições anteriores (839/470 com 7 luzes e sem decalques, luar nem apresentação): o custo vem de mais luzes por item (cada item pago uma vez por luz que o cobre), do luar (cobre a tela toda) e dos decalques, não das sombras; ainda é uma cena de teste, e é o que o i5-3470 vai sentir mais. Carga de fundo da máquina durante a medição: 5 a 40% de CPU (outros agentes e o navegador; não consegui pará-los), então os números têm ruído de até uns 25% e valem como ordem de grandeza.
 
 | Modo | 26 sprites | 251 sprites |
 |---|---|---|
-| nenhuma | 839 (795 a 854) | 470 (456 a 502) |
-| baixa (blob) | 802 (777 a 843) | 503 (449 a 508) |
-| média (1 sombra borrada) | 516 (511 a 660) | 232 (227 a 275) |
-| alta (até 2 sombras + contato) | 503 (476 a 520) | 222 (191 a 243) |
+| nenhuma | 375 (351 a 455) | 281 (262 a 304) |
+| baixa (blob) | 343 (342 a 350) | 248 (238 a 283) |
+| média (1 sombra borrada) | 280 (275 a 290) | 190 (153 a 194) |
+| alta (até 2 sombras + contato) | 249 (242 a 260) | 156 (138 a 163) |
 
 O custo de script das sombras (`SCRIPT_SOMBRA` na saída da medição) com 251 sprites é de ~1,2 ms por quadro na média e ~1,8 ms na alta nesta máquina; o resto da diferença é desenho (cada ator vira até 3 itens a mais). **Não medi no i5-3470** (o Breno precisa conferir com o F3): o custo de script deve pesar mais numa CPU de 3ª geração, então com a horda toda em tela a média é a candidata a padrão e a alta fica para máquina melhor. A horda do jogo real é MultiMesh, então lá a sombra teria de ser outro MultiMesh só da silhueta (o protótipo usa `Sprite2D`, como o resto).
 

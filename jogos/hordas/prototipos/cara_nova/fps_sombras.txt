@@ -1,33 +1,33 @@
-MEDIDA sombra=nenhuma luzes=7 sprites=26 normal=1 fps=853.5 frames=5121 seg=6.00
-MEDIDA sombra=baixa luzes=7 sprites=26 normal=1 fps=801.8 frames=4811 seg=6.00
-MEDIDA sombra=media luzes=7 sprites=26 normal=1 fps=510.7 frames=3065 seg=6.00
-MEDIDA sombra=alta luzes=7 sprites=26 normal=1 fps=476.0 frames=2856 seg=6.00
-MEDIDA sombra=nenhuma luzes=7 sprites=251 normal=1 fps=469.9 frames=2820 seg=6.00
-MEDIDA sombra=baixa luzes=7 sprites=251 normal=1 fps=448.8 frames=2693 seg=6.00
-MEDIDA sombra=media luzes=7 sprites=251 normal=1 fps=231.5 frames=1390 seg=6.00
-MEDIDA sombra=alta luzes=7 sprites=251 normal=1 fps=222.5 frames=1336 seg=6.00
-MEDIDA sombra=nenhuma luzes=7 sprites=26 normal=1 fps=794.7 frames=4769 seg=6.00
-MEDIDA sombra=baixa luzes=7 sprites=26 normal=1 fps=776.7 frames=4660 seg=6.00
-MEDIDA sombra=media luzes=7 sprites=26 normal=1 fps=515.7 frames=3094 seg=6.00
-MEDIDA sombra=alta luzes=7 sprites=26 normal=1 fps=503.3 frames=3020 seg=6.00
-MEDIDA sombra=nenhuma luzes=7 sprites=251 normal=1 fps=501.7 frames=3011 seg=6.00
-MEDIDA sombra=baixa luzes=7 sprites=251 normal=1 fps=503.2 frames=3020 seg=6.00
-MEDIDA sombra=media luzes=7 sprites=251 normal=1 fps=227.2 frames=1364 seg=6.00
-MEDIDA sombra=alta luzes=7 sprites=251 normal=1 fps=191.3 frames=1149 seg=6.01
-MEDIDA sombra=nenhuma luzes=7 sprites=26 normal=1 fps=838.6 frames=5032 seg=6.00
-MEDIDA sombra=baixa luzes=7 sprites=26 normal=1 fps=842.7 frames=5057 seg=6.00
-MEDIDA sombra=media luzes=7 sprites=26 normal=1 fps=660.1 frames=3961 seg=6.00
-MEDIDA sombra=alta luzes=7 sprites=26 normal=1 fps=519.5 frames=3117 seg=6.00
-MEDIDA sombra=nenhuma luzes=7 sprites=251 normal=1 fps=455.7 frames=2735 seg=6.00
-MEDIDA sombra=baixa luzes=7 sprites=251 normal=1 fps=507.5 frames=3046 seg=6.00
-MEDIDA sombra=media luzes=7 sprites=251 normal=1 fps=274.6 frames=1648 seg=6.00
-MEDIDA sombra=alta luzes=7 sprites=251 normal=1 fps=243.3 frames=1460 seg=6.00
+MEDIDA sombra=nenhuma luzes=9 sprites=26 normal=1 fps=455.4 frames=2733 seg=6.00
+MEDIDA sombra=baixa luzes=9 sprites=26 normal=1 fps=343.0 frames=2058 seg=6.00
+MEDIDA sombra=media luzes=9 sprites=26 normal=1 fps=274.6 frames=1648 seg=6.00
+MEDIDA sombra=alta luzes=9 sprites=26 normal=1 fps=249.3 frames=1496 seg=6.00
+MEDIDA sombra=nenhuma luzes=9 sprites=251 normal=1 fps=262.2 frames=1574 seg=6.00
+MEDIDA sombra=baixa luzes=9 sprites=251 normal=1 fps=283.4 frames=1701 seg=6.00
+MEDIDA sombra=media luzes=9 sprites=251 normal=1 fps=153.3 frames=920 seg=6.00
+MEDIDA sombra=alta luzes=9 sprites=251 normal=1 fps=138.1 frames=829 seg=6.00
+MEDIDA sombra=nenhuma luzes=9 sprites=26 normal=1 fps=351.2 frames=2108 seg=6.00
+MEDIDA sombra=baixa luzes=9 sprites=26 normal=1 fps=341.8 frames=2051 seg=6.00
+MEDIDA sombra=media luzes=9 sprites=26 normal=1 fps=279.6 frames=1678 seg=6.00
+MEDIDA sombra=alta luzes=9 sprites=26 normal=1 fps=260.5 frames=1564 seg=6.00
+MEDIDA sombra=nenhuma luzes=9 sprites=251 normal=1 fps=281.2 frames=1688 seg=6.00
+MEDIDA sombra=baixa luzes=9 sprites=251 normal=1 fps=238.4 frames=1431 seg=6.00
+MEDIDA sombra=media luzes=9 sprites=251 normal=1 fps=193.7 frames=1163 seg=6.00
+MEDIDA sombra=alta luzes=9 sprites=251 normal=1 fps=156.3 frames=939 seg=6.01
+MEDIDA sombra=nenhuma luzes=9 sprites=26 normal=1 fps=375.3 frames=2252 seg=6.00
+MEDIDA sombra=baixa luzes=9 sprites=26 normal=1 fps=350.1 frames=2101 seg=6.00
+MEDIDA sombra=media luzes=9 sprites=26 normal=1 fps=290.5 frames=1743 seg=6.00
+MEDIDA sombra=alta luzes=9 sprites=26 normal=1 fps=242.0 frames=1452 seg=6.00
+MEDIDA sombra=nenhuma luzes=9 sprites=251 normal=1 fps=303.7 frames=1823 seg=6.00
+MEDIDA sombra=baixa luzes=9 sprites=251 normal=1 fps=247.7 frames=1486 seg=6.00
+MEDIDA sombra=media luzes=9 sprites=251 normal=1 fps=190.0 frames=1141 seg=6.00
+MEDIDA sombra=alta luzes=9 sprites=251 normal=1 fps=163.2 frames=980 seg=6.00
 --- mediana de 3 (minimo a maximo) ---
-sprites=26 sombra=nenhuma mediana=839 (795 a 854)
-sprites=26 sombra=baixa mediana=802 (777 a 843)
-sprites=26 sombra=media mediana=516 (511 a 660)
-sprites=26 sombra=alta mediana=503 (476 a 520)
-sprites=251 sombra=nenhuma mediana=470 (456 a 502)
-sprites=251 sombra=baixa mediana=503 (449 a 508)
-sprites=251 sombra=media mediana=232 (227 a 275)
-sprites=251 sombra=alta mediana=222 (191 a 243)
+sprites=26 sombra=nenhuma mediana=375 (351 a 455)
+sprites=26 sombra=baixa mediana=343 (342 a 350)
+sprites=26 sombra=media mediana=280 (275 a 290)
+sprites=26 sombra=alta mediana=249 (242 a 260)
+sprites=251 sombra=nenhuma mediana=281 (262 a 304)
+sprites=251 sombra=baixa mediana=248 (238 a 283)
+sprites=251 sombra=media mediana=190 (153 a 194)
+sprites=251 sombra=alta mediana=156 (138 a 163)
