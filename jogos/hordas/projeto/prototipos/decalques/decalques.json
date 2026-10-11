@@ -1,0 +1,268 @@
+{
+ "atlas": [
+  512,
+  504
+ ],
+ "itens": [
+  {
+   "nome": "circulo",
+   "regiao": [
+    0,
+    0,
+    380,
+    210
+   ],
+   "centro": [
+    195,
+    105
+   ]
+  },
+  {
+   "nome": "folhas_1",
+   "regiao": [
+    114,
+    446,
+    50,
+    32
+   ],
+   "centro": [
+    26,
+    16
+   ]
+  },
+  {
+   "nome": "folhas_2",
+   "regiao": [
+    47,
+    482,
+    50,
+    21
+   ],
+   "centro": [
+    24,
+    11
+   ]
+  },
+  {
+   "nome": "folhas_3",
+   "regiao": [
+    62,
+    446,
+    50,
+    33
+   ],
+   "centro": [
+    24,
+    15
+   ]
+  },
+  {
+   "nome": "galho_1",
+   "regiao": [
+    342,
+    446,
+    60,
+    26
+   ],
+   "centro": [
+    27,
+    13
+   ]
+  },
+  {
+   "nome": "galho_2",
+   "regiao": [
+    404,
+    446,
+    60,
+    24
+   ],
+   "centro": [
+    28,
+    14
+   ]
+  },
+  {
+   "nome": "grama",
+   "regiao": [
+    0,
+    482,
+    45,
+    22
+   ],
+   "centro": [
+    22,
+    11
+   ]
+  },
+  {
+   "nome": "musgo_1",
+   "regiao": [
+    0,
+    446,
+    60,
+    34
+   ],
+   "centro": [
+    31,
+    17
+   ]
+  },
+  {
+   "nome": "musgo_2",
+   "regiao": [
+    166,
+    446,
+    60,
+    30
+   ],
+   "centro": [
+    30,
+    15
+   ]
+  },
+  {
+   "nome": "musgo_3",
+   "regiao": [
+    228,
+    446,
+    60,
+    29
+   ],
+   "centro": [
+    28,
+    13
+   ]
+  },
+  {
+   "nome": "pedrinhas_1",
+   "regiao": [
+    466,
+    446,
+    45,
+    23
+   ],
+   "centro": [
+    20,
+    10
+   ]
+  },
+  {
+   "nome": "pedrinhas_2",
+   "regiao": [
+    99,
+    482,
+    45,
+    19
+   ],
+   "centro": [
+    20,
+    9
+   ]
+  },
+  {
+   "nome": "poca",
+   "regiao": [
+    290,
+    446,
+    50,
+    27
+   ],
+   "centro": [
+    24,
+    14
+   ]
+  },
+  {
+   "nome": "raiz_estrela",
+   "regiao": [
+    283,
+    212,
+    143,
+    107
+   ],
+   "centro": [
+    67,
+    52
+   ]
+  },
+  {
+   "nome": "raiz_forquilha",
+   "regiao": [
+    0,
+    350,
+    153,
+    94
+   ],
+   "centro": [
+    74,
+    41
+   ]
+  },
+  {
+   "nome": "raiz_longa",
+   "regiao": [
+    155,
+    350,
+    175,
+    88
+   ],
+   "centro": [
+    82,
+    45
+   ]
+  },
+  {
+   "nome": "raiz_no",
+   "regiao": [
+    112,
+    212,
+    169,
+    114
+   ],
+   "centro": [
+    82,
+    54
+   ]
+  },
+  {
+   "nome": "trilha_curva",
+   "regiao": [
+    382,
+    0,
+    100,
+    153
+   ],
+   "centro": [
+    58,
+    76
+   ]
+  },
+  {
+   "nome": "trilha_diagonal",
+   "regiao": [
+    0,
+    212,
+    110,
+    136
+   ],
+   "centro": [
+    58,
+    69
+   ]
+  },
+  {
+   "nome": "trilha_reta",
+   "regiao": [
+    332,
+    350,
+    170,
+    79
+   ],
+   "centro": [
+    85,
+    40
+   ]
+  }
+ ]
+}
