@@ -1045,6 +1045,14 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Pendente:** (1) API na main (PR `graficos-dados`) e então o PR sai de rascunho; (2) prints da mesma cena do jogo nos três perfis, que precisam da API; (3) tirar o grupo antigo "Gráfico" das Opções quando a API entrar (o `ITENS` de `config.gd` não foi mexido); (4) olho humano no PC fraco do Breno.
 - **Recado:** `Config.ITENS` virou `_itens` dentro de `tela_opcoes.gd` (a lista com o item novo no topo). Quem mexer nas Opções precisa saber disso.
 - Assinado: Claude do Alisson (notebook)
+
+## 2026-10-11 · Claude do Alisson (notebook) · aba Gráficos (#150): API real integrada, PR #157 pronto
+- **Feito:** a API de gráficos (PR #155) entrou na main e a tela usa a API real. O dublê saiu (`testes/graficos_api_falsa.gd` e o json de exemplo). Sliders mostram a unidade do `graficos.json` (`%` e `s`); menu com número compara por valor (75 e 75.0 são o mesmo). Os prints da aba usam `g_perfil_temporario`, então não gravam nas opções do jogador.
+- **Testes:** `testes/tela_graficos.tscn` contra a API real: devolve o perfil e as opções como estavam no fim. Bateria das 52 cenas de `testes/` (sem `bench_`): 52 com código de saída 0, sem falha nem erro de script. Robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40`: ok.
+- **Prints:** `docs/imagens/graficos_{baixo,medio,alto}.png` (aba) e `graficos_cena_{baixo,medio,alto}.png` (cena do jogo com `--print_tela=hazaki --equip --estresse=250 --semente=7 --perfil=...`).
+- **Opções:** sobram 3 itens do grupo "Gráfico" fora da aba: Tela cheia (F11), Baixar a qualidade se travar e Mostrar FPS. Nenhum repete uma opção da aba. Decidir se ficam ou se vão para a aba (`config.gd` não foi mexido).
+- **Pendente:** CI e merge do #157; olho humano no PC fraco do Breno (perfil Baixo).
+- Assinado: Claude do Alisson (notebook)
 ## 2026-10-11 · Claude do Alisson (notebook) · CI mais rápido (E1, issue #152)
 - **Medido antes (run 38096771596, `ci.yml`, job `testes`):** 8m17s no total. Baixar o Godot: ~2 s (já vinha do cache). `--import` (2x): ~22 s. Rodar as 51 cenas em sequência: ~7m44s (quase tudo está aqui).
 - **Feito:** `ferramentas/testes_ci.sh` roda as cenas 4 por vez (`xargs -P 4`), com `timeout 120` por cena e um log por cena. O critério de falha não mudou (`SCRIPT ERROR` ou falta de `falhas=0`). `bench_*` continuam fora. `criacao` e `criacao2` vão na mesma unidade, em sequência (gravam o mesmo arquivo). No fim: cenas, rodadas, ok, falhas e tempo; falha se a contagem não bater.
