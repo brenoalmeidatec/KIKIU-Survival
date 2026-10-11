@@ -70,8 +70,8 @@ func sortear(t: float) -> String:
 		if t >= float(e.desde):
 			r -= int(e.peso)
 			if r < 0:
-				return str(e.nome)
-	return str(cfg.tipos[0].nome)
+				return str(e.sprite)
+	return str(cfg.tipos[0].sprite)
 
 
 ## Nasce um monstro fora da tela. Devolve false se não achou lugar (a taxa tenta de novo no próximo).
