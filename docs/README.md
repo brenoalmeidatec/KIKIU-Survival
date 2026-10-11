@@ -6,7 +6,8 @@
 | 🧙 [`DESIGN_PERSONAGENS_E_DESCOBERTAS.md`](DESIGN_PERSONAGENS_E_DESCOBERTAS.md) | Personagens, armas, builds, cartas, equipamentos, transformações e descobertas |
 | ⚔️ [`HAZAKI_ARMAS_EQUIPAMENTOS.md`](HAZAKI_ARMAS_EQUIPAMENTOS.md) | Hazaki: armas e equipamentos |
 | 🌐 [`ONLINE_KIKIU.md`](ONLINE_KIKIU.md) | Como funciona o online (sala, horda junta, reviver, duelo) |
-| 🎨 [`VISUAL_KIKIU.md`](VISUAL_KIKIU.md) | Direção de arte, profundidade e pipeline 3D → pixel art |
+| 🌌 [`visual_2_5d/`](visual_2_5d/README.md) | **Direção visual 2.5D (oficial desde 10/10)**: referência, HUD e menus, mundo, lacunas e paleta |
+| 🎨 [`VISUAL_KIKIU.md`](VISUAL_KIKIU.md) | Pipeline 3D → pixel art (a direção de arte agora é a 2.5D acima) |
 | ⚡ [`PERF_2026-10-06.md`](PERF_2026-10-06.md) | Medição de desempenho com 500 inimigos |
 | ⚡ [`PERF_2026-10-07.md`](PERF_2026-10-07.md) | PC antigo: perfil de qualidade, núcleos, primeiros quadros, shaders e histórico de fps |
 | ⚡ [`PERF_2026-10-10.md`](PERF_2026-10-10.md) | Marco 3: inimigos em lote (MultiMesh), atlas por região, limite de vivos por fase e a conferência visual antes/depois |
