@@ -30,14 +30,19 @@ func _ready() -> void:
 	Engine.time_scale = 3.0
 	var a := Arena.new()
 	a.heroi_id = "hazaki"
-	a.bot = true
+	a.bot = false   # sem robô: ele pegava baús (armas novas) e escolhia cartas durante a espera, e a build mudava no meio do teste
 	add_child(a)
 	await esperar(0.2)
+	a.jogador.bot = false
+	a.jogador.invencivel = 999.0   # o herói não morre no meio do teste (e nem pisca)
+	a.diretor.bonus_minutos = -100.0   # sem inimigos nascendo nas esperas
+	a.inimigos.limpar()
+	a.coleta.limpar()   # nada no chão para pegar
 	a.armas.adicionar("aura_hazaki")
 	a.armas.adicionar("katana")
 	a.armas.subir("katana")
 	a.equipamentos["cabeca"] = "cabeca_guerreiro"
-	a.xp = -1.0e12   # sem subir de nível: o robô escolheria cartas nas esperas e mudaria a build no meio do teste
+	a.xp = -1.0e12   # sem subir de nível: nenhuma carta se abre durante o teste
 	a.atualizar_visual()
 	await esperar(0.1)
 	var antes := JSON.stringify(a.armas.lista.map(func(x): return [x.id, x.nivel]))
@@ -48,7 +53,8 @@ func _ready() -> void:
 	var vel_humano: float = a.stat("velocidade")
 	h.desbloquear()
 	h.energia = h.energia_max()
-	await esperar(1.6)   # o robô transforma sozinho e a animação termina
+	h.transformar()   # sem robô, quem aperta a tecla é o teste (com o robô ligado seria automático)
+	await esperar(1.6)   # a animação da forma termina
 	ok(h.ativa, "transformou")
 	ok(a.jogador.forma != null and a.jogador.humano < 0.01, "corpo humano sumiu e o dragão apareceu")
 	ok(a.armas.ativas().map(func(x): return x.id) == ["baforada", "garras_dragao", "energia_draconica", "rugido"], "só as habilidades do dragão atacam")

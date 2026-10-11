@@ -14,7 +14,17 @@ func ok(cond: bool, msg: String) -> void:
 		print("FALHOU: ", msg)
 
 
+## Vigia: se um caminho do teste não chega ao quit() (um erro no meio aborta a função e o processo ficaria vivo, parado),
+## o vigia encerra em 100 s de relógio real, com falha. Teste normal leva uns 5 s.
+func _vigia() -> void:
+	await get_tree().create_timer(100.0, true, false, true).timeout
+	print("FALHOU: teste travou (passou de 100 s sem terminar)")
+	print("STATUS falhas=%d" % (falhas + 1))
+	get_tree().quit(1)
+
+
 func _ready() -> void:
+	_vigia()
 	for acao in ["cima", "baixo", "esquerda", "direita", "dash", "especial", "transformar", "voltar", "confirmar", "falar"]:
 		if not InputMap.has_action(acao):
 			InputMap.add_action(acao)

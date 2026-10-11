@@ -22,6 +22,7 @@ var arena: Node
 var _msgs: Array = []        # {txt, cor, t}
 var _anuncio := {"txt": "", "cor": Color.WHITE, "t": 0.0}
 var _pausado := false
+var _hud_antes_pausa := true   # o HUD estava visível antes da pausa (a abertura da fase o esconde)
 var _op_pausa := 0
 var _t := 0.0
 var _quadro_pausa := -1
@@ -532,8 +533,18 @@ func pausar() -> void:
 	get_tree().paused = not arena.eh_online   # no online o jogo dos outros não para
 	%Versao.text = Dados.texto_versao()
 	%Pausa.visible = true
+	_hud_antes_pausa = visible
+	visible = true   # a abertura da fase esconde o HUD (e com ele o menu da pausa): a pausa tem que aparecer
+	_mostra_abertura(false)
 	_pausa_texto()
 	Som.ui("abrir")
+
+
+## A abertura da fase é uma layer (7) acima da pausa (5): sem isto, o título da entrada aparece por cima do véu.
+## Enquanto a pausa estiver aberta a abertura fica escondida; ao retomar ela volta de onde parou.
+func _mostra_abertura(v: bool) -> void:
+	if arena and arena.abertura:
+		arena.abertura.visible = v
 
 
 ## Opção "Pausar ao sair da janela": trocou de janela (alt-tab) no meio da partida, pausa sozinho.
@@ -569,6 +580,8 @@ func _pausa_rects() -> Array:
 func _retomar() -> void:
 	_pausado = false
 	%Pausa.visible = false
+	visible = _hud_antes_pausa
+	_mostra_abertura(true)
 	get_tree().paused = false
 	Som.ui("voltar")
 
