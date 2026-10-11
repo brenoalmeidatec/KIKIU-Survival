@@ -3,7 +3,8 @@ extends CanvasLayer
 ## Fica numa CanvasLayer (layer 10) dentro da SubViewport 960x540 do mundo: pixel art na mesma resolução do mundo (o sharp bilinear
 ## escala junto), fonte PressStart2P sem anti-aliasing e sem hinting, e light_mask 0 para a luz do mundo não tocar nele.
 ## Lê o mundo com get() e valor padrão: sem combate mostra vida cheia, XP 0 e nível 1. Campos lidos: em mundo.heroi, vida, vida_max,
-## xp, xp_proximo, nivel, folego, folego_max; em mundo, abates, combo, tempo_partida (segundos), monstros_vivos e o sinal
+## xp, xp_proximo, nivel, folego, folego_max, cansado (bool, padrão false: a barra de fôlego pisca); em mundo, abates, combo,
+## tempo_partida (segundos), monstros_vivos e o sinal
 ## nivel_subiu(nivel), conectado só se o mundo tiver o sinal. Uso no mundo (uma linha no _ready):
 ##   sv.add_child(preload("res://v2/hud.gd").criar(self))
 ## Layout em v2/hud.tscn (coordenadas de 960x540). O canto superior direito fica livre para o minimapa.
@@ -15,6 +16,7 @@ const PULSO_T := 0.25  # segundos do pulso do combo a cada abate
 const BRILHO_T := 1.2  # segundos do brilho da barra de XP ao subir de nível
 const SALTO_PX := 4  # quantos pixels o combo sobe no pulso
 const BRILHO_XP := Color(1.7, 1.5, 0.9)  # multiplicador de cor no pico do brilho: a barra e o selo clareiam para o dourado
+const PISCA_CANSADO := Color(1.0, 0.35, 0.2)  # vermelho-laranja: a barra de fôlego pisca com ele quando o herói está cansado
 
 ## O mundo lido (o da v2, ou um falso nos testes). Pode ser null: aí o HUD mostra os valores padrão.
 var mundo = null
@@ -24,6 +26,7 @@ var brilho := 0.0
 
 var _abates_antes := 0
 var _combo_antes := 0
+var _piscada := 0.0  # segundos que o herói está cansado (para o pisca da barra de fôlego)
 var _combo_x := 0.0
 var _combo_y := 0.0
 
@@ -98,6 +101,11 @@ func avancar(dt: float) -> void:
 	var folego_max := maxf(_num(h, "folego_max", 100.0), 1.0)
 	_folego.max_value = folego_max
 	_folego.value = clampf(_num(h, "folego", folego_max), 0.0, folego_max)
+	# Herói cansado (corrida no Shift esgotou o fôlego): a barra pisca em vermelho até recuperar.
+	var cansado: bool = _campo(h, "cansado") == true
+	_piscada = _piscada + dt if cansado else 0.0
+	var pisca: bool = cansado and int(_piscada * 6.0) % 2 == 0
+	_folego.modulate = PISCA_CANSADO if pisca else Color.WHITE
 	var xp_prox := maxf(_num(h, "xp_proximo", 100.0), 1.0)
 	var xp := clampf(_num(h, "xp", 0.0), 0.0, xp_prox)
 	_xp_barra.max_value = xp_prox

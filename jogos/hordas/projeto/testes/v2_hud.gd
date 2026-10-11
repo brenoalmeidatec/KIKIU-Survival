@@ -22,6 +22,7 @@ class Heroi:
 	var nivel := 1
 	var folego := 100.0
 	var folego_max := 100.0
+	var cansado := false
 
 
 class MundoFalso:
@@ -109,6 +110,21 @@ func _testes() -> void:
 	falso.combo = 0
 	hud.avancar(PASSO)
 	ok(not hud._combo.visible, "combo some quando zera")
+
+	# 3b. herói cansado (corrida no Shift esgotou o fôlego): a barra de fôlego pisca em vermelho até recuperar
+	falso.heroi.cansado = true
+	var piscou := false
+	var vermelho_so := true
+	for i in 60:
+		hud.avancar(PASSO)
+		if hud._folego.modulate != Color.WHITE:
+			piscou = true
+			vermelho_so = vermelho_so and hud._folego.modulate.g < 1.0
+	ok(piscou, "a barra de fôlego pisca quando o herói está cansado")
+	ok(vermelho_so, "o pisca do cansado é vermelho-laranja, não outra cor")
+	falso.heroi.cansado = false
+	hud.avancar(PASSO)
+	ok(hud._folego.modulate == Color.WHITE, "a barra de fôlego para de piscar ao recuperar")
 
 	# 4. nivel_subiu acende o brilho do XP e apaga em 1,2 s
 	ok(hud.brilho == 0.0, "sem brilho antes do nível novo")
