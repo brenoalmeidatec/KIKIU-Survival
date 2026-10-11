@@ -1,0 +1,413 @@
+{
+ "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py (nao edite a mao)",
+ "enfeites": "enfeites.png",
+ "enfeites_normal": "enfeites_normal.png",
+ "ambiente": [
+  0.6,
+  0.7,
+  0.62
+ ],
+ "itens": [
+  {
+   "nome": "arvore",
+   "peso": 1,
+   "pe": [
+    71,
+    149
+   ],
+   "regiao": [
+    0,
+    0,
+    116,
+    150
+   ]
+  },
+  {
+   "nome": "arvore_pantano",
+   "peso": 2,
+   "pe": [
+    55,
+    128
+   ],
+   "regiao": [
+    118,
+    0,
+    96,
+    129
+   ]
+  },
+  {
+   "nome": "arvore_morta",
+   "peso": 2,
+   "pe": [
+    22,
+    103
+   ],
+   "regiao": [
+    216,
+    0,
+    60,
+    104
+   ]
+  },
+  {
+   "nome": "toco",
+   "peso": 3,
+   "pe": [
+    11,
+    39
+   ],
+   "regiao": [
+    278,
+    0,
+    47,
+    40
+   ]
+  },
+  {
+   "nome": "tronco",
+   "peso": 2,
+   "pe": [
+    12,
+    40
+   ],
+   "regiao": [
+    327,
+    0,
+    75,
+    41
+   ]
+  },
+  {
+   "nome": "arbusto",
+   "peso": 4,
+   "pe": [
+    24,
+    40
+   ],
+   "regiao": [
+    404,
+    0,
+    48,
+    41
+   ]
+  },
+  {
+   "nome": "cogumelos",
+   "peso": 2,
+   "pe": [
+    12,
+    19
+   ],
+   "regiao": [
+    454,
+    0,
+    22,
+    20
+   ]
+  },
+  {
+   "nome": "juncos",
+   "peso": 3,
+   "pe": [
+    14,
+    41
+   ],
+   "regiao": [
+    0,
+    152,
+    32,
+    43
+   ]
+  },
+  {
+   "nome": "raizes",
+   "peso": 2,
+   "pe": [
+    24,
+    31
+   ],
+   "regiao": [
+    34,
+    152,
+    55,
+    32
+   ]
+  },
+  {
+   "nome": "pedra",
+   "peso": 2,
+   "pe": [
+    18,
+    29
+   ],
+   "regiao": [
+    91,
+    152,
+    46,
+    31
+   ]
+  },
+  {
+   "nome": "rocha",
+   "peso": 2,
+   "pe": [
+    18,
+    42
+   ],
+   "regiao": [
+    139,
+    152,
+    39,
+    44
+   ]
+  },
+  {
+   "nome": "pedras",
+   "peso": 3,
+   "pe": [
+    11,
+    17
+   ],
+   "regiao": [
+    180,
+    152,
+    22,
+    18
+   ]
+  },
+  {
+   "nome": "coluna",
+   "peso": 2,
+   "pe": [
+    14,
+    55
+   ],
+   "regiao": [
+    204,
+    152,
+    37,
+    56
+   ]
+  },
+  {
+   "nome": "pilar",
+   "peso": 1,
+   "pe": [
+    8,
+    87
+   ],
+   "regiao": [
+    243,
+    152,
+    34,
+    88
+   ]
+  },
+  {
+   "nome": "obelisco",
+   "peso": 1,
+   "pe": [
+    17,
+    91
+   ],
+   "regiao": [
+    279,
+    152,
+    36,
+    92
+   ]
+  },
+  {
+   "nome": "pedestal",
+   "peso": 2,
+   "pe": [
+    19,
+    48
+   ],
+   "regiao": [
+    317,
+    152,
+    42,
+    50
+   ]
+  },
+  {
+   "nome": "muro",
+   "peso": 2,
+   "pe": [
+    31,
+    38
+   ],
+   "regiao": [
+    361,
+    152,
+    66,
+    40
+   ]
+  },
+  {
+   "nome": "runa",
+   "peso": 1,
+   "pe": [
+    8,
+    36
+   ],
+   "regiao": [
+    429,
+    152,
+    27,
+    38
+   ]
+  },
+  {
+   "nome": "lapide",
+   "peso": 1,
+   "pe": [
+    8,
+    27
+   ],
+   "regiao": [
+    458,
+    152,
+    22,
+    28
+   ]
+  },
+  {
+   "nome": "poste_lanterna",
+   "peso": 1,
+   "pe": [
+    4,
+    61
+   ],
+   "regiao": [
+    0,
+    246,
+    37,
+    62
+   ]
+  },
+  {
+   "nome": "toro",
+   "peso": 1,
+   "pe": [
+    20,
+    55
+   ],
+   "regiao": [
+    39,
+    246,
+    41,
+    56
+   ]
+  },
+  {
+   "nome": "altar",
+   "peso": 1,
+   "pe": [
+    11,
+    39
+   ],
+   "regiao": [
+    82,
+    246,
+    46,
+    41
+   ]
+  },
+  {
+   "nome": "cranio",
+   "peso": 1,
+   "pe": [
+    23,
+    35
+   ],
+   "regiao": [
+    130,
+    246,
+    36,
+    36
+   ]
+  },
+  {
+   "nome": "torii",
+   "peso": 1,
+   "pe": [
+    56,
+    152
+   ],
+   "regiao": [
+    168,
+    246,
+    124,
+    165
+   ]
+  },
+  {
+   "nome": "torii_quebrado",
+   "peso": 1,
+   "pe": [
+    51,
+    128
+   ],
+   "regiao": [
+    294,
+    246,
+    113,
+    139
+   ]
+  },
+  {
+   "nome": "braseiro",
+   "peso": 2,
+   "pe": [
+    25,
+    61
+   ],
+   "regiao": [
+    409,
+    246,
+    47,
+    62
+   ],
+   "fogo": [
+    23,
+    13
+   ]
+  },
+  {
+   "nome": "fogueira",
+   "peso": 2,
+   "pe": [
+    23,
+    38
+   ],
+   "regiao": [
+    0,
+    413,
+    58,
+    39
+   ],
+   "fogo": [
+    27,
+    17
+   ]
+  },
+  {
+   "nome": "caixa_oferenda",
+   "peso": 2,
+   "pe": [
+    24,
+    35
+   ],
+   "regiao": [
+    60,
+    413,
+    36,
+    36
+   ]
+  }
+ ],
+ "fixos": []
+}

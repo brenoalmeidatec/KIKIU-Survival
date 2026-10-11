@@ -1,0 +1,25 @@
+{
+ "quadro": [
+  32,
+  44
+ ],
+ "elevacao": 45.0,
+ "ppu": 24.5,
+ "linhas": [
+  "baixo",
+  "esquerda",
+  "direita",
+  "cima",
+  "baixo_esq",
+  "baixo_dir",
+  "cima_esq",
+  "cima_dir"
+ ],
+ "colunas": [
+  "parado",
+  "andar0",
+  "andar2",
+  "andar4",
+  "andar6"
+ ]
+}

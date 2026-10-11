@@ -1,0 +1,19 @@
+{
+ "quadro": [
+  38,
+  46
+ ],
+ "elevacao": 45.0,
+ "ppu": 24.5,
+ "linhas": [
+  "frente",
+  "tres_quartos"
+ ],
+ "colunas": [
+  "andar0",
+  "andar1",
+  "andar2",
+  "andar3"
+ ],
+ "pe_y": 44
+}
