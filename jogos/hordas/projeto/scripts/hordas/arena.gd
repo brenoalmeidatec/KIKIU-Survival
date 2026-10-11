@@ -234,7 +234,7 @@ func _ready() -> void:
 	jogador.paleta = heroi.get("paleta", {})  # herói criado (#72, marco 2): pele, cabelo e roupa da ficha
 	atualizar_visual.call_deferred()  # personagem em camadas: cabelo e arma inicial
 	jogador.hp = stat("vida_max")
-	armas.adicionar(str(heroi.get("arma", "pendrive")))
+	armas.adicionar(str(heroi.get("arma", "pendrive")), true)  # a arma inicial é o golpe principal: só sai com o clique (#161)
 	chao.criar_santuarios()
 	hud = Hud.instantiate()
 	hud.arena = self
@@ -353,9 +353,33 @@ func _recalcular() -> void:
 		jogador.curar(stat("vida_max") - antes)
 
 
+## O jogo está recebendo comandos de jogo? Falso com carta, pausa, loja, mapa, status, resultado, chat ou abertura da fase na tela:
+## o clique desses menus nunca vira golpe (jogador.gd lê isto antes de aceitar o botão de ataque, #161).
+func entrada_livre() -> bool:
+	if acabou or Chat.digitando or abertura.heroi_preso():
+		return false
+	if cartas.aberto() or hud._pausado or loja.aberto() or tela_mapa.aberto() or resultado.aberto() or tela_status.aberta:
+		return false
+	return true
+
+
+var _dica_ataque_dada := false
+
+
+## Dica de controle na primeira fase, uma vez: aparece quando o herói está solto (depois da abertura) e some sozinha como as outras mensagens.
+func _dica_ataque() -> void:
+	if _dica_ataque_dada or hud == null or cartas.aberto() or abertura.heroi_preso():
+		return
+	_dica_ataque_dada = true
+	if bot or duelo_ativo or diretor.fase_idx != 0:
+		return
+	mensagem("Gatilho direito para atacar" if not Input.get_connected_joypads().is_empty() else "Clique para atacar", Color(1, 0.92, 0.6))
+
+
 func _process(dt: float) -> void:
 	if acabou:
 		return
+	_dica_ataque()
 	dt = minf(dt, 1.0 / 30.0)
 	if Time.get_ticks_msec() < _hitstop_ate:  # hitstop: tempo real, não depende de Engine.time_scale
 		dt *= Jogador.HITSTOP_ESCALA
@@ -1043,14 +1067,16 @@ func aplicar(c: Dictionary) -> void:
 				build_mudou()
 				atualizar_visual()
 		"fusao":
+			var principal := false  # a fusão que engole o golpe principal continua sendo o golpe principal (#161)
 			for i in c.get("consome", []):
 				var k := -1
 				for j in armas.lista.size():
 					if armas.lista[j].id == i:
 						k = j
 				if k >= 0:
+					principal = principal or armas.lista[k].get("disparo", "auto") == "clique"
 					armas.lista.remove_at(k)
-			armas.adicionar(str(c.id))  # sem herdar nível: a fundida já nasce no topo (evolucao: true)
+			armas.adicionar(str(c.id), principal)  # sem herdar nível: a fundida já nasce no topo (evolucao: true)
 			atualizar_visual()
 			mensagem("Fusão: " + str(c.get("nome", c.id)), Color(1.0, 0.5, 0.9))
 		"comportamento":
@@ -1466,7 +1492,7 @@ func dar_build_teste(nv: int) -> void:
 	var b: Dictionary = Construcao.gerar(heroi_id, nv, rng_b)
 	armas.lista.clear()
 	for a in b.armas:
-		armas.adicionar(a.id)
+		armas.adicionar(a.id, a.id == str(heroi.get("arma", "")))
 		armas.achar(a.id).nivel = a.nivel
 	passivos = b.passivos
 	nivel = nv

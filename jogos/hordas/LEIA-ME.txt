@@ -9,7 +9,10 @@ COMO JOGAR
   de pé é o mais forte. (Por enquanto os rivais são robôs com builds do seu nível; no jogo
   online serão os seus amigos.)
 
-  WASD ou setas ....... andar (as armas atiram sozinhas)
+  WASD ou setas ....... andar
+  Clique esquerdo ..... golpe principal, na direção do cursor (segure pra repetir). No controle: gatilho
+                        direito, mirando com o analógico direito (ou na direção em que você anda).
+                        Só as armas das cartas (órbita, aura, poça, corvos...) atacam sozinhas.
   Espaço ou Shift ..... dash (corrida rápida, você fica invencível por um instante)
   Enter ou E .......... confirmar / escolher carta (1, 2, 3, 4 também escolhem)
   R ................... sortear as cartas de novo (3 vezes por partida)

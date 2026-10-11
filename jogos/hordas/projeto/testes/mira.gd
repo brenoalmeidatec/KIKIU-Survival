@@ -1,7 +1,8 @@
 extends Node
 # Teste automático: mira direcional (#126). Campo `mira` por arma ("auto" | "direcional"); projétil, lança, pistolas, raio e
 # katana atiram pra onde o jogador aponta (analógico direito ou mouse) com assistência de 20 graus; sem entrada de mira miram no
-# mais perto; órbita, aura, poça, corvos e runas continuam automáticos.
+# mais perto; órbita, aura, poça, corvos e runas continuam automáticos. Desde o #161 as armas testadas entram como arma inicial
+# (`disparo: clique`) e o teste segura o ataque (jogador.atacar_forcado): sem ele elas ficariam paradas esperando o clique.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/mira.tscn  (imprime "MIRA falhas=0")
 const Arena := preload("res://scripts/hordas/arena.gd")
 const Armas := preload("res://scripts/hordas/armas.gd")
@@ -138,7 +139,10 @@ func _na_arena() -> void:
 		a.cartas._fechar()
 	a.inimigos.limpar()
 	a.armas.lista.clear()
-	a.armas.adicionar("pendrive")
+	# #161: sem auto-battle. As armas aqui entram como arma inicial (disparo clique) e o teste "segura o botão de ataque" o tempo todo;
+	# a mira que o teste confere é a mesma de antes (o botão de ataque só libera o golpe, a direção continua sendo a da mira).
+	j.atacar_forcado = true
+	a.armas.adicionar("pendrive", true)
 	var p = a.armas.achar("pendrive")
 	# ---- analógico direito: entra no mira_dir ----
 	ok(j.mira_dir == Vector2.ZERO, "sem entrada de mira: ZERO")
@@ -231,7 +235,7 @@ func _na_arena() -> void:
 	Config.temporario("mira_assistida", guardado)
 	# ---- lança e katana: golpes direcionais ----
 	a.armas.lista.clear()
-	a.armas.adicionar("lanca")
+	a.armas.adicionar("lanca", true)
 	var l = a.armas.achar("lanca")
 	j.mira_forcada = Vector2.UP
 	a.armas.especiais.clear()
@@ -246,7 +250,7 @@ func _na_arena() -> void:
 	esp = _primeiro_esp(a, "lanca")
 	ok(esp != null and esp.dir.dot(Vector2.DOWN) > 0.95, "lança sem mira: o mais perto (embaixo)")
 	a.armas.lista.clear()
-	a.armas.adicionar("katana")
+	a.armas.adicionar("katana", true)
 	var k = a.armas.achar("katana")
 	j.mira_forcada = Vector2.LEFT
 	a.armas.especiais.clear()
@@ -255,7 +259,7 @@ func _na_arena() -> void:
 	esp = _primeiro_esp(a, "katana")
 	ok(esp != null and esp.dir.dot(Vector2.LEFT) > 0.99, "katana corta pra onde o jogador aponta (esquerda)")
 	a.armas.lista.clear()
-	a.armas.adicionar("desert_eagles")
+	a.armas.adicionar("desert_eagles", true)
 	var pi = a.armas.achar("desert_eagles")
 	j.mira_forcada = Vector2.LEFT
 	a.armas.especiais.clear()
@@ -270,7 +274,7 @@ func _na_arena() -> void:
 	alvos = [alvo_raio]
 	alvo_raio.hp = 100000.0
 	a.armas.lista.clear()
-	a.armas.adicionar("raio")
+	a.armas.adicionar("raio", true)
 	var rr = a.armas.achar("raio")
 	j.mira_forcada = Vector2.RIGHT.rotated(deg_to_rad(-9.0))
 	a.armas.especiais.clear()
