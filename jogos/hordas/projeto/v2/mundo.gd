@@ -84,6 +84,7 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color(0.02, 0.03, 0.03))
 	_montar()
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
+	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
 	if _modo == "livre" or args.has("rotulo"):
