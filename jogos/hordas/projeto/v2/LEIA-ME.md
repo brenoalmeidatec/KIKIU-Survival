@@ -16,7 +16,8 @@ Rodar: `godot --path jogos/hordas/projeto res://v2/mundo.tscn` (ou `-- --v2` no 
 | `ator.gd`, `heroi.gd`, `monstro.gd`, `sprites.gd`, `entrada.gd` | Herói (8 direções, mira no mouse, tocha), monstros (vagam e perseguem) e as folhas de sprites. `Heroi.atacar()` é o gancho do golpe (ação `atacar`), vazio. |
 | `colisao.gd` | Grade estática, círculo contra elipse, deslizando (outro agente, PR #170). |
 | `medir_fps.sh`, `fps.txt` | Mede o fps parado no santuário (sombra média e alta, 3 repetições, sem V-Sync). |
+| `hud.gd/.tscn` | HUD numa CanvasLayer (layer 10) dentro da apresentação, sem luz do mundo. Vida, fôlego, XP com selo de nível, tempo, abates, vivos, combo e brilho ao subir de nível. Lê `mundo` e `mundo.heroi` com `get()` e valor padrão. `criar(mundo)` é a linha do `mundo.gd`. Molduras e barras em `hud/` (PNG gerados por `hud/gerar_molduras.py`, Pillow). |
 
 Dados: `dados/v2_floresta.json` (mapa 2880x1620). Foi montado por `fonte_arte/gerar_v2_floresta.py` (semente fixa) como ponto de partida; depois disso o JSON é a fonte e pode ser editado à mão.
 
-Teste: `testes/v2_mundo.tscn` (imprime `v2_mundo falhas=0`).
+Teste: `testes/v2_mundo.tscn` (imprime `v2_mundo falhas=0`). HUD: `testes/v2_hud.tscn` (imprime `v2_hud falhas=0`); prints do HUD sobre a v2: `godot --path jogos/hordas/projeto res://testes/v2_hud.tscn -- --fotos=PASTA` (fotos em `docs/visual_2_5d/hud_v2/`).
