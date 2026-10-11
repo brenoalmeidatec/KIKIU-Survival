@@ -4,7 +4,7 @@ extends Control
 ## e GPU (visual). Cada opção tem nome, o controle (controle deslizante, menu com setas ou sim/não), uma linha de ajuda
 ## com o peso (leve, médio ou pesado) e fps ao vivo no canto.
 ## Mexer numa opção chama api.g_definir; escolher um perfil chama api.g_aplicar_perfil; a tela atualiza com o sinal
-## graficos_mudou. A API é o autoload Config por padrão; os testes e os prints trocam `api` por um dublê local.
+## graficos_mudou. A API é o autoload Config (valor padrão de `api`; só troque para testar outra fonte).
 ## Teclado: cima/baixo escolhem, esquerda/direita mudam, Enter aplica, Esc volta. Mouse: passar escolhe, clique muda
 ## (direito volta), arrastar o controle deslizante, roda do mouse rola a lista. Ao fechar emite `fechou`; quem abriu
 ## volta para a sua tela.
@@ -72,7 +72,7 @@ func _ready() -> void:
 	draw.connect(_desenhar)
 	_opcoes = api.g_opcoes()
 	if perfil_inicial != "":
-		api.g_aplicar_perfil(perfil_inicial)
+		api.g_perfil_temporario(perfil_inicial)   # só na memória: o print não grava nas opções do jogador
 	if api.has_signal("graficos_mudou"):
 		api.graficos_mudou.connect(_recarregar)
 	_montar_layout()
@@ -183,7 +183,7 @@ func _mudar_opcao(op: Dictionary, d: int) -> void:
 		var vals: Array = op.get("valores", padrao)
 		if vals.is_empty():
 			return
-		var i := vals.find(atual)
+		var i := _indice(vals, atual)
 		if i < 0:
 			i = 0 if d > 0 else vals.size() - 1
 		else:
@@ -446,7 +446,8 @@ func _desenhar_opcao(l: Dictionary, y: float, sel: bool) -> void:
 		_lista.draw_rect(Rect2(BARRA_X, y + 5, BARRA_W, 6), Color(0.27, 0.27, 0.38))
 		_lista.draw_rect(Rect2(BARRA_X, y + 5, BARRA_W * frac, 6), Color(0.3, 0.6, 1.0))
 		_lista.draw_rect(Rect2(BARRA_X + BARRA_W * frac - 2, y + 2, 4, 12), Color.WHITE)
-		_txt(_lista, Vector2(DIR - 56, y + 10), _fmt_num(v, float(op.get("passo", 1))), 8, cor_v, 56, HORIZONTAL_ALIGNMENT_RIGHT)
+		var txt_v := _fmt_num(v, float(op.get("passo", 1))) + str(op.get("unidade", ""))   # "%" e "s" vêm do graficos.json
+		_txt(_lista, Vector2(DIR - 56, y + 10), txt_v, 8, cor_v, 56, HORIZONTAL_ALIGNMENT_RIGHT)
 	else:
 		_txt(_lista, Vector2(ESQ, y + 10), "< %s >" % _rotulo(op, valor), 8, cor_v, DIR - ESQ, HORIZONTAL_ALIGNMENT_RIGHT)
 	# linha de ajuda com a etiqueta de peso
@@ -456,11 +457,23 @@ func _desenhar_opcao(l: Dictionary, y: float, sel: bool) -> void:
 	_lista.draw_multiline_string(TEMA.default_font, Vector2(float(l.x_ajuda), y + 22), str(op.get("ajuda", "")), HORIZONTAL_ALIGNMENT_LEFT, float(l.larg_ajuda), 8, -1, COR_AJUDA)
 
 
+## Posição de um valor na lista de valores do menu. Número compara por valor (75 e 75.0 são o mesmo).
+func _indice(vals: Array, valor) -> int:
+	for i in vals.size():
+		var v = vals[i]
+		if (v is float or v is int) and (valor is float or valor is int):
+			if is_equal_approx(float(v), float(valor)):
+				return i
+		elif v == valor:
+			return i
+	return -1
+
+
 func _rotulo(op: Dictionary, valor) -> String:
 	var padrao: Array = [false, true] if str(op.get("tipo", "")) == "sim_nao" else []
 	var vals: Array = op.get("valores", padrao)
 	var rot: Array = op.get("rotulos", [])
-	var i := vals.find(valor)
+	var i := _indice(vals, valor)
 	if i >= 0 and i < rot.size():
 		return str(rot[i])
 	if valor is bool:
