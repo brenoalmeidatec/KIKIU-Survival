@@ -1,0 +1,248 @@
+extends Node
+# Teste automático da meta-progressão da v2 (v2/meta.gd, v2/altar.gd e v2/resultado_meta.gd). Usa um save TEMPORÁRIO
+# (user://teste_v2_meta.cfg): o save real (user://v2_progresso.cfg) não é tocado, e a conferência por md5 garante isso.
+# Confere: comprar desconta as almas e sobe o nível; sem almas não compra; o save é gravado no arquivo; aplicar muda a vida e o dano
+# iniciais do herói no mundo de verdade; o marco de 5 min e o combo de 50 desbloqueiam a melhoria nova e marcam as conquistas;
+# vencer marca o chefe; registrar a partida soma as almas (com o bônus) e guarda o resumo; o santuário monta uma linha por melhoria
+# e por conquista, trava o que está bloqueado e atualiza o saldo ao comprar; e o resultado sobe as almas até o total.
+# Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_meta.tscn  (imprime "v2_meta falhas=0")
+# Prints (precisa de janela, não de --headless): godot --path jogos/hordas/projeto res://testes/v2_meta.tscn -- --fotos=PASTA
+#   grava santuario_sem_almas.png, santuario_com_almas.png, resultado_meio.png e resultado_fim.png (só o viewport) e sai.
+const Meta := preload("res://v2/meta.gd")
+const Mundo := preload("res://v2/mundo.tscn")
+const Altar := preload("res://v2/altar.tscn")
+const Resultado := preload("res://v2/resultado_meta.gd")
+const SAVE_TESTE := "user://teste_v2_meta.cfg"
+const SAVE_REAL := "user://v2_progresso.cfg"
+
+var falhas := 0
+
+
+func ok(cond: bool, msg: String) -> void:
+	if not cond:
+		falhas += 1
+		print("FALHOU: ", msg)
+
+
+func _ready() -> void:
+	Meta.caminho_save = SAVE_TESTE
+	var pasta := ""
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--fotos="):
+			pasta = a.trim_prefix("--fotos=")
+	if pasta != "":
+		await _fotos(pasta)
+		_apagar_save()
+		get_tree().quit()
+		return
+	await _testes()
+	_apagar_save()
+	print("v2_meta falhas=%d" % falhas)
+	get_tree().quit()
+
+
+func _apagar_save() -> void:
+	if FileAccess.file_exists(SAVE_TESTE):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
+
+
+func _testes() -> void:
+	var md5_real := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
+	_apagar_save()
+
+	# 1. economia: sem almas não compra; com almas desconta e sobe o nível; o preço cresce a cada nível
+	var vida := Meta.melhoria("vida")
+	ok(Meta.saldo() == 0, "começa sem almas")
+	ok(not Meta.comprar("vida"), "sem almas não compra")
+	ok(Meta.nivel("vida") == 0, "sem compra o nível continua 0")
+	ok(not FileAccess.file_exists(SAVE_TESTE), "comprar sem almas não cria save")
+	Meta.creditar(100)
+	ok(Meta.saldo() == 100, "creditar soma no saldo")
+	ok(Meta.comprar("vida"), "com 100 almas compra o 1º nível de vida")
+	ok(Meta.saldo() == 60, "o 1º nível custa 40 almas: sobram 60 (tem %d)" % Meta.saldo())
+	ok(Meta.nivel("vida") == 1, "o nível sobe para 1")
+	ok(Meta.custo_do_nivel(vida, 1) == 60, "o 2º nível custa 60")
+	ok(Meta.comprar("vida") and Meta.saldo() == 0 and Meta.nivel("vida") == 2, "o 2º nível cabe com 60 almas e zera o saldo")
+	ok(not Meta.comprar("vida"), "o 3º nível (90) não cabe com 0 almas")
+	ok(Meta.nivel("vida") == 2, "a compra recusada não mexe no nível")
+
+	# 2. o save é gravado no arquivo (lido de outro ConfigFile, como uma sessão nova faria)
+	var cf := ConfigFile.new()
+	ok(cf.load(SAVE_TESTE) == OK, "o save foi gravado no caminho de teste")
+	ok(int(cf.get_value("moeda", "almas", -1)) == 0, "o saldo está no arquivo")
+	ok(int(cf.get_value("melhorias", "vida", -1)) == 2, "o nível está no arquivo")
+	ok(int(Meta.estado().niveis["vida"]) == 2 and int(Meta.estado().almas) == 0, "estado() relê o arquivo")
+
+	# 3. aplicar: o mundo de verdade põe a vida e o dano iniciais (o mundo chama Meta.aplicar em _montar)
+	var m = Mundo.instantiate()
+	m.modo_teste = true
+	add_child(m)
+	m.set_process(false)
+	var base_vida := float(m.combate.cfg.heroi.vida)
+	ok(is_equal_approx(m.heroi.vida_max, base_vida + 20.0), "aplicar: vida máxima = base + 2 níveis (%s)" % str(m.heroi.vida_max))
+	ok(is_equal_approx(m.heroi.vida, m.heroi.vida_max), "aplicar: a vida começa cheia")
+	ok(is_equal_approx(m.heroi.m_dano, 1.0), "sem compra de dano o multiplicador fica em 1")
+	Meta.creditar(200)
+	ok(Meta.comprar("dano"), "compra o 1º nível de dano")
+	Meta.aplicar(m)
+	ok(is_equal_approx(m.heroi.m_dano, 1.06), "aplicar: dano inicial sobe 6%% (%s)" % str(m.heroi.m_dano))
+	ok(m.meta_bonus.has("raridade") and m.meta_bonus.has("rolagem") and m.meta_bonus.has("almas"), "os bônus sem efeito ainda ficam em meta_bonus")
+	m.queue_free()
+	await get_tree().process_frame
+
+	# 4. marcos: bloqueado até cumprir; 5 min e combo 50 marcam as conquistas e liberam a melhoria nova
+	ok(not Meta.comprar("treino"), "melhoria travada (requer 5 min) não compra, mesmo com almas")
+	ok(Meta.checar_ao_vivo(299.0, 49).is_empty(), "antes dos 5 min e do combo 50 nada é cumprido")
+	var novas := Meta.checar_ao_vivo(300.0, 50)
+	ok(novas.has("sobreviva_5min") and novas.has("combo_50"), "5 min e combo 50 cumprem as duas conquistas: %s" % str(novas))
+	ok(bool(Meta.estado()["conquistas"]["sobreviva_5min"]), "a conquista de 5 min fica no save")
+	ok(Meta.comprar("treino"), "o marco libera a melhoria nova (treino)")
+	ok(Meta.nivel("treino") == 1, "o treino sobe para o nível 1")
+	ok(Meta.checar_ao_vivo(400.0, 60).is_empty(), "conquista já cumprida não repete")
+
+	# 5. fim da partida: as almas entram com o bônus, o resumo fica guardado, vencer marca o chefe
+	var antes := Meta.saldo()
+	var r := Meta.registrar_partida({"tempo": 320.0, "abates": 40, "nivel": 5, "maior_combo": 12, "venceu": false, "almas": 20})
+	ok(int(r.ganhas) == 20 and int(r.antes) == antes and int(r.depois) == antes + 20, "a partida soma as almas que trouxe (+20)")
+	ok(Meta.comprar("almas"), "compra o 1º nível de almas abundantes")
+	r = Meta.registrar_partida({"tempo": 90.0, "abates": 7, "nivel": 2, "maior_combo": 3, "venceu": false, "almas": 100})
+	ok(int(r.ganhas) == 108, "o bônus de almas (+8%%) entra: 100 viram 108 (%s)" % str(r.ganhas))
+	var u: Dictionary = Meta.estado()["ultima"]
+	ok(int(u.abates) == 7 and int(u.nivel) == 2 and int(u.ganhas) == 108, "o resumo da última partida fica no save")
+	r = Meta.registrar_partida({"tempo": 600.0, "abates": 90, "nivel": 9, "maior_combo": 20, "venceu": true, "almas": 0})
+	ok(bool(Meta.estado()["conquistas"]["derrota_chefe"]), "vencer marca a conquista do chefe")
+
+	# 6. santuário: uma linha por melhoria e conquista, bloqueio, saldo na tela, compra pelo botão e o máximo
+	_apagar_save()
+	var a = Altar.instantiate()
+	add_child(a)
+	await get_tree().process_frame
+	ok(a._linhas.size() == Meta.melhorias().size(), "uma linha por melhoria no santuário")
+	ok(a._conq.size() == Meta.conquistas().size(), "uma linha por conquista no santuário")
+	ok(a._linhas["treino"].botao.disabled and a._linhas["treino"].botao.text == "BLOQUEADA", "o treino aparece bloqueado sem o marco")
+	ok(not a._linhas["vida"].botao.disabled, "vida (liberada) aparece comprável")
+	Meta.creditar(500)
+	a._atualizar()
+	a._comprar("vida")
+	ok(Meta.nivel("vida") == 1 and a._saldo.text == "460", "comprar no santuário sobe o nível e o saldo da tela acompanha (%s)" % a._saldo.text)
+	ok(a._linhas["vida"].botao.text == "COMPRAR 60", "o botão mostra o preço do próximo nível")
+	a._comprar("treino")
+	ok(a._status.text.begins_with("Bloqueada"), "tentar comprar o bloqueado avisa o motivo")
+	Meta.creditar(10000)
+	for i in 4:
+		a._comprar("vida")
+	ok(Meta.nivel("vida") == 5 and a._linhas["vida"].botao.disabled and a._linhas["vida"].botao.text == "MÁXIMO", "no máximo o botão vira MÁXIMO e trava")
+	a._comprar("vida")
+	ok(a._status.text == "Nível máximo", "comprar no máximo avisa")
+	a.queue_free()
+	await get_tree().process_frame
+
+	# 7. resultado: as almas sobem até o total e entram no saldo; antes de 0,8 s o toque não sai da tela
+	var m2 = Mundo.instantiate()
+	m2.modo_teste = true
+	add_child(m2)
+	m2.set_process(false)
+	var res = Resultado.new()
+	res.montar(m2)
+	var saldo_antes := Meta.saldo()
+	res._terminar({"tempo": 125.0, "abates": 30, "nivel": 4, "maior_combo": 9, "venceu": false, "almas": 30})
+	ok(res.aberto and res._ganhas == 30, "a tela abre com as almas da partida (save zerado: sem bônus, 30; tem %d)" % res._ganhas)
+	ok(Meta.saldo() == saldo_antes + res._ganhas, "o resultado grava as almas no saldo")
+	res._animar(0.2)
+	ok(res._almas_num.text != "+%d" % res._ganhas, "no começo a animação ainda não chegou ao total")
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = true
+	res.entrada(ev)
+	ok(not res._saindo, "clique logo no começo não sai do resultado")
+	res._animar(2.0)
+	ok(res._almas_num.text == "+%d" % res._ganhas, "a animação termina no total: %s" % res._almas_num.text)
+	ok(res._saldo.text == "Saldo: %d" % Meta.saldo(), "o saldo na tela bate com o save")
+	res._terminou = true  # garante que nada mais grava nesta tela
+	m2.queue_free()
+	await get_tree().process_frame
+
+	# 8. sem o sinal do mundo: a conquista de tempo é gravada no meio da partida, e a tela com as almas abre sozinha
+	#    quando a tela de resultado (telas.gd) abre, que é quando o herói cai
+	_apagar_save()
+	var m3 = Mundo.instantiate()
+	m3.modo_teste = true
+	add_child(m3)
+	m3.set_process(false)
+	var r3 = Resultado.new()
+	r3.montar(m3)
+	m3.add_child(r3)
+	m3.tempo_partida = 302.0
+	await _frames(2)
+	ok(bool(Meta.estado()["conquistas"]["sobreviva_5min"]), "a conquista de 5 min é gravada no meio da partida, sem esperar o fim")
+	ok(not r3.aberto, "no meio da partida a tela de resultado não abre")
+	m3.combate.telas.mostrar_resultado()
+	await _frames(2)
+	ok(r3.aberto and r3._terminou, "a tela com as almas abre sozinha quando a tela de resultado abre")
+	ok(int(Meta.estado()["ultima"]["tempo"]) == 302, "o resumo da partida é gravado pelo caminho sem sinal")
+	m3.queue_free()
+	await get_tree().process_frame
+
+	# o save real não foi tocado por este teste
+	var md5_depois := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
+	ok(md5_depois == md5_real, "o save real (user://v2_progresso.cfg) não foi alterado")
+
+
+func _frames(n: int) -> void:
+	for i in n:
+		await get_tree().process_frame
+
+
+func _foto_janela(caminho: String) -> void:
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png(caminho)
+	print("FOTO ", caminho)
+
+
+func _fotos(pasta: String) -> void:
+	# santuário sem almas (save vazio)
+	_apagar_save()
+	var a = Altar.instantiate()
+	add_child(a)
+	await _frames(3)
+	await _foto_janela(pasta.path_join("santuario_sem_almas.png"))
+	a.queue_free()
+	await get_tree().process_frame
+
+	# santuário com almas, algumas melhorias compradas e o treino liberado
+	Meta.creditar(300)
+	Meta.comprar("vida")
+	Meta.comprar("vida")
+	Meta.comprar("dano")
+	Meta.comprar("ima")
+	Meta.comprar("folego")
+	Meta.checar_ao_vivo(300.0, 50)
+	Meta.creditar(120)
+	Meta.comprar("treino")
+	Meta.registrar_partida({"tempo": 212.0, "abates": 44, "nivel": 6, "maior_combo": 17, "venceu": false, "almas": 0})
+	a = Altar.instantiate()
+	add_child(a)
+	await _frames(3)
+	await _foto_janela(pasta.path_join("santuario_com_almas.png"))
+	a.queue_free()
+	await get_tree().process_frame
+
+	# resultado com as almas subindo: no meio da animação e no fim
+	var m = Mundo.instantiate()
+	m.modo_teste = false
+	add_child(m)
+	m.set_process(false)
+	await _frames(2)
+	var res = m.meta_res
+	if res == null:  # sem a tela do mundo (não deveria acontecer fora do modo de teste)
+		res = Resultado.new()
+		res.montar(m)
+		m.sv.add_child(res)
+	res._terminar({"tempo": 412.0, "abates": 58, "nivel": 8, "maior_combo": 34, "venceu": false, "almas": 46})
+	await get_tree().create_timer(0.55).timeout
+	await m.ap.foto(pasta.path_join("resultado_meio.png"))
+	await get_tree().create_timer(1.6).timeout
+	await m.ap.foto(pasta.path_join("resultado_fim.png"))
+	res._terminou = true
+	m.queue_free()
+	await get_tree().process_frame
