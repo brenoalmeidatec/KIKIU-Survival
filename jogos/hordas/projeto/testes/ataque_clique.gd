@@ -73,6 +73,7 @@ func _ready() -> void:
 	get_window().size = Vector2i(640, 360)  # janela do tamanho do viewport: as coordenadas do mouse do teste valem 1:1 (headless abre 64x64)
 	_dados()
 	await _na_arena()
+	await _dragao()
 	print("ataque_clique falhas=%d" % falhas)
 	get_tree().quit()
 
@@ -314,5 +315,57 @@ func _na_arena() -> void:
 	ok(j.atacando and do_robo > 0, "o robô segura o clique e a arma inicial atira (atacando %s, tiros %d)" % [j.atacando, do_robo])
 	j.bot = false
 
+	a.queue_free()
+	await esperar(0.1)
+
+
+## Forma de dragão do Hazaki: a baforada (golpe da forma) também só sai com o ataque; a energia dracônica continua sozinha.
+func _dragao() -> void:
+	var a := Arena.new()
+	a.heroi_id = "hazaki"
+	add_child(a)
+	a.set_process(false)
+	await avancar(a, 1.6)
+	a.bot = false
+	var j = a.jogador
+	j.bot = false
+	j.invencivel = 9999.0
+	a.diretor.xp_mult = 0.0
+	if a.cartas.aberto():
+		a.cartas._fechar()
+	a.inimigos.limpar()
+	var perto = a.inimigos.criar("carnical", j.centro() + Vector2(60, 0), 1)
+	perto.atordoado = 999.0
+	perto.hp = 1.0e9
+	alvos = [perto]
+	var h = a.habilidades
+	h.desbloquear()
+	h.energia = h.energia_max()
+	h.transformar()
+	ok(
+		a.armas.forma_lista.map(func(x): return x.disparo) == ["clique", "clique", "auto", "auto"],
+		"forma de dragão: baforada e garras clique, energia e rugido auto"
+	)
+	var baforada := 0
+	var energia := 0
+	for i in 150:  # 2,5 s sem entrada de ataque
+		perto.pos = j.centro() + Vector2(60, 0)
+		await avancar(a, 1.0 / 60.0)
+		for e in a.armas.especiais:
+			if str(e.get("tipo", "")) == "baforada":
+				baforada += 1
+			elif str(e.get("tipo", "")) == "energia_draconica":
+				energia += 1
+	ok(baforada == 0, "dragão sem entrada de ataque: a baforada não sai (%d quadros)" % baforada)
+	ok(energia > 0, "dragão: a energia dracônica (auto) segue atirando sozinha")
+	j.atacar_forcado = true
+	j.mira_forcada = Vector2.RIGHT
+	for i in 90:
+		perto.pos = j.centro() + Vector2(60, 0)
+		await avancar(a, 1.0 / 60.0)
+		for e in a.armas.especiais:
+			if str(e.get("tipo", "")) == "baforada":
+				baforada += 1
+	ok(baforada > 0, "dragão atacando: a baforada sai")
 	a.queue_free()
 	await esperar(0.1)
