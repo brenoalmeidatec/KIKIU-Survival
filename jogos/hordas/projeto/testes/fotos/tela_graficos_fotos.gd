@@ -1,7 +1,7 @@
 extends Node
 # Prints da aba Gráficos (#150) numa janela real (sem --headless). Só o viewport do jogo é salvo, nunca a área de trabalho.
 # Usa a API real, mas só na memória (g_perfil_temporario): não grava nas opções do jogador.
-# Roda: godot --path jogos/hordas/projeto res://testes/tela_graficos_fotos.tscn -- --fotos=<pasta> --perfis=baixo,medio,alto
+# Roda: godot --path jogos/hordas/projeto res://testes/fotos/tela_graficos_fotos.tscn -- --fotos=<pasta> --perfis=baixo,medio,alto
 # Salva graficos_<perfil>.png (topo e CPU) e graficos_<perfil>_gpu.png (lista rolada até a GPU).
 const Tela := preload("res://cenas/tela_graficos.tscn")
 
