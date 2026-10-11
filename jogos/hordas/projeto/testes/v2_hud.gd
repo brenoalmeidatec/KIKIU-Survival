@@ -3,6 +3,9 @@ extends Node
 # vivos e o sinal nivel_subiu), muda os valores e confere que barras e textos refletem; que o combo pulsa a cada abate, some quando zera
 # e volta à posição de repouso; que o brilho do XP acende com nivel_subiu e apaga; que o HUD aguenta mundo nulo ou sem campos; que o
 # canto superior direito (minimapa) fica livre; e que o HUD está no mundo da v2, acima da vinheta, fora da luz e com fonte sem AA.
+# Leva de anúncios (seção 10): a faixa mostra um anúncio por vez e a fila segura o resto; os marcos de combo anunciam o mais alto
+# cruzado; o nível faz pop no selo e anel de luz; a barra de chefe desce com a fantasma; a vinheta liga abaixo de 25% de vida;
+# o relógio pisca ao virar o minuto; e um mundo só com nivel_subiu continua funcionando.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_hud.tscn  (imprime "v2_hud falhas=0")
 # Prints: godot --path jogos/hordas/projeto res://testes/v2_hud.tscn -- --fotos=PASTA  (grava PNG do HUD sobre o mundo da v2 e sai)
 const Mundo := preload("res://v2/mundo.tscn")
@@ -28,6 +31,12 @@ class Heroi:
 class MundoFalso:
 	extends RefCounted
 	signal nivel_subiu(nivel)
+	signal onda_forte(numero)
+	signal elite_apareceu(nome)
+	signal chefe_apareceu(nome, vida_max)
+	signal chefe_vida(vida)
+	signal evolucao(nome)
+	signal anuncio(texto, cor)
 	var heroi := Heroi.new()
 	var abates := 0
 	var combo := 0
@@ -90,8 +99,8 @@ func _testes() -> void:
 	ok(hud._vida_barra.value == 50.0, "barra de vida reflete 50")
 	ok(hud._vida_txt.text == "50/100", "texto da vida: %s" % hud._vida_txt.text)
 	ok(hud._folego.value == 30.0, "barra de fôlego reflete 30")
-	ok(hud._xp_barra.value == 40.0 and hud._xp_barra.max_value == 80.0, "barra de XP reflete 40 de 80")
-	ok(hud._xp_txt.text == "40/80", "texto do XP: %s" % hud._xp_txt.text)
+	ok(hud._xp_barra.value > 0.0 and hud._xp_barra.value < 40.0, "as almas rolam até 40, não pulam: %s" % hud._xp_barra.value)
+	ok(hud._xp_barra.max_value == 80.0, "barra de XP com máximo 80")
 	ok(hud._selo_num.text == "7", "selo mostra o nível 7")
 	ok(hud._relogio.text == "07:32", "tempo 452 s vira 07:32: %s" % hud._relogio.text)
 	ok(hud._abates.text == "ABATES 37\nVIVOS 12", "abates e vivos: %s" % hud._abates.text)
@@ -105,6 +114,8 @@ func _testes() -> void:
 	ok(inteiro, "o combo fica em pixel inteiro durante o pulso")
 	ok(hud.pulso == 0.0, "o pulso acaba em 0,25 s")
 	ok(hud._combo.position.y == hud._combo_y, "o combo volta à posição de repouso")
+	_passar(hud, 1.0)
+	ok(hud._xp_barra.value == 40.0 and hud._xp_txt.text == "40/80", "as almas acabam de rolar em 40/80: %s" % hud._xp_txt.text)
 
 	# 3. o combo some quando zera
 	falso.combo = 0
@@ -183,7 +194,7 @@ func _testes() -> void:
 	var no_minimapa := 0
 	var quebrado := 0
 	for c in raiz.get_children():
-		if not c is Control:
+		if not c is Control or c.name == "Vinheta":  # a vinheta é a borda da tela inteira, não um bloco
 			continue
 		var r := Rect2(c.position, c.size)
 		if not Rect2(0, 0, 960, 540).encloses(r):
@@ -205,6 +216,171 @@ func _testes() -> void:
 	var fonte = raiz.get_theme_font("font")
 	ok(fonte is FontFile and fonte.antialiasing == TextServer.FONT_ANTIALIASING_NONE, "fonte do HUD sem anti-aliasing")
 	ok(fonte is FontFile and fonte.hinting == TextServer.HINTING_NONE, "fonte do HUD sem hinting")
+
+	# 10. anúncios, marcos de combo, chefe, vinheta, relógio e sinais que faltam no mundo
+	_testes_anuncios(vista)
+
+
+## Anúncios (faixa, fila, marcos, nível, sinal livre), barra de chefe com fantasma, vinheta de vida baixa e pisca do relógio.
+func _testes_anuncios(vista: SubViewport) -> void:
+	var f := MundoFalso.new()
+	var h = Hud.criar(f)
+	vista.add_child(h)
+	h.set_process(false)
+	h.avancar(PASSO)
+	var an = h._anuncio
+
+	# A. um anúncio por vez: entra com a cor do tipo, segura e sai
+	f.onda_forte.emit(3)
+	h.avancar(PASSO)
+	ok(an.texto_ativo == "ONDA FORTE!" and an.visible, "ONDA FORTE! aparece na faixa")
+	ok(an._texto.get_theme_color("font_color") == Hud.COR_ONDA, "ONDA FORTE! sai em vermelho")
+	_passar(h, 1.0)
+	ok(an.texto_ativo == "ONDA FORTE!" and an.visible, "o anúncio segura por cerca de 1,2 s")
+	_passar(h, 1.0)
+	ok(an.texto_ativo == "" and not an.visible, "o anúncio some depois de sair")
+
+	# B. fila: os seguintes esperam e entram um de cada vez, sem sobrepor
+	f.onda_forte.emit(1)
+	f.elite_apareceu.emit("Lobo")
+	f.evolucao.emit("Lança")
+	h.avancar(PASSO)
+	ok(an.texto_ativo == "ONDA FORTE!" and an.fila.size() == 2, "a fila segura os anúncios seguintes")
+	_passar(h, 1.7)
+	ok(an.texto_ativo == "ELITE!" and an.fila.size() == 1, "o próximo da fila entra quando o anterior sai")
+	ok(an._texto.get_theme_color("font_color") == Hud.COR_ELITE, "ELITE! sai em roxo")
+	_passar(h, 1.7)
+	ok(an.texto_ativo == "EVOLUÇÃO: LANÇA" and an.fila.size() == 0, "EVOLUÇÃO: vem com o nome em caixa-alta")
+	_passar(h, 2.0)
+	ok(an.texto_ativo == "" and not an.ocupado(), "a fila esvazia e a faixa fica livre")
+
+	# C. a fila tem limite: com muitos anúncios, sai o mais antigo
+	for i in 8:
+		f.anuncio.emit("X%d" % i, Color.WHITE)
+	h.avancar(PASSO)
+	ok(an.texto_ativo == "X0" and an.fila.size() == 5, "a fila para em 5 anúncios esperando")
+	ok(an.fila[0]["texto"] == "X3", "a fila larga o mais antigo: %s" % an.fila[0]["texto"])
+	_passar(h, 12.0)
+	ok(not an.ocupado(), "a fila drena toda")
+
+	# D. marcos de combo: o anúncio é o mais alto cruzado, e cresce em intensidade
+	var g := MundoFalso.new()
+	var hg = Hud.criar(g)
+	vista.add_child(hg)
+	hg.set_process(false)
+	hg.avancar(PASSO)
+	var ag = hg._anuncio
+	g.combo = 9
+	hg.avancar(PASSO)
+	ok(not ag.ocupado(), "abaixo de 10 não há anúncio de combo")
+	g.combo = 10
+	hg.avancar(PASSO)
+	ok(ag.texto_ativo == "SEQUÊNCIA!", "marco 10 anuncia SEQUÊNCIA!")
+	_passar(hg, 2.5)
+	g.combo = 25
+	hg.avancar(PASSO)
+	ok(ag.texto_ativo == "CARNIFICINA!", "marco 25 anuncia CARNIFICINA!")
+	_passar(hg, 2.5)
+	g.combo = 0
+	hg.avancar(PASSO)
+	g.combo = 50
+	hg.avancar(PASSO)
+	ok(ag.texto_ativo == "MASSACRE!", "marco 50 anuncia MASSACRE!")
+	ok(hg._combo_num.scale.x > 1.0, "o número do combo dá o soco de escala no abate")
+	_passar(hg, 2.5)
+	g.combo = 60
+	hg.avancar(PASSO)
+	ok(not ag.ocupado(), "sem cruzar marco novo, não há anúncio")
+	g.combo = 0
+	hg.avancar(PASSO)
+	g.combo = 250
+	hg.avancar(PASSO)
+	ok(ag.texto_ativo == "LENDÁRIO!" and ag.fila.size() == 0, "de 0 a 250 num quadro, só o marco mais alto (LENDÁRIO!)")
+	ok(ag.scale.x > 1.5, "o marco 200 entra maior que os outros: %s" % ag.scale.x)
+	_passar(hg, 3.0)
+
+	# E. nível: o anúncio NÍVEL N!, o pop do selo e o anel de luz
+	f.nivel_subiu.emit(8)
+	h.avancar(PASSO)
+	ok(an.texto_ativo == "NÍVEL 8!", "nível novo anuncia NÍVEL 8!")
+	ok(an._texto.get_theme_color("font_color") == Hud.COR_NIVEL, "NÍVEL N! sai em azul-claro")
+	ok(h._anel.visible and h._selo.scale.x > 1.0, "o selo dá pop e o anel de luz sai")
+	_passar(h, 0.6)
+	ok(not h._anel.visible and h._selo.scale.x == 1.0, "o anel some em meio segundo e o selo volta ao tamanho")
+	_passar(h, 3.0)
+
+	# F. sinal livre: a cor vem do sinal (Color ou o texto de uma cor)
+	f.anuncio.emit("PORTAL ABERTO", Color.GREEN)
+	h.avancar(PASSO)
+	ok(an.texto_ativo == "PORTAL ABERTO" and an._texto.get_theme_color("font_color") == Color.GREEN, "anúncio livre com a cor do sinal")
+	f.anuncio.emit("OLÁ", "#ff0000")
+	ok(an.fila.size() == 1 and an.fila[0]["cor"] == Color.RED, "cor em texto hexadecimal vira Color")
+	_passar(h, 4.0)
+
+	# G. chefe: a real cai na hora; a fantasma segura e desce devagar; some ao chegar a zero
+	f.chefe_apareceu.emit("Guardião do bosque", 1000)
+	h.avancar(PASSO)
+	ok(h._chefe.visible and h._chefe_barra.max_value == 1000.0 and h._chefe_barra.value == 1000.0, "a barra do chefe aparece cheia")
+	ok(h._chefe_nome.text == "GUARDIÃO DO BOSQUE", "o nome do chefe em caixa-alta: %s" % h._chefe_nome.text)
+	f.chefe_vida.emit(500)
+	h.avancar(PASSO)
+	ok(h._chefe_barra.value == 500.0 and h._chefe_txt.text == "500/1000", "a barra real cai na hora: %s" % h._chefe_txt.text)
+	ok(h._chefe_fantasma_barra.value == 1000.0, "a fantasma segura antes de descer")
+	_passar(h, 0.6)
+	var fantasma: float = h._chefe_fantasma_barra.value
+	ok(fantasma < 1000.0 and fantasma > 500.0, "a fantasma desce atrás da real: %s" % fantasma)
+	_passar(h, 10.0)
+	ok(h._chefe_fantasma_barra.value == 500.0, "a fantasma chega à real e para")
+	f.chefe_vida.emit(0)
+	_passar(h, 10.0)
+	ok(not h._chefe.visible, "o painel do chefe some quando ele chega a zero")
+
+	# H. vida baixa: abaixo de 25%, a barra pisca e a vinheta liga; acima, a vinheta apaga
+	f.heroi.vida = 20.0
+	var piscou := false
+	for i in 30:
+		h.avancar(PASSO)
+		piscou = piscou or h._vida_barra.modulate != Color.WHITE
+	ok(piscou, "a barra de vida pisca abaixo de 25%")
+	_passar(h, 0.5)
+	ok(h.vinheta_alfa > 0.3 and h._vinheta.visible, "a vinheta liga abaixo de 25%%: %s" % h.vinheta_alfa)
+	f.heroi.vida = 26.0
+	_passar(h, 1.0)
+	ok(h.vinheta_alfa == 0.0 and not h._vinheta.visible, "a vinheta apaga acima de 25%")
+	ok(h._vida_barra.modulate == Color.WHITE, "a barra de vida para de piscar acima de 25%")
+
+	# I. relógio: pisca dourado ao virar o minuto
+	f.tempo_partida = 59.0
+	h.avancar(PASSO)
+	ok(h._relogio.modulate == Color.WHITE, "sem virar o minuto, o relógio fica branco")
+	f.tempo_partida = 61.0
+	h.avancar(PASSO)
+	ok(h._relogio.modulate != Color.WHITE, "o tempo pisca dourado ao virar o minuto")
+	_passar(h, 1.0)
+	ok(h._relogio.modulate == Color.WHITE, "o pisca do tempo acaba")
+
+	# J. mundo com só o nivel_subiu (o da v1 ou um antigo): anuncia o nível e não conecta o resto
+	var s := MundoSoNivel.new()
+	var hs = Hud.criar(s)
+	vista.add_child(hs)
+	hs.set_process(false)
+	s.nivel_subiu.emit(3)
+	hs.avancar(PASSO)
+	ok(hs._anuncio.texto_ativo == "NÍVEL 3!", "com só nivel_subiu, o nível anuncia")
+	ok(not s.has_signal("onda_forte") and not s.has_signal("chefe_apareceu"), "mundo sem os sinais novos não ganha sinais")
+	hs.ligar(null)
+	hs.avancar(PASSO)
+	ok(hs._anuncio.texto_ativo == "NÍVEL 3!", "trocar para mundo nulo não derruba a faixa")
+
+
+class MundoSoNivel:
+	extends RefCounted
+	signal nivel_subiu(nivel)
+
+
+func _passar(h, segundos: float) -> void:
+	for i in roundi(segundos / PASSO):
+		h.avancar(PASSO)
 
 
 ## Prints do HUD sobre o mundo da v2, com valores falsos: começo, vida pela metade com combo x12 e nível 7, nível novo, e combo zerado.
@@ -243,6 +419,30 @@ func _fotos(pasta: String) -> void:
 	falso.heroi.vida = 100.0
 	await get_tree().create_timer(0.5).timeout
 	await _foto(w, pasta, "hud_combo_zerado")
+
+	# Anúncios, chefe e vida baixa: um print de cada, com a faixa sozinha na tela.
+	await get_tree().create_timer(2.0).timeout
+	falso.onda_forte.emit(3)
+	await get_tree().create_timer(0.5).timeout
+	await _foto(w, pasta, "anuncio_onda_forte")
+
+	await get_tree().create_timer(2.0).timeout
+	falso.combo = 50
+	await get_tree().create_timer(0.5).timeout
+	await _foto(w, pasta, "anuncio_massacre_x50")
+
+	await get_tree().create_timer(2.0).timeout
+	falso.combo = 0
+	falso.heroi.vida = 18.0
+	await get_tree().create_timer(0.6).timeout
+	await _foto(w, pasta, "vida_baixa_vinheta")
+
+	falso.heroi.vida = 100.0
+	await get_tree().create_timer(2.0).timeout
+	falso.chefe_apareceu.emit("Guardião do bosque", 1000)
+	falso.chefe_vida.emit(500)
+	await get_tree().create_timer(0.8).timeout
+	await _foto(w, pasta, "chefe_meia_com_fantasma")
 
 
 func _foto(w, pasta: String, nome: String) -> void:

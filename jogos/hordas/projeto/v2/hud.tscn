@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://v2/hud.gd" id="1_hud"]
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_pedra.png" id="2_moldura"]
@@ -7,6 +7,10 @@
 [ext_resource type="Texture2D" path="res://v2/hud/barra_folego.png" id="5_folego"]
 [ext_resource type="Texture2D" path="res://v2/hud/barra_xp.png" id="6_xp"]
 [ext_resource type="Texture2D" path="res://v2/hud/selo_nivel.png" id="7_selo"]
+[ext_resource type="Texture2D" path="res://v2/hud/moldura_faixa.png" id="8_faixa"]
+[ext_resource type="Texture2D" path="res://v2/hud/anel_luz.png" id="9_anel"]
+[ext_resource type="Texture2D" path="res://v2/hud/barra_fantasma.png" id="10_fantasma"]
+[ext_resource type="Script" path="res://v2/hud_anuncios.gd" id="11_anuncios"]
 
 [node name="Hud" type="CanvasLayer"]
 layer = 10
@@ -18,6 +22,13 @@ offset_bottom = 540.0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 1
 theme_override_font_sizes/font_size = 8
+
+[node name="Vinheta" type="TextureRect" parent="Raiz"]
+layout_mode = 0
+offset_right = 960.0
+offset_bottom = 540.0
+expand_mode = 1
+stretch_mode = 0
 
 [node name="Vida" type="NinePatchRect" parent="Raiz"]
 offset_left = 6.0
@@ -225,3 +236,115 @@ grow_vertical = 2
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "1"
+
+[node name="Anel" type="TextureRect" parent="Raiz"]
+visible = false
+layout_mode = 0
+offset_left = 264.0
+offset_top = 513.0
+offset_right = 284.0
+offset_bottom = 533.0
+texture = ExtResource("9_anel")
+expand_mode = 1
+
+[node name="Chefe" type="NinePatchRect" parent="Raiz"]
+visible = false
+layout_mode = 0
+offset_left = 190.0
+offset_top = 106.0
+offset_right = 770.0
+offset_bottom = 152.0
+texture = ExtResource("2_moldura")
+patch_margin_left = 5
+patch_margin_top = 5
+patch_margin_right = 5
+patch_margin_bottom = 5
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Nome" type="Label" parent="Raiz/Chefe"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 4.0
+offset_right = 575.0
+offset_bottom = 16.0
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+text = "CHEFE"
+
+[node name="Fantasma" type="TextureProgressBar" parent="Raiz/Chefe"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 20.0
+offset_right = 575.0
+offset_bottom = 36.0
+value = 100.0
+texture_under = ExtResource("3_fundo")
+texture_progress = ExtResource("10_fantasma")
+nine_patch_stretch = true
+stretch_margin_left = 1
+stretch_margin_top = 1
+stretch_margin_right = 1
+stretch_margin_bottom = 1
+
+[node name="Barra" type="TextureProgressBar" parent="Raiz/Chefe"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 20.0
+offset_right = 575.0
+offset_bottom = 36.0
+value = 100.0
+texture_progress = ExtResource("4_vida")
+nine_patch_stretch = true
+stretch_margin_left = 1
+stretch_margin_top = 1
+stretch_margin_right = 1
+stretch_margin_bottom = 1
+
+[node name="Texto" type="Label" parent="Raiz/Chefe"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 20.0
+offset_right = 575.0
+offset_bottom = 36.0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "0/0"
+
+[node name="Anuncio" type="Control" parent="Raiz"]
+visible = false
+layout_mode = 0
+offset_left = 200.0
+offset_top = 160.0
+offset_right = 760.0
+offset_bottom = 200.0
+script = ExtResource("11_anuncios")
+
+[node name="Moldura" type="NinePatchRect" parent="Raiz/Anuncio"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("8_faixa")
+patch_margin_left = 5
+patch_margin_top = 5
+patch_margin_right = 5
+patch_margin_bottom = 5
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="Texto" type="Label" parent="Raiz/Anuncio"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+text = ""
