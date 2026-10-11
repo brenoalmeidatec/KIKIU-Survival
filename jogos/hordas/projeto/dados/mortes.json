@@ -1,6 +1,6 @@
 {
  "_ajuda": "Mortes violentas (#32): o efeito depende do que deu o golpe final. causa_por_arma: id da arma -> causa (fogo, gelo, raio, corte, impacto, tiro, aura, explosao, padrao). Arma sem entrada cai em causa_por_tipo (o campo tipo do armas.json) e, no fim, em padrao. O Poder Elemental decide pelo elemento da bola (fogo/gelo/raio). efeito_por_causa: causa -> desenho (cinzas, estilhaco, choque, corte, pedacos, furo, desintegrar, simples). Com a opção Mortes violentas = Reduzida tudo vira o efeito suave (sem sangue e sem partes). part = quantas partículas/pedaços o efeito gasta do teto de partículas. teto: no máximo `mortes` efeitos grandes ao mesmo tempo e `particulas` partículas; passou disso, o inimigo usa a morte simples (até `simples` ao mesmo tempo) e depois some como antes. Só morre com efeito quem está perto da tela (tela = meia largura/altura em px).",
- "teto": {"mortes": 16, "particulas": 400, "simples": 32, "manchas": 60, "vida_mancha": 9.0},
+ "teto": {"mortes": 16, "particulas": 400, "simples": 32, "manchas": 60},
  "tela": {"x": 360, "y": 210},
  "causa_por_arma": {
   "katana": "corte",

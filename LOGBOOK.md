@@ -1055,3 +1055,20 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
   - `gdformat` não rodou (fica para o fechamento da etapa).
   - Olho humano: conferir a textura de piso nova na máquina de testes do Breno.
 - Assinado: Claude do Alisson (notebook)
+## 2026-10-11 · Claude do Alisson (notebook) · CI mais rápido (E1, issue #152)
+- **Medido antes (run 38096771596, `ci.yml`, job `testes`):** 8m17s no total. Baixar o Godot: ~2 s (já vinha do cache). `--import` (2x): ~22 s. Rodar as 51 cenas em sequência: ~7m44s (quase tudo está aqui).
+- **Feito:** `ferramentas/testes_ci.sh` roda as cenas 4 por vez (`xargs -P 4`), com `timeout 120` por cena e um log por cena. O critério de falha não mudou (`SCRIPT ERROR` ou falta de `falhas=0`). `bench_*` continuam fora. `criacao` e `criacao2` vão na mesma unidade, em sequência (gravam o mesmo arquivo). No fim: cenas, rodadas, ok, falhas e tempo; falha se a contagem não bater.
+- **Não mexi:** o passo do Godot (já tinha cache), o `--import` e o workflow de Release (gatilhos e jobs iguais). Não fiz cache da pasta `.godot`: o import leva ~22 s e a chave mudaria a cada commit, então o ganho seria pequeno.
+- **Checado:** sintaxe do script, YAML do `ci.yml` e um teste com Godot falso (51 cenas, uma com SCRIPT ERROR, exit 1). Não há Godot no notebook: a prova de verdade é o CI do PR.
+- **Pendente:** rodar o CI do PR e comparar o tempo com o de cima; mesclar só com tudo verde.
+- Assinado: Claude do Alisson (notebook)
+- **Depois (PR #154, run 38103995863, mesmo `ci.yml` com o script):** job `testes` 2m31s (de 8m17s, ~70% a menos); o passo das cenas levou 125 s. Contagem: 51 cenas, 51 rodadas, 51 ok, 0 falhas. `gdlint` e `ortografia` verdes. Uma rodada só: se aparecer cena instável com 4 em paralelo, o `P` do `ci.yml` (padrão 4) é o primeiro ajuste.
+- **Release:** não foi alterado (gatilhos e jobs iguais); o próximo push na `main` (o merge deste PR) roda o export e a publicação como sempre.
+
+## 2026-10-11 · Claude do Alisson (notebook) · aba Gráficos: dados e ligações (#150, E1)
+- **Feito:** `dados/graficos.json` com as 15 opções (CPU: máximo de inimigos, partículas, cálculo dos monstros, detalhe longe da câmera, tempo dos restos; GPU: luz com relevo, sombras, brilhos e halos, névoa, vinheta, efeitos das armas, tremor e clarões, escala de render, limite de fps, V-Sync) e os 3 perfis. Médio e Alto mantêm os números de `qualidade.json` (que saiu); Baixo é o perfil do i5-3470.
+- **API em `config.gd`:** `Config.g(chave)`, `g_definir` (vira personalizado), `g_perfil`, `g_aplicar_perfil`, `g_perfil_temporario` (só memória, para teste), `g_detectar`, `g_opcoes`, `recarregar` e o sinal `graficos_mudou`. Salva na seção `[graficos]` de `opcoes.cfg`. Migra a "Qualidade gráfica" antiga uma vez.
+- **Saíram do ITENS:** qualidade, vsync, fps_max e vinheta. A tela nova da aba deve trazer todas. `qualidade_auto` ficou (baixa de perfil se fps < 40 por 8 s; em personalizado não faz nada).
+- **Pendente:** `escala_render` é salva mas ainda não age. `content_scale_factor` do viewport raiz muda a área visível (zoom), não a resolução, então não serve; falta um SubViewport com a cena do jogo. `luz_relevo` só guarda o valor (Etapa 3). A frequência de "alvo" não tem controle próprio: só a separação entra no `calculo_monstros`.
+- **Testes:** novo `testes/graficos.tscn` (perfis batem com os números de hoje, personalizado, salvar e carregar, detectar, migração, fatores do jogo). 50 de 52 cenas limpas; `transicao` (tempo) passa sozinha e `mapa` passa sozinha (no lote deu saída vazia). Robô `--bot --heroi=hazaki --semente=7 --rapido=3 --sair=40` exit 0, sem SCRIPT ERROR.
+- **Recado para o Claude do Breno:** a tela (outro agente, E2) precisa ler `Config.g_opcoes()` e `g_perfil()`. Olho humano pendente: prints da mesma cena em Baixo, Médio e Alto, e fps real no i5-3470.

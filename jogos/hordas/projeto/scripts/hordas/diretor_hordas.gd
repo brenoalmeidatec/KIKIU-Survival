@@ -208,12 +208,12 @@ func fase_atual() -> Dictionary:
 
 ## Teto de inimigos vivos (#127). O da fase (dados/fase.json > dificuldade > limite_vivos, padrão 250; uma fase do
 ## regioes.json pode ter o seu `limite_vivos`) vale no jogo normal; a prorrogação e o Enxame Final sobem pra `limite_vivos_pror` (500).
-## Convive com o limite do perfil de qualidade (dados/qualidade.json): vale o menor dos dois. Pura: o teste usa.
+## Convive com o limite do perfil de qualidade (dados/graficos.json): vale o menor dos dois. Pura: o teste usa.
 func limite_vivos() -> int:
 	var base := int(_fase.get("limite_vivos", _dif.get("limite_vivos", 250)))
 	if pror_ativa() or enxame_final:
 		base = maxi(base, int(_dif.get("limite_vivos_pror", 500)))
-	return mini(base, int(Config.q("limite_vivos")))
+	return mini(base, int(Config.g("max_inimigos")))
 
 
 func _gastar() -> void:

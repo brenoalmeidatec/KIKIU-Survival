@@ -144,7 +144,7 @@ func _process_i(dt: float) -> void:
 		return
 	_t += dt
 	_mat.set_shader_parameter("t", _t)
-	_mat.set_shader_parameter("halo_n", int(Config.q("escuro_halo")))
+	_mat.set_shader_parameter("halo_n", Config.leituras_horror())
 	_mat.set_shader_parameter("aparece", _aparece)
 	var amb: Color = arena.chao._ambiente.color if arena.chao and "_ambiente" in arena.chao else Color.WHITE
 	_mat.set_shader_parameter("ambiente", Vector3(amb.r, amb.g, amb.b))
@@ -161,7 +161,7 @@ func _process_i(dt: float) -> void:
 func _atualizar_luzes() -> void:
 	var ct: Transform2D = get_viewport().get_canvas_transform()
 	var n := 0
-	var max_l := mini(MAX_LUZES, int(Config.q("escuro_luzes")))   # perfil de qualidade
+	var max_l := mini(MAX_LUZES, Config.luzes_horror())   # perfil de qualidade
 	var jog: Vector2 = ct * arena.jogador.centro()
 	var pisca := 1.0 + 0.035 * sin(_t * 9.0) + 0.02 * sin(_t * 23.0)
 	_luzes[n] = Vector4(jog.x, jog.y, float(_cfg.get("raio_heroi", 130.0)) * pisca, 1.0)
