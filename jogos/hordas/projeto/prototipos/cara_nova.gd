@@ -1,7 +1,8 @@
 extends Node2D
 ## Protótipo da cara nova (V1 + V2), cena de teste FORA do jogo: mundo de 960x540, chão e árvores da Floresta, luz escura
-## com PointLight2D e sprites com ALBEDO + NORMAL (CanvasTexture). Os sprites vêm de jogos/hordas/prototipos/cara_nova/sprites/
-## (gerados por gerar_cara_nova.py), lidos por caminho de fora de res:// para não duplicar nada em assets/.
+## com PointLight2D e sprites com ALBEDO + NORMAL (CanvasTexture). Os sprites vêm de projeto/prototipos/cara_nova/sprites/
+## (gerados por gerar_cara_nova.py). Tudo é lido por res:// (PNG por load() do recurso importado, JSON por FileAccess com
+## entrada no include_filter do export_presets.cfg): no exe exportado não há pasta de disco ao lado, só o pck.
 ##
 ## Uso (a partir de jogos/hordas):
 ##   godot --path projeto res://prototipos/cara_nova.tscn -- --fotos=PASTA --seq=1.0,2.0
@@ -12,7 +13,7 @@ extends Node2D
 ## Sem --fotos e sem --medir a cena fica aberta (modo livre): teclas 1/2/3 (0 desliga) trocam o modo, WASD anda com o herói,
 ## L faz a luz azul seguir o mouse (--azul=x,y fixa a luz azul num ponto), T leva a tocha e a aura junto com o herói. --sem_vsync solta o fps; --rotulo mostra o rótulo nas fotos.
 
-const PASTA := "../prototipos/cara_nova/sprites"
+const PASTA := "res://prototipos/cara_nova/sprites"
 const LARG := 960
 const ALT := 540
 const HEROI_POS := Vector2(470, 292)
@@ -202,23 +203,29 @@ func _num(chave: String, padrao: float) -> float:
 
 func _imagem(nome: String) -> Image:
 	if not _imgs.has(nome):
-		var caminho := ProjectSettings.globalize_path("res://").path_join(PASTA).path_join(nome).simplify_path()
-		var im := Image.load_from_file(caminho)
+		var caminho := PASTA.path_join(nome)
+		var im := _png(caminho)
 		if im == null:
 			push_error("sem imagem: " + caminho)
 		_imgs[nome] = im
 	return _imgs[nome]
 
 
+## PNG por load(): no exe exportado o PNG de origem não vai para o pck (vira .ctex importado), então Image.load_from_file e
+## FileAccess não o acham. load() acha o recurso importado; get_image() devolve a imagem para os cálculos (normal, blur, atlas).
+func _png(caminho: String) -> Image:
+	var tex := load(caminho) as Texture2D
+	return tex.get_image() if tex != null else null
+
+
 func _tem(nome: String) -> bool:
-	var caminho := ProjectSettings.globalize_path("res://").path_join(PASTA).path_join(nome).simplify_path()
-	return FileAccess.file_exists(caminho)
+	return ResourceLoader.exists(PASTA.path_join(nome))
 
 
 func _tipo(nome: String) -> Dictionary:
 	if _tipos.has(nome):
 		return _tipos[nome]
-	var caminho := ProjectSettings.globalize_path("res://").path_join(PASTA).path_join(nome + ".json").simplify_path()
+	var caminho := PASTA.path_join(nome + ".json")
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(caminho))
 	var t := CanvasTexture.new()
 	var alb := ImageTexture.create_from_image(_imagem(nome + "_albedo.png"))
@@ -605,17 +612,17 @@ func _montar() -> void:
 
 func _chao() -> void:
 	var piso := Sprite2D.new()
-	var raiz := ProjectSettings.globalize_path("res://")
+	var raiz := "res://"
 	var esc := _num("chao", 2.0)
 	var qual_piso := str(_a.get("piso", "piso_ia" if _a.has("piso_ia") else "piso"))
 	var novo := raiz.path_join("prototipos/piso/%s.png" % qual_piso)
-	if not _a.has("piso_antigo") and not _a.has("cenario_antigo") and FileAccess.file_exists(novo):
+	if not _a.has("piso_antigo") and not _a.has("cenario_antigo") and ResourceLoader.exists(novo):
 		# chão novo (prototipos/piso, aprovado): escala 1 (1 texel = 1 px), com piso_normal.png como normal map
 		var ct := CanvasTexture.new()
-		ct.diffuse_texture = ImageTexture.create_from_image(Image.load_from_file(novo))
+		ct.diffuse_texture = ImageTexture.create_from_image(_png(novo))
 		var nn := raiz.path_join("prototipos/piso/%s_normal.png" % qual_piso)
-		if _com_normal and FileAccess.file_exists(nn):
-			ct.normal_texture = ImageTexture.create_from_image(Image.load_from_file(nn))
+		if _com_normal and ResourceLoader.exists(nn):
+			ct.normal_texture = ImageTexture.create_from_image(_png(nn))
 		piso.texture = ct
 		esc = 1.0
 		# sob a luz laranja o musgo ia a amarelo saturado: tira um pouco do verde e dessatura o chão antes da luz
@@ -671,19 +678,19 @@ func _carregar_itens() -> void:
 	## Atlas de objetos de cenário. Padrão: arte nova do imagegen (prototipos/objetos: albedo + normal, escala final). --cenario_antigo:
 	## os enfeites regerados em Blender (sprites/floresta_enfeites_*), só albedo. Cada item é recortado UMA vez (com margem) e ganha a
 	## textura nítida, a borrada para a sombra do modo médio e, quando há, a CanvasTexture com normal map.
-	var raiz := ProjectSettings.globalize_path("res://")
+	var raiz := "res://"
 	var antigo := _a.has("cenario_antigo")
 	var info: Dictionary
 	var atlas: Image
 	var norm: Image = null
 	if antigo:
-		info = JSON.parse_string(FileAccess.get_file_as_string(raiz.path_join(PASTA).path_join("floresta_enfeites.json")))
+		info = JSON.parse_string(FileAccess.get_file_as_string(PASTA.path_join("floresta_enfeites.json")))
 		atlas = _imagem("floresta_enfeites_albedo.png")
 	else:
 		info = JSON.parse_string(FileAccess.get_file_as_string(raiz.path_join(OBJ_DIR).path_join("cenario.json")))
-		atlas = Image.load_from_file(raiz.path_join(OBJ_DIR).path_join("enfeites.png"))
+		atlas = _png(raiz.path_join(OBJ_DIR).path_join("enfeites.png"))
 		if _com_normal:
-			norm = Image.load_from_file(raiz.path_join(OBJ_DIR).path_join("enfeites_normal.png"))
+			norm = _png(raiz.path_join(OBJ_DIR).path_join("enfeites_normal.png"))
 			norm.convert(Image.FORMAT_RGBA8)
 	atlas.convert(Image.FORMAT_RGBA8)
 	for it in info.itens:
@@ -839,15 +846,15 @@ func _cenario_novo() -> void:
 
 func _carregar_decalques() -> void:
 	## Decalques de chão (prototipos/decalques: albedo + normal + json com regiao e centro de cada item). Cada um vira uma CanvasTexture.
-	var dir := ProjectSettings.globalize_path("res://").path_join(DEC_DIR)
+	var dir := "res://".path_join(DEC_DIR)
 	if not FileAccess.file_exists(dir.path_join("decalques.json")):
 		return
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("decalques.json")))
-	var atlas := Image.load_from_file(dir.path_join("decalques.png"))
+	var atlas := _png(dir.path_join("decalques.png"))
 	atlas.convert(Image.FORMAT_RGBA8)
 	var norm: Image = null
-	if _com_normal and FileAccess.file_exists(dir.path_join("decalques_normal.png")):
-		norm = Image.load_from_file(dir.path_join("decalques_normal.png"))
+	if _com_normal and ResourceLoader.exists(dir.path_join("decalques_normal.png")):
+		norm = _png(dir.path_join("decalques_normal.png"))
 		norm.convert(Image.FORMAT_RGBA8)
 	for it in info.itens:
 		var r := Rect2i(int(it.regiao[0]), int(it.regiao[1]), int(it.regiao[2]), int(it.regiao[3]))

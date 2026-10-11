@@ -6,6 +6,9 @@ extends Node
 ##   --online=host [--jogadores=2] (abre a sala e começa sozinho quando tiver 2)
 ##   --online=join --endereco=127.0.0.1:7777  (entra na sala)
 ##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
+## Abrir uma cena no lugar do menu (Release: KIKIU.exe -- --prototipo; o "--" faz o protótipo ler --fotos/--seq):
+##   --prototipo (res://prototipos/cara_nova.tscn)  --v2 (res://v2/mundo.tscn; sem o arquivo, cai no protótipo com aviso)
+##   --cena=res://... (qualquer cena; sem o arquivo, fica no menu com aviso). Ordem: --cena > --v2 > --prototipo.
 
 const Arena := preload("res://scripts/hordas/arena.gd")
 const Perf := preload("res://scripts/hordas/perf.gd")
@@ -14,6 +17,8 @@ const Sorte := preload("res://scripts/hordas/sorte.gd")
 const Mapa := preload("res://scripts/hordas/mapa.gd")
 const W := 640.0
 const H := 360.0
+const CENA_PROTOTIPO := "res://prototipos/cara_nova.tscn"  # protótipo 2.5D (base da v2), congelado como referência
+const CENA_V2 := "res://v2/mundo.tscn"  # cena da v2 (ainda não existe na main; --v2 só abre se existir)
 const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")
@@ -124,6 +129,11 @@ func _ready() -> void:
 	_versao = Dados.texto_versao()
 	_teclas()
 	_ler_args()
+	var cena := cena_de_argumentos(_args, func(p): return ResourceLoader.exists(p))
+	if cena != "":  # cena de teste no lugar do menu: a troca é no fim do quadro; esta cena para aqui
+		process_mode = Node.PROCESS_MODE_DISABLED
+		get_tree().change_scene_to_file.call_deferred(cena)
+		return
 	if _args.has("perfil"):  # teste: --perfil=alto|medio|baixo vale só nesta execução (não grava nas opções)
 		Config.g_perfil_temporario(str(_args.perfil))
 	Perf.ligado = _args.has("sair")  # relatório de custo por sistema no log do --sair (perf.gd)
@@ -209,6 +219,24 @@ func _ler_args() -> void:
 		if a.begins_with("--"):
 			var p: PackedStringArray = a.substr(2).split("=", true, 1)
 			_args[p[0]] = p[1] if p.size() > 1 else true
+
+
+## Cena que substitui o menu pelos argumentos ("" = menu, como sempre). `existe` diz se um caminho res:// existe
+## (na prática ResourceLoader.exists; o teste passa o seu). Ordem: --cena > --v2 > --prototipo.
+static func cena_de_argumentos(args: Dictionary, existe: Callable) -> String:
+	if args.has("cena"):
+		if existe.call(str(args.cena)):
+			return str(args.cena)
+		print("AVISO --cena=%s: arquivo não existe; abrindo o menu" % str(args.cena))
+		return ""
+	if args.has("v2"):
+		if existe.call(CENA_V2):
+			return CENA_V2
+		print("AVISO --v2: %s ainda não existe; abrindo o protótipo" % CENA_V2)
+		return CENA_PROTOTIPO
+	if args.has("prototipo"):
+		return CENA_PROTOTIPO
+	return ""
 
 
 func _ler_recordes() -> Dictionary:
