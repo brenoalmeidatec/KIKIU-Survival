@@ -1044,3 +1044,5 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Checado:** sintaxe do script, YAML do `ci.yml` e um teste com Godot falso (51 cenas, uma com SCRIPT ERROR, exit 1). Não há Godot no notebook: a prova de verdade é o CI do PR.
 - **Pendente:** rodar o CI do PR e comparar o tempo com o de cima; mesclar só com tudo verde.
 - Assinado: Claude do Alisson (notebook)
+- **Depois (PR #154, run 38103995863, mesmo `ci.yml` com o script):** job `testes` 2m31s (de 8m17s, ~70% a menos); o passo das cenas levou 125 s. Contagem: 51 cenas, 51 rodadas, 51 ok, 0 falhas. `gdlint` e `ortografia` verdes. Uma rodada só: se aparecer cena instável com 4 em paralelo, o `P` do `ci.yml` (padrão 4) é o primeiro ajuste.
+- **Release:** não foi alterado (gatilhos e jobs iguais); o próximo push na `main` (o merge deste PR) roda o export e a publicação como sempre.
