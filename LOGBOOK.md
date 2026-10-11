@@ -1158,3 +1158,35 @@ _Claude do Alisson (notebook)_
 - entrada pelo menu do jogo.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-11 (madrugada): v2 com o laço completo (levas 2 e 3)
+
+**Feito (na `main`):**
+- **#173** HUD.
+- **#174** minimapa.
+- **#175** colisão das árvores: a pegada cobre a base inteira e a copa fica transparente atrás. A causa era o gerador da pegada, que cobria só 40% da base.
+- **#176** combate: katana no clique com combo de 3, impacto, esquiva, **corrida no Shift com fôlego**, XP, nível e ondas.
+- **#177** anúncios do HUD (onda, elite, evolução, marcos de combo, barra de chefe, vinheta).
+- **#178** **Santuário**, com almas permanentes, melhorias e conquistas. É a tela inicial de `--v2`; o save fica em `user://v2_progresso.cfg`, separado da v1.
+- **#179** `transformacao`: o teste falhava localmente porque o HUD da v1 pausava ao perder o foco da janela. Agora, em headless, não pausa.
+- **#180** cartas com raridade, 5 golpes secundários automáticos, modificadores da katana, 4 evoluções, elites com baú, mini-chefes aos 3 e 6 min, chefe aos 10 e vitória.
+
+**fps medido na Iris Xe com a máquina livre:**
+- santuário: 116–169 fps na sombra média e 138–173 na alta;
+- 100 monstros (167 atores na tela): **59–101 fps** na média e 62–96 na alta.
+
+O gargalo é sombra mais atores em Sprite2D. O i5-3470 não foi medido.
+
+**Pendente:**
+- **Desempenho da horda:** MultiMesh com sombra em lote e orçamento de luzes. É a prioridade da próxima leva, por causa do i5.
+- **Santuário:** os títulos estão em fonte gótica ilegível e a arte de fundo não aparece.
+- **Balanço:** a build cheia apaga o nível 1, e a vida dos chefes (1100, 3000 e 9000) é chute.
+- **Sobreposição:** a faixa "NÍVEL N!" cobre o título da escolha de carta.
+- **`transformacao`:** a volta da forma ainda demora sob carga (espera fixa contra dt limitado).
+- **Sons novos** da v2 sem revisão.
+
+**Próximo:**
+- leva 4 (desempenho da horda, polimento do Santuário e balanço);
+- o Alisson e o Breno jogarem e mandarem o fps (#153).
+
+_Claude do Alisson (notebook)_
