@@ -9,6 +9,7 @@ extends Node2D
 ## o corpo humano some (com o equipamento, que é filho do sprite) e volta igual; o dash vira investida.
 ## Não conta como arma exclusiva. No online e no duelo final não transforma (ainda não vai pela rede).
 
+const Armas := preload("res://scripts/hordas/armas.gd")
 const Dragao := preload("res://scripts/hordas/dragao.gd")
 const ENTRAR := 1.1  # segundos da animação de transformação
 const SAIR := 0.7  # e da volta
@@ -153,7 +154,17 @@ func transformar() -> void:
 	var lista := []
 	for i in h.get("armas", []).size():
 		var id: String = h.armas[i]
-		lista.append({"id": id, "nivel": mini(nv, arena.armas.nivel_max(id)), "t": 0.6 + i * 0.25, "ativo": 0.0, "acertos": {}, "tique": 0.0})
+		lista.append(
+			{
+				"id": id,
+				"nivel": mini(nv, arena.armas.nivel_max(id)),
+				"t": 0.6 + i * 0.25,
+				"ativo": 0.0,
+				"acertos": {},
+				"tique": 0.0,
+				"disparo": Armas.disparo_de(id, false)
+			}
+		)
 	arena.armas.forma_lista = lista
 	if str(h.get("visual", "")) == "dragao":
 		forma = Dragao.new()

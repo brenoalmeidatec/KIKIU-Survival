@@ -65,6 +65,12 @@ var _vel_dash := DASH_VEL  # vezes a velocidade de andar no dash em curso (rolam
 ## ---- Esquiva perfeita e mira direcional (#126) ----
 var mira_dir := Vector2.ZERO  # direção da mira deste quadro (analógico direito ou mouse); ZERO = sem entrada: as armas direcionais miram no mais perto
 var mira_forcada := Vector2.ZERO  # só para prints/testes (--mira=x,y): mira nessa direção como se fosse o analógico direito
+## ---- Ataque por clique (#161) ----
+var atacando := false  # segurando o ataque neste quadro: as armas de `disparo: clique` (armas.gd) só atiram assim
+var atacar_forcado := false  # só para prints/testes: ataca como se segurasse o botão
+var _ataque_preso := false  # o botão foi apertado EM JOGO (não num menu, carta ou HUD) e continua apertado
+var _nasceu := Engine.get_process_frames()  # o clique que escolheu o herói no menu (mesmo quadro em que a arena nasce) não ataca
+var _ataque_mouse := false  # ... e era o do mouse: a mira é o cursor, mesmo com "Mirar com o mouse" desligado
 var _mouse_ult := Vector2(-1000, -1000)  # onde o mouse estava no quadro anterior (mexeu = quer mirar com ele)
 var _mouse_parado := 99.0  # s sem mexer o mouse
 var _extra_t := 0.0  # esquiva perfeita: quanto falta do +dano no próximo golpe (0 = sem bônus)
@@ -284,6 +290,7 @@ func atualizar_i(dt: float) -> void:
 	_extra_t = maxf(0.0, _extra_t - dt)
 	_perfeita_t = maxf(0.0, _perfeita_t - dt)
 	_vermelho = maxf(0.0, _vermelho - dt)
+	_atualizar_ataque()
 	_atualizar_mira(dt)
 	_atk_t = maxf(0.0, _atk_t - dt)
 	_atk_cool = maxf(0.0, _atk_cool - dt)
@@ -510,6 +517,36 @@ func tem_bonus_esquiva() -> bool:
 	return _extra_t > 0.0
 
 
+# ---------- ataque por clique (#161) ----------
+
+
+## Só o botão apertado em jogo vale: o clique que um menu, a tela de cartas, a pausa ou um controle da HUD consumiu nunca chega
+## aqui (eles tratam o evento antes), e o botão que já estava apertado quando a tela fechou não conta até soltar e apertar de novo.
+func _unhandled_input(e: InputEvent) -> void:
+	if bot or arena == null or e.is_echo() or not InputMap.has_action("atacar") or not e.is_action_pressed("atacar"):
+		return
+	if Engine.get_process_frames() <= _nasceu or not arena.entrada_livre():
+		return
+	_ataque_preso = true
+	_ataque_mouse = e is InputEventMouseButton
+
+
+## Decide `atacando` do quadro: botão preso (mouse ou gatilho), `atacar_forcado` (testes) ou o robô, que segura o clique sempre.
+func _atualizar_ataque() -> void:
+	if _no_menu() or not arena.entrada_livre():
+		atacando = false
+		_ataque_preso = false
+		_ataque_mouse = false
+		return
+	if bot or atacar_forcado:
+		atacando = true
+		return
+	if _ataque_preso and not (InputMap.has_action("atacar") and Input.is_action_pressed("atacar")):
+		_ataque_preso = false
+		_ataque_mouse = false
+	atacando = _ataque_preso
+
+
 # ---------- mira direcional (#126) ----------
 
 
@@ -528,7 +565,9 @@ func _atualizar_mira(dt: float) -> void:
 		var s := Input.get_vector("mira_esquerda", "mira_direita", "mira_cima", "mira_baixo", float(Dados.json("mira").get("deadzone", 0.3)))
 		if s != Vector2.ZERO:
 			d = s.normalized()
-		elif Config.v("mira_mouse") and is_inside_tree() and get_viewport() != null:
+		elif _ataque_preso and not _ataque_mouse and _mov != Vector2.ZERO:
+			d = _mov.normalized()  # gatilho sem analógico direito: golpeia pra onde está andando
+		elif (Config.v("mira_mouse") or _ataque_mouse) and is_inside_tree() and get_viewport() != null:
 			var mp := get_viewport().get_mouse_position()
 			if _mouse_ult.x < -900.0:
 				_mouse_ult = mp
@@ -538,14 +577,14 @@ func _atualizar_mira(dt: float) -> void:
 			else:
 				_mouse_parado += dt
 			var tempo := float(Dados.json("mira").get("mouse_tempo", 2.0))
-			if _mouse_parado < tempo or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			if _mouse_parado < tempo or _ataque_mouse or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 				var para := get_global_mouse_position() - centro()
 				if para.length() > 10.0:
 					d = para.normalized()
 	mira_dir = d
 
 
-## Robô: mira no meio do bando perto (o assistente de mira gruda no vírus mais alinhado), como um jogador mirando onde tem mais.
+## Robô: segura o clique mirando no vírus mais perto.
 func _bot_mira() -> Vector2:
 	if arena == null or arena.get("inimigos") == null or arena.inimigos == null:
 		return Vector2.ZERO
@@ -561,13 +600,10 @@ func _bot_mira() -> Vector2:
 				melhor = dd
 				alvo = r.pos - c
 		return alvo.normalized() if alvo != Vector2.ZERO else Vector2.ZERO
-	var perto: Array = arena.inimigos.no_circulo(c, 240.0)
-	if perto.is_empty():
+	var alvo = arena.inimigos.mais_perto(c, 300.0)
+	if alvo == null:
 		return Vector2.ZERO
-	var soma := Vector2.ZERO
-	for v in perto:
-		soma += v.pos
-	var para: Vector2 = soma / float(perto.size()) - c
+	var para: Vector2 = alvo.pos - c
 	return para.normalized() if para.length() > 4.0 else Vector2.ZERO
 
 

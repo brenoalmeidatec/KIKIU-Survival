@@ -1,6 +1,9 @@
 extends Node2D
 const Perf := preload("res://scripts/hordas/perf.gd")
-## As armas do jogador. Todas atiram sozinhas. O jeito de cada uma vem do "tipo" no armas.json:
+## As armas do jogador. O jeito de cada uma vem do "tipo" no armas.json. Quando atiram vem do campo `disparo` (#161):
+## "clique" = só com o jogador atacando (clique esquerdo do mouse ou gatilho direito; o robô segura sempre), no ritmo da recarga;
+## "auto" = sozinha. A arma inicial do herói e a da forma transformada são "clique"; as das cartas, "auto".
+## Tipos:
 ##   projetil  atira no vírus mais perto
 ##   chicote   golpe reto na frente (e atrás, com mais quantidade)
 ##   orbita    coisas girando em volta por um tempo
@@ -79,6 +82,14 @@ func ativas() -> Array:
 	return forma_lista if not forma_lista.is_empty() else lista
 
 
+## "clique" ou "auto" (#161): o campo `disparo` da arma em armas.json; sem ele, a arma inicial é "clique" e as outras "auto".
+static func disparo_de(id: String, inicial := false) -> String:
+	var d := Dados.item(id)
+	if d.has("disparo"):
+		return str(d.disparo)
+	return "clique" if inicial else "auto"
+
+
 func tem(id: String) -> bool:
 	return achar(id) != null
 
@@ -90,8 +101,9 @@ func achar(id: String):
 	return null
 
 
-func adicionar(id: String) -> void:
-	lista.append({"id": id, "nivel": 1, "t": 0.3, "ativo": 0.0, "acertos": {}, "tique": 0.0, "comp": []})
+## `inicial` = a arma com que o herói começa (golpe principal): vale "clique", a não ser que o armas.json diga outro `disparo`.
+func adicionar(id: String, inicial := false) -> void:
+	lista.append({"id": id, "nivel": 1, "t": 0.3, "ativo": 0.0, "acertos": {}, "tique": 0.0, "comp": [], "disparo": disparo_de(id, inicial)})
 	preaquecer()
 	if arena:
 		arena.build_mudou()  # etiquetas da arma nova: o conjunto liga na hora (#63)
@@ -203,8 +215,13 @@ func atualizar(dt: float) -> void:
 func atualizar_i(dt: float) -> void:
 	_t += dt
 	var jog: Node2D = dono
+	var por_clique: bool = dono != null and "atacando" in dono  # só o jogador tem botão de ataque; o rival do duelo atira sozinho
 	for a in ativas():
 		var d := Dados.item(a.id)
+		if por_clique and a.get("disparo", "auto") == "clique":
+			if not dono.atacando and _espera_clique(a, d, dt):
+				continue  # sem entrada de ataque: a arma só esfria e espera o clique
+			d = _def_clique(a.id, d)
 		var s := _s(a)
 		match str(d.get("tipo", "")):
 			"projetil":
@@ -217,7 +234,7 @@ func atualizar_i(dt: float) -> void:
 				if a.t <= 0:
 					a.t = maxf(0.15, s.recarga)
 					for i in s.quantidade:
-						_fila.append({"t": i * 0.12, "arma": a, "lado": jog.lado * (1 if i % 2 == 0 else -1)})
+						_fila.append({"t": i * 0.12, "arma": a, "lado": _lado_golpe(a) * (1 if i % 2 == 0 else -1)})
 			"orbita":
 				if a.ativo > 0:
 					a.ativo -= dt
@@ -274,6 +291,46 @@ func atualizar_i(dt: float) -> void:
 	queue_redraw()
 	_chao_pocas.queue_redraw()
 	_atras.queue_redraw()
+
+
+## ---------- disparo por clique (#161) ----------
+
+var _def_clique_cache: Dictionary = {}
+
+
+## Arma de clique mira onde o jogador aponta (o cursor), seja qual for o tipo: vira "direcional" (ver `mirar`).
+func _def_clique(id: String, d: Dictionary) -> Dictionary:
+	if not _def_clique_cache.has(id):
+		var c := d.duplicate()
+		c["mira"] = "direcional"
+		_def_clique_cache[id] = c
+	return _def_clique_cache[id]
+
+
+## Arma de clique sem o jogador atacando: só a recarga anda (nunca fura o cooldown) e devolve true (pula o quadro).
+## Devolve false quando a arma ainda tem coisa pra fazer sozinha: a órbita já girando termina o giro.
+func _espera_clique(a: Dictionary, d: Dictionary, dt: float) -> bool:
+	if str(d.get("tipo", "")) == "orbita" and a.ativo > 0.0:
+		return false
+	a.t = maxf(0.0, a.t - dt)
+	a.tique = maxf(0.0, float(a.get("tique", 0.0)) - dt)
+	return true
+
+
+## Para onde a arma de clique `a` golpeia: Vector2.ZERO se o jogador não está apontando (cai no mais perto, como antes) ou a arma é automática.
+func dir_clique(origem: Vector2, alcance: float, a: Dictionary) -> Vector2:
+	var m := entrada_mira()
+	if m == Vector2.ZERO or a.get("disparo", "auto") != "clique":
+		return Vector2.ZERO
+	return _resolver(origem, m, alcance).dir
+
+
+## Lado (1 ou -1) de um golpe horizontal (chicote): o do cursor se a arma é de clique e há mira; senão o lado em que o dono olha.
+func _lado_golpe(a: Dictionary) -> float:
+	var m := entrada_mira()
+	if m != Vector2.ZERO and a.get("disparo", "auto") == "clique" and absf(m.x) > 0.05:
+		return signf(m.x)
+	return dono.lado
 
 
 ## ---------- mira direcional (#126) ----------
@@ -601,9 +658,12 @@ func _orbita(a: Dictionary, s: Dictionary) -> void:
 
 func _derramar(a: Dictionary, d: Dictionary, s: Dictionary) -> void:
 	var jog: Node2D = dono
+	var para := dir_clique(jog.centro(), 160.0, a)  # arma de clique (#161): a poça cai no rumo do cursor
 	for i in s.quantidade:
 		var alvo = campo.aleatorio_na_tela(jog.centro())
 		var p: Vector2 = alvo.pos if alvo else jog.centro() + Vector2.from_angle(randf() * TAU) * randf_range(40, 140)
+		if para != Vector2.ZERO:
+			p = jog.centro() + para.rotated(randf_range(-0.35, 0.35)) * randf_range(50.0, 130.0)
 		pocas.append(
 			{
 				"pos": p,

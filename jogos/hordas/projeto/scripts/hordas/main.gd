@@ -56,6 +56,7 @@ const TECLAS := {
 	"mira_direita": [],
 	"mira_cima": [],
 	"mira_baixo": [],  # mira direcional (#126): o analógico direito (eixos abaixo); o mouse é lido direto pelo jogador
+	"atacar": [],  # golpe principal (#161): botão esquerdo do mouse e gatilho direito do controle (adicionados em _teclas)
 }
 const CONTROLE := {
 	"cima": [JOY_BUTTON_DPAD_UP],
@@ -193,6 +194,13 @@ func _teclas() -> void:
 		m.axis = par[1]
 		m.axis_value = par[2]
 		InputMap.action_add_event(par[0], m)
+	var clique := InputEventMouseButton.new()
+	clique.button_index = MOUSE_BUTTON_LEFT
+	InputMap.action_add_event("atacar", clique)
+	var gatilho := InputEventJoypadMotion.new()
+	gatilho.axis = JOY_AXIS_TRIGGER_RIGHT
+	gatilho.axis_value = 1.0
+	InputMap.action_add_event("atacar", gatilho)
 	Config.aplicar_teclas()  # teclas/botões que o jogador trocou em Opções > Controles (#126) valem por cima dos padrões
 
 
@@ -1326,7 +1334,7 @@ func _desenhar() -> void:
 				_txt(Vector2(0, 302), "Multiplayer em teste: pode ter bugs. O foco agora é o modo sozinho.", 8, Color(0.85, 0.6, 1.0))
 			if _msg != "":
 				_txt(Vector2(0, 302), _msg, 8, Color(1, 0.6, 0.5))
-			_txt(Vector2(0, 340), "WASD/setas = andar, Espaço = esquiva, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
+			_txt(Vector2(0, 340), "WASD/setas = andar, Clique = atacar, Espaço = esquiva, Enter = confirmar, F11 = tela cheia", 8, Color(0.5, 0.5, 0.6))
 			_txt(Vector2(0, 354), _versao, 8, Color(0.72, 0.74, 0.86, 0.85), W - 4, HORIZONTAL_ALIGNMENT_RIGHT)
 		"opcoes":
 			_fundo()  # a tela de Opções desenha por cima (tela_opcoes.gd)

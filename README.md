@@ -19,7 +19,7 @@
 
 ## 🎮 O jogo
 
-O K.I.K.I.U é um jogo de hordas em **pixel art com clima de fantasia sombria**. Você atravessa um mundo tomado pelo caos enquanto ondas de monstros fecham o cerco. As armas atacam sozinhas; o seu trabalho é se mexer, esquivar, escolher as melhorias certas a cada nível e montar uma combinação que aguente o tranco.
+O K.I.K.I.U é um jogo de hordas em **pixel art com clima de fantasia sombria**. Você atravessa um mundo tomado pelo caos enquanto ondas de monstros fecham o cerco. O golpe principal sai no clique do mouse (ou no gatilho do controle), na direção do cursor; as armas das cartas atacam sozinhas. O seu trabalho é se mexer, mirar, esquivar, escolher as melhorias certas a cada nível e montar uma combinação que aguente o tranco.
 
 Tudo é feito para jogar **com os amigos**. Até seis pessoas atravessam o mundo juntas, levantam quem caiu e dividem a mesma horda. Quando o último chefe cai, a amizade acaba: começa o **duelo final**, todos contra todos numa arena que vai fechando, e só um sai de pé.
 
@@ -56,7 +56,7 @@ Herói criado tem uma regra só: **se ele morrer, morre de vez**. Ele sai com it
 
 ## ✨ O que tem dentro
 
-- 🗡️ **Dezenas de armas** que atacam sozinhas, de lâminas e machados que voltam até raios, corvos e runas, e que **evoluem** quando encontram o item certo.
+- 🗡️ **Dezenas de armas** (o golpe principal no clique, as das cartas atacando sozinhas), de lâminas e machados que voltam até raios, corvos e runas, e que **evoluem** quando encontram o item certo.
 - 🔥 **Elementos que se misturam:** fogo, gelo, raio e veneno, com reações quando dois se encontram.
 - 🌀 **Rolamento de esquiva** com fôlego: dá para rolar através do perigo, mas não o tempo todo. Rolar bem em cima do inimigo é uma **esquiva perfeita**: ele fica lento e o seu próximo golpe sai mais forte.
 - 🎯 **Mira de verdade:** lança, pistolas, katana, raio e tiros vão para onde você aponta (analógico direito ou mouse), com uma ajudinha da mira; sem apontar, miram sozinhos no mais perto.
