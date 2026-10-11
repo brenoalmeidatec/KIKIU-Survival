@@ -189,7 +189,7 @@ func _ready() -> void:
 		inteira = inteira and w.cam.position == w.cam.position.round() and absf(w.cam.deslocamento.x) <= 3.0
 	ok(w.combate.criticos > cr0, "o crítico saiu")
 	ok(tremeu and inteira, "crítico: a câmera treme, sempre em pixel inteiro")
-	ok(w.combate.fx.n_tam.has(16), "o número do crítico é maior")
+	ok(w.combate.fx.n_tam.has(24), "o número do crítico é maior (24 px; o normal tem 16)")
 	w.combate.cfg.golpe.critico.chance = 0.1
 	# a estocada tem peso: hit-stop de 70 ms e tremor
 	zerar()
@@ -267,18 +267,19 @@ func _ready() -> void:
 	tecla.pressed = true
 	w._input(tecla)  # escolher a 2ª carta com a tecla 2
 	var snap_depois := [h.m_dano, h.m_vel_ataque, h.m_area, h.m_vel_mov, h.vida_max, h.m_ima, h.m_critico]
-	ok(snap_depois != snap_antes, "a carta %s mudou um número do herói" % carta.id)
+	ok(snap_depois != snap_antes or carta.cat != "stat", "a carta %s mudou o herói" % carta.id)
 	ok(not w.combate.pausado and w.combate.progresso.melhorias.get(carta.id, 0) == 1, "a escolha fecha e o jogo segue")
 	passos(10)
 	ok(w.tempo_partida > tp7, "o mundo volta a andar depois da escolha")
-	# todas as 7 melhorias aplicam um efeito
+	# todas as 7 melhorias de stat aplicam um efeito
 	var base_h := [h.m_dano, h.m_vel_ataque, h.m_area, h.m_vel_mov, h.vida_max, h.m_ima, h.m_critico]
-	for cc in c.melhorias:
+	var stats: Array = w.combate.cartas.cfg.stats
+	for cc in stats:
 		var antes_v := [h.m_dano, h.m_vel_ataque, h.m_area, h.m_vel_mov, h.vida_max, h.m_ima, h.m_critico]
 		w.combate.progresso.aplicar(cc)
 		var depois_v := [h.m_dano, h.m_vel_ataque, h.m_area, h.m_vel_mov, h.vida_max, h.m_ima, h.m_critico]
 		ok(antes_v != depois_v, "melhoria %s tem efeito" % cc.id)
-	ok(c.melhorias.size() == 7, "7 melhorias nos dados")
+	ok(stats.size() == 7, "7 melhorias de stat nos dados")
 	ok(base_h != [h.m_dano, h.m_vel_ataque, h.m_area, h.m_vel_mov, h.vida_max, h.m_ima, h.m_critico], "melhorias acumulam")
 
 	# 8. o contato tira vida, com recarga e invencibilidade; o pisca; a esquiva dá i-frames

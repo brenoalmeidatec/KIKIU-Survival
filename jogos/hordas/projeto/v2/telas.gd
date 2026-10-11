@@ -1,11 +1,10 @@
 extends RefCounted
 ## Telas simples do combate da v2 (o HUD bonito é de outro módulo): a escolha de cartas ao subir de nível (3 cartas com cor e brilho pela
 ## RARIDADE, mais rerrolar e banir), a roleta do baú, a tela de resultado (VOCÊ CAIU ou VITÓRIA, com as almas ganhas), os anúncios grandes
-## ("ONDA FORTE!", "ELITE!", "EVOLUÇÃO: Anel de Brasas", "MASSACRE x50"), a barra de vida do chefe no topo e um texto de DEPURAÇÃO com vida,
-## nível, XP, combo e abates (DESLIGADO por padrão agora que o HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro
+## e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (DESLIGADO por padrão agora que o HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro
 ## do SubViewport 960x540; o mouse não chega nos Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_na_tela()) e a
 ## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar) e B (banir a carta marcada).
-## Quando o HUD passar a desenhar os anúncios e a barra do chefe, ele liga `mundo.anuncios_no_hud` e as telas deste arquivo ficam quietas.
+## Os anúncios grandes e a barra do chefe são do HUD (v2/hud_anuncios.gd e hud.gd), que escutam os sinais do mundo.
 
 const LARG := 960
 const ALT := 540
@@ -19,15 +18,12 @@ var combate
 var mundo
 var camada: CanvasLayer
 var depuracao := true
-var aviso_t := 0.0  # s que faltam do anúncio na tela (testes)
 var sel := 0
 var mostrada_t := 0.0  # s desde que a tela de resultado abriu (ignora clique logo no começo)
 var resultado_aberto := false
 var escolha_aberta := false
 var bau_aberto := false
 var bau_pronto := false  # a roleta terminou de revelar tudo
-var anuncios_mostrados := 0  # quantos anúncios já apareceram (testes)
-var ultimo_anuncio := ""  # o texto do último anúncio (testes)
 
 var _fundo: ColorRect
 var _escolha: Control
@@ -45,23 +41,11 @@ var _res_titulo: Label
 var _res_linhas: Label
 var _res_valores: Label
 var _res_dica: Label
-var _anuncio: Label
-var _anuncio_sub: Label
-var _fila_anuncio: Array = []
-var _an_t := 0.0
-var _an_dur := 0.0
 var _dep: Label
 var _dep_t := 0.0
 var _fonte: Font
 var _fonte_t: Font
 var _t_ui := 0.0
-var _chefe_box: Control
-var _chefe_nome: Label
-var _chefe_fundo: ColorRect
-var _chefe_atraso: ColorRect
-var _chefe_vida: ColorRect
-var _chefe_frac := 1.0
-var _chefe_atr := 1.0
 var _bau: Control
 var _bau_titulo: Label
 var _bau_slots: Array[Panel] = []
@@ -91,18 +75,6 @@ func montar(c, sv: Node) -> void:
 	_montar_escolha()
 	_montar_bau()
 	_montar_resultado()
-	_montar_chefe()
-	_anuncio = _rotulo("", 48, true, Color(1.0, 0.82, 0.35), HORIZONTAL_ALIGNMENT_CENTER)
-	_anuncio.position = Vector2(0, 76)
-	_anuncio.size = Vector2(LARG, 60)
-	_anuncio.pivot_offset = Vector2(LARG * 0.5, 30)
-	_anuncio.visible = false
-	camada.add_child(_anuncio)
-	_anuncio_sub = _rotulo("", 16, false, Color(1.0, 0.95, 0.85), HORIZONTAL_ALIGNMENT_CENTER)
-	_anuncio_sub.position = Vector2(0, 138)
-	_anuncio_sub.size = Vector2(LARG, 24)
-	_anuncio_sub.visible = false
-	camada.add_child(_anuncio_sub)
 	_dep = _rotulo("", 8, false, Color(0.9, 1.0, 0.95), HORIZONTAL_ALIGNMENT_LEFT)
 	_dep.position = Vector2(6, 30)
 	_dep.size = Vector2(500, 40)
@@ -287,41 +259,6 @@ func _montar_resultado() -> void:
 	_res.add_child(_res_dica)
 
 
-func _montar_chefe() -> void:
-	_chefe_box = Control.new()
-	_chefe_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_chefe_box.visible = false
-	camada.add_child(_chefe_box)
-	_chefe_nome = _rotulo("", 16, true, Color(1.0, 0.8, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
-	_chefe_nome.position = Vector2(0, 30)
-	_chefe_nome.size = Vector2(LARG, 22)
-	_chefe_box.add_child(_chefe_nome)
-	var borda := ColorRect.new()
-	borda.color = Color(0.0, 0.0, 0.0, 0.9)
-	borda.position = Vector2(270, 54)
-	borda.size = Vector2(420, 14)
-	borda.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_chefe_box.add_child(borda)
-	_chefe_fundo = ColorRect.new()
-	_chefe_fundo.color = Color(0.2, 0.05, 0.05, 0.95)
-	_chefe_fundo.position = Vector2(272, 56)
-	_chefe_fundo.size = Vector2(416, 10)
-	_chefe_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_chefe_box.add_child(_chefe_fundo)
-	_chefe_atraso = ColorRect.new()
-	_chefe_atraso.color = Color(1.0, 0.95, 0.85, 0.9)
-	_chefe_atraso.position = Vector2(272, 56)
-	_chefe_atraso.size = Vector2(416, 10)
-	_chefe_atraso.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_chefe_box.add_child(_chefe_atraso)
-	_chefe_vida = ColorRect.new()
-	_chefe_vida.color = Color(0.9, 0.15, 0.2)
-	_chefe_vida.position = Vector2(272, 56)
-	_chefe_vida.size = Vector2(416, 10)
-	_chefe_vida.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_chefe_box.add_child(_chefe_vida)
-
-
 # ------------------------------------------------------------------ mostrar
 
 
@@ -421,41 +358,6 @@ func esconder() -> void:
 	_res.visible = false
 	_fundo.visible = false
 	_fundo.color = Color(0.02, 0.02, 0.05, 0.62)
-
-
-## Anúncio grande no alto da tela (um atrás do outro). `sub` = linha menor embaixo.
-func anunciar(texto: String, cor: Color, sub := "", dur := 2.0) -> void:
-	if texto == "":
-		return
-	anuncios_mostrados += 1
-	ultimo_anuncio = texto
-	if mundo.anuncios_no_hud:
-		return
-	if _fila_anuncio.size() >= 3:
-		_fila_anuncio.pop_front()
-	_fila_anuncio.append({"texto": texto, "cor": cor, "sub": sub, "dur": dur})
-	if aviso_t <= 0.0:
-		_proximo_anuncio()
-
-
-## Compatível com o que já existia: aviso simples.
-func aviso(texto: String, dur: float) -> void:
-	anunciar(texto, Color(1.0, 0.82, 0.35), "", dur)
-
-
-func _proximo_anuncio() -> void:
-	if _fila_anuncio.is_empty():
-		return
-	var a: Dictionary = _fila_anuncio.pop_front()
-	_anuncio.text = str(a.texto)
-	_anuncio.add_theme_color_override("font_color", a.cor)
-	_anuncio_sub.text = str(a.sub)
-	_anuncio_sub.add_theme_color_override("font_color", Color(a.cor).lerp(Color.WHITE, 0.55))
-	_anuncio.visible = true
-	_anuncio_sub.visible = str(a.sub) != ""
-	aviso_t = float(a.dur)
-	_an_dur = float(a.dur)
-	_an_t = 0.0
 
 
 func ligar_depuracao(v: bool) -> void:
@@ -593,19 +495,6 @@ func _pular_bau() -> void:
 
 func atualizar(dt: float) -> void:
 	_t_ui += dt
-	if aviso_t > 0.0:
-		aviso_t -= dt
-		_an_t += dt
-		var k_in := clampf(_an_t / 0.18, 0.0, 1.0)
-		var e := 1.0 + 0.45 * (1.0 - k_in) * (1.0 - k_in)
-		_anuncio.scale = Vector2(e, e)
-		var a := clampf(aviso_t / 0.5, 0.0, 1.0) * clampf(_an_t / 0.08, 0.0, 1.0)
-		_anuncio.modulate.a = a
-		_anuncio_sub.modulate.a = a
-		if aviso_t <= 0.0:
-			_anuncio.visible = false
-			_anuncio_sub.visible = false
-			_proximo_anuncio()
 	if resultado_aberto:
 		mostrada_t += dt
 		_res_dica.visible = int(mostrada_t * 2.0) % 2 == 0 or mostrada_t < 0.6
@@ -613,7 +502,6 @@ func atualizar(dt: float) -> void:
 		_pulsar_cartas()
 	if bau_aberto:
 		_atualizar_bau(dt)
-	_atualizar_chefe(dt)
 	if depuracao:
 		_dep_t -= dt
 		if _dep_t <= 0.0:
@@ -645,24 +533,6 @@ func _pulsar_cartas() -> void:
 		if rar > 0:
 			var base := 4 + 3 * rar
 			_estilos[i].shadow_size = base + roundi((2.0 + 2.0 * rar) * (0.5 + 0.5 * sin(_t_ui * (3.0 + rar) + float(i))))
-
-
-func _atualizar_chefe(dt: float) -> void:
-	var ch = combate.chefes
-	var mostrar: bool = ch != null and ch.vivo and ch.atual != null and not mundo.anuncios_no_hud and combate.jogo != "vitoria"
-	_chefe_box.visible = mostrar
-	if not mostrar:
-		_chefe_atr = 1.0
-		return
-	var m = ch.atual
-	var frac := clampf(m.vida / maxf(m.vida_max, 1.0), 0.0, 1.0)
-	_chefe_nome.text = str(ch.marca.nome)
-	var cor := Color(ch.marca.cor[0], ch.marca.cor[1], ch.marca.cor[2])
-	_chefe_nome.add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.45))
-	_chefe_vida.color = cor.lerp(Color(0.9, 0.1, 0.15), 0.5)
-	_chefe_atr = maxf(frac, _chefe_atr - dt * 0.35)
-	_chefe_vida.size.x = 416.0 * frac
-	_chefe_atraso.size.x = 416.0 * _chefe_atr
 
 
 ## Entrada das telas. Devolve true se o evento foi usado (escolha de carta, baú, jogar de novo, F1).

@@ -14,7 +14,7 @@ extends Node
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F4 mostra a colisão, Esc sai.
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
-## anuncios_no_hud e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
+## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
 ## no herói vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado.
 
 const Apresentacao := preload("res://v2/apresentacao.gd")
@@ -72,7 +72,6 @@ var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
 var maior_combo := 0
 var xp_coletado := 0.0  # soma do XP dos orbes pegos (com o bônus do combo)
 var resultado: Dictionary = {}  # o último resultado de partida (vazio enquanto joga)
-var anuncios_no_hud := false  # o HUD liga isto quando passa a desenhar os anúncios e a barra do chefe: telas.gd para de desenhar os dela
 var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredondado (a meta-progressão lê isto)
 	get:
 		return roundi(xp_coletado / 10.0)

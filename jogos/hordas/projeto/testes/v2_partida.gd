@@ -1,0 +1,471 @@
+extends Node
+# Teste automático da profundidade da partida da v2 (leva 3): raridade que sobe com o nível, cartas (stat, golpe, modificador), rerrolar e
+# banir, os 5 golpes secundários acertando, os modificadores da katana, as evoluções, a elite que solta baú e o baú que dá melhorias, o mini-chefe
+# aos 3 min e o chefe aos 10 (simulados), os ataques anunciados, a vitória e o sinal partida_terminou com os campos certos.
+# Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_partida.tscn  (imprime "v2_partida falhas=0")
+const Mundo := preload("res://v2/mundo.tscn")
+const Heroi := preload("res://v2/heroi.gd")
+const PASSO := 1.0 / 60.0
+var falhas := 0
+var w
+var sinais := {}
+
+
+func ok(cond: bool, msg: String) -> void:
+	if not cond:
+		falhas += 1
+		print("FALHOU: ", msg)
+
+
+func passos(n: int) -> void:
+	for i in n:
+		w.avancar(PASSO)
+
+
+func ate(cond: Callable, max_passos: int) -> int:
+	for i in max_passos:
+		if cond.call():
+			return i
+		w.avancar(PASSO)
+	return -1 if not cond.call() else max_passos
+
+
+func zerar() -> void:
+	w.reiniciar()
+	w.combate.limpar_partida()
+	w.combate.diretor.ligado = false
+	w.heroi.imortal = true
+	w.heroi.entrada_forcada = Vector2.ZERO
+	w.heroi.ataque_forcado = null
+	w.heroi.correr_forcado = null
+	w.heroi.fonte = Heroi.Fonte.MOUSE
+	w.mouse_forcado = w.heroi.centro() + Vector2(100, 0)
+	w.combate.cartas.rng.seed = 12345
+	sinais.clear()
+	passos(3)
+
+
+func monstro_a(dx: float, dy := 0.0, nome := "inimigo_cao_ossos", vida := 100000.0):
+	var m = w.nascer_monstro(nome, w.heroi.pos + Vector2(dx, dy))
+	m.vida_max = vida
+	m.vida = vida
+	m.atordoa_t = 0.0
+	return m
+
+
+## Pega a carta `id` na raridade `rar` (0 a 3) e aplica.
+func pegar(id: String, rar := 0) -> Dictionary:
+	var cs = w.combate.cartas
+	var c: Dictionary = cs.montar_carta(cs.definicao(id), rar)
+	cs.aplicar(c)
+	return c
+
+
+func conta(nome: String) -> int:
+	return int(sinais.get(nome, 0))
+
+
+func _ready() -> void:
+	w = Mundo.instantiate()
+	w.modo_teste = true
+	add_child(w)
+	w.set_process(false)
+	w.combate.audio.mudo = true
+	for nome in ["onda_forte", "elite_apareceu", "chefe_apareceu", "chefe_vida", "evolucao", "anuncio", "partida_terminou"]:
+		ok(w.has_signal(nome), "sinal %s existe" % nome)
+	w.evolucao.connect(func(n): sinais["evolucao"] = conta("evolucao") + 1; sinais["evolucao_nome"] = n)
+	w.elite_apareceu.connect(func(n): sinais["elite"] = conta("elite") + 1; sinais["elite_nome"] = n)
+	w.chefe_apareceu.connect(func(n, v): sinais["chefe"] = conta("chefe") + 1; sinais["chefe_nome"] = n; sinais["chefe_vida_max"] = v)
+	w.chefe_vida.connect(func(v): sinais["chefe_vida"] = conta("chefe_vida") + 1; sinais["chefe_vida_ultima"] = v)
+	w.anuncio.connect(func(t, _c): sinais["anuncio"] = conta("anuncio") + 1; sinais["anuncio_texto"] = t)
+	w.onda_forte.connect(func(n): sinais["onda"] = conta("onda") + 1; sinais["onda_n"] = n)
+	w.partida_terminou.connect(func(r): sinais["fim"] = conta("fim") + 1; sinais["fim_res"] = r)
+	var cs = w.combate.cartas
+	var cfg: Dictionary = cs.cfg
+
+	# 0. dados
+	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
+	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 5 and cfg.modificadores.size() == 4, "4 raridades, 5 golpes secundários e 4 modificadores")
+	ok(cfg.evolucoes.size() >= 3, "pelo menos 3 evoluções nos dados")
+	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
+
+	# 1. a raridade sobe com o nível
+	zerar()
+	var alta1: float = cs.chance_raridade(2, 1) + cs.chance_raridade(3, 1)
+	var alta20: float = cs.chance_raridade(2, 20) + cs.chance_raridade(3, 20)
+	ok(alta20 > alta1 * 4.0, "épico e lendário ficam bem mais prováveis no nível 20 (%.3f contra %.3f)" % [alta20, alta1])
+	ok(cs.chance_raridade(0, 20) < cs.chance_raridade(0, 1), "a comum cai com o nível")
+	var soma1 := 0
+	var soma20 := 0
+	for i in 3000:
+		soma1 += cs.sortear_raridade(1)
+		soma20 += cs.sortear_raridade(20)
+	ok(soma20 > soma1 * 2, "sorteando, a raridade média sobe do nível 1 ao 20 (%d contra %d)" % [soma1, soma20])
+	var bau_soma := 0
+	for i in 3000:
+		bau_soma += cs.sortear_raridade(1, float(cfg.bau.bonus_raridade))
+	ok(bau_soma > soma1, "o baú favorece as raridades altas")
+	var total := 0.0
+	for i in 4:
+		total += cs.chance_raridade(i, 7)
+	ok(absf(total - 1.0) < 0.001, "as chances somam 1")
+	# a raridade muda o número da carta e a cor
+	var c0: Dictionary = cs.montar_carta(cs.definicao("dano"), 0)
+	var c3: Dictionary = cs.montar_carta(cs.definicao("dano"), 3)
+	ok(c3.valor > c0.valor * 2.5 and c3.desc != c0.desc, "o lendário dá bem mais que o comum (%s contra %s)" % [c3.desc, c0.desc])
+	ok(c0.cor != c3.cor and c0.rar_nome == "Comum" and c3.rar_nome == "Lendário", "cada raridade tem a sua cor e nome")
+	# sorteio: 3 cartas diferentes
+	var tres: Array = cs.sortear(3, 5)
+	var ids := {}
+	for c in tres:
+		ids[c.id] = true
+	ok(tres.size() == 3 and ids.size() == 3, "o sorteio traz 3 cartas diferentes")
+	# o começo da build: sem golpe nenhum, o nível 1 traz pelo menos um golpe secundário
+	var sem_golpe := 0
+	for i in 60:
+		var t3: Array = cs.sortear(3, 1)
+		var tem := false
+		for c in t3:
+			if c.cat == "golpe":
+				tem = true
+		if not tem:
+			sem_golpe += 1
+	ok(sem_golpe == 0, "no começo a escolha sempre traz um golpe secundário")
+
+	# 2. escolha de nível: rerrolar (1x por tela) e banir
+	zerar()
+	var h = w.heroi
+	h.xp = h.xp_proximo - 0.1
+	w.combate.progresso.ganhar_xp(0.2)
+	ate(func(): return w.combate.jogo == "escolha", 120)
+	ok(w.combate.jogo == "escolha" and w.combate.progresso.cartas.size() == 3, "a escolha abre com 3 cartas")
+	var antes_ids: Array = []
+	for c in w.combate.progresso.cartas:
+		antes_ids.append(c.id)
+	ok(w.combate.progresso.rerrolar(), "rerrolar funciona uma vez")
+	var depois_ids: Array = []
+	for c in w.combate.progresso.cartas:
+		depois_ids.append(c.id)
+	var repetiu := false
+	for id in depois_ids:
+		if antes_ids.has(id):
+			repetiu = true
+	ok(not repetiu, "as cartas rerroladas são novas")
+	ok(not w.combate.progresso.rerrolar(), "só 1 rerrolar por tela")
+	ok(cs.rerrolar_usados == 1, "o rerrolar gasta um uso da partida")
+	var alvo_ban: String = w.combate.progresso.cartas[1].id
+	ok(w.combate.progresso.banir(1), "banir funciona")
+	ok(w.combate.progresso.cartas.size() == 3 and not _tem_id(w.combate.progresso.cartas, alvo_ban), "a carta banida some e outra toma o lugar")
+	var voltou := false
+	for i in 80:
+		if _tem_id(cs.sortear(3, 5), alvo_ban):
+			voltou = true
+	ok(not voltou, "a carta banida nunca mais sai")
+	ok(w.combate.progresso.banir(0) and not w.combate.progresso.banir(0), "os banimentos acabam (%d no total)" % int(cfg.escolha.banir_total))
+	w.combate.progresso.escolher(0)
+	ok(not w.combate.pausado and w.combate.jogo == "jogando", "escolher fecha a tela")
+
+	# 3. os 5 golpes secundários acertam
+	var casos := {
+		"laminas": ["orbita", 36.0],
+		"aura_fogo": ["aura", 30.0],
+		"corvos": ["corvos", 70.0],
+		"raio": ["raio", 90.0],
+		"runa": ["runa", 70.0],
+	}
+	for id in casos:
+		zerar()
+		var tipo: String = casos[id][0]
+		var m = monstro_a(float(casos[id][1]), 0.0)
+		m.cacador = false
+		m.raio_vaga = 0.0
+		pegar(id, 0)
+		ok(w.combate.armas.tem(id), "o golpe %s entra pela carta" % id)
+		var v0: float = m.vida
+		ate(func(): return int(w.combate.armas.acertos.get(tipo, 0)) > 0, 900)
+		ok(int(w.combate.armas.acertos.get(tipo, 0)) > 0 and m.vida < v0, "o golpe %s (%s) acerta o monstro (vida %d de %d)" % [id, tipo, roundi(m.vida), roundi(v0)])
+	# a aura queima, as lâminas passam, o raio salta
+	zerar()
+	var ma = monstro_a(30.0, 0.0)
+	pegar("aura_fogo", 0)
+	ate(func(): return ma.queima_t > 0.0, 200)
+	ok(ma.queima_t > 0.0, "a aura de fogo deixa o monstro queimando")
+	var vq: float = ma.vida
+	passos(60)
+	ok(ma.vida < vq, "o fogo continua tirando vida")
+	zerar()
+	var r1 = monstro_a(70.0, 0.0)
+	var r2 = monstro_a(110.0, 10.0)
+	var r3 = monstro_a(140.0, -10.0)
+	for rr in [r1, r2, r3]:
+		rr.cacador = false
+		rr.raio_vaga = 0.0
+	pegar("raio", 0)
+	ate(func(): return r3.vida < r3.vida_max, 300)
+	ok(r1.vida < r1.vida_max and r2.vida < r2.vida_max, "o raio em cadeia pula para os vizinhos")
+	# nível e raridade do golpe
+	zerar()
+	var cg: Dictionary = cs.montar_carta(cs.definicao("laminas"), 3)
+	cs.aplicar(cg)
+	ok(cs.nivel_de("laminas") == 2, "a carta lendária de golpe sobe 2 níveis")
+	for i in 4:
+		cs.aplicar(cs.montar_carta(cs.definicao("laminas"), 0))
+	ok(cs.nivel_de("laminas") == 5 and int(w.combate.armas.ativas["laminas"].st.quantidade) >= 4, "o golpe chega ao nível 5 com mais lâminas")
+	ok(not _tem_id(cs.sortear(3, 5), "laminas") or cs.nivel_de("laminas") < 5, "no nível máximo a carta deixa de sair")
+
+	# 4. modificadores da katana
+	zerar()
+	var mo = monstro_a(110.0, 0.0)
+	mo.cacador = false
+	mo.raio_vaga = 0.0
+	pegar("onda", 0)
+	h = w.heroi
+	h.ataque_forcado = true
+	ate(func(): return int(w.combate.armas.acertos.get("onda", 0)) > 0, 300)
+	ok(int(w.combate.armas.acertos.get("onda", 0)) > 0 and mo.vida < mo.vida_max, "o corte solta uma onda que acerta de longe")
+	h.ataque_forcado = null
+	zerar()
+	var ml = monstro_a(120.0, 0.0)
+	ml.cacador = false
+	ml.raio_vaga = 0.0
+	pegar("fura", 0)
+	w.combate.armas.lancar_lanca(w.heroi.pos + w.heroi.ORIGEM_GOLPE, Vector2.RIGHT, 40.0)
+	passos(40)
+	ok(int(w.combate.armas.acertos.get("lanca", 0)) > 0 and ml.vida < ml.vida_max, "a lança da estocada atravessa e acerta")
+	zerar()
+	var m1 = monstro_a(30.0, 0.0)
+	var m2 = monstro_a(40.0, 6.0)
+	m1.cacador = false
+	m2.cacador = false
+	m1.raio_vaga = 0.0
+	m2.raio_vaga = 0.0
+	pegar("explode", 0)
+	w.heroi.m_critico = 5.0
+	w.mouse_forcado = w.heroi.centro() + Vector2(100, 0)
+	w.heroi.ataque_forcado = true
+	ate(func(): return int(w.combate.armas.acertos.get("explode", 0)) > 0, 300)
+	ok(int(w.combate.armas.acertos.get("explode", 0)) > 0, "o crítico explode e fere quem está em volta")
+	zerar()
+	var mf = monstro_a(30.0, 0.0, "inimigo_cao_ossos", 5.0)
+	mf.cacador = false
+	pegar("folego", 0)
+	w.heroi.folego = 1.0
+	w.combate.ferir(mf, 100.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	ok(w.heroi.folego > 1.05, "matar devolve fôlego (%.2f)" % w.heroi.folego)
+
+	# 5. evoluções
+	zerar()
+	pegar("aura_fogo", 0)
+	pegar("aura_fogo", 0)
+	pegar("laminas", 0)
+	pegar("laminas", 0)
+	ok(cs.evoluidas.is_empty(), "com as peças no nível 2 ainda não evolui")
+	pegar("aura_fogo", 0)
+	ok(cs.evoluidas.is_empty(), "com uma peça só ainda não evolui")
+	pegar("laminas", 0)
+	ok(cs.evoluidas.has("anel_de_brasas"), "aura de fogo 3 + lâminas 3 viram o Anel de Brasas")
+	ok(w.combate.armas.tem("anel_de_brasas") and not w.combate.armas.tem("laminas") and not w.combate.armas.tem("aura_fogo"), "as duas peças somem e fica a evoluída")
+	ok(conta("evolucao") == 1 and str(sinais.get("evolucao_nome", "")) == "Anel de Brasas", "sinal evolucao(nome) com o nome certo")
+	var me = monstro_a(40.0, 0.0)
+	me.cacador = false
+	ate(func(): return me.vida < me.vida_max, 200)
+	ok(me.vida < me.vida_max and me.queima_t > 0.0, "o Anel de Brasas fere e queima")
+	ok(not _tem_id(cs.sortear(3, 8), "laminas") and not _tem_id(cs.sortear(3, 8), "aura_fogo"), "as peças consumidas não saem mais")
+	zerar()
+	for i in 3:
+		pegar("corvos", 0)
+		pegar("raio", 0)
+	ok(cs.evoluidas.has("revoada_de_trovoes") and w.combate.armas.tem("revoada_de_trovoes"), "corvos 3 + raio 3 viram a Revoada de Trovões")
+	zerar()
+	for i in 3:
+		pegar("runa", 0)
+	for i in 2:
+		pegar("explode", 0)
+	ok(cs.evoluidas.has("circulo_runico") and w.combate.armas.tem("circulo_runico") and cs.ativa("explode"), "runa 3 + crítico explosivo 2 viram o Círculo Rúnico (o modificador fica)")
+	zerar()
+	for i in 2:
+		pegar("onda", 0)
+		pegar("fura", 0)
+	ok(cs.evoluidas.has("ventania") and not w.combate.armas.ventania.is_empty(), "onda 2 + estocada perfurante 2 viram a Ventania Cortante")
+	zerar()
+	ok(cs.evoluidas.is_empty() and w.combate.armas.ativas.is_empty() and w.combate.armas.ventania.is_empty(), "jogar de novo zera a build")
+
+	# 6. elite com contorno solta baú; baú dá de 1 a 3 melhorias de graça
+	zerar()
+	h = w.heroi
+	var el = w.combate.elites.nascer("inimigo_cao_ossos", "blindado", h.pos + Vector2(120, 0))
+	ok(el != null and el.elite and el.escala > 1.3 and el.vida_max > 100.0, "a elite nasce maior e com mais vida (%.1fx, %d de vida)" % [el.escala, roundi(el.vida_max)])
+	ok(el.contorno != null and el.contorno.visible, "a elite tem o contorno colorido")
+	ok(conta("elite") == 1 and str(sinais.get("elite_nome", "")).contains("Cão de Ossos Blindado"), "sinal elite_apareceu(nome): %s" % str(sinais.get("elite_nome", "")))
+	passos(5)
+	w.combate.ferir(el, 9999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	ok(not el.vivo and not el.contorno.visible, "a elite morre e o contorno some")
+	ok(w.combate.baus.ativos() == 1, "a elite solta um baú")
+	var bau_pos: Vector2 = w.combate.baus.lista.filter(func(b): return b.ativo)[0].pos
+	passos(30)
+	var estado_antes := _total_cartas()
+	h.entrada_forcada = Vector2.ZERO
+	h.definir_pos(bau_pos)
+	ate(func(): return w.combate.jogo == "bau", 120)
+	ok(w.combate.jogo == "bau" and w.combate.pausado and w.combate.telas.bau_aberto, "encostar no baú abre a roleta e para o mundo")
+	var n_bau: int = w.combate.baus.ultimas.size()
+	ok(n_bau >= 1 and n_bau <= 3, "o baú dá de 1 a 3 melhorias (%d)" % n_bau)
+	ok(_total_cartas() > estado_antes, "as melhorias do baú já valem")
+	var tp := float(w.tempo_partida)
+	passos(30)
+	ok(w.tempo_partida == tp, "durante a roleta o mundo está parado")
+	ate(func(): return w.combate.telas.bau_pronto, 900)
+	ok(w.combate.telas.bau_pronto, "a roleta termina sozinha")
+	var enter := InputEventKey.new()
+	enter.keycode = KEY_ENTER
+	enter.pressed = true
+	w._input(enter)
+	ok(w.combate.jogo == "jogando" and not w.combate.pausado and not w.combate.telas.bau_aberto, "Enter fecha a roleta e o jogo volta")
+	# pular a roleta (sem orbes de XP voando: um nível novo abriria a escolha)
+	w.combate.orbes.limpar()
+	h.xp = 0.0
+	w.combate.baus.soltar(h.pos + Vector2(40, 0), 1.0, 3)
+	h.definir_pos(h.pos + Vector2(40, 0))
+	ate(func(): return w.combate.jogo == "bau", 120)
+	ok(w.combate.baus.ultimas.size() >= 1 and w.combate.jogo == "bau", "baú forçado a 3 melhorias abre")
+	w._input(enter)
+	ok(w.combate.telas.bau_pronto, "Enter durante a roleta revela tudo na hora")
+	w._input(enter)
+	ok(w.combate.jogo == "jogando", "e o próximo Enter fecha")
+	# os outros modificadores da elite
+	zerar()
+	var ex = w.combate.elites.nascer("inimigo_cao_ossos", "explosivo", w.heroi.pos + Vector2(150, 0))
+	w.combate.ferir(ex, 9999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	ok(w.combate.avisos.ativos() >= 1, "a elite explosiva anuncia a explosão no chão ao morrer")
+	zerar()
+	var inv = w.combate.elites.nascer("inimigo_cao_ossos", "invoca", w.heroi.pos + Vector2(150, 0))
+	inv.invoca_t = 0.1
+	var vivos0: int = w.monstros.size()
+	passos(30)
+	ok(w.monstros.size() > vivos0, "a elite invocadora chama monstros")
+	zerar()
+	var rap = w.combate.elites.nascer("inimigo_lobo_sombrio", "rapido", w.heroi.pos + Vector2(150, 0))
+	ok(rap.vel_mult > 1.4, "a elite veloz é mais rápida")
+	# o diretor faz nascer elites sozinho
+	zerar()
+	w.combate.diretor.ligado = true
+	w.tempo_partida = float(cfg.elites.primeira) + 1.0
+	ate(func(): return w.combate.elites.nascidas > 0, 400)
+	ok(w.combate.elites.nascidas > 0, "a primeira elite nasce sozinha depois de %d s" % int(cfg.elites.primeira))
+
+	# 7. mini-chefes aos 3 e 6 min, chefe aos 10, ataques anunciados
+	zerar()
+	w.combate.diretor.ligado = false
+	w.tempo_partida = 170.0
+	passos(30)
+	ok(not w.combate.chefes.vivo, "aos 2:50 ainda não tem mini-chefe")
+	w.tempo_partida = 180.5
+	passos(10)
+	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "mini1", "o mini-chefe nasce aos 3 min")
+	var ch = w.combate.chefes.atual
+	ok(ch.chefe and ch.escala > 2.0 and ch.vida_max >= 1000.0, "o mini-chefe é grande e tem muita vida")
+	ok(conta("chefe") == 1 and sinais.get("chefe_vida_max", 0.0) == ch.vida_max, "sinal chefe_apareceu(nome, vida_max)")
+	ok(str(sinais.get("anuncio_texto", "")).contains("MINI-CHEFE"), "anuncio('MINI-CHEFE: ...') junto do chefe_apareceu (%s)" % str(sinais.get("anuncio_texto", "")))
+	ate(func(): return w.combate.avisos.ativos() > 0, 900)
+	ok(w.combate.avisos.ativos() > 0 and w.combate.chefes.ataques_feitos > 0, "o chefe anuncia o ataque com uma área piscando no chão")
+	var vida_h: float = w.heroi.vida
+	ate(func(): return w.combate.avisos.disparados > 0, 400)
+	ok(w.combate.avisos.disparados > 0, "depois do aviso a área dispara")
+	w.heroi.imortal = false
+	w.heroi.vida = w.heroi.vida_max
+	w.combate.avisos.circulo(w.heroi.pos, 40.0, 0.5, 15.0, Color.RED)
+	passos(10)
+	ok(w.heroi.vida == w.heroi.vida_max, "durante o aviso ninguém leva dano")
+	passos(40)
+	ok(w.heroi.vida < w.heroi.vida_max, "quem fica na área leva o dano quando ela dispara")
+	w.heroi.imortal = true
+	var chefe_v0: float = ch.vida
+	w.combate.ferir(ch, 50.0, Vector2.RIGHT, 500.0, 2.0, Color.WHITE)
+	ok(ch.vida < chefe_v0 and ch.emp.length() < 100.0 and ch.atordoa_t < 0.01, "o chefe apanha mas não sai voando nem fica atordoado")
+	passos(5)
+	ok(conta("chefe_vida") > 0, "sinal chefe_vida(vida) a cada mudança")
+	var baus0: int = w.combate.baus.soltos
+	w.combate.ferir(ch, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	ok(not w.combate.chefes.vivo and float(sinais.get("chefe_vida_ultima", 1.0)) == 0.0, "a morte do chefe emite chefe_vida(0)")
+	ok(w.combate.baus.soltos == baus0 + 1, "o mini-chefe solta um baú")
+	ok(w.combate.jogo == "jogando", "matar o mini-chefe não é vitória")
+	w.tempo_partida = 360.5
+	passos(40)
+	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "mini2", "o segundo mini-chefe nasce aos 6 min")
+	w.combate.ferir(w.combate.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	ok(w.combate.jogo == "jogando", "matar o segundo mini-chefe também não é vitória")
+	w.tempo_partida = 600.5
+	passos(40)
+	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "chefe", "o chefe nasce aos 10 min")
+	ok(str(sinais.get("anuncio_texto", "")).contains("CHEFE"), "anuncia o chefe")
+	# 8. vencer o chefe é a vitória
+	w.abates = 321
+	w.maior_combo = 55
+	w.xp_coletado = 1234.0
+	w.combate.ferir(w.combate.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	ok(w.combate.jogo == "vencendo" and w.monstros.is_empty(), "matar o chefe começa a vitória e os monstros estouram")
+	ate(func(): return w.combate.jogo == "vitoria", 300)
+	ok(w.combate.jogo == "vitoria" and w.combate.pausado and w.combate.telas.resultado_aberto, "a tela de resultado abre na vitória")
+	ok(w.combate.telas._res_titulo.text == "VITÓRIA", "a tela mostra VITÓRIA")
+	ok(conta("fim") == 1, "partida_terminou saiu uma vez")
+	var res: Dictionary = sinais.get("fim_res", {})
+	for k in ["tempo", "abates", "nivel", "maior_combo", "venceu", "almas"]:
+		ok(res.has(k), "partida_terminou traz o campo %s" % k)
+	ok(res.get("venceu") == true and int(res.get("abates", 0)) >= 321 and int(res.get("maior_combo", 0)) == 55, "campos da vitória certos")
+	ok(int(res.get("almas", -1)) == 123 and w.almas_partida == 123, "almas = XP coletado / 10 arredondado (123)")
+	ok(float(res.get("tempo", 0.0)) > 600.0 and int(res.get("nivel", 0)) >= 1, "tempo e nível")
+	ok(w.combate.telas._res_linhas.text.contains("Almas") and w.combate.telas._res_valores.text.contains("123"), "a tela mostra as almas ganhas")
+
+	# 9. derrota: partida_terminou com venceu = false
+	zerar()
+	w.heroi.imortal = false
+	w.abates = 12
+	w.maior_combo = 9
+	w.xp_coletado = 47.0
+	w.tempo_partida = 75.0
+	w.heroi.vida = 1.0
+	var mm = monstro_a(14.0, 0.0, "inimigo_cao_ossos", 50.0)
+	mm.cacador = true
+	ate(func(): return w.combate.jogo == "morte", 400)
+	ok(w.combate.jogo == "morte" and w.combate.telas._res_titulo.text == "VOCÊ CAIU", "morrer mostra VOCÊ CAIU")
+	res = sinais.get("fim_res", {})
+	ok(conta("fim") == 1 and res.get("venceu") == false, "partida_terminou na derrota (venceu = false)")
+	ok(int(res.get("abates", 0)) == 12 and int(res.get("maior_combo", 0)) == 9 and int(res.get("almas", -1)) == 5, "abates, combo e almas (47 / 10 = 5)")
+	ok(absf(float(res.get("tempo", 0.0)) - 75.0) < 3.0, "tempo da derrota ~75 s (%.1f)" % float(res.get("tempo", 0.0)))
+	zerar()
+	ok(w.xp_coletado == 0.0 and w.almas_partida == 0 and w.resultado.is_empty(), "jogar de novo zera as almas")
+	w.xp_coletado = 14.0
+	ok(w.almas_partida == 1, "14 de XP viram 1 alma")
+	w.xp_coletado = 15.0
+	ok(w.almas_partida == 2, "15 de XP arredondam para 2 almas")
+
+	# 10. números de dano maiores
+	zerar()
+	var mn = monstro_a(30.0, 0.0)
+	mn.cacador = false
+	w.combate.fx.n_tam.fill(0)
+	w.combate.ferir(mn, 10.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	ok(w.combate.fx.n_tam.has(16), "o número de dano normal tem 16 px")
+
+	print("v2_partida falhas=%d" % falhas)
+	get_tree().quit()
+
+
+func _tem_id(lista: Array, id: String) -> bool:
+	for c in lista:
+		if str(c.id) == id:
+			return true
+	return false
+
+
+func _total_cartas() -> int:
+	var n := 0
+	for id in w.combate.cartas.estado:
+		n += int(w.combate.cartas.estado[id].n)
+	return n

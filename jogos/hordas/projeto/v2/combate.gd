@@ -60,7 +60,8 @@ var ultimo_hit_stop := 0.0
 var _plim_t := 0.0
 var _plim_n := 0
 var _fila: Array = []  # monstros que morreram no quadro por golpe secundário ou fogo (saem em processar_mortes)
-var _seq := 0  # quantas faixas de sequência de abates já foram anunciadas neste combo
+var anuncios := 0  # quantos anúncios saíram (testes)
+var ultimo_anuncio := ""
 var ferimentos := 0  # golpes secundários que feriram (testes)
 var _grade := {}
 var _usadas: Array = []
@@ -165,7 +166,6 @@ func atualizar(dt: float) -> void:
 		combo_t -= dt
 		if combo_t <= 0.0:
 			mundo.combo = 0
-			_seq = 0
 	_plim_t -= dt
 	if jogo == "jogando":
 		_separar()
@@ -346,7 +346,6 @@ func matar(m) -> void:
 	mundo.combo += 1
 	combo_t = float(cfg.combo_abates.janela)
 	mundo.maior_combo = maxi(mundo.maior_combo, mundo.combo)
-	_sequencia()
 	var mult := minf(1.0 + float(mundo.combo - 1) * float(cfg.combo_abates.xp_por_abate), float(cfg.combo_abates.xp_max))
 	for i in m.n_orbes:
 		orbes.soltar(m.pos, m.xp * mult)
@@ -390,15 +389,6 @@ func processar_mortes() -> void:
 		var m = _fila.pop_back()
 		if m.vivo:
 			matar(m)
-
-
-## Anuncia a sequência de abates (CHACINA, MASSACRE...) quando o combo passa de uma faixa.
-func _sequencia() -> void:
-	var faixas: Array = cartas.cfg.anuncios.abates
-	while _seq < faixas.size() and mundo.combo >= int(faixas[_seq].combo):
-		var f: Dictionary = faixas[_seq]
-		_seq += 1
-		anunciar(str(f.texto).replace("{n}", str(int(f.combo))), _cor(f.cor), "", 1.5)
 
 
 ## Um orbe chegou ao herói: XP, e o "plim" sobe de tom a cada orbe seguido.
@@ -497,24 +487,21 @@ func nivel_subiu(nivel: int) -> void:
 # ------------------------------------------------------------------ anúncios, elites, chefes e vitória (leva 3)
 
 
-## Anúncio grande no meio da tela. Emite o sinal `anuncio(texto, cor)` do mundo (o HUD desenha) e mostra o texto simples em telas.gd
-## enquanto o HUD não assume (mundo.anuncios_no_hud).
-func anunciar(texto: String, cor: Color, sub := "", dur := 2.0) -> void:
+## Anúncio de texto livre: emite o sinal `anuncio(texto, cor)` do mundo, que o HUD (v2/hud_anuncios.gd) desenha. ONDA FORTE, ELITE e EVOLUÇÃO
+## têm sinal próprio (o HUD escreve o texto sozinho), e o nível e os marcos de combo ele anuncia por conta dele: não repita aqui.
+func anunciar(texto: String, cor: Color, _sub := "", _dur := 2.0) -> void:
+	anuncios += 1
+	ultimo_anuncio = texto
 	mundo.anuncio.emit(texto, cor)
-	telas.anunciar(texto, cor, sub, dur)
 
 
 func onda_forte(numero: int) -> void:
-	var a: Dictionary = cartas.cfg.anuncios.onda_forte
 	mundo.onda_forte.emit(numero)
-	anunciar(str(a.texto), _cor(a.cor), "", 2.2)
 	audio.tocar("onda", 1.0, 0.0, 0.0)
 
 
 func elite_apareceu(nome: String, m, cor: Color) -> void:
-	var a: Dictionary = cartas.cfg.anuncios.elite
 	mundo.elite_apareceu.emit(nome)
-	anunciar(str(a.texto), cor, nome, 2.4)
 	audio.tocar("elite", 1.0, 0.0, 0.1)
 	fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.9), 70.0, 0.5)
 
@@ -523,7 +510,7 @@ func chefe_apareceu(m, mk: Dictionary) -> void:
 	var a: Dictionary = cartas.cfg.anuncios.minichefe if bool(mk.mini) else cartas.cfg.anuncios.chefe
 	var cor := Color(mk.cor[0], mk.cor[1], mk.cor[2])
 	mundo.chefe_apareceu.emit(str(mk.nome), float(mk.vida))
-	anunciar(str(a.texto).replace("{nome}", str(mk.nome)), cor, "", 3.0)
+	anunciar(str(a.texto).replace("{nome}", str(mk.nome)), cor)
 	audio.tocar("chefe", 0.7, 0.0, 0.3)
 	fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.9), 110.0, 0.7)
 	mundo.cam.tremer(3.0, 0.4)
@@ -534,8 +521,6 @@ func evolucao_feita(ev: Dictionary) -> void:
 	var h = mundo.heroi
 	var cor := Color(ev.cor[0], ev.cor[1], ev.cor[2])
 	mundo.evolucao.emit(str(ev.nome))
-	var a: Dictionary = cartas.cfg.anuncios.evolucao
-	anunciar(str(a.texto).replace("{nome}", str(ev.nome)), cor, str(ev.desc), 3.2)
 	audio.tocar("evolucao", 1.0, 0.0, 0.0)
 	fx.onda(h.pos + Vector2(0, -12), Color(cor.r, cor.g, cor.b, 0.95), 130.0, 0.6)
 	fx.onda(h.pos + Vector2(0, -12), Color(1, 1, 1, 0.8), 80.0, 0.4)
@@ -608,7 +593,6 @@ func limpar_partida() -> void:
 	ferimentos = 0
 	fim_emitido = false
 	venceu = false
-	_seq = 0
 	mundo.xp_coletado = 0.0
 	mundo.resultado = {}
 	progresso.zerar()

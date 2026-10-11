@@ -352,8 +352,11 @@ func _orbita(a: Dictionary, h, dt: float, vel_a: float) -> void:
 		if m.cd[slot] > _agora:
 			continue
 		for i in n:
+			# a lâmina varre do meio do círculo até a ponta: acerta também o monstro colado no herói
 			var lim: float = 10.0 + m.raio
-			if pts[i].distance_squared_to(m.pos) < lim * lim:
+			var ini: Vector2 = centro + (pts[i] - centro) * 0.3
+			var q: Vector2 = Geometry2D.get_closest_point_to_segment(m.pos, ini, pts[i])
+			if q.distance_squared_to(m.pos) < lim * lim:
 				var fora: Vector2 = m.pos - centro
 				fora = fora.normalized() if fora.length() > 0.5 else Vector2.RIGHT
 				m.cd[slot] = _agora + tique
