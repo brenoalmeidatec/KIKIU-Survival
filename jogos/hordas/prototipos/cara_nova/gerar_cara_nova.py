@@ -29,7 +29,7 @@ import numpy as np
 AQUI = os.path.dirname(os.path.abspath(__file__))
 HORDAS = os.path.normpath(os.path.join(AQUI, "..", ".."))
 GERADORES = os.path.join(HORDAS, "fonte_arte", "modelos3d")
-SAIDA = os.path.join(AQUI, "sprites")
+SAIDA = os.path.join(HORDAS, "projeto", "prototipos", "cara_nova", "sprites")  # dentro do projeto: o exe só lê res://
 sys.path.insert(0, GERADORES)
 import pixel3d as px3  # noqa: E402
 
