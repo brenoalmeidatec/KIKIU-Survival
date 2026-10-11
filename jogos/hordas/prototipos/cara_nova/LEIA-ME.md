@@ -12,7 +12,7 @@ Protótipo **isolado** (nada de `main.gd`, `arena.gd`, `assets/` do jogo ou `dad
 |---|---|
 | `gerar_cara_nova.py` | Gerador (Blender 4.5). Reaproveita o modelo 3D de `hazaki.py`, `horror.py` e `floresta.py` e troca **só em memória** o que muda: materiais, câmera, escala e pós-processo. `pixel3d.py`, `hazaki.py`, `monstros.py`, `horror.py` e `floresta.py` ficam intactos. |
 | `gerar_tudo.sh` | Gera tudo (herói e 5 monstros) em paralelo: ~3 min. |
-| `sprites/` | Saída: por sprite, `_albedo.png`, `_normal.png`, `_emissao.png` e `.json` (tamanho do quadro, linhas e colunas). |
+| `../../projeto/prototipos/cara_nova/sprites/` | Saída (dentro do projeto, porque o exe exportado só lê `res://`): por sprite, `_albedo.png`, `_normal.png`, `_emissao.png` e `.json` (tamanho do quadro, linhas e colunas). |
 | `prever.sh` | Monta a prévia albedo / normal / emissão de uma folha (para olhar). |
 | `medir_fps.sh` e `fps.txt` | Medição de fps na Iris Xe (3 repetições). |
 | `gerar_cenario_cara_nova.py` | Gerador (Blender 4.5) do chão e dos enfeites da Floresta **sem sombra assada** (ver "Sombras em tempo real"). |
