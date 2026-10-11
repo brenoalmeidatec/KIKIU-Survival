@@ -33,6 +33,12 @@ O Claude do Alisson (PC e notebook) **trabalha sozinho neste repositório**. O B
 - Registre cada marco no `LOGBOOK.md`. A cada marco novo, o Breno gera o zip para testar.
 - **Limites que continuam:** nada de senhas, chaves ou credenciais no repositório; não apagar o repositório nem reescrever o histórico da `main` (sem force-push); nada pago sem o Breno; a Cairu fica como está, a menos que seja preciso mexer na engine compartilhada.
 
+## V1 pausada, v2 sobre o protótipo (decisão do Alisson, 2026-10-11)
+O protótipo 2.5D (`jogos/hordas/projeto/prototipos/cara_nova.tscn`, PR #156) foi aprovado e **é a base da v2**. A v2 cresce em `jogos/hordas/projeto/v2/`, e os dados ficam em `dados/v2_*.json`.
+- **A v1** (`main.tscn`, `arena.gd` e o resto do jogo atual) **está pausada**: nada de recurso novo nem refino. Só entra correção de bug grave (crash, save corrompido, build quebrado). Quando um sistema da v1 servir na v2, **porte para a v2**, sem melhorar a v1.
+- O protótipo fica congelado como referência. O que for reaproveitado vira módulo em `v2/`.
+- O plano de etapas do épico #152 continua, agora aplicado à v2.
+
 ## Divisão de trabalho entre os Claudes (combinado em 2026-10-10)
 Os dois Claudes têm limites muito diferentes: o **Claude do Breno** roda no plano Pro (US$ 20, pouco uso por janela) e o **Claude do Alisson** no plano Max (US$ 100 ou mais, uso alto, agentes em paralelo). Para render o máximo dos dois, cada um fica com o que o outro não consegue fazer bem.
 
