@@ -18,8 +18,9 @@ var arena: Node
 var ativas: Array = []        # registros (veja `registro`) dos efeitos grandes em andamento
 var simples: Array = []       # mortes simples em andamento
 var manchas: Array = []       # sangue e cinza no chão: {pos, t, r, cor}
-## s que a mancha fica no chão (mortes.json > teto > vida_mancha); o Dimraeth deixa a luta marcada no chão por um tempo
-var _vida_mancha: float = float(Dados.json("mortes").get("teto", {}).get("vida_mancha", 4.0))
+## s que a mancha fica no chão (aba Gráficos > restos_chao); o Dimraeth deixa a luta marcada no chão por um tempo
+func _vida_mancha() -> float:
+	return float(Config.g("restos_chao"))
 var part_usadas := 0          # soma de `part` das ativas (teto de partículas)
 var ult_efeito := ""          # o último efeito escolhido (o teste lê)
 var contagem := {}            # efeito -> quantas vezes foi escolhido (o teste lê)
@@ -104,12 +105,12 @@ func nova(v, forcar := false) -> String:
 	var dm: Dictionary = Dados.json("mortes")
 	var teto: Dictionary = dm.get("teto", {})
 	var part := int(dm.get("efeitos", {}).get(ef, {}).get("part", 0))
-	var max_g := maxi(1, roundi(float(teto.get("mortes", 24)) * float(Config.q("mortes_grandes"))))   # perfil de qualidade: tetos menores
-	var max_p := maxi(20, roundi(float(teto.get("particulas", 600)) * float(Config.q("mortes_part")))) if Config.particulas() > 0.0 else 0   # opção "Partículas: Nenhuma"
+	var max_g := maxi(1, roundi(float(teto.get("mortes", 24)) * Config.fator_particulas("mortes_grandes")))   # perfil de qualidade: tetos menores
+	var max_p := maxi(20, roundi(float(teto.get("particulas", 600)) * Config.fator_particulas("mortes_part"))) if Config.g("particulas_sim") != "nenhuma" else 0   # particulas_sim: nenhuma = sem partículas
 	if ef != "simples" and (ativas.size() >= max_g or part_usadas + part > max_p):
 		ef = "simples"   # sem vaga: morte simples
 	if ef == "simples":
-		if simples.size() >= roundi(float(teto.get("simples", 48)) * float(Config.q("mortes_simples"))):
+		if simples.size() >= roundi(float(teto.get("simples", 48)) * Config.fator_particulas("mortes_simples")):
 			return ""
 		simples.append(registro(v, causa, "simples"))
 	else:
@@ -172,7 +173,7 @@ func atualizar_i(dt: float) -> void:
 	i = manchas.size() - 1
 	while i >= 0:
 		manchas[i].t += dt
-		if manchas[i].t > _vida_mancha:
+		if manchas[i].t > _vida_mancha():
 			manchas.remove_at(i)
 		i -= 1
 	queue_redraw()
@@ -193,7 +194,7 @@ func _draw_i() -> void:
 		if m.t < 0.0 or (vm.has_area() and not vm.has_point(m.pos)):
 			continue
 		var k := clampf(m.t / 0.4, 0.0, 1.0)
-		var a := 0.62 * (1.0 - smoothstep(_vida_mancha * 0.6, _vida_mancha, m.t))
+		var a := 0.62 * (1.0 - smoothstep(_vida_mancha() * 0.6, _vida_mancha(), m.t))
 		draw_set_transform(m.pos, 0.0, Vector2(1.0, 0.36))
 		draw_circle(Vector2.ZERO, float(m.r) * (0.4 + 0.6 * k), Color(m.cor.r, m.cor.g, m.cor.b, a))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

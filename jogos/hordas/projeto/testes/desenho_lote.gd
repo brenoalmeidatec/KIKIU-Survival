@@ -49,15 +49,15 @@ func _ready() -> void:
 	var dados_fase: Dictionary = Dados.json("fase").get("dificuldade", {})
 	ok(int(dados_fase.get("limite_vivos", 0)) == 250, "fase.json: limite_vivos padrão = 250")
 	ok(int(dados_fase.get("limite_vivos_pror", 0)) == 500, "fase.json: limite_vivos_pror = 500")
-	var qs := {"alta": 500, "media": 350, "baixa": 250}
+	var qs := {"alto": 500, "medio": 350, "baixo": 250}
 	df.enxame_final = false
 	df.final_chamado = false
 	for q in qs:
-		Config.temporario("qualidade", q)
+		Config.g_perfil_temporario(q)
 		ok(df.limite_vivos() == 250, "jogo normal, qualidade %s: limite = 250 (deu %d)" % [q, df.limite_vivos()])
 	df.enxame_final = true
 	for q in qs:
-		Config.temporario("qualidade", q)
+		Config.g_perfil_temporario(q)
 		ok(df.limite_vivos() == qs[q], "Enxame Final, qualidade %s: limite = %d (deu %d)" % [q, qs[q], df.limite_vivos()])
 	df.enxame_final = false
 	var t_ant: float = df.t_fase
@@ -65,18 +65,18 @@ func _ready() -> void:
 	df.t_fase = float(df._fase.get("duracao", 600)) + float(df.pror_cfg().get("janela_chefe", 120.0)) + 3.0
 	ok(df.pror_ativa(), "preparo: a prorrogação está ativa")
 	for q in qs:
-		Config.temporario("qualidade", q)
+		Config.g_perfil_temporario(q)
 		ok(df.limite_vivos() == qs[q], "prorrogação, qualidade %s: limite = %d (deu %d)" % [q, qs[q], df.limite_vivos()])
 	df.t_fase = t_ant
 	df.final_chamado = false
-	Config.temporario("qualidade", "alta")
+	Config.g_perfil_temporario("alto")
 	df._fase["limite_vivos"] = 120
 	ok(df.limite_vivos() == 120, "uma fase pode ter o seu limite (120)")
 	df._fase.erase("limite_vivos")
 	ok(df.limite_vivos() == 250, "sem o limite da fase volta ao padrão")
 
 	# ---------- desenho em lote ----------
-	Config.temporario("qualidade", "alta")
+	Config.g_perfil_temporario("alto")
 	I.limpar()
 	I._t = 1.0
 	var origem: Vector2 = j.position

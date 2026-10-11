@@ -80,8 +80,8 @@ func _ready() -> void:
 	_versao = Dados.texto_versao()
 	_teclas()
 	_ler_args()
-	if _args.has("qualidade"):   # teste: --qualidade=alta|media|baixa vale só nesta execução (não grava nas opções)
-		Config.temporario("qualidade", str(_args.qualidade))
+	if _args.has("perfil"):   # teste: --perfil=alto|medio|baixo vale só nesta execução (não grava nas opções)
+		Config.g_perfil_temporario(str(_args.perfil))
 	Perf.ligado = _args.has("sair")   # relatório de custo por sistema no log do --sair (perf.gd)
 	_camada.layer = 20
 	add_child(_camada)
@@ -721,10 +721,10 @@ func _diagnostico(dt: float) -> void:
 		_lento_t = _lento_t + dt if Engine.get_frames_per_second() < 40 else 0.0
 		if _lento_t >= 8.0:
 			_lento_t = 0.0
-			var ordem := ["alta", "media", "baixa"]
-			var i := ordem.find(str(Config.v("qualidade")))
+			var ordem := ["alto", "medio", "baixo"]
+			var i := ordem.find(Config.g_perfil())
 			if i >= 0 and i < 2:
-				Config.temporario("qualidade", ordem[i + 1])
+				Config.g_perfil_temporario(ordem[i + 1])
 				_arena.mensagem("FPS baixo: qualidade gráfica %s" % ["média" if i == 0 else "baixa"], Color(1, 0.8, 0.4))
 	if _diag_lbl == null or not _diag_lbl.visible:
 		return
@@ -738,8 +738,8 @@ func _diagnostico(dt: float) -> void:
 	top.sort_custom(func(a, b): return us[a] > us[b])
 	var q := maxi(Perf.quadros, 1)
 	var linhas := "fps %d  quadro %.1f ms  proc %.1f ms
-vivos %d  qualidade %s  %dx%d" % [Engine.get_frames_per_second(), _diag_soma * 1000.0 / _diag_q,
-		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.inimigos.vivos(), Config.v("qualidade"), get_window().size.x, get_window().size.y]
+vivos %d  perfil %s  %dx%d" % [Engine.get_frames_per_second(), _diag_soma * 1000.0 / _diag_q,
+		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, _arena.inimigos.vivos(), Config.g_perfil(), get_window().size.x, get_window().size.y]
 	for k in mini(3, top.size()):
 		linhas += "
 %s %d us" % [top[k], int(us[top[k]]) / q]

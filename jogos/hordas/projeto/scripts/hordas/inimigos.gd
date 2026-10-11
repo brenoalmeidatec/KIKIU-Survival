@@ -661,8 +661,9 @@ func atualizar(dt: float, jog: Node2D) -> void:
 	var k_vm := minf(1.0, dt * ACEL_VEL)   # suavização do andar (constante de tempo ~0,1 s); a investida arranca de uma vez
 	var k_sep := dt * 12.0
 	var k_kb := exp(-9.0 * dt)   # o knockback some em ~0,1 s (calculado uma vez por quadro, não por bicho)
-	var cad_perto := clampi(roundi(SEP_PERIODO / maxf(dt, 0.0001)), 1, 12)   # quadros entre dois cálculos de separação
-	var cad_longe := clampi(roundi(SEP_PERIODO_LONGE / maxf(dt, 0.0001)), 1, 24)
+	var espaco := float(Config.g("calculo_monstros"))   # aba Gráficos: 0,5 (frequente), 1 (normal), 2 (espaçado) x o intervalo
+	var cad_perto := clampi(roundi(SEP_PERIODO * espaco / maxf(dt, 0.0001)), 1, 12)   # quadros entre dois cálculos de separação
+	var cad_longe := clampi(roundi(SEP_PERIODO_LONGE * espaco / maxf(dt, 0.0001)), 1, 24)
 
 	var _p2 := Perf.ini()
 	for v: V in lista.duplicate():
@@ -994,8 +995,8 @@ func _draw() -> void:
 	# só entra no desenho quem está na tela (com folga pro tamanho do sprite e da sombra): com 500 bichos, a maioria fica fora.
 	# `_ordem` = os visíveis, do mais alto pro mais baixo (quem está embaixo fica na frente). Ordena uma lista de números
 	# (y e posição na lista juntos numa chave só) com o sort nativo, todo quadro: bem mais barato que sort_custom.
-	var sombra_proj := bool(Config.q("sombra_projetada"))   # perfil de qualidade (dados/qualidade.json)
-	var lod_x := float(Config.q("lod_x"))
+	var sombra_proj: bool = Config.g("sombras") == "projetadas"   # perfil de qualidade (dados/graficos.json)
+	var lod_x := float(Config.g("lod_monstros"))
 	var vis: Rect2 = get_canvas_transform().affine_inverse() * get_viewport_rect()
 	var x0 := vis.position.x
 	var x1 := vis.end.x

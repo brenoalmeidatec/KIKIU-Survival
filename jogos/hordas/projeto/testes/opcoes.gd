@@ -17,11 +17,13 @@ func _ready() -> void:
 		ok(not it.has("rotulos") or it.rotulos.size() == it.valores.size(), "%s: um rótulo por valor" % it.chave)
 		ok(Config.rotulo(it.chave) != "", "%s: tem rótulo" % it.chave)
 	# girar dá a volta nos dois sentidos
-	Config.definir("fps_max", 30)
-	Config.girar("fps_max", -1)
-	ok(Config.v("fps_max") == 0 and Config.rotulo("fps_max") == "Sem limite", "FPS: de 30 pra trás vira Sem limite")
-	Config.girar("fps_max", 1)
-	ok(Config.v("fps_max") == 30, "FPS: e volta pra 30")
+	Config.definir("texto_hud", "medio")
+	Config.girar("texto_hud", -1)
+	ok(Config.v("texto_hud") == "normal", "fonte: de médio pra trás vira normal")
+	Config.girar("texto_hud", -1)
+	ok(Config.v("texto_hud") == "grande", "fonte: de normal pra trás dá a volta e vira grande")
+	Config.girar("texto_hud", 1)
+	ok(Config.v("texto_hud") == "normal", "fonte: e volta pra normal")
 	Config.definir("musica", 0.3)
 	ok(Config.rotulo("musica") == "30%" and is_equal_approx(Som.volume_musica, 0.3), "música: 30%% e o Som acompanha (%s)" % Config.rotulo("musica"))
 	# fica salvo no arquivo
