@@ -1093,3 +1093,30 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - O `jogos/hordas/formatar.sh` e o CI usam o mesmo `-l 160`, e o CI agora **reprova** código fora do padrão (antes só avisava). Para corrigir: `jogos/hordas/formatar.sh` (precisa de `pip install "gdtoolkit==4.*"`).
 - Verificação: `--import` sem erro, bateria completa 52 de 53 (só `transformacao` falhou rodando em paralelo; sozinha passa 3 de 3, então ainda é instável sob carga) e robô de 40 s sem SCRIPT ERROR.
 - **Pendente:** `transformacao` ainda instável com carga; o `gdlint` segue só como aviso.
+
+## 2026-10-11 (noite): protótipo 2.5D montado, fim do auto-battle, sem marca do Godot
+
+**Feito (na `main`):**
+- #163 e #165 (parte de #162): ícone nativo da janela, créditos sem a marca do Godot (licença MIT só em texto) e tela de entrada com arte própria (`assets/icone/entrada.png`, gerada por `fonte_arte/gerar_entrada.py` a partir da arte do Alisson). Falta alguém confirmar numa build real: a tela de entrada e o ícone da barra de tarefas.
+- #164: opção **Sombras** (Simples, Suaves, Detalhadas) na aba Gráficos, amarrada aos perfis. Ela é gravada já e age quando a luz nova entrar.
+- #166 (fecha #161): **fim do auto-battle.** O golpe principal sai no clique esquerdo ou no gatilho direito, e as armas de carta continuam automáticas. Ficou um campo `disparo` em `armas.json` e o teste `ataque_clique`.
+
+**Protótipo (PR #156, rascunho, branch `alisson/prototipo-cara-nova`):**
+- **Sombras em tempo real:** cisalhamento a partir dos pés (sem rotação), soma ponderada das luzes e suavização no tempo, nos modos baixa, média e alta. O teste é `prototipos/teste_sombra_cara_nova.gd`.
+- **Cenário novo:** 28 objetos feitos no imagegen pelo Alisson e recortados por `prototipos/cara_nova/objetos/gerar_objetos.py`, mais decalques de chão (`decalques/gerar_decalques.py`: círculo ritual, trilhas, raízes e detalhes) e chão procedural (`piso/gerar_piso.py`). Torii, braseiro e fogueira têm fogo em partículas e luz.
+- **Apresentação "sharp bilinear":** a cena vai num SubViewport de 960x540. Isso resolve a distorção de pixel em escala fracionária. **Leve isso para o jogo na Etapa 2.**
+- **fps na Iris Xe** (251 sprites): 281 sem sombra, 190 na média e 156 na alta. Caiu bastante com as ~10 luzes, os ~90 decalques e o SubViewport. O i5-3470 ainda não foi medido.
+- **Atalhos de teste no notebook:** `%LOCALAPPDATA%\KIKIU-teste\kikiu_teste.ps1`, com o "KIKIU (teste)" (Release mais nova) e o "KIKIU protótipo 2.5D" (cena da branch).
+
+**Pendente:**
+- O teste `transformacao` é instável sob carga.
+- A `escala_render` ainda não age; entra na Etapa 2 junto com o SubViewport.
+- Falta decidir as 3 opções antigas que sobraram em Opções.
+- O perfil Baixo precisa ser medido no i5.
+- O protótipo destoa da referência em três pontos: falta água e fundo de floresta, os bichos parecem pequenos perto do cenário, e a cena está um pouco escura.
+
+**Próximo:**
+- O Alisson aprovar o protótipo montado; aí começa a Etapa 2 (960x540, câmera, HUD e o sharp bilinear no jogo).
+- Ideias para depois: vento nas copas e na grama, e variações de cor por região a partir dos 28 objetos.
+
+_Claude do Alisson (notebook)_
