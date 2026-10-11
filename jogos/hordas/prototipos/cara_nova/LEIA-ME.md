@@ -67,20 +67,32 @@ O `mundo.md` calcula "herói 16,7% da tela" pelo **quadro** de 60 px, mas a arte
 
 **O que não funcionou ou ficou a desejar:**
 - Quem tem material escuro (cavaleiro oco de aço, aranha) vira silhueta com borda iluminada fora das poças de luz. É o efeito pretendido, mas na horda isso pede mais luz ou albedo mais claro por família.
-- Luz com normal é **mais escura** que sem normal (N·L = altura/distância na face plana). Compensei com alturas de luz de 45 a 60 px (a 22 a 26 o lado com relevo ficava preto) e energia mais alta. Altura é o botão entre "contraste forte" e "legível".
+- Luz com normal é **mais escura** que sem normal (N·L = altura/distância na face plana). Compensei com alturas de luz de 45 a 60 px (a 22 a 26 os bichos fora da poça ficavam quase pretos) e energia mais alta. Altura é o botão entre "contraste forte" e "legível".
 - Perto da referência no **clima** (poças de luz colorida sobre fundo escuro, bichos acesos de um lado) e longe em **densidade** (a referência tem 60+ bichos, vegetação verde saturada, efeitos de magia, ruínas e portal) e em **cor do cenário**. O chão da Floresta de hoje é quase preto e marrom, e o enfeite é esparso. Isso é V3 (cenário) e V5 (efeitos), não do gerador de sprites.
 - Sem sombra projetada (sem `LightOccluder2D`, como recomendado).
 
 ## Fps (Intel Iris Xe, notebook, janela 1280x720 com viewport 960x540, sem V-Sync)
 
-{{FPS}}
+Mediana de 3 rodadas de 6 s (mínimo a máximo entre parênteses). "Sprites" = herói + N monstros, cada um com sombra de contato; os olhos são outro sprite aditivo. Cena completa: chão, enfeites, árvores, vinheta, `CanvasModulate`.
+
+| Luzes | 26 sprites, com normal | 26 sprites, sem normal | 251 sprites, com normal | 251 sprites, sem normal |
+|---|---|---|---|---|
+| 1 | 598 (514 a 622) | 593 (466 a 620) | 237 (225 a 273) | 245 (193 a 282) |
+| 3 | 557 (513 a 598) | 574 (544 a 605) | 232 (174 a 241) | 203 (191 a 272) |
+| 6 | 497 (482 a 498) | 530 (458 a 543) | 230 (168 a 233) | 207 (159 a 251) |
+
+Como ler:
+- **Quem manda é a quantidade de sprites**, não as luzes: com 251 sprites o fps cai para ~40% do de 26, e de 1 para 6 luzes cai pouco (10 a 17%, dentro do ruído). Cada sprite é pelo menos 3 itens de desenho (corpo, sombra, olhos), e cada um é lido pela luz.
+- **O normal map não apareceu como custo** neste teste: com e sem normal a diferença fica dentro do ruído de uma rodada para outra. Isso **não** contradiz o #148 (que mediu quase metade do fps com normal): lá o teste era de 300 sprites do mesmo tipo e luz a 1280x720; aqui o gargalo é CPU/desenho de sprites separados.
+- **Ruído alto:** a máquina estava com ~90% de CPU por testes de outros agentes durante a medição, e as rodadas variam até 25%. Trate os números como ordem de grandeza (centenas de fps na Iris Xe), **não** como a resposta para o i5-3470, que o Breno precisa medir com o F3. Um sinal bom: nada passa de 6 luzes de cada vez, e a V2 do `mundo.md` já prevê só 2 luzes no perfil Baixo.
+- Não é o desenho do jogo real: a horda lá é MultiMesh (menos itens de desenho por bicho) e o HUD, os projéteis e os efeitos somam custo que aqui não existe.
 
 ## O que muda no gerador real quando for aprovado
 
 1. `pixel3d.camera`: `elevacao_graus` 32 -> 45 (uma linha, vale para todos os chamadores; cenários e chão têm de ir junto para o pé e o chão combinarem).
 2. Escala: `PPU` 60/2,55 -> 24,5 e quadros novos (herói 32x44, pé na linha 42; monstros: dividir `W` e `H` da tabela por ~1,25 e deixar crescer até caber). **Atenção:** `dados/animacao_monstros.json`, `quadros_monstros.json` e o `jogador.gd` (44x60, `PE_Y`) guardam o tamanho do quadro.
 3. Passo novo no `pixelar`: `luz_borda=False` e **sem toon**: `material_toon` vira albedo chapado (`_albedo` do `gerar_cara_nova.py`). Escuros levantados com `cor ** 0,6`.
-4. Gerar **albedo + normal** de cada sprite (o `gerar_cara_nova.py` já faz os 3 passes na mesma cena: o render dobra ou triplica, ~1,5 a 3 s por quadro do herói e menos para monstros; os 50 monstros em paralelo cabem em ~15 min).
+4. Gerar **albedo + normal** de cada sprite (o `gerar_cara_nova.py` já faz os 3 passes na mesma cena, então o render triplica). Medido neste notebook: o Hazaki inteiro (8 direções x 5 quadros = 120 renders) leva 38 s sozinho; os 7 trabalhos do `gerar_tudo.sh` juntos levam ~3 min. Para os 50 monstros é só estimativa (não medi): da ordem de 1 a 2 min por monstro, em paralelo.
 5. Emissão (olhos e chamas) como terceiro PNG, só para quem tem emissivo.
 6. No Godot: `CanvasTexture` (difusa + normal) nos sprites, **olhos aditivos fora do `CanvasModulate`** (ver "Limitações"), luz de `PointLight2D` com altura 45 a 60 e os limites por perfil de `qualidade.json`.
 
