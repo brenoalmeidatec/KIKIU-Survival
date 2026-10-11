@@ -3,6 +3,7 @@
   "excecoes": [
     "fps",
     "v-sync",
+    "sync",
     "bug",
     "cabeça-dura",
     "chakram",
