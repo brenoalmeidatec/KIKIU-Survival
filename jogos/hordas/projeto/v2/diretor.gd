@@ -48,9 +48,10 @@ func atualizar(dt: float) -> void:
 	if t >= proxima_onda:
 		onda_forte()
 		proxima_onda += float(cfg.onda_cada)
-	acum += taxa(t) * dt
+	var folga: float = 0.4 if combate.chefes.vivo else 1.0  # com chefe em campo a horda dá uma folga
+	acum += taxa(t) * dt * folga
 	var vivos: int = mundo.monstros.size()
-	var cap := limite(t)
+	var cap := roundi(float(limite(t)) * (0.6 if combate.chefes.vivo else 1.0))
 	while acum >= 1.0:
 		acum -= 1.0
 		if vivos >= cap or vivos >= int(cfg.teto):
@@ -127,5 +128,4 @@ func onda_forte() -> void:
 	for i in n:
 		var nome := "inimigo_cavaleiro_oco" if i < elite else sortear(t)
 		nascer(nome)
-	combate.audio.tocar("onda", 1.0, 0.0, 0.0)
-	combate.telas.aviso("ONDA FORTE!" if ondas > 0 else "", 2.2)
+	combate.onda_forte(ondas)

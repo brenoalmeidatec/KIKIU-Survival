@@ -9,9 +9,9 @@ extends RefCounted
 ## Posições são arredondadas para pixel inteiro ao desenhar (o pixel art não treme).
 
 const MAX_PART := 360
-const MAX_NUM := 40
+const MAX_NUM := 64
 const MAX_CORTES := 4
-const MAX_FLASH := 18
+const MAX_FLASH := 24
 const MAX_LUZES := 3
 const MAX_ONDAS := 6
 
@@ -130,6 +130,7 @@ var _fl: Array[Sprite2D] = []
 var _fl_alvo: Array = []  # Ator que o flash segue (ou null: parado onde nasceu)
 var _fl_t := PackedFloat32Array()
 var _fl_dur := PackedFloat32Array()
+var _fl_esc := PackedFloat32Array()  # tamanho do ator (elite e chefe são maiores)
 var _fl_modo := PackedByteArray()  # 0 = piscada de dano, 1 = morte (encolhe e some), 2 = rastro da esquiva
 var _fi := 0
 
@@ -240,6 +241,7 @@ func _montar_flashes() -> void:
 		_fl.append(s)
 		_fl_alvo.append(null)
 	_fl_t.resize(MAX_FLASH)
+	_fl_esc.resize(MAX_FLASH)
 	_fl_dur.resize(MAX_FLASH)
 	_fl_modo.resize(MAX_FLASH)
 	_fl_t.fill(9.0)
@@ -304,7 +306,8 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	s.region_rect = a.regiao
 	s.flip_h = a.espelha
 	s.position = a.raiz.position
-	s.scale = Vector2.ONE
+	_fl_esc[i] = a.escala
+	s.scale = Vector2.ONE * a.escala
 	s.rotation = 0.0
 	s.visible = true
 	var mat := s.material as ShaderMaterial
@@ -385,15 +388,16 @@ func onda(pos: Vector2, cor: Color, raio: float, dur: float) -> void:
 	o_cor[i] = cor
 
 
-## Número de dano que salta. `grande` = crítico (fonte 16 em vez de 8).
-func numero(pos: Vector2, texto: String, cor: Color, grande := false) -> void:
+## Número de dano que salta, com contorno. `grande` = crítico (fonte 24; o normal é 16). Um dano que não é do golpe da katana (fogo,
+## raio, aura...) usa `tam` menor se quiser.
+func numero(pos: Vector2, texto: String, cor: Color, grande := false, tam := 0) -> void:
 	var i := _ni
 	_ni = (_ni + 1) % MAX_NUM
-	n_pos[i] = pos + Vector2(randf_range(-9.0, 9.0), -8.0 - float(_ni % 4) * 5.0)
+	n_pos[i] = pos + Vector2(randf_range(-12.0, 12.0), -10.0 - float(_ni % 4) * 8.0)
 	n_t[i] = 0.0
-	n_dur[i] = 0.95 if grande else 0.7
+	n_dur[i] = 1.0 if grande else 0.75
 	n_txt[i] = texto
-	n_tam[i] = 16 if grande else 8
+	n_tam[i] = tam if tam > 0 else (24 if grande else 16)
 	n_cor[i] = cor
 	n_ativos += 1
 	usados.numeros += 1
@@ -507,7 +511,7 @@ func atualizar(dt: float) -> void:
 					s.flip_h = a.espelha
 				mat.set_shader_parameter("k", 1.0 - k * k)
 			1:
-				s.scale = Vector2(1.0 + 0.25 * k, 1.0 - 0.35 * k)
+				s.scale = Vector2(1.0 + 0.25 * k, 1.0 - 0.35 * k) * _fl_esc[i]
 				s.position.y -= 24.0 * dt
 				mat.set_shader_parameter("k", 1.0 - k)
 			2:
@@ -550,12 +554,12 @@ func _desenhar_numeros() -> void:
 			continue
 		var k := n_t[i] / n_dur[i]
 		var tam := n_tam[i]
-		if tam == 16 and n_t[i] < 0.07:
-			tam = 24
+		if tam == 24 and n_t[i] < 0.08:
+			tam = 32
 		var c := n_cor[i]
 		c.a = 1.0 if k < 0.65 else 1.0 - (k - 0.65) / 0.35
 		var t: String = n_txt[i]
 		var larg := fonte.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x
 		var p := (n_pos[i] - Vector2(larg * 0.5, 0)).round()
-		txt.draw_string_outline(fonte, p, t, HORIZONTAL_ALIGNMENT_LEFT, -1, tam, 4, Color(0, 0, 0, c.a))
+		txt.draw_string_outline(fonte, p, t, HORIZONTAL_ALIGNMENT_LEFT, -1, tam, 6 if tam >= 24 else 5, Color(0, 0, 0, c.a))
 		txt.draw_string(fonte, p, t, HORIZONTAL_ALIGNMENT_LEFT, -1, tam, c)

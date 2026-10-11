@@ -14,6 +14,12 @@ const Progresso := preload("res://v2/progresso.gd")
 const Diretor := preload("res://v2/diretor.gd")
 const Telas := preload("res://v2/telas.gd")
 const AudioV2 := preload("res://v2/audio.gd")
+const Cartas := preload("res://v2/cartas.gd")
+const Armas := preload("res://v2/armas.gd")
+const Avisos := preload("res://v2/avisos.gd")
+const Elites := preload("res://v2/elites.gd")
+const Baus := preload("res://v2/bau.gd")
+const Chefes := preload("res://v2/chefe.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
@@ -27,6 +33,14 @@ var audio
 var progresso
 var diretor
 var telas
+var cartas  # raridade, sorteio, evolução (leva 3)
+var armas  # golpes secundários automáticos e ondas da katana
+var avisos  # ataques anunciados no chão
+var elites
+var baus
+var chefes
+var fim_emitido := false  # partida_terminou já saiu
+var venceu := false
 
 # tempo
 var parada_t := 0.0  # hit-stop que falta (s, relógio real)
@@ -45,6 +59,9 @@ var hit_stops := 0
 var ultimo_hit_stop := 0.0
 var _plim_t := 0.0
 var _plim_n := 0
+var _fila: Array = []  # monstros que morreram no quadro por golpe secundário ou fogo (saem em processar_mortes)
+var _seq := 0  # quantas faixas de sequência de abates já foram anunciadas neste combo
+var ferimentos := 0  # golpes secundários que feriram (testes)
 var _grade := {}
 var _usadas: Array = []
 var _q := 0
@@ -61,12 +78,24 @@ func montar(m) -> void:
 	orbes.montar(self, m.glow, m.atm.tex_brilho)
 	orbes.ima_vel = float(cfg.xp.ima_vel)
 	orbes.ima_acel = float(cfg.xp.ima_acel)
+	cartas = Cartas.new()
+	cartas.montar(self)
+	armas = Armas.new()
+	armas.montar(self, m.glow, m.sv, m.atm.tex_brilho)
 	progresso = Progresso.new()
 	progresso.montar(self)
 	diretor = Diretor.new()
 	diretor.montar(self)
 	telas = Telas.new()
 	telas.montar(self, m.sv)
+	avisos = Avisos.new()
+	avisos.montar(self, m.glow)
+	elites = Elites.new()
+	elites.montar(self)
+	baus = Baus.new()
+	baus.montar(self)
+	chefes = Chefes.new()
+	chefes.montar(self)
 
 
 ## Liga o herói às regras dos dados (vida, fôlego, curva de XP). Chamado quando o herói nasce e quando a partida recomeça.
@@ -115,6 +144,12 @@ func _fim_camera_lenta() -> void:
 		"morte":
 			jogo = "morte"
 			pausado = true
+			fim_de_partida(false)
+			telas.mostrar_resultado()
+		"vitoria":
+			jogo = "vitoria"
+			pausado = true
+			fim_de_partida(true)
 			telas.mostrar_resultado()
 	lento_acao = ""
 
@@ -125,15 +160,22 @@ func _fim_camera_lenta() -> void:
 func atualizar(dt: float) -> void:
 	_q += 1
 	var h = mundo.heroi
+	processar_mortes()  # fogo e golpes do quadro anterior
 	if mundo.combo > 0:
 		combo_t -= dt
 		if combo_t <= 0.0:
 			mundo.combo = 0
+			_seq = 0
 	_plim_t -= dt
 	if jogo == "jogando":
 		_separar()
 		_contato(h)
 		diretor.atualizar(dt)
+		armas.atualizar(dt)
+		elites.atualizar(dt)
+		chefes.atualizar(dt)
+		avisos.atualizar(dt)
+		baus.atualizar(dt)
 	orbes.atualizar(dt, h.pos + Vector2(0, -8), float(cfg.heroi.ima_raio) * h.m_ima)
 
 
@@ -195,11 +237,12 @@ func _contato(h) -> void:
 	for m in mundo.monstros:
 		if m.recarga > 0.0 or m.atordoa_t > 0.0:
 			continue
+		var ext: float = m.raio - m._base_raio  # elite e chefe são grandes: encostam de mais longe
 		var dx: float = m.pos.x - h.pos.x
-		if absf(dx) > alc:
+		if absf(dx) > alc + ext:
 			continue
 		var dy: float = m.pos.y - h.pos.y
-		if dx * dx + dy * dy > a2:
+		if dx * dx + dy * dy > (a2 if ext <= 0.0 else (alc + ext) * (alc + ext)):
 			continue
 		if h.levar_dano(m.dano, m.pos):
 			m.recarga = float(cfg.contato.recarga)
@@ -235,6 +278,8 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 	var morreram: Array = []
 	var cor := _cor(passo.cor)
 	for m in mundo.monstros:
+		if m.morrendo:
+			continue
 		var rel: Vector2 = m.pos + Vector2(0, -6) - origem
 		var dist := rel.length()
 		if dist > alc + m.raio:
@@ -253,6 +298,9 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var emp: Vector2 = (dir * 0.55 + longe * 0.45).normalized() * float(passo.empurrao) * (1.25 if crit else 1.0)
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0))
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
+		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
+			var raio_e: float = float(cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
+			armas.explodir(m.pos, float(dano) * float(armas.mods.explode) / 100.0, raio_e, COR_CRIT, m)
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dano), COR_CRIT if crit else COR_NUM, crit)
 		fx.flash(m, 0.1)
 		fx.faiscas(ponto - longe * float(m.raio) * 0.5, dir, 10 if crit else 6, cor, 200.0 if crit else 160.0)
@@ -265,6 +313,12 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		matar(m)
 		parada = maxf(parada, float(cfg.morte.hit_stop))
 		tremor = maxf(tremor, float(cfg.morte.tremor))
+	# modificadores da katana: o corte solta uma onda, a estocada solta uma lança de luz
+	if passo.nome == "corte" and float(armas.mods.onda) > 0.0:
+		armas.lancar_onda(origem, dir, float(passo.dano) * h.m_dano * float(armas.mods.onda) / 100.0)
+	elif passo.nome == "estocada" and float(armas.mods.fura) > 0.0:
+		armas.lancar_lanca(origem, dir, float(passo.dano) * h.m_dano * float(armas.mods.fura) / 100.0)
+	processar_mortes()
 	if n > 0:
 		hit_stop(parada)
 		if tremor > 0.0:
@@ -276,24 +330,75 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 
 
 func matar(m) -> void:
+	if not m.vivo:
+		return
 	mortes += 1
 	var c: Vector2 = m.pos + Vector2(0, -8)
-	m.vivo = false
-	m.raiz.visible = false
-	if m.olho != null:
-		m.olho.visible = false
+	m.esconder()
+	m.morrendo = false
+	m.queima_t = 0.0
 	mundo.sombras.ativar(m, false)
+	var grande: bool = m.elite or m.chefe
 	fx.flash(m, 0.24, Color(1, 1, 1), 1)
-	fx.estouro(c, Color(0.9, 0.9, 0.85), int(cfg.morte.particulas))
-	audio.tocar("morte", randf_range(0.9, 1.12), -1.0, 0.03)
+	fx.estouro(c, Color(0.9, 0.9, 0.85), int(cfg.morte.particulas) * (3 if grande else 1))
+	audio.tocar("morte", randf_range(0.9, 1.12) * (0.7 if grande else 1.0), -1.0, 0.03)
 	mundo.abates += 1
 	mundo.combo += 1
 	combo_t = float(cfg.combo_abates.janela)
 	mundo.maior_combo = maxi(mundo.maior_combo, mundo.combo)
+	_sequencia()
 	var mult := minf(1.0 + float(mundo.combo - 1) * float(cfg.combo_abates.xp_por_abate), float(cfg.combo_abates.xp_max))
 	for i in m.n_orbes:
 		orbes.soltar(m.pos, m.xp * mult)
+	if float(armas.mods.folego) > 0.0:  # modificador da katana: matar recupera fôlego
+		mundo.heroi.ganhar_folego(float(armas.mods.folego) / 100.0)
+	if m.elite:
+		elites.ao_morrer(m)
+	if m.chefe:
+		mundo.cam.tremer(4.0, 0.4)
+		fx.onda(m.pos, Color(1.0, 0.9, 0.7, 0.9), 120.0, 0.6)
+		hit_stop(0.25)
 	mundo.devolver_monstro(m)
+	if m.chefe:
+		chefes.ao_morrer(m)
+		m.chefe = false
+
+
+## Golpe de fonte secundária (aura, lâminas, corvos, raio, runa, ondas, fogo): tira vida, empurra e mostra o número. A morte NÃO é
+## processada na hora (fica na fila, saindo em processar_mortes) para não mexer em mundo.monstros enquanto alguém percorre a lista.
+## Devolve true se a vida zerou. `numero` = mostra o número de dano.
+func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: Color, numero := true) -> bool:
+	if not m.vivo or m.morrendo:
+		return false
+	var dn := maxi(1, roundi(dano))
+	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
+	ferimentos += 1
+	if numero:
+		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, false)
+		fx.flash(m, 0.08)
+	if morreu:
+		m.morrendo = true
+		_fila.append(m)
+	return morreu
+
+
+## Mata quem morreu por golpe secundário ou fogo desde a última vez.
+func processar_mortes() -> void:
+	var guarda := 0
+	while not _fila.is_empty() and guarda < 400:
+		guarda += 1
+		var m = _fila.pop_back()
+		if m.vivo:
+			matar(m)
+
+
+## Anuncia a sequência de abates (CHACINA, MASSACRE...) quando o combo passa de uma faixa.
+func _sequencia() -> void:
+	var faixas: Array = cartas.cfg.anuncios.abates
+	while _seq < faixas.size() and mundo.combo >= int(faixas[_seq].combo):
+		var f: Dictionary = faixas[_seq]
+		_seq += 1
+		anunciar(str(f.texto).replace("{n}", str(int(f.combo))), _cor(f.cor), "", 1.5)
 
 
 ## Um orbe chegou ao herói: XP, e o "plim" sobe de tom a cada orbe seguido.
@@ -306,6 +411,7 @@ func coletar(valor: float, _de: Vector2) -> void:
 	var tom := minf(1.0 + float(_plim_n) * float(cfg.xp.plim_passo), float(cfg.xp.plim_max))
 	audio.tocar("orbe", tom, -4.0, 0.0)
 	var h = mundo.heroi
+	mundo.xp_coletado += valor
 	fx.particula(h.pos + Vector2(randf_range(-4, 4), -18), Vector2(randf_range(-10, 10), -30), 0.28, 9.0, Color(0.5, 0.95, 1.0, 0.7), -10.0, true)
 	progresso.ganhar_xp(valor)
 
@@ -388,19 +494,104 @@ func nivel_subiu(nivel: int) -> void:
 	mundo.nivel_subiu.emit(nivel)
 
 
+# ------------------------------------------------------------------ anúncios, elites, chefes e vitória (leva 3)
+
+
+## Anúncio grande no meio da tela. Emite o sinal `anuncio(texto, cor)` do mundo (o HUD desenha) e mostra o texto simples em telas.gd
+## enquanto o HUD não assume (mundo.anuncios_no_hud).
+func anunciar(texto: String, cor: Color, sub := "", dur := 2.0) -> void:
+	mundo.anuncio.emit(texto, cor)
+	telas.anunciar(texto, cor, sub, dur)
+
+
+func onda_forte(numero: int) -> void:
+	var a: Dictionary = cartas.cfg.anuncios.onda_forte
+	mundo.onda_forte.emit(numero)
+	anunciar(str(a.texto), _cor(a.cor), "", 2.2)
+	audio.tocar("onda", 1.0, 0.0, 0.0)
+
+
+func elite_apareceu(nome: String, m, cor: Color) -> void:
+	var a: Dictionary = cartas.cfg.anuncios.elite
+	mundo.elite_apareceu.emit(nome)
+	anunciar(str(a.texto), cor, nome, 2.4)
+	audio.tocar("elite", 1.0, 0.0, 0.1)
+	fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.9), 70.0, 0.5)
+
+
+func chefe_apareceu(m, mk: Dictionary) -> void:
+	var a: Dictionary = cartas.cfg.anuncios.minichefe if bool(mk.mini) else cartas.cfg.anuncios.chefe
+	var cor := Color(mk.cor[0], mk.cor[1], mk.cor[2])
+	mundo.chefe_apareceu.emit(str(mk.nome), float(mk.vida))
+	anunciar(str(a.texto).replace("{nome}", str(mk.nome)), cor, "", 3.0)
+	audio.tocar("chefe", 0.7, 0.0, 0.3)
+	fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.9), 110.0, 0.7)
+	mundo.cam.tremer(3.0, 0.4)
+
+
+## Uma evolução aconteceu (cartas.gd chama): efeitos e aviso grande.
+func evolucao_feita(ev: Dictionary) -> void:
+	var h = mundo.heroi
+	var cor := Color(ev.cor[0], ev.cor[1], ev.cor[2])
+	mundo.evolucao.emit(str(ev.nome))
+	var a: Dictionary = cartas.cfg.anuncios.evolucao
+	anunciar(str(a.texto).replace("{nome}", str(ev.nome)), cor, str(ev.desc), 3.2)
+	audio.tocar("evolucao", 1.0, 0.0, 0.0)
+	fx.onda(h.pos + Vector2(0, -12), Color(cor.r, cor.g, cor.b, 0.95), 130.0, 0.6)
+	fx.onda(h.pos + Vector2(0, -12), Color(1, 1, 1, 0.8), 80.0, 0.4)
+	fx.luz_rapida(h.pos + Vector2(0, -12), cor, 2.4, 240.0, 0.7)
+	fx.flash(h, 0.4, cor, 0, 0.9)
+	fx.estouro(h.pos + Vector2(0, -16), cor, 20)
+	mundo.cam.tremer(3.0, 0.3)
+
+
+## Venceu o chefe: os monstros que sobraram estouram, câmera lenta e a tela de VITÓRIA.
+func vitoria() -> void:
+	if jogo == "vencendo" or jogo == "vitoria" or jogo == "morrendo" or jogo == "morte":
+		return
+	jogo = "vencendo"
+	var a: Dictionary = cartas.cfg.anuncios.vitoria
+	anunciar(str(a.texto), _cor(a.cor), "", 3.0)
+	audio.tocar("vitoria", 1.0, 0.0, 0.0)
+	for m in mundo.monstros.duplicate():
+		matar(m)
+	mundo.cam.tremer(5.0, 0.6)
+	camera_lenta("vitoria", 1.8, 0.25)
+
+
+## Emite partida_terminou(resultado) uma vez por partida (a meta-progressão lê isto).
+func fim_de_partida(ganhou: bool) -> void:
+	if fim_emitido:
+		return
+	fim_emitido = true
+	venceu = ganhou
+	var r := {
+		"tempo": mundo.tempo_partida, "abates": mundo.abates, "nivel": mundo.heroi.nivel, "maior_combo": mundo.maior_combo, "venceu": ganhou,
+		"almas": mundo.almas_partida
+	}
+	mundo.resultado = r
+	mundo.partida_terminou.emit(r)
+
+
 # ------------------------------------------------------------------ partida
 
 
 ## Zera a partida: monstros de volta ao pool, orbes e efeitos limpos, contadores e estado.
 func limpar_partida() -> void:
 	for m in mundo.monstros.duplicate():
-		m.vivo = false
-		m.raiz.visible = false
-		if m.olho != null:
-			m.olho.visible = false
+		m.esconder()
+		m.morrendo = false
+		m.elite = false
+		m.chefe = false
 		mundo.sombras.ativar(m, false)
 		mundo.devolver_monstro(m)
+	_fila.clear()
 	orbes.limpar()
+	armas.limpar()
+	avisos.limpar()
+	baus.limpar()
+	elites.zerar()
+	chefes.zerar()
 	fx.limpar()
 	parada_t = 0.0
 	lento_t = 0.0
@@ -414,6 +605,12 @@ func limpar_partida() -> void:
 	acertos = 0
 	criticos = 0
 	mortes = 0
+	ferimentos = 0
+	fim_emitido = false
+	venceu = false
+	_seq = 0
+	mundo.xp_coletado = 0.0
+	mundo.resultado = {}
 	progresso.zerar()
 	diretor.zerar()
 	telas.esconder()
@@ -421,7 +618,7 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
-	for m in [orbes, progresso, diretor, telas, fx]:
+	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, avisos, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -432,6 +629,12 @@ func liberar() -> void:
 	diretor = null
 	telas = null
 	fx = null
+	cartas = null
+	armas = null
+	avisos = null
+	elites = null
+	baus = null
+	chefes = null
 	mundo = null
 
 

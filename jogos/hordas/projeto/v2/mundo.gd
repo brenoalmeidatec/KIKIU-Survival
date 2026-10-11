@@ -13,8 +13,9 @@ extends Node
 ##   --janela=1280x720 --rotulo (fps na tela) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F4 mostra a colisão, Esc sai.
-## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos e o sinal
-## nivel_subiu(nivel); no herói vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado.
+## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
+## anuncios_no_hud e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
+## no herói vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado.
 
 const Apresentacao := preload("res://v2/apresentacao.gd")
 const CameraMundo := preload("res://v2/camera_mundo.gd")
@@ -38,6 +39,15 @@ const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_e
 const PESOS_MONSTRO := [4, 4, 3, 3, 1]
 
 signal nivel_subiu(nivel: int)
+## Sinais da partida (leva 3), para o HUD e a meta-progressão: onda forte começou, elite/chefe apareceu, vida do chefe mudou, evolução feita,
+## anúncio grande (texto + cor) e fim da partida com o resultado {tempo, abates, nivel, maior_combo, venceu, almas}.
+signal onda_forte(numero: int)
+signal elite_apareceu(nome: String)
+signal chefe_apareceu(nome: String, vida_max: float)
+signal chefe_vida(vida: float)
+signal evolucao(nome: String)
+signal anuncio(texto: String, cor: Color)
+signal partida_terminou(resultado: Dictionary)
 
 ## Para os testes: true antes de add_child pula o que mexe na janela e nas fotos.
 var modo_teste := false
@@ -60,6 +70,12 @@ var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
 var maior_combo := 0
+var xp_coletado := 0.0  # soma do XP dos orbes pegos (com o bônus do combo)
+var resultado: Dictionary = {}  # o último resultado de partida (vazio enquanto joga)
+var anuncios_no_hud := false  # o HUD liga isto quando passa a desenhar os anúncios e a barra do chefe: telas.gd para de desenhar os dela
+var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredondado (a meta-progressão lê isto)
+	get:
+		return roundi(xp_coletado / 10.0)
 var tempo_partida := 0.0  # s de jogo (não conta hit-stop nem a pausa da escolha)
 var monstros_vivos: int:
 	get:

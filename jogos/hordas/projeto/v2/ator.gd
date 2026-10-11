@@ -12,6 +12,7 @@ var espelha := false
 var pos := Vector2.ZERO
 var estatico := true
 var raio := 7.0  # raio do corpo no chão (colisão, v2/colisao.gd)
+var escala := 1.0  # tamanho do sprite (elite e chefe são maiores)
 var ativo := false  # na tela (com margem): só ele tem sombra e gasta conta por quadro
 var olho: Sprite2D = null  # brilho dos olhos (monstros), na camada sem escurecimento
 
