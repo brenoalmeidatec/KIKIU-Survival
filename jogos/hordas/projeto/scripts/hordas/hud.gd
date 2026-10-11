@@ -593,7 +593,10 @@ func _mostra_abertura(v: bool) -> void:
 
 ## Opção "Pausar ao sair da janela": trocou de janela (alt-tab) no meio da partida, pausa sozinho.
 func _notification(what: int) -> void:
+	# headless não tem janela: não há foco real a respeitar (o CI e os testes rodam assim)
 	if what != NOTIFICATION_APPLICATION_FOCUS_OUT or not Config.v("pausar_fora") or arena == null:
+		return
+	if DisplayServer.get_name() == "headless":
 		return
 	if not arena.bot and not arena.eh_online and not _pausado and not arena.cartas.aberto() and arena.jogador and arena.jogador.hp > 0:
 		pausar()
