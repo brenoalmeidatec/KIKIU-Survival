@@ -100,7 +100,7 @@ Fora de qualquer luz, nos três modos, fica um blob fraco sem direção.
 ### Para testar ao vivo
 Sem `--fotos` e sem `--medir` a cena **fica aberta** (modo livre); `--seq=...` é aceito e ignorado:
 `godot --path <projeto> res://prototipos/cara_nova.tscn -- --seq=999999`
-Teclas: **1, 2, 3** trocam baixo, médio e alto (0 desliga), com rótulo no canto (modo e fps). **WASD** anda com o herói (as luzes ficam no mundo; a tocha e a aura só vão junto com ele se apertar **T**). **L** liga e desliga a luz azul seguindo o mouse. Argumentos: `--sombra=baixa|media|alta|nenhuma` (padrão `media`), `--sem_vsync` (solta o fps no rótulo), `--rotulo` (rótulo também nas fotos), `--azul=x,y` (fixa a luz azul), `--grade=x,y` (cena de teste com uma luz só nesse ponto, ver abaixo), `--piso_antigo`.
+Teclas: **1, 2, 3** trocam baixo, médio e alto (0 desliga), com rótulo no canto (modo e fps). **WASD** anda com o herói (as luzes ficam no mundo; a tocha e a aura só vão junto com ele se apertar **T**). **L** liga e desliga a luz azul seguindo o mouse. Argumentos: `--sombra=baixa|media|alta|nenhuma` (padrão `media`), `--cenario_antigo`, `--sem_atmosfera`, `--sem_vsync` (solta o fps no rótulo), `--rotulo` (rótulo também nas fotos), `--azul=x,y` (fixa a luz azul), `--grade=x,y` (cena de teste com uma luz só nesse ponto, ver abaixo), `--piso_antigo`.
 
 ### Sombra assada no cenário (achado e correção)
 O Alisson viu a sombra do cenário **parada numa direção**. Confirmado com evidência, e a causa era arte, não código:
@@ -125,16 +125,36 @@ Para cada ator (herói, espelhado, não espelhado e 8 itens de cenário) e nos m
 
 **O que ainda estala:** quando a luz cruza exatamente a linha leste-oeste a silhueta troca de espelhada para em pé (um sprite visto de perfil vira um fio: é a física do billboard). Para a sombra não virar uma linha ela tem espessura mínima (`Y_MIN` = 0,2 H), então nesse instante a ponta salta uns 0,4 H uma vez; o alfa cai para 45% nessa faixa para quase não aparecer.
 
+### Cenário novo (arte do imagegen), chão novo, clima e atmosfera
+
+O cenário do protótipo agora vem de `projeto/prototipos/objetos/` (23 itens, albedo + normal, já na escala final: árvore de 150 px, herói de ~39; escala 1, sem ampliar) e o chão de `projeto/prototipos/piso/` (`piso.png` + `piso_normal.png`, 512x512, 1 texel = 1 px). Os enfeites regerados em Blender (`gerar_cenario_cara_nova.py`) saem de cena, mas continuam acessíveis com `--cenario_antigo` (que também volta ao chão sem sombra assada, para comparar); `--piso_antigo` usa o chão do jogo de hoje.
+
+![antes, depois (média e alta) e referência](../../prints/prototipo_cara_nova_cenario_novo_antes_depois.png)
+
+- **Composição** (`_cenario_novo`, parecida com a arte de entrada): círculo de ruína perto do centro (obelisco, colunas, pilar, lápides, muros, pedestal, runa), árvores grandes nas bordas, arbustos, juncos, raízes e cogumelos agrupados em volta, altar e crânio no canto inferior esquerdo, poste de lanterna e toro à direita e no fundo.
+- **Luz dos objetos:** `poste_lanterna`, `toro` e o `altar` (vela) são `PointLight2D` pequenas, quentes e fracas, com tremor leve (alguns %), e contam nas sombras como as outras luzes (7 luzes no total). O corpo brilhante delas e das magias é um brilho de queda suave (aditivo), não mais um disco.
+- **Sombra e normal:** todos os objetos têm `CanvasTexture` (albedo + normal) e a sombra dinâmica; objetos altos têm comprimento máximo menor (árvore 0,5 H, coluna 0,9 H, baixos 1,6 H).
+- **Clima de cor:** `CanvasModulate` `#122125` (verde-azulado quase preto), queda das luzes mais forte (1, 0,5 a 22%, 0,1 a 55%, 0 na borda; a atenuação da sombra usa a mesma curva), então o que está longe das luzes fica escuro de verdade e as poças ficam contrastadas. O chão novo passa por um shader que tira ~20% do verde e dessatura 30% antes da luz (sem isso o musgo virava amarelo saturado sob a luz laranja); as manchas grandes de musgo e terra somem no escuro. Os objetos são levantados 1,7x antes da luz (a arte é muito escura). Botões: `--amb=`, `--obj=`, `--ganho_chao=`, `--verde_chao=`, `--dessat_chao=`, `--e_tocha=`.
+- **Magias roxa e azul:** brilho aditivo de queda suave + poucas faíscas subindo (10 partículas), no lugar dos discos chapados. Os discos eram manchas claras do chão antigo sob a luz colorida.
+- **Atmosfera:** vaga-lumes (34 `CPUParticles2D` aditivas que piscam e vagam) e folhas vermelhas caindo (22, giram devagar), na camada sem `CanvasModulate`. No modo de sombra **baixa** todas as partículas caem pela metade (simula o perfil Baixo). `--sem_atmosfera` desliga.
+- **`--piso_novo`** continua aceito (agora é o padrão quando `res://prototipos/piso/piso.png` existe).
+
+![luz L (azul) à esquerda e à direita, com zoom nos pilares](../../prints/prototipo_cara_nova_cenario_novo_luz_L.png)
+
+O teste automático continua passando com os objetos novos (`TESTE_SOMBRA OK: 2964 checagens, 0 falhas`, 23 tipos de objeto).
+
+**O que ainda destoa da referência:** a cena está bem mais escura e dessaturada (a referência tem o círculo de pedra claro e musgoso iluminando o centro, vermelhos e roxos saturados, água refletindo azul, o torii e a fogueira grande); falta o piso de lajes em círculo (a ruína aqui são só os objetos), a água, o fundo de floresta densa e as folhas vermelhas no chão; as árvores das bordas ficam quase silhuetas pretas fora da luz (na referência elas têm contraluz azulada); a tocha do herói não é uma chama grande e os bichos são menores e menos detalhados.
+
 ### Fps por modo de sombra (Intel Iris Xe, notebook, 6 luzes, sem V-Sync)
 
-Mediana de 3 rodadas de 6 s intercaladas (mínimo a máximo entre parênteses), `medir_sombras.sh`. "26 sprites" = herói + 25 monstros; "251" = herói + 250. Mais 29 sprites de cenário (22 enfeites e 7 árvores) com sombra em todos os casos. Carga de fundo da máquina durante a medição: 10 a 25% de CPU (outros agentes e o navegador; não consegui pará-los), então os números têm ruído de até uns 25% e valem como ordem de grandeza.
+Mediana de 3 rodadas de 6 s intercaladas (mínimo a máximo entre parênteses), `medir_sombras.sh`. "26 sprites" = herói + 25 monstros; "251" = herói + 250. Mais ~55 objetos de cenário com sombra e normal map, 7 luzes, vaga-lumes, folhas e faíscas (medido com o cenário novo; as medições anteriores, com 29 objetos e 6 luzes, estão no histórico do git). Carga de fundo da máquina durante a medição: 5 a 40% de CPU (outros agentes e o navegador; não consegui pará-los), então os números têm ruído de até uns 25% e valem como ordem de grandeza.
 
 | Modo | 26 sprites | 251 sprites |
 |---|---|---|
-| nenhuma | 948 (758 a 1055) | 458 (443 a 510) |
-| baixa (blob) | 857 (799 a 899) | 449 (381 a 492) |
-| média (1 sombra borrada) | 650 (636 a 753) | 265 (243 a 273) |
-| alta (até 2 sombras + contato) | 584 (531 a 614) | 199 (192 a 223) |
+| nenhuma | 839 (795 a 854) | 470 (456 a 502) |
+| baixa (blob) | 802 (777 a 843) | 503 (449 a 508) |
+| média (1 sombra borrada) | 516 (511 a 660) | 232 (227 a 275) |
+| alta (até 2 sombras + contato) | 503 (476 a 520) | 222 (191 a 243) |
 
 O custo de script das sombras (`SCRIPT_SOMBRA` na saída da medição) com 251 sprites é de ~1,2 ms por quadro na média e ~1,8 ms na alta nesta máquina; o resto da diferença é desenho (cada ator vira até 3 itens a mais). **Não medi no i5-3470** (o Breno precisa conferir com o F3): o custo de script deve pesar mais numa CPU de 3ª geração, então com a horda toda em tela a média é a candidata a padrão e a alta fica para máquina melhor. A horda do jogo real é MultiMesh, então lá a sombra teria de ser outro MultiMesh só da silhueta (o protótipo usa `Sprite2D`, como o resto).
 
