@@ -218,7 +218,7 @@ def gerar_piso():
     luz_piso()
     piso(r)
     repetir_3x3()
-    img = renderizar(PISO, PISO, pontilhado=0.04, contorno=False, luz_borda=False, opaco=True, paleta=PAL_PISO)
+    img = renderizar(PISO, PISO, pontilhado=0.0, contorno=False, luz_borda=False, opaco=True, paleta=PAL_PISO)
     return {"img": veios(img, random.Random("veios"))}
 
 
@@ -507,7 +507,7 @@ def gerar_parede():
     cam_frente(W, PAREDE_H, W / 2 / PX, PAREDE_H / 2 / PX)
     luz_parede()
     parede(r)
-    return {"img": renderizar(W, PAREDE_H, pontilhado=0.025, contorno=False, luz_borda=False, opaco=True)}
+    return {"img": renderizar(W, PAREDE_H, pontilhado=0.0, contorno=False, luz_borda=False, opaco=True)}
 
 
 # ================================================================ tapete (visto de cima)
