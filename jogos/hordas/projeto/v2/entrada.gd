@@ -2,7 +2,7 @@ extends RefCounted
 ## Entrada da v2: garante as ações que o mundo lê quando a cena roda sozinha (godot ... res://v2/mundo.tscn), sem passar pelo main.gd, que é
 ## quem cria o InputMap do jogo (TECLAS em scripts/hordas/main.gd). Só cria o que faltar: com o main.gd rodando nada muda, e as teclas que o
 ## jogador trocou em Opções > Controles continuam valendo. Andar = ações esquerda, direita, cima e baixo (WASD, setas e analógico esquerdo);
-## mirar com o controle = mira_* (analógico direito); golpe principal = atacar (botão esquerdo do mouse e gatilho direito).
+## mirar com o controle = mira_* (analógico direito); golpe principal = atacar (botão esquerdo do mouse e gatilho direito); esquiva = Espaço e botão B; correr = Shift e L3 (analógico apertado).
 
 const TECLAS := {"esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT], "cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN]}
 const EIXOS := {
@@ -39,3 +39,19 @@ static func garantir() -> void:
 		gatilho.axis = JOY_AXIS_TRIGGER_RIGHT
 		gatilho.axis_value = 1.0
 		InputMap.action_add_event("atacar", gatilho)
+	if not InputMap.has_action("esquiva"):
+		InputMap.add_action("esquiva", 0.4)
+		var espaco := InputEventKey.new()
+		espaco.physical_keycode = KEY_SPACE
+		InputMap.action_add_event("esquiva", espaco)
+		var b := InputEventJoypadButton.new()
+		b.button_index = JOY_BUTTON_B
+		InputMap.action_add_event("esquiva", b)
+	if not InputMap.has_action("correr"):
+		InputMap.add_action("correr", 0.4)
+		var shift := InputEventKey.new()
+		shift.physical_keycode = KEY_SHIFT
+		InputMap.action_add_event("correr", shift)
+		var l3 := InputEventJoypadButton.new()
+		l3.button_index = JOY_BUTTON_LEFT_STICK
+		InputMap.action_add_event("correr", l3)
