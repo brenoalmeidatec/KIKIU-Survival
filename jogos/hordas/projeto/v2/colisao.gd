@@ -8,8 +8,11 @@ extends RefCounted
 ## normal (y * ry/rx). O empurrão sai só no sentido normal, então o corpo desliza ao longo de uma forma lisa e não
 ## prende nela. Sobra uma folga de FOLGA px, para o corpo não ficar tangente à forma (erro de ponto flutuante
 ## contaria como dentro). Limite conhecido: entre duas formas encostadas há uma quina côncava, e um resolver que
-## recebe só a posição pode parar lá (os empurrões se cancelam). Por isso o muro e o tronco são uma elipse larga,
-## e as formas de cenário devem ficar separadas.
+## recebe só a posição pode parar lá (os empurrões se cancelam). Por isso o muro é uma elipse larga, e as formas de
+## cenário devem ficar separadas.
+## Árvores, tocos e tronco caído têm PEGADA: um ou mais círculos (elipses 2:1) que cobrem a base visual inteira, raízes
+## incluídas (gerar_objetos.py, _pegada_de_base). Quem garante que o corpo não entra na base é essa cobertura; o teste
+## testes/v2_arvores.tscn mede isso nas 8 direções.
 ## A grade é plana e fixa: GRADE_W x GRADE_H células de 64 px, começando em -OFFSET_CELULAS células. Forma fora
 ## dela fica na célula da borda (a consulta também prende na borda, então o resultado não muda).
 ## Uso: adicionar_objeto(pe, formas) para cada objeto fixo; por quadro e corpo, resolver(pos, raio).
@@ -123,6 +126,18 @@ static func livre(pos: Vector2, raio: float) -> bool:
 				if Vector2(q.x, q.y * ks[i]).length() < rxs[i] + raio:
 					return false
 	return true
+
+
+## Depuração (tecla F4): as formas registradas que tocam o retângulo `r` (coordenadas do mundo), como {c, rx, ry}.
+static func formas_no_retangulo(r: Rect2) -> Array:
+	var saida: Array = []
+	for i in _cen.size():
+		var rx := _rx[i]
+		var ry := rx / _k[i]
+		var caixa := Rect2(_cen[i] - Vector2(rx, ry), Vector2(rx, ry) * 2.0)
+		if caixa.intersects(r):
+			saida.append({"c": _cen[i], "rx": rx, "ry": ry})
+	return saida
 
 
 static func _coluna(x: float) -> int:

@@ -7,8 +7,8 @@ extends Node
 ## Rodar (a partir de jogos/hordas):  godot --path projeto res://v2/mundo.tscn [-- opções]
 ## Opções (após --): --fotos=PASTA --seq=2.0 --pos=x,y --nome=foto (foto do viewport e sai) | --medir --duracao=6 (fps e sai)
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
-##   --janela=1280x720 --rotulo (fps na tela) --escala_pura (nearest fracionário em vez do sharp bilinear)
-## Modo livre: WASD/analógico anda, o mouse mira, 1/2/3 trocam a sombra (baixa/média/alta), 0 desliga, Esc sai.
+##   --janela=1280x720 --rotulo (fps na tela) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
+## Modo livre: WASD/analógico anda, o mouse mira, 1/2/3 trocam a sombra (baixa/média/alta), 0 desliga, F4 mostra a colisão, Esc sai.
 
 const Apresentacao := preload("res://v2/apresentacao.gd")
 const CameraMundo := preload("res://v2/camera_mundo.gd")
@@ -20,6 +20,8 @@ const Sprites := preload("res://v2/sprites.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Monstro := preload("res://v2/monstro.gd")
 const Entrada := preload("res://v2/entrada.gd")
+const Copas := preload("res://v2/copas.gd")
+const Depuracao := preload("res://v2/depuracao_colisao.gd")
 const LARG := 960
 const ALT := 540
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
@@ -38,6 +40,8 @@ var luzes
 var sombras
 var atm
 var cenario
+var copas  # copa transparente das árvores (copas.gd)
+var dbg_colisao: Node2D  # F4: contorno das formas de colisão (depuracao_colisao.gd)
 var sprites
 var heroi
 var monstros: Array = []
@@ -148,6 +152,13 @@ func _montar() -> void:
 	sombras.luzes = luzes
 	cenario = Cenario.new()
 	cenario.carregar(dados, no_mundo, luzes, sombras, sprites.com_normal)
+	copas = Copas.new()
+	copas.montar(cenario.objetos)
+	dbg_colisao = Depuracao.new()
+	dbg_colisao.mundo = self
+	dbg_colisao.z_index = 400  # por cima do mundo inteiro (árvores, atores, sombras)
+	dbg_colisao.visible = args.has("colisao")
+	no_mundo.add_child(dbg_colisao)
 	_rng.seed = int(dados.get("semente", 11))
 	_criar_heroi()
 	_criar_monstros()
@@ -312,6 +323,8 @@ func _input(e: InputEvent) -> void:
 			sombras.definir_modo(Sombras.MEDIA)
 		KEY_3:
 			sombras.definir_modo(Sombras.ALTA)
+		KEY_F4:
+			dbg_colisao.visible = not dbg_colisao.visible
 		KEY_ESCAPE:
 			if get_tree().current_scene == self and not modo_teste:
 				get_tree().quit()
@@ -351,6 +364,9 @@ func avancar(dt: float) -> void:
 	var rect: Rect2 = cam.retangulo()
 	atm.seguir(cam.position)
 	cenario.atualizar_blocos(rect)
+	var atores_mov: Array = [heroi]
+	atores_mov.append_array(monstros)
+	copas.atualizar(dt, cenario.ativos, atores_mov)
 	luzes.atualizar(t, rect)
 	var tela := rect.grow(MARGEM_SOMBRA)
 	var com_sombra: bool = sombras.modo != Sombras.NENHUMA
@@ -405,7 +421,7 @@ func _montar_rotulo() -> void:
 
 func _texto_rotulo() -> void:
 	_rotulo.text = (
-		"sombra: %s   %d fps   atores na tela: %d   luzes ligadas: %d/%d\nWASD anda   mouse mira   1 baixa  2 media  3 alta  0 sem sombra   Esc sai"
+		"sombra: %s   %d fps   atores na tela: %d   luzes ligadas: %d/%d\nWASD anda   mouse mira   1 baixa  2 media  3 alta  0 sem sombra   F4 colisão   Esc sai"
 		% [str(Sombras.NOMES[sombras.modo]).to_upper(), Engine.get_frames_per_second(), atores_ativos(), luzes.ligadas(), luzes.lista.size()]
 	)
 
