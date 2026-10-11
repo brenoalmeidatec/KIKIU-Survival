@@ -39,6 +39,9 @@ AZUL_ESCURO = (29, 95, 143, 255)
 VAZIO_ESCURO = (6, 6, 10, 255)
 VAZIO = (22, 22, 30, 255)
 PAINEL = (1, 3, 11, 205)  # painel #01030b, translúcido
+FANTASMA_CLARO = (255, 240, 214, 255)  # barra fantasma do chefe: o dano recente que desce devagar
+FANTASMA = (236, 206, 176, 255)
+FANTASMA_ESCURO = (176, 134, 116, 255)
 
 
 def moldura_pedra() -> Image.Image:
@@ -120,6 +123,38 @@ def selo() -> Image.Image:
     return img
 
 
+def moldura_faixa() -> Image.Image:
+    """20x20: moldura da faixa de anúncio. Metal claro (o anúncio tinge por tipo com modulate), cantos cortados em degrau e miolo escuro translúcido."""
+    img = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
+    px = img.load()
+    for y in range(20):
+        for x in range(20):
+            dx = min(x, 19 - x)
+            dy = min(y, 19 - y)
+            s = dx + dy
+            if s < 3:  # canto cortado: transparente
+                continue
+            if s == 3 or dx == 0 or dy == 0:
+                px[x, y] = CONTORNO
+            elif dx == 1 or dy == 1:
+                px[x, y] = METAL_CLARO
+            elif dx == 2 or dy == 2:
+                px[x, y] = METAL
+            elif dy == 3:
+                px[x, y] = (40, 44, 56, 235)  # filete de luz no alto do miolo
+            else:
+                px[x, y] = PAINEL
+    return img
+
+
+def anel_luz() -> Image.Image:
+    """20x20: anel de luz do pop de nível (círculo de 2 px, dourado claro). Cresce por escala no HUD."""
+    img = Image.new("RGBA", (20, 20), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse([0, 0, 19, 19], outline=OURO_CLARO, width=2)
+    return img
+
+
 def main() -> None:
     saidas = {
         "moldura_pedra.png": moldura_pedra(),
@@ -128,6 +163,9 @@ def main() -> None:
         "barra_xp.png": barra([OURO_CLARO, OURO, OURO, OURO, OURO, OURO, OURO_ESCURO]),
         "barra_folego.png": barra([AZUL_CLARO, AZUL, AZUL, AZUL_ESCURO]),
         "selo_nivel.png": selo(),
+        "moldura_faixa.png": moldura_faixa(),
+        "anel_luz.png": anel_luz(),
+        "barra_fantasma.png": barra([FANTASMA_CLARO, FANTASMA, FANTASMA, FANTASMA_ESCURO, FANTASMA_ESCURO]),
     }
     for nome, img in saidas.items():
         img.save(AQUI / nome, optimize=False)
