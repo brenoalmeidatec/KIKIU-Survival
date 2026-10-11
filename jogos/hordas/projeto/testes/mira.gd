@@ -21,11 +21,20 @@ func esperar(s: float) -> void:
 ## Tempo SIMULADO: passos fixos de 1/60 s com a arena em _process manual, cada passo com um quadro de verdade.
 ## Com o relógio de parede o projétil andava uma distância diferente por quadro (dt real), e o ricochete
 ## mudava a direção conforme a carga da máquina (falhou 1 de 4 rodadas com as cenas em paralelo).
+## Os vírus que o diretor sorteia nascem a qualquer momento, inclusive no meio de um tiro, e puxavam a mira assistida
+## (falhava ~1 em 8). Com `alvos` preenchido, todo passo manda pra longe quem não for alvo do teste.
+var alvos: Array = []
+
+
 func avancar(a: Node, s: float) -> void:
 	var t := 0.0
 	while t < s - 0.000001:
 		var d := minf(1.0 / 60.0, s - t)
 		a._process(d)
+		if not alvos.is_empty():
+			for v in a.inimigos.lista:
+				if not v in alvos:
+					v.pos = a.jogador.centro() + Vector2(3000, 3000)
 		await get_tree().process_frame
 		t += d
 
@@ -146,6 +155,7 @@ func _na_arena() -> void:
 	perto.atordoado = 20.0
 	var longe = a.inimigos.criar("carnical", j.centro() + Vector2(140, 0), 1)  # à direita (mais longe)
 	longe.atordoado = 20.0
+	alvos = [perto, longe]
 	longe.pos = j.centro() + Vector2(140, 0)  # o tiro anterior pode ter empurrado o vírus: volta pro lugar
 	perto.pos = j.centro() + Vector2(0, 120)
 	longe.hp = 100000.0
@@ -257,6 +267,7 @@ func _na_arena() -> void:
 	a.inimigos.limpar()
 	var alvo_raio = a.inimigos.criar("carnical", j.centro() + Vector2(150, -30), 1)
 	alvo_raio.atordoado = 20.0
+	alvos = [alvo_raio]
 	alvo_raio.hp = 100000.0
 	a.armas.lista.clear()
 	a.armas.adicionar("raio")
