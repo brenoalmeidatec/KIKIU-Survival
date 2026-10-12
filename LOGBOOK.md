@@ -1302,3 +1302,12 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude do Alisson (notebook) · v2: heróis Nicão e Lucas (PR, card e testes)
+- **Feito:** `alisson/v2-herois` com a `main` mesclada (conflitos de `altar.gd`, `heroi.gd`, `combate.gd` e `v2_cartas.json` resolvidos mantendo a main) e `testes/v2_herois` fechado (`falhas=0`). Correções: o helper `arco_do_passo` da main tinha perdido o teto de 360 graus (a pancada do Nicão, com a área 1,2, não acertava quem estava atrás); o card SUA BUILD agora mostra o nome do herói, a arma (campo `arma` em `dados/v2_herois.json`) e os modificadores dele; as adagas não leem `avanco` e `hit_stop` no card (SCRIPT ERROR ao apertar C); na seleção, o véu tinha 0x0 e não escurecia nada, a descrição não quebrava linha e a VOLTAR caía sobre ENTRAR NA FLORESTA.
+- **Testes:** `v2_herois`, `v2_partida`, `v2_esc` e as demais `v2_*` rodadas localmente com `falhas=0` e sem SCRIPT ERROR.
+- **Print:** `docs/visual_2_5d/herois_v2/santuario_selecao.png` (viewport 1280x720), usado no corpo do PR.
+- **Pendente:** o tiro secundário de Nicão e Lucas fica para `alisson/v2-ruptura` (sugestões no corpo do PR). O texto dos heróis ocupa 4 linhas no cartão, sem folga acima dos números.
+- **Próximo:** revisar o PR e mesclar depois da ruptura, que mexe nos mesmos botões e no card.
+
+_Claude do Alisson (notebook)_
