@@ -4,6 +4,9 @@ extends RefCounted
 ## e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (DESLIGADO por padrão agora que o HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro
 ## do SubViewport 960x540; o mouse não chega nos Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_na_tela()) e a
 ## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar) e B (banir a carta marcada).
+## TRAVA: a escolha abre com as cartas apagadas por 3 s de TEMPO REAL (0,8 s depois de rerrolar ou banir). Nesse tempo clique, tecla e
+## botão são descartados (a contagem pulsa) e nada chega ao herói; ESC passa, é da pausa. O baú tem a sua trava (bau_espera_s). Os tempos
+## vêm de dados/v2_cartas.json e a contagem corre no `atualizar` (relógio de parede), congelada com a pausa aberta (mundo.pausa.aberto).
 ## Os anúncios grandes e a barra do chefe são do HUD (v2/hud_anuncios.gd e hud.gd), que escutam os sinais do mundo.
 
 const LARG := 960
@@ -19,6 +22,10 @@ const TAM_TITULO := 56  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixe
 const TAM_NOME := 37  # múltiplo de 2 px da grade da Jersey 10 (cabe em uma linha na maioria dos nomes)
 const TAM_NOME_CURTO := 28  # nomes longos (Lâminas Rodopiantes) que não cabem em TAM_NOME
 const TAM_TEXTO := 16
+const TAM_CONTAGEM := 19  # a contagem da trava usa a Jersey 10 na grade de 19 px (como os botões)
+const COR_TRAVA := Color(0.45, 0.45, 0.45, 1.0)  # cartas apagadas na trava
+const PULSO_T := 0.2  # s da pulsada da contagem quando um clique ou tecla cai na trava
+const ACENDER_T := 0.35  # s do brilho quando as cartas liberam
 
 var combate
 var mundo
@@ -30,6 +37,12 @@ var resultado_aberto := false
 var escolha_aberta := false
 var bau_aberto := false
 var bau_pronto := false  # a roleta terminou de revelar tudo
+var espera_escolha := 0.0  # s REAIS até as cartas aceitarem clique ou tecla (0 = liberadas)
+var espera_bau := 0.0  # s REAIS até a roleta aceitar pular ou fechar (0 = liberada)
+var mouse_fn := Callable()  # testes: posição do mouse na tela (960x540); sem ela, o mouse de verdade (mundo.ap)
+var _espera_total := 0.0  # a trava que está correndo (base da barra de cada carta)
+var _acender := 0.0  # s que faltam do brilho de liberação
+var _pulso := 0.0  # s que faltam da pulsada da contagem
 
 var _fundo: ColorRect
 var _escolha: Control
@@ -139,6 +152,14 @@ func _montar_escolha() -> void:
 		p.add_theme_stylebox_override("panel", st)
 		_estilos.append(st)
 		_montar_cartao(p, "[%d]" % (i + 1))
+		var barra := ColorRect.new()  # a trava: enche de 0 à largura da carta (só aparece na trava)
+		barra.name = "espera"
+		barra.position = Vector2(MARGEM, CARTA_A - 6.0)
+		barra.size = Vector2(0.0, 3.0)
+		barra.color = Color(1.0, 0.86, 0.42)
+		barra.visible = false
+		barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		p.add_child(barra)
 		_escolha.add_child(p)
 		_cartas.append(p)
 	# rerrolar e banir
@@ -332,8 +353,14 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 		_preencher(p, c)
 		var rar := int(c.get("rar", 0))
 		_estilos[i].shadow_size = 0 if rar == 0 else 4 + 3 * rar
+	var ec: Dictionary = combate.cartas.cfg.escolha
+	_espera_total = float(ec.rerrolar_espera_s) if refresh else float(ec.espera_s)
+	espera_escolha = _espera_total
+	_acender = 0.0
 	_marcar()
 	_atualizar_botoes()
+	if espera_escolha > 0.0:
+		_iniciar_trava()
 	_texto_build()
 	combate.audio.tocar("carta", 1.0 + 0.12 * float(_rar_max(cartas)), 0.0, 0.0)
 
@@ -345,25 +372,28 @@ func _rar_max(cartas: Array) -> int:
 	return m
 
 
+## A carta marcada (sel) só aparece fora da trava: na trava não há realce de seleção.
 func _marcar() -> void:
 	var cartas: Array = combate.progresso.cartas
+	var sem_trava := espera_escolha <= 0.0
 	for i in 3:
 		var c: Dictionary = cartas[i] if i < cartas.size() else {}
 		var cor: Color = c.get("cor", Color(0.36, 0.34, 0.45))
 		var rar := int(c.get("rar", 0))
-		var novo := _estilo(i == sel, cor, rar)
+		var marcada := sem_trava and i == sel
+		var novo := _estilo(marcada, cor, rar)
 		_estilos[i].bg_color = novo.bg_color
 		_estilos[i].border_color = novo.border_color
 		_estilos[i].shadow_color = novo.shadow_color
 		_estilos[i].shadow_size = novo.shadow_size
-		_estilos[i].set_border_width_all(2 + (1 if rar >= 2 else 0) + (1 if i == sel else 0))
-		_cartas[i].position.y = CARTA_Y - (8.0 if i == sel else 0.0)
+		_estilos[i].set_border_width_all(2 + (1 if rar >= 2 else 0) + (1 if marcada else 0))
+		_cartas[i].position.y = CARTA_Y - (8.0 if marcada else 0.0)
 
 
 func _atualizar_botoes() -> void:
 	var cs = combate.cartas
-	var pr: bool = cs.pode_rerrolar()
-	var pb: bool = cs.pode_banir()
+	var pr: bool = cs.pode_rerrolar() and espera_escolha <= 0.0
+	var pb: bool = cs.pode_banir() and espera_escolha <= 0.0
 	_btn_r_txt.text = "[R] Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "[R] Rerrolar (já usou)"
 	_btn_b_txt.text = "[B] Banir a marcada (%d)" % cs.banimentos_restantes()
 	_btn_r.modulate = Color.WHITE if pr else Color(1, 1, 1, 0.4)
@@ -395,9 +425,16 @@ func mostrar_resultado() -> void:
 
 
 func esconder() -> void:
+	if mundo.heroi != null:
+		mundo.heroi.exigir_soltar_ataque()  # o clique que fechou a escolha ou o baú não vira golpe no quadro seguinte
 	escolha_aberta = false
 	resultado_aberto = false
 	bau_aberto = false
+	espera_escolha = 0.0
+	espera_bau = 0.0
+	for p in _cartas:
+		p.modulate = Color.WHITE
+		(p.get_node("espera") as ColorRect).visible = false
 	_escolha.visible = false
 	_bau.visible = false
 	_res.visible = false
@@ -417,6 +454,7 @@ func ligar_depuracao(v: bool) -> void:
 func mostrar_bau(cartas: Array) -> void:
 	bau_aberto = true
 	bau_pronto = false
+	espera_bau = float(combate.cartas.cfg.bau.bau_espera_s)
 	_bau_cartas = cartas
 	_bau_i = 0
 	_bau_t = 0.0
@@ -487,6 +525,8 @@ func _revelar_slot(i: int) -> void:
 
 
 func _atualizar_bau(dt: float) -> void:
+	if espera_bau > 0.0 and not _pausa_aberta():
+		espera_bau = maxf(0.0, espera_bau - dt)
 	for i in 3:
 		if _bau_slots[i].visible and _bau_slots[i].modulate.r > 1.0:
 			var m := _bau_slots[i].modulate
@@ -543,7 +583,7 @@ func atualizar(dt: float) -> void:
 		mostrada_t += dt
 		_res_dica.visible = int(mostrada_t * 2.0) % 2 == 0 or mostrada_t < 0.6
 	if escolha_aberta:
-		_pulsar_cartas()
+		_atualizar_escolha(dt)
 	if bau_aberto:
 		_atualizar_bau(dt)
 	if depuracao:
@@ -579,6 +619,77 @@ func _pulsar_cartas() -> void:
 			_estilos[i].shadow_size = base + roundi((2.0 + 2.0 * rar) * (0.5 + 0.5 * sin(_t_ui * (3.0 + rar) + float(i))))
 
 
+## Posição do mouse na tela 960x540 (mouse_fn é o gancho dos testes; sem ele, o mouse de verdade).
+func _mouse() -> Vector2:
+	if mouse_fn.is_valid():
+		return mouse_fn.call()
+	return mundo.ap.mouse_na_tela()
+
+
+## Pausa aberta (v2/pausa.gd): a trava não anda. mundo.pausa é o nó do menu (mundo.gd); sem ele, nenhuma pausa conta.
+func _pausa_aberta() -> bool:
+	var p = mundo.get("pausa")
+	return p != null and bool(p.aberto)
+
+
+## Tempo REAL da escolha: a trava das cartas (3 s; 0,8 s depois de rerrolar ou banir), o brilho ao liberar e a pulsada da contagem.
+## O dt vem do relógio de parede (combate.efeitos), então câmera lenta e hit-stop não mexem nele.
+func _atualizar_escolha(dt: float) -> void:
+	if espera_escolha > 0.0:
+		if not _pausa_aberta():
+			espera_escolha = maxf(0.0, espera_escolha - dt)
+			_pulso = maxf(0.0, _pulso - dt)
+		if espera_escolha > 0.0:
+			_quadro_trava()
+		else:
+			_liberar_cartas()
+		return
+	if _acender > 0.0:
+		_acender = maxf(0.0, _acender - dt)
+		var k := 0.7 * _acender / ACENDER_T
+		for p in _cartas:
+			p.modulate = Color(1.0 + k, 1.0 + k, 1.0 + k, 1.0)
+	_pulsar_cartas()
+
+
+## Começa a trava: cartas apagadas, uma barra vazia em cada carta e a contagem na legenda (fonte de título).
+func _iniciar_trava() -> void:
+	_sub.add_theme_font_override("font", _fonte_t)
+	_sub.add_theme_font_size_override("font_size", TAM_CONTAGEM)
+	for i in 3:
+		var p := _cartas[i]
+		p.modulate = COR_TRAVA
+		(p.get_node("espera") as ColorRect).visible = p.visible
+	_quadro_trava()
+
+
+## Cada quadro da trava: a barra enche, a contagem muda (3, 2, 1) e a pulsada da contagem decai.
+func _quadro_trava() -> void:
+	var feito := clampf(1.0 - espera_escolha / maxf(_espera_total, 0.001), 0.0, 1.0)
+	for p in _cartas:
+		(p.get_node("espera") as ColorRect).size.x = (CARTA_L - 2.0 * MARGEM) * feito
+	var txt := "Escolha em %d" % ceili(espera_escolha)
+	if _sub.text != txt:
+		_sub.text = txt
+	_sub.add_theme_color_override("font_color", Color(1.0, 0.86, 0.42).lerp(Color.WHITE, clampf(_pulso / PULSO_T, 0.0, 1.0)))
+
+
+## Fim da trava: as cartas acendem, a legenda volta ao normal, a marcação aparece e um som curto avisa.
+func _liberar_cartas() -> void:
+	espera_escolha = 0.0
+	_pulso = 0.0
+	_acender = ACENDER_T
+	_sub.text = "Escolha uma carta"
+	_sub.add_theme_font_override("font", _fonte)
+	_sub.add_theme_font_size_override("font_size", TAM_TEXTO)
+	_sub.add_theme_color_override("font_color", Color(0.85, 0.85, 0.95))
+	for p in _cartas:
+		(p.get_node("espera") as ColorRect).visible = false
+	_marcar()
+	_atualizar_botoes()
+	combate.audio.tocar("carta", 1.4, -4.0, 0.0)
+
+
 ## Entrada das telas. Devolve true se o evento foi usado (escolha de carta, baú, jogar de novo, F1).
 func entrada(e: InputEvent) -> bool:
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_F1:
@@ -594,7 +705,7 @@ func entrada(e: InputEvent) -> bool:
 
 
 func _carta_sob_mouse() -> int:
-	var m: Vector2 = mundo.ap.mouse_na_tela()
+	var m := _mouse()
 	for i in 3:
 		if _cartas[i].visible and Rect2(_cartas[i].position, _cartas[i].size).grow(6.0).has_point(m):
 			return i
@@ -602,7 +713,7 @@ func _carta_sob_mouse() -> int:
 
 
 func _botao_sob_mouse() -> String:
-	var m: Vector2 = mundo.ap.mouse_na_tela()
+	var m := _mouse()
 	if Rect2(_btn_r.position, _btn_r.size).has_point(m):
 		return "r"
 	if Rect2(_btn_b.position, _btn_b.size).has_point(m):
@@ -610,28 +721,45 @@ func _botao_sob_mouse() -> String:
 	return ""
 
 
+## Na trava (espera_escolha > 0) qualquer clique, tecla ou botão de escolha é DESCARTADO e pulsa a contagem: nada escolhe, nada
+## rerrola, nada bane e nada chega ao herói. Um clique que já estava apertado antes da liberação não conta: só aperto novo (press) vale.
 func _entrada_escolha(e: InputEvent) -> bool:
 	var n: int = combate.progresso.cartas.size()
+	var travada := espera_escolha > 0.0
 	if e is InputEventMouseMotion:
-		var i := _carta_sob_mouse()
-		if i >= 0 and i != sel:
-			sel = i
-			_marcar()
-			combate.audio.tocar("carta", 1.2, -6.0, 0.03)
+		if not travada:  # na trava o mouse passa sem realce de carta
+			var i := _carta_sob_mouse()
+			if i >= 0 and i != sel:
+				sel = i
+				_marcar()
+				combate.audio.tocar("carta", 1.2, -6.0, 0.03)
 		return true
-	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-		var b := _botao_sob_mouse()
-		if b == "r":
-			_rerrolar()
+	if e is InputEventMouseButton:
+		if not e.pressed:
+			return false
+		if travada:
+			_pulso = PULSO_T
 			return true
-		if b == "b":
-			_banir()
-			return true
-		var i := _carta_sob_mouse()
-		if i >= 0:
-			combate.progresso.escolher(i)
+		if e.button_index == MOUSE_BUTTON_LEFT:
+			var b := _botao_sob_mouse()
+			if b == "r":
+				_rerrolar()
+				return true
+			if b == "b":
+				_banir()
+				return true
+			var j := _carta_sob_mouse()
+			if j >= 0:
+				combate.progresso.escolher(j)
 		return true
-	if e is InputEventKey and e.pressed and not e.echo:
+	if e is InputEventKey:
+		if not e.pressed or e.keycode == KEY_ESCAPE:
+			return false  # ESC é da pausa (pausa.gd), e soltar uma tecla não escolhe nada
+		if e.echo:
+			return true
+		if travada:
+			_pulso = PULSO_T
+			return true
 		match e.keycode:
 			KEY_1, KEY_2, KEY_3:
 				var i: int = e.keycode - KEY_1
@@ -648,14 +776,15 @@ func _entrada_escolha(e: InputEvent) -> bool:
 			KEY_B, KEY_X:
 				_banir()
 		return true
-	if e.is_action_pressed("ui_left"):
-		_mover(-1, n)
-		return true
-	if e.is_action_pressed("ui_right"):
-		_mover(1, n)
-		return true
-	if e.is_action_pressed("ui_accept"):
-		combate.progresso.escolher(sel)
+	if e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right") or e.is_action_pressed("ui_accept"):
+		if travada:
+			_pulso = PULSO_T
+		elif e.is_action_pressed("ui_left"):
+			_mover(-1, n)
+		elif e.is_action_pressed("ui_right"):
+			_mover(1, n)
+		else:
+			combate.progresso.escolher(sel)
 		return true
 	return false
 
@@ -681,6 +810,8 @@ func _mover(d: int, n: int) -> void:
 
 
 func _entrada_bau(e: InputEvent) -> bool:
+	if e is InputEventKey and e.keycode == KEY_ESCAPE:
+		return false  # ESC é da pausa (pausa.gd), no baú como na escolha
 	var vai := false
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E]:
 		vai = true
@@ -689,10 +820,11 @@ func _entrada_bau(e: InputEvent) -> bool:
 	elif e.is_action_pressed("ui_accept"):
 		vai = true
 	if vai:
-		if bau_pronto:
-			combate.baus.fechar()
-		else:
-			_pular_bau()
+		if espera_bau <= 0.0:  # na trava de 1,5 s o clique é descartado: não pula nem fecha
+			if bau_pronto:
+				combate.baus.fechar()
+			else:
+				_pular_bau()
 		return true
 	return e is InputEventKey or e is InputEventMouseButton
 

@@ -48,6 +48,7 @@ var mira_mundo := Vector2.ZERO  # ponto do mundo para onde o golpe vai (mouse ou
 var entrada_forcada: Variant = null  # testes, fotos e medição: um Vector2 aqui vale no lugar do teclado e do controle
 var ataque_forcado: Variant = null  # idem para o botão de atacar segurado (true/false); só vale com entrada_forcada
 var correr_forcado: Variant = null  # idem para o botão de correr segurado
+var _soltar_ataque := false  # o botão de atacar que fechou uma tela (escolha, baú) já foi gasto: só volta a golpear depois de soltá-lo
 var avanco_camera := Vector2.ZERO  # para onde a câmera adianta ao correr (px, suavizado)
 var imortal := false  # medição e roteiros: ninguém tira vida
 var andando := false
@@ -142,6 +143,12 @@ func esquivar() -> void:
 	esq_pedido = float(mundo.combate.cfg.golpe.buffer)
 
 
+## Uma tela (escolha de carta, baú) acabou de fechar com o botão de atacar possivelmente apertado: o golpe por segurar (polling) fica
+## desligado até o botão ser solto, para o clique que escolheu a carta não virar um golpe no quadro seguinte.
+func exigir_soltar_ataque() -> void:
+	_soltar_ataque = true
+
+
 func entrada_evento(e: InputEvent) -> void:
 	if e.is_action_pressed("atacar", false, true):
 		atacar()
@@ -219,6 +226,9 @@ func atualizar(dt: float) -> void:
 	var segurando := false
 	if real:
 		segurando = InputMap.has_action("atacar") and Input.is_action_pressed("atacar")
+		if _soltar_ataque:  # o aperto que escolheu a carta ainda está lá: não conta como golpe até soltar
+			_soltar_ataque = segurando
+			segurando = false
 	elif ataque_forcado != null:
 		segurando = bool(ataque_forcado)
 	# mira (sempre calculada: o golpe sai para ela)

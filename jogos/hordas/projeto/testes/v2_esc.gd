@@ -630,6 +630,7 @@ func _t_intercalacoes() -> void:
 	ok(pausa.aberto, "nível ganho durante o baú: ESC abre a pausa sobre o baú")
 	_esc()
 	ok(not pausa.aberto and c.jogo == "bau", "e fecha de volta ao baú")
+	c.telas.espera_bau = 0.0  # a trava de 1,5 s do baú (testes/v2_cartas_espera.gd) já passou: aqui o assunto é o ESC
 	_tecla(KEY_ENTER)  # pula a roleta
 	_tecla(KEY_ENTER)  # fecha o baú
 	ok(c.jogo == "jogando" or c.jogo == "escolha", "o baú fecha (jogo = %s)" % c.jogo)
