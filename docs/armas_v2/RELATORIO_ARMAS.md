@@ -86,3 +86,25 @@ As cinco fusões novas (dragão de brasa, caçada espiritual, urso solar, exérc
 - Ventania: quando as 8 ondas estão ocupadas, a nova sobrescreve a que falta menos para acabar (antes sobrescrevia a primeira).
 - Anel de Brasas: a aura agora leva o bônus de raridade, como a órbita.
 - Pendências de design: a lança da ventania e a onda têm peças sem ficha própria; o campo `cor` da ventania não é lido pelo código; 10 ícones se repetem entre armas diferentes; o efeito de gelo e a queimadura de algumas armas descritas no arte não existem no código.
+
+
+## Fusões novas (16)
+
+| Fusão | Tipo | Raridade | Peças | Efeito |
+|---|---|---|---|---|
+| Chuva de Lâminas | Projétil | Comum | flechas_sombrias 3 + adagas_voadoras 3 | Três lâminas voam de uma vez no inimigo mais perto. |
+| Bola Incendiária | Projétil | Comum | bola_fogo 3 + bolas_chumbo 3 | Projéteis pesados explodem ao cair e ferem quem está perto. |
+| Nevasca Congelante | Nuvem | Comum | nevoeiro_gelado 3 + nevasca 3 | Uma nevasca larga desacelera quem fica dentro dela. |
+| Cinzas Ácidas | Nuvem | Comum | cinzas_vulcanicas 3 + chuva_acida 3 | Uma nuvem de cinza ácida cai perto do herói e corrói os inimigos. |
+| Estrondo | Anel | Comum | onda_choque 3 + grito_guerra 3 | Um grito de guerra em onda empurra tudo com força. |
+| Terra Partida | Anel | Comum | terremoto 3 + martelo_trovao 3 | O chão racha em anéis que levantam os inimigos. |
+| Pedreira Ardente | Meteoro | Comum | chuva_pedras 3 + pedras_vulcanicas 3 | Quatro pedras em brasa caem em volta do herói. |
+| Cometa Duplo | Meteoro | Comum | cometa_gelado 3 + estrelas_cadentes 3 | Dois cometas caem juntos sobre inimigos próximos. |
+| Chuva de Ferro | Projétil | Rara | bumerangue_ferro 3 + rajada_vento 3 + meteoro_flamejante 3 | Projéteis de ferro atravessam inimigos e explodem no fim. |
+| Peste Negra | Nuvem | Rara | dardos_peconhentos 3 + nuvem_veneno 3 + fumaca_sonolenta 3 | Uma névoa de peçonha se espalha e não sai de perto do herói. |
+| Juramento Sagrado | Anel | Rara | anel_espinhos 3 + pulso_sagrado 3 + nevoa_espectral 3 | Anéis sagrados se abrem e sopram os inimigos para longe. |
+| Eclipse Negro | Meteoro | Rara | cometa_negro 3 + fogo_do_ceu 3 + cortina_sangue 3 | Dois cometas negros e uma cortina de sangue caem sem trégua. |
+| Tempestade Primordial | Projétil | Lendária | lanca_geada 5 + estrelas_sombra 5 + bumerangue_ferro 5 + raio_solar 5 | Lanças e pedras perfuram; cada impacto puxa os inimigos para o ponto. |
+| Eclipse de Almas | Aliado | Lendária | lobo_espirito 5 + espirito_raposa 5 + fantasma_mata 5 + espirito_urso 5 | Espíritos prendem o inimigo; quem já está preso leva dano em dobro. |
+| Juízo Final | Meteoro | Lendária | cometa_negro 5 + fogo_do_ceu 5 + meteoro_flamejante 5 + raio_meteorico 5 | Cada meteoro que cai chama outro sobre o inimigo mais perto. |
+| Furacão Glacial | Nuvem | Lendária | nevasca 5 + nevoeiro_gelado 5 + anel_gelado 5 + lanca_geada 5 | Nuvem gelada; inimigos lentos dentro dela levam dano em dobro. |

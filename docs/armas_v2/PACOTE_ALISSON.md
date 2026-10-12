@@ -442,3 +442,188 @@ Este pacote tem um sprite por arma (50) e por fusão (9). Cada entrada traz o re
 - **Sprite:** 48 x 56 px por quadro, 4 quadros em linha (sheet de 192 x 56 px). Os quadros são a passada: a perna da frente sobe e desce e os torrões se soltam.
 - **Prompt para o gerador de imagem (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. A heavy colossus built from clay and grey stone, a broad body with cracks, small chunks of clay falling from its shoulders, seen from above and slightly from the side. Use these colors only: clay #BF9966, pale clay highlight #DCC7AB, dark clay shadow #433624, grey stone #9EA3AD. Four frames in one horizontal row, each frame exactly 48 x 56 pixels, the whole sheet exactly 192 x 56 pixels, the legs alternating in a slow stomping cycle. Transparent background, no text, no border, no frame, no ground dust. Clean pixel art with flat shading and a one-pixel dark outline, matching the style of the rest of the game.
 
+
+
+## Fusões novas (16): comuns, raras e lendárias
+
+Estas fusões entraram no código depois da lista acima. Lendárias têm mecânica própria; o gerador de sprite só precisa do efeito visual.
+
+# Chuva de Lâminas (chuva_de_lacas)
+- **Tipo e raridade:** Projétil, Comum (fusão de 2 peças: flechas_sombrias (nível 3), adagas_voadoras (nível 3)).
+- **Resumo visual (2 linhas):** Três lâminas voam de uma vez no inimigo mais perto.
+- **Paleta:**
+  - Cor principal: #BFE6FF
+  - Brilho: #D9F0FF
+  - Sombra: #4D5C66
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 14 x 6 px por quadro, 4 quadros em linha (sheet de 56 x 6 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a small glowing arrow or shard, pointing right, themed as: Três lâminas voam de uma vez no inimigo mais perto.. Use these colors only: main #BFE6FF, highlight #D9F0FF, dark shadow #4D5C66, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 14 x 6 pixels, the whole sheet exactly 56 x 6 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Bola Incendiária (bola_incendiaria)
+- **Tipo e raridade:** Projétil, Comum (fusão de 2 peças: bola_fogo (nível 3), bolas_chumbo (nível 3)).
+- **Resumo visual (2 linhas):** Projéteis pesados explodem ao cair e ferem quem está perto.
+- **Paleta:**
+  - Cor principal: #FF8C33
+  - Brilho: #FFBA85
+  - Sombra: #663814
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 14 x 6 px por quadro, 4 quadros em linha (sheet de 56 x 6 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a small glowing arrow or shard, pointing right, themed as: Projéteis pesados explodem ao cair e ferem quem está perto.. Use these colors only: main #FF8C33, highlight #FFBA85, dark shadow #663814, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 14 x 6 pixels, the whole sheet exactly 56 x 6 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Nevasca Congelante (nevasca_congelante)
+- **Tipo e raridade:** Nuvem, Comum (fusão de 2 peças: nevoeiro_gelado (nível 3), nevasca (nível 3)).
+- **Resumo visual (2 linhas):** Uma nevasca larga desacelera quem fica dentro dela.
+- **Paleta:**
+  - Cor principal: #99E6FF
+  - Brilho: #C2F0FF
+  - Sombra: #3D5C66
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 48 x 48 px por quadro, 4 quadros em linha (sheet de 192 x 48 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a soft swirling cloud or mist puff seen from above, themed as: Uma nevasca larga desacelera quem fica dentro dela.. Use these colors only: main #99E6FF, highlight #C2F0FF, dark shadow #3D5C66, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 48 x 48 pixels, the whole sheet exactly 192 x 48 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Cinzas Ácidas (cinzas_acidas)
+- **Tipo e raridade:** Nuvem, Comum (fusão de 2 peças: cinzas_vulcanicas (nível 3), chuva_acida (nível 3)).
+- **Resumo visual (2 linhas):** Uma nuvem de cinza ácida cai perto do herói e corrói os inimigos.
+- **Paleta:**
+  - Cor principal: #B2CC4C
+  - Brilho: #ECFF9F
+  - Sombra: #47521F
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 48 x 48 px por quadro, 4 quadros em linha (sheet de 192 x 48 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a soft swirling cloud or mist puff seen from above, themed as: Uma nuvem de cinza ácida cai perto do herói e corrói os inimigos.. Use these colors only: main #B2CC4C, highlight #ECFF9F, dark shadow #47521F, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 48 x 48 pixels, the whole sheet exactly 192 x 48 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Estrondo (estrondo)
+- **Tipo e raridade:** Anel, Comum (fusão de 2 peças: onda_choque (nível 3), grito_guerra (nível 3)).
+- **Resumo visual (2 linhas):** Um grito de guerra em onda empurra tudo com força.
+- **Paleta:**
+  - Cor principal: #FFCC80
+  - Brilho: #FFE0B2
+  - Sombra: #665233
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 64 x 64 px por quadro, 4 quadros em linha (sheet de 256 x 64 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is an expanding ring of energy seen from above, themed as: Um grito de guerra em onda empurra tudo com força.. Use these colors only: main #FFCC80, highlight #FFE0B2, dark shadow #665233, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 64 x 64 pixels, the whole sheet exactly 256 x 64 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Terra Partida (terra_partida)
+- **Tipo e raridade:** Anel, Comum (fusão de 2 peças: terremoto (nível 3), martelo_trovao (nível 3)).
+- **Resumo visual (2 linhas):** O chão racha em anéis que levantam os inimigos.
+- **Paleta:**
+  - Cor principal: #D99959
+  - Brilho: #FFD2A5
+  - Sombra: #573D24
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 64 x 64 px por quadro, 4 quadros em linha (sheet de 256 x 64 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is an expanding ring of energy seen from above, themed as: O chão racha em anéis que levantam os inimigos.. Use these colors only: main #D99959, highlight #FFD2A5, dark shadow #573D24, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 64 x 64 pixels, the whole sheet exactly 256 x 64 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Pedreira Ardente (pedreira_ardente)
+- **Tipo e raridade:** Meteoro, Comum (fusão de 2 peças: chuva_pedras (nível 3), pedras_vulcanicas (nível 3)).
+- **Resumo visual (2 linhas):** Quatro pedras em brasa caem em volta do herói.
+- **Paleta:**
+  - Cor principal: #FF7333
+  - Brilho: #FFAB85
+  - Sombra: #662E14
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 24 x 24 px por quadro, 4 quadros em linha (sheet de 96 x 24 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a burning rock or comet head with a short fiery tail, themed as: Quatro pedras em brasa caem em volta do herói.. Use these colors only: main #FF7333, highlight #FFAB85, dark shadow #662E14, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 24 x 24 pixels, the whole sheet exactly 96 x 24 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Cometa Duplo (cometa_duplo)
+- **Tipo e raridade:** Meteoro, Comum (fusão de 2 peças: cometa_gelado (nível 3), estrelas_cadentes (nível 3)).
+- **Resumo visual (2 linhas):** Dois cometas caem juntos sobre inimigos próximos.
+- **Paleta:**
+  - Cor principal: #B2E6FF
+  - Brilho: #D1F0FF
+  - Sombra: #475C66
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 24 x 24 px por quadro, 4 quadros em linha (sheet de 96 x 24 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a burning rock or comet head with a short fiery tail, themed as: Dois cometas caem juntos sobre inimigos próximos.. Use these colors only: main #B2E6FF, highlight #D1F0FF, dark shadow #475C66, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 24 x 24 pixels, the whole sheet exactly 96 x 24 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Chuva de Ferro (chuva_de_ferro)
+- **Tipo e raridade:** Projétil, Rara (fusão de 3 peças: bumerangue_ferro (nível 3), rajada_vento (nível 3), meteoro_flamejante (nível 3)).
+- **Resumo visual (2 linhas):** Projéteis de ferro atravessam inimigos e explodem no fim.
+- **Paleta:**
+  - Cor principal: #B2B2CC
+  - Brilho: #ECECFF
+  - Sombra: #474752
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 14 x 6 px por quadro, 4 quadros em linha (sheet de 56 x 6 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a small glowing arrow or shard, pointing right, themed as: Projéteis de ferro atravessam inimigos e explodem no fim.. Use these colors only: main #B2B2CC, highlight #ECECFF, dark shadow #474752, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 14 x 6 pixels, the whole sheet exactly 56 x 6 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Peste Negra (peste_negra)
+- **Tipo e raridade:** Nuvem, Rara (fusão de 3 peças: dardos_peconhentos (nível 3), nuvem_veneno (nível 3), fumaca_sonolenta (nível 3)).
+- **Resumo visual (2 linhas):** Uma névoa de peçonha se espalha e não sai de perto do herói.
+- **Paleta:**
+  - Cor principal: #66CC4C
+  - Brilho: #B3FF9F
+  - Sombra: #29521F
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 48 x 48 px por quadro, 4 quadros em linha (sheet de 192 x 48 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a soft swirling cloud or mist puff seen from above, themed as: Uma névoa de peçonha se espalha e não sai de perto do herói.. Use these colors only: main #66CC4C, highlight #B3FF9F, dark shadow #29521F, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 48 x 48 pixels, the whole sheet exactly 192 x 48 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Juramento Sagrado (juramento_sagrado)
+- **Tipo e raridade:** Anel, Rara (fusão de 3 peças: anel_espinhos (nível 3), pulso_sagrado (nível 3), nevoa_espectral (nível 3)).
+- **Resumo visual (2 linhas):** Anéis sagrados se abrem e sopram os inimigos para longe.
+- **Paleta:**
+  - Cor principal: #FFF2B2
+  - Brilho: #FFF7D1
+  - Sombra: #666147
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 64 x 64 px por quadro, 4 quadros em linha (sheet de 256 x 64 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is an expanding ring of energy seen from above, themed as: Anéis sagrados se abrem e sopram os inimigos para longe.. Use these colors only: main #FFF2B2, highlight #FFF7D1, dark shadow #666147, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 64 x 64 pixels, the whole sheet exactly 256 x 64 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Eclipse Negro (eclipse_negro)
+- **Tipo e raridade:** Meteoro, Rara (fusão de 3 peças: cometa_negro (nível 3), fogo_do_ceu (nível 3), cortina_sangue (nível 3)).
+- **Resumo visual (2 linhas):** Dois cometas negros e uma cortina de sangue caem sem trégua.
+- **Paleta:**
+  - Cor principal: #733380
+  - Brilho: #C083CC
+  - Sombra: #2E1433
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 24 x 24 px por quadro, 4 quadros em linha (sheet de 96 x 24 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a burning rock or comet head with a short fiery tail, themed as: Dois cometas negros e uma cortina de sangue caem sem trégua.. Use these colors only: main #733380, highlight #C083CC, dark shadow #2E1433, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 24 x 24 pixels, the whole sheet exactly 96 x 24 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+
+# Tempestade Primordial (tempestade_primordial)
+- **Tipo e raridade:** Projétil, Lendária (fusão de 4 peças: lanca_geada (nível 5), estrelas_sombra (nível 5), bumerangue_ferro (nível 5), raio_solar (nível 5)).
+- **Resumo visual (2 linhas):** Lanças e pedras perfuram; cada impacto puxa os inimigos para o ponto.
+- **Paleta:**
+  - Cor principal: #FFFF99
+  - Brilho: #FFFFC2
+  - Sombra: #66663D
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 14 x 6 px por quadro, 4 quadros em linha (sheet de 56 x 6 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a small glowing arrow or shard, pointing right, themed as: Lanças e pedras perfuram; cada impacto puxa os inimigos para o ponto.. Use these colors only: main #FFFF99, highlight #FFFFC2, dark shadow #66663D, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 14 x 6 pixels, the whole sheet exactly 56 x 6 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+- **Animação extra (lendária):** a carta ganha borda e rodapé magenta (#FF73D9). O efeito em si é o mesmo tamanho; o brilho em volta pode ser um pouco mais forte.
+
+# Eclipse de Almas (eclipse_de_almas)
+- **Tipo e raridade:** Aliado, Lendária (fusão de 4 peças: lobo_espirito (nível 5), espirito_raposa (nível 5), fantasma_mata (nível 5), espirito_urso (nível 5)).
+- **Resumo visual (2 linhas):** Espíritos prendem o inimigo; quem já está preso leva dano em dobro.
+- **Paleta:**
+  - Cor principal: #B280FF
+  - Brilho: #D1B2FF
+  - Sombra: #473366
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 20 x 24 px por quadro, 4 quadros em linha (sheet de 80 x 24 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a small spirit creature standing upright, themed as: Espíritos prendem o inimigo; quem já está preso leva dano em dobro.. Use these colors only: main #B280FF, highlight #D1B2FF, dark shadow #473366, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 20 x 24 pixels, the whole sheet exactly 80 x 24 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+- **Animação extra (lendária):** a carta ganha borda e rodapé magenta (#FF73D9). O efeito em si é o mesmo tamanho; o brilho em volta pode ser um pouco mais forte.
+
+# Juízo Final (juizo_final)
+- **Tipo e raridade:** Meteoro, Lendária (fusão de 4 peças: cometa_negro (nível 5), fogo_do_ceu (nível 5), meteoro_flamejante (nível 5), raio_meteorico (nível 5)).
+- **Resumo visual (2 linhas):** Cada meteoro que cai chama outro sobre o inimigo mais perto.
+- **Paleta:**
+  - Cor principal: #FF4C1A
+  - Brilho: #FF9475
+  - Sombra: #661F0A
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 24 x 24 px por quadro, 4 quadros em linha (sheet de 96 x 24 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a burning rock or comet head with a short fiery tail, themed as: Cada meteoro que cai chama outro sobre o inimigo mais perto.. Use these colors only: main #FF4C1A, highlight #FF9475, dark shadow #661F0A, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 24 x 24 pixels, the whole sheet exactly 96 x 24 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+- **Animação extra (lendária):** a carta ganha borda e rodapé magenta (#FF73D9). O efeito em si é o mesmo tamanho; o brilho em volta pode ser um pouco mais forte.
+
+# Furacão Glacial (furacao_glacial)
+- **Tipo e raridade:** Nuvem, Lendária (fusão de 4 peças: nevasca (nível 5), nevoeiro_gelado (nível 5), anel_gelado (nível 5), lanca_geada (nível 5)).
+- **Resumo visual (2 linhas):** Nuvem gelada; inimigos lentos dentro dela levam dano em dobro.
+- **Paleta:**
+  - Cor principal: #80F2FF
+  - Brilho: #B2F7FF
+  - Sombra: #336166
+  - Núcleo branco: #FFFFFF
+- **Sprite:** 48 x 48 px por quadro, 4 quadros em linha (sheet de 192 x 48 px).
+- **Prompt para o GPT (em inglês, pronto para colar):** Pixel art sprite sheet for a top-down 2.5D dark fantasy survival game. The effect is a soft swirling cloud or mist puff seen from above, themed as: Nuvem gelada; inimigos lentos dentro dela levam dano em dobro.. Use these colors only: main #80F2FF, highlight #B2F7FF, dark shadow #336166, white core #FFFFFF. Four frames in one horizontal row, each frame exactly 48 x 48 pixels, the whole sheet exactly 192 x 48 pixels, the effect pulsing slightly from frame to frame. Transparent background, no text, no border, no ground shadow. Clean pixel art with flat shading and a one-pixel dark outline, matching the rest of the game.
+- **Animação extra (lendária):** a carta ganha borda e rodapé magenta (#FF73D9). O efeito em si é o mesmo tamanho; o brilho em volta pode ser um pouco mais forte.
