@@ -10,9 +10,9 @@ extends Node
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
-##   --janela=1280x720 --rotulo (fps na tela) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
+##   --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
-## 0 desliga, F1 liga o texto de depuração do combate, F4 mostra a colisão, Esc sai.
+## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, Esc sai.
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
 ## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
 ## no herói vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado.
@@ -443,6 +443,8 @@ func _input(e: InputEvent) -> void:
 			sombras.definir_modo(Sombras.MEDIA)
 		KEY_3:
 			sombras.definir_modo(Sombras.ALTA)
+		KEY_F3:
+			_alternar_rotulo()
 		KEY_F4:
 			dbg_colisao.visible = not dbg_colisao.visible
 		KEY_ESCAPE:
@@ -459,7 +461,7 @@ func _process(delta: float) -> void:
 	if roteiro != null:
 		roteiro.atualizar(delta)
 	_us_total += Time.get_ticks_usec() - t0
-	if _rotulo != null:
+	if _rotulo != null and _rotulo.visible:
 		_rotulo_t += delta
 		if _rotulo_t > 0.3:
 			_rotulo_t = 0.0
@@ -563,6 +565,15 @@ func _montar_rotulo() -> void:
 	_rotulo.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	_rotulo.add_theme_constant_override("outline_size", 4)
 	camada.add_child(_rotulo)
+	_rotulo.visible = args.has("rotulo")  # desligado na partida normal: F3 liga e desliga (ou --rotulo já começa ligado)
+	_texto_rotulo()
+
+
+## F3: liga e desliga o texto de depuração (fps, atores na tela, luzes).
+func _alternar_rotulo() -> void:
+	if _rotulo == null:
+		return
+	_rotulo.visible = not _rotulo.visible
 	_texto_rotulo()
 
 
