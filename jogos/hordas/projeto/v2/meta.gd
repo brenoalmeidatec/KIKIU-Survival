@@ -28,6 +28,32 @@ static func melhoria(id: String) -> Dictionary:
 	return {}
 
 
+## Item marcado com "oculta_ate_ter_efeito" (dados/v2_meta.json, _ajuda): não aparece para o jogador até ganhar efeito real.
+static func oculto(item: Dictionary) -> bool:
+	return bool(item.get("oculta_ate_ter_efeito", false))
+
+
+## As melhorias que o santuário e o card SUA BUILD mostram (sem as ocultas).
+static func melhorias_visiveis() -> Array:
+	return melhorias().filter(func(m): return not oculto(m))
+
+
+## O item (melhoria, modo ou visual do catálogo) que uma recompensa de conquista libera; {} se não achar.
+static func item_da_recompensa(r: Dictionary) -> Dictionary:
+	var lista: Array = []
+	match str(r.get("tipo", "")):
+		"melhoria":
+			lista = melhorias()
+		"modo":
+			lista = catalogo().get("modos", [])
+		"visual":
+			lista = catalogo().get("visuais", [])
+	for x in lista:
+		if str(x.id) == str(r.get("id", "")):
+			return x
+	return {}
+
+
 static func _ler() -> ConfigFile:
 	var cf := ConfigFile.new()
 	cf.load(caminho_save)  # sem arquivo ainda: sai com erro e o cf fica vazio (saldo 0, nada comprado)
