@@ -1026,7 +1026,7 @@ Meta (≥ 85% de 41 = 34,9 aos 30 s) atingida. `armas_novas`, `golpes`, `regras_
 - **Testes:** `MAPA_MUNDO falhas=0` (portal no portão, perigo machuca, chão comum não), `MAPA_FASE falhas=0`, `PROR falhas=0`; robô `--bot --heroi=hazaki --semente=7` sem SCRIPT ERROR.
 - Assinado: Claude (thread do Breno, projeto JOGO)
 ## 2026-10-11 · Claude (thread do Breno, projeto JOGO) · Marco 4: fechamento (#128)
-- **Feito:** gelo fino ('e') escorrega: o herói segue um pouco no embalo do último passo e para na parede. Feito em `arena.gd` (sem mexer em `jogador.gd`). `chao_em` em `mapa_fase_mundo.gd`.
+- **Feito:** `chao_em` em `mapa_fase_mundo.gd` (letra do chão no ponto). O deslize no gelo fino foi tentado em `arena.gd` e tirado de volta: o CI do `testes` falhou em `rolamento` duas vezes com ele (39 px contra o limite; antes passava). Fica para depois de o Alisson fechar o movimento do herói; o gelo hoje só machuca.
 - **Fica com o Alisson (Etapa 4 do #152):** colisão dos inimigos (`inimigos.gd`) e a adaptação do mapa para a câmera 2.5D.
 - **Pendente de arte:** formas e cores dos santuários e do chão são provisórias.
 - **Testes:** `MAPA_MUNDO falhas=0`, `MAPA_FASE falhas=0`, `PROR` (ver commit), robô sem SCRIPT ERROR.
