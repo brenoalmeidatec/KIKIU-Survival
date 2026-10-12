@@ -604,15 +604,96 @@
    "nome": "restos_cobaia",
    "peso": 1,
    "pe": [
-    23,
-    24
+    34,
+    28
    ],
    "colisao": [],
    "regiao": [
     268,
     218,
-    46,
-    25
+    63,
+    29
+   ]
+  },
+  {
+   "nome": "porta_blindada",
+   "peso": 1,
+   "pe": [
+    49,
+    84
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -5.7
+     ],
+     "raio": [
+      48.0,
+      5.7
+     ]
+    }
+   ],
+   "regiao": [
+    333,
+    218,
+    101,
+    88
+   ]
+  },
+  {
+   "nome": "duto_ventilacao",
+   "peso": 1,
+   "pe": [
+    20,
+    75
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      18.5,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    436,
+    218,
+    40,
+    77
+   ]
+  },
+  {
+   "nome": "estante_amostras",
+   "peso": 1,
+   "pe": [
+    30,
+    61
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -6.2
+     ],
+     "raio": [
+      28.6,
+      6.5
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    308,
+    60,
+    62
    ]
   }
  ]

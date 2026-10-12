@@ -44,7 +44,92 @@ OBJETOS = {
     "cacos_vidro": {"col": "passavel", "d": 0.7},
     "lixo_lab": {"col": "passavel", "d": 0.8},
     "restos_cobaia": {"col": "passavel", "d": 1.1},
+    "porta_blindada": {"col": "caixa", "w": 3.0, "d": 0.5, "folga": 1.0},
+    "duto_ventilacao": {"col": "caixa", "w": 1.1, "d": 0.8},
+    "estante_amostras": {"col": "caixa", "w": 1.7, "d": 0.55},
 }
+LARGOS = {"gerador", "capsula_cripto", "bancada_lab", "estante_amostras", "porta_blindada"}  # o passo ao longo da borda deixa de ser curto demais para eles
+
+# temas das bordas: o que cada trecho tem na fileira alta (atrás) e na baixa (na frente) e a luz que o ilumina
+TEMAS = {
+    "servidores": {"alto": ["rack_servidores", "rack_servidores", "rack_servidores", "armario_aco", "duto_ventilacao"],
+                   "baixo": ["console", "mesa_lab", "console", "caixa_suprimentos", "mesa_lab"], "luz": "borda_ciano"},
+    "deposito": {"alto": ["caixa_empilhada", "caixa_empilhada", "armario_aco", "estante_amostras", "caixa_empilhada"],
+                 "baixo": ["caixa_suprimentos", "caixa_suprimentos", "barril_toxico", "mesa_lab", "caixa_suprimentos"], "luz": "borda_ambar"},
+    "biologia": {"alto": ["tanque_alto", "estante_amostras", "tanque_alto", "estante_amostras", "tanque_quebrado"],
+                 "baixo": ["bancada_lab", "gaiola", "maca", "barril_toxico", "gaiola"], "luz": "borda_verde"},
+    "energia": {"alto": ["cano_grosso", "duto_ventilacao", "gerador", "cano_grosso", "pilar_lab", "duto_ventilacao"],
+                "baixo": ["barril_toxico", "caixa_suprimentos", "barril_toxico", "console", "mesa_lab"], "luz": "borda_ambar"},
+    "ruinas": {"alto": ["tanque_quebrado", "rack_servidores", "caixa_empilhada", "tanque_quebrado", "armario_aco"],
+               "baixo": ["console_quebrado", "maca", "gaiola", "console_quebrado", "caixa_suprimentos"], "luz": "borda_vermelha"},
+    "criogenia": {"alto": ["pilar_lab", "tanque_alto", "armario_aco", "estante_amostras", "pilar_lab"],
+                  "baixo": ["capsula_cripto", "bancada_lab", "console", "capsula_cripto", "mesa_lab"], "luz": "borda_ciano"},
+}
+
+
+# ------------------------------------------------------------------ piso: desgaste por cima do azulejo do Blender (já achatado)
+def detalhar_piso(img):
+    """O azulejo do Blender sai limpo e regular demais ao lado da floresta (que tem pedra, musgo e terra em cada pixel). Aqui entram: brilho
+    próprio de cada placa, quina clara em cima e à esquerda e escura embaixo e à direita, sujeira nos cantos, grão, riscos, ferrugem e
+    manchas de água. Tudo dá a volta nas bordas (o azulejo repete) e usa semente fixa."""
+    import numpy as np
+    from PIL import Image
+
+    r = np.random.RandomState(SEMENTE + 2)
+    a = np.asarray(img.convert("RGB")).astype(np.float32)
+    h, w, _ = a.shape
+    n = 16
+    th = h / float(n)
+    yy, xx = np.mgrid[0:h, 0:w]
+    ti, tj = np.minimum(xx // 32, n - 1), np.minimum((yy / th).astype(int), n - 1)
+    tx, ty = (xx % 32).astype(np.float32), (yy % th).astype(np.float32)
+    # 0. as manchas redondas do Blender (cilindros pretos) viram sujeira picotada: metade dos pixels delas clareia
+    lum = a.mean(axis=2)
+    interior = (tx >= 3) & (tx < 29) & (ty >= 2.2) & (ty < 19.4)
+    pinta_mancha = interior & (lum < 27)
+    clareia = pinta_mancha & (r.rand(h, w) < 0.55)
+    a[clareia] *= 1.7
+    # 1. cada placa com o seu brilho e um leve degradê (uma metade mais clara, como chapa que pegou luz do teto)
+    base = 0.82 + 0.34 * r.rand(n, n)
+    fator = base[tj, ti]
+    inclina = (r.rand(n, n) - 0.5)[tj, ti] * 0.18
+    fator = fator * (1.0 + inclina * (tx / 32.0 - 0.5) * 2.0)
+    a *= fator[..., None]
+    # 2. quinas: claro em cima e à esquerda, escuro embaixo e à direita
+    luz = ((tx >= 1) & (tx < 3)) | ((ty >= 0.7) & (ty < 1.8))
+    sombra = ((tx >= 28) & (tx < 31)) | ((ty >= 19.6) & (ty < 21.9))
+    a[luz] *= 1.28
+    a[sombra] *= 0.72
+    # 3. cantos sujos: o canto de baixo de cada placa escurece e uns cantos ganham ferrugem
+    canto = np.clip((tx - 18) / 14.0, 0, 1) * np.clip((ty - 11) / 11.0, 0, 1)
+    a *= (1.0 - 0.28 * canto)[..., None]
+    # 4. grão: pixels soltos mais claros e mais escuros
+    g = r.rand(h, w)
+    a[g < 0.06] *= 1.22
+    a[(g > 0.06) & (g < 0.14)] *= 0.8
+    # 5. riscos claros curtos e arranhões diagonais
+    for _ in range(150):
+        x0, y0 = r.randint(0, w), r.randint(0, h)
+        comp = r.randint(5, 16)
+        dx, dy = (1, 0) if r.rand() < 0.45 else ((1, 1) if r.rand() < 0.5 else (1, -1))
+        for k in range(comp):
+            px, py = (x0 + dx * k) % w, (y0 + dy * k) % h
+            a[py, px] += np.array([22, 26, 30], np.float32)
+    # 6. ferrugem e água: manchas de pixels (blobs irregulares com borda picotada)
+    def blob(cx, cy, rx, ry, cor, forca):
+        for y in range(int(cy - ry - 1), int(cy + ry + 2)):
+            for x in range(int(cx - rx - 1), int(cx + rx + 2)):
+                d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
+                if d < 1.0 and r.rand() < (1.0 - d) * 1.4:
+                    p = (y % h, x % w)
+                    a[p] = a[p] * (1 - forca) + np.array(cor, np.float32) * forca
+    for _ in range(46):
+        blob(r.randint(0, w), r.randint(0, h), r.uniform(3, 10), r.uniform(2, 5), (118, 70, 40), r.uniform(0.35, 0.6))
+    for _ in range(22):
+        blob(r.randint(0, w), r.randint(0, h), r.uniform(8, 20), r.uniform(4, 9), (20, 30, 40), r.uniform(0.25, 0.4))
+    for _ in range(16):
+        blob(r.randint(0, w), r.randint(0, h), r.uniform(4, 9), r.uniform(2, 5), (40, 108, 120), r.uniform(0.18, 0.3))
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB")
 
 
 # ------------------------------------------------------------------ decalques (já achatados por sen 45)
@@ -99,6 +184,11 @@ LUZ_TIPOS = {
     "toxico": {"cor": [0.4, 1.0, 0.4], "e": 0.8, "r": 95, "h": 20, "tremor": 0.1, "orbe": 0.0},
     "gerador": {"cor": [1.0, 0.6, 0.25], "e": 1.4, "r": 160, "h": 40, "tremor": 0.12, "orbe": 0.25},
     "fio_solto": {"cor": [0.8, 0.92, 1.0], "e": 1.8, "r": 130, "h": 45, "tremor": 0.4, "orbe": 0.3, "faiscas": True},
+    # luzes das bordas (sem orbe): altas e largas, para pegar a frente do equipamento alto que a câmera vê de frente
+    "borda_ciano": {"cor": [0.3, 0.8, 1.0], "e": 1.1, "r": 250, "h": 70, "tremor": 0.03, "orbe": 0.0},
+    "borda_verde": {"cor": [0.3, 1.0, 0.5], "e": 1.0, "r": 240, "h": 70, "tremor": 0.06, "orbe": 0.0},
+    "borda_ambar": {"cor": [1.0, 0.62, 0.26], "e": 1.0, "r": 240, "h": 70, "tremor": 0.1, "orbe": 0.0},
+    "borda_vermelha": {"cor": [1.0, 0.2, 0.12], "e": 1.0, "r": 230, "h": 70, "tremor": 0.25, "orbe": 0.0},
 }
 LUZ_OBJETOS = {
     "tanque_alto": {"tipo": "tanque_verde", "luz": [0, -8], "orbe": [0, -58]},
@@ -119,7 +209,7 @@ MINIMAPA = {
         "capsula_cripto": ["5adcf2", 2], "gerador": ["d6ac26", 2], "cano_grosso": ["8c6a4a", 1], "mesa_lab": ["8a98a6", 1],
         "bancada_lab": ["8a98a6", 2], "console": ["5adcf2", 1], "console_quebrado": ["8aa0b0", 1], "caixa_suprimentos": ["8a7a5a", 1],
         "caixa_empilhada": ["8a7a5a", 1], "barril_toxico": ["5bd06a", 1], "maca": ["b9bdc2", 1], "gaiola": ["7a8896", 1],
-        "lampada_emergencia": ["ec3b2e", 1],
+        "lampada_emergencia": ["ec3b2e", 1], "porta_blindada": ["56626f", 2], "duto_ventilacao": ["7a8896", 1], "estante_amostras": ["7a8896", 1],
     },
     "decalques": {"selo_central": ["ddcc80", 5, "anel"], "poca_acido_g": ["3fcf6a", 2], "faixa_perigo_g": ["d6ac26", 1]},
     "luzes_fortes": ["gerador"],
@@ -195,7 +285,7 @@ def montar(tam, rng):
     cx, cy = 1440, 320
     area("triagem", cx, cy, 330, 150)
     for k, x in enumerate([cx - 250, cx - 160, cx - 70]):
-        obj("parede_lab_b" if k == 1 else "parede_lab_a", x, 430)
+        obj("porta_blindada" if k == 1 else "parede_lab_a", x, 430)
     for k, x in enumerate([cx + 70, cx + 160, cx + 250]):
         obj("parede_lab_c" if k == 1 else "parede_lab_a", x, 430)
     for n, dx, dy in [("bancada_lab", -190, 330), ("bancada_lab", 190, 330), ("mesa_lab", -60, 260), ("mesa_lab", 80, 275), ("console", 0, 215),
@@ -252,7 +342,7 @@ def montar(tam, rng):
     for k, x in enumerate([cx - 250, cx - 160, cx - 70]):
         obj("parede_lab_a" if k != 2 else "parede_lab_b", x, 1190)
     for k, x in enumerate([cx + 70, cx + 160, cx + 250]):
-        obj("parede_lab_a" if k != 0 else "parede_lab_c", x, 1190)
+        obj("parede_lab_a" if k == 1 else ("parede_lab_c" if k == 0 else "porta_blindada"), x, 1190)
     for n, dx, dy in [("maca", -230, 70), ("maca", -120, 80), ("mesa_lab", 40, 70), ("mesa_lab", 160, 60), ("console", 270, 80), ("lampada_emergencia", -300, -10),
                       ("lampada_emergencia", 320, -10)]:
         obj(n, cx + dx, cy + dy)
@@ -275,36 +365,78 @@ def montar(tam, rng):
     obj("cacos_vidro", cx + 160, cy + 20, ocupa=False)
 
     # ---------------------------------------------------------------- bordas: o mapa é fechado por paredes e equipamento alto
-    paredes = ["parede_lab_a", "parede_lab_a", "parede_lab_a", "parede_lab_b", "parede_lab_c"]
-    alto = ["rack_servidores", "armario_aco", "tanque_alto", "cano_grosso", "pilar_lab", "tanque_quebrado", "rack_servidores", "caixa_empilhada"]
-    baixo = ["caixa_suprimentos", "mesa_lab", "barril_toxico", "caixa_suprimentos", "bancada_lab", "maca", "gaiola", "barril_toxico"]
-    # norte: parede dos fundos (pé em y=146, logo acima da faixa andável) e uma fileira de equipamento atrás dela
-    x = 50
+    # Cada trecho da borda (480 px no norte e no sul, 380 px no oeste e no leste) tem um TEMA, com os seus equipamentos e uma luz da cor dele:
+    # a borda muda de cara ao andar e as fileiras altas (que a câmera vê de frente e ficam pretas sem luz) ganham o seu clarão.
+    nomes_t = list(TEMAS)
+
+    def sorteia_temas(n):
+        t = rng.sample(nomes_t, min(n, len(nomes_t)))
+        while len(t) < n:
+            t.append(rng.choice(nomes_t))
+        return t
+
+    def passo(nome, a, b):
+        return max(rng.uniform(a, b), tam[nome][0] * 0.62) if nome in LARGOS else rng.uniform(a, b)
+
+    t_norte, t_sul, t_oeste, t_leste = sorteia_temas(6), sorteia_temas(6), sorteia_temas(4), sorteia_temas(4)
+    # norte: parede dos fundos (pé em y=146, logo acima da faixa andável, com portas blindadas aqui e ali) e uma fileira de equipamento atrás dela
+    paredes = ["parede_lab_a"] * 4 + ["parede_lab_b"] * 2 + ["parede_lab_c"] * 2 + ["porta_blindada"]
+    x, anterior = 50, ""
     while x < W - 30:
-        obj(rng.choice(paredes), x, 146, ocupa=False)
+        nome = rng.choice(paredes)
+        if nome == "porta_blindada" and anterior == nome:
+            nome = "parede_lab_a"
+        obj(nome, x, 146, ocupa=False)
+        anterior = nome
         x += 92
     x = 40
     while x < W:
-        nome = rng.choice(alto)
+        nome = rng.choice(TEMAS[t_norte[min(5, int(x // 480))]]["alto"])
         obj(nome, x + rng.uniform(-14, 14), 96 + rng.uniform(-10, 8), ocupa=False)
-        x += rng.uniform(58, 84)
+        x += passo(nome, 58, 84)
     # sul: baixo na frente da faixa andável, alto mais atrás da câmera
     x = 40
     while x < W:
-        obj(rng.choice(baixo), x + rng.uniform(-10, 10), 1500 + rng.uniform(-6, 10), ocupa=False)
-        x += rng.uniform(78, 120)
+        nome = rng.choice(TEMAS[t_sul[min(5, int(x // 480))]]["baixo"])
+        obj(nome, x + rng.uniform(-10, 10), 1500 + rng.uniform(-6, 10), ocupa=False)
+        x += passo(nome, 78, 120)
     x = 30
     while x < W:
-        obj(rng.choice(alto), x + rng.uniform(-14, 14), 1595 + rng.uniform(-8, 14), ocupa=False)
-        x += rng.uniform(56, 80)
+        nome = rng.choice(TEMAS[t_sul[min(5, int(x // 480))]]["alto"])
+        obj(nome, x + rng.uniform(-14, 14), 1595 + rng.uniform(-8, 14), ocupa=False)
+        x += passo(nome, 56, 80)
     # oeste e leste: duas colunas de equipamento (o miolo fica livre; a câmera para na borda)
-    for lado, xs in (("O", (62, 118)), ("L", (W - 62, W - 118))):
+    for lado, xs, temas in (("O", (62, 118), t_oeste), ("L", (W - 62, W - 118), t_leste)):
         for k, xc in enumerate(xs):
             y = 170 + (k * 31)
             while y < 1500:
-                nome = rng.choice(alto if k == 0 else baixo)
+                nome = rng.choice(TEMAS[temas[min(3, int((y - 150) // 380))]]["alto" if k == 0 else "baixo"])
                 obj(nome, xc + rng.uniform(-8, 8), y, ocupa=False)
                 y += rng.uniform(56, 82)
+    # uma luz fraca por trecho, na cor do tema (sem orbe: só clareia o equipamento e o chão da borda)
+    for i in range(6):
+        cx_ = 240 + i * 480
+        luzes.append({"tipo": TEMAS[t_sul[i]]["luz"], "pos": [round(cx_ + rng.uniform(-60, 60)), 1525], "orbe": [0, 0]})
+        luzes.append({"tipo": TEMAS[t_norte[i]]["luz"], "pos": [round(cx_ + rng.uniform(-60, 60)), 128], "orbe": [0, 0]})
+    for i in range(4):
+        cy_ = 340 + i * 380
+        luzes.append({"tipo": TEMAS[t_oeste[i]]["luz"], "pos": [round(150 + rng.uniform(-20, 20)), cy_], "orbe": [0, 0]})
+        luzes.append({"tipo": TEMAS[t_leste[i]]["luz"], "pos": [round(W - 150 + rng.uniform(-20, 20)), cy_], "orbe": [0, 0]})
+    # chão da borda: cabos, ralos, faixas e poças, para a faixa de equipamento não ficar sobre piso limpo
+    chao_borda = ["cabo_a", "cabo_b", "cabo_c", "grade_dreno", "faixa_perigo_p", "poca_oleo_p", "poca_acido_p", "mancha_b", "papeis_a", "placa_chao",
+                  "rachadura_b", "rachadura_c", "seta_chao"]
+    x = 120
+    while x < W - 100:
+        dec(rng.choice(chao_borda), x, rng.choice([1455, 1470]) + rng.uniform(-8, 8), rng.random() < 0.5)
+        dec(rng.choice(chao_borda), x + rng.uniform(0, 60), 196 + rng.uniform(-8, 12), rng.random() < 0.5)
+        x += rng.uniform(110, 190)
+    y = 260
+    while y < 1420:
+        dec(rng.choice(chao_borda), 196 + rng.uniform(-8, 10), y, rng.random() < 0.5)
+        dec(rng.choice(chao_borda), W - 196 + rng.uniform(-10, 8), y + rng.uniform(0, 40), rng.random() < 0.5)
+        y += rng.uniform(120, 200)
+    for x, y in [(380, 1490), (1100, 1500), (1840, 1485), (2540, 1495), (610, 190), (1960, 184), (180, 640), (2700, 1100)]:
+        obj(rng.choice(["restos_cobaia", "cacos_vidro", "lixo_lab"]), x, y, ocupa=False)
 
     # ---------------------------------------------------------------- miolo: desordem nos corredores (decalques e entulho, sem bloquear)
     prib = [(cx_ - rx - 20, cy_ - ry - 20, cx_ + rx + 20, cy_ + ry + 20) for cx_, cy_, rx, ry in areas.values()]
@@ -351,7 +483,7 @@ def montar(tam, rng):
     ]
     return {
         "semente": SEMENTE,
-        "mapa": {"tam": [W, H], "chao": {"piso": "piso", "ganho": 3.0, "verde": 1.0, "dessat": 0.0}, "ambiente": "1d2b3a",
+        "mapa": {"tam": [W, H], "chao": {"piso": "piso", "ganho": 2.2, "verde": 1.0, "dessat": 0.3}, "ambiente": "16232d",
                  "luar": {"e": 0.3, "h": 0.2, "ang": 70}, "ganho_objetos": 1.8, "ganho_decalques": 1.4, "borda_andavel": 150},
         "nascimento": {"heroi": [CX - 10, CY - 22], "monstros": monstros},
         "luz_tipos": LUZ_TIPOS,
