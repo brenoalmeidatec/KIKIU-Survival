@@ -16,6 +16,8 @@ const MAX_RAIOS := 6
 const PTS := 32
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x
 const COR_RAIO := Color(0.72, 0.86, 1.0)
+const ANGULOS_LEQUE := [-0.3, 0.0, 0.3]  # as lanças da Ventania (rad); uma só sem ela
+const RUNA_NO_ALVO := 0.65  # chance de a runa nascer em cima de um monstro perto (senão cai num anel em volta do herói, onde talvez ninguém pise)
 
 var combate
 var mundo
@@ -265,11 +267,26 @@ func pct_onda() -> float:
 	return float(mods.onda) * (float(ventania.mult_onda) if not ventania.is_empty() else 1.0)
 
 
+## O dano da onda que um corte de `dano_corte` solta, e o da lança que uma estocada de `dano_estocada` solta (`combate.golpear` lança com
+## estes dois e o card de status mostra os mesmos), e quantas lanças saem (uma, ou o leque de três da Ventania).
+func dano_da_onda(dano_corte: float) -> float:
+	return dano_corte * pct_onda() / 100.0
+
+
+func dano_da_lanca(dano_estocada: float) -> float:
+	return dano_estocada * float(mods.fura) / 100.0
+
+
+func n_lancas() -> int:
+	return 1 if ventania.is_empty() else ANGULOS_LEQUE.size()
+
+
 ## Os números de um golpe secundário `a` (um item de `ativas`) COMO O JOGO OS USA agora, com o dano do herói e a velocidade de ataque dentro
 ## (o card de status, status.gd, lê isto): `dano` por acerto (já arredondado, como o jogo faz em `combate.ferir`), `intervalo` em s entre dois
-## acertos da mesma fonte, `acertos` por segundo que a estimativa supõe e `dps`, a estimativa de dano por segundo num monstro sempre ao
-## alcance (lâmina e aura batem a cada recarga; corvos e raios contam o que cada ciclo solta; fogo conta a queima). O teste v2_status
-## confere cada tipo contra a simulação.
+## acertos da mesma fonte, `acertos` por segundo que a estimativa supõe e `dps`, a ESTIMATIVA de dano por segundo num monstro sempre ao
+## alcance (lâmina e aura batem a cada recarga; corvos e raios contam o que cada ciclo solta; fogo conta a queima; a runa conta só as que
+## nascem sobre o monstro). É uma estimativa por monstro: o arco elétrico da Revoada (+60% por bicada, só com um vizinho por perto) fica de
+## fora, e a explosão da runa atinge todos em volta (contra vários monstros o total sobe). O teste v2_status confere cada tipo contra a simulação.
 func numeros(a: Dictionary) -> Dictionary:
 	var h = mundo.heroi
 	var st: Dictionary = a.st
@@ -293,7 +310,7 @@ func numeros(a: Dictionary) -> Dictionary:
 		"corvos":
 			intervalo = float(st.tique)  # a bicada não acelera com a velocidade de ataque; só a chegada de corvos novos
 			var vivos := minf(float(MAX_CORVOS), float(st.quantidade) * float(st.duracao) * vel_a / float(st.recarga))
-			acertos_s = vivos / intervalo * (1.0 + float(st.get("eletrico", 0.0)))
+			acertos_s = vivos / intervalo  # o arco elétrico da Revoada fica de fora: só solta com um vizinho a 64 px do alvo
 		"raio":
 			intervalo = float(st.recarga) / vel_a
 			var queda := 0.0
@@ -304,7 +321,7 @@ func numeros(a: Dictionary) -> Dictionary:
 			acertos_s = float(st.quantidade) * queda / intervalo
 		"runa":
 			intervalo = float(st.recarga) / vel_a
-			acertos_s = float(st.quantidade) / intervalo
+			acertos_s = float(st.quantidade) / intervalo * RUNA_NO_ALVO  # só as que nascem sobre o monstro (`_ponto_runa`) explodem de pronto
 	return {"dano": dano, "intervalo": intervalo, "acertos": acertos_s, "dps": dano * acertos_s + extra}
 
 
@@ -728,7 +745,7 @@ func _runas_gerar(a: Dictionary, h, dt: float, vel_a: float) -> void:
 func _ponto_runa(h) -> Vector2:
 	for tentativa in 5:
 		var p: Vector2
-		if not _perto.is_empty() and randf() < 0.65:
+		if not _perto.is_empty() and randf() < RUNA_NO_ALVO:
 			var m = _perto[randi() % _perto.size()]
 			p = m.pos + Vector2(randf_range(-16, 16), randf_range(-10, 10))
 		else:
@@ -813,12 +830,11 @@ func _livre_onda() -> int:
 	return 0
 
 
-## O corte solta uma onda (dano já calculado). Com a Ventania, ela fica maior e mais forte.
+## O corte solta uma onda (o dano já vem de `dano_da_onda`, com a Ventania dentro). Com a Ventania, ela fica também mais larga.
 func lancar_onda(origem: Vector2, dir: Vector2, dano: float) -> void:
 	var cd: Dictionary = combate.cartas.definicao("onda")
 	var larg := 34.0
 	if not ventania.is_empty():
-		dano *= float(ventania.mult_onda)
 		larg *= float(ventania.larg_onda)
 	_nova_onda(origem + dir * 14.0, dir, 0, float(cd.get("vel", 250.0)), float(cd.get("alcance", 150.0)), dano, larg)
 
@@ -828,7 +844,7 @@ func lancar_lanca(origem: Vector2, dir: Vector2, dano: float) -> void:
 	var cd: Dictionary = combate.cartas.definicao("fura")
 	var angulos: Array = [0.0]
 	if not ventania.is_empty():
-		angulos = [-0.3, 0.0, 0.3]
+		angulos = ANGULOS_LEQUE
 	for ang in angulos:
 		_nova_onda(origem + dir * 20.0, dir.rotated(float(ang)), 1, float(cd.get("vel", 380.0)), float(cd.get("alcance", 190.0)), dano, 12.0)
 

@@ -148,8 +148,10 @@ func _sinergia_texto(id: String) -> String:
 	return ""
 
 
-## Evoluções ainda não feitas que usam a peça `id` (o card de status mostra): [{nome, falta}], onde `falta` lista as peças que ainda não
-## estão no nível pedido ("Aura de Fogo nv 3"). Vazio = a peça não entra em evolução nenhuma, ou a evolução dela já aconteceu.
+## Evoluções ainda não feitas que usam a peça `id` (o card de status mostra): [{nome, falta, perdida}], onde `falta` lista as peças que ainda
+## não estão no nível pedido ("Aura de Fogo nv 3") e `perdida` as que NÃO CHEGAM MAIS lá (banida abaixo do nível pedido, ou já gasta em outra
+## evolução), cada uma como "Lâminas Rodopiantes banida": se não está vazia, a evolução é impossível. Vazio = a peça não entra em evolução
+## nenhuma, ou a evolução dela já aconteceu.
 func evolucoes_com(id: String) -> Array:
 	var r: Array = []
 	for ev in cfg.evolucoes:
@@ -157,13 +159,19 @@ func evolucoes_com(id: String) -> Array:
 			continue
 		var usa := false
 		var falta: Array = []
+		var perdida: Array = []
 		for p in ev.pecas:
 			if str(p.id) == id:
 				usa = true
 			if not _peca_ok(p):
-				falta.append("%s nv %d" % [str(_def[str(p.id)].nome), int(p.nivel)])
+				var nome := str(_def[str(p.id)].nome)
+				falta.append("%s nv %d" % [nome, int(p.nivel)])
+				if bool(estado.get(str(p.id), {}).get("usada", false)):
+					perdida.append("%s já evoluiu em outra" % nome)
+				elif banidas.has(str(p.id)):
+					perdida.append("%s banida" % nome)
 		if usa:
-			r.append({"nome": str(ev.nome), "falta": falta})
+			r.append({"nome": str(ev.nome), "falta": falta, "perdida": perdida})
 	return r
 
 
