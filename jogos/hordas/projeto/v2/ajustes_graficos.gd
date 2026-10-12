@@ -5,7 +5,8 @@ extends RefCounted
 ## A tela da v1 (scripts/hordas/tela_graficos.gd) não é usada: ela desenha tudo numa caixa de 640x360 e lê o mouse no espaço
 ## da própria tela, o que não cabe no SubViewport da partida. Esta classe só dá as linhas e aplica as ações; o desenho e a
 ## entrada são da pausa (pausa.gd), com a fonte da v2.
-## Só as opções que a v2 lê hoje valem na hora na partida (LIDAS_NA_V2). As outras aparecem com "*" e a nota na ajuda.
+## Só as opções que a v2 lê hoje valem na hora na partida (LIDAS_NA_V2). As outras levam "(*)" depois do valor (na Spleen, que desenha o
+## asterisco legível; na Jersey 10 do nome ele saía parecido com uma aspa) e a nota na ajuda.
 ## Ids das linhas: "g:perfil", "g:detectar", "g:fps" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
 
 const PERFIS := ["baixo", "medio", "alto"]
@@ -16,7 +17,8 @@ const LIDAS_NA_V2 := ["sombras", "particulas_sim", "limite_fps", "vsync"]
 const AJUDA_PERFIL := "Baixo, Médio e Alto mudam todas as opções de uma vez. Mexer numa opção deixa o perfil Personalizado."
 const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e número de processadores."
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
-const NOTA_V2 := " * ainda sem efeito na v2 (vale na v1)."
+const MARCA_V2 := " (*)"  # depois do valor: a linha é a da Spleen, onde o asterisco lê bem
+const NOTA_V2 := " (*) ainda sem efeito na v2 (vale na v1)."
 
 var mensagem := ""  # aviso curto do detectar, mostrado no rodapé da pausa
 
@@ -59,10 +61,11 @@ func _linha_opcao(op: Dictionary) -> Dictionary:
 	var chave := str(op.get("chave", ""))
 	var nome := str(op.get("nome", chave))
 	var ajuda := str(op.get("ajuda", ""))
+	var valor := _texto_valor(op)
 	if not lida_na_v2(chave):
-		nome += " *"
+		valor += MARCA_V2
 		ajuda += NOTA_V2
-	return _it("g:op:" + chave, nome, _texto_valor(op), ajuda)
+	return _it("g:op:" + chave, nome, valor, ajuda)
 
 
 func _texto_valor(op: Dictionary) -> String:

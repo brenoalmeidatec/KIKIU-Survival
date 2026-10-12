@@ -30,8 +30,9 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 | Arquivo(s) no jogo | Onde é usado | Autor | Fonte (link) | Licença | Crédito exigido? | Mudanças nossas | Data |
 |---|---|---|---|---|---|---|---|
 | `assets/fonte/jersey10/` | títulos da v2 | The Soft Type Project | Google Fonts (Jersey 10) | SIL OFL 1.1 | texto da licença (`OFL.txt`) e Créditos | nenhuma | 2026-10-11 |
-| `assets/fonte/pixelify_sans/` | texto corrido da v2 | The Pixelify Sans Project | Google Fonts (Pixelify Sans) | SIL OFL 1.1 | texto da licença (`OFL.txt`) e Créditos | nenhuma | 2026-10-11 |
 | `assets/fonte/PressStart2P.ttf` | números e HUD | CodeMan38 | Google Fonts (Press Start 2P) | SIL OFL 1.1 | Créditos | nenhuma | desde a v1 |
 | `assets/audio/musica/*.ogg` | música | Kevin MacLeod (incompetech.com) | incompetech.com | CC BY 4.0 | sim (Créditos e `LICENCAS_AUDIO.md`) | cortes, laço, ganho, OGG | 2026-10-12 |
+| ~~`assets/fonte/pixelify_sans/`~~ | removida em 2026-10-12 (o 5 saía como S: "500" lia-se "800"); trocada pela Spleen | The Pixelify Sans Project | Google Fonts (Pixelify Sans) | SIL OFL 1.1 | - | - | 2026-10-11 |
+| `assets/fonte/spleen/spleen-8x16.otf` | texto corrido e valores da v2 (`Dados.fonte_texto`), sempre em 16 px | Frederic Cambus | https://github.com/fcambus/spleen (release 2.2.0) | BSD de 2 cláusulas | sim: aviso de copyright e texto da licença (`LICENSE.txt` ao lado; linha na tela de Créditos) | nenhuma | 2026-10-12 |
 
 (Itens novos entram no fim da tabela.)
