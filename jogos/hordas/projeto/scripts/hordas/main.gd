@@ -6,7 +6,7 @@ extends Node
 ##   --online=host [--jogadores=2] (abre a sala e começa sozinho quando tiver 2)
 ##   --online=join --endereco=127.0.0.1:7777  (entra na sala)
 ##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
-## A cena principal do jogo é a v2 (res://v2/altar.tscn). Esta tela (a v1) abre com `-- --v1` ou com um argumento da v1
+## A cena principal do jogo é a v2 (res://v2/menu_principal.tscn, o título, que leva ao santuário). Esta tela (a v1) abre com `-- --v1` ou com um argumento da v1
 ## (--bot, --online, --sair, --print_tela, --cena, --prototipo), que o santuário repassa para cá (v2/altar.gd, ARGS_V1).
 ## Abrir uma cena no lugar do menu (Release: KIKIU.exe -- --prototipo; o "--" faz o protótipo ler --fotos/--seq):
 ##   --prototipo (res://prototipos/cara_nova.tscn)  --v2 (res://v2/altar.tscn, o santuário da v2; sem o arquivo, cai no protótipo com aviso)
@@ -20,7 +20,7 @@ const Mapa := preload("res://scripts/hordas/mapa.gd")
 const W := 640.0
 const H := 360.0
 const CENA_PROTOTIPO := "res://prototipos/cara_nova.tscn"  # protótipo 2.5D (base da v2), congelado como referência
-const CENA_V2 := "res://v2/altar.tscn"  # santuário da v2 (a primeira tela da v2; o botão Entrar leva ao mundo, v2/mundo.tscn)
+const CENA_V2 := "res://v2/altar.tscn"  # santuário da v2 (depois do título, v2/menu_principal.tscn; o botão Entrar leva ao mundo, v2/mundo.tscn)
 const SAVE := "user://recordes.json"
 const SAVE_ONLINE := "user://online.json"
 const TelaOpcoes := preload("res://scripts/hordas/tela_opcoes.gd")

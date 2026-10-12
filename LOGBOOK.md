@@ -1302,3 +1302,14 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude do Alisson (PC) · v2: menu principal (título antes do santuário)
+- **Feito:** a cena principal da v2 agora é o título, `v2/menu_principal.tscn` (antes abria no santuário). Logo KIKILL em Jersey 10 (112 px) sobre o fundo `assets/titulo/fundo.png`, com Jogar (vai ao santuário), Ajustes (o submenu da pausa: Gráficos e Áudio), Créditos (a tela de Créditos da pausa) e Sair (pede confirmação). Mouse, teclado e controle; ESC e Start abrem "Sair?" com "Não" marcado, sem fechar o jogo de surpresa. O título toca a faixa do santuário (`menu`), que não recomeça quando o santuário abre.
+- **Fundo:** `jogos/hordas/fonte_arte/gerar_fundo_titulo.py` gera o fundo a partir de `entrada_fonte.webp` (960x540, 48 cores) sem o "K.I.K.I.U" que `gerar_entrada.py` desenha por cima. Não havia arte de título pronta; as capturas de partida (com HUD) não serviram. Registrado em `docs/LICENCAS_ARTE.md`. O prompt para uma arte de título nova está no corpo do PR da branch `alisson/v2-menu-principal`.
+- **Controle:** o InputMap da v2 não tinha o A em `ui_accept` nem o B em `ui_cancel` (só o D-pad e o analógico). `v2/entrada.gd` (`garantir()`) acrescenta os dois quando faltam, então o "Enter ou A confirma" do santuário passa a valer. A v1 não chama `garantir()`.
+- **Pausa (`v2/pausa.gd`):** novo sinal `fechou` (o título devolve o foco ao botão que abriu) e `abrir_creditos()`, em que o Voltar fecha direto sem passar por Ajustes. O resto da pausa não muda.
+- **Santuário:** o mesmo. A checagem de "argumento da v1" virou `Altar.pede_v1_na_entrada()` (mesmo código), chamada pelo título e pelo santuário.
+- **Testes:** `testes/v2_menu` novo (`v2_menu falhas=0`: foco por teclado, controle e mouse; Jogar por Enter, A e clique; ESC, Start e B em "Sair?"; Ajustes e Créditos abrem e voltam com o foco; só o Sim sai). `entrada_cenas` confere a nova cena principal. Também passam `v2_pausa`, `v2_musica`, `v2_meta`, `v2_esc` e `v2_cartas_espera`.
+- **Pendente:** a tela ainda não foi vista numa build exportada (o print do viewport está em `docs/prints/v2_menu_principal.png`). Conferir foco, leitura e controle no PC e no notebook. A arte final sai do prompt do PR no GPT: quando chegar, troca `assets/titulo/fundo.png` e registra a licença. O santuário não ganhou "voltar ao título" (não foi pedido).
+
+_Claude do Alisson (PC)_
