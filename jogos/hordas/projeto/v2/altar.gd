@@ -308,7 +308,7 @@ func _atualizar() -> void:
 			botao.text = "MÁXIMO"
 			botao.disabled = true
 		else:
-			var agora := ("Agora: " + Meta.texto_efeito(m, n)) if n > 0 else "Ainda sem efeito"
+			var agora := ("Agora: " + Meta.texto_efeito(m, n)) if n > 0 else "Não comprada"
 			efeito.text = "%s   %s" % [agora, Meta.texto_proximo(m, n)]
 			botao.text = "COMPRAR %d" % Meta.custo_do_nivel(m, n)
 			botao.disabled = false
