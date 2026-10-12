@@ -151,9 +151,7 @@ func _sinergia_texto(id: String) -> String:
 	var ev := _sinergia_ev(id)
 	if ev.is_empty():
 		return ""
-	if str(ev.get("raridade", "")) == "lendario":
-		return "LENDÁRIA! Evolui: %s" % ev.nome
-	return "Evolui: %s" % ev.nome
+	return "Evolui: %s" % ev.nome  # a lendária já sai magenta e com o nome da raridade no card: o prefixo não cabe numa linha
 
 
 ## A evolução (ainda livre) que esta peça ajuda a fechar, ou {} se nenhuma.
