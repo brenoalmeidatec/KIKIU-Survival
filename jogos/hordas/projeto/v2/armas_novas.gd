@@ -2,7 +2,7 @@ extends RefCounted
 ## Golpes secundários novos da v2 (leva 5): cinco tipos que `v2/armas.gd` chama pelo nome do golpe (dados/v2_cartas.json > "golpes").
 ##   projetil: a cada recarga, tiros no inimigo mais perto (perfura N inimigos; explosao = área no impacto).
 ##   nuvem:    a cada recarga, uma nuvem cai perto de um inimigo, fica `duracao` s e dá dano em tiques (lentidao opcional).
-##   anel:     a cada recarga, um anel de choque sai do herói e cresce até `raio`; cada inimigo é atingido uma vez.
+##   anel:     a cada recarga, um anel de choque sai do herói e cresce até `raio`; cada inimigo é atingido uma vez (`lento_s`, opcional: segundos de lentidão).
 ##   meteoro:  a cada recarga, meteoros marcam o chão (aviso) e caem em área perto de inimigos.
 ##   aliado:   a cada recarga, espíritos perseguem o inimigo mais perto e dão dano em tiques ao tocar.
 ## Tudo em um pool fixo (MAX slots, dicionários reaproveitados): nenhum nó, nenhuma alocação por quadro. O desenho usa a textura
@@ -180,6 +180,9 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 		(it.hit as Array).append(m)
 		var dir: Vector2 = (m.pos - c).normalized()
 		pai.combate.ferir(m, _dano(st), dir, float(st.get("empurra", 0.0)), 0.15, _cor_num(a.cor))
+		var lento := float(st.get("lento_s", 0.0))  # o gelo: segundos de lentidão no monstro atingido
+		if lento > 0.0:
+			m.deixar_lento(lento)
 		pai._acertou("anel")
 	if r >= float(st.raio):
 		it.vida = 0.0
