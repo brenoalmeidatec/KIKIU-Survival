@@ -190,6 +190,19 @@ func _ready() -> void:
 		if _tem_id(cs.sortear(3, 5), alvo_ban):
 			voltou = true
 	ok(not voltou, "a carta banida nunca mais sai")
+	# 2b. carta escondida até ter efeito (oculta_ate_ter_efeito em dados/v2_cartas.json) não sai no sorteio, e volta sem a flag
+	var escondida: Dictionary = cs.definicao("critico")
+	var tinha: bool = cs.disponiveis().has(escondida)
+	ok(tinha, "a carta de teste (critico) começa disponível no sorteio")
+	escondida["oculta_ate_ter_efeito"] = true
+	ok(not cs.disponiveis().has(escondida), "a carta escondida sai da lista de disponíveis")
+	var saiu_escondida := false
+	for i in 80:
+		if _tem_id(cs.sortear(3, 5), "critico"):
+			saiu_escondida = true
+	ok(not saiu_escondida, "a carta escondida nunca sai no sorteio")
+	escondida.erase("oculta_ate_ter_efeito")
+	ok(cs.disponiveis().has(escondida), "sem a flag a carta volta a ficar disponível")
 	ok(w.combate.progresso.banir(0) and not w.combate.progresso.banir(0), "os banimentos acabam (%d no total)" % int(cfg.escolha.banir_total))
 	w.combate.progresso.escolher(0)
 	ok(not w.combate.pausado and w.combate.jogo == "jogando", "escolher fecha a tela")

@@ -86,7 +86,7 @@ func _testes() -> void:
 	ok(Meta.comprar("dano"), "compra o 1º nível de dano")
 	Meta.aplicar(m)
 	ok(is_equal_approx(m.heroi.m_dano, 1.06), "aplicar: dano inicial sobe 6%% (%s)" % str(m.heroi.m_dano))
-	ok(m.meta_bonus.has("raridade") and m.meta_bonus.has("rolagem") and m.meta_bonus.has("almas"), "os bônus sem efeito ainda ficam em meta_bonus")
+	ok(m.meta_bonus.has("raridade") and m.meta_bonus.has("rolagem") and m.meta_bonus.has("almas"), "os bônus de raridade, rolagem e almas ficam em meta_bonus")
 	m.queue_free()
 	await get_tree().process_frame
 
@@ -117,8 +117,27 @@ func _testes() -> void:
 	var a = Altar.instantiate()
 	add_child(a)
 	await get_tree().process_frame
-	ok(a._linhas.size() == Meta.melhorias().size(), "uma linha por melhoria no santuário")
+	ok(a._linhas.size() == Meta.melhorias_visiveis().size(), "uma linha por melhoria visível no santuário")
 	ok(a._conq.size() == Meta.conquistas().size(), "uma linha por conquista no santuário")
+	# 6b. item escondido até ter efeito (oculta_ate_ter_efeito): o santuário não mostra o modo nem o visual, e a conquista segue
+	#     na lista sem a recompensa; sem a flag a recompensa volta com "(sem efeito ainda)" (o efeito segue pendente)
+	var modo_pesadelo := Meta.item_da_recompensa({"tipo": "modo", "id": "pesadelo"})
+	var visual_rastro := Meta.item_da_recompensa({"tipo": "visual", "id": "rastro_katana"})
+	ok(Meta.oculto(modo_pesadelo) and Meta.oculto(visual_rastro), "pesadelo e rastro de katana estão marcados como escondidos")
+	ok(not Meta.oculto(Meta.melhoria("raridade")) and not Meta.oculto(Meta.melhoria("rolagem")) and not Meta.oculto(Meta.melhoria("almas")), "raridade, rolagem e almas têm efeito e seguem visíveis")
+	a._atualizar()
+	ok(a._conq["derrota_chefe"].rec.text == "" and a._conq["combo_50"].rec.text == "", "a recompensa escondida some do santuário (%s / %s)" % [a._conq["derrota_chefe"].rec.text, a._conq["combo_50"].rec.text])
+	ok(a._conq["combo_50"].nome.text == "Combo de cinquenta", "a conquista com recompensa escondida segue na lista")
+	visual_rastro.erase("oculta_ate_ter_efeito")
+	a._atualizar()
+	ok(a._conq["combo_50"].rec.text == "Libera: Rastro de katana (sem efeito ainda)", "sem a flag o visual volta, com o aviso de efeito pendente (%s)" % a._conq["combo_50"].rec.text)
+	visual_rastro["oculta_ate_ter_efeito"] = true
+	a._atualizar()
+	var mel_vida := Meta.melhoria("vida")
+	mel_vida["oculta_ate_ter_efeito"] = true
+	ok(Meta.melhorias_visiveis().size() == Meta.melhorias().size() - 1 and not Meta.melhorias_visiveis().has(mel_vida), "melhoria marcada sai da lista do santuário e do card")
+	mel_vida.erase("oculta_ate_ter_efeito")
+	ok(Meta.melhorias_visiveis().size() == Meta.melhorias().size(), "sem a flag a melhoria volta à lista")
 	ok(a._linhas["treino"].botao.disabled and a._linhas["treino"].botao.text == "BLOQUEADA", "o treino aparece bloqueado sem o marco")
 	ok(not a._linhas["vida"].botao.disabled, "vida (liberada) aparece comprável")
 	Meta.creditar(500)

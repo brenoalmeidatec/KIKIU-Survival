@@ -109,6 +109,8 @@ func _disponivel(d: Dictionary) -> bool:
 	var id := str(d.id)
 	if banidas.has(id) or bool(estado.get(id, {}).get("usada", false)):
 		return false
+	if bool(d.get("oculta_ate_ter_efeito", false)):  # escondida até ter efeito real (dados/v2_cartas.json, _ajuda)
+		return false
 	return nivel_de(id) < int(d.max)
 
 

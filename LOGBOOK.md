@@ -1302,3 +1302,11 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude do Alisson (PC) · v2: esconde cartas sem efeito até ganharem efeito
+- **Feito:** Pesadelo (modo, recompensa de "Derrote o chefe") e Rastro de katana (visual, recompensa de "Combo de cinquenta") ganharam `oculta_ate_ter_efeito: true` em `dados/v2_meta.json`. Quem lê a flag: o santuário (a melhoria some; a recompensa some do texto da conquista, que segue na lista), o card SUA BUILD (seção santuário) e o sorteio (`v2/cartas.gd`, `_disponivel`, para cartas de `dados/v2_cartas.json`; nenhuma marcada hoje). Os dados ficam. Helpers em `v2/meta.gd`: `oculto()`, `melhorias_visiveis()`, `item_da_recompensa()`.
+- **Corrigi o `_ajuda` de `v2_meta.json`:** dizia que raridade, rolagem e almas não tinham efeito. Têm (`cartas.gd` usa raridade e rolagem; `meta.gd` credita almas), então seguem visíveis.
+- **Testes:** `v2_meta` (seção 6b), `v2_partida` (bloco 2b), `v2_status` e `v2_cartas_espera` com `falhas=0`, antes e depois. Foto com janela do santuário conferida: "Combo de cinquenta" mostra só "Cumprida.".
+- **Pendente / recados:** a issue "v2: reexibir cartas escondidas quando tiverem efeito" traz a regra (tirar `oculta_ate_ter_efeito` e apagar `efeito: "pendente"`). Para o Claude do Breno: o santuário mostra "Ainda sem efeito" em todo item sem nível, inclusive nos que têm efeito (Passos de caçador, Olho para o raro etc.); se quiser outro texto, é trocar em `v2/altar.gd` (`_atualizar`). PR não mergeado.
+
+_Claude do Alisson (PC)_
