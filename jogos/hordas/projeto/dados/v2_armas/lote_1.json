@@ -1,0 +1,218 @@
+[
+  {
+    "id": "flechas_sombrias",
+    "icone": "icone_u_arco_sussurro",
+    "nome": "Flechas Sombrias",
+    "desc": "Dispara flechas roxas rápidas no inimigo mais perto, em linha reta.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.42, 0.18, 0.62],
+    "base": {"dano": 8, "recarga": 1.8, "quantidade": 1, "vel": 420, "alcance": 220, "perfura": 0, "explosao": 0},
+    "niveis": [
+      {"texto": "+1 flecha", "quantidade": 1},
+      {"texto": "+3 de dano", "dano": 3},
+      {"texto": "perfura 1 inimigo", "perfura": 1},
+      {"texto": "+5 de dano e mais rápida", "dano": 5, "recarga": -0.3}
+    ],
+    "arte": {
+      "visual": "Flecha roxa-escura de ponta afiada, com rastro fino de fumaça escura, voando em linha reta até o inimigo mais perto. No impacto, um pequeno estalo de sombra roxa.",
+      "cores": ["roxo escuro", "lilás", "preto"],
+      "tamanho": "projétil de 12x3 px; impacto de 14 px",
+      "duracao": "0,2 s no impacto",
+      "provisorio": "Uma linha reta fina de 2 px roxa, com um círculo de 14 px que some no impacto."
+    }
+  },
+  {
+    "id": "adagas_voadoras",
+    "icone": "icone_u_adaga_sombria",
+    "nome": "Adagas Voadoras",
+    "desc": "Atira adagas de aço em leque curto no inimigo mais perto, sem parar.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.75, 0.78, 0.82],
+    "base": {"dano": 7, "recarga": 1.2, "quantidade": 2, "vel": 380, "alcance": 150, "perfura": 0, "explosao": 0},
+    "niveis": [
+      {"texto": "+2 de dano", "dano": 2},
+      {"texto": "+1 adaga", "quantidade": 1},
+      {"texto": "+30 de alcance", "alcance": 30},
+      {"texto": "+3 de dano e mais rápido", "dano": 3, "recarga": -0.2}
+    ],
+    "arte": {
+      "visual": "Adaga de aço cinza-claro que gira no ar sobre o próprio eixo, com brilho metálico no giro. Duas saem juntas em leque curto. No impacto, uma faísca branca.",
+      "cores": ["aço cinza-claro", "branco", "cinza-azulado"],
+      "tamanho": "adaga de 10x4 px; impacto de 12 px",
+      "duracao": "0,2 s no impacto",
+      "provisorio": "Um losango pequeno de 6 px cinza girando (dois giros por segundo), com um risco branco no impacto."
+    }
+  },
+  {
+    "id": "lanca_geada",
+    "icone": "icone_u_lanca_cacada",
+    "nome": "Lança de Geada",
+    "desc": "Arremessa lança de gelo no inimigo mais perto a cada poucos segundos.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 1.1,
+    "cor": [0.55, 0.85, 1.0],
+    "base": {"dano": 14, "recarga": 3.0, "quantidade": 1, "vel": 300, "alcance": 200, "perfura": 0, "explosao": 0},
+    "niveis": [
+      {"texto": "+4 de dano", "dano": 4},
+      {"texto": "perfura 1 inimigo", "perfura": 1},
+      {"texto": "+1 lança", "quantidade": 1},
+      {"texto": "+6 de dano, mais rápida", "dano": 6, "recarga": -0.5}
+    ],
+    "arte": {
+      "visual": "Lança azul-gelo com ponta cristalina, que avança girando devagar e deixa um rastro de cristais de gelo. Ao atravessar um inimigo, solta flocos brancos; no impacto, racha em estilhaços de gelo.",
+      "cores": ["azul-gelo", "branco", "azul-claro"],
+      "tamanho": "lança de 18x4 px; impacto de 22 px",
+      "duracao": "0,3 s no impacto",
+      "provisorio": "Um traço azul-gelo de 3 px com 4 pontos brancos atrás, e um círculo azul de 22 px no impacto."
+    }
+  },
+  {
+    "id": "estrelas_sombra",
+    "icone": "icone_u_kunai_corvo",
+    "nome": "Estrelas de Sombra",
+    "desc": "Atira shurikens pretas bem seguidas no inimigo mais perto, sem parar.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 0.9,
+    "cor": [0.12, 0.1, 0.16],
+    "base": {"dano": 4, "recarga": 0.9, "quantidade": 1, "vel": 400, "alcance": 180, "perfura": 0, "explosao": 0},
+    "niveis": [
+      {"texto": "+1 estrela", "quantidade": 1},
+      {"texto": "+1 de dano, mais rápidas", "dano": 1, "recarga": -0.1},
+      {"texto": "+1 estrela", "quantidade": 1},
+      {"texto": "+3 de dano, 4ª estrela", "dano": 3, "quantidade": 1}
+    ],
+    "arte": {
+      "visual": "Shuriken preta de quatro pontas, girando rápido no ar em direção ao inimigo. Rastro curto cinza-escuro. No impacto, um pequeno clarão cinza.",
+      "cores": ["preto", "cinza-escuro", "cinza-claro"],
+      "tamanho": "shuriken de 8x8 px; impacto de 10 px",
+      "duracao": "0,15 s no impacto",
+      "provisorio": "Um quadrado preto de 6 px girando, com um risco cinza de 2 px atrás e um círculo cinza de 10 px no impacto."
+    }
+  },
+  {
+    "id": "bola_fogo",
+    "icone": "icone_u_frasco_incendiario",
+    "nome": "Bola de Fogo",
+    "desc": "Esfera de fogo lenta que explode em área no inimigo mais perto.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 1.2,
+    "cor": [1.0, 0.45, 0.1],
+    "base": {"dano": 18, "recarga": 2.6, "quantidade": 1, "vel": 200, "alcance": 260, "perfura": 0, "explosao": 40},
+    "niveis": [
+      {"texto": "+6 de dano", "dano": 6},
+      {"texto": "explosão maior", "explosao": 12},
+      {"texto": "+1 esfera", "quantidade": 1},
+      {"texto": "+8 de dano e mais rápida", "dano": 8, "recarga": -0.4}
+    ],
+    "arte": {
+      "visual": "Esfera de fogo laranja com núcleo amarelo, que sai devagar e deixa faíscas caindo atrás. Ao chegar ao alvo, explode num círculo de fogo que se abre no chão e some em seguida.",
+      "cores": ["laranja", "amarelo", "vermelho"],
+      "tamanho": "esfera de 16 px; explosão de 80 px de diâmetro",
+      "duracao": "0,4 s na explosão",
+      "provisorio": "Um círculo laranja de 16 px com 3 faíscas amarelas atrás, e um anel laranja que cresce até 80 px de diâmetro no impacto."
+    }
+  },
+  {
+    "id": "dardos_peconhentos",
+    "icone": "icone_u_dardo_primitivo",
+    "nome": "Dardos Peçonhentos",
+    "desc": "Atira dardos verdes de dano baixo no inimigo mais perto, bem seguidos.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 0.9,
+    "cor": [0.5, 0.95, 0.2],
+    "base": {"dano": 5, "recarga": 0.9, "quantidade": 1, "vel": 360, "alcance": 200, "perfura": 0, "explosao": 0},
+    "niveis": [
+      {"texto": "+2 de dano", "dano": 2},
+      {"texto": "dardo mais rápido", "recarga": -0.1},
+      {"texto": "+1 dardo", "quantidade": 1},
+      {"texto": "+3 de dano, mais rápidos", "dano": 3, "recarga": -0.1}
+    ],
+    "arte": {
+      "visual": "Dardo curto verde-limão com ponta escura, que voa reto e pinga gotas verdes no rastro. No impacto, uma pequena nuvem verde de veneno que some rápido.",
+      "cores": ["verde-limão", "verde-escuro", "preto"],
+      "tamanho": "dardo de 8x2 px; impacto de 12 px",
+      "duracao": "0,2 s no impacto",
+      "provisorio": "Um traço verde de 2 px com 2 gotas verdes atrás, e um círculo verde de 12 px que some no impacto."
+    }
+  },
+  {
+    "id": "raio_solar",
+    "icone": "icone_u_estrela_matutina",
+    "nome": "Raio Solar",
+    "desc": "Dispara um feixe dourado rápido e de longe no inimigo mais perto.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 1.1,
+    "cor": [1.0, 0.85, 0.3],
+    "base": {"dano": 12, "recarga": 1.4, "quantidade": 1, "vel": 700, "alcance": 300, "perfura": 0, "explosao": 0},
+    "niveis": [
+      {"texto": "perfura 1 inimigo", "perfura": 1},
+      {"texto": "+4 de dano", "dano": 4},
+      {"texto": "+1 feixe e recarga menor", "quantidade": 1, "recarga": -0.2},
+      {"texto": "+5 de dano, perfura mais", "dano": 5, "perfura": 1}
+    ],
+    "arte": {
+      "visual": "Feixe dourado fino e reto, que sai do herói em direção ao inimigo. Ao atravessar um inimigo, continua o caminho com um brilho de sol. No impacto, um flash dourado em cruz.",
+      "cores": ["dourado", "amarelo-claro", "branco"],
+      "tamanho": "feixe de 40x3 px; impacto de 18 px",
+      "duracao": "0,15 s no impacto",
+      "provisorio": "Uma linha dourada de 3 px com brilho branco na ponta, e uma cruz dourada de 18 px no impacto."
+    }
+  },
+  {
+    "id": "bumerangue_ferro",
+    "icone": "icone_u_disco_cortante",
+    "nome": "Bumerangue de Ferro",
+    "desc": "Lança um disco de ferro que atravessa dois inimigos e volta para você.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 1.1,
+    "cor": [0.72, 0.45, 0.3],
+    "base": {"dano": 13, "recarga": 2.2, "quantidade": 1, "vel": 320, "alcance": 230, "perfura": 2, "explosao": 0},
+    "niveis": [
+      {"texto": "+4 de dano", "dano": 4},
+      {"texto": "+1 bumerangue", "quantidade": 1},
+      {"texto": "perfura mais 1 inimigo", "perfura": 1},
+      {"texto": "+5 de dano, volta rápido", "dano": 5, "recarga": -0.3}
+    ],
+    "arte": {
+      "visual": "Disco de ferro ferrugento, que gira no próprio eixo e corta o ar em arco de ida. Ao acertar, risca faíscas laranja; depois, a mesma peça volta girando no sentido contrário.",
+      "cores": ["ferrugem", "cinza-ferro", "laranja"],
+      "tamanho": "disco de 16 px de diâmetro; impacto de 16 px",
+      "duracao": "0,2 s no impacto",
+      "provisorio": "Um círculo ferrugem de 16 px girando com um risco de 2 px atrás, e 3 faíscas laranja no impacto."
+    }
+  },
+  {
+    "id": "bolas_chumbo",
+    "icone": "icone_u_marreta_enferrujada",
+    "nome": "Bolas de Chumbo",
+    "desc": "Bolas de chumbo pesadas e lentas que esmagam o inimigo mais perto.",
+    "tipo": "projetil",
+    "max": 5,
+    "peso": 1.4,
+    "cor": [0.45, 0.47, 0.52],
+    "base": {"dano": 22, "recarga": 4.5, "quantidade": 1, "vel": 180, "alcance": 180, "perfura": 0, "explosao": 24},
+    "niveis": [
+      {"texto": "+6 de dano", "dano": 6},
+      {"texto": "+1 bola", "quantidade": 1},
+      {"texto": "impacto mais forte", "explosao": 8},
+      {"texto": "+8 de dano, mais rápida", "dano": 8, "recarga": -0.5}
+    ],
+    "arte": {
+      "visual": "Bola de chumbo cinza-escuro, pesada, que voa devagar com um pequeno rastro de poeira. No impacto, o chão racha num círculo de poeira que se espalha e some.",
+      "cores": ["chumbo cinza-escuro", "cinza-claro", "marrom-poeira"],
+      "tamanho": "bola de 14 px; impacto de 48 px de diâmetro",
+      "duracao": "0,35 s no impacto",
+      "provisorio": "Um círculo cinza de 14 px com 3 pontos de poeira atrás, e um anel marrom de 48 px no impacto que some em 0,35 s."
+    }
+  }
+]
