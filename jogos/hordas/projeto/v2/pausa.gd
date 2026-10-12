@@ -13,21 +13,21 @@ extends CanvasLayer
 ## PROCESS_MODE_ALWAYS): ela vem antes do mundo e das telas na ordem do _input e continua ouvindo com a árvore pausada. No santuário
 ## o menu mora na raiz e usa o próprio _input. Nos dois casos a regra é a de entrada(). Abre em "jogando" e também sobre a escolha de
 ## cartas e o baú (que voltam intactos ao fechar); não abre na câmera lenta da morte e da vitória nem no resultado.
-## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores, apoio e ajuda na Pixelify Sans
-## (Dados.fonte_texto), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
+## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores, apoio e ajuda na Spleen 8x16
+## (Dados.fonte_texto, sempre em 16 px), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const TAM_TITULO := 56  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
 const TAM_BOTAO := 19  # botões e linhas (Jersey 10 na grade de 19)
-const TAM_SUB := 14  # linha de apoio do título
-const TAM_VALOR := 14  # valor à direita (Pixelify Sans)
-const TAM_AJUDA := 12  # ajuda da linha escolhida (rodapé dos gráficos)
-const TAM_DICA := 14
+const TAM_SUB := 16  # linha de apoio do título
+const TAM_VALOR := 16  # valor à direita (Spleen, grade de 16 px)
+const TAM_AJUDA := 16  # ajuda da linha escolhida (rodapé dos gráficos)
+const TAM_DICA := 16
 const LARG := 960.0
 const ALT := 540.0
-const PAINEL := Rect2(290, 55, 380, 430)
+const PAINEL := Rect2(260, 55, 440, 430)  # 440 de largura: a Spleen é mais larga que a Pixelify
 const LINHA0 := 118.0  # primeira linha, a partir do topo do painel
 const LINHA_H := 36.0
 const LINHA_ALT := 32.0  # altura da faixa de cada linha

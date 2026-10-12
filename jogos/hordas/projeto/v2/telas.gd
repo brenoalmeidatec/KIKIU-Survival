@@ -21,7 +21,7 @@ const ICONE := 32.0  # o ícone da v1 tem 16x16: aqui sai em 2x, pixel a pixel
 const TAM_TITULO := 56  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
 const TAM_NOME := 37  # múltiplo de 2 px da grade da Jersey 10 (cabe em uma linha na maioria dos nomes)
 const TAM_NOME_CURTO := 28  # nomes longos (Lâminas Rodopiantes) que não cabem em TAM_NOME
-const TAM_TEXTO := 16
+const TAM_TEXTO := 16  # grade da Spleen 8x16 (só 16 ou 32): o 5 e o S, o 0 e o O não se confundem
 const TAM_CONTAGEM := 19  # a contagem da trava usa a Jersey 10 na grade de 19 px (como os botões)
 const COR_TRAVA := Color(0.45, 0.45, 0.45, 1.0)  # cartas apagadas na trava
 const PULSO_T := 0.2  # s da pulsada da contagem quando um clique ou tecla cai na trava
@@ -62,7 +62,7 @@ var _res_valores: Label
 var _res_dica: Label
 var _dep: Label
 var _dep_t := 0.0
-var _fonte: Font  # texto corrido (Pixelify Sans)
+var _fonte: Font  # texto corrido (Spleen 8x16, sempre em 16 px)
 var _fonte_t: Font  # títulos e nomes (Jersey 10)
 var _fonte_px: Font  # o texto de depuração segue na Press Start 2P
 var _t_ui := 0.0
@@ -219,8 +219,8 @@ func _montar_cartao(p: Panel, tecla: String) -> void:
 	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(icone)
 	_campo(p, "nome", TAM_NOME, true, Color(1.0, 0.95, 0.8), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 86, larg, 40)
-	_campo(p, "desc", TAM_TEXTO, false, Color(0.88, 0.9, 1.0), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 130, larg, 58, true)
-	_campo(p, "proximo", TAM_TEXTO, false, Color(0.6, 0.85, 1.0), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 190, larg, 42, true)
+	_campo(p, "desc", TAM_TEXTO, false, Color(0.88, 0.9, 1.0), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 128, larg, 54, true)
+	_campo(p, "proximo", TAM_TEXTO, false, Color(0.6, 0.85, 1.0), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 184, larg, 50, true)
 	var sep := ColorRect.new()
 	sep.name = "sep"
 	sep.position = Vector2(MARGEM, 236)
