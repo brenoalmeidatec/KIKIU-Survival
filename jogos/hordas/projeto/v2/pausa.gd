@@ -16,6 +16,7 @@ extends CanvasLayer
 ## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores, apoio e ajuda na Spleen 8x16
 ## (Dados.fonte_texto, sempre em 16 px), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 
+const Paleta := preload("res://v2/paleta.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
@@ -35,10 +36,6 @@ const VISIVEIS := 5  # linhas visíveis de uma vez; a lista rola com a seleção
 const AJUDA_Y := LINHA0 + VISIVEIS * LINHA_H + 8.0  # rodapé com a ajuda da linha escolhida
 const AJUDA_H := 96.0
 const DICA_Y := 406.0  # PAINEL.size.y - 24
-const COR_OURO := Color(1.0, 0.86, 0.42)
-const COR_TEXTO := Color(0.92, 0.9, 0.96)
-const COR_CAB := Color(0.62, 0.6, 0.72)  # cabeçalho de seção (não é selecionável)
-const COR_FUNDO := Color(0.004, 0.012, 0.043, 0.72)  # #01030b a 0,7 (hud_menus.md, seção 4)
 const DICA := "Setas escolhem   Enter confirma   Esc volta"
 const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
@@ -105,7 +102,7 @@ func _montar() -> void:
 	_raiz.visible = false
 	add_child(_raiz)
 	var fundo := ColorRect.new()
-	fundo.color = COR_FUNDO
+	fundo.color = Paleta.alfa(Paleta.PAINEL, 0.72)
 	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_raiz.add_child(fundo)
@@ -121,10 +118,12 @@ func _montar() -> void:
 	caixa.texture_margin_bottom = 5
 	painel.add_theme_stylebox_override("panel", caixa)
 	_raiz.add_child(painel)
-	_titulo = _rotulo(Dados.fonte_titulo, TAM_TITULO, COR_OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 18), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_titulo = _rotulo(
+		Dados.fonte_titulo, TAM_TITULO, Paleta.OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 18), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER
+	)
 	_raiz.add_child(_titulo)
 	_sub = _rotulo(
-		Dados.fonte_texto, TAM_SUB, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER
+		Dados.fonte_texto, TAM_SUB, Paleta.TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	_raiz.add_child(_sub)
 	for i in VISIVEIS:
@@ -134,8 +133,8 @@ func _montar() -> void:
 		linha.size = Vector2(w, LINHA_ALT)
 		linha.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var est := StyleBoxFlat.new()
-		est.bg_color = Color(COR_OURO.r, COR_OURO.g, COR_OURO.b, 0.14)
-		est.border_color = COR_OURO
+		est.bg_color = Paleta.alfa(Paleta.OURO, 0.14)
+		est.border_color = Paleta.OURO
 		est.set_border_width_all(2)
 		est.set_corner_radius_all(0)
 		var marca := Panel.new()
@@ -143,20 +142,20 @@ func _montar() -> void:
 		marca.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		marca.add_theme_stylebox_override("panel", est)
 		linha.add_child(marca)
-		var rot := _rotulo(Dados.fonte_titulo, TAM_BOTAO, COR_TEXTO, Vector2(12, 6), w - 24, HORIZONTAL_ALIGNMENT_LEFT)
+		var rot := _rotulo(Dados.fonte_titulo, TAM_BOTAO, Paleta.TEXTO, Vector2(12, 6), w - 24, HORIZONTAL_ALIGNMENT_LEFT)
 		linha.add_child(rot)
-		var val := _rotulo(Dados.fonte_texto, TAM_VALOR, COR_TEXTO, Vector2(12, 8), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
+		var val := _rotulo(Dados.fonte_texto, TAM_VALOR, Paleta.TEXTO, Vector2(12, 8), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
 		linha.add_child(val)
 		_raiz.add_child(linha)
 		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val})
 	_ajuda = _rotulo(
-		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 22, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 44, HORIZONTAL_ALIGNMENT_LEFT
+		Dados.fonte_texto, TAM_AJUDA, Paleta.TEXTO, Vector2(PAINEL.position.x + 22, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 44, HORIZONTAL_ALIGNMENT_LEFT
 	)
 	_ajuda.size.y = AJUDA_H
 	_ajuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_raiz.add_child(_ajuda)
 	_dica = _rotulo(
-		Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER
+		Dados.fonte_texto, TAM_DICA, Paleta.TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	_raiz.add_child(_dica)
 	_fps = _rotulo(Dados.fonte, 8, Color(1, 1, 1, 0.92), Vector2(6, ALT - 16), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
@@ -531,7 +530,7 @@ func _desenhar() -> void:
 		l["marca"].visible = on
 		l["rotulo"].text = str(it.rotulo)
 		l["valor"].text = str(it.get("valor", ""))
-		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
+		var cor := Paleta.CABECALHO if cab else (Paleta.OURO if on else Paleta.TEXTO)
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
 	_card_build()

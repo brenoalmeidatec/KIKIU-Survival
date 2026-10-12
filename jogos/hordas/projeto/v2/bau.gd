@@ -4,6 +4,7 @@ extends RefCounted
 ## O baú não tem arte pronta: o desenho é um pixel art de 22x20 gerado aqui, uma vez, e o brilho dourado (aditivo, na camada glow) e a luz
 ## são o que o faz aparecer no escuro. Pool de 4 baús criados na abertura; nada de nó novo durante a partida.
 
+const Paleta := preload("res://v2/paleta.gd")
 const MAX := 4
 const ACHATA := 0.62
 
@@ -203,7 +204,7 @@ func abrir(b: Dictionary) -> void:
 				"stat": "cura",
 				"rar": 0,
 				"rar_nome": "Comum",
-				"cor": Color(0.8, 0.82, 0.86),
+				"cor": Paleta.RARIDADES[0],
 				"icone": "icone_vida",
 				"proximo": "",
 				"nivel_txt": "",

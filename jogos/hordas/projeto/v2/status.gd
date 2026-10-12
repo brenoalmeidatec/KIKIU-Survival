@@ -21,6 +21,7 @@ extends CanvasLayer
 ## A entrada é `entrada(evento)`, chamada pelo mundo.gd (o SubViewport não recebe a entrada da janela, então este nó não tem _input).
 ## Criado pelo mundo.gd (uma linha no _ready), que guarda em `mundo.status`.
 
+const Paleta := preload("res://v2/paleta.gd")
 const Meta := preload("res://v2/meta.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
@@ -54,16 +55,8 @@ const COLUNAS_PAUSA := [
 const COLUNAS_CENTRAL := [Rect2(14, 14, 296, 512), Rect2(332, 14, 296, 512), Rect2(650, 14, 296, 512)]
 const SECOES_DUAS := [["heroi", "partida", "santuario"], ["katana", "golpes"]]
 const SECOES_TRES := [["heroi", "partida", "santuario"], ["katana"], ["golpes"]]
-const COR_FUNDO_OPACO := Color(0.004, 0.012, 0.043, 1.0)  # o painel #01030b: por baixo da moldura (translúcida) quando o card tem de ser lido sem ver o que está atrás
-const COR_TITULO := Color(1.0, 0.86, 0.42)
-const COR_ROTULO := Color(0.72, 0.7, 0.83)
-const COR_VALOR := Color(1.0, 0.93, 0.66)
-const COR_BONUS := Color(0.55, 0.95, 0.62)
-const COR_SANTUARIO := Color(0.82, 0.68, 1.0)
-const COR_DICA := Color(0.6, 0.8, 0.98)
-const COR_LINHA := Color(0.55, 0.53, 0.68, 0.5)
 ## Estilo de um trecho de texto (veja `_bloco`): 0 = apoio, 1 = número em destaque, 2 = bônus.
-const CORES_TRECHO := [COR_ROTULO, COR_VALOR, COR_BONUS]
+var CORES_TRECHO := [Paleta.TEXTO_SECUNDARIO, Paleta.VALOR, Paleta.BONUS]
 
 var mundo
 var secoes: Array = []  # o último `coletar` (os testes leem)
@@ -335,7 +328,7 @@ static func _sec_heroi(m) -> Dictionary:
 	lin.append(_l("heroi.nivel", "Nível", "%d · XP %d/%d" % [h.nivel, roundi(h.xp), roundi(h.xp_proximo)], [h.nivel, h.xp, h.xp_proximo], "", true))
 	lin.append(_l("heroi.esquiva", "Esquiva", "%d seguidas" % seguidas, [seguidas, h.esq_dur]))
 	lin.append(_l("heroi.imune", "Imune na esquiva", "%s s" % _v(h.esq_inv, 2), [h.esq_inv]))
-	return _sec("heroi", "HERÓI", Color(1.0, 0.6, 0.55), lin)
+	return _sec("heroi", "HERÓI", Paleta.SECAO_HEROI, lin)
 
 
 static func _sec_katana(m) -> Dictionary:
@@ -420,7 +413,7 @@ static func _sec_katana(m) -> Dictionary:
 				str(d.nome),
 				str(d.get("curto", d.nome)),
 				str(d.get("icone", "")),
-				Color(0.8, 0.95, 1.0),
+				Paleta.DICA,
 				nivel_txt,
 				nivel_curto,
 				tr,
@@ -450,7 +443,7 @@ static func _sec_katana(m) -> Dictionary:
 				[float(ev.mult_onda)]
 			)
 		)
-	return _sec("katana", "KATANA (CLIQUE)", Color(1.0, 0.78, 0.45), lin)
+	return _sec("katana", "KATANA (CLIQUE)", Paleta.SECAO_KATANA, lin)
 
 
 static func _sec_golpes(m) -> Dictionary:
@@ -509,7 +502,7 @@ static func _sec_golpes(m) -> Dictionary:
 		)
 	if lin.is_empty():
 		lin.append({"tipo": "texto", "id": "arma.nenhum", "texto": "Nenhum ainda: eles vêm das cartas.", "estilo": 0, "n": []})
-	return _sec("golpes", "GOLPES AUTOMÁTICOS", Color(0.6, 0.8, 1.0), lin)
+	return _sec("golpes", "GOLPES AUTOMÁTICOS", Paleta.SECAO_GOLPES, lin)
 
 
 ## Os danos de uma lista, arredondados como o jogo os aplica e separados por "/" ("8/9"); repetidos em seguida viram um número só.
@@ -590,7 +583,7 @@ static func _sec_partida(m) -> Dictionary:
 	)
 	lin.append(_l("partida.onda", "Onda forte", str(c.diretor.ondas), [c.diretor.ondas]))
 	lin.append(_l("partida.proxima", "Próxima onda", "em %d s" % ceili(falta_onda), [falta_onda]))
-	return _sec("partida", "PARTIDA", Color(0.6, 0.95, 0.85), lin)
+	return _sec("partida", "PARTIDA", Paleta.SECAO_PARTIDA, lin)
 
 
 static func _sec_santuario(_m, meta_niveis: Variant) -> Dictionary:
@@ -603,7 +596,7 @@ static func _sec_santuario(_m, meta_niveis: Variant) -> Dictionary:
 		lin.append({"tipo": "texto", "id": "santuario." + str(md.id), "texto": Meta.texto_efeito(md, n), "estilo": 3, "n": [float(md.valor) * n]})
 	if lin.is_empty():
 		lin.append({"tipo": "texto", "id": "santuario.nenhuma", "texto": "Nenhuma melhoria comprada.", "estilo": 0, "n": []})
-	return _sec("santuario", "SANTUÁRIO", COR_SANTUARIO, lin)
+	return _sec("santuario", "SANTUÁRIO", Paleta.ALMA, lin)
 
 
 # ------------------------------------------------------------------ desenho
@@ -619,11 +612,11 @@ func _pintar() -> void:
 	var rects: Array = _colunas()
 	var opaco: bool = _m != "hud"  # na pausa e no painel central: sem ver o que está atrás
 	if _m == "central":
-		_tela.draw_rect(TELA, COR_FUNDO_OPACO)  # o painel central cobre a tela toda: as cartas (camada 5) e o HUD ficam escondidos
+		_tela.draw_rect(TELA, Paleta.PAINEL)  # o painel central cobre a tela toda: as cartas (camada 5) e o HUD ficam escondidos
 	for c in rects.size():
 		var r := _medir(c)  # também decide se as dicas de evolução cabem (_sem_dicas)
 		if opaco:
-			_tela.draw_rect(r, COR_FUNDO_OPACO)
+			_tela.draw_rect(r, Paleta.PAINEL)
 		_tela.draw_style_box(_estilo, r)
 		_coluna(c, rects[c], false)
 
@@ -717,9 +710,11 @@ func _coluna(c: int, r: Rect2, seco: bool) -> float:
 	_cortou = false
 	if c == 0:
 		if not seco:
-			_texto_titulo("SUA BUILD", Vector2(x, y), COR_TITULO)
+			_texto_titulo("SUA BUILD", Vector2(x, y), Paleta.OURO)
 			if _m != "pausa":  # o C não faz nada com o menu aberto
-				_tela.draw_string(_f_num, Vector2(x, y + 6.0 + _f_num.get_ascent(TAM_NUM)), "[C] fecha", HORIZONTAL_ALIGNMENT_RIGHT, w, TAM_NUM, COR_ROTULO)
+				_tela.draw_string(
+					_f_num, Vector2(x, y + 6.0 + _f_num.get_ascent(TAM_NUM)), "[C] fecha", HORIZONTAL_ALIGNMENT_RIGHT, w, TAM_NUM, Paleta.TEXTO_SECUNDARIO
+				)
 		y += ALT_TITULO
 	for id in _secoes_das_colunas()[c]:
 		var sec := _achar(str(id))
@@ -727,7 +722,7 @@ func _coluna(c: int, r: Rect2, seco: bool) -> float:
 			continue
 		y = _secao(sec, x, y + 3.0, w, seco, limite)
 	if _cortou and not seco:
-		_texto(Dados.fonte_texto, "...", Vector2(x, limite - ALT_LINHA + 2.0), w, HORIZONTAL_ALIGNMENT_CENTER, TAM, COR_ROTULO)
+		_texto(Dados.fonte_texto, "...", Vector2(x, limite - ALT_LINHA + 2.0), w, HORIZONTAL_ALIGNMENT_CENTER, TAM, Paleta.TEXTO_SECUNDARIO)
 	return y - r.position.y + PAD - 2.0
 
 
@@ -744,7 +739,7 @@ func _secao(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite: f
 		return y
 	if not seco:
 		_texto_titulo(str(sec.titulo), Vector2(x, y - 1.0), sec.cor)
-		_tela.draw_line(Vector2(x, y + ALT_CAB - 1.0), Vector2(x + w, y + ALT_CAB - 1.0), COR_LINHA, 1.0)
+		_tela.draw_line(Vector2(x, y + ALT_CAB - 1.0), Vector2(x + w, y + ALT_CAB - 1.0), Color(Paleta.DIVISOR, 0.5), 1.0)
 	y += ALT_CAB + 2.0
 	for l in sec.linhas:
 		if _m == "hud" and bool(l.get("so_cheio", false)):
@@ -780,7 +775,7 @@ func _item(l: Dictionary, x: float, y: float, w: float) -> void:
 			_desenhar_linha(l, x, y, w)
 		"texto":
 			var santuario := int(l.estilo) == 3
-			var cor := COR_SANTUARIO if santuario else COR_ROTULO
+			var cor := Paleta.ALMA if santuario else Paleta.TEXTO_SECUNDARIO
 			var yy := y
 			for linha_t in _quebrar(str(l.texto), TAM_P if santuario else TAM, w):
 				_misto(str(linha_t), x, yy, TAM_P if santuario else TAM, cor, cor)
@@ -801,10 +796,10 @@ func _desenhar_linha(l: Dictionary, x: float, y: float, w: float) -> void:
 		bonus != ""
 		and f.get_string_size(str(l.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x + 8.0 + _larg_misto(str(l.valor), TAM) + _larg_misto(bonus, TAM) + 5.0 <= w
 	):
-		_misto(bonus, direita, y, TAM, COR_BONUS, COR_BONUS, true)
+		_misto(bonus, direita, y, TAM, Paleta.BONUS, Paleta.BONUS, true)
 		direita -= _larg_misto(bonus, TAM) + 5.0
-	_texto(f, str(l.rotulo), Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
-	_misto(str(l.valor), direita, y, TAM, COR_ROTULO, COR_VALOR, true)
+	_texto(f, str(l.rotulo), Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, Paleta.TEXTO_SECUNDARIO)
+	_misto(str(l.valor), direita, y, TAM, Paleta.TEXTO_SECUNDARIO, Paleta.VALOR, true)
 
 
 func _desenhar_icone(l: Dictionary, x: float, y: float) -> void:
@@ -828,7 +823,7 @@ func _desenhar_bloco_compacto(l: Dictionary, x: float, y: float, w: float) -> vo
 	for tr in l.uma:
 		xs += _desenhar_trecho(tr, xs, y + 4.0)
 	var nivel := str(l.nivel_curto)
-	_misto(nivel, xx - 6.0, y + 3.0, TAM_P, COR_ROTULO, COR_ROTULO, true)
+	_misto(nivel, xx - 6.0, y + 3.0, TAM_P, Paleta.TEXTO_SECUNDARIO, Paleta.TEXTO_SECUNDARIO, true)
 	# o nome na grade da Jersey 10 (19) quando cabe; se não, um degrau abaixo (a Jersey fora da grade sai borrada, então só quando precisa)
 	var tam_nome := TAM_CAB if _larg_bloco_compacto(l, TAM_CAB) <= w - ICONE - 4.0 else TAM_NOME_PEQ
 	_tela.draw_string(ft, Vector2(xt, y - 1.0 + ft.get_ascent(TAM_CAB)), str(l.nome_curto), HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome, cor)
@@ -851,7 +846,7 @@ func _desenhar_bloco(l: Dictionary, x: float, y: float, w: float) -> void:
 	if ft.get_string_size(nome, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome).x + _larg_misto(nivel, TAM_P) + 8.0 > wt:
 		tam_nome = TAM_NOME_PEQ
 	_tela.draw_string(ft, Vector2(xt, y - 1.0 + ft.get_ascent(TAM_CAB)), nome, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome, cor)
-	_misto(nivel, xt + wt, y + 1.0, TAM_P, COR_ROTULO, COR_ROTULO, true)
+	_misto(nivel, xt + wt, y + 1.0, TAM_P, Paleta.TEXTO_SECUNDARIO, Paleta.TEXTO_SECUNDARIO, true)
 	var yy := y + ICONE + 1.0
 	for linha_t in _linhas_do_bloco(l, wt):
 		var xx := xt
@@ -860,7 +855,7 @@ func _desenhar_bloco(l: Dictionary, x: float, y: float, w: float) -> void:
 		yy += 12.0
 	if str(l.dica) != "" and not _sem_dicas:
 		for linha_d in _linhas_dica(str(l.dica), wt):  # os números da dica na fonte dos números (a fonte de texto pequena confunde dígitos)
-			_misto(str(linha_d), xt, yy, TAM_P, COR_DICA, COR_DICA)
+			_misto(str(linha_d), xt, yy, TAM_P, Paleta.DICA, Paleta.DICA)
 			yy += 12.0
 
 
@@ -869,7 +864,7 @@ func _desenhar_trecho(tr: Array, x: float, y: float) -> float:
 	var estilo := int(tr[1])
 	var cor: Color = CORES_TRECHO[estilo]
 	if estilo == 0:
-		_misto(str(tr[0]), x, y, TAM_P, cor, COR_VALOR)
+		_misto(str(tr[0]), x, y, TAM_P, cor, Paleta.VALOR)
 	else:
 		var base := y + Dados.fonte_texto.get_ascent(TAM_P)
 		_tela.draw_string(_f_num, Vector2(x, base), str(tr[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_NUM, cor)
@@ -891,11 +886,6 @@ func _larg_trecho(tr: Array) -> float:
 const TAM_GRANDE := 16  # números grandes (Press Start 2P, 2x a grade do HUD)
 const ALT_STAT := 20.0
 const ALT_GOLPE := 20.0
-const COR_VIDA := Color(0.86, 0.22, 0.25)
-const COR_XP := Color(0.45, 0.75, 1.0)
-const COR_FOLEGO := Color(0.55, 0.95, 0.62)
-const COR_VAZIO := Color(0.16, 0.15, 0.24)
-const COR_BORDA := Color(0.04, 0.03, 0.08)
 ## Ícones 8x8 desenhados aqui (2x na tela = 16 px). "#" = cor do ícone, "o" = brilho, "." = vazio. Feitos para o card, sem arte de terceiros.
 const ICONES := {
 	"vida": [".##.##..", "#o####..", "######..", "######..", ".####...", "..##....", "........", "........"],
@@ -950,9 +940,11 @@ func _visual(seco: bool) -> Array:
 		var y := r.position.y + PAD - 2.0
 		if c == 0:
 			if not seco:
-				_texto_titulo("SUA BUILD", Vector2(x, y), COR_TITULO)
+				_texto_titulo("SUA BUILD", Vector2(x, y), Paleta.OURO)
 				var dica := "[Tab] detalhes" if _m == "pausa" else "[Tab] detalhes [C] fecha"
-				_tela.draw_string(_f_num, Vector2(x, y + 6.0 + _f_num.get_ascent(TAM_NUM)), dica, HORIZONTAL_ALIGNMENT_RIGHT, w, TAM_NUM, COR_ROTULO)
+				_tela.draw_string(
+					_f_num, Vector2(x, y + 6.0 + _f_num.get_ascent(TAM_NUM)), dica, HORIZONTAL_ALIGNMENT_RIGHT, w, TAM_NUM, Paleta.TEXTO_SECUNDARIO
+				)
 			y += ALT_TITULO
 		for id in grupos[c]:
 			var sec := _achar(str(id))
@@ -960,7 +952,7 @@ func _visual(seco: bool) -> Array:
 				continue
 			if not seco:
 				_texto_titulo(str(sec.titulo).replace(" (CLIQUE)", ""), Vector2(x, y + 2.0), sec.cor)
-				_tela.draw_line(Vector2(x, y + ALT_CAB + 2.0), Vector2(x + w, y + ALT_CAB + 2.0), COR_LINHA, 1.0)
+				_tela.draw_line(Vector2(x, y + ALT_CAB + 2.0), Vector2(x + w, y + ALT_CAB + 2.0), Color(Paleta.DIVISOR, 0.5), 1.0)
 			y += ALT_CAB + 7.0
 			match str(id):
 				"heroi":
@@ -1001,11 +993,11 @@ func _pintar_visual() -> void:
 	var alts := _visual(true)
 	var cols := colunas_visuais()
 	if _m == "central":
-		_tela.draw_rect(TELA, COR_FUNDO_OPACO)
+		_tela.draw_rect(TELA, Paleta.PAINEL)
 	for c in cols.size():
 		var col: Rect2 = cols[c]
 		var r := Rect2(col.position, Vector2(col.size.x, minf(float(alts[c]), col.size.y)))
-		_tela.draw_rect(r, COR_FUNDO_OPACO)
+		_tela.draw_rect(r, Paleta.PAINEL)
 		_tela.draw_style_box(_estilo, r)
 	_visual(false)
 
@@ -1028,8 +1020,8 @@ func _num(s: String, pos: Vector2, w: float, alin: HorizontalAlignment, tam: int
 
 ## Barra com moldura escura: `frac` de 0 a 1 cheio na cor `cor`.
 func _barra(r: Rect2, frac: float, cor: Color) -> void:
-	_tela.draw_rect(r.grow(1.0), COR_BORDA)
-	_tela.draw_rect(r, COR_VAZIO)
+	_tela.draw_rect(r.grow(1.0), Paleta.BARRA_BORDA)
+	_tela.draw_rect(r, Paleta.BARRA_VAZIA)
 	var f := clampf(frac, 0.0, 1.0)
 	if f > 0.0:
 		_tela.draw_rect(Rect2(r.position, Vector2(roundf(r.size.x * f), r.size.y)), cor)
@@ -1040,17 +1032,17 @@ func _barra(r: Rect2, frac: float, cor: Color) -> void:
 func _pips(pos: Vector2, cheios: float, total: int, cor: Color, lado := 8.0) -> void:
 	for i in total:
 		var r := Rect2(pos + Vector2(i * (lado + 3.0), 0), Vector2(lado, lado))
-		_tela.draw_rect(r.grow(1.0), COR_BORDA)
-		_tela.draw_rect(r, COR_VAZIO)
+		_tela.draw_rect(r.grow(1.0), Paleta.BARRA_BORDA)
+		_tela.draw_rect(r, Paleta.BARRA_VAZIA)
 		var f := clampf(cheios - i, 0.0, 1.0)
 		if f > 0.0:
 			_tela.draw_rect(Rect2(r.position, Vector2(roundf(lado * f), lado)), cor)
 
 
 ## Uma linha de atributo: ícone, rótulo e o número grande à direita.
-func _stat(ic: String, cor_ic: Color, rotulo: String, valor: String, x: float, y: float, w: float, cor_valor := COR_VALOR) -> void:
+func _stat(ic: String, cor_ic: Color, rotulo: String, valor: String, x: float, y: float, w: float, cor_valor := Paleta.VALOR) -> void:
 	_icone8(ic, Vector2(x, y + 1.0), cor_ic)
-	_texto(Dados.fonte_texto, rotulo, Vector2(x + 22.0, y + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+	_texto(Dados.fonte_texto, rotulo, Vector2(x + 22.0, y + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, Paleta.TEXTO_SECUNDARIO)
 	_num(valor, Vector2(x, y + 1.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM_GRANDE if valor.length() <= 6 else TAM_NUM, cor_valor)
 
 
@@ -1062,20 +1054,20 @@ static func _bonus_pct(mult: float) -> String:
 func _v_heroi(x: float, y: float, w: float, seco: bool) -> float:
 	var h = mundo.heroi
 	if not seco:
-		_num("NV%d" % h.nivel, Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM_GRANDE, COR_TITULO)  # nível grande e a barra de XP ao lado
-		_barra(Rect2(x + 80.0, y + 4.0, w - 80.0, 8.0), h.xp / maxf(1.0, h.xp_proximo), COR_XP)
-		_icone8("vida", Vector2(x, y + 22.0), COR_VIDA)  # vida: barra grossa com o número dentro
-		_barra(Rect2(x + 22.0, y + 22.0, w - 22.0, 16.0), h.vida / maxf(1.0, h.vida_max), COR_VIDA)
+		_num("NV%d" % h.nivel, Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM_GRANDE, Paleta.OURO)  # nível grande e a barra de XP ao lado
+		_barra(Rect2(x + 80.0, y + 4.0, w - 80.0, 8.0), h.xp / maxf(1.0, h.xp_proximo), Paleta.XP)
+		_icone8("vida", Vector2(x, y + 22.0), Paleta.VIDA)  # vida: barra grossa com o número dentro
+		_barra(Rect2(x + 22.0, y + 22.0, w - 22.0, 16.0), h.vida / maxf(1.0, h.vida_max), Paleta.VIDA)
 		_num("%d/%d" % [roundi(h.vida), roundi(h.vida_max)], Vector2(x + 22.0, y + 26.0), w - 22.0, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Color.WHITE)
-		_icone8("folego", Vector2(x, y + 44.0), COR_FOLEGO)  # fôlego em cargas (pips) e quantas esquivas seguidas dá
-		_pips(Vector2(x + 22.0, y + 48.0), h.folego, ceili(h.folego_max - 0.01), COR_FOLEGO)
-		_texto(Dados.fonte_texto, "fôlego", Vector2(x, y + 44.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
+		_icone8("folego", Vector2(x, y + 44.0), Paleta.FOLEGO)  # fôlego em cargas (pips) e quantas esquivas seguidas dá
+		_pips(Vector2(x + 22.0, y + 48.0), h.folego, ceili(h.folego_max - 0.01), Paleta.FOLEGO)
+		_texto(Dados.fonte_texto, "fôlego", Vector2(x, y + 44.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, Paleta.TEXTO_SECUNDARIO)
 		var seg := int(linha(secoes, "heroi.esquiva").get("n", [0])[0])
-		_icone8("esquiva", Vector2(x, y + 64.0), COR_DICA)
-		_pips(Vector2(x + 22.0, y + 68.0), seg, seg, COR_DICA)
-		_texto(Dados.fonte_texto, "esquivas", Vector2(x, y + 64.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
-		_stat("vel", COR_BONUS, "Velocidade", _bonus_pct(h.m_vel_mov), x, y + 86.0, w, COR_BONUS if h.m_vel_mov > 1.0 else COR_ROTULO)
-		_stat("ima", COR_SANTUARIO, "Ímã", _bonus_pct(h.m_ima), x, y + 86.0 + ALT_STAT, w, COR_BONUS if h.m_ima > 1.0 else COR_ROTULO)
+		_icone8("esquiva", Vector2(x, y + 64.0), Paleta.DICA)
+		_pips(Vector2(x + 22.0, y + 68.0), seg, seg, Paleta.DICA)
+		_texto(Dados.fonte_texto, "esquivas", Vector2(x, y + 64.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, Paleta.TEXTO_SECUNDARIO)
+		_stat("vel", Paleta.BONUS, "Velocidade", _bonus_pct(h.m_vel_mov), x, y + 86.0, w, Paleta.BONUS if h.m_vel_mov > 1.0 else Paleta.TEXTO_SECUNDARIO)
+		_stat("ima", Paleta.ALMA, "Ímã", _bonus_pct(h.m_ima), x, y + 86.0 + ALT_STAT, w, Paleta.BONUS if h.m_ima > 1.0 else Paleta.TEXTO_SECUNDARIO)
 	return y + 86.0 + 2.0 * ALT_STAT
 
 
@@ -1085,23 +1077,23 @@ func _v_partida(x: float, y: float, w: float, seco: bool) -> float:
 		var ab := int(linha(secoes, "partida.abates").get("n", [0])[0])
 		var al := int(linha(secoes, "partida.almas").get("n", [0, 0])[1])
 		var cw := w / 3.0
-		var itens := [["tempo", COR_DICA, _tempo(t)], ["abates", COR_ROTULO, str(ab)], ["almas", COR_SANTUARIO, str(al)]]
+		var itens := [["tempo", Paleta.DICA, _tempo(t)], ["abates", Paleta.TEXTO_SECUNDARIO, str(ab)], ["almas", Paleta.ALMA, str(al)]]
 		for i in itens.size():
 			var cx := x + i * cw
 			_icone8(str(itens[i][0]), Vector2(cx + (cw - 16.0) / 2.0, y), itens[i][1])
-			_num(str(itens[i][2]), Vector2(cx, y + 20.0), cw, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, COR_VALOR)
+			_num(str(itens[i][2]), Vector2(cx, y + 20.0), cw, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Paleta.VALOR)
 		var rb: Array = linha(secoes, "partida.rerrolar").get("n", [0, 0])  # as cartas: rerrolar e banir que restam
 		var yy := y + 36.0
-		_icone8("rerrolar", Vector2(x, yy), COR_DICA)
-		_num(str(int(rb[0])), Vector2(x + 20.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, COR_VALOR)
-		_icone8("banir", Vector2(x + 56.0, yy), COR_VIDA)
-		_num(str(int(rb[1])), Vector2(x + 76.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, COR_VALOR)
+		_icone8("rerrolar", Vector2(x, yy), Paleta.DICA)
+		_num(str(int(rb[0])), Vector2(x + 20.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, Paleta.VALOR)
+		_icone8("banir", Vector2(x + 56.0, yy), Paleta.VIDA)
+		_num(str(int(rb[1])), Vector2(x + 76.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, Paleta.VALOR)
 		var nm := 0
 		for l in _achar("santuario").get("linhas", []):
 			if str(l.id) != "santuario.nenhuma":
 				nm += 1
 		if nm > 0:
-			_texto(Dados.fonte_texto, "Santuário: %d" % nm, Vector2(x, yy + 2.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_SANTUARIO)
+			_texto(Dados.fonte_texto, "Santuário: %d" % nm, Vector2(x, yy + 2.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, Paleta.ALMA)
 	return y + 56.0
 
 
@@ -1112,10 +1104,19 @@ func _v_katana(x: float, y: float, w: float, seco: bool) -> float:
 		for d in linha(secoes, "katana.dano").get("n", []):
 			maior = maxf(maior, float(d))
 		var cr: Array = linha(secoes, "katana.critico").get("n", [0, 1])
-		_stat("dano", COR_VALOR, "Dano", str(roundi(maior)), x, y, w)
-		_stat("critico", COR_TITULO, "Crítico", "%s%%" % _p(float(cr[0]) * 100.0), x, y + ALT_STAT, w)
-		_stat("ritmo", COR_DICA, "Vel. ataque", _bonus_pct(h.m_vel_ataque), x, y + 2.0 * ALT_STAT, w, COR_BONUS if h.m_vel_ataque > 1.0 else COR_ROTULO)
-		_stat("area", COR_BONUS, "Área", _bonus_pct(h.m_area), x, y + 3.0 * ALT_STAT, w, COR_BONUS if h.m_area > 1.0 else COR_ROTULO)
+		_stat("dano", Paleta.VALOR, "Dano", str(roundi(maior)), x, y, w)
+		_stat("critico", Paleta.OURO, "Crítico", "%s%%" % _p(float(cr[0]) * 100.0), x, y + ALT_STAT, w)
+		_stat(
+			"ritmo",
+			Paleta.DICA,
+			"Vel. ataque",
+			_bonus_pct(h.m_vel_ataque),
+			x,
+			y + 2.0 * ALT_STAT,
+			w,
+			Paleta.BONUS if h.m_vel_ataque > 1.0 else Paleta.TEXTO_SECUNDARIO
+		)
+		_stat("area", Paleta.BONUS, "Área", _bonus_pct(h.m_area), x, y + 3.0 * ALT_STAT, w, Paleta.BONUS if h.m_area > 1.0 else Paleta.TEXTO_SECUNDARIO)
 	y += 4.0 * ALT_STAT
 	for l in _achar("katana").get("linhas", []):  # os modificadores da katana: uma linha cada, como os golpes
 		if str(l.tipo) == "bloco":
@@ -1129,7 +1130,7 @@ func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool) -> flo
 	for l in sec.linhas:
 		if str(l.tipo) != "bloco":
 			if not seco:
-				_texto(Dados.fonte_texto, "Nenhum ainda: vêm das cartas.", Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+				_texto(Dados.fonte_texto, "Nenhum ainda: vêm das cartas.", Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, Paleta.TEXTO_SECUNDARIO)
 			y += ALT_LINHA
 			continue
 		if not seco:
@@ -1149,7 +1150,7 @@ func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 	var pipx := x + w - num_w - 56.0
 	var nc := str(l.nivel_curto)
 	if nc == "evo":
-		_icone8("critico", Vector2(pipx, y + 1.0), COR_TITULO)
+		_icone8("critico", Vector2(pipx, y + 1.0), Paleta.OURO)
 	else:
 		var p := nc.split("/")
 		var niv := int(p[0])

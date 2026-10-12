@@ -14,11 +14,20 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Telas := preload("res://v2/telas.gd")
 const Pausa := preload("res://v2/pausa.gd")
+const Status := preload("res://v2/status.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const OPCOES_TESTE := "user://teste_v2_fontes_opcoes.cfg"
 const PT := "ãçéêõüÃÇÉÊÕÜáíóúâôàÁÍÓÚÂÔÀ"
 const SIMBOLOS := "0123456789*()%+-/:.,'\"x[]°×"
 const PARES := [["5", "S"], ["0", "O"], ["1", "I"], ["1", "l"], ["I", "l"], ["2", "Z"], ["6", "G"], ["8", "B"], ["0", "D"], ["3", "8"], ["6", "b"]]
+
+## Tamanhos fora da grade que ficam de propósito. Motivo escrito aqui; o PR e o DESIGN.md (seção 8) repetem.
+const EXCECOES := {
+	"status.TAM": "SUA BUILD: Spleen 12 px. Em 16 as colunas não cabem (v2/status.gd:7-10); a Spleen 6x12 seria o certo.",
+	"status.TAM_P": "SUA BUILD: Spleen 11 px, a mesma pendência de status.TAM.",
+	"status.TAM_NOME_PEQ": "SUA BUILD: Jersey 14 px para o nome de golpe que não cabe em 19.",
+	"telas.TAM_NOME_CURTO": "Escolha: Jersey 28 px para o nome longo (Lâminas Rodopiantes) que não cabe em 37.",
+}
 
 var falhas := 0
 
@@ -99,6 +108,36 @@ func _tamanhos() -> void:
 	for t in [Telas.TAM_TEXTO, Pausa.TAM_SUB, Pausa.TAM_VALOR, Pausa.TAM_AJUDA, Pausa.TAM_DICA]:
 		ok(t % 16 == 0, "tamanho %d da Spleen é múltiplo da grade (16)" % t)
 	ok(Telas.TAM_TITULO in [19, 37, 56] and Telas.TAM_NOME in [19, 37, 56], "títulos da Jersey 10 na grade (19, 37, 56)")
+	_tamanhos_da_grade()
+
+
+## Cada tamanho de texto da v2, por fonte, cai na grade (Spleen 16, Jersey 19/37/56, Press Start 8, múltiplos) ou está em EXCECOES
+## com o motivo. Tamanho novo fora da grade falha aqui, e exceção sem constante correspondente também.
+func _tamanhos_da_grade() -> void:
+	var casos := [
+		["spleen", "telas.TAM_TEXTO", Telas.TAM_TEXTO],
+		["spleen", "pausa.TAM_SUB", Pausa.TAM_SUB],
+		["spleen", "pausa.TAM_VALOR", Pausa.TAM_VALOR],
+		["spleen", "pausa.TAM_AJUDA", Pausa.TAM_AJUDA],
+		["spleen", "pausa.TAM_DICA", Pausa.TAM_DICA],
+		["spleen", "status.TAM", Status.TAM],
+		["spleen", "status.TAM_P", Status.TAM_P],
+		["jersey", "telas.TAM_TITULO", Telas.TAM_TITULO],
+		["jersey", "telas.TAM_NOME", Telas.TAM_NOME],
+		["jersey", "telas.TAM_NOME_CURTO", Telas.TAM_NOME_CURTO],
+		["jersey", "telas.TAM_CONTAGEM", Telas.TAM_CONTAGEM],
+		["jersey", "status.TAM_CAB", Status.TAM_CAB],
+		["jersey", "status.TAM_NOME_PEQ", Status.TAM_NOME_PEQ],
+		["press", "status.TAM_NUM", Status.TAM_NUM],
+		["press", "status.TAM_GRANDE", Status.TAM_GRANDE],
+	]
+	var nomes := []
+	for c in casos:
+		nomes.append(c[1])
+		var na_grade: bool = (c[2] % 16 == 0) if c[0] == "spleen" else (c[2] % 8 == 0) if c[0] == "press" else (c[2] in [19, 37, 56])
+		ok(na_grade or EXCECOES.has(c[1]), "%s = %d px (%s) fora da grade e sem exceção documentada" % [c[1], c[2], c[0]])
+	for chave in EXCECOES:
+		ok(chave in nomes, "exceção %s não corresponde a nenhum tamanho da lista" % chave)
 
 
 ## Altura de um texto quebrado na largura dada, na fonte e no tamanho dados.

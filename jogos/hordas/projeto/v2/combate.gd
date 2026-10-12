@@ -8,6 +8,7 @@ extends RefCounted
 ##   efeitos(dt_real)     -> partículas, números, cortes, luzes (continuam durante o hit-stop)
 ## O herói chama golpe_comecou/golpear/esquiva_comecou/heroi_apanhou/heroi_morreu; os orbes chamam coletar.
 
+const Paleta := preload("res://v2/paleta.gd")
 const Efeitos := preload("res://v2/efeitos.gd")
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
@@ -20,9 +21,6 @@ const Avisos := preload("res://v2/avisos.gd")
 const Elites := preload("res://v2/elites.gd")
 const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
-const COR_NUM := Color(1.0, 0.96, 0.84)
-const COR_CRIT := Color(1.0, 0.74, 0.2)
-const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
 const CEL := 26.0  # célula da grade de separação dos monstros
 const PASSO_SEP := 3  # cada monstro recalcula a separação a cada 3 quadros (o resultado vale por 3)
 const GRADE_N := 1024  # tamanho da tabela de hash da grade (potência de 2)
@@ -400,8 +398,8 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
 			var raio_e: float = float(cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
-			armas.explodir(m.pos, float(dano) * float(armas.mods.explode) / 100.0, raio_e, COR_CRIT, m)
-		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dano), COR_CRIT if crit else COR_NUM, crit)
+			armas.explodir(m.pos, float(dano) * float(armas.mods.explode) / 100.0, raio_e, Paleta.DANO_CRITICO, m)
+		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dano), Paleta.DANO_CRITICO if crit else Paleta.DANO_NUMERO, crit)
 		fx.flash(m, 0.1)
 		fx.faiscas(ponto - longe * float(m.raio) * 0.5, dir, 10 if crit else 6, cor, 200.0 if crit else 160.0)
 		audio.tocar("critico" if crit else "impacto", randf_range(0.92, 1.1), 0.0, 0.03)
@@ -556,7 +554,7 @@ func rastro_esquiva(h) -> void:
 
 func heroi_apanhou(valor: float) -> void:
 	var h = mundo.heroi
-	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), COR_DANO_HEROI, false)
+	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), Paleta.PERIGO, false)
 	fx.flash(h, 0.14, Color(1.0, 0.3, 0.3), 0, 0.9)
 	fx.faiscas(h.pos + Vector2(0, -16), h.emp.normalized(), 8, Color(1.0, 0.3, 0.25), 150.0)
 	audio.tocar("dano_heroi", randf_range(0.95, 1.05), 0.0, 0.05)

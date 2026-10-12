@@ -5,6 +5,7 @@ extends Control
 ## janela em CANVAS_ITEMS, sem SubViewport: botões, foco e controle funcionam direto. Cada compra relê o save (Meta.estado()).
 ## Visual: a arte de entrada escurecida, molduras de pedra do HUD (v2/hud/moldura_pedra.png). Títulos na Jersey 10 (Dados.fonte_titulo) e a lista densa na Press Start 2P (Dados.fonte), que tem a grade de 8 px que as 10 linhas pedem.
 
+const Paleta := preload("res://v2/paleta.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Trilha := preload("res://v2/trilha.gd")
@@ -16,12 +17,6 @@ const CENA_V1 := "res://main.tscn"
 const ARGS_V1 := ["v1", "cena", "prototipo", "bot", "online", "sair", "print_tela"]
 const LARG := 960
 const ALT := 540
-const COR_OURO := Color(1.0, 0.86, 0.42)
-const COR_TEXTO := Color(0.92, 0.9, 0.96)
-const COR_APAGADO := Color(0.55, 0.56, 0.64)
-const COR_EFEITO := Color(0.74, 0.76, 0.84)
-const COR_FOCO := Color(1.0, 0.97, 0.8)  # texto do botão com foco ou sob o mouse (o fundo do botão é escuro)
-const COR_ALMA := Color(0.8, 0.66, 1.0)
 const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Mouse também"
 const LINHA_Y0 := 128.0  # primeira linha de melhoria
 const LINHA_H := 36.0
@@ -54,10 +49,10 @@ class Cadeado:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	func _draw() -> void:
-		var cor := Color(1.0, 0.86, 0.42) if aberto else Color(0.55, 0.56, 0.64)
+		var cor := Paleta.OURO if aberto else Paleta.TEXTO_APAGADO
 		draw_rect(Rect2(3, 1, 8, 8), cor, false, 2.0)
 		draw_rect(Rect2(1, 7, 12, 9), cor)
-		draw_rect(Rect2(6, 10, 2, 3), Color(0.08, 0.08, 0.1))
+		draw_rect(Rect2(6, 10, 2, 3), Paleta.CARTAO)
 
 
 func _ready() -> void:
@@ -143,27 +138,27 @@ func _montar() -> void:
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fundo)
 	var veu := ColorRect.new()
-	veu.color = Color(0.01, 0.02, 0.035, 0.8)
+	veu.color = Paleta.alfa(Paleta.PAINEL, 0.8)
 	veu.set_anchors_preset(PRESET_FULL_RECT)
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 
-	add_child(_texto("SANTUÁRIO", 56, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 6, LARG, 56)))
+	add_child(_texto("SANTUÁRIO", 56, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 6, LARG, 56)))
 	add_child(_painel(Rect2(700, 10, 240, 46)))
-	add_child(_texto("ALMAS", 8, false, COR_ALMA, HORIZONTAL_ALIGNMENT_LEFT, Rect2(716, 14, 120, 12)))
-	_saldo = _texto("0", 37, true, COR_ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(716, 16, 208, 38))
+	add_child(_texto("ALMAS", 8, false, Paleta.ALMA, HORIZONTAL_ALIGNMENT_LEFT, Rect2(716, 14, 120, 12)))
+	_saldo = _texto("0", 37, true, Paleta.ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(716, 16, 208, 38))
 	add_child(_saldo)
-	_ultima = _texto("", 8, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 62, 920, 14))
+	_ultima = _texto("", 8, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 62, 920, 14))
 	add_child(_ultima)
 
 	# coluna da esquerda: as melhorias compradas com almas
 	add_child(_painel(Rect2(36, 88, 572, 374)))
-	add_child(_texto("MELHORIAS", 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, 90, 300, 38)))
+	add_child(_texto("MELHORIAS", 37, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, 90, 300, 38)))
 	var i := 0
 	for m in Meta.melhorias_visiveis():
 		var y := LINHA_Y0 + i * LINHA_H
-		var nome := _texto("", 8, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, y + 3, 380, 12))
-		var efeito := _texto("", 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, y + 18, 380, 12))
+		var nome := _texto("", 8, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, y + 3, 380, 12))
+		var efeito := _texto("", 8, false, Paleta.TEXTO_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, y + 18, 380, 12))
 		var cadeado := Cadeado.new()
 		cadeado.position = Vector2(428, y + 9)
 		var botao := Button.new()
@@ -180,23 +175,23 @@ func _montar() -> void:
 
 	# coluna da direita: conquistas com cadeado (e o que cada uma libera)
 	add_child(_painel(Rect2(624, 88, 300, 374)))
-	add_child(_texto("CONQUISTAS", 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(640, 90, 280, 38)))
+	add_child(_texto("CONQUISTAS", 37, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(640, 90, 280, 38)))
 	i = 0
 	for c in Meta.conquistas():
 		var y := CONQ_Y0 + i * CONQ_H
 		var cadeado := Cadeado.new()
 		cadeado.position = Vector2(640, y + 2)
-		var nome := _texto("", 8, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y, 252, 12))
-		var desc := _texto("", 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y + 14, 252, 30))
+		var nome := _texto("", 8, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y, 252, 12))
+		var desc := _texto("", 8, false, Paleta.TEXTO_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y + 14, 252, 30))
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		var rec := _texto("", 8, false, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y + 50, 252, 30))
+		var rec := _texto("", 8, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y + 50, 252, 30))
 		rec.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		for no in [cadeado, nome, desc, rec]:
 			add_child(no)
 		_conq[str(c.id)] = {"cadeado": cadeado, "nome": nome, "desc": desc, "rec": rec}
 		i += 1
 
-	_status = _texto("", 8, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 464, 920, 14))
+	_status = _texto("", 8, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 464, 920, 14))
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
@@ -205,15 +200,15 @@ func _montar() -> void:
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
 	_entrar.add_theme_font_size_override("font_size", 37)
 	_estilo_botao(_entrar, 37)
-	_entrar.add_theme_color_override("font_color", COR_OURO)
+	_entrar.add_theme_color_override("font_color", Paleta.OURO)
 	_entrar.pressed.connect(_entrar_floresta)
 	add_child(_entrar)
-	add_child(_texto("MAPA", 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 468, 120, 12)))
+	add_child(_texto("MAPA", 8, false, Paleta.TEXTO_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 468, 120, 12)))
 	_mapa = Button.new()  # à esquerda de ENTRAR: clique ou Enter passa para o mapa seguinte
 	_mapa.position = Vector2(36, 482)
 	_mapa.size = Vector2(252, 40)
 	_estilo_botao(_mapa, 37)
-	_mapa.add_theme_color_override("font_color", COR_OURO)
+	_mapa.add_theme_color_override("font_color", Paleta.OURO)
 	_mapa.pressed.connect(_trocar_mapa)
 	add_child(_mapa)
 	_ajustes = Button.new()  # ao lado de ENTRAR: abre o mesmo submenu Ajustes da pausa (ligado no _ready)
@@ -223,9 +218,9 @@ func _montar() -> void:
 	_ajustes.add_theme_font_override("font", Dados.fonte_titulo)
 	_ajustes.add_theme_font_size_override("font_size", 37)
 	_estilo_botao(_ajustes, 37)
-	_ajustes.add_theme_color_override("font_color", COR_OURO)
+	_ajustes.add_theme_color_override("font_color", Paleta.OURO)
 	add_child(_ajustes)
-	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
+	add_child(_texto(DICA, 8, false, Paleta.TEXTO_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:
@@ -248,7 +243,7 @@ func _painel(r: Rect2) -> Panel:
 	p.position = r.position
 	p.size = r.size
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_theme_stylebox_override("panel", _moldura(Color(0.82, 0.85, 0.95)))
+	p.add_theme_stylebox_override("panel", _moldura(Paleta.MOLDURA))
 	return p
 
 
@@ -268,16 +263,16 @@ func _moldura(cor: Color) -> StyleBoxTexture:
 func _estilo_botao(b: Button, tam: int) -> void:
 	b.add_theme_font_override("font", Dados.fonte_titulo if tam >= 24 else Dados.fonte)
 	b.add_theme_font_size_override("font_size", tam)
-	b.add_theme_stylebox_override("normal", _moldura(Color(0.8, 0.82, 0.9)))
-	b.add_theme_stylebox_override("hover", _moldura(COR_OURO))
-	b.add_theme_stylebox_override("focus", _moldura(COR_OURO))
-	b.add_theme_stylebox_override("pressed", _moldura(Color(0.6, 0.6, 0.7)))
-	b.add_theme_stylebox_override("disabled", _moldura(Color(0.42, 0.42, 0.5, 0.75)))
-	b.add_theme_color_override("font_color", COR_TEXTO)
-	b.add_theme_color_override("font_hover_color", COR_FOCO)
-	b.add_theme_color_override("font_focus_color", COR_FOCO)
-	b.add_theme_color_override("font_pressed_color", COR_TEXTO)
-	b.add_theme_color_override("font_disabled_color", COR_APAGADO)
+	b.add_theme_stylebox_override("normal", _moldura(Paleta.MOLDURA))
+	b.add_theme_stylebox_override("hover", _moldura(Paleta.OURO))
+	b.add_theme_stylebox_override("focus", _moldura(Paleta.OURO))
+	b.add_theme_stylebox_override("pressed", _moldura(Paleta.MOLDURA_ESCURA))
+	b.add_theme_stylebox_override("disabled", _moldura(Paleta.alfa(Paleta.MOLDURA_APAGADA, 0.75)))
+	b.add_theme_color_override("font_color", Paleta.TEXTO)
+	b.add_theme_color_override("font_hover_color", Paleta.FOCO)
+	b.add_theme_color_override("font_focus_color", Paleta.FOCO)
+	b.add_theme_color_override("font_pressed_color", Paleta.TEXTO)
+	b.add_theme_color_override("font_disabled_color", Paleta.TEXTO_APAGADO)
 
 
 # ------------------------------------------------------------------ estado da tela
@@ -296,8 +291,8 @@ func _atualizar() -> void:
 		var cadeado: Cadeado = linha.cadeado
 		nome.text = "%s   %d/%d" % [m.nome, n, int(m.max)]
 		var bloqueada := not _liberada(m, e)
-		nome.add_theme_color_override("font_color", COR_APAGADO if bloqueada else COR_TEXTO)
-		efeito.add_theme_color_override("font_color", COR_EFEITO)
+		nome.add_theme_color_override("font_color", Paleta.TEXTO_APAGADO if bloqueada else Paleta.TEXTO)
+		efeito.add_theme_color_override("font_color", Paleta.TEXTO_SECUNDARIO)
 		cadeado.visible = bloqueada
 		if bloqueada:
 			efeito.text = "Libera ao cumprir: %s" % _nome_conquista(str(m.requer))
@@ -319,7 +314,7 @@ func _atualizar() -> void:
 		cadeado.aberto = feita
 		cadeado.queue_redraw()
 		(v.nome as Label).text = str(c.nome)
-		(v.nome as Label).add_theme_color_override("font_color", COR_OURO if feita else COR_TEXTO)
+		(v.nome as Label).add_theme_color_override("font_color", Paleta.OURO if feita else Paleta.TEXTO)
 		(v.desc as Label).text = str(c.desc)
 		var libera := _texto_recompensa(c.recompensa)
 		var texto := ("Libera: " + libera) if libera != "" else ""

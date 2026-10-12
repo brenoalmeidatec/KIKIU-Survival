@@ -7,6 +7,7 @@ extends RefCounted
 ## rar_nome, cor (Color), valor (stat/mod, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat}.
 ## O cartão (telas.gd) mostra nessa ordem: raridade e tecla, ícone, nome, desc, proximo e, no rodapé, nivel_txt e evolui.
 
+const Paleta := preload("res://v2/paleta.gd")
 const Armas := preload("res://v2/armas.gd")
 
 var combate
@@ -259,7 +260,7 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 		"cat": cat,
 		"rar": r,
 		"rar_nome": ra.nome,
-		"cor": Color(ra.cor[0], ra.cor[1], ra.cor[2]),
+		"cor": Paleta.RARIDADES[r],
 		"max": int(d.max),
 		"nivel_atual": n,
 		"nivel_novo": n + 1,

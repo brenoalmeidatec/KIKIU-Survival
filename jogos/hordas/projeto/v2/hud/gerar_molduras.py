@@ -10,37 +10,47 @@ o miolo das bordas repete em mosaico (NinePatchRect em TILE), então o pixel nã
 Paleta: docs/visual_2_5d/paleta.json (painel, borda, ouro, vida, fragmentos) mais tons de pedra e metal.
 """
 
+import json
 import random
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 AQUI = Path(__file__).resolve().parent
+# As cores-base da UI vêm de dados/v2_paleta.json, a mesma fonte de v2/paleta.gd. Os tons claro e escuro dos degradês
+# e a pedra são daqui (não estão no JSON). Para mudar uma cor-base, mude no JSON e rode este script de novo.
+PALETA = json.loads((AQUI.parent.parent / "dados" / "v2_paleta.json").read_text(encoding="utf-8"))
 
-# Pedra escura e metal (tons de pedra inventados a partir do painel #01030b e da borda #86898f).
+
+def rgb(nome: str, alfa: int = 255) -> tuple:
+    h = PALETA[nome].lstrip("#")
+    return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), alfa)
+
+
+# Pedra escura e metal (tons de pedra inventados a partir do painel e da borda de metal).
 PEDRA_A = (38, 38, 46, 255)
 PEDRA_B = (46, 46, 55, 255)
 PEDRA_C = (29, 29, 36, 255)
 BISEL_CLARO = (74, 74, 88, 255)
 BISEL_ESCURO = (16, 16, 22, 255)
 CONTORNO = (8, 8, 12, 255)
-METAL = (125, 134, 144, 255)  # borda #86898f, um pouco mais escura
+METAL = (125, 134, 144, 255)  # borda de metal da moldura: #7d8690 (o comentário antigo dizia #86898f)
 METAL_CLARO = (196, 204, 212, 255)
 METAL_ESCURO = (58, 64, 72, 255)
-VERMELHO = (185, 33, 45, 255)  # vida #b9212d (paleta.json)
+VERMELHO = rgb("vida")  # vida (dados/v2_paleta.json)
 VERMELHO_CLARO = (226, 92, 98, 255)
 VERMELHO_ESCURO = (98, 16, 24, 255)
-OURO = (224, 188, 72, 255)  # ouro #e0bc48 (paleta.json)
+OURO = rgb("xp")  # XP: a barra e o selo de nível (o nome é herança; o valor é "xp" da paleta)
 OURO_CLARO = (250, 230, 156, 255)
 OURO_ESCURO = (132, 104, 26, 255)
-AZUL = (74, 163, 217, 255)
+AZUL = rgb("folego")  # fôlego (dados/v2_paleta.json)
 AZUL_CLARO = (210, 234, 255, 255)
 AZUL_ESCURO = (29, 95, 143, 255)
 VAZIO_ESCURO = (6, 6, 10, 255)
 VAZIO = (22, 22, 30, 255)
-PAINEL = (1, 3, 11, 205)  # painel #01030b, translúcido
+PAINEL = rgb("painel", 205)  # painel translúcido (alfa 0,80)
 FANTASMA_CLARO = (255, 240, 214, 255)  # barra fantasma do chefe: o dano recente que desce devagar
-FANTASMA = (236, 206, 176, 255)
+FANTASMA = rgb("fantasma_chefe")
 FANTASMA_ESCURO = (176, 134, 116, 255)
 
 

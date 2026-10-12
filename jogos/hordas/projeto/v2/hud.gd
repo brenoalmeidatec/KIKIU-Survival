@@ -11,17 +11,14 @@ extends CanvasLayer
 ##   sv.add_child(preload("res://v2/hud.gd").criar(self))
 ## Layout em v2/hud.tscn (coordenadas de 960x540). O canto superior direito fica livre para o minimapa.
 
+const Paleta := preload("res://v2/paleta.gd")
 const CENA := "res://v2/hud.tscn"
 const FONTE := "res://assets/fonte/PressStart2P.ttf"
-const OURO := Color(0.945, 0.694, 0.055)  # #f1b10e, o destaque da paleta
 const PULSO_T := 0.25  # segundos do pulso do combo a cada abate
 const BRILHO_T := 1.2  # segundos do brilho da barra de XP ao subir de nível
 const SALTO_PX := 4  # quantos pixels o combo sobe no pulso
 const BRILHO_XP := Color(1.7, 1.5, 0.9)  # multiplicador de cor no pico do brilho: a barra e o selo clareiam para o dourado
-const PISCA_CANSADO := Color(1.0, 0.35, 0.2)  # vermelho-laranja: a barra de fôlego pisca com ele quando o herói está cansado
 const LIMIAR_VIDA_BAIXA := 0.25  # abaixo de 25% da vida: vinheta vermelha e barra de vida piscando
-const PISCA_VIDA := Color(1.0, 0.4, 0.4)
-const VERMELHO_VINHETA := Color(1.0, 0.1, 0.1)
 const VINHETA_MAX := 0.7  # opacidade máxima da vinheta (ela pulsa um pouco abaixo disso)
 const POP_SELO_T := 0.3  # segundos do pop do selo ao subir de nível
 const ANEL_T := 0.5  # segundos do anel de luz que sai do selo
@@ -29,12 +26,8 @@ const RELOGIO_PISCA_T := 0.8  # o tempo pisca dourado 0,8 s a cada minuto sobrev
 const ROLAGEM_XP := 9.0  # quão rápido o número das almas rola até o valor da barra de XP
 const CHEFE_ESPERA := 0.35  # segundos que a fantasma espera antes de descer atrás da barra real
 const CHEFE_QUEDA := 1.2  # quão rápido a fantasma desce atrás da real (fração da diferença por segundo)
-const COR_ONDA := Color(1.0, 0.33, 0.3)  # vermelho: ONDA FORTE!
-const COR_ELITE := Color(0.75, 0.45, 1.0)  # roxo: ELITE!
-const COR_NIVEL := Color(0.82, 0.92, 1.0)  # azul-claro: NÍVEL N!
 const MARCOS := [10, 25, 50, 100, 200]
 const NOMES_MARCOS := ["SEQUÊNCIA!", "CARNIFICINA!", "MASSACRE!", "IMPARÁVEL!", "LENDÁRIO!"]
-const CORES_MARCOS := [OURO, Color(1.0, 0.55, 0.15), Color(1.0, 0.3, 0.3), Color(0.8, 0.4, 1.0), Color(0.5, 0.95, 1.0)]
 ## Sinais do mundo e o método do HUD que cada um chama. Só se conecta o que o mundo tem.
 const SINAIS := [
 	["nivel_subiu", "_nivel_subiu"],
@@ -167,7 +160,7 @@ func avancar(dt: float) -> void:
 	var cansado: bool = _campo(h, "cansado") == true
 	_piscada = _piscada + dt if cansado else 0.0
 	var pisca: bool = cansado and int(_piscada * 6.0) % 2 == 0
-	_folego.modulate = PISCA_CANSADO if pisca else Color.WHITE
+	_folego.modulate = Paleta.FOLEGO_CANSADO if pisca else Color.WHITE
 	var xp_prox := maxf(_num(h, "xp_proximo", 100.0), 1.0)
 	var xp_alvo := clampf(_num(h, "xp", 0.0), 0.0, xp_prox)
 	_xp_mostrado = _rolar_xp(xp_alvo, dt)
@@ -226,7 +219,7 @@ func _animar(dt: float) -> void:
 		_anel.modulate = Color(1, 1, 1, sumindo)
 	# Relógio: pisca dourado a cada minuto, em quatro degraus.
 	_relogio_pisca = maxf(_relogio_pisca - dt, 0.0)
-	_relogio.modulate = Color.WHITE.lerp(OURO, roundf(4.0 * _relogio_pisca / RELOGIO_PISCA_T) / 4.0)
+	_relogio.modulate = Color.WHITE.lerp(Paleta.OURO, roundf(4.0 * _relogio_pisca / RELOGIO_PISCA_T) / 4.0)
 
 
 ## Vida baixa (abaixo de 25%): a barra de vida pisca e a vinheta vermelha pulsa nas bordas. A vinheta entra e sai aos poucos.
@@ -235,12 +228,12 @@ func _vida_baixa(dt: float, fracao: float) -> void:
 	_pisca_vida = _pisca_vida + dt if baixa else 0.0
 	_tempo_vinheta = _tempo_vinheta + dt if baixa else 0.0
 	var pisca := baixa and int(_pisca_vida * 5.0) % 2 == 0
-	_vida_barra.modulate = PISCA_VIDA if pisca else Color.WHITE
+	_vida_barra.modulate = Paleta.PERIGO if pisca else Color.WHITE
 	var alvo := 0.0
 	if baixa:
 		alvo = VINHETA_MAX * (0.75 + 0.25 * sin(_tempo_vinheta * 7.0))
 	vinheta_alfa = move_toward(vinheta_alfa, alvo, dt * 3.0)
-	_vinheta.modulate = Color(VERMELHO_VINHETA.r, VERMELHO_VINHETA.g, VERMELHO_VINHETA.b, vinheta_alfa)
+	_vinheta.modulate = Paleta.alfa(Paleta.PERIGO, vinheta_alfa)
 	_vinheta.visible = vinheta_alfa > 0.0
 
 
@@ -264,14 +257,14 @@ func _checar_marcos(antes: int, agora: int) -> void:
 		if antes < MARCOS[i] and agora >= MARCOS[i]:
 			marco = i
 	if marco >= 0:
-		_anuncio.anunciar(NOMES_MARCOS[marco], CORES_MARCOS[marco], marco)
+		_anuncio.anunciar(NOMES_MARCOS[marco], Paleta.COMBO_MARCOS[marco], marco)
 
 
 static func _cor_do_combo(combo: int) -> Color:
 	var cor := Color.WHITE
 	for i in MARCOS.size():
 		if combo >= MARCOS[i]:
-			cor = CORES_MARCOS[i]
+			cor = Paleta.COMBO_MARCOS[i]
 	return cor
 
 
@@ -279,19 +272,19 @@ func _nivel_subiu(nivel = 0) -> void:
 	brilho = BRILHO_T
 	_pop_selo = POP_SELO_T
 	_anel_t = ANEL_T
-	_anuncio.anunciar("NÍVEL %d!" % int(nivel), COR_NIVEL)
+	_anuncio.anunciar("NÍVEL %d!" % int(nivel), Paleta.ANUNCIO_NIVEL)
 
 
 func _onda_forte(_numero = 0) -> void:
-	_anuncio.anunciar("ONDA FORTE!", COR_ONDA)
+	_anuncio.anunciar("ONDA FORTE!", Paleta.PERIGO)
 
 
 func _elite_apareceu(_nome = "") -> void:
-	_anuncio.anunciar("ELITE!", COR_ELITE)
+	_anuncio.anunciar("ELITE!", Paleta.ANUNCIO_ELITE)
 
 
 func _evolucao(nome = "") -> void:
-	_anuncio.anunciar("EVOLUÇÃO: %s" % str(nome).to_upper(), OURO)
+	_anuncio.anunciar("EVOLUÇÃO: %s" % str(nome).to_upper(), Paleta.OURO)
 
 
 func _anuncio_livre(texto = "", cor = Color.WHITE) -> void:

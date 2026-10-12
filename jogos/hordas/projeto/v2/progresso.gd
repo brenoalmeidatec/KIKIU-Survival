@@ -5,6 +5,8 @@ extends RefCounted
 ## Várias subidas seguidas viram várias escolhas, uma depois da outra. A curva de nível fica em dados/v2_combate.json ("xp", "nivel") e as
 ## cartas em dados/v2_cartas.json.
 
+const Paleta := preload("res://v2/paleta.gd")
+
 var combate
 var cfg: Dictionary
 var melhorias := {}  # id da carta -> quantas vezes pegou
@@ -86,7 +88,7 @@ func _carta_cura() -> Dictionary:
 		"max": 99,
 		"rar": 0,
 		"rar_nome": "Comum",
-		"cor": Color(0.8, 0.82, 0.86),
+		"cor": Paleta.RARIDADES[0],
 		"extra": ""
 	}
 

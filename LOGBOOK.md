@@ -1320,3 +1320,12 @@ _Claude do Alisson (notebook)_
 - **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-12 (8) · Claude do Alisson (PC) · v2: paleta única da UI
+- **Feito:** a cor da UI da v2 tem uma fonte só, `jogos/hordas/projeto/dados/v2_paleta.json`. Lida por `v2/paleta.gd` (constantes `Paleta.OURO`, `Paleta.VIDA` etc.) e por `v2/hud/gerar_molduras.py` (barras e painel do HUD; as molduras saíram iguais aos PNG commitados). Trocados os usos em status, telas, pausa, altar, hud, resultado_meta, combate (números e perigo), bau e cartas (raridade). A cor da raridade saiu de `dados/v2_cartas.json`.
+- **Valores escolhidos** (guia do #216, seção 8): vida `#b9212d` (o do HUD); XP `#e0bc48` e fôlego `#4aa3d9` (os do HUD, que estavam trocados no card); ouro `#ffdb6b` (o dos menus; havia 5 valores); alma `#cca8ff`; perigo `#ff544d` (eram 6 vermelhos); fusão magenta `#ff73d9` (o comentário "ouro da fusão" virou "magenta"). O motivo de cada um está no `_ajuda` do JSON.
+- **Fontes:** `v2_fontes` confere agora a grade de cada tamanho de texto, e só passa fora dela o que está em `EXCECOES`, com motivo: SUA BUILD Spleen 12 e 11 px, nome de golpe Jersey 14 px, nome longo de carta Jersey 28 px. "VOCÊ CAIU" saiu de Jersey 60 para 56 (estava fora da grade e não constava do guia).
+- **Pendente / recados:** ficaram de fora as cores do mundo (efeitos, armas, monstros, minimapa e `gerar_minimapa_moldura.py`). `docs/visual_2_5d/paleta.json` ganhou um `_ajuda` dizendo que é só amostra da referência e que nenhum código o lê. O DESIGN.md do #216 precisa seguir a paleta nova: a lista do que muda está no corpo do PR.
+- **Testes:** `v2_paleta` (novo), `v2_fontes`, `v2_status`, `v2_hud`, `v2_pausa`, `v2_esc`, `v2_partida`, `v2_meta` e `v2_cartas_espera` com `falhas=0`; gdformat do CI limpo. Prints antes e depois em `docs/visual_2_5d/paleta_v2/`.
+
+_Claude do Alisson (PC)_
