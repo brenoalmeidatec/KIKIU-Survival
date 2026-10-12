@@ -160,7 +160,7 @@
 			"icone": "icone_vento_sopro",
 			"nome": "Corte ondulante",
 			"curto": "Onda",
-			"desc": "Cada corte da katana solta uma onda de corte que anda para a frente e machuca quem está no caminho. Dano: {v}% do golpe.",
+			"desc": "O corte solta uma onda que anda para a frente: {v}% do dano.",
 			"mod": "onda",
 			"valor": 40,
 			"max": 4,
