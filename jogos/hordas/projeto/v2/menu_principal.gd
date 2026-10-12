@@ -1,5 +1,5 @@
 extends Control
-## Tela de título da v2 (a cena principal): logo KIKILL sobre a arte de entrada (assets/titulo/fundo.png, feito por
+## Tela de título da v2 (a cena principal): logo K.I.K.I.U sobre a arte de título (assets/titulo/fundo.png, feito por
 ## fonte_arte/gerar_fundo_titulo.py) e as opções Jogar (vai ao santuário), Ajustes (o submenu da pausa: Gráficos e Áudio), Créditos
 ## (a tela de Créditos da pausa) e Sair (pede confirmação). Mouse, teclado e controle: os botões são do Godot e o foco segue o cursor.
 ## ESC e Start abrem "Sair?" com "Não" marcado, como no santuário: nunca fecham o jogo de surpresa.
@@ -81,7 +81,7 @@ func _montar() -> void:
 	fundo.set_anchors_preset(PRESET_FULL_RECT)
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fundo)
-	add_child(_texto("KIKILL", TAM_LOGO, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, LOGO_Y, LARG, 130)))
+	add_child(_texto("K.I.K.I.U", TAM_LOGO, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, LOGO_Y, LARG, 130)))
 	var textos := ["JOGAR", "AJUSTES", "CRÉDITOS", "SAIR"]
 	var acoes := [_jogar, _abrir_ajustes, _abrir_creditos, _sair]
 	for i in textos.size():

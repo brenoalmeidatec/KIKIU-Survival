@@ -125,7 +125,7 @@ func _botoes(t: Node) -> Array:
 
 func _logo(t: Node) -> Label:
 	for l in t.find_children("*", "Label", false, false):
-		if l.text == "KIKILL":
+		if l.text == "K.I.K.I.U":
 			return l
 	return null
 
@@ -154,7 +154,7 @@ func _testes() -> void:
 		return
 	ok([bs[0].text, bs[1].text, bs[2].text, bs[3].text] == ["JOGAR", "AJUSTES", "CRÉDITOS", "SAIR"], "a ordem é Jogar, Ajustes, Créditos e Sair")
 	var logo := _logo(t)
-	ok(logo != null and logo.get_theme_font_size("font_size") == Menu.TAM_LOGO, "o logo KIKILL existe, na Jersey 10 no tamanho do logo")
+	ok(logo != null and logo.get_theme_font_size("font_size") == Menu.TAM_LOGO, "o logo K.I.K.I.U existe, na Jersey 10 no tamanho do logo")
 	ok(logo != null and logo.get_theme_font("font") == Dados.fonte_titulo, "o logo usa a fonte de título (Jersey 10)")
 	ok(t.pausa != null and not t.pausa.aberto, "o menu de pausa começa fechado")
 	ok(t._trilha != null and t._trilha.faixa == "menu" and t._trilha.momento == "santuario", "a música do título é a do santuário (faixa menu)")

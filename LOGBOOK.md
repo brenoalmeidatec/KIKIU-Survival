@@ -1310,7 +1310,7 @@ _Claude do Alisson (nuvem)_
 _Claude do Alisson (notebook)_
 
 ## 2026-10-12 (7) · Claude do Alisson (PC) · v2: menu principal (título antes do santuário)
-- **Feito:** a cena principal da v2 agora é o título, `v2/menu_principal.tscn` (antes abria no santuário). Logo KIKILL em Jersey 10 (112 px) sobre o fundo `assets/titulo/fundo.png`, com Jogar (vai ao santuário), Ajustes (o submenu da pausa: Gráficos e Áudio), Créditos (a tela de Créditos da pausa) e Sair (pede confirmação). Mouse, teclado e controle; ESC e Start abrem "Sair?" com "Não" marcado, sem fechar o jogo de surpresa. O título toca a faixa do santuário (`menu`), que não recomeça quando o santuário abre.
+- **Feito:** a cena principal da v2 agora é o título, `v2/menu_principal.tscn` (antes abria no santuário). Logo K.I.K.I.U em Jersey 10 (112 px) sobre o fundo `assets/titulo/fundo.png`, com Jogar (vai ao santuário), Ajustes (o submenu da pausa: Gráficos e Áudio), Créditos (a tela de Créditos da pausa) e Sair (pede confirmação). Mouse, teclado e controle; ESC e Start abrem "Sair?" com "Não" marcado, sem fechar o jogo de surpresa. O título toca a faixa do santuário (`menu`), que não recomeça quando o santuário abre.
 - **Fundo:** `jogos/hordas/fonte_arte/gerar_fundo_titulo.py` gera o fundo a partir de `entrada_fonte.webp` (960x540, 48 cores) sem o "K.I.K.I.U" que `gerar_entrada.py` desenha por cima. Não havia arte de título pronta; as capturas de partida (com HUD) não serviram. Registrado em `docs/LICENCAS_ARTE.md`. O prompt para uma arte de título nova está no corpo do PR da branch `alisson/v2-menu-principal`.
 - **Controle:** o InputMap da v2 não tinha o A em `ui_accept` nem o B em `ui_cancel` (só o D-pad e o analógico). `v2/entrada.gd` (`garantir()`) acrescenta os dois quando faltam, então o "Enter ou A confirma" do santuário passa a valer. A v1 não chama `garantir()`.
 - **Pausa (`v2/pausa.gd`):** novo sinal `fechou` (o título devolve o foco ao botão que abriu) e `abrir_creditos()`, em que o Voltar fecha direto sem passar por Ajustes. O resto da pausa não muda.
@@ -1323,3 +1323,10 @@ _Claude do Alisson (notebook)_
 - **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-12 - Menu principal: arte nova do GPT e nome K.I.K.I.U (PR #215)
+- **Feito:** o nome do jogo no menu, nos testes, no LEIA-ME e neste log é K.I.K.I.U (com pontos). A arte de título nova, gerada no GPT pelo Alisson, está versionada em `jogos/hordas/fonte_arte/fundo_titulo_fonte.webp`. `gerar_fundo_titulo.py` lê dela, reduz para 960x540 com BOX e 48 cores e gera `assets/titulo/fundo.png`. Medido antes: a arte não tem grade de pixel fixa, então BOX e não NEAREST. O logo fica no centro-superior sobre o céu escuro (12,9:1 sem faixa), o menu no centro-inferior, sem cobrir o herói. A faixa escura atrás da dica ficou: sem ela o pior 1% dos pixels cai para 1,06:1 e com ela sobe para 3,34:1. Registro em `docs/LICENCAS_ARTE.md` como arte própria gerada no GPT pelo Alisson.
+- **Testes:** `v2_menu`, `entrada_cenas` e `v2_esc` com `falhas=0` (headless). O print `docs/imagens/v2_menu_principal.png` foi refeito com `--fotos` (com janela).
+- **Pendente:** olhar o print num monitor real (PC e notebook): a dica é pequena e o print é 1280x720.
+
+_Claude do Breno (PC)_
