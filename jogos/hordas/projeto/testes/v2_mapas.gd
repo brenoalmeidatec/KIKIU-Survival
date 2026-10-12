@@ -3,9 +3,10 @@ extends Node
 # Confere: a lista de mapas e a escolha gravada (padrão, trocar, id desconhecido, dar a volta); cada mapa tem os objetos e decalques que
 # o json cita nos atlas dele, as luzes e o minimapa só citam nomes que existem, o herói e as zonas de monstros nascem fora de qualquer
 # colisão, o mundo roda 2 s com o herói andando nas 4 direções (dentro da área andável e sem esbarrar para sempre) e o santuário troca o
-# mapa pelo botão e mostra o nome no ENTRAR.
+# mapa pelo botão e mostra o nome no ENTRAR. A cidade ainda tem o teste de rua: o herói anda 300 px pelo leste do cruzamento central sem travar.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_mapas.tscn  (imprime "v2_mapas falhas=0")
-# Prints (precisa de janela): ... res://testes/v2_mapas.tscn -- --fotos=PASTA  grava santuario_mapa_<id>.png (a tela do santuário com cada mapa).
+# Prints (precisa de janela): ... res://testes/v2_mapas.tscn -- --fotos=PASTA  grava santuario_mapa_<id>.png (a tela do santuário com cada mapa)
+# e mundo_<id>_rua.png (a tela da partida no mapa, depois do passeio de rua).
 const Mapas := preload("res://v2/mapas.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -41,7 +42,7 @@ func _ready() -> void:
 
 func _lista_e_escolha() -> void:
 	ok(Mapas.ids().size() >= 2, "há pelo menos 2 mapas (floresta e laboratório): %s" % str(Mapas.ids()))
-	ok(Mapas.ids().has("floresta") and Mapas.ids().has("laboratorio"), "floresta e laboratório estão na lista")
+	ok(Mapas.ids().has("floresta") and Mapas.ids().has("laboratorio") and Mapas.ids().has("cidade"), "floresta, laboratório e cidade estão na lista")
 	ok(Mapas.escolhido() == "floresta", "sem save o mapa é a floresta (deu %s)" % Mapas.escolhido())
 	Mapas.escolher("laboratorio")
 	ok(Mapas.escolhido() == "laboratorio", "escolher grava e escolhido lê de volta")
@@ -114,6 +115,9 @@ func _mundo_do_mapa(id: String) -> void:
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.heroi.imortal = true
 	ok(w.id_mapa == id and str(w.dados.get("_ajuda", "")) != "", "%s: o mundo carregou o json certo" % id)
+	if id == "cidade":
+		_rua_da_cidade(w)
+		await _foto_mundo(id, "rua")
 	ok(w.cenario.objetos.size() >= 150, "%s: objetos no mundo: %d" % [id, w.cenario.objetos.size()])
 	ok(w.cenario.n_decalques >= 100, "%s: decalques no mundo: %d" % [id, w.cenario.n_decalques])
 	ok(w.luzes.lista.size() >= 8, "%s: luzes no mundo: %d" % [id, w.luzes.lista.size()])
@@ -139,6 +143,30 @@ func _mundo_do_mapa(id: String) -> void:
 	remove_child(w)
 	w.free()
 	await get_tree().process_frame
+
+
+## A cidade tem ruas livres: o herói sai do cruzamento central e anda 300 px pelo leste sem travar (carros e postes ficam no meio-fio).
+func _rua_da_cidade(w) -> void:
+	var ini: Vector2 = w.heroi.pos
+	w.heroi.entrada_forcada = Vector2(1, 0)
+	for i in 600:  # até 10 s; para ao chegar
+		w.avancar(PASSO)
+		if w.heroi.pos.x >= ini.x + 300.0:
+			break
+	w.heroi.entrada_forcada = Vector2.ZERO
+	ok(w.heroi.pos.x >= ini.x + 300.0 and absf(w.heroi.pos.y - ini.y) < 80.0, "cidade: o herói anda 300 px pela rua do leste sem travar (%s -> %s)" % [str(ini), str(w.heroi.pos)])
+
+
+## Com --fotos=PASTA grava a tela da partida (só com janela, como as do santuário).
+func _foto_mundo(id: String, nome: String) -> void:
+	var pasta := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--fotos="):
+			pasta = arg.substr(8)
+	if pasta == "" or DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png(pasta.path_join("mundo_%s_%s.png" % [id, nome]))
 
 
 func _santuario() -> void:

@@ -1,0 +1,265 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/gerar_v2_mapas.py (nao edite a mao)",
+ "itens": [
+  {
+   "nome": "bueiro",
+   "regiao": [
+    0,
+    0,
+    46,
+    33
+   ],
+   "centro": [
+    23,
+    16
+   ]
+  },
+  {
+   "nome": "bueiro_aberto",
+   "regiao": [
+    48,
+    0,
+    68,
+    48
+   ],
+   "centro": [
+    34,
+    24
+   ]
+  },
+  {
+   "nome": "poca_oleo_g",
+   "regiao": [
+    118,
+    0,
+    100,
+    49
+   ],
+   "centro": [
+    50,
+    24
+   ]
+  },
+  {
+   "nome": "poca_oleo_p",
+   "regiao": [
+    220,
+    0,
+    58,
+    28
+   ],
+   "centro": [
+    29,
+    14
+   ]
+  },
+  {
+   "nome": "poca_chuva_g",
+   "regiao": [
+    280,
+    0,
+    120,
+    55
+   ],
+   "centro": [
+    60,
+    27
+   ]
+  },
+  {
+   "nome": "poca_chuva_p",
+   "regiao": [
+    402,
+    0,
+    66,
+    31
+   ],
+   "centro": [
+    33,
+    15
+   ]
+  },
+  {
+   "nome": "mancha_a",
+   "regiao": [
+    0,
+    57,
+    96,
+    47
+   ],
+   "centro": [
+    48,
+    23
+   ]
+  },
+  {
+   "nome": "mancha_b",
+   "regiao": [
+    98,
+    57,
+    70,
+    34
+   ],
+   "centro": [
+    35,
+    17
+   ]
+  },
+  {
+   "nome": "mancha_c",
+   "regiao": [
+    170,
+    57,
+    120,
+    57
+   ],
+   "centro": [
+    60,
+    28
+   ]
+  },
+  {
+   "nome": "mancha_sangue",
+   "regiao": [
+    292,
+    57,
+    76,
+    37
+   ],
+   "centro": [
+    38,
+    18
+   ]
+  },
+  {
+   "nome": "fuligem",
+   "regiao": [
+    0,
+    116,
+    150,
+    68
+   ],
+   "centro": [
+    75,
+    34
+   ]
+  },
+  {
+   "nome": "rachadura_a",
+   "regiao": [
+    152,
+    116,
+    130,
+    28
+   ],
+   "centro": [
+    65,
+    14
+   ]
+  },
+  {
+   "nome": "rachadura_b",
+   "regiao": [
+    284,
+    116,
+    100,
+    25
+   ],
+   "centro": [
+    50,
+    12
+   ]
+  },
+  {
+   "nome": "rachadura_c",
+   "regiao": [
+    0,
+    186,
+    150,
+    31
+   ],
+   "centro": [
+    75,
+    15
+   ]
+  },
+  {
+   "nome": "cabo_b",
+   "regiao": [
+    152,
+    186,
+    110,
+    21
+   ],
+   "centro": [
+    55,
+    10
+   ]
+  },
+  {
+   "nome": "grade_dreno",
+   "regiao": [
+    264,
+    186,
+    72,
+    31
+   ],
+   "centro": [
+    36,
+    15
+   ]
+  },
+  {
+   "nome": "papeis_a",
+   "regiao": [
+    338,
+    186,
+    60,
+    28
+   ],
+   "centro": [
+    30,
+    14
+   ]
+  },
+  {
+   "nome": "papeis_b",
+   "regiao": [
+    400,
+    186,
+    48,
+    24
+   ],
+   "centro": [
+    24,
+    12
+   ]
+  },
+  {
+   "nome": "faixa_obra_g",
+   "regiao": [
+    0,
+    219,
+    176,
+    14
+   ],
+   "centro": [
+    88,
+    7
+   ]
+  },
+  {
+   "nome": "faixa_obra_p",
+   "regiao": [
+    178,
+    219,
+    88,
+    14
+   ],
+   "centro": [
+    44,
+    7
+   ]
+  }
+ ]
+}

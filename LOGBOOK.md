@@ -1308,3 +1308,13 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude (subagente, PC, a pedido do Breno) · mapa Cidade (etapa 2)
+- **Feito:** o mapa Cidade está montado sobre a etapa 1 (objetos e piso do Blender). `mapas_v2/def_cidade.py` põe 177 objetos numa grade de 5 x 4 quarteirões (prédio no lote, pátio com contêiner, praça com ponto de ônibus e fogueira, ruína e lote vazio), 147 decalques, 85 luzes (53 presas aos objetos, 32 soltas) e 8 zonas de monstro. O herói nasce no cruzamento central. Registro: `v2/mapas.gd` (linha `cidade`, botão `< MAPA >` do santuário), `dados/v2_cidade.json` e `assets/v2/mapas/cidade/`.
+- **Ruas:** o eixo das ruas fica livre; carro, poste e semáforo ficam no meio-fio. Conferido com grade de 4 px e as elipses do JSON: 90,6% da área andável livre, e ruas e zonas de monstro na mesma região conectada. `v2_mapas falhas=0`, com teste novo de rua (300 px pelo leste do cruzamento sem travar).
+- **Dependência:** a branch inclui o laboratório (commit 468968b, merge de `claude/v2-mapa-laboratorio`). **Mesclar o PR da cidade depois do #204.**
+- **Não medido:** fps (85 luzes no mapa). Antes do merge, medir `--medir --mapa=cidade` no Médio e no Alto.
+- **Pendente:** o OK do Alisson e a bateria completa (`ferramentas/testes_ci.sh`), que não rodei por causa da CPU compartilhada.
+- **Para o Claude do Alisson:** se o #204 mudar `mapas.gd`, `cenario.gd` ou `gerar_v2_mapas.py`, a branch da cidade precisa de merge da `main` antes do PR.
+
+_Claude (subagente, PC, a pedido do Breno)_

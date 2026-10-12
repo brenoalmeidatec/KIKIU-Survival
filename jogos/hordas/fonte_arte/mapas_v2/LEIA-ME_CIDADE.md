@@ -1,8 +1,6 @@
-# Cidade: etapa 1 (objetos e piso, Blender -> pixel art)
+# Cidade: objetos, piso e mapa (Blender -> pixel art)
 
-**Estado em 2026-10-12 (branch `alisson/v2-mapa-cidade`, a partir de `claude/v2-mapa-laboratorio`):** os 41 objetos da cidade e o piso (asfalto + calçada + lote)
-estão feitos e conferidos a olho no tamanho do jogo. **Falta a etapa 2**: `mapas_v2/def_cidade.py` (colisão, decalques, layout do mapa, luzes), a linha em
-`Mapas.LISTA` e o JSON `dados/v2_cidade.json`. O layout NÃO foi escrito. Os brutos do Blender (`mapas_v2/brutos/cidade/`) ficam fora do Git: rode o comando abaixo.
+**Estado (2026-10-12):** etapa 1 feita (os 41 objetos e o piso: asfalto, calçada e lote, conferidos a olho no tamanho do jogo) e **etapa 2 feita**: `mapas_v2/def_cidade.py` (grade de 5 x 4 quarteirões, colisão, decalques, luzes e zonas de monstros), a linha em `Mapas.LISTA` e o JSON `dados/v2_cidade.json`, gerados por `gerar_v2_mapas.py cidade`. Os brutos do Blender (`mapas_v2/brutos/cidade/`) ficam fora do Git: rode o comando abaixo antes do gerador.
 
 ## Como gerar
 ```
@@ -22,6 +20,7 @@ Arquivos (todos em `jogos/hordas/fonte_arte/`):
 | `modelos3d/cidade_adereco.py` | Caçamba, contêineres, barricadas, sacos de areia, pneus, entulho, muros e o ponto de ônibus. |
 | `modelos3d/cidade_piso.py` | O piso: campo de alturas em numpy (1024 x 1024) + cor pintada em numpy, renderizado de cima pelo Blender. |
 | `mapas_v2/medidas_cidade.py` | **Python puro**, lido pelo Blender e pelo `def_cidade.py`: `MEDIDAS` (pegada w x d, altura, tela), `LUZES`, `LUZ_TIPOS`, `luz_objetos()`, `luzes_extras()`, `PISO`, `lote_px(i, j)`. |
+| `mapas_v2/def_cidade.py` | A etapa 2: `OBJETOS` (a pegada de `medidas_cidade`), `DECALQUES`, `GRADE` dos quarteirões (P prédio no lote, E pátio, B praça com ponto de ônibus e fogueira, R ruína, V vazio), `montar()`: ruas livres, meio-fio, bordas fora da área andável, luzes e zonas de monstros. Lido por `gerar_v2_mapas.py cidade`. |
 | `mapas_v2/decalques_cidade.py` | Decalques da cidade em Pillow: `bueiro(rng)` e `bueiro(rng, aberto=True)`. |
 
 ## Convenções (as mesmas do laboratório)
@@ -98,7 +97,7 @@ do mapa) ao lado de cada cópia do objeto. O ponto da luz é onde a fonte aparec
 fogo), `neon_rosa`, `neon_azul`, `neon_verde`, `neon_vermelho`, `vitrine` (branco frio: farmácia e ponto de ônibus), `janela` (amarelo fraco), `semaforo` e `baliza`
 (vermelho fraco; a baliza pisca). O `poste_quebrado` fica sem luz (de propósito). Carros, caçamba, containers e prédio em ruína não emitem luz.
 
-## Dicas para a etapa 2
+## Dicas de layout (aplicadas no def_cidade.py)
 - Os prédios têm de 174 a 207 px de altura de sprite (o maior, 207 px; árvore da floresta tem 150 a 200): o buraco raio-x do `copas.gd` abre para o herói atrás deles (sprite de
   60 px ou mais), então não precisa de nada a mais; a oclusão por monstro continua valendo.
 - Mapa aberto: o monstro persegue em linha reta, então ponha prédios e muros em trechos curtos com abertura; um prédio por lote deixa uma rua de 6,5 m + 2 calçadas entre eles.
