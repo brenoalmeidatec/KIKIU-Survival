@@ -124,18 +124,30 @@ func _testes() -> void:
 	var modo_pesadelo := Meta.item_da_recompensa({"tipo": "modo", "id": "pesadelo"})
 	var visual_rastro := Meta.item_da_recompensa({"tipo": "visual", "id": "rastro_katana"})
 	ok(Meta.oculto(modo_pesadelo) and Meta.oculto(visual_rastro), "pesadelo e rastro de katana estão marcados como escondidos")
-	ok(not Meta.oculto(Meta.melhoria("raridade")) and not Meta.oculto(Meta.melhoria("rolagem")) and not Meta.oculto(Meta.melhoria("almas")), "raridade, rolagem e almas têm efeito e seguem visíveis")
+	ok(
+		not Meta.oculto(Meta.melhoria("raridade")) and not Meta.oculto(Meta.melhoria("rolagem")) and not Meta.oculto(Meta.melhoria("almas")),
+		"raridade, rolagem e almas têm efeito e seguem visíveis"
+	)
 	a._atualizar()
-	ok(a._conq["derrota_chefe"].rec.text == "" and a._conq["combo_50"].rec.text == "", "a recompensa escondida some do santuário (%s / %s)" % [a._conq["derrota_chefe"].rec.text, a._conq["combo_50"].rec.text])
+	ok(
+		a._conq["derrota_chefe"].rec.text == "" and a._conq["combo_50"].rec.text == "",
+		"a recompensa escondida some do santuário (%s / %s)" % [a._conq["derrota_chefe"].rec.text, a._conq["combo_50"].rec.text]
+	)
 	ok(a._conq["combo_50"].nome.text == "Combo de cinquenta", "a conquista com recompensa escondida segue na lista")
 	visual_rastro.erase("oculta_ate_ter_efeito")
 	a._atualizar()
-	ok(a._conq["combo_50"].rec.text == "Libera: Rastro de katana (sem efeito ainda)", "sem a flag o visual volta, com o aviso de efeito pendente (%s)" % a._conq["combo_50"].rec.text)
+	ok(
+		a._conq["combo_50"].rec.text == "Libera: Rastro de katana (sem efeito ainda)",
+		"sem a flag o visual volta, com o aviso de efeito pendente (%s)" % a._conq["combo_50"].rec.text
+	)
 	visual_rastro["oculta_ate_ter_efeito"] = true
 	a._atualizar()
 	var mel_vida := Meta.melhoria("vida")
 	mel_vida["oculta_ate_ter_efeito"] = true
-	ok(Meta.melhorias_visiveis().size() == Meta.melhorias().size() - 1 and not Meta.melhorias_visiveis().has(mel_vida), "melhoria marcada sai da lista do santuário e do card")
+	ok(
+		Meta.melhorias_visiveis().size() == Meta.melhorias().size() - 1 and not Meta.melhorias_visiveis().has(mel_vida),
+		"melhoria marcada sai da lista do santuário e do card"
+	)
 	mel_vida.erase("oculta_ate_ter_efeito")
 	ok(Meta.melhorias_visiveis().size() == Meta.melhorias().size(), "sem a flag a melhoria volta à lista")
 	ok(a._linhas["treino"].botao.disabled and a._linhas["treino"].botao.text == "BLOQUEADA", "o treino aparece bloqueado sem o marco")
