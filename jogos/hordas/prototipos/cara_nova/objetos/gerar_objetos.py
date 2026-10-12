@@ -13,7 +13,8 @@ Saida, em jogos/hordas/projeto/prototipos/objetos/ (mesmo layout nas duas folhas
     as previas em jogos/hordas/prints/prototipo_objetos_novos.png e v2_colisao_formas.png (elipses por cima)
 
 Uso (so precisa de Pillow):
-    python gerar_objetos.py
+    python gerar_objetos.py           enfeites e pedras da cara nova (prototipo)
+    python gerar_objetos.py armas     sprites das armas da v2 (fonte_armas_*.webp) -> projeto/assets/v2/armas/
 
 Passos: fundo = alfa 0 (ou branco) ligado a borda, por flood fill; objetos = componentes do que sobrou,
 juntados por proximidade; ordem = linha e coluna; BOX para a escala do jogo; alfa binario a 50%;
@@ -22,6 +23,7 @@ quantizacao sem dithering; normal = domo pela distancia ate a borda + um pouco d
 import json
 import math
 import os
+import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -169,7 +171,7 @@ def dist_caixas(a, b):
     return max(dx, dy)
 
 
-def agrupar(w, h, data, nome_folha, esperado, linhas):
+def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False):
     alfa = data[3::4]
     fundo = fundo_por_borda(w, h, alfa)
     fg = bytearray(w * h)
@@ -206,6 +208,17 @@ def agrupar(w, h, data, nome_folha, esperado, linhas):
         _fundir(grupos, prox, menor, w)
     if len(grupos) < esperado:
         raise SystemExit("%s: achei %d objetos, esperava %d" % (nome_folha, len(grupos), esperado))
+    if por_centro:
+        # folha sem faixas limpas entre as linhas (particulas de uma linha tocam a outra): ordena pelo centro
+        # vertical e corta pelas contagens de cada linha; dentro da linha, da esquerda para a direita
+        grupos.sort(key=lambda g: g["caixa"][1] + g["caixa"][3])
+        ordenados, inicio = [], 0
+        for n in linhas:
+            ordenados.extend(sorted(grupos[inicio:inicio + n], key=lambda g: g["caixa"][0] + g["caixa"][2]))
+            inicio += n
+        print("%s: %d objetos em %d linhas (pelo centro), ruido descartado %d px" % (
+            nome_folha, len(ordenados), len(linhas), ruido_descartado))
+        return ordenados
     # linhas: intervalos verticais que se sobrepoem ficam na mesma linha
     grupos.sort(key=lambda g: g["caixa"][1])
     fileiras, atual, fim = [], [], -1
@@ -257,12 +270,12 @@ def escalar(img, eixo, alvo):
     return img.resize((nw, nh), Image.BOX)
 
 
-def binarizar(img):
+def binarizar(img, limiar=LIMIAR_ALFA):
     w, h = img.size
     dados = bytearray(img.tobytes())
     for i in range(w * h):
         j = i * 4
-        if dados[j + 3] < LIMIAR_ALFA:
+        if dados[j + 3] < limiar:
             dados[j:j + 4] = b"\x00\x00\x00\x00"
         else:
             dados[j + 3] = 255
@@ -895,5 +908,278 @@ def main():
     print("previa", PREVIA)
 
 
+# ------------------------------------------------------------------ armas da v2 (python gerar_objetos.py armas)
+# Folhas de arte propria que o Alisson gerou no GPT: 16 projeteis e meteoros (fundo branco), 9 aliados
+# (fundo branco) e 12 efeitos de area (fundo preto, aditivos). Saida: um PNG por sprite em
+# projeto/assets/v2/armas/ (normal map so onde a luz 2D age: projetil e aliado), indice.json e a previa.
+# Nao liga nada no codigo: quem liga o sprite a arma e a v2, depois que o PR entrar.
+ARMAS_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "armas")
+ARMAS_PREVIA = os.path.join(HORDAS, "prints", "v2_armas_sprites.png")
+LIMITE_CLARO_FUNDO = 236     # folha clara: min(R, G, B) acima disto e fundo branco (so o que liga a borda)
+LIMITE_ESCURO_FUNDO = 10     # folha escura: max(R, G, B) abaixo disto e fundo preto
+LIMITE_ADITIVO = 6           # efeito aditivo: brilho abaixo disto vira zero (ruido do fundo)
+LIMIAR_ARMAS = 64            # sprite claro: alfa a 25% (e nao 50%) para a haste fina de 1 px nao sumir na reducao
+COR_ARMAS_CLARO = 48         # paleta unica de cada folha clara (sem dithering)
+COR_ARMAS_ADITIVO = 40       # paleta unica da folha de efeitos
+
+# (arquivo ao lado deste script, modo, linhas da folha, tipo no indice, sprites na ordem de linha e coluna)
+# sprite = (nome, familia, caixa, armas_sugeridas, armas_aproximadas, obs); caixa = (largura, altura) em px
+# no jogo 960x540. Efeito de area: altura 0 (sai da proporcao da folha).
+ARMAS_FOLHAS = [
+    ("fonte_armas_projeteis.webp", "claro", [4, 4, 4, 4], "projetil", [
+        ("flecha_roxa", "projetil", (12, 3), ["flechas_sombrias"], [], ""),
+        ("adaga_aco", "projetil", (10, 4), ["adagas_voadoras"], [], ""),
+        ("lanca_gelo", "projetil", (18, 4), ["lanca_geada"], [], ""),
+        ("shuriken_sombria", "projetil", (8, 8), ["estrelas_sombra"], [], ""),
+        ("bola_fogo", "projetil", (16, 16), ["bola_fogo"], ["fogo_do_ceu"], ""),
+        ("dardo_verde", "projetil", (8, 3), ["dardos_peconhentos"], [], "3 px de altura (a spec pede 2) para a ponta nao sumir"),
+        ("feixe_dourado", "projetil", (40, 3), ["raio_solar"], [], ""),
+        ("disco_ferro", "projetil", (16, 16), ["bumerangue_ferro"], [], ""),
+        ("bola_chumbo", "projetil", (14, 14), ["bolas_chumbo"], ["chuva_pedras"], ""),
+        ("pedra_vulcanica", "meteoro", (10, 10), ["pedras_vulcanicas"], [], ""),
+        ("meteoro_flamejante", "meteoro", (28, 28), ["meteoro_flamejante"], [], ""),
+        ("cometa_gelo", "meteoro", (22, 22), ["cometa_gelado"], [], ""),
+        ("cometa_roxo", "meteoro", (40, 40), ["cometa_negro"], [], ""),
+        ("estrela_cadente", "meteoro", (24, 16), ["estrelas_cadentes"], [], ""),
+        ("espinho_verde", "meteoro", (6, 14), ["chuva_espinhos"], [], ""),
+        ("estilhaco_azul", "meteoro", (30, 30), [], ["raio_meteorico"], "estilhaco azul com faiscas: so aproxima o meteoro eletrico"),
+    ]),
+    ("fonte_armas_aliados.webp", "claro", [3, 3, 3], "aliado", [
+        ("lobo_fantasma", "aliado", (36, 28), ["lobo_espirito"], [], ""),
+        ("raposa_de_fogo", "aliado", (28, 18), ["espirito_raposa"], [], ""),
+        ("guardiao_de_pedra", "aliado", (44, 52), ["guardiao_pedra"], [], ""),
+        ("fantasma_encapuzado", "aliado", (24, 34), ["fantasma_mata"], [], ""),
+        ("serpente_de_brasa", "aliado", (40, 22), ["serpente_ardente"], [], ""),
+        ("urso_espiritual", "aliado", (52, 40), ["espirito_urso"], [], ""),
+        ("golem_de_barro", "aliado", (46, 54), ["golem_barro"], [], ""),
+        ("dragao_vermelho", "aliado", (32, 26), ["dragao_filhote"], [], ""),
+        ("esqueleto_guerreiro", "aliado", (30, 44), ["esqueleto_guerreiro"], [], ""),
+    ]),
+    ("fonte_armas_areas.webp", "escuro", [4, 4, 4], "area", [
+        ("nuvem_veneno", "nuvem", (100, 0), ["nuvem_veneno"], [], ""),
+        ("nevoa_gelada", "nuvem", (120, 0), ["nevoeiro_gelado"], [], ""),
+        ("nuvem_cinzas", "nuvem", (160, 0), ["cinzas_vulcanicas"], [], ""),
+        ("nuvem_esporos", "nuvem", (120, 0), ["nuvem_espora"], [], ""),
+        ("nevoa_fantasmal", "nuvem", (100, 0), [], ["nevoa_espectral"], "roxa com rostos; a spec pede branco-azulada"),
+        ("nuvem_sangue", "nuvem", (70, 0), ["cortina_sangue"], [], ""),
+        ("anel_fogo", "anel", (128, 0), [], ["grito_guerra"], "anel de chama: tambem serve a aura_fogo (arma existente, fora das 45)"),
+        ("anel_dourado", "anel", (128, 0), ["pulso_sagrado"], [], ""),
+        ("anel_onda_branca", "anel", (128, 0), ["onda_choque"], [], ""),
+        ("anel_espinhos_verdes", "anel", (128, 0), ["anel_espinhos"], [], ""),
+        ("anel_lunar", "anel", (128, 0), ["anel_luar"], [], ""),
+        ("anel_vento", "anel", (128, 0), [], ["rajada_vento"], "espiral de vento, nao anel"),
+    ]),
+]
+
+# armas das 45 novas sem sprite adequado: vao para a 4a folha (ver o corpo do PR)
+ARMAS_SEM_SPRITE = {
+    "fumaca_sonolenta": "falta sprite: fumaca roxa-clara com letras z",
+    "chuva_acida": "falta sprite: gotas amarelo-esverdeadas numa area",
+    "nevasca": "falta sprite: nuvem branca alta com flocos",
+    "martelo_trovao": "falta sprite: anel amarelo estreito com faiscas eletricas",
+    "terremoto": "falta sprite: elipse marrom de poeira e pedras rente ao chao",
+    "anel_gelado": "falta sprite: anel azul-gelo com cristais brancos na borda",
+}
+
+ARMAS_AJUDA = (
+    "Sprites das armas da v2, recortados das folhas de arte propria do Alisson (geradas no GPT). "
+    "Chave = nome do sprite. arquivo = PNG nesta pasta. normal = normal map pareado para a luz 2D "
+    "(so projetil e aliado; efeito de area nao tem). tipo: projetil (aponta para a direita; o codigo gira "
+    "pelo angulo do tiro), aliado (de pe: a borda de baixo e o chao) e area (efeito aditivo: o fundo preto "
+    "virou transparencia e o brilho virou alfa; desenhar com mistura aditiva ou alfa). tamanho = largura x "
+    "altura em px no jogo (960x540); em area a altura sai da proporcao da folha. armas_sugeridas = armas das "
+    "45 novas que o sprite serve bem; armas_aproximadas = sprite provisorio, sai na 4a folha; armas_sem_sprite "
+    "= armas que precisam da 4a folha. Ainda nao ligado ao codigo."
+)
+
+
+def carregar_folha_armas(caminho, modo):
+    """Le a folha (RGB) e poe alfa 0 no fundo (branco ou preto, conforme o modo) e 255 no resto.
+    O fundo so vira 0 onde a cor e de fundo; o flood fill de fundo_por_borda separa o que liga a borda."""
+    rgb = Image.open(caminho).convert("RGB")
+    w, h = rgb.size
+    px = rgb.tobytes()
+    out = bytearray(w * h * 4)
+    for i in range(w * h):
+        r, g, b = px[3 * i], px[3 * i + 1], px[3 * i + 2]
+        if modo == "claro":
+            fundo = min(r, g, b) >= LIMITE_CLARO_FUNDO
+        else:
+            fundo = max(r, g, b) <= LIMITE_ESCURO_FUNDO
+        out[4 * i:4 * i + 4] = bytes((r, g, b, 0 if fundo else 255))
+    return w, h, bytes(out)
+
+
+def aditivo(rgb):
+    """Efeito sobre fundo preto -> RGBA: alfa = brilho maximo do pixel (quase a luminancia, mas nao apaga
+    o vermelho ou o verde saturados); cor = a cor sem o brilho. Sobre preto, a composicao volta ao original."""
+    w, h = rgb.size
+    px = rgb.tobytes()
+    out = bytearray(w * h * 4)
+    for i in range(w * h):
+        r, g, b = px[3 * i], px[3 * i + 1], px[3 * i + 2]
+        a = max(r, g, b)
+        if a < LIMITE_ADITIVO:
+            continue
+        out[4 * i:4 * i + 4] = bytes((min(255, round(r * 255 / a)), min(255, round(g * 255 / a)),
+                                      min(255, round(b * 255 / a)), a))
+    return Image.frombytes("RGBA", (w, h), bytes(out))
+
+
+def fit_em_caixa(img, w, h):
+    """Reduz (BOX, em espaco pre-multiplicado pelo Pillow) para caber em w x h, mantendo a proporcao."""
+    bw, bh = img.size
+    s = min(w / float(bw), h / float(bh))
+    return img.resize((max(1, min(w, round(bw * s))), max(1, min(h, round(bh * s)))), Image.BOX)
+
+
+def em_tela(img, w, h, base):
+    """Poe o sprite numa tela w x h: centralizado, ou com a borda de baixo no fundo da caixa (base 'pe')."""
+    tela = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    x = (w - img.width) // 2
+    y = h - img.height if base == "pe" else (h - img.height) // 2
+    tela.paste(img, (x, y))
+    return tela
+
+
+def quantizar_lista(imagens, cores):
+    """Uma paleta so para a folha (cores de pixels visiveis), mapeamento sem dithering; a alfa nao muda."""
+    amostra = bytearray()
+    for im in imagens:
+        alfa = im.getchannel("A").tobytes()
+        rgb = im.convert("RGB").tobytes()
+        for i in range(len(alfa)):
+            if alfa[i] >= LIMITE_ADITIVO:
+                amostra += rgb[3 * i:3 * i + 3]
+    paleta = Image.frombytes("RGB", (len(amostra) // 3, 1), bytes(amostra)).quantize(
+        colors=cores, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    saida = []
+    for im in imagens:
+        q = im.convert("RGB").quantize(palette=paleta, dither=Image.Dither.NONE).convert("RGBA")
+        q.putalpha(im.getchannel("A"))
+        saida.append(q)
+    return saida
+
+
+def gerar_armas():
+    os.makedirs(ARMAS_SAIDA, exist_ok=True)
+    sprites = {}
+    previa = []                  # (tipo, nome, imagem, armas_sugeridas, armas_aproximadas)
+    for arquivo, modo, linhas, tipo, lista in ARMAS_FOLHAS:
+        w, h, data = carregar_folha_armas(os.path.join(AQUI, arquivo), modo)
+        grupos = agrupar(w, h, data, arquivo, len(lista), linhas, por_centro=True)
+        feitos = []
+        for g, (nome, familia, caixa, sugeridas, aproximadas, obs) in zip(grupos, lista):
+            cru = recortar(g, w, data)
+            if modo == "claro":
+                alb = binarizar(fit_em_caixa(cru, caixa[0], caixa[1]), LIMIAR_ARMAS)
+                if tipo == "aliado":
+                    alb = contorno(em_tela(alb, caixa[0], caixa[1], "pe"))
+                else:
+                    alb = em_tela(alb, caixa[0], caixa[1], "centro")
+            else:
+                nh = max(1, round(cru.height * caixa[0] / float(cru.width)))
+                alb = aditivo(cru.convert("RGB").resize((caixa[0], nh), Image.BOX))
+            feitos.append((nome, familia, sugeridas, aproximadas, obs, alb))
+        quant = quantizar_lista([f[5] for f in feitos], COR_ARMAS_CLARO if modo == "claro" else COR_ARMAS_ADITIVO)
+        for (nome, familia, sugeridas, aproximadas, obs, _), q in zip(feitos, quant):
+            tem_normal = tipo in ("projetil", "aliado")
+            q.save(os.path.join(ARMAS_SAIDA, nome + ".png"))
+            if tem_normal:
+                nor = normal_do_objeto(q)
+                nor.save(os.path.join(ARMAS_SAIDA, nome + "_normal.png"))
+            entrada = {
+                "arquivo": nome + ".png",
+                "normal": nome + "_normal.png" if tem_normal else None,
+                "tipo": tipo,
+                "familia": familia,
+                "tamanho": [q.width, q.height],
+                "armas_sugeridas": sugeridas,
+                "armas_aproximadas": aproximadas,
+            }
+            if obs:
+                entrada["obs"] = obs
+            sprites[nome] = entrada
+            previa.append((tipo, nome, q, sugeridas, aproximadas))
+            print("  %-22s %-7s %3dx%-3d sugeridas %s%s" % (
+                nome, tipo, q.width, q.height, sugeridas, (" aprox %s" % aproximadas) if aproximadas else ""))
+        print("%s: %d sprites, %s" % (arquivo, len(feitos), "paleta de %d cores" % (COR_ARMAS_CLARO if modo == "claro" else COR_ARMAS_ADITIVO)))
+    indice = {
+        "_ajuda": ARMAS_AJUDA,
+        "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py armas (nao edite a mao)",
+        "armas_sem_sprite": ARMAS_SEM_SPRITE,
+        "sprites": sprites,
+    }
+    with open(os.path.join(ARMAS_SAIDA, "indice.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(indice, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    sug = sum(len(s["armas_sugeridas"]) for s in sprites.values())
+    apr = sum(len(s["armas_aproximadas"]) for s in sprites.values())
+    print("armas: %d com sprite adequado, %d com sprite aproximado, %d sem sprite" % (sug, apr, len(ARMAS_SEM_SPRITE)))
+    previa_armas(previa, ARMAS_PREVIA)
+    print("previa", ARMAS_PREVIA)
+
+
+def previa_armas(itens, caminho):
+    """Prancha escura: cada sprite em 3x (projetil, aliado) ou 2x (area), com as armas que ele serve.
+    Azul-claro = arma servida; laranja = so aproximada (sai na 4a folha)."""
+    fonte = ImageFont.load_default(size=13)
+    fonte_titulo = ImageFont.load_default(size=16)
+    medidor = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    branco, laranja, cinza = (236, 236, 236, 255), (255, 178, 84, 255), (150, 150, 162, 255)
+    fundo = (22, 20, 28, 255)
+    margem = 32
+    secoes = [
+        ("projetil", "Projeteis e meteoros (folha 18: 16 sprites)", 8, 3),
+        ("aliado", "Aliados (folha 19: 9 sprites)", 5, 3),
+        ("area", "Efeitos de area, aditivos (folha 20: 12 sprites)", 4, 2),
+    ]
+    plano = []
+    largura = 0
+    for tipo, titulo, colunas, esc in secoes:
+        sel = [it for it in itens if it[0] == tipo]
+        imgs = [it[2].resize((it[2].width * esc, it[2].height * esc), Image.NEAREST) for it in sel]
+        txts = [[(it[1], branco)] + [("-> " + a, branco) for a in it[3]] + [("~ " + a, laranja) for a in it[4]]
+                for it in sel]
+        larg_txt = max(medidor.textlength(t, font=fonte) for linhas in txts for t, _ in linhas)
+        cel_w = int(24 + max(max(im.width for im in imgs), larg_txt))
+        linhas_cel = []
+        for r in range(0, len(sel), colunas):
+            idx = list(range(r, min(r + colunas, len(sel))))
+            linhas_cel.append((idx, max(imgs[i].height for i in idx), max(len(txts[i]) for i in idx) * 16))
+        plano.append((titulo, cel_w, imgs, txts, linhas_cel))
+        largura = max(largura, colunas * cel_w)
+    altura = 110
+    for _, _, _, _, linhas_cel in plano:
+        altura += 34 + sum(alt + 12 + txt + 18 for _, alt, txt in linhas_cel)
+    tela = Image.new("RGBA", (2 * margem + largura, altura), fundo)
+    d = ImageDraw.Draw(tela)
+    d.text((margem, 14), "Armas da v2: sprites recortados das folhas do Alisson (arte propria, GPT)",
+           fill=branco, font=fonte_titulo)
+    d.text((margem, 40), "-> arma que o sprite serve bem        ~ sprite provisorio (troca na 4a folha)",
+           fill=cinza, font=fonte)
+    y = 90
+    for titulo, cel_w, imgs, txts, linhas_cel in plano:
+        d.text((margem, y), titulo, fill=branco, font=fonte_titulo)
+        y += 34
+        for idx, alt_img, alt_txt in linhas_cel:
+            base = y + alt_img
+            for k, i in enumerate(idx):
+                cx = margem + k * cel_w
+                im = imgs[i]
+                d.rectangle([cx, y - 4, cx + cel_w - 10, y + alt_img + alt_txt + 14], outline=(44, 40, 54, 255))
+                tela.alpha_composite(im, (cx + (cel_w - 10 - im.width) // 2, base - im.height))
+                ty = base + 8
+                for texto, cor in txts[i]:
+                    d.text((cx + 10, ty), texto, fill=cor, font=fonte)
+                    ty += 16
+            y += alt_img + 12 + alt_txt + 18
+    os.makedirs(os.path.dirname(caminho), exist_ok=True)
+    tela.convert("RGB").save(caminho)
+
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "armas":
+        gerar_armas()
+    else:
+        main()

@@ -1,0 +1,541 @@
+{
+ "_ajuda": "Sprites das armas da v2, recortados das folhas de arte propria do Alisson (geradas no GPT). Chave = nome do sprite. arquivo = PNG nesta pasta. normal = normal map pareado para a luz 2D (so projetil e aliado; efeito de area nao tem). tipo: projetil (aponta para a direita; o codigo gira pelo angulo do tiro), aliado (de pe: a borda de baixo e o chao) e area (efeito aditivo: o fundo preto virou transparencia e o brilho virou alfa; desenhar com mistura aditiva ou alfa). tamanho = largura x altura em px no jogo (960x540); em area a altura sai da proporcao da folha. armas_sugeridas = armas das 45 novas que o sprite serve bem; armas_aproximadas = sprite provisorio, sai na 4a folha; armas_sem_sprite = armas que precisam da 4a folha. Ainda nao ligado ao codigo.",
+ "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py armas (nao edite a mao)",
+ "armas_sem_sprite": {
+  "fumaca_sonolenta": "falta sprite: fumaca roxa-clara com letras z",
+  "chuva_acida": "falta sprite: gotas amarelo-esverdeadas numa area",
+  "nevasca": "falta sprite: nuvem branca alta com flocos",
+  "martelo_trovao": "falta sprite: anel amarelo estreito com faiscas eletricas",
+  "terremoto": "falta sprite: elipse marrom de poeira e pedras rente ao chao",
+  "anel_gelado": "falta sprite: anel azul-gelo com cristais brancos na borda"
+ },
+ "sprites": {
+  "flecha_roxa": {
+   "arquivo": "flecha_roxa.png",
+   "normal": "flecha_roxa_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    12,
+    3
+   ],
+   "armas_sugeridas": [
+    "flechas_sombrias"
+   ],
+   "armas_aproximadas": []
+  },
+  "adaga_aco": {
+   "arquivo": "adaga_aco.png",
+   "normal": "adaga_aco_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    10,
+    4
+   ],
+   "armas_sugeridas": [
+    "adagas_voadoras"
+   ],
+   "armas_aproximadas": []
+  },
+  "lanca_gelo": {
+   "arquivo": "lanca_gelo.png",
+   "normal": "lanca_gelo_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    18,
+    4
+   ],
+   "armas_sugeridas": [
+    "lanca_geada"
+   ],
+   "armas_aproximadas": []
+  },
+  "shuriken_sombria": {
+   "arquivo": "shuriken_sombria.png",
+   "normal": "shuriken_sombria_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    8,
+    8
+   ],
+   "armas_sugeridas": [
+    "estrelas_sombra"
+   ],
+   "armas_aproximadas": []
+  },
+  "bola_fogo": {
+   "arquivo": "bola_fogo.png",
+   "normal": "bola_fogo_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    16,
+    16
+   ],
+   "armas_sugeridas": [
+    "bola_fogo"
+   ],
+   "armas_aproximadas": [
+    "fogo_do_ceu"
+   ]
+  },
+  "dardo_verde": {
+   "arquivo": "dardo_verde.png",
+   "normal": "dardo_verde_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    8,
+    3
+   ],
+   "armas_sugeridas": [
+    "dardos_peconhentos"
+   ],
+   "armas_aproximadas": [],
+   "obs": "3 px de altura (a spec pede 2) para a ponta nao sumir"
+  },
+  "feixe_dourado": {
+   "arquivo": "feixe_dourado.png",
+   "normal": "feixe_dourado_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    40,
+    3
+   ],
+   "armas_sugeridas": [
+    "raio_solar"
+   ],
+   "armas_aproximadas": []
+  },
+  "disco_ferro": {
+   "arquivo": "disco_ferro.png",
+   "normal": "disco_ferro_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    16,
+    16
+   ],
+   "armas_sugeridas": [
+    "bumerangue_ferro"
+   ],
+   "armas_aproximadas": []
+  },
+  "bola_chumbo": {
+   "arquivo": "bola_chumbo.png",
+   "normal": "bola_chumbo_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    14,
+    14
+   ],
+   "armas_sugeridas": [
+    "bolas_chumbo"
+   ],
+   "armas_aproximadas": [
+    "chuva_pedras"
+   ]
+  },
+  "pedra_vulcanica": {
+   "arquivo": "pedra_vulcanica.png",
+   "normal": "pedra_vulcanica_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    10,
+    10
+   ],
+   "armas_sugeridas": [
+    "pedras_vulcanicas"
+   ],
+   "armas_aproximadas": []
+  },
+  "meteoro_flamejante": {
+   "arquivo": "meteoro_flamejante.png",
+   "normal": "meteoro_flamejante_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    28,
+    28
+   ],
+   "armas_sugeridas": [
+    "meteoro_flamejante"
+   ],
+   "armas_aproximadas": []
+  },
+  "cometa_gelo": {
+   "arquivo": "cometa_gelo.png",
+   "normal": "cometa_gelo_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    22,
+    22
+   ],
+   "armas_sugeridas": [
+    "cometa_gelado"
+   ],
+   "armas_aproximadas": []
+  },
+  "cometa_roxo": {
+   "arquivo": "cometa_roxo.png",
+   "normal": "cometa_roxo_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    40,
+    40
+   ],
+   "armas_sugeridas": [
+    "cometa_negro"
+   ],
+   "armas_aproximadas": []
+  },
+  "estrela_cadente": {
+   "arquivo": "estrela_cadente.png",
+   "normal": "estrela_cadente_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    24,
+    16
+   ],
+   "armas_sugeridas": [
+    "estrelas_cadentes"
+   ],
+   "armas_aproximadas": []
+  },
+  "espinho_verde": {
+   "arquivo": "espinho_verde.png",
+   "normal": "espinho_verde_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    6,
+    14
+   ],
+   "armas_sugeridas": [
+    "chuva_espinhos"
+   ],
+   "armas_aproximadas": []
+  },
+  "estilhaco_azul": {
+   "arquivo": "estilhaco_azul.png",
+   "normal": "estilhaco_azul_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    30,
+    30
+   ],
+   "armas_sugeridas": [],
+   "armas_aproximadas": [
+    "raio_meteorico"
+   ],
+   "obs": "estilhaco azul com faiscas: so aproxima o meteoro eletrico"
+  },
+  "lobo_fantasma": {
+   "arquivo": "lobo_fantasma.png",
+   "normal": "lobo_fantasma_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    36,
+    28
+   ],
+   "armas_sugeridas": [
+    "lobo_espirito"
+   ],
+   "armas_aproximadas": []
+  },
+  "raposa_de_fogo": {
+   "arquivo": "raposa_de_fogo.png",
+   "normal": "raposa_de_fogo_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    28,
+    18
+   ],
+   "armas_sugeridas": [
+    "espirito_raposa"
+   ],
+   "armas_aproximadas": []
+  },
+  "guardiao_de_pedra": {
+   "arquivo": "guardiao_de_pedra.png",
+   "normal": "guardiao_de_pedra_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    44,
+    52
+   ],
+   "armas_sugeridas": [
+    "guardiao_pedra"
+   ],
+   "armas_aproximadas": []
+  },
+  "fantasma_encapuzado": {
+   "arquivo": "fantasma_encapuzado.png",
+   "normal": "fantasma_encapuzado_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    24,
+    34
+   ],
+   "armas_sugeridas": [
+    "fantasma_mata"
+   ],
+   "armas_aproximadas": []
+  },
+  "serpente_de_brasa": {
+   "arquivo": "serpente_de_brasa.png",
+   "normal": "serpente_de_brasa_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    40,
+    22
+   ],
+   "armas_sugeridas": [
+    "serpente_ardente"
+   ],
+   "armas_aproximadas": []
+  },
+  "urso_espiritual": {
+   "arquivo": "urso_espiritual.png",
+   "normal": "urso_espiritual_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    52,
+    40
+   ],
+   "armas_sugeridas": [
+    "espirito_urso"
+   ],
+   "armas_aproximadas": []
+  },
+  "golem_de_barro": {
+   "arquivo": "golem_de_barro.png",
+   "normal": "golem_de_barro_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    46,
+    54
+   ],
+   "armas_sugeridas": [
+    "golem_barro"
+   ],
+   "armas_aproximadas": []
+  },
+  "dragao_vermelho": {
+   "arquivo": "dragao_vermelho.png",
+   "normal": "dragao_vermelho_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    32,
+    26
+   ],
+   "armas_sugeridas": [
+    "dragao_filhote"
+   ],
+   "armas_aproximadas": []
+  },
+  "esqueleto_guerreiro": {
+   "arquivo": "esqueleto_guerreiro.png",
+   "normal": "esqueleto_guerreiro_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    30,
+    44
+   ],
+   "armas_sugeridas": [
+    "esqueleto_guerreiro"
+   ],
+   "armas_aproximadas": []
+  },
+  "nuvem_veneno": {
+   "arquivo": "nuvem_veneno.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    100,
+    64
+   ],
+   "armas_sugeridas": [
+    "nuvem_veneno"
+   ],
+   "armas_aproximadas": []
+  },
+  "nevoa_gelada": {
+   "arquivo": "nevoa_gelada.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    120,
+    74
+   ],
+   "armas_sugeridas": [
+    "nevoeiro_gelado"
+   ],
+   "armas_aproximadas": []
+  },
+  "nuvem_cinzas": {
+   "arquivo": "nuvem_cinzas.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    160,
+    104
+   ],
+   "armas_sugeridas": [
+    "cinzas_vulcanicas"
+   ],
+   "armas_aproximadas": []
+  },
+  "nuvem_esporos": {
+   "arquivo": "nuvem_esporos.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    120,
+    77
+   ],
+   "armas_sugeridas": [
+    "nuvem_espora"
+   ],
+   "armas_aproximadas": []
+  },
+  "nevoa_fantasmal": {
+   "arquivo": "nevoa_fantasmal.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    100,
+    68
+   ],
+   "armas_sugeridas": [],
+   "armas_aproximadas": [
+    "nevoa_espectral"
+   ],
+   "obs": "roxa com rostos; a spec pede branco-azulada"
+  },
+  "nuvem_sangue": {
+   "arquivo": "nuvem_sangue.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    70,
+    50
+   ],
+   "armas_sugeridas": [
+    "cortina_sangue"
+   ],
+   "armas_aproximadas": []
+  },
+  "anel_fogo": {
+   "arquivo": "anel_fogo.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    87
+   ],
+   "armas_sugeridas": [],
+   "armas_aproximadas": [
+    "grito_guerra"
+   ],
+   "obs": "anel de chama: tambem serve a aura_fogo (arma existente, fora das 45)"
+  },
+  "anel_dourado": {
+   "arquivo": "anel_dourado.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    89
+   ],
+   "armas_sugeridas": [
+    "pulso_sagrado"
+   ],
+   "armas_aproximadas": []
+  },
+  "anel_onda_branca": {
+   "arquivo": "anel_onda_branca.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    84
+   ],
+   "armas_sugeridas": [
+    "onda_choque"
+   ],
+   "armas_aproximadas": []
+  },
+  "anel_espinhos_verdes": {
+   "arquivo": "anel_espinhos_verdes.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    86
+   ],
+   "armas_sugeridas": [
+    "anel_espinhos"
+   ],
+   "armas_aproximadas": []
+  },
+  "anel_lunar": {
+   "arquivo": "anel_lunar.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    89
+   ],
+   "armas_sugeridas": [
+    "anel_luar"
+   ],
+   "armas_aproximadas": []
+  },
+  "anel_vento": {
+   "arquivo": "anel_vento.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    95
+   ],
+   "armas_sugeridas": [],
+   "armas_aproximadas": [
+    "rajada_vento"
+   ],
+   "obs": "espiral de vento, nao anel"
+  }
+ }
+}

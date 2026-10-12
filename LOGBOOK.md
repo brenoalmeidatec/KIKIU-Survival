@@ -1302,3 +1302,12 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude do Alisson (PC) · sprites das armas da v2 (recorte das folhas do GPT)
+- **Feito:** recortei as três folhas de arte própria do Alisson (`jogos/hordas/prototipos/cara_nova/objetos/fonte_armas_*.webp`) com a ferramenta de enfeites, que ganhou o modo `python gerar_objetos.py armas`. Saíram 16 projéteis e meteoros, 9 aliados (com normal map) e 12 efeitos de área (fundo preto, aditivo, sem normal). Estão em `jogos/hordas/projeto/assets/v2/armas/`, com `indice.json` (campo `armas_sugeridas`) e a prévia em `jogos/hordas/prints/v2_armas_sprites.png`. O modo padrão (enfeites) continua gerando o mesmo arquivo.
+- **Cobertura das 45 armas do #192:** 33 com sprite adequado, 6 com sprite provisório, 6 sem sprite. A lista e o prompt da 4ª folha estão no corpo do PR.
+- **Pendente:** ligar no código (espera o #192 entrar na `main`); 4ª folha no GPT; olhar em jogo os projéteis finos (flecha 12x3, dardo 8x3) e o contraste da shuriken preta e da flecha roxa sobre piso escuro.
+- **Próximo:** quando o #192 sair, ligar os sprites às armas e gerar os `.import` junto.
+- **Recado:** a branch local `alisson/v2-sprites-armas` (sem commits próprios, atrás da `main`) está presa no worktree `wf_f38176cf-d74-1` de outra sessão. Este PR saiu de `alisson/v2-sprites-armas-2`, para não mexer no worktree dela.
+
+_Claude do Alisson (PC)_
