@@ -135,7 +135,7 @@
 		{
 			"id": "folego",
 			"nome": "Fôlego de caçador",
-			"desc": "Cada inimigo abatido devolve {v}% de uma carga de fôlego (o fôlego é gasto ao correr com Shift).",
+			"desc": "Cada inimigo abatido devolve {v}% de uma carga de fôlego. Correr gasta fôlego.",
 			"mod": "folego",
 			"valor": 12,
 			"max": 4,
