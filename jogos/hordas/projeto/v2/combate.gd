@@ -6,7 +6,7 @@ extends RefCounted
 ##   passo_tempo(dt_real) -> dt do mundo (0 no hit-stop e na pausa; fração na câmera lenta)
 ##   atualizar(dt_mundo)  -> contato, separação dos monstros, orbes, combo, diretor (tempo do mundo)
 ##   efeitos(dt_real)     -> partículas, números, cortes, luzes (continuam durante o hit-stop)
-## O herói chama golpe_comecou/golpear/esquiva_comecou/heroi_apanhou/heroi_morreu; os orbes chamam coletar. A ruptura do botão direito
+## O herói chama golpe_comecou/golpear/esquiva_comecou/heroi_apanhou/heroi_morreu; os orbes chamam coletar. A ruptura (tecla E)
 ## (v2/ruptura.gd) é um módulo daqui (`ruptura`): o contragolpe dela entra em golpe_comecou e golpear.
 
 const Efeitos := preload("res://v2/efeitos.gd")
@@ -22,6 +22,7 @@ const Elites := preload("res://v2/elites.gd")
 const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
 const Ruptura := preload("res://v2/ruptura.gd")
+const Escudo := preload("res://v2/escudo.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
@@ -46,7 +47,8 @@ var avisos  # ataques anunciados no chão
 var elites
 var baus
 var chefes
-var ruptura  # a habilidade do botão direito (v2/ruptura.gd)
+var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
+var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
 var fim_emitido := false  # partida_terminou já saiu
 var venceu := false
 
@@ -105,6 +107,8 @@ func montar(m) -> void:
 	avisos.montar(self, m.glow)
 	ruptura = Ruptura.new()
 	ruptura.montar(self, m.glow)
+	escudo = Escudo.new()
+	escudo.montar(self, m.glow)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
@@ -293,7 +297,7 @@ func _contato(h) -> void:
 		var dy: float = m.pos.y - hp.y
 		if dx * dx + dy * dy > lim * lim:
 			continue
-		if h.levar_dano(m.dano, m.pos):
+		if h.levar_dano(m.dano, m.pos, m):
 			m.recarga = float(cfg.contato.recarga)
 			return  # um golpe por vez: o resto espera a invencibilidade passar
 
@@ -302,6 +306,7 @@ func _contato(h) -> void:
 func efeitos(dt: float) -> void:
 	fx.atualizar(dt)
 	ruptura.efeitos(dt)
+	escudo.efeitos(dt)
 	telas.atualizar(dt)
 
 
@@ -704,6 +709,7 @@ func limpar_partida() -> void:
 	armas.limpar()
 	avisos.limpar()
 	ruptura.limpar()
+	escudo.limpar()
 	baus.limpar()
 	elites.zerar()
 	chefes.zerar()
@@ -732,7 +738,7 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, avisos, ruptura, elites, baus, chefes]:
+	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, avisos, ruptura, escudo, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -747,6 +753,7 @@ func liberar() -> void:
 	armas = null
 	avisos = null
 	ruptura = null
+	escudo = null
 	elites = null
 	baus = null
 	chefes = null

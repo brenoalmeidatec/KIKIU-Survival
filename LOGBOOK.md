@@ -1310,3 +1310,12 @@ _Claude do Alisson (notebook)_
 - **Pendente:** ao mesclar depois do #190 (card SUA BUILD) há conflito de texto em `combate.gd` e `LEIA-ME.md`; resolver e rodar `v2_status`, `v2_combate` e `v2_ruptura`.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 — v2: esquema Overwatch nos botões (PR #201)
+- **Decisão do Alisson:** botão direito = tiro SECUNDÁRIO definido por herói (hoje: ESCUDO), **E** (LB) = habilidade (a Ruptura saiu do botão direito), **Q** (RB) = ultimate (reservado: só a ação `ultimate` e um slot vazio no HUD, sem mecânica).
+- **Escudo** (`v2/escudo.gd`, dados em `dados/v2_secundario.json`, com `_ajuda`): segurar ergue um arco de 120° na direção da mira que barra o dano vindo da frente (contato, avisos no chão e ataques do chefe, tudo por `Heroi.levar_dano(valor, de, quem)`, que agora devolve true também quando o golpe é barrado). Anda a 60%, não corre nem golpeia, gasta 1,2 de fôlego por segundo (o mesmo da corrida; zerar deixa cansado e o escudo cai). Bloqueio perfeito (primeiros 0,15 s): sem gasto, empurra e atordoa 0,7 s quem bateu. Qual secundário cada herói tem é dado (`v2_secundario.json > padrao` e `herois`): a branch `alisson/v2-herois` só mapeia a chave do herói para outro id quando o módulo dele existir.
+- **Testes:** `v2_escudo` novo (`falhas=0`); `v2_ruptura` adaptado para E/LB; `v2_combate`, `v2_esc`, `v2_hud` e `v2_status` ok. Merge da main (#190 card SUA BUILD e #199) resolvido em `combate.gd` e `LEIA-ME.md`.
+- **O que NÃO foi conferido:** o jogo na janela real: a legibilidade do arco azul, o peso do bloqueio perfeito (hit-stop e tremor), o volume dos sons reaproveitados, o LT/LB com controle de verdade, e se segurar o direito com o mouse parado mira para onde se espera.
+- **Pendente:** o painel de status (`status.gd`) ainda não mostra o escudo (`escudo.resumo()` está pronto); o ultimate (Q) não tem mecânica.
+
+_Claude do Alisson (notebook)_

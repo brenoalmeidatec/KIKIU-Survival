@@ -2,7 +2,7 @@ extends RefCounted
 ## As cartas da v2 (leva 3): montagem de build. Sorteia cartas com RARIDADE (comum, raro, épico, lendário; a chance das altas sobe com o
 ## nível), aplica melhorias de stat, golpes secundários automáticos (v2/armas.gd), modificadores da katana e as EVOLUÇÕES (duas peças viram
 ## uma versão evoluída). Também guarda os banidos e os usos de rerrolar/banir. Tudo vem de dados/v2_cartas.json (veja o `_ajuda` de lá).
-## As 5 melhorias da RUPTURA (botão direito) vêm de dados/v2_ruptura.json > cartas, entram aqui com cat "rb" e sorteiam, evoluem de raridade e
+## As 5 melhorias da RUPTURA (tecla E) vêm de dados/v2_ruptura.json > cartas, entram aqui com cat "rb" e sorteiam, evoluem de raridade e
 ## aparecem no resumo como as outras (o ramo "rb" de aplicar soma o valor e avisa combate.ruptura.definir).
 ##
 ## Uma carta é um Dictionary: {id, icone (nome do PNG em assets/gerado/), nome, desc (já com o valor), cat ("stat", "golpe" ou "mod"), rar (0 a 3),
@@ -39,7 +39,7 @@ func montar(c) -> void:
 	for d in cfg.modificadores:
 		_def[d.id] = d
 		_cat[d.id] = "mod"
-	for d in Dados.json("v2_ruptura").get("cartas", []):  # a ruptura do botão direito (v2/ruptura.gd)
+	for d in Dados.json("v2_ruptura").get("cartas", []):  # a ruptura da tecla E (v2/ruptura.gd)
 		_def[d.id] = d
 		_cat[d.id] = "rb"
 	rng.randomize()

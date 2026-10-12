@@ -1,5 +1,5 @@
 extends RefCounted
-## A RUPTURA da v2 (botão direito do mouse ou gatilho esquerdo): segura para carregar, solta para rachar o chão em 360 graus em volta do herói.
+## A RUPTURA da v2 (tecla E ou LB do controle; o botão direito é o secundário, o escudo: v2/escudo.gd): segura para carregar, solta para rachar o chão em 360 graus em volta do herói.
 ## Dano, atordoamento e empurrão em tudo dentro da elipse do chão (a mesma dos avisos e das sombras), sem mira. É a resposta ao cerco: a
 ## katana cobre um arco na frente, a ruptura alcança a fila de trás. Depois de um disparo que acertou, a katana causa mais dano por um instante
 ## (contragolpe): a ruptura abre, o combo de 3 fecha.
@@ -552,7 +552,7 @@ func resumo() -> Dictionary:
 func linha() -> String:
 	var r := resumo()
 	return (
-		"Ruptura (botão direito): dano %s a %s | raio %s a %s px | recarga %s s | atordoa %s a %s s | contragolpe +%s%% por %s s | eco %s%%"
+		"Ruptura (E): dano %s a %s | raio %s a %s px | recarga %s s | atordoa %s a %s s | contragolpe +%s%% por %s s | eco %s%%"
 		% [
 			_fmt(r.dano_min),
 			_fmt(r.dano_max),

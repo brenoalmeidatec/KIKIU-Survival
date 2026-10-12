@@ -12,10 +12,14 @@ extends "res://v2/ator.gd"
 ##    não corre nem esquiva até recuperar ~30%, e anda mais devagar. A recuperação começa depois de um atraso sem gastar e é mais rápida
 ##    parado. Atacar cancela a corrida. A câmera adianta um pouco na direção da corrida.
 ##  - VIDA: ao apanhar fica invencível um instante, piscando, e leva um empurrão.
-##  - RUPTURA (ação "ruptura", botão direito do mouse ou gatilho esquerdo; números em dados/v2_ruptura.json, disparo em v2/ruptura.gd): o APERTO
+##  - ESCUDO (ação "escudo", botão direito do mouse ou gatilho esquerdo; é o SECUNDÁRIO deste herói, definido em dados/v2_secundario.json; v2/escudo.gd):
+##    segurar ergue um escudo na frente (arco de ~120 graus na direção da mira) que bloqueia o dano vindo da frente (levar_dano). Anda a 60%, não
+##    corre nem golpeia e gasta o fôlego da corrida; o bloqueio nos primeiros ~0,15 s é PERFEITO (empurra e atordoa quem bateu, sem gasto).
+##  - RUPTURA (ação "ruptura", tecla E ou LB do controle; números em dados/v2_ruptura.json, disparo em v2/ruptura.gd): o APERTO
 ##    (evento) pede, a POSSE (polling) carrega. Estado.CARGA anda a 45%, não corre nem golpeia, NÃO é invencível e apanhar não cancela. Soltar
 ##    com carga mínima dispara em 360 graus (soltura perfeita na janela depois da carga cheia). Cancelam sem disparar e sem gastar recarga: a
 ##    esquiva, a pausa/escolha/baú/resultado (combate.jogo e pausado), a morte e o salto de relógio (ESC e perda de foco).
+##  - ULTIMATE (ação "ultimate", tecla Q ou RB): RESERVADO, ainda sem mecânica (só a ação de entrada e um slot vazio no HUD).
 ## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), e da
 ## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max.
 
@@ -54,6 +58,7 @@ var entrada_forcada: Variant = null  # testes, fotos e medição: um Vector2 aqu
 var ataque_forcado: Variant = null  # idem para o botão de atacar segurado (true/false); só vale com entrada_forcada
 var correr_forcado: Variant = null  # idem para o botão de correr segurado
 var ruptura_forcada: Variant = null  # idem para o botão da ruptura segurado
+var escudo_forcado: Variant = null  # idem para o botão do escudo (secundário) segurado
 var _soltar_ataque := false  # o botão de atacar que fechou uma tela (escolha, baú) já foi gasto: só volta a golpear depois de soltá-lo
 var avanco_camera := Vector2.ZERO  # para onde a câmera adianta ao correr (px, suavizado)
 var imortal := false  # medição e roteiros: ninguém tira vida
@@ -80,7 +85,12 @@ var esq_inv := 0.3
 var esq_dir := Vector2.RIGHT
 var esq_pedido := 0.0
 var esquivas := 0
-# ruptura (botão direito)
+# escudo (secundário, botão direito)
+var escudo_ativo := false  # o escudo está erguido (lido pelo desenho e pelo levar_dano)
+var escudo_t := 0.0  # s desde que ergueu (tempo do mundo): a janela do bloqueio perfeito
+var escudo_bloqueios := 0  # testes
+var escudo_perfeitos := 0  # testes
+# ruptura (tecla E)
 var rup_carga := 0.0  # fração da carga (0 a 1) lida pelo HUD e pelo desenho do anel
 var rup_carga_t := 0.0  # s de carga (tempo do mundo)
 var rup_recarga := 0.0  # s até poder carregar de novo
@@ -122,6 +132,8 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	folego = folego_max
 	cansado = false
 	correndo = false
+	escudo_ativo = false
+	escudo_t = 0.0
 	_atraso_t = 0.0
 	esq_dur = float(cfg.esquiva.tempo)
 	esq_inv = float(cfg.esquiva.invulneravel)
@@ -138,6 +150,10 @@ func resetar(p: Vector2) -> void:
 	xp = 0.0
 	nivel = 1
 	estado = Estado.LIVRE
+	escudo_ativo = false
+	escudo_t = 0.0
+	escudo_bloqueios = 0
+	escudo_perfeitos = 0
 	emp = Vector2.ZERO
 	invenc = 0.0
 	combo_t = 0.0
@@ -258,10 +274,15 @@ func ganhar_folego(x: float) -> void:
 		cansado = false
 
 
-## Levou `valor` de dano de algo em `de` (mundo). Devolve true se o dano entrou.
-func levar_dano(valor: float, de: Vector2) -> bool:
+## Levou `valor` de dano de algo em `de` (mundo); `quem` é o monstro que bateu (null: ataque de área). Devolve true se o golpe foi CONSUMIDO: o
+## dano entrou ou o escudo barrou (quem chama arma a recarga do golpe nos dois casos; o dano barrado não tira vida nem dá invencibilidade).
+func levar_dano(valor: float, de: Vector2, quem = null) -> bool:
 	if not vulneravel():
 		return false
+	var esc = mundo.combate.escudo
+	if escudo_ativo and esc != null and esc.cobre(self, de):
+		esc.bloquear(self, valor, de, quem)
+		return true
 	vida = maxf(0.0, vida - valor)
 	invenc = float(mundo.combate.cfg.heroi.invencivel)
 	var d := pos - de
@@ -273,6 +294,7 @@ func levar_dano(valor: float, de: Vector2) -> bool:
 	mundo.combate.heroi_apanhou(valor)
 	if vida <= 0.0:
 		cancelar_ruptura(false)
+		escudo_ativo = false
 		estado = Estado.MORTO
 		mundo.combate.heroi_morreu()
 	return true
@@ -333,6 +355,7 @@ func atualizar(dt: float) -> void:
 		emp = Vector2.ZERO
 	if estado != Estado.LIVRE:
 		correndo = false
+		_baixar_escudo()
 	var antes := pos
 	if desl != Vector2.ZERO:
 		mundo.mover(self, desl)
@@ -354,6 +377,9 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 	if rup_pedido_t > 0.0 and pode_ruptura() and _segurando_ruptura():  # a ruptura vem antes do golpe: segurar o clique e apertar o direito carrega
 		_iniciar_carga()
 		return Vector2.ZERO
+	if _quer_escudo():  # o escudo vem antes do golpe: segurar o direito e o clique esquerdo ergue o escudo, não golpeia
+		return _escudo(dt, v)
+	_baixar_escudo()
 	if (pedido_t > 0.0 or segurando) and pausa_t <= 0.0:  # o golpe tem prioridade sobre a corrida
 		_iniciar_golpe()
 		return Vector2.ZERO
@@ -377,6 +403,53 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 				_poeira_t = float(mundo.combate.cfg.corrida.poeira_cada)
 				mundo.combate.poeira(self)
 	return v * k * dt
+
+
+## O botão do escudo (secundário) está segurado e o herói pode erguer? Polling, como o atacar. Em modo forçado (testes) vale `escudo_forcado`.
+func _quer_escudo() -> bool:
+	var c = mundo.combate
+	if c.escudo == null or not c.escudo.ativo_para(str(chave)) or c.jogo != "jogando" or c.pausado or _pausa_aberta():
+		return false
+	var apertado: bool
+	if entrada_forcada != null:
+		apertado = escudo_forcado != null and bool(escudo_forcado)
+	else:
+		apertado = InputMap.has_action("escudo") and Input.is_action_pressed("escudo")
+	if not apertado or cansado:
+		return false
+	# erguer pede um mínimo de fôlego; já erguido segue até zerar (o _gastar deixa cansado e o escudo cai)
+	return escudo_ativo or folego >= float(c.escudo.cfg.folego_min)
+
+
+## Um quadro com o escudo erguido: anda devagar (mira manda para onde olha), gasta fôlego e não corre nem golpeia.
+func _escudo(dt: float, v: Vector2) -> Vector2:
+	var esc = mundo.combate.escudo
+	if not escudo_ativo:
+		escudo_ativo = true
+		escudo_t = 0.0
+		if fonte == Fonte.ANDA and entrada_forcada == null:
+			fonte = Fonte.MOUSE  # o escudo olha para a mira, não para onde anda
+		esc.ergueu(self)
+	else:
+		escudo_t += dt
+	pedido_t = 0.0  # um clique de golpe guardado não vaza para depois
+	_gastar(float(esc.cfg.gasto) * dt)
+	if cansado:  # o último fôlego acabou agora: o escudo cai na hora
+		_baixar_escudo()
+		return v * vel_andar() * float(mundo.combate.cfg.folego.lento_cansado) * dt
+	if v == Vector2.ZERO:
+		return Vector2.ZERO
+	return v * vel_andar() * float(esc.cfg.mov) * dt
+
+
+func _baixar_escudo() -> void:
+	if not escudo_ativo:
+		return
+	escudo_ativo = false
+	escudo_t = 0.0
+	var esc = mundo.combate.escudo
+	if esc != null:
+		esc.abaixou(self)
 
 
 func _quer_correr() -> bool:
@@ -524,7 +597,7 @@ func _esquiva(dt: float) -> Vector2:
 	return esq_dir * VEL * m_vel_mov * float(mundo.combate.cfg.esquiva.velocidade) * k * dt
 
 
-# ------------------------------------------------------------------ ruptura (botão direito)
+# ------------------------------------------------------------------ ruptura (tecla E)
 
 
 ## Pode começar a carga agora? Só com o jogo rolando (nada de escolha, baú, morte, vitória, resultado nem pausa), recarga zerada e livre

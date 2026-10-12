@@ -14,7 +14,7 @@ extends RefCounted
 ##                         ordem: aranhas grandes (escala 2) atrás e na frente do herói (ordem de desenho); cerco: a horda com 2 aranhas grandes
 ##                         depois de 3 s de perseguição, com o herói parado (os monstros cercam e não entram no corpo dele).
 ##   --roteiro=oclusao     (leva 4) herói atrás de uma árvore (1_arvore) e herói coberto por uma aranha grande na frente (2_aranha).
-##   --roteiro=ruptura     (botão direito) 24 monstros a caminho do herói parado, que carrega a ruptura. Fotos do viewport: 1_carga (meia carga:
+##   --roteiro=ruptura     (tecla E) 24 monstros a caminho do herói parado, que carrega a ruptura. Fotos do viewport: 1_carga (meia carga:
 ##                         anel fantasma no raio final e anel interno), 2_cheia_perfeita (anel piscando na janela perfeita), 3_disparo (0,10 s
 ##                         depois de soltar: onda, rachaduras, números), 4_depois (0,6 s: monstros empurrados e atordoados, katana alaranjada
 ##                         no contragolpe) e 5_slot (HUD com o slot em recarga). Usar com --fotos=PASTA --nome=prefixo.
@@ -546,7 +546,7 @@ func _r_ruptura() -> void:
 				m.vida_max = 99999.0
 			passo = 1
 			t_passo = 0.0
-		1:  # aperta e segura o botão direito com a horda ainda a caminho
+		1:  # aperta e segura a tecla E com a horda ainda a caminho
 			if t_passo > 0.3:
 				h.ruptura_forcada = true
 				h.ruptura()

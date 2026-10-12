@@ -1,6 +1,6 @@
 extends Node
-# Teste automático da RUPTURA, a habilidade do botão direito (v2/ruptura.gd, heroi.gd, combate.gd, cartas.gd, hud.gd, dados/v2_ruptura.json):
-# dados, ação de entrada (botão direito e gatilho esquerdo), carga que cresce, toque curto que cancela, disparo em 360 graus pela elipse do chão
+# Teste automático da RUPTURA, a habilidade da tecla E (LB no controle) (v2/ruptura.gd, heroi.gd, combate.gd, cartas.gd, hud.gd, dados/v2_ruptura.json):
+# dados, ação de entrada (tecla E e LB), carga que cresce, toque curto que cancela, disparo em 360 graus pela elipse do chão
 # (cheio, parcial, perfeito), apanhar sem cancelar, esquiva que cancela, pausa/escolha/baú/morte que cancelam e não deixam o clique vazar, salto de
 # relógio, recarga e buffer, golpe da katana (buffer, prioridade), chefe e elite, mortes em massa, contragolpe, as 5 cartas, os stats existentes,
 # crítico explosivo, limites de efeito, reinício, o slot do HUD e a medição do alívio do cerco (só imprime) e do tempo do disparo com 100 monstros.
@@ -101,17 +101,20 @@ func cor_corte() -> Color:
 	return (fx._cortes[i].material as ShaderMaterial).get_shader_parameter("cor")
 
 
-func evento_direito(apertado: bool) -> InputEventMouseButton:
-	var ev := InputEventMouseButton.new()
-	ev.button_index = MOUSE_BUTTON_RIGHT
+## A tecla da habilidade (E). O nome antigo ficou: a ruptura já esteve no botão direito, que agora é o escudo (testes/v2_escudo.gd).
+func evento_direito(apertado: bool) -> InputEventKey:
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_E
+	ev.physical_keycode = KEY_E
 	ev.pressed = apertado
 	return ev
 
 
-func evento_gatilho(valor: float) -> InputEventJoypadMotion:
-	var ev := InputEventJoypadMotion.new()
-	ev.axis = JOY_AXIS_TRIGGER_LEFT
-	ev.axis_value = valor
+## O LB do controle (valor >= 0,5 = apertado).
+func evento_gatilho(valor: float) -> InputEventJoypadButton:
+	var ev := InputEventJoypadButton.new()
+	ev.button_index = JOY_BUTTON_LEFT_SHOULDER
+	ev.pressed = valor >= 0.5
 	return ev
 
 
@@ -148,17 +151,19 @@ func _ready() -> void:
 	)
 	ok(w.combate != null and rp != null and rp.no != null, "o combate tem o módulo da ruptura")
 
-	# 2. entrada: a ação ruptura (botão direito e gatilho esquerdo); o resto continua
+	# 2. entrada: a ação ruptura (tecla E e LB); o botão direito é do escudo; o resto continua
 	ok(InputMap.has_action("ruptura"), "a ação ruptura existe")
 	var tem_direito := false
 	var tem_gatilho := false
 	for e in InputMap.action_get_events("ruptura"):
-		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_RIGHT:
+		if e is InputEventKey and e.physical_keycode == KEY_E:
 			tem_direito = true
-		if e is InputEventJoypadMotion and e.axis == JOY_AXIS_TRIGGER_LEFT:
+		if e is InputEventJoypadButton and e.button_index == JOY_BUTTON_LEFT_SHOULDER:
 			tem_gatilho = true
-	ok(tem_direito, "ruptura: botão direito do mouse")
-	ok(tem_gatilho, "ruptura: gatilho esquerdo do controle")
+		ok(not (e is InputEventMouseButton), "ruptura: nenhum botão do mouse (o direito é do escudo)")
+	ok(tem_direito, "ruptura: tecla E")
+	ok(tem_gatilho, "ruptura: LB do controle")
+	ok(InputMap.has_action("ultimate") and InputMap.has_action("escudo"), "as ações escudo e ultimate (reservada) existem")
 	var atacar_esquerdo := false
 	for e in InputMap.action_get_events("atacar"):
 		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
@@ -841,7 +846,7 @@ func _ready() -> void:
 	var linha: String = rp.linha()
 	ok(
 		linha.begins_with(
-			"Ruptura (botão direito): dano 10 a 22 | raio 56 a 96 px | recarga 2,6 s | atordoa 0,25 a 0,5 s | contragolpe +30% por 1,5 s | eco 0%"
+			"Ruptura (E): dano 10 a 22 | raio 56 a 96 px | recarga 2,6 s | atordoa 0,25 a 0,5 s | contragolpe +30% por 1,5 s | eco 0%"
 		),
 		"linha(): %s" % linha
 	)
@@ -886,10 +891,8 @@ func _ready() -> void:
 	passos(3)
 	ok(h.estado == Heroi.Estado.CARGA, "o gatilho esquerdo inicia a carga")
 	passos(25)
-	Input.parse_input_event(evento_gatilho(0.9))  # ainda apertado: mexer o gatilho não é um aperto novo
-	await get_tree().process_frame
 	passos(1)
-	ok(h.estado == Heroi.Estado.CARGA, "mexer o gatilho segurado não atrapalha a carga")
+	ok(h.estado == Heroi.Estado.CARGA, "o LB segurado mantém a carga")
 	Input.parse_input_event(evento_gatilho(0.0))
 	await get_tree().process_frame
 	passos(2)
@@ -897,10 +900,7 @@ func _ready() -> void:
 	var sons0: int = w.combate.audio.tocados
 	Input.parse_input_event(evento_gatilho(1.0))  # na recarga: negado uma vez só
 	await get_tree().process_frame
-	Input.parse_input_event(evento_gatilho(0.8))
-	await get_tree().process_frame
-	Input.parse_input_event(evento_gatilho(1.0))
-	await get_tree().process_frame
+	passos(3)
 	ok(
 		h.rup_nega_t > 0.0 and w.combate.audio.tocados == sons0 + 1,
 		"gatilho segurado na recarga: o 'negado' toca uma vez (%d sons)" % (w.combate.audio.tocados - sons0)
@@ -993,8 +993,6 @@ func _enviar(e: InputEvent) -> void:
 
 func _direito(apertado: bool) -> void:
 	var e := evento_direito(apertado)
-	e.position = _mouse_teste()
-	e.global_position = e.position
 	_enviar(e)
 
 
@@ -1054,7 +1052,6 @@ func _janela() -> void:
 	_tecla(KEY_ESCAPE)
 	ok(pausa.aberto, "b) o ESC abre a pausa (sem carga)")
 	_direito(true)
-	ok(pausa._apertos.has(MOUSE_BUTTON_RIGHT), "b) com o menu aberto o aperto do botão direito é do menu (a função dele continua)")
 	ok(h.rup_pedido_t == 0.0 and h.estado == Heroi.Estado.LIVRE, "b) e o herói não recebe o aperto")
 	_tecla(KEY_ESCAPE)  # fecha com o botão direito ainda segurado
 	ok(not pausa.aberto and not get_tree().paused, "b) o ESC fecha a pausa")
@@ -1090,11 +1087,12 @@ func _janela() -> void:
 	ok(h.rup_pedido_t == 0.0 and h.estado == Heroi.Estado.LIVRE and tl.escolha_aberta, "c) na trava o clique direito é descartado")
 	passos(4)
 	ok(h.estado == Heroi.Estado.LIVRE and h.rup_carga_t == 0.0, "c) na trava o botão segurado não acumula carga")
-	tl.espera_escolha = 0.0  # a trava passou: o clique direito continua sem escolher nem rerrolar (só o esquerdo age)
+	tl.espera_escolha = 0.0  # a trava passou: o E é a tecla de confirmar da escolha (telas.gd) e passa a escolher
 	_direito(false)
 	_direito(true)
-	ok(tl.escolha_aberta and h.rup_pedido_t == 0.0, "c) depois da trava o clique direito não escolhe carta nem vaza")
-	w.combate.progresso.escolher(0)
+	ok(h.rup_pedido_t == 0.0, "c) depois da trava o E confirma a carta (como sempre) e não vaza para a ruptura")
+	if tl.escolha_aberta:
+		w.combate.progresso.escolher(0)
 	passos(8)
 	ok(h.estado == Heroi.Estado.LIVRE and h.rup_disparos == 0 and h.rup_carga_t == 0.0, "c) o botão segurado quando a escolha fecha não recomeça a carga")
 	_direito(false)

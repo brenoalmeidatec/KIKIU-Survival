@@ -7,7 +7,7 @@ extends CanvasLayer
 ## xp, xp_proximo, nivel, folego, folego_max, cansado (bool, padrão false: a barra de fôlego pisca); em mundo, abates, combo,
 ## tempo_partida (segundos), monstros_vivos. Sinais do mundo, cada um ligado só se o mundo tiver: nivel_subiu(nivel),
 ## onda_forte(numero), elite_apareceu(nome), chefe_apareceu(nome, vida_max), chefe_vida(vida), evolucao(nome), anuncio(texto, cor).
-## Slot da ruptura (botão direito) logo abaixo da barra de fôlego, desenhado por código (sem PNG): lê em mundo.heroi, com padrão, rup_carga (0 a 1),
+## Slot da ruptura (tecla E) logo abaixo da barra de fôlego, desenhado por código (sem PNG): lê em mundo.heroi, com padrão, rup_carga (0 a 1),
 ## rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max. Herói sem esses campos (mundo falso dos testes): o slot some.
 ## Uso no mundo (uma linha no _ready):
 ##   sv.add_child(preload("res://v2/hud.gd").criar(self))
@@ -81,6 +81,7 @@ var _chefe_fantasma := 1.0
 var _chefe_espera := 0.0
 # slot da ruptura: o que foi desenhado por último (só redesenha quando muda)
 var _rb: Control = null
+var _ult: Control = null  # o slot do ULTIMATE (tecla Q): reservado, vazio, sem mecânica ainda
 var _rb_chave := ""
 var _rb_barra := 0  # px da barra de carga (0 a 20)
 var _rb_cortina := 0  # px da cortina da recarga (0 a 20)
@@ -228,6 +229,15 @@ func _criar_slot_ruptura() -> void:
 	_rb.visible = false
 	_rb.draw.connect(_desenhar_slot)
 	$Raiz.add_child(_rb)
+	_ult = Control.new()
+	_ult.name = "SlotUltimate"
+	_ult.position = RB_POS + Vector2(RB_TAM + 4, 0)
+	_ult.size = Vector2(RB_TAM, RB_TAM)
+	_ult.light_mask = 0
+	_ult.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ult.visible = false
+	_ult.draw.connect(_desenhar_ultimate)
+	$Raiz.add_child(_ult)
 
 
 ## Um quadro do slot: lê o herói, anima (pop, tremida) e pede redesenho só se algo mudou. Sem os campos da ruptura no herói, esconde.
@@ -237,6 +247,8 @@ func _ruptura(dt: float, h) -> void:
 	var tem: bool = h != null and _campo(h, "rup_carga") != null
 	if _rb.visible != tem:
 		_rb.visible = tem
+		_ult.visible = tem
+		_ult.queue_redraw()
 	if not tem:
 		return
 	var f := clampf(_num(h, "rup_carga", 0.0), 0.0, 1.0)
@@ -275,12 +287,12 @@ func _desenhar_slot() -> void:
 	elif _rb_perf:
 		borda = Color.WHITE
 	_moldura(Rect2(0, 0, s, s), borda)
-	# o mouse (9x11): corpo, divisória e o botão direito preenchido
-	var corpo := Color(0.7, 0.68, 0.62) if _rb_pronta else Color(0.38, 0.37, 0.35)
-	_moldura(Rect2(5, 5, 9, 11), corpo, true)  # cantos cortados: o mouse
-	_rb.draw_rect(Rect2(6, 9, 7, 1), corpo)
-	_rb.draw_rect(Rect2(9, 6, 1, 3), corpo)
-	_rb.draw_rect(Rect2(10, 6, 3, 3), RB_LARANJA if _rb_pronta else Color(0.22, 0.21, 0.2))
+	# a tecla da habilidade: a letra E (7x9 px)
+	var tecla := RB_LARANJA if _rb_pronta else Color(0.38, 0.37, 0.35)
+	_rb.draw_rect(Rect2(7, 5, 2, 9), tecla)
+	_rb.draw_rect(Rect2(9, 5, 5, 2), tecla)
+	_rb.draw_rect(Rect2(9, 8, 4, 2), tecla)
+	_rb.draw_rect(Rect2(9, 12, 5, 2), tecla)
 	# recarga: cortina escura do topo para baixo, a fração que falta
 	if _rb_cortina > 0:
 		_rb.draw_rect(Rect2(1, 1, s - 2.0, float(_rb_cortina)), Color(0.0, 0.0, 0.0, 0.7))
@@ -295,6 +307,22 @@ func _desenhar_slot() -> void:
 	# contragolpe aberto: faísca laranja de 1 px na borda de cima
 	if _rb_contra > 0:
 		_rb.draw_rect(Rect2(1, 0, float(_rb_contra), 1), Color(1.0, 0.7, 0.3))
+
+
+## O slot do ultimate (Q): moldura apagada e a letra Q, sem barra nem recarga (a mecânica ainda não existe).
+func _desenhar_ultimate() -> void:
+	var s := float(RB_TAM)
+	var apagado := Color(0.3, 0.29, 0.32)
+	_ult.draw_rect(Rect2(0, 0, s, s), Color(0.13, 0.12, 0.16, 0.6))
+	_ult.draw_rect(Rect2(0, 0, s, 1), apagado)
+	_ult.draw_rect(Rect2(0, s - 1, s, 1), apagado)
+	_ult.draw_rect(Rect2(0, 1, 1, s - 2), apagado)
+	_ult.draw_rect(Rect2(s - 1, 1, 1, s - 2), apagado)
+	_ult.draw_rect(Rect2(6, 5, 8, 2), apagado)  # o Q: aro de 8x8 com o rabo
+	_ult.draw_rect(Rect2(6, 12, 8, 2), apagado)
+	_ult.draw_rect(Rect2(6, 7, 2, 5), apagado)
+	_ult.draw_rect(Rect2(12, 7, 2, 5), apagado)
+	_ult.draw_rect(Rect2(11, 12, 4, 4), apagado)
 
 
 ## Contorno de 1 px em retângulos cheios (draw_rect sem preencher borra em coordenada inteira). `redondo` corta os quatro cantos.
