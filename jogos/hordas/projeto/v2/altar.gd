@@ -7,6 +7,7 @@ extends Control
 
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
+const Trilha := preload("res://v2/trilha.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const FUNDO := preload("res://assets/icone/entrada.png")
 const FLORESTA := "res://v2/mundo.tscn"
@@ -39,6 +40,7 @@ var _entrar: Button
 var _mapa: Button  # escolhe o mapa da próxima partida (Mapas.LISTA); o texto de ENTRAR acompanha
 var _mapa_id := Mapas.PADRAO
 var _ajustes: Button
+var trilha  # música de fundo do santuário (trilha.gd)
 
 
 class Cadeado:
@@ -67,6 +69,9 @@ func _ready() -> void:
 	var pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)  # ESC aqui abre só "Sair?"; o botão Ajustes abre o submenu (pausa.gd)
 	add_child(pausa)
 	_ajustes.pressed.connect(pausa.abrir_ajustes)
+	trilha = Trilha.new()
+	add_child(trilha)
+	trilha.tocar("santuario")
 	_atualizar()
 	_atualizar_mapa()
 	_entrar.grab_focus()
@@ -195,7 +200,7 @@ func _montar() -> void:
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
-	_entrar.position = Vector2(300, 482)
+	_entrar.position = Vector2(300, 478)
 	_entrar.size = Vector2(360, 40)
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
 	_entrar.add_theme_font_size_override("font_size", 37)
@@ -213,14 +218,14 @@ func _montar() -> void:
 	add_child(_mapa)
 	_ajustes = Button.new()  # ao lado de ENTRAR: abre o mesmo submenu Ajustes da pausa (ligado no _ready)
 	_ajustes.text = "AJUSTES"
-	_ajustes.position = Vector2(672, 482)
+	_ajustes.position = Vector2(672, 478)
 	_ajustes.size = Vector2(168, 40)
 	_ajustes.add_theme_font_override("font", Dados.fonte_titulo)
 	_ajustes.add_theme_font_size_override("font_size", 37)
 	_estilo_botao(_ajustes, 37)
 	_ajustes.add_theme_color_override("font_color", COR_OURO)
 	add_child(_ajustes)
-	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 526, LARG, 12)))
+	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:

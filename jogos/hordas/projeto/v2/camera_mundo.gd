@@ -46,7 +46,13 @@ func seguir(alvo: Vector2, dt: float) -> void:
 
 
 ## Tremor de câmera: `amp` px no começo, caindo até zero em `dur` s. Um tremor mais fraco não atropela um mais forte em andamento.
+## A opção "Tremor e clarões" (tremor_clarao, 0 a 100%) da aba Gráficos escala `amp`; em 0% a câmera não treme.
 func tremer(amp: float, dur := 0.16) -> void:
+	var forca = Config.g("tremor_clarao")
+	if forca != null:
+		amp *= clampf(float(forca) / 100.0, 0.0, 1.0)
+	if amp <= 0.0:
+		return
 	if amp >= tremor_amp * clampf(tremor_t / tremor_dur, 0.0, 1.0):
 		tremor_amp = amp
 		tremor_dur = maxf(dur, 0.01)

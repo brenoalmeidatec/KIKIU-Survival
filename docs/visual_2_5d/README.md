@@ -17,7 +17,7 @@ O jogo **continua 2D por dentro** (Godot 4.4.1, sprites gerados pelo nosso pipel
 
 ## Regras que valem já
 1. **A referência manda.** Na dúvida, compare com `docs/imagens/referencia_2_5d.webp`.
-2. **O pipeline continua o nosso:** heróis, monstros e cenários saem do Blender (`fonte_arte/modelos3d/`). Nada de pack pago, e nada de arte de terceiros no Git (regra da #132 e da #116).
+2. **O pipeline é o nosso, e arte livre ajuda:** heróis, monstros e cenários continuam saindo do Blender (`fonte_arte/modelos3d/`). **Nada de arte com direitos autorais** (sem licença de uso livre). Arte de terceiros de **livre uso** (CC0, domínio público, CC BY com crédito etc.) **pode e deve** entrar quando economiza esforço e combina com o nosso contexto (estilo, escala e luz do jogo): as condições e o registro obrigatório estão em [`docs/LICENCAS_ARTE.md`](../LICENCAS_ARTE.md). Pack pago só com o OK do Breno (regra revista em 2026-10-12; antes: #132 e #116).
 3. **Desempenho:** o perfil **Baixo** continua rodando no PC do trabalho do Breno (i5-3470, vídeo fraco). **Médio e Alto** levam os efeitos completos, inclusive a luz com relevo. A aba de Gráficos (#150) controla isso.
 4. **Legibilidade antes de beleza:** o herói, os objetivos e o portal sempre se destacam. Os monstros têm olhos acesos (vermelhos) para se lerem no escuro. Elite e chefe têm barra de vida (Marco 1).
 5. **Tudo orientado a dados** (`dados/*.json` com `_ajuda`), como o resto do jogo.

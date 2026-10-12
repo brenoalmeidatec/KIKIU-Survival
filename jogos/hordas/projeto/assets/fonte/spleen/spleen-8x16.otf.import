@@ -2,13 +2,13 @@
 
 importer="font_data_dynamic"
 type="FontFile"
-uid="uid://b265kx7j4dvlk"
-path="res://.godot/imported/PixelifySans.ttf-1c69e0f5b8d4fc2f19897177effc6ed8.fontdata"
+uid="uid://dgaeaknyo8su5"
+path="res://.godot/imported/spleen-8x16.otf-d02517b0b360bfdd2aa8e698ca60af3d.fontdata"
 
 [deps]
 
-source_file="res://assets/fonte/pixelify_sans/PixelifySans.ttf"
-dest_files=["res://.godot/imported/PixelifySans.ttf-1c69e0f5b8d4fc2f19897177effc6ed8.fontdata"]
+source_file="res://assets/fonte/spleen/spleen-8x16.otf"
+dest_files=["res://.godot/imported/spleen-8x16.otf-d02517b0b360bfdd2aa8e698ca60af3d.fontdata"]
 
 [params]
 
