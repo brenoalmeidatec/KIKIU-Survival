@@ -23,7 +23,10 @@ const Chefes := preload("res://v2/chefe.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
-const CEL := 20.0  # célula da grade de separação dos monstros
+const CEL := 32.0  # célula da grade de separação dos monstros
+const GRADE_N := 1024  # tamanho da tabela de hash da grade (potência de 2)
+const RAIO_GRANDE := 11.0  # acima disto o monstro (elite, chefe) fica na lista dos grandes, fora da grade
+const CONTATO_BASE := 13.0  # raio do herói (6) + do cão (7): o `contato.alcance` dos dados vale para o cão; os outros encostam pelo raio
 
 var mundo
 var cfg: Dictionary = {}
@@ -64,8 +67,11 @@ var anuncios := 0  # quantos anúncios saíram (testes)
 var ultimo_anuncio := ""
 var ferimentos := 0  # golpes secundários que feriram (testes)
 var us_armas := 0  # microssegundos gastos em armas.atualizar (medição)
-var _grade := {}
-var _usadas: Array = []
+var _cab := PackedInt32Array()  # grade de separação: primeira entrada de cada célula (hash)
+var _prox := PackedInt32Array()  # próximo monstro na mesma célula
+var _pos := PackedVector2Array()
+var _rad := PackedFloat32Array()
+var _grandes: Array[int] = []
 var _q := 0
 
 
@@ -182,70 +188,94 @@ func atualizar(dt: float) -> void:
 	orbes.atualizar(dt, h.pos + Vector2(0, -8), float(cfg.heroi.ima_raio) * h.m_ima)
 
 
-## Monstros colados se empurram (uma grade de 20 px; metade deles por quadro): a horda faz uma roda em volta do herói em vez de virar
-## uma pilha em cima dele. O resultado fica em `sep` (px/s) e entra no deslocamento do próprio monstro.
+## Monstros colados se empurram: a horda faz uma roda em volta do herói em vez de virar uma pilha em cima dele. Uma grade espacial de
+## CEL px (tabela de hash em vetores planos, sem Dictionary nem Array por célula) guarda os monstros pequenos; os grandes (elite, chefe)
+## ficam numa lista à parte que todos consultam, porque o alcance deles passa de uma célula. Metade dos monstros por quadro (o resultado
+## vale por dois quadros). O resultado fica em `sep` (px/s) e entra no deslocamento do próprio monstro. O herói é outro caso: o corpo dele
+## é sólido, e quem entra nele é empurrado para fora em `Monstro.atualizar` (`_corpo_do_heroi`).
 func _separar() -> void:
 	var ms: Array = mundo.monstros
 	var n := ms.size()
 	if n < 2:
 		return
-	for k in _usadas:
-		(_grade[k] as Array).clear()
-	_usadas.clear()
-	for m in ms:
-		var k := int(m.pos.x / CEL) * 4096 + int(m.pos.y / CEL)
-		var l = _grade.get(k)
-		if l == null:
-			l = []
-			_grade[k] = l
-		if l.is_empty():
-			_usadas.append(k)
-		l.append(m)
-	var i := _q & 1
-	while i < n:
+	if _cab.is_empty():
+		_cab.resize(GRADE_N)
+	_cab.fill(-1)
+	if _pos.size() < n:
+		_pos.resize(n + 64)
+		_rad.resize(n + 64)
+		_prox.resize(n + 64)
+	_grandes.clear()
+	for i in n:
 		var m = ms[i]
-		i += 2
+		var p: Vector2 = m.pos
+		var r: float = m.raio
+		_pos[i] = p
+		_rad[i] = r
+		if r > RAIO_GRANDE:
+			_grandes.append(i)
+			continue
+		var h := ((int(p.x / CEL) * 73856093) ^ (int(p.y / CEL) * 19349663)) & (GRADE_N - 1)
+		_prox[i] = _cab[h]
+		_cab[h] = i
+	var i0 := _q & 1
+	while i0 < n:
+		var m = ms[i0]
+		var k := i0
+		i0 += 2
 		if m.atordoa_t > 0.0:
 			m.sep = Vector2.ZERO
 			continue
-		var cx := int(m.pos.x / CEL)
-		var cy := int(m.pos.y / CEL)
+		var p: Vector2 = _pos[k]
+		var r: float = _rad[k]
 		var empurra := Vector2.ZERO
-		for dx in range(-1, 2):
-			for dy in range(-1, 2):
-				var l = _grade.get((cx + dx) * 4096 + cy + dy)
-				if l == null:
-					continue
-				for o in l:
-					if o == m:
-						continue
-					var d: Vector2 = m.pos - o.pos
-					var lim: float = (m.raio + o.raio) * 1.15
-					var d2 := d.length_squared()
-					if d2 >= lim * lim:
-						continue
-					if d2 < 0.01:
-						d = Vector2(randf() - 0.5, randf() - 0.5)
-						d2 = d.length_squared()
-					var dist := sqrt(d2)
-					empurra += d / dist * (lim - dist)
+		var cx := int(p.x / CEL)
+		var cy := int(p.y / CEL)
+		var alcance := 1 if r <= RAIO_GRANDE else 3  # os grandes olham mais longe na grade
+		for dx in range(-alcance, alcance + 1):
+			for dy in range(-alcance, alcance + 1):
+				var j: int = _cab[(((cx + dx) * 73856093) ^ ((cy + dy) * 19349663)) & (GRADE_N - 1)]
+				while j >= 0:
+					if j != k:
+						var d := p - _pos[j]
+						var lim := (r + _rad[j]) * 1.15
+						var d2 := d.length_squared()
+						if d2 < lim * lim:
+							if d2 < 0.01:
+								d = Vector2(randf() - 0.5, randf() - 0.5)
+								d2 = d.length_squared()
+							var dist := sqrt(d2)
+							empurra += d / dist * (lim - dist)
+					j = _prox[j]
+		for j in _grandes:
+			if j == k:
+				continue
+			var d := p - _pos[j]
+			var lim := (r + _rad[j]) * 1.15
+			var d2 := d.length_squared()
+			if d2 < lim * lim:
+				if d2 < 0.01:
+					d = Vector2(randf() - 0.5, randf() - 0.5)
+					d2 = d.length_squared()
+				var dist := sqrt(d2)
+				empurra += d / dist * (lim - dist)
 		m.sep = (empurra * 14.0).limit_length(46.0)
 
 
 func _contato(h) -> void:
 	if not h.vulneravel():
 		return
-	var alc := float(cfg.contato.alcance)
-	var a2 := alc * alc
+	var folga := float(cfg.contato.alcance) - CONTATO_BASE  # o alcance de antes, para o cão, vira "encostou no corpo + folga"
+	var hp: Vector2 = h.pos
 	for m in mundo.monstros:
 		if m.recarga > 0.0 or m.atordoa_t > 0.0:
 			continue
-		var ext: float = m.raio - m._base_raio  # elite e chefe são grandes: encostam de mais longe
-		var dx: float = m.pos.x - h.pos.x
-		if absf(dx) > alc + ext:
+		var lim: float = h.raio + m.raio + folga  # encostou no corpo do herói (o monstro grande encosta de mais longe)
+		var dx: float = m.pos.x - hp.x
+		if absf(dx) > lim:
 			continue
-		var dy: float = m.pos.y - h.pos.y
-		if dx * dx + dy * dy > (a2 if ext <= 0.0 else (alc + ext) * (alc + ext)):
+		var dy: float = m.pos.y - hp.y
+		if dx * dx + dy * dy > lim * lim:
 			continue
 		if h.levar_dano(m.dano, m.pos):
 			m.recarga = float(cfg.contato.recarga)

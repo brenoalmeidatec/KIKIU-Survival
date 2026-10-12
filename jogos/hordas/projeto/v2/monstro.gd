@@ -10,7 +10,9 @@ const VEL_VAGA := 24.0
 const VEL_CACA := 54.0
 const RAIO_VER := 170.0  # começa a perseguir
 const RAIO_PERDER := 250.0  # desiste (maior que RAIO_VER: não fica trocando de estado na borda)
-const PARAR_A := 16.0  # chega perto do herói e para
+const FOLGA_CORPO := 1.5  # px entre o corpo do monstro e o do herói quando ele para para golpear
+const CERCO_ENTRA := 70.0  # a esta distância do herói o monstro deixa de ir ao centro e vai ao seu ponto do anel em volta dele
+const CERCO_SAI := 110.0
 const PASSO_ANIM := 0.16
 const AMORTECE_EMP := 9.0  # o empurrão perde força: emp *= exp(-9 dt)
 
@@ -62,6 +64,9 @@ var v_sx := 1.0  # escala do desenho (tamanho x "soco") e tremida de x do atordo
 var v_sy := 1.0
 var v_jx := 0.0
 var v_cor := Color.WHITE  # cor do desenho (tinta, fogo, lentidão), para o lote
+var heroi_raio_atual := 6.0  # o raio do corpo do herói no último quadro (para a IA)
+var ang_cerco := 0.0  # onde, no anel em volta do herói, este monstro quer ficar (rad): eles cercam em vez de empilhar
+var _no_cerco := false
 var n_col := 4  # colunas da folha (quadros de andar)
 var fw := 40.0  # tamanho do quadro e linha dos pés (px), e o canto da folha no atlas da horda: o que o lote precisa para desenhar
 var fh := 42.0
@@ -138,6 +143,7 @@ func reviver(p: Vector2) -> void:
 	if contorno != null:
 		contorno.visible = false
 	persegue = false
+	_no_cerco = false
 	casa = p
 	_alvo = p
 	_espera = rng.randf_range(0.0, 1.0)
@@ -158,7 +164,7 @@ func apanhar(dano_tirado: float, empurrao: Vector2, atordoamento: float) -> bool
 
 ## Um passo do monstro: temporizadores, IA, empurrões e o movimento (mundo.mover). O desenho não é daqui: o monstro em lote é desenhado
 ## por v2/horda.gd (que chama `visual` para quem está na tela) e o monstro com nós (elite, chefe) por `_visual_no`.
-func atualizar(dt: float, heroi_pos: Vector2) -> void:
+func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
 	if recarga > 0.0:
 		recarga -= dt
 	if queima_t > 0.0:
@@ -168,6 +174,7 @@ func atualizar(dt: float, heroi_pos: Vector2) -> void:
 	if _batida > 0.0:
 		_batida -= dt
 	var v := Vector2.ZERO
+	heroi_raio_atual = heroi_raio
 	if atordoa_t > 0.0:
 		atordoa_t -= dt
 	else:
@@ -182,6 +189,14 @@ func atualizar(dt: float, heroi_pos: Vector2) -> void:
 		desl += sep * dt
 	if desl != Vector2.ZERO:
 		mundo.mover(self, desl)
+	# o corpo do herói é sólido: quem entrou nele é empurrado para fora (suave: 60% da penetração por quadro; passa por mundo.mover, a colisão manda)
+	var dxh := pos.x - heroi_pos.x
+	var dyh := pos.y - heroi_pos.y
+	var lim := heroi_raio + raio
+	if dxh * dxh + dyh * dyh < lim * lim:
+		var dist := sqrt(dxh * dxh + dyh * dyh)
+		var fora := Vector2(dxh, dyh) / dist if dist > 0.01 else Vector2.from_angle(ang_cerco)
+		mundo.mover(self, fora * (lim - dist) * 0.6)
 	if v != Vector2.ZERO:
 		_anim += dt
 	vel_v = v
@@ -326,8 +341,19 @@ func _ia(dt: float, heroi_pos: Vector2) -> Vector2:
 		return vel_ia * (0.5 if lento_t > 0.0 else 1.0)
 	var k_vel := vel_mult * (0.45 if lento_t > 0.0 else 1.0)
 	if persegue:
-		if dist > PARAR_A:
+		if dist > CERCO_ENTRA:
+			if dist > CERCO_SAI:
+				_no_cerco = false
 			return d / dist * vel_caca * k_vel
+		# perto: cada um vai ao seu ponto do anel em volta do herói (o raio do corpo dele + o do monstro): o grande fica mais longe
+		if not _no_cerco:
+			_no_cerco = true
+			ang_cerco = (pos - heroi_pos).angle() + rng.randf_range(-0.7, 0.7)
+		var parar: float = heroi_raio_atual + raio + FOLGA_CORPO
+		var da := heroi_pos + Vector2.from_angle(ang_cerco) * parar - pos
+		var dd := da.length()
+		if dd > 2.0:
+			return da / dd * vel_caca * k_vel * minf(1.0, dd / 10.0)
 		return Vector2.ZERO
 	if _espera > 0.0:
 		_espera -= dt

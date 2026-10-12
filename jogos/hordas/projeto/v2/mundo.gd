@@ -481,8 +481,10 @@ func avancar(dt: float) -> void:
 			var p0 := Time.get_ticks_usec()
 			heroi.atualizar(dtm)
 			var p1 := Time.get_ticks_usec()
+			var hp: Vector2 = heroi.pos
+			var hr: float = heroi.raio
 			for mo in monstros:
-				mo.atualizar(dtm, heroi.pos)
+				mo.atualizar(dtm, hp, hr)
 			var p2 := Time.get_ticks_usec()
 			combate.atualizar(dtm)
 			var p3 := Time.get_ticks_usec()
@@ -662,7 +664,7 @@ func _medir() -> void:
 		var partes := []
 		for k in perfil:
 			partes.append("%s %.2f" % [k, int(perfil[k]) / 1000.0 / frames])
-		print("PERFIL ms/quadro: ", ", ".join(partes))
+		print("PERFIL ms/quadro: ", ", ".join(partes), " | horda: %d monstros em %d fatias" % [horda.n_lote, horda.n_fatias()])
 		print(
 			(
 				"RENDER ms/quadro: cpu mundo %.2f, gpu mundo %.2f, cpu janela %.2f, gpu janela %.2f; chamadas de desenho %.0f; objetos %d; fora do script %.2f"

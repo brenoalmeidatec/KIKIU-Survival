@@ -16,6 +16,7 @@ const Sombras := preload("res://v2/sombras.gd")
 const MARGEM_TELA := 96.0  # só monstro a até 96 px da tela é desenhado (e tem sombra)
 const CAP_INI := 16  # instâncias de cada MultiMesh no começo (dobra quando falta)
 const DECIMA := 3  # a conta da luz sobre a sombra de cada monstro roda a cada N quadros (o deslize suavizado esconde o degrau)
+const MARGEM_AABB := 80.0  # folga em volta das instâncias (o maior quadro de monstro, em escala de elite, cabe)
 const Y_MIN := 0.2  # espessura vertical mínima da sombra (a mesma de sombras.gd: luz bem ao lado não vira linha)
 
 ## Lê o recorte (x, y, largura, altura em px do atlas; largura negativa = espelhado) do custom data de cada instância e a cor (modulate)
@@ -80,6 +81,10 @@ class Lote:
 	var cap := 0
 	var chave := 0.0  # só nas fatias de sprite: onde ela fica na ordem de y do mundo
 	var visivel := false
+	var x0 := 1.0e9  # limites das instâncias deste quadro (px, no espaço do nó): é o retângulo que a luz 2D usa para saber quem a recebe
+	var y0 := 1.0e9
+	var x1 := -1.0e9
+	var y1 := -1.0e9
 
 	func montar(quad: Mesh, tex: Texture2D, mat: Material, pai: Node) -> void:
 		mm = MultiMesh.new()
@@ -104,9 +109,16 @@ class Lote:
 		mm.instance_count = cap
 		buf.resize(cap * 16)
 
-	func enviar() -> void:
+	func enviar(dy := 0.0) -> void:
 		mm.buffer = buf
 		mm.visible_instance_count = n
+		# retângulo apertado (e não "o mundo todo"): sem isso toda luz da tela entra no desenho da fatia inteira
+		if x1 >= x0:
+			mm.custom_aabb = AABB(Vector3(x0 - MARGEM_AABB, y0 - MARGEM_AABB - dy, -1.0), Vector3(x1 - x0 + 2.0 * MARGEM_AABB, y1 - y0 + 2.0 * MARGEM_AABB, 2.0))
+			x0 = 1.0e9
+			y0 = 1.0e9
+			x1 = -1.0e9
+			y1 = -1.0e9
 		if not visivel:
 			visivel = true
 			mmi.visible = true
@@ -267,7 +279,7 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		var pr: Vector2 = m.raiz.position
 		while sp < ns and _seps[sp] <= pr.y:
 			sp += 1
-		if sp != sp_ant:
+		if sp != sp_ant and not (f != null and str(mundo.args.get("dbg", "")) == "uma_fatia"):
 			sp_ant = sp
 			f = _fatia()
 			f.chave = pr.y + 0.5 if sp >= ns else (pr.y + _seps[sp]) * 0.5  # entre o último nó acima e o primeiro abaixo
@@ -299,6 +311,10 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		buf[o + 13] = cy
 		buf[o + 14] = fl
 		buf[o + 15] = h
+		f.x0 = minf(f.x0, pr.x)
+		f.x1 = maxf(f.x1, pr.x)
+		f.y0 = minf(f.y0, pr.y)
+		f.y1 = maxf(f.y1, pr.y)
 		# ---- olhos (aditivos, na camada glow: coordenadas do mundo)
 		if bo.n >= bo.cap:
 			bo.crescer()
@@ -362,13 +378,16 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		bf[bi + 7] = pr.y - 1.0 - 14.4 * k  # centrada em (0, -1)
 		bf[bi + 11] = b_alfa
 	# ---- manda tudo para o desenho
+	var dbg: String = str(mundo.args.get("dbg", ""))
 	for j in usadas:
+		if dbg == "sem_fatias":
+			break
 		var fa := fatias[j]
 		fa.mmi.position = Vector2(0.0, fa.chave)
-		fa.enviar()
+		fa.enviar(fa.chave)
 	for j in range(usadas, fatias.size()):
 		fatias[j].esconder()
-	if n_lote > 0:
+	if n_lote > 0 and dbg != "sem_olhos":
 		bo.enviar()
 		if modo != Sombras.NENHUMA:
 			bb.enviar()
@@ -397,6 +416,8 @@ func _fatia() -> Lote:
 		var l := Lote.new()
 		l.montar(_quad, atlas.tex, _mat_sprite, mundo.no_mundo)
 		l.mmi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		if str(mundo.args.get("dbg", "")) == "fatia_sem_luz":
+			l.mmi.light_mask = 0
 		fatias.append(l)
 	var f := fatias[usadas]
 	usadas += 1
