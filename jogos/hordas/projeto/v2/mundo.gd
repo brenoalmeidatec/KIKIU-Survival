@@ -37,6 +37,7 @@ const Depuracao := preload("res://v2/depuracao_colisao.gd")
 const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
 const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no santuário
+const Trilha := preload("res://v2/trilha.gd")  # a música de fundo da partida (faixa por momento, volume no bus Musica)
 const LARG := 960
 const ALT := 540
 const ORCAMENTO_LUZES := {"desligada": 6, "so_heroi": 0, "tudo": 0}  # máximo de luzes ligadas por "luz_relevo" (0 = sem limite); o perfil Baixo usa "desligada"
@@ -80,6 +81,7 @@ var combate
 var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
 var meta_res  # resultado com as almas (resultado_meta.gd); null no modo de teste
 var pausa  # menu de pausa (pausa.gd): pausa.aberto diz se está aberto (as telas leem aqui)
+var trilha  # música de fundo (trilha.gd); null nas medições e nas fotos, que ficam mudas
 var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, rolagem, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
@@ -148,6 +150,10 @@ func _ready() -> void:
 	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
 	sv.add_child(pausa)
+	if _modo == "livre":  # medir e fotografar ficam sem música
+		trilha = Trilha.new()
+		add_child(trilha)
+		trilha.ligar(self)
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
 		sv.add_child(meta_res)
@@ -573,6 +579,8 @@ func reiniciar() -> void:
 	Meta.aplicar(self)
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_popular_inicial()
+	if trilha != null:
+		trilha.tocar("partida")
 
 
 func get_modo() -> String:

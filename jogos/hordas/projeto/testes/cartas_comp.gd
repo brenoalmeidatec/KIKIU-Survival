@@ -17,6 +17,11 @@ func esperar(s: float) -> void:
 	await get_tree().create_timer(s, true, false, true).timeout
 
 
+## Volume do bus "Musica" em dB (o volume das Opções mora nele; o dos players é só o fade).
+func db_bus() -> float:
+	return AudioServer.get_bus_volume_db(AudioServer.get_bus_index(Som.BUS_MUSICA))
+
+
 ## Dono falso: só o que as armas pedem.
 class Dono:
 	extends Node2D
@@ -265,7 +270,8 @@ func _ready() -> void:
 	Som.musica("menu")
 	await esperar(0.2)
 	ok(Som._atual.playing and not Som.fade_estado().ativo, "primeira faixa entra direto, no volume das opções")
-	ok(absf(Som._atual.volume_db - linear_to_db(0.6)) < 0.5, "volume da faixa = opção (%.1f dB)" % Som._atual.volume_db)
+	ok(Som._atual.bus == Som.BUS_MUSICA and Som._saida.bus == Som.BUS_MUSICA, "as duas faixas tocam no bus Musica")
+	ok(absf(db_bus() - linear_to_db(0.6)) < 0.5 and absf(Som._atual.volume_db) < 0.5, "volume = opção, no bus (%.1f dB)" % db_bus())
 	var velho := Som._atual.stream
 	Som.musica("menu")
 	ok(Som._atual.stream == velho and not Som.fade_estado().ativo, "pedir a mesma faixa não reinicia nem faz fade")
@@ -285,7 +291,7 @@ func _ready() -> void:
 			break
 		var pn := db_to_linear(Som._atual.volume_db) if Som._atual.volume_db > -79.0 else 0.0
 		var pv := db_to_linear(Som._saida.volume_db) if Som._saida.playing and Som._saida.volume_db > -79.0 else 0.0
-		var pot := (pn * pn + pv * pv) / (0.6 * 0.6)
+		var pot := pn * pn + pv * pv  # o volume das Opções é do bus: aqui só o fade
 		pior_potencia = minf(pior_potencia, pot)
 		maior_potencia = maxf(maior_potencia, pot)
 		if pn > 0.05 and pv > 0.05:
@@ -296,10 +302,13 @@ func _ready() -> void:
 	ok(maior_potencia < 1.15, "sem estouro: a potência somada não passa do normal (máximo %.2f)" % maior_potencia)
 	await esperar(0.9)
 	ok(not Som.fade_estado().ativo and not Som._saida.playing and Som._atual.playing, "ao fim do fade só a nova toca")
-	ok(absf(Som._atual.volume_db - linear_to_db(0.6)) < 0.5, "a faixa nova termina no volume das opções (%.1f dB)" % Som._atual.volume_db)
+	ok(absf(Som._atual.volume_db) < 0.5 and absf(db_bus() - linear_to_db(0.6)) < 0.5, "a faixa nova termina no volume das opções (%.1f dB)" % db_bus())
 	Som.volume_musica = 0.3
 	Som.atualizar_volume()
-	ok(absf(Som._atual.volume_db - linear_to_db(0.3)) < 0.5, "mudar o volume nas opções acompanha na hora")
+	ok(absf(db_bus() - linear_to_db(0.3)) < 0.5, "mudar o volume nas opções acompanha na hora (bus)")
+	Som.volume_musica = 0.0
+	Som.atualizar_volume()
+	ok(AudioServer.is_bus_mute(AudioServer.get_bus_index(Som.BUS_MUSICA)), "volume 0 silencia o bus")
 	Som.volume_musica = 0.6
 	Som.atualizar_volume()
 	# troca no meio de outra troca: nunca fica mudo nem com 3 faixas
@@ -310,7 +319,7 @@ func _ready() -> void:
 	ok(Som._atual.playing and (Som._saida.playing or Som._g_atual >= 1.0), "troca no meio da troca continua tocando")
 	await esperar(2.0)
 	ok(
-		Som._atual.playing and not Som._saida.playing and absf(Som._atual.volume_db - linear_to_db(0.6)) < 0.5,
+		Som._atual.playing and not Som._saida.playing and absf(Som._atual.volume_db) < 0.5 and absf(db_bus() - linear_to_db(0.6)) < 0.5,
 		"depois de duas trocas seguidas só uma faixa toca, no volume certo"
 	)
 	Som.parar_musica()

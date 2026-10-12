@@ -7,6 +7,7 @@ extends Control
 
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
+const Trilha := preload("res://v2/trilha.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const FUNDO := preload("res://assets/icone/entrada.png")
 const FLORESTA := "res://v2/mundo.tscn"
@@ -39,6 +40,7 @@ var _entrar: Button
 var _mapa: Button  # escolhe o mapa da próxima partida (Mapas.LISTA); o texto de ENTRAR acompanha
 var _mapa_id := Mapas.PADRAO
 var _ajustes: Button
+var trilha  # música de fundo do santuário (trilha.gd)
 
 
 class Cadeado:
@@ -67,6 +69,9 @@ func _ready() -> void:
 	var pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)  # ESC aqui abre só "Sair?"; o botão Ajustes abre o submenu (pausa.gd)
 	add_child(pausa)
 	_ajustes.pressed.connect(pausa.abrir_ajustes)
+	trilha = Trilha.new()
+	add_child(trilha)
+	trilha.tocar("santuario")
 	_atualizar()
 	_atualizar_mapa()
 	_entrar.grab_focus()
