@@ -1077,14 +1077,17 @@ func _build_maxima() -> void:
 
 ## A build mais pesada que as cartas permitem sem evoluir: cada carta de stat no máximo de cópias e na raridade lendária (vida, dano e alcance
 ## enormes: os maiores números que o card vai mostrar), cada golpe no nível 2 e lendário, os modificadores em lendária (a onda e a estocada
-## só uma vez: duas cópias de cada virariam a Ventania).
+## só uma vez: duas cópias de cada virariam a Ventania). Só os 5 golpes do desenho: com os 50 golpes do PR #192 a coluna não cabe,
+## e o card não tem teto de golpes nem paginação (pendência: decidir o teto por build ou paginar o card).
 func _build_extrema() -> void:
 	var cs = w.combate.cartas
 	for d in cs.cfg.stats:
 		for i in int(d.max):
 			pegar(str(d.id), 3)
+	var golpes := ["aura_fogo", "laminas", "corvos", "raio", "runa"]  # os 5 do desenho do card (os mesmos de _build_maxima)
 	for d in cs.cfg.golpes:
-		pegar(str(d.id), 3)
+		if str(d.id) in golpes:
+			pegar(str(d.id), 3)
 	for par in [["onda", 1], ["fura", 1], ["explode", 1], ["folego", 4]]:
 		for i in int(par[1]):
 			pegar(str(par[0]), 3)
