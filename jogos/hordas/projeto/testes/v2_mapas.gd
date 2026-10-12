@@ -126,13 +126,18 @@ func _passagens_e_vista(id: String) -> void:
 		var rel: Dictionary = Passagens.relatorio(w.limite_andavel, w.heroi.pos, pontos, raio)
 		ok(rel.pontos_fora.is_empty(), "%s: toda zona de monstros tem caminho até o herói (raio %.0f): fora = %s" % [id, raio, str(rel.pontos_fora)])
 		ok(rel.bolsoes.is_empty(), "%s: sem ilhas livres fechadas (raio %.0f): %s" % [id, raio, str(rel.bolsoes)])
-		ok(float(rel.alcancadas) >= 0.97 * float(rel.livres), "%s: 97%% ou mais do chão livre se alcança (raio %.0f): %d de %d" % [id, raio, rel.alcancadas, rel.livres])
+		ok(
+			float(rel.alcancadas) >= 0.97 * float(rel.livres),
+			"%s: 97%% ou mais do chão livre se alcança (raio %.0f): %d de %d" % [id, raio, rel.alcancadas, rel.livres]
+		)
 		if id == "laboratorio":  # o laboratório é desenhado com corredores: nada de beco fino (a floresta tem os dela, de árvores e tocos)
 			ok(rel.becos <= 4, "%s: sem becos finos sem saída (raio %.0f): %d células" % [id, raio, rel.becos])
 	# os quatro cantos andáveis ligam entre si (o corredor das bordas não fecha)
 	var g: Dictionary = Passagens.grade(w.limite_andavel, Passagens.RAIO_HEROI)
 	var a0: Rect2 = w.limite_andavel
-	for canto in [a0.position + Vector2(60, 60), a0.position + Vector2(a0.size.x - 60, 60), a0.position + Vector2(60, a0.size.y - 60), a0.end - Vector2(60, 60)]:
+	for canto in [
+		a0.position + Vector2(60, 60), a0.position + Vector2(a0.size.x - 60, 60), a0.position + Vector2(60, a0.size.y - 60), a0.end - Vector2(60, 60)
+	]:
 		var vis: PackedByteArray = Passagens.alcancaveis(g, canto)
 		ok(Passagens.contar(vis) >= 0.97 * float(Passagens.contar(g.livre)), "%s: do canto %s se alcança quase todo o mapa" % [id, str(canto)])
 	# 2. objeto alto na frente do herói fica translúcido; baixo não; na frente dele volta
@@ -150,7 +155,10 @@ func _passagens_e_vista(id: String) -> void:
 		w.heroi.definir_pos(alto.pos + Vector2(0, -float(alto.alt) * 0.3))
 		for i in 90:
 			w.avancar(PASSO)
-		ok(w.copas.fuerza_da_copa(alto) > 0.97, "%s: herói atrás de %s: o objeto fica translúcido (força %.2f)" % [id, alto.chave, w.copas.fuerza_da_copa(alto)])
+		ok(
+			w.copas.fuerza_da_copa(alto) > 0.97,
+			"%s: herói atrás de %s: o objeto fica translúcido (força %.2f)" % [id, alto.chave, w.copas.fuerza_da_copa(alto)]
+		)
 		w.heroi.definir_pos(alto.pos + Vector2(0, 40))
 		for i in 90:
 			w.avancar(PASSO)
