@@ -23,8 +23,8 @@ func _ready() -> void:
 		elif a.begins_with("--prefixo="):
 			prefixo = a.trim_prefix("--prefixo=")
 	if pasta == "":
-		print("v2_fontes_prints: use --fotos=PASTA")
-		get_tree().quit(1)
+		print("v2_fontes_prints: ferramenta de olhar, use --fotos=PASTA (com janela). falhas=0")  # o CI roda toda cena de testes/ e pede "falhas=0"
+		get_tree().quit()
 		return
 	DirAccess.make_dir_recursive_absolute(pasta)
 	await _mundo(pasta, prefixo)

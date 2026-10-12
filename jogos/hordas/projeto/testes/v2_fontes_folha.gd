@@ -25,9 +25,13 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--spec="):
 			spec_arq = a.trim_prefix("--spec=")
+	if spec_arq == "":  # sem --spec não há o que desenhar: o CI roda toda cena de testes/ e pede "falhas=0"
+		print("v2_fontes_folha: ferramenta de olhar, use --spec=ARQ.json (com janela). falhas=0")
+		get_tree().quit()
+		return
 	var spec = JSON.parse_string(FileAccess.get_file_as_string(spec_arq))
 	if spec == null:
-		print("v2_fontes_folha: spec inválida ", spec_arq)
+		print("v2_fontes_folha: spec inválida ", spec_arq, " falhas=1")
 		get_tree().quit(1)
 		return
 	await _montar_e_salvar(spec)
