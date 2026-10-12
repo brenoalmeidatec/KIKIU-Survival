@@ -1,7 +1,10 @@
 extends Node
 ## Efeitos sonoros (com limite pra não virar barulho quando tem 500 vírus) e música.
+## A música toca no bus "Musica" (criado aqui, filho do Master): o volume das Opções mora no bus, e o fade entre faixas, nos
+## players. Os efeitos seguem no Master, direto.
 
 const VOZES := 12
+const BUS_MUSICA := &"Musica"
 var _players: Array[AudioStreamPlayer] = []
 var _atual := AudioStreamPlayer.new()  # a faixa que toca (ou que está entrando)
 var _saida := AudioStreamPlayer.new()  # a faixa que está saindo no crossfade
@@ -16,6 +19,9 @@ var volume_musica := 0.6
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_garantir_bus()
+	_atual.bus = BUS_MUSICA
+	_saida.bus = BUS_MUSICA
 	for i in VOZES:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
@@ -25,6 +31,17 @@ func _ready() -> void:
 	for f in DirAccess.get_files_at("res://assets/audio/efeitos"):
 		if f.ends_with(".wav.import") or f.ends_with(".wav"):
 			_stream("res://assets/audio/efeitos/" + f.trim_suffix(".import"))
+	atualizar_volume()
+
+
+## Cria o bus "Musica" (saída no Master) se o projeto ainda não tem um. Sem arquivo de layout: o código é a fonte única.
+func _garantir_bus() -> void:
+	if AudioServer.get_bus_index(BUS_MUSICA) != -1:
+		return
+	AudioServer.add_bus()
+	var i := AudioServer.bus_count - 1
+	AudioServer.set_bus_name(i, BUS_MUSICA)
+	AudioServer.set_bus_send(i, &"Master")
 
 
 ## intervalo = tempo mínimo entre dois sons iguais.
@@ -96,8 +113,14 @@ func parar_musica() -> void:
 	_g_saida = 0.0
 
 
-## Volume mudou nas Opções: a música que já está tocando acompanha na hora.
+## Volume mudou nas Opções (o slider Música): vai direto para o bus, e a faixa que já está tocando acompanha na hora.
+## Zero silencia o bus (mute) em vez de depender de -80 dB.
 func atualizar_volume() -> void:
+	var i := AudioServer.get_bus_index(BUS_MUSICA)
+	if i != -1:
+		var mudo := volume_musica <= 0.0001
+		AudioServer.set_bus_mute(i, mudo)
+		AudioServer.set_bus_volume_db(i, -80.0 if mudo else linear_to_db(minf(volume_musica, 1.0)))
 	_aplicar_ganhos()
 
 
@@ -123,9 +146,9 @@ func _aplicar_ganhos() -> void:
 	_saida.volume_db = _db(_g_saida)
 
 
-## Ganho 0..1 do fade (curva de potência igual: seno) vezes o volume das Opções, em dB (nunca -inf).
+## Ganho 0..1 do fade (curva de potência igual: seno) em dB (nunca -inf). O volume das Opções não entra aqui: é do bus.
 func _db(g: float) -> float:
-	var amp := sin(clampf(g, 0.0, 1.0) * PI * 0.5) * volume_musica
+	var amp := sin(clampf(g, 0.0, 1.0) * PI * 0.5)
 	return -80.0 if amp <= 0.0001 else linear_to_db(amp)
 
 
