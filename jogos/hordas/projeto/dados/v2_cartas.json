@@ -59,7 +59,7 @@
 			"icone": "icone_corvos",
 			"nome": "Corvos Famintos",
 			"curto": "Corvos",
-			"desc": "Corvos saem atrás dos inimigos mais próximos e os bicam aos poucos. É automático.",
+			"desc": "Corvos caçam o inimigo mais perto e bicam sozinhos.",
 			"tipo": "corvos",
 			"max": 5,
 			"peso": 1.3,
