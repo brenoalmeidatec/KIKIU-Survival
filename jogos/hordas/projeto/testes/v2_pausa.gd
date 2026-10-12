@@ -268,7 +268,7 @@ func _testes() -> void:
 	_tecla(KEY_ENTER)
 	ok(pausa._graficos.mensagem != "", "Detectar pela máquina dá um aviso (%s)" % pausa._graficos.mensagem)
 	_ir_para(pausa, "g:op:luz_relevo")
-	ok(str(pausa._itens_atuais[pausa.sel].rotulo).ends_with("*"), "uma opção que a v2 ainda não lê aparece marcada com *")
+	ok(str(pausa._itens_atuais[pausa.sel].valor).ends_with("(*)"), "uma opção que a v2 ainda não lê aparece marcada com (*) depois do valor")
 	_tecla(KEY_ESCAPE)  # ESC dentro de Gráficos volta a Ajustes (um nível)
 	ok(pausa.tela == "ajustes" and pausa.aberto, "ESC em Gráficos volta um nível: a Ajustes, sem fechar a pausa")
 
