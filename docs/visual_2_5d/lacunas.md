@@ -192,4 +192,4 @@ Cada fase abaixo vira uma issue. O critério de pronto usa um X proposto para ca
 4. Não contei quantos heróis e monstros existem em `dados/herois.json` e `dados/inimigos.json`. Isso muda o tamanho do V4.
 5. Câmera 3/4: o Breno quer um truque de 2D (achatar e desenhar em perspectiva) ou pseudo-3D de verdade? O custo e o risco são muito diferentes.
 6. Resolução base: manter 640x360 com mais densidade ou subir para 960x540?
-7. Fonte do HUD: qual fonte de alta resolução usar, com licença compatível com "nada de pack pago".
+7. Fonte do HUD: qual fonte de alta resolução usar, com licença livre (ver `docs/LICENCAS_ARTE.md`).
