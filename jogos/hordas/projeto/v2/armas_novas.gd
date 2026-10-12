@@ -99,10 +99,11 @@ func _disparar(a: Dictionary, h, perto: Array) -> void:
 	var alvo = _mais_perto(h.pos, float(st.alcance), perto)
 	if alvo == null:
 		return
-	var direcao: Vector2 = (alvo.pos - h.pos).normalized()
+	var saida: Vector2 = h.pos + Vector2(0, -14)  # o tiro sai do alto do herói, então a mira parte dali (senão a trajetória fica deslocada)
+	var direcao: Vector2 = (alvo.pos - saida).normalized()
 	var n := int(st.quantidade)
 	for k in n:
-		var it := _novo("projetil", a, h.pos + Vector2(0, -14), 1.6)
+		var it := _novo("projetil", a, saida, 1.6)
 		if it.is_empty():
 			return
 		var ang := (float(k) - (n - 1) * 0.5) * 0.14  # tiros em leque curto
