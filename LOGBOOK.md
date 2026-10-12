@@ -1190,3 +1190,16 @@ O gargalo é sombra mais atores em Sprite2D. O i5-3470 não foi medido.
 - o Alisson e o Breno jogarem e mandarem o fps (#153).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12: textos das armas da v2 e pendências da v2 2.5D
+
+**Feito (PR em rascunho):**
+- As descrições das cartas de golpe, modificador e evolução (`dados/v2_cartas.json`) agora dizem o que a arma faz, quem dispara (automático ou a katana), e a receita das evoluções (quais peças, em qual nível). Os números não mudaram.
+- Não foi mexido na v1 (`armas.json`), por causa da regra de pausa.
+
+**Pendente:**
+- Sprites das armas: não foram refeitos. Precisam de Blender ou de desenho pixel a pixel, e não dá para conferir sem o Godot aqui.
+- "Piras antigas": na v1 é a Pira Antiga (santuário de tomada, `dados/descobertas.json`). A v2 não tem pira. Ela tem braseiro e fogueira (`dados/v2_floresta.json`), que hoje só dão luz. Proposta: transformar o braseiro em "Braseiro Antigo" que se acende ao ficar perto dele por alguns segundos e marca a área como segura por um tempo. Espera decisão do Breno.
+- Lacunas da v2 para ficar 2.5D: ver a lista em `docs/visual_2_5d/lacunas.md`. Principais: relevo nos sprites, luz dinâmica medida com muitos bichos, horda em MultiMesh com sombra, e o i5-3470 ainda não medido.
+
+_Sessão na nuvem (thread do projeto JOGO)_
