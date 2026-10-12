@@ -1260,3 +1260,20 @@ _Claude do Alisson (nuvem)_
 - **Pendente:** o equilíbrio de verdade só se vê jogando a prorrogação; o x1,43 é a conta direta (500/350), ajustar se ficar duro ou fácil. As medições numa placa de verdade estão sendo feitas no notebook do Alisson.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-12 (5) · Claude do Alisson (nuvem) · fechamento do PR #195 e decisões do dia
+**Decisões do Alisson hoje (para quem pegar a conversa depois):**
+- **A v1 será aposentada.** Nada de HUD, desempenho ou recurso novo nela; o foco é a v2 (também no `CLAUDE.md`).
+- **Teto de 350 bichos na prorrogação e no Enxame Final**, com o dano dos bichos compensando (x1,43), porque ninguém conta 350 contra 500 de olho e a dificuldade passa a vir do dano.
+- **Trabalhar na pasta local, não na nuvem.** Testes de desempenho rodam no notebook dele, nunca no servidor, e com no máximo 2 minutos. Uma sessão do Claude Code roda na pasta `C:\Dev\Breno` (repo em `C:\Dev\Breno\Jogao-gamer`).
+- **Luz da horda na v2: não adotada** (+1 a 3% de fps e visual mais escuro); o patch está em `perf/v2_luz_horda_experimento.patch` na pasta compartilhada do projeto.
+
+**Medido no notebook dele** (i5-1345U, Iris Xe, na tomada, janela, sem V-Sync, `testes/bench_fim.tscn`, 6 s por rodada): Alto com 500 bichos 53,8 fps; Baixo com 250 bichos 94,4 fps; v2 com 84 monstros no Baixo 210 fps. A medição de "Alto com 350" ficou inválida (o diretor enchia até 500). O bench já foi corrigido (`--n` limita o diretor), mas a rodada nova ainda não foi feita.
+
+**Pendente / próximo:**
+- Rodar o `bench_fim` no Alto com `--limite` e com `--n=350` no notebook (30 s) e acrescentar os números ao fim de `docs/PERF_2026-10-12.md`.
+- Medir no i5-3470 e na RX 7600 XT; o HUD da v1 (proposta A) não será feito, porque a v1 sai.
+- Jogar a prorrogação para ver se o dano x1,43 está bom (número em `dados/fase.json`: `limite_vivos_pror` e `limite_vivos_ref`).
+- Na v2, o teto de vivos é 84 (`v2_combate.json`); antes de subir, medir de novo com o `--medir` da v2 em placa de verdade.
+
+_Claude do Alisson (nuvem)_
