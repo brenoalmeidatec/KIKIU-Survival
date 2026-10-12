@@ -1277,3 +1277,21 @@ _Claude do Alisson (nuvem)_
 - Na v2, o teto de vivos é 84 (`v2_combate.json`); antes de subir, medir de novo com o `--medir` da v2 em placa de verdade.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-12 (4) · Claude do Alisson (notebook) · v2: acabamento de produto (marca do Godot, Gráficos, Créditos)
+- **Marca do Godot (#162), conferida num exportado de verdade:** exportei o Windows e o Web no notebook e abri o `.exe`. A tela de entrada mostra a arte do K.I.K.I.U, sem o logo do Godot; o ícone do `.exe`, da janela e da barra de tarefas é o escudo; o título da janela é "K.I.K.I.U". No Web, o `index.html` usa a mesma imagem de carregamento, o ícone do jogo e o título "K.I.K.I.U". O Linux não embute ícone no executável (limite do formato).
+- **Sobrou um texto legal:** nas propriedades do `.exe`, `LegalCopyright` ainda traz o aviso da licença MIT do Godot. Deixei como está de propósito, porque é obrigação da licença; agora o aviso também está nos créditos da v2 (abaixo).
+- **Gráficos da v2:** o menu só mostra as 6 opções que a v2 lê (`LIDAS_NA_V2` em `v2/ajustes_graficos.gd`): partículas, luz com relevo, sombras, tremor e clarões, limite de FPS e V-Sync. Saíram da tela (seguem nos perfis e no `graficos.json`): máximo de inimigos, cálculo dos monstros, detalhe longe da câmera, restos no chão, brilhos e halos, névoa, vinheta, efeitos das armas e escala de renderização. Sem mais `*` nem nota de "sem efeito". O **Tremor e clarões** passou a valer: `camera_mundo.tremer` multiplica a amplitude por 0–100%.
+- **Ajuda:** Sombras e Luz com relevo não citam mais a "Etapa 3" da v1; a de Luz com relevo agora descreve o que a v2 faz (Desligada = só as 6 luzes mais perto da tela).
+- **Créditos na v2** (antes só a v1 tinha): Ajustes > Créditos (`v2/creditos.gd`), uma linha por crédito e o aviso da licença no rodapé (Godot MIT, fontes OFL, criadores).
+- **Santuário:** a dica do rodapé estava encostada nos botões; os botões subiram 4 px e a dica desceu 2 px.
+- **Testes:** `v2_pausa` ganhou checagens (só mostra opção lida, tremor 0%/50%, Créditos e aviso do Godot); `v2_pausa`, `v2_meta`, `v2_mundo`, `v2_combate`, `v2_esc`, `v2_hud`, `graficos`, `tela_graficos` e `entrada_cenas` com 0 falhas; `gdformat --check` limpo. Prints com janela: `pausa_graficos`, `pausa_creditos` e `santuario_com_almas` (gerados por `v2_pausa` e `v2_meta` com `--fotos`).
+
+**Pendente / recados:**
+- **Para o Claude da música:** CC BY 4.0 pede atribuição visível. Quando a v2 tiver música, acrescente a linha em `v2/creditos.gd` (a v1 listava as 7 faixas do Kevin MacLeod; `docs/LICENCAS_AUDIO.md` tem o texto de cada faixa).
+- **Opções de CPU e escala de render** voltam ao menu só quando a v2 passar a lê-las (o teto de vivos da v2 vem de `dados/v2_combate.json`, não do slider).
+- **Santuário:** "Pesadelo" e "Rastro de katana" aparecem como "(sem efeito ainda)" (`efeito: pendente` em `v2_meta.json`); decisão de conteúdo do Breno.
+- **Abertura:** do clique no `.exe` até a primeira imagem passaram ~3 s no notebook (uma medição só; o PCK embutido tem 120 MB) e a arte de entrada fica ~0,3 s na tela.
+- **#162** fica pronta para fechar com este PR; falta o Alisson olhar a tela de entrada numa build.
+
+_Claude do Alisson (notebook)_

@@ -191,7 +191,7 @@ func _montar() -> void:
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
-	_entrar.position = Vector2(300, 482)
+	_entrar.position = Vector2(300, 478)
 	_entrar.size = Vector2(360, 40)
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
 	_entrar.add_theme_font_size_override("font_size", 37)
@@ -201,14 +201,14 @@ func _montar() -> void:
 	add_child(_entrar)
 	_ajustes = Button.new()  # ao lado de ENTRAR: abre o mesmo submenu Ajustes da pausa (ligado no _ready)
 	_ajustes.text = "AJUSTES"
-	_ajustes.position = Vector2(672, 482)
+	_ajustes.position = Vector2(672, 478)
 	_ajustes.size = Vector2(168, 40)
 	_ajustes.add_theme_font_override("font", Dados.fonte_titulo)
 	_ajustes.add_theme_font_size_override("font_size", 37)
 	_estilo_botao(_ajustes, 37)
 	_ajustes.add_theme_color_override("font_color", COR_OURO)
 	add_child(_ajustes)
-	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 526, LARG, 12)))
+	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:

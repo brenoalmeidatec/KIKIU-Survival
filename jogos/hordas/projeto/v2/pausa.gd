@@ -17,6 +17,7 @@ extends CanvasLayer
 ## (Dados.fonte_texto), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
+const Creditos := preload("res://v2/creditos.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const TAM_TITULO := 56  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
 const TAM_BOTAO := 19  # botões e linhas (Jersey 10 na grade de 19)
@@ -249,7 +250,7 @@ func _voltar_tela() -> void:
 				_ir("menu")
 			else:
 				fechar()
-		"graficos", "audio":
+		"graficos", "audio", "creditos":
 			_ir("ajustes")
 		_:
 			_executar("nao", 0)
@@ -385,6 +386,8 @@ func _executar(id: String, passo: int) -> void:
 			_ir("graficos")
 		"audio":
 			_ir("audio")
+		"creditos":
+			_ir("creditos")
 		"voltar":
 			_voltar_tela()
 		"santuario":
@@ -444,7 +447,9 @@ func _itens() -> Array:
 			r.append(_it("sair", "Sair do jogo"))
 			return r
 		"ajustes":
-			return [_it("graficos", "Gráficos"), _it("audio", "Áudio"), _it("voltar", "Voltar")]
+			return [_it("graficos", "Gráficos"), _it("audio", "Áudio"), _it("creditos", "Créditos"), _it("voltar", "Voltar")]
+		"creditos":
+			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"graficos":
 			return _graficos.itens()
 		"audio":
@@ -468,6 +473,8 @@ func _titulo_tela() -> String:
 			return "GRÁFICOS"
 		"audio":
 			return "ÁUDIO"
+		"creditos":
+			return "CRÉDITOS"
 		"confirmar_santuario":
 			return "VOLTAR?"
 		"confirmar_sair":
@@ -517,9 +524,9 @@ func _desenhar() -> void:
 		l["valor"].add_theme_color_override("font_color", cor)
 
 
-## Rodapé: a ajuda da linha escolhida (só na aba Gráficos, onde o json traz a ajuda de cada opção).
+## Rodapé: a ajuda da linha escolhida (só em Gráficos, onde o json traz a ajuda de cada opção, e em Créditos, com o aviso de cada licença).
 func _texto_ajuda() -> String:
-	if tela != "graficos" or sel >= _itens_atuais.size():
+	if (tela != "graficos" and tela != "creditos") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))
 
