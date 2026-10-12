@@ -6,15 +6,21 @@ extends CanvasLayer
 ## e Sair do jogo (com confirmação). Sair é o ÚNICO caminho que fecha o jogo; ao_sair é o gancho que os testes trocam.
 ## No santuário (altar.gd, sem mundo) o ESC só abre a confirmação de sair. Perder o foco da janela pausa a partida (opção
 ## pausar_fora da v1; não vale em headless). Criada pelo mundo.gd (uma linha no _ready) e pelo altar.gd.
+## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores e apoio na Pixelify Sans
+## (Dados.fonte_texto), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 ## Os botões são desenhados e testados por retângulo: o SubViewport da partida não entrega mouse aos Controls (ver resultado_meta.gd).
 
-const FONTE := preload("res://assets/fonte/PressStart2P.ttf")  # ponto ÚNICO da fonte do menu (a gótica de títulos chega em outro PR)
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
+const TAM_TITULO := 56  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
+const TAM_BOTAO := 19  # botões do menu (Jersey 10 na grade de 19; 37 estourava a largura do painel)
+const TAM_VALOR := 14  # Pixelify Sans: valor à direita (com 19 encostava no nome da linha)
+const TAM_DICA := 14
 const LARG := 960.0
 const ALT := 540.0
-const PAINEL := Rect2(290, 110, 380, 320)
-const LINHA0 := 92.0  # primeira linha, a partir do topo do painel
-const LINHA_H := 36.0
+const PAINEL := Rect2(290, 70, 380, 400)
+const LINHA0 := 118.0  # primeira linha, a partir do topo do painel
+const LINHA_H := 50.0
+const LINHA_ALT := 44.0  # altura da faixa de cada linha
 const LINHAS_MAX := 5
 const COR_OURO := Color(1.0, 0.86, 0.42)
 const COR_TEXTO := Color(0.92, 0.9, 0.96)
@@ -77,15 +83,15 @@ func _montar() -> void:
 	caixa.texture_margin_bottom = 5
 	painel.add_theme_stylebox_override("panel", caixa)
 	_raiz.add_child(painel)
-	_titulo = _rotulo(16, COR_OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 22), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_titulo = _rotulo(Dados.fonte_titulo, TAM_TITULO, COR_OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 18), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	_raiz.add_child(_titulo)
-	_sub = _rotulo(8, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 56), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER)
+	_sub = _rotulo(Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER)
 	_raiz.add_child(_sub)
-	_dica = _rotulo(8, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + PAINEL.size.y - 26), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER)
+	_dica = _rotulo(Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + PAINEL.size.y - 26), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER)
 	_raiz.add_child(_dica)
 	for i in LINHAS_MAX:
 		var w := PAINEL.size.x - 48
-		var h := LINHA_H - 4
+		var h := LINHA_ALT
 		var linha := Control.new()
 		linha.position = Vector2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H)
 		linha.size = Vector2(w, h)
@@ -100,24 +106,25 @@ func _montar() -> void:
 		marca.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		marca.add_theme_stylebox_override("panel", est)
 		linha.add_child(marca)
-		var rot := _rotulo(16, COR_TEXTO, Vector2(12, 4), w - 24, HORIZONTAL_ALIGNMENT_LEFT)
+		var rot := _rotulo(Dados.fonte_titulo, TAM_BOTAO, COR_TEXTO, Vector2(12, 6), w - 24, HORIZONTAL_ALIGNMENT_LEFT)
 		linha.add_child(rot)
-		var val := _rotulo(16, COR_TEXTO, Vector2(12, 4), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
+		var val := _rotulo(Dados.fonte_texto, TAM_VALOR, COR_TEXTO, Vector2(12, 8), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
 		linha.add_child(val)
 		_raiz.add_child(linha)
 		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val})
-	_fps = _rotulo(8, Color(1, 1, 1, 0.92), Vector2(6, ALT - 16), 200.0, HORIZONTAL_ALIGNMENT_LEFT)
+	_fps = _rotulo(Dados.fonte, 8, Color(1, 1, 1, 0.92), Vector2(6, ALT - 16), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
 	add_child(_fps)  # fora de _raiz: o contador de fps aparece também com o menu fechado
 
 
-func _rotulo(tam: int, cor: Color, pos: Vector2, ancho: float, alin: HorizontalAlignment) -> Label:
+## Um rótulo do menu. A fonte entra por parâmetro (Dados.fonte_titulo, fonte_texto ou fonte) e cada uso escolhe a sua.
+func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin: HorizontalAlignment) -> Label:
 	var l := Label.new()
 	l.position = pos
-	l.size = Vector2(ancho, tam + 8)
+	l.size = Vector2(ancho, tam + 12)
 	l.horizontal_alignment = alin
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	l.add_theme_font_override("font", FONTE)
+	l.add_theme_font_override("font", fonte)
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
@@ -251,7 +258,7 @@ func _acao_sel(passo: int, confirmar: bool) -> void:
 func _linha_sob_mouse() -> int:
 	var m := _mouse()
 	for i in _itens_atuais.size():
-		var r := Rect2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H, PAINEL.size.x - 48, LINHA_H - 4)
+		var r := Rect2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H, PAINEL.size.x - 48, LINHA_ALT)
 		if r.has_point(m):
 			return i
 	return -1
@@ -384,7 +391,7 @@ func _titulo_tela() -> String:
 		"confirmar_santuario":
 			return "VOLTAR?"
 		"confirmar_sair":
-			return "SAIR DO JOGO?"
+			return "SAIR?"
 	return "PAUSADO"
 
 

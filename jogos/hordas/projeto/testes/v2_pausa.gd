@@ -220,7 +220,7 @@ func _testes() -> void:
 
 	# 8. o clique do mouse escolhe a linha (Gráficos é a linha 1 do menu)
 	pausa.mouse_fn = Callable(self, "_mouse_teste")
-	_mouse_alvo = Vector2(354, 110 + 92 + 1 * 36 + 10)
+	_mouse_alvo = Vector2(354, 70 + 118 + 1 * 50 + 22)  # Gráficos: linha 2 do menu (PAINEL, LINHA0, LINHA_H de pausa.gd)
 	_clique(sv, _mouse_alvo)
 	ok(pausa.tela == "graficos", "clique com o mouse abre a linha clicada")
 	_tecla(sv, KEY_ESCAPE)
