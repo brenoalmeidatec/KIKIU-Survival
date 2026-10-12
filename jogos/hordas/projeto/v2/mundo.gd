@@ -12,7 +12,7 @@ extends Node
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --janela=1280x720 --rotulo (fps na tela) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
-## 0 desliga, F1 liga o texto de depuração do combate, F4 mostra a colisão, Esc sai.
+## 0 desliga, F1 liga o texto de depuração do combate, F4 mostra a colisão, Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
 ## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
 ## no herói vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado.
@@ -130,6 +130,7 @@ func _ready() -> void:
 	_montar()
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
 	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
+	sv.add_child(preload("res://v2/pausa.tscn").instantiate().iniciar(self))  # ESC ou Start pausam e abrem o menu (pausa.gd)
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
 		sv.add_child(meta_res)
@@ -445,9 +446,6 @@ func _input(e: InputEvent) -> void:
 			sombras.definir_modo(Sombras.ALTA)
 		KEY_F4:
 			dbg_colisao.visible = not dbg_colisao.visible
-		KEY_ESCAPE:
-			if get_tree().current_scene == self and not modo_teste:
-				get_tree().quit()
 
 
 # ------------------------------------------------------------------ quadro
@@ -568,7 +566,7 @@ func _montar_rotulo() -> void:
 
 func _texto_rotulo() -> void:
 	_rotulo.text = (
-		"sombra: %s   %d fps   atores na tela: %d   luzes ligadas: %d/%d\nWASD anda   mouse mira   1 baixa  2 media  3 alta  0 sem sombra   F4 colisão   Esc sai"
+		"sombra: %s   %d fps   atores na tela: %d   luzes ligadas: %d/%d\nWASD anda   mouse mira   1 baixa  2 media  3 alta  0 sem sombra   F4 colisão   Esc pausa"
 		% [str(Sombras.NOMES[sombras.modo]).to_upper(), Engine.get_frames_per_second(), atores_ativos(), luzes.ligadas(), luzes.lista.size()]
 	)
 

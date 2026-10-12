@@ -236,7 +236,7 @@ func _nome_conquista(id) -> String:
 
 
 ## Entrada enquanto a tela de resultado está aberta: consome o que é do jogo (o mundo não anda e a tela de resultado de telas.gd
-## não reinicia). Devolve true se usou o evento. Esc passa, para continuar saindo do jogo como antes.
+## não reinicia). Devolve true se usou o evento. Esc passa: aqui o ESC não abre a pausa (pausa.gd só pausa com o jogo rolando).
 func entrada(e: InputEvent) -> bool:
 	if not aberto:
 		return false
