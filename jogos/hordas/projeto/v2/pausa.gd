@@ -44,7 +44,9 @@ const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Crea
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
 const AudioV2 := preload("res://v2/audio.gd")  # o clique do santuário (sem partida), com os WAV da v2
 
-var mundo  # a partida (mundo.gd); null no santuário (altar.gd)
+signal fechou  # o menu fechou: quem o abriu (o santuário, o título) devolve o foco ao botão
+
+var mundo  # a partida (mundo.gd); null no santuário (altar.gd) e no título (menu_principal.gd)
 var mouse_fn := Callable()  # mouse em 960x540 (o Apresentacao da partida); vazio = mouse da janela (santuário)
 var ao_sair := Callable()  # "Sim" em Sair do jogo; vazio = get_tree().quit()
 var aberto := false
@@ -208,6 +210,7 @@ func fechar() -> void:
 	if mundo != null:
 		get_tree().paused = _arvore_antes
 	_card_build()
+	fechou.emit()
 
 
 ## O card "SUA BUILD" (status.gd) aparece ao lado do menu, só na tela "menu" (some em Ajustes, nas confirmações e ao fechar).
@@ -225,13 +228,22 @@ func abrir_sair() -> void:
 	_ir("confirmar_sair", "")
 
 
-## Santuário: o botão Ajustes abre o mesmo submenu (sem pausa, porque não há partida).
+## Santuário e título: o botão Ajustes abre o mesmo submenu (sem pausa, porque não há partida).
 func abrir_ajustes() -> void:
 	if aberto:
 		return
 	aberto = true
 	_raiz.visible = true
 	_ir("ajustes", "")
+
+
+## Título: o botão Créditos abre a tela de Créditos direto. Sem nada por trás (origem ""), o Voltar fecha e não leva a Ajustes.
+func abrir_creditos() -> void:
+	if aberto:
+		return
+	aberto = true
+	_raiz.visible = true
+	_ir("creditos", "")
 
 
 ## Só olha em que passo do jogo a partida está (combate.jogo), nunca um flag solto: "jogando", ou a escolha de cartas e o baú, que
@@ -261,7 +273,10 @@ func _voltar_tela() -> void:
 			else:
 				fechar()
 		"graficos", "audio", "creditos":
-			_ir("ajustes")
+			if tela == "creditos" and _origem == "":
+				fechar()  # Créditos abertos direto pelo título: não há Ajustes por trás
+			else:
+				_ir("ajustes")
 		_:
 			_executar("nao", 0)
 

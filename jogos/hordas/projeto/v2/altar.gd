@@ -98,10 +98,16 @@ static func pede_v1(args: Dictionary, primeira_vez: bool) -> bool:
 	return false
 
 
-func _abrir_v1() -> bool:
+## Primeira tela do processo (o título, ou o santuário aberto direto): se os argumentos forem da v1, manda para ela. Marca a
+## entrada, para as telas seguintes (o santuário, depois do título) saberem que já não são a primeira.
+static func pede_v1_na_entrada() -> bool:
 	var primeira := not Engine.has_meta("kikiu_entrada")
 	Engine.set_meta("kikiu_entrada", true)
-	if not pede_v1(ler_args(OS.get_cmdline_user_args() + OS.get_cmdline_args()), primeira):
+	return pede_v1(ler_args(OS.get_cmdline_user_args() + OS.get_cmdline_args()), primeira)
+
+
+func _abrir_v1() -> bool:
+	if not pede_v1_na_entrada():
 		return false
 	process_mode = Node.PROCESS_MODE_DISABLED
 	get_tree().change_scene_to_file.call_deferred(CENA_V1)
