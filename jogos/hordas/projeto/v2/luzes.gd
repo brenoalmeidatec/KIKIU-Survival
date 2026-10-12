@@ -30,8 +30,10 @@ class Entrada:
 	var alvo: Ator = null  # luz presa a um ator (a tocha do herói)
 	var desloca := Vector2.ZERO
 	var ativa := false
+	var cand := false  # alcança a tela neste quadro (antes do orçamento)
 
 
+var orcamento := 0  # máximo de luzes ligadas ao mesmo tempo (0 = sem limite); vem do perfil de gráficos
 var dn := 0
 var dpos := PackedVector2Array()
 var dr := PackedFloat32Array()
@@ -127,10 +129,12 @@ func prender(e: Entrada, a: Ator, desloca: Vector2) -> void:
 	e.luz.position = e.pos
 
 
-## Tremor, órbita e liga/desliga pela tela. `rect` = o que a câmera mostra (mundo).
+## Tremor, órbita e liga/desliga pela tela. `rect` = o que a câmera mostra (mundo). Com `orcamento` > 0, só as N luzes mais perto do
+## centro da tela ficam ligadas (as presas ao herói sempre ficam): o perfil Baixo gasta menos GPU, que é o que a luz custa.
 func atualizar(t: float, rect: Rect2) -> void:
 	var tela := rect.grow(MARGEM_LUZ)
 	dn = 0
+	var n_cand := 0
 	for e in lista:
 		if e.alvo != null:
 			e.pos = e.alvo.raiz.position + e.desloca
@@ -141,7 +145,13 @@ func atualizar(t: float, rect: Rect2) -> void:
 		var cy := clampf(e.pos.y, tela.position.y, tela.end.y)
 		var dx := e.pos.x - cx
 		var dy := e.pos.y - cy
-		var liga := dx * dx + dy * dy <= e.raio * e.raio
+		e.cand = dx * dx + dy * dy <= e.raio * e.raio
+		if e.cand:
+			n_cand += 1
+	if orcamento > 0 and n_cand > orcamento:
+		_limitar(rect.get_center())
+	for e in lista:
+		var liga := e.cand
 		if liga != e.ativa:
 			e.ativa = liga
 			e.luz.enabled = liga
@@ -171,6 +181,26 @@ func atualizar(t: float, rect: Rect2) -> void:
 		de[dn] = en
 		dh[dn] = e.altura
 		dn += 1
+
+
+## Corta as candidatas que passam do orçamento: ficam as presas ao herói e as mais perto do centro da tela. Quem já está ligada ganha uma
+## folga de 25% na distância, para a troca entre duas luzes parecidas não ficar piscando.
+func _limitar(centro: Vector2) -> void:
+	var fila: Array = []
+	var sobra := orcamento
+	for i in lista.size():
+		var e: Entrada = lista[i]
+		if not e.cand:
+			continue
+		if e.alvo != null:
+			sobra -= 1
+			continue
+		var d2 := e.pos.distance_squared_to(centro) * (0.56 if e.ativa else 1.0)
+		fila.append([d2, i])
+	fila.sort()
+	for k in fila.size():
+		if k >= sobra:
+			(lista[fila[k][1]] as Entrada).cand = false
 
 
 func ligadas() -> int:

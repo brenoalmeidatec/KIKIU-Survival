@@ -1,0 +1,57 @@
+santuario baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=225.3 frames=1352 seg=6.00
+santuario baixa SCRIPT ms/quadro=0.919 (sombras 0.000, golpes secundários 0.039, desenho deles 0.000)
+santuario media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=164.1 frames=985 seg=6.00
+santuario media SCRIPT ms/quadro=2.099 (sombras 1.156, golpes secundários 0.037, desenho deles 0.000)
+santuario alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=140.6 frames=844 seg=6.00
+santuario alta SCRIPT ms/quadro=2.843 (sombras 1.781, golpes secundários 0.042, desenho deles 0.000)
+santuario baixo MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=223.9 frames=1344 seg=6.00
+santuario baixo SCRIPT ms/quadro=0.947 (sombras 0.000, golpes secundários 0.042, desenho deles 0.000)
+horda baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=124.4 frames=747 seg=6.01
+horda baixa SCRIPT ms/quadro=3.927 (sombras 0.000, golpes secundários 0.049, desenho deles 0.000)
+horda media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=167 blocos=70/192 fps=90.0 frames=540 seg=6.00
+horda media SCRIPT ms/quadro=6.757 (sombras 3.542, golpes secundários 0.043, desenho deles 0.000)
+horda alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=167 blocos=70/192 fps=83.2 frames=499 seg=6.00
+horda alta SCRIPT ms/quadro=7.390 (sombras 4.145, golpes secundários 0.043, desenho deles 0.000)
+horda baixo MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=137.9 frames=828 seg=6.00
+horda baixo SCRIPT ms/quadro=3.447 (sombras 0.000, golpes secundários 0.043, desenho deles 0.000)
+santuario baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=208.5 frames=1251 seg=6.00
+santuario baixa SCRIPT ms/quadro=0.989 (sombras 0.000, golpes secundários 0.044, desenho deles 0.000)
+santuario media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=151.2 frames=908 seg=6.01
+santuario media SCRIPT ms/quadro=2.531 (sombras 1.412, golpes secundários 0.042, desenho deles 0.000)
+santuario alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=164.5 frames=988 seg=6.01
+santuario alta SCRIPT ms/quadro=2.346 (sombras 1.441, golpes secundários 0.037, desenho deles 0.000)
+santuario baixo MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=204.7 frames=1228 seg=6.00
+santuario baixo SCRIPT ms/quadro=0.945 (sombras 0.000, golpes secundários 0.041, desenho deles 0.000)
+horda baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=167 blocos=70/192 fps=152.1 frames=913 seg=6.00
+horda baixa SCRIPT ms/quadro=3.172 (sombras 0.000, golpes secundários 0.040, desenho deles 0.000)
+horda media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=167 blocos=70/192 fps=103.8 frames=623 seg=6.00
+horda media SCRIPT ms/quadro=5.807 (sombras 3.003, golpes secundários 0.037, desenho deles 0.000)
+horda alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=96.6 frames=580 seg=6.00
+horda alta SCRIPT ms/quadro=6.157 (sombras 3.411, golpes secundários 0.037, desenho deles 0.000)
+horda baixo MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=167 blocos=70/192 fps=124.7 frames=749 seg=6.01
+horda baixo SCRIPT ms/quadro=3.803 (sombras 0.000, golpes secundários 0.048, desenho deles 0.000)
+santuario baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=236.9 frames=1422 seg=6.00
+santuario baixa SCRIPT ms/quadro=0.902 (sombras 0.000, golpes secundários 0.040, desenho deles 0.000)
+santuario media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=188.9 frames=1134 seg=6.00
+santuario media SCRIPT ms/quadro=1.974 (sombras 1.110, golpes secundários 0.036, desenho deles 0.000)
+santuario alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=168.0 frames=1009 seg=6.00
+santuario alta SCRIPT ms/quadro=2.350 (sombras 1.439, golpes secundários 0.038, desenho deles 0.000)
+santuario baixo MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=216.9 frames=1302 seg=6.00
+santuario baixo SCRIPT ms/quadro=1.003 (sombras 0.000, golpes secundários 0.044, desenho deles 0.000)
+horda baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=167 blocos=70/192 fps=149.5 frames=897 seg=6.00
+horda baixa SCRIPT ms/quadro=3.186 (sombras 0.000, golpes secundários 0.040, desenho deles 0.000)
+horda media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=98.0 frames=588 seg=6.00
+horda media SCRIPT ms/quadro=6.195 (sombras 3.181, golpes secundários 0.038, desenho deles 0.000)
+horda alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=167 blocos=70/192 fps=88.7 frames=532 seg=6.00
+horda alta SCRIPT ms/quadro=6.881 (sombras 3.947, golpes secundários 0.038, desenho deles 0.000)
+horda baixo MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=156.6 frames=940 seg=6.00
+horda baixo SCRIPT ms/quadro=3.062 (sombras 0.000, golpes secundários 0.039, desenho deles 0.000)
+--- mediana de 3 (minimo a maximo) ---
+santuario baixa mediana=225 (208 a 237)
+santuario media mediana=164 (151 a 189)
+santuario alta mediana=164 (141 a 168)
+santuario baixo mediana=217 (205 a 224)
+horda baixa mediana=150 (124 a 152)
+horda media mediana=98 (90 a 104)
+horda alta mediana=89 (83 a 97)
+horda baixo mediana=138 (125 a 157)

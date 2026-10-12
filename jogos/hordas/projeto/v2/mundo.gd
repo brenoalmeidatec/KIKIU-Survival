@@ -7,6 +7,7 @@ extends Node
 ##
 ## Rodar (a partir de jogos/hordas):  godot --path projeto res://v2/mundo.tscn [-- opções]
 ## Opções (após --): --fotos=PASTA --seq=2.0 --pos=x,y --nome=foto (foto do viewport e sai) | --medir --duracao=6 (fps e sai)
+##   --perfil=baixo|medio|alto (vale o perfil de gráficos inteiro: sombras, partículas e orçamento de luzes; sem gravar) --luzes=N (orçamento de luzes)
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
@@ -30,12 +31,15 @@ const Entrada := preload("res://v2/entrada.gd")
 const Combate := preload("res://v2/combate.gd")
 const Roteiro := preload("res://v2/roteiro.gd")
 const Copas := preload("res://v2/copas.gd")
+const Horda := preload("res://v2/horda.gd")  # os monstros comuns em lote (MultiMesh)
 const Oclusao := preload("res://v2/oclusao.gd")  # silhueta do herói atrás de monstro grande (leva 4)
 const Depuracao := preload("res://v2/depuracao_colisao.gd")
 const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
 const LARG := 960
 const ALT := 540
+const ORCAMENTO_LUZES := {"desligada": 6, "so_heroi": 0, "tudo": 0}  # máximo de luzes ligadas por "luz_relevo" (0 = sem limite); o perfil Baixo usa "desligada"
+const PASSO_SOMBRA_CENARIO := 3  # a sombra de cada objeto parado recalcula a cada 3 quadros (a luz que a move muda devagar; o deslize suaviza)
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
 const Colisao := preload("res://v2/colisao.gd")
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
@@ -65,6 +69,7 @@ var atm
 var cenario
 var copas  # buraco raio-x nas árvores atrás das quais o herói está (copas.gd)
 var oclusao  # silhueta do herói quando um monstro na frente o cobre (oclusao.gd)
+var horda  # desenho dos monstros comuns em lote (horda.gd)
 var dbg_colisao: Node2D  # F4: contorno das formas de colisão (depuracao_colisao.gd)
 var sprites
 var heroi
@@ -104,6 +109,8 @@ var _rng := RandomNumberGenerator.new()
 var _rotulo: Label
 var _rotulo_t := 0.0
 var _us_total := 0
+var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0]
+var perfil := {}  # medição (--medir): microssegundos acumulados por parte do quadro
 var _ms_carga := 0.0
 
 
@@ -115,6 +122,8 @@ func _ready() -> void:
 	_seq = float(args.get("seq", 2.0))
 	_med["duracao"] = float(args.get("duracao", 6.0))
 	Entrada.garantir()
+	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
+		Config.g_perfil_temporario(str(args.perfil))
 	dados = Dados.json("v2_floresta")
 	var tm: Array = dados.get("mapa", {}).get("tam", [2880, 1620])
 	mapa = Rect2(0, 0, float(tm[0]), float(tm[1]))
@@ -223,6 +232,8 @@ func _montar() -> void:
 	oclusao = Oclusao.new().montar(sv, heroi)
 	combate.iniciar_heroi()
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
+	horda = Horda.new()
+	horda.montar(self)
 	_pre_criar_monstros()
 	_popular_inicial()
 	var todos: Array = cenario.objetos.duplicate()
@@ -292,26 +303,12 @@ func _popular_inicial() -> void:
 			mo.raio_vaga = float(z.get("vaga", 90.0))
 
 
-## Um monstro novo do tipo `nome` (nós, olhos e sombra). Só é chamado quando o pool do tipo esvazia.
+## Um monstro novo do tipo `nome` (uma linha de números: quem o desenha é a horda). Só é chamado quando o pool do tipo esvazia.
 func _novo_monstro(nome: String):
 	var tp: Dictionary = sprites.tipo(nome)
 	var mo := Monstro.new()
 	mo.criar(self, no_mundo, nome, tp, Vector2.ZERO, _rng)
 	mo.aplicar_stats(combate.cfg.monstros[nome])
-	if tp.emissao != null:
-		var o := Sprite2D.new()
-		o.texture = tp.emissao
-		o.region_enabled = true
-		o.region_rect = mo.regiao
-		o.centered = false
-		o.offset = Vector2(-tp.w / 2.0, -tp.pe)
-		o.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		var mat := CanvasItemMaterial.new()
-		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-		o.material = mat
-		o.visible = false
-		glow.add_child(o)
-		mo.olho = o
 	_todos_monstros.append(mo)
 	if _sombras_prontas:
 		sombras.registrar_lote([mo])
@@ -395,6 +392,11 @@ func _ler_graficos() -> void:
 	var nome := str(args.get("sombra", Config.g("sombras")))
 	var m := Sombras.NOMES.find(nome)
 	sombras.definir_modo(m if m >= 0 else Sombras.MEDIA)
+	if horda != null and modo_teste == false:
+		horda.atualizar(t, cam.retangulo(), quadros)  # mudou no menu de pausa: o lote já aparece no modo novo, sem esperar a partida andar
+	# orçamento de luzes pelo perfil ("luz_relevo" da aba Gráficos): cada luz ligada custa GPU em tudo o que ela toca, e a iGPU do i5 é fraca
+	var relevo := str(Config.g("luz_relevo"))
+	luzes.orcamento = int(args.get("luzes", ORCAMENTO_LUZES.get(relevo, 0)))
 	var nivel := str(args.get("particulas", Config.g("particulas_sim")))
 	var f: Dictionary = Config.PART_NIVEL.get(nivel, {})
 	atm.definir_fatores(float(f.get("amb_particulas", 1.0)), float(f.get("efe_particulas", 1.0)))
@@ -485,18 +487,36 @@ func avancar(dt: float) -> void:
 		var dtm: float = combate.passo_tempo(dt)  # o mundo para no hit-stop e na pausa, e anda devagar na câmera lenta
 		if dtm > 0.0:
 			tempo_partida += dtm
+			var p0 := Time.get_ticks_usec()
 			heroi.atualizar(dtm)
+			var p1 := Time.get_ticks_usec()
+			var hp: Vector2 = heroi.pos
+			var hr: float = heroi.raio
 			for mo in monstros:
-				mo.atualizar(dtm, heroi.pos)
+				mo.atualizar(dtm, hp, hr)
+			var p2 := Time.get_ticks_usec()
 			combate.atualizar(dtm)
+			var p3 := Time.get_ticks_usec()
+			_perfil("heroi", p1 - p0)
+			_perfil("monstros", p2 - p1)
+			_perfil("combate", p3 - p2)
+		var p4 := Time.get_ticks_usec()
 		cam.seguir(heroi.pos + Heroi.CENTRO_CORPO + heroi.avanco_camera, dt)
 		combate.efeitos(dt)
+		_perfil("camera_efeitos", Time.get_ticks_usec() - p4)
+	var p5 := Time.get_ticks_usec()
 	var rect: Rect2 = cam.retangulo()
 	atm.seguir(cam.position)
 	cenario.atualizar_blocos(rect)
+	var p6 := Time.get_ticks_usec()
 	copas.atualizar(dt, cenario.ativos, heroi)
 	oclusao.atualizar(dt, heroi, monstros)
+	var p7 := Time.get_ticks_usec()
 	luzes.atualizar(t, rect)
+	_perfil("cenario_atm", p6 - p5)
+	_perfil("copas", p7 - p6)
+	_perfil("luzes", Time.get_ticks_usec() - p7)
+	var p8 := Time.get_ticks_usec()
 	var tela := rect.grow(MARGEM_SOMBRA)
 	var com_sombra: bool = sombras.modo != Sombras.NENHUMA
 	var estatica: bool = sombras.modo >= Sombras.MEDIA  # na baixa, o objeto parado só tem a mancha, que não muda
@@ -506,10 +526,12 @@ func avancar(dt: float) -> void:
 		if dentro != a.ativo:
 			sombras.ativar(a, dentro)
 		n += 1
-		if dentro and estatica and (n + quadros) % 2 == 0:  # cenário parado: só a luz muda, metade por quadro
+		if dentro and estatica and (n + quadros) % PASSO_SOMBRA_CENARIO == 0:  # cenário parado: só a luz muda, um terço por quadro
 			sombras.atualizar(a, t)
-	var movel: Array = [heroi]
-	movel.append_array(monstros)
+	var movel: Array = [heroi]  # os atores com nós: o herói, as elites e os chefes (o resto da horda é do lote)
+	for a in monstros:
+		if not a.lote:
+			movel.append(a)
 	for a in movel:
 		var dentro := com_sombra and tela.has_point(a.pos)
 		if dentro != a.ativo:
@@ -518,6 +540,15 @@ func avancar(dt: float) -> void:
 				a.olho.visible = dentro
 		if dentro:
 			sombras.atualizar(a, t)
+	_perfil("sombras_ativacao", Time.get_ticks_usec() - p8)
+	var p9 := Time.get_ticks_usec()
+	horda.atualizar(t, rect, quadros)
+	_perfil("horda", Time.get_ticks_usec() - p9)
+
+
+## Soma `us` microssegundos na parte `nome` do perfil (só vale a pena para a medição).
+func _perfil(nome: String, us: int) -> void:
+	perfil[nome] = int(perfil.get(nome, 0)) + us
 
 
 ## Jogar de novo: o mesmo mapa, o herói no início, monstros do começo e tudo zerado.
@@ -591,6 +622,17 @@ func _salvar_foto() -> void:
 	get_tree().quit()
 
 
+## Tempo de CPU e de GPU do desenho (do mundo e da janela) e chamadas de desenho do quadro, somados na medição.
+func _medir_render() -> void:
+	var rid := sv.get_viewport_rid()
+	var raiz := get_tree().root.get_viewport_rid()
+	_r_acum[0] += RenderingServer.viewport_get_measured_render_time_cpu(rid)
+	_r_acum[1] += RenderingServer.viewport_get_measured_render_time_gpu(rid)
+	_r_acum[2] += RenderingServer.viewport_get_measured_render_time_cpu(raiz)
+	_r_acum[3] += RenderingServer.viewport_get_measured_render_time_gpu(raiz)
+	_r_acum[4] += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
+
+
 func _medir() -> void:
 	if t < _med["aquecer"]:
 		_us_total = 0
@@ -601,8 +643,12 @@ func _medir() -> void:
 		sombras.us_script = 0
 		combate.us_armas = 0
 		combate.armas.us_desenho = 0
+		perfil.clear()
+		RenderingServer.viewport_set_measure_render_time(sv.get_viewport_rid(), true)
+		RenderingServer.viewport_set_measure_render_time(get_tree().root.get_viewport_rid(), true)
 		return
 	_med["frames"] = int(_med["frames"]) + 1
+	_medir_render()
 	var dec: float = t - float(_med["inicio"])
 	if dec >= float(_med["duracao"]):
 		var frames: int = int(_med["frames"])
@@ -630,6 +676,24 @@ func _medir() -> void:
 					sombras.us_script / 1000.0 / frames,
 					combate.us_armas / 1000.0 / frames,
 					combate.armas.us_desenho / 1000.0 / frames
+				]
+			)
+		)
+		var partes := []
+		for k in perfil:
+			partes.append("%s %.2f" % [k, int(perfil[k]) / 1000.0 / frames])
+		print("PERFIL ms/quadro: ", ", ".join(partes), " | horda: %d monstros em %d fatias" % [horda.n_lote, horda.n_fatias()])
+		print(
+			(
+				"RENDER ms/quadro: cpu mundo %.2f, gpu mundo %.2f, cpu janela %.2f, gpu janela %.2f; chamadas de desenho %.0f; objetos %d; fora do script %.2f"
+				% [
+					_r_acum[0] / frames,
+					_r_acum[1] / frames,
+					_r_acum[2] / frames,
+					_r_acum[3] / frames,
+					_r_acum[4] / frames,
+					RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
+					dec * 1000.0 / frames - _us_total / 1000.0 / frames
 				]
 			)
 		)

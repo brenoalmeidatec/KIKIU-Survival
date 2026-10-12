@@ -289,7 +289,7 @@ func luz_rapida(pos: Vector2, cor: Color, energia: float, raio: float, dur: floa
 
 ## Silhueta sobre o ator (branca por padrão). modo 0 = piscada de dano (segue o ator), 1 = morte (fica onde estava, encolhe e sobe), 2 = rastro da esquiva.
 func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
-	if a == null or a.sprite == null:
+	if a == null or a.tipo.is_empty():
 		return
 	var i := _fi
 	# reaproveita o flash que já segue este ator (piscadas seguidas não gastam slot)
@@ -302,7 +302,7 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 		_fi = (_fi + 1) % MAX_FLASH
 	var s := _fl[i]
 	s.texture = a.tipo.alb
-	s.offset = a.sprite.offset
+	s.offset = a.sprite.offset if a.sprite != null else a.offset
 	s.region_rect = a.regiao
 	s.flip_h = a.espelha
 	s.position = a.raiz.position

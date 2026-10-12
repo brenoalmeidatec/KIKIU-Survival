@@ -1,15 +1,105 @@
-MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=190.2 frames=1142 seg=6.00
-SCRIPT ms/quadro=1.949 (sombras 1.295)
-MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=214.4 frames=1287 seg=6.00
-SCRIPT ms/quadro=1.676 (sombras 1.170)
-MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=203.7 frames=1222 seg=6.00
-SCRIPT ms/quadro=1.794 (sombras 1.183)
-MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=182.7 frames=1096 seg=6.00
-SCRIPT ms/quadro=2.169 (sombras 1.569)
-MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=190.7 frames=1144 seg=6.00
-SCRIPT ms/quadro=1.913 (sombras 1.300)
-MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=173.3 frames=1040 seg=6.00
-SCRIPT ms/quadro=2.113 (sombras 1.520)
+santuario baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=187.3 frames=1124 seg=6.00
+santuario baixa SCRIPT ms/quadro=0.935 (sombras 0.000, golpes secundários 0.038, desenho deles 0.000)
+santuario baixa PERFIL ms/quadro: c_separar 0.05, c_contato 0.03, c_orbes 0.00, heroi 0.08, monstros 0.20, combate 0.16, camera_efeitos 0.02, cenario_atm 0.02, copas 0.09, luzes 0.11, sombras_ativacao 0.13, horda 0.11 | horda: 2 monstros em 2 fatias
+santuario baixa RENDER ms/quadro: cpu mundo 2.10, gpu mundo 3.84, cpu janela 0.19, gpu janela 0.35; chamadas de desenho 253; objetos 390; fora do script 4.41
+santuario media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=166.1 frames=997 seg=6.00
+santuario media SCRIPT ms/quadro=1.358 (sombras 0.271, golpes secundários 0.036, desenho deles 0.000)
+santuario media PERFIL ms/quadro: c_separar 0.04, c_contato 0.02, c_orbes 0.00, heroi 0.08, monstros 0.18, combate 0.15, camera_efeitos 0.02, cenario_atm 0.01, copas 0.08, luzes 0.10, sombras_ativacao 0.60, horda 0.12 | horda: 2 monstros em 2 fatias
+santuario media RENDER ms/quadro: cpu mundo 2.33, gpu mundo 4.25, cpu janela 0.17, gpu janela 0.37; chamadas de desenho 385; objetos 455; fora do script 4.66
+santuario alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=87 blocos=70/192 fps=161.8 frames=971 seg=6.00
+santuario alta SCRIPT ms/quadro=1.559 (sombras 0.394, golpes secundários 0.035, desenho deles 0.000)
+santuario alta PERFIL ms/quadro: c_separar 0.04, c_contato 0.02, c_orbes 0.00, heroi 0.08, monstros 0.19, combate 0.15, camera_efeitos 0.02, cenario_atm 0.01, copas 0.08, luzes 0.10, sombras_ativacao 0.80, horda 0.12 | horda: 1 monstros em 1 fatias
+santuario alta RENDER ms/quadro: cpu mundo 2.41, gpu mundo 4.32, cpu janela 0.17, gpu janela 0.39; chamadas de desenho 413; objetos 481; fora do script 4.62
+santuario baixo MEDIDA sombra=baixa luzes_ligadas=6/30 atores_na_tela=88 blocos=70/192 fps=207.1 frames=1243 seg=6.00
+santuario baixo SCRIPT ms/quadro=1.116 (sombras 0.000, golpes secundários 0.045, desenho deles 0.000)
+santuario baixo PERFIL ms/quadro: c_separar 0.06, c_contato 0.03, c_orbes 0.01, heroi 0.05, monstros 0.25, combate 0.19, camera_efeitos 0.02, cenario_atm 0.02, copas 0.11, luzes 0.16, sombras_ativacao 0.16, horda 0.13 | horda: 2 monstros em 2 fatias
+santuario baixo RENDER ms/quadro: cpu mundo 2.47, gpu mundo 3.03, cpu janela 0.25, gpu janela 0.37; chamadas de desenho 244; objetos 380; fora do script 3.71
+horda baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=161.1 frames=967 seg=6.00
+horda baixa SCRIPT ms/quadro=2.957 (sombras 0.000, golpes secundários 0.039, desenho deles 0.000)
+horda baixa PERFIL ms/quadro: c_separar 0.40, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 1.07, combate 0.49, camera_efeitos 0.02, cenario_atm 0.02, copas 0.17, luzes 0.10, sombras_ativacao 0.14, horda 0.89 | horda: 80 monstros em 13 fatias
+horda baixa RENDER ms/quadro: cpu mundo 2.18, gpu mundo 4.07, cpu janela 0.19, gpu janela 0.29; chamadas de desenho 272; objetos 481; fora do script 3.25
+horda media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=142.6 frames=857 seg=6.01
+horda media SCRIPT ms/quadro=3.573 (sombras 0.526, golpes secundários 0.034, desenho deles 0.000)
+horda media PERFIL ms/quadro: c_separar 0.34, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 0.92, combate 0.42, camera_efeitos 0.02, cenario_atm 0.01, copas 0.14, luzes 0.09, sombras_ativacao 0.59, horda 1.32 | horda: 80 monstros em 13 fatias
+horda media RENDER ms/quadro: cpu mundo 2.37, gpu mundo 4.71, cpu janela 0.17, gpu janela 0.35; chamadas de desenho 405; objetos 546; fora do script 3.44
+horda alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=167 blocos=70/192 fps=131.6 frames=790 seg=6.00
+horda alta SCRIPT ms/quadro=4.026 (sombras 0.757, golpes secundários 0.035, desenho deles 0.000)
+horda alta PERFIL ms/quadro: c_separar 0.35, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 0.94, combate 0.43, camera_efeitos 0.02, cenario_atm 0.01, copas 0.14, luzes 0.09, sombras_ativacao 0.78, horda 1.54 | horda: 81 monstros em 13 fatias
+horda alta RENDER ms/quadro: cpu mundo 2.53, gpu mundo 4.74, cpu janela 0.17, gpu janela 0.35; chamadas de desenho 433; objetos 576; fora do script 3.57
+horda baixo MEDIDA sombra=baixa luzes_ligadas=6/30 atores_na_tela=168 blocos=70/192 fps=169.2 frames=1016 seg=6.00
+horda baixo SCRIPT ms/quadro=2.903 (sombras 0.000, golpes secundários 0.038, desenho deles 0.000)
+horda baixo PERFIL ms/quadro: c_separar 0.40, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 1.04, combate 0.48, camera_efeitos 0.02, cenario_atm 0.02, copas 0.17, luzes 0.12, sombras_ativacao 0.14, horda 0.86 | horda: 82 monstros em 13 fatias
+horda baixo RENDER ms/quadro: cpu mundo 2.08, gpu mundo 3.53, cpu janela 0.18, gpu janela 0.35; chamadas de desenho 263; objetos 477; fora do script 3.01
+santuario baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=218.8 frames=1313 seg=6.00
+santuario baixa SCRIPT ms/quadro=0.984 (sombras 0.000, golpes secundários 0.041, desenho deles 0.000)
+santuario baixa PERFIL ms/quadro: c_separar 0.05, c_contato 0.03, c_orbes 0.01, heroi 0.05, monstros 0.23, combate 0.17, camera_efeitos 0.02, cenario_atm 0.02, copas 0.10, luzes 0.12, sombras_ativacao 0.14, horda 0.12 | horda: 2 monstros em 2 fatias
+santuario baixa RENDER ms/quadro: cpu mundo 2.30, gpu mundo 3.26, cpu janela 0.22, gpu janela 0.31; chamadas de desenho 253; objetos 389; fora do script 3.59
+santuario media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=205.4 frames=1233 seg=6.00
+santuario media SCRIPT ms/quadro=1.384 (sombras 0.282, golpes secundários 0.036, desenho deles 0.000)
+santuario media PERFIL ms/quadro: c_separar 0.05, c_contato 0.02, c_orbes 0.00, heroi 0.04, monstros 0.20, combate 0.15, camera_efeitos 0.02, cenario_atm 0.02, copas 0.08, luzes 0.10, sombras_ativacao 0.64, horda 0.12 | horda: 2 monstros em 2 fatias
+santuario media RENDER ms/quadro: cpu mundo 2.42, gpu mundo 3.31, cpu janela 0.19, gpu janela 0.32; chamadas de desenho 385; objetos 454; fora do script 3.49
+santuario alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=184.0 frames=1105 seg=6.00
+santuario alta SCRIPT ms/quadro=1.616 (sombras 0.425, golpes secundários 0.037, desenho deles 0.000)
+santuario alta PERFIL ms/quadro: c_separar 0.05, c_contato 0.03, c_orbes 0.00, heroi 0.04, monstros 0.19, combate 0.16, camera_efeitos 0.02, cenario_atm 0.02, copas 0.08, luzes 0.10, sombras_ativacao 0.87, horda 0.12 | horda: 2 monstros em 2 fatias
+santuario alta RENDER ms/quadro: cpu mundo 2.68, gpu mundo 3.52, cpu janela 0.19, gpu janela 0.34; chamadas de desenho 413; objetos 482; fora do script 3.82
+santuario baixo MEDIDA sombra=baixa luzes_ligadas=6/30 atores_na_tela=88 blocos=70/192 fps=253.0 frames=1518 seg=6.00
+santuario baixo SCRIPT ms/quadro=0.903 (sombras 0.000, golpes secundários 0.037, desenho deles 0.000)
+santuario baixo PERFIL ms/quadro: c_separar 0.05, c_contato 0.03, c_orbes 0.00, heroi 0.04, monstros 0.20, combate 0.16, camera_efeitos 0.02, cenario_atm 0.02, copas 0.09, luzes 0.12, sombras_ativacao 0.13, horda 0.11 | horda: 2 monstros em 2 fatias
+santuario baixo RENDER ms/quadro: cpu mundo 2.00, gpu mundo 2.57, cpu janela 0.20, gpu janela 0.33; chamadas de desenho 244; objetos 380; fora do script 3.05
+horda baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=169.8 frames=1019 seg=6.00
+horda baixa SCRIPT ms/quadro=2.717 (sombras 0.000, golpes secundários 0.036, desenho deles 0.000)
+horda baixa PERFIL ms/quadro: c_separar 0.38, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 0.96, combate 0.46, camera_efeitos 0.02, cenario_atm 0.01, copas 0.15, luzes 0.09, sombras_ativacao 0.13, horda 0.82 | horda: 80 monstros em 11 fatias
+horda baixa RENDER ms/quadro: cpu mundo 2.09, gpu mundo 4.02, cpu janela 0.18, gpu janela 0.28; chamadas de desenho 270; objetos 480; fora do script 3.17
+horda media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=142.5 frames=856 seg=6.01
+horda media SCRIPT ms/quadro=3.580 (sombras 0.526, golpes secundários 0.036, desenho deles 0.000)
+horda media PERFIL ms/quadro: c_separar 0.35, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 0.92, combate 0.43, camera_efeitos 0.02, cenario_atm 0.01, copas 0.15, luzes 0.09, sombras_ativacao 0.59, horda 1.30 | horda: 80 monstros em 13 fatias
+horda media RENDER ms/quadro: cpu mundo 2.40, gpu mundo 4.44, cpu janela 0.18, gpu janela 0.32; chamadas de desenho 406; objetos 547; fora do script 3.44
+horda alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=137.7 frames=827 seg=6.01
+horda alta SCRIPT ms/quadro=3.827 (sombras 0.722, golpes secundários 0.035, desenho deles 0.000)
+horda alta PERFIL ms/quadro: c_separar 0.34, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 0.89, combate 0.42, camera_efeitos 0.02, cenario_atm 0.01, copas 0.14, luzes 0.09, sombras_ativacao 0.75, horda 1.45 | horda: 80 monstros em 12 fatias
+horda alta RENDER ms/quadro: cpu mundo 2.44, gpu mundo 4.60, cpu janela 0.16, gpu janela 0.33; chamadas de desenho 433; objetos 575; fora do script 3.44
+horda baixo MEDIDA sombra=baixa luzes_ligadas=6/30 atores_na_tela=167 blocos=70/192 fps=177.6 frames=1066 seg=6.00
+horda baixo SCRIPT ms/quadro=2.712 (sombras 0.000, golpes secundários 0.037, desenho deles 0.000)
+horda baixo PERFIL ms/quadro: c_separar 0.34, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 0.98, combate 0.42, camera_efeitos 0.02, cenario_atm 0.01, copas 0.15, luzes 0.11, sombras_ativacao 0.13, horda 0.83 | horda: 81 monstros em 15 fatias
+horda baixo RENDER ms/quadro: cpu mundo 1.98, gpu mundo 3.56, cpu janela 0.17, gpu janela 0.34; chamadas de desenho 264; objetos 475; fora do script 2.92
+santuario baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=237.9 frames=1428 seg=6.00
+santuario baixa SCRIPT ms/quadro=0.905 (sombras 0.000, golpes secundários 0.037, desenho deles 0.000)
+santuario baixa PERFIL ms/quadro: c_separar 0.05, c_contato 0.03, c_orbes 0.00, heroi 0.04, monstros 0.21, combate 0.16, camera_efeitos 0.02, cenario_atm 0.02, copas 0.09, luzes 0.11, sombras_ativacao 0.13, horda 0.11 | horda: 2 monstros em 2 fatias
+santuario baixa RENDER ms/quadro: cpu mundo 2.16, gpu mundo 3.04, cpu janela 0.21, gpu janela 0.29; chamadas de desenho 253; objetos 389; fora do script 3.30
+santuario media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=183.4 frames=1101 seg=6.00
+santuario media SCRIPT ms/quadro=1.516 (sombras 0.313, golpes secundários 0.040, desenho deles 0.000)
+santuario media PERFIL ms/quadro: c_separar 0.05, c_contato 0.03, c_orbes 0.00, heroi 0.04, monstros 0.22, combate 0.17, camera_efeitos 0.02, cenario_atm 0.02, copas 0.09, luzes 0.11, sombras_ativacao 0.70, horda 0.13 | horda: 2 monstros em 2 fatias
+santuario media RENDER ms/quadro: cpu mundo 2.71, gpu mundo 3.69, cpu janela 0.22, gpu janela 0.34; chamadas de desenho 385; objetos 454; fora do script 3.94
+santuario alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=194.5 frames=1168 seg=6.01
+santuario alta SCRIPT ms/quadro=1.545 (sombras 0.403, golpes secundários 0.035, desenho deles 0.000)
+santuario alta PERFIL ms/quadro: c_separar 0.04, c_contato 0.02, c_orbes 0.00, heroi 0.04, monstros 0.19, combate 0.15, camera_efeitos 0.02, cenario_atm 0.01, copas 0.08, luzes 0.10, sombras_ativacao 0.82, horda 0.12 | horda: 2 monstros em 2 fatias
+santuario alta RENDER ms/quadro: cpu mundo 2.53, gpu mundo 3.31, cpu janela 0.20, gpu janela 0.32; chamadas de desenho 413; objetos 482; fora do script 3.60
+santuario baixo MEDIDA sombra=baixa luzes_ligadas=6/30 atores_na_tela=88 blocos=70/192 fps=255.6 frames=1534 seg=6.00
+santuario baixo SCRIPT ms/quadro=0.893 (sombras 0.000, golpes secundários 0.036, desenho deles 0.000)
+santuario baixo PERFIL ms/quadro: c_separar 0.05, c_contato 0.02, c_orbes 0.00, heroi 0.04, monstros 0.20, combate 0.15, camera_efeitos 0.02, cenario_atm 0.02, copas 0.09, luzes 0.12, sombras_ativacao 0.13, horda 0.11 | horda: 2 monstros em 2 fatias
+santuario baixo RENDER ms/quadro: cpu mundo 1.97, gpu mundo 2.53, cpu janela 0.20, gpu janela 0.31; chamadas de desenho 244; objetos 380; fora do script 3.02
+horda baixa MEDIDA sombra=baixa luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=167.5 frames=1005 seg=6.00
+horda baixa SCRIPT ms/quadro=2.813 (sombras 0.000, golpes secundários 0.037, desenho deles 0.000)
+horda baixa PERFIL ms/quadro: c_separar 0.38, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 0.99, combate 0.47, camera_efeitos 0.02, cenario_atm 0.02, copas 0.16, luzes 0.10, sombras_ativacao 0.14, horda 0.86 | horda: 80 monstros em 14 fatias
+horda baixa RENDER ms/quadro: cpu mundo 2.13, gpu mundo 3.95, cpu janela 0.18, gpu janela 0.28; chamadas de desenho 274; objetos 483; fora do script 3.16
+horda media MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=144.0 frames=864 seg=6.00
+horda media SCRIPT ms/quadro=3.546 (sombras 0.527, golpes secundários 0.034, desenho deles 0.000)
+horda media PERFIL ms/quadro: c_separar 0.34, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 0.91, combate 0.42, camera_efeitos 0.02, cenario_atm 0.01, copas 0.15, luzes 0.09, sombras_ativacao 0.59, horda 1.28 | horda: 80 monstros em 14 fatias
+horda media RENDER ms/quadro: cpu mundo 2.37, gpu mundo 4.34, cpu janela 0.18, gpu janela 0.31; chamadas de desenho 406; objetos 548; fora do script 3.40
+horda alta MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=120.7 frames=725 seg=6.01
+horda alta SCRIPT ms/quadro=4.431 (sombras 0.815, golpes secundários 0.039, desenho deles 0.000)
+horda alta PERFIL ms/quadro: c_separar 0.39, c_contato 0.01, c_orbes 0.00, heroi 0.04, monstros 1.08, combate 0.48, camera_efeitos 0.02, cenario_atm 0.02, copas 0.16, luzes 0.10, sombras_ativacao 0.86, horda 1.66 | horda: 80 monstros em 14 fatias
+horda alta RENDER ms/quadro: cpu mundo 2.73, gpu mundo 5.01, cpu janela 0.20, gpu janela 0.38; chamadas de desenho 435; objetos 575; fora do script 3.86
+horda baixo MEDIDA sombra=baixa luzes_ligadas=6/30 atores_na_tela=166 blocos=70/192 fps=155.1 frames=931 seg=6.00
+horda baixo SCRIPT ms/quadro=3.119 (sombras 0.000, golpes secundários 0.042, desenho deles 0.000)
+horda baixo PERFIL ms/quadro: c_separar 0.39, c_contato 0.01, c_orbes 0.01, heroi 0.04, monstros 1.11, combate 0.49, camera_efeitos 0.02, cenario_atm 0.02, copas 0.17, luzes 0.13, sombras_ativacao 0.15, horda 0.97 | horda: 80 monstros em 15 fatias
+horda baixo RENDER ms/quadro: cpu mundo 2.24, gpu mundo 3.99, cpu janela 0.20, gpu janela 0.39; chamadas de desenho 267; objetos 474; fora do script 3.33
 --- mediana de 3 (minimo a maximo) ---
-sombra=media mediana=191 (190 a 204)
-sombra=alta mediana=183 (173 a 214)
+santuario baixa mediana=219 (187 a 238)
+santuario media mediana=183 (166 a 205)
+santuario alta mediana=184 (162 a 194)
+santuario baixo mediana=253 (207 a 256)
+horda baixa mediana=168 (161 a 170)
+horda media mediana=143 (142 a 144)
+horda alta mediana=132 (121 a 138)
+horda baixo mediana=169 (155 a 178)
