@@ -36,6 +36,7 @@ const Oclusao := preload("res://v2/oclusao.gd")  # silhueta do herói atrás de 
 const Depuracao := preload("res://v2/depuracao_colisao.gd")
 const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
+const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no santuário
 const Trilha := preload("res://v2/trilha.gd")  # a música de fundo da partida (faixa por momento, volume no bus Musica)
 const LARG := 960
 const ALT := 540
@@ -59,6 +60,7 @@ signal partida_terminou(resultado: Dictionary)
 
 ## Para os testes: true antes de add_child pula o que mexe na janela e nas fotos.
 var modo_teste := false
+var id_mapa := ""  # "floresta", "laboratorio"...: vazio = o escolhido no santuário (floresta nos testes), ou --mapa=<id>; os testes podem pôr antes de add_child
 var mouse_forcado: Variant = null  # testes: um Vector2 do mundo aqui vale no lugar do mouse
 var dados: Dictionary = {}
 var ap
@@ -128,7 +130,9 @@ func _ready() -> void:
 	Entrada.garantir()
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
 		Config.g_perfil_temporario(str(args.perfil))
-	dados = Dados.json("v2_floresta")
+	if id_mapa == "":
+		id_mapa = str(args.get("mapa", Mapas.PADRAO if modo_teste else Mapas.escolhido()))
+	dados = Dados.json(str(Mapas.buscar(id_mapa).dados))
 	var tm: Array = dados.get("mapa", {}).get("tam", [2880, 1620])
 	mapa = Rect2(0, 0, float(tm[0]), float(tm[1]))
 	var borda := float(dados.get("mapa", {}).get("borda_andavel", 24.0))
@@ -227,10 +231,11 @@ func _montar() -> void:
 	sombras = Sombras.new()
 	sombras.montar(no_mundo)
 	sombras.luzes = luzes
+	sombras.definir_ambiente(dados.get("mapa", {}).get("sombra_ambiente", {}))  # sombra base do mapa (laboratório); sem a chave, só as luzes
 	cenario = Cenario.new()
 	cenario.carregar(dados, no_mundo, luzes, sombras, sprites.com_normal)
 	copas = Copas.new()
-	copas.montar(cenario.objetos)
+	copas.montar(cenario.objetos, float(dados.get("mapa", {}).get("copas_altura_min", Copas.ALTURA_MIN)))
 	dbg_colisao = Depuracao.new()
 	dbg_colisao.mundo = self
 	dbg_colisao.z_index = 400  # por cima do mundo inteiro (árvores, atores, sombras)
@@ -254,6 +259,7 @@ func _montar() -> void:
 	_sombras_prontas = true
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_luar(m)
+	atm.config = dados.get("atmosfera", {})
 	atm.ambiente(cam.position)
 	_vinheta()
 	_ler_graficos()

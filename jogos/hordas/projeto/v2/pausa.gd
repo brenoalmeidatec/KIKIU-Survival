@@ -284,6 +284,10 @@ func entrada(e: InputEvent) -> bool:
 			abrir_sair()
 			return true
 		return pausar()
+	# Tab: o card "SUA BUILD" ao lado do menu troca a página visual pela de detalhes (status.gd)
+	if e is InputEventKey and e.keycode == KEY_TAB and e.pressed and not e.echo and tela == "menu" and mundo != null and mundo.get("status") != null:
+		mundo.status.alternar_detalhe()
+		return true
 	if e is InputEventMouseMotion:
 		var i := _linha_sob_mouse()
 		if i >= 0 and i != sel:

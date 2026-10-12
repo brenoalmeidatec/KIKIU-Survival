@@ -133,6 +133,8 @@ func entrada(e: InputEvent) -> bool:
 		if e is InputEventKey:
 			if e.keycode == KEY_ESCAPE:
 				return false
+			if e.keycode == KEY_TAB and e.pressed and not e.echo:
+				alternar_detalhe()
 			if e.keycode == KEY_C and e.pressed and not e.echo and not (e.ctrl_pressed or e.alt_pressed or e.meta_pressed):
 				alternar()
 		return true
@@ -611,6 +613,9 @@ func _pintar() -> void:
 	if secoes.is_empty() or _modo_atual == "":
 		return
 	_m = _modo_atual
+	if _m != "hud" and not _detalhe:
+		_pintar_visual()  # pausa e painel central abrem na página visual; o Tab troca pela tabela de detalhes
+		return
 	var rects: Array = _colunas()
 	var opaco: bool = _m != "hud"  # na pausa e no painel central: sem ver o que está atrás
 	if _m == "central":
@@ -875,6 +880,296 @@ func _larg_trecho(tr: Array) -> float:
 	if int(tr[1]) == 0:
 		return _larg_misto(str(tr[0]), TAM_P)
 	return _f_num.get_string_size(str(tr[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_NUM).x
+
+
+# ------------------------------------------------------------------ página VISUAL (pausa e painel central)
+# O que a pessoa lê para decidir a build, em barras, pips e ícones: nível e XP, vida, fôlego, esquivas, os bônus e o que cada golpe faz.
+# O detalhe técnico (px/s, recuperação do fôlego, imunidade em segundos, a próxima onda...) fica na página de DETALHES (a tabela de antes),
+# que o Tab alterna (`alternar_detalhe`). O HUD compacto (C na partida) segue a tabela curta. Os números vêm das `secoes` (o mesmo `coletar`
+# que os testes conferem) e, no que é só barra (vida, XP e fôlego de agora, os multiplicadores), do herói.
+
+const TAM_GRANDE := 16  # números grandes (Press Start 2P, 2x a grade do HUD)
+const ALT_STAT := 20.0
+const ALT_GOLPE := 20.0
+const COR_VIDA := Color(0.86, 0.22, 0.25)
+const COR_XP := Color(0.45, 0.75, 1.0)
+const COR_FOLEGO := Color(0.55, 0.95, 0.62)
+const COR_VAZIO := Color(0.16, 0.15, 0.24)
+const COR_BORDA := Color(0.04, 0.03, 0.08)
+## Ícones 8x8 desenhados aqui (2x na tela = 16 px). "#" = cor do ícone, "o" = brilho, "." = vazio. Feitos para o card, sem arte de terceiros.
+const ICONES := {
+	"vida": [".##.##..", "#o####..", "######..", "######..", ".####...", "..##....", "........", "........"],
+	"folego": ["...##...", "..#o##..", ".#o###..", ".####...", "..###...", "...##...", "....#...", "........"],
+	"esquiva": ["..##....", "..#o#...", "...##...", ".####.#.", "#.##.#..", "..#.#...", ".#...#..", "#.....#."],
+	"ima": ["#.....#.", "#o...o#.", "#.....#.", "#.....#.", "##...##.", ".#####..", "..###...", "........"],
+	"vel": ["...##...", "..##....", ".####o#.", "#####...", "..##....", ".##.....", "##......", "........"],
+	"dano": [".......#", "......##", ".....o#.", "....##..", ".#.##...", "..##....", ".#.#....", "#......."],
+	"critico": ["...#....", "..###...", "#.#o#.#.", ".#####..", "#.#o#.#.", "..###...", "...#....", "........"],
+	"ritmo": ["..###...", ".#o..#..", "#...#.#.", "#..#..#.", "#.....#.", ".#...#..", "..###...", "........"],
+	"area": ["#.#.#.#.", "........", "#..##..#", "..#oo#..", "#.#oo#.#", "...##...", "#......#", ".#.#.#.."],
+	"tempo": ["..###...", ".#o..#..", "#..#..#.", "#..##.#.", "#.....#.", ".#...#..", "..###...", "........"],
+	"abates": [".####...", "#o####..", "#.##.#..", "######..", ".#..#...", ".####...", "........", "........"],
+	"almas": ["...#....", "..##....", ".#o##...", ".####...", "######..", "#o####..", ".####...", "........"],
+	"rerrolar": ["######..", "#o...#..", "#.#..#..", "#..#.#..", "#...##..", "######..", "........", "........"],
+	"banir": ["#.....#.", ".#...#..", "..#.#...", "...#....", "..#.#...", ".#...#..", "#.....#.", "........"],
+}
+
+var _detalhe := false  # pausa e painel central: true = a página de detalhes (a tabela), false = a visual
+
+
+## Tab: troca a página visual pela de detalhes (e volta). Vale com o card na pausa ou no painel central; devolve true se trocou.
+func alternar_detalhe() -> bool:
+	if _modo_atual != "pausa" and _modo_atual != "central":
+		return false
+	_detalhe = not _detalhe
+	_tela.queue_redraw()
+	return true
+
+
+## A página na tela (ou a que seria medida): "visual", "detalhe" ou "hud" (o compacto do C).
+func pagina() -> String:
+	if _modo_de_medida() == "hud":
+		return "hud"
+	return "detalhe" if _detalhe else "visual"
+
+
+## As colunas da página visual: na pausa as duas ao lado do menu; no painel central as três.
+func colunas_visuais() -> Array:
+	return COLUNAS_CENTRAL if _modo_de_medida() == "central" else COLUNAS_PAUSA
+
+
+## Desenha (ou só mede, com `seco`) a página visual; devolve, por coluna, a altura que o conteúdo pede.
+func _visual(seco: bool) -> Array:
+	var cols: Array = colunas_visuais()
+	var grupos: Array = [["heroi", "partida"], ["katana", "golpes"]] if cols.size() == 2 else [["heroi", "partida"], ["katana"], ["golpes"]]
+	var alts: Array = []
+	for c in cols.size():
+		var r: Rect2 = cols[c]
+		var x := r.position.x + PAD
+		var w := r.size.x - 2.0 * PAD
+		var y := r.position.y + PAD - 2.0
+		if c == 0:
+			if not seco:
+				_texto_titulo("SUA BUILD", Vector2(x, y), COR_TITULO)
+				var dica := "[Tab] detalhes" if _m == "pausa" else "[Tab] detalhes [C] fecha"
+				_tela.draw_string(_f_num, Vector2(x, y + 6.0 + _f_num.get_ascent(TAM_NUM)), dica, HORIZONTAL_ALIGNMENT_RIGHT, w, TAM_NUM, COR_ROTULO)
+			y += ALT_TITULO
+		for id in grupos[c]:
+			var sec := _achar(str(id))
+			if sec.is_empty():
+				continue
+			if not seco:
+				_texto_titulo(str(sec.titulo).replace(" (CLIQUE)", ""), Vector2(x, y + 2.0), sec.cor)
+				_tela.draw_line(Vector2(x, y + ALT_CAB + 2.0), Vector2(x + w, y + ALT_CAB + 2.0), COR_LINHA, 1.0)
+			y += ALT_CAB + 7.0
+			match str(id):
+				"heroi":
+					y = _v_heroi(x, y, w, seco)
+				"partida":
+					y = _v_partida(x, y, w, seco)
+				"katana":
+					y = _v_katana(x, y, w, seco)
+				"golpes":
+					y = _v_golpes(sec, x, y, w, seco)
+			y += 4.0
+		alts.append(y - r.position.y + PAD - 2.0)
+	return alts
+
+
+## Os retângulos da página visual como são desenhados (a altura é a que o conteúdo pede, sem passar da coluna).
+func retangulos_visuais() -> Array:
+	_m = _modo_de_medida()
+	var alts := _visual(true)
+	var r: Array = []
+	for c in alts.size():
+		var col: Rect2 = colunas_visuais()[c]
+		r.append(Rect2(col.position, Vector2(col.size.x, minf(float(alts[c]), col.size.y))))
+	return r
+
+
+## Por coluna: true se a página visual pede mais altura que a coluna (os testes conferem que nunca, nem com a build cheia).
+func visual_cortada() -> Array:
+	_m = _modo_de_medida()
+	var alts := _visual(true)
+	var r: Array = []
+	for c in alts.size():
+		r.append(float(alts[c]) > (colunas_visuais()[c] as Rect2).size.y)
+	return r
+
+
+func _pintar_visual() -> void:
+	var alts := _visual(true)
+	var cols := colunas_visuais()
+	if _m == "central":
+		_tela.draw_rect(TELA, COR_FUNDO_OPACO)
+	for c in cols.size():
+		var col: Rect2 = cols[c]
+		var r := Rect2(col.position, Vector2(col.size.x, minf(float(alts[c]), col.size.y)))
+		_tela.draw_rect(r, COR_FUNDO_OPACO)
+		_tela.draw_style_box(_estilo, r)
+	_visual(false)
+
+
+func _icone8(nome: String, pos: Vector2, cor: Color, escala := 2.0) -> void:
+	var px: Array = ICONES.get(nome, [])
+	var brilho := cor.lightened(0.55)
+	for j in px.size():
+		var row: String = px[j]
+		for i in row.length():
+			var ch := row[i]
+			if ch == ".":
+				continue
+			_tela.draw_rect(Rect2(pos + Vector2(i, j) * escala, Vector2(escala, escala)), brilho if ch == "o" else cor)
+
+
+func _num(s: String, pos: Vector2, w: float, alin: HorizontalAlignment, tam: int, cor: Color) -> void:
+	_tela.draw_string(_f_num, Vector2(pos.x, pos.y + _f_num.get_ascent(tam)), s, alin, w, tam, cor)
+
+
+## Barra com moldura escura: `frac` de 0 a 1 cheio na cor `cor`.
+func _barra(r: Rect2, frac: float, cor: Color) -> void:
+	_tela.draw_rect(r.grow(1.0), COR_BORDA)
+	_tela.draw_rect(r, COR_VAZIO)
+	var f := clampf(frac, 0.0, 1.0)
+	if f > 0.0:
+		_tela.draw_rect(Rect2(r.position, Vector2(roundf(r.size.x * f), r.size.y)), cor)
+		_tela.draw_rect(Rect2(r.position, Vector2(roundf(r.size.x * f), 2.0)), cor.lightened(0.3))
+
+
+## Pips (quadradinhos): `total` casas, `cheios` cheios (a fração vira pip parcial).
+func _pips(pos: Vector2, cheios: float, total: int, cor: Color, lado := 8.0) -> void:
+	for i in total:
+		var r := Rect2(pos + Vector2(i * (lado + 3.0), 0), Vector2(lado, lado))
+		_tela.draw_rect(r.grow(1.0), COR_BORDA)
+		_tela.draw_rect(r, COR_VAZIO)
+		var f := clampf(cheios - i, 0.0, 1.0)
+		if f > 0.0:
+			_tela.draw_rect(Rect2(r.position, Vector2(roundf(lado * f), lado)), cor)
+
+
+## Uma linha de atributo: ícone, rótulo e o número grande à direita.
+func _stat(ic: String, cor_ic: Color, rotulo: String, valor: String, x: float, y: float, w: float, cor_valor := COR_VALOR) -> void:
+	_icone8(ic, Vector2(x, y + 1.0), cor_ic)
+	_texto(Dados.fonte_texto, rotulo, Vector2(x + 22.0, y + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+	_num(valor, Vector2(x, y + 1.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM_GRANDE if valor.length() <= 6 else TAM_NUM, cor_valor)
+
+
+static func _bonus_pct(mult: float) -> String:
+	var p := roundi((mult - 1.0) * 100.0)
+	return "base" if p == 0 else ("%+d%%" % p)
+
+
+func _v_heroi(x: float, y: float, w: float, seco: bool) -> float:
+	var h = mundo.heroi
+	if not seco:
+		_num("NV%d" % h.nivel, Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM_GRANDE, COR_TITULO)  # nível grande e a barra de XP ao lado
+		_barra(Rect2(x + 80.0, y + 4.0, w - 80.0, 8.0), h.xp / maxf(1.0, h.xp_proximo), COR_XP)
+		_icone8("vida", Vector2(x, y + 22.0), COR_VIDA)  # vida: barra grossa com o número dentro
+		_barra(Rect2(x + 22.0, y + 22.0, w - 22.0, 16.0), h.vida / maxf(1.0, h.vida_max), COR_VIDA)
+		_num("%d/%d" % [roundi(h.vida), roundi(h.vida_max)], Vector2(x + 22.0, y + 26.0), w - 22.0, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Color.WHITE)
+		_icone8("folego", Vector2(x, y + 44.0), COR_FOLEGO)  # fôlego em cargas (pips) e quantas esquivas seguidas dá
+		_pips(Vector2(x + 22.0, y + 48.0), h.folego, ceili(h.folego_max - 0.01), COR_FOLEGO)
+		_texto(Dados.fonte_texto, "fôlego", Vector2(x, y + 44.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
+		var seg := int(linha(secoes, "heroi.esquiva").get("n", [0])[0])
+		_icone8("esquiva", Vector2(x, y + 64.0), COR_DICA)
+		_pips(Vector2(x + 22.0, y + 68.0), seg, seg, COR_DICA)
+		_texto(Dados.fonte_texto, "esquivas", Vector2(x, y + 64.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
+		_stat("vel", COR_BONUS, "Velocidade", _bonus_pct(h.m_vel_mov), x, y + 86.0, w, COR_BONUS if h.m_vel_mov > 1.0 else COR_ROTULO)
+		_stat("ima", COR_SANTUARIO, "Ímã", _bonus_pct(h.m_ima), x, y + 86.0 + ALT_STAT, w, COR_BONUS if h.m_ima > 1.0 else COR_ROTULO)
+	return y + 86.0 + 2.0 * ALT_STAT
+
+
+func _v_partida(x: float, y: float, w: float, seco: bool) -> float:
+	if not seco:
+		var t := float(linha(secoes, "partida.tempo").get("n", [0])[0])
+		var ab := int(linha(secoes, "partida.abates").get("n", [0])[0])
+		var al := int(linha(secoes, "partida.almas").get("n", [0, 0])[1])
+		var cw := w / 3.0
+		var itens := [["tempo", COR_DICA, _tempo(t)], ["abates", COR_ROTULO, str(ab)], ["almas", COR_SANTUARIO, str(al)]]
+		for i in itens.size():
+			var cx := x + i * cw
+			_icone8(str(itens[i][0]), Vector2(cx + (cw - 16.0) / 2.0, y), itens[i][1])
+			_num(str(itens[i][2]), Vector2(cx, y + 20.0), cw, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, COR_VALOR)
+		var rb: Array = linha(secoes, "partida.rerrolar").get("n", [0, 0])  # as cartas: rerrolar e banir que restam
+		var yy := y + 36.0
+		_icone8("rerrolar", Vector2(x, yy), COR_DICA)
+		_num(str(int(rb[0])), Vector2(x + 20.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, COR_VALOR)
+		_icone8("banir", Vector2(x + 56.0, yy), COR_VIDA)
+		_num(str(int(rb[1])), Vector2(x + 76.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, COR_VALOR)
+		var nm := 0
+		for l in _achar("santuario").get("linhas", []):
+			if str(l.id) != "santuario.nenhuma":
+				nm += 1
+		if nm > 0:
+			_texto(Dados.fonte_texto, "Santuário: %d" % nm, Vector2(x, yy + 2.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_SANTUARIO)
+	return y + 56.0
+
+
+func _v_katana(x: float, y: float, w: float, seco: bool) -> float:
+	var h = mundo.heroi
+	if not seco:
+		var maior := 0.0
+		for d in linha(secoes, "katana.dano").get("n", []):
+			maior = maxf(maior, float(d))
+		var cr: Array = linha(secoes, "katana.critico").get("n", [0, 1])
+		_stat("dano", COR_VALOR, "Dano", str(roundi(maior)), x, y, w)
+		_stat("critico", COR_TITULO, "Crítico", "%s%%" % _p(float(cr[0]) * 100.0), x, y + ALT_STAT, w)
+		_stat("ritmo", COR_DICA, "Vel. ataque", _bonus_pct(h.m_vel_ataque), x, y + 2.0 * ALT_STAT, w, COR_BONUS if h.m_vel_ataque > 1.0 else COR_ROTULO)
+		_stat("area", COR_BONUS, "Área", _bonus_pct(h.m_area), x, y + 3.0 * ALT_STAT, w, COR_BONUS if h.m_area > 1.0 else COR_ROTULO)
+	y += 4.0 * ALT_STAT
+	for l in _achar("katana").get("linhas", []):  # os modificadores da katana: uma linha cada, como os golpes
+		if str(l.tipo) == "bloco":
+			if not seco:
+				_golpe(l, x, y, w)
+			y += ALT_GOLPE
+	return y
+
+
+func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool) -> float:
+	for l in sec.linhas:
+		if str(l.tipo) != "bloco":
+			if not seco:
+				_texto(Dados.fonte_texto, "Nenhum ainda: vêm das cartas.", Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+			y += ALT_LINHA
+			continue
+		if not seco:
+			_golpe(l, x, y, w)
+		y += ALT_GOLPE
+	return y
+
+
+## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em pips (estrela dourada se evoluído) e o número.
+func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
+	var cor: Color = l.cor
+	var num_w := _larg_trechos(l.uma)
+	_tela.draw_rect(Rect2(x - 1.0, y - 1.0, 18.0, 18.0), cor.darkened(0.55))
+	_desenhar_icone(l, x, y)
+	var nome_w := w - 22.0 - 60.0 - num_w
+	_texto(Dados.fonte_texto, _cabe(str(l.nome_curto), nome_w), Vector2(x + 22.0, y + 2.0), nome_w, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor.lerp(Color.WHITE, 0.35))
+	var pipx := x + w - num_w - 56.0
+	var nc := str(l.nivel_curto)
+	if nc == "evo":
+		_icone8("critico", Vector2(pipx, y + 1.0), COR_TITULO)
+	else:
+		var p := nc.split("/")
+		var niv := int(p[0])
+		_pips(Vector2(pipx, y + 5.0), niv, int(p[1]) if p.size() > 1 else niv, cor, 5.0)
+	_desenhar_trechos_em(l.uma, x + w - num_w, y + 2.0)
+
+
+func _desenhar_trechos_em(trechos: Array, x: float, y: float) -> void:
+	for tr in trechos:
+		x += _desenhar_trecho(tr, x, y)
+
+
+## Corta o nome com "." se não couber em `w`.
+func _cabe(s: String, w: float) -> String:
+	var f: Font = Dados.fonte_texto
+	if f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x <= w:
+		return s
+	while s.length() > 1 and f.get_string_size(s + ".", HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x > w:
+		s = s.substr(0, s.length() - 1)
+	return s + "."
 
 
 func _larg_trechos(trechos: Array) -> float:
