@@ -191,7 +191,7 @@ func atualizar(dt: float) -> void:
 		avisos.atualizar(dt)
 		baus.atualizar(dt)
 	var o0 := Time.get_ticks_usec()
-	orbes.atualizar(dt, h.pos + Vector2(0, -8), float(cfg.heroi.ima_raio) * h.m_ima)
+	orbes.atualizar(dt, h.pos + Vector2(0, -8), h.alcance_ima())
 	mundo._perfil("c_orbes", Time.get_ticks_usec() - o0)
 
 
@@ -298,10 +298,29 @@ func efeitos(dt: float) -> void:
 # ------------------------------------------------------------------ golpe
 
 
+## Os números do golpe da katana COMO O JOGO OS USA (golpe_comecou e golpear leem daqui; o card de status, status.gd, também).
+## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance e arco com a área.
+func dano_do_passo(passo: Dictionary) -> float:
+	return float(passo.dano) * mundo.heroi.m_dano
+
+
+func alcance_do_passo(passo: Dictionary) -> float:
+	return float(passo.alcance) * mundo.heroi.m_area
+
+
+func arco_do_passo(passo: Dictionary) -> float:
+	return float(passo.arco) * (1.0 + (mundo.heroi.m_area - 1.0) * 0.5)
+
+
+## Chance de crítico da katana (0 a 1): a base dos dados mais o bônus das cartas.
+func chance_critico() -> float:
+	return float(cfg.golpe.critico.chance) + mundo.heroi.m_critico
+
+
 func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	var cor := _cor(passo.cor)
-	var alc: float = float(passo.alcance) * h.m_area
-	var arco: float = float(passo.arco) * (1.0 + (h.m_area - 1.0) * 0.5)
+	var alc: float = alcance_do_passo(passo)
+	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
 	fx.corte(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, arco, float(passo.lado), str(passo.nome), cor, vis)
 	audio.tocar(str(passo.som), randf_range(0.96, 1.06), -2.0 if passo.nome != "estocada" else 0.0, 0.02)
@@ -309,8 +328,8 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 
 ## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
 func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
-	var alc: float = float(passo.alcance) * h.m_area
-	var arco: float = float(passo.arco) * (1.0 + (h.m_area - 1.0) * 0.5)
+	var alc: float = alcance_do_passo(passo)
+	var arco: float = arco_do_passo(passo)
 	var cos_meio := cos(deg_to_rad(arco * 0.5))
 	var parada := 0.0
 	var tremor := 0.0
@@ -328,8 +347,8 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 			continue
 		n += 1
 		acertos += 1
-		var crit: bool = randf() < float(cfg.golpe.critico.chance) + h.m_critico
-		var d: float = float(passo.dano) * h.m_dano * (1.0 + randf_range(-float(cfg.golpe.variacao), float(cfg.golpe.variacao)))
+		var crit: bool = randf() < chance_critico()
+		var d: float = dano_do_passo(passo) * (1.0 + randf_range(-float(cfg.golpe.variacao), float(cfg.golpe.variacao)))
 		if crit:
 			d *= float(cfg.golpe.critico.mult)
 			criticos += 1
@@ -355,9 +374,9 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		tremor = maxf(tremor, float(cfg.morte.tremor))
 	# modificadores da katana: o corte solta uma onda, a estocada solta uma lança de luz
 	if passo.nome == "corte" and float(armas.mods.onda) > 0.0:
-		armas.lancar_onda(origem, dir, float(passo.dano) * h.m_dano * float(armas.mods.onda) / 100.0)
+		armas.lancar_onda(origem, dir, dano_do_passo(passo) * float(armas.mods.onda) / 100.0)
 	elif passo.nome == "estocada" and float(armas.mods.fura) > 0.0:
-		armas.lancar_lanca(origem, dir, float(passo.dano) * h.m_dano * float(armas.mods.fura) / 100.0)
+		armas.lancar_lanca(origem, dir, dano_do_passo(passo) * float(armas.mods.fura) / 100.0)
 	processar_mortes()
 	if n > 0:
 		hit_stop(parada)

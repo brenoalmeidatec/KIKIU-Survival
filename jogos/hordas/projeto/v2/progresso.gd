@@ -28,6 +28,11 @@ func xp_para(n: int) -> float:
 	return roundf(float(x.base) + float(x.passo) * k + float(x.quad) * k * k)
 
 
+## Vida que o herói recupera a cada nível que sobe (a fração `cura_nivel` da vida máxima de agora). O card de status mostra este valor.
+func cura_por_nivel() -> float:
+	return combate.mundo.heroi.vida_max * float(cfg.heroi.cura_nivel)
+
+
 func zerar() -> void:
 	melhorias.clear()
 	pendentes = 0
@@ -51,7 +56,7 @@ func ganhar_xp(v: float) -> void:
 		h.xp -= h.xp_proximo
 		h.nivel += 1
 		h.xp_proximo = xp_para(h.nivel)
-		h.curar(h.vida_max * float(cfg.heroi.cura_nivel))
+		h.curar(cura_por_nivel())
 		pendentes += 1
 		combate.nivel_subiu(h.nivel)
 	if pendentes > 0 and combate.lento_acao == "" and not combate.pausado and combate.jogo == "jogando":

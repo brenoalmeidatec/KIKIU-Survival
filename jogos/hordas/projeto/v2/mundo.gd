@@ -13,7 +13,7 @@ extends Node
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
-## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
+## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
 ## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
 ## no herói vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado.
@@ -77,6 +77,7 @@ var monstros: Array = []  # os monstros VIVOS (quem morre volta para o pool e re
 var combate
 var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
 var meta_res  # resultado com as almas (resultado_meta.gd); null no modo de teste
+var status  # card "SUA BUILD" (status.gd): a tecla C liga no HUD e a pausa o mostra ao lado do menu
 var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, rolagem, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
@@ -142,6 +143,8 @@ func _ready() -> void:
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
 	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
 	sv.add_child(preload("res://v2/pausa.tscn").instantiate().iniciar(self))  # ESC ou Start pausam e abrem o menu (pausa.gd)
+	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
+	sv.add_child(status)
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
 		sv.add_child(meta_res)
@@ -428,6 +431,9 @@ func mouse_mundo() -> Vector2:
 
 
 func _input(e: InputEvent) -> void:
+	if status != null and status.entrada(e):  # C liga e desliga o card da build, também sobre a escolha de cartas e o baú (que comem as teclas)
+		get_viewport().set_input_as_handled()
+		return
 	if meta_res != null and meta_res.entrada(e):  # o resultado com as almas vem antes da tela de resultado (telas.gd)
 		get_viewport().set_input_as_handled()
 		return

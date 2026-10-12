@@ -260,6 +260,54 @@ func tem(id: String) -> bool:
 	return ativas.has(id)
 
 
+## Quanto do dano do corte a onda leva, em %: o valor do modificador vezes a Ventania (se a evolução já veio). É o que `lancar_onda` solta.
+func pct_onda() -> float:
+	return float(mods.onda) * (float(ventania.mult_onda) if not ventania.is_empty() else 1.0)
+
+
+## Os números de um golpe secundário `a` (um item de `ativas`) COMO O JOGO OS USA agora, com o dano do herói e a velocidade de ataque dentro
+## (o card de status, status.gd, lê isto): `dano` por acerto (já arredondado, como o jogo faz em `combate.ferir`), `intervalo` em s entre dois
+## acertos da mesma fonte, `acertos` por segundo que a estimativa supõe e `dps`, a estimativa de dano por segundo num monstro sempre ao
+## alcance (lâmina e aura batem a cada recarga; corvos e raios contam o que cada ciclo solta; fogo conta a queima). O teste v2_status
+## confere cada tipo contra a simulação.
+func numeros(a: Dictionary) -> Dictionary:
+	var h = mundo.heroi
+	var st: Dictionary = a.st
+	var vel_a: float = h.m_vel_ataque
+	var dano := float(maxi(1, roundi(float(st.dano) * h.m_dano)))
+	var intervalo := 1.0
+	var acertos_s := 1.0
+	var extra := 0.0
+	var queima := float(st.get("queima_dps", 0.0))
+	if queima > 0.0:  # fogo que fica no monstro (vale o maior, conta uma vez): a cada 0,5 s tira queima*0,5 arredondado (monstro._queimar)
+		extra += float(maxi(1, roundi(queima * 0.5))) * 2.0
+	match str(a.tipo):
+		"orbita":
+			intervalo = float(st.tique) / vel_a
+			acertos_s = 1.0 / intervalo  # monstro colado no herói (a lâmina varre do centro): bate a cada recarga do monstro
+			if st.has("aura_raio"):  # Anel de Brasas: a aura de fogo bate junto (a cada 0,5 s / velocidade de ataque)
+				extra += float(maxi(1, roundi(float(st.aura_dano) * h.m_dano))) * vel_a / 0.5
+		"aura":
+			intervalo = float(st.tique) / vel_a
+			acertos_s = 1.0 / intervalo
+		"corvos":
+			intervalo = float(st.tique)  # a bicada não acelera com a velocidade de ataque; só a chegada de corvos novos
+			var vivos := minf(float(MAX_CORVOS), float(st.quantidade) * float(st.duracao) * vel_a / float(st.recarga))
+			acertos_s = vivos / intervalo * (1.0 + float(st.get("eletrico", 0.0)))
+		"raio":
+			intervalo = float(st.recarga) / vel_a
+			var queda := 0.0
+			var k := 1.0
+			for j in int(st.cadeia) + 1:  # cada salto leva 85% do anterior (_cair_raio)
+				queda += k
+				k *= 0.85
+			acertos_s = float(st.quantidade) * queda / intervalo
+		"runa":
+			intervalo = float(st.recarga) / vel_a
+			acertos_s = float(st.quantidade) / intervalo
+	return {"dano": dano, "intervalo": intervalo, "acertos": acertos_s, "dps": dano * acertos_s + extra}
+
+
 # ------------------------------------------------------------------ o quadro
 
 

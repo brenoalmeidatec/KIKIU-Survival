@@ -148,6 +148,25 @@ func _sinergia_texto(id: String) -> String:
 	return ""
 
 
+## Evoluções ainda não feitas que usam a peça `id` (o card de status mostra): [{nome, falta}], onde `falta` lista as peças que ainda não
+## estão no nível pedido ("Aura de Fogo nv 3"). Vazio = a peça não entra em evolução nenhuma, ou a evolução dela já aconteceu.
+func evolucoes_com(id: String) -> Array:
+	var r: Array = []
+	for ev in cfg.evolucoes:
+		if evoluidas.has(ev.id):
+			continue
+		var usa := false
+		var falta: Array = []
+		for p in ev.pecas:
+			if str(p.id) == id:
+				usa = true
+			if not _peca_ok(p):
+				falta.append("%s nv %d" % [str(_def[str(p.id)].nome), int(p.nivel)])
+		if usa:
+			r.append({"nome": str(ev.nome), "falta": falta})
+	return r
+
+
 func golpes_ativos() -> int:
 	var n := 0
 	for d in cfg.golpes:
