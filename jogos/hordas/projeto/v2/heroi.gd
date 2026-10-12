@@ -12,10 +12,15 @@ extends "res://v2/ator.gd"
 ##    não corre nem esquiva até recuperar ~30%, e anda mais devagar. A recuperação começa depois de um atraso sem gastar e é mais rápida
 ##    parado. Atacar cancela a corrida. A câmera adianta um pouco na direção da corrida.
 ##  - VIDA: ao apanhar fica invencível um instante, piscando, e leva um empurrão.
-## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool).
+##  - RUPTURA (ação "ruptura", botão direito do mouse ou gatilho esquerdo; números em dados/v2_ruptura.json, disparo em v2/ruptura.gd): o APERTO
+##    (evento) pede, a POSSE (polling) carrega. Estado.CARGA anda a 45%, não corre nem golpeia, NÃO é invencível e apanhar não cancela. Soltar
+##    com carga mínima dispara em 360 graus (soltura perfeita na janela depois da carga cheia). Cancelam sem disparar e sem gastar recarga: a
+##    esquiva, a pausa/escolha/baú/resultado (combate.jogo e pausado), a morte e o salto de relógio (ESC e perda de foco).
+## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), e da
+## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max.
 
 enum Fonte { ANDA, MOUSE, STICK }
-enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO }
+enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA }  # CARGA no fim: nada é renumerado
 const VEL := 100.0  # px/s
 const PASSO_ANIM := 0.13  # s por quadro de andar
 const CENTRO_CORPO := Vector2(0, -20)  # do pé ao meio do corpo (mira e câmera)
@@ -48,6 +53,7 @@ var mira_mundo := Vector2.ZERO  # ponto do mundo para onde o golpe vai (mouse ou
 var entrada_forcada: Variant = null  # testes, fotos e medição: um Vector2 aqui vale no lugar do teclado e do controle
 var ataque_forcado: Variant = null  # idem para o botão de atacar segurado (true/false); só vale com entrada_forcada
 var correr_forcado: Variant = null  # idem para o botão de correr segurado
+var ruptura_forcada: Variant = null  # idem para o botão da ruptura segurado
 var _soltar_ataque := false  # o botão de atacar que fechou uma tela (escolha, baú) já foi gasto: só volta a golpear depois de soltá-lo
 var avanco_camera := Vector2.ZERO  # para onde a câmera adianta ao correr (px, suavizado)
 var imortal := false  # medição e roteiros: ninguém tira vida
@@ -74,6 +80,22 @@ var esq_inv := 0.3
 var esq_dir := Vector2.RIGHT
 var esq_pedido := 0.0
 var esquivas := 0
+# ruptura (botão direito)
+var rup_carga := 0.0  # fração da carga (0 a 1) lida pelo HUD e pelo desenho do anel
+var rup_carga_t := 0.0  # s de carga (tempo do mundo)
+var rup_recarga := 0.0  # s até poder carregar de novo
+var rup_recarga_max := 1.0  # a recarga do último disparo (o HUD desenha a fração)
+var rup_perfeita := false  # a carga está na janela da soltura perfeita
+var rup_nega_t := 0.0  # s do "negado" (apertou na recarga): o slot do HUD treme
+var contragolpe_t := 0.0  # s que faltam do bônus de dano da katana depois de um disparo que acertou
+var contragolpe_max := 1.5  # a janela cheia, para o HUD
+var rup_pedido_t := 0.0  # aperto guardado
+var rup_disparos := 0  # testes
+var rup_cancelados := 0  # testes
+var _rup_us := 0  # Time.get_ticks_usec() do último quadro da carga (salto de relógio)
+var _rup_apos_acerto := false  # o aperto veio depois do acerto do golpe: cancela o resto do golpe (antes do acerto, espera o golpe acabar)
+var _rup_tique := 0  # quantos marcos de som a carga atual já tocou
+var _rup_punch := 0.0
 var _esq_rastro := 0.0
 var _atraso_t := 0.0  # s até o fôlego começar a voltar
 var _poeira_t := 0.0
@@ -123,6 +145,19 @@ func resetar(p: Vector2) -> void:
 	pedido_t = 0.0
 	esq_pedido = 0.0
 	proximo = 0
+	rup_carga = 0.0
+	rup_carga_t = 0.0
+	rup_recarga = 0.0
+	rup_recarga_max = 1.0
+	rup_perfeita = false
+	rup_nega_t = 0.0
+	contragolpe_t = 0.0
+	rup_pedido_t = 0.0
+	_rup_apos_acerto = false
+	rup_disparos = 0
+	rup_cancelados = 0
+	_rup_tique = 0
+	_rup_punch = 0.0
 	avanco_camera = Vector2.ZERO
 	_punch = 0.0
 	sprite.rotation = 0.0
@@ -149,11 +184,32 @@ func exigir_soltar_ataque() -> void:
 	_soltar_ataque = true
 
 
+## O botão da ruptura foi apertado (o mundo repassa o evento; os testes também chamam). Só pede: quem carrega é a POSSE do botão (_livre).
+## Na recarga (mais que o buffer) é negado: som grave e o slot do HUD treme. Antes do quadro de acerto de um golpe, o pedido espera o golpe acabar.
+func ruptura() -> void:
+	var c = mundo.combate
+	if c.ruptura == null or c.jogo != "jogando" or c.pausado or _pausa_aberta() or estado == Estado.MORTO or estado == Estado.CARGA:
+		return
+	var buffer := float(c.cfg.golpe.buffer)
+	if rup_recarga > buffer:
+		rup_nega_t = float(c.ruptura.cfg.nega_t)
+		c.ruptura.negou(self)
+		return
+	rup_pedido_t = buffer
+	_rup_apos_acerto = estado == Estado.GOLPE and golpe_acertou
+	if estado == Estado.GOLPE and not golpe_acertou:
+		rup_pedido_t += maxf(golpe_dur - golpe_t, 0.0)
+
+
 func entrada_evento(e: InputEvent) -> void:
 	if e.is_action_pressed("atacar", false, true):
 		atacar()
 	elif InputMap.has_action("esquiva") and e.is_action_pressed("esquiva", false, true):
 		esquivar()
+	elif InputMap.has_action("ruptura") and e.is_action_pressed("ruptura", false, true):
+		# o gatilho analógico manda um evento a cada mexida: só a borda (o aperto de verdade) conta, senão o "negado" repetiria
+		if not (e is InputEventJoypadMotion) or Input.is_action_just_pressed("ruptura"):
+			ruptura()
 
 
 func vivo() -> bool:
@@ -197,6 +253,7 @@ func levar_dano(valor: float, de: Vector2) -> bool:
 		proximo = 0
 	mundo.combate.heroi_apanhou(valor)
 	if vida <= 0.0:
+		cancelar_ruptura(false)
 		estado = Estado.MORTO
 		mundo.combate.heroi_morreu()
 	return true
@@ -222,7 +279,9 @@ func atualizar(dt: float) -> void:
 	pedido_t = maxf(0.0, pedido_t - dt)
 	esq_pedido = maxf(0.0, esq_pedido - dt)
 	pausa_t = maxf(0.0, pausa_t - dt)
-	_recuperar(dt, v == Vector2.ZERO and estado == Estado.LIVRE)
+	if rup_recarga > 0.0 or rup_pedido_t > 0.0 or rup_nega_t > 0.0 or contragolpe_t > 0.0:
+		_rup_relogios(dt)
+	_recuperar(dt, v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA))
 	var segurando := false
 	if real:
 		segurando = InputMap.has_action("atacar") and Input.is_action_pressed("atacar")
@@ -246,6 +305,8 @@ func atualizar(dt: float) -> void:
 			desl = _golpe(dt, v)
 		Estado.ESQUIVA:
 			desl = _esquiva(dt)
+		Estado.CARGA:
+			desl = _carga(dt, v)
 	if emp.length_squared() > 4.0:
 		desl += emp * dt
 		emp *= exp(-11.0 * dt)
@@ -270,6 +331,9 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 	correndo = false
 	if esq_pedido > 0.0 and pode_esquivar():
 		_iniciar_esquiva(v)
+		return Vector2.ZERO
+	if rup_pedido_t > 0.0 and pode_ruptura() and _segurando_ruptura():  # a ruptura vem antes do golpe: segurar o clique e apertar o direito carrega
+		_iniciar_carga()
 		return Vector2.ZERO
 	if (pedido_t > 0.0 or segurando) and pausa_t <= 0.0:  # o golpe tem prioridade sobre a corrida
 		_iniciar_golpe()
@@ -380,6 +444,11 @@ func _golpe(dt: float, v: Vector2) -> Vector2:
 		golpe_acertou = true
 		_punch = 1.0
 		mundo.combate.golpear(self, pos + ORIGEM_GOLPE, golpe_dir, golpe_cfg, golpe_i)
+	# a ruptura pedida depois do acerto cancela o resto do golpe e carrega na hora (o mesmo padrão da esquiva)
+	if rup_pedido_t > 0.0 and _rup_apos_acerto and pode_ruptura() and _segurando_ruptura():
+		_encerrar_golpe(false)
+		_iniciar_carga()
+		return Vector2.ZERO
 	if p >= 1.0:
 		_encerrar_golpe(true)
 	return desl
@@ -436,6 +505,125 @@ func _esquiva(dt: float) -> Vector2:
 	return esq_dir * VEL * m_vel_mov * float(mundo.combate.cfg.esquiva.velocidade) * k * dt
 
 
+# ------------------------------------------------------------------ ruptura (botão direito)
+
+
+## Pode começar a carga agora? Só com o jogo rolando (nada de escolha, baú, morte, vitória, resultado nem pausa), recarga zerada e livre
+## ou depois do acerto de um golpe. Esquiva e morto não iniciam.
+func pode_ruptura() -> bool:
+	var c = mundo.combate
+	return (
+		c.ruptura != null
+		and rup_recarga <= 0.0
+		and c.jogo == "jogando"
+		and not c.pausado
+		and not _pausa_aberta()
+		and (estado == Estado.LIVRE or estado == Estado.GOLPE)
+	)
+
+
+## O menu de pausa (ESC) está aberto sobre a partida? Com ele aberto nada da ruptura começa nem continua.
+func _pausa_aberta() -> bool:
+	return mundo.pausa != null and mundo.pausa.aberto
+
+
+## O botão da ruptura está segurado? Polling, como o atacar. Em modo forçado (testes e fotos) vale `ruptura_forcada`.
+func _segurando_ruptura() -> bool:
+	if entrada_forcada != null:
+		return ruptura_forcada != null and bool(ruptura_forcada)
+	return InputMap.has_action("ruptura") and Input.is_action_pressed("ruptura")
+
+
+## Relógios da ruptura, no tempo do mundo (hit-stop e pausa congelam). Quando a recarga zera, avisa uma vez.
+func _rup_relogios(dt: float) -> void:
+	rup_pedido_t = maxf(0.0, rup_pedido_t - dt)
+	rup_nega_t = maxf(0.0, rup_nega_t - dt)
+	contragolpe_t = maxf(0.0, contragolpe_t - dt)
+	if rup_recarga > 0.0:
+		rup_recarga = maxf(0.0, rup_recarga - dt)
+		if rup_recarga <= 0.0:
+			mundo.combate.ruptura.pronta(self)
+
+
+func _iniciar_carga() -> void:
+	estado = Estado.CARGA
+	rup_carga = 0.0
+	rup_carga_t = 0.0
+	rup_perfeita = false
+	rup_pedido_t = 0.0
+	_rup_apos_acerto = false
+	pedido_t = 0.0
+	combo_t = 0.0
+	proximo = 0
+	_rup_tique = 0
+	_rup_us = Time.get_ticks_usec()
+
+
+func _carga(dt: float, v: Vector2) -> Vector2:
+	var c = mundo.combate
+	var rp = c.ruptura
+	var agora := Time.get_ticks_usec()
+	# fora de partida, em pausa ou com o relógio saltando (ESC e perda de foco não passam por combate.pausado): cancela sem disparar
+	if c.jogo != "jogando" or c.pausado or _pausa_aberta() or float(agora - _rup_us) / 1.0e6 > float(rp.cfg.salto_relogio):
+		cancelar_ruptura(false)
+		return Vector2.ZERO
+	_rup_us = agora
+	if esq_pedido > 0.0 and pode_esquivar():  # a esquiva é a saída da carga: cancela de graça e rola (cansado, a carga continua)
+		cancelar_ruptura(false)
+		_iniciar_esquiva(v)
+		return Vector2.ZERO
+	rup_carga_t += dt
+	var cm: float = rp.carga_max(self)
+	rup_carga = clampf(rup_carga_t / cm, 0.0, 1.0)
+	rup_perfeita = rup_carga_t >= cm and rup_carga_t <= cm + float(rp.cfg.perfeito.janela)  # janela fixa em s: não encolhe com a velocidade de ataque
+	var tiques: Array = rp.cfg.tiques
+	while _rup_tique < tiques.size() and rup_carga >= float(tiques[_rup_tique]):
+		rp.tique(self, _rup_tique)
+		_rup_tique += 1
+	if not _segurando_ruptura():
+		_soltar()
+		return Vector2.ZERO
+	andando = v != Vector2.ZERO
+	if not andando:
+		return Vector2.ZERO
+	if fonte == Fonte.ANDA:
+		dir_olhar = v.normalized()
+	return v * VEL * m_vel_mov * float(rp.cfg.mov_carga) * dt  # a 45%, também cansado, sem somar com o cansaço
+
+
+## Soltou o botão: carga curta cancela (sem recarga); senão dispara com o f e o perfeito deste instante.
+func _soltar() -> void:
+	var rp = mundo.combate.ruptura
+	if rup_carga_t < float(rp.cfg.carga_min):
+		cancelar_ruptura(true)
+		return
+	var f := rup_carga
+	var perfeito := rup_perfeita
+	estado = Estado.LIVRE
+	rup_carga = 0.0
+	rup_carga_t = 0.0
+	rup_perfeita = false
+	rup_disparos += 1
+	rp.disparar(self, f, perfeito)
+	pausa_t = maxf(pausa_t, float(rp.cfg.pausa_pos))  # só impede o golpe, não impede andar
+	_rup_punch = 1.0
+
+
+## Desfaz a carga sem disparar e sem gastar recarga. Idempotente; `som` = toca o ruptura_cancela. Público: o combate chama na pausa.
+func cancelar_ruptura(som := true) -> void:
+	if estado != Estado.CARGA:
+		return
+	var rp = mundo.combate.ruptura
+	if rp != null:
+		rp.cancelou(self, som)
+	estado = Estado.LIVRE
+	rup_carga = 0.0
+	rup_carga_t = 0.0
+	rup_perfeita = false
+	rup_pedido_t = 0.0
+	rup_cancelados += 1
+
+
 # ------------------------------------------------------------------ visual
 
 
@@ -460,6 +648,13 @@ func _visual(dt: float, v: Vector2) -> void:
 		var ant := clampf(golpe_t / (golpe_dur * float(golpe_cfg.acerto_em)), 0.0, 1.0)
 		desloca = (golpe_dir * (-2.0 * (1.0 - ant) + 3.0 * punch_k)).round()  # puxa para trás e solta
 		esc = Vector2(1.0 + 0.1 * punch_k, 1.0 - 0.07 * punch_k)
+	elif estado == Estado.CARGA:  # agacha, treme um pixel na carga cheia
+		esc = Vector2(1.0 + 0.05 * rup_carga, 1.0 - 0.09 * rup_carga)
+		if rup_carga >= 1.0:
+			desloca = Vector2(float(int(Time.get_ticks_msec() / 40.0) % 3 - 1), 0.0)
+	if _rup_punch > 0.0:  # o soco do disparo: alarga e achata um instante
+		_rup_punch = maxf(0.0, _rup_punch - dt / 0.12)
+		esc = Vector2(lerpf(esc.x, 1.14, _rup_punch), lerpf(esc.y, 0.88, _rup_punch))
 	if estado == Estado.ESQUIVA:
 		var p := clampf(esq_t / esq_dur, 0.0, 1.0)
 		var gira := signf(esq_dir.x) if absf(esq_dir.x) > 0.1 else 1.0
@@ -478,6 +673,8 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.modulate = Color(1, 1, 1, 0.78)
 	elif piscando:
 		sprite.modulate = Color(1, 0.55, 0.55, 0.38)
+	elif estado == Estado.CARGA:
+		sprite.modulate = Color.WHITE.lerp(Color(1.0, 0.85, 0.65), rup_carga)  # o corpo esquenta com a carga
 	else:
 		sprite.modulate = Color.WHITE
 

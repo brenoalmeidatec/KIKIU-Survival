@@ -14,6 +14,10 @@ extends RefCounted
 ##                         ordem: aranhas grandes (escala 2) atrás e na frente do herói (ordem de desenho); cerco: a horda com 2 aranhas grandes
 ##                         depois de 3 s de perseguição, com o herói parado (os monstros cercam e não entram no corpo dele).
 ##   --roteiro=oclusao     (leva 4) herói atrás de uma árvore (1_arvore) e herói coberto por uma aranha grande na frente (2_aranha).
+##   --roteiro=ruptura     (botão direito) 24 monstros a caminho do herói parado, que carrega a ruptura. Fotos do viewport: 1_carga (meia carga:
+##                         anel fantasma no raio final e anel interno), 2_cheia_perfeita (anel piscando na janela perfeita), 3_disparo (0,10 s
+##                         depois de soltar: onda, rachaduras, números), 4_depois (0,6 s: monstros empurrados e atordoados, katana alaranjada
+##                         no contragolpe) e 5_slot (HUD com o slot em recarga). Usar com --fotos=PASTA --nome=prefixo.
 ## Nada disto roda no jogo normal.
 
 var mundo
@@ -82,6 +86,8 @@ func atualizar(dt: float) -> void:
 				_r_ordem()
 			"cerco":
 				_r_cerco()
+			"ruptura":
+				_r_ruptura()
 
 
 # ------------------------------------------------------------------ robô e estresse
@@ -518,6 +524,69 @@ func _r_cerco() -> void:
 				_foto("1_cerco")
 				passo = 2
 		2:
+			mundo.get_tree().quit()
+
+
+func _r_ruptura() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:  # a horda vem de várias distâncias (60 a 190 px) e o herói parado começa a carregar: na soltura uns estão dentro da elipse e outros fora
+			_preparar()
+			mundo.mouse_forcado = h.centro() + Vector2(100, 0)
+			var tipos := [
+				"inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_lobo_sombrio", "inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho"
+			]
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 11
+			for i in 24:
+				var a := TAU * float(i) / 24.0 + rng.randf_range(-0.12, 0.12)
+				var r := rng.randf_range(60.0, 190.0)
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(cos(a) * r, sin(a) * r * 0.62), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			passo = 1
+			t_passo = 0.0
+		1:  # aperta e segura o botão direito com a horda ainda a caminho
+			if t_passo > 0.3:
+				h.ruptura_forcada = true
+				h.ruptura()
+				passo = 2
+				t_passo = 0.0
+		2:
+			if h.estado == h.Estado.CARGA and h.rup_carga >= 0.5:
+				_foto("1_carga")
+				passo = 3
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 3
+		3:  # a janela perfeita: o anel pisca
+			if h.rup_perfeita:
+				_foto("2_cheia_perfeita")
+				passo = 4
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 4
+		4:  # solta
+			h.ruptura_forcada = false
+			passo = 5
+			t_passo = 0.0
+		5:
+			if t_passo > 0.10:
+				_foto("3_disparo")
+				passo = 6
+				t_passo = 0.0
+		6:  # a katana fecha o combo dentro da janela do contragolpe
+			h.ataque_forcado = true
+			if t_passo > 0.6:
+				_foto("4_depois")
+				passo = 7
+				t_passo = 0.0
+		7:
+			h.ataque_forcado = false
+			if t_passo > 0.3:
+				_foto("5_slot")
+				passo = 8
+		8:
 			mundo.get_tree().quit()
 
 

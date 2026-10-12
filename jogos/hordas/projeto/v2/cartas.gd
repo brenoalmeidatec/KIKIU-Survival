@@ -2,9 +2,11 @@ extends RefCounted
 ## As cartas da v2 (leva 3): montagem de build. Sorteia cartas com RARIDADE (comum, raro, épico, lendário; a chance das altas sobe com o
 ## nível), aplica melhorias de stat, golpes secundários automáticos (v2/armas.gd), modificadores da katana e as EVOLUÇÕES (duas peças viram
 ## uma versão evoluída). Também guarda os banidos e os usos de rerrolar/banir. Tudo vem de dados/v2_cartas.json (veja o `_ajuda` de lá).
+## As 5 melhorias da RUPTURA (botão direito) vêm de dados/v2_ruptura.json > cartas, entram aqui com cat "rb" e sorteiam, evoluem de raridade e
+## aparecem no resumo como as outras (o ramo "rb" de aplicar soma o valor e avisa combate.ruptura.definir).
 ##
 ## Uma carta é um Dictionary: {id, icone (nome do PNG em assets/gerado/), nome, desc (já com o valor), cat ("stat", "golpe" ou "mod"), rar (0 a 3),
-## rar_nome, cor (Color), valor (stat/mod, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat}.
+## rar_nome, cor (Color), valor (stat/mod/rb, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat}.
 ## O cartão (telas.gd) mostra nessa ordem: raridade e tecla, ícone, nome, desc, proximo e, no rodapé, nivel_txt e evolui.
 
 const Armas := preload("res://v2/armas.gd")
@@ -37,6 +39,9 @@ func montar(c) -> void:
 	for d in cfg.modificadores:
 		_def[d.id] = d
 		_cat[d.id] = "mod"
+	for d in Dados.json("v2_ruptura").get("cartas", []):  # a ruptura do botão direito (v2/ruptura.gd)
+		_def[d.id] = d
+		_cat[d.id] = "rb"
 	rng.randomize()
 
 
@@ -273,6 +278,10 @@ func aplicar(c: Dictionary) -> void:
 			e.n = int(e.n) + 1
 			e.soma = float(e.soma) + float(c.get("valor", d.valor))
 			combate.armas.definir_modificador(str(d.mod), float(e.soma))
+		"rb":
+			e.n = int(e.n) + 1
+			e.soma = float(e.soma) + float(c.get("valor", d.valor))
+			combate.ruptura.definir(str(d.chave), float(e.soma))
 		_:
 			e.n = int(e.n) + 1
 			_aplicar_stat(h, str(c.get("stat", "")), float(c.get("valor", 0.0)))
