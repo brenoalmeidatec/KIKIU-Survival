@@ -109,6 +109,8 @@ func _disponivel(d: Dictionary) -> bool:
 	var id := str(d.id)
 	if banidas.has(id) or bool(estado.get(id, {}).get("usada", false)):
 		return false
+	if d.has("herois") and not (d.herois as Array).has(combate.heroi_id):  # carta de um herói só: não aparece para os outros
+		return false
 	return nivel_de(id) < int(d.max)
 
 

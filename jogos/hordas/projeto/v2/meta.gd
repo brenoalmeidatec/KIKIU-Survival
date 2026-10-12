@@ -4,7 +4,7 @@ extends RefCounted
 ## iniciar_heroi). Tudo fica em `caminho_save` (ConfigFile user://v2_progresso.cfg, separado do save da v1). Regras e textos
 ## vêm de dados/v2_meta.json. Não há estado em memória: cada leitura vem do arquivo, e os testes trocam `caminho_save` por um
 ## arquivo temporário para não tocar no save real.
-## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida.
+## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida; [heroi] id = herói escolhido.
 
 static var caminho_save := "user://v2_progresso.cfg"
 
@@ -54,6 +54,17 @@ static func estado() -> Dictionary:
 		for k in cf.get_section_keys("ultima"):
 			ultima[k] = cf.get_value("ultima", k)
 	return {"almas": int(cf.get_value("moeda", "almas", 0)), "niveis": niveis, "conquistas": cumpridas, "ultima": ultima}
+
+
+## Herói escolhido no santuário ("" = nenhum gravado: vale o Hazaki). Chave nova, [heroi] id: save antigo sem ela segue valendo.
+static func heroi_escolhido() -> String:
+	return str(_ler().get_value("heroi", "id", ""))
+
+
+static func escolher_heroi(id: String) -> void:
+	var cf := _ler()
+	cf.set_value("heroi", "id", id)
+	_gravar(cf)
 
 
 static func saldo() -> int:
@@ -194,6 +205,7 @@ static func aplicar(mundo) -> void:
 	h.m_ima = 1.0 + _bonus("ima", cf)
 	h.m_vel_ataque = 1.0 + _bonus("treino", cf)
 	mundo.meta_bonus = {"raridade": _bonus("raridade", cf), "rolagem": int(_total("rolagem", cf)), "almas": _bonus("almas", cf)}
+	preload("res://v2/herois.gd").aplicar_bonus(mundo)  # bônus do herói escolhido (área, sorte...) por cima das melhorias
 
 
 ## Almas que a partida trouxe. `almas_partida` ainda não existe na v2 (o agente das cartas e dos chefes expõe): até lá vale 0.

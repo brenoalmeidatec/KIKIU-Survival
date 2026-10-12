@@ -6,6 +6,8 @@ extends Control
 ## Visual: a arte de entrada escurecida, molduras de pedra do HUD (v2/hud/moldura_pedra.png). Títulos na Jersey 10 (Dados.fonte_titulo) e a lista densa na Press Start 2P (Dados.fonte), que tem a grade de 8 px que as 10 linhas pedem.
 
 const Meta := preload("res://v2/meta.gd")
+const Herois := preload("res://v2/herois.gd")
+const SelecaoHeroi := preload("res://v2/selecao_heroi.gd")  # a tela de escolher o herói (botão HERÓI)
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const FUNDO := preload("res://assets/icone/entrada.png")
 const FLORESTA := "res://v2/mundo.tscn"
@@ -36,6 +38,8 @@ var _linhas := {}  # id da melhoria -> {nome, efeito, botao, cadeado}
 var _conq := {}  # id da conquista -> {cadeado, nome, desc, rec}
 var _entrar: Button
 var _ajustes: Button
+var _heroi: Button  # abre a seleção de herói; o texto mostra o herói escolhido
+var _selecao  # selecao_heroi.gd
 
 
 class Cadeado:
@@ -64,6 +68,12 @@ func _ready() -> void:
 	var pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)  # ESC aqui abre só "Sair?"; o botão Ajustes abre o submenu (pausa.gd)
 	add_child(pausa)
 	_ajustes.pressed.connect(pausa.abrir_ajustes)
+	_selecao = SelecaoHeroi.new()  # depois da pausa: o ESC dele roda primeiro e fecha a seleção em vez de abrir o "Sair?"
+	add_child(_selecao)
+	_selecao.montar()
+	_selecao.escolhido.connect(_heroi_escolhido)
+	_heroi.pressed.connect(_selecao.abrir)
+	_selecao.visibility_changed.connect(func(): if not _selecao.visible: _heroi.grab_focus())  # fechou (escolheu ou voltou): o foco volta ao botão
 	_atualizar()
 	_entrar.grab_focus()
 
@@ -208,6 +218,12 @@ func _montar() -> void:
 	_estilo_botao(_ajustes, 37)
 	_ajustes.add_theme_color_override("font_color", COR_OURO)
 	add_child(_ajustes)
+	_heroi = Button.new()  # à esquerda de ENTRAR: abre a seleção de herói (selecao_heroi.gd, ligado no _ready)
+	_heroi.position = Vector2(36, 482)
+	_heroi.size = Vector2(252, 40)
+	_estilo_botao(_heroi, 37)
+	_heroi.add_theme_color_override("font_color", COR_OURO)
+	add_child(_heroi)
 	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 526, LARG, 12)))
 
 
@@ -267,6 +283,7 @@ func _estilo_botao(b: Button, tam: int) -> void:
 
 
 func _atualizar() -> void:
+	_heroi.text = "HERÓI: %s" % str(Herois.heroi(Herois.escolhido()).nome).to_upper()
 	var e := Meta.estado()
 	_saldo.text = str(e.almas)
 	_ultima.text = _texto_ultima(e.ultima)
@@ -386,6 +403,13 @@ func _motivo(m: Dictionary) -> String:
 func _avisar(texto: String) -> void:
 	_status.text = texto
 	_status_t = TEMPO_AVISO
+
+
+## O herói foi escolhido na seleção (já gravado no save): o botão mostra o nome e o foco volta para ele.
+func _heroi_escolhido(id: String) -> void:
+	_avisar("Herói: %s" % str(Herois.heroi(id).nome))
+	_atualizar()
+	_heroi.grab_focus()
 
 
 func _entrar_floresta() -> void:

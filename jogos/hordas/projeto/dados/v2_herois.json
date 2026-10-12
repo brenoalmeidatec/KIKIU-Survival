@@ -1,0 +1,264 @@
+{
+	"_ajuda": "Os heróis jogáveis da v2, lido por v2/herois.gd (e por altar.gd, combate.gd, heroi.gd e cartas.gd). Uma lista em \"herois\", na ordem em que aparecem no santuário; o primeiro (hazaki) é o padrão: sem escolha gravada no save, vale ele. Cada herói: id, nome, titulo, desc (curta, mostrada no santuário), sprite (folha em prototipos/cara_nova/sprites, sem extensão), raio (corpo no chão, px), bonus {dano, vel_ataque, area (multiplicam; 1 = normal), sorte (fração: chance de uma carta comum subir para rara, soma com a do santuário)} e cfg: o que SOBRESCREVE em dados/v2_combate.json para esse herói (mesclagem por chaves; a lista passos substitui a inteira). Em cfg.heroi: vida, vel (px/s de andar) e mov_golpe (fração da velocidade andando durante o golpe: o peso). O Hazaki repete aqui os números de v2_combate.json e por isso não muda nada (o teste v2_herois confere). cfg.golpe.passos é o combo, na ordem. Passo corpo a corpo (tipo ausente ou \"melee\"): nome (corte, estocada, batida ou pancada), dano, alcance, arco (graus; 360 = em volta), duracao, acerto_em, avanco, empurrao, atordoa, hit_stop, tremor, lado, som (+ tom e vol opcionais), cor. Passo \"adagas\": nome, dano (de CADA adaga), n (quantas saem), leque (graus entre a primeira e a última), vel (px/s), alcance (px que voam), perfura (quantos monstros a mais atravessa), duracao, acerto_em (quando saem), empurrao, atordoa, som, cor; hit_stop e tremor valem por acerto (opcionais). Passos \"adagas\" ignoram arco e avanco.",
+	"herois": [
+		{
+			"id": "hazaki",
+			"nome": "Hazaki",
+			"titulo": "O Samurai",
+			"desc": "Samurai de katana. Combo de dois cortes e uma estocada que empurra. Equilibrado: corpo a corpo de alcance médio.",
+			"sprite": "hazaki_samurai",
+			"raio": 6,
+			"bonus": {
+				"dano": 1.0,
+				"vel_ataque": 1.0,
+				"area": 1.0,
+				"sorte": 0.0
+			},
+			"cfg": {
+				"heroi": {
+					"vida": 100,
+					"vel": 100,
+					"mov_golpe": 0.55
+				},
+				"folego": {
+					"max": 3
+				},
+				"golpe": {
+					"passos": [
+						{
+							"nome": "corte",
+							"dano": 12,
+							"alcance": 46,
+							"arco": 125,
+							"duracao": 0.26,
+							"acerto_em": 0.34,
+							"avanco": 12,
+							"empurrao": 150,
+							"atordoa": 0.3,
+							"hit_stop": 0.045,
+							"tremor": 0,
+							"lado": 1,
+							"som": "corte1",
+							"cor": [
+								1.0,
+								0.92,
+								0.75
+							]
+						},
+						{
+							"nome": "corte",
+							"dano": 13,
+							"alcance": 48,
+							"arco": 130,
+							"duracao": 0.26,
+							"acerto_em": 0.34,
+							"avanco": 12,
+							"empurrao": 160,
+							"atordoa": 0.3,
+							"hit_stop": 0.045,
+							"tremor": 0,
+							"lado": -1,
+							"som": "corte2",
+							"cor": [
+								0.85,
+								0.95,
+								1.0
+							]
+						},
+						{
+							"nome": "estocada",
+							"dano": 26,
+							"alcance": 74,
+							"arco": 46,
+							"duracao": 0.36,
+							"acerto_em": 0.4,
+							"avanco": 26,
+							"empurrao": 330,
+							"atordoa": 0.55,
+							"hit_stop": 0.07,
+							"tremor": 2,
+							"lado": 1,
+							"som": "estocada",
+							"cor": [
+								1.0,
+								0.78,
+								0.5
+							]
+						}
+					]
+				}
+			}
+		},
+		{
+			"id": "nicao",
+			"nome": "Nicão",
+			"titulo": "O Guardião",
+			"desc": "Guardião de marreta. Batida larga e pancada no chão em área, lentas e com empurrão forte. Muita vida, anda devagar.",
+			"sprite": "nicao",
+			"raio": 8,
+			"bonus": {
+				"dano": 1.0,
+				"vel_ataque": 1.0,
+				"area": 1.2,
+				"sorte": 0.0
+			},
+			"cfg": {
+				"heroi": {
+					"vida": 180,
+					"vel": 78,
+					"mov_golpe": 0.3,
+					"recuo_dano": 70
+				},
+				"folego": {
+					"max": 3
+				},
+				"golpe": {
+					"janela_combo": 0.5,
+					"pausa_fim_combo": 0.3,
+					"passos": [
+						{
+							"nome": "batida",
+							"dano": 24,
+							"alcance": 56,
+							"arco": 150,
+							"duracao": 0.55,
+							"acerto_em": 0.5,
+							"avanco": 8,
+							"empurrao": 380,
+							"atordoa": 0.6,
+							"hit_stop": 0.075,
+							"tremor": 2,
+							"lado": 1,
+							"som": "estocada",
+							"tom": 0.72,
+							"cor": [
+								0.85,
+								0.9,
+								1.0
+							]
+						},
+						{
+							"nome": "pancada",
+							"dano": 40,
+							"alcance": 62,
+							"arco": 360,
+							"duracao": 0.75,
+							"acerto_em": 0.55,
+							"avanco": 0,
+							"empurrao": 560,
+							"atordoa": 0.9,
+							"hit_stop": 0.11,
+							"tremor": 4,
+							"lado": 1,
+							"som": "impacto",
+							"tom": 0.55,
+							"cor": [
+								1.0,
+								0.82,
+								0.55
+							]
+						}
+					]
+				}
+			}
+		},
+		{
+			"id": "lucas",
+			"nome": "Lucas",
+			"titulo": "O Caótico",
+			"desc": "Adagueiro à distância. Joga adagas em leque na direção da mira; segure para repetir. Frágil, veloz e com sorte nas cartas.",
+			"sprite": "lucas",
+			"raio": 5,
+			"bonus": {
+				"dano": 1.0,
+				"vel_ataque": 1.0,
+				"area": 1.0,
+				"sorte": 0.15
+			},
+			"cfg": {
+				"heroi": {
+					"vida": 70,
+					"vel": 118,
+					"mov_golpe": 0.8,
+					"recuo_dano": 130
+				},
+				"folego": {
+					"max": 3
+				},
+				"golpe": {
+					"janela_combo": 0.38,
+					"pausa_fim_combo": 0.1,
+					"variacao": 0.15,
+					"passos": [
+						{
+							"tipo": "adagas",
+							"nome": "arremesso",
+							"dano": 7,
+							"n": 2,
+							"leque": 12,
+							"vel": 430,
+							"alcance": 220,
+							"perfura": 1,
+							"duracao": 0.2,
+							"acerto_em": 0.3,
+							"empurrao": 70,
+							"atordoa": 0.12,
+							"som": "corte2",
+							"tom": 1.45,
+							"vol": -5,
+							"cor": [
+								0.75,
+								0.85,
+								1.0
+							]
+						},
+						{
+							"tipo": "adagas",
+							"nome": "arremesso",
+							"dano": 7,
+							"n": 2,
+							"leque": 12,
+							"vel": 430,
+							"alcance": 220,
+							"perfura": 1,
+							"duracao": 0.2,
+							"acerto_em": 0.3,
+							"empurrao": 70,
+							"atordoa": 0.12,
+							"som": "corte1",
+							"tom": 1.5,
+							"vol": -5,
+							"cor": [
+								0.9,
+								0.7,
+								1.0
+							]
+						},
+						{
+							"tipo": "adagas",
+							"nome": "leque",
+							"dano": 8,
+							"n": 5,
+							"leque": 54,
+							"vel": 400,
+							"alcance": 200,
+							"perfura": 1,
+							"duracao": 0.3,
+							"acerto_em": 0.35,
+							"empurrao": 100,
+							"atordoa": 0.2,
+							"som": "estocada",
+							"tom": 1.3,
+							"vol": -3,
+							"cor": [
+								1.0,
+								0.75,
+								1.0
+							]
+						}
+					]
+				}
+			}
+		}
+	]
+}
