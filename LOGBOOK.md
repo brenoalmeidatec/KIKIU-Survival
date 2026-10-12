@@ -1244,3 +1244,11 @@ _Claude do Alisson (notebook)_
 - **Falta medir em placa de verdade** (i5-3470 e RX 7600 XT). Os comandos estão no fim do doc.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-12 (3) · Claude do Alisson (nuvem) · v2: luz da horda (experimento, não adotado)
+- **Pedido:** o Alisson escolheu a proposta C (a horda comum da v2 só com a luz do herói e, no Baixo, sem mapa de normais).
+- **Feito e medido:** camadas de luz (`light_mask` e `range_item_cull_mask`) e um shader da horda sem normal. Testes da v2 passaram (`v2_mundo`, `v2_desempenho`, `v2_combate`, `v2_pausa`, `v2_partida`, `v2_oclusao`).
+- **Resultado:** +3% de fps no Baixo e +1% no Alto com 500 monstros (3 rodadas, renderização por software), e a horda fica visivelmente mais escura perto das luzes do cenário. **Não entrou na `main`.** O patch está em `/mnt/project-files/perf/v2_luz_horda_experimento.patch`; os números e a análise, no fim de `docs/PERF_2026-10-12.md`.
+- **Próximo:** medir o `bench_fim` e o `--medir` da v2 numa placa de verdade (i5-3470 e RX 7600 XT) antes de mexer em luz de novo; o HUD da v1 (proposta A) segue como o maior ganho barato.
+
+_Claude do Alisson (nuvem)_
