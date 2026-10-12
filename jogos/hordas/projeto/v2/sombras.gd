@@ -120,6 +120,11 @@ func _textura_blob() -> GradientTexture2D:
 	return t
 
 
+## A textura da mancha dos pés (a horda desenha as manchas dos monstros em lote com ela).
+func textura_blob() -> Texture2D:
+	return _tex_blob
+
+
 # ------------------------------------------------------------------ registro e modo
 
 
@@ -142,7 +147,7 @@ func _sprite_sombra(a: Ator) -> Sprite2D:
 
 ## Cria blob + 2 sombras (todos escondidos) para cada ator da lista, agrupando por textura para o lote do renderizador não quebrar.
 func registrar_lote(lista: Array) -> void:
-	var ordenada := lista.duplicate()
+	var ordenada := lista.filter(func(x): return not x.lote)  # monstro em lote não tem nó: a sombra dele é do lote (horda.gd)
 	ordenada.sort_custom(func(x, y): return str(x.chave) < str(y.chave))
 	for a: Ator in ordenada:
 		var b := Sprite2D.new()
@@ -181,6 +186,8 @@ func ativar(a: Ator, ligar: bool) -> void:
 	if a.ativo == ligar:
 		return
 	a.ativo = ligar
+	if a.blob == null:
+		return  # em lote (ou ainda sem sombra registrada): só a marca
 	if ligar:
 		a.sl = [-1, -1]
 		a.sa = [0.0, 0.0]
@@ -251,26 +258,52 @@ func _suaviza_slot(a: Ator, slot: int, alvo_vec: Vector2, alvo_alfa: float, k: f
 	a.sa[slot] = lerpf(a.sa[slot], alvo_alfa, k)
 
 
-## Atualiza a sombra de UM ator ativo (t = tempo do mundo). Quem chama escolhe a frequência (parado: a cada 2 quadros; móvel: todo quadro).
+## Atualiza a sombra de UM ator ativo com nós (t = tempo do mundo). Quem chama escolhe a frequência (parado: a cada 2 quadros; móvel: todo quadro).
+## Monstro em lote não passa por aqui: v2/horda.gd chama `calcular` e escreve a instância dele no MultiMesh.
 func atualizar(a: Ator, t: float) -> void:
 	if modo == BAIXA:
 		_blob(a, 1.0, 0.62)
 		return
 	if modo < MEDIA:
 		return
+	calcular(a, t)
+	var pos: Vector2 = a.raiz.position
+	if modo == MEDIA:
+		_posicionar(a.sh1, pos, a.sv[0], a.esc, a.sa[0])
+	else:
+		_posicionar(a.sh1, pos, a.sv[0], a.esc, a.sa[0])
+		_posicionar(a.sh2, pos, a.sv[1], a.esc, a.sa[1])
+	_blob(a, a.b_esc, a.b_alfa)
+
+
+## A conta da sombra (modos média e alta): deixa em `a.sv`/`a.sa` o vetor e o alfa de cada sombra (já suavizados) e em `a.b_esc`/`a.b_alfa`
+## a mancha dos pés. Não toca em nó nenhum: serve ao ator com nós (`atualizar`) e ao lote da horda.
+func calcular(a: Ator, t: float) -> void:
 	var t0 := Time.get_ticks_usec()
-	var pos := a.raiz.position
+	var pos: Vector2 = a.raiz.position
 	var centro := pos + Vector2(0, -a.alt * 0.35)
-	var esc := a.esc
 	var rmax := a.rmax
 	var alt := a.alt
 	var n: int = luzes.dn
+	var dpos: PackedVector2Array = luzes.dpos
+	var dr: PackedFloat32Array = luzes.dr
+	var de: PackedFloat32Array = luzes.de
+	var dh: PackedFloat32Array = luzes.dh
 	var dt := t - a.t_ult if a.t_ult >= 0.0 else 1.0
 	a.t_ult = t
 	var k := 1.0 - exp(-SUAVIZA * dt)
 	_lv.resize(n)
 	for i in n:
-		_lv[i] = luzes.de[i] * _atenua(centro.distance_to(luzes.dpos[i]), luzes.dr[i])
+		# atenuação inline (a mesma curva de _atenua): luz que não alcança o ator pesa 0 sem chamar função
+		var u := centro.distance_to(dpos[i]) / dr[i]
+		if u >= 1.0:
+			_lv[i] = 0.0
+		elif u < GRAD_OFF[1]:
+			_lv[i] = de[i] * lerpf(GRAD_VAL[0], GRAD_VAL[1], u / GRAD_OFF[1])
+		elif u < GRAD_OFF[2]:
+			_lv[i] = de[i] * lerpf(GRAD_VAL[1], GRAD_VAL[2], (u - GRAD_OFF[1]) / (GRAD_OFF[2] - GRAD_OFF[1]))
+		else:
+			_lv[i] = de[i] * lerpf(GRAD_VAL[2], GRAD_VAL[3], (u - GRAD_OFF[2]) / (GRAD_OFF[3] - GRAD_OFF[2]))
 	if modo == MEDIA:
 		# uma sombra só: soma ponderada dos vetores de TODAS as luzes (peso = energia x atenuação). Ninguém "assume" de repente:
 		# a direção gira junto com os pesos, e luzes opostas se anulam (sombra curta = mancha)
@@ -281,15 +314,15 @@ func atualizar(a: Ator, t: float) -> void:
 			var v := _lv[i]
 			if v < 0.02:
 				continue
-			soma += _vetor_sombra(pos, luzes.dpos[i], luzes.dh[i], alt, rmax) * v
+			soma += _vetor_sombra(pos, dpos[i], dh[i], alt, rmax) * v
 			soma_w += v
 			vmax = maxf(vmax, v)
 		var forca := clampf(vmax / LUZ_REF, 0.0, 1.0)
 		var vec := soma / soma_w if soma_w > 0.0 else Vector2.ZERO
 		var alfa := 0.6 * forca * smoothstep(0.06, 0.25, vec.length())
 		_suaviza_slot(a, 0, vec, alfa, k)
-		_posicionar(a.sh1, pos, a.sv[0], esc, a.sa[0])
-		_blob(a, lerpf(1.0, 0.7, forca), lerpf(0.4, 0.28, forca))
+		a.b_esc = lerpf(1.0, 0.7, forca)
+		a.b_alfa = lerpf(0.4, 0.28, forca)
 	else:
 		# alto: as 2 luzes que mais iluminam, cada uma com sua sombra e alfa proporcional ao peso. Cada sombra (slot) segue a SUA luz
 		# enquanto ela estiver entre as 2 maiores; a luz nova só ocupa o slot que ficou livre, e a troca é um deslize
@@ -324,11 +357,11 @@ func atualizar(a: Ator, t: float) -> void:
 			var vec: Vector2 = a.sv[s]
 			var alfa := 0.0
 			if li >= 0:
-				vec = _vetor_sombra(pos, luzes.dpos[li], luzes.dh[li], alt, rmax)
+				vec = _vetor_sombra(pos, dpos[li], dh[li], alt, rmax)
 				alfa = 0.7 * fator * clampf(_lv[li] / LUZ_REF, 0.0, 1.0) * smoothstep(0.06, 0.25, vec.length())
 			if li >= 0 and a.sa[s] < 0.01:
 				a.sv[s] = vec  # slot que estava apagado nasce já no lugar certo (nada de deslizar de longe)
 			_suaviza_slot(a, s, vec, alfa, k)
-			_posicionar(a.sh1 if s == 0 else a.sh2, pos, a.sv[s], esc, a.sa[s])
-		_blob(a, lerpf(1.0, 0.45, clampf(v1 / LUZ_REF, 0.0, 1.0)), lerpf(0.4, 0.85, clampf(v1 / LUZ_REF, 0.0, 1.0)))
+		a.b_esc = lerpf(1.0, 0.45, clampf(v1 / LUZ_REF, 0.0, 1.0))
+		a.b_alfa = lerpf(0.4, 0.85, clampf(v1 / LUZ_REF, 0.0, 1.0))
 	us_script += Time.get_ticks_usec() - t0

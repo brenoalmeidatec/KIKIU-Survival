@@ -21,6 +21,7 @@ var ganho_obj := 1.7  # a arte nova é bem escura: levanta antes da luz (o ambie
 var ganho_dec := 1.4
 var objetos: Array[Ator] = []
 var ativos: Array[Ator] = []  # objetos dos blocos visíveis agora
+var versao := 0  # sobe toda vez que `ativos` é refeita (quem guarda uma cópia ordenada sabe quando refazer)
 var n_decalques := 0
 var ms_carga := 0.0
 var nascimento: Dictionary = {}
@@ -243,6 +244,7 @@ func atualizar_blocos(rect: Rect2) -> bool:
 	if nova == _faixa:
 		return false
 	_faixa = nova
+	versao += 1
 	ativos.clear()
 	for k: Vector2i in _blocos:
 		var dentro := k.x >= x0 and k.x <= x1 and k.y >= y0 and k.y <= y1

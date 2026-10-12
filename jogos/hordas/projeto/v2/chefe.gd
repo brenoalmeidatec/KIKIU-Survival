@@ -91,6 +91,7 @@ func nascer(mk: Dictionary, onde: Variant = null):
 	marca = mk
 	atual = m
 	vivo = true
+	m.virar_no()  # chefe é desenhado por nós, não pelo lote da horda
 	m.chefe = true
 	m.vida_max = float(mk.vida)
 	m.vida = m.vida_max

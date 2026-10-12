@@ -112,6 +112,7 @@ func nascer(sprite := "", mod := "", onde: Variant = null):
 
 ## Transforma o monstro `m` em elite com o modificador `md` (dados).
 func marcar(m, md: Dictionary) -> void:
+	m.virar_no()  # elite é desenhada por nós (poucas e grandes), não pelo lote da horda
 	m.elite = true
 	m.mod_elite = str(md.id)
 	m.cor_elite = Color(md.cor[0], md.cor[1], md.cor[2])
@@ -144,7 +145,7 @@ func dar_contorno(m, cor: Color) -> void:
 		mundo.glow.add_child(s)
 		m.contorno = s
 	m.contorno.texture = m.tipo.alb
-	m.contorno.offset = m.sprite.offset
+	m.contorno.offset = m.offset
 	(m.contorno.material as ShaderMaterial).set_shader_parameter("cor", cor)
 	m.contorno.visible = true
 	m._sincronizar_contorno()
