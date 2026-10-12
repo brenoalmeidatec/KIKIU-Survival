@@ -1,7 +1,7 @@
 # Mapas novos da v2 (laboratório e cidade): como são feitos e onde parou
 
 **Estado em 2026-10-12 (WIP, branch `claude/v2-mapa-laboratorio`, sem PR):** o **laboratório está jogável de ponta a ponta** (seleção no
-santuário, mapa, luzes, minimapa, partículas, colisão, teste `v2_mapas` com falhas=0). A **cidade ainda não foi começada**.
+santuário, mapa, luzes, minimapa, partículas, colisão, teste `v2_mapas` com falhas=0). Na **cidade**, os objetos e o piso estão prontos (etapa 1, `LEIA-ME_CIDADE.md`); falta o mapa (etapa 2).
 
 ## O pipeline (igual ao do herói: Blender -> pixel art), em dois passos
 
@@ -41,7 +41,7 @@ Prévia dos brutos do Blender com régua de escala: `python mapas_v2/previa_brut
 2. **Prompts do ChatGPT (imagegen)** para o Alisson gerar folhas de referência mais ricas: ainda **não foram escritos**. A ideia: mesma convenção da
    floresta (`prototipos/cara_nova/objetos/gerar_objetos.py`: fundo branco, objetos em grade, uma folha por tema), e o `gerar_v2_mapas.py` ganhar a
    leitura de folhas (`agrupar` do `gerar_objetos.py`) no lugar dos brutos do Blender quando a folha existir.
-3. **Cidade:** `modelos3d/mapa_cidade.py` (prédios, postes, carros, caçambas, bancos, hidrantes, barricadas, barril de fogo; piso de asfalto com calçada),
+3. **Cidade** (os objetos e o piso JÁ ESTÃO FEITOS: `modelos3d/mapa_cidade.py`, veja `LEIA-ME_CIDADE.md`; falta o resto):
    `mapas_v2/def_cidade.py` (colisão, decalques de faixa e bueiro, layout em ruas e quarteirões, luzes de poste a sódio e neon), linha em `Mapas.LISTA`
    (`{"id": "cidade", "nome": "CIDADE", "entrar": "ENTRAR NA CIDADE", "dados": "v2_cidade"}`) e o PR da cidade (a partir da branch do laboratório).
 4. Documentar `mapas.gd` na tabela de `v2/LEIA-ME.md`.
