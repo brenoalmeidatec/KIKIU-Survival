@@ -1218,3 +1218,15 @@ _Claude do Alisson (notebook)_
 - **Balanço** depende de jogar.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12: a v2 vira o jogo padrão (#194)
+
+**Feito:**
+- `run/main_scene` agora é o santuário da v2 (`v2/altar.tscn`), então o F5 e os exports (Windows, Linux, Web) abrem a v2. Os presets de export não mudaram.
+- A v1 abre com `-- --v1` (`KIKIU.exe -- --v1`). Os argumentos de teste dela (`--bot`, `--online`, `--sair`, `--print_tela`, `--cena`, `--prototipo`) também vão direto para a v1 (`ARGS_V1` em `v2/altar.gd`), então os comandos do README e os `testes/online_*.sh` não mudaram.
+- O repasse do santuário para a v1 só acontece na primeira abertura do processo (sem laço com `--v2`), e no menu da v1 `--v1` ganha de `--v2`. O `testes/entrada_cenas` cobre isso.
+
+**Pendente:**
+- **`esquiva` (v1) instável no CI:** falhou uma vez em "o robô esquiva quando tem vírus colado" e passou ao rodar de novo. A suspeita é que as armas do robô tiram o inimigo do raio em 3 quadros.
+
+_Claude do Alisson (nuvem)_
