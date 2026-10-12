@@ -155,7 +155,7 @@ func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin
 # ------------------------------------------------------------------ abrir e fechar
 
 
-## Abre o menu sobre a partida e para o mundo. Só com o jogo rolando (não na escolha, no baú, na morte, na vitória nem no resultado).
+## Abre o menu sobre a partida e para o mundo. Vale com o jogo rolando, na escolha e no baú (não na morte, na vitória nem no resultado).
 func pausar() -> void:
 	if mundo == null or aberto or not _pode_pausar():
 		return
@@ -193,9 +193,11 @@ func abrir_ajustes() -> void:
 	_ir("ajustes", "")
 
 
+## Abre com a partida rolando, na escolha de carta e no baú (o mundo já está parado neles e a trava das cartas congela com o menu);
+## não abre na morte, na vitória nem no resultado.
 func _pode_pausar() -> bool:
 	var c = mundo.combate
-	return c != null and c.jogo == "jogando" and not c.pausado
+	return c != null and c.jogo in ["jogando", "escolha", "bau"]
 
 
 func _ir(nova: String, origem := "menu") -> void:
@@ -226,16 +228,44 @@ func _voltar_tela() -> void:
 # ------------------------------------------------------------------ entrada
 
 
-func _input(e: InputEvent) -> void:
-	if not aberto:
-		if _pede_menu(e):
+## Na partida o menu mora dentro do SubViewport da apresentação, que NÃO recebe a entrada da janela, e o mundo (pausável) não recebe
+## entrada com a árvore pausada. Esta porta é filha do mundo e roda mesmo pausada (PROCESS_MODE_ALWAYS): leva a entrada da janela ao menu
+## (`entrada`) antes do `mundo._input`, para ESC e Start abrirem e fecharem a pausa e, aberta, o menu comer o resto.
+class Porta:
+	extends Node
+	var menu
+
+	func _input(e: InputEvent) -> void:
+		if menu != null and menu.entrada(e):
 			get_viewport().set_input_as_handled()
-			if mundo == null:
-				abrir_sair()
-			else:
-				pausar()
-		return
-	get_viewport().set_input_as_handled()  # aberto: o menu come a entrada (o mundo já está parado; no santuário, os botões de trás não recebem)
+
+
+## Cria a porta da partida (o mundo a põe como filha dele: `add_child(pausa.porta())`).
+func porta() -> Node:
+	var p := Porta.new()
+	p.menu = self
+	p.process_mode = Node.PROCESS_MODE_ALWAYS
+	return p
+
+
+## No santuário o menu está na raiz e recebe a entrada da janela direto por aqui (na partida só quando alguém empurra o evento no SubViewport).
+func _input(e: InputEvent) -> void:
+	var vp := get_viewport()
+	if entrada(e):
+		vp.set_input_as_handled()
+
+
+## Trata um evento e devolve true se o menu o consumiu: ESC ou Start com o menu fechado abrem (e são consumidos mesmo quando a pausa
+## recusa, para a tecla não vazar para o resto) e, aberto, o menu come tudo (o mundo já está parado; no santuário, os botões de trás não recebem).
+func entrada(e: InputEvent) -> bool:
+	if not aberto:
+		if not _pede_menu(e):
+			return false
+		if mundo == null:
+			abrir_sair()
+		else:
+			pausar()
+		return true
 	if e is InputEventMouseMotion:
 		var i := _linha_sob_mouse()
 		if i >= 0 and i != sel:
@@ -266,6 +296,7 @@ func _input(e: InputEvent) -> void:
 		_acao_sel(1, false)
 	elif e.is_action_pressed("ui_accept"):
 		_acao_sel(1, true)
+	return true
 
 
 ## ESC (tecla) ou Start do controle: os dois pausam e, com o menu aberto, voltam como o ui_cancel (B).

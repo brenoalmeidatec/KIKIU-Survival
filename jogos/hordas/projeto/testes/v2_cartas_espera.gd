@@ -3,7 +3,9 @@ extends Node
 # Nada escolhe nos primeiros 3,0 s depois de a escolha abrir (clique, 1/2/3, Enter, Espaço, E, direcional, ui_accept, R, B, botões);
 # depois escolhe. Rerrolar e banir travam 0,8 s; nível pendente trava 3 s de novo; o baú trava 1,5 s; a contagem congela com a pausa
 # aberta; câmera lenta e hit-stop não mudam o tempo da trava; um clique segurado desde antes não escolhe; ESC passa pela trava; a
-# contagem e a barra aparecem, e as cartas acendem ao liberar.
+# contagem e a barra aparecem, e as cartas acendem ao liberar. O ESC e o Start entram pela JANELA (Input.parse_input_event, a rota do
+# teclado de verdade; a pausa mora no SubViewport e só recebe pelo mundo._input) e abrem a pausa na partida, na escolha e no baú, com a
+# trava congelada; o clique que escolhe a carta não vira golpe do herói (o botão segue apertado no Input).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cartas_espera.tscn  (imprime "v2_cartas_espera falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
@@ -58,6 +60,13 @@ func _acao(nome: String) -> InputEventAction:
 	var e := InputEventAction.new()
 	e.action = nome
 	e.pressed = true
+	return e
+
+
+func _start(apertado := true) -> InputEventJoypadButton:
+	var e := InputEventJoypadButton.new()
+	e.button_index = JOY_BUTTON_START
+	e.pressed = apertado
 	return e
 
 
@@ -292,6 +301,98 @@ func _run() -> void:
 	ok(w.combate.telas.bau_pronto, "depois de 1,5 s, Enter pula a roleta")
 	w._input(_tecla(KEY_ENTER))
 	ok(w.combate.jogo == "jogando" and not w.combate.telas.bau_aberto, "e o próximo Enter fecha o baú")
+
+	# 11. o ESC e o Start da JANELA chegam ao menu de pausa. A pausa mora no SubViewport, que não recebe a entrada da janela: o evento
+	# entra por Input.parse_input_event (a rota do teclado de verdade) e o mundo._input o entrega. Antes, nada chegava e o ESC "não funcionava".
+	Input.use_accumulated_input = false  # a entrada vai ao mundo na hora, sem esperar o quadro
+	zerar()
+	ok(w.combate.jogo == "jogando" and not w.pausa.aberto, "partida rolando, pausa fechada")
+	Input.parse_input_event(_tecla(KEY_ESCAPE))
+	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	ok(w.pausa.aberto and get_tree().paused, "ESC da janela abre o menu de pausa na partida")
+	Input.parse_input_event(_tecla(KEY_ESCAPE))
+	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	ok(not w.pausa.aberto and not get_tree().paused, "ESC da janela de novo fecha o menu")
+	Input.parse_input_event(_start())
+	ok(w.pausa.aberto, "Start do controle abre o menu de pausa na partida")
+	Input.parse_input_event(_start())
+	ok(not w.pausa.aberto and not get_tree().paused, "Start de novo fecha")
+
+	# 12. ESC na escolha de carta: abre a pausa SOBRE a escolha, a trava congela de verdade (árvore pausada), nada escolhe e fechar volta
+	zerar()
+	subir_nivel()
+	passos(30)
+	var t_antes := trava()
+	var escolhidas0: int = w.combate.progresso.escolhidas
+	Input.parse_input_event(_tecla(KEY_ESCAPE))
+	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	ok(w.pausa.aberto and get_tree().paused, "ESC na escolha abre a pausa")
+	ok(w.combate.jogo == "escolha" and w.combate.telas.escolha_aberta, "e a escolha continua aberta por baixo")
+	passos(120)
+	ok(trava() == t_antes, "com a pausa aberta na escolha a trava não anda (%.3f contra %.3f)" % [trava(), t_antes])
+	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B]:  # a pausa come a entrada: nada chega às cartas
+		Input.parse_input_event(_tecla(k))
+		Input.parse_input_event(_tecla(k, false, false))
+	ok(w.combate.progresso.escolhidas == escolhidas0 and w.combate.jogo == "escolha", "com a pausa aberta as teclas não escolhem carta")
+	Input.parse_input_event(_tecla(KEY_ESCAPE))
+	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	ok(not w.pausa.aberto and not get_tree().paused and w.combate.jogo == "escolha", "ESC de novo fecha o menu e a escolha segue")
+	passos(30)
+	ok(trava() < t_antes, "fechada a pausa, a trava volta a andar")
+	ate(func(): return trava() <= 0.0, 200)
+	w._input(_tecla(KEY_2))
+	ok(w.combate.progresso.escolhidas == escolhidas0 + 1 and w.combate.jogo == "jogando", "depois da trava a carta é escolhida normalmente")
+
+	# 13. ESC no baú abre a pausa e a trava do baú congela; Voltar ao santuário na escolha encerra a partida sem deixar a tela da escolha
+	zerar()
+	w.combate.jogo = "bau"
+	w.combate.pausado = true
+	w.combate.telas.mostrar_bau(w.combate.cartas.sortear(2, 3))
+	passos(15)
+	var bau_antes: float = w.combate.telas.espera_bau
+	Input.parse_input_event(_tecla(KEY_ESCAPE))
+	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	ok(w.pausa.aberto and w.combate.telas.bau_aberto, "ESC no baú abre a pausa e o baú segue aberto")
+	passos(90)
+	ok(w.combate.telas.espera_bau == bau_antes, "com a pausa aberta a trava do baú não anda")
+	Input.parse_input_event(_tecla(KEY_ESCAPE))
+	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	ok(not w.pausa.aberto and not get_tree().paused and w.combate.jogo == "bau", "ESC de novo volta ao baú")
+	zerar()
+	subir_nivel()
+	Input.parse_input_event(_tecla(KEY_ESCAPE))
+	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	w.pausa._executar("santuario", 0)
+	w.pausa._executar("ok_santuario", 0)
+	ok(w.combate.jogo == "abandono" and not get_tree().paused, "Voltar ao santuário a partir da escolha abandona a partida")
+	ok(not w.combate.telas.escolha_aberta and w.combate.telas.resultado_aberto, "a escolha some e o resultado abre")
+	w.combate.jogo = "morte"  # na morte e no resultado o ESC não abre a pausa
+	Input.parse_input_event(_tecla(KEY_ESCAPE))
+	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	ok(not w.pausa.aberto and not get_tree().paused, "na morte o ESC não abre a pausa")
+
+	# 14. o clique que escolhe a carta não vira golpe: o botão continua apertado e o herói lê o botão de atacar por polling (Input).
+	# (zerar() desliga o polling com entrada_forcada; aqui o herói lê o Input de verdade.)
+	zerar()
+	w.heroi.entrada_forcada = null
+	subir_nivel()
+	ate(func(): return trava() <= 0.0, 200)
+	passos(40)
+	var golpes0: int = w.heroi.golpes
+	esc0 = w.combate.progresso.escolhidas
+	mouse_pos = _centro_carta(1)
+	Input.parse_input_event(_clique(mouse_pos))  # o aperto escolhe a carta e o botão fica apertado no Input
+	ok(w.combate.progresso.escolhidas == esc0 + 1 and w.combate.jogo == "jogando", "o clique na carta 2 escolhe")
+	ok(Input.is_action_pressed("atacar"), "o botão de atacar segue apertado no Input (a condição do defeito)")
+	passos(20)
+	ok(w.heroi.golpes == golpes0, "o clique que escolheu a carta não vira golpe enquanto o botão está apertado (%d golpes)" % (w.heroi.golpes - golpes0))
+	Input.parse_input_event(_clique(mouse_pos, false))  # soltou
+	passos(5)
+	Input.parse_input_event(_clique(mouse_pos))  # aperto novo: golpeia
+	passos(5)
+	ok(w.heroi.golpes > golpes0, "depois de soltar, um aperto novo golpeia normalmente")
+	Input.parse_input_event(_clique(mouse_pos, false))
+	Input.use_accumulated_input = true
 
 	print("v2_cartas_espera falhas=%d" % falhas)
 	get_tree().quit(1 if falhas > 0 else 0)

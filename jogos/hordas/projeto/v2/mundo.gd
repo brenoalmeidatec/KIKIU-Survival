@@ -144,6 +144,7 @@ func _ready() -> void:
 	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd)
 	sv.add_child(pausa)
+	add_child(pausa.porta())  # a pausa está no SubViewport e o mundo não recebe entrada com a árvore pausada: a porta leva a entrada da janela até ela
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
 		sv.add_child(meta_res)

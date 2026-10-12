@@ -425,6 +425,8 @@ func mostrar_resultado() -> void:
 
 
 func esconder() -> void:
+	if mundo.heroi != null:
+		mundo.heroi.exigir_soltar_ataque()  # o clique que fechou a escolha ou o baú não vira golpe no quadro seguinte
 	escolha_aberta = false
 	resultado_aberto = false
 	bau_aberto = false
@@ -808,6 +810,8 @@ func _mover(d: int, n: int) -> void:
 
 
 func _entrada_bau(e: InputEvent) -> bool:
+	if e is InputEventKey and e.keycode == KEY_ESCAPE:
+		return false  # ESC é da pausa (pausa.gd), no baú como na escolha
 	var vai := false
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E]:
 		vai = true
