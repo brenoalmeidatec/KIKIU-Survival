@@ -11,6 +11,7 @@ const ALT := 540
 const CARTA_L := 256.0
 const CARTA_A := 288.0
 const CARTA_Y := 146.0
+const LENDARIA_COR := Color(1.0, 0.45, 0.85)  # magenta: a faixa e o rodapé de uma peça que fecha lendária
 const FOLGA := 20.0
 const BTN_Y := 440.0
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
@@ -221,11 +222,14 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	(p.get_node("desc") as Label).text = str(c.desc)
 	(p.get_node("proximo") as Label).text = str(c.get("proximo", ""))
 	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
-	(p.get_node("evolui") as Label).text = str(c.get("evolui", ""))
+	var evo := p.get_node("evolui") as Label
+	evo.text = str(c.get("evolui", ""))
+	var lendaria := bool(c.get("lendaria", false))  # a peça que fecha uma lendária ganha o ouro da fusão
+	evo.add_theme_color_override("font_color", LENDARIA_COR if lendaria else Color(1.0, 0.82, 0.4))
 	var rl := p.get_node("rar") as Label
 	rl.text = str(c.get("rar_nome", "")).to_upper()
 	rl.add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.3))
-	(p.get_node("faixa") as ColorRect).color = Color(cor.r, cor.g, cor.b, 0.9)
+	(p.get_node("faixa") as ColorRect).color = Color(LENDARIA_COR.r, LENDARIA_COR.g, LENDARIA_COR.b, 0.9) if lendaria else Color(cor.r, cor.g, cor.b, 0.9)
 	var nome_icone := str(c.get("icone", ""))
 	(p.get_node("icone") as TextureRect).texture = Dados.tex(nome_icone) if nome_icone != "" else null
 	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(cor))

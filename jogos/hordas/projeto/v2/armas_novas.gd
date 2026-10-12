@@ -129,6 +129,8 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 		var ex := float(st.get("explosao", 0.0))
 		if ex > 0.0:
 			pai.explodir(m.pos, dano, ex, a.cor, m)
+		if st.has("puxa"):  # a tempestade: cada impacto puxa os inimigos próximos para o ponto
+			_puxar(m.pos, float(st.get("puxa_raio", 90.0)), float(st.puxa))
 		if int(it.pen) <= 0:
 			it.vida = 0.0
 			return
@@ -154,7 +156,45 @@ func _tique_nuvem(it: Dictionary, dt: float) -> void:
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
 	it.t = float(st.tique)
+	if st.has("gelo_mult"):  # o furacão: quem já está lento dentro da nuvem leva dano em dobro
+		_tique_gelo(it.p, float(it.r), st, a.cor)
+		return
 	pai._dano_area(it.p, float(it.r), _dano(st), 30.0, 0.0, a.cor, "nuvem", float(st.get("lentidao", 0.0)))
+
+
+func _tique_gelo(p: Vector2, r: float, st: Dictionary, cor: Color) -> void:
+	for m in pai.mundo.monstros:
+		if not m.vivo or m.morrendo:
+			continue
+		var d: Vector2 = m.pos - p
+		if not pai.na_elipse(d, r + m.raio):
+			continue
+		var dano := _dano(st)
+		if m.lento_t > 0.0:
+			dano *= float(st.gelo_mult)
+		var fora: Vector2 = d.normalized() if d.length() > 0.5 else Vector2.RIGHT
+		pai.combate.ferir(m, dano, fora, 30.0, 0.0, _cor_num(cor))
+		m.deixar_lento(float(st.get("lentidao", 0.0)))
+		pai._acertou("nuvem")
+
+
+## Puxa os monstros dentro de `raio` até `forca` px na direção de `p` (a tempestade primordial).
+func _puxar(p: Vector2, raio: float, forca: float) -> void:
+	for m in pai.mundo.monstros:
+		if not m.vivo or m.morrendo:
+			continue
+		var d: Vector2 = p - m.pos
+		if _eli(d).length() > raio:
+			continue
+		m.pos = m.pos + d.normalized() * minf(forca, d.length())
+
+
+## Dano do golpe; se o monstro já está lento e a arma tem `mult_lento`, o dano sobe (combo de lentidão).
+func _dano_em(m, st: Dictionary) -> float:
+	var d := _dano(st)
+	if st.has("mult_lento") and m.lento_t > 0.0:
+		d *= float(st.mult_lento)
+	return d
 
 
 func _anel(a: Dictionary, h) -> void:
@@ -196,6 +236,7 @@ func _meteoros(a: Dictionary, h, perto: Array) -> void:
 		if it.is_empty():
 			return
 		it.t = float(st.aviso)  # o aviso no chão antes da queda
+		it["filho"] = false
 
 
 func _cair_meteoro(it: Dictionary, dt: float) -> void:
@@ -207,6 +248,13 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
 	pai.explodir(it.p, _dano(st), float(st.raio), a.cor)
+	if st.has("cadeia") and not bool(it.get("filho", false)):  # o juízo: cada queda chama outro meteoro no inimigo mais perto
+		var alvo = _mais_perto(it.p, 400.0, pai.mundo.monstros)
+		if alvo != null:
+			var f := _novo("meteoro", a, alvo.pos, float(st.aviso) + 0.3)
+			if not f.is_empty():
+				f.t = float(st.aviso)
+				f["filho"] = true  # o filho não chama outro: a corrente tem só um elo
 	it.vida = 0.3  # o estouro fica um pouco
 
 
@@ -236,7 +284,10 @@ func _mover_aliado(it: Dictionary, h, dt: float, perto: Array) -> void:
 	if alvo != null and float(it.t) <= 0.0 and _eli(alvo.pos - it.p).length() < 12.0 + float(alvo.raio):
 		it.t = float(st.tique)
 		var dir: Vector2 = (alvo.pos - it.p).normalized()
-		pai.combate.ferir(alvo, _dano(st), dir, 30.0, 0.05, _cor_num(a.cor))
+		var dano := _dano_em(alvo, st)
+		if st.has("prende"):  # o eclipse: o toque prende o inimigo na sombra
+			alvo.deixar_lento(float(st.prende))
+		pai.combate.ferir(alvo, dano, dir, 30.0, 0.05, _cor_num(a.cor))
 		pai._acertou("aliado")
 
 

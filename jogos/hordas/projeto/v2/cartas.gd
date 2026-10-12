@@ -148,13 +148,23 @@ func _evo_livre(ev: Dictionary) -> bool:
 
 
 func _sinergia_texto(id: String) -> String:
+	var ev := _sinergia_ev(id)
+	if ev.is_empty():
+		return ""
+	if str(ev.get("raridade", "")) == "lendario":
+		return "LENDÁRIA! Evolui: %s" % ev.nome
+	return "Evolui: %s" % ev.nome
+
+
+## A evolução (ainda livre) que esta peça ajuda a fechar, ou {} se nenhuma.
+func _sinergia_ev(id: String) -> Dictionary:
 	for ev in cfg.evolucoes:
 		if not _evo_livre(ev):
 			continue
 		for p in ev.pecas:
 			if p.id == id:
-				return "Evolui: %s" % ev.nome
-	return ""
+				return ev
+	return {}
 
 
 func golpes_ativos() -> int:
@@ -258,6 +268,7 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 	var sin := _sinergia_texto(id)
 	if sin != "" and cat != "stat":
 		c.evolui = sin
+		c.lendaria = str(_sinergia_ev(id).get("raridade", "")) == "lendario"
 	return c
 
 
