@@ -8,7 +8,8 @@ extends RefCounted
 ##   --roteiro=correr      foto do herói correndo com a poeira e a câmera adiantada
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
 ##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, do mini-chefe e do chefe anunciando
-##                         o ataque, da tela de vitória e da escolha com raridades. Fotos 11_build ... 20_escolha, sempre só do viewport.
+##                         o ataque, da tela de vitória e da escolha com raridades (na trava, 20_escolha_trava, e depois de liberar,
+##                         21_escolha_liberada). Fotos 11_build ... 21_escolha_liberada, sempre só do viewport.
 ##   --roteiro=vitrine|ordem|cerco   (leva 4, desempenho) vitrine: os 5 tipos parados em 3 fileiras, para comparar antes e depois do mesmo quadro;
 ##                         ordem: aranhas grandes (escala 2) atrás e na frente do herói (ordem de desenho); cerco: a horda com 2 aranhas grandes
 ##                         depois de 3 s de perseguição, com o herói parado (os monstros cercam e não entram no corpo dele).
@@ -423,11 +424,16 @@ func _r_escolha() -> void:
 			c.telas.mostrar_escolha(c.progresso.cartas, 20)
 			passo = 1
 			t_passo = 0.0
-		1:
-			if t_passo > 0.8:
-				_foto("20_escolha")
+		1:  # a trava: cartas apagadas e a contagem ("Escolha em 2") na legenda, com a barra no meio
+			if t_passo > 1.2:
+				_foto("20_escolha_trava")
 				passo = 2
-		2:
+				t_passo = 0.0
+		2:  # logo depois de liberar (3 s de tempo real): as cartas acendem
+			if c.telas.espera_escolha <= 0.0 and t_passo > 0.12:
+				_foto("21_escolha_liberada")
+				passo = 3
+		3:
 			mundo.get_tree().quit()
 
 

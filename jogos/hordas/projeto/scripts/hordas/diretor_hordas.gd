@@ -215,13 +215,24 @@ func fase_atual() -> Dictionary:
 
 
 ## Teto de inimigos vivos (#127). O da fase (dados/fase.json > dificuldade > limite_vivos, padrão 250; uma fase do
-## regioes.json pode ter o seu `limite_vivos`) vale no jogo normal; a prorrogação e o Enxame Final sobem pra `limite_vivos_pror` (500).
+## regioes.json pode ter o seu `limite_vivos`) vale no jogo normal; a prorrogação e o Enxame Final sobem pra `limite_vivos_pror` (350).
 ## Convive com o limite do perfil de qualidade (dados/graficos.json): vale o menor dos dois. Pura: o teste usa.
 func limite_vivos() -> int:
 	var base := int(_fase.get("limite_vivos", _dif.get("limite_vivos", 250)))
 	if pror_ativa() or enxame_final:
-		base = maxi(base, int(_dif.get("limite_vivos_pror", 500)))
+		base = maxi(base, int(_dif.get("limite_vivos_pror", 350)))
 	return mini(base, int(Config.g("max_inimigos")))
+
+
+## Menos bichos na tela com o mesmo perigo: a prorrogação e o Enxame Final foram desenhados para `limite_vivos_ref` (500) vivos e hoje o teto
+## é `limite_vivos_pror` (350), então o dano de quem nasce nelas sobe na proporção (500/350 = x1,43). Fora delas vale 1. Não depende do
+## perfil de gráficos (o perigo é o mesmo em qualquer PC; quem usa Médio ou Baixo já tem menos bichos e não ganha dano a mais).
+func mult_dano_teto() -> float:
+	if not (pror_ativa() or enxame_final):
+		return 1.0
+	var ref := float(_dif.get("limite_vivos_ref", 500))
+	var teto := float(maxi(int(_dif.get("limite_vivos_pror", 500)), 1))
+	return maxf(ref / teto, 1.0)
 
 
 func _gastar() -> void:

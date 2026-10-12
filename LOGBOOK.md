@@ -1218,3 +1218,62 @@ _Claude do Alisson (notebook)_
 - **Balanço** depende de jogar.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12: a v2 vira o jogo padrão (#194)
+
+**Feito:**
+- `run/main_scene` agora é o santuário da v2 (`v2/altar.tscn`), então o F5 e os exports (Windows, Linux, Web) abrem a v2. Os presets de export não mudaram.
+- A v1 abre com `-- --v1` (`KIKIU.exe -- --v1`). Os argumentos de teste dela (`--bot`, `--online`, `--sair`, `--print_tela`, `--cena`, `--prototipo`) também vão direto para a v1 (`ARGS_V1` em `v2/altar.gd`), então os comandos do README e os `testes/online_*.sh` não mudaram.
+- O repasse do santuário para a v1 só acontece na primeira abertura do processo (sem laço com `--v2`), e no menu da v1 `--v1` ganha de `--v2`. O `testes/entrada_cenas` cobre isso.
+
+**Pendente:**
+- **`esquiva` (v1) instável no CI:** falhou uma vez em "o robô esquiva quando tem vírus colado" e passou ao rodar de novo. A suspeita é que as armas do robô tiram o inimigo do raio em 3 quadros.
+## 2026-10-12 (2): os 15 fps do fim da partida, reproduzidos e medidos
+
+**Feito:**
+- **`testes/bench_fim.tscn`:** o pior caso do relato (build de nível 70 com semente fixa, relógio em 25 min, 500 bichos, `--limite` para respeitar o teto de vivos). Roda na `main` e nas versões antigas. Tem ainda `--picos=MS`, `--dissecar_hud` e `--sem_hud`.
+- **`docs/PERF_2026-10-12.md`:** antes do #140, a Release do #140 e a `main`, em headless e com janela (renderização por software, num contêiner sem placa de vídeo).
+  - **Os ~15 fps foram reproduzidos:** a versão de antes, no Baixo, deu 15,7 fps.
+  - **O hotfix funciona e continua na `main`:** Baixo de 15,7 para 27 fps com janela, e de 74 para 114–124 em headless; Médio +36%. O ganho vem do teto de vivos por perfil, não de bicho mais barato.
+  - **O Alto aos 25 min não mudou:** a prorrogação ainda põe 500 bichos, e quem segura o fps é a qualidade automática (fps < 40 por 8 s).
+
+**Pendente / propostas** (nada aplicado; a v1 está pausada):
+- **HUD da v1:** custa ~450–520 chamadas de desenho (mais que a horda no Baixo) e uns 15–20% de fps na janela. A `main` tem picos piores que a Release do hotfix por isso.
+- **Teto da prorrogação no Alto** de 500 para 350: decisão do Breno.
+- **v2:** o script aguenta 500 (8,8 ms), mas o desenho com luz 2D e mapa de normais cresce com a horda. A proposta é deixar a horda só com a luz do herói e, no Baixo, sem mapa de normais.
+- **Falta medir em placa de verdade** (i5-3470 e RX 7600 XT). Os comandos estão no fim do doc.
+
+_Claude do Alisson (nuvem)_
+
+## 2026-10-12 (3) · Claude do Alisson (nuvem) · v2: luz da horda (experimento, não adotado)
+- **Pedido:** o Alisson escolheu a proposta C (a horda comum da v2 só com a luz do herói e, no Baixo, sem mapa de normais).
+- **Feito e medido:** camadas de luz (`light_mask` e `range_item_cull_mask`) e um shader da horda sem normal. Testes da v2 passaram (`v2_mundo`, `v2_desempenho`, `v2_combate`, `v2_pausa`, `v2_partida`, `v2_oclusao`).
+- **Resultado:** +3% de fps no Baixo e +1% no Alto com 500 monstros (3 rodadas, renderização por software), e a horda fica visivelmente mais escura perto das luzes do cenário. **Não entrou na `main`.** O patch está em `/mnt/project-files/perf/v2_luz_horda_experimento.patch`; os números e a análise, no fim de `docs/PERF_2026-10-12.md`.
+- **Próximo:** medir o `bench_fim` e o `--medir` da v2 numa placa de verdade (i5-3470 e RX 7600 XT) antes de mexer em luz de novo; o HUD da v1 (proposta A) segue como o maior ganho barato.
+
+_Claude do Alisson (nuvem)_
+
+## 2026-10-12 (4) · Claude do Alisson (nuvem) · teto de 350 bichos na prorrogação, com dano compensando
+- **Decisão do Alisson:** a v1 vai ser aposentada (nada de HUD novo nela); a prorrogação e o Enxame Final passam de 500 para **350** vivos e a dificuldade vem do **dano** dos bichos.
+- **Feito:** `dados/fase.json`: `limite_vivos_pror` 350 e `limite_vivos_ref` 500. `diretor.mult_dano_teto()` devolve 500/350 (x1,43) na prorrogação e no Enxame Final; `inimigos.criar` e `_mult_tiro` multiplicam o dano por ele. Não depende do perfil de gráficos. Quem já estava vivo quando a prorrogação começou mantém o dano antigo.
+- **Testes:** `desenho_lote` ampliado (teto, multiplicador, bug que nasce na prorrogação, tiro, Enxame Final); `prorrogacao`, `regioes`, `mortes` e `esquiva` com falhas=0.
+- **Pendente:** o equilíbrio de verdade só se vê jogando a prorrogação; o x1,43 é a conta direta (500/350), ajustar se ficar duro ou fácil. As medições numa placa de verdade estão sendo feitas no notebook do Alisson.
+
+_Claude do Alisson (nuvem)_
+
+## 2026-10-12 (5) · Claude do Alisson (nuvem) · fechamento do PR #195 e decisões do dia
+**Decisões do Alisson hoje (para quem pegar a conversa depois):**
+- **A v1 será aposentada.** Nada de HUD, desempenho ou recurso novo nela; o foco é a v2 (também no `CLAUDE.md`).
+- **Teto de 350 bichos na prorrogação e no Enxame Final**, com o dano dos bichos compensando (x1,43), porque ninguém conta 350 contra 500 de olho e a dificuldade passa a vir do dano.
+- **Trabalhar na pasta local, não na nuvem.** Testes de desempenho rodam no notebook dele, nunca no servidor, e com no máximo 2 minutos. Uma sessão do Claude Code roda na pasta `C:\Dev\Breno` (repo em `C:\Dev\Breno\Jogao-gamer`).
+- **Luz da horda na v2: não adotada** (+1 a 3% de fps e visual mais escuro); o patch está em `perf/v2_luz_horda_experimento.patch` na pasta compartilhada do projeto.
+
+**Medido no notebook dele** (i5-1345U, Iris Xe, na tomada, janela, sem V-Sync, `testes/bench_fim.tscn`, 6 s por rodada): Alto com 500 bichos 53,8 fps; Baixo com 250 bichos 94,4 fps; v2 com 84 monstros no Baixo 210 fps. A medição de "Alto com 350" ficou inválida (o diretor enchia até 500). O bench já foi corrigido (`--n` limita o diretor), mas a rodada nova ainda não foi feita.
+
+**Pendente / próximo:**
+- Rodar o `bench_fim` no Alto com `--limite` e com `--n=350` no notebook (30 s) e acrescentar os números ao fim de `docs/PERF_2026-10-12.md`.
+- Medir no i5-3470 e na RX 7600 XT; o HUD da v1 (proposta A) não será feito, porque a v1 sai.
+- Jogar a prorrogação para ver se o dano x1,43 está bom (número em `dados/fase.json`: `limite_vivos_pror` e `limite_vivos_ref`).
+- Na v2, o teto de vivos é 84 (`v2_combate.json`); antes de subir, medir de novo com o `--medir` da v2 em placa de verdade.
+
+_Claude do Alisson (nuvem)_

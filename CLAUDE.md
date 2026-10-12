@@ -36,6 +36,7 @@ O Claude do Alisson (PC e notebook) **trabalha sozinho neste repositório**. O B
 ## V1 pausada, v2 sobre o protótipo (decisão do Alisson, 2026-10-11)
 O protótipo 2.5D (`jogos/hordas/projeto/prototipos/cara_nova.tscn`, PR #156) foi aprovado e **é a base da v2**. A v2 cresce em `jogos/hordas/projeto/v2/`, e os dados ficam em `dados/v2_*.json`.
 - **A v1** (`main.tscn`, `arena.gd` e o resto do jogo atual) **está pausada**: nada de recurso novo nem refino. Só entra correção de bug grave (crash, save corrompido, build quebrado). Quando um sistema da v1 servir na v2, **porte para a v2**, sem melhorar a v1.
+- **A v1 vai ser aposentada** (decisão do Alisson, 2026-10-12): todo o esforço vai para a v2, nada de HUD, desempenho nem recurso novo na v1. A exceção foi o teto de 350 vivos na prorrogação e no Enxame Final (PR #195), pedido por ele. Desde o #194 a v2 é a cena principal e a v1 abre com `-- --v1`.
 - O protótipo fica congelado como referência. O que for reaproveitado vira módulo em `v2/`.
 - O plano de etapas do épico #152 continua, agora aplicado à v2.
 

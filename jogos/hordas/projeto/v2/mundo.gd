@@ -78,6 +78,7 @@ var combate
 var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
 var meta_res  # resultado com as almas (resultado_meta.gd); null no modo de teste
 var status  # card "SUA BUILD" (status.gd): a tecla C liga no HUD e a pausa o mostra ao lado do menu
+var pausa  # menu de pausa (pausa.gd): pausa.aberto diz se está aberto (as telas leem aqui)
 var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, rolagem, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
@@ -142,7 +143,8 @@ func _ready() -> void:
 	_montar()
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
 	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
-	sv.add_child(preload("res://v2/pausa.tscn").instantiate().iniciar(self))  # ESC ou Start pausam e abrem o menu (pausa.gd)
+	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
+	sv.add_child(pausa)
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
 	sv.add_child(status)
 	if not modo_teste:
@@ -434,6 +436,7 @@ func _input(e: InputEvent) -> void:
 	if status != null and status.entrada(e):  # C liga e desliga o card da build, também sobre a escolha de cartas e o baú (que comem as teclas)
 		get_viewport().set_input_as_handled()
 		return
+	# ESC e Start (e toda a entrada com o menu aberto) já foram tratados pela Antena da pausa, que vem antes na ordem do _input
 	if meta_res != null and meta_res.entrada(e):  # o resultado com as almas vem antes da tela de resultado (telas.gd)
 		get_viewport().set_input_as_handled()
 		return

@@ -11,6 +11,7 @@
 | ⚡ [`PERF_2026-10-06.md`](PERF_2026-10-06.md) | Medição de desempenho com 500 inimigos |
 | ⚡ [`PERF_2026-10-07.md`](PERF_2026-10-07.md) | PC antigo: perfil de qualidade, núcleos, primeiros quadros, shaders e histórico de fps |
 | ⚡ [`PERF_2026-10-10.md`](PERF_2026-10-10.md) | Marco 3: inimigos em lote (MultiMesh), atlas por região, limite de vivos por fase e a conferência visual antes/depois |
+| ⚡ [`PERF_2026-10-12.md`](PERF_2026-10-12.md) | Pior caso do fim da partida (nível 70, 25 min, 500 bichos): `bench_fim`, antes e depois do hotfix #140, gargalos que sobraram na v1 e na v2 |
 | 📖 [`HISTORIA_GRUPO_AMIGOS.md`](HISTORIA_GRUPO_AMIGOS.md) | Os amigos do jogo, como o Breno contou |
 | 🔬 [`analise_jogos_de_hordas.md`](analise_jogos_de_hordas.md) | Análise de Vampire Survivors, Risk of Rain 2 e Megabonk |
 | 🎮 [`ANALISE_10_JOGOS_HORDAS.md`](ANALISE_10_JOGOS_HORDAS.md) | Mais 10 jogos parecidos e ideias pro K.I.K.I.U |
