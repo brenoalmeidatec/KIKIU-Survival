@@ -9,6 +9,7 @@ extends RefCounted
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
 ##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, do mini-chefe e do chefe anunciando
 ##                         o ataque, da tela de vitória e da escolha com raridades. Fotos 11_build ... 20_escolha, sempre só do viewport.
+##   --roteiro=oclusao     (leva 4) herói atrás de uma árvore (1_arvore) e herói coberto por uma aranha grande na frente (2_aranha).
 ## Nada disto roda no jogo normal.
 
 var mundo
@@ -69,6 +70,8 @@ func atualizar(dt: float) -> void:
 				_r_vitoria()
 			"escolha":
 				_r_escolha()
+			"oclusao":
+				_r_oclusao()
 
 
 # ------------------------------------------------------------------ robô e estresse
@@ -416,4 +419,43 @@ func _r_escolha() -> void:
 				_foto("20_escolha")
 				passo = 2
 		2:
+			mundo.get_tree().quit()
+
+
+# ------------------------------------------------------------------ leva 4: oclusão (herói atrás de árvore e coberto por monstro)
+
+
+## 1_arvore: o herói atrás de uma árvore do meio do mapa (a copa e o tronco o escondem). 2_aranha: o herói no ponto de
+## nascimento, com uma aranha grande na frente cobrindo o corpo (a silhueta do herói aparece por cima).
+func _r_oclusao() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			var arvore = null
+			for o in mundo.cenario.objetos:
+				if o.chave == "arvore" and o.pos.x > 900.0 and o.pos.x < 2000.0 and o.pos.y > 500.0 and o.pos.y < 1100.0:
+					arvore = o
+					break
+			if arvore != null:
+				h.definir_pos(arvore.pos + Vector2(0, -40))
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.9:
+				_foto("1_arvore")
+				passo = 2
+				t_passo = 0.0
+		2:
+			var c: Array = mundo.dados.get("nascimento", {}).get("heroi", [1440, 820])
+			h.definir_pos(Vector2(float(c[0]), float(c[1])))
+			var m = mundo.nascer_monstro("inimigo_aranha_tecela", h.pos + Vector2(0, 12), false)
+			m.definir_escala(2.0)
+			passo = 3
+			t_passo = 0.0
+		3:
+			if t_passo > 0.9:
+				_foto("2_aranha")
+				passo = 4
+		4:
 			mundo.get_tree().quit()
