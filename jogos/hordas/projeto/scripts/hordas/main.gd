@@ -1381,7 +1381,7 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 226), "Motor do jogo: Godot Engine (licença MIT)", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 236), "Fonte Press Start 2P, de CodeMan38 (licença OFL)", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 248), "Fonte Jersey 10 (títulos), de The Soft Type Project (licença OFL)", 8, Color(0.6, 0.6, 0.7))
-			_txt(Vector2(0, 260), "Fonte Pixelify Sans (texto), de The Pixelify Sans Project (licença OFL)", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 260), "Fonte Spleen (texto), (c) 2018-2026 Frederic Cambus (BSD de 2 cláusulas)", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 272), "Efeitos sonoros gerados por código, no próprio projeto", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 284), "Música: Kevin MacLeod (incompetech.com), CC BY 4.0", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 296), "Oppressive Gloom, Crypto, Giant Wyrm, Ignosi,", 8, Color(0.6, 0.6, 0.7))

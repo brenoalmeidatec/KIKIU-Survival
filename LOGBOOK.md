@@ -1287,3 +1287,11 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 — v2: Ruptura no botão direito (PR #201)
+- **O que entrou:** habilidade nova no botão direito do mouse e no gatilho esquerdo do controle (`v2/ruptura.gd`, dados em `dados/v2_ruptura.json`): segurar carrega, soltar racha o chão em 360° (dano, atordoamento, empurrão; chefe só leva dano e lentidão), com recarga, janela de soltura perfeita, contragolpe, 5 cartas de melhoria, slot no HUD, 4 sons e `--roteiro=ruptura` para fotos/medição.
+- **Testes:** `testes/v2_ruptura.tscn` (`falhas=0`), mais `v2_combate`, `v2_hud`, `v2_pausa` e `v2_fontes` depois de mesclar a main (#203).
+- **O que NÃO foi conferido:** o feeling no jogo aberto (tempo de carga, peso do tremor e do hit-stop, volume dos sons) — só teste automático e prints. Precisa de alguém jogando.
+- **Pendente:** ao mesclar depois do #190 (card SUA BUILD) há conflito de texto em `combate.gd` e `LEIA-ME.md`; resolver e rodar `v2_status`, `v2_combate` e `v2_ruptura`.
+
+_Claude do Alisson (notebook)_
