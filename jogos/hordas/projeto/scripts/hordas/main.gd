@@ -6,6 +6,8 @@ extends Node
 ##   --online=host [--jogadores=2] (abre a sala e começa sozinho quando tiver 2)
 ##   --online=join --endereco=127.0.0.1:7777  (entra na sala)
 ##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
+## A cena principal do jogo é a v2 (res://v2/altar.tscn). Esta tela (a v1) abre com `-- --v1` ou com um argumento da v1
+## (--bot, --online, --sair, --print_tela, --cena, --prototipo), que o santuário repassa para cá (v2/altar.gd, ARGS_V1).
 ## Abrir uma cena no lugar do menu (Release: KIKIU.exe -- --prototipo; o "--" faz o protótipo ler --fotos/--seq):
 ##   --prototipo (res://prototipos/cara_nova.tscn)  --v2 (res://v2/altar.tscn, o santuário da v2; sem o arquivo, cai no protótipo com aviso)
 ##   --cena=res://... (qualquer cena; sem o arquivo, fica no menu com aviso). Ordem: --cena > --v2 > --prototipo.
@@ -229,7 +231,7 @@ static func cena_de_argumentos(args: Dictionary, existe: Callable) -> String:
 			return str(args.cena)
 		print("AVISO --cena=%s: arquivo não existe; abrindo o menu" % str(args.cena))
 		return ""
-	if args.has("v2"):
+	if args.has("v2") and not args.has("v1"):  # --v1 ganha de --v2 (o santuário mandou pra cá)
 		if existe.call(CENA_V2):
 			return CENA_V2
 		print("AVISO --v2: %s ainda não existe; abrindo o protótipo" % CENA_V2)

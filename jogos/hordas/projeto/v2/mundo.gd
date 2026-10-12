@@ -77,6 +77,7 @@ var monstros: Array = []  # os monstros VIVOS (quem morre volta para o pool e re
 var combate
 var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
 var meta_res  # resultado com as almas (resultado_meta.gd); null no modo de teste
+var pausa  # menu de pausa (pausa.gd): pausa.aberto diz se está aberto (as telas leem aqui)
 var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, rolagem, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
@@ -87,7 +88,6 @@ var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredonda
 	get:
 		return roundi(xp_coletado / 10.0)
 var tempo_partida := 0.0  # s de jogo (não conta hit-stop nem a pausa da escolha)
-var pausa  # o menu de pausa (pausa.gd), criado no _ready; telas.gd lê `aberto` para congelar a trava das cartas
 var monstros_vivos: int:
 	get:
 		return monstros.size()
@@ -142,9 +142,8 @@ func _ready() -> void:
 	_montar()
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
 	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
-	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd)
+	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
 	sv.add_child(pausa)
-	add_child(pausa.porta())  # a pausa está no SubViewport e o mundo não recebe entrada com a árvore pausada: a porta leva a entrada da janela até ela
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
 		sv.add_child(meta_res)
@@ -431,6 +430,7 @@ func mouse_mundo() -> Vector2:
 
 
 func _input(e: InputEvent) -> void:
+	# ESC e Start (e toda a entrada com o menu aberto) já foram tratados pela Antena da pausa, que vem antes na ordem do _input
 	if meta_res != null and meta_res.entrada(e):  # o resultado com as almas vem antes da tela de resultado (telas.gd)
 		get_viewport().set_input_as_handled()
 		return

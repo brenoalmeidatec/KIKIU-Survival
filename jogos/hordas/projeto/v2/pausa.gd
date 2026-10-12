@@ -8,6 +8,11 @@ extends CanvasLayer
 ## No santuário (altar.gd, sem mundo) o ESC abre só "Sair?", e abrir_ajustes() abre Ajustes (o botão do santuário).
 ## Perder o foco da janela pausa a partida (opção pausar_fora da v1; não vale em headless). Criada pelo mundo.gd (uma linha no
 ## _ready) e pelo altar.gd. Os botões são desenhados e testados por retângulo: o SubViewport da partida não entrega mouse aos Controls.
+## ENTRADA: a janela entrega teclado, controle e mouse só à viewport RAIZ; o SubViewport da partida (onde o menu mora, para ficar na
+## grade de pixels) não recebe nada, então o _input do menu NÃO roda lá. Na partida quem o alimenta é a Antena (filha do mundo, em
+## PROCESS_MODE_ALWAYS): ela vem antes do mundo e das telas na ordem do _input e continua ouvindo com a árvore pausada. No santuário
+## o menu mora na raiz e usa o próprio _input. Nos dois casos a regra é a de entrada(). Abre em "jogando" e também sobre a escolha de
+## cartas e o baú (que voltam intactos ao fechar); não abre na câmera lenta da morte e da vitória nem no resultado.
 ## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores, apoio e ajuda na Pixelify Sans
 ## (Dados.fonte_texto), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 
@@ -41,6 +46,8 @@ var mouse_fn := Callable()  # mouse em 960x540 (o Apresentacao da partida); vazi
 var ao_sair := Callable()  # "Sim" em Sair do jogo; vazio = get_tree().quit()
 var aberto := false
 var tela := "menu"
+var _arvore_antes := false  # get_tree().paused de quando o menu abriu: fechar devolve exatamente isso
+var _apertos := {}  # botões do mouse apertados COM o menu aberto: só a soltura de um aperto visto aciona uma linha
 var sel := 0
 var _topo := 0  # primeira linha visível da lista
 var _origem := "menu"  # para onde "Não" de uma confirmação volta; "" = fecha (santuário, sem menu por trás)
@@ -61,11 +68,29 @@ func iniciar(m) -> Node:
 	mundo = m
 	if mundo != null:
 		mouse_fn = Callable(mundo.ap, "mouse_na_tela")
+		mundo.add_child(Antena.new(self))
 	return self
+
+
+## Leva à pausa da partida a entrada que a janela manda à raiz. É filha do mundo (depois dele na árvore, então recebe ANTES dele e
+## das telas) e roda com a árvore pausada, quando o próprio mundo não recebe nada. O que o menu usa, ela tira do caminho do mundo.
+class Antena:
+	extends Node
+	var menu
+
+	func _init(m) -> void:
+		menu = m
+		name = "AntenaPausa"
+		process_mode = Node.PROCESS_MODE_ALWAYS
+
+	func _input(e: InputEvent) -> void:
+		if is_instance_valid(menu) and menu.entrada(e):
+			get_viewport().set_input_as_handled()
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # com a árvore pausada, o menu continua recebendo entrada e desenhando
+	set_process_input(mundo == null)  # na partida a entrada vem da Antena (o SubViewport não recebe a janela)
 	layer = 14
 	_montar()
 	_desenhar()
@@ -155,24 +180,29 @@ func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin
 # ------------------------------------------------------------------ abrir e fechar
 
 
-## Abre o menu sobre a partida e para o mundo. Vale com o jogo rolando, na escolha e no baú (não na morte, na vitória nem no resultado).
-func pausar() -> void:
+## Abre o menu sobre a partida e para o mundo. Vale com o jogo rolando e sobre a escolha de cartas e o baú; não na câmera lenta da
+## morte e da vitória nem no resultado. Devolve true se abriu.
+func pausar() -> bool:
 	if mundo == null or aberto or not _pode_pausar():
-		return
+		return false
+	_arvore_antes = get_tree().paused
+	_apertos.clear()
 	aberto = true
 	_raiz.visible = true
 	_ir("menu")
 	get_tree().paused = true
+	return true
 
 
-## Fecha o menu e despausa a partida (no santuário não há pausa para tirar).
+## Fecha o menu e devolve a árvore ao estado de antes de abrir (no santuário não há pausa para tirar).
 func fechar() -> void:
 	if not aberto:
 		return
 	aberto = false
 	_raiz.visible = false
+	_apertos.clear()
 	if mundo != null:
-		get_tree().paused = false
+		get_tree().paused = _arvore_antes
 
 
 ## Santuário (sem mundo): o ESC abre direto a confirmação de sair.
@@ -193,11 +223,11 @@ func abrir_ajustes() -> void:
 	_ir("ajustes", "")
 
 
-## Abre com a partida rolando, na escolha de carta e no baú (o mundo já está parado neles e a trava das cartas congela com o menu);
-## não abre na morte, na vitória nem no resultado.
+## Só olha em que passo do jogo a partida está (combate.jogo), nunca um flag solto: "jogando", ou a escolha de cartas e o baú, que
+## o menu cobre e devolve como estavam. Morrendo, vencendo e os resultados têm o fluxo deles.
 func _pode_pausar() -> bool:
 	var c = mundo.combate
-	return c != null and c.jogo in ["jogando", "escolha", "bau"]
+	return c != null and (c.jogo == "jogando" or c.jogo == "escolha" or c.jogo == "bau")
 
 
 func _ir(nova: String, origem := "menu") -> void:
@@ -228,44 +258,23 @@ func _voltar_tela() -> void:
 # ------------------------------------------------------------------ entrada
 
 
-## Na partida o menu mora dentro do SubViewport da apresentação, que NÃO recebe a entrada da janela, e o mundo (pausável) não recebe
-## entrada com a árvore pausada. Esta porta é filha do mundo e roda mesmo pausada (PROCESS_MODE_ALWAYS): leva a entrada da janela ao menu
-## (`entrada`) antes do `mundo._input`, para ESC e Start abrirem e fecharem a pausa e, aberta, o menu comer o resto.
-class Porta:
-	extends Node
-	var menu
-
-	func _input(e: InputEvent) -> void:
-		if menu != null and menu.entrada(e):
-			get_viewport().set_input_as_handled()
-
-
-## Cria a porta da partida (o mundo a põe como filha dele: `add_child(pausa.porta())`).
-func porta() -> Node:
-	var p := Porta.new()
-	p.menu = self
-	p.process_mode = Node.PROCESS_MODE_ALWAYS
-	return p
-
-
-## No santuário o menu está na raiz e recebe a entrada da janela direto por aqui (na partida só quando alguém empurra o evento no SubViewport).
+## Só o santuário usa (o menu mora na raiz); na partida o _input do menu fica desligado e a Antena chama entrada().
 func _input(e: InputEvent) -> void:
-	var vp := get_viewport()
 	if entrada(e):
-		vp.set_input_as_handled()
+		get_viewport().set_input_as_handled()
 
 
-## Trata um evento e devolve true se o menu o consumiu: ESC ou Start com o menu fechado abrem (e são consumidos mesmo quando a pausa
-## recusa, para a tecla não vazar para o resto) e, aberto, o menu come tudo (o mundo já está parado; no santuário, os botões de trás não recebem).
+## Um evento de entrada. Devolve true se o menu o usou: então quem chamou o tira do caminho (o mundo e as telas não o veem).
+## Fechado, só ESC e Start importam, e só contam se o menu abriu. Aberto, o menu come tudo (o mundo está parado; no santuário, os
+## botões de trás não recebem).
 func entrada(e: InputEvent) -> bool:
 	if not aberto:
 		if not _pede_menu(e):
 			return false
 		if mundo == null:
 			abrir_sair()
-		else:
-			pausar()
-		return true
+			return true
+		return pausar()
 	if e is InputEventMouseMotion:
 		var i := _linha_sob_mouse()
 		if i >= 0 and i != sel:
@@ -276,12 +285,17 @@ func entrada(e: InputEvent) -> bool:
 		_mover(-1)
 	elif e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 		_mover(1)
+	elif e is InputEventMouseButton and e.pressed and (e.button_index == MOUSE_BUTTON_LEFT or e.button_index == MOUSE_BUTTON_RIGHT):
+		_apertos[e.button_index] = true
 	elif e is InputEventMouseButton and not e.pressed and (e.button_index == MOUSE_BUTTON_LEFT or e.button_index == MOUSE_BUTTON_RIGHT):
-		# o clique age ao SOLTAR: quem fecha a pausa com o mouse não manda o golpe do herói (o golpe é no aperto, em heroi.gd)
-		var j := _linha_sob_mouse()
-		if j >= 0:
-			sel = j
-			_acao_sel(1 if e.button_index == MOUSE_BUTTON_LEFT else -1, e.button_index == MOUSE_BUTTON_LEFT)
+		# o clique age ao SOLTAR: quem fecha a pausa com o mouse não manda o golpe do herói (o golpe é no aperto, em heroi.gd).
+		# Só vale a soltura de um aperto visto COM o menu aberto: quem abriu o menu com o botão segurado (o golpe repetido, o clique da
+		# carta) solta com o cursor em cima de uma linha, e isso não pode apertar a linha.
+		if _apertos.erase(e.button_index):
+			var j := _linha_sob_mouse()
+			if j >= 0:
+				sel = j
+				_acao_sel(1 if e.button_index == MOUSE_BUTTON_LEFT else -1, e.button_index == MOUSE_BUTTON_LEFT)
 	elif e is InputEventJoypadMotion:
 		pass  # o analógico não navega (cada quadro com o analógico acima do limite contaria como um aperto); o direcional do controle navega
 	elif _pede_menu(e) or e.is_action_pressed("ui_cancel"):
