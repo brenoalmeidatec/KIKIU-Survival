@@ -2,7 +2,7 @@ extends Node
 ## Bench do pior caso do fim da partida (relato dos ~15 fps: 25 min, nível 70, ~500 inimigos). Não é teste de regra: só mede.
 ## Com janela e SEM V-Sync. Determinístico: semente 7, build de nível 70 com semente fixa, herói andando num quadrado.
 ## Roda: godot --path jogos/hordas/projeto res://testes/bench_fim.tscn -- --perfil=alto|medio|baixo
-##   opções: --n=500 (bichos pedidos) --seg=12 --aquecer=3 --fase=4 --build=70 --pular=1500 (s de partida: 25 min)
+##   opções: --n=500 (bichos pedidos; também limita o diretor do jogo, então --n=350 dá mesmo ~350 vivos) --seg=12 --aquecer=3 --fase=4 --build=70 --pular=1500 (s de partida: 25 min)
 ##           --picos=MS (quadros acima de MS ms, com o que pesou neles) --dissecar_hud (chamadas de desenho por nó do HUD) --sem_hud
 ##           --limite (repõe só até o teto de vivos do jogo, diretor.limite_vivos(): é o que a partida de verdade faz;
 ##           sem ele, repõe sempre até n, que é o custo cru de n bichos) --armas=a,b,c --nivel_arma=8 (no lugar das armas da build)
@@ -40,6 +40,10 @@ func _ready() -> void:
 	var a = m._arena
 	var j = a.jogador
 	_dar_build(a, int(_args.get("build", 70)))
+	if _args.has("n"):  # --n=N também limita o diretor: sem isso ele enche até o teto do jogo e o n pedido não vale
+		a.diretor._dif["limite_vivos"] = n
+		a.diretor._dif["limite_vivos_pror"] = n
+		a.diretor._fase["limite_vivos"] = n
 	a.diretor.xp_mult = 0.0  # ninguém sobe de nível no meio (a carta pausaria o jogo)
 	var tabela: Array = m._tipos_do_conjunto(a.diretor.conjunto())
 	var rng := RandomNumberGenerator.new()
