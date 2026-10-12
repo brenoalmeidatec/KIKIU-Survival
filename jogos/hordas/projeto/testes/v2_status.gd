@@ -20,6 +20,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Status := preload("res://v2/status.gd")
 const Meta := preload("res://v2/meta.gd")
+const Pausa := preload("res://v2/pausa.gd")
 const PASSO := 1.0 / 60.0
 const PASSO_FINO := 1.0 / 240.0  # a medição do ciclo do combo e do avanço do golpe sem o arredondamento por quadro
 const SAVE_TESTE := "user://teste_v2_status_meta.cfg"
@@ -895,7 +896,7 @@ func _modificadores() -> void:
 		if i >= 0 and onda.size() > 1 + k:
 			perto(float(onda[1 + k]), c.armas.w_dano[i], 0.001, "o dano da onda do corte %d no card é o da onda que o jogo soltou" % k)
 	ok(onda.size() == 3 and absf(float(onda[1]) - float(onda[2])) > 0.3, "os dois cortes soltam ondas de dano diferente, e o card sabe disso")
-	ok(" / " in "".join(_textos(lin("katana.onda").trechos)), "o card mostra o dano da onda de cada corte (%s)" % "".join(_textos(lin("katana.onda").trechos)))
+	ok("/" in "".join(_textos(lin("katana.onda").trechos)), "o card mostra o dano da onda de cada corte (%s)" % "".join(_textos(lin("katana.onda").trechos)))
 	ok(lin("katana.onda").nivel_txt == "nv 1/4", "o modificador mostra o nível dele (%s)" % lin("katana.onda").nivel_txt)
 	# --- o modificador segue o NOME do passo, não a posição: com o 2º passo rebatizado de estocada, o card acompanha o jogo
 	zerar()
@@ -1074,6 +1075,21 @@ func _build_maxima() -> void:
 		pegar(id)
 
 
+## A build mais pesada que as cartas permitem sem evoluir: cada carta de stat no máximo de cópias e na raridade lendária (vida, dano e alcance
+## enormes: os maiores números que o card vai mostrar), cada golpe no nível 2 e lendário, os modificadores em lendária (a onda e a estocada
+## só uma vez: duas cópias de cada virariam a Ventania).
+func _build_extrema() -> void:
+	var cs = w.combate.cartas
+	for d in cs.cfg.stats:
+		for i in int(d.max):
+			pegar(str(d.id), 3)
+	for d in cs.cfg.golpes:
+		pegar(str(d.id), 3)
+	for par in [["onda", 1], ["fura", 1], ["explode", 1], ["folego", 4]]:
+		for i in int(par[1]):
+			pegar(str(par[0]), 3)
+
+
 ## Compra tudo no Santuário do save temporário (todos os níveis de todas as melhorias).
 func _comprar_tudo() -> void:
 	Meta.creditar(1000000)
@@ -1170,7 +1186,7 @@ func _interface() -> void:
 	var pr: Array = st.retangulos()
 	ok(st.linhas_que_estouram().is_empty(), "nenhuma linha estoura a largura das colunas da pausa (%s)" % str(st.linhas_que_estouram()))
 	ok(not st.colunas_cortadas().has(true), "nada é cortado nas colunas da pausa")
-	var painel := Rect2(290, 55, 380, 430)
+	var painel: Rect2 = Pausa.PAINEL
 	for rc in pr:
 		ok(not (rc as Rect2).intersects(painel), "as colunas da pausa ficam ao lado do menu, não em cima (%s)" % str(rc))
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "as colunas da pausa cabem na tela")
@@ -1341,12 +1357,12 @@ func _escolha_e_bau(st, c, pausa) -> void:
 
 
 ## Os três modos do card (HUD compacto, pausa e painel central) em quatro situações: build vazia (e Santuário sem compra), meio de partida,
-## build máxima e o Santuário todo comprado. Em todas: nenhuma linha estoura a coluna, nada é cortado, tudo cabe na tela, o HUD fica livre
+## build máxima e a build extrema (os maiores números) com o Santuário todo comprado. Em todas: nenhuma linha estoura a coluna, nada é cortado, tudo cabe na tela, o HUD fica livre
 ## e o menu da pausa também.
 func _layouts(st, c) -> void:
 	var hud := _hud_rects()
-	var painel := Rect2(290, 55, 380, 430)
-	for cenario in ["vazia", "meio de partida", "build máxima", "Santuário todo comprado"]:
+	var painel: Rect2 = Pausa.PAINEL
+	for cenario in ["vazia", "meio de partida", "build máxima", "build extrema e Santuário todo comprado"]:
 		zerar()
 		match cenario:
 			"meio de partida":
@@ -1360,12 +1376,17 @@ func _layouts(st, c) -> void:
 				w.abates = 144
 			"build máxima":
 				_build_maxima()
-			"Santuário todo comprado":
+			"build extrema e Santuário todo comprado":
 				_comprar_tudo()
 				w.reiniciar()
 				c.limpar_partida()
 				c.diretor.ligado = false
-				_build_maxima()
+				_build_extrema()
+				w.tempo_partida = 3599.0
+				w.abates = 99999
+				w.combo = 999
+				w.maior_combo = 999
+				w.xp_coletado = 999999.0
 		for modo in ["hud", "pausa", "central"]:
 			match modo:
 				"hud":
@@ -1515,4 +1536,20 @@ func _fotos(pasta: String) -> void:
 	await get_tree().process_frame
 	await _foto("status_pausa", pasta)
 	pausa.fechar()
+	# 5) a build extrema (os maiores números) com o Santuário todo comprado: o pior caso de largura
+	_comprar_tudo()
+	zerar()
+	_build_extrema()
+	w.tempo_partida = 3599.0
+	w.abates = 99999
+	w.combo = 999
+	w.maior_combo = 999
+	w.xp_coletado = 999999.0
+	h.vida = h.vida_max
+	st._hud = true
+	st._aplicar()
+	await get_tree().process_frame
+	await _foto("status_hud_extrema", pasta)
+	st._hud = false
+	st._aplicar()
 	print("v2_status fotos em ", pasta)

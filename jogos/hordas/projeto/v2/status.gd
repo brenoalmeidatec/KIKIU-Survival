@@ -5,8 +5,9 @@ extends CanvasLayer
 ##     nunca de uma fórmula copiada aqui. Cada linha tem `id`, `rotulo`, `valor` (o texto), `bonus` (o que passa da base, em outra cor) e `n`
 ##     (os números crus, em ordem; é o que o teste v2_status compara com o que o jogo FAZ).
 ##  2. O desenho, em TRÊS modos (`_modo()`), todos com a moldura de pedra do HUD (hud/moldura_pedra.png). Títulos na Jersey 10, texto na
-##     Pixelify Sans e NÚMEROS na Press Start 2P (regra do v2/LEIA-ME.md; a Pixelify Sans desenha o 5 como um S e o 7 como um T, o que não
-##     serve para um painel de números). Tudo é desenhado num Control só (draw_*): nenhum nó por linha, nenhum nó criado ao atualizar.
+##     Spleen 8x16 (`Dados.fonte_texto`) e NÚMEROS na Press Start 2P (a fonte do HUD). ATENÇÃO: o texto sai na Spleen em 11 e 12 px, FORA da grade de
+##     16 px que a regra das fontes do v2/LEIA-ME.md pede (o card é denso: em 16 px as colunas não cabem). Fica legível nos prints, mas é pendência
+##     (a Spleen 6x12, da mesma família, seria o tamanho certo). Tudo é desenhado num Control só (draw_*): nenhum nó por linha, nenhum nó criado ao atualizar.
 ## Onde aparece:
 ##  - "pausa": na tela "menu" da pausa, duas colunas ladeiam o menu (pausa.gd chama `na_pausa(true/false)`), por cima da pausa (camada 15).
 ##    Layout COMPLETO (nomes por extenso, duas linhas de números por golpe e as dicas de evolução);
@@ -21,13 +22,14 @@ extends CanvasLayer
 ## Criado pelo mundo.gd (uma linha no _ready), que guarda em `mundo.status`.
 
 const Meta := preload("res://v2/meta.gd")
+const Pausa := preload("res://v2/pausa.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const LAYER_HUD := 8
 const LAYER_CENTRAL := 13  # acima do HUD (10), do resultado (12) e das cartas (5); abaixo do menu de pausa (14)
 const LAYER_PAUSA := 15  # acima do menu de pausa (camada 14) e do escurecimento dele
 const PERIODO := 0.25  # 4 Hz
 const ALFA_HUD := 0.92
-const TAM := 12  # texto (Pixelify Sans)
+const TAM := 12  # texto (Spleen 8x16 escalada: ver a ATENÇÃO do cabeçalho)
 const TAM_NUM := 8  # números (Press Start 2P, a grade de 8 px do HUD)
 const TAM_P := 11  # linhas de apoio
 const TAM_CAB := 19  # títulos e cabeçalhos (Jersey 10; 19 é a grade da fonte)
@@ -43,9 +45,12 @@ const JOGO_VIVO := ["jogando", "escolha", "bau"]  # estados do combate em que o 
 const JOGO_CARTAS := ["escolha", "bau"]  # as telas de cartas: aí o C abre o painel central
 ## Colunas de cada modo: x, y, largura e altura máxima. HUD: a da esquerda sob a vida e o fôlego (y 40) e fora da barra do chefe (x até 190);
 ## a da direita sob o minimapa (que acaba em y 112) e fora da barra do chefe e dos anúncios (x a partir de 772). Pausa: colada nos dois lados
-## do menu (que ocupa x 290 a 670). Central: três colunas lado a lado, a tela toda é do painel.
+## do painel do menu (`Pausa.PAINEL`, x 260 a 700). Central: três colunas lado a lado, a tela toda é do painel.
 const COLUNAS_HUD := [Rect2(6, 40, 184, 466), Rect2(772, 118, 182, 388)]
-const COLUNAS_PAUSA := [Rect2(8, 14, 274, 512), Rect2(678, 14, 274, 512)]
+const COLUNAS_PAUSA := [
+	Rect2(8, 14, Pausa.PAINEL.position.x - 16.0, 512),
+	Rect2(Pausa.PAINEL.position.x + Pausa.PAINEL.size.x + 8.0, 14, 944.0 - Pausa.PAINEL.position.x - Pausa.PAINEL.size.x, 512)
+]  # coladas nos dois lados do painel do menu (`Pausa.PAINEL`)
 const COLUNAS_CENTRAL := [Rect2(14, 14, 296, 512), Rect2(332, 14, 296, 512), Rect2(650, 14, 296, 512)]
 const SECOES_DUAS := [["heroi", "partida", "santuario"], ["katana", "golpes"]]
 const SECOES_TRES := [["heroi", "partida", "santuario"], ["katana"], ["golpes"]]
@@ -122,6 +127,8 @@ func _ready() -> void:
 ## escolha de cartas e do baú, que comem as teclas). Com o painel central aberto o card engole TODA a entrada, menos o ESC (que é da pausa):
 ## nenhum clique, tecla ou botão chega às cartas escondidas.
 func entrada(e: InputEvent) -> bool:
+	if _modo_atual == "central" and not _sobre_cartas():
+		_aplicar()  # as cartas fecharam por outro caminho: o painel sai antes de engolir a entrada
 	if _modo_atual == "central":
 		if e is InputEventKey:
 			if e.keycode == KEY_ESCAPE:
@@ -348,12 +355,12 @@ static func _sec_katana(m) -> Dictionary:
 	var chance := minf(c.chance_critico(), 1.0)  # o jogo sorteia `randf() < chance`: acima de 100% não passa
 	var mult := float(cfg.golpe.critico.mult)
 	var lin: Array = []
-	lin.append(_l("katana.dano", "Dano", " / ".join(t_danos), danos, _mais_pct((h.m_dano - 1.0) * 100.0)))
+	lin.append(_l("katana.dano", "Dano", "/".join(t_danos), danos, _mais_pct((h.m_dano - 1.0) * 100.0)))
 	lin.append(_l("katana.vel", "Vel. de ataque", _mais_pct((h.m_vel_ataque - 1.0) * 100.0) if h.m_vel_ataque != 1.0 else "base", [h.m_vel_ataque]))
 	lin.append(_l("katana.combo", "Combo completo", "%s s" % _v(ciclo, 2), [ciclo]))
-	lin.append(_l("katana.alcance", "Alcance", " / ".join(t_alc) + " px", alcances))
+	lin.append(_l("katana.alcance", "Alcance", "/".join(t_alc) + " px", alcances))
 	lin.append(_l("katana.area", "Área do corte", _mais_pct((h.m_area - 1.0) * 100.0) if h.m_area != 1.0 else "base", [h.m_area]))
-	lin.append(_l("katana.critico", "Crítico", "%s%% · x%s" % [_p(chance * 100.0), _v(mult, 1)], [chance, mult], _mais_pct(h.m_critico * 100.0)))
+	lin.append(_l("katana.critico", "Crítico x%s" % _v(mult, 1), "%s%%" % _p(chance * 100.0), [chance, mult], _mais_pct(h.m_critico * 100.0)))
 	var cs = c.cartas
 	var ar = c.armas
 	for md in ["onda", "fura", "explode", "folego"]:
@@ -503,14 +510,14 @@ static func _sec_golpes(m) -> Dictionary:
 	return _sec("golpes", "GOLPES AUTOMÁTICOS", Color(0.6, 0.8, 1.0), lin)
 
 
-## Os danos de uma lista, arredondados como o jogo os aplica e separados por " / " ("8 / 9"); repetidos em seguida viram um número só.
+## Os danos de uma lista, arredondados como o jogo os aplica e separados por "/" ("8/9"); repetidos em seguida viram um número só.
 static func _lista_dano(danos: Array) -> String:
 	var t: Array = []
 	for d in danos:
 		var r := str(maxi(1, roundi(float(d))))
 		if t.is_empty() or t[t.size() - 1] != r:
 			t.append(r)
-	return " / ".join(t)
+	return "/".join(t)
 
 
 ## "Evolui: Anel de Brasas (falta Lâminas Rodopiantes nv 3)", ou, se uma peça não chega mais lá (banida, ou já gasta em outra evolução),
@@ -671,9 +678,8 @@ func linhas_que_estouram() -> Array:
 func _estoura(l: Dictionary, w: float) -> bool:
 	var f: Font = Dados.fonte_texto
 	match str(l.tipo):
-		"linha":
-			var wb := _larg_misto(str(l.bonus), TAM) + 5.0 if str(l.bonus) != "" else 0.0
-			return f.get_string_size(str(l.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x + 8.0 + _larg_misto(str(l.valor), TAM) + wb > w
+		"linha":  # o bônus (o verde à direita) é opcional: sem espaço ele sai (veja `_desenhar_linha`); o rótulo e o valor têm de caber
+			return f.get_string_size(str(l.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x + 8.0 + _larg_misto(str(l.valor), TAM) > w
 		"texto":
 			var tam := TAM_P if int(l.estilo) == 3 else TAM
 			if _quebrar(str(l.texto), tam, w).size() > 2:
@@ -785,7 +791,11 @@ func _desenhar_linha(l: Dictionary, x: float, y: float, w: float) -> void:
 	var f: Font = Dados.fonte_texto
 	var direita := x + w
 	var bonus := str(l.bonus)
-	if bonus != "":
+	# o bônus só entra se couber ao lado do rótulo e do valor (numa build extrema o valor já enche a coluna: fica o que importa)
+	if (
+		bonus != ""
+		and f.get_string_size(str(l.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x + 8.0 + _larg_misto(str(l.valor), TAM) + _larg_misto(bonus, TAM) + 5.0 <= w
+	):
 		_misto(bonus, direita, y, TAM, COR_BONUS, COR_BONUS, true)
 		direita -= _larg_misto(bonus, TAM) + 5.0
 	_texto(f, str(l.rotulo), Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
@@ -844,7 +854,7 @@ func _desenhar_bloco(l: Dictionary, x: float, y: float, w: float) -> void:
 			xx += _desenhar_trecho(tr, xx, yy)
 		yy += 12.0
 	if str(l.dica) != "" and not _sem_dicas:
-		for linha_d in _linhas_dica(str(l.dica), wt):  # os números da dica na fonte dos números (o "2" da Pixelify Sans pequena parece um 8)
+		for linha_d in _linhas_dica(str(l.dica), wt):  # os números da dica na fonte dos números (a fonte de texto pequena confunde dígitos)
 			_misto(str(linha_d), xt, yy, TAM_P, COR_DICA, COR_DICA)
 			yy += 12.0
 
@@ -927,10 +937,10 @@ func _quebrar(s: String, tam: int, w: float) -> Array:
 	return linhas
 
 
-# ---- texto: a Pixelify Sans para as palavras e a Press Start 2P para os números
+# ---- texto: a Spleen para as palavras e a Press Start 2P para os números
 
 
-## Parte `s` em pedaços: [[texto, é_número], ...]. Número = sinal, dígitos, decimais e % (o "5" da Pixelify Sans parece um S).
+## Parte `s` em pedaços: [[texto, é_número], ...]. Número = sinal, dígitos, decimais e % (os números do card vão na fonte do HUD).
 func _partes(s: String) -> Array:
 	var r: Array = []
 	var i := 0
@@ -967,7 +977,7 @@ func _misto(s: String, x: float, y: float, tam: int, cor_txt: Color, cor_num: Co
 			xx += Dados.fonte_texto.get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x
 
 
-## Texto simples na Pixelify Sans (sem números): `pos` é o canto de cima da linha (o desenho pede a linha de base).
+## Texto simples na Spleen (sem números): `pos` é o canto de cima da linha (o desenho pede a linha de base).
 func _texto(f: Font, s: String, pos: Vector2, w: float, alin: HorizontalAlignment, tam: int, cor: Color) -> void:
 	_tela.draw_string(f, Vector2(pos.x, pos.y + f.get_ascent(tam)), s, alin, w, tam, cor)
 
