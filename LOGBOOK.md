@@ -1308,3 +1308,10 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 - Laboratorio: sombras base, passagens e objetos translucidos (PR #204)
+- **Feito:** `mapa.sombra_ambiente` (luz virtual em `sombras.gd`: o laboratorio tem sombra mesmo longe das luzes; a floresta nao muda), `mapa.copas_altura_min` (racks, armarios e tanques ficam translucidos sobre o heroi, generico em `copas.gd`), `v2/passagens.gd` (grade de navegacao com a colisao real: caminho ate cada zona de monstros com corpo comum e largo, sem ilhas, sem beco fino) e checagens em `testes/v2_mapas.gd` para todo mapa (inclui a futura Cidade). O layout do laboratorio ja passava: nenhum objeto precisou mudar.
+- **Pendente:** a Cidade (branch do Alisson) herda tudo ao por `sombra_ambiente` no JSON dela; o teste vai acusar objeto que feche passagem.
+- **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
+
+_Claude do Alisson (PC)_

@@ -11,6 +11,8 @@ const Meta := preload("res://v2/meta.gd")
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Colisao := preload("res://v2/colisao.gd")
+const Passagens := preload("res://v2/passagens.gd")
+const Sombras := preload("res://v2/sombras.gd")
 const SAVE_TESTE := "user://teste_v2_mapas.cfg"
 const PASSO := 1.0 / 60.0
 const PADRAO_OBJ := "res://prototipos/objetos"
@@ -33,6 +35,7 @@ func _ready() -> void:
 		_dados_do_mapa(id)
 	for id in Mapas.ids():
 		await _mundo_do_mapa(id)
+		_passagens_e_vista(id)
 	await _santuario()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
 	print("v2_mapas falhas=%d" % falhas)
@@ -103,6 +106,80 @@ func _dados_do_mapa(id: String) -> void:
 		ok(decs.has(nome), "%s: minimapa cita o decalque %s, que não existe" % [id, nome])
 	var nasc: Dictionary = d.get("nascimento", {})
 	ok(nasc.has("heroi") and nasc.get("monstros", []).size() >= 6, "%s: nascimento com herói e zonas de monstro" % id)
+
+
+## Passagens (v2/passagens.gd), objeto na frente do herói (copas.gd) e sombra base (sombras.gd), em cada mapa.
+func _passagens_e_vista(id: String) -> void:
+	var w = Mundo.instantiate()
+	w.modo_teste = true
+	w.id_mapa = id
+	add_child(w)
+	w.set_process(false)
+	w.heroi.entrada_forcada = Vector2.ZERO
+	w.heroi.imortal = true
+	w.monstros.clear()
+	var pontos: Array = []
+	for z in w.dados.nascimento.monstros:
+		pontos.append(Vector2(float(z.centro[0]), float(z.centro[1])))
+	# 1. caminho livre: do nascimento do herói a cada zona de monstros, com o corpo comum e com o corpo largo (elite/chefe), sem ilhas fechadas
+	for raio in [Passagens.RAIO_HEROI, Passagens.RAIO_HORDA]:
+		var rel: Dictionary = Passagens.relatorio(w.limite_andavel, w.heroi.pos, pontos, raio)
+		ok(rel.pontos_fora.is_empty(), "%s: toda zona de monstros tem caminho até o herói (raio %.0f): fora = %s" % [id, raio, str(rel.pontos_fora)])
+		ok(rel.bolsoes.is_empty(), "%s: sem ilhas livres fechadas (raio %.0f): %s" % [id, raio, str(rel.bolsoes)])
+		ok(float(rel.alcancadas) >= 0.97 * float(rel.livres), "%s: 97%% ou mais do chão livre se alcança (raio %.0f): %d de %d" % [id, raio, rel.alcancadas, rel.livres])
+		if id == "laboratorio":  # o laboratório é desenhado com corredores: nada de beco fino (a floresta tem os dela, de árvores e tocos)
+			ok(rel.becos <= 4, "%s: sem becos finos sem saída (raio %.0f): %d células" % [id, raio, rel.becos])
+	# os quatro cantos andáveis ligam entre si (o corredor das bordas não fecha)
+	var g: Dictionary = Passagens.grade(w.limite_andavel, Passagens.RAIO_HEROI)
+	var a0: Rect2 = w.limite_andavel
+	for canto in [a0.position + Vector2(60, 60), a0.position + Vector2(a0.size.x - 60, 60), a0.position + Vector2(60, a0.size.y - 60), a0.end - Vector2(60, 60)]:
+		var vis: PackedByteArray = Passagens.alcancaveis(g, canto)
+		ok(Passagens.contar(vis) >= 0.97 * float(Passagens.contar(g.livre)), "%s: do canto %s se alcança quase todo o mapa" % [id, str(canto)])
+	# 2. objeto alto na frente do herói fica translúcido; baixo não; na frente dele volta
+	var alt_min := float(w.dados.get("mapa", {}).get("copas_altura_min", w.copas.ALTURA_MIN))
+	var alto = null
+	var baixo = null
+	for a in w.cenario.objetos:
+		var h := float(a.sprite.texture.get_height())
+		if alto == null and h >= alt_min and h <= 130.0 and a.sprite.material != null:
+			alto = a
+		if baixo == null and h < alt_min - 12.0 and a.sprite.material == null:
+			baixo = a
+	ok(alto != null, "%s: há um objeto alto para o teste do fade" % id)
+	if alto != null:
+		w.heroi.definir_pos(alto.pos + Vector2(0, -float(alto.alt) * 0.3))
+		for i in 90:
+			w.avancar(PASSO)
+		ok(w.copas.fuerza_da_copa(alto) > 0.97, "%s: herói atrás de %s: o objeto fica translúcido (força %.2f)" % [id, alto.chave, w.copas.fuerza_da_copa(alto)])
+		w.heroi.definir_pos(alto.pos + Vector2(0, 40))
+		for i in 90:
+			w.avancar(PASSO)
+		ok(w.copas.fuerza_da_copa(alto) < 0.03, "%s: herói na frente de %s: o objeto volta opaco" % [id, alto.chave])
+	if baixo != null:
+		w.heroi.definir_pos(baixo.pos + Vector2(0, -8))
+		for i in 30:
+			w.avancar(PASSO)
+		ok(w.copas.fuerza_da_copa(baixo) == 0.0, "%s: objeto baixo (%s) não encobre o herói" % [id, baixo.chave])
+	# 3. sombra base: sem nenhuma luz perto, o laboratório ainda dá sombra (sombra_ambiente); a floresta segue só com as luzes
+	w.sombras.definir_modo(Sombras.MEDIA)
+	w.luzes.dn = 0
+	var sombreado := 0
+	var n := 0
+	for a in w.cenario.objetos:
+		if float(a.sprite.texture.get_height()) < 50.0:
+			continue
+		n += 1
+		w.sombras.calcular(a, 1.0)
+		if a.sa[0] > 0.1:
+			sombreado += 1
+		if n >= 20:
+			break
+	if w.dados.get("mapa", {}).has("sombra_ambiente"):
+		ok(sombreado == n and n > 0, "%s: sem luz por perto, os objetos altos ainda têm sombra (%d de %d)" % [id, sombreado, n])
+	else:
+		ok(sombreado == 0, "%s: sem sombra_ambiente e sem luz, nada de sombra (%d)" % [id, sombreado])
+	remove_child(w)
+	w.free()
 
 
 func _mundo_do_mapa(id: String) -> void:
