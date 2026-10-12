@@ -31,6 +31,7 @@ const Combate := preload("res://v2/combate.gd")
 const Roteiro := preload("res://v2/roteiro.gd")
 const Copas := preload("res://v2/copas.gd")
 const Horda := preload("res://v2/horda.gd")  # os monstros comuns em lote (MultiMesh)
+const Oclusao := preload("res://v2/oclusao.gd")  # silhueta do herói atrás de monstro grande (leva 4)
 const Depuracao := preload("res://v2/depuracao_colisao.gd")
 const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
@@ -63,7 +64,8 @@ var luzes
 var sombras
 var atm
 var cenario
-var copas  # copa transparente das árvores (copas.gd)
+var copas  # buraco raio-x nas árvores atrás das quais o herói está (copas.gd)
+var oclusao  # silhueta do herói quando um monstro na frente o cobre (oclusao.gd)
 var horda  # desenho dos monstros comuns em lote (horda.gd)
 var dbg_colisao: Node2D  # F4: contorno das formas de colisão (depuracao_colisao.gd)
 var sprites
@@ -222,6 +224,7 @@ func _montar() -> void:
 	combate = Combate.new()
 	combate.montar(self)
 	_criar_heroi()
+	oclusao = Oclusao.new().montar(sv, heroi)
 	combate.iniciar_heroi()
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
 	horda = Horda.new()
@@ -495,9 +498,8 @@ func avancar(dt: float) -> void:
 	atm.seguir(cam.position)
 	cenario.atualizar_blocos(rect)
 	var p6 := Time.get_ticks_usec()
-	var atores_mov: Array = [heroi]
-	atores_mov.append_array(monstros)
-	copas.atualizar(dt, cenario.ativos, atores_mov)
+	copas.atualizar(dt, cenario.ativos, heroi)
+	oclusao.atualizar(dt, heroi, monstros)
 	var p7 := Time.get_ticks_usec()
 	luzes.atualizar(t, rect)
 	_perfil("cenario_atm", p6 - p5)
