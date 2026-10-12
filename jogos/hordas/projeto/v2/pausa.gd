@@ -40,6 +40,7 @@ const COR_TEXTO := Color(0.92, 0.9, 0.96)
 const COR_CAB := Color(0.62, 0.6, 0.72)  # cabeçalho de seção (não é selecionável)
 const COR_FUNDO := Color(0.004, 0.012, 0.043, 0.72)  # #01030b a 0,7 (hud_menus.md, seção 4)
 const DICA := "Setas escolhem   Enter confirma   Esc volta"
+const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
 
 var mundo  # a partida (mundo.gd); null no santuário (altar.gd)
@@ -524,8 +525,10 @@ func _desenhar() -> void:
 		l["valor"].add_theme_color_override("font_color", cor)
 
 
-## Rodapé: a ajuda da linha escolhida (só em Gráficos, onde o json traz a ajuda de cada opção, e em Créditos, com o aviso de cada licença).
+## Rodapé: a ajuda da linha escolhida em Gráficos (o json traz a ajuda de cada opção) e em Créditos (o aviso de cada licença) e, na aba Áudio, o crédito das músicas (CC BY exige).
 func _texto_ajuda() -> String:
+	if tela == "audio":
+		return CREDITO_MUSICA
 	if (tela != "graficos" and tela != "creditos") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))

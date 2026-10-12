@@ -26,6 +26,11 @@ const LINHAS := [
 		"ajuda": "Press Start 2P, de CodeMan38. Jersey 10, de The Soft Type Project (títulos). Pixelify Sans, de The Pixelify Sans Project (textos). Todas sob a SIL Open Font License 1.1.",
 	},
 	{
+		"rotulo": "Música",
+		"valor": "Kevin MacLeod",
+		"ajuda": "Música: Kevin MacLeod (incompetech.com), licença Creative Commons Atribuição 4.0 (CC BY 4.0). As faixas foram cortadas e ganharam laço para o jogo.",
+	},
+	{
 		"rotulo": "Efeitos sonoros",
 		"valor": "Feitos no projeto",
 		"ajuda": "Os efeitos sonoros são gerados por código, dentro do próprio projeto.",

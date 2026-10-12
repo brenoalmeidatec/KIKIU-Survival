@@ -6,6 +6,7 @@ extends Control
 ## Visual: a arte de entrada escurecida, molduras de pedra do HUD (v2/hud/moldura_pedra.png). Títulos na Jersey 10 (Dados.fonte_titulo) e a lista densa na Press Start 2P (Dados.fonte), que tem a grade de 8 px que as 10 linhas pedem.
 
 const Meta := preload("res://v2/meta.gd")
+const Trilha := preload("res://v2/trilha.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const FUNDO := preload("res://assets/icone/entrada.png")
 const FLORESTA := "res://v2/mundo.tscn"
@@ -36,6 +37,7 @@ var _linhas := {}  # id da melhoria -> {nome, efeito, botao, cadeado}
 var _conq := {}  # id da conquista -> {cadeado, nome, desc, rec}
 var _entrar: Button
 var _ajustes: Button
+var trilha  # música de fundo do santuário (trilha.gd)
 
 
 class Cadeado:
@@ -64,6 +66,9 @@ func _ready() -> void:
 	var pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)  # ESC aqui abre só "Sair?"; o botão Ajustes abre o submenu (pausa.gd)
 	add_child(pausa)
 	_ajustes.pressed.connect(pausa.abrir_ajustes)
+	trilha = Trilha.new()
+	add_child(trilha)
+	trilha.tocar("santuario")
 	_atualizar()
 	_entrar.grab_focus()
 
