@@ -17,7 +17,22 @@ const EIXOS := {
 }
 
 
+## Os menus (título, santuário, pausa, escolhas) usam ui_accept e ui_cancel. O Godot traz o D-pad e o analógico nas ações ui_*,
+## mas não o A nem o B: sem eles o controle não confirma nem volta. Acrescenta o A e o B quando faltarem.
+static func _garantir_botoes_de_menu() -> void:
+	for par in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B]]:
+		var tem := false
+		for e in InputMap.action_get_events(par[0]):
+			if e is InputEventJoypadButton and e.button_index == par[1]:
+				tem = true
+		if not tem:
+			var b := InputEventJoypadButton.new()
+			b.button_index = par[1]
+			InputMap.action_add_event(par[0], b)
+
+
 static func garantir() -> void:
+	_garantir_botoes_de_menu()
 	for acao: String in EIXOS:
 		if InputMap.has_action(acao):
 			continue
