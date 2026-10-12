@@ -1077,14 +1077,17 @@ func _build_maxima() -> void:
 
 ## A build mais pesada que as cartas permitem sem evoluir: cada carta de stat no máximo de cópias e na raridade lendária (vida, dano e alcance
 ## enormes: os maiores números que o card vai mostrar), cada golpe no nível 2 e lendário, os modificadores em lendária (a onda e a estocada
-## só uma vez: duas cópias de cada virariam a Ventania).
+## só uma vez: duas cópias de cada virariam a Ventania). Só os 5 golpes do desenho: com os 50 golpes do PR #192 a coluna não cabe,
+## e o card não tem teto de golpes nem paginação (pendência: decidir o teto por build ou paginar o card).
 func _build_extrema() -> void:
 	var cs = w.combate.cartas
 	for d in cs.cfg.stats:
 		for i in int(d.max):
 			pegar(str(d.id), 3)
+	var golpes := ["aura_fogo", "laminas", "corvos", "raio", "runa"]  # os 5 do desenho do card (os mesmos de _build_maxima)
 	for d in cs.cfg.golpes:
-		pegar(str(d.id), 3)
+		if str(d.id) in golpes:
+			pegar(str(d.id), 3)
 	for par in [["onda", 1], ["fura", 1], ["explode", 1], ["folego", 4]]:
 		for i in int(par[1]):
 			pegar(str(par[0]), 3)
@@ -1187,6 +1190,16 @@ func _interface() -> void:
 	ok(st.linhas_que_estouram().is_empty(), "nenhuma linha estoura a largura das colunas da pausa (%s)" % str(st.linhas_que_estouram()))
 	ok(not st.colunas_cortadas().has(true), "nada é cortado nas colunas da pausa")
 	var painel: Rect2 = Pausa.PAINEL
+	# a página VISUAL (barras, pips e ícones) é a que abre; o Tab troca pela tabela de detalhes e volta
+	ok(st.pagina() == "visual", "a pausa abre o card na página visual (%s)" % st.pagina())
+	ok(not st.visual_cortada().has(true), "a página visual da pausa cabe na altura das colunas (%s)" % str(st.retangulos_visuais()))
+	for rv in st.retangulos_visuais():
+		ok(not (rv as Rect2).intersects(painel) and Rect2(0, 0, 960, 540).encloses(rv), "a página visual fica ao lado do menu, na tela (%s)" % str(rv))
+	var tab := InputEventKey.new()
+	tab.keycode = KEY_TAB
+	tab.pressed = true
+	ok(pausa.entrada(tab) and st.pagina() == "detalhe", "o Tab na pausa troca para a página de detalhes")
+	ok(pausa.entrada(tab) and st.pagina() == "visual" and pausa.aberto, "o Tab de novo volta à página visual, com a pausa aberta")
 	for rc in pr:
 		ok(not (rc as Rect2).intersects(painel), "as colunas da pausa ficam ao lado do menu, não em cima (%s)" % str(rc))
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "as colunas da pausa cabem na tela")
@@ -1262,6 +1275,7 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	ok(st.linhas_que_estouram().is_empty() and not st.colunas_cortadas().has(true), "o painel central não estoura nem corta nada")
 	for rc in rc3:
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "a coluna do painel central cabe na tela (%s)" % str(rc))
+	ok(st.retangulos_visuais().size() == 3 and not st.visual_cortada().has(true), "a página visual do painel central tem três colunas e cabe")
 	# --- a trava de 3 s das cartas segue correndo (tempo real) com o painel aberto
 	var trava0: float = tela_c.espera_escolha
 	ok(trava0 > 2.0, "a trava das cartas está correndo (%.2f s)" % trava0)
@@ -1535,6 +1549,10 @@ func _fotos(pasta: String) -> void:
 	pausa.pausar()
 	await get_tree().process_frame
 	await _foto("status_pausa", pasta)
+	st.alternar_detalhe()  # a página de detalhes (a tabela de antes)
+	await get_tree().process_frame
+	await _foto("status_pausa_detalhe", pasta)
+	st.alternar_detalhe()
 	pausa.fechar()
 	# 5) a build extrema (os maiores números) com o Santuário todo comprado: o pior caso de largura
 	_comprar_tudo()

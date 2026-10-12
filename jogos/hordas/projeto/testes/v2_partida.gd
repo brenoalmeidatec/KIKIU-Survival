@@ -114,8 +114,8 @@ func _ready() -> void:
 
 	# 0. dados
 	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
-	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 5 and cfg.modificadores.size() == 4, "4 raridades, 5 golpes secundários e 4 modificadores")
-	ok(cfg.evolucoes.size() >= 3, "pelo menos 3 evoluções nos dados")
+	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 50 and cfg.modificadores.size() == 4, "4 raridades, 50 golpes secundários e 4 modificadores")
+	ok(cfg.evolucoes.size() == 25, "25 evoluções nos dados (4 antigas, 5 novas e 16 de 2, 3 e 4 peças)")
 	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
 
 	# 1. a raridade sobe com o nível
@@ -229,6 +229,31 @@ func _ready() -> void:
 			int(w.combate.armas.acertos.get(tipo, 0)) > 0 and m.vida < v0,
 			"o golpe %s (%s) acerta o monstro (vida %d de %d)" % [id, tipo, roundi(m.vida), roundi(v0)]
 		)
+	# 3b. os golpes novos (leva 5): o primeiro de cada tipo novo acerta (o meteoro conta como "explode", o estouro da explosão)
+	var vistos := {}
+	for d in cfg.golpes:
+		var tp := str(d.tipo)
+		if tp in ["orbita", "aura", "corvos", "raio", "runa"] or vistos.has(tp):
+			continue
+		vistos[tp] = true
+		var chave := "explode" if tp == "meteoro" else tp
+		zerar()
+		var mn = monstro_a(60.0, 0.0)
+		mn.cacador = false
+		mn.raio_vaga = 0.0
+		pegar(str(d.id), 0)
+		ok(w.combate.armas.tem(str(d.id)), "o golpe novo %s entra pela carta" % str(d.id))
+		var vn: float = mn.vida
+		ate(func(): return mn.vida < vn, 1200)
+		var ac := int(w.combate.armas.acertos.get(chave, 0))
+		ok(
+			ac > 0 and mn.vida < vn,
+			(
+				"o golpe novo %s (%s) acerta o monstro (acertos %d, vida %d de %d, perto %d, ativos %s)"
+				% [str(d.id), tp, ac, roundi(mn.vida), roundi(vn), w.combate.armas._perto.size(), str(w.combate.armas.novas.tem_ativos())]
+			)
+		)
+	ok(vistos.size() == 5, "os 5 tipos novos estão nos dados (%d)" % vistos.size())
 	# a aura queima, as lâminas passam, o raio salta
 	zerar()
 	var ma = monstro_a(30.0, 0.0)
@@ -325,6 +350,21 @@ func _ready() -> void:
 		pegar("corvos", 0)
 		pegar("raio", 0)
 	ok(cs.evoluidas.has("revoada_de_trovoes") and w.combate.armas.tem("revoada_de_trovoes"), "corvos 3 + raio 3 viram a Revoada de Trovões")
+	# 5b. as 5 fusões novas (leva 5): duas peças no nível 3 viram a evolução e as peças somem
+	var fusoes := [
+		["dragao_filhote", "serpente_ardente", "dragao_de_brasa"],
+		["lobo_espirito", "espirito_raposa", "cacada_espiritual"],
+		["espirito_urso", "raio_solar", "urso_solar"],
+		["esqueleto_guerreiro", "fantasma_mata", "exercito_esquecido"],
+		["golem_barro", "guardiao_pedra", "colosso_de_pedra"],
+	]
+	for f in fusoes:
+		zerar()
+		for i in 3:
+			pegar(f[0], 0)
+			pegar(f[1], 0)
+		ok(cs.evoluidas.has(f[2]) and w.combate.armas.tem(f[2]), "%s e %s viram %s" % [f[0], f[1], f[2]])
+		ok(not w.combate.armas.tem(f[0]) and not w.combate.armas.tem(f[1]), "as peças de %s somem" % f[2])
 	zerar()
 	for i in 3:
 		pegar("runa", 0)
@@ -339,6 +379,21 @@ func _ready() -> void:
 		pegar("onda", 0)
 		pegar("fura", 0)
 	ok(cs.evoluidas.has("ventania") and not w.combate.armas.ventania.is_empty(), "onda 2 + estocada perfurante 2 viram a Ventania Cortante")
+	# 5c. as 16 fusões novas (comuns, raras e lendárias) viram arma, com o tipo certo, e só uma lendária por partida
+	for ev in cfg.evolucoes.slice(9):
+		zerar()
+		cs.evoluir(ev)
+		ok(w.combate.armas.tem(str(ev.id)), "%s (%s) vira arma" % [ev.nome, ev.tipo])
+	zerar()
+	var lendarias: Array = cfg.evolucoes.filter(func(e): return str(e.get("raridade", "")) == "lendario")
+	ok(lendarias.size() == 4, "4 fusões lendárias nos dados")
+	zerar()
+	cs.evoluir(lendarias[0])
+	var mecanica: Dictionary = w.combate.armas.ativas.get(str(lendarias[0].id), {}).get("st", {})
+	ok(mecanica.has("puxa") or mecanica.has("prende") or mecanica.has("cadeia") or mecanica.has("gelo_mult"), "a lendária tem mecânica própria")
+	ok(cs.lendarias_feitas == 1 and not cs._evo_livre(lendarias[1]), "depois de uma lendária, as outras ficam fora da partida")
+	zerar()
+	ok(cs.lendarias_feitas == 0 and cs._evo_livre(lendarias[1]), "jogar de novo libera a lendária")
 	zerar()
 	ok(cs.evoluidas.is_empty() and w.combate.armas.ativas.is_empty() and w.combate.armas.ventania.is_empty(), "jogar de novo zera a build")
 

@@ -155,13 +155,15 @@ func _montar_nos() -> void:
 
 ## Fundo do mapa: pintado uma vez, pixel a pixel, a partir dos dados do mundo (nada de desenhar por quadro).
 func _gerar_fundo() -> void:
+	var cfg: Dictionary = mundo.dados.get("minimapa", {})  # mapas novos: cores e tamanhos por nome (a floresta não tem a chave e usa as tabelas acima)
+	var cor_fechado := Color(str(cfg.get("fechado", "101a14")))
 	var img := Image.create(MAPA_LARG, MAPA_ALT, false, Image.FORMAT_RGBA8)
-	img.fill(C_CHAO)
+	img.fill(Color(str(cfg.get("chao", "26362d"))))
 	var andavel: Rect2 = mundo.limite_andavel
 	for y in MAPA_ALT:
 		for x in MAPA_LARG:
 			if not andavel.has_point(mapa_para_mundo(Vector2(x + 0.5, y + 0.5))):
-				img.set_pixel(x, y, C_FECHADO)
+				img.set_pixel(x, y, cor_fechado)
 	for x in MAPA_LARG:
 		img.set_pixel(x, 0, C_FORA)
 		img.set_pixel(x, MAPA_ALT - 1, C_FORA)
@@ -169,6 +171,10 @@ func _gerar_fundo() -> void:
 		img.set_pixel(0, y, C_FORA)
 		img.set_pixel(MAPA_LARG - 1, y, C_FORA)
 	var dados: Dictionary = mundo.dados
+	if not cfg.is_empty():
+		_pintar_cfg(img, dados, cfg)
+		fundo = ImageTexture.create_from_image(img)
+		return
 	for d in dados.get("decalques", []):
 		var nome := str(d[0])
 		var q := mundo_para_mapa(Vector2(float(d[1]), float(d[2])))
@@ -187,9 +193,30 @@ func _gerar_fundo() -> void:
 	fundo = ImageTexture.create_from_image(img)
 
 
+## Mapas novos: "minimapa" do json = {chao, fechado, decalques: {nome: [cor, px] ou [cor, raio, "anel"]}, objetos: {nome: [cor, px]},
+## luzes_fortes: [nomes]}. Só o que está na tabela aparece.
+func _pintar_cfg(img: Image, dados: Dictionary, cfg: Dictionary) -> void:
+	var td: Dictionary = cfg.get("decalques", {})
+	for d in dados.get("decalques", []):
+		var e = td.get(str(d[0]))
+		if e == null:
+			continue
+		var q := mundo_para_mapa(Vector2(float(d[1]), float(d[2])))
+		if e.size() > 2 and str(e[2]) == "anel":
+			_anel(img, q, float(e[1]), Color(str(e[0])))
+		else:
+			_quadrado(img, q, int(e[1]), Color(str(e[0])))
+	var to: Dictionary = cfg.get("objetos", {})
+	for o in dados.get("objetos", []):
+		var e = to.get(str(o[0]))
+		if e != null:
+			_quadrado(img, mundo_para_mapa(Vector2(float(o[1]), float(o[2]))), int(e[1]), Color(str(e[0])))
+
+
 func _ler_luzes() -> void:
+	var fortes: Array = mundo.dados.get("minimapa", {}).get("luzes_fortes", LUZES_FORTES)
 	for a in mundo.cenario.objetos:
-		if str(a.chave) in LUZES_FORTES:
+		if str(a.chave) in fortes:
 			luzes_mapa.append(mundo_para_mapa(a.pos))
 
 

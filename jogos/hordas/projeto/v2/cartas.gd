@@ -20,6 +20,7 @@ var rerrolar_usados := 0
 var banir_usados := 0
 var rerrolar_na_tela := 0
 var evolucoes_feitas := 0
+var lendarias_feitas := 0  # só uma lendária por partida
 var _def := {}  # id -> definição (stat, golpe ou modificador)
 var _cat := {}
 
@@ -48,6 +49,7 @@ func zerar() -> void:
 	banir_usados = 0
 	rerrolar_na_tela = 0
 	evolucoes_feitas = 0
+	lendarias_feitas = 0
 	rng.randomize()
 
 
@@ -126,7 +128,7 @@ func disponiveis() -> Array:
 ## Peso extra da carta que ajuda a fechar uma evolução (a outra peça já foi pega).
 func _peso_sinergia(id: String) -> float:
 	for ev in cfg.evolucoes:
-		if evoluidas.has(ev.id):
+		if not _evo_livre(ev):
 			continue
 		var tem_peca := false
 		var outras := 0
@@ -140,14 +142,29 @@ func _peso_sinergia(id: String) -> float:
 	return 1.0
 
 
+## Evolução que ainda pode acontecer: não feita e, se for lendária, só enquanto nenhuma foi feita nesta partida.
+func _evo_livre(ev: Dictionary) -> bool:
+	if evoluidas.has(ev.id):
+		return false
+	return not (str(ev.get("raridade", "")) == "lendario" and lendarias_feitas >= 1)
+
+
 func _sinergia_texto(id: String) -> String:
+	var ev := _sinergia_ev(id)
+	if ev.is_empty():
+		return ""
+	return "Evolui: %s" % ev.nome  # a lendária já sai magenta e com o nome da raridade no card: o prefixo não cabe numa linha
+
+
+## A evolução (ainda livre) que esta peça ajuda a fechar, ou {} se nenhuma.
+func _sinergia_ev(id: String) -> Dictionary:
 	for ev in cfg.evolucoes:
-		if evoluidas.has(ev.id):
+		if not _evo_livre(ev):
 			continue
 		for p in ev.pecas:
 			if p.id == id:
-				return "Evolui: %s" % ev.nome
-	return ""
+				return ev
+	return {}
 
 
 ## Evoluções ainda não feitas que usam a peça `id` (o card de status mostra): [{nome, falta, perdida}], onde `falta` lista as peças que ainda
@@ -278,6 +295,7 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 	var sin := _sinergia_texto(id)
 	if sin != "" and cat != "stat":
 		c.evolui = sin
+		c.lendaria = str(_sinergia_ev(id).get("raridade", "")) == "lendario"
 	return c
 
 
@@ -343,6 +361,8 @@ func _checar_evolucoes() -> String:
 	for ev in cfg.evolucoes:
 		if evoluidas.has(ev.id):
 			continue
+		if not _evo_livre(ev):
+			continue
 		var pronta := true
 		for p in ev.pecas:
 			if not _peca_ok(p):
@@ -357,6 +377,8 @@ func _checar_evolucoes() -> String:
 func evoluir(ev: Dictionary) -> void:
 	evoluidas.append(ev.id)
 	evolucoes_feitas += 1
+	if str(ev.get("raridade", "")) == "lendario":
+		lendarias_feitas += 1
 	var bonus := 0.0
 	for id in ev.consome:
 		bonus = maxf(bonus, float(estado.get(id, {}).get("bonus", 0.0)))
