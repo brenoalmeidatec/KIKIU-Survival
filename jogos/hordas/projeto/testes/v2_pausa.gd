@@ -361,7 +361,7 @@ func _limpar_saves() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
 
 
-## Prints do menu (só o viewport): a pausa, Ajustes, Gráficos (rolada até uma opção com ajuda), Áudio, a confirmação de sair e
+## Prints do menu (só o viewport): a pausa, Ajustes, Gráficos (rolada até uma opção com ajuda), Áudio, a confirmação de sair, a pausa sobre a escolha de carta e
 ## o submenu no santuário.
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
@@ -392,6 +392,13 @@ func _fotos(pasta: String) -> void:
 	_ir_para(janela, pausa, "sair")
 	_tecla(janela, KEY_ENTER)
 	await mundo.ap.foto(pasta.path_join("pausa_confirmar_sair.png"))
+	_tecla(janela, KEY_ESCAPE)  # Sair? -> menu ("Não")
+	_tecla(janela, KEY_ESCAPE)  # fecha a pausa
+	mundo.combate.progresso.abrir_escolha()  # a escolha de carta aberta, sem esperar a trava: o ESC abre o menu por cima dela
+	for i in 20:
+		mundo.avancar(1.0 / 60.0)
+	_tecla(janela, KEY_ESCAPE)
+	await mundo.ap.foto(pasta.path_join("pausa_sobre_escolha.png"))
 	get_tree().paused = false
 	mundo.queue_free()
 	await get_tree().process_frame  # a janela volta à escala antes do santuário montar a dele (ver _testes)
