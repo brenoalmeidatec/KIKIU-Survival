@@ -115,7 +115,7 @@ func _ready() -> void:
 	# 0. dados
 	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
 	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 50 and cfg.modificadores.size() == 4, "4 raridades, 50 golpes secundários e 4 modificadores")
-	ok(cfg.evolucoes.size() >= 3, "pelo menos 3 evoluções nos dados")
+	ok(cfg.evolucoes.size() == 9, "9 evoluções nos dados (4 antigas e 5 novas)")
 	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
 
 	# 1. a raridade sobe com o nível
@@ -337,6 +337,21 @@ func _ready() -> void:
 		pegar("corvos", 0)
 		pegar("raio", 0)
 	ok(cs.evoluidas.has("revoada_de_trovoes") and w.combate.armas.tem("revoada_de_trovoes"), "corvos 3 + raio 3 viram a Revoada de Trovões")
+	# 5b. as 5 fusões novas (leva 5): duas peças no nível 3 viram a evolução e as peças somem
+	var fusoes := [
+		["dragao_filhote", "serpente_ardente", "dragao_de_brasa"],
+		["lobo_espirito", "espirito_raposa", "cacada_espiritual"],
+		["espirito_urso", "raio_solar", "urso_solar"],
+		["esqueleto_guerreiro", "fantasma_mata", "exercito_esquecido"],
+		["golem_barro", "guardiao_pedra", "colosso_de_pedra"],
+	]
+	for f in fusoes:
+		zerar()
+		for i in 3:
+			pegar(f[0], 0)
+			pegar(f[1], 0)
+		ok(cs.evoluidas.has(f[2]) and w.combate.armas.tem(f[2]), "%s e %s viram %s" % [f[0], f[1], f[2]])
+		ok(not w.combate.armas.tem(f[0]) and not w.combate.armas.tem(f[1]), "as peças de %s somem" % f[2])
 	zerar()
 	for i in 3:
 		pegar("runa", 0)

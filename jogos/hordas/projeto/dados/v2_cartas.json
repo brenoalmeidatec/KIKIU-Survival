@@ -237,7 +237,12 @@
 			"cor": [0.8, 1.0, 0.95],
 			"mult_onda": 1.9,
 			"larg_onda": 1.6
-		}
+		},
+		{"id": "dragao_de_brasa", "nome": "Dragão de Brasa", "desc": "Três espíritos de brasa perseguem o inimigo mais perto e ferem ao tocar.", "pecas": [{"id": "dragao_filhote", "nivel": 3}, {"id": "serpente_ardente", "nivel": 3}], "consome": ["dragao_filhote", "serpente_ardente"], "tipo": "aliado", "cor": [1.0, 0.45, 0.1], "arma": {"dano": 14, "recarga": 2.6, "quantidade": 3, "duracao": 6.0, "vel": 200, "tique": 0.45}},
+		{"id": "cacada_espiritual", "nome": "Caçada Espiritual", "desc": "Lobo e raposa espirituais caçam juntos o inimigo mais perto.", "pecas": [{"id": "lobo_espirito", "nivel": 3}, {"id": "espirito_raposa", "nivel": 3}], "consome": ["lobo_espirito", "espirito_raposa"], "tipo": "aliado", "cor": [0.6, 0.85, 1.0], "arma": {"dano": 12, "recarga": 2.4, "quantidade": 3, "duracao": 5.5, "vel": 210, "tique": 0.4}},
+		{"id": "urso_solar", "nome": "Urso Solar", "desc": "Feixes dourados atravessam até quatro inimigos em linha reta.", "pecas": [{"id": "espirito_urso", "nivel": 3}, {"id": "raio_solar", "nivel": 3}], "consome": ["espirito_urso", "raio_solar"], "tipo": "projetil", "cor": [1.0, 0.85, 0.35], "arma": {"dano": 30, "recarga": 2.2, "quantidade": 2, "vel": 420, "alcance": 300, "perfura": 3, "explosao": 0}},
+		{"id": "exercito_esquecido", "nome": "Exército Esquecido", "desc": "Esqueletos e fantasmas saem juntos e perseguem o inimigo mais perto.", "pecas": [{"id": "esqueleto_guerreiro", "nivel": 3}, {"id": "fantasma_mata", "nivel": 3}], "consome": ["esqueleto_guerreiro", "fantasma_mata"], "tipo": "aliado", "cor": [0.85, 0.85, 0.8], "arma": {"dano": 13, "recarga": 2.8, "quantidade": 4, "duracao": 5.0, "vel": 180, "tique": 0.5}},
+		{"id": "colosso_de_pedra", "nome": "Colosso de Pedra", "desc": "Um colosso de pedra e barro, lento e pesado, bate forte a cada segundo.", "pecas": [{"id": "golem_barro", "nivel": 3}, {"id": "guardiao_pedra", "nivel": 3}], "consome": ["golem_barro", "guardiao_pedra"], "tipo": "aliado", "cor": [0.75, 0.6, 0.4], "arma": {"dano": 30, "recarga": 4.0, "quantidade": 1, "duracao": 8.0, "vel": 120, "tique": 1.0}}
 	],
 	"elites": {
 		"primeira": 45,
