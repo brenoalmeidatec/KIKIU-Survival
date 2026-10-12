@@ -1277,3 +1277,12 @@ _Claude do Alisson (nuvem)_
 - Na v2, o teto de vivos é 84 (`v2_combate.json`); antes de subir, medir de novo com o `--medir` da v2 em placa de verdade.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-12 (6) · Claude do Alisson (notebook) · mapa Laboratório (WIP) e base para mais mapas
+- **Pedido do Alisson:** dois mapas novos na v2, Laboratório e depois Cidade, cada um com assets e texturas próprios, no estilo da floresta. Ele mandou parar no meio do Laboratório e pediu um resumo de continuação: o detalhe está em `jogos/hordas/fonte_arte/mapas_v2/LEIA-ME.md`.
+- **Decisão de assets:** nada de pacote de terceiros (regra de `docs/visual_2_5d`). Os objetos saem do **Blender** no mesmo enquadramento do herói (1 m = 32 px, câmera a 45°), com normal map de verdade, e o Python (`fonte_arte/gerar_v2_mapas.py`) vira atlas, colisão, decalques, piso e o JSON do mapa. Os prompts do ChatGPT para folhas de referência (caminho opcional, mais rico) ainda não foram escritos.
+- **Feito (branch `claude/v2-mapa-laboratorio`, sem PR):** laboratório jogável de ponta a ponta (24 objetos, piso de aço, 23 decalques, ~370 objetos e ~160 decalques no mapa, luzes de tanque verde, tela ciano, emergência vermelha, criogenia e gerador); seleção de mapa no santuário (`v2/mapas.gd`, botão `< MAPA >`, `--mapa=<id>`); ganchos por dados no `cenario.gd`, `minimapa.gd`, `atmosfera.gd`; `export_presets.cfg` com o filtro dos JSON novos; `testes/v2_mapas.tscn` com falhas=0.
+- **Pendente:** bateria completa e `--medir` no notebook, PR do Laboratório (pedir o OK do Alisson antes de mesclar), acabamento da arte, prompts do ChatGPT, a Cidade inteira e a linha na tabela de `v2/LEIA-ME.md`.
+- **Próximo:** rodar `ferramentas/testes_ci.sh`, abrir o PR do Laboratório, depois `modelos3d/mapa_cidade.py` e `mapas_v2/def_cidade.py`.
+
+_Claude do Alisson (notebook)_
