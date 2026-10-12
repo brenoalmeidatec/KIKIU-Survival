@@ -298,7 +298,43 @@ func teste_luzes() -> void:
 	passos(4)
 
 
-# --- 6. tempo de um passo do mundo com a horda (só impresso no CI)
+# --- 6. pausa (get_tree().paused): a horda congela inteira e volta sem salto
+func teste_pausa() -> void:
+	zerar()
+	anel(60, 60.0, 200.0, 61)
+	passos(30)
+	w.set_process(true)
+	for _i in 3:
+		await get_tree().process_frame
+	get_tree().paused = true
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var t0: float = w.t
+	var pos0: Array = []
+	for m in w.monstros:
+		pos0.append(m.pos)
+	var buf0: PackedFloat32Array = w.horda.fatias[0].buf.duplicate()
+	var n0: int = w.horda.fatias[0].n
+	for _i in 12:
+		await get_tree().process_frame
+	ok(is_equal_approx(w.t, t0), "pausado: o tempo do mundo não anda (%.3f -> %.3f)" % [t0, w.t])
+	var moveu := 0
+	for i in w.monstros.size():
+		if not w.monstros[i].pos.is_equal_approx(pos0[i]):
+			moveu += 1
+	ok(moveu == 0, "pausado: nenhum monstro se mexe (%d mexeram)" % moveu)
+	ok(w.horda.fatias[0].buf == buf0 and w.horda.fatias[0].n == n0, "pausado: o lote fica exatamente como estava")
+	get_tree().paused = false
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var salto := 0.0
+	for i in w.monstros.size():
+		salto = maxf(salto, (w.monstros[i].pos - pos0[i]).length())
+	ok(salto < 10.0, "ao despausar a horda volta sem salto (maior deslocamento %.1f px em 2 quadros)" % salto)
+	w.set_process(false)
+
+
+# --- 7. tempo de um passo do mundo com a horda (só impresso no CI)
 func teste_tempo() -> void:
 	zerar()
 	anel(100, 70.0, 230.0, 51)
@@ -334,6 +370,7 @@ func _ready() -> void:
 	teste_cerco()
 	teste_elite()
 	teste_luzes()
+	await teste_pausa()
 	teste_tempo()
 	print("v2_desempenho falhas=%d" % falhas)
 	get_tree().quit()

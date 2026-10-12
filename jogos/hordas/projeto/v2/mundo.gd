@@ -392,6 +392,8 @@ func _ler_graficos() -> void:
 	var nome := str(args.get("sombra", Config.g("sombras")))
 	var m := Sombras.NOMES.find(nome)
 	sombras.definir_modo(m if m >= 0 else Sombras.MEDIA)
+	if horda != null and modo_teste == false:
+		horda.atualizar(t, cam.retangulo(), quadros)  # mudou no menu de pausa: o lote já aparece no modo novo, sem esperar a partida andar
 	# orçamento de luzes pelo perfil ("luz_relevo" da aba Gráficos): cada luz ligada custa GPU em tudo o que ela toca, e a iGPU do i5 é fraca
 	var relevo := str(Config.g("luz_relevo"))
 	luzes.orcamento = int(args.get("luzes", ORCAMENTO_LUZES.get(relevo, 0)))

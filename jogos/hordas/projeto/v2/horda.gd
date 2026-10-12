@@ -31,7 +31,9 @@ void fragment() {
 	if (reg.z < 0.0) { u.x = 1.0 - u.x; }
 	vec2 uv = (reg.xy + u * vec2(abs(reg.z), reg.w)) / vec2(textureSize(TEXTURE, 0));
 	COLOR = texture(TEXTURE, uv) * cor;
-	NORMAL_MAP = texture(NORMAL_TEXTURE, uv).rgb;
+	vec3 n = texture(NORMAL_TEXTURE, uv).rgb;
+	if (reg.z < 0.0) { n.r = 1.0 - n.r; }  // Sprite2D com flip_h também espelha o x do normal
+	NORMAL_MAP = n;
 }
 """
 ## Silhueta preta que esmaece ao longo do sprite (a mesma de sombras.gd): `cor.r` = a linha dos pés / 128 (altura do pé no quadro) e

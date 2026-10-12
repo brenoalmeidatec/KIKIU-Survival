@@ -21,8 +21,14 @@ for rep in 1 2 3; do
     extra=""
     [ "$cenario" = "horda" ] && extra="--estresse=100 --imortal"
     for modo in baixa media alta baixo; do
-      timeout 120 "$GODOT" --path . res://v2/mundo.tscn -- --medir $(flags_modo $modo) --duracao=6 $extra 2>&1 \
-        | grep -E "MEDIDA|SCRIPT ms|PERFIL|RENDER" | sed "s/^/$cenario $modo /" >> "$SAIDA"
+      # uma rodada que nao imprime MEDIDA (o Godot nao subiu com a maquina carregada, por exemplo) e repetida ate 3 vezes
+      for tentativa in 1 2 3; do
+        saida_run=$(timeout 120 "$GODOT" --path . res://v2/mundo.tscn -- --medir $(flags_modo $modo) --duracao=6 $extra 2>&1 | grep -E "MEDIDA|SCRIPT ms|PERFIL|RENDER")
+        if echo "$saida_run" | grep -q MEDIDA; then
+          echo "$saida_run" | sed "s/^/$cenario $modo /" >> "$SAIDA"
+          break
+        fi
+      done
     done
   done
 done
@@ -30,7 +36,7 @@ echo "--- mediana de 3 (minimo a maximo) ---" >> "$SAIDA"
 for cenario in santuario horda; do
   for modo in baixa media alta baixo; do
     grep "^$cenario $modo MEDIDA " "$SAIDA" | sed 's/.*fps=\([0-9.]*\).*/\1/' | sort -n \
-      | awk -v c=$cenario -v m=$modo '{a[NR]=$1} END {printf "%s %s mediana=%.0f (%.0f a %.0f)\n", c, m, a[2], a[1], a[3]}' >> "$SAIDA"
+      | awk -v c=$cenario -v m=$modo '{a[NR]=$1} END {printf "%s %s mediana=%.0f (%.0f a %.0f)\n", c, m, a[int((NR+1)/2)], a[1], a[NR]}' >> "$SAIDA"
   done
 done
 tail -8 "$SAIDA"
