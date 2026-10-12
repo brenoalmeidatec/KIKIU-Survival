@@ -1,46 +1,57 @@
 extends CanvasLayer
 ## Menu de pausa da v2 (camada 14, acima de tudo). Na partida, ESC ou Start pausam o mundo (get_tree().paused) e abrem o menu;
-## ESC, Start, B ou "Continuar" fecham. Opções: Continuar; Gráficos (Sombras, Partículas e Mostrar FPS, lidos e gravados pelo Config:
-## g_definir e definir; a v2 reage ao graficos_mudou); Volume (Música e Efeitos, as mesmas chaves da v1); Voltar ao santuário (com
-## confirmação: a partida conta como abandonada, pelo caminho da morte, combate.abandonar -> partida_terminou com venceu = false);
-## e Sair do jogo (com confirmação). Sair é o ÚNICO caminho que fecha o jogo; ao_sair é o gancho que os testes trocam.
-## No santuário (altar.gd, sem mundo) o ESC só abre a confirmação de sair. Perder o foco da janela pausa a partida (opção
-## pausar_fora da v1; não vale em headless). Criada pelo mundo.gd (uma linha no _ready) e pelo altar.gd.
-## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores e apoio na Pixelify Sans
+## ESC, Start, B ou "Continuar" fecham. Pausa: Continuar, Ajustes, Voltar ao santuário (com confirmação: a partida conta como
+## abandonada, pelo caminho da morte, combate.abandonar -> partida_terminou com venceu = false) e Sair do jogo (com confirmação).
+## Ajustes: Gráficos (o menu completo da aba, em ajustes_graficos.gd, dirigido pelo dados/graficos.json e pelo Config) e Áudio
+## (Música e Efeitos, as chaves musica e efeitos da v1). ESC dentro de Ajustes volta um nível, sem fechar a pausa de uma vez.
+## Sair é o ÚNICO caminho que fecha o jogo; ao_sair é o gancho que os testes trocam.
+## No santuário (altar.gd, sem mundo) o ESC abre só "Sair?", e abrir_ajustes() abre Ajustes (o botão do santuário).
+## Perder o foco da janela pausa a partida (opção pausar_fora da v1; não vale em headless). Criada pelo mundo.gd (uma linha no
+## _ready) e pelo altar.gd. Os botões são desenhados e testados por retângulo: o SubViewport da partida não entrega mouse aos Controls.
+## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores, apoio e ajuda na Pixelify Sans
 ## (Dados.fonte_texto), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
-## Os botões são desenhados e testados por retângulo: o SubViewport da partida não entrega mouse aos Controls (ver resultado_meta.gd).
 
+const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const TAM_TITULO := 56  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
-const TAM_BOTAO := 19  # botões do menu (Jersey 10 na grade de 19; 37 estourava a largura do painel)
-const TAM_VALOR := 14  # Pixelify Sans: valor à direita (com 19 encostava no nome da linha)
+const TAM_BOTAO := 19  # botões e linhas (Jersey 10 na grade de 19)
+const TAM_SUB := 14  # linha de apoio do título
+const TAM_VALOR := 14  # valor à direita (Pixelify Sans)
+const TAM_AJUDA := 12  # ajuda da linha escolhida (rodapé dos gráficos)
 const TAM_DICA := 14
 const LARG := 960.0
 const ALT := 540.0
-const PAINEL := Rect2(290, 70, 380, 400)
+const PAINEL := Rect2(290, 55, 380, 430)
 const LINHA0 := 118.0  # primeira linha, a partir do topo do painel
-const LINHA_H := 50.0
-const LINHA_ALT := 44.0  # altura da faixa de cada linha
-const LINHAS_MAX := 5
+const LINHA_H := 36.0
+const LINHA_ALT := 32.0  # altura da faixa de cada linha
+const VISIVEIS := 5  # linhas visíveis de uma vez; a lista rola com a seleção
+const AJUDA_Y := LINHA0 + VISIVEIS * LINHA_H + 8.0  # rodapé com a ajuda da linha escolhida
+const AJUDA_H := 96.0
+const DICA_Y := 406.0  # PAINEL.size.y - 24
 const COR_OURO := Color(1.0, 0.86, 0.42)
 const COR_TEXTO := Color(0.92, 0.9, 0.96)
+const COR_CAB := Color(0.62, 0.6, 0.72)  # cabeçalho de seção (não é selecionável)
 const COR_FUNDO := Color(0.004, 0.012, 0.043, 0.72)  # #01030b a 0,7 (hud_menus.md, seção 4)
 const DICA := "Setas escolhem   Enter confirma   Esc volta"
-const STEPPERS := ["sombras", "particulas", "fps", "musica", "efeitos"]  # linhas que mudam de valor (esquerda e direita também valem)
+const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
 
-var mundo  # a partida (mundo.gd); null no santuário
+var mundo  # a partida (mundo.gd); null no santuário (altar.gd)
 var mouse_fn := Callable()  # mouse em 960x540 (o Apresentacao da partida); vazio = mouse da janela (santuário)
 var ao_sair := Callable()  # "Sim" em Sair do jogo; vazio = get_tree().quit()
 var aberto := false
 var tela := "menu"
 var sel := 0
+var _topo := 0  # primeira linha visível da lista
 var _origem := "menu"  # para onde "Não" de uma confirmação volta; "" = fecha (santuário, sem menu por trás)
 var _itens_atuais: Array = []
+var _graficos := AjustesGraficos.new()
 var _raiz: Control
 var _titulo: Label
 var _sub: Label
 var _dica: Label
-var _linhas: Array = []  # uma por linha possível: {linha, marca, rotulo, valor}
+var _ajuda: Label
+var _linhas: Array = []  # uma por linha visível: {linha, marca, rotulo, valor}
 var _fps: Label
 var _fps_t := 0.0
 
@@ -85,16 +96,15 @@ func _montar() -> void:
 	_raiz.add_child(painel)
 	_titulo = _rotulo(Dados.fonte_titulo, TAM_TITULO, COR_OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 18), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	_raiz.add_child(_titulo)
-	_sub = _rotulo(Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER)
+	_sub = _rotulo(
+		Dados.fonte_texto, TAM_SUB, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER
+	)
 	_raiz.add_child(_sub)
-	_dica = _rotulo(Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + PAINEL.size.y - 26), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER)
-	_raiz.add_child(_dica)
-	for i in LINHAS_MAX:
+	for i in VISIVEIS:
 		var w := PAINEL.size.x - 48
-		var h := LINHA_ALT
 		var linha := Control.new()
 		linha.position = Vector2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H)
-		linha.size = Vector2(w, h)
+		linha.size = Vector2(w, LINHA_ALT)
 		linha.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var est := StyleBoxFlat.new()
 		est.bg_color = Color(COR_OURO.r, COR_OURO.g, COR_OURO.b, 0.14)
@@ -112,12 +122,22 @@ func _montar() -> void:
 		linha.add_child(val)
 		_raiz.add_child(linha)
 		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val})
+	_ajuda = _rotulo(
+		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 22, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 44, HORIZONTAL_ALIGNMENT_LEFT
+	)
+	_ajuda.size.y = AJUDA_H
+	_ajuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_raiz.add_child(_ajuda)
+	_dica = _rotulo(
+		Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER
+	)
+	_raiz.add_child(_dica)
 	_fps = _rotulo(Dados.fonte, 8, Color(1, 1, 1, 0.92), Vector2(6, ALT - 16), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
 	add_child(_fps)  # fora de _raiz: o contador de fps aparece também com o menu fechado
 
 
-## Um rótulo do menu. A fonte entra por parâmetro (Dados.fonte_titulo, fonte_texto ou fonte) e cada uso escolhe a sua.
+## Um rótulo do menu. A fonte entra por parâmetro e cada uso escolhe a sua.
 func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin: HorizontalAlignment) -> Label:
 	var l := Label.new()
 	l.position = pos
@@ -164,6 +184,15 @@ func abrir_sair() -> void:
 	_ir("confirmar_sair", "")
 
 
+## Santuário: o botão Ajustes abre o mesmo submenu (sem pausa, porque não há partida).
+func abrir_ajustes() -> void:
+	if aberto:
+		return
+	aberto = true
+	_raiz.visible = true
+	_ir("ajustes", "")
+
+
 func _pode_pausar() -> bool:
 	var c = mundo.combate
 	return c != null and c.jogo == "jogando" and not c.pausado
@@ -173,16 +202,25 @@ func _ir(nova: String, origem := "menu") -> void:
 	tela = nova
 	_origem = origem
 	sel = 1 if nova.begins_with("confirmar") else 0  # confirmação começa em "Não"
+	_topo = 0
 	_desenhar()
 
 
+## ESC (ou B, ou Start): volta um nível. Na pausa, fecha; em Ajustes, volta à pausa (no santuário, fecha);
+## em Gráficos e Áudio, volta a Ajustes; nas confirmações, é "Não".
 func _voltar_tela() -> void:
-	if tela == "menu":
-		fechar()
-	elif tela == "graficos" or tela == "volume":
-		_ir("menu")
-	else:
-		_executar("nao", 0)
+	match tela:
+		"menu":
+			fechar()
+		"ajustes":
+			if mundo != null:
+				_ir("menu")
+			else:
+				fechar()
+		"graficos", "audio":
+			_ir("ajustes")
+		_:
+			_executar("nao", 0)
 
 
 # ------------------------------------------------------------------ entrada
@@ -204,6 +242,10 @@ func _input(e: InputEvent) -> void:
 			sel = i
 			_som_cursor()
 			_desenhar()
+	elif e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_WHEEL_UP:
+		_mover(-1)
+	elif e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		_mover(1)
 	elif e is InputEventMouseButton and not e.pressed and (e.button_index == MOUSE_BUTTON_LEFT or e.button_index == MOUSE_BUTTON_RIGHT):
 		# o clique age ao SOLTAR: quem fecha a pausa com o mouse não manda o golpe do herói (o golpe é no aperto, em heroi.gd)
 		var j := _linha_sob_mouse()
@@ -235,32 +277,47 @@ func _pede_menu(e: InputEvent) -> bool:
 	return false
 
 
+## Próxima linha selecionável na direção d (cabeçalho de seção não recebe a seleção).
 func _mover(d: int) -> void:
-	if _itens_atuais.is_empty():
+	var n := _itens_atuais.size()
+	if n == 0:
 		return
-	sel = posmod(sel + d, _itens_atuais.size())
+	for k in n:
+		sel = posmod(sel + d, n)
+		if str(_itens_atuais[sel].id) != "":
+			break
 	_som_cursor()
 	_desenhar()
 
 
-## Aciona a linha selecionada. Linha que muda valor (STEPPERS) recebe o passo (+1 ou -1); as outras só com confirmar.
+## Aciona a linha selecionada. Linha que muda valor recebe o passo (+1 ou -1); as outras só com confirmar.
 func _acao_sel(passo: int, confirmar: bool) -> void:
 	if _itens_atuais.is_empty():
 		return
-	var id: String = _itens_atuais[sel].id
-	if id in STEPPERS:
+	var id := str(_itens_atuais[sel].id)
+	if id == "":
+		return
+	if _eh_stepper(id):
 		_executar(id, passo)
 	elif confirmar:
 		_som_ok()
 		_executar(id, 0)
 
 
+func _eh_stepper(id: String) -> bool:
+	return id in STEPPERS or id == "g:perfil" or id.begins_with("g:op:")
+
+
+## Índice (na lista inteira) da linha visível sob o mouse; -1 se não há linha ali (ou é cabeçalho).
 func _linha_sob_mouse() -> int:
 	var m := _mouse()
-	for i in _itens_atuais.size():
+	for i in _linhas.size():
+		var idx := _topo + i
+		if idx >= _itens_atuais.size():
+			break
 		var r := Rect2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H, PAINEL.size.x - 48, LINHA_ALT)
 		if r.has_point(m):
-			return i
+			return idx if str(_itens_atuais[idx].id) != "" else -1
 	return -1
 
 
@@ -277,12 +334,14 @@ func _executar(id: String, passo: int) -> void:
 	match id:
 		"continuar":
 			fechar()
+		"ajustes":
+			_ir("ajustes")
 		"graficos":
 			_ir("graficos")
-		"volume":
-			_ir("volume")
+		"audio":
+			_ir("audio")
 		"voltar":
-			_ir("menu")
+			_voltar_tela()
 		"santuario":
 			_ir("confirmar_santuario")
 		"sair":
@@ -296,16 +355,11 @@ func _executar(id: String, passo: int) -> void:
 			_voltar_santuario()
 		"ok_sair":
 			_sair()
-		"sombras":
-			_girar_opcao("sombras", passo)
-		"particulas":
-			_girar_opcao("particulas_sim", passo)
-		"fps":
-			Config.definir("mostrar_fps", not bool(Config.v("mostrar_fps")))
-		"musica":
-			_volume("musica", passo)
-		"efeitos":
-			_volume("efeitos", passo)
+		"musica", "efeitos":
+			_volume(id, passo)
+		_:
+			if id.begins_with("g:"):
+				_graficos.agir(id.substr(2), passo)
 	_desenhar()
 
 
@@ -324,27 +378,9 @@ func _sair() -> void:
 		get_tree().quit()
 
 
-func _girar_opcao(chave: String, passo: int) -> void:
-	var o: Dictionary = Config.g_opcao(chave)
-	var valores: Array = o.get("valores", [])
-	if valores.is_empty():
-		return
-	var i := maxi(valores.find(Config.g(chave)), 0)
-	Config.g_definir(chave, valores[posmod(i + passo, valores.size())])
-
-
 func _volume(chave: String, passo: int) -> void:
 	var v := clampf(float(Config.v(chave)) + 0.1 * passo, 0.0, 1.0)
 	Config.definir(chave, snappedf(v, 0.1))  # grava em opcoes.cfg e aplica o volume (Som) na hora, como a v1
-
-
-func _rotulo_opcao(chave: String) -> String:
-	var o: Dictionary = Config.g_opcao(chave)
-	var i: int = o.get("valores", []).find(Config.g(chave))
-	var rotulos: Array = o.get("rotulos", [])
-	if i >= 0 and i < rotulos.size():
-		return str(rotulos[i])
-	return str(Config.g(chave))
 
 
 func _pct(v: Variant) -> String:
@@ -357,19 +393,16 @@ func _pct(v: Variant) -> String:
 func _itens() -> Array:
 	match tela:
 		"menu":
-			var r := [_it("continuar", "Continuar"), _it("graficos", "Gráficos"), _it("volume", "Volume")]
+			var r := [_it("continuar", "Continuar"), _it("ajustes", "Ajustes")]
 			if mundo != null:
 				r.append(_it("santuario", "Voltar ao santuário"))
 			r.append(_it("sair", "Sair do jogo"))
 			return r
+		"ajustes":
+			return [_it("graficos", "Gráficos"), _it("audio", "Áudio"), _it("voltar", "Voltar")]
 		"graficos":
-			return [
-				_it("sombras", "Sombras", _rotulo_opcao("sombras")),
-				_it("particulas", "Partículas", _rotulo_opcao("particulas_sim")),
-				_it("fps", "Mostrar FPS", "Sim" if bool(Config.v("mostrar_fps")) else "Não"),
-				_it("voltar", "Voltar"),
-			]
-		"volume":
+			return _graficos.itens()
+		"audio":
 			return [_it("musica", "Música", _pct(Config.v("musica"))), _it("efeitos", "Efeitos", _pct(Config.v("efeitos"))), _it("voltar", "Voltar")]
 		"confirmar_santuario":
 			return [_it("ok_santuario", "Sim"), _it("nao", "Não")]
@@ -379,15 +412,17 @@ func _itens() -> Array:
 
 
 func _it(id: String, rotulo: String, valor := "") -> Dictionary:
-	return {"id": id, "rotulo": rotulo, "valor": valor}
+	return {"id": id, "rotulo": rotulo, "valor": valor, "ajuda": ""}
 
 
 func _titulo_tela() -> String:
 	match tela:
+		"ajustes":
+			return "AJUSTES"
 		"graficos":
 			return "GRÁFICOS"
-		"volume":
-			return "VOLUME"
+		"audio":
+			return "ÁUDIO"
 		"confirmar_santuario":
 			return "VOLTAR?"
 		"confirmar_sair":
@@ -400,30 +435,48 @@ func _sub_tela() -> String:
 		return "A partida conta como abandonada."
 	if tela == "confirmar_sair":
 		return "Fecha o jogo de vez."
+	if tela == "graficos":
+		return _graficos.mensagem
 	return ""
 
 
-## Redesenha o menu inteiro (é barato: são poucas linhas). Chamado a cada mudança de tela, seleção ou valor.
+## Redesenha o menu (é barato: são poucas linhas). Chamado a cada mudança de tela, seleção, rolagem ou valor.
 func _desenhar() -> void:
 	_itens_atuais = _itens()
-	sel = clampi(sel, 0, maxi(_itens_atuais.size() - 1, 0))
+	var n := _itens_atuais.size()
+	sel = clampi(sel, 0, maxi(n - 1, 0))
+	if sel < _topo:
+		_topo = sel
+	elif sel >= _topo + VISIVEIS:
+		_topo = sel - VISIVEIS + 1
+	_topo = clampi(_topo, 0, maxi(n - VISIVEIS, 0))
 	_titulo.text = _titulo_tela()
 	_sub.text = _sub_tela()
 	_dica.text = DICA
+	_ajuda.text = _texto_ajuda()
 	for i in _linhas.size():
 		var l: Dictionary = _linhas[i]
-		var mostra: bool = i < _itens_atuais.size()
+		var idx := _topo + i
+		var mostra: bool = idx < n
 		l["linha"].visible = mostra
 		if not mostra:
 			continue
-		var on: bool = i == sel
-		var it: Dictionary = _itens_atuais[i]
+		var it: Dictionary = _itens_atuais[idx]
+		var cab: bool = bool(it.get("cab", false))
+		var on: bool = idx == sel and not cab
 		l["marca"].visible = on
 		l["rotulo"].text = str(it.rotulo)
-		l["valor"].text = str(it.valor)
-		var cor := COR_OURO if on else COR_TEXTO
+		l["valor"].text = str(it.get("valor", ""))
+		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
+
+
+## Rodapé: a ajuda da linha escolhida (só na aba Gráficos, onde o json traz a ajuda de cada opção).
+func _texto_ajuda() -> String:
+	if tela != "graficos" or sel >= _itens_atuais.size():
+		return ""
+	return str(_itens_atuais[sel].get("ajuda", ""))
 
 
 func _process(dt: float) -> void:
