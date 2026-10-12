@@ -1252,3 +1252,11 @@ _Claude do Alisson (nuvem)_
 - **Próximo:** medir o `bench_fim` e o `--medir` da v2 numa placa de verdade (i5-3470 e RX 7600 XT) antes de mexer em luz de novo; o HUD da v1 (proposta A) segue como o maior ganho barato.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-12 (4) · Claude do Alisson (nuvem) · teto de 350 bichos na prorrogação, com dano compensando
+- **Decisão do Alisson:** a v1 vai ser aposentada (nada de HUD novo nela); a prorrogação e o Enxame Final passam de 500 para **350** vivos e a dificuldade vem do **dano** dos bichos.
+- **Feito:** `dados/fase.json`: `limite_vivos_pror` 350 e `limite_vivos_ref` 500. `diretor.mult_dano_teto()` devolve 500/350 (x1,43) na prorrogação e no Enxame Final; `inimigos.criar` e `_mult_tiro` multiplicam o dano por ele. Não depende do perfil de gráficos. Quem já estava vivo quando a prorrogação começou mantém o dano antigo.
+- **Testes:** `desenho_lote` ampliado (teto, multiplicador, bug que nasce na prorrogação, tiro, Enxame Final); `prorrogacao`, `regioes`, `mortes` e `esquiva` com falhas=0.
+- **Pendente:** o equilíbrio de verdade só se vê jogando a prorrogação; o x1,43 é a conta direta (500/350), ajustar se ficar duro ou fácil. As medições numa placa de verdade estão sendo feitas no notebook do Alisson.
+
+_Claude do Alisson (nuvem)_

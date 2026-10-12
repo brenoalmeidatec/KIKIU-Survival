@@ -59,8 +59,9 @@ func _ready() -> void:
 	# ---------- limite de vivos por fase ----------
 	var dados_fase: Dictionary = Dados.json("fase").get("dificuldade", {})
 	ok(int(dados_fase.get("limite_vivos", 0)) == 250, "fase.json: limite_vivos padrão = 250")
-	ok(int(dados_fase.get("limite_vivos_pror", 0)) == 500, "fase.json: limite_vivos_pror = 500")
-	var qs := {"alto": 500, "medio": 350, "baixo": 250}
+	ok(int(dados_fase.get("limite_vivos_pror", 0)) == 350, "fase.json: limite_vivos_pror = 350")
+	ok(int(dados_fase.get("limite_vivos_ref", 0)) == 500, "fase.json: limite_vivos_ref = 500")
+	var qs := {"alto": 350, "medio": 350, "baixo": 250}
 	df.enxame_final = false
 	df.final_chamado = false
 	for q in qs:
@@ -78,8 +79,27 @@ func _ready() -> void:
 	for q in qs:
 		Config.g_perfil_temporario(q)
 		ok(df.limite_vivos() == qs[q], "prorrogação, qualidade %s: limite = %d (deu %d)" % [q, qs[q], df.limite_vivos()])
+	# o teto de 350 na prorrogação vem com mais dano em quem nasce (500/350), em qualquer perfil
+	var esperado := 500.0 / 350.0
+	for q in qs:
+		Config.g_perfil_temporario(q)
+		ok(absf(df.mult_dano_teto() - esperado) < 0.001, "prorrogação, qualidade %s: dano x%.3f (deu %.3f)" % [q, esperado, df.mult_dano_teto()])
+	I.limpar()
+	var com_pror = I.criar("bug", j.position + Vector2(300, 0), 1)
+	var tiro_pror: float = I._mult_tiro()
 	df.t_fase = t_ant
 	df.final_chamado = false
+	ok(df.mult_dano_teto() == 1.0, "fora da prorrogação o dano não muda")
+	var sem_pror = I.criar("bug", j.position + Vector2(340, 0), 1)
+	ok(
+		absf(com_pror.dano / sem_pror.dano - esperado) < 0.001,
+		"o bug que nasce na prorrogação tem x%.3f de dano (deu %.3f)" % [esperado, com_pror.dano / sem_pror.dano]
+	)
+	ok(absf(tiro_pror / I._mult_tiro() - esperado) < 0.001, "o tiro dos inimigos também compensa na prorrogação")
+	df.enxame_final = true
+	ok(absf(df.mult_dano_teto() - esperado) < 0.001, "Enxame Final: dano x%.3f" % esperado)
+	df.enxame_final = false
+	I.limpar()
 	Config.g_perfil_temporario("alto")
 	df._fase["limite_vivos"] = 120
 	ok(df.limite_vivos() == 120, "uma fase pode ter o seu limite (120)")
