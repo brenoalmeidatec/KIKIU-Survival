@@ -75,7 +75,7 @@
     "id": "estrelas_sombra",
     "icone": "icone_u_kunai_corvo",
     "nome": "Estrelas de Sombra",
-    "desc": "Atira shurikens pretas bem seguidas no inimigo mais perto, sem parar.",
+    "desc": "Atira estrelas pretas bem seguidas no inimigo mais perto, sem parar.",
     "tipo": "projetil",
     "max": 5,
     "peso": 0.9,
