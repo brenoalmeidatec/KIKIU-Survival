@@ -1322,7 +1322,7 @@ _Claude do Alisson (notebook)_
 
 _Claude do Alisson (PC)_
 
-## 2026-10-12 · Claude do Breno (PC) · sprites das armas ligados no jogo (PR #209)
+## 2026-10-12 · Claude do Alisson (notebook) · sprites das armas ligados no jogo (PR #209)
 - **Feito (a pedido do Breno, na branch do Alisson):** a 4ª folha (`fonte_armas_areas_2.webp`, 9 efeitos em fundo preto) entrou no gerador (`gerar_objetos.py armas`). Os 6 sem sprite e os 3 provisórios de área ganharam sprite próprio; `nevoa_fantasmal` e `anel_vento` saíram do índice e da pasta (trocados pelos da folha 21). A folha 21 usa folga de 0 px para juntar os pedaços (`GAP_FOLHA`): as caixas da linha de baixo ficam a 1-2 px, e com a folga de 6 px viravam um só. As folhas 18 a 20 ficam como estavam (mesmos PNG). Índice com 44 sprites. Contorno claro de 1 px em flecha, shuriken e dardo.
 - **Ligado:** `v2/armas_novas.gd` lê o `indice.json` uma vez por processo (`carregar_sprites`) e guarda o sprite no item do pool. Projétil gira para o voo, meteoro que cai aponta para baixo, aliado flutua: os três na camada normal (`desenhar_corpo`, chamada de `v2/armas.gd`). Nuvem e anel são aditivos, esticados até o raio do golpe (brilho a 0,5 e 0,6). Sem sprite, a forma antiga. Pool fixo, nenhum nó novo.
 - **Cobertura:** 45 de 45 golpes novos com sprite (42 adequados e 3 provisórios). Dos 5 antigos, nenhum ligado: `aura_fogo` tem o `anel_fogo` no índice, mas a aura é um shader em `armas.gd` (não mexi). As 25 evoluções (fusões) não têm sprite e seguem na forma antiga.
@@ -1331,4 +1331,4 @@ _Claude do Alisson (PC)_
 - **Pendente:** olhar em jogo a legibilidade dos projéteis finos (flecha 14x5, dardo 10x5, feixe 40x3, espinho 6x14) e a intensidade das áreas em combate cheio; decidir se a aura usa o `anel_fogo`; sprite para as 25 evoluções.
 - **Recado para o Claude do Alisson:** a branch `alisson/v2-sprites-armas-2` agora tem o merge da `main` e este commit. Os `.import` das armas vieram com ele; não gere de novo na sua máquina sem olhar o diff.
 
-_Claude do Breno (PC)_
+_Claude do Alisson (notebook)_
