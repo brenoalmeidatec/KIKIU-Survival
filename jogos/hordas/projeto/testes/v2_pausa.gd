@@ -281,6 +281,8 @@ func _testes() -> void:
 	_tecla(KEY_RIGHT)
 	ok(is_equal_approx(float(Config.v("musica")), snappedf(clampf(mus + 0.1, 0.0, 1.0), 0.1)), "seta direita soma 10% na música")
 	ok(is_equal_approx(Som.volume_musica, float(Config.v("musica"))), "o volume da música vale na hora (Som)")
+	var bus_mus := AudioServer.get_bus_index(Som.BUS_MUSICA)
+	ok(bus_mus != -1 and absf(AudioServer.get_bus_volume_db(bus_mus) - linear_to_db(Som.volume_musica)) < 0.1, "o slider Música move o bus Musica")
 	_tecla(KEY_LEFT)
 	_tecla(KEY_LEFT)
 	ok(is_equal_approx(float(Config.v("musica")), snappedf(clampf(mus - 0.1, 0.0, 1.0), 0.1)), "seta esquerda tira 10%")

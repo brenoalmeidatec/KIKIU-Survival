@@ -1,0 +1,9 @@
+{
+	"_ajuda": "Trilha sonora da v2 (v2/trilha.gd). 'faixas' liga cada MOMENTO ao nome de um .ogg de assets/audio/musica/ (sem a extensão). Momentos: santuario (tela inicial e pausa do santuário), partida (floresta), chefe (mini-chefes aos 3 e 6 min e o chefe dos 10 min; ao cair um mini-chefe volta a partida) e resultado (derrota ou vitória, até sair da tela). Momento sem faixa aqui deixa tocar a que já está. Origem e licença de cada arquivo: docs/LICENCAS_AUDIO.md. O volume é o slider Música das Ajustes (bus Musica, som.gd).",
+	"faixas": {
+		"santuario": "menu",
+		"partida": "minijogo_tenso",
+		"chefe": "chefe",
+		"resultado": "fim"
+	}
+}
