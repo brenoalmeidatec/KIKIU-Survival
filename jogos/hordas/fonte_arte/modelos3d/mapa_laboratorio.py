@@ -394,15 +394,112 @@ def lixo_lab(r):
 
 
 def restos_cobaia(r):
-    pele = M("2b3a2e", 0.7, 0.4, 0.3, 9.0)
-    esfera("corpo", 0.3, (0, 0, 0.18), pele, escala=(1.3, 0.9, 0.55))
-    esfera("cabeca", 0.15, (0.45, -0.05, 0.14), pele, escala=(1, 1, 0.8))
+    """Restos de uma cobaia: carcaça rasa numa poça de gosma, com costelas, coluna, caveira e rabo (antes era uma bola com quatro pernas e
+    parecia tartaruga). Deitada ao longo de x, a caveira para a direita."""
+    carne = M("7a5a5e", 0.8, 0.3, 0.35, 9.0)
+    osso = M("cbc4b0", 0.7, 0.1, 0.15, 12.0)
+    escuro = M("26181b", 0.9)
+    esfera("gosma", 0.6, (0.0, 0.05, 0.01), E("2fa855", 0.32), escala=(1.45, 1.0, 0.04))
+    esfera("sangue", 0.3, (-0.2, -0.3, 0.012), M("5a1414", 0.4), escala=(1.4, 0.8, 0.03))
+    # só a parte de trás ainda tem carne; o peito está aberto e mostra as costelas
+    esfera("quadril", 0.26, (-0.42, 0.02, 0.1), carne, escala=(1.25, 0.95, 0.5))
+    esfera("pelo", 0.18, (-0.62, 0.1, 0.07), M("4a3a3e", 0.9, 0.2, 0.4), escala=(1.3, 1.0, 0.5))
+    barra((-0.5, 0.0, 0.1), (0.38, 0.0, 0.1), 0.035, osso, v=8)  # coluna
+    for xi in (-0.2, -0.02, 0.16):
+        for s in (-1, 1):
+            barra((xi, s * 0.03, 0.1), (xi - 0.02, s * 0.2, 0.2), 0.034, osso, v=8)  # costela: sobe e abre
+            barra((xi - 0.02, s * 0.2, 0.2), (xi - 0.06, s * 0.3, 0.07), 0.03, osso, v=8)  # e desce de volta ao chão
+    esfera("peito", 0.15, (-0.04, 0.0, 0.06), escuro, escala=(2.1, 0.8, 0.3))  # cavidade escura entre as costelas
+    # caveira de focinho comprido (roedor) com os olhos ainda acesos
+    esfera("cranio", 0.12, (0.5, 0.0, 0.11), osso, escala=(1.0, 0.85, 0.85))
+    esfera("focinho", 0.08, (0.64, 0.02, 0.08), osso, escala=(1.4, 0.8, 0.7))
     for s in (-1, 1):
-        barra((-0.2, s * 0.2, 0.1), (-0.5, s * 0.35, 0.04), 0.045, pele, v=8)
-        barra((0.2, s * 0.2, 0.1), (0.35, s * 0.4, 0.04), 0.04, pele, v=8)
-    esfera("gosma", 0.5, (0.0, 0.0, 0.01), E("2fa855", 0.35), escala=(1.4, 1.0, 0.04))
-    for k in range(3):
-        esfera("olho", 0.03, (0.52, -0.1 + 0.1 * (k % 2), 0.2), E("e8ff9a", 2.5))
+        esfera("olho", 0.035, (0.52, s * 0.07, 0.17), E("c8ff6a", 2.6))
+    # rabo comprido e fino, dobrado no chão
+    barra((-0.82, 0.12, 0.05), (-1.0, 0.3, 0.03), 0.032, carne, v=6)
+    barra((-1.0, 0.3, 0.03), (-0.88, 0.52, 0.025), 0.026, carne, v=6)
+    # ossos soltos e um pedaço de jaleco
+    for x, y, a in [(0.1, 0.38, 0.4), (-0.3, -0.42, 2.0), (0.38, -0.34, 1.1)]:
+        B(0.2, 0.045, 0.045, x, y, 0.02, osso, ch=0.01, rot=(0, 0, a))
+    B(0.34, 0.26, 0.025, 0.15, -0.18, 0.015, M("b8bcc0", 0.95), ch=0.0, rot=(0, 0, 0.3))
+
+
+def porta_blindada(r):
+    """Trecho de parede com porta blindada (variedade para a parede dos fundos): moldura de faixa de perigo, folha de aço com nervuras, volante e luz de status."""
+    _parede_base(r)
+    aco = metal("65727f", 0.4, 0.2, 0.12)
+    claro = metal(ACO_CLARO, 0.35)
+    amarelo, preto = M(PERIGO, 0.6, 0.1, 0.1), M(PRETO, 0.7)
+    B(1.9, 0.07, 2.5, 0, -0.31, 0.0, M("14171b", 0.8), ch=0.01)  # vão escuro
+    for i in range(11):  # moldura em listras de perigo (cima)
+        B(0.17, 0.05, 0.12, -0.85 + i * 0.17, -0.355, 2.38, amarelo if i % 2 == 0 else preto, ch=0.0)
+    for s in (-1, 1):
+        for i in range(12):
+            B(0.1, 0.05, 0.2, s * 0.93, -0.355, 0.0 + i * 0.2, amarelo if i % 2 == 0 else preto, ch=0.0)
+    B(1.64, 0.1, 2.28, 0, -0.38, 0.04, aco, ch=0.02)  # folha da porta
+    for k in range(5):  # nervuras horizontais
+        B(1.5, 0.03, 0.05, 0, -0.45, 0.35 + k * 0.42, M("39424c", 0.6, 0.1, 0.1), ch=0.0)
+    B(0.08, 0.04, 2.2, 0, -0.45, 0.06, M("39424c", 0.6), ch=0.0)  # junta do meio
+    cilindro("volante", 0.2, 0.05, (0.45, -0.46, 1.1), claro, vertices=16, rot=(math.pi / 2, 0, 0))
+    for a in range(4):
+        barra((0.45, -0.46, 1.1), (0.45 + 0.2 * math.cos(a * math.pi / 2 + 0.4), -0.46, 1.1 + 0.2 * math.sin(a * math.pi / 2 + 0.4)), 0.02, claro, v=6)
+    B(0.34, 0.05, 0.62, -0.5, -0.45, 1.5, M("15181c", 0.9), ch=0.0)  # painel de status
+    led(-0.6, -0.49, 1.95, VERMELHO, 0.09)
+    led(-0.4, -0.49, 1.95, "ffb23a", 0.07)
+    B(0.26, 0.02, 0.18, -0.5, -0.485, 1.55, E(CIANO, 1.1), ch=0.0)
+
+
+def duto_ventilacao(r):
+    """Unidade de ventilação alta: caixa de aço com veneziana no alto, ventoinha embaixo e dutos que saem pelo topo e pelo lado."""
+    aco = metal("5a6573", 0.4, 0.2, 0.12)
+    escuro = M("15181c", 0.9)
+    B(1.1, 0.8, 2.1, 0, 0, 0, aco, ch=0.03)
+    B(1.16, 0.86, 0.1, 0, 0, 0.0, M(CONCRETO_ESC, 0.85), ch=0.02)
+    B(0.9, 0.04, 0.62, 0, -0.42, 1.28, escuro, ch=0.0)  # abertura da veneziana
+    for k in range(7):
+        B(0.9, 0.05, 0.035, 0, -0.45, 1.3 + k * 0.085, metal(ACO_CLARO, 0.35), ch=0.0, rot=(0.35, 0, 0))
+    cilindro("aro", 0.36, 0.06, (0, -0.43, 0.6), metal(ACO_ESC, 0.4), vertices=24, rot=(math.pi / 2, 0, 0))
+    cilindro("ventoinha", 0.3, 0.04, (0, -0.46, 0.6), escuro, vertices=24, rot=(math.pi / 2, 0, 0))
+    for k in range(5):  # pás
+        a = k * 2 * math.pi / 5 + 0.3
+        barra((0, -0.49, 0.6), (0.26 * math.cos(a), -0.49, 0.6 + 0.26 * math.sin(a)), 0.035, metal("46505c", 0.4), v=6)
+    cilindro("cubo", 0.06, 0.06, (0, -0.5, 0.6), metal(ACO_CLARO, 0.3), vertices=12, rot=(math.pi / 2, 0, 0))
+    C(0.3, 0.5, 0.0, 0.0, 2.1, metal("6a7580", 0.4), v=20)  # duto que sobe
+    barra((0.0, 0.0, 2.45), (0.5, 0.0, 2.45), 0.2, metal("6a7580", 0.4), v=16)  # e dobra para o lado
+    for x in (0.2, 0.38):
+        C(0.23, 0.05, x, 0.0, 2.45, metal(ACO_ESC, 0.4), v=16, rot=(0, math.pi / 2, 0))
+    led(0.38, -0.43, 0.2, "ffb23a", 0.07)
+    led(0.38, -0.43, 0.33, VERDE, 0.06)
+    B(0.3, 0.02, 0.2, -0.33, -0.43, 0.15, M(PERIGO, 0.6), ch=0.0)
+
+
+def estante_amostras(r):
+    """Estante de aço com frascos de amostra: alguns acesos de verde e âmbar (luz fraca no albedo, só o brilho do vidro)."""
+    aco = metal("4f5a66", 0.4, 0.2, 0.1)
+    for x in (-0.86, 0.86):
+        for y in (-0.25, 0.25):
+            B(0.07, 0.07, 2.05, x, y, 0.0, aco, ch=0.01)
+    B(1.78, 0.58, 0.06, 0, 0, 0.0, M("262d35", 0.7), ch=0.01)
+    for z in (0.5, 0.98, 1.46, 1.94):
+        B(1.78, 0.58, 0.05, 0, 0, z, metal("66717e", 0.35), ch=0.01)
+    B(1.74, 0.04, 2.0, 0, 0.29, 0.05, M("1b1f24", 0.9), ch=0.0)  # fundo
+    cores = [("3fcf6a", 1.2), ("ffb23a", 1.0), ("7de8ff", 0.9), (None, 0), ("3fcf6a", 0.9)]
+    for nivel, z in enumerate((0.06, 0.55, 1.03, 1.51)):
+        x = -0.72
+        while x < 0.75:
+            tipo = r.random()
+            if tipo < 0.6:
+                c, f = r.choice(cores)
+                h = r.uniform(0.2, 0.34)
+                C(0.085, h, x, r.uniform(-0.1, 0.1), z, vidro("6fb6bd") if c is None else E(c, f), v=14)
+                C(0.09, 0.03, x, 0.0, z + h, metal(ACO_ESC), v=14)
+                x += 0.2
+            elif tipo < 0.85:
+                B(r.uniform(0.22, 0.34), 0.28, r.uniform(0.14, 0.26), x + 0.1, 0.0, z, M(r.choice(["4b5a4a", "5a5444", "46525f"]), 0.8, 0.2, 0.15), ch=0.02)
+                x += 0.38
+            else:
+                x += 0.22  # vão
+    B(0.5, 0.02, 0.12, 0.0, -0.3, 0.52, M(PERIGO, 0.6), ch=0.0)
 
 
 OBJETOS = {
@@ -429,7 +526,10 @@ OBJETOS = {
     "lampada_emergencia": tela(0.6, 0.6, 2.5, lampada_emergencia),
     "cacos_vidro": tela(1.0, 0.7, 0.15, cacos_vidro),
     "lixo_lab": tela(1.1, 0.8, 0.4, lixo_lab),
-    "restos_cobaia": tela(1.7, 1.1, 0.5, restos_cobaia),
+    "restos_cobaia": tela(2.3, 1.3, 0.5, restos_cobaia),
+    "porta_blindada": tela(3.0, 0.5, 3.2, porta_blindada, extra_h=0.35),
+    "duto_ventilacao": tela(1.2, 0.9, 2.75, duto_ventilacao),
+    "estante_amostras": tela(1.8, 0.65, 2.1, estante_amostras),
 }
 
 

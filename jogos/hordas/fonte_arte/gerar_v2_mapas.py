@@ -153,13 +153,16 @@ def montar_atlas_objetos(mapa, defs, saida):
 
 
 # ------------------------------------------------------------------ piso e decalques
-def processar_piso(mapa, saida):
+def processar_piso(mapa, saida, detalhe=None):
+    """detalhe (opcional, vem do def_<mapa>.py como detalhar_piso(img, rng)): pinta desgaste no azulejo achatado antes da paleta."""
     pasta = BRUTOS / mapa
     img = Image.open(pasta / "piso.png").convert("RGB")
     nor = Image.open(pasta / "piso_n.png").convert("RGB")
     h2 = int(round(img.height * ACHATA))
     img = img.resize((img.width, h2), Image.BOX)
     nor = nor.resize((nor.width, h2), Image.BOX)
+    if detalhe is not None:
+        img = detalhe(img)
     img = quantizar(img, CORES_PISO)
     img.save(saida / "piso.png")
     nor.save(saida / "piso_normal.png")
@@ -249,7 +252,7 @@ def main():
     rng = random.Random(mod.SEMENTE)
     print("== %s ==" % mapa)
     obj_info, obj_folha = montar_atlas_objetos(mapa, mod.OBJETOS, saida)
-    piso = processar_piso(mapa, saida)
+    piso = processar_piso(mapa, saida, getattr(mod, "detalhar_piso", None))
     dec_info, dec_folha = montar_decalques(mod.DECALQUES, saida, random.Random(mod.SEMENTE + 1))
     tam = {n: (i["regiao"][2], i["regiao"][3], i["pe"]) for n, i in obj_info.items()}
     mapa_json = mod.montar(tam, rng)
