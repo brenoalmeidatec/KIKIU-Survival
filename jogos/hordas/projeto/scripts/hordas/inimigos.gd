@@ -356,6 +356,8 @@ func criar(tipo: String, pos: Vector2, nivel := 1, elite := false) -> V:
 	if arena and arena.has_method("ef"):  # calor (#63): modificadores que o jogador ligou antes da corrida
 		v.hpmax *= 1.0 + arena.ef("inimigo_vida") + (arena.ef("chefe_vida") if v.chefe else 0.0)
 		v.dano *= 1.0 + arena.ef("inimigo_dano")
+		if arena.diretor != null:
+			v.dano *= arena.diretor.mult_dano_teto()  # prorrogação e Enxame Final: teto de 350 bichos, dano compensa (diretor_hordas.gd)
 		v.vel *= 1.0 + arena.ef("inimigo_velocidade")
 	v.raio = float(dd.get("raio", 8))
 	if bool(dd.get("elite", false)) and not v.chefe:
@@ -1354,6 +1356,9 @@ func _desenhar_topo() -> void:
 	c.draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 
 
-## Dano dos tiros dos inimigos com o calor ("Garras Afiadas" vale pros tiros também).
+## Dano dos tiros dos inimigos com o calor ("Garras Afiadas" vale pros tiros também) e com a compensação do teto da prorrogação.
 func _mult_tiro() -> float:
-	return 1.0 + (arena.ef("inimigo_dano") if arena and arena.has_method("ef") else 0.0)
+	var m: float = 1.0 + (arena.ef("inimigo_dano") if arena and arena.has_method("ef") else 0.0)
+	if arena and arena.diretor != null:
+		m *= arena.diretor.mult_dano_teto()
+	return m
