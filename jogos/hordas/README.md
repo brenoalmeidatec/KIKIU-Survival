@@ -9,6 +9,8 @@ Apresentação do jogo no [README principal](../../README.md). Aqui fica o que �
 3. ➕ No gerenciador de projetos do Godot, clique em **Importar** e escolha `jogos/hordas/projeto/project.godot`.
 4. ⏳ Na primeira vez o Godot importa imagens e sons (demora um pouco). Depois, **F5** roda o jogo.
 
+O **F5** (e o executável) abre a **v2**, pelo santuário (`v2/altar.tscn`, a cena principal). A v1, pausada, abre com `-- --v1` (no executável: `KIKIU.exe -- --v1`); os argumentos de teste dela (`--bot`, `--online`, `--sair`, `--print_tela`, `--cena`, `--prototipo`) também levam direto à v1, então os comandos abaixo continuam iguais.
+
 O projeto usa o renderer *Compatibility*, tela base 640×360 com escala inteira (pixel art sem borrar).
 
 ## 🧪 Testes automáticos
