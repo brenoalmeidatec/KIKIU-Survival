@@ -77,7 +77,7 @@
 			"icone": "icone_raio",
 			"nome": "Raio em Cadeia",
 			"curto": "Raio",
-			"desc": "Um raio cai no inimigo mais próximo e pula para os inimigos perto dele. É automático.",
+			"desc": "Um raio cai no inimigo mais perto e pula para os vizinhos.",
 			"tipo": "raio",
 			"max": 5,
 			"peso": 1.3,
