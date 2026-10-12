@@ -8,7 +8,7 @@ const Ator := preload("res://v2/ator.gd")
 const Sombras := preload("res://v2/sombras.gd")
 const Colisao := preload("res://v2/colisao.gd")
 const Sprites := preload("res://v2/sprites.gd")
-const OBJ_DIR := "res://prototipos/objetos"  # atlas dos objetos: albedo + normal, escala final a 960x540
+const OBJ_DIR := "res://prototipos/objetos"  # atlas dos objetos: albedo + normal, escala final a 960x540 (a floresta; "pastas" do mapa troca)
 const DEC_DIR := "res://prototipos/decalques"  # decalques de chão: albedo + normal
 const PISO_DIR := "res://prototipos/piso"
 const MARGEM := 3  # px transparentes em volta de cada objeto recortado: o blur da sombra não corta na borda
@@ -25,6 +25,9 @@ var versao := 0  # sobe toda vez que `ativos` é refeita (quem guarda uma cópia
 var n_decalques := 0
 var ms_carga := 0.0
 var nascimento: Dictionary = {}
+var _obj_dir := OBJ_DIR  # "mapa.pastas" do json troca estas três (laboratório, cidade); sem "pastas" valem as da floresta
+var _dec_dir := DEC_DIR
+var _piso_dir := PISO_DIR
 var _mundo: Node2D
 var _chao_deco: Node2D
 var _luzes
@@ -46,6 +49,10 @@ func carregar(dados: Dictionary, mundo: Node2D, luzes, sombras, normal := true) 
 	var m: Dictionary = dados.get("mapa", {})
 	tam = Vector2(float(m.get("tam", [2880, 1620])[0]), float(m.get("tam", [2880, 1620])[1]))
 	nascimento = dados.get("nascimento", {})
+	var pastas: Dictionary = m.get("pastas", {})
+	_obj_dir = str(pastas.get("objetos", OBJ_DIR))
+	_dec_dir = str(pastas.get("decalques", DEC_DIR))
+	_piso_dir = str(pastas.get("piso", PISO_DIR))
 	ganho_obj = float(m.get("ganho_objetos", ganho_obj))
 	ganho_dec = float(m.get("ganho_decalques", ganho_dec))
 	_chao(m.get("chao", {}))
@@ -73,8 +80,8 @@ func _chao(c: Dictionary) -> void:
 	var piso := Sprite2D.new()
 	var nome := str(c.get("piso", "piso"))
 	var ct := CanvasTexture.new()
-	ct.diffuse_texture = ImageTexture.create_from_image(Sprites.png(PISO_DIR.path_join(nome + ".png")))
-	var nn := PISO_DIR.path_join(nome + "_normal.png")
+	ct.diffuse_texture = ImageTexture.create_from_image(Sprites.png(_piso_dir.path_join(nome + ".png")))
+	var nn := _piso_dir.path_join(nome + "_normal.png")
 	if com_normal and ResourceLoader.exists(nn):
 		ct.normal_texture = ImageTexture.create_from_image(Sprites.png(nn))
 	piso.texture = ct
@@ -105,7 +112,7 @@ func _chao(c: Dictionary) -> void:
 
 
 func _carregar_decalques() -> void:
-	var dir := DEC_DIR
+	var dir := _dec_dir
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir.path_join("decalques.json")))
 	var atlas := Sprites.png(dir.path_join("decalques.png"))
 	atlas.convert(Image.FORMAT_RGBA8)
@@ -156,12 +163,12 @@ func _decalque(nome: String, pos: Vector2, espelha := false) -> void:
 ## Atlas de objetos de cenário (prototipos/objetos). Cada item é recortado UMA vez (com margem) e ganha a textura nítida, a borrada para a
 ## sombra do modo médio e a CanvasTexture com normal map, e guarda as formas de "colisao" do item (elipses no chão, v2/colisao.gd).
 func _carregar_itens() -> void:
-	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(OBJ_DIR.path_join("cenario.json")))
-	var atlas := Sprites.png(OBJ_DIR.path_join(str(info.get("enfeites", "enfeites.png"))))
+	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(_obj_dir.path_join("cenario.json")))
+	var atlas := Sprites.png(_obj_dir.path_join(str(info.get("enfeites", "enfeites.png"))))
 	atlas.convert(Image.FORMAT_RGBA8)
 	var norm: Image = null
 	if com_normal:
-		norm = Sprites.png(OBJ_DIR.path_join(str(info.get("enfeites_normal", "enfeites_normal.png"))))
+		norm = Sprites.png(_obj_dir.path_join(str(info.get("enfeites_normal", "enfeites_normal.png"))))
 		norm.convert(Image.FORMAT_RGBA8)
 	for it in info.itens:
 		var r := Rect2i(int(it.regiao[0]), int(it.regiao[1]), int(it.regiao[2]), int(it.regiao[3]))

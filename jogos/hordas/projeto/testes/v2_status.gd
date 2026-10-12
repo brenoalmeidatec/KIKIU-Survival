@@ -1187,6 +1187,16 @@ func _interface() -> void:
 	ok(st.linhas_que_estouram().is_empty(), "nenhuma linha estoura a largura das colunas da pausa (%s)" % str(st.linhas_que_estouram()))
 	ok(not st.colunas_cortadas().has(true), "nada é cortado nas colunas da pausa")
 	var painel: Rect2 = Pausa.PAINEL
+	# a página VISUAL (barras, pips e ícones) é a que abre; o Tab troca pela tabela de detalhes e volta
+	ok(st.pagina() == "visual", "a pausa abre o card na página visual (%s)" % st.pagina())
+	ok(not st.visual_cortada().has(true), "a página visual da pausa cabe na altura das colunas (%s)" % str(st.retangulos_visuais()))
+	for rv in st.retangulos_visuais():
+		ok(not (rv as Rect2).intersects(painel) and Rect2(0, 0, 960, 540).encloses(rv), "a página visual fica ao lado do menu, na tela (%s)" % str(rv))
+	var tab := InputEventKey.new()
+	tab.keycode = KEY_TAB
+	tab.pressed = true
+	ok(pausa.entrada(tab) and st.pagina() == "detalhe", "o Tab na pausa troca para a página de detalhes")
+	ok(pausa.entrada(tab) and st.pagina() == "visual" and pausa.aberto, "o Tab de novo volta à página visual, com a pausa aberta")
 	for rc in pr:
 		ok(not (rc as Rect2).intersects(painel), "as colunas da pausa ficam ao lado do menu, não em cima (%s)" % str(rc))
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "as colunas da pausa cabem na tela")
@@ -1262,6 +1272,7 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	ok(st.linhas_que_estouram().is_empty() and not st.colunas_cortadas().has(true), "o painel central não estoura nem corta nada")
 	for rc in rc3:
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "a coluna do painel central cabe na tela (%s)" % str(rc))
+	ok(st.retangulos_visuais().size() == 3 and not st.visual_cortada().has(true), "a página visual do painel central tem três colunas e cabe")
 	# --- a trava de 3 s das cartas segue correndo (tempo real) com o painel aberto
 	var trava0: float = tela_c.espera_escolha
 	ok(trava0 > 2.0, "a trava das cartas está correndo (%.2f s)" % trava0)
@@ -1535,6 +1546,10 @@ func _fotos(pasta: String) -> void:
 	pausa.pausar()
 	await get_tree().process_frame
 	await _foto("status_pausa", pasta)
+	st.alternar_detalhe()  # a página de detalhes (a tabela de antes)
+	await get_tree().process_frame
+	await _foto("status_pausa_detalhe", pasta)
+	st.alternar_detalhe()
 	pausa.fechar()
 	# 5) a build extrema (os maiores números) com o Santuário todo comprado: o pior caso de largura
 	_comprar_tudo()
