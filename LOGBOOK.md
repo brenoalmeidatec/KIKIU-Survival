@@ -1190,3 +1190,31 @@ O gargalo é sombra mais atores em Sprite2D. O i5-3470 não foi medido.
 - o Alisson e o Breno jogarem e mandarem o fps (#153).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12: v2, leva 4 (retorno do Alisson jogando)
+
+**Feito (na `main`):**
+- **#183 oclusão:** buraco raio-x circular em volta do herói nas árvores (no lugar do corte reto) e silhueta do herói quando um monstro cobre ele.
+- **#184 interface:**
+  - fontes legíveis: Jersey 10 nos títulos e Pixelify Sans no texto, as duas OFL, com créditos (a gótica saiu);
+  - carta com estrutura fixa e ícone;
+  - o combo e a faixa do HUD somem durante a escolha;
+  - o texto de depuração fica desligado e o F3 alterna.
+- **#185 e #186 pausa:** o ESC não fecha mais o jogo. A pausa tem 4 itens (Continuar, Ajustes, Voltar ao santuário, Sair). Ajustes tem o Gráficos completo, dirigido por `dados/graficos.json` em `v2/ajustes_graficos.gd`, e o Áudio. O Santuário ganhou o botão Ajustes.
+- **#187 desempenho:**
+  - horda comum em MultiMesh (`v2/horda.gd`), com sombra em lote;
+  - corpo do herói sólido e cerco em anel;
+  - grade da colisão cobrindo o mapa todo (antes, o leste e o sul caíam na borda);
+  - Baixo com 6 luzes no máximo.
+
+  **fps na Iris Xe com 100 monstros:** média 98 → 143, alta 89 → 132, perfil Baixo 138 → 169.
+
+**Pendente:**
+- **i5-3470** sem medição.
+- **Sombras dos ~70 objetos do cenário** ainda em nós; seria o próximo ganho.
+- **Ajuda de "Sombras"** no Gráficos ainda fala em "Etapa 3" (texto da v1).
+- **Opções com \*** que a v2 ainda não lê.
+- **`regras_armas` e `transformacao` (v1)** falham sozinhos sob carga local.
+- **Balanço** depende de jogar.
+
+_Claude do Alisson (notebook)_
