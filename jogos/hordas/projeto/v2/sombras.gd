@@ -28,7 +28,24 @@ var us_script := 0  # tempo de script (só para a medição)
 var _mat: ShaderMaterial
 var _tex_blob: GradientTexture2D
 var _todos: Array[Ator] = []
+var amb_e := 0.0  # luz de AMBIENTE (mapa.sombra_ambiente no json): uma luz virtual, paralela e sem fim, que dá sombra base a todo objeto, mesmo longe de qualquer luz
+var amb_dir := Vector2.ZERO  # vetor (mundo) para onde a sombra ambiente aponta, já com o y achatado
 var _lv := PackedFloat32Array()  # peso de cada luz sobre o ator em atualização (energia x atenuação)
+
+
+## Liga a sombra de ambiente a partir de `mapa.sombra_ambiente` do json: {"e": peso (1,2 = força total), "ang": graus para onde a sombra cai
+## (90 = para baixo na tela), "comp": comprimento / altura do sprite}. Sem a chave, nada muda (a floresta segue só com as luzes do mapa).
+func definir_ambiente(d: Dictionary) -> void:
+	amb_e = float(d.get("e", 0.0))
+	var a := deg_to_rad(float(d.get("ang", 90.0)))
+	amb_dir = Vector2(cos(a), sin(a) * ACHATA) * float(d.get("comp", 0.45))
+
+
+## Vetor da sombra da luz `i`: as do mapa pela geometria de sempre, e o índice `n` (depois da última) é o ambiente.
+func _vetor_luz(i: int, n: int, pos: Vector2, dpos: PackedVector2Array, dh: PackedFloat32Array, alt: float, rmax: float) -> Vector2:
+	if i == n:
+		return amb_dir.limit_length(rmax)
+	return _vetor_sombra(pos, dpos[i], dh[i], alt, rmax)
 
 
 func montar(mundo: Node2D) -> void:
@@ -292,7 +309,7 @@ func calcular(a: Ator, t: float) -> void:
 	var dt := t - a.t_ult if a.t_ult >= 0.0 else 1.0
 	a.t_ult = t
 	var k := 1.0 - exp(-SUAVIZA * dt)
-	_lv.resize(n)
+	_lv.resize(n + 1)
 	for i in n:
 		# atenuação inline (a mesma curva de _atenua): luz que não alcança o ator pesa 0 sem chamar função
 		var u := centro.distance_to(dpos[i]) / dr[i]
@@ -304,17 +321,21 @@ func calcular(a: Ator, t: float) -> void:
 			_lv[i] = de[i] * lerpf(GRAD_VAL[1], GRAD_VAL[2], (u - GRAD_OFF[1]) / (GRAD_OFF[2] - GRAD_OFF[1]))
 		else:
 			_lv[i] = de[i] * lerpf(GRAD_VAL[2], GRAD_VAL[3], (u - GRAD_OFF[2]) / (GRAD_OFF[3] - GRAD_OFF[2]))
+	var nt := n
+	if amb_e > 0.0:
+		_lv[n] = amb_e  # a luz virtual do ambiente entra como mais uma, sem atenuação
+		nt = n + 1
 	if modo == MEDIA:
 		# uma sombra só: soma ponderada dos vetores de TODAS as luzes (peso = energia x atenuação). Ninguém "assume" de repente:
 		# a direção gira junto com os pesos, e luzes opostas se anulam (sombra curta = mancha)
 		var soma := Vector2.ZERO
 		var soma_w := 0.0
 		var vmax := 0.0
-		for i in n:
+		for i in nt:
 			var v := _lv[i]
 			if v < 0.02:
 				continue
-			soma += _vetor_sombra(pos, dpos[i], dh[i], alt, rmax) * v
+			soma += _vetor_luz(i, n, pos, dpos, dh, alt, rmax) * v
 			soma_w += v
 			vmax = maxf(vmax, v)
 		var forca := clampf(vmax / LUZ_REF, 0.0, 1.0)
@@ -330,7 +351,7 @@ func calcular(a: Ator, t: float) -> void:
 		var i2 := -1
 		var v1 := 0.0
 		var v2 := 0.0
-		for i in n:
+		for i in nt:
 			var v := _lv[i]
 			if v > v1:
 				i2 = i1
@@ -357,7 +378,7 @@ func calcular(a: Ator, t: float) -> void:
 			var vec: Vector2 = a.sv[s]
 			var alfa := 0.0
 			if li >= 0:
-				vec = _vetor_sombra(pos, dpos[li], dh[li], alt, rmax)
+				vec = _vetor_luz(li, n, pos, dpos, dh, alt, rmax)
 				alfa = 0.7 * fator * clampf(_lv[li] / LUZ_REF, 0.0, 1.0) * smoothstep(0.06, 0.25, vec.length())
 			if li >= 0 and a.sa[s] < 0.01:
 				a.sv[s] = vec  # slot que estava apagado nasce já no lugar certo (nada de deslizar de longe)

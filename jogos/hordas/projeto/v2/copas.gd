@@ -37,11 +37,12 @@ var _n := 0
 
 
 ## Dá a cada objeto alto o material do buraco (shader com a força e o centro). Chamado uma vez, depois do cenário carregar.
-func montar(objetos: Array) -> void:
+## altura_min: sprite de pelo menos esta altura (px) encobre o herói; o mapa pode baixá-la (`mapa.copas_altura_min`: no laboratório, bancadas e armários também cobrem).
+func montar(objetos: Array, altura_min := float(ALTURA_MIN)) -> void:
 	var sh := Shader.new()
 	sh.code = SHADER
 	for a in objetos:
-		if a.sprite == null or a.sprite.texture == null or float(a.sprite.texture.get_height()) < ALTURA_MIN:
+		if a.sprite == null or a.sprite.texture == null or float(a.sprite.texture.get_height()) < altura_min:
 			continue
 		var m := ShaderMaterial.new()
 		m.shader = sh

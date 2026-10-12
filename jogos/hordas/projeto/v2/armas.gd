@@ -9,6 +9,7 @@ extends RefCounted
 ## enquanto ela é percorrida.
 
 const Colisao := preload("res://v2/colisao.gd")
+const Novas := preload("res://v2/armas_novas.gd")
 const MAX_CORVOS := 16
 const MAX_RUNAS := 14
 const MAX_ONDAS := 8
@@ -38,6 +39,7 @@ var _perto: Array = []
 var _desenha := false
 var _id_proj := 0
 var _fase := 0.0
+var novas  # golpes novos (v2/armas_novas.gd): projétil, nuvem, anel, meteoro e aliado
 
 # corvos
 var c_pos := PackedVector2Array()
@@ -80,6 +82,8 @@ func montar(c, camada: Node, sv: Node, tex: Texture2D) -> void:
 	mundo = c.mundo
 	fx = c.fx
 	tex_brilho = tex
+	novas = Novas.new()
+	novas.montar(self)
 	_texturas()
 	camada.add_child(_aura_sp)
 	no_corpo = Node2D.new()
@@ -147,6 +151,7 @@ func _nova_luz(sv: Node, cor: Color) -> PointLight2D:
 ## Volta ao começo da partida.
 func limpar() -> void:
 	ativas.clear()
+	novas.limpar()
 	for k in mods:
 		mods[k] = 0.0
 	ventania = {}
@@ -229,6 +234,8 @@ func adicionar_evoluida(ev: Dictionary, bonus: float) -> void:
 	a.bonus = bonus
 	var st: Dictionary = (ev.arma as Dictionary).duplicate()
 	st.dano = float(st.dano) * (1.0 + bonus)
+	if st.has("aura_dano"):  # a aura do Anel de Brasas também leva o bônus da raridade
+		st.aura_dano = float(st.aura_dano) * (1.0 + bonus)
 	a.st = st
 	ativas[str(ev.id)] = a
 
@@ -237,6 +244,7 @@ func remover(id: String) -> void:
 	var a: Dictionary = ativas.get(id, {})
 	if a.is_empty():
 		return
+	novas.remover(a)
 	for i in MAX_CORVOS:
 		if c_arma[i] == a:
 			c_vida[i] = 0.0
@@ -352,11 +360,14 @@ func atualizar(dt: float) -> void:
 					_raio(a, h, vel_a, dt)
 				"runa":
 					_runas_gerar(a, h, dt, vel_a)
+				"projetil", "nuvem", "anel", "meteoro", "aliado":
+					novas.golpe(a, h, dt, vel_a, _perto)
 	elif _perto.size() > 0 or _tem_pool():
 		_juntar_perto(h.pos, 340.0)
 	_aura_visual(h)
 	_corvos_mover(h, dt)
 	_runas_mover(h, dt)
+	novas.quadro(h, dt, _perto)
 	_ondas_mover(dt)
 	_raios_tempo(dt)
 	_luzes(h, dt)
@@ -375,6 +386,8 @@ func _tem_pool() -> bool:
 	for i in MAX_RUNAS:
 		if r_vida[i] > 0.0:
 			return true
+	if novas.tem_ativos():
+		return true
 	for i in MAX_ONDAS:
 		if w_dist[i] > 0.0:
 			return true
@@ -824,10 +837,13 @@ func explodir(p: Vector2, dano: float, raio: float, cor: Color, ignorar = null) 
 
 
 func _livre_onda() -> int:
+	var mais_antiga := 0
 	for i in MAX_ONDAS:
 		if w_dist[i] <= 0.0:
 			return i
-	return 0
+		if w_dist[i] < w_dist[mais_antiga]:  # cheia: sobrescreve a que falta menos para acabar
+			mais_antiga = i
+	return mais_antiga
 
 
 ## O corte solta uma onda (o dano já vem de `dano_da_onda`, com a Ventania dentro). Com a Ventania, ela fica também mais larga.
@@ -1165,6 +1181,7 @@ func _desenhar_brilho_i() -> void:
 			no_brilho.draw_line((p - dir * 30.0).round(), p.round(), Color(0.6, 0.95, 1.0, 0.35 * fade), 7.0)
 			no_brilho.draw_line((p - dir * 22.0).round(), (p + dir * 8.0).round(), Color(1, 1, 1, 0.95 * fade), 2.0)
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(12, 12), Vector2(24, 24)), false, Color(0.6, 1.0, 0.95, 0.4 * fade))
+	novas.desenhar(no_brilho, tex_brilho)
 
 
 func _desenhar_laminas(a: Dictionary) -> void:

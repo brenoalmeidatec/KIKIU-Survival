@@ -6,6 +6,7 @@ extends Control
 ## Visual: a arte de entrada escurecida, molduras de pedra do HUD (v2/hud/moldura_pedra.png). Títulos na Jersey 10 (Dados.fonte_titulo) e a lista densa na Press Start 2P (Dados.fonte), que tem a grade de 8 px que as 10 linhas pedem.
 
 const Meta := preload("res://v2/meta.gd")
+const Mapas := preload("res://v2/mapas.gd")
 const Trilha := preload("res://v2/trilha.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const FUNDO := preload("res://assets/icone/entrada.png")
@@ -36,6 +37,8 @@ var _status_t := 0.0
 var _linhas := {}  # id da melhoria -> {nome, efeito, botao, cadeado}
 var _conq := {}  # id da conquista -> {cadeado, nome, desc, rec}
 var _entrar: Button
+var _mapa: Button  # escolhe o mapa da próxima partida (Mapas.LISTA); o texto de ENTRAR acompanha
+var _mapa_id := Mapas.PADRAO
 var _ajustes: Button
 var trilha  # música de fundo do santuário (trilha.gd)
 
@@ -70,6 +73,7 @@ func _ready() -> void:
 	add_child(trilha)
 	trilha.tocar("santuario")
 	_atualizar()
+	_atualizar_mapa()
 	_entrar.grab_focus()
 
 
@@ -210,6 +214,14 @@ func _montar() -> void:
 	_entrar.add_theme_color_override("font_color", COR_OURO)
 	_entrar.pressed.connect(_entrar_floresta)
 	add_child(_entrar)
+	add_child(_texto("MAPA", 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 468, 120, 12)))
+	_mapa = Button.new()  # à esquerda de ENTRAR: clique ou Enter passa para o mapa seguinte
+	_mapa.position = Vector2(36, 482)
+	_mapa.size = Vector2(252, 40)
+	_estilo_botao(_mapa, 37)
+	_mapa.add_theme_color_override("font_color", COR_OURO)
+	_mapa.pressed.connect(_trocar_mapa)
+	add_child(_mapa)
 	_ajustes = Button.new()  # ao lado de ENTRAR: abre o mesmo submenu Ajustes da pausa (ligado no _ready)
 	_ajustes.text = "AJUSTES"
 	_ajustes.position = Vector2(672, 478)
@@ -397,6 +409,18 @@ func _motivo(m: Dictionary) -> String:
 func _avisar(texto: String) -> void:
 	_status.text = texto
 	_status_t = TEMPO_AVISO
+
+
+func _atualizar_mapa() -> void:
+	_mapa_id = Mapas.escolhido()
+	var m: Dictionary = Mapas.buscar(_mapa_id)
+	_mapa.text = "< %s >" % m.nome
+	_entrar.text = str(m.entrar)
+
+
+func _trocar_mapa() -> void:
+	Mapas.escolher(Mapas.proximo(_mapa_id))
+	_atualizar_mapa()
 
 
 func _entrar_floresta() -> void:

@@ -1278,6 +1278,12 @@ _Claude do Alisson (nuvem)_
 
 _Claude do Alisson (nuvem)_
 
+## 2026-10-12 (6) · Claude do Alisson (notebook) · mapa Laboratório (WIP) e base para mais mapas
+- **Pedido do Alisson:** dois mapas novos na v2, Laboratório e depois Cidade, cada um com assets e texturas próprios, no estilo da floresta. Ele mandou parar no meio do Laboratório e pediu um resumo de continuação: o detalhe está em `jogos/hordas/fonte_arte/mapas_v2/LEIA-ME.md`.
+- **Decisão de assets:** nada de pacote de terceiros (regra de `docs/visual_2_5d`). Os objetos saem do **Blender** no mesmo enquadramento do herói (1 m = 32 px, câmera a 45°), com normal map de verdade, e o Python (`fonte_arte/gerar_v2_mapas.py`) vira atlas, colisão, decalques, piso e o JSON do mapa. Os prompts do ChatGPT para folhas de referência (caminho opcional, mais rico) ainda não foram escritos.
+- **Feito (branch `claude/v2-mapa-laboratorio`, sem PR):** laboratório jogável de ponta a ponta (24 objetos, piso de aço, 23 decalques, ~370 objetos e ~160 decalques no mapa, luzes de tanque verde, tela ciano, emergência vermelha, criogenia e gerador); seleção de mapa no santuário (`v2/mapas.gd`, botão `< MAPA >`, `--mapa=<id>`); ganchos por dados no `cenario.gd`, `minimapa.gd`, `atmosfera.gd`; `export_presets.cfg` com o filtro dos JSON novos; `testes/v2_mapas.tscn` com falhas=0.
+- **Pendente:** bateria completa e `--medir` no notebook, PR do Laboratório (pedir o OK do Alisson antes de mesclar), acabamento da arte, prompts do ChatGPT, a Cidade inteira e a linha na tabela de `v2/LEIA-ME.md`.
+- **Próximo:** rodar `ferramentas/testes_ci.sh`, abrir o PR do Laboratório, depois `modelos3d/mapa_cidade.py` e `mapas_v2/def_cidade.py`.
 ## 2026-10-12 (4) · Claude do Alisson (notebook) · v2: acabamento de produto (marca do Godot, Gráficos, Créditos)
 - **Marca do Godot (#162), conferida num exportado de verdade:** exportei o Windows e o Web no notebook e abri o `.exe`. A tela de entrada mostra a arte do K.I.K.I.U, sem o logo do Godot; o ícone do `.exe`, da janela e da barra de tarefas é o escudo; o título da janela é "K.I.K.I.U". No Web, o `index.html` usa a mesma imagem de carregamento, o ícone do jogo e o título "K.I.K.I.U". O Linux não embute ícone no executável (limite do formato).
 - **Sobrou um texto legal:** nas propriedades do `.exe`, `LegalCopyright` ainda traz o aviso da licença MIT do Godot. Deixei como está de propósito, porque é obrigação da licença; agora o aviso também está nos créditos da v2 (abaixo).
@@ -1311,5 +1317,9 @@ _Claude do Alisson (notebook)_
 - **Santuário:** o mesmo. A checagem de "argumento da v1" virou `Altar.pede_v1_na_entrada()` (mesmo código), chamada pelo título e pelo santuário.
 - **Testes:** `testes/v2_menu` novo (`v2_menu falhas=0`: foco por teclado, controle e mouse; Jogar por Enter, A e clique; ESC, Start e B em "Sair?"; Ajustes e Créditos abrem e voltam com o foco; só o Sim sai). `entrada_cenas` confere a nova cena principal. Também passam `v2_pausa`, `v2_musica`, `v2_meta`, `v2_esc` e `v2_cartas_espera`.
 - **Pendente:** a tela ainda não foi vista numa build exportada (o print do viewport está em `docs/prints/v2_menu_principal.png`). Conferir foco, leitura e controle no PC e no notebook. A arte final sai do prompt do PR no GPT: quando chegar, troca `assets/titulo/fundo.png` e registra a licença. O santuário não ganhou "voltar ao título" (não foi pedido).
+## 2026-10-12 - Laboratorio: sombras base, passagens e objetos translucidos (PR #204)
+- **Feito:** `mapa.sombra_ambiente` (luz virtual em `sombras.gd`: o laboratorio tem sombra mesmo longe das luzes; a floresta nao muda), `mapa.copas_altura_min` (racks, armarios e tanques ficam translucidos sobre o heroi, generico em `copas.gd`), `v2/passagens.gd` (grade de navegacao com a colisao real: caminho ate cada zona de monstros com corpo comum e largo, sem ilhas, sem beco fino) e checagens em `testes/v2_mapas.gd` para todo mapa (inclui a futura Cidade). O layout do laboratorio ja passava: nenhum objeto precisou mudar.
+- **Pendente:** a Cidade (branch do Alisson) herda tudo ao por `sombra_ambiente` no JSON dela; o teste vai acusar objeto que feche passagem.
+- **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
 
 _Claude do Alisson (PC)_
