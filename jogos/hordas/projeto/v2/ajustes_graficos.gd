@@ -5,20 +5,18 @@ extends RefCounted
 ## A tela da v1 (scripts/hordas/tela_graficos.gd) não é usada: ela desenha tudo numa caixa de 640x360 e lê o mouse no espaço
 ## da própria tela, o que não cabe no SubViewport da partida. Esta classe só dá as linhas e aplica as ações; o desenho e a
 ## entrada são da pausa (pausa.gd), com a fonte da v2.
-## Só as opções que a v2 lê hoje valem na hora na partida (LIDAS_NA_V2). As outras levam "(*)" depois do valor (na Spleen, que desenha o
-## asterisco legível; na Jersey 10 do nome ele saía parecido com uma aspa) e a nota na ajuda.
+## O menu só mostra as opções que a v2 lê hoje (LIDAS_NA_V2), todas valendo na hora na partida. As outras do json seguem nos
+## perfis (a v1 usa), mas sem linha aqui: opção que não faz nada na tela não aparece. Opção nova só entra na lista depois de ser lida.
 ## Ids das linhas: "g:perfil", "g:detectar", "g:fps" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
 
 const PERFIS := ["baixo", "medio", "alto"]
 const NOMES_PERFIL := {"baixo": "Baixo", "medio": "Médio", "alto": "Alto", "personalizado": "Personalizado"}
 const SECOES := ["cpu", "gpu"]
 const NOMES_SECAO := {"cpu": "CPU (simulação)", "gpu": "GPU (visual)"}
-const LIDAS_NA_V2 := ["sombras", "particulas_sim", "limite_fps", "vsync"]
+const LIDAS_NA_V2 := ["particulas_sim", "luz_relevo", "sombras", "tremor_clarao", "limite_fps", "vsync"]
 const AJUDA_PERFIL := "Baixo, Médio e Alto mudam todas as opções de uma vez. Mexer numa opção deixa o perfil Personalizado."
 const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e número de processadores."
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
-const MARCA_V2 := " (*)"  # depois do valor: a linha é a da Spleen, onde o asterisco lê bem
-const NOTA_V2 := " (*) ainda sem efeito na v2 (vale na v1)."
 
 var mensagem := ""  # aviso curto do detectar, mostrado no rodapé da pausa
 
@@ -34,7 +32,7 @@ func itens() -> Array:
 	for sec in SECOES:
 		r.append({"id": "", "rotulo": NOMES_SECAO[sec], "valor": "", "ajuda": "", "cab": true})
 		for op in opcoes:
-			if str(op.get("secao", "")) == sec:
+			if str(op.get("secao", "")) == sec and lida_na_v2(str(op.get("chave", ""))):
 				r.append(_linha_opcao(op))
 	r.append(_it("voltar", "Voltar"))
 	return r
@@ -52,20 +50,14 @@ func agir(id: String, passo: int) -> void:
 		_mudar_opcao(id.substr(3), passo)
 
 
-## Vale na hora na partida? (só para a nota de rodapé e para o teste)
+## A v2 lê esta opção? (só as lidas ganham linha no menu)
 func lida_na_v2(chave: String) -> bool:
 	return LIDAS_NA_V2.has(chave)
 
 
 func _linha_opcao(op: Dictionary) -> Dictionary:
 	var chave := str(op.get("chave", ""))
-	var nome := str(op.get("nome", chave))
-	var ajuda := str(op.get("ajuda", ""))
-	var valor := _texto_valor(op)
-	if not lida_na_v2(chave):
-		valor += MARCA_V2
-		ajuda += NOTA_V2
-	return _it("g:op:" + chave, nome, valor, ajuda)
+	return _it("g:op:" + chave, str(op.get("nome", chave)), _texto_valor(op), str(op.get("ajuda", "")))
 
 
 func _texto_valor(op: Dictionary) -> String:

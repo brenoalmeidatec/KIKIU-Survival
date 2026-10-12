@@ -232,6 +232,25 @@ func curar(v: float) -> void:
 	vida = minf(vida_max, vida + v)
 
 
+## Velocidade de andar (px/s) com o bônus de movimento, e a de correr. O card de status (status.gd) lê estas duas; `_livre` anda com elas.
+func vel_andar() -> float:
+	return VEL * m_vel_mov
+
+
+func vel_correr() -> float:
+	return vel_andar() * float(mundo.combate.cfg.corrida.velocidade)
+
+
+## Alcance do ímã de almas (px): a distância em que o orbe começa a voar para o herói (combate.atualizar).
+func alcance_ima() -> float:
+	return float(mundo.combate.cfg.heroi.ima_raio) * m_ima
+
+
+## Duração (s) do passo `i` do combo com a velocidade de ataque de agora.
+func duracao_do_passo(i: int) -> float:
+	return float(mundo.combate.cfg.golpe.passos[i].duracao) / m_vel_ataque
+
+
 ## Fôlego que volta (matar com o modificador "Fôlego de caçador"): sai do cansaço se passar do limite.
 func ganhar_folego(x: float) -> void:
 	folego = minf(folego_max, folego + x)
@@ -342,16 +361,16 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 		return Vector2.ZERO
 	if fonte == Fonte.ANDA:
 		dir_olhar = v.normalized()
-	var k := VEL * m_vel_mov
+	var k := vel_andar()
 	if cansado:
 		k *= float(mundo.combate.cfg.folego.lento_cansado)
 	elif _quer_correr() and folego > 0.0:
 		correndo = true
-		k *= float(mundo.combate.cfg.corrida.velocidade)
+		k = vel_correr()
 		_gastar(float(mundo.combate.cfg.corrida.gasto) * dt)
 		if cansado:  # o último fôlego acabou agora: para de correr na hora
 			correndo = false
-			k = VEL * m_vel_mov * float(mundo.combate.cfg.folego.lento_cansado)
+			k = vel_andar() * float(mundo.combate.cfg.folego.lento_cansado)
 		else:
 			_poeira_t -= dt
 			if _poeira_t <= 0.0:
@@ -412,7 +431,7 @@ func _iniciar_golpe() -> void:
 	var passos: Array = mundo.combate.cfg.golpe.passos
 	golpe_i = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
 	golpe_cfg = passos[golpe_i]
-	golpe_dur = float(golpe_cfg.duracao) / m_vel_ataque
+	golpe_dur = duracao_do_passo(golpe_i)
 	golpe_t = 0.0
 	golpe_acertou = false
 	pedido_t = 0.0
