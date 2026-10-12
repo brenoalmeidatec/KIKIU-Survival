@@ -20,6 +20,7 @@ var rerrolar_usados := 0
 var banir_usados := 0
 var rerrolar_na_tela := 0
 var evolucoes_feitas := 0
+var lendarias_feitas := 0  # só uma lendária por partida
 var _def := {}  # id -> definição (stat, golpe ou modificador)
 var _cat := {}
 
@@ -48,6 +49,7 @@ func zerar() -> void:
 	banir_usados = 0
 	rerrolar_na_tela = 0
 	evolucoes_feitas = 0
+	lendarias_feitas = 0
 	rng.randomize()
 
 
@@ -124,7 +126,7 @@ func disponiveis() -> Array:
 ## Peso extra da carta que ajuda a fechar uma evolução (a outra peça já foi pega).
 func _peso_sinergia(id: String) -> float:
 	for ev in cfg.evolucoes:
-		if evoluidas.has(ev.id):
+		if not _evo_livre(ev):
 			continue
 		var tem_peca := false
 		var outras := 0
@@ -138,9 +140,16 @@ func _peso_sinergia(id: String) -> float:
 	return 1.0
 
 
+## Evolução que ainda pode acontecer: não feita e, se for lendária, só enquanto nenhuma foi feita nesta partida.
+func _evo_livre(ev: Dictionary) -> bool:
+	if evoluidas.has(ev.id):
+		return false
+	return not (str(ev.get("raridade", "")) == "lendario" and lendarias_feitas >= 1)
+
+
 func _sinergia_texto(id: String) -> String:
 	for ev in cfg.evolucoes:
-		if evoluidas.has(ev.id):
+		if not _evo_livre(ev):
 			continue
 		for p in ev.pecas:
 			if p.id == id:
@@ -314,6 +323,8 @@ func _checar_evolucoes() -> String:
 	for ev in cfg.evolucoes:
 		if evoluidas.has(ev.id):
 			continue
+		if not _evo_livre(ev):
+			continue
 		var pronta := true
 		for p in ev.pecas:
 			if not _peca_ok(p):
@@ -328,6 +339,8 @@ func _checar_evolucoes() -> String:
 func evoluir(ev: Dictionary) -> void:
 	evoluidas.append(ev.id)
 	evolucoes_feitas += 1
+	if str(ev.get("raridade", "")) == "lendario":
+		lendarias_feitas += 1
 	var bonus := 0.0
 	for id in ev.consome:
 		bonus = maxf(bonus, float(estado.get(id, {}).get("bonus", 0.0)))

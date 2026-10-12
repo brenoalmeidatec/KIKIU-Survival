@@ -115,7 +115,7 @@ func _ready() -> void:
 	# 0. dados
 	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
 	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 50 and cfg.modificadores.size() == 4, "4 raridades, 50 golpes secundários e 4 modificadores")
-	ok(cfg.evolucoes.size() == 9, "9 evoluções nos dados (4 antigas e 5 novas)")
+	ok(cfg.evolucoes.size() == 25, "25 evoluções nos dados (4 antigas, 5 novas e 16 de 2, 3 e 4 peças)")
 	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
 
 	# 1. a raridade sobe com o nível
@@ -366,6 +366,18 @@ func _ready() -> void:
 		pegar("onda", 0)
 		pegar("fura", 0)
 	ok(cs.evoluidas.has("ventania") and not w.combate.armas.ventania.is_empty(), "onda 2 + estocada perfurante 2 viram a Ventania Cortante")
+	# 5c. as 16 fusões novas (comuns, raras e lendárias) viram arma, com o tipo certo, e só uma lendária por partida
+	for ev in cfg.evolucoes.slice(9):
+		zerar()
+		cs.evoluir(ev)
+		ok(w.combate.armas.tem(str(ev.id)), "%s (%s) vira arma" % [ev.nome, ev.tipo])
+	zerar()
+	var lendarias: Array = cfg.evolucoes.filter(func(e): return str(e.get("raridade", "")) == "lendario")
+	ok(lendarias.size() == 4, "4 fusões lendárias nos dados")
+	cs.evoluir(lendarias[0])
+	ok(cs.lendarias_feitas == 1 and not cs._evo_livre(lendarias[1]), "depois de uma lendária, as outras ficam fora da partida")
+	zerar()
+	ok(cs.lendarias_feitas == 0 and cs._evo_livre(lendarias[1]), "jogar de novo libera a lendária")
 	zerar()
 	ok(cs.evoluidas.is_empty() and w.combate.armas.ativas.is_empty() and w.combate.armas.ventania.is_empty(), "jogar de novo zera a build")
 
