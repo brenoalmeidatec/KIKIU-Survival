@@ -793,6 +793,8 @@ func _interface() -> void:
 	tecla(KEY_C)
 	await esperar()
 	ok(not st.aberto(), "C fecha o card sobre a escolha")
+	if "espera_escolha" in c.telas:  # a trava de 3 s das cartas (outro PR) descarta as teclas: aqui ela já passou
+		c.telas.espera_escolha = 0.0
 	tecla(KEY_1)  # as teclas da escolha seguem funcionando
 	await esperar()
 	ok(c.progresso.escolhidas == escolhidas0 + 1 and c.jogo == "jogando", "a tecla 1 ainda escolhe a primeira carta depois do C")
