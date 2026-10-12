@@ -31,6 +31,7 @@ var _status_t := 0.0
 var _linhas := {}  # id da melhoria -> {nome, efeito, botao, cadeado}
 var _conq := {}  # id da conquista -> {cadeado, nome, desc, rec}
 var _entrar: Button
+var _ajustes: Button
 
 
 class Cadeado:
@@ -54,7 +55,9 @@ func _ready() -> void:
 	_ajustar_janela()
 	set_anchors_preset(PRESET_FULL_RECT)
 	_montar()
-	add_child(preload("res://v2/pausa.tscn").instantiate().iniciar(null))  # ESC aqui abre só "Sair do jogo?" (pausa.gd)
+	var pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)  # ESC aqui abre só "Sair?"; o botão Ajustes abre o submenu (pausa.gd)
+	add_child(pausa)
+	_ajustes.pressed.connect(pausa.abrir_ajustes)
 	_atualizar()
 	_entrar.grab_focus()
 
@@ -159,6 +162,15 @@ func _montar() -> void:
 	_entrar.add_theme_color_override("font_color", COR_OURO)
 	_entrar.pressed.connect(_entrar_floresta)
 	add_child(_entrar)
+	_ajustes = Button.new()  # ao lado de ENTRAR: abre o mesmo submenu Ajustes da pausa (ligado no _ready)
+	_ajustes.text = "AJUSTES"
+	_ajustes.position = Vector2(672, 482)
+	_ajustes.size = Vector2(168, 40)
+	_ajustes.add_theme_font_override("font", Dados.fonte_titulo)
+	_ajustes.add_theme_font_size_override("font_size", 37)
+	_estilo_botao(_ajustes, 37)
+	_ajustes.add_theme_color_override("font_color", COR_OURO)
+	add_child(_ajustes)
 	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 526, LARG, 12)))
 
 

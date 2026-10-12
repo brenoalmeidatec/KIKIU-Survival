@@ -1,15 +1,17 @@
 extends Node
-# Teste automático do menu de pausa da v2 (v2/pausa.gd, ligado ao mundo e ao santuário). Usa saves TEMPORÁRIOS: a meta
-# (user://teste_v2_pausa_meta.cfg) e as opções (user://teste_v2_pausa_opcoes.cfg). O save real (user://v2_progresso.cfg) e
-# user://opcoes.cfg não são tocados, e a conferência por md5 garante isso.
-# Confere: ESC e Start pausam e despausam; Continuar fecha; na escolha de cartas e no baú o ESC não faz nada; Sair do jogo pede
-# confirmação e só o "Sim" chama o gancho (que é o quit de verdade); Gráficos (Sombras, Partículas, Mostrar FPS) grava pelo Config e
-# muda a sombra do mundo ao vivo; Volume grava e aplica no Som; o clique do mouse escolhe a linha; o hit-stop e a câmera lenta
-# seguem depois de pausar e voltar; Voltar ao santuário despausa, abandona a partida (venceu = false) e credita as almas;
-# perder o foco não pausa em headless; e no santuário o ESC só abre "Sair do jogo?".
+# Teste automático do menu de pausa da v2 (v2/pausa.gd, v2/ajustes_graficos.gd, ligado ao mundo e ao santuário). Usa saves
+# TEMPORÁRIOS: a meta (user://teste_v2_pausa_meta.cfg) e as opções (user://teste_v2_pausa_opcoes.cfg). O save real
+# (user://v2_progresso.cfg) e user://opcoes.cfg não são tocados, e a conferência por md5 garante isso.
+# Confere: a pausa tem 4 itens (Continuar, Ajustes, Voltar ao santuário, Sair do jogo); ESC e Start pausam e despausam;
+# Continuar fecha; na escolha de cartas e no baú o ESC não faz nada; Sair pede confirmação e só o Sim chama o gancho;
+# Ajustes abre Gráficos (com CPU e GPU) e Áudio; trocar o perfil muda a config (e a sombra do mundo, ao vivo); Sombras,
+# sliders, listas, Mostrar FPS e Detectar gravam pelo Config; Música e Efeitos mudam o volume (e o Som); o clique do mouse
+# escolhe a linha; ESC dentro de Ajustes volta um nível; o hit-stop e a câmera lenta seguem depois de pausar; Voltar ao santuário
+# despausa, abandona a partida (venceu = false) e credita as almas; perder o foco não pausa em headless; e no santuário o ESC
+# abre só "Sair?", e o botão Ajustes abre o submenu.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
-# Prints (precisa de janela, não de --headless): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
-#   grava pausa_menu, pausa_graficos, pausa_confirmar_sair e santuario_sair (só o viewport) e sai.
+# Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
+#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_audio, pausa_confirmar_sair e santuario_ajustes (só o viewport).
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Meta := preload("res://v2/meta.gd")
@@ -104,6 +106,25 @@ func _achar_pausa(pai: Node) -> Node:
 	return null
 
 
+## Anda com as setas até a linha de id `id` (a seleção pula os cabeçalhos, como o jogador sente).
+func _ir_para(sv: Viewport, pausa, id: String) -> void:
+	for i in 80:
+		if pausa.sel < pausa._itens_atuais.size() and str(pausa._itens_atuais[pausa.sel].id) == id:
+			return
+		_tecla(sv, KEY_DOWN)
+
+
+func _ids(pausa) -> Array:
+	var r: Array = []
+	for it in pausa._itens_atuais:
+		r.append(str(it.id))
+	return r
+
+
+func _sel_id(pausa) -> String:
+	return str(pausa._itens_atuais[pausa.sel].id) if pausa.sel < pausa._itens_atuais.size() else ""
+
+
 func _testes() -> void:
 	var md5_save := _md5(SAVE_REAL)
 	var md5_opc := _md5(OPCOES_REAL)
@@ -125,6 +146,10 @@ func _testes() -> void:
 	# 1. ESC pausa e de novo despausa; Start do controle faz o mesmo
 	_tecla(sv, KEY_ESCAPE)
 	ok(pausa.aberto and get_tree().paused, "ESC pausa a partida e abre o menu")
+	ok(
+		_ids(pausa) == ["continuar", "ajustes", "santuario", "sair"],
+		"a pausa tem 4 itens: Continuar, Ajustes, Voltar ao santuário, Sair (%s)" % str(_ids(pausa))
+	)
 	_tecla(sv, KEY_ESCAPE)
 	ok(not pausa.aberto and not get_tree().paused, "ESC de novo fecha o menu e despausa")
 	_pad(sv, JOY_BUTTON_START)
@@ -161,12 +186,12 @@ func _testes() -> void:
 
 	# 5. Sair do jogo: pede confirmação; "Não" volta ao menu sem sair; só "Sim" chama o gancho
 	_tecla(sv, KEY_ESCAPE)
-	_baixo(sv, 4)
+	_ir_para(sv, pausa, "sair")
 	_tecla(sv, KEY_ENTER)
 	ok(pausa.tela == "confirmar_sair" and saiu == 0, "Sair do jogo pede confirmação e ainda não sai")
 	_tecla(sv, KEY_ENTER)  # o padrão da confirmação é "Não"
 	ok(pausa.tela == "menu" and pausa.aberto and saiu == 0, "Não volta ao menu e não sai")
-	_baixo(sv, 4)
+	_ir_para(sv, pausa, "sair")
 	_tecla(sv, KEY_ENTER)
 	_tecla(sv, KEY_UP)
 	_tecla(sv, KEY_ENTER)  # Sim
@@ -175,54 +200,89 @@ func _testes() -> void:
 	_tecla(sv, KEY_ESCAPE)  # fecha a pausa
 	ok(not pausa.aberto and not get_tree().paused, "ESC fecha a pausa depois da confirmação cancelada")
 
-	# 6. Gráficos: Sombras e Partículas gravam pelo Config e a sombra do mundo muda na hora; Mostrar FPS liga e desliga
+	# 6. Ajustes e Gráficos: a aba tem CPU e GPU; trocar o perfil muda a config e a sombra do mundo; as linhas gravam
+	Config.g_aplicar_perfil("alto")  # ponto de partida conhecido (o save do jogador pode ter outro perfil)
 	_tecla(sv, KEY_ESCAPE)
-	_baixo(sv, 1)
+	_ir_para(sv, pausa, "ajustes")
+	_tecla(sv, KEY_ENTER)
+	ok(pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "voltar"], "Ajustes abre com Gráficos, Áudio e Voltar")
+	_ir_para(sv, pausa, "graficos")
 	_tecla(sv, KEY_ENTER)
 	ok(pausa.tela == "graficos", "Gráficos abre a aba")
-	var nomes: Array = Config.g_opcao("sombras").valores
-	var antes_s := str(Config.g("sombras"))
-	var prox_s := str(nomes[(nomes.find(antes_s) + 1) % nomes.size()])
-	_tecla(sv, KEY_ENTER)  # linha 0: Sombras
-	ok(str(Config.g("sombras")) == prox_s, "Sombras pela pausa grava na configuração (%s -> %s)" % [antes_s, prox_s])
-	ok(mundo.sombras.modo == Sombras.NOMES.find(prox_s), "a sombra do mundo muda ao vivo (graficos_mudou)")
-	var part: Array = Config.g_opcao("particulas_sim").valores
-	var antes_p := str(Config.g("particulas_sim"))
-	var prox_p := str(part[(part.find(antes_p) + 1) % part.size()])
-	_baixo(sv, 1)
-	_tecla(sv, KEY_ENTER)  # linha 1: Partículas
-	ok(str(Config.g("particulas_sim")) == prox_p, "Partículas pela pausa grava na configuração")
-	ok(Config.g_perfil() == "personalizado", "mudar uma opção de gráficos vira personalizado, como na aba")
-	_baixo(sv, 1)
+	var ids_g: Array = _ids(pausa)
+	ok(
+		"g:perfil" in ids_g and "g:fps" in ids_g and "g:op:sombras" in ids_g and "g:op:luz_relevo" in ids_g,
+		"a aba Gráficos tem perfil, FPS e as opções do json"
+	)
+	var cabs := 0
+	for it in pausa._itens_atuais:
+		if bool(it.get("cab", false)):
+			cabs += 1
+	ok(cabs == 2, "a aba tem as duas seções, CPU e GPU (cabeçalhos: %d)" % cabs)
+	_ir_para(sv, pausa, "g:perfil")
+	_tecla(sv, KEY_RIGHT)  # alto -> baixo
+	ok(Config.g_perfil() == "baixo", "trocar o perfil para Baixo muda a config (perfil = %s)" % Config.g_perfil())
+	ok(str(Config.g("sombras")) == "baixa" and int(Config.g("limite_fps")) == 60, "o perfil Baixo põe sombras baixa e limite de 60 fps")
+	ok(mundo.sombras.modo == Sombras.BAIXA, "a sombra do mundo acompanha o perfil ao vivo (graficos_mudou)")
+	_ir_para(sv, pausa, "g:op:sombras")
+	_tecla(sv, KEY_RIGHT)  # baixa -> media
+	ok(str(Config.g("sombras")) == "media" and mundo.sombras.modo == Sombras.MEDIA, "Sombras (lista) muda a config e a sombra do mundo")
+	ok(_sel_id(pausa) == "g:op:sombras" and pausa._ajuda.text != "", "o rodapé mostra a ajuda da linha escolhida")
+	_ir_para(sv, pausa, "g:op:brilhos_halos")
+	var halos_antes := int(Config.g("brilhos_halos"))
+	_tecla(sv, KEY_RIGHT)  # slider: passo de 25
+	ok(
+		int(Config.g("brilhos_halos")) == mini(halos_antes + 25, 100),
+		"um slider sobe pelo passo do json (%d -> %s)" % [halos_antes, str(Config.g("brilhos_halos"))]
+	)
+	_ir_para(sv, pausa, "g:op:particulas_sim")
+	var part_antes := str(Config.g("particulas_sim"))
+	_tecla(sv, KEY_RIGHT)
+	ok(str(Config.g("particulas_sim")) != part_antes, "Partículas (lista) muda a config")
+	_ir_para(sv, pausa, "g:fps")
 	var fps_antes := bool(Config.v("mostrar_fps"))
-	_tecla(sv, KEY_ENTER)  # linha 2: Mostrar FPS
+	_tecla(sv, KEY_ENTER)
 	ok(bool(Config.v("mostrar_fps")) != fps_antes, "Mostrar FPS liga e desliga")
 	pausa._fps_t = 0.0
 	await get_tree().process_frame
 	ok(pausa._fps.visible == (not fps_antes), "o contador de fps segue a opção ao vivo")
-	_baixo(sv, 1)
-	_tecla(sv, KEY_ENTER)  # linha 3: Voltar
-	ok(pausa.tela == "menu", "Voltar na aba volta ao menu")
-
-	# 7. Volume: seta direita soma 10% em Música (grava em opcoes e aplica no Som); a esquerda tira; ESC volta sem fechar
-	_baixo(sv, 2)
+	_ir_para(sv, pausa, "g:detectar")
 	_tecla(sv, KEY_ENTER)
-	ok(pausa.tela == "volume", "Volume abre a aba")
+	ok(pausa._graficos.mensagem != "", "Detectar pela máquina dá um aviso (%s)" % pausa._graficos.mensagem)
+	_ir_para(sv, pausa, "g:op:luz_relevo")
+	ok(str(pausa._itens_atuais[pausa.sel].rotulo).ends_with("*"), "uma opção que a v2 ainda não lê aparece marcada com *")
+	_tecla(sv, KEY_ESCAPE)  # ESC dentro de Gráficos volta a Ajustes (um nível)
+	ok(pausa.tela == "ajustes" and pausa.aberto, "ESC em Gráficos volta um nível: a Ajustes, sem fechar a pausa")
+
+	# 7. Áudio: Música e Efeitos mudam o volume (grava em opcoes e aplica no Som); ESC volta a Ajustes e depois à pausa
+	_ir_para(sv, pausa, "audio")
+	_tecla(sv, KEY_ENTER)
+	ok(pausa.tela == "audio", "Áudio abre a aba")
 	var mus := float(Config.v("musica"))
+	_ir_para(sv, pausa, "musica")
 	_tecla(sv, KEY_RIGHT)
 	ok(is_equal_approx(float(Config.v("musica")), snappedf(clampf(mus + 0.1, 0.0, 1.0), 0.1)), "seta direita soma 10% na música")
 	ok(is_equal_approx(Som.volume_musica, float(Config.v("musica"))), "o volume da música vale na hora (Som)")
 	_tecla(sv, KEY_LEFT)
 	_tecla(sv, KEY_LEFT)
 	ok(is_equal_approx(float(Config.v("musica")), snappedf(clampf(mus - 0.1, 0.0, 1.0), 0.1)), "seta esquerda tira 10%")
+	_ir_para(sv, pausa, "efeitos")
+	var efe := float(Config.v("efeitos"))
+	_tecla(sv, KEY_ENTER)  # Enter soma
+	ok(is_equal_approx(float(Config.v("efeitos")), snappedf(clampf(efe + 0.1, 0.0, 1.0), 0.1)), "Enter também soma 10% nos efeitos")
 	_tecla(sv, KEY_ESCAPE)
-	ok(pausa.tela == "menu" and pausa.aberto, "ESC na aba volta ao menu, sem fechar a pausa")
+	ok(pausa.tela == "ajustes" and pausa.aberto, "ESC em Áudio volta a Ajustes (sem fechar)")
+	_tecla(sv, KEY_ESCAPE)
+	ok(pausa.tela == "menu" and pausa.aberto, "ESC em Ajustes volta à pausa (sem fechar a pausa de uma vez)")
+	_tecla(sv, KEY_ESCAPE)
+	ok(not pausa.aberto and not get_tree().paused, "ESC na pausa fecha e despausa")
 
-	# 8. o clique do mouse escolhe a linha (Gráficos é a linha 1 do menu)
+	# 8. o clique do mouse escolhe a linha (Ajustes é a linha 2 do menu: a lista começa no topo)
+	_tecla(sv, KEY_ESCAPE)
 	pausa.mouse_fn = Callable(self, "_mouse_teste")
-	_mouse_alvo = Vector2(354, 70 + 118 + 1 * 50 + 22)  # Gráficos: linha 2 do menu (PAINEL, LINHA0, LINHA_H de pausa.gd)
+	_mouse_alvo = Vector2(354, 55 + 118 + 1 * 36 + 16)  # Ajustes: linha 2 (PAINEL, LINHA0, LINHA_H de pausa.gd)
 	_clique(sv, _mouse_alvo)
-	ok(pausa.tela == "graficos", "clique com o mouse abre a linha clicada")
+	ok(pausa.tela == "ajustes", "clique com o mouse abre a linha clicada")
 	_tecla(sv, KEY_ESCAPE)
 	_tecla(sv, KEY_ESCAPE)
 	ok(not pausa.aberto and not get_tree().paused, "ESC fecha o menu depois do clique")
@@ -234,7 +294,7 @@ func _testes() -> void:
 	mundo.sv.add_child(res)
 	res.montar(mundo)  # o mesmo que o mundo faz fora do modo de teste
 	_tecla(sv, KEY_ESCAPE)
-	_baixo(sv, 3)
+	_ir_para(sv, pausa, "santuario")
 	_tecla(sv, KEY_ENTER)
 	ok(pausa.tela == "confirmar_santuario", "Voltar ao santuário pede confirmação")
 	_tecla(sv, KEY_UP)
@@ -253,7 +313,7 @@ func _testes() -> void:
 	pausa._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 	ok(not pausa.aberto and not get_tree().paused, "perder o foco não pausa em headless")
 
-	# 11. santuário: o ESC só abre a confirmação de sair (Não por padrão; Sim chama o gancho).
+	# 11. santuário: o ESC só abre a confirmação de sair (Não por padrão; Sim chama o gancho); o botão Ajustes abre o submenu.
 	# O mundo sai antes: o Apresentacao devolve a escala da janela na saída, e o santuário precisa ter a dele.
 	mundo.queue_free()
 	await get_tree().process_frame
@@ -274,6 +334,12 @@ func _testes() -> void:
 		_tecla(get_viewport(), KEY_UP)
 		_tecla(get_viewport(), KEY_ENTER)  # Sim
 		ok(saiu == saidas_antes + 1, "no santuário, Sim chama o gancho de saída")
+		_tecla(get_viewport(), KEY_ESCAPE)  # fecha
+		ok(not pa.aberto, "o ESC fecha a confirmação de sair (no santuário)")
+		altar._ajustes.pressed.emit()  # o botão Ajustes do santuário
+		ok(pa.aberto and pa.tela == "ajustes", "o botão Ajustes do santuário abre o submenu")
+		_tecla(get_viewport(), KEY_ESCAPE)  # no santuário, ESC em Ajustes fecha (não há pausa por trás)
+		ok(not pa.aberto, "no santuário, ESC em Ajustes fecha o submenu")
 	altar.queue_free()
 
 	# o save real e as opções reais não foram tocados
@@ -287,7 +353,8 @@ func _limpar_saves() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
 
 
-## Prints do menu (só o viewport): o menu da partida, a confirmação de sair, a aba de gráficos e a confirmação do santuário.
+## Prints do menu (só o viewport): a pausa, Ajustes, Gráficos (rolada até uma opção com ajuda), Áudio, a confirmação de sair e
+## o submenu no santuário.
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
 	var mundo = Mundo.instantiate()
@@ -296,25 +363,34 @@ func _fotos(pasta: String) -> void:
 	mundo.set_process(false)
 	await get_tree().process_frame
 	var sv: SubViewport = mundo.sv
+	var pausa = _achar_pausa(sv)
+	Config.g_aplicar_perfil("alto")
 	_tecla(sv, KEY_ESCAPE)
 	await mundo.ap.foto(pasta.path_join("pausa_menu.png"))
-	_baixo(sv, 4)
+	_ir_para(sv, pausa, "ajustes")
+	_tecla(sv, KEY_ENTER)
+	await mundo.ap.foto(pasta.path_join("pausa_ajustes.png"))
+	_ir_para(sv, pausa, "graficos")
+	_tecla(sv, KEY_ENTER)
+	_ir_para(sv, pausa, "g:op:sombras")
+	await mundo.ap.foto(pasta.path_join("pausa_graficos.png"))
+	_tecla(sv, KEY_ESCAPE)
+	_ir_para(sv, pausa, "audio")
+	_tecla(sv, KEY_ENTER)
+	await mundo.ap.foto(pasta.path_join("pausa_audio.png"))
+	_tecla(sv, KEY_ESCAPE)  # Áudio -> Ajustes
+	_tecla(sv, KEY_ESCAPE)  # Ajustes -> pausa (a pausa continua aberta)
+	_ir_para(sv, pausa, "sair")
 	_tecla(sv, KEY_ENTER)
 	await mundo.ap.foto(pasta.path_join("pausa_confirmar_sair.png"))
-	_tecla(sv, KEY_ESCAPE)
-	_tecla(sv, KEY_ESCAPE)
-	_tecla(sv, KEY_ESCAPE)
-	_baixo(sv, 1)
-	_tecla(sv, KEY_ENTER)
-	await mundo.ap.foto(pasta.path_join("pausa_graficos.png"))
 	get_tree().paused = false
 	mundo.queue_free()
 	await get_tree().process_frame  # a janela volta à escala antes do santuário montar a dele (ver _testes)
 	var altar = Altar.instantiate()
 	add_child(altar)
 	await get_tree().process_frame
-	_tecla(get_viewport(), KEY_ESCAPE)
+	altar._ajustes.pressed.emit()
 	await RenderingServer.frame_post_draw
-	get_viewport().get_texture().get_image().save_png(pasta.path_join("santuario_sair.png"))
+	get_viewport().get_texture().get_image().save_png(pasta.path_join("santuario_ajustes.png"))
 	altar.queue_free()
 	print("v2_pausa fotos em ", pasta)
