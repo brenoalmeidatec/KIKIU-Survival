@@ -2,7 +2,7 @@ extends Control
 ## Santuário da v2: a tela antes da floresta (é a cena que `--v2` abre). Compra melhorias permanentes com as almas (v2/meta.gd),
 ## mostra as conquistas com cadeado, o resumo da última partida e ENTRAR NA FLORESTA (v2/mundo.tscn). Desenhado em 960x540 com a
 ## janela em CANVAS_ITEMS, sem SubViewport: botões, foco e controle funcionam direto. Cada compra relê o save (Meta.estado()).
-## Visual: a arte de entrada escurecida, molduras de pedra do HUD (v2/hud/moldura_pedra.png) e fontes do jogo (PressStart2P e Jacquard).
+## Visual: a arte de entrada escurecida, molduras de pedra do HUD (v2/hud/moldura_pedra.png). Títulos na Jersey 10 (Dados.fonte_titulo) e a lista densa na Press Start 2P (Dados.fonte), que tem a grade de 8 px que as 10 linhas pedem.
 
 const Meta := preload("res://v2/meta.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
@@ -54,6 +54,7 @@ func _ready() -> void:
 	_ajustar_janela()
 	set_anchors_preset(PRESET_FULL_RECT)
 	_montar()
+	add_child(preload("res://v2/pausa.tscn").instantiate().iniciar(null))  # ESC aqui abre só "Sair do jogo?" (pausa.gd)
 	_atualizar()
 	_entrar.grab_focus()
 
@@ -82,11 +83,6 @@ func _process(dt: float) -> void:
 			_status.text = ""
 
 
-func _unhandled_input(e: InputEvent) -> void:
-	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_ESCAPE:
-		get_tree().quit()
-
-
 # ------------------------------------------------------------------ montagem
 
 
@@ -103,17 +99,17 @@ func _montar() -> void:
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 
-	add_child(_texto("SANTUÁRIO", 40, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 12, LARG, 48)))
+	add_child(_texto("SANTUÁRIO", 56, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 6, LARG, 56)))
 	add_child(_painel(Rect2(700, 10, 240, 46)))
 	add_child(_texto("ALMAS", 8, false, COR_ALMA, HORIZONTAL_ALIGNMENT_LEFT, Rect2(716, 14, 120, 12)))
-	_saldo = _texto("0", 24, true, COR_ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(716, 20, 208, 30))
+	_saldo = _texto("0", 37, true, COR_ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(716, 16, 208, 38))
 	add_child(_saldo)
 	_ultima = _texto("", 8, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 62, 920, 14))
 	add_child(_ultima)
 
 	# coluna da esquerda: as melhorias compradas com almas
 	add_child(_painel(Rect2(36, 88, 572, 374)))
-	add_child(_texto("MELHORIAS", 24, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, 94, 300, 30)))
+	add_child(_texto("MELHORIAS", 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, 90, 300, 38)))
 	var i := 0
 	for m in Meta.melhorias():
 		var y := LINHA_Y0 + i * LINHA_H
@@ -135,7 +131,7 @@ func _montar() -> void:
 
 	# coluna da direita: conquistas com cadeado (e o que cada uma libera)
 	add_child(_painel(Rect2(624, 88, 300, 374)))
-	add_child(_texto("CONQUISTAS", 24, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(640, 94, 280, 30)))
+	add_child(_texto("CONQUISTAS", 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(640, 90, 280, 38)))
 	i = 0
 	for c in Meta.conquistas():
 		var y := CONQ_Y0 + i * CONQ_H
@@ -151,19 +147,19 @@ func _montar() -> void:
 		_conq[str(c.id)] = {"cadeado": cadeado, "nome": nome, "desc": desc, "rec": rec}
 		i += 1
 
-	_status = _texto("", 8, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 468, 920, 14))
+	_status = _texto("", 8, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 464, 920, 14))
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
-	_entrar.position = Vector2(300, 486)
-	_entrar.size = Vector2(360, 36)
+	_entrar.position = Vector2(300, 482)
+	_entrar.size = Vector2(360, 40)
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
-	_entrar.add_theme_font_size_override("font_size", 24)
-	_estilo_botao(_entrar, 24)
+	_entrar.add_theme_font_size_override("font_size", 37)
+	_estilo_botao(_entrar, 37)
 	_entrar.add_theme_color_override("font_color", COR_OURO)
 	_entrar.pressed.connect(_entrar_floresta)
 	add_child(_entrar)
-	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 524, LARG, 12)))
+	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 526, LARG, 12)))
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:

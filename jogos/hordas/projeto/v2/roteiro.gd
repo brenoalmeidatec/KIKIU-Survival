@@ -405,15 +405,15 @@ func _r_escolha() -> void:
 			_preparar()
 			armar_build()
 			h.nivel = 20
-			# procura uma escolha com épico ou lendário para a foto mostrar as cores
+			# procura uma escolha com as três cartas de raridades diferentes, para a foto mostrar a escala de cores e os ícones
 			var achada := 0
 			for semente in 400:
 				c.cartas.rng.seed = semente
 				var cs: Array = c.cartas.sortear(3, 20)
-				var soma := 0
+				var raridades := {}
 				for k in cs:
-					soma += int(k.rar)
-				if soma >= 6:
+					raridades[int(k.rar)] = true
+				if raridades.size() == 3:
 					achada = semente
 					break
 			c.cartas.rng.seed = achada

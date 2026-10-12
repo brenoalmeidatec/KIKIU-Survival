@@ -602,6 +602,17 @@ func fim_de_partida(ganhou: bool) -> void:
 	mundo.partida_terminou.emit(r)
 
 
+## Voltar ao santuário pelo menu de pausa (pausa.gd): a partida acaba como derrota, pelo mesmo caminho da morte
+## (fim_de_partida credita as almas e mostra o resultado). Chamado com a árvore já despausada.
+func abandonar() -> void:
+	if jogo != "jogando":
+		return
+	jogo = "abandono"
+	pausado = true
+	fim_de_partida(false)
+	telas.mostrar_resultado()
+
+
 # ------------------------------------------------------------------ partida
 
 

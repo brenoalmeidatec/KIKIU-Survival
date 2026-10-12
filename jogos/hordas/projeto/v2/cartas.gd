@@ -3,8 +3,9 @@ extends RefCounted
 ## nível), aplica melhorias de stat, golpes secundários automáticos (v2/armas.gd), modificadores da katana e as EVOLUÇÕES (duas peças viram
 ## uma versão evoluída). Também guarda os banidos e os usos de rerrolar/banir. Tudo vem de dados/v2_cartas.json (veja o `_ajuda` de lá).
 ##
-## Uma carta é um Dictionary: {id, nome, desc (já com o valor), cat ("stat", "golpe" ou "mod"), rar (0 a 3), rar_nome, cor (Color), valor
-## (stat/mod, já multiplicado pela raridade), max, nivel_atual, nivel_novo, extra (texto do nível ou da sinergia), stat}.
+## Uma carta é um Dictionary: {id, icone (nome do PNG em assets/gerado/), nome, desc (já com o valor), cat ("stat", "golpe" ou "mod"), rar (0 a 3),
+## rar_nome, cor (Color), valor (stat/mod, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat}.
+## O cartão (telas.gd) mostra nessa ordem: raridade e tecla, ícone, nome, desc, proximo e, no rodapé, nivel_txt e evolui.
 
 const Armas := preload("res://v2/armas.gd")
 
@@ -207,6 +208,7 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 	var n := nivel_de(id)
 	var c := {
 		"id": id,
+		"icone": str(d.get("icone", "")),
 		"nome": d.nome,
 		"cat": cat,
 		"rar": r,
@@ -216,31 +218,37 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 		"nivel_atual": n,
 		"nivel_novo": n + 1,
 		"valor": 0.0,
-		"extra": "",
 		"stat": str(d.get("stat", "")),
-		"desc": ""
+		"desc": "",
+		"proximo": "",  # linha abaixo da descrição: o que o golpe ganha no próximo nível (ou o bônus da raridade)
+		"nivel_txt": "",  # rodapé: "Nível 2/5" ou "Novo golpe"
+		"evolui": ""  # rodapé: "Evolui: ..." quando esta peça fecha uma evolução
 	}
+	var bonus_pct := roundi(float(ra.bonus_arma) * 100.0)
 	if cat == "golpe":
 		var sobe := 2 if r == rar.size() - 1 else 1
 		c.nivel_novo = mini(n + sobe, int(d.max))
 		c.desc = str(d.desc)
 		var ni: int = c.nivel_novo
 		if n == 0:
-			c.extra = "Novo golpe automático"
+			c.nivel_txt = "Novo golpe"
+			if ra.bonus_arma > 0.0:
+				c.proximo = "+%d%% de dano pela raridade" % bonus_pct
 		else:
+			c.nivel_txt = "Nível %d/%d" % [ni, int(d.max)]
 			var partes: Array = []
 			for k in range(n, ni):
 				partes.append(str(d.niveis[k - 1].texto))
-			c.extra = "Nível %d: %s" % [ni, ", ".join(partes)]
-		if ra.bonus_arma > 0.0:
-			c.extra += "  (+%d%% de dano)" % roundi(float(ra.bonus_arma) * 100.0)
+			c.proximo = "Próximo: %s" % ", ".join(partes)
+			if ra.bonus_arma > 0.0:
+				c.proximo += " (+%d%% de dano)" % bonus_pct
 	else:
 		c.valor = float(d.valor) * float(ra.mult)
 		c.desc = str(d.desc).replace("{v}", str(roundi(float(c.valor))))
-		c.extra = "Nível %d/%d" % [n + 1, int(d.max)]
+		c.nivel_txt = "Nível %d/%d" % [n + 1, int(d.max)]
 	var sin := _sinergia_texto(id)
 	if sin != "" and cat != "stat":
-		c.extra += "\n" + sin
+		c.evolui = sin
 	return c
 
 
