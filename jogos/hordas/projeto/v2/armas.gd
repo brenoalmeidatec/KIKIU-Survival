@@ -232,6 +232,8 @@ func adicionar_evoluida(ev: Dictionary, bonus: float) -> void:
 	a.bonus = bonus
 	var st: Dictionary = (ev.arma as Dictionary).duplicate()
 	st.dano = float(st.dano) * (1.0 + bonus)
+	if st.has("aura_dano"):  # a aura do Anel de Brasas também leva o bônus da raridade
+		st.aura_dano = float(st.aura_dano) * (1.0 + bonus)
 	a.st = st
 	ativas[str(ev.id)] = a
 
@@ -770,10 +772,13 @@ func explodir(p: Vector2, dano: float, raio: float, cor: Color, ignorar = null) 
 
 
 func _livre_onda() -> int:
+	var mais_antiga := 0
 	for i in MAX_ONDAS:
 		if w_dist[i] <= 0.0:
 			return i
-	return 0
+		if w_dist[i] < w_dist[mais_antiga]:  # cheia: sobrescreve a que falta menos para acabar
+			mais_antiga = i
+	return mais_antiga
 
 
 ## O corte solta uma onda (dano já calculado). Com a Ventania, ela fica maior e mais forte.
