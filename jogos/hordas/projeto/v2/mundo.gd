@@ -87,6 +87,7 @@ var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredonda
 	get:
 		return roundi(xp_coletado / 10.0)
 var tempo_partida := 0.0  # s de jogo (não conta hit-stop nem a pausa da escolha)
+var pausa  # o menu de pausa (pausa.gd), criado no _ready; telas.gd lê `aberto` para congelar a trava das cartas
 var monstros_vivos: int:
 	get:
 		return monstros.size()
@@ -141,7 +142,8 @@ func _ready() -> void:
 	_montar()
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
 	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
-	sv.add_child(preload("res://v2/pausa.tscn").instantiate().iniciar(self))  # ESC ou Start pausam e abrem o menu (pausa.gd)
+	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd)
+	sv.add_child(pausa)
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
 		sv.add_child(meta_res)

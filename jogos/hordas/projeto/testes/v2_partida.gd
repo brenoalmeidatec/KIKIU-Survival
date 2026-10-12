@@ -374,8 +374,11 @@ func _ready() -> void:
 	h.definir_pos(h.pos + Vector2(40, 0))
 	ate(func(): return w.combate.jogo == "bau", 120)
 	ok(w.combate.baus.ultimas.size() >= 1 and w.combate.jogo == "bau", "baú forçado a 3 melhorias abre")
+	w._input(enter)  # dentro da trava de 1,5 s do baú: descartado (não pula)
+	ok(w.combate.telas.bau_aberto and not w.combate.telas.bau_pronto, "Enter na trava de 1,5 s do baú é descartado")
+	passos(92)  # 1,53 s de tempo real: a trava passou
 	w._input(enter)
-	ok(w.combate.telas.bau_pronto, "Enter durante a roleta revela tudo na hora")
+	ok(w.combate.telas.bau_pronto, "Enter depois da trava revela tudo na hora")
 	w._input(enter)
 	ok(w.combate.jogo == "jogando", "e o próximo Enter fecha")
 	# os outros modificadores da elite
