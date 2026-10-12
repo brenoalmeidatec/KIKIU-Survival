@@ -29,6 +29,7 @@ const CEL := 26.0  # célula da grade de separação dos monstros
 const PASSO_SEP := 3  # cada monstro recalcula a separação a cada 3 quadros (o resultado vale por 3)
 const GRADE_N := 1024  # tamanho da tabela de hash da grade (potência de 2)
 const RAIO_GRANDE := 11.0  # acima disto o monstro (elite, chefe) fica na lista dos grandes, fora da grade
+const QUADRO_REF := 1.0 / 60.0  # o quadro de referência do "Combo completo" do card de status (vsync de 60 Hz)
 const CONTATO_BASE := 13.0  # raio do herói (6) + do cão (7): o `contato.alcance` dos dados vale para o cão; os outros encostam pelo raio
 
 var mundo
@@ -199,7 +200,7 @@ func atualizar(dt: float) -> void:
 		avisos.atualizar(dt)
 		baus.atualizar(dt)
 	var o0 := Time.get_ticks_usec()
-	orbes.atualizar(dt, h.pos + Vector2(0, -8), float(cfg.heroi.ima_raio) * h.m_ima)
+	orbes.atualizar(dt, h.pos + Vector2(0, -8), h.alcance_ima())
 	mundo._perfil("c_orbes", Time.get_ticks_usec() - o0)
 
 
@@ -306,14 +307,76 @@ func efeitos(dt: float) -> void:
 # ------------------------------------------------------------------ golpe
 
 
+## Os números do golpe da katana COMO O JOGO OS USA (golpe_comecou e golpear leem daqui; o card de status, status.gd, também).
+## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance e arco com a área.
+func dano_do_passo(passo: Dictionary) -> float:
+	return float(passo.dano) * mundo.heroi.m_dano
+
+
+func alcance_do_passo(passo: Dictionary) -> float:
+	return float(passo.alcance) * mundo.heroi.m_area
+
+
+## O arco com a área do herói, até 360 graus: a pancada do Nicão é em volta toda, e sem o teto 360 com a área vira 396 e o cosseno do acerto inverte.
+func arco_do_passo(passo: Dictionary) -> float:
+	return minf(float(passo.arco) * (1.0 + (mundo.heroi.m_area - 1.0) * 0.5), 360.0)
+
+
+## Chance de crítico da katana (0 a 1): a base dos dados mais o bônus das cartas.
+func chance_critico() -> float:
+	return float(cfg.golpe.critico.chance) + mundo.heroi.m_critico
+
+
+## Até onde o passo alcança de verdade: o alcance com a área MAIS o avanço (lunge) que o herói faz antes do acerto (a estocada de 74 px
+## acerta a 100 px). É o que o card de status mostra.
+func alcance_efetivo_do_passo(passo: Dictionary) -> float:
+	return alcance_do_passo(passo) + float(passo.get("avanco", 0.0))  # sem avanço no passo (as adagas): 0, como o lunge do heroi.gd
+
+
+## Hit-stop (s) de um acerto do passo: o do crítico se `crit`, senão o do passo. `golpear` e o card de status usam esta.
+func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
+	if str(passo.get("tipo", "melee")) == "adagas":  # as adagas não param o tempo no acerto (v2/adagas.gd não chama o hit-stop)
+		return 0.0
+	return float(cfg.golpe.critico.hit_stop) if crit else float(passo.hit_stop)
+
+
+## Quanto dura um combo inteiro com o clique segurado num alvo ao alcance, em s, nos quadros de `dt` (o jogo anda em quadros inteiros, então
+## cada fase arredonda para cima: o passo, o hit-stop do acerto, a pausa do fim do combo; cada passo ainda gasta o quadro em que começa).
+## O padrão é o quadro de 60 Hz (`QUADRO_REF`), com o qual o "Combo completo" do card de status bate com o que o jogador vê (1,30 s com a
+## velocidade base, onde só a soma dos passos daria 0,88 s). O hit-stop é o médio (com a chance de crítico) e supõe que todo passo acerta; sem
+## mortes no meio (cada abate soma `morte.hit_stop`). O teste v2_status mede o ciclo de verdade em vários `dt` e compara.
+func ciclo_do_combo(dt := QUADRO_REF) -> float:
+	var pc := clampf(chance_critico(), 0.0, 1.0)
+	var quadros := float(_quadros(float(cfg.golpe.pausa_fim_combo), dt))
+	for i in cfg.golpe.passos.size():
+		var p: Dictionary = cfg.golpe.passos[i]
+		quadros += 1.0 + float(_quadros(mundo.heroi.duracao_do_passo(i), dt))
+		quadros += lerpf(float(_quadros(hit_stop_do_acerto(p, false), dt)), float(_quadros(hit_stop_do_acerto(p, true), dt)), pc)
+	return quadros * dt
+
+
+## Quantos quadros de `dt` o jogo gasta para vencer `s` segundos (um quadro inteiro por vez, para cima).
+static func _quadros(s: float, dt: float) -> int:
+	return ceili(s / dt - 0.0001)
+
+
+## Os passos do combo com o nome `nome` ("corte", "estocada"): o modificador solta onda nos cortes e lança na estocada, pelo NOME do passo.
+func passos_de(nome: String) -> Array:
+	var r: Array = []
+	for p in cfg.golpe.passos:
+		if str(p.nome) == nome:
+			r.append(p)
+	return r
+
+
 func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	var cor := _cor(passo.cor)
 	var tom := float(passo.get("tom", 1.0))  # tom e vol opcionais do passo: o Nicão é grave, o Lucas agudo
 	if str(passo.get("tipo", "melee")) == "adagas" or passo.nome == "pancada":  # sem corte desenhado: as adagas e o chão aparecem no acerto
 		audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
 		return
-	var alc: float = float(passo.alcance) * h.m_area
-	var arco: float = minf(float(passo.arco) * (1.0 + (h.m_area - 1.0) * 0.5), 360.0)
+	var alc: float = alcance_do_passo(passo)
+	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
 	fx.corte(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, arco, float(passo.lado), str(passo.nome), cor, vis)
 	audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0 if passo.nome != "estocada" else 0.0)), 0.02)
@@ -324,8 +387,8 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 	if str(passo.get("tipo", "melee")) == "adagas":  # o Lucas: as adagas saem (v2/adagas.gd) e acertam por conta própria
 		adagas.lancar(h, origem, dir, passo)
 		return 0
-	var alc: float = float(passo.alcance) * h.m_area
-	var arco: float = minf(float(passo.arco) * (1.0 + (h.m_area - 1.0) * 0.5), 360.0)
+	var alc: float = alcance_do_passo(passo)
+	var arco: float = arco_do_passo(passo)
 	var pancada: bool = passo.nome == "pancada"  # o Nicão no chão: em volta, empurrão para fora
 	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nicão: empurra e atordoa mais
 	if pancada:
@@ -347,8 +410,8 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 			continue
 		n += 1
 		acertos += 1
-		var crit: bool = randf() < float(cfg.golpe.critico.chance) + h.m_critico
-		var d: float = float(passo.dano) * h.m_dano * (1.0 + randf_range(-float(cfg.golpe.variacao), float(cfg.golpe.variacao)))
+		var crit: bool = randf() < chance_critico()
+		var d: float = dano_do_passo(passo) * (1.0 + randf_range(-float(cfg.golpe.variacao), float(cfg.golpe.variacao)))
 		if crit:
 			d *= float(cfg.golpe.critico.mult)
 			criticos += 1
@@ -365,7 +428,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		fx.flash(m, 0.1)
 		fx.faiscas(ponto - longe * float(m.raio) * 0.5, dir, 10 if crit else 6, cor, 200.0 if crit else 160.0)
 		audio.tocar("critico" if crit else "impacto", randf_range(0.92, 1.1), 0.0, 0.03)
-		parada = maxf(parada, float(cfg.golpe.critico.hit_stop) if crit else float(passo.hit_stop))
+		parada = maxf(parada, hit_stop_do_acerto(passo, crit))
 		tremor = maxf(tremor, float(cfg.golpe.critico.tremor) if crit else float(passo.tremor))
 		if morreu:
 			morreram.append(m)
@@ -375,11 +438,11 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		tremor = maxf(tremor, float(cfg.morte.tremor))
 	# modificadores da katana: o corte solta uma onda, a estocada solta uma lança de luz
 	if passo.nome == "corte" and float(armas.mods.onda) > 0.0:
-		armas.lancar_onda(origem, dir, float(passo.dano) * h.m_dano * float(armas.mods.onda) / 100.0)
+		armas.lancar_onda(origem, dir, armas.dano_da_onda(dano_do_passo(passo)))
 	elif passo.nome == "estocada" and float(armas.mods.fura) > 0.0:
-		armas.lancar_lanca(origem, dir, float(passo.dano) * h.m_dano * float(armas.mods.fura) / 100.0)
+		armas.lancar_lanca(origem, dir, armas.dano_da_lanca(dano_do_passo(passo)))
 	if pancada and float(armas.mods.abalo) > 0.0:  # modificador do Nicão: a pancada solta uma onda de choque para a frente
-		armas.lancar_onda(origem, dir, float(passo.dano) * h.m_dano * float(armas.mods.abalo) / 100.0)
+		armas.lancar_onda(origem, dir, dano_do_passo(passo) * float(armas.mods.abalo) / 100.0)
 	processar_mortes()
 	if n > 0:
 		hit_stop(parada)

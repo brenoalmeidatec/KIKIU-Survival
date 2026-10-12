@@ -7,7 +7,7 @@ var _cache := {}
 var _tex := {}
 var fonte: Font  # pixel legível (Press Start 2P): números, HUD, depuração e o texto da v1
 var fonte_titulo: Font  # títulos em pixel (Jersey 10, OFL): títulos de tela, nomes das cartas, botões grandes. Ver v2/LEIA-ME.md
-var fonte_texto: Font  # texto corrido das telas da v2 (Pixelify Sans, OFL): descrições, linhas do santuário e do resultado
+var fonte_texto: Font  # texto corrido e valores das telas da v2 (Spleen 8x16, BSD-2): descrições, ajuda, números do resultado. Só em 16 ou 32 px (grade da fonte)
 var herois_extra := {}  # heróis montados em tempo de execução (criação de personagem, #72): entram na tabela "herois"
 
 
@@ -20,7 +20,7 @@ func _ready() -> void:
 	fonte_titulo = load("res://assets/fonte/jersey10/Jersey10-Regular.ttf")
 	if fonte_titulo is FontFile:
 		(fonte_titulo as FontFile).opentype_feature_overrides = {ts.name_to_tag("liga"): 0, ts.name_to_tag("clig"): 0}
-	fonte_texto = load("res://assets/fonte/pixelify_sans/PixelifySans.ttf")
+	fonte_texto = load("res://assets/fonte/spleen/spleen-8x16.otf")
 	if fonte_texto is FontFile:
 		(fonte_texto as FontFile).opentype_feature_overrides = {ts.name_to_tag("liga"): 0, ts.name_to_tag("clig"): 0}
 	ThemeDB.get_default_theme().default_font = fonte

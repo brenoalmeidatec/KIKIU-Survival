@@ -13,20 +13,21 @@ extends CanvasLayer
 ## PROCESS_MODE_ALWAYS): ela vem antes do mundo e das telas na ordem do _input e continua ouvindo com a árvore pausada. No santuário
 ## o menu mora na raiz e usa o próprio _input. Nos dois casos a regra é a de entrada(). Abre em "jogando" e também sobre a escolha de
 ## cartas e o baú (que voltam intactos ao fechar); não abre na câmera lenta da morte e da vitória nem no resultado.
-## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores, apoio e ajuda na Pixelify Sans
-## (Dados.fonte_texto), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
+## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores, apoio e ajuda na Spleen 8x16
+## (Dados.fonte_texto, sempre em 16 px), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
+const Creditos := preload("res://v2/creditos.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const TAM_TITULO := 56  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
 const TAM_BOTAO := 19  # botões e linhas (Jersey 10 na grade de 19)
-const TAM_SUB := 14  # linha de apoio do título
-const TAM_VALOR := 14  # valor à direita (Pixelify Sans)
-const TAM_AJUDA := 12  # ajuda da linha escolhida (rodapé dos gráficos)
-const TAM_DICA := 14
+const TAM_SUB := 16  # linha de apoio do título
+const TAM_VALOR := 16  # valor à direita (Spleen, grade de 16 px)
+const TAM_AJUDA := 16  # ajuda da linha escolhida (rodapé dos gráficos)
+const TAM_DICA := 16
 const LARG := 960.0
 const ALT := 540.0
-const PAINEL := Rect2(290, 55, 380, 430)
+const PAINEL := Rect2(260, 55, 440, 430)  # 440 de largura: a Spleen é mais larga que a Pixelify
 const LINHA0 := 118.0  # primeira linha, a partir do topo do painel
 const LINHA_H := 36.0
 const LINHA_ALT := 32.0  # altura da faixa de cada linha
@@ -39,6 +40,7 @@ const COR_TEXTO := Color(0.92, 0.9, 0.96)
 const COR_CAB := Color(0.62, 0.6, 0.72)  # cabeçalho de seção (não é selecionável)
 const COR_FUNDO := Color(0.004, 0.012, 0.043, 0.72)  # #01030b a 0,7 (hud_menus.md, seção 4)
 const DICA := "Setas escolhem   Enter confirma   Esc volta"
+const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
 
 var mundo  # a partida (mundo.gd); null no santuário (altar.gd)
@@ -203,6 +205,13 @@ func fechar() -> void:
 	_apertos.clear()
 	if mundo != null:
 		get_tree().paused = _arvore_antes
+	_card_build()
+
+
+## O card "SUA BUILD" (status.gd) aparece ao lado do menu, só na tela "menu" (some em Ajustes, nas confirmações e ao fechar).
+func _card_build() -> void:
+	if mundo != null and mundo.get("status") != null:
+		mundo.status.na_pausa(aberto and tela == "menu")
 
 
 ## Santuário (sem mundo): o ESC abre direto a confirmação de sair.
@@ -249,7 +258,7 @@ func _voltar_tela() -> void:
 				_ir("menu")
 			else:
 				fechar()
-		"graficos", "audio":
+		"graficos", "audio", "creditos":
 			_ir("ajustes")
 		_:
 			_executar("nao", 0)
@@ -385,6 +394,8 @@ func _executar(id: String, passo: int) -> void:
 			_ir("graficos")
 		"audio":
 			_ir("audio")
+		"creditos":
+			_ir("creditos")
 		"voltar":
 			_voltar_tela()
 		"santuario":
@@ -444,7 +455,9 @@ func _itens() -> Array:
 			r.append(_it("sair", "Sair do jogo"))
 			return r
 		"ajustes":
-			return [_it("graficos", "Gráficos"), _it("audio", "Áudio"), _it("voltar", "Voltar")]
+			return [_it("graficos", "Gráficos"), _it("audio", "Áudio"), _it("creditos", "Créditos"), _it("voltar", "Voltar")]
+		"creditos":
+			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"graficos":
 			return _graficos.itens()
 		"audio":
@@ -468,6 +481,8 @@ func _titulo_tela() -> String:
 			return "GRÁFICOS"
 		"audio":
 			return "ÁUDIO"
+		"creditos":
+			return "CRÉDITOS"
 		"confirmar_santuario":
 			return "VOLTAR?"
 		"confirmar_sair":
@@ -515,11 +530,14 @@ func _desenhar() -> void:
 		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
+	_card_build()
 
 
-## Rodapé: a ajuda da linha escolhida (só na aba Gráficos, onde o json traz a ajuda de cada opção).
+## Rodapé: a ajuda da linha escolhida em Gráficos (o json traz a ajuda de cada opção) e em Créditos (o aviso de cada licença) e, na aba Áudio, o crédito das músicas (CC BY exige).
 func _texto_ajuda() -> String:
-	if tela != "graficos" or sel >= _itens_atuais.size():
+	if tela == "audio":
+		return CREDITO_MUSICA
+	if (tela != "graficos" and tela != "creditos") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))
 

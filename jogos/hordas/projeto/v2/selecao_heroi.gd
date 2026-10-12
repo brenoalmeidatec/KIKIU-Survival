@@ -17,6 +17,7 @@ const CARTAO := Vector2(280, 370)
 const CARTAO_Y := 82.0
 const ESCALA := 3  # o sprite parado, em pixels de tela por pixel de arte (inteiro: nada de borrar)
 const ALTURA_SPRITE := 160.0
+const TOPO_SPRITE := 4.0  # onde o sprite começa no cartão: a descrição (4 linhas) tem de caber acima dos números
 
 var aberta := false
 var cartoes := {}  # id -> o Button do cartão
@@ -29,11 +30,13 @@ var _sprites := Sprites.new()
 func montar() -> void:
 	_base = Dados.json("v2_combate")
 	set_anchors_preset(PRESET_FULL_RECT)
+	size = Vector2(960, 540)  # o tamanho da tela já agora: com 0x0 (o santuário ainda sem layout) o véu não cobria nada e o de trás aparecia aceso
 	mouse_filter = Control.MOUSE_FILTER_STOP  # o santuário de trás não recebe clique nenhum
 	visible = false
 	var veu := ColorRect.new()
 	veu.color = Color(0.0, 0.01, 0.02, 0.9)
 	veu.set_anchors_preset(PRESET_FULL_RECT)
+	veu.size = size
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 	add_child(_rotulo("ESCOLHA O HERÓI", 56, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 8, 960, 56)))
@@ -48,9 +51,9 @@ func montar() -> void:
 		i += 1
 	_voltar = Button.new()
 	_voltar.text = "VOLTAR"
-	_voltar.position = Vector2(380, 486)
-	_voltar.size = Vector2(200, 40)
 	_estilo_botao(_voltar)
+	_voltar.position = Vector2(380, 460)  # logo abaixo dos cartões (acabam em 452) e acima da dica
+	_voltar.size = Vector2(200, 40)
 	_voltar.pressed.connect(fechar)
 	add_child(_voltar)
 	add_child(_rotulo("Setas ou direcional escolhem   Enter ou A confirma   ESC ou B volta", 14, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 530, 960, 14)))
@@ -68,11 +71,10 @@ func _montar_cartao(h: Dictionary) -> Button:
 	b.pressed.connect(_pegar.bind(str(h.id)))
 	var id := str(h.id)
 	b.add_child(_sprite_do(id))
-	var y := 14.0 + ALTURA_SPRITE + 8.0
+	var y := TOPO_SPRITE + ALTURA_SPRITE
 	b.add_child(_rotulo(str(h.nome).to_upper(), 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, y, CARTAO.x, 36)))
 	b.add_child(_rotulo(str(h.titulo), 14, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, y + 36, CARTAO.x, 16)))
-	var desc := _rotulo(str(h.desc), 14, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(14, y + 58, CARTAO.x - 28, 80))
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var desc := _rotulo(str(h.desc), 14, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(14, y + 56, CARTAO.x - 28, 68), true)
 	b.add_child(desc)
 	var nums := Herois.numeros(id, _base)
 	for k in nums.size():
@@ -101,7 +103,7 @@ func _sprite_do(id: String) -> TextureRect:
 	r.stretch_mode = TextureRect.STRETCH_SCALE
 	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	r.size = Vector2(usado.size) * ESCALA
-	r.position = Vector2((CARTAO.x - r.size.x) / 2.0, 14.0 + ALTURA_SPRITE - r.size.y)
+	r.position = Vector2((CARTAO.x - r.size.x) / 2.0, TOPO_SPRITE + ALTURA_SPRITE - r.size.y)
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return r
 
@@ -176,8 +178,10 @@ func _input(e: InputEvent) -> void:
 # ------------------------------------------------------------------ visual
 
 
-func _rotulo(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:
+func _rotulo(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2, quebra := false) -> Label:
 	var l := Label.new()
+	if quebra:  # a quebra vem ANTES do texto e do tamanho: depois, a largura do rótulo fica a do texto inteiro (uma linha só)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.text = txt
 	l.position = r.position
 	l.size = r.size

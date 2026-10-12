@@ -5,14 +5,16 @@ extends Node
 # save intacto); cada herói criando a partida de verdade (vida, velocidade, tamanho, bônus, sprite); o Hazaki sem mudar; o Nicão batendo em
 # arco e depois em volta, empurrando para fora; o Lucas jogando adagas em leque na direção do mouse, que acertam monstro da horda, elite e
 # chefe, furam, somem, repetem segurando e não criam nó; o filtro das cartas por herói (e as cartas novas funcionando); e o santuário
-# com a seleção (cartões, mouse, teclado, ESC e a escolha gravada).
+# com a seleção (cartões, mouse, teclado, ESC e a escolha gravada); e o card SUA BUILD com o herói escolhido (nome, arma e os
+# modificadores dele).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_herois.tscn  (imprime "v2_herois falhas=0")
-# Prints (precisa de janela): ... res://testes/v2_herois.tscn -- --fotos=PASTA  grava o santuário com a seleção e cada herói golpeando.
+# Prints (precisa de janela): ... res://testes/v2_herois.tscn -- --fotos=PASTA  grava o santuário com a seleção, cada herói golpeando e o card SUA BUILD dele.
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
 const Meta := preload("res://v2/meta.gd")
+const Status := preload("res://v2/status.gd")  # o card SUA BUILD (tecla C)
 const SAVE_TESTE := "user://teste_v2_herois.cfg"
 const SAVE_REAL := "user://v2_progresso.cfg"
 const PASSO := 1.0 / 60.0
@@ -108,6 +110,7 @@ func _testes() -> void:
 	await _t_nicao()
 	await _t_lucas()
 	await _t_cartas()
+	await _t_card()
 	await _t_altar()
 
 
@@ -400,6 +403,50 @@ func _t_cartas() -> void:
 		ok(w.combate.cartas.sortear(1, 5, 3.0).size() == 1, "%s: o sorteio do baú funciona" % id)
 
 
+# ------------------------------------------------------------------ card SUA BUILD
+
+
+func _secao_card(secs: Array, id: String) -> Dictionary:
+	for s in secs:
+		if str(s.get("id", "")) == id:
+			return s
+	return {}
+
+
+## O card SUA BUILD mostra o herói ESCOLHIDO: o nome na seção HERÓI, a arma na seção de golpe, os números dele e os modificadores
+## dele (e só os dele). O número de cada modificador é o que o jogo usa (armas.mods).
+func _t_card() -> void:
+	var arma := {"hazaki": "KATANA (CLIQUE)", "nicao": "MARRETA (CLIQUE)", "lucas": "ADAGAS (CLIQUE)"}
+	var mods := {"hazaki": ["onda", "fura"], "nicao": ["abalo", "muralha"], "lucas": ["chuva", "mira"]}
+	for id in ["hazaki", "nicao", "lucas"]:
+		await novo(id)
+		zerar()
+		var h = w.heroi
+		var cfg_h: Dictionary = Herois.heroi(id).cfg
+		var secs: Array = Status.coletar(w)
+		var titulo_h := str(_secao_card(secs, "heroi").get("titulo", ""))
+		ok(titulo_h == "HERÓI: " + str(Herois.heroi(id).nome).to_upper(), "%s: o card abre a seção HERÓI com o nome dele (%s)" % [id, titulo_h])
+		var titulo_k := str(_secao_card(secs, "katana").get("titulo", ""))
+		ok(titulo_k == arma[id], "%s: a seção de golpe leva a arma dele (%s)" % [id, titulo_k])
+		var vida_card := str(Status.linha(secs, "heroi.vida").get("valor", ""))
+		ok(vida_card == "%d / %d" % [roundi(h.vida), roundi(h.vida_max)] and roundi(h.vida_max) == roundi(float(cfg_h.heroi.vida)), "%s: a vida no card é a do herói (%s)" % [id, vida_card])
+		var andar_card := str(Status.linha(secs, "heroi.andar").get("valor", ""))
+		ok(andar_card == "%d px/s" % roundi(float(cfg_h.heroi.vel)), "%s: o andar no card é a velocidade do herói (%s)" % [id, andar_card])
+		ok(Status.linha(secs, "katana.dano").get("n", []).size() == cfg_h.golpe.passos.size(), "%s: a seção de golpe tem uma conta por passo do combo dele" % id)
+		var cs = w.combate.cartas
+		for md in mods[id]:
+			cs.aplicar(cs.montar_carta(cs.definicao(md), 0))
+		secs = Status.coletar(w)
+		for md in mods[id]:
+			var bl: Dictionary = Status.linha(secs, "katana." + md)
+			ok(not bl.is_empty() and absf(float(bl.n[0]) - float(w.combate.armas.mods[md])) < 0.001, "%s: o card mostra o modificador %s com o número do jogo (%s)" % [id, md, str(bl.get("n", []))])
+		for outro in ["hazaki", "nicao", "lucas"]:
+			if outro == id:
+				continue
+			for md in mods[outro]:
+				ok(Status.linha(secs, "katana." + md).is_empty(), "%s: o card não mostra o modificador %s, que é de outro herói" % [id, md])
+
+
 # ------------------------------------------------------------------ santuário
 
 
@@ -543,6 +590,10 @@ func _fotos(pasta: String) -> void:
 		w.combate.audio.mudo = true
 		await _quadros(3)
 		await _golpes_foto(pasta, id)
+		w.status.alternar()  # o card SUA BUILD (tecla C), ao lado da partida
+		await _quadros(6)
+		await _foto_janela(pasta, "card_%s" % id)
+		w.status.alternar()
 		w.queue_free()
 		w = null
 		await _quadros(3)

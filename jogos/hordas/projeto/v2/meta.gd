@@ -143,13 +143,19 @@ static func checar_ao_vivo(tempo: float, maior_combo: int) -> Array:
 	return novas
 
 
+## As almas que o fim da partida credita de fato: as `bruto` da partida mais o bônus "Almas abundantes" do Santuário (`bonus` = fração,
+## `mundo.meta_bonus.almas`). É a conta de `registrar_partida`; o card de status (status.gd) mostra o mesmo número.
+static func almas_creditadas(bruto: int, bonus: float) -> int:
+	return roundi(bruto * (1.0 + bonus))
+
+
 ## Fim da partida: credita as almas (com o bônus de "almas"), marca conquistas e guarda o resumo.
 ## `r` tem tempo, abates, nivel, maior_combo, venceu e almas. Devolve antes, ganhas, depois e as conquistas novas.
 static func registrar_partida(r: Dictionary) -> Dictionary:
 	var cf := _ler()
 	var antes := int(cf.get_value("moeda", "almas", 0))
 	var bruto := int(r.get("almas", 0))
-	var ganhas := roundi(bruto * (1.0 + _bonus("almas", cf)))
+	var ganhas := almas_creditadas(bruto, _bonus("almas", cf))
 	cf.set_value("moeda", "almas", antes + ganhas)
 	var novas := _conquistar(cf, r)
 	cf.set_value("ultima", "tempo", float(r.get("tempo", 0.0)))

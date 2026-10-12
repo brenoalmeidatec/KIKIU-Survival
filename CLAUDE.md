@@ -40,6 +40,12 @@ O protótipo 2.5D (`jogos/hordas/projeto/prototipos/cara_nova.tscn`, PR #156) fo
 - O protótipo fica congelado como referência. O que for reaproveitado vira módulo em `v2/`.
 - O plano de etapas do épico #152 continua, agora aplicado à v2.
 
+## Arte e licenças (decisão do Alisson, 2026-10-12)
+**Nada de arte com direitos autorais.** Arte, som, fonte e ícone de terceiros de **livre uso** podem e devem ser usados quando economizam esforço e são compatíveis com o nosso contexto (licença que permite uso comercial, redistribuição no jogo e modificação; estilo, escala e luz do jogo). O que vale, o que é proibido e o **registro obrigatório** de cada item (fonte, autor, licença, mudanças) estão em `docs/LICENCAS_ARTE.md` (a música e os sons seguem também o `docs/LICENCAS_AUDIO.md`).
+- Antes de usar: confira a licença na página do arquivo **no dia**, registre no `docs/LICENCAS_ARTE.md` e ponha o crédito na tela de Créditos quando a licença pedir.
+- Em dúvida (licença copyleft, "só uso pessoal", sem licença declarada), **não use**: pergunte ao Alisson. Pack pago só com o Breno.
+- O pipeline do Blender continua sendo o caminho para heróis, monstros e cenários próprios; arte livre complementa e acelera.
+
 ## Divisão de trabalho entre os Claudes (combinado em 2026-10-10)
 Os dois Claudes têm limites muito diferentes: o **Claude do Breno** roda no plano Pro (US$ 20, pouco uso por janela) e o **Claude do Alisson** no plano Max (US$ 100 ou mais, uso alto, agentes em paralelo). Para render o máximo dos dois, cada um fica com o que o outro não consegue fazer bem.
 

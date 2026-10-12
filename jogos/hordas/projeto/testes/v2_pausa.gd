@@ -12,7 +12,7 @@ extends Node
 # abre só "Sair?", e o botão Ajustes abre o submenu.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
-#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_audio, pausa_confirmar_sair e santuario_ajustes (só o viewport).
+#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (só o viewport).
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Meta := preload("res://v2/meta.gd")
@@ -223,7 +223,7 @@ func _testes() -> void:
 	_tecla(KEY_ESCAPE)
 	_ir_para(pausa, "ajustes")
 	_tecla(KEY_ENTER)
-	ok(pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "voltar"], "Ajustes abre com Gráficos, Áudio e Voltar")
+	ok(pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "creditos", "voltar"], "Ajustes abre com Gráficos, Áudio, Créditos e Voltar")
 	_ir_para(pausa, "graficos")
 	_tecla(KEY_ENTER)
 	ok(pausa.tela == "graficos", "Gráficos abre a aba")
@@ -246,13 +246,22 @@ func _testes() -> void:
 	_tecla(KEY_RIGHT)  # baixa -> media
 	ok(str(Config.g("sombras")) == "media" and mundo.sombras.modo == Sombras.MEDIA, "Sombras (lista) muda a config e a sombra do mundo")
 	ok(_sel_id(pausa) == "g:op:sombras" and pausa._ajuda.text != "", "o rodapé mostra a ajuda da linha escolhida")
-	_ir_para(pausa, "g:op:brilhos_halos")
-	var halos_antes := int(Config.g("brilhos_halos"))
-	_tecla(KEY_RIGHT)  # slider: passo de 25
+	_ir_para(pausa, "g:op:tremor_clarao")
+	var tremor_antes := int(Config.g("tremor_clarao"))
+	_tecla(KEY_LEFT)  # slider: passo de 25
 	ok(
-		int(Config.g("brilhos_halos")) == mini(halos_antes + 25, 100),
-		"um slider sobe pelo passo do json (%d -> %s)" % [halos_antes, str(Config.g("brilhos_halos"))]
+		int(Config.g("tremor_clarao")) == maxi(tremor_antes - 25, 0),
+		"um slider muda pelo passo do json (%d -> %s)" % [tremor_antes, str(Config.g("tremor_clarao"))]
 	)
+	Config.g_temporario("tremor_clarao", 0)
+	mundo.cam.tremor_t = 0.0
+	mundo.cam.tremer(4.0, 0.3)
+	ok(mundo.cam.tremor_t == 0.0, "a câmera não treme com Tremor e clarões em 0%")
+	Config.g_temporario("tremor_clarao", 50)
+	mundo.cam.tremer(4.0, 0.3)
+	ok(is_equal_approx(mundo.cam.tremor_amp, 2.0) and mundo.cam.tremor_t > 0.0, "a câmera treme pela metade com 50%% (amp %s)" % str(mundo.cam.tremor_amp))
+	mundo.cam.tremor_t = 0.0
+	mundo.cam.tremor_amp = 0.0
 	_ir_para(pausa, "g:op:particulas_sim")
 	var part_antes := str(Config.g("particulas_sim"))
 	_tecla(KEY_RIGHT)
@@ -267,10 +276,39 @@ func _testes() -> void:
 	_ir_para(pausa, "g:detectar")
 	_tecla(KEY_ENTER)
 	ok(pausa._graficos.mensagem != "", "Detectar pela máquina dá um aviso (%s)" % pausa._graficos.mensagem)
+	var todas_lidas := true
+	for it in pausa._itens_atuais:
+		var iid: String = str(it.get("id", ""))
+		if iid.begins_with("g:op:") and not pausa._graficos.lida_na_v2(iid.substr(5)):
+			todas_lidas = false
+	ok(
+		todas_lidas and not ("g:op:escala_render" in _ids(pausa)) and not ("g:op:max_inimigos" in _ids(pausa)),
+		"a aba só mostra opções que a v2 lê (sem escala de render nem máximo de inimigos)"
+	)
 	_ir_para(pausa, "g:op:luz_relevo")
-	ok(str(pausa._itens_atuais[pausa.sel].rotulo).ends_with("*"), "uma opção que a v2 ainda não lê aparece marcada com *")
+	ok(
+		not str(pausa._itens_atuais[pausa.sel].rotulo).ends_with("*") and not str(pausa._itens_atuais[pausa.sel].ajuda).contains("Etapa"),
+		"a ajuda das opções não cita etapa nem marca com *"
+	)
 	_tecla(KEY_ESCAPE)  # ESC dentro de Gráficos volta a Ajustes (um nível)
 	ok(pausa.tela == "ajustes" and pausa.aberto, "ESC em Gráficos volta um nível: a Ajustes, sem fechar a pausa")
+
+	# 6b. Créditos: uma linha por crédito, com o aviso da licença no rodapé (o aviso do Godot é obrigação da licença MIT)
+	_ir_para(pausa, "creditos")
+	_tecla(KEY_ENTER)
+	ok(pausa.tela == "creditos" and pausa._titulo.text == "CRÉDITOS", "Créditos abre a tela")
+	var motor_ok := false
+	var vazios := 0
+	for it in pausa._itens_atuais:
+		if str(it.id).begins_with("c:") and (str(it.rotulo) == "" or str(it.ajuda) == ""):
+			vazios += 1
+		if str(it.rotulo) == "Motor do jogo" and str(it.ajuda).contains("MIT") and str(it.ajuda).contains("Juan Linietsky"):
+			motor_ok = true
+	ok(motor_ok and vazios == 0, "os créditos trazem o aviso da licença MIT do Godot e nenhuma linha vazia")
+	_ir_para(pausa, "c:2")
+	ok(pausa._ajuda.text.contains("Godot Engine"), "o rodapé mostra o aviso da linha escolhida")
+	_tecla(KEY_ESCAPE)
+	ok(pausa.tela == "ajustes" and pausa.aberto, "ESC em Créditos volta a Ajustes")
 
 	# 7. Áudio: Música e Efeitos mudam o volume (grava em opcoes e aplica no Som); ESC volta a Ajustes e depois à pausa
 	_ir_para(pausa, "audio")
@@ -281,6 +319,8 @@ func _testes() -> void:
 	_tecla(KEY_RIGHT)
 	ok(is_equal_approx(float(Config.v("musica")), snappedf(clampf(mus + 0.1, 0.0, 1.0), 0.1)), "seta direita soma 10% na música")
 	ok(is_equal_approx(Som.volume_musica, float(Config.v("musica"))), "o volume da música vale na hora (Som)")
+	var bus_mus := AudioServer.get_bus_index(Som.BUS_MUSICA)
+	ok(bus_mus != -1 and absf(AudioServer.get_bus_volume_db(bus_mus) - linear_to_db(Som.volume_musica)) < 0.1, "o slider Música move o bus Musica")
 	_tecla(KEY_LEFT)
 	_tecla(KEY_LEFT)
 	ok(is_equal_approx(float(Config.v("musica")), snappedf(clampf(mus - 0.1, 0.0, 1.0), 0.1)), "seta esquerda tira 10%")
@@ -397,6 +437,11 @@ func _fotos(pasta: String) -> void:
 	_tecla(KEY_ENTER)
 	await mundo.ap.foto(pasta.path_join("pausa_audio.png"))
 	_tecla(KEY_ESCAPE)  # Áudio -> Ajustes
+	_ir_para(pausa, "creditos")
+	_tecla(KEY_ENTER)
+	_ir_para(pausa, "c:2")
+	await mundo.ap.foto(pasta.path_join("pausa_creditos.png"))
+	_tecla(KEY_ESCAPE)  # Créditos -> Ajustes
 	_tecla(KEY_ESCAPE)  # Ajustes -> pausa (a pausa continua aberta)
 	_ir_para(pausa, "sair")
 	_tecla(KEY_ENTER)

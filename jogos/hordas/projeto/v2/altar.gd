@@ -8,6 +8,7 @@ extends Control
 const Meta := preload("res://v2/meta.gd")
 const Herois := preload("res://v2/herois.gd")
 const SelecaoHeroi := preload("res://v2/selecao_heroi.gd")  # a tela de escolher o herói (botão HERÓI)
+const Trilha := preload("res://v2/trilha.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const FUNDO := preload("res://assets/icone/entrada.png")
 const FLORESTA := "res://v2/mundo.tscn"
@@ -40,6 +41,7 @@ var _entrar: Button
 var _ajustes: Button
 var _heroi: Button  # abre a seleção de herói; o texto mostra o herói escolhido
 var _selecao  # selecao_heroi.gd
+var trilha  # música de fundo do santuário (trilha.gd)
 
 
 class Cadeado:
@@ -74,6 +76,9 @@ func _ready() -> void:
 	_selecao.escolhido.connect(_heroi_escolhido)
 	_heroi.pressed.connect(_selecao.abrir)
 	_selecao.visibility_changed.connect(func(): if not _selecao.visible: _heroi.grab_focus())  # fechou (escolheu ou voltou): o foco volta ao botão
+	trilha = Trilha.new()
+	add_child(trilha)
+	trilha.tocar("santuario")
 	_atualizar()
 	_entrar.grab_focus()
 
@@ -201,7 +206,7 @@ func _montar() -> void:
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
-	_entrar.position = Vector2(300, 482)
+	_entrar.position = Vector2(300, 478)
 	_entrar.size = Vector2(360, 40)
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
 	_entrar.add_theme_font_size_override("font_size", 37)
@@ -211,7 +216,7 @@ func _montar() -> void:
 	add_child(_entrar)
 	_ajustes = Button.new()  # ao lado de ENTRAR: abre o mesmo submenu Ajustes da pausa (ligado no _ready)
 	_ajustes.text = "AJUSTES"
-	_ajustes.position = Vector2(672, 482)
+	_ajustes.position = Vector2(672, 478)
 	_ajustes.size = Vector2(168, 40)
 	_ajustes.add_theme_font_override("font", Dados.fonte_titulo)
 	_ajustes.add_theme_font_size_override("font_size", 37)
@@ -219,12 +224,12 @@ func _montar() -> void:
 	_ajustes.add_theme_color_override("font_color", COR_OURO)
 	add_child(_ajustes)
 	_heroi = Button.new()  # à esquerda de ENTRAR: abre a seleção de herói (selecao_heroi.gd, ligado no _ready)
-	_heroi.position = Vector2(36, 482)
+	_heroi.position = Vector2(36, 478)  # na mesma linha de ENTRAR e AJUSTES; a dica fica 10 px abaixo deles
 	_heroi.size = Vector2(252, 40)
 	_estilo_botao(_heroi, 37)
 	_heroi.add_theme_color_override("font_color", COR_OURO)
 	add_child(_heroi)
-	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 526, LARG, 12)))
+	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:
