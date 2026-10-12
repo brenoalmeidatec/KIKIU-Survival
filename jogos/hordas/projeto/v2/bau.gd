@@ -204,7 +204,10 @@ func abrir(b: Dictionary) -> void:
 				"rar": 0,
 				"rar_nome": "Comum",
 				"cor": Color(0.8, 0.82, 0.86),
-				"extra": "",
+				"icone": "icone_vida",
+				"proximo": "",
+				"nivel_txt": "",
+				"evolui": "",
 				"valor": 0.0,
 				"max": 99
 			}

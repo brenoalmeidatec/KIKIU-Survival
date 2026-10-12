@@ -8,11 +8,17 @@ extends RefCounted
 
 const LARG := 960
 const ALT := 540
-const CARTA_L := 224.0
-const CARTA_A := 214.0
-const CARTA_Y := 178.0
-const FOLGA := 24.0
-const BTN_Y := 400.0
+const CARTA_L := 256.0
+const CARTA_A := 288.0
+const CARTA_Y := 146.0
+const FOLGA := 20.0
+const BTN_Y := 440.0
+const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
+const ICONE := 32.0  # o ícone da v1 tem 16x16: aqui sai em 2x, pixel a pixel
+const TAM_TITULO := 56  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
+const TAM_NOME := 37  # múltiplo de 2 px da grade da Jersey 10 (cabe em uma linha na maioria dos nomes)
+const TAM_NOME_CURTO := 28  # nomes longos (Lâminas Rodopiantes) que não cabem em TAM_NOME
+const TAM_TEXTO := 16
 
 var combate
 var mundo
@@ -43,8 +49,9 @@ var _res_valores: Label
 var _res_dica: Label
 var _dep: Label
 var _dep_t := 0.0
-var _fonte: Font
-var _fonte_t: Font
+var _fonte: Font  # texto corrido (Pixelify Sans)
+var _fonte_t: Font  # títulos e nomes (Jersey 10)
+var _fonte_px: Font  # o texto de depuração segue na Press Start 2P
 var _t_ui := 0.0
 var _bau: Control
 var _bau_titulo: Label
@@ -61,8 +68,9 @@ var _bau_dica: Label
 func montar(c, sv: Node) -> void:
 	combate = c
 	mundo = c.mundo
-	_fonte = Dados.fonte
+	_fonte = Dados.fonte_texto
 	_fonte_t = Dados.fonte_titulo
+	_fonte_px = Dados.fonte
 	camada = CanvasLayer.new()
 	camada.layer = 5
 	sv.add_child(camada)
@@ -76,6 +84,7 @@ func montar(c, sv: Node) -> void:
 	_montar_bau()
 	_montar_resultado()
 	_dep = _rotulo("", 8, false, Color(0.9, 1.0, 0.95), HORIZONTAL_ALIGNMENT_LEFT)
+	_dep.add_theme_font_override("font", _fonte_px)
 	_dep.position = Vector2(6, 30)
 	_dep.size = Vector2(500, 40)
 	camada.add_child(_dep)
@@ -90,7 +99,7 @@ func _rotulo(texto: String, tam: int, titulo: bool, cor: Color, alin: Horizontal
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	l.add_theme_constant_override("outline_size", 4 if titulo else 3)
+	l.add_theme_constant_override("outline_size", 4 if titulo else 2)
 	l.horizontal_alignment = alin
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
@@ -114,80 +123,140 @@ func _montar_escolha() -> void:
 	_escolha.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_escolha.visible = false
 	camada.add_child(_escolha)
-	_titulo = _rotulo("", 48, true, Color(1.0, 0.86, 0.42), HORIZONTAL_ALIGNMENT_CENTER)
-	_titulo.position = Vector2(0, 100)
-	_titulo.size = Vector2(LARG, 60)
+	_titulo = _rotulo("", TAM_TITULO, true, Color(1.0, 0.86, 0.42), HORIZONTAL_ALIGNMENT_CENTER)
+	_titulo.position = Vector2(0, 66)
+	_titulo.size = Vector2(LARG, 64)
 	_escolha.add_child(_titulo)
-	_sub = _rotulo("Escolha uma carta", 8, false, Color(0.85, 0.85, 0.95), HORIZONTAL_ALIGNMENT_CENTER)
-	_sub.position = Vector2(0, 156)
-	_sub.size = Vector2(LARG, 12)
+	_sub = _rotulo("Escolha uma carta", TAM_TEXTO, false, Color(0.85, 0.85, 0.95), HORIZONTAL_ALIGNMENT_CENTER)
+	_sub.position = Vector2(0, 122)
+	_sub.size = Vector2(LARG, 20)
 	_escolha.add_child(_sub)
 	var x0 := (LARG - (3.0 * CARTA_L + 2.0 * FOLGA)) * 0.5
 	for i in 3:
 		var p := Panel.new()
 		p.position = Vector2(x0 + i * (CARTA_L + FOLGA), CARTA_Y)
-		p.size = Vector2(CARTA_L, CARTA_A)
-		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var st := _estilo(false)
 		p.add_theme_stylebox_override("panel", st)
 		_estilos.append(st)
-		var tecla := _rotulo("[%d]" % (i + 1), 8, false, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_LEFT)
-		tecla.position = Vector2(10, 8)
-		tecla.size = Vector2(60, 12)
-		p.add_child(tecla)
-		var rar := _rotulo("", 8, false, Color.WHITE, HORIZONTAL_ALIGNMENT_RIGHT)
-		rar.name = "rar"
-		rar.position = Vector2(CARTA_L - 130, 8)
-		rar.size = Vector2(120, 12)
-		p.add_child(rar)
-		var faixa := ColorRect.new()
-		faixa.name = "faixa"
-		faixa.position = Vector2(8, 24)
-		faixa.size = Vector2(CARTA_L - 16, 3)
-		faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		p.add_child(faixa)
-		var nome := _rotulo("", 24, true, Color(1.0, 0.95, 0.8), HORIZONTAL_ALIGNMENT_CENTER)
-		nome.name = "nome"
-		nome.position = Vector2(8, 34)
-		nome.size = Vector2(CARTA_L - 16, 56)
-		nome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		p.add_child(nome)
-		var desc := _rotulo("", 8, false, Color(0.88, 0.9, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
-		desc.name = "desc"
-		desc.position = Vector2(12, 98)
-		desc.size = Vector2(CARTA_L - 24, 52)
-		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		p.add_child(desc)
-		var extra := _rotulo("", 8, false, Color(0.6, 0.85, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
-		extra.name = "extra"
-		extra.position = Vector2(12, 152)
-		extra.size = Vector2(CARTA_L - 24, 52)
-		extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		p.add_child(extra)
+		_montar_cartao(p, "[%d]" % (i + 1))
 		_escolha.add_child(p)
 		_cartas.append(p)
 	# rerrolar e banir
-	_btn_r = _botao(Vector2(LARG * 0.5 - 214, BTN_Y), "r")
+	_btn_r = _botao(Vector2(LARG * 0.5 - 254, BTN_Y), "r")
 	_btn_b = _botao(Vector2(LARG * 0.5 + 14, BTN_Y), "b")
 	_btn_r_txt = _btn_r.get_node("t")
 	_btn_b_txt = _btn_b.get_node("t")
-	_build = _rotulo("", 8, false, Color(0.75, 0.8, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
-	_build.position = Vector2(60, 440)
-	_build.size = Vector2(LARG - 120, 40)
+	_build = _rotulo("", TAM_TEXTO, false, Color(0.75, 0.8, 0.9), HORIZONTAL_ALIGNMENT_CENTER)
+	_build.position = Vector2(60, 472)
+	_build.size = Vector2(LARG - 120, 36)
 	_build.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_escolha.add_child(_build)
+
+
+## Um campo de texto do cartão (ou de qualquer tela de cartas): nó com nome, posição e tamanho dados.
+func _campo(
+	pai: Node, nome: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, x: float, y: float, w: float, h: float, quebra := false
+) -> Label:
+	var l := _rotulo("", tam, titulo, cor, alin)
+	l.name = nome
+	l.position = Vector2(x, y)
+	l.size = Vector2(w, h)
+	if quebra:
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	pai.add_child(l)
+	return l
+
+
+## Monta o cartão vazio (a escolha e o baú usam o mesmo). Ordem fixa, de cima para baixo: tecla e raridade; faixa da cor da raridade;
+## ícone numa moldura da cor da raridade; nome; descrição; o que o golpe ganha no próximo nível; no rodapé, nível e evolução.
+## Todas as linhas são centradas (a tecla e a raridade ficam nas pontas do topo), com a mesma margem dos dois lados.
+func _montar_cartao(p: Panel, tecla: String) -> void:
+	p.size = Vector2(CARTA_L, CARTA_A)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var larg := CARTA_L - 2.0 * MARGEM
+	_campo(p, "tecla", TAM_TEXTO, false, Color(0.7, 0.7, 0.8), HORIZONTAL_ALIGNMENT_LEFT, MARGEM, 8, larg, 20).text = tecla
+	_campo(p, "rar", TAM_TEXTO, false, Color.WHITE, HORIZONTAL_ALIGNMENT_RIGHT, MARGEM, 8, larg, 20)
+	var faixa := ColorRect.new()
+	faixa.name = "faixa"
+	faixa.position = Vector2(MARGEM, 32)
+	faixa.size = Vector2(larg, 3)
+	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(faixa)
+	var moldura := Panel.new()
+	moldura.name = "moldura"
+	moldura.position = Vector2((CARTA_L - ICONE) * 0.5 - 6.0, 40)
+	moldura.size = Vector2(ICONE + 12.0, ICONE + 12.0)
+	moldura.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(moldura)
+	var icone := TextureRect.new()
+	icone.name = "icone"
+	icone.position = Vector2((CARTA_L - ICONE) * 0.5, 46)
+	icone.size = Vector2(ICONE, ICONE)
+	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(icone)
+	_campo(p, "nome", TAM_NOME, true, Color(1.0, 0.95, 0.8), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 86, larg, 40)
+	_campo(p, "desc", TAM_TEXTO, false, Color(0.88, 0.9, 1.0), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 130, larg, 58, true)
+	_campo(p, "proximo", TAM_TEXTO, false, Color(0.6, 0.85, 1.0), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 190, larg, 42, true)
+	var sep := ColorRect.new()
+	sep.name = "sep"
+	sep.position = Vector2(MARGEM, 236)
+	sep.size = Vector2(larg, 1)
+	sep.color = Color(1, 1, 1, 0.2)
+	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(sep)
+	_campo(p, "nivel", TAM_TEXTO, false, Color(0.92, 0.92, 0.96), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 242, larg, 20)
+	_campo(p, "evolui", TAM_TEXTO, false, Color(1.0, 0.82, 0.4), HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 262, larg, 20)
+
+
+## Põe os dados de uma carta (escolha, ou baú já revelado) no cartão `p`.
+func _preencher(p: Panel, c: Dictionary) -> void:
+	var cor: Color = c.get("cor", Color(0.8, 0.82, 0.86))
+	var nome := p.get_node("nome") as Label
+	nome.text = str(c.nome)
+	nome.add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.55))
+	_ajustar_nome(nome)
+	(p.get_node("desc") as Label).text = str(c.desc)
+	(p.get_node("proximo") as Label).text = str(c.get("proximo", ""))
+	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
+	(p.get_node("evolui") as Label).text = str(c.get("evolui", ""))
+	var rl := p.get_node("rar") as Label
+	rl.text = str(c.get("rar_nome", "")).to_upper()
+	rl.add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.3))
+	(p.get_node("faixa") as ColorRect).color = Color(cor.r, cor.g, cor.b, 0.9)
+	var nome_icone := str(c.get("icone", ""))
+	(p.get_node("icone") as TextureRect).texture = Dados.tex(nome_icone) if nome_icone != "" else null
+	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(cor))
+
+
+## Nome numa linha só: o tamanho grande se cabe na largura do cartão, senão o pequeno (um nome longo não sai da carta).
+func _ajustar_nome(l: Label) -> void:
+	var largura := _fonte_t.get_string_size(l.text, HORIZONTAL_ALIGNMENT_CENTER, -1, TAM_NOME).x
+	l.add_theme_font_size_override("font_size", TAM_NOME if largura <= CARTA_L - 2.0 * MARGEM else TAM_NOME_CURTO)
+
+
+## Moldura do ícone: fundo quase preto e borda da cor da raridade.
+func _moldura(cor: Color) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = Color(0.03, 0.025, 0.05, 0.95)
+	s.border_color = cor
+	s.set_border_width_all(2)
+	s.set_corner_radius_all(0)
+	return s
 
 
 func _botao(pos: Vector2, _id: String) -> Panel:
 	var p := Panel.new()
 	p.position = pos
-	p.size = Vector2(200, 26)
+	p.size = Vector2(240, 28)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_theme_stylebox_override("panel", _estilo(false, Color(0.5, 0.5, 0.62)))
-	var t := _rotulo("", 8, false, Color(0.9, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	var t := _rotulo("", TAM_TEXTO, false, Color(0.9, 0.92, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
 	t.name = "t"
-	t.position = Vector2(4, 8)
-	t.size = Vector2(192, 12)
+	t.position = Vector2(4, 5)
+	t.size = Vector2(232, 18)
 	p.add_child(t)
 	_escolha.add_child(p)
 	return p
@@ -198,39 +267,21 @@ func _montar_bau() -> void:
 	_bau.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bau.visible = false
 	camada.add_child(_bau)
-	_bau_titulo = _rotulo("BAÚ!", 48, true, Color(1.0, 0.86, 0.42), HORIZONTAL_ALIGNMENT_CENTER)
-	_bau_titulo.position = Vector2(0, 104)
-	_bau_titulo.size = Vector2(LARG, 60)
+	_bau_titulo = _rotulo("BAÚ!", TAM_TITULO, true, Color(1.0, 0.86, 0.42), HORIZONTAL_ALIGNMENT_CENTER)
+	_bau_titulo.position = Vector2(0, 80)
+	_bau_titulo.size = Vector2(LARG, 64)
 	_bau.add_child(_bau_titulo)
 	for i in 3:
 		var p := Panel.new()
-		p.size = Vector2(CARTA_L, 150.0)
-		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var st := _estilo(false)
 		p.add_theme_stylebox_override("panel", st)
 		_bau_estilos.append(st)
-		var nome := _rotulo("", 24, true, Color(1.0, 0.95, 0.8), HORIZONTAL_ALIGNMENT_CENTER)
-		nome.name = "nome"
-		nome.position = Vector2(8, 22)
-		nome.size = Vector2(CARTA_L - 16, 56)
-		nome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		p.add_child(nome)
-		var rar := _rotulo("", 8, false, Color.WHITE, HORIZONTAL_ALIGNMENT_CENTER)
-		rar.name = "rar"
-		rar.position = Vector2(8, 8)
-		rar.size = Vector2(CARTA_L - 16, 12)
-		p.add_child(rar)
-		var desc := _rotulo("", 8, false, Color(0.88, 0.9, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
-		desc.name = "desc"
-		desc.position = Vector2(12, 84)
-		desc.size = Vector2(CARTA_L - 24, 60)
-		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		p.add_child(desc)
+		_montar_cartao(p, "")
 		_bau.add_child(p)
 		_bau_slots.append(p)
-	_bau_dica = _rotulo("ENTER ou clique para continuar", 8, false, Color(1.0, 0.85, 0.45), HORIZONTAL_ALIGNMENT_CENTER)
-	_bau_dica.position = Vector2(0, 380)
-	_bau_dica.size = Vector2(LARG, 12)
+	_bau_dica = _rotulo("ENTER ou clique para continuar", TAM_TEXTO, false, Color(1.0, 0.85, 0.45), HORIZONTAL_ALIGNMENT_CENTER)
+	_bau_dica.position = Vector2(0, 450)
+	_bau_dica.size = Vector2(LARG, 20)
 	_bau.add_child(_bau_dica)
 
 
@@ -239,21 +290,21 @@ func _montar_resultado() -> void:
 	_res.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_res.visible = false
 	camada.add_child(_res)
-	_res_titulo = _rotulo("VOCÊ CAIU", 60, true, Color(1.0, 0.38, 0.32), HORIZONTAL_ALIGNMENT_CENTER)
+	_res_titulo = _rotulo("VOCÊ CAIU", TAM_TITULO, true, Color(1.0, 0.38, 0.32), HORIZONTAL_ALIGNMENT_CENTER)
 	_res_titulo.position = Vector2(0, 80)
 	_res_titulo.size = Vector2(LARG, 72)
 	_res.add_child(_res_titulo)
-	_res_linhas = _rotulo("Tempo\nAbates\nMaior combo\nNível\nAlmas ganhas", 16, false, Color(0.8, 0.82, 0.95), HORIZONTAL_ALIGNMENT_LEFT)
+	_res_linhas = _rotulo("Tempo\nAbates\nMaior combo\nNível\nAlmas ganhas", TAM_TEXTO, false, Color(0.8, 0.82, 0.95), HORIZONTAL_ALIGNMENT_LEFT)
 	_res_linhas.position = Vector2(300, 186)
 	_res_linhas.size = Vector2(240, 190)
-	_res_linhas.add_theme_constant_override("line_spacing", 12)
+	_res_linhas.add_theme_constant_override("line_spacing", 8)
 	_res.add_child(_res_linhas)
-	_res_valores = _rotulo("", 16, false, Color(1.0, 0.95, 0.75), HORIZONTAL_ALIGNMENT_RIGHT)
+	_res_valores = _rotulo("", TAM_TEXTO, false, Color(1.0, 0.95, 0.75), HORIZONTAL_ALIGNMENT_RIGHT)
 	_res_valores.position = Vector2(540, 186)
 	_res_valores.size = Vector2(120, 190)
-	_res_valores.add_theme_constant_override("line_spacing", 12)
+	_res_valores.add_theme_constant_override("line_spacing", 8)
 	_res.add_child(_res_valores)
-	_res_dica = _rotulo("ENTER ou clique para jogar de novo", 8, false, Color(1.0, 0.85, 0.45), HORIZONTAL_ALIGNMENT_CENTER)
+	_res_dica = _rotulo("ENTER ou clique para jogar de novo", TAM_TEXTO, false, Color(1.0, 0.85, 0.45), HORIZONTAL_ALIGNMENT_CENTER)
 	_res_dica.position = Vector2(0, 410)
 	_res_dica.size = Vector2(LARG, 12)
 	_res.add_child(_res_dica)
@@ -278,15 +329,7 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 		if i >= maxn:
 			continue
 		var c: Dictionary = cartas[i]
-		var cor: Color = c.get("cor", Color(0.8, 0.82, 0.86))
-		(p.get_node("nome") as Label).text = str(c.nome)
-		(p.get_node("nome") as Label).add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.55))
-		(p.get_node("desc") as Label).text = str(c.desc)
-		(p.get_node("extra") as Label).text = str(c.get("extra", ""))
-		var rl := p.get_node("rar") as Label
-		rl.text = str(c.get("rar_nome", "")).to_upper()
-		rl.add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.3))
-		(p.get_node("faixa") as ColorRect).color = Color(cor.r, cor.g, cor.b, 0.9)
+		_preencher(p, c)
 		var rar := int(c.get("rar", 0))
 		_estilos[i].shadow_size = 0 if rar == 0 else 4 + 3 * rar
 	_marcar()
@@ -389,7 +432,7 @@ func mostrar_bau(cartas: Array) -> void:
 		p.visible = i < n
 		if i >= n:
 			continue
-		p.position = Vector2(x0 + i * (CARTA_L + FOLGA), 200.0)
+		p.position = Vector2(x0 + i * (CARTA_L + FOLGA), CARTA_Y)
 		_limpar_slot(i)
 	combate.audio.tocar("bau", 1.0, 0.0, 0.0)
 
@@ -397,8 +440,10 @@ func mostrar_bau(cartas: Array) -> void:
 func _limpar_slot(i: int) -> void:
 	var p := _bau_slots[i]
 	(p.get_node("nome") as Label).text = "?"
-	(p.get_node("rar") as Label).text = ""
-	(p.get_node("desc") as Label).text = ""
+	for campo in ["rar", "desc", "proximo", "nivel", "evolui"]:
+		(p.get_node(campo) as Label).text = ""
+	(p.get_node("icone") as TextureRect).texture = null
+	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(Color(0.36, 0.34, 0.45)))
 	p.modulate = Color(1, 1, 1, 0.9)
 	var novo := _estilo(false)
 	_bau_estilos[i].bg_color = novo.bg_color
@@ -414,7 +459,9 @@ func _girar_slot(i: int) -> void:
 	var r: int = randi() % cs.rar.size()
 	var cor := Color(cs.rar[r].cor[0], cs.rar[r].cor[1], cs.rar[r].cor[2])
 	var p := _bau_slots[i]
-	(p.get_node("nome") as Label).text = str(d.nome)
+	var nome_girando := p.get_node("nome") as Label
+	nome_girando.text = str(d.nome)
+	_ajustar_nome(nome_girando)
 	(p.get_node("nome") as Label).add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.4))
 	var novo := _estilo(false, cor, r)
 	_bau_estilos[i].bg_color = novo.bg_color
@@ -428,12 +475,7 @@ func _revelar_slot(i: int) -> void:
 	var cor: Color = c.get("cor", Color(0.8, 0.82, 0.86))
 	var rar := int(c.get("rar", 0))
 	var p := _bau_slots[i]
-	(p.get_node("nome") as Label).text = str(c.nome)
-	(p.get_node("nome") as Label).add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.55))
-	var rl := p.get_node("rar") as Label
-	rl.text = str(c.get("rar_nome", "")).to_upper()
-	rl.add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.3))
-	(p.get_node("desc") as Label).text = "%s\n%s" % [str(c.desc), str(c.get("extra", ""))]
+	_preencher(p, c)
 	var novo := _estilo(true, cor, rar)
 	_bau_estilos[i].bg_color = novo.bg_color
 	_bau_estilos[i].border_color = novo.border_color

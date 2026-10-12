@@ -181,7 +181,8 @@ func avancar(dt: float) -> void:
 	var abates := roundi(_num(mundo, "abates", 0.0))
 	var combo := roundi(_num(mundo, "combo", 0.0))
 	_abates.text = "ABATES %d\nVIVOS %d" % [abates, roundi(_num(mundo, "monstros_vivos", 0.0))]
-	_combo.visible = combo > 0
+	var cartas_na_tela := _cartas_na_tela()  # a escolha e o baú têm o título grande no alto: combo e faixa saem
+	_combo.visible = combo > 0 and not cartas_na_tela
 	_combo_num.text = "x%d" % combo
 	_checar_marcos(_combo_antes, combo)
 	if abates > _abates_antes or combo > _combo_antes:
@@ -192,6 +193,13 @@ func avancar(dt: float) -> void:
 	_chefe_quadro(dt)
 	_animar(dt)
 	_anuncio.avancar(dt)
+	_anuncio.visible = _anuncio.texto_ativo != "" and not cartas_na_tela
+
+
+## Verdadeiro com a escolha de carta ou o baú abertos (telas.gd). Sem combate no mundo (testes), é falso.
+func _cartas_na_tela() -> bool:
+	var telas = _campo(_campo(mundo, "combate"), "telas")
+	return _campo(telas, "escolha_aberta") == true or _campo(telas, "bau_aberto") == true
 
 
 func _animar(dt: float) -> void:

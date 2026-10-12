@@ -219,6 +219,47 @@ func _testes() -> void:
 
 	# 10. anúncios, marcos de combo, chefe, vinheta, relógio e sinais que faltam no mundo
 	_testes_anuncios(vista)
+	_testes_rotulo_e_cartas()
+
+
+## Leva de interface: o texto de depuração (fps e atores) começa DESLIGADO na partida normal e a tecla F3 liga e desliga;
+## com a escolha de carta (ou o baú) aberta, o HUD esconde o combo e a faixa de anúncio (o título grande fica no alto).
+func _testes_rotulo_e_cartas() -> void:
+	var w = Mundo.instantiate()
+	w.modo_teste = true
+	add_child(w)
+	w.set_process(false)
+	ok(w._rotulo != null, "a partida livre monta o texto de depuração")
+	ok(w._rotulo != null and not w._rotulo.visible, "o texto de depuração começa desligado na partida normal")
+	var tecla := InputEventKey.new()
+	tecla.keycode = KEY_F3
+	tecla.physical_keycode = KEY_F3
+	tecla.pressed = true
+	w._input(tecla)
+	ok(w._rotulo != null and w._rotulo.visible, "F3 liga o texto de depuração")
+	w._input(tecla)
+	ok(w._rotulo != null and not w._rotulo.visible, "F3 desliga de novo")
+	var real = w.sv.get_node_or_null("Hud")
+	ok(real != null, "o mundo da v2 tem o HUD (para o teste da escolha)")
+	if real != null:
+		w.combo = 12
+		real.avancar(PASSO)
+		ok(real._combo.visible, "combo x12 aparece na partida")
+		real._anuncio.anunciar("NÍVEL 3!", Color.WHITE)
+		real.avancar(PASSO)
+		ok(real._anuncio.visible, "a faixa de anúncio aparece na partida")
+		w.combate.telas.escolha_aberta = true
+		real.avancar(PASSO)
+		ok(not real._combo.visible, "com a escolha aberta, o combo some")
+		ok(not real._anuncio.visible, "com a escolha aberta, a faixa some")
+		w.combate.telas.escolha_aberta = false
+		w.combate.telas.bau_aberto = true
+		real.avancar(PASSO)
+		ok(not real._combo.visible and not real._anuncio.visible, "com o baú aberto, o combo e a faixa também somem")
+		w.combate.telas.bau_aberto = false
+		real.avancar(PASSO)
+		ok(real._combo.visible, "o combo volta quando a escolha fecha")
+	w.queue_free()
 
 
 ## Anúncios (faixa, fila, marcos, nível, sinal livre), barra de chefe com fantasma, vinheta de vida baixa e pisca do relógio.
