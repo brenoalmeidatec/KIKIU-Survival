@@ -1,0 +1,218 @@
+[
+  {
+    "id": "nuvem_veneno",
+    "icone": "icone_u_pocao_corrosiva",
+    "nome": "Nuvem Venenosa",
+    "desc": "Uma nuvem verde cai perto de você e envenena quem ficar dentro.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.45, 0.95, 0.2],
+    "base": {"dano": 5, "recarga": 3.0, "alcance": 180, "raio": 50, "duracao": 4.0, "tique": 0.5, "lentidao": 0},
+    "niveis": [
+      {"texto": "+2 de dano", "dano": 2},
+      {"texto": "nuvem dura mais", "duracao": 1.5},
+      {"texto": "cai mais rápido", "recarga": -0.6},
+      {"texto": "+3 de dano e nuvem maior", "dano": 3, "raio": 12}
+    ],
+    "arte": {
+      "visual": "Uma nuvem verde-tóxica, densa e com bolhas, cai do alto no chão perto do herói e fica parada, com partículas subindo. Referência de tela 960x540.",
+      "cores": ["verde-limão", "verde musgo", "bolhas claras"],
+      "tamanho": "nuvem de 100 px de diâmetro no chão; bolhas de 3 a 6 px",
+      "duracao": "a nuvem some com fade nos últimos 0,5 s",
+      "provisorio": "Um círculo verde translúcido pulsando, com 6 pequenas bolhas subindo."
+    }
+  },
+  {
+    "id": "nevoeiro_gelado",
+    "icone": "icone_cristal_geada",
+    "nome": "Nevoeiro Gelado",
+    "desc": "Uma nuvem azul cai perto de você e congela quem entra nela.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.2, 0.55, 1.0],
+    "base": {"dano": 4, "recarga": 2.5, "alcance": 200, "raio": 60, "duracao": 3.5, "tique": 0.5, "lentidao": 0.3},
+    "niveis": [
+      {"texto": "+2 de dano", "dano": 2},
+      {"texto": "gelo mais forte", "lentidao": 0.1},
+      {"texto": "cai mais rápido", "recarga": -0.4},
+      {"texto": "+2 de dano e mais gelo", "dano": 2, "lentidao": 0.1}
+    ],
+    "arte": {
+      "visual": "Uma névoa azul-gelo espessa se espalha no chão em forma de círculo, com cristais de gelo finos girando devagar. Referência de tela 960x540.",
+      "cores": ["azul-gelo", "azul profundo", "branco-frio"],
+      "tamanho": "névoa de 120 px de diâmetro; cristais de 4 px",
+      "duracao": "fade de 0,4 s no fim",
+      "provisorio": "Um círculo azul translúcido que escurece levemente, com 4 pontos brancos girando em volta."
+    }
+  },
+  {
+    "id": "cinzas_vulcanicas",
+    "icone": "icone_u_tocha_ardente",
+    "nome": "Cinzas Vulcânicas",
+    "desc": "Nuvem grande de cinza cai perto de você e sufoca em pulsos seguidos.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.35, 0.35, 0.38],
+    "base": {"dano": 4, "recarga": 3.5, "alcance": 220, "raio": 80, "duracao": 3.0, "tique": 0.3, "lentidao": 0},
+    "niveis": [
+      {"texto": "+2 de dano", "dano": 2},
+      {"texto": "pulsa mais rápido", "tique": -0.05},
+      {"texto": "dura mais e nuvem maior", "duracao": 1.0, "raio": 10},
+      {"texto": "+3 de dano e cai antes", "dano": 3, "recarga": -0.4}
+    ],
+    "arte": {
+      "visual": "Uma nuvem cinza-escura, grande e turva, cai no chão com brasas apagadas girando dentro. Referência de tela 960x540.",
+      "cores": ["cinza-escuro", "cinza-carvão", "laranja apagado nas brasas"],
+      "tamanho": "nuvem de 160 px de diâmetro; brasas de 3 px",
+      "duracao": "fade de 0,5 s no fim",
+      "provisorio": "Um círculo cinza escuro translúcido com 5 pontinhos laranja piscando dentro."
+    }
+  },
+  {
+    "id": "fumaca_sonolenta",
+    "icone": "icone_u_cajado_eremita",
+    "nome": "Fumaça Sonolenta",
+    "desc": "Névoa roxa cai perto de você e deixa os inimigos lentos e sonolentos.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.75, 0.6, 1.0],
+    "base": {"dano": 4, "recarga": 3.0, "alcance": 180, "raio": 55, "duracao": 4.0, "tique": 0.6, "lentidao": 0.5},
+    "niveis": [
+      {"texto": "+2 de dano", "dano": 2},
+      {"texto": "sono mais pesado", "lentidao": 0.05},
+      {"texto": "nuvem dura mais", "duracao": 1.5},
+      {"texto": "+2 de dano e cai antes", "dano": 2, "recarga": -0.5}
+    ],
+    "arte": {
+      "visual": "Uma fumaça roxa-clara, suave e lenta, cai e se espalha no chão com pequenas letras 'z' flutuando para cima. Referência de tela 960x540.",
+      "cores": ["roxo-claro", "lilás", "branco-lavanda"],
+      "tamanho": "fumaça de 110 px de diâmetro; 'z' de 8 px",
+      "duracao": "fade suave de 0,6 s no fim",
+      "provisorio": "Um círculo lilás translúcido com 2 pequenos traços em forma de z subindo."
+    }
+  },
+  {
+    "id": "chuva_acida",
+    "icone": "icone_u_estrela_matutina",
+    "nome": "Chuva Ácida",
+    "desc": "Gotas ácidas caem numa área longe de você e corroem quem estiver nela.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.95, 0.9, 0.25],
+    "base": {"dano": 8, "recarga": 1.8, "alcance": 300, "raio": 70, "duracao": 2.5, "tique": 0.5, "lentidao": 0},
+    "niveis": [
+      {"texto": "+3 de dano", "dano": 3},
+      {"texto": "área maior", "raio": 12},
+      {"texto": "recarrega mais rápido", "recarga": -0.3},
+      {"texto": "+4 de dano e dura mais", "dano": 4, "duracao": 1.0}
+    ],
+    "arte": {
+      "visual": "Várias gotas amarelo-esverdeadas caem de cima dentro de uma área no chão, com fumaça fina subindo onde batem. Referência de tela 960x540.",
+      "cores": ["amarelo-ácido", "verde-amarelado", "fumaça clara"],
+      "tamanho": "área de 140 px de diâmetro; gotas de 3 x 6 px",
+      "duracao": "as gotas caem em 0,3 s e a área some com fade",
+      "provisorio": "Um círculo amarelo translúcido com 5 pequenos riscos verticais caindo dentro dele."
+    }
+  },
+  {
+    "id": "nevasca",
+    "icone": "icone_geada",
+    "nome": "Nevasca",
+    "desc": "Uma nuvem branca e longa cai perto de você e atrasa quem fica nela.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.97, 0.97, 0.99],
+    "base": {"dano": 4, "recarga": 4.0, "alcance": 200, "raio": 65, "duracao": 6.0, "tique": 0.6, "lentidao": 0.35},
+    "niveis": [
+      {"texto": "+2 de dano", "dano": 2},
+      {"texto": "dura mais", "duracao": 1.5},
+      {"texto": "mais lenta ao monstro", "lentidao": 0.1},
+      {"texto": "+2 de dano e mais frio", "dano": 2, "lentidao": 0.1}
+    ],
+    "arte": {
+      "visual": "Uma nuvem branca e alta, com flocos de neve caindo do centro para fora, ocupando uma área longa no chão. Referência de tela 960x540.",
+      "cores": ["branco", "branco-gelo", "cinza-azulado claro"],
+      "tamanho": "nuvem de 130 px de diâmetro; flocos de 3 a 5 px",
+      "duracao": "flocos caem por toda a duração; fade de 0,8 s no fim",
+      "provisorio": "Um círculo branco translúcido com 6 pontos brancos caindo em espiral."
+    }
+  },
+  {
+    "id": "nuvem_espora",
+    "icone": "icone_u_baluarte_espinhoso",
+    "nome": "Nuvem de Esporos",
+    "desc": "Nuvem de esporos dourados cai perto de você e fica por muito tempo.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.7, 0.5, 0.2],
+    "base": {"dano": 10, "recarga": 4.5, "alcance": 200, "raio": 60, "duracao": 7.0, "tique": 0.8, "lentidao": 0},
+    "niveis": [
+      {"texto": "+3 de dano", "dano": 3},
+      {"texto": "dura mais", "duracao": 1.5},
+      {"texto": "cai mais rápido", "recarga": -0.4},
+      {"texto": "+4 de dano e nuvem maior", "dano": 4, "raio": 12}
+    ],
+    "arte": {
+      "visual": "Uma nuvem marrom-dourada de esporos, com grãos pequenos girando lentamente e caindo para o chão. Referência de tela 960x540.",
+      "cores": ["marrom-dourado", "bege", "âmbar"],
+      "tamanho": "nuvem de 120 px de diâmetro; grãos de 2 a 4 px",
+      "duracao": "grãos caem por toda a duração; fade de 0,7 s no fim",
+      "provisorio": "Um círculo marrom-dourado translúcido com 8 pontinhos claros girando em volta."
+    }
+  },
+  {
+    "id": "cortina_sangue",
+    "icone": "icone_u_retalhador_sangrento",
+    "nome": "Cortina de Sangue",
+    "desc": "Névoa vermelha de dano alto surge perto de você, em intervalos longos.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.85, 0.08, 0.12],
+    "base": {"dano": 18, "recarga": 4.5, "alcance": 150, "raio": 35, "duracao": 3.0, "tique": 0.5, "lentidao": 0},
+    "niveis": [
+      {"texto": "+3 de dano", "dano": 3},
+      {"texto": "cai mais rápido", "recarga": -0.4},
+      {"texto": "+3 de dano e área maior", "dano": 3, "raio": 8},
+      {"texto": "+4 de dano e dura mais", "dano": 4, "duracao": 1.0}
+    ],
+    "arte": {
+      "visual": "Uma névoa vermelho-sangue densa, com gotas escorrendo de dentro, aparece de uma vez no chão ao lado do herói. Referência de tela 960x540.",
+      "cores": ["vermelho-sangue", "vermelho escuro", "rosa-vivo nas bordas"],
+      "tamanho": "névoa de 70 px de diâmetro; gotas de 3 x 5 px",
+      "duracao": "surge com flash de 0,15 s e some com fade no fim",
+      "provisorio": "Um círculo vermelho translúcido com 3 gotas escorrendo para baixo."
+    }
+  },
+  {
+    "id": "nevoa_espectral",
+    "icone": "icone_u_lanterna_fantasma",
+    "nome": "Névoa Espectral",
+    "desc": "Nuvem fantasmagórica surge ao seu lado e assombra quem chega perto.",
+    "tipo": "nuvem",
+    "max": 5,
+    "peso": 1.0,
+    "cor": [0.8, 0.95, 0.95],
+    "base": {"dano": 8, "recarga": 2.8, "alcance": 120, "raio": 50, "duracao": 4.0, "tique": 0.5, "lentidao": 0},
+    "niveis": [
+      {"texto": "+3 de dano", "dano": 3},
+      {"texto": "assombra mais rápido", "tique": -0.1},
+      {"texto": "dura mais", "duracao": 1.0},
+      {"texto": "+4 de dano e cai antes", "dano": 4, "recarga": -0.4}
+    ],
+    "arte": {
+      "visual": "Uma névoa branco-azulada, meio transparente, com rostos muito difusos dentro, surge perto do herói e fica flutuando no chão. Referência de tela 960x540.",
+      "cores": ["branco-azulado", "azul-pálido", "ciano claro"],
+      "tamanho": "névoa de 100 px de diâmetro; rostos difusos de 12 px",
+      "duracao": "aparece com fade de 0,3 s e some com fade de 0,6 s",
+      "provisorio": "Um círculo branco-azulado translúcido com pulsação leve de brilho."
+    }
+  }
+]
