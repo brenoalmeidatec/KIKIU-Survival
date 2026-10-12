@@ -54,6 +54,7 @@ func _ready() -> void:
 	_ajustar_janela()
 	set_anchors_preset(PRESET_FULL_RECT)
 	_montar()
+	add_child(preload("res://v2/pausa.tscn").instantiate().iniciar(null))  # ESC aqui abre só "Sair do jogo?" (pausa.gd)
 	_atualizar()
 	_entrar.grab_focus()
 
@@ -80,11 +81,6 @@ func _process(dt: float) -> void:
 		_status_t -= dt
 		if _status_t <= 0.0:
 			_status.text = ""
-
-
-func _unhandled_input(e: InputEvent) -> void:
-	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_ESCAPE:
-		get_tree().quit()
 
 
 # ------------------------------------------------------------------ montagem
