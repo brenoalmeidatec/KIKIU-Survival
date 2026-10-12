@@ -1,14 +1,6 @@
 {
- "_ajuda": "Sprites das armas da v2, recortados das folhas de arte propria do Alisson (geradas no GPT). Chave = nome do sprite. arquivo = PNG nesta pasta. normal = normal map pareado para a luz 2D (so projetil e aliado; efeito de area nao tem). tipo: projetil (aponta para a direita; o codigo gira pelo angulo do tiro), aliado (de pe: a borda de baixo e o chao) e area (efeito aditivo: o fundo preto virou transparencia e o brilho virou alfa; desenhar com mistura aditiva ou alfa). tamanho = largura x altura em px no jogo (960x540); em area a altura sai da proporcao da folha. armas_sugeridas = armas das 45 novas que o sprite serve bem; armas_aproximadas = sprite provisorio, sai na 4a folha; armas_sem_sprite = armas que precisam da 4a folha. Ainda nao ligado ao codigo.",
+ "_ajuda": "Sprites das armas da v2, recortados das folhas de arte propria do Alisson (geradas no GPT). Chave = nome do sprite. arquivo = PNG nesta pasta. normal = normal map pareado para a luz 2D (so projetil e aliado; efeito de area nao tem). tipo: projetil (aponta para a direita; o codigo gira pelo angulo do voo, e o meteoro que cai fica com a ponta para baixo), aliado (de pe: a borda de baixo e o chao) e area (efeito aditivo: o fundo preto virou transparencia e o brilho virou alfa; desenhar com mistura aditiva). tamanho = largura x altura em px no jogo (960x540); em area a altura sai da proporcao da folha. armas_sugeridas = armas que o sprite serve bem (as 45 novas e aura_fogo); armas_aproximadas = sprite provisorio, serve a arma mas nao e o ideal. Ligado ao codigo em v2/armas_novas.gd: o golpe usa o sprite da sua arma; sem sprite, mantem a forma antiga.",
  "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py armas (nao edite a mao)",
- "armas_sem_sprite": {
-  "fumaca_sonolenta": "falta sprite: fumaca roxa-clara com letras z",
-  "chuva_acida": "falta sprite: gotas amarelo-esverdeadas numa area",
-  "nevasca": "falta sprite: nuvem branca alta com flocos",
-  "martelo_trovao": "falta sprite: anel amarelo estreito com faiscas eletricas",
-  "terremoto": "falta sprite: elipse marrom de poeira e pedras rente ao chao",
-  "anel_gelado": "falta sprite: anel azul-gelo com cristais brancos na borda"
- },
  "sprites": {
   "flecha_roxa": {
    "arquivo": "flecha_roxa.png",
@@ -16,13 +8,14 @@
    "tipo": "projetil",
    "familia": "projetil",
    "tamanho": [
-    12,
-    3
+    14,
+    5
    ],
    "armas_sugeridas": [
     "flechas_sombrias"
    ],
-   "armas_aproximadas": []
+   "armas_aproximadas": [],
+   "obs": "fina e escura: contorno claro de 1 px"
   },
   "adaga_aco": {
    "arquivo": "adaga_aco.png",
@@ -58,13 +51,14 @@
    "tipo": "projetil",
    "familia": "projetil",
    "tamanho": [
-    8,
-    8
+    10,
+    10
    ],
    "armas_sugeridas": [
     "estrelas_sombra"
    ],
-   "armas_aproximadas": []
+   "armas_aproximadas": [],
+   "obs": "escura: contorno claro de 1 px"
   },
   "bola_fogo": {
    "arquivo": "bola_fogo.png",
@@ -88,14 +82,14 @@
    "tipo": "projetil",
    "familia": "projetil",
    "tamanho": [
-    8,
-    3
+    10,
+    5
    ],
    "armas_sugeridas": [
     "dardos_peconhentos"
    ],
    "armas_aproximadas": [],
-   "obs": "3 px de altura (a spec pede 2) para a ponta nao sumir"
+   "obs": "3 px de altura (a spec pede 2) para a ponta nao sumir; fino: contorno claro de 1 px"
   },
   "feixe_dourado": {
    "arquivo": "feixe_dourado.png",
@@ -422,21 +416,6 @@
    ],
    "armas_aproximadas": []
   },
-  "nevoa_fantasmal": {
-   "arquivo": "nevoa_fantasmal.png",
-   "normal": null,
-   "tipo": "area",
-   "familia": "nuvem",
-   "tamanho": [
-    100,
-    68
-   ],
-   "armas_sugeridas": [],
-   "armas_aproximadas": [
-    "nevoa_espectral"
-   ],
-   "obs": "roxa com rostos; a spec pede branco-azulada"
-  },
   "nuvem_sangue": {
    "arquivo": "nuvem_sangue.png",
    "normal": null,
@@ -460,11 +439,11 @@
     128,
     87
    ],
-   "armas_sugeridas": [],
-   "armas_aproximadas": [
-    "grito_guerra"
+   "armas_sugeridas": [
+    "aura_fogo"
    ],
-   "obs": "anel de chama: tambem serve a aura_fogo (arma existente, fora das 45)"
+   "armas_aproximadas": [],
+   "obs": "anel de chama: serve a aura_fogo (arma antiga, fora das 45); a aura segue no shader de armas.gd"
   },
   "anel_dourado": {
    "arquivo": "anel_dourado.png",
@@ -522,19 +501,139 @@
    ],
    "armas_aproximadas": []
   },
-  "anel_vento": {
-   "arquivo": "anel_vento.png",
+  "terremoto_poeira": {
+   "arquivo": "terremoto_poeira.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    150,
+    69
+   ],
+   "armas_sugeridas": [
+    "terremoto"
+   ],
+   "armas_aproximadas": [],
+   "obs": "poeira e pedras rente ao chao"
+  },
+  "anel_eletrico": {
+   "arquivo": "anel_eletrico.png",
    "normal": null,
    "tipo": "area",
    "familia": "anel",
    "tamanho": [
     128,
-    95
+    63
    ],
-   "armas_sugeridas": [],
-   "armas_aproximadas": [
+   "armas_sugeridas": [
+    "martelo_trovao"
+   ],
+   "armas_aproximadas": [],
+   "obs": "anel amarelo com faiscas eletricas"
+  },
+  "anel_gelo": {
+   "arquivo": "anel_gelo.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    60
+   ],
+   "armas_sugeridas": [
+    "anel_gelado"
+   ],
+   "armas_aproximadas": [],
+   "obs": "anel azul-gelo com cristais"
+  },
+  "fumaca_sonolenta": {
+   "arquivo": "fumaca_sonolenta.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    110,
+    57
+   ],
+   "armas_sugeridas": [
+    "fumaca_sonolenta"
+   ],
+   "armas_aproximadas": [],
+   "obs": "fumaca lilas com letras Z"
+  },
+  "chuva_acida": {
+   "arquivo": "chuva_acida.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    120,
+    80
+   ],
+   "armas_sugeridas": [
+    "chuva_acida"
+   ],
+   "armas_aproximadas": [],
+   "obs": "gotas verde-amareladas caindo numa area"
+  },
+  "nuvem_neve": {
+   "arquivo": "nuvem_neve.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    140,
+    91
+   ],
+   "armas_sugeridas": [
+    "nevasca"
+   ],
+   "armas_aproximadas": [],
+   "obs": "nuvem branca alta com flocos"
+  },
+  "nevoa_espectral": {
+   "arquivo": "nevoa_espectral.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    100,
+    65
+   ],
+   "armas_sugeridas": [
+    "nevoa_espectral"
+   ],
+   "armas_aproximadas": [],
+   "obs": "nevoa azulada com rostos"
+  },
+  "anel_vermelho": {
+   "arquivo": "anel_vermelho.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    70
+   ],
+   "armas_sugeridas": [
+    "grito_guerra"
+   ],
+   "armas_aproximadas": [],
+   "obs": "anel vermelho de energia"
+  },
+  "redemoinho_verde": {
+   "arquivo": "redemoinho_verde.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    128,
+    73
+   ],
+   "armas_sugeridas": [
     "rajada_vento"
    ],
+   "armas_aproximadas": [],
    "obs": "espiral de vento, nao anel"
   }
  }

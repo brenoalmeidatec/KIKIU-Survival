@@ -1125,6 +1125,7 @@ func _desenhar_corpo_i() -> void:
 		var quadro: int = [0, 1, 2, 1][int(c_fase[i] / 1.57) & 3]
 		var r := Rect2(c + Vector2(-16.5 * lado, -13.5), Vector2(33.0 * lado, 27.0))
 		no_corpo.draw_texture_rect_region(_tex_corvo, r, Rect2(quadro * 22, 0, 22, 18))
+	novas.desenhar_corpo(no_corpo)
 
 
 func _desenhar_brilho() -> void:

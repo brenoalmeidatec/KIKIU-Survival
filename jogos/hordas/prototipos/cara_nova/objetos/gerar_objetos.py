@@ -171,7 +171,7 @@ def dist_caixas(a, b):
     return max(dx, dy)
 
 
-def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False):
+def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False, gap=GAP_JUNTA):
     alfa = data[3::4]
     fundo = fundo_por_borda(w, h, alfa)
     fg = bytearray(w * h)
@@ -192,7 +192,7 @@ def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False):
         mudou = False
         for a in range(len(grupos)):
             for b in range(a + 1, len(grupos)):
-                if dist_caixas(grupos[a]["caixa"], grupos[b]["caixa"]) <= GAP_JUNTA:
+                if dist_caixas(grupos[a]["caixa"], grupos[b]["caixa"]) <= gap:
                     _fundir(grupos, a, b, w)
                     mudou = True
                     break
@@ -910,9 +910,9 @@ def main():
 
 # ------------------------------------------------------------------ armas da v2 (python gerar_objetos.py armas)
 # Folhas de arte propria que o Alisson gerou no GPT: 16 projeteis e meteoros (fundo branco), 9 aliados
-# (fundo branco) e 12 efeitos de area (fundo preto, aditivos). Saida: um PNG por sprite em
-# projeto/assets/v2/armas/ (normal map so onde a luz 2D age: projetil e aliado), indice.json e a previa.
-# Nao liga nada no codigo: quem liga o sprite a arma e a v2, depois que o PR entrar.
+# (fundo branco), 12 efeitos de area da folha 20 e 9 da folha 21 (fundo preto, aditivos). Saida: um PNG por
+# sprite em projeto/assets/v2/armas/ (normal map so onde a luz 2D age: projetil e aliado), indice.json e a previa.
+# A v2 le o indice.json em v2/armas_novas.gd (um sprite por golpe).
 ARMAS_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "armas")
 ARMAS_PREVIA = os.path.join(HORDAS, "prints", "v2_armas_sprites.png")
 LIMITE_CLARO_FUNDO = 236     # folha clara: min(R, G, B) acima disto e fundo branco (so o que liga a borda)
@@ -927,12 +927,12 @@ COR_ARMAS_ADITIVO = 40       # paleta unica da folha de efeitos
 # no jogo 960x540. Efeito de area: altura 0 (sai da proporcao da folha).
 ARMAS_FOLHAS = [
     ("fonte_armas_projeteis.webp", "claro", [4, 4, 4, 4], "projetil", [
-        ("flecha_roxa", "projetil", (12, 3), ["flechas_sombrias"], [], ""),
+        ("flecha_roxa", "projetil", (12, 3), ["flechas_sombrias"], [], "fina e escura: contorno claro de 1 px"),
         ("adaga_aco", "projetil", (10, 4), ["adagas_voadoras"], [], ""),
         ("lanca_gelo", "projetil", (18, 4), ["lanca_geada"], [], ""),
-        ("shuriken_sombria", "projetil", (8, 8), ["estrelas_sombra"], [], ""),
+        ("shuriken_sombria", "projetil", (8, 8), ["estrelas_sombra"], [], "escura: contorno claro de 1 px"),
         ("bola_fogo", "projetil", (16, 16), ["bola_fogo"], ["fogo_do_ceu"], ""),
-        ("dardo_verde", "projetil", (8, 3), ["dardos_peconhentos"], [], "3 px de altura (a spec pede 2) para a ponta nao sumir"),
+        ("dardo_verde", "projetil", (8, 3), ["dardos_peconhentos"], [], "3 px de altura (a spec pede 2) para a ponta nao sumir; fino: contorno claro de 1 px"),
         ("feixe_dourado", "projetil", (40, 3), ["raio_solar"], [], ""),
         ("disco_ferro", "projetil", (16, 16), ["bumerangue_ferro"], [], ""),
         ("bola_chumbo", "projetil", (14, 14), ["bolas_chumbo"], ["chuva_pedras"], ""),
@@ -960,36 +960,47 @@ ARMAS_FOLHAS = [
         ("nevoa_gelada", "nuvem", (120, 0), ["nevoeiro_gelado"], [], ""),
         ("nuvem_cinzas", "nuvem", (160, 0), ["cinzas_vulcanicas"], [], ""),
         ("nuvem_esporos", "nuvem", (120, 0), ["nuvem_espora"], [], ""),
-        ("nevoa_fantasmal", "nuvem", (100, 0), [], ["nevoa_espectral"], "roxa com rostos; a spec pede branco-azulada"),
+        ("nevoa_fantasmal", "nuvem", (100, 0), [], [], "descartado: a folha 21 traz a nevoa espectral"),
         ("nuvem_sangue", "nuvem", (70, 0), ["cortina_sangue"], [], ""),
-        ("anel_fogo", "anel", (128, 0), [], ["grito_guerra"], "anel de chama: tambem serve a aura_fogo (arma existente, fora das 45)"),
+        ("anel_fogo", "anel", (128, 0), ["aura_fogo"], [], "anel de chama: serve a aura_fogo (arma antiga, fora das 45); a aura segue no shader de armas.gd"),
         ("anel_dourado", "anel", (128, 0), ["pulso_sagrado"], [], ""),
         ("anel_onda_branca", "anel", (128, 0), ["onda_choque"], [], ""),
         ("anel_espinhos_verdes", "anel", (128, 0), ["anel_espinhos"], [], ""),
         ("anel_lunar", "anel", (128, 0), ["anel_luar"], [], ""),
-        ("anel_vento", "anel", (128, 0), [], ["rajada_vento"], "espiral de vento, nao anel"),
+        ("anel_vento", "anel", (128, 0), [], [], "descartado: a folha 21 traz a rajada de vento"),
+    ]),
+    ("fonte_armas_areas_2.webp", "escuro", [3, 3, 3], "area", [
+        ("terremoto_poeira", "nuvem", (150, 0), ["terremoto"], [], "poeira e pedras rente ao chao"),
+        ("anel_eletrico", "anel", (128, 0), ["martelo_trovao"], [], "anel amarelo com faiscas eletricas"),
+        ("anel_gelo", "anel", (128, 0), ["anel_gelado"], [], "anel azul-gelo com cristais"),
+        ("fumaca_sonolenta", "nuvem", (110, 0), ["fumaca_sonolenta"], [], "fumaca lilas com letras Z"),
+        ("chuva_acida", "nuvem", (120, 0), ["chuva_acida"], [], "gotas verde-amareladas caindo numa area"),
+        ("nuvem_neve", "nuvem", (140, 0), ["nevasca"], [], "nuvem branca alta com flocos"),
+        ("nevoa_espectral", "nuvem", (100, 0), ["nevoa_espectral"], [], "nevoa azulada com rostos"),
+        ("anel_vermelho", "anel", (128, 0), ["grito_guerra"], [], "anel vermelho de energia"),
+        ("redemoinho_verde", "anel", (128, 0), ["rajada_vento"], [], "espiral de vento, nao anel"),
     ]),
 ]
 
-# armas das 45 novas sem sprite adequado: vao para a 4a folha (ver o corpo do PR)
-ARMAS_SEM_SPRITE = {
-    "fumaca_sonolenta": "falta sprite: fumaca roxa-clara com letras z",
-    "chuva_acida": "falta sprite: gotas amarelo-esverdeadas numa area",
-    "nevasca": "falta sprite: nuvem branca alta com flocos",
-    "martelo_trovao": "falta sprite: anel amarelo estreito com faiscas eletricas",
-    "terremoto": "falta sprite: elipse marrom de poeira e pedras rente ao chao",
-    "anel_gelado": "falta sprite: anel azul-gelo com cristais brancos na borda",
-}
+# Folga para juntar pedacos de um mesmo sprite: a folha 21 tem sprites da linha de baixo a 1-2 px um do outro, e com
+# a folga de 6 px eles viravam um so (7 objetos em vez de 9). Folhas 18 a 20 seguem com a folga padrao.
+GAP_FOLHA = {"fonte_armas_areas_2.webp": 0}
+# Projeteis finos ou escuros: ganham 1 px claro em volta (depois da paleta, que fica igual), para ler no piso escuro.
+CONTORNO_CLARO = {"flecha_roxa", "shuriken_sombria", "dardo_verde"}
+COR_CONTORNO = (236, 240, 248)
+# Cortados (a folha 20 tem 12 celulas, e a grade precisa delas) mas trocados pelos da folha 21: nao saem no indice.
+ARMAS_DESCARTADOS = {"nevoa_fantasmal", "anel_vento"}
 
 ARMAS_AJUDA = (
     "Sprites das armas da v2, recortados das folhas de arte propria do Alisson (geradas no GPT). "
     "Chave = nome do sprite. arquivo = PNG nesta pasta. normal = normal map pareado para a luz 2D "
     "(so projetil e aliado; efeito de area nao tem). tipo: projetil (aponta para a direita; o codigo gira "
-    "pelo angulo do tiro), aliado (de pe: a borda de baixo e o chao) e area (efeito aditivo: o fundo preto "
-    "virou transparencia e o brilho virou alfa; desenhar com mistura aditiva ou alfa). tamanho = largura x "
-    "altura em px no jogo (960x540); em area a altura sai da proporcao da folha. armas_sugeridas = armas das "
-    "45 novas que o sprite serve bem; armas_aproximadas = sprite provisorio, sai na 4a folha; armas_sem_sprite "
-    "= armas que precisam da 4a folha. Ainda nao ligado ao codigo."
+    "pelo angulo do voo, e o meteoro que cai fica com a ponta para baixo), aliado (de pe: a borda de baixo e o chao) "
+    "e area (efeito aditivo: o fundo preto virou transparencia e o brilho virou alfa; desenhar com mistura aditiva). "
+    "tamanho = largura x altura em px no jogo (960x540); em area a altura sai da proporcao da folha. "
+    "armas_sugeridas = armas que o sprite serve bem (as 45 novas e aura_fogo); armas_aproximadas = sprite "
+    "provisorio, serve a arma mas nao e o ideal. Ligado ao codigo em v2/armas_novas.gd: o golpe usa o sprite "
+    "da sua arma; sem sprite, mantem a forma antiga."
 )
 
 
@@ -1061,13 +1072,34 @@ def quantizar_lista(imagens, cores):
     return saida
 
 
+def com_contorno(img):
+    """Sprite com 1 px claro em volta (os 8 vizinhos do que e opaco): a imagem cresce 2 px em cada eixo."""
+    base = Image.new("RGBA", (img.width + 2, img.height + 2), (0, 0, 0, 0))
+    base.paste(img, (1, 1))
+    w, h = base.size
+    alfa = base.getchannel("A").tobytes()
+    out = bytearray(base.tobytes())
+    for y in range(h):
+        for x in range(w):
+            if alfa[y * w + x]:
+                continue
+            vizinho = any(
+                alfa[(y + dy) * w + x + dx]
+                for dy in (-1, 0, 1) for dx in (-1, 0, 1)
+                if 0 <= x + dx < w and 0 <= y + dy < h
+            )
+            if vizinho:
+                out[4 * (y * w + x):4 * (y * w + x) + 4] = bytes(COR_CONTORNO + (255,))
+    return Image.frombytes("RGBA", (w, h), bytes(out))
+
+
 def gerar_armas():
     os.makedirs(ARMAS_SAIDA, exist_ok=True)
     sprites = {}
     previa = []                  # (tipo, nome, imagem, armas_sugeridas, armas_aproximadas)
     for arquivo, modo, linhas, tipo, lista in ARMAS_FOLHAS:
         w, h, data = carregar_folha_armas(os.path.join(AQUI, arquivo), modo)
-        grupos = agrupar(w, h, data, arquivo, len(lista), linhas, por_centro=True)
+        grupos = agrupar(w, h, data, arquivo, len(lista), linhas, por_centro=True, gap=GAP_FOLHA.get(arquivo, GAP_JUNTA))
         feitos = []
         for g, (nome, familia, caixa, sugeridas, aproximadas, obs) in zip(grupos, lista):
             cru = recortar(g, w, data)
@@ -1082,7 +1114,10 @@ def gerar_armas():
                 alb = aditivo(cru.convert("RGB").resize((caixa[0], nh), Image.BOX))
             feitos.append((nome, familia, sugeridas, aproximadas, obs, alb))
         quant = quantizar_lista([f[5] for f in feitos], COR_ARMAS_CLARO if modo == "claro" else COR_ARMAS_ADITIVO)
-        for (nome, familia, sugeridas, aproximadas, obs, _), q in zip(feitos, quant):
+        escritos = [(f, q) for f, q in zip(feitos, quant) if f[0] not in ARMAS_DESCARTADOS]
+        for (nome, familia, sugeridas, aproximadas, obs, _), q in escritos:
+            if nome in CONTORNO_CLARO:
+                q = com_contorno(q)
             tem_normal = tipo in ("projetil", "aliado")
             q.save(os.path.join(ARMAS_SAIDA, nome + ".png"))
             if tem_normal:
@@ -1103,11 +1138,10 @@ def gerar_armas():
             previa.append((tipo, nome, q, sugeridas, aproximadas))
             print("  %-22s %-7s %3dx%-3d sugeridas %s%s" % (
                 nome, tipo, q.width, q.height, sugeridas, (" aprox %s" % aproximadas) if aproximadas else ""))
-        print("%s: %d sprites, %s" % (arquivo, len(feitos), "paleta de %d cores" % (COR_ARMAS_CLARO if modo == "claro" else COR_ARMAS_ADITIVO)))
+        print("%s: %d sprites, %s" % (arquivo, len(escritos), "paleta de %d cores" % (COR_ARMAS_CLARO if modo == "claro" else COR_ARMAS_ADITIVO)))
     indice = {
         "_ajuda": ARMAS_AJUDA,
         "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py armas (nao edite a mao)",
-        "armas_sem_sprite": ARMAS_SEM_SPRITE,
         "sprites": sprites,
     }
     with open(os.path.join(ARMAS_SAIDA, "indice.json"), "w", encoding="utf-8", newline="\n") as f:
@@ -1115,14 +1149,14 @@ def gerar_armas():
         f.write("\n")
     sug = sum(len(s["armas_sugeridas"]) for s in sprites.values())
     apr = sum(len(s["armas_aproximadas"]) for s in sprites.values())
-    print("armas: %d com sprite adequado, %d com sprite aproximado, %d sem sprite" % (sug, apr, len(ARMAS_SEM_SPRITE)))
+    print("armas: %d com sprite adequado, %d com sprite aproximado" % (sug, apr))
     previa_armas(previa, ARMAS_PREVIA)
     print("previa", ARMAS_PREVIA)
 
 
 def previa_armas(itens, caminho):
     """Prancha escura: cada sprite em 3x (projetil, aliado) ou 2x (area), com as armas que ele serve.
-    Azul-claro = arma servida; laranja = so aproximada (sai na 4a folha)."""
+    Azul-claro = arma servida; laranja = so aproximada (sprite provisorio)."""
     fonte = ImageFont.load_default(size=13)
     fonte_titulo = ImageFont.load_default(size=16)
     medidor = ImageDraw.Draw(Image.new("RGB", (1, 1)))
@@ -1132,7 +1166,7 @@ def previa_armas(itens, caminho):
     secoes = [
         ("projetil", "Projeteis e meteoros (folha 18: 16 sprites)", 8, 3),
         ("aliado", "Aliados (folha 19: 9 sprites)", 5, 3),
-        ("area", "Efeitos de area, aditivos (folha 20: 12 sprites)", 4, 2),
+        ("area", "Efeitos de area, aditivos (folhas 20 e 21: 19 sprites)", 4, 2),
     ]
     plano = []
     largura = 0
@@ -1156,7 +1190,7 @@ def previa_armas(itens, caminho):
     d = ImageDraw.Draw(tela)
     d.text((margem, 14), "Armas da v2: sprites recortados das folhas do Alisson (arte propria, GPT)",
            fill=branco, font=fonte_titulo)
-    d.text((margem, 40), "-> arma que o sprite serve bem        ~ sprite provisorio (troca na 4a folha)",
+    d.text((margem, 40), "-> arma que o sprite serve bem        ~ sprite provisorio (serve a arma, mas nao e o ideal)",
            fill=cinza, font=fonte)
     y = 90
     for titulo, cel_w, imgs, txts, linhas_cel in plano:

@@ -8,20 +8,27 @@ extends RefCounted
 ## Tudo em um pool fixo (MAX slots, dicionários reaproveitados): nenhum nó, nenhuma alocação por quadro. O desenho usa a textura
 ## de brilho que o `armas.gd` já tem, em modo aditivo (camada no_brilho). O `armas.gd` guarda o pai (`pai`) para usar o dano em área
 ## (`_dano_area`) e a explosão (`explodir`), e o combate (`ferir`) para o dano direto.
+## Sprites (assets/v2/armas/indice.json): cada golpe usa o da sua arma (`sprite_de`). Projétil, meteoro que cai e aliado desenham o
+## sprite na camada normal (`desenhar_corpo`, que recebe a luz 2D); áreas (nuvem e anel) desenham o sprite na aditiva, no raio do golpe.
+## Golpe sem sprite mantém a forma antiga.
 
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (igual ao armas.gd)
 const MAX := 48
 const RAIO_PROJ := 10.0
+const PASTA_SPRITES := "res://assets/v2/armas/"
 
 var pai  # v2/armas.gd
 var itens: Array = []  # o pool: cada slot é um dicionário fixo; vida <= 0 é livre
+static var _sprites: Dictionary = {}  # id da arma -> {tex, tam, tipo}; lido uma vez por processo (carregar_sprites)
+static var _lidos := false
 
 
 func montar(p) -> void:
 	pai = p
+	carregar_sprites()
 	itens.clear()
 	for i in MAX:
-		itens.append({"k": "", "a": null, "vida": 0.0, "p": Vector2.ZERO, "v": Vector2.ZERO, "t": 0.0, "r": 0.0, "fase": 0.0, "pen": 0, "hit": []})
+		itens.append({"k": "", "a": null, "sp": {}, "vida": 0.0, "p": Vector2.ZERO, "v": Vector2.ZERO, "t": 0.0, "r": 0.0, "fase": 0.0, "pen": 0, "hit": []})
 
 
 func limpar() -> void:
@@ -40,6 +47,39 @@ func tem_ativos() -> bool:
 		if float(it.vida) > 0.0:
 			return true
 	return false
+
+
+# ------------------------------------------------------------------ sprites (assets/v2/armas/indice.json)
+
+
+## Lê o índice uma vez por processo: cada arma aponta para o seu {tex, tam, tipo} (sugeridas e aproximadas). Sprite que não carrega
+## fica de fora (o golpe segue com a forma antiga). Com normal map, a textura é um CanvasTexture: a luz 2D age nela.
+static func carregar_sprites() -> void:
+	if _lidos:
+		return
+	_lidos = true
+	var d = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES.path_join("indice.json")))
+	if not (d is Dictionary):
+		return
+	for nome in d.get("sprites", {}):
+		var s: Dictionary = d.sprites[nome]
+		var tex := load(PASTA_SPRITES.path_join(str(s.arquivo))) as Texture2D
+		if tex == null:
+			continue
+		if s.get("normal") != null:
+			var ct := CanvasTexture.new()
+			ct.diffuse_texture = tex
+			ct.normal_texture = load(PASTA_SPRITES.path_join(str(s.normal))) as Texture2D
+			tex = ct
+		var entrada := {"tex": tex, "tam": Vector2(float(s.tamanho[0]), float(s.tamanho[1])), "tipo": str(s.tipo)}
+		for arma in s.armas_sugeridas + s.armas_aproximadas:
+			_sprites[str(arma)] = entrada
+
+
+## Sprite do golpe `id` ({tex, tam, tipo}), ou {} quando a arma não tem sprite.
+static func sprite_de(id: String) -> Dictionary:
+	carregar_sprites()
+	return _sprites.get(id, {})
 
 
 # ------------------------------------------------------------------ o timer de recarga (chamado por golpe, como as outras famílias)
@@ -291,9 +331,11 @@ func _mover_aliado(it: Dictionary, h, dt: float, perto: Array) -> void:
 		pai._acertou("aliado")
 
 
-# ------------------------------------------------------------------ desenho (camada aditiva no_brilho)
+# ------------------------------------------------------------------ desenho (duas camadas: corpo e brilho)
 
 
+## Camada aditiva (`no_brilho`): o rastro e o halo dos projéteis, o brilho dos meteoros e aliados, e as áreas com sprite no raio do
+## golpe. Sem sprite, cada golpe desenha a forma antiga.
 func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 	for it in itens:
 		if float(it.vida) <= 0.0:
@@ -301,27 +343,38 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 		var a: Dictionary = it.a
 		var st: Dictionary = a.st
 		var cor: Color = a.cor
+		var sp: Dictionary = it.sp
 		var p: Vector2 = (it.p as Vector2).round()
 		match str(it.k):
 			"projetil":
 				var dir: Vector2 = (it.v as Vector2).normalized()
-				ci.draw_line((p - dir * 9.0).round(), p, Color(cor.r, cor.g, cor.b, 0.45), 4.0)
-				ci.draw_line((p - dir * 6.0).round(), p, Color(1, 1, 1, 0.9), 1.5)
-				ci.draw_texture_rect(tex, Rect2(p - Vector2(7, 7), Vector2(14, 14)), false, Color(cor.r, cor.g, cor.b, 0.5))
+				if sp.is_empty():
+					ci.draw_line((p - dir * 9.0).round(), p, Color(cor.r, cor.g, cor.b, 0.45), 4.0)
+					ci.draw_line((p - dir * 6.0).round(), p, Color(1, 1, 1, 0.9), 1.5)
+					ci.draw_texture_rect(tex, Rect2(p - Vector2(7, 7), Vector2(14, 14)), false, Color(cor.r, cor.g, cor.b, 0.5))
+				else:
+					ci.draw_line((p - dir * 9.0).round(), p, Color(cor.r, cor.g, cor.b, 0.4), 3.0)
+					_halo(ci, tex, p, sp, cor, 0.45)
 			"nuvem":
 				var fade := clampf(float(it.vida) / 0.6, 0.0, 1.0) * clampf((float(st.duracao) - float(it.vida)) / 0.3, 0.0, 1.0)
-				var pulso := 0.85 + 0.15 * sin(float(it.fase))
-				ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
-				ci.draw_circle(Vector2.ZERO, float(it.r) * pulso, Color(cor.r, cor.g, cor.b, 0.22 * fade))
-				ci.draw_circle(Vector2.ZERO, float(it.r) * 0.55 * pulso, Color(cor.r, cor.g, cor.b, 0.3 * fade))
-				ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				if sp.is_empty():
+					var pulso := 0.85 + 0.15 * sin(float(it.fase))
+					ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
+					ci.draw_circle(Vector2.ZERO, float(it.r) * pulso, Color(cor.r, cor.g, cor.b, 0.22 * fade))
+					ci.draw_circle(Vector2.ZERO, float(it.r) * 0.55 * pulso, Color(cor.r, cor.g, cor.b, 0.3 * fade))
+					ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				else:
+					_area(ci, sp, p, float(it.r), Color(1, 1, 1, 0.5 * fade))
 			"anel":
 				var r := float(it.r)
 				var fade_a := clampf(1.0 - r / float(st.raio), 0.0, 1.0)
-				ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
-				ci.draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(cor.r, cor.g, cor.b, 0.85 * fade_a), 3.0)
-				ci.draw_arc(Vector2.ZERO, maxf(r - 4.0, 0.5), 0.0, TAU, 48, Color(1, 1, 1, 0.45 * fade_a), 1.5)
-				ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				if sp.is_empty():
+					ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
+					ci.draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(cor.r, cor.g, cor.b, 0.85 * fade_a), 3.0)
+					ci.draw_arc(Vector2.ZERO, maxf(r - 4.0, 0.5), 0.0, TAU, 48, Color(1, 1, 1, 0.45 * fade_a), 1.5)
+					ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				else:
+					_area(ci, sp, p, r, Color(1, 1, 1, 0.6 * fade_a))
 			"meteoro":
 				var raio := float(st.raio)
 				if float(it.t) > 0.0:
@@ -331,9 +384,12 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 					ci.draw_arc(Vector2.ZERO, raio * (1.0 - 0.4 * k), 0.0, TAU, 32, Color(cor.r, cor.g, cor.b, 0.5 + 0.4 * pisca), 2.0)
 					ci.draw_circle(Vector2.ZERO, raio * 0.35 * k, Color(cor.r, cor.g, cor.b, 0.25 * k))
 					ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-					var bola: Vector2 = (p + Vector2(0, -80.0 * (1.0 - k))).round()
-					ci.draw_texture_rect(tex, Rect2(bola - Vector2(9, 9), Vector2(18, 18)), false, Color(cor.r, cor.g, cor.b, 0.7))
-					ci.draw_circle(bola, 4.0, Color(1, 1, 1, 0.9))
+					var bola := _queda(it)
+					if sp.is_empty():
+						ci.draw_texture_rect(tex, Rect2(bola - Vector2(9, 9), Vector2(18, 18)), false, Color(cor.r, cor.g, cor.b, 0.7))
+						ci.draw_circle(bola, 4.0, Color(1, 1, 1, 0.9))
+					else:
+						_halo(ci, tex, bola, sp, cor, 0.6)
 				else:
 					var sumindo := clampf(float(it.vida) / 0.3, 0.0, 1.0)
 					ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
@@ -342,8 +398,59 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 			"aliado":
 				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
 				var alfa := clampf(float(it.vida) / 0.5, 0.0, 1.0)
-				ci.draw_texture_rect(tex, Rect2(sobe - Vector2(10, 10), Vector2(20, 20)), false, Color(cor.r, cor.g, cor.b, 0.6 * alfa))
-				ci.draw_circle(sobe, 2.5, Color(1, 1, 1, 0.95 * alfa))
+				if sp.is_empty():
+					ci.draw_texture_rect(tex, Rect2(sobe - Vector2(10, 10), Vector2(20, 20)), false, Color(cor.r, cor.g, cor.b, 0.6 * alfa))
+					ci.draw_circle(sobe, 2.5, Color(1, 1, 1, 0.95 * alfa))
+				else:
+					_halo(ci, tex, sobe, sp, cor, 0.35 * alfa)
+
+
+## Camada normal (`no_corpo`, a das sombras e dos corvos, que recebe a luz 2D): o sprite de projétil (virado para o voo), de meteoro
+## que cai (com a ponta para baixo) e de aliado (de pé, flutuando).
+func desenhar_corpo(ci: CanvasItem) -> void:
+	for it in itens:
+		var sp: Dictionary = it.sp
+		if float(it.vida) <= 0.0 or sp.is_empty():
+			continue
+		var p: Vector2 = (it.p as Vector2).round()
+		match str(it.k):
+			"projetil":
+				_sprite(ci, sp, p, (it.v as Vector2).angle())
+			"meteoro":
+				if float(it.t) > 0.0:
+					_sprite(ci, sp, _queda(it), PI * 0.5)
+			"aliado":
+				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
+				_sprite(ci, sp, sobe, 0.0, Color(1, 1, 1, clampf(float(it.vida) / 0.5, 0.0, 1.0)))
+
+
+## O sprite centrado em `c`, girado `ang` (o projétil aponta para a direção do voo).
+func _sprite(ci: CanvasItem, sp: Dictionary, c: Vector2, ang: float, cor: Color = Color.WHITE) -> void:
+	var tam: Vector2 = sp.tam
+	ci.draw_set_transform(c, ang, Vector2.ONE)
+	ci.draw_texture_rect(sp.tex, Rect2(-(tam * 0.5).floor(), tam), false, cor)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Halo aditivo atrás do sprite: o "leve brilho" que ajuda a ler o projétil fino ou escuro no piso.
+func _halo(ci: CanvasItem, tex: Texture2D, c: Vector2, sp: Dictionary, cor: Color, alfa: float) -> void:
+	var tam: Vector2 = sp.tam
+	var lado := maxf(tam.x, tam.y) * 1.2 + 4.0
+	ci.draw_texture_rect(tex, Rect2((c - Vector2(lado, lado) * 0.5).round(), Vector2(lado, lado)), false, Color(cor.r, cor.g, cor.b, alfa))
+
+
+## Área com sprite (nuvem e anel): ocupa o diâmetro 2r do golpe; a altura segue a proporção do sprite.
+func _area(ci: CanvasItem, sp: Dictionary, c: Vector2, r: float, cor: Color) -> void:
+	var tam: Vector2 = sp.tam
+	var alt := r * 2.0 * tam.y / tam.x
+	ci.draw_texture_rect(sp.tex, Rect2((c - Vector2(r, alt * 0.5)).round(), Vector2(r * 2.0, alt).round()), false, cor)
+
+
+## Posição do meteoro que cai: sobe 80 px no início do aviso e desce até o chão.
+func _queda(it: Dictionary) -> Vector2:
+	var st: Dictionary = it.a.st
+	var k := 1.0 - float(it.t) / float(st.aviso)
+	return ((it.p as Vector2).round() + Vector2(0, -80.0 * (1.0 - k))).round()
 
 
 # ------------------------------------------------------------------ auxiliares
@@ -359,6 +466,7 @@ func _novo(k: String, a: Dictionary, p: Vector2, vida: float) -> Dictionary:
 		return it
 	it.k = k
 	it.a = a
+	it.sp = sprite_de(str(a.id))
 	it.p = p
 	it.v = Vector2.ZERO
 	it.vida = vida
