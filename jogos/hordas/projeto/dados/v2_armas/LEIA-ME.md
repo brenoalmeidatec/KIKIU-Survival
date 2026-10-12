@@ -1,6 +1,6 @@
 # Armas da v2: lotes de staging
 
-Esta pasta guarda os lotes de armas novas (golpes secundários) feitos por agentes. Cada `lote_N.json` tem 9 armas. Os lotes **não** entram no jogo ainda: a integração em `dados/v2_cartas.json` (campo `golpes`) e os tipos novos em `v2/armas.gd` vêm depois, numa etapa única, depois de revisão. Por isso nada aqui é lido pelo jogo.
+Esta pasta guarda os lotes de armas novas (golpes secundários) feitos por agentes. Cada `lote_N.json` tem 9 armas. Os 45 golpes já estão no jogo: entraram em `dados/v2_cartas.json` (campo `golpes`) e os cinco tipos novos estão em `v2/armas_novas.gd`. Os lotes ficam aqui como registro e como referência de `arte` (o que o Alisson desenha); o jogo lê `v2_cartas.json`, não estes arquivos.
 
 Meta: 50 golpes no total = 5 que já existem (`laminas`, `aura_fogo`, `corvos`, `raio`, `runa`) + 45 novos (5 lotes de 9).
 

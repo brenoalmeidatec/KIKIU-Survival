@@ -114,7 +114,7 @@ func _ready() -> void:
 
 	# 0. dados
 	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
-	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 5 and cfg.modificadores.size() == 4, "4 raridades, 5 golpes secundários e 4 modificadores")
+	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 50 and cfg.modificadores.size() == 4, "4 raridades, 50 golpes secundários e 4 modificadores")
 	ok(cfg.evolucoes.size() >= 3, "pelo menos 3 evoluções nos dados")
 	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
 
@@ -216,6 +216,24 @@ func _ready() -> void:
 			int(w.combate.armas.acertos.get(tipo, 0)) > 0 and m.vida < v0,
 			"o golpe %s (%s) acerta o monstro (vida %d de %d)" % [id, tipo, roundi(m.vida), roundi(v0)]
 		)
+	# 3b. os golpes novos (leva 5): o primeiro de cada tipo novo acerta (o meteoro conta como "explode", o estouro da explosão)
+	var vistos := {}
+	for d in cfg.golpes:
+		var tp := str(d.tipo)
+		if tp in ["orbita", "aura", "corvos", "raio", "runa"] or vistos.has(tp):
+			continue
+		vistos[tp] = true
+		var chave := "explode" if tp == "meteoro" else tp
+		zerar()
+		var mn = monstro_a(60.0, 0.0)
+		mn.cacador = false
+		mn.raio_vaga = 0.0
+		pegar(str(d.id), 0)
+		ok(w.combate.armas.tem(str(d.id)), "o golpe novo %s entra pela carta" % str(d.id))
+		var vn: float = mn.vida
+		ate(func(): return int(w.combate.armas.acertos.get(chave, 0)) > 0, 1200)
+		ok(int(w.combate.armas.acertos.get(chave, 0)) > 0 and mn.vida < vn, "o golpe novo %s (%s) acerta o monstro" % [str(d.id), tp])
+	ok(vistos.size() == 5, "os 5 tipos novos estão nos dados (%d)" % vistos.size())
 	# a aura queima, as lâminas passam, o raio salta
 	zerar()
 	var ma = monstro_a(30.0, 0.0)
