@@ -95,7 +95,7 @@
 			"icone": "icone_runas",
 			"nome": "Runa Explosiva",
 			"curto": "Runa",
-			"desc": "Desenha runas no chão ao seu redor. Quando um inimigo pisa numa runa, ela explode. As runas somem depois de alguns segundos.",
+			"desc": "Runas no chão ao seu redor. Explodem quando um inimigo pisa.",
 			"tipo": "runa",
 			"max": 5,
 			"peso": 1.3,
