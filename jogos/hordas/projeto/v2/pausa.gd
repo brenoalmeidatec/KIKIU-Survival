@@ -205,6 +205,13 @@ func fechar() -> void:
 	_apertos.clear()
 	if mundo != null:
 		get_tree().paused = _arvore_antes
+	_card_build()
+
+
+## O card "SUA BUILD" (status.gd) aparece ao lado do menu, só na tela "menu" (some em Ajustes, nas confirmações e ao fechar).
+func _card_build() -> void:
+	if mundo != null and mundo.get("status") != null:
+		mundo.status.na_pausa(aberto and tela == "menu")
 
 
 ## Santuário (sem mundo): o ESC abre direto a confirmação de sair.
@@ -523,6 +530,7 @@ func _desenhar() -> void:
 		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
+	_card_build()
 
 
 ## Rodapé: a ajuda da linha escolhida em Gráficos (o json traz a ajuda de cada opção) e em Créditos (o aviso de cada licença) e, na aba Áudio, o crédito das músicas (CC BY exige).
