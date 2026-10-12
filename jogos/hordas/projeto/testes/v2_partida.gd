@@ -231,8 +231,15 @@ func _ready() -> void:
 		pegar(str(d.id), 0)
 		ok(w.combate.armas.tem(str(d.id)), "o golpe novo %s entra pela carta" % str(d.id))
 		var vn: float = mn.vida
-		ate(func(): return int(w.combate.armas.acertos.get(chave, 0)) > 0, 1200)
-		ok(int(w.combate.armas.acertos.get(chave, 0)) > 0 and mn.vida < vn, "o golpe novo %s (%s) acerta o monstro" % [str(d.id), tp])
+		ate(func(): return mn.vida < vn, 1200)
+		var ac := int(w.combate.armas.acertos.get(chave, 0))
+		ok(
+			ac > 0 and mn.vida < vn,
+			(
+				"o golpe novo %s (%s) acerta o monstro (acertos %d, vida %d de %d, perto %d, ativos %s)"
+				% [str(d.id), tp, ac, roundi(mn.vida), roundi(vn), w.combate.armas._perto.size(), str(w.combate.armas.novas.tem_ativos())]
+			)
+		)
 	ok(vistos.size() == 5, "os 5 tipos novos estão nos dados (%d)" % vistos.size())
 	# a aura queima, as lâminas passam, o raio salta
 	zerar()
