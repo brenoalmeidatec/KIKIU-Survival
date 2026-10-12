@@ -7,6 +7,7 @@ extends Node
 ##
 ## Rodar (a partir de jogos/hordas):  godot --path projeto res://v2/mundo.tscn [-- opções]
 ## Opções (após --): --fotos=PASTA --seq=2.0 --pos=x,y --nome=foto (foto do viewport e sai) | --medir --duracao=6 (fps e sai)
+##   --perfil=baixo|medio|alto (vale o perfil de gráficos inteiro: sombras, partículas e orçamento de luzes; sem gravar) --luzes=N (orçamento de luzes)
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
@@ -37,6 +38,8 @@ const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (me
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
 const LARG := 960
 const ALT := 540
+const ORCAMENTO_LUZES := {"desligada": 6, "so_heroi": 0, "tudo": 0}  # máximo de luzes ligadas por "luz_relevo" (0 = sem limite); o perfil Baixo usa "desligada"
+const PASSO_SOMBRA_CENARIO := 3  # a sombra de cada objeto parado recalcula a cada 3 quadros (a luz que a move muda devagar; o deslize suaviza)
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
 const Colisao := preload("res://v2/colisao.gd")
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
@@ -119,6 +122,8 @@ func _ready() -> void:
 	_seq = float(args.get("seq", 2.0))
 	_med["duracao"] = float(args.get("duracao", 6.0))
 	Entrada.garantir()
+	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
+		Config.g_perfil_temporario(str(args.perfil))
 	dados = Dados.json("v2_floresta")
 	var tm: Array = dados.get("mapa", {}).get("tam", [2880, 1620])
 	mapa = Rect2(0, 0, float(tm[0]), float(tm[1]))
@@ -207,7 +212,6 @@ func _montar() -> void:
 	atm.montar(glow)
 	luzes = Luzes.new()
 	luzes.montar(sv, glow, atm, dados.get("luz_tipos", {}))
-	luzes.orcamento = int(args.get("luzes", 0))
 	sombras = Sombras.new()
 	sombras.montar(no_mundo)
 	sombras.luzes = luzes
@@ -387,6 +391,9 @@ func _ler_graficos() -> void:
 	var nome := str(args.get("sombra", Config.g("sombras")))
 	var m := Sombras.NOMES.find(nome)
 	sombras.definir_modo(m if m >= 0 else Sombras.MEDIA)
+	# orçamento de luzes pelo perfil ("luz_relevo" da aba Gráficos): cada luz ligada custa GPU em tudo o que ela toca, e a iGPU do i5 é fraca
+	var relevo := str(Config.g("luz_relevo"))
+	luzes.orcamento = int(args.get("luzes", ORCAMENTO_LUZES.get(relevo, 0)))
 	var nivel := str(args.get("particulas", Config.g("particulas_sim")))
 	var f: Dictionary = Config.PART_NIVEL.get(nivel, {})
 	atm.definir_fatores(float(f.get("amb_particulas", 1.0)), float(f.get("efe_particulas", 1.0)))
@@ -517,7 +524,7 @@ func avancar(dt: float) -> void:
 		if dentro != a.ativo:
 			sombras.ativar(a, dentro)
 		n += 1
-		if dentro and estatica and (n + quadros) % 2 == 0:  # cenário parado: só a luz muda, metade por quadro
+		if dentro and estatica and (n + quadros) % PASSO_SOMBRA_CENARIO == 0:  # cenário parado: só a luz muda, um terço por quadro
 			sombras.atualizar(a, t)
 	var movel: Array = [heroi]  # os atores com nós: o herói, as elites e os chefes (o resto da horda é do lote)
 	for a in monstros:

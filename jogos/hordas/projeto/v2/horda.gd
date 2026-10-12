@@ -13,6 +13,7 @@ extends RefCounted
 ## continuam nós (`Monstro.virar_no`): são poucos.
 
 const Sombras := preload("res://v2/sombras.gd")
+const Monstro := preload("res://v2/monstro.gd")
 const MARGEM_TELA := 96.0  # só monstro a até 96 px da tela é desenhado (e tem sombra)
 const CAP_INI := 16  # instâncias de cada MultiMesh no começo (dobra quando falta)
 const DECIMA := 3  # a conta da luz sobre a sombra de cada monstro roda a cada N quadros (o deslize suavizado esconde o degrau)
@@ -114,7 +115,9 @@ class Lote:
 		mm.visible_instance_count = n
 		# retângulo apertado (e não "o mundo todo"): sem isso toda luz da tela entra no desenho da fatia inteira
 		if x1 >= x0:
-			mm.custom_aabb = AABB(Vector3(x0 - MARGEM_AABB, y0 - MARGEM_AABB - dy, -1.0), Vector3(x1 - x0 + 2.0 * MARGEM_AABB, y1 - y0 + 2.0 * MARGEM_AABB, 2.0))
+			mm.custom_aabb = AABB(
+				Vector3(x0 - MARGEM_AABB, y0 - MARGEM_AABB - dy, -1.0), Vector3(x1 - x0 + 2.0 * MARGEM_AABB, y1 - y0 + 2.0 * MARGEM_AABB, 2.0)
+			)
 			x0 = 1.0e9
 			y0 = 1.0e9
 			x1 = -1.0e9
@@ -130,7 +133,7 @@ class Lote:
 
 
 var mundo
-var sombras
+var sombras: Sombras
 var atlas := {}
 var com_normal := true
 var fatias: Array[Lote] = []  # os sprites, na ordem de y
@@ -143,7 +146,8 @@ var us := 0  # microssegundos gastos por `atualizar` (só para a medição)
 var _quad: ArrayMesh
 var _mat_sprite: ShaderMaterial
 var _modo := -1
-var _vis: Array = []
+var ordem: Array[Monstro] = []  # os monstros em lote na tela, na ordem de desenho (pelos pés); `chave_y` de cada um é a da fatia dele
+var _vis: Array[Monstro] = []
 var _chaves := PackedFloat64Array()
 var _seps := PackedFloat32Array()
 var _seps_est := PackedFloat32Array()
@@ -248,7 +252,7 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 	_vis.clear()
 	_chaves.clear()
 	var i := 0
-	for m in mundo.monstros:
+	for m: Monstro in mundo.monstros:
 		if not m.lote:
 			continue
 		if tela.has_point(m.pos):
@@ -256,7 +260,7 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 				m.ativo = true
 				_zerar_luz(m)
 			_vis.append(m)
-			_chaves.append(float((int(m.raiz.position.y) + 8192) << 16) + float(i))
+			_chaves.append(float((int(m.pr.y) + 8192) << 16) + float(i))
 			i += 1
 		elif m.ativo:
 			m.ativo = false
@@ -274,15 +278,21 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 	bs.n = 0
 	bb.n = 0
 	bo.n = 0
+	ordem.clear()
+	var com_sombra := modo != Sombras.NENHUMA
+	var inclinada := modo >= Sombras.MEDIA
+	var nslots := 1 if modo == Sombras.MEDIA else 2
 	for kk in _chaves:
-		var m = _vis[int(kk) & 0xFFFF]
-		var pr: Vector2 = m.raiz.position
+		var m: Monstro = _vis[int(kk) & 0xFFFF]
+		var pr := m.pr
 		while sp < ns and _seps[sp] <= pr.y:
 			sp += 1
-		if sp != sp_ant and not (f != null and str(mundo.args.get("dbg", "")) == "uma_fatia"):
+		if sp != sp_ant:
 			sp_ant = sp
 			f = _fatia()
 			f.chave = pr.y + 0.5 if sp >= ns else (pr.y + _seps[sp]) * 0.5  # entre o último nó acima e o primeiro abaixo
+		m.chave_y = f.chave
+		ordem.append(m)
 		m.visual()
 		# ---- sprite
 		if f.n >= f.cap:
@@ -290,19 +300,21 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		var buf := f.buf
 		var o := f.n << 4
 		f.n += 1
-		var w: float = m.fw
-		var h: float = m.fh
-		var pe: float = m.fpe
-		var sx: float = m.v_sx
-		var sy: float = m.v_sy
-		var cor: Color = m.v_cor
-		var cx: float = m.coluna * w + m.ao.x
-		var cy: float = m.linha * h + m.ao.y
+		var w := m.fw
+		var h := m.fh
+		var pe := m.fpe
+		var sx := m.v_sx
+		var sy := m.v_sy
+		var cor := m.v_cor
+		var cx := m.coluna * w + m.ao.x
+		var cy := m.linha * h + m.ao.y
 		var fl := -w if m.espelha else w
+		var ox := pr.x + m.v_jx - w * 0.5 * sx
+		var oy := pr.y - pe * sy
 		buf[o] = w * sx
-		buf[o + 3] = pr.x + m.v_jx - w * 0.5 * sx
+		buf[o + 3] = ox
 		buf[o + 5] = h * sy
-		buf[o + 7] = pr.y - pe * sy - f.chave
+		buf[o + 7] = oy - f.chave
 		buf[o + 8] = cor.r
 		buf[o + 9] = cor.g
 		buf[o + 10] = cor.b
@@ -311,10 +323,14 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		buf[o + 13] = cy
 		buf[o + 14] = fl
 		buf[o + 15] = h
-		f.x0 = minf(f.x0, pr.x)
-		f.x1 = maxf(f.x1, pr.x)
-		f.y0 = minf(f.y0, pr.y)
-		f.y1 = maxf(f.y1, pr.y)
+		if pr.x < f.x0:
+			f.x0 = pr.x
+		if pr.x > f.x1:
+			f.x1 = pr.x
+		if pr.y < f.y0:
+			f.y0 = pr.y
+		if pr.y > f.y1:
+			f.y1 = pr.y
 		# ---- olhos (aditivos, na camada glow: coordenadas do mundo)
 		if bo.n >= bo.cap:
 			bo.crescer()
@@ -322,27 +338,27 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		var oo := bo.n << 4
 		bo.n += 1
 		ob[oo] = w * sx
-		ob[oo + 3] = pr.x + m.v_jx - w * 0.5 * sx
+		ob[oo + 3] = ox
 		ob[oo + 5] = h * sy
-		ob[oo + 7] = pr.y - pe * sy
+		ob[oo + 7] = oy
 		ob[oo + 12] = cx
 		ob[oo + 13] = cy
 		ob[oo + 14] = fl
 		ob[oo + 15] = h
-		if modo == Sombras.NENHUMA:
+		if not com_sombra:
 			continue
 		# ---- sombras: mancha dos pés (todas as qualidades) e a silhueta inclinada (média e alta)
-		var esc: float = m.escala
 		var b_esc := 1.0
 		var b_alfa := 0.62
-		if modo >= Sombras.MEDIA:
+		if inclinada:
 			if m.t_ult < 0.0 or (m.sid + quadro) % DECIMA == 0:
 				sombras.calcular(m, t)
 			b_esc = m.b_esc
 			b_alfa = m.b_alfa
-			for s in (1 if modo == Sombras.MEDIA else 2):
-				var vec: Vector2 = m.sv[s]
-				var alfa: float = m.sa[s]
+			var esc := m.escala
+			for s in nslots:
+				var vec := m.sv[s]
+				var alfa := m.sa[s]
 				if alfa <= 0.01:
 					continue
 				var vy := vec.y
@@ -366,7 +382,7 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 				sb[so + 13] = cy
 				sb[so + 14] = fl
 				sb[so + 15] = h
-		var k: float = m.larg_blob * b_esc / 64.0
+		var k := m.larg_blob * b_esc / 64.0
 		if bb.n >= bb.cap:
 			bb.crescer()
 		var bf := bb.buf
@@ -378,22 +394,19 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 		bf[bi + 7] = pr.y - 1.0 - 14.4 * k  # centrada em (0, -1)
 		bf[bi + 11] = b_alfa
 	# ---- manda tudo para o desenho
-	var dbg: String = str(mundo.args.get("dbg", ""))
 	for j in usadas:
-		if dbg == "sem_fatias":
-			break
 		var fa := fatias[j]
 		fa.mmi.position = Vector2(0.0, fa.chave)
 		fa.enviar(fa.chave)
 	for j in range(usadas, fatias.size()):
 		fatias[j].esconder()
-	if n_lote > 0 and dbg != "sem_olhos":
+	if n_lote > 0:
 		bo.enviar()
-		if modo != Sombras.NENHUMA:
+		if com_sombra:
 			bb.enviar()
 		else:
 			bb.esconder()
-		if modo >= Sombras.MEDIA:
+		if inclinada:
 			bs.enviar()
 		else:
 			bs.esconder()
@@ -416,8 +429,6 @@ func _fatia() -> Lote:
 		var l := Lote.new()
 		l.montar(_quad, atlas.tex, _mat_sprite, mundo.no_mundo)
 		l.mmi.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		if str(mundo.args.get("dbg", "")) == "fatia_sem_luz":
-			l.mmi.light_mask = 0
 		fatias.append(l)
 	var f := fatias[usadas]
 	usadas += 1

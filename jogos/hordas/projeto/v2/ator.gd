@@ -19,6 +19,7 @@ var linha := 0
 var coluna := 0
 var espelha := false
 var pos := Vector2.ZERO
+var pr := Vector2.ZERO  # `pos` arredondada: onde o ator é desenhado (o mesmo que raiz.position)
 var estatico := true
 var raio := 7.0  # raio do corpo no chão (colisão, v2/colisao.gd)
 var escala := 1.0  # tamanho do sprite (elite e chefe são maiores)
@@ -47,7 +48,8 @@ var b_alfa := 0.4
 
 func definir_pos(p: Vector2) -> void:
 	pos = p
-	raiz.position = p.round()
+	pr = p.round()
+	raiz.position = pr
 
 
 ## Folha de sprites animada: o corpo é filho da raiz, com o recorte da linha e coluna.

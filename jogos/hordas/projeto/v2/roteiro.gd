@@ -9,6 +9,9 @@ extends RefCounted
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
 ##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, do mini-chefe e do chefe anunciando
 ##                         o ataque, da tela de vitória e da escolha com raridades. Fotos 11_build ... 20_escolha, sempre só do viewport.
+##   --roteiro=vitrine|ordem|cerco   (leva 4, desempenho) vitrine: os 5 tipos parados em 3 fileiras, para comparar antes e depois do mesmo quadro;
+##                         ordem: aranhas grandes (escala 2) atrás e na frente do herói (ordem de desenho); cerco: a horda com 2 aranhas grandes
+##                         depois de 3 s de perseguição, com o herói parado (os monstros cercam e não entram no corpo dele).
 ##   --roteiro=oclusao     (leva 4) herói atrás de uma árvore (1_arvore) e herói coberto por uma aranha grande na frente (2_aranha).
 ## Nada disto roda no jogo normal.
 
@@ -72,6 +75,12 @@ func atualizar(dt: float) -> void:
 				_r_escolha()
 			"oclusao":
 				_r_oclusao()
+			"vitrine":
+				_r_vitrine()
+			"ordem":
+				_r_ordem()
+			"cerco":
+				_r_cerco()
 
 
 # ------------------------------------------------------------------ robô e estresse
@@ -427,6 +436,85 @@ func _r_escolha() -> void:
 
 ## 1_arvore: o herói atrás de uma árvore do meio do mapa (a copa e o tronco o escondem). 2_aranha: o herói no ponto de
 ## nascimento, com uma aranha grande na frente cobrindo o corpo (a silhueta do herói aparece por cima).
+## Vitrine (comparar antes e depois do mesmo quadro): os 5 tipos de monstro parados em 3 fileiras (de frente, de três quartos, espelhados, com
+## quadros e tintas diferentes), um elite-escala e um com fogo, tudo congelado (atordoado) perto do herói. Foto "1_vitrine".
+func _r_vitrine() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			mundo.mouse_forcado = h.centro() + Vector2(100, 0)  # o herói olha sempre para a direita (a foto não depende do mouse)
+			var tipos: Array = mundo.TIPOS_MONSTRO
+			for fila in 3:
+				for i in tipos.size():
+					var m = mundo.nascer_monstro(tipos[i], h.pos + Vector2(-110.0 + i * 55.0, 50.0 + fila * 38.0), true)
+					m.atordoa_t = 9999.0
+					m.quadro((i + fila) % 4, fila % 2, fila == 2, fila == 2)
+					if fila == 1 and i == 1:
+						m.definir_escala(1.6)
+						m.tinta = Color(0.9, 0.7, 1.2)
+					if fila == 2 and i == 3:
+						m.queimar(1.0, 99.0)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 1.0:
+				_foto("1_vitrine")
+				passo = 2
+		2:
+			mundo.get_tree().quit()
+
+
+## Ordem de desenho: uma aranha grande (escala 2) logo atrás do herói e outra logo na frente, paradas. A de trás fica por baixo dele e a
+## da frente por cima (y-sort pelos pés). Foto "1_ordem".
+func _r_ordem() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			mundo.mouse_forcado = h.centro() + Vector2(100, 0)  # o herói olha sempre para a direita (a foto não depende do mouse)
+			for dy in [-26.0, 28.0]:
+				var m = mundo.nascer_monstro("inimigo_aranha_tecela", h.pos + Vector2(6.0 * signf(dy), dy), false)
+				m.definir_escala(2.0)
+				m.atordoa_t = 9999.0
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 1.0:
+				_foto("1_ordem")
+				passo = 2
+		2:
+			mundo.get_tree().quit()
+
+
+## Cerco: 34 monstros e 2 aranhas grandes (escala 2 e 3) caçando o herói parado. Depois de 3 s: foto "1_cerco" (eles formam uma roda em volta
+## dele, sem entrar no corpo, e nenhum fica por cima).
+func _r_cerco() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			mundo.mouse_forcado = h.centro() + Vector2(100, 0)  # o herói olha sempre para a direita (a foto não depende do mouse)
+			var tipos: Array = mundo.TIPOS_MONSTRO
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 7
+			for i in 34:
+				var a := rng.randf() * TAU
+				var r := rng.randf_range(70.0, 190.0)
+				mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(cos(a) * r, sin(a) * r * 0.62), true)
+			for k in [2.0, 3.0]:
+				var m = mundo.nascer_monstro("inimigo_aranha_tecela", h.pos + Vector2(110.0 * (k - 2.5) * 2.0, 60.0), true)
+				m.definir_escala(k)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 3.0:
+				_foto("1_cerco")
+				passo = 2
+		2:
+			mundo.get_tree().quit()
+
+
 func _r_oclusao() -> void:
 	var h = mundo.heroi
 	match passo:

@@ -72,6 +72,7 @@ var fw := 40.0  # tamanho do quadro e linha dos pés (px), e o canto da folha no
 var fh := 42.0
 var fpe := 40.0
 var ao := Vector2.ZERO
+var chave_y := 0.0  # onde a fatia do lote em que ele está fica na ordem de y do mundo (horda.gd; os testes conferem)
 var sid := 0  # número de série (a horda espalha a conta da luz entre os quadros)
 var _ponto = null  # a `raiz` do monstro em lote (um Ponto de ator.gd)
 var _no_raiz: Node2D = null  # os nós da elite e do chefe, criados na primeira vez
@@ -189,14 +190,14 @@ func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
 		desl += sep * dt
 	if desl != Vector2.ZERO:
 		mundo.mover(self, desl)
-	# o corpo do herói é sólido: quem entrou nele é empurrado para fora (suave: 60% da penetração por quadro; passa por mundo.mover, a colisão manda)
+	# o corpo do herói é sólido: quem entrou nele é empurrado para fora (suave: 80% da penetração por quadro; passa por mundo.mover, a colisão manda)
 	var dxh := pos.x - heroi_pos.x
 	var dyh := pos.y - heroi_pos.y
 	var lim := heroi_raio + raio
 	if dxh * dxh + dyh * dyh < lim * lim:
 		var dist := sqrt(dxh * dxh + dyh * dyh)
 		var fora := Vector2(dxh, dyh) / dist if dist > 0.01 else Vector2.from_angle(ang_cerco)
-		mundo.mover(self, fora * (lim - dist) * 0.6)
+		mundo.mover(self, fora * (lim - dist) * 0.8)
 	if v != Vector2.ZERO:
 		_anim += dt
 	vel_v = v
@@ -210,7 +211,16 @@ func visual() -> void:
 	v_sx = (1.0 + 0.2 * k) * escala
 	v_sy = (1.0 - 0.16 * k) * escala
 	v_jx = float(rng.randi_range(-1, 1)) if (atordoa_t > 0.0 and k > 0.0) else 0.0
-	_escolher_quadro(vel_v)
+	var v := vel_v  # (a escolha do quadro, inline: roda por monstro na tela por quadro)
+	var l := 0 if absf(v.x) < absf(v.y) * 0.5 else 1
+	var esp := espelha if absf(v.x) < 1.0 else v.x < 0.0
+	var c := int(_anim / PASSO_ANIM) % n_col
+	if v == Vector2.ZERO and atordoa_t > 0.0:
+		l = linha
+		c = coluna
+		esp = espelha
+	if l != linha or c != coluna or esp != espelha:
+		quadro(c, l, esp, esp != espelha)
 	var queimando := queima_t > 0.0
 	if queimando or lento_t > 0.0 or tinta != Color.WHITE:
 		var cf := tinta
@@ -326,6 +336,8 @@ func _voltar_lote() -> void:
 		sh1.visible = false
 		sh2.visible = false
 	raiz = _ponto
+
+
 ## A vontade do monstro: devolve a velocidade (px/s) que ele quer andar.
 func _ia(dt: float, heroi_pos: Vector2) -> Vector2:
 	var d := heroi_pos - pos

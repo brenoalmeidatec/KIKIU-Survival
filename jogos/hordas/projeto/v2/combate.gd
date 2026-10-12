@@ -23,7 +23,8 @@ const Chefes := preload("res://v2/chefe.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
-const CEL := 32.0  # célula da grade de separação dos monstros
+const CEL := 26.0  # célula da grade de separação dos monstros
+const PASSO_SEP := 3  # cada monstro recalcula a separação a cada 3 quadros (o resultado vale por 3)
 const GRADE_N := 1024  # tamanho da tabela de hash da grade (potência de 2)
 const RAIO_GRANDE := 11.0  # acima disto o monstro (elite, chefe) fica na lista dos grandes, fora da grade
 const CONTATO_BASE := 13.0  # raio do herói (6) + do cão (7): o `contato.alcance` dos dados vale para o cão; os outros encostam pelo raio
@@ -175,8 +176,12 @@ func atualizar(dt: float) -> void:
 			mundo.combo = 0
 	_plim_t -= dt
 	if jogo == "jogando":
+		var s0 := Time.get_ticks_usec()
 		_separar()
+		var s1 := Time.get_ticks_usec()
 		_contato(h)
+		mundo._perfil("c_separar", s1 - s0)
+		mundo._perfil("c_contato", Time.get_ticks_usec() - s1)
 		diretor.atualizar(dt)
 		var t0 := Time.get_ticks_usec()
 		armas.atualizar(dt)
@@ -185,13 +190,15 @@ func atualizar(dt: float) -> void:
 		chefes.atualizar(dt)
 		avisos.atualizar(dt)
 		baus.atualizar(dt)
+	var o0 := Time.get_ticks_usec()
 	orbes.atualizar(dt, h.pos + Vector2(0, -8), float(cfg.heroi.ima_raio) * h.m_ima)
+	mundo._perfil("c_orbes", Time.get_ticks_usec() - o0)
 
 
 ## Monstros colados se empurram: a horda faz uma roda em volta do herói em vez de virar uma pilha em cima dele. Uma grade espacial de
 ## CEL px (tabela de hash em vetores planos, sem Dictionary nem Array por célula) guarda os monstros pequenos; os grandes (elite, chefe)
-## ficam numa lista à parte que todos consultam, porque o alcance deles passa de uma célula. Metade dos monstros por quadro (o resultado
-## vale por dois quadros). O resultado fica em `sep` (px/s) e entra no deslocamento do próprio monstro. O herói é outro caso: o corpo dele
+## ficam numa lista à parte que todos consultam, porque o alcance deles passa de uma célula. Um terço dos monstros por quadro (o resultado
+## vale por PASSO_SEP quadros). O resultado fica em `sep` (px/s) e entra no deslocamento do próprio monstro. O herói é outro caso: o corpo dele
 ## é sólido, e quem entra nele é empurrado para fora em `Monstro.atualizar` (`_corpo_do_heroi`).
 func _separar() -> void:
 	var ms: Array = mundo.monstros
@@ -218,11 +225,11 @@ func _separar() -> void:
 		var h := ((int(p.x / CEL) * 73856093) ^ (int(p.y / CEL) * 19349663)) & (GRADE_N - 1)
 		_prox[i] = _cab[h]
 		_cab[h] = i
-	var i0 := _q & 1
+	var i0 := _q % PASSO_SEP
 	while i0 < n:
 		var m = ms[i0]
 		var k := i0
-		i0 += 2
+		i0 += PASSO_SEP
 		if m.atordoa_t > 0.0:
 			m.sep = Vector2.ZERO
 			continue

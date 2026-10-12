@@ -19,17 +19,20 @@ extends RefCounted
 ## limpar() zera tudo ao trocar de fase. Sem class_name: carregue com preload, como o resto do projeto.
 
 const TAM_CELULA := 64.0
-const GRADE_W := 32
-const GRADE_H := 24
+const GRADE_W := 64  # 64 x 40 células de 64 px cobrem o mapa da v2 (2880 x 1620) e sobra: antes era 32 x 24 e o leste e o sul caíam na célula da borda
+const GRADE_H := 40
 const OFFSET_CELULAS := 4
 const PASSADAS := 4
 const FOLGA := 0.01
+const RAIO_BUSCA := 32.0  # corpo de até este raio usa a tabela de células "perto de alguma forma" (a maioria do mapa aberto passa sem conta)
 
 static var _cen := PackedVector2Array()  # centro de cada forma, no mundo
 static var _rx := PackedFloat32Array()  # raio em x
 static var _k := PackedFloat32Array()  # rx / ry: o fator que escala o y
 static var _grade: Array = []  # GRADE_W * GRADE_H células, cada uma um PackedInt32Array de índices de forma
 static var _rx_max := 0.0
+static var _perto := PackedByteArray()  # por célula: 1 se alguma forma está a menos de RAIO_BUSCA dela (refeita quando entra forma nova)
+static var _sujo := true
 
 
 static func limpar() -> void:
@@ -40,6 +43,7 @@ static func limpar() -> void:
 	for _i in GRADE_W * GRADE_H:
 		_grade.append(PackedInt32Array())
 	_rx_max = 0.0
+	_sujo = true
 
 
 ## Registra um objeto fixo. pos_pe é o pé dele no mundo; formas é a lista "colisao" do cenário.
@@ -59,6 +63,7 @@ static func adicionar_objeto(pos_pe: Vector2, formas: Array) -> void:
 		_rx.append(rx)
 		_k.append(rx / ry)
 		_rx_max = maxf(_rx_max, rx)
+		_sujo = true
 		var ax := _coluna(centro.x - rx)
 		var bx := _coluna(centro.x + rx)
 		var ay := _linha(centro.y - ry)
@@ -76,6 +81,10 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 	var p := pos
 	if _grade.is_empty():
 		return p
+	if _sujo:
+		_refazer_perto()
+	if raio <= RAIO_BUSCA and _perto[_coluna(p.x) * GRADE_H + _linha(p.y)] == 0:
+		return p  # nenhuma forma por perto: nada a resolver
 	var cen := _cen
 	var rxs := _rx
 	var ks := _k
@@ -106,6 +115,23 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 		if not tocou:
 			break
 	return p
+
+
+## Marca as células que têm alguma forma a menos de RAIO_BUSCA (o círculo de um corpo de até esse raio só toca forma assim).
+static func _refazer_perto() -> void:
+	_perto = PackedByteArray()
+	_perto.resize(GRADE_W * GRADE_H)
+	for i in _cen.size():
+		var rx := _rx[i]
+		var ry := rx / _k[i]
+		var ax := _coluna(_cen[i].x - rx - RAIO_BUSCA)
+		var bx := _coluna(_cen[i].x + rx + RAIO_BUSCA)
+		var ay := _linha(_cen[i].y - ry - RAIO_BUSCA)
+		var by := _linha(_cen[i].y + ry + RAIO_BUSCA)
+		for gx in range(ax, bx + 1):
+			for gy in range(ay, by + 1):
+				_perto[gx * GRADE_H + gy] = 1
+	_sujo = false
 
 
 ## True se o círculo (pos, raio) não toca nenhuma forma.
