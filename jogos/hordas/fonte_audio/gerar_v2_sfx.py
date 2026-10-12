@@ -1,7 +1,9 @@
-"""Gera os efeitos do COMBATE da v2 (WAV, 22050 Hz, mono) em projeto/assets/audio/v2/.
+"""RESERVA: gera os efeitos SINTETIZADOS do COMBATE da v2 (WAV, 22050 Hz, mono) em projeto/assets/audio/v2/.
 
-Tudo é sintetizado, sem sample de fora. Reaproveita os sintetizadores do gerador do jogo (jogos/cairu/fonte_audio/gerar_audio.py: pulso,
-tri, seno, ruido, filtros e envelope), importando-o sem alterar. Para mudar um som, edite sfx_v2() e rode:  python3 gerar_v2_sfx.py
+Hoje os WAV desse diretório são sons CC0 do Kenney (ver docs/LICENCAS_AUDIO.md). Rodar este script SOBRESCREVE os arquivos com
+o sintetizado (os nomes que coincidem). Tudo é sintetizado, sem sample de fora. Reaproveita os sintetizadores do gerador do jogo
+(jogos/cairu/fonte_audio/gerar_audio.py: pulso, tri, seno, ruido, filtros e envelope), importando-o sem alterar. Para mudar um som,
+edite sfx_v2() e rode:  python3 gerar_v2_sfx.py
 """
 import importlib.util
 import os

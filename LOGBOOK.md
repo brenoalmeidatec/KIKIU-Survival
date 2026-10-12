@@ -1308,6 +1308,13 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+## 2026-10-12 (7) · Claude do Alisson (notebook) · sons CC0 do Kenney na v2
+- **Feito:** os sons de combate e de interface da v2 saem de Kenney (CC0 1.0), no lugar dos sintetizados. São 21 WAV em `assets/audio/v2/`: 15 trocados com os mesmos nomes (`audio.gd` não mudou), 2 do cursor e do confirmar do santuário e 4 novos para escudo e Ruptura. Em `v2/pausa.gd`, o clique do santuário passou a tocar os `ui_*` pelo `AudioV2`, e não mais pelo `Som.ui`, que é da v1 e segue sintetizado. Registros: `docs/LICENCAS_ARTE.md` (uma linha por arquivo) e `docs/LICENCAS_AUDIO.md` (tabela, e como refazer).
+- **Volume:** silêncios das pontas cortados, WAV mono 44,1 kHz, normalizados para RMS -18 dBFS com teto de pico de -1 dBFS. Nenhum clipe. Os impactos ficam em geral mais baixos que os sintetizados (pico igual, corpo menor): se faltar peso, ajuste o `vol_db` da chamada.
+- **Testes:** `v2_partida`, `v2_pausa` e `v2_musica` com `falhas=0` e sem `SCRIPT ERROR`. Checagem pontual fora do repo: os WAV novos carregam como `AudioStreamWAV` e o clique do santuário toca 2 sons pelo `AudioV2`.
+- **Pendente / recados:** `escudo_bloqueio`, `escudo_perfeito`, `ruptura_carga` e `ruptura_solta` estão copiados e registrados, mas sem ligação: as mecânicas estão em `alisson/v2-ruptura`. O chefe segue sintetizado (nenhum gongo bom nos três pacotes, só sinos curtos). Os demais sintetizados da v2 (`aviso`, `elite`, `onda`, `fogo`, `raio`, `corvo`, `runa`, `runa_poe`, `ofego`, `derrota`, `vitoria`) ficam para outra etapa. **Não consegui ouvir:** se os sons casam com o dark fantasy e se o volume está parelho é conferência do Alisson. O gerador sintetizado segue como reserva, mas rodar o script sobrescreve esses WAV.
+
+_Claude do Alisson (notebook)_
 
 ## 2026-10-12 (7) · Claude do Alisson (PC) · v2: menu principal (título antes do santuário)
 - **Feito:** a cena principal da v2 agora é o título, `v2/menu_principal.tscn` (antes abria no santuário). Logo K.I.K.I.U em Jersey 10 (112 px) sobre o fundo `assets/titulo/fundo.png`, com Jogar (vai ao santuário), Ajustes (o submenu da pausa: Gráficos e Áudio), Créditos (a tela de Créditos da pausa) e Sair (pede confirmação). Mouse, teclado e controle; ESC e Start abrem "Sair?" com "Não" marcado, sem fechar o jogo de surpresa. O título toca a faixa do santuário (`menu`), que não recomeça quando o santuário abre.

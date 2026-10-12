@@ -42,6 +42,7 @@ const COR_FUNDO := Color(0.004, 0.012, 0.043, 0.72)  # #01030b a 0,7 (hud_menus.
 const DICA := "Setas escolhem   Enter confirma   Esc volta"
 const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
+const AudioV2 := preload("res://v2/audio.gd")  # o clique do santuário (sem partida), com os WAV da v2
 
 signal fechou  # o menu fechou: quem o abriu (o santuário, o título) devolve o foco ao botão
 
@@ -65,6 +66,7 @@ var _ajuda: Label
 var _linhas: Array = []  # uma por linha visível: {linha, marca, rotulo, valor}
 var _fps: Label
 var _fps_t := 0.0
+var _sons_ui  # clique do santuário (sem partida): o áudio da v2 (assets/audio/v2/), sem usar os WAV da v1
 
 
 ## Liga o menu à partida (m = mundo.gd) ou ao santuário (null). Chamado antes de entrar na árvore.
@@ -584,15 +586,23 @@ func _notification(what: int) -> void:
 # ------------------------------------------------------------------ sons (o áudio do combate roda com a pausa; o Som global não)
 
 
+## Clique do menu fora da partida (santuário): toca o WAV da v2 com o volume de Efeitos das Opções.
+func _tocar_ui(nome: String) -> void:
+	if _sons_ui == null:
+		_sons_ui = AudioV2.new()
+		add_child(_sons_ui)
+	_sons_ui.tocar(nome)
+
+
 func _som_cursor() -> void:
 	if mundo != null and mundo.combate != null:
 		mundo.combate.audio.tocar("carta", 1.2, -6.0, 0.03)
 	else:
-		Som.ui("cursor")
+		_tocar_ui("ui_cursor")
 
 
 func _som_ok() -> void:
 	if mundo != null and mundo.combate != null:
 		mundo.combate.audio.tocar("escolher", 1.0, 0.0, 0.0)
 	else:
-		Som.ui("confirmar")
+		_tocar_ui("ui_confirmar")
