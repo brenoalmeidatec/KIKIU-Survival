@@ -1,0 +1,700 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/gerar_v2_mapas.py (nao edite a mao)",
+ "enfeites": "enfeites.png",
+ "enfeites_normal": "enfeites_normal.png",
+ "itens": [
+  {
+   "nome": "parede_lab_a",
+   "peso": 1,
+   "pe": [
+    49,
+    84
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -5.7
+     ],
+     "raio": [
+      48.0,
+      5.7
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    0,
+    101,
+    85
+   ]
+  },
+  {
+   "nome": "parede_lab_b",
+   "peso": 1,
+   "pe": [
+    49,
+    84
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -5.7
+     ],
+     "raio": [
+      48.0,
+      5.7
+     ]
+    }
+   ],
+   "regiao": [
+    103,
+    0,
+    101,
+    85
+   ]
+  },
+  {
+   "nome": "parede_lab_c",
+   "peso": 1,
+   "pe": [
+    49,
+    84
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -5.7
+     ],
+     "raio": [
+      48.0,
+      5.7
+     ]
+    }
+   ],
+   "regiao": [
+    206,
+    0,
+    101,
+    93
+   ]
+  },
+  {
+   "nome": "pilar_lab",
+   "peso": 1,
+   "pe": [
+    16,
+    92
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      13.4,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    309,
+    0,
+    32,
+    94
+   ]
+  },
+  {
+   "nome": "rack_servidores",
+   "peso": 1,
+   "pe": [
+    15,
+    68
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      15.1,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    343,
+    0,
+    32,
+    69
+   ]
+  },
+  {
+   "nome": "armario_aco",
+   "peso": 1,
+   "pe": [
+    17,
+    57
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -6.8
+     ],
+     "raio": [
+      16.8,
+      7.1
+     ]
+    }
+   ],
+   "regiao": [
+    377,
+    0,
+    34,
+    58
+   ]
+  },
+  {
+   "nome": "tanque_alto",
+   "peso": 1,
+   "pe": [
+    27,
+    103
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -17.0
+     ],
+     "raio": [
+      25.2,
+      17.8
+     ]
+    }
+   ],
+   "regiao": [
+    413,
+    0,
+    54,
+    105
+   ]
+  },
+  {
+   "nome": "tanque_quebrado",
+   "peso": 1,
+   "pe": [
+    27,
+    103
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -17.0
+     ],
+     "raio": [
+      25.2,
+      17.8
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    107,
+    54,
+    109
+   ]
+  },
+  {
+   "nome": "capsula_cripto",
+   "peso": 1,
+   "pe": [
+    17,
+    72
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -22.6
+     ],
+     "raio": [
+      16.8,
+      23.8
+     ]
+    }
+   ],
+   "regiao": [
+    56,
+    107,
+    34,
+    73
+   ]
+  },
+  {
+   "nome": "gerador",
+   "peso": 1,
+   "pe": [
+    35,
+    87
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -15.8
+     ],
+     "raio": [
+      33.6,
+      16.6
+     ]
+    }
+   ],
+   "regiao": [
+    92,
+    107,
+    76,
+    88
+   ]
+  },
+  {
+   "nome": "cano_grosso",
+   "peso": 1,
+   "pe": [
+    13,
+    84
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -7.9
+     ],
+     "raio": [
+      11.8,
+      8.3
+     ]
+    }
+   ],
+   "regiao": [
+    170,
+    107,
+    40,
+    85
+   ]
+  },
+  {
+   "nome": "mesa_lab",
+   "peso": 1,
+   "pe": [
+    28,
+    42
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      26.9,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    212,
+    107,
+    56,
+    43
+   ]
+  },
+  {
+   "nome": "bancada_lab",
+   "peso": 1,
+   "pe": [
+    50,
+    48
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -10.2
+     ],
+     "raio": [
+      50.4,
+      10.7
+     ]
+    }
+   ],
+   "regiao": [
+    270,
+    107,
+    100,
+    49
+   ]
+  },
+  {
+   "nome": "console",
+   "peso": 1,
+   "pe": [
+    21,
+    51
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -8.5
+     ],
+     "raio": [
+      20.2,
+      8.9
+     ]
+    }
+   ],
+   "regiao": [
+    372,
+    107,
+    43,
+    52
+   ]
+  },
+  {
+   "nome": "console_quebrado",
+   "peso": 1,
+   "pe": [
+    21,
+    53
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -8.5
+     ],
+     "raio": [
+      20.2,
+      8.9
+     ]
+    }
+   ],
+   "regiao": [
+    417,
+    107,
+    45,
+    54
+   ]
+  },
+  {
+   "nome": "caixa_suprimentos",
+   "peso": 1,
+   "pe": [
+    18,
+    41
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -11.3
+     ],
+     "raio": [
+      16.8,
+      11.9
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    218,
+    36,
+    42
+   ]
+  },
+  {
+   "nome": "caixa_empilhada",
+   "peso": 1,
+   "pe": [
+    21,
+    63
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -12.4
+     ],
+     "raio": [
+      18.5,
+      13.1
+     ]
+    }
+   ],
+   "regiao": [
+    38,
+    218,
+    41,
+    64
+   ]
+  },
+  {
+   "nome": "barril_toxico",
+   "peso": 1,
+   "pe": [
+    12,
+    38
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -7.9
+     ],
+     "raio": [
+      11.8,
+      8.3
+     ]
+    }
+   ],
+   "regiao": [
+    81,
+    218,
+    24,
+    40
+   ]
+  },
+  {
+   "nome": "maca",
+   "peso": 1,
+   "pe": [
+    14,
+    58
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -21.5
+     ],
+     "raio": [
+      13.4,
+      22.6
+     ]
+    }
+   ],
+   "regiao": [
+    107,
+    218,
+    28,
+    59
+   ]
+  },
+  {
+   "nome": "gaiola",
+   "peso": 1,
+   "pe": [
+    22,
+    54
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -11.3
+     ],
+     "raio": [
+      21.8,
+      11.9
+     ]
+    }
+   ],
+   "regiao": [
+    137,
+    218,
+    44,
+    55
+   ]
+  },
+  {
+   "nome": "lampada_emergencia",
+   "peso": 1,
+   "pe": [
+    7,
+    64
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.1
+     ],
+     "raio": [
+      6.0,
+      4.3
+     ]
+    }
+   ],
+   "regiao": [
+    183,
+    218,
+    14,
+    65
+   ]
+  },
+  {
+   "nome": "cacos_vidro",
+   "peso": 1,
+   "pe": [
+    17,
+    16
+   ],
+   "colisao": [],
+   "regiao": [
+    199,
+    218,
+    33,
+    18
+   ]
+  },
+  {
+   "nome": "lixo_lab",
+   "peso": 1,
+   "pe": [
+    15,
+    19
+   ],
+   "colisao": [],
+   "regiao": [
+    234,
+    218,
+    32,
+    20
+   ]
+  },
+  {
+   "nome": "restos_cobaia",
+   "peso": 1,
+   "pe": [
+    34,
+    28
+   ],
+   "colisao": [],
+   "regiao": [
+    268,
+    218,
+    63,
+    29
+   ]
+  },
+  {
+   "nome": "porta_blindada",
+   "peso": 1,
+   "pe": [
+    49,
+    84
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -5.7
+     ],
+     "raio": [
+      48.0,
+      5.7
+     ]
+    }
+   ],
+   "regiao": [
+    333,
+    218,
+    101,
+    88
+   ]
+  },
+  {
+   "nome": "duto_ventilacao",
+   "peso": 1,
+   "pe": [
+    20,
+    75
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      18.5,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    436,
+    218,
+    40,
+    77
+   ]
+  },
+  {
+   "nome": "estante_amostras",
+   "peso": 1,
+   "pe": [
+    30,
+    61
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -6.2
+     ],
+     "raio": [
+      28.6,
+      6.5
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    308,
+    60,
+    62
+   ]
+  }
+ ]
+}
