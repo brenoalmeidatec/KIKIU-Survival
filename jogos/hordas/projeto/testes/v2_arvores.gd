@@ -5,7 +5,7 @@ extends Node
 #   - nunca entra na base visual (os pixels opacos das 12 linhas de baixo do sprite, no chão: distância y * 2 ao pé);
 #   - chega perto dela (a parada é de verdade, não um teste vazio).
 # A caminhada isola a árvore testada na grade (os vizinhos atrapalhariam a parada, não a base). A árvore da borda do mapa
-# (fora da área andável) anda no mundo inteiro e só confere que não entra na base. Depois: a copa fica semitransparente (45%)
+# (fora da área andável) anda no mundo inteiro e só confere que não entra na base. Depois: um buraco raio-x abre em volta do herói atrás da árvore
 # com o herói atrás e volta com ele na frente, em transição suave; e a tecla F4 liga e desliga o contorno de colisão.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_arvores.tscn  (imprime "v2_arvores falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -157,13 +157,15 @@ func _ready() -> void:
 		for i in 90:
 			w.avancar(PASSO)
 			if i == 4:
-				meio_caminho = w.copas.alfa_da_copa(arvore_alta)  # 5 quadros depois de encostar: a transição está em curso
-		var alfa_atras: float = w.copas.alfa_da_copa(arvore_alta)
-		ok(absf(alfa_atras - 0.45) < 0.03, "atrás da árvore: copa a 45%% (deu %.2f)" % alfa_atras)
-		ok(meio_caminho > 0.46 and meio_caminho < 0.99, "a copa muda aos poucos (5 quadros depois: %.2f)" % meio_caminho)
+				meio_caminho = w.copas.fuerza_da_copa(arvore_alta)  # 5 quadros depois de encostar: o buraco está abrindo
+		var forca_atras: float = w.copas.fuerza_da_copa(arvore_alta)
+		ok(forca_atras > 0.97, "atrás da árvore: o buraco raio-x está aberto (força %.2f)" % forca_atras)
+		ok(meio_caminho > 0.05 and meio_caminho < 0.95, "o buraco abre aos poucos (5 quadros depois: %.2f)" % meio_caminho)
+		var centro_no_shader: Vector2 = arvore_alta.sprite.material.get_shader_parameter("centro")
+		ok(centro_no_shader.distance_to(w.heroi.centro()) < 1.0, "o centro do buraco é o herói")
 		w.heroi.definir_pos(arvore_alta.pos + Vector2(0, 30))  # na frente: a árvore não encobre o herói
 		passos(90)
-		ok(absf(w.copas.alfa_da_copa(arvore_alta) - 1.0) < 0.03, "na frente da árvore: copa volta a 100%% (deu %.2f)" % w.copas.alfa_da_copa(arvore_alta))
+		ok(w.copas.fuerza_da_copa(arvore_alta) < 0.03, "na frente da árvore: o buraco fecha (força %.2f)" % w.copas.fuerza_da_copa(arvore_alta))
 
 	# 4. F4 liga e desliga o contorno de colisão (desligado por padrão)
 	var f4 := InputEventKey.new()
