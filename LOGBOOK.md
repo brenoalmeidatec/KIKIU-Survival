@@ -1228,5 +1228,19 @@ _Claude do Alisson (notebook)_
 
 **Pendente:**
 - **`esquiva` (v1) instável no CI:** falhou uma vez em "o robô esquiva quando tem vírus colado" e passou ao rodar de novo. A suspeita é que as armas do robô tiram o inimigo do raio em 3 quadros.
+## 2026-10-12 (2): os 15 fps do fim da partida, reproduzidos e medidos
+
+**Feito:**
+- **`testes/bench_fim.tscn`:** o pior caso do relato (build de nível 70 com semente fixa, relógio em 25 min, 500 bichos, `--limite` para respeitar o teto de vivos). Roda na `main` e nas versões antigas. Tem ainda `--picos=MS`, `--dissecar_hud` e `--sem_hud`.
+- **`docs/PERF_2026-10-12.md`:** antes do #140, a Release do #140 e a `main`, em headless e com janela (renderização por software, num contêiner sem placa de vídeo).
+  - **Os ~15 fps foram reproduzidos:** a versão de antes, no Baixo, deu 15,7 fps.
+  - **O hotfix funciona e continua na `main`:** Baixo de 15,7 para 27 fps com janela, e de 74 para 114–124 em headless; Médio +36%. O ganho vem do teto de vivos por perfil, não de bicho mais barato.
+  - **O Alto aos 25 min não mudou:** a prorrogação ainda põe 500 bichos, e quem segura o fps é a qualidade automática (fps < 40 por 8 s).
+
+**Pendente / propostas** (nada aplicado; a v1 está pausada):
+- **HUD da v1:** custa ~450–520 chamadas de desenho (mais que a horda no Baixo) e uns 15–20% de fps na janela. A `main` tem picos piores que a Release do hotfix por isso.
+- **Teto da prorrogação no Alto** de 500 para 350: decisão do Breno.
+- **v2:** o script aguenta 500 (8,8 ms), mas o desenho com luz 2D e mapa de normais cresce com a horda. A proposta é deixar a horda só com a luz do herói e, no Baixo, sem mapa de normais.
+- **Falta medir em placa de verdade** (i5-3470 e RX 7600 XT). Os comandos estão no fim do doc.
 
 _Claude do Alisson (nuvem)_
