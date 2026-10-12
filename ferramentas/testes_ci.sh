@@ -5,7 +5,7 @@
 #   paralelas: padrao 4 (cada cena e um processo Godot headless).
 #
 # Criterio de falha (o mesmo de antes do paralelismo): a saida da cena tem
-# "SCRIPT ERROR", ou nao tem "falhas=0". Cena que estoura 120 s tambem falha.
+# "SCRIPT ERROR", ou nao tem "falhas=0". Cena que estoura 120 s tambem falha (regras_armas, que e lenta, tem 300 s).
 # bench_* ficam de fora. criacao e criacao2 gravam o mesmo arquivo de heroi
 # (user://teste_heroi_criado.json e user://teste_criacao2.json), por isso rodam
 # em sequencia dentro da mesma unidade, nunca em paralelo.
@@ -16,8 +16,10 @@ set -u
 # Modo interno, chamado pelo xargs: roda as cenas da unidade, uma apos a outra.
 # Recebe GODOT, LOGS (exportados) e o diretorio atual = jogos/hordas/projeto.
 rodar_uma() {
-  local n="$1" saida
-  saida=$(timeout 120 "$GODOT" --headless --path . "res://testes/$n.tscn" 2>&1) || true
+  local n="$1" saida limite=120
+  # regras_armas (v1) leva de 100 a 290 s: passa ou estoura os 120 s conforme a carga da maquina, e bloqueava todo PR.
+  [ "$n" = "regras_armas" ] && limite=300
+  saida=$(timeout "$limite" "$GODOT" --headless --path . "res://testes/$n.tscn" 2>&1) || true
   printf '%s\n' "$saida" > "$LOGS/$n.log"
   if grep -q "SCRIPT ERROR" <<<"$saida"; then
     echo "SCRIPT ERROR" > "$LOGS/$n.res"
