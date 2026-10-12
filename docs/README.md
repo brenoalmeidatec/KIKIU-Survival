@@ -11,11 +11,13 @@
 | ⚡ [`PERF_2026-10-06.md`](PERF_2026-10-06.md) | Medição de desempenho com 500 inimigos |
 | ⚡ [`PERF_2026-10-07.md`](PERF_2026-10-07.md) | PC antigo: perfil de qualidade, núcleos, primeiros quadros, shaders e histórico de fps |
 | ⚡ [`PERF_2026-10-10.md`](PERF_2026-10-10.md) | Marco 3: inimigos em lote (MultiMesh), atlas por região, limite de vivos por fase e a conferência visual antes/depois |
+| ⚡ [`PERF_2026-10-12.md`](PERF_2026-10-12.md) | Pior caso do fim da partida (nível 70, 25 min, 500 bichos): `bench_fim`, antes e depois do hotfix #140, gargalos que sobraram na v1 e na v2 |
 | 📖 [`HISTORIA_GRUPO_AMIGOS.md`](HISTORIA_GRUPO_AMIGOS.md) | Os amigos do jogo, como o Breno contou |
 | 🔬 [`analise_jogos_de_hordas.md`](analise_jogos_de_hordas.md) | Análise de Vampire Survivors, Risk of Rain 2 e Megabonk |
 | 🎮 [`ANALISE_10_JOGOS_HORDAS.md`](ANALISE_10_JOGOS_HORDAS.md) | Mais 10 jogos parecidos e ideias pro K.I.K.I.U |
 | 🧩 [`ANALISE_DIMRAETH_ENGINE.md`](ANALISE_DIMRAETH_ENGINE.md) · [`DIMRAETH_ADAPTACAO.md`](DIMRAETH_ADAPTACAO.md) | Estudo do Dimraeth e o que foi adaptado |
 | 🆓 [`assets_gratis.md`](assets_gratis.md) · [`ideias_visual_gba.md`](ideias_visual_gba.md) | Pesquisas de assets e de visual |
 | 🔊 [`LICENCAS_AUDIO.md`](LICENCAS_AUDIO.md) | Licenças das músicas |
+| 🎨 [`LICENCAS_ARTE.md`](LICENCAS_ARTE.md) | Arte, som e fontes de terceiros: o que pode (livre uso), o que não pode e o registro obrigatório |
 
 O diário do projeto (o que foi feito, o que falta) fica no [`LOGBOOK.md`](../LOGBOOK.md) da raiz.

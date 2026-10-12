@@ -48,6 +48,7 @@ var mira_mundo := Vector2.ZERO  # ponto do mundo para onde o golpe vai (mouse ou
 var entrada_forcada: Variant = null  # testes, fotos e medição: um Vector2 aqui vale no lugar do teclado e do controle
 var ataque_forcado: Variant = null  # idem para o botão de atacar segurado (true/false); só vale com entrada_forcada
 var correr_forcado: Variant = null  # idem para o botão de correr segurado
+var _soltar_ataque := false  # o botão de atacar que fechou uma tela (escolha, baú) já foi gasto: só volta a golpear depois de soltá-lo
 var avanco_camera := Vector2.ZERO  # para onde a câmera adianta ao correr (px, suavizado)
 var imortal := false  # medição e roteiros: ninguém tira vida
 var andando := false
@@ -142,6 +143,12 @@ func esquivar() -> void:
 	esq_pedido = float(mundo.combate.cfg.golpe.buffer)
 
 
+## Uma tela (escolha de carta, baú) acabou de fechar com o botão de atacar possivelmente apertado: o golpe por segurar (polling) fica
+## desligado até o botão ser solto, para o clique que escolheu a carta não virar um golpe no quadro seguinte.
+func exigir_soltar_ataque() -> void:
+	_soltar_ataque = true
+
+
 func entrada_evento(e: InputEvent) -> void:
 	if e.is_action_pressed("atacar", false, true):
 		atacar()
@@ -167,6 +174,25 @@ func vulneravel() -> bool:
 
 func curar(v: float) -> void:
 	vida = minf(vida_max, vida + v)
+
+
+## Velocidade de andar (px/s) com o bônus de movimento, e a de correr. O card de status (status.gd) lê estas duas; `_livre` anda com elas.
+func vel_andar() -> float:
+	return VEL * m_vel_mov
+
+
+func vel_correr() -> float:
+	return vel_andar() * float(mundo.combate.cfg.corrida.velocidade)
+
+
+## Alcance do ímã de almas (px): a distância em que o orbe começa a voar para o herói (combate.atualizar).
+func alcance_ima() -> float:
+	return float(mundo.combate.cfg.heroi.ima_raio) * m_ima
+
+
+## Duração (s) do passo `i` do combo com a velocidade de ataque de agora.
+func duracao_do_passo(i: int) -> float:
+	return float(mundo.combate.cfg.golpe.passos[i].duracao) / m_vel_ataque
 
 
 ## Fôlego que volta (matar com o modificador "Fôlego de caçador"): sai do cansaço se passar do limite.
@@ -219,6 +245,9 @@ func atualizar(dt: float) -> void:
 	var segurando := false
 	if real:
 		segurando = InputMap.has_action("atacar") and Input.is_action_pressed("atacar")
+		if _soltar_ataque:  # o aperto que escolheu a carta ainda está lá: não conta como golpe até soltar
+			_soltar_ataque = segurando
+			segurando = false
 	elif ataque_forcado != null:
 		segurando = bool(ataque_forcado)
 	# mira (sempre calculada: o golpe sai para ela)
@@ -268,16 +297,16 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 		return Vector2.ZERO
 	if fonte == Fonte.ANDA:
 		dir_olhar = v.normalized()
-	var k := VEL * m_vel_mov
+	var k := vel_andar()
 	if cansado:
 		k *= float(mundo.combate.cfg.folego.lento_cansado)
 	elif _quer_correr() and folego > 0.0:
 		correndo = true
-		k *= float(mundo.combate.cfg.corrida.velocidade)
+		k = vel_correr()
 		_gastar(float(mundo.combate.cfg.corrida.gasto) * dt)
 		if cansado:  # o último fôlego acabou agora: para de correr na hora
 			correndo = false
-			k = VEL * m_vel_mov * float(mundo.combate.cfg.folego.lento_cansado)
+			k = vel_andar() * float(mundo.combate.cfg.folego.lento_cansado)
 		else:
 			_poeira_t -= dt
 			if _poeira_t <= 0.0:
@@ -338,7 +367,7 @@ func _iniciar_golpe() -> void:
 	var passos: Array = mundo.combate.cfg.golpe.passos
 	golpe_i = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
 	golpe_cfg = passos[golpe_i]
-	golpe_dur = float(golpe_cfg.duracao) / m_vel_ataque
+	golpe_dur = duracao_do_passo(golpe_i)
 	golpe_t = 0.0
 	golpe_acertou = false
 	pedido_t = 0.0

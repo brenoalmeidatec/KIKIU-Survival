@@ -1,13 +1,18 @@
 extends Control
-## Santuário da v2: a tela antes da floresta (é a cena que `--v2` abre). Compra melhorias permanentes com as almas (v2/meta.gd),
+## Santuário da v2: a tela antes da floresta e a CENA PRINCIPAL do jogo (run/main_scene). Com `--v1` (ou um argumento só da v1,
+## veja ARGS_V1) abre o menu da v1 (main.tscn), que resolve o resto (--cena, --prototipo, --bot...). Compra melhorias permanentes com as almas (v2/meta.gd),
 ## mostra as conquistas com cadeado, o resumo da última partida e ENTRAR NA FLORESTA (v2/mundo.tscn). Desenhado em 960x540 com a
 ## janela em CANVAS_ITEMS, sem SubViewport: botões, foco e controle funcionam direto. Cada compra relê o save (Meta.estado()).
 ## Visual: a arte de entrada escurecida, molduras de pedra do HUD (v2/hud/moldura_pedra.png). Títulos na Jersey 10 (Dados.fonte_titulo) e a lista densa na Press Start 2P (Dados.fonte), que tem a grade de 8 px que as 10 linhas pedem.
 
 const Meta := preload("res://v2/meta.gd")
+const Trilha := preload("res://v2/trilha.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const FUNDO := preload("res://assets/icone/entrada.png")
 const FLORESTA := "res://v2/mundo.tscn"
+const CENA_V1 := "res://main.tscn"
+## Argumentos que levam à v1 (main.gd os trata): --v1, os de troca de cena e os de teste da v1 (README de jogos/hordas, testes/online_*.sh).
+const ARGS_V1 := ["v1", "cena", "prototipo", "bot", "online", "sair", "print_tela"]
 const LARG := 960
 const ALT := 540
 const COR_OURO := Color(1.0, 0.86, 0.42)
@@ -32,6 +37,7 @@ var _linhas := {}  # id da melhoria -> {nome, efeito, botao, cadeado}
 var _conq := {}  # id da conquista -> {cadeado, nome, desc, rec}
 var _entrar: Button
 var _ajustes: Button
+var trilha  # música de fundo do santuário (trilha.gd)
 
 
 class Cadeado:
@@ -52,14 +58,50 @@ class Cadeado:
 
 
 func _ready() -> void:
+	if _abrir_v1():
+		return
 	_ajustar_janela()
 	set_anchors_preset(PRESET_FULL_RECT)
 	_montar()
 	var pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)  # ESC aqui abre só "Sair?"; o botão Ajustes abre o submenu (pausa.gd)
 	add_child(pausa)
 	_ajustes.pressed.connect(pausa.abrir_ajustes)
+	trilha = Trilha.new()
+	add_child(trilha)
+	trilha.tocar("santuario")
 	_atualizar()
 	_entrar.grab_focus()
+
+
+## Lê os argumentos (antes e depois do "--") como main.gd: "--chave=valor" ou "--chave".
+static func ler_args(lista: PackedStringArray) -> Dictionary:
+	var args := {}
+	for a in lista:
+		if a.begins_with("--"):
+			var p: PackedStringArray = a.substr(2).split("=", true, 1)
+			args[p[0]] = p[1] if p.size() > 1 else true
+	return args
+
+
+## Se os argumentos pedem a v1. Só vale na primeira vez que o santuário abre no processo: a v1 pode mandar de volta pra cá
+## (--v2, --cena=res://v2/altar.tscn) e isso não pode virar laço.
+static func pede_v1(args: Dictionary, primeira_vez: bool) -> bool:
+	if not primeira_vez:
+		return false
+	for k in ARGS_V1:
+		if args.has(k):
+			return true
+	return false
+
+
+func _abrir_v1() -> bool:
+	var primeira := not Engine.has_meta("kikiu_entrada")
+	Engine.set_meta("kikiu_entrada", true)
+	if not pede_v1(ler_args(OS.get_cmdline_user_args() + OS.get_cmdline_args()), primeira):
+		return false
+	process_mode = Node.PROCESS_MODE_DISABLED
+	get_tree().change_scene_to_file.call_deferred(CENA_V1)
+	return true
 
 
 func _exit_tree() -> void:
@@ -154,7 +196,7 @@ func _montar() -> void:
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
-	_entrar.position = Vector2(300, 482)
+	_entrar.position = Vector2(300, 478)
 	_entrar.size = Vector2(360, 40)
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
 	_entrar.add_theme_font_size_override("font_size", 37)
@@ -164,14 +206,14 @@ func _montar() -> void:
 	add_child(_entrar)
 	_ajustes = Button.new()  # ao lado de ENTRAR: abre o mesmo submenu Ajustes da pausa (ligado no _ready)
 	_ajustes.text = "AJUSTES"
-	_ajustes.position = Vector2(672, 482)
+	_ajustes.position = Vector2(672, 478)
 	_ajustes.size = Vector2(168, 40)
 	_ajustes.add_theme_font_override("font", Dados.fonte_titulo)
 	_ajustes.add_theme_font_size_override("font_size", 37)
 	_estilo_botao(_ajustes, 37)
 	_ajustes.add_theme_color_override("font_color", COR_OURO)
 	add_child(_ajustes)
-	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 526, LARG, 12)))
+	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:

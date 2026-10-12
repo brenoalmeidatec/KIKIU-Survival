@@ -6,6 +6,8 @@ extends Node
 ##   --online=host [--jogadores=2] (abre a sala e começa sozinho quando tiver 2)
 ##   --online=join --endereco=127.0.0.1:7777  (entra na sala)
 ##   --dragao (transformação do herói já liberada e com a energia cheia; o robô transforma sozinho)
+## A cena principal do jogo é a v2 (res://v2/altar.tscn). Esta tela (a v1) abre com `-- --v1` ou com um argumento da v1
+## (--bot, --online, --sair, --print_tela, --cena, --prototipo), que o santuário repassa para cá (v2/altar.gd, ARGS_V1).
 ## Abrir uma cena no lugar do menu (Release: KIKIU.exe -- --prototipo; o "--" faz o protótipo ler --fotos/--seq):
 ##   --prototipo (res://prototipos/cara_nova.tscn)  --v2 (res://v2/altar.tscn, o santuário da v2; sem o arquivo, cai no protótipo com aviso)
 ##   --cena=res://... (qualquer cena; sem o arquivo, fica no menu com aviso). Ordem: --cena > --v2 > --prototipo.
@@ -229,7 +231,7 @@ static func cena_de_argumentos(args: Dictionary, existe: Callable) -> String:
 			return str(args.cena)
 		print("AVISO --cena=%s: arquivo não existe; abrindo o menu" % str(args.cena))
 		return ""
-	if args.has("v2"):
+	if args.has("v2") and not args.has("v1"):  # --v1 ganha de --v2 (o santuário mandou pra cá)
 		if existe.call(CENA_V2):
 			return CENA_V2
 		print("AVISO --v2: %s ainda não existe; abrindo o protótipo" % CENA_V2)
@@ -1379,7 +1381,7 @@ func _desenhar() -> void:
 			_txt(Vector2(0, 226), "Motor do jogo: Godot Engine (licença MIT)", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 236), "Fonte Press Start 2P, de CodeMan38 (licença OFL)", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 248), "Fonte Jersey 10 (títulos), de The Soft Type Project (licença OFL)", 8, Color(0.6, 0.6, 0.7))
-			_txt(Vector2(0, 260), "Fonte Pixelify Sans (texto), de The Pixelify Sans Project (licença OFL)", 8, Color(0.6, 0.6, 0.7))
+			_txt(Vector2(0, 260), "Fonte Spleen (texto), (c) 2018-2026 Frederic Cambus (BSD de 2 cláusulas)", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 272), "Efeitos sonoros gerados por código, no próprio projeto", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 284), "Música: Kevin MacLeod (incompetech.com), CC BY 4.0", 8, Color(0.6, 0.6, 0.7))
 			_txt(Vector2(0, 296), "Oppressive Gloom, Crypto, Giant Wyrm, Ignosi,", 8, Color(0.6, 0.6, 0.7))
