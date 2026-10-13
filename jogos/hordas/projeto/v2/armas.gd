@@ -29,6 +29,7 @@ var ventania := {}  # evolução da katana, ou {}
 var acertos := {}  # tipo -> quantos acertos (testes)
 var lancadas := 0  # ondas e lanças lançadas (testes)
 var no_corpo: Node2D
+var no_nevoa: Node2D
 var no_brilho: Node2D
 var tex_brilho: Texture2D
 var luz_fogo: PointLight2D
@@ -89,6 +90,13 @@ func montar(c, camada: Node, sv: Node, tex: Texture2D) -> void:
 	no_corpo = Node2D.new()
 	no_corpo.draw.connect(_desenhar_corpo)
 	camada.add_child(no_corpo)
+	# Fumaça mantém contraste próprio sobre chão escuro e tochas, sem somar luz.
+	no_nevoa = Node2D.new()
+	var material_nevoa := CanvasItemMaterial.new()
+	material_nevoa.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	no_nevoa.material = material_nevoa
+	no_nevoa.draw.connect(_desenhar_nevoa)
+	camada.add_child(no_nevoa)
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	no_brilho = Node2D.new()
@@ -171,6 +179,7 @@ func limpar() -> void:
 	_aura_sp.visible = false
 	_desenha = false
 	no_corpo.queue_redraw()
+	no_nevoa.queue_redraw()
 	no_brilho.queue_redraw()
 
 
@@ -375,6 +384,7 @@ func atualizar(dt: float) -> void:
 	var ativo := movel or _tem_pool()
 	if ativo or _desenha:
 		no_corpo.queue_redraw()
+		no_nevoa.queue_redraw()
 		no_brilho.queue_redraw()
 	_desenha = ativo
 
@@ -1125,6 +1135,12 @@ func _desenhar_corpo_i() -> void:
 		var quadro: int = [0, 1, 2, 1][int(c_fase[i] / 1.57) & 3]
 		var r := Rect2(c + Vector2(-16.5 * lado, -13.5), Vector2(33.0 * lado, 27.0))
 		no_corpo.draw_texture_rect_region(_tex_corvo, r, Rect2(quadro * 22, 0, 22, 18))
+
+
+func _desenhar_nevoa() -> void:
+	var t0 := Time.get_ticks_usec()
+	novas.desenhar_corpo(no_nevoa, tex_brilho)
+	us_desenho += Time.get_ticks_usec() - t0
 
 
 func _desenhar_brilho() -> void:
