@@ -1559,3 +1559,11 @@ _Codex GPT-6.1 Sol (PC)_
 - **Próximo:** agente principal atualiza PR #238 por push normal e mescla Cidade #211 após CI verde; publicação/build conjunta ficam com ele. Nenhum push/main/PR feito neste bloco.
 
 _Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · morte e retorno seguro ao santuário
+- **Antes/depois:** Alisson relatou travamento/fechamento ao morrer. Windows registrou 0xc0000005 na build b7a1d87; reprodução com Enter em CONTINUAR saiu -1073741819. No Godot de desenvolvimento, a mesma entrada produz SCRIPT ERROR em mundo.gd:694 (viewport nulo): resultado_meta trocava a cena imediatamente antes de mundo marcar o evento. A troca agora é diferida até terminar a entrada, com guarda contra cliques repetidos.
+- **Falha de save:** o relógio e o botão CONTINUAR avançam mesmo quando a meta não grava; mantém NÃO FOI POSSÍVEL SALVAR, sem creditar almas falsas nem prender o jogador na tela.
+- **Testes reais:** Godot 4.4.1 import exit 0; v2_morte (novo, quatro mapas, Enter/mouse/A, entrada precoce/repetida, mundo pausado, crédito único, gravação recusada e hash do save real), v2_meta, v2_partida, v2_esc e v2_santuario: todos exit 0/falhas=0/sem SCRIPT ERROR. v2_morte também passou com renderer OpenGL Intel Iris Xe, janela oculta 960×540. Avisos de RID/recursos ao encerrar harness permanecem; recusa de .tmp é intencional. gdformat scripts/testes/v2: 229 arquivos limpos; diff-check limpo.
+- **Próximo:** CI do PR e repetir no EXE exportado junto aos efeitos visuais. Splash e exports preservados. Logs fora do Git em C:/Dev/Breno/analise-kikiu/morte-*.log.
+
+_Codex GPT-6.1 Sol (PC)_

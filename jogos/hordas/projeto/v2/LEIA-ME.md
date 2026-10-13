@@ -76,3 +76,5 @@ Teste da navegação do santuário: `testes/v2_santuario.tscn` usa a entrada da 
 ## Cidade e Ruínas da Floresta (2026-10-13)
 
 A seleção tem quatro mapas: FLORESTA, LABORATÓRIO, CIDADE e RUÍNAS DA FLORESTA. Cidade usa `v2_cidade.json` e `assets/v2/mapas/cidade/`, com ruas e quarteirões próprios. Ruínas da Floresta preserva o id `medio`, `v2_medio.json`, os marcadores e mecânicas; saves antigos continuam abrindo o mesmo mapa. A escolha usa o save seguro da meta-progressão. `v2_mapas` percorre todos os mapas, passagens, mecânicas das ruínas e a rua central da Cidade.
+
+Resultado da partida: CONTINUAR agenda a troca para o santuário ao fim do evento, preservando o viewport que ainda consome a entrada. Falha de save mantém o aviso e libera CONTINUAR após 0,8 s. `testes/v2_morte.tscn` cobre morte real nos quatro mapas, teclado/mouse/controle, entrada duplicada, crédito único e falha de gravação, sem tocar no progresso real.
