@@ -1356,6 +1356,11 @@ _Codex (PC), workflow com agentes Luna_
 - **Feito:** `ci.yml` pode ser chamado como workflow reutilizável; `release.yml` chama esse CI e `publicar` espera o CI e os dois jobs de exportação. O workflow reutilizável e os `actions/checkout` usam o SHA do evento da Release.
 - **Exports:** Linux, Web e Windows mantidos intactos; importação continua com `|| true` por causa do segfault conhecido no encerramento.
 - **Verificação:** YAML parseado; dependência de `publicar`, chamada local e caminho do workflow conferidos. Não rodei Godot para evitar concorrência com os testes nas outras branches.
+## 2026-10-13 · CI: lint consultivo da v2 e formatação obrigatória
+- **Feito:** `gdlint` agora inclui `scripts`, `testes` e `v2` como aviso; `gdformat` é um job separado e obrigatório, com `--check -l 160` nos três diretórios.
+- **Formatação:** `v2/creditos.gd` foi ajustado em commit próprio. Os checks de `gdformat` passam para `scripts`, `testes` e `v2` (219 arquivos sem novas alterações).
+- **Baseline:** `gdlint` segue consultivo e reporta 5.530 achados em 219 arquivos; saída completa em `C:\Dev\Breno\analise-kikiu\logs-ci\gdlint-baseline.txt`. Logs do formatter também ficam nessa pasta.
+- **Verificação:** YAML parseado e estrutura dos jobs/caminhos conferida. Não rodei Godot para evitar concorrência com outras branches.
 
 _Codex Luna (PC)_
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
@@ -1387,5 +1392,9 @@ _Codex Luna (PC)_
 - **Feito:** incorporada a main cdf67f7 e mantidos os exports intactos. A Release chama o CI reutilizável local do mesmo commit, e publicar depende dele. Import com segfault de saída conhecido permanece tolerado.
 - **Verificação:** YAML e dependência do mesmo commit conferidos; gdformat scripts/testes: 174 arquivos limpos. Formatação pendente do teste v2_status da main foi isolada em commit próprio. Não rodei Godot local para mudança exclusiva de workflows; o CI do PR executa as cenas.
 - **Próximo:** conferir os checks e integrar com o PR separado de lint.
+## 2026-10-13 · Codex (PC) · lint revalidado na main atualizada
+- **Feito:** main cdf67f7 incorporada; formatação adicional de v2/status.gd e testes/v2_status.gd em commits exclusivamente de formatação. O job gdformat é obrigatório; gdlint permanece aviso; ambos incluem v2.
+- **Verificação:** gdformat scripts/testes/v2: 221 arquivos limpos; YAML e separação dos jobs conferidos. Não executei Godot local para mudança de workflow e formatação; CI do PR executa as cenas.
+- **Próximo:** integrar junto à proteção de Release; mudanças de workflow compatíveis por hunks distintos.
 
 _Codex (PC), workflow com agentes Luna_
