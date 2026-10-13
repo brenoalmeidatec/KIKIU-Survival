@@ -1359,3 +1359,5 @@ _Claude do Breno (PC)_
 - **Guia mínimo:** ao mudar uma pegada, edite a fonte do protótipo e regenere `prototipos/objetos/cenario.json`; faça `godot --headless --path jogos/hordas/projeto --import`, rode `res://testes/v2_arvores.tscn`, e não versione `.import`, `.uid` nem `.godot/` gerados.
 
 _Codex Luna (PC)_
+
+- **Refino do caminho comum:** movimentos curtos usam comprimento ao quadrado e resolvem uma única vez, sem divisão nem laço de subpassos. O benchmark acima descreve a versão anterior com laço de uma iteração; o refino não é uma promessa de FPS. Guia da v2 atualizado.

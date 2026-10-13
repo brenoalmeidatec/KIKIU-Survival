@@ -434,13 +434,15 @@ func _ler_graficos() -> void:
 ## na área andável (o mapa menos "borda_andavel": as árvores das bordas fecham o mapa). Devolve o deslocamento que de fato aconteceu.
 func mover(a, desejado: Vector2) -> Vector2:
 	var antes: Vector2 = a.pos
-	var n_passos := 1
-	if desejado.length() > MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, antes + desejado, a.raio):
-		n_passos = ceili(desejado.length() / MAX_PASSO_COLISAO)
-	var passo := desejado / n_passos
-	var depois := antes
-	for _i in n_passos:
-		depois = Colisao.resolver(depois + passo, a.raio)
+	var depois := antes + desejado
+	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, a.raio):
+		var n_passos := ceili(desejado.length() / MAX_PASSO_COLISAO)
+		var passo := desejado / n_passos
+		depois = antes
+		for _i in n_passos:
+			depois = Colisao.resolver(depois + passo, a.raio)
+	else:
+		depois = Colisao.resolver(depois, a.raio)
 	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
 	a.definir_pos(depois)
 	return depois - antes
