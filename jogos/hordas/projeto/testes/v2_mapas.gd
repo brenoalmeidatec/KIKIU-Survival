@@ -458,6 +458,7 @@ func _santuario() -> void:
 	var a = Altar.instantiate()
 	add_child(a)
 	await get_tree().process_frame
+	ok(a._mapa.get_rect().end.x <= a._entrar.position.x, "santuário: floresta não sobrepõe ENTRAR")
 	ok(a._mapa.text.contains("FLORESTA") and a._entrar.text == "ENTRAR NA FLORESTA", "santuário: começa na floresta (%s / %s)" % [a._mapa.text, a._entrar.text])
 	a._mapa.pressed.emit()
 	ok(Mapas.escolhido() == "laboratorio", "santuário: o botão passa para o laboratório e grava")
@@ -465,11 +466,18 @@ func _santuario() -> void:
 		a._mapa.text.contains("LABORATÓRIO") and a._entrar.text == "ENTRAR NO LABORATÓRIO",
 		"santuário: o texto acompanha (%s / %s)" % [a._mapa.text, a._entrar.text]
 	)
+	await get_tree().process_frame
+	ok(a._mapa.get_rect().end.x <= a._entrar.position.x, "santuário: laboratório não sobrepõe ENTRAR")
 	await _foto(a, "laboratorio")
 	for id in ["cidade", "medio", "floresta"]:
 		a._mapa.pressed.emit()
 		var m: Dictionary = Mapas.buscar(id)
 		ok(Mapas.escolhido() == id and a._mapa.text.contains(m.nome) and a._entrar.text == m.entrar, "santuário: seleção e rótulo de %s" % id)
+		await get_tree().process_frame
+		ok(
+			a._mapa.get_rect().end.x <= a._entrar.position.x,
+			"santuário: seletor %s não sobrepõe ENTRAR (fim %.1f / início %.1f)" % [id, a._mapa.get_rect().end.x, a._entrar.position.x]
+		)
 		await _foto(a, id)
 	ok(Mapas.escolhido() == "floresta", "santuário: dá a volta à lista")
 	remove_child(a)

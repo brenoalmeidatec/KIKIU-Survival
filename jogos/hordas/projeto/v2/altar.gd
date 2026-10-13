@@ -414,6 +414,10 @@ func _atualizar_mapa() -> void:
 	_mapa_id = Mapas.escolhido()
 	var m: Dictionary = Mapas.buscar(_mapa_id)
 	_mapa.text = "< %s >" % m.nome
+	# O mínimo do Button cresce com o texto; a Jersey 19 mantém todos os nomes completos na mesma largura.
+	_mapa.add_theme_font_size_override("font_size", 19)
+	_mapa.size = Vector2(248, 40)
+	_mapa.tooltip_text = str(m.nome)
 	_entrar.text = str(m.entrar)
 
 

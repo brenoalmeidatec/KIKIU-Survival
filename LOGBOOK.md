@@ -1541,3 +1541,5 @@ _Codex GPT-6.1 Sol (PC)_
 - **Checks/limites:** gdformat scripts/testes/v2 (227 arquivos) e git diff --check limpos. Logs, capturas e wrapper local em C:/Dev/Breno/analise-kikiu/logs-cidade-nova, fora do Git. Avisos RID/recursos no encerramento headless permanecem. Nenhum push/merge remoto neste bloco; publicação/CI/build ficam com o agente principal.
 
 _CodexSolPC_
+
+- **Correção da conferência visual:** o nome inteiro aparecia no PNG anterior, mas isso não provava ausência de sobreposição. Assert após `process_frame` reproduziu seletor de Ruínas terminando em x348 contra ENTRAR em x300 (48 px sobrepostos). `_atualizar_mapa` agora mantém fonte Jersey 19 em todos os mapas, texto completo, tooltip e largura 248 px. O teste espera o mínimo diferido do Godot e verifica geometria nos quatro mapas. `v2_mapas`, `v2_meta` e `v2_fontes` sobre a correção: exit 0/falhas=0/sem SCRIPT ERROR; renderer real também passou os limites. Formatação global (227 arquivos) e diff limpos.
