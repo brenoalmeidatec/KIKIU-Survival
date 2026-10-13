@@ -1574,3 +1574,11 @@ _Codex GPT-6.1 Sol (PC)_
 - **Próximo:** agente principal revisa PR e faz build; nenhum push/merge neste bloco.
 
 _Codex GPT-6.1 Sol (PC)_
+
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Emblema de solo rompido no HUD
+- **Feito:** substituído o símbolo angular da Ruptura por duas placas de pedra separadas e fenda central ramificada, autoral e compacto no ícone 48×48. Estados/cores/carga/recarga continuam os mesmos; nenhum ajuste no mundo ou nos efeitos de Ruptura/escudo.
+- **Validação:** Godot 4.4.1 v2_hud e v2_ruptura exit 0/falhas=0/sem SCRIPT ERROR. Capturas reais OpenGL 960×540 com janela oculta, prontidão/carga/recarga e detalhes do card inspecionados; fotos/logs locais no worktree, fora do Git. gdformat global e diff-check conferidos.
+- **Próximo:** agente principal atualiza PR #240 e CI; build precisa ser reexportada com este novo ícone.
+
+_Codex GPT-6.1 Sol (PC)_
