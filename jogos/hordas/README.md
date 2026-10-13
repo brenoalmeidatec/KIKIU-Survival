@@ -82,3 +82,6 @@ Técnicas e referências em [`docs/VISUAL_KIKIU.md`](../../docs/VISUAL_KIKIU.md)
 ### Espera das recompensas da v2
 
 A escolha de carta e a abertura do baú aguardam 1 segundo de tempo real. No baú, todas as recompensas aparecem ao final desse segundo, mesmo quando há três cartas; Enter ou clique fecha a tela depois. Rerrolar ou banir continua com 0,8 segundo. A pausa congela a espera e cliques anteriores à liberação são descartados.
+### Arte da abertura
+
+O splash da inicialização usa `assets/titulo/fundo.png`, a mesma arte atual do menu principal da v2. A antiga imagem `assets/icone/entrada.png` permanece no histórico, mas não é mais a imagem de abertura configurada.
