@@ -1308,6 +1308,16 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude (subagente, PC, a pedido do Breno) · mapa Cidade (etapa 2)
+- **Feito:** o mapa Cidade está montado sobre a etapa 1 (objetos e piso do Blender). `mapas_v2/def_cidade.py` põe 177 objetos numa grade de 5 x 4 quarteirões (prédio no lote, pátio com contêiner, praça com ponto de ônibus e fogueira, ruína e lote vazio), 147 decalques, 85 luzes (53 presas aos objetos, 32 soltas) e 8 zonas de monstro. O herói nasce no cruzamento central. Registro: `v2/mapas.gd` (linha `cidade`, botão `< MAPA >` do santuário), `dados/v2_cidade.json` e `assets/v2/mapas/cidade/`.
+- **Ruas:** o eixo das ruas fica livre; carro, poste e semáforo ficam no meio-fio. Conferido com grade de 4 px e as elipses do JSON: 90,6% da área andável livre, e ruas e zonas de monstro na mesma região conectada. `v2_mapas falhas=0`, com teste novo de rua (300 px pelo leste do cruzamento sem travar).
+- **Dependência:** a branch inclui o laboratório (commit 468968b, merge de `claude/v2-mapa-laboratorio`). **Mesclar o PR da cidade depois do #204.**
+- **Não medido:** fps (85 luzes no mapa). Antes do merge, medir `--medir --mapa=cidade` no Médio e no Alto.
+- **Pendente:** o OK do Alisson e a bateria completa (`ferramentas/testes_ci.sh`), que não rodei por causa da CPU compartilhada.
+- **Para o Claude do Alisson:** se o #204 mudar `mapas.gd`, `cenario.gd` ou `gerar_v2_mapas.py`, a branch da cidade precisa de merge da `main` antes do PR.
+
+_Claude (subagente, PC, a pedido do Breno)_
 ## 2026-10-12 (7) · Claude do Alisson (notebook) · sons CC0 do Kenney na v2
 - **Feito:** os sons de combate e de interface da v2 saem de Kenney (CC0 1.0), no lugar dos sintetizados. São 21 WAV em `assets/audio/v2/`: 15 trocados com os mesmos nomes (`audio.gd` não mudou), 2 do cursor e do confirmar do santuário e 4 novos para escudo e Ruptura. Em `v2/pausa.gd`, o clique do santuário passou a tocar os `ui_*` pelo `AudioV2`, e não mais pelo `Som.ui`, que é da v1 e segue sintetizado. Registros: `docs/LICENCAS_ARTE.md` (uma linha por arquivo) e `docs/LICENCAS_AUDIO.md` (tabela, e como refazer).
 - **Volume:** silêncios das pontas cortados, WAV mono 44,1 kHz, normalizados para RMS -18 dBFS com teto de pico de -1 dBFS. Nenhum clipe. Os impactos ficam em geral mais baixos que os sintetizados (pico igual, corpo menor): se faltar peso, ajuste o `vol_db` da chamada.
@@ -1523,3 +1533,13 @@ _Codex GPT-6.1 Sol (PC)_
 - **Próximo:** atualizar PR #236, obter CI verde e exportar/validar a candidata com este commit; publicação e merge remoto ficam com o agente responsável.
 
 _Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-13 · Cidade na seleção e Ruínas da Floresta
+- **Antes/depois:** a build main 5dd7972 mostrava Floresta, Laboratório e Médio. Integrada a Cidade da PR #211 (head 2aa41db) por merge da main, preservando histórico e assets: a seleção agora oferece Floresta, Laboratório, Cidade e Ruínas da Floresta. O antigo `medio` conserva id, dados, progresso e mecânicas #220/#222; só os textos mudam para RUÍNAS DA FLORESTA e ENTRAR NAS RUÍNAS. Save seguro, árvores, E/Ruptura e escudo da main preservados.
+- **Testes:** import real Godot 4.4.1 exit 0; v2_mapas, v2_mundo e v2_arvores exit 0/falhas=0/sem SCRIPT ERROR. v2_mapas cobre os quatro mapas, rua da Cidade de 300 px, passagens, marcadores/espinhos das ruínas, save legado bruto `medio`, preservação de outros dados e fallback desconhecido. Renderer OpenGL real (Intel Iris Xe) também v2_mapas exit 0/falhas=0; capturas do mundo e seleção 960×540 revisadas, nome e botão das ruínas cabem.
+- **Custo CPU, sem promessa de FPS:** benchmark headless de `mundo.avancar(1/60)`, 20 monstros, semente 211, 100 passos de aquecimento por caso e 20 amostras de 100 passos, alternando ordem dos quatro casos e montando um mundo por vez. Medianas: Laboratório média 410,98 µs/alta 457,55 µs; Cidade média 372,42 µs/alta 417,38 µs. Cidade conserva 177 objetos e 85 luzes do mapa (87 no mundo incluindo duas do herói); Laboratório 376 objetos/122 luzes totais. Mede CPU com renderer dummy, não custo de GPU nem gameplay completo. Primeira tentativa via --script não carregou autoloads e foi encerrada; log da falha preservado, não contado como validação.
+- **Checks/limites:** gdformat scripts/testes/v2 (227 arquivos) e git diff --check limpos. Logs, capturas e wrapper local em C:/Dev/Breno/analise-kikiu/logs-cidade-nova, fora do Git. Avisos RID/recursos no encerramento headless permanecem. Nenhum push/merge remoto neste bloco; publicação/CI/build ficam com o agente principal.
+
+_CodexSolPC_
+
+- **Correção da conferência visual:** o nome inteiro aparecia no PNG anterior, mas isso não provava ausência de sobreposição. Assert após `process_frame` reproduziu seletor de Ruínas terminando em x348 contra ENTRAR em x300 (48 px sobrepostos). `_atualizar_mapa` agora mantém fonte Jersey 19 em todos os mapas, texto completo, tooltip e largura 248 px. O teste espera o mínimo diferido do Godot e verifica geometria nos quatro mapas. `v2_mapas`, `v2_meta` e `v2_fontes` sobre a correção: exit 0/falhas=0/sem SCRIPT ERROR; renderer real também passou os limites. Formatação global (227 arquivos) e diff limpos.

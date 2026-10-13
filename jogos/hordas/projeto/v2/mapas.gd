@@ -9,7 +9,8 @@ const PADRAO := "floresta"
 const LISTA := [
 	{"id": "floresta", "nome": "FLORESTA", "entrar": "ENTRAR NA FLORESTA", "dados": "v2_floresta"},
 	{"id": "laboratorio", "nome": "LABORATÓRIO", "entrar": "ENTRAR NO LABORATÓRIO", "dados": "v2_laboratorio"},
-	{"id": "medio", "nome": "MÉDIO", "entrar": "ENTRAR NO MÉDIO", "dados": "v2_medio"},
+	{"id": "cidade", "nome": "CIDADE", "entrar": "ENTRAR NA CIDADE", "dados": "v2_cidade"},
+	{"id": "medio", "nome": "RUÍNAS DA FLORESTA", "entrar": "ENTRAR NAS RUÍNAS", "dados": "v2_medio"},
 ]
 
 

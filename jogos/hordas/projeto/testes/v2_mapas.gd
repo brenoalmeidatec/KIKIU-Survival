@@ -52,11 +52,22 @@ func _apagar_save() -> void:
 
 
 func _lista_e_escolha() -> void:
+	ok(Mapas.ids() == ["floresta", "laboratorio", "cidade", "medio"], "os quatro mapas na ordem de seleção")
 	ok(Mapas.ids().size() >= 2, "há pelo menos 2 mapas (floresta e laboratório): %s" % str(Mapas.ids()))
 	ok(Mapas.ids().has("floresta") and Mapas.ids().has("laboratorio"), "floresta e laboratório estão na lista")
 	ok(Mapas.escolhido() == "floresta", "sem save o mapa é a floresta (deu %s)" % Mapas.escolhido())
 	Mapas.escolher("laboratorio")
 	ok(Mapas.escolhido() == "laboratorio", "escolher grava e escolhido lê de volta")
+	var legado := ConfigFile.new()
+	legado.set_value("config", "mapa", "medio")
+	legado.set_value("meta", "almas", 123)
+	ok(legado.save(SAVE_TESTE) == OK, "fixture de save antigo com id medio")
+	ok(Mapas.escolhido() == "medio" and Mapas.buscar("medio").nome == "RUÍNAS DA FLORESTA", "save antigo medio preserva o id e mostra o nome novo")
+	Mapas.escolher("cidade")
+	var preservado := ConfigFile.new()
+	preservado.load(SAVE_TESTE)
+	ok(preservado.get_value("meta", "almas", 0) == 123, "trocar mapa preserva os dados anteriores do save")
+	ok(Mapas.escolhido() == "cidade", "cidade é gravada no save seguro")
 	Mapas.escolher("nao_existe")
 	ok(Mapas.escolhido() == "floresta", "id desconhecido cai na floresta")
 	ok(Mapas.proximo("floresta") == Mapas.ids()[1], "o seguinte da floresta é o segundo da lista")
@@ -207,6 +218,9 @@ func _mundo_do_mapa(id: String) -> void:
 	w.set_process(false)
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.heroi.imortal = true
+	if id == "cidade":
+		_rua_da_cidade(w)
+		await _foto_mundo(id, "rua")
 	ok(w.id_mapa == id and str(w.dados.get("_ajuda", "")) != "", "%s: o mundo carregou o json certo" % id)
 	ok(w.cenario.objetos.size() >= 150, "%s: objetos no mundo: %d" % [id, w.cenario.objetos.size()])
 	ok(w.cenario.n_decalques >= 100, "%s: decalques no mundo: %d" % [id, w.cenario.n_decalques])
@@ -412,11 +426,39 @@ func _mecanicas_d(w, marcas: Array) -> void:
 	w.heroi.imortal = true
 
 
+## A cidade tem ruas livres: o herói sai do cruzamento central e anda 300 px pelo leste sem travar (carros e postes ficam no meio-fio).
+func _rua_da_cidade(w) -> void:
+	var ini: Vector2 = w.heroi.pos
+	w.heroi.entrada_forcada = Vector2(1, 0)
+	for i in 600:  # até 10 s; para ao chegar
+		w.avancar(PASSO)
+		if w.heroi.pos.x >= ini.x + 300.0:
+			break
+	w.heroi.entrada_forcada = Vector2.ZERO
+	ok(
+		w.heroi.pos.x >= ini.x + 300.0 and absf(w.heroi.pos.y - ini.y) < 80.0,
+		"cidade: o herói anda 300 px pela rua do leste sem travar (%s -> %s)" % [str(ini), str(w.heroi.pos)]
+	)
+
+
+## Com --fotos=PASTA grava a tela da partida (só com janela, como as do santuário).
+func _foto_mundo(id: String, nome: String) -> void:
+	var pasta := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--fotos="):
+			pasta = arg.substr(8)
+	if pasta == "" or DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png(pasta.path_join("mundo_%s_%s.png" % [id, nome]))
+
+
 func _santuario() -> void:
 	Mapas.escolher("floresta")
 	var a = Altar.instantiate()
 	add_child(a)
 	await get_tree().process_frame
+	ok(a._mapa.get_rect().end.x <= a._entrar.position.x, "santuário: floresta não sobrepõe ENTRAR")
 	ok(a._mapa.text.contains("FLORESTA") and a._entrar.text == "ENTRAR NA FLORESTA", "santuário: começa na floresta (%s / %s)" % [a._mapa.text, a._entrar.text])
 	a._mapa.pressed.emit()
 	ok(Mapas.escolhido() == "laboratorio", "santuário: o botão passa para o laboratório e grava")
@@ -424,9 +466,19 @@ func _santuario() -> void:
 		a._mapa.text.contains("LABORATÓRIO") and a._entrar.text == "ENTRAR NO LABORATÓRIO",
 		"santuário: o texto acompanha (%s / %s)" % [a._mapa.text, a._entrar.text]
 	)
+	await get_tree().process_frame
+	ok(a._mapa.get_rect().end.x <= a._entrar.position.x, "santuário: laboratório não sobrepõe ENTRAR")
 	await _foto(a, "laboratorio")
-	for i in Mapas.ids().size() - 1:
+	for id in ["cidade", "medio", "floresta"]:
 		a._mapa.pressed.emit()
+		var m: Dictionary = Mapas.buscar(id)
+		ok(Mapas.escolhido() == id and a._mapa.text.contains(m.nome) and a._entrar.text == m.entrar, "santuário: seleção e rótulo de %s" % id)
+		await get_tree().process_frame
+		ok(
+			a._mapa.get_rect().end.x <= a._entrar.position.x,
+			"santuário: seletor %s não sobrepõe ENTRAR (fim %.1f / início %.1f)" % [id, a._mapa.get_rect().end.x, a._entrar.position.x]
+		)
+		await _foto(a, id)
 	ok(Mapas.escolhido() == "floresta", "santuário: dá a volta à lista")
 	remove_child(a)
 	a.free()
