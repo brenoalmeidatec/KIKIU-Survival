@@ -2304,6 +2304,7 @@
 	"marcadores": [
 		{"tipo": "alavanca", "pos": [300, 1200], "raio": 200},
 		{"tipo": "placa", "pos": [600, 1200], "raio": 200, "texto": "Aqui os santos caíram. Ninguém lembra o nome do último."},
+		{"tipo": "mercador", "pos": [600, 1320], "raio": 200, "custo": 8, "forcar": 1},
 		{"tipo": "pilar", "pos": [780, 1080], "raio": 200, "ordem": 3, "nome": "terra"},
 		{"tipo": "bau", "pos": [1000, 1200], "raio": 400, "forcar": 3},
 		{"tipo": "fragmento", "pos": [900, 720], "raio": 200},
@@ -2313,6 +2314,7 @@
 		{"tipo": "pilar", "pos": [1860, 420], "raio": 200, "ordem": 2, "nome": "água"},
 		{"tipo": "placa", "pos": [2000, 300], "raio": 200, "texto": "A relíquia se partiu em quatro. Quem a junta, a leva."},
 		{"tipo": "fragmento", "pos": [2100, 660], "raio": 200},
+		{"tipo": "espinhos", "pos": [1950, 770], "rect": [1800, 700, 300, 140], "seguro": [[1800, 740, 300, 40]], "dano": 6},
 		{"tipo": "bau_trancado", "pos": [1900, 1020], "raio": 400, "forcar": 3},
 		{"tipo": "alavanca", "pos": [2100, 1260], "raio": 200},
 		{"tipo": "chefe", "pos": [2550, 1140], "raio": 600, "marca": "mini1", "exige": "pilares"},

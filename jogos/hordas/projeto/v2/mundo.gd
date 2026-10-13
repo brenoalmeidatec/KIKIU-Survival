@@ -91,7 +91,7 @@ var xp_coletado := 0.0  # soma do XP dos orbes pegos (com o bônus do combo)
 var resultado: Dictionary = {}  # o último resultado de partida (vazio enquanto joga)
 var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredondado (a meta-progressão lê isto)
 	get:
-		return roundi(xp_coletado / 10.0)
+		return maxi(0, roundi(xp_coletado / 10.0) - _almas_gastas)  # o mercador leva as que gastam o ouro da partida
 var tempo_partida := 0.0  # s de jogo (não conta hit-stop nem a pausa da escolha)
 var monstros_vivos: int:
 	get:
@@ -108,6 +108,9 @@ var _pilares_ok := false  # os três pilares acenderam: o mini-chefe com "exige"
 const PILARES := 3
 const DEFESA_ONDA_S := 4.0  # a defesa de ponto solta uma onda de monstros a cada 4 s
 const DEFESA_MONSTROS_POR_ONDA := 2
+var _almas_gastas := 0  # almas da partida gastas no mercador (saem do almas_partida)
+var _espinhos: Array = []  # zonas que machucam (dados "espinhos"): o caminho de pedra é seguro
+const ESPINHOS_TIQUE_S := 1.0  # um tique de dano a cada segundo dentro da zona (o golpe tem invencibilidade)
 const FRAGMENTOS_RELIQUIA := 4  # com estes fragmentos a relíquia monta e cai um baú
 const COR_ANUNCIO := Color(1.0, 0.85, 0.4)
 var _sombras_prontas := false
@@ -343,7 +346,14 @@ func _montar_marcadores() -> void:
 	_atalho_aberto = false
 	_pilares_prox = 0
 	_pilares_ok = false
+	_almas_gastas = 0
+	for z in _espinhos:  # a reinicialização (Jogar de novo) refaz as zonas
+		z.visual.queue_free()
+	_espinhos.clear()
 	for m in dados.get("marcadores", []):
+		if str(m.tipo) == "espinhos":
+			_espinhos.append(_montar_espinhos(m))
+			continue
 		_marcadores.append(
 			{
 				"tipo": str(m.tipo),
@@ -356,6 +366,7 @@ func _montar_marcadores() -> void:
 				"texto": str(m.get("texto", "")),
 				"exige": str(m.get("exige", "")),
 				"tempo": float(m.get("tempo", 0.0)),
+				"custo": int(m.get("custo", 0)),
 				"t": 0.0,  # tempo de defesa já cumprido
 				"onda": 0.0,  # segundos até a próxima onda da defesa
 				"feito": false,
@@ -374,6 +385,56 @@ func _checar_marcadores(dt: float) -> void:
 		if perto and m.tipo == "defesa" and not m.feito:
 			_defesa(m, dt)
 		m.dentro = perto
+	_dano_espinhos(dt)
+
+
+## Espinhos: a zona (rect) que machuca e os caminhos de pedra seguros dentro dela. Os desenhos são polígonos criados uma vez, na montagem.
+func _montar_espinhos(m: Dictionary) -> Dictionary:
+	var visual := Node2D.new()
+	visual.z_index = -95  # chão: abaixo dos decalques (-90), dos objetos e do herói
+	no_mundo.add_child(visual)
+	var zona := _rect(m.rect)
+	var seguro: Array = []
+	for s in m.get("seguro", []):
+		var pedra := _rect(s)
+		seguro.append(pedra)
+		var poligono := Polygon2D.new()
+		poligono.polygon = _cantos(pedra)
+		poligono.color = Color(0.62, 0.6, 0.55, 0.9)
+		visual.add_child(poligono)
+	var espinhos := Polygon2D.new()
+	espinhos.polygon = _cantos(zona)
+	espinhos.color = Color(0.55, 0.12, 0.1, 0.45)
+	visual.add_child(espinhos)
+	return {"rect": zona, "seguro": seguro, "dano": float(m.get("dano", 6.0)), "t": 0.0, "visual": visual}
+
+
+func _rect(a: Array) -> Rect2:
+	return Rect2(float(a[0]), float(a[1]), float(a[2]), float(a[3]))
+
+
+func _cantos(r: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)])
+
+
+## Fora do caminho de pedra, quem está na zona apanha um tique a cada ESPINHOS_TIQUE_S.
+func _dano_espinhos(dt: float) -> void:
+	var hp: Vector2 = heroi.pos
+	for z in _espinhos:
+		if not z.rect.has_point(hp) or _em_algum(z.seguro, hp):
+			z.t = 0.0
+			continue
+		z.t += dt
+		if z.t >= ESPINHOS_TIQUE_S:
+			z.t = 0.0
+			heroi.levar_dano(z.dano, hp)
+
+
+func _em_algum(rects: Array, p: Vector2) -> bool:
+	for r in rects:
+		if r.has_point(p):
+			return true
+	return false
 
 
 ## Defesa de ponto: com o herói dentro do raio o tempo corre e surgem monstros em volta a cada DEFESA_ONDA_S; ao completar `tempo`, cai uma relíquia (baú).
@@ -452,6 +513,16 @@ func _tocar_marca(m: Dictionary) -> void:
 		"defesa":
 			if not m.feito:
 				combate.anunciar("DEFESA: aguente %d s" % int(m.tempo), COR_ANUNCIO)
+		"mercador":
+			if m.feito:
+				return
+			if almas_partida < m.custo:
+				combate.anunciar("MERCADOR: faltam %d almas" % (m.custo - almas_partida), COR_ANUNCIO)
+				return
+			m.feito = true
+			_almas_gastas += m.custo
+			combate.baus.soltar(m.pos, 1.0, m.forcar)
+			combate.anunciar("MERCADOR: uma carta por %d almas" % m.custo, COR_ANUNCIO)
 		"chefe":
 			if m.feito or combate.chefes.atual != null:
 				return

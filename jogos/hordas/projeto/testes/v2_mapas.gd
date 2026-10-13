@@ -279,6 +279,7 @@ func _marcadores(id: String) -> void:
 	_mecanicas_a(w, marcas)
 	_mecanicas_b(w, marcas)
 	_mecanicas_c(w, marcas)
+	_mecanicas_d(w, marcas)
 	remove_child(w)
 	w.free()
 
@@ -364,6 +365,38 @@ func _mecanicas_c(w, marcas: Array) -> void:
 		w.avancar(PASSO)
 	ok(w.combate.baus.soltos == antes + 1, "lote C: a defesa cumprida faz cair a relíquia")
 	ok(w.monstros.size() > monstros_antes, "lote C: a defesa solta monstros em volta")
+
+
+## Lote D: o mercador troca almas da partida por uma carta (sem almas, não troca; a troca tira o custo do total); os espinhos machucam
+## fora do caminho de pedra e não sobre ele.
+func _mecanicas_d(w, marcas: Array) -> void:
+	var merc := _primeiro(marcas, "mercador")
+	var esp := _primeiro(marcas, "espinhos")
+	ok(not merc.is_empty() and not esp.is_empty(), "lote D: há mercador e espinhos no mapa médio")
+	if merc.is_empty() or esp.is_empty():
+		return
+	var antes: int = w.combate.baus.soltos
+	w.xp_coletado = 50.0  # 5 almas: menos que o custo
+	_ir(w, merc.pos)
+	ok(w.combate.baus.soltos == antes and w._almas_gastas == 0, "lote D: sem almas o mercador não troca")
+	w.xp_coletado = 300.0  # 30 almas
+	_ir(w, Vector2(240, 1320))
+	_ir(w, merc.pos)
+	ok(w._almas_gastas == int(merc.custo) and w.combate.baus.soltos == antes + 1, "lote D: com almas o mercador troca e uma carta cai")
+	ok(w.almas_partida == 30 - int(merc.custo), "lote D: as almas gastas saem do total (%d)" % w.almas_partida)
+	w.monstros.clear()
+	w.heroi.imortal = false
+	var vida0: float = w.heroi.vida
+	w.heroi.definir_pos(Vector2(float(esp.pos[0]), 705.0))  # na zona, fora do caminho de pedra
+	for i in 90:
+		w.avancar(PASSO)
+	ok(w.heroi.vida < vida0, "lote D: fora do caminho de pedra os espinhos machucam")
+	w.heroi.vida = vida0
+	w.heroi.definir_pos(Vector2(float(esp.pos[0]), 760.0))  # no caminho de pedra
+	for i in 90:
+		w.avancar(PASSO)
+	ok(w.heroi.vida == vida0, "lote D: no caminho de pedra os espinhos não machucam")
+	w.heroi.imortal = true
 
 
 func _santuario() -> void:
