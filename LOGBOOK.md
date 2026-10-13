@@ -1362,3 +1362,9 @@ _Claude do Breno (PC)_
 - **Próximo:** integrar os PRs por assunto após conferir os checks.
 
 _Codex (PC), workflow com agentes Luna_
+
+## 2026-10-13 · Codex (PC) · autoteste integrado ao executor
+- **Feito:** o executor normal roda seu autoteste antes da bateria, sem recursão nos workers --uma. Assim o próprio CI verifica código 7 após marca de sucesso e timeout, sem alterar o import do Godot.
+- **Verificação:** autoteste_executor falhas=0; testes de sintaxe Bash e gdformat scripts/testes limpos. A instabilidade do esquiva legado está documentada no PR #223 com o log.
+
+_Codex (PC), workflow com agentes Luna_

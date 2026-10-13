@@ -52,6 +52,8 @@ GODOT=$(readlink -f "${1:?uso: testes_ci.sh <godot> [paralelas]}")
 P="${2:-4}"
 RAIZ=$(cd "$(dirname "$0")/.." && pwd)
 SELF=$(readlink -f "$0")
+# Confere a classificacao do executor antes da bateria; --uma nao entra aqui.
+bash "$RAIZ/ferramentas/autoteste_executor.sh" || exit 1
 cd "$RAIZ/jogos/hordas/projeto" || exit 1
 LOGS="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/testes-logs"
 rm -rf "$LOGS" && mkdir -p "$LOGS"
