@@ -1350,6 +1350,33 @@ _Claude do Breno (PC)_
 - **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
 
 _Claude (PC do Breno, via Remote Control)_
+## 2026-10-13 · Codex Luna / Codex (PC) · executor de testes
+- **Feito:** preservado o código de saída do timeout/Godot; aprovação exige código 0, falhas=0 e nenhum SCRIPT ERROR. Logs distinguem timeout 124, crash/sinal e falha comum. Mantido o limite de 300 s do regras_armas; import do CI não mudou.
+- **Testes:** autoteste_executor com sucesso, código 7 após falhas=0, timeout real abreviado, crash 139, SCRIPT ERROR, saída incompleta, marca inválida e limite de regras_armas: falhas=0. gdformat -l 160 --check scripts testes: 173 arquivos limpos. Sem mudança no jogo; a bateria Godot não foi rodada neste assunto.
+- **Pendente / próximo:** CI do PR e integração separada da proteção de Release. Sem alterações nos arquivos v2 dos PRs #201/#214/#217/#219/#220/#222.
+
+_Codex (PC), workflow com agentes Luna_
+## 2026-10-13 · Codex Luna (PC) · save seguro da meta-progressão v2
+- **Feito:** `v2/meta.gd` grava por temporário validado, mantém `.bak`, recupera de backup e bloqueia gravação sobre save corrompido sem backup. `mapas.gd` usa os mesmos helpers, evitando que a escolha do mapa apague o save. Falhas retornam para compra, escolha de mapa e fim de partida; altar e resultado não anunciam ganhos que não foram salvos. `testes/v2_meta.gd` e `testes/v2_mapas.gd` passaram (`falhas=0`), cobrindo falha de gravação, compra sem persistência, recuperação do backup e corrupção sem backup.
+- **Pendente:** integrar a `origin/main` avançada durante este trabalho e conferir os arquivos sobrepostos com os PRs #201, #214, #217, #219, #220 e #222.
+## 2026-10-13 · CI da Release exige testes verdes no mesmo SHA
+- **Feito:** `ci.yml` pode ser chamado como workflow reutilizável; `release.yml` chama esse CI e `publicar` espera o CI e os dois jobs de exportação. O workflow reutilizável e os `actions/checkout` usam o SHA do evento da Release.
+- **Exports:** Linux, Web e Windows mantidos intactos; importação continua com `|| true` por causa do segfault conhecido no encerramento.
+- **Verificação:** YAML parseado; dependência de `publicar`, chamada local e caminho do workflow conferidos. Não rodei Godot para evitar concorrência com os testes nas outras branches.
+## 2026-10-13 · CI: lint consultivo da v2 e formatação obrigatória
+- **Feito:** `gdlint` agora inclui `scripts`, `testes` e `v2` como aviso; `gdformat` é um job separado e obrigatório, com `--check -l 160` nos três diretórios.
+- **Formatação:** `v2/creditos.gd` foi ajustado em commit próprio. Os checks de `gdformat` passam para `scripts`, `testes` e `v2` (219 arquivos sem novas alterações).
+- **Baseline:** `gdlint` segue consultivo e reporta 5.530 achados em 219 arquivos; saída completa em `C:\Dev\Breno\analise-kikiu\logs-ci\gdlint-baseline.txt`. Logs do formatter também ficam nessa pasta.
+- **Verificação:** YAML parseado e estrutura dos jobs/caminhos conferida. Não rodei Godot para evitar concorrência com outras branches.
+
+_Codex Luna (PC)_
+## 2026-10-13 · Codex (PC) · guia técnico da v2 e legado
+- **Feito:** README do módulo separa v2 disponível (título menu_principal, apresentação 960×540), legado v1 e roadmap. Comandos --bot/--online ficam identificados como legado; tabela de pastas identifica v2 e serviços compartilhados. Corrigido teto legado de prorrogação para 350.
+- **Verificação:** caminhos e cena principal conferidos com project.godot e módulos menu_principal/apresentacao/mapas; gdformat scripts/testes limpo na base inicial. Apenas documentação, sem alteração de comportamento; nenhuma cena Godot foi rodada para este assunto.
+- **Próximo:** revalidar a documentação e formatação sobre a main atualizada antes do PR.
+
+_Codex (PC), workflow com agentes Luna_
+
 
 ## 2026-10-13 - v2 Marco 4, parte 2: mecânicas de exploração no mapa médio (PR em rascunho, depende da #220)
 - **Feito:** as 8 mecânicas no mapa médio, em 4 lotes com commit próprio. Lote A: baú trancado com a chave numa ruína, e relíquia montada com 4 fragmentos. Lote B: duas alavancas que abrem o atalho, e três pilares que precisam ser ativados na ordem da placa para liberar o mini-chefe. Lote C: defesa de ponto (30 s dentro do raio, com ondas de monstros, e uma relíquia), e placas de lore em 3 pontos. Lote D: mercador que troca almas da partida por uma carta, e espinhos com caminho de pedra seguro. Tudo em `v2/mundo.gd`, pelos marcadores do JSON; sem módulo novo, sem objeto criado por quadro (a defesa cria monstros a cada 4 s; os espinhos têm desenho criado uma vez).
@@ -1366,3 +1393,133 @@ _Claude (PC do Breno, via Remote Control)_
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex (PC) · executor revalidado sobre a main atualizada
+- **Feito:** incorporada a main cdf67f7 sem descartar o trabalho paralelo. A formatação pendente em testes/v2_status.gd, vinda da main, foi corrigida em commit separado exclusivamente de formatação.
+- **Testes:** autoteste_executor falhas=0; gdformat -l 160 --check scripts testes: 174 arquivos limpos. O CI do PR #223 está em execução; imports do workflow permanecem intactos.
+- **Próximo:** integrar os PRs por assunto após conferir os checks.
+
+_Codex (PC), workflow com agentes Luna_
+
+## 2026-10-13 · Codex (PC) · autoteste integrado ao executor
+- **Feito:** o executor normal roda seu autoteste antes da bateria, sem recursão nos workers --uma. Assim o próprio CI verifica código 7 após marca de sucesso e timeout, sem alterar o import do Godot.
+- **Verificação:** autoteste_executor falhas=0; testes de sintaxe Bash e gdformat scripts/testes limpos. A instabilidade do esquiva legado está documentada no PR #223 com o log.
+
+_Codex (PC), workflow com agentes Luna_
+## 2026-10-13 (2) · Codex Luna (PC) · validação do save seguro
+- **Feito:** após integrar `origin/main` (`cdf67f7`), passaram `v2_meta`, `v2_mapas`, `v2_pausa`, `v2_esc`, `v2_musica` e `v2_status` com `falhas=0`; `gdformat --line-length 160 --check` passou em 174 scripts e testes. O fixture `v2_mapas` limpa também `.tmp` e `.bak`, gerados pelo save seguro.
+- **Sobreposição com PRs:** #201 não altera os arquivos de save; #214 altera `meta.gd` e `altar.gd`; #217 altera `altar.gd` e `resultado_meta.gd`; #219 já está integrado; #220 altera `mapas.gd`, `v2_mapas.gd` e `LEIA-ME.md`; #222 altera `v2_mapas.gd` e `LEIA-ME.md`. Os PRs ainda abertos que compartilham arquivos precisam de revisão ao integrar.
+- **Pendente:** PR/push será tratado pelo root.
+
+_Codex Luna (PC)_
+## 2026-10-13 · Codex (PC) · Release revalidada na main atualizada
+- **Feito:** incorporada a main cdf67f7 e mantidos os exports intactos. A Release chama o CI reutilizável local do mesmo commit, e publicar depende dele. Import com segfault de saída conhecido permanece tolerado.
+- **Verificação:** YAML e dependência do mesmo commit conferidos; gdformat scripts/testes: 174 arquivos limpos. Formatação pendente do teste v2_status da main foi isolada em commit próprio. Não rodei Godot local para mudança exclusiva de workflows; o CI do PR executa as cenas.
+- **Próximo:** conferir os checks e integrar com o PR separado de lint.
+## 2026-10-13 · Codex (PC) · lint revalidado na main atualizada
+- **Feito:** main cdf67f7 incorporada; formatação adicional de v2/status.gd e testes/v2_status.gd em commits exclusivamente de formatação. O job gdformat é obrigatório; gdlint permanece aviso; ambos incluem v2.
+- **Verificação:** gdformat scripts/testes/v2: 221 arquivos limpos; YAML e separação dos jobs conferidos. Não executei Godot local para mudança de workflow e formatação; CI do PR executa as cenas.
+- **Próximo:** integrar junto à proteção de Release; mudanças de workflow compatíveis por hunks distintos.
+## 2026-10-13 · Codex (PC), agentes Luna · grade de separação sem vizinho duplicado
+- **Feito:** cache dos hashes vizinhos únicos em vetores planos reutilizados por índice de ator. Recalcula só ao mudar a célula ou o alcance; cada bucket é visitado uma vez. Sem Dictionary por quadro e sem mudança em mundo.gd.
+- **Testes:** v2_combate: código 0, falhas=0, sem SCRIPT ERROR, incluindo raio comum no caso (84,214)/(73,203) e reutilização do cache.
+- **Custo:** benchmark headless, algoritmo original completo como referência, semente fixa, 20 amostras de 100 chamadas alternando ordem. Cache aquecido: 100 atores −35,2%, 500 −19,9%; em movimento a 45 px/s atravessando células: 100 −4,1%, 500 −3,2%. São tempos da separação, não FPS; confirmar em hardware alvo.
+- **Pendente / conflitos:** combate.gd pode sobrepor #201/#214/#220/#222. #217 mexe na UI; #219 já está na base cdf67f7. A correção do quadro extra é outro PR.
+## 2026-10-13 · Codex (PC), agentes Luna · sem quadro extra ao abrir a escolha
+- **Feito:** passo_tempo retorna 0.0 se _fim_camera_lenta abriu a escolha e ativou a pausa. Mudança de duas linhas em combate.gd; mundo.gd permanece igual. A grade é outro PR.
+- **Testes:** Godot 4.4.1 headless, após import real: v2_combate, v2_esc e v2_pausa, código 0, falhas=0 e sem SCRIPT ERROR. Teste força movimento do herói e confere relógio da partida e posições do herói/monstro no quadro exato da transição. gdformat scripts/testes limpo; formatação de teste v2_status da main em commit separado.
+- **Pendente / conflitos:** conferir sobreposição de combate.gd com #201/#214/#220/#222. #217 é UI; #219 já está na base atualizada.
+## 2026-10-13 · Codex (PC) · guia v2 revalidado sobre a main
+- **Feito:** documentação conferida sobre main cdf67f7; não anuncia recursos dos PRs abertos como entregues. Formatação pendente do teste v2_status da main em commit separado.
+- **Testes:** Godot 4.4.1 headless: v2_menu e entrada_cenas, código 0, falhas=0, sem SCRIPT ERROR. Cena principal e dimensões 960×540 conferidas nos arquivos; gdformat scripts/testes: 174 arquivos limpos.
+- **Próximo:** manter guia e roadmap alinhados a cada port da v1 ou integração de PR.
+
+_Codex (PC), workflow com agentes Luna_
+## 2026-10-13 · Codex com agentes Luna (PC) · recompensas em 1 segundo
+- **Feito:** escolha inicial e baú da v2 aguardam 1 s real; no baú todas as cartas são reveladas juntas ao completar esse segundo, independentemente de haver 1, 2 ou 3 recompensas. Rerrolar/banir mantém 0,8 s. A pausa e o descarte de cliques antecipados continuam cobertos.
+- **Testes:** Godot 4.4.1, import real; `v2_cartas_espera`, `v2_partida`, `v2_esc` e `v2_status`: código 0, `falhas=0`, sem `SCRIPT ERROR`. O fuzz de ESC ganhou 1000 passos para manter os mesmos mínimos de cobertura com a escolha mais curta; o teste do painel mede 0,25 s dentro da nova espera. `gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes` limpo. A tentativa inicial de executar `v2_cartas.tscn` não rodou: a cena não existe, e não é contada como teste aprovado.
+- **Pendente / recados:** conferir sensação em uma partida. Conflitos potenciais de dados/estilo com #201, #209, #214 e #217; as mudanças de mecânicas do mapa #220/#222 usam baús e devem preservar a espera nova.
+
+_Codex com agentes Luna (PC)_
+## 2026-10-13 · Névoa Espectral e leitura visual dos ataques
+- **Feito:** nuvens da v2 ganharam motivos animados próprios (espectros, fumaça de sono, bolhas, cristais, brasas e sangue), volume oval no chão, entrada/saída em fade e pulso proporcional à vida efetivamente removida. Projéteis, anéis, meteoros e aliados usam silhuetas próprias quando ajudam a identificar fogo, veneno, gelo ou sombra; pool fixo em 48.
+- **Compatibilidade:** a Névoa Espectral usa o sprite opcional `sp` quando ele existir, mantendo o pulso de acerto por cima. Assim, os sprites da PR #209 poderão assumir o corpo sem duplicação; os motivos por código funcionam mesmo sem ela.
+- **Mecânica e guia:** preservados lentidão, contagem de acertos e multiplicador de gelo da nuvem; pulso só ocorre com perda real de vida. Descrição/arte da carta e guia v2 atualizados.
+- **Verificação:** importação real Godot 4.4.1 concluída; `v2_partida` terminou com `falhas=0`; `gdformat -l 160 --check` e `git diff --check` limpos. Captura de viewport real (960×540, não vazia) em `C:\Dev\Breno\analise-kikiu\logs-ataques\identidade_nuvens.png`; rótulos da imagem pertencem apenas à cena de demonstração.
+
+_Codex LunaPC_
+
+- **Ajuste da conferência:** o roteiro de foto foi retirado de `testes/` e preservado como ferramenta local, pois aguardar `frame_post_draw` sem renderer trava a execução headless. Ele não é teste funcional nem participa do CI. Os testes de dano/feedback permanecem em `v2_partida`; rótulos pertencem somente à demonstração. A formatação global scripts/testes exige o commit separado de `v2_status` da main.
+
+## 2026-10-13 · Névoas com volume legível e carta espectral dentro do limite
+- **Visual:** veneno tem véus verdes claros irregulares sobrepostos, dobras sombreadas, deriva e entrada/saída suave. Espectros, bruma com cristais, sono lilás, cinzas densas, cortina de sangue, chuva ácida e esporos preservam motivos próprios. Textura procedural compartilhada criada uma vez; nó de fumaça criado na montagem, sem mistura aditiva, sem nós ou dicionários novos por desenho. Pool permanece em 48; mecânica de dano, raio, tique e duração não mudou.
+- **Carta e CI:** a descrição espectral anterior media 64 px no espaço de 54 px. A nova frase “Névoa com espectros que ferem quem fica nela.” mede 48 px; o critério de v2_fontes foi preservado.
+- **Verificação:** Godot 4.4.1 v2_partida, v2_status e v2_fontes com falhas=0; gdformat -l 160 --check (scripts/testes e fontes alteradas) e git diff --check passaram. Capturas OpenGL do veneno em escala 1× e grade de motivos em 2× ficaram fora do repositório, junto do wrapper local. Runners ainda reportam recursos/RID em uso ao encerrar, sem SCRIPT ERROR. Splash temporário da captura foi restaurado.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 - v2: barra de vida das elites
+- **Feito:** elites ganham uma barra pequena acima da região visual do sprite, calculada com o retângulo, offset e escala do Sprite2D. A barra nasce sob demanda só ao marcar elite, acompanha vida/vida máxima imediatamente ao receber dano, some com vida zero/morte e permanece escondida se o ator voltar ao pool como monstro comum; a mesma instância é reutilizada se virar elite outra vez.
+- **Testes:** `v2_hud falhas=0` (headless), cobrindo posição visual, fração de vida, morte, retorno ao pool como comum e reutilização como elite. Captura com renderer real em `C:\Dev\Breno\analise-kikiu\logs-hud\elite_barra_vida.png`.
+- **Formatação:** `gdformat -l160 --check` nos arquivos alterados.
+
+- **Conferência final:** formatação global de scripts/testes limpa após commit separado de formatação do teste de status da main. Captura real revisada; a primeira chamada com parâmetros de foto incorretos executou asserts de F3 e falhou em quatro rótulos no renderer, sem alterar esses testes. A chamada corrigida de captura terminou com código 0. A aprovação funcional citada acima é a execução headless com `falhas=0` e sem `SCRIPT ERROR`.
+## 2026-10-13 · Codex com agentes Luna (PC) · splash usa a arte atual
+- **Feito:** o menu já usava a arte nova do PR #215, mas `boot_splash/image` ainda referenciava `assets/icone/entrada.png`. A configuração da inicialização passa a apontar para `assets/titulo/fundo.png`, a mesma arte atual do menu. Nenhuma arte nova nem alteração dos exports.
+- **Testes:** Godot 4.4.1 com import real, `v2_menu` e `entrada_cenas`: código 0, `falhas=0`, sem `SCRIPT ERROR`; imagem configurada existente e referência conferida. Formatação global scripts/testes limpa em commit separado; `git diff --check` limpo.
+- **Pendente / recados:** conferir a abertura na próxima build; nenhuma mudança de combate. Guia atualizado.
+
+_Codex com agentes Luna (PC)_
+## 2026-10-13 - v2: árvores bloqueiam corrida e esquiva (Codex Luna PC)
+- **Causa:** `mundo.mover()` resolvia apenas a posição final. Um passo de esquiva com `delta=0,1` desloca cerca de 31 px; a pegada mais estreita pode ficar inteiramente entre posição inicial e final. O JSON de `prototipos/objetos/cenario.json` exporta as colisões das cinco árvores/tocos/troncos testadas, e os movimentos do herói passam por `mundo.mover()`: não era falta de export nem um bypass do herói.
+- **Correção:** passos de até 8 px quando o segmento pode tocar a caixa expandida de alguma forma; segmentos em área aberta continuam com uma única chamada ao resolver. O pré-filtro usa a grade já existente e o teste de caixa é conservador, sem alocação por quadro. O tamanho de 8 px fica abaixo da menor largura vertical de colisão expandida entre as pegadas de árvore e o raio 6 px do herói. A copa continua atravessável.
+- **Regressão:** `testes/v2_arvores.tscn` agora percorre o cenário real com as 572 formas: corrida e esquiva via `Heroi.atualizar()` contra os cinco tipos, percurso longo que começa/termina livre atravessando a árvore, e passagem pela copa. Reproduzida antes: início (1398,433), passo (0,35), base em (1402,456), terminou do outro lado; depois da correção, `v2_arvores falhas=0`.
+- **Desempenho:** benchmark local com 500 corpos em posições fixas do mapa, monstros a 45 px/s e um herói correndo/esquivando; medianas de 5×10 quadros, no `Godot 4.4.1`. Corrida 60fps: 2,90→3,46 ms/quadro (+0,56 ms); esquiva 60fps: 2,92→3,43 ms (+0,51 ms); corrida `dt=0,1`: 2,76→3,14 ms (+0,38 ms); esquiva `dt=0,1`: 3,19→3,44 ms (+0,26 ms). Também medido o pior caso artificial em que os 500 corpos fazem esquiva: corrigido 2,6× baseline em `dt=0,1`; isso não representa a horda (monstros não esquivam). Log fora do repositório: `C:\Dev\Breno\analise-kikiu\logs-arvores\v2-arvores-passo8-full.txt`.
+- **Testes e revisão:** import real executado; depois dele, `v2_arvores falhas=0`, `v2_colisao falhas=0` e `v2_combate falhas=0`, todos exit 0 e sem SCRIPT ERROR. Uma execução de `v2_combate` antes do reimport emitiu atribuição de `n` em Nil em `v2/horda.gd:282`; após o reimport, não se reproduziu. Os runners de árvores/combate imprimem avisos de RID/recursos em uso no encerramento. `gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes` e `git diff --check` passam. PRs sobrepostos consultados: #201 e #214 tocam movimento do herói/mundo, mas não alteram a rota `mundo.mover`; #217 não conflita; #220/#222 só tocam marcadores do mundo, sem conflito lógico.
+- **Guia mínimo:** ao mudar uma pegada, edite a fonte do protótipo e regenere `prototipos/objetos/cenario.json`; faça `godot --headless --path jogos/hordas/projeto --import`, rode `res://testes/v2_arvores.tscn`, e não versione `.import`, `.uid` nem `.godot/` gerados.
+
+_Codex Luna (PC)_
+
+- **Refino do caminho comum:** movimentos curtos usam comprimento ao quadrado e resolvem uma única vez, sem divisão nem laço de subpassos. O benchmark acima descreve a versão anterior com laço de uma iteração; o refino não é uma promessa de FPS. Guia da v2 atualizado.
+
+- **CI / teste de mundo:** a primeira execução do PR falhou em `v2_mundo`: o teste deixava o herói junto de uma forma após a perseguição e esperava deslocamento puro (início 1150,213/443,742; feito 10,249/5,331). A nova resolução intermediária corretamente corrige a colisão. O caso de soma agora encontra um trajeto livre dentro da área andável sem apagar as formas; o clamp é testado separadamente com ator fora do limite. `v2_mundo` passou com código 0, `falhas=0`, sem `SCRIPT ERROR`. Log da falha do CI e diagnóstico preservados.
+## 2026-10-13 - HUD de habilidades E/Q da v2
+- **Feito:** cards originais E/Q na faixa inferior, lendo apenas o estado real da Ruptura quando o herói o publica. Na main, E fica indisponível; Q fica cinza com “EM BREVE” até existir mecânica. No PR201, os desenhos antigos dos slots ficam transparentes e seus nós/flags permanecem intactos. Layout evita XP e coluna de status.
+- **Testes:** `v2_hud` e teste de integração temporário no checkout `origin/alisson/v2-ruptura`, ambos `falhas=0`; integração verificou prontidão, carga, recarga e transparência dos controles antigos. Capturas OpenGL em `C:\Dev\Breno\analise-kikiu\logs-hud\overwatch_pr201_*.png`.
+- **Pendente:** Q não tem mecânica implementada. Documentação em `docs/v2_hud_habilidades.md`.
+
+_Codex (PC)_
+- **Conferência:** `v2_status` e `v2_esc` na base principal, `v2_escudo`, `v2_ruptura` e a integração real em PR201 sem `SCRIPT ERROR`. Formatação global no escopo obrigatório scripts/testes limpa após commit separado de status; os scripts do adaptador também passam. O projeto inteiro contém outras pendências de formatação alheias, preservadas. Desenho do adaptador revisado por GPT-6.1 Sol leve; nenhuma mecânica nova de Q.
+
+## 2026-10-12 — v2: Ruptura no botão direito (PR #201)
+- **O que entrou:** habilidade nova no botão direito do mouse e no gatilho esquerdo do controle (`v2/ruptura.gd`, dados em `dados/v2_ruptura.json`): segurar carrega, soltar racha o chão em 360° (dano, atordoamento, empurrão; chefe só leva dano e lentidão), com recarga, janela de soltura perfeita, contragolpe, 5 cartas de melhoria, slot no HUD, 4 sons e `--roteiro=ruptura` para fotos/medição.
+- **Testes:** `testes/v2_ruptura.tscn` (`falhas=0`), mais `v2_combate`, `v2_hud`, `v2_pausa` e `v2_fontes` depois de mesclar a main (#203).
+- **O que NÃO foi conferido:** o feeling no jogo aberto (tempo de carga, peso do tremor e do hit-stop, volume dos sons) — só teste automático e prints. Precisa de alguém jogando.
+- **Pendente:** ao mesclar depois do #190 (card SUA BUILD) há conflito de texto em `combate.gd` e `LEIA-ME.md`; resolver e rodar `v2_status`, `v2_combate` e `v2_ruptura`.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-12 — v2: esquema Overwatch nos botões (PR #201)
+- **Decisão do Alisson:** botão direito = tiro SECUNDÁRIO definido por herói (hoje: ESCUDO), **E** (LB) = habilidade (a Ruptura saiu do botão direito), **Q** (RB) = ultimate (reservado: só a ação `ultimate` e um slot vazio no HUD, sem mecânica).
+- **Escudo** (`v2/escudo.gd`, dados em `dados/v2_secundario.json`, com `_ajuda`): segurar ergue um arco de 120° na direção da mira que barra o dano vindo da frente (contato, avisos no chão e ataques do chefe, tudo por `Heroi.levar_dano(valor, de, quem)`, que agora devolve true também quando o golpe é barrado). Anda a 60%, não corre nem golpeia, gasta 1,2 de fôlego por segundo (o mesmo da corrida; zerar deixa cansado e o escudo cai). Bloqueio perfeito (primeiros 0,15 s): sem gasto, empurra e atordoa 0,7 s quem bateu. Qual secundário cada herói tem é dado (`v2_secundario.json > padrao` e `herois`): a branch `alisson/v2-herois` só mapeia a chave do herói para outro id quando o módulo dele existir.
+- **Testes:** `v2_escudo` novo (`falhas=0`); `v2_ruptura` adaptado para E/LB; `v2_combate`, `v2_esc`, `v2_hud` e `v2_status` ok. Merge da main (#190 card SUA BUILD e #199) resolvido em `combate.gd` e `LEIA-ME.md`.
+- **O que NÃO foi conferido:** o jogo na janela real: a legibilidade do arco azul, o peso do bloqueio perfeito (hit-stop e tremor), o volume dos sons reaproveitados, o LT/LB com controle de verdade, e se segurar o direito com o mouse parado mira para onde se espera.
+- **Pendente:** o painel de status (`status.gd`) ainda não mostra o escudo (`escudo.resumo()` está pronto); o ultimate (Q) não tem mecânica.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · integração para entrega
+- **Feito:** PRs #223–#235 e #201 integrados por merges preservando todos os históricos, sobre main a78829f (mapa médio #220). Guias combinados, splash obrigatório `res://assets/titulo/fundo.png`, E carrega/solta Ruptura, botão direito/LT escudo e Q reservado. Exports/presets sem alteração.
+- **Correções da integração:** teste de Ruptura atualizado para os 50 golpes existentes na base; fixtures de status, ESC, pausa, música e fontes limpam os backups e temporários dos seus saves de teste. A falha inicial do status (backup recuperado pelo novo save seguro) foi preservada em log separado. Formatação de escudo/Ruptura/mundo em commit próprio.
+- **Validação real:** Godot 4.4.1, duas importações, código 0 e sem SCRIPT ERROR. Cenas v2_ruptura, v2_escudo, v2_hud, v2_meta, v2_arvores, v2_mundo, v2_combate, v2_cartas_espera, v2_partida, v2_esc, v2_status, v2_fontes, v2_menu, entrada_cenas, v2_mapas, v2_pausa e v2_musica: código 0, falhas=0, sem SCRIPT ERROR. Meta provoca erros de parse do save corrompido intencionalmente; avisos de recursos/RID no encerramento headless permanecem, sem falha nas cenas.
+- **Checks:** autoteste_executor código 0/falhas=0; gdformat -l 160 --check scripts/testes/v2 (227 arquivos limpos), git diff --check e ancestralidade dos 14 heads conferidos. Nenhuma entrada anterior da main removida do LOGBOOK; imports/cache/UID aleatórios fora dos commits. Logs locais em analise-kikiu/logs-entrega.
+- **Próximo:** revisão, CI da integração e build exportada pelo agente responsável; nenhum push/merge GitHub feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · retomada da integração para entrega
+- **Feito:** integração atualizada por merge da main a6004a7, incluindo mecânicas do mapa médio #222 e correção do teste do elmo #221. Os 14 heads de #201 e #223–#235 continuam preservados. Splash permanece em `res://assets/titulo/fundo.png`; E/Ruptura e botão direito/escudo preservados; Q reservado. Exports/presets sem alteração.
+- **Validação real após a atualização:** Godot 4.4.1 headless nas 18 cenas v2_mapas, v2_mundo, v2_ruptura, v2_escudo, v2_hud, v2_esc, v2_combate, v2_cartas_espera, v2_status, equipamentos, v2_arvores, v2_partida, v2_meta, v2_fontes, v2_menu, entrada_cenas, v2_pausa e v2_musica: todas código 0, falhas=0 e sem SCRIPT ERROR. Logs em analise-kikiu/logs-entrega-retomada. Meta exercita save corrompido intencionalmente; avisos de recursos/RID no encerramento headless permanecem.
+- **Checks:** gdformat -l 160 --check scripts/testes/v2: código 0, 227 arquivos limpos; git diff --check limpo. Imports/UID não rastreados permanecem fora dos commits.
+- **Limite confirmado por leitura do código:** os espinhos de #222 chamam Heroi.levar_dano com origem na posição do herói; Escudo.cobre considera origem a menos de 0,5 px como coberta. Assim, escudo erguido bloqueia espinhos pela regra existente. Nenhuma mudança de design feita nesta integração; comportamento deve entrar na revisão de gameplay da build.
+- **Próximo:** atualizar PR #236, obter CI verde e exportar/validar a candidata com este commit; publicação e merge remoto ficam com o agente responsável.
+
+_Codex GPT-6.1 Sol (PC)_

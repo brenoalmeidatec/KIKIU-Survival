@@ -5,6 +5,7 @@ extends Node
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_partida.tscn  (imprime "v2_partida falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
+const ArmasNovas := preload("res://v2/armas_novas.gd")
 const PASSO := 1.0 / 60.0
 var falhas := 0
 var w
@@ -254,6 +255,72 @@ func _ready() -> void:
 			)
 		)
 	ok(vistos.size() == 5, "os 5 tipos novos estão nos dados (%d)" % vistos.size())
+	# 3c. nuvens têm motivos, fades e feedback ligado à vida removida
+	ok(
+		(
+			ArmasNovas.motivo_nuvem("nevoa_espectral") == "espectros"
+			and ArmasNovas.motivo_nuvem("nuvem_veneno") == "bolhas"
+			and ArmasNovas.motivo_nuvem("nevoeiro_gelado") == "cristais"
+			and ArmasNovas.motivo_nuvem("cinzas_vulcanicas") == "brasas"
+			and ArmasNovas.motivo_nuvem("cortina_sangue") == "sangue"
+			and ArmasNovas.motivo_nuvem("fumaca_sonolenta") == "sono"
+		),
+		"cada nuvem escolhe o motivo animado do seu elemento"
+	)
+	ok(
+		(
+			ArmasNovas.opacidade_nuvem(4.0, 4.0) == 0.0
+			and is_equal_approx(ArmasNovas.opacidade_nuvem(2.0, 4.0), 1.0)
+			and ArmasNovas.opacidade_nuvem(0.0, 4.0) == 0.0
+		),
+		"a nuvem surge e desaparece com fade sem alterar sua duração"
+	)
+	ok(w.combate.armas.novas.itens.size() == ArmasNovas.MAX, "efeitos usam o pool fixo de 48 slots")
+	zerar()
+	var mn_nuvem = monstro_a(0.0, 0.0)
+	var arma_nuvem := {"id": "nevoa_espectral", "st": {"dano": 8.0, "tique": 0.5, "duracao": 4.0, "lentidao": 0.4}, "cor": Color(0.8, 0.95, 0.95)}
+	var camada_nuvem = w.combate.armas.novas
+	var slot_nuvem: Dictionary = camada_nuvem._novo("nuvem", arma_nuvem, mn_nuvem.pos, 4.0)
+	slot_nuvem.r = 50.0
+	slot_nuvem.t = 0.01
+	var vida_nuvem: float = mn_nuvem.vida
+	camada_nuvem._tique_nuvem(slot_nuvem, PASSO)
+	ok(mn_nuvem.vida < vida_nuvem and slot_nuvem.pulso > 0.0 and mn_nuvem.lento_t > 0.0, "o pulso aparece com dano real e preserva a lentidão da nuvem")
+	slot_nuvem.t = 0.01
+	camada_nuvem._tique_nuvem(slot_nuvem, PASSO)
+	ok(slot_nuvem.pulso > 0.0 and int(w.combate.armas.acertos.get("nuvem", 0)) == 2, "cada tique real renova um pulso e conta um acerto de área")
+	zerar()
+	var nuvem_vazia := {"id": "nevoa_espectral", "st": {"dano": 8.0, "tique": 0.5, "duracao": 4.0, "lentidao": 0.0}, "cor": Color(0.8, 0.95, 0.95)}
+	var slot_vazio: Dictionary = w.combate.armas.novas._novo("nuvem", nuvem_vazia, w.heroi.pos, 4.0)
+	slot_vazio.r = 50.0
+	slot_vazio.t = 0.01
+	w.combate.armas.novas._tique_nuvem(slot_vazio, PASSO)
+	ok(slot_vazio.pulso == 0.0 and int(w.combate.armas.acertos.get("nuvem", 0)) == 0, "sem vida removida a névoa não pulsa nem anuncia acerto")
+	var imune = monstro_a(0.0, 0.0)
+	imune.morrendo = true
+	var nuvem_sem_hit := {
+		"id": "nevoeiro_gelado", "st": {"dano": 8.0, "tique": 0.5, "duracao": 4.0, "lentidao": 0.4, "gelo_mult": 2.0}, "cor": Color(0.2, 0.55, 1.0)
+	}
+	var slot_sem_hit: Dictionary = w.combate.armas.novas._novo("nuvem", nuvem_sem_hit, imune.pos, 4.0)
+	slot_sem_hit.r = 50.0
+	slot_sem_hit.t = 0.01
+	w.combate.armas.novas._tique_nuvem(slot_sem_hit, PASSO)
+	ok(slot_sem_hit.pulso == 0.0, "alvo imune ou morrendo nunca acende o pulso de acerto")
+	zerar()
+	var lento = monstro_a(0.0, 0.0)
+	lento.lento_t = 1.0
+	var nuvem_gelo := {
+		"id": "nevoeiro_gelado", "st": {"dano": 8.0, "tique": 0.5, "duracao": 4.0, "lentidao": 0.4, "gelo_mult": 2.0}, "cor": Color(0.2, 0.55, 1.0)
+	}
+	var slot_gelo: Dictionary = w.combate.armas.novas._novo("nuvem", nuvem_gelo, lento.pos, 4.0)
+	slot_gelo.r = 50.0
+	slot_gelo.t = 0.01
+	var vida_gelo: float = lento.vida
+	w.combate.armas.novas._tique_nuvem(slot_gelo, PASSO)
+	ok(
+		vida_gelo - lento.vida >= 16.0 and lento.lento_t >= 1.0 and slot_gelo.pulso > 0.0,
+		"o gelo dobra o dano no alvo lento, renova a lentidão e conta o impacto real"
+	)
 	# a aura queima, as lâminas passam, o raio salta
 	zerar()
 	var ma = monstro_a(30.0, 0.0)

@@ -383,6 +383,8 @@ func _comprar(id: String) -> void:
 	var n := Meta.nivel(id)
 	if Meta.comprar(id):
 		_avisar("%s: nível %d" % [m.nome, n + 1])
+	elif Meta.erro_save:
+		_avisar("Não foi possível salvar")
 	else:
 		_avisar(_motivo(m))
 	_atualizar()
@@ -416,7 +418,9 @@ func _atualizar_mapa() -> void:
 
 
 func _trocar_mapa() -> void:
-	Mapas.escolher(Mapas.proximo(_mapa_id))
+	if not Mapas.escolher(Mapas.proximo(_mapa_id)):
+		_avisar("Não foi possível salvar")
+		return
 	_atualizar_mapa()
 
 

@@ -7,6 +7,8 @@ extends CanvasLayer
 ## xp, xp_proximo, nivel, folego, folego_max, cansado (bool, padrão false: a barra de fôlego pisca); em mundo, abates, combo,
 ## tempo_partida (segundos), monstros_vivos. Sinais do mundo, cada um ligado só se o mundo tiver: nivel_subiu(nivel),
 ## onda_forte(numero), elite_apareceu(nome), chefe_apareceu(nome, vida_max), chefe_vida(vida), evolucao(nome), anuncio(texto, cor).
+## Slot da ruptura (tecla E) logo abaixo da barra de fôlego, desenhado por código (sem PNG): lê em mundo.heroi, com padrão, rup_carga (0 a 1),
+## rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max. Herói sem esses campos (mundo falso dos testes): o slot some.
 ## Uso no mundo (uma linha no _ready):
 ##   sv.add_child(preload("res://v2/hud.gd").criar(self))
 ## Layout em v2/hud.tscn (coordenadas de 960x540). O canto superior direito fica livre para o minimapa.
@@ -32,6 +34,11 @@ const CHEFE_QUEDA := 1.2  # quão rápido a fantasma desce atrás da real (fraç
 const COR_ONDA := Color(1.0, 0.33, 0.3)  # vermelho: ONDA FORTE!
 const COR_ELITE := Color(0.75, 0.45, 1.0)  # roxo: ELITE!
 const COR_NIVEL := Color(0.82, 0.92, 1.0)  # azul-claro: NÍVEL N!
+const RB_POS := Vector2(6, 39)  # o slot da ruptura: 22x22, logo abaixo da barra de fôlego (x 6 a 156, y 31 a 35)
+const RB_TAM := 22
+const RB_POP_T := 0.15  # s do pop ao zerar a recarga
+const RB_LARANJA := Color(1.0, 0.55, 0.2)
+const RB_BORDA := Color(0.45, 0.40, 0.30)
 const MARCOS := [10, 25, 50, 100, 200]
 const NOMES_MARCOS := ["SEQUÊNCIA!", "CARNIFICINA!", "MASSACRE!", "IMPARÁVEL!", "LENDÁRIO!"]
 const CORES_MARCOS := [OURO, Color(1.0, 0.55, 0.15), Color(1.0, 0.3, 0.3), Color(0.8, 0.4, 1.0), Color(0.5, 0.95, 1.0)]
@@ -72,6 +79,18 @@ var _chefe_max := 1.0
 var _chefe_real := 1.0
 var _chefe_fantasma := 1.0
 var _chefe_espera := 0.0
+# slot da ruptura: o que foi desenhado por último (só redesenha quando muda)
+var _rb: Control = null
+var _ult: Control = null  # o slot do ULTIMATE (tecla Q): reservado, vazio, sem mecânica ainda
+var _rb_chave := ""
+var _rb_barra := 0  # px da barra de carga (0 a 20)
+var _rb_cortina := 0  # px da cortina da recarga (0 a 20)
+var _rb_contra := 0  # px da faísca do contragolpe (0 a 20)
+var _rb_pronta := true
+var _rb_perf := false  # moldura piscando em branco (janela perfeita)
+var _rb_nega := false  # moldura vermelha
+var _rb_pop := 0.0
+var _rb_recarga_antes := 0.0
 
 @onready var _vida_barra: TextureProgressBar = $Raiz/Vida/Barra
 @onready var _vida_txt: Label = $Raiz/Vida/Texto
@@ -132,6 +151,7 @@ func _ready() -> void:
 	_anel.pivot_offset = Vector2(10, 10)
 	_vinheta.texture = _textura_vinheta()
 	_vinheta.visible = false
+	_criar_slot_ruptura()
 
 
 func _exit_tree() -> void:
@@ -191,9 +211,127 @@ func avancar(dt: float) -> void:
 	_combo_antes = combo
 	_cor_base = _cor_do_combo(combo)
 	_chefe_quadro(dt)
+	_ruptura(dt, h)
 	_animar(dt)
 	_anuncio.avancar(dt)
 	_anuncio.visible = _anuncio.texto_ativo != "" and not cartas_na_tela
+
+
+## O slot da ruptura: um Control criado aqui (o laço de _ready que zera luz e mouse já rodou, então zera de novo).
+func _criar_slot_ruptura() -> void:
+	_rb = Control.new()
+	_rb.name = "SlotRuptura"
+	_rb.position = RB_POS
+	_rb.size = Vector2(RB_TAM, RB_TAM)
+	_rb.pivot_offset = Vector2(RB_TAM, RB_TAM) / 2.0
+	_rb.light_mask = 0
+	_rb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rb.visible = false
+	_rb.draw.connect(_desenhar_slot)
+	$Raiz.add_child(_rb)
+	_ult = Control.new()
+	_ult.name = "SlotUltimate"
+	_ult.position = RB_POS + Vector2(RB_TAM + 4, 0)
+	_ult.size = Vector2(RB_TAM, RB_TAM)
+	_ult.light_mask = 0
+	_ult.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ult.visible = false
+	_ult.draw.connect(_desenhar_ultimate)
+	$Raiz.add_child(_ult)
+
+
+## Um quadro do slot: lê o herói, anima (pop, tremida) e pede redesenho só se algo mudou. Sem os campos da ruptura no herói, esconde.
+func _ruptura(dt: float, h) -> void:
+	if _rb == null:
+		return
+	var tem: bool = h != null and _campo(h, "rup_carga") != null
+	if _rb.visible != tem:
+		_rb.visible = tem
+		_ult.visible = tem
+		_ult.queue_redraw()
+	if not tem:
+		return
+	var f := clampf(_num(h, "rup_carga", 0.0), 0.0, 1.0)
+	var rec := maxf(_num(h, "rup_recarga", 0.0), 0.0)
+	var rec_max := maxf(_num(h, "rup_recarga_max", 1.0), 0.001)
+	var nega := maxf(_num(h, "rup_nega_t", 0.0), 0.0)
+	var contra := maxf(_num(h, "contragolpe_t", 0.0), 0.0)
+	var contra_max := maxf(_num(h, "contragolpe_max", 1.5), 0.001)
+	if _rb_recarga_antes > 0.0 and rec <= 0.0:
+		_rb_pop = RB_POP_T
+	_rb_recarga_antes = rec
+	_rb_pop = maxf(_rb_pop - dt, 0.0)
+	var treme := 0.0
+	if nega > 0.0:  # apertou na recarga: treme 2 px
+		treme = 2.0 if int(nega * 40.0) % 2 == 0 else -2.0
+	_rb.position = RB_POS + Vector2(treme, 0.0)
+	_rb.scale = Vector2.ONE * (1.0 + roundf(3.0 * _rb_pop / RB_POP_T) / 10.0)  # 1,3 para 1,0 em degraus de pixel art
+	_rb_pronta = rec <= 0.0
+	_rb_barra = roundi(f * 20.0)
+	_rb_cortina = ceili(rec / rec_max * 20.0) if rec > 0.0 else 0
+	_rb_contra = ceili(contra / contra_max * 20.0) if contra > 0.0 else 0
+	_rb_perf = _campo(h, "rup_perfeita") == true and int(Time.get_ticks_msec() / 50.0) % 2 == 0
+	_rb_nega = nega > 0.0
+	var chave := "%d|%d|%d|%s|%s|%s" % [_rb_barra, _rb_cortina, _rb_contra, _rb_pronta, _rb_perf, _rb_nega]
+	if chave != _rb_chave:
+		_rb_chave = chave
+		_rb.queue_redraw()
+
+
+func _desenhar_slot() -> void:
+	var s := float(RB_TAM)
+	_rb.draw_rect(Rect2(0, 0, s, s), Color(0.13, 0.12, 0.16, 0.85))
+	var borda := RB_BORDA
+	if _rb_nega:
+		borda = Color(1.0, 0.25, 0.2)
+	elif _rb_perf:
+		borda = Color.WHITE
+	_moldura(Rect2(0, 0, s, s), borda)
+	# a tecla da habilidade: a letra E (7x9 px)
+	var tecla := RB_LARANJA if _rb_pronta else Color(0.38, 0.37, 0.35)
+	_rb.draw_rect(Rect2(7, 5, 2, 9), tecla)
+	_rb.draw_rect(Rect2(9, 5, 5, 2), tecla)
+	_rb.draw_rect(Rect2(9, 8, 4, 2), tecla)
+	_rb.draw_rect(Rect2(9, 12, 5, 2), tecla)
+	# recarga: cortina escura do topo para baixo, a fração que falta
+	if _rb_cortina > 0:
+		_rb.draw_rect(Rect2(1, 1, s - 2.0, float(_rb_cortina)), Color(0.0, 0.0, 0.0, 0.7))
+		if _rb_cortina < 20:
+			_rb.draw_rect(Rect2(1, 1 + _rb_cortina, s - 2.0, 1), Color(0.6, 0.5, 0.35, 0.8))  # a borda da cortina: a varredura se lê
+	# carga: barra vertical de 3 px na borda direita, de baixo para cima, de laranja a branco, com marcas em 25, 50 e 75%
+	_rb.draw_rect(Rect2(18, 1, 3, 20), Color(0.0, 0.0, 0.0, 0.5))
+	if _rb_barra > 0:
+		_rb.draw_rect(Rect2(18, 21 - _rb_barra, 3, _rb_barra), RB_LARANJA.lerp(Color.WHITE, float(_rb_barra) / 20.0))
+		for marca in [5, 10, 15]:
+			_rb.draw_rect(Rect2(18, 21 - marca, 3, 1), Color(0.05, 0.05, 0.07, 0.9))
+	# contragolpe aberto: faísca laranja de 1 px na borda de cima
+	if _rb_contra > 0:
+		_rb.draw_rect(Rect2(1, 0, float(_rb_contra), 1), Color(1.0, 0.7, 0.3))
+
+
+## O slot do ultimate (Q): moldura apagada e a letra Q, sem barra nem recarga (a mecânica ainda não existe).
+func _desenhar_ultimate() -> void:
+	var s := float(RB_TAM)
+	var apagado := Color(0.3, 0.29, 0.32)
+	_ult.draw_rect(Rect2(0, 0, s, s), Color(0.13, 0.12, 0.16, 0.6))
+	_ult.draw_rect(Rect2(0, 0, s, 1), apagado)
+	_ult.draw_rect(Rect2(0, s - 1, s, 1), apagado)
+	_ult.draw_rect(Rect2(0, 1, 1, s - 2), apagado)
+	_ult.draw_rect(Rect2(s - 1, 1, 1, s - 2), apagado)
+	_ult.draw_rect(Rect2(6, 5, 8, 2), apagado)  # o Q: aro de 8x8 com o rabo
+	_ult.draw_rect(Rect2(6, 12, 8, 2), apagado)
+	_ult.draw_rect(Rect2(6, 7, 2, 5), apagado)
+	_ult.draw_rect(Rect2(12, 7, 2, 5), apagado)
+	_ult.draw_rect(Rect2(11, 12, 4, 4), apagado)
+
+
+## Contorno de 1 px em retângulos cheios (draw_rect sem preencher borra em coordenada inteira). `redondo` corta os quatro cantos.
+func _moldura(r: Rect2, cor: Color, redondo := false) -> void:
+	var c := 1.0 if redondo else 0.0
+	_rb.draw_rect(Rect2(r.position.x + c, r.position.y, r.size.x - 2.0 * c, 1), cor)
+	_rb.draw_rect(Rect2(r.position.x + c, r.end.y - 1, r.size.x - 2.0 * c, 1), cor)
+	_rb.draw_rect(Rect2(r.position.x, r.position.y + 1, 1, r.size.y - 2), cor)
+	_rb.draw_rect(Rect2(r.end.x - 1, r.position.y + 1, 1, r.size.y - 2), cor)
 
 
 ## Verdadeiro com a escolha de carta ou o baú abertos (telas.gd). Sem combate no mundo (testes), é falso.

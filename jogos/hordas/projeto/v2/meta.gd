@@ -7,6 +7,19 @@ extends RefCounted
 ## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida.
 
 static var caminho_save := "user://v2_progresso.cfg"
+static var erro_save := false
+
+
+static func _caminho_temporario() -> String:
+	return caminho_save + ".tmp"
+
+
+static func _caminho_backup() -> String:
+	return caminho_save + ".bak"
+
+
+static func _erro_de_parse(erro: Error) -> bool:
+	return erro == ERR_PARSE_ERROR or erro == ERR_FILE_CORRUPT
 
 
 static func catalogo() -> Dictionary:
@@ -56,14 +69,83 @@ static func item_da_recompensa(r: Dictionary) -> Dictionary:
 
 static func _ler() -> ConfigFile:
 	var cf := ConfigFile.new()
-	cf.load(caminho_save)  # sem arquivo ainda: sai com erro e o cf fica vazio (saldo 0, nada comprado)
-	return cf
+	var existe := FileAccess.file_exists(caminho_save)
+	if not existe:
+		if not FileAccess.file_exists(_caminho_backup()):
+			return cf
+		var backup := ConfigFile.new()
+		if backup.load(_caminho_backup()) == OK:
+			push_warning("v2 meta: save ausente; recuperando %s" % _caminho_backup())
+			return backup
+		push_warning("v2 meta: backup inválido em %s" % _caminho_backup())
+		return null
+	var erro := cf.load(caminho_save)
+	if erro == OK:
+		return cf
+	if not _erro_de_parse(erro):
+		push_warning("v2 meta: não foi possível ler %s (erro %d); preservando os arquivos" % [caminho_save, erro])
+		return null
+	var backup := ConfigFile.new()
+	if FileAccess.file_exists(_caminho_backup()):
+		var erro_backup := backup.load(_caminho_backup())
+		if erro_backup == OK:
+			push_warning("v2 meta: save corrompido; recuperando %s" % _caminho_backup())
+			return backup
+		if not _erro_de_parse(erro_backup):
+			push_warning("v2 meta: não foi possível ler o backup %s (erro %d)" % [_caminho_backup(), erro_backup])
+			return null
+	push_warning("v2 meta: save corrompido e sem backup válido; preservando os arquivos")
+	return null
 
 
-static func _gravar(cf: ConfigFile) -> void:
-	var erro := cf.save(caminho_save)
+static func _gravar(cf: ConfigFile) -> bool:
+	var temporario := _caminho_temporario()
+	var backup := _caminho_backup()
+	var erro := cf.save(temporario)
 	if erro != OK:
-		push_warning("v2 meta: não gravou %s (erro %d)" % [caminho_save, erro])
+		push_warning("v2 meta: não gravou temporário %s (erro %d)" % [temporario, erro])
+		return false
+	var conferir := ConfigFile.new()
+	if conferir.load(temporario) != OK:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temporario))
+		push_warning("v2 meta: temporário inválido em %s" % temporario)
+		return false
+	var havia_save := FileAccess.file_exists(caminho_save)
+	var save_valido := false
+	if havia_save:
+		var atual := ConfigFile.new()
+		var erro_atual := atual.load(caminho_save)
+		save_valido = erro_atual == OK
+		if not save_valido and not _erro_de_parse(erro_atual):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(temporario))
+			push_warning("v2 meta: não foi possível ler %s (erro %d); preservando os arquivos" % [caminho_save, erro_atual])
+			return false
+	if havia_save and save_valido:
+		if FileAccess.file_exists(backup):
+			erro = DirAccess.remove_absolute(ProjectSettings.globalize_path(backup))
+			if erro != OK:
+				DirAccess.remove_absolute(ProjectSettings.globalize_path(temporario))
+				push_warning("v2 meta: não removeu backup antigo %s (erro %d)" % [backup, erro])
+				return false
+		erro = DirAccess.rename_absolute(ProjectSettings.globalize_path(caminho_save), ProjectSettings.globalize_path(backup))
+		if erro != OK:
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(temporario))
+			push_warning("v2 meta: não moveu save para backup (erro %d)" % erro)
+			return false
+	elif havia_save:
+		# Um save inválido nunca substitui um backup recuperável.
+		erro = DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho_save))
+		if erro != OK:
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(temporario))
+			push_warning("v2 meta: não removeu save corrompido (erro %d)" % erro)
+			return false
+	erro = DirAccess.rename_absolute(ProjectSettings.globalize_path(temporario), ProjectSettings.globalize_path(caminho_save))
+	if erro != OK:
+		if havia_save and save_valido:
+			DirAccess.copy_absolute(ProjectSettings.globalize_path(backup), ProjectSettings.globalize_path(caminho_save))
+		push_warning("v2 meta: não instalou save novo (erro %d)" % erro)
+		return false
+	return true
 
 
 ## Foto do save para a tela: saldo, nível de cada melhoria, conquistas cumpridas e o resumo da última partida.
@@ -71,23 +153,25 @@ static func estado() -> Dictionary:
 	var cf := _ler()
 	var niveis := {}
 	for m in melhorias():
-		niveis[m.id] = int(cf.get_value("melhorias", m.id, 0))
+		niveis[m.id] = int(cf.get_value("melhorias", m.id, 0)) if cf != null else 0
 	var cumpridas := {}
 	for c in conquistas():
-		cumpridas[c.id] = bool(cf.get_value("conquistas", c.id, false))
+		cumpridas[c.id] = bool(cf.get_value("conquistas", c.id, false)) if cf != null else false
 	var ultima := {}
-	if cf.has_section("ultima"):
+	if cf != null and cf.has_section("ultima"):
 		for k in cf.get_section_keys("ultima"):
 			ultima[k] = cf.get_value("ultima", k)
-	return {"almas": int(cf.get_value("moeda", "almas", 0)), "niveis": niveis, "conquistas": cumpridas, "ultima": ultima}
+	return {"almas": int(cf.get_value("moeda", "almas", 0)) if cf != null else 0, "niveis": niveis, "conquistas": cumpridas, "ultima": ultima}
 
 
 static func saldo() -> int:
-	return int(_ler().get_value("moeda", "almas", 0))
+	var cf := _ler()
+	return int(cf.get_value("moeda", "almas", 0)) if cf != null else 0
 
 
 static func nivel(id: String) -> int:
-	return int(_ler().get_value("melhorias", id, 0))
+	var cf := _ler()
+	return int(cf.get_value("melhorias", id, 0)) if cf != null else 0
 
 
 ## Almas que o próximo nível custa (o nível seguinte ao `n` já comprado).
@@ -97,10 +181,14 @@ static func custo_do_nivel(m: Dictionary, n: int) -> int:
 
 ## Pode comprar? (tem nível sobrando, a conquista que a libera está cumprida e as almas bastam). Não mexe em nada.
 static func comprar(id: String) -> bool:
+	erro_save = false
 	var m := melhoria(id)
 	if m.is_empty():
 		return false
 	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return false
 	var n := int(cf.get_value("melhorias", id, 0))
 	if n >= int(m.max) or not _liberada(m, cf):
 		return false
@@ -110,8 +198,8 @@ static func comprar(id: String) -> bool:
 		return false
 	cf.set_value("moeda", "almas", almas - preco)
 	cf.set_value("melhorias", id, n + 1)
-	_gravar(cf)
-	return true
+	erro_save = not _gravar(cf)
+	return not erro_save
 
 
 static func _liberada(m: Dictionary, cf: ConfigFile) -> bool:
@@ -122,8 +210,11 @@ static func _liberada(m: Dictionary, cf: ConfigFile) -> bool:
 ## Soma almas ao saldo (testes e qualquer ganho fora da partida).
 static func creditar(n: int) -> void:
 	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return
 	cf.set_value("moeda", "almas", int(cf.get_value("moeda", "almas", 0)) + n)
-	_gravar(cf)
+	erro_save = not _gravar(cf)
 
 
 static func _cumprida(c: Dictionary, r: Dictionary) -> bool:
@@ -152,9 +243,15 @@ static func _conquistar(cf: ConfigFile, r: Dictionary) -> Array:
 ## Chamado no quadro durante a partida: conquistas de tempo e de combo que já foram cumpridas. Devolve os ids novos.
 static func checar_ao_vivo(tempo: float, maior_combo: int) -> Array:
 	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return []
 	var novas := _conquistar(cf, {"tempo": tempo, "maior_combo": maior_combo, "venceu": false})
 	if not novas.is_empty():
-		_gravar(cf)
+		if not _gravar(cf):
+			erro_save = true
+			return []
+		erro_save = false
 	return novas
 
 
@@ -167,7 +264,11 @@ static func almas_creditadas(bruto: int, bonus: float) -> int:
 ## Fim da partida: credita as almas (com o bônus de "almas"), marca conquistas e guarda o resumo.
 ## `r` tem tempo, abates, nivel, maior_combo, venceu e almas. Devolve antes, ganhas, depois e as conquistas novas.
 static func registrar_partida(r: Dictionary) -> Dictionary:
+	erro_save = false
 	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return {}
 	var antes := int(cf.get_value("moeda", "almas", 0))
 	var bruto := int(r.get("almas", 0))
 	var ganhas := almas_creditadas(bruto, _bonus("almas", cf))
@@ -179,7 +280,9 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "nivel", int(r.get("nivel", 1)))
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
-	_gravar(cf)
+	if not _gravar(cf):
+		erro_save = true
+		return {}
 	return {"antes": antes, "ganhas": ganhas, "depois": antes + ganhas, "novas": novas}
 
 
@@ -215,6 +318,8 @@ static func texto_proximo(m: Dictionary, n: int) -> String:
 ## bônus), então chamar de novo não soma em cima. Os bônus de raridade, rolagem e almas ficam em mundo.meta_bonus.
 static func aplicar(mundo) -> void:
 	var cf := _ler()
+	if cf == null:
+		return
 	var h = mundo.heroi
 	var cfg: Dictionary = mundo.combate.cfg
 	h.vida_max = float(cfg.heroi.vida) + _total("vida", cf)

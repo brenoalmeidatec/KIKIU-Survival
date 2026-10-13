@@ -154,6 +154,48 @@ static func livre(pos: Vector2, raio: float) -> bool:
 	return true
 
 
+## A grade `_perto` já inclui cada forma com margem RAIO_BUSCA. Testa as células da caixa do segmento;
+## falso garante que um corpo de até esse raio pode resolver só o destino sem atravessar forma sólida.
+static func segmento_perto(inicio: Vector2, fim: Vector2, raio: float) -> bool:
+	if _grade.is_empty():
+		return false
+	if raio > RAIO_BUSCA:
+		return true
+	if _sujo:
+		_refazer_perto()
+	var min_x := minf(inicio.x, fim.x)
+	var max_x := maxf(inicio.x, fim.x)
+	var min_y := minf(inicio.y, fim.y)
+	var max_y := maxf(inicio.y, fim.y)
+	# A maior parte do mapa é aberta. A tabela expandida é um descarte rápido; só na vizinhança
+	# de alguma forma fazemos a checagem precisa dos retângulos dos candidatos.
+	for gx in range(_coluna(min_x), _coluna(max_x) + 1):
+		for gy in range(_linha(min_y), _linha(max_y) + 1):
+			if _perto[gx * GRADE_H + gy] != 0:
+				return _segmento_sobrepoe_forma(min_x, max_x, min_y, max_y, raio)
+	return false
+
+
+static func _segmento_sobrepoe_forma(min_x: float, max_x: float, min_y: float, max_y: float, raio: float) -> bool:
+	# Busca formas cujas caixas expandidas pelo corpo possam tocar algum ponto do segmento.
+	# É conservador (cantos de retângulo podem disparar passos extras), mas evita subpassos só
+	# porque o caminho passa no halo amplo de 32 px usado pelo fast path de resolver().
+	var ax := _coluna(min_x - raio)
+	var bx := _coluna(max_x + raio)
+	var ay := _linha(min_y - raio)
+	var by := _linha(max_y + raio)
+	for gx in range(ax, bx + 1):
+		for gy in range(ay, by + 1):
+			for i in _grade[gx * GRADE_H + gy]:
+				var ry: float = _rx[i] / _k[i]
+				if max_x + raio < _cen[i].x - _rx[i] or min_x - raio > _cen[i].x + _rx[i]:
+					continue
+				if max_y + raio < _cen[i].y - ry or min_y - raio > _cen[i].y + ry:
+					continue
+				return true
+	return false
+
+
 ## Depuração (tecla F4): as formas registradas que tocam o retângulo `r` (coordenadas do mundo), como {c, rx, ry}.
 static func formas_no_retangulo(r: Rect2) -> Array:
 	var saida: Array = []

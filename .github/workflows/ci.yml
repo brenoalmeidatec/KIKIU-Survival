@@ -2,6 +2,7 @@ name: CI
 on:
   pull_request:
   workflow_dispatch:
+  workflow_call:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -51,6 +52,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install "gdtoolkit==4.*"
-      - run: gdlint jogos/hordas/projeto/scripts jogos/hordas/projeto/testes || echo "::warning::gdlint achou problemas de estilo (so aviso ate o codigo ser formatado)"
-      - name: gdformat --check (reprova codigo fora do padrao; para corrigir, rode jogos/hordas/formatar.sh)
-        run: gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes
+      - run: gdlint jogos/hordas/projeto/scripts jogos/hordas/projeto/testes jogos/hordas/projeto/v2 || echo "::warning::gdlint achou problemas de estilo (so aviso ate o codigo ser formatado)"
+  gdformat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "gdtoolkit==4.*"
+      - name: gdformat --check (scripts, testes e v2)
+        run: gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes jogos/hordas/projeto/v2

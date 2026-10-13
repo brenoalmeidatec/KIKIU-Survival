@@ -1,0 +1,42 @@
+{
+	"_ajuda": "A ruptura da tecla E (LB no controle) (v2/ruptura.gd, heroi.gd e combate.gd). Segurar a tecla E carrega, soltar racha o chão em 360 graus em volta do herói: dano, atordoamento e empurrão em tudo dentro da elipse do chão. Tempos em segundos, distâncias em px de chão, empurrão em px/s. Pares como raio [56, 96] valem de carga mínima (f = 0) a carga cheia (f = 1), com interpolação linear; f é a fração da carga (carga_max). carga_max: tempo até a carga cheia (dividido pela velocidade de ataque, nunca abaixo de carga_piso); carga_min: soltar antes disto só cancela (sem recarga); mov_carga: fração da velocidade de andar enquanto carrega; pausa_pos: folga sem golpear com a katana depois do disparo; salto_relogio: se o jogo ficar parado mais que isto com a carga aberta (pausa, perda de foco), ela cancela sem disparar; nega_t: tempo do slot do HUD tremendo quando o aperto cai na recarga; tiques: frações da carga em que toca o tique (a última é a carga cheia) e tique_tom o tom de cada um. raio: de chão, vezes (1 + (área - 1) * area_k) por causa do Arco largo. dano: antes de Lâmina afiada e das cartas. atordoa: a base, multiplicada pela carta Estrondo, com teto atordoa_max (elite vale metade e chefe zero, como em qualquer golpe). empurrao: px/s, dividido pelo peso do monstro. recarga: tempo entre dois disparos, com recarga_piso como limite com cartas e recarga_cartas_max como a maior redução (fração) que as cartas dão. hit_stop e tremor: de f = 0 a f = 1 (tremor_dur é a duração do tremor). perfeito: soltar na janela (s depois da carga cheia) dá bônus: dano e raio multiplicam, atordoa_mais soma segundos, recarga_menos tira segundos (nunca abaixo do piso), hit_stop_mais soma segundos e tremor_mais soma px. contragolpe: depois de um disparo que acertou, por tempo s a katana causa mais bonus de dano (fração; bonus_max é o teto com cartas). chefe.lento: segundos de lentidão no chefe e nos mini-chefes (eles não são atordoados nem empurrados). eco: a carta Eco do chão solta um segundo pulso depois de atraso s, com raio e empurrao relativos ao primeiro. Limites de efeito por disparo: numeros_max (números de dano nos alvos mais perto, mais todo crítico), flash_max (piscadas), faiscas_alvos (conjuntos de faíscas), explosoes_critico (explosões do modificador Crítico explosivo da katana). herois: a ruptura vale para QUALQUER herói (o script do herói é um só) e, por padrão, todos usam os números de ruptura; para um herói ter a sua, escreva aqui, na chave dele (a mesma de chave no herói), só o que muda, por exemplo {\"nicao\": {\"raio\": [64, 110], \"recarga\": 3.0, \"perfeito\": {\"dano\": 1.4}}}: números e pares ([min, max]) trocam inteiros, e os blocos (perfeito, contragolpe, chefe, eco) trocam só as chaves que você escrever. cartas: as cinco melhorias da ruptura (id, icone, nome, desc com {v}, chave, valor base, max, peso); o valor é multiplicado pela raridade como nas outras cartas (v2_cartas.json) e a chave diz o que a carta soma: dano (%), recarga (%), atordoa (%), contra (% de bônus no contragolpe) e eco (% do dano do primeiro pulso).",
+	"ruptura": {
+		"carga_max": 0.9,
+		"carga_min": 0.2,
+		"carga_piso": 0.4,
+		"mov_carga": 0.45,
+		"pausa_pos": 0.1,
+		"salto_relogio": 0.35,
+		"nega_t": 0.25,
+		"tiques": [0.25, 0.5, 0.75, 1.0],
+		"tique_tom": [0.9, 1.0, 1.12, 1.25],
+		"raio": [56, 96],
+		"area_k": 0.6,
+		"dano": [10, 22],
+		"atordoa": [0.25, 0.5],
+		"atordoa_max": 1.0,
+		"empurrao": [150, 260],
+		"recarga": 2.6,
+		"recarga_piso": 2.0,
+		"recarga_cartas_max": 0.6,
+		"hit_stop": [0.05, 0.1],
+		"tremor": [2, 4],
+		"tremor_dur": 0.17,
+		"numeros_max": 8,
+		"flash_max": 20,
+		"faiscas_alvos": 8,
+		"explosoes_critico": 6,
+		"perfeito": {"janela": 0.2, "dano": 1.25, "raio": 1.15, "atordoa_mais": 0.15, "recarga_menos": 0.4, "hit_stop_mais": 0.03, "tremor_mais": 1},
+		"contragolpe": {"tempo": 1.5, "bonus": 0.3, "bonus_max": 1.0},
+		"chefe": {"lento": [0.5, 1.2]},
+		"eco": {"atraso": 0.3, "raio": 0.7, "empurrao": 0.5}
+	},
+	"herois": {},
+	"cartas": [
+		{"id": "rb_dano", "icone": "icone_martelo", "nome": "Punho de terra", "desc": "A ruptura causa +{v}% de dano.", "chave": "dano", "valor": 15, "max": 6, "peso": 1.0},
+		{"id": "rb_recarga", "icone": "icone_ampulheta", "nome": "Pulso ligeiro", "desc": "Reduz a recarga da ruptura em {v}%.", "chave": "recarga", "valor": 6, "max": 4, "peso": 1.0},
+		{"id": "rb_estrondo", "icone": "icone_terremoto", "nome": "Estrondo", "desc": "A ruptura atordoa {v}% mais.", "chave": "atordoa", "valor": 20, "max": 3, "peso": 0.9},
+		{"id": "rb_contra", "icone": "icone_arte_marcial", "nome": "Contragolpe", "desc": "Depois da ruptura, a katana causa +{v}% de dano por um instante.", "chave": "contra", "valor": 8, "max": 3, "peso": 1.0},
+		{"id": "rb_eco", "icone": "icone_sino", "nome": "Eco do chão", "desc": "Um segundo pulso, menor e sem atordoar, causa {v}% do dano da ruptura.", "chave": "eco", "valor": 25, "max": 2, "peso": 1.0}
+	]
+}

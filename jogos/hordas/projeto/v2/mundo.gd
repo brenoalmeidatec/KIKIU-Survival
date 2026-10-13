@@ -12,7 +12,7 @@ extends Node
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
-## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
+## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
 ## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
@@ -41,6 +41,7 @@ const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no
 const Trilha := preload("res://v2/trilha.gd")  # a música de fundo da partida (faixa por momento, volume no bus Musica)
 const LARG := 960
 const ALT := 540
+const MAX_PASSO_COLISAO := 8.0  # menor pegada de árvore + círculo do herói ocupa mais que este passo
 const ORCAMENTO_LUZES := {"desligada": 6, "so_heroi": 0, "tudo": 0}  # máximo de luzes ligadas por "luz_relevo" (0 = sem limite); o perfil Baixo usa "desligada"
 const PASSO_SOMBRA_CENARIO := 3  # a sombra de cada objeto parado recalcula a cada 3 quadros (a luz que a move muda devagar; o deslize suaviza)
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
@@ -358,24 +359,27 @@ func _montar_marcadores() -> void:
 		if str(m.tipo) == "espinhos":
 			_espinhos.append(_montar_espinhos(m))
 			continue
-		_marcadores.append(
-			{
-				"tipo": str(m.tipo),
-				"pos": Vector2(float(m.pos[0]), float(m.pos[1])),
-				"raio": float(m.get("raio", 600.0)),
-				"forcar": int(m.get("forcar", 0)),
-				"marca": str(m.get("marca", "")),
-				"ordem": int(m.get("ordem", 0)),
-				"nome": str(m.get("nome", "")),
-				"texto": str(m.get("texto", "")),
-				"exige": str(m.get("exige", "")),
-				"tempo": float(m.get("tempo", 0.0)),
-				"custo": int(m.get("custo", 0)),
-				"t": 0.0,  # tempo de defesa já cumprido
-				"onda": 0.0,  # segundos até a próxima onda da defesa
-				"feito": false,
-				"dentro": false,
-			}
+		(
+			_marcadores
+			. append(
+				{
+					"tipo": str(m.tipo),
+					"pos": Vector2(float(m.pos[0]), float(m.pos[1])),
+					"raio": float(m.get("raio", 600.0)),
+					"forcar": int(m.get("forcar", 0)),
+					"marca": str(m.get("marca", "")),
+					"ordem": int(m.get("ordem", 0)),
+					"nome": str(m.get("nome", "")),
+					"texto": str(m.get("texto", "")),
+					"exige": str(m.get("exige", "")),
+					"tempo": float(m.get("tempo", 0.0)),
+					"custo": int(m.get("custo", 0)),
+					"t": 0.0,  # tempo de defesa já cumprido
+					"onda": 0.0,  # segundos até a próxima onda da defesa
+					"feito": false,
+					"dentro": false,
+				}
+			)
 		)
 
 
@@ -658,7 +662,15 @@ func _ler_graficos() -> void:
 ## na área andável (o mapa menos "borda_andavel": as árvores das bordas fecham o mapa). Devolve o deslocamento que de fato aconteceu.
 func mover(a, desejado: Vector2) -> Vector2:
 	var antes: Vector2 = a.pos
-	var depois: Vector2 = Colisao.resolver(antes + desejado, a.raio)
+	var depois := antes + desejado
+	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, a.raio):
+		var n_passos := ceili(desejado.length() / MAX_PASSO_COLISAO)
+		var passo := desejado / n_passos
+		depois = antes
+		for _i in n_passos:
+			depois = Colisao.resolver(depois + passo, a.raio)
+	else:
+		depois = Colisao.resolver(depois, a.raio)
 	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
 	a.definir_pos(depois)
 	return depois - antes
