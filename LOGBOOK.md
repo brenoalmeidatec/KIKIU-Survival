@@ -1354,3 +1354,10 @@ _Codex Luna (PC)_
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 (2) · Codex Luna (PC) · validação do save seguro
+- **Feito:** após integrar `origin/main` (`cdf67f7`), passaram `v2_meta`, `v2_mapas`, `v2_pausa`, `v2_esc`, `v2_musica` e `v2_status` com `falhas=0`; `gdformat --line-length 160 --check` passou em 174 scripts e testes. O fixture `v2_mapas` limpa também `.tmp` e `.bak`, gerados pelo save seguro.
+- **Sobreposição com PRs:** #201 não altera os arquivos de save; #214 altera `meta.gd` e `altar.gd`; #217 altera `altar.gd` e `resultado_meta.gd`; #219 já está integrado; #220 altera `mapas.gd`, `v2_mapas.gd` e `LEIA-ME.md`; #222 altera `v2_mapas.gd` e `LEIA-ME.md`. Os PRs ainda abertos que compartilham arquivos precisam de revisão ao integrar.
+- **Pendente:** PR/push será tratado pelo root.
+
+_Codex Luna (PC)_

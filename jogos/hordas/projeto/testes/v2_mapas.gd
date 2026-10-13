@@ -29,7 +29,7 @@ func ok(cond: bool, msg: String) -> void:
 
 func _ready() -> void:
 	Meta.caminho_save = SAVE_TESTE
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
+	_apagar_save()
 	_lista_e_escolha()
 	for id in Mapas.ids():
 		_dados_do_mapa(id)
@@ -37,9 +37,17 @@ func _ready() -> void:
 		await _mundo_do_mapa(id)
 		_passagens_e_vista(id)
 	await _santuario()
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
+	_apagar_save()
 	print("v2_mapas falhas=%d" % falhas)
 	get_tree().quit(1 if falhas > 0 else 0)
+
+
+func _apagar_save() -> void:
+	var sufixos: Array[String] = ["", ".tmp", ".bak"]
+	for sufixo in sufixos:
+		var caminho := SAVE_TESTE + sufixo
+		if FileAccess.file_exists(caminho):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho))
 
 
 func _lista_e_escolha() -> void:
