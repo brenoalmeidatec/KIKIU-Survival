@@ -23,6 +23,7 @@ var _saindo := false
 var _t := 0.0
 var _antes := 0
 var _ganhas := 0
+var _save_ok := true
 var _tocou := false
 var _checa_t := 0.0
 var _aviso_t := 0.0
@@ -176,6 +177,15 @@ func _terminar(r: Dictionary) -> void:
 	if not r.has("almas"):
 		r["almas"] = Meta.almas_da_partida(mundo)
 	var res: Dictionary = Meta.registrar_partida(r)
+	_save_ok = not res.is_empty()
+	if not _save_ok:
+		_antes = Meta.saldo()
+		_ganhas = 0
+		_mostrar(r, [])
+		_almas_tit.text = "NÃO FOI POSSÍVEL SALVAR"
+		_almas_num.text = "+0"
+		_saldo.text = "Saldo não atualizado"
+		return
 	_antes = int(res.antes)
 	_ganhas = int(res.ganhas)
 	_mostrar(r, res.novas)
@@ -201,6 +211,8 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 
 
 func _animar(dt: float) -> void:
+	if not _save_ok:
+		return
 	_t += dt
 	var k := clampf(_t / TEMPO_ANIM, 0.0, 1.0)
 	k = 1.0 - pow(1.0 - k, 3.0)  # sobe rápido e desacelera no fim

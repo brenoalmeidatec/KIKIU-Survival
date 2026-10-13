@@ -52,7 +52,7 @@ func _ready() -> void:
 
 func _limpar() -> void:
 	get_tree().paused = false
-	for c in [SAVE_TESTE, OPCOES_TESTE]:
+	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
 	Config.arquivo = "user://opcoes.cfg"
@@ -407,8 +407,9 @@ func _testes() -> void:
 
 
 func _limpar_saves() -> void:
-	if FileAccess.file_exists(SAVE_TESTE):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
+	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp"]:
+		if FileAccess.file_exists(c):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
 
 
 ## Prints do menu (só o viewport): a pausa, Ajustes, Gráficos (rolada até uma opção com ajuda), Áudio, a confirmação de sair e

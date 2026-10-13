@@ -1,7 +1,9 @@
-"""Gera os efeitos do COMBATE da v2 (WAV, 22050 Hz, mono) em projeto/assets/audio/v2/.
+"""RESERVA: gera os efeitos SINTETIZADOS do COMBATE da v2 (WAV, 22050 Hz, mono) em projeto/assets/audio/v2/.
 
-Tudo é sintetizado, sem sample de fora. Reaproveita os sintetizadores do gerador do jogo (jogos/cairu/fonte_audio/gerar_audio.py: pulso,
-tri, seno, ruido, filtros e envelope), importando-o sem alterar. Para mudar um som, edite sfx_v2() e rode:  python3 gerar_v2_sfx.py
+Hoje os WAV desse diretório são sons CC0 do Kenney (ver docs/LICENCAS_AUDIO.md). Rodar este script SOBRESCREVE os arquivos com
+o sintetizado (os nomes que coincidem). Tudo é sintetizado, sem sample de fora. Reaproveita os sintetizadores do gerador do jogo
+(jogos/cairu/fonte_audio/gerar_audio.py: pulso, tri, seno, ruido, filtros e envelope), importando-o sem alterar. Para mudar um som,
+edite sfx_v2() e rode:  python3 gerar_v2_sfx.py
 """
 import importlib.util
 import os
@@ -105,6 +107,24 @@ def sfx_v2():
     triunfo = [67, 67, 67, 72, 76, 79, 84]
     durs = [0.12, 0.12, 0.12, 0.2, 0.2, 0.2, 0.9]
     e["vitoria"] = np.concatenate([base.pulso(base.freq(n), q, 0.5) * 0.5 * base.env(int(q * SR), 0.003, 0.05, 0.7, 0.08) + base.tri(base.freq(n - 12), q) * 0.4 * base.env(int(q * SR), 0.003, 0.05, 0.7, 0.08) for n, q in zip(triunfo, durs)]) * 0.4
+    # --- a ruptura do botão direito (v2/ruptura.gd)
+    d = 0.05  # tique da carga (25, 50, 75 e 100%): um clique de seno, o herói sobe o tom por cima
+    e["ruptura_tique"] = base.seno(880, d) * np.exp(-t(d) * 70) * 0.55
+    d = 0.18  # carga cheia / recarga pronta: dois tons que decaem
+    dois = np.zeros(int(d * SR))
+    n1 = int(0.09 * SR)
+    dois[:n1] += base.seno(1318, 0.09)[:n1] * np.exp(-t(0.09)[:n1] * 28)
+    n2 = len(dois) - int(0.11 * SR)
+    m2 = len(dois) - n2
+    dois[n2:] += base.seno(1760, 0.11)[:m2] * np.exp(-t(0.11)[:m2] * 22)
+    e["ruptura_pronta"] = dois * 0.45
+    d = 0.45  # o disparo: pancada grave que desce de 110 para 45 Hz, estouro de ruído filtrado e um estalo agudo curto no começo
+    estalo = base.passa_alta(base.ruido(d, 61), 0.6) * np.exp(-t(d) * 90)
+    e["ruptura_disparo"] = (
+        varre(110, 45, d) * np.exp(-t(d) * 7) * 0.95 + base.passa_baixa(base.ruido(d, 62), 0.22) * np.exp(-t(d) * 9) * 1.2 + estalo * 0.55
+    ) * 0.62
+    d = 0.1  # carga cancelada ou negada: varredura descendente abafada
+    e["ruptura_cancela"] = base.passa_baixa(varre(520, 180, d), 0.35) * np.exp(-t(d) * 22) * 0.9
     return e
 
 

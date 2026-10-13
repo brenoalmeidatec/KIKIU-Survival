@@ -8,7 +8,8 @@ const LINHAS := [
 	{
 		"rotulo": "Criadores",
 		"valor": "Breno e Alisson",
-		"ajuda": "K.I.K.I.U nasceu de uma ideia do Breno (história, personagens, mecânicas e a base do código) e virou jogo a quatro mãos: o Alisson cuidou da arte, dos cenários, do visual e do online.",
+		"ajuda":
+		"K.I.K.I.U nasceu de uma ideia do Breno (história, personagens, mecânicas e a base do código) e virou jogo a quatro mãos: o Alisson cuidou da arte, dos cenários, do visual e do online.",
 	},
 	{
 		"rotulo": "Feito com",
@@ -18,17 +19,20 @@ const LINHAS := [
 	{
 		"rotulo": "Motor do jogo",
 		"valor": "Godot Engine",
-		"ajuda": "Godot Engine, licença MIT. Copyright (c) 2014-present Godot Engine contributors. Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur. godotengine.org/license",
+		"ajuda":
+		"Godot Engine, licença MIT. Copyright (c) 2014-present Godot Engine contributors. Copyright (c) 2007-2014 Juan Linietsky, Ariel Manzur. godotengine.org/license",
 	},
 	{
 		"rotulo": "Fontes",
 		"valor": "Licença OFL",
-		"ajuda": "Press Start 2P, de CodeMan38. Jersey 10, de The Soft Type Project (títulos). Pixelify Sans, de The Pixelify Sans Project (textos). Todas sob a SIL Open Font License 1.1.",
+		"ajuda":
+		"Press Start 2P, de CodeMan38. Jersey 10, de The Soft Type Project (títulos). Pixelify Sans, de The Pixelify Sans Project (textos). Todas sob a SIL Open Font License 1.1.",
 	},
 	{
 		"rotulo": "Música",
 		"valor": "Kevin MacLeod",
-		"ajuda": "Música: Kevin MacLeod (incompetech.com), licença Creative Commons Atribuição 4.0 (CC BY 4.0). As faixas foram cortadas e ganharam laço para o jogo.",
+		"ajuda":
+		"Música: Kevin MacLeod (incompetech.com), licença Creative Commons Atribuição 4.0 (CC BY 4.0). As faixas foram cortadas e ganharam laço para o jogo.",
 	},
 	{
 		"rotulo": "Efeitos sonoros",

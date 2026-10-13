@@ -42,8 +42,11 @@ const COR_FUNDO := Color(0.004, 0.012, 0.043, 0.72)  # #01030b a 0,7 (hud_menus.
 const DICA := "Setas escolhem   Enter confirma   Esc volta"
 const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
+const AudioV2 := preload("res://v2/audio.gd")  # o clique do santuário (sem partida), com os WAV da v2
 
-var mundo  # a partida (mundo.gd); null no santuário (altar.gd)
+signal fechou  # o menu fechou: quem o abriu (o santuário, o título) devolve o foco ao botão
+
+var mundo  # a partida (mundo.gd); null no santuário (altar.gd) e no título (menu_principal.gd)
 var mouse_fn := Callable()  # mouse em 960x540 (o Apresentacao da partida); vazio = mouse da janela (santuário)
 var ao_sair := Callable()  # "Sim" em Sair do jogo; vazio = get_tree().quit()
 var aberto := false
@@ -63,6 +66,7 @@ var _ajuda: Label
 var _linhas: Array = []  # uma por linha visível: {linha, marca, rotulo, valor}
 var _fps: Label
 var _fps_t := 0.0
+var _sons_ui  # clique do santuário (sem partida): o áudio da v2 (assets/audio/v2/), sem usar os WAV da v1
 
 
 ## Liga o menu à partida (m = mundo.gd) ou ao santuário (null). Chamado antes de entrar na árvore.
@@ -206,6 +210,7 @@ func fechar() -> void:
 	if mundo != null:
 		get_tree().paused = _arvore_antes
 	_card_build()
+	fechou.emit()
 
 
 ## O card "SUA BUILD" (status.gd) aparece ao lado do menu, só na tela "menu" (some em Ajustes, nas confirmações e ao fechar).
@@ -223,13 +228,22 @@ func abrir_sair() -> void:
 	_ir("confirmar_sair", "")
 
 
-## Santuário: o botão Ajustes abre o mesmo submenu (sem pausa, porque não há partida).
+## Santuário e título: o botão Ajustes abre o mesmo submenu (sem pausa, porque não há partida).
 func abrir_ajustes() -> void:
 	if aberto:
 		return
 	aberto = true
 	_raiz.visible = true
 	_ir("ajustes", "")
+
+
+## Título: o botão Créditos abre a tela de Créditos direto. Sem nada por trás (origem ""), o Voltar fecha e não leva a Ajustes.
+func abrir_creditos() -> void:
+	if aberto:
+		return
+	aberto = true
+	_raiz.visible = true
+	_ir("creditos", "")
 
 
 ## Só olha em que passo do jogo a partida está (combate.jogo), nunca um flag solto: "jogando", ou a escolha de cartas e o baú, que
@@ -259,7 +273,10 @@ func _voltar_tela() -> void:
 			else:
 				fechar()
 		"graficos", "audio", "creditos":
-			_ir("ajustes")
+			if tela == "creditos" and _origem == "":
+				fechar()  # Créditos abertos direto pelo título: não há Ajustes por trás
+			else:
+				_ir("ajustes")
 		_:
 			_executar("nao", 0)
 
@@ -284,6 +301,14 @@ func entrada(e: InputEvent) -> bool:
 			abrir_sair()
 			return true
 		return pausar()
+	# Tab: o card "SUA BUILD" ao lado do menu troca a página visual pela de detalhes (status.gd)
+	if e is InputEventKey and e.keycode == KEY_TAB and e.pressed and not e.echo and tela == "menu" and mundo != null and mundo.get("status") != null:
+		mundo.status.alternar_detalhe()
+		return true
+	# Q e E trocam a página dos golpes do card (status.gd); a Antena entrega a tecla aqui antes do card, então o pedido passa por aqui
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_Q, KEY_E] and tela == "menu" and mundo != null and mundo.get("status") != null:
+		mundo.status.paginar(-1 if e.keycode == KEY_Q else 1)
+		return true
 	if e is InputEventMouseMotion:
 		var i := _linha_sob_mouse()
 		if i >= 0 and i != sel:
@@ -565,15 +590,23 @@ func _notification(what: int) -> void:
 # ------------------------------------------------------------------ sons (o áudio do combate roda com a pausa; o Som global não)
 
 
+## Clique do menu fora da partida (santuário): toca o WAV da v2 com o volume de Efeitos das Opções.
+func _tocar_ui(nome: String) -> void:
+	if _sons_ui == null:
+		_sons_ui = AudioV2.new()
+		add_child(_sons_ui)
+	_sons_ui.tocar(nome)
+
+
 func _som_cursor() -> void:
 	if mundo != null and mundo.combate != null:
 		mundo.combate.audio.tocar("carta", 1.2, -6.0, 0.03)
 	else:
-		Som.ui("cursor")
+		_tocar_ui("ui_cursor")
 
 
 func _som_ok() -> void:
 	if mundo != null and mundo.combate != null:
 		mundo.combate.audio.tocar("escolher", 1.0, 0.0, 0.0)
 	else:
-		Som.ui("confirmar")
+		_tocar_ui("ui_confirmar")

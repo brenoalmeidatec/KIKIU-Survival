@@ -2,7 +2,7 @@
 
 **Estado em 2026-10-12: o laboratório está FECHADO** (branch `claude/v2-mapa-laboratorio`, PR "v2: mapa Laboratório", aguardando o OK do Alisson):
 seleção no santuário, mapa, luzes, minimapa, partículas, colisão, teste `v2_mapas` com falhas=0, bateria completa, fps medido contra a floresta
-(tabela no PR) e build exportado conferido. A **cidade** está montada (objetos e piso na etapa 1; mapa na etapa 2, em `LEIA-ME_CIDADE.md`). O PR da cidade parte da branch do laboratório e deve ser mesclado depois do #204.
+(tabela no PR) e build exportado conferido. A **cidade ainda não foi começada** (ela parte da branch do laboratório).
 
 Acabamento da arte (fechamento): tom do piso e do ambiente igualados ao da floresta (`mapa.chao.ganho` 2,2, `dessat` 0,3, ambiente `16232d`: o
 primeiro laboratório saía bem mais claro e mais azul que a floresta); piso com desgaste em Python (`detalhar_piso` em `def_laboratorio.py`, ligado
@@ -50,8 +50,14 @@ Prévia dos brutos do Blender com régua de escala: `python mapas_v2/previa_brut
 2. **Prompts do ChatGPT (imagegen)** para o Alisson gerar folhas de referência mais ricas: ainda **não foram escritos**. A ideia: mesma convenção da
    floresta (`prototipos/cara_nova/objetos/gerar_objetos.py`: fundo branco, objetos em grade, uma folha por tema), e o `gerar_v2_mapas.py` ganhar a
    leitura de folhas (`agrupar` do `gerar_objetos.py`) no lugar dos brutos do Blender quando a folha existir.
-3. **Cidade:** montada (`LEIA-ME_CIDADE.md`). Falta o OK do Alisson; o PR depende do #204 (mesclar depois dele).
+3. **Cidade:** `modelos3d/mapa_cidade.py` (prédios, postes, carros, caçambas, bancos, hidrantes, barricadas, barril de fogo; piso de asfalto com calçada),
+   `mapas_v2/def_cidade.py` (colisão, decalques de faixa e bueiro, layout em ruas e quarteirões, luzes de poste a sódio e neon), linha em `Mapas.LISTA`
+   (`{"id": "cidade", "nome": "CIDADE", "entrar": "ENTRAR NA CIDADE", "dados": "v2_cidade"}`) e o PR da cidade (a partir da branch do laboratório).
 4. (Feito) `mapas.gd` e a seleção de mapa estão na tabela de `v2/LEIA-ME.md`.
 
 Dicas de quem fez: os mapas têm de ser **abertos** (o monstro persegue em linha reta e prende em parede comprida: paredes só em trechos com abertura, ou nas bordas,
 que ficam fora da área andável); a colisão do `colisao.gd` aceita qualquer `ry`, mas formas encostadas deixam uma quina côncava onde o resolver trava.
+
+## Cidade integrada (2026-10-13)
+
+A Cidade da PR #211 integra a seleção junto de Floresta, Laboratório e Ruínas da Floresta. Fonte e regras próprias em `LEIA-ME_CIDADE.md`; assets e os 177 objetos/85 luzes preservados. Ruínas da Floresta é o nome exibido do id `medio`, sem regenerar o mapa nem mudar progresso salvo.

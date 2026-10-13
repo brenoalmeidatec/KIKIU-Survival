@@ -73,6 +73,28 @@ func _ready() -> void:
 	ok(w.has_signal("nivel_subiu"), "sinal nivel_subiu(nivel)")
 	ok(w.monstros_vivos == w.monstros.size() and w.monstros.size() == 20, "monstros_vivos = 20 no começo")
 
+	# Uma colisão da tabela não pode percorrer duas vezes o mesmo monstro. As células (2,7) e (4,9)
+	# têm o mesmo hash; só a primeira contém um vizinho que encosta no ator em (3,8).
+	var lista_original: Array = w.monstros
+	var ator_grade = lista_original[0]
+	var vizinho_grade = lista_original[1]
+	var pos_ator_original: Vector2 = ator_grade.pos
+	var pos_vizinho_original: Vector2 = vizinho_grade.pos
+	ator_grade.definir_pos(Vector2(84, 214))
+	vizinho_grade.definir_pos(Vector2(73, 203))
+	w.monstros = [ator_grade, vizinho_grade]
+	w.combate._q = 0
+	w.combate._separar()
+	var delta_grade: Vector2 = ator_grade.pos - vizinho_grade.pos
+	var lim_grade: float = (ator_grade.raio + vizinho_grade.raio) * 1.15
+	var sep_esperada := delta_grade.normalized() * (lim_grade - delta_grade.length()) * 14.0
+	ok(ator_grade.sep.distance_to(sep_esperada) < 0.01, "a colisão de hash não duplica a força da separação (%s)" % str(ator_grade.sep))
+	w.combate._separar()
+	ok(ator_grade.sep.distance_to(sep_esperada) < 0.01, "a consulta reutiliza o cache sem duplicar a força")
+	w.monstros = lista_original
+	ator_grade.definir_pos(pos_ator_original)
+	vizinho_grade.definir_pos(pos_vizinho_original)
+
 	# 1. sem clique não sai golpe
 	zerar()
 	var m1 = monstro_a(30)
@@ -242,6 +264,7 @@ func _ready() -> void:
 	# 7. nível: câmera lenta de 0,4 s, escolha de 1 entre 3 melhorias (o mundo para), melhoria aplicada
 	zerar()
 	h = w.heroi
+	var monstro_pausa = monstro_a(100)
 	_niveis = 0
 	var nv0: int = h.nivel
 	h.xp = h.xp_proximo - 0.5
@@ -249,7 +272,21 @@ func _ready() -> void:
 	ate(func(): return h.nivel > nv0, 120)
 	ok(h.nivel == nv0 + 1 and _niveis == 1, "o XP enche a barra e sobe o nível (sinal nivel_subiu: %d)" % _niveis)
 	ok(w.combate.lento_t > 0.0 and w.combate.lento_escala < 0.5, "câmera lenta ao subir de nível")
-	var passos_lento := ate(func(): return w.combate.jogo == "escolha", 120)
+	h.entrada_forcada = Vector2(1, 0)
+	var passos_lento := 0
+	var tp_quadro := 0.0
+	var pos_heroi_quadro := Vector2.ZERO
+	var pos_monstro_quadro := Vector2.ZERO
+	while w.combate.jogo != "escolha" and passos_lento < 120:
+		tp_quadro = w.tempo_partida
+		pos_heroi_quadro = h.pos
+		pos_monstro_quadro = monstro_pausa.pos
+		w.avancar(PASSO)
+		passos_lento += 1
+		if w.combate.jogo == "escolha":
+			ok(w.tempo_partida == tp_quadro, "o quadro que abre a escolha não avança o relógio da partida")
+			ok(h.pos == pos_heroi_quadro and monstro_pausa.pos == pos_monstro_quadro, "o quadro que abre a escolha não move herói nem monstro")
+	h.entrada_forcada = Vector2.ZERO
 	ok(passos_lento >= 20 and passos_lento <= 30, "a câmera lenta dura ~0,4 s antes da escolha (%d passos)" % passos_lento)
 	ok(w.combate.pausado and w.combate.progresso.cartas.size() == 3, "abre a escolha com 3 cartas")
 	var ids := {}

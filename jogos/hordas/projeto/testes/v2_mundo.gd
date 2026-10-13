@@ -226,12 +226,34 @@ func _ready() -> void:
 	passos(30)
 	ok(not m0.persegue, "o monstro desiste quando o herói foge")
 
-	# 9. o ponto único de movimento: o herói e os monstros andam por mundo.mover (hoje só soma e prende no mapa)
+	# 9. Em um trecho comprovadamente livre, mover soma o deslocamento e prende o ator na área andável.
+	# O caso anterior deixava o herói encostado numa forma depois da perseguição: a correção de colisão muda o deslocamento ali.
+	var trecho_livre := false
+	for y in range(ceili(w.limite_andavel.position.y) + 32, floori(w.limite_andavel.end.y) - 32, 64):
+		for x in range(ceili(w.limite_andavel.position.x) + 32, floori(w.limite_andavel.end.x) - 32, 64):
+			var ponto := Vector2(x, y)
+			var livre := true
+			for passo in range(11):
+				if not Colisao.livre(ponto + Vector2(10, 5) * (float(passo) / 10.0), w.heroi.raio):
+					livre = false
+					break
+			if livre:
+				w.heroi.definir_pos(ponto)
+				trecho_livre = true
+				break
+		if trecho_livre:
+			break
+	ok(trecho_livre, "há um trecho livre para testar o deslocamento sem colisão")
 	var a_mover: Vector2 = w.heroi.pos
 	var feito: Vector2 = w.mover(w.heroi, Vector2(10, 5))
-	ok(feito == Vector2(10, 5) and w.heroi.pos == a_mover + Vector2(10, 5), "mover soma o deslocamento")
-	feito = w.mover(w.heroi, Vector2(-5000, 0))
-	ok(w.heroi.pos.x == w.limite_andavel.position.x and feito.x < 0.0, "mover prende na área andável (x = %.1f)" % w.heroi.pos.x)
+	ok(
+		feito == Vector2(10, 5) and w.heroi.pos == a_mover + Vector2(10, 5),
+		"mover soma o deslocamento: início=%s feito=%s final=%s esperado=%s" % [a_mover, feito, w.heroi.pos, a_mover + Vector2(10, 5)]
+	)
+	# O limite é testado independentemente de obstáculos entre dois extremos distantes.
+	w.heroi.definir_pos(Vector2(w.limite_andavel.position.x - 500.0, w.heroi.pos.y))
+	feito = w.mover(w.heroi, Vector2.ZERO)
+	ok(w.heroi.pos.x == w.limite_andavel.position.x and feito.x == 500.0, "mover corrige a posição fora da área andável (x = %.1f)" % w.heroi.pos.x)
 
 	# 9b. a colisão (v2/colisao.gd) liga em mover: o herói não atravessa um objeto isolado e fica fora das formas
 	var alvo = null

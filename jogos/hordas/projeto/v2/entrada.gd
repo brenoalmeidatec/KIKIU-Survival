@@ -2,7 +2,9 @@ extends RefCounted
 ## Entrada da v2: garante as ações que o mundo lê quando a cena roda sozinha (godot ... res://v2/mundo.tscn), sem passar pelo main.gd, que é
 ## quem cria o InputMap do jogo (TECLAS em scripts/hordas/main.gd). Só cria o que faltar: com o main.gd rodando nada muda, e as teclas que o
 ## jogador trocou em Opções > Controles continuam valendo. Andar = ações esquerda, direita, cima e baixo (WASD, setas e analógico esquerdo);
-## mirar com o controle = mira_* (analógico direito); golpe principal = atacar (botão esquerdo do mouse e gatilho direito); esquiva = Espaço e botão B; correr = Shift e L3 (analógico apertado).
+## mirar com o controle = mira_* (analógico direito); golpe principal = atacar (botão esquerdo do mouse e gatilho direito); esquiva = Espaço e botão B; correr = Shift e L3 (analógico apertado);
+## secundário = escudo (v2/escudo.gd, por herói em dados/v2_secundario.json): botão direito do mouse e gatilho esquerdo do controle (segurar ergue);
+## habilidade = ruptura (v2/ruptura.gd): tecla E e LB do controle (segurar carrega, soltar dispara); ultimate = Q e RB (reservado, sem efeito).
 
 const TECLAS := {"esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT], "cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN]}
 const EIXOS := {
@@ -17,7 +19,22 @@ const EIXOS := {
 }
 
 
+## Os menus (título, santuário, pausa, escolhas) usam ui_accept e ui_cancel. O Godot traz o D-pad e o analógico nas ações ui_*,
+## mas não o A nem o B: sem eles o controle não confirma nem volta. Acrescenta o A e o B quando faltarem.
+static func _garantir_botoes_de_menu() -> void:
+	for par in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B]]:
+		var tem := false
+		for e in InputMap.action_get_events(par[0]):
+			if e is InputEventJoypadButton and e.button_index == par[1]:
+				tem = true
+		if not tem:
+			var b := InputEventJoypadButton.new()
+			b.button_index = par[1]
+			InputMap.action_add_event(par[0], b)
+
+
 static func garantir() -> void:
+	_garantir_botoes_de_menu()
 	for acao: String in EIXOS:
 		if InputMap.has_action(acao):
 			continue
@@ -55,3 +72,32 @@ static func garantir() -> void:
 		var l3 := InputEventJoypadButton.new()
 		l3.button_index = JOY_BUTTON_LEFT_STICK
 		InputMap.action_add_event("correr", l3)
+	# habilidade (E / LB): a ruptura. Padrão Overwatch: o botão direito é o tiro SECUNDÁRIO, a habilidade fica numa tecla.
+	if not InputMap.has_action("ruptura"):
+		InputMap.add_action("ruptura", 0.4)
+		var e := InputEventKey.new()
+		e.physical_keycode = KEY_E
+		InputMap.action_add_event("ruptura", e)
+		var lb := InputEventJoypadButton.new()
+		lb.button_index = JOY_BUTTON_LEFT_SHOULDER
+		InputMap.action_add_event("ruptura", lb)
+	# secundário (botão direito / LT): definido por herói em dados/v2_secundario.json; hoje é o escudo (v2/escudo.gd)
+	if not InputMap.has_action("escudo"):
+		InputMap.add_action("escudo", 0.4)
+		var direito := InputEventMouseButton.new()
+		direito.button_index = MOUSE_BUTTON_RIGHT
+		InputMap.action_add_event("escudo", direito)
+		var lt := InputEventJoypadMotion.new()
+		lt.axis = JOY_AXIS_TRIGGER_LEFT
+		lt.axis_value = 1.0
+		InputMap.action_add_event("escudo", lt)
+	# ULTIMATE (Q / RB): RESERVADO. Só a ação existe; nada a lê ainda (o slot vazio do HUD é só aviso). Quando a mecânica chegar, o herói
+	# passa a ler `ultimate` como lê `ruptura`.
+	if not InputMap.has_action("ultimate"):
+		InputMap.add_action("ultimate", 0.4)
+		var q := InputEventKey.new()
+		q.physical_keycode = KEY_Q
+		InputMap.action_add_event("ultimate", q)
+		var rb := InputEventJoypadButton.new()
+		rb.button_index = JOY_BUTTON_RIGHT_SHOULDER
+		InputMap.action_add_event("ultimate", rb)

@@ -98,10 +98,16 @@ static func pede_v1(args: Dictionary, primeira_vez: bool) -> bool:
 	return false
 
 
-func _abrir_v1() -> bool:
+## Primeira tela do processo (o título, ou o santuário aberto direto): se os argumentos forem da v1, manda para ela. Marca a
+## entrada, para as telas seguintes (o santuário, depois do título) saberem que já não são a primeira.
+static func pede_v1_na_entrada() -> bool:
 	var primeira := not Engine.has_meta("kikiu_entrada")
 	Engine.set_meta("kikiu_entrada", true)
-	if not pede_v1(ler_args(OS.get_cmdline_user_args() + OS.get_cmdline_args()), primeira):
+	return pede_v1(ler_args(OS.get_cmdline_user_args() + OS.get_cmdline_args()), primeira)
+
+
+func _abrir_v1() -> bool:
+	if not pede_v1_na_entrada():
 		return false
 	process_mode = Node.PROCESS_MODE_DISABLED
 	get_tree().change_scene_to_file.call_deferred(CENA_V1)
@@ -160,7 +166,7 @@ func _montar() -> void:
 	add_child(_painel(Rect2(36, 88, 572, 374)))
 	add_child(_texto("MELHORIAS", 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, 90, 300, 38)))
 	var i := 0
-	for m in Meta.melhorias():
+	for m in Meta.melhorias_visiveis():
 		var y := LINHA_Y0 + i * LINHA_H
 		var nome := _texto("", 8, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, y + 3, 380, 12))
 		var efeito := _texto("", 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(52, y + 18, 380, 12))
@@ -287,7 +293,7 @@ func _atualizar() -> void:
 	var e := Meta.estado()
 	_saldo.text = str(e.almas)
 	_ultima.text = _texto_ultima(e.ultima)
-	for m in Meta.melhorias():
+	for m in Meta.melhorias_visiveis():
 		var linha: Dictionary = _linhas[str(m.id)]
 		var n: int = e.niveis[str(m.id)]
 		var nome: Label = linha.nome
@@ -308,7 +314,7 @@ func _atualizar() -> void:
 			botao.text = "MÁXIMO"
 			botao.disabled = true
 		else:
-			var agora := ("Agora: " + Meta.texto_efeito(m, n)) if n > 0 else "Ainda sem efeito"
+			var agora := ("Agora: " + Meta.texto_efeito(m, n)) if n > 0 else "Não comprada"
 			efeito.text = "%s   %s" % [agora, Meta.texto_proximo(m, n)]
 			botao.text = "COMPRAR %d" % Meta.custo_do_nivel(m, n)
 			botao.disabled = false
@@ -321,7 +327,9 @@ func _atualizar() -> void:
 		(v.nome as Label).text = str(c.nome)
 		(v.nome as Label).add_theme_color_override("font_color", COR_OURO if feita else COR_TEXTO)
 		(v.desc as Label).text = str(c.desc)
-		(v.rec as Label).text = ("Cumprida. Libera: " if feita else "Libera: ") + _texto_recompensa(c.recompensa)
+		var libera := _texto_recompensa(c.recompensa)
+		var texto := ("Libera: " + libera) if libera != "" else ""
+		(v.rec as Label).text = ("Cumprida. " + texto).strip_edges() if feita else texto
 
 
 func _liberada(m: Dictionary, e: Dictionary) -> bool:
@@ -336,23 +344,18 @@ func _nome_conquista(id: String) -> String:
 	return id
 
 
-## O que a conquista libera, em texto. Modo e visual só ficam marcados no save (efeito pendente).
+## O que a conquista libera, em texto. Modo e visual só ficam marcados no save: com `efeito` "pendente" saem com "(sem efeito ainda)".
+## Item com `oculta_ate_ter_efeito` (dados/v2_meta.json) não aparece: devolve "" e a conquista segue na lista, sem a recompensa.
 func _texto_recompensa(r: Dictionary) -> String:
-	match str(r.tipo):
-		"melhoria":
-			return str(Meta.melhoria(str(r.id)).get("nome", r.id))
-		"modo":
-			return "modo %s (sem efeito ainda)" % _nome_em(Meta.catalogo().get("modos", []), str(r.id))
-		"visual":
-			return "%s (sem efeito ainda)" % _nome_em(Meta.catalogo().get("visuais", []), str(r.id))
-	return str(r.id)
-
-
-func _nome_em(lista: Array, id: String) -> String:
-	for x in lista:
-		if str(x.id) == id:
-			return str(x.nome)
-	return id
+	var item := Meta.item_da_recompensa(r)
+	if Meta.oculto(item):
+		return ""
+	var nome := str(item.get("nome", r.id))
+	if str(r.tipo) == "modo":
+		nome = "modo " + nome
+	if str(item.get("efeito", "")) == "pendente":
+		nome += " (sem efeito ainda)"
+	return nome
 
 
 func _texto_ultima(u: Dictionary) -> String:
@@ -380,6 +383,8 @@ func _comprar(id: String) -> void:
 	var n := Meta.nivel(id)
 	if Meta.comprar(id):
 		_avisar("%s: nível %d" % [m.nome, n + 1])
+	elif Meta.erro_save:
+		_avisar("Não foi possível salvar")
 	else:
 		_avisar(_motivo(m))
 	_atualizar()
@@ -413,7 +418,9 @@ func _atualizar_mapa() -> void:
 
 
 func _trocar_mapa() -> void:
-	Mapas.escolher(Mapas.proximo(_mapa_id))
+	if not Mapas.escolher(Mapas.proximo(_mapa_id)):
+		_avisar("Não foi possível salvar")
+		return
 	_atualizar_mapa()
 
 

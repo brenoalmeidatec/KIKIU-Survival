@@ -12,7 +12,10 @@ const Meta := preload("res://v2/meta.gd")
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Resultado := preload("res://v2/resultado_meta.gd")
+const Mapas := preload("res://v2/mapas.gd")
 const SAVE_TESTE := "user://teste_v2_meta.cfg"
+const SAVE_CORRUPTO := "user://teste_v2_meta_corrupto.cfg"
+const SAVE_FALHA := "user://teste_v2_meta_falha.cfg"
 const SAVE_REAL := "user://v2_progresso.cfg"
 
 var falhas := 0
@@ -42,8 +45,14 @@ func _ready() -> void:
 
 
 func _apagar_save() -> void:
-	if FileAccess.file_exists(SAVE_TESTE):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
+	_apagar_caminho(SAVE_TESTE)
+	_apagar_caminho(SAVE_TESTE + ".tmp")
+	_apagar_caminho(SAVE_TESTE + ".bak")
+
+
+func _apagar_caminho(caminho: String) -> void:
+	if FileAccess.file_exists(caminho):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho))
 
 
 func _testes() -> void:
@@ -86,7 +95,7 @@ func _testes() -> void:
 	ok(Meta.comprar("dano"), "compra o 1º nível de dano")
 	Meta.aplicar(m)
 	ok(is_equal_approx(m.heroi.m_dano, 1.06), "aplicar: dano inicial sobe 6%% (%s)" % str(m.heroi.m_dano))
-	ok(m.meta_bonus.has("raridade") and m.meta_bonus.has("rolagem") and m.meta_bonus.has("almas"), "os bônus sem efeito ainda ficam em meta_bonus")
+	ok(m.meta_bonus.has("raridade") and m.meta_bonus.has("rolagem") and m.meta_bonus.has("almas"), "os bônus de raridade, rolagem e almas ficam em meta_bonus")
 	m.queue_free()
 	await get_tree().process_frame
 
@@ -117,8 +126,39 @@ func _testes() -> void:
 	var a = Altar.instantiate()
 	add_child(a)
 	await get_tree().process_frame
-	ok(a._linhas.size() == Meta.melhorias().size(), "uma linha por melhoria no santuário")
+	ok(a._linhas.size() == Meta.melhorias_visiveis().size(), "uma linha por melhoria visível no santuário")
 	ok(a._conq.size() == Meta.conquistas().size(), "uma linha por conquista no santuário")
+	# 6b. item escondido até ter efeito (oculta_ate_ter_efeito): o santuário não mostra o modo nem o visual, e a conquista segue
+	#     na lista sem a recompensa; sem a flag a recompensa volta com "(sem efeito ainda)" (o efeito segue pendente)
+	var modo_pesadelo := Meta.item_da_recompensa({"tipo": "modo", "id": "pesadelo"})
+	var visual_rastro := Meta.item_da_recompensa({"tipo": "visual", "id": "rastro_katana"})
+	ok(Meta.oculto(modo_pesadelo) and Meta.oculto(visual_rastro), "pesadelo e rastro de katana estão marcados como escondidos")
+	ok(
+		not Meta.oculto(Meta.melhoria("raridade")) and not Meta.oculto(Meta.melhoria("rolagem")) and not Meta.oculto(Meta.melhoria("almas")),
+		"raridade, rolagem e almas têm efeito e seguem visíveis"
+	)
+	a._atualizar()
+	ok(
+		a._conq["derrota_chefe"].rec.text == "" and a._conq["combo_50"].rec.text == "",
+		"a recompensa escondida some do santuário (%s / %s)" % [a._conq["derrota_chefe"].rec.text, a._conq["combo_50"].rec.text]
+	)
+	ok(a._conq["combo_50"].nome.text == "Combo de cinquenta", "a conquista com recompensa escondida segue na lista")
+	visual_rastro.erase("oculta_ate_ter_efeito")
+	a._atualizar()
+	ok(
+		a._conq["combo_50"].rec.text == "Libera: Rastro de katana (sem efeito ainda)",
+		"sem a flag o visual volta, com o aviso de efeito pendente (%s)" % a._conq["combo_50"].rec.text
+	)
+	visual_rastro["oculta_ate_ter_efeito"] = true
+	a._atualizar()
+	var mel_vida := Meta.melhoria("vida")
+	mel_vida["oculta_ate_ter_efeito"] = true
+	ok(
+		Meta.melhorias_visiveis().size() == Meta.melhorias().size() - 1 and not Meta.melhorias_visiveis().has(mel_vida),
+		"melhoria marcada sai da lista do santuário e do card"
+	)
+	mel_vida.erase("oculta_ate_ter_efeito")
+	ok(Meta.melhorias_visiveis().size() == Meta.melhorias().size(), "sem a flag a melhoria volta à lista")
 	ok(a._linhas["treino"].botao.disabled and a._linhas["treino"].botao.text == "BLOQUEADA", "o treino aparece bloqueado sem o marco")
 	ok(not a._linhas["vida"].botao.disabled, "vida (liberada) aparece comprável")
 	Meta.creditar(500)
@@ -182,6 +222,76 @@ func _testes() -> void:
 	ok(int(Meta.estado()["ultima"]["tempo"]) == 302, "o resumo da partida é gravado pelo caminho sem sinal")
 	m3.queue_free()
 	await get_tree().process_frame
+
+	# 9. save corrompido recupera o backup e não troca o arquivo corrompido por um save vazio
+	_apagar_caminho(SAVE_CORRUPTO)
+	_apagar_caminho(SAVE_CORRUPTO + ".bak")
+	var arquivo_corrupto := FileAccess.open(SAVE_CORRUPTO, FileAccess.WRITE)
+	arquivo_corrupto.store_string("[moeda\nisto não é um ConfigFile\n")
+	arquivo_corrupto.close()
+	var backup_cfg := ConfigFile.new()
+	backup_cfg.set_value("moeda", "almas", 77)
+	backup_cfg.set_value("melhorias", "vida", 1)
+	ok(backup_cfg.save(SAVE_CORRUPTO + ".bak") == OK, "prepara backup válido do save corrompido")
+	Meta.caminho_save = SAVE_CORRUPTO
+	ok(Meta.saldo() == 77 and Meta.nivel("vida") == 1, "save corrompido recupera saldo e melhoria do .bak")
+	Meta.creditar(10)
+	ok(not Meta.erro_save and Meta.saldo() == 87, "save recuperado aceita gravação mantendo o backup")
+	ok(FileAccess.file_exists(SAVE_CORRUPTO + ".bak"), "a recuperação mantém o .bak disponível")
+
+	# 10. falha ao criar temporário: comprar e registrar_partida propagam falha sem ganho
+	_apagar_caminho(SAVE_FALHA)
+	_apagar_caminho(SAVE_FALHA + ".bak")
+	var inicial := ConfigFile.new()
+	inicial.set_value("moeda", "almas", 100)
+	ok(inicial.save(SAVE_FALHA) == OK, "prepara saldo para simular falha de gravação")
+	var temp_como_pasta := ProjectSettings.globalize_path(SAVE_FALHA + ".tmp")
+	ok(DirAccess.make_dir_recursive_absolute(temp_como_pasta) == OK, "bloqueia o caminho do temporário como pasta")
+	Meta.caminho_save = SAVE_FALHA
+	ok(not Meta.comprar("vida") and Meta.erro_save, "compra devolve falha se não consegue gravar")
+	ok(Meta.saldo() == 100 and Meta.nivel("vida") == 0, "compra que falhou não persiste saldo nem nível")
+	var altar_falha = Altar.instantiate()
+	add_child(altar_falha)
+	await get_tree().process_frame
+	altar_falha._comprar("vida")
+	ok(altar_falha._status.text == "Não foi possível salvar", "o santuário informa falha de gravação em vez de anunciar o nível")
+	altar_falha.queue_free()
+	await get_tree().process_frame
+	ok(Meta.checar_ao_vivo(300.0, 50).is_empty() and Meta.erro_save, "conquista sem gravação não é anunciada como concluída")
+	var r_falha := Meta.registrar_partida({"tempo": 60.0, "abates": 2, "nivel": 2, "maior_combo": 3, "venceu": false, "almas": 50})
+	ok(r_falha.is_empty() and Meta.erro_save, "registrar_partida devolve resultado vazio se não consegue gravar")
+	ok(Meta.saldo() == 100 and Meta.estado().ultima.is_empty(), "partida que falhou não mostra nem persiste almas ou resumo")
+	var mundo_falha = Mundo.instantiate()
+	mundo_falha.modo_teste = true
+	add_child(mundo_falha)
+	var resultado_falha = Resultado.new()
+	resultado_falha.montar(mundo_falha)
+	resultado_falha._terminar({"tempo": 60.0, "abates": 2, "nivel": 2, "maior_combo": 3, "venceu": false, "almas": 50})
+	ok(resultado_falha.aberto and resultado_falha._ganhas == 0, "resultado não anima almas quando o save falha")
+	ok(resultado_falha._almas_tit.text == "NÃO FOI POSSÍVEL SALVAR", "resultado identifica a falha de gravação")
+	mundo_falha.queue_free()
+	await get_tree().process_frame
+
+	# 11. sem backup, corrupção bloqueia gravações e preserva os bytes originais
+	_apagar_caminho(SAVE_CORRUPTO)
+	var sem_backup := FileAccess.open(SAVE_CORRUPTO, FileAccess.WRITE)
+	sem_backup.store_string("[section")
+	sem_backup.close()
+	var conteudo_sem_backup := FileAccess.get_file_as_string(SAVE_CORRUPTO)
+	_apagar_caminho(SAVE_CORRUPTO + ".bak")
+	ok(not FileAccess.file_exists(SAVE_CORRUPTO + ".bak"), "remove o backup antes de testar corrupção sem backup")
+	Meta.caminho_save = SAVE_CORRUPTO
+	Meta.creditar(500)
+	ok(Meta.erro_save, "corrupção sem backup bloqueia a gravação")
+	ok(FileAccess.get_file_as_string(SAVE_CORRUPTO) == conteudo_sem_backup, "corrupção sem backup nunca é substituída por save vazio")
+	ok(not Mapas.escolher("laboratorio") and Meta.erro_save, "escolha de mapa propaga falha no mesmo save")
+	ok(Mapas.escolhido() == Mapas.PADRAO, "falha ao salvar mapa não altera a escolha")
+	Meta.caminho_save = SAVE_TESTE
+	_apagar_caminho(SAVE_CORRUPTO)
+	_apagar_caminho(SAVE_CORRUPTO + ".bak")
+	_apagar_caminho(SAVE_FALHA)
+	_apagar_caminho(SAVE_FALHA + ".bak")
+	DirAccess.remove_absolute(temp_como_pasta)
 
 	# o save real não foi tocado por este teste
 	var md5_depois := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
