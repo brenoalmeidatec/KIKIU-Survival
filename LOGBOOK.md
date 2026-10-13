@@ -1349,3 +1349,10 @@ _Claude do Breno (PC)_
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex com agentes Luna (PC) · splash usa a arte atual
+- **Feito:** o menu já usava a arte nova do PR #215, mas `boot_splash/image` ainda referenciava `assets/icone/entrada.png`. A configuração da inicialização passa a apontar para `assets/titulo/fundo.png`, a mesma arte atual do menu. Nenhuma arte nova nem alteração dos exports.
+- **Testes:** Godot 4.4.1 com import real, `v2_menu` e `entrada_cenas`: código 0, `falhas=0`, sem `SCRIPT ERROR`; imagem configurada existente e referência conferida. Formatação global scripts/testes limpa em commit separado; `git diff --check` limpo.
+- **Pendente / recados:** conferir a abertura na próxima build; nenhuma mudança de combate. Guia atualizado.
+
+_Codex com agentes Luna (PC)_
