@@ -1349,3 +1349,8 @@ _Claude do Breno (PC)_
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 - v2: barra de vida das elites
+- **Feito:** elites ganham uma barra pequena acima da região visual do sprite, calculada com o retângulo, offset e escala do Sprite2D. A barra nasce sob demanda só ao marcar elite, acompanha vida/vida máxima imediatamente ao receber dano, some com vida zero/morte e permanece escondida se o ator voltar ao pool como monstro comum; a mesma instância é reutilizada se virar elite outra vez.
+- **Testes:** `v2_hud falhas=0` (headless), cobrindo posição visual, fração de vida, morte, retorno ao pool como comum e reutilização como elite. Captura com renderer real em `C:\Dev\Breno\analise-kikiu\logs-hud\elite_barra_vida.png`.
+- **Formatação:** `gdformat -l160 --check` nos arquivos alterados.
