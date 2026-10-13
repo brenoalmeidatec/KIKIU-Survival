@@ -27,18 +27,19 @@ static func buscar(id: String) -> Dictionary:
 
 ## O mapa escolhido no santuário (lido do save a cada chamada, como o resto da meta-progressão).
 static func escolhido() -> String:
-	var cf := ConfigFile.new()
-	cf.load(Meta.caminho_save)
-	return str(buscar(str(cf.get_value("config", "mapa", PADRAO))).id)
+	var cf := Meta._ler()
+	return str(buscar(str(cf.get_value("config", "mapa", PADRAO)) if cf != null else PADRAO).id)
 
 
-static func escolher(id: String) -> void:
-	var cf := ConfigFile.new()
-	cf.load(Meta.caminho_save)
+static func escolher(id: String) -> bool:
+	Meta.erro_save = false
+	var cf := Meta._ler()
+	if cf == null:
+		Meta.erro_save = true
+		return false
 	cf.set_value("config", "mapa", str(buscar(id).id))
-	var erro := cf.save(Meta.caminho_save)
-	if erro != OK:
-		push_warning("v2 mapas: não gravou %s (erro %d)" % [Meta.caminho_save, erro])
+	Meta.erro_save = not Meta._gravar(cf)
+	return not Meta.erro_save
 
 
 ## O seguinte da lista (dando a volta), a partir do id dado.
