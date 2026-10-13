@@ -1361,3 +1361,5 @@ _Claude do Breno (PC)_
 _Codex Luna (PC)_
 
 - **Refino do caminho comum:** movimentos curtos usam comprimento ao quadrado e resolvem uma única vez, sem divisão nem laço de subpassos. O benchmark acima descreve a versão anterior com laço de uma iteração; o refino não é uma promessa de FPS. Guia da v2 atualizado.
+
+- **CI / teste de mundo:** a primeira execução do PR falhou em `v2_mundo`: o teste deixava o herói junto de uma forma após a perseguição e esperava deslocamento puro (início 1150,213/443,742; feito 10,249/5,331). A nova resolução intermediária corretamente corrige a colisão. O caso de soma agora encontra um trajeto livre dentro da área andável sem apagar as formas; o clamp é testado separadamente com ator fora do limite. `v2_mundo` passou com código 0, `falhas=0`, sem `SCRIPT ERROR`. Log da falha do CI e diagnóstico preservados.
