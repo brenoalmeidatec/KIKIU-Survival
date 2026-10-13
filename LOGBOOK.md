@@ -1396,3 +1396,10 @@ _Codex LunaPC_
 - **Verificação:** Godot 4.4.1 v2_partida, v2_status e v2_fontes com falhas=0; gdformat -l 160 --check (scripts/testes e fontes alteradas) e git diff --check passaram. Capturas OpenGL do veneno em escala 1× e grade de motivos em 2× ficaram fora do repositório, junto do wrapper local. Runners ainda reportam recursos/RID em uso ao encerrar, sem SCRIPT ERROR. Splash temporário da captura foi restaurado.
 
 _Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 - HUD de habilidades E/Q da v2
+- **Feito:** cards originais E/Q na faixa inferior, lendo apenas o estado real da Ruptura quando o herói o publica. Na main, E fica indisponível; Q fica cinza com “EM BREVE” até existir mecânica. No PR201, os desenhos antigos dos slots ficam transparentes e seus nós/flags permanecem intactos. Layout evita XP e coluna de status.
+- **Testes:** `v2_hud` e teste de integração temporário no checkout `origin/alisson/v2-ruptura`, ambos `falhas=0`; integração verificou prontidão, carga, recarga e transparência dos controles antigos. Capturas OpenGL em `C:\Dev\Breno\analise-kikiu\logs-hud\overwatch_pr201_*.png`.
+- **Pendente:** Q não tem mecânica implementada. Documentação em `docs/v2_hud_habilidades.md`.
+
+_Codex (PC)_
+- **Conferência:** `v2_status` e `v2_esc` na base principal, `v2_escudo`, `v2_ruptura` e a integração real em PR201 sem `SCRIPT ERROR`. Formatação global no escopo obrigatório scripts/testes limpa após commit separado de status; os scripts do adaptador também passam. O projeto inteiro contém outras pendências de formatação alheias, preservadas. Desenho do adaptador revisado por GPT-6.1 Sol leve; nenhuma mecânica nova de Q.

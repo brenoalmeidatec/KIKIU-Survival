@@ -64,3 +64,4 @@ Teste do card: `testes/v2_status.tscn` (imprime `v2_status falhas=0`, uns 35 s):
 
 As elites mostram uma barra de vida acima do sprite. Ela acompanha a vida atual, desaparece na morte e não é herdada por monstros comuns quando o pool reutiliza o ator. O nó é criado apenas para elites e reaproveitado.
 A colisão do cenário verifica o trajeto de movimentos rápidos perto das pegadas, impedindo corrida/esquiva de atravessarem troncos. Movimentos curtos e trechos livres resolvem a posição uma única vez; as copas permanecem atravessáveis. Ao alterar formas do cenário, rode o teste `v2_arvores` com o mapa real importado.
+HUD de habilidades: `hud_habilidades.gd` desenha os cards E/Q e consulta o estado real publicado pelo herói. E aparece indisponível quando não há Ruptura; Q mostra EM BREVE até ganhar mecânica. O adaptador não recebe entrada nem dispara habilidades. Contrato e integração: [HUD de habilidades](../../../../docs/v2_hud_habilidades.md).
