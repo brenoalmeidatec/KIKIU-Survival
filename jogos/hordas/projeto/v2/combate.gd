@@ -6,7 +6,8 @@ extends RefCounted
 ##   passo_tempo(dt_real) -> dt do mundo (0 no hit-stop e na pausa; fração na câmera lenta)
 ##   atualizar(dt_mundo)  -> contato, separação dos monstros, orbes, combo, diretor (tempo do mundo)
 ##   efeitos(dt_real)     -> partículas, números, cortes, luzes (continuam durante o hit-stop)
-## O herói chama golpe_comecou/golpear/esquiva_comecou/heroi_apanhou/heroi_morreu; os orbes chamam coletar.
+## O herói chama golpe_comecou/golpear/esquiva_comecou/heroi_apanhou/heroi_morreu; os orbes chamam coletar. A ruptura (tecla E)
+## (v2/ruptura.gd) é um módulo daqui (`ruptura`): o contragolpe dela entra em golpe_comecou e golpear.
 
 const Efeitos := preload("res://v2/efeitos.gd")
 const Orbes := preload("res://v2/orbes.gd")
@@ -20,6 +21,8 @@ const Avisos := preload("res://v2/avisos.gd")
 const Elites := preload("res://v2/elites.gd")
 const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
+const Ruptura := preload("res://v2/ruptura.gd")
+const Escudo := preload("res://v2/escudo.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
@@ -44,6 +47,8 @@ var avisos  # ataques anunciados no chão
 var elites
 var baus
 var chefes
+var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
+var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
 var fim_emitido := false  # partida_terminou já saiu
 var venceu := false
 
@@ -106,6 +111,10 @@ func montar(m) -> void:
 	telas.montar(self, m.sv)
 	avisos = Avisos.new()
 	avisos.montar(self, m.glow)
+	ruptura = Ruptura.new()
+	ruptura.montar(self, m.glow)
+	escudo = Escudo.new()
+	escudo.montar(self, m.glow)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
@@ -126,6 +135,8 @@ func iniciar_heroi() -> void:
 ## dt do mundo a partir do dt real: hit-stop e pausa travam o mundo; a câmera lenta o desacelera.
 func passo_tempo(dt: float) -> float:
 	if pausado:
+		if mundo.heroi != null:
+			mundo.heroi.cancelar_ruptura(false)  # escolha, baú, morte e resultado: a carga da ruptura não sobrevive (idempotente)
 		return 0.0
 	if parada_t > 0.0:
 		parada_t -= dt
@@ -198,6 +209,7 @@ func atualizar(dt: float) -> void:
 		elites.atualizar(dt)
 		chefes.atualizar(dt)
 		avisos.atualizar(dt)
+		ruptura.atualizar(dt)
 		baus.atualizar(dt)
 	var o0 := Time.get_ticks_usec()
 	orbes.atualizar(dt, h.pos + Vector2(0, -8), h.alcance_ima())
@@ -315,7 +327,7 @@ func _contato(h) -> void:
 		var dy: float = m.pos.y - hp.y
 		if dx * dx + dy * dy > lim * lim:
 			continue
-		if h.levar_dano(m.dano, m.pos):
+		if h.levar_dano(m.dano, m.pos, m):
 			m.recarga = float(cfg.contato.recarga)
 			return  # um golpe por vez: o resto espera a invencibilidade passar
 
@@ -323,6 +335,8 @@ func _contato(h) -> void:
 ## Efeitos visuais no relógio de parede (continuam andando no hit-stop).
 func efeitos(dt: float) -> void:
 	fx.atualizar(dt)
+	ruptura.efeitos(dt)
+	escudo.efeitos(dt)
 	telas.atualizar(dt)
 
 
@@ -390,6 +404,8 @@ func passos_de(nome: String) -> Array:
 
 func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	var cor := _cor(passo.cor)
+	if h.contragolpe_t > 0.0:  # a janela do contragolpe (depois da ruptura): o corte sai alaranjado
+		cor = cor.lerp(Color(1.0, 0.55, 0.2), 0.6)
 	var alc: float = alcance_do_passo(passo)
 	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
@@ -407,6 +423,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 	var n := 0
 	var morreram: Array = []
 	var cor := _cor(passo.cor)
+	var k_contra: float = ruptura.fator_contragolpe(h)  # janela do contragolpe: só o golpe direto da katana ganha (ondas e golpes secundários, não)
 	for m in mundo.monstros:
 		if m.morrendo:
 			continue
@@ -419,7 +436,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		n += 1
 		acertos += 1
 		var crit: bool = randf() < chance_critico()
-		var d: float = dano_do_passo(passo) * (1.0 + randf_range(-float(cfg.golpe.variacao), float(cfg.golpe.variacao)))
+		var d: float = dano_do_passo(passo) * k_contra * (1.0 + randf_range(-float(cfg.golpe.variacao), float(cfg.golpe.variacao)))
 		if crit:
 			d *= float(cfg.golpe.critico.mult)
 			criticos += 1
@@ -721,6 +738,8 @@ func limpar_partida() -> void:
 	orbes.limpar()
 	armas.limpar()
 	avisos.limpar()
+	ruptura.limpar()
+	escudo.limpar()
 	baus.limpar()
 	elites.zerar()
 	chefes.zerar()
@@ -749,7 +768,7 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, avisos, elites, baus, chefes]:
+	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, avisos, ruptura, escudo, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -763,6 +782,8 @@ func liberar() -> void:
 	cartas = null
 	armas = null
 	avisos = null
+	ruptura = null
+	escudo = null
 	elites = null
 	baus = null
 	chefes = null
