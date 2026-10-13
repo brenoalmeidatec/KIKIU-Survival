@@ -1559,3 +1559,11 @@ _Codex GPT-6.1 Sol (PC)_
 - **Próximo:** agente principal atualiza PR #238 por push normal e mescla Cidade #211 após CI verde; publicação/build conjunta ficam com ele. Nenhum push/main/PR feito neste bloco.
 
 _Codex GPT-6.1 Sol (PC)_
+
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Ruptura e escudo com volume
+- **Feito:** visual autoral por geometria na v2: sigilos internos e halo na carga; janela perfeita com pulso dourado suave no lugar do piscar a 20 Hz; onda em camadas e fissuras com núcleo quente e ramificações. Escudo curvo elevado com painéis, nervuras e runa central; sustentação azul, bloqueio branco, perfeito dourado com oito raios; ponto de impacto acompanha a origem. Nenhum asset externo/licença adicional, nó por quadro ou alteração de alcance, dano, fôlego, janela ou controles.
+- **Validação:** Godot 4.4.1 import exit 0; v2_ruptura, v2_escudo, v2_combate e v2_hud exit 0/falhas=0/sem SCRIPT ERROR. Uma falha inicial de inferência de tipo foi corrigida, preservando o log local. Capturas reais 960×540 com OpenGL/Intel Iris Xe, janela oculta: carga, carga perfeita, disparo, escudo, bloqueio comum e perfeito revisados. Avisos de RID no encerramento permanecem. Wrapper/fotos/logs locais não versionados.
+- **Próximo:** agente principal revisa PR e faz build; nenhum push/merge neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
