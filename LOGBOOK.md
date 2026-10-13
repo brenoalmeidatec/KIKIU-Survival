@@ -1343,6 +1343,13 @@ _Claude do Alisson (PC)_
 
 _Claude do Breno (PC)_
 
+## 2026-10-13 - HUD de habilidades E/Q da v2
+- **Feito:** cards originais E/Q na faixa inferior, lendo apenas o estado real da Ruptura quando o herói o publica. Na main, E fica indisponível; Q fica cinza com “EM BREVE” até existir mecânica. No PR201, os desenhos antigos dos slots ficam transparentes e seus nós/flags permanecem intactos. Layout evita XP e coluna de status.
+- **Testes:** `v2_hud` e teste de integração temporário no checkout `origin/alisson/v2-ruptura`, ambos `falhas=0`; integração verificou prontidão, carga, recarga e transparência dos controles antigos. Capturas OpenGL em `C:\Dev\Breno\analise-kikiu\logs-hud\overwatch_pr201_*.png`.
+- **Pendente:** Q não tem mecânica implementada. Documentação em `docs/v2_hud_habilidades.md`.
+
+_Codex (PC)_
+
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
 - **Feito:** o card da v2 (pausa, painel central e HUD) deixou de cortar os golpes quando a build passa do que cabe. Na página visual da pausa e no painel central os golpes ganham páginas: quantos cabem sai da altura da coluna (sem número fixo), a última linha diz "Página X/Y · Q E", e Q e E trocam de página (pela entrada da pausa e do painel central). No HUD o compacto mostra o que cabe e o pé diz "+N golpes" (escolhido por ser o mais leve: sem troca automática de página). Golpe com nome longo e sem `curto` corta com "." no HUD, em vez de estourar a coluna. Com um golpe só não há paginação.
 - **Testes:** `v2_status` com `falhas=0` (novo bloco `_paginacao`: 50 golpes no HUD, na pausa e no painel central). Prints com os 50 golpes em `status_hud_50_golpes` e `status_pausa_50_golpes`.
