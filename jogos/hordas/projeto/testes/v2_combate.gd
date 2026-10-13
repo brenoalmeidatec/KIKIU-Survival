@@ -73,6 +73,28 @@ func _ready() -> void:
 	ok(w.has_signal("nivel_subiu"), "sinal nivel_subiu(nivel)")
 	ok(w.monstros_vivos == w.monstros.size() and w.monstros.size() == 20, "monstros_vivos = 20 no começo")
 
+	# Uma colisão da tabela não pode percorrer duas vezes o mesmo monstro. As células (2,7) e (4,9)
+	# têm o mesmo hash; só a primeira contém um vizinho que encosta no ator em (3,8).
+	var lista_original: Array = w.monstros
+	var ator_grade = lista_original[0]
+	var vizinho_grade = lista_original[1]
+	var pos_ator_original: Vector2 = ator_grade.pos
+	var pos_vizinho_original: Vector2 = vizinho_grade.pos
+	ator_grade.definir_pos(Vector2(84, 214))
+	vizinho_grade.definir_pos(Vector2(73, 203))
+	w.monstros = [ator_grade, vizinho_grade]
+	w.combate._q = 0
+	w.combate._separar()
+	var delta_grade: Vector2 = ator_grade.pos - vizinho_grade.pos
+	var lim_grade: float = (ator_grade.raio + vizinho_grade.raio) * 1.15
+	var sep_esperada := delta_grade.normalized() * (lim_grade - delta_grade.length()) * 14.0
+	ok(ator_grade.sep.distance_to(sep_esperada) < 0.01, "a colisão de hash não duplica a força da separação (%s)" % str(ator_grade.sep))
+	w.combate._separar()
+	ok(ator_grade.sep.distance_to(sep_esperada) < 0.01, "a consulta reutiliza o cache sem duplicar a força")
+	w.monstros = lista_original
+	ator_grade.definir_pos(pos_ator_original)
+	vizinho_grade.definir_pos(pos_vizinho_original)
+
 	# 1. sem clique não sai golpe
 	zerar()
 	var m1 = monstro_a(30)

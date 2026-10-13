@@ -71,6 +71,12 @@ var ferimentos := 0  # golpes secundários que feriram (testes)
 var us_armas := 0  # microssegundos gastos em armas.atualizar (medição)
 var _cab := PackedInt32Array()  # grade de separação: primeira entrada de cada célula (hash)
 var _prox := PackedInt32Array()  # próximo monstro na mesma célula
+# Hashes vizinhos únicos por célula. Vetores reutilizados: só recalcula ao mudar de célula/alcance.
+var _cache_x := PackedInt32Array()
+var _cache_y := PackedInt32Array()
+var _cache_alcance := PackedInt32Array()
+var _cache_n := PackedInt32Array()
+var _cache_hash := PackedInt32Array()  # 49 posições por ator (alcance máximo de 3 células)
 var _pos := PackedVector2Array()
 var _rad := PackedFloat32Array()
 var _grandes: Array[int] = []
@@ -213,6 +219,11 @@ func _separar() -> void:
 		_pos.resize(n + 64)
 		_rad.resize(n + 64)
 		_prox.resize(n + 64)
+		_cache_x.resize(n + 64)
+		_cache_y.resize(n + 64)
+		_cache_alcance.resize(n + 64)
+		_cache_n.resize(n + 64)
+		_cache_hash.resize((n + 64) * 49)
 	_grandes.clear()
 	for i in n:
 		var m = ms[i]
@@ -240,21 +251,38 @@ func _separar() -> void:
 		var cx := int(p.x / CEL)
 		var cy := int(p.y / CEL)
 		var alcance := 1 if r <= RAIO_GRANDE else 3  # os grandes olham mais longe na grade
-		for dx in range(-alcance, alcance + 1):
-			for dy in range(-alcance, alcance + 1):
-				var j: int = _cab[(((cx + dx) * 73856093) ^ ((cy + dy) * 19349663)) & (GRADE_N - 1)]
-				while j >= 0:
-					if j != k:
-						var d := p - _pos[j]
-						var lim := (r + _rad[j]) * 1.15
-						var d2 := d.length_squared()
-						if d2 < lim * lim:
-							if d2 < 0.01:
-								d = Vector2(randf() - 0.5, randf() - 0.5)
-								d2 = d.length_squared()
-							var dist := sqrt(d2)
-							empurra += d / dist * (lim - dist)
-					j = _prox[j]
+		var desloc := k * 49
+		if _cache_alcance[k] != alcance or _cache_x[k] != cx or _cache_y[k] != cy:
+			var qtd := 0
+			for dx in range(-alcance, alcance + 1):
+				for dy in range(-alcance, alcance + 1):
+					var hash_cel := (((cx + dx) * 73856093) ^ ((cy + dy) * 19349663)) & (GRADE_N - 1)
+					var repetido := false
+					for q in qtd:
+						if _cache_hash[desloc + q] == hash_cel:
+							repetido = true
+							break
+					if not repetido:
+						_cache_hash[desloc + qtd] = hash_cel
+						qtd += 1
+			_cache_n[k] = qtd
+			_cache_x[k] = cx
+			_cache_y[k] = cy
+			_cache_alcance[k] = alcance
+		for q in _cache_n[k]:
+			var j: int = _cab[_cache_hash[desloc + q]]
+			while j >= 0:
+				if j != k:
+					var d := p - _pos[j]
+					var lim := (r + _rad[j]) * 1.15
+					var d2 := d.length_squared()
+					if d2 < lim * lim:
+						if d2 < 0.01:
+							d = Vector2(randf() - 0.5, randf() - 0.5)
+							d2 = d.length_squared()
+						var dist := sqrt(d2)
+						empurra += d / dist * (lim - dist)
+				j = _prox[j]
 		for j in _grandes:
 			if j == k:
 				continue
