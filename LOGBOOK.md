@@ -1360,3 +1360,10 @@ _Claude do Breno (PC)_
 _Codex LunaPC_
 
 - **Ajuste da conferência:** o roteiro de foto foi retirado de `testes/` e preservado como ferramenta local, pois aguardar `frame_post_draw` sem renderer trava a execução headless. Ele não é teste funcional nem participa do CI. Os testes de dano/feedback permanecem em `v2_partida`; rótulos pertencem somente à demonstração. A formatação global scripts/testes exige o commit separado de `v2_status` da main.
+
+## 2026-10-13 · Névoas com volume legível e carta espectral dentro do limite
+- **Visual:** veneno tem véus verdes claros irregulares sobrepostos, dobras sombreadas, deriva e entrada/saída suave. Espectros, bruma com cristais, sono lilás, cinzas densas, cortina de sangue, chuva ácida e esporos preservam motivos próprios. Textura procedural compartilhada criada uma vez; nó de fumaça criado na montagem, sem mistura aditiva, sem nós ou dicionários novos por desenho. Pool permanece em 48; mecânica de dano, raio, tique e duração não mudou.
+- **Carta e CI:** a descrição espectral anterior media 64 px no espaço de 54 px. A nova frase “Névoa com espectros que ferem quem fica nela.” mede 48 px; o critério de v2_fontes foi preservado.
+- **Verificação:** Godot 4.4.1 v2_partida, v2_status e v2_fontes com falhas=0; gdformat -l 160 --check (scripts/testes e fontes alteradas) e git diff --check passaram. Capturas OpenGL do veneno em escala 1× e grade de motivos em 2× ficaram fora do repositório, junto do wrapper local. Runners ainda reportam recursos/RID em uso ao encerrar, sem SCRIPT ERROR. Splash temporário da captura foi restaurado.
+
+_Codex GPT-6.1 Sol (PC)_

@@ -12,6 +12,7 @@ extends RefCounted
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (igual ao armas.gd)
 const MAX := 48
 const RAIO_PROJ := 10.0
+static var _tex_fumaca: Texture2D
 
 var pai  # v2/armas.gd
 var itens: Array = []  # o pool: cada slot é um dicionário fixo; vida <= 0 é livre
@@ -316,7 +317,7 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				var dir: Vector2 = (it.v as Vector2).normalized()
 				_desenhar_projetil(ci, it, tex, cor, p, dir)
 			"nuvem":
-				_desenhar_nuvem(ci, it, st, cor, p)
+				_desenhar_pulso_nuvem(ci, it, st, p)
 			"anel":
 				var r := float(it.r)
 				var fade_a := clampf(1.0 - r / float(st.raio), 0.0, 1.0)
@@ -350,6 +351,13 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				if str(a.id) == "fantasma_mata" or str(a.id) == "lobo_espirito":
 					ci.draw_circle(sobe + Vector2(-2, -2), 0.8, Color(0.18, 0.2, 0.35, alfa))
 					ci.draw_circle(sobe + Vector2(2, -2), 0.8, Color(0.18, 0.2, 0.35, alfa))
+
+
+func desenhar_corpo(ci: CanvasItem, tex: Texture2D) -> void:
+	for it in itens:
+		if float(it.vida) <= 0.0 or str(it.k) != "nuvem":
+			continue
+		_desenhar_nuvem(ci, it, it.a.st, it.a.cor, tex, (it.p as Vector2).round())
 
 
 # ------------------------------------------------------------------ auxiliares
@@ -447,49 +455,70 @@ func _novo(k: String, a: Dictionary, p: Vector2, vida: float) -> Dictionary:
 	return it
 
 
-## Áreas baixas e espíritos suspensos usam motivos próprios por arma. Primitivas leves, sem partículas nem nós por golpe.
-func _desenhar_nuvem(ci: CanvasItem, it: Dictionary, st: Dictionary, cor: Color, p: Vector2) -> void:
+## Fumaça translúcida em camadas usa uma textura irregular criada uma vez; sem partículas nem nós por golpe.
+func _desenhar_nuvem(ci: CanvasItem, it: Dictionary, st: Dictionary, cor: Color, tex: Texture2D, p: Vector2) -> void:
 	var vida := float(it.vida)
 	var duracao := float(st.duracao)
 	var fade := opacidade_nuvem(vida, duracao)
 	var fase := float(it.fase)
 	var r := float(it.r)
-	var pulso := clampf(float(it.pulso), 0.0, 1.0)
-	# Se a arma já ganhou sprite no índice, ele fornece o corpo e o motivo; aqui fica só o anel de confirmação.
-	var sprite: Dictionary = it.get("sp", {})
-	if not sprite.is_empty():
-		if pulso > 0.0:
-			ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
-			ci.draw_arc(Vector2.ZERO, r * (0.58 + (1.0 - pulso) * 0.3), 0.0, TAU, 32, Color(1.0, 0.98, 0.9, 0.7 * pulso * fade), 2.0 + pulso)
-			ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		return
-	var respirar := 0.94 + 0.06 * sin(fase * 0.8)
-	# Volume de chão com borda tênue: ajuda a ler o alcance sem virar uma poça opaca.
-	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
-	ci.draw_circle(Vector2.ZERO, r * respirar, Color(cor.r * 0.8, cor.g * 0.9, cor.b, 0.12 * fade))
-	ci.draw_arc(Vector2.ZERO, r * respirar, 0.12, TAU - 0.12, 40, Color(cor.r, cor.g, cor.b, 0.38 * fade), 1.5)
-	ci.draw_circle(Vector2.ZERO, r * 0.42, Color(cor.r, cor.g, cor.b, (0.12 + 0.12 * pulso) * fade))
-	if pulso > 0.0:
-		var raio_pulso := r * (0.48 + (1.0 - pulso) * 0.3)
-		ci.draw_arc(Vector2.ZERO, raio_pulso, 0.0, TAU, 32, Color(1.0, 0.98, 0.9, 0.7 * pulso * fade), 2.0 + pulso)
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
 	var id := str(it.a.get("id", ""))
+	# O sprite opcional de arma entra como base discreta; os volumes e motivos continuam ativos com ou sem ele.
+	var sprite = it.get("sp")
+	if sprite != null and not sprite.is_empty():
+		var tam: Vector2 = sprite.tam
+		var altura := r * 2.0 * tam.y / tam.x
+		ci.draw_texture_rect(
+			sprite.tex, Rect2((p - Vector2(r, altura * 0.5)).round(), Vector2(r * 2.0, altura).round()), false, Color(cor.r, cor.g, cor.b, 0.18 * fade)
+		)
+	var respirar := 0.96 + 0.04 * sin(fase * 0.8)
+	# Só um brilho oval suave marca o alcance; o corpo principal fica suspenso como fumaça.
+	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
+	ci.draw_texture_rect(tex, Rect2(-r * respirar, -r * 0.72, r * 2.0 * respirar, r * 1.44), false, Color(cor.r, cor.g, cor.b, 0.10 * fade))
+	ci.draw_arc(Vector2.ZERO, r * respirar, 0.1, TAU - 0.1, 40, Color(cor.r, cor.g, cor.b, 0.09 * fade), 1.1)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	match motivo_nuvem(id):
 		"espectros":
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.72, 0.9, 1.0), 6, 32.0, 1.16, 0.62)
 			_desenhar_espiritos(ci, p, fase, fade, true, cor)
 		"sono":
-			_desenhar_espiritos(ci, p, fase, fade, false, cor)
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.72, 0.54, 1.0), 6, 30.0, 1.20, 0.62)
+			_desenhar_sonolenta(ci, p, fase, fade)
 		"sangue":
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.72, 0.035, 0.08), 5, 38.0, 0.92, 0.58, 0.96)
 			_desenhar_sangue(ci, p, fase, fade, cor)
 		"bolhas":
-			_desenhar_bolhas(ci, p, fase, fade, cor)
+			if id == "nuvem_espora":
+				_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.7, 0.5, 0.24), 5, 22.0, 0.92, 0.50)
+				_desenhar_esporos(ci, p, fase, fade)
+			elif id == "chuva_acida":
+				_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.72, 0.75, 0.2), 5, 27.0, 1.08, 0.56)
+				_desenhar_chuva_acida(ci, p, fase, fade)
+			else:
+				_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.72, 0.91, 0.42), 9, 46.0, 1.65, 0.9, 0.68)
+				_desenhar_bolhas(ci, p, fase, fade, cor)
 		"cristais":
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.53, 0.82, 1.0), 6, 28.0, 1.12, 0.62)
 			_desenhar_cristais(ci, p, fase, fade, cor)
+			if id == "nevasca":
+				_desenhar_neve(ci, p, fase, fade)
 		"brasas":
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.37, 0.4, 0.44), 7, 32.0, 1.35, 0.72)
 			_desenhar_brasa(ci, p, fase, fade, cor)
 		_:
-			_desenhar_fumaca(ci, p, fase, fade, cor)
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, cor, 5, 24.0, 0.76, 0.28)
+
+
+func _desenhar_pulso_nuvem(ci: CanvasItem, it: Dictionary, st: Dictionary, p: Vector2) -> void:
+	var pulso := clampf(float(it.pulso), 0.0, 1.0)
+	if pulso <= 0.0:
+		return
+	var fade := opacidade_nuvem(float(it.vida), float(st.duracao))
+	var r := float(it.r)
+	var raio_pulso := r * (0.55 + (1.0 - pulso) * 0.28)
+	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
+	ci.draw_arc(Vector2.ZERO, raio_pulso, 0.0, TAU, 32, Color(1.0, 0.98, 0.9, 0.62 * pulso * fade), 1.5 + pulso)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 static func motivo_nuvem(id: String) -> String:
@@ -533,11 +562,97 @@ func _desenhar_espiritos(ci: CanvasItem, p: Vector2, fase: float, fade: float, e
 
 
 func _desenhar_bolhas(ci: CanvasItem, p: Vector2, fase: float, fade: float, cor: Color) -> void:
-	for n in 6:
-		var q := (p + Vector2(sin(fase * 0.7 + n * 2.1) * (11.0 + n), -6.0 - fposmod(fase * 4.0 + n * 7.0, 24.0))).round()
-		var raio := 1.5 + float(n % 3) * 0.55
+	for n in 4:
+		var q := (p + Vector2(sin(fase * 0.7 + n * 2.1) * (15.0 + n * 2.0), -8.0 - fposmod(fase * 4.0 + n * 7.0, 35.0))).round()
+		var raio := 1.8 + float(n % 2) * 0.8
 		ci.draw_circle(q, raio + 1.0, Color(cor.r, cor.g, cor.b, 0.2 * fade))
 		ci.draw_arc(q, raio, 0.0, TAU, 8, Color(0.9, 1.0, 0.72, 0.68 * fade), 1.0)
+
+
+func _desenhar_volume_nuvem(
+	ci: CanvasItem,
+	tex: Texture2D,
+	p: Vector2,
+	r: float,
+	fase: float,
+	fade: float,
+	cor: Color,
+	quantidade: int,
+	altura: float,
+	largura: float,
+	alfa: float,
+	aspecto: float = 0.64
+) -> void:
+	for n in quantidade:
+		var u := float(n) / float(maxi(1, quantidade - 1))
+		var oscilacao := sin(fase * (0.52 + float(n % 3) * 0.08) + float(n) * 1.9)
+		var x := (u - 0.5) * r * 1.16 + oscilacao * r * 0.09
+		var faixa := float(n % 3)
+		var y := -6.0 - faixa * (altura / 3.0) - oscilacao * 3.5
+		var escala := 0.78 + faixa * 0.1 + 0.05 * sin(fase * 0.7 + float(n))
+		var w := r * largura * escala * (0.86 + 0.14 * sin(float(n) * 2.37))
+		var h := maxf(12.0, w * aspecto * (0.86 + 0.16 * cos(float(n) * 1.73)))
+		var centro := (p + Vector2(x, y)).round()
+		var camada := Color(cor.r, cor.g, cor.b, alfa * fade * (0.86 + 0.14 * sin(fase + float(n))))
+		var area := Rect2(centro - Vector2(w, h) * 0.5, Vector2(w, h))
+		# Sombra fria nas dobras dá volume e separa o vapor do piso iluminado.
+		ci.draw_texture_rect(
+			_textura_fumaca(), Rect2(area.position + Vector2(2.0, 4.0), area.size), false, Color(cor.r * 0.20, cor.g * 0.28, cor.b * 0.20, alfa * fade * 0.52)
+		)
+		ci.draw_texture_rect(_textura_fumaca(), area, false, camada)
+
+
+static func _textura_fumaca() -> Texture2D:
+	if _tex_fumaca != null:
+		return _tex_fumaca
+	var imagem := Image.create(64, 40, false, Image.FORMAT_RGBA8)
+	for y in 40:
+		for x in 64:
+			var nx := (float(x) + 0.5) / 32.0 - 1.0
+			var ny := (float(y) + 0.5) / 20.0 - 1.0
+			var dist := sqrt(nx * nx * 0.72 + ny * ny * 1.55)
+			var borda := 0.72 + 0.12 * sin(float(x) * 0.31 + float(y) * 0.17) + 0.08 * sin(float(x) * 0.13 - float(y) * 0.39)
+			var alfa := (1.0 - smoothstep(0.28, borda, dist)) * (0.72 + 0.28 * sin(float(x) * 0.21 + float(y) * 0.27))
+			imagem.set_pixel(x, y, Color(1.0, 1.0, 1.0, clampf(alfa, 0.0, 1.0)))
+	_tex_fumaca = ImageTexture.create_from_image(imagem)
+	return _tex_fumaca
+
+
+func _desenhar_sonolenta(ci: CanvasItem, p: Vector2, fase: float, fade: float) -> void:
+	for n in 2:
+		var x := roundf(cos(fase * 0.35 + float(n) * PI) * 15.0 + float(n) * 4.0)
+		var y := roundf(-15.0 - fposmod(fase * 2.2 + float(n) * 12.0, 23.0))
+		var origem := p + Vector2(x, y)
+		var al := 0.62 * fade
+		ci.draw_line(origem, origem + Vector2(4, 0), Color(0.93, 0.84, 1.0, al), 1.4)
+		ci.draw_line(origem + Vector2(4, 0), origem + Vector2(1, 3), Color(0.93, 0.84, 1.0, al), 1.4)
+		ci.draw_line(origem + Vector2(1, 3), origem + Vector2(5, 3), Color(0.93, 0.84, 1.0, al), 1.4)
+
+
+func _desenhar_esporos(ci: CanvasItem, p: Vector2, fase: float, fade: float) -> void:
+	for n in 6:
+		var ang := fase * 0.2 + TAU * float(n) / 6.0
+		var q := (p + Vector2(cos(ang) * (10.0 + float(n % 3) * 7.0), -8.0 + sin(ang * 1.5) * 12.0)).round()
+		ci.draw_circle(q, 1.5, Color(0.95, 0.78, 0.35, 0.62 * fade))
+		ci.draw_line(q, q + Vector2(0.0, 3.0), Color(0.92, 0.66, 0.24, 0.42 * fade), 1.0)
+
+
+func _desenhar_chuva_acida(ci: CanvasItem, p: Vector2, fase: float, fade: float) -> void:
+	for n in 5:
+		var x := sin(float(n) * 3.1 + fase * 0.18) * 29.0
+		var y := -34.0 + fposmod(fase * 18.0 + float(n) * 13.0, 34.0)
+		var q := (p + Vector2(x, y)).round()
+		ci.draw_line(q + Vector2(-1, -4), q + Vector2(1, 3), Color(0.85, 0.95, 0.3, 0.75 * fade), 2.0)
+		ci.draw_circle(q + Vector2(1, 3), 1.6, Color(0.94, 1.0, 0.42, 0.6 * fade))
+
+
+func _desenhar_neve(ci: CanvasItem, p: Vector2, fase: float, fade: float) -> void:
+	for n in 5:
+		var x := cos(fase * 0.12 + float(n) * 1.8) * (9.0 + float(n) * 4.0)
+		var y := -25.0 + fposmod(fase * 3.4 + float(n) * 9.0, 27.0)
+		var q := (p + Vector2(x, y)).round()
+		ci.draw_line(q + Vector2(-2, 0), q + Vector2(2, 0), Color(1, 1, 1, 0.65 * fade), 1.0)
+		ci.draw_line(q + Vector2(0, -2), q + Vector2(0, 2), Color(1, 1, 1, 0.65 * fade), 1.0)
 
 
 func _desenhar_cristais(ci: CanvasItem, p: Vector2, fase: float, fade: float, cor: Color) -> void:
@@ -565,14 +680,6 @@ func _desenhar_sangue(ci: CanvasItem, p: Vector2, fase: float, fade: float, cor:
 		var gota := Vector2(1.2, 3.4)
 		ci.draw_line(q - gota, q + gota, Color(cor.r, cor.g * 0.5, cor.b * 0.5, 0.65 * fade), 2.0)
 		ci.draw_circle(q - gota, 1.3, Color(cor.r, cor.g * 0.45, cor.b * 0.45, 0.62 * fade))
-
-
-func _desenhar_fumaca(ci: CanvasItem, p: Vector2, fase: float, fade: float, cor: Color) -> void:
-	for n in 3:
-		var deslocamento := Vector2(float(n - 1) * 9.0 + sin(fase + n) * 2.0, -10.0 - sin(fase * 0.7 + n * 2.0) * 5.0)
-		var q := (p + deslocamento).round()
-		ci.draw_arc(q, 5.0 + float(n), PI * 1.05, TAU * 0.95, 12, Color(cor.r, cor.g, cor.b, 0.34 * fade), 2.0)
-		ci.draw_arc(q + Vector2(0, -5), 3.5, PI, TAU * 0.9, 10, Color(0.9, 0.86, 1.0, 0.42 * fade), 1.0)
 
 
 ## Dano do golpe com o multiplicador de dano do herói (o mesmo que os corvos usam).
