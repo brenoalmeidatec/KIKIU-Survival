@@ -1342,3 +1342,10 @@ _Claude do Alisson (PC)_
 - **Pendente:** olhar o print num monitor real (PC e notebook): a dica é pequena e o print é 1280x720.
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · CI da Release exige testes verdes no mesmo SHA
+- **Feito:** `ci.yml` pode ser chamado como workflow reutilizável; `release.yml` chama esse CI e `publicar` espera o CI e os dois jobs de exportação. O workflow reutilizável e os `actions/checkout` usam o SHA do evento da Release.
+- **Exports:** Linux, Web e Windows mantidos intactos; importação continua com `|| true` por causa do segfault conhecido no encerramento.
+- **Verificação:** YAML parseado; dependência de `publicar`, chamada local e caminho do workflow conferidos. Não rodei Godot para evitar concorrência com os testes nas outras branches.
+
+_Codex Luna (PC)_
