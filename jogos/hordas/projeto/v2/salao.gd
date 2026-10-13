@@ -93,6 +93,7 @@ func _ready() -> void:
 		return
 	_ajustar_janela()
 	set_anchors_preset(PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE  # a sala recebe o clique em _unhandled_input (andar até um alvo), não a tela inteira
 	_carregar_dados()
 	_sprite = load(SPRITE + "_albedo.png") as Texture2D
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(SPRITE + ".json"))
@@ -268,7 +269,7 @@ func _montar_hud() -> void:
 		_saldo_lbl,
 		_prompt,
 		_aviso_lbl,
-		_rotulo(DICA, Dados.fonte_texto, 16, COR_APAGADO, Rect2(0, ALT - 30, LARG - 200, 22), HORIZONTAL_ALIGNMENT_LEFT)
+		_rotulo(DICA, Dados.fonte_texto, 16, COR_APAGADO, Rect2(24, ALT - 30, LARG - 240, 22), HORIZONTAL_ALIGNMENT_LEFT)
 	]:
 		add_child(l)
 	var ajustes := Button.new()
@@ -584,6 +585,8 @@ func comprar_item(id: String) -> bool:
 
 
 func _comprar_atual() -> void:
+	if _p_itens.is_empty():
+		return
 	var m: Dictionary = _p_itens[_p_atual]
 	if comprar_item(str(m.id)):
 		_p_aviso.text = "Comprado: %s" % m.nome

@@ -1583,3 +1583,14 @@ _Codex GPT-6.1 Sol (PC)_
 - **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
 
 _Claude (PC do Breno, via Remote Control)_
+
+## Salão do personagem (2026-10-13)
+- **Feito:** cada personagem tem o próprio santuário (almas, melhorias, conquistas e o último mapa) em `user://v2_personagem_<id>.cfg`. O save antigo (`v2_progresso.cfg`) vira o primeiro personagem na primeira abertura, sem apagar nada (o arquivo antigo fica como está). Fluxo novo: JOGAR → escolha de personagem (`v2/personagens_tela.gd`) → salão (`v2/salao.gd`) → portal → partida. Morte e vitória voltam ao salão. O salão tem três estruturas: ESTÁTUAS (vida, dano, velocidade, fôlego, treino), ALTAR (ímã, almas, raridade, rolagem) e CÓDICE (conquistas, só leitura). O painel mostra nome, nível, efeito atual → próximo, custo e saldo; DETALHES mostra o efeito no nível máximo. Os valores e custos de `dados/v2_meta.json` não mudaram.
+- **Decisões padrão (não pedidas com detalhe):** o personagem novo escolhe um nome da lista de amigos (`dados/v2_salao.json`), não digita; o retrato é o `rosto.png` do amigo (Breno não tem pasta, então usa o quadro do herói); a figura andando no salão é o samurai, porque é o único sprite de herói que a v2 tem; nenhum mapa começa travado (o mecanismo de `requer` em `v2/mapas.gd` existe e foi testado, mas nenhum mapa usa).
+- **Não feito / pendente:** `v2/altar.gd` ficou sem uso no fluxo (só `testes/v2_meta` ainda abre `altar.tscn`); o próximo passo é portar esse teste para o salão e apagar o santuário antigo. Arte: as estruturas, portais, piso, parede e tochas são formas desenhadas em código; a lista e os prompts para o GPT Astra estão em `docs/ux_salao/ARTE_PARA_ALISSON.md`.
+- **Fps (medido nesta máquina, janela 1280x720):** salão parado 43 fps, andando 45 fps; partida 23 fps (`testes/bench_salao.tscn`, o fluxo inteiro com os prints em `docs/ux_salao/prints/`).
+- **Testes:** `v2_salao` falhas=0 (novo); `v2_menu` e `v2_morte` falhas=0 (ajustados para o novo destino de JOGAR e da volta à partida). Falham aqui também no commit base `9937210`, sem nenhuma mudança deste PR: `v2_desempenho`, `v2_mundo`, `transformacao`, `golpes`, `cartas_comp`.
+- **Para o Claude do Alisson:** este PR não mexe nos arquivos de arte dele nem em `v2/heroi.gd`, `v2/horda.gd`, `v2/status.gd` nem na paleta (#217). As cores estão centralizadas em `COR_*` no topo de `v2/salao.gd` e `v2/personagens_tela.gd`.
+- **Para testar:** JOGAR → criar um personagem → clicar em ESTÁTUAS (ele anda até lá) → COMPRAR → ESC → clicar no portal da FLORESTA → morrer ou abandonar pela pausa → CONTINUAR. As almas da partida têm que aparecer no salão.
+
+_Claude (PC do Breno, via Remote Control)_

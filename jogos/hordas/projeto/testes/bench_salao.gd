@@ -1,7 +1,7 @@
 extends Node
 # Bench do fluxo do personagem (título → escolha → salão → compra → portal → partida → morte → salão) e do fps no salão. Não entra
 # na bateria do CI (bench_*). Precisa de janela (não --headless), porque grava as telas e mede o quadro de verdade.
-# Roda: godot --path jogos/hordas/projeto res://testes/bench_salao.tscn -- --fotos=PASTA
+# Roda: godot --path jogos/hordas/projeto res://testes/bench_salao.tscn -- --prints=PASTA
 # A navegação usa entradas de verdade (ações de teclado e cliques do mouse, pelo Input). Só o clique que anda até uma estrutura
 # e a morte da partida (combate.abandonar, o mesmo caminho do "Voltar ao santuário" da pausa) são disparados pelo código.
 # Imprime fps_salao_parado e fps_salao_andando, e grava PNGs (só o viewport) em PASTA.
@@ -27,16 +27,18 @@ func _ready() -> void:
 	Personagens.caminho_indice = "user://bench_salao_personagens.cfg"
 	Personagens.caminho_antigo = "user://bench_salao_antigo.cfg"
 	for a in OS.get_cmdline_user_args():
-		if a.begins_with("--fotos="):
-			_pasta = a.trim_prefix("--fotos=")
+		if a.begins_with("--prints="):
+			_pasta = a.trim_prefix("--prints=")
 	_limpar()
 	_correr()
 
 
 func _limpar() -> void:
-	for f in ["user://bench_salao_personagens.cfg"] + range(1, 4).map(func(i): return Personagens.caminho_do_save("p%d" % i)):
-		if FileAccess.file_exists(f):
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
+	# apaga os saves de bench anteriores (personagens e meta), para cada execução começar do zero
+	var dir := DirAccess.open("user://")
+	for arquivo in dir.get_files():
+		if arquivo.begins_with("bench_salao"):
+			dir.remove(arquivo)
 	Meta.caminho_save = "user://bench_salao_meta.cfg"
 
 
@@ -111,18 +113,20 @@ func _tecla(acao: String) -> void:
 	await get_tree().process_frame
 
 
+## Clique em `pos`, dado em coordenadas da sala (960x540); o evento vai em pixels da janela, que podem ser maiores.
 func _clicar(pos: Vector2) -> void:
+	var janela := Vector2(DisplayServer.window_get_size()) * pos / Vector2(960, 540)
 	var e := InputEventMouseButton.new()
 	e.button_index = MOUSE_BUTTON_LEFT
-	e.position = pos
-	e.global_position = pos
+	e.position = janela
+	e.global_position = janela
 	e.pressed = true
 	Input.parse_input_event(e)
 	await get_tree().process_frame
 	var s := InputEventMouseButton.new()
 	s.button_index = MOUSE_BUTTON_LEFT
-	s.position = pos
-	s.global_position = pos
+	s.position = janela
+	s.global_position = janela
 	s.pressed = false
 	Input.parse_input_event(s)
 	await get_tree().process_frame
