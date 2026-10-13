@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Minimapa da v2 (cena própria, v2/minimapa.tscn). O mundo o instancia dentro da apresentação 960x540 (layer 5: fora do CanvasModulate,
-## como o brilho). Pequeno no canto superior direito; Tab alterna para o mapa grande no centro, semitransparente.
+## como o brilho). Pequeno no canto superior direito; Tab segurado abre o mapa grande no centro, semitransparente; ao soltar, volta ao pequeno.
 ##
 ## Fundo: gerado UMA vez no _ready a partir de mundo.dados (trilhas e lajes em cinza, árvores em verde escuro, poças em azul, santuário
 ## dourado, bordas fechadas em escuro): 1 px do minimapa = 19,2 px do mundo, 150x84. A névoa começa escura e cada ponto que o herói
@@ -24,6 +24,7 @@ const ESCALA_GRANDE := 4  # o mapa grande é o mesmo desenho ampliado em número
 const PERIODO := 0.1  # 10 Hz
 const RAIO_REVELA := 230.0  # px do mundo que a névoa revela em volta do herói
 const RAIO_MONSTRO := 600.0  # monstros dentro disso aparecem como pontos vermelhos
+const RAIO_SETA := 900.0  # missões mais longe do herói que isto ganham uma seta na borda do minimapa
 const LUZES_FORTES := ["braseiro", "fogueira"]
 
 # paleta de docs/visual_2_5d/paleta.json (ui e elementos)
@@ -41,6 +42,7 @@ const C_HEROI := Color("edf0f6")  # texto
 const C_MONSTRO := Color("c5251c")  # dano vermelho
 const C_LUZ := Color("d87a2b")  # fogo
 const C_NEVOA := Color("01030b")  # painel
+const C_BAU := Color("f1c35a")  # baú ativo, só desenhado depois de visto pela névoa
 
 const OBJETOS := {
 	"arvore": C_ARVORE,
@@ -83,6 +85,8 @@ var fundo: ImageTexture  # o mapa de fundo: criado uma vez
 var monstros_mapa: Array[Vector2] = []  # monstros perto do herói (coordenadas do minimapa)
 var luzes_mapa: Array[Vector2] = []  # braseiros e fogueiras do mapa
 var luzes_vistas: Array[Vector2] = []  # as que a névoa já revelou
+var baus_mapa: Array[Vector2] = []  # baús ativos que a névoa já revelou
+var setas_mapa: Array[Vector2] = []  # pontos na borda do minimapa que apontam para as missões longe do herói
 var heroi_mapa := Vector2.ZERO
 var mira_dir := Vector2(0, 1)
 var atualizacoes := 0  # quantas vezes os marcadores foram repintados (teste: 10 por segundo)
@@ -274,17 +278,13 @@ func _process(delta: float) -> void:
 	passar(delta)
 
 
-## Tab: a borda de subida alterna o mapa (segurar não repete). Fica por polling porque os nós de dentro do SubViewport não recebem
-## _input do teclado da janela.
+## Tab segurado: o mapa grande fica aberto enquanto o Tab está apertado e volta ao pequeno ao soltar. Só a mudança de estado conta
+## (o --minimapa=grande não é desfeito no primeiro quadro). Fica por polling porque os nós de dentro do SubViewport não recebem _input.
 func ler_tecla(pressionada: bool) -> void:
-	if pressionada and not _tab_antes:
-		alternar()
+	if pressionada != _tab_antes:
+		grande = pressionada
+		_layout()
 	_tab_antes = pressionada
-
-
-func alternar() -> void:
-	grande = not grande
-	_layout()
 
 
 ## Um passo do minimapa. Acumula o tempo e, a cada 0,1 s, atualiza névoa e marcadores.
@@ -317,7 +317,56 @@ func _atualizar() -> void:
 	for q in luzes_mapa:
 		if _revelado_mapa(q):
 			luzes_vistas.append(q)
+	baus_mapa.clear()  # baús só aparecem depois de vistos pela névoa
+	for b in _baus():
+		var qb := mundo_para_mapa(b.pos)
+		if b.ativo and _revelado_mapa(qb):
+			baus_mapa.append(qb)
+	setas_mapa.clear()
+	for p in _missoes():
+		if centro.distance_to(p) > RAIO_SETA:
+			setas_mapa.append(_na_borda(heroi_mapa, mundo_para_mapa(p)))
 	_desenho.queue_redraw()
+
+
+## O mirante (marca do mundo): o mapa inteiro sai da névoa de uma vez.
+func revelar_tudo() -> void:
+	_nevoa_img.fill(Color(0, 0, 0, 0))
+	_nevoa.update(_nevoa_img)
+
+
+## Os baús do combate (cada um com `ativo` e `pos` do mundo). Lidos com get() e valor padrão, como o resto.
+func _baus() -> Array:
+	var c = mundo.get("combate")
+	return c.baus.lista if c != null else []
+
+
+## As missões que pedem seta (chefe e portão, das marcas do mundo) e ainda não foram cumpridas.
+func _missoes() -> Array:
+	var r: Array = []
+	var marcas = mundo.get("_marcadores")
+	if marcas is Array:
+		for m in marcas:
+			if (m.tipo == "chefe" or m.tipo == "portao") and not m.feito:
+				r.append(m.pos)
+	return r
+
+
+## Onde a reta da origem ao alvo cruza a borda do minimapa: o ponto da seta.
+func _na_borda(origem: Vector2, alvo: Vector2) -> Vector2:
+	var d := alvo - origem
+	if d.length() < 0.001:
+		return origem
+	var t := INF
+	if d.x > 0.0:
+		t = minf(t, (MAPA_LARG - 1.0 - origem.x) / d.x)
+	elif d.x < 0.0:
+		t = minf(t, -origem.x / d.x)
+	if d.y > 0.0:
+		t = minf(t, (MAPA_ALT - 1.0 - origem.y) / d.y)
+	elif d.y < 0.0:
+		t = minf(t, -origem.y / d.y)
+	return origem + d * t
 
 
 ## Monstros do mundo: `mundo.monstros` é a lista dos VIVOS (o combate tira quem morre). `monstros_vivos` é só a contagem, para o HUD.
@@ -378,6 +427,10 @@ func _pintar() -> void:
 	_desenho.draw_texture_rect(_nevoa, Rect2(Vector2.ZERO, tam), false)
 	for q in luzes_vistas:
 		_marca(q, C_LUZ, 2)
+	for q in baus_mapa:
+		_marca(q, C_BAU, 2)
+	for q in setas_mapa:
+		_marca(q, C_SANTUARIO, 3)
 	for q in monstros_mapa:
 		_marca(q, C_MONSTRO, 2)
 	_seta(heroi_mapa, mira_dir, C_HEROI)
