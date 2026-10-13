@@ -98,7 +98,11 @@ var monstros_vivos: int:
 		return monstros.size()
 var _pool_monstros := {}  # tipo -> monstros mortos prontos para renascer
 var _todos_monstros: Array = []
-var _marcadores: Array = []  # marcas do mapa (dados "marcadores"): baús e mini-chefe, que nascem quando o herói chega perto
+var _marcadores: Array = []  # marcas do mapa (dados "marcadores"): cada uma faz o efeito ao o herói entrar no raio (_tocar_marca)
+var _tem_chave := false  # achou a chave da ruína nesta partida (abre o baú trancado)
+var _fragmentos := 0  # fragmentos da relíquia achados nesta partida
+const FRAGMENTOS_RELIQUIA := 4  # com estes fragmentos a relíquia monta e cai um baú
+const COR_ANUNCIO := Color(1.0, 0.85, 0.4)
 var _sombras_prontas := false
 var mapa := Rect2(0, 0, 2880, 1620)
 var limite_andavel := Rect2(150, 150, 2580, 1320)  # onde herói e monstros podem pisar (mapa menos "borda_andavel")
@@ -322,42 +326,74 @@ func _popular_inicial() -> void:
 			mo.raio_vaga = float(z.get("vaga", 90.0))
 
 
-## Marcas do mapa (dados "marcadores"): baús e mini-chefe. Atalho e portão ainda são só dados (sem efeito).
+## Marcas do mapa (dados "marcadores"). Cada marca guarda `feito` (já teve efeito nesta partida) e `dentro` (o herói está no raio).
+## Atalho e portão ainda não fazem nada: são só dados.
 func _montar_marcadores() -> void:
 	_marcadores.clear()
+	_tem_chave = false
+	_fragmentos = 0
 	for m in dados.get("marcadores", []):
-		var tipo := str(m.tipo)
-		if tipo != "bau" and tipo != "chefe":
-			continue
 		_marcadores.append(
 			{
-				"tipo": tipo,
+				"tipo": str(m.tipo),
 				"pos": Vector2(float(m.pos[0]), float(m.pos[1])),
 				"raio": float(m.get("raio", 600.0)),
 				"forcar": int(m.get("forcar", 0)),
 				"marca": str(m.get("marca", "")),
 				"feito": false,
+				"dentro": false,
 			}
 		)
 
 
-## Quem chega perto de uma marca (uma vez por partida): o baú cai com a relíquia e o mini-chefe nasce no ponto, se nenhum chefe estiver vivo.
+## O efeito de uma marca acontece quando o herói ENTRA no raio (não a cada quadro dentro dele).
 func _checar_marcadores() -> void:
 	var hp: Vector2 = heroi.pos
 	for m in _marcadores:
-		if m.feito or hp.distance_squared_to(m.pos) > m.raio * m.raio:
-			continue
-		if m.tipo == "bau":
-			combate.baus.soltar(m.pos, 1.0, m.forcar)
-		elif combate.chefes.atual != null:
-			continue
-		else:
+		var perto: bool = hp.distance_squared_to(m.pos) <= m.raio * m.raio
+		if perto and not m.dentro:
+			_tocar_marca(m)
+		m.dentro = perto
+
+
+func _tocar_marca(m: Dictionary) -> void:
+	match m.tipo:
+		"bau":
+			if not m.feito:
+				combate.baus.soltar(m.pos, 1.0, m.forcar)
+				m.feito = true
+		"bau_trancado":
+			if m.feito:
+				return
+			if _tem_chave:
+				combate.baus.soltar(m.pos, 1.0, m.forcar)
+				m.feito = true
+			else:
+				combate.anunciar("TRANCADO: a chave está numa ruína", COR_ANUNCIO)
+		"chave":
+			if not m.feito:
+				m.feito = true
+				_tem_chave = true
+				combate.anunciar("CHAVE ENCONTRADA", COR_ANUNCIO)
+		"fragmento":
+			if m.feito:
+				return
+			m.feito = true
+			_fragmentos += 1
+			if _fragmentos < FRAGMENTOS_RELIQUIA:
+				combate.anunciar("FRAGMENTO %d/%d" % [_fragmentos, FRAGMENTOS_RELIQUIA], COR_ANUNCIO)
+			else:
+				combate.anunciar("RELÍQUIA MONTADA!", COR_ANUNCIO)
+				combate.baus.soltar(heroi.pos, 1.0, 3)
+		"chefe":
+			if m.feito or combate.chefes.atual != null:
+				return
+			m.feito = true
 			var mk := _marca_chefe(m.marca)
 			if mk.is_empty():
 				push_warning("v2 mapa: marca de chefe desconhecida: " + m.marca)
 			else:
 				combate.chefes.nascer(mk, m.pos)
-		m.feito = true
 
 
 ## A marca de chefe (dados/v2_cartas.json, chefes.marcas) com este id; vazio se não existe.

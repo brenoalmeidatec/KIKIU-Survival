@@ -262,7 +262,7 @@ func _marcadores(id: String) -> void:
 	ok(chefes_ok, "%s: a marca de chefe do marcador existe em v2_cartas.json" % id)
 	ok(tipos.get("bau", 0) >= 3 and tipos.get("bau", 0) <= 4, "%s: 3 ou 4 baús com relíquia (%d)" % [id, tipos.get("bau", 0)])
 	ok(tipos.get("chefe", 0) == 1 and tipos.get("atalho", 0) == 1 and tipos.get("portao", 0) == 1, "%s: 1 mini-chefe, 1 atalho e 1 portão" % id)
-	ok(marcas.size() <= 8, "%s: até 8 pontos na rota (%d)" % [id, marcas.size()])
+	ok(marcas.size() <= 30, "%s: marcadores na rota (%d)" % [id, marcas.size()])
 	ok(total >= 6000.0 and total <= 9000.0, "%s: rota de ~1 min 30 (%.0f px em linha reta, a 100 px/s)" % [id, total])
 	# no mundo: o baú cai quando o herói chega perto, uma vez; o mini-chefe nasce no ponto e não nasce de novo enquanto vive
 	var caidos := 0
@@ -283,8 +283,44 @@ func _marcadores(id: String) -> void:
 			w.avancar(PASSO)
 			ok(w.combate.chefes.atual == nasceu, "%s: o mini-chefe não nasce de novo enquanto vive" % id)
 	ok(w.combate.baus.soltos == caidos, "%s: %d baús caíram, um por marcador" % [id, caidos])
+	_mecanicas_a(w, marcas)
 	remove_child(w)
 	w.free()
+
+
+## Lote A: a chave da ruína abre o baú trancado (sem ela, nada cai) e 4 fragmentos montam a relíquia, que faz cair um baú.
+func _mecanicas_a(w, marcas: Array) -> void:
+	var trancado := _primeiro(marcas, "bau_trancado")
+	var chave := _primeiro(marcas, "chave")
+	var frags: Array = marcas.filter(func(m): return m.tipo == "fragmento")
+	ok(not trancado.is_empty() and not chave.is_empty(), "lote A: há baú trancado e chave no mapa médio")
+	ok(frags.size() == 4, "lote A: são 4 fragmentos (%d)" % frags.size())
+	if trancado.is_empty() or chave.is_empty():
+		return
+	var antes: int = w.combate.baus.soltos
+	_ir(w, trancado.pos)
+	ok(w.combate.baus.soltos == antes and not w._tem_chave, "lote A: sem a chave o baú trancado não cai")
+	_ir(w, chave.pos)
+	ok(w._tem_chave, "lote A: a chave da ruína é achada")
+	_ir(w, trancado.pos)
+	ok(w.combate.baus.soltos == antes + 1, "lote A: com a chave o baú trancado cai")
+	for f in frags:
+		_ir(w, f.pos)
+	ok(w._fragmentos == 4, "lote A: os 4 fragmentos contam (%d)" % w._fragmentos)
+	ok(w.combate.baus.soltos == antes + 2, "lote A: a relíquia montada faz cair um baú")
+
+
+func _primeiro(marcas: Array, tipo: String) -> Dictionary:
+	for m in marcas:
+		if m.tipo == tipo:
+			return m
+	return {}
+
+
+func _ir(w, p: Vector2) -> void:
+	w.heroi.definir_pos(p)
+	w.avancar(PASSO)
+	w.avancar(PASSO)
 
 
 func _santuario() -> void:
