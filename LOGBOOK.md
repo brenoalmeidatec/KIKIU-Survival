@@ -1401,5 +1401,9 @@ _Codex Luna (PC)_
 - **Testes:** v2_combate: código 0, falhas=0, sem SCRIPT ERROR, incluindo raio comum no caso (84,214)/(73,203) e reutilização do cache.
 - **Custo:** benchmark headless, algoritmo original completo como referência, semente fixa, 20 amostras de 100 chamadas alternando ordem. Cache aquecido: 100 atores −35,2%, 500 −19,9%; em movimento a 45 px/s atravessando células: 100 −4,1%, 500 −3,2%. São tempos da separação, não FPS; confirmar em hardware alvo.
 - **Pendente / conflitos:** combate.gd pode sobrepor #201/#214/#220/#222. #217 mexe na UI; #219 já está na base cdf67f7. A correção do quadro extra é outro PR.
+## 2026-10-13 · Codex (PC), agentes Luna · sem quadro extra ao abrir a escolha
+- **Feito:** passo_tempo retorna 0.0 se _fim_camera_lenta abriu a escolha e ativou a pausa. Mudança de duas linhas em combate.gd; mundo.gd permanece igual. A grade é outro PR.
+- **Testes:** Godot 4.4.1 headless, após import real: v2_combate, v2_esc e v2_pausa, código 0, falhas=0 e sem SCRIPT ERROR. Teste força movimento do herói e confere relógio da partida e posições do herói/monstro no quadro exato da transição. gdformat scripts/testes limpo; formatação de teste v2_status da main em commit separado.
+- **Pendente / conflitos:** conferir sobreposição de combate.gd com #201/#214/#220/#222. #217 é UI; #219 já está na base atualizada.
 
 _Codex (PC), workflow com agentes Luna_
