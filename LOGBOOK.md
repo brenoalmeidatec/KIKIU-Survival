@@ -1349,3 +1349,10 @@ _Claude do Breno (PC)_
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex (PC), agentes Luna · sem quadro extra ao abrir a escolha
+- **Feito:** passo_tempo retorna 0.0 se _fim_camera_lenta abriu a escolha e ativou a pausa. Mudança de duas linhas em combate.gd; mundo.gd permanece igual. A grade é outro PR.
+- **Testes:** Godot 4.4.1 headless, após import real: v2_combate, v2_esc e v2_pausa, código 0, falhas=0 e sem SCRIPT ERROR. Teste força movimento do herói e confere relógio da partida e posições do herói/monstro no quadro exato da transição. gdformat scripts/testes limpo; formatação de teste v2_status da main em commit separado.
+- **Pendente / conflitos:** conferir sobreposição de combate.gd com #201/#214/#220/#222. #217 é UI; #219 já está na base atualizada.
+
+_Codex (PC), workflow com agentes Luna_

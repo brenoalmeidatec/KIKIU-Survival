@@ -242,6 +242,7 @@ func _ready() -> void:
 	# 7. nível: câmera lenta de 0,4 s, escolha de 1 entre 3 melhorias (o mundo para), melhoria aplicada
 	zerar()
 	h = w.heroi
+	var monstro_pausa = monstro_a(100)
 	_niveis = 0
 	var nv0: int = h.nivel
 	h.xp = h.xp_proximo - 0.5
@@ -249,7 +250,21 @@ func _ready() -> void:
 	ate(func(): return h.nivel > nv0, 120)
 	ok(h.nivel == nv0 + 1 and _niveis == 1, "o XP enche a barra e sobe o nível (sinal nivel_subiu: %d)" % _niveis)
 	ok(w.combate.lento_t > 0.0 and w.combate.lento_escala < 0.5, "câmera lenta ao subir de nível")
-	var passos_lento := ate(func(): return w.combate.jogo == "escolha", 120)
+	h.entrada_forcada = Vector2(1, 0)
+	var passos_lento := 0
+	var tp_quadro := 0.0
+	var pos_heroi_quadro := Vector2.ZERO
+	var pos_monstro_quadro := Vector2.ZERO
+	while w.combate.jogo != "escolha" and passos_lento < 120:
+		tp_quadro = w.tempo_partida
+		pos_heroi_quadro = h.pos
+		pos_monstro_quadro = monstro_pausa.pos
+		w.avancar(PASSO)
+		passos_lento += 1
+		if w.combate.jogo == "escolha":
+			ok(w.tempo_partida == tp_quadro, "o quadro que abre a escolha não avança o relógio da partida")
+			ok(h.pos == pos_heroi_quadro and monstro_pausa.pos == pos_monstro_quadro, "o quadro que abre a escolha não move herói nem monstro")
+	h.entrada_forcada = Vector2.ZERO
 	ok(passos_lento >= 20 and passos_lento <= 30, "a câmera lenta dura ~0,4 s antes da escolha (%d passos)" % passos_lento)
 	ok(w.combate.pausado and w.combate.progresso.cartas.size() == 3, "abre a escolha com 3 cartas")
 	var ids := {}

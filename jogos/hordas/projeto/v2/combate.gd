@@ -128,6 +128,8 @@ func passo_tempo(dt: float) -> float:
 		lento_t -= dt
 		if lento_t <= 0.0:
 			_fim_camera_lenta()
+			if pausado:
+				return 0.0
 		return dt * lento_escala
 	return dt
 
