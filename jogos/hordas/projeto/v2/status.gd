@@ -82,6 +82,10 @@ var _timer: Timer  # o relógio de 4 Hz: só corre com o card ligado (sem _proce
 var _sem_dicas := false  # a coluna estourou a altura: as dicas de evolução saem primeiro
 var _cortou := false  # mesmo sem as dicas não coube: o que sobrou fica de fora, marcado com "..."
 var _sobrou: Array = [false, false, false]  # por coluna: o conteúdo passou da altura mesmo sem as dicas (os testes conferem que é tudo false)
+var _reserva := 0.0  # altura do pé da coluna guardada para a linha "+N golpes" (só quando nem tudo coube)
+var _golpes_mostrados := 0  # golpes desenhados na coluna agora (o "+N golpes" conta os que faltam)
+var _pag := 0  # página dos golpes na página visual (pausa e painel central): Q e E trocam; a altura da coluna decide quantos cabem
+var _npag_golpes := 1  # páginas dos golpes na última medida (Q e E não passam dali)
 
 
 ## Cria o card ligado ao mundo. É o que o mundo.gd chama (e guarda em `mundo.status`).
@@ -137,6 +141,8 @@ func entrada(e: InputEvent) -> bool:
 				alternar_detalhe()
 			if e.keycode == KEY_C and e.pressed and not e.echo and not (e.ctrl_pressed or e.alt_pressed or e.meta_pressed):
 				alternar()
+			if e.keycode in [KEY_Q, KEY_E] and e.pressed and not e.echo:
+				paginar(-1 if e.keycode == KEY_Q else 1)
 		return true
 	if not (e is InputEventKey) or not e.pressed or e.echo or e.keycode != KEY_C:
 		return false
@@ -209,6 +215,8 @@ func _aplicar() -> void:
 	if _central and not _sobre_cartas():
 		_central = false  # as cartas já se foram: o painel não fica órfão
 	_modo_atual = _modo()
+	if _modo_atual != "" and not visible:
+		_pag = 0  # o card abre na primeira página dos golpes
 	visible = _modo_atual != ""
 	if _hud or _central or _pausa:
 		if _timer.is_stopped():
@@ -642,7 +650,7 @@ func retangulos() -> Array:
 	return r
 
 
-## Por coluna: true se o conteúdo NÃO coube na altura da coluna, mesmo sem as dicas de evolução (o que sobra é cortado com "..."). Os testes
+## Por coluna: true se o conteúdo NÃO coube na altura da coluna, mesmo sem as dicas de evolução (o que sobra sai, e o pé diz "+N golpes" ou "..."; a página visual não corta: pagina). Os testes
 ## conferem que nunca acontece, nem com a build máxima, nem com o Santuário todo comprado.
 func colunas_cortadas() -> Array:
 	_m = _modo_de_medida()
@@ -656,9 +664,13 @@ func colunas_cortadas() -> Array:
 func _medir(c: int) -> Rect2:
 	var r: Rect2 = _colunas()[c]
 	_sem_dicas = false
+	_reserva = 0.0
 	var alt := _coluna(c, r, true)
 	if alt > r.size.y and _m != "hud":  # não coube: as dicas de evolução saem primeiro (o HUD compacto não tem dicas)
 		_sem_dicas = true
+		alt = _coluna(c, r, true)
+	if alt > r.size.y:  # ainda não coube: o pé da coluna guarda a linha "+N golpes" e o conteúdo para antes dela
+		_reserva = ALT_LINHA
 		alt = _coluna(c, r, true)
 	_sobrou[c] = alt > r.size.y
 	return Rect2(r.position, Vector2(r.size.x, minf(alt, r.size.y)))
@@ -696,16 +708,11 @@ func _estoura(l: Dictionary, w: float) -> bool:
 		"bloco":
 			var wt := w - ICONE - 4.0
 			if _m == "hud":
-				return _larg_bloco_compacto(l) > wt
+				# o nome encolhe e corta com "." quando não cabe (`_desenhar_bloco_compacto`): estoura só se nível e número não cabem com um pedaço de nome
+				return _larg_misto(str(l.nivel_curto), TAM_P) + 12.0 + _larg_trechos(l.uma) + 40.0 > wt
 			var nome_w := Dados.fonte_titulo.get_string_size(str(l.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_NOME_PEQ).x
 			return nome_w + _larg_misto(str(l.nivel_curto), TAM_P) + 8.0 > wt or _linhas_do_bloco(l, wt).size() > 2
 	return false
-
-
-## A largura de um bloco na linha única do HUD com o nome curto no tamanho `tam`: nome, nível e número, com os respiros.
-func _larg_bloco_compacto(l: Dictionary, tam := TAM_NOME_PEQ) -> float:
-	var nome_w := Dados.fonte_titulo.get_string_size(str(l.nome_curto), HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x
-	return nome_w + 6.0 + _larg_misto(str(l.nivel_curto), TAM_P) + 6.0 + _larg_trechos(l.uma)
 
 
 ## Desenha (ou só mede, com `seco`) a coluna `c` dentro de `r`. Devolve a altura que o conteúdo pede, com a moldura.
@@ -713,8 +720,10 @@ func _coluna(c: int, r: Rect2, seco: bool) -> float:
 	var x := r.position.x + PAD
 	var w := r.size.x - 2.0 * PAD
 	var y := r.position.y + PAD - 2.0
-	var limite := r.end.y - PAD
+	var fim := r.end.y - PAD  # o pé da coluna: é nele que sai a linha "+N golpes" (ou "...")
+	var limite := fim - _reserva  # com a reserva, o conteúdo para antes da linha do pé
 	_cortou = false
+	_golpes_mostrados = 0
 	if c == 0:
 		if not seco:
 			_texto_titulo("SUA BUILD", Vector2(x, y), COR_TITULO)
@@ -727,8 +736,20 @@ func _coluna(c: int, r: Rect2, seco: bool) -> float:
 			continue
 		y = _secao(sec, x, y + 3.0, w, seco, limite)
 	if _cortou and not seco:
-		_texto(Dados.fonte_texto, "...", Vector2(x, limite - ALT_LINHA + 2.0), w, HORIZONTAL_ALIGNMENT_CENTER, TAM, COR_ROTULO)
+		# o que não coube some da tela, e a linha do pé diz quantos golpes faltam (a build inteira não tem teto: a página visual pagina)
+		var faltam := (_golpes_total() - _golpes_mostrados) if "golpes" in _secoes_das_colunas()[c] else 0
+		var txt := "+%d golpes" % faltam if faltam > 0 else "..."
+		_texto(Dados.fonte_texto, txt, Vector2(x, fim - ALT_LINHA + 2.0), w, HORIZONTAL_ALIGNMENT_CENTER, TAM, COR_ROTULO)
 	return y - r.position.y + PAD - 2.0
+
+
+## Quantos golpes a build tem no total (as linhas de bloco da seção "golpes").
+func _golpes_total() -> int:
+	var n := 0
+	for l in _achar("golpes").get("linhas", []):
+		if str(l.tipo) == "bloco":
+			n += 1
+	return n
 
 
 func _achar(id: String) -> Dictionary:
@@ -755,6 +776,8 @@ func _secao(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite: f
 			return y
 		if not seco:
 			_item(l, x, y, w)
+			if str(sec.id) == "golpes" and str(l.tipo) == "bloco":
+				_golpes_mostrados += 1
 		y += alt
 	return y
 
@@ -829,9 +852,12 @@ func _desenhar_bloco_compacto(l: Dictionary, x: float, y: float, w: float) -> vo
 		xs += _desenhar_trecho(tr, xs, y + 4.0)
 	var nivel := str(l.nivel_curto)
 	_misto(nivel, xx - 6.0, y + 3.0, TAM_P, COR_ROTULO, COR_ROTULO, true)
-	# o nome na grade da Jersey 10 (19) quando cabe; se não, um degrau abaixo (a Jersey fora da grade sai borrada, então só quando precisa)
-	var tam_nome := TAM_CAB if _larg_bloco_compacto(l, TAM_CAB) <= w - ICONE - 4.0 else TAM_NOME_PEQ
-	_tela.draw_string(ft, Vector2(xt, y - 1.0 + ft.get_ascent(TAM_CAB)), str(l.nome_curto), HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome, cor)
+	# o nome vai até o nível (o espaço que sobra entre o ícone e o nível); na grade da Jersey 10 (19) quando cabe, um degrau abaixo se não
+	# (a Jersey fora da grade sai borrada, então só quando precisa), e corta com "." quando nem o degrau cabe (golpe com nome longo e sem curto)
+	var espaco_nome := (xx - 6.0 - _larg_misto(nivel, TAM_P) - 6.0) - xt
+	var tam_nome := TAM_CAB if ft.get_string_size(str(l.nome_curto), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_CAB).x <= espaco_nome else TAM_NOME_PEQ
+	var nome := _cabe_nome(str(l.nome_curto), espaco_nome, tam_nome)
+	_tela.draw_string(ft, Vector2(xt, y - 1.0 + ft.get_ascent(TAM_CAB)), nome, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome, cor)
 
 
 func _desenhar_bloco(l: Dictionary, x: float, y: float, w: float) -> void:
@@ -970,7 +996,7 @@ func _visual(seco: bool) -> Array:
 				"katana":
 					y = _v_katana(x, y, w, seco)
 				"golpes":
-					y = _v_golpes(sec, x, y, w, seco)
+					y = _v_golpes(sec, x, y, w, seco, r.end.y - PAD)
 			y += 4.0
 		alts.append(y - r.position.y + PAD - 2.0)
 	return alts
@@ -1125,17 +1151,62 @@ func _v_katana(x: float, y: float, w: float, seco: bool) -> float:
 	return y
 
 
-func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool) -> float:
+## Os golpes da página visual: cabem quantos a altura que sobra (até `limite`) deixar, sem teto fixo. Se não couberem todos, a última linha
+## da coluna é "Página X/Y · Q E" e Q e E trocam de página (`paginar`). Uma página só não ganha linha nenhuma de paginação.
+func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite: float) -> float:
+	var blocos: Array = []
 	for l in sec.linhas:
-		if str(l.tipo) != "bloco":
-			if not seco:
-				_texto(Dados.fonte_texto, "Nenhum ainda: vêm das cartas.", Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
-			y += ALT_LINHA
-			continue
+		if str(l.tipo) == "bloco":
+			blocos.append(l)
+	if blocos.is_empty():
 		if not seco:
-			_golpe(l, x, y, w)
+			_texto(Dados.fonte_texto, "Nenhum ainda: vêm das cartas.", Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+		return y + ALT_LINHA
+	var pg := _paginas_golpes(blocos.size(), limite - y)
+	var por: int = pg[0]
+	var paginas: int = pg[1]
+	var com_nav: bool = pg[2]
+	_npag_golpes = paginas
+	_pag = clampi(_pag, 0, paginas - 1)
+	var ini := _pag * por if com_nav else 0
+	var fim := mini(ini + por, blocos.size())
+	for k in range(ini, fim):
+		if not seco:
+			_golpe(blocos[k], x, y, w)
 		y += ALT_GOLPE
+	if com_nav:
+		if not seco:
+			_texto(Dados.fonte_texto, "Página %d/%d  · Q E" % [_pag + 1, paginas], Vector2(x, limite - ALT_LINHA + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_DICA)
+		return limite - 4.0  # o pé da coluna: a linha de paginação, e o +4 que `_visual` soma depois, cabem no limite
 	return y
+
+
+## Quantos golpes cabem por página no espaço `espaco` e quantas páginas dão para `n` golpes: [por_pagina, paginas, com_paginacao].
+## Sem paginação, tudo numa página só. Com ela, a linha de baixo é reservada para "Página X/Y".
+static func _paginas_golpes(n: int, espaco: float) -> Array:
+	if n <= 0:
+		return [0, 1, false]
+	if int(floorf(espaco / ALT_GOLPE)) >= n:
+		return [n, 1, false]
+	var por := maxi(int(floorf((espaco - ALT_LINHA) / ALT_GOLPE)), 1)
+	return [por, int(ceilf(float(n) / por)), true]
+
+
+## Q (anterior) e E (próxima): troca a página dos golpes na página visual da pausa e do painel central. Devolve true se trocou.
+func paginar(d: int) -> bool:
+	if (_modo_atual != "pausa" and _modo_atual != "central") or _detalhe:
+		return false
+	var nova := clampi(_pag + d, 0, _npag_golpes - 1)
+	if nova == _pag:
+		return false
+	_pag = nova
+	_tela.queue_redraw()
+	return true
+
+
+## Os números da paginação dos golpes na página visual: {pagina, paginas} (a página 1 de 1 quando não há paginação). Os testes leem.
+func paginas_golpes() -> Dictionary:
+	return {"pagina": _pag + 1, "paginas": _npag_golpes}
 
 
 ## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em pips (estrela dourada se evoluído) e o número.
@@ -1168,6 +1239,16 @@ func _cabe(s: String, w: float) -> String:
 	if f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x <= w:
 		return s
 	while s.length() > 1 and f.get_string_size(s + ".", HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x > w:
+		s = s.substr(0, s.length() - 1)
+	return s + "."
+
+
+## Um nome da Jersey 10 que cabe em `w` px no tamanho `tam`: se não cabe, corta e termina em "." (como `_cabe`, na fonte de texto).
+func _cabe_nome(s: String, w: float, tam: int) -> String:
+	var f: Font = Dados.fonte_titulo
+	if f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x <= w:
+		return s
+	while s.length() > 1 and f.get_string_size(s + ".", HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x > w:
 		s = s.substr(0, s.length() - 1)
 	return s + "."
 
