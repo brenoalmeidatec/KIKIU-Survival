@@ -1515,3 +1515,11 @@ _Claude do Alisson (notebook)_
 - **Próximo:** revisão, CI da integração e build exportada pelo agente responsável; nenhum push/merge GitHub feito neste bloco.
 
 _Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · retomada da integração para entrega
+- **Feito:** integração atualizada por merge da main a6004a7, incluindo mecânicas do mapa médio #222 e correção do teste do elmo #221. Os 14 heads de #201 e #223–#235 continuam preservados. Splash permanece em `res://assets/titulo/fundo.png`; E/Ruptura e botão direito/escudo preservados; Q reservado. Exports/presets sem alteração.
+- **Validação real após a atualização:** Godot 4.4.1 headless nas 18 cenas v2_mapas, v2_mundo, v2_ruptura, v2_escudo, v2_hud, v2_esc, v2_combate, v2_cartas_espera, v2_status, equipamentos, v2_arvores, v2_partida, v2_meta, v2_fontes, v2_menu, entrada_cenas, v2_pausa e v2_musica: todas código 0, falhas=0 e sem SCRIPT ERROR. Logs em analise-kikiu/logs-entrega-retomada. Meta exercita save corrompido intencionalmente; avisos de recursos/RID no encerramento headless permanecem.
+- **Checks:** gdformat -l 160 --check scripts/testes/v2: código 0, 227 arquivos limpos; git diff --check limpo. Imports/UID não rastreados permanecem fora dos commits.
+- **Limite confirmado por leitura do código:** os espinhos de #222 chamam Heroi.levar_dano com origem na posição do herói; Escudo.cobre considera origem a menos de 0,5 px como coberta. Assim, escudo erguido bloqueia espinhos pela regra existente. Nenhuma mudança de design feita nesta integração; comportamento deve entrar na revisão de gameplay da build.
+- **Próximo:** atualizar PR #236, obter CI verde e exportar/validar a candidata com este commit; publicação e merge remoto ficam com o agente responsável.
+
+_Codex GPT-6.1 Sol (PC)_
