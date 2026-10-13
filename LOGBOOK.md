@@ -1358,3 +1358,5 @@ _Claude do Breno (PC)_
 - **Verificação:** importação real Godot 4.4.1 concluída; `v2_partida` terminou com `falhas=0`; `gdformat -l 160 --check` e `git diff --check` limpos. Captura de viewport real (960×540, não vazia) em `C:\Dev\Breno\analise-kikiu\logs-ataques\identidade_nuvens.png`; rótulos da imagem pertencem apenas à cena de demonstração.
 
 _Codex LunaPC_
+
+- **Ajuste da conferência:** o roteiro de foto foi retirado de `testes/` e preservado como ferramenta local, pois aguardar `frame_post_draw` sem renderer trava a execução headless. Ele não é teste funcional nem participa do CI. Os testes de dano/feedback permanecem em `v2_partida`; rótulos pertencem somente à demonstração. A formatação global scripts/testes exige o commit separado de `v2_status` da main.
