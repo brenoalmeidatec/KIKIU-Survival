@@ -9,9 +9,15 @@ Apresentação do jogo no [README principal](../../README.md). Aqui fica o que �
 3. ➕ No gerenciador de projetos do Godot, clique em **Importar** e escolha `jogos/hordas/projeto/project.godot`.
 4. ⏳ Na primeira vez o Godot importa imagens e sons (demora um pouco). Depois, **F5** roda o jogo.
 
-O **F5** (e o executável) abre a **v2**, pelo santuário (`v2/altar.tscn`, a cena principal). A v1, pausada, abre com `-- --v1` (no executável: `KIKIU.exe -- --v1`); os argumentos de teste dela (`--bot`, `--online`, `--sair`, `--print_tela`, `--cena`, `--prototipo`) também levam direto à v1, então os comandos abaixo continuam iguais.
+O **F5** e o executável abrem o título da **v2**, `v2/menu_principal.tscn`. Jogar leva ao santuário (`v2/altar.tscn`) e de lá à partida (`v2/mundo.tscn`). A apresentação da v2 usa **960×540**, com shader sharp bilinear no mundo; o renderer é *Compatibility*. A configuração base de 640×360 do projeto atende também o legado e não é a resolução de apresentação da v2.
 
-O projeto usa o renderer *Compatibility*, tela base 640×360 com escala inteira (pixel art sem borrar).
+## 📌 V2 disponível, legado e roadmap
+
+**V2 na main:** combate solo com golpe principal no clique, combo, esquiva e corrida com fôlego; cartas, golpes automáticos e evoluções; elites, baús, mini-chefes e chefe final; HUD, minimapa, pausa, opções, música e sons; santuário com almas, melhorias permanentes e conquistas. A lista de mapas disponível está em `projeto/v2/mapas.gd` (Floresta e Laboratório nesta versão). O [guia da v2](projeto/v2/LEIA-ME.md) descreve os módulos, os controles e os testes atuais.
+
+**Legado v1, pausado:** `KIKIU.exe -- --v1` abre o jogo antigo. Os argumentos `--bot`, `--online`, `--sair`, `--print_tela`, `--cena` e `--prototipo` também selecionam a v1. Seus testes e ferramentas continuam no repositório para compatibilidade; uma descrição de recurso da v1 não comprova que ele esteja portado para a v2. A v1 usa a base 640×360.
+
+**Roadmap:** online cooperativo e duelo entre amigos, regiões/andares da visão completa e outros sistemas ainda precisam de portabilidade, integração e validação na v2. Os épicos #134 e #152 e o painel #196 acompanham isso. PR aberto (novos heróis, mapas, exploração ou interface) é trabalho em revisão, não recurso já disponível na main. Não use os comandos online abaixo como demonstração de online na v2.
 
 ## 🧪 Testes automáticos
 
@@ -21,7 +27,9 @@ Cada cena em `projeto/testes/` é um teste que roda sozinho e imprime `falhas=0`
 godot --headless --path jogos/hordas/projeto res://testes/rolamento.tscn
 ```
 
-Um robô também joga sozinho, para medir desempenho e pegar erros de script:
+**V2:** rode as cenas `v2_*` afetadas pela mudança (por exemplo `v2_combate`, `v2_meta`, `v2_esc` e `v2_menu`). Entrada real da janela é coberta por `v2_esc`; os comandos e as medições específicas da v2 estão em `projeto/v2/LEIA-ME.md`.
+
+**Ferramentas do legado v1:** um robô joga sozinho para medir desempenho e pegar erros de script:
 
 ```bash
 # um robô joga sozinho, mais rápido, e mostra os números a cada 5 s
@@ -34,9 +42,9 @@ godot --headless --path jogos/hordas/projeto -- --online=join --endereco=127.0.0
 
 Outras opções (`--fase`, `--build`, `--estresse`, `--imortal`, `--print_tela`...) estão comentadas no começo de `projeto/scripts/hordas/main.gd` (as de foto, junto da função `_print_tela`). A animação dos heróis (respiração, passo, golpe, recuo e queda) se ajusta em `projeto/dados/animacao.json` (a `_ajuda` explica cada chave); `--print_tela=animacao --heroi=X --cena=parado|andar|golpe|dano|morte --seq=...` tira uma tira de recortes pra conferir. A abertura cinematográfica da fase (tarjas, câmera, queda do herói, título da região; pula com Enter/Esc) se ajusta em `projeto/dados/entrada.json`; `--entrada` força nos robôs e `--print_tela=entrada --fase=N --seq=...` captura os instantes.
 
-**Gráficos (#150):** Opções > Gráficos abre a aba com perfis (Baixo, Médio, Alto ou Personalizado), "Detectar automaticamente" e duas seções, CPU (simulação) e GPU (visual); código em `projeto/scripts/hordas/tela_graficos.gd` e `projeto/cenas/tela_graficos.tscn`.
+**Gráficos do legado v1 (#150):** Opções > Gráficos abre a aba com perfis (Baixo, Médio, Alto ou Personalizado), "Detectar automaticamente" e duas seções, CPU (simulação) e GPU (visual); código em `projeto/scripts/hordas/tela_graficos.gd` e `projeto/cenas/tela_graficos.tscn`.
 
-**Desempenho:** Opções > Gráficos (perfil baixo/médio/alto ou personalizado, com seções CPU e GPU; valores em `projeto/dados/graficos.json`, API em `Config.g(chave)`, `Config.g_definir`, `Config.g_aplicar_perfil`; `--perfil=baixo` em teste). Bancadas com janela e sem V-Sync: `godot --path jogos/hordas/projeto res://testes/bench_horda.tscn -- --perfil=baixo` (500 bichos, determinística; confira `logica=1.00`) e `res://testes/bench_inicio.tscn` (primeiros quadros). Resultados em `docs/PERF_2026-10-07.md` e, do desenho dos inimigos em lote (MultiMesh), `docs/PERF_2026-10-10.md`. Limite de inimigos vivos: `dados/fase.json` (`limite_vivos` 250, `limite_vivos_pror` 500 na prorrogação e no Enxame Final), vale o menor com o da aba Gráficos (`max_inimigos`).
+**Desempenho do legado v1:** Opções > Gráficos (perfil baixo/médio/alto ou personalizado, com seções CPU e GPU; valores em `projeto/dados/graficos.json`, API em `Config.g(chave)`, `Config.g_definir`, `Config.g_aplicar_perfil`; `--perfil=baixo` em teste). Bancadas com janela e sem V-Sync: `godot --path jogos/hordas/projeto res://testes/bench_horda.tscn -- --perfil=baixo` (500 bichos, determinística; confira `logica=1.00`) e `res://testes/bench_inicio.tscn` (primeiros quadros). Resultados em `docs/PERF_2026-10-07.md` e, do desenho dos inimigos em lote (MultiMesh), `docs/PERF_2026-10-10.md`. Limite de inimigos vivos: `dados/fase.json` (`limite_vivos` 250, `limite_vivos_pror` 350 na prorrogação e no Enxame Final), vale o menor com o da aba Gráficos (`max_inimigos`).
 
 ## 📦 Gerar o executável (.exe)
 
@@ -54,7 +62,8 @@ Executáveis e zips **não** ficam no Git. No Godot: **Projeto › Exportar › 
 
 | Pasta | O que é |
 |---|---|
-| `projeto/scripts/hordas/` | O código do jogo (GDScript). `armas/` tem um arquivo por tipo de arma. |
+| `projeto/v2/` | Código do jogo ativo e apresentação 960×540; guia em `v2/LEIA-ME.md`. |
+| `projeto/scripts/hordas/` | Legado v1 e serviços compartilhados (autoloads). `armas/` contém os tipos de arma da v1. |
 | `projeto/dados/*.json` | Todo o conteúdo: heróis, raças, classes, armas, monstros, regiões, duelo. Mudar o jogo quase sempre é mexer só aqui; cada arquivo explica os campos no `_ajuda`. |
 | `projeto/assets/` | Imagens e sons já prontos para o jogo. |
 | `projeto/testes/` | Testes automáticos (uma cena por assunto). |
@@ -75,6 +84,6 @@ A arte sai de **modelos 3D renderizados como pixel art** no Blender 4.5 LTS: ren
 blender -b -P jogos/hordas/fonte_arte/modelos3d/cavaleiro.py
 ```
 
-Os monstros de 5 vistas (`horror.py`, `floresta.py`, `pantano.py`, `deserto.py`, `gelo.py`, `reino.py`) saem com um ciclo de andar de 6 quadros mais o branco de dano; o jogo anda o ciclo pela distância percorrida. Quadros por folha, inclinação, quique, aperto de golpe e preparo de investida ficam em `projeto/dados/animacao_monstros.json`. Para regerar: `blender -b -P jogos/hordas/fonte_arte/modelos3d/<regiao>.py` (as 6 regiões podem rodar em paralelo; atualiza `dados/quadros_monstros.json`).
+No legado v1, os monstros de 5 vistas (`horror.py`, `floresta.py`, `pantano.py`, `deserto.py`, `gelo.py`, `reino.py`) saem com um ciclo de andar de 6 quadros mais o branco de dano; o jogo anda o ciclo pela distância percorrida. Quadros por folha, inclinação, quique, aperto de golpe e preparo de investida ficam em `projeto/dados/animacao_monstros.json`. Para regerar: `blender -b -P jogos/hordas/fonte_arte/modelos3d/<regiao>.py` (as 6 regiões podem rodar em paralelo; atualiza `dados/quadros_monstros.json`).
 
 Técnicas e referências em [`docs/VISUAL_KIKIU.md`](../../docs/VISUAL_KIKIU.md); o resto da documentação está no [índice de `docs/`](../../docs/README.md).

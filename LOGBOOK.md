@@ -1342,3 +1342,10 @@ _Claude do Alisson (PC)_
 - **Pendente:** olhar o print num monitor real (PC e notebook): a dica é pequena e o print é 1280x720.
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex (PC) · guia técnico da v2 e legado
+- **Feito:** README do módulo separa v2 disponível (título menu_principal, apresentação 960×540), legado v1 e roadmap. Comandos --bot/--online ficam identificados como legado; tabela de pastas identifica v2 e serviços compartilhados. Corrigido teto legado de prorrogação para 350.
+- **Verificação:** caminhos e cena principal conferidos com project.godot e módulos menu_principal/apresentacao/mapas; gdformat scripts/testes limpo na base inicial. Apenas documentação, sem alteração de comportamento; nenhuma cena Godot foi rodada para este assunto.
+- **Próximo:** revalidar a documentação e formatação sobre a main atualizada antes do PR.
+
+_Codex (PC), workflow com agentes Luna_
