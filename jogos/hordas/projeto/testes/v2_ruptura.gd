@@ -845,9 +845,7 @@ func _ready() -> void:
 	)
 	var linha: String = rp.linha()
 	ok(
-		linha.begins_with(
-			"Ruptura (E): dano 10 a 22 | raio 56 a 96 px | recarga 2,6 s | atordoa 0,25 a 0,5 s | contragolpe +30% por 1,5 s | eco 0%"
-		),
+		linha.begins_with("Ruptura (E): dano 10 a 22 | raio 56 a 96 px | recarga 2,6 s | atordoa 0,25 a 0,5 s | contragolpe +30% por 1,5 s | eco 0%"),
 		"linha(): %s" % linha
 	)
 

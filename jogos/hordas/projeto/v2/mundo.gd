@@ -334,15 +334,18 @@ func _montar_marcadores() -> void:
 		var tipo := str(m.tipo)
 		if tipo != "bau" and tipo != "chefe":
 			continue
-		_marcadores.append(
-			{
-				"tipo": tipo,
-				"pos": Vector2(float(m.pos[0]), float(m.pos[1])),
-				"raio": float(m.get("raio", 600.0)),
-				"forcar": int(m.get("forcar", 0)),
-				"marca": str(m.get("marca", "")),
-				"feito": false,
-			}
+		(
+			_marcadores
+			. append(
+				{
+					"tipo": tipo,
+					"pos": Vector2(float(m.pos[0]), float(m.pos[1])),
+					"raio": float(m.get("raio", 600.0)),
+					"forcar": int(m.get("forcar", 0)),
+					"marca": str(m.get("marca", "")),
+					"feito": false,
+				}
+			)
 		)
 
 

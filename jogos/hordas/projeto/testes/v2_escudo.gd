@@ -99,7 +99,10 @@ func _ready() -> void:
 		if ev is InputEventKey and ev.physical_keycode == KEY_Q:
 			tem_q = true
 	ok(tem_q, "ultimate: tecla Q (reservada, sem efeito)")
-	ok(ResourceLoader.exists("res://assets/audio/v2/impacto.wav") and ResourceLoader.exists("res://assets/audio/v2/ruptura_tique.wav"), "os sons do escudo existem")
+	ok(
+		ResourceLoader.exists("res://assets/audio/v2/impacto.wav") and ResourceLoader.exists("res://assets/audio/v2/ruptura_tique.wav"),
+		"os sons do escudo existem"
+	)
 
 	# 2. erguer e baixar
 	zerar()
@@ -267,7 +270,10 @@ func _ready() -> void:
 	zerar()
 	var chave0: String = h.chave
 	esc.herois["teste_outro"] = "outro_secundario"
-	ok(esc.id_de("teste_outro") == "outro_secundario" and not esc.ativo_para("teste_outro") and esc.ativo_para(chave0), "id_de lê dados > herois; os outros ficam com o padrão")
+	ok(
+		esc.id_de("teste_outro") == "outro_secundario" and not esc.ativo_para("teste_outro") and esc.ativo_para(chave0),
+		"id_de lê dados > herois; os outros ficam com o padrão"
+	)
 	h.chave = "teste_outro"
 	erguer()
 	ok(not h.escudo_ativo, "herói com outro secundário: o escudo não ergue")
