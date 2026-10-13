@@ -1343,6 +1343,13 @@ _Claude do Alisson (PC)_
 
 _Claude do Breno (PC)_
 
+## 2026-10-13 - v2 Marco 4, parte 1: mapa médio (PR em rascunho)
+- **Feito:** mapa `medio` (`dados/v2_medio.json`, terceiro item de `LISTA` em `v2/mapas.gd`, `--mapa=medio`). Mesma arte e colisão da floresta (a grade de colisão é fixa em 2880x1620), herói no santuário (canto oeste), 6 zonas de monstros e uma rota de 8 pontos (~6.900 px em linha reta, ~1 min 30 de caminhada com os desvios). Marcadores no JSON (`marcadores`): 4 baús com relíquia (`bau.gd`, `forcar` 3) e um mini-chefe (`chefe.gd`, marca `mini1`), que nascem uma vez quando o herói chega perto; atalho escondido e portão do chefe só como dados, sem efeito. `v2/mundo.gd` ganhou `_montar_marcadores` e `_checar_marcadores` (sem módulo novo).
+- **Testes:** `v2_mapas` com `falhas=0`, incluindo os marcadores (livres, alcançáveis do santuário, rota, baú e mini-chefe no mundo). `v2_mundo` acusa uma falha de luz (`luz fora da tela desligada e dentro ligada`), que também acontece na `main` sem estas mudanças: não é deste PR.
+- **Pendente:** atalho e portão ainda não fazem nada (a passagem escondida é geometria a desenhar). O nome "MÉDIO" no botão do santuário é provisório. Falta ver o mapa jogado: `godot --path jogos/hordas/projeto res://v2/mundo.tscn -- --mapa=medio`.
+- **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
+
+_Claude (PC do Breno, via Remote Control)_
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
 - **Feito:** o card da v2 (pausa, painel central e HUD) deixou de cortar os golpes quando a build passa do que cabe. Na página visual da pausa e no painel central os golpes ganham páginas: quantos cabem sai da altura da coluna (sem número fixo), a última linha diz "Página X/Y · Q E", e Q e E trocam de página (pela entrada da pausa e do painel central). No HUD o compacto mostra o que cabe e o pé diz "+N golpes" (escolhido por ser o mais leve: sem troca automática de página). Golpe com nome longo e sem `curto` corta com "." no HUD, em vez de estourar a coluna. Com um golpe só não há paginação.
 - **Testes:** `v2_status` com `falhas=0` (novo bloco `_paginacao`: 50 golpes no HUD, na pausa e no painel central). Prints com os 50 golpes em `status_hud_50_golpes` e `status_pausa_50_golpes`.
