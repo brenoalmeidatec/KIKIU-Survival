@@ -79,6 +79,5 @@ A seleção tem quatro mapas: FLORESTA, LABORATÓRIO, CIDADE e RUÍNAS DA FLORES
 
 Resultado da partida: CONTINUAR agenda a troca para o santuário ao fim do evento, preservando o viewport que ainda consome a entrada. Falha de save mantém o aviso e libera CONTINUAR após 0,8 s. `testes/v2_morte.tscn` cobre morte real nos quatro mapas, teclado/mouse/controle, entrada duplicada, crédito único e falha de gravação, sem tocar no progresso real.
 
-
 ### Efeitos de Ruptura e escudo (2026-10-13)
 Ruptura usa sigilos radiais na carga, borda no raio atual e referência no raio máximo; a janela perfeita pulsa dourado suavemente. Disparo tem onda com halo e fissuras ramificadas com núcleo quente. Escudo é uma barreira curva elevada, com painéis, nervuras e runa: azul em sustentação, branco no bloqueio comum e dourado com oito raios no perfeito. O impacto acompanha a origem do golpe dentro do arco. São desenhos autorais por código, sem texturas externas, geração de assets por quadro ou mudança nos dados/mecânicas. Os pools existentes de 12 anéis e 2 rachaduras permanecem; a geometria usa limites fixos (20 segmentos de escudo, 12 sigilos, 9 fissuras).
