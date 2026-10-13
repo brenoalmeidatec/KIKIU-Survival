@@ -106,6 +106,8 @@ var _atalho_aberto := false
 var _pilares_prox := 0  # quantos pilares já foram ativados na ordem certa (com um fora de ordem volta a zero)
 var _pilares_ok := false  # os três pilares acenderam: o mini-chefe com "exige": "pilares" pode nascer
 const PILARES := 3
+const DEFESA_ONDA_S := 4.0  # a defesa de ponto solta uma onda de monstros a cada 4 s
+const DEFESA_MONSTROS_POR_ONDA := 2
 const FRAGMENTOS_RELIQUIA := 4  # com estes fragmentos a relíquia monta e cai um baú
 const COR_ANUNCIO := Color(1.0, 0.85, 0.4)
 var _sombras_prontas := false
@@ -353,6 +355,9 @@ func _montar_marcadores() -> void:
 				"nome": str(m.get("nome", "")),
 				"texto": str(m.get("texto", "")),
 				"exige": str(m.get("exige", "")),
+				"tempo": float(m.get("tempo", 0.0)),
+				"t": 0.0,  # tempo de defesa já cumprido
+				"onda": 0.0,  # segundos até a próxima onda da defesa
 				"feito": false,
 				"dentro": false,
 			}
@@ -360,13 +365,30 @@ func _montar_marcadores() -> void:
 
 
 ## O efeito de uma marca acontece quando o herói ENTRA no raio (não a cada quadro dentro dele).
-func _checar_marcadores() -> void:
+func _checar_marcadores(dt: float) -> void:
 	var hp: Vector2 = heroi.pos
 	for m in _marcadores:
 		var perto: bool = hp.distance_squared_to(m.pos) <= m.raio * m.raio
 		if perto and not m.dentro:
 			_tocar_marca(m)
+		if perto and m.tipo == "defesa" and not m.feito:
+			_defesa(m, dt)
 		m.dentro = perto
+
+
+## Defesa de ponto: com o herói dentro do raio o tempo corre e surgem monstros em volta a cada DEFESA_ONDA_S; ao completar `tempo`, cai uma relíquia (baú).
+func _defesa(m: Dictionary, dt: float) -> void:
+	m.t += dt
+	m.onda -= dt
+	if m.onda <= 0.0:
+		m.onda = DEFESA_ONDA_S
+		for i in DEFESA_MONSTROS_POR_ONDA:
+			var a := _rng.randf() * TAU
+			nascer_monstro(_sorteia(TIPOS_MONSTRO, PESOS_MONSTRO), m.pos + Vector2(cos(a), sin(a)) * m.raio * 0.9, true)
+	if m.t >= m.tempo:
+		m.feito = true
+		combate.baus.soltar(m.pos, 1.0, m.forcar)
+		combate.anunciar("DEFESA CUMPRIDA", COR_ANUNCIO)
 
 
 func _tocar_marca(m: Dictionary) -> void:
@@ -427,6 +449,9 @@ func _tocar_marca(m: Dictionary) -> void:
 				combate.anunciar("ORDEM ERRADA: os pilares se apagam", COR_ANUNCIO)
 		"placa":
 			combate.anunciar(m.texto, COR_ANUNCIO)
+		"defesa":
+			if not m.feito:
+				combate.anunciar("DEFESA: aguente %d s" % int(m.tempo), COR_ANUNCIO)
 		"chefe":
 			if m.feito or combate.chefes.atual != null:
 				return
@@ -646,7 +671,7 @@ func avancar(dt: float) -> void:
 				mo.atualizar(dtm, hp, hr)
 			var p2 := Time.get_ticks_usec()
 			combate.atualizar(dtm)
-			_checar_marcadores()
+			_checar_marcadores(dtm)
 			var p3 := Time.get_ticks_usec()
 			_perfil("heroi", p1 - p0)
 			_perfil("monstros", p2 - p1)

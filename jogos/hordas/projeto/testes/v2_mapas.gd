@@ -278,6 +278,7 @@ func _marcadores(id: String) -> void:
 	ok(w.combate.baus.soltos == caidos, "%s: %d baús caíram, um por marcador" % [id, caidos])
 	_mecanicas_a(w, marcas)
 	_mecanicas_b(w, marcas)
+	_mecanicas_c(w, marcas)
 	remove_child(w)
 	w.free()
 
@@ -344,6 +345,25 @@ func _mecanicas_b(w, marcas: Array) -> void:
 	ok(nasceu != null and str(w.combate.chefes.marca.id) == str(chefe.marca), "lote B: o mini-chefe nasce depois dos pilares")
 	w.avancar(PASSO)
 	ok(w.combate.chefes.atual == nasceu, "lote B: o mini-chefe não nasce de novo enquanto vive")
+
+
+## Lote C: a defesa de ponto cai a relíquia depois do tempo dentro do raio (e solta monstros em volta); cada placa diz o seu texto ao entrar.
+func _mecanicas_c(w, marcas: Array) -> void:
+	var defesa := _primeiro(marcas, "defesa")
+	var placas: Array = marcas.filter(func(m): return m.tipo == "placa")
+	ok(not defesa.is_empty() and placas.size() == 3, "lote C: 1 defesa e 3 placas no mapa médio (%d)" % placas.size())
+	for pl in placas:
+		_ir(w, pl.pos)
+		ok(w.combate.ultimo_anuncio == str(pl.texto), "lote C: a placa em %s diz o seu texto" % str(pl.pos))
+	if defesa.is_empty():
+		return
+	var antes: int = w.combate.baus.soltos
+	var monstros_antes: int = w.monstros.size()
+	w.heroi.definir_pos(defesa.pos)
+	for i in int(ceil(float(defesa.tempo) / PASSO)) + 60:
+		w.avancar(PASSO)
+	ok(w.combate.baus.soltos == antes + 1, "lote C: a defesa cumprida faz cair a relíquia")
+	ok(w.monstros.size() > monstros_antes, "lote C: a defesa solta monstros em volta")
 
 
 func _santuario() -> void:
