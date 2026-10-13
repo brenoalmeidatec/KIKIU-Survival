@@ -1342,3 +1342,9 @@ _Claude do Alisson (PC)_
 - **Pendente:** olhar o print num monitor real (PC e notebook): a dica é pequena e o print é 1280x720.
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex Luna (PC) · save seguro da meta-progressão v2
+- **Feito:** `v2/meta.gd` grava por temporário validado, mantém `.bak`, recupera de backup e bloqueia gravação sobre save corrompido sem backup. `mapas.gd` usa os mesmos helpers, evitando que a escolha do mapa apague o save. Falhas retornam para compra, escolha de mapa e fim de partida; altar e resultado não anunciam ganhos que não foram salvos. `testes/v2_meta.gd` e `testes/v2_mapas.gd` passaram (`falhas=0`), cobrindo falha de gravação, compra sem persistência, recuperação do backup e corrupção sem backup.
+- **Pendente:** integrar a `origin/main` avançada durante este trabalho e conferir os arquivos sobrepostos com os PRs #201, #214, #217, #219, #220 e #222.
+
+_Codex Luna (PC)_
