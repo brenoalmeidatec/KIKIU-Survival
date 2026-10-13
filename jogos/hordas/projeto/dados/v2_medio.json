@@ -1,5 +1,5 @@
 {
-	"_ajuda": "O mapa médio da v2 (~1 min 30 de caminhada), lido por v2/cenario.gd. Feito a partir de dados/v2_floresta.json (mesmos objetos, decalques, luzes e colisão: a grade de colisão é fixa em 2880x1620). Diferenças: o herói nasce no santuário (canto oeste) e a rota passa por 8 pontos: 4 baús com relíquia (forcar 3, nascem quando o herói chega perto), um atalho escondido (só dado por enquanto), um mini-chefe (marca mini1, nasce ao chegar perto) e o portão do chefe (só dado por enquanto). marcadores: {tipo, pos [x, y], raio (px; a distância em que o baú ou o chefe nasce), forcar (cartas do baú), marca (id de dados/v2_cartas.json > chefes.marcas)}. tipo: bau, chefe, atalho, portao. Edite à mão; o teste testes/v2_mapas confere que cada ponto está livre e alcançável.",
+	"_ajuda": "O mapa médio da v2 (~1 min 30 de caminhada), lido por v2/cenario.gd. Feito a partir de dados/v2_floresta.json (mesmos objetos, decalques, luzes e colisão: a grade de colisão é fixa em 2880x1620). O herói nasce no santuário (canto oeste). Marcadores (`marcadores`), na ordem da rota: tipo, pos [x, y], raio (px; o efeito acontece ao o herói ENTRAR no raio), forcar (cartas do baú), marca (id de dados/v2_cartas.json > chefes.marcas). Tipos: bau (cai ao chegar), bau_trancado (precisa da chave), chave (ruína; abre o baú trancado), fragmento (4 montam uma relíquia, que faz cair um baú), chefe (mini-chefe), atalho e portao (só dados por enquanto). Edite à mão; o teste testes/v2_mapas confere que cada ponto está livre e alcançável.",
 	"semente": 11,
 	"mapa": {
 		"tam": [
@@ -2302,12 +2302,29 @@
 		]
 	},
 	"marcadores": [
+		{"tipo": "alavanca", "pos": [300, 1200], "raio": 200},
+		{"tipo": "placa", "pos": [600, 1200], "raio": 200, "texto": "Aqui os santos caíram. Ninguém lembra o nome do último."},
+		{"tipo": "mercador", "pos": [600, 1320], "raio": 200, "custo": 8, "forcar": 1},
+		{"tipo": "pilar", "pos": [780, 1080], "raio": 200, "ordem": 3, "nome": "terra"},
 		{"tipo": "bau", "pos": [1000, 1200], "raio": 400, "forcar": 3},
-		{"tipo": "bau", "pos": [1600, 780], "raio": 400, "forcar": 3},
+		{"tipo": "fragmento", "pos": [900, 720], "raio": 200},
+		{"tipo": "placa", "pos": [1000, 540], "raio": 200, "texto": "O fogo desperta primeiro, depois a água, e por fim a terra."},
+		{"tipo": "pilar", "pos": [1200, 480], "raio": 200, "ordem": 1, "nome": "fogo"},
 		{"tipo": "bau", "pos": [1400, 300], "raio": 400, "forcar": 3},
+		{"tipo": "pilar", "pos": [1860, 420], "raio": 200, "ordem": 2, "nome": "água"},
+		{"tipo": "placa", "pos": [2000, 300], "raio": 200, "texto": "A relíquia se partiu em quatro. Quem a junta, a leva."},
+		{"tipo": "fragmento", "pos": [2100, 660], "raio": 200},
+		{"tipo": "espinhos", "pos": [1950, 770], "rect": [1800, 700, 300, 140], "seguro": [[1800, 740, 300, 40]], "dano": 6},
+		{"tipo": "bau_trancado", "pos": [1900, 1020], "raio": 400, "forcar": 3},
+		{"tipo": "alavanca", "pos": [2100, 1260], "raio": 200},
+		{"tipo": "chefe", "pos": [2550, 1140], "raio": 600, "marca": "mini1", "exige": "pilares"},
+		{"tipo": "fragmento", "pos": [2520, 840], "raio": 200},
 		{"tipo": "atalho", "pos": [2550, 420]},
-		{"tipo": "chefe", "pos": [2550, 1140], "raio": 600, "marca": "mini1"},
+		{"tipo": "chave", "pos": [2500, 300], "raio": 200},
+		{"tipo": "bau", "pos": [1600, 780], "raio": 400, "forcar": 3},
+		{"tipo": "defesa", "pos": [1500, 1200], "raio": 250, "tempo": 30, "forcar": 3},
+		{"tipo": "portao", "pos": [1500, 1380]},
 		{"tipo": "bau", "pos": [700, 600], "raio": 400, "forcar": 3},
-		{"tipo": "portao", "pos": [1500, 1380]}
+		{"tipo": "fragmento", "pos": [360, 900], "raio": 200}
 	]
 }
