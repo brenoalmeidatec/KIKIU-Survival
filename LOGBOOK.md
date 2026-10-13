@@ -1523,3 +1523,12 @@ _Codex GPT-6.1 Sol (PC)_
 - **Próximo:** atualizar PR #236, obter CI verde e exportar/validar a candidata com este commit; publicação e merge remoto ficam com o agente responsável.
 
 _Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Santuário compacto e volta ao título
+- **Feito:** ESC/Start/B e botão VOLTAR retornam do Santuário ao menu principal. Só o título pede Sair por ESC; a pausa da partida mantém seu fluxo. Ajustes/Gráficos continuam voltando um nível e devolvem foco ao botão Ajustes quando fecham.
+- **Visual:** melhorias em grade 3×3 com marcadores de nível e custo/estado, detalhe único por foco ou mouse (inclusive bloqueadas/máximas), conquistas com barras rotuladas pela última partida e descrição acessível pelo teclado/controle. Fundo atual `assets/titulo/fundo.png`, sem mudar splash/exports. Nome completo de mapa cabe no botão em fonte 19, inclusive RUÍNAS DA FLORESTA; resumo inicial neutro.
+- **Validação:** Godot 4.4.1 real: v2_santuario, v2_meta, v2_pausa, v2_menu, v2_esc, v2_status, v2_fontes e v2_musica com código 0/falhas=0. Teste novo usa Input.parse_input_event e current_scene real para ESC, Start, B, Enter e clique; confere foco, estados bloqueado/máximo, barras e limites de cartões/textos. Falha de gravação e itens ocultos preservados por v2_meta. gdformat -l 160 --check scripts/testes/v2 limpo (228 arquivos); git diff --check limpo.
+- **Conferência visual:** capturas reais do viewport 960×540, janela oculta e frame_post_draw, antes/depois com saldo zero/com almas, barras parciais e conquistas cumpridas. Logs/fotos locais em `C:/Dev/Breno/analise-kikiu/logs-santuario`, fora do Git. Avisos de recursos/RID ao encerrar headless continuam; erros de parse de save em meta são intencionais. Nenhuma arte binária/import/cache adicional versionada.
+- **Próximo:** agente principal publica PR coeso do Santuário e integra com o PR separado dos mapas antes da build conjunta; nenhum push/merge feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_

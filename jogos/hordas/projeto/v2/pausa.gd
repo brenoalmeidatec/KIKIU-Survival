@@ -5,7 +5,7 @@ extends CanvasLayer
 ## Ajustes: Gráficos (o menu completo da aba, em ajustes_graficos.gd, dirigido pelo dados/graficos.json e pelo Config) e Áudio
 ## (Música e Efeitos, as chaves musica e efeitos da v1). ESC dentro de Ajustes volta um nível, sem fechar a pausa de uma vez.
 ## Sair é o ÚNICO caminho que fecha o jogo; ao_sair é o gancho que os testes trocam.
-## No santuário (altar.gd, sem mundo) o ESC abre só "Sair?", e abrir_ajustes() abre Ajustes (o botão do santuário).
+## No título ESC abre "Sair?". O santuário desliga sair_no_frontend e trata ESC localmente; abrir_ajustes() é compartilhado.
 ## Perder o foco da janela pausa a partida (opção pausar_fora da v1; não vale em headless). Criada pelo mundo.gd (uma linha no
 ## _ready) e pelo altar.gd. Os botões são desenhados e testados por retângulo: o SubViewport da partida não entrega mouse aos Controls.
 ## ENTRADA: a janela entrega teclado, controle e mouse só à viewport RAIZ; o SubViewport da partida (onde o menu mora, para ficar na
@@ -48,6 +48,7 @@ signal fechou  # o menu fechou: quem o abriu (o santuário, o título) devolve o
 
 var mundo  # a partida (mundo.gd); null no santuário (altar.gd) e no título (menu_principal.gd)
 var mouse_fn := Callable()  # mouse em 960x540 (o Apresentacao da partida); vazio = mouse da janela (santuário)
+var sair_no_frontend := true  # só o título abre Sair com ESC; o santuário trata sua volta
 var ao_sair := Callable()  # "Sim" em Sair do jogo; vazio = get_tree().quit()
 var aberto := false
 var tela := "menu"
@@ -219,7 +220,7 @@ func _card_build() -> void:
 		mundo.status.na_pausa(aberto and tela == "menu")
 
 
-## Santuário (sem mundo): o ESC abre direto a confirmação de sair.
+## Título (sem mundo): ESC abre a confirmação de sair quando sair_no_frontend está ativo.
 func abrir_sair() -> void:
 	if aberto:
 		return
@@ -298,6 +299,8 @@ func entrada(e: InputEvent) -> bool:
 		if not _pede_menu(e):
 			return false
 		if mundo == null:
+			if not sair_no_frontend:
+				return false
 			abrir_sair()
 			return true
 		return pausar()
