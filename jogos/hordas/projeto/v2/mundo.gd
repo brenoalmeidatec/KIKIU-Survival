@@ -41,6 +41,7 @@ const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no
 const Trilha := preload("res://v2/trilha.gd")  # a música de fundo da partida (faixa por momento, volume no bus Musica)
 const LARG := 960
 const ALT := 540
+const MAX_PASSO_COLISAO := 8.0  # menor pegada de árvore + círculo do herói ocupa mais que este passo
 const ORCAMENTO_LUZES := {"desligada": 6, "so_heroi": 0, "tudo": 0}  # máximo de luzes ligadas por "luz_relevo" (0 = sem limite); o perfil Baixo usa "desligada"
 const PASSO_SOMBRA_CENARIO := 3  # a sombra de cada objeto parado recalcula a cada 3 quadros (a luz que a move muda devagar; o deslize suaviza)
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
@@ -481,7 +482,15 @@ func _ler_graficos() -> void:
 ## na área andável (o mapa menos "borda_andavel": as árvores das bordas fecham o mapa). Devolve o deslocamento que de fato aconteceu.
 func mover(a, desejado: Vector2) -> Vector2:
 	var antes: Vector2 = a.pos
-	var depois: Vector2 = Colisao.resolver(antes + desejado, a.raio)
+	var depois := antes + desejado
+	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, a.raio):
+		var n_passos := ceili(desejado.length() / MAX_PASSO_COLISAO)
+		var passo := desejado / n_passos
+		depois = antes
+		for _i in n_passos:
+			depois = Colisao.resolver(depois + passo, a.raio)
+	else:
+		depois = Colisao.resolver(depois, a.raio)
 	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
 	a.definir_pos(depois)
 	return depois - antes
