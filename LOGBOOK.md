@@ -1352,6 +1352,10 @@ _Codex (PC), workflow com agentes Luna_
 ## 2026-10-13 · Codex Luna (PC) · save seguro da meta-progressão v2
 - **Feito:** `v2/meta.gd` grava por temporário validado, mantém `.bak`, recupera de backup e bloqueia gravação sobre save corrompido sem backup. `mapas.gd` usa os mesmos helpers, evitando que a escolha do mapa apague o save. Falhas retornam para compra, escolha de mapa e fim de partida; altar e resultado não anunciam ganhos que não foram salvos. `testes/v2_meta.gd` e `testes/v2_mapas.gd` passaram (`falhas=0`), cobrindo falha de gravação, compra sem persistência, recuperação do backup e corrupção sem backup.
 - **Pendente:** integrar a `origin/main` avançada durante este trabalho e conferir os arquivos sobrepostos com os PRs #201, #214, #217, #219, #220 e #222.
+## 2026-10-13 · CI da Release exige testes verdes no mesmo SHA
+- **Feito:** `ci.yml` pode ser chamado como workflow reutilizável; `release.yml` chama esse CI e `publicar` espera o CI e os dois jobs de exportação. O workflow reutilizável e os `actions/checkout` usam o SHA do evento da Release.
+- **Exports:** Linux, Web e Windows mantidos intactos; importação continua com `|| true` por causa do segfault conhecido no encerramento.
+- **Verificação:** YAML parseado; dependência de `publicar`, chamada local e caminho do workflow conferidos. Não rodei Godot para evitar concorrência com os testes nas outras branches.
 
 _Codex Luna (PC)_
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
@@ -1379,3 +1383,9 @@ _Codex (PC), workflow com agentes Luna_
 - **Pendente:** PR/push será tratado pelo root.
 
 _Codex Luna (PC)_
+## 2026-10-13 · Codex (PC) · Release revalidada na main atualizada
+- **Feito:** incorporada a main cdf67f7 e mantidos os exports intactos. A Release chama o CI reutilizável local do mesmo commit, e publicar depende dele. Import com segfault de saída conhecido permanece tolerado.
+- **Verificação:** YAML e dependência do mesmo commit conferidos; gdformat scripts/testes: 174 arquivos limpos. Formatação pendente do teste v2_status da main foi isolada em commit próprio. Não rodei Godot local para mudança exclusiva de workflows; o CI do PR executa as cenas.
+- **Próximo:** conferir os checks e integrar com o PR separado de lint.
+
+_Codex (PC), workflow com agentes Luna_
