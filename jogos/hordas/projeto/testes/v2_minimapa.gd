@@ -106,17 +106,37 @@ func _ready() -> void:
 	m.passar(0.1)
 	ok(m.luzes_vistas.size() >= 1, "a fogueira aparece quando a névoa a revela (%d)" % m.luzes_vistas.size())
 
-	# 7. o Tab alterna o mapa pequeno e o grande (segurar não repete)
+	# 7. o Tab segurado abre o mapa grande; ao soltar, volta ao pequeno
 	m.ler_tecla(false)
 	m.ler_tecla(true)
-	ok(m.grande, "o Tab abre o mapa grande")
+	ok(m.grande, "segurar o Tab abre o mapa grande")
 	ok(m._quadro.size == Vector2(620, 356), "mapa grande com moldura de 620x356 (%s)" % str(m._quadro.size))
 	m.ler_tecla(true)
-	ok(m.grande, "segurar o Tab não alterna de novo")
+	ok(m.grande, "continuar segurando mantém o mapa grande")
 	m.ler_tecla(false)
-	m.ler_tecla(true)
-	ok(not m.grande, "outro Tab volta ao minimapa pequeno")
+	ok(not m.grande, "soltar o Tab volta ao minimapa pequeno")
 	ok(m._quadro.size == Vector2(170, 104), "minimapa pequeno com moldura de 170x104 (%s)" % str(m._quadro.size))
+
+	# 7b. baús: só aparecem no minimapa depois de vistos pela névoa
+	var longe_bau := Vector2(2600, 1300)  # fora da névoa (ver o item 3)
+	w.combate.baus.soltar(longe_bau)
+	m.passar(0.1)
+	ok(m.baus_mapa.is_empty(), "um baú ativo, ainda não visto, não aparece no minimapa")
+	var perto_bau: Vector2 = w.heroi.pos + Heroi.CENTRO_CORPO + Vector2(40, 0)
+	w.combate.baus.soltar(perto_bau)
+	m.passar(0.1)
+	ok(m.baus_mapa.size() == 1, "um baú já visto aparece no minimapa (%d)" % m.baus_mapa.size())
+
+	# 7c. seta na borda: missão longe do herói ganha seta; a borda fica entre o herói e a missão
+	var origem := Vector2(75, 42)
+	var borda: Vector2 = m._na_borda(origem, Vector2(150, 42))  # alvo à direita, fora do mapa
+	ok(borda.is_equal_approx(Vector2(149, 42)), "a seta fica na borda do lado do alvo (%s)" % str(borda))
+	var meio: Vector2 = m._na_borda(origem, Vector2(80, 45))  # alvo dentro: a seta sai na borda, depois do alvo
+	ok(meio.x >= 79.9 and meio.x <= 149.0, "a seta de um alvo dentro do mapa sai na borda (%s)" % str(meio))
+
+	# 7d. mirante: revela o mapa inteiro de uma vez
+	m.revelar_tudo()
+	ok(m.revelado(Vector2(2600, 1300)) and m.revelado(Vector2(60, 60)), "o mirante revela o mapa todo")
 	ok(m._quadro.position.x + m._quadro.size.x <= 960.0 - 8.0 + 0.01 and m._quadro.position.y == 8.0, "o pequeno fica no canto superior direito")
 
 	# 8. 10 Hz: em 1 s, os marcadores são repintados ~10 vezes (e não 60)
