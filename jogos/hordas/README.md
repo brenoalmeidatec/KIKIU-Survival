@@ -15,6 +15,8 @@ O projeto usa o renderer *Compatibility*, tela base 640×360 com escala inteira 
 
 ## 🧪 Testes automáticos
 
+O executor `bash ferramentas/testes_ci.sh <godot> 2` exige código de saída 0, a marca `falhas=0` e ausência de `SCRIPT ERROR`. Timeout (124), crash por sinal e falha comum são identificados nos logs. `regras_armas` mantém 300 s; as demais cenas têm 120 s. Autoteste sem Godot: `bash ferramentas/autoteste_executor.sh`.
+
 Cada cena em `projeto/testes/` é um teste que roda sozinho e imprime `falhas=0` quando passa:
 
 ```bash

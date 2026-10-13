@@ -1342,3 +1342,10 @@ _Claude do Alisson (PC)_
 - **Pendente:** olhar o print num monitor real (PC e notebook): a dica é pequena e o print é 1280x720.
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex Luna / Codex (PC) · executor de testes
+- **Feito:** preservado o código de saída do timeout/Godot; aprovação exige código 0, falhas=0 e nenhum SCRIPT ERROR. Logs distinguem timeout 124, crash/sinal e falha comum. Mantido o limite de 300 s do regras_armas; import do CI não mudou.
+- **Testes:** autoteste_executor com sucesso, código 7 após falhas=0, timeout real abreviado, crash 139, SCRIPT ERROR, saída incompleta, marca inválida e limite de regras_armas: falhas=0. gdformat -l 160 --check scripts testes: 173 arquivos limpos. Sem mudança no jogo; a bateria Godot não foi rodada neste assunto.
+- **Pendente / próximo:** CI do PR e integração separada da proteção de Release. Sem alterações nos arquivos v2 dos PRs #201/#214/#217/#219/#220/#222.
+
+_Codex (PC), workflow com agentes Luna_
