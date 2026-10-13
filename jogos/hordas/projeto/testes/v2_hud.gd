@@ -219,11 +219,49 @@ func _testes() -> void:
 
 	# 10. anúncios, marcos de combo, chefe, vinheta, relógio e sinais que faltam no mundo
 	_testes_anuncios(vista)
+	_teste_barra_elite()
 	_testes_rotulo_e_cartas()
 
 
 ## Leva de interface: o texto de depuração (fps e atores) começa DESLIGADO na partida normal e a tecla F3 liga e desliga;
 ## com a escolha de carta (ou o baú) aberta, o HUD esconde o combo e a faixa de anúncio (o título grande fica no alto).
+## A elite mostra vida sobre o sprite, atualiza dano, some ao morrer e não reaparece como monstro comum ao sair do pool.
+func _teste_barra_elite() -> void:
+	var w = Mundo.instantiate()
+	w.modo_teste = true
+	add_child(w)
+	w.set_process(false)
+	var cfg: Dictionary = w.combate.elites.cfg
+	var tipo: Dictionary = cfg.tipos[0]
+	var mod: Dictionary = cfg.modificadores[0]
+	var p: Vector2 = w.heroi.pos + Vector2(72.0, 0.0)
+	var m = w.combate.elites.nascer(str(tipo.sprite), str(mod.id), p)
+	ok(m != null, "o mundo cria elite para testar a barra")
+	if m == null:
+		w.queue_free()
+		return
+	var barra = m.barra_vida_elite
+	ok(barra != null and barra.is_visible_in_tree(), "a barra nasce visível com a elite")
+	if barra == null:
+		w.queue_free()
+		return
+	var topo_visual: float = m.sprite.position.y + m.sprite.get_rect().position.y * m.sprite.scale.y
+	ok(barra.position.y < topo_visual, "a barra fica acima do topo visual do sprite, com offset e escala")
+	m.vida = m.vida_max * 0.4
+	barra.sincronizar(m)
+	ok(is_equal_approx(barra.fracao, 0.4), "a barra acompanha hp/hpmax da elite: %s" % barra.fracao)
+	m.vida = 1.0
+	w.combate.matar(m)
+	ok(not barra.visible and not barra.is_visible_in_tree(), "a barra some quando a elite morre")
+	var reutilizado = w.nascer_monstro(m.chave, p + Vector2(20.0, 0.0), true)
+	ok(reutilizado == m, "a morte devolve o mesmo ator ao pool")
+	ok(not barra.visible and not barra.is_visible_in_tree(), "a barra continua escondida quando o pool reutiliza o ator como comum")
+	w.combate.elites.marcar(reutilizado, mod)
+	barra.sincronizar(reutilizado)
+	ok(barra.visible and barra.is_visible_in_tree() and is_equal_approx(barra.fracao, 1.0), "a barra volta cheia ao reutilizar o ator como elite")
+	w.queue_free()
+
+
 func _testes_rotulo_e_cartas() -> void:
 	var w = Mundo.instantiate()
 	w.modo_teste = true
@@ -437,7 +475,14 @@ func _fotos(pasta: String) -> void:
 	for i in 60:
 		w.avancar(PASSO)
 	await _foto(w, pasta, "hud_inicio")
-
+	var ecfg: Dictionary = w.combate.elites.cfg
+	var elite = w.combate.elites.nascer(str(ecfg.tipos[0].sprite), str(ecfg.modificadores[0].id), w.heroi.pos + Vector2(72.0, 0.0))
+	if elite != null:
+		elite.vida = elite.vida_max * 0.56
+		elite._visual_no(Vector2.ZERO)
+		await get_tree().create_timer(0.3).timeout
+		await _foto(w, pasta, "elite_barra_vida")
+		w.combate.matar(elite)
 	falso.heroi.vida = 50.0
 	falso.heroi.folego = 35.0
 	falso.heroi.xp = 60.0

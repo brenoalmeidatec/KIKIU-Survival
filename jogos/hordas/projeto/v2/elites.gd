@@ -128,6 +128,7 @@ func marcar(m, md: Dictionary) -> void:
 	m.invoca_t = float(md.get("cada", 4.5)) * 0.6
 	m.definir_escala(float(cfg.escala))
 	dar_contorno(m, m.cor_elite)
+	m.garantir_barra_vida_elite()
 	if mundo.sombras != null and m.ativo:
 		mundo.sombras.atualizar(m, mundo.t)
 

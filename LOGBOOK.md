@@ -1447,3 +1447,11 @@ _Codex LunaPC_
 - **Verificação:** Godot 4.4.1 v2_partida, v2_status e v2_fontes com falhas=0; gdformat -l 160 --check (scripts/testes e fontes alteradas) e git diff --check passaram. Capturas OpenGL do veneno em escala 1× e grade de motivos em 2× ficaram fora do repositório, junto do wrapper local. Runners ainda reportam recursos/RID em uso ao encerrar, sem SCRIPT ERROR. Splash temporário da captura foi restaurado.
 
 _Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 - v2: barra de vida das elites
+- **Feito:** elites ganham uma barra pequena acima da região visual do sprite, calculada com o retângulo, offset e escala do Sprite2D. A barra nasce sob demanda só ao marcar elite, acompanha vida/vida máxima imediatamente ao receber dano, some com vida zero/morte e permanece escondida se o ator voltar ao pool como monstro comum; a mesma instância é reutilizada se virar elite outra vez.
+- **Testes:** `v2_hud falhas=0` (headless), cobrindo posição visual, fração de vida, morte, retorno ao pool como comum e reutilização como elite. Captura com renderer real em `C:\Dev\Breno\analise-kikiu\logs-hud\elite_barra_vida.png`.
+- **Formatação:** `gdformat -l160 --check` nos arquivos alterados.
+
+- **Conferência final:** formatação global de scripts/testes limpa após commit separado de formatação do teste de status da main. Captura real revisada; a primeira chamada com parâmetros de foto incorretos executou asserts de F3 e falhou em quatro rótulos no renderer, sem alterar esses testes. A chamada corrigida de captura terminou com código 0. A aprovação funcional citada acima é a execução headless com `falhas=0` e sem `SCRIPT ERROR`.
+
+_Codex com agentes Luna (PC)_
