@@ -4,8 +4,9 @@
 # Uso (a partir da raiz do repo): bash ferramentas/testes_ci.sh <godot> [paralelas]
 #   paralelas: padrao 4 (cada cena e um processo Godot headless).
 #
-# Criterio de falha (o mesmo de antes do paralelismo): a saida da cena tem
-# "SCRIPT ERROR", ou nao tem "falhas=0". Cena que estoura 120 s tambem falha (regras_armas, que e lenta, tem 300 s).
+# Uma cena passa apenas com codigo 0, "falhas=0" e sem "SCRIPT ERROR".
+# Timeout (124), crash (sinal) e falha comum ficam distintos no resultado e no log.
+# Limite: 120 s por cena; regras_armas, que e lenta, tem 300 s.
 # bench_* ficam de fora. criacao e criacao2 gravam o mesmo arquivo de heroi
 # (user://teste_heroi_criado.json e user://teste_criacao2.json), por isso rodam
 # em sequencia dentro da mesma unidade, nunca em paralelo.
@@ -16,18 +17,30 @@ set -u
 # Modo interno, chamado pelo xargs: roda as cenas da unidade, uma apos a outra.
 # Recebe GODOT, LOGS (exportados) e o diretorio atual = jogos/hordas/projeto.
 rodar_uma() {
-  local n="$1" saida limite=120
+  local n="$1" saida codigo limite=120 resultado
   # regras_armas (v1) leva de 100 a 290 s: passa ou estoura os 120 s conforme a carga da maquina, e bloqueava todo PR.
   [ "$n" = "regras_armas" ] && limite=300
-  saida=$(timeout "$limite" "$GODOT" --headless --path . "res://testes/$n.tscn" 2>&1) || true
-  printf '%s\n' "$saida" > "$LOGS/$n.log"
-  if grep -q "SCRIPT ERROR" <<<"$saida"; then
-    echo "SCRIPT ERROR" > "$LOGS/$n.res"
-  elif grep -q "falhas=0" <<<"$saida"; then
-    echo "ok" > "$LOGS/$n.res"
+  if saida=$(timeout "$limite" "$GODOT" --headless --path . "res://testes/$n.tscn" 2>&1); then
+    codigo=0
   else
-    echo "sem 'falhas=0' (timeout ou saida incompleta)" > "$LOGS/$n.res"
+    codigo=$?
   fi
+  printf '%s\n' "$saida" > "$LOGS/$n.log"
+  if [ "$codigo" -eq 124 ]; then
+    resultado="timeout (codigo 124, limite ${limite}s)"
+  elif [ "$codigo" -gt 128 ]; then
+    resultado="crash/sinal (codigo $codigo, sinal $((codigo - 128)))"
+  elif [ "$codigo" -ne 0 ]; then
+    resultado="falha do processo (codigo $codigo)"
+  elif grep -q "SCRIPT ERROR" <<<"$saida"; then
+    resultado="SCRIPT ERROR (codigo 0)"
+  elif grep -Eq '(^|[[:space:]])falhas=0([[:space:]]|$)' <<<"$saida"; then
+    resultado="ok"
+  else
+    resultado="sem 'falhas=0' (codigo 0, saida incompleta)"
+  fi
+  printf '%s\n' "$resultado" > "$LOGS/$n.res"
+  printf '\nEXECUTOR: %s; codigo=%s; limite=%ss\n' "$resultado" "$codigo" "$limite" >> "$LOGS/$n.log"
 }
 
 if [ "${1:-}" = "--uma" ]; then
@@ -39,6 +52,8 @@ GODOT=$(readlink -f "${1:?uso: testes_ci.sh <godot> [paralelas]}")
 P="${2:-4}"
 RAIZ=$(cd "$(dirname "$0")/.." && pwd)
 SELF=$(readlink -f "$0")
+# Confere a classificacao do executor antes da bateria; --uma nao entra aqui.
+bash "$RAIZ/ferramentas/autoteste_executor.sh" || exit 1
 cd "$RAIZ/jogos/hordas/projeto" || exit 1
 LOGS="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/testes-logs"
 rm -rf "$LOGS" && mkdir -p "$LOGS"
@@ -81,7 +96,7 @@ for n in "${cenas[@]}"; do
     falhas=$((falhas + 1))
     echo "::error::$n: $res"
     echo "::group::saida de $n"
-    if [ "$res" = "SCRIPT ERROR" ]; then
+    if [[ "$res" == "SCRIPT ERROR"* ]]; then
       grep -A3 "SCRIPT ERROR" "$LOGS/$n.log" | head -20
     else
       tail -25 "$LOGS/$n.log" 2>/dev/null

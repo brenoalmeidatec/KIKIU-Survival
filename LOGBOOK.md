@@ -1350,9 +1350,28 @@ _Claude do Breno (PC)_
 - **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
 
 _Claude (PC do Breno, via Remote Control)_
+## 2026-10-13 · Codex Luna / Codex (PC) · executor de testes
+- **Feito:** preservado o código de saída do timeout/Godot; aprovação exige código 0, falhas=0 e nenhum SCRIPT ERROR. Logs distinguem timeout 124, crash/sinal e falha comum. Mantido o limite de 300 s do regras_armas; import do CI não mudou.
+- **Testes:** autoteste_executor com sucesso, código 7 após falhas=0, timeout real abreviado, crash 139, SCRIPT ERROR, saída incompleta, marca inválida e limite de regras_armas: falhas=0. gdformat -l 160 --check scripts testes: 173 arquivos limpos. Sem mudança no jogo; a bateria Godot não foi rodada neste assunto.
+- **Pendente / próximo:** CI do PR e integração separada da proteção de Release. Sem alterações nos arquivos v2 dos PRs #201/#214/#217/#219/#220/#222.
+
+_Codex (PC), workflow com agentes Luna_
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
 - **Feito:** o card da v2 (pausa, painel central e HUD) deixou de cortar os golpes quando a build passa do que cabe. Na página visual da pausa e no painel central os golpes ganham páginas: quantos cabem sai da altura da coluna (sem número fixo), a última linha diz "Página X/Y · Q E", e Q e E trocam de página (pela entrada da pausa e do painel central). No HUD o compacto mostra o que cabe e o pé diz "+N golpes" (escolhido por ser o mais leve: sem troca automática de página). Golpe com nome longo e sem `curto` corta com "." no HUD, em vez de estourar a coluna. Com um golpe só não há paginação.
 - **Testes:** `v2_status` com `falhas=0` (novo bloco `_paginacao`: 50 golpes no HUD, na pausa e no painel central). Prints com os 50 golpes em `status_hud_50_golpes` e `status_pausa_50_golpes`.
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex (PC) · executor revalidado sobre a main atualizada
+- **Feito:** incorporada a main cdf67f7 sem descartar o trabalho paralelo. A formatação pendente em testes/v2_status.gd, vinda da main, foi corrigida em commit separado exclusivamente de formatação.
+- **Testes:** autoteste_executor falhas=0; gdformat -l 160 --check scripts testes: 174 arquivos limpos. O CI do PR #223 está em execução; imports do workflow permanecem intactos.
+- **Próximo:** integrar os PRs por assunto após conferir os checks.
+
+_Codex (PC), workflow com agentes Luna_
+
+## 2026-10-13 · Codex (PC) · autoteste integrado ao executor
+- **Feito:** o executor normal roda seu autoteste antes da bateria, sem recursão nos workers --uma. Assim o próprio CI verifica código 7 após marca de sucesso e timeout, sem alterar o import do Godot.
+- **Verificação:** autoteste_executor falhas=0; testes de sintaxe Bash e gdformat scripts/testes limpos. A instabilidade do esquiva legado está documentada no PR #223 com o log.
+
+_Codex (PC), workflow com agentes Luna_
