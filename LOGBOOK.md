@@ -1453,5 +1453,9 @@ _Codex GPT-6.1 Sol (PC)_
 - **Formatação:** `gdformat -l160 --check` nos arquivos alterados.
 
 - **Conferência final:** formatação global de scripts/testes limpa após commit separado de formatação do teste de status da main. Captura real revisada; a primeira chamada com parâmetros de foto incorretos executou asserts de F3 e falhou em quatro rótulos no renderer, sem alterar esses testes. A chamada corrigida de captura terminou com código 0. A aprovação funcional citada acima é a execução headless com `falhas=0` e sem `SCRIPT ERROR`.
+## 2026-10-13 · Codex com agentes Luna (PC) · splash usa a arte atual
+- **Feito:** o menu já usava a arte nova do PR #215, mas `boot_splash/image` ainda referenciava `assets/icone/entrada.png`. A configuração da inicialização passa a apontar para `assets/titulo/fundo.png`, a mesma arte atual do menu. Nenhuma arte nova nem alteração dos exports.
+- **Testes:** Godot 4.4.1 com import real, `v2_menu` e `entrada_cenas`: código 0, `falhas=0`, sem `SCRIPT ERROR`; imagem configurada existente e referência conferida. Formatação global scripts/testes limpa em commit separado; `git diff --check` limpo.
+- **Pendente / recados:** conferir a abertura na próxima build; nenhuma mudança de combate. Guia atualizado.
 
 _Codex com agentes Luna (PC)_
