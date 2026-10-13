@@ -1349,3 +1349,10 @@ _Claude do Breno (PC)_
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex com agentes Luna (PC) · recompensas em 1 segundo
+- **Feito:** escolha inicial e baú da v2 aguardam 1 s real; no baú todas as cartas são reveladas juntas ao completar esse segundo, independentemente de haver 1, 2 ou 3 recompensas. Rerrolar/banir mantém 0,8 s. A pausa e o descarte de cliques antecipados continuam cobertos.
+- **Testes:** Godot 4.4.1, import real; `v2_cartas_espera`, `v2_partida`, `v2_esc` e `v2_status`: código 0, `falhas=0`, sem `SCRIPT ERROR`. O fuzz de ESC ganhou 1000 passos para manter os mesmos mínimos de cobertura com a escolha mais curta; o teste do painel mede 0,25 s dentro da nova espera. `gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes` limpo. A tentativa inicial de executar `v2_cartas.tscn` não rodou: a cena não existe, e não é contada como teste aprovado.
+- **Pendente / recados:** conferir sensação em uma partida. Conflitos potenciais de dados/estilo com #201, #209, #214 e #217; as mudanças de mecânicas do mapa #220/#222 usam baús e devem preservar a espera nova.
+
+_Codex com agentes Luna (PC)_

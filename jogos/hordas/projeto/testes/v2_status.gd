@@ -8,7 +8,7 @@ extends Node
 # do golpe (a estocada alcança o que o card diz), a onda sai em todos os cortes, as dicas de evolução acompanham banimento e evolução, o
 # crítico para em 100% e as almas são as que o fim da partida credita (com "Almas abundantes").
 # Interface: C liga e desliga o card pela entrada de verdade (Input.parse_input_event, a mesma que a janela usa). Sobre a escolha de cartas
-# e o baú o C abre o painel CENTRAL (opaco, por cima das cartas): enquanto está aberto, tecla e clique não escolhem carta, a trava de 3 s
+# e o baú o C abre o painel CENTRAL (opaco, por cima das cartas): enquanto está aberto, tecla e clique não escolhem carta, a trava de 1 s
 # segue correndo e o ESC abre a pausa. A pausa mostra o card ao lado do menu só na tela "menu"; atualizar não cria nó. Em TODOS os modos
 # (HUD compacto, pausa e painel central) e com a build vazia, a de meio de partida, a máxima e o Santuário todo comprado, nenhuma linha
 # estoura a coluna, nada é cortado e as colunas do HUD não cobrem o HUD.
@@ -1254,7 +1254,10 @@ func _paginacao(st, c) -> void:
 	st._hud = true
 	st._aplicar()
 	await esperar()
-	ok(st._golpes_mostrados > 0 and st._golpes_mostrados < total, "no HUD o compacto mostra só o que cabe, com \"+N golpes\" no pé (%d de %d)" % [st._golpes_mostrados, total])
+	ok(
+		st._golpes_mostrados > 0 and st._golpes_mostrados < total,
+		'no HUD o compacto mostra só o que cabe, com "+N golpes" no pé (%d de %d)' % [st._golpes_mostrados, total]
+	)
 	ok(st.linhas_que_estouram().is_empty(), "no HUD nenhuma linha estoura a largura com %d golpes (%s)" % [total, str(st.linhas_que_estouram())])
 	st._hud = false
 	st._aplicar()
@@ -1267,7 +1270,10 @@ func _paginacao(st, c) -> void:
 	ok(int(pg.paginas) > 1 and int(pg.pagina) == 1, "com %d golpes a pausa pagina (página %d de %d)" % [total, int(pg.pagina), int(pg.paginas)])
 	var espaco := 300.0  # um espaço de exemplo: a conta tem de cobrir todos os golpes sem sobrar página vazia
 	var conta: Array = Status._paginas_golpes(total, espaco)
-	ok(int(conta[1]) * int(conta[0]) >= total and (int(conta[1]) - 1) * int(conta[0]) < total, "a conta de páginas cobre os %d golpes sem página vazia (%s)" % [total, str(conta)])
+	ok(
+		int(conta[1]) * int(conta[0]) >= total and (int(conta[1]) - 1) * int(conta[0]) < total,
+		"a conta de páginas cobre os %d golpes sem página vazia (%s)" % [total, str(conta)]
+	)
 	ok(int(conta[0]) * 20.0 + 13.0 <= espaco, "uma página cabe no espaço da coluna (%d golpes em %.0f px)" % [int(conta[0]), espaco])
 	var ev := InputEventKey.new()
 	ev.keycode = KEY_E
@@ -1323,7 +1329,7 @@ func pausa_entrada(ev: InputEvent) -> bool:
 
 
 ## Escolha de cartas e baú: o card compacto sai de cena, o C abre o painel CENTRAL por cima das cartas, nada é escolhido enquanto ele está
-## aberto, a trava de 3 s segue correndo, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
+## aberto, a trava de 1 s segue correndo, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
 func _escolha_e_bau(st, c, pausa) -> void:
 	var tela_c = c.telas
 	tecla(KEY_C)  # liga o card compacto (jogo rolando)
@@ -1359,13 +1365,13 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	for rc in rc3:
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "a coluna do painel central cabe na tela (%s)" % str(rc))
 	ok(st.retangulos_visuais().size() == 3 and not st.visual_cortada().has(true), "a página visual do painel central tem três colunas e cabe")
-	# --- a trava de 3 s das cartas segue correndo (tempo real) com o painel aberto
+	# --- a trava de 1 s das cartas segue correndo (tempo real) com o painel aberto
 	var trava0: float = tela_c.espera_escolha
-	ok(trava0 > 2.0, "a trava das cartas está correndo (%.2f s)" % trava0)
-	passos(60)
+	ok(trava0 > 0.5, "a trava das cartas está correndo (%.2f s)" % trava0)
+	passos(15)
 	ok(
-		tela_c.espera_escolha < trava0 - 0.8 and tela_c.espera_escolha > 0.0,
-		"com o painel aberto a trava segue correndo em tempo real (%.2f s -> %.2f s depois de 1 s)" % [trava0, tela_c.espera_escolha]
+		tela_c.espera_escolha < trava0 - 0.2 and tela_c.espera_escolha > 0.0,
+		"com o painel aberto a trava segue correndo em tempo real (%.2f s -> %.2f s depois de 0,25 s)" % [trava0, tela_c.espera_escolha]
 	)
 	# --- libera a trava e prova que o PAINEL (não a trava) segura as teclas e os cliques
 	tela_c._liberar_cartas()
