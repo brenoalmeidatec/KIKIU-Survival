@@ -101,6 +101,11 @@ var _todos_monstros: Array = []
 var _marcadores: Array = []  # marcas do mapa (dados "marcadores"): cada uma faz o efeito ao o herói entrar no raio (_tocar_marca)
 var _tem_chave := false  # achou a chave da ruína nesta partida (abre o baú trancado)
 var _fragmentos := 0  # fragmentos da relíquia achados nesta partida
+var _alavancas := 0  # alavancas puxadas (duas abrem o atalho até o portão)
+var _atalho_aberto := false
+var _pilares_prox := 0  # quantos pilares já foram ativados na ordem certa (com um fora de ordem volta a zero)
+var _pilares_ok := false  # os três pilares acenderam: o mini-chefe com "exige": "pilares" pode nascer
+const PILARES := 3
 const FRAGMENTOS_RELIQUIA := 4  # com estes fragmentos a relíquia monta e cai um baú
 const COR_ANUNCIO := Color(1.0, 0.85, 0.4)
 var _sombras_prontas := false
@@ -332,6 +337,10 @@ func _montar_marcadores() -> void:
 	_marcadores.clear()
 	_tem_chave = false
 	_fragmentos = 0
+	_alavancas = 0
+	_atalho_aberto = false
+	_pilares_prox = 0
+	_pilares_ok = false
 	for m in dados.get("marcadores", []):
 		_marcadores.append(
 			{
@@ -340,6 +349,10 @@ func _montar_marcadores() -> void:
 				"raio": float(m.get("raio", 600.0)),
 				"forcar": int(m.get("forcar", 0)),
 				"marca": str(m.get("marca", "")),
+				"ordem": int(m.get("ordem", 0)),
+				"nome": str(m.get("nome", "")),
+				"texto": str(m.get("texto", "")),
+				"exige": str(m.get("exige", "")),
 				"feito": false,
 				"dentro": false,
 			}
@@ -385,8 +398,40 @@ func _tocar_marca(m: Dictionary) -> void:
 			else:
 				combate.anunciar("RELÍQUIA MONTADA!", COR_ANUNCIO)
 				combate.baus.soltar(heroi.pos, 1.0, 3)
+		"alavanca":
+			if m.feito:
+				return
+			m.feito = true
+			_alavancas += 1
+			if _alavancas < 2:
+				combate.anunciar("ALAVANCA 1/2: puxe a outra", COR_ANUNCIO)
+			else:
+				_atalho_aberto = true
+				combate.anunciar("ATALHO ABERTO até o portão", COR_ANUNCIO)
+		"pilar":
+			if m.feito:
+				return
+			if m.ordem == _pilares_prox + 1:
+				m.feito = true
+				_pilares_prox += 1
+				if _pilares_prox < PILARES:
+					combate.anunciar("PILAR DO %s" % m.nome.to_upper(), COR_ANUNCIO)
+				else:
+					_pilares_ok = true
+					combate.anunciar("OS PILARES ACORDARAM", COR_ANUNCIO)
+			else:
+				_pilares_prox = 0
+				for p in _marcadores:
+					if p.tipo == "pilar":
+						p.feito = false
+				combate.anunciar("ORDEM ERRADA: os pilares se apagam", COR_ANUNCIO)
+		"placa":
+			combate.anunciar(m.texto, COR_ANUNCIO)
 		"chefe":
 			if m.feito or combate.chefes.atual != null:
+				return
+			if m.exige == "pilares" and not _pilares_ok:
+				combate.anunciar("O CHEFE NÃO RESPONDE: ache os pilares", COR_ANUNCIO)
 				return
 			m.feito = true
 			var mk := _marca_chefe(m.marca)

@@ -2302,18 +2302,24 @@
 		]
 	},
 	"marcadores": [
-		{"tipo": "bau", "pos": [1000, 1200], "raio": 400, "forcar": 3},
-		{"tipo": "bau", "pos": [1600, 780], "raio": 400, "forcar": 3},
-		{"tipo": "bau", "pos": [1400, 300], "raio": 400, "forcar": 3},
-		{"tipo": "chave", "pos": [2500, 300], "raio": 200},
-		{"tipo": "atalho", "pos": [2550, 420]},
-		{"tipo": "fragmento", "pos": [2100, 660], "raio": 200},
-		{"tipo": "fragmento", "pos": [2520, 840], "raio": 200},
-		{"tipo": "chefe", "pos": [2550, 1140], "raio": 600, "marca": "mini1"},
-		{"tipo": "bau_trancado", "pos": [1900, 1020], "raio": 400, "forcar": 3},
-		{"tipo": "fragmento", "pos": [900, 720], "raio": 200},
-		{"tipo": "bau", "pos": [700, 600], "raio": 400, "forcar": 3},
+		{"tipo": "alavanca", "pos": [300, 1200], "raio": 200},
 		{"tipo": "fragmento", "pos": [360, 900], "raio": 200},
-		{"tipo": "portao", "pos": [1500, 1380]}
+		{"tipo": "bau", "pos": [700, 600], "raio": 400, "forcar": 3},
+		{"tipo": "fragmento", "pos": [900, 720], "raio": 200},
+		{"tipo": "placa", "pos": [1000, 540], "raio": 200, "texto": "O fogo desperta primeiro, depois a água, e por fim a terra."},
+		{"tipo": "pilar", "pos": [1200, 480], "raio": 200, "ordem": 1, "nome": "fogo"},
+		{"tipo": "bau", "pos": [1400, 300], "raio": 400, "forcar": 3},
+		{"tipo": "pilar", "pos": [1860, 420], "raio": 200, "ordem": 2, "nome": "água"},
+		{"tipo": "fragmento", "pos": [2100, 660], "raio": 200},
+		{"tipo": "bau_trancado", "pos": [1900, 1020], "raio": 400, "forcar": 3},
+		{"tipo": "alavanca", "pos": [2100, 1260], "raio": 200},
+		{"tipo": "chefe", "pos": [2550, 1140], "raio": 600, "marca": "mini1", "exige": "pilares"},
+		{"tipo": "fragmento", "pos": [2520, 840], "raio": 200},
+		{"tipo": "atalho", "pos": [2550, 420]},
+		{"tipo": "chave", "pos": [2500, 300], "raio": 200},
+		{"tipo": "bau", "pos": [1600, 780], "raio": 400, "forcar": 3},
+		{"tipo": "portao", "pos": [1500, 1380]},
+		{"tipo": "bau", "pos": [1000, 1200], "raio": 400, "forcar": 3},
+		{"tipo": "pilar", "pos": [780, 1080], "raio": 200, "ordem": 3, "nome": "terra"}
 	]
 }

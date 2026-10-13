@@ -275,15 +275,9 @@ func _marcadores(id: String) -> void:
 			w.avancar(PASSO)
 			ok(w.combate.baus.soltos == antes + 1, "%s: o baú em %s cai uma vez ao chegar perto" % [id, str(p)])
 			caidos += 1
-		elif m.tipo == "chefe":
-			w.heroi.definir_pos(p)
-			w.avancar(PASSO)
-			var nasceu = w.combate.chefes.atual
-			ok(nasceu != null and str(w.combate.chefes.marca.id) == str(m.marca), "%s: o mini-chefe nasce ao chegar perto" % id)
-			w.avancar(PASSO)
-			ok(w.combate.chefes.atual == nasceu, "%s: o mini-chefe não nasce de novo enquanto vive" % id)
 	ok(w.combate.baus.soltos == caidos, "%s: %d baús caíram, um por marcador" % [id, caidos])
 	_mecanicas_a(w, marcas)
+	_mecanicas_b(w, marcas)
 	remove_child(w)
 	w.free()
 
@@ -321,6 +315,35 @@ func _ir(w, p: Vector2) -> void:
 	w.heroi.definir_pos(p)
 	w.avancar(PASSO)
 	w.avancar(PASSO)
+
+
+## Lote B: duas alavancas abrem o atalho; três pilares na ordem da placa liberam o mini-chefe (fora de ordem, os pilares se apagam);
+## o mini-chefe nasce uma vez ao chegar perto, depois dos pilares.
+func _mecanicas_b(w, marcas: Array) -> void:
+	var al: Array = marcas.filter(func(m): return m.tipo == "alavanca")
+	var pil: Array = marcas.filter(func(m): return m.tipo == "pilar")
+	pil.sort_custom(func(a, b): return a.ordem < b.ordem)
+	var chefe := _primeiro(marcas, "chefe")
+	ok(al.size() == 2 and pil.size() == 3 and not chefe.is_empty(), "lote B: 2 alavancas, 3 pilares e o mini-chefe no mapa médio")
+	if al.size() != 2 or pil.size() != 3 or chefe.is_empty():
+		return
+	_ir(w, al[0].pos)
+	ok(w._alavancas == 1 and not w._atalho_aberto, "lote B: uma alavanca não abre o atalho")
+	_ir(w, al[1].pos)
+	ok(w._atalho_aberto, "lote B: as duas alavancas abrem o atalho")
+	_ir(w, chefe.pos)
+	ok(w.combate.chefes.atual == null, "lote B: o mini-chefe não nasce antes dos pilares")
+	_ir(w, pil[1].pos)
+	ok(w._pilares_prox == 0 and not w._pilares_ok, "lote B: pilar fora de ordem apaga os pilares")
+	_ir(w, pil[0].pos)
+	_ir(w, pil[1].pos)
+	_ir(w, pil[2].pos)
+	ok(w._pilares_ok, "lote B: os três pilares na ordem acendem")
+	_ir(w, chefe.pos)
+	var nasceu = w.combate.chefes.atual
+	ok(nasceu != null and str(w.combate.chefes.marca.id) == str(chefe.marca), "lote B: o mini-chefe nasce depois dos pilares")
+	w.avancar(PASSO)
+	ok(w.combate.chefes.atual == nasceu, "lote B: o mini-chefe não nasce de novo enquanto vive")
 
 
 func _santuario() -> void:
