@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://v2/hud.gd" id="1_hud"]
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_pedra.png" id="2_moldura"]
@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" path="res://v2/hud/anel_luz.png" id="9_anel"]
 [ext_resource type="Texture2D" path="res://v2/hud/barra_fantasma.png" id="10_fantasma"]
 [ext_resource type="Script" path="res://v2/hud_anuncios.gd" id="11_anuncios"]
+[ext_resource type="Script" path="res://v2/hud_habilidades.gd" id="12_habilidades"]
 
 [node name="Hud" type="CanvasLayer"]
 layer = 10
@@ -348,3 +349,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 clip_text = true
 text = ""
+
+[node name="Habilidades" type="Control" parent="Raiz"]
+script = ExtResource("12_habilidades")

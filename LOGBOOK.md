@@ -1472,3 +1472,10 @@ _Codex Luna (PC)_
 - **Refino do caminho comum:** movimentos curtos usam comprimento ao quadrado e resolvem uma única vez, sem divisão nem laço de subpassos. O benchmark acima descreve a versão anterior com laço de uma iteração; o refino não é uma promessa de FPS. Guia da v2 atualizado.
 
 - **CI / teste de mundo:** a primeira execução do PR falhou em `v2_mundo`: o teste deixava o herói junto de uma forma após a perseguição e esperava deslocamento puro (início 1150,213/443,742; feito 10,249/5,331). A nova resolução intermediária corretamente corrige a colisão. O caso de soma agora encontra um trajeto livre dentro da área andável sem apagar as formas; o clamp é testado separadamente com ator fora do limite. `v2_mundo` passou com código 0, `falhas=0`, sem `SCRIPT ERROR`. Log da falha do CI e diagnóstico preservados.
+## 2026-10-13 - HUD de habilidades E/Q da v2
+- **Feito:** cards originais E/Q na faixa inferior, lendo apenas o estado real da Ruptura quando o herói o publica. Na main, E fica indisponível; Q fica cinza com “EM BREVE” até existir mecânica. No PR201, os desenhos antigos dos slots ficam transparentes e seus nós/flags permanecem intactos. Layout evita XP e coluna de status.
+- **Testes:** `v2_hud` e teste de integração temporário no checkout `origin/alisson/v2-ruptura`, ambos `falhas=0`; integração verificou prontidão, carga, recarga e transparência dos controles antigos. Capturas OpenGL em `C:\Dev\Breno\analise-kikiu\logs-hud\overwatch_pr201_*.png`.
+- **Pendente:** Q não tem mecânica implementada. Documentação em `docs/v2_hud_habilidades.md`.
+
+_Codex (PC)_
+- **Conferência:** `v2_status` e `v2_esc` na base principal, `v2_escudo`, `v2_ruptura` e a integração real em PR201 sem `SCRIPT ERROR`. Formatação global no escopo obrigatório scripts/testes limpa após commit separado de status; os scripts do adaptador também passam. O projeto inteiro contém outras pendências de formatação alheias, preservadas. Desenho do adaptador revisado por GPT-6.1 Sol leve; nenhuma mecânica nova de Q.
