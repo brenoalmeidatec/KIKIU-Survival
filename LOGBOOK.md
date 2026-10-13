@@ -1376,6 +1376,7 @@ _Codex Luna (PC)_
 - **Próximo:** revalidar a documentação e formatação sobre a main atualizada antes do PR.
 
 _Codex (PC), workflow com agentes Luna_
+
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
 - **Feito:** o card da v2 (pausa, painel central e HUD) deixou de cortar os golpes quando a build passa do que cabe. Na página visual da pausa e no painel central os golpes ganham páginas: quantos cabem sai da altura da coluna (sem número fixo), a última linha diz "Página X/Y · Q E", e Q e E trocam de página (pela entrada da pausa e do painel central). No HUD o compacto mostra o que cabe e o pé diz "+N golpes" (escolhido por ser o mais leve: sem troca automática de página). Golpe com nome longo e sem `curto` corta com "." no HUD, em vez de estourar a coluna. Com um golpe só não há paginação.
 - **Testes:** `v2_status` com `falhas=0` (novo bloco `_paginacao`: 50 golpes no HUD, na pausa e no painel central). Prints com os 50 golpes em `status_hud_50_golpes` e `status_pausa_50_golpes`.
@@ -1430,3 +1431,19 @@ _Codex (PC), workflow com agentes Luna_
 - **Pendente / recados:** conferir sensação em uma partida. Conflitos potenciais de dados/estilo com #201, #209, #214 e #217; as mudanças de mecânicas do mapa #220/#222 usam baús e devem preservar a espera nova.
 
 _Codex com agentes Luna (PC)_
+## 2026-10-13 · Névoa Espectral e leitura visual dos ataques
+- **Feito:** nuvens da v2 ganharam motivos animados próprios (espectros, fumaça de sono, bolhas, cristais, brasas e sangue), volume oval no chão, entrada/saída em fade e pulso proporcional à vida efetivamente removida. Projéteis, anéis, meteoros e aliados usam silhuetas próprias quando ajudam a identificar fogo, veneno, gelo ou sombra; pool fixo em 48.
+- **Compatibilidade:** a Névoa Espectral usa o sprite opcional `sp` quando ele existir, mantendo o pulso de acerto por cima. Assim, os sprites da PR #209 poderão assumir o corpo sem duplicação; os motivos por código funcionam mesmo sem ela.
+- **Mecânica e guia:** preservados lentidão, contagem de acertos e multiplicador de gelo da nuvem; pulso só ocorre com perda real de vida. Descrição/arte da carta e guia v2 atualizados.
+- **Verificação:** importação real Godot 4.4.1 concluída; `v2_partida` terminou com `falhas=0`; `gdformat -l 160 --check` e `git diff --check` limpos. Captura de viewport real (960×540, não vazia) em `C:\Dev\Breno\analise-kikiu\logs-ataques\identidade_nuvens.png`; rótulos da imagem pertencem apenas à cena de demonstração.
+
+_Codex LunaPC_
+
+- **Ajuste da conferência:** o roteiro de foto foi retirado de `testes/` e preservado como ferramenta local, pois aguardar `frame_post_draw` sem renderer trava a execução headless. Ele não é teste funcional nem participa do CI. Os testes de dano/feedback permanecem em `v2_partida`; rótulos pertencem somente à demonstração. A formatação global scripts/testes exige o commit separado de `v2_status` da main.
+
+## 2026-10-13 · Névoas com volume legível e carta espectral dentro do limite
+- **Visual:** veneno tem véus verdes claros irregulares sobrepostos, dobras sombreadas, deriva e entrada/saída suave. Espectros, bruma com cristais, sono lilás, cinzas densas, cortina de sangue, chuva ácida e esporos preservam motivos próprios. Textura procedural compartilhada criada uma vez; nó de fumaça criado na montagem, sem mistura aditiva, sem nós ou dicionários novos por desenho. Pool permanece em 48; mecânica de dano, raio, tique e duração não mudou.
+- **Carta e CI:** a descrição espectral anterior media 64 px no espaço de 54 px. A nova frase “Névoa com espectros que ferem quem fica nela.” mede 48 px; o critério de v2_fontes foi preservado.
+- **Verificação:** Godot 4.4.1 v2_partida, v2_status e v2_fontes com falhas=0; gdformat -l 160 --check (scripts/testes e fontes alteradas) e git diff --check passaram. Capturas OpenGL do veneno em escala 1× e grade de motivos em 2× ficaram fora do repositório, junto do wrapper local. Runners ainda reportam recursos/RID em uso ao encerrar, sem SCRIPT ERROR. Splash temporário da captura foi restaurado.
+
+_Codex GPT-6.1 Sol (PC)_
