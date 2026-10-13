@@ -1355,3 +1355,10 @@ _Codex Luna (PC)_
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Codex (PC) · Release revalidada na main atualizada
+- **Feito:** incorporada a main cdf67f7 e mantidos os exports intactos. A Release chama o CI reutilizável local do mesmo commit, e publicar depende dele. Import com segfault de saída conhecido permanece tolerado.
+- **Verificação:** YAML e dependência do mesmo commit conferidos; gdformat scripts/testes: 174 arquivos limpos. Formatação pendente do teste v2_status da main foi isolada em commit próprio. Não rodei Godot local para mudança exclusiva de workflows; o CI do PR executa as cenas.
+- **Próximo:** conferir os checks e integrar com o PR separado de lint.
+
+_Codex (PC), workflow com agentes Luna_
