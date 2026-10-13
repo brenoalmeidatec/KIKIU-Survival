@@ -270,7 +270,7 @@ func _marcadores(id: String) -> void:
 	ok(chefes_ok, "%s: a marca de chefe do marcador existe em v2_cartas.json" % id)
 	ok(tipos.get("bau", 0) >= 3 and tipos.get("bau", 0) <= 4, "%s: 3 ou 4 baús com relíquia (%d)" % [id, tipos.get("bau", 0)])
 	ok(tipos.get("chefe", 0) == 1 and tipos.get("atalho", 0) == 1 and tipos.get("portao", 0) == 1, "%s: 1 mini-chefe, 1 atalho e 1 portão" % id)
-	ok(marcas.size() <= 8, "%s: até 8 pontos na rota (%d)" % [id, marcas.size()])
+	ok(marcas.size() <= 30, "%s: marcadores na rota (%d)" % [id, marcas.size()])
 	ok(total >= 6000.0 and total <= 9000.0, "%s: rota de ~1 min 30 (%.0f px em linha reta, a 100 px/s)" % [id, total])
 	# no mundo: o baú cai quando o herói chega perto, uma vez; o mini-chefe nasce no ponto e não nasce de novo enquanto vive
 	var caidos := 0
@@ -283,16 +283,133 @@ func _marcadores(id: String) -> void:
 			w.avancar(PASSO)
 			ok(w.combate.baus.soltos == antes + 1, "%s: o baú em %s cai uma vez ao chegar perto" % [id, str(p)])
 			caidos += 1
-		elif m.tipo == "chefe":
-			w.heroi.definir_pos(p)
-			w.avancar(PASSO)
-			var nasceu = w.combate.chefes.atual
-			ok(nasceu != null and str(w.combate.chefes.marca.id) == str(m.marca), "%s: o mini-chefe nasce ao chegar perto" % id)
-			w.avancar(PASSO)
-			ok(w.combate.chefes.atual == nasceu, "%s: o mini-chefe não nasce de novo enquanto vive" % id)
 	ok(w.combate.baus.soltos == caidos, "%s: %d baús caíram, um por marcador" % [id, caidos])
+	_mecanicas_a(w, marcas)
+	_mecanicas_b(w, marcas)
+	_mecanicas_c(w, marcas)
+	_mecanicas_d(w, marcas)
 	remove_child(w)
 	w.free()
+
+
+## Lote A: a chave da ruína abre o baú trancado (sem ela, nada cai) e 4 fragmentos montam a relíquia, que faz cair um baú.
+func _mecanicas_a(w, marcas: Array) -> void:
+	var trancado := _primeiro(marcas, "bau_trancado")
+	var chave := _primeiro(marcas, "chave")
+	var frags: Array = marcas.filter(func(m): return m.tipo == "fragmento")
+	ok(not trancado.is_empty() and not chave.is_empty(), "lote A: há baú trancado e chave no mapa médio")
+	ok(frags.size() == 4, "lote A: são 4 fragmentos (%d)" % frags.size())
+	if trancado.is_empty() or chave.is_empty():
+		return
+	var antes: int = w.combate.baus.soltos
+	_ir(w, trancado.pos)
+	ok(w.combate.baus.soltos == antes and not w._tem_chave, "lote A: sem a chave o baú trancado não cai")
+	_ir(w, chave.pos)
+	ok(w._tem_chave, "lote A: a chave da ruína é achada")
+	_ir(w, trancado.pos)
+	ok(w.combate.baus.soltos == antes + 1, "lote A: com a chave o baú trancado cai")
+	for f in frags:
+		_ir(w, f.pos)
+	ok(w._fragmentos == 4, "lote A: os 4 fragmentos contam (%d)" % w._fragmentos)
+	ok(w.combate.baus.soltos == antes + 2, "lote A: a relíquia montada faz cair um baú")
+
+
+func _primeiro(marcas: Array, tipo: String) -> Dictionary:
+	for m in marcas:
+		if m.tipo == tipo:
+			return m
+	return {}
+
+
+func _ir(w, p) -> void:
+	var v: Vector2 = p if p is Vector2 else Vector2(float(p[0]), float(p[1]))
+	w.heroi.definir_pos(v)
+	w.avancar(PASSO)
+	w.avancar(PASSO)
+
+
+## Lote B: duas alavancas abrem o atalho; três pilares na ordem da placa liberam o mini-chefe (fora de ordem, os pilares se apagam);
+## o mini-chefe nasce uma vez ao chegar perto, depois dos pilares.
+func _mecanicas_b(w, marcas: Array) -> void:
+	var al: Array = marcas.filter(func(m): return m.tipo == "alavanca")
+	var pil: Array = marcas.filter(func(m): return m.tipo == "pilar")
+	pil.sort_custom(func(a, b): return a.ordem < b.ordem)
+	var chefe := _primeiro(marcas, "chefe")
+	ok(al.size() == 2 and pil.size() == 3 and not chefe.is_empty(), "lote B: 2 alavancas, 3 pilares e o mini-chefe no mapa médio")
+	if al.size() != 2 or pil.size() != 3 or chefe.is_empty():
+		return
+	_ir(w, al[0].pos)
+	ok(w._alavancas == 1 and not w._atalho_aberto, "lote B: uma alavanca não abre o atalho")
+	_ir(w, al[1].pos)
+	ok(w._atalho_aberto, "lote B: as duas alavancas abrem o atalho")
+	_ir(w, chefe.pos)
+	ok(w.combate.chefes.atual == null, "lote B: o mini-chefe não nasce antes dos pilares")
+	_ir(w, pil[1].pos)
+	ok(w._pilares_prox == 0 and not w._pilares_ok, "lote B: pilar fora de ordem apaga os pilares")
+	_ir(w, pil[0].pos)
+	_ir(w, pil[1].pos)
+	_ir(w, pil[2].pos)
+	ok(w._pilares_ok, "lote B: os três pilares na ordem acendem")
+	_ir(w, chefe.pos)
+	var nasceu = w.combate.chefes.atual
+	ok(nasceu != null and str(w.combate.chefes.marca.id) == str(chefe.marca), "lote B: o mini-chefe nasce depois dos pilares")
+	w.avancar(PASSO)
+	ok(w.combate.chefes.atual == nasceu, "lote B: o mini-chefe não nasce de novo enquanto vive")
+
+
+## Lote C: a defesa de ponto cai a relíquia depois do tempo dentro do raio (e solta monstros em volta); cada placa diz o seu texto ao entrar.
+func _mecanicas_c(w, marcas: Array) -> void:
+	var defesa := _primeiro(marcas, "defesa")
+	var placas: Array = marcas.filter(func(m): return m.tipo == "placa")
+	ok(not defesa.is_empty() and placas.size() == 3, "lote C: 1 defesa e 3 placas no mapa médio (%d)" % placas.size())
+	var textos: Array = []  # todo anúncio da partida (o mercador, perto de uma placa, pode anunciar depois dela)
+	w.anuncio.connect(func(t, _c): textos.append(t))
+	for pl in placas:
+		_ir(w, pl.pos)
+		ok(textos.has(str(pl.texto)), "lote C: a placa em %s diz o seu texto" % str(pl.pos))
+	if defesa.is_empty():
+		return
+	var antes: int = w.combate.baus.soltos
+	var monstros_antes: int = w.monstros.size()
+	_ir(w, defesa.pos)
+	for i in int(ceil(float(defesa.tempo) / PASSO)) + 60:
+		w.avancar(PASSO)
+	ok(w.combate.baus.soltos == antes + 1, "lote C: a defesa cumprida faz cair a relíquia")
+	ok(w.monstros.size() > monstros_antes, "lote C: a defesa solta monstros em volta")
+
+
+## Lote D: o mercador troca almas da partida por uma carta (sem almas, não troca; a troca tira o custo do total); os espinhos machucam
+## fora do caminho de pedra e não sobre ele.
+func _mecanicas_d(w, marcas: Array) -> void:
+	var merc := _primeiro(marcas, "mercador")
+	var esp := _primeiro(marcas, "espinhos")
+	ok(not merc.is_empty() and not esp.is_empty(), "lote D: há mercador e espinhos no mapa médio")
+	if merc.is_empty() or esp.is_empty():
+		return
+	var antes: int = w.combate.baus.soltos
+	w.xp_coletado = 50.0  # 5 almas: menos que o custo
+	_ir(w, merc.pos)
+	ok(w.combate.baus.soltos == antes and w._almas_gastas == 0, "lote D: sem almas o mercador não troca")
+	w.xp_coletado = 300.0  # 30 almas (o XP de tanto sobe de nível: a escolha pausa o mundo, então a tela fecha aqui)
+	w.combate.telas.esconder()
+	w.combate.pausado = false
+	_ir(w, Vector2(240, 1320))
+	_ir(w, merc.pos)
+	ok(w._almas_gastas == int(merc.custo) and w.combate.baus.soltos == antes + 1, "lote D: com almas o mercador troca e uma carta cai")
+	ok(w.almas_partida == 30 - int(merc.custo), "lote D: as almas gastas saem do total (%d)" % w.almas_partida)
+	w.monstros.clear()
+	w.heroi.imortal = false
+	var vida0: float = w.heroi.vida
+	w.heroi.definir_pos(Vector2(float(esp.pos[0]), 705.0))  # na zona, fora do caminho de pedra
+	for i in 90:
+		w.avancar(PASSO)
+	ok(w.heroi.vida < vida0, "lote D: fora do caminho de pedra os espinhos machucam")
+	w.heroi.vida = vida0
+	w.heroi.definir_pos(Vector2(float(esp.pos[0]), 760.0))  # no caminho de pedra
+	for i in 90:
+		w.avancar(PASSO)
+	ok(w.heroi.vida == vida0, "lote D: no caminho de pedra os espinhos não machucam")
+	w.heroi.imortal = true
 
 
 func _santuario() -> void:
