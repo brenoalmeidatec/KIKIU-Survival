@@ -1496,3 +1496,12 @@ _Claude do Alisson (notebook)_
 - **Pendente:** o painel de status (`status.gd`) ainda não mostra o escudo (`escudo.resumo()` está pronto); o ultimate (Q) não tem mecânica.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · integração para entrega
+- **Feito:** PRs #223–#235 e #201 integrados por merges preservando todos os históricos, sobre main a78829f (mapa médio #220). Guias combinados, splash obrigatório `res://assets/titulo/fundo.png`, E carrega/solta Ruptura, botão direito/LT escudo e Q reservado. Exports/presets sem alteração.
+- **Correções da integração:** teste de Ruptura atualizado para os 50 golpes existentes na base; fixtures de status, ESC, pausa, música e fontes limpam os backups e temporários dos seus saves de teste. A falha inicial do status (backup recuperado pelo novo save seguro) foi preservada em log separado. Formatação de escudo/Ruptura/mundo em commit próprio.
+- **Validação real:** Godot 4.4.1, duas importações, código 0 e sem SCRIPT ERROR. Cenas v2_ruptura, v2_escudo, v2_hud, v2_meta, v2_arvores, v2_mundo, v2_combate, v2_cartas_espera, v2_partida, v2_esc, v2_status, v2_fontes, v2_menu, entrada_cenas, v2_mapas, v2_pausa e v2_musica: código 0, falhas=0, sem SCRIPT ERROR. Meta provoca erros de parse do save corrompido intencionalmente; avisos de recursos/RID no encerramento headless permanecem, sem falha nas cenas.
+- **Checks:** autoteste_executor código 0/falhas=0; gdformat -l 160 --check scripts/testes/v2 (227 arquivos limpos), git diff --check e ancestralidade dos 14 heads conferidos. Nenhuma entrada anterior da main removida do LOGBOOK; imports/cache/UID aleatórios fora dos commits. Logs locais em analise-kikiu/logs-entrega.
+- **Próximo:** revisão, CI da integração e build exportada pelo agente responsável; nenhum push/merge GitHub feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
