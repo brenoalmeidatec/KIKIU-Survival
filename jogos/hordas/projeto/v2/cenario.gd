@@ -20,6 +20,7 @@ var com_normal := true
 var ganho_obj := 1.7  # a arte nova é bem escura: levanta antes da luz (o ambiente escuro faz o resto)
 var ganho_dec := 1.4
 var objetos: Array[Ator] = []
+var luz_dos_objetos: Array = []  # {nome, pos (pé), luz (Entrada de luzes.gd)} de cada objeto que ganhou luz (o braseiro antigo apaga e acende a sua)
 var ativos: Array[Ator] = []  # objetos dos blocos visíveis agora
 var versao := 0  # sobe toda vez que `ativos` é refeita (quem guarda uma cópia ordenada sabe quando refazer)
 var n_decalques := 0
@@ -234,7 +235,8 @@ func _objeto(nome: String, pos: Vector2, luz_obj: Dictionary) -> void:
 			orbe = pos + it.fogo - it.pe
 		else:
 			orbe = pos + Vector2(float(lo.orbe[0]), float(lo.orbe[1]))
-		_luzes.criar(str(lo.tipo), luz_pos, orbe, float(lo.get("fogo", 0.0)))
+		var luz = _luzes.criar(str(lo.tipo), luz_pos, orbe, float(lo.get("fogo", 0.0)))
+		luz_dos_objetos.append({"nome": nome, "pos": pos, "luz": luz})
 
 
 # ------------------------------------------------------------------ visibilidade por bloco
