@@ -36,6 +36,7 @@ func _ready() -> void:
 	for id in Mapas.ids():
 		await _mundo_do_mapa(id)
 		_passagens_e_vista(id)
+		_marcadores(id)
 	await _santuario()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
 	print("v2_mapas falhas=%d" % falhas)
@@ -224,6 +225,66 @@ func _mundo_do_mapa(id: String) -> void:
 	remove_child(w)
 	w.free()
 	await get_tree().process_frame
+
+
+## Marcadores do mapa (dados "marcadores", só o médio tem): cada ponto livre e alcançável a partir do santuário, os quatro tipos, a rota
+## (linha reta somada, ~1 min 30 a 100 px/s) e, no mundo, baús e mini-chefe nascem uma vez ao chegar perto e o atalho e o portão não nascem nada.
+func _marcadores(id: String) -> void:
+	var d: Dictionary = Dados.json(str(Mapas.buscar(id).dados))
+	var marcas: Array = d.get("marcadores", [])
+	if marcas.is_empty():
+		return
+	var w = Mundo.instantiate()
+	w.modo_teste = true
+	w.id_mapa = id
+	add_child(w)
+	w.set_process(false)
+	w.heroi.entrada_forcada = Vector2.ZERO
+	w.heroi.imortal = true
+	var g: Dictionary = Passagens.grade(w.limite_andavel, Passagens.RAIO_HEROI)
+	var vis: PackedByteArray = Passagens.alcancaveis(g, w.heroi.pos)
+	var tipos := {}
+	var rota: Vector2 = w.heroi.pos
+	var total := 0.0
+	var chefes_ok := true
+	for m in marcas:
+		var p := Vector2(float(m.pos[0]), float(m.pos[1]))
+		var tipo := str(m.tipo)
+		tipos[tipo] = int(tipos.get(tipo, 0)) + 1
+		ok(Colisao.livre(p, Passagens.RAIO_HEROI), "%s: marcador %s em %s está livre" % [id, tipo, str(p)])
+		var c := Passagens.celula_de(g, p)
+		ok(vis[c.y * int(g.w) + c.x] == 1, "%s: marcador %s em %s é alcançável do santuário" % [id, tipo, str(p)])
+		total += rota.distance_to(p)
+		rota = p
+		if tipo == "chefe":
+			var marca := str(m.get("marca", ""))
+			chefes_ok = chefes_ok and Dados.json("v2_cartas").chefes.marcas.any(func(mk): return str(mk.id) == marca)
+	ok(chefes_ok, "%s: a marca de chefe do marcador existe em v2_cartas.json" % id)
+	ok(tipos.get("bau", 0) >= 3 and tipos.get("bau", 0) <= 4, "%s: 3 ou 4 baús com relíquia (%d)" % [id, tipos.get("bau", 0)])
+	ok(tipos.get("chefe", 0) == 1 and tipos.get("atalho", 0) == 1 and tipos.get("portao", 0) == 1, "%s: 1 mini-chefe, 1 atalho e 1 portão" % id)
+	ok(marcas.size() <= 8, "%s: até 8 pontos na rota (%d)" % [id, marcas.size()])
+	ok(total >= 6000.0 and total <= 9000.0, "%s: rota de ~1 min 30 (%.0f px em linha reta, a 100 px/s)" % [id, total])
+	# no mundo: o baú cai quando o herói chega perto, uma vez; o mini-chefe nasce no ponto e não nasce de novo enquanto vive
+	var caidos := 0
+	for m in marcas:
+		var p := Vector2(float(m.pos[0]), float(m.pos[1]))
+		if m.tipo == "bau":
+			var antes: int = w.combate.baus.soltos
+			w.heroi.definir_pos(p)
+			w.avancar(PASSO)
+			w.avancar(PASSO)
+			ok(w.combate.baus.soltos == antes + 1, "%s: o baú em %s cai uma vez ao chegar perto" % [id, str(p)])
+			caidos += 1
+		elif m.tipo == "chefe":
+			w.heroi.definir_pos(p)
+			w.avancar(PASSO)
+			var nasceu = w.combate.chefes.atual
+			ok(nasceu != null and str(w.combate.chefes.marca.id) == str(m.marca), "%s: o mini-chefe nasce ao chegar perto" % id)
+			w.avancar(PASSO)
+			ok(w.combate.chefes.atual == nasceu, "%s: o mini-chefe não nasce de novo enquanto vive" % id)
+	ok(w.combate.baus.soltos == caidos, "%s: %d baús caíram, um por marcador" % [id, caidos])
+	remove_child(w)
+	w.free()
 
 
 func _santuario() -> void:

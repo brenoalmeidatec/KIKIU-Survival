@@ -98,6 +98,7 @@ var monstros_vivos: int:
 		return monstros.size()
 var _pool_monstros := {}  # tipo -> monstros mortos prontos para renascer
 var _todos_monstros: Array = []
+var _marcadores: Array = []  # marcas do mapa (dados "marcadores"): baús e mini-chefe, que nascem quando o herói chega perto
 var _sombras_prontas := false
 var mapa := Rect2(0, 0, 2880, 1620)
 var limite_andavel := Rect2(150, 150, 2580, 1320)  # onde herói e monstros podem pisar (mapa menos "borda_andavel")
@@ -308,6 +309,7 @@ func _pre_criar_monstros() -> void:
 
 ## Os monstros que já estão no mapa quando a partida começa (zonas do json).
 func _popular_inicial() -> void:
+	_montar_marcadores()  # as marcas voltam a nascer também no "Jogar de novo"
 	var nasc: Dictionary = dados.get("nascimento", {})
 	for z in nasc.get("monstros", []):
 		var centro := Vector2(float(z.centro[0]), float(z.centro[1]))
@@ -318,6 +320,52 @@ func _popular_inicial() -> void:
 			var p := centro + Vector2(cos(a), sin(a) * 0.6) * raio * sqrt(_rng.randf())
 			var mo = nascer_monstro(nome, p)
 			mo.raio_vaga = float(z.get("vaga", 90.0))
+
+
+## Marcas do mapa (dados "marcadores"): baús e mini-chefe. Atalho e portão ainda são só dados (sem efeito).
+func _montar_marcadores() -> void:
+	_marcadores.clear()
+	for m in dados.get("marcadores", []):
+		var tipo := str(m.tipo)
+		if tipo != "bau" and tipo != "chefe":
+			continue
+		_marcadores.append(
+			{
+				"tipo": tipo,
+				"pos": Vector2(float(m.pos[0]), float(m.pos[1])),
+				"raio": float(m.get("raio", 600.0)),
+				"forcar": int(m.get("forcar", 0)),
+				"marca": str(m.get("marca", "")),
+				"feito": false,
+			}
+		)
+
+
+## Quem chega perto de uma marca (uma vez por partida): o baú cai com a relíquia e o mini-chefe nasce no ponto, se nenhum chefe estiver vivo.
+func _checar_marcadores() -> void:
+	var hp: Vector2 = heroi.pos
+	for m in _marcadores:
+		if m.feito or hp.distance_squared_to(m.pos) > m.raio * m.raio:
+			continue
+		if m.tipo == "bau":
+			combate.baus.soltar(m.pos, 1.0, m.forcar)
+		elif combate.chefes.atual != null:
+			continue
+		else:
+			var mk := _marca_chefe(m.marca)
+			if mk.is_empty():
+				push_warning("v2 mapa: marca de chefe desconhecida: " + m.marca)
+			else:
+				combate.chefes.nascer(mk, m.pos)
+		m.feito = true
+
+
+## A marca de chefe (dados/v2_cartas.json, chefes.marcas) com este id; vazio se não existe.
+func _marca_chefe(id: String) -> Dictionary:
+	for mk in combate.chefes.cfg.marcas:
+		if str(mk.id) == id:
+			return mk
+	return {}
 
 
 ## Um monstro novo do tipo `nome` (uma linha de números: quem o desenha é a horda). Só é chamado quando o pool do tipo esvazia.
@@ -517,6 +565,7 @@ func avancar(dt: float) -> void:
 				mo.atualizar(dtm, hp, hr)
 			var p2 := Time.get_ticks_usec()
 			combate.atualizar(dtm)
+			_checar_marcadores()
 			var p3 := Time.get_ticks_usec()
 			_perfil("heroi", p1 - p0)
 			_perfil("monstros", p2 - p1)
