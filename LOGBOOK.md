@@ -1543,3 +1543,19 @@ _Codex GPT-6.1 Sol (PC)_
 _CodexSolPC_
 
 - **Correção da conferência visual:** o nome inteiro aparecia no PNG anterior, mas isso não provava ausência de sobreposição. Assert após `process_frame` reproduziu seletor de Ruínas terminando em x348 contra ENTRAR em x300 (48 px sobrepostos). `_atualizar_mapa` agora mantém fonte Jersey 19 em todos os mapas, texto completo, tooltip e largura 248 px. O teste espera o mínimo diferido do Godot e verifica geometria nos quatro mapas. `v2_mapas`, `v2_meta` e `v2_fontes` sobre a correção: exit 0/falhas=0/sem SCRIPT ERROR; renderer real também passou os limites. Formatação global (227 arquivos) e diff limpos.
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Santuário compacto e volta ao título
+- **Feito:** ESC/Start/B e botão VOLTAR retornam do Santuário ao menu principal. Só o título pede Sair por ESC; a pausa da partida mantém seu fluxo. Ajustes/Gráficos continuam voltando um nível e devolvem foco ao botão Ajustes quando fecham.
+- **Visual:** melhorias em grade 3×3 com marcadores de nível e custo/estado, detalhe único por foco ou mouse (inclusive bloqueadas/máximas), conquistas com barras rotuladas pela última partida e descrição acessível pelo teclado/controle. Fundo atual `assets/titulo/fundo.png`, sem mudar splash/exports. Nome completo de mapa cabe no botão em fonte 19, inclusive RUÍNAS DA FLORESTA; resumo inicial neutro.
+- **Validação:** Godot 4.4.1 real: v2_santuario, v2_meta, v2_pausa, v2_menu, v2_esc, v2_status, v2_fontes e v2_musica com código 0/falhas=0. Teste novo usa Input.parse_input_event e current_scene real para ESC, Start, B, Enter e clique; confere foco, estados bloqueado/máximo, barras e limites de cartões/textos. Falha de gravação e itens ocultos preservados por v2_meta. gdformat -l 160 --check scripts/testes/v2 limpo (228 arquivos); git diff --check limpo.
+- **Conferência visual:** capturas reais do viewport 960×540, janela oculta e frame_post_draw, antes/depois com saldo zero/com almas, barras parciais e conquistas cumpridas. Logs/fotos locais em `C:/Dev/Breno/analise-kikiu/logs-santuario`, fora do Git. Avisos de recursos/RID ao encerrar headless continuam; erros de parse de save em meta são intencionais. Nenhuma arte binária/import/cache adicional versionada.
+- **Próximo:** agente principal publica PR coeso do Santuário e integra com o PR separado dos mapas antes da build conjunta; nenhum push/merge feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · validação conjunta Santuário e Cidade
+- **Feito:** merge local da branch Cidade (`9337defd5088bb61fd6c876f0f3dd33b782570ec`) no Santuário, preservando ambos os históricos. Guia combina os dois blocos; LOGBOOK mantém todas as entradas. Grade, navegação, fundo atual e detalhes do Santuário preservados; seletor fica em fonte Jersey 19, largura 248 px e tooltip com nome completo. Removida só uma linha vazia final herdada de `cidade_pecas.py` para diff-check.
+- **Validação conjunta:** import real Godot 4.4.1 código 0/sem SCRIPT ERROR. v2_mapas, v2_santuario, v2_meta, v2_fontes, v2_menu e v2_esc: código 0/falhas=0/sem SCRIPT ERROR. gdformat scripts/testes/v2 limpo (228 arquivos); git diff --check e git diff --cached --check limpos. Avisos de recursos no encerramento e save corrompido intencional de meta permanecem.
+- **Visual:** renderer OpenGL real, viewport 960×540, janela oculta e frame_post_draw; capturas de RUÍNAS DA FLORESTA e CIDADE revisadas. Nomes completos, ENTRAR, grade e VOLTAR cabem; seletor termina em x284 contra ENTRAR em x300. Logs/fotos em `C:/Dev/Breno/analise-kikiu/logs-santuario/conjunto`, fora do Git.
+- **Próximo:** agente principal atualiza PR #238 por push normal e mescla Cidade #211 após CI verde; publicação/build conjunta ficam com ele. Nenhum push/main/PR feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_

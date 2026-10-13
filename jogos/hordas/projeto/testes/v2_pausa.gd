@@ -9,7 +9,7 @@ extends Node
 # sliders, listas, Mostrar FPS e Detectar gravam pelo Config; Música e Efeitos mudam o volume (e o Som); o clique do mouse
 # escolhe a linha; ESC dentro de Ajustes volta um nível; o hit-stop e a câmera lenta seguem depois de pausar; Voltar ao santuário
 # despausa, abandona a partida (venceu = false) e credita as almas; perder o foco não pausa em headless; e no santuário o ESC
-# abre só "Sair?", e o botão Ajustes abre o submenu.
+# é devolvido à navegação local, e o botão Ajustes abre o submenu.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
 #   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (só o viewport).
@@ -371,7 +371,7 @@ func _testes() -> void:
 	pausa._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 	ok(not pausa.aberto and not get_tree().paused, "perder o foco não pausa em headless")
 
-	# 11. santuário: o ESC só abre a confirmação de sair (Não por padrão; Sim chama o gancho); o botão Ajustes abre o submenu.
+	# 11. santuário: a pausa devolve ESC à navegação local; Ajustes fecha e restaura foco.
 	# O mundo sai antes: o Apresentacao devolve a escala da janela na saída, e o santuário precisa ter a dele.
 	mundo.queue_free()
 	await get_tree().process_frame
@@ -383,21 +383,17 @@ func _testes() -> void:
 	if pa != null:
 		pa.ao_sair = Callable(self, "_marcar_saida")
 		var saidas_antes := saiu
-		_tecla(KEY_ESCAPE)
-		ok(pa.aberto and pa.tela == "confirmar_sair", "no santuário, ESC abre a confirmação de sair")
-		ok(not get_tree().paused, "no santuário, ESC não mexe na árvore")
-		_tecla(KEY_ENTER)  # padrão: Não
-		ok(not pa.aberto and saiu == saidas_antes, "Não fecha a confirmação sem sair")
-		_tecla(KEY_ESCAPE)
-		_tecla(KEY_UP)
-		_tecla(KEY_ENTER)  # Sim
-		ok(saiu == saidas_antes + 1, "no santuário, Sim chama o gancho de saída")
-		_tecla(KEY_ESCAPE)  # fecha
-		ok(not pa.aberto, "o ESC fecha a confirmação de sair (no santuário)")
+		var esc := InputEventKey.new()
+		esc.keycode = KEY_ESCAPE
+		esc.pressed = true
+		ok(not pa.entrada(esc), "pausa fechada do santuário devolve ESC à navegação local")
+		ok(not pa.aberto and saiu == saidas_antes, "santuário nunca abre Sair ao receber ESC")
+		ok(not get_tree().paused, "santuário não pausa a árvore")
 		altar._ajustes.pressed.emit()  # o botão Ajustes do santuário
 		ok(pa.aberto and pa.tela == "ajustes", "o botão Ajustes do santuário abre o submenu")
 		_tecla(KEY_ESCAPE)  # no santuário, ESC em Ajustes fecha (não há pausa por trás)
 		ok(not pa.aberto, "no santuário, ESC em Ajustes fecha o submenu")
+		ok(get_viewport().gui_get_focus_owner() == altar._ajustes, "fechar Ajustes restaura foco no botão")
 	altar.queue_free()
 
 	# o save real e as opções reais não foram tocados

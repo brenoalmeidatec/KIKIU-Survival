@@ -516,4 +516,3 @@ def carro_c(r):
 
 def carro_queimado(r):
     _carro(r, "3a342f", 0.9, queimado=True, bateu=False)
-
