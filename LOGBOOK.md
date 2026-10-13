@@ -1354,5 +1354,11 @@ _Claude do Breno (PC)_
 - **Feito:** escolha inicial e baú da v2 aguardam 1 s real; no baú todas as cartas são reveladas juntas ao completar esse segundo, independentemente de haver 1, 2 ou 3 recompensas. Rerrolar/banir mantém 0,8 s. A pausa e o descarte de cliques antecipados continuam cobertos.
 - **Testes:** Godot 4.4.1, import real; `v2_cartas_espera`, `v2_partida`, `v2_esc` e `v2_status`: código 0, `falhas=0`, sem `SCRIPT ERROR`. O fuzz de ESC ganhou 1000 passos para manter os mesmos mínimos de cobertura com a escolha mais curta; o teste do painel mede 0,25 s dentro da nova espera. `gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes` limpo. A tentativa inicial de executar `v2_cartas.tscn` não rodou: a cena não existe, e não é contada como teste aprovado.
 - **Pendente / recados:** conferir sensação em uma partida. Conflitos potenciais de dados/estilo com #201, #209, #214 e #217; as mudanças de mecânicas do mapa #220/#222 usam baús e devem preservar a espera nova.
+## 2026-10-13 - v2: barra de vida das elites
+- **Feito:** elites ganham uma barra pequena acima da região visual do sprite, calculada com o retângulo, offset e escala do Sprite2D. A barra nasce sob demanda só ao marcar elite, acompanha vida/vida máxima imediatamente ao receber dano, some com vida zero/morte e permanece escondida se o ator voltar ao pool como monstro comum; a mesma instância é reutilizada se virar elite outra vez.
+- **Testes:** `v2_hud falhas=0` (headless), cobrindo posição visual, fração de vida, morte, retorno ao pool como comum e reutilização como elite. Captura com renderer real em `C:\Dev\Breno\analise-kikiu\logs-hud\elite_barra_vida.png`.
+- **Formatação:** `gdformat -l160 --check` nos arquivos alterados.
+
+- **Conferência final:** formatação global de scripts/testes limpa após commit separado de formatação do teste de status da main. Captura real revisada; a primeira chamada com parâmetros de foto incorretos executou asserts de F3 e falhou em quatro rótulos no renderer, sem alterar esses testes. A chamada corrigida de captura terminou com código 0. A aprovação funcional citada acima é a execução headless com `falhas=0` e sem `SCRIPT ERROR`.
 
 _Codex com agentes Luna (PC)_
