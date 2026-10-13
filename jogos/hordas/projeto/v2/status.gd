@@ -1176,7 +1176,15 @@ func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite
 		y += ALT_GOLPE
 	if com_nav:
 		if not seco:
-			_texto(Dados.fonte_texto, "Página %d/%d  · Q E" % [_pag + 1, paginas], Vector2(x, limite - ALT_LINHA + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_DICA)
+			_texto(
+				Dados.fonte_texto,
+				"Página %d/%d  · Q E" % [_pag + 1, paginas],
+				Vector2(x, limite - ALT_LINHA + 2.0),
+				w,
+				HORIZONTAL_ALIGNMENT_LEFT,
+				TAM,
+				COR_DICA
+			)
 		return limite - 4.0  # o pé da coluna: a linha de paginação, e o +4 que `_visual` soma depois, cabem no limite
 	return y
 
