@@ -313,8 +313,9 @@ func _primeiro(marcas: Array, tipo: String) -> Dictionary:
 	return {}
 
 
-func _ir(w, p: Vector2) -> void:
-	w.heroi.definir_pos(p)
+func _ir(w, p) -> void:
+	var v: Vector2 = p if p is Vector2 else Vector2(float(p[0]), float(p[1]))
+	w.heroi.definir_pos(v)
 	w.avancar(PASSO)
 	w.avancar(PASSO)
 
@@ -353,14 +354,16 @@ func _mecanicas_c(w, marcas: Array) -> void:
 	var defesa := _primeiro(marcas, "defesa")
 	var placas: Array = marcas.filter(func(m): return m.tipo == "placa")
 	ok(not defesa.is_empty() and placas.size() == 3, "lote C: 1 defesa e 3 placas no mapa médio (%d)" % placas.size())
+	var textos: Array = []  # todo anúncio da partida (o mercador, perto de uma placa, pode anunciar depois dela)
+	w.anuncio.connect(func(t, _c): textos.append(t))
 	for pl in placas:
 		_ir(w, pl.pos)
-		ok(w.combate.ultimo_anuncio == str(pl.texto), "lote C: a placa em %s diz o seu texto" % str(pl.pos))
+		ok(textos.has(str(pl.texto)), "lote C: a placa em %s diz o seu texto" % str(pl.pos))
 	if defesa.is_empty():
 		return
 	var antes: int = w.combate.baus.soltos
 	var monstros_antes: int = w.monstros.size()
-	w.heroi.definir_pos(defesa.pos)
+	_ir(w, defesa.pos)
 	for i in int(ceil(float(defesa.tempo) / PASSO)) + 60:
 		w.avancar(PASSO)
 	ok(w.combate.baus.soltos == antes + 1, "lote C: a defesa cumprida faz cair a relíquia")
@@ -379,7 +382,9 @@ func _mecanicas_d(w, marcas: Array) -> void:
 	w.xp_coletado = 50.0  # 5 almas: menos que o custo
 	_ir(w, merc.pos)
 	ok(w.combate.baus.soltos == antes and w._almas_gastas == 0, "lote D: sem almas o mercador não troca")
-	w.xp_coletado = 300.0  # 30 almas
+	w.xp_coletado = 300.0  # 30 almas (o XP de tanto sobe de nível: a escolha pausa o mundo, então a tela fecha aqui)
+	w.combate.telas.esconder()
+	w.combate.pausado = false
 	_ir(w, Vector2(240, 1320))
 	_ir(w, merc.pos)
 	ok(w._almas_gastas == int(merc.custo) and w.combate.baus.soltos == antes + 1, "lote D: com almas o mercador troca e uma carta cai")
