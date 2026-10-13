@@ -1254,7 +1254,10 @@ func _paginacao(st, c) -> void:
 	st._hud = true
 	st._aplicar()
 	await esperar()
-	ok(st._golpes_mostrados > 0 and st._golpes_mostrados < total, "no HUD o compacto mostra só o que cabe, com \"+N golpes\" no pé (%d de %d)" % [st._golpes_mostrados, total])
+	ok(
+		st._golpes_mostrados > 0 and st._golpes_mostrados < total,
+		'no HUD o compacto mostra só o que cabe, com "+N golpes" no pé (%d de %d)' % [st._golpes_mostrados, total]
+	)
 	ok(st.linhas_que_estouram().is_empty(), "no HUD nenhuma linha estoura a largura com %d golpes (%s)" % [total, str(st.linhas_que_estouram())])
 	st._hud = false
 	st._aplicar()
@@ -1267,7 +1270,10 @@ func _paginacao(st, c) -> void:
 	ok(int(pg.paginas) > 1 and int(pg.pagina) == 1, "com %d golpes a pausa pagina (página %d de %d)" % [total, int(pg.pagina), int(pg.paginas)])
 	var espaco := 300.0  # um espaço de exemplo: a conta tem de cobrir todos os golpes sem sobrar página vazia
 	var conta: Array = Status._paginas_golpes(total, espaco)
-	ok(int(conta[1]) * int(conta[0]) >= total and (int(conta[1]) - 1) * int(conta[0]) < total, "a conta de páginas cobre os %d golpes sem página vazia (%s)" % [total, str(conta)])
+	ok(
+		int(conta[1]) * int(conta[0]) >= total and (int(conta[1]) - 1) * int(conta[0]) < total,
+		"a conta de páginas cobre os %d golpes sem página vazia (%s)" % [total, str(conta)]
+	)
 	ok(int(conta[0]) * 20.0 + 13.0 <= espaco, "uma página cabe no espaço da coluna (%d golpes em %.0f px)" % [int(conta[0]), espaco])
 	var ev := InputEventKey.new()
 	ev.keycode = KEY_E
