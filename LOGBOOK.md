@@ -1370,6 +1370,12 @@ _Codex (PC), workflow com agentes Luna_
 - **Verificação:** YAML parseado e estrutura dos jobs/caminhos conferida. Não rodei Godot para evitar concorrência com outras branches.
 
 _Codex Luna (PC)_
+## 2026-10-13 · Codex (PC) · guia técnico da v2 e legado
+- **Feito:** README do módulo separa v2 disponível (título menu_principal, apresentação 960×540), legado v1 e roadmap. Comandos --bot/--online ficam identificados como legado; tabela de pastas identifica v2 e serviços compartilhados. Corrigido teto legado de prorrogação para 350.
+- **Verificação:** caminhos e cena principal conferidos com project.godot e módulos menu_principal/apresentacao/mapas; gdformat scripts/testes limpo na base inicial. Apenas documentação, sem alteração de comportamento; nenhuma cena Godot foi rodada para este assunto.
+- **Próximo:** revalidar a documentação e formatação sobre a main atualizada antes do PR.
+
+_Codex (PC), workflow com agentes Luna_
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
 - **Feito:** o card da v2 (pausa, painel central e HUD) deixou de cortar os golpes quando a build passa do que cabe. Na página visual da pausa e no painel central os golpes ganham páginas: quantos cabem sai da altura da coluna (sem número fixo), a última linha diz "Página X/Y · Q E", e Q e E trocam de página (pela entrada da pausa e do painel central). No HUD o compacto mostra o que cabe e o pé diz "+N golpes" (escolhido por ser o mais leve: sem troca automática de página). Golpe com nome longo e sem `curto` corta com "." no HUD, em vez de estourar a coluna. Com um golpe só não há paginação.
 - **Testes:** `v2_status` com `falhas=0` (novo bloco `_paginacao`: 50 golpes no HUD, na pausa e no painel central). Prints com os 50 golpes em `status_hud_50_golpes` e `status_pausa_50_golpes`.
@@ -1412,5 +1418,9 @@ _Codex Luna (PC)_
 - **Feito:** passo_tempo retorna 0.0 se _fim_camera_lenta abriu a escolha e ativou a pausa. Mudança de duas linhas em combate.gd; mundo.gd permanece igual. A grade é outro PR.
 - **Testes:** Godot 4.4.1 headless, após import real: v2_combate, v2_esc e v2_pausa, código 0, falhas=0 e sem SCRIPT ERROR. Teste força movimento do herói e confere relógio da partida e posições do herói/monstro no quadro exato da transição. gdformat scripts/testes limpo; formatação de teste v2_status da main em commit separado.
 - **Pendente / conflitos:** conferir sobreposição de combate.gd com #201/#214/#220/#222. #217 é UI; #219 já está na base atualizada.
+## 2026-10-13 · Codex (PC) · guia v2 revalidado sobre a main
+- **Feito:** documentação conferida sobre main cdf67f7; não anuncia recursos dos PRs abertos como entregues. Formatação pendente do teste v2_status da main em commit separado.
+- **Testes:** Godot 4.4.1 headless: v2_menu e entrada_cenas, código 0, falhas=0, sem SCRIPT ERROR. Cena principal e dimensões 960×540 conferidas nos arquivos; gdformat scripts/testes: 174 arquivos limpos.
+- **Próximo:** manter guia e roadmap alinhados a cada port da v1 ou integração de PR.
 
 _Codex (PC), workflow com agentes Luna_
