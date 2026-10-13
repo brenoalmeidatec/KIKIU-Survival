@@ -31,6 +31,7 @@ const Entrada := preload("res://v2/entrada.gd")
 const Combate := preload("res://v2/combate.gd")
 const Roteiro := preload("res://v2/roteiro.gd")
 const Copas := preload("res://v2/copas.gd")
+const Braseiros := preload("res://v2/braseiros.gd")  # o Braseiro Antigo: apagado, acende com o herói por perto e deixa a área mais segura
 const Horda := preload("res://v2/horda.gd")  # os monstros comuns em lote (MultiMesh)
 const Oclusao := preload("res://v2/oclusao.gd")  # silhueta do herói atrás de monstro grande (leva 4)
 const Depuracao := preload("res://v2/depuracao_colisao.gd")
@@ -72,6 +73,7 @@ var atm
 var cenario
 var copas  # buraco raio-x nas árvores atrás das quais o herói está (copas.gd)
 var oclusao  # silhueta do herói quando um monstro na frente o cobre (oclusao.gd)
+var braseiros  # os braseiros antigos do mapa (braseiros.gd)
 var horda  # desenho dos monstros comuns em lote (horda.gd)
 var dbg_colisao: Node2D  # F4: contorno das formas de colisão (depuracao_colisao.gd)
 var sprites
@@ -251,6 +253,8 @@ func _montar() -> void:
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
 	horda = Horda.new()
 	horda.montar(self)
+	braseiros = Braseiros.new()
+	braseiros.montar(self)
 	_pre_criar_monstros()
 	_popular_inicial()
 	var todos: Array = cenario.objetos.duplicate()
@@ -566,6 +570,7 @@ func avancar(dt: float) -> void:
 			var p2 := Time.get_ticks_usec()
 			combate.atualizar(dtm)
 			_checar_marcadores()
+			braseiros.atualizar(dtm)
 			var p3 := Time.get_ticks_usec()
 			_perfil("heroi", p1 - p0)
 			_perfil("monstros", p2 - p1)
