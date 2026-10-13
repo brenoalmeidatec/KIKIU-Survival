@@ -2,6 +2,8 @@
 
 A v2 cresce sobre o protótipo 2.5D (`prototipos/cara_nova.*`, congelado como referência). A v1 (`main.tscn`, `arena.gd`) está pausada.
 
+Ao terminar a câmera lenta e abrir a escolha de cartas, o passo de simulação retorna zero: relógio da partida, herói e monstros não avançam no quadro da transição.
+
 Rodar: o jogo já abre na v2 (a cena principal é o título, `res://v2/menu_principal.tscn`, que leva ao santuário `res://v2/altar.tscn`; a v1 abre com `-- --v1`). Direto na floresta: `godot --path jogos/hordas/projeto res://v2/mundo.tscn`. Opções após `--`: `--fotos=PASTA --seq=2.0 --pos=x,y --nome=foto`, `--medir`, `--sombra=baixa|media|alta`, `--particulas=nenhuma|poucas|medias|muitas`, `--sem_vsync`, `--sem_normal`, `--rotulo`, `--colisao`, `--perfil=baixo|medio|alto` (vale o perfil de gráficos inteiro sem gravar), `--luzes=N` (orçamento de luzes), `--estresse=N --imortal` (N monstros caçando o herói parado). Modo livre: WASD ou analógico anda, o mouse mira, clique esquerdo golpeia (segurar repete o combo), Espaço esquiva, Shift corre (gasta o mesmo fôlego), 1/2/3 trocam a sombra, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga e desliga o card da build (`status.gd`: compacto no HUD, painel central sobre a escolha e o baú), Esc (ou Start) abre o menu de pausa; Sair do jogo é o único caminho que fecha.
 
 | Arquivo | O que faz |
@@ -62,4 +64,3 @@ Teste da música (`testes/v2_musica.tscn`, imprime `v2_musica falhas=0`): o bus 
 
 Teste do card: `testes/v2_status.tscn` (imprime `v2_status falhas=0`, uns 35 s): cada número do card é conferido contra o jogo em movimento (dano, alcance com o avanço, ciclo do combo medido segurando o clique num boneco em 60, 120 e 240 quadros por segundo, crítico e seu teto, recuperação do fôlego, cada golpe automático contra a simulação, onda e lança de cada passo, dicas de evolução, almas contra `Meta.registrar_partida`), o C pela entrada de verdade nos três modos, o painel central sobre a escolha e o baú (nada escolhido, trava correndo, ESC abre a pausa) e a matriz de quatro situações por três modos (nada estoura nem é cortado). Prints só do viewport: `godot --path jogos/hordas/projeto res://testes/v2_status.tscn -- --fotos=PASTA` (em `docs/visual_2_5d/status_v2/`).
 
-Ao terminar a câmera lenta e abrir a escolha de cartas, o passo de simulação retorna zero: relógio da partida, herói e monstros não avançam no quadro da transição.
