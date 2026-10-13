@@ -1,4 +1,4 @@
-﻿extends Node
+extends Node
 # Teste automÃ¡tico do personagem, do salÃ£o e da escolha de personagem da v2 (v2/personagens.gd, v2/salao.gd e
 # v2/personagens_tela.gd). Usa arquivos TEMPORÃRIOS (user://teste_salao_*): o save real da meta (user://v2_progresso.cfg) e os saves
 # dos personagens de verdade nÃ£o sÃ£o tocados; a conferÃªncia por md5 garante isso.
