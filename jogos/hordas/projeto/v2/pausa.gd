@@ -305,6 +305,10 @@ func entrada(e: InputEvent) -> bool:
 	if e is InputEventKey and e.keycode == KEY_TAB and e.pressed and not e.echo and tela == "menu" and mundo != null and mundo.get("status") != null:
 		mundo.status.alternar_detalhe()
 		return true
+	# Q e E trocam a página dos golpes do card (status.gd); a Antena entrega a tecla aqui antes do card, então o pedido passa por aqui
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_Q, KEY_E] and tela == "menu" and mundo != null and mundo.get("status") != null:
+		mundo.status.paginar(-1 if e.keycode == KEY_Q else 1)
+		return true
 	if e is InputEventMouseMotion:
 		var i := _linha_sob_mouse()
 		if i >= 0 and i != sel:
