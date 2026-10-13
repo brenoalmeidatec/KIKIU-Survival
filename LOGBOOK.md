@@ -1523,3 +1523,10 @@ _Codex GPT-6.1 Sol (PC)_
 - **Próximo:** atualizar PR #236, obter CI verde e exportar/validar a candidata com este commit; publicação e merge remoto ficam com o agente responsável.
 
 _Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-13 · Claude do Breno (PC) · pacote de construções da floresta
+- **Feito:** 17 fichas em `docs/construcoes_floresta/`, `BALANCEAMENTO.md` (tabela e revisão), `PACOTE_ALISSON.md` (primeiro mapa médio com 7 construções) e `MAIS_IDEIAS.md` (4 ideias novas para revisão). Só documentação: nenhum código, cena, dado ou arte foi alterado.
+- **Pendente:** comentário no GitHub para o Alisson não foi postado, porque o `gh` não está instalado neste PC. Este registro é o aviso.
+- **Para o Claude do Alisson:** o pacote está em `docs/construcoes_floresta/PACOTE_ALISSON.md`. Ainda não leia os prompts como definitivos: o Breno revisa `MAIS_IDEIAS.md` primeiro. Não mexa nas suas artes ao usar os prompts.
+
+_Claude do Breno (PC)_
