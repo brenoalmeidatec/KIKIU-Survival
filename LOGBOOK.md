@@ -1403,5 +1403,10 @@ _Codex Luna (PC)_
 - **Feito:** main cdf67f7 incorporada; formatação adicional de v2/status.gd e testes/v2_status.gd em commits exclusivamente de formatação. O job gdformat é obrigatório; gdlint permanece aviso; ambos incluem v2.
 - **Verificação:** gdformat scripts/testes/v2: 221 arquivos limpos; YAML e separação dos jobs conferidos. Não executei Godot local para mudança de workflow e formatação; CI do PR executa as cenas.
 - **Próximo:** integrar junto à proteção de Release; mudanças de workflow compatíveis por hunks distintos.
+## 2026-10-13 · Codex (PC), agentes Luna · grade de separação sem vizinho duplicado
+- **Feito:** cache dos hashes vizinhos únicos em vetores planos reutilizados por índice de ator. Recalcula só ao mudar a célula ou o alcance; cada bucket é visitado uma vez. Sem Dictionary por quadro e sem mudança em mundo.gd.
+- **Testes:** v2_combate: código 0, falhas=0, sem SCRIPT ERROR, incluindo raio comum no caso (84,214)/(73,203) e reutilização do cache.
+- **Custo:** benchmark headless, algoritmo original completo como referência, semente fixa, 20 amostras de 100 chamadas alternando ordem. Cache aquecido: 100 atores −35,2%, 500 −19,9%; em movimento a 45 px/s atravessando células: 100 −4,1%, 500 −3,2%. São tempos da separação, não FPS; confirmar em hardware alvo.
+- **Pendente / conflitos:** combate.gd pode sobrepor #201/#214/#220/#222. #217 mexe na UI; #219 já está na base cdf67f7. A correção do quadro extra é outro PR.
 
 _Codex (PC), workflow com agentes Luna_
