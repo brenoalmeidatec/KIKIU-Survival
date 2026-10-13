@@ -1342,3 +1342,11 @@ _Claude do Alisson (PC)_
 - **Pendente:** olhar o print num monitor real (PC e notebook): a dica é pequena e o print é 1280x720.
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · CI: lint consultivo da v2 e formatação obrigatória
+- **Feito:** `gdlint` agora inclui `scripts`, `testes` e `v2` como aviso; `gdformat` é um job separado e obrigatório, com `--check -l 160` nos três diretórios.
+- **Formatação:** `v2/creditos.gd` foi ajustado em commit próprio. Os checks de `gdformat` passam para `scripts`, `testes` e `v2` (219 arquivos sem novas alterações).
+- **Baseline:** `gdlint` segue consultivo e reporta 5.530 achados em 219 arquivos; saída completa em `C:\Dev\Breno\analise-kikiu\logs-ci\gdlint-baseline.txt`. Logs do formatter também ficam nessa pasta.
+- **Verificação:** YAML parseado e estrutura dos jobs/caminhos conferida. Não rodei Godot para evitar concorrência com outras branches.
+
+_Codex Luna (PC)_
