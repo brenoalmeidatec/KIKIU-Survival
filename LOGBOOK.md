@@ -1349,6 +1349,11 @@ _Claude do Breno (PC)_
 - **Pendente / próximo:** CI do PR e integração separada da proteção de Release. Sem alterações nos arquivos v2 dos PRs #201/#214/#217/#219/#220/#222.
 
 _Codex (PC), workflow com agentes Luna_
+## 2026-10-13 · Codex Luna (PC) · save seguro da meta-progressão v2
+- **Feito:** `v2/meta.gd` grava por temporário validado, mantém `.bak`, recupera de backup e bloqueia gravação sobre save corrompido sem backup. `mapas.gd` usa os mesmos helpers, evitando que a escolha do mapa apague o save. Falhas retornam para compra, escolha de mapa e fim de partida; altar e resultado não anunciam ganhos que não foram salvos. `testes/v2_meta.gd` e `testes/v2_mapas.gd` passaram (`falhas=0`), cobrindo falha de gravação, compra sem persistência, recuperação do backup e corrupção sem backup.
+- **Pendente:** integrar a `origin/main` avançada durante este trabalho e conferir os arquivos sobrepostos com os PRs #201, #214, #217, #219, #220 e #222.
+
+_Codex Luna (PC)_
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
 - **Feito:** o card da v2 (pausa, painel central e HUD) deixou de cortar os golpes quando a build passa do que cabe. Na página visual da pausa e no painel central os golpes ganham páginas: quantos cabem sai da altura da coluna (sem número fixo), a última linha diz "Página X/Y · Q E", e Q e E trocam de página (pela entrada da pausa e do painel central). No HUD o compacto mostra o que cabe e o pé diz "+N golpes" (escolhido por ser o mais leve: sem troca automática de página). Golpe com nome longo e sem `curto` corta com "." no HUD, em vez de estourar a coluna. Com um golpe só não há paginação.
 - **Testes:** `v2_status` com `falhas=0` (novo bloco `_paginacao`: 50 golpes no HUD, na pausa e no painel central). Prints com os 50 golpes em `status_hud_50_golpes` e `status_pausa_50_golpes`.
@@ -1368,3 +1373,9 @@ _Codex (PC), workflow com agentes Luna_
 - **Verificação:** autoteste_executor falhas=0; testes de sintaxe Bash e gdformat scripts/testes limpos. A instabilidade do esquiva legado está documentada no PR #223 com o log.
 
 _Codex (PC), workflow com agentes Luna_
+## 2026-10-13 (2) · Codex Luna (PC) · validação do save seguro
+- **Feito:** após integrar `origin/main` (`cdf67f7`), passaram `v2_meta`, `v2_mapas`, `v2_pausa`, `v2_esc`, `v2_musica` e `v2_status` com `falhas=0`; `gdformat --line-length 160 --check` passou em 174 scripts e testes. O fixture `v2_mapas` limpa também `.tmp` e `.bak`, gerados pelo save seguro.
+- **Sobreposição com PRs:** #201 não altera os arquivos de save; #214 altera `meta.gd` e `altar.gd`; #217 altera `altar.gd` e `resultado_meta.gd`; #219 já está integrado; #220 altera `mapas.gd`, `v2_mapas.gd` e `LEIA-ME.md`; #222 altera `v2_mapas.gd` e `LEIA-ME.md`. Os PRs ainda abertos que compartilham arquivos precisam de revisão ao integrar.
+- **Pendente:** PR/push será tratado pelo root.
+
+_Codex Luna (PC)_
