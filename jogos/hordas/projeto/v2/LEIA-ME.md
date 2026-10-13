@@ -2,6 +2,8 @@
 
 A v2 cresce sobre o protótipo 2.5D (`prototipos/cara_nova.*`, congelado como referência). A v1 (`main.tscn`, `arena.gd`) está pausada.
 
+Ao terminar a câmera lenta e abrir a escolha de cartas, o passo de simulação retorna zero: relógio da partida, herói e monstros não avançam no quadro da transição.
+
 Rodar: o jogo já abre na v2 (a cena principal é o título, `res://v2/menu_principal.tscn`, que leva ao santuário `res://v2/altar.tscn`; a v1 abre com `-- --v1`). Direto na floresta: `godot --path jogos/hordas/projeto res://v2/mundo.tscn`. Opções após `--`: `--fotos=PASTA --seq=2.0 --pos=x,y --nome=foto`, `--medir`, `--sombra=baixa|media|alta`, `--particulas=nenhuma|poucas|medias|muitas`, `--sem_vsync`, `--sem_normal`, `--rotulo`, `--colisao`, `--perfil=baixo|medio|alto` (vale o perfil de gráficos inteiro sem gravar), `--luzes=N` (orçamento de luzes), `--estresse=N --imortal` (N monstros caçando o herói parado). Modo livre: WASD ou analógico anda, o mouse mira, clique esquerdo golpeia (segurar repete o combo), Espaço esquiva, Shift corre (gasta o mesmo fôlego), 1/2/3 trocam a sombra, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga e desliga o card da build (`status.gd`: compacto no HUD, painel central sobre a escolha e o baú), Esc (ou Start) abre o menu de pausa; Sair do jogo é o único caminho que fecha.
 
 | Arquivo | O que faz |
