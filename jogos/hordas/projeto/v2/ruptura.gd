@@ -489,7 +489,13 @@ func _desenhar() -> void:
 			var cor := COR_LARANJA.lerp(Color(0.55, 0.06, 0.03), clampf(k * 1.3, 0.0, 1.0))
 			cor.a = 1.0 - k
 			for pts in r_pts[i]:
-				no.draw_polyline(pts, cor, 2.0)
+				# Halo, filão e núcleo: a fissura tem espessura e continua legível no chão escuro.
+				no.draw_polyline(pts, Color(cor.r, cor.g * 0.5, cor.b * 0.3, cor.a * 0.16), 10.0)
+				no.draw_polyline(pts, cor, 3.5)
+				no.draw_polyline(pts, Color(1.0, 0.83, 0.48, cor.a * (1.0 - k)), 1.0)
+				for j in range(2, pts.size() - 1, 2):
+					var ramo := PackedVector2Array([pts[j], pts[j].lerp(pts[j + 1], 0.5) + (pts[j] - pts[j - 1]).rotated(0.9) * 0.35])
+					no.draw_polyline(ramo, cor, 1.5)
 	for i in MAX_ANEIS:
 		if a_vivo[i] != 1:
 			continue
@@ -497,7 +503,9 @@ func _desenhar() -> void:
 		var e := 1.0 - (1.0 - k) * (1.0 - k)  # saída suave: abre rápido e assenta
 		var cor: Color = a_cor[i]
 		cor.a = a_alfa[i] * (1.0 - k)
-		no.draw_polyline(_elipse(a_pos[i], lerpf(a_r0[i], a_r1[i], e), PTS), cor, lerpf(a_w0[i], a_w1[i], k))
+		var onda := _elipse(a_pos[i], lerpf(a_r0[i], a_r1[i], e), PTS)
+		no.draw_polyline(onda, Color(cor.r, cor.g, cor.b, cor.a * 0.12), 12.0 * (1.0 - k) + 1.0)
+		no.draw_polyline(onda, cor, lerpf(a_w0[i], a_w1[i], k))
 	var h = mundo.heroi
 	if h != null and h.estado == h.Estado.CARGA:
 		_desenhar_carga(h)
@@ -511,7 +519,7 @@ func _desenhar_carga(h) -> void:
 	no.draw_polyline(_elipse(p, raio_de(h, 1.0, false), PTS), Color(1.0, 0.9, 0.7, 0.22), 1.0)
 	var cor: Color
 	if h.rup_perfeita:
-		cor = Color.WHITE if int(Time.get_ticks_msec() / 25) % 2 == 0 else COR_OURO
+		cor = COR_OURO.lerp(Color.WHITE, 0.5 + 0.25 * sin(float(Time.get_ticks_msec()) * 0.018))
 	elif f >= 1.0:
 		cor = Color.WHITE
 	elif f < 0.5:
@@ -519,7 +527,19 @@ func _desenhar_carga(h) -> void:
 	else:
 		cor = COR_OURO.lerp(Color.WHITE, (f - 0.5) / 0.5)
 	cor.a = 0.95
-	no.draw_polyline(_elipse(p, raio_de(h, f, h.rup_perfeita), PTS), cor, 3.0 if h.rup_perfeita else 2.0)
+	var r := raio_de(h, f, h.rup_perfeita)
+	var borda := _elipse(p, r, PTS)
+	no.draw_polyline(borda, Color(cor.r, cor.g, cor.b, 0.12), 9.0)
+	no.draw_polyline(borda, cor, 3.0 if h.rup_perfeita else 2.0)
+	# Sigilos radiais discretos dentro do alcance; ficam maiores conforme a energia converge.
+	for i in 12:
+		var a := TAU * float(i) / 12.0
+		var d := Vector2(cos(a), sin(a) * ACHATA)
+		var tang := Vector2(-sin(a), cos(a) * ACHATA)
+		var q := p + d * r * 0.85
+		var marca := PackedVector2Array([q - tang * 3.0, q + d * (4.0 + f * 4.0), q + tang * 3.0])
+		no.draw_polyline(marca, Color(cor.r, cor.g, cor.b, 0.45 + f * 0.4), 1.5)
+		no.draw_line(p + d * r * 0.26, p + d * r * (0.3 + f * 0.18), Color(cor.r, cor.g, cor.b, 0.15 + f * 0.22), 1.0)
 
 
 # ------------------------------------------------------------------ painel de status (v2/status.gd lê estas duas)
