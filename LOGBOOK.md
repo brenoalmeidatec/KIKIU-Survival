@@ -1343,9 +1343,18 @@ _Claude do Alisson (PC)_
 
 _Claude do Breno (PC)_
 
+
 ## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
 - **Feito:** o card da v2 (pausa, painel central e HUD) deixou de cortar os golpes quando a build passa do que cabe. Na página visual da pausa e no painel central os golpes ganham páginas: quantos cabem sai da altura da coluna (sem número fixo), a última linha diz "Página X/Y · Q E", e Q e E trocam de página (pela entrada da pausa e do painel central). No HUD o compacto mostra o que cabe e o pé diz "+N golpes" (escolhido por ser o mais leve: sem troca automática de página). Golpe com nome longo e sem `curto` corta com "." no HUD, em vez de estourar a coluna. Com um golpe só não há paginação.
 - **Testes:** `v2_status` com `falhas=0` (novo bloco `_paginacao`: 50 golpes no HUD, na pausa e no painel central). Prints com os 50 golpes em `status_hud_50_golpes` e `status_pausa_50_golpes`.
 - **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Névoa Espectral e leitura visual dos ataques
+- **Feito:** nuvens da v2 ganharam motivos animados próprios (espectros, fumaça de sono, bolhas, cristais, brasas e sangue), volume oval no chão, entrada/saída em fade e pulso proporcional à vida efetivamente removida. Projéteis, anéis, meteoros e aliados usam silhuetas próprias quando ajudam a identificar fogo, veneno, gelo ou sombra; pool fixo em 48.
+- **Compatibilidade:** a Névoa Espectral usa o sprite opcional `sp` quando ele existir, mantendo o pulso de acerto por cima. Assim, os sprites da PR #209 poderão assumir o corpo sem duplicação; os motivos por código funcionam mesmo sem ela.
+- **Mecânica e guia:** preservados lentidão, contagem de acertos e multiplicador de gelo da nuvem; pulso só ocorre com perda real de vida. Descrição/arte da carta e guia v2 atualizados.
+- **Verificação:** importação real Godot 4.4.1 concluída; `v2_partida` terminou com `falhas=0`; `gdformat -l 160 --check` e `git diff --check` limpos. Captura de viewport real (960×540, não vazia) em `C:\Dev\Breno\analise-kikiu\logs-ataques\identidade_nuvens.png`; rótulos da imagem pertencem apenas à cena de demonstração.
+
+_Codex LunaPC_
