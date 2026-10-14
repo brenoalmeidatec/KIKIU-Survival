@@ -1644,3 +1644,12 @@ _Claude do Alisson (notebook)_
 - **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
 
 _Codex do Alisson_
+
+## 2026-10-14 · Claude do Alisson (notebook) · coop online, etapa 0: preparar o solo (docs/ONLINE_V2_PLANO.md)
+- **Feito:** `mundo.herois` (lista; o solo tem só o `heroi`), `mundo.alvo_mais_perto(pos)` (herói vivo mais perto; os monstros usam com 2+ heróis, o solo segue o caminho de sempre sem busca), e o tempo separado em "do mundo" e "do herói local": hit-stop, câmera lenta e a pausa da escolha ficam num `v2/tempo_local.gd` (um por herói local) e `combate.passo_tempo` devolve `dt_mundo` e deixa `dt_local`; `combate.parada_t/lento_*/pausado` seguem existindo como propriedades (os testes não mudaram). `combate.pausado_mundo` é a pausa do resultado (vale para todos). `combate.tempo_local_separado` (false no solo) é a chave que o coop e a tela dividida ligam: aí o hit-stop só trava o herói local e o mundo segue. Flag `--coop` lida em `mundo.coop_modo` e ignorada.
+- **Testes:** novo `v2_coop_preparo` (com 2 heróis o monstro persegue o mais perto e troca de alvo quando o remoto cai; o tempo do solo e o separado). Suíte inteira igual.
+- **Medida (solo, `--medir --estresse=100 --imortal`, headless, 3 rodadas):** script por quadro 1,74 a 1,81 ms depois contra 2,08 a 2,54 ms antes (a máquina oscila; não ficou mais lento).
+- **Pendente:** câmera, HUD e entrada por jogador (tela dividida) ainda são globais; `combate._contato`, marcadores e espinhos só olham o `mundo.heroi` (etapas 3 e 7).
+- **Próximo:** etapa 1 (movimento e golpe na rede local).
+
+_Claude do Alisson (notebook)_

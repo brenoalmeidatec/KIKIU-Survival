@@ -78,7 +78,9 @@ var braseiros  # os braseiros antigos do mapa (braseiros.gd)
 var horda  # desenho dos monstros comuns em lote (horda.gd)
 var dbg_colisao: Node2D  # F4: contorno das formas de colisão (depuracao_colisao.gd)
 var sprites
-var heroi
+var heroi  # o herói LOCAL (quem este teclado/controle comanda)
+var herois: Array = []  # todos os heróis do mundo (local + remotos do coop + locais da tela dividida); no solo tem só o `heroi`
+var coop_modo := ""  # --coop=host|join (etapa 1 do coop usa; hoje só é lido)
 var monstros: Array = []  # os monstros VIVOS (quem morre volta para o pool e renasce depois)
 var combate
 var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
@@ -142,6 +144,7 @@ var _ms_carga := 0.0
 func _ready() -> void:
 	var t0 := Time.get_ticks_usec()
 	args = _argumentos()
+	coop_modo = str(args.get("coop", ""))  # lida e ignorada por enquanto: o solo não muda (docs/ONLINE_V2_PLANO.md, etapa 0)
 	_modo = "medir" if args.has("medir") else ("foto" if args.has("fotos") else "livre")
 	_fotos = str(args.get("fotos", ""))
 	_seq = float(args.get("seq", 2.0))
@@ -299,12 +302,32 @@ func _criar_heroi() -> void:
 		var xy := str(args.pos).split(",")
 		p = Vector2(float(xy[0]), float(xy[1]))
 	heroi = Heroi.new()
+	herois = [heroi]
 	if _modo != "livre":  # foto e medição não dependem do teclado de quem estiver na máquina
 		heroi.entrada_forcada = _entrada_roteiro()
 	heroi.criar(self, no_mundo, sprites.tipo("hazaki" if args.has("basico") else "hazaki_samurai"), p)
 	# a tocha e a aura andam com o herói (a posição é o ponto no chão que a luz ilumina)
 	luzes.prender(luzes.criar("tocha", p), heroi, Vector2(-38, -32))
 	luzes.prender(luzes.criar("aura", p), heroi, Vector2(30, -8))
+
+
+## O herói vivo mais perto de `p` (o alvo dos monstros). Com todos caídos devolve o mais perto entre os caídos; sem lista, o local.
+func alvo_mais_perto(p: Vector2):
+	if herois.size() <= 1:
+		return heroi
+	var melhor = null
+	var melhor_d := INF
+	var melhor_vivo := false
+	for h in herois:
+		var vivo: bool = h.vida > 0.0
+		if melhor_vivo and not vivo:
+			continue
+		var d: float = p.distance_squared_to(h.pos)
+		if (vivo and not melhor_vivo) or d < melhor_d:
+			melhor = h
+			melhor_d = d
+			melhor_vivo = vivo
+	return melhor if melhor != null else heroi
 
 
 ## Foto e medição: o herói fica parado, ou anda sozinho com --anda=dx,dy (direção).
@@ -757,12 +780,18 @@ func avancar(dt: float) -> void:
 		if dtm > 0.0:
 			tempo_partida += dtm
 			var p0 := Time.get_ticks_usec()
-			heroi.atualizar(dtm)
+			if combate.dt_local > 0.0:
+				heroi.atualizar(combate.dt_local)  # no solo é igual a dtm; hit-stop e câmera lenta locais não param o mundo
 			var p1 := Time.get_ticks_usec()
-			var hp: Vector2 = heroi.pos
-			var hr: float = heroi.raio
-			for mo in monstros:
-				mo.atualizar(dtm, hp, hr)
+			if herois.size() <= 1:  # solo: um alvo só, sem busca
+				var hp: Vector2 = heroi.pos
+				var hr: float = heroi.raio
+				for mo in monstros:
+					mo.atualizar(dtm, hp, hr)
+			else:
+				for mo in monstros:
+					var alvo = alvo_mais_perto(mo.pos)
+					mo.atualizar(dtm, alvo.pos, alvo.raio)
 			var p2 := Time.get_ticks_usec()
 			combate.atualizar(dtm)
 			_checar_marcadores(dtm)
