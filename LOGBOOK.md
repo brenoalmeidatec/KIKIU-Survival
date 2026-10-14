@@ -1812,3 +1812,10 @@ _Claude do Alisson (notebook)_
 - **Atenção:** a branch `alisson/v2-herois` (#214) fica redundante depois deste merge; o orquestrador fecha o PR.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-14 - Pilha #242 > #261 > #263 mesclada em cadeia
+
+- **#261:** `claude/salao-do-heroi` (já com a main e os heróis do #214) mesclada em `codex/santuario-visual`; só o `v2/LEIA-ME.md` conflitou (mantidos os dois lados). O `v2/paleta.gd` do #261 ficou idêntico ao da main (#250): uma só fonte de cor. Categorias de compras e os quatro mapas intactos. Suíte `v2_*` ok.
+- **#263:** `codex/santuario-visual` mesclada em `alisson/salao-vivo` sem conflito. `v2_salao_vivo` ok isolado (em paralelo com `v2_mapas` ele reclama de `teste_v2_mapas.cfg` no "save real intacto": é corrida entre cenas que dividem o user://, não bug). O salão vivo NÃO foi otimizado: o checkpoint em `docs/visual_2_5d/santuario_vivo/PAUSA.md` segue valendo (queda de FPS acima de 15%).
+
+_Claude do Alisson (notebook)_
