@@ -37,6 +37,7 @@ func _ready() -> void:
 		await _mundo_do_mapa(id)
 		_passagens_e_vista(id)
 		_marcadores(id)
+		_determinismo(id)
 	await _santuario()
 	_apagar_save()
 	print("v2_mapas falhas=%d" % falhas)
@@ -52,11 +53,22 @@ func _apagar_save() -> void:
 
 
 func _lista_e_escolha() -> void:
+	ok(Mapas.ids() == ["floresta", "laboratorio", "cidade", "medio"], "os quatro mapas na ordem de seleção")
 	ok(Mapas.ids().size() >= 2, "há pelo menos 2 mapas (floresta e laboratório): %s" % str(Mapas.ids()))
 	ok(Mapas.ids().has("floresta") and Mapas.ids().has("laboratorio"), "floresta e laboratório estão na lista")
 	ok(Mapas.escolhido() == "floresta", "sem save o mapa é a floresta (deu %s)" % Mapas.escolhido())
 	Mapas.escolher("laboratorio")
 	ok(Mapas.escolhido() == "laboratorio", "escolher grava e escolhido lê de volta")
+	var legado := ConfigFile.new()
+	legado.set_value("config", "mapa", "medio")
+	legado.set_value("meta", "almas", 123)
+	ok(legado.save(SAVE_TESTE) == OK, "fixture de save antigo com id medio")
+	ok(Mapas.escolhido() == "medio" and Mapas.buscar("medio").nome == "RUÍNAS DA FLORESTA", "save antigo medio preserva o id e mostra o nome novo")
+	Mapas.escolher("cidade")
+	var preservado := ConfigFile.new()
+	preservado.load(SAVE_TESTE)
+	ok(preservado.get_value("meta", "almas", 0) == 123, "trocar mapa preserva os dados anteriores do save")
+	ok(Mapas.escolhido() == "cidade", "cidade é gravada no save seguro")
 	Mapas.escolher("nao_existe")
 	ok(Mapas.escolhido() == "floresta", "id desconhecido cai na floresta")
 	ok(Mapas.proximo("floresta") == Mapas.ids()[1], "o seguinte da floresta é o segundo da lista")
@@ -207,6 +219,9 @@ func _mundo_do_mapa(id: String) -> void:
 	w.set_process(false)
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.heroi.imortal = true
+	if id == "cidade":
+		_rua_da_cidade(w)
+		await _foto_mundo(id, "rua")
 	ok(w.id_mapa == id and str(w.dados.get("_ajuda", "")) != "", "%s: o mundo carregou o json certo" % id)
 	ok(w.cenario.objetos.size() >= 150, "%s: objetos no mundo: %d" % [id, w.cenario.objetos.size()])
 	ok(w.cenario.n_decalques >= 100, "%s: decalques no mundo: %d" % [id, w.cenario.n_decalques])
@@ -237,6 +252,27 @@ func _mundo_do_mapa(id: String) -> void:
 
 ## Marcadores do mapa (dados "marcadores", só o médio tem): cada ponto livre e alcançável a partir do santuário, os quatro tipos, a rota
 ## (linha reta somada, ~1 min 30 a 100 px/s) e, no mundo, baús e mini-chefe nascem uma vez ao chegar perto e o atalho e o portão não nascem nada.
+## Mesma semente = mesmo mapa: dois mundos do mesmo mapa têm as mesmas posições de objetos e de monstros iniciais.
+func _determinismo(id: String) -> void:
+	var assinaturas := []
+	for i in 2:
+		var w = Mundo.instantiate()
+		w.modo_teste = true
+		w.id_mapa = id
+		add_child(w)
+		w.set_process(false)
+		var s := []
+		for a in w.cenario.objetos:
+			s.append(a.pos)
+		for mo in w.monstros:
+			s.append(mo.pos)
+		assinaturas.append(s)
+		remove_child(w)
+		w.free()
+	ok(assinaturas[0] == assinaturas[1], "%s: a mesma semente dá o mesmo mapa e os mesmos monstros iniciais" % id)
+	ok(assinaturas[0].size() > 100, "%s: o mapa tem objetos e monstros para comparar (%d)" % [id, assinaturas[0].size()])
+
+
 func _marcadores(id: String) -> void:
 	var d: Dictionary = Dados.json(str(Mapas.buscar(id).dados))
 	var marcas: Array = d.get("marcadores", [])
@@ -288,6 +324,7 @@ func _marcadores(id: String) -> void:
 	_mecanicas_b(w, marcas)
 	_mecanicas_c(w, marcas)
 	_mecanicas_d(w, marcas)
+	_portao(id)
 	remove_child(w)
 	w.free()
 
@@ -409,7 +446,74 @@ func _mecanicas_d(w, marcas: Array) -> void:
 	for i in 90:
 		w.avancar(PASSO)
 	ok(w.heroi.vida == vida0, "lote D: no caminho de pedra os espinhos não machucam")
+	# com o escudo erguido, o dano de ambiente passa: 5 s nos espinhos machucam e nenhum tique conta como bloqueio.
+	# O fôlego é reposto a cada quadro (o escudo gasta 1,2 carga por segundo e o máximo é 3: sem isso ele cai antes de 5 s).
+	var bloqueios0: int = w.combate.escudo.bloqueios
+	w.combate.jogo = "jogando"  # a escolha que o XP do mercador abriu foi fechada à mão acima: o jogo volta a jogar
+	w.heroi.vida = vida0
+	w.heroi.escudo_forcado = true
+	w.heroi.definir_pos(Vector2(float(esp.pos[0]), 705.0))
+	w.avancar(PASSO)
+	w.avancar(PASSO)
+	ok(w.heroi.escudo_ativo, "lote D: o escudo ergue nos espinhos")
+	for i in 300:  # 5 s
+		w.heroi.folego = w.heroi.folego_max
+		w.avancar(PASSO)
+	ok(w.heroi.escudo_ativo, "lote D: o escudo segue erguido por 5 s nos espinhos")
+	ok(w.heroi.vida < vida0, "lote D: com o escudo erguido, os espinhos machucam (%.1f de %.1f)" % [w.heroi.vida, vida0])
+	ok(w.combate.escudo.bloqueios == bloqueios0, "lote D: o dano dos espinhos não conta como bloqueio (%d)" % w.combate.escudo.bloqueios)
+	w.heroi.escudo_forcado = false
 	w.heroi.imortal = true
+
+
+## O portão (só o médio): a missão dele pede seta no minimapa de longe, e a seta some ao herói entrar no raio (a passagem física ainda não existe).
+## Mundo próprio, porque as outras mecânicas já levam o herói para perto dele.
+func _portao(id: String) -> void:
+	var w = Mundo.instantiate()
+	w.modo_teste = true
+	w.id_mapa = id
+	add_child(w)
+	w.set_process(false)
+	w.heroi.entrada_forcada = Vector2.ZERO
+	w.heroi.imortal = true
+	var marcas: Array = Dados.json(str(Mapas.buscar(id).dados)).get("marcadores", [])
+	var portao := _primeiro(marcas, "portao")
+	ok(not portao.is_empty(), "portão: há um portão no mapa %s" % id)
+	if not portao.is_empty():
+		var p := Vector2(float(portao.pos[0]), float(portao.pos[1]))
+		_ir(w, Vector2(240, 1320))  # longe do portão: a missão pede seta
+		ok(w.minimapa._missoes().has(p), "portão: longe dele, a missão pede seta no minimapa")
+		_ir(w, p)
+		ok(not w.minimapa._missoes().has(p), "portão: ao entrar no raio a missão cumpre e a seta some")
+	remove_child(w)
+	w.free()
+
+
+## A cidade tem ruas livres: o herói sai do cruzamento central e anda 300 px pelo leste sem travar (carros e postes ficam no meio-fio).
+func _rua_da_cidade(w) -> void:
+	var ini: Vector2 = w.heroi.pos
+	w.heroi.entrada_forcada = Vector2(1, 0)
+	for i in 600:  # até 10 s; para ao chegar
+		w.avancar(PASSO)
+		if w.heroi.pos.x >= ini.x + 300.0:
+			break
+	w.heroi.entrada_forcada = Vector2.ZERO
+	ok(
+		w.heroi.pos.x >= ini.x + 300.0 and absf(w.heroi.pos.y - ini.y) < 80.0,
+		"cidade: o herói anda 300 px pela rua do leste sem travar (%s -> %s)" % [str(ini), str(w.heroi.pos)]
+	)
+
+
+## Com --fotos=PASTA grava a tela da partida (só com janela, como as do santuário).
+func _foto_mundo(id: String, nome: String) -> void:
+	var pasta := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--fotos="):
+			pasta = arg.substr(8)
+	if pasta == "" or DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png(pasta.path_join("mundo_%s_%s.png" % [id, nome]))
 
 
 func _santuario() -> void:
@@ -417,6 +521,7 @@ func _santuario() -> void:
 	var a = Altar.instantiate()
 	add_child(a)
 	await get_tree().process_frame
+	ok(a._mapa.get_rect().end.x <= a._entrar.position.x, "santuário: floresta não sobrepõe ENTRAR")
 	ok(a._mapa.text.contains("FLORESTA") and a._entrar.text == "ENTRAR NA FLORESTA", "santuário: começa na floresta (%s / %s)" % [a._mapa.text, a._entrar.text])
 	a._mapa.pressed.emit()
 	ok(Mapas.escolhido() == "laboratorio", "santuário: o botão passa para o laboratório e grava")
@@ -424,9 +529,19 @@ func _santuario() -> void:
 		a._mapa.text.contains("LABORATÓRIO") and a._entrar.text == "ENTRAR NO LABORATÓRIO",
 		"santuário: o texto acompanha (%s / %s)" % [a._mapa.text, a._entrar.text]
 	)
+	await get_tree().process_frame
+	ok(a._mapa.get_rect().end.x <= a._entrar.position.x, "santuário: laboratório não sobrepõe ENTRAR")
 	await _foto(a, "laboratorio")
-	for i in Mapas.ids().size() - 1:
+	for id in ["cidade", "medio", "floresta"]:
 		a._mapa.pressed.emit()
+		var m: Dictionary = Mapas.buscar(id)
+		ok(Mapas.escolhido() == id and a._mapa.text.contains(m.nome) and a._entrar.text == m.entrar, "santuário: seleção e rótulo de %s" % id)
+		await get_tree().process_frame
+		ok(
+			a._mapa.get_rect().end.x <= a._entrar.position.x,
+			"santuário: seletor %s não sobrepõe ENTRAR (fim %.1f / início %.1f)" % [id, a._mapa.get_rect().end.x, a._entrar.position.x]
+		)
+		await _foto(a, id)
 	ok(Mapas.escolhido() == "floresta", "santuário: dá a volta à lista")
 	remove_child(a)
 	a.free()

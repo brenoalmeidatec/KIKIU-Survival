@@ -1308,6 +1308,16 @@ _Claude do Alisson (nuvem)_
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude (subagente, PC, a pedido do Breno) · mapa Cidade (etapa 2)
+- **Feito:** o mapa Cidade está montado sobre a etapa 1 (objetos e piso do Blender). `mapas_v2/def_cidade.py` põe 177 objetos numa grade de 5 x 4 quarteirões (prédio no lote, pátio com contêiner, praça com ponto de ônibus e fogueira, ruína e lote vazio), 147 decalques, 85 luzes (53 presas aos objetos, 32 soltas) e 8 zonas de monstro. O herói nasce no cruzamento central. Registro: `v2/mapas.gd` (linha `cidade`, botão `< MAPA >` do santuário), `dados/v2_cidade.json` e `assets/v2/mapas/cidade/`.
+- **Ruas:** o eixo das ruas fica livre; carro, poste e semáforo ficam no meio-fio. Conferido com grade de 4 px e as elipses do JSON: 90,6% da área andável livre, e ruas e zonas de monstro na mesma região conectada. `v2_mapas falhas=0`, com teste novo de rua (300 px pelo leste do cruzamento sem travar).
+- **Dependência:** a branch inclui o laboratório (commit 468968b, merge de `claude/v2-mapa-laboratorio`). **Mesclar o PR da cidade depois do #204.**
+- **Não medido:** fps (85 luzes no mapa). Antes do merge, medir `--medir --mapa=cidade` no Médio e no Alto.
+- **Pendente:** o OK do Alisson e a bateria completa (`ferramentas/testes_ci.sh`), que não rodei por causa da CPU compartilhada.
+- **Para o Claude do Alisson:** se o #204 mudar `mapas.gd`, `cenario.gd` ou `gerar_v2_mapas.py`, a branch da cidade precisa de merge da `main` antes do PR.
+
+_Claude (subagente, PC, a pedido do Breno)_
 ## 2026-10-12 (7) · Claude do Alisson (notebook) · sons CC0 do Kenney na v2
 - **Feito:** os sons de combate e de interface da v2 saem de Kenney (CC0 1.0), no lugar dos sintetizados. São 21 WAV em `assets/audio/v2/`: 15 trocados com os mesmos nomes (`audio.gd` não mudou), 2 do cursor e do confirmar do santuário e 4 novos para escudo e Ruptura. Em `v2/pausa.gd`, o clique do santuário passou a tocar os `ui_*` pelo `AudioV2`, e não mais pelo `Som.ui`, que é da v1 e segue sintetizado. Registros: `docs/LICENCAS_ARTE.md` (uma linha por arquivo) e `docs/LICENCAS_AUDIO.md` (tabela, e como refazer).
 - **Volume:** silêncios das pontas cortados, WAV mono 44,1 kHz, normalizados para RMS -18 dBFS com teto de pico de -1 dBFS. Nenhum clipe. Os impactos ficam em geral mais baixos que os sintetizados (pico igual, corpo menor): se faltar peso, ajuste o `vol_db` da chamada.
@@ -1333,6 +1343,12 @@ _Claude do Alisson (notebook)_
 - **Feito:** `mapa.sombra_ambiente` (luz virtual em `sombras.gd`: o laboratorio tem sombra mesmo longe das luzes; a floresta nao muda), `mapa.copas_altura_min` (racks, armarios e tanques ficam translucidos sobre o heroi, generico em `copas.gd`), `v2/passagens.gd` (grade de navegacao com a colisao real: caminho ate cada zona de monstros com corpo comum e largo, sem ilhas, sem beco fino) e checagens em `testes/v2_mapas.gd` para todo mapa (inclui a futura Cidade). O layout do laboratorio ja passava: nenhum objeto precisou mudar.
 - **Pendente:** a Cidade (branch do Alisson) herda tudo ao por `sombra_ambiente` no JSON dela; o teste vai acusar objeto que feche passagem.
 - **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
+
+## 2026-10-12 - v2: DESIGN.md dos menus (guia visual da UI)
+- **Feito:** `jogos/hordas/projeto/v2/DESIGN.md` (144 linhas), extraído do código com `arquivo:linha`: resolução e área segura (a partida corta em COVER), paleta com as duplicações, tipografia pela grade, componentes, comportamento (Esc, trava, foco, sons) e os testes de UI. Uma linha no `CLAUDE.md` manda ler o guia antes de mexer em menu.
+- **Pendente (seção 8 do guia):** Spleen 12 px no SUA BUILD e Jersey 28 px no nome longo da carta, fora da grade; `telas.gd:248` diz "ouro da fusão" e a cor é magenta; ouro em 5 valores; XP e fôlego com cores trocadas entre HUD e card; vida em dois vermelhos.
+- **Próximo:** juntar as cores da v2 num arquivo só e fazer o `v2_fontes` conferir também o `TAM_NOME_CURTO` e os tamanhos do card.
+- **Nao conferi:** nada rodado no Godot (só docs). A branch `origin/alisson/v2-menu-principal` não existe no remoto; há um WIP local (`46b4f87`) que o guia não usa.
 
 _Claude do Alisson (PC)_
 
@@ -1530,3 +1546,131 @@ _Codex GPT-6.1 Sol (PC)_
 - **Para o Claude do Alisson:** o pacote está em `docs/construcoes_floresta/PACOTE_ALISSON.md`. Ainda não leia os prompts como definitivos: o Breno revisa `MAIS_IDEIAS.md` primeiro. Não mexa nas suas artes ao usar os prompts.
 
 _Claude do Breno (PC)_
+
+## 2026-10-13 · Cidade na seleção e Ruínas da Floresta
+- **Antes/depois:** a build main 5dd7972 mostrava Floresta, Laboratório e Médio. Integrada a Cidade da PR #211 (head 2aa41db) por merge da main, preservando histórico e assets: a seleção agora oferece Floresta, Laboratório, Cidade e Ruínas da Floresta. O antigo `medio` conserva id, dados, progresso e mecânicas #220/#222; só os textos mudam para RUÍNAS DA FLORESTA e ENTRAR NAS RUÍNAS. Save seguro, árvores, E/Ruptura e escudo da main preservados.
+- **Testes:** import real Godot 4.4.1 exit 0; v2_mapas, v2_mundo e v2_arvores exit 0/falhas=0/sem SCRIPT ERROR. v2_mapas cobre os quatro mapas, rua da Cidade de 300 px, passagens, marcadores/espinhos das ruínas, save legado bruto `medio`, preservação de outros dados e fallback desconhecido. Renderer OpenGL real (Intel Iris Xe) também v2_mapas exit 0/falhas=0; capturas do mundo e seleção 960×540 revisadas, nome e botão das ruínas cabem.
+- **Custo CPU, sem promessa de FPS:** benchmark headless de `mundo.avancar(1/60)`, 20 monstros, semente 211, 100 passos de aquecimento por caso e 20 amostras de 100 passos, alternando ordem dos quatro casos e montando um mundo por vez. Medianas: Laboratório média 410,98 µs/alta 457,55 µs; Cidade média 372,42 µs/alta 417,38 µs. Cidade conserva 177 objetos e 85 luzes do mapa (87 no mundo incluindo duas do herói); Laboratório 376 objetos/122 luzes totais. Mede CPU com renderer dummy, não custo de GPU nem gameplay completo. Primeira tentativa via --script não carregou autoloads e foi encerrada; log da falha preservado, não contado como validação.
+- **Checks/limites:** gdformat scripts/testes/v2 (227 arquivos) e git diff --check limpos. Logs, capturas e wrapper local em C:/Dev/Breno/analise-kikiu/logs-cidade-nova, fora do Git. Avisos RID/recursos no encerramento headless permanecem. Nenhum push/merge remoto neste bloco; publicação/CI/build ficam com o agente principal.
+
+_CodexSolPC_
+
+- **Correção da conferência visual:** o nome inteiro aparecia no PNG anterior, mas isso não provava ausência de sobreposição. Assert após `process_frame` reproduziu seletor de Ruínas terminando em x348 contra ENTRAR em x300 (48 px sobrepostos). `_atualizar_mapa` agora mantém fonte Jersey 19 em todos os mapas, texto completo, tooltip e largura 248 px. O teste espera o mínimo diferido do Godot e verifica geometria nos quatro mapas. `v2_mapas`, `v2_meta` e `v2_fontes` sobre a correção: exit 0/falhas=0/sem SCRIPT ERROR; renderer real também passou os limites. Formatação global (227 arquivos) e diff limpos.
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Santuário compacto e volta ao título
+- **Feito:** ESC/Start/B e botão VOLTAR retornam do Santuário ao menu principal. Só o título pede Sair por ESC; a pausa da partida mantém seu fluxo. Ajustes/Gráficos continuam voltando um nível e devolvem foco ao botão Ajustes quando fecham.
+- **Visual:** melhorias em grade 3×3 com marcadores de nível e custo/estado, detalhe único por foco ou mouse (inclusive bloqueadas/máximas), conquistas com barras rotuladas pela última partida e descrição acessível pelo teclado/controle. Fundo atual `assets/titulo/fundo.png`, sem mudar splash/exports. Nome completo de mapa cabe no botão em fonte 19, inclusive RUÍNAS DA FLORESTA; resumo inicial neutro.
+- **Validação:** Godot 4.4.1 real: v2_santuario, v2_meta, v2_pausa, v2_menu, v2_esc, v2_status, v2_fontes e v2_musica com código 0/falhas=0. Teste novo usa Input.parse_input_event e current_scene real para ESC, Start, B, Enter e clique; confere foco, estados bloqueado/máximo, barras e limites de cartões/textos. Falha de gravação e itens ocultos preservados por v2_meta. gdformat -l 160 --check scripts/testes/v2 limpo (228 arquivos); git diff --check limpo.
+- **Conferência visual:** capturas reais do viewport 960×540, janela oculta e frame_post_draw, antes/depois com saldo zero/com almas, barras parciais e conquistas cumpridas. Logs/fotos locais em `C:/Dev/Breno/analise-kikiu/logs-santuario`, fora do Git. Avisos de recursos/RID ao encerrar headless continuam; erros de parse de save em meta são intencionais. Nenhuma arte binária/import/cache adicional versionada.
+- **Próximo:** agente principal publica PR coeso do Santuário e integra com o PR separado dos mapas antes da build conjunta; nenhum push/merge feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · validação conjunta Santuário e Cidade
+- **Feito:** merge local da branch Cidade (`9337defd5088bb61fd6c876f0f3dd33b782570ec`) no Santuário, preservando ambos os históricos. Guia combina os dois blocos; LOGBOOK mantém todas as entradas. Grade, navegação, fundo atual e detalhes do Santuário preservados; seletor fica em fonte Jersey 19, largura 248 px e tooltip com nome completo. Removida só uma linha vazia final herdada de `cidade_pecas.py` para diff-check.
+- **Validação conjunta:** import real Godot 4.4.1 código 0/sem SCRIPT ERROR. v2_mapas, v2_santuario, v2_meta, v2_fontes, v2_menu e v2_esc: código 0/falhas=0/sem SCRIPT ERROR. gdformat scripts/testes/v2 limpo (228 arquivos); git diff --check e git diff --cached --check limpos. Avisos de recursos no encerramento e save corrompido intencional de meta permanecem.
+- **Visual:** renderer OpenGL real, viewport 960×540, janela oculta e frame_post_draw; capturas de RUÍNAS DA FLORESTA e CIDADE revisadas. Nomes completos, ENTRAR, grade e VOLTAR cabem; seletor termina em x284 contra ENTRAR em x300. Logs/fotos em `C:/Dev/Breno/analise-kikiu/logs-santuario/conjunto`, fora do Git.
+- **Próximo:** agente principal atualiza PR #238 por push normal e mescla Cidade #211 após CI verde; publicação/build conjunta ficam com ele. Nenhum push/main/PR feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · morte e retorno seguro ao santuário
+- **Antes/depois:** Alisson relatou travamento/fechamento ao morrer. Windows registrou 0xc0000005 na build b7a1d87; reprodução com Enter em CONTINUAR saiu -1073741819. No Godot de desenvolvimento, a mesma entrada produz SCRIPT ERROR em mundo.gd:694 (viewport nulo): resultado_meta trocava a cena imediatamente antes de mundo marcar o evento. A troca agora é diferida até terminar a entrada, com guarda contra cliques repetidos.
+- **Falha de save:** o relógio e o botão CONTINUAR avançam mesmo quando a meta não grava; mantém NÃO FOI POSSÍVEL SALVAR, sem creditar almas falsas nem prender o jogador na tela.
+- **Testes reais:** Godot 4.4.1 import exit 0; v2_morte (novo, quatro mapas, Enter/mouse/A, entrada precoce/repetida, mundo pausado, crédito único, gravação recusada e hash do save real), v2_meta, v2_partida, v2_esc e v2_santuario: todos exit 0/falhas=0/sem SCRIPT ERROR. v2_morte também passou com renderer OpenGL Intel Iris Xe, janela oculta 960×540. Avisos de RID/recursos ao encerrar harness permanecem; recusa de .tmp é intencional. gdformat scripts/testes/v2: 229 arquivos limpos; diff-check limpo.
+- **Próximo:** CI do PR e repetir no EXE exportado junto aos efeitos visuais. Splash e exports preservados. Logs fora do Git em C:/Dev/Breno/analise-kikiu/morte-*.log.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 - #128 (Marco 4): código que faltava (PR de rascunho para a main, branch claude/v2-marco4-codigo)
+- **Feito:**
+  1. Determinismo: `testes/v2_mapas` confere que dois mundos do mesmo mapa têm as mesmas posições de objetos e de monstros iniciais (mesma semente, mesmo mapa).
+  2. Minimapa (`v2/minimapa.gd`): Tab segurado abre o mapa grande e soltar volta ao pequeno (antes alternava); baús ativos aparecem só depois de revelados pela névoa; missões longe do herói (chefe e portão) ganham seta na borda do minimapa. A névoa por raio já existia.
+  3. Pontos altos: marca `mirante` no mapa médio (1350, 1140); ao entrar no raio, o minimapa revela o mapa inteiro de uma vez.
+- **Não feito (pendente):**
+  - Mapas gerados por semente a partir de peças por região: o cenário da v2 é o JSON à mão, em 2880x1620. Só entra com um gerador novo, fora do formato atual.
+  - Prints dos 5 mapas por região: a v2 não tem regiões (são 3 mapas).
+  - Arte do Alisson: torre (o mirante é só a marca) e estruturas (ruína, altar, ponte, passagem, platô, portão).
+  - Alavancas com passagem física até o portão: ainda só marcam estado.
+- **Fps (medido no PC do Breno, sem linha de base aqui):** `--medir --estresse=100 --imortal --sombra=media --sem_vsync` deu 23,4 fps na floresta e 30,4 fps no médio. O `v2/fps.txt` (142 fps na horda média) veio de outra máquina (Iris Xe), então a comparação não vale. Falta medir a `main` nesta máquina para ver a diferença real. A meta do Marco 3 não está escrita no repositório; precisa de um número para comparar.
+- **Testes:** `v2_mapas` falhas=0, `v2_minimapa` falhas=0, `v2_meta` falhas=0, `v2_partida` falhas=0. (Os erros de ConfigFile em `v2_meta` são do teste de save corrompido, esperados.)
+- **Para testar:** no mapa médio, segurar Tab (mapa grande), passar por um baú antes de vê-lo e entrar no mirante (1350, 1140) para o mapa inteiro se revelar.
+- **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
+
+_Claude (PC do Breno, via Remote Control)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Ruptura e escudo com volume
+- **Feito:** visual autoral por geometria na v2: sigilos internos e halo na carga; janela perfeita com pulso dourado suave no lugar do piscar a 20 Hz; onda em camadas e fissuras com núcleo quente e ramificações. Escudo curvo elevado com painéis, nervuras e runa central; sustentação azul, bloqueio branco, perfeito dourado com oito raios; ponto de impacto acompanha a origem. Nenhum asset externo/licença adicional, nó por quadro ou alteração de alcance, dano, fôlego, janela ou controles.
+- **Validação:** Godot 4.4.1 import exit 0; v2_ruptura, v2_escudo, v2_combate e v2_hud exit 0/falhas=0/sem SCRIPT ERROR. Uma falha inicial de inferência de tipo foi corrigida, preservando o log local. Capturas reais 960×540 com OpenGL/Intel Iris Xe, janela oculta: carga, carga perfeita, disparo, escudo, bloqueio comum e perfeito revisados. Avisos de RID no encerramento permanecem. Wrapper/fotos/logs locais não versionados.
+- **Próximo:** agente principal revisa PR e faz build; nenhum push/merge neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Emblema de solo rompido no HUD
+- **Feito:** substituído o símbolo angular da Ruptura por duas placas de pedra separadas e fenda central ramificada, autoral e compacto no ícone 48×48. Estados/cores/carga/recarga continuam os mesmos; nenhum ajuste no mundo ou nos efeitos de Ruptura/escudo.
+- **Validação:** Godot 4.4.1 v2_hud e v2_ruptura exit 0/falhas=0/sem SCRIPT ERROR. Capturas reais OpenGL 960×540 com janela oculta, prontidão/carga/recarga e detalhes do card inspecionados; fotos/logs locais no worktree, fora do Git. gdformat global e diff-check conferidos.
+- **Próximo:** agente principal atualiza PR #240 e CI; build precisa ser reexportada com este novo ícone.
+
+_Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-14 · Codex GPT-6.1 Sol (PC) · retomada do PR #240 sobre a main
+- **Feito:** merge da main b70bf6e (#241), mantendo névoa/Tab segurado/setas/mirante, os quatro mapas, correção da morte #239, splash atual e efeitos/ícone do #240. LOGBOOK da main preservado integralmente como prefixo, notas deste PR ao fim; sem reescrever entradas anteriores. Nenhuma integração dos PRs #242/#245/#246.
+- **Testes reais:** Godot 4.4.1 import código 0. v2_mapas, v2_minimapa, v2_morte, v2_ruptura, v2_escudo, v2_hud, v2_combate, v2_meta, v2_partida e v2_santuario: todos código 0/falhas=0/sem SCRIPT ERROR. gdformat scripts/testes/v2: 229 arquivos limpos; diff-check limpo. Avisos de recursos ao encerrar harness permanecem e save corrompido de meta é intencional. Logs locais pr240-retomada-*, fora do Git.
+- **Próximo:** CI do head atualizado, exportação e QA do EXE com minimapa e efeitos juntos; merge e Release somente com checks verdes. Sem alteração de exports, regras de habilidades ou novas artes.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-14 · Claude do Alisson (notebook) · divisão de trabalho entre os três agentes
+- **Feito:** decisão do Alisson registrada no fim do `CLAUDE.md` (seção reescrita) e no `AGENTS.md` novo, que o Codex lê. Claude do Alisson: sistemas, arquitetura e **integração** (resolve conflito entre PRs). Codex do Alisson: frente visual inteira (arte, sprites, efeitos, animação, UI, paleta) e builds. Claude do Breno: leve (números e textos nos JSON, conteúdo, testes da Release no i5, decisões).
+- **Regras:** reservar antes de começar, ficar na sua área de arquivos, uma só mão integra, cada um mescla só os próprios PRs.
+- **Para o Codex:** ficam com você o #209 (sprites das armas: atualizar com a main) e o #217 (paleta: refazer do zero na main atual).
+- **Para o Claude do Breno:** o #242 (Salão do herói) e o nosso #214 (Nicão e Lucas) se sobrepõem; o Alisson e o Breno decidem qual base vale, e o Claude do Alisson junta.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude do Alisson (PC) · sprites das armas da v2 (recorte das folhas do GPT)
+- **Feito:** recortei as três folhas de arte própria do Alisson (`jogos/hordas/prototipos/cara_nova/objetos/fonte_armas_*.webp`) com a ferramenta de enfeites, que ganhou o modo `python gerar_objetos.py armas`. Saíram 16 projéteis e meteoros, 9 aliados (com normal map) e 12 efeitos de área (fundo preto, aditivo, sem normal). Estão em `jogos/hordas/projeto/assets/v2/armas/`, com `indice.json` (campo `armas_sugeridas`) e a prévia em `jogos/hordas/prints/v2_armas_sprites.png`. O modo padrão (enfeites) continua gerando o mesmo arquivo.
+- **Cobertura das 45 armas do #192:** 33 com sprite adequado, 6 com sprite provisório, 6 sem sprite. A lista e o prompt da 4ª folha estão no corpo do PR.
+- **Pendente:** ligar no código (espera o #192 entrar na `main`); 4ª folha no GPT; olhar em jogo os projéteis finos (flecha 12x3, dardo 8x3) e o contraste da shuriken preta e da flecha roxa sobre piso escuro.
+- **Próximo:** quando o #192 sair, ligar os sprites às armas e gerar os `.import` junto.
+- **Recado:** a branch local `alisson/v2-sprites-armas` (sem commits próprios, atrás da `main`) está presa no worktree `wf_f38176cf-d74-1` de outra sessão. Este PR saiu de `alisson/v2-sprites-armas-2`, para não mexer no worktree dela.
+
+## 2026-10-12 · Claude do Alisson (notebook) · sprites das armas ligados no jogo (PR #209)
+- **Feito (a pedido do Breno, na branch do Alisson):** a 4ª folha (`fonte_armas_areas_2.webp`, 9 efeitos em fundo preto) entrou no gerador (`gerar_objetos.py armas`). Os 6 sem sprite e os 3 provisórios de área ganharam sprite próprio; `nevoa_fantasmal` e `anel_vento` saíram do índice e da pasta (trocados pelos da folha 21). A folha 21 usa folga de 0 px para juntar os pedaços (`GAP_FOLHA`): as caixas da linha de baixo ficam a 1-2 px, e com a folga de 6 px viravam um só. As folhas 18 a 20 ficam como estavam (mesmos PNG). Índice com 44 sprites. Contorno claro de 1 px em flecha, shuriken e dardo.
+- **Ligado:** `v2/armas_novas.gd` lê o `indice.json` uma vez por processo (`carregar_sprites`) e guarda o sprite no item do pool. Projétil gira para o voo, meteoro que cai aponta para baixo, aliado flutua: os três na camada normal (`desenhar_corpo`, chamada de `v2/armas.gd`). Nuvem e anel são aditivos, esticados até o raio do golpe (brilho a 0,5 e 0,6). Sem sprite, a forma antiga. Pool fixo, nenhum nó novo.
+- **Cobertura:** 45 de 45 golpes novos com sprite (42 adequados e 3 provisórios). Dos 5 antigos, nenhum ligado: `aura_fogo` tem o `anel_fogo` no índice, mas a aura é um shader em `armas.gd` (não mexi). As 25 evoluções (fusões) não têm sprite e seguem na forma antiga.
+- **Testes:** `v2_armas_sprites` (novo; PNG e tamanho do índice, 45 golpes com textura, armas do índice que existem nos dados, partida com os 45 ligados: todos os tipos acertam, pool e camada sem nó novo, cada golpe ativo leva o sprite da sua arma), `v2_partida`, `v2_status` e `regras_armas` com `falhas=0`. Print: `docs/visual_2_5d/armas_v2/golpes_com_sprite.png` (viewport 960x540).
+- **Achado fora do escopo:** os `.import` de `assets/v2/mapas/` e de `prototipos/` não estão no Git; o `--import` local os gera e o CI roda `--import` antes dos testes. Os de `assets/v2/armas/` estão versionados agora (o export precisa deles).
+- **Pendente:** olhar em jogo a legibilidade dos projéteis finos (flecha 14x5, dardo 10x5, feixe 40x3, espinho 6x14) e a intensidade das áreas em combate cheio; decidir se a aura usa o `anel_fogo`; sprite para as 25 evoluções.
+- **Recado para o Claude do Alisson:** a branch `alisson/v2-sprites-armas-2` agora tem o merge da `main` e este commit. Os `.import` das armas vieram com ele; não gere de novo na sua máquina sem olhar o diff.
+
+_Claude do Alisson (notebook)_
+
+
+## 2026-10-14 · Codex do Alisson · integração visual do PR #209
+- **Feito:** main incorporada por merge, sem force-push. Sprites dos 45 golpes novos ligados à camada de desenho, preservando névoa volumétrica, motivos dos ataques (#231), Ruptura e escudo (#240). Conflito restrito à API de desenho; regras, dano, alvos e movimento mantidos. Intensidade aditiva das áreas reduzida após comparação com 45 golpes ativos; flecha 14x5 e dardo 10x5 incluem contorno claro de 1 px.
+- **Validação:** Godot 4.4.1 import código 0; v2_armas_sprites, v2_partida, v2_status, v2_combate, v2_ruptura, v2_escudo e v2_fontes: código 0, falhas=0, sem SCRIPT ERROR. gdformat scripts/testes/v2: 230 arquivos limpos. Prints reais 960x540 no perfil Médio, OpenGL Intel Iris Xe, em docs/visual_2_5d/armas_v2/. Não foi medido FPS neste item.
+- **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
+
+_Codex do Alisson_
+
+## 2026-10-14 · Claude do Alisson (notebook) · revisão da main: escudo, analógico, minimapa e portão (PR 1) e release sem docs (PR 2)
+- **Feito (PR 1, `alisson/correcoes-revisao`):** espinhos do mapa médio não são barrados pelo escudo (`Heroi.levar_dano` ganhou `bloqueavel`, falso nos espinhos: sem gasto de fôlego, sem bloqueio e sem hit-stop). Analógico esquerdo não navega a escolha de cartas (`v2/telas.gd`, a mesma guarda de `v2/pausa.gd`). `Minimapa.resetar()` no `Mundo.reiniciar()`: a névoa e o mirante da partida anterior saem. O portão do médio cumpre a missão ao entrar no raio (a seta some, como a do chefe). Tab não abre o mapa grande com o card de status na tela, a escolha ou o baú. (PR 2, `alisson/release-sem-docs`): `release.yml` com `paths-ignore` (`docs/**`, `**/*.md`, `LOGBOOK.md`) no push da main; `workflow_dispatch` e o CI reutilizável seguem como estavam.
+- **Validação:** Godot 4.4.1 headless, código 0, `falhas=0`, sem SCRIPT ERROR: v2_esc, v2_pausa, v2_cartas_espera, v2_minimapa, v2_escudo, v2_ruptura, v2_hud, v2_partida, v2_status, v2_mapas, v2_mundo e v2_morte. Os cinco casos novos falharam antes da correção (commit `dddc1a3`, só testes). gdformat nas pastas de scripts, testes e v2 limpo.
+- **Pendente:** a passagem física até o portão (Marco 4) e o atalho (`_atalho_aberto` segue gravado e sem leitura). O card compacto (C) também tira o Tab do minimapa, porque o pedido era "painel de status aberto"; se o Breno quiser o Tab com o card compacto, a troca é a condição em `_tab_bloqueado()`.
+- **Para o Codex:** `v2/status.gd` não foi tocado. A falta de saída do painel central pelo controle virou issue para ele.
+- **Recado para o Claude do Alisson:** o PR 1 mexe em `v2/telas.gd` (área do Codex) e em `v2/minimapa.gd` (HUD), só nas guardas descritas. O PR 2 não toca o LOGBOOK, para não conflitar no fim do log.
+
+_Claude do Alisson (notebook)_
+## 2026-10-14 · Claude do Alisson (PC) · esquiva estável no CI
+- **Feito:** `testes/esquiva.gd` deixou de depender do crítico sorteado (`randf()` sem semente em `inimigos.ferir`). A checagem do golpe seguinte aceita só 10 ou 10 x `critico_mult`. A checagem do robô usa um vírus de 100000 de vida e espera um quadro (a grade se refaz nele). Só teste; o jogo não mudou.
+- **Validação:** antes, 4 de 20 rodadas falhavam (3 do crítico, 1 do robô); depois, 0 de 30, headless e em sequência. Quebras de propósito (`_quer_dash` com fôlego 3 e bônus de 99 quadros) fazem a cena falhar. gdformat limpo nas três pastas.
+- **Pendente:** conferir o CI do PR "Testes: esquiva estável no CI"; daqui não dá para ver o CI.
+- **Recado:** se a `esquiva` cair de novo, a mensagem diz qual checagem falhou. O problema não era timeout.
+
+_Claude do Alisson (PC)_
+
+## 2026-10-14 · Claude do Alisson (PC) · integração da PR #237 (construções da floresta)
+- **Feito:** `origin/main` (fa2f8a7, #256) mesclada na `claude/construcoes-floresta` por merge, sem force-push e sem rebase. Sem conflito de texto: no `LOGBOOK.md` ficaram as duas partes, a entrada do Breno de 2026-10-13 e as da main. A PR só mexe em `docs/construcoes_floresta/` e no `LOGBOOK.md`; nenhum `.gd`, `.tscn`, `dados/` ou `assets/` mudou.
+- **Pendente:** testes locais (gdformat e `ferramentas/testes_ci.sh`) e CI do head novo, com o resultado no comentário da PR #237. Não mesclei: a PR é do Breno e quem mescla é o dono ou o integrador, com CI verde no mesmo commit.
+- **Recado para o Claude do Breno:** para seguir com `docs/construcoes_floresta/`, parta da `claude/construcoes-floresta` atualizada (`git pull`), não da versão antiga.
+
+_Claude do Alisson (PC)_
