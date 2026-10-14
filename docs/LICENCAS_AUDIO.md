@@ -1,4 +1,4 @@
-# Licenças das músicas do K.I.K.I.U
+# Licenças de música e efeitos sonoros do K.I.K.I.U
 
 Todas as músicas do jogo (`jogos/hordas/projeto/assets/audio/musica/*.ogg`) são de **Kevin MacLeod (incompetech.com)**, licença **Creative Commons Attribution 4.0 (CC BY 4.0)** — https://creativecommons.org/licenses/by/4.0/ . Uso comercial e modificação são permitidos desde que se dê crédito e se diga o que foi alterado (feito abaixo e na tela de Créditos do jogo).
 
@@ -40,5 +40,41 @@ Os MP3 originais não estão no repositório; baixe-os do link acima para refaze
 ## Plano B
 As faixas sintetizadas por código (sem licença de terceiros) estão no histórico do Git (commit anterior a "músicas de licença aberta") e o gerador continua em `jogos/hordas/fonte_audio/gerar_musica.py`.
 
+## Efeitos sonoros da v2 (Kenney, CC0)
+Os sons de combate e de interface da v2 que eram sintetizados agora vêm de **Kenney (kenney.nl)**, licença **CC0 1.0** (domínio público: uso comercial, modificação e redistribuição livres, sem crédito obrigatório). Cada zip traz um `License.txt` com a licença; os zips não estão no repositório. Baixados em 2026-10-12:
+- Impact Sounds: https://kenney.nl/assets/impact-sounds
+- RPG Audio (coleção de Kenney Vleugels): https://kenney.nl/assets/rpg-audio
+- Interface Sounds: https://kenney.nl/assets/interface-sounds
+
+Mudanças (todas nossas, nos 21 arquivos): cortado o silêncio das pontas (abaixo de -46 dB do pico, com 2 ms antes e 15 ms depois), fade de 6 ms no fim, convertido para WAV mono de 44,1 kHz (16 bits) e normalizado para RMS -18 dBFS, com teto de pico em -1 dBFS (sem clipe). Nada além disso. Para refazer: baixar os zips, extrair os `.ogg` listados, converter para WAV e normalizar com esses parâmetros.
+
+| Arquivo em `assets/audio/v2/` | Evento na v2 | Pacote e arquivo original |
+|---|---|---|
+| `corte1.wav` | katana, 1º corte | RPG Audio, `knifeSlice.ogg` |
+| `corte2.wav` | katana, 2º corte | RPG Audio, `knifeSlice2.ogg` |
+| `estocada.wav` | katana, estocada | RPG Audio, `drawKnife2.ogg` |
+| `impacto.wav` | acerto comum | Impact Sounds, `impactMetal_medium_002.ogg` |
+| `critico.wav` | acerto crítico | Impact Sounds, `impactMetal_heavy_001.ogg` |
+| `morte.wav` | morte de monstro; banir carta | Impact Sounds, `impactSoft_heavy_001.ogg` |
+| `esquiva.wav` | esquiva | RPG Audio, `cloth2.ogg` |
+| `orbe.wav` | orbe de XP | Impact Sounds, `impactGlass_light_002.ogg` |
+| `dano_heroi.wav` | dano no herói; rerrolar ou banir falhou | Impact Sounds, `impactPunch_medium_001.ogg` |
+| `nivel.wav` | subir de nível; carta rara | Impact Sounds, `impactBell_heavy_000.ogg` |
+| `evolucao.wav` | evolução de arma | Impact Sounds, `impactBell_heavy_002.ogg` |
+| `carta.wav` | carta virada | RPG Audio, `bookFlip2.ogg` |
+| `escolher.wav` | escolha de carta ou melhoria | RPG Audio, `bookPlace1.ogg` |
+| `bau.wav` | baú abre | RPG Audio, `creak2.ogg` |
+| `bau_cai.wav` | baú cai | Impact Sounds, `impactWood_heavy_001.ogg` |
+| `ui_cursor.wav` | cursor do santuário (menu fora da partida) | Interface Sounds, `click_002.ogg` |
+| `ui_confirmar.wav` | confirmar no santuário | RPG Audio, `metalLatch.ogg` |
+| `escudo_bloqueio.wav` | **não ligado**: escudo bloqueia | Impact Sounds, `impactPlate_medium_002.ogg` |
+| `escudo_perfeito.wav` | **não ligado**: bloqueio perfeito | Impact Sounds, `impactBell_heavy_004.ogg` |
+| `ruptura_carga.wav` | **não ligado**: Ruptura carregando | Impact Sounds, `impactPlate_heavy_004.ogg` |
+| `ruptura_solta.wav` | **não ligado**: Ruptura solta | Impact Sounds, `impactGlass_heavy_004.ogg` |
+
+Os quatro "não ligados" esperam a branch `alisson/v2-ruptura` (ainda não está na `main`).
+
+**Ficou sintetizado nesta etapa:** `chefe`, `aviso`, `elite`, `onda`, `fogo`, `raio`, `corvo`, `runa`, `runa_poe`, `ofego`, `derrota` e `vitoria`, em `assets/audio/v2/`. O chefe continua assim porque nenhum dos três pacotes tem um gongo bom (só sinos curtos). Esses sons e os trocados saem do gerador `jogos/hordas/fonte_audio/gerar_v2_sfx.py`, que ficou como reserva: rodar o script sobrescreve os WAV de mesmo nome.
+
 ## Outros sons
-Efeitos sonoros: gerados por código no projeto. Fonte Press Start 2P: CodeMan38, OFL.
+Efeitos da v1 (`assets/audio/efeitos/`): gerados por código no projeto. Fonte Press Start 2P: CodeMan38, OFL.

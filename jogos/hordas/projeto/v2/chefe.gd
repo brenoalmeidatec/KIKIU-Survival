@@ -163,7 +163,7 @@ func _ia(dt: float) -> void:
 			if t_estado >= float(at.compr) / float(at.vel):
 				_terminou_ataque()
 			elif h.vulneravel() and _encostou(h):
-				h.levar_dano(float(at.dano), m.pos)
+				h.levar_dano(float(at.dano), m.pos, m)
 		"recupera":
 			m.vel_ia = Vector2.ZERO
 			if t_estado >= 0.7:

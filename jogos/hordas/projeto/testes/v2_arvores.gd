@@ -9,11 +9,13 @@ extends Node
 # com o herói atrás e volta com ele na frente, em transição suave; e a tecla F4 liga e desliga o contorno de colisão.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_arvores.tscn  (imprime "v2_arvores falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
+const Heroi := preload("res://v2/heroi.gd")
 const Sprites := preload("res://v2/sprites.gd")
 const Colisao := preload("res://v2/colisao.gd")
 const TIPOS := ["arvore", "arvore_pantano", "arvore_morta", "toco", "tronco"]
 const LINHAS_BASE := 12  # o mesmo corte do gerador (COLISAO_LINHAS_BASE)
 const PASSO := 1.0 / 60.0
+
 var falhas := 0
 var w
 var base_de := {}  # nome -> PackedVector2Array: pixels da base, relativos ao pé
@@ -110,6 +112,89 @@ func caminhar_8(nome: String, a, isolado: bool) -> void:
 			ok(bloqueado > 0, "%s: o colisor nunca segurou o herói: teste sem contato (folga mínima %.2f)" % [rotulo, mais_perto])
 
 
+## Procura no mapa cheio uma trajetória que começa e termina livre, mas cruza a base da árvore; aplica o passo de uma esquiva lenta.
+func testar_esquiva_rapida(nome: String, distancia: float) -> void:
+	var raio: float = w.heroi.raio
+	var encontrou := false
+	for a in w.cenario.objetos:
+		if a.chave != nome:
+			continue
+		var alvo: Vector2 = a.pos + centro_da_base(nome)
+		for i in 8:
+			var dir := Vector2.RIGHT.rotated(i * TAU / 8.0)
+			var inicio: Vector2 = alvo - dir * (distancia * 0.5)
+			var fim: Vector2 = alvo + dir * (distancia * 0.5)
+			if not Colisao.livre(inicio, raio) or Colisao.livre(alvo, raio) or not Colisao.livre(fim, raio):
+				continue
+			w.heroi.definir_pos(inicio)
+			w.heroi.estado = Heroi.Estado.ESQUIVA
+			w.heroi.esq_t = 0.0
+			w.heroi.esq_dir = dir
+			w.heroi.atualizar(0.1)
+			ok((w.heroi.pos - inicio).dot(dir) < distancia - 1.0, "%s: esquiva rápida não atravessa a pegada" % nome)
+			ok(Colisao.livre(w.heroi.pos, raio), "%s: esquiva termina fora da base" % nome)
+			encontrou = true
+			break
+		if encontrou:
+			break
+	ok(encontrou, "%s: mapa real tem trajetória de esquiva que cruza a base" % nome)
+
+
+## Corrida tem passos menores: chega até a base em 16 px, mas não entra nela.
+func testar_corrida(nome: String, distancia: float) -> void:
+	var raio: float = w.heroi.raio
+	var encontrou := false
+	for a in w.cenario.objetos:
+		if a.chave != nome:
+			continue
+		var alvo: Vector2 = a.pos + centro_da_base(nome)
+		for i in 8:
+			var dir := Vector2.RIGHT.rotated(i * TAU / 8.0)
+			for recuo in range(100, int(distancia), -1):
+				var inicio: Vector2 = alvo - dir * float(recuo)
+				var fim: Vector2 = inicio + dir * distancia
+				if not Colisao.livre(inicio, raio) or Colisao.livre(fim, raio):
+					continue
+				w.heroi.definir_pos(inicio)
+				w.heroi.estado = Heroi.Estado.LIVRE
+				w.heroi.folego = w.heroi.folego_max
+				w.heroi.cansado = false
+				w.heroi.entrada_forcada = dir
+				w.heroi.correr_forcado = true
+				w.heroi.atualizar(0.1)
+				ok(w.heroi.correndo, "%s: o herói usa corrida real contra a base" % nome)
+				ok(Colisao.livre(w.heroi.pos, raio), "%s: corrida termina fora da base" % nome)
+				ok((w.heroi.pos - alvo).dot(dir) <= 0.1, "%s: corrida não termina do outro lado da base" % nome)
+				encontrou = true
+				break
+			if encontrou:
+				break
+		if encontrou:
+			break
+	ok(encontrou, "%s: mapa real tem árvore que intercepta a corrida" % nome)
+
+
+## Garante que o filtro espacial vê células intermediárias quando as duas pontas estão longe da árvore.
+func testar_segmento_longo() -> void:
+	var raio: float = w.heroi.raio
+	var encontrou := false
+	for a in w.cenario.objetos:
+		if a.chave != "arvore":
+			continue
+		var alvo: Vector2 = a.pos + centro_da_base("arvore")
+		var inicio: Vector2 = alvo + Vector2(0.0, -80.0)
+		var fim: Vector2 = alvo + Vector2(0.0, 80.0)
+		if not Colisao.livre(inicio, raio) or Colisao.livre(alvo, raio) or not Colisao.livre(fim, raio):
+			continue
+		ok(Colisao.segmento_perto(inicio, fim, raio), "AABB do movimento longo encontra a célula intermediária da árvore")
+		w.heroi.definir_pos(inicio)
+		w.mover(w.heroi, fim - inicio)
+		ok(w.heroi.pos.distance_to(fim) > 1.0, "movimento longo para antes da árvore, mesmo com pontas livres")
+		encontrou = true
+		break
+	ok(encontrou, "mapa real tem árvore com percurso longo entre duas pontas livres")
+
+
 func _ready() -> void:
 	w = Mundo.instantiate()
 	w.modo_teste = true
@@ -131,6 +216,40 @@ func _ready() -> void:
 		ok(not Colisao.livre(a.pos + centro_da_base(nome), raio), "%s em (%.0f,%.0f) está registrada no mundo" % [nome, a.pos.x, a.pos.y])
 	for nome in escolhidas:
 		caminhar_8(nome, escolhidas[nome], true)
+
+	# Reproduz a esquiva com delta alto: no jogo o avanço pode chegar a ~35 px num passo (0,1 s), enquanto
+	# a espessura de uma pegada atravessada de frente é menor. O teste mantém as 572 formas do cenário.
+	# caminhar_8 isola as formas e limpa a grade; recarrega o cenário para esta parte refletir a partida real.
+	w.queue_free()
+	w = Mundo.instantiate()
+	w.modo_teste = true
+	add_child(w)
+	w.set_process(false)
+	w.heroi.entrada_forcada = Vector2.ZERO
+	for nome in TIPOS:
+		testar_esquiva_rapida(nome, 100.0 * 2.6 * (1.35 - 0.7 * (0.1 / 0.42)) * 0.1)
+		testar_corrida(nome, 16.0)  # corrida: 100 px/s × 1,6 × 0,1 s
+	testar_segmento_longo()
+	# A copa é só visual: o herói pode atravessar a área alta da árvore por trás dela.
+	var arvore_copa: Variant = null
+	for a in w.cenario.objetos:
+		if a.chave != "arvore":
+			continue
+		var inicio_copa: Vector2 = a.pos + Vector2(-60.0, -40.0)
+		var livre := true
+		for passo in 5:
+			if not Colisao.livre(inicio_copa + Vector2(30.0 * passo, 0.0), raio):
+				livre = false
+				break
+		if livre:
+			arvore_copa = a
+			break
+	ok(arvore_copa != null, "há copa alta que o herói pode atravessar sem tocar na base")
+	if arvore_copa != null:
+		var copa: Vector2 = arvore_copa.pos + Vector2(-60.0, -40.0)
+		w.heroi.definir_pos(copa)
+		w.mover(w.heroi, Vector2(120.0, 0.0))
+		ok(w.heroi.pos.distance_to(copa + Vector2(120.0, 0.0)) < 1.0, "o herói atravessa a copa sem colisão")
 
 	# 2. a árvore da borda (x acima de 1800, onde a grade prende as bordas) também segura, no mundo inteiro.
 	# A grade ficou com só uma árvore isolada: um mundo novo registra tudo de novo (cenario.carregar zera e registra).
