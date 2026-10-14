@@ -81,3 +81,7 @@ Resultado da partida: CONTINUAR agenda a troca para o santuário ao fim do event
 
 ### Efeitos de Ruptura e escudo (2026-10-13)
 Ruptura usa sigilos radiais na carga, borda no raio atual e referência no raio máximo; a janela perfeita pulsa dourado suavemente. Disparo tem onda com halo e fissuras ramificadas com núcleo quente. Escudo é uma barreira curva elevada, com painéis, nervuras e runa: azul em sustentação, branco no bloqueio comum e dourado com oito raios no perfeito. O impacto acompanha a origem do golpe dentro do arco. São desenhos autorais por código, sem texturas externas, geração de assets por quadro ou mudança nos dados/mecânicas. Os pools existentes de 12 anéis e 2 rachaduras permanecem; a geometria usa limites fixos (20 segmentos de escudo, 12 sigilos, 9 fissuras).
+
+## Paleta e tipografia da UI — 14/10/2026 (PR #250)
+
+`paleta.gd` é a fonte única de cores e tamanhos da UI, também lida pelo gerador Python de molduras. Texto corrido usa Spleen de 16 px; títulos e botões pequenos usam Jersey de 19 px, mantendo os demais tamanhos da grade. A migração não altera controles ou save. O layout ainda não está aprovado: `v2_fontes` passou, mas `v2_status` apresentou 18 falhas com a fonte de 16 px; o PR #250 continua em rascunho, com a integração do #245 pendente do Claude do Alisson. Consulte [DESIGN](DESIGN.md) e as [comparações visuais](../../../../docs/visual_2_5d/paleta_ui/).
