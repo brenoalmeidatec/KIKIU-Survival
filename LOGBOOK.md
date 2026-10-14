@@ -1668,3 +1668,13 @@ _Claude do Alisson (notebook)_
 - **Recado:** se a `esquiva` cair de novo, a mensagem diz qual checagem falhou. O problema não era timeout.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-14 · Claude do Alisson (PC) · integração do PR #252 (coop, etapa 0) com a main
+
+- **Feito:** `origin/main` (fa2f8a7) mesclada na `alisson/coop-0-preparar` por merge, sem force-push (merge `68a46d0`). O git não acusou conflito; conferi à mão `passo_tempo` e o dano dos espinhos. A #228 segue no solo (`passo_tempo` devolve 0 no quadro em que a escolha abre) e a #255 segue (espinho com `bloqueavel = false`: o escudo não barra dano de ambiente).
+- **Testes:** `testes_ci.sh` com 2 processos, 81 de 82 cenas ok. As nove citadas (`v2_coop_preparo`, `v2_partida`, `v2_combate`, `v2_esc`, `v2_pausa`, `v2_ruptura`, `v2_escudo`, `v2_cartas_espera`, `v2_minimapa`) e `esquiva` passaram; `gdformat` limpo. A falha é `transformacao` (v1, "DRAGAO falhas=4"): falhou também na main com o mesmo runner local, e passa isolada com `DRAGAO falhas=0`. O merge não tocou `scripts/hordas/arena.gd` nem `construcao.gd`, que ela carrega. No CI do GitHub, a main e o head do PR estavam verdes.
+- **Medida (solo, `--medir --estresse=100 --imortal`, 3 rodadas intercaladas):** main com mediana de 6,37 ms `SCRIPT ms/quadro` (5,21 a 7,46); integrada com 6,10 ms (5,93 a 6,50). A máquina tinha de 8 a 12 processos Godot de outros agentes, então não dá para comparar com os 1,74 a 1,81 ms do PR. Sem sinal de piora.
+- **Pendente:** no coop e na tela dividida, a escolha local não para o mundo (é o desenho do PR): o `passo_tempo` devolve 0 no quadro da escolha só para o relógio local (`dt_local`), e o mundo para só no resultado (`pausado_mundo`). Confirmar com o Alisson se é esse o desenho. A `transformacao` vermelha no runner local ainda não tem causa confirmada; a hipótese é que ela mede tempo real e sofre com a carga da máquina.
+- **Próximo:** CI no head novo; mesclar só o dono ou o integrador, com CI verde no mesmo commit.
+
+_Claude do Alisson (PC)_
