@@ -52,6 +52,7 @@ var emp_mult := 1.0  # quanto do empurrão vale
 var tinta := Color.WHITE  # cor nova do sprite (chefes e elites)
 var contorno: Sprite2D = null  # o contorno colorido da elite (camada glow, aditivo)
 var invoca_t := 0.0
+var barra_vida_elite: Node2D = null
 var escala_base := 1.0
 var _base_raio := 7.0
 var _queima_tick := 0.0
@@ -143,6 +144,8 @@ func reviver(p: Vector2) -> void:
 		_voltar_lote()
 	if contorno != null:
 		contorno.visible = false
+	if barra_vida_elite != null:
+		barra_vida_elite.visible = false
 	persegue = false
 	_no_cerco = false
 	casa = p
@@ -160,6 +163,8 @@ func apanhar(dano_tirado: float, empurrao: Vector2, atordoamento: float) -> bool
 	emp += empurrao / peso * emp_mult
 	_batida = 0.14
 	persegue = true
+	if barra_vida_elite != null:
+		barra_vida_elite.sincronizar(self)
 	return vida <= 0.0
 
 
@@ -250,13 +255,15 @@ func _escolher_quadro(v: Vector2) -> void:
 func _visual_no(v: Vector2) -> void:
 	var k := clampf(_batida / 0.14, 0.0, 1.0)
 	sprite.scale = Vector2(1.0 + 0.2 * k, 1.0 - 0.16 * k) * escala
-	sprite.position = Vector2(float(rng.randi_range(-1, 1)), 0.0) if (atordoa_t > 0.0 and k > 0.0) else Vector2.ZERO
+	sprite.position = (Vector2(float(rng.randi_range(-1, 1)), 0.0) if (atordoa_t > 0.0 and k > 0.0) else Vector2.ZERO)
 	_escolher_quadro(v)
 	if olho != null:
 		olho.position = raiz.position + sprite.position
 		olho.scale = sprite.scale
 	if contorno != null and contorno.visible:
 		_sincronizar_contorno()
+	if barra_vida_elite != null:
+		barra_vida_elite.sincronizar(self)
 	var queimando := queima_t > 0.0
 	if queimando or lento_t > 0.0 or tinta != Color.WHITE:
 		var cf := tinta
@@ -293,7 +300,18 @@ func virar_no() -> void:
 		olho.region_rect = regiao
 		olho.flip_h = espelha
 		olho.scale = sprite.scale
+	if barra_vida_elite != null:
+		barra_vida_elite.sincronizar(self)
 	definir_pos(pos)
+
+
+## Cria a barra uma vez, apenas quando o ator vira elite; o nó é reaproveitado pelo pool.
+func garantir_barra_vida_elite() -> void:
+	if barra_vida_elite == null:
+		barra_vida_elite = preload("res://v2/barra_vida_elite.gd").new()
+		barra_vida_elite.name = "BarraVidaElite"
+		_no_raiz.add_child(barra_vida_elite)
+	barra_vida_elite.sincronizar(self)
 
 
 func _criar_nos() -> void:
@@ -438,6 +456,8 @@ func esconder() -> void:
 		olho.visible = false
 	if contorno != null:
 		contorno.visible = false
+	if barra_vida_elite != null:
+		barra_vida_elite.visible = false
 
 
 func _sincronizar_contorno() -> void:

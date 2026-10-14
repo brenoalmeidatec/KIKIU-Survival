@@ -23,6 +23,7 @@ var _saindo := false
 var _t := 0.0
 var _antes := 0
 var _ganhas := 0
+var _save_ok := true
 var _tocou := false
 var _checa_t := 0.0
 var _aviso_t := 0.0
@@ -176,6 +177,15 @@ func _terminar(r: Dictionary) -> void:
 	if not r.has("almas"):
 		r["almas"] = Meta.almas_da_partida(mundo)
 	var res: Dictionary = Meta.registrar_partida(r)
+	_save_ok = not res.is_empty()
+	if not _save_ok:
+		_antes = Meta.saldo()
+		_ganhas = 0
+		_mostrar(r, [])
+		_almas_tit.text = "NÃO FOI POSSÍVEL SALVAR"
+		_almas_num.text = "+0"
+		_saldo.text = "Saldo não atualizado"
+		return
 	_antes = int(res.antes)
 	_ganhas = int(res.ganhas)
 	_mostrar(r, res.novas)
@@ -202,12 +212,14 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 
 func _animar(dt: float) -> void:
 	_t += dt
+	_botao.modulate.a = clampf((_t - 0.4) / 0.4, 0.0, 1.0)
+	if not _save_ok:
+		return
 	var k := clampf(_t / TEMPO_ANIM, 0.0, 1.0)
 	k = 1.0 - pow(1.0 - k, 3.0)  # sobe rápido e desacelera no fim
 	var mostra := roundi(_ganhas * k)
 	_almas_num.text = "+%d" % mostra
 	_saldo.text = "Saldo: %d" % (_antes + mostra)
-	_botao.modulate.a = clampf((_t - 0.4) / 0.4, 0.0, 1.0)
 	if k >= 1.0 and not _tocou:
 		_tocou = true
 		mundo.combate.audio.tocar("nivel", 1.0, -4.0, 0.0)
@@ -258,4 +270,5 @@ func _continuar() -> void:
 	if _saindo:
 		return
 	_saindo = true
-	mundo.get_tree().change_scene_to_file(SANTUARIO)
+	# A entrada do mundo ainda marca o evento no viewport: a troca só pode ocorrer depois dele.
+	mundo.get_tree().call_deferred("change_scene_to_file", SANTUARIO)

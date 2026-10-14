@@ -1,7 +1,7 @@
 extends Node
 # Teste da TRAVA das cartas e do baú da v2 (tempo real, dados/v2_cartas.json: escolha.espera_s, escolha.rerrolar_espera_s, bau.bau_espera_s).
-# Nada escolhe nos primeiros 3,0 s depois de a escolha abrir (clique, 1/2/3, Enter, Espaço, E, direcional, ui_accept, R, B, botões);
-# depois escolhe. Rerrolar e banir travam 0,8 s; nível pendente trava 3 s de novo; o baú trava 1,5 s; a contagem congela com a pausa
+# Nada escolhe nos primeiros 1,0 s depois de a escolha abrir (clique, 1/2/3, Enter, Espaço, E, direcional, ui_accept, R, B, botões);
+# depois escolhe. Rerrolar e banir travam 0,8 s; nível pendente trava 1 s de novo; o baú trava 1 s; a contagem congela com a pausa
 # aberta; câmera lenta e hit-stop não mudam o tempo da trava; um clique segurado desde antes não escolhe; ESC passa pela trava; a
 # contagem e a barra aparecem, e as cartas acendem ao liberar. O ESC e o Start entram pela JANELA (Input.parse_input_event, a rota do
 # teclado de verdade; a pausa mora no SubViewport e só recebe pelo mundo._input) e abrem a pausa na partida, na escolha e no baú, com a
@@ -148,19 +148,19 @@ func _run() -> void:
 	w.set_process(false)
 	w.combate.audio.mudo = true
 
-	# 1. a escolha abre com a trava de 3 s, a contagem e as cartas apagadas
+	# 1. a escolha abre com a trava de 1 s, a contagem e as cartas apagadas
 	zerar()
 	subir_nivel()
 	var t = w.combate.telas
 	var h = w.heroi
 	ok(w.combate.jogo == "escolha", "o nível abre a escolha")
-	ok(absf(trava() - 3.0) < 0.05, "a trava começa em 3 s (%.3f)" % trava())
-	ok(t._sub.text == "Escolha em 3", "a legenda mostra a contagem 'Escolha em 3' (%s)" % t._sub.text)
+	ok(absf(trava() - 1.0) < 0.05, "a trava começa em 1 s (%.3f)" % trava())
+	ok(t._sub.text == "Escolha em 1", "a legenda mostra a contagem 'Escolha em 1' (%s)" % t._sub.text)
 	ok(t._cartas[0].modulate.r < 0.5, "as cartas aparecem apagadas na trava")
 	ok(t._cartas[0].position.y == CARTA_Y, "sem seleção (sem realce) na trava")
 	ok((t._cartas[0].get_node("espera") as ColorRect).visible, "a barra de espera aparece em cada carta")
 
-	# 2. nada escolhe antes de 3,0 s: clique, teclas, Enter, Espaço, E, direcional, ui_accept, R, B, botões
+	# 2. nada escolhe antes de 1,0 s: clique, teclas, Enter, Espaço, E, direcional, ui_accept, R, B, botões
 	var antes := estado()
 	passos(6)  # 0,1 s
 	rajada()
@@ -170,16 +170,16 @@ func _run() -> void:
 	w._input(_movimento(_centro_carta(2)))
 	ok(t.sel == hover, "o mouse passa sobre uma carta na trava sem trocar a seleção")
 	ok(not t.entrada(_tecla(KEY_ESCAPE)), "ESC passa pela escolha (é da pausa), não é consumido")
-	passos(84)  # 1,5 s de trava
-	ok(t._sub.text == "Escolha em 2", "aos 1,5 s a contagem marca 'Escolha em 2' (%s)" % t._sub.text)
-	ok(absf((t._cartas[0].get_node("espera") as ColorRect).size.x - 232.0 * 0.5) < 3.0, "a barra enche com o tempo")
+	passos(24)  # 0,5 s de trava
+	ok(t._sub.text == "Escolha em 1", "aos 0,5 s a contagem marca 'Escolha em 1' (%s)" % t._sub.text)
+	ok(absf((t._cartas[0].get_node("espera") as ColorRect).size.x - 232.0 * (1.0 - trava())) < 0.1, "a barra acompanha a fração real da espera")
 	antes = estado()
 	rajada()
-	ok(estado() == antes, "aos 1,5 s ainda nada escolhe (trava de 3 s)")
-	passos(54)  # 2,4 s
+	ok(estado() == antes, "aos 0,5 s ainda nada escolhe (trava de 1 s)")
+	passos(18)  # 0,8 s
 	rajada()
-	ok(estado() == antes, "aos 2,4 s ainda nada escolhe")
-	ok(trava() > 0.0, "a trava ainda corre aos 2,4 s")
+	ok(estado() == antes, "aos 0,8 s ainda nada escolhe")
+	ok(trava() > 0.0, "a trava ainda corre aos 0,8 s")
 
 	# 3. depois da trava: as cartas acendem e a tecla 2 escolhe
 	var esc0: int = w.combate.progresso.escolhidas
@@ -241,7 +241,7 @@ func _run() -> void:
 	w._input(_tecla(KEY_ENTER))
 	ok(w.combate.progresso.escolhidas == esc0 + 1, "depois da trava de banir, Enter escolhe")
 
-	# 7. nível pendente: a próxima escolha trava de novo os 3 s completos
+	# 7. nível pendente: a próxima escolha trava de novo o segundo completo
 	zerar()
 	subir_nivel()
 	h = w.heroi
@@ -252,10 +252,10 @@ func _run() -> void:
 	w._input(_tecla(KEY_1))
 	ok(w.combate.progresso.escolhidas == esc0 + 1, "a primeira escolha do par vale depois da trava")
 	ate(func(): return w.combate.jogo == "escolha", 120)
-	ok(absf(trava() - 3.0) < 0.05, "o nível pendente abre outra escolha com a trava de 3 s (%.3f)" % trava())
-	passos(90)
+	ok(absf(trava() - 1.0) < 0.05, "o nível pendente abre outra escolha com a trava de 1 s (%.3f)" % trava())
+	passos(30)
 	w._input(_tecla(KEY_2))
-	ok(w.combate.progresso.escolhidas == esc0 + 1, "a segunda escolha não vale aos 1,5 s")
+	ok(w.combate.progresso.escolhidas == esc0 + 1, "a segunda escolha não vale aos 0,5 s")
 
 	# 8. a contagem é de tempo real: câmera lenta e hit-stop não mudam nada
 	ate(func(): return trava() <= 0.0, 200)
@@ -265,8 +265,8 @@ func _run() -> void:
 	w.combate.lento_t = 10.0
 	w.combate.lento_escala = 0.1
 	w.combate.parada_t = 10.0
-	passos(60)
-	ok(absf((lento_antes - trava()) - 1.0) < 0.03, "câmera lenta e hit-stop não mudam o tempo da trava (andou %.3f)" % (lento_antes - trava()))
+	passos(30)
+	ok(absf((lento_antes - trava()) - 0.5) < 0.03, "câmera lenta e hit-stop não mudam o tempo da trava (andou %.3f)" % (lento_antes - trava()))
 	w.combate.lento_t = 0.0
 	w.combate.lento_escala = 1.0
 	w.combate.parada_t = 0.0
@@ -275,7 +275,7 @@ func _run() -> void:
 	ate(func(): return trava() <= 0.0, 200)
 	zerar()
 	subir_nivel()
-	passos(60)
+	passos(15)
 	var com_pausa := trava()
 	w.pausa.aberto = true
 	passos(120)
@@ -285,22 +285,34 @@ func _run() -> void:
 	ok(trava() < com_pausa, "fechada a pausa, a contagem volta")
 	ate(func(): return trava() <= 0.0, 200)
 
-	# 10. o baú trava 1,5 s: o clique e o Enter antes disso são descartados
+	# 10. o baú trava 1 s: o clique e o Enter antes disso são descartados
 	zerar()
 	w.combate.jogo = "bau"
 	w.combate.pausado = true
 	w.combate.telas.mostrar_bau(w.combate.cartas.sortear(2, 3))
-	ok(absf(w.combate.telas.espera_bau - 1.5) < 0.001, "o baú trava por 1,5 s")
+	ok(absf(w.combate.telas.espera_bau - 1.0) < 0.001, "o baú trava por 1 s")
 	w._input(_tecla(KEY_ENTER))
 	w._input(_clique(Vector2(480, 270)))
 	passos(30)  # 0,5 s
 	w._input(_tecla(KEY_ENTER))
 	ok(w.combate.telas.bau_aberto and not w.combate.telas.bau_pronto, "Enter e clique na trava do baú não pulam a roleta")
-	passos(70)  # 1,67 s no total: a trava de 1,5 s passou com folga
+	passos(31)  # Pouco mais de 1 s no total
+	ok(w.combate.telas.bau_pronto, "a roleta revela todas as recompensas automaticamente em 1 s")
 	w._input(_tecla(KEY_ENTER))
-	ok(w.combate.telas.bau_pronto, "depois de 1,5 s, Enter pula a roleta")
-	w._input(_tecla(KEY_ENTER))
-	ok(w.combate.jogo == "jogando" and not w.combate.telas.bau_aberto, "e o próximo Enter fecha o baú")
+	ok(w.combate.jogo == "jogando" and not w.combate.telas.bau_aberto, "Enter fecha o baú depois de 1 s")
+
+	# Uma, duas ou três recompensas têm a mesma duração total, sem acumular o giro por carta.
+	for quantidade in [1, 2, 3]:
+		zerar()
+		w.combate.jogo = "bau"
+		w.combate.pausado = true
+		t.mostrar_bau(w.combate.cartas.sortear(quantidade, 3))
+		t._atualizar_bau(0.99)
+		ok(not t.bau_pronto and t.espera_bau > 0.0, "%d recompensas ainda aguardam antes de 1 s" % quantidade)
+		t._atualizar_bau(0.02)
+		ok(t.bau_pronto and t.espera_bau == 0.0 and t._bau_i == quantidade, "%d recompensas ficam todas visíveis em 1 s" % quantidade)
+		for i in quantidade:
+			ok((t._bau_slots[i].get_node("nome") as Label).text != "?", "recompensa %d foi revelada" % i)
 
 	# 11. o ESC e o Start da JANELA chegam ao menu de pausa. A pausa mora no SubViewport, que não recebe a entrada da janela: o evento
 	# entra por Input.parse_input_event (a rota do teclado de verdade) e o mundo._input o entrega. Antes, nada chegava e o ESC "não funcionava".

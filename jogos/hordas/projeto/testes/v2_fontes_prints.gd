@@ -29,7 +29,7 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
 	await _mundo(pasta, prefixo)
 	await _santuario(pasta, prefixo)
-	for c in [SAVE_TESTE, OPCOES_TESTE]:
+	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
 	Config.arquivo = "user://opcoes.cfg"

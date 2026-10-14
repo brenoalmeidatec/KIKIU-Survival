@@ -8,7 +8,7 @@ extends Node
 # do golpe (a estocada alcança o que o card diz), a onda sai em todos os cortes, as dicas de evolução acompanham banimento e evolução, o
 # crítico para em 100% e as almas são as que o fim da partida credita (com "Almas abundantes").
 # Interface: C liga e desliga o card pela entrada de verdade (Input.parse_input_event, a mesma que a janela usa). Sobre a escolha de cartas
-# e o baú o C abre o painel CENTRAL (opaco, por cima das cartas): enquanto está aberto, tecla e clique não escolhem carta, a trava de 3 s
+# e o baú o C abre o painel CENTRAL (opaco, por cima das cartas): enquanto está aberto, tecla e clique não escolhem carta, a trava de 1 s
 # segue correndo e o ESC abre a pausa. A pausa mostra o card ao lado do menu só na tela "menu"; atualizar não cria nó. Em TODOS os modos
 # (HUD compacto, pausa e painel central) e com a build vazia, a de meio de partida, a máxima e o Santuário todo comprado, nenhuma linha
 # estoura a coluna, nada é cortado e as colunas do HUD não cobrem o HUD.
@@ -248,7 +248,7 @@ func _ready() -> void:
 
 
 func _limpar_saves() -> void:
-	for c in [SAVE_TESTE, OPCOES_TESTE]:
+	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
 
@@ -1078,7 +1078,7 @@ func _build_maxima() -> void:
 ## A build mais pesada que as cartas permitem sem evoluir: cada carta de stat no máximo de cópias e na raridade lendária (vida, dano e alcance
 ## enormes: os maiores números que o card vai mostrar), cada golpe no nível 2 e lendário, os modificadores em lendária (a onda e a estocada
 ## só uma vez: duas cópias de cada virariam a Ventania). Só os 5 golpes do desenho: com os 50 golpes do PR #192 a coluna não cabe,
-## e o card não tem teto de golpes nem paginação (pendência: decidir o teto por build ou paginar o card).
+## os 50 golpes do PR #192 ficam para o teste `_paginacao` (o card pagina, sem teto).
 func _build_extrema() -> void:
 	var cs = w.combate.cartas
 	for d in cs.cfg.stats:
@@ -1237,10 +1237,99 @@ func _interface() -> void:
 		tecla(KEY_C)
 		await esperar()
 	await _layouts(st, c)
+	await _paginacao(st, c)
+
+
+## Build com MUITOS golpes (todos os de dados/v2_cartas.json, o caso do PR #192): o card não tem teto. Na página visual da pausa e no painel
+## central os golpes PAGINAM: "Página X/Y" aparece, Q e E trocam de página (pela entrada de verdade), nenhum golpe fica de fora e nada passa
+## da altura da coluna em nenhuma página. No HUD compacto o card mostra o que cabe e o pé diz "+N golpes". Com um golpe só não há paginação.
+func _paginacao(st, c) -> void:
+	zerar()
+	var cs = w.combate.cartas
+	for d in cs.cfg.golpes:
+		pegar(str(d.id))
+	var total: int = w.combate.armas.ativas.size()
+	ok(total >= 40, "a build de teste tem golpes demais para caber numa página (%d golpes)" % total)
+	# --- HUD: o compacto mostra o que cabe e o pé diz quantos faltam
+	st._hud = true
+	st._aplicar()
+	await esperar()
+	ok(
+		st._golpes_mostrados > 0 and st._golpes_mostrados < total,
+		'no HUD o compacto mostra só o que cabe, com "+N golpes" no pé (%d de %d)' % [st._golpes_mostrados, total]
+	)
+	ok(st.linhas_que_estouram().is_empty(), "no HUD nenhuma linha estoura a largura com %d golpes (%s)" % [total, str(st.linhas_que_estouram())])
+	st._hud = false
+	st._aplicar()
+	# --- pausa: a página visual pagina, e cada página cabe
+	_achar_pausa().pausar()
+	await esperar()
+	ok(st.pagina() == "visual", "a pausa abre na página visual com %d golpes" % total)
+	ok(not st.visual_cortada().has(true), "a página visual da pausa não passa da altura com %d golpes (%s)" % [total, str(st.retangulos_visuais())])
+	var pg: Dictionary = st.paginas_golpes()
+	ok(int(pg.paginas) > 1 and int(pg.pagina) == 1, "com %d golpes a pausa pagina (página %d de %d)" % [total, int(pg.pagina), int(pg.paginas)])
+	var espaco := 300.0  # um espaço de exemplo: a conta tem de cobrir todos os golpes sem sobrar página vazia
+	var conta: Array = Status._paginas_golpes(total, espaco)
+	ok(
+		int(conta[1]) * int(conta[0]) >= total and (int(conta[1]) - 1) * int(conta[0]) < total,
+		"a conta de páginas cobre os %d golpes sem página vazia (%s)" % [total, str(conta)]
+	)
+	ok(int(conta[0]) * 20.0 + 13.0 <= espaco, "uma página cabe no espaço da coluna (%d golpes em %.0f px)" % [int(conta[0]), espaco])
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_E
+	ev.physical_keycode = KEY_E
+	ev.pressed = true
+	ok(pausa_entrada(ev) and int(st.paginas_golpes().pagina) == 2, "E na pausa vai para a próxima página")
+	ok(not st.visual_cortada().has(true), "a página 2 também cabe")
+	var ev_q := InputEventKey.new()
+	ev_q.keycode = KEY_Q
+	ev_q.physical_keycode = KEY_Q
+	ev_q.pressed = true
+	ok(pausa_entrada(ev_q) and int(st.paginas_golpes().pagina) == 1, "Q na pausa volta para a página anterior")
+	ok(not st.paginar(-1) and int(st.paginas_golpes().pagina) == 1, "Q na primeira página não passa do começo")
+	for i in int(pg.paginas) + 2:
+		st.paginar(1)
+	pg = st.paginas_golpes()
+	ok(int(pg.pagina) == int(pg.paginas), "E de sobra para na última página (%d de %d)" % [int(pg.pagina), int(pg.paginas)])
+	ok(not st.visual_cortada().has(true), "a última página cabe na altura")
+	_achar_pausa().fechar()
+	await esperar()
+	# --- painel central: a mesma paginação, pelo teclado de verdade (C abre o painel; E passa pelo card)
+	c.progresso.pendentes = 1
+	c.progresso.abrir_escolha()
+	tecla(KEY_C)
+	await esperar()
+	ok(st._modo_atual == "central", "o C abre o painel central com %d golpes" % total)
+	ok(int(st.paginas_golpes().paginas) > 1, "o painel central pagina os golpes (%s)" % str(st.paginas_golpes()))
+	ok(not st.visual_cortada().has(true), "a página visual do painel central cabe com %d golpes" % total)
+	var antes: int = int(st.paginas_golpes().pagina)
+	tecla(KEY_E)
+	await esperar()
+	ok(int(st.paginas_golpes().pagina) == antes + 1, "E no painel central troca de página")
+	tecla(KEY_C)
+	await esperar()
+	c.progresso.escolher(0)
+	c.progresso.pendentes = 0
+	c.lento_t = 0.0
+	c.lento_acao = ""
+	ok(not st.aberto(), "o painel central fecha")
+	# --- um golpe só: nenhuma paginação
+	zerar()
+	pegar("laminas")
+	_achar_pausa().pausar()
+	await esperar()
+	ok(not st.visual_cortada().has(true) and int(st.paginas_golpes().paginas) == 1, "com um golpe só não há paginação (%s)" % str(st.paginas_golpes()))
+	_achar_pausa().fechar()
+	await esperar()
+
+
+## Entrega um evento à pausa como a Antena faz (o menu aberto consome a tecla).
+func pausa_entrada(ev: InputEvent) -> bool:
+	return _achar_pausa().entrada(ev)
 
 
 ## Escolha de cartas e baú: o card compacto sai de cena, o C abre o painel CENTRAL por cima das cartas, nada é escolhido enquanto ele está
-## aberto, a trava de 3 s segue correndo, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
+## aberto, a trava de 1 s segue correndo, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
 func _escolha_e_bau(st, c, pausa) -> void:
 	var tela_c = c.telas
 	tecla(KEY_C)  # liga o card compacto (jogo rolando)
@@ -1276,13 +1365,13 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	for rc in rc3:
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "a coluna do painel central cabe na tela (%s)" % str(rc))
 	ok(st.retangulos_visuais().size() == 3 and not st.visual_cortada().has(true), "a página visual do painel central tem três colunas e cabe")
-	# --- a trava de 3 s das cartas segue correndo (tempo real) com o painel aberto
+	# --- a trava de 1 s das cartas segue correndo (tempo real) com o painel aberto
 	var trava0: float = tela_c.espera_escolha
-	ok(trava0 > 2.0, "a trava das cartas está correndo (%.2f s)" % trava0)
-	passos(60)
+	ok(trava0 > 0.5, "a trava das cartas está correndo (%.2f s)" % trava0)
+	passos(15)
 	ok(
-		tela_c.espera_escolha < trava0 - 0.8 and tela_c.espera_escolha > 0.0,
-		"com o painel aberto a trava segue correndo em tempo real (%.2f s -> %.2f s depois de 1 s)" % [trava0, tela_c.espera_escolha]
+		tela_c.espera_escolha < trava0 - 0.2 and tela_c.espera_escolha > 0.0,
+		"com o painel aberto a trava segue correndo em tempo real (%.2f s -> %.2f s depois de 0,25 s)" % [trava0, tela_c.espera_escolha]
 	)
 	# --- libera a trava e prova que o PAINEL (não a trava) segura as teclas e os cliques
 	tela_c._liberar_cartas()
@@ -1471,6 +1560,23 @@ func _fotos(pasta: String) -> void:
 	var c = w.combate
 	var h = w.heroi
 	var st = w.status
+	# 0a) a build com TODOS os golpes: o HUD mostra o que cabe com "+N golpes" no pé, e a pausa pagina (Q e E)
+	for d in c.cartas.cfg.golpes:
+		pegar(str(d.id))
+	st._hud = true
+	st._aplicar()
+	await get_tree().process_frame
+	await _foto("status_hud_50_golpes", pasta)
+	st._hud = false
+	st._aplicar()
+	_achar_pausa().pausar()
+	await get_tree().process_frame
+	await _foto("status_pausa_50_golpes", pasta)
+	st.paginar(1)
+	await get_tree().process_frame
+	await _foto("status_pausa_50_golpes_p2", pasta)
+	_achar_pausa().fechar()
+	zerar()
 	# 0) HUD compacto com a build VAZIA (o começo de toda partida)
 	st._hud = true
 	st._aplicar()

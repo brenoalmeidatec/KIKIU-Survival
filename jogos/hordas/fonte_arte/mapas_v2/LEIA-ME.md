@@ -57,3 +57,7 @@ Prévia dos brutos do Blender com régua de escala: `python mapas_v2/previa_brut
 
 Dicas de quem fez: os mapas têm de ser **abertos** (o monstro persegue em linha reta e prende em parede comprida: paredes só em trechos com abertura, ou nas bordas,
 que ficam fora da área andável); a colisão do `colisao.gd` aceita qualquer `ry`, mas formas encostadas deixam uma quina côncava onde o resolver trava.
+
+## Cidade integrada (2026-10-13)
+
+A Cidade da PR #211 integra a seleção junto de Floresta, Laboratório e Ruínas da Floresta. Fonte e regras próprias em `LEIA-ME_CIDADE.md`; assets e os 177 objetos/85 luzes preservados. Ruínas da Floresta é o nome exibido do id `medio`, sem regenerar o mapa nem mudar progresso salvo.

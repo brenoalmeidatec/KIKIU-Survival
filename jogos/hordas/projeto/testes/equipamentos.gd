@@ -52,6 +52,7 @@ func _ready() -> void:
 	ok(vistas == 0, "Nicão (sem camadas) nunca vê equipamento (%d)" % vistas)
 	a.queue_free()
 	await get_tree().process_frame
+	m._calor = {}  # sem o calor salvo do jogador (calor.json): "Corpo Frágil" tiraria vida e o teste dependeria da máquina
 	m._comecar("hazaki")
 	a = m._arena
 	var hz := 0
