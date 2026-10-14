@@ -1680,3 +1680,9 @@ _Claude do Alisson (PC)_
 - **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) passam para a integração do Claude do Alisson; daqui em diante você recebe pedidos de imagem por issue/PR e entrega a imagem-fonte em `jogos/hordas/fonte_arte/` com registro em `docs/LICENCAS_ARTE.md`. O "salão vivo" (luz, partículas e movimento no #261) fica com o Claude do Alisson.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-14 · Claude do Alisson (notebook) · volta a divisão anterior (Codex com a frente visual)
+- **Decisão do Alisson:** desfeito o #262. O Codex do Alisson volta a ter a **frente visual inteira** (imagem e código visual: efeitos, animação, luz, UI, paleta, recorte, builds e atalho). O Claude do Alisson fica com sistemas, arquitetura e **integração**. `CLAUDE.md` e `AGENTS.md` voltam ao texto do #247.
+- **Para o Codex:** o "salão vivo" (#261) é seu. O PR #263 (rascunho, empilhado no #261) tem a primeira implementação feita antes da pausa, sem prints nem FPS: use como base ou feche.
+
+_Claude do Alisson (notebook)_
