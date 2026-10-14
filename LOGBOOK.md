@@ -1619,10 +1619,6 @@ _Codex GPT-6.1 Sol (PC)_
 
 _Claude do Alisson (notebook)_
 
-## 2026-10-14 · Codex do Alisson · reserva da paleta única da UI
-- **Em andamento:** reconstrução do #217 em branch nova da main 96bbc15. Fonte única visual para HUD, SUA BUILD, pausa, cartas, menu e Santuário; correção de cores semânticas e tamanhos fora da grade. Antes capturado no viewport real 960x540, sem captura da área de trabalho.
-- **Validação desta reserva:** somente documentação; nenhum comportamento alterado. Godot ainda não rodado nesta branch. Próximo: implementação visual, extensão autorizada de v2_fontes, prints depois e testes afetados.
-- **Coordenação:** status.gd e altar.gd podem conflitar com #245 e #242. Coleta de dados, controles, save e progressão serão preservados; integração de sistemas fica com o Claude do Alisson.
 ## 2026-10-12 (7) · Claude do Alisson (PC) · sprites das armas da v2 (recorte das folhas do GPT)
 - **Feito:** recortei as três folhas de arte própria do Alisson (`jogos/hordas/prototipos/cara_nova/objetos/fonte_armas_*.webp`) com a ferramenta de enfeites, que ganhou o modo `python gerar_objetos.py armas`. Saíram 16 projéteis e meteoros, 9 aliados (com normal map) e 12 efeitos de área (fundo preto, aditivo, sem normal). Estão em `jogos/hordas/projeto/assets/v2/armas/`, com `indice.json` (campo `armas_sugeridas`) e a prévia em `jogos/hordas/prints/v2_armas_sprites.png`. O modo padrão (enfeites) continua gerando o mesmo arquivo.
 - **Cobertura das 45 armas do #192:** 33 com sprite adequado, 6 com sprite provisório, 6 sem sprite. A lista e o prompt da 4ª folha estão no corpo do PR.
@@ -1646,5 +1642,17 @@ _Claude do Alisson (notebook)_
 - **Feito:** main incorporada por merge, sem force-push. Sprites dos 45 golpes novos ligados à camada de desenho, preservando névoa volumétrica, motivos dos ataques (#231), Ruptura e escudo (#240). Conflito restrito à API de desenho; regras, dano, alvos e movimento mantidos. Intensidade aditiva das áreas reduzida após comparação com 45 golpes ativos; flecha 14x5 e dardo 10x5 incluem contorno claro de 1 px.
 - **Validação:** Godot 4.4.1 import código 0; v2_armas_sprites, v2_partida, v2_status, v2_combate, v2_ruptura, v2_escudo e v2_fontes: código 0, falhas=0, sem SCRIPT ERROR. gdformat scripts/testes/v2: 230 arquivos limpos. Prints reais 960x540 no perfil Médio, OpenGL Intel Iris Xe, em docs/visual_2_5d/armas_v2/. Não foi medido FPS neste item.
 - **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
+
+_Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · reserva da paleta única da UI
+- **Em andamento:** reconstrução do #217 em branch nova da main 96bbc15. Fonte única visual para HUD, SUA BUILD, pausa, cartas, menu e Santuário; correção de cores semânticas e tamanhos fora da grade. Antes capturado no viewport real 960x540, sem captura da área de trabalho.
+- **Validação desta reserva:** somente documentação; nenhum comportamento alterado. Godot ainda não rodado nesta branch. Próximo: implementação visual, extensão autorizada de v2_fontes, prints depois e testes afetados.
+- **Coordenação:** status.gd e altar.gd podem conflitar com #245 e #242. Coleta de dados, controles, save e progressão serão preservados; integração de sistemas fica com o Claude do Alisson.
+
+## 2026-10-14 · Codex do Alisson · paleta reconstruída no PR #250
+- **Feito:** #209 mesclado com CI verde no head 7b10493; novo #250 substitui #217, encerrado com link. Cores/tamanhos em v2/paleta.gd; HUD e gerador de molduras leem a mesma fonte; vida/XP/fôlego e ouro/almas padronizados. Telas, status, pausa, menu, resultado e visual do Santuário migrados. Fontes fora da grade corrigidas; v2_fontes ampliado por solicitação do Alisson. Prints reais antes/depois 960x540 em docs/visual_2_5d/paleta_ui/.
+- **Testes:** v2_fontes passou com código 0/falhas=0/sem SCRIPT ERROR. v2_hud, v2_pausa, v2_esc, v2_santuario, v2_meta e v2_partida também passaram. v2_status retornou código 0, mas falhas=18 por estouro real de largura/altura após Spleen16; portanto REPROVADO. Não houve SCRIPT ERROR nessa execução corrigida. O primeiro import revelou preload ausente em telas.gd, corrigido antes dos testes reais acima; não considerar a execução anterior aprovada.
+- **Pendente/para Claude do Alisson:** coordenar #245/status.gd: a tabela de detalhes precisa paginação/acesso completo na grade16, além da acomodação de rótulo/valor no HUD. Não removemos atributos nem afrouxamos testes. #250 fica em rascunho, sem merge. #242 pode conflitar em altar.gd; só o visual foi alterado. Release do #209 passou nos quatro jobs CI, mas export/upload falhou novamente por cota de artefatos (#249); atalho permanece na última build validada.
 
 _Codex do Alisson_

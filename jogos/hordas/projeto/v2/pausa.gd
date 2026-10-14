@@ -16,15 +16,16 @@ extends CanvasLayer
 ## Fontes (regra de v2/LEIA-ME.md): título e botões na Jersey 10 (Dados.fonte_titulo), valores, apoio e ajuda na Spleen 8x16
 ## (Dados.fonte_texto, sempre em 16 px), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 
+const Paleta := preload("res://v2/paleta.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
-const TAM_TITULO := 56  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
-const TAM_BOTAO := 19  # botões e linhas (Jersey 10 na grade de 19)
-const TAM_SUB := 16  # linha de apoio do título
-const TAM_VALOR := 16  # valor à direita (Spleen, grade de 16 px)
-const TAM_AJUDA := 16  # ajuda da linha escolhida (rodapé dos gráficos)
-const TAM_DICA := 16
+const TAM_TITULO := Paleta.TITULO_GRANDE  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
+const TAM_BOTAO := Paleta.TITULO_PEQUENO  # botões e linhas (Jersey 10 na grade de 19)
+const TAM_SUB := Paleta.TEXTO_TAMANHO  # linha de apoio do título
+const TAM_VALOR := Paleta.TEXTO_TAMANHO  # valor à direita (Spleen, grade de 16 px)
+const TAM_AJUDA := Paleta.TEXTO_TAMANHO  # ajuda da linha escolhida (rodapé dos gráficos)
+const TAM_DICA := Paleta.TEXTO_TAMANHO
 const LARG := 960.0
 const ALT := 540.0
 const PAINEL := Rect2(260, 55, 440, 430)  # 440 de largura: a Spleen é mais larga que a Pixelify
@@ -35,10 +36,10 @@ const VISIVEIS := 5  # linhas visíveis de uma vez; a lista rola com a seleção
 const AJUDA_Y := LINHA0 + VISIVEIS * LINHA_H + 8.0  # rodapé com a ajuda da linha escolhida
 const AJUDA_H := 96.0
 const DICA_Y := 406.0  # PAINEL.size.y - 24
-const COR_OURO := Color(1.0, 0.86, 0.42)
-const COR_TEXTO := Color(0.92, 0.9, 0.96)
-const COR_CAB := Color(0.62, 0.6, 0.72)  # cabeçalho de seção (não é selecionável)
-const COR_FUNDO := Color(0.004, 0.012, 0.043, 0.72)  # #01030b a 0,7 (hud_menus.md, seção 4)
+const COR_OURO := Paleta.OURO
+const COR_TEXTO := Paleta.TEXTO
+const COR_CAB := Paleta.CABECALHO  # cabeçalho de seção (não é selecionável)
+const COR_FUNDO := Color(Paleta.PAINEL, 0.72)  # #01030b a 0,7 (hud_menus.md, seção 4)
 const DICA := "Setas escolhem   Enter confirma   Esc volta"
 const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
@@ -139,7 +140,7 @@ func _montar() -> void:
 		linha.size = Vector2(w, LINHA_ALT)
 		linha.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var est := StyleBoxFlat.new()
-		est.bg_color = Color(COR_OURO.r, COR_OURO.g, COR_OURO.b, 0.14)
+		est.bg_color = Color(Paleta.OURO, 0.14)
 		est.border_color = COR_OURO
 		est.set_border_width_all(2)
 		est.set_corner_radius_all(0)
@@ -164,7 +165,7 @@ func _montar() -> void:
 		Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	_raiz.add_child(_dica)
-	_fps = _rotulo(Dados.fonte, 8, Color(1, 1, 1, 0.92), Vector2(6, ALT - 16), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
+	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), Vector2(6, ALT - 16), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
 	add_child(_fps)  # fora de _raiz: o contador de fps aparece também com o menu fechado
 
@@ -179,7 +180,7 @@ func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin
 	l.add_theme_font_override("font", fonte)
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	l.add_theme_color_override("font_outline_color", Paleta.PRETO)
 	l.add_theme_constant_override("outline_size", 3)
 	return l
 

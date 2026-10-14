@@ -5,9 +5,7 @@ extends CanvasLayer
 ##     nunca de uma fórmula copiada aqui. Cada linha tem `id`, `rotulo`, `valor` (o texto), `bonus` (o que passa da base, em outra cor) e `n`
 ##     (os números crus, em ordem; é o que o teste v2_status compara com o que o jogo FAZ).
 ##  2. O desenho, em TRÊS modos (`_modo()`), todos com a moldura de pedra do HUD (hud/moldura_pedra.png). Títulos na Jersey 10, texto na
-##     Spleen 8x16 (`Dados.fonte_texto`) e NÚMEROS na Press Start 2P (a fonte do HUD). ATENÇÃO: o texto sai na Spleen em 11 e 12 px, FORA da grade de
-##     16 px que a regra das fontes do v2/LEIA-ME.md pede (o card é denso: em 16 px as colunas não cabem). Fica legível nos prints, mas é pendência
-##     (a Spleen 6x12, da mesma família, seria o tamanho certo). Tudo é desenhado num Control só (draw_*): nenhum nó por linha, nenhum nó criado ao atualizar.
+##     Spleen 8x16 em 16 px e NÚMEROS na Press Start 2P (a fonte do HUD). Tudo é desenhado num Control só (draw_*): nenhum nó por linha, nenhum nó criado ao atualizar.
 ## Onde aparece:
 ##  - "pausa": na tela "menu" da pausa, duas colunas ladeiam o menu (pausa.gd chama `na_pausa(true/false)`), por cima da pausa (camada 15).
 ##    Layout COMPLETO (nomes por extenso, duas linhas de números por golpe e as dicas de evolução);
@@ -21,6 +19,7 @@ extends CanvasLayer
 ## A entrada é `entrada(evento)`, chamada pelo mundo.gd (o SubViewport não recebe a entrada da janela, então este nó não tem _input).
 ## Criado pelo mundo.gd (uma linha no _ready), que guarda em `mundo.status`.
 
+const Paleta := preload("res://v2/paleta.gd")
 const Meta := preload("res://v2/meta.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
@@ -29,12 +28,12 @@ const LAYER_CENTRAL := 13  # acima do HUD (10), do resultado (12) e das cartas (
 const LAYER_PAUSA := 15  # acima do menu de pausa (camada 14) e do escurecimento dele
 const PERIODO := 0.25  # 4 Hz
 const ALFA_HUD := 0.92
-const TAM := 12  # texto (Spleen 8x16 escalada: ver a ATENÇÃO do cabeçalho)
-const TAM_NUM := 8  # números (Press Start 2P, a grade de 8 px do HUD)
-const TAM_P := 11  # linhas de apoio
-const TAM_CAB := 19  # títulos e cabeçalhos (Jersey 10; 19 é a grade da fonte)
-const TAM_NOME_PEQ := 14  # nome de golpe que não cabe no 19 (só quando precisa)
-const ALT_LINHA := 13.0
+const TAM := Paleta.TEXTO_TAMANHO
+const TAM_NUM := Paleta.NUMERO_PEQUENO
+const TAM_P := Paleta.TEXTO_TAMANHO
+const TAM_CAB := Paleta.TITULO_PEQUENO
+const TAM_NOME_PEQ := Paleta.TITULO_PEQUENO
+const ALT_LINHA := 18.0
 const ALT_CAB := 18.0
 const ALT_TITULO := 22.0
 const ALT_BLOCO_COMPACTO := 18.0  # ícone de 16 px e 2 de respiro: um golpe ou modificador por linha no HUD
@@ -54,14 +53,14 @@ const COLUNAS_PAUSA := [
 const COLUNAS_CENTRAL := [Rect2(14, 14, 296, 512), Rect2(332, 14, 296, 512), Rect2(650, 14, 296, 512)]
 const SECOES_DUAS := [["heroi", "partida", "santuario"], ["katana", "golpes"]]
 const SECOES_TRES := [["heroi", "partida", "santuario"], ["katana"], ["golpes"]]
-const COR_FUNDO_OPACO := Color(0.004, 0.012, 0.043, 1.0)  # o painel #01030b: por baixo da moldura (translúcida) quando o card tem de ser lido sem ver o que está atrás
-const COR_TITULO := Color(1.0, 0.86, 0.42)
-const COR_ROTULO := Color(0.72, 0.7, 0.83)
-const COR_VALOR := Color(1.0, 0.93, 0.66)
-const COR_BONUS := Color(0.55, 0.95, 0.62)
-const COR_SANTUARIO := Color(0.82, 0.68, 1.0)
-const COR_DICA := Color(0.6, 0.8, 0.98)
-const COR_LINHA := Color(0.55, 0.53, 0.68, 0.5)
+const COR_FUNDO_OPACO := Paleta.PAINEL
+const COR_TITULO := Paleta.OURO
+const COR_ROTULO := Paleta.TEXTO_SECUNDARIO
+const COR_VALOR := Paleta.VALOR
+const COR_BONUS := Paleta.BONUS
+const COR_SANTUARIO := Paleta.ALMA
+const COR_DICA := Paleta.DICA
+const COR_LINHA := Color(Paleta.DIVISOR, 0.5)
 ## Estilo de um trecho de texto (veja `_bloco`): 0 = apoio, 1 = número em destaque, 2 = bônus.
 const CORES_TRECHO := [COR_ROTULO, COR_VALOR, COR_BONUS]
 
@@ -343,7 +342,7 @@ static func _sec_heroi(m) -> Dictionary:
 	lin.append(_l("heroi.nivel", "Nível", "%d · XP %d/%d" % [h.nivel, roundi(h.xp), roundi(h.xp_proximo)], [h.nivel, h.xp, h.xp_proximo], "", true))
 	lin.append(_l("heroi.esquiva", "Esquiva", "%d seguidas" % seguidas, [seguidas, h.esq_dur]))
 	lin.append(_l("heroi.imune", "Imune na esquiva", "%s s" % _v(h.esq_inv, 2), [h.esq_inv]))
-	return _sec("heroi", "HERÓI", Color(1.0, 0.6, 0.55), lin)
+	return _sec("heroi", "HERÓI", Paleta.SECAO_HEROI, lin)
 
 
 static func _sec_katana(m) -> Dictionary:
@@ -428,7 +427,7 @@ static func _sec_katana(m) -> Dictionary:
 				str(d.nome),
 				str(d.get("curto", d.nome)),
 				str(d.get("icone", "")),
-				Color(0.8, 0.95, 1.0),
+				Paleta.DICA,
 				nivel_txt,
 				nivel_curto,
 				tr,
@@ -458,7 +457,7 @@ static func _sec_katana(m) -> Dictionary:
 				[float(ev.mult_onda)]
 			)
 		)
-	return _sec("katana", "KATANA (CLIQUE)", Color(1.0, 0.78, 0.45), lin)
+	return _sec("katana", "KATANA (CLIQUE)", Paleta.SECAO_KATANA, lin)
 
 
 static func _sec_golpes(m) -> Dictionary:
@@ -517,7 +516,7 @@ static func _sec_golpes(m) -> Dictionary:
 		)
 	if lin.is_empty():
 		lin.append({"tipo": "texto", "id": "arma.nenhum", "texto": "Nenhum ainda: eles vêm das cartas.", "estilo": 0, "n": []})
-	return _sec("golpes", "GOLPES AUTOMÁTICOS", Color(0.6, 0.8, 1.0), lin)
+	return _sec("golpes", "GOLPES AUTOMÁTICOS", Paleta.SECAO_GOLPES, lin)
 
 
 ## Os danos de uma lista, arredondados como o jogo os aplica e separados por "/" ("8/9"); repetidos em seguida viram um número só.
@@ -598,7 +597,7 @@ static func _sec_partida(m) -> Dictionary:
 	)
 	lin.append(_l("partida.onda", "Onda forte", str(c.diretor.ondas), [c.diretor.ondas]))
 	lin.append(_l("partida.proxima", "Próxima onda", "em %d s" % ceili(falta_onda), [falta_onda]))
-	return _sec("partida", "PARTIDA", Color(0.6, 0.95, 0.85), lin)
+	return _sec("partida", "PARTIDA", Paleta.SECAO_PARTIDA, lin)
 
 
 static func _sec_santuario(_m, meta_niveis: Variant) -> Dictionary:
@@ -788,7 +787,7 @@ func _altura(l: Dictionary, w: float) -> float:
 			if _m == "hud":
 				return ALT_BLOCO_COMPACTO
 			var wt := w - ICONE - 4.0
-			var alt := ICONE + 1.0 + 12.0 * float(_linhas_do_bloco(l, wt).size())
+			var alt := ICONE + 1.0 + ALT_LINHA * float(_linhas_do_bloco(l, wt).size())
 			if str(l.dica) != "" and not _sem_dicas:
 				alt += _alt_dica(str(l.dica), wt)
 			return alt + 3.0
@@ -844,7 +843,7 @@ func _desenhar_bloco_compacto(l: Dictionary, x: float, y: float, w: float) -> vo
 	_desenhar_icone(l, x, y)
 	var xt := x + ICONE + 4.0
 	var fim := x + w
-	var cor: Color = Color(l.cor).lerp(Color.WHITE, 0.35)
+	var cor: Color = Color(l.cor).lerp(Paleta.BRANCO, 0.35)
 	var larg_uma := _larg_trechos(l.uma)
 	var xx := fim - larg_uma
 	var xs := xx
@@ -865,7 +864,7 @@ func _desenhar_bloco(l: Dictionary, x: float, y: float, w: float) -> void:
 	_desenhar_icone(l, x, y)
 	var xt := x + ICONE + 4.0
 	var wt := w - ICONE - 4.0
-	var cor: Color = Color(l.cor).lerp(Color.WHITE, 0.35)
+	var cor: Color = Color(l.cor).lerp(Paleta.BRANCO, 0.35)
 	# o nome na Jersey 10 (19) com o nível por extenso (na pausa); no HUD o nível é curto; se o nome e o nível não cabem, o nome encolhe um degrau
 	var nome := str(l.rotulo)
 	var nivel := str(l.nivel_txt)
@@ -883,11 +882,11 @@ func _desenhar_bloco(l: Dictionary, x: float, y: float, w: float) -> void:
 		var xx := xt
 		for tr in linha_t:
 			xx += _desenhar_trecho(tr, xx, yy)
-		yy += 12.0
+		yy += ALT_LINHA
 	if str(l.dica) != "" and not _sem_dicas:
 		for linha_d in _linhas_dica(str(l.dica), wt):  # os números da dica na fonte dos números (a fonte de texto pequena confunde dígitos)
 			_misto(str(linha_d), xt, yy, TAM_P, COR_DICA, COR_DICA)
-			yy += 12.0
+			yy += ALT_LINHA
 
 
 ## Desenha um trecho de uma linha de números e devolve a largura. Estilo 1 e 2 são números (Press Start 2P); estilo 0 é texto de apoio.
@@ -914,14 +913,14 @@ func _larg_trecho(tr: Array) -> float:
 # que o Tab alterna (`alternar_detalhe`). O HUD compacto (C na partida) segue a tabela curta. Os números vêm das `secoes` (o mesmo `coletar`
 # que os testes conferem) e, no que é só barra (vida, XP e fôlego de agora, os multiplicadores), do herói.
 
-const TAM_GRANDE := 16  # números grandes (Press Start 2P, 2x a grade do HUD)
+const TAM_GRANDE := Paleta.NUMERO_GRANDE
 const ALT_STAT := 20.0
 const ALT_GOLPE := 20.0
-const COR_VIDA := Color(0.86, 0.22, 0.25)
-const COR_XP := Color(0.45, 0.75, 1.0)
-const COR_FOLEGO := Color(0.55, 0.95, 0.62)
-const COR_VAZIO := Color(0.16, 0.15, 0.24)
-const COR_BORDA := Color(0.04, 0.03, 0.08)
+const COR_VIDA := Paleta.VIDA
+const COR_XP := Paleta.XP
+const COR_FOLEGO := Paleta.FOLEGO
+const COR_VAZIO := Paleta.BARRA_VAZIA
+const COR_BORDA := Paleta.BARRA_BORDA
 ## Ícones 8x8 desenhados aqui (2x na tela = 16 px). "#" = cor do ícone, "o" = brilho, "." = vazio. Feitos para o card, sem arte de terceiros.
 const ICONES := {
 	"vida": [".##.##..", "#o####..", "######..", "######..", ".####...", "..##....", "........", "........"],
@@ -1092,7 +1091,7 @@ func _v_heroi(x: float, y: float, w: float, seco: bool) -> float:
 		_barra(Rect2(x + 80.0, y + 4.0, w - 80.0, 8.0), h.xp / maxf(1.0, h.xp_proximo), COR_XP)
 		_icone8("vida", Vector2(x, y + 22.0), COR_VIDA)  # vida: barra grossa com o número dentro
 		_barra(Rect2(x + 22.0, y + 22.0, w - 22.0, 16.0), h.vida / maxf(1.0, h.vida_max), COR_VIDA)
-		_num("%d/%d" % [roundi(h.vida), roundi(h.vida_max)], Vector2(x + 22.0, y + 26.0), w - 22.0, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Color.WHITE)
+		_num("%d/%d" % [roundi(h.vida), roundi(h.vida_max)], Vector2(x + 22.0, y + 26.0), w - 22.0, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Paleta.BRANCO)
 		_icone8("folego", Vector2(x, y + 44.0), COR_FOLEGO)  # fôlego em cargas (pips) e quantas esquivas seguidas dá
 		_pips(Vector2(x + 22.0, y + 48.0), h.folego, ceili(h.folego_max - 0.01), COR_FOLEGO)
 		_texto(Dados.fonte_texto, "fôlego", Vector2(x, y + 44.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
@@ -1224,7 +1223,9 @@ func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 	_tela.draw_rect(Rect2(x - 1.0, y - 1.0, 18.0, 18.0), cor.darkened(0.55))
 	_desenhar_icone(l, x, y)
 	var nome_w := w - 22.0 - 60.0 - num_w
-	_texto(Dados.fonte_texto, _cabe(str(l.nome_curto), nome_w), Vector2(x + 22.0, y + 2.0), nome_w, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor.lerp(Color.WHITE, 0.35))
+	_texto(
+		Dados.fonte_texto, _cabe(str(l.nome_curto), nome_w), Vector2(x + 22.0, y + 2.0), nome_w, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor.lerp(Paleta.BRANCO, 0.35)
+	)
 	var pipx := x + w - num_w - 56.0
 	var nc := str(l.nivel_curto)
 	if nc == "evo":
@@ -1294,7 +1295,7 @@ func _linhas_trechos(trechos: Array, w: float) -> Array:
 
 
 func _alt_dica(dica: String, w: float) -> float:
-	return 12.0 * float(_linhas_dica(dica, w).size()) + 1.0
+	return ALT_LINHA * float(_linhas_dica(dica, w).size()) + 1.0
 
 
 ## As linhas da dica (um parágrafo por evolução), quebradas em `w`, no máximo 3.

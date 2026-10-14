@@ -1,4 +1,6 @@
 extends CanvasLayer
+
+const Paleta := preload("res://v2/paleta.gd")
 ## Resultado da partida com as almas da v2 (camada 12, por cima da tela de resultado de telas.gd, que não é tocada). Quando a
 ## partida acaba (o herói cai, ou o sinal partida_terminou do mundo, se existir), grava a partida em v2/meta.gd e mostra as almas
 ## ganhas subindo e o saldo somando; as conquistas cumpridas aparecem embaixo. "CONTINUAR" (clique, Enter, Espaço, E ou A) vai
@@ -13,8 +15,10 @@ const SANTUARIO := "res://v2/altar.tscn"
 const TEMPO_ANIM := 1.4  # s para as almas subirem até o total
 const TEMPO_ACEITA := 0.8  # s antes de aceitar continuar (evita o clique de quem estava segurando o golpe)
 const TEMPO_AVISO := 2.6
-const COR_OURO := Color(1.0, 0.86, 0.42)
-const COR_ALMA := Color(0.8, 0.66, 1.0)
+const TAM_TITULO := Paleta.TITULO_GRANDE
+const TAM_TEXTO := Paleta.TEXTO_TAMANHO
+const COR_OURO := Paleta.OURO
+const COR_ALMA := Paleta.ALMA
 
 var mundo
 var aberto := false
@@ -45,7 +49,7 @@ func montar(m) -> void:
 	mundo = m
 	layer = 12  # por cima do HUD (camada 10): o resultado não divide a tela com o painel da partida
 	_fundo = ColorRect.new()
-	_fundo.color = Color(0.02, 0.015, 0.03, 0.97)  # quase opaco: o HUD e o mundo ficam só de pano de fundo
+	_fundo.color = Paleta.alfa(Paleta.PAINEL, 0.97)  # quase opaco: o HUD e o mundo ficam só de pano de fundo
 	_fundo.size = Vector2(LARG, ALT)
 	_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fundo.visible = false
@@ -54,33 +58,33 @@ func montar(m) -> void:
 	_res.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_res.visible = false
 	add_child(_res)
-	_titulo = _rotulo("", 60, true, Color(1.0, 0.38, 0.32), HORIZONTAL_ALIGNMENT_CENTER)
+	_titulo = _rotulo("", TAM_TITULO, true, Paleta.PERIGO, HORIZONTAL_ALIGNMENT_CENTER)
 	_titulo.position = Vector2(0, 52)
 	_titulo.size = Vector2(LARG, 72)
 	_res.add_child(_titulo)
-	_linhas = _rotulo("Tempo\nAbates\nMaior combo\nNível", 16, false, Color(0.8, 0.82, 0.95), HORIZONTAL_ALIGNMENT_LEFT)
+	_linhas = _rotulo("Tempo\nAbates\nMaior combo\nNível", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_LEFT)
 	_linhas.position = Vector2(250, 150)
 	_linhas.size = Vector2(230, 140)
 	_linhas.add_theme_constant_override("line_spacing", 12)
 	_res.add_child(_linhas)
-	_valores = _rotulo("", 16, false, Color(1.0, 0.95, 0.75), HORIZONTAL_ALIGNMENT_RIGHT)
+	_valores = _rotulo("", TAM_TEXTO, false, Paleta.VALOR, HORIZONTAL_ALIGNMENT_RIGHT)
 	_valores.position = Vector2(480, 150)
 	_valores.size = Vector2(230, 140)
 	_valores.add_theme_constant_override("line_spacing", 12)
 	_res.add_child(_valores)
-	_almas_tit = _rotulo("ALMAS GANHAS", 37, true, COR_ALMA, HORIZONTAL_ALIGNMENT_CENTER)
+	_almas_tit = _rotulo("ALMAS GANHAS", Paleta.TITULO_MEDIO, true, COR_ALMA, HORIZONTAL_ALIGNMENT_CENTER)
 	_almas_tit.position = Vector2(0, 302)
 	_almas_tit.size = Vector2(LARG, 40)
 	_res.add_child(_almas_tit)
-	_almas_num = _rotulo("+0", 56, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_almas_num = _rotulo("+0", Paleta.TITULO_GRANDE, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
 	_almas_num.position = Vector2(0, 340)
 	_almas_num.size = Vector2(LARG, 64)
 	_res.add_child(_almas_num)
-	_saldo = _rotulo("", 16, false, Color(0.9, 0.9, 1.0), HORIZONTAL_ALIGNMENT_CENTER)
+	_saldo = _rotulo("", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
 	_saldo.position = Vector2(0, 408)
 	_saldo.size = Vector2(LARG, 20)
 	_res.add_child(_saldo)
-	_novas = _rotulo("", 16, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_novas = _rotulo("", TAM_TEXTO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
 	_novas.position = Vector2(0, 432)
 	_novas.size = Vector2(LARG, 40)
 	_novas.add_theme_constant_override("line_spacing", 4)
@@ -94,12 +98,12 @@ func montar(m) -> void:
 	caixa.size = _botao.size
 	caixa.add_theme_stylebox_override("panel", _estilo_botao())
 	_botao.add_child(caixa)
-	var txt := _rotulo("CONTINUAR", 16, false, Color(1.0, 0.95, 0.7), HORIZONTAL_ALIGNMENT_CENTER)
+	var txt := _rotulo("CONTINUAR", TAM_TEXTO, false, Paleta.FOCO, HORIZONTAL_ALIGNMENT_CENTER)
 	txt.position = Vector2(0, 10)
 	txt.size = _botao.size
 	_botao.add_child(txt)
 	_res.add_child(_botao)
-	_aviso = _rotulo("", 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_aviso = _rotulo("", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
 	_aviso.position = Vector2(0, 96)
 	_aviso.size = Vector2(LARG, 40)
 	_aviso.visible = false
@@ -114,7 +118,7 @@ func _rotulo(texto: String, tam: int, titulo: bool, cor: Color, alin: Horizontal
 	l.add_theme_font_override("font", Dados.fonte_titulo if titulo else Dados.fonte_texto)
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	l.add_theme_color_override("font_outline_color", Paleta.PRETO)
 	l.add_theme_constant_override("outline_size", 4 if titulo else 2)
 	l.horizontal_alignment = alin
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -123,7 +127,7 @@ func _rotulo(texto: String, tam: int, titulo: bool, cor: Color, alin: Horizontal
 
 func _estilo_botao() -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color = Color(0.07, 0.065, 0.1, 0.97)
+	s.bg_color = Paleta.alfa(Paleta.CARTAO, 0.97)
 	s.border_color = COR_OURO
 	s.set_border_width_all(2)
 	s.set_corner_radius_all(0)
@@ -198,7 +202,7 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 	_res.visible = true
 	var venceu := bool(r.get("venceu", false))
 	_titulo.text = "VITÓRIA" if venceu else "VOCÊ CAIU"
-	_titulo.add_theme_color_override("font_color", COR_OURO if venceu else Color(1.0, 0.38, 0.32))
+	_titulo.add_theme_color_override("font_color", COR_OURO if venceu else Paleta.PERIGO)
 	var seg := int(float(r.get("tempo", 0.0)))
 	_valores.text = "%02d:%02d\n%d\nx%d\n%d" % [floori(seg / 60.0), seg % 60, int(r.get("abates", 0)), int(r.get("maior_combo", 0)), int(r.get("nivel", 1))]
 	var linhas: Array = []
