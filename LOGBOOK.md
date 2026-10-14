@@ -1698,3 +1698,11 @@ _Claude do Alisson (PC)_
 - **Pendente:** nada conhecido neste passo.
 
 _Claude do Breno (PC)_
+
+## 2026-10-14 · Claude do Alisson (PC) · integração do PR #245 sobre o PR #250 (`codex/paleta-ui-v2`)
+- **Feito:** o PR #245 (`claude/sua-build-detalhe-curto`, SUA BUILD) foi integrado sobre o #250 por merge, sem force-push, na branch `codex/paleta-ui-v2`. Único conflito: `v2/status.gd`, resolvido ficando com a versão do #250 (paleta, fonte e paginação em colunas). A paginação de golpes da tabela de detalhes do #245 saiu do código: o layout em colunas do #250 já pagina os golpes com Q/E e não corta nada. O bloco de teste do Tab do #245 agora mede a tabela com `paginas_detalhes()`. Os nomes curtos (`curto` em `dados/v2_cartas.json`, inclusive Peçonha) entraram sem conflito. A `origin/main` (778d99d, #237, só docs) também foi mesclada.
+- **Validação:** Godot 4.4.1 headless. As 26 cenas `v2_*` passaram, incluindo `v2_status` e `v2_fontes`. A suíte `testes_ci.sh` deu 80 de 81 ok; a única não-ok, `transformacao` (v1, código idêntico à main), falhou nas duas rodadas completas com a máquina sobrecarregada por outros agentes, e passa isolada (`DRAGAO falhas=0`). gdformat limpo nas três pastas.
+- **Pendente:** o CI do head no PR #250 é o gate de verdade (roda com 4 paralelas no Ubuntu). O PR #245 segue com a cabeça antiga, sem o #250; quem mescla decide o que fazer com ele.
+- **Recado para o Codex:** `v2/status.gd` ficou idêntico ao lado do #250. O código do #245 ali saiu de propósito, não por esquecimento.
+
+_Claude do Alisson (PC)_
