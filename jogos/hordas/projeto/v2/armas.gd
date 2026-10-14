@@ -875,6 +875,12 @@ func lancar_lanca(origem: Vector2, dir: Vector2, dano: float) -> void:
 		_nova_onda(origem + dir * 20.0, dir.rotated(float(ang)), 1, float(cd.get("vel", 380.0)), float(cd.get("alcance", 190.0)), dano, 12.0)
 
 
+## Uma onda em linha que atravessa os monstros, pedida de fora das cartas (o Corte do Crepúsculo, v2/ultimate.gd): dano, velocidade, alcance e
+## largura vêm dos dados do ultimate, sem depender da carta "onda".
+func lancar_onda_externa(origem: Vector2, dir: Vector2, dano: float, vel: float, alcance: float, larg: float) -> void:
+	_nova_onda(origem + dir * 14.0, dir, 0, vel, alcance, dano, larg)
+
+
 func _nova_onda(p: Vector2, dir: Vector2, tipo: int, vel: float, alcance: float, dano: float, larg: float) -> void:
 	var i := _livre_onda()
 	_id_proj += 1

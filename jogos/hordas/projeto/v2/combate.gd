@@ -23,6 +23,7 @@ const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
 const Ruptura := preload("res://v2/ruptura.gd")
 const Escudo := preload("res://v2/escudo.gd")
+const Ultimate := preload("res://v2/ultimate.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
@@ -49,6 +50,7 @@ var baus
 var chefes
 var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
+var ultimate  # o ultimate da tecla Q (v2/ultimate.gd; qual ultimate cada herói tem vem de dados/v2_ultimate.json)
 var fim_emitido := false  # partida_terminou já saiu
 var venceu := false
 
@@ -115,6 +117,8 @@ func montar(m) -> void:
 	ruptura.montar(self, m.glow)
 	escudo = Escudo.new()
 	escudo.montar(self, m.glow)
+	ultimate = Ultimate.new()
+	ultimate.montar(self, m.glow)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
@@ -210,6 +214,7 @@ func atualizar(dt: float) -> void:
 		chefes.atualizar(dt)
 		avisos.atualizar(dt)
 		ruptura.atualizar(dt)
+		ultimate.atualizar(dt)
 		baus.atualizar(dt)
 	var o0 := Time.get_ticks_usec()
 	orbes.atualizar(dt, h.pos + Vector2(0, -8), h.alcance_ima())
@@ -337,6 +342,7 @@ func efeitos(dt: float) -> void:
 	fx.atualizar(dt)
 	ruptura.efeitos(dt)
 	escudo.efeitos(dt)
+	ultimate.efeitos(dt)
 	telas.atualizar(dt)
 
 
@@ -346,11 +352,11 @@ func efeitos(dt: float) -> void:
 ## Os números do golpe da katana COMO O JOGO OS USA (golpe_comecou e golpear leem daqui; o card de status, status.gd, também).
 ## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance e arco com a área.
 func dano_do_passo(passo: Dictionary) -> float:
-	return float(passo.dano) * mundo.heroi.m_dano
+	return float(passo.dano) * mundo.heroi.m_dano * ultimate.k_dano()
 
 
 func alcance_do_passo(passo: Dictionary) -> float:
-	return float(passo.alcance) * mundo.heroi.m_area
+	return float(passo.alcance) * mundo.heroi.m_area * ultimate.k_alcance()
 
 
 func arco_do_passo(passo: Dictionary) -> float:
@@ -406,6 +412,8 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	var cor := _cor(passo.cor)
 	if h.contragolpe_t > 0.0:  # a janela do contragolpe (depois da ruptura): o corte sai alaranjado
 		cor = cor.lerp(Color(1.0, 0.55, 0.2), 0.6)
+	if ultimate.ativo():  # o Corte do Crepúsculo: o corte sai na cor do ultimate
+		cor = cor.lerp(ultimate.cor_ult(), 0.7)
 	var alc: float = alcance_do_passo(passo)
 	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
@@ -443,7 +451,9 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var dano := maxi(1, roundi(d))
 		var longe: Vector2 = rel.normalized() if dist > 0.5 else dir
 		var emp: Vector2 = (dir * 0.55 + longe * 0.45).normalized() * float(passo.empurrao) * (1.25 if crit else 1.0)
+		var vida_antes: float = m.vida
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0))
+		ultimate.dano_causado(minf(float(dano), maxf(vida_antes, 0.0)))
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
 			var raio_e: float = float(cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
@@ -465,6 +475,8 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		armas.lancar_onda(origem, dir, armas.dano_da_onda(dano_do_passo(passo)))
 	elif passo.nome == "estocada" and float(armas.mods.fura) > 0.0:
 		armas.lancar_lanca(origem, dir, armas.dano_da_lanca(dano_do_passo(passo)))
+	if ultimate.ativo():  # o Corte do Crepúsculo: cada golpe solta uma onda que atravessa
+		ultimate.onda_do_golpe(origem, dir, dano_do_passo(passo))
 	processar_mortes()
 	if n > 0:
 		hit_stop(parada)
@@ -490,6 +502,7 @@ func matar(m) -> void:
 	fx.estouro(c, Color(0.9, 0.9, 0.85), int(cfg.morte.particulas) * (3 if grande else 1))
 	audio.tocar("morte", randf_range(0.9, 1.12) * (0.7 if grande else 1.0), -1.0, 0.03)
 	mundo.abates += 1
+	ultimate.abate(m)
 	mundo.combo += 1
 	combo_t = float(cfg.combo_abates.janela)
 	mundo.maior_combo = maxi(mundo.maior_combo, mundo.combo)
@@ -517,7 +530,9 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	if not m.vivo or m.morrendo:
 		return false
 	var dn := maxi(1, roundi(dano))
+	var vida_antes: float = m.vida
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
+	ultimate.dano_causado(minf(float(dn), maxf(vida_antes, 0.0)))
 	ferimentos += 1
 	if numero:
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, false)
@@ -616,6 +631,7 @@ func heroi_morreu() -> void:
 	fx.onda(h.pos + Vector2(0, -10), Color(1.0, 0.4, 0.35, 0.9), 60.0, 0.5)
 	mundo.cam.tremer(3.0, 0.3)
 	hit_stop(0.18)
+	ultimate.limpar()  # morrer zera a carga e o ultimate ativo
 	jogo = "morrendo"
 	camera_lenta("morte", 1.3, 0.25)
 
@@ -740,6 +756,7 @@ func limpar_partida() -> void:
 	avisos.limpar()
 	ruptura.limpar()
 	escudo.limpar()
+	ultimate.limpar()
 	baus.limpar()
 	elites.zerar()
 	chefes.zerar()
@@ -768,7 +785,7 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, avisos, ruptura, escudo, elites, baus, chefes]:
+	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, avisos, ruptura, escudo, ultimate, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -784,6 +801,7 @@ func liberar() -> void:
 	avisos = null
 	ruptura = null
 	escudo = null
+	ultimate = null
 	elites = null
 	baus = null
 	chefes = null

@@ -1,5 +1,5 @@
 extends Control
-## Dois slots de habilidade no HUD. E lê somente os campos publicados pelo herói; Q fica explicitamente reservada.
+## Dois slots de habilidade no HUD. E e Q leem somente os campos publicados pelo herói (rup_* e ult_*); sem os campos de Q (ou herói sem ultimate), Q fica apagada.
 
 const TAM_CARD := Vector2(86.0, 74.0)
 const ESPACO_CARD := 2.0
@@ -14,7 +14,14 @@ const FUNDO_CARD := Color(0.035, 0.035, 0.045, 0.88)
 var estado_e := "indisponivel"  # indisponivel | ruptura
 var e_disponivel := false
 var e_pronta := false
-var q_implementada := false  # Q nunca ganha disponibilidade sem uma mecânica publicada.
+var q_implementada := false  # Q só ganha disponibilidade se o herói publicar os campos ult_* e tiver um ultimate (ult_id)
+var q_pronta := false  # carga cheia: o slot pisca
+var q_ativa := false  # o ultimate está ativo: o slot mostra o tempo que sobra
+var q_carga_px := 0  # 0 a 20
+var q_percentual := 0
+var q_restante_px := 0  # 0 a 20 (a fração do tempo que sobra)
+var q_restante_s := 0.0
+var q_cor := Color(0.74, 0.5, 1.0)
 var carga_px := 0
 var recarga_px := 0
 var contragolpe_px := 0
@@ -64,7 +71,22 @@ func sincronizar(heroi) -> void:
 		_heroi_id = id_heroi
 	e_disponivel = _tem_propriedade(heroi, "rup_carga")
 	estado_e = "ruptura" if e_disponivel else "indisponivel"
-	q_implementada = false
+	q_implementada = _tem_propriedade(heroi, "ult_carga") and str(_campo(heroi, "ult_id", "")) != ""
+	q_pronta = false
+	q_ativa = false
+	q_carga_px = 0
+	q_percentual = 0
+	q_restante_px = 0
+	q_restante_s = 0.0
+	if q_implementada:
+		var qc := clampf(float(heroi.get("ult_carga")), 0.0, 1.0)
+		q_carga_px = roundi(qc * 20.0)
+		q_percentual = floori(qc * 100.0)  # 99,6% ainda não é 100%: só o pronto mostra 100
+		q_ativa = _campo(heroi, "ult_ativo", false) == true
+		q_pronta = _campo(heroi, "ult_pronto", false) == true and not q_ativa
+		q_restante_s = maxf(float(_campo(heroi, "ult_t", 0.0)), 0.0)
+		q_restante_px = ceili(q_restante_s / maxf(float(_campo(heroi, "ult_dur", 1.0)), 0.001) * 20.0) if q_ativa else 0
+		q_cor = _campo(heroi, "ult_cor", q_cor)
 	e_pronta = false
 	carga_px = 0
 	recarga_px = 0
@@ -90,9 +112,28 @@ func sincronizar(heroi) -> void:
 		negada = float(_campo(heroi, "rup_nega_t", 0.0)) > 0.0
 	var rotulo := _rotulo_e()
 	var fase_perfeita := int(Time.get_ticks_msec() / 50.0) % 2 if perfeita else 0
+	var fase_q := int(Time.get_ticks_msec() / 120.0) % 2 if q_pronta else (int(Time.get_ticks_msec() / 80.0) % 2 if q_ativa and q_restante_s < 1.0 else 0)
 	var nova_chave := (
-		"%s|%s|%s|%d|%d|%d|%d|%s|%s|%s|%d"
-		% [estado_e, e_pronta, q_implementada, carga_px, carga_percentual, recarga_px, contragolpe_px, perfeita, negada, rotulo, fase_perfeita]
+		"%s|%s|%s|%d|%d|%d|%d|%s|%s|%s|%d|%s|%s|%d|%d|%d|%d"
+		% [
+			estado_e,
+			e_pronta,
+			q_implementada,
+			carga_px,
+			carga_percentual,
+			recarga_px,
+			contragolpe_px,
+			perfeita,
+			negada,
+			rotulo,
+			fase_perfeita,
+			q_pronta,
+			q_ativa,
+			q_carga_px,
+			q_percentual,
+			q_restante_px,
+			fase_q
+		]
 	)
 	if nova_chave != _chave:
 		_chave = nova_chave
@@ -108,7 +149,10 @@ func _draw() -> void:
 func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var card := Rect2(origem, TAM_CARD)
 	draw_rect(card, FUNDO_CARD)
-	_moldura(card, BORDA if tecla == "E" and e_disponivel else DESATIVADO)
+	var cor_card := BORDA if tecla == "E" and e_disponivel else DESATIVADO
+	if tecla == "Q" and q_implementada:
+		cor_card = _cor_moldura_q()
+	_moldura(card, cor_card)
 	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, 1.0)
 	var icone := Rect2(icon_pos, TAM_ICON)
 	var cor := CARGA_LARANJA if tecla == "E" and e_pronta else DESATIVADO
@@ -140,9 +184,7 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		draw_polyline(PackedVector2Array([p + Vector2(26, 30), p + Vector2(33, 26), p + Vector2(37, 27)]), cor, 1.5)
 
 	else:
-		# Q usa um selo apagado, sem sugerir uma habilidade pronta.
-		draw_arc(icon_pos + Vector2(24.0, 23.0), 13.0, 0.0, TAU, 24, DESATIVADO, 2.0)
-		draw_line(icon_pos + Vector2(17.0, 23.0), icon_pos + Vector2(31.0, 23.0), DESATIVADO, 2.0)
+		_desenhar_icone_q(icon_pos, icone)
 	if tecla == "E" and e_disponivel:
 		var f := clampf(float(carga_px) / 20.0, 0.0, 1.0)
 		if recarga_px > 0:
@@ -154,20 +196,73 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 			draw_rect(Rect2(icon_pos + Vector2(2.0, 43.0), Vector2(44.0 * f, 3.0)), cor)
 		if contragolpe_px > 0:
 			draw_rect(Rect2(icon_pos + Vector2(2.0, 45.0), Vector2(44.0 * float(contragolpe_px) / 20.0, 2.0)), Color(1.0, 0.48, 0.18))
-	var rotulo := "EM BREVE" if tecla == "Q" else _rotulo_e()
-	draw_string(
-		fonte,
-		Vector2(origem.x, 63.0),
-		rotulo,
-		HORIZONTAL_ALIGNMENT_CENTER,
-		TAM_CARD.x,
-		10 if tecla == "Q" else 12,
-		cor if tecla == "E" and e_disponivel else DESATIVADO
-	)
+	var rotulo := _rotulo_q() if tecla == "Q" else _rotulo_e()
+	var cor_rotulo := cor if tecla == "E" and e_disponivel else DESATIVADO
+	if tecla == "Q" and q_implementada:
+		cor_rotulo = q_cor.lightened(0.3) if (q_pronta or q_ativa) else Color(0.62, 0.6, 0.66)
+	draw_string(fonte, Vector2(origem.x, 63.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, 10 if tecla == "Q" and not q_implementada else 12, cor_rotulo)
 	var selo := Rect2(origem + Vector2((TAM_CARD.x - 16.0) * 0.5, 64.0), Vector2(16.0, 10.0))
 	draw_rect(selo, Color(0.025, 0.025, 0.03, 0.98))
-	_moldura(selo, cor if tecla == "E" and e_disponivel else DESATIVADO)
-	draw_string(fonte, selo.position + Vector2(4.0, 9.0), tecla, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, cor if tecla == "E" and e_disponivel else DESATIVADO)
+	var cor_selo := cor if tecla == "E" and e_disponivel else DESATIVADO
+	if tecla == "Q" and q_implementada:
+		cor_selo = q_cor if (q_pronta or q_ativa) else BORDA
+	_moldura(selo, cor_selo)
+	draw_string(fonte, selo.position + Vector2(4.0, 9.0), tecla, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, cor_selo)
+
+
+## A cor da moldura do slot Q: apagada com carga a meio, cor do herói quando pronta (pisca) ou ativa.
+func _cor_moldura_q() -> Color:
+	if q_pronta:
+		return q_cor.lightened(0.5) if int(Time.get_ticks_msec() / 120.0) % 2 == 0 else q_cor
+	if q_ativa:
+		return q_cor.lightened(0.5) if q_restante_s >= 1.0 or int(Time.get_ticks_msec() / 80.0) % 2 == 0 else q_cor
+	return BORDA
+
+
+func _rotulo_q() -> String:
+	if not q_implementada:
+		return "EM BREVE"
+	if q_ativa:
+		return "%.1f S" % q_restante_s
+	if q_pronta:
+		return "PRONTO"
+	return "%d%%" % q_percentual
+
+
+## O ícone do Q: o selo (aro e traço) com a carga enchendo de baixo para cima na cor do herói; pronto pisca; ativo mostra o tempo que sobra descendo.
+func _desenhar_icone_q(icon_pos: Vector2, icone: Rect2) -> void:
+	var centro := icon_pos + Vector2(24.0, 23.0)
+	if not q_implementada:
+		draw_arc(centro, 13.0, 0.0, TAU, 24, DESATIVADO, 2.0)
+		draw_line(icon_pos + Vector2(17.0, 23.0), icon_pos + Vector2(31.0, 23.0), DESATIVADO, 2.0)
+		return
+	var cor_q := q_cor
+	var fundo_alfa := 0.0
+	if q_pronta:
+		var fase := int(Time.get_ticks_msec() / 120.0) % 2 == 0
+		cor_q = q_cor.lightened(0.55) if fase else q_cor
+		fundo_alfa = 0.5 if fase else 0.28
+	elif q_ativa:
+		fundo_alfa = 0.34
+	elif q_carga_px > 0:
+		fundo_alfa = 0.0
+	else:
+		cor_q = DESATIVADO
+	draw_rect(icone, FUNDO)
+	_moldura(icone, cor_q if (q_pronta or q_ativa) else (q_cor.darkened(0.2) if q_carga_px > 0 else DESATIVADO))
+	# preenchimento: carga de baixo para cima (cheia e pronta/ativa: o quadro todo; ativa: o tempo que sobra)
+	var frac := 1.0 if q_pronta else (float(q_restante_px) / 20.0 if q_ativa else float(q_carga_px) / 20.0)
+	if frac > 0.0:
+		var alt := 46.0 * clampf(frac, 0.0, 1.0)
+		draw_rect(Rect2(icon_pos + Vector2(1.0, 47.0 - alt), Vector2(46.0, alt)), Color(q_cor.r, q_cor.g, q_cor.b, 0.55 if (q_pronta or q_ativa) else 0.4))
+		draw_rect(Rect2(icon_pos + Vector2(1.0, 47.0 - alt), Vector2(46.0, 1.0)), Color(cor_q.r, cor_q.g, cor_q.b, 0.95))
+	if fundo_alfa > 0.0:
+		draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(46.0, 46.0)), Color(cor_q.r, cor_q.g, cor_q.b, fundo_alfa * 0.5))
+	# o selo do crepúsculo: aro, lâmina diagonal e meia-lua
+	var traco := Color.WHITE if (q_pronta or q_ativa) else Color(0.9, 0.88, 0.95, 0.75)
+	draw_arc(centro, 13.0, 0.0, TAU, 24, traco, 2.0)
+	draw_line(centro + Vector2(-9.0, 9.0), centro + Vector2(9.0, -9.0), traco, 2.0)
+	draw_arc(centro, 8.0, -0.4, 1.2, 8, Color(traco.r, traco.g, traco.b, 0.7), 1.5)
 
 
 func _rotulo_e() -> String:

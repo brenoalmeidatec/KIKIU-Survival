@@ -1,0 +1,26 @@
+{
+	"_ajuda": "O ULTIMATE da v2 (tecla Q ou RB do controle), no padrão Overwatch: botão direito = secundário (dados/v2_secundario.json), E = habilidade com recarga (a ruptura), Q = ultimate. Cada herói tem uma CARGA de 0 a 100 que enche com DANO CAUSADO (golpes da katana, armas e a ruptura) e um pouco com ABATES; NÃO enche com o tempo parado nem enquanto o ultimate está ativo (enche_ativo). Q com a carga em 100 dispara; a carga zera ao usar e também ao morrer, reiniciar e voltar ao santuário; abrir cartas, baú ou a pausa NÃO mexe nela. herois mapeia a chave do herói (a mesma de `chave` no herói) para o id do ultimate dele, como o secundário (id vazio ou desconhecido = herói sem ultimate, o Q não faz nada): um herói novo só precisa de uma linha aqui, de um bloco com o id e do código do efeito em v2/ultimate.gd. CARGA: max (100); por_dano (pontos de carga por ponto de DANO REAL, o dano que passa da vida que o monstro tinha não conta); por_abate (pontos por abate); mult_elite e mult_chefe (multiplicam o por_abate); max_por_acerto (teto de carga que um único acerto dá, para o chefe não encher tudo de uma vez). Ritmo-alvo: o primeiro ultimate fica pronto por volta de 90 a 120 s de luta normal; para mudar o ritmo mexa em por_dano (e por_abate), não na duração. CORTE DO CREPUSCULO (hazaki, bloco corte_do_crepusculo): dur = s com a katana fortalecida (corre no tempo do mundo); alcance e dano = multiplicadores sobre o golpe da katana (alcance x1,8, dano x1,6); onda = a onda em linha que cada golpe solta e que atravessa os monstros (dano_pct: percentual do dano do golpe; vel px/s; alcance px; largura px); imune_empurrao = o herói não leva empurrão, só dano; combo_firme = o combo de 3 não reinicia por demora; ativar = hit_stop (s) e camera_lenta (dur s, escala do tempo) ao disparar, e tremor (px); cor = rgb 0 a 1 da aura, do corte e do corpo; aura = raio do anel no chão (px).",
+	"padrao": "",
+	"herois": {"hazaki": "corte_do_crepusculo"},
+	"carga": {
+		"max": 100,
+		"por_dano": 0.012,
+		"por_abate": 0.2,
+		"mult_elite": 6,
+		"mult_chefe": 25,
+		"max_por_acerto": 8,
+		"enche_ativo": false
+	},
+	"corte_do_crepusculo": {
+		"nome": "Corte do Crepúsculo",
+		"dur": 6.0,
+		"alcance": 1.8,
+		"dano": 1.6,
+		"onda": {"dano_pct": 55, "vel": 430, "alcance": 170, "largura": 34},
+		"imune_empurrao": true,
+		"combo_firme": true,
+		"ativar": {"hit_stop": 0.14, "camera_lenta_dur": 0.3, "camera_lenta_escala": 0.3, "tremor": 3.0},
+		"cor": [0.74, 0.5, 1.0],
+		"aura": 26
+	}
+}

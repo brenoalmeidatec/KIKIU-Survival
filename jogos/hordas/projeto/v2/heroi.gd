@@ -19,9 +19,11 @@ extends "res://v2/ator.gd"
 ##    (evento) pede, a POSSE (polling) carrega. Estado.CARGA anda a 45%, não corre nem golpeia, NÃO é invencível e apanhar não cancela. Soltar
 ##    com carga mínima dispara em 360 graus (soltura perfeita na janela depois da carga cheia). Cancelam sem disparar e sem gastar recarga: a
 ##    esquiva, a pausa/escolha/baú/resultado (combate.jogo e pausado), a morte e o salto de relógio (ESC e perda de foco).
-##  - ULTIMATE (ação "ultimate", tecla Q ou RB): RESERVADO, ainda sem mecânica (só a ação de entrada e um slot vazio no HUD).
+##  - ULTIMATE (ação "ultimate", tecla Q ou RB; v2/ultimate.gd, números em dados/v2_ultimate.json): a carga enche com o dano causado e dispara com
+##    Q quando está cheia. O do Hazaki é o Corte do Crepúsculo (katana fortalecida por 6 s, sem empurrão no herói, combo que não reinicia por demora).
 ## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), e da
-## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max.
+## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max, e do ultimate ult_carga (0 a 1),
+## ult_pronto, ult_ativo, ult_t, ult_dur, ult_cor, ult_id e ult_nome (publicados por v2/ultimate.gd).
 
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA }  # CARGA no fim: nada é renumerado
@@ -102,6 +104,15 @@ var contragolpe_max := 1.5  # a janela cheia, para o HUD
 var rup_pedido_t := 0.0  # aperto guardado
 var rup_disparos := 0  # testes
 var rup_cancelados := 0  # testes
+# ultimate (tecla Q): publicado por v2/ultimate.gd para o HUD ler
+var ult_id := ""  # id do ultimate deste herói ("" = não tem)
+var ult_nome := ""
+var ult_carga := 0.0  # fração da carga (0 a 1)
+var ult_pronto := false  # carga cheia e nada ativo: o slot do HUD pisca
+var ult_ativo := false
+var ult_t := 0.0  # s que faltam do ultimate ativo
+var ult_dur := 1.0  # a duração cheia, para o HUD
+var ult_cor := Color(0.74, 0.5, 1.0)
 var _rup_us := 0  # Time.get_ticks_usec() do último quadro da carga (salto de relógio)
 var _rup_apos_acerto := false  # o aperto veio depois do acerto do golpe: cancela o resto do golpe (antes do acerto, espera o golpe acabar)
 var _rup_tique := 0  # quantos marcos de som a carga atual já tocou
@@ -217,6 +228,14 @@ func ruptura() -> void:
 		rup_pedido_t += maxf(golpe_dur - golpe_t, 0.0)
 
 
+## O botão do ultimate foi apertado (o mundo repassa o evento; os testes também chamam). Dispara se a carga está cheia; senão não faz nada.
+func ultimate() -> bool:
+	var c = mundo.combate
+	if c.ultimate == null or _pausa_aberta() or estado == Estado.MORTO:
+		return false
+	return c.ultimate.acionar(self)
+
+
 func entrada_evento(e: InputEvent) -> void:
 	if e.is_action_pressed("atacar", false, true):
 		atacar()
@@ -226,6 +245,8 @@ func entrada_evento(e: InputEvent) -> void:
 		# o gatilho analógico manda um evento a cada mexida: só a borda (o aperto de verdade) conta, senão o "negado" repetiria
 		if not (e is InputEventJoypadMotion) or Input.is_action_just_pressed("ruptura"):
 			ruptura()
+	elif InputMap.has_action("ultimate") and e.is_action_pressed("ultimate", false, true):
+		ultimate()
 
 
 func vivo() -> bool:
@@ -288,6 +309,8 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 	invenc = float(mundo.combate.cfg.heroi.invencivel)
 	var d := pos - de
 	emp = (d.normalized() if d.length() > 0.5 else -dir_olhar) * float(mundo.combate.cfg.heroi.recuo_dano)
+	if mundo.combate.ultimate != null and mundo.combate.ultimate.imune_empurrao():  # o Corte do Crepúsculo: leva o dano, não o empurrão
+		emp = Vector2.ZERO
 	if estado == Estado.GOLPE:  # apanhar corta o golpe e o combo
 		estado = Estado.LIVRE
 		combo_t = 0.0
@@ -366,7 +389,7 @@ func atualizar(dt: float) -> void:
 
 
 func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
-	if combo_t > 0.0:
+	if combo_t > 0.0 and not (mundo.combate.ultimate != null and mundo.combate.ultimate.combo_firme()):  # no Corte do Crepúsculo o combo não reinicia por demora
 		combo_t -= dt
 		if combo_t <= 0.0:
 			proximo = 0
@@ -768,6 +791,8 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.modulate = Color(1, 0.55, 0.55, 0.38)
 	elif estado == Estado.CARGA:
 		sprite.modulate = Color.WHITE.lerp(Color(1.0, 0.85, 0.65), rup_carga)  # o corpo esquenta com a carga
+	elif ult_ativo:  # o ultimate ativo: o corpo respira na cor do herói
+		sprite.modulate = Color.WHITE.lerp(ult_cor.lightened(0.35), 0.35 + 0.15 * sin(Time.get_ticks_msec() / 1000.0 * 10.0))
 	else:
 		sprite.modulate = Color.WHITE
 

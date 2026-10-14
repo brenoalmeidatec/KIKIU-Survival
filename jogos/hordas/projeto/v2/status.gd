@@ -343,6 +343,10 @@ static func _sec_heroi(m) -> Dictionary:
 	lin.append(_l("heroi.nivel", "Nível", "%d · XP %d/%d" % [h.nivel, roundi(h.xp), roundi(h.xp_proximo)], [h.nivel, h.xp, h.xp_proximo], "", true))
 	lin.append(_l("heroi.esquiva", "Esquiva", "%d seguidas" % seguidas, [seguidas, h.esq_dur]))
 	lin.append(_l("heroi.imune", "Imune na esquiva", "%s s" % _v(h.esq_inv, 2), [h.esq_inv]))
+	if h.ult_id != "":  # o ultimate do herói (Q) e a carga de agora; só no card cheio
+		var ativo: bool = h.ult_ativo
+		var vu := "%.1f s" % h.ult_t if ativo else ("pronto" if h.ult_pronto else "%d%%" % floori(h.ult_carga * 100.0))
+		lin.append(_l("heroi.ultimate", "Ultimate (Q)", vu, [h.ult_carga, h.ult_t], "", true))
 	return _sec("heroi", "HERÓI", Color(1.0, 0.6, 0.55), lin)
 
 
