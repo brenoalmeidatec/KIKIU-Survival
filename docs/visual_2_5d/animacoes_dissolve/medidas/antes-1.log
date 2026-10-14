@@ -1,0 +1,9 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+OpenGL API 3.3.0 - Build 32.0.101.7088 - Compatibility - Using Device: Intel - Intel(R) Iris(R) Xe Graphics
+
+CARGA ms=697 cenario=327 blur=210 objetos=572 decalques=1456 luzes=30
+MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=366 blocos=70/192 fps=95.8 frames=576 seg=6.01
+SCRIPT ms/quadro=5.405 (sombras 0.644, golpes secundários 0.472, desenho deles 0.192)
+PERFIL ms/quadro: c_separar 0.31, c_contato 0.01, c_orbes 0.03, heroi 0.04, monstros 1.43, combate 0.84, camera_efeitos 0.08, cenario_atm 0.01, copas 0.18, luzes 0.06, sombras_ativacao 0.38, horda 2.26 | horda: 280 monstros em 53 fatias
+RENDER ms/quadro: cpu mundo 1.95, gpu mundo 7.65, cpu janela 0.10, gpu janela 0.33; chamadas de desenho 620; objetos 1422; fora do script 5.03
+COMBATE abates=181 maior_combo=181 nivel=18 vivos=300 ondas=0 tempo_partida=2.7 vida=100 melhorias={ "aura_fogo": 5, "laminas": 3, "corvos": 4, "raio": 2, "runa": 2, "onda": 1, "martelo_trovao": 1, "terremoto": 1, "dragao_filhote": 1, "nevasca": 1, "raio_solar": 1, "explode": 1, "raio_meteorico": 1, "nevoeiro_gelado": 1, "rb_estrondo": 1, "ima": 1, "guardiao_pedra": 1, "nevoa_espectral": 1, "cinzas_vulcanicas": 2, "dano": 1 }

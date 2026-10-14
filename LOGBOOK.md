@@ -1650,3 +1650,12 @@ _Codex do Alisson_
 - **Próximo:** benchmark real --medir no perfil Médio com horda cheia, antes/depois no IrisXe, testes e prints do viewport. Reserva somente documental: Godot ainda não rodado nesta branch.
 
 _Codex do Alisson_
+
+
+## 2026-10-14 · Codex do Alisson · dissolve validado no PR #253
+- **Feito:** shader do flash de morte dissolve por texel/progresso, sem TIME/nó/pool novo; reset em todo reuso. Só efeitos.gd. Seis prints reais960x540 e relatório/12 logs de benchmark em docs/visual_2_5d/animacoes_dissolve/.
+- **Testes:** v2_morte,v2_combate,v2_partida e QA253_DISSOLVE: código0/falhas=0/semSCRIPT ERROR. QA confere progresso, pausa sem avanço e reuso para dano/esquiva. gdformat230 limpos.
+- **Desempenho:** IrisXe real, Médio/300 monstros/build cheia,2s aquecimento+6s coleta. Primeira série mediana91,4→92,9FPS, com uma rodada depois67,8FPS (causa não isolada). Repetição justificada em3pares intercalados: mediana114,2→118,9FPS; não houve queda maior que5% na mediana. Sem prometer ganho; variação e logs preservados.
+- **Pendente/Claude:** integração do corpo do herói e contrato de fase/relógio do MultiMesh, descritos no comentário do PR. Item4 parcial; nenhum arquivo de sistemas alterado. CI remoto bloqueado por conta#249, PR rascunho sem merge. Próximo: passe de paleta/dither Alto; bloom seletivo depende de máscara de emissão acordada com integrador.
+
+_Codex do Alisson_

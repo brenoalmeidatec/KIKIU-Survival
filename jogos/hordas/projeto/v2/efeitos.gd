@@ -68,9 +68,22 @@ shader_type canvas_item;
 render_mode unshaded;
 uniform vec4 cor : source_color = vec4(1.0);
 uniform float k = 1.0;
+uniform float dissolver : hint_range(0.0, 1.0) = 0.0;
+// Coordenadas da textura: a mascara nao muda com o tempo nem com o movimento do sprite.
+float ruido_pixel(vec2 pixel) {
+	return fract(sin(dot(pixel, vec2(12.9898, 78.233))) * 43758.5453);
+}
 void fragment() {
 	float a = texture(TEXTURE, UV).a;
-	COLOR = vec4(cor.rgb, a * k);
+	vec3 tinta = cor.rgb;
+	if (dissolver > 0.0) {
+		float ruido = ruido_pixel(floor(UV / TEXTURE_PIXEL_SIZE));
+		float resta = step(dissolver, ruido);
+		float borda = (1.0 - smoothstep(0.0, 0.08, ruido - dissolver)) * resta;
+		tinta = mix(tinta, vec3(1.0), borda * 0.25);
+		a *= resta;
+	}
+	COLOR = vec4(tinta, a * k);
 }
 """
 
@@ -313,6 +326,7 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	var mat := s.material as ShaderMaterial
 	mat.set_shader_parameter("cor", cor)
 	mat.set_shader_parameter("k", forca)
+	mat.set_shader_parameter("dissolver", 0.0)
 	_fl_alvo[i] = a if modo == 0 else null
 	_fl_t[i] = 0.0
 	_fl_dur[i] = dur
@@ -511,6 +525,7 @@ func atualizar(dt: float) -> void:
 					s.flip_h = a.espelha
 				mat.set_shader_parameter("k", 1.0 - k * k)
 			1:
+				mat.set_shader_parameter("dissolver", k)
 				s.scale = Vector2(1.0 + 0.25 * k, 1.0 - 0.35 * k) * _fl_esc[i]
 				s.position.y -= 24.0 * dt
 				mat.set_shader_parameter("k", 1.0 - k)
