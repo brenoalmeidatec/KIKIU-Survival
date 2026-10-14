@@ -126,6 +126,8 @@ var _po_pes: CPUParticles2D
 var _po_tapete: CPUParticles2D
 var _altar := Vector2.ZERO
 var _tex_runas: Array[Texture2D] = []
+var _particulas: Array[CPUParticles2D] = []
+var _perfil_pendente := false
 # perfil
 var lim_luzes := 6
 var com_modulador := true
@@ -148,6 +150,7 @@ func _ler_perfil() -> void:
 ## Monta tudo. `ctx` é o salão (Control): lê dele _cenario, _heroi, _chamas, _alvos, _estruturas, _sprite e o tamanho do quadro.
 func montar(ctx) -> void:
 	_ctx = ctx
+	process_priority = 1  # depois de salao._process: respiração não é sobrescrita pelo movimento
 	_ler_perfil()
 	_ruido.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	_ruido.frequency = 1.0
@@ -168,12 +171,12 @@ func montar(ctx) -> void:
 	sem_luz.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
 	_rotulos.material = sem_luz
 	_rotulos.draw.connect(_pintar_rotulos)
-	_mundo.add_child(_rotulos)
 	_glow = CanvasLayer.new()
 	_glow.layer = -1
 	add_child(_glow)
 	_fx = Node2D.new()
 	_glow.add_child(_fx)
+	_glow.add_child(_rotulos)  # nomes sem CanvasModulate, por cima dos brilhos
 	_ler_niveis()
 	_montar_portais()
 	ctx._heroi.reparent(_mundo, false)
@@ -190,6 +193,60 @@ func montar(ctx) -> void:
 		_mundo.add_child(_modulador)
 	_pos_ant = ctx._pos
 	ctx._cenario.queue_redraw()
+	Config.graficos_mudou.connect(_agendar_perfil)
+
+
+## Ajustes podem emitir várias mudanças no mesmo quadro. Reconstrói só ao mudar a assinatura visual.
+func _agendar_perfil() -> void:
+	if _perfil_pendente:
+		return
+	_perfil_pendente = true
+	_reaplicar_perfil.call_deferred()
+
+
+func _reaplicar_perfil() -> void:
+	if _ctx._painel.visible or _ctx.pausa.aberto:
+		return  # Ajustes não reconstrói efeitos enquanto o salão está congelado
+	_perfil_pendente = false
+	var antes := [lim_luzes, modo_sombra, com_nevoa, total_particulas]
+	_ler_perfil()
+	if antes == [lim_luzes, modo_sombra, com_nevoa, total_particulas]:
+		return
+	for p in _particulas:
+		p.free()
+	_particulas.clear()
+	_po_pes = null
+	_po_tapete = null
+	for est in _estacoes:
+		est.emissor = null
+	for info in _infos_luz:
+		(info.e as Luzes.Entrada).luz.free()
+	_infos_luz.clear()
+	for portal in _portais:
+		portal.info = {}
+	if _sombras != null:
+		_sombras.raiz_sombras.free()
+		_sombras.raiz_blobs.free()
+		_sombras = null
+		_ator = null
+	if _nevoa != null:
+		_nevoa.free()
+		_nevoa = null
+		_mat_nevoa = null
+	if _modulador != null:
+		_modulador.free()
+		_modulador = null
+	_montar_luzes()
+	_montar_sombra_heroi()
+	_montar_nevoa()
+	_montar_particulas()
+	_aplicar_niveis()  # estado já lido ao montar/fechar o painel; não consulta Meta nos Ajustes
+	if com_modulador:
+		_modulador = CanvasModulate.new()
+		_modulador.color = MODULADO
+		_mundo.add_child(_modulador)
+	for p in _particulas:
+		p.speed_scale = 0.0 if _congelado else 1.0
 
 
 func _pintar_rotulos() -> void:
@@ -561,6 +618,7 @@ func _emissor(pos: Vector2, n: int, vida: float, rampa: Gradient, aditivo := tru
 	if aditivo:
 		p.material = _mat_add
 	_fx.add_child(p)
+	_particulas.append(p)
 	return p
 
 
@@ -702,11 +760,15 @@ func _process(dt: float) -> void:
 	if parado != _congelado:
 		_congelado = parado
 		_glow.process_mode = Node.PROCESS_MODE_DISABLED if parado else Node.PROCESS_MODE_INHERIT
+		for p in _particulas:
+			p.speed_scale = 0.0 if parado else 1.0  # congela também a simulação interna da engine
 	if _painel_antes and not c._painel.visible:
 		_ler_niveis_e_aplicar()
 	_painel_antes = c._painel.visible
 	if parado:
 		return
+	if _perfil_pendente:
+		_reaplicar_perfil.call_deferred()
 	dt = minf(dt, 0.05)
 	_tempo += dt
 	var pos: Vector2 = c._pos
@@ -756,7 +818,10 @@ func _heroi_vivo(c, pos: Vector2, andando: bool) -> void:
 		if alvo_id != "":
 			for a in c._alvos:
 				if str(a.id) == alvo_id:
-					c._dir = c._linha_de(a.pos - pos)  # olha para o alvo do prompt
+					var dir: int = c._linha_de(a.pos - pos)
+					if dir != c._dir:
+						c._dir = dir  # olha para o alvo do prompt
+						c._heroi.queue_redraw()
 					break
 	c._heroi.position = pos.round() + Vector2(0, resp)
 

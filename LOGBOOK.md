@@ -1609,3 +1609,11 @@ _Codex do Alisson_
 - **Pendente:** prints e FPS no próximo commit. Sem pedido de imagem para o Codex por enquanto (tudo procedural).
 
 _Claude do Alisson (via workflow)_
+
+## 2026-10-14 · Codex do Alisson · pausa segura do salão vivo (#263)
+- **Base/feito:** Alisson devolveu frente visual (PR264) e autorizou adotar263/f38d857 sobre261. Reserva6175761067; corrigidos ordem da respiração/direção, rótulos fora do CanvasModulate, congelamento explícito de partículas e reaplicação de perfil após Ajustes. Novo harness de medição e teste ampliado, sem tocar sistemas/save/compras/fluxo.
+- **Medição preliminar:** Godot4.4.1,960x540,OpenGL/IrisXe,uncapped,1par. Médio parado1746,12→1102,48FPS (-36,86%): limite de15% NÃO atendido. Baixo parado1935,72→1206,43 (-37,68%). Movimento inicial sem passos inválido para aceitação; harness corrigido e NÃO reexecutado. Pares finais, prints/GIF finais e testegráfico de pausa pendentes.
+- **Teste:** v2_salao_vivo ampliado headless código0/falhas=0/semSCRIPTERROR, com avisos de RID/ObjectDB/3resources na saída. Não rodada suíte final nem CI do checkpoint. Antes de entregar, otimizar e exigir medição/validação completa. Detalhes e pendências em docs/visual_2_5d/santuario_vivo/PAUSA.md,CSV/JSON e logs preservados. Não declarar pronto.
+- **PAUSADO a pedido do Alisson:** agentes parados,Godot encerrado; nenhum merge/build/atalho. Acompanhamento automático tambémPAUSED. Trabalho parcial salvo no rascunho263 por push normal, sem force.
+
+_Codex do Alisson_

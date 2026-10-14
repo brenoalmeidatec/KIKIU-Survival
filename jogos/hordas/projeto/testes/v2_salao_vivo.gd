@@ -27,7 +27,7 @@ func _ready() -> void:
 	prefixo = "qa_vivo_%d_" % Time.get_ticks_usec()
 	var d := DirAccess.open("user://")
 	for arquivo in d.get_files():
-		if arquivo.begins_with("v2_"):
+		if not arquivo.begins_with("qa_"):
 			reais[arquivo] = FileAccess.get_md5("user://" + arquivo)
 	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
 	Personagens.caminho_base = "user://" + prefixo + "p"
@@ -40,6 +40,7 @@ func _ready() -> void:
 			await perfil_testar(perfil)
 	if so == "":
 		await niveis_e_heroi()
+		await observacoes_reais()
 	for arquivo in reais:
 		ok(FileAccess.get_md5("user://" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
 	for arquivo in d.get_files():
@@ -176,5 +177,86 @@ func niveis_e_heroi() -> void:
 	for i in 30:
 		v._process(0.05)
 	ok(p.reacao < 0.1, "portal acalma longe (%.2f)" % p.reacao)
+	s.queue_free()
+	await get_tree().process_frame
+
+
+# Exercita quadros reais: não chama _process nem reproduz a fórmula da implementação.
+func observacoes_reais() -> void:
+	Config.g_perfil_temporario("medio")
+	var s := await abrir()
+	var v := vivo_de(s)
+	if v == null:
+		ok(false, "observações: salão vivo presente")
+		return
+	await get_tree().create_timer(0.25).timeout
+	var portal = v._portais[0]
+	var shader_antes = portal.mat.get_shader_parameter("t")
+	await get_tree().create_timer(0.2).timeout
+	ok(portal.mat.get_shader_parameter("t") != shader_antes, "shader avança em quadros reais")
+	for estado in ["painel", "pausa"]:
+		if estado == "painel":
+			s._painel.visible = true
+		else:
+			s.pausa.aberto = true
+		await get_tree().process_frame
+		await get_tree().process_frame
+		var shader_parado = portal.mat.get_shader_parameter("t")
+		var tempo_parado: float = v._tempo
+		for p in v._particulas:
+			ok(is_zero_approx(p.speed_scale), estado + ": simulação de partículas congelada")
+		var pixels := PackedByteArray()
+		if DisplayServer.get_name() != "headless":
+			await RenderingServer.frame_post_draw
+			pixels = get_viewport().get_texture().get_image().get_data()
+		await get_tree().create_timer(0.2).timeout
+		ok(v._tempo == tempo_parado, estado + ": tempo congelado em quadros reais")
+		ok(portal.mat.get_shader_parameter("t") == shader_parado, estado + ": uniform de shader congelado")
+		if DisplayServer.get_name() != "headless":
+			await RenderingServer.frame_post_draw
+			ok(pixels == get_viewport().get_texture().get_image().get_data(), estado + ": pixels idênticos durante pausa")
+		if estado == "painel":
+			s._painel.visible = false
+		else:
+			s.pausa.aberto = false
+		await get_tree().create_timer(0.1).timeout
+		ok(v._tempo > tempo_parado, estado + ": tempo retoma em quadros reais")
+		for p in v._particulas:
+			ok(p.speed_scale > 0.0, estado + ": simulação retoma")
+	s.queue_free()
+	await get_tree().process_frame
+	# Enche o save isolado pela API de compras e confere os orçamentos no estado máximo.
+	Meta.creditar(100000000)
+	for melhoria in Meta.melhorias():
+		for tentativa in 100:
+			if not Meta.comprar(str(melhoria.id)):
+				break
+	for perfil in ["baixo", "medio", "alto"]:
+		Config.g_perfil_temporario(perfil)
+		s = await abrir()
+		await get_tree().create_timer(0.1).timeout
+		var particulas := []
+		achar(s, "CPUParticles2D", particulas)
+		var soma := 0
+		for p in particulas:
+			soma += p.amount
+		ok(soma <= int({"baixo": 20, "medio": 45, "alto": 80}[perfil]), perfil + ": orçamento no estado máximo (%d)" % soma)
+		var luzes := []
+		achar(s, "PointLight2D", luzes)
+		ok(luzes.filter(func(l): return l.enabled).size() <= int({"baixo": 2, "medio": 6, "alto": 10}[perfil]), perfil + ": luzes ativas no estado máximo")
+		s.queue_free()
+		await get_tree().process_frame
+	# Personalizado só na memória: jamais chamar g_definir/g_aplicar_perfil, que gravam opções reais.
+	Config.g_perfil_temporario("alto")
+	Config._cfg.set_value("graficos", "particulas_sim", "nenhuma")
+	Config._cfg.set_value("graficos", "nevoa", false)
+	Config._cfg.set_value("graficos", "perfil", "personalizado")
+	s = await abrir()
+	await get_tree().create_timer(0.1).timeout
+	v = vivo_de(s)
+	var sem_particulas := []
+	achar(s, "CPUParticles2D", sem_particulas)
+	ok(sem_particulas.is_empty(), "personalizado Nenhuma: nenhum emissor")
+	ok(v._nevoa == null, "personalizado: névoa desativada")
 	s.queue_free()
 	await get_tree().process_frame
