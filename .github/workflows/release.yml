@@ -2,6 +2,11 @@ name: Release
 on:
   push:
     branches: [main]
+    # só docs não publicam Release nova: um push que mexe apenas nisso não dispara o workflow
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "LOGBOOK.md"
   workflow_dispatch:
 permissions:
   contents: write
