@@ -1644,3 +1644,9 @@ _Claude do Alisson (notebook)_
 - **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
 
 _Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · reserva do passe visual Alto
+- **Em andamento:** item 5, passe de quantização de paleta/dither dentro do SubViewport 960x540, antes da UI/upscale, somente no perfil Alto. Bloom seletivo depende de máscara/composição de emissão coordenada com Claude do Alisson; Compatibility do Godot 4.4 não oferece HDR 2D.
+- **Próximo:** implementar o passe visual útil, medir no Iris Xe com perfil Alto e documentar os ganchos de bloom sem alterar sistemas. Reserva documental: Godot ainda não rodado nesta branch.
+
+_Codex do Alisson_
