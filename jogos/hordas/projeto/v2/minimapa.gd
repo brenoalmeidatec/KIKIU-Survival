@@ -280,11 +280,37 @@ func _process(delta: float) -> void:
 
 ## Tab segurado: o mapa grande fica aberto enquanto o Tab está apertado e volta ao pequeno ao soltar. Só a mudança de estado conta
 ## (o --minimapa=grande não é desfeito no primeiro quadro). Fica por polling porque os nós de dentro do SubViewport não recebem _input.
+## Não abre com o painel de status na tela (o SUA BUILD usa o Tab) nem sobre a escolha de cartas ou o baú: o grande ficava por baixo.
 func ler_tecla(pressionada: bool) -> void:
-	if pressionada != _tab_antes:
-		grande = pressionada
+	var agora := pressionada and not _tab_bloqueado()
+	if agora != _tab_antes:
+		grande = agora
 		_layout()
-	_tab_antes = pressionada
+	_tab_antes = agora
+
+
+## Telas por cima do mundo que tiram o Tab do minimapa: o card de status (C, o central sobre as cartas ou ao lado da pausa), a escolha e o baú.
+func _tab_bloqueado() -> bool:
+	if mundo == null:
+		return false
+	var st = mundo.get("status")
+	if st != null and st.aberto():
+		return true
+	var c = mundo.get("combate")
+	return c != null and c.telas != null and (c.telas.escolha_aberta or c.telas.bau_aberto)
+
+
+## Jogar de novo: a névoa volta a cobrir o mapa (o mirante e a névoa da partida anterior não valem); baús, setas e luzes somem até a
+## próxima leitura. O _ultimo_texel zerado faz o próximo passo revelar em volta do herói novo, mesmo que ele nasça no mesmo texel.
+func resetar() -> void:
+	_nevoa_img.fill(C_NEVOA)
+	_nevoa.update(_nevoa_img)
+	_ultimo_texel = Vector2i(-1, -1)
+	baus_mapa.clear()
+	setas_mapa.clear()
+	luzes_vistas.clear()
+	monstros_mapa.clear()
+	_desenho.queue_redraw()
 
 
 ## Um passo do minimapa. Acumula o tempo e, a cada 0,1 s, atualiza névoa e marcadores.
