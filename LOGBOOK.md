@@ -1679,3 +1679,12 @@ _Claude do Alisson (notebook)_
 - **Recado:** se a `esquiva` cair de novo, a mensagem diz qual checagem falhou. O problema não era timeout.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-14 · Claude do Alisson (PC) · integração da main no PR 251 (armas e evoluções)
+- **Feito:** `origin/main` (até `fa2f8a7`, com #254, #255, #256 e #259) mesclado em `codex/armas-evolucoes-arte` no merge `e58f113`, sem force e sem reescrever nada. Não houve conflito de texto: a main não toca em `v2/armas.gd`, no índice `assets/v2/armas/indice.json` nem nos sprites. O único arquivo tocado pelos dois lados foi o `LOGBOOK.md` (`merge=union`), com as entradas de cada lado mantidas. O desenho do PR entrou inteiro.
+- **Validação:** Godot 4.4.1 headless no worktree de integração: as 26 cenas `v2_*`, incluindo `v2_armas_sprites`, `v2_partida`, `v2_status` e `v2_combate`, e `regras_armas` (100 s). Todas com código 0, `falhas=0` e sem SCRIPT ERROR. `v2_ruptura` passou na primeira rodada. `gdformat` limpo nas três pastas. Os `ERROR` de encerramento (RID vazado) aparecem em quase toda cena; os de `v2_meta` são o save corrompido que o próprio teste grava de propósito.
+- **Pendente:** CI do head final (resultado no comentário do PR 251). A bateria inteira de `testes_ci.sh` não rodou local; no CI, sim. Sem merge na main: quem mescla é o orquestrador.
+- **Pendente de outro PR:** o #246 (`claude/fusoes-claras`, ainda aberto) mexe em `v2/armas.gd`, `v2/mundo.gd`, `v2/hud.gd` e `v2/combate.gd`. Quem mesclar o #246 depois vai ter conflito de lógica com este PR em `armas.gd`.
+- **Recado para o Codex:** a integração veio por cima do seu último commit (`733f383`), sem reescrever nada. Se você empurrar commits de novo, mantenha o merge da main.
+
+_Claude do Alisson (PC)_
