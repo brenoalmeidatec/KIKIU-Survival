@@ -16,6 +16,7 @@ Uso (Blender 4.5 LTS), a partir de jogos/hordas/prototipos/cara_nova:
     blender -b -P gerar_cara_nova.py -- heroi
     blender -b -P gerar_cara_nova.py -- monstro horror cao_ossos
     blender -b -P gerar_cara_nova.py -- monstro floresta aranha_tecela
+    blender -b -P gerar_cara_nova.py -- heroi_v2 nicao   (ou lucas: heróis novos da v2, veja gerar_herois_v2.py)
 Parâmetros no topo (ELEVACAO, PPU, QUADRO_HEROI, ESTICA, BISEL, SUAVIZA) são as escolhas de arte, documentadas no LEIA-ME.md.
 """
 import json
@@ -443,5 +444,9 @@ if MODO == "heroi":
     gerar_heroi()
 elif MODO == "monstro":
     gerar_monstro(ARGS[0], ARGS[1])
+elif MODO == "heroi_v2":     # Nicão e Lucas (gerar_herois_v2.py): usa as funções deste módulo sem mudar os outros modos
+    sys.path.insert(0, AQUI)
+    import gerar_herois_v2
+    gerar_herois_v2.gerar(sys.modules[__name__], ARGS[0])
 else:
     raise SystemExit("modo desconhecido: " + MODO)

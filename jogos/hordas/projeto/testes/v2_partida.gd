@@ -115,7 +115,10 @@ func _ready() -> void:
 
 	# 0. dados
 	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
-	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 50 and cfg.modificadores.size() == 4, "4 raridades, 50 golpes secundários e 4 modificadores")
+	ok(
+		cfg.raridades.size() == 4 and cfg.golpes.size() == 50 and cfg.modificadores.size() == 8,
+		"4 raridades, 50 golpes secundários e 8 modificadores (4 de sempre, 2 do Nicão e 2 do Lucas, que só saem para eles)"
+	)
 	ok(cfg.evolucoes.size() == 25, "25 evoluções nos dados (4 antigas, 5 novas e 16 de 2, 3 e 4 peças)")
 	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
 

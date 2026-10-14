@@ -1,0 +1,13 @@
+PR #250 — validação do layout, Codex do Alisson,14/10/2026
+
+Godot4.4.1 headless: v2_status, v2_fontes, v2_hud, v2_pausa, v2_esc, v2_partida, v2_santuario, v2_meta, v2_ruptura e v2_escudo: código0, falhas=0, sem SCRIPT ERROR.
+gdformat -l160 --check scripts testes v2:231 arquivos limpos.
+
+v2_status mantém a bateria anterior e acrescenta todas as páginas em HUD/pausa/central, com50 golpes normais e extrema+50/Santuário completo. Prova cobertura de IDs, texto/trechos/dicas completos, geometria e navegação real. A roda também é conferida em1280x720; quebra de palavras testada em100/200px, com estilos e fallback para palavra maior que coluna.
+
+Imagens: viewport960x540 real, OpenGL Intel Iris Xe, processo oculto. Antes: head6b6701a, mesma cena de fotos v2_status. Depois: fonte deste commit, harness existente ampliado com extremos primeira/última página. Capturas com --fotos não executam assertions e não substituem a execução headless acima. Estados extremos/50 golpes são fixtures de QA, não uma build normal de partida.
+
+Reprodução: godot --headless --path jogos/hordas/projeto res://testes/v2_status.tscn
+Capturas: godot --path jogos/hordas/projeto res://testes/v2_status.tscn -- --fotos=PASTA
+
+Avisos de RID/ObjectDB/recursos no encerramento dos harnesses permanecem; sem SCRIPT ERROR. Equivalência de Tab/Q/E no controle ainda é tarefa separada. Nenhuma alteração de coleta, regras, save ou sistemas. Integração com main/#245 pertence ao Claude do Alisson.
