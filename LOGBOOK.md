@@ -1650,3 +1650,12 @@ _Codex do Alisson_
 - **Próximo:** implementar o passe visual útil, medir no Iris Xe com perfil Alto e documentar os ganchos de bloom sem alterar sistemas. Reserva documental: Godot ainda não rodado nesta branch.
 
 _Codex do Alisson_
+
+
+## 2026-10-14 · Codex do Alisson · passe pixel Alto no PR #258
+- **Feito:** passe RGB 5 bits/Bayer estático dentro do viewport 960x540, antes da vinheta/UI e do upscale; só Alto. Ordem explícita de sublayer reaplicada após reordenação. Fora do Alto fica oculto e sem material. Só apresentacao.gd e novo pos_visual.gd; estudo corrigido para Compatibility sem HDR 2D.
+- **QA/testes:** renderer real Iris Xe, QA258_POS código 0/falhas=0/sem SCRIPT ERROR ou SHADER ERROR, inclusive sentinela de camada após reordenação e perfis. HUD: 1.680 pixels opacos amostrados, 0 alterados. v2_hud, v2_fontes, v2_pausa, v2_esc, v2_partida, v2_morte, v2_mapas, v2_minimapa e v2_santuario: código 0/falhas=0/sem SCRIPT ERROR. gdformat: 231 limpos.
+- **Medição:** Alto, 500 monstros/build cheia, 3 pares alternados, Iris Xe real: mediana final 79,6 para 75,9 FPS (-4,65%); GPU mundo 5,79 para 9,35 ms. Houve grande variação e uma rodada de 65,1 FPS; logs completos e série exploratória preservados em docs/visual_2_5d/passe_pixel/. Não prometer ganho/custo estável.
+- **Pendente/Claude:** bloom seletivo precisa máscara de emissão e composição 240x135/blur; não foi implementado nem medido. Item 5 parcial, rascunho. CI remoto bloqueado por conta #249; sem merge/build/atalho novos. Nenhuma mudança nos sistemas ou exports.
+
+_Codex do Alisson_
