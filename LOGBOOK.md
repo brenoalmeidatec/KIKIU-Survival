@@ -1644,3 +1644,9 @@ _Claude do Alisson (notebook)_
 - **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
 
 _Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · reserva da arte restante das armas
+- **Em andamento:**5 golpes antigos e25 evoluções, em branch independente da main ca4b272. Folhas próprias geradas com imagegen, recorte pelo modo armas do gerador existente, evoluções visualmente derivadas das bases. Reserva também na issue #193.
+- **Validação desta reserva:** somente LOGBOOK; Godot ainda não rodado nesta branch. Nada de alterações em sistemas. Paleta #250 segue rascunho e depende da integração de layout com #245, já documentada.
+
+_Codex do Alisson_
