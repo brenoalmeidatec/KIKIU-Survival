@@ -81,3 +81,7 @@ Resultado da partida: CONTINUAR agenda a troca para o santuário ao fim do event
 
 ### Efeitos de Ruptura e escudo (2026-10-13)
 Ruptura usa sigilos radiais na carga, borda no raio atual e referência no raio máximo; a janela perfeita pulsa dourado suavemente. Disparo tem onda com halo e fissuras ramificadas com núcleo quente. Escudo é uma barreira curva elevada, com painéis, nervuras e runa: azul em sustentação, branco no bloqueio comum e dourado com oito raios no perfeito. O impacto acompanha a origem do golpe dentro do arco. São desenhos autorais por código, sem texturas externas, geração de assets por quadro ou mudança nos dados/mecânicas. Os pools existentes de 12 anéis e 2 rachaduras permanecem; a geometria usa limites fixos (20 segmentos de escudo, 12 sigilos, 9 fissuras).
+
+## Dissolve do flash de morte — 14/10/2026 (PR #253)
+
+`efeitos.gd` dissolve somente o flash de morte, com ruído estável por pixel e borda discreta, respeitando o alfa da textura. Reutiliza o pool de 24 flashes; o progresso vem da atualização existente e respeita a pausa, sem `TIME` no shader. Flash de dano, rastro de esquiva, durações e transformações permanecem. A morte do corpo do herói e o shader corporal da horda continuam pendentes do Claude do Alisson. Consulte o [relatório e os limites da implementação](../../../../docs/visual_2_5d/animacoes_dissolve/RELATORIO.md) e as [capturas comparativas](../../../../docs/visual_2_5d/animacoes_dissolve/).
