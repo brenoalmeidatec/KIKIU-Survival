@@ -81,3 +81,7 @@ Resultado da partida: CONTINUAR agenda a troca para o santuário ao fim do event
 
 ### Efeitos de Ruptura e escudo (2026-10-13)
 Ruptura usa sigilos radiais na carga, borda no raio atual e referência no raio máximo; a janela perfeita pulsa dourado suavemente. Disparo tem onda com halo e fissuras ramificadas com núcleo quente. Escudo é uma barreira curva elevada, com painéis, nervuras e runa: azul em sustentação, branco no bloqueio comum e dourado com oito raios no perfeito. O impacto acompanha a origem do golpe dentro do arco. São desenhos autorais por código, sem texturas externas, geração de assets por quadro ou mudança nos dados/mecânicas. Os pools existentes de 12 anéis e 2 rachaduras permanecem; a geometria usa limites fixos (20 segmentos de escudo, 12 sigilos, 9 fissuras).
+
+## Sprites de armas e evoluções — 14/10/2026 (PR #251)
+
+O índice reúne 74 sprites para 50 golpes base e 25 evoluções, incluindo arte própria do Alisson e do Codex do Alisson (imagegen). Os 44 sprites anteriores e seus 25 normal maps foram preservados byte a byte; as três folhas novas acrescentam 30 sprites. Projéteis e aliados recebem normal map; áreas usam composição aditiva. O pipeline existente `gerar_objetos.py armas` recorta, reduz e quantiza as folhas, gerando o índice e a prancha. Consulte o [pipeline de objetos](../../../../docs/visual_2_5d/PIPELINE_OBJETOS.md), as [capturas de armas e evoluções](../../../../docs/visual_2_5d/armas_evolucoes/) e os [prompts e a origem da arte](../../../../docs/visual_2_5d/armas_evolucoes/PROMPTS.md).
