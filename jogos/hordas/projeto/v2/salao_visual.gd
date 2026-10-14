@@ -4,6 +4,7 @@ const Paleta := preload("res://v2/paleta.gd")
 const PASTA := "res://assets/v2/santuario/"
 const POSICOES := {"estatuas": Vector2(180, 330), "altar": Vector2(780, 300), "codice": Vector2(780, 425)}
 var texturas := {}
+var rotulos_fora := false  # o salão vivo (salao_vivo.gd) desenha os nomes numa camada sem luz; o cenário não os desenha
 
 
 func _init() -> void:
@@ -57,7 +58,13 @@ func portal(n: Node2D, a: Dictionary, fechado: bool, cor: Color) -> void:
 		if fechado:
 			n.draw_rect(Rect2(p.x - 8, p.y - 57, 16, 15), Paleta.TEXTO_APAGADO)
 			n.draw_arc(p + Vector2(0, -57), 6, PI, TAU, 12, Paleta.TEXTO_APAGADO, 3)
-	# 200 px entre portais: o nome mais longo usa duas linhas de Spleen 16.
+	if not rotulos_fora:
+		rotulo_portal(n, a, fechado)
+
+
+## O nome do portal. 200 px entre portais: o nome mais longo usa duas linhas de Spleen 16.
+func rotulo_portal(n: Node2D, a: Dictionary, fechado: bool) -> void:
+	var p: Vector2 = a.pos
 	var linhas := [str(a.nome)]
 	if str(a.nome) == "RUÍNAS DA FLORESTA":
 		linhas = ["RUÍNAS DA", "FLORESTA"]
@@ -100,6 +107,12 @@ func estrutura(n: Node2D, a: Dictionary) -> void:
 			for dx in [-29.0, 0.0, 29.0]:
 				n.draw_rect(Rect2(p.x + dx - 10, p.y - 51, 20, 42), Color("#716a76"))
 				n.draw_circle(p + Vector2(dx, -62), 10, Color("#918795"))
+	if not rotulos_fora:
+		rotulo_estrutura(n, a)
+
+
+func rotulo_estrutura(n: Node2D, a: Dictionary) -> void:
+	var p: Vector2 = a.pos
 	n.draw_string(Dados.fonte_titulo, Vector2(p.x - 100, p.y + 30), str(a.nome), HORIZONTAL_ALIGNMENT_CENTER, 200, 19, Paleta.OURO)
 
 

@@ -1602,3 +1602,10 @@ _Claude (PC do Breno, via Remote Control)_
 - **Integração/pendente:** branch visual empilhada sobre claude/salao-do-heroi para não integrar sistemas por conta própria. Claude integra #242 e cruza com main/#250; paleta.gd é cópia idêntica e deve ficar uma só. Novos testes são extensão localizada autorizada para regressão visual, sem editar testes existentes. Bench antigo bench_salao usa clique fixo250,300 e precisa adotar posições atuais; harness visual novo usa alvos reais. CI no head publicado; sem merge/build/atalho antes da integração e Release verde.
 
 _Codex do Alisson_
+
+## 2026-10-14 · Claude do Alisson · salão vivo (luz, partículas e movimento), PR empilhado sobre o #261
+- **Feito:** `v2/salao_vivo.gd` + `v2/salao_vivo.gdshader`; `salao.gd` só instancia (3 linhas). Chamas vivas (núcleo, halo, poça, língua de pixels, ruído 1D) nas tochas, no cristal e nas velas do altar; PointLight2D reais pelo `luzes.gd` (Baixo 2, Médio 6, Alto 10; CanvasModulate só em Médio/Alto) e sombra do herói pelo `sombras.gd` (média/alta); portais com redemoinho em shader, cadeado pulsando se fechado; partículas CPU de 1–2 px (total 20/45/80 pelo `particulas_sim`); herói respira 1 px, olha o alvo do prompt e levanta poeira; portal reage a ~100 px, chamas balançam por mola, poeira no tapete; runas/aura/partículas nas estações pelo nível comprado (só leitura via `Meta`); névoa rasteira e ciclo de luz de ±6% em 90 s (Médio/Alto). Teste novo: `testes/v2_salao_vivo`.
+- **Decisão a conferir:** o CanvasModulate ficou em `#c8cbe0`, não `#8f93b0`: com o pedido a sala perdia ~35% de brilho médio (medido nos prints), contra ~10% agora. Está em `MODULADO` no topo de `salao_vivo.gd`. Os nomes dos portais/estações saíram do cenário e são desenhados por um nó sem luz (`salao_visual.rotulos_fora`) para continuarem legíveis.
+- **Pendente:** prints e FPS no próximo commit. Sem pedido de imagem para o Codex por enquanto (tudo procedural).
+
+_Claude do Alisson (via workflow)_
