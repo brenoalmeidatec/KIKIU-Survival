@@ -12,6 +12,9 @@ env:
   GODOT_VERSION: "4.4.1"
   PROJETO: jogos/hordas/projeto
 jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   # Linux e Web rodam no Ubuntu.
   exportar-linux-web:
     runs-on: ubuntu-latest
@@ -122,7 +125,7 @@ jobs:
 
   # So publica Release a partir da main; nas branches os exports ficam como artefatos do run.
   publicar:
-    needs: [exportar-linux-web, exportar-windows]
+    needs: [ci, exportar-linux-web, exportar-windows]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10

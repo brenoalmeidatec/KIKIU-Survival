@@ -1278,6 +1278,12 @@ _Claude do Alisson (nuvem)_
 
 _Claude do Alisson (nuvem)_
 
+## 2026-10-12 (6) · Claude do Alisson (notebook) · mapa Laboratório (WIP) e base para mais mapas
+- **Pedido do Alisson:** dois mapas novos na v2, Laboratório e depois Cidade, cada um com assets e texturas próprios, no estilo da floresta. Ele mandou parar no meio do Laboratório e pediu um resumo de continuação: o detalhe está em `jogos/hordas/fonte_arte/mapas_v2/LEIA-ME.md`.
+- **Decisão de assets:** nada de pacote de terceiros (regra de `docs/visual_2_5d`). Os objetos saem do **Blender** no mesmo enquadramento do herói (1 m = 32 px, câmera a 45°), com normal map de verdade, e o Python (`fonte_arte/gerar_v2_mapas.py`) vira atlas, colisão, decalques, piso e o JSON do mapa. Os prompts do ChatGPT para folhas de referência (caminho opcional, mais rico) ainda não foram escritos.
+- **Feito (branch `claude/v2-mapa-laboratorio`, sem PR):** laboratório jogável de ponta a ponta (24 objetos, piso de aço, 23 decalques, ~370 objetos e ~160 decalques no mapa, luzes de tanque verde, tela ciano, emergência vermelha, criogenia e gerador); seleção de mapa no santuário (`v2/mapas.gd`, botão `< MAPA >`, `--mapa=<id>`); ganchos por dados no `cenario.gd`, `minimapa.gd`, `atmosfera.gd`; `export_presets.cfg` com o filtro dos JSON novos; `testes/v2_mapas.tscn` com falhas=0.
+- **Pendente:** bateria completa e `--medir` no notebook, PR do Laboratório (pedir o OK do Alisson antes de mesclar), acabamento da arte, prompts do ChatGPT, a Cidade inteira e a linha na tabela de `v2/LEIA-ME.md`.
+- **Próximo:** rodar `ferramentas/testes_ci.sh`, abrir o PR do Laboratório, depois `modelos3d/mapa_cidade.py` e `mapas_v2/def_cidade.py`.
 ## 2026-10-12 (4) · Claude do Alisson (notebook) · v2: acabamento de produto (marca do Godot, Gráficos, Créditos)
 - **Marca do Godot (#162), conferida num exportado de verdade:** exportei o Windows e o Web no notebook e abri o `.exe`. A tela de entrada mostra a arte do K.I.K.I.U, sem o logo do Godot; o ícone do `.exe`, da janela e da barra de tarefas é o escudo; o título da janela é "K.I.K.I.U". No Web, o `index.html` usa a mesma imagem de carregamento, o ícone do jogo e o título "K.I.K.I.U". O Linux não embute ícone no executável (limite do formato).
 - **Sobrou um texto legal:** nas propriedades do `.exe`, `LegalCopyright` ainda traz o aviso da licença MIT do Godot. Deixei como está de propósito, porque é obrigação da licença; agora o aviso também está nos créditos da v2 (abaixo).
@@ -1300,5 +1306,315 @@ _Claude do Alisson (nuvem)_
 - **Testes:** `testes/v2_musica.tscn` novo (`v2_musica falhas=0`): bus e saída, cada faixa do JSON existe e está em `LICENCAS_AUDIO.md`, as transições (santuário, partida, chefe, mini-chefe que cai, chefe final, resultado e reiniciar), pico no bus acima de -60 dB (som de verdade passando) e sumindo com o slider em 0, volume salvo voltando ao reabrir as opções. Também passam `cartas_comp`, `opcoes`, `regioes` e todos os `v2_*` (pausa, esc, partida, mundo, combate, desempenho, colisão, hud, meta, minimapa, oclusão, árvores, cartas_espera). Conferido no notebook com o driver WASAPI real: bus `Musica` em -4,4 dB (60%), pico -20 dB chegando ao Master.
 - **O que eu NÃO consegui conferir:** ouvir. Pico no bus prova que o som sai pelo caminho certo, mas se as faixas casam com o clima, se o volume de cada uma está parelho e se o crossfade santuário → partida → chefe soa bem é ouvido do Alisson.
 - **Pendente / ideias:** `minijogo_tenso_b` (Giant Wyrm) e `horror` ficaram de fora (o plano era só santuário, partida e chefe); o JSON aceita trocar ou alternar por edição. CC0 de preferência: se o Alisson quiser trocar alguma por CC0, é achar o `.ogg`, registrar a linha em `LICENCAS_AUDIO.md` e mudar o JSON (o teste confere a licença).
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude (subagente, PC, a pedido do Breno) · mapa Cidade (etapa 2)
+- **Feito:** o mapa Cidade está montado sobre a etapa 1 (objetos e piso do Blender). `mapas_v2/def_cidade.py` põe 177 objetos numa grade de 5 x 4 quarteirões (prédio no lote, pátio com contêiner, praça com ponto de ônibus e fogueira, ruína e lote vazio), 147 decalques, 85 luzes (53 presas aos objetos, 32 soltas) e 8 zonas de monstro. O herói nasce no cruzamento central. Registro: `v2/mapas.gd` (linha `cidade`, botão `< MAPA >` do santuário), `dados/v2_cidade.json` e `assets/v2/mapas/cidade/`.
+- **Ruas:** o eixo das ruas fica livre; carro, poste e semáforo ficam no meio-fio. Conferido com grade de 4 px e as elipses do JSON: 90,6% da área andável livre, e ruas e zonas de monstro na mesma região conectada. `v2_mapas falhas=0`, com teste novo de rua (300 px pelo leste do cruzamento sem travar).
+- **Dependência:** a branch inclui o laboratório (commit 468968b, merge de `claude/v2-mapa-laboratorio`). **Mesclar o PR da cidade depois do #204.**
+- **Não medido:** fps (85 luzes no mapa). Antes do merge, medir `--medir --mapa=cidade` no Médio e no Alto.
+- **Pendente:** o OK do Alisson e a bateria completa (`ferramentas/testes_ci.sh`), que não rodei por causa da CPU compartilhada.
+- **Para o Claude do Alisson:** se o #204 mudar `mapas.gd`, `cenario.gd` ou `gerar_v2_mapas.py`, a branch da cidade precisa de merge da `main` antes do PR.
+
+_Claude (subagente, PC, a pedido do Breno)_
+## 2026-10-12 (7) · Claude do Alisson (notebook) · sons CC0 do Kenney na v2
+- **Feito:** os sons de combate e de interface da v2 saem de Kenney (CC0 1.0), no lugar dos sintetizados. São 21 WAV em `assets/audio/v2/`: 15 trocados com os mesmos nomes (`audio.gd` não mudou), 2 do cursor e do confirmar do santuário e 4 novos para escudo e Ruptura. Em `v2/pausa.gd`, o clique do santuário passou a tocar os `ui_*` pelo `AudioV2`, e não mais pelo `Som.ui`, que é da v1 e segue sintetizado. Registros: `docs/LICENCAS_ARTE.md` (uma linha por arquivo) e `docs/LICENCAS_AUDIO.md` (tabela, e como refazer).
+- **Volume:** silêncios das pontas cortados, WAV mono 44,1 kHz, normalizados para RMS -18 dBFS com teto de pico de -1 dBFS. Nenhum clipe. Os impactos ficam em geral mais baixos que os sintetizados (pico igual, corpo menor): se faltar peso, ajuste o `vol_db` da chamada.
+- **Testes:** `v2_partida`, `v2_pausa` e `v2_musica` com `falhas=0` e sem `SCRIPT ERROR`. Checagem pontual fora do repo: os WAV novos carregam como `AudioStreamWAV` e o clique do santuário toca 2 sons pelo `AudioV2`.
+- **Pendente / recados:** `escudo_bloqueio`, `escudo_perfeito`, `ruptura_carga` e `ruptura_solta` estão copiados e registrados, mas sem ligação: as mecânicas estão em `alisson/v2-ruptura`. O chefe segue sintetizado (nenhum gongo bom nos três pacotes, só sinos curtos). Os demais sintetizados da v2 (`aviso`, `elite`, `onda`, `fogo`, `raio`, `corvo`, `runa`, `runa_poe`, `ofego`, `derrota`, `vitoria`) ficam para outra etapa. **Não consegui ouvir:** se os sons casam com o dark fantasy e se o volume está parelho é conferência do Alisson. O gerador sintetizado segue como reserva, mas rodar o script sobrescreve esses WAV.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude do Alisson (PC) · v2: menu principal (título antes do santuário)
+- **Feito:** a cena principal da v2 agora é o título, `v2/menu_principal.tscn` (antes abria no santuário). Logo K.I.K.I.U em Jersey 10 (112 px) sobre o fundo `assets/titulo/fundo.png`, com Jogar (vai ao santuário), Ajustes (o submenu da pausa: Gráficos e Áudio), Créditos (a tela de Créditos da pausa) e Sair (pede confirmação). Mouse, teclado e controle; ESC e Start abrem "Sair?" com "Não" marcado, sem fechar o jogo de surpresa. O título toca a faixa do santuário (`menu`), que não recomeça quando o santuário abre.
+- **Fundo:** `jogos/hordas/fonte_arte/gerar_fundo_titulo.py` gera o fundo a partir de `entrada_fonte.webp` (960x540, 48 cores) sem o "K.I.K.I.U" que `gerar_entrada.py` desenha por cima. Não havia arte de título pronta; as capturas de partida (com HUD) não serviram. Registrado em `docs/LICENCAS_ARTE.md`. O prompt para uma arte de título nova está no corpo do PR da branch `alisson/v2-menu-principal`.
+- **Controle:** o InputMap da v2 não tinha o A em `ui_accept` nem o B em `ui_cancel` (só o D-pad e o analógico). `v2/entrada.gd` (`garantir()`) acrescenta os dois quando faltam, então o "Enter ou A confirma" do santuário passa a valer. A v1 não chama `garantir()`.
+- **Pausa (`v2/pausa.gd`):** novo sinal `fechou` (o título devolve o foco ao botão que abriu) e `abrir_creditos()`, em que o Voltar fecha direto sem passar por Ajustes. O resto da pausa não muda.
+- **Santuário:** o mesmo. A checagem de "argumento da v1" virou `Altar.pede_v1_na_entrada()` (mesmo código), chamada pelo título e pelo santuário.
+- **Testes:** `testes/v2_menu` novo (`v2_menu falhas=0`: foco por teclado, controle e mouse; Jogar por Enter, A e clique; ESC, Start e B em "Sair?"; Ajustes e Créditos abrem e voltam com o foco; só o Sim sai). `entrada_cenas` confere a nova cena principal. Também passam `v2_pausa`, `v2_musica`, `v2_meta`, `v2_esc` e `v2_cartas_espera`.
+- **Pendente:** a tela ainda não foi vista numa build exportada (o print do viewport está em `docs/prints/v2_menu_principal.png`). Conferir foco, leitura e controle no PC e no notebook. A arte final sai do prompt do PR no GPT: quando chegar, troca `assets/titulo/fundo.png` e registra a licença. O santuário não ganhou "voltar ao título" (não foi pedido).
+## 2026-10-12 (7) · Claude do Alisson (PC) · v2: esconde cartas sem efeito até ganharem efeito
+- **Feito:** Pesadelo (modo, recompensa de "Derrote o chefe") e Rastro de katana (visual, recompensa de "Combo de cinquenta") ganharam `oculta_ate_ter_efeito: true` em `dados/v2_meta.json`. Quem lê a flag: o santuário (a melhoria some; a recompensa some do texto da conquista, que segue na lista), o card SUA BUILD (seção santuário) e o sorteio (`v2/cartas.gd`, `_disponivel`, para cartas de `dados/v2_cartas.json`; nenhuma marcada hoje). Os dados ficam. Helpers em `v2/meta.gd`: `oculto()`, `melhorias_visiveis()`, `item_da_recompensa()`.
+- **Corrigi o `_ajuda` de `v2_meta.json`:** dizia que raridade, rolagem e almas não tinham efeito. Têm (`cartas.gd` usa raridade e rolagem; `meta.gd` credita almas), então seguem visíveis.
+- **Testes:** `v2_meta` (seção 6b), `v2_partida` (bloco 2b), `v2_status` e `v2_cartas_espera` com `falhas=0`, antes e depois. Foto com janela do santuário conferida: "Combo de cinquenta" mostra só "Cumprida.".
+- **Pendente / recados:** a issue "v2: reexibir cartas escondidas quando tiverem efeito" traz a regra (tirar `oculta_ate_ter_efeito` e apagar `efeito: "pendente"`). Para o Claude do Breno: o santuário mostra "Ainda sem efeito" em todo item sem nível, inclusive nos que têm efeito (Passos de caçador, Olho para o raro etc.); se quiser outro texto, é trocar em `v2/altar.gd` (`_atualizar`). PR não mergeado.
+## 2026-10-12 - Laboratorio: sombras base, passagens e objetos translucidos (PR #204)
+- **Feito:** `mapa.sombra_ambiente` (luz virtual em `sombras.gd`: o laboratorio tem sombra mesmo longe das luzes; a floresta nao muda), `mapa.copas_altura_min` (racks, armarios e tanques ficam translucidos sobre o heroi, generico em `copas.gd`), `v2/passagens.gd` (grade de navegacao com a colisao real: caminho ate cada zona de monstros com corpo comum e largo, sem ilhas, sem beco fino) e checagens em `testes/v2_mapas.gd` para todo mapa (inclui a futura Cidade). O layout do laboratorio ja passava: nenhum objeto precisou mudar.
+- **Pendente:** a Cidade (branch do Alisson) herda tudo ao por `sombra_ambiente` no JSON dela; o teste vai acusar objeto que feche passagem.
+- **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
+
+## 2026-10-12 - v2: DESIGN.md dos menus (guia visual da UI)
+- **Feito:** `jogos/hordas/projeto/v2/DESIGN.md` (144 linhas), extraído do código com `arquivo:linha`: resolução e área segura (a partida corta em COVER), paleta com as duplicações, tipografia pela grade, componentes, comportamento (Esc, trava, foco, sons) e os testes de UI. Uma linha no `CLAUDE.md` manda ler o guia antes de mexer em menu.
+- **Pendente (seção 8 do guia):** Spleen 12 px no SUA BUILD e Jersey 28 px no nome longo da carta, fora da grade; `telas.gd:248` diz "ouro da fusão" e a cor é magenta; ouro em 5 valores; XP e fôlego com cores trocadas entre HUD e card; vida em dois vermelhos.
+- **Próximo:** juntar as cores da v2 num arquivo só e fazer o `v2_fontes` conferir também o `TAM_NOME_CURTO` e os tamanhos do card.
+- **Nao conferi:** nada rodado no Godot (só docs). A branch `origin/alisson/v2-menu-principal` não existe no remoto; há um WIP local (`46b4f87`) que o guia não usa.
+
+_Claude do Alisson (PC)_
+
+## 2026-10-12 - Menu principal: arte nova do GPT e nome K.I.K.I.U (PR #215)
+- **Feito:** o nome do jogo no menu, nos testes, no LEIA-ME e neste log é K.I.K.I.U (com pontos). A arte de título nova, gerada no GPT pelo Alisson, está versionada em `jogos/hordas/fonte_arte/fundo_titulo_fonte.webp`. `gerar_fundo_titulo.py` lê dela, reduz para 960x540 com BOX e 48 cores e gera `assets/titulo/fundo.png`. Medido antes: a arte não tem grade de pixel fixa, então BOX e não NEAREST. O logo fica no centro-superior sobre o céu escuro (12,9:1 sem faixa), o menu no centro-inferior, sem cobrir o herói. A faixa escura atrás da dica ficou: sem ela o pior 1% dos pixels cai para 1,06:1 e com ela sobe para 3,34:1. Registro em `docs/LICENCAS_ARTE.md` como arte própria gerada no GPT pelo Alisson.
+- **Testes:** `v2_menu`, `entrada_cenas` e `v2_esc` com `falhas=0` (headless). O print `docs/imagens/v2_menu_principal.png` foi refeito com `--fotos` (com janela).
+- **Pendente:** olhar o print num monitor real (PC e notebook): a dica é pequena e o print é 1280x720.
+
+_Claude do Breno (PC)_
+
+## 2026-10-13 - v2 Marco 4, parte 1: mapa médio (PR em rascunho)
+- **Feito:** mapa `medio` (`dados/v2_medio.json`, terceiro item de `LISTA` em `v2/mapas.gd`, `--mapa=medio`). Mesma arte e colisão da floresta (a grade de colisão é fixa em 2880x1620), herói no santuário (canto oeste), 6 zonas de monstros e uma rota de 8 pontos (~6.900 px em linha reta, ~1 min 30 de caminhada com os desvios). Marcadores no JSON (`marcadores`): 4 baús com relíquia (`bau.gd`, `forcar` 3) e um mini-chefe (`chefe.gd`, marca `mini1`), que nascem uma vez quando o herói chega perto; atalho escondido e portão do chefe só como dados, sem efeito. `v2/mundo.gd` ganhou `_montar_marcadores` e `_checar_marcadores` (sem módulo novo).
+- **Testes:** `v2_mapas` com `falhas=0`, incluindo os marcadores (livres, alcançáveis do santuário, rota, baú e mini-chefe no mundo). `v2_mundo` acusa uma falha de luz (`luz fora da tela desligada e dentro ligada`), que também acontece na `main` sem estas mudanças: não é deste PR.
+- **Pendente:** atalho e portão ainda não fazem nada (a passagem escondida é geometria a desenhar). O nome "MÉDIO" no botão do santuário é provisório. Falta ver o mapa jogado: `godot --path jogos/hordas/projeto res://v2/mundo.tscn -- --mapa=medio`.
+- **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
+
+_Claude (PC do Breno, via Remote Control)_
+## 2026-10-13 · Codex Luna / Codex (PC) · executor de testes
+- **Feito:** preservado o código de saída do timeout/Godot; aprovação exige código 0, falhas=0 e nenhum SCRIPT ERROR. Logs distinguem timeout 124, crash/sinal e falha comum. Mantido o limite de 300 s do regras_armas; import do CI não mudou.
+- **Testes:** autoteste_executor com sucesso, código 7 após falhas=0, timeout real abreviado, crash 139, SCRIPT ERROR, saída incompleta, marca inválida e limite de regras_armas: falhas=0. gdformat -l 160 --check scripts testes: 173 arquivos limpos. Sem mudança no jogo; a bateria Godot não foi rodada neste assunto.
+- **Pendente / próximo:** CI do PR e integração separada da proteção de Release. Sem alterações nos arquivos v2 dos PRs #201/#214/#217/#219/#220/#222.
+
+_Codex (PC), workflow com agentes Luna_
+## 2026-10-13 · Codex Luna (PC) · save seguro da meta-progressão v2
+- **Feito:** `v2/meta.gd` grava por temporário validado, mantém `.bak`, recupera de backup e bloqueia gravação sobre save corrompido sem backup. `mapas.gd` usa os mesmos helpers, evitando que a escolha do mapa apague o save. Falhas retornam para compra, escolha de mapa e fim de partida; altar e resultado não anunciam ganhos que não foram salvos. `testes/v2_meta.gd` e `testes/v2_mapas.gd` passaram (`falhas=0`), cobrindo falha de gravação, compra sem persistência, recuperação do backup e corrupção sem backup.
+- **Pendente:** integrar a `origin/main` avançada durante este trabalho e conferir os arquivos sobrepostos com os PRs #201, #214, #217, #219, #220 e #222.
+## 2026-10-13 · CI da Release exige testes verdes no mesmo SHA
+- **Feito:** `ci.yml` pode ser chamado como workflow reutilizável; `release.yml` chama esse CI e `publicar` espera o CI e os dois jobs de exportação. O workflow reutilizável e os `actions/checkout` usam o SHA do evento da Release.
+- **Exports:** Linux, Web e Windows mantidos intactos; importação continua com `|| true` por causa do segfault conhecido no encerramento.
+- **Verificação:** YAML parseado; dependência de `publicar`, chamada local e caminho do workflow conferidos. Não rodei Godot para evitar concorrência com os testes nas outras branches.
+## 2026-10-13 · CI: lint consultivo da v2 e formatação obrigatória
+- **Feito:** `gdlint` agora inclui `scripts`, `testes` e `v2` como aviso; `gdformat` é um job separado e obrigatório, com `--check -l 160` nos três diretórios.
+- **Formatação:** `v2/creditos.gd` foi ajustado em commit próprio. Os checks de `gdformat` passam para `scripts`, `testes` e `v2` (219 arquivos sem novas alterações).
+- **Baseline:** `gdlint` segue consultivo e reporta 5.530 achados em 219 arquivos; saída completa em `C:\Dev\Breno\analise-kikiu\logs-ci\gdlint-baseline.txt`. Logs do formatter também ficam nessa pasta.
+- **Verificação:** YAML parseado e estrutura dos jobs/caminhos conferida. Não rodei Godot para evitar concorrência com outras branches.
+
+_Codex Luna (PC)_
+## 2026-10-13 · Codex (PC) · guia técnico da v2 e legado
+- **Feito:** README do módulo separa v2 disponível (título menu_principal, apresentação 960×540), legado v1 e roadmap. Comandos --bot/--online ficam identificados como legado; tabela de pastas identifica v2 e serviços compartilhados. Corrigido teto legado de prorrogação para 350.
+- **Verificação:** caminhos e cena principal conferidos com project.godot e módulos menu_principal/apresentacao/mapas; gdformat scripts/testes limpo na base inicial. Apenas documentação, sem alteração de comportamento; nenhuma cena Godot foi rodada para este assunto.
+- **Próximo:** revalidar a documentação e formatação sobre a main atualizada antes do PR.
+
+_Codex (PC), workflow com agentes Luna_
+
+
+## 2026-10-13 - v2 Marco 4, parte 2: mecânicas de exploração no mapa médio (PR em rascunho, depende da #220)
+- **Feito:** as 8 mecânicas no mapa médio, em 4 lotes com commit próprio. Lote A: baú trancado com a chave numa ruína, e relíquia montada com 4 fragmentos. Lote B: duas alavancas que abrem o atalho, e três pilares que precisam ser ativados na ordem da placa para liberar o mini-chefe. Lote C: defesa de ponto (30 s dentro do raio, com ondas de monstros, e uma relíquia), e placas de lore em 3 pontos. Lote D: mercador que troca almas da partida por uma carta, e espinhos com caminho de pedra seguro. Tudo em `v2/mundo.gd`, pelos marcadores do JSON; sem módulo novo, sem objeto criado por quadro (a defesa cria monstros a cada 4 s; os espinhos têm desenho criado uma vez).
+- **Decisões:** o "ouro" do mercador são as almas da partida (não há ouro no jogo); as almas gastas saem do `almas_partida`, o que também reduz o que a partida credita. O contador dos fragmentos é o banner da HUD (`FRAGMENTO n/4`), não um painel novo. Os marcadores da rota são ordenados por vizinho mais próximo a partir do santuário.
+- **Testes:** `v2_mapas` com `falhas=0` (cobre os quatro lotes: chave, trancado, fragmentos, alavancas, pilares em ordem e fora de ordem, chefe depois dos pilares, placas, defesa, mercador com e sem almas, espinhos dentro e fora do caminho). `v2_meta` e `v2_partida` com `falhas=0`. `v2_mundo` com a mesma falha de luz que já existia na `main` ("luz fora da tela desligada e dentro ligada").
+- **Pendente:** (1) as duas alavancas só marcam o estado e anunciam; a passagem física até o portão precisa de geometria (um objeto de colisão que se remove, ou um desenho do atalho). (2) o chão de espinhos e pedra são polígonos simples, sem arte: quem desenha é o Alisson. (3) o nome "MÉDIO" continua provisório. (4) a rota ficou de 6000 a 9000 px em linha reta (medido pelo teste), mas não foi jogada: o tempo real precisa de uma passada no PC.
+- **Para testar:** `godot --path jogos/hordas/projeto res://testes/v2_mapas.tscn` (imprime `v2_mapas falhas=0`), e jogar com `godot --path jogos/hordas/projeto res://v2/mundo.tscn -- --mapa=medio`.
+- **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`. Os espinhos e a pedra criados em código são placeholders de polígono: se preferir o seu desenho, troca em `v2/mundo.gd` (`_montar_espinhos`).
+
+_Claude (PC do Breno, via Remote Control)_
+## 2026-10-13 - Card SUA BUILD pagina os golpes (sem teto)
+- **Feito:** o card da v2 (pausa, painel central e HUD) deixou de cortar os golpes quando a build passa do que cabe. Na página visual da pausa e no painel central os golpes ganham páginas: quantos cabem sai da altura da coluna (sem número fixo), a última linha diz "Página X/Y · Q E", e Q e E trocam de página (pela entrada da pausa e do painel central). No HUD o compacto mostra o que cabe e o pé diz "+N golpes" (escolhido por ser o mais leve: sem troca automática de página). Golpe com nome longo e sem `curto` corta com "." no HUD, em vez de estourar a coluna. Com um golpe só não há paginação.
+- **Testes:** `v2_status` com `falhas=0` (novo bloco `_paginacao`: 50 golpes no HUD, na pausa e no painel central). Prints com os 50 golpes em `status_hud_50_golpes` e `status_pausa_50_golpes`.
+- **Pendente:** o detalhe da pausa (Tab) ainda corta com "+N golpes" em vez de paginar. Os 50 golpes de `dados/v2_armas/lote_*.json` não têm `curto`, então no HUD e na página visual os nomes saem cortados com "." (um `curto` por golpe resolve).
+
+_Claude do Breno (PC)_
+
+## 2026-10-13 · Codex (PC) · executor revalidado sobre a main atualizada
+- **Feito:** incorporada a main cdf67f7 sem descartar o trabalho paralelo. A formatação pendente em testes/v2_status.gd, vinda da main, foi corrigida em commit separado exclusivamente de formatação.
+- **Testes:** autoteste_executor falhas=0; gdformat -l 160 --check scripts testes: 174 arquivos limpos. O CI do PR #223 está em execução; imports do workflow permanecem intactos.
+- **Próximo:** integrar os PRs por assunto após conferir os checks.
+
+_Codex (PC), workflow com agentes Luna_
+
+## 2026-10-13 · Codex (PC) · autoteste integrado ao executor
+- **Feito:** o executor normal roda seu autoteste antes da bateria, sem recursão nos workers --uma. Assim o próprio CI verifica código 7 após marca de sucesso e timeout, sem alterar o import do Godot.
+- **Verificação:** autoteste_executor falhas=0; testes de sintaxe Bash e gdformat scripts/testes limpos. A instabilidade do esquiva legado está documentada no PR #223 com o log.
+
+_Codex (PC), workflow com agentes Luna_
+## 2026-10-13 (2) · Codex Luna (PC) · validação do save seguro
+- **Feito:** após integrar `origin/main` (`cdf67f7`), passaram `v2_meta`, `v2_mapas`, `v2_pausa`, `v2_esc`, `v2_musica` e `v2_status` com `falhas=0`; `gdformat --line-length 160 --check` passou em 174 scripts e testes. O fixture `v2_mapas` limpa também `.tmp` e `.bak`, gerados pelo save seguro.
+- **Sobreposição com PRs:** #201 não altera os arquivos de save; #214 altera `meta.gd` e `altar.gd`; #217 altera `altar.gd` e `resultado_meta.gd`; #219 já está integrado; #220 altera `mapas.gd`, `v2_mapas.gd` e `LEIA-ME.md`; #222 altera `v2_mapas.gd` e `LEIA-ME.md`. Os PRs ainda abertos que compartilham arquivos precisam de revisão ao integrar.
+- **Pendente:** PR/push será tratado pelo root.
+
+_Codex Luna (PC)_
+## 2026-10-13 · Codex (PC) · Release revalidada na main atualizada
+- **Feito:** incorporada a main cdf67f7 e mantidos os exports intactos. A Release chama o CI reutilizável local do mesmo commit, e publicar depende dele. Import com segfault de saída conhecido permanece tolerado.
+- **Verificação:** YAML e dependência do mesmo commit conferidos; gdformat scripts/testes: 174 arquivos limpos. Formatação pendente do teste v2_status da main foi isolada em commit próprio. Não rodei Godot local para mudança exclusiva de workflows; o CI do PR executa as cenas.
+- **Próximo:** conferir os checks e integrar com o PR separado de lint.
+## 2026-10-13 · Codex (PC) · lint revalidado na main atualizada
+- **Feito:** main cdf67f7 incorporada; formatação adicional de v2/status.gd e testes/v2_status.gd em commits exclusivamente de formatação. O job gdformat é obrigatório; gdlint permanece aviso; ambos incluem v2.
+- **Verificação:** gdformat scripts/testes/v2: 221 arquivos limpos; YAML e separação dos jobs conferidos. Não executei Godot local para mudança de workflow e formatação; CI do PR executa as cenas.
+- **Próximo:** integrar junto à proteção de Release; mudanças de workflow compatíveis por hunks distintos.
+## 2026-10-13 · Codex (PC), agentes Luna · grade de separação sem vizinho duplicado
+- **Feito:** cache dos hashes vizinhos únicos em vetores planos reutilizados por índice de ator. Recalcula só ao mudar a célula ou o alcance; cada bucket é visitado uma vez. Sem Dictionary por quadro e sem mudança em mundo.gd.
+- **Testes:** v2_combate: código 0, falhas=0, sem SCRIPT ERROR, incluindo raio comum no caso (84,214)/(73,203) e reutilização do cache.
+- **Custo:** benchmark headless, algoritmo original completo como referência, semente fixa, 20 amostras de 100 chamadas alternando ordem. Cache aquecido: 100 atores −35,2%, 500 −19,9%; em movimento a 45 px/s atravessando células: 100 −4,1%, 500 −3,2%. São tempos da separação, não FPS; confirmar em hardware alvo.
+- **Pendente / conflitos:** combate.gd pode sobrepor #201/#214/#220/#222. #217 mexe na UI; #219 já está na base cdf67f7. A correção do quadro extra é outro PR.
+## 2026-10-13 · Codex (PC), agentes Luna · sem quadro extra ao abrir a escolha
+- **Feito:** passo_tempo retorna 0.0 se _fim_camera_lenta abriu a escolha e ativou a pausa. Mudança de duas linhas em combate.gd; mundo.gd permanece igual. A grade é outro PR.
+- **Testes:** Godot 4.4.1 headless, após import real: v2_combate, v2_esc e v2_pausa, código 0, falhas=0 e sem SCRIPT ERROR. Teste força movimento do herói e confere relógio da partida e posições do herói/monstro no quadro exato da transição. gdformat scripts/testes limpo; formatação de teste v2_status da main em commit separado.
+- **Pendente / conflitos:** conferir sobreposição de combate.gd com #201/#214/#220/#222. #217 é UI; #219 já está na base atualizada.
+## 2026-10-13 · Codex (PC) · guia v2 revalidado sobre a main
+- **Feito:** documentação conferida sobre main cdf67f7; não anuncia recursos dos PRs abertos como entregues. Formatação pendente do teste v2_status da main em commit separado.
+- **Testes:** Godot 4.4.1 headless: v2_menu e entrada_cenas, código 0, falhas=0, sem SCRIPT ERROR. Cena principal e dimensões 960×540 conferidas nos arquivos; gdformat scripts/testes: 174 arquivos limpos.
+- **Próximo:** manter guia e roadmap alinhados a cada port da v1 ou integração de PR.
+
+_Codex (PC), workflow com agentes Luna_
+## 2026-10-13 · Codex com agentes Luna (PC) · recompensas em 1 segundo
+- **Feito:** escolha inicial e baú da v2 aguardam 1 s real; no baú todas as cartas são reveladas juntas ao completar esse segundo, independentemente de haver 1, 2 ou 3 recompensas. Rerrolar/banir mantém 0,8 s. A pausa e o descarte de cliques antecipados continuam cobertos.
+- **Testes:** Godot 4.4.1, import real; `v2_cartas_espera`, `v2_partida`, `v2_esc` e `v2_status`: código 0, `falhas=0`, sem `SCRIPT ERROR`. O fuzz de ESC ganhou 1000 passos para manter os mesmos mínimos de cobertura com a escolha mais curta; o teste do painel mede 0,25 s dentro da nova espera. `gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes` limpo. A tentativa inicial de executar `v2_cartas.tscn` não rodou: a cena não existe, e não é contada como teste aprovado.
+- **Pendente / recados:** conferir sensação em uma partida. Conflitos potenciais de dados/estilo com #201, #209, #214 e #217; as mudanças de mecânicas do mapa #220/#222 usam baús e devem preservar a espera nova.
+
+_Codex com agentes Luna (PC)_
+## 2026-10-13 · Névoa Espectral e leitura visual dos ataques
+- **Feito:** nuvens da v2 ganharam motivos animados próprios (espectros, fumaça de sono, bolhas, cristais, brasas e sangue), volume oval no chão, entrada/saída em fade e pulso proporcional à vida efetivamente removida. Projéteis, anéis, meteoros e aliados usam silhuetas próprias quando ajudam a identificar fogo, veneno, gelo ou sombra; pool fixo em 48.
+- **Compatibilidade:** a Névoa Espectral usa o sprite opcional `sp` quando ele existir, mantendo o pulso de acerto por cima. Assim, os sprites da PR #209 poderão assumir o corpo sem duplicação; os motivos por código funcionam mesmo sem ela.
+- **Mecânica e guia:** preservados lentidão, contagem de acertos e multiplicador de gelo da nuvem; pulso só ocorre com perda real de vida. Descrição/arte da carta e guia v2 atualizados.
+- **Verificação:** importação real Godot 4.4.1 concluída; `v2_partida` terminou com `falhas=0`; `gdformat -l 160 --check` e `git diff --check` limpos. Captura de viewport real (960×540, não vazia) em `C:\Dev\Breno\analise-kikiu\logs-ataques\identidade_nuvens.png`; rótulos da imagem pertencem apenas à cena de demonstração.
+
+_Codex LunaPC_
+
+- **Ajuste da conferência:** o roteiro de foto foi retirado de `testes/` e preservado como ferramenta local, pois aguardar `frame_post_draw` sem renderer trava a execução headless. Ele não é teste funcional nem participa do CI. Os testes de dano/feedback permanecem em `v2_partida`; rótulos pertencem somente à demonstração. A formatação global scripts/testes exige o commit separado de `v2_status` da main.
+
+## 2026-10-13 · Névoas com volume legível e carta espectral dentro do limite
+- **Visual:** veneno tem véus verdes claros irregulares sobrepostos, dobras sombreadas, deriva e entrada/saída suave. Espectros, bruma com cristais, sono lilás, cinzas densas, cortina de sangue, chuva ácida e esporos preservam motivos próprios. Textura procedural compartilhada criada uma vez; nó de fumaça criado na montagem, sem mistura aditiva, sem nós ou dicionários novos por desenho. Pool permanece em 48; mecânica de dano, raio, tique e duração não mudou.
+- **Carta e CI:** a descrição espectral anterior media 64 px no espaço de 54 px. A nova frase “Névoa com espectros que ferem quem fica nela.” mede 48 px; o critério de v2_fontes foi preservado.
+- **Verificação:** Godot 4.4.1 v2_partida, v2_status e v2_fontes com falhas=0; gdformat -l 160 --check (scripts/testes e fontes alteradas) e git diff --check passaram. Capturas OpenGL do veneno em escala 1× e grade de motivos em 2× ficaram fora do repositório, junto do wrapper local. Runners ainda reportam recursos/RID em uso ao encerrar, sem SCRIPT ERROR. Splash temporário da captura foi restaurado.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 - v2: barra de vida das elites
+- **Feito:** elites ganham uma barra pequena acima da região visual do sprite, calculada com o retângulo, offset e escala do Sprite2D. A barra nasce sob demanda só ao marcar elite, acompanha vida/vida máxima imediatamente ao receber dano, some com vida zero/morte e permanece escondida se o ator voltar ao pool como monstro comum; a mesma instância é reutilizada se virar elite outra vez.
+- **Testes:** `v2_hud falhas=0` (headless), cobrindo posição visual, fração de vida, morte, retorno ao pool como comum e reutilização como elite. Captura com renderer real em `C:\Dev\Breno\analise-kikiu\logs-hud\elite_barra_vida.png`.
+- **Formatação:** `gdformat -l160 --check` nos arquivos alterados.
+
+- **Conferência final:** formatação global de scripts/testes limpa após commit separado de formatação do teste de status da main. Captura real revisada; a primeira chamada com parâmetros de foto incorretos executou asserts de F3 e falhou em quatro rótulos no renderer, sem alterar esses testes. A chamada corrigida de captura terminou com código 0. A aprovação funcional citada acima é a execução headless com `falhas=0` e sem `SCRIPT ERROR`.
+## 2026-10-13 · Codex com agentes Luna (PC) · splash usa a arte atual
+- **Feito:** o menu já usava a arte nova do PR #215, mas `boot_splash/image` ainda referenciava `assets/icone/entrada.png`. A configuração da inicialização passa a apontar para `assets/titulo/fundo.png`, a mesma arte atual do menu. Nenhuma arte nova nem alteração dos exports.
+- **Testes:** Godot 4.4.1 com import real, `v2_menu` e `entrada_cenas`: código 0, `falhas=0`, sem `SCRIPT ERROR`; imagem configurada existente e referência conferida. Formatação global scripts/testes limpa em commit separado; `git diff --check` limpo.
+- **Pendente / recados:** conferir a abertura na próxima build; nenhuma mudança de combate. Guia atualizado.
+
+_Codex com agentes Luna (PC)_
+## 2026-10-13 - v2: árvores bloqueiam corrida e esquiva (Codex Luna PC)
+- **Causa:** `mundo.mover()` resolvia apenas a posição final. Um passo de esquiva com `delta=0,1` desloca cerca de 31 px; a pegada mais estreita pode ficar inteiramente entre posição inicial e final. O JSON de `prototipos/objetos/cenario.json` exporta as colisões das cinco árvores/tocos/troncos testadas, e os movimentos do herói passam por `mundo.mover()`: não era falta de export nem um bypass do herói.
+- **Correção:** passos de até 8 px quando o segmento pode tocar a caixa expandida de alguma forma; segmentos em área aberta continuam com uma única chamada ao resolver. O pré-filtro usa a grade já existente e o teste de caixa é conservador, sem alocação por quadro. O tamanho de 8 px fica abaixo da menor largura vertical de colisão expandida entre as pegadas de árvore e o raio 6 px do herói. A copa continua atravessável.
+- **Regressão:** `testes/v2_arvores.tscn` agora percorre o cenário real com as 572 formas: corrida e esquiva via `Heroi.atualizar()` contra os cinco tipos, percurso longo que começa/termina livre atravessando a árvore, e passagem pela copa. Reproduzida antes: início (1398,433), passo (0,35), base em (1402,456), terminou do outro lado; depois da correção, `v2_arvores falhas=0`.
+- **Desempenho:** benchmark local com 500 corpos em posições fixas do mapa, monstros a 45 px/s e um herói correndo/esquivando; medianas de 5×10 quadros, no `Godot 4.4.1`. Corrida 60fps: 2,90→3,46 ms/quadro (+0,56 ms); esquiva 60fps: 2,92→3,43 ms (+0,51 ms); corrida `dt=0,1`: 2,76→3,14 ms (+0,38 ms); esquiva `dt=0,1`: 3,19→3,44 ms (+0,26 ms). Também medido o pior caso artificial em que os 500 corpos fazem esquiva: corrigido 2,6× baseline em `dt=0,1`; isso não representa a horda (monstros não esquivam). Log fora do repositório: `C:\Dev\Breno\analise-kikiu\logs-arvores\v2-arvores-passo8-full.txt`.
+- **Testes e revisão:** import real executado; depois dele, `v2_arvores falhas=0`, `v2_colisao falhas=0` e `v2_combate falhas=0`, todos exit 0 e sem SCRIPT ERROR. Uma execução de `v2_combate` antes do reimport emitiu atribuição de `n` em Nil em `v2/horda.gd:282`; após o reimport, não se reproduziu. Os runners de árvores/combate imprimem avisos de RID/recursos em uso no encerramento. `gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes` e `git diff --check` passam. PRs sobrepostos consultados: #201 e #214 tocam movimento do herói/mundo, mas não alteram a rota `mundo.mover`; #217 não conflita; #220/#222 só tocam marcadores do mundo, sem conflito lógico.
+- **Guia mínimo:** ao mudar uma pegada, edite a fonte do protótipo e regenere `prototipos/objetos/cenario.json`; faça `godot --headless --path jogos/hordas/projeto --import`, rode `res://testes/v2_arvores.tscn`, e não versione `.import`, `.uid` nem `.godot/` gerados.
+
+_Codex Luna (PC)_
+
+- **Refino do caminho comum:** movimentos curtos usam comprimento ao quadrado e resolvem uma única vez, sem divisão nem laço de subpassos. O benchmark acima descreve a versão anterior com laço de uma iteração; o refino não é uma promessa de FPS. Guia da v2 atualizado.
+
+- **CI / teste de mundo:** a primeira execução do PR falhou em `v2_mundo`: o teste deixava o herói junto de uma forma após a perseguição e esperava deslocamento puro (início 1150,213/443,742; feito 10,249/5,331). A nova resolução intermediária corretamente corrige a colisão. O caso de soma agora encontra um trajeto livre dentro da área andável sem apagar as formas; o clamp é testado separadamente com ator fora do limite. `v2_mundo` passou com código 0, `falhas=0`, sem `SCRIPT ERROR`. Log da falha do CI e diagnóstico preservados.
+## 2026-10-13 - HUD de habilidades E/Q da v2
+- **Feito:** cards originais E/Q na faixa inferior, lendo apenas o estado real da Ruptura quando o herói o publica. Na main, E fica indisponível; Q fica cinza com “EM BREVE” até existir mecânica. No PR201, os desenhos antigos dos slots ficam transparentes e seus nós/flags permanecem intactos. Layout evita XP e coluna de status.
+- **Testes:** `v2_hud` e teste de integração temporário no checkout `origin/alisson/v2-ruptura`, ambos `falhas=0`; integração verificou prontidão, carga, recarga e transparência dos controles antigos. Capturas OpenGL em `C:\Dev\Breno\analise-kikiu\logs-hud\overwatch_pr201_*.png`.
+- **Pendente:** Q não tem mecânica implementada. Documentação em `docs/v2_hud_habilidades.md`.
+
+_Codex (PC)_
+- **Conferência:** `v2_status` e `v2_esc` na base principal, `v2_escudo`, `v2_ruptura` e a integração real em PR201 sem `SCRIPT ERROR`. Formatação global no escopo obrigatório scripts/testes limpa após commit separado de status; os scripts do adaptador também passam. O projeto inteiro contém outras pendências de formatação alheias, preservadas. Desenho do adaptador revisado por GPT-6.1 Sol leve; nenhuma mecânica nova de Q.
+
+## 2026-10-12 — v2: Ruptura no botão direito (PR #201)
+- **O que entrou:** habilidade nova no botão direito do mouse e no gatilho esquerdo do controle (`v2/ruptura.gd`, dados em `dados/v2_ruptura.json`): segurar carrega, soltar racha o chão em 360° (dano, atordoamento, empurrão; chefe só leva dano e lentidão), com recarga, janela de soltura perfeita, contragolpe, 5 cartas de melhoria, slot no HUD, 4 sons e `--roteiro=ruptura` para fotos/medição.
+- **Testes:** `testes/v2_ruptura.tscn` (`falhas=0`), mais `v2_combate`, `v2_hud`, `v2_pausa` e `v2_fontes` depois de mesclar a main (#203).
+- **O que NÃO foi conferido:** o feeling no jogo aberto (tempo de carga, peso do tremor e do hit-stop, volume dos sons) — só teste automático e prints. Precisa de alguém jogando.
+- **Pendente:** ao mesclar depois do #190 (card SUA BUILD) há conflito de texto em `combate.gd` e `LEIA-ME.md`; resolver e rodar `v2_status`, `v2_combate` e `v2_ruptura`.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-12 — v2: esquema Overwatch nos botões (PR #201)
+- **Decisão do Alisson:** botão direito = tiro SECUNDÁRIO definido por herói (hoje: ESCUDO), **E** (LB) = habilidade (a Ruptura saiu do botão direito), **Q** (RB) = ultimate (reservado: só a ação `ultimate` e um slot vazio no HUD, sem mecânica).
+- **Escudo** (`v2/escudo.gd`, dados em `dados/v2_secundario.json`, com `_ajuda`): segurar ergue um arco de 120° na direção da mira que barra o dano vindo da frente (contato, avisos no chão e ataques do chefe, tudo por `Heroi.levar_dano(valor, de, quem)`, que agora devolve true também quando o golpe é barrado). Anda a 60%, não corre nem golpeia, gasta 1,2 de fôlego por segundo (o mesmo da corrida; zerar deixa cansado e o escudo cai). Bloqueio perfeito (primeiros 0,15 s): sem gasto, empurra e atordoa 0,7 s quem bateu. Qual secundário cada herói tem é dado (`v2_secundario.json > padrao` e `herois`): a branch `alisson/v2-herois` só mapeia a chave do herói para outro id quando o módulo dele existir.
+- **Testes:** `v2_escudo` novo (`falhas=0`); `v2_ruptura` adaptado para E/LB; `v2_combate`, `v2_esc`, `v2_hud` e `v2_status` ok. Merge da main (#190 card SUA BUILD e #199) resolvido em `combate.gd` e `LEIA-ME.md`.
+- **O que NÃO foi conferido:** o jogo na janela real: a legibilidade do arco azul, o peso do bloqueio perfeito (hit-stop e tremor), o volume dos sons reaproveitados, o LT/LB com controle de verdade, e se segurar o direito com o mouse parado mira para onde se espera.
+- **Pendente:** o painel de status (`status.gd`) ainda não mostra o escudo (`escudo.resumo()` está pronto); o ultimate (Q) não tem mecânica.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · integração para entrega
+- **Feito:** PRs #223–#235 e #201 integrados por merges preservando todos os históricos, sobre main a78829f (mapa médio #220). Guias combinados, splash obrigatório `res://assets/titulo/fundo.png`, E carrega/solta Ruptura, botão direito/LT escudo e Q reservado. Exports/presets sem alteração.
+- **Correções da integração:** teste de Ruptura atualizado para os 50 golpes existentes na base; fixtures de status, ESC, pausa, música e fontes limpam os backups e temporários dos seus saves de teste. A falha inicial do status (backup recuperado pelo novo save seguro) foi preservada em log separado. Formatação de escudo/Ruptura/mundo em commit próprio.
+- **Validação real:** Godot 4.4.1, duas importações, código 0 e sem SCRIPT ERROR. Cenas v2_ruptura, v2_escudo, v2_hud, v2_meta, v2_arvores, v2_mundo, v2_combate, v2_cartas_espera, v2_partida, v2_esc, v2_status, v2_fontes, v2_menu, entrada_cenas, v2_mapas, v2_pausa e v2_musica: código 0, falhas=0, sem SCRIPT ERROR. Meta provoca erros de parse do save corrompido intencionalmente; avisos de recursos/RID no encerramento headless permanecem, sem falha nas cenas.
+- **Checks:** autoteste_executor código 0/falhas=0; gdformat -l 160 --check scripts/testes/v2 (227 arquivos limpos), git diff --check e ancestralidade dos 14 heads conferidos. Nenhuma entrada anterior da main removida do LOGBOOK; imports/cache/UID aleatórios fora dos commits. Logs locais em analise-kikiu/logs-entrega.
+- **Próximo:** revisão, CI da integração e build exportada pelo agente responsável; nenhum push/merge GitHub feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · retomada da integração para entrega
+- **Feito:** integração atualizada por merge da main a6004a7, incluindo mecânicas do mapa médio #222 e correção do teste do elmo #221. Os 14 heads de #201 e #223–#235 continuam preservados. Splash permanece em `res://assets/titulo/fundo.png`; E/Ruptura e botão direito/escudo preservados; Q reservado. Exports/presets sem alteração.
+- **Validação real após a atualização:** Godot 4.4.1 headless nas 18 cenas v2_mapas, v2_mundo, v2_ruptura, v2_escudo, v2_hud, v2_esc, v2_combate, v2_cartas_espera, v2_status, equipamentos, v2_arvores, v2_partida, v2_meta, v2_fontes, v2_menu, entrada_cenas, v2_pausa e v2_musica: todas código 0, falhas=0 e sem SCRIPT ERROR. Logs em analise-kikiu/logs-entrega-retomada. Meta exercita save corrompido intencionalmente; avisos de recursos/RID no encerramento headless permanecem.
+- **Checks:** gdformat -l 160 --check scripts/testes/v2: código 0, 227 arquivos limpos; git diff --check limpo. Imports/UID não rastreados permanecem fora dos commits.
+- **Limite confirmado por leitura do código:** os espinhos de #222 chamam Heroi.levar_dano com origem na posição do herói; Escudo.cobre considera origem a menos de 0,5 px como coberta. Assim, escudo erguido bloqueia espinhos pela regra existente. Nenhuma mudança de design feita nesta integração; comportamento deve entrar na revisão de gameplay da build.
+- **Próximo:** atualizar PR #236, obter CI verde e exportar/validar a candidata com este commit; publicação e merge remoto ficam com o agente responsável.
+
+_Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-13 · Cidade na seleção e Ruínas da Floresta
+- **Antes/depois:** a build main 5dd7972 mostrava Floresta, Laboratório e Médio. Integrada a Cidade da PR #211 (head 2aa41db) por merge da main, preservando histórico e assets: a seleção agora oferece Floresta, Laboratório, Cidade e Ruínas da Floresta. O antigo `medio` conserva id, dados, progresso e mecânicas #220/#222; só os textos mudam para RUÍNAS DA FLORESTA e ENTRAR NAS RUÍNAS. Save seguro, árvores, E/Ruptura e escudo da main preservados.
+- **Testes:** import real Godot 4.4.1 exit 0; v2_mapas, v2_mundo e v2_arvores exit 0/falhas=0/sem SCRIPT ERROR. v2_mapas cobre os quatro mapas, rua da Cidade de 300 px, passagens, marcadores/espinhos das ruínas, save legado bruto `medio`, preservação de outros dados e fallback desconhecido. Renderer OpenGL real (Intel Iris Xe) também v2_mapas exit 0/falhas=0; capturas do mundo e seleção 960×540 revisadas, nome e botão das ruínas cabem.
+- **Custo CPU, sem promessa de FPS:** benchmark headless de `mundo.avancar(1/60)`, 20 monstros, semente 211, 100 passos de aquecimento por caso e 20 amostras de 100 passos, alternando ordem dos quatro casos e montando um mundo por vez. Medianas: Laboratório média 410,98 µs/alta 457,55 µs; Cidade média 372,42 µs/alta 417,38 µs. Cidade conserva 177 objetos e 85 luzes do mapa (87 no mundo incluindo duas do herói); Laboratório 376 objetos/122 luzes totais. Mede CPU com renderer dummy, não custo de GPU nem gameplay completo. Primeira tentativa via --script não carregou autoloads e foi encerrada; log da falha preservado, não contado como validação.
+- **Checks/limites:** gdformat scripts/testes/v2 (227 arquivos) e git diff --check limpos. Logs, capturas e wrapper local em C:/Dev/Breno/analise-kikiu/logs-cidade-nova, fora do Git. Avisos RID/recursos no encerramento headless permanecem. Nenhum push/merge remoto neste bloco; publicação/CI/build ficam com o agente principal.
+
+_CodexSolPC_
+
+- **Correção da conferência visual:** o nome inteiro aparecia no PNG anterior, mas isso não provava ausência de sobreposição. Assert após `process_frame` reproduziu seletor de Ruínas terminando em x348 contra ENTRAR em x300 (48 px sobrepostos). `_atualizar_mapa` agora mantém fonte Jersey 19 em todos os mapas, texto completo, tooltip e largura 248 px. O teste espera o mínimo diferido do Godot e verifica geometria nos quatro mapas. `v2_mapas`, `v2_meta` e `v2_fontes` sobre a correção: exit 0/falhas=0/sem SCRIPT ERROR; renderer real também passou os limites. Formatação global (227 arquivos) e diff limpos.
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Santuário compacto e volta ao título
+- **Feito:** ESC/Start/B e botão VOLTAR retornam do Santuário ao menu principal. Só o título pede Sair por ESC; a pausa da partida mantém seu fluxo. Ajustes/Gráficos continuam voltando um nível e devolvem foco ao botão Ajustes quando fecham.
+- **Visual:** melhorias em grade 3×3 com marcadores de nível e custo/estado, detalhe único por foco ou mouse (inclusive bloqueadas/máximas), conquistas com barras rotuladas pela última partida e descrição acessível pelo teclado/controle. Fundo atual `assets/titulo/fundo.png`, sem mudar splash/exports. Nome completo de mapa cabe no botão em fonte 19, inclusive RUÍNAS DA FLORESTA; resumo inicial neutro.
+- **Validação:** Godot 4.4.1 real: v2_santuario, v2_meta, v2_pausa, v2_menu, v2_esc, v2_status, v2_fontes e v2_musica com código 0/falhas=0. Teste novo usa Input.parse_input_event e current_scene real para ESC, Start, B, Enter e clique; confere foco, estados bloqueado/máximo, barras e limites de cartões/textos. Falha de gravação e itens ocultos preservados por v2_meta. gdformat -l 160 --check scripts/testes/v2 limpo (228 arquivos); git diff --check limpo.
+- **Conferência visual:** capturas reais do viewport 960×540, janela oculta e frame_post_draw, antes/depois com saldo zero/com almas, barras parciais e conquistas cumpridas. Logs/fotos locais em `C:/Dev/Breno/analise-kikiu/logs-santuario`, fora do Git. Avisos de recursos/RID ao encerrar headless continuam; erros de parse de save em meta são intencionais. Nenhuma arte binária/import/cache adicional versionada.
+- **Próximo:** agente principal publica PR coeso do Santuário e integra com o PR separado dos mapas antes da build conjunta; nenhum push/merge feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · validação conjunta Santuário e Cidade
+- **Feito:** merge local da branch Cidade (`9337defd5088bb61fd6c876f0f3dd33b782570ec`) no Santuário, preservando ambos os históricos. Guia combina os dois blocos; LOGBOOK mantém todas as entradas. Grade, navegação, fundo atual e detalhes do Santuário preservados; seletor fica em fonte Jersey 19, largura 248 px e tooltip com nome completo. Removida só uma linha vazia final herdada de `cidade_pecas.py` para diff-check.
+- **Validação conjunta:** import real Godot 4.4.1 código 0/sem SCRIPT ERROR. v2_mapas, v2_santuario, v2_meta, v2_fontes, v2_menu e v2_esc: código 0/falhas=0/sem SCRIPT ERROR. gdformat scripts/testes/v2 limpo (228 arquivos); git diff --check e git diff --cached --check limpos. Avisos de recursos no encerramento e save corrompido intencional de meta permanecem.
+- **Visual:** renderer OpenGL real, viewport 960×540, janela oculta e frame_post_draw; capturas de RUÍNAS DA FLORESTA e CIDADE revisadas. Nomes completos, ENTRAR, grade e VOLTAR cabem; seletor termina em x284 contra ENTRAR em x300. Logs/fotos em `C:/Dev/Breno/analise-kikiu/logs-santuario/conjunto`, fora do Git.
+- **Próximo:** agente principal atualiza PR #238 por push normal e mescla Cidade #211 após CI verde; publicação/build conjunta ficam com ele. Nenhum push/main/PR feito neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · morte e retorno seguro ao santuário
+- **Antes/depois:** Alisson relatou travamento/fechamento ao morrer. Windows registrou 0xc0000005 na build b7a1d87; reprodução com Enter em CONTINUAR saiu -1073741819. No Godot de desenvolvimento, a mesma entrada produz SCRIPT ERROR em mundo.gd:694 (viewport nulo): resultado_meta trocava a cena imediatamente antes de mundo marcar o evento. A troca agora é diferida até terminar a entrada, com guarda contra cliques repetidos.
+- **Falha de save:** o relógio e o botão CONTINUAR avançam mesmo quando a meta não grava; mantém NÃO FOI POSSÍVEL SALVAR, sem creditar almas falsas nem prender o jogador na tela.
+- **Testes reais:** Godot 4.4.1 import exit 0; v2_morte (novo, quatro mapas, Enter/mouse/A, entrada precoce/repetida, mundo pausado, crédito único, gravação recusada e hash do save real), v2_meta, v2_partida, v2_esc e v2_santuario: todos exit 0/falhas=0/sem SCRIPT ERROR. v2_morte também passou com renderer OpenGL Intel Iris Xe, janela oculta 960×540. Avisos de RID/recursos ao encerrar harness permanecem; recusa de .tmp é intencional. gdformat scripts/testes/v2: 229 arquivos limpos; diff-check limpo.
+- **Próximo:** CI do PR e repetir no EXE exportado junto aos efeitos visuais. Splash e exports preservados. Logs fora do Git em C:/Dev/Breno/analise-kikiu/morte-*.log.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 - #128 (Marco 4): código que faltava (PR de rascunho para a main, branch claude/v2-marco4-codigo)
+- **Feito:**
+  1. Determinismo: `testes/v2_mapas` confere que dois mundos do mesmo mapa têm as mesmas posições de objetos e de monstros iniciais (mesma semente, mesmo mapa).
+  2. Minimapa (`v2/minimapa.gd`): Tab segurado abre o mapa grande e soltar volta ao pequeno (antes alternava); baús ativos aparecem só depois de revelados pela névoa; missões longe do herói (chefe e portão) ganham seta na borda do minimapa. A névoa por raio já existia.
+  3. Pontos altos: marca `mirante` no mapa médio (1350, 1140); ao entrar no raio, o minimapa revela o mapa inteiro de uma vez.
+- **Não feito (pendente):**
+  - Mapas gerados por semente a partir de peças por região: o cenário da v2 é o JSON à mão, em 2880x1620. Só entra com um gerador novo, fora do formato atual.
+  - Prints dos 5 mapas por região: a v2 não tem regiões (são 3 mapas).
+  - Arte do Alisson: torre (o mirante é só a marca) e estruturas (ruína, altar, ponte, passagem, platô, portão).
+  - Alavancas com passagem física até o portão: ainda só marcam estado.
+- **Fps (medido no PC do Breno, sem linha de base aqui):** `--medir --estresse=100 --imortal --sombra=media --sem_vsync` deu 23,4 fps na floresta e 30,4 fps no médio. O `v2/fps.txt` (142 fps na horda média) veio de outra máquina (Iris Xe), então a comparação não vale. Falta medir a `main` nesta máquina para ver a diferença real. A meta do Marco 3 não está escrita no repositório; precisa de um número para comparar.
+- **Testes:** `v2_mapas` falhas=0, `v2_minimapa` falhas=0, `v2_meta` falhas=0, `v2_partida` falhas=0. (Os erros de ConfigFile em `v2_meta` são do teste de save corrompido, esperados.)
+- **Para testar:** no mapa médio, segurar Tab (mapa grande), passar por um baú antes de vê-lo e entrar no mirante (1350, 1140) para o mapa inteiro se revelar.
+- **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
+
+_Claude (PC do Breno, via Remote Control)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Ruptura e escudo com volume
+- **Feito:** visual autoral por geometria na v2: sigilos internos e halo na carga; janela perfeita com pulso dourado suave no lugar do piscar a 20 Hz; onda em camadas e fissuras com núcleo quente e ramificações. Escudo curvo elevado com painéis, nervuras e runa central; sustentação azul, bloqueio branco, perfeito dourado com oito raios; ponto de impacto acompanha a origem. Nenhum asset externo/licença adicional, nó por quadro ou alteração de alcance, dano, fôlego, janela ou controles.
+- **Validação:** Godot 4.4.1 import exit 0; v2_ruptura, v2_escudo, v2_combate e v2_hud exit 0/falhas=0/sem SCRIPT ERROR. Uma falha inicial de inferência de tipo foi corrigida, preservando o log local. Capturas reais 960×540 com OpenGL/Intel Iris Xe, janela oculta: carga, carga perfeita, disparo, escudo, bloqueio comum e perfeito revisados. Avisos de RID no encerramento permanecem. Wrapper/fotos/logs locais não versionados.
+- **Próximo:** agente principal revisa PR e faz build; nenhum push/merge neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Emblema de solo rompido no HUD
+- **Feito:** substituído o símbolo angular da Ruptura por duas placas de pedra separadas e fenda central ramificada, autoral e compacto no ícone 48×48. Estados/cores/carga/recarga continuam os mesmos; nenhum ajuste no mundo ou nos efeitos de Ruptura/escudo.
+- **Validação:** Godot 4.4.1 v2_hud e v2_ruptura exit 0/falhas=0/sem SCRIPT ERROR. Capturas reais OpenGL 960×540 com janela oculta, prontidão/carga/recarga e detalhes do card inspecionados; fotos/logs locais no worktree, fora do Git. gdformat global e diff-check conferidos.
+- **Próximo:** agente principal atualiza PR #240 e CI; build precisa ser reexportada com este novo ícone.
+
+_Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-14 · Codex GPT-6.1 Sol (PC) · retomada do PR #240 sobre a main
+- **Feito:** merge da main b70bf6e (#241), mantendo névoa/Tab segurado/setas/mirante, os quatro mapas, correção da morte #239, splash atual e efeitos/ícone do #240. LOGBOOK da main preservado integralmente como prefixo, notas deste PR ao fim; sem reescrever entradas anteriores. Nenhuma integração dos PRs #242/#245/#246.
+- **Testes reais:** Godot 4.4.1 import código 0. v2_mapas, v2_minimapa, v2_morte, v2_ruptura, v2_escudo, v2_hud, v2_combate, v2_meta, v2_partida e v2_santuario: todos código 0/falhas=0/sem SCRIPT ERROR. gdformat scripts/testes/v2: 229 arquivos limpos; diff-check limpo. Avisos de recursos ao encerrar harness permanecem e save corrompido de meta é intencional. Logs locais pr240-retomada-*, fora do Git.
+- **Próximo:** CI do head atualizado, exportação e QA do EXE com minimapa e efeitos juntos; merge e Release somente com checks verdes. Sem alteração de exports, regras de habilidades ou novas artes.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-14 · Claude do Alisson (notebook) · divisão de trabalho entre os três agentes
+- **Feito:** decisão do Alisson registrada no fim do `CLAUDE.md` (seção reescrita) e no `AGENTS.md` novo, que o Codex lê. Claude do Alisson: sistemas, arquitetura e **integração** (resolve conflito entre PRs). Codex do Alisson: frente visual inteira (arte, sprites, efeitos, animação, UI, paleta) e builds. Claude do Breno: leve (números e textos nos JSON, conteúdo, testes da Release no i5, decisões).
+- **Regras:** reservar antes de começar, ficar na sua área de arquivos, uma só mão integra, cada um mescla só os próprios PRs.
+- **Para o Codex:** ficam com você o #209 (sprites das armas: atualizar com a main) e o #217 (paleta: refazer do zero na main atual).
+- **Para o Claude do Breno:** o #242 (Salão do herói) e o nosso #214 (Nicão e Lucas) se sobrepõem; o Alisson e o Breno decidem qual base vale, e o Claude do Alisson junta.
 
 _Claude do Alisson (notebook)_

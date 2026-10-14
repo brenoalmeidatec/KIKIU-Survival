@@ -5,6 +5,7 @@ extends Node
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_partida.tscn  (imprime "v2_partida falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
+const ArmasNovas := preload("res://v2/armas_novas.gd")
 const PASSO := 1.0 / 60.0
 var falhas := 0
 var w
@@ -114,8 +115,8 @@ func _ready() -> void:
 
 	# 0. dados
 	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
-	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 5 and cfg.modificadores.size() == 4, "4 raridades, 5 golpes secundários e 4 modificadores")
-	ok(cfg.evolucoes.size() >= 3, "pelo menos 3 evoluções nos dados")
+	ok(cfg.raridades.size() == 4 and cfg.golpes.size() == 50 and cfg.modificadores.size() == 4, "4 raridades, 50 golpes secundários e 4 modificadores")
+	ok(cfg.evolucoes.size() == 25, "25 evoluções nos dados (4 antigas, 5 novas e 16 de 2, 3 e 4 peças)")
 	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
 
 	# 1. a raridade sobe com o nível
@@ -190,6 +191,19 @@ func _ready() -> void:
 		if _tem_id(cs.sortear(3, 5), alvo_ban):
 			voltou = true
 	ok(not voltou, "a carta banida nunca mais sai")
+	# 2b. carta escondida até ter efeito (oculta_ate_ter_efeito em dados/v2_cartas.json) não sai no sorteio, e volta sem a flag
+	var escondida: Dictionary = cs.definicao("critico")
+	var tinha: bool = cs.disponiveis().has(escondida)
+	ok(tinha, "a carta de teste (critico) começa disponível no sorteio")
+	escondida["oculta_ate_ter_efeito"] = true
+	ok(not cs.disponiveis().has(escondida), "a carta escondida sai da lista de disponíveis")
+	var saiu_escondida := false
+	for i in 80:
+		if _tem_id(cs.sortear(3, 5), "critico"):
+			saiu_escondida = true
+	ok(not saiu_escondida, "a carta escondida nunca sai no sorteio")
+	escondida.erase("oculta_ate_ter_efeito")
+	ok(cs.disponiveis().has(escondida), "sem a flag a carta volta a ficar disponível")
 	ok(w.combate.progresso.banir(0) and not w.combate.progresso.banir(0), "os banimentos acabam (%d no total)" % int(cfg.escolha.banir_total))
 	w.combate.progresso.escolher(0)
 	ok(not w.combate.pausado and w.combate.jogo == "jogando", "escolher fecha a tela")
@@ -216,6 +230,97 @@ func _ready() -> void:
 			int(w.combate.armas.acertos.get(tipo, 0)) > 0 and m.vida < v0,
 			"o golpe %s (%s) acerta o monstro (vida %d de %d)" % [id, tipo, roundi(m.vida), roundi(v0)]
 		)
+	# 3b. os golpes novos (leva 5): o primeiro de cada tipo novo acerta (o meteoro conta como "explode", o estouro da explosão)
+	var vistos := {}
+	for d in cfg.golpes:
+		var tp := str(d.tipo)
+		if tp in ["orbita", "aura", "corvos", "raio", "runa"] or vistos.has(tp):
+			continue
+		vistos[tp] = true
+		var chave := "explode" if tp == "meteoro" else tp
+		zerar()
+		var mn = monstro_a(60.0, 0.0)
+		mn.cacador = false
+		mn.raio_vaga = 0.0
+		pegar(str(d.id), 0)
+		ok(w.combate.armas.tem(str(d.id)), "o golpe novo %s entra pela carta" % str(d.id))
+		var vn: float = mn.vida
+		ate(func(): return mn.vida < vn, 1200)
+		var ac := int(w.combate.armas.acertos.get(chave, 0))
+		ok(
+			ac > 0 and mn.vida < vn,
+			(
+				"o golpe novo %s (%s) acerta o monstro (acertos %d, vida %d de %d, perto %d, ativos %s)"
+				% [str(d.id), tp, ac, roundi(mn.vida), roundi(vn), w.combate.armas._perto.size(), str(w.combate.armas.novas.tem_ativos())]
+			)
+		)
+	ok(vistos.size() == 5, "os 5 tipos novos estão nos dados (%d)" % vistos.size())
+	# 3c. nuvens têm motivos, fades e feedback ligado à vida removida
+	ok(
+		(
+			ArmasNovas.motivo_nuvem("nevoa_espectral") == "espectros"
+			and ArmasNovas.motivo_nuvem("nuvem_veneno") == "bolhas"
+			and ArmasNovas.motivo_nuvem("nevoeiro_gelado") == "cristais"
+			and ArmasNovas.motivo_nuvem("cinzas_vulcanicas") == "brasas"
+			and ArmasNovas.motivo_nuvem("cortina_sangue") == "sangue"
+			and ArmasNovas.motivo_nuvem("fumaca_sonolenta") == "sono"
+		),
+		"cada nuvem escolhe o motivo animado do seu elemento"
+	)
+	ok(
+		(
+			ArmasNovas.opacidade_nuvem(4.0, 4.0) == 0.0
+			and is_equal_approx(ArmasNovas.opacidade_nuvem(2.0, 4.0), 1.0)
+			and ArmasNovas.opacidade_nuvem(0.0, 4.0) == 0.0
+		),
+		"a nuvem surge e desaparece com fade sem alterar sua duração"
+	)
+	ok(w.combate.armas.novas.itens.size() == ArmasNovas.MAX, "efeitos usam o pool fixo de 48 slots")
+	zerar()
+	var mn_nuvem = monstro_a(0.0, 0.0)
+	var arma_nuvem := {"id": "nevoa_espectral", "st": {"dano": 8.0, "tique": 0.5, "duracao": 4.0, "lentidao": 0.4}, "cor": Color(0.8, 0.95, 0.95)}
+	var camada_nuvem = w.combate.armas.novas
+	var slot_nuvem: Dictionary = camada_nuvem._novo("nuvem", arma_nuvem, mn_nuvem.pos, 4.0)
+	slot_nuvem.r = 50.0
+	slot_nuvem.t = 0.01
+	var vida_nuvem: float = mn_nuvem.vida
+	camada_nuvem._tique_nuvem(slot_nuvem, PASSO)
+	ok(mn_nuvem.vida < vida_nuvem and slot_nuvem.pulso > 0.0 and mn_nuvem.lento_t > 0.0, "o pulso aparece com dano real e preserva a lentidão da nuvem")
+	slot_nuvem.t = 0.01
+	camada_nuvem._tique_nuvem(slot_nuvem, PASSO)
+	ok(slot_nuvem.pulso > 0.0 and int(w.combate.armas.acertos.get("nuvem", 0)) == 2, "cada tique real renova um pulso e conta um acerto de área")
+	zerar()
+	var nuvem_vazia := {"id": "nevoa_espectral", "st": {"dano": 8.0, "tique": 0.5, "duracao": 4.0, "lentidao": 0.0}, "cor": Color(0.8, 0.95, 0.95)}
+	var slot_vazio: Dictionary = w.combate.armas.novas._novo("nuvem", nuvem_vazia, w.heroi.pos, 4.0)
+	slot_vazio.r = 50.0
+	slot_vazio.t = 0.01
+	w.combate.armas.novas._tique_nuvem(slot_vazio, PASSO)
+	ok(slot_vazio.pulso == 0.0 and int(w.combate.armas.acertos.get("nuvem", 0)) == 0, "sem vida removida a névoa não pulsa nem anuncia acerto")
+	var imune = monstro_a(0.0, 0.0)
+	imune.morrendo = true
+	var nuvem_sem_hit := {
+		"id": "nevoeiro_gelado", "st": {"dano": 8.0, "tique": 0.5, "duracao": 4.0, "lentidao": 0.4, "gelo_mult": 2.0}, "cor": Color(0.2, 0.55, 1.0)
+	}
+	var slot_sem_hit: Dictionary = w.combate.armas.novas._novo("nuvem", nuvem_sem_hit, imune.pos, 4.0)
+	slot_sem_hit.r = 50.0
+	slot_sem_hit.t = 0.01
+	w.combate.armas.novas._tique_nuvem(slot_sem_hit, PASSO)
+	ok(slot_sem_hit.pulso == 0.0, "alvo imune ou morrendo nunca acende o pulso de acerto")
+	zerar()
+	var lento = monstro_a(0.0, 0.0)
+	lento.lento_t = 1.0
+	var nuvem_gelo := {
+		"id": "nevoeiro_gelado", "st": {"dano": 8.0, "tique": 0.5, "duracao": 4.0, "lentidao": 0.4, "gelo_mult": 2.0}, "cor": Color(0.2, 0.55, 1.0)
+	}
+	var slot_gelo: Dictionary = w.combate.armas.novas._novo("nuvem", nuvem_gelo, lento.pos, 4.0)
+	slot_gelo.r = 50.0
+	slot_gelo.t = 0.01
+	var vida_gelo: float = lento.vida
+	w.combate.armas.novas._tique_nuvem(slot_gelo, PASSO)
+	ok(
+		vida_gelo - lento.vida >= 16.0 and lento.lento_t >= 1.0 and slot_gelo.pulso > 0.0,
+		"o gelo dobra o dano no alvo lento, renova a lentidão e conta o impacto real"
+	)
 	# a aura queima, as lâminas passam, o raio salta
 	zerar()
 	var ma = monstro_a(30.0, 0.0)
@@ -312,6 +417,21 @@ func _ready() -> void:
 		pegar("corvos", 0)
 		pegar("raio", 0)
 	ok(cs.evoluidas.has("revoada_de_trovoes") and w.combate.armas.tem("revoada_de_trovoes"), "corvos 3 + raio 3 viram a Revoada de Trovões")
+	# 5b. as 5 fusões novas (leva 5): duas peças no nível 3 viram a evolução e as peças somem
+	var fusoes := [
+		["dragao_filhote", "serpente_ardente", "dragao_de_brasa"],
+		["lobo_espirito", "espirito_raposa", "cacada_espiritual"],
+		["espirito_urso", "raio_solar", "urso_solar"],
+		["esqueleto_guerreiro", "fantasma_mata", "exercito_esquecido"],
+		["golem_barro", "guardiao_pedra", "colosso_de_pedra"],
+	]
+	for f in fusoes:
+		zerar()
+		for i in 3:
+			pegar(f[0], 0)
+			pegar(f[1], 0)
+		ok(cs.evoluidas.has(f[2]) and w.combate.armas.tem(f[2]), "%s e %s viram %s" % [f[0], f[1], f[2]])
+		ok(not w.combate.armas.tem(f[0]) and not w.combate.armas.tem(f[1]), "as peças de %s somem" % f[2])
 	zerar()
 	for i in 3:
 		pegar("runa", 0)
@@ -326,6 +446,21 @@ func _ready() -> void:
 		pegar("onda", 0)
 		pegar("fura", 0)
 	ok(cs.evoluidas.has("ventania") and not w.combate.armas.ventania.is_empty(), "onda 2 + estocada perfurante 2 viram a Ventania Cortante")
+	# 5c. as 16 fusões novas (comuns, raras e lendárias) viram arma, com o tipo certo, e só uma lendária por partida
+	for ev in cfg.evolucoes.slice(9):
+		zerar()
+		cs.evoluir(ev)
+		ok(w.combate.armas.tem(str(ev.id)), "%s (%s) vira arma" % [ev.nome, ev.tipo])
+	zerar()
+	var lendarias: Array = cfg.evolucoes.filter(func(e): return str(e.get("raridade", "")) == "lendario")
+	ok(lendarias.size() == 4, "4 fusões lendárias nos dados")
+	zerar()
+	cs.evoluir(lendarias[0])
+	var mecanica: Dictionary = w.combate.armas.ativas.get(str(lendarias[0].id), {}).get("st", {})
+	ok(mecanica.has("puxa") or mecanica.has("prende") or mecanica.has("cadeia") or mecanica.has("gelo_mult"), "a lendária tem mecânica própria")
+	ok(cs.lendarias_feitas == 1 and not cs._evo_livre(lendarias[1]), "depois de uma lendária, as outras ficam fora da partida")
+	zerar()
+	ok(cs.lendarias_feitas == 0 and cs._evo_livre(lendarias[1]), "jogar de novo libera a lendária")
 	zerar()
 	ok(cs.evoluidas.is_empty() and w.combate.armas.ativas.is_empty() and w.combate.armas.ventania.is_empty(), "jogar de novo zera a build")
 

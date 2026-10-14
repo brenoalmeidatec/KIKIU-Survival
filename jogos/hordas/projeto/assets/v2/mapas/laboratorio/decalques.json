@@ -1,0 +1,304 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/gerar_v2_mapas.py (nao edite a mao)",
+ "itens": [
+  {
+   "nome": "selo_central",
+   "regiao": [
+    0,
+    0,
+    300,
+    212
+   ],
+   "centro": [
+    150,
+    106
+   ]
+  },
+  {
+   "nome": "selo_pequeno",
+   "regiao": [
+    302,
+    0,
+    120,
+    85
+   ],
+   "centro": [
+    60,
+    42
+   ]
+  },
+  {
+   "nome": "faixa_perigo_g",
+   "regiao": [
+    0,
+    214,
+    176,
+    14
+   ],
+   "centro": [
+    88,
+    7
+   ]
+  },
+  {
+   "nome": "faixa_perigo_p",
+   "regiao": [
+    178,
+    214,
+    88,
+    14
+   ],
+   "centro": [
+    44,
+    7
+   ]
+  },
+  {
+   "nome": "seta_chao",
+   "regiao": [
+    268,
+    214,
+    88,
+    31
+   ],
+   "centro": [
+    44,
+    15
+   ]
+  },
+  {
+   "nome": "poca_acido_g",
+   "regiao": [
+    358,
+    214,
+    110,
+    54
+   ],
+   "centro": [
+    55,
+    27
+   ]
+  },
+  {
+   "nome": "poca_acido_p",
+   "regiao": [
+    0,
+    270,
+    64,
+    31
+   ],
+   "centro": [
+    32,
+    15
+   ]
+  },
+  {
+   "nome": "poca_oleo_g",
+   "regiao": [
+    66,
+    270,
+    100,
+    49
+   ],
+   "centro": [
+    50,
+    24
+   ]
+  },
+  {
+   "nome": "poca_oleo_p",
+   "regiao": [
+    168,
+    270,
+    58,
+    28
+   ],
+   "centro": [
+    29,
+    14
+   ]
+  },
+  {
+   "nome": "mancha_a",
+   "regiao": [
+    228,
+    270,
+    96,
+    47
+   ],
+   "centro": [
+    48,
+    23
+   ]
+  },
+  {
+   "nome": "mancha_b",
+   "regiao": [
+    326,
+    270,
+    70,
+    34
+   ],
+   "centro": [
+    35,
+    17
+   ]
+  },
+  {
+   "nome": "mancha_c",
+   "regiao": [
+    0,
+    321,
+    120,
+    57
+   ],
+   "centro": [
+    60,
+    28
+   ]
+  },
+  {
+   "nome": "mancha_sangue",
+   "regiao": [
+    122,
+    321,
+    76,
+    37
+   ],
+   "centro": [
+    38,
+    18
+   ]
+  },
+  {
+   "nome": "rachadura_a",
+   "regiao": [
+    200,
+    321,
+    130,
+    28
+   ],
+   "centro": [
+    65,
+    14
+   ]
+  },
+  {
+   "nome": "rachadura_b",
+   "regiao": [
+    332,
+    321,
+    100,
+    25
+   ],
+   "centro": [
+    50,
+    12
+   ]
+  },
+  {
+   "nome": "rachadura_c",
+   "regiao": [
+    0,
+    380,
+    150,
+    31
+   ],
+   "centro": [
+    75,
+    15
+   ]
+  },
+  {
+   "nome": "cabo_a",
+   "regiao": [
+    152,
+    380,
+    140,
+    24
+   ],
+   "centro": [
+    70,
+    12
+   ]
+  },
+  {
+   "nome": "cabo_b",
+   "regiao": [
+    294,
+    380,
+    110,
+    21
+   ],
+   "centro": [
+    55,
+    10
+   ]
+  },
+  {
+   "nome": "cabo_c",
+   "regiao": [
+    0,
+    413,
+    170,
+    25
+   ],
+   "centro": [
+    85,
+    12
+   ]
+  },
+  {
+   "nome": "grade_dreno",
+   "regiao": [
+    172,
+    413,
+    72,
+    31
+   ],
+   "centro": [
+    36,
+    15
+   ]
+  },
+  {
+   "nome": "placa_chao",
+   "regiao": [
+    246,
+    413,
+    76,
+    37
+   ],
+   "centro": [
+    38,
+    18
+   ]
+  },
+  {
+   "nome": "papeis_a",
+   "regiao": [
+    324,
+    413,
+    60,
+    28
+   ],
+   "centro": [
+    30,
+    14
+   ]
+  },
+  {
+   "nome": "papeis_b",
+   "regiao": [
+    386,
+    413,
+    48,
+    24
+   ],
+   "centro": [
+    24,
+    12
+   ]
+  }
+ ]
+}

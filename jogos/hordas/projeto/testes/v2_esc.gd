@@ -74,7 +74,7 @@ func _ready() -> void:
 func _limpar() -> void:
 	get_tree().paused = false
 	_soltar_tudo()
-	for c in [SAVE_TESTE, OPCOES_TESTE]:
+	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
 	Config.arquivo = "user://opcoes.cfg"
@@ -783,7 +783,7 @@ func _t_fuzz() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 424242
 	var contagem := {"jogando": 0, "escolha": 0, "bau": 0, "fora": 0, "resultado": 0}
-	var passos_fuzz := 500
+	var passos_fuzz := 1000  # A escolha de 1 s dura menos; mantém a cobertura de todos os estados sem reduzir os mínimos.
 	for passo in passos_fuzz:
 		# o fuzz não fica preso nos estados sem pausa: dá quadros à câmera lenta e aperta CONTINUAR no resultado (nova partida)
 		if c.jogo == "morrendo" or c.jogo == "vencendo":

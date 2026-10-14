@@ -30,7 +30,7 @@ func _ready() -> void:
 	await _testes()
 	Som.parar_musica()
 	Config.arquivo = "user://opcoes.cfg"
-	for c in [SAVE_TESTE, OPCOES_TESTE]:
+	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
 	print("v2_musica falhas=%d" % falhas)

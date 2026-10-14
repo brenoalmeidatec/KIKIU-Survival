@@ -14,6 +14,9 @@ var _glow: Node
 var _regs: Array = []  # {"p": CPUParticles2D, "base": amount, "tipo": "amb" | "efe"}
 var _vaga: CPUParticles2D
 var _folhas: CPUParticles2D
+## Do json do mapa ("atmosfera"): {"vaga": {n, cor [r,g,b(,a)], tam, vel}, "folhas": {n, cor, tam, vel}}. Sem a chave valem os vaga-lumes
+## verdes e as folhas vermelhas da floresta; n = 0 desliga aquele emissor.
+var config := {}
 
 
 func montar(glow: Node) -> void:
@@ -86,8 +89,10 @@ func ligar(p: CPUParticles2D, ligado: bool) -> void:
 
 ## Vaga-lumes e folhas: os emissores vão para o centro da câmera (as partículas já emitidas ficam no mundo).
 func ambiente(centro: Vector2) -> void:
+	var cv: Dictionary = config.get("vaga", {})
+	var nv := int(cv.get("n", 34))
 	var f := CPUParticles2D.new()
-	f.amount = 34
+	f.amount = maxi(nv, 1)
 	f.lifetime = 7.0
 	f.preprocess = 7.0
 	f.local_coords = false
@@ -97,22 +102,24 @@ func ambiente(centro: Vector2) -> void:
 	f.direction = Vector2(0, -1)
 	f.spread = 180.0
 	f.gravity = Vector2(0, -2)
-	f.initial_velocity_min = 3.0
-	f.initial_velocity_max = 11.0
+	f.initial_velocity_min = 3.0 * float(cv.get("vel", 1.0))
+	f.initial_velocity_max = 11.0 * float(cv.get("vel", 1.0))
 	f.tangential_accel_min = -6.0
 	f.tangential_accel_max = 6.0
 	f.damping_min = 0.5
 	f.damping_max = 1.5
-	f.color = Color(0.78, 1.0, 0.42)
+	f.color = _cor(cv.get("cor", [0.78, 1.0, 0.42]))
 	f.color_ramp = _rampa_alfa([0.0, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0], [0.0, 1.0, 0.25, 1.0, 0.3, 1.0, 0.6, 0.0])
 	f.texture = tex_brilho
-	f.scale_amount_min = 0.03
-	f.scale_amount_max = 0.07
+	f.scale_amount_min = 0.03 * float(cv.get("tam", 1.0))
+	f.scale_amount_max = 0.07 * float(cv.get("tam", 1.0))
 	f.material = _aditivo()
 	_vaga = f
-	_registrar(f, 34, "amb")
+	_registrar(f, nv, "amb")
+	var cf: Dictionary = config.get("folhas", {})
+	var nf := int(cf.get("n", 30))
 	var fo := CPUParticles2D.new()
-	fo.amount = 30
+	fo.amount = maxi(nf, 1)
 	fo.lifetime = 22.0
 	fo.preprocess = 22.0
 	fo.local_coords = false
@@ -122,20 +129,24 @@ func ambiente(centro: Vector2) -> void:
 	fo.direction = Vector2(0.25, 1.0)
 	fo.spread = 14.0
 	fo.gravity = Vector2.ZERO
-	fo.initial_velocity_min = 16.0
-	fo.initial_velocity_max = 28.0
+	fo.initial_velocity_min = 16.0 * float(cf.get("vel", 1.0))
+	fo.initial_velocity_max = 28.0 * float(cf.get("vel", 1.0))
 	fo.angular_velocity_min = -90.0
 	fo.angular_velocity_max = 90.0
 	fo.tangential_accel_min = -4.0
 	fo.tangential_accel_max = 4.0
-	fo.color = Color(0.85, 0.1, 0.07, 0.95)
+	fo.color = _cor(cf.get("cor", [0.85, 0.1, 0.07, 0.95]))
 	var im := Image.create(4, 3, false, Image.FORMAT_RGBA8)
 	im.fill(Color.WHITE)
 	fo.texture = ImageTexture.create_from_image(im)
-	fo.scale_amount_min = 0.8
-	fo.scale_amount_max = 1.4
+	fo.scale_amount_min = 0.8 * float(cf.get("tam", 1.0))
+	fo.scale_amount_max = 1.4 * float(cf.get("tam", 1.0))
 	_folhas = fo
-	_registrar(fo, 30, "amb")
+	_registrar(fo, nf, "amb")
+
+
+func _cor(c: Array) -> Color:
+	return Color(float(c[0]), float(c[1]), float(c[2]), float(c[3]) if c.size() > 3 else 1.0)
 
 
 func seguir(centro: Vector2) -> void:
