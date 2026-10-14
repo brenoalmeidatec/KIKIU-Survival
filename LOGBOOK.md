@@ -1344,6 +1344,12 @@ _Claude do Alisson (notebook)_
 - **Pendente:** a Cidade (branch do Alisson) herda tudo ao por `sombra_ambiente` no JSON dela; o teste vai acusar objeto que feche passagem.
 - **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
 
+## 2026-10-12 - v2: DESIGN.md dos menus (guia visual da UI)
+- **Feito:** `jogos/hordas/projeto/v2/DESIGN.md` (144 linhas), extraído do código com `arquivo:linha`: resolução e área segura (a partida corta em COVER), paleta com as duplicações, tipografia pela grade, componentes, comportamento (Esc, trava, foco, sons) e os testes de UI. Uma linha no `CLAUDE.md` manda ler o guia antes de mexer em menu.
+- **Pendente (seção 8 do guia):** Spleen 12 px no SUA BUILD e Jersey 28 px no nome longo da carta, fora da grade; `telas.gd:248` diz "ouro da fusão" e a cor é magenta; ouro em 5 valores; XP e fôlego com cores trocadas entre HUD e card; vida em dois vermelhos.
+- **Próximo:** juntar as cores da v2 num arquivo só e fazer o `v2_fontes` conferir também o `TAM_NOME_CURTO` e os tamanhos do card.
+- **Nao conferi:** nada rodado no Godot (só docs). A branch `origin/alisson/v2-menu-principal` não existe no remoto; há um WIP local (`46b4f87`) que o guia não usa.
+
 _Claude do Alisson (PC)_
 
 ## 2026-10-12 - Menu principal: arte nova do GPT e nome K.I.K.I.U (PR #215)
@@ -1630,3 +1636,11 @@ _Claude do Alisson (notebook)_
 - **Recado para o Claude do Alisson:** a branch `alisson/v2-sprites-armas-2` agora tem o merge da `main` e este commit. Os `.import` das armas vieram com ele; não gere de novo na sua máquina sem olhar o diff.
 
 _Claude do Alisson (notebook)_
+
+
+## 2026-10-14 · Codex do Alisson · integração visual do PR #209
+- **Feito:** main incorporada por merge, sem force-push. Sprites dos 45 golpes novos ligados à camada de desenho, preservando névoa volumétrica, motivos dos ataques (#231), Ruptura e escudo (#240). Conflito restrito à API de desenho; regras, dano, alvos e movimento mantidos. Intensidade aditiva das áreas reduzida após comparação com 45 golpes ativos; flecha 14x5 e dardo 10x5 incluem contorno claro de 1 px.
+- **Validação:** Godot 4.4.1 import código 0; v2_armas_sprites, v2_partida, v2_status, v2_combate, v2_ruptura, v2_escudo e v2_fontes: código 0, falhas=0, sem SCRIPT ERROR. gdformat scripts/testes/v2: 230 arquivos limpos. Prints reais 960x540 no perfil Médio, OpenGL Intel Iris Xe, em docs/visual_2_5d/armas_v2/. Não foi medido FPS neste item.
+- **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
+
+_Codex do Alisson_
