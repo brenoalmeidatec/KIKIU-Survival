@@ -13,17 +13,18 @@ extends CanvasLayer
 ##   sv.add_child(preload("res://v2/hud.gd").criar(self))
 ## Layout em v2/hud.tscn (coordenadas de 960x540). O canto superior direito fica livre para o minimapa.
 
+const Paleta := preload("res://v2/paleta.gd")
 const CENA := "res://v2/hud.tscn"
 const FONTE := "res://assets/fonte/PressStart2P.ttf"
-const OURO := Color(0.945, 0.694, 0.055)  # #f1b10e, o destaque da paleta
+const OURO := Paleta.OURO
 const PULSO_T := 0.25  # segundos do pulso do combo a cada abate
 const BRILHO_T := 1.2  # segundos do brilho da barra de XP ao subir de nível
 const SALTO_PX := 4  # quantos pixels o combo sobe no pulso
 const BRILHO_XP := Color(1.7, 1.5, 0.9)  # multiplicador de cor no pico do brilho: a barra e o selo clareiam para o dourado
-const PISCA_CANSADO := Color(1.0, 0.35, 0.2)  # vermelho-laranja: a barra de fôlego pisca com ele quando o herói está cansado
+const PISCA_CANSADO := Paleta.FOLEGO_CANSADO
 const LIMIAR_VIDA_BAIXA := 0.25  # abaixo de 25% da vida: vinheta vermelha e barra de vida piscando
-const PISCA_VIDA := Color(1.0, 0.4, 0.4)
-const VERMELHO_VINHETA := Color(1.0, 0.1, 0.1)
+const PISCA_VIDA := Paleta.VIDA_PISCA
+const VERMELHO_VINHETA := Paleta.PERIGO
 const VINHETA_MAX := 0.7  # opacidade máxima da vinheta (ela pulsa um pouco abaixo disso)
 const POP_SELO_T := 0.3  # segundos do pop do selo ao subir de nível
 const ANEL_T := 0.5  # segundos do anel de luz que sai do selo
@@ -31,17 +32,17 @@ const RELOGIO_PISCA_T := 0.8  # o tempo pisca dourado 0,8 s a cada minuto sobrev
 const ROLAGEM_XP := 9.0  # quão rápido o número das almas rola até o valor da barra de XP
 const CHEFE_ESPERA := 0.35  # segundos que a fantasma espera antes de descer atrás da barra real
 const CHEFE_QUEDA := 1.2  # quão rápido a fantasma desce atrás da real (fração da diferença por segundo)
-const COR_ONDA := Color(1.0, 0.33, 0.3)  # vermelho: ONDA FORTE!
-const COR_ELITE := Color(0.75, 0.45, 1.0)  # roxo: ELITE!
-const COR_NIVEL := Color(0.82, 0.92, 1.0)  # azul-claro: NÍVEL N!
+const COR_ONDA := Paleta.PERIGO
+const COR_ELITE := Paleta.ANUNCIO_ELITE
+const COR_NIVEL := Paleta.ANUNCIO_NIVEL
 const RB_POS := Vector2(6, 39)  # o slot da ruptura: 22x22, logo abaixo da barra de fôlego (x 6 a 156, y 31 a 35)
 const RB_TAM := 22
 const RB_POP_T := 0.15  # s do pop ao zerar a recarga
-const RB_LARANJA := Color(1.0, 0.55, 0.2)
-const RB_BORDA := Color(0.45, 0.40, 0.30)
+const RB_LARANJA := Paleta.CARGA_LARANJA
+const RB_BORDA := Paleta.RUPTURA_BORDA
 const MARCOS := [10, 25, 50, 100, 200]
 const NOMES_MARCOS := ["SEQUÊNCIA!", "CARNIFICINA!", "MASSACRE!", "IMPARÁVEL!", "LENDÁRIO!"]
-const CORES_MARCOS := [OURO, Color(1.0, 0.55, 0.15), Color(1.0, 0.3, 0.3), Color(0.8, 0.4, 1.0), Color(0.5, 0.95, 1.0)]
+const CORES_MARCOS := Paleta.COMBO_MARCOS
 ## Sinais do mundo e o método do HUD que cada um chama. Só se conecta o que o mundo tem.
 const SINAIS := [
 	["nivel_subiu", "_nivel_subiu"],
@@ -280,15 +281,15 @@ func _ruptura(dt: float, h) -> void:
 
 func _desenhar_slot() -> void:
 	var s := float(RB_TAM)
-	_rb.draw_rect(Rect2(0, 0, s, s), Color(0.13, 0.12, 0.16, 0.85))
+	_rb.draw_rect(Rect2(0, 0, s, s), Color(Paleta.HABILIDADE_FUNDO, 0.85))
 	var borda := RB_BORDA
 	if _rb_nega:
-		borda = Color(1.0, 0.25, 0.2)
+		borda = Paleta.PERIGO
 	elif _rb_perf:
 		borda = Color.WHITE
 	_moldura(Rect2(0, 0, s, s), borda)
 	# a tecla da habilidade: a letra E (7x9 px)
-	var tecla := RB_LARANJA if _rb_pronta else Color(0.38, 0.37, 0.35)
+	var tecla := RB_LARANJA if _rb_pronta else Paleta.TECLA_APAGADA
 	_rb.draw_rect(Rect2(7, 5, 2, 9), tecla)
 	_rb.draw_rect(Rect2(9, 5, 5, 2), tecla)
 	_rb.draw_rect(Rect2(9, 8, 4, 2), tecla)
@@ -297,23 +298,23 @@ func _desenhar_slot() -> void:
 	if _rb_cortina > 0:
 		_rb.draw_rect(Rect2(1, 1, s - 2.0, float(_rb_cortina)), Color(0.0, 0.0, 0.0, 0.7))
 		if _rb_cortina < 20:
-			_rb.draw_rect(Rect2(1, 1 + _rb_cortina, s - 2.0, 1), Color(0.6, 0.5, 0.35, 0.8))  # a borda da cortina: a varredura se lê
+			_rb.draw_rect(Rect2(1, 1 + _rb_cortina, s - 2.0, 1), Color(Paleta.RECARGA_BORDA, 0.8))  # a borda da cortina: a varredura se lê
 	# carga: barra vertical de 3 px na borda direita, de baixo para cima, de laranja a branco, com marcas em 25, 50 e 75%
 	_rb.draw_rect(Rect2(18, 1, 3, 20), Color(0.0, 0.0, 0.0, 0.5))
 	if _rb_barra > 0:
 		_rb.draw_rect(Rect2(18, 21 - _rb_barra, 3, _rb_barra), RB_LARANJA.lerp(Color.WHITE, float(_rb_barra) / 20.0))
 		for marca in [5, 10, 15]:
-			_rb.draw_rect(Rect2(18, 21 - marca, 3, 1), Color(0.05, 0.05, 0.07, 0.9))
+			_rb.draw_rect(Rect2(18, 21 - marca, 3, 1), Color(Paleta.CARGA_MARCA, 0.9))
 	# contragolpe aberto: faísca laranja de 1 px na borda de cima
 	if _rb_contra > 0:
-		_rb.draw_rect(Rect2(1, 0, float(_rb_contra), 1), Color(1.0, 0.7, 0.3))
+		_rb.draw_rect(Rect2(1, 0, float(_rb_contra), 1), Paleta.CONTRAGOLPE)
 
 
 ## O slot do ultimate (Q): moldura apagada e a letra Q, sem barra nem recarga (a mecânica ainda não existe).
 func _desenhar_ultimate() -> void:
 	var s := float(RB_TAM)
-	var apagado := Color(0.3, 0.29, 0.32)
-	_ult.draw_rect(Rect2(0, 0, s, s), Color(0.13, 0.12, 0.16, 0.6))
+	var apagado := Paleta.HABILIDADE_DESATIVADA
+	_ult.draw_rect(Rect2(0, 0, s, s), Color(Paleta.HABILIDADE_FUNDO, 0.6))
 	_ult.draw_rect(Rect2(0, 0, s, 1), apagado)
 	_ult.draw_rect(Rect2(0, s - 1, s, 1), apagado)
 	_ult.draw_rect(Rect2(0, 1, 1, s - 2), apagado)

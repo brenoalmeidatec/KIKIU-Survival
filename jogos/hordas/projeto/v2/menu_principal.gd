@@ -5,6 +5,7 @@ extends Control
 ## ESC e Start abrem "Sair?" com "Não" marcado, como no santuário: nunca fecham o jogo de surpresa.
 ## A música é a do santuário (a mesma faixa "menu"): o Som não reinicia a faixa quando o santuário começa.
 
+const Paleta := preload("res://v2/paleta.gd")
 const Altar := preload("res://v2/altar.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle da v2 (o A confirma e o B volta nos menus)
 const Pausa := preload("res://v2/pausa.tscn")
@@ -14,13 +15,13 @@ const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const SANTUARIO := "res://v2/altar.tscn"
 const LARG := 960
 const ALT := 540
-const COR_OURO := Color(1.0, 0.86, 0.42)
-const COR_TEXTO := Color(0.92, 0.9, 0.96)
-const COR_APAGADO := Color(0.55, 0.56, 0.64)
-const COR_FOCO := Color(1.0, 0.97, 0.8)  # texto do botão com foco ou sob o mouse (o fundo do botão é escuro)
-const TAM_LOGO := 112  # 2 x 56: múltiplo da grade da Jersey 10 (ver v2/LEIA-ME.md)
-const TAM_BOTAO := 37
-const TAM_DICA := 16  # grade da Spleen 8x16
+const COR_OURO := Paleta.OURO
+const COR_TEXTO := Paleta.TEXTO
+const COR_APAGADO := Paleta.TEXTO_APAGADO
+const COR_FOCO := Paleta.FOCO  # texto do botão com foco ou sob o mouse (o fundo do botão é escuro)
+const TAM_LOGO := 2 * Paleta.TITULO_GRANDE  # 2 x 56: múltiplo da grade da Jersey 10 (ver v2/LEIA-ME.md)
+const TAM_BOTAO := Paleta.TITULO_MEDIO
+const TAM_DICA := Paleta.TEXTO_TAMANHO  # grade da Spleen 8x16
 const LOGO_Y := 44.0
 const BOTAO_LARG := 260.0
 const BOTAO_ALT := 44.0
@@ -96,7 +97,7 @@ func _montar() -> void:
 		add_child(b)
 		_botoes.append(b)
 	var faixa := ColorRect.new()  # faixa escura atrás da dica: o chão da arte é claro ali embaixo
-	faixa.color = Color(0.01, 0.02, 0.035, 0.6)
+	faixa.color = Color(Paleta.PAINEL, 0.6)
 	faixa.position = Vector2(0, ALT - 46)
 	faixa.size = Vector2(LARG, 46)
 	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -113,7 +114,7 @@ func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAli
 	l.add_theme_font_override("font", Dados.fonte_titulo if titulo else Dados.fonte_texto)
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	l.add_theme_color_override("font_outline_color", Color(Paleta.PRETO, 0.9))
 	l.add_theme_constant_override("outline_size", 4 if titulo else 0)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
@@ -135,10 +136,10 @@ func _moldura(cor: Color) -> StyleBoxTexture:
 func _estilo_botao(b: Button) -> void:
 	b.add_theme_font_override("font", Dados.fonte_titulo)
 	b.add_theme_font_size_override("font_size", TAM_BOTAO)
-	b.add_theme_stylebox_override("normal", _moldura(Color(0.8, 0.82, 0.9)))
+	b.add_theme_stylebox_override("normal", _moldura(Paleta.MOLDURA))
 	b.add_theme_stylebox_override("hover", _moldura(COR_OURO))
 	b.add_theme_stylebox_override("focus", _moldura(COR_OURO))
-	b.add_theme_stylebox_override("pressed", _moldura(Color(0.6, 0.6, 0.7)))
+	b.add_theme_stylebox_override("pressed", _moldura(Paleta.MOLDURA_ESCURA))
 	b.add_theme_color_override("font_color", COR_TEXTO)
 	b.add_theme_color_override("font_hover_color", COR_FOCO)
 	b.add_theme_color_override("font_focus_color", COR_FOCO)

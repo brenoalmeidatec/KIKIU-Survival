@@ -6,6 +6,7 @@ extends Control
 ## Visual: cartões em grade, níveis em marcadores e detalhe compartilhado por foco/mouse. Conquistas mostram a última partida,
 ## sem fingir progresso acumulado. ESC e VOLTAR retornam ao título; Ajustes fecha devolvendo foco ao botão.
 
+const Paleta := preload("res://v2/paleta.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Trilha := preload("res://v2/trilha.gd")
@@ -17,12 +18,12 @@ const CENA_V1 := "res://main.tscn"
 const ARGS_V1 := ["v1", "cena", "prototipo", "bot", "online", "sair", "print_tela"]
 const LARG := 960
 const ALT := 540
-const COR_OURO := Color(1.0, 0.86, 0.42)
-const COR_TEXTO := Color(0.92, 0.9, 0.96)
-const COR_APAGADO := Color(0.55, 0.56, 0.64)
-const COR_EFEITO := Color(0.74, 0.76, 0.84)
-const COR_FOCO := Color(1.0, 0.97, 0.8)  # texto do botão com foco ou sob o mouse (o fundo do botão é escuro)
-const COR_ALMA := Color(0.8, 0.66, 1.0)
+const COR_OURO := Paleta.OURO
+const COR_TEXTO := Paleta.TEXTO
+const COR_APAGADO := Paleta.TEXTO_APAGADO
+const COR_EFEITO := Paleta.TEXTO_SECUNDARIO
+const COR_FOCO := Paleta.FOCO  # texto do botão com foco ou sob o mouse (o fundo do botão é escuro)
+const COR_ALMA := Paleta.ALMA
 const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Mouse também"
 const TEMPO_AVISO := 3.0
 
@@ -55,10 +56,10 @@ class Cadeado:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	func _draw() -> void:
-		var cor := Color(1.0, 0.86, 0.42) if aberto else Color(0.55, 0.56, 0.64)
+		var cor := Paleta.OURO if aberto else Paleta.TEXTO_APAGADO
 		draw_rect(Rect2(3, 1, 8, 8), cor, false, 2.0)
 		draw_rect(Rect2(1, 7, 12, 9), cor)
-		draw_rect(Rect2(6, 10, 2, 3), Color(0.08, 0.08, 0.1))
+		draw_rect(Rect2(6, 10, 2, 3), Paleta.CARTAO)
 
 
 func _ready() -> void:
@@ -152,21 +153,21 @@ func _montar() -> void:
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fundo)
 	var veu := ColorRect.new()
-	veu.color = Color(0.01, 0.02, 0.035, 0.8)
+	veu.color = Color(Paleta.PAINEL, 0.8)
 	veu.set_anchors_preset(PRESET_FULL_RECT)
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 
-	add_child(_texto("SANTUÁRIO", 56, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 6, LARG, 56)))
+	add_child(_texto("SANTUÁRIO", Paleta.TITULO_GRANDE, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 6, LARG, 56)))
 	add_child(_painel(Rect2(700, 10, 240, 46)))
-	add_child(_texto("ALMAS", 8, false, COR_ALMA, HORIZONTAL_ALIGNMENT_LEFT, Rect2(716, 14, 120, 12)))
-	_saldo = _texto("0", 37, true, COR_ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(716, 16, 208, 38))
+	add_child(_texto("ALMAS", Paleta.NUMERO_PEQUENO, false, COR_ALMA, HORIZONTAL_ALIGNMENT_LEFT, Rect2(716, 14, 120, 12)))
+	_saldo = _texto("0", Paleta.TITULO_MEDIO, true, COR_ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(716, 16, 208, 38))
 	add_child(_saldo)
-	_ultima = _texto("", 8, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 62, 920, 14))
+	_ultima = _texto("", Paleta.NUMERO_PEQUENO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 62, 920, 14))
 	add_child(_ultima)
 
 	# Grade de cartões: o detalhe da seleção ocupa uma única faixa, sem repetir parágrafos.
-	add_child(_texto("MELHORIAS", 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 86, 572, 38)))
+	add_child(_texto("MELHORIAS", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 86, 572, 38)))
 	var i := 0
 	for m in Meta.melhorias_visiveis():
 		var x := 36.0 + (i % 3) * 194.0
@@ -176,8 +177,8 @@ func _montar() -> void:
 		selecionar.focus_entered.connect(_selecionar.bind(str(m.id)))
 		selecionar.mouse_entered.connect(_selecionar.bind(str(m.id)))
 		selecionar.pressed.connect(_selecionar.bind(str(m.id)))
-		var nome := _texto("", 19, true, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(x + 8, y + 4, 168, 22))
-		var efeito := _texto("", 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(x + 92, y + 29, 82, 12))
+		var nome := _texto("", Paleta.TITULO_PEQUENO, true, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(x + 8, y + 4, 168, 22))
+		var efeito := _texto("", Paleta.NUMERO_PEQUENO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(x + 92, y + 29, 82, 12))
 		var progresso := Marcadores.new()
 		progresso.position = Vector2(x + 8, y + 30)
 		var cadeado := Cadeado.new()
@@ -185,7 +186,7 @@ func _montar() -> void:
 		var botao := Button.new()
 		botao.position = Vector2(x + 8, y + 48)
 		botao.size = Vector2(142, 24)
-		_estilo_botao(botao, 8)
+		_estilo_botao(botao, Paleta.NUMERO_PEQUENO)
 		botao.pressed.connect(_comprar.bind(str(m.id)))
 		botao.focus_entered.connect(_selecionar.bind(str(m.id)))
 		botao.mouse_entered.connect(_selecionar.bind(str(m.id)))
@@ -194,11 +195,11 @@ func _montar() -> void:
 		_linhas[str(m.id)] = {"nome": nome, "efeito": efeito, "botao": botao, "cadeado": cadeado, "progresso": progresso, "selecionar": selecionar}
 		i += 1
 	add_child(_painel(Rect2(36, 392, 572, 66)))
-	_detalhe = _texto("", 16, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(48, 398, 548, 54))
+	_detalhe = _texto("", Paleta.TEXTO_TAMANHO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(48, 398, 548, 54))
 	_detalhe.add_theme_font_override("font", Dados.fonte_texto)
 	_detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_detalhe)
-	add_child(_texto("CONQUISTAS", 37, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(632, 86, 292, 38)))
+	add_child(_texto("CONQUISTAS", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(632, 86, 292, 38)))
 	i = 0
 	for c in Meta.conquistas():
 		var y := 128.0 + i * 108.0
@@ -209,18 +210,18 @@ func _montar() -> void:
 		selecionar.pressed.connect(_selecionar_conquista.bind(str(c.id)))
 		var cadeado := Cadeado.new()
 		cadeado.position = Vector2(642, y + 8)
-		var nome := _texto("", 19, true, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y + 3, 250, 24))
-		var desc := _texto("", 16, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(642, y + 43, 272, 34))
+		var nome := _texto("", Paleta.TITULO_PEQUENO, true, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y + 3, 250, 24))
+		var desc := _texto("", Paleta.TEXTO_TAMANHO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(642, y + 43, 272, 34))
 		desc.add_theme_font_override("font", Dados.fonte_texto)
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		var rec := _texto("", 8, false, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(642, y + 79, 272, 14))
+		var rec := _texto("", Paleta.NUMERO_PEQUENO, false, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(642, y + 79, 272, 14))
 		rec.clip_text = true
 		var barra := ProgressBar.new()
 		barra.position = Vector2(642, y + 29)
 		barra.size = Vector2(272, 8)
 		barra.show_percentage = false
 		var trilho := StyleBoxFlat.new()
-		trilho.bg_color = Color(0.16, 0.17, 0.22)
+		trilho.bg_color = Paleta.BARRA_VAZIA
 		var preenchimento := StyleBoxFlat.new()
 		preenchimento.bg_color = COR_ALMA
 		barra.add_theme_stylebox_override("background", trilho)
@@ -231,23 +232,23 @@ func _montar() -> void:
 		_conq[str(c.id)] = {"cadeado": cadeado, "nome": nome, "desc": desc, "rec": rec, "barra": barra, "selecionar": selecionar}
 		i += 1
 
-	_status = _texto("", 8, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 464, 920, 14))
+	_status = _texto("", Paleta.NUMERO_PEQUENO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 464, 920, 14))
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
 	_entrar.position = Vector2(300, 478)
 	_entrar.size = Vector2(360, 40)
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
-	_entrar.add_theme_font_size_override("font_size", 37)
-	_estilo_botao(_entrar, 37)
+	_entrar.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO)
+	_estilo_botao(_entrar, Paleta.TITULO_MEDIO)
 	_entrar.add_theme_color_override("font_color", COR_OURO)
 	_entrar.pressed.connect(_entrar_floresta)
 	add_child(_entrar)
-	add_child(_texto("MAPA", 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 468, 120, 12)))
+	add_child(_texto("MAPA", Paleta.NUMERO_PEQUENO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 468, 120, 12)))
 	_mapa = Button.new()  # à esquerda de ENTRAR: clique ou Enter passa para o mapa seguinte
 	_mapa.position = Vector2(36, 482)
 	_mapa.size = Vector2(248, 40)
-	_estilo_botao(_mapa, 19)
+	_estilo_botao(_mapa, Paleta.TITULO_PEQUENO)
 	_mapa.add_theme_color_override("font_color", COR_OURO)
 	_mapa.pressed.connect(_trocar_mapa)
 	add_child(_mapa)
@@ -256,18 +257,18 @@ func _montar() -> void:
 	_ajustes.position = Vector2(672, 478)
 	_ajustes.size = Vector2(124, 40)
 	_ajustes.add_theme_font_override("font", Dados.fonte_titulo)
-	_ajustes.add_theme_font_size_override("font_size", 37)
-	_estilo_botao(_ajustes, 19)
+	_ajustes.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO)
+	_estilo_botao(_ajustes, Paleta.TITULO_PEQUENO)
 	_ajustes.add_theme_color_override("font_color", COR_OURO)
 	add_child(_ajustes)
 	_voltar = Button.new()
 	_voltar.text = "VOLTAR"
 	_voltar.position = Vector2(808, 478)
 	_voltar.size = Vector2(116, 40)
-	_estilo_botao(_voltar, 19)
+	_estilo_botao(_voltar, Paleta.TITULO_PEQUENO)
 	_voltar.pressed.connect(_voltar_menu)
 	add_child(_voltar)
-	add_child(_texto(DICA, 8, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
+	add_child(_texto(DICA, Paleta.NUMERO_PEQUENO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:
@@ -279,7 +280,7 @@ func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAli
 	l.add_theme_font_override("font", Dados.fonte_titulo if titulo else Dados.fonte)
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	l.add_theme_color_override("font_outline_color", Color(Paleta.PRETO, 0.9))
 	l.add_theme_constant_override("outline_size", 3)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
@@ -290,7 +291,7 @@ func _painel(r: Rect2) -> Panel:
 	p.position = r.position
 	p.size = r.size
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_theme_stylebox_override("panel", _moldura(Color(0.82, 0.85, 0.95)))
+	p.add_theme_stylebox_override("panel", _moldura(Paleta.MOLDURA))
 	return p
 
 
@@ -310,11 +311,11 @@ func _moldura(cor: Color) -> StyleBoxTexture:
 func _estilo_botao(b: Button, tam: int) -> void:
 	b.add_theme_font_override("font", Dados.fonte_titulo if tam >= 19 else Dados.fonte)
 	b.add_theme_font_size_override("font_size", tam)
-	b.add_theme_stylebox_override("normal", _moldura(Color(0.8, 0.82, 0.9)))
+	b.add_theme_stylebox_override("normal", _moldura(Paleta.MOLDURA))
 	b.add_theme_stylebox_override("hover", _moldura(COR_OURO))
 	b.add_theme_stylebox_override("focus", _moldura(COR_OURO))
-	b.add_theme_stylebox_override("pressed", _moldura(Color(0.6, 0.6, 0.7)))
-	b.add_theme_stylebox_override("disabled", _moldura(Color(0.42, 0.42, 0.5, 0.75)))
+	b.add_theme_stylebox_override("pressed", _moldura(Paleta.MOLDURA_ESCURA))
+	b.add_theme_stylebox_override("disabled", _moldura(Color(Paleta.MOLDURA_APAGADA, 0.75)))
 	b.add_theme_color_override("font_color", COR_TEXTO)
 	b.add_theme_color_override("font_hover_color", COR_FOCO)
 	b.add_theme_color_override("font_focus_color", COR_FOCO)
@@ -474,7 +475,7 @@ func _atualizar_mapa() -> void:
 	var m: Dictionary = Mapas.buscar(_mapa_id)
 	_mapa.text = "< %s >" % m.nome
 	# O mínimo do Button cresce com o texto; a Jersey 19 mantém todos os nomes completos na mesma largura.
-	_mapa.add_theme_font_size_override("font_size", 19)
+	_mapa.add_theme_font_size_override("font_size", Paleta.TITULO_PEQUENO)
 	_mapa.size = Vector2(248, 40)
 	_mapa.tooltip_text = str(m.nome)
 	_entrar.text = str(m.entrar)
@@ -502,7 +503,7 @@ class Marcadores:
 
 	func _draw() -> void:
 		for i in maximo:
-			draw_rect(Rect2(i * 15, 0, 11, 8), COR_ALMA if i < nivel else Color(0.22, 0.24, 0.32))
+			draw_rect(Rect2(i * 15, 0, 11, 8), COR_ALMA if i < nivel else Paleta.BARRA_VAZIA)
 
 
 func _detalhe_melhoria(m: Dictionary, e: Dictionary) -> String:
@@ -538,7 +539,7 @@ func _botao_detalhe(r: Rect2) -> Button:
 	for estado in ["normal", "hover", "pressed"]:
 		b.add_theme_stylebox_override(estado, StyleBoxEmpty.new())
 	var foco := StyleBoxFlat.new()
-	foco.bg_color = Color(0, 0, 0, 0)
+	foco.bg_color = Color(Paleta.PRETO, 0.0)
 	foco.set_border_width_all(1)
 	foco.border_color = COR_OURO
 	b.add_theme_stylebox_override("focus", foco)
