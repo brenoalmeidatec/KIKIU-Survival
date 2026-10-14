@@ -1652,6 +1652,14 @@ _Claude do Alisson (notebook)_
 
 _Codex do Alisson_
 
+## 2026-10-14 · Claude do Alisson (notebook) · coop online, etapa 0: preparar o solo (docs/ONLINE_V2_PLANO.md)
+- **Feito:** `mundo.herois` (lista; o solo tem só o `heroi`), `mundo.alvo_mais_perto(pos)` (herói vivo mais perto; os monstros usam com 2+ heróis, o solo segue o caminho de sempre sem busca), e o tempo separado em "do mundo" e "do herói local": hit-stop, câmera lenta e a pausa da escolha ficam num `v2/tempo_local.gd` (um por herói local) e `combate.passo_tempo` devolve `dt_mundo` e deixa `dt_local`; `combate.parada_t/lento_*/pausado` seguem existindo como propriedades (os testes não mudaram). `combate.pausado_mundo` é a pausa do resultado (vale para todos). `combate.tempo_local_separado` (false no solo) é a chave que o coop e a tela dividida ligam: aí o hit-stop só trava o herói local e o mundo segue. Flag `--coop` lida em `mundo.coop_modo` e ignorada.
+- **Testes:** novo `v2_coop_preparo` (com 2 heróis o monstro persegue o mais perto e troca de alvo quando o remoto cai; o tempo do solo e o separado). Suíte inteira igual.
+- **Medida (solo, `--medir --estresse=100 --imortal`, headless, 3 rodadas):** script por quadro 1,74 a 1,81 ms depois contra 2,08 a 2,54 ms antes (a máquina oscila; não ficou mais lento).
+- **Pendente:** câmera, HUD e entrada por jogador (tela dividida) ainda são globais; `combate._contato`, marcadores e espinhos só olham o `mundo.heroi` (etapas 3 e 7).
+- **Próximo:** etapa 1 (movimento e golpe na rede local).
+
+_Claude do Alisson (notebook)_
 ## 2026-10-14 · Codex do Alisson · reserva da paleta única da UI
 - **Em andamento:** reconstrução do #217 em branch nova da main 96bbc15. Fonte única visual para HUD, SUA BUILD, pausa, cartas, menu e Santuário; correção de cores semânticas e tamanhos fora da grade. Antes capturado no viewport real 960x540, sem captura da área de trabalho.
 - **Validação desta reserva:** somente documentação; nenhum comportamento alterado. Godot ainda não rodado nesta branch. Próximo: implementação visual, extensão autorizada de v2_fontes, prints depois e testes afetados.
@@ -1703,6 +1711,15 @@ _Claude do Alisson (notebook)_
 
 _Claude do Alisson (PC)_
 
+## 2026-10-14 · Claude do Alisson (PC) · integração do PR #252 (coop, etapa 0) com a main
+
+- **Feito:** `origin/main` (fa2f8a7) mesclada na `alisson/coop-0-preparar` por merge, sem force-push (merge `68a46d0`). O git não acusou conflito; conferi à mão `passo_tempo` e o dano dos espinhos. A #228 segue no solo (`passo_tempo` devolve 0 no quadro em que a escolha abre) e a #255 segue (espinho com `bloqueavel = false`: o escudo não barra dano de ambiente).
+- **Testes:** `testes_ci.sh` com 2 processos, 81 de 82 cenas ok. As nove citadas (`v2_coop_preparo`, `v2_partida`, `v2_combate`, `v2_esc`, `v2_pausa`, `v2_ruptura`, `v2_escudo`, `v2_cartas_espera`, `v2_minimapa`) e `esquiva` passaram; `gdformat` limpo. A falha é `transformacao` (v1, "DRAGAO falhas=4"): falhou também na main com o mesmo runner local, e passa isolada com `DRAGAO falhas=0`. O merge não tocou `scripts/hordas/arena.gd` nem `construcao.gd`, que ela carrega. No CI do GitHub, a main e o head do PR estavam verdes.
+- **Medida (solo, `--medir --estresse=100 --imortal`, 3 rodadas intercaladas):** main com mediana de 6,37 ms `SCRIPT ms/quadro` (5,21 a 7,46); integrada com 6,10 ms (5,93 a 6,50). A máquina tinha de 8 a 12 processos Godot de outros agentes, então não dá para comparar com os 1,74 a 1,81 ms do PR. Sem sinal de piora.
+- **Pendente:** no coop e na tela dividida, a escolha local não para o mundo (é o desenho do PR): o `passo_tempo` devolve 0 no quadro da escolha só para o relógio local (`dt_local`), e o mundo para só no resultado (`pausado_mundo`). Confirmar com o Alisson se é esse o desenho. A `transformacao` vermelha no runner local ainda não tem causa confirmada; a hipótese é que ela mede tempo real e sofre com a carga da máquina.
+- **Próximo:** CI no head novo; mesclar só o dono ou o integrador, com CI verde no mesmo commit.
+
+_Claude do Alisson (PC)_
 ## 2026-10-14 · Claude do Alisson (PC) · integração da main no PR 251 (armas e evoluções)
 - **Feito:** `origin/main` (até `fa2f8a7`, com #254, #255, #256 e #259) mesclado em `codex/armas-evolucoes-arte` no merge `e58f113`, sem force e sem reescrever nada. Não houve conflito de texto: a main não toca em `v2/armas.gd`, no índice `assets/v2/armas/indice.json` nem nos sprites. O único arquivo tocado pelos dois lados foi o `LOGBOOK.md` (`merge=union`), com as entradas de cada lado mantidas. O desenho do PR entrou inteiro.
 - **Validação:** Godot 4.4.1 headless no worktree de integração: as 26 cenas `v2_*`, incluindo `v2_armas_sprites`, `v2_partida`, `v2_status` e `v2_combate`, e `regras_armas` (100 s). Todas com código 0, `falhas=0` e sem SCRIPT ERROR. `v2_ruptura` passou na primeira rodada. `gdformat` limpo nas três pastas. Os `ERROR` de encerramento (RID vazado) aparecem em quase toda cena; os de `v2_meta` são o save corrompido que o próprio teste grava de propósito.
