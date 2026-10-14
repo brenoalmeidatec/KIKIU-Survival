@@ -344,7 +344,7 @@ func _popular_inicial() -> void:
 
 
 ## Marcas do mapa (dados "marcadores"). Cada marca guarda `feito` (já teve efeito nesta partida) e `dentro` (o herói está no raio).
-## Atalho e portão ainda não fazem nada: são só dados.
+## O atalho ainda não faz nada (só dados). O portão cumpre a missão ao herói entrar no raio: some a seta do minimapa.
 func _montar_marcadores() -> void:
 	_marcadores.clear()
 	_tem_chave = false
@@ -437,7 +437,7 @@ func _dano_espinhos(dt: float) -> void:
 		z.t += dt
 		if z.t >= ESPINHOS_TIQUE_S:
 			z.t = 0.0
-			heroi.levar_dano(z.dano, hp)
+			heroi.levar_dano(z.dano, hp, null, false)  # ambiente: o escudo não barra (não há quem bateu)
 
 
 func _em_algum(rects: Array, p: Vector2) -> bool:
@@ -528,6 +528,9 @@ func _tocar_marca(m: Dictionary) -> void:
 				m.feito = true
 				minimapa.revelar_tudo()
 				combate.anunciar("MIRANTE: o mapa inteiro se revela", COR_ANUNCIO)
+		"portao":
+			# só a missão por enquanto: a passagem física até o portão ainda não existe (LOGBOOK, Marco 4); entrar no raio cumpre e tira a seta
+			m.feito = true
 		"mercador":
 			if m.feito:
 				return
@@ -836,6 +839,8 @@ func reiniciar() -> void:
 	Meta.aplicar(self)
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_popular_inicial()
+	if is_instance_valid(minimapa):
+		minimapa.resetar()  # a névoa, os baús e as marcas da partida anterior (e o mirante) não valem para a nova
 	if trilha != null:
 		trilha.tocar("partida")
 

@@ -1344,6 +1344,12 @@ _Claude do Alisson (notebook)_
 - **Pendente:** a Cidade (branch do Alisson) herda tudo ao por `sombra_ambiente` no JSON dela; o teste vai acusar objeto que feche passagem.
 - **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
 
+## 2026-10-12 - v2: DESIGN.md dos menus (guia visual da UI)
+- **Feito:** `jogos/hordas/projeto/v2/DESIGN.md` (144 linhas), extraído do código com `arquivo:linha`: resolução e área segura (a partida corta em COVER), paleta com as duplicações, tipografia pela grade, componentes, comportamento (Esc, trava, foco, sons) e os testes de UI. Uma linha no `CLAUDE.md` manda ler o guia antes de mexer em menu.
+- **Pendente (seção 8 do guia):** Spleen 12 px no SUA BUILD e Jersey 28 px no nome longo da carta, fora da grade; `telas.gd:248` diz "ouro da fusão" e a cor é magenta; ouro em 5 valores; XP e fôlego com cores trocadas entre HUD e card; vida em dois vermelhos.
+- **Próximo:** juntar as cores da v2 num arquivo só e fazer o `v2_fontes` conferir também o `TAM_NOME_CURTO` e os tamanhos do card.
+- **Nao conferi:** nada rodado no Godot (só docs). A branch `origin/alisson/v2-menu-principal` não existe no remoto; há um WIP local (`46b4f87`) que o guia não usa.
+
 _Claude do Alisson (PC)_
 
 ## 2026-10-12 - Menu principal: arte nova do GPT e nome K.I.K.I.U (PR #215)
@@ -1583,3 +1589,74 @@ _Codex GPT-6.1 Sol (PC)_
 - **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
 
 _Claude (PC do Breno, via Remote Control)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Ruptura e escudo com volume
+- **Feito:** visual autoral por geometria na v2: sigilos internos e halo na carga; janela perfeita com pulso dourado suave no lugar do piscar a 20 Hz; onda em camadas e fissuras com núcleo quente e ramificações. Escudo curvo elevado com painéis, nervuras e runa central; sustentação azul, bloqueio branco, perfeito dourado com oito raios; ponto de impacto acompanha a origem. Nenhum asset externo/licença adicional, nó por quadro ou alteração de alcance, dano, fôlego, janela ou controles.
+- **Validação:** Godot 4.4.1 import exit 0; v2_ruptura, v2_escudo, v2_combate e v2_hud exit 0/falhas=0/sem SCRIPT ERROR. Uma falha inicial de inferência de tipo foi corrigida, preservando o log local. Capturas reais 960×540 com OpenGL/Intel Iris Xe, janela oculta: carga, carga perfeita, disparo, escudo, bloqueio comum e perfeito revisados. Avisos de RID no encerramento permanecem. Wrapper/fotos/logs locais não versionados.
+- **Próximo:** agente principal revisa PR e faz build; nenhum push/merge neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Emblema de solo rompido no HUD
+- **Feito:** substituído o símbolo angular da Ruptura por duas placas de pedra separadas e fenda central ramificada, autoral e compacto no ícone 48×48. Estados/cores/carga/recarga continuam os mesmos; nenhum ajuste no mundo ou nos efeitos de Ruptura/escudo.
+- **Validação:** Godot 4.4.1 v2_hud e v2_ruptura exit 0/falhas=0/sem SCRIPT ERROR. Capturas reais OpenGL 960×540 com janela oculta, prontidão/carga/recarga e detalhes do card inspecionados; fotos/logs locais no worktree, fora do Git. gdformat global e diff-check conferidos.
+- **Próximo:** agente principal atualiza PR #240 e CI; build precisa ser reexportada com este novo ícone.
+
+_Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-14 · Codex GPT-6.1 Sol (PC) · retomada do PR #240 sobre a main
+- **Feito:** merge da main b70bf6e (#241), mantendo névoa/Tab segurado/setas/mirante, os quatro mapas, correção da morte #239, splash atual e efeitos/ícone do #240. LOGBOOK da main preservado integralmente como prefixo, notas deste PR ao fim; sem reescrever entradas anteriores. Nenhuma integração dos PRs #242/#245/#246.
+- **Testes reais:** Godot 4.4.1 import código 0. v2_mapas, v2_minimapa, v2_morte, v2_ruptura, v2_escudo, v2_hud, v2_combate, v2_meta, v2_partida e v2_santuario: todos código 0/falhas=0/sem SCRIPT ERROR. gdformat scripts/testes/v2: 229 arquivos limpos; diff-check limpo. Avisos de recursos ao encerrar harness permanecem e save corrompido de meta é intencional. Logs locais pr240-retomada-*, fora do Git.
+- **Próximo:** CI do head atualizado, exportação e QA do EXE com minimapa e efeitos juntos; merge e Release somente com checks verdes. Sem alteração de exports, regras de habilidades ou novas artes.
+
+_Codex GPT-6.1 Sol (PC)_
+## 2026-10-14 · Claude do Alisson (notebook) · divisão de trabalho entre os três agentes
+- **Feito:** decisão do Alisson registrada no fim do `CLAUDE.md` (seção reescrita) e no `AGENTS.md` novo, que o Codex lê. Claude do Alisson: sistemas, arquitetura e **integração** (resolve conflito entre PRs). Codex do Alisson: frente visual inteira (arte, sprites, efeitos, animação, UI, paleta) e builds. Claude do Breno: leve (números e textos nos JSON, conteúdo, testes da Release no i5, decisões).
+- **Regras:** reservar antes de começar, ficar na sua área de arquivos, uma só mão integra, cada um mescla só os próprios PRs.
+- **Para o Codex:** ficam com você o #209 (sprites das armas: atualizar com a main) e o #217 (paleta: refazer do zero na main atual).
+- **Para o Claude do Breno:** o #242 (Salão do herói) e o nosso #214 (Nicão e Lucas) se sobrepõem; o Alisson e o Breno decidem qual base vale, e o Claude do Alisson junta.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-12 (7) · Claude do Alisson (PC) · sprites das armas da v2 (recorte das folhas do GPT)
+- **Feito:** recortei as três folhas de arte própria do Alisson (`jogos/hordas/prototipos/cara_nova/objetos/fonte_armas_*.webp`) com a ferramenta de enfeites, que ganhou o modo `python gerar_objetos.py armas`. Saíram 16 projéteis e meteoros, 9 aliados (com normal map) e 12 efeitos de área (fundo preto, aditivo, sem normal). Estão em `jogos/hordas/projeto/assets/v2/armas/`, com `indice.json` (campo `armas_sugeridas`) e a prévia em `jogos/hordas/prints/v2_armas_sprites.png`. O modo padrão (enfeites) continua gerando o mesmo arquivo.
+- **Cobertura das 45 armas do #192:** 33 com sprite adequado, 6 com sprite provisório, 6 sem sprite. A lista e o prompt da 4ª folha estão no corpo do PR.
+- **Pendente:** ligar no código (espera o #192 entrar na `main`); 4ª folha no GPT; olhar em jogo os projéteis finos (flecha 12x3, dardo 8x3) e o contraste da shuriken preta e da flecha roxa sobre piso escuro.
+- **Próximo:** quando o #192 sair, ligar os sprites às armas e gerar os `.import` junto.
+- **Recado:** a branch local `alisson/v2-sprites-armas` (sem commits próprios, atrás da `main`) está presa no worktree `wf_f38176cf-d74-1` de outra sessão. Este PR saiu de `alisson/v2-sprites-armas-2`, para não mexer no worktree dela.
+
+## 2026-10-12 · Claude do Alisson (notebook) · sprites das armas ligados no jogo (PR #209)
+- **Feito (a pedido do Breno, na branch do Alisson):** a 4ª folha (`fonte_armas_areas_2.webp`, 9 efeitos em fundo preto) entrou no gerador (`gerar_objetos.py armas`). Os 6 sem sprite e os 3 provisórios de área ganharam sprite próprio; `nevoa_fantasmal` e `anel_vento` saíram do índice e da pasta (trocados pelos da folha 21). A folha 21 usa folga de 0 px para juntar os pedaços (`GAP_FOLHA`): as caixas da linha de baixo ficam a 1-2 px, e com a folga de 6 px viravam um só. As folhas 18 a 20 ficam como estavam (mesmos PNG). Índice com 44 sprites. Contorno claro de 1 px em flecha, shuriken e dardo.
+- **Ligado:** `v2/armas_novas.gd` lê o `indice.json` uma vez por processo (`carregar_sprites`) e guarda o sprite no item do pool. Projétil gira para o voo, meteoro que cai aponta para baixo, aliado flutua: os três na camada normal (`desenhar_corpo`, chamada de `v2/armas.gd`). Nuvem e anel são aditivos, esticados até o raio do golpe (brilho a 0,5 e 0,6). Sem sprite, a forma antiga. Pool fixo, nenhum nó novo.
+- **Cobertura:** 45 de 45 golpes novos com sprite (42 adequados e 3 provisórios). Dos 5 antigos, nenhum ligado: `aura_fogo` tem o `anel_fogo` no índice, mas a aura é um shader em `armas.gd` (não mexi). As 25 evoluções (fusões) não têm sprite e seguem na forma antiga.
+- **Testes:** `v2_armas_sprites` (novo; PNG e tamanho do índice, 45 golpes com textura, armas do índice que existem nos dados, partida com os 45 ligados: todos os tipos acertam, pool e camada sem nó novo, cada golpe ativo leva o sprite da sua arma), `v2_partida`, `v2_status` e `regras_armas` com `falhas=0`. Print: `docs/visual_2_5d/armas_v2/golpes_com_sprite.png` (viewport 960x540).
+- **Achado fora do escopo:** os `.import` de `assets/v2/mapas/` e de `prototipos/` não estão no Git; o `--import` local os gera e o CI roda `--import` antes dos testes. Os de `assets/v2/armas/` estão versionados agora (o export precisa deles).
+- **Pendente:** olhar em jogo a legibilidade dos projéteis finos (flecha 14x5, dardo 10x5, feixe 40x3, espinho 6x14) e a intensidade das áreas em combate cheio; decidir se a aura usa o `anel_fogo`; sprite para as 25 evoluções.
+- **Recado para o Claude do Alisson:** a branch `alisson/v2-sprites-armas-2` agora tem o merge da `main` e este commit. Os `.import` das armas vieram com ele; não gere de novo na sua máquina sem olhar o diff.
+
+_Claude do Alisson (notebook)_
+
+
+## 2026-10-14 · Codex do Alisson · integração visual do PR #209
+- **Feito:** main incorporada por merge, sem force-push. Sprites dos 45 golpes novos ligados à camada de desenho, preservando névoa volumétrica, motivos dos ataques (#231), Ruptura e escudo (#240). Conflito restrito à API de desenho; regras, dano, alvos e movimento mantidos. Intensidade aditiva das áreas reduzida após comparação com 45 golpes ativos; flecha 14x5 e dardo 10x5 incluem contorno claro de 1 px.
+- **Validação:** Godot 4.4.1 import código 0; v2_armas_sprites, v2_partida, v2_status, v2_combate, v2_ruptura, v2_escudo e v2_fontes: código 0, falhas=0, sem SCRIPT ERROR. gdformat scripts/testes/v2: 230 arquivos limpos. Prints reais 960x540 no perfil Médio, OpenGL Intel Iris Xe, em docs/visual_2_5d/armas_v2/. Não foi medido FPS neste item.
+- **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
+
+_Codex do Alisson_
+
+## 2026-10-14 · Claude do Alisson (notebook) · revisão da main: escudo, analógico, minimapa e portão (PR 1) e release sem docs (PR 2)
+- **Feito (PR 1, `alisson/correcoes-revisao`):** espinhos do mapa médio não são barrados pelo escudo (`Heroi.levar_dano` ganhou `bloqueavel`, falso nos espinhos: sem gasto de fôlego, sem bloqueio e sem hit-stop). Analógico esquerdo não navega a escolha de cartas (`v2/telas.gd`, a mesma guarda de `v2/pausa.gd`). `Minimapa.resetar()` no `Mundo.reiniciar()`: a névoa e o mirante da partida anterior saem. O portão do médio cumpre a missão ao entrar no raio (a seta some, como a do chefe). Tab não abre o mapa grande com o card de status na tela, a escolha ou o baú. (PR 2, `alisson/release-sem-docs`): `release.yml` com `paths-ignore` (`docs/**`, `**/*.md`, `LOGBOOK.md`) no push da main; `workflow_dispatch` e o CI reutilizável seguem como estavam.
+- **Validação:** Godot 4.4.1 headless, código 0, `falhas=0`, sem SCRIPT ERROR: v2_esc, v2_pausa, v2_cartas_espera, v2_minimapa, v2_escudo, v2_ruptura, v2_hud, v2_partida, v2_status, v2_mapas, v2_mundo e v2_morte. Os cinco casos novos falharam antes da correção (commit `dddc1a3`, só testes). gdformat nas pastas de scripts, testes e v2 limpo.
+- **Pendente:** a passagem física até o portão (Marco 4) e o atalho (`_atalho_aberto` segue gravado e sem leitura). O card compacto (C) também tira o Tab do minimapa, porque o pedido era "painel de status aberto"; se o Breno quiser o Tab com o card compacto, a troca é a condição em `_tab_bloqueado()`.
+- **Para o Codex:** `v2/status.gd` não foi tocado. A falta de saída do painel central pelo controle virou issue para ele.
+- **Recado para o Claude do Alisson:** o PR 1 mexe em `v2/telas.gd` (área do Codex) e em `v2/minimapa.gd` (HUD), só nas guardas descritas. O PR 2 não toca o LOGBOOK, para não conflitar no fim do log.
+
+_Claude do Alisson (notebook)_
+## 2026-10-14 · Claude do Alisson (PC) · esquiva estável no CI
+- **Feito:** `testes/esquiva.gd` deixou de depender do crítico sorteado (`randf()` sem semente em `inimigos.ferir`). A checagem do golpe seguinte aceita só 10 ou 10 x `critico_mult`. A checagem do robô usa um vírus de 100000 de vida e espera um quadro (a grade se refaz nele). Só teste; o jogo não mudou.
+- **Validação:** antes, 4 de 20 rodadas falhavam (3 do crítico, 1 do robô); depois, 0 de 30, headless e em sequência. Quebras de propósito (`_quer_dash` com fôlego 3 e bônus de 99 quadros) fazem a cena falhar. gdformat limpo nas três pastas.
+- **Pendente:** conferir o CI do PR "Testes: esquiva estável no CI"; daqui não dá para ver o CI.
+- **Recado:** se a `esquiva` cair de novo, a mensagem diz qual checagem falhou. O problema não era timeout.
+
+_Claude do Alisson (PC)_

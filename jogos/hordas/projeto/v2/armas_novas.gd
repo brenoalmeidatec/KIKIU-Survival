@@ -12,7 +12,10 @@ extends RefCounted
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (igual ao armas.gd)
 const MAX := 48
 const RAIO_PROJ := 10.0
+const PASTA_SPRITES := "res://assets/v2/armas/"
 static var _tex_fumaca: Texture2D
+static var _sprites: Dictionary = {}
+static var _lidos := false
 
 var pai  # v2/armas.gd
 var itens: Array = []  # o pool: cada slot é um dicionário fixo; vida <= 0 é livre
@@ -20,10 +23,24 @@ var itens: Array = []  # o pool: cada slot é um dicionário fixo; vida <= 0 é 
 
 func montar(p) -> void:
 	pai = p
+	carregar_sprites()
 	itens.clear()
 	for i in MAX:
 		itens.append(
-			{"k": "", "a": null, "vida": 0.0, "p": Vector2.ZERO, "v": Vector2.ZERO, "t": 0.0, "r": 0.0, "fase": 0.0, "pen": 0, "hit": [], "pulso": 0.0}
+			{
+				"k": "",
+				"a": null,
+				"sp": {},
+				"vida": 0.0,
+				"p": Vector2.ZERO,
+				"v": Vector2.ZERO,
+				"t": 0.0,
+				"r": 0.0,
+				"fase": 0.0,
+				"pen": 0,
+				"hit": [],
+				"pulso": 0.0
+			}
 		)
 
 
@@ -43,6 +60,39 @@ func tem_ativos() -> bool:
 		if float(it.vida) > 0.0:
 			return true
 	return false
+
+
+# ------------------------------------------------------------------ sprites (assets/v2/armas/indice.json)
+
+
+## Lê o índice uma vez por processo: cada arma aponta para o seu {tex, tam, tipo} (sugeridas e aproximadas). Sprite que não carrega
+## fica de fora (o golpe segue com a forma antiga). Com normal map, a textura é um CanvasTexture: a luz 2D age nela.
+static func carregar_sprites() -> void:
+	if _lidos:
+		return
+	_lidos = true
+	var d = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES.path_join("indice.json")))
+	if not (d is Dictionary):
+		return
+	for nome in d.get("sprites", {}):
+		var s: Dictionary = d.sprites[nome]
+		var tex := load(PASTA_SPRITES.path_join(str(s.arquivo))) as Texture2D
+		if tex == null:
+			continue
+		if s.get("normal") != null:
+			var ct := CanvasTexture.new()
+			ct.diffuse_texture = tex
+			ct.normal_texture = load(PASTA_SPRITES.path_join(str(s.normal))) as Texture2D
+			tex = ct
+		var entrada := {"tex": tex, "tam": Vector2(float(s.tamanho[0]), float(s.tamanho[1])), "tipo": str(s.tipo)}
+		for arma in s.armas_sugeridas + s.armas_aproximadas:
+			_sprites[str(arma)] = entrada
+
+
+## Sprite do golpe `id` ({tex, tam, tipo}), ou {} quando a arma não tem sprite.
+static func sprite_de(id: String) -> Dictionary:
+	carregar_sprites()
+	return _sprites.get(id, {})
 
 
 # ------------------------------------------------------------------ o timer de recarga (chamado por golpe, como as outras famílias)
@@ -317,10 +367,17 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				var dir: Vector2 = (it.v as Vector2).normalized()
 				_desenhar_projetil(ci, it, tex, cor, p, dir)
 			"nuvem":
+				var sp: Dictionary = it.sp
+				if not sp.is_empty():
+					var fade := opacidade_nuvem(float(it.vida), float(st.duracao))
+					_area(ci, sp, p, float(it.r), Color(1, 1, 1, 0.035 * fade))
 				_desenhar_pulso_nuvem(ci, it, st, p)
 			"anel":
 				var r := float(it.r)
 				var fade_a := clampf(1.0 - r / float(st.raio), 0.0, 1.0)
+				var sp: Dictionary = it.sp
+				if not sp.is_empty():
+					_area(ci, sp, p, r, Color(1, 1, 1, 0.12 * fade_a))
 				ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
 				ci.draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(cor.r, cor.g, cor.b, 0.85 * fade_a), 3.0)
 				ci.draw_arc(Vector2.ZERO, maxf(r - 4.0, 0.5), 0.0, TAU, 48, Color(1, 1, 1, 0.45 * fade_a), 1.5)
@@ -358,6 +415,47 @@ func desenhar_corpo(ci: CanvasItem, tex: Texture2D) -> void:
 		if float(it.vida) <= 0.0 or str(it.k) != "nuvem":
 			continue
 		_desenhar_nuvem(ci, it, it.a.st, it.a.cor, tex, (it.p as Vector2).round())
+
+
+## Camada normal (`no_corpo`, a das sombras e dos corvos, que recebe a luz 2D): o sprite de projétil (virado para o voo), de meteoro
+## que cai (com a ponta para baixo) e de aliado (de pé, flutuando).
+func desenhar_sprites(ci: CanvasItem) -> void:
+	for it in itens:
+		var sp: Dictionary = it.sp
+		if float(it.vida) <= 0.0 or sp.is_empty():
+			continue
+		var p: Vector2 = (it.p as Vector2).round()
+		match str(it.k):
+			"projetil":
+				_sprite(ci, sp, p, (it.v as Vector2).angle())
+			"meteoro":
+				if float(it.t) > 0.0:
+					_sprite(ci, sp, _queda(it), PI * 0.5)
+			"aliado":
+				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
+				_sprite(ci, sp, sobe, 0.0, Color(1, 1, 1, clampf(float(it.vida) / 0.5, 0.0, 1.0)))
+
+
+## O sprite centrado em `c`, girado `ang` (o projétil aponta para a direção do voo).
+func _sprite(ci: CanvasItem, sp: Dictionary, c: Vector2, ang: float, cor: Color = Color.WHITE) -> void:
+	var tam: Vector2 = sp.tam
+	ci.draw_set_transform(c, ang, Vector2.ONE)
+	ci.draw_texture_rect(sp.tex, Rect2(-(tam * 0.5).floor(), tam), false, cor)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Área com sprite (nuvem e anel): ocupa o diâmetro 2r do golpe; a altura segue a proporção do sprite.
+func _area(ci: CanvasItem, sp: Dictionary, c: Vector2, r: float, cor: Color) -> void:
+	var tam: Vector2 = sp.tam
+	var alt := r * 2.0 * tam.y / tam.x
+	ci.draw_texture_rect(sp.tex, Rect2((c - Vector2(r, alt * 0.5)).round(), Vector2(r * 2.0, alt).round()), false, cor)
+
+
+## Posição do meteoro que cai: sobe 80 px no início do aviso e desce até o chão.
+func _queda(it: Dictionary) -> Vector2:
+	var st: Dictionary = it.a.st
+	var k := 1.0 - float(it.t) / float(st.aviso)
+	return ((it.p as Vector2).round() + Vector2(0, -80.0 * (1.0 - k))).round()
 
 
 # ------------------------------------------------------------------ auxiliares
@@ -443,6 +541,7 @@ func _novo(k: String, a: Dictionary, p: Vector2, vida: float) -> Dictionary:
 		return it
 	it.k = k
 	it.a = a
+	it.sp = sprite_de(str(a.id))
 	it.p = p
 	it.v = Vector2.ZERO
 	it.vida = vida

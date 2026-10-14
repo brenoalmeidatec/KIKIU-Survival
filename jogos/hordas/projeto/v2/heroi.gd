@@ -276,11 +276,12 @@ func ganhar_folego(x: float) -> void:
 
 ## Levou `valor` de dano de algo em `de` (mundo); `quem` é o monstro que bateu (null: ataque de área). Devolve true se o golpe foi CONSUMIDO: o
 ## dano entrou ou o escudo barrou (quem chama arma a recarga do golpe nos dois casos; o dano barrado não tira vida nem dá invencibilidade).
-func levar_dano(valor: float, de: Vector2, quem = null) -> bool:
+## `bloqueavel` = false é o dano de AMBIENTE (espinhos do mapa): não há quem bateu nem de onde vem, então o escudo não barra.
+func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> bool:
 	if not vulneravel():
 		return false
 	var esc = mundo.combate.escudo
-	if escudo_ativo and esc != null and esc.cobre(self, de):
+	if bloqueavel and escudo_ativo and esc != null and esc.cobre(self, de):
 		esc.bloquear(self, valor, de, quem)
 		return true
 	vida = maxf(0.0, vida - valor)
