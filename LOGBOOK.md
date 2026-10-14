@@ -1658,3 +1658,9 @@ _Codex do Alisson_
 - **Pendente:** CI no head antes de merge; possível conflito apenas de desenho em armas.gd com #246. Nenhuma alteração em sistemas, exports ou save. Paleta#250 rascunho: CI confirmou v2_status18falhas e também esquiva(v1)falhas1; logs apontados no PR. Publicação/atalho ainda dependem da cota#249.
 
 _Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · fontes e reprodução da arte no #251
+- **Feito:** ajuda do índice e título da prancha agora atribuem as folhas ao Alisson e ao Codex do Alisson, com cobertura dos 50 golpes e 25 evoluções. Pipeline regenerado; nenhuma textura de runtime mudou. Harness de captura adicionado à documentação visual para reprodução dos cinco cenários.
+- **Validação:** gerador código 0, diff-check limpo. Os testes de runtime já registrados continuam aplicáveis, pois só autoria/ajuda/prancha/documentação mudaram. CI não iniciou por cobrança/limite da conta; sem merge.
+
+_Codex do Alisson_

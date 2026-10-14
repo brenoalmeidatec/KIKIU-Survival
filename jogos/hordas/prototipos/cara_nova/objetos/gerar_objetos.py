@@ -911,6 +911,7 @@ def main():
 
 
 # ------------------------------------------------------------------ armas da v2 (python gerar_objetos.py armas)
+# Arte propria: folhas do Alisson (GPT) e do Codex do Alisson (imagegen); cobertura dos 50 golpes e 25 evolucoes.
 # Folhas de arte propria que o Alisson gerou no GPT: 16 projeteis e meteoros (fundo branco), 9 aliados
 # (fundo branco), 12 efeitos de area da folha 20 e 9 da folha 21 (fundo preto, aditivos). Saida: um PNG por
 # sprite em projeto/assets/v2/armas/ (normal map so onde a luz 2D age: projetil e aliado), indice.json e a previa.
@@ -1031,14 +1032,14 @@ COR_CONTORNO = (236, 240, 248)
 ARMAS_DESCARTADOS = {"nevoa_fantasmal", "anel_vento"}
 
 ARMAS_AJUDA = (
-    "Sprites das armas da v2, recortados das folhas de arte propria do Alisson (geradas no GPT). "
+    "Sprites das armas da v2, recortados de arte propria do Alisson (GPT) e do Codex do Alisson (imagegen). "
     "Chave = nome do sprite. arquivo = PNG nesta pasta. normal = normal map pareado para a luz 2D "
     "(so projetil e aliado; efeito de area nao tem). tipo: projetil (aponta para a direita; o codigo gira "
     "pelo angulo do voo, e o meteoro que cai fica com a ponta para baixo), aliado (de pe: a borda de baixo e o chao) "
     "e area (efeito aditivo: o fundo preto virou transparencia e o brilho virou alfa; desenhar com mistura aditiva). "
     "tamanho = largura x altura em px no jogo (960x540); em area a altura sai da proporcao da folha. "
-    "armas_sugeridas = armas que o sprite serve bem (as 45 novas e aura_fogo); armas_aproximadas = sprite "
-    "provisorio, serve a arma mas nao e o ideal. Ligado ao codigo em v2/armas_novas.gd: o golpe usa o sprite "
+    "Cobertura: 50 golpes base e 25 evolucoes. armas_sugeridas = armas que o sprite serve bem; armas_aproximadas = sprite "
+    "provisorio, serve a arma mas nao e o ideal. Ligado ao desenho em v2/armas.gd e v2/armas_novas.gd: o golpe usa o sprite "
     "da sua arma; sem sprite, mantem a forma antiga."
 )
 
@@ -1228,7 +1229,7 @@ def previa_armas(itens, caminho):
         altura += 34 + sum(alt + 12 + txt + 18 for _, alt, txt in linhas_cel)
     tela = Image.new("RGBA", (2 * margem + largura, altura), fundo)
     d = ImageDraw.Draw(tela)
-    d.text((margem, 14), "Armas da v2: sprites recortados das folhas do Alisson (arte propria, GPT)",
+    d.text((margem, 14), "Armas da v2: Alisson (GPT) e Codex do Alisson (imagegen) - 50 golpes, 25 evolucoes",
            fill=branco, font=fonte_titulo)
     d.text((margem, 40), "-> arma que o sprite serve bem        ~ sprite provisorio (serve a arma, mas nao e o ideal)",
            fill=cinza, font=fonte)
