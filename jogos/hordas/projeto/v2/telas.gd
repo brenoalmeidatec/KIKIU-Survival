@@ -783,6 +783,8 @@ func _entrada_escolha(e: InputEvent) -> bool:
 			KEY_B, KEY_X:
 				_banir()
 		return true
+	if e is InputEventJoypadMotion:
+		return false  # o analógico não navega nem escolhe: cada quadro com ele acima do limite contaria como um aperto (o direcional e o A fazem isso)
 	if e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right") or e.is_action_pressed("ui_accept"):
 		if travada:
 			_pulso = PULSO_T
