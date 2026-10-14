@@ -1,0 +1,11 @@
+QA final: Godot 4.4.1.stable.official.49a5bc7b6; OpenGL Compatibility; Intel Iris Xe; viewport 960x540.
+Novo teste repo testes/v2_salao_visual.gd/.tscn: exit0, falhas0; visual_final.log sem erros ou warnings; gdformat check limpo.
+Harness viewport final: exit0, falhas0; depois.stdout.log e depois.stderr.log (stderr vazio).
+5 oficiais: v2_salao, v2_menu, v2_morte, v2_meta, v2_santuario: todos exit0 e falhas0, sem SCRIPT ERROR.
+Oficiais produzem avisos de teardown/leaks; v2_meta testa corrupcao e falha de escrita deliberadas. Nao alterados.
+Baseline oficial v2_salao com script HEAD salvo (copia externa do teste; apenas preload de Salao substituido): falhas0; mesmos 2 resources/ObjectDB warnings presentes antes.
+Demais oficiais nao reexecutados em checkout baseline completo: nao atribuir todos os avisos por inferencia.
+Bench exploratorio de 3s por modo, janela hidden, vsync disabled: consultar CSV. Grande variacao entre rodadas concorrentes; nao promete ganho FPS. Drawcalls45->35, objetos675->204 na mesma sala.
+Capturas apenas viewport, antes_*.png/depois_*.png; representativas: 01_salao, item_estatuas_02, item_altar_03, painel_codice, prompt_medio.
+Teste novo verifica PNG/cache/dimensoes/transparencia, rects+altura minima medida dentro cartao, largura texto+style dos botoes rodape, prompts dentro viewport, todos itens, alcance e handler mouse/A, lock sintetico existente e save temporario com hash real preservado.
+Limite: entradas mouse/A invocam handler da sala; nao simulam roteamento completo/foco do sistema operacional. Portais atuais todos abertos, lock por condicao sintetica.

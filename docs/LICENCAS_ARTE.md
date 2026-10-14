@@ -58,3 +58,8 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 | `assets/titulo/fundo.png` | fundo da tela de título da v2 (`v2/menu_principal.tscn`) | Alisson: arte própria gerada no GPT (prompt no corpo do PR #215) | arte gerada no GPT pelo Alisson, versionada em `jogos/hordas/fonte_arte/fundo_titulo_fonte.webp` (1672x941) | própria (sem licença de terceiros) | não | recorte 16:9 reduzido a 960x540 (BOX), 48 cores sem dithering e sem o título K.I.K.I.U (`fonte_arte/gerar_fundo_titulo.py`) | 2026-10-12 |
 
 (Itens novos entram no fim da tabela.)
+
+## Arte própria do salão — Codex do Alisson,14/10/2026
+- Fontes: jogos/hordas/fonte_arte/santuario_v2/fonte_fundo.png, fonte_estruturas.png, fonte_portais.png. Destino: jogos/hordas/projeto/assets/v2/santuario/.
+- Criadas com imagegen embutido a pedido do Alisson, seguindo conceito aprovado pelo Breno no PR260. Não adicionam arte de terceiros.
+- Recorte e redução pelo wrapper gerar.py, reutilizando o pipeline gerar_objetos.py. Prompts/contexto em docs/visual_2_5d/santuario/IMPLEMENTACAO.md. Fontes originais preservadas.

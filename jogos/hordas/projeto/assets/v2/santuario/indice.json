@@ -1,0 +1,17 @@
+{
+  "origem": "Arte própria Codex/imagegen, 2026-10-14",
+  "fonte": "jogos/hordas/fonte_arte/santuario_v2/",
+  "viewport": [
+    960,
+    540
+  ],
+  "estrutura": [
+    112,
+    112
+  ],
+  "portal": [
+    112,
+    142
+  ],
+  "nota": "Geometria de interação em v2/salao_visual.gd; não são máscaras de colisão."
+}
