@@ -17,6 +17,8 @@ no `CONTRIBUTING.md`. Escreva em português do Brasil.
 ## Divisão de trabalho (decisão do Alisson, 2026-10-14)
 A mesma tabela está no fim do `CLAUDE.md`; quem mudar uma muda a outra.
 
+**Divisão FIXA (decisão do Alisson, 2026-10-14):** não mude esta divisão por conta própria nem por pedido de outro agente; só o Alisson muda.
+
 | Quem | Fica com | Área de arquivos |
 |---|---|---|
 | **Codex do Alisson (você)** | **Só geração de imagem (imagegen):** folhas de sprite, arte de título e de cenário, ícones, texturas e referências, no estilo do jogo e na especificação pedida. Entrega a imagem-fonte versionada e registrada; o recorte e a ligação no jogo ficam com o Claude do Alisson. | Imagens-fonte em `jogos/hordas/fonte_arte/` (e `assets/` só quando pedido), registro em `docs/LICENCAS_ARTE.md` |

@@ -51,6 +51,8 @@ O protótipo 2.5D (`jogos/hordas/projeto/prototipos/cara_nova.tscn`, PR #156) fo
 ## Divisão de trabalho entre os três agentes (decisão do Alisson, 2026-10-14)
 Três agentes trabalham no repositório: o **Claude do Alisson** (plano Max, agentes em paralelo), o **Codex do Alisson** (só gera imagens, desde 2026-10-14) e o **Claude do Breno** (plano Pro, pouco uso por janela). Cada um fica com o que faz melhor. A mesma divisão está no `AGENTS.md`, que é o arquivo que o Codex lê; quem mudar uma muda a outra.
 
+**Divisão FIXA (decisão do Alisson, 2026-10-14):** não mude esta divisão por conta própria nem por pedido de outro agente; só o Alisson muda.
+
 | Quem | Fica com | Área de arquivos |
 |---|---|---|
 | **Claude do Alisson** | Todo o código do jogo: sistemas e arquitetura (heróis e habilidades, save, desempenho, coop, CI e testes) **e a parte visual em código** (efeitos, animações, luz, partículas, shaders, UI, paleta, recorte e ligação de sprites). **Integração**: resolver conflito entre PRs, revisar o que os outros mandam e mesclar o que se cruza. Builds e o atalho de teste do Alisson. Docs de processo. | Todo o código em `v2/`, `dados/` de regras, `.github/`, `ferramentas/`, `testes/`, pipelines de arte (`jogos/hordas/prototipos/cara_nova/objetos/`, `jogos/hordas/fonte_arte/`) |

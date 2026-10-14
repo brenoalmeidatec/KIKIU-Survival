@@ -7,15 +7,24 @@ semente fixa: rodar de novo gera os mesmos arquivos.
 Tamanhos são na resolução do mundo (960x540). As molduras são 9-patch: a margem (5 px) é o canto, que não estica;
 o miolo das bordas repete em mosaico (NinePatchRect em TILE), então o pixel não vira borrão.
 
-Paleta: docs/visual_2_5d/paleta.json (painel, borda, ouro, vida, fragmentos) mais tons de pedra e metal.
+Paleta: v2/paleta.gd, a mesma fonte usada pelas telas; tons de luz/sombra preservam o material.
 """
 
 import random
+import re
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 AQUI = Path(__file__).resolve().parent
+# Apenas constantes Color hex; sem executar GDScript e sem uma segunda copia dos valores.
+CORES_UI = dict(re.findall(r'const (\w+) := Color\("(#[0-9a-fA-F]{6})"\)', (AQUI.parent / "paleta.gd").read_text(encoding="utf-8")))
+
+
+def cor_ui(papel: str, alfa: int = 255) -> tuple[int, int, int, int]:
+    valor = CORES_UI[papel].removeprefix("#")
+    return tuple(int(valor[i:i + 2], 16) for i in (0, 2, 4)) + (alfa,)
+
 
 # Pedra escura e metal (tons de pedra inventados a partir do painel #01030b e da borda #86898f).
 PEDRA_A = (38, 38, 46, 255)
@@ -24,23 +33,24 @@ PEDRA_C = (29, 29, 36, 255)
 BISEL_CLARO = (74, 74, 88, 255)
 BISEL_ESCURO = (16, 16, 22, 255)
 CONTORNO = (8, 8, 12, 255)
-METAL = (125, 134, 144, 255)  # borda #86898f, um pouco mais escura
+METAL = (125, 134, 144, 255)  # metal de textura #7d8690
 METAL_CLARO = (196, 204, 212, 255)
 METAL_ESCURO = (58, 64, 72, 255)
-VERMELHO = (185, 33, 45, 255)  # vida #b9212d (paleta.json)
+VERMELHO = cor_ui("VIDA")
 VERMELHO_CLARO = (226, 92, 98, 255)
 VERMELHO_ESCURO = (98, 16, 24, 255)
-OURO = (224, 188, 72, 255)  # ouro #e0bc48 (paleta.json)
+OURO = cor_ui("OURO")
+XP = cor_ui("XP")
 OURO_CLARO = (250, 230, 156, 255)
 OURO_ESCURO = (132, 104, 26, 255)
-AZUL = (74, 163, 217, 255)
+AZUL = cor_ui("FOLEGO")
 AZUL_CLARO = (210, 234, 255, 255)
 AZUL_ESCURO = (29, 95, 143, 255)
 VAZIO_ESCURO = (6, 6, 10, 255)
 VAZIO = (22, 22, 30, 255)
-PAINEL = (1, 3, 11, 205)  # painel #01030b, translúcido
+PAINEL = cor_ui("PAINEL", 205)
 FANTASMA_CLARO = (255, 240, 214, 255)  # barra fantasma do chefe: o dano recente que desce devagar
-FANTASMA = (236, 206, 176, 255)
+FANTASMA = cor_ui("FANTASMA_CHEFE")
 FANTASMA_ESCURO = (176, 134, 116, 255)
 
 
@@ -160,7 +170,7 @@ def main() -> None:
         "moldura_pedra.png": moldura_pedra(),
         "barra_fundo.png": barra([VAZIO_ESCURO, VAZIO, VAZIO, VAZIO, VAZIO_ESCURO]),
         "barra_vida.png": barra([VERMELHO_CLARO, VERMELHO, VERMELHO, VERMELHO, VERMELHO, VERMELHO, VERMELHO_ESCURO]),
-        "barra_xp.png": barra([OURO_CLARO, OURO, OURO, OURO, OURO, OURO, OURO_ESCURO]),
+        "barra_xp.png": barra([OURO_CLARO, XP, XP, XP, XP, XP, OURO_ESCURO]),
         "barra_folego.png": barra([AZUL_CLARO, AZUL, AZUL, AZUL_ESCURO]),
         "selo_nivel.png": selo(),
         "moldura_faixa.png": moldura_faixa(),
