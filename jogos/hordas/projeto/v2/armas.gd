@@ -1215,7 +1215,11 @@ func _desenhar_laminas(a: Dictionary) -> void:
 			var aa := ang - float(q + 1) * 0.2
 			var pp := p + Vector2(cos(aa) - cos(ang), (sin(aa) - sin(ang)) * ACHATA) * R
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(pp.round() - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.26 - 0.09 * q))
-		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.55 if evo else 0.42))
+		if evo:  # a fusão lê de longe: halo maior e um miolo claro (só duas luzes a mais por lâmina)
+				no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(24, 24), Vector2(48, 48)), false, Color(cor.r, cor.g, cor.b, 0.5))
+				no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(9, 9), Vector2(18, 18)), false, Color(1.0, 1.0, 1.0, 0.7))
+		else:
+				no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.42))
 		no_brilho.draw_set_transform(p, tang.angle(), Vector2(1.15, 1.15))
 		no_brilho.draw_texture(_tex_lamina, Vector2(-13, -5.5), tinta)
 		no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

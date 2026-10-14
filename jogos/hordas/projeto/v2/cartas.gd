@@ -10,6 +10,7 @@ extends RefCounted
 ## O cartão (telas.gd) mostra nessa ordem: raridade e tecla, ícone, nome, desc, proximo e, no rodapé, nivel_txt e evolui.
 
 const Armas := preload("res://v2/armas.gd")
+const LINHA_RODAPE := 29  # letras que cabem no rodapé do cartão (Spleen 8x16 em 16 px: 8 px por letra, 232 px de largura)
 
 var combate
 var cfg: Dictionary = {}
@@ -154,11 +155,30 @@ func _evo_livre(ev: Dictionary) -> bool:
 	return not (str(ev.get("raridade", "")) == "lendario" and lendarias_feitas >= 1)
 
 
+## O aviso do rodapé da carta: "Aura nv3 » FUSÃO Anel", a receita inteira à vista antes da fusão. Cabe numa linha de 16 px (a Spleen
+## 8x16 cabe LINHA_RODAPE letras): nome curto da peça e da fusão, "+N" quando sobram peças, e sem "FUSÃO" se ainda assim não cabe.
 func _sinergia_texto(id: String) -> String:
 	var ev := _sinergia_ev(id)
 	if ev.is_empty():
 		return ""
-	return "Evolui: %s" % ev.nome  # a lendária já sai magenta e com o nome da raridade no card: o prefixo não cabe numa linha
+	var outras: Array = []
+	for p in ev.pecas:
+		if str(p.id) != id:
+			outras.append(p)
+	var fusao := str(ev.get("curto", ev.nome))
+	var texto: String
+	if outras.size() == 1:
+		texto = "%s nv%d » FUSÃO %s" % [_curto(str(outras[0].id)), int(outras[0].nivel), fusao]
+	else:
+		texto = "%s +%d » FUSÃO %s" % [_curto(str(outras[0].id)), outras.size() - 1, fusao]
+	if texto.length() > LINHA_RODAPE:  # sem a palavra FUSÃO quando não cabe: a fusão já aparece no nome
+		texto = texto.replace("FUSÃO ", "")
+	return texto
+
+
+## Nome curto de uma peça: o `curto` do dado (o do card compacto), ou a primeira palavra do nome (Flechas Sombrias: Flechas).
+func _curto(id: String) -> String:
+	return str(_def[id].get("curto", str(_def[id].nome).split(" ")[0]))
 
 
 ## A evolução (ainda livre) que esta peça ajuda a fechar, ou {} se nenhuma.

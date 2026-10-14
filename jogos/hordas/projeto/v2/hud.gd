@@ -42,6 +42,11 @@ const RB_BORDA := Color(0.45, 0.40, 0.30)
 const MARCOS := [10, 25, 50, 100, 200]
 const NOMES_MARCOS := ["SEQUÊNCIA!", "CARNIFICINA!", "MASSACRE!", "IMPARÁVEL!", "LENDÁRIO!"]
 const CORES_MARCOS := [OURO, Color(1.0, 0.55, 0.15), Color(1.0, 0.3, 0.3), Color(0.8, 0.4, 1.0), Color(0.5, 0.95, 1.0)]
+const FUSAO_T := 2.0  # s que o cartão grande da fusão fica na tela (com a saída de 0,4 s no fim)
+const FUSAO_L := 600.0  # largura do cartão da fusão (espaço de 960 px da tela)
+const FUSAO_A := 200.0
+const FUSAO_X := 180.0
+const FUSAO_Y := 150.0
 ## Sinais do mundo e o método do HUD que cada um chama. Só se conecta o que o mundo tem.
 const SINAIS := [
 	["nivel_subiu", "_nivel_subiu"],
@@ -67,6 +72,10 @@ var _piscada := 0.0  # segundos que o herói está cansado (para o pisca da barr
 var _pisca_vida := 0.0  # segundos com vida baixa (para o pisca da barra de vida)
 var _tempo_vinheta := 0.0  # segundos com vida baixa (para o pulso da vinheta)
 var _combo_x := 0.0
+var _fusao: Control  # o cartão grande da fusão (montado na primeira fusão)
+var _fusao_nome: Label
+var _fusao_desc: Label
+var _fusao_tween: Tween
 var _combo_y := 0.0
 var _cor_base := Color.WHITE  # cor do combo na contagem atual (sobe com os marcos)
 var _minuto_antes := 0
@@ -428,8 +437,62 @@ func _elite_apareceu(_nome = "") -> void:
 	_anuncio.anunciar("ELITE!", COR_ELITE)
 
 
-func _evolucao(nome = "") -> void:
+## A fusão: além da faixa pequena, um cartão grande no centro com o nome e o que a arma faz. É o momento que o jogador precisa LER,
+## então a fonte é a de título (Jersey 10) e o texto corrido é o da Spleen 8x16 em 16 px. Só uma tween (sem nó por quadro).
+func _evolucao(nome = "", desc = "") -> void:
 	_anuncio.anunciar("EVOLUÇÃO: %s" % str(nome).to_upper(), OURO)
+	_mostrar_fusao(str(nome), str(desc))
+
+
+func _mostrar_fusao(nome: String, desc: String) -> void:
+	if _fusao == null:
+		_montar_fusao()
+	_fusao_nome.text = nome.to_upper()
+	_fusao_desc.text = desc
+	_fusao.modulate.a = 1.0
+	_fusao.scale = Vector2.ONE * 1.25
+	_fusao.visible = true
+	if _fusao_tween != null:
+		_fusao_tween.kill()
+	_fusao_tween = create_tween()
+	_fusao_tween.tween_property(_fusao, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_fusao_tween.tween_interval(FUSAO_T - 0.6)
+	_fusao_tween.tween_property(_fusao, "modulate:a", 0.0, 0.4)
+	_fusao_tween.tween_callback(_fusao.hide)
+
+
+func _montar_fusao() -> void:
+	_fusao = Control.new()
+	_fusao.position = Vector2(FUSAO_X, FUSAO_Y)
+	_fusao.size = Vector2(FUSAO_L, FUSAO_A)
+	_fusao.pivot_offset = _fusao.size * 0.5
+	_fusao.visible = false
+	var fundo := ColorRect.new()
+	fundo.color = Color(0.04, 0.03, 0.08, 0.88)
+	fundo.size = _fusao.size
+	_fusao.add_child(fundo)
+	_fusao.add_child(_rotulo(Dados.fonte_titulo, 56, OURO, 12.0, 64.0, "FUSÃO!"))
+	_fusao_nome = _rotulo(Dados.fonte_titulo, 37, Color(1.0, 0.95, 0.8), 80.0, 44.0, "")
+	_fusao.add_child(_fusao_nome)
+	_fusao_desc = _rotulo(Dados.fonte_texto, 16, Color(0.88, 0.9, 1.0), 132.0, 60.0, "", true)
+	_fusao.add_child(_fusao_desc)
+	$Raiz.add_child(_fusao)
+
+
+func _rotulo(fonte: Font, tam: int, cor: Color, y: float, altura: float, texto: String, quebra := false) -> Label:
+	var l := Label.new()
+	l.text = texto
+	l.add_theme_font_override("font", fonte)
+	l.add_theme_font_size_override("font_size", tam)
+	l.add_theme_color_override("font_color", cor)
+	l.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
+	l.add_theme_constant_override("outline_size", 4 if tam > 16 else 0)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if quebra else TextServer.AUTOWRAP_OFF
+	l.position = Vector2(0.0, y)
+	l.size = Vector2(FUSAO_L, altura)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
 
 
 func _anuncio_livre(texto = "", cor = Color.WHITE) -> void:
