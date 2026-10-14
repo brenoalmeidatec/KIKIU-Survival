@@ -40,6 +40,7 @@ O protótipo 2.5D (`jogos/hordas/projeto/prototipos/cara_nova.tscn`, PR #156) fo
 - **A v1 vai ser aposentada** (decisão do Alisson, 2026-10-12): todo o esforço vai para a v2, nada de HUD, desempenho nem recurso novo na v1. A exceção foi o teto de 350 vivos na prorrogação e no Enxame Final (PR #195), pedido por ele. Desde o #194 a v2 é a cena principal e a v1 abre com `-- --v1`.
 - O protótipo fica congelado como referência. O que for reaproveitado vira módulo em `v2/`.
 - O plano de etapas do épico #152 continua, agora aplicado à v2.
+- Antes de mexer em menu/UI da v2, leia jogos/hordas/projeto/v2/DESIGN.md
 
 ## Arte e licenças (decisão do Alisson, 2026-10-12)
 **Nada de arte com direitos autorais.** Arte, som, fonte e ícone de terceiros de **livre uso** podem e devem ser usados quando economizam esforço e são compatíveis com o nosso contexto (licença que permite uso comercial, redistribuição no jogo e modificação; estilo, escala e luz do jogo). O que vale, o que é proibido e o **registro obrigatório** de cada item (fonte, autor, licença, mudanças) estão em `docs/LICENCAS_ARTE.md` (a música e os sons seguem também o `docs/LICENCAS_AUDIO.md`).

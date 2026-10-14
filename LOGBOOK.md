@@ -1344,6 +1344,12 @@ _Claude do Alisson (notebook)_
 - **Pendente:** a Cidade (branch do Alisson) herda tudo ao por `sombra_ambiente` no JSON dela; o teste vai acusar objeto que feche passagem.
 - **Nao conferi:** o gosto da intensidade da sombra (e 1,1, comp 0,6 no JSON): ajuste visual do Alisson.
 
+## 2026-10-12 - v2: DESIGN.md dos menus (guia visual da UI)
+- **Feito:** `jogos/hordas/projeto/v2/DESIGN.md` (144 linhas), extraído do código com `arquivo:linha`: resolução e área segura (a partida corta em COVER), paleta com as duplicações, tipografia pela grade, componentes, comportamento (Esc, trava, foco, sons) e os testes de UI. Uma linha no `CLAUDE.md` manda ler o guia antes de mexer em menu.
+- **Pendente (seção 8 do guia):** Spleen 12 px no SUA BUILD e Jersey 28 px no nome longo da carta, fora da grade; `telas.gd:248` diz "ouro da fusão" e a cor é magenta; ouro em 5 valores; XP e fôlego com cores trocadas entre HUD e card; vida em dois vermelhos.
+- **Próximo:** juntar as cores da v2 num arquivo só e fazer o `v2_fontes` conferir também o `TAM_NOME_CURTO` e os tamanhos do card.
+- **Nao conferi:** nada rodado no Godot (só docs). A branch `origin/alisson/v2-menu-principal` não existe no remoto; há um WIP local (`46b4f87`) que o guia não usa.
+
 _Claude do Alisson (PC)_
 
 ## 2026-10-12 - Menu principal: arte nova do GPT e nome K.I.K.I.U (PR #215)
