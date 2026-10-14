@@ -19,8 +19,8 @@ A mesma tabela está no fim do `CLAUDE.md`; quem mudar uma muda a outra.
 
 | Quem | Fica com | Área de arquivos |
 |---|---|---|
-| **Codex do Alisson (você)** | Frente visual inteira, da imagem até funcionar no jogo: folhas de sprite, arte de título, ícones, recorte, ligar sprites, efeitos (Ruptura, escudo, golpes), animações, bloom, polimento de UI e paleta. Builds, ZIP e o atalho de teste do Alisson. | `assets/`, `jogos/hordas/fonte_arte/`, `jogos/hordas/prototipos/cara_nova/objetos/`, desenho/efeito/UI em `v2/` (`armas*.gd` na parte de desenho, `hud*.gd`, `telas.gd`, `status.gd`, `pausa.gd`, `menu_principal.gd`, `altar.gd` na parte visual), `docs/visual_2_5d/` |
-| **Claude do Alisson** | Sistemas e arquitetura: coop online, heróis e habilidades (E, Q, secundário por herói), save, desempenho, CI e testes. **Integração**: resolve conflito entre PRs, revisa e mescla o que se cruza. Docs de processo. | `v2/combate.gd`, `v2/heroi.gd`, `v2/meta.gd`, `v2/mundo.gd`, `v2/entrada.gd`, `dados/` de regras, `.github/`, `ferramentas/`, `testes/` |
+| **Codex do Alisson (você)** | **Só geração de imagem (imagegen):** folhas de sprite, arte de título e de cenário, ícones, texturas e referências, no estilo do jogo e na especificação pedida. Entrega a imagem-fonte versionada e registrada; o recorte e a ligação no jogo ficam com o Claude do Alisson. | Imagens-fonte em `jogos/hordas/fonte_arte/` (e `assets/` só quando pedido), registro em `docs/LICENCAS_ARTE.md` |
+| **Claude do Alisson** | Todo o código do jogo: sistemas e arquitetura (heróis e habilidades, save, desempenho, coop, CI e testes) **e a parte visual em código** (efeitos, animações, luz, partículas, shaders, UI, paleta, recorte e ligação de sprites). **Integração**: resolver conflito entre PRs, revisar o que os outros mandam e mesclar o que se cruza. Builds e o atalho de teste do Alisson. Docs de processo. | Todo o código em `v2/`, `dados/` de regras, `.github/`, `ferramentas/`, `testes/`, pipelines de arte (`jogos/hordas/prototipos/cara_nova/objetos/`, `jogos/hordas/fonte_arte/`) |
 | **Claude do Breno** | Leve (plano Pro): números e textos em `dados/*.json`, conteúdo dos amigos, testes da Release no i5-3470, decisões do Breno, admin do GitHub. | `dados/*.json` (números e textos), issues |
 
 **Regras para ninguém pisar no outro**
@@ -30,8 +30,8 @@ A mesma tabela está no fim do `CLAUDE.md`; quem mudar uma muda a outra.
 4. **Mescle só os próprios PRs**, com CI verde no mesmo commit. PR de outro agente: comente; quem mescla é o dono ou o integrador.
 5. Precisa de algo do Breno? **Uma pergunta curta e fechada** na issue (sim/não, ou A, B, C) com um padrão já escolhido; sem resposta, siga pelo padrão.
 
-## Arte (a sua frente)
-- Antes de mexer em menu ou UI da v2, leia `jogos/hordas/projeto/v2/DESIGN.md` (quando estiver na main) e `docs/visual_2_5d/README.md`.
-- Arte gerada por você ou pelo Alisson é arte própria: registre a origem em `docs/LICENCAS_ARTE.md`. Arte de terceiros só de livre uso, conferida no dia e registrada.
-- Pipelines existentes: folhas em fundo branco ou preto passam por `jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py` (recorte, downscale BOX, quantização sem dither, normal map); objetos de mapa saem do Blender por script (`jogos/hordas/fonte_arte/mapas_v2/`). Reaproveite antes de criar outro.
-- Mostre antes/depois com print do viewport do Godot no PR (nunca captura da área de trabalho).
+## Arte (a sua frente, decisão do Alisson em 2026-10-14)
+Sua tarefa é **gerar imagens**. Você não altera código do jogo (`.gd`, `.tscn`, `.gdshader`, `dados/`), testes nem workflows: isso é do Claude do Alisson, que recorta, liga no jogo e testa.
+- **Pedido:** chega numa issue ou PR com a especificação (o que é, tamanho, fundo branco/preto/transparente, grade, estilo, referência). Na dúvida, siga `docs/imagens/referencia_2_5d.webp` e `docs/visual_2_5d/README.md`: pixel art 2.5D top-down dark fantasy, sem texto, sem grade, nada encostando na borda da célula.
+- **Entrega:** a imagem-fonte em `jogos/hordas/fonte_arte/<assunto>/` num PR pequeno só de arte, com uma linha em `docs/LICENCAS_ARTE.md` (arte própria gerada no Codex) e o prompt usado no corpo do PR. Avise na issue ou PR de origem, começando com "Para o Claude do Alisson:".
+- **Seus PRs visuais abertos antes desta decisão** (#250, #251, #253, #258, #261): a integração e o que faltar no código ficam com o Claude do Alisson; você só gera as imagens que eles ainda pedirem.

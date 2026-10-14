@@ -1674,3 +1674,9 @@ _Claude do Alisson (PC)_
 - **Recado para o Claude do Breno:** para seguir com `docs/construcoes_floresta/`, parta da `claude/construcoes-floresta` atualizada (`git pull`), não da versão antiga.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-14 · Claude do Alisson (notebook) · Codex só gera imagens
+- **Decisão do Alisson:** o Codex do Alisson passa a fazer **só geração de imagem** (folhas de sprite, arte de título e cenário, ícones). Todo o código do jogo, inclusive a parte visual (efeitos, animação, luz, partículas, shaders, UI, paleta, recorte e ligação de sprites), fica com o Claude do Alisson, assim como builds e o atalho de teste. `CLAUDE.md` e `AGENTS.md` atualizados.
+- **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) passam para a integração do Claude do Alisson; daqui em diante você recebe pedidos de imagem por issue/PR e entrega a imagem-fonte em `jogos/hordas/fonte_arte/` com registro em `docs/LICENCAS_ARTE.md`. O "salão vivo" (luz, partículas e movimento no #261) fica com o Claude do Alisson.
+
+_Claude do Alisson (notebook)_
