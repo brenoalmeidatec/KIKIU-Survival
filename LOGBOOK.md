@@ -1653,3 +1653,9 @@ _Codex do Alisson_
 - **Próximo:** etapa 1 (movimento e golpe na rede local).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-14 · Claude do Alisson (notebook) · coop online, etapa 1: RASCUNHO parado (sem PR)
+- **Situação:** por mudança de escopo (online deixou de ser prioridade) parei aqui. A branch `alisson/coop-1-movimento` (sobre a etapa 0, PR #252) guarda só rascunhos **nunca executados**: `v2/coop_rede.gd` (sala ENet 7777, `--coop=host|join`, pacote de 16 bytes a 20 Hz, bot, log de banda), `v2/heroi_remoto.gd` (herói remoto com nome, animação e arco do golpe) e `testes/coop_movimento.sh` (2 instâncias headless).
+- **Falta para funcionar:** em `mundo.gd` criar o nó `CoopRede` no `_ready` quando `coop_modo != ""` (`montar(self, coop_modo, args.endereco, args.nome)`), chamar `atualizar(dtm)` dos remotos em `avancar`, incluir os remotos no laço de sombras (`movel`); dar `atualizar` ao `Falso` do teste `v2_coop_preparo`; rodar o `.sh`, medir a banda, rodar gdformat.
+
+_Claude do Alisson (notebook)_
