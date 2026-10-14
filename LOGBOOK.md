@@ -1644,3 +1644,9 @@ _Claude do Alisson (notebook)_
 - **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
 
 _Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · reserva da animação visual
+- **Em andamento:** item4 visual: dissolve no efeito de morte usando o pool/shader existente. Herói já tem antecipação/avanço/squash de golpe e queda; o restante do corpo/herói e contrato de fase/relógio do MultiMesh dependem de coordenação com Claude do Alisson, sem alterações nos arquivos de sistemas.
+- **Próximo:** benchmark real --medir no perfil Médio com horda cheia, antes/depois no IrisXe, testes e prints do viewport. Reserva somente documental: Godot ainda não rodado nesta branch.
+
+_Codex do Alisson_
