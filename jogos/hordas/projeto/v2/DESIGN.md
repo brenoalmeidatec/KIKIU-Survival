@@ -84,7 +84,7 @@ XP dourado e ouro de seleção são papéis distintos. Fusão magenta continua d
 - **Trava das cartas**: 3 s em tempo real (`dados/v2_cartas.json:10`, `espera_s`); 0,8 s após rerrolar ou banir (`rerrolar_espera_s`); baú 1,5 s (`dados/v2_cartas.json:304`, `telas.gd:461`). Clique, tecla e botão são descartados, e a contagem pulsa. Esc passa para a pausa. A trava congela com a pausa aberta (`telas.gd:7-9`). Cartas apagadas usam `#737373` (`telas.gd:27, 665`).
 - **Foco inicial**: a pausa abre em "Continuar" (`pausa.gd:245` põe "Não" nas confirmações); o santuário, em ENTRAR (`altar.gd:77`); a escolha, na carta 1 (`telas.gd:35`).
 - **Sons de UI**: fora da partida, a pausa usa `Som.ui("cursor")` (-6 dB) e `Som.ui("confirmar")` (-4 dB) (`scripts/hordas/som.gd:68-73`). Na partida, usa os sons de jogo `carta` e `escolher` (`pausa.gd:572-583`). Não existem `ui_cursor` nem `ui_confirmar`.
-- **TAB** troca a página do SUA BUILD na pausa (`pausa.gd:287-290`) e o detalhe no painel central (`status.gd:136-137`). **C** liga e desliga o card (`status.gd:141`).
+- **TAB** alterna visual/detalhes do SUA BUILD na pausa e no painel central. **Q/E** mudam as páginas de conteúdo em ambos os layouts. No HUD compacto, **PgUp/PgDn** ou a roda sobre uma coluna mudam a página; a roda fora do card segue livre. **C** liga/desliga o card. A tabela de detalhes quebra rótulos, valores e bônus em linhas e preserva dicas completas; cada coluna informa sua página atual/total. Teclado é necessário para Tab/Q/E; equivalência no controle permanece uma tarefa separada (#257).
 
 ## 6. Regras de conteúdo
 
@@ -114,7 +114,7 @@ Mexeu em cor ou fonte: rode `v2_fontes` e `v2_status`. Mexeu em estado de tela: 
 
 O PR de paleta unifica vida/XP/fôlego, ouro/almas e cores de tela. Spleen deve usar 16 ou 32 px; Jersey, 19, 37 ou 56 px; o logo de 112 px equivale a 2 × 56. Press Start 2P usa 8 ou 16 px, inclusive nos rótulos compactos das habilidades. Os tamanhos vêm das constantes de `v2/paleta.gd`. O teste `v2_fontes` verifica a grade, incluindo os tamanhos adaptativos dos nomes e o card SUA BUILD. Aumentar fonte exige medir novamente largura e altura, sem esconder atributos para fazer o teste passar.
 
-**Validação parcial deste PR:** `v2_fontes` passou, mas `v2_status` apresentou 18 falhas após a adoção de fonte de 16 px. O layout ainda precisa de correção e validação; a integração com o #245 fica com o Claude do Alisson. Aprovar a grade tipográfica não comprova que textos e atributos cabem nas caixas.
+**Regressão do layout:** a fonte de 16 px expôs18 falhas de largura/altura. A tabela agora distribui conteúdo em páginas, sem apagar bônus, atributos ou dicas para caber. `v2_status` mantém a matriz de layouts e adiciona cobertura de todos os IDs/trechos/dicas nas páginas, com 50 golpes e build extrema/Santuário completo; a entrada real confere Q/E, Tab, PgUp/PgDn e roda dentro/fora das colunas, inclusive com janela ampliada. O diagnóstico mede o plano usado no desenho; prints reais do viewport continuam necessários para conferir a composição. Capturas com `--fotos` não executam as assertions da bateria. Integração com main/#245 continua com o Claude do Alisson.
 
 Continuam duas diferenças de composição: cartões usam painel próprio sem moldura de pedra; o Santuário tem faixas pretas e a partida usa corte. Isso não muda neste trabalho de paleta. Os números de dano no mundo e os dados de raridade continuam sob responsabilidade de sistemas; mudar sua origem exige coordenação com o Claude do Alisson.
 
