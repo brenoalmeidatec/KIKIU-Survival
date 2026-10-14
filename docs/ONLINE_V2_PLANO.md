@@ -92,7 +92,7 @@ Contando cabeçalhos UDP/ENet (~40 B por pacote). A subida de uma casa brasileir
 
 ## 3. Regras de jogo do coop (decisões do Alisson)
 
-Cada item traz o **padrão proposto**; o Alisson só precisa dizer "ok" ou o que muda.
+**Aprovado pelo Alisson em 2026-10-14:** os padrões dos itens 1, 2, 3, 4, 6 e 7, e hit-stop e câmera lenta **locais** (só na tela de quem bateu ou subiu de nível; ele vai jogar para confirmar a sensação). O item 5 segue o padrão até alguém pedir outra coisa.
 
 1. **Escolha de cartas.** Cada um escolhe a sua, na hora que sobe de nível. *Proposto:* **o mundo não pausa**; o jogador que escolhe fica numa bolha (invencível e parado), com tempo limite de 15 s, depois escolhe sozinho a primeira carta; as outras pessoas continuam jogando e veem o aliado dentro da bolha. É a decisão que a v1 já tomou ("cartas e Esc não pausam"). Alternativa mais fácil de implementar mas ruim de jogar: pausar todos (um chato com 4 pessoas trava os outros 3). *Esc e pausa:* no coop o menu de pausa abre por cima mas a partida continua.
 2. **XP e almas.** *Proposto:* **orbes pessoais** (cada cliente cria os seus quando recebe a morte, 100% do XP para quem pegou, sem tráfego de rede), nível e cartas por jogador. **Almas por jogador**, cada um grava as suas (`almas_partida` = XP coletado / 10, como hoje). Um pequeno bônus de equipe nas almas (sugestão: +10% por aliado vivo no fim) só se o Alisson quiser incentivar ficar junto.
@@ -121,7 +121,11 @@ Cada etapa é **1 PR pequeno e testável**. Todas mantêm o solo funcionando e o
 
 **Estimativa de tamanho.** Etapas 0, 1 e 8 são pequenas; 2, 3, 5 e 6 são médias; 4, 7 e 9 são médias com risco de ajuste fino. Ordem de grandeza: **10 PRs, 3 deles grandes** (2, 3 e 5, porque tocam combate e mundo). A etapa 1 já entrega "dois jogadores se vendo na rede local" e a etapa 3 já é jogável.
 
-## 5. Riscos e o que ficou aberto
+## 5. Depois do online: tela dividida (pedido do Alisson, 2026-10-14)
+
+Coop local na mesma máquina, com a tela dividida em 2 (e depois 4), cada jogador num controle. Fica para depois da etapa 9, mas as etapas 0 a 6 devem deixar o caminho aberto: `mundo.herois` com N heróis locais, entrada por dispositivo (`v2/entrada.gd` por jogador) e câmera, HUD e hit-stop "locais" por jogador, não globais. Com isso, a tela dividida vira um SubViewport por jogador sobre o mesmo mundo, sem rede. Medir o custo de dois SubViewports de 960x540 no Iris Xe antes de prometer.
+
+## 6. Riscos e o que ficou aberto
 
 - **CPU do anfitrião** com 4 jogadores e 220 monstros: precisa de medição na etapa 2, em especial na máquina fraca.
 - **Elites e chefes** têm nós e efeitos próprios (`avisos.gd`, `elites.gd`, `chefe.gd`): o fantoche deles é o ponto mais delicado.
