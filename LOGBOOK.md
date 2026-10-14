@@ -1623,5 +1623,28 @@ _Claude do Alisson (notebook)_
 - **Em andamento:** reconstrução do #217 em branch nova da main 96bbc15. Fonte única visual para HUD, SUA BUILD, pausa, cartas, menu e Santuário; correção de cores semânticas e tamanhos fora da grade. Antes capturado no viewport real 960x540, sem captura da área de trabalho.
 - **Validação desta reserva:** somente documentação; nenhum comportamento alterado. Godot ainda não rodado nesta branch. Próximo: implementação visual, extensão autorizada de v2_fontes, prints depois e testes afetados.
 - **Coordenação:** status.gd e altar.gd podem conflitar com #245 e #242. Coleta de dados, controles, save e progressão serão preservados; integração de sistemas fica com o Claude do Alisson.
+## 2026-10-12 (7) · Claude do Alisson (PC) · sprites das armas da v2 (recorte das folhas do GPT)
+- **Feito:** recortei as três folhas de arte própria do Alisson (`jogos/hordas/prototipos/cara_nova/objetos/fonte_armas_*.webp`) com a ferramenta de enfeites, que ganhou o modo `python gerar_objetos.py armas`. Saíram 16 projéteis e meteoros, 9 aliados (com normal map) e 12 efeitos de área (fundo preto, aditivo, sem normal). Estão em `jogos/hordas/projeto/assets/v2/armas/`, com `indice.json` (campo `armas_sugeridas`) e a prévia em `jogos/hordas/prints/v2_armas_sprites.png`. O modo padrão (enfeites) continua gerando o mesmo arquivo.
+- **Cobertura das 45 armas do #192:** 33 com sprite adequado, 6 com sprite provisório, 6 sem sprite. A lista e o prompt da 4ª folha estão no corpo do PR.
+- **Pendente:** ligar no código (espera o #192 entrar na `main`); 4ª folha no GPT; olhar em jogo os projéteis finos (flecha 12x3, dardo 8x3) e o contraste da shuriken preta e da flecha roxa sobre piso escuro.
+- **Próximo:** quando o #192 sair, ligar os sprites às armas e gerar os `.import` junto.
+- **Recado:** a branch local `alisson/v2-sprites-armas` (sem commits próprios, atrás da `main`) está presa no worktree `wf_f38176cf-d74-1` de outra sessão. Este PR saiu de `alisson/v2-sprites-armas-2`, para não mexer no worktree dela.
+
+## 2026-10-12 · Claude do Alisson (notebook) · sprites das armas ligados no jogo (PR #209)
+- **Feito (a pedido do Breno, na branch do Alisson):** a 4ª folha (`fonte_armas_areas_2.webp`, 9 efeitos em fundo preto) entrou no gerador (`gerar_objetos.py armas`). Os 6 sem sprite e os 3 provisórios de área ganharam sprite próprio; `nevoa_fantasmal` e `anel_vento` saíram do índice e da pasta (trocados pelos da folha 21). A folha 21 usa folga de 0 px para juntar os pedaços (`GAP_FOLHA`): as caixas da linha de baixo ficam a 1-2 px, e com a folga de 6 px viravam um só. As folhas 18 a 20 ficam como estavam (mesmos PNG). Índice com 44 sprites. Contorno claro de 1 px em flecha, shuriken e dardo.
+- **Ligado:** `v2/armas_novas.gd` lê o `indice.json` uma vez por processo (`carregar_sprites`) e guarda o sprite no item do pool. Projétil gira para o voo, meteoro que cai aponta para baixo, aliado flutua: os três na camada normal (`desenhar_corpo`, chamada de `v2/armas.gd`). Nuvem e anel são aditivos, esticados até o raio do golpe (brilho a 0,5 e 0,6). Sem sprite, a forma antiga. Pool fixo, nenhum nó novo.
+- **Cobertura:** 45 de 45 golpes novos com sprite (42 adequados e 3 provisórios). Dos 5 antigos, nenhum ligado: `aura_fogo` tem o `anel_fogo` no índice, mas a aura é um shader em `armas.gd` (não mexi). As 25 evoluções (fusões) não têm sprite e seguem na forma antiga.
+- **Testes:** `v2_armas_sprites` (novo; PNG e tamanho do índice, 45 golpes com textura, armas do índice que existem nos dados, partida com os 45 ligados: todos os tipos acertam, pool e camada sem nó novo, cada golpe ativo leva o sprite da sua arma), `v2_partida`, `v2_status` e `regras_armas` com `falhas=0`. Print: `docs/visual_2_5d/armas_v2/golpes_com_sprite.png` (viewport 960x540).
+- **Achado fora do escopo:** os `.import` de `assets/v2/mapas/` e de `prototipos/` não estão no Git; o `--import` local os gera e o CI roda `--import` antes dos testes. Os de `assets/v2/armas/` estão versionados agora (o export precisa deles).
+- **Pendente:** olhar em jogo a legibilidade dos projéteis finos (flecha 14x5, dardo 10x5, feixe 40x3, espinho 6x14) e a intensidade das áreas em combate cheio; decidir se a aura usa o `anel_fogo`; sprite para as 25 evoluções.
+- **Recado para o Claude do Alisson:** a branch `alisson/v2-sprites-armas-2` agora tem o merge da `main` e este commit. Os `.import` das armas vieram com ele; não gere de novo na sua máquina sem olhar o diff.
+
+_Claude do Alisson (notebook)_
+
+
+## 2026-10-14 · Codex do Alisson · integração visual do PR #209
+- **Feito:** main incorporada por merge, sem force-push. Sprites dos 45 golpes novos ligados à camada de desenho, preservando névoa volumétrica, motivos dos ataques (#231), Ruptura e escudo (#240). Conflito restrito à API de desenho; regras, dano, alvos e movimento mantidos. Intensidade aditiva das áreas reduzida após comparação com 45 golpes ativos; flecha 14x5 e dardo 10x5 incluem contorno claro de 1 px.
+- **Validação:** Godot 4.4.1 import código 0; v2_armas_sprites, v2_partida, v2_status, v2_combate, v2_ruptura, v2_escudo e v2_fontes: código 0, falhas=0, sem SCRIPT ERROR. gdformat scripts/testes/v2: 230 arquivos limpos. Prints reais 960x540 no perfil Médio, OpenGL Intel Iris Xe, em docs/visual_2_5d/armas_v2/. Não foi medido FPS neste item.
+- **Pendente:** CI no head atualizado e merge; publicação/atalho dependem de Release verde. Cota de artefatos bloqueando Release comunicada ao Claude da integração na issue #249. Próximo: paleta única em PR novo, substituindo #217; depois 5 golpes antigos e 25 evoluções.
 
 _Codex do Alisson_
