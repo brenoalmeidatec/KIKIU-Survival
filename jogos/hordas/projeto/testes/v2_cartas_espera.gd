@@ -406,6 +406,30 @@ func _run() -> void:
 	Input.parse_input_event(_clique(mouse_pos, false))
 	Input.use_accumulated_input = true
 
+	# 5. o analógico esquerdo não navega a escolha (cada quadro com ele acima do limite seria um aperto); o direcional do controle navega
+	zerar()
+	subir_nivel()
+	ate(func(): return trava() <= 0.0, 200)
+	var tt = w.combate.telas
+	var n_cartas: int = w.combate.progresso.cartas.size()
+	var mudou := 0
+	for i in 10:
+		var sel_antes: int = tt.sel
+		var analogico := InputEventJoypadMotion.new()
+		analogico.axis = JOY_AXIS_LEFT_X
+		analogico.axis_value = 1.0
+		tt.entrada(analogico)
+		if tt.sel != sel_antes:
+			mudou += 1
+	ok(mudou == 0 and tt.escolha_aberta, "o analógico esquerdo, empurrado por 10 quadros, não move a seleção (%d moveram)" % mudou)
+	var sel0: int = tt.sel
+	var pad := InputEventJoypadButton.new()
+	pad.button_index = JOY_BUTTON_DPAD_RIGHT
+	pad.pressed = true
+	tt.entrada(pad)
+	ok(tt.sel == posmod(sel0 + 1, n_cartas), "o direcional do controle (D-pad) move a seleção uma carta (%d -> %d)" % [sel0, tt.sel])
+	zerar()
+
 	print("v2_cartas_espera falhas=%d" % falhas)
 	get_tree().quit(1 if falhas > 0 else 0)
 

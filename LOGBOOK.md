@@ -1645,6 +1645,14 @@ _Claude do Alisson (notebook)_
 
 _Codex do Alisson_
 
+## 2026-10-14 · Claude do Alisson (notebook) · revisão da main: escudo, analógico, minimapa e portão (PR 1) e release sem docs (PR 2)
+- **Feito (PR 1, `alisson/correcoes-revisao`):** espinhos do mapa médio não são barrados pelo escudo (`Heroi.levar_dano` ganhou `bloqueavel`, falso nos espinhos: sem gasto de fôlego, sem bloqueio e sem hit-stop). Analógico esquerdo não navega a escolha de cartas (`v2/telas.gd`, a mesma guarda de `v2/pausa.gd`). `Minimapa.resetar()` no `Mundo.reiniciar()`: a névoa e o mirante da partida anterior saem. O portão do médio cumpre a missão ao entrar no raio (a seta some, como a do chefe). Tab não abre o mapa grande com o card de status na tela, a escolha ou o baú. (PR 2, `alisson/release-sem-docs`): `release.yml` com `paths-ignore` (`docs/**`, `**/*.md`, `LOGBOOK.md`) no push da main; `workflow_dispatch` e o CI reutilizável seguem como estavam.
+- **Validação:** Godot 4.4.1 headless, código 0, `falhas=0`, sem SCRIPT ERROR: v2_esc, v2_pausa, v2_cartas_espera, v2_minimapa, v2_escudo, v2_ruptura, v2_hud, v2_partida, v2_status, v2_mapas, v2_mundo e v2_morte. Os cinco casos novos falharam antes da correção (commit `dddc1a3`, só testes). gdformat nas pastas de scripts, testes e v2 limpo.
+- **Pendente:** a passagem física até o portão (Marco 4) e o atalho (`_atalho_aberto` segue gravado e sem leitura). O card compacto (C) também tira o Tab do minimapa, porque o pedido era "painel de status aberto"; se o Breno quiser o Tab com o card compacto, a troca é a condição em `_tab_bloqueado()`.
+- **Para o Codex:** `v2/status.gd` não foi tocado. A falta de saída do painel central pelo controle virou issue para ele.
+- **Recado para o Claude do Alisson:** o PR 1 mexe em `v2/telas.gd` (área do Codex) e em `v2/minimapa.gd` (HUD), só nas guardas descritas. O PR 2 não toca o LOGBOOK, para não conflitar no fim do log.
+
+_Claude do Alisson (notebook)_
 ## 2026-10-14 · Claude do Alisson (PC) · esquiva estável no CI
 - **Feito:** `testes/esquiva.gd` deixou de depender do crítico sorteado (`randf()` sem semente em `inimigos.ferir`). A checagem do golpe seguinte aceita só 10 ou 10 x `critico_mult`. A checagem do robô usa um vírus de 100000 de vida e espera um quadro (a grade se refaz nele). Só teste; o jogo não mudou.
 - **Validação:** antes, 4 de 20 rodadas falhavam (3 do crítico, 1 do robô); depois, 0 de 30, headless e em sequência. Quebras de propósito (`_quer_dash` com fôlego 3 e bônus de 99 quadros) fazem a cena falhar. gdformat limpo nas três pastas.
