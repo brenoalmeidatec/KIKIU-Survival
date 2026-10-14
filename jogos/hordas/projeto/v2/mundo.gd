@@ -118,6 +118,7 @@ const FRAGMENTOS_RELIQUIA := 4  # com estes fragmentos a relíquia monta e cai u
 const COR_ANUNCIO := Color(1.0, 0.85, 0.4)
 var _sombras_prontas := false
 var mapa := Rect2(0, 0, 2880, 1620)
+var minimapa  # o CanvasLayer do minimapa (o mirante revela o mapa inteiro por ele)
 var limite_andavel := Rect2(150, 150, 2580, 1320)  # onde herói e monstros podem pisar (mapa menos "borda_andavel")
 var t := 0.0
 var quadros := 0
@@ -166,7 +167,8 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color(0.02, 0.03, 0.03))
 	_montar()
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
-	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
+	minimapa = preload("res://v2/minimapa.tscn").instantiate().iniciar(self)
+	sv.add_child(minimapa)
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
 	sv.add_child(pausa)
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
@@ -521,6 +523,11 @@ func _tocar_marca(m: Dictionary) -> void:
 		"defesa":
 			if not m.feito:
 				combate.anunciar("DEFESA: aguente %d s" % int(m.tempo), COR_ANUNCIO)
+		"mirante":
+			if not m.feito:
+				m.feito = true
+				minimapa.revelar_tudo()
+				combate.anunciar("MIRANTE: o mapa inteiro se revela", COR_ANUNCIO)
 		"mercador":
 			if m.feito:
 				return

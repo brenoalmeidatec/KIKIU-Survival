@@ -1567,6 +1567,22 @@ _Codex GPT-6.1 Sol (PC)_
 - **Próximo:** CI do PR e repetir no EXE exportado junto aos efeitos visuais. Splash e exports preservados. Logs fora do Git em C:/Dev/Breno/analise-kikiu/morte-*.log.
 
 _Codex GPT-6.1 Sol (PC)_
+## 2026-10-13 - #128 (Marco 4): código que faltava (PR de rascunho para a main, branch claude/v2-marco4-codigo)
+- **Feito:**
+  1. Determinismo: `testes/v2_mapas` confere que dois mundos do mesmo mapa têm as mesmas posições de objetos e de monstros iniciais (mesma semente, mesmo mapa).
+  2. Minimapa (`v2/minimapa.gd`): Tab segurado abre o mapa grande e soltar volta ao pequeno (antes alternava); baús ativos aparecem só depois de revelados pela névoa; missões longe do herói (chefe e portão) ganham seta na borda do minimapa. A névoa por raio já existia.
+  3. Pontos altos: marca `mirante` no mapa médio (1350, 1140); ao entrar no raio, o minimapa revela o mapa inteiro de uma vez.
+- **Não feito (pendente):**
+  - Mapas gerados por semente a partir de peças por região: o cenário da v2 é o JSON à mão, em 2880x1620. Só entra com um gerador novo, fora do formato atual.
+  - Prints dos 5 mapas por região: a v2 não tem regiões (são 3 mapas).
+  - Arte do Alisson: torre (o mirante é só a marca) e estruturas (ruína, altar, ponte, passagem, platô, portão).
+  - Alavancas com passagem física até o portão: ainda só marcam estado.
+- **Fps (medido no PC do Breno, sem linha de base aqui):** `--medir --estresse=100 --imortal --sombra=media --sem_vsync` deu 23,4 fps na floresta e 30,4 fps no médio. O `v2/fps.txt` (142 fps na horda média) veio de outra máquina (Iris Xe), então a comparação não vale. Falta medir a `main` nesta máquina para ver a diferença real. A meta do Marco 3 não está escrita no repositório; precisa de um número para comparar.
+- **Testes:** `v2_mapas` falhas=0, `v2_minimapa` falhas=0, `v2_meta` falhas=0, `v2_partida` falhas=0. (Os erros de ConfigFile em `v2_meta` são do teste de save corrompido, esperados.)
+- **Para testar:** no mapa médio, segurar Tab (mapa grande), passar por um baú antes de vê-lo e entrar no mirante (1350, 1140) para o mapa inteiro se revelar.
+- **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
+
+_Claude (PC do Breno, via Remote Control)_
 
 ## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Ruptura e escudo com volume
 - **Feito:** visual autoral por geometria na v2: sigilos internos e halo na carga; janela perfeita com pulso dourado suave no lugar do piscar a 20 Hz; onda em camadas e fissuras com núcleo quente e ramificações. Escudo curvo elevado com painéis, nervuras e runa central; sustentação azul, bloqueio branco, perfeito dourado com oito raios; ponto de impacto acompanha a origem. Nenhum asset externo/licença adicional, nó por quadro ou alteração de alcance, dano, fôlego, janela ou controles.
@@ -1580,5 +1596,12 @@ _Codex GPT-6.1 Sol (PC)_
 - **Feito:** substituído o símbolo angular da Ruptura por duas placas de pedra separadas e fenda central ramificada, autoral e compacto no ícone 48×48. Estados/cores/carga/recarga continuam os mesmos; nenhum ajuste no mundo ou nos efeitos de Ruptura/escudo.
 - **Validação:** Godot 4.4.1 v2_hud e v2_ruptura exit 0/falhas=0/sem SCRIPT ERROR. Capturas reais OpenGL 960×540 com janela oculta, prontidão/carga/recarga e detalhes do card inspecionados; fotos/logs locais no worktree, fora do Git. gdformat global e diff-check conferidos.
 - **Próximo:** agente principal atualiza PR #240 e CI; build precisa ser reexportada com este novo ícone.
+
+_Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-14 · Codex GPT-6.1 Sol (PC) · retomada do PR #240 sobre a main
+- **Feito:** merge da main b70bf6e (#241), mantendo névoa/Tab segurado/setas/mirante, os quatro mapas, correção da morte #239, splash atual e efeitos/ícone do #240. LOGBOOK da main preservado integralmente como prefixo, notas deste PR ao fim; sem reescrever entradas anteriores. Nenhuma integração dos PRs #242/#245/#246.
+- **Testes reais:** Godot 4.4.1 import código 0. v2_mapas, v2_minimapa, v2_morte, v2_ruptura, v2_escudo, v2_hud, v2_combate, v2_meta, v2_partida e v2_santuario: todos código 0/falhas=0/sem SCRIPT ERROR. gdformat scripts/testes/v2: 229 arquivos limpos; diff-check limpo. Avisos de recursos ao encerrar harness permanecem e save corrompido de meta é intencional. Logs locais pr240-retomada-*, fora do Git.
+- **Próximo:** CI do head atualizado, exportação e QA do EXE com minimapa e efeitos juntos; merge e Release somente com checks verdes. Sem alteração de exports, regras de habilidades ou novas artes.
 
 _Codex GPT-6.1 Sol (PC)_

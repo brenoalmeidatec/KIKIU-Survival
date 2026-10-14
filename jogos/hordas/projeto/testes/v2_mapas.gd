@@ -37,6 +37,7 @@ func _ready() -> void:
 		await _mundo_do_mapa(id)
 		_passagens_e_vista(id)
 		_marcadores(id)
+		_determinismo(id)
 	await _santuario()
 	_apagar_save()
 	print("v2_mapas falhas=%d" % falhas)
@@ -251,6 +252,27 @@ func _mundo_do_mapa(id: String) -> void:
 
 ## Marcadores do mapa (dados "marcadores", só o médio tem): cada ponto livre e alcançável a partir do santuário, os quatro tipos, a rota
 ## (linha reta somada, ~1 min 30 a 100 px/s) e, no mundo, baús e mini-chefe nascem uma vez ao chegar perto e o atalho e o portão não nascem nada.
+## Mesma semente = mesmo mapa: dois mundos do mesmo mapa têm as mesmas posições de objetos e de monstros iniciais.
+func _determinismo(id: String) -> void:
+	var assinaturas := []
+	for i in 2:
+		var w = Mundo.instantiate()
+		w.modo_teste = true
+		w.id_mapa = id
+		add_child(w)
+		w.set_process(false)
+		var s := []
+		for a in w.cenario.objetos:
+			s.append(a.pos)
+		for mo in w.monstros:
+			s.append(mo.pos)
+		assinaturas.append(s)
+		remove_child(w)
+		w.free()
+	ok(assinaturas[0] == assinaturas[1], "%s: a mesma semente dá o mesmo mapa e os mesmos monstros iniciais" % id)
+	ok(assinaturas[0].size() > 100, "%s: o mapa tem objetos e monstros para comparar (%d)" % [id, assinaturas[0].size()])
+
+
 func _marcadores(id: String) -> void:
 	var d: Dictionary = Dados.json(str(Mapas.buscar(id).dados))
 	var marcas: Array = d.get("marcadores", [])
