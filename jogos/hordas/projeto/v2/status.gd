@@ -86,6 +86,8 @@ var _reserva := 0.0  # altura do pé da coluna guardada para a linha "+N golpes"
 var _golpes_mostrados := 0  # golpes desenhados na coluna agora (o "+N golpes" conta os que faltam)
 var _pag := 0  # página dos golpes na página visual (pausa e painel central): Q e E trocam; a altura da coluna decide quantos cabem
 var _npag_golpes := 1  # páginas dos golpes na última medida (Q e E não passam dali)
+var _pag_det := 0  # página dos golpes na tabela de detalhes (Tab): mesma troca de Q e E, com as suas próprias páginas
+var _npag_det := 1
 
 
 ## Cria o card ligado ao mundo. É o que o mundo.gd chama (e guarda em `mundo.status`).
@@ -217,6 +219,7 @@ func _aplicar() -> void:
 	_modo_atual = _modo()
 	if _modo_atual != "" and not visible:
 		_pag = 0  # o card abre na primeira página dos golpes
+		_pag_det = 0
 	visible = _modo_atual != ""
 	if _hud or _central or _pausa:
 		if _timer.is_stopped():
@@ -767,6 +770,8 @@ func _secao(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite: f
 		_texto_titulo(str(sec.titulo), Vector2(x, y - 1.0), sec.cor)
 		_tela.draw_line(Vector2(x, y + ALT_CAB - 1.0), Vector2(x + w, y + ALT_CAB - 1.0), COR_LINHA, 1.0)
 	y += ALT_CAB + 2.0
+	if str(sec.id) == "golpes" and _m != "hud" and _tem_bloco(sec):
+		return _golpes_detalhe(sec, x, y, w, seco, limite)
 	for l in sec.linhas:
 		if _m == "hud" and bool(l.get("so_cheio", false)):
 			continue
@@ -780,6 +785,62 @@ func _secao(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite: f
 				_golpes_mostrados += 1
 		y += alt
 	return y
+
+
+## Os golpes na tabela de detalhes (pausa e painel central, tecla Tab): as linhas de bloco cabem por página na altura que sobra, e Q e E
+## trocam de página como na visual. Cada página começa no topo da seção; quando há mais de uma, a última linha é a da paginação.
+func _golpes_detalhe(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite: float) -> float:
+	var blocos: Array = []
+	for l in sec.linhas:
+		if str(l.tipo) == "bloco":
+			blocos.append(l)
+	var pags := _quebras_golpes(blocos, y, limite, w)
+	var com_nav := pags.size() > 1
+	_npag_det = pags.size()
+	_pag_det = clampi(_pag_det, 0, _npag_det - 1)
+	var ini: int = pags[_pag_det][0]
+	var fim: int = pags[_pag_det][1]
+	for k in range(ini, fim):
+		var l: Dictionary = blocos[k]
+		if not seco:
+			_item(l, x, y, w)
+			_golpes_mostrados += 1
+		y += _altura(l, w)
+	if com_nav:
+		if not seco:
+			_texto(Dados.fonte_texto, "Página %d/%d  · Q E" % [_pag_det + 1, _npag_det], Vector2(x, limite - ALT_LINHA + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_DICA)
+		return limite  # a coluna vai até o pé, com a linha da paginação dentro dela
+	return y
+
+
+## Quebra os blocos em páginas [ini, fim) na altura do que sobra a partir de `y0` até `limite`. Tudo numa página se couber; senão, cada
+## página deixa a linha de baixo para a paginação.
+func _quebras_golpes(blocos: Array, y0: float, limite: float, w: float) -> Array:
+	var total := y0
+	for l in blocos:
+		total += _altura(l, w)
+	if total <= limite:
+		return [[0, blocos.size()]]
+	var lim := limite - ALT_LINHA
+	var pags: Array = []
+	var ini := 0
+	var yy := y0
+	for k in blocos.size():
+		var alt := _altura(blocos[k], w)
+		if yy + alt > lim and k > ini:
+			pags.append([ini, k])
+			ini = k
+			yy = y0
+		yy += alt
+	pags.append([ini, blocos.size()])
+	return pags
+
+
+func _tem_bloco(sec: Dictionary) -> bool:
+	for l in sec.linhas:
+		if str(l.tipo) == "bloco":
+			return true
+	return false
 
 
 func _altura(l: Dictionary, w: float) -> float:
@@ -1202,18 +1263,25 @@ static func _paginas_golpes(n: int, espaco: float) -> Array:
 
 ## Q (anterior) e E (próxima): troca a página dos golpes na página visual da pausa e do painel central. Devolve true se trocou.
 func paginar(d: int) -> bool:
-	if (_modo_atual != "pausa" and _modo_atual != "central") or _detalhe:
+	if _modo_atual != "pausa" and _modo_atual != "central":
 		return false
-	var nova := clampi(_pag + d, 0, _npag_golpes - 1)
-	if nova == _pag:
+	var atual := _pag_det if _detalhe else _pag  # a tabela de detalhes e a página visual têm cada uma a sua paginação
+	var total := _npag_det if _detalhe else _npag_golpes
+	var nova := clampi(atual + d, 0, total - 1)
+	if nova == atual:
 		return false
-	_pag = nova
+	if _detalhe:
+		_pag_det = nova
+	else:
+		_pag = nova
 	_tela.queue_redraw()
 	return true
 
 
 ## Os números da paginação dos golpes na página visual: {pagina, paginas} (a página 1 de 1 quando não há paginação). Os testes leem.
 func paginas_golpes() -> Dictionary:
+	if _detalhe:
+		return {"pagina": _pag_det + 1, "paginas": _npag_det}
 	return {"pagina": _pag + 1, "paginas": _npag_golpes}
 
 

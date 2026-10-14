@@ -1292,6 +1292,19 @@ func _paginacao(st, c) -> void:
 	pg = st.paginas_golpes()
 	ok(int(pg.pagina) == int(pg.paginas), "E de sobra para na última página (%d de %d)" % [int(pg.pagina), int(pg.paginas)])
 	ok(not st.visual_cortada().has(true), "a última página cabe na altura")
+	# --- a tabela de detalhes (Tab) também pagina os golpes: Q e E trocam de página, e nenhuma coluna corta nada
+	var tab := InputEventKey.new()
+	tab.keycode = KEY_TAB
+	tab.physical_keycode = KEY_TAB
+	tab.pressed = true
+	ok(pausa_entrada(tab) and st.pagina() == "detalhe", "o Tab abre a tabela de detalhes")
+	await esperar()
+	var det: Dictionary = st.paginas_golpes()
+	ok(int(det.paginas) > 1 and int(det.pagina) == 1, "a tabela de detalhes pagina os golpes com %d golpes (%s)" % [total, str(det)])
+	ok(not st.colunas_cortadas().has(true), "a tabela de detalhes não corta nada com %d golpes (%s)" % [total, str(st.retangulos())])
+	ok(pausa_entrada(ev) and int(st.paginas_golpes().pagina) == 2, "E na tabela de detalhes vai para a página 2")
+	ok(not st.colunas_cortadas().has(true), "a página 2 da tabela de detalhes também cabe")
+	ok(pausa_entrada(tab) and st.pagina() == "visual", "o Tab de novo volta à página visual")
 	_achar_pausa().fechar()
 	await esperar()
 	# --- painel central: a mesma paginação, pelo teclado de verdade (C abre o painel; E passa pelo card)
@@ -1575,6 +1588,10 @@ func _fotos(pasta: String) -> void:
 	st.paginar(1)
 	await get_tree().process_frame
 	await _foto("status_pausa_50_golpes_p2", pasta)
+	st.alternar_detalhe()
+	await get_tree().process_frame
+	await _foto("status_pausa_50_detalhe", pasta)
+	st.alternar_detalhe()
 	_achar_pausa().fechar()
 	zerar()
 	# 0) HUD compacto com a build VAZIA (o começo de toda partida)
