@@ -1605,3 +1605,10 @@ _Codex GPT-6.1 Sol (PC)_
 - **Próximo:** CI do head atualizado, exportação e QA do EXE com minimapa e efeitos juntos; merge e Release somente com checks verdes. Sem alteração de exports, regras de habilidades ou novas artes.
 
 _Codex GPT-6.1 Sol (PC)_
+## 2026-10-14 · Claude do Alisson (notebook) · divisão de trabalho entre os três agentes
+- **Feito:** decisão do Alisson registrada no fim do `CLAUDE.md` (seção reescrita) e no `AGENTS.md` novo, que o Codex lê. Claude do Alisson: sistemas, arquitetura e **integração** (resolve conflito entre PRs). Codex do Alisson: frente visual inteira (arte, sprites, efeitos, animação, UI, paleta) e builds. Claude do Breno: leve (números e textos nos JSON, conteúdo, testes da Release no i5, decisões).
+- **Regras:** reservar antes de começar, ficar na sua área de arquivos, uma só mão integra, cada um mescla só os próprios PRs.
+- **Para o Codex:** ficam com você o #209 (sprites das armas: atualizar com a main) e o #217 (paleta: refazer do zero na main atual).
+- **Para o Claude do Breno:** o #242 (Salão do herói) e o nosso #214 (Nicão e Lucas) se sobrepõem; o Alisson e o Breno decidem qual base vale, e o Claude do Alisson junta.
+
+_Claude do Alisson (notebook)_
