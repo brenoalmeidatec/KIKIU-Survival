@@ -1618,3 +1618,10 @@ _Codex GPT-6.1 Sol (PC)_
 - **Para o Claude do Breno:** o #242 (Salão do herói) e o nosso #214 (Nicão e Lucas) se sobrepõem; o Alisson e o Breno decidem qual base vale, e o Claude do Alisson junta.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-14 · Codex do Alisson · reserva da paleta única da UI
+- **Em andamento:** reconstrução do #217 em branch nova da main 96bbc15. Fonte única visual para HUD, SUA BUILD, pausa, cartas, menu e Santuário; correção de cores semânticas e tamanhos fora da grade. Antes capturado no viewport real 960x540, sem captura da área de trabalho.
+- **Validação desta reserva:** somente documentação; nenhum comportamento alterado. Godot ainda não rodado nesta branch. Próximo: implementação visual, extensão autorizada de v2_fontes, prints depois e testes afetados.
+- **Coordenação:** status.gd e altar.gd podem conflitar com #245 e #242. Coleta de dados, controles, save e progressão serão preservados; integração de sistemas fica com o Claude do Alisson.
+
+_Codex do Alisson_
