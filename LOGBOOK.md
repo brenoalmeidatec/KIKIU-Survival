@@ -1668,6 +1668,23 @@ _Codex do Alisson_
 - **Feito:** corrigidos os18 estouros de largura/altura do SUA BUILD após a migração para Spleen16. Rótulo, valor e bônus quebram conforme a coluna; tabela distribui atributos em páginas, sem apagar bônus, nomes completos, números ou dicas de evolução. Rodapé fica dentro da moldura; índice reinicia ao trocar modo e é limitado quando muda a quantidade de páginas. HUD usa PgUp/PgDn ou roda sobre a coluna, com conversão das coordenadas da janela; pausa/central usam Q/E existentes. Quebra dos trechos respeita palavras, com divisão por caracteres só para palavra maior que a coluna. Coleta, regras, save e sistemas preservados.
 - **Testes:** Godot4.4.1 headless, código0/falhas=0/sem SCRIPT ERROR em v2_status (inclui50 golpes, extremo+50/Santuário completo, todos os IDs/páginas, trechos/dicas completos, roda dentro/fora e janela1280x720, palavras/estilos), v2_fontes, v2_hud, v2_pausa, v2_esc, v2_partida, v2_santuario, v2_meta, v2_ruptura e v2_escudo. Assertions originais de v2_status preservadas; extensão localizada na área de testes do Claude necessária para esta regressão, avisada no PR. gdformat scripts/testes/v2:231 arquivos limpos. Capturas reais do viewport960x540 antes/depois em docs/visual_2_5d/paleta_ui/layout/, renderer OpenGL/IrisXe, janela oculta. Capturas são evidência visual, não substituem a bateria de assertions. Avisos de recursos ao encerrar o harness permanecem.
 - **Próximo/integração:** CI no novo head; Claude integra a main e os cruzamentos com #245/status.gd, #242/altar.gd e #255/telas.gd. Não resolvi conflitos nem integrei PR alheio. #251 segue com Claude. Alisson também pediu revisão de composição do menu principal e Santuário: estudo visual separado, sem misturar essa reorganização no PR de paleta/layout.
+## 2026-10-14 · Codex do Alisson · reserva da arte restante das armas
+- **Em andamento:**5 golpes antigos e25 evoluções, em branch independente da main ca4b272. Folhas próprias geradas com imagegen, recorte pelo modo armas do gerador existente, evoluções visualmente derivadas das bases. Reserva também na issue #193.
+- **Validação desta reserva:** somente LOGBOOK; Godot ainda não rodado nesta branch. Nada de alterações em sistemas. Paleta #250 segue rascunho e depende da integração de layout com #245, já documentada.
+
+_Codex do Alisson_
+
+
+## 2026-10-14 · Codex do Alisson · 30 sprites restantes no PR #251
+- **Feito:** três folhas imagegen próprias, 11 projéteis,7 aliados e12 áreas; 30 sprites e18 normais novos, índice com74 entradas cobrindo50 golpes+25 evoluções. Pipeline existente ampliado;69 PNG anteriores idênticos. Ligação restrita aos métodos de desenho de armas.gd, com fallback procedural. Aura mantém shader; raio mantém linhas e um único stamp por raio; Ventania lê o estado existente. Prompts normalizados/licenças e dez prints reais960x540 documentados em docs/visual_2_5d/armas_evolucoes/.
+- **Validação:** Godot4.4.1 import código0/semSCRIPT ERROR. v2_armas_sprites,v2_partida,v2_status,v2_combate,v2_ruptura,v2_escudo e v2_fontes: código0/falhas=0/semSCRIPT ERROR. Capturas reais OpenGL IrisXe código0/QA251_VISUAL falhas=0. Extensão pequena de testes/v2_armas_sprites (área do Claude) necessária para aceitar IDs de evoluções válidas e exigir sua própria arte, sem afrouxar os45 golpes nem checks de PNG/pool.
+- **Pendente:** CI no head antes de merge; possível conflito apenas de desenho em armas.gd com #246. Nenhuma alteração em sistemas, exports ou save. Paleta#250 rascunho: CI confirmou v2_status18falhas e também esquiva(v1)falhas1; logs apontados no PR. Publicação/atalho ainda dependem da cota#249.
+
+_Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · fontes e reprodução da arte no #251
+- **Feito:** ajuda do índice e título da prancha agora atribuem as folhas ao Alisson e ao Codex do Alisson, com cobertura dos 50 golpes e 25 evoluções. Pipeline regenerado; nenhuma textura de runtime mudou. Harness de captura adicionado à documentação visual para reprodução dos cinco cenários.
+- **Validação:** gerador código 0, diff-check limpo. Os testes de runtime já registrados continuam aplicáveis, pois só autoria/ajuda/prancha/documentação mudaram. CI não iniciou por cobrança/limite da conta; sem merge.
 
 _Codex do Alisson_
 ## 2026-10-14 · Claude do Alisson (notebook) · revisão da main: escudo, analógico, minimapa e portão (PR 1) e release sem docs (PR 2)
@@ -1686,6 +1703,12 @@ _Claude do Alisson (notebook)_
 
 _Claude do Alisson (PC)_
 
+## 2026-10-14 · Claude do Alisson (PC) · integração da main no PR 251 (armas e evoluções)
+- **Feito:** `origin/main` (até `fa2f8a7`, com #254, #255, #256 e #259) mesclado em `codex/armas-evolucoes-arte` no merge `e58f113`, sem force e sem reescrever nada. Não houve conflito de texto: a main não toca em `v2/armas.gd`, no índice `assets/v2/armas/indice.json` nem nos sprites. O único arquivo tocado pelos dois lados foi o `LOGBOOK.md` (`merge=union`), com as entradas de cada lado mantidas. O desenho do PR entrou inteiro.
+- **Validação:** Godot 4.4.1 headless no worktree de integração: as 26 cenas `v2_*`, incluindo `v2_armas_sprites`, `v2_partida`, `v2_status` e `v2_combate`, e `regras_armas` (100 s). Todas com código 0, `falhas=0` e sem SCRIPT ERROR. `v2_ruptura` passou na primeira rodada. `gdformat` limpo nas três pastas. Os `ERROR` de encerramento (RID vazado) aparecem em quase toda cena; os de `v2_meta` são o save corrompido que o próprio teste grava de propósito.
+- **Pendente:** CI do head final (resultado no comentário do PR 251). A bateria inteira de `testes_ci.sh` não rodou local; no CI, sim. Sem merge na main: quem mescla é o orquestrador.
+- **Pendente de outro PR:** o #246 (`claude/fusoes-claras`, ainda aberto) mexe em `v2/armas.gd`, `v2/mundo.gd`, `v2/hud.gd` e `v2/combate.gd`. Quem mesclar o #246 depois vai ter conflito de lógica com este PR em `armas.gd`.
+- **Recado para o Codex:** a integração veio por cima do seu último commit (`733f383`), sem reescrever nada. Se você empurrar commits de novo, mantenha o merge da main.
 ## 2026-10-14 · Claude do Alisson (PC) · integração da PR #237 (construções da floresta)
 - **Feito:** `origin/main` (fa2f8a7, #256) mesclada na `claude/construcoes-floresta` por merge, sem force-push e sem rebase. Sem conflito de texto: no `LOGBOOK.md` ficaram as duas partes, a entrada do Breno de 2026-10-13 e as da main. A PR só mexe em `docs/construcoes_floresta/` e no `LOGBOOK.md`; nenhum `.gd`, `.tscn`, `dados/` ou `assets/` mudou.
 - **Pendente:** testes locais (gdformat e `ferramentas/testes_ci.sh`) e CI do head novo, com o resultado no comentário da PR #237. Não mesclei: a PR é do Breno e quem mescla é o dono ou o integrador, com CI verde no mesmo commit.
@@ -1710,5 +1733,11 @@ _Claude do Alisson (PC)_
 ## 2026-10-14 · Claude do Alisson (notebook) · Codex só gera imagens
 - **Decisão do Alisson:** o Codex do Alisson passa a fazer **só geração de imagem** (folhas de sprite, arte de título e cenário, ícones). Todo o código do jogo, inclusive a parte visual (efeitos, animação, luz, partículas, shaders, UI, paleta, recorte e ligação de sprites), fica com o Claude do Alisson, assim como builds e o atalho de teste. `CLAUDE.md` e `AGENTS.md` atualizados.
 - **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) passam para a integração do Claude do Alisson; daqui em diante você recebe pedidos de imagem por issue/PR e entrega a imagem-fonte em `jogos/hordas/fonte_arte/` com registro em `docs/LICENCAS_ARTE.md`. O "salão vivo" (luz, partículas e movimento no #261) fica com o Claude do Alisson.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-14 · Claude do Alisson (notebook) · volta a divisão anterior (Codex com a frente visual)
+- **Decisão do Alisson:** desfeito o #262. O Codex do Alisson volta a ter a **frente visual inteira** (imagem e código visual: efeitos, animação, luz, UI, paleta, recorte, builds e atalho). O Claude do Alisson fica com sistemas, arquitetura e **integração**. `CLAUDE.md` e `AGENTS.md` voltam ao texto do #247.
+- **Para o Codex:** o "salão vivo" (#261) é seu. O PR #263 (rascunho, empilhado no #261) tem a primeira implementação feita antes da pausa, sem prints nem FPS: use como base ou feche.
 
 _Claude do Alisson (notebook)_
