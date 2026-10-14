@@ -1686,3 +1686,9 @@ _Claude do Alisson (notebook)_
 - **Para o Codex:** o "salão vivo" (#261) é seu. O PR #263 (rascunho, empilhado no #261) tem a primeira implementação feita antes da pausa, sem prints nem FPS: use como base ou feche.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-14 · Claude do Alisson (notebook) · divisão FIXA: Codex só gera imagens
+- **Decisão do Alisson, agora fixa:** o Claude do Alisson faz **todo o código do jogo** (sistemas e visual), integração, builds e atalho; o **Codex do Alisson só gera imagens** quando pedido; o Claude do Breno testa, decide e ajusta números. Motivo: três agentes no mesmo código geravam conflito o tempo todo. `CLAUDE.md` e `AGENTS.md` voltam ao texto do #262, com o aviso de que só o Alisson muda a divisão.
+- **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) e o salão vivo (#263) passam para o Claude do Alisson. Daqui em diante, só pedidos de imagem.
+
+_Claude do Alisson (notebook)_
