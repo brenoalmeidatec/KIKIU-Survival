@@ -1,7 +1,8 @@
 extends Node
-## Efeitos sonoros do combate da v2: um punhado de AudioStreamPlayer reaproveitados (nada de nó por som). Os WAV são gerados por
-## jogos/hordas/fonte_audio/gerar_v2_sfx.py (que reaproveita os sintetizadores do gerador do jogo) e ficam em assets/audio/v2/. O volume
-## segue o das Opções (Som.volume_efeitos, o autoload do jogo). Sem WAV, tocar() não faz nada.
+## Efeitos sonoros da v2: um punhado de AudioStreamPlayer reaproveitados (nada de nó por som). Os WAV ficam em assets/audio/v2/
+## (sons CC0 do Kenney, cortados e normalizados; registro em docs/LICENCAS_AUDIO.md). O gerador sintetizado
+## (jogos/hordas/fonte_audio/gerar_v2_sfx.py) ficou como reserva. O volume segue o das Opções (Som.volume_efeitos, o autoload
+## do jogo). Sem WAV, tocar() não faz nada.
 
 const PASTA := "res://assets/audio/v2/"
 const VOZES := 10

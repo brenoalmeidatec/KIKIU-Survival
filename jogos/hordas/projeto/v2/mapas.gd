@@ -1,0 +1,49 @@
+extends RefCounted
+## Os mapas da v2: a lista que o santuário mostra, qual está escolhido e o arquivo de dados de cada um (dados/v2_<id>.json).
+## A escolha fica no save da meta-progressão ([config] mapa, o mesmo `Meta.caminho_save`) e vale a partir da próxima partida; `--mapa=<id>`
+## abre um mapa direto sem gravar. Para criar um mapa novo: gere o JSON (fonte_arte/gerar_v2_mapas.py) e ponha uma linha em LISTA.
+## Sem class_name: carregue com preload, como o resto do projeto.
+
+const Meta := preload("res://v2/meta.gd")
+const PADRAO := "floresta"
+const LISTA := [
+	{"id": "floresta", "nome": "FLORESTA", "entrar": "ENTRAR NA FLORESTA", "dados": "v2_floresta"},
+	{"id": "laboratorio", "nome": "LABORATÓRIO", "entrar": "ENTRAR NO LABORATÓRIO", "dados": "v2_laboratorio"},
+	{"id": "cidade", "nome": "CIDADE", "entrar": "ENTRAR NA CIDADE", "dados": "v2_cidade"},
+	{"id": "medio", "nome": "RUÍNAS DA FLORESTA", "entrar": "ENTRAR NAS RUÍNAS", "dados": "v2_medio"},
+]
+
+
+static func ids() -> Array:
+	return LISTA.map(func(m): return m.id)
+
+
+## O mapa da lista (ou o padrão, se o id não existir).
+static func buscar(id: String) -> Dictionary:
+	for m in LISTA:
+		if m.id == id:
+			return m
+	return LISTA[0]
+
+
+## O mapa escolhido no santuário (lido do save a cada chamada, como o resto da meta-progressão).
+static func escolhido() -> String:
+	var cf := Meta._ler()
+	return str(buscar(str(cf.get_value("config", "mapa", PADRAO)) if cf != null else PADRAO).id)
+
+
+static func escolher(id: String) -> bool:
+	Meta.erro_save = false
+	var cf := Meta._ler()
+	if cf == null:
+		Meta.erro_save = true
+		return false
+	cf.set_value("config", "mapa", str(buscar(id).id))
+	Meta.erro_save = not Meta._gravar(cf)
+	return not Meta.erro_save
+
+
+## O seguinte da lista (dando a volta), a partir do id dado.
+static func proximo(id: String, passo := 1) -> String:
+	var i := ids().find(str(buscar(id).id))
+	return str(LISTA[posmod(i + passo, LISTA.size())].id)

@@ -1,0 +1,1090 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/gerar_v2_mapas.py (nao edite a mao)",
+ "enfeites": "enfeites.png",
+ "enfeites_normal": "enfeites_normal.png",
+ "itens": [
+  {
+   "nome": "predio_loja",
+   "peso": 1,
+   "pe": [
+    105,
+    161
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -29.4
+     ],
+     "raio": [
+      104.2,
+      30.9
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    0,
+    210,
+    174
+   ]
+  },
+  {
+   "nome": "predio_bar",
+   "peso": 1,
+   "pe": [
+    95,
+    166
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -29.4
+     ],
+     "raio": [
+      94.1,
+      30.9
+     ]
+    }
+   ],
+   "regiao": [
+    212,
+    0,
+    190,
+    177
+   ]
+  },
+  {
+   "nome": "predio_apto_a",
+   "peso": 1,
+   "pe": [
+    92,
+    192
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -23.8
+     ],
+     "raio": [
+      90.7,
+      24.9
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    179,
+    184,
+    204
+   ]
+  },
+  {
+   "nome": "predio_apto_b",
+   "peso": 1,
+   "pe": [
+    92,
+    190
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -23.8
+     ],
+     "raio": [
+      90.7,
+      24.9
+     ]
+    }
+   ],
+   "regiao": [
+    186,
+    179,
+    184,
+    203
+   ]
+  },
+  {
+   "nome": "predio_torre",
+   "peso": 1,
+   "pe": [
+    95,
+    191
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -22.6
+     ],
+     "raio": [
+      94.1,
+      23.8
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    385,
+    190,
+    195
+   ]
+  },
+  {
+   "nome": "predio_ruina",
+   "peso": 1,
+   "pe": [
+    98,
+    183
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -24.9
+     ],
+     "raio": [
+      97.4,
+      26.1
+     ]
+    }
+   ],
+   "regiao": [
+    192,
+    385,
+    203,
+    207
+   ]
+  },
+  {
+   "nome": "poste_rua",
+   "peso": 1,
+   "pe": [
+    7,
+    130
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.5
+     ],
+     "raio": [
+      6.7,
+      4.8
+     ]
+    }
+   ],
+   "regiao": [
+    397,
+    385,
+    69,
+    131
+   ]
+  },
+  {
+   "nome": "poste_rua_e",
+   "peso": 1,
+   "pe": [
+    62,
+    130
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.5
+     ],
+     "raio": [
+      6.7,
+      4.8
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    594,
+    69,
+    131
+   ]
+  },
+  {
+   "nome": "poste_quebrado",
+   "peso": 1,
+   "pe": [
+    8,
+    80
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -5.7
+     ],
+     "raio": [
+      8.4,
+      5.9
+     ]
+    }
+   ],
+   "regiao": [
+    71,
+    594,
+    73,
+    121
+   ]
+  },
+  {
+   "nome": "semaforo",
+   "peso": 1,
+   "pe": [
+    24,
+    89
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.0
+     ],
+     "raio": [
+      5.9,
+      4.2
+     ]
+    }
+   ],
+   "regiao": [
+    146,
+    594,
+    30,
+    90
+   ]
+  },
+  {
+   "nome": "semaforo_torto",
+   "peso": 1,
+   "pe": [
+    10,
+    87
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.0
+     ],
+     "raio": [
+      5.9,
+      4.2
+     ]
+    }
+   ],
+   "regiao": [
+    178,
+    594,
+    29,
+    88
+   ]
+  },
+  {
+   "nome": "placa_pare",
+   "peso": 1,
+   "pe": [
+    12,
+    56
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -2.3
+     ],
+     "raio": [
+      3.4,
+      3.0
+     ]
+    }
+   ],
+   "regiao": [
+    209,
+    594,
+    24,
+    57
+   ]
+  },
+  {
+   "nome": "placa_rua",
+   "peso": 1,
+   "pe": [
+    16,
+    64
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -2.3
+     ],
+     "raio": [
+      3.4,
+      3.0
+     ]
+    }
+   ],
+   "regiao": [
+    235,
+    594,
+    36,
+    65
+   ]
+  },
+  {
+   "nome": "placa_neon",
+   "peso": 1,
+   "pe": [
+    22,
+    82
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.5
+     ],
+     "raio": [
+      6.7,
+      4.8
+     ]
+    }
+   ],
+   "regiao": [
+    273,
+    594,
+    44,
+    83
+   ]
+  },
+  {
+   "nome": "hidrante",
+   "peso": 1,
+   "pe": [
+    9,
+    22
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.5
+     ],
+     "raio": [
+      6.7,
+      4.8
+     ]
+    }
+   ],
+   "regiao": [
+    319,
+    594,
+    18,
+    23
+   ]
+  },
+  {
+   "nome": "cone",
+   "peso": 1,
+   "pe": [
+    8,
+    22
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.8
+     ],
+     "raio": [
+      7.1,
+      5.0
+     ]
+    }
+   ],
+   "regiao": [
+    339,
+    594,
+    16,
+    23
+   ]
+  },
+  {
+   "nome": "cone_tombado",
+   "peso": 1,
+   "pe": [
+    13,
+    16
+   ],
+   "colisao": [],
+   "regiao": [
+    357,
+    594,
+    41,
+    22
+   ]
+  },
+  {
+   "nome": "barril_fogo",
+   "peso": 1,
+   "pe": [
+    11,
+    35
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -7.4
+     ],
+     "raio": [
+      10.9,
+      7.7
+     ]
+    }
+   ],
+   "regiao": [
+    400,
+    594,
+    22,
+    36
+   ]
+  },
+  {
+   "nome": "lixeira_metal",
+   "peso": 1,
+   "pe": [
+    10,
+    35
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -7.0
+     ],
+     "raio": [
+      10.4,
+      7.4
+     ]
+    }
+   ],
+   "regiao": [
+    424,
+    594,
+    21,
+    36
+   ]
+  },
+  {
+   "nome": "lixeira_rodas",
+   "peso": 1,
+   "pe": [
+    12,
+    37
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      11.4,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    447,
+    594,
+    24,
+    38
+   ]
+  },
+  {
+   "nome": "lixeira_azul",
+   "peso": 1,
+   "pe": [
+    12,
+    37
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      11.4,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    727,
+    24,
+    38
+   ]
+  },
+  {
+   "nome": "banco",
+   "peso": 1,
+   "pe": [
+    28,
+    34
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -6.8
+     ],
+     "raio": [
+      30.2,
+      7.1
+     ]
+    }
+   ],
+   "regiao": [
+    26,
+    727,
+    56,
+    35
+   ]
+  },
+  {
+   "nome": "sacos_areia",
+   "peso": 1,
+   "pe": [
+    44,
+    31
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      43.7,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    84,
+    727,
+    88,
+    36
+   ]
+  },
+  {
+   "nome": "barricada_concreto",
+   "peso": 1,
+   "pe": [
+    67,
+    38
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -11.3
+     ],
+     "raio": [
+      73.9,
+      11.9
+     ]
+    }
+   ],
+   "regiao": [
+    174,
+    727,
+    140,
+    43
+   ]
+  },
+  {
+   "nome": "barricada_madeira",
+   "peso": 1,
+   "pe": [
+    50,
+    43
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -10.2
+     ],
+     "raio": [
+      53.8,
+      10.7
+     ]
+    }
+   ],
+   "regiao": [
+    316,
+    727,
+    100,
+    44
+   ]
+  },
+  {
+   "nome": "pneus",
+   "peso": 1,
+   "pe": [
+    31,
+    41
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -12.4
+     ],
+     "raio": [
+      21.8,
+      13.1
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    773,
+    65,
+    43
+   ]
+  },
+  {
+   "nome": "cacamba",
+   "peso": 1,
+   "pe": [
+    44,
+    54
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -14.7
+     ],
+     "raio": [
+      42.0,
+      15.4
+     ]
+    }
+   ],
+   "regiao": [
+    67,
+    773,
+    88,
+    55
+   ]
+  },
+  {
+   "nome": "container_a",
+   "peso": 1,
+   "pe": [
+    98,
+    114
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -27.2
+     ],
+     "raio": [
+      100.8,
+      28.5
+     ]
+    }
+   ],
+   "regiao": [
+    157,
+    773,
+    196,
+    115
+   ]
+  },
+  {
+   "nome": "container_b",
+   "peso": 1,
+   "pe": [
+    98,
+    114
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -27.2
+     ],
+     "raio": [
+      100.8,
+      28.5
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    890,
+    196,
+    115
+   ]
+  },
+  {
+   "nome": "entulho_a",
+   "peso": 1,
+   "pe": [
+    14,
+    29
+   ],
+   "colisao": [],
+   "regiao": [
+    198,
+    890,
+    40,
+    30
+   ]
+  },
+  {
+   "nome": "entulho_b",
+   "peso": 1,
+   "pe": [
+    41,
+    43
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -13.6
+     ],
+     "raio": [
+      33.6,
+      14.3
+     ]
+    }
+   ],
+   "regiao": [
+    240,
+    890,
+    97,
+    52
+   ]
+  },
+  {
+   "nome": "muro_tijolo",
+   "peso": 1,
+   "pe": [
+    51,
+    59
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.5
+     ],
+     "raio": [
+      50.4,
+      4.8
+     ]
+    }
+   ],
+   "regiao": [
+    339,
+    890,
+    102,
+    62
+   ]
+  },
+  {
+   "nome": "muro_quebrado",
+   "peso": 1,
+   "pe": [
+    51,
+    59
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -4.5
+     ],
+     "raio": [
+      50.4,
+      4.8
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    1007,
+    102,
+    73
+   ]
+  },
+  {
+   "nome": "ponto_onibus",
+   "peso": 1,
+   "pe": [
+    59,
+    85
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -14.7
+     ],
+     "raio": [
+      57.1,
+      15.4
+     ]
+    }
+   ],
+   "regiao": [
+    104,
+    1007,
+    132,
+    89
+   ]
+  },
+  {
+   "nome": "carro_a",
+   "peso": 1,
+   "pe": [
+    75,
+    68
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -21.5
+     ],
+     "raio": [
+      75.6,
+      22.6
+     ]
+    }
+   ],
+   "regiao": [
+    238,
+    1007,
+    150,
+    69
+   ]
+  },
+  {
+   "nome": "carro_b",
+   "peso": 1,
+   "pe": [
+    75,
+    68
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -21.5
+     ],
+     "raio": [
+      75.6,
+      22.6
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    1098,
+    150,
+    69
+   ]
+  },
+  {
+   "nome": "carro_c",
+   "peso": 1,
+   "pe": [
+    75,
+    68
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -21.5
+     ],
+     "raio": [
+      75.6,
+      22.6
+     ]
+    }
+   ],
+   "regiao": [
+    152,
+    1098,
+    150,
+    69
+   ]
+  },
+  {
+   "nome": "carro_queimado",
+   "peso": 1,
+   "pe": [
+    75,
+    81
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -21.5
+     ],
+     "raio": [
+      75.6,
+      22.6
+     ]
+    }
+   ],
+   "regiao": [
+    304,
+    1098,
+    150,
+    82
+   ]
+  },
+  {
+   "nome": "carro_a_v",
+   "peso": 1,
+   "pe": [
+    32,
+    114
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -50.9
+     ],
+     "raio": [
+      31.9,
+      53.5
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    1182,
+    63,
+    115
+   ]
+  },
+  {
+   "nome": "carro_b_v",
+   "peso": 1,
+   "pe": [
+    31,
+    113
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -50.9
+     ],
+     "raio": [
+      31.9,
+      53.5
+     ]
+    }
+   ],
+   "regiao": [
+    65,
+    1182,
+    63,
+    114
+   ]
+  },
+  {
+   "nome": "carro_c_v",
+   "peso": 1,
+   "pe": [
+    32,
+    113
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -50.9
+     ],
+     "raio": [
+      31.9,
+      53.5
+     ]
+    }
+   ],
+   "regiao": [
+    130,
+    1182,
+    63,
+    114
+   ]
+  }
+ ]
+}

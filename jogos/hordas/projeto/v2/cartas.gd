@@ -2,9 +2,11 @@ extends RefCounted
 ## As cartas da v2 (leva 3): montagem de build. Sorteia cartas com RARIDADE (comum, raro, épico, lendário; a chance das altas sobe com o
 ## nível), aplica melhorias de stat, golpes secundários automáticos (v2/armas.gd), modificadores da katana e as EVOLUÇÕES (duas peças viram
 ## uma versão evoluída). Também guarda os banidos e os usos de rerrolar/banir. Tudo vem de dados/v2_cartas.json (veja o `_ajuda` de lá).
+## As 5 melhorias da RUPTURA (tecla E) vêm de dados/v2_ruptura.json > cartas, entram aqui com cat "rb" e sorteiam, evoluem de raridade e
+## aparecem no resumo como as outras (o ramo "rb" de aplicar soma o valor e avisa combate.ruptura.definir).
 ##
 ## Uma carta é um Dictionary: {id, icone (nome do PNG em assets/gerado/), nome, desc (já com o valor), cat ("stat", "golpe" ou "mod"), rar (0 a 3),
-## rar_nome, cor (Color), valor (stat/mod, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat}.
+## rar_nome, cor (Color), valor (stat/mod/rb, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat}.
 ## O cartão (telas.gd) mostra nessa ordem: raridade e tecla, ícone, nome, desc, proximo e, no rodapé, nivel_txt e evolui.
 
 const Armas := preload("res://v2/armas.gd")
@@ -20,6 +22,7 @@ var rerrolar_usados := 0
 var banir_usados := 0
 var rerrolar_na_tela := 0
 var evolucoes_feitas := 0
+var lendarias_feitas := 0  # só uma lendária por partida
 var _def := {}  # id -> definição (stat, golpe ou modificador)
 var _cat := {}
 
@@ -37,6 +40,9 @@ func montar(c) -> void:
 	for d in cfg.modificadores:
 		_def[d.id] = d
 		_cat[d.id] = "mod"
+	for d in Dados.json("v2_ruptura").get("cartas", []):  # a ruptura da tecla E (v2/ruptura.gd)
+		_def[d.id] = d
+		_cat[d.id] = "rb"
 	rng.randomize()
 
 
@@ -48,6 +54,7 @@ func zerar() -> void:
 	banir_usados = 0
 	rerrolar_na_tela = 0
 	evolucoes_feitas = 0
+	lendarias_feitas = 0
 	rng.randomize()
 
 
@@ -109,6 +116,8 @@ func _disponivel(d: Dictionary) -> bool:
 	var id := str(d.id)
 	if banidas.has(id) or bool(estado.get(id, {}).get("usada", false)):
 		return false
+	if bool(d.get("oculta_ate_ter_efeito", false)):  # escondida até ter efeito real (dados/v2_cartas.json, _ajuda)
+		return false
 	return nivel_de(id) < int(d.max)
 
 
@@ -124,7 +133,7 @@ func disponiveis() -> Array:
 ## Peso extra da carta que ajuda a fechar uma evolução (a outra peça já foi pega).
 func _peso_sinergia(id: String) -> float:
 	for ev in cfg.evolucoes:
-		if evoluidas.has(ev.id):
+		if not _evo_livre(ev):
 			continue
 		var tem_peca := false
 		var outras := 0
@@ -138,14 +147,29 @@ func _peso_sinergia(id: String) -> float:
 	return 1.0
 
 
+## Evolução que ainda pode acontecer: não feita e, se for lendária, só enquanto nenhuma foi feita nesta partida.
+func _evo_livre(ev: Dictionary) -> bool:
+	if evoluidas.has(ev.id):
+		return false
+	return not (str(ev.get("raridade", "")) == "lendario" and lendarias_feitas >= 1)
+
+
 func _sinergia_texto(id: String) -> String:
+	var ev := _sinergia_ev(id)
+	if ev.is_empty():
+		return ""
+	return "Evolui: %s" % ev.nome  # a lendária já sai magenta e com o nome da raridade no card: o prefixo não cabe numa linha
+
+
+## A evolução (ainda livre) que esta peça ajuda a fechar, ou {} se nenhuma.
+func _sinergia_ev(id: String) -> Dictionary:
 	for ev in cfg.evolucoes:
-		if evoluidas.has(ev.id):
+		if not _evo_livre(ev):
 			continue
 		for p in ev.pecas:
 			if p.id == id:
-				return "Evolui: %s" % ev.nome
-	return ""
+				return ev
+	return {}
 
 
 ## Evoluções ainda não feitas que usam a peça `id` (o card de status mostra): [{nome, falta, perdida}], onde `falta` lista as peças que ainda
@@ -276,6 +300,7 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 	var sin := _sinergia_texto(id)
 	if sin != "" and cat != "stat":
 		c.evolui = sin
+		c.lendaria = str(_sinergia_ev(id).get("raridade", "")) == "lendario"
 	return c
 
 
@@ -300,6 +325,10 @@ func aplicar(c: Dictionary) -> void:
 			e.n = int(e.n) + 1
 			e.soma = float(e.soma) + float(c.get("valor", d.valor))
 			combate.armas.definir_modificador(str(d.mod), float(e.soma))
+		"rb":
+			e.n = int(e.n) + 1
+			e.soma = float(e.soma) + float(c.get("valor", d.valor))
+			combate.ruptura.definir(str(d.chave), float(e.soma))
 		_:
 			e.n = int(e.n) + 1
 			_aplicar_stat(h, str(c.get("stat", "")), float(c.get("valor", 0.0)))
@@ -341,6 +370,8 @@ func _checar_evolucoes() -> String:
 	for ev in cfg.evolucoes:
 		if evoluidas.has(ev.id):
 			continue
+		if not _evo_livre(ev):
+			continue
 		var pronta := true
 		for p in ev.pecas:
 			if not _peca_ok(p):
@@ -355,6 +386,8 @@ func _checar_evolucoes() -> String:
 func evoluir(ev: Dictionary) -> void:
 	evoluidas.append(ev.id)
 	evolucoes_feitas += 1
+	if str(ev.get("raridade", "")) == "lendario":
+		lendarias_feitas += 1
 	var bonus := 0.0
 	for id in ev.consome:
 		bonus = maxf(bonus, float(estado.get(id, {}).get("bonus", 0.0)))

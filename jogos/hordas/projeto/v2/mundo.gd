@@ -12,7 +12,7 @@ extends Node
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
-## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
+## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
 ## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
@@ -31,14 +31,17 @@ const Entrada := preload("res://v2/entrada.gd")
 const Combate := preload("res://v2/combate.gd")
 const Roteiro := preload("res://v2/roteiro.gd")
 const Copas := preload("res://v2/copas.gd")
+const Braseiros := preload("res://v2/braseiros.gd")  # o Braseiro Antigo: apagado, acende com o herói por perto e deixa a área mais segura
 const Horda := preload("res://v2/horda.gd")  # os monstros comuns em lote (MultiMesh)
 const Oclusao := preload("res://v2/oclusao.gd")  # silhueta do herói atrás de monstro grande (leva 4)
 const Depuracao := preload("res://v2/depuracao_colisao.gd")
 const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
+const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no santuário
 const Trilha := preload("res://v2/trilha.gd")  # a música de fundo da partida (faixa por momento, volume no bus Musica)
 const LARG := 960
 const ALT := 540
+const MAX_PASSO_COLISAO := 8.0  # menor pegada de árvore + círculo do herói ocupa mais que este passo
 const ORCAMENTO_LUZES := {"desligada": 6, "so_heroi": 0, "tudo": 0}  # máximo de luzes ligadas por "luz_relevo" (0 = sem limite); o perfil Baixo usa "desligada"
 const PASSO_SOMBRA_CENARIO := 3  # a sombra de cada objeto parado recalcula a cada 3 quadros (a luz que a move muda devagar; o deslize suaviza)
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
@@ -59,6 +62,7 @@ signal partida_terminou(resultado: Dictionary)
 
 ## Para os testes: true antes de add_child pula o que mexe na janela e nas fotos.
 var modo_teste := false
+var id_mapa := ""  # "floresta", "laboratorio"...: vazio = o escolhido no santuário (floresta nos testes), ou --mapa=<id>; os testes podem pôr antes de add_child
 var mouse_forcado: Variant = null  # testes: um Vector2 do mundo aqui vale no lugar do mouse
 var dados: Dictionary = {}
 var ap
@@ -70,6 +74,7 @@ var atm
 var cenario
 var copas  # buraco raio-x nas árvores atrás das quais o herói está (copas.gd)
 var oclusao  # silhueta do herói quando um monstro na frente o cobre (oclusao.gd)
+var braseiros  # os braseiros antigos do mapa (braseiros.gd)
 var horda  # desenho dos monstros comuns em lote (horda.gd)
 var dbg_colisao: Node2D  # F4: contorno das formas de colisão (depuracao_colisao.gd)
 var sprites
@@ -89,15 +94,31 @@ var xp_coletado := 0.0  # soma do XP dos orbes pegos (com o bônus do combo)
 var resultado: Dictionary = {}  # o último resultado de partida (vazio enquanto joga)
 var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredondado (a meta-progressão lê isto)
 	get:
-		return roundi(xp_coletado / 10.0)
+		return maxi(0, roundi(xp_coletado / 10.0) - _almas_gastas)  # o mercador leva as que gastam o ouro da partida
 var tempo_partida := 0.0  # s de jogo (não conta hit-stop nem a pausa da escolha)
 var monstros_vivos: int:
 	get:
 		return monstros.size()
 var _pool_monstros := {}  # tipo -> monstros mortos prontos para renascer
 var _todos_monstros: Array = []
+var _marcadores: Array = []  # marcas do mapa (dados "marcadores"): cada uma faz o efeito ao o herói entrar no raio (_tocar_marca)
+var _tem_chave := false  # achou a chave da ruína nesta partida (abre o baú trancado)
+var _fragmentos := 0  # fragmentos da relíquia achados nesta partida
+var _alavancas := 0  # alavancas puxadas (duas abrem o atalho até o portão)
+var _atalho_aberto := false
+var _pilares_prox := 0  # quantos pilares já foram ativados na ordem certa (com um fora de ordem volta a zero)
+var _pilares_ok := false  # os três pilares acenderam: o mini-chefe com "exige": "pilares" pode nascer
+const PILARES := 3
+const DEFESA_ONDA_S := 4.0  # a defesa de ponto solta uma onda de monstros a cada 4 s
+const DEFESA_MONSTROS_POR_ONDA := 2
+var _almas_gastas := 0  # almas da partida gastas no mercador (saem do almas_partida)
+var _espinhos: Array = []  # zonas que machucam (dados "espinhos"): o caminho de pedra é seguro
+const ESPINHOS_TIQUE_S := 1.0  # um tique de dano a cada segundo dentro da zona (o golpe tem invencibilidade)
+const FRAGMENTOS_RELIQUIA := 4  # com estes fragmentos a relíquia monta e cai um baú
+const COR_ANUNCIO := Color(1.0, 0.85, 0.4)
 var _sombras_prontas := false
 var mapa := Rect2(0, 0, 2880, 1620)
+var minimapa  # o CanvasLayer do minimapa (o mirante revela o mapa inteiro por ele)
 var limite_andavel := Rect2(150, 150, 2580, 1320)  # onde herói e monstros podem pisar (mapa menos "borda_andavel")
 var t := 0.0
 var quadros := 0
@@ -128,7 +149,9 @@ func _ready() -> void:
 	Entrada.garantir()
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
 		Config.g_perfil_temporario(str(args.perfil))
-	dados = Dados.json("v2_floresta")
+	if id_mapa == "":
+		id_mapa = str(args.get("mapa", Mapas.PADRAO if modo_teste else Mapas.escolhido()))
+	dados = Dados.json(str(Mapas.buscar(id_mapa).dados))
 	var tm: Array = dados.get("mapa", {}).get("tam", [2880, 1620])
 	mapa = Rect2(0, 0, float(tm[0]), float(tm[1]))
 	var borda := float(dados.get("mapa", {}).get("borda_andavel", 24.0))
@@ -144,7 +167,8 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color(0.02, 0.03, 0.03))
 	_montar()
 	sv.add_child(preload("res://v2/hud.gd").criar(self))
-	sv.add_child(preload("res://v2/minimapa.tscn").instantiate().iniciar(self))
+	minimapa = preload("res://v2/minimapa.tscn").instantiate().iniciar(self)
+	sv.add_child(minimapa)
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
 	sv.add_child(pausa)
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
@@ -227,10 +251,11 @@ func _montar() -> void:
 	sombras = Sombras.new()
 	sombras.montar(no_mundo)
 	sombras.luzes = luzes
+	sombras.definir_ambiente(dados.get("mapa", {}).get("sombra_ambiente", {}))  # sombra base do mapa (laboratório); sem a chave, só as luzes
 	cenario = Cenario.new()
 	cenario.carregar(dados, no_mundo, luzes, sombras, sprites.com_normal)
 	copas = Copas.new()
-	copas.montar(cenario.objetos)
+	copas.montar(cenario.objetos, float(dados.get("mapa", {}).get("copas_altura_min", Copas.ALTURA_MIN)))
 	dbg_colisao = Depuracao.new()
 	dbg_colisao.mundo = self
 	dbg_colisao.z_index = 400  # por cima do mundo inteiro (árvores, atores, sombras)
@@ -245,6 +270,8 @@ func _montar() -> void:
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
 	horda = Horda.new()
 	horda.montar(self)
+	braseiros = Braseiros.new()
+	braseiros.montar(self)
 	_pre_criar_monstros()
 	_popular_inicial()
 	var todos: Array = cenario.objetos.duplicate()
@@ -254,6 +281,7 @@ func _montar() -> void:
 	_sombras_prontas = true
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_luar(m)
+	atm.config = dados.get("atmosfera", {})
 	atm.ambiente(cam.position)
 	_vinheta()
 	_ler_graficos()
@@ -302,6 +330,7 @@ func _pre_criar_monstros() -> void:
 
 ## Os monstros que já estão no mapa quando a partida começa (zonas do json).
 func _popular_inicial() -> void:
+	_montar_marcadores()  # as marcas voltam a nascer também no "Jogar de novo"
 	var nasc: Dictionary = dados.get("nascimento", {})
 	for z in nasc.get("monstros", []):
 		var centro := Vector2(float(z.centro[0]), float(z.centro[1]))
@@ -312,6 +341,223 @@ func _popular_inicial() -> void:
 			var p := centro + Vector2(cos(a), sin(a) * 0.6) * raio * sqrt(_rng.randf())
 			var mo = nascer_monstro(nome, p)
 			mo.raio_vaga = float(z.get("vaga", 90.0))
+
+
+## Marcas do mapa (dados "marcadores"). Cada marca guarda `feito` (já teve efeito nesta partida) e `dentro` (o herói está no raio).
+## Atalho e portão ainda não fazem nada: são só dados.
+func _montar_marcadores() -> void:
+	_marcadores.clear()
+	_tem_chave = false
+	_fragmentos = 0
+	_alavancas = 0
+	_atalho_aberto = false
+	_pilares_prox = 0
+	_pilares_ok = false
+	_almas_gastas = 0
+	for z in _espinhos:  # a reinicialização (Jogar de novo) refaz as zonas
+		z.visual.queue_free()
+	_espinhos.clear()
+	for m in dados.get("marcadores", []):
+		if str(m.tipo) == "espinhos":
+			_espinhos.append(_montar_espinhos(m))
+			continue
+		(
+			_marcadores
+			. append(
+				{
+					"tipo": str(m.tipo),
+					"pos": Vector2(float(m.pos[0]), float(m.pos[1])),
+					"raio": float(m.get("raio", 600.0)),
+					"forcar": int(m.get("forcar", 0)),
+					"marca": str(m.get("marca", "")),
+					"ordem": int(m.get("ordem", 0)),
+					"nome": str(m.get("nome", "")),
+					"texto": str(m.get("texto", "")),
+					"exige": str(m.get("exige", "")),
+					"tempo": float(m.get("tempo", 0.0)),
+					"custo": int(m.get("custo", 0)),
+					"t": 0.0,  # tempo de defesa já cumprido
+					"onda": 0.0,  # segundos até a próxima onda da defesa
+					"feito": false,
+					"dentro": false,
+				}
+			)
+		)
+
+
+## O efeito de uma marca acontece quando o herói ENTRA no raio (não a cada quadro dentro dele).
+func _checar_marcadores(dt: float) -> void:
+	var hp: Vector2 = heroi.pos
+	for m in _marcadores:
+		var perto: bool = hp.distance_squared_to(m.pos) <= m.raio * m.raio
+		if perto and not m.dentro:
+			_tocar_marca(m)
+		if perto and m.tipo == "defesa" and not m.feito:
+			_defesa(m, dt)
+		m.dentro = perto
+	_dano_espinhos(dt)
+
+
+## Espinhos: a zona (rect) que machuca e os caminhos de pedra seguros dentro dela. Os desenhos são polígonos criados uma vez, na montagem.
+func _montar_espinhos(m: Dictionary) -> Dictionary:
+	var visual := Node2D.new()
+	visual.z_index = -95  # chão: abaixo dos decalques (-90), dos objetos e do herói
+	no_mundo.add_child(visual)
+	var zona := _rect(m.rect)
+	var seguro: Array = []
+	for s in m.get("seguro", []):
+		var pedra := _rect(s)
+		seguro.append(pedra)
+		var poligono := Polygon2D.new()
+		poligono.polygon = _cantos(pedra)
+		poligono.color = Color(0.62, 0.6, 0.55, 0.9)
+		visual.add_child(poligono)
+	var espinhos := Polygon2D.new()
+	espinhos.polygon = _cantos(zona)
+	espinhos.color = Color(0.55, 0.12, 0.1, 0.45)
+	visual.add_child(espinhos)
+	return {"rect": zona, "seguro": seguro, "dano": float(m.get("dano", 6.0)), "t": 0.0, "visual": visual}
+
+
+func _rect(a: Array) -> Rect2:
+	return Rect2(float(a[0]), float(a[1]), float(a[2]), float(a[3]))
+
+
+func _cantos(r: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)])
+
+
+## Fora do caminho de pedra, quem está na zona apanha um tique a cada ESPINHOS_TIQUE_S.
+func _dano_espinhos(dt: float) -> void:
+	var hp: Vector2 = heroi.pos
+	for z in _espinhos:
+		if not z.rect.has_point(hp) or _em_algum(z.seguro, hp):
+			z.t = 0.0
+			continue
+		z.t += dt
+		if z.t >= ESPINHOS_TIQUE_S:
+			z.t = 0.0
+			heroi.levar_dano(z.dano, hp)
+
+
+func _em_algum(rects: Array, p: Vector2) -> bool:
+	for r in rects:
+		if r.has_point(p):
+			return true
+	return false
+
+
+## Defesa de ponto: com o herói dentro do raio o tempo corre e surgem monstros em volta a cada DEFESA_ONDA_S; ao completar `tempo`, cai uma relíquia (baú).
+func _defesa(m: Dictionary, dt: float) -> void:
+	m.t += dt
+	m.onda -= dt
+	if m.onda <= 0.0:
+		m.onda = DEFESA_ONDA_S
+		for i in DEFESA_MONSTROS_POR_ONDA:
+			var a := _rng.randf() * TAU
+			nascer_monstro(_sorteia(TIPOS_MONSTRO, PESOS_MONSTRO), m.pos + Vector2(cos(a), sin(a)) * m.raio * 0.9, true)
+	if m.t >= m.tempo:
+		m.feito = true
+		combate.baus.soltar(m.pos, 1.0, m.forcar)
+		combate.anunciar("DEFESA CUMPRIDA", COR_ANUNCIO)
+
+
+func _tocar_marca(m: Dictionary) -> void:
+	match m.tipo:
+		"bau":
+			if not m.feito:
+				combate.baus.soltar(m.pos, 1.0, m.forcar)
+				m.feito = true
+		"bau_trancado":
+			if m.feito:
+				return
+			if _tem_chave:
+				combate.baus.soltar(m.pos, 1.0, m.forcar)
+				m.feito = true
+			else:
+				combate.anunciar("TRANCADO: a chave está numa ruína", COR_ANUNCIO)
+		"chave":
+			if not m.feito:
+				m.feito = true
+				_tem_chave = true
+				combate.anunciar("CHAVE ENCONTRADA", COR_ANUNCIO)
+		"fragmento":
+			if m.feito:
+				return
+			m.feito = true
+			_fragmentos += 1
+			if _fragmentos < FRAGMENTOS_RELIQUIA:
+				combate.anunciar("FRAGMENTO %d/%d" % [_fragmentos, FRAGMENTOS_RELIQUIA], COR_ANUNCIO)
+			else:
+				combate.anunciar("RELÍQUIA MONTADA!", COR_ANUNCIO)
+				combate.baus.soltar(heroi.pos, 1.0, 3)
+		"alavanca":
+			if m.feito:
+				return
+			m.feito = true
+			_alavancas += 1
+			if _alavancas < 2:
+				combate.anunciar("ALAVANCA 1/2: puxe a outra", COR_ANUNCIO)
+			else:
+				_atalho_aberto = true
+				combate.anunciar("ATALHO ABERTO até o portão", COR_ANUNCIO)
+		"pilar":
+			if m.feito:
+				return
+			if m.ordem == _pilares_prox + 1:
+				m.feito = true
+				_pilares_prox += 1
+				if _pilares_prox < PILARES:
+					combate.anunciar("PILAR DO %s" % m.nome.to_upper(), COR_ANUNCIO)
+				else:
+					_pilares_ok = true
+					combate.anunciar("OS PILARES ACORDARAM", COR_ANUNCIO)
+			else:
+				_pilares_prox = 0
+				for p in _marcadores:
+					if p.tipo == "pilar":
+						p.feito = false
+				combate.anunciar("ORDEM ERRADA: os pilares se apagam", COR_ANUNCIO)
+		"placa":
+			combate.anunciar(m.texto, COR_ANUNCIO)
+		"defesa":
+			if not m.feito:
+				combate.anunciar("DEFESA: aguente %d s" % int(m.tempo), COR_ANUNCIO)
+		"mirante":
+			if not m.feito:
+				m.feito = true
+				minimapa.revelar_tudo()
+				combate.anunciar("MIRANTE: o mapa inteiro se revela", COR_ANUNCIO)
+		"mercador":
+			if m.feito:
+				return
+			if almas_partida < m.custo:
+				combate.anunciar("MERCADOR: faltam %d almas" % (m.custo - almas_partida), COR_ANUNCIO)
+				return
+			m.feito = true
+			_almas_gastas += m.custo
+			combate.baus.soltar(m.pos, 1.0, m.forcar)
+			combate.anunciar("MERCADOR: uma carta por %d almas" % m.custo, COR_ANUNCIO)
+		"chefe":
+			if m.feito or combate.chefes.atual != null:
+				return
+			if m.exige == "pilares" and not _pilares_ok:
+				combate.anunciar("O CHEFE NÃO RESPONDE: ache os pilares", COR_ANUNCIO)
+				return
+			m.feito = true
+			var mk := _marca_chefe(m.marca)
+			if mk.is_empty():
+				push_warning("v2 mapa: marca de chefe desconhecida: " + m.marca)
+			else:
+				combate.chefes.nascer(mk, m.pos)
+
+
+## A marca de chefe (dados/v2_cartas.json, chefes.marcas) com este id; vazio se não existe.
+func _marca_chefe(id: String) -> Dictionary:
+	for mk in combate.chefes.cfg.marcas:
+		if str(mk.id) == id:
+			return mk
+	return {}
 
 
 ## Um monstro novo do tipo `nome` (uma linha de números: quem o desenha é a horda). Só é chamado quando o pool do tipo esvazia.
@@ -423,7 +669,15 @@ func _ler_graficos() -> void:
 ## na área andável (o mapa menos "borda_andavel": as árvores das bordas fecham o mapa). Devolve o deslocamento que de fato aconteceu.
 func mover(a, desejado: Vector2) -> Vector2:
 	var antes: Vector2 = a.pos
-	var depois: Vector2 = Colisao.resolver(antes + desejado, a.raio)
+	var depois := antes + desejado
+	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, a.raio):
+		var n_passos := ceili(desejado.length() / MAX_PASSO_COLISAO)
+		var passo := desejado / n_passos
+		depois = antes
+		for _i in n_passos:
+			depois = Colisao.resolver(depois + passo, a.raio)
+	else:
+		depois = Colisao.resolver(depois, a.raio)
 	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
 	a.definir_pos(depois)
 	return depois - antes
@@ -511,6 +765,8 @@ func avancar(dt: float) -> void:
 				mo.atualizar(dtm, hp, hr)
 			var p2 := Time.get_ticks_usec()
 			combate.atualizar(dtm)
+			_checar_marcadores(dtm)
+			braseiros.atualizar(dtm)
 			var p3 := Time.get_ticks_usec()
 			_perfil("heroi", p1 - p0)
 			_perfil("monstros", p2 - p1)

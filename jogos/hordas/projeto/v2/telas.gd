@@ -4,7 +4,7 @@ extends RefCounted
 ## e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (DESLIGADO por padrão agora que o HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro
 ## do SubViewport 960x540; o mouse não chega nos Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_na_tela()) e a
 ## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar) e B (banir a carta marcada).
-## TRAVA: a escolha abre com as cartas apagadas por 3 s de TEMPO REAL (0,8 s depois de rerrolar ou banir). Nesse tempo clique, tecla e
+## TRAVA: a escolha abre com as cartas apagadas por 1 s de TEMPO REAL (0,8 s depois de rerrolar ou banir). Nesse tempo clique, tecla e
 ## botão são descartados (a contagem pulsa) e nada chega ao herói; ESC passa, é da pausa. O baú tem a sua trava (bau_espera_s). Os tempos
 ## vêm de dados/v2_cartas.json e a contagem corre no `atualizar` (relógio de parede), congelada com a pausa aberta (mundo.pausa.aberto).
 ## Os anúncios grandes e a barra do chefe são do HUD (v2/hud_anuncios.gd e hud.gd), que escutam os sinais do mundo.
@@ -14,6 +14,7 @@ const ALT := 540
 const CARTA_L := 256.0
 const CARTA_A := 288.0
 const CARTA_Y := 146.0
+const LENDARIA_COR := Color(1.0, 0.45, 0.85)  # magenta: a faixa e o rodapé de uma peça que fecha lendária
 const FOLGA := 20.0
 const BTN_Y := 440.0
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
@@ -242,11 +243,14 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	(p.get_node("desc") as Label).text = str(c.desc)
 	(p.get_node("proximo") as Label).text = str(c.get("proximo", ""))
 	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
-	(p.get_node("evolui") as Label).text = str(c.get("evolui", ""))
+	var evo := p.get_node("evolui") as Label
+	evo.text = str(c.get("evolui", ""))
+	var lendaria := bool(c.get("lendaria", false))  # a peça que fecha uma lendária ganha o ouro da fusão
+	evo.add_theme_color_override("font_color", LENDARIA_COR if lendaria else Color(1.0, 0.82, 0.4))
 	var rl := p.get_node("rar") as Label
 	rl.text = str(c.get("rar_nome", "")).to_upper()
 	rl.add_theme_color_override("font_color", cor.lerp(Color.WHITE, 0.3))
-	(p.get_node("faixa") as ColorRect).color = Color(cor.r, cor.g, cor.b, 0.9)
+	(p.get_node("faixa") as ColorRect).color = Color(LENDARIA_COR.r, LENDARIA_COR.g, LENDARIA_COR.b, 0.9) if lendaria else Color(cor.r, cor.g, cor.b, 0.9)
 	var nome_icone := str(c.get("icone", ""))
 	(p.get_node("icone") as TextureRect).texture = Dados.tex(nome_icone) if nome_icone != "" else null
 	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(cor))
@@ -527,6 +531,8 @@ func _revelar_slot(i: int) -> void:
 func _atualizar_bau(dt: float) -> void:
 	if espera_bau > 0.0 and not _pausa_aberta():
 		espera_bau = maxf(0.0, espera_bau - dt)
+		if espera_bau <= 0.0:
+			_pular_bau()  # Todas as recompensas ficam visíveis ao completar 1 s, independentemente da quantidade.
 	for i in 3:
 		if _bau_slots[i].visible and _bau_slots[i].modulate.r > 1.0:
 			var m := _bau_slots[i].modulate
@@ -632,7 +638,7 @@ func _pausa_aberta() -> bool:
 	return p != null and bool(p.aberto)
 
 
-## Tempo REAL da escolha: a trava das cartas (3 s; 0,8 s depois de rerrolar ou banir), o brilho ao liberar e a pulsada da contagem.
+## Tempo REAL da escolha: a trava das cartas (1 s; 0,8 s depois de rerrolar ou banir), o brilho ao liberar e a pulsada da contagem.
 ## O dt vem do relógio de parede (combate.efeitos), então câmera lenta e hit-stop não mexem nele.
 func _atualizar_escolha(dt: float) -> void:
 	if espera_escolha > 0.0:
@@ -820,7 +826,7 @@ func _entrada_bau(e: InputEvent) -> bool:
 	elif e.is_action_pressed("ui_accept"):
 		vai = true
 	if vai:
-		if espera_bau <= 0.0:  # na trava de 1,5 s o clique é descartado: não pula nem fecha
+		if espera_bau <= 0.0:  # na trava de 1 s o clique é descartado: não pula nem fecha
 			if bau_pronto:
 				combate.baus.fechar()
 			else:
