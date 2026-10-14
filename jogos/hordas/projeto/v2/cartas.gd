@@ -118,6 +118,8 @@ func _disponivel(d: Dictionary) -> bool:
 		return false
 	if bool(d.get("oculta_ate_ter_efeito", false)):  # escondida até ter efeito real (dados/v2_cartas.json, _ajuda)
 		return false
+	if d.has("herois") and not (d.herois as Array).has(combate.heroi_id):  # carta de um herói só: não aparece para os outros
+		return false
 	return nivel_de(id) < int(d.max)
 
 

@@ -175,7 +175,9 @@ func _ready() -> void:
 	await avancar(a, 4 / 60.0)
 	h0 = alvo.hp
 	a.inimigos.ferir(alvo, 10.0)
-	ok(h0 - alvo.hp < 12.49 or h0 - alvo.hp >= 19.0, "o golpe seguinte sai sem o bônus (perda %.1f; crítico à parte)" % (h0 - alvo.hp))
+	# o crítico (×1,5) sorteia dentro de ferir(), sem semente: sem o bônus o golpe sai 10, ou 15 se o crítico saiu. Nunca 12,5 nem 18,75 (com o +25%).
+	var perda2: float = h0 - alvo.hp
+	ok(is_equal_approx(perda2, 10.0) or is_equal_approx(perda2, 10.0 * a.stat("critico_mult")), "o golpe seguinte sai sem o bônus (perda %.2f)" % perda2)
 	# o bônus vence se o jogador não bater em 4 s
 	j._extra_t = 0.2
 	await avancar(a, 0.35)
@@ -189,7 +191,8 @@ func _ready() -> void:
 	j.dash_t = 0.0
 	var v_bot = a.inimigos.criar("carnical", j.centro() + Vector2(10, 0), 1)
 	v_bot.atordoado = 5.0
-	await avancar(a, 3 / 60.0)
+	v_bot.hp = 100000.0  # o robô atira sozinho: um crítico sorteado no tiro (×1,5) matava este vírus (14 de vida) e a checagem media a morte
+	await avancar(a, 1 / 60.0)  # um quadro basta: a grade se refaz nele, e o empurrão do tiro só mexe na posição no quadro seguinte
 	ok(j._quer_dash(), "o robô esquiva quando tem vírus colado")
 	a.queue_free()
 	await get_tree().process_frame

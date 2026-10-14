@@ -7,6 +7,7 @@ extends Control
 const Mapas := preload("res://v2/mapas.gd")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
+const Herois := preload("res://v2/herois.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle (Enter e A confirmam, ESC e B voltam)
 const SALAO := "res://v2/salao.tscn"
 const TITULO := "res://v2/menu_principal.tscn"
@@ -169,7 +170,7 @@ func _mostrar_personagem(id: String) -> void:
 	var r := Personagens.resumo(id)
 	_nome.text = str(r.nome)
 	_definir_retrato(_pasta_do_nome(str(r.nome)))
-	var linhas := ["Almas: %d" % int(r.almas), "Arma inicial: %s" % _arma_inicial()]
+	var linhas := ["Almas: %d" % int(r.almas), "Herói: %s" % _heroi_e_arma(Personagens.heroi(id))]
 	var efeitos := []
 	var niveis := Personagens.niveis(id)
 	for m in Meta.melhorias_visiveis():
@@ -186,7 +187,7 @@ func _mostrar_personagem(id: String) -> void:
 func _mostrar_nome(n: Dictionary) -> void:
 	_nome.text = str(n.nome)
 	_definir_retrato(str(n.pasta))
-	_info.text = "Santuário novo: sem almas e sem melhorias.\nArma inicial: %s." % _arma_inicial()
+	_info.text = "Santuário novo: sem almas e sem melhorias.\nHerói: %s." % _heroi_e_arma(Personagens.heroi_do_nome(str(n.nome)))
 
 
 func _mostrar_vazio() -> void:
@@ -195,8 +196,8 @@ func _mostrar_vazio() -> void:
 	_definir_retrato("")
 
 
-func _arma_inicial() -> String:
-	return str(Dados.json("v2_salao").get("arma_inicial", ""))
+func _heroi_e_arma(heroi_id: String) -> String:
+	return "%s (%s)" % [str(Herois.heroi(heroi_id).nome), Personagens.arma_inicial(heroi_id)]
 
 
 func _pasta_do_nome(nome_txt: String) -> String:
@@ -232,7 +233,7 @@ func _escolher(id: String) -> void:
 
 
 func _criar(n: Dictionary) -> void:
-	var id := Personagens.criar(str(n.nome))
+	var id := Personagens.criar(str(n.nome), Personagens.heroi_do_nome(str(n.nome)))
 	if id == "" or not Personagens.ativar(id):
 		_aviso.text = "Não foi possível gravar o personagem. Tente de novo."
 		return
