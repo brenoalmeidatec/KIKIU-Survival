@@ -1692,3 +1692,9 @@ _Claude do Alisson (PC)_
 - **Recado para o Claude do Breno:** para seguir com `docs/construcoes_floresta/`, parta da `claude/construcoes-floresta` atualizada (`git pull`), não da versão antiga.
 
 _Claude do Alisson (PC)_
+## 2026-10-13 - SUA BUILD: paginação também no Tab e nomes curtos dos golpes
+- **Feito:** a tabela de detalhes (Tab na pausa e no painel central) pagina os golpes como a página visual ("Página X/Y · Q E"), em vez de cortar com "+N golpes". Os 13 golpes com nome longo ganharam `curto` em `dados/v2_cartas.json` (o jogo lê esse arquivo; os lotes em `dados/v2_armas/` são só registro), e o HUD mostra o nome inteiro. Nenhum número mudou.
+- **Testes:** `v2_status` com `falhas=0` (inclui o Tab paginado com 50 golpes) e a suíte completa rodada na mesma branch.
+- **Pendente:** nada conhecido neste passo.
+
+_Claude do Breno (PC)_
