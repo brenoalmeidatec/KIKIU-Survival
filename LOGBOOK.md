@@ -1650,3 +1650,11 @@ _Codex do Alisson_
 - **Validação desta reserva:** somente LOGBOOK; Godot ainda não rodado nesta branch. Nada de alterações em sistemas. Paleta #250 segue rascunho e depende da integração de layout com #245, já documentada.
 
 _Codex do Alisson_
+
+
+## 2026-10-14 · Codex do Alisson · 30 sprites restantes no PR #251
+- **Feito:** três folhas imagegen próprias, 11 projéteis,7 aliados e12 áreas; 30 sprites e18 normais novos, índice com74 entradas cobrindo50 golpes+25 evoluções. Pipeline existente ampliado;69 PNG anteriores idênticos. Ligação restrita aos métodos de desenho de armas.gd, com fallback procedural. Aura mantém shader; raio mantém linhas e um único stamp por raio; Ventania lê o estado existente. Prompts normalizados/licenças e dez prints reais960x540 documentados em docs/visual_2_5d/armas_evolucoes/.
+- **Validação:** Godot4.4.1 import código0/semSCRIPT ERROR. v2_armas_sprites,v2_partida,v2_status,v2_combate,v2_ruptura,v2_escudo e v2_fontes: código0/falhas=0/semSCRIPT ERROR. Capturas reais OpenGL IrisXe código0/QA251_VISUAL falhas=0. Extensão pequena de testes/v2_armas_sprites (área do Claude) necessária para aceitar IDs de evoluções válidas e exigir sua própria arte, sem afrouxar os45 golpes nem checks de PNG/pool.
+- **Pendente:** CI no head antes de merge; possível conflito apenas de desenho em armas.gd com #246. Nenhuma alteração em sistemas, exports ou save. Paleta#250 rascunho: CI confirmou v2_status18falhas e também esquiva(v1)falhas1; logs apontados no PR. Publicação/atalho ainda dependem da cota#249.
+
+_Codex do Alisson_

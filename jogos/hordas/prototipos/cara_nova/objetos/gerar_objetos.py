@@ -171,7 +171,7 @@ def dist_caixas(a, b):
     return max(dx, dy)
 
 
-def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False, gap=GAP_JUNTA):
+def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False, gap=GAP_JUNTA, juntar_caixas=True):
     alfa = data[3::4]
     fundo = fundo_por_borda(w, h, alfa)
     fg = bytearray(w * h)
@@ -187,7 +187,9 @@ def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False, gap=GAP_
         pedacos.append({"idx": idx, "caixa": caixa(idx, w), "area": len(idx)})
     # junta pedacos com caixas proximas (um objeto pode ter partes soltas)
     grupos = [dict(p, idx=list(p["idx"])) for p in pedacos]
-    mudou = True
+    # Folhas densas podem ter caixas sobrepostas sem pixels conectados. Nesse caso,
+    # preserva componentes completos; apenas fragmentos excedentes vao ao mais proximo.
+    mudou = juntar_caixas
     while mudou:
         mudou = False
         for a in range(len(grupos)):
@@ -962,7 +964,7 @@ ARMAS_FOLHAS = [
         ("nuvem_esporos", "nuvem", (120, 0), ["nuvem_espora"], [], ""),
         ("nevoa_fantasmal", "nuvem", (100, 0), [], [], "descartado: a folha 21 traz a nevoa espectral"),
         ("nuvem_sangue", "nuvem", (70, 0), ["cortina_sangue"], [], ""),
-        ("anel_fogo", "anel", (128, 0), ["aura_fogo"], [], "anel de chama: serve a aura_fogo (arma antiga, fora das 45); a aura segue no shader de armas.gd"),
+        ("anel_fogo", "anel", (128, 0), [], ["aura_fogo"], "referencia anterior da aura; sprite proprio aura_fogo tem prioridade"),
         ("anel_dourado", "anel", (128, 0), ["pulso_sagrado"], [], ""),
         ("anel_onda_branca", "anel", (128, 0), ["onda_choque"], [], ""),
         ("anel_espinhos_verdes", "anel", (128, 0), ["anel_espinhos"], [], ""),
@@ -980,13 +982,50 @@ ARMAS_FOLHAS = [
         ("anel_vermelho", "anel", (128, 0), ["grito_guerra"], [], "anel vermelho de energia"),
         ("redemoinho_verde", "anel", (128, 0), ["rajada_vento"], [], "espiral de vento, nao anel"),
     ]),
+    ("fonte_armas_evolucoes_projeteis.png", "claro", [4, 4, 3], "projetil", [
+        ("laminas", "orbita", (18, 10), ["laminas"], [], "arte propria: evolucao ou familia base"),
+        ("anel_de_brasas", "orbita", (22, 14), ["anel_de_brasas"], [], "arte propria: evolucao ou familia base"),
+        ("urso_solar", "projetil", (26, 16), ["urso_solar"], [], "arte propria: evolucao ou familia base"),
+        ("chuva_de_lacas", "projetil", (22, 7), ["chuva_de_lacas"], [], "arte propria: evolucao ou familia base"),
+        ("bola_incendiaria", "projetil", (24, 18), ["bola_incendiaria"], [], "arte propria: evolucao ou familia base"),
+        ("pedreira_ardente", "meteoro", (22, 22), ["pedreira_ardente"], [], "arte propria: evolucao ou familia base"),
+        ("cometa_duplo", "meteoro", (32, 18), ["cometa_duplo"], [], "arte propria: evolucao ou familia base"),
+        ("chuva_de_ferro", "projetil", (24, 18), ["chuva_de_ferro"], [], "arte propria: evolucao ou familia base"),
+        ("eclipse_negro", "meteoro", (36, 28), ["eclipse_negro"], [], "arte propria: evolucao ou familia base"),
+        ("tempestade_primordial", "projetil", (44, 16), ["tempestade_primordial"], [], "arte propria: evolucao ou familia base"),
+        ("juizo_final", "meteoro", (40, 30), ["juizo_final"], [], "arte propria: evolucao ou familia base"),
+    ]),
+    ("fonte_armas_evolucoes_aliados.png", "claro", [3, 2, 2], "aliado", [
+        ("corvos", "corvos", (33, 27), ["corvos"], [], "arte propria: evolucao ou familia base"),
+        ("revoada_de_trovoes", "corvos", (36, 30), ["revoada_de_trovoes"], [], "arte propria: evolucao ou familia base"),
+        ("dragao_de_brasa", "aliado", (40, 36), ["dragao_de_brasa"], [], "arte propria: evolucao ou familia base"),
+        ("cacada_espiritual", "aliado", (44, 32), ["cacada_espiritual"], [], "arte propria: evolucao ou familia base"),
+        ("exercito_esquecido", "aliado", (34, 44), ["exercito_esquecido"], [], "arte propria: evolucao ou familia base"),
+        ("colosso_de_pedra", "aliado", (48, 54), ["colosso_de_pedra"], [], "arte propria: evolucao ou familia base"),
+        ("eclipse_de_almas", "aliado", (48, 38), ["eclipse_de_almas"], [], "arte propria: evolucao ou familia base"),
+    ]),
+    ("fonte_armas_evolucoes_areas.png", "escuro", [4, 4, 4], "area", [
+        ("aura_fogo", "aura", (128, 0), ["aura_fogo"], [], "arte propria: evolucao ou familia base"),
+        ("raio", "raio", (100, 0), ["raio"], [], "arte propria: evolucao ou familia base"),
+        ("runa", "runa", (72, 0), ["runa"], [], "arte propria: evolucao ou familia base"),
+        ("circulo_runico", "runa", (100, 0), ["circulo_runico"], [], "arte propria: evolucao ou familia base"),
+        ("ventania", "katana", (120, 0), ["ventania"], [], "arte propria: evolucao ou familia base"),
+        ("nevasca_congelante", "nuvem", (145, 0), ["nevasca_congelante"], [], "arte propria: evolucao ou familia base"),
+        ("cinzas_acidas", "nuvem", (150, 0), ["cinzas_acidas"], [], "arte propria: evolucao ou familia base"),
+        ("estrondo", "anel", (140, 0), ["estrondo"], [], "arte propria: evolucao ou familia base"),
+        ("terra_partida", "anel", (150, 0), ["terra_partida"], [], "arte propria: evolucao ou familia base"),
+        ("peste_negra", "nuvem", (130, 0), ["peste_negra"], [], "arte propria: evolucao ou familia base"),
+        ("juramento_sagrado", "anel", (140, 0), ["juramento_sagrado"], [], "arte propria: evolucao ou familia base"),
+        ("furacao_glacial", "nuvem", (160, 0), ["furacao_glacial"], [], "arte propria: evolucao ou familia base"),
+    ]),
+
 ]
 
 # Folga para juntar pedacos de um mesmo sprite: a folha 21 tem sprites da linha de baixo a 1-2 px um do outro, e com
 # a folga de 6 px eles viravam um so (7 objetos em vez de 9). Folhas 18 a 20 seguem com a folga padrao.
-GAP_FOLHA = {"fonte_armas_areas_2.webp": 0}
+GAP_FOLHA = {"fonte_armas_areas_2.webp": 0, "fonte_armas_evolucoes_aliados.png": 0}
 # Projeteis finos ou escuros: ganham 1 px claro em volta (depois da paleta, que fica igual), para ler no piso escuro.
-CONTORNO_CLARO = {"flecha_roxa", "shuriken_sombria", "dardo_verde"}
+CONTORNO_CLARO = {"flecha_roxa", "shuriken_sombria", "dardo_verde", "laminas", "chuva_de_lacas"}
 COR_CONTORNO = (236, 240, 248)
 # Cortados (a folha 20 tem 12 celulas, e a grade precisa delas) mas trocados pelos da folha 21: nao saem no indice.
 ARMAS_DESCARTADOS = {"nevoa_fantasmal", "anel_vento"}
@@ -1099,7 +1138,8 @@ def gerar_armas():
     previa = []                  # (tipo, nome, imagem, armas_sugeridas, armas_aproximadas)
     for arquivo, modo, linhas, tipo, lista in ARMAS_FOLHAS:
         w, h, data = carregar_folha_armas(os.path.join(AQUI, arquivo), modo)
-        grupos = agrupar(w, h, data, arquivo, len(lista), linhas, por_centro=True, gap=GAP_FOLHA.get(arquivo, GAP_JUNTA))
+        grupos = agrupar(w, h, data, arquivo, len(lista), linhas, por_centro=True, gap=GAP_FOLHA.get(arquivo, GAP_JUNTA),
+                         juntar_caixas=arquivo != "fonte_armas_evolucoes_aliados.png")
         feitos = []
         for g, (nome, familia, caixa, sugeridas, aproximadas, obs) in zip(grupos, lista):
             cru = recortar(g, w, data)
@@ -1164,9 +1204,9 @@ def previa_armas(itens, caminho):
     fundo = (22, 20, 28, 255)
     margem = 32
     secoes = [
-        ("projetil", "Projeteis e meteoros (folha 18: 16 sprites)", 8, 3),
-        ("aliado", "Aliados (folha 19: 9 sprites)", 5, 3),
-        ("area", "Efeitos de area, aditivos (folhas 20 e 21: 19 sprites)", 4, 2),
+        ("projetil", "Projeteis e meteoros (bases e evolucoes: 27 sprites)", 8, 3),
+        ("aliado", "Aliados (bases e evolucoes: 16 sprites)", 5, 3),
+        ("area", "Efeitos de area, aditivos (bases e evolucoes: 31 sprites)", 4, 2),
     ]
     plano = []
     largura = 0

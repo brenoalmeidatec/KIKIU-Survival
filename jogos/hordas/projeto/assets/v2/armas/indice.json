@@ -439,11 +439,11 @@
     128,
     87
    ],
-   "armas_sugeridas": [
+   "armas_sugeridas": [],
+   "armas_aproximadas": [
     "aura_fogo"
    ],
-   "armas_aproximadas": [],
-   "obs": "anel de chama: serve a aura_fogo (arma antiga, fora das 45); a aura segue no shader de armas.gd"
+   "obs": "referencia anterior da aura; sprite proprio aura_fogo tem prioridade"
   },
   "anel_dourado": {
    "arquivo": "anel_dourado.png",
@@ -635,6 +635,456 @@
    ],
    "armas_aproximadas": [],
    "obs": "espiral de vento, nao anel"
+  },
+  "laminas": {
+   "arquivo": "laminas.png",
+   "normal": "laminas_normal.png",
+   "tipo": "projetil",
+   "familia": "orbita",
+   "tamanho": [
+    20,
+    12
+   ],
+   "armas_sugeridas": [
+    "laminas"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "anel_de_brasas": {
+   "arquivo": "anel_de_brasas.png",
+   "normal": "anel_de_brasas_normal.png",
+   "tipo": "projetil",
+   "familia": "orbita",
+   "tamanho": [
+    22,
+    14
+   ],
+   "armas_sugeridas": [
+    "anel_de_brasas"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "urso_solar": {
+   "arquivo": "urso_solar.png",
+   "normal": "urso_solar_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    26,
+    16
+   ],
+   "armas_sugeridas": [
+    "urso_solar"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "chuva_de_lacas": {
+   "arquivo": "chuva_de_lacas.png",
+   "normal": "chuva_de_lacas_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    24,
+    9
+   ],
+   "armas_sugeridas": [
+    "chuva_de_lacas"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "bola_incendiaria": {
+   "arquivo": "bola_incendiaria.png",
+   "normal": "bola_incendiaria_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    24,
+    18
+   ],
+   "armas_sugeridas": [
+    "bola_incendiaria"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "pedreira_ardente": {
+   "arquivo": "pedreira_ardente.png",
+   "normal": "pedreira_ardente_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    22,
+    22
+   ],
+   "armas_sugeridas": [
+    "pedreira_ardente"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "cometa_duplo": {
+   "arquivo": "cometa_duplo.png",
+   "normal": "cometa_duplo_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    32,
+    18
+   ],
+   "armas_sugeridas": [
+    "cometa_duplo"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "chuva_de_ferro": {
+   "arquivo": "chuva_de_ferro.png",
+   "normal": "chuva_de_ferro_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    24,
+    18
+   ],
+   "armas_sugeridas": [
+    "chuva_de_ferro"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "eclipse_negro": {
+   "arquivo": "eclipse_negro.png",
+   "normal": "eclipse_negro_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    36,
+    28
+   ],
+   "armas_sugeridas": [
+    "eclipse_negro"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "tempestade_primordial": {
+   "arquivo": "tempestade_primordial.png",
+   "normal": "tempestade_primordial_normal.png",
+   "tipo": "projetil",
+   "familia": "projetil",
+   "tamanho": [
+    44,
+    16
+   ],
+   "armas_sugeridas": [
+    "tempestade_primordial"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "juizo_final": {
+   "arquivo": "juizo_final.png",
+   "normal": "juizo_final_normal.png",
+   "tipo": "projetil",
+   "familia": "meteoro",
+   "tamanho": [
+    40,
+    30
+   ],
+   "armas_sugeridas": [
+    "juizo_final"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "corvos": {
+   "arquivo": "corvos.png",
+   "normal": "corvos_normal.png",
+   "tipo": "aliado",
+   "familia": "corvos",
+   "tamanho": [
+    33,
+    27
+   ],
+   "armas_sugeridas": [
+    "corvos"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "revoada_de_trovoes": {
+   "arquivo": "revoada_de_trovoes.png",
+   "normal": "revoada_de_trovoes_normal.png",
+   "tipo": "aliado",
+   "familia": "corvos",
+   "tamanho": [
+    36,
+    30
+   ],
+   "armas_sugeridas": [
+    "revoada_de_trovoes"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "dragao_de_brasa": {
+   "arquivo": "dragao_de_brasa.png",
+   "normal": "dragao_de_brasa_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    40,
+    36
+   ],
+   "armas_sugeridas": [
+    "dragao_de_brasa"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "cacada_espiritual": {
+   "arquivo": "cacada_espiritual.png",
+   "normal": "cacada_espiritual_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    44,
+    32
+   ],
+   "armas_sugeridas": [
+    "cacada_espiritual"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "exercito_esquecido": {
+   "arquivo": "exercito_esquecido.png",
+   "normal": "exercito_esquecido_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    34,
+    44
+   ],
+   "armas_sugeridas": [
+    "exercito_esquecido"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "colosso_de_pedra": {
+   "arquivo": "colosso_de_pedra.png",
+   "normal": "colosso_de_pedra_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    48,
+    54
+   ],
+   "armas_sugeridas": [
+    "colosso_de_pedra"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "eclipse_de_almas": {
+   "arquivo": "eclipse_de_almas.png",
+   "normal": "eclipse_de_almas_normal.png",
+   "tipo": "aliado",
+   "familia": "aliado",
+   "tamanho": [
+    48,
+    38
+   ],
+   "armas_sugeridas": [
+    "eclipse_de_almas"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "aura_fogo": {
+   "arquivo": "aura_fogo.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "aura",
+   "tamanho": [
+    128,
+    82
+   ],
+   "armas_sugeridas": [
+    "aura_fogo"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "raio": {
+   "arquivo": "raio.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "raio",
+   "tamanho": [
+    100,
+    39
+   ],
+   "armas_sugeridas": [
+    "raio"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "runa": {
+   "arquivo": "runa.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "runa",
+   "tamanho": [
+    72,
+    46
+   ],
+   "armas_sugeridas": [
+    "runa"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "circulo_runico": {
+   "arquivo": "circulo_runico.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "runa",
+   "tamanho": [
+    100,
+    72
+   ],
+   "armas_sugeridas": [
+    "circulo_runico"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "ventania": {
+   "arquivo": "ventania.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "katana",
+   "tamanho": [
+    120,
+    79
+   ],
+   "armas_sugeridas": [
+    "ventania"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "nevasca_congelante": {
+   "arquivo": "nevasca_congelante.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    145,
+    114
+   ],
+   "armas_sugeridas": [
+    "nevasca_congelante"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "cinzas_acidas": {
+   "arquivo": "cinzas_acidas.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    150,
+    130
+   ],
+   "armas_sugeridas": [
+    "cinzas_acidas"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "estrondo": {
+   "arquivo": "estrondo.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    140,
+    95
+   ],
+   "armas_sugeridas": [
+    "estrondo"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "terra_partida": {
+   "arquivo": "terra_partida.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    150,
+    106
+   ],
+   "armas_sugeridas": [
+    "terra_partida"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "peste_negra": {
+   "arquivo": "peste_negra.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    130,
+    121
+   ],
+   "armas_sugeridas": [
+    "peste_negra"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "juramento_sagrado": {
+   "arquivo": "juramento_sagrado.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "anel",
+   "tamanho": [
+    140,
+    94
+   ],
+   "armas_sugeridas": [
+    "juramento_sagrado"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
+  },
+  "furacao_glacial": {
+   "arquivo": "furacao_glacial.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "nuvem",
+   "tamanho": [
+    160,
+    130
+   ],
+   "armas_sugeridas": [
+    "furacao_glacial"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte propria: evolucao ou familia base"
   }
  }
 }
