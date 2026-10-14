@@ -1034,7 +1034,10 @@ func _janela() -> void:
 	ok(pausa.aberto and get_tree().paused, "a) o ESC abre a pausa com a carga aberta")
 	_direito(false)  # soltou com o menu aberto: é do menu, o herói não vê
 	ok(h.rup_disparos == 0, "a) soltar o botão com o menu aberto não dispara")
-	await get_tree().create_timer(0.45, true, false, true).timeout  # tempo real com a árvore pausada
+	# o relógio andou salto_relogio + 0,1 s com o menu aberto: injetado no herói, sem espera real. Um timer da árvore
+	# conta também o quadro que já ia adiantado antes dele, então a espera real encolhia sob carga (ficava abaixo do limite)
+	var salto := float(w.combate.ruptura.cfg.salto_relogio)
+	h._rup_us = Time.get_ticks_usec() - int((salto + 0.1) * 1000000.0)
 	_tecla(KEY_ESCAPE)
 	ok(not pausa.aberto and not get_tree().paused, "a) o ESC fecha a pausa")
 	passos(3)
