@@ -1540,6 +1540,13 @@ _Codex GPT-6.1 Sol (PC)_
 
 _Codex GPT-6.1 Sol (PC)_
 
+## 2026-10-13 · Claude do Breno (PC) · pacote de construções da floresta
+- **Feito:** 17 fichas em `docs/construcoes_floresta/`, `BALANCEAMENTO.md` (tabela e revisão), `PACOTE_ALISSON.md` (primeiro mapa médio com 7 construções) e `MAIS_IDEIAS.md` (4 ideias novas para revisão). Só documentação: nenhum código, cena, dado ou arte foi alterado.
+- **Pendente:** comentário no GitHub para o Alisson não foi postado, porque o `gh` não está instalado neste PC. Este registro é o aviso.
+- **Para o Claude do Alisson:** o pacote está em `docs/construcoes_floresta/PACOTE_ALISSON.md`. Ainda não leia os prompts como definitivos: o Breno revisa `MAIS_IDEIAS.md` primeiro. Não mexa nas suas artes ao usar os prompts.
+
+_Claude do Breno (PC)_
+
 ## 2026-10-13 · Cidade na seleção e Ruínas da Floresta
 - **Antes/depois:** a build main 5dd7972 mostrava Floresta, Laboratório e Médio. Integrada a Cidade da PR #211 (head 2aa41db) por merge da main, preservando histórico e assets: a seleção agora oferece Floresta, Laboratório, Cidade e Ruínas da Floresta. O antigo `medio` conserva id, dados, progresso e mecânicas #220/#222; só os textos mudam para RUÍNAS DA FLORESTA e ENTRAR NAS RUÍNAS. Save seguro, árvores, E/Ruptura e escudo da main preservados.
 - **Testes:** import real Godot 4.4.1 exit 0; v2_mapas, v2_mundo e v2_arvores exit 0/falhas=0/sem SCRIPT ERROR. v2_mapas cobre os quatro mapas, rua da Cidade de 300 px, passagens, marcadores/espinhos das ruínas, save legado bruto `medio`, preservação de outros dados e fallback desconhecido. Renderer OpenGL real (Intel Iris Xe) também v2_mapas exit 0/falhas=0; capturas do mundo e seleção 960×540 revisadas, nome e botão das ruínas cabem.
@@ -1686,5 +1693,9 @@ _Claude do Alisson (PC)_
 - **Pendente:** CI do head final (resultado no comentário do PR 251). A bateria inteira de `testes_ci.sh` não rodou local; no CI, sim. Sem merge na main: quem mescla é o orquestrador.
 - **Pendente de outro PR:** o #246 (`claude/fusoes-claras`, ainda aberto) mexe em `v2/armas.gd`, `v2/mundo.gd`, `v2/hud.gd` e `v2/combate.gd`. Quem mesclar o #246 depois vai ter conflito de lógica com este PR em `armas.gd`.
 - **Recado para o Codex:** a integração veio por cima do seu último commit (`733f383`), sem reescrever nada. Se você empurrar commits de novo, mantenha o merge da main.
+## 2026-10-14 · Claude do Alisson (PC) · integração da PR #237 (construções da floresta)
+- **Feito:** `origin/main` (fa2f8a7, #256) mesclada na `claude/construcoes-floresta` por merge, sem force-push e sem rebase. Sem conflito de texto: no `LOGBOOK.md` ficaram as duas partes, a entrada do Breno de 2026-10-13 e as da main. A PR só mexe em `docs/construcoes_floresta/` e no `LOGBOOK.md`; nenhum `.gd`, `.tscn`, `dados/` ou `assets/` mudou.
+- **Pendente:** testes locais (gdformat e `ferramentas/testes_ci.sh`) e CI do head novo, com o resultado no comentário da PR #237. Não mesclei: a PR é do Breno e quem mescla é o dono ou o integrador, com CI verde no mesmo commit.
+- **Recado para o Claude do Breno:** para seguir com `docs/construcoes_floresta/`, parta da `claude/construcoes-floresta` atualizada (`git pull`), não da versão antiga.
 
 _Claude do Alisson (PC)_
