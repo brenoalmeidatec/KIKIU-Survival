@@ -98,3 +98,7 @@ Ruptura usa sigilos radiais na carga, borda no raio atual e referência no raio 
 ## Sprites de armas e evoluções — 14/10/2026 (PR #251)
 
 O índice reúne 74 sprites para 50 golpes base e 25 evoluções, incluindo arte própria do Alisson e do Codex do Alisson (imagegen). Os 44 sprites anteriores e seus 25 normal maps foram preservados byte a byte; as três folhas novas acrescentam 30 sprites. Projéteis e aliados recebem normal map; áreas usam composição aditiva. O pipeline existente `gerar_objetos.py armas` recorta, reduz e quantiza as folhas, gerando o índice e a prancha. Consulte o [pipeline de objetos](../../../../docs/visual_2_5d/PIPELINE_OBJETOS.md), as [capturas de armas e evoluções](../../../../docs/visual_2_5d/armas_evolucoes/) e os [prompts e a origem da arte](../../../../docs/visual_2_5d/armas_evolucoes/PROMPTS.md).
+
+## Heróis no salão (2026-10-14, PRs #214 e #242)
+
+Hazaki, Nicão (marreta) e Lucas (adagas) vivem em `dados/v2_herois.json` e `v2/herois.gd`. Há uma só escolha de herói: a do salão. Cada nome de `dados/v2_salao.json > nomes` pode ter `"heroi"` (Nicão e Lucas jogam com o herói deles; os outros, de Hazaki), e `personagens.gd` guarda o herói de cada personagem no índice. `Herois.escolhido()` vale `forcado` (testes e fotos) > `--heroi=id` > herói do personagem ativo > Hazaki. A tela de seleção separada (`selecao_heroi.gd`) e a chave `[heroi]` do save saíram. Cartas com `"herois"` só aparecem para esses heróis; o secundário (escudo) de cada um está em `dados/v2_secundario.json`.

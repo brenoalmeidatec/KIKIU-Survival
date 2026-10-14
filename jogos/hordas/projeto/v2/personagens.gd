@@ -8,6 +8,7 @@ extends RefCounted
 ## Nomes, pastas dos retratos e arma inicial vêm de dados/v2_salao.json. Sem class_name: carregue com preload, como o resto do projeto.
 
 const Meta := preload("res://v2/meta.gd")
+const Herois := preload("res://v2/herois.gd")
 
 static var caminho_indice := "user://v2_personagens.cfg"
 static var caminho_base := "user://v2_personagem_"  # o arquivo de cada slot é caminho_base + id + ".cfg"
@@ -44,6 +45,19 @@ static func nome(id: String) -> String:
 
 static func heroi(id: String) -> String:
 	return str(_indice().get_value(id, "heroi", HEROI_PADRAO))
+
+
+## O herói que o nome joga ao ser criado (campo "heroi" de dados/v2_salao.json; sem ele, o Hazaki).
+static func heroi_do_nome(nome_txt: String) -> String:
+	for n in nomes():
+		if str(n.nome) == nome_txt and Herois.existe(str(n.get("heroi", ""))):
+			return str(n.heroi)
+	return HEROI_PADRAO
+
+
+## A arma inicial do herói do personagem (dados/v2_herois.json), em caixa de título.
+static func arma_inicial(heroi_id: String) -> String:
+	return str(Herois.heroi(heroi_id).get("arma", "")).capitalize()
 
 
 ## Nomes que ainda não têm personagem (a tela de criar oferece só estes).

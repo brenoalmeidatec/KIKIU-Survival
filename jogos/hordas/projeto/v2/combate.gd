@@ -24,6 +24,8 @@ const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
 const Ruptura := preload("res://v2/ruptura.gd")
 const Escudo := preload("res://v2/escudo.gd")
+const Herois := preload("res://v2/herois.gd")
+const Adagas := preload("res://v2/adagas.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
 const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
@@ -50,6 +52,8 @@ var baus
 var chefes
 var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
+var adagas  # as adagas do Lucas (pool, v2/adagas.gd)
+var heroi_id := "hazaki"  # o herói da partida (v2/herois.gd)
 var fim_emitido := false  # partida_terminou já saiu
 var venceu := false
 
@@ -116,7 +120,8 @@ var _q := 0
 
 func montar(m) -> void:
 	mundo = m
-	cfg = Dados.json("v2_combate")
+	heroi_id = Herois.escolhido()
+	cfg = Herois.cfg_para(Dados.json("v2_combate"), heroi_id)  # o herói escolhido cobre vida, velocidade, fôlego e o combo
 	audio = AudioV2.new()
 	m.add_child(audio)
 	fx = Efeitos.new()
@@ -129,6 +134,8 @@ func montar(m) -> void:
 	cartas.montar(self)
 	armas = Armas.new()
 	armas.montar(self, m.glow, m.sv, m.atm.tex_brilho)
+	adagas = Adagas.new()
+	adagas.montar(self, m.glow, m.atm.tex_brilho)
 	progresso = Progresso.new()
 	progresso.montar(self)
 	diretor = Diretor.new()
@@ -246,6 +253,7 @@ func atualizar(dt: float) -> void:
 		var t0 := Time.get_ticks_usec()
 		armas.atualizar(dt)
 		us_armas += Time.get_ticks_usec() - t0
+		adagas.atualizar(dt)
 		elites.atualizar(dt)
 		chefes.atualizar(dt)
 		avisos.atualizar(dt)
@@ -393,8 +401,9 @@ func alcance_do_passo(passo: Dictionary) -> float:
 	return float(passo.alcance) * mundo.heroi.m_area
 
 
+## O arco com a área do herói, até 360 graus: a pancada do Nicão é em volta toda, e sem o teto 360 com a área vira 396 e o cosseno do acerto inverte.
 func arco_do_passo(passo: Dictionary) -> float:
-	return float(passo.arco) * (1.0 + (mundo.heroi.m_area - 1.0) * 0.5)
+	return minf(float(passo.arco) * (1.0 + (mundo.heroi.m_area - 1.0) * 0.5), 360.0)
 
 
 ## Chance de crítico da katana (0 a 1): a base dos dados mais o bônus das cartas.
@@ -405,11 +414,13 @@ func chance_critico() -> float:
 ## Até onde o passo alcança de verdade: o alcance com a área MAIS o avanço (lunge) que o herói faz antes do acerto (a estocada de 74 px
 ## acerta a 100 px). É o que o card de status mostra.
 func alcance_efetivo_do_passo(passo: Dictionary) -> float:
-	return alcance_do_passo(passo) + float(passo.avanco)
+	return alcance_do_passo(passo) + float(passo.get("avanco", 0.0))  # sem avanço no passo (as adagas): 0, como o lunge do heroi.gd
 
 
 ## Hit-stop (s) de um acerto do passo: o do crítico se `crit`, senão o do passo. `golpear` e o card de status usam esta.
 func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
+	if str(passo.get("tipo", "melee")) == "adagas":  # as adagas não param o tempo no acerto (v2/adagas.gd não chama o hit-stop)
+		return 0.0
 	return float(cfg.golpe.critico.hit_stop) if crit else float(passo.hit_stop)
 
 
@@ -446,17 +457,28 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	var cor := _cor(passo.cor)
 	if h.contragolpe_t > 0.0:  # a janela do contragolpe (depois da ruptura): o corte sai alaranjado
 		cor = cor.lerp(Color(1.0, 0.55, 0.2), 0.6)
+	var tom := float(passo.get("tom", 1.0))  # tom e vol opcionais do passo: o Nicão é grave, o Lucas agudo
+	if str(passo.get("tipo", "melee")) == "adagas" or passo.nome == "pancada":  # sem corte desenhado: as adagas e o chão aparecem no acerto
+		audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
+		return
 	var alc: float = alcance_do_passo(passo)
 	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
 	fx.corte(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, arco, float(passo.lado), str(passo.nome), cor, vis)
-	audio.tocar(str(passo.som), randf_range(0.96, 1.06), -2.0 if passo.nome != "estocada" else 0.0, 0.02)
+	audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0 if passo.nome != "estocada" else 0.0)), 0.02)
 
 
 ## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
 func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
+	if str(passo.get("tipo", "melee")) == "adagas":  # o Lucas: as adagas saem (v2/adagas.gd) e acertam por conta própria
+		adagas.lancar(h, origem, dir, passo)
+		return 0
 	var alc: float = alcance_do_passo(passo)
 	var arco: float = arco_do_passo(passo)
+	var pancada: bool = passo.nome == "pancada"  # o Nicão no chão: em volta, empurrão para fora
+	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nicão: empurra e atordoa mais
+	if pancada:
+		_estouro_chao(h, alc, passo)
 	var cos_meio := cos(deg_to_rad(arco * 0.5))
 	var parada := 0.0
 	var tremor := 0.0
@@ -482,8 +504,9 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 			criticos += 1
 		var dano := maxi(1, roundi(d))
 		var longe: Vector2 = rel.normalized() if dist > 0.5 else dir
-		var emp: Vector2 = (dir * 0.55 + longe * 0.45).normalized() * float(passo.empurrao) * (1.25 if crit else 1.0)
-		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0))
+		var rumo: Vector2 = longe if pancada else (dir * 0.55 + longe * 0.45).normalized()
+		var emp: Vector2 = rumo * float(passo.empurrao) * (1.25 if crit else 1.0) * forca
+		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0) * (1.0 + (forca - 1.0) * 0.5))
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
 			var raio_e: float = float(cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
@@ -505,12 +528,27 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		armas.lancar_onda(origem, dir, armas.dano_da_onda(dano_do_passo(passo)))
 	elif passo.nome == "estocada" and float(armas.mods.fura) > 0.0:
 		armas.lancar_lanca(origem, dir, armas.dano_da_lanca(dano_do_passo(passo)))
+	if pancada and float(armas.mods.abalo) > 0.0:  # modificador do Nicão: a pancada solta uma onda de choque para a frente
+		armas.lancar_onda(origem, dir, dano_do_passo(passo) * float(armas.mods.abalo) / 100.0)
 	processar_mortes()
 	if n > 0:
 		hit_stop(parada)
 		if tremor > 0.0:
 			mundo.cam.tremer(tremor, 0.17)
+	elif pancada:
+		mundo.cam.tremer(float(passo.tremor) * 0.5, 0.15)  # o chão treme mesmo sem acertar ninguém
 	return n
+
+
+## A pancada no chão do Nicão: duas ondas de poeira, estouro de pedrinhas, luz e o baque grave.
+func _estouro_chao(h, alc: float, passo: Dictionary) -> void:
+	var cor := _cor(passo.cor)
+	var p: Vector2 = h.pos + Vector2(0, -2)
+	fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), alc, 0.3)
+	fx.onda(p, Color(1, 1, 1, 0.6), alc * 0.6, 0.2)
+	fx.estouro(p, Color(0.75, 0.68, 0.55), 12)
+	fx.luz_rapida(p + Vector2(0, -6), cor, 1.8, alc * 2.6, 0.3)
+	audio.tocar("impacto", 0.5, 2.0, 0.05)
 
 
 # ------------------------------------------------------------------ morte, orbes e combo
@@ -553,14 +591,14 @@ func matar(m) -> void:
 ## Golpe de fonte secundária (aura, lâminas, corvos, raio, runa, ondas, fogo): tira vida, empurra e mostra o número. A morte NÃO é
 ## processada na hora (fica na fila, saindo em processar_mortes) para não mexer em mundo.monstros enquanto alguém percorre a lista.
 ## Devolve true se a vida zerou. `numero` = mostra o número de dano.
-func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: Color, numero := true) -> bool:
+func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: Color, numero := true, critico := false) -> bool:
 	if not m.vivo or m.morrendo:
 		return false
 	var dn := maxi(1, roundi(dano))
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
 	ferimentos += 1
 	if numero:
-		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, false)
+		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, critico)
 		fx.flash(m, 0.08)
 	if morreu:
 		m.morrendo = true
@@ -778,6 +816,7 @@ func limpar_partida() -> void:
 	_fila.clear()
 	orbes.limpar()
 	armas.limpar()
+	adagas.limpar()
 	avisos.limpar()
 	ruptura.limpar()
 	escudo.limpar()
@@ -810,7 +849,7 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, avisos, ruptura, escudo, elites, baus, chefes]:
+	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -823,6 +862,7 @@ func liberar() -> void:
 	fx = null
 	cartas = null
 	armas = null
+	adagas = null
 	avisos = null
 	ruptura = null
 	escudo = null

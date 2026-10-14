@@ -1772,5 +1772,20 @@ _Claude do Alisson (notebook)_
 ## 2026-10-14 · Claude do Alisson (notebook) · divisão FIXA: Codex só gera imagens
 - **Decisão do Alisson, agora fixa:** o Claude do Alisson faz **todo o código do jogo** (sistemas e visual), integração, builds e atalho; o **Codex do Alisson só gera imagens** quando pedido; o Claude do Breno testa, decide e ajusta números. Motivo: três agentes no mesmo código geravam conflito o tempo todo. `CLAUDE.md` e `AGENTS.md` voltam ao texto do #262, com o aviso de que só o Alisson muda a divisão.
 - **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) e o salão vivo (#263) passam para o Claude do Alisson. Daqui em diante, só pedidos de imagem.
+## 2026-10-12 (7) · Claude do Alisson (notebook) · v2: heróis Nicão e Lucas (PR, card e testes)
+- **Feito:** `alisson/v2-herois` com a `main` mesclada (conflitos de `altar.gd`, `heroi.gd`, `combate.gd` e `v2_cartas.json` resolvidos mantendo a main) e `testes/v2_herois` fechado (`falhas=0`). Correções: o helper `arco_do_passo` da main tinha perdido o teto de 360 graus (a pancada do Nicão, com a área 1,2, não acertava quem estava atrás); o card SUA BUILD agora mostra o nome do herói, a arma (campo `arma` em `dados/v2_herois.json`) e os modificadores dele; as adagas não leem `avanco` e `hit_stop` no card (SCRIPT ERROR ao apertar C); na seleção, o véu tinha 0x0 e não escurecia nada, a descrição não quebrava linha e a VOLTAR caía sobre ENTRAR NA FLORESTA.
+- **Testes:** `v2_herois`, `v2_partida`, `v2_esc` e as demais `v2_*` rodadas localmente com `falhas=0` e sem SCRIPT ERROR.
+- **Print:** `docs/visual_2_5d/herois_v2/santuario_selecao.png` (viewport 1280x720), usado no corpo do PR.
+- **Pendente:** o tiro secundário de Nicão e Lucas fica para `alisson/v2-ruptura` (sugestões no corpo do PR). O texto dos heróis ocupa 4 linhas no cartão, sem folga acima dos números.
+- **Próximo:** revisar o PR e mesclar depois da ruptura, que mexe nos mesmos botões e no card.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-14 - Pilha dos heróis/salão integrada sobre a main (#242, #214)
+
+- **#242 + main:** `origin/main` mesclada em `claude/salao-do-heroi` (conflito só no `v2/LEIA-ME.md`: mantidos os dois lados). Suíte `v2_*` com `falhas=0`.
+- **#214 dentro do #242:** Nicão e Lucas entram no sistema de personagens do salão, sem segunda escolha de herói. `dados/v2_salao.json > nomes` ganhou `"heroi"` (Nicão e Lucas jogam com o herói deles, os demais de Hazaki); `personagens.gd` guarda o herói no índice (`heroi_do_nome`, `arma_inicial`); `Herois.escolhido()` lê o personagem ativo. Saíram `selecao_heroi.gd`, o botão HERÓI do altar e a chave `[heroi]` do save (`Meta.heroi_escolhido/escolher_heroi`). `dados/v2_secundario.json` mapeia os três heróis ao escudo. Cartas de herói (`"herois"`) coexistem com as 50 de golpes e 25 evoluções da main (8 modificadores).
+- **Testes:** `v2_herois` reescrito para o modelo de personagens; `v2_partida` e `v2_ruptura` com a contagem nova (8 modificadores). Todas as `v2_*` ok.
+- **Atenção:** a branch `alisson/v2-herois` (#214) fica redundante depois deste merge; o orquestrador fecha o PR.
 
 _Claude do Alisson (notebook)_
