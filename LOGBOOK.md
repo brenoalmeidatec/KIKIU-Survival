@@ -1583,3 +1583,25 @@ _Codex GPT-6.1 Sol (PC)_
 - **Para o Claude do Alisson:** este PR não mexe em arte, `assets/`, `fonte_arte/`, `docs/visual_2_5d/`, `v2/heroi.gd` nem `v2/horda.gd`.
 
 _Claude (PC do Breno, via Remote Control)_
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Ruptura e escudo com volume
+- **Feito:** visual autoral por geometria na v2: sigilos internos e halo na carga; janela perfeita com pulso dourado suave no lugar do piscar a 20 Hz; onda em camadas e fissuras com núcleo quente e ramificações. Escudo curvo elevado com painéis, nervuras e runa central; sustentação azul, bloqueio branco, perfeito dourado com oito raios; ponto de impacto acompanha a origem. Nenhum asset externo/licença adicional, nó por quadro ou alteração de alcance, dano, fôlego, janela ou controles.
+- **Validação:** Godot 4.4.1 import exit 0; v2_ruptura, v2_escudo, v2_combate e v2_hud exit 0/falhas=0/sem SCRIPT ERROR. Uma falha inicial de inferência de tipo foi corrigida, preservando o log local. Capturas reais 960×540 com OpenGL/Intel Iris Xe, janela oculta: carga, carga perfeita, disparo, escudo, bloqueio comum e perfeito revisados. Avisos de RID no encerramento permanecem. Wrapper/fotos/logs locais não versionados.
+- **Próximo:** agente principal revisa PR e faz build; nenhum push/merge neste bloco.
+
+_Codex GPT-6.1 Sol (PC)_
+
+
+## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Emblema de solo rompido no HUD
+- **Feito:** substituído o símbolo angular da Ruptura por duas placas de pedra separadas e fenda central ramificada, autoral e compacto no ícone 48×48. Estados/cores/carga/recarga continuam os mesmos; nenhum ajuste no mundo ou nos efeitos de Ruptura/escudo.
+- **Validação:** Godot 4.4.1 v2_hud e v2_ruptura exit 0/falhas=0/sem SCRIPT ERROR. Capturas reais OpenGL 960×540 com janela oculta, prontidão/carga/recarga e detalhes do card inspecionados; fotos/logs locais no worktree, fora do Git. gdformat global e diff-check conferidos.
+- **Próximo:** agente principal atualiza PR #240 e CI; build precisa ser reexportada com este novo ícone.
+
+_Codex GPT-6.1 Sol (PC)_
+
+## 2026-10-14 · Codex GPT-6.1 Sol (PC) · retomada do PR #240 sobre a main
+- **Feito:** merge da main b70bf6e (#241), mantendo névoa/Tab segurado/setas/mirante, os quatro mapas, correção da morte #239, splash atual e efeitos/ícone do #240. LOGBOOK da main preservado integralmente como prefixo, notas deste PR ao fim; sem reescrever entradas anteriores. Nenhuma integração dos PRs #242/#245/#246.
+- **Testes reais:** Godot 4.4.1 import código 0. v2_mapas, v2_minimapa, v2_morte, v2_ruptura, v2_escudo, v2_hud, v2_combate, v2_meta, v2_partida e v2_santuario: todos código 0/falhas=0/sem SCRIPT ERROR. gdformat scripts/testes/v2: 229 arquivos limpos; diff-check limpo. Avisos de recursos ao encerrar harness permanecem e save corrompido de meta é intencional. Logs locais pr240-retomada-*, fora do Git.
+- **Próximo:** CI do head atualizado, exportação e QA do EXE com minimapa e efeitos juntos; merge e Release somente com checks verdes. Sem alteração de exports, regras de habilidades ou novas artes.
+
+_Codex GPT-6.1 Sol (PC)_

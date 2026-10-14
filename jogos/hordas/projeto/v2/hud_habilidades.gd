@@ -121,13 +121,24 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
 	if tecla == "E":
-		# Símbolo próprio de ruptura: uma fenda angular com um núcleo aceso.
+		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura.
 		var p := icon_pos
-		draw_line(p + Vector2(10.0, 8.0), p + Vector2(25.0, 8.0), cor, 3.0)
-		draw_line(p + Vector2(25.0, 8.0), p + Vector2(18.0, 22.0), cor, 3.0)
-		draw_line(p + Vector2(18.0, 22.0), p + Vector2(31.0, 22.0), cor, 3.0)
-		draw_line(p + Vector2(31.0, 22.0), p + Vector2(21.0, 39.0), cor, 3.0)
-		draw_circle(p + Vector2(21.0, 22.0), 3.0, Color.WHITE if perfeita else cor)
+		var esquerda := PackedVector2Array([Vector2(6, 14), Vector2(18, 8), Vector2(21, 16), Vector2(17, 23), Vector2(21, 30), Vector2(17, 38), Vector2(6, 32)])
+		var direita := PackedVector2Array(
+			[Vector2(27, 8), Vector2(41, 14), Vector2(41, 32), Vector2(25, 39), Vector2(29, 29), Vector2(25, 23), Vector2(29, 16)]
+		)
+		for placa in [esquerda, direita]:
+			for i in placa.size():
+				placa[i] += p
+			draw_colored_polygon(placa, Color(cor.r, cor.g, cor.b, 0.24))
+			var contorno: PackedVector2Array = placa.duplicate()
+			contorno.append(placa[0])
+			draw_polyline(contorno, cor, 1.5)
+		var fenda := PackedVector2Array([p + Vector2(24, 8), p + Vector2(26, 16), p + Vector2(21, 23), p + Vector2(26, 30), p + Vector2(22, 39)])
+		draw_polyline(fenda, Color(1.0, 0.88, 0.6) if perfeita else cor, 2.5)
+		draw_polyline(PackedVector2Array([p + Vector2(21, 23), p + Vector2(15, 20), p + Vector2(11, 22)]), cor, 1.5)
+		draw_polyline(PackedVector2Array([p + Vector2(26, 30), p + Vector2(33, 26), p + Vector2(37, 27)]), cor, 1.5)
+
 	else:
 		# Q usa um selo apagado, sem sugerir uma habilidade pronta.
 		draw_arc(icon_pos + Vector2(24.0, 23.0), 13.0, 0.0, TAU, 24, DESATIVADO, 2.0)

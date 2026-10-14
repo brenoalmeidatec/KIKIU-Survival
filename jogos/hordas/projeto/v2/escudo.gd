@@ -18,7 +18,7 @@ extends RefCounted
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura e dos avisos)
 const COR_AZUL := Color(0.45, 0.82, 1.0)
 const COR_OURO := Color(1.0, 0.85, 0.3)
-const PTS := 14  # pontos do arco desenhado
+const PTS := 20  # pontos do arco desenhado
 
 var combate
 var mundo
@@ -32,6 +32,7 @@ var ultimo: Dictionary = {}  # o último bloqueio (testes): perfeito, valor, emp
 var _flash_t := 0.0  # s do clarão do último bloqueio (comum)
 var _perf_t := 0.0  # s do clarão dourado do bloqueio perfeito
 var _desenhou := false
+var _impacto := Vector2.ZERO
 
 
 func montar(c, camada: Node) -> void:
@@ -110,7 +111,11 @@ func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 	ultimo = {"perfeito": perfeito, "valor": valor, "empurrao": emp, "atordoa": atordoa}
 	# o clarão, as faíscas e o som
 	var fx = combate.fx
-	var ponto: Vector2 = h.pos + Vector2(0, -10) + h.dir_olhar * float(cfg.raio)
+	var entrada := Vector2(de.x - h.pos.x, (de.y - h.pos.y) / ACHATA).normalized()
+	if entrada.length_squared() < 0.1:
+		entrada = Vector2(h.dir_olhar.x, h.dir_olhar.y / ACHATA).normalized()
+	_impacto = Vector2(entrada.x, entrada.y * ACHATA) * float(cfg.raio) + Vector2(0, -20)
+	var ponto: Vector2 = h.pos + _impacto
 	var cor := COR_OURO if perfeito else COR_AZUL
 	fx.estouro(ponto, cor, 6 if perfeito else 3)
 	fx.luz_rapida(ponto, cor, 1.6, 40.0, 0.18)
@@ -173,5 +178,29 @@ func _desenhar() -> void:
 		pts.append(c + Vector2(cos(a) * r, sin(a) * r * ACHATA))
 	var leque := PackedVector2Array([c])
 	leque.append_array(pts)
-	no.draw_colored_polygon(leque, Color(cor.r, cor.g, cor.b, alfa * 0.45))
-	no.draw_polyline(pts, Color(cor.r, cor.g, cor.b, minf(alfa * 3.0, 0.95)), 2.0)
+	# Barreira curva elevada: a base continua no mesmo arco de cobertura.
+	no.draw_colored_polygon(leque, Color(cor.r, cor.g, cor.b, alfa * 0.18))
+	var topo := PackedVector2Array()
+	var altura := 24.0
+	for q in pts:
+		topo.append(q + Vector2(0, -altura))
+	for i in PTS:
+		var painel := PackedVector2Array([pts[i], pts[i + 1], topo[i + 1], topo[i]])
+		no.draw_colored_polygon(painel, Color(cor.r * 0.65, cor.g * 0.8, cor.b, alfa * (0.45 if i % 2 == 0 else 0.3)))
+	no.draw_polyline(topo, Color(cor.r, cor.g, cor.b, alfa * 0.35), 7.0)
+	no.draw_polyline(topo, Color(cor.r, cor.g, cor.b, minf(alfa * 3.0, 0.95)), 2.0)
+	no.draw_polyline(pts, Color(cor.r, cor.g, cor.b, alfa * 1.5), 1.0)
+	for i in range(0, PTS + 1, 4):
+		no.draw_line(pts[i], topo[i], Color(cor.r, cor.g, cor.b, alfa * 1.7), 1.5)
+	# Runa central em losango, presa à barreira e à direção da mira.
+	var centro := topo[PTS >> 1] + Vector2(0, altura * 0.5)
+	var runa := PackedVector2Array([centro + Vector2(0, -8), centro + Vector2(5, 0), centro + Vector2(0, 8), centro + Vector2(-5, 0), centro + Vector2(0, -8)])
+	no.draw_polyline(runa, Color(cor.r, cor.g, cor.b, 0.8), 1.5)
+	if _flash_t > 0.0 or _perf_t > 0.0:
+		var t := _perf_t / 0.22 if _perf_t > 0.0 else _flash_t / 0.14
+		var impacto: Vector2 = h.pos + _impacto
+		var tamanho := (1.0 - t) * 16.0 + 5.0
+		for i in 8 if _perf_t > 0.0 else 4:
+			var d := Vector2.from_angle(TAU * float(i) / (8.0 if _perf_t > 0.0 else 4.0))
+			no.draw_line(impacto + d * tamanho * 0.4, impacto + d * tamanho, Color(cor.r, cor.g, cor.b, t), 2.0)
+		no.draw_circle(impacto, 3.0 * t, Color(1.0, 0.97, 0.8, t))
