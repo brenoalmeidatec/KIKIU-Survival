@@ -1653,3 +1653,10 @@ _Codex do Alisson_
 - **Recado para o Claude do Alisson:** o PR 1 mexe em `v2/telas.gd` (área do Codex) e em `v2/minimapa.gd` (HUD), só nas guardas descritas. O PR 2 não toca o LOGBOOK, para não conflitar no fim do log.
 
 _Claude do Alisson (notebook)_
+## 2026-10-14 · Claude do Alisson (PC) · esquiva estável no CI
+- **Feito:** `testes/esquiva.gd` deixou de depender do crítico sorteado (`randf()` sem semente em `inimigos.ferir`). A checagem do golpe seguinte aceita só 10 ou 10 x `critico_mult`. A checagem do robô usa um vírus de 100000 de vida e espera um quadro (a grade se refaz nele). Só teste; o jogo não mudou.
+- **Validação:** antes, 4 de 20 rodadas falhavam (3 do crítico, 1 do robô); depois, 0 de 30, headless e em sequência. Quebras de propósito (`_quer_dash` com fôlego 3 e bônus de 99 quadros) fazem a cena falhar. gdformat limpo nas três pastas.
+- **Pendente:** conferir o CI do PR "Testes: esquiva estável no CI"; daqui não dá para ver o CI.
+- **Recado:** se a `esquiva` cair de novo, a mensagem diz qual checagem falhou. O problema não era timeout.
+
+_Claude do Alisson (PC)_
