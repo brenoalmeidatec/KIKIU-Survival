@@ -1659,3 +1659,9 @@ _Codex do Alisson_
 - **Pendente/Claude:** integração do corpo do herói e contrato de fase/relógio do MultiMesh, descritos no comentário do PR. Item4 parcial; nenhum arquivo de sistemas alterado. CI remoto bloqueado por conta#249, PR rascunho sem merge. Próximo: passe de paleta/dither Alto; bloom seletivo depende de máscara de emissão acordada com integrador.
 
 _Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · reprodução do dissolve no #253
+- **Feito:** harnesses de viewport e benchmark preservados na documentação visual do PR. São as mesmas verificações já executadas: progresso, pausa do efeito e limpeza do slot ao reutilizar; sem alteração no runtime.
+- **Pendente:** integração corporal do Claude e CI da conta, conforme o PR. Nenhum merge ou nova build.
+
+_Codex do Alisson_
