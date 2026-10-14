@@ -808,7 +808,15 @@ func _golpes_detalhe(sec: Dictionary, x: float, y: float, w: float, seco: bool, 
 		y += _altura(l, w)
 	if com_nav:
 		if not seco:
-			_texto(Dados.fonte_texto, "Página %d/%d  · Q E" % [_pag_det + 1, _npag_det], Vector2(x, limite - ALT_LINHA + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_DICA)
+			_texto(
+				Dados.fonte_texto,
+				"Página %d/%d  · Q E" % [_pag_det + 1, _npag_det],
+				Vector2(x, limite - ALT_LINHA + 2.0),
+				w,
+				HORIZONTAL_ALIGNMENT_LEFT,
+				TAM,
+				COR_DICA
+			)
 		return limite  # a coluna vai até o pé, com a linha da paginação dentro dela
 	return y
 
