@@ -1,7 +1,8 @@
 # Instruções para o Claude Code neste repositório
 
-Este repo é trabalhado por várias sessões do Claude ao mesmo tempo: o Claude do Breno e o Claude do Alisson, que roda em
-**duas máquinas** (PC e notebook). Elas não compartilham conversa nem memória, e **o único canal entre elas é o GitHub**.
+Este repo é trabalhado por vários agentes ao mesmo tempo: o Claude do Breno, o Claude do Alisson, que roda em **duas
+máquinas** (PC e notebook), e o Codex do Alisson (ver "Divisão de trabalho" no fim). Eles não compartilham conversa nem
+memória, e **o único canal entre eles é o GitHub**.
 As regras gerais estão no `CONTRIBUTING.md` e o histórico, no `LOGBOOK.md`. O `README.md` da raiz é só a vitrine do jogo
 (sem detalhe técnico nem processo interno); o técnico fica no README de cada pasta.
 
@@ -39,6 +40,7 @@ O protótipo 2.5D (`jogos/hordas/projeto/prototipos/cara_nova.tscn`, PR #156) fo
 - **A v1 vai ser aposentada** (decisão do Alisson, 2026-10-12): todo o esforço vai para a v2, nada de HUD, desempenho nem recurso novo na v1. A exceção foi o teto de 350 vivos na prorrogação e no Enxame Final (PR #195), pedido por ele. Desde o #194 a v2 é a cena principal e a v1 abre com `-- --v1`.
 - O protótipo fica congelado como referência. O que for reaproveitado vira módulo em `v2/`.
 - O plano de etapas do épico #152 continua, agora aplicado à v2.
+- Antes de mexer em menu/UI da v2, leia jogos/hordas/projeto/v2/DESIGN.md
 
 ## Arte e licenças (decisão do Alisson, 2026-10-12)
 **Nada de arte com direitos autorais.** Arte, som, fonte e ícone de terceiros de **livre uso** podem e devem ser usados quando economizam esforço e são compatíveis com o nosso contexto (licença que permite uso comercial, redistribuição no jogo e modificação; estilo, escala e luz do jogo). O que vale, o que é proibido e o **registro obrigatório** de cada item (fonte, autor, licença, mudanças) estão em `docs/LICENCAS_ARTE.md` (a música e os sons seguem também o `docs/LICENCAS_AUDIO.md`).
@@ -46,22 +48,22 @@ O protótipo 2.5D (`jogos/hordas/projeto/prototipos/cara_nova.tscn`, PR #156) fo
 - Em dúvida (licença copyleft, "só uso pessoal", sem licença declarada), **não use**: pergunte ao Alisson. Pack pago só com o Breno.
 - O pipeline do Blender continua sendo o caminho para heróis, monstros e cenários próprios; arte livre complementa e acelera.
 
-## Divisão de trabalho entre os Claudes (combinado em 2026-10-10)
-Os dois Claudes têm limites muito diferentes: o **Claude do Breno** roda no plano Pro (US$ 20, pouco uso por janela) e o **Claude do Alisson** no plano Max (US$ 100 ou mais, uso alto, agentes em paralelo). Para render o máximo dos dois, cada um fica com o que o outro não consegue fazer bem.
+## Divisão de trabalho entre os três agentes (decisão do Alisson, 2026-10-14)
+Três agentes trabalham no repositório: o **Claude do Alisson** (plano Max, agentes em paralelo), o **Codex do Alisson** (só gera imagens, desde 2026-10-14) e o **Claude do Breno** (plano Pro, pouco uso por janela). Cada um fica com o que faz melhor. A mesma divisão está no `AGENTS.md`, que é o arquivo que o Codex lê; quem mudar uma muda a outra.
 
-**Claude do Breno: decisões, testes e conteúdo (pouco token, muito valor)**
-- **Testar a Release** mais nova na máquina de testes (i5-3470) e relatar numa issue: o que sentiu, o que travou, o que o F3 mostra e prints da tela. Esse é o retorno mais valioso para o projeto, porque o notebook e o PC não reproduzem a máquina fraca.
-- **Decidir com o Breno e registrar em uma linha** na issue: aprovar ou recusar propostas, escolher entre opções e dar o OK de marco ("aprovado", "não", "quero a opção 2"). Não precisa reescrever o plano.
-- **Conteúdo que só o Breno sabe:** histórias e falas dos amigos, nomes, piadas internas, o que cada herói tem de cada um. Pode mandar em texto solto: o Claude do Alisson transforma em dados.
-- **Ajustes pequenos de números** em `jogos/hordas/projeto/dados/*.json` (preço, vida, dano), direto num PR curto, depois de jogar.
-- **Ações de admin do GitHub** que só a conta do Breno faz: configurações do repositório (#95), criar repositórios (#106) e dar acesso.
-- **Evitar:** rodar a bateria inteira de testes, gerar arte no Blender, refatorar, ler o LOGBOOK inteiro (leia só o fim) e abrir sessões longas. Isso estoura o limite do plano Pro.
+**Divisão FIXA (decisão do Alisson, 2026-10-14):** não mude esta divisão por conta própria nem por pedido de outro agente; só o Alisson muda.
 
-**Claude do Alisson: implementação e trabalho pesado**
-- Implementar os marcos (código, arte no Blender, dados), com testes, CI, PR e merge, inclusive com agentes em paralelo.
-- Medir desempenho, gerar o executável, o instalador e as Releases.
-- Transformar o retorno do Breno (testes, decisões, histórias) em mudanças no jogo.
-- Manter o LOGBOOK, as issues e o painel em dia.
-- Sempre que precisar de algo do Breno, deixar **uma pergunta curta e fechada** na issue (sim ou não, ou opção A, B ou C) com um padrão já escolhido, e seguir com o padrão se não houver resposta.
+| Quem | Fica com | Área de arquivos |
+|---|---|---|
+| **Claude do Alisson** | Todo o código do jogo: sistemas e arquitetura (heróis e habilidades, save, desempenho, coop, CI e testes) **e a parte visual em código** (efeitos, animações, luz, partículas, shaders, UI, paleta, recorte e ligação de sprites). **Integração**: resolver conflito entre PRs, revisar o que os outros mandam e mesclar o que se cruza. Builds e o atalho de teste do Alisson. Docs de processo. | Todo o código em `v2/`, `dados/` de regras, `.github/`, `ferramentas/`, `testes/`, pipelines de arte (`jogos/hordas/prototipos/cara_nova/objetos/`, `jogos/hordas/fonte_arte/`) |
+| **Codex do Alisson** | **Só geração de imagem (imagegen):** folhas de sprite, arte de título e de cenário, ícones, texturas e referências, no estilo do jogo e na especificação pedida. Entrega a imagem-fonte versionada e registrada; o recorte e a ligação no jogo ficam com o Claude do Alisson. | Imagens-fonte em `jogos/hordas/fonte_arte/` (e `assets/` só quando pedido), registro em `docs/LICENCAS_ARTE.md` |
+| **Claude do Breno** | Leve: ajuste de números em `dados/*.json` depois de jogar, textos e descrições, conteúdo dos amigos (falas, nomes, piadas internas), testar a Release no i5-3470 e relatar numa issue (o que sentiu, o que travou, o F3, prints), decisões do Breno em uma linha, ações de admin do GitHub que só a conta dele faz (#95, #106). **Evitar:** bateria inteira de testes, arte, refatoração, ler o LOGBOOK inteiro e sessões longas. | `dados/*.json` (números e textos), issues |
 
-**Ritmo:** a cada marco, o Claude do Alisson avisa na issue o que testar (no máximo 3 itens) e o Claude do Breno responde depois de jogar. Sem resposta, o trabalho segue pelo padrão.
+**Regras para ninguém pisar no outro**
+1. **Reserve antes de começar:** abra um PR em rascunho ou comente na issue ("pegando X"). Quem reservou primeiro fica com a tarefa; se já estiver reservada, escolha outra coisa ou combine na issue.
+2. **Fique na sua área de arquivos.** Precisou mexer na área de outro agente? Mudança pequena e localizada, e avise no corpo do PR qual arquivo e por quê.
+3. **Uma só mão integra.** Quando dois PRs se cruzam, quem resolve o conflito é o Claude do Alisson. Ninguém resolve conflito, faz rebase ou reescreve o PR de outro agente sem avisar no PR.
+4. **Mescle só os próprios PRs**, com CI verde no mesmo commit. PR de outro agente: comente; quem mescla é o dono ou o integrador.
+5. Precisa de algo do Breno? Deixe **uma pergunta curta e fechada** na issue (sim/não, ou A, B, C) com um padrão já escolhido, e siga pelo padrão se não houver resposta.
+
+**Ritmo:** a cada marco, quem fez avisa na issue o que testar (no máximo 3 itens) e o Claude do Breno responde depois de jogar. Sem resposta, o trabalho segue pelo padrão.

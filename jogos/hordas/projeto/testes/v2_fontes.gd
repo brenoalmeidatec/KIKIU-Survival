@@ -13,6 +13,9 @@ extends Node
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_fontes.tscn  (imprime "v2_fontes falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Telas := preload("res://v2/telas.gd")
+const Status := preload("res://v2/status.gd")
+const ResultadoMeta := preload("res://v2/resultado_meta.gd")
+const MenuPrincipal := preload("res://v2/menu_principal.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const OPCOES_TESTE := "user://teste_v2_fontes_opcoes.cfg"
@@ -96,9 +99,32 @@ func _digitos() -> void:
 
 
 func _tamanhos() -> void:
-	for t in [Telas.TAM_TEXTO, Pausa.TAM_SUB, Pausa.TAM_VALOR, Pausa.TAM_AJUDA, Pausa.TAM_DICA]:
-		ok(t % 16 == 0, "tamanho %d da Spleen é múltiplo da grade (16)" % t)
-	ok(Telas.TAM_TITULO in [19, 37, 56] and Telas.TAM_NOME in [19, 37, 56], "títulos da Jersey 10 na grade (19, 37, 56)")
+	for t in [
+		Telas.TAM_TEXTO,
+		Pausa.TAM_SUB,
+		Pausa.TAM_VALOR,
+		Pausa.TAM_AJUDA,
+		Pausa.TAM_DICA,
+		Status.TAM,
+		Status.TAM_P,
+		ResultadoMeta.TAM_TEXTO,
+		MenuPrincipal.TAM_DICA
+	]:
+		ok(t in [16, 32], "tamanho %d da Spleen na grade (16, 32)" % t)
+	for t in [
+		Telas.TAM_TITULO,
+		Telas.TAM_NOME,
+		Telas.TAM_NOME_CURTO,
+		Telas.TAM_CONTAGEM,
+		Status.TAM_CAB,
+		Status.TAM_NOME_PEQ,
+		ResultadoMeta.TAM_TITULO,
+		MenuPrincipal.TAM_BOTAO
+	]:
+		ok(t in [19, 37, 56], "tamanho %d da Jersey 10 na grade (19, 37, 56)" % t)
+	ok(MenuPrincipal.TAM_LOGO == 2 * 56, "o logo usa a exceção documentada de 2 x 56")
+	for t in [Status.TAM_NUM, Status.TAM_GRANDE]:
+		ok(t > 0 and t % 8 == 0, "números na grade de 8 px")
 
 
 ## Altura de um texto quebrado na largura dada, na fonte e no tamanho dados.
@@ -115,6 +141,15 @@ func _cartoes() -> void:
 	var c = w.combate
 	var cs = c.cartas
 	var tl = c.telas
+	var resultado := ResultadoMeta.new()
+	add_child(resultado)
+	resultado.montar(w)
+	_rotulos_na_grade(resultado)
+	resultado.queue_free()
+	var menu := MenuPrincipal.new()
+	menu._montar()  # só montagem: não muda janela, música nem foco da partida de teste
+	_rotulos_na_grade(menu)
+	menu.free()
 	var painel: Panel = tl._cartas[0]
 	var f: Font = Dados.fonte_texto
 	var larg := Telas.CARTA_L - 2.0 * Telas.MARGEM
@@ -126,6 +161,7 @@ func _cartoes() -> void:
 			for rar in 4:
 				var carta: Dictionary = cs.montar_carta(d, rar)
 				tl._preencher(painel, carta)
+				_rotulos_na_grade(painel)
 				n += 1
 				for campo in ["desc", "proximo", "nivel", "evolui"]:
 					var l := painel.get_node(campo) as Label
@@ -141,6 +177,7 @@ func _cartoes() -> void:
 					)
 				var nome := painel.get_node("nome") as Label
 				var tam_nome: int = nome.get_theme_font_size("font_size")
+				ok(tam_nome in [19, 37, 56], "nome adaptado da carta permanece na grade")
 				ok(
 					Dados.fonte_titulo.get_string_size(nome.text, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome).x <= larg,
 					"carta %s: o nome cabe (%s)" % [d.id, nome.text]
@@ -177,3 +214,19 @@ func _menu_graficos() -> void:
 		f.get_string_size(Pausa.DICA, HORIZONTAL_ALIGNMENT_LEFT, -1, Pausa.TAM_DICA).x <= Pausa.PAINEL.size.x - 16.0,
 		"a dica de teclas cabe numa linha do painel"
 	)
+
+
+## Confere a fonte e o tamanho finais dos Labels, incluindo nomes adaptados depois de preencher cartas.
+func _rotulos_na_grade(no: Node) -> void:
+	if no is Label or no is Button:
+		var rot := no as Control
+		var fonte := rot.get_theme_font("font")
+		var tam := rot.get_theme_font_size("font_size")
+		if fonte == Dados.fonte_texto:
+			ok(tam in [16, 32], "Label %s: Spleen na grade (%d)" % [str(rot.get("text")), tam])
+		elif fonte == Dados.fonte_titulo:
+			ok(tam in [19, 37, 56] or (tam == 112 and str(rot.get("text")) == "K.I.K.I.U"), "Label %s: Jersey na grade (%d)" % [str(rot.get("text")), tam])
+		elif fonte == Dados.fonte:
+			ok(tam > 0 and tam % 8 == 0, "Label %s: Press Start na grade (%d)" % [str(rot.get("text")), tam])
+	for filho in no.get_children():
+		_rotulos_na_grade(filho)
