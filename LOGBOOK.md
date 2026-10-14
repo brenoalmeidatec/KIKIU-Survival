@@ -1660,3 +1660,10 @@ _Claude do Alisson (notebook)_
 - **Recado:** se a `esquiva` cair de novo, a mensagem diz qual checagem falhou. O problema não era timeout.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-14 · Codex do Alisson · conceito do salão para aprovação do Breno
+- Pedido do Alisson: enviar ao Breno a proposta visual do Santuário explorável, alinhada à direção do PR #242. Imagem e especificação em docs/visual_2_5d/santuario/. Conceito artístico gerado com imagegen; não é print do jogo nem implementação. Objetos representam melhorias atuais; descobertas, provas, conclusão e persistência online são ideias futuras.
+- Antes: estudo de página com abas. Depois: proposta de salão com centro livre, estações laterais e saída para expedições. Nenhum arquivo de sistema ou fluxo alterado. PR em rascunho aguardando avaliação visual; sem merge/build nesta entrega.
+- Validação: inspeção visual da imagem e documentação. Testes Godot não rodados: somente arte conceitual e documentação. Formatação global registrada no PR.
+
+_Codex do Alisson_

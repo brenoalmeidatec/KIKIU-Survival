@@ -59,3 +59,8 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 | `assets/v2/armas/*.png` (44 sprites e 25 normais; lista em `indice.json`) | sprites das armas da v2, ligados em `v2/armas_novas.gd` | Alisson (arte própria) | gerada no GPT pelo Alisson; folhas-fonte em `jogos/hordas/prototipos/cara_nova/objetos/fonte_armas_*.webp` | própria do autor (sem licença de terceiros) | não | recorte por célula, redução BOX, alfa binário (projéteis e aliados) ou brilho virou alfa (efeitos, fundo preto), quantização sem dithering, normal map (projéteis e aliados), contorno claro de 1 px (flecha, shuriken e dardo) | 2026-10-12 |
 
 (Itens novos entram no fim da tabela.)
+
+### Conceito do Santuário — Codex do Alisson, 14/10/2026
+- Arquivo: docs/visual_2_5d/santuario/conceito-salao.png.
+- Origem: arte própria gerada pelo Codex com imagegen embutido, a pedido do Alisson; sem assets de terceiros adicionados. Prompt e contexto registrados em LAYOUT.md na mesma pasta.
+- Uso: estudo de layout para aprovação do Breno, não integrado ao jogo.
