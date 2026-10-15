@@ -1911,3 +1911,55 @@ _Codex do Alisson_
 - **Pendente:** Breno/orquestrador mesclar o PR na main; fecha #257 e #275.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson (notebook) · piloto: herói andando no Blender (8 direções)
+- **Feito:** `jogos/hordas/fonte_arte/blender_herois/` (gerar_heroi_andar.py, previa_gif.py, folha `hazaki_samurai_blender_*`, .blend). Herói padrão da v2 = `hazaki_samurai`. Ciclo de andar novo de 6 quadros x 8 direções, cor + normal, render 4x + BOX + paleta + contorno 1 px, mesma grade e linhas do sprite atual (32x44; colunas parado + 6). Render: 168 imagens em 49 s (53 s com o setup), Blender 4.5, `-b -t 6`. Prévias em `docs/visual_2_5d/blender_herois/`. O sprite do jogo NÃO foi trocado.
+- **Pendente:** detalhes finos (listras douradas do peito, rosto) perdem definição com o BOX; joelho não existe no modelo (só levanta a perna inteira); `PASSO_ANIM` do `heroi.gd` assume 4 quadros; falta parado/respira, combo da katana, rolamento, escudo, morte e os outros heróis (Nicão, Lucas).
+- **Próximo:** decidir se a folha troca a atual; depois repetir o script com as ações já existentes em `hazaki.py` (ataque, defesa, dano, morte).
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson (PC) · combo da katana no Hazaki (3 golpes x 4 quadros)
+- **Feito:** branch `alisson/hazaki-anim-combo` (a partir de `alisson/hazaki-blender`, sem PR). `hazaki/anim_combo.py` com 12 quadros: golpe 1 corte horizontal da direita para a esquerda, golpe 2 da esquerda para a direita, golpe 3 descendente com passo da perna esquerda. Cada golpe tem antecipação, golpe, impacto e volta. Os ângulos do tronco e do braço da katana saíram da posição da ponta da lâmina (cinemática do rig), para caber no quadro 32x44. `quadros/combo/`: 96 pares cor/normal, todos 32x44 RGBA, alfa binário e silhueta igual entre cor e normal. `gerar.py` e os outros módulos não foram mexidos; `hazaki_rig.blend` não foi salvo (`--anim` não salva).
+- **Limite:** a lâmina aparece nos 12 quadros na frente e nas diagonais de frente. Ela some quando passa para o lado de trás do corpo: de costas, na maior parte dos golpes; no perfil esquerdo, no impacto 1, na volta 1 e no golpe 2; no perfil direito, no impacto 2. É geometria, não pose: um corte na frente do peito fica atrás do tronco vista de costas, e o quadro de 32x44 não comporta uma lâmina mais longa ou mais larga sem encostar na borda.
+- **Pendente:** decidir se a legibilidade de costas é requisito. Se for, o caminho é um rastro do golpe no código do jogo (efeito, que é do Claude do Alisson pela divisão fixa), não mais pose.
+- **Próximo:** quem integrar decide se a folha do combo entra no `v2`.
+
+_Claude do Alisson (PC)_
+## 2026-10-15 · Claude do Alisson (workflow) · Hazaki: animações de defesa (escudo, dano) e morte em WIP
+- **Feito:** `hazaki/anim_escudo.py` (2 quadros: erguer e segurar, guarda alta com a katana vertical) e `hazaki/anim_dano.py` (2 quadros: impacto e recuo, tronco e cabeça para trás). Quadros commitados em `quadros/escudo/` e `quadros/dano/` (8 direções, cor + normal, 32x44, alfa binário, mesma silhueta nos dois). Conferido por script. Borda: `dano` não toca; `escudo` toca em `baixo_dir` (coluna 31) e `cima_esq` (coluna 0), sem corte aparente.
+- **Feito, mas não fecha:** `hazaki/anim_morte.py` (6 quadros, WIP). Os quadros NÃO foram commitados. Deitado de comprido não cabe no quadro: o corpo tem ~3,3 unidades (~44 px) e, nas vistas de lado e diagonais, passa dos 32 px; nas vistas de costas, a cabeça desce para fora da linha do pé. A morte virou "sentado e recostado" (q4-q5): cabe melhor, mas os quadros 2 a 5 ainda cortam 1 a 9 px em algumas direções.
+- **Achado de convenção (corrigir o LEIA-ME):** `girar(x=-)` é "para frente" só em ossos que apontam para baixo (braço, antebraço, perna, canela). Em tronco e cabeça, que apontam para cima, é o contrário: `x=+` inclina para frente. Conferido com um teste no `hazaki_rig.blend`.
+- **Pendente:** decidir como a morte cabe no quadro 32x44 (âncora própria para a morte, quadro maior para ela, ou pose mais compacta). Enquanto isso, não usar `quadros/morte` no jogo.
+- **Próximo:** revisão e merge pelo integrador (branch `alisson/hazaki-anim-defesa`, sem PR aberto por aqui).
+
+_Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 · Claude do Alisson (workflow, máquina não confirmada) · Hazaki do Blender: montagem 1 (folha final com as 7 animações e QA no Salão)
+- **Feito:** mesclei em `alisson/hazaki-blender` as branches `hazaki-anim-rolamento`, `hazaki-anim-combo` e `hazaki-anim-defesa` (sem conflito; o LOGBOOK da defesa entrou no automático). O `gerar.py` renderizou as 7 animações (parado, andar, rolamento, combo, escudo, dano, morte): 38 quadros x 8 direções, cor e normal, 32x44, em 22 s com `blender -b -t 6`. A folha final está em `hazaki/hazaki_final_albedo.png` e `hazaki_final_normal.png` (1216x352: 38 colunas x 8 linhas). O `hazaki_final.json` segue o formato que o `sprites.gd` e o `heroi.gd` leem, e as animações novas estão em `animacoes` (colunas, quadros, tempo por quadro sugerido). Documentado no `hazaki/LEIA-ME.md`, com a convenção de `girar(x=)` corrigida no tronco e na cabeça.
+- **Feito, com aviso:** GIFs em `docs/visual_2_5d/blender_herois/hazaki/` (uma por animação, 8 direções lado a lado, e `comparativo_atual_x_novo.gif` com o `hazaki` que o jogo usa hoje). QA no Salão real, janela oculta: a cena `blender_herois/qa/qa_hazaki_final.gd` troca só a textura do herói, e o jogo não foi tocado. Prints de parado, andando e meio do golpe 3 (coluna 25, de frente) no PR.
+- **Pendente:** (1) a morte encosta ou corta a borda lateral em 28 dos 48 quadros (é o WIP do autor, quadros 1 a 5); (2) andar, rolamento e escudo encostam na borda em algumas diagonais (largura máxima 30 px, então devem caber, mas sem folga); (3) o jogo ainda não usa as colunas novas: o `heroi.gd` anda com `colunas.size() - 1` quadros e o `PASSO_ANIM` dele é 0,13 s, enquanto o andar pede cerca de 0,09 s.
+- **Próximo:** decidir a âncora da morte antes de ligar no jogo; depois ligar rolamento e combo no `heroi.gd` (é do Claude do Alisson, fora de `hazaki/`).
+- **Recados:** PR em rascunho aberto para a `main`, sem merge. Os PNGs re-renderizados saíram pixel-idênticos aos commitados, então foram restaurados para não gerar diff de bytes; só o `hazaki_rig.blend` regenerado entrou como binário.
+
+_Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 | Hazaki do Blender: correção das animações (revisão de arte 5,5/10), branch `alisson/hazaki-blender`
+- **Feito:** morte, combo, rolamento, dano e escudo refeitos (`jogos/hordas/fonte_arte/blender_herois/hazaki/anim_*.py`), folha final regerada (50 colunas), GIFs em `docs/visual_2_5d/blender_herois/hazaki/`.
+  Morte: 8 quadros (tomba, impacto q3, rebote, 2 de repouso), deitada nas 8 direções, cabeça para a câmera (de bruços de frente, de costas de costas e de perfil); corpo 25 a 31 px de largura, cabe na célula 32x44.
+  Combo: 18 quadros (3 golpes diferentes: horizontal, diagonal, estocada; antecipação, golpe e impacto com rastro, hold de 1 quadro, volta). Rolamento: giro de verdade com poeira. Dano: 4 quadros. Escudo: 4 quadros, a katana cruza o tronco.
+  Katana mais larga, longa e clara em todas as animações (`gerar.py`: andar e parado re-renderizados). Infra nova: `ossos.ancorar/encaixar_x/guarda_ponta`, `posar(..., ang)`, `efeito()` (rastro 2D), `ik_katana.py`, `s_quadros` no JSON.
+- **Pendente:** a ordem das colunas da folha mudou (combo 16-33, escudo 34-37, dano 38-41, morte 42-49) e o QA `qa_hazaki_final.gd` e o PNG `qa_salao_*` do Salão ainda são da montagem 1 (não foram re-gerados). Alguns quadros de golpe e rolamento ainda encostam 1 px na borda (o rastro é cortado pela célula).
+  Ninguém conferiu no jogo: só os PNGs e GIFs foram vistos. O jogo não lê esses quadros (heroi.gd é do Claude do Alisson).
+- **Próximo:** nova revisão de arte; ligar morte/combo/rolamento no `heroi.gd` usando `animacoes` do `hazaki_final.json` (`s_quadros` dá o tempo de cada quadro).
+
+_Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 · Claude do Alisson (workflow, máquina não confirmada) · Hazaki do Blender: montagem 2 (render completo, folha de 50 colunas, prints no Salão)
+- **Feito:** o merge das três branches de animação (rolamento, combo, defesa) em `montar-2`, a partir de `alisson/hazaki-blender`, deu "Already up to date": as três já eram ancestrais, então nada mudou. Render completo com `gerar.py` (7 animações, 800 PNGs cor e normal) em 32 s de parede com `blender -b -t 6`. O re-render saiu pixel-idêntico ao commitado, então folha, prévia e GIFs continuam iguais. O que muda no commit: `hazaki_final.json` (`tempo_render_s` = 32), `montar_folha.py` (docstring: 50 colunas, não 38), `LEIA-ME.md` (a seção de folha ainda era a da montagem 1, de 38 colunas, e foi trocada pela de 50 com bordas e tempos atuais), a cena `qa/qa_hazaki_final.gd` (comentário) e o print `qa_salao_parado_andando_golpe3.png` (novo).
+- **Feito (QA no Salão):** o Salão (`v2/salao.tscn`) está no `origin/main` (#242), não nesta branch. Rodei a cena de QA numa cópia do `main` extraída com `git archive`, fora do repo, com o Godot 4.4.1 em janela oculta. Prints reais de parado, andando e golpe 3 (de frente e de perfil), mais um controle com o sprite atual do jogo: a troca de textura aparece de verdade. Import 39 s; cada print uns 5 s.
+- **Pendente:** bordas (`medir.py`): combo toca em 6 direções (o rastro é cortado pela célula), dano e morte em 5, rolamento em 4, andar em 4; parado e escudo não tocam. O jogo ainda não lê as colunas novas (`heroi.gd` é do Claude do Alisson). Nenhuma partida foi jogada com estes quadros: os prints são do QA.
+- **Próximo:** quem integrar decide se a folha de 50 colunas entra no `v2` e se `heroi.gd` passa a usar `animacoes`, depois de revisar as bordas do combo e da morte.
+- **Recados:** PR #276 segue como rascunho, sem merge. Os GIFs e o print novo estão em `docs/visual_2_5d/blender_herois/hazaki/` e são os links do corpo do PR.
+
+_Claude do Alisson (workflow, máquina não confirmada)_
