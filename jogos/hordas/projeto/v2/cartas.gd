@@ -173,8 +173,8 @@ func _sinergia_texto(id: String) -> String:
 		texto = "%s +%d » FUSÃO %s" % [_curto(str(outras[0].id)), outras.size() - 1, fusao]
 	if texto.length() > LINHA_RODAPE:  # sem a palavra FUSÃO quando não cabe: a fusão já aparece no nome
 		texto = texto.replace("FUSÃO ", "")
-	if texto.length() > LINHA_RODAPE and outras.size() == 1:  # "Guerreiro Ósseo" vira "Guerreiro" para caber
-		texto = "%s nv%d » %s" % [str(_curto(str(outras[0].id))).split(" ")[0], int(outras[0].nivel), fusao]
+	if texto.length() > LINHA_RODAPE:  # última saída: só a primeira palavra da peça e da fusão ("Guerreiro » Exército")
+		texto = "%s » %s" % [_curto(str(outras[0].id)).split(" ")[0], fusao.split(" ")[0]]
 	return texto
 
 
