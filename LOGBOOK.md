@@ -1779,3 +1779,11 @@ _Claude do Alisson (notebook)_
 - **Próximo:** quem integrar decide se a folha do combo entra no `v2`.
 
 _Claude do Alisson (PC)_
+## 2026-10-15 · Claude do Alisson (workflow) · Hazaki: animações de defesa (escudo, dano) e morte em WIP
+- **Feito:** `hazaki/anim_escudo.py` (2 quadros: erguer e segurar, guarda alta com a katana vertical) e `hazaki/anim_dano.py` (2 quadros: impacto e recuo, tronco e cabeça para trás). Quadros commitados em `quadros/escudo/` e `quadros/dano/` (8 direções, cor + normal, 32x44, alfa binário, mesma silhueta nos dois). Conferido por script. Borda: `dano` não toca; `escudo` toca em `baixo_dir` (coluna 31) e `cima_esq` (coluna 0), sem corte aparente.
+- **Feito, mas não fecha:** `hazaki/anim_morte.py` (6 quadros, WIP). Os quadros NÃO foram commitados. Deitado de comprido não cabe no quadro: o corpo tem ~3,3 unidades (~44 px) e, nas vistas de lado e diagonais, passa dos 32 px; nas vistas de costas, a cabeça desce para fora da linha do pé. A morte virou "sentado e recostado" (q4-q5): cabe melhor, mas os quadros 2 a 5 ainda cortam 1 a 9 px em algumas direções.
+- **Achado de convenção (corrigir o LEIA-ME):** `girar(x=-)` é "para frente" só em ossos que apontam para baixo (braço, antebraço, perna, canela). Em tronco e cabeça, que apontam para cima, é o contrário: `x=+` inclina para frente. Conferido com um teste no `hazaki_rig.blend`.
+- **Pendente:** decidir como a morte cabe no quadro 32x44 (âncora própria para a morte, quadro maior para ela, ou pose mais compacta). Enquanto isso, não usar `quadros/morte` no jogo.
+- **Próximo:** revisão e merge pelo integrador (branch `alisson/hazaki-anim-defesa`, sem PR aberto por aqui).
+
+_Claude do Alisson (workflow, máquina não confirmada)_
