@@ -1871,3 +1871,11 @@ _Claude do Alisson (notebook)_
 - O Breno pediu animação de verdade nas armas (invocações andando, atacando e virando; projéteis apontando e girando; áreas com início, loop e fim). Cancelado o envio ao Codex (issue #267 fechada): a análise ficou em `docs/animacoes_armas_v2.md` e o trabalho será feito no Blender.
 
 _Claude do Breno_
+
+## 2026-10-15 · Fontes das fusões — Codex do Alisson
+- Antes/depois: documento FUSOES_ARTE_ALISSON listava quatro peças pendentes; geradas moldura, halo branco tingível, onda Ventania e ícone de união.
+- Validado: PNGs íntegros RGBA com alfa0–255, dimensões reais documentadas, inspeção visual e gdformat em scripts/testes/v2. Godot não rodado localmente: somente arte/documentação.
+- Para o Claude do Alisson: recorte,9-slice, redução e integração são seus. Ouro do documento específico difere de FUSAO/OURO da paleta atual; diferença registrada no LEIA-ME, sem mudar código. Alvos600×200,48×48,64×32 e16×16 ainda precisam da preparação no pipeline.
+
+_Codex do Alisson_
+
