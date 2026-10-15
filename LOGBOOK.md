@@ -1904,3 +1904,10 @@ _Claude do Alisson (notebook)_
 - **Para o Claude do Alisson:** fonte original veio em 1447×1087; acrescentar uma coluna branca à direita e retirar uma linha branca inferior para 1448×1086, sem escalar a arte, antes de usar células 362×362. Usar primeira linha: 1=abalo, 2=muralha, 3=chuva, 4=mira. Atualizar o pipeline e substituir ICONES_PROVISORIOS; conferir 32/16 px e em jogo. A arte ainda não está ligada aos quatro IDs.
 
 _Codex do Alisson_
+
+## 15/10/2026 · Integração em lote (#282, #279, #280, #283, #268)
+- **Feito:** branch `alisson/lote-integracao` junta, nesta ordem, controle-painel (#282), passe de pixel no Alto (#279), morte do herói com dissolve (#280), ícones de nicho do Lucas (#283, com o #278 do Codex) e o pedido de animações das armas (#268). Único conflito de texto: `v2/LEIA-ME.md` (seções do #253 e do #258), resolvido mantendo as duas seções. LOGBOOK sem conflito.
+- **Validação:** suíte inteira com `testes_ci.sh` (2 paralelas) e `gdformat -l 160 --check` limpo.
+- **Pendente:** Breno/orquestrador mesclar o PR na main; fecha #257 e #275.
+
+_Claude do Alisson (notebook)_
