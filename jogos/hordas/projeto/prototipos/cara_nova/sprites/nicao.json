@@ -1,10 +1,11 @@
 {
  "quadro": [
   64,
-  60
+  96
  ],
  "elevacao": 45.0,
  "ppu": 24.5,
+ "pe_y": 74,
  "linhas": [
   "baixo",
   "esquerda",
@@ -18,9 +19,209 @@
  "colunas": [
   "parado",
   "andar0",
+  "andar1",
   "andar2",
+  "andar3",
   "andar4",
-  "andar6"
+  "andar5"
  ],
- "pe_y": 58
+ "render": "Cycles, pixel nativo 64x96 (anao ~40 px), 1 amostra, sem bloom (gerar.py, 8 direcoes, cor e normal)",
+ "grade": {
+  "linhas": 8,
+  "colunas": 38,
+  "quadro": [
+   64,
+   96
+  ]
+ },
+ "nomes_colunas": [
+  "parado0",
+  "andar0",
+  "andar1",
+  "andar2",
+  "andar3",
+  "andar4",
+  "andar5",
+  "parado1",
+  "parado2",
+  "parado3",
+  "rolamento0",
+  "rolamento1",
+  "rolamento2",
+  "rolamento3",
+  "rolamento4",
+  "rolamento5",
+  "combo0",
+  "combo1",
+  "combo2",
+  "combo3",
+  "combo4",
+  "combo5",
+  "combo6",
+  "combo7",
+  "combo8",
+  "combo9",
+  "combo10",
+  "combo11",
+  "escudo0",
+  "escudo1",
+  "dano0",
+  "dano1",
+  "morte0",
+  "morte1",
+  "morte2",
+  "morte3",
+  "morte4",
+  "morte5"
+ ],
+ "animacoes": {
+  "parado": {
+   "colunas": [
+    0,
+    7,
+    8,
+    9
+   ],
+   "quadros": 4,
+   "s_por_quadro": 0.28,
+   "fps": 3.6,
+   "s_quadros": [
+    0.28,
+    0.28,
+    0.28,
+    0.28
+   ]
+  },
+  "andar": {
+   "colunas": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "quadros": 6,
+   "s_por_quadro": 0.11,
+   "fps": 9.1
+  },
+  "rolamento": {
+   "colunas": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "quadros": 6,
+   "s_por_quadro": 0.07,
+   "fps": 14.3,
+   "s_quadros": [
+    0.08,
+    0.07,
+    0.06,
+    0.06,
+    0.07,
+    0.1
+   ]
+  },
+  "combo": {
+   "colunas": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "quadros": 12,
+   "s_por_quadro": 0.09,
+   "fps": 11.1,
+   "s_quadros": [
+    0.11,
+    0.13,
+    0.05,
+    0.06,
+    0.12,
+    0.09,
+    0.12,
+    0.16,
+    0.05,
+    0.07,
+    0.16,
+    0.1
+   ],
+   "aviso": "golpe 1 (batida, quadros 0 a 5) e golpe 2 (pancada, 6 a 11); o impacto e o quadro 3 de cada golpe; a marreta de 3,2 passa de 40 px e cai fora do quadro em poucos quadros de diagonal (medir.py)",
+   "golpes": 2,
+   "quadros_por_golpe": 6,
+   "golpes_tipo": [
+    "batida",
+    "pancada"
+   ],
+   "quadros_do_golpe": [
+    "antecipacao",
+    "antecipacao_funda",
+    "golpe",
+    "impacto",
+    "segura",
+    "volta"
+   ]
+  },
+  "escudo": {
+   "colunas": [
+    28,
+    29
+   ],
+   "quadros": 2,
+   "s_por_quadro": 0.1,
+   "fps": 10.0,
+   "s_quadros": [
+    0.07,
+    0.12
+   ]
+  },
+  "dano": {
+   "colunas": [
+    30,
+    31
+   ],
+   "quadros": 2,
+   "s_por_quadro": 0.1,
+   "fps": 10.0,
+   "s_quadros": [
+    0.07,
+    0.13
+   ]
+  },
+  "morte": {
+   "colunas": [
+    32,
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "quadros": 6,
+   "s_por_quadro": 0.12,
+   "fps": 8.3,
+   "s_quadros": [
+    0.1,
+    0.11,
+    0.08,
+    0.05,
+    0.1,
+    0.4
+   ],
+   "aviso": "cai DE LADO, deitado atravessado na tela (cabeca para a esquerda ou a direita), encolhido; a marreta cai ao lado, no chao a frente dele"
+  }
+ },
+ "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'."
 }
