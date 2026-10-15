@@ -1,6 +1,6 @@
 extends Node
 # Teste automático dos sprites das armas da v2 (assets/v2/armas/indice.json, ligados em v2/armas_novas.gd): o índice lê e cada PNG
-# carrega com o tamanho que ele diz; cada golpe novo (45) tem sprite com textura; cada arma citada no índice é um golpe que existe;
+# carrega com o tamanho que ele diz; cada golpe novo (45) tem sprite com textura; cada arma citada no índice é um golpe ou evolução que existe;
 # com os 45 golpes ligados ao mesmo tempo, todos os tipos acertam, o pool continua do mesmo tamanho, nenhum nó novo aparece no
 # desenho e cada golpe ativo leva o sprite da sua arma.
 # Com janela e `-- --fotos=PASTA`, salva o print do viewport com os golpes na tela (usado em docs/visual_2_5d/armas_v2).
@@ -30,6 +30,9 @@ func golpe_existe(id: String) -> bool:
 	for g in w.combate.cartas.cfg.golpes:
 		if str(g.id) == id:
 			return true
+	for ev in w.combate.cartas.cfg.evolucoes:
+		if str(ev.id) == id:
+			return true
 	return false
 
 
@@ -52,7 +55,7 @@ func checar_indice() -> void:
 		var armas: Array = s.armas_sugeridas + s.armas_aproximadas
 		ok(not armas.is_empty(), "%s: serve pelo menos uma arma" % nome)
 		for arma in armas:
-			ok(golpe_existe(str(arma)), "%s serve %s, que não é golpe nos dados" % [nome, arma])
+			ok(golpe_existe(str(arma)), "%s serve %s, que não é golpe nem evolução nos dados" % [nome, arma])
 
 
 ## Cada golpe novo (os 45) tem sprite com textura.
@@ -71,7 +74,19 @@ func checar_golpes() -> void:
 			ok(false, "golpe novo %s sem sprite com textura" % id)
 	ok(novos == 45, "45 golpes novos nos dados (%d)" % novos)
 	ok(com == novos, "todo golpe novo tem sprite com textura (%d de %d)" % [com, novos])
-	print("cobertura: %d de %d golpes novos com sprite; os 5 antigos seguem com a forma antiga, exceto a aura (anel_fogo no índice)" % [com, novos])
+	for id in ANTIGOS:
+		ok(not Novas.sprite_de(id).is_empty(), "golpe antigo %s tem sprite" % id)
+	var evolucoes: Array = w.combate.cartas.cfg.evolucoes
+	ok(evolucoes.size() == 25, "25 evolucoes nos dados")
+	for ev in evolucoes:
+		var sp: Dictionary = Novas.sprite_de(str(ev.id))
+		ok(not sp.is_empty(), "evolucao %s tem sprite proprio" % str(ev.id))
+		if not sp.is_empty():
+			var textura: Texture2D = sp.tex
+			if textura is CanvasTexture:
+				textura = (textura as CanvasTexture).diffuse_texture
+			ok(textura.resource_path.get_file() == str(ev.id) + ".png", "evolucao %s usa a propria arte" % str(ev.id))
+	print("cobertura: %d de %d golpes novos, 5 antigos e 25 evolucoes com sprite" % [com, novos])
 
 
 func monstro_a(dx: float, dy: float):

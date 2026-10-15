@@ -403,6 +403,12 @@ func _testes_anuncios(vista: SubViewport) -> void:
 	_passar(h, 12.0)
 	ok(not an.ocupado(), "a fila drena toda")
 
+	# B2. (leva 6) a fusão abre o cartão grande com o nome e o que ela faz; a faixa pequena continua
+	f.evolucao.emit("Anel de Brasas", "Seis lâminas em brasa.")
+	ok(h._fusao != null and h._fusao.visible, "a fusão abre o cartão grande")
+	ok(h._fusao_nome.text == "ANEL DE BRASAS" and h._fusao_desc.text == "Seis lâminas em brasa.", "o cartão grande leva o nome e o que faz")
+	_passar(h, 12.0)  # a faixa da fusão sai da fila antes dos próximos testes de anúncio
+
 	# D. marcos de combo: o anúncio é o mais alto cruzado, e cresce em intensidade
 	var g := MundoFalso.new()
 	var hg = Hud.criar(g)

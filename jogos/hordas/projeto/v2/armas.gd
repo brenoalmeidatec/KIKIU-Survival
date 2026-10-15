@@ -24,7 +24,7 @@ var combate
 var mundo
 var fx
 var ativas := {}  # id -> golpe secundário {id, tipo, cor, slot, nivel, bonus, st (números), t, t2, ang, pulso, pts, R, evo}
-var mods := {"onda": 0.0, "fura": 0.0, "explode": 0.0, "folego": 0.0}  # valor acumulado (em %) de cada modificador da katana
+var mods := {"onda": 0.0, "fura": 0.0, "explode": 0.0, "folego": 0.0, "abalo": 0.0, "muralha": 0.0, "chuva": 0.0, "mira": 0.0}  # valor acumulado (em %) de cada modificador da katana
 var ventania := {}  # evolução da katana, ou {}
 var acertos := {}  # tipo -> quantos acertos (testes)
 var lancadas := 0  # ondas e lanças lançadas (testes)
@@ -1125,6 +1125,13 @@ func _desenhar_corpo_i() -> void:
 			continue
 		for p in a.pts as PackedVector2Array:  # sombra de cada lâmina no chão
 			no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-7, -1), Vector2(14, 6)), false, Color(0, 0, 0, 0.45))
+		var sp := Novas.sprite_de(str(a.id))
+		if not sp.is_empty():
+			var pontos: PackedVector2Array = a.pts
+			for k in pontos.size():
+				var ang := float(a.ang) + TAU * float(k) / float(pontos.size())
+				var tang := Vector2(-sin(ang), cos(ang) * ACHATA).normalized()
+				_sprite_antigo(no_corpo, sp, (pontos[k] + Vector2(0, -14)).round(), tang.angle())
 	for i in MAX_CORVOS:
 		if c_vida[i] <= 0.0:
 			continue
@@ -1132,9 +1139,14 @@ func _desenhar_corpo_i() -> void:
 		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-8, -2), Vector2(16, 7)), false, Color(0, 0, 0, 0.45))
 		var c := (p + Vector2(0, -c_z[i])).round()
 		var lado := 1.0 if c_vel[i].x >= 0.0 else -1.0
-		var quadro: int = [0, 1, 2, 1][int(c_fase[i] / 1.57) & 3]
-		var r := Rect2(c + Vector2(-16.5 * lado, -13.5), Vector2(33.0 * lado, 27.0))
-		no_corpo.draw_texture_rect_region(_tex_corvo, r, Rect2(quadro * 22, 0, 22, 18))
+		var sp := Novas.sprite_de(str((c_arma[i] as Dictionary).get("id", "corvos"))) if c_arma[i] != null else {}
+		if not sp.is_empty():
+			# O loader entrega CanvasTexture com normal map; o corpo recebe a luz do mundo.
+			_sprite_antigo(no_corpo, sp, c, 0.0, Vector2(lado, 1.0 + 0.035 * sin(c_fase[i])))
+		else:
+			var quadro: int = [0, 1, 2, 1][int(c_fase[i] / 1.57) & 3]
+			var r := Rect2(c + Vector2(-16.5 * lado, -13.5), Vector2(33.0 * lado, 27.0))
+			no_corpo.draw_texture_rect_region(_tex_corvo, r, Rect2(quadro * 22, 0, 22, 18))
 	novas.desenhar_sprites(no_corpo)
 
 
@@ -1155,6 +1167,13 @@ func _desenhar_brilho_i() -> void:
 		var a: Dictionary = ativas[id]
 		if str(a.tipo) == "orbita":
 			_desenhar_laminas(a)
+		if str(a.tipo) == "aura" or (str(a.tipo) == "orbita" and a.st.has("aura_raio")):
+			var sp := Novas.sprite_de(str(a.id))
+			if not sp.is_empty() and str(sp.tipo) == "area":
+				var raio := float(a.get("RA", a.R))
+				var tam := Vector2(raio * 2.0, raio * 2.0 * ACHATA)
+				# O shader continua responsável pela aura; a arte só marca o chão sem lavar o mundo.
+				no_brilho.draw_texture_rect(sp.tex, Rect2((mundo.heroi.pos + Vector2(0, -1) - tam * 0.5).round(), tam), false, Color(1, 1, 1, 0.08))
 	for i in MAX_CORVOS:  # um brilho roxo em volta (e azul se for elétrico)
 		if c_vida[i] <= 0.0:
 			continue
@@ -1174,15 +1193,32 @@ func _desenhar_brilho_i() -> void:
 		var base := i * PTS
 		for j in z_n[i]:
 			pts.append(z_pts[base + j].round())
+		# A linha mantém todos os saltos e dentes; a arte acrescenta só uma chamada por raio.
 		no_brilho.draw_polyline(pts, Color(0.5, 0.7, 1.0, 0.35 * k), 7.0)
 		no_brilho.draw_polyline(pts, Color(0.75, 0.88, 1.0, 0.9 * k), 3.0)
 		no_brilho.draw_polyline(pts, Color(1, 1, 1, k), 1.0)
+		# z_* não guarda id de origem. O stamp genérico cobre apenas a primeira queda reamostrada.
+		var sp := Novas.sprite_de("raio")
+		if not sp.is_empty() and pts.size() > 1:
+			var fim := pts[mini(8, pts.size() - 1)]
+			var trecho := fim - pts[0]
+			var original: Vector2 = sp.tam
+			var tam := Vector2(trecho.length(), minf(12.0, trecho.length() * original.y / maxf(original.x, 1.0)))
+			_sprite_antigo(no_brilho, sp, (fim + pts[0]) * 0.5, trecho.angle(), Vector2.ONE, 0.15 * k, tam)
 	for i in MAX_ONDAS:
 		if w_dist[i] <= 0.0:
 			continue
 		var p: Vector2 = w_pos[i]
 		var dir: Vector2 = w_dir[i]
 		var fade := clampf(w_dist[i] / 40.0, 0.0, 1.0)
+		# Ondas e lanças não guardam id de arma. Só o estado evoluído já existente escolhe a arte.
+		var sp := Novas.sprite_de("ventania") if not ventania.is_empty() else {}
+		if not sp.is_empty():
+			var tam: Vector2 = sp.tam
+			if w_tipo[i] == 0:
+				tam *= w_larg[i] / maxf(tam.y, 1.0)
+			_sprite_antigo(no_brilho, sp, p, dir.angle(), Vector2.ONE, 0.28 * fade, tam)
+			continue
 		if w_tipo[i] == 0:
 			var r := w_larg[i] * 0.5
 			var ang := dir.angle()
@@ -1216,10 +1252,15 @@ func _desenhar_laminas(a: Dictionary) -> void:
 			var aa := ang - float(q + 1) * 0.2
 			var pp := p + Vector2(cos(aa) - cos(ang), (sin(aa) - sin(ang)) * ACHATA) * R
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(pp.round() - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.26 - 0.09 * q))
-		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.55 if evo else 0.42))
-		no_brilho.draw_set_transform(p, tang.angle(), Vector2(1.15, 1.15))
-		no_brilho.draw_texture(_tex_lamina, Vector2(-13, -5.5), tinta)
-		no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		if evo:  # a fusão lê de longe: halo maior e um miolo claro (só duas luzes a mais por lâmina)
+			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(24, 24), Vector2(48, 48)), false, Color(cor.r, cor.g, cor.b, 0.5))
+			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(9, 9), Vector2(18, 18)), false, Color(1.0, 1.0, 1.0, 0.7))
+		else:
+			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.42))
+		if Novas.sprite_de(str(a.id)).is_empty():  # arte nova está no passe de corpo, com luz; o rastro permanece aqui
+			no_brilho.draw_set_transform(p, tang.angle(), Vector2(1.15, 1.15))
+			no_brilho.draw_texture(_tex_lamina, Vector2(-13, -5.5), tinta)
+			no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _desenhar_runa(i: int) -> void:
@@ -1236,6 +1277,11 @@ func _desenhar_runa(i: int) -> void:
 	no_brilho.draw_texture_rect(
 		tex_brilho, Rect2(p - Vector2(raio, raio * ACHATA) * 1.5, Vector2(raio, raio * ACHATA) * 3.0), false, Color(cor.r, cor.g, cor.b, 0.22 * al)
 	)
+	var sp := Novas.sprite_de(str(a.id))
+	if not sp.is_empty():
+		var tam := Vector2(raio * surge * 2.0, raio * surge * 2.0 * ACHATA)
+		_sprite_antigo(no_brilho, sp, p.round(), 0.0, Vector2.ONE, 0.3 * al, tam)
+		return
 	var esc := raio * surge / 29.5
 	var rot := _fase * 1.3
 	# a runa está no chão: roda no plano e depois achata o y (matriz: gira, depois ACHATA)
@@ -1244,3 +1290,11 @@ func _desenhar_runa(i: int) -> void:
 	no_brilho.draw_set_transform_matrix(Transform2D(Vector2(esc, 0), Vector2(0, esc * ACHATA), p.round()))
 	no_brilho.draw_texture(_tex_anel, Vector2(-31.5, -31.5), Color(cor.r, cor.g, cor.b, 0.9 * al))
 	no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Desenho apenas: usa a textura (inclusive normal map) do índice, sem nós nem alteração dos pools.
+func _sprite_antigo(ci: CanvasItem, sp: Dictionary, centro: Vector2, angulo: float, escala := Vector2.ONE, alfa := 1.0, tamanho := Vector2.ZERO) -> void:
+	var tam: Vector2 = sp.tam if tamanho == Vector2.ZERO else tamanho
+	ci.draw_set_transform(centro.round(), angulo, escala)
+	ci.draw_texture_rect(sp.tex, Rect2(-tam * 0.5, tam), false, Color(1, 1, 1, alfa))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

@@ -324,6 +324,7 @@ func _marcadores(id: String) -> void:
 	_mecanicas_b(w, marcas)
 	_mecanicas_c(w, marcas)
 	_mecanicas_d(w, marcas)
+	_portao(id)
 	remove_child(w)
 	w.free()
 
@@ -445,7 +446,47 @@ func _mecanicas_d(w, marcas: Array) -> void:
 	for i in 90:
 		w.avancar(PASSO)
 	ok(w.heroi.vida == vida0, "lote D: no caminho de pedra os espinhos não machucam")
+	# com o escudo erguido, o dano de ambiente passa: 5 s nos espinhos machucam e nenhum tique conta como bloqueio.
+	# O fôlego é reposto a cada quadro (o escudo gasta 1,2 carga por segundo e o máximo é 3: sem isso ele cai antes de 5 s).
+	var bloqueios0: int = w.combate.escudo.bloqueios
+	w.combate.jogo = "jogando"  # a escolha que o XP do mercador abriu foi fechada à mão acima: o jogo volta a jogar
+	w.heroi.vida = vida0
+	w.heroi.escudo_forcado = true
+	w.heroi.definir_pos(Vector2(float(esp.pos[0]), 705.0))
+	w.avancar(PASSO)
+	w.avancar(PASSO)
+	ok(w.heroi.escudo_ativo, "lote D: o escudo ergue nos espinhos")
+	for i in 300:  # 5 s
+		w.heroi.folego = w.heroi.folego_max
+		w.avancar(PASSO)
+	ok(w.heroi.escudo_ativo, "lote D: o escudo segue erguido por 5 s nos espinhos")
+	ok(w.heroi.vida < vida0, "lote D: com o escudo erguido, os espinhos machucam (%.1f de %.1f)" % [w.heroi.vida, vida0])
+	ok(w.combate.escudo.bloqueios == bloqueios0, "lote D: o dano dos espinhos não conta como bloqueio (%d)" % w.combate.escudo.bloqueios)
+	w.heroi.escudo_forcado = false
 	w.heroi.imortal = true
+
+
+## O portão (só o médio): a missão dele pede seta no minimapa de longe, e a seta some ao herói entrar no raio (a passagem física ainda não existe).
+## Mundo próprio, porque as outras mecânicas já levam o herói para perto dele.
+func _portao(id: String) -> void:
+	var w = Mundo.instantiate()
+	w.modo_teste = true
+	w.id_mapa = id
+	add_child(w)
+	w.set_process(false)
+	w.heroi.entrada_forcada = Vector2.ZERO
+	w.heroi.imortal = true
+	var marcas: Array = Dados.json(str(Mapas.buscar(id).dados)).get("marcadores", [])
+	var portao := _primeiro(marcas, "portao")
+	ok(not portao.is_empty(), "portão: há um portão no mapa %s" % id)
+	if not portao.is_empty():
+		var p := Vector2(float(portao.pos[0]), float(portao.pos[1]))
+		_ir(w, Vector2(240, 1320))  # longe do portão: a missão pede seta
+		ok(w.minimapa._missoes().has(p), "portão: longe dele, a missão pede seta no minimapa")
+		_ir(w, p)
+		ok(not w.minimapa._missoes().has(p), "portão: ao entrar no raio a missão cumpre e a seta some")
+	remove_child(w)
+	w.free()
 
 
 ## A cidade tem ruas livres: o herói sai do cruzamento central e anda 300 px pelo leste sem travar (carros e postes ficam no meio-fio).

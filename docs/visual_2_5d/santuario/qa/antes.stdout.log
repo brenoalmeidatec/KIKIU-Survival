@@ -1,0 +1,6 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+OpenGL API 3.3.0 - Build 32.0.101.7088 - Compatibility - Using Device: Intel - Intel(R) Iris(R) Xe Graphics
+
+bench_antes_parado fps=825.22 frames=2476 segundos=3.000 draw_calls=45 objetos=675 renderer=Intel(R) Iris(R) Xe Graphics
+bench_antes_andando fps=838.86 frames=2517 segundos=3.000 draw_calls=45 objetos=675 renderer=Intel(R) Iris(R) Xe Graphics
+v2_salao_visual variante=antes falhas=0

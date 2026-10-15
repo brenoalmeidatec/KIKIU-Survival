@@ -15,6 +15,7 @@ Saida, em jogos/hordas/projeto/prototipos/objetos/ (mesmo layout nas duas folhas
 Uso (so precisa de Pillow):
     python gerar_objetos.py           enfeites e pedras da cara nova (prototipo)
     python gerar_objetos.py armas     sprites das armas da v2 (fonte_armas_*.webp) -> projeto/assets/v2/armas/
+    python gerar_objetos.py icones    icones das cartas da v2 (folhas do #272, fonte_arte/icones_cartas/) -> projeto/assets/v2/icones_cartas/
 
 Passos: fundo = alfa 0 (ou branco) ligado a borda, por flood fill; objetos = componentes do que sobrou,
 juntados por proximidade; ordem = linha e coluna; BOX para a escala do jogo; alfa binario a 50%;
@@ -23,6 +24,7 @@ quantizacao sem dithering; normal = domo pela distancia ate a borda + um pouco d
 import json
 import math
 import os
+import re
 import sys
 
 from PIL import Image, ImageDraw, ImageFont
@@ -171,7 +173,7 @@ def dist_caixas(a, b):
     return max(dx, dy)
 
 
-def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False, gap=GAP_JUNTA):
+def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False, gap=GAP_JUNTA, juntar_caixas=True):
     alfa = data[3::4]
     fundo = fundo_por_borda(w, h, alfa)
     fg = bytearray(w * h)
@@ -187,7 +189,9 @@ def agrupar(w, h, data, nome_folha, esperado, linhas, por_centro=False, gap=GAP_
         pedacos.append({"idx": idx, "caixa": caixa(idx, w), "area": len(idx)})
     # junta pedacos com caixas proximas (um objeto pode ter partes soltas)
     grupos = [dict(p, idx=list(p["idx"])) for p in pedacos]
-    mudou = True
+    # Folhas densas podem ter caixas sobrepostas sem pixels conectados. Nesse caso,
+    # preserva componentes completos; apenas fragmentos excedentes vao ao mais proximo.
+    mudou = juntar_caixas
     while mudou:
         mudou = False
         for a in range(len(grupos)):
@@ -909,6 +913,7 @@ def main():
 
 
 # ------------------------------------------------------------------ armas da v2 (python gerar_objetos.py armas)
+# Arte propria: folhas do Alisson (GPT) e do Codex do Alisson (imagegen); cobertura dos 50 golpes e 25 evolucoes.
 # Folhas de arte propria que o Alisson gerou no GPT: 16 projeteis e meteoros (fundo branco), 9 aliados
 # (fundo branco), 12 efeitos de area da folha 20 e 9 da folha 21 (fundo preto, aditivos). Saida: um PNG por
 # sprite em projeto/assets/v2/armas/ (normal map so onde a luz 2D age: projetil e aliado), indice.json e a previa.
@@ -962,7 +967,7 @@ ARMAS_FOLHAS = [
         ("nuvem_esporos", "nuvem", (120, 0), ["nuvem_espora"], [], ""),
         ("nevoa_fantasmal", "nuvem", (100, 0), [], [], "descartado: a folha 21 traz a nevoa espectral"),
         ("nuvem_sangue", "nuvem", (70, 0), ["cortina_sangue"], [], ""),
-        ("anel_fogo", "anel", (128, 0), ["aura_fogo"], [], "anel de chama: serve a aura_fogo (arma antiga, fora das 45); a aura segue no shader de armas.gd"),
+        ("anel_fogo", "anel", (128, 0), [], ["aura_fogo"], "referencia anterior da aura; sprite proprio aura_fogo tem prioridade"),
         ("anel_dourado", "anel", (128, 0), ["pulso_sagrado"], [], ""),
         ("anel_onda_branca", "anel", (128, 0), ["onda_choque"], [], ""),
         ("anel_espinhos_verdes", "anel", (128, 0), ["anel_espinhos"], [], ""),
@@ -980,26 +985,63 @@ ARMAS_FOLHAS = [
         ("anel_vermelho", "anel", (128, 0), ["grito_guerra"], [], "anel vermelho de energia"),
         ("redemoinho_verde", "anel", (128, 0), ["rajada_vento"], [], "espiral de vento, nao anel"),
     ]),
+    ("fonte_armas_evolucoes_projeteis.png", "claro", [4, 4, 3], "projetil", [
+        ("laminas", "orbita", (18, 10), ["laminas"], [], "arte propria: evolucao ou familia base"),
+        ("anel_de_brasas", "orbita", (22, 14), ["anel_de_brasas"], [], "arte propria: evolucao ou familia base"),
+        ("urso_solar", "projetil", (26, 16), ["urso_solar"], [], "arte propria: evolucao ou familia base"),
+        ("chuva_de_lacas", "projetil", (22, 7), ["chuva_de_lacas"], [], "arte propria: evolucao ou familia base"),
+        ("bola_incendiaria", "projetil", (24, 18), ["bola_incendiaria"], [], "arte propria: evolucao ou familia base"),
+        ("pedreira_ardente", "meteoro", (22, 22), ["pedreira_ardente"], [], "arte propria: evolucao ou familia base"),
+        ("cometa_duplo", "meteoro", (32, 18), ["cometa_duplo"], [], "arte propria: evolucao ou familia base"),
+        ("chuva_de_ferro", "projetil", (24, 18), ["chuva_de_ferro"], [], "arte propria: evolucao ou familia base"),
+        ("eclipse_negro", "meteoro", (36, 28), ["eclipse_negro"], [], "arte propria: evolucao ou familia base"),
+        ("tempestade_primordial", "projetil", (44, 16), ["tempestade_primordial"], [], "arte propria: evolucao ou familia base"),
+        ("juizo_final", "meteoro", (40, 30), ["juizo_final"], [], "arte propria: evolucao ou familia base"),
+    ]),
+    ("fonte_armas_evolucoes_aliados.png", "claro", [3, 2, 2], "aliado", [
+        ("corvos", "corvos", (33, 27), ["corvos"], [], "arte propria: evolucao ou familia base"),
+        ("revoada_de_trovoes", "corvos", (36, 30), ["revoada_de_trovoes"], [], "arte propria: evolucao ou familia base"),
+        ("dragao_de_brasa", "aliado", (40, 36), ["dragao_de_brasa"], [], "arte propria: evolucao ou familia base"),
+        ("cacada_espiritual", "aliado", (44, 32), ["cacada_espiritual"], [], "arte propria: evolucao ou familia base"),
+        ("exercito_esquecido", "aliado", (34, 44), ["exercito_esquecido"], [], "arte propria: evolucao ou familia base"),
+        ("colosso_de_pedra", "aliado", (48, 54), ["colosso_de_pedra"], [], "arte propria: evolucao ou familia base"),
+        ("eclipse_de_almas", "aliado", (48, 38), ["eclipse_de_almas"], [], "arte propria: evolucao ou familia base"),
+    ]),
+    ("fonte_armas_evolucoes_areas.png", "escuro", [4, 4, 4], "area", [
+        ("aura_fogo", "aura", (128, 0), ["aura_fogo"], [], "arte propria: evolucao ou familia base"),
+        ("raio", "raio", (100, 0), ["raio"], [], "arte propria: evolucao ou familia base"),
+        ("runa", "runa", (72, 0), ["runa"], [], "arte propria: evolucao ou familia base"),
+        ("circulo_runico", "runa", (100, 0), ["circulo_runico"], [], "arte propria: evolucao ou familia base"),
+        ("ventania", "katana", (120, 0), ["ventania"], [], "arte propria: evolucao ou familia base"),
+        ("nevasca_congelante", "nuvem", (145, 0), ["nevasca_congelante"], [], "arte propria: evolucao ou familia base"),
+        ("cinzas_acidas", "nuvem", (150, 0), ["cinzas_acidas"], [], "arte propria: evolucao ou familia base"),
+        ("estrondo", "anel", (140, 0), ["estrondo"], [], "arte propria: evolucao ou familia base"),
+        ("terra_partida", "anel", (150, 0), ["terra_partida"], [], "arte propria: evolucao ou familia base"),
+        ("peste_negra", "nuvem", (130, 0), ["peste_negra"], [], "arte propria: evolucao ou familia base"),
+        ("juramento_sagrado", "anel", (140, 0), ["juramento_sagrado"], [], "arte propria: evolucao ou familia base"),
+        ("furacao_glacial", "nuvem", (160, 0), ["furacao_glacial"], [], "arte propria: evolucao ou familia base"),
+    ]),
+
 ]
 
 # Folga para juntar pedacos de um mesmo sprite: a folha 21 tem sprites da linha de baixo a 1-2 px um do outro, e com
 # a folga de 6 px eles viravam um so (7 objetos em vez de 9). Folhas 18 a 20 seguem com a folga padrao.
-GAP_FOLHA = {"fonte_armas_areas_2.webp": 0}
+GAP_FOLHA = {"fonte_armas_areas_2.webp": 0, "fonte_armas_evolucoes_aliados.png": 0}
 # Projeteis finos ou escuros: ganham 1 px claro em volta (depois da paleta, que fica igual), para ler no piso escuro.
-CONTORNO_CLARO = {"flecha_roxa", "shuriken_sombria", "dardo_verde"}
+CONTORNO_CLARO = {"flecha_roxa", "shuriken_sombria", "dardo_verde", "laminas", "chuva_de_lacas"}
 COR_CONTORNO = (236, 240, 248)
 # Cortados (a folha 20 tem 12 celulas, e a grade precisa delas) mas trocados pelos da folha 21: nao saem no indice.
 ARMAS_DESCARTADOS = {"nevoa_fantasmal", "anel_vento"}
 
 ARMAS_AJUDA = (
-    "Sprites das armas da v2, recortados das folhas de arte propria do Alisson (geradas no GPT). "
+    "Sprites das armas da v2, recortados de arte propria do Alisson (GPT) e do Codex do Alisson (imagegen). "
     "Chave = nome do sprite. arquivo = PNG nesta pasta. normal = normal map pareado para a luz 2D "
     "(so projetil e aliado; efeito de area nao tem). tipo: projetil (aponta para a direita; o codigo gira "
     "pelo angulo do voo, e o meteoro que cai fica com a ponta para baixo), aliado (de pe: a borda de baixo e o chao) "
     "e area (efeito aditivo: o fundo preto virou transparencia e o brilho virou alfa; desenhar com mistura aditiva). "
     "tamanho = largura x altura em px no jogo (960x540); em area a altura sai da proporcao da folha. "
-    "armas_sugeridas = armas que o sprite serve bem (as 45 novas e aura_fogo); armas_aproximadas = sprite "
-    "provisorio, serve a arma mas nao e o ideal. Ligado ao codigo em v2/armas_novas.gd: o golpe usa o sprite "
+    "Cobertura: 50 golpes base e 25 evolucoes. armas_sugeridas = armas que o sprite serve bem; armas_aproximadas = sprite "
+    "provisorio, serve a arma mas nao e o ideal. Ligado ao desenho em v2/armas.gd e v2/armas_novas.gd: o golpe usa o sprite "
     "da sua arma; sem sprite, mantem a forma antiga."
 )
 
@@ -1099,7 +1141,8 @@ def gerar_armas():
     previa = []                  # (tipo, nome, imagem, armas_sugeridas, armas_aproximadas)
     for arquivo, modo, linhas, tipo, lista in ARMAS_FOLHAS:
         w, h, data = carregar_folha_armas(os.path.join(AQUI, arquivo), modo)
-        grupos = agrupar(w, h, data, arquivo, len(lista), linhas, por_centro=True, gap=GAP_FOLHA.get(arquivo, GAP_JUNTA))
+        grupos = agrupar(w, h, data, arquivo, len(lista), linhas, por_centro=True, gap=GAP_FOLHA.get(arquivo, GAP_JUNTA),
+                         juntar_caixas=arquivo != "fonte_armas_evolucoes_aliados.png")
         feitos = []
         for g, (nome, familia, caixa, sugeridas, aproximadas, obs) in zip(grupos, lista):
             cru = recortar(g, w, data)
@@ -1164,9 +1207,9 @@ def previa_armas(itens, caminho):
     fundo = (22, 20, 28, 255)
     margem = 32
     secoes = [
-        ("projetil", "Projeteis e meteoros (folha 18: 16 sprites)", 8, 3),
-        ("aliado", "Aliados (folha 19: 9 sprites)", 5, 3),
-        ("area", "Efeitos de area, aditivos (folhas 20 e 21: 19 sprites)", 4, 2),
+        ("projetil", "Projeteis e meteoros (bases e evolucoes: 27 sprites)", 8, 3),
+        ("aliado", "Aliados (bases e evolucoes: 16 sprites)", 5, 3),
+        ("area", "Efeitos de area, aditivos (bases e evolucoes: 31 sprites)", 4, 2),
     ]
     plano = []
     largura = 0
@@ -1188,7 +1231,7 @@ def previa_armas(itens, caminho):
         altura += 34 + sum(alt + 12 + txt + 18 for _, alt, txt in linhas_cel)
     tela = Image.new("RGBA", (2 * margem + largura, altura), fundo)
     d = ImageDraw.Draw(tela)
-    d.text((margem, 14), "Armas da v2: sprites recortados das folhas do Alisson (arte propria, GPT)",
+    d.text((margem, 14), "Armas da v2: Alisson (GPT) e Codex do Alisson (imagegen) - 50 golpes, 25 evolucoes",
            fill=branco, font=fonte_titulo)
     d.text((margem, 40), "-> arma que o sprite serve bem        ~ sprite provisorio (serve a arma, mas nao e o ideal)",
            fill=cinza, font=fonte)
@@ -1212,8 +1255,151 @@ def previa_armas(itens, caminho):
     tela.convert("RGB").save(caminho)
 
 
+# ------------------------------------------------------------------ icones das cartas (v2): folhas do #272 -> 32 px e 16 px
+ICONES_FONTE = os.path.join(HORDAS, "fonte_arte", "icones_cartas")
+ICONES_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "icones_cartas")
+ICONES_PREVIA = os.path.join(HORDAS, "prints", "v2_icones_cartas.png")
+ICONES_GRADE = (4, 3)        # colunas e linhas de cada folha (ordem: esquerda para a direita, de cima para baixo)
+ICONES_CELULA = 362          # lado de cada celula (1448x1086 = 4 x 3 celulas)
+ICONES_TAM = 32              # icone da carta: a escolha (o cartao tem 32 px), o bau e os slots da HUD
+ICONES_TAM_PEQUENO = 16      # SUA BUILD: a linha do card tem 18 px (HUD) e 20 px (visual); 32 px nao cabe
+ICONES_COR = 64              # paleta unica para as duas medidas, sem dithering
+ICONES_LIMIAR = 64           # alfa binario a 25% (e nao 50%): a lamina e a haste finas nao somem na reducao para 16 px
+ICONES_AJUDA = (
+    "Icones proprios das cartas da v2 (arte do PR #272, folhas em jogos/hordas/fonte_arte/icones_cartas/). "
+    "A chave e o ID da carta em dados/v2_cartas.json (unico entre categorias; INDICE.md traz categoria + ID). "
+    "arquivo = 32x32, o icone da escolha de cartas, do bau e dos slots da HUD; pequeno = 16x16 (pasta 16/), o da linha do card SUA BUILD. "
+    "ID sem entrada (ou arquivo faltando) cai no campo antigo icone (assets/gerado/, 16x16). "
+    "Nao edite a mao: rode `python gerar_objetos.py icones`."
+)
+
+
+def ler_indice_icones():
+    """(folha, celula, categoria, id) de cada linha da tabela de INDICE.md. As celulas vazias nao tem linha."""
+    folha = None
+    itens = []
+    with open(os.path.join(ICONES_FONTE, "INDICE.md"), encoding="utf-8") as f:
+        for linha in f:
+            m = re.match(r"## Folha (\d+)\b", linha)
+            if m:
+                folha = int(m.group(1))
+                continue
+            m = re.match(r"\| (\d+) \| ([^|]+?) / ([^|]+?) \|", linha)
+            if m and folha is not None:
+                itens.append((folha, int(m.group(1)), m.group(2).strip(), m.group(3).strip()))
+    return itens
+
+
+def recortar_celula(cel):
+    """Celula RGB de fundo branco -> RGBA: alfa 0 no branco que liga a borda (flood fill); o branco preso dentro do desenho fica."""
+    w, h = cel.size
+    px = cel.tobytes()
+    alfa = bytearray(w * h)
+    for i in range(w * h):
+        if min(px[3 * i], px[3 * i + 1], px[3 * i + 2]) < LIMITE_CLARO_FUNDO:
+            alfa[i] = 255
+    fundo = fundo_por_borda(w, h, alfa)
+    out = bytearray(w * h * 4)
+    for i in range(w * h):
+        out[4 * i:4 * i + 4] = bytes((px[3 * i], px[3 * i + 1], px[3 * i + 2], 0 if fundo[i] else 255))
+    return Image.frombytes("RGBA", (w, h), bytes(out))
+
+
+def icone_da_celula(cel, tam):
+    """Icone de tam x tam: caixa justa do desenho, BOX para caber com 1 px de folga, alfa binario e contorno escuro de 1 px."""
+    img = recortar_celula(cel)
+    img = img.crop(img.getchannel("A").getbbox())
+    lado = tam - 2  # a folga de 1 px de cada lado e do contorno
+    img = binarizar(fit_em_caixa(img, lado, lado), ICONES_LIMIAR)
+    return contorno(em_tela(img, tam, tam, "centro"))
+
+
+# Cartas sem desenho próprio ainda (vieram com o Nicão e o Lucas no #242): ícone emprestado até o Codex entregar o delas.
+ICONES_PROVISORIOS = {
+    "abalo": "terremoto",  # Abalo sísmico: onda de choque da pancada no chão
+    "muralha": "guardiao_pedra",  # Peso de muralha: empurra e atordoa mais
+    "chuva": "adagas_voadoras",  # Chuva de adagas
+    "mira": "fura",  # Mira longa: adagas mais longe e mais rápidas
+}
+
+
+def gerar_icones():
+    cols, linhas = ICONES_GRADE
+    esperado = (cols * ICONES_CELULA, linhas * ICONES_CELULA)
+    folhas = {}
+    feitos = []  # (id, categoria, folha, celula, icone 32, icone 16)
+    ids = set()
+    for folha, celula, categoria, cid in ler_indice_icones():
+        if cid in ids:
+            raise SystemExit("ID repetido no INDICE.md: %s" % cid)
+        ids.add(cid)
+        if folha not in folhas:
+            caminho = os.path.join(ICONES_FONTE, "folha_%02d.png" % folha)
+            im = Image.open(caminho).convert("RGB")
+            if im.size != esperado:
+                raise SystemExit("%s: %dx%d, esperado %dx%d" % (caminho, im.width, im.height, esperado[0], esperado[1]))
+            folhas[folha] = im
+        k = celula - 1
+        x0 = (k % cols) * ICONES_CELULA
+        y0 = (k // cols) * ICONES_CELULA
+        cel = folhas[folha].crop((x0, y0, x0 + ICONES_CELULA, y0 + ICONES_CELULA))
+        feitos.append((cid, categoria, folha, celula, icone_da_celula(cel, ICONES_TAM), icone_da_celula(cel, ICONES_TAM_PEQUENO)))
+    n = len(feitos)
+    quant = quantizar_lista([f[4] for f in feitos] + [f[5] for f in feitos], ICONES_COR)
+    os.makedirs(os.path.join(ICONES_SAIDA, "16"), exist_ok=True)
+    icones = {}
+    for i, (cid, categoria, folha, celula, _, _) in enumerate(feitos):
+        quant[i].save(os.path.join(ICONES_SAIDA, cid + ".png"))
+        quant[n + i].save(os.path.join(ICONES_SAIDA, "16", cid + ".png"))
+        icones[cid] = {
+            "arquivo": cid + ".png",
+            "pequeno": "16/" + cid + ".png",
+            "categoria": categoria,
+            "folha": "folha_%02d.png" % folha,
+            "celula": celula,
+        }
+        print("  %-24s %-10s folha %d celula %2d" % (cid, categoria, folha, celula))
+    # cartas que ainda não têm desenho próprio usam, por enquanto, o ícone de outra carta parecida (pedido ao Codex)
+    for cid, base in ICONES_PROVISORIOS.items():
+        if cid not in icones and base in icones:
+            icones[cid] = dict(icones[base], provisorio_de=base)
+            print("  %-24s provisório: usa o ícone de %s" % (cid, base))
+    indice = {
+        "_ajuda": ICONES_AJUDA,
+        "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py icones (nao edite a mao)",
+        "tamanhos": {"carta": ICONES_TAM, "pequeno": ICONES_TAM_PEQUENO},
+        "icones": icones,
+    }
+    with open(os.path.join(ICONES_SAIDA, "indice.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(indice, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    previa_icones([q for q in quant[:n]], [q for q in quant[n:]], ICONES_PREVIA)
+    print("icones: %d cartas em %s (%d px) e 16/ (%d px), paleta de %d cores" % (n, ICONES_SAIDA, ICONES_TAM, ICONES_TAM_PEQUENO, ICONES_COR))
+    print("previa", ICONES_PREVIA)
+
+
+def previa_icones(grandes, pequenos, caminho):
+    """Conferencia para olhar: os 32 px e os 16 px sobre o fundo escuro da carta, ambos em 3x (nearest)."""
+    fundo = (34, 30, 42)
+    colunas = 10
+    passo = 3 * ICONES_TAM + 12
+    blocos = [(grandes, ICONES_TAM), (pequenos, ICONES_TAM_PEQUENO)]
+    altura = sum(((len(lista) + colunas - 1) // colunas) * passo + 12 for lista, _ in blocos)
+    tela = Image.new("RGB", (colunas * passo, altura), fundo)
+    y0 = 0
+    for lista, tam in blocos:
+        for i, im in enumerate(lista):
+            g = im.resize((tam * 3, tam * 3), Image.NEAREST)
+            tela.paste(g, ((i % colunas) * passo + 6, y0 + (i // colunas) * passo + 6), g)
+        y0 += ((len(lista) + colunas - 1) // colunas) * passo + 12
+    os.makedirs(os.path.dirname(caminho), exist_ok=True)
+    tela.save(caminho)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "armas":
         gerar_armas()
+    elif len(sys.argv) > 1 and sys.argv[1] == "icones":
+        gerar_icones()
     else:
         main()

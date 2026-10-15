@@ -18,3 +18,14 @@ CLAUDE.local.md
 
 # Carimbo de versão do .exe, gerado por jogos/hordas/gerar_versao.sh antes de exportar
 jogos/hordas/projeto/dados/versao.json
+
+# Segredos e credenciais (o repositório é público desde 2026-10-14): nunca commitar
+export_credentials.cfg
+.env
+.env.*
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+*.key

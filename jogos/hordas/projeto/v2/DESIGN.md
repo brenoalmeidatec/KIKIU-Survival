@@ -1,11 +1,11 @@
 # DESIGN da UI da v2
 
-Guia visual dos menus e da interface da v2 (`jogos/hordas/projeto/v2/`). Leia antes de mexer em menu, HUD, cartas ou santuário. Cada cor e fonte traz `arquivo:linha` do código do `main`. Se o código mudar, atualize este arquivo no mesmo PR.
+Guia visual dos menus e da interface da v2 (`jogos/hordas/projeto/v2/`). Leia antes de mexer em menu, HUD, cartas ou santuário. As cores e os tamanhos de fonte vêm de `v2/paleta.gd`; as referências de código abaixo localizam seus usos. Se o código mudar, atualize este arquivo no mesmo PR.
 
 **Regras de ouro**
 - Tudo cabe em 960x540, e o essencial fica dentro da área segura (seção 1).
 - Texto corrido só em Spleen 16 px. Títulos só em Jersey 19, 37 ou 56. Números em Press Start 2P (seção 3).
-- Use as cores da seção 2 antes de criar uma. Cor nova entra na tabela.
+- Use as cores da seção 2 antes de criar uma. Cor nova entra em `v2/paleta.gd` e na tabela.
 - Pouco texto: barra, pip, ícone e número grande antes de palavra.
 - Antes de subir, rode os testes da seção 7.
 
@@ -29,43 +29,31 @@ Guia visual dos menus e da interface da v2 (`jogos/hordas/projeto/v2/`). Leia an
 
 ## 2. Paleta
 
-Hex arredondado. O valor exato é o `Color(...)` citado.
+A fonte única da UI é `v2/paleta.gd`, com constantes GDScript. HUD, SUA BUILD, pausa, cartas, resultado, menu e Santuário usam as constantes por papel; o gerador Python `hud/gerar_molduras.py` lê esse mesmo arquivo para gerar as texturas. Transparência e animação podem variar sem criar outra cor semântica. Luz e sombra da textura de pedra/metal são materiais, não cores de estado.
 
-| Papel | Cor | Onde |
+| Papel | Constante | Cor |
 |---|---|---|
-| Painel de pedra (fundo) | `#01030b` a 0,80 | `v2/hud/gerar_molduras.py:41, 50` |
-| Véu da pausa / do santuário | `#01030b` a 0,72 / `#030509` a 0,80 | `pausa.gd:41, 108`; `altar.gd:146` |
-| Cartão da escolha (normal / selecionado) | `#12111a` / `#211f2b` | `telas.gd:124` |
-| Borda do cartão sem raridade | `#5c5773` | `telas.gd:122` |
-| Texto / texto apagado | `#ebe6f5` / `#8c8fa3` | `pausa.gd:39`; `altar.gd:20-21` |
-| Cabeçalho de seção / rótulo do card | `#9e99b8` / `#b8b3d4` | `pausa.gd:40`; `status.gd:59` |
-| Destaque: seleção e títulos (foco de texto `#fff7cc`) | `#ffdb6b` | `pausa.gd:38`; `altar.gd:19, 23`; `resultado_meta.gd:16`; `status.gd:58` |
-| Ouro do HUD (marcos, relógio, evolução) | `#f1b10e` | `hud.gd:16, 293-294` |
-| Almas | `#cca8ff` | `altar.gd:24`; `resultado_meta.gd:17` |
-| Raridade comum / raro / épico / lendário | `#ccd1db` / `#59a8ff` / `#bd66ff` / `#ffbd33` | `dados/v2_cartas.json:4-7` |
-| Fusão lendária (faixa e rodapé) | magenta `#ff73d9` | `telas.gd:17, 249, 253` |
-| Barras do HUD: vida / XP / fôlego / fantasma do chefe | `#b9212d` / `#e0bc48` / `#4aa3d9` / `#ecceb0` | `gerar_molduras.py:30, 33, 36, 43` (usos em `:162-168`) |
-| Card SUA BUILD: vida / XP / fôlego | `#db3840` / `#73bfff` / `#8cf29e` | `status.gd:894-896` |
-| Piscadas: vida / fôlego cansado | `#ff6666` / `#ff5933` | `hud.gd:23, 21` |
-| Perigo: onda / vinheta / dano no herói | `#ff544d` / `#ff1a1a` / `#ff5252` | `hud.gd:32, 24`; `combate.gd:25` |
-| Anúncios: elite / nível / crítico | `#bf73ff` / `#d1ebff` / `#ffbd33` | `hud.gd:33-34`; `combate.gd:24` |
-| Números de dano | `#fff5d6` | `combate.gd:23` |
-| Card: valor / santuário / dica | `#ffeda8` / `#d1adff` / `#99ccfa` | `status.gd:60, 62, 63` |
-| Seleção de linha na pausa | ouro a 0,14 + borda ouro 2 px | `pausa.gd:136-140` |
+| Vida | VIDA | `#b9212d` |
+| XP | XP | `#e0bc48` |
+| Fôlego | FOLEGO | `#4aa3d9` |
+| Dano recente do chefe | FANTASMA_CHEFE | `#ecceb0` |
+| Destaque, título e ouro da UI | OURO | `#ffdb6b` |
+| Almas | ALMA | `#cca8ff` |
+| Perigo | PERIGO | `#ff544d` |
+| Fusão | FUSAO | `#ff73d9` (magenta) |
+| Texto / secundário / apagado | TEXTO / TEXTO_SECUNDARIO / TEXTO_APAGADO | `#ebe6f5` / `#b8b3d4` / `#8c8fa3` |
+| Painel / cartão / selecionado | PAINEL / CARTAO / CARTAO_SELECIONADO | `#01030b` / `#12111a` / `#211f2b` |
+| Raridades | RARIDADES | comum `#ccd1db`, raro `#59a8ff`, épico `#bd66ff`, lendário `#ffbd33` |
 
-**Duplicação (cor espalhada):**
-- O ouro tem pelo menos 5 valores. `COR_OURO` está copiado em `pausa.gd`, `altar.gd`, `resultado_meta.gd` e `status.gd`.
-- O roxo de alma tem 3 valores: `#cca8ff`, `#d1adff` (card) e `#d06df2` (paleta de arte).
-- O vermelho de perigo tem 6 variantes (`#db3840`, `#ff5252`, `#ff544d`, `#ff6666`, `#ff5933`, `#ff1a1a`).
-- Sugestão, não feita aqui: um único arquivo de constantes de cor para a v2.
+XP dourado e ouro de seleção são papéis distintos. Fusão magenta continua distinta de raridade lendária. Não alterar os dados de sorteio para mudar apenas a cor da UI. Novas cores de estado entram na fonte única antes do uso. `docs/visual_2_5d/paleta.json` aponta para ela e preserva somente estudos de arte de elementos/dano.
 
 ## 3. Tipografia
 
 | Fonte (`scripts/hordas/dados.gd`) | Uso | Tamanhos (onde) |
 |---|---|---|
-| Jersey 10 (`fonte_titulo`, `:20-22`) | títulos, nomes, botões grandes | 56: títulos (`pausa.gd:22`, `altar.gd:151`, `telas.gd:22`). 37: nomes e saldo (`telas.gd:23`, `altar.gd:154`). 19: botões e linhas (`pausa.gd:23`), trava (`telas.gd:26`), cabeçalhos (`status.gd:35`) |
-| Spleen 8x16 (`fonte_texto`, `:23-25`) | texto corrido, valores, ajuda | 16 (`pausa.gd:24-27`, `telas.gd:25`) |
-| Press Start 2P (`fonte`, `:15-19`) | números, HUD, lista do santuário | 8 (`hud.tscn:24`, `altar.gd:156, 172`, `pausa.gd:162`). 16 em números grandes (`status.gd:891`) |
+| Jersey 10 (`fonte_titulo`) | títulos, nomes, botões grandes | `Paleta.TITULO_GRANDE` (56), `TITULO_MEDIO` (37) e `TITULO_PEQUENO` (19); logo do menu: 2 × `TITULO_GRANDE` (112) |
+| Spleen 8x16 (`fonte_texto`) | texto corrido, valores, ajuda | `Paleta.TEXTO_TAMANHO` (16) ou `TEXTO_GRANDE` (32) |
+| Press Start 2P (`fonte` e tema padrão) | números, HUD, lista do santuário e habilidades | `Paleta.NUMERO_PEQUENO` (8) ou `NUMERO_GRANDE` (16); rótulos e teclas de `hud_habilidades.gd`: 8 |
 
 - Spleen só em 16 ou 32 px (`dados.gd:10`, `v2/LEIA-ME.md:39`). Títulos só em 19, 37 ou 56.
 - A lista densa do santuário em Press Start 8 px é exceção aprovada (`altar.gd:6`, `v2/LEIA-ME.md:39`).
@@ -87,7 +75,7 @@ Hex arredondado. O valor exato é o `Color(...)` citado.
   - mouse: passar o cursor seleciona, roda rola, clique aciona ao soltar (`pausa.gd:291-303`; `telas.gd:741`).
 - **Barras do HUD**: PNG de 3 px com degradê (`gerar_molduras.py:102-108, 161-168`). Vida pisca abaixo de 25% (`hud.gd:238`, `v2/LEIA-ME.md:31`). XP acende no pico (`hud.gd:20, 215`). **Barras do SUA BUILD**: borda de 1 px `#0a0814`, fundo `#29263d`, faixa de 2 px no topo mais clara (`status.gd:897-898, 1030-1036`).
 - **Pips** (`status.gd:1040-1050`): quadradinhos de 8 px com 3 px de espaço; fração vira pip parcial. Nível usa pips de 5 px; evoluído ganha estrela dourada (`status.gd:1141, 1156`).
-- **Ícones 8x8** (`status.gd:899-915`): `#` cor, `o` brilho (cor clareada 55%), `.` vazio. Desenhados por código a 2x (16 px) por `_icone8` (`status.gd:1013-1022`). Cartas usam o ícone 16x16 da v1 em 2x (`v2/LEIA-ME.md:41`).
+- **Ícones 8x8** (`status.gd:899-915`): `#` cor, `o` brilho (cor clareada 55%), `.` vazio. Desenhados por código a 2x (16 px) por `_icone8` (`status.gd:1013-1022`). Cartas usam o ícone próprio do ID (`assets/v2/icones_cartas`): 32x32 na escolha, no baú e nos slots da HUD; 16x16 na linha do SUA BUILD (`v2/LEIA-ME.md`).
 - **Avisos** (`hud_anuncios.gd`): uma faixa no centro alto, fila de até 5, moldura `moldura_faixa.png` tingida por tipo (`hud.gd:32-34, 293-294`). Não há balão de fala; os avisos de ataque no chão (`avisos.gd`) são do mundo.
 
 ## 5. Comportamento
@@ -96,13 +84,13 @@ Hex arredondado. O valor exato é o `Color(...)` citado.
 - **Trava das cartas**: 3 s em tempo real (`dados/v2_cartas.json:10`, `espera_s`); 0,8 s após rerrolar ou banir (`rerrolar_espera_s`); baú 1,5 s (`dados/v2_cartas.json:304`, `telas.gd:461`). Clique, tecla e botão são descartados, e a contagem pulsa. Esc passa para a pausa. A trava congela com a pausa aberta (`telas.gd:7-9`). Cartas apagadas usam `#737373` (`telas.gd:27, 665`).
 - **Foco inicial**: a pausa abre em "Continuar" (`pausa.gd:245` põe "Não" nas confirmações); o santuário, em ENTRAR (`altar.gd:77`); a escolha, na carta 1 (`telas.gd:35`).
 - **Sons de UI**: fora da partida, a pausa usa `Som.ui("cursor")` (-6 dB) e `Som.ui("confirmar")` (-4 dB) (`scripts/hordas/som.gd:68-73`). Na partida, usa os sons de jogo `carta` e `escolher` (`pausa.gd:572-583`). Não existem `ui_cursor` nem `ui_confirmar`.
-- **TAB** troca a página do SUA BUILD na pausa (`pausa.gd:287-290`) e o detalhe no painel central (`status.gd:136-137`). **C** liga e desliga o card (`status.gd:141`).
+- **TAB** alterna visual/detalhes do SUA BUILD na pausa e no painel central. **Q/E** mudam as páginas de conteúdo em ambos os layouts. No HUD compacto, **PgUp/PgDn** ou a roda sobre uma coluna mudam a página; a roda fora do card segue livre. **C** liga/desliga o card. A tabela de detalhes quebra rótulos, valores e bônus em linhas e preserva dicas completas; cada coluna informa sua página atual/total. Teclado é necessário para Tab/Q/E; equivalência no controle permanece uma tarefa separada (#257).
 
 ## 6. Regras de conteúdo
 
 - Nada com direitos autorais: arte e fonte de terceiros precisam de licença livre e de registro em `docs/LICENCAS_ARTE.md` e nos Créditos (`CLAUDE.md:43-47`).
 - `docs/visual_2_5d/hud_menus.md` é a direção da V1 ("Não implementar agora", linha 97). Não é especificação da v2, que usa Jersey e Spleen (`v2/LEIA-ME.md:39`).
-- A paleta de arte é `docs/visual_2_5d/paleta.json`. Nenhum código a lê (seção 8).
+- O estudo de paleta de arte está em `docs/visual_2_5d/paleta.json`; a UI tem fonte única em `v2/paleta.gd`, também lida pelo gerador de molduras.
 
 ## 7. Testes de UI
 
@@ -122,18 +110,13 @@ Comando: `godot --path jogos/hordas/projeto res://testes/<nome>.tscn`. A maioria
 
 Mexeu em cor ou fonte: rode `v2_fontes` e `v2_status`. Mexeu em estado de tela: rode `v2_esc` e `v2_pausa`.
 
-## 8. Dívidas de cor e fonte
+## 8. Validação de cor e fonte
 
-1. SUA BUILD em Spleen 12 px, fora da grade (`status.gd:32`; pendência em `status.gd:7-10`). `v2_fontes` confere só telas e pausa (`testes/v2_fontes.gd:99-101`).
-2. Nome longo de carta em Jersey 28 px, fora da grade e sem teste (`telas.gd:24`).
-3. Comentário errado: `telas.gd:248` diz "ouro da fusão", mas a cor é magenta (`telas.gd:17`).
-4. Lendário em dois sentidos: raridade ouro `#ffbd33` (`dados/v2_cartas.json:7`) e fusão magenta. O crítico também é `#ffbd33` (`combate.gd:24`).
-5. XP e fôlego com cores trocadas entre HUD (`gerar_molduras.py:33, 36`) e SUA BUILD (`status.gd:895-896`).
-6. Vida: `#b9212d` no HUD e `#db3840` no card (`gerar_molduras.py:30`; `status.gd:894`).
-7. `docs/visual_2_5d/paleta.json` diz vida `#b9212d`, ouro `#e0bc48`, almas `#d06df2`. O código usa outros valores (seção 2).
-8. Dois tipos de painel: cartões sem moldura de pedra (`telas.gd:122-132`).
-9. Enquadramento: santuário com faixas pretas, partida cortada (seção 1).
-10. O comentário de `gerar_molduras.py:27` diz `#86898f`, mas o valor é `#7d8690`.
+O PR de paleta unifica vida/XP/fôlego, ouro/almas e cores de tela. Spleen deve usar 16 ou 32 px; Jersey, 19, 37 ou 56 px; o logo de 112 px equivale a 2 × 56. Press Start 2P usa 8 ou 16 px, inclusive nos rótulos compactos das habilidades. Os tamanhos vêm das constantes de `v2/paleta.gd`. O teste `v2_fontes` verifica a grade, incluindo os tamanhos adaptativos dos nomes e o card SUA BUILD. Aumentar fonte exige medir novamente largura e altura, sem esconder atributos para fazer o teste passar.
+
+**Regressão do layout:** a fonte de 16 px expôs18 falhas de largura/altura. A tabela agora distribui conteúdo em páginas, sem apagar bônus, atributos ou dicas para caber. `v2_status` mantém a matriz de layouts e adiciona cobertura de todos os IDs/trechos/dicas nas páginas, com 50 golpes e build extrema/Santuário completo; a entrada real confere Q/E, Tab, PgUp/PgDn e roda dentro/fora das colunas, inclusive com janela ampliada. O diagnóstico mede o plano usado no desenho; prints reais do viewport continuam necessários para conferir a composição. Capturas com `--fotos` não executam as assertions da bateria. Integração com main/#245 continua com o Claude do Alisson.
+
+Continuam duas diferenças de composição: cartões usam painel próprio sem moldura de pedra; o Santuário tem faixas pretas e a partida usa corte. Isso não muda neste trabalho de paleta. Os números de dano no mundo e os dados de raridade continuam sob responsabilidade de sistemas; mudar sua origem exige coordenação com o Claude do Alisson.
 
 ## 9. Antes de mexer em menu
 

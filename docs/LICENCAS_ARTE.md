@@ -57,5 +57,18 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 | `assets/audio/v2/ruptura_solta.wav` | NÃO LIGADO: Ruptura solta (branch `alisson/v2-ruptura`) | Kenney (kenney.nl) | Impact Sounds, `Audio/impactGlass_heavy_004.ogg`: https://kenney.nl/assets/impact-sounds | CC0 1.0 | não | cortado, mono 44,1 kHz, WAV, normalizado | 2026-10-12 |
 | `assets/titulo/fundo.png` | fundo da tela de título da v2 (`v2/menu_principal.tscn`) | Alisson: arte própria gerada no GPT (prompt no corpo do PR #215) | arte gerada no GPT pelo Alisson, versionada em `jogos/hordas/fonte_arte/fundo_titulo_fonte.webp` (1672x941) | própria (sem licença de terceiros) | não | recorte 16:9 reduzido a 960x540 (BOX), 48 cores sem dithering e sem o título K.I.K.I.U (`fonte_arte/gerar_fundo_titulo.py`) | 2026-10-12 |
 | `assets/v2/armas/*.png` (44 sprites e 25 normais; lista em `indice.json`) | sprites das armas da v2, ligados em `v2/armas_novas.gd` | Alisson (arte própria) | gerada no GPT pelo Alisson; folhas-fonte em `jogos/hordas/prototipos/cara_nova/objetos/fonte_armas_*.webp` | própria do autor (sem licença de terceiros) | não | recorte por célula, redução BOX, alfa binário (projéteis e aliados) ou brilho virou alfa (efeitos, fundo preto), quantização sem dithering, normal map (projéteis e aliados), contorno claro de 1 px (flecha, shuriken e dardo) | 2026-10-12 |
+| `assets/v2/armas/` (30 sprites novos e 18 normais; IDs em `indice.json`) | cinco golpes antigos e 25 evoluções da v2 | Codex do Alisson (arte própria gerada com imagegen) | três folhas `fonte_armas_evolucoes_*.png` em `jogos/hordas/prototipos/cara_nova/objetos/`; especificação em `docs/visual_2_5d/armas_evolucoes/PROMPTS.md` | própria, sem material de terceiros | não | recorte pelo modo armas de gerar_objetos.py, BOX, quantização sem dither, remoção de fundo branco ou preto aditivo, normais de projéteis/aliados e contorno claro de 1 px em lâminas/flechas evoluídas | 2026-10-14 |
 
 (Itens novos entram no fim da tabela.)
+
+## Arte própria do salão — Codex do Alisson,14/10/2026
+- Fontes: jogos/hordas/fonte_arte/santuario_v2/fonte_fundo.png, fonte_estruturas.png, fonte_portais.png. Destino: jogos/hordas/projeto/assets/v2/santuario/.
+- Criadas com imagegen embutido a pedido do Alisson, seguindo conceito aprovado pelo Breno no PR260. Não adicionam arte de terceiros.
+- Recorte e redução pelo wrapper gerar.py, reutilizando o pipeline gerar_objetos.py. Prompts/contexto em docs/visual_2_5d/santuario/IMPLEMENTACAO.md. Fontes originais preservadas.
+## Teste de animação imagegen — Codex do Alisson,15/10/2026
+- Imagens-fonte próprias geradas com imagegen embutido para a issue266: jogos/hordas/fonte_arte/teste_animacao/heroi_andando_baixo.png, heroi_andando_baixo_v2.png e golpe_katana.png.
+- Referência do herói fornecida pelo projeto; nenhum material novo de terceiros. Prompts e limites registrados ao lado das fontes. Sem recorte/GIF/integração nesta entrega; isso fica com Claude do Alisson.
+## Ícones das cartas por ID — Codex do Alisson,15/10/2026
+- Oito folhas-fonte próprias geradas com imagegen embutido em jogos/hordas/fonte_arte/icones_cartas/folha_01.png até folha_08.png, a pedido direto do Alisson(issue270).
+- Direção: pixel art2.5D dark fantasy, materiais frios e brilho elemental; folha01 gerada sem imagem externa e demais usam a primeira como estilo. Prompts exatos e índice por categoria/ID ao lado. Nenhum novo material de terceiros.
+- São86entradas de cartas mais katana/escudo/Ruptura e selo Q indisponível(90motivos). Não são animações ou sprites de ataque; recorte/integração permanecem com Claude do Alisson.
