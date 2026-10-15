@@ -1285,7 +1285,7 @@ def ler_indice_icones():
             if m:
                 folha = int(m.group(1))
                 continue
-            m = re.match(r"\| (\d+) \| ([^|]+?) / ([^|]+?) \|", linha)
+            m = re.match(r"\| (\d+)[^|]*\| ([^|]+?) / ([^|]+?) \|", linha)  # a célula pode trazer "(linha 1, coluna 1; ...)"
             if m and folha is not None:
                 itens.append((folha, int(m.group(1)), m.group(2).strip(), m.group(3).strip()))
     return itens
@@ -1337,6 +1337,11 @@ def gerar_icones():
         if folha not in folhas:
             caminho = os.path.join(ICONES_FONTE, "folha_%02d.png" % folha)
             im = Image.open(caminho).convert("RGB")
+            if im.size != esperado and abs(im.width - esperado[0]) <= 4 and abs(im.height - esperado[1]) <= 4:
+                # o gerador de imagem às vezes entrega 1-2 px a mais ou a menos: completa com branco ou corta a sobra
+                tela = Image.new("RGB", esperado, (255, 255, 255))
+                tela.paste(im, (0, 0))
+                im = tela
             if im.size != esperado:
                 raise SystemExit("%s: %dx%d, esperado %dx%d" % (caminho, im.width, im.height, esperado[0], esperado[1]))
             folhas[folha] = im

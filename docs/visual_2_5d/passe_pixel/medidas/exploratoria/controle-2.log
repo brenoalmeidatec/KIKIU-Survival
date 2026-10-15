@@ -1,0 +1,9 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+OpenGL API 3.3.0 - Build 32.0.101.7088 - Compatibility - Using Device: Intel - Intel(R) Iris(R) Xe Graphics
+
+CARGA ms=687 cenario=315 blur=207 objetos=572 decalques=1456 luzes=30
+MEDIDA sombra=alta luzes_ligadas=13/30 atores_na_tela=566 blocos=70/192 fps=83.2 frames=500 seg=6.01
+SCRIPT ms/quadro=8.754 (sombras 1.291, golpes secundários 0.927, desenho deles 0.155)
+PERFIL ms/quadro: c_separar 0.59, c_contato 0.01, c_orbes 0.03, heroi 0.03, monstros 2.24, combate 1.59, camera_efeitos 0.08, cenario_atm 0.01, copas 0.22, luzes 0.06, sombras_ativacao 0.49, horda 3.88 | horda: 480 monstros em 60 fatias
+RENDER ms/quadro: cpu mundo 1.93, gpu mundo 5.52, cpu janela 0.09, gpu janela 0.24; chamadas de desenho 659; objetos 2167; fora do script 3.26
+COMBATE abates=254 maior_combo=254 nivel=19 vivos=500 ondas=0 tempo_partida=2.4 vida=100 melhorias={ "aura_fogo": 5, "laminas": 2, "corvos": 5, "raio": 2, "runa": 2, "rb_dano": 1, "bolas_chumbo": 1, "serpente_ardente": 1, "flechas_sombrias": 1, "espirito_raposa": 1, "fura": 1, "terremoto": 2, "grito_guerra": 1, "pulso_sagrado": 1, "lobo_espirito": 1, "bumerangue_ferro": 1, "esqueleto_guerreiro": 1, "martelo_trovao": 1, "dragao_filhote": 1, "raio_solar": 1 }

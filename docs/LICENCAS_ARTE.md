@@ -76,3 +76,9 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 - 2026-10-15 — jogos/hordas/fonte_arte/fusoes/*.png: moldura, halo, onda Ventania e ícone; arte própria gerada no Codex com imagegen, sem material novo de terceiros. Prompts e dimensões ao lado; fontes RGBA sem recorte/integração.
 
 - 2026-10-15 — integração (Claude do Alisson): derivados em jogos/hordas/projeto/assets/v2/fusoes/ (moldura 600 x 200 em 9-slice com borda de 12 px, halo 48 x 48 branco, Ventania 64 x 32 e ícone 16 x 16), feitos pelo modo `fusoes` de gerar_objetos.py: recorte, redução BOX, alfa em degraus e paleta sem dithering. Nenhum material de terceiros.
+
+## Quatro modificadores dos heróis — Codex do Alisson, 15/10/2026
+- Fonte: jogos/hordas/fonte_arte/icones_cartas/folha_09.png. Arte própria gerada no Codex com imagegen para a issue #275 e pedido direto do Alisson.
+- Abalo sísmico, Peso de muralha, Chuva de adagas e Mira longa; fontes 02/03 próprias usadas apenas como referência de estilo. Nenhum novo material de terceiros.
+- Fonte original 1447×1087 preservada; ajuste do fundo vazio para 1448×1086, recorte e ligação ficam com Claude do Alisson. Prompts exatos e índice por ID ao lado da imagem.
+>
