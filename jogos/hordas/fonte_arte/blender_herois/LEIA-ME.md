@@ -33,3 +33,4 @@ Prints (960x540, janela oculta) e a comparação ficam em `estudo_estilo/`.
 
 ## Framework de animação (2026-10-15)
 A base para as animações do herói (rig com joelho/cotovelo, um módulo por animação, cor + normal em 8 direções) está em `hazaki/` (ver `hazaki/LEIA-ME.md`). Exemplos prontos: parado (4 quadros) e andar (6).
+O **Nicão** (anão de marreta, modelado por script a partir da referência do Codex, com IK das duas mãos no cabo e quadro 64x96) usa a mesma estrutura em `nicao/` (ver `nicao/LEIA-ME.md`): parado, andar, rolamento, combo de 2 golpes (batida e pancada no chão), defesa, dano e morte, já ligados no jogo.

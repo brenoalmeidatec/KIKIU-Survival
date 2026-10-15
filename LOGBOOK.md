@@ -2036,3 +2036,26 @@ _Claude do Alisson (notebook)_
 - **Para o Alisson:** o PR não foi mesclado. Os `.import` dos dois PNGs novos entraram no commit; os gerados pela importação em outras pastas ficaram de fora.
 
 _Claude do Alisson (notebook)_
+## 2026-10-15 · Referências dos heróis — Codex do Alisson
+- Antes/depois: faltavam folhas para modelagem; entregues Matheus, Nicão e Lucas, cada um com frente, perfil e costas, branco e grade 3×1.
+- Validado: inspeção visual, integridade/dimensões dos PNGs e gdformat em scripts, testes e v2. Godot não executado localmente: somente arte e documentação, nenhum código/dado/teste alterado.
+- Para o Claude do Alisson: modelar e integrar; Matheus mantém a katana padrão, Nicão marreta e Lucas adagas. LEIA-ME e PROMPTS descrevem células, cores e limites. Pendente: validação dos modelos dentro do jogo.
+
+_Codex do Alisson_
+
+## 2026-10-15 · Nicão no Blender (todas as animações) — Claude do Alisson (notebook)
+- **Feito:** o Nicão (anão guardião de marreta) modelado por script a partir da referência do Codex (`fonte_arte/referencia_herois/nicao.png`), com o processo aprovado do Hazaki (Cycles em pixel nativo, 4 faixas de luz, contorno no tom da cor, 8 direções, cor + normal). Pasta `jogos/hordas/fonte_arte/blender_herois/nicao/` (LEIA-ME completo). Animações: parado (4), andar (6), rolamento (6), combo de 2 golpes x 6 quadros (batida horizontal e pancada no chão com poeira e pedras; antecipação longa e impacto no quadro 3), defesa (2), dano (2) e morte (6, cai de lado e fica deitado atravessado, a marreta cai no chão ao lado). A marreta tem osso próprio e as duas mãos a seguram por IK analítico (`ossos.segurar`).
+- **No jogo:** folha trocada em `prototipos/cara_nova/sprites/nicao_albedo.png`, `nicao_normal.png` e `nicao.json` (38 colunas, `animacoes` lidas pelo `heroi.gd` como no Hazaki: nenhuma linha de código do jogo mudou). **O quadro passou de 64x60 para 64x96** (pé na linha 74): a marreta tem 43 px e bate no chão à frente do herói, que na câmera a 45 graus cai abaixo da linha do pé; o corpo ficou menor que o do sprite antigo (~26 x 40 px contra 55 x 54), perto do Hazaki (44 px de altura).
+- **Provas:** GIF por animação (8 direções), comparativo com o sprite antigo e prints reais (partida e Salão, janela oculta) em `docs/visual_2_5d/blender_herois/nicao/`. `testes/v2_herois.gd` ganhou `_t_nicao_animacoes` (colunas do combo/rolamento/defesa/dano/morte lidas do JSON) e a checagem do quadro 64x96. Cenas para os prints: `testes/fotos/nicao_fotos` e `nicao_salao_fotos` (fora do CI).
+- **Testes:** suíte v2 inteira, 37 cenas, 2 em paralelo, 37 de 37 com código 0, `falhas=0` e sem `SCRIPT ERROR`; `v2_herois`, `v2_partida`, `v2_salao`, `v2_mundo` e `v2_morte_heroi` repetidos com a folha final, todos ok. `gdformat -l 160 --check` limpo em scripts, testes e v2.
+- **Pendente / para o Codex (visual):** o arco branco de corte e o escudo azul que o jogo desenha por cima são os do Hazaki (não acompanham a marreta); o Salão desenha sempre o Hazaki (constante `SPRITE` em `v2/salao.gd`), então o Nicão só aparece lá no QA. Próximo: Matheus e Lucas pelo mesmo processo (o `ossos.py` do Nicão tem o IK de duas mãos; candidatos a módulo compartilhado listados no LEIA-ME).
+- **Para o Alisson:** o PR não foi mesclado.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-15 · Nicão, revisão de arte 2 (PR #298) — Claude do Alisson (notebook)
+- **Feito:** a pancada do combo cai de lado (sinal por direção da câmera), então a cabeça da marreta aparece nas 8 direções, inclusive de costas; elmo, crista, cabeça da marreta, ombreira e barba mais claros e rim mais forte; marreta mais à frente no andar de lado; barba com costeletas. Folha re-renderizada, remontada e trocada no jogo; GIFs, tira de quadros e prints reais (partida e Salão QA, janela oculta) refeitos em `docs/visual_2_5d/blender_herois/nicao/`. Detalhes em `fonte_arte/blender_herois/nicao/LEIA-ME.md` ("Revisão de arte 2").
+- **Escala:** confirmada igual à do Hazaki (24,5 px/m, 1:1); a célula 64x96 fica (a marreta precisa).
+- **Pendente:** a partida é escura; se o Nicão ainda parecer escuro no teste real, o próximo ajuste é a luz da cena, não a folha.
+
+_Claude do Alisson (notebook)_
