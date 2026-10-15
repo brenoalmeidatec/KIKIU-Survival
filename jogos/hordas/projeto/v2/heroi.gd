@@ -116,6 +116,8 @@ var _ofego_t := 0.0
 var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
+var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
+var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
 
 
@@ -180,6 +182,8 @@ func resetar(p: Vector2) -> void:
 	_rup_punch = 0.0
 	avanco_camera = Vector2.ZERO
 	_punch = 0.0
+	_dano_t = -1.0
+	_morte_t = 0.0
 	sprite.rotation = 0.0
 	sprite.modulate = Color.WHITE
 	sprite.scale = Vector2.ONE
@@ -298,7 +302,9 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 		combo_t = 0.0
 		proximo = 0
 	mundo.combate.heroi_apanhou(valor)
+	_dano_t = 0.0
 	if vida <= 0.0:
+		_morte_t = 0.0
 		cancelar_ruptura(false)
 		escudo_ativo = false
 		estado = Estado.MORTO
@@ -733,6 +739,9 @@ func _visual(dt: float, v: Vector2) -> void:
 		c = 1 + int(_anim / PASSO_ANIM) % (int(tipo.info.colunas.size()) - 1)
 	else:
 		_anim = 0.0
+	var ca := _coluna_acao(dt)
+	if ca >= 0:
+		c = ca
 	if l != linha or c != coluna:
 		quadro(c, l)
 	# corpo: o "soco" do golpe (esticada na direção do corte), o giro da esquiva e o pisca de quem acabou de apanhar
@@ -753,7 +762,11 @@ func _visual(dt: float, v: Vector2) -> void:
 	if _rup_punch > 0.0:  # o soco do disparo: alarga e achata um instante
 		_rup_punch = maxf(0.0, _rup_punch - dt / 0.12)
 		esc = Vector2(lerpf(esc.x, 1.14, _rup_punch), lerpf(esc.y, 0.88, _rup_punch))
-	if estado == Estado.ESQUIVA:
+	if estado == Estado.ESQUIVA and _tem_anim("rolamento"):
+		sprite.position = Vector2.ZERO  # o rolamento já está desenhado na folha: sem girar o sprite
+		sprite.offset = _off_base
+		sprite.rotation = 0.0
+	elif estado == Estado.ESQUIVA:
 		var p := clampf(esq_t / esq_dur, 0.0, 1.0)
 		var gira := signf(esq_dir.x) if absf(esq_dir.x) > 0.1 else 1.0
 		sprite.position = Vector2(0, -14)
@@ -778,11 +791,73 @@ func _visual(dt: float, v: Vector2) -> void:
 
 
 func _visual_morto(dt: float) -> void:
+	if _tem_anim("morte"):  # o quadro de morte do Blender (deitado, de cabeça para a câmera): o sprite não gira
+		var c_lenta: float = mundo.combate.lento_escala if mundo.combate.lento_t > 0.0 else 1.0
+		_morte_t += dt / maxf(c_lenta, 0.05)  # a câmera lenta da morte (0,25x por 1,3 s) não pode comer a animação: conta em tempo real
+		var c := _coluna_por_tempo("morte", _morte_t)
+		if c != coluna or linha_de(dir_olhar) != linha:
+			quadro(c, linha_de(dir_olhar))
+		sprite.rotation = 0.0
+		sprite.position = Vector2.ZERO
+		sprite.offset = _off_base
+		sprite.scale = Vector2.ONE
+		sprite.modulate = Color(1, 0.8, 0.8, 0.85)
+		return
 	sprite.position = Vector2(0, -14)
 	sprite.offset = _off_base + Vector2(0, 14)
 	sprite.rotation = lerpf(sprite.rotation, 1.45 * (1.0 if dir_olhar.x >= 0 else -1.0), 1.0 - exp(-9.0 * dt))
 	sprite.scale = Vector2.ONE
 	sprite.modulate = Color(1, 0.8, 0.8, 0.85)
+
+
+## A folha tem a animação `nome` (as folhas de 50 colunas do Blender trazem "animacoes" no json; as antigas só andar)?
+func _tem_anim(nome: String) -> bool:
+	var a: Variant = tipo.info.get("animacoes", null)
+	return a is Dictionary and (a as Dictionary).has(nome)
+
+
+## A coluna do quadro `i` da animação `nome` (limitado ao último).
+func _coluna_anim(nome: String, i: int) -> int:
+	var cols: Array = tipo.info.animacoes[nome].colunas
+	return int(cols[clampi(i, 0, cols.size() - 1)])
+
+
+## A coluna da animação `nome` depois de `t` segundos, pelos tempos s_quadros da folha (ou s_por_quadro); trava no último quadro.
+func _coluna_por_tempo(nome: String, t: float) -> int:
+	var a: Dictionary = tipo.info.animacoes[nome]
+	var n := (a.colunas as Array).size()
+	var dur: Array = a.get("s_quadros", [])
+	var acum := 0.0
+	for i in n:
+		acum += float(dur[i]) if i < dur.size() else float(a.get("s_por_quadro", 0.1))
+		if t < acum:
+			return _coluna_anim(nome, i)
+	return _coluna_anim(nome, n - 1)
+
+
+## Coluna da ação em andamento (golpe, rolamento, escudo, dano), ou -1 para seguir parado/andar. Só com a folha nova.
+func _coluna_acao(dt: float) -> int:
+	if _dano_t >= 0.0:
+		_dano_t += dt
+		if _tem_anim("dano") and estado != Estado.ESQUIVA:
+			var dur := 0.0
+			for x in tipo.info.animacoes.dano.get("s_quadros", [0.08]):
+				dur += float(x)
+			if _dano_t < dur:
+				return _coluna_por_tempo("dano", _dano_t)
+		if _dano_t >= 0.5:
+			_dano_t = -1.0
+	if estado == Estado.GOLPE and _tem_anim("combo"):
+		var por_golpe := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
+		var passo := mini(golpe_i, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
+		var p := clampf(golpe_t / maxf(golpe_dur, 0.001), 0.0, 0.999)
+		return _coluna_anim("combo", passo * por_golpe + int(p * por_golpe))
+	if estado == Estado.ESQUIVA and _tem_anim("rolamento"):
+		var n := (tipo.info.animacoes.rolamento.colunas as Array).size()
+		return _coluna_anim("rolamento", int(clampf(esq_t / maxf(esq_dur, 0.001), 0.0, 0.999) * n))
+	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
+		return _coluna_por_tempo("escudo", escudo_t)
+	return -1
 
 
 ## Linhas da folha: baixo, esquerda, direita, cima, baixo_esq, baixo_dir, cima_esq, cima_dir. As 8 direções saem do ângulo na tela.
