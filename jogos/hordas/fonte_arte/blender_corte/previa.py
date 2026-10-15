@@ -13,7 +13,7 @@ import numpy as np
 ARGS = sys.argv[sys.argv.index("--") + 1:]
 FOLHA, GIF = os.path.abspath(ARGS[0]), os.path.abspath(ARGS[1])
 TIRA = ARGS[2] if len(ARGS) > 2 else None
-TAM, N, ESC = 128, 12, 3
+TAM, N, ESC = 128, 16, 3
 FUNDO = np.array([0.17, 0.16, 0.20], dtype=np.float32)
 TINTAS = [((1.0, 0.92, 0.75), 1.0), ((0.85, 0.95, 1.0), -1.0)]   # cores dos 2 cortes do combo; lado 1 e -1
 
@@ -117,14 +117,15 @@ seq, atr = [], []
 for cor, lado in TINTAS:
     for i in range(N):
         seq.append(quadro(folha, i, cor, lado))
-        atr.append(4 if i < 2 else (3 if i < 7 else 5))   # centesimos de segundo
+        atr.append(5 if i < 3 else (3 if i < 6 else (9 if i < 8 else 5)))   # centesimos de segundo
     seq.append(quadro(folha, N - 1, cor, lado) * 0 + (np.clip(FUNDO, 0, 1) * 255).astype(np.uint8))
     atr.append(40)
 escreve_gif(seq, atr, GIF)
 print("GIF", GIF, len(seq), "quadros")
 
 if TIRA:
-    tira = np.concatenate([quadro(folha, i, TINTAS[0][0], 1.0) for i in range(N)], axis=1)
+    lin = [np.concatenate([quadro(folha, i, TINTAS[0][0], 1.0) for i in range(r * 8, r * 8 + 8)], axis=1) for r in range(N // 8)]
+    tira = np.concatenate(lin, axis=0)
     img = bpy.data.images.new("tira", tira.shape[1], tira.shape[0], alpha=False)
     img.colorspace_settings.name = "Non-Color"
     rgba = np.ones((tira.shape[0], tira.shape[1], 4), np.float32)

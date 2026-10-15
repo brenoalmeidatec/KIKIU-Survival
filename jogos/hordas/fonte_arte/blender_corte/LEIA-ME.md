@@ -3,7 +3,7 @@
 Efeito do golpe de katana feito por nós no Blender 5.2 (nada de arte de terceiros). Refazer:
 
 ```
-blender -b -P corte_hazaki.py            # gera corte_hazaki.blend e corte_hazaki_folha.png (12 quadros 128x128, quantizada)
+blender -b -P corte_hazaki.py            # gera corte_hazaki.blend e corte_hazaki_folha.png (16 quadros 128x128, quantizada)
 blender -b -P previa.py -- corte_hazaki_folha.png previa_corte.gif   # prévia sobre fundo escuro
 ```
 

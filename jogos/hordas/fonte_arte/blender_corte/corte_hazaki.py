@@ -1,21 +1,18 @@
-"""Corte da katana do Hazaki, animado no Blender (leve: Cycles emissivo, 128x128, 12 quadros).
+"""Corte da katana do Hazaki, animado no Blender (leve: Cycles so com emissao, 128x128, 16 quadros).
 
-Rodar (do PC de casa, sem abrir o Blender):
+Rodar (sem abrir o Blender):
     blender -b -P corte_hazaki.py -- [pasta_de_saida]
+Ou, no Blender aberto, executar o arquivo e chamar as etapas: limpa(); etapa_base(); etapa_katana(); etapa_corte(); etapa_impacto(); etapa_faiscas().
 
-Saidas (padrao: esta pasta):
-    corte_hazaki.blend              cena para refazer/ajustar
-    saida/quadro_####.png           quadros crus
-    corte_hazaki_folha.png          folha 12x1 (1536x128) JA quantizada, a que o jogo usa
-O jogo (v2/efeitos.gd) le a folha com RGB = "calor" (0..1, tinge de cor do golpe + branco no fio) e alfa = intensidade.
+Saidas: corte_hazaki.blend, corte_hazaki_folha.png (16x1 = 2048x128, JA quantizada, a que o jogo usa).
+O jogo (v2/efeitos.gd) le a folha com RGB = "calor" (0..1: tinge de cor do golpe e vai ao branco no fio) e alfa = intensidade.
 
-Como o efeito e feito:
-- malha em crescente (mesmo formato do rastro antigo), UV.x = posicao no arco, UV.y = largura;
-- material emissivo guiado por 3 valores animados (cabeca, ponta_do_rastro, intensidade): o golpe nasce fino (antecipacao),
-  corre rapido pelo arco, e o rastro se desfaz da cauda para a ponta (dissipacao);
-- brilho no fio: linha clara na borda externa + clarao em estrela na cabeca da lamina;
-- lascas/faiscas: pecinhas emissivas que saem da cabeca da lamina durante o golpe.
-Aponta para +x (angulo 0), arco de 125 graus, sentido 'lado = 1' do jogo (de cima para baixo na tela). O jogo espelha para lado = -1.
+Linha do tempo (quadro: o que acontece):
+    1-3   antecipacao: a katana se arma para tras, um brilho corre pelo fio
+    4-6   golpe: a katana passa MUITO rapido, com imagens-fantasma atras e um rastro fino colado na ponta
+    7-8   impacto (congelado 2 quadros): flash branco, o corte grosso e a linha fina de anime surgem de uma vez, estrela e anel de choque
+    9-16  a linha afina e some da cauda para a ponta, o anel abre, as lascas voam e a katana some
+Aponta para +x (angulo 0), arco de 125 graus, sentido 'lado = 1' do jogo (de cima para baixo na tela); o jogo espelha para lado = -1.
 """
 import math
 import os
@@ -25,93 +22,58 @@ import sys
 import bpy
 import numpy as np
 
-AQUI = os.path.dirname(os.path.abspath(__file__))
+try:
+    AQUI = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    AQUI = r"D:\dev\kikiu_cortes\jogos\hordas\fonte_arte\blender_corte"
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SAIDA = os.path.abspath(ARGS[0]) if ARGS else AQUI
 
-TAM = 128          # px de cada quadro
-N = 12             # quadros
+TAM = 128
+N = 16
 ARCO = math.radians(125.0)
-R_EXT = 0.80       # raio externo (a tela vai de -1 a 1; sobra margem para as lascas)
-LARG = 0.40        # largura maxima do crescente
-random.seed(7)
-
-
-# ------------------------------------------------------------------ cena limpa
-bpy.ops.wm.read_factory_settings(use_empty=True)
+MEIO = ARCO / 2
+R_EXT = 0.80
+IMPACTO = 7                       # quadro do impacto (o dano do jogo cai por volta do 7)
+ANG = {1: 100, 2: 116, 3: 124, 4: 70, 5: 5, 6: -55, 7: -90, 8: -96, 9: -98}   # graus da katana por quadro
 cena = bpy.context.scene
-cena.frame_start, cena.frame_end = 1, N
-cena.render.resolution_x = cena.render.resolution_y = TAM
-cena.render.resolution_percentage = 100
-cena.render.film_transparent = True
-cena.render.engine = "CYCLES"
-cena.cycles.device = "CPU"
-cena.cycles.samples = 12
-cena.cycles.use_denoising = False
-cena.cycles.max_bounces = 0
-for nome, valor in (("view_transform", "Standard"), ("look", "None")):
-    try:
-        setattr(cena.view_settings, nome, valor)
-    except TypeError:
-        pass
-cena.render.image_settings.file_format = "PNG"
-cena.render.image_settings.color_mode = "RGBA"
-cena.render.image_settings.color_depth = "8"
-cena.render.use_motion_blur = False
-bpy.context.preferences.edit.keyframe_new_interpolation_type = "LINEAR"  # chaves lineares (golpe seco)
-
-cam_d = bpy.data.cameras.new("cam")
-cam_d.type = "ORTHO"
-cam_d.ortho_scale = 2.0
-cam = bpy.data.objects.new("camera", cam_d)
-cam.location = (0, 0, 5)
-cena.collection.objects.link(cam)
-cena.camera = cam
 
 
-# ------------------------------------------------------------------ rastro em crescente
-def crescente():
-    # u = 0 no comeco do corte (cima), 1 no fim (baixo); v = 0 borda interna, 1 borda externa.
-    na, nr = 72, 6
-    verts, uvs, faces = [], [], []
-    meio = ARCO / 2
-    for i in range(na + 1):
-        u = i / na
-        a = meio - u * ARCO                      # +meio (cima) -> -meio (baixo), vista de cima
-        t = max(1.0 - (abs(a) / meio) ** 2, 0.0)
-        r_int = R_EXT - LARG * (t ** 0.7)
-        for j in range(nr + 1):
-            v = j / nr
-            r = r_int + (R_EXT - r_int) * v
-            verts.append((math.cos(a) * r, math.sin(a) * r, 0.0))
-            uvs.append((u, v))
-    for i in range(na):
-        for j in range(nr):
-            k = i * (nr + 1) + j
-            faces.append((k, k + nr + 1, k + nr + 2, k + 1))
-    me = bpy.data.meshes.new("crescente")
-    me.from_pydata(verts, [], faces)
-    uv = me.uv_layers.new(name="UVMap")
-    for poly in me.polygons:
-        for li in poly.loop_indices:
-            uv.data[li].uv = uvs[me.loops[li].vertex_index]
-    ob = bpy.data.objects.new("crescente", me)
-    cena.collection.objects.link(ob)
-    return ob
+def lin():
+    bpy.context.preferences.edit.keyframe_new_interpolation_type = "LINEAR"
 
 
-def valor(nt, nome, x, y):
+def rad(g):
+    return math.radians(g)
+
+
+def ang_katana(f):
+    return ANG.get(f, ANG[9])
+
+
+def keyar(ob, f, loc=None, esc=None, rot=None):
+    if loc is not None:
+        ob.location = loc
+        ob.keyframe_insert("location", frame=f)
+    if esc is not None:
+        ob.scale = esc
+        ob.keyframe_insert("scale", frame=f)
+    if rot is not None:
+        ob.rotation_euler = (0, 0, rot)
+        ob.keyframe_insert("rotation_euler", frame=f)
+
+
+# ------------------------------------------------------------------ materiais
+def valor(nt, nome):
     n = nt.nodes.new("ShaderNodeValue")
     n.label = nome
-    n.location = (x, y)
     return n
 
 
-def mat(nt, op, a, b=None, clamp=False, x=0, y=0):
+def mat(nt, op, a, b=None, clamp=False):
     n = nt.nodes.new("ShaderNodeMath")
     n.operation = op
     n.use_clamp = clamp
-    n.location = (x, y)
     for idx, src in enumerate((a, b)):
         if src is None:
             continue
@@ -122,8 +84,30 @@ def mat(nt, op, a, b=None, clamp=False, x=0, y=0):
     return n.outputs[0]
 
 
-def material_rastro():
-    m = bpy.data.materials.new("rastro")
+def emissivo(nome, calor, alfa=1.0, animado=False):
+    """Emissivo cinza (calor 0..1) com alfa fixo ou animado (devolve o no 'alfa' para keyar)."""
+    m = bpy.data.materials.new(nome)
+    nt = m.node_tree
+    nt.nodes.clear()
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Color"].default_value = (calor, calor, calor, 1)
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    if alfa >= 1.0 and not animado:
+        nt.links.new(em.outputs[0], out.inputs[0])
+        return m, None
+    tr = nt.nodes.new("ShaderNodeBsdfTransparent")
+    mix = nt.nodes.new("ShaderNodeMixShader")
+    no = valor(nt, "alfa")
+    no.outputs[0].default_value = alfa
+    nt.links.new(no.outputs[0], mix.inputs[0])
+    nt.links.new(tr.outputs[0], mix.inputs[1])
+    nt.links.new(em.outputs[0], mix.inputs[2])
+    nt.links.new(mix.outputs[0], out.inputs[0])
+    return m, no
+
+
+def material_rastro(nome):
+    m = bpy.data.materials.new(nome)
     nt = m.node_tree
     nt.nodes.clear()
     uvn = nt.nodes.new("ShaderNodeUVMap")
@@ -131,35 +115,24 @@ def material_rastro():
     sep = nt.nodes.new("ShaderNodeSeparateXYZ")
     nt.links.new(uvn.outputs[0], sep.inputs[0])
     u, v = sep.outputs[0], sep.outputs[1]
-
-    cabeca = valor(nt, "cabeca", -600, 300)
-    ponta = valor(nt, "ponta_do_rastro", -600, 200)
-    inten = valor(nt, "intensidade", -600, 100)
+    cabeca, ponta, inten = valor(nt, "cabeca"), valor(nt, "ponta_do_rastro"), valor(nt, "intensidade")
     H, P, I = cabeca.outputs[0], ponta.outputs[0], inten.outputs[0]
-
-    # onde estou no rastro (0 na ponta, 1 na cabeca)
     vao = mat(nt, "MAXIMUM", mat(nt, "SUBTRACT", H, P), 0.02)
     q = mat(nt, "DIVIDE", mat(nt, "SUBTRACT", u, P), vao, clamp=True)
     dentro = mat(nt, "MULTIPLY", mat(nt, "LESS_THAN", u, mat(nt, "ADD", H, 0.004)), mat(nt, "GREATER_THAN", u, P))
-    tendencia = mat(nt, "POWER", q, 1.5)
-
-    # perfil de largura: interior transparente, exterior forte
+    tend = mat(nt, "POWER", q, 1.2)
     interior = mat(nt, "MULTIPLY", mat(nt, "POWER", v, 1.5), 0.65)
     base = mat(nt, "ADD", 0.35, interior)
-    k = mat(nt, "MULTIPLY", mat(nt, "MULTIPLY", dentro, tendencia), mat(nt, "MULTIPLY", base, I))
-    k = mat(nt, "MULTIPLY", k, mat(nt, "MULTIPLY", v, 6.0, clamp=True))  # borda interna some suave
-
-    # brilho no fio: linha clara na borda externa + clarao logo atras da cabeca
-    linha = mat(nt, "MULTIPLY", mat(nt, "SUBTRACT", v, 0.78), 4.5, clamp=True)
+    k = mat(nt, "MULTIPLY", mat(nt, "MULTIPLY", dentro, tend), mat(nt, "MULTIPLY", base, I))
+    k = mat(nt, "MULTIPLY", k, mat(nt, "MULTIPLY", v, 6.0, clamp=True))
+    linha = mat(nt, "MULTIPLY", mat(nt, "SUBTRACT", v, 0.70), 3.3, clamp=True)       # fio claro na borda externa
     d = mat(nt, "SUBTRACT", H, u)
     clarao = mat(nt, "EXPONENT", mat(nt, "MULTIPLY", mat(nt, "MULTIPLY", mat(nt, "DIVIDE", d, 0.05), mat(nt, "DIVIDE", d, 0.05)), -1.0))
     clarao = mat(nt, "MULTIPLY", clarao, mat(nt, "MULTIPLY", dentro, I))
-    k = mat(nt, "ADD", k, mat(nt, "MULTIPLY", mat(nt, "MULTIPLY", linha, dentro), mat(nt, "MULTIPLY", tendencia, I)))
+    k = mat(nt, "ADD", k, mat(nt, "MULTIPLY", mat(nt, "MULTIPLY", linha, dentro), mat(nt, "MULTIPLY", tend, I)))
     k = mat(nt, "ADD", k, mat(nt, "MULTIPLY", clarao, 0.8), clamp=True)
-
-    calor = mat(nt, "ADD", mat(nt, "MULTIPLY", mat(nt, "POWER", q, 2.5), mat(nt, "POWER", v, 1.0)),
-                mat(nt, "ADD", mat(nt, "MULTIPLY", linha, 0.55), clarao), clamp=True)
-
+    calor = mat(nt, "ADD", mat(nt, "MULTIPLY", mat(nt, "POWER", q, 1.5), mat(nt, "POWER", v, 0.7)),
+                mat(nt, "ADD", mat(nt, "MULTIPLY", linha, 0.6), clarao), clamp=True)
     comb = nt.nodes.new("ShaderNodeCombineColor")
     for i in range(3):
         nt.links.new(calor, comb.inputs[i])
@@ -175,118 +148,249 @@ def material_rastro():
     return m, cabeca, ponta, inten
 
 
-def material_emissivo(nome, radial=False):
-    m = bpy.data.materials.new(nome)
-    nt = m.node_tree
-    nt.nodes.clear()
-    em = nt.nodes.new("ShaderNodeEmission")
-    em.inputs["Color"].default_value = (1, 1, 1, 1)
-    out = nt.nodes.new("ShaderNodeOutputMaterial")
-    if radial:  # disco de brilho macio
-        tc = nt.nodes.new("ShaderNodeTexCoord")
-        gr = nt.nodes.new("ShaderNodeTexGradient")
-        gr.gradient_type = "QUADRATIC_SPHERE"
-        nt.links.new(tc.outputs["Object"], gr.inputs[0])
-        tr = nt.nodes.new("ShaderNodeBsdfTransparent")
-        mix = nt.nodes.new("ShaderNodeMixShader")
-        nt.links.new(gr.outputs[0], mix.inputs[0])
-        nt.links.new(tr.outputs[0], mix.inputs[1])
-        nt.links.new(em.outputs[0], mix.inputs[2])
-        nt.links.new(mix.outputs[0], out.inputs[0])
-    else:
-        nt.links.new(em.outputs[0], out.inputs[0])
-    return m
+def keyar_rastro(nos, chaves):
+    cab, pon, ite = nos
+    for f, c, p, i in chaves:
+        for no, val in ((cab, c), (pon, p), (ite, i)):
+            no.outputs[0].default_value = val
+            no.outputs[0].keyframe_insert("default_value", frame=f)
 
 
-def plano(nome, w, h, material):
+# ------------------------------------------------------------------ geometria
+def poli(nome, pts, material, z=0.0):
     me = bpy.data.meshes.new(nome)
-    me.from_pydata([(-w, -h, 0), (w, -h, 0), (w, h, 0), (-w, h, 0)], [], [(0, 1, 2, 3)])
+    me.from_pydata([(x, y, 0) for x, y in pts], [], [tuple(range(len(pts)))])
+    ob = bpy.data.objects.new(nome, me)
+    ob.data.materials.append(material)
+    ob.location.z = z
+    cena.collection.objects.link(ob)
+    return ob
+
+
+def lente(nome, comp, larg, material, z=0.0):
+    """Losango fino e afiado nas duas pontas, centrado na origem, ao longo de +x."""
+    return poli(nome, [(-comp, 0), (0, larg), (comp, 0), (0, -larg)], material, z)
+
+
+def anel(nome, r_ext, r_int, material, n=48):
+    me = bpy.data.meshes.new(nome)
+    vs, fs = [], []
+    for i in range(n):
+        a = math.tau * i / n
+        vs += [(math.cos(a) * r_ext, math.sin(a) * r_ext, 0), (math.cos(a) * r_int, math.sin(a) * r_int, 0)]
+    for i in range(n):
+        j = (i + 1) % n
+        fs.append((2 * i, 2 * j, 2 * j + 1, 2 * i + 1))
+    me.from_pydata(vs, [], fs)
     ob = bpy.data.objects.new(nome, me)
     ob.data.materials.append(material)
     cena.collection.objects.link(ob)
     return ob
 
 
-# ------------------------------------------------------------------ animacao
-rastro = crescente()
-m_rastro, v_cabeca, v_ponta, v_inten = material_rastro()
-rastro.data.materials.append(m_rastro)
-
-# (quadro, cabeca, ponta_do_rastro, intensidade): antecipacao (1-2), golpe (3-6), dissipacao (7-12)
-CHAVES = [
-    (1, 0.02, 0.00, 0.30), (2, 0.07, 0.00, 0.50),                                    # antecipacao: fio fino se armando
-    (3, 0.32, 0.00, 1.00), (4, 0.64, 0.00, 1.00), (5, 0.93, 0.03, 1.00), (6, 1.03, 0.14, 1.00),
-    (7, 1.03, 0.26, 0.95), (8, 1.03, 0.42, 0.80), (9, 1.03, 0.60, 0.62), (10, 1.03, 0.78, 0.45),
-    (11, 1.03, 0.92, 0.28), (12, 1.03, 1.02, 0.12),
-]
-for f, c, p, i in CHAVES:
-    for no, val in ((v_cabeca, c), (v_ponta, p), (v_inten, i)):
-        no.outputs[0].default_value = val
-        no.outputs[0].keyframe_insert("default_value", frame=f)
-
-
-def pos_cabeca(u, raio=R_EXT):
-    a = ARCO / 2 - u * ARCO
-    return math.cos(a) * raio, math.sin(a) * raio, a
-
-
-def keyar(ob, f, loc=None, esc=None, rot=None):
-    if loc is not None:
-        ob.location = loc
-        ob.keyframe_insert("location", frame=f)
-    if esc is not None:
-        ob.scale = esc
-        ob.keyframe_insert("scale", frame=f)
-    if rot is not None:
-        ob.rotation_euler = (0, 0, rot)
-        ob.keyframe_insert("rotation_euler", frame=f)
+def crescente(nome, larg, material, r_ext=R_EXT, perfil=0.5):
+    na, nr = 72, 6
+    verts, uvs, faces = [], [], []
+    for i in range(na + 1):
+        u = i / na
+        a = MEIO - u * ARCO
+        t = max(1.0 - (abs(a) / MEIO) ** 2, 0.0)
+        r_int = r_ext - larg * (t ** perfil)
+        for j in range(nr + 1):
+            v = j / nr
+            r = r_int + (r_ext - r_int) * v
+            verts.append((math.cos(a) * r, math.sin(a) * r, 0.0))
+            uvs.append((u, v))
+    for i in range(na):
+        for j in range(nr):
+            k = i * (nr + 1) + j
+            faces.append((k, k + nr + 1, k + nr + 2, k + 1))
+    me = bpy.data.meshes.new(nome)
+    me.from_pydata(verts, [], faces)
+    uv = me.uv_layers.new(name="UVMap")
+    for poly in me.polygons:
+        for li in poly.loop_indices:
+            uv.data[li].uv = uvs[me.loops[li].vertex_index]
+    ob = bpy.data.objects.new(nome, me)
+    ob.data.materials.append(material)
+    cena.collection.objects.link(ob)
+    return ob
 
 
-# clarao em estrela + disco na cabeca da lamina
-m_branco = material_emissivo("branco")
-m_disco = material_emissivo("disco", radial=True)
-estr1 = plano("estrela_a", 1.0, 0.07, m_branco)
-estr2 = plano("estrela_b", 0.07, 0.7, m_branco)
-disco = plano("disco", 1.0, 1.0, m_disco)
-cabeca_u = {f: c for f, c, _, _ in CHAVES}
-for f in range(1, N + 1):
-    u = min(cabeca_u[f], 1.0)
-    x, y, a = pos_cabeca(u, R_EXT - 0.04)
-    forca = {1: 0.0, 2: 0.25, 3: 0.55, 4: 0.8, 5: 1.0, 6: 0.9, 7: 0.55, 8: 0.25}.get(f, 0.0)
-    # a estrela gira junto com o corte
-    for ob, base, rot in ((estr1, 0.20, a), (estr2, 0.20, a + math.pi / 2), (disco, 0.11, 0.0)):
-        s = max(forca * base, 0.0001)
-        keyar(ob, f, loc=(x, y, 0.1), esc=(s, s, 1), rot=rot)
+# ------------------------------------------------------------------ etapas
+def limpa():
+    for ob in list(bpy.data.objects):
+        bpy.data.objects.remove(ob, do_unlink=True)
+    for bloco in (bpy.data.meshes, bpy.data.materials, bpy.data.actions):
+        for it in list(bloco):
+            bloco.remove(it)
 
-# lascas/faiscas saindo da cabeca durante o golpe
-LASCAS = 16
-for i in range(LASCAS):
-    ob = plano("lasca_%02d" % i, 1.0, 0.18, m_branco)
-    nasce = random.choice([4, 4, 5, 5, 5, 6, 6, 7])
-    vida = random.choice([3, 4, 4, 5])
-    u0 = min(cabeca_u[nasce], 1.0)
-    x0, y0, a0 = pos_cabeca(u0, R_EXT - random.uniform(0.0, 0.1))
-    saida = a0 + random.uniform(-0.55, 0.55)                       # para fora do arco, espalhando
-    vel = random.uniform(0.07, 0.16)
-    comp = random.uniform(0.05, 0.11)
+
+def etapa_base():
+    """Cena, camera ortografica de cima e render leve."""
+    lin()
+    cena.frame_start, cena.frame_end = 1, N
+    cena.render.resolution_x = cena.render.resolution_y = TAM
+    cena.render.resolution_percentage = 100
+    cena.render.film_transparent = True
+    cena.render.engine = "CYCLES"
+    cena.cycles.device = "CPU"
+    cena.cycles.samples = 12
+    cena.cycles.use_denoising = False
+    cena.cycles.max_bounces = 0
+    for nome, valor_ in (("view_transform", "Standard"), ("look", "None")):
+        try:
+            setattr(cena.view_settings, nome, valor_)
+        except TypeError:
+            pass
+    cena.render.image_settings.file_format = "PNG"
+    cena.render.image_settings.color_mode = "RGBA"
+    cena.render.image_settings.color_depth = "8"
+    cd = bpy.data.cameras.new("cam")
+    cd.type = "ORTHO"
+    cd.ortho_scale = 2.0
+    cam = bpy.data.objects.new("camera", cd)
+    cam.location = (0, 0, 5)
+    cena.collection.objects.link(cam)
+    cena.camera = cam
+
+
+def lamina_katana(sufixo, calor_corpo, calor_fio, alfa, animado=False):
+    """Katana (lamina + fio + lombada + cabo + tsuba) filha de um pivo na origem; devolve (pivo, nos_de_alfa)."""
+    piv = bpy.data.objects.new("pivo_katana" + sufixo, None)
+    cena.collection.objects.link(piv)
+    m_corpo, n1 = emissivo("lamina" + sufixo, calor_corpo, alfa, animado)
+    m_fio, n2 = emissivo("fio" + sufixo, calor_fio, alfa, animado)
+    m_cabo, n3 = emissivo("cabo" + sufixo, calor_corpo * 0.5, alfa, animado)
+    pecas = [
+        poli("lamina" + sufixo, [(0.20, 0.024), (0.80, 0.022), (0.90, 0.0), (0.87, -0.013), (0.20, -0.024)], m_corpo),
+        poli("fio" + sufixo, [(0.22, -0.013), (0.86, -0.011), (0.87, -0.013), (0.20, -0.024)], m_fio, 0.01),
+        poli("lombada" + sufixo, [(0.20, 0.024), (0.80, 0.022), (0.80, 0.015), (0.20, 0.015)], m_fio, 0.01),
+        poli("cabo" + sufixo, [(0.00, 0.020), (0.19, 0.017), (0.19, -0.017), (0.00, -0.020)], m_cabo),
+        poli("tsuba" + sufixo, [(0.185, 0.055), (0.215, 0.055), (0.215, -0.055), (0.185, -0.055)], m_fio, 0.01),
+    ]
+    for p in pecas:
+        p.parent = piv
+    return piv, [n for n in (n1, n2, n3) if n is not None]
+
+
+def etapa_katana():
+    """A katana passando na frente (3 imagens-fantasma atras) e o brilho correndo no fio."""
+    lin()
+    piv, _ = lamina_katana("", 0.66, 1.0, 1.0)
     for f in range(1, N + 1):
-        t = f - nasce
-        if t < 0 or t >= vida:
-            keyar(ob, f, loc=(x0, y0, 0.2), esc=(0.0001, 0.0001, 1), rot=saida)
-            continue
-        vida_k = 1.0 - t / vida
-        px = x0 + math.cos(saida) * vel * t - 0.005 * t * t
-        py = y0 + math.sin(saida) * vel * t - 0.012 * t * t         # cai um pouco: peso de lasca
-        s = comp * (0.4 + 0.6 * vida_k)
-        keyar(ob, f, loc=(px, py, 0.2), esc=(s, s * 0.45, 1), rot=saida)
+        keyar(piv, f, esc=(1, 1, 1) if f <= 9 else (0.0001, 0.0001, 1), rot=rad(ang_katana(f)))
+    # fantasmas: a mesma katana alguns quadros atras, mais fracos (efeito de velocidade)
+    for lag, calor, alfa in ((1, 0.66, 0.6), (2, 0.33, 0.4)):
+        g, _ = lamina_katana("_f%d" % lag, calor, calor, alfa)
+        for f in range(1, N + 1):
+            fa = f - lag
+            vis = 5 <= f <= 7 and fa >= 3
+            keyar(g, f, esc=(1, 1, 1) if vis else (0.0001, 0.0001, 1), rot=rad(ang_katana(max(fa, 1))))
+    # brilho que corre pelo fio nos quadros 3-4 (a lamina "lampeja" antes de cortar)
+    m_br, _ = emissivo("brilho_fio", 1.0)
+    br = lente("brilho_fio", 0.07, 0.03, m_br, 0.05)
+    piv_br = bpy.data.objects.new("pivo_brilho", None)
+    cena.collection.objects.link(piv_br)
+    br.parent = piv_br
+    for f in range(1, N + 1):
+        a = rad(ang_katana(f))
+        x = {3: 0.35, 4: 0.78}.get(f)
+        keyar(piv_br, f, rot=a)
+        keyar(br, f, loc=(x if x else 0.5, 0, 0.05), esc=(1, 1, 1) if x else (0.0001, 0.0001, 1))
 
-# ------------------------------------------------------------------ renderiza e monta a folha
-os.makedirs(os.path.join(SAIDA, "saida"), exist_ok=True)
-cena.render.filepath = os.path.join(SAIDA, "saida", "quadro_")
-bpy.ops.render.render(animation=True)
-bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SAIDA, "corte_hazaki.blend"), copy=True)
+
+def etapa_corte():
+    """O rastro fino colado na ponta da katana, o corte grosso do impacto e a linha fina de anime."""
+    lin()
+    # rastro curto que acompanha a ponta (quadros 4-7)
+    m1, a1, b1, c1 = material_rastro("rastro_ponta")
+    crescente("rastro_ponta", 0.07, m1, r_ext=0.84, perfil=0.5)
+    keyar_rastro((a1, b1, c1), [
+        (1, 0, 0, 0), (3, 0, 0, 0), (4, 0.2, 0.0, 0.6), (5, 0.55, 0.28, 0.8), (6, 0.9, 0.55, 0.9), (7, 1.03, 0.75, 0.9),
+        (8, 1.03, 1.0, 0.4), (9, 1.03, 1.03, 0.0), (16, 1.03, 1.03, 0.0)])
+    # corte grosso: dois quadros de flash no impacto
+    m2, a2, b2, c2 = material_rastro("corte_grosso")
+    crescente("corte_grosso", 0.24, m2, perfil=0.5)
+    keyar_rastro((a2, b2, c2), [(1, 0, 0, 0), (IMPACTO - 1, 0, 0, 0), (IMPACTO, 1.03, 0.0, 1.0), (IMPACTO + 1, 1.03, 0.0, 1.0),
+                                (IMPACTO + 2, 1.03, 0.45, 0.7), (IMPACTO + 3, 1.03, 1.03, 0.0), (N, 1.03, 1.03, 0.0)])
+    # linha fina (anime): surge inteira no impacto e afina/some da cauda para a ponta
+    m3, a3, b3, c3 = material_rastro("corte_fino")
+    crescente("corte_fino", 0.075, m3, r_ext=R_EXT + 0.04, perfil=0.5)
+    ch = [(1, 0, 0, 0), (IMPACTO - 1, 0, 0, 0)]
+    for f in range(IMPACTO, N + 1):
+        t = (f - IMPACTO) / (N - IMPACTO)
+        ch.append((f, 1.03, min(max((t - 0.25) * 1.4, 0.0), 1.03), 1.0 - 0.7 * t if f < N else 0.0))
+    keyar_rastro((a3, b3, c3), ch)
 
 
+def etapa_impacto():
+    """Flash em estrela no ponto do choque e onda de ar que se afasta do corte."""
+    lin()
+    m_b, _ = emissivo("branco", 1.0)
+    ix, iy = math.cos(rad(-35)) * R_EXT, math.sin(rad(-35)) * R_EXT          # ponto do impacto (meio-baixo do arco)
+    est = [lente("estrela_a", 0.34, 0.025, m_b, 0.1), lente("estrela_b", 0.24, 0.025, m_b, 0.1)]
+    forca = {IMPACTO: 1.0, IMPACTO + 1: 1.0, IMPACTO + 2: 0.55, IMPACTO + 3: 0.25}
+    for f in range(1, N + 1):
+        k = forca.get(f, 0.0)
+        s = max(k, 0.0001)
+        keyar(est[0], f, loc=(ix, iy, 0.1), esc=(s, s, 1), rot=rad(25))
+        keyar(est[1], f, loc=(ix, iy, 0.1), esc=(s, s, 1), rot=rad(25) + math.pi / 2)
+    # onda de ar: um segundo arco fino que se afasta do corte e some (sensacao de ar rasgado)
+    m_o, a_o, b_o, c_o = material_rastro("onda_ar")
+    onda = crescente("onda_ar", 0.05, m_o, r_ext=R_EXT, perfil=0.5)
+    ch = [(1, 0, 0, 0), (IMPACTO - 1, 0, 0, 0)]
+    for f in range(IMPACTO, N + 1):
+        t = (f - IMPACTO) / (N - IMPACTO)
+        ch.append((f, 1.03, 0.0, max(0.9 - 1.1 * t, 0.0)))
+        s_ = 1.0 + 0.30 * t ** 0.6
+        keyar(onda, f, esc=(s_, s_, 1))
+    for f in range(1, IMPACTO):
+        keyar(onda, f, esc=(1, 1, 1))
+    keyar_rastro((a_o, b_o, c_o), ch)
+
+
+def etapa_faiscas():
+    """Lascas e faiscas: rajada no impacto, riscos compridos e pontinhos que sobem."""
+    lin()
+    random.seed(7)
+    m_b, _ = emissivo("branco_fx", 1.0)
+    ix, iy = math.cos(rad(-35)) * R_EXT, math.sin(rad(-35)) * R_EXT
+    for i in range(44):
+        longo = i < 28
+        ob = lente("fasca_%02d" % i, 1.0, 0.16 if longo else 0.5, m_b, 0.2)
+        nasce = random.choice([IMPACTO, IMPACTO, IMPACTO, IMPACTO + 1, IMPACTO + 1, IMPACTO + 2])
+        vida = random.choice([3, 4, 5, 6]) if longo else random.choice([4, 6, 8])
+        a_arc = rad(random.uniform(-62, 62) * 0.9)
+        x0 = math.cos(a_arc) * (R_EXT - random.uniform(0, 0.08))
+        y0 = math.sin(a_arc) * (R_EXT - random.uniform(0, 0.08))
+        if i < 18:                                   # parte nasce no ponto do choque
+            x0, y0 = ix + random.uniform(-0.05, 0.05), iy + random.uniform(-0.05, 0.05)
+        dir_ = a_arc + random.uniform(-0.6, 0.6) if i >= 18 else random.uniform(0, math.tau)
+        vel = random.uniform(0.09, 0.20) if longo else random.uniform(0.02, 0.05)
+        comp = random.uniform(0.06, 0.13) if longo else random.uniform(0.012, 0.025)
+        for f in range(1, N + 1):
+            t = f - nasce
+            if t < 0 or t >= vida:
+                keyar(ob, f, loc=(x0, y0, 0.2), esc=(0.0001, 0.0001, 1), rot=dir_)
+                continue
+            vk = 1.0 - t / vida
+            px = x0 + math.cos(dir_) * vel * t
+            py = y0 + math.sin(dir_) * vel * t + (0.012 * t if not longo else -0.008 * t * t)
+            s = comp * (0.5 + 0.5 * vk)
+            keyar(ob, f, loc=(px, py, 0.2), esc=(s, s * 0.2 if longo else s, 1), rot=dir_)
+
+
+def monta_tudo():
+    limpa()
+    etapa_base()
+    etapa_katana()
+    etapa_corte()
+    etapa_impacto()
+    etapa_faiscas()
+
+
+# ------------------------------------------------------------------ render + folha
 def le(caminho):
     img = bpy.data.images.load(caminho)
     img.colorspace_settings.name = "Non-Color"
@@ -307,13 +411,25 @@ def quantiza(q):
     return out
 
 
-quadros = [quantiza(le(os.path.join(SAIDA, "saida", "quadro_%04d.png" % f))) for f in range(1, N + 1)]
-folha = np.concatenate(quadros, axis=1)
-img = bpy.data.images.new("folha", TAM * N, TAM, alpha=True)
-img.colorspace_settings.name = "Non-Color"
-img.alpha_mode = "STRAIGHT"
-img.pixels = folha.reshape(-1).tolist()
-img.filepath_raw = os.path.join(SAIDA, "corte_hazaki_folha.png")
-img.file_format = "PNG"
-img.save()
-print("FOLHA OK", img.filepath_raw)
+def renderiza_e_monta():
+    os.makedirs(os.path.join(SAIDA, "saida"), exist_ok=True)
+    cena.render.filepath = os.path.join(SAIDA, "saida", "quadro_")
+    bpy.ops.render.render(animation=True)
+    quadros = [quantiza(le(os.path.join(SAIDA, "saida", "quadro_%04d.png" % f))) for f in range(1, N + 1)]
+    folha = np.concatenate(quadros, axis=1)
+    img = bpy.data.images.new("folha", TAM * N, TAM, alpha=True)
+    img.colorspace_settings.name = "Non-Color"
+    img.alpha_mode = "STRAIGHT"
+    img.pixels = folha.reshape(-1).tolist()
+    img.filepath_raw = os.path.join(SAIDA, "corte_hazaki_folha.png")
+    img.file_format = "PNG"
+    img.save()
+    print("FOLHA OK", img.filepath_raw)
+
+
+if bpy.app.background:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    cena = bpy.context.scene
+    monta_tudo()
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(SAIDA, "corte_hazaki.blend"), copy=True)
+    renderiza_e_monta()

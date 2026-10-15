@@ -14,7 +14,7 @@ const MAX_CORTES := 4
 const MAX_FLASH := 24
 const MAX_LUZES := 3
 const MAX_ONDAS := 6
-const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 12 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
+const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
 
 const SHADER_CORTE := """
 shader_type canvas_item;
@@ -24,12 +24,12 @@ uniform float arco = 2.2;
 uniform float lado = 1.0;
 uniform float modo = 0.0;
 uniform vec4 cor : source_color = vec4(1.0);
-uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 12 quadros em linha, RGB = calor, A = intensidade
+uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 16 quadros em linha, RGB = calor, A = intensidade
 float pos(float x) { return floor(x * 8.0 + 0.5) / 8.0; }
 void fragment() {
 	if (modo > 1.5) {
-		float q = min(floor(prog * 12.0), 11.0);
-		vec4 t = texture(folha, vec2((UV.x + q) / 12.0, lado > 0.0 ? UV.y : 1.0 - UV.y));
+		float q = min(floor(prog * 16.0), 15.0);
+		vec4 t = texture(folha, vec2((UV.x + q) / 16.0, lado > 0.0 ? UV.y : 1.0 - UV.y));
 		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.55);
 		COLOR = vec4(c * 3.0, t.a);
 	} else {
