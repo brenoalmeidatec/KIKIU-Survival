@@ -1,8 +1,8 @@
 # Índice das fontes de ícones das cartas
 
-Inventário em origin/main 77fa330, para geração de imagens-fonte; não altera regras, recorta ou integra. Inclui todas as entradas de v2_cartas.json, inclusive eventuais cartas ocultas.
+Inventário inicial em main 77fa330; folha 09 baseada na main 51ab6aa, após as quatro cartas do #242. Inclui todas as 90 entradas de v2_cartas.json nessas bases, inclusive cartas ocultas. Não altera regras nem faz recorte ou integração.
 
-Total: **90 motivos**: 50 golpes, 25 evoluções/fusões, 7 stats, 4 modificadores, katana principal, escudo secundário, E Ruptura e selo Q reservado. São 89 motivos de conteúdo e 1 placeholder sem habilidade publicada. O Dragão Cobalto de habilidades.json pertence ao sistema legado; não é a Q atual da v2 e não entra neste lote.
+Total com a folha 09: **94 motivos**: 50 golpes, 25 evoluções/fusões, 7 stats, 8 modificadores, katana principal, escudo secundário, E Ruptura e selo Q reservado. São 93 motivos de conteúdo e 1 placeholder sem habilidade publicada. O Dragão Cobalto de habilidades.json pertence ao sistema legado; não é a Q atual da v2 e não entra neste lote.
 
 Referências lidas: dados/v2_cartas.json, dados/v2_secundario.json, dados/v2_ruptura.json, dados/habilidades.json, v2/heroi.gd, v2/cartas.gd, v2/telas.gd, v2/status.gd e v2/hud_habilidades.gd. Os cartões de escolha usam o campo icone; as evoluções atualmente reutilizam no HUD o ícone da primeira peça consumida. As fontes abaixo dão identidade própria a cada ID, sem mudar essa ligação.
 
@@ -139,6 +139,21 @@ Não são sprites de ataque ou animação de gameplay. Fusões entram como ícon
 | 4 | secundário / escudo | **Escudo** — Bloqueia de frente; bloqueio perfeito repele e atordoa. | sem campo; desenho em código | Sturdy frontal dark steel shield with a bright parry spark on its rim |
 | 5 | habilidade / ruptura | **Ruptura (E)** — Carrega e racha o chão ao redor, causando dano e repelindo. | desenho em código de duas placas e fenda | Two separated rocky ground plates with a branching central orange fissure and outward force |
 | 6 | reserva / ultimate_q | **Ultimate (Q), reservada** — Sem mecânica publicada; somente selo indisponível. | desenho em código: círculo apagado e traço | Muted gray circular seal crossed by a short horizontal bar, no letters and no implied power |
+## Folha 09 — fonte: folha_09.png (issue #275)
+
+Quatro modificadores dos heróis Nicão e Lucas, nas células 1–4 da primeira linha. As células 5–12 não contêm ícones. Ordem: esquerda → direita.
+
+**Dimensão real da fonte gerada:** 1447×1087 px. A grade lógica continua com células de 362×362. Antes de usar o recorte rígido do pipeline, o Claude deve acrescentar uma coluna branca à direita e remover uma linha branca do rodapé, chegando a 1448×1086 **sem redimensionar os desenhos**. A variação é só no fundo vazio; todos os motivos cabem na primeira linha e nas respectivas colunas. A fonte original foi preservada.
+
+| Célula | Categoria / ID | Nome e descrição real da carta | Herói | Desenho e associação |
+|---|---|---|---|---|
+| 1 (linha 1, coluna 1; x=0, y=0) | modificador / abalo | **Abalo sísmico** — A pancada no chão solta uma onda de choque com {v}% do dano. | Nicão | Martelo pesado atingindo pedra, com onda dourada se abrindo a partir do impacto. |
+| 2 (linha 1, coluna 2; x=362, y=0) | modificador / muralha | **Peso de muralha** — Os golpes empurram e atordoam {v}% mais. | Nicão | Manopla de ferro empurrando uma silhueta, com estrelas de atordoamento. Não representa defesa ou escudo. |
+| 3 (linha 1, coluna 3; x=724, y=0) | modificador / chuva | **Chuva de adagas** — Cada adaga que acerta tem {v}% de chance de soltar outra. | Lucas | Duas adagas ligadas por um rastro violeta e uma faísca de impacto sobre fragmentos. Simboliza o encadeamento; a ilustração não é um diagrama literal da trajetória. |
+| 4 (linha 1, coluna 4; x=1086, y=0) | modificador / mira | **Mira longa** — As adagas voam {v}% mais longe e mais rápido. | Lucas | Uma adaga com rastro longo e anéis de vento ciano, representando alcance e velocidade. Não acrescenta perfuração. |
+
+Os nomes de destino sugeridos são abalo.png, muralha.png, chuva.png e mira.png, nas variantes de 32 e 16 px já usadas no #274. O Claude faz normalização do fundo, recorte e ligação no pipeline; esta entrega não altera os ícones provisórios em uso.
+
 ## Conferência das fontes e orientação de integração
 
 As folhas são fontes ilustrativas, não diagramas de regras. Todos os motivos previstos têm sua célula; a folha 08 mantém seis células finais brancas e Q continua como selo cinza reservado. A folha 06 foi revisada com imagegen: Anel de Brasas tem seis lâminas e Colosso de Pedra usa granito frio com barro, sem lava. Revoada de Trovões usa uma amostra ilustrativa do bando. Eclipse de Almas prioriza o vínculo dos espíritos com a vítima, sem retratar separadamente todas as espécies consumidas.

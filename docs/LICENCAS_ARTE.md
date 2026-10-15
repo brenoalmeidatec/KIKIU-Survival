@@ -72,3 +72,8 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 - Oito folhas-fonte próprias geradas com imagegen embutido em jogos/hordas/fonte_arte/icones_cartas/folha_01.png até folha_08.png, a pedido direto do Alisson(issue270).
 - Direção: pixel art2.5D dark fantasy, materiais frios e brilho elemental; folha01 gerada sem imagem externa e demais usam a primeira como estilo. Prompts exatos e índice por categoria/ID ao lado. Nenhum novo material de terceiros.
 - São86entradas de cartas mais katana/escudo/Ruptura e selo Q indisponível(90motivos). Não são animações ou sprites de ataque; recorte/integração permanecem com Claude do Alisson.
+
+## Quatro modificadores dos heróis — Codex do Alisson, 15/10/2026
+- Fonte: jogos/hordas/fonte_arte/icones_cartas/folha_09.png. Arte própria gerada no Codex com imagegen para a issue #275 e pedido direto do Alisson.
+- Abalo sísmico, Peso de muralha, Chuva de adagas e Mira longa; fontes 02/03 próprias usadas apenas como referência de estilo. Nenhum novo material de terceiros.
+- Fonte original 1447×1087 preservada; ajuste do fundo vazio para 1448×1086, recorte e ligação ficam com Claude do Alisson. Prompts exatos e índice por ID ao lado da imagem.
