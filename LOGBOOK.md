@@ -1688,6 +1688,9 @@ _Codex do Alisson_
 ## 2026-10-14 · Codex do Alisson · reserva da animação visual
 - **Em andamento:** item4 visual: dissolve no efeito de morte usando o pool/shader existente. Herói já tem antecipação/avanço/squash de golpe e queda; o restante do corpo/herói e contrato de fase/relógio do MultiMesh dependem de coordenação com Claude do Alisson, sem alterações nos arquivos de sistemas.
 - **Próximo:** benchmark real --medir no perfil Médio com horda cheia, antes/depois no IrisXe, testes e prints do viewport. Reserva somente documental: Godot ainda não rodado nesta branch.
+## 2026-10-14 · Codex do Alisson · reserva do passe visual Alto
+- **Em andamento:** item 5, passe de quantização de paleta/dither dentro do SubViewport 960x540, antes da UI/upscale, somente no perfil Alto. Bloom seletivo depende de máscara/composição de emissão coordenada com Claude do Alisson; Compatibility do Godot 4.4 não oferece HDR 2D.
+- **Próximo:** implementar o passe visual útil, medir no Iris Xe com perfil Alto e documentar os ganchos de bloom sem alterar sistemas. Reserva documental: Godot ainda não rodado nesta branch.
 ## 2026-10-14 · Claude do Alisson (notebook) · coop online, etapa 0: preparar o solo (docs/ONLINE_V2_PLANO.md)
 - **Feito:** `mundo.herois` (lista; o solo tem só o `heroi`), `mundo.alvo_mais_perto(pos)` (herói vivo mais perto; os monstros usam com 2+ heróis, o solo segue o caminho de sempre sem busca), e o tempo separado em "do mundo" e "do herói local": hit-stop, câmera lenta e a pausa da escolha ficam num `v2/tempo_local.gd` (um por herói local) e `combate.passo_tempo` devolve `dt_mundo` e deixa `dt_local`; `combate.parada_t/lento_*/pausado` seguem existindo como propriedades (os testes não mudaram). `combate.pausado_mundo` é a pausa do resultado (vale para todos). `combate.tempo_local_separado` (false no solo) é a chave que o coop e a tela dividida ligam: aí o hit-stop só trava o herói local e o mundo segue. Flag `--coop` lida em `mundo.coop_modo` e ignorada.
 - **Testes:** novo `v2_coop_preparo` (com 2 heróis o monstro persegue o mais perto e troca de alvo quando o remoto cai; o tempo do solo e o separado). Suíte inteira igual.
@@ -1730,6 +1733,11 @@ _Codex do Alisson_
 ## 2026-10-14 · Codex do Alisson · reprodução do dissolve no #253
 - **Feito:** harnesses de viewport e benchmark preservados na documentação visual do PR. São as mesmas verificações já executadas: progresso, pausa do efeito e limpeza do slot ao reutilizar; sem alteração no runtime.
 - **Pendente:** integração corporal do Claude e CI da conta, conforme o PR. Nenhum merge ou nova build.
+## 2026-10-14 · Codex do Alisson · passe pixel Alto no PR #258
+- **Feito:** passe RGB 5 bits/Bayer estático dentro do viewport 960x540, antes da vinheta/UI e do upscale; só Alto. Ordem explícita de sublayer reaplicada após reordenação. Fora do Alto fica oculto e sem material. Só apresentacao.gd e novo pos_visual.gd; estudo corrigido para Compatibility sem HDR 2D.
+- **QA/testes:** renderer real Iris Xe, QA258_POS código 0/falhas=0/sem SCRIPT ERROR ou SHADER ERROR, inclusive sentinela de camada após reordenação e perfis. HUD: 1.680 pixels opacos amostrados, 0 alterados. v2_hud, v2_fontes, v2_pausa, v2_esc, v2_partida, v2_morte, v2_mapas, v2_minimapa e v2_santuario: código 0/falhas=0/sem SCRIPT ERROR. gdformat: 231 limpos.
+- **Medição:** Alto, 500 monstros/build cheia, 3 pares alternados, Iris Xe real: mediana final 79,6 para 75,9 FPS (-4,65%); GPU mundo 5,79 para 9,35 ms. Houve grande variação e uma rodada de 65,1 FPS; logs completos e série exploratória preservados em docs/visual_2_5d/passe_pixel/. Não prometer ganho/custo estável.
+- **Pendente/Claude:** bloom seletivo precisa máscara de emissão e composição 240x135/blur; não foi implementado nem medido. Item 5 parcial, rascunho. CI remoto bloqueado por conta #249; sem merge/build/atalho novos. Nenhuma mudança nos sistemas ou exports.
 
 _Codex do Alisson_
 ## 2026-10-14 · Codex do Alisson · 30 sprites restantes no PR #251
@@ -1871,14 +1879,38 @@ _Claude do Alisson (notebook)_
 - O Breno pediu animação de verdade nas armas (invocações andando, atacando e virando; projéteis apontando e girando; áreas com início, loop e fim). Cancelado o envio ao Codex (issue #267 fechada): a análise ficou em `docs/animacoes_armas_v2.md` e o trabalho será feito no Blender.
 
 _Claude do Breno_
+## 2026-10-15 · Claude do Alisson · SUA BUILD no controle: painel central com saída (#257)
+- **Antes/depois:** com o painel central aberto sobre a escolha de cartas ou o baú, o controle não tinha saída: `status.entrada()` engolia todo botão e só o C abria e fechava o painel. Agora o Select (`JOY_BUTTON_BACK`, o botão que a v1 já dava ao card "status") liga e desliga o painel, o B fecha, LB e RB paginam como Q e E, e o resto do controle segue engolido com o painel aberto, porque as cartas estão escondidas.
+- **Escopo:** `v2/status.gd` (`entrada()` e a constante `BOTAO_PAINEL`) e a lista de controles do `v2/LEIA-ME.md`. Na partida o Select não liga o card compacto: o C segue sendo o da partida, de propósito. O Start continua sendo da antena da pausa, que o recebe antes do card, como o ESC.
+- **Testes:** `testes/v2_status.gd` ganhou `botao()`, que manda `InputEventJoypadButton` pela mesma entrada da janela que o `tecla()` usa, e checagens do controle na escolha, no baú e na paginação. Sem a correção, essas checagens dão 9 falhas; com ela, `v2_status falhas=0`. Rodei uma a uma, com timeout de 180 s, as 33 cenas `v2_*` e `entrada_cenas`, mais `status` (v1): todas com código 0, `falhas=0` e sem SCRIPT ERROR. gdformat -l 160 limpo em scripts, testes e v2.
+- **Pendente:** o card compacto da partida ainda não tem botão no controle. Y e os outros botões seguem livres. O issue #257 diz "Para o Codex" porque foi escrito quando a divisão era outra; pela divisão do `origin/main`, `v2/` é do Claude do Alisson, e o PR ficou com ele.
+- **Para o Claude do Breno:** testar com o controle, em três itens: (1) na escolha de cartas, Select abre o painel e Select de novo fecha; (2) com o painel aberto, A não escolhe carta e B fecha; (3) LB e RB trocam de página dos golpes no painel.
+- **Próximo:** esperar o CI do PR. Quem mescla é o orquestrador, depois do CI verde.
+## 2026-10-15 - Passe de pixel no Alto pronto (PR #258)
+- **Feito:** a branch `codex/passe-pixel-alto` foi atualizada com `origin/main` (conflito só no `v2/LEIA-ME.md`, mantidas as duas seções). Revisados `pos_visual.gd` e `apresentacao.gd`: só o perfil Alto desenha o quantizador; Baixo, Médio e Personalizado deixam o retângulo oculto e sem material. Novo teste `testes/v2_pos_visual` (perfil liga/desliga em tempo de execução, camada 3, dentro do SubViewport). Todos os `v2_*` com `falhas=0` e `gdformat -l 160` limpo.
+- **Pendente:** bloom seletivo, que depende do contrato de camada de luz dos sistemas; sai em PR separado.
+- **Próximo:** mesclar este PR (o orquestrador mescla).
+- **Para o Claude do Alisson:** Alto personalizado (opção mexida) vira "personalizado" e perde o passe; é intencional pelo contrato `g_perfil() == "alto"`.
+## 2026-10-15 — Morte do herói: flash e dissolução no corpo (#253, parte do herói)
+- **Feito:** gancho em `v2/heroi.gd` (`_iniciar_morte`, `morte_k`, `morte_t`): ao morrer o corpo ganha um shader de dissolução por pixel (ruído estável nas coordenadas da textura, borda clara) com flash branco no início. O progresso anda só em `_visual_morto(dt)`, com o `dt` do herói local, então o hit-stop da morte (0,18 s), a câmera lenta e a pausa esticam ou congelam a animação; o shader não usa `TIME`. O material só existe depois da morte (herói vivo não paga nada) e `resetar` o limpa. Horda (`INSTANCE_CUSTOM`) fica de fora: exige mexer em `horda.gd`/`monstro.gd` e a conta de CPU por monstro não fechou.
+- **Validação:** teste novo `testes/v2_morte_heroi` (material só após a morte, congelado no hit-stop e na pausa, anda depois, termina em 1, reset limpa); `v2_morte`, `v2_herois`, `esquiva`, `v2_ruptura` com falhas=0; gdformat -l 160 limpo. Sem prints: a verificação é por números, o visual real precisa de olho humano.
+- **Pendente:** o PR #253 (dissolve do flash dos monstros em `efeitos.gd`) estava em rascunho e conflitava em `v2/LEIA-ME.md`; resolvi o conflito mesclando a main e tirei de rascunho. Coordenar com o #277 se ele mexer em `_visual_morto`.
 
-## 2026-10-15 · Fontes do Marco 4 — Codex do Alisson
-- Antes/depois: peças pendentes na issue #244; entregues ruína, altar, ponte, passagem estreita, platô, portão, torre e mirante em folha 4×2, com revisão de margens.
-- Validação: inspeção visual, PNG íntegro e dimensão real documentada (1774×887), gdformat em scripts/testes/v2. Godot não executado localmente: somente arte/documentação.
-- Para o Claude do Alisson: recorte, normalização da grade, escala, pivôs, colisão e integração são seus. Prints dos três mapas e demais critérios da issue #244 continuam pendentes; esta fonte não os substitui.
+_Claude do Alisson (notebook)_
+## 2026-10-15 · Codex do Alisson · quatro ícones dos heróis (#275)
+- **Antes/depois:** abalo/muralha/chuva/mira usavam arte emprestada. Gerada folha_09.png com quatro símbolos próprios no estilo das folhas anteriores: impacto/onda, empurrão/atordoamento, encadeamento de adagas e alcance/velocidade. Índice atualizado com ID, descrição real, herói e célula.
+- **Escopo:** somente imagem-fonte, índice, orientação, prompts e licença; sem código, dados, recorte ou alteração dos ícones em uso. Total das fontes agora 94 motivos, incluindo 90 cartas e quatro símbolos extras.
+- **Validação:** inspeção de quatro motivos e margens; integridade PNG e dimensões reais conferidas. Godot não executado localmente nesta entrega de arte. Formatação obrigatória conferida antes do PR.
+- **Para o Claude do Alisson:** fonte original veio em 1447×1087; acrescentar uma coluna branca à direita e retirar uma linha branca inferior para 1448×1086, sem escalar a arte, antes de usar células 362×362. Usar primeira linha: 1=abalo, 2=muralha, 3=chuva, 4=mira. Atualizar o pipeline e substituir ICONES_PROVISORIOS; conferir 32/16 px e em jogo. A arte ainda não está ligada aos quatro IDs.
 
 _Codex do Alisson_
 
+## 15/10/2026 · Integração em lote (#282, #279, #280, #283, #268)
+- **Feito:** branch `alisson/lote-integracao` junta, nesta ordem, controle-painel (#282), passe de pixel no Alto (#279), morte do herói com dissolve (#280), ícones de nicho do Lucas (#283, com o #278 do Codex) e o pedido de animações das armas (#268). Único conflito de texto: `v2/LEIA-ME.md` (seções do #253 e do #258), resolvido mantendo as duas seções. LOGBOOK sem conflito.
+- **Validação:** suíte inteira com `testes_ci.sh` (2 paralelas) e `gdformat -l 160 --check` limpo.
+- **Pendente:** Breno/orquestrador mesclar o PR na main; fecha #257 e #275.
+
+_Claude do Alisson (notebook)_
 
 ## 2026-10-15 · Claude do Alisson (notebook) · Marco 4: estruturas no mapa médio (integra o #288, Refs #244)
 - **Feito:** a folha do Codex (`jogos/hordas/fonte_arte/marco4/fonte_estruturas.png`) virou 8 sprites com `python gerar_objetos.py marco4`: modo novo do gerador (flood fill do branco, BOX para o tamanho do jogo, alfa binário, contorno de 1 px, normal estimado, 40 cores sem dithering). Atlas em `projeto/assets/v2/marco4/`, que `v2/cenario.gd` carrega junto com o da pasta do mapa. No mapa médio entraram 7 objetos `m4_*` sobre os marcadores: ruína (chave), altar (defesa), passagem (atalho), platô (chefe), portão, torre (placa do fogo) e mirante. Nenhum objeto da floresta saiu; a lógica dos marcadores não mudou.

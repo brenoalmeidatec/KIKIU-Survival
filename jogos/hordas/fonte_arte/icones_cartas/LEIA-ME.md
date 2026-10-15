@@ -1,11 +1,13 @@
 # Ícones das cartas — fontes para integração
 
-Oito folhas de 1448×1086, com 4 colunas e 3 linhas; cada célula mede 362×362. A ordem é da esquerda para a direita, de cima para baixo, conforme INDICE.md. Fundo branco, sem molduras ou texto. São 90 motivos em 96 posições: as seis últimas células da folha 08 estão vazias. Fontes produzidas com imagegen, sem recorte.
+Nove folhas-fonte, com 94 motivos: 90 cartas (50 golpes, 25 evoluções, sete atributos e oito modificadores), mais katana, escudo, Ruptura e selo reservado de Q. O selo de Q não representa uma habilidade ativa. A ordem de cada folha é da esquerda para a direita, de cima para baixo; INDICE.md identifica cada célula, categoria, ID, nome e descrição.
 
-Cobertura: 86 entradas de v2_cartas (50 golpes, 25 evoluções, 7 atributos e 4 modificadores), mais katana, escudo, Ruptura e selo reservado de Q. O selo de Q não representa uma habilidade ativa. Descrições e significados estão em INDICE.md; os prompts exatos, em PROMPTS.md.
+As folhas 01–08 medem 1448×1086, com grade de 4 colunas e 3 linhas e células de 362×362. A folha 08 tem seis células finais vazias. As fontes 01–08 já foram recortadas e integradas pelo Claude no #274: 32 px na escolha/baú/HUD e 16 px no SUA BUILD. Nomes de ícones legados e a coluna histórica do índice descrevem o estado anterior a essa integração.
 
-O Claude do Alisson faz a integração: separar ícones, comparar a leitura em 48 e 64 px, remover o fundo branco preservando brilhos internos, ajustar margens e vincular por categoria + ID. O nome do ícone antigo não basta: vários IDs compartilham a mesma textura hoje. Estas fontes ainda não aparecem nas cartas do jogo.
+A folha 09 acrescenta quatro modificadores: abalo e muralha (Nicão), chuva e mira (Lucas), nas células 1–4; o restante não contém ícones. **A fonte original veio com 1447×1087**, um pixel diferente em cada eixo. Para usar a mesma grade de 362 px, o Claude deve adicionar uma coluna branca à direita e retirar uma linha branca inferior, sem redimensionar a arte. Esse ajuste, o recorte e o vínculo dos quatro novos IDs ainda estão pendentes. A fonte original foi preservada, sem edição por script.
 
-A folha 06 recebeu uma revisão no imagegen: Anel de Brasas apresenta seis lâminas; Colosso de Pedra combina granito frio com barro, sem lava. Outras quantidades de corvos e fragmentos são representativas: o desenho não define os números das regras. As fusões aqui são ícones de carta, não sprites de ataque nem animações da issue #267, cancelada.
+Arte própria gerada com imagegen; prompts exatos em PROMPTS.md. Direção: pixel art 2.5D dark fantasy, aço envelhecido, pedra, sombras frias e brilho localizado. A folha 09 usa as fontes 02 e 03 apenas como referência de estilo. Não há material novo de terceiros.
 
-Arte própria gerada no Codex em 15/10/2026. Nenhuma cena ou código alterado; Godot não executado localmente nesta entrega de arte. Integridade PNG, dimensões, IDs e assuntos conferidos. A legibilidade no tamanho final e a avaliação dentro do jogo ficam para a integração.
+Os desenhos são símbolos de cartas: quantidades e trajetórias ilustradas não definem as regras. Não são sprites de ataque ou animações. Na folha 06, Anel de Brasas tem seis lâminas; Colosso de Pedra combina granito frio com barro, sem lava.
+
+A entrega da folha 09 altera somente imagem e documentação; Godot não executado localmente. Integridade PNG, dimensão real, assuntos e IDs conferidos. O Claude valida os recortes em 32/16 px e a leitura dentro do jogo.

@@ -27,6 +27,17 @@ Lista do que falta. **Herói:** andar, combo de katana em 3 golpes, rolamento/es
 A ordem 1 → 2 → 3 → 4 entrega melhora visível já na primeira semana e deixa o investimento caro (o rig) para quando a direção da V4 estiver travada.
 
 ## 2. Bloom e pixel shader no perfil Alto sem pesar no Iris Xe
+### Correção contextual — 14/10/2026 (PR #258)
+
+O renderer real do jogo é **Godot 4.4.1 Compatibility (OpenGL)**. A [matriz oficial do Godot 4.4](https://docs.godotengine.org/en/4.4/tutorials/rendering/renderers.html) distingue glow de HDR 2D: embora liste suporte a glow, **Compatibility não oferece viewport HDR 2D**. Portanto, a proposta histórica abaixo de ativar `use_hdr_2d` e usar cores acima de 1,0 não é aplicável ao renderer atual; não representa glow HDR disponível no jogo.
+
+**Implementado neste PR:** passe de quantização RGB de 5 bits por canal com dither ordenado Bayer 4×4, em `v2/apresentacao.gd` e `v2/pos_visual.gd`. Ele atua somente no perfil Alto, sobre o mundo em 960×540 e antes da UI. Não equivale a bloom, nem a uma quantização para as cores específicas de `paleta.json`.
+
+**Bloom seletivo ainda não implementado.** Depende de uma máscara de emissão para portal, magia, olhos e tochas, além de viewport 240×135, blur e composição. A integração desses recursos fica com o Claude do Alisson, conforme encaminhamento no PR #258. Extrair apenas os pixels claros da imagem final também faria chão e objetos claros brilharem, por isso não substitui a máscara seletiva.
+
+As afirmações de custo “barato” e “desprezível” do estudo original abaixo são estimativas históricas, não resultados de benchmark. Menor resolução reduz pixels processados, mas não comprova custo desprezível no Iris Xe ou em outra GPU: cada passe e a composição precisam de medição no renderer real, com e sem efeito e em condições equivalentes.
+
+**Estudo original de 12/10/2026, preservado para contexto:**
 
 O custo de pós-processamento é proporcional aos **pixels processados**. Como o mundo é 960x540 (0,5 Mpx), qualquer efeito aplicado **dentro do SubViewport, antes do upscale**, é barato até para o Iris Xe.
 
