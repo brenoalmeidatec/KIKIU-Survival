@@ -1685,6 +1685,9 @@ _Claude do Alisson (notebook)_
 
 _Codex do Alisson_
 
+## 2026-10-14 · Codex do Alisson · reserva da animação visual
+- **Em andamento:** item4 visual: dissolve no efeito de morte usando o pool/shader existente. Herói já tem antecipação/avanço/squash de golpe e queda; o restante do corpo/herói e contrato de fase/relógio do MultiMesh dependem de coordenação com Claude do Alisson, sem alterações nos arquivos de sistemas.
+- **Próximo:** benchmark real --medir no perfil Médio com horda cheia, antes/depois no IrisXe, testes e prints do viewport. Reserva somente documental: Godot ainda não rodado nesta branch.
 ## 2026-10-14 · Claude do Alisson (notebook) · coop online, etapa 0: preparar o solo (docs/ONLINE_V2_PLANO.md)
 - **Feito:** `mundo.herois` (lista; o solo tem só o `heroi`), `mundo.alvo_mais_perto(pos)` (herói vivo mais perto; os monstros usam com 2+ heróis, o solo segue o caminho de sempre sem busca), e o tempo separado em "do mundo" e "do herói local": hit-stop, câmera lenta e a pausa da escolha ficam num `v2/tempo_local.gd` (um por herói local) e `combate.passo_tempo` devolve `dt_mundo` e deixa `dt_local`; `combate.parada_t/lento_*/pausado` seguem existindo como propriedades (os testes não mudaram). `combate.pausado_mundo` é a pausa do resultado (vale para todos). `combate.tempo_local_separado` (false no solo) é a chave que o coop e a tela dividida ligam: aí o hit-stop só trava o herói local e o mundo segue. Flag `--coop` lida em `mundo.coop_modo` e ignorada.
 - **Testes:** novo `v2_coop_preparo` (com 2 heróis o monstro persegue o mais perto e troca de alvo quando o remoto cai; o tempo do solo e o separado). Suíte inteira igual.
@@ -1716,6 +1719,19 @@ _Codex do Alisson_
 _Codex do Alisson_
 
 
+## 2026-10-14 · Codex do Alisson · dissolve validado no PR #253
+- **Feito:** shader do flash de morte dissolve por texel/progresso, sem TIME/nó/pool novo; reset em todo reuso. Só efeitos.gd. Seis prints reais960x540 e relatório/12 logs de benchmark em docs/visual_2_5d/animacoes_dissolve/.
+- **Testes:** v2_morte,v2_combate,v2_partida e QA253_DISSOLVE: código0/falhas=0/semSCRIPT ERROR. QA confere progresso, pausa sem avanço e reuso para dano/esquiva. gdformat230 limpos.
+- **Desempenho:** IrisXe real, Médio/300 monstros/build cheia,2s aquecimento+6s coleta. Primeira série mediana91,4→92,9FPS, com uma rodada depois67,8FPS (causa não isolada). Repetição justificada em3pares intercalados: mediana114,2→118,9FPS; não houve queda maior que5% na mediana. Sem prometer ganho; variação e logs preservados.
+- **Pendente/Claude:** integração do corpo do herói e contrato de fase/relógio do MultiMesh, descritos no comentário do PR. Item4 parcial; nenhum arquivo de sistemas alterado. CI remoto bloqueado por conta#249, PR rascunho sem merge. Próximo: passe de paleta/dither Alto; bloom seletivo depende de máscara de emissão acordada com integrador.
+
+_Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · reprodução do dissolve no #253
+- **Feito:** harnesses de viewport e benchmark preservados na documentação visual do PR. São as mesmas verificações já executadas: progresso, pausa do efeito e limpeza do slot ao reutilizar; sem alteração no runtime.
+- **Pendente:** integração corporal do Claude e CI da conta, conforme o PR. Nenhum merge ou nova build.
+
+_Codex do Alisson_
 ## 2026-10-14 · Codex do Alisson · 30 sprites restantes no PR #251
 - **Feito:** três folhas imagegen próprias, 11 projéteis,7 aliados e12 áreas; 30 sprites e18 normais novos, índice com74 entradas cobrindo50 golpes+25 evoluções. Pipeline existente ampliado;69 PNG anteriores idênticos. Ligação restrita aos métodos de desenho de armas.gd, com fallback procedural. Aura mantém shader; raio mantém linhas e um único stamp por raio; Ventania lê o estado existente. Prompts normalizados/licenças e dez prints reais960x540 documentados em docs/visual_2_5d/armas_evolucoes/.
 - **Validação:** Godot4.4.1 import código0/semSCRIPT ERROR. v2_armas_sprites,v2_partida,v2_status,v2_combate,v2_ruptura,v2_escudo e v2_fontes: código0/falhas=0/semSCRIPT ERROR. Capturas reais OpenGL IrisXe código0/QA251_VISUAL falhas=0. Extensão pequena de testes/v2_armas_sprites (área do Claude) necessária para aceitar IDs de evoluções válidas e exigir sua própria arte, sem afrouxar os45 golpes nem checks de PNG/pool.
