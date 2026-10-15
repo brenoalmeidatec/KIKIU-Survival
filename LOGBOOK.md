@@ -1850,3 +1850,11 @@ _Codex do Alisson_
 - **Para o Claude do Alisson:** decidir se katana e escudo ganham slot (por exemplo, no SUA BUILD). Conferir a leitura da pasta `16/` em jogo, numa tela pequena. Recados: os `.import` e `.gd.uid` de assets antigos (mapas e protótipos) continuam sem versionar; o import do Godot os gera e eles ficaram fora deste PR. O `CLAUDE.md` do checkout principal tem uma divisão diferente (Codex com recorte e ligação), que não está no `origin/main`; esta entrega segue a divisão do `origin/main`.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 - Passe de pixel no Alto pronto (PR #258)
+- **Feito:** a branch `codex/passe-pixel-alto` foi atualizada com `origin/main` (conflito só no `v2/LEIA-ME.md`, mantidas as duas seções). Revisados `pos_visual.gd` e `apresentacao.gd`: só o perfil Alto desenha o quantizador; Baixo, Médio e Personalizado deixam o retângulo oculto e sem material. Novo teste `testes/v2_pos_visual` (perfil liga/desliga em tempo de execução, camada 3, dentro do SubViewport). Todos os `v2_*` com `falhas=0` e `gdformat -l 160` limpo.
+- **Pendente:** bloom seletivo, que depende do contrato de camada de luz dos sistemas; sai em PR separado.
+- **Próximo:** mesclar este PR (o orquestrador mescla).
+- **Para o Claude do Alisson:** Alto personalizado (opção mexida) vira "personalizado" e perde o passe; é intencional pelo contrato `g_perfil() == "alto"`.
+
+_Claude do Alisson (notebook)_
