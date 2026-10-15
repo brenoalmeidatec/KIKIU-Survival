@@ -9,7 +9,8 @@ extends Node
 # crítico para em 100% e as almas são as que o fim da partida credita (com "Almas abundantes").
 # Interface: C liga e desliga o card pela entrada de verdade (Input.parse_input_event, a mesma que a janela usa). Sobre a escolha de cartas
 # e o baú o C abre o painel CENTRAL (opaco, por cima das cartas): enquanto está aberto, tecla e clique não escolhem carta, a trava de 1 s
-# segue correndo e o ESC abre a pausa. A pausa mostra o card ao lado do menu só na tela "menu"; atualizar não cria nó. Em TODOS os modos
+# segue correndo e o ESC abre a pausa. No controle, o Select liga e desliga o painel (como o C), o B fecha e LB/RB paginam, e com o painel
+# aberto o resto do controle é engolido. A pausa mostra o card ao lado do menu só na tela "menu"; atualizar não cria nó. Em TODOS os modos
 # (HUD compacto, pausa e painel central) e com a build vazia, a de meio de partida, a máxima e o Santuário todo comprado, nenhuma linha
 # estoura a coluna, nada é cortado e as colunas do HUD não cobrem o HUD.
 # Usa saves TEMPORÁRIOS (meta e opções); o save real (user://v2_progresso.cfg) não é tocado, e o md5 confere.
@@ -210,6 +211,21 @@ func tecla(k: Key) -> void:
 	e.physical_keycode = k
 	e.pressed = true
 	Input.parse_input_event(e)  # a entrada de verdade: Window -> árvore -> mundo._input (o SubViewport não recebe isto)
+
+
+## Evento de um botão do controle (apertado ou solto): para a entrada direta (status.entrada) e para o `botao`.
+func evento_botao(b: JoyButton, apertado := true) -> InputEventJoypadButton:
+	var e := InputEventJoypadButton.new()
+	e.button_index = b
+	e.pressed = apertado
+	e.pressure = 1.0 if apertado else 0.0
+	return e
+
+
+## Um toque no botão do controle (aperta e solta), pela mesma entrada de verdade que o `tecla` usa.
+func botao(b: JoyButton) -> void:
+	Input.parse_input_event(evento_botao(b, true))
+	Input.parse_input_event(evento_botao(b, false))
 
 
 func _ready() -> void:
@@ -1109,6 +1125,10 @@ func _interface() -> void:
 	zerar()
 	# --- C liga e desliga pela entrada de verdade (mundo._input)
 	ok(not st.aberto(), "começa fechado")
+	# --- na partida o Select não liga o card: o compacto segue sendo da tecla C (o controle só mexe no painel sobre as cartas)
+	botao(JOY_BUTTON_BACK)
+	await esperar()
+	ok(not st.aberto(), "na partida o Select não liga o card compacto")
 	tecla(KEY_C)
 	await esperar()
 	ok(st.aberto() and st.visible and not st._timer.is_stopped() and not st.is_processing(), "C liga o card no HUD, com o relógio de 4 Hz e sem _process")
@@ -1321,6 +1341,13 @@ func _paginacao(st, c) -> void:
 	tecla(KEY_E)
 	await esperar()
 	ok(int(st.paginas_golpes().pagina) == antes + 1, "E no painel central troca de página")
+	# --- o controle pagina como o teclado: LB é o Q e RB é o E
+	botao(JOY_BUTTON_LEFT_SHOULDER)
+	await esperar()
+	ok(int(st.paginas_golpes().pagina) == antes, "LB no painel central volta uma página, como o Q")
+	botao(JOY_BUTTON_RIGHT_SHOULDER)
+	await esperar()
+	ok(int(st.paginas_golpes().pagina) == antes + 1, "RB no painel central avança uma página, como o E")
 	tecla(KEY_C)
 	await esperar()
 	c.progresso.escolher(0)
@@ -1424,10 +1451,39 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	pausa.fechar()
 	ok(not get_tree().paused and st._modo_atual == "central" and st.aberto(), "ao fechar a pausa o painel central volta (%s)" % st._modo_atual)
 	ok(c.progresso.escolhidas == escolhidas0 and c.jogo == "escolha" and c.pausado and tela_c.escolha_aberta and tela_c.sel == sel0, "e a escolha está intacta")
+	# --- o Start também abre a pausa por cima do painel: a Antena da pausa o recebe antes do card, como o ESC
+	botao(JOY_BUTTON_START)
+	await esperar()
+	ok(pausa.aberto and get_tree().paused, "o Start abre a pausa com o painel central aberto")
+	pausa.fechar()
+	ok(not get_tree().paused and st._modo_atual == "central" and st.aberto(), "ao fechar a pausa do Start o painel central volta (%s)" % st._modo_atual)
 	# --- C fecha o painel: as cartas voltam e as teclas da escolha funcionam
 	tecla(KEY_C)
 	await esperar()
 	ok(not st.aberto() and c.jogo == "escolha", "C fecha o painel central sobre a escolha")
+	# --- o controle: Select liga e desliga o painel como o C; com ele aberto, A, X e o direcional não escolhem carta nem mexem na seleção, e B fecha
+	botao(JOY_BUTTON_BACK)
+	await esperar()
+	ok(st.aberto() and st._modo_atual == "central", "Select sobre a escolha abre o painel central (%s)" % st._modo_atual)
+	botao(JOY_BUTTON_A)
+	botao(JOY_BUTTON_X)
+	botao(JOY_BUTTON_DPAD_LEFT)
+	await esperar()
+	ok(
+		c.progresso.escolhidas == escolhidas0 and c.jogo == "escolha" and tela_c.sel == sel0 and st.aberto(),
+		"com o painel aberto A, X e o direcional não escolhem carta nem mexem na seleção"
+	)
+	botao(JOY_BUTTON_B)
+	await esperar()
+	ok(not st.aberto() and c.jogo == "escolha", "B fecha o painel central sobre a escolha")
+	ok(not st.entrada(evento_botao(JOY_BUTTON_A)), "com o painel fechado, A não é engolido e segue para as cartas")
+	botao(JOY_BUTTON_BACK)
+	await esperar()
+	ok(st.aberto() and st._modo_atual == "central", "Select de novo abre o painel central")
+	botao(JOY_BUTTON_BACK)
+	await esperar()
+	ok(not st.aberto() and c.jogo == "escolha", "Select fecha o painel central (como o C)")
+	ok(c.progresso.escolhidas == escolhidas0 and tela_c.sel == sel0, "e a escolha segue intacta depois dos botões do controle")
 	tecla(KEY_1)  # as teclas da escolha seguem funcionando
 	await esperar()
 	ok(c.progresso.escolhidas == escolhidas0 + 1 and c.jogo == "jogando", "a tecla 1 escolhe a primeira carta depois de fechar o painel")
@@ -1468,6 +1524,16 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	tecla(KEY_C)
 	await esperar()
 	ok(not st.aberto() and c.jogo == "bau", "C fecha o painel sobre o baú")
+	# --- o controle no baú: Select reabre o painel, A não avança o baú com ele aberto, e B fecha
+	botao(JOY_BUTTON_BACK)
+	await esperar()
+	ok(st.aberto() and st._modo_atual == "central", "Select sobre o baú abre o painel central (%s)" % st._modo_atual)
+	botao(JOY_BUTTON_A)
+	await esperar()
+	ok(tela_c._bau_fase == fase0 and not tela_c.bau_pronto and c.jogo == "bau", "com o painel aberto, A não avança o baú")
+	botao(JOY_BUTTON_B)
+	await esperar()
+	ok(not st.aberto() and c.jogo == "bau", "B fecha o painel sobre o baú")
 	tela_c.mouse_fn = Callable()
 	tela_c.bau_pronto = true
 	c.baus.fechar()

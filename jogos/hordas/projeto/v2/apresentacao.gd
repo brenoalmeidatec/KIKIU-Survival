@@ -6,11 +6,13 @@ extends Node
 ## Uso: var ap := Apresentacao.new(); add_child(ap); ap.montar(janela, escala_pura) -> SubViewport (é onde vai o mundo).
 ## Ao sair da cena, devolve à janela o modo de escala que ela tinha (o jogo v1 usa o content_scale_mode "viewport" de 640x360).
 
+const PosVisual := preload("res://v2/pos_visual.gd")
 const LARG := 960
 const ALT := 540
 
 var sv: SubViewport
 var tela: TextureRect
+var pos_visual: CanvasLayer
 var _janela: Window
 var _modo_antes := Window.CONTENT_SCALE_MODE_VIEWPORT
 var _tam_antes := Vector2i(640, 360)
@@ -32,6 +34,9 @@ func montar(janela: Window, escala_pura := false) -> SubViewport:
 	sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	sv.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 	add_child(sv)
+	# O passe fixa sublayer -1 na camada 3: depois de mundo/glow e antes da vinheta e da UI.
+	pos_visual = PosVisual.new()
+	sv.add_child(pos_visual)
 	var camada := CanvasLayer.new()
 	add_child(camada)
 	tela = TextureRect.new()
