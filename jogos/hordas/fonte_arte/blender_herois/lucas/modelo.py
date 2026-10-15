@@ -72,8 +72,8 @@ def construir(ns):
         reg(segment("Adaga na mão cabo " + sfx[1], tuple(cabo_a), tuple(cabo_b), .052, .052, M["Osso do cabo"], 6), "antebraco" + sfx)
         reg(segment("Adaga na mão guarda " + sfx[1], tuple(cabo_b - d * .02), tuple(cabo_b + d * .03), .13, .13, M["Latão antigo"], 6), "antebraco" + sfx)
         lam_a = cabo_b + d * .05
-        reg(segment("Adaga na mão lâmina " + sfx[1], tuple(lam_a), tuple(lam_a + d * .38), .150, .105, M["Fio polido"], 4), "antebraco" + sfx)
-        reg(segment("Adaga na mão ponta " + sfx[1], tuple(lam_a + d * .38), tuple(lam_a + d * .56), .105, .0, M["Fio polido"], 4), "antebraco" + sfx)
+        reg(segment("Adaga na mão lâmina " + sfx[1], tuple(lam_a), tuple(lam_a + d * .50), .19, .13, M["Fio polido"], 4), "antebraco" + sfx)
+        reg(segment("Adaga na mão ponta " + sfx[1], tuple(lam_a + d * .50), tuple(lam_a + d * .76), .13, .0, M["Fio polido"], 4), "antebraco" + sfx)
 
     # ------------------------------------------------------------------ tronco: túnica roxa (barra em ponta), camisa escura, cinto, lenço, bandoleira
     corpo = [(-.28, -.19, 1.52), (.28, -.19, 1.52), (.28, .18, 1.52), (-.28, .18, 1.52),
@@ -112,16 +112,16 @@ def construir(ns):
     adaga_corpo("Adaga do quadril direito", (.38, .02, 1.74), (.08, 0, -1), "quadril", comp=.20)
 
     # ------------------------------------------------------------------ cabeça: rosto, cabelo, capuz (casca aberta na frente) com a ponta para cima e para trás
-    reg(ico("Cabeça facetada", (0, -.02, 2.72), (.29, .255, .34), M["Rosto iluminado"], 2), "cabeca")
-    reg(ico("Cabelo da testa", (0, -.14, 3.03), (.20, .07, .045), M["Cabelo quase preto"], 2), "cabeca")
+    reg(ico("Cabeça facetada", (0, -.02, 2.72), (.235, .25, .35), M["Rosto iluminado"], 2), "cabeca")
+    reg(ico("Cabelo da testa", (0, -.14, 3.04), (.17, .07, .045), M["Cabelo quase preto"], 2), "cabeca")
     for s in (-1, 1):
-        reg(box("Olho " + ("esquerdo" if s < 0 else "direito"), (s * .105, -.262, 2.725), (.068, .025, .046), M["Olho"], .007), "cabeca")
-    reg(ico("Nariz", (0, -.282, 2.665), (.045, .052, .06), M["Pele"], 1), "cabeca")
+        reg(box("Olho " + ("esquerdo" if s < 0 else "direito"), (s * .082, -.258, 2.725), (.068, .025, .046), M["Olho"], .007), "cabeca")
+    reg(ico("Nariz", (0, -.276, 2.665), (.038, .05, .06), M["Pele"], 1), "cabeca")
     # capuz: esfera achatada sem a frente (abertura do rosto) e sem a base (o lenço cobre o pescoço)
     bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=1, location=(0, .07, 2.80))
     capuz = bpy.context.object
     capuz.name = "Capuz"
-    capuz.scale = (.405, .385, .46)
+    capuz.scale = (.405, .385, .42)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     capuz.data.materials.append(M["Roxo do capuz"])
     bm = bmesh.new()
@@ -129,14 +129,27 @@ def construir(ns):
     apagar = []
     for f in bm.faces:
         c = f.calc_center_median()
-        frente = f.normal.y < -.30 and c.z < 3.08 and abs(c.x) < .36
+        frente = f.normal.y < -.30 and c.z < 3.05 and abs(c.x) < .30
         if frente or c.z < 2.50:
             apagar.append(f)
     bmesh.ops.delete(bm, geom=apagar, context="FACES")
     bm.to_mesh(capuz.data)
     bm.free()
     reg(capuz, "cabeca")
-    reg(segment("Ponta do capuz", (0, .10, 3.05), (0, .30, 3.40), .25, .0, M["Roxo iluminado"], 6), "cabeca")
+    # forro: o interior do capuz, escuro, atrás do rosto (só a metade de trás da elipse), dá a sombra interna e emoldura o rosto estreito
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=1, location=(0, .06, 2.80))
+    forro = bpy.context.object
+    forro.name = "Forro do capuz"
+    forro.scale = (.36, .34, .40)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    forro.data.materials.append(M["Roxo das dobras"])
+    bm = bmesh.new()
+    bm.from_mesh(forro.data)
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.calc_center_median().y < .02 or f.calc_center_median().z < 2.52], context="FACES")
+    bm.to_mesh(forro.data)
+    bm.free()
+    reg(forro, "cabeca")
+    reg(segment("Ponta do capuz", (0, .12, 3.06), (0, .44, 3.24), .14, .0, M["Roxo do capuz"], 6), "cabeca")
     reg(segment("Dobra do capuz", (0, .05, 3.00), (0, .20, 3.12), .30, .22, M["Roxo das dobras"], 6), "cabeca")
 
     novos = [o for o in bpy.data.objects if o not in antes]

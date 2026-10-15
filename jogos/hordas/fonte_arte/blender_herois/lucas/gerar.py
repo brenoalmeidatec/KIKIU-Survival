@@ -55,7 +55,7 @@ def hexa(h):
 PALETA = {
     "Roxo do capuz": "#5c1e70", "Roxo iluminado": "#772e8c", "Roxo das dobras": "#3a1048", "Lenço dourado": "#a58236", "Lenço verso": "#836527",
     "Camisa escura": "#26243f", "Calça escura": "#383c60", "Couro castanho": "#503829", "Couro claro": "#6b4b31",
-    "Pele": "#8a6048", "Rosto iluminado": "#a87654", "Cabelo quase preto": "#222839", "Osso do cabo": "#bdb08c",
+    "Pele": "#8a6048", "Rosto iluminado": "#74503c", "Cabelo quase preto": "#222839", "Osso do cabo": "#bdb08c",
     "Aço azulado": "#8da0b8", "Fio polido": "#d6e0ea", "Latão antigo": "#9a7a3e", "Olho": "#0a0c14",
 }
 BRILHANTES = {}
@@ -430,7 +430,8 @@ def pintar_poligonos(cor, normal, mascara, poligonos):
             l1 = ((by - qy) * (cx - qx) + (qx - bx) * (cy - qy)) / d
             l2 = ((qy - ay) * (cx - qx) + (ax - qx) * (cy - qy)) / d
             dentro |= (l1 >= 0) & (l2 >= 0) & (1 - l1 - l2 >= 0)
-        dentro &= ~mascara
+        if not (len(rgb) > 3 and rgb[3]):
+            dentro &= ~mascara       # 4o valor True = a lâmina vem à frente do corpo: pinta por cima
         cor[dentro] = (rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0, 1.0)
         normal[dentro] = (0.5, 0.5, 1.0, 1.0)
 

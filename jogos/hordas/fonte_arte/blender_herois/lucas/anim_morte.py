@@ -20,7 +20,7 @@ N_QUADROS = 6
 DOBRA_PERNA = 1.9
 DOBRA_CANELA = 0.9
 CURVA = 0.5        # rad extra de flexão do tronco no deitado (encurta na tela)
-ENCOLHE = 0.12     # o corpo caído encolhe até 12% (cabeça e lenço do Lucas são maiores; sem isso passaria dos 32 px)
+ENCOLHE = 0.25     # o corpo caído encolhe até 25% (cabeça, capuz e lenço do Lucas são grandes; com menos, o capuz passava dos 32 px e era cortado na borda)
 S_POR_QUADRO = [0.10, 0.10, 0.08, 0.05, 0.12, 0.30]    # q3 = impacto, rápido; o último é o repouso (fica)
 ESCOLHA = [0, 1, 2, 3, 5, 7]
 
@@ -73,7 +73,7 @@ def escolher(ang):
 
 def posar(arm, quadro, n_quadros, ang=0.0):
     giro, sinal = escolher(ang)
-    f = 1.0 - ENCOLHE * min(1.0, abs(QUADROS[ESCOLHA[quadro]]["raiz"]) / 1.4)
+    f = 1.0 - ENCOLHE * min(1.0, abs(QUADROS[ESCOLHA[quadro]]["raiz"]) / 0.85)
     arm.scale = tuple(v * f for v in arm.scale)
     p = QUADROS[ESCOLHA[quadro]]
     # o giro entra aos poucos (junto com o tombo), para o q0 ainda ser o herói em pé; antes de tombar ele só cambaleia para trás (x),

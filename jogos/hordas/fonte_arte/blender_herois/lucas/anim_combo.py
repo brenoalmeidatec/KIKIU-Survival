@@ -39,12 +39,13 @@ LEQUE = [
     dict(d=(-0.95, 0.0, -0.40), ad=(-1.70, 0.0, 0.0), e=(-0.95, 0.0, 0.40), ae=(-1.70, 0.0, 0.0), to=(0.18, 0.0, 0.0), qu=0.0,
          pe=(-0.35, 0.60), pd=(-0.15, 0.60), vis=(True, True)),
     # abre: os braços disparam para fora e para a frente, em V
-    dict(d=(-1.30, -0.35, 0.40), ad=(-0.10, 0.0, 0.0), e=(-1.30, 0.35, -0.40), ae=(-0.10, 0.0, 0.0), to=(0.10, 0.0, 0.0), qu=0.0,
+    dict(d=(-1.35, -0.08, 0.12), ad=(-0.10, 0.0, 0.0), e=(-1.35, 0.08, -0.12), ae=(-0.10, 0.0, 0.0), to=(0.10, 0.0, 0.0), qu=0.0,
          pe=(-0.55, 0.50), pd=(0.30, 0.20), vis=(False, False)),
-    dict(d=(-1.45, -0.35, 0.50), ad=(-0.05, 0.0, 0.0), e=(-1.45, 0.35, -0.50), ae=(-0.05, 0.0, 0.0), to=(0.26, 0.0, 0.0), qu=0.0,
+    dict(d=(-1.60, -0.08, 0.12), ad=(-0.05, 0.0, 0.0), e=(-1.60, 0.08, -0.12), ae=(-0.05, 0.0, 0.0), to=(0.26, 0.0, 0.0), qu=0.0,
          pe=(-0.70, 0.55), pd=(0.40, 0.10), vis=(False, False)),
-    dict(d=(-0.50, -0.15, 0.20), ad=(-1.00, 0.0, 0.0), e=(0.15, 0.10, 0.0), ae=(-0.40, 0.0, 0.0), to=(0.06, 0.0, 0.0), qu=0.0,
-         pe=(-0.25, 0.28), pd=(0.12, 0.22), vis=(True, False)),
+    # segue o arremesso: os dois braços ficam estendidos à frente (seguimento do gesto), sem adaga na mão (elas voam); o risco continua no ar
+    dict(d=(-1.40, -0.06, 0.10), ad=(-0.12, 0.0, 0.0), e=(-1.40, 0.06, -0.10), ae=(-0.12, 0.0, 0.0), to=(0.20, 0.0, 0.0), qu=0.0,
+         pe=(-0.55, 0.45), pd=(0.28, 0.18), vis=(False, False)),
 ]
 
 
@@ -90,28 +91,50 @@ COR_ANTIGA = (140, 160, 186)
 COR_NOVA = (226, 236, 246)
 
 
+def _na_tela(d):
+    """Comprimento aproximado (no plano da tela) de um vetor do mundo: x = direita da tela, vertical = z e y a 45 graus."""
+    return math.hypot(d.x, d.z * 0.707 + d.y * 0.707)
+
+
 def efeito(arm, quadro, n_quadros, ang):
+    """Lâminas SEMPRE visíveis (2 a 3 px claros ou mais): a adaga na mão (q0 e q3 de cada arremesso) ganha um brilho no fio, e a adaga arremessada (q1, q2 e a
+    pose final do leque) vira um risco de aço comprido saindo da mão. Pintado por cima do corpo (4o valor da cor = True), porque a lâmina vem à frente do
+    herói; se a lâmina aponta para a câmera (encurtada na tela), a direção é puxada para fora do corpo para o risco não sumir."""
     g, i = divmod(quadro, 4)
-    if i not in (1, 2):
-        return []
     pose = pose_do_quadro(quadro)
-    # de onde saem as adagas: a mão que arremessou (arremesso 1 = direita, 2 = esquerda, 3 = as duas)
-    maos = ["d"] if g == 0 else (["e"] if g == 1 else ["d", "e"])
+    arremesso = i in (1, 2) or (g == 2 and i == 3)
+    if arremesso:
+        maos = ["d"] if g == 0 else (["e"] if g == 1 else ["d", "e"])
+    else:
+        maos = [lado for lado, v in (("d", pose["vis"][0]), ("e", pose["vis"][1])) if v]
     saida = []
     for lado in maos:
         guarda, ponta = ossos.mao_adaga(arm, lado)
         dirv = (ponta - guarda).normalized()
-        base = ponta + dirv * (0.10 if i == 1 else 0.35)
-        comp = 0.55 if i == 1 else 0.85
-        ramos = [dirv]
-        if g == 2 and i == 2:      # o leque: mais duas adagas para dentro, uma de cada lado do centro
-            frente = Vector((math.sin(math.radians(ang)), -math.cos(math.radians(ang)), 0.0))
-            ramos = [dirv, (dirv * 0.8 + frente * 0.6).normalized()]
+        if arremesso:      # a lâmina solta segue o antebraço (a direção do arremesso), não a lâmina presa na mão
+            osso = arm.pose.bones["antebraco_" + lado]
+            dirv = (arm.matrix_world @ osso.tail - arm.matrix_world @ osso.head).normalized()
+            if abs(math.sin(math.radians(ang))) > 0.9:      # de perfil o braço bate na borda da célula: a lâmina sobe na diagonal, puxada para dentro
+                sx = 1.0 if dirv.x >= 0 else -1.0
+                dirv = Vector((0.25 * sx, -0.2, 0.9)).normalized()
+        sinal = 1.0 if (ponta.x - arm.location.x) >= 0 else -1.0
+        fora = Vector((sinal * 0.5, -0.6, 0.3)).normalized()
+        if _na_tela(dirv) < 0.75:
+            dirv = (dirv * (_na_tela(dirv) / 0.75) + fora * (1.0 - _na_tela(dirv) / 0.75)).normalized()
+        if arremesso:
+            base = guarda + dirv * 0.05 - (Vector((0.35 * sinal, 0, 0)) if abs(math.sin(math.radians(ang))) > 0.9 else Vector())      # a lâmina no instante da soltura: sai da mão, curta (o resto do voo é o projétil do jogo)
+            comp = 0.55 if i == 1 else 0.70 if i == 2 else 0.50
+            ramos = [dirv]
+            if g == 2 and i >= 2:      # o leque: mais uma adaga para dentro, entre o centro e a mão
+                frente = Vector((math.sin(math.radians(ang)), -math.cos(math.radians(ang)), 0.0))
+                ramos = [dirv, (dirv * 0.8 + frente * 0.6).normalized()]
+        else:
+            base, comp, ramos = ponta - dirv * 0.40, 0.40, [dirv]      # brilho no fio da adaga que está na mão
         for d in ramos:
             fim = base + d * comp
             lado_v = Vector((0, 0, 1)).cross(d)
-            lado_v = lado_v.normalized() * 0.035 if lado_v.length > 1e-3 else Vector((0.035, 0, 0))
-            meio = base + d * comp * 0.5
-            saida.append(([base - lado_v, meio - lado_v * 1.2, fim, meio + lado_v * 1.2, base + lado_v], COR_ANTIGA))
-            saida.append(([meio, fim + d * 0.15 * 0, fim, meio], COR_NOVA))
+            lado_v = lado_v.normalized() * 0.09 if lado_v.length > 1e-3 else Vector((0.09, 0, 0))
+            meio = base + d * comp * 0.55
+            saida.append(([base, meio - lado_v, fim, meio + lado_v], COR_ANTIGA + (True,)))
+            saida.append(([meio - lado_v * 0.1, fim - d * 0.02, meio + lado_v * 0.1], COR_NOVA + (True,)))
     return saida
