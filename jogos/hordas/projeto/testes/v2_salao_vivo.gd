@@ -27,7 +27,7 @@ func _ready() -> void:
 	prefixo = "qa_vivo_%d_" % Time.get_ticks_usec()
 	var d := DirAccess.open("user://")
 	for arquivo in d.get_files():
-		if not arquivo.begins_with("qa_"):
+		if not arquivo.begins_with("qa_") and not arquivo.begins_with("teste_"):  # arquivos de teste, que rodam em paralelo no mesmo user://
 			reais[arquivo] = FileAccess.get_md5("user://" + arquivo)
 	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
 	Personagens.caminho_base = "user://" + prefixo + "p"
