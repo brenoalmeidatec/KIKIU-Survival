@@ -24,14 +24,17 @@ func _ready() -> void:
 	for secao in ["stats", "golpes", "modificadores", "evolucoes"]:
 		for d in cartas[secao]:
 			ids.append(str(d.id))
-	ok(ids.size() == 86, "v2_cartas.json tem %d cartas, esperava 86" % ids.size())
+	ok(ids.size() >= 86, "v2_cartas.json tem %d cartas, esperava pelo menos 86" % ids.size())  # cresce quando entram cartas novas
 
 	var lido: Variant = JSON.parse_string(FileAccess.get_file_as_string(INDICE))
 	ok(lido is Dictionary, "indice.json não lê como JSON")
 	if lido is Dictionary:
 		var icones: Dictionary = lido.get("icones", {})
 		ok(str(lido.get("_ajuda", "")) != "", "indice.json sem _ajuda")
-		ok(icones.size() == 90, "indice.json tem %d ícones, esperava 90" % icones.size())
+		ok(
+			icones.size() == ids.size() + SECUNDARIOS.size(),
+			"indice.json tem %d ícones, esperava %d (uma por carta + secundários)" % [icones.size(), ids.size() + SECUNDARIOS.size()]
+		)
 		for id in ids + SECUNDARIOS:
 			ok(icones.has(id), "%s sem entrada no indice.json" % id)
 

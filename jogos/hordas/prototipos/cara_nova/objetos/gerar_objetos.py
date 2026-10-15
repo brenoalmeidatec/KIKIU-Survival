@@ -1314,6 +1314,15 @@ def icone_da_celula(cel, tam):
     return contorno(em_tela(img, tam, tam, "centro"))
 
 
+# Cartas sem desenho próprio ainda (vieram com o Nicão e o Lucas no #242): ícone emprestado até o Codex entregar o delas.
+ICONES_PROVISORIOS = {
+    "abalo": "terremoto",  # Abalo sísmico: onda de choque da pancada no chão
+    "muralha": "guardiao_pedra",  # Peso de muralha: empurra e atordoa mais
+    "chuva": "adagas_voadoras",  # Chuva de adagas
+    "mira": "fura",  # Mira longa: adagas mais longe e mais rápidas
+}
+
+
 def gerar_icones():
     cols, linhas = ICONES_GRADE
     esperado = (cols * ICONES_CELULA, linhas * ICONES_CELULA)
@@ -1350,6 +1359,11 @@ def gerar_icones():
             "celula": celula,
         }
         print("  %-24s %-10s folha %d celula %2d" % (cid, categoria, folha, celula))
+    # cartas que ainda não têm desenho próprio usam, por enquanto, o ícone de outra carta parecida (pedido ao Codex)
+    for cid, base in ICONES_PROVISORIOS.items():
+        if cid not in icones and base in icones:
+            icones[cid] = dict(icones[base], provisorio_de=base)
+            print("  %-24s provisório: usa o ícone de %s" % (cid, base))
     indice = {
         "_ajuda": ICONES_AJUDA,
         "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py icones (nao edite a mao)",
