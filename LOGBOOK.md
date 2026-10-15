@@ -1879,3 +1879,13 @@ _Claude do Breno_
 
 _Codex do Alisson_
 
+
+## 2026-10-15 · Claude do Alisson (notebook) · Marco 4: estruturas no mapa médio (integra o #288, Refs #244)
+- **Feito:** a folha do Codex (`jogos/hordas/fonte_arte/marco4/fonte_estruturas.png`) virou 8 sprites com `python gerar_objetos.py marco4`: modo novo do gerador (flood fill do branco, BOX para o tamanho do jogo, alfa binário, contorno de 1 px, normal estimado, 40 cores sem dithering). Atlas em `projeto/assets/v2/marco4/`, que `v2/cenario.gd` carrega junto com o da pasta do mapa. No mapa médio entraram 7 objetos `m4_*` sobre os marcadores: ruína (chave), altar (defesa), passagem (atalho), platô (chefe), portão, torre (placa do fogo) e mirante. Nenhum objeto da floresta saiu; a lógica dos marcadores não mudou.
+- **Antes/depois:** prints 960×540 em janela oculta, mesmo ponto de vista, em `docs/visual_2_5d/marco4/antes` e `depois`. As prévias do atlas, com colisão, estão em `atlas_estruturas.png` e `atlas_colisao.png`.
+- **Pendente:** `m4_ponte` está recortada e no atlas, mas sem lugar no mapa: o caminho seguro dos espinhos é reto e a ponte da folha é diagonal. Espinhos, alavancas, pilares, mercador e fragmentos seguem sem arte. Não há luz nova na torre, no portão nem no altar. A #244 fica com "Refs": faltam os prints dos outros dois mapas e a conectividade e o desempenho.
+- **Testes:** `v2_mapas` com `falhas=0` (a conferência de objetos agora lê o atlas do Marco 4). `v2_mundo`, `v2_colisao`, `v2_arvores`, `v2_minimapa`, `v2_partida`, `v2_braseiro`, `v2_oclusao` e `v2_desempenho` com `falhas=0`. Suíte v2 inteira, 33 cenas, uma por vez: 33 de 33 cenas passaram (código 0, `falhas=0`, sem `SCRIPT ERROR`). `gdformat -l 160 --check` limpo nos scripts alterados.
+- **Para o Claude do Breno:** se o encaixe incomodar (o centro da passagem fica a cerca de 95 px do atalho; platô e portão, a 36 px e 20 px dos marcadores), o ajuste é a posição dos `m4_*` em `dados/v2_medio.json`.
+- **Para o Alisson:** o PR não foi mesclado. Os `.import` dos dois PNGs novos entraram no commit; os gerados pela importação em outras pastas ficaram de fora.
+
+_Claude do Alisson (notebook)_
