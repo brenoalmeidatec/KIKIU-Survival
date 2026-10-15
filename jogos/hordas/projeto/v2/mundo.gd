@@ -57,7 +57,7 @@ signal onda_forte(numero: int)
 signal elite_apareceu(nome: String)
 signal chefe_apareceu(nome: String, vida_max: float)
 signal chefe_vida(vida: float)
-signal evolucao(nome: String)
+signal evolucao(nome: String, desc: String)
 signal anuncio(texto: String, cor: Color)
 signal partida_terminou(resultado: Dictionary)
 

@@ -75,9 +75,10 @@ func _ready() -> void:
 	for nome in ["onda_forte", "elite_apareceu", "chefe_apareceu", "chefe_vida", "evolucao", "anuncio", "partida_terminou"]:
 		ok(w.has_signal(nome), "sinal %s existe" % nome)
 	w.evolucao.connect(
-		func(n):
+		func(n, d):
 			sinais["evolucao"] = conta("evolucao") + 1
 			sinais["evolucao_nome"] = n
+			sinais["evolucao_desc"] = d
 	)
 	w.elite_apareceu.connect(
 		func(n):
@@ -656,6 +657,29 @@ func _ready() -> void:
 	ok(cs.rerrolar_total() == int(cfg.escolha.rerrolar_total) + 2 and cs.rerrolar_por_tela() == 3, "o bônus de rolagem soma rerrolares")
 	w.meta_bonus = {}
 
+	# 5b2. (leva 6) a receita à vista: a carta de uma peça diz com quem junta e o que sai; a fusão pede o cartão grande e câmera lenta
+	zerar()
+	pegar("aura_fogo", 0)
+	pegar("aura_fogo", 0)
+	var dica := str(cs.montar_carta(cs.definicao("aura_fogo"), 0).get("evolui", ""))
+	ok(dica == "Lâminas nv3 » FUSÃO Anel", "a aura nv 2 mostra a receita da fusão (%s)" % dica)
+	ok(str(cs.montar_carta(cs.definicao("laminas"), 0).get("evolui", "")) == "Aura nv3 » FUSÃO Anel", "as lâminas mostram a receita espelhada")
+	for i in 1:
+		pegar("aura_fogo", 0)
+	pegar("laminas", 0)
+	pegar("laminas", 0)
+	ok(not cs.evoluidas.has("anel_de_brasas"), "com a aura no 3 e as lâminas no 2 a fusão ainda não acontece")
+	pegar("laminas", 0)
+	ok(cs.evoluidas.has("anel_de_brasas"), "lâminas no 3 fecham o Anel de Brasas")
+	ok(str(sinais.get("evolucao_desc", "")).contains("Seis lâminas"), "o sinal da fusão leva o que ela faz para o cartão grande")
+	ok(w.combate.lento_acao == "fusao" and w.combate.lento_escala < 1.0, "a fusão pede câmera lenta (%s)" % w.combate.lento_acao)
+	# o ganho de poder da Ventania: a onda de 80% (2 cartas comuns) vira 80% x 2,4 = 192% do dano do corte (antes 1,9 = 152%)
+	zerar()
+	pegar("onda", 0)
+	pegar("onda", 0)
+	pegar("fura", 0)
+	pegar("fura", 0)
+	ok(absf(w.combate.armas.pct_onda() - 80.0 * 2.4) < 0.001, "a Ventania leva a onda a 80%% x 2,4 (%s)" % w.combate.armas.pct_onda())
 	print("v2_partida falhas=%d" % falhas)
 	get_tree().quit()
 

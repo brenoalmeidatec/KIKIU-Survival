@@ -35,6 +35,9 @@ const GRADE_N := 1024  # tamanho da tabela de hash da grade (potência de 2)
 const RAIO_GRANDE := 11.0  # acima disto o monstro (elite, chefe) fica na lista dos grandes, fora da grade
 const QUADRO_REF := 1.0 / 60.0  # o quadro de referência do "Combo completo" do card de status (vsync de 60 Hz)
 const CONTATO_BASE := 13.0  # raio do herói (6) + do cão (7): o `contato.alcance` dos dados vale para o cão; os outros encostam pelo raio
+const FUSAO_PARADA_S := 0.1  # hit-stop de uma fusão (s reais): o mundo para um instante quando as peças viram a arma nova
+const FUSAO_LENTA_S := 0.6  # câmera lenta da fusão (s reais)
+const FUSAO_ESCALA := 0.35  # velocidade do mundo na câmera lenta da fusão
 
 var mundo
 var cfg: Dictionary = {}
@@ -745,8 +748,10 @@ func chefe_apareceu(m, mk: Dictionary) -> void:
 func evolucao_feita(ev: Dictionary) -> void:
 	var h = mundo.heroi
 	var cor := Color(ev.cor[0], ev.cor[1], ev.cor[2])
-	mundo.evolucao.emit(str(ev.nome))
+	mundo.evolucao.emit(str(ev.nome), str(ev.get("desc", "")))
 	audio.tocar("evolucao", 1.0, 0.0, 0.0)
+	hit_stop(FUSAO_PARADA_S)  # um instante parado e a câmera lenta: a fusão precisa ser lida, não passar voando
+	camera_lenta("fusao", FUSAO_LENTA_S, FUSAO_ESCALA)
 	fx.onda(h.pos + Vector2(0, -12), Color(cor.r, cor.g, cor.b, 0.95), 130.0, 0.6)
 	fx.onda(h.pos + Vector2(0, -12), Color(1, 1, 1, 0.8), 80.0, 0.4)
 	fx.luz_rapida(h.pos + Vector2(0, -12), cor, 2.4, 240.0, 0.7)

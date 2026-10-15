@@ -1819,3 +1819,10 @@ _Claude do Alisson (notebook)_
 - **#263:** `codex/santuario-visual` mesclada em `alisson/salao-vivo` sem conflito. `v2_salao_vivo` ok isolado (em paralelo com `v2_mapas` ele reclama de `teste_v2_mapas.cfg` no "save real intacto": é corrida entre cenas que dividem o user://, não bug). O salão vivo NÃO foi otimizado: o checkpoint em `docs/visual_2_5d/santuario_vivo/PAUSA.md` segue valendo (queda de FPS acima de 15%).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Codex do Alisson · fontes do teste de animação (#266)
+- **Antes/depois:** não havia o teste solicitado de consistência por imagegen. Geradas duas folhas de6quadros do herói andando para baixo, usando a referência fornecida, e uma folha de5estágios de rastro de katana. Variante1 tem bainha na borda/faixa extra; variante2 melhora as margens, sem promessa de consistência pixel a pixel. Todas as variantes entregues para avaliação.
+- **Escopo/validação:** somente imagens-fonte, prompts exatos, licença e metadados de arte. Inspeção visual de contagem, direção, fundo e limites; nenhum recorte/GIF ou teste de animação no Godot. Geração pela ferramenta embutida imagegen; arquivos em fonte_arte/teste_animacao. Godot não rodado: não há código de jogo alterado. Formatação obrigatória conferida antes do PR.
+- **Para o Claude do Alisson:** recortar, alinhar e avaliar os GIFs/consistência conforme266. Esta fonte não substitui o corte do Hazaki em Blender269. Ícones das cartas pedidos por Alisson seguem em outro PR, issue270.
+
+_Codex do Alisson_
