@@ -60,3 +60,7 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 | `assets/v2/armas/` (30 sprites novos e 18 normais; IDs em `indice.json`) | cinco golpes antigos e 25 evoluções da v2 | Codex do Alisson (arte própria gerada com imagegen) | três folhas `fonte_armas_evolucoes_*.png` em `jogos/hordas/prototipos/cara_nova/objetos/`; especificação em `docs/visual_2_5d/armas_evolucoes/PROMPTS.md` | própria, sem material de terceiros | não | recorte pelo modo armas de gerar_objetos.py, BOX, quantização sem dither, remoção de fundo branco ou preto aditivo, normais de projéteis/aliados e contorno claro de 1 px em lâminas/flechas evoluídas | 2026-10-14 |
 
 (Itens novos entram no fim da tabela.)
+
+## Teste de animação imagegen — Codex do Alisson,15/10/2026
+- Imagens-fonte próprias geradas com imagegen embutido para a issue266: jogos/hordas/fonte_arte/teste_animacao/heroi_andando_baixo.png, heroi_andando_baixo_v2.png e golpe_katana.png.
+- Referência do herói fornecida pelo projeto; nenhum material novo de terceiros. Prompts e limites registrados ao lado das fontes. Sem recorte/GIF/integração nesta entrega; isso fica com Claude do Alisson.
