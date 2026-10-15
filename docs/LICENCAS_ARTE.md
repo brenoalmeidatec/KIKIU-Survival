@@ -68,3 +68,7 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Teste de animação imagegen — Codex do Alisson,15/10/2026
 - Imagens-fonte próprias geradas com imagegen embutido para a issue266: jogos/hordas/fonte_arte/teste_animacao/heroi_andando_baixo.png, heroi_andando_baixo_v2.png e golpe_katana.png.
 - Referência do herói fornecida pelo projeto; nenhum material novo de terceiros. Prompts e limites registrados ao lado das fontes. Sem recorte/GIF/integração nesta entrega; isso fica com Claude do Alisson.
+## Ícones das cartas por ID — Codex do Alisson,15/10/2026
+- Oito folhas-fonte próprias geradas com imagegen embutido em jogos/hordas/fonte_arte/icones_cartas/folha_01.png até folha_08.png, a pedido direto do Alisson(issue270).
+- Direção: pixel art2.5D dark fantasy, materiais frios e brilho elemental; folha01 gerada sem imagem externa e demais usam a primeira como estilo. Prompts exatos e índice por categoria/ID ao lado. Nenhum novo material de terceiros.
+- São86entradas de cartas mais katana/escudo/Ruptura e selo Q indisponível(90motivos). Não são animações ou sprites de ataque; recorte/integração permanecem com Claude do Alisson.

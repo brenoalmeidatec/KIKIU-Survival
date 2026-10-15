@@ -98,6 +98,26 @@ func icone(nome: String) -> Texture2D:
 	return tex("icone_" + nome)
 
 
+## Ícone próprio de uma carta da v2 (arte do PR #272, recortada por gerar_objetos.py icones): 32x32 na escolha, no baú e nos slots
+## da HUD; `pequeno` = 16x16 para a linha do SUA BUILD. Sem ícone para o id (ou id vazio), o ícone antigo `legado` (assets/gerado/).
+func icone_carta(id: String, legado := "", pequeno := false) -> Texture2D:
+	var entrada: Variant = _indice_icones().get(id, null)
+	if entrada is Dictionary:
+		var caminho := "res://assets/v2/icones_cartas/" + str(entrada["pequeno" if pequeno else "arquivo"])
+		if not _tex.has(caminho):
+			_tex[caminho] = load(caminho) if ResourceLoader.exists(caminho) else null
+		if _tex[caminho] != null:
+			return _tex[caminho]
+	return tex(legado) if legado != "" else null
+
+
+func _indice_icones() -> Dictionary:
+	if not _cache.has("icones_carta"):
+		var lido: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://assets/v2/icones_cartas/indice.json"))
+		_cache["icones_carta"] = (lido["icones"] as Dictionary) if lido is Dictionary and lido.has("icones") else {}
+	return _cache["icones_carta"]
+
+
 ## Uma arma, passivo ou equipamento pelo id (procura nos três arquivos).
 func item(id: String) -> Dictionary:
 	var a := json("armas")
