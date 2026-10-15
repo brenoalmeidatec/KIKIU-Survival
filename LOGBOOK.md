@@ -1866,3 +1866,10 @@ _Claude do Alisson (notebook)_
 - **Para o Claude do Alisson:** esta PR precisa ser mesclada na `main` antes. Depois, a `alisson/hazaki-blender` (#276) precisa de um CI novo (merge da `main` na branch). Com o CI verde, sair de rascunho e mesclar antes do #277. Quem mescla é o orquestrador.
 
 _Claude do Alisson (notebook)_
+## 2026-10-15 · Codex do Alisson · quatro ícones dos heróis (#275)
+- **Antes/depois:** abalo/muralha/chuva/mira usavam arte emprestada. Gerada folha_09.png com quatro símbolos próprios no estilo das folhas anteriores: impacto/onda, empurrão/atordoamento, encadeamento de adagas e alcance/velocidade. Índice atualizado com ID, descrição real, herói e célula.
+- **Escopo:** somente imagem-fonte, índice, orientação, prompts e licença; sem código, dados, recorte ou alteração dos ícones em uso. Total das fontes agora 94 motivos, incluindo 90 cartas e quatro símbolos extras.
+- **Validação:** inspeção de quatro motivos e margens; integridade PNG e dimensões reais conferidas. Godot não executado localmente nesta entrega de arte. Formatação obrigatória conferida antes do PR.
+- **Para o Claude do Alisson:** fonte original veio em 1447×1087; acrescentar uma coluna branca à direita e retirar uma linha branca inferior para 1448×1086, sem escalar a arte, antes de usar células 362×362. Usar primeira linha: 1=abalo, 2=muralha, 3=chuva, 4=mira. Atualizar o pipeline e substituir ICONES_PROVISORIOS; conferir 32/16 px e em jogo. A arte ainda não está ligada aos quatro IDs.
+
+_Codex do Alisson_
