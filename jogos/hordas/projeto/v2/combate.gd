@@ -12,6 +12,7 @@ extends RefCounted
 const Efeitos := preload("res://v2/efeitos.gd")
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
+const TempoLocal := preload("res://v2/tempo_local.gd")
 const Diretor := preload("res://v2/diretor.gd")
 const Telas := preload("res://v2/telas.gd")
 const AudioV2 := preload("res://v2/audio.gd")
@@ -55,12 +56,37 @@ var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário ca
 var fim_emitido := false  # partida_terminou já saiu
 var venceu := false
 
-# tempo
-var parada_t := 0.0  # hit-stop que falta (s, relógio real)
-var lento_t := 0.0  # câmera lenta que falta (s, relógio real)
-var lento_escala := 1.0
-var lento_acao := ""  # o que acontece quando a câmera lenta acaba: "nivel" ou "morte"
-var pausado := false  # escolha de melhoria ou tela de resultado aberta
+# tempo: o estado de hit-stop, câmera lenta e pausa da escolha é do herói local (v2/tempo_local.gd); estas propriedades só repassam
+var local := TempoLocal.new()
+var parada_t: float:  # hit-stop que falta (s, relógio real)
+	get:
+		return local.parada_t
+	set(v):
+		local.parada_t = v
+var lento_t: float:  # câmera lenta que falta (s, relógio real)
+	get:
+		return local.lento_t
+	set(v):
+		local.lento_t = v
+var lento_escala: float:
+	get:
+		return local.lento_escala
+	set(v):
+		local.lento_escala = v
+var lento_acao: String:  # o que acontece quando a câmera lenta acaba: "nivel", "morte" ou "vitoria"
+	get:
+		return local.lento_acao
+	set(v):
+		local.lento_acao = v
+var pausado: bool:  # escolha de melhoria, baú ou tela de resultado aberta (para o herói local)
+	get:
+		return local.pausado
+	set(v):
+		local.pausado = v
+var pausado_mundo := false  # pausa que vale para todos (resultado da partida); no solo anda junto com `pausado`
+var tempo_local_separado := false  # coop e tela dividida: hit-stop, câmera lenta e escolha só valem para o herói local; o solo deixa false
+var dt_mundo := 0.0  # o dt do último passo_tempo para o mundo (monstros, relógio, combate)
+var dt_local := 0.0  # o dt do último passo_tempo para o herói local (animação e movimento); no solo é igual a dt_mundo
 var jogo := "jogando"  # jogando, escolha, morte
 
 # contadores e estado (testes)
@@ -135,9 +161,22 @@ func iniciar_heroi() -> void:
 # ------------------------------------------------------------------ tempo
 
 
-## dt do mundo a partir do dt real: hit-stop e pausa travam o mundo; a câmera lenta o desacelera.
+## dt do mundo a partir do dt real: hit-stop e pausa travam o mundo; a câmera lenta o desacelera. Devolve o dt do MUNDO e deixa em
+## `dt_local` o do herói local. No solo os dois são iguais (comportamento de sempre); com `tempo_local_separado` (coop, tela dividida) o
+## hit-stop, a câmera lenta e a escolha só afetam `dt_local` e o mundo segue, salvo `pausado_mundo` (resultado), que para todos.
 func passo_tempo(dt: float) -> float:
-	if pausado:
+	var dl := _passo_local(dt)
+	dt_local = dl
+	if not tempo_local_separado:
+		dt_mundo = dl
+	else:
+		dt_mundo = 0.0 if pausado_mundo else dt
+	return dt_mundo
+
+
+## O relógio do herói local: pausa, hit-stop e câmera lenta (a parte que antes era o corpo inteiro de passo_tempo).
+func _passo_local(dt: float) -> float:
+	if pausado or pausado_mundo:
 		if mundo.heroi != null:
 			mundo.heroi.cancelar_ruptura(false)  # escolha, baú, morte e resultado: a carga da ruptura não sobrevive (idempotente)
 		return 0.0
@@ -148,15 +187,14 @@ func passo_tempo(dt: float) -> float:
 		lento_t -= dt
 		if lento_t <= 0.0:
 			_fim_camera_lenta()
-			if pausado:
+			if pausado or pausado_mundo:
 				return 0.0
 		return dt * lento_escala
 	return dt
 
 
 func hit_stop(s: float) -> void:
-	if s > parada_t:
-		parada_t = s
+	if local.parar(s):
 		ultimo_hit_stop = s
 	hit_stops += 1
 
@@ -176,11 +214,13 @@ func _fim_camera_lenta() -> void:
 		"morte":
 			jogo = "morte"
 			pausado = true
+			pausado_mundo = true
 			fim_de_partida(false)
 			telas.mostrar_resultado()
 		"vitoria":
 			jogo = "vitoria"
 			pausado = true
+			pausado_mundo = true
 			fim_de_partida(true)
 			telas.mostrar_resultado()
 	lento_acao = ""
@@ -723,6 +763,7 @@ func abandonar() -> void:
 	telas.esconder()
 	jogo = "abandono"
 	pausado = true
+	pausado_mundo = true
 	fim_de_partida(false)
 	telas.mostrar_resultado()
 
@@ -754,6 +795,7 @@ func limpar_partida() -> void:
 	lento_escala = 1.0
 	lento_acao = ""
 	pausado = false
+	pausado_mundo = false
 	jogo = "jogando"
 	combo_t = 0.0
 	_plim_t = 0.0

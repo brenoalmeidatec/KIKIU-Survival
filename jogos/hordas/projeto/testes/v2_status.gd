@@ -1238,6 +1238,8 @@ func _interface() -> void:
 		await esperar()
 	await _layouts(st, c)
 	await _paginacao(st, c)
+	_quebra_trechos_sem_partir_palavras(st)
+	await _regressao_layout_completo(st, c)
 
 
 ## Build com MUITOS golpes (todos os de dados/v2_cartas.json, o caso do PR #192): o card não tem teto. Na página visual da pausa e no painel
@@ -1292,6 +1294,19 @@ func _paginacao(st, c) -> void:
 	pg = st.paginas_golpes()
 	ok(int(pg.pagina) == int(pg.paginas), "E de sobra para na última página (%d de %d)" % [int(pg.pagina), int(pg.paginas)])
 	ok(not st.visual_cortada().has(true), "a última página cabe na altura")
+	# --- a tabela de detalhes (Tab) também pagina os golpes: Q e E trocam de página, e nenhuma coluna corta nada
+	var tab := InputEventKey.new()
+	tab.keycode = KEY_TAB
+	tab.physical_keycode = KEY_TAB
+	tab.pressed = true
+	ok(pausa_entrada(tab) and st.pagina() == "detalhe", "o Tab abre a tabela de detalhes")
+	await esperar()
+	var det: Dictionary = st.paginas_detalhes()
+	ok(int(det.paginas) > 1 and int(det.pagina) == 1, "a tabela de detalhes pagina os golpes com %d golpes (%s)" % [total, str(det)])
+	ok(not st.colunas_cortadas().has(true), "a tabela de detalhes não corta nada com %d golpes (%s)" % [total, str(st.retangulos())])
+	ok(pausa_entrada(ev) and int(st.paginas_detalhes().pagina) == 2, "E na tabela de detalhes vai para a página 2")
+	ok(not st.colunas_cortadas().has(true), "a página 2 da tabela de detalhes também cabe")
+	ok(pausa_entrada(tab) and st.pagina() == "visual", "o Tab de novo volta à página visual")
 	_achar_pausa().fechar()
 	await esperar()
 	# --- painel central: a mesma paginação, pelo teclado de verdade (C abre o painel; E passa pelo card)
@@ -1575,6 +1590,10 @@ func _fotos(pasta: String) -> void:
 	st.paginar(1)
 	await get_tree().process_frame
 	await _foto("status_pausa_50_golpes_p2", pasta)
+	st.alternar_detalhe()
+	await get_tree().process_frame
+	await _foto("status_pausa_50_detalhe", pasta)
+	st.alternar_detalhe()
 	_achar_pausa().fechar()
 	zerar()
 	# 0) HUD compacto com a build VAZIA (o começo de toda partida)
@@ -1676,4 +1695,231 @@ func _fotos(pasta: String) -> void:
 	await _foto("status_hud_extrema", pasta)
 	st._hud = false
 	st._aplicar()
+	# 6) Pior caso combinado: dez capturas extras, primeira/última página.
+	for d in c.cartas.cfg.golpes:
+		pegar(str(d.id), 3)
+	st._hud = true
+	st._aplicar()
+	await _fotos_extremos_paginas(st, "status_extrema50_hud_detalhe", pasta, false)
+	st._hud = false
+	st._aplicar()
+	pausa.pausar()
+	if st.pagina() != "visual":
+		st.alternar_detalhe()
+	await _fotos_extremos_paginas(st, "status_extrema50_pausa_visual", pasta, true)
+	st.alternar_detalhe()
+	await _fotos_extremos_paginas(st, "status_extrema50_pausa_detalhe", pasta, false)
+	pausa.fechar()
+	c.progresso.pendentes = 1
+	c.progresso.abrir_escolha()
+	st.alternar()
+	if st.pagina() != "visual":
+		st.alternar_detalhe()
+	await _fotos_extremos_paginas(st, "status_extrema50_central_visual", pasta, true)
+	st.alternar_detalhe()
+	await _fotos_extremos_paginas(st, "status_extrema50_central_detalhe", pasta, false)
+	st.alternar()
 	print("v2_status fotos em ", pasta)
+
+
+func _fotos_extremos_paginas(st, nome: String, pasta: String, visual: bool) -> void:
+	if visual:
+		st.visual_cortada()
+	else:
+		st.retangulos()
+	var info: Dictionary = st.paginas_golpes() if visual else st.paginas_detalhes()
+	for i in int(info.paginas):
+		st.paginar(-1)
+	await _foto(nome + "_primeira", pasta)
+	for i in int(info.paginas):
+		st.paginar(1)
+	await _foto(nome + "_ultima", pasta)
+
+
+## Regressão de conteúdo: a paginação não pode fazer atributos desaparecerem para caber.
+## medir_layout vem do mesmo plano usado para pintar; pixels e colisões da página visual ainda exigem as fotos.
+func _regressao_layout_completo(st, c) -> void:
+	for extremo in [false, true]:
+		zerar()
+		if extremo:
+			_comprar_tudo()
+			zerar()
+			_build_extrema()
+		for d in c.cartas.cfg.golpes:
+			pegar(str(d.id), 3 if extremo else 0)
+		w.tempo_partida = 3599.0
+		w.abates = 99999
+		w.combo = 999
+		w.maior_combo = 999
+		w.xp_coletado = 999999.0
+		for modo in ["hud", "pausa", "central"]:
+			if modo == "hud":
+				tecla(KEY_C)
+			elif modo == "pausa":
+				tecla(KEY_ESCAPE)
+			else:
+				c.progresso.pendentes = 1
+				c.progresso.abrir_escolha()
+				tecla(KEY_C)
+			await esperar()
+			var contexto := "[conteúdo completo / extremo=%s / %s]" % [extremo, modo]
+			ok(st._modo_atual == modo, contexto + " entrada real abre modo")
+			if modo != "hud":
+				if st.pagina() != "visual":
+					tecla(KEY_TAB)
+					await esperar()
+				st.visual_cortada()  # atualiza a conta das páginas antes de navegar
+				var vis: int = int(st.paginas_golpes().paginas)
+				for i in vis:
+					tecla(KEY_Q)
+				await esperar()
+				var vistos := {}
+				for i in vis:
+					for item in st.medir_golpes_visuais():
+						ok(not vistos.has(str(item.id)), contexto + " golpe visual não se repete: " + str(item.id))
+						vistos[str(item.id)] = true
+						ok(Rect2(0, 0, 960, 540).encloses(item.rect), contexto + " golpe visual dentro da tela")
+					ok(not st.visual_cortada().has(true), contexto + " visual cabe na página %d" % (i + 1))
+					for r in st.retangulos_visuais():
+						ok(Rect2(0, 0, 960, 540).encloses(r), contexto + " visual dentro do viewport")
+					if i < vis - 1:
+						tecla(KEY_E)
+						await esperar()
+						ok(int(st.paginas_golpes().pagina) == i + 2, contexto + " E percorre todas páginas visuais")
+				var esperados_visuais := 0
+				for sec in st.secoes:
+					if str(sec.id) == "golpes":
+						for l in sec.linhas:
+							if str(l.tipo) == "bloco":
+								esperados_visuais += 1
+								ok(vistos.has(str(l.id)), contexto + " golpe acessível na visual: " + str(l.id))
+				ok(vistos.size() == esperados_visuais, contexto + " visual cobre todos golpes sem extras")
+				tecla(KEY_TAB)
+				await esperar()
+				ok(st.pagina() == "detalhe", contexto + " Tab abre detalhes")
+			await _conferir_paginas_completas(st, contexto, modo)
+			if modo == "hud":
+				tecla(KEY_C)
+			elif modo == "pausa":
+				tecla(KEY_ESCAPE)
+			else:
+				tecla(KEY_C)
+				await esperar()
+				c.progresso.escolher(0)
+				c.progresso.pendentes = 0
+				c.lento_t = 0.0
+				c.lento_acao = ""
+			await esperar()
+
+
+func _conferir_paginas_completas(st, contexto: String, modo: String) -> void:
+	var esperado := {}
+	for sec in st.secoes:
+		for l in sec.linhas:
+			if modo != "hud" or not bool(l.get("so_cheio", false)):
+				esperado[str(l.id)] = l
+	var diagnostico: Array = st.medir_layout()
+	var ids := {}
+	for item in diagnostico:
+		var id := str(item.id)
+		ok(not ids.has(id), contexto + " ID não se repete no plano: " + id)
+		ids[id] = true
+		ok(esperado.has(id) and item.dados == esperado.get(id), contexto + " preserva dados completos: " + id)
+		var r: Rect2 = item.rect
+		var coluna: Rect2 = st._colunas()[int(item.coluna)]
+		ok(coluna.encloses(r) and Rect2(0, 0, 960, 540).encloses(r), contexto + " item cabe: " + id)
+		for outro in diagnostico:
+			if id != str(outro.id) and item.coluna == outro.coluna and item.pagina == outro.pagina:
+				ok(not r.intersects(outro.rect), contexto + " itens não se sobrepõem: " + id + "/" + str(outro.id))
+		if str(item.dados.tipo) == "bloco" and modo != "hud":
+			var refeito := ""
+			for linha_t in st._linhas_do_bloco(item.dados, r.size.x - Status.ICONE - 4.0):
+				ok(st._larg_trechos(linha_t) <= r.size.x - Status.ICONE - 4.0, contexto + " trecho medido cabe: " + id)
+				for tr in linha_t:
+					refeito += str(tr[0])
+			ok(refeito.replace(" ", "") == "".join(_textos(item.dados.trechos)).replace(" ", ""), contexto + " trechos completos sem abreviar: " + id)
+			var dica := " ".join(st._linhas_dica(str(item.dados.dica), r.size.x - Status.ICONE - 4.0))
+			ok(dica.replace(" ", "") == str(item.dados.dica).replace("\n", "").replace(" ", ""), contexto + " dica completa sem teto: " + id)
+	ok(ids.size() == esperado.size(), contexto + " todos IDs têm página (%d/%d)" % [ids.size(), esperado.size()])
+	var info: Dictionary = st.paginas_detalhes()
+	var total := int(info.paginas)
+	for i in total:
+		tecla(KEY_PAGEUP if modo == "hud" else KEY_Q)
+	await esperar()
+	ok(int(st.paginas_detalhes().pagina) == 1, contexto + " navegação volta ao início")
+	if modo == "hud" and total > 1:
+		var janela := get_window()
+		var tamanho_anterior := janela.size
+		for tamanho in [tamanho_anterior, Vector2i(1280, 720)]:
+			janela.size = tamanho
+			await esperar()
+			_roda_status(Vector2(480, 270), MOUSE_BUTTON_WHEEL_DOWN)
+			await esperar()
+			ok(int(st.paginas_detalhes().pagina) == 1, contexto + " roda fora das colunas não muda página")
+			var dentro: Vector2 = (st.retangulos()[0] as Rect2).get_center()
+			_roda_status(dentro, MOUSE_BUTTON_WHEEL_DOWN)
+			await esperar()
+			ok(int(st.paginas_detalhes().pagina) == 2, contexto + " roda dentro da coluna avança pela entrada real")
+			_roda_status(dentro, MOUSE_BUTTON_WHEEL_UP)
+			await esperar()
+			ok(int(st.paginas_detalhes().pagina) == 1, contexto + " roda dentro da coluna volta pela entrada real")
+		janela.size = tamanho_anterior
+		await esperar()
+	for i in total:
+		ok(int(st.paginas_detalhes().pagina) == i + 1, contexto + " visita página %d" % (i + 1))
+		ok(not st.colunas_cortadas().has(true) and st.linhas_que_estouram().is_empty(), contexto + " largura/altura da página %d" % (i + 1))
+		for r in st.retangulos():
+			ok(Rect2(0, 0, 960, 540).encloses(r), contexto + " página dentro do viewport")
+		if i < total - 1:
+			tecla(KEY_PAGEDOWN if modo == "hud" else KEY_E)
+			await esperar()
+	tecla(KEY_PAGEDOWN if modo == "hud" else KEY_E)
+	await esperar()
+	ok(int(st.paginas_detalhes().pagina) == total, contexto + " não ultrapassa última página")
+
+
+func _roda_status(pos: Vector2, botao: MouseButton) -> void:
+	var ev := InputEventMouseButton.new()
+	var tamanho := get_viewport().get_visible_rect().size
+	var escala := maxf(tamanho.x / 960.0, tamanho.y / 540.0)
+	ev.position = (pos - Vector2(480, 270)) * escala + tamanho / 2.0
+	ev.button_index = botao
+	ev.pressed = true
+	Input.parse_input_event(ev)
+
+
+## Frases quebram entre palavras; só uma palavra maior que a coluna pode quebrar em caracteres.
+func _quebra_trechos_sem_partir_palavras(st) -> void:
+	var origem: Array = [["dano dano área alcance crítico intervalo poder duração ", 0], ["12345 ", 1], ["bônus elevado", 2]]
+	var palavras_esperadas := "dano dano área alcance crítico intervalo poder duração 12345 bônus elevado".split(" ", false)
+	var caracteres_esperados := []
+	for tr in origem:
+		for ch in str(tr[0]):
+			if ch != " ":
+				caracteres_esperados.append([ch, tr[1]])
+	for largura in [100.0, 200.0]:
+		var palavras := PackedStringArray()
+		var caracteres := []
+		var linhas: Array = st._linhas_trechos(origem, largura)
+		ok(linhas.size() > 1, "wrap de frase exercita várias linhas em %.0f px" % largura)
+		for linha_t in linhas:
+			ok(st._larg_trechos(linha_t) <= largura, "frase quebrada cabe em %.0f px" % largura)
+			var texto := ""
+			for tr in linha_t:
+				texto += str(tr[0])
+				for ch in str(tr[0]):
+					if ch != " ":
+						caracteres.append([ch, tr[1]])
+			palavras.append_array(texto.split(" ", false))
+		ok(palavras == palavras_esperadas, "wrap não fragmenta palavras comuns/acento em %.0f px: %s" % [largura, str(palavras)])
+		ok(caracteres == caracteres_esperados, "wrap preserva conteúdo e estilo de cada caractere em %.0f px" % largura)
+	var excessiva := "supercalifragilisticamenteextraordinaria"
+	var partes: Array = st._linhas_trechos([[excessiva, 2]], 100.0)
+	var refeito := ""
+	ok(partes.size() > 1, "palavra maior que coluna usa fallback em mais de uma linha")
+	for linha_t in partes:
+		ok(st._larg_trechos(linha_t) <= 100.0, "fallback da palavra excessiva cabe na largura")
+		for tr in linha_t:
+			refeito += str(tr[0])
+			ok(int(tr[1]) == 2, "fallback preserva estilo da palavra excessiva")
+	ok(refeito == excessiva, "fallback preserva todos os caracteres da palavra excessiva")

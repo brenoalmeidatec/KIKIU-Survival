@@ -1,30 +1,8 @@
 {
   "_ajuda": "Cores amostradas de docs/imagens/referencia_2_5d.webp (1672x941) com ffmpeg + script de média. Formato #rrggbb. Método: 'avg' = média da área (fundo de painel, barras cheias); 'sat' = média só dos pixels saturados (efeitos e números); 'bright' = média dos 20% mais claros (texto e ícones). Limite: a referência é imagem-conceito reamostrada (webp), então bordas de 1 a 2 px e texto pequeno ficam com cor puxada para a média do fundo. Valores marcados em _obs devem ser conferidos no jogo antes de virar tema. Os painéis são translúcidos: o hex do painel é a cor média sobre a floresta escura, não a cor opaca; a opacidade real fica para o Theme (ver hud_menus.md, seção 2).",
   "ui": {
-    "painel": "#01030b",
-    "borda": "#86898f",
-    "borda_destaque": "#f1b10e",
-    "texto": "#edf0f6",
-    "texto_secundario": "#5c7185",
-    "ouro": "#e0bc48",
-    "almas": "#d06df2",
-    "vida": "#b9212d",
-    "fragmentos": "#3061d0",
-    "objetivo": "#ddcc80",
-    "portal": "#c88bef",
-    "_obs": {
-      "painel": "avg de uma faixa livre de texto do painel do objetivo (sem a transparência, que é alpha do Theme).",
-      "borda": "linha vertical do painel do objetivo, método bright, 2 px. Subestimada pela reamostragem; a borda real é azul-acinzentada clara.",
-      "borda_destaque": "cor da barra de fase preenchida (sat). A moldura do slot selecionado é amarelo mais forte (visual, não medido com limpeza).",
-      "texto": "nome Hazaki, método bright.",
-      "texto_secundario": "rótulos FPS e PING (bright).",
-      "ouro": "moeda e número de Ouro (sat).",
-      "almas": "chama de Almas (sat).",
-      "vida": "preenchimento da barra de vida (sat).",
-      "fragmentos": "preenchimento da barra de fragmentos (sat).",
-      "objetivo": "losango do Objetivo (bright).",
-      "portal": "título PORTAL ABERTO e feixe do portal (roxo claro, bright)."
-    }
+    "_fonte": "jogos/hordas/projeto/v2/paleta.gd",
+    "_obs": "A UI usa a fonte única de constantes GDScript em v2/paleta.gd, lida também pelo gerador Python de molduras. As amostras originais da referência são históricas; elementos e dano abaixo continuam como estudo de arte, não uma segunda paleta de UI."
   },
   "elementos": {
     "fogo": "#d87a2b",
