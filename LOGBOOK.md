@@ -1969,3 +1969,11 @@ _Claude do Alisson (workflow, máquina não confirmada)_
 - **Recados:** PR #276 segue como rascunho, sem merge. Os GIFs e o print novo estão em `docs/visual_2_5d/blender_herois/hazaki/` e são os links do corpo do PR.
 
 _Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 - Hazaki do Blender no jogo, final (empilhado no lote #291)
+
+- **Feito:** junta #276 (folha do Blender) e #277 (ligação no `heroi.gd`) sobre `alisson/lote-integracao`. Conflito com o dissolve da morte (#280) resolvido em `v2/heroi.gd`: a queda do Blender toca primeiro (relógio real, a câmera lenta não come a animação) e o shader de dissolução entra só no fim dela, sem flash branco durante a queda; sem animação de morte (folhas antigas) nada muda. A morte do Blender agora cai DE LADO (rola em torno do eixo frente-trás, encolhida, cabeça para a esquerda ou direita da tela) em todas as direções, em vez de cair de costas para a câmera, que visto de cima parecia de cabeça para baixo (`anim_morte.py`). Lâmina da katana mais larga (0,15 para 0,18) e mais aberta para fora, para ler de frente e de costas. Folha remontada e copiada para `hazaki_samurai_*`. O tempo do andar vem de `animacoes.andar.s_por_quadro` do JSON (0,09 s), com `PASSO_ANIM` de reserva. `testes/v2_morte_heroi.gd` ajustado ao novo encadeamento.
+- **Pendente:** deitado, o corpo (botas e katana) passa 3 a 5 px dos 32 da célula e é cortado (`medir.py`); aceito por não mudar o tamanho da célula. O print do Salão (`qa/`) segue só para QA.
+- **Próximo:** o Breno/Alisson jogarem para ver o ritmo do andar e a queda; mesclar o lote #291 e depois este PR.
+
+_Claude do Alisson (notebook)_

@@ -255,7 +255,7 @@
     0.25,
     0.3
    ],
-   "aviso": "deitada de cabeca para a camera, nas 8 direcoes (anim_morte.py); a largura real do corpo fica em 25 a 31 px (medida no mundo); alguns quadros encostam 1 px na borda (medir.py)"
+   "aviso": "cai DE LADO, deitada atravessada na tela (cabeca para a esquerda ou a direita), encolhida; nos quadros deitados o corpo (botas, katana) passa 3 a 5 px dos 32 e e cortado pela celula (anim_morte.py, medir.py)"
   }
  },
  "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'."

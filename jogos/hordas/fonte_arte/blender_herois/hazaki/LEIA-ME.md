@@ -28,7 +28,7 @@ nessa ordem, colunas = quadros (o jogo usa `[parado, andar0..]`; cada animação
 | `combo` | 18 | `anim_combo.py`: 3 golpes x 6 quadros (antecipação, antecipação funda, golpe com rastro, impacto com rastro, hold, volta): horizontal, diagonal descendente e estocada |
 | `escudo` | 4 | `anim_escudo.py`: a katana cruza na frente do tronco (diagonal, ponta para cima), braço esquerdo em apoio; 2 quadros de entrada e 2 de guarda (o corpo cede no 3º) |
 | `dano` | 4 | `anim_dano.py`: impacto (cabeça jogada), recuo máximo, reação e volta com ease |
-| `morte` | 8 | `anim_morte.py`: leva o golpe, cede os joelhos, tomba, BATE (q3), rebate 1 px, assenta e fica deitado 2 quadros; nas 8 direções termina deitado com a cabeça para a câmera |
+| `morte` | 8 | `anim_morte.py`: leva o golpe, cede os joelhos, tomba DE LADO (rola em torno do eixo frente-trás), BATE (q3), rebate 1 px, assenta e fica deitado 2 quadros, encolhido; nas 8 direções termina atravessado na tela (cabeça para a esquerda ou a direita), nunca de cabeça para baixo |
 
 Cada `anim_<nome>.py` pode declarar `S_POR_QUADRO` (segundos de cada quadro: impacto rápido, hold e repouso longos); o `montar_folha.py` copia isso para `s_quadros` no JSON.
 

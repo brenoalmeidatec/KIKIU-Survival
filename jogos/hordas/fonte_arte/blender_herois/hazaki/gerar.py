@@ -141,7 +141,7 @@ for lado, s in (("esquerda", -1), ("direita", 1)):
     OSSO_DE[ico("Mão " + lado, tuple(mao), (.13, .13, .14), ns["skin"] if s < 0 else ns["skin_lit"], 2)] = "antebraco" + sfx
     if s > 0:
         # KATANA na mão direita da tela, apontada para o lado e para baixo, lâmina espessa (lê de qualquer direção)
-        d = Vector((.18, -.08, -.98)).normalized()
+        d = Vector((.26, -.08, -.97)).normalized()
         cabo_a, cabo_b = mao - d * .20, mao + d * .17
         OSSO_DE[segment("Cabo da katana", tuple(cabo_a), tuple(cabo_b), .052, .052, ns["hair"], 8)] = "antebraco_d"
         for i in range(4):
@@ -150,8 +150,8 @@ for lado, s in (("esquerda", -1), ("direita", 1)):
         OSSO_DE[segment("Guarda da katana", tuple(cabo_b - d * .03), tuple(cabo_b + d * .03), .15, .15, ns["gold"], 8)] = "antebraco_d"
         lam_a = cabo_b + d * .06
         lam_b = lam_a + d * .80
-        OSSO_DE[segment("Lâmina da katana", tuple(lam_a), tuple(lam_b), .150, .110, ns["silver"], 4)] = "antebraco_d"
-        OSSO_DE[segment("Ponta da katana", tuple(lam_b), tuple(lam_b + d * .18), .110, .0, ns["silver"], 4)] = "antebraco_d"
+        OSSO_DE[segment("Lâmina da katana", tuple(lam_a), tuple(lam_b), .180, .130, ns["silver"], 4)] = "antebraco_d"
+        OSSO_DE[segment("Ponta da katana", tuple(lam_b), tuple(lam_b + d * .18), .130, .0, ns["silver"], 4)] = "antebraco_d"
         OSSO_DE[ns["line"]("Fio azul refletido", [tuple(lam_a + Vector((0, -.05, 0))), tuple(lam_b + Vector((0, -.05, 0)))], .028, ns["cyan"])] = "antebraco_d"
 novos = [o for o in bpy.data.objects if o not in ANT]
 heroi += novos

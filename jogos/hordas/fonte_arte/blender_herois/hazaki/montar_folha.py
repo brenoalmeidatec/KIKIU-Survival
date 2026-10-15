@@ -46,7 +46,7 @@ COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(1
 COLUNAS += [("escudo", i) for i in range(4)] + [("dano", i) for i in range(4)] + [("morte", i) for i in range(8)]
 
 AVISOS = {
-    "morte": "deitada de cabeca para a camera, nas 8 direcoes (anim_morte.py); a largura real do corpo fica em 25 a 31 px (medida no mundo); alguns quadros encostam 1 px na borda (medir.py)",
+    "morte": "cai DE LADO, deitada atravessada na tela (cabeca para a esquerda ou a direita), encolhida; nos quadros deitados o corpo (botas, katana) passa 3 a 5 px dos 32 e e cortado pela celula (anim_morte.py, medir.py)",
     "andar": "baixo_esq, baixo_dir, cima_esq e cima_dir encostam na borda em alguns quadros (medir.py)",
     "rolamento": "quadro 1 (mergulho): a bainha ou a katana encostam na borda de perfil e em baixo_dir/cima_esq (medir.py)",
     "combo": "o rastro da lamina e a ponta da katana encostam na borda em varios quadros de golpe, de perfil e nas diagonais; o rastro e cortado pela celula (medir.py)",

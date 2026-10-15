@@ -759,7 +759,10 @@ func _visual(dt: float, v: Vector2) -> void:
 	var c := 0
 	if estado == Estado.LIVRE and andando:
 		_anim += dt * (1.45 if correndo else 1.0)
-		c = 1 + int(_anim / PASSO_ANIM) % (int(tipo.info.colunas.size()) - 1)
+		var passo := PASSO_ANIM
+		if _tem_anim("andar"):  # o tempo do andar vem da folha (animacoes.andar.s_por_quadro), então ajusta pelo JSON
+			passo = float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM))
+		c = 1 + int(_anim / passo) % (int(tipo.info.colunas.size()) - 1)
 	else:
 		_anim = 0.0
 	var ca := _coluna_acao(dt)
@@ -827,16 +830,22 @@ func _iniciar_morte() -> void:
 		sprite.material = _mat_morte
 
 
+## Segundos reais da morte inteira: a queda do Blender (até o quadro de repouso, se a folha tem) mais a dissolução.
+func duracao_morte() -> float:
+	return (_duracao_anim("morte", true) if _tem_anim("morte") else 0.0) + MORTE_DISSOLVE
+
+
 ## Progresso 0..1 da dissolução do corpo (relógio de jogo, sem TIME).
 func morte_k() -> float:
 	return clampf(morte_t / MORTE_DISSOLVE, 0.0, 1.0)
 
 
 func _visual_morto(dt: float) -> void:
-	var anim := _tem_anim("morte")  # a queda do Blender (deitada de lado) toca primeiro; o dissolve entra no fim dela
+	var anim := _tem_anim("morte")  # a queda do Blender (deitada de lado) toca primeiro; o dissolve entra quando ela chega ao quadro de repouso
+	var c_lenta := 1.0
 	if anim:
-		var c_lenta: float = mundo.combate.lento_escala if mundo.combate.lento_t > 0.0 else 1.0
-		_morte_t += dt / maxf(c_lenta, 0.05)  # a câmera lenta da morte (0,25x por 1,3 s) não pode comer a animação: conta em tempo real
+		c_lenta = maxf(mundo.combate.lento_escala if mundo.combate.lento_t > 0.0 else 1.0, 0.05)
+		_morte_t += dt / c_lenta  # a câmera lenta da morte (0,25x por 1,3 s) não pode comer a animação: conta em tempo real
 		var c := _coluna_por_tempo("morte", _morte_t)
 		if c != coluna or linha_de(dir_olhar) != linha:
 			quadro(c, linha_de(dir_olhar))
@@ -845,9 +854,9 @@ func _visual_morto(dt: float) -> void:
 		sprite.offset = _off_base
 		sprite.scale = Vector2.ONE
 		sprite.modulate = Color(1, 0.8, 0.8, 0.85)
-		if _morte_t < _duracao_anim("morte"):
+		if _morte_t < _duracao_anim("morte", true):
 			return
-	morte_t += dt
+	morte_t += dt / c_lenta  # com a queda do Blender o dissolve também conta em tempo real (a tela de resultado não corta ele)
 	var k := morte_k()
 	if _mat_morte != null:
 		if sprite.material != _mat_morte:
@@ -869,12 +878,12 @@ func _tem_anim(nome: String) -> bool:
 	return a is Dictionary and (a as Dictionary).has(nome)
 
 
-## Duração total (s) da animação `nome`, pelos tempos s_quadros da folha (ou s_por_quadro).
-func _duracao_anim(nome: String) -> float:
+## Duração total (s) da animação `nome`, pelos tempos s_quadros da folha (ou s_por_quadro); `sem_ultimo` tira o quadro final (a pose que fica).
+func _duracao_anim(nome: String, sem_ultimo := false) -> float:
 	var a: Dictionary = tipo.info.animacoes[nome]
 	var dur: Array = a.get("s_quadros", [])
 	var tot := 0.0
-	for i in (a.colunas as Array).size():
+	for i in (a.colunas as Array).size() - (1 if sem_ultimo else 0):
 		tot += float(dur[i]) if i < dur.size() else float(a.get("s_por_quadro", 0.1))
 	return tot
 
