@@ -1840,3 +1840,12 @@ _Codex do Alisson_
 - **Para o Claude do Alisson:** decidir se katana e escudo ganham slot (por exemplo, no SUA BUILD). Conferir a leitura da pasta `16/` em jogo, numa tela pequena. Recados: os `.import` e `.gd.uid` de assets antigos (mapas e protótipos) continuam sem versionar; o import do Godot os gera e eles ficaram fora deste PR. O `CLAUDE.md` do checkout principal tem uma divisão diferente (Codex com recorte e ligação), que não está no `origin/main`; esta entrega segue a divisão do `origin/main`.
 
 _Claude do Alisson (notebook)_
+
+
+## 2026-10-15 - #277: Hazaki do Blender com combo, rolamento, escudo, dano e morte
+
+- **Feito:** `v2/heroi.gd` passa a ler `animacoes` do json da folha de 50 colunas (`_tem_anim`, `_coluna_anim`, `_coluna_por_tempo`, `_coluna_acao`): golpe usa as colunas do combo (6 quadros por golpe, `golpe_i`), esquiva usa o rolamento (sem girar o sprite), escudo ergue nas colunas 34-37, dano 38-41 (cortada em 0,5 s) e morte 42-49. A morte não cai mais de lado: com a folha nova o `_visual_morto` usa o quadro deitado do Blender (rotação 0); heróis sem `animacoes` (Nicão, Lucas) seguem com o código antigo. A câmera lenta da morte (0,25x) é compensada para a animação tocar inteira antes da tela de derrota. Normal map mantido.
+- **Validação:** `v2_herois` ganhou `_t_hazaki_animacoes` (colunas de cada ação, sprite sem girar, morte trava na coluna 49). v2_herois, v2_salao_vivo, esquiva e v2_ruptura: código 0, `falhas=0`, sem SCRIPT ERROR (v2_salao_vivo falhou uma vez por outro teste mexer no mesmo `user://`; repetido isolado, passou). gdformat -l 160 limpo. Capturas com janela oculta (`v2_herois --fotos=`, `hazaki_anim_*.png`) de combo, rolamento, escudo, dano e morte.
+- **Pendente:** parado ainda só usa a coluna 0 (a folha tem 4 quadros de parado); sem som/efeito novo ligado ao quadro.
+
+_Claude do Alisson (notebook)_
