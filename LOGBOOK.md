@@ -2043,3 +2043,13 @@ _Claude do Alisson (notebook)_
 
 _Codex do Alisson_
 
+
+## 2026-10-15 · Lucas no Blender (todas as animações) — Claude do Alisson (notebook)
+- **Feito:** o Lucas (adagas) ganhou o mesmo processo do Hazaki (#293) em `jogos/hordas/fonte_arte/blender_herois/lucas/`: `modelo.py` monta o modelo por script a partir da referência do Codex (`referencia_herois/lucas.png`: capuz roxo pontudo, lenço dourado com ponta longa, túnica roxa, bandoleira com três adagas, braçadeiras, botas altas), `gerar.py` (rig com joelho e cotovelo, 4 faixas, contorno, Cycles em pixel nativo 32x44, 8 direções, cor e normal), uma `anim_<nome>.py` por animação e `montar_folha.py`. Animações: parado 4, andar 6, **combo de arremesso 12** (3 arremessos x 4 quadros: puxa, lança, braço estendido, volta; o 3º é o leque com as duas mãos), rolamento 6, **secundário/defesa 2** (as duas adagas cruzadas), dano 2 e morte 6 (de lado, enrolada e deitada, encolhida 12% para caber nos 32 px). A adaga da mão (`ossos.adaga`) some do quadro quando é lançada. Folha de 38 colunas no jogo (`sprites/lucas_*`, que trocou o sprite de 40x46): `heroi.gd` já lia `animacoes` do json, então só entrou o json (`combo.golpes` = 3, `quadros_por_golpe` = 4). Nada em `heroi.gd`, Hazaki e Nicão intactos.
+- **Salão:** o Santuário mostrava sempre o Hazaki; `v2/salao.gd` agora usa a folha do herói do personagem ativo (e o número de quadros de andar vem do json). O retrato de `personagens_tela.gd` continua com o Hazaki.
+- **Testes:** `v2_herois` generalizado (`_t_animacoes`, colunas lidas do json; vale para Hazaki e Lucas) e a foto de cada animação agora sai para os dois heróis do Blender. `v2_herois`, `v2_partida`, `v2_salao`, `v2_mundo`, `v2_morte_heroi`, `v2_mapas` e `v2_status` com `falhas=0`; a suíte v2 inteira (37 cenas, 2 em paralelo): 35 passaram de primeira e as duas que estouraram os 120 s (`v2_mapas`, `v2_status`) passaram sozinhas logo depois (outra sessão usava a máquina). `gdformat -l 160 --check` limpo.
+- **Evidências:** GIFs, comparativo com o sprite antigo, comparativo com a referência e prints reais (partida e Santuário, janela oculta) em `docs/visual_2_5d/blender_herois/lucas/`; detalhes e limites (bordas, morte, leque) no `LEIA-ME.md` da pasta.
+- **Pendente:** o rosto em 32x44 são dois olhos e a pele (a identidade vem do capuz e do lenço); a morte fica enrolada, não esticada, por causa dos 32 px; o retrato do Santuário (`personagens_tela.gd`) ainda é o do Hazaki. Matheus e Nicão seguem o mesmo molde (copiar a pasta, trocar `modelo.py` e as poses).
+- **Para o Alisson:** o PR não foi mesclado.
+
+_Claude do Alisson (notebook)_
