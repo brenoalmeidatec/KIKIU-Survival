@@ -40,6 +40,8 @@ var _mapa_id := Mapas.PADRAO
 var _ajustes: Button
 var _voltar: Button
 var _detalhe: Label
+var _modo_btn: Button  # liga e desliga o modo Pesadelo (só aparece com a conquista cumprida)
+var _rastro_btn: Button  # liga e desliga o Rastro de katana (idem)
 var _selecionada := "vida"
 var pausa
 var trilha  # música de fundo do santuário (trilha.gd)
@@ -194,8 +196,10 @@ func _montar() -> void:
 			add_child(no)
 		_linhas[str(m.id)] = {"nome": nome, "efeito": efeito, "botao": botao, "cadeado": cadeado, "progresso": progresso, "selecionar": selecionar}
 		i += 1
-	add_child(_painel(Rect2(36, 392, 572, 66)))
-	_detalhe = _texto("", Paleta.TEXTO_TAMANHO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(48, 398, 548, 54))
+	add_child(_painel(Rect2(36, 392, 408, 66)))
+	_modo_btn = _botao_extra(Rect2(452, 392, 156, 31), "modo", "pesadelo")
+	_rastro_btn = _botao_extra(Rect2(452, 427, 156, 31), "visual", "rastro_katana")
+	_detalhe = _texto("", Paleta.TEXTO_TAMANHO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(48, 398, 384, 54))
 	_detalhe.add_theme_font_override("font", Dados.fonte_texto)
 	_detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_detalhe)
@@ -271,6 +275,43 @@ func _montar() -> void:
 	add_child(_texto(DICA, Paleta.NUMERO_PEQUENO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
 
 
+## Botão de liga/desliga de um modo ou visual liberado por conquista (some enquanto a conquista não foi cumprida).
+func _botao_extra(r: Rect2, tipo: String, id: String) -> Button:
+	var b := Button.new()
+	b.position = r.position
+	b.size = r.size
+	_estilo_botao(b, Paleta.NUMERO_PEQUENO)
+	b.pressed.connect(_alternar_extra.bind(tipo, id))
+	b.focus_entered.connect(_detalhar_extra.bind(tipo, id))
+	b.mouse_entered.connect(_detalhar_extra.bind(tipo, id))
+	b.visible = false
+	add_child(b)
+	return b
+
+
+func _alternar_extra(tipo: String, id: String) -> void:
+	if not Meta.ligar(tipo, id, not Meta.ligado(tipo, id)):
+		_avisar("Não foi possível salvar")
+	_atualizar_extras()
+	_detalhar_extra(tipo, id)
+
+
+func _detalhar_extra(tipo: String, id: String) -> void:
+	var item := Meta.item_extra(tipo, id)
+	_detalhe.text = "%s\n%s" % [item.get("nome", id), Meta.texto_item(item)]
+
+
+## Mostra os botões dos extras liberados, com o estado (LIGADO ou DESLIGADO).
+func _atualizar_extras() -> void:
+	for par in [[_modo_btn, "modo", "pesadelo", "PESADELO"], [_rastro_btn, "visual", "rastro_katana", "RASTRO"]]:
+		var b: Button = par[0]
+		b.visible = Meta.liberado(par[1], par[2])
+		b.text = "%s: %s" % [par[3], "LIGADO" if Meta.ligado(par[1], par[2]) else "DESLIGADO"]
+		var item := Meta.item_extra(par[1], par[2])
+		b.tooltip_text = "%s\n%s" % [item.get("nome", par[2]), Meta.texto_item(item)]
+		b.add_theme_color_override("font_color", COR_OURO if Meta.ligado(par[1], par[2]) else COR_TEXTO)
+
+
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:
 	var l := Label.new()
 	l.text = txt
@@ -330,6 +371,7 @@ func _atualizar() -> void:
 	var e := Meta.estado()
 	_saldo.text = str(e.almas)
 	_ultima.text = _texto_ultima(e.ultima)
+	_atualizar_extras()
 	for m in Meta.melhorias_visiveis():
 		var linha: Dictionary = _linhas[str(m.id)]
 		var n: int = e.niveis[str(m.id)]

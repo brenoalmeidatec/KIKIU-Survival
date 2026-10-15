@@ -97,7 +97,10 @@ func _ver_visual(a) -> void:
 		a._conq[id].selecionar.grab_focus()
 		ok(a._detalhe.text.contains(str(Meta.conquistas().filter(func(c): return str(c.id) == id)[0].desc)), "conquista %s tem detalhe por foco" % id)
 		ok(a._detalhe.get_minimum_size().y <= a._detalhe.size.y, "detalhe conquista %s cabe" % id)
-	ok(not a._detalhe.text.contains("Rastro"), "recompensa oculta não vaza no detalhe")
+	ok(
+		a._detalhe.text.contains("Libera: Rastro de katana") and not a._detalhe.text.contains("sem efeito"),
+		"a recompensa do rastro aparece no detalhe, sem aviso de efeito pendente"
+	)
 	ok(a._conq["sobreviva_5min"].barra.value == 0, "sem partida a barra começa vazia")
 	Meta.registrar_partida({"tempo": 150, "maior_combo": 25})
 	a._atualizar()

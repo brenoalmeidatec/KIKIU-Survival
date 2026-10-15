@@ -1,5 +1,5 @@
 {
-	"_ajuda": "Meta-progressão da v2 entre partidas, lido por v2/meta.gd (regras e save), v2/altar.gd (santuário) e v2/resultado_meta.gd (tela de resultado). As almas são a moeda permanente: cada partida soma ao saldo as almas que trouxe (mundo.almas_partida, quando existir), e o saldo fica em user://v2_progresso.cfg (save separado da v1). \"melhorias\": id (chave no save), nome, desc (o {v} é o valor de UM nível; o texto sai com o valor total), stat (o que o aplicar muda no herói ou no que vem depois), valor (por nível), max (níveis), custo (almas do 1º nível), cresce (o custo de cada nível seguinte é o anterior vezes isto), decimal (true mostra uma casa), requer (id de conquista; sem ela a melhoria aparece bloqueada). Stats com efeito no herói: vida, folego, dano, velocidade, ima, treino. Raridade (chance de carta rara no sorteio), rolagem (rerrolar a mais) e almas (almas a mais por partida) já têm efeito na partida. \"conquistas\": id, nome, desc, condicao (tempo, combo ou venceu) com limite (s ou abates), recompensa (tipo melhoria, modo ou visual; a conquista libera o id). \"modos\" e \"visuais\": só ficam marcados no save quando a conquista é cumprida; efeito pendente = ainda não tem efeito na partida. \"oculta_ate_ter_efeito\": true (em melhoria, modo ou visual) esconde o item de tudo o que o jogador vê (santuário, card SUA BUILD e texto de recompensa das conquistas) enquanto ele não tem efeito real; os dados ficam, nada é apagado. A conquista que o libera segue na lista, só sem o texto da recompensa. Quando o item ganhar efeito, tire a flag e apague o \"efeito\": \"pendente\" (senão o aviso \"(sem efeito ainda)\" continua aparecendo). Hoje escondidos: modo pesadelo (conquista derrota_chefe) e visual rastro_katana (conquista combo_50).",
+	"_ajuda": "Meta-progressão da v2 entre partidas, lido por v2/meta.gd (regras e save), v2/altar.gd (santuário) e v2/resultado_meta.gd (tela de resultado). As almas são a moeda permanente: cada partida soma ao saldo as almas que trouxe (mundo.almas_partida, quando existir), e o saldo fica em user://v2_progresso.cfg (save separado da v1). \"melhorias\": id (chave no save), nome, desc (o {v} é o valor de UM nível; o texto sai com o valor total), stat (o que o aplicar muda no herói ou no que vem depois), valor (por nível), max (níveis), custo (almas do 1º nível), cresce (o custo de cada nível seguinte é o anterior vezes isto), decimal (true mostra uma casa), requer (id de conquista; sem ela a melhoria aparece bloqueada). Stats com efeito no herói: vida, folego, dano, velocidade, ima, treino. Raridade (chance de carta rara no sorteio), rolagem (rerrolar a mais) e almas (almas a mais por partida) já têm efeito na partida. \"conquistas\": id, nome, desc, condicao (tempo, combo ou venceu) com limite (s ou abates), recompensa (tipo melhoria, modo ou visual; a conquista libera o id). \"modos\" e \"visuais\": só ficam marcados no save quando a conquista é cumprida; efeito pendente = ainda não tem efeito na partida. \"oculta_ate_ter_efeito\": true (em melhoria, modo ou visual) esconde o item de tudo o que o jogador vê (santuário, card SUA BUILD e texto de recompensa das conquistas) enquanto ele não tem efeito real; os dados ficam, nada é apagado. A conquista que o libera segue na lista, só sem o texto da recompensa. Quando o item ganhar efeito, tire a flag e apague o \"efeito\": \"pendente\" (senão o aviso \"(sem efeito ainda)\" continua aparecendo). Hoje nenhum item está escondido: o modo Pesadelo (conquista derrota_chefe; números em \"regras\", com {vida}, {dano}, {densidade} e {almas} no desc como porcentagem a mais) e o visual Rastro de katana (conquista combo_50; \"variante\" = a folha de corte do v2/efeitos.gd) têm efeito, e o Santuário tem um botão para ligar e desligar cada um. A escolha fica no save ([config] pesadelo e rastro_katana) e só vale com a conquista cumprida.",
 	"melhorias": [
 		{"id": "vida", "nome": "Vigor da mata", "desc": "+{v} de vida inicial", "stat": "vida", "valor": 10, "max": 5, "custo": 40, "cresce": 1.5},
 		{"id": "dano", "nome": "Gume de herança", "desc": "+{v}% de dano inicial", "stat": "dano", "valor": 6, "max": 5, "custo": 40, "cresce": 1.5},
@@ -17,9 +17,21 @@
 		{"id": "combo_50", "nome": "Combo de cinquenta", "desc": "Chegue a um combo de 50 abates seguidos.", "condicao": "combo", "limite": 50, "recompensa": {"tipo": "visual", "id": "rastro_katana"}}
 	],
 	"modos": [
-		{"id": "pesadelo", "nome": "Pesadelo", "desc": "Modo mais difícil da floresta.", "efeito": "pendente", "oculta_ate_ter_efeito": true}
+		{
+			"id": "pesadelo",
+			"nome": "Pesadelo",
+			"desc": "A partida fica mais dura: monstros com +{vida}% de vida e +{dano}% de dano, hordas +{densidade}% mais densas e o chefe chega mais cedo. Em troca, +{almas}% de almas.",
+			"regras": {
+				"_ajuda": "Números do modo Pesadelo (ligado no Santuário antes da partida; lido por v2/meta.gd, mundo.gd, diretor.gd e chefe.gd). vida_mult e dano_mult multiplicam a vida e o dano de TODO monstro que nasce (comuns, elites e chefes); densidade_mult multiplica a taxa de nascimento, o teto de monstros vivos e o tamanho das ondas fortes; chefe_tempo_mult multiplica o tempo em que cada mini-chefe e o chefe aparecem (0,8 = 20% mais cedo); almas_mult multiplica as almas que a partida credita, junto com o bônus de Almas abundantes.",
+				"vida_mult": 1.5,
+				"dano_mult": 1.25,
+				"densidade_mult": 1.3,
+				"chefe_tempo_mult": 0.8,
+				"almas_mult": 1.5
+			}
+		}
 	],
 	"visuais": [
-		{"id": "rastro_katana", "nome": "Rastro de katana", "desc": "Um rastro de luz no corte da katana.", "efeito": "pendente", "oculta_ate_ter_efeito": true}
+		{"id": "rastro_katana", "nome": "Rastro de katana", "desc": "Troca o corte da katana pelo rastro de energia ciano, feito no Blender. Só muda o visual: o dano é o mesmo.", "variante": "ciano"}
 	]
 }
