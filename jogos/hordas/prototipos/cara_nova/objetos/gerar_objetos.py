@@ -15,8 +15,10 @@ Saida, em jogos/hordas/projeto/prototipos/objetos/ (mesmo layout nas duas folhas
 Uso (so precisa de Pillow):
     python gerar_objetos.py           enfeites e pedras da cara nova (prototipo)
     python gerar_objetos.py armas     sprites das armas da v2 (fonte_armas_*.webp) -> projeto/assets/v2/armas/
+    python gerar_objetos.py hud       molduras 9-slice do HUD (folhas do #290, fonte_arte/hud_molduras/) -> projeto/v2/hud/moldura_{retrato,barra,habilidade}.png
     python gerar_objetos.py icones    icones das cartas da v2 (folhas do #272, fonte_arte/icones_cartas/) -> projeto/assets/v2/icones_cartas/
     python gerar_objetos.py marco4    8 estruturas do Marco 4 (fonte_arte/marco4/fonte_estruturas.png, grade 4x2) -> projeto/assets/v2/marco4/
+    python gerar_objetos.py fusoes    moldura, halo, Ventania e icone das fusoes (fonte_arte/fusoes/) -> projeto/assets/v2/fusoes/
 
 Passos: fundo = alfa 0 (ou branco) ligado a borda, por flood fill; objetos = componentes do que sobrou,
 juntados por proximidade; ordem = linha e coluna; BOX para a escala do jogo; alfa binario a 50%;
@@ -1493,14 +1495,287 @@ def gerar_marco4():
     print("marco4: %d estruturas em %s, folha %dx%d, paleta de %d cores" % (
         len(sprites), MARCO4_SAIDA, larg_folha, alt_folha, cores))
     print("previas", MARCO4_PREVIA, MARCO4_PREVIA_COLISAO)
+# ------------------------------------------------------------------ molduras do HUD (modo "hud")
+# Folhas do Codex (#290): 3 x 3 celulas, fundo branco, pecas soltas (cantos, bordas, centro). Vira texturas de 9-slice na escala do HUD.
+HUD_FONTE = os.path.join(HORDAS, "fonte_arte", "hud_molduras")
+HUD_SAIDA = os.path.join(HORDAS, "projeto", "v2", "hud")
+HUD_PREVIA = os.path.join(HORDAS, "prints", "v2_hud_molduras.png")
+HUD_LADO = 1254              # cada folha: 3 x 3 celulas de 418 px; aceita 1 a 2 px de diferenca (a geracao nao garante o tamanho exato)
+HUD_TOLERANCIA = 2
+HUD_COR = 32                 # paleta por textura, sem dithering
+HUD_LIMIAR = 96              # alfa binario a 37%: a fina linha de metal nao some na reducao
+HUD_MIOLO = 0.4              # fracao central de cada borda que sobra (as pontas tem arremate e nao se repetem)
+HUD_MIOLO_LARG = 6           # largura final do trecho esticavel da borda (px)
+# arquivo de saida, folha, espessura da borda em px de HUD. Cantos e bordas saem na mesma escala (a da espessura medida no braco do canto).
+HUD_MOLDURAS = [
+    ("moldura_retrato.png", "retrato.png", 6),
+    ("moldura_barra.png", "barras.png", 4),
+    ("moldura_habilidade.png", "habilidades.png", 4),
+]
+
+
+def hud_celulas(caminho):
+    """As 9 pecas da folha (RGBA, fundo transparente, caixa justa), na ordem de leitura. Aceita 1-2 px de diferenca no tamanho."""
+    im = Image.open(caminho).convert("RGB")
+    if abs(im.width - HUD_LADO) > HUD_TOLERANCIA or abs(im.height - HUD_LADO) > HUD_TOLERANCIA:
+        raise SystemExit("%s: %dx%d, esperado %dx%d (+-%d)" % (caminho, im.width, im.height, HUD_LADO, HUD_LADO, HUD_TOLERANCIA))
+    lado_x = im.width / 3.0
+    lado_y = im.height / 3.0
+    pecas = []
+    for k in range(9):
+        x0 = round((k % 3) * lado_x)
+        y0 = round((k // 3) * lado_y)
+        cel = im.crop((x0, y0, round(x0 + lado_x), round(y0 + lado_y)))
+        rgba = recortar_celula(cel)
+        caixa_ = rgba.getchannel("A").getbbox()
+        if caixa_ is None:
+            raise SystemExit("%s: celula %d vazia" % (caminho, k + 1))
+        pecas.append(rgba.crop(caixa_))
+    return pecas
+
+
+def hud_espessura_braco(canto, horizontal):
+    """Espessura do braco reto do canto (px de origem): o menor entre as contagens de opacos nas colunas (ou linhas) a 10% e a 90% do lado.
+    Uma delas cai no braco paralelo ao eixo (fino); a outra, no braco perpendicular (percorre o canto todo)."""
+    a = canto.getchannel("A")
+    w, h = canto.size
+    if horizontal:
+        cols = (int(w * 0.1), int(w * 0.9))
+        return min(sum(1 for y in range(h) if a.getpixel((x, y)) >= 128) for x in cols)
+    lins = (int(h * 0.1), int(h * 0.9))
+    return min(sum(1 for x in range(w) if a.getpixel((x, y)) >= 128) for y in lins)
+
+
+def hud_deslocamento_braco(canto, lado):
+    """Distancia (px de origem) da borda externa do canto (lado "t", "b", "l" ou "r") ate o inicio do braco reto, lida longe do vertice."""
+    a = canto.getchannel("A")
+    w, h = canto.size
+    if lado in ("t", "b"):
+        x = min((int(w * 0.1), int(w * 0.9)), key=lambda c: sum(1 for y in range(h) if a.getpixel((c, y)) >= 128))
+        ys = [y for y in range(h) if a.getpixel((x, y)) >= 128]
+        return ys[0] if lado == "t" else h - 1 - ys[-1]
+    y = min((int(h * 0.1), int(h * 0.9)), key=lambda c: sum(1 for x in range(w) if a.getpixel((x, c)) >= 128))
+    xs = [x for x in range(w) if a.getpixel((x, y)) >= 128]
+    return xs[0] if lado == "l" else w - 1 - xs[-1]
+
+
+def hud_montar(pecas, alvo_espessura):
+    """9-slice na escala do HUD: (imagem, margem do canto, relatorio)."""
+    tl, topo, tr, esq, centro, dir_, bl, base, br = pecas
+    # espessura de origem: a media dos bracos retos dos quatro cantos; a escala vem dela
+    medidas = [hud_espessura_braco(c, h) for c in (tl, tr, bl, br) for h in (True, False)]
+    esp_origem = sum(medidas) / float(len(medidas))
+    s = alvo_espessura / esp_origem
+    # os quatro cantos ficam quadrados do mesmo tamanho m (a diferenca de 1-2 px entre eles na folha some aqui), senao sobra frestas na emenda
+    m = max(1, round(max(max(c.width, c.height) for c in (tl, tr, bl, br)) * s))
+    cantos = [c.resize((m, m), Image.BOX) for c in (tl, tr, bl, br)]
+
+    def miolo(p, horizontal):
+        comp = p.width if horizontal else p.height
+        ini = int(comp * (1.0 - HUD_MIOLO) / 2.0)
+        fim = int(comp * (1.0 + HUD_MIOLO) / 2.0)
+        corte = p.crop((ini, 0, fim, p.height)) if horizontal else p.crop((0, ini, p.width, fim))
+        tam = (HUD_MIOLO_LARG, alvo_espessura) if horizontal else (alvo_espessura, HUD_MIOLO_LARG)
+        return corte.resize(tam, Image.BOX)
+
+    lado = 2 * m + HUD_MIOLO_LARG
+    tela = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+    tela.paste(cantos[0], (0, 0))
+    tela.paste(cantos[1], (lado - cantos[1].width, 0))
+    tela.paste(cantos[2], (0, lado - cantos[2].height))
+    tela.paste(cantos[3], (lado - cantos[3].width, lado - cantos[3].height))
+    # cada borda alinhada ao braco dos dois cantos vizinhos (o braco comeca um pouco depois da borda externa do canto)
+    dt = round(s * (hud_deslocamento_braco(tl, "t") + hud_deslocamento_braco(tr, "t")) / 2.0)
+    db = round(s * (hud_deslocamento_braco(bl, "b") + hud_deslocamento_braco(br, "b")) / 2.0)
+    de = round(s * (hud_deslocamento_braco(tl, "l") + hud_deslocamento_braco(bl, "l")) / 2.0)
+    dd = round(s * (hud_deslocamento_braco(tr, "r") + hud_deslocamento_braco(br, "r")) / 2.0)
+    tela.paste(miolo(topo, True), (m, dt))
+    tela.paste(miolo(base, True), (m, lado - alvo_espessura - db))
+    tela.paste(miolo(esq, False), (de, m))
+    tela.paste(miolo(dir_, False), (lado - alvo_espessura - dd, m))
+    rel = "braco medido %s px de origem -> HUD %d px (escala %.4f), canto %d px" % (medidas, alvo_espessura, s, m)
+    return tela, m, rel
+
+
+def gerar_hud():
+    os.makedirs(HUD_SAIDA, exist_ok=True)
+    montados = []
+    for saida, folha, espessura in HUD_MOLDURAS:
+        pecas = hud_celulas(os.path.join(HUD_FONTE, folha))
+        tela, margem, rel = hud_montar(pecas, espessura)
+        montados.append((saida, binarizar(tela, HUD_LIMIAR), margem, espessura, rel))
+    quant = quantizar_lista([mm[1] for mm in montados], HUD_COR)
+    info = {}
+    for (saida, _, margem, espessura, rel), img in zip(montados, quant):
+        img.save(os.path.join(HUD_SAIDA, saida))
+        info[saida] = {"margem": margem, "espessura": espessura, "tamanho": list(img.size)}
+        print("  %-26s %dx%d margem %d  %s" % (saida, img.width, img.height, margem, rel))
+    with open(os.path.join(HUD_SAIDA, "molduras_codex.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py hud (nao edite a mao)",
+                   "_ajuda": "9-slice das molduras do HUD (fonte: fonte_arte/hud_molduras). margem = patch_margin nos 4 lados; o centro fica transparente.",
+                   "molduras": info}, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    os.makedirs(os.path.dirname(HUD_PREVIA), exist_ok=True)
+    tela = Image.new("RGB", (len(quant) * 8 * 40 + 20, 8 * 40 + 40), (34, 30, 42))
+    x = 20
+    for img in quant:
+        g = img.resize((img.width * 8, img.height * 8), Image.NEAREST)
+        tela.paste(g, (x, 20), g)
+        x += g.width + 20
+    tela.save(HUD_PREVIA)
+    print("previa", HUD_PREVIA)
+# ------------------------------------------------------------------ arte das fusoes (v2, PR #289 do Codex): moldura, halo, Ventania e icone
+# Fontes em jogos/hordas/fonte_arte/fusoes/ (RGBA com alfa real, sem recorte). Saida em projeto/assets/v2/fusoes/, com indice.json
+# no mesmo esquema do indice das armas. A Ventania entra por ele e vale por cima da entrada de armas/ de mesma id (v2/armas_novas.gd).
+FUSOES_FONTE = os.path.join(HORDAS, "fonte_arte", "fusoes")
+FUSOES_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "fusoes")
+FUSOES_PREVIA = os.path.join(HORDAS, "prints", "v2_fusoes_arte.png")
+MOLDURA_TAM = (600, 200)           # o cartao da fusao (v2/hud.gd: FUSAO_L x FUSAO_A)
+MOLDURA_BORDA = 12                 # margem do 9-slice no alvo: cantos de 12 x 12 px sem escala; so o miolo estica
+MOLDURA_CANTO = 52                 # cantos e faixas da borda, em px da fonte: o filete dourado da fonte fica a 41-49 px da borda
+MOLDURA_MIOLO = (10, 8, 20, 250)   # miolo liso #0a0814 para o texto (a fonte tem grao sobre o mesmo violeta)
+MOLDURA_COR = 40                   # paleta unica da moldura, sem dithering
+HALO_TAM = 48                      # halo branco: a cor da fusao vem do modulate (v2/armas.gd e v2/hud.gd)
+DEGRAUS_ALFA = [0, 64, 128, 192, 255]  # o desvanecer do halo e da onda em faixas, sem meio-tom novo
+VENTANIA_TAM = (64, 32)            # onda da Ventania Cortante: 2:1, como pede a especificacao
+VENTANIA_LIMIAR = 40               # alfa abaixo disto some (o chiado de pixels claros da fonte)
+VENTANIA_COR = 24                  # paleta unica da onda, sem dithering
+ICONE_TAM = 16                     # icone da fusao: 16 px, mostrado em 2x; mesmo caminho dos icones de carta
+FUSOES_AJUDA = (
+    "Arte das fusoes da v2 (PR #289 do Codex; fontes em jogos/hordas/fonte_arte/fusoes/). moldura.png = 600x200 em 9-slice "
+    "(borda de 12 px, NinePatchRect na HUD). halo.png = 48x48 branco, tingido pela cor da fusao. icone.png = 16x16, mostrado em 2x. "
+    "sprites.ventania entra no registro de armas (v2/armas_novas.gd) e vale por cima da arte de armas/ de mesma id. "
+    "Nao edite a mao: rode `python gerar_objetos.py fusoes`."
+)
+
+
+def _degrau(v, limiar=0):
+    """Alfa v no degrau mais proximo de DEGRAUS_ALFA; abaixo de limiar some."""
+    if v < limiar:
+        return 0
+    return min(DEGRAUS_ALFA, key=lambda n: abs(n - v))
+
+
+def moldura_fusao(caminho):
+    """Moldura 600 x 200 em 9-slice. O corpo da fonte (sem a margem transparente) e que vira o alvo: cantos de 40 px
+    viram 12 x 12 px, as faixas viram 12 px de espessura, o miolo estica e fica liso. Sem reduzir o canvas inteiro."""
+    im = Image.open(caminho).convert("RGBA")
+    # o corpo e o alfa opaco (>= 128): com alfa > 12, pixels soltos acima da borda empurram o recorte e perdem o filete dourado
+    corpo = im.crop(im.getchannel("A").point(lambda v: 255 if v >= LIMIAR_ALFA else 0).getbbox())
+    w, h = corpo.size
+    c, b = MOLDURA_CANTO, MOLDURA_BORDA
+    tw, th = MOLDURA_TAM
+    if w <= 2 * c or h <= 2 * c:
+        raise SystemExit("moldura: corpo %dx%d pequeno demais para cantos de %d px" % (w, h, c))
+    saida = Image.new("RGBA", (tw, th), MOLDURA_MIOLO)
+    cantos = [
+        ((0, 0), (0, 0, c, c)),
+        ((tw - b, 0), (w - c, 0, w, c)),
+        ((0, th - b), (0, h - c, c, h)),
+        ((tw - b, th - b), (w - c, h - c, w, h)),
+    ]
+    for pos, caixa in cantos:
+        saida.paste(corpo.crop(caixa).resize((b, b), Image.BOX), pos)
+    saida.paste(corpo.crop((c, 0, w - c, c)).resize((tw - 2 * b, b), Image.BOX), (b, 0))
+    saida.paste(corpo.crop((c, h - c, w - c, h)).resize((tw - 2 * b, b), Image.BOX), (b, th - b))
+    saida.paste(corpo.crop((0, c, c, h - c)).resize((b, th - 2 * b), Image.BOX), (0, b))
+    saida.paste(corpo.crop((w - c, c, w, h - c)).resize((b, th - 2 * b), Image.BOX), (tw - b, b))
+    return quantizar_lista([binarizar(saida, LIMIAR_ALFA)], MOLDURA_COR)[0]
+
+
+def halo_fusao(caminho):
+    """Halo 48 x 48: BOX da fonte inteira (a margem transparente ja esta la), branco puro e alfa em degraus."""
+    im = Image.open(caminho).convert("RGBA").resize((HALO_TAM, HALO_TAM), Image.BOX)
+    saida = Image.new("RGBA", im.size, (255, 255, 255, 0))
+    saida.putalpha(im.getchannel("A").point(_degrau))
+    return saida
+
+
+def ventania_fusao(caminho):
+    """Onda 64 x 32: a fonte inteira vira 64 x 32 (BOX), alfa em degraus e o chiado claro some; cor por paleta sem dithering."""
+    im = Image.open(caminho).convert("RGBA").resize(VENTANIA_TAM, Image.BOX)
+    im.putalpha(im.getchannel("A").point(lambda v: _degrau(v, VENTANIA_LIMIAR)))
+    return quantizar_lista([im], VENTANIA_COR)[0]
+
+
+def icone_fusao(caminho):
+    """Icone 16 x 16 pelo caminho dos icones de carta: caixa justa, quadrado, BOX em 14 px (1 px de folga), alfa binario a 25%
+    e contorno escuro de 1 px (contorno() escurece a borda opaca)."""
+    im = Image.open(caminho).convert("RGBA")
+    im = im.crop(im.getchannel("A").point(lambda v: 255 if v > LIMITE_FUNDO else 0).getbbox())
+    lado = max(im.size)
+    quadrado = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+    quadrado.paste(im, ((lado - im.width) // 2, (lado - im.height) // 2))
+    img = binarizar(fit_em_caixa(quadrado, ICONE_TAM - 2, ICONE_TAM - 2), ICONES_LIMIAR)
+    img = contorno(em_tela(img, ICONE_TAM, ICONE_TAM, "centro"))
+    return quantizar_lista([img], ICONES_COR)[0]
+
+
+def previa_fusoes(feitos, caminho):
+    """Conferencia para olhar: moldura em 1x e as outras em escala inteira (nearest), sobre o fundo do cartao."""
+    tela = Image.new("RGBA", (980, 420), (34, 30, 42, 255))
+
+    def cola(img, x, y, s):
+        tela.alpha_composite(img.resize((img.width * s, img.height * s), Image.NEAREST), (x, y))
+
+    cola(feitos["moldura"], 10, 10, 1)
+    cola(feitos["halo"], 620, 10, 4)
+    cola(feitos["ventania"], 620, 230, 3)
+    cola(feitos["icone"], 840, 230, 6)
+    os.makedirs(os.path.dirname(caminho), exist_ok=True)
+    tela.convert("RGB").save(caminho)
+
+
+def gerar_fusoes():
+    os.makedirs(FUSOES_SAIDA, exist_ok=True)
+    feitos = {
+        "moldura": moldura_fusao(os.path.join(FUSOES_FONTE, "moldura.png")),
+        "halo": halo_fusao(os.path.join(FUSOES_FONTE, "halo.png")),
+        "ventania": ventania_fusao(os.path.join(FUSOES_FONTE, "ventania.png")),
+        "icone": icone_fusao(os.path.join(FUSOES_FONTE, "icone.png")),
+    }
+    for nome, img in feitos.items():
+        img.save(os.path.join(FUSOES_SAIDA, nome + ".png"))
+        print("  %-9s %3dx%-3d" % (nome, img.width, img.height))
+    tam = {nome: [img.width, img.height] for nome, img in feitos.items()}
+    indice = {
+        "_ajuda": FUSOES_AJUDA,
+        "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py fusoes (nao edite a mao)",
+        "sprites": {
+            "ventania": {
+                "arquivo": "ventania.png",
+                "normal": None,
+                "tipo": "area",
+                "familia": "katana",
+                "tamanho": tam["ventania"],
+                "armas_sugeridas": ["ventania"],
+                "armas_aproximadas": [],
+                "obs": "arte da fusao Ventania Cortante (Codex, #289): troca a onda da evolucao",
+            },
+        },
+        "arte": {
+            "moldura": {"arquivo": "moldura.png", "tamanho": tam["moldura"], "borda": MOLDURA_BORDA},
+            "halo": {"arquivo": "halo.png", "tamanho": tam["halo"]},
+            "icone": {"arquivo": "icone.png", "tamanho": tam["icone"]},
+        },
+    }
+    with open(os.path.join(FUSOES_SAIDA, "indice.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(indice, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    previa_fusoes(feitos, FUSOES_PREVIA)
+    print("previa", FUSOES_PREVIA)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "armas":
+    if len(sys.argv) > 1 and sys.argv[1] == "hud":
+        gerar_hud()
+    elif len(sys.argv) > 1 and sys.argv[1] == "armas":
         gerar_armas()
     elif len(sys.argv) > 1 and sys.argv[1] == "icones":
         gerar_icones()
     elif len(sys.argv) > 1 and sys.argv[1] == "marco4":
         gerar_marco4()
+    elif len(sys.argv) > 1 and sys.argv[1] == "fusoes":
+        gerar_fusoes()
     else:
         main()

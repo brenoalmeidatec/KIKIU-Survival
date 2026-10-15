@@ -14,7 +14,9 @@ extends CanvasLayer
 ## Layout em v2/hud.tscn (coordenadas de 960x540). O canto superior direito fica livre para o minimapa.
 
 const Paleta := preload("res://v2/paleta.gd")
+const Herois := preload("res://v2/herois.gd")
 const CENA := "res://v2/hud.tscn"
+const SPRITES := "res://prototipos/cara_nova/sprites/"
 const FONTE := "res://assets/fonte/PressStart2P.ttf"
 const OURO := Paleta.OURO
 const PULSO_T := 0.25  # segundos do pulso do combo a cada abate
@@ -35,7 +37,7 @@ const CHEFE_QUEDA := 1.2  # quão rápido a fantasma desce atrás da real (fraç
 const COR_ONDA := Paleta.PERIGO
 const COR_ELITE := Paleta.ANUNCIO_ELITE
 const COR_NIVEL := Paleta.ANUNCIO_NIVEL
-const RB_POS := Vector2(6, 39)  # o slot da ruptura: 22x22, logo abaixo da barra de fôlego (x 6 a 156, y 31 a 35)
+const RB_POS := Vector2(54, 40)  # o slot da ruptura (hoje escondido por hud_habilidades.gd): 22x22, logo abaixo da moldura das barras (y 6 a 36)
 const RB_TAM := 22
 const RB_POP_T := 0.15  # s do pop ao zerar a recarga
 const RB_LARANJA := Paleta.CARGA_LARANJA
@@ -48,6 +50,10 @@ const FUSAO_L := 600.0  # largura do cartão da fusão (espaço de 960 px da tel
 const FUSAO_A := 200.0
 const FUSAO_X := 180.0
 const FUSAO_Y := 150.0
+const MOLDURA_FUSAO := preload("res://assets/v2/fusoes/moldura.png")  # 600 x 200 em 9-slice: a borda tem 12 px, o miolo estica
+const MOLDURA_BORDA := 12
+const HALO_FUSAO := preload("res://assets/v2/fusoes/halo.png")  # halo branco 48 x 48, tingido pela cor da fusão
+const ICONE_FUSAO := preload("res://assets/v2/fusoes/icone.png")  # junção de duas setas, 16 x 16, mostrada em 2x
 ## Sinais do mundo e o método do HUD que cada um chama. Só se conecta o que o mundo tem.
 const SINAIS := [
 	["nivel_subiu", "_nivel_subiu"],
@@ -74,9 +80,11 @@ var _pisca_vida := 0.0  # segundos com vida baixa (para o pisca da barra de vida
 var _tempo_vinheta := 0.0  # segundos com vida baixa (para o pulso da vinheta)
 var _combo_x := 0.0
 var _fusao: Control  # o cartão grande da fusão (montado na primeira fusão)
+var _selo_pesadelo: Label  # "PESADELO" ao lado do relógio (modo do santuário)
 var _fusao_nome: Label
 var _fusao_desc: Label
 var _fusao_tween: Tween
+var _fusao_halos: Array = []  # os dois halos do cartão da fusão (tingidos pela cor dela)
 var _combo_y := 0.0
 var _cor_base := Color.WHITE  # cor do combo na contagem atual (sobe com os marcos)
 var _minuto_antes := 0
@@ -102,6 +110,7 @@ var _rb_nega := false  # moldura vermelha
 var _rb_pop := 0.0
 var _rb_recarga_antes := 0.0
 
+@onready var _heroi_img: TextureRect = $Raiz/Retrato/Heroi
 @onready var _vida_barra: TextureProgressBar = $Raiz/Vida/Barra
 @onready var _vida_txt: Label = $Raiz/Vida/Texto
 @onready var _folego: TextureProgressBar = $Raiz/Folego
@@ -161,7 +170,28 @@ func _ready() -> void:
 	_anel.pivot_offset = Vector2(10, 10)
 	_vinheta.texture = _textura_vinheta()
 	_vinheta.visible = false
+	_retrato_do_heroi()
 	_criar_slot_ruptura()
+	_criar_selo_pesadelo()
+
+
+## O retrato: o quadro parado do herói da partida (linha "baixo", coluna "parado" da folha), sem filtro, dentro da moldura de pedra.
+## Sem a folha ou sem o json, o retrato fica vazio (só moldura e fundo).
+func _retrato_do_heroi() -> void:
+	var base := SPRITES + Herois.sprite(Herois.escolhido())
+	var folha := load(base + "_albedo.png") as Texture2D
+	if folha == null or not FileAccess.file_exists(base + ".json"):
+		return
+	var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
+	if not info is Dictionary or not info.has("quadro"):
+		return
+	var quadro := Vector2(float(info.quadro[0]), float(info.quadro[1]))
+	var recorte := AtlasTexture.new()
+	recorte.atlas = folha
+	recorte.region = Rect2(Vector2.ZERO, quadro)
+	_heroi_img.texture = recorte
+	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_heroi_img.size = quadro
 
 
 func _exit_tree() -> void:
@@ -205,6 +235,7 @@ func avancar(dt: float) -> void:
 	_xp_barra.value = _xp_mostrado
 	_xp_txt.text = "%d/%d" % [roundi(_xp_mostrado), roundi(xp_prox)]
 	_selo_num.text = str(roundi(_num(h, "nivel", 1.0)))
+	_selo_pesadelo.visible = mundo != null and mundo.has_method("pesadelo") and mundo.pesadelo()
 	var tempo := maxf(_num(mundo, "tempo_partida", 0.0), 0.0)
 	_relogio.text = "%02d:%02d" % [int(tempo) / 60, int(tempo) % 60]
 	_checar_minuto(int(tempo) / 60)
@@ -225,6 +256,22 @@ func avancar(dt: float) -> void:
 	_animar(dt)
 	_anuncio.avancar(dt)
 	_anuncio.visible = _anuncio.texto_ativo != "" and not cartas_na_tela
+
+
+## O aviso PESADELO, ao lado do relógio: só aparece quando a partida é no modo Pesadelo (mundo.pesadelo()).
+func _criar_selo_pesadelo() -> void:
+	_selo_pesadelo = Label.new()
+	_selo_pesadelo.text = "PESADELO"
+	_selo_pesadelo.position = Vector2(540.0, 10.0)
+	_selo_pesadelo.add_theme_font_override("font", Dados.fonte_titulo)
+	_selo_pesadelo.add_theme_font_size_override("font_size", 20)
+	_selo_pesadelo.add_theme_color_override("font_color", VERMELHO_VINHETA)
+	_selo_pesadelo.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
+	_selo_pesadelo.add_theme_constant_override("outline_size", 4)
+	_selo_pesadelo.light_mask = 0
+	_selo_pesadelo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_selo_pesadelo.visible = false
+	$Raiz.add_child(_selo_pesadelo)
 
 
 ## O slot da ruptura: um Control criado aqui (o laço de _ready que zera luz e mouse já rodou, então zera de novo).
@@ -442,12 +489,23 @@ func _elite_apareceu(_nome = "") -> void:
 ## então a fonte é a de título (Jersey 10) e o texto corrido é o da Spleen 8x16 em 16 px. Só uma tween (sem nó por quadro).
 func _evolucao(nome = "", desc = "") -> void:
 	_anuncio.anunciar("EVOLUÇÃO: %s" % str(nome).to_upper(), OURO)
-	_mostrar_fusao(str(nome), str(desc))
+	_mostrar_fusao(str(nome), str(desc), _cor_fusao(str(nome)))
 
 
-func _mostrar_fusao(nome: String, desc: String) -> void:
+## A cor da fusão é o campo cor da evolução em dados/v2_cartas.json (o halo sai nessa cor); sem ele, o magenta da fusão.
+func _cor_fusao(nome: String) -> Color:
+	for e in Dados.json("v2_cartas").get("evolucoes", []):
+		if str(e.get("nome", "")) == nome and e.get("cor") is Array:
+			var c: Array = e.cor
+			return Color(float(c[0]), float(c[1]), float(c[2]))
+	return Paleta.FUSAO
+
+
+func _mostrar_fusao(nome: String, desc: String, cor: Color) -> void:
 	if _fusao == null:
 		_montar_fusao()
+	for halo in _fusao_halos:
+		halo.modulate = Color(cor.r, cor.g, cor.b, 0.9)
 	_fusao_nome.text = nome.to_upper()
 	_fusao_desc.text = desc
 	_fusao.modulate.a = 1.0
@@ -468,14 +526,40 @@ func _montar_fusao() -> void:
 	_fusao.size = Vector2(FUSAO_L, FUSAO_A)
 	_fusao.pivot_offset = _fusao.size * 0.5
 	_fusao.visible = false
-	var fundo := ColorRect.new()
-	fundo.color = Color(0.04, 0.03, 0.08, 0.88)
+	var fundo := NinePatchRect.new()  # a moldura de pedra e ouro em 9-slice: o miolo liso já está no PNG
+	fundo.texture = MOLDURA_FUSAO
+	fundo.patch_margin_left = MOLDURA_BORDA
+	fundo.patch_margin_top = MOLDURA_BORDA
+	fundo.patch_margin_right = MOLDURA_BORDA
+	fundo.patch_margin_bottom = MOLDURA_BORDA
 	fundo.size = _fusao.size
+	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fusao.add_child(fundo)
 	_fusao.add_child(_rotulo(Dados.fonte_titulo, 56, OURO, 12.0, 64.0, "FUSÃO!"))
+	for x in [46.0, 506.0]:  # um de cada lado do título: o halo da fusão e o ícone de junção
+		var halo := TextureRect.new()
+		halo.texture = HALO_FUSAO
+		halo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		halo.stretch_mode = TextureRect.STRETCH_SCALE
+		halo.position = Vector2(x, 20.0)
+		halo.size = Vector2(48.0, 48.0)
+		halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_fusao.add_child(halo)
+		_fusao_halos.append(halo)
+		var icone := TextureRect.new()
+		icone.texture = ICONE_FUSAO
+		icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icone.stretch_mode = TextureRect.STRETCH_SCALE
+		icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icone.position = Vector2(x + 8.0, 28.0)
+		icone.size = Vector2(32.0, 32.0)
+		icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_fusao.add_child(icone)
 	_fusao_nome = _rotulo(Dados.fonte_titulo, 37, Color(1.0, 0.95, 0.8), 80.0, 44.0, "")
 	_fusao.add_child(_fusao_nome)
 	_fusao_desc = _rotulo(Dados.fonte_texto, 16, Color(0.88, 0.9, 1.0), 132.0, 60.0, "", true)
+	_fusao_desc.position.x = MOLDURA_BORDA + 16.0  # o texto corrido fica dentro da borda de 12 px, com folga
+	_fusao_desc.size.x = FUSAO_L - 2.0 * (MOLDURA_BORDA + 16.0)
 	_fusao.add_child(_fusao_desc)
 	$Raiz.add_child(_fusao)
 

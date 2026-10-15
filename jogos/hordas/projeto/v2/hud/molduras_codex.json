@@ -1,0 +1,30 @@
+{
+ "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py hud (nao edite a mao)",
+ "_ajuda": "9-slice das molduras do HUD (fonte: fonte_arte/hud_molduras). margem = patch_margin nos 4 lados; o centro fica transparente.",
+ "molduras": {
+  "moldura_retrato.png": {
+   "margem": 17,
+   "espessura": 6,
+   "tamanho": [
+    40,
+    40
+   ]
+  },
+  "moldura_barra.png": {
+   "margem": 11,
+   "espessura": 4,
+   "tamanho": [
+    28,
+    28
+   ]
+  },
+  "moldura_habilidade.png": {
+   "margem": 11,
+   "espessura": 4,
+   "tamanho": [
+    28,
+    28
+   ]
+  }
+ }
+}

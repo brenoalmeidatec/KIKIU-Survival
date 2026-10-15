@@ -73,10 +73,12 @@ XP dourado e ouro de seleção são papéis distintos. Fusão magenta continua d
   - teclado: setas e Enter (`pausa.gd:316-324`); Esc abre e fecha a pausa (`pausa.gd:314, 329-334`); na escolha, 1-2-3, Enter, Espaço, E, R rerrolar, B banir (`telas.gd:5-6, 783-844`);
   - controle: stick e setas mudam a seleção, A confirma, B volta, Start abre a pausa (`pausa.gd:312-334`; `altar.gd:25`);
   - mouse: passar o cursor seleciona, roda rola, clique aciona ao soltar (`pausa.gd:291-303`; `telas.gd:741`).
+- **Molduras do HUD (arte do Codex, #290)**: três 9-slice de pedra e ferro em `v2/hud/` (`moldura_retrato.png` borda de 6 px e margem 17; `moldura_barra.png` e `moldura_habilidade.png` borda de 4 px e margem 11; margens também em `molduras_codex.json`), geradas por `gerar_objetos.py hud` a partir de `fonte_arte/hud_molduras/`, centro transparente e desenhadas POR CIMA do conteúdo. Retrato: quadro parado do herói da partida (32x44) sobre `PAINEL`, no canto superior esquerdo (6,6, 44x56). Vida e fôlego dividem uma só moldura (54,6, 150x30): vida 14 px de altura, fôlego 6 px, as cores de `Paleta.VIDA` e `Paleta.FOLEGO` vêm das barras e não da pedra. Slots E e Q (`hud_habilidades.gd`): moldura de pedra em volta do card de 86x74, em 9-slice por `RenderingServer.canvas_item_add_nine_patch`; desabilitado = a mesma moldura a 0,75 de alfa; o estado (pronto, recarga, negado, perfeito) continua no quadro de 1 px do ícone e nas cores da paleta, nunca na pedra. O selo da tecla (E, Q) fica sobre a borda de baixo. Texto continua Press Start 2P em 8 px. Moldura da faixa de XP, do tempo, dos abates e do chefe segue `moldura_pedra.png`.
 - **Barras do HUD**: PNG de 3 px com degradê (`gerar_molduras.py:102-108, 161-168`). Vida pisca abaixo de 25% (`hud.gd:238`, `v2/LEIA-ME.md:31`). XP acende no pico (`hud.gd:20, 215`). **Barras do SUA BUILD**: borda de 1 px `#0a0814`, fundo `#29263d`, faixa de 2 px no topo mais clara (`status.gd:897-898, 1030-1036`).
 - **Pips** (`status.gd:1040-1050`): quadradinhos de 8 px com 3 px de espaço; fração vira pip parcial. Nível usa pips de 5 px; evoluído ganha estrela dourada (`status.gd:1141, 1156`).
 - **Ícones 8x8** (`status.gd:899-915`): `#` cor, `o` brilho (cor clareada 55%), `.` vazio. Desenhados por código a 2x (16 px) por `_icone8` (`status.gd:1013-1022`). Cartas usam o ícone próprio do ID (`assets/v2/icones_cartas`): 32x32 na escolha, no baú e nos slots da HUD; 16x16 na linha do SUA BUILD (`v2/LEIA-ME.md`).
 - **Avisos** (`hud_anuncios.gd`): uma faixa no centro alto, fila de até 5, moldura `moldura_faixa.png` tingida por tipo (`hud.gd:32-34, 293-294`). Não há balão de fala; os avisos de ataque no chão (`avisos.gd`) são do mundo.
+- **Cartão da FUSÃO** (`hud.gd`, `_montar_fusao`): 600 x 200, moldura `assets/v2/fusoes/moldura.png` em 9-slice (`NinePatchRect`, borda de 12 px; o miolo estica e é liso). Um halo 48 x 48 de cada lado do título, tingido pela cor da evolução (campo `cor` em `dados/v2_cartas.json`), com o ícone de junção 16 x 16 mostrado em 2x (`fusoes/icone.png`). O texto corrido tem 28 px de recuo, dentro da borda. No SUA BUILD, a linha de peça já fundida (nível "evoluída", `status.gd`, `_fundida`) leva o mesmo ícone depois do nível. A onda da Ventania é `assets/v2/fusoes/ventania.png` (64 x 32), entregue por `v2/armas_novas.gd`; o halo das lâminas evoluídas (`v2/armas.gd`) é `fusoes/halo.png`.
 
 ## 5. Comportamento
 
@@ -107,6 +109,7 @@ Comando: `godot --path jogos/hordas/projeto res://testes/<nome>.tscn`. A maioria
 | `v2_partida` | cartas, raridade, baú, resultado (`:51`) |
 | `v2_meta` | santuário e meta-progressão (`:51`) |
 | `v2_musica` | música de cada tela (`:59`) |
+| `v2_fusoes` | arte da fusão: tamanhos (600 x 200, 48, 16, 64 x 32), borda de 12 px e a Ventania no registro de armas |
 
 Mexeu em cor ou fonte: rode `v2_fontes` e `v2_status`. Mexeu em estado de tela: rode `v2_esc` e `v2_pausa`.
 

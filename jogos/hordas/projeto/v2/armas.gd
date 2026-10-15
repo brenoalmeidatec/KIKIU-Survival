@@ -19,6 +19,7 @@ const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x
 const COR_RAIO := Color(0.72, 0.86, 1.0)
 const ANGULOS_LEQUE := [-0.3, 0.0, 0.3]  # as lanças da Ventania (rad); uma só sem ela
 const RUNA_NO_ALVO := 0.65  # chance de a runa nascer em cima de um monstro perto (senão cai num anel em volta do herói, onde talvez ninguém pise)
+const HALO_FUSAO := preload("res://assets/v2/fusoes/halo.png")  # halo branco 48 x 48 da fusão, tingido pela cor dela (lâminas evoluídas)
 
 var combate
 var mundo
@@ -1253,7 +1254,7 @@ func _desenhar_laminas(a: Dictionary) -> void:
 			var pp := p + Vector2(cos(aa) - cos(ang), (sin(aa) - sin(ang)) * ACHATA) * R
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(pp.round() - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.26 - 0.09 * q))
 		if evo:  # a fusão lê de longe: halo maior e um miolo claro (só duas luzes a mais por lâmina)
-			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(24, 24), Vector2(48, 48)), false, Color(cor.r, cor.g, cor.b, 0.5))
+			no_brilho.draw_texture_rect(HALO_FUSAO, Rect2(p - Vector2(24, 24), Vector2(48, 48)), false, Color(cor.r, cor.g, cor.b, 0.5))
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(9, 9), Vector2(18, 18)), false, Color(1.0, 1.0, 1.0, 0.7))
 		else:
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.42))

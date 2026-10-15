@@ -13,6 +13,7 @@ const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (igual ao armas.g
 const MAX := 48
 const RAIO_PROJ := 10.0
 const PASTA_SPRITES := "res://assets/v2/armas/"
+const PASTA_FUSOES := "res://assets/v2/fusoes/"
 static var _tex_fumaca: Texture2D
 static var _sprites: Dictionary = {}
 static var _lidos := false
@@ -67,22 +68,28 @@ func tem_ativos() -> bool:
 
 ## Lê o índice uma vez por processo: cada arma aponta para o seu {tex, tam, tipo} (sugeridas e aproximadas). Sprite que não carrega
 ## fica de fora (o golpe segue com a forma antiga). Com normal map, a textura é um CanvasTexture: a luz 2D age nela.
+## A arte das fusões (assets/v2/fusoes/) lê por último: a Ventania Cortante troca a onda da arma base pela sua.
 static func carregar_sprites() -> void:
 	if _lidos:
 		return
 	_lidos = true
-	var d = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES.path_join("indice.json")))
+	for pasta in [PASTA_SPRITES, PASTA_FUSOES]:
+		_ler_indice(pasta)
+
+
+static func _ler_indice(pasta: String) -> void:
+	var d = JSON.parse_string(FileAccess.get_file_as_string(pasta.path_join("indice.json")))
 	if not (d is Dictionary):
 		return
 	for nome in d.get("sprites", {}):
 		var s: Dictionary = d.sprites[nome]
-		var tex := load(PASTA_SPRITES.path_join(str(s.arquivo))) as Texture2D
+		var tex := load(pasta.path_join(str(s.arquivo))) as Texture2D
 		if tex == null:
 			continue
 		if s.get("normal") != null:
 			var ct := CanvasTexture.new()
 			ct.diffuse_texture = tex
-			ct.normal_texture = load(PASTA_SPRITES.path_join(str(s.normal))) as Texture2D
+			ct.normal_texture = load(pasta.path_join(str(s.normal))) as Texture2D
 			tex = ct
 		var entrada := {"tex": tex, "tam": Vector2(float(s.tamanho[0]), float(s.tamanho[1])), "tipo": str(s.tipo)}
 		for arma in s.armas_sugeridas + s.armas_aproximadas:
