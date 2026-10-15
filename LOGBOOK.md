@@ -2036,3 +2036,13 @@ _Claude do Alisson (notebook)_
 - **Para o Alisson:** o PR não foi mesclado. Os `.import` dos dois PNGs novos entraram no commit; os gerados pela importação em outras pastas ficaram de fora.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson (notebook) · fim do turno: estado e retomada
+- **Na main hoje:** salão vivo e visual do Salão (#242/#261/#263), Nicão e Lucas no sistema de personagens do #242, ícones próprios de todas as cartas (#274, #283 via lote #291), lote #291 (controle no SUA BUILD #257, passe pixel no Alto, dissolve da morte do herói), Hazaki do Blender com todas as animações e morte de lado (#293), aba Gráficos completa (#287), aviso de versão nova (#284), Pesadelo e Rastro de katana com efeito (#285), dissolve dos monstros (#253), arte do Codex ligada: fusões (#294), molduras do HUD (#292), estruturas do Marco 4 (#295). Divisão FIXA: Claude faz todo o código, Codex só gera imagens (#265).
+- **Abertos, prontos mas reprovados na revisão de arte (não mesclar ainda):** #296 Matheus, #297 Lucas, #298 Nicão (heróis no Blender pelas referências do #286). Achados: martelo do Nicão some de costas na pancada; capuz do Lucas parece gorro e as facas somem; Matheus some no escuro e a arma não lembra a katana; todos escuros demais sobre o piso.
+- **Revisão 2 pausada no meio (WIP, NÃO verificada):** branches `wip/nicao-revisao2` (commit completo da revisão do Nicão), `wip/lucas-revisao2`, `wip/matheus-revisao2` e `wip/heroi-legivel` (contorno claro + luz pessoal para todos os heróis). Ao retomar: conferir cada WIP, terminar, levar para os PRs #296–#298 (merge, sem force), rodar testes/CI e uma nova revisão de arte; o #286 (referências do Codex) fecha quando os três entrarem.
+- **Próximo sugerido:** (1) robô de playtest da v2 que joga partidas inteiras sem janela e relata travas, telas presas, FPS e números de equilíbrio; (2) documento de 1 página com o ciclo do jogo; (3) o Alisson jogar uma Release com calma antes de novos sistemas. Nome público: o Alisson diz K.I.K.I.U, e a #139 registra "KIKILL" decidido pelo Breno em 10/10 — confirmar com o Breno.
+- **Esperando outros:** Breno: #139, #153, #137, #95 (admin: apagar branches após merge). Épicos e marcos seguem abertos (#134, #133, #132, #131, #130, #129, #127, #126, #125, #63, #152), PS Vita #87.
+- **Notas técnicas:** prints com Godot em janela oculta (`Start-Process ... -WindowStyle Hidden`); script de fila de merge que resolve conflito só de docs ficou no scratchpad (não versionado); `gh` deste notebook não tem escopo `workflow` (mudanças em `.github/workflows` não sobem daqui).
+
+_Claude do Alisson (notebook)_
