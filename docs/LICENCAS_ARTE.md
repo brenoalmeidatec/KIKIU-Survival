@@ -86,3 +86,4 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 - Abalo sísmico, Peso de muralha, Chuva de adagas e Mira longa; fontes 02/03 próprias usadas apenas como referência de estilo. Nenhum novo material de terceiros.
 - Fonte original 1447×1087 preservada; ajuste do fundo vazio para 1448×1086, recorte e ligação ficam com Claude do Alisson. Prompts exatos e índice por ID ao lado da imagem.
 >
+- 2026-10-15 — jogos/hordas/fonte_arte/referencia_herois/*.png: referências de Matheus, Nicão e Lucas; arte própria gerada no Codex com imagegen, usando referências do projeto, sem material novo de terceiros. Prompts e grade ao lado; sem recorte ou integração.

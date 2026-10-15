@@ -2036,3 +2036,10 @@ _Claude do Alisson (notebook)_
 - **Para o Alisson:** o PR não foi mesclado. Os `.import` dos dois PNGs novos entraram no commit; os gerados pela importação em outras pastas ficaram de fora.
 
 _Claude do Alisson (notebook)_
+## 2026-10-15 · Referências dos heróis — Codex do Alisson
+- Antes/depois: faltavam folhas para modelagem; entregues Matheus, Nicão e Lucas, cada um com frente, perfil e costas, branco e grade 3×1.
+- Validado: inspeção visual, integridade/dimensões dos PNGs e gdformat em scripts, testes e v2. Godot não executado localmente: somente arte e documentação, nenhum código/dado/teste alterado.
+- Para o Claude do Alisson: modelar e integrar; Matheus mantém a katana padrão, Nicão marreta e Lucas adagas. LEIA-ME e PROMPTS descrevem células, cores e limites. Pendente: validação dos modelos dentro do jogo.
+
+_Codex do Alisson_
+
