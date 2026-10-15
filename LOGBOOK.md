@@ -1688,6 +1688,9 @@ _Codex do Alisson_
 ## 2026-10-14 · Codex do Alisson · reserva da animação visual
 - **Em andamento:** item4 visual: dissolve no efeito de morte usando o pool/shader existente. Herói já tem antecipação/avanço/squash de golpe e queda; o restante do corpo/herói e contrato de fase/relógio do MultiMesh dependem de coordenação com Claude do Alisson, sem alterações nos arquivos de sistemas.
 - **Próximo:** benchmark real --medir no perfil Médio com horda cheia, antes/depois no IrisXe, testes e prints do viewport. Reserva somente documental: Godot ainda não rodado nesta branch.
+## 2026-10-14 · Codex do Alisson · reserva do passe visual Alto
+- **Em andamento:** item 5, passe de quantização de paleta/dither dentro do SubViewport 960x540, antes da UI/upscale, somente no perfil Alto. Bloom seletivo depende de máscara/composição de emissão coordenada com Claude do Alisson; Compatibility do Godot 4.4 não oferece HDR 2D.
+- **Próximo:** implementar o passe visual útil, medir no Iris Xe com perfil Alto e documentar os ganchos de bloom sem alterar sistemas. Reserva documental: Godot ainda não rodado nesta branch.
 ## 2026-10-14 · Claude do Alisson (notebook) · coop online, etapa 0: preparar o solo (docs/ONLINE_V2_PLANO.md)
 - **Feito:** `mundo.herois` (lista; o solo tem só o `heroi`), `mundo.alvo_mais_perto(pos)` (herói vivo mais perto; os monstros usam com 2+ heróis, o solo segue o caminho de sempre sem busca), e o tempo separado em "do mundo" e "do herói local": hit-stop, câmera lenta e a pausa da escolha ficam num `v2/tempo_local.gd` (um por herói local) e `combate.passo_tempo` devolve `dt_mundo` e deixa `dt_local`; `combate.parada_t/lento_*/pausado` seguem existindo como propriedades (os testes não mudaram). `combate.pausado_mundo` é a pausa do resultado (vale para todos). `combate.tempo_local_separado` (false no solo) é a chave que o coop e a tela dividida ligam: aí o hit-stop só trava o herói local e o mundo segue. Flag `--coop` lida em `mundo.coop_modo` e ignorada.
 - **Testes:** novo `v2_coop_preparo` (com 2 heróis o monstro persegue o mais perto e troca de alvo quando o remoto cai; o tempo do solo e o separado). Suíte inteira igual.
@@ -1730,6 +1733,11 @@ _Codex do Alisson_
 ## 2026-10-14 · Codex do Alisson · reprodução do dissolve no #253
 - **Feito:** harnesses de viewport e benchmark preservados na documentação visual do PR. São as mesmas verificações já executadas: progresso, pausa do efeito e limpeza do slot ao reutilizar; sem alteração no runtime.
 - **Pendente:** integração corporal do Claude e CI da conta, conforme o PR. Nenhum merge ou nova build.
+## 2026-10-14 · Codex do Alisson · passe pixel Alto no PR #258
+- **Feito:** passe RGB 5 bits/Bayer estático dentro do viewport 960x540, antes da vinheta/UI e do upscale; só Alto. Ordem explícita de sublayer reaplicada após reordenação. Fora do Alto fica oculto e sem material. Só apresentacao.gd e novo pos_visual.gd; estudo corrigido para Compatibility sem HDR 2D.
+- **QA/testes:** renderer real Iris Xe, QA258_POS código 0/falhas=0/sem SCRIPT ERROR ou SHADER ERROR, inclusive sentinela de camada após reordenação e perfis. HUD: 1.680 pixels opacos amostrados, 0 alterados. v2_hud, v2_fontes, v2_pausa, v2_esc, v2_partida, v2_morte, v2_mapas, v2_minimapa e v2_santuario: código 0/falhas=0/sem SCRIPT ERROR. gdformat: 231 limpos.
+- **Medição:** Alto, 500 monstros/build cheia, 3 pares alternados, Iris Xe real: mediana final 79,6 para 75,9 FPS (-4,65%); GPU mundo 5,79 para 9,35 ms. Houve grande variação e uma rodada de 65,1 FPS; logs completos e série exploratória preservados em docs/visual_2_5d/passe_pixel/. Não prometer ganho/custo estável.
+- **Pendente/Claude:** bloom seletivo precisa máscara de emissão e composição 240x135/blur; não foi implementado nem medido. Item 5 parcial, rascunho. CI remoto bloqueado por conta #249; sem merge/build/atalho novos. Nenhuma mudança nos sistemas ou exports.
 
 _Codex do Alisson_
 ## 2026-10-14 · Codex do Alisson · 30 sprites restantes no PR #251
@@ -1878,5 +1886,10 @@ _Claude do Breno_
 - **Pendente:** o card compacto da partida ainda não tem botão no controle. Y e os outros botões seguem livres. O issue #257 diz "Para o Codex" porque foi escrito quando a divisão era outra; pela divisão do `origin/main`, `v2/` é do Claude do Alisson, e o PR ficou com ele.
 - **Para o Claude do Breno:** testar com o controle, em três itens: (1) na escolha de cartas, Select abre o painel e Select de novo fecha; (2) com o painel aberto, A não escolhe carta e B fecha; (3) LB e RB trocam de página dos golpes no painel.
 - **Próximo:** esperar o CI do PR. Quem mescla é o orquestrador, depois do CI verde.
+## 2026-10-15 - Passe de pixel no Alto pronto (PR #258)
+- **Feito:** a branch `codex/passe-pixel-alto` foi atualizada com `origin/main` (conflito só no `v2/LEIA-ME.md`, mantidas as duas seções). Revisados `pos_visual.gd` e `apresentacao.gd`: só o perfil Alto desenha o quantizador; Baixo, Médio e Personalizado deixam o retângulo oculto e sem material. Novo teste `testes/v2_pos_visual` (perfil liga/desliga em tempo de execução, camada 3, dentro do SubViewport). Todos os `v2_*` com `falhas=0` e `gdformat -l 160` limpo.
+- **Pendente:** bloom seletivo, que depende do contrato de camada de luz dos sistemas; sai em PR separado.
+- **Próximo:** mesclar este PR (o orquestrador mescla).
+- **Para o Claude do Alisson:** Alto personalizado (opção mexida) vira "personalizado" e perde o passe; é intencional pelo contrato `g_perfil() == "alto"`.
 
 _Claude do Alisson (notebook)_
