@@ -15,6 +15,7 @@ Saida, em jogos/hordas/projeto/prototipos/objetos/ (mesmo layout nas duas folhas
 Uso (so precisa de Pillow):
     python gerar_objetos.py           enfeites e pedras da cara nova (prototipo)
     python gerar_objetos.py armas     sprites das armas da v2 (fonte_armas_*.webp) -> projeto/assets/v2/armas/
+    python gerar_objetos.py icones    icones das cartas da v2 (folhas do #272, fonte_arte/icones_cartas/) -> projeto/assets/v2/icones_cartas/
 
 Passos: fundo = alfa 0 (ou branco) ligado a borda, por flood fill; objetos = componentes do que sobrou,
 juntados por proximidade; ordem = linha e coluna; BOX para a escala do jogo; alfa binario a 50%;
@@ -23,6 +24,7 @@ quantizacao sem dithering; normal = domo pela distancia ate a borda + um pouco d
 import json
 import math
 import os
+import re
 import sys
 
 from PIL import Image, ImageDraw, ImageFont
@@ -1253,8 +1255,137 @@ def previa_armas(itens, caminho):
     tela.convert("RGB").save(caminho)
 
 
+# ------------------------------------------------------------------ icones das cartas (v2): folhas do #272 -> 32 px e 16 px
+ICONES_FONTE = os.path.join(HORDAS, "fonte_arte", "icones_cartas")
+ICONES_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "icones_cartas")
+ICONES_PREVIA = os.path.join(HORDAS, "prints", "v2_icones_cartas.png")
+ICONES_GRADE = (4, 3)        # colunas e linhas de cada folha (ordem: esquerda para a direita, de cima para baixo)
+ICONES_CELULA = 362          # lado de cada celula (1448x1086 = 4 x 3 celulas)
+ICONES_TAM = 32              # icone da carta: a escolha (o cartao tem 32 px), o bau e os slots da HUD
+ICONES_TAM_PEQUENO = 16      # SUA BUILD: a linha do card tem 18 px (HUD) e 20 px (visual); 32 px nao cabe
+ICONES_COR = 64              # paleta unica para as duas medidas, sem dithering
+ICONES_LIMIAR = 64           # alfa binario a 25% (e nao 50%): a lamina e a haste finas nao somem na reducao para 16 px
+ICONES_AJUDA = (
+    "Icones proprios das cartas da v2 (arte do PR #272, folhas em jogos/hordas/fonte_arte/icones_cartas/). "
+    "A chave e o ID da carta em dados/v2_cartas.json (unico entre categorias; INDICE.md traz categoria + ID). "
+    "arquivo = 32x32, o icone da escolha de cartas, do bau e dos slots da HUD; pequeno = 16x16 (pasta 16/), o da linha do card SUA BUILD. "
+    "ID sem entrada (ou arquivo faltando) cai no campo antigo icone (assets/gerado/, 16x16). "
+    "Nao edite a mao: rode `python gerar_objetos.py icones`."
+)
+
+
+def ler_indice_icones():
+    """(folha, celula, categoria, id) de cada linha da tabela de INDICE.md. As celulas vazias nao tem linha."""
+    folha = None
+    itens = []
+    with open(os.path.join(ICONES_FONTE, "INDICE.md"), encoding="utf-8") as f:
+        for linha in f:
+            m = re.match(r"## Folha (\d+)\b", linha)
+            if m:
+                folha = int(m.group(1))
+                continue
+            m = re.match(r"\| (\d+) \| ([^|]+?) / ([^|]+?) \|", linha)
+            if m and folha is not None:
+                itens.append((folha, int(m.group(1)), m.group(2).strip(), m.group(3).strip()))
+    return itens
+
+
+def recortar_celula(cel):
+    """Celula RGB de fundo branco -> RGBA: alfa 0 no branco que liga a borda (flood fill); o branco preso dentro do desenho fica."""
+    w, h = cel.size
+    px = cel.tobytes()
+    alfa = bytearray(w * h)
+    for i in range(w * h):
+        if min(px[3 * i], px[3 * i + 1], px[3 * i + 2]) < LIMITE_CLARO_FUNDO:
+            alfa[i] = 255
+    fundo = fundo_por_borda(w, h, alfa)
+    out = bytearray(w * h * 4)
+    for i in range(w * h):
+        out[4 * i:4 * i + 4] = bytes((px[3 * i], px[3 * i + 1], px[3 * i + 2], 0 if fundo[i] else 255))
+    return Image.frombytes("RGBA", (w, h), bytes(out))
+
+
+def icone_da_celula(cel, tam):
+    """Icone de tam x tam: caixa justa do desenho, BOX para caber com 1 px de folga, alfa binario e contorno escuro de 1 px."""
+    img = recortar_celula(cel)
+    img = img.crop(img.getchannel("A").getbbox())
+    lado = tam - 2  # a folga de 1 px de cada lado e do contorno
+    img = binarizar(fit_em_caixa(img, lado, lado), ICONES_LIMIAR)
+    return contorno(em_tela(img, tam, tam, "centro"))
+
+
+def gerar_icones():
+    cols, linhas = ICONES_GRADE
+    esperado = (cols * ICONES_CELULA, linhas * ICONES_CELULA)
+    folhas = {}
+    feitos = []  # (id, categoria, folha, celula, icone 32, icone 16)
+    ids = set()
+    for folha, celula, categoria, cid in ler_indice_icones():
+        if cid in ids:
+            raise SystemExit("ID repetido no INDICE.md: %s" % cid)
+        ids.add(cid)
+        if folha not in folhas:
+            caminho = os.path.join(ICONES_FONTE, "folha_%02d.png" % folha)
+            im = Image.open(caminho).convert("RGB")
+            if im.size != esperado:
+                raise SystemExit("%s: %dx%d, esperado %dx%d" % (caminho, im.width, im.height, esperado[0], esperado[1]))
+            folhas[folha] = im
+        k = celula - 1
+        x0 = (k % cols) * ICONES_CELULA
+        y0 = (k // cols) * ICONES_CELULA
+        cel = folhas[folha].crop((x0, y0, x0 + ICONES_CELULA, y0 + ICONES_CELULA))
+        feitos.append((cid, categoria, folha, celula, icone_da_celula(cel, ICONES_TAM), icone_da_celula(cel, ICONES_TAM_PEQUENO)))
+    n = len(feitos)
+    quant = quantizar_lista([f[4] for f in feitos] + [f[5] for f in feitos], ICONES_COR)
+    os.makedirs(os.path.join(ICONES_SAIDA, "16"), exist_ok=True)
+    icones = {}
+    for i, (cid, categoria, folha, celula, _, _) in enumerate(feitos):
+        quant[i].save(os.path.join(ICONES_SAIDA, cid + ".png"))
+        quant[n + i].save(os.path.join(ICONES_SAIDA, "16", cid + ".png"))
+        icones[cid] = {
+            "arquivo": cid + ".png",
+            "pequeno": "16/" + cid + ".png",
+            "categoria": categoria,
+            "folha": "folha_%02d.png" % folha,
+            "celula": celula,
+        }
+        print("  %-24s %-10s folha %d celula %2d" % (cid, categoria, folha, celula))
+    indice = {
+        "_ajuda": ICONES_AJUDA,
+        "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py icones (nao edite a mao)",
+        "tamanhos": {"carta": ICONES_TAM, "pequeno": ICONES_TAM_PEQUENO},
+        "icones": icones,
+    }
+    with open(os.path.join(ICONES_SAIDA, "indice.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(indice, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    previa_icones([q for q in quant[:n]], [q for q in quant[n:]], ICONES_PREVIA)
+    print("icones: %d cartas em %s (%d px) e 16/ (%d px), paleta de %d cores" % (n, ICONES_SAIDA, ICONES_TAM, ICONES_TAM_PEQUENO, ICONES_COR))
+    print("previa", ICONES_PREVIA)
+
+
+def previa_icones(grandes, pequenos, caminho):
+    """Conferencia para olhar: os 32 px e os 16 px sobre o fundo escuro da carta, ambos em 3x (nearest)."""
+    fundo = (34, 30, 42)
+    colunas = 10
+    passo = 3 * ICONES_TAM + 12
+    blocos = [(grandes, ICONES_TAM), (pequenos, ICONES_TAM_PEQUENO)]
+    altura = sum(((len(lista) + colunas - 1) // colunas) * passo + 12 for lista, _ in blocos)
+    tela = Image.new("RGB", (colunas * passo, altura), fundo)
+    y0 = 0
+    for lista, tam in blocos:
+        for i, im in enumerate(lista):
+            g = im.resize((tam * 3, tam * 3), Image.NEAREST)
+            tela.paste(g, ((i % colunas) * passo + 6, y0 + (i // colunas) * passo + 6), g)
+        y0 += ((len(lista) + colunas - 1) // colunas) * passo + 12
+    os.makedirs(os.path.dirname(caminho), exist_ok=True)
+    tela.save(caminho)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "armas":
         gerar_armas()
+    elif len(sys.argv) > 1 and sys.argv[1] == "icones":
+        gerar_icones()
     else:
         main()

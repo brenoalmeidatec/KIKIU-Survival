@@ -1,0 +1,640 @@
+{
+ "_ajuda": "Icones proprios das cartas da v2 (arte do PR #272, folhas em jogos/hordas/fonte_arte/icones_cartas/). A chave e o ID da carta em dados/v2_cartas.json (unico entre categorias; INDICE.md traz categoria + ID). arquivo = 32x32, o icone da escolha de cartas, do bau e dos slots da HUD; pequeno = 16x16 (pasta 16/), o da linha do card SUA BUILD. ID sem entrada (ou arquivo faltando) cai no campo antigo icone (assets/gerado/, 16x16). Nao edite a mao: rode `python gerar_objetos.py icones`.",
+ "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py icones (nao edite a mao)",
+ "tamanhos": {
+  "carta": 32,
+  "pequeno": 16
+ },
+ "icones": {
+  "dano": {
+   "arquivo": "dano.png",
+   "pequeno": "16/dano.png",
+   "categoria": "stat",
+   "folha": "folha_01.png",
+   "celula": 1
+  },
+  "vel_ataque": {
+   "arquivo": "vel_ataque.png",
+   "pequeno": "16/vel_ataque.png",
+   "categoria": "stat",
+   "folha": "folha_01.png",
+   "celula": 2
+  },
+  "area": {
+   "arquivo": "area.png",
+   "pequeno": "16/area.png",
+   "categoria": "stat",
+   "folha": "folha_01.png",
+   "celula": 3
+  },
+  "vel_mov": {
+   "arquivo": "vel_mov.png",
+   "pequeno": "16/vel_mov.png",
+   "categoria": "stat",
+   "folha": "folha_01.png",
+   "celula": 4
+  },
+  "vida": {
+   "arquivo": "vida.png",
+   "pequeno": "16/vida.png",
+   "categoria": "stat",
+   "folha": "folha_01.png",
+   "celula": 5
+  },
+  "ima": {
+   "arquivo": "ima.png",
+   "pequeno": "16/ima.png",
+   "categoria": "stat",
+   "folha": "folha_01.png",
+   "celula": 6
+  },
+  "critico": {
+   "arquivo": "critico.png",
+   "pequeno": "16/critico.png",
+   "categoria": "stat",
+   "folha": "folha_01.png",
+   "celula": 7
+  },
+  "laminas": {
+   "arquivo": "laminas.png",
+   "pequeno": "16/laminas.png",
+   "categoria": "golpe",
+   "folha": "folha_01.png",
+   "celula": 8
+  },
+  "aura_fogo": {
+   "arquivo": "aura_fogo.png",
+   "pequeno": "16/aura_fogo.png",
+   "categoria": "golpe",
+   "folha": "folha_01.png",
+   "celula": 9
+  },
+  "corvos": {
+   "arquivo": "corvos.png",
+   "pequeno": "16/corvos.png",
+   "categoria": "golpe",
+   "folha": "folha_01.png",
+   "celula": 10
+  },
+  "raio": {
+   "arquivo": "raio.png",
+   "pequeno": "16/raio.png",
+   "categoria": "golpe",
+   "folha": "folha_01.png",
+   "celula": 11
+  },
+  "runa": {
+   "arquivo": "runa.png",
+   "pequeno": "16/runa.png",
+   "categoria": "golpe",
+   "folha": "folha_01.png",
+   "celula": 12
+  },
+  "flechas_sombrias": {
+   "arquivo": "flechas_sombrias.png",
+   "pequeno": "16/flechas_sombrias.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 1
+  },
+  "adagas_voadoras": {
+   "arquivo": "adagas_voadoras.png",
+   "pequeno": "16/adagas_voadoras.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 2
+  },
+  "lanca_geada": {
+   "arquivo": "lanca_geada.png",
+   "pequeno": "16/lanca_geada.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 3
+  },
+  "estrelas_sombra": {
+   "arquivo": "estrelas_sombra.png",
+   "pequeno": "16/estrelas_sombra.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 4
+  },
+  "bola_fogo": {
+   "arquivo": "bola_fogo.png",
+   "pequeno": "16/bola_fogo.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 5
+  },
+  "dardos_peconhentos": {
+   "arquivo": "dardos_peconhentos.png",
+   "pequeno": "16/dardos_peconhentos.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 6
+  },
+  "raio_solar": {
+   "arquivo": "raio_solar.png",
+   "pequeno": "16/raio_solar.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 7
+  },
+  "bumerangue_ferro": {
+   "arquivo": "bumerangue_ferro.png",
+   "pequeno": "16/bumerangue_ferro.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 8
+  },
+  "bolas_chumbo": {
+   "arquivo": "bolas_chumbo.png",
+   "pequeno": "16/bolas_chumbo.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 9
+  },
+  "nuvem_veneno": {
+   "arquivo": "nuvem_veneno.png",
+   "pequeno": "16/nuvem_veneno.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 10
+  },
+  "nevoeiro_gelado": {
+   "arquivo": "nevoeiro_gelado.png",
+   "pequeno": "16/nevoeiro_gelado.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 11
+  },
+  "cinzas_vulcanicas": {
+   "arquivo": "cinzas_vulcanicas.png",
+   "pequeno": "16/cinzas_vulcanicas.png",
+   "categoria": "golpe",
+   "folha": "folha_02.png",
+   "celula": 12
+  },
+  "fumaca_sonolenta": {
+   "arquivo": "fumaca_sonolenta.png",
+   "pequeno": "16/fumaca_sonolenta.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 1
+  },
+  "chuva_acida": {
+   "arquivo": "chuva_acida.png",
+   "pequeno": "16/chuva_acida.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 2
+  },
+  "nevasca": {
+   "arquivo": "nevasca.png",
+   "pequeno": "16/nevasca.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 3
+  },
+  "nuvem_espora": {
+   "arquivo": "nuvem_espora.png",
+   "pequeno": "16/nuvem_espora.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 4
+  },
+  "cortina_sangue": {
+   "arquivo": "cortina_sangue.png",
+   "pequeno": "16/cortina_sangue.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 5
+  },
+  "nevoa_espectral": {
+   "arquivo": "nevoa_espectral.png",
+   "pequeno": "16/nevoa_espectral.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 6
+  },
+  "onda_choque": {
+   "arquivo": "onda_choque.png",
+   "pequeno": "16/onda_choque.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 7
+  },
+  "pulso_sagrado": {
+   "arquivo": "pulso_sagrado.png",
+   "pequeno": "16/pulso_sagrado.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 8
+  },
+  "anel_gelado": {
+   "arquivo": "anel_gelado.png",
+   "pequeno": "16/anel_gelado.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 9
+  },
+  "grito_guerra": {
+   "arquivo": "grito_guerra.png",
+   "pequeno": "16/grito_guerra.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 10
+  },
+  "terremoto": {
+   "arquivo": "terremoto.png",
+   "pequeno": "16/terremoto.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 11
+  },
+  "martelo_trovao": {
+   "arquivo": "martelo_trovao.png",
+   "pequeno": "16/martelo_trovao.png",
+   "categoria": "golpe",
+   "folha": "folha_03.png",
+   "celula": 12
+  },
+  "rajada_vento": {
+   "arquivo": "rajada_vento.png",
+   "pequeno": "16/rajada_vento.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 1
+  },
+  "anel_espinhos": {
+   "arquivo": "anel_espinhos.png",
+   "pequeno": "16/anel_espinhos.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 2
+  },
+  "anel_luar": {
+   "arquivo": "anel_luar.png",
+   "pequeno": "16/anel_luar.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 3
+  },
+  "meteoro_flamejante": {
+   "arquivo": "meteoro_flamejante.png",
+   "pequeno": "16/meteoro_flamejante.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 4
+  },
+  "chuva_pedras": {
+   "arquivo": "chuva_pedras.png",
+   "pequeno": "16/chuva_pedras.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 5
+  },
+  "cometa_gelado": {
+   "arquivo": "cometa_gelado.png",
+   "pequeno": "16/cometa_gelado.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 6
+  },
+  "estrelas_cadentes": {
+   "arquivo": "estrelas_cadentes.png",
+   "pequeno": "16/estrelas_cadentes.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 7
+  },
+  "cometa_negro": {
+   "arquivo": "cometa_negro.png",
+   "pequeno": "16/cometa_negro.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 8
+  },
+  "fogo_do_ceu": {
+   "arquivo": "fogo_do_ceu.png",
+   "pequeno": "16/fogo_do_ceu.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 9
+  },
+  "pedras_vulcanicas": {
+   "arquivo": "pedras_vulcanicas.png",
+   "pequeno": "16/pedras_vulcanicas.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 10
+  },
+  "raio_meteorico": {
+   "arquivo": "raio_meteorico.png",
+   "pequeno": "16/raio_meteorico.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 11
+  },
+  "chuva_espinhos": {
+   "arquivo": "chuva_espinhos.png",
+   "pequeno": "16/chuva_espinhos.png",
+   "categoria": "golpe",
+   "folha": "folha_04.png",
+   "celula": 12
+  },
+  "lobo_espirito": {
+   "arquivo": "lobo_espirito.png",
+   "pequeno": "16/lobo_espirito.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 1
+  },
+  "espirito_raposa": {
+   "arquivo": "espirito_raposa.png",
+   "pequeno": "16/espirito_raposa.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 2
+  },
+  "guardiao_pedra": {
+   "arquivo": "guardiao_pedra.png",
+   "pequeno": "16/guardiao_pedra.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 3
+  },
+  "fantasma_mata": {
+   "arquivo": "fantasma_mata.png",
+   "pequeno": "16/fantasma_mata.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 4
+  },
+  "serpente_ardente": {
+   "arquivo": "serpente_ardente.png",
+   "pequeno": "16/serpente_ardente.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 5
+  },
+  "espirito_urso": {
+   "arquivo": "espirito_urso.png",
+   "pequeno": "16/espirito_urso.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 6
+  },
+  "golem_barro": {
+   "arquivo": "golem_barro.png",
+   "pequeno": "16/golem_barro.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 7
+  },
+  "dragao_filhote": {
+   "arquivo": "dragao_filhote.png",
+   "pequeno": "16/dragao_filhote.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 8
+  },
+  "esqueleto_guerreiro": {
+   "arquivo": "esqueleto_guerreiro.png",
+   "pequeno": "16/esqueleto_guerreiro.png",
+   "categoria": "golpe",
+   "folha": "folha_05.png",
+   "celula": 9
+  },
+  "onda": {
+   "arquivo": "onda.png",
+   "pequeno": "16/onda.png",
+   "categoria": "modificador",
+   "folha": "folha_05.png",
+   "celula": 10
+  },
+  "fura": {
+   "arquivo": "fura.png",
+   "pequeno": "16/fura.png",
+   "categoria": "modificador",
+   "folha": "folha_05.png",
+   "celula": 11
+  },
+  "explode": {
+   "arquivo": "explode.png",
+   "pequeno": "16/explode.png",
+   "categoria": "modificador",
+   "folha": "folha_05.png",
+   "celula": 12
+  },
+  "folego": {
+   "arquivo": "folego.png",
+   "pequeno": "16/folego.png",
+   "categoria": "modificador",
+   "folha": "folha_06.png",
+   "celula": 1
+  },
+  "anel_de_brasas": {
+   "arquivo": "anel_de_brasas.png",
+   "pequeno": "16/anel_de_brasas.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 2
+  },
+  "revoada_de_trovoes": {
+   "arquivo": "revoada_de_trovoes.png",
+   "pequeno": "16/revoada_de_trovoes.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 3
+  },
+  "circulo_runico": {
+   "arquivo": "circulo_runico.png",
+   "pequeno": "16/circulo_runico.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 4
+  },
+  "ventania": {
+   "arquivo": "ventania.png",
+   "pequeno": "16/ventania.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 5
+  },
+  "dragao_de_brasa": {
+   "arquivo": "dragao_de_brasa.png",
+   "pequeno": "16/dragao_de_brasa.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 6
+  },
+  "cacada_espiritual": {
+   "arquivo": "cacada_espiritual.png",
+   "pequeno": "16/cacada_espiritual.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 7
+  },
+  "urso_solar": {
+   "arquivo": "urso_solar.png",
+   "pequeno": "16/urso_solar.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 8
+  },
+  "exercito_esquecido": {
+   "arquivo": "exercito_esquecido.png",
+   "pequeno": "16/exercito_esquecido.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 9
+  },
+  "colosso_de_pedra": {
+   "arquivo": "colosso_de_pedra.png",
+   "pequeno": "16/colosso_de_pedra.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 10
+  },
+  "chuva_de_lacas": {
+   "arquivo": "chuva_de_lacas.png",
+   "pequeno": "16/chuva_de_lacas.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 11
+  },
+  "bola_incendiaria": {
+   "arquivo": "bola_incendiaria.png",
+   "pequeno": "16/bola_incendiaria.png",
+   "categoria": "evolução",
+   "folha": "folha_06.png",
+   "celula": 12
+  },
+  "nevasca_congelante": {
+   "arquivo": "nevasca_congelante.png",
+   "pequeno": "16/nevasca_congelante.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 1
+  },
+  "cinzas_acidas": {
+   "arquivo": "cinzas_acidas.png",
+   "pequeno": "16/cinzas_acidas.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 2
+  },
+  "estrondo": {
+   "arquivo": "estrondo.png",
+   "pequeno": "16/estrondo.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 3
+  },
+  "terra_partida": {
+   "arquivo": "terra_partida.png",
+   "pequeno": "16/terra_partida.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 4
+  },
+  "pedreira_ardente": {
+   "arquivo": "pedreira_ardente.png",
+   "pequeno": "16/pedreira_ardente.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 5
+  },
+  "cometa_duplo": {
+   "arquivo": "cometa_duplo.png",
+   "pequeno": "16/cometa_duplo.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 6
+  },
+  "chuva_de_ferro": {
+   "arquivo": "chuva_de_ferro.png",
+   "pequeno": "16/chuva_de_ferro.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 7
+  },
+  "peste_negra": {
+   "arquivo": "peste_negra.png",
+   "pequeno": "16/peste_negra.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 8
+  },
+  "juramento_sagrado": {
+   "arquivo": "juramento_sagrado.png",
+   "pequeno": "16/juramento_sagrado.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 9
+  },
+  "eclipse_negro": {
+   "arquivo": "eclipse_negro.png",
+   "pequeno": "16/eclipse_negro.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 10
+  },
+  "tempestade_primordial": {
+   "arquivo": "tempestade_primordial.png",
+   "pequeno": "16/tempestade_primordial.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 11
+  },
+  "eclipse_de_almas": {
+   "arquivo": "eclipse_de_almas.png",
+   "pequeno": "16/eclipse_de_almas.png",
+   "categoria": "evolução",
+   "folha": "folha_07.png",
+   "celula": 12
+  },
+  "juizo_final": {
+   "arquivo": "juizo_final.png",
+   "pequeno": "16/juizo_final.png",
+   "categoria": "evolução",
+   "folha": "folha_08.png",
+   "celula": 1
+  },
+  "furacao_glacial": {
+   "arquivo": "furacao_glacial.png",
+   "pequeno": "16/furacao_glacial.png",
+   "categoria": "evolução",
+   "folha": "folha_08.png",
+   "celula": 2
+  },
+  "katana": {
+   "arquivo": "katana.png",
+   "pequeno": "16/katana.png",
+   "categoria": "principal",
+   "folha": "folha_08.png",
+   "celula": 3
+  },
+  "escudo": {
+   "arquivo": "escudo.png",
+   "pequeno": "16/escudo.png",
+   "categoria": "secundário",
+   "folha": "folha_08.png",
+   "celula": 4
+  },
+  "ruptura": {
+   "arquivo": "ruptura.png",
+   "pequeno": "16/ruptura.png",
+   "categoria": "habilidade",
+   "folha": "folha_08.png",
+   "celula": 5
+  },
+  "ultimate_q": {
+   "arquivo": "ultimate_q.png",
+   "pequeno": "16/ultimate_q.png",
+   "categoria": "reserva",
+   "folha": "folha_08.png",
+   "celula": 6
+  }
+ }
+}
