@@ -34,11 +34,16 @@ func zerar() -> void:
 
 ## Taxa de nascimento (monstros/s) e teto de vivos no instante `t` da partida: sobem em linha reta até tempo_taxa/tempo_cap.
 func taxa(t: float) -> float:
-	return lerpf(float(cfg.taxa_ini), float(cfg.taxa_fim), clampf(t / float(cfg.tempo_taxa), 0.0, 1.0))
+	return lerpf(float(cfg.taxa_ini), float(cfg.taxa_fim), clampf(t / float(cfg.tempo_taxa), 0.0, 1.0)) * mundo.fator_pesadelo("densidade_mult")
+
+
+## O máximo de monstros vivos de uma vez (o teto dos dados; no Pesadelo sobe com a densidade).
+func teto() -> int:
+	return roundi(float(cfg.teto) * mundo.fator_pesadelo("densidade_mult"))
 
 
 func limite(t: float) -> int:
-	return roundi(lerpf(float(cfg.cap_ini), float(cfg.cap_fim), clampf(t / float(cfg.tempo_cap), 0.0, 1.0)))
+	return roundi(lerpf(float(cfg.cap_ini), float(cfg.cap_fim), clampf(t / float(cfg.tempo_cap), 0.0, 1.0)) * mundo.fator_pesadelo("densidade_mult"))
 
 
 func atualizar(dt: float) -> void:
@@ -54,7 +59,7 @@ func atualizar(dt: float) -> void:
 	var cap := roundi(float(limite(t)) * (0.6 if combate.chefes.vivo else 1.0))
 	while acum >= 1.0:
 		acum -= 1.0
-		if vivos >= cap or vivos >= int(cfg.teto):
+		if vivos >= cap or vivos >= teto():
 			acum = minf(acum, 1.0)  # no teto não junta devedor: quando abrir vaga, nasce um por vez
 			break
 		if nascer(sortear(t)):
@@ -123,8 +128,8 @@ func onda_forte() -> void:
 	var n := int(cfg.onda_base) + int(cfg.onda_mais) * (ondas - 1)
 	var t: float = mundo.tempo_partida
 	var elite := int(cfg.onda_elite) * ondas
-	var folga: int = int(cfg.teto) - mundo.monstros.size()
-	n = mini(n + elite, maxi(folga, 0))
+	var folga: int = teto() - mundo.monstros.size()
+	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult")) + elite, maxi(folga, 0))
 	for i in n:
 		var nome := "inimigo_cavaleiro_oco" if i < elite else sortear(t)
 		nascer(nome)

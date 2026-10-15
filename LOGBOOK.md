@@ -1871,3 +1871,12 @@ _Claude do Alisson (notebook)_
 - O Breno pediu animação de verdade nas armas (invocações andando, atacando e virando; projéteis apontando e girando; áreas com início, loop e fim). Cancelado o envio ao Codex (issue #267 fechada): a análise ficou em `docs/animacoes_armas_v2.md` e o trabalho será feito no Blender.
 
 _Claude do Breno_
+
+## 2026-10-15 · Claude do Alisson · Pesadelo e Rastro de katana voltam ao Santuário (#213)
+- **Antes/depois:** o modo Pesadelo e o visual Rastro de katana estavam escondidos (`oculta_ate_ter_efeito`) por não terem efeito. Agora têm: as flags e o `"efeito": "pendente"` saíram de `dados/v2_meta.json`, e o Santuário ganhou dois botões de liga/desliga (ao lado do detalhe) que só aparecem com a conquista cumprida. A escolha fica no save (`[config] pesadelo` e `rastro_katana`) e só vale com a conquista feita.
+- **Pesadelo (números em `dados/v2_meta.json`, modos > pesadelo > regras, com `_ajuda`):** monstros com +50% de vida e +25% de dano (comuns, elites e chefes, em `mundo.nascer_monstro` e `chefe.gd`), hordas +30% mais densas (taxa, teto de vivos e ondas fortes no `diretor.gd`), chefes 20% mais cedo (`chefe.gd`) e +50% de almas no fim da partida (`Meta.registrar_partida`; o card SUA BUILD usa a mesma conta). PESADELO aparece no HUD (ao lado do relógio), no card e no título do resultado.
+- **Rastro de katana:** ligado, `Meta.aplicar` põe `fx.variante = "ciano"` e o corte usa `corte_hazaki_ciano.png` (Blender); só visual, o dano não muda.
+- **Testes:** `v2_meta` (seção 6b reescrita), `v2_santuario` (texto da recompensa) e o novo `v2_pesadelo` (liga só com conquista, vida, dano, taxa, teto, onda, chefe, almas, HUD, resultado, rastro). `v2_partida` não precisou mudar (a carta escondida do teste é a `critico`). Mexi um pouco em `altar.gd`, `hud.gd`, `status.gd` e `resultado_meta.gd` (área visual do Codex): só os botões, o rótulo PESADELO e uma linha no card.
+- **Pendente:** olhar o Santuário e o HUD no jogo para acertar a posição dos botões e do rótulo; rebalancear os números do Pesadelo depois de jogar.
+
+_Claude do Alisson (notebook)_

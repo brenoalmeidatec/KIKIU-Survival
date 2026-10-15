@@ -638,8 +638,10 @@ static func _sec_partida(m) -> Dictionary:
 	# as almas que o fim da partida credita de fato: as coletadas mais o bônus "Almas abundantes" do Santuário (a conta de Meta.registrar_partida)
 	var bruto: int = m.almas_partida
 	var bonus_almas := float(m.meta_bonus.get("almas", 0.0)) if m.meta_bonus is Dictionary else 0.0
-	var creditadas: int = Meta.almas_creditadas(bruto, bonus_almas)
+	var creditadas: int = Meta.almas_creditadas(bruto, bonus_almas, m.fator_pesadelo("almas_mult"))
 	var lin: Array = []
+	if m.pesadelo():
+		lin.append(_l("partida.modo", "Modo", "PESADELO", [1], "", true))
 	lin.append(_l("partida.tempo", "Tempo", _tempo(m.tempo_partida), [m.tempo_partida], "", true))
 	lin.append(_l("partida.abates", "Abates", str(m.abates), [m.abates], "", true))
 	lin.append(_l("partida.combo", "Combo", "x%d · maior x%d" % [m.combo, m.maior_combo], [m.combo, m.maior_combo], "", true))

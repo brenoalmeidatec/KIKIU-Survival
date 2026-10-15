@@ -74,6 +74,7 @@ var _pisca_vida := 0.0  # segundos com vida baixa (para o pisca da barra de vida
 var _tempo_vinheta := 0.0  # segundos com vida baixa (para o pulso da vinheta)
 var _combo_x := 0.0
 var _fusao: Control  # o cartão grande da fusão (montado na primeira fusão)
+var _selo_pesadelo: Label  # "PESADELO" ao lado do relógio (modo do santuário)
 var _fusao_nome: Label
 var _fusao_desc: Label
 var _fusao_tween: Tween
@@ -162,6 +163,7 @@ func _ready() -> void:
 	_vinheta.texture = _textura_vinheta()
 	_vinheta.visible = false
 	_criar_slot_ruptura()
+	_criar_selo_pesadelo()
 
 
 func _exit_tree() -> void:
@@ -205,6 +207,7 @@ func avancar(dt: float) -> void:
 	_xp_barra.value = _xp_mostrado
 	_xp_txt.text = "%d/%d" % [roundi(_xp_mostrado), roundi(xp_prox)]
 	_selo_num.text = str(roundi(_num(h, "nivel", 1.0)))
+	_selo_pesadelo.visible = mundo != null and mundo.has_method("pesadelo") and mundo.pesadelo()
 	var tempo := maxf(_num(mundo, "tempo_partida", 0.0), 0.0)
 	_relogio.text = "%02d:%02d" % [int(tempo) / 60, int(tempo) % 60]
 	_checar_minuto(int(tempo) / 60)
@@ -225,6 +228,22 @@ func avancar(dt: float) -> void:
 	_animar(dt)
 	_anuncio.avancar(dt)
 	_anuncio.visible = _anuncio.texto_ativo != "" and not cartas_na_tela
+
+
+## O aviso PESADELO, ao lado do relógio: só aparece quando a partida é no modo Pesadelo (mundo.pesadelo()).
+func _criar_selo_pesadelo() -> void:
+	_selo_pesadelo = Label.new()
+	_selo_pesadelo.text = "PESADELO"
+	_selo_pesadelo.position = Vector2(540.0, 10.0)
+	_selo_pesadelo.add_theme_font_override("font", Dados.fonte_titulo)
+	_selo_pesadelo.add_theme_font_size_override("font_size", 20)
+	_selo_pesadelo.add_theme_color_override("font_color", VERMELHO_VINHETA)
+	_selo_pesadelo.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
+	_selo_pesadelo.add_theme_constant_override("outline_size", 4)
+	_selo_pesadelo.light_mask = 0
+	_selo_pesadelo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_selo_pesadelo.visible = false
+	$Raiz.add_child(_selo_pesadelo)
 
 
 ## O slot da ruptura: um Control criado aqui (o laço de _ready que zera luz e mouse já rodou, então zera de novo).

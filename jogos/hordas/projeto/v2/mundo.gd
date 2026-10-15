@@ -607,12 +607,23 @@ func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k
 		mo = _novo_monstro(nome)
 	else:
 		mo = lista.pop_back()
-	mo.aplicar_stats(combate.cfg.monstros[nome], k_vida, k_dano)
+	mo.aplicar_stats(combate.cfg.monstros[nome], k_vida * fator_pesadelo("vida_mult"), k_dano * fator_pesadelo("dano_mult"))
 	mo.cacador = cacador
 	mo.raio_vaga = 90.0
 	mo.reviver(p)
 	monstros.append(mo)
 	return mo
+
+
+## Multiplicador do modo Pesadelo (chave de dados/v2_meta.json, modos > pesadelo > regras); 1 quando o modo não está ligado.
+func fator_pesadelo(chave: String) -> float:
+	var r = meta_bonus.get("pesadelo")
+	return float(r.get(chave, 1.0)) if r is Dictionary else 1.0
+
+
+## A partida é no modo Pesadelo?
+func pesadelo() -> bool:
+	return meta_bonus.get("pesadelo") is Dictionary
 
 
 ## O monstro morreu (ou a partida acabou): sai da lista dos vivos e fica no pool do tipo.
