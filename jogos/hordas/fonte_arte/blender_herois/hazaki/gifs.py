@@ -43,13 +43,15 @@ def tira(celulas, rotulos=True, titulo=None):
     return img
 
 
-def gif_animacao(anim, n, s, saida):
+def gif_animacao(anim, n, s, saida, tempos=None):
+    """`tempos` = segundos de cada quadro (s_quadros do json: impacto rápido, hold e repouso longos); sem ele, `s` para todos."""
     quadros = []
     for q in range(n):
         celulas = [(quadro(anim, q, d), d) for d in DIRECOES]
         quadros.append(tira(celulas))
     caminho = os.path.join(saida, anim + ".gif")
-    quadros[0].save(caminho, save_all=True, append_images=quadros[1:], duration=int(round(s * 1000)), loop=0, disposal=2)
+    duracao = [int(round(t * 1000)) for t in tempos] if tempos else int(round(s * 1000))
+    quadros[0].save(caminho, save_all=True, append_images=quadros[1:], duration=duracao, loop=0, disposal=2)
     return caminho
 
 
@@ -98,7 +100,7 @@ def main():
     info = json.load(open(os.path.join(AQUI, "hazaki_final.json"), encoding="utf-8"))
     for anim, dados in info["animacoes"].items():
         n = dados["quadros"]
-        print(gif_animacao(anim, n, dados["s_por_quadro"], saida))
+        print(gif_animacao(anim, n, dados["s_por_quadro"], saida, dados.get("s_quadros")))
     print(gif_comparativo(saida))
 
 

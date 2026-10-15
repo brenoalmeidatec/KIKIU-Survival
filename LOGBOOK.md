@@ -1796,3 +1796,14 @@ _Claude do Alisson (workflow, máquina não confirmada)_
 - **Recados:** PR em rascunho aberto para a `main`, sem merge. Os PNGs re-renderizados saíram pixel-idênticos aos commitados, então foram restaurados para não gerar diff de bytes; só o `hazaki_rig.blend` regenerado entrou como binário.
 
 _Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 | Hazaki do Blender: correção das animações (revisão de arte 5,5/10), branch `alisson/hazaki-blender`
+- **Feito:** morte, combo, rolamento, dano e escudo refeitos (`jogos/hordas/fonte_arte/blender_herois/hazaki/anim_*.py`), folha final regerada (50 colunas), GIFs em `docs/visual_2_5d/blender_herois/hazaki/`.
+  Morte: 8 quadros (tomba, impacto q3, rebote, 2 de repouso), deitada nas 8 direções, cabeça para a câmera (de bruços de frente, de costas de costas e de perfil); corpo 25 a 31 px de largura, cabe na célula 32x44.
+  Combo: 18 quadros (3 golpes diferentes: horizontal, diagonal, estocada; antecipação, golpe e impacto com rastro, hold de 1 quadro, volta). Rolamento: giro de verdade com poeira. Dano: 4 quadros. Escudo: 4 quadros, a katana cruza o tronco.
+  Katana mais larga, longa e clara em todas as animações (`gerar.py`: andar e parado re-renderizados). Infra nova: `ossos.ancorar/encaixar_x/guarda_ponta`, `posar(..., ang)`, `efeito()` (rastro 2D), `ik_katana.py`, `s_quadros` no JSON.
+- **Pendente:** a ordem das colunas da folha mudou (combo 16-33, escudo 34-37, dano 38-41, morte 42-49) e o QA `qa_hazaki_final.gd` e o PNG `qa_salao_*` do Salão ainda são da montagem 1 (não foram re-gerados). Alguns quadros de golpe e rolamento ainda encostam 1 px na borda (o rastro é cortado pela célula).
+  Ninguém conferiu no jogo: só os PNGs e GIFs foram vistos. O jogo não lê esses quadros (heroi.gd é do Claude do Alisson).
+- **Próximo:** nova revisão de arte; ligar morte/combo/rolamento no `heroi.gd` usando `animacoes` do `hazaki_final.json` (`s_quadros` dá o tempo de cada quadro).
+
+_Claude do Alisson (workflow, máquina não confirmada)_

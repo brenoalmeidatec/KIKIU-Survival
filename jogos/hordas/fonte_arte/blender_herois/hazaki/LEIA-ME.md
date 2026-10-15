@@ -24,6 +24,13 @@ nessa ordem, colunas = quadros (o jogo usa `[parado, andar0..]`; cada animação
 |---|---|---|
 | `parado` | 4 | `anim_parado.py`: respiração de 1 px (peito/cabeça sobem juntos) e leve balanço |
 | `andar` | 6 | `anim_andar.py`: ciclo do piloto (contato, descida, passagem, contato oposto, descida, passagem), agora com joelho, cotovelo e bota plana |
+| `rolamento` | 6 | `anim_rolamento.py`: rolamento de verdade (agacha, mergulha encolhido, gira mais de uma volta com a cabeça passando pelos pés, abre e sai agachado), com poeira atrás |
+| `combo` | 18 | `anim_combo.py`: 3 golpes x 6 quadros (antecipação, antecipação funda, golpe com rastro, impacto com rastro, hold, volta): horizontal, diagonal descendente e estocada |
+| `escudo` | 4 | `anim_escudo.py`: a katana cruza na frente do tronco (diagonal, ponta para cima), braço esquerdo em apoio; 2 quadros de entrada e 2 de guarda (o corpo cede no 3º) |
+| `dano` | 4 | `anim_dano.py`: impacto (cabeça jogada), recuo máximo, reação e volta com ease |
+| `morte` | 8 | `anim_morte.py`: leva o golpe, cede os joelhos, tomba, BATE (q3), rebate 1 px, assenta e fica deitado 2 quadros; nas 8 direções termina deitado com a cabeça para a câmera |
+
+Cada `anim_<nome>.py` pode declarar `S_POR_QUADRO` (segundos de cada quadro: impacto rápido, hold e repouso longos); o `montar_folha.py` copia isso para `s_quadros` no JSON.
 
 ## Como escrever uma animação nova
 Crie `anim_<nome>.py` (o `gerar.py` descobre pelo nome; `--anim=<nome>` renderiza só ela):
@@ -37,6 +44,15 @@ def posar(arm, quadro, n_quadros):      # arm já vem zerado (pose de repouso)
 ```
 Sem registrar nada em outro lugar. Os módulos compartilham só `ossos.py`.
 
+**Opcionais do contrato** (o `gerar.py` detecta pela assinatura/nome):
+- `posar(arm, quadro, n_quadros, ang)` (4 parâmetros): recebe também o giro do herói na direção (graus; 0 = de frente). A morte usa para escolher a queda de cada direção.
+- `efeito(arm, quadro, n_quadros, ang)` -> `[(pontos_no_mundo, (r, g, b)), ...]`: polígonos 2D pintados DEPOIS do render (rastro da lâmina do combo, poeira do rolamento).
+  Pinta só onde o corpo não está, sem meio-tom, e na normal usa a normal reta; cor e normal continuam com a mesma silhueta.
+- Quedas, rolamento e tudo que sai do chão: `ossos.ancorar(arm, extra_z=, centrar_x=)` põe o corpo INTEIRO no chão (a caixa toda, não só as botas), na mesma linha de baixo
+  do herói em pé; `ossos.encaixar_x(arm)` só desliza o corpo em x o necessário para caber nos 32 px (golpes e estocadas); `ossos.guarda_ponta(arm)` devolve a guarda e a ponta da katana.
+- Largura real do corpo, sem o corte do quadro (px): `HAZAKI_LARGURA=1 blender -b -t 6 -P gerar.py -- --anim=<nome>` imprime `LARGURA_PX` por quadro/direção.
+- `ik_katana.py` (autoria, offline): dado onde a guarda e a direção da lâmina devem ficar, resolve os ângulos do braço da katana (use o número no `anim_*.py`).
+
 **Ossos** (`ossos.OSSOS`): `raiz, quadril, torso, cabeca, braco_e/d` (ombro-cotovelo), `antebraco_e/d` (cotovelo-punho: leva mão, proteção e katana),
 `perna_e/d` (quadril-joelho), `canela_e/d` (joelho-tornozelo), `pe_e/d` (bota). `_e` = esquerda DA TELA (x negativo), `_d` = direita da tela (x positivo, onde está a katana).
 Hierarquia: raiz > quadril > {torso > {cabeca, braco > antebraco}, perna > canela > pe}. O pivô de cada osso é a articulação (cabeça do osso).
@@ -49,7 +65,7 @@ cotovelo dobra com `girar(antebraco, x=-)`. `pisar` calcula o sobe-e-desce do qu
 ## O que o herói é (resumo das decisões)
 - Modelo = geometria do Codex (`../codex_estudo/criar_estudo.py`, lida em tempo de execução, não copiada) com franja e boca removidas, cabeça 1,22x, mechas mais grossas,
   lenço mais curto. **Pernas, botas, braços, mãos e katana são recriados em repouso reto** para poder dobrar no joelho/cotovelo.
-- Katana na mão direita da tela, apontada para baixo e levemente para fora, **lâmina espessa (pirâmide de 4 lados, ~3 px)** com fio frio: lê em qualquer direção, mesmo a 44 px.
+- Katana na mão direita da tela, apontada para baixo e levemente para fora, **lâmina espessa e clara (pirâmide de 4 lados, ~4 px, 0,8 de comprimento, tom #d6e0ea mais claro que o contorno)** com fio frio: lê em qualquer direção, mesmo a 44 px.
   O braço da katana quase não balança no andar (senão a lâmina estoura os 32 px nas diagonais).
 - Largura: 27-28 px de frente (o estudo: ~27), até 30 nas diagonais; nenhum quadro passa de 32 px (conferido renderizando num quadro de 48 px). Pixel na coluna 0 ou 31 pode
   ocorrer, mas nada é cortado. `LARGURA` em `gerar.py` ajusta; subir encosta a lâmina e o lenço na borda.

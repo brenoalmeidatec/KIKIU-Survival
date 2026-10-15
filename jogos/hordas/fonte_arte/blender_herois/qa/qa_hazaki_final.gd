@@ -1,9 +1,9 @@
 extends Control
 ## QA TEMPORÁRIO (montagem 1 do Hazaki do Blender): abre o Salão da v2 e troca só a textura do herói pela folha final
-## (hazaki_final_albedo.png, 38 colunas, ver hazaki/LEIA-ME.md). Não altera o jogo. Copie este arquivo e o .tscn para
+## (hazaki_final_albedo.png, 50 colunas, ver hazaki/LEIA-ME.md). Não altera o jogo. Copie este arquivo e o .tscn para
 ## projeto/testes/ antes de rodar (o .tscn aponta para res://testes/). Uso (janela oculta, renderizando):
 ##   Godot --path jogos/hordas/projeto res://testes/qa_hazaki_final.tscn -- --folha=<caminho sem _albedo.png> --saida=<png> [--quadro=0] [--dir=0] [--pos=480,330]
-## --quadro = coluna da folha (0 parado; 1 a 6 andar; 16 a 27 combo, golpe 3 = 24 a 27); --dir = linha (0 baixo, 1 esquerda, 2 direita, 3 cima, 4 baixo_esq, 5 baixo_dir, 6 cima_esq, 7 cima_dir).
+## --quadro = coluna da folha (0 parado; 1 a 6 andar; 16 a 33 combo, golpe 3 = 28 a 33; 34 a 37 escudo, 38 a 41 dano, 42 a 49 morte); --dir = linha (0 baixo, 1 esquerda, 2 direita, 3 cima, 4 baixo_esq, 5 baixo_dir, 6 cima_esq, 7 cima_dir).
 ## Usa personagem isolado (user://qa_hazaki_*), sem tocar nos saves reais.
 const Personagens = preload("res://v2/personagens.gd")
 const Meta = preload("res://v2/meta.gd")

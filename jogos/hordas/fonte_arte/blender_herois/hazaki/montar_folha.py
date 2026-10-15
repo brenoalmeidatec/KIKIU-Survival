@@ -8,7 +8,7 @@ Lê quadros/<anim>/<direcao>_<i>_{cor,normal}.png (saída do gerar.py) e grava n
   hazaki_final_previa_x4.png: cópia de prévia (albedo ampliado 4x, sobre fundo escuro)
 
 Colunas: as 7 primeiras são as da folha do piloto (parado = coluna 0, andar0..andar5 = colunas 1 a 6), e o heroi.gd anda com
-colunas.size() - 1 quadros. As colunas novas vão no FIM: parado 1..3, rolamento, combo (3 golpes x 4), escudo, dano e morte.
+colunas.size() - 1 quadros. As colunas novas vão no FIM: parado 1..3, rolamento, combo (3 golpes x 6), escudo, dano e morte.
 Por isso "colunas" do JSON continua com as 7 do andar; as animações novas estão em "animacoes" (ver LEIA-ME.md).
 """
 import json
@@ -26,22 +26,31 @@ ANIMACOES = [
     ("parado", 4, 0.25),
     ("andar", 6, 0.09),
     ("rolamento", 6, 0.07),
-    ("combo", 12, 0.06),
-    ("escudo", 2, 0.12),
-    ("dano", 2, 0.08),
-    ("morte", 6, 0.14),
+    ("combo", 18, 0.06),
+    ("escudo", 4, 0.10),
+    ("dano", 4, 0.08),
+    ("morte", 8, 0.12),
 ]
+# tempo por quadro (s) quando o quadro tem ritmo próprio (impacto rápido, hold e repouso longos); mesmos números do S_POR_QUADRO de cada anim_<nome>.py
+TEMPOS = {
+    "rolamento": [0.07, 0.07, 0.06, 0.06, 0.07, 0.09],
+    "combo": [0.07, 0.07, 0.04, 0.05, 0.08, 0.07] * 3,
+    "escudo": [0.07, 0.08, 0.10, 0.14],
+    "dano": [0.06, 0.09, 0.09, 0.10],
+    "morte": [0.10, 0.10, 0.08, 0.05, 0.08, 0.10, 0.25, 0.30],
+}
 
 # (animação, quadro) de cada coluna da folha, na ordem em que a folha é escrita
 COLUNAS = [("parado", 0)] + [("andar", i) for i in range(6)] + [("parado", i) for i in (1, 2, 3)]
-COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(12)]
-COLUNAS += [("escudo", i) for i in range(2)] + [("dano", i) for i in range(2)] + [("morte", i) for i in range(6)]
+COLUNAS += [("rolamento", i) for i in range(6)] + [("combo", i) for i in range(18)]
+COLUNAS += [("escudo", i) for i in range(4)] + [("dano", i) for i in range(4)] + [("morte", i) for i in range(8)]
 
 AVISOS = {
-    "morte": "WIP do autor (anim_morte.py): quadros 1 a 5 (indice 0 = primeiro) cortam a borda do quadro em varias direcoes (medido na montagem 1)",
+    "morte": "deitada de cabeca para a camera, nas 8 direcoes (anim_morte.py); a largura real do corpo fica em 25 a 31 px (medida no mundo); alguns quadros encostam 1 px na borda (medir.py)",
     "andar": "baixo_esq, baixo_dir, cima_esq e cima_dir encostam na borda em alguns quadros (medir.py)",
-    "rolamento": "baixo_esq e cima_dir encostam na borda em alguns quadros (medir.py)",
-    "escudo": "baixo_dir e cima_esq encostam na borda em alguns quadros (medir.py)",
+    "rolamento": "quadro 1 (mergulho): a bainha ou a katana encostam na borda de perfil e em baixo_dir/cima_esq (medir.py)",
+    "combo": "o rastro da lamina e a ponta da katana encostam na borda em varios quadros de golpe, de perfil e nas diagonais; o rastro e cortado pela celula (medir.py)",
+    "dano": "frente, costas e baixo_dir/cima_esq encostam 1 px na borda (os bracos abertos; medir.py)",
 }
 
 
@@ -100,11 +109,15 @@ def main():
         if len(colunas_de(anim)) != n:
             raise SystemExit("contagem de colunas de %s diferente de %d" % (anim, n))
         entrada = {"colunas": colunas_de(anim), "quadros": n, "s_por_quadro": s, "fps": round(1.0 / s, 1)}
+        if anim in TEMPOS:
+            entrada["s_quadros"] = TEMPOS[anim]
         if anim in AVISOS:
             entrada["aviso"] = AVISOS[anim]
         info["animacoes"][anim] = entrada
     info["animacoes"]["combo"]["golpes"] = 3
-    info["animacoes"]["combo"]["quadros_por_golpe"] = 4
+    info["animacoes"]["combo"]["quadros_por_golpe"] = 6
+    info["animacoes"]["combo"]["golpes_tipo"] = ["horizontal", "diagonal", "estocada"]
+    info["animacoes"]["combo"]["quadros_do_golpe"] = ["antecipacao", "antecipacao_funda", "golpe_com_rastro", "impacto_com_rastro", "hold", "volta"]
     with open(os.path.join(AQUI, "hazaki_final.json"), "w", encoding="utf-8") as f:
         json.dump(info, f, ensure_ascii=False, indent=1)
         f.write("\n")

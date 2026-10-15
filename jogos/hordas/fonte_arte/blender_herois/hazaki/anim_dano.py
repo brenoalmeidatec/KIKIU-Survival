@@ -1,26 +1,47 @@
-"""DANO (levou um golpe): 2 quadros. Quadro 0 = impacto (tronco e cabeça jogados para trás, os braços abrem, os joelhos cedem),
-quadro 1 = recuo (o corpo volta um pouco, a cabeça ainda fica para trás).
+"""DANO (levou um golpe): 4 quadros, uma vez só. A pose tem de ler sozinha em 32x44 (o flash branco/vermelho fica por conta do shader do jogo).
+q0 = IMPACTO: a cabeça é jogada para trás e o tronco se curva, os braços abrem, o corpo todo recua e os joelhos cedem.
+q1 = RECUO máximo: o tronco curvado, o peso nos calcanhares, um pé escorregando para trás.
+q2 = reage: o tronco volta a meio caminho, a cabeça acompanha atrasada.
+q3 = quase de pé (volta ao repouso com ease, o jogo emenda no parado).
 
-Sinais: ver anim_escudo.py. Tronco e cabeça: x NEGATIVO é para trás. Braço, antebraço, perna e canela: x POSITIVO é para trás.
+Sinais (ver anim_escudo.py): raiz x NEGATIVO = o corpo todo inclina para trás (pivô nos pés); tronco e cabeça: x NEGATIVO = para trás; braço, antebraço,
+perna e canela: x NEGATIVO = para a frente (POSITIVO = para trás). A cabeça fica a ~0,5 rad do tronco no máximo (mais que isso a junta do pescoço abre).
+O recuo é para TRÁS do herói (o golpe vem de frente); `ossos.pisar` põe as botas no chão e `ossos.encaixar_x` desliza o corpo só se passar dos 32 px (o recuo aparece pela inclinação do corpo; não há folga para deslocar o herói).
 """
 import ossos
 
-N_QUADROS = 2
+N_QUADROS = 4
+S_POR_QUADRO = [0.06, 0.09, 0.09, 0.10]
 
-IMPACTO = dict(tronco=-0.24, cabeca=-0.42, braco_e=0.55, antebraco_e=-0.35, braco_d=0.45, antebraco_d=-0.50,
-               perna_e=0.15, canela_e=0.35, perna_d=-0.05, canela_d=0.25)
-RECUO = dict(tronco=-0.15, cabeca=-0.30, braco_e=0.40, antebraco_e=-0.25, braco_d=0.30, antebraco_d=-0.35,
-             perna_e=0.10, canela_e=0.25, perna_d=0.0, canela_d=0.20)
+# raiz (inclinação do corpo todo), recuo (unidades do modelo, para trás), tronco, cabeça, braços (x, y), antebraços, coxas e canelas (e = esq, d = dir)
+QUADROS = [
+    dict(raiz=-0.05, recuo=0.05, tronco=-0.28, cabeca=-0.42,
+         braco_e=(0.55, 0.18), antebraco_e=-0.45, braco_d=(0.12, -0.08), antebraco_d=-0.10,
+         perna_e=0.15, canela_e=0.55, perna_d=-0.15, canela_d=0.40),
+    dict(raiz=-0.08, recuo=0.10, tronco=-0.34, cabeca=-0.28,
+         braco_e=(0.40, 0.15), antebraco_e=-0.30, braco_d=(0.10, -0.06), antebraco_d=-0.08,
+         perna_e=0.35, canela_e=0.75, perna_d=-0.25, canela_d=0.55),
+    dict(raiz=-0.05, recuo=0.06, tronco=-0.20, cabeca=-0.30,
+         braco_e=(0.30, 0.12), antebraco_e=-0.30, braco_d=(0.08, -0.05), antebraco_d=-0.06,
+         perna_e=0.20, canela_e=0.45, perna_d=-0.10, canela_d=0.35),
+    dict(raiz=-0.04, recuo=0.06, tronco=-0.10, cabeca=-0.12,
+         braco_e=(0.12, 0.10), antebraco_e=-0.20, braco_d=(0.12, -0.05), antebraco_d=-0.15,
+         perna_e=0.08, canela_e=0.20, perna_d=-0.04, canela_d=0.15),
+]
 
 
 def posar(arm, quadro, n_quadros):
-    p = IMPACTO if quadro == 0 else RECUO
+    p = QUADROS[quadro]
+    ossos.girar(arm, "raiz", x=p["raiz"])
     ossos.girar(arm, "torso", x=p["tronco"])
     ossos.girar(arm, "cabeca", x=p["cabeca"])
-    for osso in ("braco_e", "antebraco_e", "braco_d", "antebraco_d"):
-        ossos.girar(arm, osso, x=p[osso])
     for lado in ("e", "d"):
-        ossos.girar(arm, "perna_" + lado, x=p["perna_" + lado])
-        ossos.girar(arm, "canela_" + lado, x=p["canela_" + lado])
-        ossos.girar(arm, "pe_" + lado, x=-(p["perna_" + lado] + p["canela_" + lado]))   # a bota fica plana, como no repouso
-    ossos.pisar(arm)
+        bx, by = p["braco_" + lado]
+        ossos.girar(arm, "braco_" + lado, x=bx, y=by)
+        ossos.girar(arm, "antebraco_" + lado, x=p["antebraco_" + lado])
+        perna, canela = p["perna_" + lado], p["canela_" + lado]
+        ossos.girar(arm, "perna_" + lado, x=perna)
+        ossos.girar(arm, "canela_" + lado, x=canela)
+        ossos.girar(arm, "pe_" + lado, x=-(perna + canela + p["raiz"]))     # a bota fica plana no chão
+    ossos.pisar(arm)               # as botas no chão (o ancorar olharia a bainha, que desce quando o quadril recua)
+    ossos.encaixar_x(arm)

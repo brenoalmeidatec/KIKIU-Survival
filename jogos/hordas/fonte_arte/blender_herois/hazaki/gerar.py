@@ -15,6 +15,7 @@ Mudou em relação ao estudo: pernas e braços recriados em repouso reto (com jo
 para o lado/baixo, herói mais largo (~31 px), e tudo preso a ossos.
 """
 import importlib
+import inspect
 import math
 import os
 import random
@@ -24,6 +25,7 @@ from pathlib import Path
 
 import bpy
 import numpy as np
+from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Matrix, Vector
 
 AQUI = Path(__file__).resolve().parent
@@ -56,7 +58,7 @@ def hexa(h):
 PALETA = {
     "Tecido vermelho queimado": "#7a2a32", "Vermelho iluminado": "#93383b", "Dobras do tecido": "#4c1c2c",
     "Calça azul carvão": "#2f384c", "Cabelo quase preto": "#222839", "Couro castanho": "#503829",
-    "Pele": "#9a7360", "Rosto iluminado": "#b78c74", "Aço azulado": "#66798d", "Fio polido": "#b9c4cf",
+    "Pele": "#9a7360", "Rosto iluminado": "#b78c74", "Aço azulado": "#66798d", "Fio polido": "#d6e0ea",
     "Latão antigo": "#9a7a3e", "Olho": "#0a0c14",
 }
 BRILHANTES = {"Reflexo frio": "#8ea9c4"}
@@ -147,10 +149,10 @@ for lado, s in (("esquerda", -1), ("direita", 1)):
             OSSO_DE[segment("Trança do cabo", tuple(c), tuple(c + d * .025), .058, .058, ns["gold"], 8)] = "antebraco_d"
         OSSO_DE[segment("Guarda da katana", tuple(cabo_b - d * .03), tuple(cabo_b + d * .03), .15, .15, ns["gold"], 8)] = "antebraco_d"
         lam_a = cabo_b + d * .06
-        lam_b = lam_a + d * .70
-        OSSO_DE[segment("Lâmina da katana", tuple(lam_a), tuple(lam_b), .115, .085, ns["silver"], 4)] = "antebraco_d"
-        OSSO_DE[segment("Ponta da katana", tuple(lam_b), tuple(lam_b + d * .16), .085, .0, ns["silver"], 4)] = "antebraco_d"
-        OSSO_DE[ns["line"]("Fio azul refletido", [tuple(lam_a + Vector((0, -.05, 0))), tuple(lam_b + Vector((0, -.05, 0)))], .02, ns["cyan"])] = "antebraco_d"
+        lam_b = lam_a + d * .80
+        OSSO_DE[segment("Lâmina da katana", tuple(lam_a), tuple(lam_b), .150, .110, ns["silver"], 4)] = "antebraco_d"
+        OSSO_DE[segment("Ponta da katana", tuple(lam_b), tuple(lam_b + d * .18), .110, .0, ns["silver"], 4)] = "antebraco_d"
+        OSSO_DE[ns["line"]("Fio azul refletido", [tuple(lam_a + Vector((0, -.05, 0))), tuple(lam_b + Vector((0, -.05, 0)))], .028, ns["cyan"])] = "antebraco_d"
 novos = [o for o in bpy.data.objects if o not in ANT]
 heroi += novos
 
@@ -472,6 +474,8 @@ px = ler(TMP / "calibra.png", False)
 ys, xs = np.nonzero(px[:, :, 3] > 0.5)
 dy = ys.max() - PE_LINHA
 cam_data.shift_y = -dy / max(W, H)
+ossos.calibrar(arm, ELEV)
+LOC0 = Vector(arm["loc0"])
 print("calibragem: caixa y %d..%d x %d..%d (largura %d px); desloca %d px" % (ys.min(), ys.max(), xs.min(), xs.max(), xs.max() - xs.min() + 1, dy))
 
 
@@ -484,24 +488,64 @@ def animacoes():
     return achadas
 
 
+def projetar(co):
+    """Ponto do mundo -> (x, y) em pixels do quadro (y para baixo), pela câmera do jogo."""
+    v = world_to_camera_view(cena, cam, co)
+    return v.x * W, (1.0 - v.y) * H
+
+
+def pintar_poligonos(cor, normal, mascara, poligonos):
+    """Efeitos 2D de golpe (rastro da lâmina): poligonos = [(pontos_no_mundo, (r, g, b) 0-255), ...]. Pinta só onde o corpo NÃO está (o rastro
+    fica atrás do herói), sem meio-tom (alfa 1), e na normal usa a normal reta (contorno). Altera cor e normal no lugar."""
+    ys, xs = np.mgrid[0:H, 0:W]
+    cx, cy = xs + 0.5, ys + 0.5
+    for pts, rgb in poligonos:
+        p = [projetar(Vector(q)) for q in pts]
+        dentro = np.zeros((H, W), bool)
+        for i in range(1, len(p) - 1):
+            (ax, ay), (bx, by), (qx, qy) = p[0], p[i], p[i + 1]
+            d = (by - qy) * (ax - qx) + (qx - bx) * (ay - qy)
+            if abs(d) < 1e-9:
+                continue
+            l1 = ((by - qy) * (cx - qx) + (qx - bx) * (cy - qy)) / d
+            l2 = ((qy - ay) * (cx - qx) + (ax - qx) * (cy - qy)) / d
+            dentro |= (l1 >= 0) & (l2 >= 0) & (1 - l1 - l2 >= 0)
+        dentro &= ~mascara
+        cor[dentro] = (rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0, 1.0)
+        normal[dentro] = (0.5, 0.5, 1.0, 1.0)
+
+
 def renderizar_animacao(nome):
     mod = importlib.import_module("anim_" + nome)
     n = mod.N_QUADROS
     pasta = SAIDA / nome
     pasta.mkdir(parents=True, exist_ok=True)
+    usa_ang = len(inspect.signature(mod.posar).parameters) >= 4          # posar(arm, quadro, n, ang): ang = giro do herói na direção
+    efeito = getattr(mod, "efeito", None)                                # efeito(arm, quadro, n, ang) -> polígonos 2D do golpe (ver pintar_poligonos)
     for q in range(n):
-        ossos.zerar(arm)
-        mod.posar(arm, q, n)
-        bpy.context.view_layer.update()
         for dname, ang in DIRECOES:
+            ossos.zerar(arm)
+            arm.location = LOC0
             arm.rotation_euler = (0, 0, math.radians(ang))
+            if usa_ang:
+                mod.posar(arm, q, n, ang)
+            else:
+                mod.posar(arm, q, n)
+            bpy.context.view_layer.update()
             base = pasta / ("%s_%d" % (dname, q))
             renderizar(str(base) + "_cor.png")
             cor = ler(str(base) + "_cor.png", False)
             mascara = cor[:, :, 3] > 0.5
             tmp = TMP / "n.png"
             renderizar(tmp, normal=True)
-            gravar_normal(normais.pos_normal(ler(tmp, True), mascara), str(base) + "_normal.png")
+            nor = normais.pos_normal(ler(tmp, True), mascara)
+            polis = efeito(arm, q, n, ang) if efeito else []
+            if polis:
+                cor = ler(str(base) + "_cor.png", True)
+                pintar_poligonos(cor, nor, mascara, polis)
+                gravar_normal(cor, str(base) + "_cor.png")
+            gravar_normal(nor, str(base) + "_normal.png")
+    arm.location = LOC0
     arm.rotation_euler = (0, 0, 0)
     print("ANIM_OK %s: %d quadros x %d direções" % (nome, n, len(DIRECOES)))
 

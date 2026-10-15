@@ -9,6 +9,7 @@ Convenção dos eixos (do herói em repouso, olhando para a câmera = "baixo"), 
 Os ossos (ver OSSOS) têm todos o eixo X local = X do mundo, então a mesma convenção vale em qualquer osso.
 """
 import math
+import os
 
 import bpy
 from mathutils import Euler, Matrix, Vector
@@ -67,3 +68,71 @@ def pisar(arm, extra=0.0):
     arm.pose.bones["raiz"].location = (0.0, 0.0, 0.0)
     atual = _min_z_botas(arm)
     arm.pose.bones["raiz"].location = (0.0, 0.0, chao - atual + extra)
+
+
+# ---------------------------------------------------------------- ancoragem no chão pela caixa do corpo inteiro (quedas, deitados)
+import numpy as np  # noqa: E402
+
+
+def verts_mundo(arm):
+    """Todos os vértices (N x 3, mundo) das peças presas ao esqueleto, na pose e no giro atuais."""
+    bpy.context.view_layer.update()
+    pts = []
+    for o in arm.children:
+        if o.type != "MESH":
+            continue
+        n = len(o.data.vertices)
+        a = np.empty(n * 3, np.float32)
+        o.data.vertices.foreach_get("co", a)
+        m = np.array(o.matrix_world)
+        pts.append(a.reshape(n, 3) @ m[:3, :3].T + m[:3, 3])
+    return np.concatenate(pts)
+
+
+def calibrar(arm, elev):
+    """Chame uma vez, no repouso de frente e sem giro: guarda o chão (z mínimo), a linha mais baixa da tela e a posição do objeto."""
+    p = verts_mundo(arm)
+    e = math.radians(elev)
+    arm["elev"] = elev
+    arm["z_chao_mundo"] = float(p[:, 2].min())
+    arm["v_chao"] = float((p[:, 2] * math.cos(e) + p[:, 1] * math.sin(e)).min())
+    arm["loc0"] = tuple(arm.location)
+
+
+def ancorar(arm, extra_z=0.0, centrar_x=1.0):
+    """Move o herói INTEIRO (o objeto) para o ponto mais baixo do corpo encostar no chão, a borda de baixo do desenho cair na linha do herói
+    em pé e a caixa ficar centrada em x. Serve para quedas e deitados (`pisar` só olha as botas). `extra_z` levanta depois (rebote, salto)."""
+    p = verts_mundo(arm)
+    e = math.radians(arm["elev"])
+    dz = arm["z_chao_mundo"] - float(p[:, 2].min())
+    vmin = float((p[:, 2] * math.cos(e) + p[:, 1] * math.sin(e)).min()) + dz * math.cos(e)
+    dy = (arm["v_chao"] - vmin) / math.sin(e)
+    dx = -0.5 * float(p[:, 0].min() + p[:, 0].max()) * float(centrar_x)
+    if os.environ.get("HAZAKI_LARGURA"):      # depuração: largura real (px) do corpo, sem o corte do quadro
+        print("LARGURA_PX %.1f" % ((p[:, 0].max() - p[:, 0].min()) * 24.5))
+    arm.location = (arm.location[0] + dx, arm.location[1] + dy, arm.location[2] + dz + extra_z)
+
+
+def encaixar_x(arm, meia_px=15.0):
+    """Desliza o herói (o objeto) em x só o necessário para o corpo, a katana e o lenço caberem na meia-largura do quadro (`meia_px`, em px do jogo).
+    Se a caixa for mais larga que o quadro, centra. Para golpes e estocadas, que esticam a katana para fora do corpo."""
+    p = verts_mundo(arm)
+    lo, hi = float(p[:, 0].min()), float(p[:, 0].max())
+    meia = meia_px / 24.5
+    if os.environ.get("HAZAKI_LARGURA"):
+        print("LARGURA_PX %.1f" % ((hi - lo) * 24.5))
+    if hi - lo >= 2 * meia:
+        dx = -0.5 * (lo + hi)
+    else:
+        dx = max(0.0, -meia - lo) - max(0.0, hi - meia)
+    arm.location = (arm.location[0] + dx, arm.location[1], arm.location[2])
+
+
+def guarda_ponta(arm):
+    """(guarda, ponta) da katana no mundo, como Vectors, na pose atual."""
+    bpy.context.view_layer.update()
+    g = bpy.data.objects["Guarda da katana"]
+    pg = sum((g.matrix_world @ v.co for v in g.data.vertices), Vector()) / len(g.data.vertices)
+    o = bpy.data.objects["Ponta da katana"]
+    pt = max((o.matrix_world @ v.co for v in o.data.vertices), key=lambda q: (q - pg).length)
+    return pg, pt
