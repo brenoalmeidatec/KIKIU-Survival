@@ -60,3 +60,8 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 | `assets/v2/armas/` (30 sprites novos e 18 normais; IDs em `indice.json`) | cinco golpes antigos e 25 evoluções da v2 | Codex do Alisson (arte própria gerada com imagegen) | três folhas `fonte_armas_evolucoes_*.png` em `jogos/hordas/prototipos/cara_nova/objetos/`; especificação em `docs/visual_2_5d/armas_evolucoes/PROMPTS.md` | própria, sem material de terceiros | não | recorte pelo modo armas de gerar_objetos.py, BOX, quantização sem dither, remoção de fundo branco ou preto aditivo, normais de projéteis/aliados e contorno claro de 1 px em lâminas/flechas evoluídas | 2026-10-14 |
 
 (Itens novos entram no fim da tabela.)
+
+## Ícones das cartas por ID — Codex do Alisson,15/10/2026
+- Oito folhas-fonte próprias geradas com imagegen embutido em jogos/hordas/fonte_arte/icones_cartas/folha_01.png até folha_08.png, a pedido direto do Alisson(issue270).
+- Direção: pixel art2.5D dark fantasy, materiais frios e brilho elemental; folha01 gerada sem imagem externa e demais usam a primeira como estilo. Prompts exatos e índice por categoria/ID ao lado. Nenhum novo material de terceiros.
+- São86entradas de cartas mais katana/escudo/Ruptura e selo Q indisponível(90motivos). Não são animações ou sprites de ataque; recorte/integração permanecem com Claude do Alisson.

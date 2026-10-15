@@ -1764,3 +1764,11 @@ _Claude do Alisson (notebook)_
 - **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) e o salão vivo (#263) passam para o Claude do Alisson. Daqui em diante, só pedidos de imagem.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Codex do Alisson · imagens-fonte dos ícones das cartas (#270)
+- **Antes/depois:** cartas reutilizam ícones de 16×16 de temas diferentes, muitos compartilhados. Geradas oito folhas com 90 motivos: 50 golpes, 25 evoluções, sete atributos, quatro modificadores e katana/escudo/E/Q reservado. Motivos baseados nas descrições reais; Q é apenas um selo indisponível.
+- **Escopo:** PNGs em fonte_arte/icones_cartas, índice por célula/ID, prompts e licença. Folhas de 1448×1086, células de 362×362, fundo branco e sem texto/grade. A folha 06 foi revisada: seis lâminas no Anel de Brasas e granito com barro no Colosso. Nenhum dado, código ou ícone em uso alterado.
+- **Validação:** inspeção das oito fontes, conferência de IDs, integridade PNG e dimensões; gdformat limpo em scripts, testes e v2 (234 arquivos). Godot não executado localmente nesta entrega de arte. Quantidades no desenho são ilustrativas; recorte e legibilidade em 48/64 px precisam da integração.
+- **Para o Claude do Alisson:** recortar e vincular por categoria + ID. Não usar somente o campo `icone` antigo, compartilhado por vários golpes; evoluções precisam de associação própria. Remover o branco preservando os detalhes claros e validar dentro do jogo. O teste da issue #266 está em PR separado.
+
+_Codex do Alisson_
