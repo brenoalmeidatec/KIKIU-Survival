@@ -72,3 +72,5 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 - Oito folhas-fonte próprias geradas com imagegen embutido em jogos/hordas/fonte_arte/icones_cartas/folha_01.png até folha_08.png, a pedido direto do Alisson(issue270).
 - Direção: pixel art2.5D dark fantasy, materiais frios e brilho elemental; folha01 gerada sem imagem externa e demais usam a primeira como estilo. Prompts exatos e índice por categoria/ID ao lado. Nenhum novo material de terceiros.
 - São86entradas de cartas mais katana/escudo/Ruptura e selo Q indisponível(90motivos). Não são animações ou sprites de ataque; recorte/integração permanecem com Claude do Alisson.
+
+- 2026-10-15 — jogos/hordas/fonte_arte/marco4/fonte_estruturas.png: oito estruturas; arte própria gerada no Codex com imagegen, referência visual do projeto, sem material novo de terceiros. Grade e prompts ao lado; recorte/integração pendentes.
