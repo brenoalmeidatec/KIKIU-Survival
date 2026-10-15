@@ -86,6 +86,9 @@ O fluxo da v2 agora é JOGAR → escolha de personagem (`personagens.tscn`) → 
 - `salao.gd`: a sala (andar com as setas ou clicando; Enter ou A usa; ESC volta à escolha). As estruturas e os portais vêm de `dados/v2_salao.json` e `v2/mapas.gd`. O desenho da sala é feito uma vez; por quadro só se mexem o herói e as tochas.
 - `personagens_tela.gd`: a lista de personagens e NOVO PERSONAGEM (escolhe um nome livre).
 - `altar.gd` ficou sem uso no fluxo; `testes/v2_meta` ainda o abre (a porta para o salão é o próximo passo).
+### Visual do salão aprovado (#260)
+O desenho foi extraído para salao_visual.gd: fundo/texturas em assets/v2/santuario, carregados uma vez. O helper fornece posições de apresentação das três estruturas e desenha os quatro portais; salao.gd usa as mesmas posições nos alvos. O painel preserva nomes/efeitos/custos e usa lista rolável, texto16px e título37px. Ajustes e Voltar permanecem acessíveis. Fonte única paleta.gd do #250; integrar sem duplicar cores. Sem novas regras, colisões, saves ou desbloqueios. Detalhes/fontes: docs/visual_2_5d/santuario/IMPLEMENTACAO.md.
+
 
 
 ### Efeitos de Ruptura e escudo (2026-10-13)

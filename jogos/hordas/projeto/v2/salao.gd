@@ -5,6 +5,9 @@ extends Control
 ## à escolha de personagem. Estruturas e portais vêm de dados/v2_salao.json e de v2/mapas.gd. Desenhado em 960x540 com a janela em
 ## CANVAS_ITEMS, como o santuário. O desenho da sala é um só (não se redesenha); por quadro, só se mexem o personagem e as chamas.
 
+const Visual := preload("res://v2/salao_visual.gd")
+const Vivo := preload("res://v2/salao_vivo.gd")
+const Paleta := preload("res://v2/paleta.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Personagens := preload("res://v2/personagens.gd")
@@ -22,23 +25,20 @@ const ANDAR_MAX := Vector2(920, 505)
 const VELOCIDADE := 130.0  # px/s andando
 const ALCANCE := 70.0  # px entre os pés do herói e a estrutura ou portal para ele responder
 const ESCALA := 2.0
-const COR_OURO := Color(1.0, 0.86, 0.42)
-const COR_TEXTO := Color(0.92, 0.9, 0.96)
-const COR_APAGADO := Color(0.55, 0.56, 0.64)
-const COR_FOCO := Color(1.0, 0.97, 0.8)
-const COR_AVISO := Color(1.0, 0.72, 0.56)
-const COR_ALMA := Color(0.8, 0.66, 1.0)
-const COR_PAREDE := Color(0.14, 0.13, 0.17)
-const COR_TIJOLO := Color(0.1, 0.095, 0.12)
-const COR_CHAO := Color(0.2, 0.18, 0.16)
-const COR_LINHA_CHAO := Color(0.16, 0.145, 0.13)
-const COR_PEDRA := Color(0.36, 0.34, 0.38)
-const COR_MOLDURA := Color(0.5, 0.47, 0.42)
+const COR_OURO := Paleta.OURO
+const COR_TEXTO := Paleta.TEXTO
+const COR_APAGADO := Paleta.TEXTO_APAGADO
+const COR_FOCO := Paleta.FOCO
+const COR_AVISO := Paleta.VALOR
+const COR_ALMA := Paleta.ALMA
 const CORES_MAPA := {
 	"floresta": Color(0.3, 0.62, 0.36), "laboratorio": Color(0.3, 0.68, 0.78), "cidade": Color(0.85, 0.58, 0.3), "medio": Color(0.5, 0.55, 0.8)
 }
 const COR_TRAVADO := Color(0.22, 0.22, 0.25)
-const DICA := "Setas ou analógico andam   Enter ou A usa   Clique também   Esc volta"
+const DICA := "Setas / analógico: andar   Enter / A: usar   Clique: explorar"
+
+var _visual := Visual.new()
+var _p_rolagem: ScrollContainer
 
 var ao_entrar := Callable()  # gancho dos testes: recebe o caminho da cena da partida; vazio = troca a cena
 var pausa
@@ -135,11 +135,14 @@ func _ajustar_janela() -> void:
 func _carregar_dados() -> void:
 	_estruturas = Dados.json("v2_salao").get("estruturas", [])
 	_alvos.clear()
+	# Apenas apresentação: agrupa estações nas laterais sem alterar regras ou limites.
 	for e in _estruturas:
-		_alvos.append({"tipo": "estrutura", "id": str(e.id), "nome": str(e.nome), "acao": str(e.nome), "pos": Vector2(float(e.x), float(e.y))})
+		_alvos.append(
+			{"tipo": "estrutura", "id": str(e.id), "nome": str(e.nome), "acao": str(e.nome), "pos": Visual.posicao(str(e.id), Vector2(float(e.x), float(e.y)))}
+		)
 	for i in Mapas.LISTA.size():
 		var m: Dictionary = Mapas.LISTA[i]
-		var x: float = lerp(150.0, 810.0, float(i) / maxf(1.0, Mapas.LISTA.size() - 1.0))
+		var x: float = lerp(180.0, 780.0, float(i) / maxf(1.0, Mapas.LISTA.size() - 1.0))
 		_alvos.append({"tipo": "portal", "id": str(m.id), "nome": str(m.nome), "acao": str(m.entrar), "pos": Vector2(x, CHAO_Y + 8.0)})
 
 
@@ -175,28 +178,14 @@ func _montar_cenario() -> void:
 	_chamas.draw.connect(_pintar_chamas)
 	add_child(_chamas)
 	_cenario.queue_redraw()
+	var vivo := Vivo.new()  # luz, partículas e movimento por cima da arte (v2/salao_vivo.gd)
+	add_child(vivo)
+	vivo.montar(self)
 
 
 func _pintar_cenario() -> void:
-	_cenario.draw_rect(Rect2(0, 0, LARG, CHAO_Y), COR_PAREDE)
-	for linha in 6:  # tijolos: fiadas alternadas
-		var y := linha * 30.0
-		_cenario.draw_line(Vector2(0, y), Vector2(LARG, y), COR_TIJOLO, 2.0)
-		for col in range(-1, 33):
-			var x := col * 30.0 + (15.0 if linha % 2 == 1 else 0.0)
-			_cenario.draw_line(Vector2(x, y), Vector2(x, y + 30.0), COR_TIJOLO, 2.0)
-	_cenario.draw_rect(Rect2(0, CHAO_Y, LARG, ALT - CHAO_Y), COR_CHAO)
-	var fuga := Vector2(LARG / 2.0, CHAO_Y - 160.0)  # chão em perspectiva: as linhas se encontram atrás da parede
-	for xb in range(-600, LARG + 700, 120):
-		_cenario.draw_line(fuga, Vector2(xb, ALT), COR_LINHA_CHAO, 2.0)
-	for k in 4:
-		var y := CHAO_Y + (ALT - CHAO_Y) * pow((k + 1) / 4.0, 2.0)
-		_cenario.draw_line(Vector2(0, y), Vector2(LARG, y), COR_LINHA_CHAO, 2.0)
-	_cenario.draw_rect(Rect2(0, CHAO_Y - 8, LARG, 8), COR_MOLDURA)  # rodapé da parede
-	for x in [0.0, LARG - 56.0]:  # colunas nas bordas
-		_cenario.draw_rect(Rect2(x, 0, 56, ALT), COR_MOLDURA.darkened(0.25))
-	for i in _alvos.size():
-		var a: Dictionary = _alvos[i]
+	_visual.fundo(_cenario)
+	for a in _alvos:
 		if a.tipo == "portal":
 			_desenhar_portal(a)
 		else:
@@ -204,43 +193,16 @@ func _pintar_cenario() -> void:
 
 
 func _desenhar_portal(a: Dictionary) -> void:
-	var m := Mapas.buscar(str(a.id))
-	var x: float = a.pos.x
-	var topo := CHAO_Y - 96.0
-	var fechado := Mapas.condicao(m) != ""
-	var cor: Color = COR_TRAVADO if fechado else CORES_MAPA.get(str(a.id), COR_TRAVADO)
-	_cenario.draw_rect(Rect2(x - 38, topo, 76, 96), COR_MOLDURA)
-	_cenario.draw_circle(Vector2(x, topo), 38, COR_MOLDURA)
-	_cenario.draw_rect(Rect2(x - 28, topo + 4, 56, 92), cor.darkened(0.5))
-	_cenario.draw_circle(Vector2(x, topo + 4), 28, cor.darkened(0.5))
-	if fechado:  # cadeado: o texto de por que está fechado aparece ao usar o portal
-		_cenario.draw_rect(Rect2(x - 9, topo + 40, 18, 14), COR_APAGADO)
-		_cenario.draw_rect(Rect2(x - 5, topo + 30, 10, 12), COR_APAGADO, false, 3.0)
-	_cenario.draw_string(
-		Dados.fonte_texto, Vector2(x - 120, CHAO_Y + 40), str(a.nome), HORIZONTAL_ALIGNMENT_CENTER, 240, 16, COR_OURO if not fechado else COR_APAGADO
-	)
+	var fechado := Mapas.condicao(Mapas.buscar(str(a.id))) != ""
+	_visual.portal(_cenario, a, fechado, COR_TRAVADO if fechado else CORES_MAPA.get(str(a.id), COR_TRAVADO))
 
 
 func _desenhar_estrutura(a: Dictionary) -> void:
-	var x: float = a.pos.x
-	var y: float = a.pos.y
-	var cor := COR_ALMA if str(a.id) == "altar" else (Color(0.55, 0.4, 0.26) if str(a.id) == "codice" else COR_PEDRA)
-	_cenario.draw_rect(Rect2(x - 36, y - 8, 72, 24), COR_MOLDURA.darkened(0.2))
-	_cenario.draw_rect(Rect2(x - 30, y - 46, 60, 40), cor.darkened(0.15))
-	_cenario.draw_rect(Rect2(x - 30, y - 46, 60, 6), cor)
-	_cenario.draw_string(Dados.fonte_texto, Vector2(x - 110, y - 56), str(a.nome), HORIZONTAL_ALIGNMENT_CENTER, 220, 16, COR_OURO)
+	_visual.estrutura(_cenario, a)
 
 
 func _pintar_chamas() -> void:
-	for i in 2:  # tochas nas paredes laterais
-		var x := 90.0 if i == 0 else LARG - 90.0
-		var r := 9.0 + 2.5 * sin(_tempo * 9.0 + i * 2.0)
-		_chamas.draw_circle(Vector2(x, CHAO_Y - 120), r * 2.4, Color(1.0, 0.6, 0.2, 0.12))
-		_chamas.draw_circle(Vector2(x, CHAO_Y - 120), r * 0.7, Color(1.0, 0.85, 0.4, 0.95))
-	var altar: Dictionary = _estrutura("altar")
-	if not altar.is_empty():  # brilho do altar: um anel que pulsa
-		var r2 := 36.0 + 3.0 * sin(_tempo * 3.0)
-		_chamas.draw_circle(Vector2(altar.x, altar.y - 52), r2, Color(0.8, 0.66, 1.0, 0.16))
+	_visual.chamas(_chamas, _tempo)
 
 
 func _pintar_heroi() -> void:
@@ -253,32 +215,43 @@ func _pintar_heroi() -> void:
 
 
 func _montar_hud() -> void:
-	_nome_lbl = _rotulo(Personagens.nome(Personagens.ativo()), Dados.fonte_titulo, 37, COR_OURO, Rect2(24, 12, 420, 44), HORIZONTAL_ALIGNMENT_LEFT)
-	_saldo_lbl = _rotulo("", Dados.fonte_titulo, 37, COR_ALMA, Rect2(LARG - 444, 12, 420, 44), HORIZONTAL_ALIGNMENT_RIGHT)
-	_prompt = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(0, 0, 320, 22), HORIZONTAL_ALIGNMENT_CENTER)
+	var topo := ColorRect.new()
+	topo.color = Paleta.alfa(Paleta.PAINEL, 0.88)
+	topo.size = Vector2(LARG, 58)
+	topo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(topo)
+	add_child(_rotulo("SANTUÁRIO", Dados.fonte_titulo, 37, COR_OURO, Rect2(24, 3, 230, 44), HORIZONTAL_ALIGNMENT_LEFT))
+	_nome_lbl = _rotulo(Personagens.nome(Personagens.ativo()), Dados.fonte_texto, 16, COR_TEXTO, Rect2(258, 19, 330, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_saldo_lbl = _rotulo("", Dados.fonte_titulo, 37, COR_ALMA, Rect2(610, 3, 326, 44), HORIZONTAL_ALIGNMENT_RIGHT)
+	_prompt = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(0, 0, 440, 26), HORIZONTAL_ALIGNMENT_CENTER)
+	_prompt.add_theme_stylebox_override("normal", _caixa(Paleta.PAINEL, Paleta.BORDA))
 	_prompt.visible = false
-	_aviso_lbl = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(0, ALT - 78, LARG, 22), HORIZONTAL_ALIGNMENT_CENTER)
+	_aviso_lbl = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(40, 455, 880, 40), HORIZONTAL_ALIGNMENT_CENTER)
+	_aviso_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var faixa := ColorRect.new()
-	faixa.color = Color(0.01, 0.02, 0.035, 0.7)
-	faixa.position = Vector2(0, ALT - 42)
-	faixa.size = Vector2(LARG, 42)
+	faixa.color = Paleta.alfa(Paleta.PAINEL, 0.88)
+	faixa.position = Vector2(0, 505)
+	faixa.size = Vector2(LARG, 35)
 	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(faixa)
 	for l in [
-		_nome_lbl,
-		_saldo_lbl,
-		_prompt,
-		_aviso_lbl,
-		_rotulo(DICA, Dados.fonte_texto, 16, COR_APAGADO, Rect2(24, ALT - 30, LARG - 240, 22), HORIZONTAL_ALIGNMENT_LEFT)
+		_nome_lbl, _saldo_lbl, _prompt, _aviso_lbl, _rotulo(DICA, Dados.fonte_texto, 16, COR_APAGADO, Rect2(20, 511, 650, 24), HORIZONTAL_ALIGNMENT_LEFT)
 	]:
 		add_child(l)
 	var ajustes := Button.new()
 	ajustes.text = "AJUSTES"
-	ajustes.position = Vector2(LARG - 184, ALT - 38)
-	ajustes.size = Vector2(164, 34)
+	ajustes.position = Vector2(682, 507)
+	ajustes.size = Vector2(120, 30)
 	_estilo_botao(ajustes, 16)
 	ajustes.pressed.connect(func(): pausa.abrir_ajustes())
 	add_child(ajustes)
+	var voltar := Button.new()
+	voltar.text = "VOLTAR Esc/B"
+	voltar.position = Vector2(810, 507)
+	voltar.size = Vector2(136, 30)
+	_estilo_botao(voltar, 16)
+	voltar.pressed.connect(func(): get_tree().change_scene_to_file.call_deferred(ESCOLHA))
+	add_child(voltar)
 
 
 func _montar_painel() -> void:
@@ -287,45 +260,64 @@ func _montar_painel() -> void:
 	_painel.visible = false
 	add_child(_painel)
 	var veu := ColorRect.new()
-	veu.color = Color(0.02, 0.02, 0.04, 0.9)
+	veu.color = Paleta.alfa(Paleta.PAINEL, 0.66)
 	veu.set_anchors_preset(PRESET_FULL_RECT)
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_painel.add_child(veu)
-	_p_titulo = _rotulo("", Dados.fonte_titulo, 56, COR_OURO, Rect2(0, 22, LARG, 60), HORIZONTAL_ALIGNMENT_CENTER)
+	var cartao := Panel.new()
+	cartao.position = Vector2(36, 26)
+	cartao.size = Vector2(888, 488)
+	cartao.add_theme_stylebox_override("panel", _caixa(Paleta.CARTAO, Paleta.BORDA))
+	cartao.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_painel.add_child(cartao)
+	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(60, 38, 660, 46), HORIZONTAL_ALIGNMENT_LEFT)
 	_painel.add_child(_p_titulo)
+	var fechar := Button.new()
+	fechar.text = "VOLTAR Esc/B"
+	fechar.position = Vector2(742, 42)
+	fechar.size = Vector2(158, 34)
+	_estilo_botao(fechar, 16)
+	fechar.pressed.connect(_fechar_painel)
+	_painel.add_child(fechar)
+	_p_rolagem = ScrollContainer.new()
+	_p_rolagem.position = Vector2(60, 100)
+	_p_rolagem.size = Vector2(322, 360)
+	_p_rolagem.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_p_rolagem.follow_focus = true
+	_painel.add_child(_p_rolagem)
 	_p_lista = VBoxContainer.new()
-	_p_lista.position = Vector2(40, 110)
-	_p_lista.size = Vector2(340, 330)
-	_p_lista.add_theme_constant_override("separation", 10)
-	_painel.add_child(_p_lista)
-	var x := 420.0
-	_p_nome = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(x, 110, 500, 44), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_nivel = _rotulo("", Dados.fonte_texto, 32, COR_TEXTO, Rect2(x, 160, 500, 36), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_agora = _rotulo("", Dados.fonte_texto, 32, COR_TEXTO, Rect2(x, 200, 500, 36), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_proximo = _rotulo("", Dados.fonte_texto, 32, COR_FOCO, Rect2(x, 240, 500, 36), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_custo = _rotulo("", Dados.fonte_texto, 32, COR_ALMA, Rect2(x, 280, 500, 36), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_saldo = _rotulo("", Dados.fonte_texto, 32, COR_ALMA, Rect2(x, 320, 500, 36), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(x, 364, 500, 22), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_detalhe = _rotulo("", Dados.fonte_texto, 16, COR_APAGADO, Rect2(x, 392, 500, 44), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_p_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_p_lista.add_theme_constant_override("separation", 8)
+	_p_rolagem.add_child(_p_lista)
+	var x := 410.0
+	_p_nome = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(x, 96, 486, 86), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_nivel = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(x, 185, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_agora = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(x, 215, 486, 54), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_proximo = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(x, 271, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_custo = _rotulo("", Dados.fonte_texto, 16, COR_ALMA, Rect2(x, 314, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_saldo = _rotulo("", Dados.fonte_texto, 16, COR_ALMA, Rect2(x, 340, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(x, 368, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_detalhe = _rotulo("", Dados.fonte_texto, 16, COR_APAGADO, Rect2(x, 410, 486, 42), HORIZONTAL_ALIGNMENT_LEFT)
 	_p_detalhe.visible = false
 	for l in [_p_nome, _p_nivel, _p_agora, _p_proximo, _p_custo, _p_saldo, _p_aviso, _p_detalhe]:
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 		_painel.add_child(l)
 	_p_comprar = Button.new()
 	_p_comprar.text = "COMPRAR"
-	_p_comprar.position = Vector2(x, 450)
-	_p_comprar.size = Vector2(220, 48)
-	_estilo_botao(_p_comprar, 37)
+	_p_comprar.position = Vector2(x, 460)
+	_p_comprar.size = Vector2(226, 38)
+	_estilo_botao(_p_comprar, 19)
 	_p_comprar.pressed.connect(_comprar_atual)
 	_painel.add_child(_p_comprar)
 	_p_detalhes = Button.new()
 	_p_detalhes.text = "DETALHES"
-	_p_detalhes.position = Vector2(x + 240, 450)
-	_p_detalhes.size = Vector2(220, 48)
-	_estilo_botao(_p_detalhes, 37)
+	_p_detalhes.position = Vector2(x + 244, 460)
+	_p_detalhes.size = Vector2(242, 38)
+	_estilo_botao(_p_detalhes, 19)
 	_p_detalhes.pressed.connect(func(): _p_detalhe.visible = not _p_detalhe.visible)
 	_painel.add_child(_p_detalhes)
-	_painel.add_child(_rotulo("Esc fecha", Dados.fonte_texto, 16, COR_APAGADO, Rect2(0, ALT - 30, LARG, 22), HORIZONTAL_ALIGNMENT_CENTER))
+	_painel.add_child(_rotulo("Selecione para consultar", Dados.fonte_texto, 16, COR_APAGADO, Rect2(60, 474, 322, 24), HORIZONTAL_ALIGNMENT_LEFT))
 
 
 func _rotulo(txt: String, fonte: Font, tam: int, cor: Color, r: Rect2, alin: HorizontalAlignment) -> Label:
@@ -344,13 +336,30 @@ func _rotulo(txt: String, fonte: Font, tam: int, cor: Color, r: Rect2, alin: Hor
 
 
 func _estilo_botao(b: Button, tam: int) -> void:
-	b.add_theme_font_override("font", Dados.fonte_titulo if tam >= 37 else Dados.fonte_texto)
+	b.add_theme_font_override("font", Dados.fonte_titulo if tam >= 19 else Dados.fonte_texto)
 	b.add_theme_font_size_override("font_size", tam)
 	b.add_theme_color_override("font_color", COR_TEXTO)
 	b.add_theme_color_override("font_hover_color", COR_FOCO)
 	b.add_theme_color_override("font_focus_color", COR_FOCO)
 	b.add_theme_color_override("font_disabled_color", COR_APAGADO)
+	b.add_theme_stylebox_override("normal", _caixa(Paleta.CARTAO, Paleta.BORDA))
+	b.add_theme_stylebox_override("hover", _caixa(Paleta.CARTAO_SELECIONADO, Paleta.OURO))
+	b.add_theme_stylebox_override("focus", _caixa(Color(0, 0, 0, 0), Paleta.OURO))
+	b.add_theme_stylebox_override("pressed", _caixa(Paleta.PAINEL, Paleta.OURO))
+	b.add_theme_stylebox_override("disabled", _caixa(Paleta.PAINEL, Paleta.TEXTO_APAGADO))
 	b.mouse_entered.connect(b.grab_focus)
+
+
+func _caixa(fundo: Color, borda: Color) -> StyleBoxFlat:
+	var estilo := StyleBoxFlat.new()
+	estilo.bg_color = fundo
+	estilo.border_color = borda
+	estilo.set_border_width_all(1)
+	estilo.content_margin_left = 10
+	estilo.content_margin_right = 10
+	estilo.content_margin_top = 4
+	estilo.content_margin_bottom = 4
+	return estilo
 
 
 # ------------------------------------------------------------------ quadro
@@ -405,7 +414,7 @@ func _atualizar_prompt() -> void:
 	if _prompt_de != str(perto.id):
 		_prompt_de = str(perto.id)
 		_prompt.text = "Enter ou A: %s" % perto.acao
-	_prompt.position = Vector2(_pos.x - 160, _pos.y - 150)
+	_prompt.position = Vector2(clampf(perto.pos.x - 220.0, 12.0, LARG - 452.0), clampf(perto.pos.y - 132.0, 62.0, 467.0))
 
 
 func _unhandled_input(e: InputEvent) -> void:
@@ -506,12 +515,14 @@ func _montar_lista() -> void:
 		var it: Dictionary = _p_itens[i]
 		var b := Button.new()
 		b.text = (
-			("%s  %s" % [it.nome, "cumprida" if cumpridas.get(str(it.id), false) else "falta"])
+			("%s\n%s" % [it.nome, "cumprida" if cumpridas.get(str(it.id), false) else "falta"])
 			if _p_codice
-			else ("%s  %d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)])
+			else ("%s\n%d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)])
 		)
-		b.custom_minimum_size = Vector2(340, 52)
-		b.clip_text = true
+		b.custom_minimum_size = Vector2(300, 64)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.clip_text = false
 		_estilo_botao(b, 16)
 		b.focus_entered.connect(_mostrar_item.bind(i))
 		b.pressed.connect(_mostrar_item.bind(i))
@@ -610,7 +621,7 @@ func _montar_lista_niveis() -> void:
 	for i in _p_lista.get_child_count():
 		var it: Dictionary = _p_itens[i]
 		var b: Button = _p_lista.get_child(i)
-		b.text = "%s  %d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)]
+		b.text = "%s\n%d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)]
 
 
 func _fechar_painel() -> void:
