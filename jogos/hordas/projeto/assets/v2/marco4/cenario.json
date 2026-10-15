@@ -1,0 +1,237 @@
+{
+ "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py marco4 (nao edite a mao)",
+ "_ajuda": "Estruturas do Marco 4 da v2 (arte do Codex, folha em jogos/hordas/fonte_arte/marco4/). Nomes m4_* sao unicos no jogo: o mapa os usa em dados/v2_medio.json (objetos). pe = base no chao (a posicao do objeto); colisao em elipses relativas ao pe, como no atlas dos enfeites. Nao edite a mao: rode `python gerar_objetos.py marco4`.",
+ "enfeites": "enfeites.png",
+ "enfeites_normal": "enfeites_normal.png",
+ "itens": [
+  {
+   "nome": "m4_ruina",
+   "pe": [
+    42,
+    111
+   ],
+   "regiao": [
+    0,
+    0,
+    130,
+    112
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      8.7,
+      -16.1
+     ],
+     "raio": [
+      11.7,
+      5.8
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      54.2,
+      -16.1
+     ],
+     "raio": [
+      11.7,
+      5.8
+     ]
+    }
+   ]
+  },
+  {
+   "nome": "m4_altar",
+   "pe": [
+    35,
+    56
+   ],
+   "regiao": [
+    132,
+    0,
+    74,
+    58
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      2.0,
+      -14.2
+     ],
+     "raio": [
+      26.6,
+      13.3
+     ]
+    }
+   ]
+  },
+  {
+   "nome": "m4_ponte",
+   "pe": [
+    71,
+    189
+   ],
+   "regiao": [
+    208,
+    0,
+    220,
+    190
+   ],
+   "colisao": []
+  },
+  {
+   "nome": "m4_passagem",
+   "pe": [
+    135,
+    168
+   ],
+   "regiao": [
+    0,
+    192,
+    170,
+    170
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -101.0,
+      -28.6
+     ],
+     "raio": [
+      34.0,
+      17.0
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      1.0,
+      -28.6
+     ],
+     "raio": [
+      34.0,
+      17.0
+     ]
+    }
+   ]
+  },
+  {
+   "nome": "m4_plato",
+   "pe": [
+    105,
+    151
+   ],
+   "regiao": [
+    172,
+    192,
+    190,
+    153
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -10.0,
+      -44.4
+     ],
+     "raio": [
+      68.4,
+      34.2
+     ]
+    }
+   ]
+  },
+  {
+   "nome": "m4_portao",
+   "pe": [
+    121,
+    114
+   ],
+   "regiao": [
+    0,
+    364,
+    150,
+    115
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -98.5,
+      -12.2
+     ],
+     "raio": [
+      15.0,
+      7.5
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      3.5,
+      -13.8
+     ],
+     "raio": [
+      18.0,
+      9.0
+     ]
+    }
+   ]
+  },
+  {
+   "nome": "m4_torre",
+   "pe": [
+    69,
+    169
+   ],
+   "regiao": [
+    152,
+    364,
+    127,
+    170
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -5.5,
+      -27.2
+     ],
+     "raio": [
+      39.4,
+      19.7
+     ]
+    }
+   ]
+  },
+  {
+   "nome": "m4_mirante",
+   "pe": [
+    88,
+    120
+   ],
+   "regiao": [
+    281,
+    364,
+    150,
+    121
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      5.0,
+      -25.0
+     ],
+     "raio": [
+      37.5,
+      18.8
+     ]
+    }
+   ]
+  }
+ ]
+}
