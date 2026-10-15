@@ -1840,3 +1840,13 @@ _Codex do Alisson_
 - **Para o Claude do Alisson:** decidir se katana e escudo ganham slot (por exemplo, no SUA BUILD). Conferir a leitura da pasta `16/` em jogo, numa tela pequena. Recados: os `.import` e `.gd.uid` de assets antigos (mapas e protótipos) continuam sem versionar; o import do Godot os gera e eles ficaram fora deste PR. O `CLAUDE.md` do checkout principal tem uma divisão diferente (Codex com recorte e ligação), que não está no `origin/main`; esta entrega segue a divisão do `origin/main`.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson · SUA BUILD no controle: painel central com saída (#257)
+- **Antes/depois:** com o painel central aberto sobre a escolha de cartas ou o baú, o controle não tinha saída: `status.entrada()` engolia todo botão e só o C abria e fechava o painel. Agora o Select (`JOY_BUTTON_BACK`, o botão que a v1 já dava ao card "status") liga e desliga o painel, o B fecha, LB e RB paginam como Q e E, e o resto do controle segue engolido com o painel aberto, porque as cartas estão escondidas.
+- **Escopo:** `v2/status.gd` (`entrada()` e a constante `BOTAO_PAINEL`) e a lista de controles do `v2/LEIA-ME.md`. Na partida o Select não liga o card compacto: o C segue sendo o da partida, de propósito. O Start continua sendo da antena da pausa, que o recebe antes do card, como o ESC.
+- **Testes:** `testes/v2_status.gd` ganhou `botao()`, que manda `InputEventJoypadButton` pela mesma entrada da janela que o `tecla()` usa, e checagens do controle na escolha, no baú e na paginação. Sem a correção, essas checagens dão 9 falhas; com ela, `v2_status falhas=0`. Rodei uma a uma, com timeout de 180 s, as 33 cenas `v2_*` e `entrada_cenas`, mais `status` (v1): todas com código 0, `falhas=0` e sem SCRIPT ERROR. gdformat -l 160 limpo em scripts, testes e v2.
+- **Pendente:** o card compacto da partida ainda não tem botão no controle. Y e os outros botões seguem livres. O issue #257 diz "Para o Codex" porque foi escrito quando a divisão era outra; pela divisão do `origin/main`, `v2/` é do Claude do Alisson, e o PR ficou com ele.
+- **Para o Claude do Breno:** testar com o controle, em três itens: (1) na escolha de cartas, Select abre o painel e Select de novo fecha; (2) com o painel aberto, A não escolhe carta e B fecha; (3) LB e RB trocam de página dos golpes no painel.
+- **Próximo:** esperar o CI do PR. Quem mescla é o orquestrador, depois do CI verde.
+
+_Claude do Alisson (notebook)_
