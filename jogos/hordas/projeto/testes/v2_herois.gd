@@ -140,8 +140,8 @@ func _t_dados() -> void:
 			ok(h.has(k), "%s tem o campo %s" % [h.id, k])
 		var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + str(h.sprite) + ".json"))
 		ok(
-			info != null and info.linhas.size() == 8 and info.colunas.size() == 5 and info.quadro.size() == 2,
-			"%s: o json da folha tem quadro, 8 linhas e 5 colunas" % h.id
+			info != null and info.linhas.size() == 8 and info.colunas.size() >= 5 and info.quadro.size() == 2,
+			"%s: o json da folha tem quadro, 8 linhas e pelo menos 5 colunas (parado + andar)" % h.id
 		)
 		ok(
 			ResourceLoader.exists(PASTA_SPRITES + str(h.sprite) + "_albedo.png") and ResourceLoader.exists(PASTA_SPRITES + str(h.sprite) + "_normal.png"),
