@@ -17,6 +17,7 @@ const SAVE_TESTE := "user://teste_v2_mapas.cfg"
 const PASSO := 1.0 / 60.0
 const PADRAO_OBJ := "res://prototipos/objetos"
 const PADRAO_DEC := "res://prototipos/decalques"
+const ATLAS_MARCO4 := "res://assets/v2/marco4"  # as estruturas do Marco 4 (m4_*): o cenario.gd carrega este atlas junto
 
 var falhas := 0
 
@@ -93,7 +94,7 @@ func _dados_do_mapa(id: String) -> void:
 	var cen := _json(str(pastas.get("objetos", PADRAO_OBJ)) + "/cenario.json")
 	var dec := _json(str(pastas.get("decalques", PADRAO_DEC)) + "/decalques.json")
 	var itens := {}
-	for it in cen.get("itens", []):
+	for it in cen.get("itens", []) + _json(ATLAS_MARCO4 + "/cenario.json").get("itens", []):
 		itens[str(it.nome)] = it
 		ok(it.has("pe") and it.has("regiao") and it.has("colisao"), "%s: item %s com pe, regiao e colisao" % [id, it.nome])
 	var decs := {}
