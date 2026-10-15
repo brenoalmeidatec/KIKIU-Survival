@@ -140,8 +140,8 @@ func _t_dados() -> void:
 			ok(h.has(k), "%s tem o campo %s" % [h.id, k])
 		var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + str(h.sprite) + ".json"))
 		ok(
-			info != null and info.linhas.size() == 8 and info.colunas.size() == 5 and info.quadro.size() == 2,
-			"%s: o json da folha tem quadro, 8 linhas e 5 colunas" % h.id
+			info != null and info.linhas.size() == 8 and info.colunas.size() >= 5 and info.quadro.size() == 2,
+			"%s: o json da folha tem quadro, 8 linhas e pelo menos 5 colunas (parado + andar)" % h.id
 		)
 		ok(
 			ResourceLoader.exists(PASTA_SPRITES + str(h.sprite) + "_albedo.png") and ResourceLoader.exists(PASTA_SPRITES + str(h.sprite) + "_normal.png"),
@@ -244,6 +244,55 @@ func _t_hazaki() -> void:
 	ok(n >= 0, "Hazaki golpeia")
 	ok(m.vida < m.vida_max and m.vida >= m.vida_max - 14.0 * 1.2 - 0.01, "Hazaki: o primeiro corte tira ~12 (vida %d de %d)" % [m.vida, m.vida_max])
 	ok(w.combate.adagas.lancadas == 0, "Hazaki não joga adaga")
+	_t_hazaki_animacoes()
+
+
+## As linhas da folha de 50 colunas do Blender ligadas ao herói: combo, rolamento, escudo, dano e morte (sem girar o sprite).
+func _t_hazaki_animacoes() -> void:
+	var h = w.heroi
+	var an: Dictionary = h.tipo.info.get("animacoes", {})
+	ok(an.has("combo") and an.has("rolamento") and an.has("escudo") and an.has("dano") and an.has("morte"), "Hazaki: a folha traz as animações de ação")
+	# golpe
+	zerar()
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	h.atacar()
+	ate(func(): return h.estado == Heroi.Estado.GOLPE, 20)
+	passos(2)
+	ok(h.coluna >= 16 and h.coluna <= 21, "golpe 1: usa as colunas do combo 16-21 (coluna %d)" % h.coluna)
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	# rolamento
+	zerar()
+	h.entrada_forcada = Vector2(1, 0)
+	h.esquivar()
+	ate(func(): return h.estado == Heroi.Estado.ESQUIVA, 20)
+	passos(3)
+	ok(h.coluna >= 10 and h.coluna <= 15, "esquiva: usa as colunas do rolamento 10-15 (coluna %d)" % h.coluna)
+	ok(is_zero_approx(h.sprite.rotation), "esquiva: o sprite não gira (o rolamento é da folha)")
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	# escudo
+	zerar()
+	h.escudo_forcado = true
+	passos(30)
+	ok(h.escudo_ativo and h.coluna >= 34 and h.coluna <= 37, "escudo: usa as colunas 34-37 (coluna %d)" % h.coluna)
+	h.escudo_forcado = null
+	passos(5)
+	# dano
+	zerar()
+	h.imortal = false
+	h.invenc = 0.0
+	h.levar_dano(1.0, h.pos + Vector2(30, 0))
+	ate(func(): return h.coluna >= 38 and h.coluna <= 41, 60)
+	ok(h.coluna >= 38 and h.coluna <= 41, "dano: usa as colunas 38-41 (coluna %d)" % h.coluna)
+	ate(func(): return h.coluna < 38 or h.coluna > 41, 600)
+	ok(h.coluna < 38 or h.coluna > 41, "dano: a animação acaba e volta ao parado (coluna %d)" % h.coluna)
+	# morte
+	h.invenc = 0.0
+	h.levar_dano(100000.0, h.pos + Vector2(30, 0))
+	ate(func(): return h.coluna >= 42, 120)
+	ok(h.estado == Heroi.Estado.MORTO and h.coluna >= 42 and h.coluna <= 49, "morte: usa as colunas 42-49 (coluna %d)" % h.coluna)
+	ate(func(): return h.coluna == 49, 1200)
+	ok(h.coluna == 49, "morte: trava no último quadro, deitado (coluna %d)" % h.coluna)
+	ok(is_zero_approx(h.sprite.rotation), "morte: o sprite não gira 90 graus (rotação %.2f)" % h.sprite.rotation)
 
 
 # ------------------------------------------------------------------ Nicão
@@ -592,9 +641,49 @@ func _fotos(pasta: String) -> void:
 		await _quadros(6)
 		await _foto_janela(pasta, "card_%s" % id)
 		w.status.alternar()
+		if id == "hazaki":
+			await _anim_fotos(pasta)
 		w.queue_free()
 		w = null
 		await _quadros(3)
+
+
+## Uma foto de cada animação de ação do Hazaki (combo, rolamento, escudo, dano e morte), na partida de verdade.
+func _anim_fotos(pasta: String) -> void:
+	zerar()
+	var h = w.heroi
+	h.imortal = false
+	h.atacar()
+	ate(func(): return h.estado == Heroi.Estado.GOLPE, 20)
+	passos(6)
+	await RenderingServer.frame_post_draw
+	await w.ap.foto(pasta.path_join("hazaki_anim_combo.png"))
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	h.entrada_forcada = Vector2(1, 0)
+	h.esquivar()
+	ate(func(): return h.estado == Heroi.Estado.ESQUIVA, 20)
+	passos(10)
+	await RenderingServer.frame_post_draw
+	await w.ap.foto(pasta.path_join("hazaki_anim_rolamento.png"))
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	h.entrada_forcada = Vector2.ZERO
+	h.escudo_forcado = true
+	passos(30)
+	await RenderingServer.frame_post_draw
+	await w.ap.foto(pasta.path_join("hazaki_anim_escudo.png"))
+	h.escudo_forcado = null
+	passos(5)
+	h.invenc = 0.0
+	h.levar_dano(1.0, h.pos + Vector2(30, 0))
+	ate(func(): return h.coluna >= 38 and h.coluna <= 41, 60)
+	passos(4)
+	await RenderingServer.frame_post_draw
+	await w.ap.foto(pasta.path_join("hazaki_anim_dano.png"))
+	h.invenc = 0.0
+	h.levar_dano(100000.0, h.pos + Vector2(30, 0))
+	ate(func(): return h.coluna == 49, 1200)
+	await RenderingServer.frame_post_draw
+	await w.ap.foto(pasta.path_join("hazaki_anim_morte.png"))
 
 
 func _golpes_foto(pasta: String, id: String) -> void:
