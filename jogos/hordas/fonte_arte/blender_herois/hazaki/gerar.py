@@ -45,6 +45,7 @@ if _PERFIL:
     _spec = importlib.util.spec_from_file_location("perfil_heroi", _PERFIL)
     perfil = importlib.util.module_from_spec(_spec)
     _spec.loader.exec_module(perfil)
+    sys.path.insert(0, str(Path(_PERFIL).resolve().parent))      # anim_<nome>.py na pasta do perfil substitui o do Hazaki (ex.: matheus/anim_morte.py)
 NOME = perfil.NOME if perfil else "hazaki"
 SAIDA = (Path(_PERFIL).resolve().parent if perfil else AQUI) / "quadros"
 
@@ -164,7 +165,7 @@ for lado, s in (("esquerda", -1), ("direita", 1)):
             OSSO_DE[segment("Trança do cabo", tuple(c), tuple(c + d * .025), .058, .058, ns["gold"], 8)] = "antebraco_d"
         OSSO_DE[segment("Guarda da katana", tuple(cabo_b - d * .03), tuple(cabo_b + d * .03), .15, .15, ns["gold"], 8)] = "antebraco_d"
         lam_a = cabo_b + d * .06
-        lam_b = lam_a + d * .80
+        lam_b = lam_a + d * (getattr(perfil, "LAMINA", .80) if perfil else .80)
         OSSO_DE[segment("Lâmina da katana", tuple(lam_a), tuple(lam_b), .180, .130, ns["silver"], 4)] = "antebraco_d"
         OSSO_DE[segment("Ponta da katana", tuple(lam_b), tuple(lam_b + d * .18), .130, .0, ns["silver"], 4)] = "antebraco_d"
         OSSO_DE[ns["line"]("Fio azul refletido", [tuple(lam_a + Vector((0, -.05, 0))), tuple(lam_b + Vector((0, -.05, 0)))], .028, ns["cyan"])] = "antebraco_d"
@@ -312,6 +313,8 @@ def material_contorno(m):
         return cascas[m.name]
     base = hexa(PALETA.get(m.name, "#4a5a70"))
     escuro = clampc(mais(base, (0.010, 0.014, 0.034), 0.20))
+    if perfil and hasattr(perfil, "contorno"):
+        escuro = perfil.contorno(m.name, base, escuro, mais, clampc)      # o perfil pode clarear o contorno (rim) para o corpo não sumir no piso escuro
     novo = bpy.data.materials.new("Contorno " + m.name)
     novo.use_nodes = True
     n = novo.node_tree.nodes
@@ -486,7 +489,13 @@ def gravar_normal(px, caminho):
 ossos.zerar(arm)
 ossos.pisar(arm)
 arm.rotation_euler = (0, 0, 0)
+# com LAMINA no perfil (katana mais comprida que a do Hazaki) a ponta passa da linha do pé: a calibragem ignora a lâmina, para o corpo não subir
+_laminas = [o for o in bpy.data.objects if perfil and hasattr(perfil, "LAMINA") and o.name.replace("Contorno — ", "").startswith(("Lâmina da katana", "Ponta da katana", "Fio azul"))]
+for o in _laminas:
+    o.hide_render = True
 renderizar(TMP / "calibra.png")
+for o in _laminas:
+    o.hide_render = False
 px = ler(TMP / "calibra.png", False)
 ys, xs = np.nonzero(px[:, :, 3] > 0.5)
 dy = ys.max() - PE_LINHA
@@ -497,7 +506,7 @@ print("calibragem: caixa y %d..%d x %d..%d (largura %d px); desloca %d px" % (ys
 
 
 def animacoes():
-    achadas = sorted(p.stem[len("anim_"):] for p in AQUI.glob("anim_*.py"))
+    achadas = sorted({p.stem[len("anim_"):] for p in list(AQUI.glob("anim_*.py")) + list(SAIDA.parent.glob("anim_*.py"))})
     if SO_ANIM:
         if SO_ANIM not in achadas:
             raise SystemExit("animação '%s' não existe; há: %s" % (SO_ANIM, ", ".join(achadas)))
