@@ -26,7 +26,7 @@ const VAO := Vector2(40, 78)  # o vão do portal onde o redemoinho aparece (px)
 const VAO_TOPO := -108.0  # topo do vão em relação aos pés do portal
 const CADEADO := Vector2(-1, -59)  # cadeado do portal fechado, em relação aos pés dele
 const TAPETE := Rect2(395, 425, 170, 115)
-const MODULADO := Color("#c8cbe0")  # mais claro que o #8f93b0 do pedido: com ele a sala perdia ~35% de brilho médio (medido nos prints); o contraste vem das luzes
+const MODULADO := Color("#b4b8d4")  # mais claro que o #8f93b0 do pedido: com ele a sala perdia ~35% de brilho médio (medido nos prints); o contraste vem das luzes
 const COR_TOCHA := Color(1.0, 0.62, 0.28)
 const COR_CHAMA_VELA := Color(0.78, 0.5, 1.0)
 const PERIODO_CICLO := 90.0
@@ -121,6 +121,7 @@ var _infos_luz: Array[Dictionary] = []  # {e, base, en, sem, tipo, portal}
 var _sombras: Sombras
 var _ator: Ator
 var _nevoa: Sprite2D
+var _vinheta: Sprite2D
 var _mat_nevoa: ShaderMaterial
 var _po_pes: CPUParticles2D
 var _po_tapete: CPUParticles2D
@@ -191,6 +192,7 @@ func montar(ctx) -> void:
 		_modulador = CanvasModulate.new()
 		_modulador.color = MODULADO
 		_mundo.add_child(_modulador)
+	_montar_vinheta()
 	_pos_ant = ctx._pos
 	ctx._cenario.queue_redraw()
 	Config.graficos_mudou.connect(_agendar_perfil)
@@ -247,6 +249,8 @@ func _reaplicar_perfil() -> void:
 		_mundo.add_child(_modulador)
 	for p in _particulas:
 		p.speed_scale = 0.0 if _congelado else 1.0
+	if _vinheta != null:
+		_mundo.move_child(_vinheta, _mundo.get_child_count() - 1)  # a sombra remontada põe o herói no fim: a vinheta volta por cima
 
 
 func _pintar_rotulos() -> void:
@@ -415,7 +419,7 @@ func _montar_portais() -> void:
 			p.vao = v
 			p.mat = m
 		p.halo = _spr(_tex_banda(_par(104), _par(128), 6, 1.8), p.pos + Vector2(0, -68))
-		p.poca = _spr(_tex_banda(_par(116), _par(34), 5, 1.3), p.pos + Vector2(0, 11))
+		p.poca = _spr(_tex_banda(_par(196), _par(72), 6, 1.25), p.pos + Vector2(0, 22))  # a cor do portal derrama no piso
 		if p.fechado:
 			p.cadeado = _spr(_tex_bits(CADEADO_BITS, Color(1.0, 0.8, 0.35), 2), p.pos + CADEADO)
 		_portais.append(p)
@@ -445,7 +449,9 @@ func _nova_chama(pos: Vector2, cor: Color, escala: float, sem: float, com_poca: 
 
 func _montar_chamas() -> void:
 	for i in TOCHAS.size():
-		var c := _nova_chama(TOCHAS[i], COR_TOCHA, 1.0, float(i) * 2.3 + 0.7, true, Vector2(TOCHAS[i].x + (6 if i == 0 else -6), 178), Vector2i(7, 11), 6.0)
+		var c := _nova_chama(TOCHAS[i], COR_TOCHA, 1.35, float(i) * 2.3 + 0.7, true, Vector2(TOCHAS[i].x + (10 if i == 0 else -10), 182), Vector2i(7, 11), 6.0)
+		c.halo_a = 0.46  # a luz da tocha tem de se ler no muro e no chão, não só na chama pintada
+		c.poca_a = 0.44
 		c.mola = true
 		c.reativo = Vector2(TOCHAS[i].x, 190)
 	_altar = _pos_alvo("altar")
@@ -499,7 +505,7 @@ func _montar_estacoes() -> void:
 
 func _montar_luzes() -> void:
 	var tipos := {
-		"tocha": {"r": 430.0, "e": 1.6, "h": 45.0, "cor": [COR_TOCHA.r, COR_TOCHA.g, COR_TOCHA.b]},
+		"tocha": {"r": 460.0, "e": 2.3, "h": 45.0, "cor": [COR_TOCHA.r, COR_TOCHA.g, COR_TOCHA.b]},
 		"altar": {"r": 430.0, "e": 1.9, "h": 50.0, "cor": [0.72, 0.45, 1.0]},
 		"salao": {"r": 520.0, "e": 0.8, "h": 60.0, "cor": [1.0, 0.82, 0.6]},
 		"estatuas": {"r": 190.0, "e": 0.7, "h": 40.0, "cor": [0.95, 0.6, 0.45]},
@@ -508,27 +514,29 @@ func _montar_luzes() -> void:
 	}
 	for p in _portais:
 		var cor: Color = p.cor.lerp(Color.WHITE, 0.1)
-		tipos["portal_" + p.id] = {"r": 400.0, "e": 0.5 if p.fechado else 1.6, "h": 45.0, "cor": [cor.r, cor.g, cor.b]}
+		tipos["portal_" + p.id] = {"r": 420.0, "e": 0.5 if p.fechado else 2.1, "h": 45.0, "cor": [cor.r, cor.g, cor.b]}
 	_luzes = Luzes.new()
 	_luzes.montar(_mundo, null, null, tipos)
 	_luzes.orcamento = lim_luzes
 	var lista: Array = []
 	if lim_luzes <= 2:
-		lista = [["altar", _altar + Vector2(-14, -50), null], ["salao", Vector2(480, 160), null]]
+		lista = [["altar", _altar + Vector2(-14, -50), -1], ["salao", Vector2(480, 160), -1]]
 	else:
-		lista = [["tocha", TOCHAS[0] + Vector2(8, 4), null], ["tocha", TOCHAS[1] + Vector2(-8, 4), null], ["altar", _altar + Vector2(-14, -50), null]]
+		lista = [["tocha", TOCHAS[0] + Vector2(8, 4), -1], ["tocha", TOCHAS[1] + Vector2(-8, 4), -1], ["altar", _altar + Vector2(-14, -50), -1]]
 		for p in _portais:
-			lista.append(["portal_" + p.id, p.pos + Vector2(0, -70), p])
+			lista.append(["portal_" + p.id, p.pos + Vector2(0, -70), _portais.find(p)])
 		if lim_luzes >= 10:
-			lista.append(["estatuas", _pos_alvo("estatuas") + Vector2(-10, -40), null])
-			lista.append(["codice", _pos_alvo("codice") + Vector2(2, -45), null])
-			lista.append(["emblema", Vector2(480, 305), null])
+			lista.append(["estatuas", _pos_alvo("estatuas") + Vector2(-10, -40), -1])
+			lista.append(["codice", _pos_alvo("codice") + Vector2(2, -45), -1])
+			lista.append(["emblema", Vector2(480, 305), -1])
 	for i in lista.size():
 		var item: Array = lista[i]
 		var e: Luzes.Entrada = _luzes.criar(str(item[0]), item[1])
-		var info := {"e": e, "base": item[1], "en": e.energia, "sem": float(i) * 1.7 + 0.3, "tipo": str(item[0]), "portal": item[2]}
-		if item[2] != null:
-			(item[2] as Portal).info = info
+		# o portal é guardado pelo índice, não pela referência: Portal.info -> Dictionary -> Portal fechava um ciclo de
+		# RefCounted que nunca era liberado (avisos de vazamento de ObjectDB/recursos ao fechar o jogo)
+		var info := {"e": e, "base": item[1], "en": e.energia, "sem": float(i) * 1.7 + 0.3, "tipo": str(item[0]), "portal": int(item[2])}
+		if int(item[2]) >= 0:
+			_portais[int(item[2])].info = info
 		_infos_luz.append(info)
 
 
@@ -547,7 +555,7 @@ func _montar_sombra_heroi() -> void:
 	_sombras.raiz_blobs.z_index = 0  # entre o cenário e o herói, na ordem da árvore
 	_sombras.raiz_sombras.z_index = 0
 	_sombras.modo = modo_sombra
-	_sombras.definir_ambiente({"e": 0.5, "ang": 90.0, "comp": 0.3})
+	_sombras.definir_ambiente({"e": 0.75, "ang": 90.0, "comp": 0.35})
 	_ator = Ator.new()
 	_ator.chave = "heroi"
 	_ator.raiz = Ator.Ponto.new()
@@ -563,8 +571,40 @@ func _montar_sombra_heroi() -> void:
 	_sombras.definir_modo(modo_sombra)
 	_sombras.ativar(_ator, true)
 	_ator.blob.visible = false  # a mancha dos pés já existe no desenho do herói
+	# nos mapas a sombra é suave (LINEAR em sombras.gd); no salão o pixel tem de ficar nítido como o resto da tela
+	for sp in _sombras.raiz_sombras.get_children():
+		if sp is CanvasItem:
+			(sp as CanvasItem).texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	# a ordem na árvore: as sombras ficam antes do herói (o herói foi movido para o fim de _mundo mais abaixo)
 	_mundo.move_child(_ctx._heroi, _mundo.get_child_count() - 1)
+
+
+# ------------------------------------------------------------------ vinheta (cantos escuros, centro claro)
+
+
+## Cantos e bordas escuros em faixas (pixel art, sem gradiente liso): as tochas e os portais, que ficam na camada de
+## brilho por cima, saltam do escuro. É a mesma em todos os perfis (custa um sprite) e não reconstrói com Ajustes.
+func _montar_vinheta() -> void:
+	var w := LARG / 4
+	var h := ALT / 4
+	var im := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var centro := Vector2(w * 0.5, h * 0.56)
+	for y in h:
+		for x in w:
+			var d := Vector2((x - centro.x) / (w * 0.62), (y - centro.y) / (h * 0.66)).length()
+			var t := clampf((d - 0.45) / 0.6, 0.0, 1.0)
+			var a := floorf(t * t * 6.0) / 6.0 * 0.62  # 6 faixas, no máximo 62% de escuro nos cantos
+			im.set_pixel(x, y, Color(0.02, 0.02, 0.05, a))
+	_vinheta = Sprite2D.new()
+	_vinheta.texture = ImageTexture.create_from_image(im)
+	_vinheta.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_vinheta.centered = false
+	_vinheta.scale = Vector2(4, 4)
+	_vinheta.light_mask = 0
+	var sem_luz := CanvasItemMaterial.new()
+	sem_luz.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	_vinheta.material = sem_luz
+	_mundo.add_child(_vinheta)
 
 
 # ------------------------------------------------------------------ névoa rasteira (item 8)
@@ -611,8 +651,8 @@ func _emissor(pos: Vector2, n: int, vida: float, rampa: Gradient, aditivo := tru
 	p.local_coords = false
 	p.texture = _tex_ponto
 	p.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	p.scale_amount_min = 1.0
-	p.scale_amount_max = 2.0
+	p.scale_amount_min = 2.0
+	p.scale_amount_max = 3.0
 	p.color_ramp = rampa
 	p.position = pos.round()
 	if aditivo:
@@ -632,7 +672,7 @@ func _montar_particulas() -> void:
 	# brasas das tochas
 	for t in TOCHAS:
 		var b := _emissor(
-			t + Vector2(0, -4), _n(0.08), 1.7, _rampa([[0.0, Color(1, 0.85, 0.45, 0.0)], [0.12, Color(1, 0.75, 0.3, 1)], [1.0, Color(0.9, 0.2, 0.05, 0)]])
+			t + Vector2(0, -4), _n(0.12), 2.2, _rampa([[0.0, Color(1, 0.85, 0.45, 0.0)], [0.12, Color(1, 0.75, 0.3, 1)], [1.0, Color(0.9, 0.2, 0.05, 0)]])
 		)
 		b.direction = Vector2(0, -1)
 		b.spread = 28.0
@@ -867,8 +907,8 @@ func _portal(p: Portal, dt: float, heroi: Vector2, ciclo: float) -> void:
 	p.mat.set_shader_parameter("t", _tempo + p.fase * 5.0)
 	p.mat.set_shader_parameter("forca", respira * r * ciclo)
 	var cl := Color(p.cor.r, p.cor.g, p.cor.b)
-	p.halo.modulate = Color(cl.r, cl.g, cl.b, 0.2 * respira * r)
-	p.poca.modulate = Color(cl.r, cl.g, cl.b, 0.22 * respira * r)
+	p.halo.modulate = Color(cl.r, cl.g, cl.b, 0.28 * respira * r)
+	p.poca.modulate = Color(cl.r, cl.g, cl.b, 0.4 * respira * r)
 
 
 func _estacao_vivo(est: Estacao, ciclo: float) -> void:
@@ -902,7 +942,7 @@ func _luzes_vivas(heroi: Vector2, ciclo: float) -> void:
 				en *= 0.8 + 0.2 * sin(_tempo * 0.8)
 			_:
 				if tipo.begins_with("portal_"):
-					var p: Portal = info.portal
+					var p: Portal = _portais[int(info.portal)]
 					en *= (0.85 + 0.15 * sin(_tempo * 1.4 + p.fase) + 0.05 * sin(_tempo * 3.7 + p.fase * 2.0)) * (1.0 + 0.5 * p.reacao)
 					j = _jitter(sem, 1.0)
 				else:
