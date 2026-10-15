@@ -1,0 +1,5 @@
+variante,modo,fps_exploratorio,duracao_s,draw_calls,objetos,gpu,vsync,viewport
+antes,parado,825.22,3,45,675,Intel Iris Xe,disabled,960x540
+antes,andando,838.86,3,45,675,Intel Iris Xe,disabled,960x540
+depois,parado,1788.48,3,35,204,Intel Iris Xe,disabled,960x540
+depois,andando,1958.60,3,35,204,Intel Iris Xe,disabled,960x540

@@ -163,6 +163,7 @@ func _ready() -> void:
 	ok(is_equal_approx(j.golpe_extra(), 1.0) and not j.tem_bonus_esquiva(), "só o próximo: depois volta ao normal")
 	# o dano de verdade passa por inimigos.ferir
 	a.inimigos.limpar()
+	a._stats["critico"] = 0.0  # sem critico sorteado: o golpe seguinte tem que sair com a perda de um golpe normal
 	var alvo = a.inimigos.criar("carnical", j.centro() + Vector2(0, 200), 1)
 	alvo.atordoado = 5.0
 	alvo.hp = 100000.0

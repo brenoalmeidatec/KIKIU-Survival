@@ -61,6 +61,10 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 
 (Itens novos entram no fim da tabela.)
 
+## Arte própria do salão — Codex do Alisson,14/10/2026
+- Fontes: jogos/hordas/fonte_arte/santuario_v2/fonte_fundo.png, fonte_estruturas.png, fonte_portais.png. Destino: jogos/hordas/projeto/assets/v2/santuario/.
+- Criadas com imagegen embutido a pedido do Alisson, seguindo conceito aprovado pelo Breno no PR260. Não adicionam arte de terceiros.
+- Recorte e redução pelo wrapper gerar.py, reutilizando o pipeline gerar_objetos.py. Prompts/contexto em docs/visual_2_5d/santuario/IMPLEMENTACAO.md. Fontes originais preservadas.
 ## Teste de animação imagegen — Codex do Alisson,15/10/2026
 - Imagens-fonte próprias geradas com imagegen embutido para a issue266: jogos/hordas/fonte_arte/teste_animacao/heroi_andando_baixo.png, heroi_andando_baixo_v2.png e golpe_katana.png.
 - Referência do herói fornecida pelo projeto; nenhum material novo de terceiros. Prompts e limites registrados ao lado das fontes. Sem recorte/GIF/integração nesta entrega; isso fica com Claude do Alisson.

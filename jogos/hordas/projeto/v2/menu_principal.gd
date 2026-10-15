@@ -12,7 +12,7 @@ const Pausa := preload("res://v2/pausa.tscn")
 const Trilha := preload("res://v2/trilha.gd")
 const FUNDO := preload("res://assets/titulo/fundo.png")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
-const SANTUARIO := "res://v2/altar.tscn"
+const ESCOLHA := "res://v2/personagens.tscn"  # JOGAR leva à escolha de personagem; dela, ao salão (v2/salao.tscn)
 const LARG := 960
 const ALT := 540
 const COR_OURO := Paleta.OURO
@@ -162,7 +162,7 @@ func _jogar() -> void:
 	if ao_jogar.is_valid():
 		ao_jogar.call()
 	else:
-		get_tree().change_scene_to_file(SANTUARIO)
+		get_tree().change_scene_to_file(ESCOLHA)
 
 
 func _abrir_ajustes() -> void:

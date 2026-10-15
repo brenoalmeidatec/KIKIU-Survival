@@ -78,6 +78,18 @@ Teste da navegação do santuário: `testes/v2_santuario.tscn` usa a entrada da 
 A seleção tem quatro mapas: FLORESTA, LABORATÓRIO, CIDADE e RUÍNAS DA FLORESTA. Cidade usa `v2_cidade.json` e `assets/v2/mapas/cidade/`, com ruas e quarteirões próprios. Ruínas da Floresta preserva o id `medio`, `v2_medio.json`, os marcadores e mecânicas; saves antigos continuam abrindo o mesmo mapa. A escolha usa o save seguro da meta-progressão. `v2_mapas` percorre todos os mapas, passagens, mecânicas das ruínas e a rua central da Cidade.
 
 Resultado da partida: CONTINUAR agenda a troca para o santuário ao fim do evento, preservando o viewport que ainda consome a entrada. Falha de save mantém o aviso e libera CONTINUAR após 0,8 s. `testes/v2_morte.tscn` cobre morte real nos quatro mapas, teclado/mouse/controle, entrada duplicada, crédito único e falha de gravação, sem tocar no progresso real.
+## Salão e escolha de personagem (2026-10-13)
+
+O fluxo da v2 agora é JOGAR → escolha de personagem (`personagens.tscn`) → salão (`salao.tscn`) → portal → partida. Morte e vitória voltam ao salão (`resultado_meta.gd`, constante `SANTUARIO`).
+
+- `personagens.gd`: o índice e o save de cada personagem. `Meta.caminho_save` aponta para o personagem ativo. A migração do save antigo roda só na primeira vez.
+- `salao.gd`: a sala (andar com as setas ou clicando; Enter ou A usa; ESC volta à escolha). As estruturas e os portais vêm de `dados/v2_salao.json` e `v2/mapas.gd`. O desenho da sala é feito uma vez; por quadro só se mexem o herói e as tochas.
+- `personagens_tela.gd`: a lista de personagens e NOVO PERSONAGEM (escolhe um nome livre).
+- `altar.gd` ficou sem uso no fluxo; `testes/v2_meta` ainda o abre (a porta para o salão é o próximo passo).
+### Visual do salão aprovado (#260)
+O desenho foi extraído para salao_visual.gd: fundo/texturas em assets/v2/santuario, carregados uma vez. O helper fornece posições de apresentação das três estruturas e desenha os quatro portais; salao.gd usa as mesmas posições nos alvos. O painel preserva nomes/efeitos/custos e usa lista rolável, texto16px e título37px. Ajustes e Voltar permanecem acessíveis. Fonte única paleta.gd do #250; integrar sem duplicar cores. Sem novas regras, colisões, saves ou desbloqueios. Detalhes/fontes: docs/visual_2_5d/santuario/IMPLEMENTACAO.md.
+
+
 
 ### Efeitos de Ruptura e escudo (2026-10-13)
 Ruptura usa sigilos radiais na carga, borda no raio atual e referência no raio máximo; a janela perfeita pulsa dourado suavemente. Disparo tem onda com halo e fissuras ramificadas com núcleo quente. Escudo é uma barreira curva elevada, com painéis, nervuras e runa: azul em sustentação, branco no bloqueio comum e dourado com oito raios no perfeito. O impacto acompanha a origem do golpe dentro do arco. São desenhos autorais por código, sem texturas externas, geração de assets por quadro ou mudança nos dados/mecânicas. Os pools existentes de 12 anéis e 2 rachaduras permanecem; a geometria usa limites fixos (20 segmentos de escudo, 12 sigilos, 9 fissuras).
@@ -89,3 +101,7 @@ Ruptura usa sigilos radiais na carga, borda no raio atual e referência no raio 
 ## Sprites de armas e evoluções — 14/10/2026 (PR #251)
 
 O índice reúne 74 sprites para 50 golpes base e 25 evoluções, incluindo arte própria do Alisson e do Codex do Alisson (imagegen). Os 44 sprites anteriores e seus 25 normal maps foram preservados byte a byte; as três folhas novas acrescentam 30 sprites. Projéteis e aliados recebem normal map; áreas usam composição aditiva. O pipeline existente `gerar_objetos.py armas` recorta, reduz e quantiza as folhas, gerando o índice e a prancha. Consulte o [pipeline de objetos](../../../../docs/visual_2_5d/PIPELINE_OBJETOS.md), as [capturas de armas e evoluções](../../../../docs/visual_2_5d/armas_evolucoes/) e os [prompts e a origem da arte](../../../../docs/visual_2_5d/armas_evolucoes/PROMPTS.md).
+
+## Heróis no salão (2026-10-14, PRs #214 e #242)
+
+Hazaki, Nicão (marreta) e Lucas (adagas) vivem em `dados/v2_herois.json` e `v2/herois.gd`. Há uma só escolha de herói: a do salão. Cada nome de `dados/v2_salao.json > nomes` pode ter `"heroi"` (Nicão e Lucas jogam com o herói deles; os outros, de Hazaki), e `personagens.gd` guarda o herói de cada personagem no índice. `Herois.escolhido()` vale `forcado` (testes e fotos) > `--heroi=id` > herói do personagem ativo > Hazaki. A tela de seleção separada (`selecao_heroi.gd`) e a chave `[heroi]` do save saíram. Cartas com `"herois"` só aparecem para esses heróis; o secundário (escudo) de cada um está em `dados/v2_secundario.json`.

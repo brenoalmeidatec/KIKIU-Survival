@@ -1,5 +1,5 @@
 extends "res://v2/ator.gd"
-## Herói da v2 (Hazaki): anda com WASD, setas e analógico esquerdo; fica virado para o MOUSE (8 direções) quando o mouse mexe, e para onde
+## Herói da v2 (o escolhido no santuário: Hazaki, Nicão ou Lucas, v2/herois.gd; os números vêm do cfg dele): anda com WASD, setas e analógico esquerdo; fica virado para o MOUSE (8 direções) quando o mouse mexe, e para onde
 ## anda quando a direção de andar muda; com o controle, o analógico direito manda. Anima parado e andando com a folha do protótipo.
 ##
 ## Combate (números em dados/v2_combate.json):
@@ -23,6 +23,8 @@ extends "res://v2/ator.gd"
 ## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), e da
 ## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max.
 
+const Herois := preload("res://v2/herois.gd")
+
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA }  # CARGA no fim: nada é renumerado
 const VEL := 100.0  # px/s
@@ -40,6 +42,7 @@ var folego := 3.0  # fôlego em cargas (fracionário), gasto por esquiva (um blo
 var folego_max := 3.0
 var cansado := false  # fôlego zerou: sem correr nem esquivar até recuperar
 var correndo := false
+var vel_base := VEL  # px/s de andar do herói escolhido (cfg.heroi.vel, v2/herois.gd); o VEL é só o padrão
 
 # ---- modificadores das melhorias (progresso.gd)
 var m_dano := 1.0
@@ -118,14 +121,15 @@ var _off_base := Vector2.ZERO
 
 func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
 	mundo = m
-	chave = "hazaki"
-	raio = 6.0
+	chave = str(mundo.combate.heroi_id)  # o herói escolhido (v2/herois.gd): a folha de sprites já vem em `t`
+	raio = float(Herois.heroi(chave).get("raio", 6.0))
 	montar_animado(pai, t, p, 0, 0, false)
 	_off_base = sprite.offset
 
 
 ## Lê as vidas e as regras do dados/v2_combate.json (chamado pelo combate depois de criar o herói).
 func iniciar_stats(cfg: Dictionary) -> void:
+	vel_base = float(cfg.heroi.get("vel", VEL))
 	vida_max = float(cfg.heroi.vida)
 	vida = vida_max
 	folego_max = float(cfg.folego.max)
@@ -249,8 +253,9 @@ func curar(v: float) -> void:
 
 
 ## Velocidade de andar (px/s) com o bônus de movimento, e a de correr. O card de status (status.gd) lê estas duas; `_livre` anda com elas.
+## Velocidade de andar (px/s): a base do herói escolhido (cfg.heroi.vel) com o modificador de movimento das cartas.
 func vel_andar() -> float:
-	return VEL * m_vel_mov
+	return vel_base * m_vel_mov
 
 
 func vel_correr() -> float:
@@ -530,9 +535,9 @@ func _golpe(dt: float, v: Vector2) -> Vector2:
 	var desl := Vector2.ZERO
 	var t_av := golpe_dur * acerto
 	if golpe_t < t_av:  # lunge: velocidade que cai linearmente até zero, a integral dá exatamente "avanco" px
-		desl += golpe_dir * float(golpe_cfg.avanco) * 2.0 * (1.0 - golpe_t / t_av) / t_av * dt
+		desl += golpe_dir * float(golpe_cfg.get("avanco", 0.0)) * 2.0 * (1.0 - golpe_t / t_av) / t_av * dt
 	if v != Vector2.ZERO:
-		desl += v * VEL * m_vel_mov * float(mundo.combate.cfg.heroi.mov_golpe) * dt
+		desl += v * vel_base * m_vel_mov * float(mundo.combate.cfg.heroi.mov_golpe) * dt
 	if not golpe_acertou and p >= acerto:
 		golpe_acertou = true
 		_punch = 1.0
@@ -592,10 +597,10 @@ func _esquiva(dt: float) -> Vector2:
 		mundo.combate.rastro_esquiva(self)
 	if esq_t >= esq_dur:
 		estado = Estado.LIVRE
-		return esq_dir * VEL * m_vel_mov * float(mundo.combate.cfg.esquiva.velocidade) * 0.25 * dt
+		return esq_dir * vel_base * m_vel_mov * float(mundo.combate.cfg.esquiva.velocidade) * 0.25 * dt
 	# arranca rápido e desacelera no fim (o rolamento "agarra" o chão)
 	var k := 1.35 - 0.7 * p
-	return esq_dir * VEL * m_vel_mov * float(mundo.combate.cfg.esquiva.velocidade) * k * dt
+	return esq_dir * vel_base * m_vel_mov * float(mundo.combate.cfg.esquiva.velocidade) * k * dt
 
 
 # ------------------------------------------------------------------ ruptura (tecla E)
