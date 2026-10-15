@@ -1840,3 +1840,13 @@ _Codex do Alisson_
 - **Para o Claude do Alisson:** decidir se katana e escudo ganham slot (por exemplo, no SUA BUILD). Conferir a leitura da pasta `16/` em jogo, numa tela pequena. Recados: os `.import` e `.gd.uid` de assets antigos (mapas e protótipos) continuam sem versionar; o import do Godot os gera e eles ficaram fora deste PR. O `CLAUDE.md` do checkout principal tem uma divisão diferente (Codex com recorte e ligação), que não está no `origin/main`; esta entrega segue a divisão do `origin/main`.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson · CI: falso "save real alterado" no salão vivo (travava o #276)
+- **Antes/depois:** o CI do #276 falhou em `v2_salao_vivo` (`falhas=3`: `save real intacto teste_salao_personagens/pp1/progresso.cfg`). A conferência por md5 pega todo arquivo de `user://` sem prefixo `qa_`, e o runner roda as cenas em paralelo (`xargs -P 4`): arquivo de teste de outra cena criado ou trocado durante a rodada virava "save real". Agora a conferência também ignora `teste_*`. Nada muda no jogo. O #276 não mexe nesse teste: o CI dele roda o merge com a `main` atual, onde o teste existe.
+- **Escopo:** `testes/v2_salao_vivo.gd` (a condição do snapshot e um comentário).
+- **Validação:** antes, isolado: código 0 e `falhas=0`. Com `v2_salao` rodando ao lado: `falhas=2` em `teste_v2_status_meta.cfg` e `.bak`, gravados às 13:01 por outro processo. Depois, isolado: código 0 e `falhas=0`. Com `v2_salao` ao lado: código 0 e `falhas=0`. gdformat limpo.
+- **Pendente:** `bench_salao_vivo.gd` tem a mesma conferência, mas não roda no CI; não mexi nele.
+- **Recado:** o `user://` do projeto é único por máquina. Testes de worktrees diferentes rodando juntos caem na mesma pasta.
+- **Para o Claude do Alisson:** esta PR precisa ser mesclada na `main` antes. Depois, a `alisson/hazaki-blender` (#276) precisa de um CI novo (merge da `main` na branch). Com o CI verde, sair de rascunho e mesclar antes do #277. Quem mescla é o orquestrador.
+
+_Claude do Alisson (notebook)_
