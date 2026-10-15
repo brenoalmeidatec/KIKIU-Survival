@@ -1,0 +1,174 @@
+{
+ "quadro": [
+  32,
+  44
+ ],
+ "elevacao": 45.0,
+ "ppu": 24.5,
+ "pe_y": 42,
+ "linhas": [
+  "baixo",
+  "esquerda",
+  "direita",
+  "cima",
+  "baixo_esq",
+  "baixo_dir",
+  "cima_esq",
+  "cima_dir"
+ ],
+ "colunas": [
+  "parado",
+  "andar0",
+  "andar1",
+  "andar2",
+  "andar3",
+  "andar4",
+  "andar5"
+ ],
+ "render": "Cycles, pixel nativo 32x44, 1 amostra, sem bloom (gerar.py, 8 direções, cor e normal)",
+ "tempo_render_s": 22,
+ "grade": {
+  "linhas": 8,
+  "colunas": 38,
+  "quadro": [
+   32,
+   44
+  ]
+ },
+ "nomes_colunas": [
+  "parado0",
+  "andar0",
+  "andar1",
+  "andar2",
+  "andar3",
+  "andar4",
+  "andar5",
+  "parado1",
+  "parado2",
+  "parado3",
+  "rolamento0",
+  "rolamento1",
+  "rolamento2",
+  "rolamento3",
+  "rolamento4",
+  "rolamento5",
+  "combo0",
+  "combo1",
+  "combo2",
+  "combo3",
+  "combo4",
+  "combo5",
+  "combo6",
+  "combo7",
+  "combo8",
+  "combo9",
+  "combo10",
+  "combo11",
+  "escudo0",
+  "escudo1",
+  "dano0",
+  "dano1",
+  "morte0",
+  "morte1",
+  "morte2",
+  "morte3",
+  "morte4",
+  "morte5"
+ ],
+ "animacoes": {
+  "parado": {
+   "colunas": [
+    0,
+    7,
+    8,
+    9
+   ],
+   "quadros": 4,
+   "s_por_quadro": 0.25,
+   "fps": 4.0
+  },
+  "andar": {
+   "colunas": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "quadros": 6,
+   "s_por_quadro": 0.09,
+   "fps": 11.1,
+   "aviso": "baixo_esq, baixo_dir, cima_esq e cima_dir encostam na borda em alguns quadros (medir.py)"
+  },
+  "rolamento": {
+   "colunas": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "quadros": 6,
+   "s_por_quadro": 0.07,
+   "fps": 14.3,
+   "aviso": "baixo_esq e cima_dir encostam na borda em alguns quadros (medir.py)"
+  },
+  "combo": {
+   "colunas": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+   ],
+   "quadros": 12,
+   "s_por_quadro": 0.06,
+   "fps": 16.7,
+   "golpes": 3,
+   "quadros_por_golpe": 4
+  },
+  "escudo": {
+   "colunas": [
+    28,
+    29
+   ],
+   "quadros": 2,
+   "s_por_quadro": 0.12,
+   "fps": 8.3,
+   "aviso": "baixo_dir e cima_esq encostam na borda em alguns quadros (medir.py)"
+  },
+  "dano": {
+   "colunas": [
+    30,
+    31
+   ],
+   "quadros": 2,
+   "s_por_quadro": 0.08,
+   "fps": 12.5
+  },
+  "morte": {
+   "colunas": [
+    32,
+    33,
+    34,
+    35,
+    36,
+    37
+   ],
+   "quadros": 6,
+   "s_por_quadro": 0.14,
+   "fps": 7.1,
+   "aviso": "WIP do autor (anim_morte.py): quadros 1 a 5 (indice 0 = primeiro) cortam a borda do quadro em varias direcoes (medido na montagem 1)"
+  }
+ },
+ "nota": "heroi.gd anda com colunas.size() - 1 quadros: por isso 'colunas' tem so o andar. As outras animacoes estao em 'animacoes'."
+}

@@ -42,7 +42,7 @@ Sem registrar nada em outro lugar. Os módulos compartilham só `ossos.py`.
 Hierarquia: raiz > quadril > {torso > {cabeca, braco > antebraco}, perna > canela > pe}. O pivô de cada osso é a articulação (cabeça do osso).
 
 **Eixos de `girar`/`mover`** (espaço do herói em repouso, de frente para a câmera; valem para qualquer osso): x = direita da tela, y = para TRÁS do herói
-(a frente é -y), z = para cima. `girar(x=)` NEGATIVO = para frente (perna/braço vão à frente, tronco se curva), `girar(y=)` = inclina de lado, `girar(z=)` = gira em pé
+(a frente é -y), z = para cima. `girar(x=)` NEGATIVO = para frente nos ossos que apontam para baixo (braço, antebraço, perna, canela); no tronco e na cabeça, que apontam para cima, é o contrário (x POSITIVO inclina para frente, x NEGATIVO para trás), `girar(y=)` = inclina de lado, `girar(z=)` = gira em pé
 (antihorário visto de cima). Ângulos em radianos; `mover` em unidades do modelo (1 px do jogo = 0,074; herói tem ~4,2 de altura). Joelho dobra com `girar(canela, x=+)`,
 cotovelo dobra com `girar(antebraco, x=-)`. `pisar` calcula o sobe-e-desce do quadril a partir da geometria das pernas.
 
@@ -59,3 +59,29 @@ cotovelo dobra com `girar(antebraco, x=-)`. `pisar` calcula o sobe-e-desce do qu
 - `chao` (sola em repouso) e a calibragem do pé (linha 43 com contorno) são medidos a cada execução no parado de frente; a vista `cima` fica 1 px acima porque a bota projeta menos.
 - Sem normal "de luz": o jogo faz a iluminação dele a partir da normal; `previa.py` só mostra a cor.
 - O jogo ainda NÃO usa estes quadros.
+
+## Folha final (montagem 1: todas as animações)
+Gerada por `python montar_folha.py` (depois do `gerar.py`): `hazaki_final_albedo.png` (cor), `hazaki_final_normal.png` (normal),
+`hazaki_final.json` (formato que `v2/sprites.gd` e `v2/heroi.gd` leem, mais `animacoes`) e `hazaki_final_previa_x4.png` (prévia ampliada 4x).
+Os GIFs (`python gifs.py <pasta>`) estão em `docs/visual_2_5d/blender_herois/hazaki/`. A cena de QA do Salão é `../qa/qa_hazaki_final.gd`.
+
+Grade: **8 linhas** (a ordem de `linhas`: baixo, esquerda, direita, cima, baixo_esq, baixo_dir, cima_esq, cima_dir) x **38 colunas**, quadro 32x44.
+As colunas 0 a 6 são as da folha do piloto (parado + andar0 a andar5); as colunas novas vão no fim.
+
+| colunas | animação | quadros | s por quadro (sugerido) |
+|---|---|---|---|
+| 0, 7 a 9 | parado (0 = quadro 0; 7 a 9 = quadros 1 a 3, colunas novas) | 4 | 0,25 |
+| 1 a 6 | andar (andar0 a andar5) | 6 | 0,09 |
+| 10 a 15 | rolamento | 6 | 0,07 |
+| 16 a 27 | combo: golpe 1 = 16 a 19, golpe 2 = 20 a 23, golpe 3 = 24 a 27 | 12 | 0,06 |
+| 28 a 29 | escudo | 2 | 0,12 |
+| 30 a 31 | dano | 2 | 0,08 |
+| 32 a 37 | morte (WIP) | 6 | 0,14 |
+
+- **`colunas` do JSON tem só as 7 do andar de propósito**: `heroi.gd` anda com `colunas.size() - 1` quadros, e colunas novas ali fariam o passo
+  rodar pelo combo e pela morte. As animações novas estão em `animacoes` (coluna inicial e final, quadros, tempo por quadro, aviso). O jogo ainda
+  não as usa: ligar isso é trabalho no `heroi.gd`, fora desta pasta.
+- `pe_y` = 42 (o pé na linha 42; a linha 43 é o contorno, ver `PE_LINHA` em `gerar.py`).
+- Cortes de borda medidos com `medir.py` (encostar não é corte, mas a largura chega perto de 32 px): `andar`, `rolamento` e `escudo` encostam
+  em algumas diagonais; `morte` corta a borda em vários quadros (é WIP do autor). Por isso a morte não deve entrar no jogo antes de fechar.
+- Tempo medido nesta montagem: `gerar.py` com as 7 animações, 22 s (Blender 4.5.14, `-b -t 6`).

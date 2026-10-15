@@ -1787,3 +1787,12 @@ _Claude do Alisson (PC)_
 - **Próximo:** revisão e merge pelo integrador (branch `alisson/hazaki-anim-defesa`, sem PR aberto por aqui).
 
 _Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 · Claude do Alisson (workflow, máquina não confirmada) · Hazaki do Blender: montagem 1 (folha final com as 7 animações e QA no Salão)
+- **Feito:** mesclei em `alisson/hazaki-blender` as branches `hazaki-anim-rolamento`, `hazaki-anim-combo` e `hazaki-anim-defesa` (sem conflito; o LOGBOOK da defesa entrou no automático). O `gerar.py` renderizou as 7 animações (parado, andar, rolamento, combo, escudo, dano, morte): 38 quadros x 8 direções, cor e normal, 32x44, em 22 s com `blender -b -t 6`. A folha final está em `hazaki/hazaki_final_albedo.png` e `hazaki_final_normal.png` (1216x352: 38 colunas x 8 linhas). O `hazaki_final.json` segue o formato que o `sprites.gd` e o `heroi.gd` leem, e as animações novas estão em `animacoes` (colunas, quadros, tempo por quadro sugerido). Documentado no `hazaki/LEIA-ME.md`, com a convenção de `girar(x=)` corrigida no tronco e na cabeça.
+- **Feito, com aviso:** GIFs em `docs/visual_2_5d/blender_herois/hazaki/` (uma por animação, 8 direções lado a lado, e `comparativo_atual_x_novo.gif` com o `hazaki` que o jogo usa hoje). QA no Salão real, janela oculta: a cena `blender_herois/qa/qa_hazaki_final.gd` troca só a textura do herói, e o jogo não foi tocado. Prints de parado, andando e meio do golpe 3 (coluna 25, de frente) no PR.
+- **Pendente:** (1) a morte encosta ou corta a borda lateral em 28 dos 48 quadros (é o WIP do autor, quadros 1 a 5); (2) andar, rolamento e escudo encostam na borda em algumas diagonais (largura máxima 30 px, então devem caber, mas sem folga); (3) o jogo ainda não usa as colunas novas: o `heroi.gd` anda com `colunas.size() - 1` quadros e o `PASSO_ANIM` dele é 0,13 s, enquanto o andar pede cerca de 0,09 s.
+- **Próximo:** decidir a âncora da morte antes de ligar no jogo; depois ligar rolamento e combo no `heroi.gd` (é do Claude do Alisson, fora de `hazaki/`).
+- **Recados:** PR em rascunho aberto para a `main`, sem merge. Os PNGs re-renderizados saíram pixel-idênticos aos commitados, então foram restaurados para não gerar diff de bytes; só o `hazaki_rig.blend` regenerado entrou como binário.
+
+_Claude do Alisson (workflow, máquina não confirmada)_
