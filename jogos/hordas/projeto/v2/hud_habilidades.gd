@@ -11,6 +11,10 @@ const BORDA := Paleta.HABILIDADE_BORDA
 const DESATIVADO := Paleta.HABILIDADE_DESATIVADA
 const FUNDO := Color(Paleta.CARTAO, 0.92)
 const FUNDO_CARD := Color(Paleta.PAINEL, 0.88)
+const MOLDURA := preload("res://v2/hud/moldura_habilidade.png")  # 9-slice da arte do Codex (#290), margem 11 (v2/hud/molduras_codex.json)
+const MOLDURA_MARGEM := Vector2(11.0, 11.0)
+const MOLDURA_APAGADA := Color(1.0, 1.0, 1.0, 0.75)  # slot desabilitado: a mesma moldura a 0,75 de alfa (DESIGN.md, botões)
+const FOLGA_MOLDURA := 4.0  # espessura da borda de pedra: o quadro do ícone começa depois dela
 
 var estado_e := "indisponivel"  # indisponivel | ruptura
 var e_disponivel := false
@@ -109,8 +113,8 @@ func _draw() -> void:
 func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var card := Rect2(origem, TAM_CARD)
 	draw_rect(card, FUNDO_CARD)
-	_moldura(card, BORDA if tecla == "E" and e_disponivel else DESATIVADO)
-	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, 1.0)
+	_moldura_pedra(card, tecla == "E" and e_disponivel)
+	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, FOLGA_MOLDURA + 1.0)
 	var icone := Rect2(icon_pos, TAM_ICON)
 	var cor := CARGA_LARANJA if tecla == "E" and e_pronta else DESATIVADO
 	if tecla == "E" and not e_disponivel:
@@ -191,6 +195,22 @@ func _rotulo_e() -> String:
 	if carga_percentual > 0:
 		return "%d%%" % carga_percentual
 	return "RUPTURA"
+
+
+## A moldura de pedra do slot (9-slice, centro transparente). O estado (pronto, recarga, negado) continua no quadro de 1 px do ícone.
+func _moldura_pedra(retangulo: Rect2, ativa: bool) -> void:
+	RenderingServer.canvas_item_add_nine_patch(
+		get_canvas_item(),
+		retangulo,
+		Rect2(Vector2.ZERO, MOLDURA.get_size()),
+		MOLDURA.get_rid(),
+		MOLDURA_MARGEM,
+		MOLDURA_MARGEM,
+		RenderingServer.NINE_PATCH_STRETCH,
+		RenderingServer.NINE_PATCH_STRETCH,
+		false,
+		Color.WHITE if ativa else MOLDURA_APAGADA
+	)
 
 
 func _moldura(retangulo: Rect2, cor: Color) -> void:

@@ -14,7 +14,9 @@ extends CanvasLayer
 ## Layout em v2/hud.tscn (coordenadas de 960x540). O canto superior direito fica livre para o minimapa.
 
 const Paleta := preload("res://v2/paleta.gd")
+const Herois := preload("res://v2/herois.gd")
 const CENA := "res://v2/hud.tscn"
+const SPRITES := "res://prototipos/cara_nova/sprites/"
 const FONTE := "res://assets/fonte/PressStart2P.ttf"
 const OURO := Paleta.OURO
 const PULSO_T := 0.25  # segundos do pulso do combo a cada abate
@@ -35,7 +37,7 @@ const CHEFE_QUEDA := 1.2  # quão rápido a fantasma desce atrás da real (fraç
 const COR_ONDA := Paleta.PERIGO
 const COR_ELITE := Paleta.ANUNCIO_ELITE
 const COR_NIVEL := Paleta.ANUNCIO_NIVEL
-const RB_POS := Vector2(6, 39)  # o slot da ruptura: 22x22, logo abaixo da barra de fôlego (x 6 a 156, y 31 a 35)
+const RB_POS := Vector2(54, 40)  # o slot da ruptura (hoje escondido por hud_habilidades.gd): 22x22, logo abaixo da moldura das barras (y 6 a 36)
 const RB_TAM := 22
 const RB_POP_T := 0.15  # s do pop ao zerar a recarga
 const RB_LARANJA := Paleta.CARGA_LARANJA
@@ -108,6 +110,7 @@ var _rb_nega := false  # moldura vermelha
 var _rb_pop := 0.0
 var _rb_recarga_antes := 0.0
 
+@onready var _heroi_img: TextureRect = $Raiz/Retrato/Heroi
 @onready var _vida_barra: TextureProgressBar = $Raiz/Vida/Barra
 @onready var _vida_txt: Label = $Raiz/Vida/Texto
 @onready var _folego: TextureProgressBar = $Raiz/Folego
@@ -167,8 +170,28 @@ func _ready() -> void:
 	_anel.pivot_offset = Vector2(10, 10)
 	_vinheta.texture = _textura_vinheta()
 	_vinheta.visible = false
+	_retrato_do_heroi()
 	_criar_slot_ruptura()
 	_criar_selo_pesadelo()
+
+
+## O retrato: o quadro parado do herói da partida (linha "baixo", coluna "parado" da folha), sem filtro, dentro da moldura de pedra.
+## Sem a folha ou sem o json, o retrato fica vazio (só moldura e fundo).
+func _retrato_do_heroi() -> void:
+	var base := SPRITES + Herois.sprite(Herois.escolhido())
+	var folha := load(base + "_albedo.png") as Texture2D
+	if folha == null or not FileAccess.file_exists(base + ".json"):
+		return
+	var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
+	if not info is Dictionary or not info.has("quadro"):
+		return
+	var quadro := Vector2(float(info.quadro[0]), float(info.quadro[1]))
+	var recorte := AtlasTexture.new()
+	recorte.atlas = folha
+	recorte.region = Rect2(Vector2.ZERO, quadro)
+	_heroi_img.texture = recorte
+	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_heroi_img.size = quadro
 
 
 func _exit_tree() -> void:

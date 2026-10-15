@@ -1886,6 +1886,10 @@ _Claude do Alisson (notebook)_
 
 _Claude do Breno_
 
+## 2026-10-15 · Fontes das molduras do HUD — Codex do Alisson
+- Antes/depois: faltavam fontes de componentes; entregues três folhas3×3 para retrato, barras de vida/fôlego e slots E/Q,27 peças ao todo, branco e sem texto.
+- Validado: inspeção de orientação/margens, integridade/dimensões1254×1254 e gdformat em scripts/testes/v2. Godot não executado localmente: somente arte/documentação.
+- Para o Claude do Alisson: recortar, ajustar emendas/espessuras, reduzir e montar9-slice. Usar trecho central das bordas para retirar arremates. Molduras neutras compartilhadas; cores de vida/fôlego e estados E/Q continuam no código existente. Nenhum código/dado/teste alterado.
 ## 2026-10-15 · Fontes das fusões — Codex do Alisson
 - Antes/depois: documento FUSOES_ARTE_ALISSON listava quatro peças pendentes; geradas moldura, halo branco tingível, onda Ventania e ícone de união.
 - Validado: PNGs íntegros RGBA com alfa0–255, dimensões reais documentadas, inspeção visual e gdformat em scripts/testes/v2. Godot não rodado localmente: somente arte/documentação.
@@ -1894,6 +1898,12 @@ _Claude do Breno_
 _Codex do Alisson_
 
 
+## 2026-10-15 · Claude do Alisson · Arte do Codex no jogo: HUD (inclui #290)
+- **Antes/depois:** o HUD usava `moldura_pedra.png` (20x20, margem 5) nas barras e 1 px de contorno nos slots E e Q; não tinha retrato. Agora: retrato do herói (quadro parado 32x44, `Herois.escolhido()`) com a moldura do Codex, vida e fôlego dentro de uma moldura de barra compartilhada (150x30) e os cards E e Q com a moldura de habilidade em volta. As cores de `paleta.gd` não mudaram (vida, fôlego, estados do ícone); a pedra é só material. 960x540 mantido; `v2_hud` confere que tudo cabe e que o minimapa fica livre.
+- **Ferramenta:** `gerar_objetos.py hud` (modo novo; os outros modos não foram regenerados). Flood-fill do branco, 4 cantos quadrados do mesmo tamanho, trecho central das bordas (sem arremate), redução BOX, alfa binário, 32 cores sem dither. Aceita folhas com 1–2 px de diferença. Saída em `v2/hud/moldura_{retrato,barra,habilidade}.png` + `molduras_codex.json` (margens: retrato 17, barra 11, habilidade 11; bordas de 6, 4 e 4 px).
+- **Validação:** `gdformat -l 160 --check` limpo; `v2_hud` e as outras 32 cenas `v2_*` em headless, uma por vez (2 em paralelo): código 0, `falhas=0`, sem SCRIPT ERROR. Prints 960x540 em janela oculta (antes/depois, início, vida baixa, E em recarga, E carregada) em `docs/visual_2_5d/hud/`. `testes/v2_hud.gd --fotos=` ganhou os dois prints de E.
+- **Pendente:** Q segue reservada ("EM BREVE", sem mecânica), então não existe "Q cheio" para fotografar; o print mostra E com carga cheia. XP, tempo, abates, chefe e anúncio seguem com `moldura_pedra.png`. O hud.gd ainda desenha os slots antigos (escondidos por `hud_habilidades.gd`); remover é outra tarefa. Heróis diferentes do Hazaki não foram fotografados (a lógica lê `quadro` do json de cada folha).
+- **Para o Claude do Breno:** nada.
 ## 2026-10-15 · Claude do Alisson · Arte das fusões no jogo (integra o #289 do Codex)
 - **Antes/depois:** o cartão FUSÃO era um retângulo escuro; agora é moldura em 9-slice de 600 x 200 (borda de 12 px), com halo e ícone de junção dos dois lados do título. A onda da Ventania usava o sprite antigo de 120 x 79; agora usa a arte do Codex, 64 x 32. O halo das lâminas evoluídas era desenhado por código; agora é o halo da arte, tingido pela cor da fusão. A linha de peça fundida no SUA BUILD ganhou o ícone de junção (16 x 16).
 - **Escopo:** `prototipos/cara_nova/objetos/gerar_objetos.py` (modo novo `fusoes`; os modos `armas` e `icones` não foram rodados nem mudaram), `projeto/assets/v2/fusoes/` (moldura, halo, Ventania, ícone e índice), `v2/hud.gd` (cartão FUSÃO), `v2/armas.gd` (halo), `v2/armas_novas.gd` (o registro lê o índice da fusão depois do de armas, então a Ventania vale por cima), `v2/status.gd` (ícone na linha fundida), `v2/DESIGN.md`, `docs/LICENCAS_ARTE.md`, teste novo `testes/v2_fusoes` e ferramenta de prints `testes/fotos/fusoes_fotos` (fora do CI).
