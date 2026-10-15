@@ -1764,3 +1764,10 @@ _Claude do Alisson (notebook)_
 - **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) e o salão vivo (#263) passam para o Claude do Alisson. Daqui em diante, só pedidos de imagem.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson (notebook) · piloto: herói andando no Blender (8 direções)
+- **Feito:** `jogos/hordas/fonte_arte/blender_herois/` (gerar_heroi_andar.py, previa_gif.py, folha `hazaki_samurai_blender_*`, .blend). Herói padrão da v2 = `hazaki_samurai`. Ciclo de andar novo de 6 quadros x 8 direções, cor + normal, render 4x + BOX + paleta + contorno 1 px, mesma grade e linhas do sprite atual (32x44; colunas parado + 6). Render: 168 imagens em 49 s (53 s com o setup), Blender 4.5, `-b -t 6`. Prévias em `docs/visual_2_5d/blender_herois/`. O sprite do jogo NÃO foi trocado.
+- **Pendente:** detalhes finos (listras douradas do peito, rosto) perdem definição com o BOX; joelho não existe no modelo (só levanta a perna inteira); `PASSO_ANIM` do `heroi.gd` assume 4 quadros; falta parado/respira, combo da katana, rolamento, escudo, morte e os outros heróis (Nicão, Lucas).
+- **Próximo:** decidir se a folha troca a atual; depois repetir o script com as ações já existentes em `hazaki.py` (ataque, defesa, dano, morte).
+
+_Claude do Alisson (notebook)_
