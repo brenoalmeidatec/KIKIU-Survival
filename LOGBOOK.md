@@ -1929,3 +1929,10 @@ _Codex do Alisson_
 - **Pendente:** Breno/orquestrador mesclar o PR na main; fecha #257 e #275.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson · Fusões: merge com a main (#291)
+- **Antes/depois:** a `main` andou com o lote #291 (201c64c) depois da branch. Mesclei em `a6db966`. O único conflito foi em `docs/LICENCAS_ARTE.md`, com as duas seções novas mantidas (a das fusões e a dos quatro modificadores do Codex). `v2/status.gd` e o `gerar_objetos.py` mesclaram sozinhos; conferi os dois.
+- **Validação pós-merge:** gdformat -l 160 --check limpo. As 36 cenas `v2_*` (inclui `v2_fusoes`, `v2_morte_heroi` e `v2_pos_visual`, que vieram da main) com código 0, `falhas=0` e sem SCRIPT ERROR, uma por vez. Também a `armas_novas` (fora do prefixo v2), que usa o registro de armas mudado.
+- **Recado:** a main passou a versionar os `.import` de mapas e protótipos e alguns `.gd.uid` que o import gera. Tirei as cópias locais que estavam sobrando (saíram do worktree, não do Git) antes do merge.
+
+_Claude do Alisson (notebook)_
