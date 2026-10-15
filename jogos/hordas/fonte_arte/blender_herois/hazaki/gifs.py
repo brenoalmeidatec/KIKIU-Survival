@@ -1,6 +1,9 @@
 """GIFs do Hazaki (Python com Pillow): um GIF por animação (8 direções lado a lado) e um comparativo com o herói atual do jogo.
 
-    python gifs.py <pasta_de_saida>
+    python gifs.py <pasta_de_saida> [pasta_do_personagem nome folha_atual]
+
+Sem os 3 últimos argumentos, o Hazaki. Para outro personagem (ex. Matheus: python gifs.py <saida> ../matheus matheus hazaki_samurai), os quadros e o json vêm
+da pasta dele e o comparativo põe, em cima, o andar da folha de 50 colunas que o jogo usa hoje (`folha_atual`, em prototipos/cara_nova/sprites).
 
 Lê quadros/<anim>/ desta pasta e a folha atual do jogo em ../../../projeto/prototipos/cara_nova/sprites/hazaki_albedo.png.
 A velocidade de cada GIF é a do hazaki_final.json (s_por_quadro). No comparativo, o atual roda 4 quadros e o novo 6 no mesmo
@@ -12,8 +15,10 @@ import sys
 
 from PIL import Image, ImageDraw
 
-AQUI = os.path.dirname(os.path.abspath(__file__))
-PROJETO = os.path.normpath(os.path.join(AQUI, "..", "..", "..", "projeto"))
+AQUI = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.dirname(os.path.abspath(__file__))  # pasta dos quadros
+NOME = sys.argv[3] if len(sys.argv) > 3 else "hazaki"
+FOLHA_ATUAL = sys.argv[4] if len(sys.argv) > 4 else None
+PROJETO = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "projeto"))
 W, H, Z = 32, 44, 4
 DIRECOES = ["baixo", "esquerda", "direita", "cima", "baixo_esq", "baixo_dir", "cima_esq", "cima_dir"]
 FUNDO = (34, 34, 42)
@@ -92,16 +97,38 @@ def gif_comparativo(saida):
     return caminho
 
 
+def gif_comparativo_folha(saida):
+    """Atual (andar da folha de 50 colunas que o jogo usa hoje para este personagem) x novo (andar do Blender); os dois a 0,09 s por quadro."""
+    sprites = os.path.join(PROJETO, "prototipos", "cara_nova", "sprites")
+    info_a = json.load(open(os.path.join(sprites, FOLHA_ATUAL + ".json"), encoding="utf-8"))
+    folha = Image.open(os.path.join(sprites, FOLHA_ATUAL + "_albedo.png")).convert("RGBA")
+    cols = info_a["animacoes"]["andar"]["colunas"] if "animacoes" in info_a else list(range(1, 7))
+    s = int(round(info_a["animacoes"]["andar"]["s_por_quadro"] * 1000)) if "animacoes" in info_a else 90
+    quadros = []
+    for i in range(len(cols)):
+        linha_a = [(folha.crop((cols[i] * W, info_a["linhas"].index(d) * H, cols[i] * W + W, info_a["linhas"].index(d) * H + H)), d) for d in DIRECOES]
+        linha_n = [(quadro("andar", i, d), d) for d in DIRECOES]
+        cima = tira(linha_a, titulo="atual (jogo hoje, folha " + FOLHA_ATUAL + "): andar")
+        baixo = tira(linha_n, rotulos=False, titulo="novo (" + NOME + " do Blender): andar")
+        img = Image.new("RGB", (cima.width, cima.height + baixo.height + 6), FUNDO)
+        img.paste(cima, (0, 0))
+        img.paste(baixo, (0, cima.height + 6))
+        quadros.append(img)
+    caminho = os.path.join(saida, "comparativo_atual_x_novo.gif")
+    quadros[0].save(caminho, save_all=True, append_images=quadros[1:], duration=s, loop=0, disposal=2)
+    return caminho
+
+
 def main():
     if len(sys.argv) < 2:
         raise SystemExit("uso: python gifs.py <pasta_de_saida>")
     saida = sys.argv[1]
     os.makedirs(saida, exist_ok=True)
-    info = json.load(open(os.path.join(AQUI, "hazaki_final.json"), encoding="utf-8"))
+    info = json.load(open(os.path.join(AQUI, NOME + "_final.json"), encoding="utf-8"))
     for anim, dados in info["animacoes"].items():
         n = dados["quadros"]
         print(gif_animacao(anim, n, dados["s_por_quadro"], saida, dados.get("s_quadros")))
-    print(gif_comparativo(saida))
+    print(gif_comparativo_folha(saida) if FOLHA_ATUAL else gif_comparativo(saida))
 
 
 main()
