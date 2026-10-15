@@ -6,6 +6,7 @@ extends Control
 ## CANVAS_ITEMS, como o santuário. O desenho da sala é um só (não se redesenha); por quadro, só se mexem o personagem e as chamas.
 
 const Visual := preload("res://v2/salao_visual.gd")
+const Vivo := preload("res://v2/salao_vivo.gd")
 const Paleta := preload("res://v2/paleta.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
@@ -177,6 +178,9 @@ func _montar_cenario() -> void:
 	_chamas.draw.connect(_pintar_chamas)
 	add_child(_chamas)
 	_cenario.queue_redraw()
+	var vivo := Vivo.new()  # luz, partículas e movimento por cima da arte (v2/salao_vivo.gd)
+	add_child(vivo)
+	vivo.montar(self)
 
 
 func _pintar_cenario() -> void:

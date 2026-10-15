@@ -1615,6 +1615,21 @@ _Claude (PC do Breno, via Remote Control)_
 - **Integração/pendente:** branch visual empilhada sobre claude/salao-do-heroi para não integrar sistemas por conta própria. Claude integra #242 e cruza com main/#250; paleta.gd é cópia idêntica e deve ficar uma só. Novos testes são extensão localizada autorizada para regressão visual, sem editar testes existentes. Bench antigo bench_salao usa clique fixo250,300 e precisa adotar posições atuais; harness visual novo usa alvos reais. CI no head publicado; sem merge/build/atalho antes da integração e Release verde.
 
 _Codex do Alisson_
+
+## 2026-10-14 · Claude do Alisson · salão vivo (luz, partículas e movimento), PR empilhado sobre o #261
+- **Feito:** `v2/salao_vivo.gd` + `v2/salao_vivo.gdshader`; `salao.gd` só instancia (3 linhas). Chamas vivas (núcleo, halo, poça, língua de pixels, ruído 1D) nas tochas, no cristal e nas velas do altar; PointLight2D reais pelo `luzes.gd` (Baixo 2, Médio 6, Alto 10; CanvasModulate só em Médio/Alto) e sombra do herói pelo `sombras.gd` (média/alta); portais com redemoinho em shader, cadeado pulsando se fechado; partículas CPU de 1–2 px (total 20/45/80 pelo `particulas_sim`); herói respira 1 px, olha o alvo do prompt e levanta poeira; portal reage a ~100 px, chamas balançam por mola, poeira no tapete; runas/aura/partículas nas estações pelo nível comprado (só leitura via `Meta`); névoa rasteira e ciclo de luz de ±6% em 90 s (Médio/Alto). Teste novo: `testes/v2_salao_vivo`.
+- **Decisão a conferir:** o CanvasModulate ficou em `#c8cbe0`, não `#8f93b0`: com o pedido a sala perdia ~35% de brilho médio (medido nos prints), contra ~10% agora. Está em `MODULADO` no topo de `salao_vivo.gd`. Os nomes dos portais/estações saíram do cenário e são desenhados por um nó sem luz (`salao_visual.rotulos_fora`) para continuarem legíveis.
+- **Pendente:** prints e FPS no próximo commit. Sem pedido de imagem para o Codex por enquanto (tudo procedural).
+
+_Claude do Alisson (via workflow)_
+
+## 2026-10-14 · Codex do Alisson · pausa segura do salão vivo (#263)
+- **Base/feito:** Alisson devolveu frente visual (PR264) e autorizou adotar263/f38d857 sobre261. Reserva6175761067; corrigidos ordem da respiração/direção, rótulos fora do CanvasModulate, congelamento explícito de partículas e reaplicação de perfil após Ajustes. Novo harness de medição e teste ampliado, sem tocar sistemas/save/compras/fluxo.
+- **Medição preliminar:** Godot4.4.1,960x540,OpenGL/IrisXe,uncapped,1par. Médio parado1746,12→1102,48FPS (-36,86%): limite de15% NÃO atendido. Baixo parado1935,72→1206,43 (-37,68%). Movimento inicial sem passos inválido para aceitação; harness corrigido e NÃO reexecutado. Pares finais, prints/GIF finais e testegráfico de pausa pendentes.
+- **Teste:** v2_salao_vivo ampliado headless código0/falhas=0/semSCRIPTERROR, com avisos de RID/ObjectDB/3resources na saída. Não rodada suíte final nem CI do checkpoint. Antes de entregar, otimizar e exigir medição/validação completa. Detalhes e pendências em docs/visual_2_5d/santuario_vivo/PAUSA.md,CSV/JSON e logs preservados. Não declarar pronto.
+- **PAUSADO a pedido do Alisson:** agentes parados,Godot encerrado; nenhum merge/build/atalho. Acompanhamento automático tambémPAUSED. Trabalho parcial salvo no rascunho263 por push normal, sem force.
+
+_Codex do Alisson_
 ## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Ruptura e escudo com volume
 - **Feito:** visual autoral por geometria na v2: sigilos internos e halo na carga; janela perfeita com pulso dourado suave no lugar do piscar a 20 Hz; onda em camadas e fissuras com núcleo quente e ramificações. Escudo curvo elevado com painéis, nervuras e runa central; sustentação azul, bloqueio branco, perfeito dourado com oito raios; ponto de impacto acompanha a origem. Nenhum asset externo/licença adicional, nó por quadro ou alteração de alcance, dano, fôlego, janela ou controles.
 - **Validação:** Godot 4.4.1 import exit 0; v2_ruptura, v2_escudo, v2_combate e v2_hud exit 0/falhas=0/sem SCRIPT ERROR. Uma falha inicial de inferência de tipo foi corrigida, preservando o log local. Capturas reais 960×540 com OpenGL/Intel Iris Xe, janela oculta: carga, carga perfeita, disparo, escudo, bloqueio comum e perfeito revisados. Avisos de RID no encerramento permanecem. Wrapper/fotos/logs locais não versionados.
@@ -1795,5 +1810,12 @@ _Claude do Alisson (notebook)_
 - **#214 dentro do #242:** Nicão e Lucas entram no sistema de personagens do salão, sem segunda escolha de herói. `dados/v2_salao.json > nomes` ganhou `"heroi"` (Nicão e Lucas jogam com o herói deles, os demais de Hazaki); `personagens.gd` guarda o herói no índice (`heroi_do_nome`, `arma_inicial`); `Herois.escolhido()` lê o personagem ativo. Saíram `selecao_heroi.gd`, o botão HERÓI do altar e a chave `[heroi]` do save (`Meta.heroi_escolhido/escolher_heroi`). `dados/v2_secundario.json` mapeia os três heróis ao escudo. Cartas de herói (`"herois"`) coexistem com as 50 de golpes e 25 evoluções da main (8 modificadores).
 - **Testes:** `v2_herois` reescrito para o modelo de personagens; `v2_partida` e `v2_ruptura` com a contagem nova (8 modificadores). Todas as `v2_*` ok.
 - **Atenção:** a branch `alisson/v2-herois` (#214) fica redundante depois deste merge; o orquestrador fecha o PR.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-14 - Pilha #242 > #261 > #263 mesclada em cadeia
+
+- **#261:** `claude/salao-do-heroi` (já com a main e os heróis do #214) mesclada em `codex/santuario-visual`; só o `v2/LEIA-ME.md` conflitou (mantidos os dois lados). O `v2/paleta.gd` do #261 ficou idêntico ao da main (#250): uma só fonte de cor. Categorias de compras e os quatro mapas intactos. Suíte `v2_*` ok.
+- **#263:** `codex/santuario-visual` mesclada em `alisson/salao-vivo` sem conflito. `v2_salao_vivo` ok isolado (em paralelo com `v2_mapas` ele reclama de `teste_v2_mapas.cfg` no "save real intacto": é corrida entre cenas que dividem o user://, não bug). O salão vivo NÃO foi otimizado: o checkpoint em `docs/visual_2_5d/santuario_vivo/PAUSA.md` segue valendo (queda de FPS acima de 15%).
 
 _Claude do Alisson (notebook)_
