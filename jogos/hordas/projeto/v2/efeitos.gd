@@ -14,6 +14,8 @@ const MAX_CORTES := 4
 const MAX_FLASH := 24
 const MAX_LUZES := 3
 const MAX_ONDAS := 6
+const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
+const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_hazaki_ciano.png")  # variante: so a energia ciano, 12 quadros
 
 const SHADER_CORTE := """
 shader_type canvas_item;
@@ -23,8 +25,21 @@ uniform float arco = 2.2;
 uniform float lado = 1.0;
 uniform float modo = 0.0;
 uniform vec4 cor : source_color = vec4(1.0);
+uniform float quadros = 16.0;
+uniform float fixo = 0.0;  // 1 = rampa ciano fixa (variante ciano) em vez da cor do golpe
+uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 16 quadros em linha, RGB = calor, A = intensidade
 float pos(float x) { return floor(x * 8.0 + 0.5) / 8.0; }
 void fragment() {
+	if (modo > 1.5) {
+		float q = min(floor(prog * quadros), quadros - 1.0);
+		vec4 t = texture(folha, vec2((UV.x + q) / quadros, lado > 0.0 ? UV.y : 1.0 - UV.y));
+		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.85);
+		if (fixo > 0.5) {
+			float h = clamp(t.r, 0.0, 1.0) * 3.0;
+			c = h < 1.0 ? mix(vec3(0.04, 0.55, 0.62), vec3(0.10, 0.80, 0.85), h) : (h < 2.0 ? mix(vec3(0.10, 0.80, 0.85), vec3(0.40, 0.95, 1.0), h - 1.0) : mix(vec3(0.40, 0.95, 1.0), vec3(0.92, 1.0, 1.0), h - 2.0));
+		}
+		COLOR = vec4(c * (fixo > 0.5 ? 1.8 : 3.0), t.a);
+	} else {
 	vec2 p = (UV - 0.5) * 2.0;
 	p.y *= lado;
 	float r = length(p);
@@ -60,6 +75,7 @@ void fragment() {
 	k = pos(k * sai);
 	vec3 c = mix(cor.rgb, vec3(1.0), clamp(quente, 0.0, 1.0) * 0.55);
 	COLOR = vec4(c * k * 2.4, k);
+	}
 }
 """
 
@@ -68,9 +84,22 @@ shader_type canvas_item;
 render_mode unshaded;
 uniform vec4 cor : source_color = vec4(1.0);
 uniform float k = 1.0;
+uniform float dissolver : hint_range(0.0, 1.0) = 0.0;
+// Coordenadas da textura: a mascara nao muda com o tempo nem com o movimento do sprite.
+float ruido_pixel(vec2 pixel) {
+	return fract(sin(dot(pixel, vec2(12.9898, 78.233))) * 43758.5453);
+}
 void fragment() {
 	float a = texture(TEXTURE, UV).a;
-	COLOR = vec4(cor.rgb, a * k);
+	vec3 tinta = cor.rgb;
+	if (dissolver > 0.0) {
+		float ruido = ruido_pixel(floor(UV / TEXTURE_PIXEL_SIZE));
+		float resta = step(dissolver, ruido);
+		float borda = (1.0 - smoothstep(0.0, 0.08, ruido - dissolver)) * resta;
+		tinta = mix(tinta, vec3(1.0), borda * 0.25);
+		a *= resta;
+	}
+	COLOR = vec4(tinta, a * k);
 }
 """
 
@@ -117,6 +146,7 @@ var _cortes: Array[Sprite2D] = []
 var _cortes_t := PackedFloat32Array()
 var _cortes_dur := PackedFloat32Array()
 var _ci := 0
+var variante := "katana"  # qual folha o corte usa: "katana" (katana + linha de anime) ou "ciano" (so a energia ciano)
 
 # luzes rápidas
 var _luzes: Array[PointLight2D] = []
@@ -256,7 +286,8 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	var i := _ci
 	_ci = (_ci + 1) % MAX_CORTES
 	var s := _cortes[i]
-	var r := alcance * 1.25
+	var folha := tipo == "corte"  # o corte usa a folha do Blender; a estocada continua no shader
+	var r := alcance * (1.45 if folha else 1.25)  # na folha o arco ocupa 0,8 da meia-largura
 	s.position = origem.round()
 	s.rotation = ang
 	s.scale = Vector2.ONE * (r / 32.0)
@@ -265,7 +296,11 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
 	mat.set_shader_parameter("lado", lado)
-	mat.set_shader_parameter("modo", 1.0 if tipo == "estocada" else 0.0)
+	mat.set_shader_parameter("modo", 2.0 if folha else (1.0 if tipo == "estocada" else 0.0))
+	var ciano := variante == "ciano"
+	mat.set_shader_parameter("folha", FOLHA_CORTE_CIANO if ciano else FOLHA_CORTE)
+	mat.set_shader_parameter("quadros", 12.0 if ciano else 16.0)
+	mat.set_shader_parameter("fixo", 1.0 if ciano else 0.0)
 	mat.set_shader_parameter("cor", cor)
 	_cortes_t[i] = 0.0
 	_cortes_dur[i] = dur
@@ -313,6 +348,7 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	var mat := s.material as ShaderMaterial
 	mat.set_shader_parameter("cor", cor)
 	mat.set_shader_parameter("k", forca)
+	mat.set_shader_parameter("dissolver", 0.0)
 	_fl_alvo[i] = a if modo == 0 else null
 	_fl_t[i] = 0.0
 	_fl_dur[i] = dur
@@ -511,6 +547,7 @@ func atualizar(dt: float) -> void:
 					s.flip_h = a.espelha
 				mat.set_shader_parameter("k", 1.0 - k * k)
 			1:
+				mat.set_shader_parameter("dissolver", k)
 				s.scale = Vector2(1.0 + 0.25 * k, 1.0 - 0.35 * k) * _fl_esc[i]
 				s.position.y -= 24.0 * dt
 				mat.set_shader_parameter("k", 1.0 - k)

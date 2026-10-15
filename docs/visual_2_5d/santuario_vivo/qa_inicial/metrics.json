@@ -1,0 +1,132 @@
+{
+	"godot": {
+		"build": "official",
+		"hash": "49a5bc7b616bd04689a2c89e89bda41f50241464",
+		"hex": 263169,
+		"major": 4,
+		"minor": 4,
+		"patch": 1,
+		"status": "stable",
+		"string": "4.4.1-stable (official)",
+		"timestamp": 0
+	},
+	"max_fps": 0,
+	"renderer": "Intel(R) Iris(R) Xe Graphics",
+	"results": [
+		{
+			"fps": 1935.72125613912,
+			"frames": 5808,
+			"median_cpu_ms": 1.53,
+			"median_frame_ms": 0.48,
+			"movement": "idle",
+			"p95_cpu_ms": 1.569,
+			"p95_frame_ms": 0.795,
+			"pair": 0,
+			"profile": "baixo",
+			"version": "antes"
+		},
+		{
+			"fps": 1206.4306520726,
+			"frames": 3619,
+			"median_cpu_ms": 2.225,
+			"median_frame_ms": 0.799,
+			"movement": "idle",
+			"p95_cpu_ms": 2.626,
+			"p95_frame_ms": 1.177,
+			"pair": 0,
+			"profile": "baixo",
+			"version": "depois"
+		},
+		{
+			"fps": 1930.55534719826,
+			"frames": 5791,
+			"median_cpu_ms": 2.229,
+			"median_frame_ms": 0.5,
+			"movement": "moving",
+			"p95_cpu_ms": 3.048,
+			"p95_frame_ms": 0.718,
+			"pair": 0,
+			"profile": "baixo",
+			"version": "antes"
+		},
+		{
+			"fps": 1090.85611201145,
+			"frames": 3272,
+			"median_cpu_ms": 2.042,
+			"median_frame_ms": 0.85,
+			"movement": "moving",
+			"p95_cpu_ms": 3.029,
+			"p95_frame_ms": 1.422,
+			"pair": 0,
+			"profile": "baixo",
+			"version": "depois"
+		},
+		{
+			"fps": 1746.12298680722,
+			"frames": 5237,
+			"median_cpu_ms": 1.392,
+			"median_frame_ms": 0.526,
+			"movement": "idle",
+			"p95_cpu_ms": 1.724,
+			"p95_frame_ms": 0.905,
+			"pair": 0,
+			"profile": "medio",
+			"version": "antes"
+		},
+		{
+			"fps": 1102.47555267963,
+			"frames": 3307,
+			"median_cpu_ms": 2.086,
+			"median_frame_ms": 0.887,
+			"movement": "idle",
+			"p95_cpu_ms": 2.178,
+			"p95_frame_ms": 1.167,
+			"pair": 0,
+			"profile": "medio",
+			"version": "depois"
+		},
+		{
+			"fps": 1915.03702404913,
+			"frames": 5745,
+			"median_cpu_ms": 1.291,
+			"median_frame_ms": 0.495,
+			"movement": "moving",
+			"p95_cpu_ms": 1.41,
+			"p95_frame_ms": 0.731,
+			"pair": 0,
+			"profile": "medio",
+			"version": "antes"
+		},
+		{
+			"fps": 1074.52411313432,
+			"frames": 3224,
+			"median_cpu_ms": 1.854,
+			"median_frame_ms": 0.919,
+			"movement": "moving",
+			"p95_cpu_ms": 3.294,
+			"p95_frame_ms": 1.178,
+			"pair": 0,
+			"profile": "medio",
+			"version": "depois"
+		}
+	],
+	"sample_seconds": 3,
+	"save_failures": 0,
+	"save_hashes_before": {
+		".recovery_mode_lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		"calor.json": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+		"online.json": "cc85ad477ec2b59cc773b17ce2dc2db900c11f21171419fdffb21f7552c8c403",
+		"opcoes.cfg": "4964752c8d04786ea99010f7daa70c2702fc4f4e71ad366c7071c584f3b7b4e7",
+		"recordes.json": "3f8561754997c5f4ac59dfd54a0c35a4aa67325ef26ddc05a95614e7b8b31283",
+		"sonda_meta.cfg": "a322aea9223e81b932bc5ef2cddbdc9962e39a6b5b29641844c710fc0fd03b31",
+		"teste_graficos.cfg": "0c3ff3d514fa0a086b0c4026041943a96a7e3b16fc354bd47ec8cc473fb5e1e1",
+		"v2_progresso.cfg": "b673e919e8d20869c1e2001f73b5e76a6875e6de2ded6410823ea5706be76c69",
+		"v2_progresso.cfg.bak": "8dfbb2a044235e29c21e4b1ab5de0a4acfe93484940500e8086676705a0ad18a"
+	},
+	"size": [
+		960,
+		540
+	],
+	"vsync": false,
+	"warmup_seconds": 3
+}

@@ -24,7 +24,7 @@ var combate
 var mundo
 var fx
 var ativas := {}  # id -> golpe secundário {id, tipo, cor, slot, nivel, bonus, st (números), t, t2, ang, pulso, pts, R, evo}
-var mods := {"onda": 0.0, "fura": 0.0, "explode": 0.0, "folego": 0.0}  # valor acumulado (em %) de cada modificador da katana
+var mods := {"onda": 0.0, "fura": 0.0, "explode": 0.0, "folego": 0.0, "abalo": 0.0, "muralha": 0.0, "chuva": 0.0, "mira": 0.0}  # valor acumulado (em %) de cada modificador da katana
 var ventania := {}  # evolução da katana, ou {}
 var acertos := {}  # tipo -> quantos acertos (testes)
 var lancadas := 0  # ondas e lanças lançadas (testes)
@@ -1252,7 +1252,11 @@ func _desenhar_laminas(a: Dictionary) -> void:
 			var aa := ang - float(q + 1) * 0.2
 			var pp := p + Vector2(cos(aa) - cos(ang), (sin(aa) - sin(ang)) * ACHATA) * R
 			no_brilho.draw_texture_rect(tex_brilho, Rect2(pp.round() - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.26 - 0.09 * q))
-		no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.55 if evo else 0.42))
+		if evo:  # a fusão lê de longe: halo maior e um miolo claro (só duas luzes a mais por lâmina)
+			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(24, 24), Vector2(48, 48)), false, Color(cor.r, cor.g, cor.b, 0.5))
+			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(9, 9), Vector2(18, 18)), false, Color(1.0, 1.0, 1.0, 0.7))
+		else:
+			no_brilho.draw_texture_rect(tex_brilho, Rect2(p - Vector2(17, 17), Vector2(34, 34)), false, Color(cor.r, cor.g, cor.b, 0.42))
 		if Novas.sprite_de(str(a.id)).is_empty():  # arte nova está no passe de corpo, com luz; o rastro permanece aqui
 			no_brilho.draw_set_transform(p, tang.angle(), Vector2(1.15, 1.15))
 			no_brilho.draw_texture(_tex_lamina, Vector2(-13, -5.5), tinta)

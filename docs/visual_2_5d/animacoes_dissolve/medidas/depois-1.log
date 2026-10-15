@@ -1,0 +1,9 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+OpenGL API 3.3.0 - Build 32.0.101.7088 - Compatibility - Using Device: Intel - Intel(R) Iris(R) Xe Graphics
+
+CARGA ms=806 cenario=382 blur=238 objetos=572 decalques=1456 luzes=30
+MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=366 blocos=70/192 fps=67.8 frames=407 seg=6.00
+SCRIPT ms/quadro=8.342 (sombras 0.994, golpes secundários 0.716, desenho deles 0.671)
+PERFIL ms/quadro: c_separar 0.47, c_contato 0.01, c_orbes 0.04, heroi 0.05, monstros 2.17, combate 1.28, camera_efeitos 0.12, cenario_atm 0.02, copas 0.24, luzes 0.09, sombras_ativacao 0.58, horda 3.48 | horda: 280 monstros em 49 fatias
+RENDER ms/quadro: cpu mundo 3.23, gpu mundo 10.09, cpu janela 0.17, gpu janela 0.44; chamadas de desenho 656; objetos 1231; fora do script 6.40
+COMBATE abates=152 maior_combo=152 nivel=17 vivos=300 ondas=0 tempo_partida=2.7 vida=100 melhorias={ "aura_fogo": 5, "laminas": 2, "corvos": 4, "raio": 3, "runa": 3, "meteoro_flamejante": 1, "nuvem_veneno": 1, "espirito_raposa": 2, "nevoa_espectral": 1, "lanca_geada": 1, "rb_dano": 1, "dano": 1, "chuva_acida": 1, "cortina_sangue": 1, "onda": 1, "espirito_urso": 1, "rb_eco": 1, "folego": 1 }

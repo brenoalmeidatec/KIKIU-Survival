@@ -34,6 +34,7 @@ const TAM_P := Paleta.TEXTO_TAMANHO
 const TAM_CAB := Paleta.TITULO_PEQUENO
 const TAM_NOME_PEQ := Paleta.TITULO_PEQUENO
 const ALT_LINHA := 18.0
+const Herois := preload("res://v2/herois.gd")  # o herói escolhido: nome, arma (dados/v2_herois.json)
 const ALT_CAB := 18.0
 const ALT_TITULO := 22.0
 const ALT_BLOCO_COMPACTO := 18.0  # ícone de 16 px e 2 de respiro: um golpe ou modificador por linha no HUD
@@ -341,6 +342,11 @@ static func _tempo(s: float) -> String:
 	return "%d:%02d" % [seg / 60, seg % 60]
 
 
+## O cadastro do herói escolhido (nome, título, arma): dados/v2_herois.json. O card não tem nada fixo de herói.
+static func _cadastro(m) -> Dictionary:
+	return Herois.heroi(str(m.heroi.chave))
+
+
 static func _sec_heroi(m) -> Dictionary:
 	var h = m.heroi
 	var c = m.combate
@@ -363,7 +369,7 @@ static func _sec_heroi(m) -> Dictionary:
 	lin.append(_l("heroi.nivel", "Nível", "%d · XP %d/%d" % [h.nivel, roundi(h.xp), roundi(h.xp_proximo)], [h.nivel, h.xp, h.xp_proximo], "", true))
 	lin.append(_l("heroi.esquiva", "Esquiva", "%d seguidas" % seguidas, [seguidas, h.esq_dur]))
 	lin.append(_l("heroi.imune", "Imune na esquiva", "%s s" % _v(h.esq_inv, 2), [h.esq_inv]))
-	return _sec("heroi", "HERÓI", Paleta.SECAO_HEROI, lin)
+	return _sec("heroi", "HERÓI: " + str(_cadastro(m).get("nome", "")).to_upper(), Paleta.SECAO_HEROI, lin)
 
 
 static func _sec_katana(m) -> Dictionary:
@@ -393,7 +399,7 @@ static func _sec_katana(m) -> Dictionary:
 	lin.append(_l("katana.critico", "Crítico x%s" % _v(mult, 1), "%s%%" % _p(chance * 100.0), [chance, mult], _mais_pct(h.m_critico * 100.0)))
 	var cs = c.cartas
 	var ar = c.armas
-	for md in ["onda", "fura", "explode", "folego"]:
+	for md in ["onda", "fura", "explode", "folego", "abalo", "muralha", "chuva", "mira"]:  # os de cada herói só aparecem com a carta dele
 		var valor := float(ar.mods[md])
 		if valor <= 0.0:
 			continue
@@ -438,6 +444,31 @@ static func _sec_katana(m) -> Dictionary:
 				tr = [[_p(valor), 1], ["% de uma carga por abate", 0]]
 				curto = [[_p(valor), 1], ["% de carga por abate", 0]]
 				uma = [[_p(valor) + "%", 1]]
+			"abalo":
+				# o Nicão: a pancada no chão solta uma onda de choque com esse % do dano dela
+				var danos_abalo: Array = []
+				for p in c.passos_de("pancada"):
+					danos_abalo.append(valor / 100.0 * c.dano_do_passo(p))
+				var txt_a := _lista_dano(danos_abalo)
+				n = [valor] + danos_abalo
+				tr = [[_p(valor), 1], ["% da pancada (", 0], [txt_a, 1], [" de dano)", 0]]
+				curto = [[_p(valor), 1], ["% da pancada (", 0], [txt_a, 1], [")", 0]]
+				uma = [[_p(valor) + "%", 1]]
+			"muralha":
+				# o Nicão: empurra e atordoa mais (o empurrão do golpe e o atordoamento sobem esse %)
+				tr = [["+", 0], [_p(valor), 1], ["% de empurrão e atordoamento", 0]]
+				curto = [["+", 0], [_p(valor), 1], ["% empurrão", 0]]
+				uma = [["+" + _p(valor) + "%", 1]]
+			"chuva":
+				# o Lucas: cada acerto solta uma adaga extra com esse % de chance
+				tr = [[_p(valor), 1], ["% de chance de cada acerto soltar uma adaga extra", 0]]
+				curto = [[_p(valor), 1], ["% de adaga extra", 0]]
+				uma = [[_p(valor) + "%", 1]]
+			"mira":
+				# o Lucas: alcance e velocidade das adagas
+				tr = [["+", 0], [_p(valor), 1], ["% de alcance e velocidade das adagas", 0]]
+				curto = [["+", 0], [_p(valor), 1], ["% alcance das adagas", 0]]
+				uma = [["+" + _p(valor) + "%", 1]]
 		# a peça que já virou a Ventania não sobe mais de nível: diz "evoluída" em vez de um "nv 2/4" parado
 		var evoluida: bool = not cs.ativa(str(md))
 		var nivel_txt := "evoluída" if evoluida else "nv %d/%d" % [nivel, int(d.max)]
@@ -455,7 +486,8 @@ static func _sec_katana(m) -> Dictionary:
 				curto,
 				uma,
 				_dica_evolucao(cs, str(md)),
-				n
+				n,
+				str(md)
 			)
 		)
 	if not ar.ventania.is_empty():
@@ -475,10 +507,11 @@ static func _sec_katana(m) -> Dictionary:
 				tr_v,
 				[["x" + _v(float(ev.mult_onda), 1), 1]],
 				"",
-				[float(ev.mult_onda)]
+				[float(ev.mult_onda)],
+				"ventania"
 			)
 		)
-	return _sec("katana", "KATANA (CLIQUE)", Paleta.SECAO_KATANA, lin)
+	return _sec("katana", "%s (CLIQUE)" % str(_cadastro(m).get("arma", "KATANA")), Paleta.SECAO_KATANA, lin)
 
 
 static func _sec_golpes(m) -> Dictionary:
@@ -532,7 +565,8 @@ static func _sec_golpes(m) -> Dictionary:
 				curto,
 				uma,
 				dica,
-				[nums.dano, nums.intervalo, nums.dps, nums.acertos]
+				[nums.dano, nums.intervalo, nums.dps, nums.acertos],
+				str(id)
 			)
 		)
 	if lin.is_empty():
@@ -576,7 +610,8 @@ static func _bloco(
 	curto: Array,
 	uma: Array,
 	dica: String,
-	n: Array
+	n: Array,
+	carta: String = ""  # id da carta (golpe, evolução, modificador): o ícone próprio dela sai na linha; `icone` é o antigo, de reserva
 ) -> Dictionary:
 	return {
 		"tipo": "bloco",
@@ -591,7 +626,8 @@ static func _bloco(
 		"curto": curto,
 		"uma": uma,
 		"dica": dica,
-		"n": n
+		"n": n,
+		"carta": carta
 	}
 
 
@@ -897,12 +933,11 @@ func _desenhar_linha(l: Dictionary, x: float, y: float, w: float) -> void:
 	_misto(str(l.valor), direita, y, TAM, COR_ROTULO, COR_VALOR, true)
 
 
+## Ícone da carta na linha do card: o próprio do id, na versão de 16 px (a linha tem 18 a 20 px); sem ele, o antigo `icone`.
 func _desenhar_icone(l: Dictionary, x: float, y: float) -> void:
-	var ic := str(l.icone)
-	if ic != "":
-		var tx: Texture2D = Dados.tex(ic)
-		if tx != null:
-			_tela.draw_texture(tx, Vector2(x, y))
+	var tx := Dados.icone_carta(str(l.get("carta", "")), str(l.icone), true)
+	if tx != null:
+		_tela.draw_texture(tx, Vector2(x, y))
 
 
 ## Um golpe ou modificador numa linha só (HUD): ícone, nome curto, nível e o número (poder estimado, ou o valor do modificador).

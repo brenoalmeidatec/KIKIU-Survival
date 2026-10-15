@@ -35,6 +35,7 @@ const Braseiros := preload("res://v2/braseiros.gd")  # o Braseiro Antigo: apagad
 const Horda := preload("res://v2/horda.gd")  # os monstros comuns em lote (MultiMesh)
 const Oclusao := preload("res://v2/oclusao.gd")  # silhueta do herói atrás de monstro grande (leva 4)
 const Depuracao := preload("res://v2/depuracao_colisao.gd")
+const Herois := preload("res://v2/herois.gd")  # heróis jogáveis (Hazaki, Nicão, Lucas)
 const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
 const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no santuário
@@ -56,7 +57,7 @@ signal onda_forte(numero: int)
 signal elite_apareceu(nome: String)
 signal chefe_apareceu(nome: String, vida_max: float)
 signal chefe_vida(vida: float)
-signal evolucao(nome: String)
+signal evolucao(nome: String, desc: String)
 signal anuncio(texto: String, cor: Color)
 signal partida_terminou(resultado: Dictionary)
 
@@ -305,7 +306,7 @@ func _criar_heroi() -> void:
 	herois = [heroi]
 	if _modo != "livre":  # foto e medição não dependem do teclado de quem estiver na máquina
 		heroi.entrada_forcada = _entrada_roteiro()
-	heroi.criar(self, no_mundo, sprites.tipo("hazaki" if args.has("basico") else "hazaki_samurai"), p)
+	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite(combate.heroi_id, args.has("basico"))), p)
 	# a tocha e a aura andam com o herói (a posição é o ponto no chão que a luz ilumina)
 	luzes.prender(luzes.criar("tocha", p), heroi, Vector2(-38, -32))
 	luzes.prender(luzes.criar("aura", p), heroi, Vector2(30, -8))

@@ -18,6 +18,18 @@ static func ids() -> Array:
 	return LISTA.map(func(m): return m.id)
 
 
+## O texto que fecha o portal do mapa, ou "" se ele está aberto. `requer` (opcional na LISTA) é o id de uma conquista do save do
+## personagem: sem ela o portal fica fechado e mostra a descrição da conquista. Nenhum mapa tem `requer` hoje.
+static func condicao(m: Dictionary) -> String:
+	var req := str(m.get("requer", ""))
+	if req == "" or Meta.estado().conquistas.get(req, false):
+		return ""
+	for c in Meta.conquistas():
+		if str(c.id) == req:
+			return "Fechado: %s" % c.desc
+	return "Fechado"
+
+
 ## O mapa da lista (ou o padrão, se o id não existir).
 static func buscar(id: String) -> Dictionary:
 	for m in LISTA:

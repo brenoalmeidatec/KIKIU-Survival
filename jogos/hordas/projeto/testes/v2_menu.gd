@@ -185,8 +185,8 @@ func _testes() -> void:
 	ok(jogou == 2, "o botão A do controle em Jogar vai ao santuário")
 	_clique(_centro(bs[0]))
 	ok(jogou == 3, "o clique em Jogar vai ao santuário")
-	var cena := load(Menu.SANTUARIO) as PackedScene
-	ok(Menu.SANTUARIO == "res://v2/altar.tscn" and cena != null and cena.can_instantiate(), "o destino de Jogar é o santuário da v2 e a cena carrega")
+	var cena := load(Menu.ESCOLHA) as PackedScene
+	ok(Menu.ESCOLHA == "res://v2/personagens.tscn" and cena != null and cena.can_instantiate(), "o destino de Jogar é o santuário da v2 e a cena carrega")
 
 	# ESC e Start no título: pedem "Sair?" com "Não" marcado; não saem
 	_tecla(KEY_ESCAPE)

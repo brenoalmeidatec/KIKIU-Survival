@@ -1,9 +1,10 @@
 extends Node
-## Percorre morte -> resultado -> entrada real -> santuário na cena atual, sem modo_teste.
-## Save exclusivo; também confere saída do resultado quando a gravação falha.
+## Percorre morte -> resultado -> entrada real -> salão na cena atual, sem modo_teste.
+## Save exclusivo (um personagem de teste, em arquivos temporários); também confere saída do resultado quando a gravação falha.
 const Mundo := preload("res://v2/mundo.tscn")
 const Meta := preload("res://v2/meta.gd")
 const Heroi := preload("res://v2/heroi.gd")
+const Personagens := preload("res://v2/personagens.gd")
 const SAVE_REAL := "user://v2_progresso.cfg"
 var falhas := 0
 var caminho := ""
@@ -22,6 +23,13 @@ func _ready() -> void:
 func _rodar() -> void:
 	var real_antes := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
 	var antigo := Meta.caminho_save
+	# o salão precisa de um personagem ativo: usa um de teste, em arquivos temporários (os saves reais ficam fora)
+	var prefixo := "user://teste_v2_morte_%s_" % Time.get_ticks_usec()
+	Personagens.caminho_base = prefixo + "personagem_"
+	Personagens.caminho_indice = prefixo + "personagens.cfg"
+	Personagens.caminho_antigo = prefixo + "antigo.cfg"
+	var personagem := Personagens.criar("Breno")
+	Personagens.ativar(personagem)
 	caminho = "user://teste_v2_morte_%s.cfg" % Time.get_ticks_usec()
 	Meta.caminho_save = caminho
 	# Não pode pertencer à cena que a troca destruirá: mantém o teste vivo na raiz.
@@ -30,6 +38,9 @@ func _rodar() -> void:
 	for i in 4:
 		await _caso(["floresta", "laboratorio", "cidade", "medio"][i], i)
 	Meta.caminho_save = antigo
+	for arquivo in [Personagens.caminho_indice, Personagens.caminho_do_save(personagem)]:
+		if FileAccess.file_exists(arquivo):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(arquivo))
 	for sufixo in ["", ".bak", ".tmp"]:
 		if FileAccess.file_exists(caminho + sufixo):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho + sufixo))
@@ -40,6 +51,7 @@ func _rodar() -> void:
 
 
 func _caso(mapa: String, tipo: int) -> void:
+	Meta.caminho_save = caminho  # a sala de cada caso pode trocar o save ativo (o salão aponta a meta para o personagem)
 	var tree := get_tree()
 	var w = Mundo.instantiate()
 	w.id_mapa = mapa
@@ -88,7 +100,7 @@ func _caso(mapa: String, tipo: int) -> void:
 	ok(is_instance_valid(w) and w.is_inside_tree() and res._saindo, "cena sobrevive ao processamento do evento")
 	await tree.process_frame
 	await tree.process_frame
-	ok(tree.current_scene != null and tree.current_scene.scene_file_path == "res://v2/altar.tscn", "entrada real retorna ao santuário")
+	ok(tree.current_scene != null and tree.current_scene.scene_file_path == "res://v2/salao.tscn", "entrada real retorna ao santuário")
 	if falha_save:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho + ".tmp"))
 	if tree.current_scene != null:
