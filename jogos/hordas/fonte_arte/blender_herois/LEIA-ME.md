@@ -30,3 +30,6 @@ lenço mais curto e katana apontada para baixo e menor (a do estudo estouraria o
 Formato: 8 linhas x 7 colunas como o do piloto; só há o quadro PARADO (repetido onde faltaria andar), sem normal.
 Para ver no salão: `qa/qa_heroi_estilo.gd` (cena de QA que troca só a textura do herói no print; precisa do Salão da v2, que está na main e ainda não nesta branch).
 Prints (960x540, janela oculta) e a comparação ficam em `estudo_estilo/`.
+
+## Framework de animação (2026-10-15)
+A base para as animações do herói (rig com joelho/cotovelo, um módulo por animação, cor + normal em 8 direções) está em `hazaki/` (ver `hazaki/LEIA-ME.md`). Exemplos prontos: parado (4 quadros) e andar (6).
