@@ -1871,3 +1871,10 @@ _Claude do Alisson (notebook)_
 - O Breno pediu animação de verdade nas armas (invocações andando, atacando e virando; projéteis apontando e girando; áreas com início, loop e fim). Cancelado o envio ao Codex (issue #267 fechada): a análise ficou em `docs/animacoes_armas_v2.md` e o trabalho será feito no Blender.
 
 _Claude do Breno_
+
+## 2026-10-15 · Claude do Alisson · aviso de versão nova no título (#106)
+- **Feito:** `v2/atualizador.gd` consulta `releases/latest` da API pública em segundo plano (HTTPRequest, timeout de 5 s, falha silenciosa) e compara a tag `build-AAAA-MM-DD-<sha>` com o carimbo de `dados/versao.json`. Se houver Release mais nova, o título mostra "Versão nova disponível", que abre a página da Release (`OS.shell_open`, só URL do nosso repositório). Build `dev` (sem carimbo) não consulta. Opção "Avisar versão nova" em Ajustes (`verificar_versao`, padrão ligado).
+- **Fora de propósito:** baixar e trocar o jogo sozinho (atualizador completo) por segurança: o aviso só leva à página.
+- **Testes:** `v2_menu` (resposta simulada, sem rede), `v2_pausa` ajustado para a nova linha de Ajustes.
+
+_Claude do Alisson (notebook)_

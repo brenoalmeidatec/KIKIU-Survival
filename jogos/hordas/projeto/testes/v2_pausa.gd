@@ -223,7 +223,10 @@ func _testes() -> void:
 	_tecla(KEY_ESCAPE)
 	_ir_para(pausa, "ajustes")
 	_tecla(KEY_ENTER)
-	ok(pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "creditos", "voltar"], "Ajustes abre com Gráficos, Áudio, Créditos e Voltar")
+	ok(
+		pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "versao", "creditos", "voltar"],
+		"Ajustes abre com Gráficos, Áudio, aviso de versão, Créditos e Voltar"
+	)
 	_ir_para(pausa, "graficos")
 	_tecla(KEY_ENTER)
 	ok(pausa.tela == "graficos", "Gráficos abre a aba")

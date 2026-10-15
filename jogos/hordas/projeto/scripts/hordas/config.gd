@@ -45,6 +45,7 @@ const ITENS := [
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	# Gráfico: perfil, CPU e GPU ficam em dados/graficos.json (Config.g / g_definir). Aqui só o que é do jogador, fora do perfil.
 	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Baixar a qualidade se travar", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "verificar_versao", "grupo": "Gráfico", "nome": "Avisar versão nova", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{"chave": "musica", "grupo": "Som", "nome": "Música", "valores": VOLUMES, "formato": "pct", "padrao": 0.6},
 	{"chave": "efeitos", "grupo": "Som", "nome": "Efeitos", "valores": VOLUMES, "formato": "pct", "padrao": 0.8},
