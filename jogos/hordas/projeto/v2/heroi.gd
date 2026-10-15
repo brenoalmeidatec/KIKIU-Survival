@@ -29,6 +29,24 @@ enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA }  # CARGA no fim: nada é renumerado
 const VEL := 100.0  # px/s
 const PASSO_ANIM := 0.13  # s por quadro de andar
+const MORTE_DISSOLVE := 0.3  # s de jogo (relógio do herói: hit-stop e câmera lenta esticam) que o corpo leva para se desfazer
+const MORTE_FLASH := 0.2  # fração inicial da dissolução em que o corpo fica branco (o "flash" do golpe fatal)
+const SHADER_MORTE := """
+shader_type canvas_item;
+uniform float dissolver : hint_range(0.0, 1.0) = 0.0;
+uniform float branco : hint_range(0.0, 1.0) = 0.0;
+// Coordenadas da textura: a máscara não muda com o tempo nem com a rotação do sprite. O progresso vem do relógio de jogo.
+float ruido_pixel(vec2 pixel) {
+	return fract(sin(dot(pixel, vec2(12.9898, 78.233))) * 43758.5453);
+}
+void fragment() {
+	float ruido = ruido_pixel(floor(UV / TEXTURE_PIXEL_SIZE));
+	float resta = step(dissolver, ruido);
+	float borda = (1.0 - smoothstep(0.0, 0.08, ruido - dissolver)) * resta;
+	COLOR.rgb = mix(COLOR.rgb, vec3(1.0), max(branco, borda * 0.25));
+	COLOR.a *= resta;
+}
+"""
 const CENTRO_CORPO := Vector2(0, -20)  # do pé ao meio do corpo (mira e câmera)
 const ORIGEM_GOLPE := Vector2(0, -10)  # de onde o arco do golpe parte (altura do tronco, no chão do 2.5D)
 
@@ -117,6 +135,8 @@ var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
 var _off_base := Vector2.ZERO
+var morte_t := 0.0  # s de jogo desde a morte (só anda em _visual_morto, no dt do herói: hit-stop e pausa o congelam)
+var _mat_morte: ShaderMaterial = null
 
 
 func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
@@ -185,6 +205,8 @@ func resetar(p: Vector2) -> void:
 	sprite.scale = Vector2.ONE
 	sprite.position = Vector2.ZERO
 	sprite.offset = _off_base
+	sprite.material = null
+	morte_t = 0.0
 	definir_pos(p)
 	iniciar_stats(mundo.combate.cfg)
 
@@ -302,6 +324,7 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 		cancelar_ruptura(false)
 		escudo_ativo = false
 		estado = Estado.MORTO
+		_iniciar_morte()
 		mundo.combate.heroi_morreu()
 	return true
 
@@ -777,7 +800,30 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.modulate = Color.WHITE
 
 
+## Gancho do visual da morte: põe o shader de dissolução no corpo (só agora, então o herói vivo não paga nada por ele).
+func _iniciar_morte() -> void:
+	morte_t = 0.0
+	if _mat_morte == null:
+		var sh := Shader.new()
+		sh.code = SHADER_MORTE
+		_mat_morte = ShaderMaterial.new()
+		_mat_morte.shader = sh
+	_mat_morte.set_shader_parameter("dissolver", 0.0)
+	_mat_morte.set_shader_parameter("branco", 1.0)
+	sprite.material = _mat_morte
+
+
+## Progresso 0..1 da dissolução do corpo (relógio de jogo, sem TIME).
+func morte_k() -> float:
+	return clampf(morte_t / MORTE_DISSOLVE, 0.0, 1.0)
+
+
 func _visual_morto(dt: float) -> void:
+	morte_t += dt
+	var k := morte_k()
+	if _mat_morte != null and sprite.material == _mat_morte:
+		_mat_morte.set_shader_parameter("dissolver", k)
+		_mat_morte.set_shader_parameter("branco", clampf(1.0 - k / MORTE_FLASH, 0.0, 1.0))
 	sprite.position = Vector2(0, -14)
 	sprite.offset = _off_base + Vector2(0, 14)
 	sprite.rotation = lerpf(sprite.rotation, 1.45 * (1.0 if dir_olhar.x >= 0 else -1.0), 1.0 - exp(-9.0 * dt))

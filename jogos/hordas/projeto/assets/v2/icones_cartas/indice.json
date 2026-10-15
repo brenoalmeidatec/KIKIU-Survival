@@ -637,36 +637,32 @@
    "celula": 6
   },
   "abalo": {
-   "arquivo": "terremoto.png",
-   "pequeno": "16/terremoto.png",
-   "categoria": "golpe",
-   "folha": "folha_03.png",
-   "celula": 11,
-   "provisorio_de": "terremoto"
+   "arquivo": "abalo.png",
+   "pequeno": "16/abalo.png",
+   "categoria": "modificador",
+   "folha": "folha_09.png",
+   "celula": 1
   },
   "muralha": {
-   "arquivo": "guardiao_pedra.png",
-   "pequeno": "16/guardiao_pedra.png",
-   "categoria": "golpe",
-   "folha": "folha_05.png",
-   "celula": 3,
-   "provisorio_de": "guardiao_pedra"
+   "arquivo": "muralha.png",
+   "pequeno": "16/muralha.png",
+   "categoria": "modificador",
+   "folha": "folha_09.png",
+   "celula": 2
   },
   "chuva": {
-   "arquivo": "adagas_voadoras.png",
-   "pequeno": "16/adagas_voadoras.png",
-   "categoria": "golpe",
-   "folha": "folha_02.png",
-   "celula": 2,
-   "provisorio_de": "adagas_voadoras"
+   "arquivo": "chuva.png",
+   "pequeno": "16/chuva.png",
+   "categoria": "modificador",
+   "folha": "folha_09.png",
+   "celula": 3
   },
   "mira": {
-   "arquivo": "fura.png",
-   "pequeno": "16/fura.png",
+   "arquivo": "mira.png",
+   "pequeno": "16/mira.png",
    "categoria": "modificador",
-   "folha": "folha_05.png",
-   "celula": 11,
-   "provisorio_de": "fura"
+   "folha": "folha_09.png",
+   "celula": 4
   }
  }
 }
