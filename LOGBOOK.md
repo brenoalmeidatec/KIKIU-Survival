@@ -1886,6 +1886,23 @@ _Claude do Alisson (notebook)_
 
 _Claude do Breno_
 
+## 2026-10-15 · Fontes das fusões — Codex do Alisson
+- Antes/depois: documento FUSOES_ARTE_ALISSON listava quatro peças pendentes; geradas moldura, halo branco tingível, onda Ventania e ícone de união.
+- Validado: PNGs íntegros RGBA com alfa0–255, dimensões reais documentadas, inspeção visual e gdformat em scripts/testes/v2. Godot não rodado localmente: somente arte/documentação.
+- Para o Claude do Alisson: recorte,9-slice, redução e integração são seus. Ouro do documento específico difere de FUSAO/OURO da paleta atual; diferença registrada no LEIA-ME, sem mudar código. Alvos600×200,48×48,64×32 e16×16 ainda precisam da preparação no pipeline.
+
+_Codex do Alisson_
+
+
+## 2026-10-15 · Claude do Alisson · Arte das fusões no jogo (integra o #289 do Codex)
+- **Antes/depois:** o cartão FUSÃO era um retângulo escuro; agora é moldura em 9-slice de 600 x 200 (borda de 12 px), com halo e ícone de junção dos dois lados do título. A onda da Ventania usava o sprite antigo de 120 x 79; agora usa a arte do Codex, 64 x 32. O halo das lâminas evoluídas era desenhado por código; agora é o halo da arte, tingido pela cor da fusão. A linha de peça fundida no SUA BUILD ganhou o ícone de junção (16 x 16).
+- **Escopo:** `prototipos/cara_nova/objetos/gerar_objetos.py` (modo novo `fusoes`; os modos `armas` e `icones` não foram rodados nem mudaram), `projeto/assets/v2/fusoes/` (moldura, halo, Ventania, ícone e índice), `v2/hud.gd` (cartão FUSÃO), `v2/armas.gd` (halo), `v2/armas_novas.gd` (o registro lê o índice da fusão depois do de armas, então a Ventania vale por cima), `v2/status.gd` (ícone na linha fundida), `v2/DESIGN.md`, `docs/LICENCAS_ARTE.md`, teste novo `testes/v2_fusoes` e ferramenta de prints `testes/fotos/fusoes_fotos` (fora do CI).
+- **Recorte:** moldura: o corpo é o alfa >= 128 (com alfa > 12 entravam pixels soltos e o filete dourado saía do recorte); cantos e faixas de 52 px da fonte viram 12 px, o miolo estica e vira #0a0814 liso. Halo: BOX para 48 x 48, branco, alfa em degraus (0, 64, 128, 192, 255). Ventania: BOX para 64 x 32, alfa abaixo de 40 some. Ícone: caixa justa, 14 px, alfa binário a 25% e contorno escuro (o mesmo caminho dos ícones de carta). Cores por paleta sem dithering.
+- **Validação:** gdformat -l 160 --check limpo em scripts, testes e v2. Godot 4.4.1 headless, uma cena por vez: as 34 cenas v2_* com código 0, `falhas=0` e sem SCRIPT ERROR (inclui a nova `v2_fusoes`). Prints em janela oculta, 960 x 540, antes e depois, em docs/visual_2_5d/fusoes/. A captura do SUA BUILD vem da janela do jogo (1280 x 720) e foi reduzida para 960 x 540 com proporção exata, porque o card fica fora da SubViewport.
+- **Decisões:** (1) a cor da fusão vem do campo `cor` da evolução (`_cor_fusao`); sem achar, usa o magenta `Paleta.FUSAO`. (2) O ouro da arte (#f1b10e) foi mantido, como pede o LEIA-ME do Codex; nenhuma constante de `paleta.gd` mudou. (3) A "forja" citada no pedido não existe no código; o ícone foi para o cartão FUSÃO (anúncio) e para o SUA BUILD (lista). (4) A opacidade da onda da Ventania (0,28) não mudou; só a arte.
+- **Pendente:** conferir em 4:3 e 16:10 se o cartão cabe na área segura (DESIGN, seção 1); o ícone em 2x no cartão ainda pede olhar de quem joga, porque lê como junção mas está pequeno. Os `.import` e `.gd.uid` gerados pelo import de mapas e protótipos continuam fora deste PR, como antes.
+- **Recado:** `assets/v2/fusoes/` é do modo `fusoes`; regenere só esse modo (`python gerar_objetos.py fusoes`). Rodar `armas` não traz a arte antiga da Ventania de volta, porque a fusão agora entrega a sprite pelo registro.
+- **Para o Claude do Breno:** o cartão FUSÃO aparece em toda fusão. Para conferir a arte, a Ventania (onda 2 + estocada perfurante 2) e o Anel de Brasas são as mais fáceis.
 ## 2026-10-15 · Claude do Alisson · Pesadelo e Rastro de katana voltam ao Santuário (#213)
 - **Antes/depois:** o modo Pesadelo e o visual Rastro de katana estavam escondidos (`oculta_ate_ter_efeito`) por não terem efeito. Agora têm: as flags e o `"efeito": "pendente"` saíram de `dados/v2_meta.json`, e o Santuário ganhou dois botões de liga/desliga (ao lado do detalhe) que só aparecem com a conquista cumprida. A escolha fica no save (`[config] pesadelo` e `rastro_katana`) e só vale com a conquista feita.
 - **Pesadelo (números em `dados/v2_meta.json`, modos > pesadelo > regras, com `_ajuda`):** monstros com +50% de vida e +25% de dano (comuns, elites e chefes, em `mundo.nascer_monstro` e `chefe.gd`), hordas +30% mais densas (taxa, teto de vivos e ondas fortes no `diretor.gd`), chefes 20% mais cedo (`chefe.gd`) e +50% de almas no fim da partida (`Meta.registrar_partida`; o card SUA BUILD usa a mesma conta). PESADELO aparece no HUD (ao lado do relógio), no card e no título do resultado.
@@ -1936,6 +1953,10 @@ _Codex do Alisson_
 
 _Claude do Alisson (notebook)_
 
+## 2026-10-15 · Claude do Alisson · Fusões: merge com a main (#291)
+- **Antes/depois:** a `main` andou com o lote #291 (201c64c) depois da branch. Mesclei em `a6db966`. O único conflito foi em `docs/LICENCAS_ARTE.md`, com as duas seções novas mantidas (a das fusões e a dos quatro modificadores do Codex). `v2/status.gd` e o `gerar_objetos.py` mesclaram sozinhos; conferi os dois.
+- **Validação pós-merge:** gdformat -l 160 --check limpo. As 36 cenas `v2_*` (inclui `v2_fusoes`, `v2_morte_heroi` e `v2_pos_visual`, que vieram da main) com código 0, `falhas=0` e sem SCRIPT ERROR, uma por vez. Também a `armas_novas` (fora do prefixo v2), que usa o registro de armas mudado.
+- **Recado:** a main passou a versionar os `.import` de mapas e protótipos e alguns `.gd.uid` que o import gera. Tirei as cópias locais que estavam sobrando (saíram do worktree, não do Git) antes do merge.
 ## 2026-10-15 · Claude do Alisson (notebook) · piloto: herói andando no Blender (8 direções)
 - **Feito:** `jogos/hordas/fonte_arte/blender_herois/` (gerar_heroi_andar.py, previa_gif.py, folha `hazaki_samurai_blender_*`, .blend). Herói padrão da v2 = `hazaki_samurai`. Ciclo de andar novo de 6 quadros x 8 direções, cor + normal, render 4x + BOX + paleta + contorno 1 px, mesma grade e linhas do sprite atual (32x44; colunas parado + 6). Render: 168 imagens em 49 s (53 s com o setup), Blender 4.5, `-b -t 6`. Prévias em `docs/visual_2_5d/blender_herois/`. O sprite do jogo NÃO foi trocado.
 - **Pendente:** detalhes finos (listras douradas do peito, rosto) perdem definição com o BOX; joelho não existe no modelo (só levanta a perna inteira); `PASSO_ANIM` do `heroi.gd` assume 4 quadros; falta parado/respira, combo da katana, rolamento, escudo, morte e os outros heróis (Nicão, Lucas).
