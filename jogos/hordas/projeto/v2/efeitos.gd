@@ -14,6 +14,7 @@ const MAX_CORTES := 4
 const MAX_FLASH := 24
 const MAX_LUZES := 3
 const MAX_ONDAS := 6
+const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 12 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
 
 const SHADER_CORTE := """
 shader_type canvas_item;
@@ -23,8 +24,15 @@ uniform float arco = 2.2;
 uniform float lado = 1.0;
 uniform float modo = 0.0;
 uniform vec4 cor : source_color = vec4(1.0);
+uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 12 quadros em linha, RGB = calor, A = intensidade
 float pos(float x) { return floor(x * 8.0 + 0.5) / 8.0; }
 void fragment() {
+	if (modo > 1.5) {
+		float q = min(floor(prog * 12.0), 11.0);
+		vec4 t = texture(folha, vec2((UV.x + q) / 12.0, lado > 0.0 ? UV.y : 1.0 - UV.y));
+		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.55);
+		COLOR = vec4(c * 3.0, t.a);
+	} else {
 	vec2 p = (UV - 0.5) * 2.0;
 	p.y *= lado;
 	float r = length(p);
@@ -60,6 +68,7 @@ void fragment() {
 	k = pos(k * sai);
 	vec3 c = mix(cor.rgb, vec3(1.0), clamp(quente, 0.0, 1.0) * 0.55);
 	COLOR = vec4(c * k * 2.4, k);
+	}
 }
 """
 
@@ -256,7 +265,8 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	var i := _ci
 	_ci = (_ci + 1) % MAX_CORTES
 	var s := _cortes[i]
-	var r := alcance * 1.25
+	var folha := tipo == "corte"  # o corte usa a folha do Blender; a estocada continua no shader
+	var r := alcance * (1.45 if folha else 1.25)  # na folha o arco ocupa 0,8 da meia-largura
 	s.position = origem.round()
 	s.rotation = ang
 	s.scale = Vector2.ONE * (r / 32.0)
@@ -265,7 +275,8 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
 	mat.set_shader_parameter("lado", lado)
-	mat.set_shader_parameter("modo", 1.0 if tipo == "estocada" else 0.0)
+	mat.set_shader_parameter("modo", 2.0 if folha else (1.0 if tipo == "estocada" else 0.0))
+	mat.set_shader_parameter("folha", FOLHA_CORTE)
 	mat.set_shader_parameter("cor", cor)
 	_cortes_t[i] = 0.0
 	_cortes_dur[i] = dur
