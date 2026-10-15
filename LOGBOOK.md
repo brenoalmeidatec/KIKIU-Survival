@@ -1871,3 +1871,11 @@ _Claude do Alisson (notebook)_
 - O Breno pediu animação de verdade nas armas (invocações andando, atacando e virando; projéteis apontando e girando; áreas com início, loop e fim). Cancelado o envio ao Codex (issue #267 fechada): a análise ficou em `docs/animacoes_armas_v2.md` e o trabalho será feito no Blender.
 
 _Claude do Breno_
+
+## 2026-10-15 · Fontes das molduras do HUD — Codex do Alisson
+- Antes/depois: faltavam fontes de componentes; entregues três folhas3×3 para retrato, barras de vida/fôlego e slots E/Q,27 peças ao todo, branco e sem texto.
+- Validado: inspeção de orientação/margens, integridade/dimensões1254×1254 e gdformat em scripts/testes/v2. Godot não executado localmente: somente arte/documentação.
+- Para o Claude do Alisson: recortar, ajustar emendas/espessuras, reduzir e montar9-slice. Usar trecho central das bordas para retirar arremates. Molduras neutras compartilhadas; cores de vida/fôlego e estados E/Q continuam no código existente. Nenhum código/dado/teste alterado.
+
+_Codex do Alisson_
+
