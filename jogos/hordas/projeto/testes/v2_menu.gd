@@ -237,6 +237,79 @@ func _testes() -> void:
 
 	t.queue_free()
 	await get_tree().process_frame
+	await _testes_versao()
+
+
+## Aviso de versão nova (#106), sem rede: a resposta da API é simulada e o carimbo é injetado.
+func _testes_versao() -> void:
+	var A := preload("res://v2/atualizador.gd")
+	var carimbo := {"data": "2026-10-10", "commit": "aaaaaaa"}
+	ok(A.mais_nova("build-2026-10-15-bbbbbbb", carimbo), "tag de data posterior é mais nova")
+	ok(A.mais_nova("build-2026-10-10-bbbbbbb", carimbo), "mesma data com outro commit é mais nova")
+	ok(not A.mais_nova("build-2026-10-10-aaaaaaa", carimbo), "mesmo commit não é mais nova")
+	ok(not A.mais_nova("build-2026-10-10-aaaaaaa1234", {"data": "2026-10-10", "commit": "aaaaaaa+"}), "commit com + e o mesmo prefixo não é mais nova")
+	ok(not A.mais_nova("build-2026-10-01-bbbbbbb", carimbo), "tag de data anterior não é mais nova")
+	ok(not A.mais_nova("lixo", carimbo) and not A.mais_nova("build-2026-10-15-bbbbbbb", {}), "tag fora do formato ou build dev nunca avisa")
+	var nova := '{"tag_name": "build-2026-10-15-bbbbbbb", "html_url": "https://github.com/brenoalmeidatec/KIKIU-Survival/releases/tag/build-2026-10-15-bbbbbbb"}'
+
+	# com Release mais nova: o botão aparece e abre a página (gancho, sem navegador)
+	var t = Titulo.instantiate()
+	t.atualizador.carimbo = carimbo
+	t.atualizador.resposta_simulada = nova
+	t.abrir_url = Callable(self, "_marcar_url")
+	add_child(t)
+	await get_tree().process_frame
+	ok(t.aviso_versao != null and t.aviso_versao.text == "Versão nova disponível", "Release mais nova mostra o aviso no título")
+	if t.aviso_versao != null:
+		t.aviso_versao.pressed.emit()
+		ok(url_aberta.ends_with("/releases/tag/build-2026-10-15-bbbbbbb"), "o aviso abre a página da Release")
+	t.queue_free()
+	await get_tree().process_frame
+
+	# a mesma versão, resposta com lixo, URL de outro site e build dev: sem aviso (e a URL de fora cai na página de Releases)
+	for caso in [['{"tag_name": "build-2026-10-10-aaaaaaa"}', carimbo], ["não é json", carimbo], [nova, {}]]:
+		var u = Titulo.instantiate()
+		u.atualizador.carimbo = caso[1]
+		u.atualizador.resposta_simulada = caso[0]
+		add_child(u)
+		await get_tree().process_frame
+		ok(u.aviso_versao == null, "sem Release mais nova (ou sem carimbo) não aparece aviso")
+		u.queue_free()
+		await get_tree().process_frame
+	var f = Titulo.instantiate()
+	f.atualizador.carimbo = carimbo
+	f.atualizador.resposta_simulada = '{"tag_name": "build-2026-10-15-bbbbbbb", "html_url": "https://malicioso.example/x"}'
+	f.abrir_url = Callable(self, "_marcar_url")
+	add_child(f)
+	await get_tree().process_frame
+	f.aviso_versao.pressed.emit()
+	ok(url_aberta == A.PREFIXO_PAGINA, "URL de outro site na resposta é trocada pela página de Releases do repositório")
+	f.queue_free()
+	await get_tree().process_frame
+
+	# opção desligada em Ajustes: nem consulta
+	Config.definir("verificar_versao", false)
+	var d = Titulo.instantiate()
+	d.atualizador.carimbo = carimbo
+	d.atualizador.resposta_simulada = nova
+	add_child(d)
+	await get_tree().process_frame
+	ok(d.aviso_versao == null and not d.atualizador.verificar(), "com a verificação desligada não consulta nem avisa")
+	d._abrir_ajustes()
+	var itens: Array = d.pausa._itens()
+	var ids: Array = itens.map(func(i): return i.id)
+	ok(ids.has("versao"), "Ajustes tem a linha de avisar versão nova")
+	d.pausa._executar("versao", 1)
+	ok(bool(Config.v("verificar_versao")), "a linha de Ajustes liga a verificação de novo")
+	d.queue_free()
+	await get_tree().process_frame
+
+
+var url_aberta := ""
+
+
+func _marcar_url(u: String) -> void:
+	url_aberta = u
 
 
 func _fotos(pasta: String) -> void:

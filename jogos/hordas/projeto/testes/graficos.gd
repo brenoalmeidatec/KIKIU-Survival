@@ -174,5 +174,27 @@ func _ready() -> void:
 		ok(Config.g("sombras") == par[1], "migração: sombras %s vira %s" % [par[0], par[1]])
 	Config.g_aplicar_perfil("alto")
 
+	# 10. a queda automática é só da memória: g_perfil_temporario não grava, nem quando outra opção é salva depois;
+	# recarregar e mexer numa opção da aba tiram o temporário; g_temporario muda o valor e não o perfil
+	Config.g_aplicar_perfil("alto")
+	Config.g_perfil_temporario("baixo")
+	Config.definir("mostrar_fps", true)  # salva o arquivo com outra opção
+	var arq_t := ConfigFile.new()
+	arq_t.load(ARQ_TESTE)
+	ok(Config.g_perfil() == "baixo" and Config.g("sombras") == "baixa", "temporário: vale na memória")
+	ok(
+		arq_t.get_value("graficos", "perfil", "") == "alto" and arq_t.get_value("graficos", "sombras", "") == "alta",
+		"temporário: o arquivo continua com o perfil alto"
+	)
+	Config.recarregar()
+	ok(Config.g_perfil() == "alto" and Config.g("sombras") == "alta", "recarregar tira o temporário")
+	Config.g_perfil_temporario("medio")
+	Config.g_definir("max_inimigos", 300)
+	ok(Config.g_perfil() == "personalizado" and Config.g("sombras") == "alta", "mexer numa opção tira o temporário: vale o salvo")
+	Config.g_aplicar_perfil("alto")
+	Config.g_temporario("tremor_clarao", 0)
+	ok(Config.g_perfil() == "alto" and Config.g("tremor_clarao") == 0, "g_temporario muda o valor e não o perfil")
+	Config.g_aplicar_perfil("alto")
+
 	print("GRAFICOS falhas=%d" % falhas)
 	get_tree().quit()

@@ -10,6 +10,7 @@ const Altar := preload("res://v2/altar.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle da v2 (o A confirma e o B volta nos menus)
 const Pausa := preload("res://v2/pausa.tscn")
 const Trilha := preload("res://v2/trilha.gd")
+const Atualizador := preload("res://v2/atualizador.gd")
 const FUNDO := preload("res://assets/titulo/fundo.png")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const ESCOLHA := "res://v2/personagens.tscn"  # JOGAR leva à escolha de personagem; dela, ao salão (v2/salao.tscn)
@@ -35,6 +36,10 @@ var _botoes: Array[Button] = []  # Jogar, Ajustes, Créditos e Sair, de cima par
 var _ultimo: Button  # o último botão com foco: é nele que o foco volta quando um submenu fecha
 var _antes := {}  # modo de escala da janela antes desta tela (volta ao sair)
 var _trilha  # a faixa do santuário (trilha.gd)
+var atualizador := Atualizador.new()  # consulta a Release mais nova em segundo plano (#106); os testes ajustam antes do add_child
+var aviso_versao: Button  # "Versão nova disponível": só existe depois que a consulta achou uma Release mais nova
+var abrir_url := Callable()  # gancho: os testes trocam a abertura da página no navegador; vazio = OS.shell_open
+var _url_versao := ""
 
 
 func _ready() -> void:
@@ -53,6 +58,9 @@ func _ready() -> void:
 	add_child(_trilha)
 	_trilha.tocar("santuario")
 	_botoes[0].grab_focus()
+	add_child(atualizador)
+	atualizador.nova_versao.connect(_mostrar_aviso_versao)
+	atualizador.verificar()  # sem carimbo (build dev) ou com a opção desligada, não faz nada
 
 
 func _exit_tree() -> void:
@@ -175,3 +183,25 @@ func _abrir_creditos() -> void:
 
 func _sair() -> void:
 	pausa.abrir_sair()  # "Sair do jogo?" com "Não" marcado; o "Sim" chama o gancho ao_sair da pausa (quit por padrão)
+
+
+## Aviso discreto no canto: só aparece se a Release mais nova for posterior à build (atualizador.gd). Abre a página; não baixa nada.
+func _mostrar_aviso_versao(tag: String, url: String) -> void:
+	_url_versao = url
+	if aviso_versao == null:
+		aviso_versao = Button.new()
+		aviso_versao.size = Vector2(250, 30)
+		aviso_versao.position = Vector2(LARG - 262, 12)
+		_estilo_botao(aviso_versao)
+		aviso_versao.add_theme_font_size_override("font_size", TAM_DICA)
+		aviso_versao.pressed.connect(_abrir_pagina_versao)
+		add_child(aviso_versao)
+	aviso_versao.text = "Versão nova disponível"
+	aviso_versao.tooltip_text = tag
+
+
+func _abrir_pagina_versao() -> void:
+	if abrir_url.is_valid():
+		abrir_url.call(_url_versao)
+	else:
+		OS.shell_open(_url_versao)
