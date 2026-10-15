@@ -40,6 +40,7 @@ const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (me
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
 const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no santuário
 const Trilha := preload("res://v2/trilha.gd")  # a música de fundo da partida (faixa por momento, volume no bus Musica)
+const QualidadeAuto := preload("res://v2/qualidade_auto.gd")  # "Baixar a qualidade se travar": desce o perfil quando o fps trava
 const LARG := 960
 const ALT := 540
 const MAX_PASSO_COLISAO := 8.0  # menor pegada de árvore + círculo do herói ocupa mais que este passo
@@ -89,6 +90,8 @@ var meta_res  # resultado com as almas (resultado_meta.gd); null no modo de test
 var status  # card "SUA BUILD" (status.gd): a tecla C liga no HUD e a pausa o mostra ao lado do menu
 var pausa  # menu de pausa (pausa.gd): pausa.aberto diz se está aberto (as telas leem aqui)
 var trilha  # música de fundo (trilha.gd); null nas medições e nas fotos, que ficam mudas
+var _qualidade := QualidadeAuto.new()  # a contagem do fps travado (opção qualidade_auto)
+var _qualidade_ligada := false  # só no jogo de verdade: sem teste, sem argumentos e com janela
 var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, rolagem, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
@@ -187,6 +190,7 @@ func _ready() -> void:
 		meta_res.montar(self)
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
+	_qualidade_ligada = DisplayServer.get_name() != "headless" and OS.get_cmdline_user_args().is_empty()
 	if _modo == "livre" or args.has("rotulo"):
 		_montar_rotulo()
 	if _modo == "medir":
@@ -688,6 +692,18 @@ func _ler_graficos() -> void:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
 
 
+## Baixa automática (opção "qualidade_auto", "Baixar a qualidade se travar", aba Gráficos): fps abaixo de 40 por 8 s desce um
+## perfil, só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
+func _baixar_qualidade(dt: float, fps: float) -> void:
+	if not _qualidade_ligada or not bool(Config.v("qualidade_auto")):
+		return
+	var nome := _qualidade.passo(dt, fps, Config.g_perfil())
+	if nome == "":
+		return
+	Config.g_perfil_temporario(nome)
+	combate.anunciar("FPS baixo: qualidade gráfica %s" % ("média" if nome == "medio" else "baixa"), Color(1, 0.8, 0.4))
+
+
 # ------------------------------------------------------------------ movimento e mouse
 
 
@@ -767,6 +783,7 @@ func _process(delta: float) -> void:
 			_texto_rotulo()
 	if modo_teste:
 		return
+	_baixar_qualidade(delta, Engine.get_frames_per_second())
 	if _modo == "medir":
 		_medir()
 	elif _modo == "foto" and not _foto_feita and t >= _seq and (roteiro == null or roteiro.roteiro == ""):
