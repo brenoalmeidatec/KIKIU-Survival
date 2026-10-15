@@ -1807,3 +1807,12 @@ _Claude do Alisson (workflow, máquina não confirmada)_
 - **Próximo:** nova revisão de arte; ligar morte/combo/rolamento no `heroi.gd` usando `animacoes` do `hazaki_final.json` (`s_quadros` dá o tempo de cada quadro).
 
 _Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 · Claude do Alisson (workflow, máquina não confirmada) · Hazaki do Blender: montagem 2 (render completo, folha de 50 colunas, prints no Salão)
+- **Feito:** o merge das três branches de animação (rolamento, combo, defesa) em `montar-2`, a partir de `alisson/hazaki-blender`, deu "Already up to date": as três já eram ancestrais, então nada mudou. Render completo com `gerar.py` (7 animações, 800 PNGs cor e normal) em 32 s de parede com `blender -b -t 6`. O re-render saiu pixel-idêntico ao commitado, então folha, prévia e GIFs continuam iguais. O que muda no commit: `hazaki_final.json` (`tempo_render_s` = 32), `montar_folha.py` (docstring: 50 colunas, não 38), `LEIA-ME.md` (a seção de folha ainda era a da montagem 1, de 38 colunas, e foi trocada pela de 50 com bordas e tempos atuais), a cena `qa/qa_hazaki_final.gd` (comentário) e o print `qa_salao_parado_andando_golpe3.png` (novo).
+- **Feito (QA no Salão):** o Salão (`v2/salao.tscn`) está no `origin/main` (#242), não nesta branch. Rodei a cena de QA numa cópia do `main` extraída com `git archive`, fora do repo, com o Godot 4.4.1 em janela oculta. Prints reais de parado, andando e golpe 3 (de frente e de perfil), mais um controle com o sprite atual do jogo: a troca de textura aparece de verdade. Import 39 s; cada print uns 5 s.
+- **Pendente:** bordas (`medir.py`): combo toca em 6 direções (o rastro é cortado pela célula), dano e morte em 5, rolamento em 4, andar em 4; parado e escudo não tocam. O jogo ainda não lê as colunas novas (`heroi.gd` é do Claude do Alisson). Nenhuma partida foi jogada com estes quadros: os prints são do QA.
+- **Próximo:** quem integrar decide se a folha de 50 colunas entra no `v2` e se `heroi.gd` passa a usar `animacoes`, depois de revisar as bordas do combo e da morte.
+- **Recados:** PR #276 segue como rascunho, sem merge. Os GIFs e o print novo estão em `docs/visual_2_5d/blender_herois/hazaki/` e são os links do corpo do PR.
+
+_Claude do Alisson (workflow, máquina não confirmada)_

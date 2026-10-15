@@ -26,7 +26,7 @@
   "andar5"
  ],
  "render": "Cycles, pixel nativo 32x44, 1 amostra, sem bloom (gerar.py, 8 direções, cor e normal)",
- "tempo_render_s": 22,
+ "tempo_render_s": 32,
  "grade": {
   "linhas": 8,
   "colunas": 50,

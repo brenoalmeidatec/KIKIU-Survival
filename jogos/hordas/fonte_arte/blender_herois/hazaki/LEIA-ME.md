@@ -76,28 +76,43 @@ cotovelo dobra com `girar(antebraco, x=-)`. `pisar` calcula o sobe-e-desce do qu
 - Sem normal "de luz": o jogo faz a iluminação dele a partir da normal; `previa.py` só mostra a cor.
 - O jogo ainda NÃO usa estes quadros.
 
-## Folha final (montagem 1: todas as animações)
+## Folha final (montagem 2: todas as animações)
 Gerada por `python montar_folha.py` (depois do `gerar.py`): `hazaki_final_albedo.png` (cor), `hazaki_final_normal.png` (normal),
 `hazaki_final.json` (formato que `v2/sprites.gd` e `v2/heroi.gd` leem, mais `animacoes`) e `hazaki_final_previa_x4.png` (prévia ampliada 4x).
-Os GIFs (`python gifs.py <pasta>`) estão em `docs/visual_2_5d/blender_herois/hazaki/`. A cena de QA do Salão é `../qa/qa_hazaki_final.gd`.
+Os GIFs (`python gifs.py <pasta>`) estão em `docs/visual_2_5d/blender_herois/hazaki/`.
 
-Grade: **8 linhas** (a ordem de `linhas`: baixo, esquerda, direita, cima, baixo_esq, baixo_dir, cima_esq, cima_dir) x **38 colunas**, quadro 32x44.
-As colunas 0 a 6 são as da folha do piloto (parado + andar0 a andar5); as colunas novas vão no fim.
+Grade: **8 linhas** (a ordem de `linhas`: baixo, esquerda, direita, cima, baixo_esq, baixo_dir, cima_esq, cima_dir) x **50 colunas**, quadro 32x44.
+As colunas 0 a 6 são as da folha do piloto (parado + andar0 a andar5); as colunas novas vão no fim, na ordem de `nomes_colunas` do JSON.
 
 | colunas | animação | quadros | s por quadro (sugerido) |
 |---|---|---|---|
-| 0, 7 a 9 | parado (0 = quadro 0; 7 a 9 = quadros 1 a 3, colunas novas) | 4 | 0,25 |
+| 0, 7 a 9 | parado (0 = quadro 0; 7 a 9 = quadros 1 a 3) | 4 | 0,25 |
 | 1 a 6 | andar (andar0 a andar5) | 6 | 0,09 |
-| 10 a 15 | rolamento | 6 | 0,07 |
-| 16 a 27 | combo: golpe 1 = 16 a 19, golpe 2 = 20 a 23, golpe 3 = 24 a 27 | 12 | 0,06 |
-| 28 a 29 | escudo | 2 | 0,12 |
-| 30 a 31 | dano | 2 | 0,08 |
-| 32 a 37 | morte (WIP) | 6 | 0,14 |
+| 10 a 15 | rolamento | 6 | 0,07 (ritmo por quadro em `s_quadros`) |
+| 16 a 33 | combo: golpe 1 = 16 a 21, golpe 2 = 22 a 27, golpe 3 = 28 a 33 | 18 | 0,06 (ritmo por quadro em `s_quadros`) |
+| 34 a 37 | escudo | 4 | 0,10 |
+| 38 a 41 | dano | 4 | 0,08 |
+| 42 a 49 | morte | 8 | 0,12 (ritmo por quadro em `s_quadros`) |
 
 - **`colunas` do JSON tem só as 7 do andar de propósito**: `heroi.gd` anda com `colunas.size() - 1` quadros, e colunas novas ali fariam o passo
-  rodar pelo combo e pela morte. As animações novas estão em `animacoes` (coluna inicial e final, quadros, tempo por quadro, aviso). O jogo ainda
+  rodar pelo combo e pela morte. As animações novas estão em `animacoes` (coluna inicial e final, quadros, tempo por quadro sugerido, `s_quadros` quando o quadro tem ritmo próprio, aviso). O jogo ainda
   não as usa: ligar isso é trabalho no `heroi.gd`, fora desta pasta.
 - `pe_y` = 42 (o pé na linha 42; a linha 43 é o contorno, ver `PE_LINHA` em `gerar.py`).
-- Cortes de borda medidos com `medir.py` (encostar não é corte, mas a largura chega perto de 32 px): `andar`, `rolamento` e `escudo` encostam
-  em algumas diagonais; `morte` corta a borda em vários quadros (é WIP do autor). Por isso a morte não deve entrar no jogo antes de fechar.
-- Tempo medido nesta montagem: `gerar.py` com as 7 animações, 22 s (Blender 4.5.14, `-b -t 6`).
+- **Bordas, medidas com `medir.py`** (toca = algum quadro tem pixel na coluna 0 ou 31; tocar não é cortar, o corte real se mede com `HAZAKI_LARGURA=1`):
+  - `parado` e `escudo`: não tocam.
+  - `andar`: baixo_esq, baixo_dir, cima_esq e cima_dir.
+  - `rolamento`: esquerda, direita, baixo_dir e cima_esq.
+  - `combo`: todas, menos baixo e cima (o rastro da lâmina é cortado pela célula).
+  - `dano`: baixo, direita, cima, baixo_dir e cima_esq.
+  - `morte`: baixo, direita, cima, baixo_esq e cima_dir (largura de 25 a 32 px).
+- **Reprodutibilidade:** o `gerar.py` é determinístico. Re-renderizar nesta montagem deu os 800 PNGs pixel-idênticos aos commitados, e a folha, a prévia e os GIFs saíram byte a byte iguais. Diferença só de bytes do PNG (encode) não vai para o commit.
+
+## QA no Salão (montagem 2)
+`docs/visual_2_5d/blender_herois/hazaki/qa_salao_parado_andando_golpe3.png` tem cinco painéis ampliados 4x em volta do herói no Salão: o sprite atual do jogo (controle) e, depois, parado (coluna 0), andando (coluna 4, andar3), golpe 3 de frente (coluna 30, quadro 2 do golpe 3) e golpe 3 de perfil (mesma coluna, direção direita). Os prints inteiros (960x540) ficaram fora do repo.
+A cena `../qa/qa_hazaki_final.gd` só troca a textura do herói; o jogo não muda.
+- **O Salão está no `origin/main`, não nesta branch** (esta branch parte de antes do #242). Para rodar: copie `qa/qa_hazaki_final.gd` e o `.tscn` para `testes/` de uma cópia do `main` (fora do repo), faça o import (`Godot --headless --path <projeto> --import`) e rode com janela oculta (`Start-Process ... -WindowStyle Hidden`), passando `--folha=<.../hazaki/hazaki_final>` (sem `_albedo.png`) e `--saida=<png>`.
+- Nesta montagem: import 39 s; cada print, uns 5 s.
+
+## Tempo medido (montagem 2)
+- `gerar.py` com as 7 animações: **32 s** de parede (Blender 4.5.14, `-b -t 6`, contando a abertura do Blender). Gravado em `tempo_render_s` do JSON (a montagem 1 registrou 22 s).
+- `montar_folha.py` e `gifs.py` não foram cronometrados separadamente.

@@ -3,7 +3,7 @@
     python montar_folha.py
 
 Lê quadros/<anim>/<direcao>_<i>_{cor,normal}.png (saída do gerar.py) e grava nesta pasta:
-  hazaki_final_albedo.png e hazaki_final_normal.png: grade de 8 linhas x 38 colunas, quadros 32x44 (cor e normal, mesma silhueta)
+  hazaki_final_albedo.png e hazaki_final_normal.png: grade de 8 linhas x 50 colunas, quadros 32x44 (cor e normal, mesma silhueta)
   hazaki_final.json: formato do jogo (quadro, linhas, colunas, pe_y) + animação -> colunas, quadros e tempo por quadro sugerido
   hazaki_final_previa_x4.png: cópia de prévia (albedo ampliado 4x, sobre fundo escuro)
 
@@ -99,7 +99,7 @@ def main():
         "linhas": DIRECOES,
         "colunas": ["parado"] + ["andar%d" % i for i in range(6)],
         "render": "Cycles, pixel nativo 32x44, 1 amostra, sem bloom (gerar.py, 8 direções, cor e normal)",
-        "tempo_render_s": 22,
+        "tempo_render_s": 32,
         "grade": {"linhas": len(DIRECOES), "colunas": len(COLUNAS), "quadro": [W, H]},
         "nomes_colunas": [nome_coluna(a, q) for a, q in COLUNAS],
         "animacoes": {},
