@@ -4,14 +4,14 @@ const Paleta := preload("res://v2/paleta.gd")
 ## Resultado da partida com as almas da v2 (camada 12, por cima da tela de resultado de telas.gd, que não é tocada). Quando a
 ## partida acaba (o herói cai, ou o sinal partida_terminou do mundo, se existir), grava a partida em v2/meta.gd e mostra as almas
 ## ganhas subindo e o saldo somando; as conquistas cumpridas aparecem embaixo. "CONTINUAR" (clique, Enter, Espaço, E ou A) vai
-## para o santuário (v2/altar.tscn). Durante a partida, as conquistas de tempo e de combo viram um aviso no alto. O mouse não
+## para o salão do personagem (v2/salao.tscn). Durante a partida, as conquistas de tempo e de combo viram um aviso no alto. O mouse não
 ## chega nos Controls de dentro do SubViewport, então o clique não passa por botão: é qualquer clique, lido aqui.
 ## Criada pelo mundo.gd (uma linha no _ready, fora do modo de teste); o mundo entrega a entrada a ela antes da tela de resultado.
 
 const Meta := preload("res://v2/meta.gd")
 const LARG := 960
 const ALT := 540
-const SANTUARIO := "res://v2/altar.tscn"
+const SANTUARIO := "res://v2/salao.tscn"
 const TEMPO_ANIM := 1.4  # s para as almas subirem até o total
 const TEMPO_ACEITA := 0.8  # s antes de aceitar continuar (evita o clique de quem estava segurando o golpe)
 const TEMPO_AVISO := 2.6
