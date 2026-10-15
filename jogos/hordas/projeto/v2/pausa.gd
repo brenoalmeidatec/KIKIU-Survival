@@ -447,6 +447,8 @@ func _executar(id: String, passo: int) -> void:
 			_sair()
 		"musica", "efeitos":
 			_volume(id, passo)
+		"versao":
+			Config.definir("verificar_versao", not bool(Config.v("verificar_versao")))
 		_:
 			if id.begins_with("g:"):
 				_graficos.agir(id.substr(2), passo)
@@ -489,7 +491,13 @@ func _itens() -> Array:
 			r.append(_it("sair", "Sair do jogo"))
 			return r
 		"ajustes":
-			return [_it("graficos", "Gráficos"), _it("audio", "Áudio"), _it("creditos", "Créditos"), _it("voltar", "Voltar")]
+			return [
+				_it("graficos", "Gráficos"),
+				_it("audio", "Áudio"),
+				_it("versao", "Avisar versão nova", "Sim" if bool(Config.v("verificar_versao")) else "Não"),
+				_it("creditos", "Créditos"),
+				_it("voltar", "Voltar")
+			]
 		"creditos":
 			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"graficos":

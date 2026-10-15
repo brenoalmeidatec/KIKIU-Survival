@@ -1886,6 +1886,10 @@ _Claude do Alisson (notebook)_
 
 _Claude do Breno_
 
+## 2026-10-15 · Claude do Alisson · aviso de versão nova no título (#106)
+- **Feito:** `v2/atualizador.gd` consulta `releases/latest` da API pública em segundo plano (HTTPRequest, timeout de 5 s, falha silenciosa) e compara a tag `build-AAAA-MM-DD-<sha>` com o carimbo de `dados/versao.json`. Se houver Release mais nova, o título mostra "Versão nova disponível", que abre a página da Release (`OS.shell_open`, só URL do nosso repositório). Build `dev` (sem carimbo) não consulta. Opção "Avisar versão nova" em Ajustes (`verificar_versao`, padrão ligado).
+- **Fora de propósito:** baixar e trocar o jogo sozinho (atualizador completo) por segurança: o aviso só leva à página.
+- **Testes:** `v2_menu` (resposta simulada, sem rede), `v2_pausa` ajustado para a nova linha de Ajustes.
 ## 2026-10-15 · Claude do Alisson · aba Gráficos da v2: Tela cheia, queda de qualidade e FPS (#150)
 - **Antes/depois:** o topo de Ajustes > Gráficos (v2) tinha Perfil, Detectar pela máquina e Mostrar FPS. Agora tem também Tela cheia (F11) e Baixar a qualidade se travar, fora do perfil (gravam em `opcoes`, então não viram Personalizado). F11 liga e desliga a tela cheia nas telas da v2, com a pausa aberta ou fechada. A baixa de qualidade (fps abaixo de 40 por 8 s desce Alto, Médio, Baixo, só na sessão, com aviso na partida) passa a valer na v2; antes só a v1 fazia.
 - **Escopo:** `v2/ajustes_graficos.gd`, `v2/pausa.gd` (F11 no começo de `entrada()`), `v2/qualidade_auto.gd` (novo, a contagem), `v2/mundo.gd` (chamada no `_process`, só no jogo de verdade), `scripts/hordas/config.gd` (perfil temporário fora de `_cfg`, em `_temp`), testes `v2_pausa`, `graficos` e `v2_salao_vivo`, `v2/LEIA-ME.md`, print em `docs/imagens/graficos_v2_topo.png`.
