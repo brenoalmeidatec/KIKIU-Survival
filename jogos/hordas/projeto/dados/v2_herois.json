@@ -1,5 +1,16 @@
 {
 	"_ajuda": "Os heróis jogáveis da v2, lido por v2/herois.gd (e por altar.gd, combate.gd, heroi.gd e cartas.gd). Uma lista em \"herois\", na ordem em que aparecem no santuário; o primeiro (hazaki) é o padrão: sem escolha gravada no save, vale ele. Cada herói: id, nome, titulo, desc (curta, mostrada no santuário), sprite (folha em prototipos/cara_nova/sprites, sem extensão), raio (corpo no chão, px), bonus {dano, vel_ataque, area (multiplicam; 1 = normal), sorte (fração: chance de uma carta comum subir para rara, soma com a do santuário)} e cfg: o que SOBRESCREVE em dados/v2_combate.json para esse herói (mesclagem por chaves; a lista passos substitui a inteira). Em cfg.heroi: vida, vel (px/s de andar) e mov_golpe (fração da velocidade andando durante o golpe: o peso). O Hazaki repete aqui os números de v2_combate.json e por isso não muda nada (o teste v2_herois confere). cfg.golpe.passos é o combo, na ordem. Passo corpo a corpo (tipo ausente ou \"melee\"): nome (corte, estocada, batida ou pancada), dano, alcance, arco (graus; 360 = em volta), duracao, acerto_em, avanco, empurrao, atordoa, hit_stop, tremor, lado, som (+ tom e vol opcionais), cor. Passo \"adagas\": nome, dano (de CADA adaga), n (quantas saem), leque (graus entre a primeira e a última), vel (px/s), alcance (px que voam), perfura (quantos monstros a mais atravessa), duracao, acerto_em (quando saem), empurrao, atordoa, som, cor; hit_stop e tremor valem por acerto (opcionais). Passos \"adagas\" ignoram arco e avanco.",
+	"legibilidade": {
+		"_ajuda": "Deixa o herói legível no piso escuro e no meio da horda (v2/heroi.gd, aplicar_legibilidade; shader v2/heroi_contorno.gdshader). contorno: cor (rgb 0 a 1) e alfa da borda clara de 1 px do sprite (alfa 0 = sem contorno). luz: luz pessoal presa ao herói, uma PointLight2D suave (cor rgb, e = energia, r = raio em px, h = altura, desloca = [x, y] do pé até o ponto no chão que ela ilumina); não projeta sombra no chão (só clareia o herói). arco: o rastro branco do golpe some perto do corpo para não esconder o herói (raio_px = até onde o arco fica apagado, borda_px = largura do degradê, minimo = fração do brilho que sobra no centro do corpo, 0 a 1). perfis: por nível de luz (baixo = luz_relevo desligada, medio = só herói, alto = tudo) liga o contorno (contorno: true/false) e multiplica a energia da luz pessoal (luz: 0 = sem luz); o Baixo fica só com o contorno, para poupar a placa de vídeo.",
+		"contorno": {"cor": [1.0, 0.93, 0.8], "alfa": 0.85},
+		"luz": {"cor": [1.0, 0.9, 0.72], "e": 0.9, "r": 90, "h": 40, "desloca": [0, -14]},
+		"arco": {"raio_px": 16.0, "borda_px": 22.0, "minimo": 0.25},
+		"perfis": {
+			"baixo": {"contorno": true, "luz": 0.0},
+			"medio": {"contorno": true, "luz": 1.0},
+			"alto": {"contorno": true, "luz": 1.0}
+		}
+	},
 	"herois": [
 		{
 			"id": "hazaki",

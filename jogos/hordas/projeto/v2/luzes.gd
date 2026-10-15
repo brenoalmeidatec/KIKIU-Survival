@@ -31,6 +31,8 @@ class Entrada:
 	var desloca := Vector2.ZERO
 	var ativa := false
 	var cand := false  # alcança a tela neste quadro (antes do orçamento)
+	var apagada := false  # desligada de vez (o perfil não quer esta luz): nunca candidata
+	var sem_sombra := false  # clareia mas não entra nos vetores dpos/dr/de/dh das sombras (a luz pessoal do herói)
 
 
 var orcamento := 0  # máximo de luzes ligadas ao mesmo tempo (0 = sem limite); vem do perfil de gráficos
@@ -145,7 +147,7 @@ func atualizar(t: float, rect: Rect2) -> void:
 		var cy := clampf(e.pos.y, tela.position.y, tela.end.y)
 		var dx := e.pos.x - cx
 		var dy := e.pos.y - cy
-		e.cand = dx * dx + dy * dy <= e.raio * e.raio
+		e.cand = not e.apagada and dx * dx + dy * dy <= e.raio * e.raio
 		if e.cand:
 			n_cand += 1
 	if orcamento > 0 and n_cand > orcamento:
@@ -171,6 +173,8 @@ func atualizar(t: float, rect: Rect2) -> void:
 		for p in e.particulas:
 			if e.orbita != Vector2.ZERO or e.alvo != null:
 				p.position = e.pos + e.orbe_desloca
+		if e.sem_sombra:
+			continue
 		if dn >= dpos.size():
 			dpos.resize(dn + 8)
 			dr.resize(dn + 8)

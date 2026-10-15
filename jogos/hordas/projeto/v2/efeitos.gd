@@ -8,6 +8,7 @@ extends RefCounted
 ##  - números de dano: texto com contorno que sobe e some, desenhado numa só chamada (fonte pixel do jogo, tamanhos 8 e 16).
 ## Posições são arredondadas para pixel inteiro ao desenhar (o pixel art não treme).
 
+const Herois := preload("res://v2/herois.gd")
 const MAX_PART := 360
 const MAX_NUM := 64
 const MAX_CORTES := 4
@@ -26,6 +27,8 @@ uniform float lado = 1.0;
 uniform float modo = 0.0;
 uniform vec4 cor : source_color = vec4(1.0);
 uniform float quadros = 16.0;
+uniform float raio_px = 80.0;  // raio do arco na tela (px): converte a distância em UV para px
+uniform vec3 poupa = vec3(0.0, 1.0, 1.0);  // poupar o corpo do herói: x = raio apagado (px), y = largura do degradê (px), z = brilho que sobra no centro
 uniform float fixo = 0.0;  // 1 = rampa ciano fixa (variante ciano) em vez da cor do golpe
 uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 16 quadros em linha, RGB = calor, A = intensidade
 float pos(float x) { return floor(x * 8.0 + 0.5) / 8.0; }
@@ -76,6 +79,10 @@ void fragment() {
 	vec3 c = mix(cor.rgb, vec3(1.0), clamp(quente, 0.0, 1.0) * 0.55);
 	COLOR = vec4(c * k * 2.4, k);
 	}
+	// o herói por cima do arco: perto da origem do golpe (o corpo) o brilho aditivo cai para `poupa.z`, para o rastro não apagar o herói
+	float dist_px = length(UV - 0.5) * 2.0 * raio_px;
+	float dim = mix(poupa.z, 1.0, smoothstep(poupa.x, poupa.x + poupa.y, dist_px));
+	COLOR *= dim;
 }
 """
 
@@ -296,6 +303,8 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
 	mat.set_shader_parameter("lado", lado)
+	mat.set_shader_parameter("raio_px", r)
+	mat.set_shader_parameter("poupa", _poupa_corpo())
 	mat.set_shader_parameter("modo", 2.0 if folha else (1.0 if tipo == "estocada" else 0.0))
 	var ciano := variante == "ciano"
 	mat.set_shader_parameter("folha", FOLHA_CORTE_CIANO if ciano else FOLHA_CORTE)
@@ -306,6 +315,12 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	_cortes_dur[i] = dur
 	usados.cortes += 1
 	luz_rapida(origem + Vector2.from_angle(ang) * alcance * 0.55, cor, 1.7 if tipo == "estocada" else 1.35, alcance * 2.3, dur * 0.9)
+
+
+## Quanto o arco do golpe poupa o corpo do herói (dados/v2_herois.json, legibilidade.arco): (raio apagado px, degradê px, brilho que sobra).
+func _poupa_corpo() -> Vector3:
+	var a: Dictionary = Herois.legibilidade().get("arco", {})
+	return Vector3(float(a.get("raio_px", 0.0)), maxf(float(a.get("borda_px", 1.0)), 1.0), float(a.get("minimo", 1.0)))
 
 
 func luz_rapida(pos: Vector2, cor: Color, energia: float, raio: float, dur: float) -> void:

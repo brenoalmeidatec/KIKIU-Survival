@@ -33,7 +33,8 @@ func _ready() -> void:
 	var h = w.heroi
 	h.entrada_forcada = Vector2.ZERO
 	passos(3)
-	ok(h.sprite.material == null and h.morte_k() == 0.0, "vivo: sem material de dissolução")
+	var mat_vivo = h.sprite.material  # o contorno claro (legibilidade) ou null no perfil sem ele; nunca o da dissolução
+	ok(mat_vivo == h._mat_contorno and h.morte_k() == 0.0, "vivo: sem material de dissolução")
 	ok(not Heroi.SHADER_MORTE.contains("TIME"), "o shader da morte não usa TIME")
 
 	h.imortal = false
@@ -41,8 +42,8 @@ func _ready() -> void:
 	h.levar_dano(h.vida + 100.0, h.pos + Vector2(10, 0))
 	ok(h.estado == Heroi.Estado.MORTO, "morreu")
 	var anim: bool = h._tem_anim("morte")  # a folha do Blender: a queda toca primeiro e o dissolve entra no fim dela
-	ok(anim or h.sprite.material != null, "sem animação de morte: o material de dissolução entra logo")
-	ok(not anim or h.sprite.material == null, "com a queda do Blender: sem dissolução nem flash branco enquanto ele cai")
+	ok(anim or h.sprite.material != mat_vivo, "sem animação de morte: o material de dissolução entra logo")
+	ok(not anim or h.sprite.material == mat_vivo, "com a queda do Blender: sem dissolução nem flash branco enquanto ele cai")
 	ok(w.combate.parada_t > 0.0, "a morte dispara hit-stop")
 	passos(3)  # hit-stop: o relógio do herói está parado, a dissolução não anda
 	ok(h.morte_t == 0.0 and h.morte_k() == 0.0, "hit-stop congela a dissolução (morte_t=%f)" % h.morte_t)
@@ -53,7 +54,7 @@ func _ready() -> void:
 	if anim:
 		var cols: Array = h.tipo.info.animacoes.morte.colunas
 		passos(6)
-		ok(h.sprite.material == null and h.morte_t == 0.0, "durante a queda a dissolução não anda")
+		ok(h.sprite.material == mat_vivo and h.morte_t == 0.0, "durante a queda a dissolução não anda")
 		ok(cols.has(float(h.coluna)) or cols.has(h.coluna), "toca um quadro da animação de morte (coluna %d)" % h.coluna)
 		n = 0
 		while h.morte_t == 0.0 and n < 900:
@@ -62,7 +63,7 @@ func _ready() -> void:
 		var dur: float = h._duracao_anim("morte", true)
 		ok(h._morte_t >= dur, "o dissolve só entra depois da queda toda (%f de %f s)" % [h._morte_t, dur])
 		ok(h.coluna == int(cols[cols.size() - 1]), "a queda trava no último quadro (deitado)")
-		ok(h.sprite.material != null, "no fim da queda entra o material de dissolução")
+		ok(h.sprite.material != mat_vivo, "no fim da queda entra o material de dissolução")
 	var mat := h.sprite.material as ShaderMaterial
 	ok(float(mat.get_shader_parameter("branco")) >= 0.5, "começa no flash branco")
 	passos(10)
@@ -80,6 +81,6 @@ func _ready() -> void:
 	ok(float(mat.get_shader_parameter("branco")) == 0.0, "flash branco acabou")
 
 	h.resetar(h.pos)
-	ok(h.sprite.material == null and h.morte_t == 0.0, "recomeço limpa o material e o relógio")
+	ok(h.sprite.material == h._mat_contorno and h.morte_t == 0.0, "recomeço limpa o material e o relógio")
 	print("v2_morte_heroi falhas=%d" % falhas)
 	get_tree().quit()

@@ -96,3 +96,8 @@ static func numeros(id: String, base: Dictionary) -> Array:
 		["VELOC.", str(roundi(float(cfg.heroi.vel)))],
 		["COMBO", str(roundi(total))],
 	]
+
+
+## Números da legibilidade do herói no escuro (contorno, luz pessoal e arco do golpe): dados/v2_herois.json, "legibilidade".
+static func legibilidade() -> Dictionary:
+	return catalogo().get("legibilidade", {})

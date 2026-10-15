@@ -314,6 +314,7 @@ func _criar_heroi() -> void:
 	# a tocha e a aura andam com o herói (a posição é o ponto no chão que a luz ilumina)
 	luzes.prender(luzes.criar("tocha", p), heroi, Vector2(-38, -32))
 	luzes.prender(luzes.criar("aura", p), heroi, Vector2(30, -8))
+	heroi.aplicar_legibilidade()  # contorno claro e luz pessoal por perfil (v2_herois.json, "legibilidade")
 
 
 ## O herói vivo mais perto de `p` (o alvo dos monstros). Com todos caídos devolve o mais perto entre os caídos; sem lista, o local.

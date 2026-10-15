@@ -47,6 +47,8 @@ void fragment() {
 	COLOR.a *= resta;
 }
 """
+const CONTORNO := preload("res://v2/heroi_contorno.gdshader")  # borda clara de 1 px (legibilidade no escuro)
+const NIVEL_LUZ := {"desligada": "baixo", "so_heroi": "medio", "tudo": "alto"}  # luz_relevo da aba Gráficos -> chave de legibilidade.perfis
 const CENTRO_CORPO := Vector2(0, -20)  # do pé ao meio do corpo (mira e câmera)
 const ORIGEM_GOLPE := Vector2(0, -10)  # de onde o arco do golpe parte (altura do tronco, no chão do 2.5D)
 
@@ -139,6 +141,8 @@ var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
 var morte_t := 0.0  # s de jogo desde a morte (só anda em _visual_morto, no dt do herói: hit-stop e pausa o congelam)
 var _mat_morte: ShaderMaterial = null
+var _mat_contorno: ShaderMaterial = null  # o material do herói vivo (null quando o perfil não liga o contorno)
+var luz_pessoal: Variant = null  # Luzes.Entrada da luz suave presa ao herói (null enquanto o perfil não liga a luz)
 
 
 func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
@@ -209,10 +213,44 @@ func resetar(p: Vector2) -> void:
 	sprite.scale = Vector2.ONE
 	sprite.position = Vector2.ZERO
 	sprite.offset = _off_base
-	sprite.material = null
+	sprite.material = _mat_contorno
 	morte_t = 0.0
 	definir_pos(p)
 	iniciar_stats(mundo.combate.cfg)
+	aplicar_legibilidade()
+
+
+## Legibilidade do herói no escuro (dados/v2_herois.json, "legibilidade"), por perfil de gráficos (luz_relevo: desligada = Baixo, só herói = Médio,
+## tudo = Alto): o Baixo só ganha o contorno claro de 1 px (shader heroi_contorno); Médio e Alto ganham o contorno e uma luz pessoal suave presa
+## ao herói. A luz não entra no sistema de sombras (sem_sombra). Chamado ao criar o herói, a cada recomeço e pelos testes depois de trocar o perfil.
+func aplicar_legibilidade() -> void:
+	var d := Herois.legibilidade()
+	if d.is_empty():
+		return
+	var perfil: Dictionary = d.get("perfis", {}).get(str(NIVEL_LUZ.get(str(Config.g("luz_relevo")), "medio")), {})
+	var cont: Dictionary = d.get("contorno", {})
+	if bool(perfil.get("contorno", false)) and float(cont.get("alfa", 0.0)) > 0.0:
+		if _mat_contorno == null:
+			_mat_contorno = ShaderMaterial.new()
+			_mat_contorno.shader = CONTORNO
+		var cor: Array = cont.cor
+		_mat_contorno.set_shader_parameter("cor_contorno", Color(float(cor[0]), float(cor[1]), float(cor[2]), float(cont.alfa)))
+	else:
+		_mat_contorno = null
+	if estado != Estado.MORTO:  # morto: o material é o da queda/dissolução, que o _visual_morto controla
+		sprite.material = _mat_contorno
+	var k := float(perfil.get("luz", 0.0))
+	var lz: Dictionary = d.get("luz", {})
+	var luzes = mundo.luzes
+	if luz_pessoal == null and k > 0.0 and not lz.is_empty():
+		var c: Array = lz.cor
+		luzes.tipos["heroi_pessoal"] = {"cor": c, "e": lz.e, "r": lz.r, "h": lz.h}
+		luz_pessoal = luzes.criar("heroi_pessoal", pos)
+		luz_pessoal.sem_sombra = true
+		luzes.prender(luz_pessoal, self, Vector2(float(lz.desloca[0]), float(lz.desloca[1])))
+	if luz_pessoal != null:
+		luz_pessoal.energia = float(lz.get("e", 0.0)) * k
+		luz_pessoal.apagada = k <= 0.0
 
 
 ## O botão de atacar foi apertado (o mundo repassa o clique; os testes também chamam): guarda o pedido por alguns instantes.
