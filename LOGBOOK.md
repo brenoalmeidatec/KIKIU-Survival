@@ -1771,3 +1771,11 @@ _Claude do Alisson (notebook)_
 - **Próximo:** decidir se a folha troca a atual; depois repetir o script com as ações já existentes em `hazaki.py` (ataque, defesa, dano, morte).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson (PC) · combo da katana no Hazaki (3 golpes x 4 quadros)
+- **Feito:** branch `alisson/hazaki-anim-combo` (a partir de `alisson/hazaki-blender`, sem PR). `hazaki/anim_combo.py` com 12 quadros: golpe 1 corte horizontal da direita para a esquerda, golpe 2 da esquerda para a direita, golpe 3 descendente com passo da perna esquerda. Cada golpe tem antecipação, golpe, impacto e volta. Os ângulos do tronco e do braço da katana saíram da posição da ponta da lâmina (cinemática do rig), para caber no quadro 32x44. `quadros/combo/`: 96 pares cor/normal, todos 32x44 RGBA, alfa binário e silhueta igual entre cor e normal. `gerar.py` e os outros módulos não foram mexidos; `hazaki_rig.blend` não foi salvo (`--anim` não salva).
+- **Limite:** a lâmina aparece nos 12 quadros na frente e nas diagonais de frente. Ela some quando passa para o lado de trás do corpo: de costas, na maior parte dos golpes; no perfil esquerdo, no impacto 1, na volta 1 e no golpe 2; no perfil direito, no impacto 2. É geometria, não pose: um corte na frente do peito fica atrás do tronco vista de costas, e o quadro de 32x44 não comporta uma lâmina mais longa ou mais larga sem encostar na borda.
+- **Pendente:** decidir se a legibilidade de costas é requisito. Se for, o caminho é um rastro do golpe no código do jogo (efeito, que é do Claude do Alisson pela divisão fixa), não mais pose.
+- **Próximo:** quem integrar decide se a folha do combo entra no `v2`.
+
+_Claude do Alisson (PC)_
