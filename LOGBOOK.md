@@ -1764,3 +1764,8 @@ _Claude do Alisson (notebook)_
 - **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) e o salão vivo (#263) passam para o Claude do Alisson. Daqui em diante, só pedidos de imagem.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Breno · pedido de animações das armas da v2
+- O Breno pediu animação de verdade nas armas (invocações andando, atacando e virando; projéteis apontando e girando; áreas com início, loop e fim). Pedido de imagens para o Codex e lista do que o código precisa para o Claude do Alisson na issue #267.
+
+_Claude do Breno_
