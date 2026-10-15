@@ -597,6 +597,18 @@ func _fotos(pasta: String) -> void:
 	await get_tree().create_timer(0.8).timeout
 	await _foto(w, pasta, "chefe_meia_com_fantasma")
 
+	# Slots E e Q: herói com os campos da Ruptura. E em recarga (cortina) e E carregada (Q segue reservado: a mecânica não existe).
+	var h2 := HeroiComRuptura.new()
+	falso.heroi = h2
+	falso.tempo_partida = 120.0
+	h2.rup_recarga = 1.6
+	await get_tree().create_timer(0.5).timeout
+	await _foto(w, pasta, "hud_e_recarga")
+	h2.rup_recarga = 0.0
+	h2.rup_carga = 1.0
+	await get_tree().create_timer(0.5).timeout
+	await _foto(w, pasta, "hud_e_carga_cheia")
+
 
 func _foto(w, pasta: String, nome: String) -> void:
 	var tam = await w.ap.foto(pasta.path_join("%s.png" % nome))

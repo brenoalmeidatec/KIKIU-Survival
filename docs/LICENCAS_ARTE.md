@@ -74,3 +74,4 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 - São86entradas de cartas mais katana/escudo/Ruptura e selo Q indisponível(90motivos). Não são animações ou sprites de ataque; recorte/integração permanecem com Claude do Alisson.
 
 - 2026-10-15 — jogos/hordas/fonte_arte/hud_molduras/*.png: componentes para retrato, barras de vida/fôlego e slots E/Q; arte própria gerada no Codex com imagegen, sem material novo de terceiros. Grade3×3 e prompts ao lado; recorte/9-slice/integração pendentes.
+- 2026-10-15 — jogos/hordas/projeto/v2/hud/moldura_{retrato,barra,habilidade}.png (+ molduras_codex.json): recorte, redução BOX (borda de 4 a 6 px) e quantização (32 cores, sem dither) das folhas acima, por `gerar_objetos.py hud`; derivados de arte própria, sem material novo de terceiros. Integradas no HUD da v2 (retrato do herói, barras de vida e fôlego, slots E e Q).
