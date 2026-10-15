@@ -244,21 +244,36 @@ func _t_hazaki() -> void:
 	ok(n >= 0, "Hazaki golpeia")
 	ok(m.vida < m.vida_max and m.vida >= m.vida_max - 14.0 * 1.2 - 0.01, "Hazaki: o primeiro corte tira ~12 (vida %d de %d)" % [m.vida, m.vida_max])
 	ok(w.combate.adagas.lancadas == 0, "Hazaki não joga adaga")
-	_t_hazaki_animacoes()
+	_t_animacoes("Hazaki")
 
 
-## As linhas da folha de 50 colunas do Blender ligadas ao herói: combo, rolamento, escudo, dano e morte (sem girar o sprite).
-func _t_hazaki_animacoes() -> void:
+## Primeira e última coluna da animação `nome` na folha do herói da partida (o json de animações da folha do Blender).
+func _cols(nome: String) -> Vector2i:
+	var c: Array = w.heroi.tipo.info.animacoes[nome].colunas
+	return Vector2i(int(c[0]), int(c[c.size() - 1]))
+
+
+## As linhas da folha do Blender ligadas ao herói: combo, rolamento, escudo, dano e morte (sem girar o sprite). Vale para o Hazaki e o Lucas: as colunas vêm do json.
+func _t_animacoes(quem: String) -> void:
 	var h = w.heroi
 	var an: Dictionary = h.tipo.info.get("animacoes", {})
-	ok(an.has("combo") and an.has("rolamento") and an.has("escudo") and an.has("dano") and an.has("morte"), "Hazaki: a folha traz as animações de ação")
+	ok(an.has("combo") and an.has("rolamento") and an.has("escudo") and an.has("dano") and an.has("morte"), "%s: a folha traz as animações de ação" % quem)
+	var combo := _cols("combo")
+	var por_golpe := int(an.combo.get("quadros_por_golpe", 6))
+	var roll := _cols("rolamento")
+	var esc := _cols("escudo")
+	var dano := _cols("dano")
+	var morte := _cols("morte")
 	# golpe
 	zerar()
 	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
 	h.atacar()
 	ate(func(): return h.estado == Heroi.Estado.GOLPE, 20)
 	passos(2)
-	ok(h.coluna >= 16 and h.coluna <= 21, "golpe 1: usa as colunas do combo 16-21 (coluna %d)" % h.coluna)
+	ok(
+		h.coluna >= combo.x and h.coluna < combo.x + por_golpe,
+		"golpe 1: usa as colunas do combo %d-%d (coluna %d)" % [combo.x, combo.x + por_golpe - 1, h.coluna]
+	)
 	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
 	# rolamento
 	zerar()
@@ -266,14 +281,14 @@ func _t_hazaki_animacoes() -> void:
 	h.esquivar()
 	ate(func(): return h.estado == Heroi.Estado.ESQUIVA, 20)
 	passos(3)
-	ok(h.coluna >= 10 and h.coluna <= 15, "esquiva: usa as colunas do rolamento 10-15 (coluna %d)" % h.coluna)
+	ok(h.coluna >= roll.x and h.coluna <= roll.y, "esquiva: usa as colunas do rolamento %d-%d (coluna %d)" % [roll.x, roll.y, h.coluna])
 	ok(is_zero_approx(h.sprite.rotation), "esquiva: o sprite não gira (o rolamento é da folha)")
 	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
 	# escudo
 	zerar()
 	h.escudo_forcado = true
 	passos(30)
-	ok(h.escudo_ativo and h.coluna >= 34 and h.coluna <= 37, "escudo: usa as colunas 34-37 (coluna %d)" % h.coluna)
+	ok(h.escudo_ativo and h.coluna >= esc.x and h.coluna <= esc.y, "escudo: usa as colunas %d-%d (coluna %d)" % [esc.x, esc.y, h.coluna])
 	h.escudo_forcado = null
 	passos(5)
 	# dano
@@ -281,17 +296,17 @@ func _t_hazaki_animacoes() -> void:
 	h.imortal = false
 	h.invenc = 0.0
 	h.levar_dano(1.0, h.pos + Vector2(30, 0))
-	ate(func(): return h.coluna >= 38 and h.coluna <= 41, 60)
-	ok(h.coluna >= 38 and h.coluna <= 41, "dano: usa as colunas 38-41 (coluna %d)" % h.coluna)
-	ate(func(): return h.coluna < 38 or h.coluna > 41, 600)
-	ok(h.coluna < 38 or h.coluna > 41, "dano: a animação acaba e volta ao parado (coluna %d)" % h.coluna)
+	ate(func(): return h.coluna >= dano.x and h.coluna <= dano.y, 60)
+	ok(h.coluna >= dano.x and h.coluna <= dano.y, "dano: usa as colunas %d-%d (coluna %d)" % [dano.x, dano.y, h.coluna])
+	ate(func(): return h.coluna < dano.x or h.coluna > dano.y, 600)
+	ok(h.coluna < dano.x or h.coluna > dano.y, "dano: a animação acaba e volta ao parado (coluna %d)" % h.coluna)
 	# morte
 	h.invenc = 0.0
 	h.levar_dano(100000.0, h.pos + Vector2(30, 0))
-	ate(func(): return h.coluna >= 42, 120)
-	ok(h.estado == Heroi.Estado.MORTO and h.coluna >= 42 and h.coluna <= 49, "morte: usa as colunas 42-49 (coluna %d)" % h.coluna)
-	ate(func(): return h.coluna == 49, 1200)
-	ok(h.coluna == 49, "morte: trava no último quadro, deitado (coluna %d)" % h.coluna)
+	ate(func(): return h.coluna >= morte.x, 120)
+	ok(h.estado == Heroi.Estado.MORTO and h.coluna >= morte.x and h.coluna <= morte.y, "morte: usa as colunas %d-%d (coluna %d)" % [morte.x, morte.y, h.coluna])
+	ate(func(): return h.coluna == morte.y, 1200)
+	ok(h.coluna == morte.y, "morte: trava no último quadro, deitado (coluna %d)" % h.coluna)
 	ok(is_zero_approx(h.sprite.rotation), "morte: o sprite não gira 90 graus (rotação %.2f)" % h.sprite.rotation)
 
 
@@ -375,7 +390,7 @@ func _t_lucas() -> void:
 	var ad = w.combate.adagas
 	ok(w.combate.heroi_id == "lucas" and h.chave == "lucas", "a partida do Lucas: heroi_id e chave")
 	ok(h.vida_max == 70.0 and h.vel_base == 118.0 and h.raio == 5.0, "Lucas: frágil (70), rápido (118 px/s), pequeno (raio 5)")
-	ok(h.tipo.w == 40 and h.tipo.h == 46, "Lucas: folha própria")
+	ok(h.tipo.w == 32 and h.tipo.h == 44, "Lucas: folha própria (a do Blender, 32x44)")
 	ok(float(w.meta_bonus.raridade) >= 0.15 - 0.0001, "Lucas: sorte nas cartas (meta_bonus.raridade %.2f)" % float(w.meta_bonus.raridade))
 	ok(w.combate.cfg.golpe.passos.size() == 3 and str(w.combate.cfg.golpe.passos[0].tipo) == "adagas", "Lucas: combo de 3 arremessos de adagas")
 	w.reiniciar()
@@ -477,6 +492,11 @@ func _t_lucas() -> void:
 	# limpar a partida tira as adagas do ar
 	w.combate.limpar_partida()
 	ok(ad.ativas() == 0 and ad.lancadas == 0, "limpar a partida zera as adagas")
+	_t_animacoes("Lucas")
+	ok(
+		int(h.tipo.info.animacoes.combo.get("golpes", 0)) == 3 and int(h.tipo.info.animacoes.combo.get("quadros_por_golpe", 0)) == 4,
+		"Lucas: o combo da folha tem 3 arremessos de 4 quadros"
+	)
 
 
 # ------------------------------------------------------------------ cartas
@@ -641,15 +661,15 @@ func _fotos(pasta: String) -> void:
 		await _quadros(6)
 		await _foto_janela(pasta, "card_%s" % id)
 		w.status.alternar()
-		if id == "hazaki":
-			await _anim_fotos(pasta)
+		if id == "hazaki" or id == "lucas":
+			await _anim_fotos(pasta, id)
 		w.queue_free()
 		w = null
 		await _quadros(3)
 
 
-## Uma foto de cada animação de ação do Hazaki (combo, rolamento, escudo, dano e morte), na partida de verdade.
-func _anim_fotos(pasta: String) -> void:
+## Uma foto de cada animação de ação do herói do Blender (combo, rolamento, escudo, dano e morte), na partida de verdade.
+func _anim_fotos(pasta: String, id: String) -> void:
 	zerar()
 	var h = w.heroi
 	h.imortal = false
@@ -657,33 +677,35 @@ func _anim_fotos(pasta: String) -> void:
 	ate(func(): return h.estado == Heroi.Estado.GOLPE, 20)
 	passos(6)
 	await RenderingServer.frame_post_draw
-	await w.ap.foto(pasta.path_join("hazaki_anim_combo.png"))
+	await w.ap.foto(pasta.path_join("%s_anim_combo.png" % id))
 	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
 	h.entrada_forcada = Vector2(1, 0)
 	h.esquivar()
 	ate(func(): return h.estado == Heroi.Estado.ESQUIVA, 20)
 	passos(10)
 	await RenderingServer.frame_post_draw
-	await w.ap.foto(pasta.path_join("hazaki_anim_rolamento.png"))
+	await w.ap.foto(pasta.path_join("%s_anim_rolamento.png" % id))
 	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
 	h.entrada_forcada = Vector2.ZERO
 	h.escudo_forcado = true
 	passos(30)
 	await RenderingServer.frame_post_draw
-	await w.ap.foto(pasta.path_join("hazaki_anim_escudo.png"))
+	await w.ap.foto(pasta.path_join("%s_anim_escudo.png" % id))
 	h.escudo_forcado = null
 	passos(5)
 	h.invenc = 0.0
 	h.levar_dano(1.0, h.pos + Vector2(30, 0))
-	ate(func(): return h.coluna >= 38 and h.coluna <= 41, 60)
-	passos(4)
+	var dano := _cols("dano")
+	ate(func(): return h.coluna >= dano.x and h.coluna <= dano.y, 60)
+	passos(2)
 	await RenderingServer.frame_post_draw
-	await w.ap.foto(pasta.path_join("hazaki_anim_dano.png"))
+	await w.ap.foto(pasta.path_join("%s_anim_dano.png" % id))
 	h.invenc = 0.0
 	h.levar_dano(100000.0, h.pos + Vector2(30, 0))
-	ate(func(): return h.coluna == 49, 1200)
+	var morte := _cols("morte")
+	ate(func(): return h.coluna >= morte.y - 1, 1200)  # o quadro deitado antes do dissolve (no último a dissolução já começou)
 	await RenderingServer.frame_post_draw
-	await w.ap.foto(pasta.path_join("hazaki_anim_morte.png"))
+	await w.ap.foto(pasta.path_join("%s_anim_morte.png" % id))
 
 
 func _golpes_foto(pasta: String, id: String) -> void:
