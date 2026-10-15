@@ -48,6 +48,10 @@ const FUSAO_L := 600.0  # largura do cartão da fusão (espaço de 960 px da tel
 const FUSAO_A := 200.0
 const FUSAO_X := 180.0
 const FUSAO_Y := 150.0
+const MOLDURA_FUSAO := preload("res://assets/v2/fusoes/moldura.png")  # 600 x 200 em 9-slice: a borda tem 12 px, o miolo estica
+const MOLDURA_BORDA := 12
+const HALO_FUSAO := preload("res://assets/v2/fusoes/halo.png")  # halo branco 48 x 48, tingido pela cor da fusão
+const ICONE_FUSAO := preload("res://assets/v2/fusoes/icone.png")  # junção de duas setas, 16 x 16, mostrada em 2x
 ## Sinais do mundo e o método do HUD que cada um chama. Só se conecta o que o mundo tem.
 const SINAIS := [
 	["nivel_subiu", "_nivel_subiu"],
@@ -77,6 +81,7 @@ var _fusao: Control  # o cartão grande da fusão (montado na primeira fusão)
 var _fusao_nome: Label
 var _fusao_desc: Label
 var _fusao_tween: Tween
+var _fusao_halos: Array = []  # os dois halos do cartão da fusão (tingidos pela cor dela)
 var _combo_y := 0.0
 var _cor_base := Color.WHITE  # cor do combo na contagem atual (sobe com os marcos)
 var _minuto_antes := 0
@@ -442,12 +447,23 @@ func _elite_apareceu(_nome = "") -> void:
 ## então a fonte é a de título (Jersey 10) e o texto corrido é o da Spleen 8x16 em 16 px. Só uma tween (sem nó por quadro).
 func _evolucao(nome = "", desc = "") -> void:
 	_anuncio.anunciar("EVOLUÇÃO: %s" % str(nome).to_upper(), OURO)
-	_mostrar_fusao(str(nome), str(desc))
+	_mostrar_fusao(str(nome), str(desc), _cor_fusao(str(nome)))
 
 
-func _mostrar_fusao(nome: String, desc: String) -> void:
+## A cor da fusão é o campo cor da evolução em dados/v2_cartas.json (o halo sai nessa cor); sem ele, o magenta da fusão.
+func _cor_fusao(nome: String) -> Color:
+	for e in Dados.json("v2_cartas").get("evolucoes", []):
+		if str(e.get("nome", "")) == nome and e.get("cor") is Array:
+			var c: Array = e.cor
+			return Color(float(c[0]), float(c[1]), float(c[2]))
+	return Paleta.FUSAO
+
+
+func _mostrar_fusao(nome: String, desc: String, cor: Color) -> void:
 	if _fusao == null:
 		_montar_fusao()
+	for halo in _fusao_halos:
+		halo.modulate = Color(cor.r, cor.g, cor.b, 0.9)
 	_fusao_nome.text = nome.to_upper()
 	_fusao_desc.text = desc
 	_fusao.modulate.a = 1.0
@@ -468,14 +484,40 @@ func _montar_fusao() -> void:
 	_fusao.size = Vector2(FUSAO_L, FUSAO_A)
 	_fusao.pivot_offset = _fusao.size * 0.5
 	_fusao.visible = false
-	var fundo := ColorRect.new()
-	fundo.color = Color(0.04, 0.03, 0.08, 0.88)
+	var fundo := NinePatchRect.new()  # a moldura de pedra e ouro em 9-slice: o miolo liso já está no PNG
+	fundo.texture = MOLDURA_FUSAO
+	fundo.patch_margin_left = MOLDURA_BORDA
+	fundo.patch_margin_top = MOLDURA_BORDA
+	fundo.patch_margin_right = MOLDURA_BORDA
+	fundo.patch_margin_bottom = MOLDURA_BORDA
 	fundo.size = _fusao.size
+	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fusao.add_child(fundo)
 	_fusao.add_child(_rotulo(Dados.fonte_titulo, 56, OURO, 12.0, 64.0, "FUSÃO!"))
+	for x in [46.0, 506.0]:  # um de cada lado do título: o halo da fusão e o ícone de junção
+		var halo := TextureRect.new()
+		halo.texture = HALO_FUSAO
+		halo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		halo.stretch_mode = TextureRect.STRETCH_SCALE
+		halo.position = Vector2(x, 20.0)
+		halo.size = Vector2(48.0, 48.0)
+		halo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_fusao.add_child(halo)
+		_fusao_halos.append(halo)
+		var icone := TextureRect.new()
+		icone.texture = ICONE_FUSAO
+		icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icone.stretch_mode = TextureRect.STRETCH_SCALE
+		icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icone.position = Vector2(x + 8.0, 28.0)
+		icone.size = Vector2(32.0, 32.0)
+		icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_fusao.add_child(icone)
 	_fusao_nome = _rotulo(Dados.fonte_titulo, 37, Color(1.0, 0.95, 0.8), 80.0, 44.0, "")
 	_fusao.add_child(_fusao_nome)
 	_fusao_desc = _rotulo(Dados.fonte_texto, 16, Color(0.88, 0.9, 1.0), 132.0, 60.0, "", true)
+	_fusao_desc.position.x = MOLDURA_BORDA + 16.0  # o texto corrido fica dentro da borda de 12 px, com folga
+	_fusao_desc.size.x = FUSAO_L - 2.0 * (MOLDURA_BORDA + 16.0)
 	_fusao.add_child(_fusao_desc)
 	$Raiz.add_child(_fusao)
 

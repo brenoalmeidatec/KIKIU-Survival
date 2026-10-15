@@ -1879,3 +1879,15 @@ _Claude do Breno_
 
 _Codex do Alisson_
 
+
+## 2026-10-15 · Claude do Alisson · Arte das fusões no jogo (integra o #289 do Codex)
+- **Antes/depois:** o cartão FUSÃO era um retângulo escuro; agora é moldura em 9-slice de 600 x 200 (borda de 12 px), com halo e ícone de junção dos dois lados do título. A onda da Ventania usava o sprite antigo de 120 x 79; agora usa a arte do Codex, 64 x 32. O halo das lâminas evoluídas era desenhado por código; agora é o halo da arte, tingido pela cor da fusão. A linha de peça fundida no SUA BUILD ganhou o ícone de junção (16 x 16).
+- **Escopo:** `prototipos/cara_nova/objetos/gerar_objetos.py` (modo novo `fusoes`; os modos `armas` e `icones` não foram rodados nem mudaram), `projeto/assets/v2/fusoes/` (moldura, halo, Ventania, ícone e índice), `v2/hud.gd` (cartão FUSÃO), `v2/armas.gd` (halo), `v2/armas_novas.gd` (o registro lê o índice da fusão depois do de armas, então a Ventania vale por cima), `v2/status.gd` (ícone na linha fundida), `v2/DESIGN.md`, `docs/LICENCAS_ARTE.md`, teste novo `testes/v2_fusoes` e ferramenta de prints `testes/fotos/fusoes_fotos` (fora do CI).
+- **Recorte:** moldura: o corpo é o alfa >= 128 (com alfa > 12 entravam pixels soltos e o filete dourado saía do recorte); cantos e faixas de 52 px da fonte viram 12 px, o miolo estica e vira #0a0814 liso. Halo: BOX para 48 x 48, branco, alfa em degraus (0, 64, 128, 192, 255). Ventania: BOX para 64 x 32, alfa abaixo de 40 some. Ícone: caixa justa, 14 px, alfa binário a 25% e contorno escuro (o mesmo caminho dos ícones de carta). Cores por paleta sem dithering.
+- **Validação:** gdformat -l 160 --check limpo em scripts, testes e v2. Godot 4.4.1 headless, uma cena por vez: as 34 cenas v2_* com código 0, `falhas=0` e sem SCRIPT ERROR (inclui a nova `v2_fusoes`). Prints em janela oculta, 960 x 540, antes e depois, em docs/visual_2_5d/fusoes/. A captura do SUA BUILD vem da janela do jogo (1280 x 720) e foi reduzida para 960 x 540 com proporção exata, porque o card fica fora da SubViewport.
+- **Decisões:** (1) a cor da fusão vem do campo `cor` da evolução (`_cor_fusao`); sem achar, usa o magenta `Paleta.FUSAO`. (2) O ouro da arte (#f1b10e) foi mantido, como pede o LEIA-ME do Codex; nenhuma constante de `paleta.gd` mudou. (3) A "forja" citada no pedido não existe no código; o ícone foi para o cartão FUSÃO (anúncio) e para o SUA BUILD (lista). (4) A opacidade da onda da Ventania (0,28) não mudou; só a arte.
+- **Pendente:** conferir em 4:3 e 16:10 se o cartão cabe na área segura (DESIGN, seção 1); o ícone em 2x no cartão ainda pede olhar de quem joga, porque lê como junção mas está pequeno. Os `.import` e `.gd.uid` gerados pelo import de mapas e protótipos continuam fora deste PR, como antes.
+- **Recado:** `assets/v2/fusoes/` é do modo `fusoes`; regenere só esse modo (`python gerar_objetos.py fusoes`). Rodar `armas` não traz a arte antiga da Ventania de volta, porque a fusão agora entrega a sprite pelo registro.
+- **Para o Claude do Breno:** o cartão FUSÃO aparece em toda fusão. Para conferir a arte, a Ventania (onda 2 + estocada perfurante 2) e o Anel de Brasas são as mais fáceis.
+
+_Claude do Alisson (notebook)_

@@ -1,0 +1,45 @@
+{
+ "_ajuda": "Arte das fusoes da v2 (PR #289 do Codex; fontes em jogos/hordas/fonte_arte/fusoes/). moldura.png = 600x200 em 9-slice (borda de 12 px, NinePatchRect na HUD). halo.png = 48x48 branco, tingido pela cor da fusao. icone.png = 16x16, mostrado em 2x. sprites.ventania entra no registro de armas (v2/armas_novas.gd) e vale por cima da arte de armas/ de mesma id. Nao edite a mao: rode `python gerar_objetos.py fusoes`.",
+ "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py fusoes (nao edite a mao)",
+ "sprites": {
+  "ventania": {
+   "arquivo": "ventania.png",
+   "normal": null,
+   "tipo": "area",
+   "familia": "katana",
+   "tamanho": [
+    64,
+    32
+   ],
+   "armas_sugeridas": [
+    "ventania"
+   ],
+   "armas_aproximadas": [],
+   "obs": "arte da fusao Ventania Cortante (Codex, #289): troca a onda da evolucao"
+  }
+ },
+ "arte": {
+  "moldura": {
+   "arquivo": "moldura.png",
+   "tamanho": [
+    600,
+    200
+   ],
+   "borda": 12
+  },
+  "halo": {
+   "arquivo": "halo.png",
+   "tamanho": [
+    48,
+    48
+   ]
+  },
+  "icone": {
+   "arquivo": "icone.png",
+   "tamanho": [
+    16,
+    16
+   ]
+  }
+ }
+}

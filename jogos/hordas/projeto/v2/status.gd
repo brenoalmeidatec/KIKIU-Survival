@@ -40,6 +40,7 @@ const ALT_TITULO := 22.0
 const ALT_BLOCO_COMPACTO := 18.0  # ícone de 16 px e 2 de respiro: um golpe ou modificador por linha no HUD
 const PAD := 8.0
 const ICONE := 16.0
+const ICONE_FUSAO := preload("res://assets/v2/fusoes/icone.png")  # junção de duas setas (16 x 16): marca a linha de peça já fundida
 const TELA := Rect2(0, 0, 960, 540)
 const JOGO_VIVO := ["jogando", "escolha", "bau"]  # estados do combate em que o C vale
 const JOGO_CARTAS := ["escolha", "bau"]  # as telas de cartas: aí o C abre o painel central
@@ -940,6 +941,11 @@ func _desenhar_icone(l: Dictionary, x: float, y: float) -> void:
 		_tela.draw_texture(tx, Vector2(x, y))
 
 
+## Linha de peça já fundida: o nível é "evoluída" (nível curto "evo"). Só essa linha leva o ícone da fusão.
+static func _fundida(l: Dictionary) -> bool:
+	return str(l.nivel_curto) == "evo"
+
+
 ## Um golpe ou modificador numa linha só (HUD): ícone, nome curto, nível e o número (poder estimado, ou o valor do modificador).
 func _desenhar_bloco_compacto(l: Dictionary, x: float, y: float, w: float) -> void:
 	var ft: Font = Dados.fonte_titulo
@@ -957,6 +963,10 @@ func _desenhar_bloco_compacto(l: Dictionary, x: float, y: float, w: float) -> vo
 	# o nome vai até o nível (o espaço que sobra entre o ícone e o nível); na grade da Jersey 10 (19) quando cabe, um degrau abaixo se não
 	# (a Jersey fora da grade sai borrada, então só quando precisa), e corta com "." quando nem o degrau cabe (golpe com nome longo e sem curto)
 	var espaco_nome := (xx - 6.0 - _larg_misto(nivel, TAM_P) - 6.0) - xt
+	if _fundida(l):  # o ícone da fusão entra antes do "evo", e o nome cede o espaço dele
+		var xi := xx - 6.0 - _larg_misto(nivel, TAM_P) - 4.0 - ICONE_FUSAO.get_width()
+		_tela.draw_texture(ICONE_FUSAO, Vector2(xi, y))
+		espaco_nome -= ICONE_FUSAO.get_width() + 4.0
 	var tam_nome := TAM_CAB if ft.get_string_size(str(l.nome_curto), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_CAB).x <= espaco_nome else TAM_NOME_PEQ
 	var nome := _cabe_nome(str(l.nome_curto), espaco_nome, tam_nome)
 	_tela.draw_string(ft, Vector2(xt, y - 1.0 + ft.get_ascent(TAM_CAB)), nome, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome, cor)
@@ -972,6 +982,8 @@ func _desenhar_bloco(l: Dictionary, x: float, y: float, w: float) -> void:
 		_texto(Dados.fonte_texto, nome, Vector2(xt, yy), wt, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor)
 		yy += ALT_LINHA
 	_misto(str(l.nivel_txt), xt, yy, TAM_P, COR_ROTULO, COR_ROTULO)
+	if _fundida(l):  # a peça fundida leva o ícone da fusão depois do "evoluída"
+		_tela.draw_texture(ICONE_FUSAO, Vector2(xt + _larg_misto(str(l.nivel_txt), TAM_P) + 6.0, yy))
 	yy += ALT_LINHA
 	for linha_t in _linhas_do_bloco(l, wt):
 		var xx := xt
