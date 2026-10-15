@@ -698,7 +698,7 @@ func heroi_morreu() -> void:
 	mundo.cam.tremer(3.0, 0.3)
 	hit_stop(0.18)
 	jogo = "morrendo"
-	camera_lenta("morte", 1.3, 0.25)
+	camera_lenta("morte", maxf(1.3, h.duracao_morte() + 0.25), 0.25)  # a queda do herói e o dissolve cabem antes da tela de resultado
 
 
 func nivel_subiu(nivel: int) -> void:
