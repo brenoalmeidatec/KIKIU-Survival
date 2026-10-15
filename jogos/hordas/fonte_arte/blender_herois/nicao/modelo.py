@@ -18,9 +18,9 @@ def P(x, y, z):
 
 # nome do material -> (cor base; é o tom do meio das 4 faixas), lido pelo gerar.py
 PALETA = {
-    "Elmo de ferro": "#4a4a58", "Crista do elmo": "#80808e", "Armadura carvão": "#3b3640", "Ombreira azul": "#484c78",
-    "Barba ruiva": "#8e3222", "Tabardo vermelho": "#932e26", "Couro castanho": "#6e4a28", "Luva": "#523622", "Pele": "#bc7a3a",
-    "Cabo de madeira": "#8a5624", "Cabeça da marreta": "#4a4e80", "Latão antigo": "#b48c3a", "Bota de ferro": "#4c464c", "Olho": "#0a0c14",
+    "Elmo de ferro": "#6a6c82", "Crista do elmo": "#aab0c4", "Armadura carvão": "#3b3640", "Ombreira azul": "#5a62a2",
+    "Barba ruiva": "#a83e24", "Tabardo vermelho": "#932e26", "Couro castanho": "#6e4a28", "Luva": "#523622", "Pele": "#bc7a3a",
+    "Cabo de madeira": "#8a5624", "Cabeça da marreta": "#6c78b8", "Latão antigo": "#b48c3a", "Bota de ferro": "#4c464c", "Olho": "#0a0c14",
 }
 
 
@@ -80,7 +80,9 @@ def construir(ns):
     nova("cabeca", box("Nasal", P(0, -.44, 2.40), (.10, .07, .42), M["Crista do elmo"], .01))
     nova("cabeca", box("Crista do elmo", P(0, 0, 2.95), (.13, .66, .12), M["Crista do elmo"], .02))
     nova("cabeca", box("Rosto", P(0, -.30, 2.34), (.60, .18, .22), M["Pele"], .02))
-    nova("cabeca", ico("Barba", P(0, -.33, 1.98), (.40, .25, .38), M["Barba ruiva"], 2))
+    nova("cabeca", ico("Barba", P(0, -.33, 1.98), (.44, .28, .40), M["Barba ruiva"], 2))
+    for s in (-1, 1):       # costeletas: a barba continua lida nas diagonais
+        nova("cabeca", ico("Barba lado %d" % s, P(s * .33, -.22, 2.06), (.17, .30, .34), M["Barba ruiva"], 2))
     for s in (-1, 1):
         nova("cabeca", ico("Olho %d" % s, P(s * .15, -.405, 2.36), (.065, .03, .055), M["Olho"], 1))
     # marreta: cabo de madeira do chão até acima da cabeça, cabeça de pedra azul com cinta de latão

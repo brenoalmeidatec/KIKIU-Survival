@@ -2052,3 +2052,10 @@ _Codex do Alisson_
 - **Para o Alisson:** o PR não foi mesclado.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Nicão, revisão de arte 2 (PR #298) — Claude do Alisson (notebook)
+- **Feito:** a pancada do combo cai de lado (sinal por direção da câmera), então a cabeça da marreta aparece nas 8 direções, inclusive de costas; elmo, crista, cabeça da marreta, ombreira e barba mais claros e rim mais forte; marreta mais à frente no andar de lado; barba com costeletas. Folha re-renderizada, remontada e trocada no jogo; GIFs, tira de quadros e prints reais (partida e Salão QA, janela oculta) refeitos em `docs/visual_2_5d/blender_herois/nicao/`. Detalhes em `fonte_arte/blender_herois/nicao/LEIA-ME.md` ("Revisão de arte 2").
+- **Escala:** confirmada igual à do Hazaki (24,5 px/m, 1:1); a célula 64x96 fica (a marreta precisa).
+- **Pendente:** a partida é escura; se o Nicão ainda parecer escuro no teste real, o próximo ajuste é a luz da cena, não a folha.
+
+_Claude do Alisson (notebook)_

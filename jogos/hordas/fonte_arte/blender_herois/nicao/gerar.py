@@ -122,11 +122,11 @@ def estilizar(material, base):
     links.new(geo.outputs["Normal"], dot2.inputs[0])
     borda = nodes.new("ShaderNodeMath")
     borda.operation = "GREATER_THAN"
-    borda.inputs[1].default_value = 0.58
+    borda.inputs[1].default_value = 0.45
     links.new(dot2.outputs["Value"], borda.inputs[0])
     fac = nodes.new("ShaderNodeMath")
     fac.operation = "MULTIPLY"
-    fac.inputs[1].default_value = 0.55
+    fac.inputs[1].default_value = 0.70
     links.new(borda.outputs[0], fac.inputs[0])
     mix = nodes.new("ShaderNodeMixRGB")
     mix.blend_type = "MIX"

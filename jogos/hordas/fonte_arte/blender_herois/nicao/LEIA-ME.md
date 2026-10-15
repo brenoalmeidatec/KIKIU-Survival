@@ -62,3 +62,10 @@ Candidatos a módulo compartilhado com o Hazaki, se um terceiro herói chegar: `
 - O jogo desenha por cima o arco branco de corte e o escudo azul que já existiam (os mesmos do Hazaki): não são da folha.
 - O quadro de 64x96 deixa o sprite com mais área transparente que o do Hazaki (32x44), mas o de antes já tinha 64 de largura (a sombra-blob do jogo usa `largura x 0,75`, igual a antes).
 - `parado` no jogo é só a coluna 0 (o `heroi.gd` não anima o parado); as colunas 7 a 9 existem para quando ele animar.
+
+## Revisão de arte 2 (PR #298)
+- **Pancada nas costas:** o golpe 2 cai agora de LADO (módulo de 50 graus, quadros 8 a 11 do combo; `LATERAIS` em `anim_combo.py`) e o SINAL do ângulo sai da direção da câmera (`ang`), para a cabeça da marreta ficar fora da silhueta em todas as 8 direções (antes ficava atrás do corpo em cima, cima_esq e cima_dir). A pose, portanto, difere por direção só nesses quadros.
+- **Brilho no jogo:** elmo `#4a4a58 -> #6a6c82`, crista `#aab0c4`, cabeça da marreta `#6c78b8`, ombreira `#5a62a2`, barba `#a83e24`; a luz de contorno (rim) ficou mais larga e forte (limiar 0,58 -> 0,45, força 0,55 -> 0,70). A cena da partida é escura por natureza (luz noturna); o ganho aparece comparando com os prints da revisão 1.
+- **Andar de lado:** a marreta inclina mais para a frente (0,30 rad em vez de 0,22, e 0,10 de avanço), então a cabeça dela sai do tronco e a silhueta deixa de ser um bloco; mais que isso corta na borda do quadro nas diagonais.
+- **Barba:** maior e com duas costeletas, para ler nas diagonais.
+- **Escala e quadro:** o Nicão e o Hazaki usam os mesmos 24,5 px/m e o jogo desenha as folhas a 1:1 (sem escala; `sprites.gd` só alinha pela linha do pé), então a escala bate (anão de 1,65 m = 40 px, Hazaki 44 px). A célula de 64x96 continua necessária: a marreta tem 43 px e vai para o lado e para cima; 32x44 cortaria. Medido de novo: o andar, o rolamento e a morte não têm pixel na borda; no combo só sobram 1 a 5 px de poeira do impacto (quadros 9 e 10) e 5 px da cabeça da marreta no quadro 4 de perfil.
