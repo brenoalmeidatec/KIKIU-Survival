@@ -1865,6 +1865,12 @@ _Codex do Alisson_
 
 _Claude do Alisson (notebook)_
 
+
+## 2026-10-15 - #277: Hazaki do Blender com combo, rolamento, escudo, dano e morte
+
+- **Feito:** `v2/heroi.gd` passa a ler `animacoes` do json da folha de 50 colunas (`_tem_anim`, `_coluna_anim`, `_coluna_por_tempo`, `_coluna_acao`): golpe usa as colunas do combo (6 quadros por golpe, `golpe_i`), esquiva usa o rolamento (sem girar o sprite), escudo ergue nas colunas 34-37, dano 38-41 (cortada em 0,5 s) e morte 42-49. A morte não cai mais de lado: com a folha nova o `_visual_morto` usa o quadro deitado do Blender (rotação 0); heróis sem `animacoes` (Nicão, Lucas) seguem com o código antigo. A câmera lenta da morte (0,25x) é compensada para a animação tocar inteira antes da tela de derrota. Normal map mantido.
+- **Validação:** `v2_herois` ganhou `_t_hazaki_animacoes` (colunas de cada ação, sprite sem girar, morte trava na coluna 49). v2_herois, v2_salao_vivo, esquiva e v2_ruptura: código 0, `falhas=0`, sem SCRIPT ERROR (v2_salao_vivo falhou uma vez por outro teste mexer no mesmo `user://`; repetido isolado, passou). gdformat -l 160 limpo. Capturas com janela oculta (`v2_herois --fotos=`, `hazaki_anim_*.png`) de combo, rolamento, escudo, dano e morte.
+- **Pendente:** parado ainda só usa a coluna 0 (a folha tem 4 quadros de parado); sem som/efeito novo ligado ao quadro.
 ## 2026-10-15 · Claude do Alisson · CI: falso "save real alterado" no salão vivo (travava o #276)
 - **Antes/depois:** o CI do #276 falhou em `v2_salao_vivo` (`falhas=3`: `save real intacto teste_salao_personagens/pp1/progresso.cfg`). A conferência por md5 pega todo arquivo de `user://` sem prefixo `qa_`, e o runner roda as cenas em paralelo (`xargs -P 4`): arquivo de teste de outra cena criado ou trocado durante a rodada virava "save real". Agora a conferência também ignora `teste_*`. Nada muda no jogo. O #276 não mexe nesse teste: o CI dele roda o merge com a `main` atual, onde o teste existe.
 - **Escopo:** `testes/v2_salao_vivo.gd` (a condição do snapshot e um comentário).
@@ -1886,6 +1892,13 @@ _Claude do Breno_
 - **Rastro de katana:** ligado, `Meta.aplicar` põe `fx.variante = "ciano"` e o corte usa `corte_hazaki_ciano.png` (Blender); só visual, o dano não muda.
 - **Testes:** `v2_meta` (seção 6b reescrita), `v2_santuario` (texto da recompensa) e o novo `v2_pesadelo` (liga só com conquista, vida, dano, taxa, teto, onda, chefe, almas, HUD, resultado, rastro). `v2_partida` não precisou mudar (a carta escondida do teste é a `critico`). Mexi um pouco em `altar.gd`, `hud.gd`, `status.gd` e `resultado_meta.gd` (área visual do Codex): só os botões, o rótulo PESADELO e uma linha no card.
 - **Pendente:** olhar o Santuário e o HUD no jogo para acertar a posição dos botões e do rótulo; rebalancear os números do Pesadelo depois de jogar.
+## 2026-10-15 · Claude do Alisson · aba Gráficos da v2: Tela cheia, queda de qualidade e FPS (#150)
+- **Antes/depois:** o topo de Ajustes > Gráficos (v2) tinha Perfil, Detectar pela máquina e Mostrar FPS. Agora tem também Tela cheia (F11) e Baixar a qualidade se travar, fora do perfil (gravam em `opcoes`, então não viram Personalizado). F11 liga e desliga a tela cheia nas telas da v2, com a pausa aberta ou fechada. A baixa de qualidade (fps abaixo de 40 por 8 s desce Alto, Médio, Baixo, só na sessão, com aviso na partida) passa a valer na v2; antes só a v1 fazia.
+- **Escopo:** `v2/ajustes_graficos.gd`, `v2/pausa.gd` (F11 no começo de `entrada()`), `v2/qualidade_auto.gd` (novo, a contagem), `v2/mundo.gd` (chamada no `_process`, só no jogo de verdade), `scripts/hordas/config.gd` (perfil temporário fora de `_cfg`, em `_temp`), testes `v2_pausa`, `graficos` e `v2_salao_vivo`, `v2/LEIA-ME.md`, print em `docs/imagens/graficos_v2_topo.png`.
+- **Correção junto:** `g_perfil_temporario` gravava no mesmo ConfigFile das opções, então a queda ia para o arquivo no próximo salvamento de qualquer opção (até o volume). Agora fica só na memória; `g_definir`, `g_aplicar_perfil` e `recarregar` a tiram. A v1 usa a mesma API e ganha a correção.
+- **Validação:** suíte completa de `testes/` (88 cenas, sem `bench_*`), uma por vez, headless: 87 ok na primeira rodada. `v2_salao_vivo` falhou porque escrevia direto em `_cfg` (dependia da lógica antiga); ajustado para `g_temporario` e rodado de novo com `falhas=0`. Também `v2_pausa`, `graficos`, `v2_menu`, `v2_fontes`, `v2_esc` e `v2_status` com `falhas=0`. `gdformat -l 160 --check` limpo em scripts, testes e v2. Print com janela oculta (`v2_pausa -- --fotos`, 960x540): o topo da lista e o rodapé de quatro linhas cabem no painel.
+- **Pendente:** a queda por fps numa partida real só foi conferida por função (fps simulado). Falta jogar no PC fraco do Breno (perfil Baixo, i5-3470). "Baixar a qualidade" vem ligada, como na v1: confirmar o padrão com o Breno.
+- **Para o Claude do Alisson:** `v2/pausa.gd` e a parte visual de `v2/ajustes_graficos.gd` estão na área do Codex pela divisão do CLAUDE.md da checkout principal. A mudança ali é pequena (F11 e duas linhas da aba) e está avisada no corpo da PR. Sobreposições com PRs abertas: `v2/mundo.gd` com a #285 (ela mexe em `nascer_monstro`, linha ~607; as minhas mudanças são depois de `_ler_graficos` e no `_process`); `v2/LEIA-ME.md` com #258, #279, #282 e #285 (manter os dois lados).
 ## 2026-10-15 · Claude do Alisson · SUA BUILD no controle: painel central com saída (#257)
 - **Antes/depois:** com o painel central aberto sobre a escolha de cartas ou o baú, o controle não tinha saída: `status.entrada()` engolia todo botão e só o C abria e fechava o painel. Agora o Select (`JOY_BUTTON_BACK`, o botão que a v1 já dava ao card "status") liga e desliga o painel, o B fecha, LB e RB paginam como Q e E, e o resto do controle segue engolido com o painel aberto, porque as cartas estão escondidas.
 - **Escopo:** `v2/status.gd` (`entrada()` e a constante `BOTAO_PAINEL`) e a lista de controles do `v2/LEIA-ME.md`. Na partida o Select não liga o card compacto: o C segue sendo o da partida, de propósito. O Start continua sendo da antena da pausa, que o recebe antes do card, como o ESC.
@@ -1916,5 +1929,65 @@ _Codex do Alisson_
 - **Feito:** branch `alisson/lote-integracao` junta, nesta ordem, controle-painel (#282), passe de pixel no Alto (#279), morte do herói com dissolve (#280), ícones de nicho do Lucas (#283, com o #278 do Codex) e o pedido de animações das armas (#268). Único conflito de texto: `v2/LEIA-ME.md` (seções do #253 e do #258), resolvido mantendo as duas seções. LOGBOOK sem conflito.
 - **Validação:** suíte inteira com `testes_ci.sh` (2 paralelas) e `gdformat -l 160 --check` limpo.
 - **Pendente:** Breno/orquestrador mesclar o PR na main; fecha #257 e #275.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson (notebook) · piloto: herói andando no Blender (8 direções)
+- **Feito:** `jogos/hordas/fonte_arte/blender_herois/` (gerar_heroi_andar.py, previa_gif.py, folha `hazaki_samurai_blender_*`, .blend). Herói padrão da v2 = `hazaki_samurai`. Ciclo de andar novo de 6 quadros x 8 direções, cor + normal, render 4x + BOX + paleta + contorno 1 px, mesma grade e linhas do sprite atual (32x44; colunas parado + 6). Render: 168 imagens em 49 s (53 s com o setup), Blender 4.5, `-b -t 6`. Prévias em `docs/visual_2_5d/blender_herois/`. O sprite do jogo NÃO foi trocado.
+- **Pendente:** detalhes finos (listras douradas do peito, rosto) perdem definição com o BOX; joelho não existe no modelo (só levanta a perna inteira); `PASSO_ANIM` do `heroi.gd` assume 4 quadros; falta parado/respira, combo da katana, rolamento, escudo, morte e os outros heróis (Nicão, Lucas).
+- **Próximo:** decidir se a folha troca a atual; depois repetir o script com as ações já existentes em `hazaki.py` (ataque, defesa, dano, morte).
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Alisson (PC) · combo da katana no Hazaki (3 golpes x 4 quadros)
+- **Feito:** branch `alisson/hazaki-anim-combo` (a partir de `alisson/hazaki-blender`, sem PR). `hazaki/anim_combo.py` com 12 quadros: golpe 1 corte horizontal da direita para a esquerda, golpe 2 da esquerda para a direita, golpe 3 descendente com passo da perna esquerda. Cada golpe tem antecipação, golpe, impacto e volta. Os ângulos do tronco e do braço da katana saíram da posição da ponta da lâmina (cinemática do rig), para caber no quadro 32x44. `quadros/combo/`: 96 pares cor/normal, todos 32x44 RGBA, alfa binário e silhueta igual entre cor e normal. `gerar.py` e os outros módulos não foram mexidos; `hazaki_rig.blend` não foi salvo (`--anim` não salva).
+- **Limite:** a lâmina aparece nos 12 quadros na frente e nas diagonais de frente. Ela some quando passa para o lado de trás do corpo: de costas, na maior parte dos golpes; no perfil esquerdo, no impacto 1, na volta 1 e no golpe 2; no perfil direito, no impacto 2. É geometria, não pose: um corte na frente do peito fica atrás do tronco vista de costas, e o quadro de 32x44 não comporta uma lâmina mais longa ou mais larga sem encostar na borda.
+- **Pendente:** decidir se a legibilidade de costas é requisito. Se for, o caminho é um rastro do golpe no código do jogo (efeito, que é do Claude do Alisson pela divisão fixa), não mais pose.
+- **Próximo:** quem integrar decide se a folha do combo entra no `v2`.
+
+_Claude do Alisson (PC)_
+## 2026-10-15 · Claude do Alisson (workflow) · Hazaki: animações de defesa (escudo, dano) e morte em WIP
+- **Feito:** `hazaki/anim_escudo.py` (2 quadros: erguer e segurar, guarda alta com a katana vertical) e `hazaki/anim_dano.py` (2 quadros: impacto e recuo, tronco e cabeça para trás). Quadros commitados em `quadros/escudo/` e `quadros/dano/` (8 direções, cor + normal, 32x44, alfa binário, mesma silhueta nos dois). Conferido por script. Borda: `dano` não toca; `escudo` toca em `baixo_dir` (coluna 31) e `cima_esq` (coluna 0), sem corte aparente.
+- **Feito, mas não fecha:** `hazaki/anim_morte.py` (6 quadros, WIP). Os quadros NÃO foram commitados. Deitado de comprido não cabe no quadro: o corpo tem ~3,3 unidades (~44 px) e, nas vistas de lado e diagonais, passa dos 32 px; nas vistas de costas, a cabeça desce para fora da linha do pé. A morte virou "sentado e recostado" (q4-q5): cabe melhor, mas os quadros 2 a 5 ainda cortam 1 a 9 px em algumas direções.
+- **Achado de convenção (corrigir o LEIA-ME):** `girar(x=-)` é "para frente" só em ossos que apontam para baixo (braço, antebraço, perna, canela). Em tronco e cabeça, que apontam para cima, é o contrário: `x=+` inclina para frente. Conferido com um teste no `hazaki_rig.blend`.
+- **Pendente:** decidir como a morte cabe no quadro 32x44 (âncora própria para a morte, quadro maior para ela, ou pose mais compacta). Enquanto isso, não usar `quadros/morte` no jogo.
+- **Próximo:** revisão e merge pelo integrador (branch `alisson/hazaki-anim-defesa`, sem PR aberto por aqui).
+
+_Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 · Claude do Alisson (workflow, máquina não confirmada) · Hazaki do Blender: montagem 1 (folha final com as 7 animações e QA no Salão)
+- **Feito:** mesclei em `alisson/hazaki-blender` as branches `hazaki-anim-rolamento`, `hazaki-anim-combo` e `hazaki-anim-defesa` (sem conflito; o LOGBOOK da defesa entrou no automático). O `gerar.py` renderizou as 7 animações (parado, andar, rolamento, combo, escudo, dano, morte): 38 quadros x 8 direções, cor e normal, 32x44, em 22 s com `blender -b -t 6`. A folha final está em `hazaki/hazaki_final_albedo.png` e `hazaki_final_normal.png` (1216x352: 38 colunas x 8 linhas). O `hazaki_final.json` segue o formato que o `sprites.gd` e o `heroi.gd` leem, e as animações novas estão em `animacoes` (colunas, quadros, tempo por quadro sugerido). Documentado no `hazaki/LEIA-ME.md`, com a convenção de `girar(x=)` corrigida no tronco e na cabeça.
+- **Feito, com aviso:** GIFs em `docs/visual_2_5d/blender_herois/hazaki/` (uma por animação, 8 direções lado a lado, e `comparativo_atual_x_novo.gif` com o `hazaki` que o jogo usa hoje). QA no Salão real, janela oculta: a cena `blender_herois/qa/qa_hazaki_final.gd` troca só a textura do herói, e o jogo não foi tocado. Prints de parado, andando e meio do golpe 3 (coluna 25, de frente) no PR.
+- **Pendente:** (1) a morte encosta ou corta a borda lateral em 28 dos 48 quadros (é o WIP do autor, quadros 1 a 5); (2) andar, rolamento e escudo encostam na borda em algumas diagonais (largura máxima 30 px, então devem caber, mas sem folga); (3) o jogo ainda não usa as colunas novas: o `heroi.gd` anda com `colunas.size() - 1` quadros e o `PASSO_ANIM` dele é 0,13 s, enquanto o andar pede cerca de 0,09 s.
+- **Próximo:** decidir a âncora da morte antes de ligar no jogo; depois ligar rolamento e combo no `heroi.gd` (é do Claude do Alisson, fora de `hazaki/`).
+- **Recados:** PR em rascunho aberto para a `main`, sem merge. Os PNGs re-renderizados saíram pixel-idênticos aos commitados, então foram restaurados para não gerar diff de bytes; só o `hazaki_rig.blend` regenerado entrou como binário.
+
+_Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 | Hazaki do Blender: correção das animações (revisão de arte 5,5/10), branch `alisson/hazaki-blender`
+- **Feito:** morte, combo, rolamento, dano e escudo refeitos (`jogos/hordas/fonte_arte/blender_herois/hazaki/anim_*.py`), folha final regerada (50 colunas), GIFs em `docs/visual_2_5d/blender_herois/hazaki/`.
+  Morte: 8 quadros (tomba, impacto q3, rebote, 2 de repouso), deitada nas 8 direções, cabeça para a câmera (de bruços de frente, de costas de costas e de perfil); corpo 25 a 31 px de largura, cabe na célula 32x44.
+  Combo: 18 quadros (3 golpes diferentes: horizontal, diagonal, estocada; antecipação, golpe e impacto com rastro, hold de 1 quadro, volta). Rolamento: giro de verdade com poeira. Dano: 4 quadros. Escudo: 4 quadros, a katana cruza o tronco.
+  Katana mais larga, longa e clara em todas as animações (`gerar.py`: andar e parado re-renderizados). Infra nova: `ossos.ancorar/encaixar_x/guarda_ponta`, `posar(..., ang)`, `efeito()` (rastro 2D), `ik_katana.py`, `s_quadros` no JSON.
+- **Pendente:** a ordem das colunas da folha mudou (combo 16-33, escudo 34-37, dano 38-41, morte 42-49) e o QA `qa_hazaki_final.gd` e o PNG `qa_salao_*` do Salão ainda são da montagem 1 (não foram re-gerados). Alguns quadros de golpe e rolamento ainda encostam 1 px na borda (o rastro é cortado pela célula).
+  Ninguém conferiu no jogo: só os PNGs e GIFs foram vistos. O jogo não lê esses quadros (heroi.gd é do Claude do Alisson).
+- **Próximo:** nova revisão de arte; ligar morte/combo/rolamento no `heroi.gd` usando `animacoes` do `hazaki_final.json` (`s_quadros` dá o tempo de cada quadro).
+
+_Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 · Claude do Alisson (workflow, máquina não confirmada) · Hazaki do Blender: montagem 2 (render completo, folha de 50 colunas, prints no Salão)
+- **Feito:** o merge das três branches de animação (rolamento, combo, defesa) em `montar-2`, a partir de `alisson/hazaki-blender`, deu "Already up to date": as três já eram ancestrais, então nada mudou. Render completo com `gerar.py` (7 animações, 800 PNGs cor e normal) em 32 s de parede com `blender -b -t 6`. O re-render saiu pixel-idêntico ao commitado, então folha, prévia e GIFs continuam iguais. O que muda no commit: `hazaki_final.json` (`tempo_render_s` = 32), `montar_folha.py` (docstring: 50 colunas, não 38), `LEIA-ME.md` (a seção de folha ainda era a da montagem 1, de 38 colunas, e foi trocada pela de 50 com bordas e tempos atuais), a cena `qa/qa_hazaki_final.gd` (comentário) e o print `qa_salao_parado_andando_golpe3.png` (novo).
+- **Feito (QA no Salão):** o Salão (`v2/salao.tscn`) está no `origin/main` (#242), não nesta branch. Rodei a cena de QA numa cópia do `main` extraída com `git archive`, fora do repo, com o Godot 4.4.1 em janela oculta. Prints reais de parado, andando e golpe 3 (de frente e de perfil), mais um controle com o sprite atual do jogo: a troca de textura aparece de verdade. Import 39 s; cada print uns 5 s.
+- **Pendente:** bordas (`medir.py`): combo toca em 6 direções (o rastro é cortado pela célula), dano e morte em 5, rolamento em 4, andar em 4; parado e escudo não tocam. O jogo ainda não lê as colunas novas (`heroi.gd` é do Claude do Alisson). Nenhuma partida foi jogada com estes quadros: os prints são do QA.
+- **Próximo:** quem integrar decide se a folha de 50 colunas entra no `v2` e se `heroi.gd` passa a usar `animacoes`, depois de revisar as bordas do combo e da morte.
+- **Recados:** PR #276 segue como rascunho, sem merge. Os GIFs e o print novo estão em `docs/visual_2_5d/blender_herois/hazaki/` e são os links do corpo do PR.
+
+_Claude do Alisson (workflow, máquina não confirmada)_
+
+## 2026-10-15 - Hazaki do Blender no jogo, final (empilhado no lote #291)
+
+- **Feito:** junta #276 (folha do Blender) e #277 (ligação no `heroi.gd`) sobre `alisson/lote-integracao`. Conflito com o dissolve da morte (#280) resolvido em `v2/heroi.gd`: a queda do Blender toca primeiro (relógio real, a câmera lenta não come a animação) e o shader de dissolução entra só no fim dela, sem flash branco durante a queda; sem animação de morte (folhas antigas) nada muda. A morte do Blender agora cai DE LADO (rola em torno do eixo frente-trás, encolhida, cabeça para a esquerda ou direita da tela) em todas as direções, em vez de cair de costas para a câmera, que visto de cima parecia de cabeça para baixo (`anim_morte.py`). Lâmina da katana mais larga (0,15 para 0,18) e mais aberta para fora, para ler de frente e de costas. Folha remontada e copiada para `hazaki_samurai_*`. O tempo do andar vem de `animacoes.andar.s_por_quadro` do JSON (0,09 s), com `PASSO_ANIM` de reserva. `testes/v2_morte_heroi.gd` ajustado ao novo encadeamento.
+- **Pendente:** deitado, o corpo (botas e katana) passa 3 a 5 px dos 32 da célula e é cortado (`medir.py`); aceito por não mudar o tamanho da célula. O print do Salão (`qa/`) segue só para QA.
+- **Próximo:** o Breno/Alisson jogarem para ver o ritmo do andar e a queda; mesclar o lote #291 e depois este PR.
 
 _Claude do Alisson (notebook)_

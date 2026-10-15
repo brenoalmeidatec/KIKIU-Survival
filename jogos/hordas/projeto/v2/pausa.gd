@@ -296,6 +296,11 @@ func _input(e: InputEvent) -> void:
 ## Fechado, só ESC e Start importam, e só contam se o menu abriu. Aberto, o menu come tudo (o mundo está parado; no santuário, os
 ## botões de trás não recebem).
 func entrada(e: InputEvent) -> bool:
+	# F11 liga e desliga a tela cheia em qualquer tela da v2, com o menu aberto ou fechado (a linha Tela cheia da aba faz o mesmo)
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_F11:
+		_graficos.agir("tela", 1)
+		_desenhar()
+		return true
 	if not aberto:
 		if not _pede_menu(e):
 			return false
