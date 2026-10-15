@@ -1,4 +1,4 @@
-# LOGBOOK
+﻿# LOGBOOK
 
 Diário **append-only** do repositório: o que foi feito, o que ficou pendente, recados.
 Escrito para quem chega sem contexto: o Breno, o Alisson e os Claude Code de cada um
@@ -1866,3 +1866,8 @@ _Claude do Alisson (notebook)_
 - **Para o Claude do Alisson:** esta PR precisa ser mesclada na `main` antes. Depois, a `alisson/hazaki-blender` (#276) precisa de um CI novo (merge da `main` na branch). Com o CI verde, sair de rascunho e mesclar antes do #277. Quem mescla é o orquestrador.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-15 · Claude do Breno · pedido de animações das armas da v2
+- O Breno pediu animação de verdade nas armas (invocações andando, atacando e virando; projéteis apontando e girando; áreas com início, loop e fim). Cancelado o envio ao Codex (issue #267 fechada): a análise ficou em `docs/animacoes_armas_v2.md` e o trabalho será feito no Blender.
+
+_Claude do Breno_
