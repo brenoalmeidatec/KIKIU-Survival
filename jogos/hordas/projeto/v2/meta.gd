@@ -67,6 +67,67 @@ static func item_da_recompensa(r: Dictionary) -> Dictionary:
 	return {}
 
 
+## O modo ou visual do catálogo com este id; {} se não achar.
+static func item_extra(tipo: String, id: String) -> Dictionary:
+	return item_da_recompensa({"tipo": tipo, "id": id})
+
+
+## O jogador já cumpriu a conquista que libera este modo ou visual? (`cf` = o save já lido.)
+static func _item_liberado(tipo: String, id: String, cf: ConfigFile) -> bool:
+	for c in conquistas():
+		var r: Dictionary = c.get("recompensa", {})
+		if str(r.get("tipo", "")) == tipo and str(r.get("id", "")) == id:
+			return bool(cf.get_value("conquistas", c.id, false))
+	return false
+
+
+## Modo ou visual liberado pela conquista (ainda não quer dizer que está ligado).
+static func liberado(tipo: String, id: String) -> bool:
+	var cf := _ler()
+	return cf != null and _item_liberado(tipo, id, cf)
+
+
+## Ligado no Santuário E liberado: só então vale na partida (save: [config] <id> = true).
+static func ligado(tipo: String, id: String) -> bool:
+	var cf := _ler()
+	return cf != null and _item_liberado(tipo, id, cf) and bool(cf.get_value("config", id, false))
+
+
+## Liga ou desliga um modo ou visual no Santuário. Sem a conquista cumprida não liga. Devolve false se não gravou.
+static func ligar(tipo: String, id: String, valor: bool) -> bool:
+	erro_save = false
+	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return false
+	if valor and not _item_liberado(tipo, id, cf):
+		return false
+	cf.set_value("config", id, valor)
+	erro_save = not _gravar(cf)
+	return not erro_save
+
+
+## Os números do modo Pesadelo (dados/v2_meta.json, modos > pesadelo > regras), sem a chave de ajuda.
+static func regras_pesadelo() -> Dictionary:
+	var r: Dictionary = item_extra("modo", "pesadelo").get("regras", {}).duplicate()
+	r.erase("_ajuda")
+	return r
+
+
+## Porcentagem a mais de um multiplicador do Pesadelo (1,5 = 50).
+static func _mais_pct(regras: Dictionary, chave: String) -> int:
+	return roundi((float(regras.get(chave, 1.0)) - 1.0) * 100.0)
+
+
+## Texto do modo ou visual para o Santuário: o desc, com os números do Pesadelo no lugar de {vida}, {dano}, {densidade} e {almas}.
+static func texto_item(item: Dictionary) -> String:
+	var t := str(item.get("desc", ""))
+	var r: Dictionary = item.get("regras", {})
+	for par in [["vida", "vida_mult"], ["dano", "dano_mult"], ["densidade", "densidade_mult"], ["almas", "almas_mult"]]:
+		t = t.replace("{%s}" % par[0], str(_mais_pct(r, par[1])))
+	return t
+
+
 static func _ler() -> ConfigFile:
 	var cf := ConfigFile.new()
 	var existe := FileAccess.file_exists(caminho_save)
@@ -256,13 +317,13 @@ static func checar_ao_vivo(tempo: float, maior_combo: int) -> Array:
 
 
 ## As almas que o fim da partida credita de fato: as `bruto` da partida mais o bônus "Almas abundantes" do Santuário (`bonus` = fração,
-## `mundo.meta_bonus.almas`). É a conta de `registrar_partida`; o card de status (status.gd) mostra o mesmo número.
-static func almas_creditadas(bruto: int, bonus: float) -> int:
-	return roundi(bruto * (1.0 + bonus))
+## `mundo.meta_bonus.almas`) e, no Pesadelo, o `mult` (almas_mult das regras). É a conta de `registrar_partida`; o card de status (status.gd) mostra o mesmo número.
+static func almas_creditadas(bruto: int, bonus: float, mult := 1.0) -> int:
+	return roundi(bruto * (1.0 + bonus) * mult)
 
 
 ## Fim da partida: credita as almas (com o bônus de "almas"), marca conquistas e guarda o resumo.
-## `r` tem tempo, abates, nivel, maior_combo, venceu e almas. Devolve antes, ganhas, depois e as conquistas novas.
+## `r` tem tempo, abates, nivel, maior_combo, venceu, almas e pesadelo (true = a partida foi no modo Pesadelo). Devolve antes, ganhas, depois e as conquistas novas.
 static func registrar_partida(r: Dictionary) -> Dictionary:
 	erro_save = false
 	var cf := _ler()
@@ -271,7 +332,9 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 		return {}
 	var antes := int(cf.get_value("moeda", "almas", 0))
 	var bruto := int(r.get("almas", 0))
-	var ganhas := almas_creditadas(bruto, _bonus("almas", cf))
+	var pesadelo := bool(r.get("pesadelo", false))
+	var mult := float(regras_pesadelo().get("almas_mult", 1.0)) if pesadelo else 1.0
+	var ganhas := almas_creditadas(bruto, _bonus("almas", cf), mult)
 	cf.set_value("moeda", "almas", antes + ganhas)
 	var novas := _conquistar(cf, r)
 	cf.set_value("ultima", "tempo", float(r.get("tempo", 0.0)))
@@ -280,6 +343,7 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "nivel", int(r.get("nivel", 1)))
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
+	cf.set_value("ultima", "pesadelo", pesadelo)
 	if not _gravar(cf):
 		erro_save = true
 		return {}
@@ -315,7 +379,7 @@ static func texto_proximo(m: Dictionary, n: int) -> String:
 
 
 ## Põe as melhorias compradas no herói, no começo da partida. Os valores são ABSOLUTOS (base do dados/v2_combate.json mais o
-## bônus), então chamar de novo não soma em cima. Os bônus de raridade, rolagem e almas ficam em mundo.meta_bonus.
+## bônus), então chamar de novo não soma em cima. Os bônus de raridade, rolagem e almas (e as regras do Pesadelo, se ligado) ficam em mundo.meta_bonus; o Rastro de katana troca mundo.combate.fx.variante.
 static func aplicar(mundo) -> void:
 	var cf := _ler()
 	if cf == null:
@@ -331,6 +395,11 @@ static func aplicar(mundo) -> void:
 	h.m_ima = 1.0 + _bonus("ima", cf)
 	h.m_vel_ataque = 1.0 + _bonus("treino", cf)
 	mundo.meta_bonus = {"raridade": _bonus("raridade", cf), "rolagem": int(_total("rolagem", cf)), "almas": _bonus("almas", cf)}
+	if ligado("modo", "pesadelo"):
+		mundo.meta_bonus["pesadelo"] = regras_pesadelo()  # as regras do modo; sem a chave a partida é normal (mundo.fator_pesadelo)
+	if mundo.combate != null and mundo.combate.fx != null:  # visual do santuário: a folha do corte da katana (só cosmético, o dano é o mesmo)
+		var rastro := ligado("visual", "rastro_katana")
+		mundo.combate.fx.variante = str(item_extra("visual", "rastro_katana").get("variante", "katana")) if rastro else "katana"
 	preload("res://v2/herois.gd").aplicar_bonus(mundo)  # bônus do herói escolhido (área, sorte...) por cima das melhorias
 
 
