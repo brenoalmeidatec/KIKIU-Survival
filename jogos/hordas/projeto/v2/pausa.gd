@@ -296,6 +296,11 @@ func _input(e: InputEvent) -> void:
 ## Fechado, só ESC e Start importam, e só contam se o menu abriu. Aberto, o menu come tudo (o mundo está parado; no santuário, os
 ## botões de trás não recebem).
 func entrada(e: InputEvent) -> bool:
+	# F11 liga e desliga a tela cheia em qualquer tela da v2, com o menu aberto ou fechado (a linha Tela cheia da aba faz o mesmo)
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_F11:
+		_graficos.agir("tela", 1)
+		_desenhar()
+		return true
 	if not aberto:
 		if not _pede_menu(e):
 			return false
@@ -442,6 +447,8 @@ func _executar(id: String, passo: int) -> void:
 			_sair()
 		"musica", "efeitos":
 			_volume(id, passo)
+		"versao":
+			Config.definir("verificar_versao", not bool(Config.v("verificar_versao")))
 		_:
 			if id.begins_with("g:"):
 				_graficos.agir(id.substr(2), passo)
@@ -484,7 +491,13 @@ func _itens() -> Array:
 			r.append(_it("sair", "Sair do jogo"))
 			return r
 		"ajustes":
-			return [_it("graficos", "Gráficos"), _it("audio", "Áudio"), _it("creditos", "Créditos"), _it("voltar", "Voltar")]
+			return [
+				_it("graficos", "Gráficos"),
+				_it("audio", "Áudio"),
+				_it("versao", "Avisar versão nova", "Sim" if bool(Config.v("verificar_versao")) else "Não"),
+				_it("creditos", "Créditos"),
+				_it("voltar", "Voltar")
+			]
 		"creditos":
 			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"graficos":

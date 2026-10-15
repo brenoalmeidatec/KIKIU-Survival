@@ -78,6 +78,7 @@ XP dourado e ouro de seleção são papéis distintos. Fusão magenta continua d
 - **Pips** (`status.gd:1040-1050`): quadradinhos de 8 px com 3 px de espaço; fração vira pip parcial. Nível usa pips de 5 px; evoluído ganha estrela dourada (`status.gd:1141, 1156`).
 - **Ícones 8x8** (`status.gd:899-915`): `#` cor, `o` brilho (cor clareada 55%), `.` vazio. Desenhados por código a 2x (16 px) por `_icone8` (`status.gd:1013-1022`). Cartas usam o ícone próprio do ID (`assets/v2/icones_cartas`): 32x32 na escolha, no baú e nos slots da HUD; 16x16 na linha do SUA BUILD (`v2/LEIA-ME.md`).
 - **Avisos** (`hud_anuncios.gd`): uma faixa no centro alto, fila de até 5, moldura `moldura_faixa.png` tingida por tipo (`hud.gd:32-34, 293-294`). Não há balão de fala; os avisos de ataque no chão (`avisos.gd`) são do mundo.
+- **Cartão da FUSÃO** (`hud.gd`, `_montar_fusao`): 600 x 200, moldura `assets/v2/fusoes/moldura.png` em 9-slice (`NinePatchRect`, borda de 12 px; o miolo estica e é liso). Um halo 48 x 48 de cada lado do título, tingido pela cor da evolução (campo `cor` em `dados/v2_cartas.json`), com o ícone de junção 16 x 16 mostrado em 2x (`fusoes/icone.png`). O texto corrido tem 28 px de recuo, dentro da borda. No SUA BUILD, a linha de peça já fundida (nível "evoluída", `status.gd`, `_fundida`) leva o mesmo ícone depois do nível. A onda da Ventania é `assets/v2/fusoes/ventania.png` (64 x 32), entregue por `v2/armas_novas.gd`; o halo das lâminas evoluídas (`v2/armas.gd`) é `fusoes/halo.png`.
 
 ## 5. Comportamento
 
@@ -108,6 +109,7 @@ Comando: `godot --path jogos/hordas/projeto res://testes/<nome>.tscn`. A maioria
 | `v2_partida` | cartas, raridade, baú, resultado (`:51`) |
 | `v2_meta` | santuário e meta-progressão (`:51`) |
 | `v2_musica` | música de cada tela (`:59`) |
+| `v2_fusoes` | arte da fusão: tamanhos (600 x 200, 48, 16, 64 x 32), borda de 12 px e a Ventania no registro de armas |
 
 Mexeu em cor ou fonte: rode `v2_fontes` e `v2_status`. Mexeu em estado de tela: rode `v2_esc` e `v2_pausa`.
 

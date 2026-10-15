@@ -178,6 +178,7 @@ func _resultado_do_mundo() -> Dictionary:
 
 func _terminar(r: Dictionary) -> void:
 	_terminou = true
+	r["pesadelo"] = mundo.pesadelo()  # o Pesadelo rende mais almas (Meta.registrar_partida)
 	if not r.has("almas"):
 		r["almas"] = Meta.almas_da_partida(mundo)
 	var res: Dictionary = Meta.registrar_partida(r)
@@ -202,6 +203,8 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 	_res.visible = true
 	var venceu := bool(r.get("venceu", false))
 	_titulo.text = "VITÓRIA" if venceu else "VOCÊ CAIU"
+	if bool(r.get("pesadelo", false)):
+		_titulo.text += " · PESADELO"
 	_titulo.add_theme_color_override("font_color", COR_OURO if venceu else Paleta.PERIGO)
 	var seg := int(float(r.get("tempo", 0.0)))
 	_valores.text = "%02d:%02d\n%d\nx%d\n%d" % [floori(seg / 60.0), seg % 60, int(r.get("abates", 0)), int(r.get("maior_combo", 0)), int(r.get("nivel", 1))]

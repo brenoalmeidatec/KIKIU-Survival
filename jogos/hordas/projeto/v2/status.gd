@@ -15,7 +15,8 @@ extends CanvasLayer
 ##    numa linha (ícone, nome curto, nível e número), sem dicas; atributos longos quebram e o conteúdo pagina com PgUp/PgDn ou roda sobre o card;
 ##  - "central": sobre a escolha de cartas e o baú o C abre um painel no centro, em três colunas e no layout completo paginado, com o fundo opaco: ele
 ##    ESCONDE as cartas (nada pela metade). Enquanto está aberto, clique e tecla não escolhem carta (a trava de 3 s das cartas segue correndo
-##    em tempo real); o ESC abre a pausa como sempre. Com o painel fechado o card do HUD sai de cena nessas telas (ele cobriria a 1ª e a 3ª carta).
+##    em tempo real); o ESC abre a pausa como sempre; no controle, o Select liga o painel e B o fecha (LB/RB paginam).
+##    Com o painel fechado o card do HUD sai de cena nessas telas (ele cobriria a 1ª e a 3ª carta).
 ## A entrada é `entrada(evento)`, chamada pelo mundo.gd (o SubViewport não recebe a entrada da janela, então este nó não tem _input).
 ## Criado pelo mundo.gd (uma linha no _ready), que guarda em `mundo.status`.
 
@@ -28,6 +29,7 @@ const LAYER_CENTRAL := 13  # acima do HUD (10), do resultado (12) e das cartas (
 const LAYER_PAUSA := 15  # acima do menu de pausa (camada 14) e do escurecimento dele
 const PERIODO := 0.25  # 4 Hz
 const ALFA_HUD := 0.92
+const BOTAO_PAINEL := JOY_BUTTON_BACK  # o Select liga e desliga o painel central, como o C (a v1 já o dava ao card: "status" em main.gd)
 const TAM := Paleta.TEXTO_TAMANHO
 const TAM_NUM := Paleta.NUMERO_PEQUENO
 const TAM_P := Paleta.TEXTO_TAMANHO
@@ -40,6 +42,7 @@ const ALT_TITULO := 22.0
 const ALT_BLOCO_COMPACTO := 18.0  # ícone de 16 px e 2 de respiro: um golpe ou modificador por linha no HUD
 const PAD := 8.0
 const ICONE := 16.0
+const ICONE_FUSAO := preload("res://assets/v2/fusoes/icone.png")  # junção de duas setas (16 x 16): marca a linha de peça já fundida
 const TELA := Rect2(0, 0, 960, 540)
 const JOGO_VIVO := ["jogando", "escolha", "bau"]  # estados do combate em que o C vale
 const JOGO_CARTAS := ["escolha", "bau"]  # as telas de cartas: aí o C abre o painel central
@@ -130,9 +133,9 @@ func _ready() -> void:
 # ------------------------------------------------------------------ ligar e desligar
 
 
-## C: liga e desliga o card compacto (ou o painel central, sobre as cartas). Devolve true se usou o evento (o mundo.gd o passa antes da
-## escolha de cartas e do baú, que comem as teclas). Com o painel central aberto o card engole TODA a entrada, menos o ESC (que é da pausa):
-## nenhum clique, tecla ou botão chega às cartas escondidas.
+## C (ou o Select do controle): liga e desliga o card compacto (ou o painel central, sobre as cartas). Devolve true se usou o evento (o mundo.gd o
+## passa antes da escolha de cartas e do baú, que comem as teclas). Com o painel central aberto o card engole TODA a entrada, menos o ESC (que é
+## da pausa): nenhum clique, tecla ou botão chega às cartas escondidas. No controle, com o painel aberto, B fecha e LB/RB paginam como Q e E.
 func entrada(e: InputEvent) -> bool:
 	if _modo_atual == "central" and not _sobre_cartas():
 		_aplicar()  # as cartas fecharam por outro caminho: o painel sai antes de engolir a entrada
@@ -146,13 +149,27 @@ func entrada(e: InputEvent) -> bool:
 				alternar()
 			if e.keycode in [KEY_Q, KEY_E] and e.pressed and not e.echo:
 				paginar(-1 if e.keycode == KEY_Q else 1)
-		return true
+		elif e is InputEventJoypadButton and e.pressed:
+			if e.button_index == BOTAO_PAINEL:
+				alternar()  # Select: liga e desliga, como o C
+			elif e.button_index == JOY_BUTTON_B:
+				_central = false  # B fecha o painel (o "voltar" das outras telas)
+				_aplicar()
+			elif e.button_index == JOY_BUTTON_LEFT_SHOULDER or e.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+				paginar(-1 if e.button_index == JOY_BUTTON_LEFT_SHOULDER else 1)  # LB é o Q, RB é o E
+		return true  # o resto da entrada é engolido: as cartas estão escondidas
 	if _modo_atual == "hud" and e is InputEventMouseButton and e.pressed and e.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 		for r in retangulos():
 			if (r as Rect2).has_point(_pos_na_tela(e.position)):
 				return paginar(-1 if e.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
 	if _modo_atual == "hud" and e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_PAGEUP, KEY_PAGEDOWN]:
 		return paginar(-1 if e.keycode == KEY_PAGEUP else 1)
+	if e is InputEventJoypadButton:
+		# o Select sobre a escolha ou o baú abre o painel central, como o C; na partida o controle não mexe no card compacto
+		if not e.pressed or e.button_index != BOTAO_PAINEL or not _sobre_cartas() or not pode_alternar():
+			return false
+		alternar()
+		return true
 	if not (e is InputEventKey) or not e.pressed or e.echo or e.keycode != KEY_C:
 		return false
 	if e.ctrl_pressed or e.alt_pressed or e.meta_pressed:
@@ -171,7 +188,8 @@ func _pos_na_tela(pos: Vector2) -> Vector2:
 	return (pos - janela / 2.0) / maxf(escala, 0.001) + TELA.size / 2.0
 
 
-## O C vale com a partida de pé, na escolha de cartas e no baú; não vale com a pausa aberta (ela mostra o card dela) nem no fim da partida.
+## O C (e o Select do controle) vale com a partida de pé, na escolha de cartas e no baú;
+## não vale com a pausa aberta (ela mostra o card dela) nem no fim da partida.
 func pode_alternar() -> bool:
 	return mundo != null and mundo.combate != null and not _pausa and str(mundo.combate.jogo) in JOGO_VIVO and not get_tree().paused
 
@@ -638,8 +656,10 @@ static func _sec_partida(m) -> Dictionary:
 	# as almas que o fim da partida credita de fato: as coletadas mais o bônus "Almas abundantes" do Santuário (a conta de Meta.registrar_partida)
 	var bruto: int = m.almas_partida
 	var bonus_almas := float(m.meta_bonus.get("almas", 0.0)) if m.meta_bonus is Dictionary else 0.0
-	var creditadas: int = Meta.almas_creditadas(bruto, bonus_almas)
+	var creditadas: int = Meta.almas_creditadas(bruto, bonus_almas, m.fator_pesadelo("almas_mult"))
 	var lin: Array = []
+	if m.pesadelo():
+		lin.append(_l("partida.modo", "Modo", "PESADELO", [1], "", true))
 	lin.append(_l("partida.tempo", "Tempo", _tempo(m.tempo_partida), [m.tempo_partida], "", true))
 	lin.append(_l("partida.abates", "Abates", str(m.abates), [m.abates], "", true))
 	lin.append(_l("partida.combo", "Combo", "x%d · maior x%d" % [m.combo, m.maior_combo], [m.combo, m.maior_combo], "", true))
@@ -940,6 +960,11 @@ func _desenhar_icone(l: Dictionary, x: float, y: float) -> void:
 		_tela.draw_texture(tx, Vector2(x, y))
 
 
+## Linha de peça já fundida: o nível é "evoluída" (nível curto "evo"). Só essa linha leva o ícone da fusão.
+static func _fundida(l: Dictionary) -> bool:
+	return str(l.nivel_curto) == "evo"
+
+
 ## Um golpe ou modificador numa linha só (HUD): ícone, nome curto, nível e o número (poder estimado, ou o valor do modificador).
 func _desenhar_bloco_compacto(l: Dictionary, x: float, y: float, w: float) -> void:
 	var ft: Font = Dados.fonte_titulo
@@ -957,6 +982,10 @@ func _desenhar_bloco_compacto(l: Dictionary, x: float, y: float, w: float) -> vo
 	# o nome vai até o nível (o espaço que sobra entre o ícone e o nível); na grade da Jersey 10 (19) quando cabe, um degrau abaixo se não
 	# (a Jersey fora da grade sai borrada, então só quando precisa), e corta com "." quando nem o degrau cabe (golpe com nome longo e sem curto)
 	var espaco_nome := (xx - 6.0 - _larg_misto(nivel, TAM_P) - 6.0) - xt
+	if _fundida(l):  # o ícone da fusão entra antes do "evo", e o nome cede o espaço dele
+		var xi := xx - 6.0 - _larg_misto(nivel, TAM_P) - 4.0 - ICONE_FUSAO.get_width()
+		_tela.draw_texture(ICONE_FUSAO, Vector2(xi, y))
+		espaco_nome -= ICONE_FUSAO.get_width() + 4.0
 	var tam_nome := TAM_CAB if ft.get_string_size(str(l.nome_curto), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_CAB).x <= espaco_nome else TAM_NOME_PEQ
 	var nome := _cabe_nome(str(l.nome_curto), espaco_nome, tam_nome)
 	_tela.draw_string(ft, Vector2(xt, y - 1.0 + ft.get_ascent(TAM_CAB)), nome, HORIZONTAL_ALIGNMENT_LEFT, -1, tam_nome, cor)
@@ -972,6 +1001,8 @@ func _desenhar_bloco(l: Dictionary, x: float, y: float, w: float) -> void:
 		_texto(Dados.fonte_texto, nome, Vector2(xt, yy), wt, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor)
 		yy += ALT_LINHA
 	_misto(str(l.nivel_txt), xt, yy, TAM_P, COR_ROTULO, COR_ROTULO)
+	if _fundida(l):  # a peça fundida leva o ícone da fusão depois do "evoluída"
+		_tela.draw_texture(ICONE_FUSAO, Vector2(xt + _larg_misto(str(l.nivel_txt), TAM_P) + 6.0, yy))
 	yy += ALT_LINHA
 	for linha_t in _linhas_do_bloco(l, wt):
 		var xx := xt

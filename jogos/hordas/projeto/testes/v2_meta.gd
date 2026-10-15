@@ -128,28 +128,54 @@ func _testes() -> void:
 	await get_tree().process_frame
 	ok(a._linhas.size() == Meta.melhorias_visiveis().size(), "uma linha por melhoria visível no santuário")
 	ok(a._conq.size() == Meta.conquistas().size(), "uma linha por conquista no santuário")
-	# 6b. item escondido até ter efeito (oculta_ate_ter_efeito): o santuário não mostra o modo nem o visual, e a conquista segue
-	#     na lista sem a recompensa; sem a flag a recompensa volta com "(sem efeito ainda)" (o efeito segue pendente)
+	# 6b. Pesadelo e Rastro de katana têm efeito: aparecem no santuário (sem "sem efeito ainda"), os botões só surgem com a conquista
+	#     cumprida e ligam e desligam; o item marcado com oculta_ate_ter_efeito segue escondido (a regra geral continua valendo)
 	var modo_pesadelo := Meta.item_da_recompensa({"tipo": "modo", "id": "pesadelo"})
 	var visual_rastro := Meta.item_da_recompensa({"tipo": "visual", "id": "rastro_katana"})
-	ok(Meta.oculto(modo_pesadelo) and Meta.oculto(visual_rastro), "pesadelo e rastro de katana estão marcados como escondidos")
+	ok(not Meta.oculto(modo_pesadelo) and not Meta.oculto(visual_rastro), "pesadelo e rastro de katana não estão mais escondidos")
+	ok(str(modo_pesadelo.get("efeito", "")) != "pendente" and str(visual_rastro.get("efeito", "")) != "pendente", "nenhum dos dois tem efeito pendente")
 	ok(
 		not Meta.oculto(Meta.melhoria("raridade")) and not Meta.oculto(Meta.melhoria("rolagem")) and not Meta.oculto(Meta.melhoria("almas")),
 		"raridade, rolagem e almas têm efeito e seguem visíveis"
 	)
 	a._atualizar()
 	ok(
-		a._conq["derrota_chefe"].rec.text == "" and a._conq["combo_50"].rec.text == "",
-		"a recompensa escondida some do santuário (%s / %s)" % [a._conq["derrota_chefe"].rec.text, a._conq["combo_50"].rec.text]
+		a._conq["derrota_chefe"].rec.text == "Libera: modo Pesadelo" and a._conq["combo_50"].rec.text == "Libera: Rastro de katana",
+		"a recompensa volta ao santuário, sem aviso de efeito pendente (%s / %s)" % [a._conq["derrota_chefe"].rec.text, a._conq["combo_50"].rec.text]
 	)
-	ok(a._conq["combo_50"].nome.text == "Combo de cinquenta", "a conquista com recompensa escondida segue na lista")
-	visual_rastro.erase("oculta_ate_ter_efeito")
+	ok(a._conq["combo_50"].nome.text == "Combo de cinquenta", "a conquista segue na lista")
+	ok(not a._modo_btn.visible and not a._rastro_btn.visible, "sem as conquistas os botões de Pesadelo e Rastro ficam escondidos")
+	ok(not Meta.ligar("modo", "pesadelo", true) and not Meta.ligar("visual", "rastro_katana", true), "sem a conquista não liga")
+	Meta.registrar_partida({"tempo": 10.0, "maior_combo": 50, "venceu": true})
+	a._atualizar()
+	ok(a._modo_btn.visible and a._rastro_btn.visible, "com as conquistas cumpridas os botões aparecem")
+	ok(
+		a._modo_btn.text == "PESADELO: DESLIGADO" and a._rastro_btn.text == "RASTRO: DESLIGADO",
+		"começam desligados (%s / %s)" % [a._modo_btn.text, a._rastro_btn.text]
+	)
+	ok(
+		a._modo_btn.get_minimum_size().x <= a._modo_btn.size.x and a._rastro_btn.get_minimum_size().x <= a._rastro_btn.size.x,
+		"o texto dos botões cabe (%s)" % a._modo_btn.get_minimum_size()
+	)
+	a._modo_btn.pressed.emit()
+	a._rastro_btn.pressed.emit()
+	ok(Meta.ligado("modo", "pesadelo") and Meta.ligado("visual", "rastro_katana"), "clicar liga e grava no save")
+	ok(
+		a._modo_btn.text == "PESADELO: LIGADO" and a._detalhe.text.contains("Rastro de katana"),
+		"o botão mostra o modo ligado e o detalhe, o último item tocado"
+	)
+	a._modo_btn.pressed.emit()
+	ok(not Meta.ligado("modo", "pesadelo") and Meta.ligado("visual", "rastro_katana"), "clicar de novo desliga só o modo")
+	Meta.ligar("visual", "rastro_katana", false)
+	modo_pesadelo["oculta_ate_ter_efeito"] = true
+	visual_rastro["oculta_ate_ter_efeito"] = true
 	a._atualizar()
 	ok(
-		a._conq["combo_50"].rec.text == "Libera: Rastro de katana (sem efeito ainda)",
-		"sem a flag o visual volta, com o aviso de efeito pendente (%s)" % a._conq["combo_50"].rec.text
+		a._conq["derrota_chefe"].rec.text == "" and a._conq["combo_50"].rec.text == "",
+		"item marcado como escondido some do santuário (%s / %s)" % [a._conq["derrota_chefe"].rec.text, a._conq["combo_50"].rec.text]
 	)
-	visual_rastro["oculta_ate_ter_efeito"] = true
+	modo_pesadelo.erase("oculta_ate_ter_efeito")
+	visual_rastro.erase("oculta_ate_ter_efeito")
 	a._atualizar()
 	var mel_vida := Meta.melhoria("vida")
 	mel_vida["oculta_ate_ter_efeito"] = true

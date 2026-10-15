@@ -64,7 +64,7 @@ func atualizar(dt: float) -> void:
 	var t: float = mundo.tempo_partida
 	if atual == null:
 		for mk in cfg.marcas:
-			if not feitos.has(mk.id) and t >= float(mk.tempo):
+			if not feitos.has(mk.id) and t >= float(mk.tempo) * mundo.fator_pesadelo("chefe_tempo_mult"):
 				nascer(mk)
 				break
 		return
@@ -93,9 +93,9 @@ func nascer(mk: Dictionary, onde: Variant = null):
 	vivo = true
 	m.virar_no()  # chefe é desenhado por nós, não pelo lote da horda
 	m.chefe = true
-	m.vida_max = float(mk.vida)
+	m.vida_max = float(mk.vida) * mundo.fator_pesadelo("vida_mult")
 	m.vida = m.vida_max
-	m.dano = float(mk.dano)
+	m.dano = float(mk.dano) * mundo.fator_pesadelo("dano_mult")
 	m.vel_caca = float(mk.vel)
 	m.xp = float(mk.xp)
 	m.n_orbes = int(mk.orbes)
