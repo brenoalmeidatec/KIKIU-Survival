@@ -2,7 +2,7 @@
 
 Rodar (sem abrir o Blender):
     blender -b -P corte_hazaki.py -- [pasta_de_saida]
-Ou, no Blender aberto, executar o arquivo e chamar as etapas: limpa(); etapa_base(); etapa_katana(); etapa_corte(); etapa_impacto(); etapa_faiscas().
+Ou, no Blender aberto, importar o modulo e chamar monta_tudo() (ou as etapas: limpa, etapa_base, etapa_katana, etapa_fio, etapa_faiscas).
 
 Saidas: corte_hazaki.blend, corte_hazaki_folha.png (16x1 = 2048x128, JA quantizada, a que o jogo usa).
 O jogo (v2/efeitos.gd) le a folha com RGB = "calor" (0..1: tinge de cor do golpe e vai ao branco no fio) e alfa = intensidade.
@@ -281,7 +281,7 @@ def etapa_katana():
     for f in range(1, N + 1):
         keyar(piv, f, esc=(1, 1, 1) if f <= 9 else (0.0001, 0.0001, 1), rot=rad(ang_katana(f)))
     # fantasmas: a mesma katana alguns quadros atras, mais fracos (efeito de velocidade)
-    for lag, calor, alfa in ((1, 0.66, 0.6), (2, 0.33, 0.4)):
+    for lag, calor, alfa in ((1, 0.66, 0.6),):
         g, _ = lamina_katana("_f%d" % lag, calor, calor, alfa)
         for f in range(1, N + 1):
             fa = f - lag
@@ -300,54 +300,28 @@ def etapa_katana():
         keyar(br, f, loc=(x if x else 0.5, 0, 0.05), esc=(1, 1, 1) if x else (0.0001, 0.0001, 1))
 
 
-def etapa_corte():
-    """O rastro fino colado na ponta da katana, o corte grosso do impacto e a linha fina de anime."""
+def etapa_fio():
+    """O fio da katana: arco fino e afiado colado na ponta da lamina (cresce com ela), flash branco no fim da passada e some da cauda para a ponta."""
     lin()
-    # rastro curto que acompanha a ponta (quadros 4-7)
-    m1, a1, b1, c1 = material_rastro("rastro_ponta")
-    crescente("rastro_ponta", 0.07, m1, r_ext=0.84, perfil=0.5)
-    keyar_rastro((a1, b1, c1), [
-        (1, 0, 0, 0), (3, 0, 0, 0), (4, 0.2, 0.0, 0.6), (5, 0.55, 0.28, 0.8), (6, 0.9, 0.55, 0.9), (7, 1.03, 0.75, 0.9),
-        (8, 1.03, 1.0, 0.4), (9, 1.03, 1.03, 0.0), (16, 1.03, 1.03, 0.0)])
-    # corte grosso: dois quadros de flash no impacto
-    m2, a2, b2, c2 = material_rastro("corte_grosso")
-    crescente("corte_grosso", 0.24, m2, perfil=0.5)
-    keyar_rastro((a2, b2, c2), [(1, 0, 0, 0), (IMPACTO - 1, 0, 0, 0), (IMPACTO, 1.03, 0.0, 1.0), (IMPACTO + 1, 1.03, 0.0, 1.0),
-                                (IMPACTO + 2, 1.03, 0.45, 0.7), (IMPACTO + 3, 1.03, 1.03, 0.0), (N, 1.03, 1.03, 0.0)])
-    # linha fina (anime): surge inteira no impacto e afina/some da cauda para a ponta
-    m3, a3, b3, c3 = material_rastro("corte_fino")
-    crescente("corte_fino", 0.075, m3, r_ext=R_EXT + 0.04, perfil=0.5)
-    ch = [(1, 0, 0, 0), (IMPACTO - 1, 0, 0, 0)]
-    for f in range(IMPACTO, N + 1):
-        t = (f - IMPACTO) / (N - IMPACTO)
-        ch.append((f, 1.03, min(max((t - 0.25) * 1.4, 0.0), 1.03), 1.0 - 0.7 * t if f < N else 0.0))
-    keyar_rastro((a3, b3, c3), ch)
-
-
-def etapa_impacto():
-    """Flash em estrela no ponto do choque e onda de ar que se afasta do corte."""
-    lin()
-    m_b, _ = emissivo("branco", 1.0)
-    ix, iy = math.cos(rad(-35)) * R_EXT, math.sin(rad(-35)) * R_EXT          # ponto do impacto (meio-baixo do arco)
-    est = [lente("estrela_a", 0.34, 0.025, m_b, 0.1), lente("estrela_b", 0.24, 0.025, m_b, 0.1)]
-    forca = {IMPACTO: 1.0, IMPACTO + 1: 1.0, IMPACTO + 2: 0.55, IMPACTO + 3: 0.25}
+    m, c, p, i = material_rastro("fio_arco")
+    crescente("fio_arco", 0.10, m, r_ext=R_EXT + 0.03, perfil=0.5)
+    ch = []
     for f in range(1, N + 1):
-        k = forca.get(f, 0.0)
-        s = max(k, 0.0001)
-        keyar(est[0], f, loc=(ix, iy, 0.1), esc=(s, s, 1), rot=rad(25))
-        keyar(est[1], f, loc=(ix, iy, 0.1), esc=(s, s, 1), rot=rad(25) + math.pi / 2)
-    # onda de ar: um segundo arco fino que se afasta do corte e some (sensacao de ar rasgado)
-    m_o, a_o, b_o, c_o = material_rastro("onda_ar")
-    onda = crescente("onda_ar", 0.05, m_o, r_ext=R_EXT, perfil=0.5)
-    ch = [(1, 0, 0, 0), (IMPACTO - 1, 0, 0, 0)]
-    for f in range(IMPACTO, N + 1):
-        t = (f - IMPACTO) / (N - IMPACTO)
-        ch.append((f, 1.03, 0.0, max(0.9 - 1.1 * t, 0.0)))
-        s_ = 1.0 + 0.30 * t ** 0.6
-        keyar(onda, f, esc=(s_, s_, 1))
-    for f in range(1, IMPACTO):
-        keyar(onda, f, esc=(1, 1, 1))
-    keyar_rastro((a_o, b_o, c_o), ch)
+        u = min(max((math.degrees(MEIO) - ang_katana(f)) / math.degrees(ARCO), 0.0), 1.03)
+        if f < 4:
+            ch.append((f, 0.0, 0.0, 0.0))
+        elif f <= IMPACTO:
+            ch.append((f, u, 0.0, 1.0))
+        else:
+            t = (f - IMPACTO) / (N - IMPACTO)
+            ch.append((f, 1.03, min(t * 1.1, 1.03), max(1.0 - 0.85 * t, 0.0) if f < N else 0.0))
+    keyar_rastro((c, p, i), ch)
+    # flash branco: o mesmo arco, grosso, 100% branco, so no quadro do impacto
+    mb, nb = emissivo("flash_branco", 1.0, 1.0, animado=True)
+    crescente("flash", 0.34, mb, r_ext=R_EXT + 0.02, perfil=0.5)
+    for f in range(1, N + 1):
+        nb.outputs[0].default_value = 1.0 if f == IMPACTO else 0.0
+        nb.outputs[0].keyframe_insert("default_value", frame=f)
 
 
 def etapa_faiscas():
@@ -385,8 +359,7 @@ def monta_tudo():
     limpa()
     etapa_base()
     etapa_katana()
-    etapa_corte()
-    etapa_impacto()
+    etapa_fio()
     etapa_faiscas()
 
 

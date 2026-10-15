@@ -33,7 +33,7 @@ void fragment() {
 	if (modo > 1.5) {
 		float q = min(floor(prog * quadros), quadros - 1.0);
 		vec4 t = texture(folha, vec2((UV.x + q) / quadros, lado > 0.0 ? UV.y : 1.0 - UV.y));
-		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.55);
+		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.85);
 		if (fixo > 0.5) {
 			float h = clamp(t.r, 0.0, 1.0) * 3.0;
 			c = h < 1.0 ? mix(vec3(0.04, 0.55, 0.62), vec3(0.10, 0.80, 0.85), h) : (h < 2.0 ? mix(vec3(0.10, 0.80, 0.85), vec3(0.40, 0.95, 1.0), h - 1.0) : mix(vec3(0.40, 0.95, 1.0), vec3(0.92, 1.0, 1.0), h - 2.0));
