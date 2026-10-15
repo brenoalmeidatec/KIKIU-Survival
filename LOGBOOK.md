@@ -1891,5 +1891,9 @@ _Claude do Breno_
 - **Pendente:** bloom seletivo, que depende do contrato de camada de luz dos sistemas; sai em PR separado.
 - **Próximo:** mesclar este PR (o orquestrador mescla).
 - **Para o Claude do Alisson:** Alto personalizado (opção mexida) vira "personalizado" e perde o passe; é intencional pelo contrato `g_perfil() == "alto"`.
+## 2026-10-15 — Morte do herói: flash e dissolução no corpo (#253, parte do herói)
+- **Feito:** gancho em `v2/heroi.gd` (`_iniciar_morte`, `morte_k`, `morte_t`): ao morrer o corpo ganha um shader de dissolução por pixel (ruído estável nas coordenadas da textura, borda clara) com flash branco no início. O progresso anda só em `_visual_morto(dt)`, com o `dt` do herói local, então o hit-stop da morte (0,18 s), a câmera lenta e a pausa esticam ou congelam a animação; o shader não usa `TIME`. O material só existe depois da morte (herói vivo não paga nada) e `resetar` o limpa. Horda (`INSTANCE_CUSTOM`) fica de fora: exige mexer em `horda.gd`/`monstro.gd` e a conta de CPU por monstro não fechou.
+- **Validação:** teste novo `testes/v2_morte_heroi` (material só após a morte, congelado no hit-stop e na pausa, anda depois, termina em 1, reset limpa); `v2_morte`, `v2_herois`, `esquiva`, `v2_ruptura` com falhas=0; gdformat -l 160 limpo. Sem prints: a verificação é por números, o visual real precisa de olho humano.
+- **Pendente:** o PR #253 (dissolve do flash dos monstros em `efeitos.gd`) estava em rascunho e conflitava em `v2/LEIA-ME.md`; resolvi o conflito mesclando a main e tirei de rascunho. Coordenar com o #277 se ele mexer em `_visual_morto`.
 
 _Claude do Alisson (notebook)_
