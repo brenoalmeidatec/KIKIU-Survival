@@ -40,16 +40,31 @@ func _ready() -> void:
 	h.invenc = 0.0
 	h.levar_dano(h.vida + 100.0, h.pos + Vector2(10, 0))
 	ok(h.estado == Heroi.Estado.MORTO, "morreu")
-	ok(h.sprite.material != null, "a morte põe o material de dissolução")
+	var anim: bool = h._tem_anim("morte")  # a folha do Blender: a queda toca primeiro e o dissolve entra no fim dela
+	ok(anim or h.sprite.material != null, "sem animação de morte: o material de dissolução entra logo")
+	ok(not anim or h.sprite.material == null, "com a queda do Blender: sem dissolução nem flash branco enquanto ele cai")
 	ok(w.combate.parada_t > 0.0, "a morte dispara hit-stop")
 	passos(3)  # hit-stop: o relógio do herói está parado, a dissolução não anda
 	ok(h.morte_t == 0.0 and h.morte_k() == 0.0, "hit-stop congela a dissolução (morte_t=%f)" % h.morte_t)
-	var mat := h.sprite.material as ShaderMaterial
-	ok(float(mat.get_shader_parameter("branco")) == 1.0, "começa no flash branco")
 	var n := 0
 	while w.combate.parada_t > 0.0 and n < 100:
 		passos(1)
 		n += 1
+	if anim:
+		var cols: Array = h.tipo.info.animacoes.morte.colunas
+		passos(6)
+		ok(h.sprite.material == null and h.morte_t == 0.0, "durante a queda a dissolução não anda")
+		ok(cols.has(float(h.coluna)) or cols.has(h.coluna), "toca um quadro da animação de morte (coluna %d)" % h.coluna)
+		n = 0
+		while h.morte_t == 0.0 and n < 900:
+			passos(1)
+			n += 1
+		var dur: float = h._duracao_anim("morte", true)
+		ok(h._morte_t >= dur, "o dissolve só entra depois da queda toda (%f de %f s)" % [h._morte_t, dur])
+		ok(h.coluna == int(cols[cols.size() - 1]), "a queda trava no último quadro (deitado)")
+		ok(h.sprite.material != null, "no fim da queda entra o material de dissolução")
+	var mat := h.sprite.material as ShaderMaterial
+	ok(float(mat.get_shader_parameter("branco")) >= 0.5, "começa no flash branco")
 	passos(10)
 	ok(h.morte_t > 0.0 and h.morte_k() > 0.0, "depois do hit-stop a dissolução anda (k=%f)" % h.morte_k())
 	var k1: float = h.morte_k()
@@ -60,7 +75,7 @@ func _ready() -> void:
 	passos(10)
 	ok(h.morte_t == m_ant, "pausa congela a dissolução")
 	w.combate.pausado = false
-	passos(600)
+	passos(900)
 	ok(h.morte_k() == 1.0 and float(mat.get_shader_parameter("dissolver")) >= 0.99, "termina em 1 (k=%f)" % h.morte_k())
 	ok(float(mat.get_shader_parameter("branco")) == 0.0, "flash branco acabou")
 

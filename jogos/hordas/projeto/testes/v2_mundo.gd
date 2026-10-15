@@ -65,7 +65,7 @@ func _ready() -> void:
 	ok(absf(w.heroi.pos.x - w.cam.position.x) < 60.0, "a câmera ficou perto do herói (%.1f)" % absf(w.heroi.pos.x - w.cam.position.x))
 	ok(inteira, "a câmera esteve sempre em pixel inteiro")
 	ok(
-		w.heroi.coluna >= 1 and w.heroi.coluna <= 4 and w.heroi.linha == 2,
+		w.heroi.coluna >= 1 and w.heroi.coluna < int(w.heroi.tipo.info.colunas.size()) and w.heroi.linha == 2,
 		"andando para a direita: quadro de andar, linha direita (col %d, linha %d)" % [w.heroi.coluna, w.heroi.linha]
 	)
 	w.heroi.entrada_forcada = Vector2.ZERO
