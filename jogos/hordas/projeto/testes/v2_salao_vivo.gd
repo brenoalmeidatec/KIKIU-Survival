@@ -246,11 +246,10 @@ func observacoes_reais() -> void:
 		ok(luzes.filter(func(l): return l.enabled).size() <= int({"baixo": 2, "medio": 6, "alto": 10}[perfil]), perfil + ": luzes ativas no estado máximo")
 		s.queue_free()
 		await get_tree().process_frame
-	# Personalizado só na memória: jamais chamar g_definir/g_aplicar_perfil, que gravam opções reais.
+	# Personalizado só na memória: g_temporario muda os valores; jamais g_definir/g_aplicar_perfil, que gravam opções reais.
 	Config.g_perfil_temporario("alto")
-	Config._cfg.set_value("graficos", "particulas_sim", "nenhuma")
-	Config._cfg.set_value("graficos", "nevoa", false)
-	Config._cfg.set_value("graficos", "perfil", "personalizado")
+	Config.g_temporario("particulas_sim", "nenhuma")
+	Config.g_temporario("nevoa", false)
 	s = await abrir()
 	await get_tree().create_timer(0.1).timeout
 	v = vivo_de(s)
