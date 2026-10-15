@@ -1540,6 +1540,13 @@ _Codex GPT-6.1 Sol (PC)_
 
 _Codex GPT-6.1 Sol (PC)_
 
+## 2026-10-13 · Claude do Breno (PC) · pacote de construções da floresta
+- **Feito:** 17 fichas em `docs/construcoes_floresta/`, `BALANCEAMENTO.md` (tabela e revisão), `PACOTE_ALISSON.md` (primeiro mapa médio com 7 construções) e `MAIS_IDEIAS.md` (4 ideias novas para revisão). Só documentação: nenhum código, cena, dado ou arte foi alterado.
+- **Pendente:** comentário no GitHub para o Alisson não foi postado, porque o `gh` não está instalado neste PC. Este registro é o aviso.
+- **Para o Claude do Alisson:** o pacote está em `docs/construcoes_floresta/PACOTE_ALISSON.md`. Ainda não leia os prompts como definitivos: o Breno revisa `MAIS_IDEIAS.md` primeiro. Não mexa nas suas artes ao usar os prompts.
+
+_Claude do Breno (PC)_
+
 ## 2026-10-13 · Cidade na seleção e Ruínas da Floresta
 - **Antes/depois:** a build main 5dd7972 mostrava Floresta, Laboratório e Médio. Integrada a Cidade da PR #211 (head 2aa41db) por merge da main, preservando histórico e assets: a seleção agora oferece Floresta, Laboratório, Cidade e Ruínas da Floresta. O antigo `medio` conserva id, dados, progresso e mecânicas #220/#222; só os textos mudam para RUÍNAS DA FLORESTA e ENTRAR NAS RUÍNAS. Save seguro, árvores, E/Ruptura e escudo da main preservados.
 - **Testes:** import real Godot 4.4.1 exit 0; v2_mapas, v2_mundo e v2_arvores exit 0/falhas=0/sem SCRIPT ERROR. v2_mapas cobre os quatro mapas, rua da Cidade de 300 px, passagens, marcadores/espinhos das ruínas, save legado bruto `medio`, preservação de outros dados e fallback desconhecido. Renderer OpenGL real (Intel Iris Xe) também v2_mapas exit 0/falhas=0; capturas do mundo e seleção 960×540 revisadas, nome e botão das ruínas cabem.
@@ -1590,6 +1597,39 @@ _Codex GPT-6.1 Sol (PC)_
 
 _Claude (PC do Breno, via Remote Control)_
 
+## Salão do personagem (2026-10-13)
+- **Feito:** cada personagem tem o próprio santuário (almas, melhorias, conquistas e o último mapa) em `user://v2_personagem_<id>.cfg`. O save antigo (`v2_progresso.cfg`) vira o primeiro personagem na primeira abertura, sem apagar nada (o arquivo antigo fica como está). Fluxo novo: JOGAR → escolha de personagem (`v2/personagens_tela.gd`) → salão (`v2/salao.gd`) → portal → partida. Morte e vitória voltam ao salão. O salão tem três estruturas: ESTÁTUAS (vida, dano, velocidade, fôlego, treino), ALTAR (ímã, almas, raridade, rolagem) e CÓDICE (conquistas, só leitura). O painel mostra nome, nível, efeito atual → próximo, custo e saldo; DETALHES mostra o efeito no nível máximo. Os valores e custos de `dados/v2_meta.json` não mudaram.
+- **Decisões padrão (não pedidas com detalhe):** o personagem novo escolhe um nome da lista de amigos (`dados/v2_salao.json`), não digita; o retrato é o `rosto.png` do amigo (Breno não tem pasta, então usa o quadro do herói); a figura andando no salão é o samurai, porque é o único sprite de herói que a v2 tem; nenhum mapa começa travado (o mecanismo de `requer` em `v2/mapas.gd` existe e foi testado, mas nenhum mapa usa).
+- **Não feito / pendente:** `v2/altar.gd` ficou sem uso no fluxo (só `testes/v2_meta` ainda abre `altar.tscn`); o próximo passo é portar esse teste para o salão e apagar o santuário antigo. Arte: as estruturas, portais, piso, parede e tochas são formas desenhadas em código; a lista e os prompts para o GPT Astra estão em `docs/ux_salao/ARTE_PARA_ALISSON.md`.
+- **Fps (medido nesta máquina, janela 1280x720):** salão parado 43 fps, andando 45 fps; partida 23 fps (`testes/bench_salao.tscn`, o fluxo inteiro com os prints em `docs/ux_salao/prints/`).
+- **Testes:** `v2_salao` falhas=0 (novo); `v2_menu` e `v2_morte` falhas=0 (ajustados para o novo destino de JOGAR e da volta à partida). Falham aqui também no commit base `9937210`, sem nenhuma mudança deste PR: `v2_desempenho`, `v2_mundo`, `transformacao`, `golpes`, `cartas_comp`.
+- **Para o Claude do Alisson:** este PR não mexe nos arquivos de arte dele nem em `v2/heroi.gd`, `v2/horda.gd`, `v2/status.gd` nem na paleta (#217). As cores estão centralizadas em `COR_*` no topo de `v2/salao.gd` e `v2/personagens_tela.gd`.
+- **Para testar:** JOGAR → criar um personagem → clicar em ESTÁTUAS (ele anda até lá) → COMPRAR → ESC → clicar no portal da FLORESTA → morrer ou abandonar pela pausa → CONTINUAR. As almas da partida têm que aparecer no salão.
+
+_Claude (PC do Breno, via Remote Control)_
+## 2026-10-14 · Codex do Alisson · visual aprovado do Santuário no Godot
+- **Antes/depois:** sobre o #242 (head9f79acc), o salão de marcadores em código ganha piso/parede próprios, estações de estátuas/fonte/bigorna, altar de almas/astrolábio e códice/relicário; quatro portais por mapa, estado fechado e tochas com halo discreto. Centro livre, estações laterais, mesmas posições para desenho/alvos. Painel com conteúdo completo e fonte16, lista rolável, Ajustes/Voltar e prompt limitado960x540. Paleta única idêntica ao #250. Nenhuma regra de compras, preço, condição, movimentação, save ou fluxo alterada; não há sistema novo de forja, relíquias/online ou colisões.
+- **Arte:** três fontes imagegen próprias preservadas em fonte_arte/santuario_v2, recortadas pelo wrapper do pipeline existente. Origem/prompts/licença registrados. Nove texturas: fundo, três estações e cinco portais. Capturas reais antes/depois960x540 em docs/visual_2_5d/santuario/prints, não capturas da área de trabalho.
+- **Validação local:** Godot4.4.1, v2_salao_visual (novo, PNG/cache/alpha/tamanhos, limites e altura mínima medida, rodapé, todos itens, prompts, alcance/mouse/A/compra em save isolado e hashes reais), v2_salao, v2_menu, v2_morte, v2_meta e v2_santuario: código0/falhas=0/sem SCRIPT ERROR. Teste visual/harness sem avisos; testes antigos têm avisos de teardown e meta testa corrupção/escrita recusada. Leaks do teste salao também reproduzidos antes. gdformat scripts/testes/v2:237 arquivos limpos. Primeira execução por agente com4.7.1 descartada; evidência final exclusivamente4.4.1. Primeira montagem transitória do novo teste tinha variável de harness indevida; corrigida antes da validação final.
+- **Medição exploratória IrisXe/OpenGL:** mesma sala, VSync desligado,3s por modo: draw calls45→35; objetos675→204. FPS parado825,22→1788,48, andando838,86→1958,60, sujeito a grande variação e aquecimento; não promessa de ganho. Saídas/CSV/harness em docs/visual_2_5d/santuario/qa.
+- **Integração/pendente:** branch visual empilhada sobre claude/salao-do-heroi para não integrar sistemas por conta própria. Claude integra #242 e cruza com main/#250; paleta.gd é cópia idêntica e deve ficar uma só. Novos testes são extensão localizada autorizada para regressão visual, sem editar testes existentes. Bench antigo bench_salao usa clique fixo250,300 e precisa adotar posições atuais; harness visual novo usa alvos reais. CI no head publicado; sem merge/build/atalho antes da integração e Release verde.
+
+_Codex do Alisson_
+
+## 2026-10-14 · Claude do Alisson · salão vivo (luz, partículas e movimento), PR empilhado sobre o #261
+- **Feito:** `v2/salao_vivo.gd` + `v2/salao_vivo.gdshader`; `salao.gd` só instancia (3 linhas). Chamas vivas (núcleo, halo, poça, língua de pixels, ruído 1D) nas tochas, no cristal e nas velas do altar; PointLight2D reais pelo `luzes.gd` (Baixo 2, Médio 6, Alto 10; CanvasModulate só em Médio/Alto) e sombra do herói pelo `sombras.gd` (média/alta); portais com redemoinho em shader, cadeado pulsando se fechado; partículas CPU de 1–2 px (total 20/45/80 pelo `particulas_sim`); herói respira 1 px, olha o alvo do prompt e levanta poeira; portal reage a ~100 px, chamas balançam por mola, poeira no tapete; runas/aura/partículas nas estações pelo nível comprado (só leitura via `Meta`); névoa rasteira e ciclo de luz de ±6% em 90 s (Médio/Alto). Teste novo: `testes/v2_salao_vivo`.
+- **Decisão a conferir:** o CanvasModulate ficou em `#c8cbe0`, não `#8f93b0`: com o pedido a sala perdia ~35% de brilho médio (medido nos prints), contra ~10% agora. Está em `MODULADO` no topo de `salao_vivo.gd`. Os nomes dos portais/estações saíram do cenário e são desenhados por um nó sem luz (`salao_visual.rotulos_fora`) para continuarem legíveis.
+- **Pendente:** prints e FPS no próximo commit. Sem pedido de imagem para o Codex por enquanto (tudo procedural).
+
+_Claude do Alisson (via workflow)_
+
+## 2026-10-14 · Codex do Alisson · pausa segura do salão vivo (#263)
+- **Base/feito:** Alisson devolveu frente visual (PR264) e autorizou adotar263/f38d857 sobre261. Reserva6175761067; corrigidos ordem da respiração/direção, rótulos fora do CanvasModulate, congelamento explícito de partículas e reaplicação de perfil após Ajustes. Novo harness de medição e teste ampliado, sem tocar sistemas/save/compras/fluxo.
+- **Medição preliminar:** Godot4.4.1,960x540,OpenGL/IrisXe,uncapped,1par. Médio parado1746,12→1102,48FPS (-36,86%): limite de15% NÃO atendido. Baixo parado1935,72→1206,43 (-37,68%). Movimento inicial sem passos inválido para aceitação; harness corrigido e NÃO reexecutado. Pares finais, prints/GIF finais e testegráfico de pausa pendentes.
+- **Teste:** v2_salao_vivo ampliado headless código0/falhas=0/semSCRIPTERROR, com avisos de RID/ObjectDB/3resources na saída. Não rodada suíte final nem CI do checkpoint. Antes de entregar, otimizar e exigir medição/validação completa. Detalhes e pendências em docs/visual_2_5d/santuario_vivo/PAUSA.md,CSV/JSON e logs preservados. Não declarar pronto.
+- **PAUSADO a pedido do Alisson:** agentes parados,Godot encerrado; nenhum merge/build/atalho. Acompanhamento automático tambémPAUSED. Trabalho parcial salvo no rascunho263 por push normal, sem force.
+
+_Codex do Alisson_
 ## 2026-10-13 · Codex GPT-6.1 Sol (PC) · Ruptura e escudo com volume
 - **Feito:** visual autoral por geometria na v2: sigilos internos e halo na carga; janela perfeita com pulso dourado suave no lugar do piscar a 20 Hz; onda em camadas e fissuras com núcleo quente e ramificações. Escudo curvo elevado com painéis, nervuras e runa central; sustentação azul, bloqueio branco, perfeito dourado com oito raios; ponto de impacto acompanha a origem. Nenhum asset externo/licença adicional, nó por quadro ou alteração de alcance, dano, fôlego, janela ou controles.
 - **Validação:** Godot 4.4.1 import exit 0; v2_ruptura, v2_escudo, v2_combate e v2_hud exit 0/falhas=0/sem SCRIPT ERROR. Uma falha inicial de inferência de tipo foi corrigida, preservando o log local. Capturas reais 960×540 com OpenGL/Intel Iris Xe, janela oculta: carga, carga perfeita, disparo, escudo, bloqueio comum e perfeito revisados. Avisos de RID no encerramento permanecem. Wrapper/fotos/logs locais não versionados.
@@ -1648,6 +1688,33 @@ _Codex do Alisson_
 ## 2026-10-14 · Codex do Alisson · reserva da animação visual
 - **Em andamento:** item4 visual: dissolve no efeito de morte usando o pool/shader existente. Herói já tem antecipação/avanço/squash de golpe e queda; o restante do corpo/herói e contrato de fase/relógio do MultiMesh dependem de coordenação com Claude do Alisson, sem alterações nos arquivos de sistemas.
 - **Próximo:** benchmark real --medir no perfil Médio com horda cheia, antes/depois no IrisXe, testes e prints do viewport. Reserva somente documental: Godot ainda não rodado nesta branch.
+## 2026-10-14 · Claude do Alisson (notebook) · coop online, etapa 0: preparar o solo (docs/ONLINE_V2_PLANO.md)
+- **Feito:** `mundo.herois` (lista; o solo tem só o `heroi`), `mundo.alvo_mais_perto(pos)` (herói vivo mais perto; os monstros usam com 2+ heróis, o solo segue o caminho de sempre sem busca), e o tempo separado em "do mundo" e "do herói local": hit-stop, câmera lenta e a pausa da escolha ficam num `v2/tempo_local.gd` (um por herói local) e `combate.passo_tempo` devolve `dt_mundo` e deixa `dt_local`; `combate.parada_t/lento_*/pausado` seguem existindo como propriedades (os testes não mudaram). `combate.pausado_mundo` é a pausa do resultado (vale para todos). `combate.tempo_local_separado` (false no solo) é a chave que o coop e a tela dividida ligam: aí o hit-stop só trava o herói local e o mundo segue. Flag `--coop` lida em `mundo.coop_modo` e ignorada.
+- **Testes:** novo `v2_coop_preparo` (com 2 heróis o monstro persegue o mais perto e troca de alvo quando o remoto cai; o tempo do solo e o separado). Suíte inteira igual.
+- **Medida (solo, `--medir --estresse=100 --imortal`, headless, 3 rodadas):** script por quadro 1,74 a 1,81 ms depois contra 2,08 a 2,54 ms antes (a máquina oscila; não ficou mais lento).
+- **Pendente:** câmera, HUD e entrada por jogador (tela dividida) ainda são globais; `combate._contato`, marcadores e espinhos só olham o `mundo.heroi` (etapas 3 e 7).
+- **Próximo:** etapa 1 (movimento e golpe na rede local).
+
+_Claude do Alisson (notebook)_
+## 2026-10-14 · Codex do Alisson · reserva da paleta única da UI
+- **Em andamento:** reconstrução do #217 em branch nova da main 96bbc15. Fonte única visual para HUD, SUA BUILD, pausa, cartas, menu e Santuário; correção de cores semânticas e tamanhos fora da grade. Antes capturado no viewport real 960x540, sem captura da área de trabalho.
+- **Validação desta reserva:** somente documentação; nenhum comportamento alterado. Godot ainda não rodado nesta branch. Próximo: implementação visual, extensão autorizada de v2_fontes, prints depois e testes afetados.
+- **Coordenação:** status.gd e altar.gd podem conflitar com #245 e #242. Coleta de dados, controles, save e progressão serão preservados; integração de sistemas fica com o Claude do Alisson.
+
+## 2026-10-14 · Codex do Alisson · paleta reconstruída no PR #250
+- **Feito:** #209 mesclado com CI verde no head 7b10493; novo #250 substitui #217, encerrado com link. Cores/tamanhos em v2/paleta.gd; HUD e gerador de molduras leem a mesma fonte; vida/XP/fôlego e ouro/almas padronizados. Telas, status, pausa, menu, resultado e visual do Santuário migrados. Fontes fora da grade corrigidas; v2_fontes ampliado por solicitação do Alisson. Prints reais antes/depois 960x540 em docs/visual_2_5d/paleta_ui/.
+- **Testes:** v2_fontes passou com código 0/falhas=0/sem SCRIPT ERROR. v2_hud, v2_pausa, v2_esc, v2_santuario, v2_meta e v2_partida também passaram. v2_status retornou código 0, mas falhas=18 por estouro real de largura/altura após Spleen16; portanto REPROVADO. Não houve SCRIPT ERROR nessa execução corrigida. O primeiro import revelou preload ausente em telas.gd, corrigido antes dos testes reais acima; não considerar a execução anterior aprovada.
+- **Pendente/para Claude do Alisson:** coordenar #245/status.gd: a tabela de detalhes precisa paginação/acesso completo na grade16, além da acomodação de rótulo/valor no HUD. Não removemos atributos nem afrouxamos testes. #250 fica em rascunho, sem merge. #242 pode conflitar em altar.gd; só o visual foi alterado. Release do #209 passou nos quatro jobs CI, mas export/upload falhou novamente por cota de artefatos (#249); atalho permanece na última build validada.
+
+_Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · layout do PR #250 na grade de16 px
+- **Feito:** corrigidos os18 estouros de largura/altura do SUA BUILD após a migração para Spleen16. Rótulo, valor e bônus quebram conforme a coluna; tabela distribui atributos em páginas, sem apagar bônus, nomes completos, números ou dicas de evolução. Rodapé fica dentro da moldura; índice reinicia ao trocar modo e é limitado quando muda a quantidade de páginas. HUD usa PgUp/PgDn ou roda sobre a coluna, com conversão das coordenadas da janela; pausa/central usam Q/E existentes. Quebra dos trechos respeita palavras, com divisão por caracteres só para palavra maior que a coluna. Coleta, regras, save e sistemas preservados.
+- **Testes:** Godot4.4.1 headless, código0/falhas=0/sem SCRIPT ERROR em v2_status (inclui50 golpes, extremo+50/Santuário completo, todos os IDs/páginas, trechos/dicas completos, roda dentro/fora e janela1280x720, palavras/estilos), v2_fontes, v2_hud, v2_pausa, v2_esc, v2_partida, v2_santuario, v2_meta, v2_ruptura e v2_escudo. Assertions originais de v2_status preservadas; extensão localizada na área de testes do Claude necessária para esta regressão, avisada no PR. gdformat scripts/testes/v2:231 arquivos limpos. Capturas reais do viewport960x540 antes/depois em docs/visual_2_5d/paleta_ui/layout/, renderer OpenGL/IrisXe, janela oculta. Capturas são evidência visual, não substituem a bateria de assertions. Avisos de recursos ao encerrar o harness permanecem.
+- **Próximo/integração:** CI no novo head; Claude integra a main e os cruzamentos com #245/status.gd, #242/altar.gd e #255/telas.gd. Não resolvi conflitos nem integrei PR alheio. #251 segue com Claude. Alisson também pediu revisão de composição do menu principal e Santuário: estudo visual separado, sem misturar essa reorganização no PR de paleta/layout.
+## 2026-10-14 · Codex do Alisson · reserva da arte restante das armas
+- **Em andamento:**5 golpes antigos e25 evoluções, em branch independente da main ca4b272. Folhas próprias geradas com imagegen, recorte pelo modo armas do gerador existente, evoluções visualmente derivadas das bases. Reserva também na issue #193.
+- **Validação desta reserva:** somente LOGBOOK; Godot ainda não rodado nesta branch. Nada de alterações em sistemas. Paleta #250 segue rascunho e depende da integração de layout com #245, já documentada.
 
 _Codex do Alisson_
 
@@ -1665,3 +1732,127 @@ _Codex do Alisson_
 - **Pendente:** integração corporal do Claude e CI da conta, conforme o PR. Nenhum merge ou nova build.
 
 _Codex do Alisson_
+## 2026-10-14 · Codex do Alisson · 30 sprites restantes no PR #251
+- **Feito:** três folhas imagegen próprias, 11 projéteis,7 aliados e12 áreas; 30 sprites e18 normais novos, índice com74 entradas cobrindo50 golpes+25 evoluções. Pipeline existente ampliado;69 PNG anteriores idênticos. Ligação restrita aos métodos de desenho de armas.gd, com fallback procedural. Aura mantém shader; raio mantém linhas e um único stamp por raio; Ventania lê o estado existente. Prompts normalizados/licenças e dez prints reais960x540 documentados em docs/visual_2_5d/armas_evolucoes/.
+- **Validação:** Godot4.4.1 import código0/semSCRIPT ERROR. v2_armas_sprites,v2_partida,v2_status,v2_combate,v2_ruptura,v2_escudo e v2_fontes: código0/falhas=0/semSCRIPT ERROR. Capturas reais OpenGL IrisXe código0/QA251_VISUAL falhas=0. Extensão pequena de testes/v2_armas_sprites (área do Claude) necessária para aceitar IDs de evoluções válidas e exigir sua própria arte, sem afrouxar os45 golpes nem checks de PNG/pool.
+- **Pendente:** CI no head antes de merge; possível conflito apenas de desenho em armas.gd com #246. Nenhuma alteração em sistemas, exports ou save. Paleta#250 rascunho: CI confirmou v2_status18falhas e também esquiva(v1)falhas1; logs apontados no PR. Publicação/atalho ainda dependem da cota#249.
+
+_Codex do Alisson_
+
+## 2026-10-14 · Codex do Alisson · fontes e reprodução da arte no #251
+- **Feito:** ajuda do índice e título da prancha agora atribuem as folhas ao Alisson e ao Codex do Alisson, com cobertura dos 50 golpes e 25 evoluções. Pipeline regenerado; nenhuma textura de runtime mudou. Harness de captura adicionado à documentação visual para reprodução dos cinco cenários.
+- **Validação:** gerador código 0, diff-check limpo. Os testes de runtime já registrados continuam aplicáveis, pois só autoria/ajuda/prancha/documentação mudaram. CI não iniciou por cobrança/limite da conta; sem merge.
+
+_Codex do Alisson_
+## 2026-10-14 · Claude do Alisson (notebook) · revisão da main: escudo, analógico, minimapa e portão (PR 1) e release sem docs (PR 2)
+- **Feito (PR 1, `alisson/correcoes-revisao`):** espinhos do mapa médio não são barrados pelo escudo (`Heroi.levar_dano` ganhou `bloqueavel`, falso nos espinhos: sem gasto de fôlego, sem bloqueio e sem hit-stop). Analógico esquerdo não navega a escolha de cartas (`v2/telas.gd`, a mesma guarda de `v2/pausa.gd`). `Minimapa.resetar()` no `Mundo.reiniciar()`: a névoa e o mirante da partida anterior saem. O portão do médio cumpre a missão ao entrar no raio (a seta some, como a do chefe). Tab não abre o mapa grande com o card de status na tela, a escolha ou o baú. (PR 2, `alisson/release-sem-docs`): `release.yml` com `paths-ignore` (`docs/**`, `**/*.md`, `LOGBOOK.md`) no push da main; `workflow_dispatch` e o CI reutilizável seguem como estavam.
+- **Validação:** Godot 4.4.1 headless, código 0, `falhas=0`, sem SCRIPT ERROR: v2_esc, v2_pausa, v2_cartas_espera, v2_minimapa, v2_escudo, v2_ruptura, v2_hud, v2_partida, v2_status, v2_mapas, v2_mundo e v2_morte. Os cinco casos novos falharam antes da correção (commit `dddc1a3`, só testes). gdformat nas pastas de scripts, testes e v2 limpo.
+- **Pendente:** a passagem física até o portão (Marco 4) e o atalho (`_atalho_aberto` segue gravado e sem leitura). O card compacto (C) também tira o Tab do minimapa, porque o pedido era "painel de status aberto"; se o Breno quiser o Tab com o card compacto, a troca é a condição em `_tab_bloqueado()`.
+- **Para o Codex:** `v2/status.gd` não foi tocado. A falta de saída do painel central pelo controle virou issue para ele.
+- **Recado para o Claude do Alisson:** o PR 1 mexe em `v2/telas.gd` (área do Codex) e em `v2/minimapa.gd` (HUD), só nas guardas descritas. O PR 2 não toca o LOGBOOK, para não conflitar no fim do log.
+
+_Claude do Alisson (notebook)_
+## 2026-10-14 · Claude do Alisson (PC) · esquiva estável no CI
+- **Feito:** `testes/esquiva.gd` deixou de depender do crítico sorteado (`randf()` sem semente em `inimigos.ferir`). A checagem do golpe seguinte aceita só 10 ou 10 x `critico_mult`. A checagem do robô usa um vírus de 100000 de vida e espera um quadro (a grade se refaz nele). Só teste; o jogo não mudou.
+- **Validação:** antes, 4 de 20 rodadas falhavam (3 do crítico, 1 do robô); depois, 0 de 30, headless e em sequência. Quebras de propósito (`_quer_dash` com fôlego 3 e bônus de 99 quadros) fazem a cena falhar. gdformat limpo nas três pastas.
+- **Pendente:** conferir o CI do PR "Testes: esquiva estável no CI"; daqui não dá para ver o CI.
+- **Recado:** se a `esquiva` cair de novo, a mensagem diz qual checagem falhou. O problema não era timeout.
+
+_Claude do Alisson (PC)_
+
+## 2026-10-14 · Claude do Alisson (PC) · integração do PR #252 (coop, etapa 0) com a main
+
+- **Feito:** `origin/main` (fa2f8a7) mesclada na `alisson/coop-0-preparar` por merge, sem force-push (merge `68a46d0`). O git não acusou conflito; conferi à mão `passo_tempo` e o dano dos espinhos. A #228 segue no solo (`passo_tempo` devolve 0 no quadro em que a escolha abre) e a #255 segue (espinho com `bloqueavel = false`: o escudo não barra dano de ambiente).
+- **Testes:** `testes_ci.sh` com 2 processos, 81 de 82 cenas ok. As nove citadas (`v2_coop_preparo`, `v2_partida`, `v2_combate`, `v2_esc`, `v2_pausa`, `v2_ruptura`, `v2_escudo`, `v2_cartas_espera`, `v2_minimapa`) e `esquiva` passaram; `gdformat` limpo. A falha é `transformacao` (v1, "DRAGAO falhas=4"): falhou também na main com o mesmo runner local, e passa isolada com `DRAGAO falhas=0`. O merge não tocou `scripts/hordas/arena.gd` nem `construcao.gd`, que ela carrega. No CI do GitHub, a main e o head do PR estavam verdes.
+- **Medida (solo, `--medir --estresse=100 --imortal`, 3 rodadas intercaladas):** main com mediana de 6,37 ms `SCRIPT ms/quadro` (5,21 a 7,46); integrada com 6,10 ms (5,93 a 6,50). A máquina tinha de 8 a 12 processos Godot de outros agentes, então não dá para comparar com os 1,74 a 1,81 ms do PR. Sem sinal de piora.
+- **Pendente:** no coop e na tela dividida, a escolha local não para o mundo (é o desenho do PR): o `passo_tempo` devolve 0 no quadro da escolha só para o relógio local (`dt_local`), e o mundo para só no resultado (`pausado_mundo`). Confirmar com o Alisson se é esse o desenho. A `transformacao` vermelha no runner local ainda não tem causa confirmada; a hipótese é que ela mede tempo real e sofre com a carga da máquina.
+- **Próximo:** CI no head novo; mesclar só o dono ou o integrador, com CI verde no mesmo commit.
+
+_Claude do Alisson (PC)_
+## 2026-10-14 · Claude do Alisson (PC) · integração da main no PR 251 (armas e evoluções)
+- **Feito:** `origin/main` (até `fa2f8a7`, com #254, #255, #256 e #259) mesclado em `codex/armas-evolucoes-arte` no merge `e58f113`, sem force e sem reescrever nada. Não houve conflito de texto: a main não toca em `v2/armas.gd`, no índice `assets/v2/armas/indice.json` nem nos sprites. O único arquivo tocado pelos dois lados foi o `LOGBOOK.md` (`merge=union`), com as entradas de cada lado mantidas. O desenho do PR entrou inteiro.
+- **Validação:** Godot 4.4.1 headless no worktree de integração: as 26 cenas `v2_*`, incluindo `v2_armas_sprites`, `v2_partida`, `v2_status` e `v2_combate`, e `regras_armas` (100 s). Todas com código 0, `falhas=0` e sem SCRIPT ERROR. `v2_ruptura` passou na primeira rodada. `gdformat` limpo nas três pastas. Os `ERROR` de encerramento (RID vazado) aparecem em quase toda cena; os de `v2_meta` são o save corrompido que o próprio teste grava de propósito.
+- **Pendente:** CI do head final (resultado no comentário do PR 251). A bateria inteira de `testes_ci.sh` não rodou local; no CI, sim. Sem merge na main: quem mescla é o orquestrador.
+- **Pendente de outro PR:** o #246 (`claude/fusoes-claras`, ainda aberto) mexe em `v2/armas.gd`, `v2/mundo.gd`, `v2/hud.gd` e `v2/combate.gd`. Quem mesclar o #246 depois vai ter conflito de lógica com este PR em `armas.gd`.
+- **Recado para o Codex:** a integração veio por cima do seu último commit (`733f383`), sem reescrever nada. Se você empurrar commits de novo, mantenha o merge da main.
+## 2026-10-14 · Claude do Alisson (PC) · integração da PR #237 (construções da floresta)
+- **Feito:** `origin/main` (fa2f8a7, #256) mesclada na `claude/construcoes-floresta` por merge, sem force-push e sem rebase. Sem conflito de texto: no `LOGBOOK.md` ficaram as duas partes, a entrada do Breno de 2026-10-13 e as da main. A PR só mexe em `docs/construcoes_floresta/` e no `LOGBOOK.md`; nenhum `.gd`, `.tscn`, `dados/` ou `assets/` mudou.
+- **Pendente:** testes locais (gdformat e `ferramentas/testes_ci.sh`) e CI do head novo, com o resultado no comentário da PR #237. Não mesclei: a PR é do Breno e quem mescla é o dono ou o integrador, com CI verde no mesmo commit.
+- **Recado para o Claude do Breno:** para seguir com `docs/construcoes_floresta/`, parta da `claude/construcoes-floresta` atualizada (`git pull`), não da versão antiga.
+
+_Claude do Alisson (PC)_
+## 2026-10-13 - SUA BUILD: paginação também no Tab e nomes curtos dos golpes
+- **Feito:** a tabela de detalhes (Tab na pausa e no painel central) pagina os golpes como a página visual ("Página X/Y · Q E"), em vez de cortar com "+N golpes". Os 13 golpes com nome longo ganharam `curto` em `dados/v2_cartas.json` (o jogo lê esse arquivo; os lotes em `dados/v2_armas/` são só registro), e o HUD mostra o nome inteiro. Nenhum número mudou.
+- **Testes:** `v2_status` com `falhas=0` (inclui o Tab paginado com 50 golpes) e a suíte completa rodada na mesma branch.
+- **Pendente:** nada conhecido neste passo.
+
+_Claude do Breno (PC)_
+
+## 2026-10-14 · Claude do Alisson (PC) · integração do PR #245 sobre o PR #250 (`codex/paleta-ui-v2`)
+- **Feito:** o PR #245 (`claude/sua-build-detalhe-curto`, SUA BUILD) foi integrado sobre o #250 por merge, sem force-push, na branch `codex/paleta-ui-v2`. Único conflito: `v2/status.gd`, resolvido ficando com a versão do #250 (paleta, fonte e paginação em colunas). A paginação de golpes da tabela de detalhes do #245 saiu do código: o layout em colunas do #250 já pagina os golpes com Q/E e não corta nada. O bloco de teste do Tab do #245 agora mede a tabela com `paginas_detalhes()`. Os nomes curtos (`curto` em `dados/v2_cartas.json`, inclusive Peçonha) entraram sem conflito. A `origin/main` (778d99d, #237, só docs) também foi mesclada.
+- **Validação:** Godot 4.4.1 headless. As 26 cenas `v2_*` passaram, incluindo `v2_status` e `v2_fontes`. A suíte `testes_ci.sh` deu 80 de 81 ok; a única não-ok, `transformacao` (v1, código idêntico à main), falhou nas duas rodadas completas com a máquina sobrecarregada por outros agentes, e passa isolada (`DRAGAO falhas=0`). gdformat limpo nas três pastas.
+- **Pendente:** o CI do head no PR #250 é o gate de verdade (roda com 4 paralelas no Ubuntu). O PR #245 segue com a cabeça antiga, sem o #250; quem mescla decide o que fazer com ele.
+- **Recado para o Codex:** `v2/status.gd` ficou idêntico ao lado do #250. O código do #245 ali saiu de propósito, não por esquecimento.
+
+_Claude do Alisson (PC)_
+
+## 2026-10-14 · Claude do Alisson (notebook) · Codex só gera imagens
+- **Decisão do Alisson:** o Codex do Alisson passa a fazer **só geração de imagem** (folhas de sprite, arte de título e cenário, ícones). Todo o código do jogo, inclusive a parte visual (efeitos, animação, luz, partículas, shaders, UI, paleta, recorte e ligação de sprites), fica com o Claude do Alisson, assim como builds e o atalho de teste. `CLAUDE.md` e `AGENTS.md` atualizados.
+- **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) passam para a integração do Claude do Alisson; daqui em diante você recebe pedidos de imagem por issue/PR e entrega a imagem-fonte em `jogos/hordas/fonte_arte/` com registro em `docs/LICENCAS_ARTE.md`. O "salão vivo" (luz, partículas e movimento no #261) fica com o Claude do Alisson.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-14 · Claude do Alisson (notebook) · volta a divisão anterior (Codex com a frente visual)
+- **Decisão do Alisson:** desfeito o #262. O Codex do Alisson volta a ter a **frente visual inteira** (imagem e código visual: efeitos, animação, luz, UI, paleta, recorte, builds e atalho). O Claude do Alisson fica com sistemas, arquitetura e **integração**. `CLAUDE.md` e `AGENTS.md` voltam ao texto do #247.
+- **Para o Codex:** o "salão vivo" (#261) é seu. O PR #263 (rascunho, empilhado no #261) tem a primeira implementação feita antes da pausa, sem prints nem FPS: use como base ou feche.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-14 · Claude do Alisson (notebook) · divisão FIXA: Codex só gera imagens
+- **Decisão do Alisson, agora fixa:** o Claude do Alisson faz **todo o código do jogo** (sistemas e visual), integração, builds e atalho; o **Codex do Alisson só gera imagens** quando pedido; o Claude do Breno testa, decide e ajusta números. Motivo: três agentes no mesmo código geravam conflito o tempo todo. `CLAUDE.md` e `AGENTS.md` voltam ao texto do #262, com o aviso de que só o Alisson muda a divisão.
+- **Para o Codex:** seus PRs visuais abertos (#250, #251, #253, #258, #261) e o salão vivo (#263) passam para o Claude do Alisson. Daqui em diante, só pedidos de imagem.
+## 2026-10-12 (7) · Claude do Alisson (notebook) · v2: heróis Nicão e Lucas (PR, card e testes)
+- **Feito:** `alisson/v2-herois` com a `main` mesclada (conflitos de `altar.gd`, `heroi.gd`, `combate.gd` e `v2_cartas.json` resolvidos mantendo a main) e `testes/v2_herois` fechado (`falhas=0`). Correções: o helper `arco_do_passo` da main tinha perdido o teto de 360 graus (a pancada do Nicão, com a área 1,2, não acertava quem estava atrás); o card SUA BUILD agora mostra o nome do herói, a arma (campo `arma` em `dados/v2_herois.json`) e os modificadores dele; as adagas não leem `avanco` e `hit_stop` no card (SCRIPT ERROR ao apertar C); na seleção, o véu tinha 0x0 e não escurecia nada, a descrição não quebrava linha e a VOLTAR caía sobre ENTRAR NA FLORESTA.
+- **Testes:** `v2_herois`, `v2_partida`, `v2_esc` e as demais `v2_*` rodadas localmente com `falhas=0` e sem SCRIPT ERROR.
+- **Print:** `docs/visual_2_5d/herois_v2/santuario_selecao.png` (viewport 1280x720), usado no corpo do PR.
+- **Pendente:** o tiro secundário de Nicão e Lucas fica para `alisson/v2-ruptura` (sugestões no corpo do PR). O texto dos heróis ocupa 4 linhas no cartão, sem folga acima dos números.
+- **Próximo:** revisar o PR e mesclar depois da ruptura, que mexe nos mesmos botões e no card.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-14 - Pilha dos heróis/salão integrada sobre a main (#242, #214)
+
+- **#242 + main:** `origin/main` mesclada em `claude/salao-do-heroi` (conflito só no `v2/LEIA-ME.md`: mantidos os dois lados). Suíte `v2_*` com `falhas=0`.
+- **#214 dentro do #242:** Nicão e Lucas entram no sistema de personagens do salão, sem segunda escolha de herói. `dados/v2_salao.json > nomes` ganhou `"heroi"` (Nicão e Lucas jogam com o herói deles, os demais de Hazaki); `personagens.gd` guarda o herói no índice (`heroi_do_nome`, `arma_inicial`); `Herois.escolhido()` lê o personagem ativo. Saíram `selecao_heroi.gd`, o botão HERÓI do altar e a chave `[heroi]` do save (`Meta.heroi_escolhido/escolher_heroi`). `dados/v2_secundario.json` mapeia os três heróis ao escudo. Cartas de herói (`"herois"`) coexistem com as 50 de golpes e 25 evoluções da main (8 modificadores).
+- **Testes:** `v2_herois` reescrito para o modelo de personagens; `v2_partida` e `v2_ruptura` com a contagem nova (8 modificadores). Todas as `v2_*` ok.
+- **Atenção:** a branch `alisson/v2-herois` (#214) fica redundante depois deste merge; o orquestrador fecha o PR.
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-14 - Pilha #242 > #261 > #263 mesclada em cadeia
+
+- **#261:** `claude/salao-do-heroi` (já com a main e os heróis do #214) mesclada em `codex/santuario-visual`; só o `v2/LEIA-ME.md` conflitou (mantidos os dois lados). O `v2/paleta.gd` do #261 ficou idêntico ao da main (#250): uma só fonte de cor. Categorias de compras e os quatro mapas intactos. Suíte `v2_*` ok.
+- **#263:** `codex/santuario-visual` mesclada em `alisson/salao-vivo` sem conflito. `v2_salao_vivo` ok isolado (em paralelo com `v2_mapas` ele reclama de `teste_v2_mapas.cfg` no "save real intacto": é corrida entre cenas que dividem o user://, não bug). O salão vivo NÃO foi otimizado: o checkpoint em `docs/visual_2_5d/santuario_vivo/PAUSA.md` segue valendo (queda de FPS acima de 15%).
+
+_Claude do Alisson (notebook)_
+
+## 2026-10-15 · Codex do Alisson · fontes do teste de animação (#266)
+- **Antes/depois:** não havia o teste solicitado de consistência por imagegen. Geradas duas folhas de6quadros do herói andando para baixo, usando a referência fornecida, e uma folha de5estágios de rastro de katana. Variante1 tem bainha na borda/faixa extra; variante2 melhora as margens, sem promessa de consistência pixel a pixel. Todas as variantes entregues para avaliação.
+- **Escopo/validação:** somente imagens-fonte, prompts exatos, licença e metadados de arte. Inspeção visual de contagem, direção, fundo e limites; nenhum recorte/GIF ou teste de animação no Godot. Geração pela ferramenta embutida imagegen; arquivos em fonte_arte/teste_animacao. Godot não rodado: não há código de jogo alterado. Formatação obrigatória conferida antes do PR.
+- **Para o Claude do Alisson:** recortar, alinhar e avaliar os GIFs/consistência conforme266. Esta fonte não substitui o corte do Hazaki em Blender269. Ícones das cartas pedidos por Alisson seguem em outro PR, issue270.
+## 2026-10-15 · Codex do Alisson · imagens-fonte dos ícones das cartas (#270)
+- **Antes/depois:** cartas reutilizam ícones de 16×16 de temas diferentes, muitos compartilhados. Geradas oito folhas com 90 motivos: 50 golpes, 25 evoluções, sete atributos, quatro modificadores e katana/escudo/E/Q reservado. Motivos baseados nas descrições reais; Q é apenas um selo indisponível.
+- **Escopo:** PNGs em fonte_arte/icones_cartas, índice por célula/ID, prompts e licença. Folhas de 1448×1086, células de 362×362, fundo branco e sem texto/grade. A folha 06 foi revisada: seis lâminas no Anel de Brasas e granito com barro no Colosso. Nenhum dado, código ou ícone em uso alterado.
+- **Validação:** inspeção das oito fontes, conferência de IDs, integridade PNG e dimensões; gdformat limpo em scripts, testes e v2 (234 arquivos). Godot não executado localmente nesta entrega de arte. Quantidades no desenho são ilustrativas; recorte e legibilidade em 48/64 px precisam da integração.
+- **Para o Claude do Alisson:** recortar e vincular por categoria + ID. Não usar somente o campo `icone` antigo, compartilhado por vários golpes; evoluções precisam de associação própria. Remover o branco preservando os detalhes claros e validar dentro do jogo. O teste da issue #266 está em PR separado.
+
+_Codex do Alisson_
+
+## 2026-10-15 · Claude do Alisson · ícones próprios das cartas (arte do #272, issue #270)
+- **Antes/depois:** escolha de cartas, baú, SUA BUILD (HUD e pausa) e slots E e Q da HUD usavam o ícone 16×16 antigo, que vários IDs dividiam. Agora cada ID tem o seu: 32×32 na escolha, no baú e nos slots (E = Ruptura, Q = selo apagado); 16×16 nas linhas do SUA BUILD, porque a linha tem 18 a 20 px e 32 px não cabe sem refazer o layout. Prints 960×540 (janela oculta) em `docs/visual_2_5d/icones_cartas/` (`antes_*` e `depois_*`).
+- **Escopo:** `gerar_objetos.py icones` recorta as 8 folhas do #272 (célula de 362 px; fundo branco tirado por flood fill a partir da borda, então o branco preso no desenho fica; BOX; alfa binário a 25%; contorno de 1 px; paleta única de 64 cores, sem dithering). Saída em `assets/v2/icones_cartas/` com `indice.json` (id → arquivo, `_ajuda`); a pasta `16/` tem o pequeno. `Dados.icone_carta(id, icone, pequeno)` cai no ícone antigo quando o ID não tem arte. Katana e escudo não têm slot de carta hoje (a HUD só tem E e Q), então ficam só como arte.
+- **Validação:** teste novo `testes/v2_icones_cartas` (as 86 cartas de `v2_cartas.json` e os 4 secundários carregam 32 e 16 px; fallback conferido). Suíte v2 headless, cena por cena com timeout de 180 s: 29/29 ok (código 0, `falhas=0`, sem SCRIPT ERROR). gdformat -l 160 limpo em scripts, testes e v2.
+- **Pendente:** os 48 e 64 px pedidos no LEIA-ME do #272 não foram comparados: o cartão tem 288 px de altura e não cabe ícone maior sem refazer o layout. Katana e escudo sem slot.
+- **Para o Claude do Alisson:** decidir se katana e escudo ganham slot (por exemplo, no SUA BUILD). Conferir a leitura da pasta `16/` em jogo, numa tela pequena. Recados: os `.import` e `.gd.uid` de assets antigos (mapas e protótipos) continuam sem versionar; o import do Godot os gera e eles ficaram fora deste PR. O `CLAUDE.md` do checkout principal tem uma divisão diferente (Codex com recorte e ligação), que não está no `origin/main`; esta entrega segue a divisão do `origin/main`.
+
+_Claude do Alisson (notebook)_

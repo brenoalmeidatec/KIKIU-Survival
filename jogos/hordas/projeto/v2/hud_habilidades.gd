@@ -1,15 +1,16 @@
 extends Control
 ## Dois slots de habilidade no HUD. E lê somente os campos publicados pelo herói; Q fica explicitamente reservada.
 
+const Paleta := preload("res://v2/paleta.gd")
 const TAM_CARD := Vector2(86.0, 74.0)
 const ESPACO_CARD := 2.0
 const TAM_ICON := Vector2(48.0, 48.0)
 const POSICAO := Vector2(596.0, 438.0)
-const CARGA_LARANJA := Color(1.0, 0.55, 0.2)
-const BORDA := Color(0.58, 0.55, 0.52)
-const DESATIVADO := Color(0.32, 0.31, 0.34)
-const FUNDO := Color(0.08, 0.075, 0.09, 0.92)
-const FUNDO_CARD := Color(0.035, 0.035, 0.045, 0.88)
+const CARGA_LARANJA := Paleta.CARGA_LARANJA
+const BORDA := Paleta.HABILIDADE_BORDA
+const DESATIVADO := Paleta.HABILIDADE_DESATIVADA
+const FUNDO := Color(Paleta.CARTAO, 0.92)
+const FUNDO_CARD := Color(Paleta.PAINEL, 0.88)
 
 var estado_e := "indisponivel"  # indisponivel | ruptura
 var e_disponivel := false
@@ -115,13 +116,17 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	if tecla == "E" and not e_disponivel:
 		cor = DESATIVADO
 	if tecla == "E" and negada:
-		cor = Color(1.0, 0.25, 0.2)
+		cor = Paleta.PERIGO
 	if tecla == "E" and perfeita and int(Time.get_ticks_msec() / 50.0) % 2 == 0:
-		cor = Color.WHITE
+		cor = Paleta.BRANCO
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
-	if tecla == "E":
-		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura.
+	var arte := Dados.icone_carta("ruptura" if tecla == "E" else "ultimate_q")
+	if arte != null:
+		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro de 48; apagado quando não está disponível
+		draw_texture(arte, icon_pos + (TAM_ICON - arte.get_size()) * 0.5, Color.WHITE if tecla == "E" and e_disponivel else DESATIVADO)
+	elif tecla == "E":
+		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura (reserva, se o ícone faltar).
 		var p := icon_pos
 		var esquerda := PackedVector2Array([Vector2(6, 14), Vector2(18, 8), Vector2(21, 16), Vector2(17, 23), Vector2(21, 30), Vector2(17, 38), Vector2(6, 32)])
 		var direita := PackedVector2Array(
@@ -130,12 +135,12 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		for placa in [esquerda, direita]:
 			for i in placa.size():
 				placa[i] += p
-			draw_colored_polygon(placa, Color(cor.r, cor.g, cor.b, 0.24))
+			draw_colored_polygon(placa, Color(cor, 0.24))
 			var contorno: PackedVector2Array = placa.duplicate()
 			contorno.append(placa[0])
 			draw_polyline(contorno, cor, 1.5)
 		var fenda := PackedVector2Array([p + Vector2(24, 8), p + Vector2(26, 16), p + Vector2(21, 23), p + Vector2(26, 30), p + Vector2(22, 39)])
-		draw_polyline(fenda, Color(1.0, 0.88, 0.6) if perfeita else cor, 2.5)
+		draw_polyline(fenda, Paleta.CARGA_PERFEITA if perfeita else cor, 2.5)
 		draw_polyline(PackedVector2Array([p + Vector2(21, 23), p + Vector2(15, 20), p + Vector2(11, 22)]), cor, 1.5)
 		draw_polyline(PackedVector2Array([p + Vector2(26, 30), p + Vector2(33, 26), p + Vector2(37, 27)]), cor, 1.5)
 
@@ -147,13 +152,13 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		var f := clampf(float(carga_px) / 20.0, 0.0, 1.0)
 		if recarga_px > 0:
 			var altura := 46.0 * clampf(float(recarga_px) / 20.0, 0.0, 1.0)
-			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(46.0, altura)), Color(0.0, 0.0, 0.0, 0.56))
+			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(46.0, altura)), Color(Paleta.PRETO, 0.56))
 			if recarga_px < 20:
-				draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + altura), Vector2(46.0, 1.0)), Color(0.9, 0.65, 0.3, 0.95))
+				draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + altura), Vector2(46.0, 1.0)), Color(Paleta.RECARGA_LINHA, 0.95))
 		elif carga_px > 0:
 			draw_rect(Rect2(icon_pos + Vector2(2.0, 43.0), Vector2(44.0 * f, 3.0)), cor)
 		if contragolpe_px > 0:
-			draw_rect(Rect2(icon_pos + Vector2(2.0, 45.0), Vector2(44.0 * float(contragolpe_px) / 20.0, 2.0)), Color(1.0, 0.48, 0.18))
+			draw_rect(Rect2(icon_pos + Vector2(2.0, 45.0), Vector2(44.0 * float(contragolpe_px) / 20.0, 2.0)), Paleta.CONTRAGOLPE)
 	var rotulo := "EM BREVE" if tecla == "Q" else _rotulo_e()
 	draw_string(
 		fonte,
@@ -161,13 +166,21 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		rotulo,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		TAM_CARD.x,
-		10 if tecla == "Q" else 12,
+		Paleta.NUMERO_PEQUENO,
 		cor if tecla == "E" and e_disponivel else DESATIVADO
 	)
 	var selo := Rect2(origem + Vector2((TAM_CARD.x - 16.0) * 0.5, 64.0), Vector2(16.0, 10.0))
-	draw_rect(selo, Color(0.025, 0.025, 0.03, 0.98))
+	draw_rect(selo, Color(Paleta.PAINEL, 0.98))
 	_moldura(selo, cor if tecla == "E" and e_disponivel else DESATIVADO)
-	draw_string(fonte, selo.position + Vector2(4.0, 9.0), tecla, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 9, cor if tecla == "E" and e_disponivel else DESATIVADO)
+	draw_string(
+		fonte,
+		selo.position + Vector2(4.0, 9.0),
+		tecla,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1.0,
+		Paleta.NUMERO_PEQUENO,
+		cor if tecla == "E" and e_disponivel else DESATIVADO
+	)
 
 
 func _rotulo_e() -> String:
@@ -213,4 +226,4 @@ func _esconder_slot_anterior(nome: String) -> void:
 	var slot = _hud.get(nome)
 	if slot is CanvasItem:
 		# Alpha zero não interfere nos flags/estados que os testes e o combate de PR201 consultam.
-		slot.modulate = Color(slot.modulate.r, slot.modulate.g, slot.modulate.b, 0.0)
+		slot.modulate = Color(slot.modulate, 0.0)

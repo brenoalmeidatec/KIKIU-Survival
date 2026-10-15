@@ -146,8 +146,8 @@ func _ready() -> void:
 		ok(ResourceLoader.exists("res://assets/audio/v2/%s.wav" % som), "o WAV %s existe" % som)
 		ok(w.combate.audio._stream(som) != null, "o WAV %s carrega" % som)
 	ok(
-		cs.cfg.stats.size() == 7 and cs.cfg.golpes.size() == 50 and cs.cfg.modificadores.size() == 4,
-		"v2_cartas preserva 7 stats, 50 golpes e 4 modificadores da base integrada"
+		cs.cfg.stats.size() == 7 and cs.cfg.golpes.size() == 50 and cs.cfg.modificadores.size() == 8,
+		"v2_cartas preserva 7 stats, 50 golpes e 8 modificadores (4 da base e 4 dos heróis)"
 	)
 	ok(w.combate != null and rp != null and rp.no != null, "o combate tem o módulo da ruptura")
 
