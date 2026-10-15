@@ -455,7 +455,8 @@ static func _sec_katana(m) -> Dictionary:
 				curto,
 				uma,
 				_dica_evolucao(cs, str(md)),
-				n
+				n,
+				str(md)
 			)
 		)
 	if not ar.ventania.is_empty():
@@ -475,7 +476,8 @@ static func _sec_katana(m) -> Dictionary:
 				tr_v,
 				[["x" + _v(float(ev.mult_onda), 1), 1]],
 				"",
-				[float(ev.mult_onda)]
+				[float(ev.mult_onda)],
+				"ventania"
 			)
 		)
 	return _sec("katana", "KATANA (CLIQUE)", Paleta.SECAO_KATANA, lin)
@@ -532,7 +534,8 @@ static func _sec_golpes(m) -> Dictionary:
 				curto,
 				uma,
 				dica,
-				[nums.dano, nums.intervalo, nums.dps, nums.acertos]
+				[nums.dano, nums.intervalo, nums.dps, nums.acertos],
+				str(id)
 			)
 		)
 	if lin.is_empty():
@@ -576,7 +579,8 @@ static func _bloco(
 	curto: Array,
 	uma: Array,
 	dica: String,
-	n: Array
+	n: Array,
+	carta: String = ""  # id da carta (golpe, evolução, modificador): o ícone próprio dela sai na linha; `icone` é o antigo, de reserva
 ) -> Dictionary:
 	return {
 		"tipo": "bloco",
@@ -591,7 +595,8 @@ static func _bloco(
 		"curto": curto,
 		"uma": uma,
 		"dica": dica,
-		"n": n
+		"n": n,
+		"carta": carta
 	}
 
 
@@ -897,12 +902,11 @@ func _desenhar_linha(l: Dictionary, x: float, y: float, w: float) -> void:
 	_misto(str(l.valor), direita, y, TAM, COR_ROTULO, COR_VALOR, true)
 
 
+## Ícone da carta na linha do card: o próprio do id, na versão de 16 px (a linha tem 18 a 20 px); sem ele, o antigo `icone`.
 func _desenhar_icone(l: Dictionary, x: float, y: float) -> void:
-	var ic := str(l.icone)
-	if ic != "":
-		var tx: Texture2D = Dados.tex(ic)
-		if tx != null:
-			_tela.draw_texture(tx, Vector2(x, y))
+	var tx := Dados.icone_carta(str(l.get("carta", "")), str(l.icone), true)
+	if tx != null:
+		_tela.draw_texture(tx, Vector2(x, y))
 
 
 ## Um golpe ou modificador numa linha só (HUD): ícone, nome curto, nível e o número (poder estimado, ou o valor do modificador).

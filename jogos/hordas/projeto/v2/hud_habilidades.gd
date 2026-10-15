@@ -121,8 +121,12 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		cor = Paleta.BRANCO
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
-	if tecla == "E":
-		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura.
+	var arte := Dados.icone_carta("ruptura" if tecla == "E" else "ultimate_q")
+	if arte != null:
+		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro de 48; apagado quando não está disponível
+		draw_texture(arte, icon_pos + (TAM_ICON - arte.get_size()) * 0.5, Color.WHITE if tecla == "E" and e_disponivel else DESATIVADO)
+	elif tecla == "E":
+		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura (reserva, se o ícone faltar).
 		var p := icon_pos
 		var esquerda := PackedVector2Array([Vector2(6, 14), Vector2(18, 8), Vector2(21, 16), Vector2(17, 23), Vector2(21, 30), Vector2(17, 38), Vector2(6, 32)])
 		var direita := PackedVector2Array(

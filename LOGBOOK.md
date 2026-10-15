@@ -1776,3 +1776,12 @@ _Claude do Alisson (notebook)_
 - **Para o Claude do Alisson:** recortar e vincular por categoria + ID. Não usar somente o campo `icone` antigo, compartilhado por vários golpes; evoluções precisam de associação própria. Remover o branco preservando os detalhes claros e validar dentro do jogo. O teste da issue #266 está em PR separado.
 
 _Codex do Alisson_
+
+## 2026-10-15 · Claude do Alisson · ícones próprios das cartas (arte do #272, issue #270)
+- **Antes/depois:** escolha de cartas, baú, SUA BUILD (HUD e pausa) e slots E e Q da HUD usavam o ícone 16×16 antigo, que vários IDs dividiam. Agora cada ID tem o seu: 32×32 na escolha, no baú e nos slots (E = Ruptura, Q = selo apagado); 16×16 nas linhas do SUA BUILD, porque a linha tem 18 a 20 px e 32 px não cabe sem refazer o layout. Prints 960×540 (janela oculta) em `docs/visual_2_5d/icones_cartas/` (`antes_*` e `depois_*`).
+- **Escopo:** `gerar_objetos.py icones` recorta as 8 folhas do #272 (célula de 362 px; fundo branco tirado por flood fill a partir da borda, então o branco preso no desenho fica; BOX; alfa binário a 25%; contorno de 1 px; paleta única de 64 cores, sem dithering). Saída em `assets/v2/icones_cartas/` com `indice.json` (id → arquivo, `_ajuda`); a pasta `16/` tem o pequeno. `Dados.icone_carta(id, icone, pequeno)` cai no ícone antigo quando o ID não tem arte. Katana e escudo não têm slot de carta hoje (a HUD só tem E e Q), então ficam só como arte.
+- **Validação:** teste novo `testes/v2_icones_cartas` (as 86 cartas de `v2_cartas.json` e os 4 secundários carregam 32 e 16 px; fallback conferido). Suíte v2 headless, cena por cena com timeout de 180 s: 29/29 ok (código 0, `falhas=0`, sem SCRIPT ERROR). gdformat -l 160 limpo em scripts, testes e v2.
+- **Pendente:** os 48 e 64 px pedidos no LEIA-ME do #272 não foram comparados: o cartão tem 288 px de altura e não cabe ícone maior sem refazer o layout. Katana e escudo sem slot.
+- **Para o Claude do Alisson:** decidir se katana e escudo ganham slot (por exemplo, no SUA BUILD). Conferir a leitura da pasta `16/` em jogo, numa tela pequena. Recados: os `.import` e `.gd.uid` de assets antigos (mapas e protótipos) continuam sem versionar; o import do Godot os gera e eles ficaram fora deste PR. O `CLAUDE.md` do checkout principal tem uma divisão diferente (Codex com recorte e ligação), que não está no `origin/main`; esta entrega segue a divisão do `origin/main`.
+
+_Claude do Alisson (notebook)_

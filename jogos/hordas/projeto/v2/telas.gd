@@ -19,7 +19,7 @@ const LENDARIA_COR := Paleta.FUSAO  # magenta: a faixa e o rodapé de uma peça 
 const FOLGA := 20.0
 const BTN_Y := 440.0
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
-const ICONE := 32.0  # o ícone da v1 tem 16x16: aqui sai em 2x, pixel a pixel
+const ICONE := 32.0  # ícone próprio da carta (assets/v2/icones_cartas, 32x32): sai 1 para 1, pixel a pixel
 const TAM_TITULO := Paleta.TITULO_GRANDE  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
 const TAM_NOME := Paleta.TITULO_MEDIO  # múltiplo de 2 px da grade da Jersey 10 (cabe em uma linha na maioria dos nomes)
 const TAM_NOME_CURTO := Paleta.TITULO_PEQUENO  # nomes longos (Lâminas Rodopiantes) que não cabem em TAM_NOME
@@ -252,8 +252,7 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	rl.text = str(c.get("rar_nome", "")).to_upper()
 	rl.add_theme_color_override("font_color", cor.lerp(Paleta.BRANCO, 0.3))
 	(p.get_node("faixa") as ColorRect).color = Color(LENDARIA_COR.r, LENDARIA_COR.g, LENDARIA_COR.b, 0.9) if lendaria else Color(cor.r, cor.g, cor.b, 0.9)
-	var nome_icone := str(c.get("icone", ""))
-	(p.get_node("icone") as TextureRect).texture = Dados.tex(nome_icone) if nome_icone != "" else null
+	(p.get_node("icone") as TextureRect).texture = Dados.icone_carta(str(c.get("id", "")), str(c.get("icone", "")))
 	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(cor))
 
 
