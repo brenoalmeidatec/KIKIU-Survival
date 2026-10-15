@@ -10,14 +10,17 @@ extends Node
 # escolhe a linha; ESC dentro de Ajustes volta um nível; o hit-stop e a câmera lenta seguem depois de pausar; Voltar ao santuário
 # despausa, abandona a partida (venceu = false) e credita as almas; perder o foco não pausa em headless; e no santuário o ESC
 # é devolvido à navegação local, e o botão Ajustes abre o submenu.
+# Tela cheia (linha e F11, com a pausa aberta ou fechada) e Baixar a qualidade se travar ficam fora do perfil: não viram
+# personalizado. A queda por fps (qualidade_auto) vale só na memória: o arquivo não recebe o perfil caído.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
-#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (só o viewport).
+#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_graficos_topo, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (só o viewport).
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Meta := preload("res://v2/meta.gd")
 const Resultado := preload("res://v2/resultado_meta.gd")
 const Sombras := preload("res://v2/sombras.gd")
+const QualidadeAuto := preload("res://v2/qualidade_auto.gd")
 const SAVE_TESTE := "user://teste_v2_pausa_meta.cfg"
 const OPCOES_TESTE := "user://teste_v2_pausa_opcoes.cfg"
 const SAVE_REAL := "user://v2_progresso.cfg"
@@ -273,6 +276,82 @@ func _testes() -> void:
 	pausa._fps_t = 0.0
 	await get_tree().process_frame
 	ok(pausa._fps.visible == (not fps_antes), "o contador de fps segue a opção ao vivo")
+
+	# 6b. Tela cheia, Baixar a qualidade e Mostrar FPS são opções fora do perfil: mexer nelas não vira personalizado
+	var ids_topo := _ids(pausa)
+	ok(
+		ids_topo.find("g:tela") >= 0 and ids_topo.find("g:tela") < ids_topo.find("g:qualidade") and ids_topo.find("g:qualidade") < ids_topo.find("g:fps"),
+		"a aba tem Tela cheia, Baixar a qualidade e Mostrar FPS no topo, nessa ordem"
+	)
+	Config.g_aplicar_perfil("alto")
+	_ir_para(pausa, "g:tela")
+	var tela_antes := bool(Config.v("tela_cheia"))
+	_tecla(KEY_ENTER)
+	ok(bool(Config.v("tela_cheia")) != tela_antes and Config.g_perfil() == "alto", "Tela cheia liga e desliga pela linha, sem mudar o perfil")
+	_tecla(KEY_F11)
+	ok(bool(Config.v("tela_cheia")) == tela_antes and pausa.aberto, "F11 com o menu aberto volta a Tela cheia, e o menu continua aberto")
+	_ir_para(pausa, "g:qualidade")
+	var qual_antes := bool(Config.v("qualidade_auto"))
+	_tecla(KEY_ENTER)
+	ok(bool(Config.v("qualidade_auto")) != qual_antes and Config.g_perfil() == "alto", "Baixar a qualidade liga e desliga pela linha, sem mudar o perfil")
+	_tecla(KEY_ENTER)
+	ok(bool(Config.v("qualidade_auto")) == qual_antes, "Baixar a qualidade volta ao valor de antes")
+
+	# 6c. a baixa automática (fps abaixo de 40 por 8 s) desce o perfil só na memória; o arquivo guarda o que o jogador escolheu
+	Config.g_aplicar_perfil("alto")
+	mundo._qualidade_ligada = true  # o jogo de verdade (no teste o mundo fica desligado de propósito)
+	for i in 500:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "medio" and mundo.sombras.modo == Sombras.MEDIA, "8 s com fps abaixo de 40 desce de Alto para Médio, e a sombra do mundo acompanha")
+	var salvo := ConfigFile.new()
+	salvo.load(OPCOES_TESTE)
+	ok(str(salvo.get_value("graficos", "perfil", "")) == "alto", "a queda não grava: o arquivo continua com o perfil Alto")
+	Config.definir("mostrar_fps", Config.v("mostrar_fps"))  # salvar outra opção não pode levar a queda para o arquivo
+	salvo.load(OPCOES_TESTE)
+	ok(
+		str(salvo.get_value("graficos", "perfil", "")) == "alto" and str(salvo.get_value("graficos", "sombras", "")) == "alta",
+		"salvar outra opção não leva a queda para o arquivo"
+	)
+	ok(Config.g_perfil() == "medio", "a queda vale na memória até o jogador mexer numa opção da aba")
+	for i in 500:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "baixo" and mundo.sombras.modo == Sombras.BAIXA, "mais 8 s de fps baixo desce até Baixo")
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "baixo", "no Baixo não desce mais")
+	Config.g_aplicar_perfil("alto")
+	ok(Config.g_perfil() == "alto" and Config.g("sombras") == "alta", "escolher Alto de novo tira a queda")
+	Config.g_definir("max_inimigos", 300)  # personalizado
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "personalizado", "o Personalizado não é derrubado pela baixa automática")
+	Config.g_aplicar_perfil("alto")
+	Config.definir("qualidade_auto", false)
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "alto", "com Baixar a qualidade desligado, o fps baixo não muda nada")
+	Config.definir("qualidade_auto", true)
+	mundo._qualidade_ligada = false
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "alto", "fora do jogo de verdade (testes, medições) a baixa não age")
+	Config.g_aplicar_perfil("alto")
+
+	# 6d. a contagem sozinha (v2/qualidade_auto.gd): 8 s abaixo de 40 fps desce um degrau; 40 fps zera; Baixo e Personalizado não descem
+	var qa := QualidadeAuto.new()
+	var antes_de_8s := ""
+	for i in 15:
+		antes_de_8s += qa.passo(0.5, 30.0, "alto")
+	ok(antes_de_8s == "" and qa.passo(0.5, 30.0, "alto") == "medio", "7,5 s abaixo de 40 fps não desce; no 8º segundo desce para médio")
+	qa.passo(0.5, 40.0, "medio")  # 40 fps ainda não é travado: zera a contagem
+	var depois_de_zerar := ""
+	for i in 15:
+		depois_de_zerar += qa.passo(0.5, 30.0, "medio")
+	ok(depois_de_zerar == "" and qa.passo(0.5, 30.0, "medio") == "baixo", "40 fps zera a contagem: são outros 8 s para descer de médio para baixo")
+	var sem_descer := ""
+	for i in 100:
+		sem_descer += qa.passo(0.5, 30.0, "baixo") + qa.passo(0.5, 30.0, "personalizado")
+	ok(sem_descer == "", "Baixo e Personalizado nunca descem")
 	_ir_para(pausa, "g:detectar")
 	_tecla(KEY_ENTER)
 	ok(pausa._graficos.mensagem != "", "Detectar pela máquina dá um aviso (%s)" % pausa._graficos.mensagem)
@@ -371,6 +450,16 @@ func _testes() -> void:
 	pausa._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 	ok(not pausa.aberto and not get_tree().paused, "perder o foco não pausa em headless")
 
+	# 10b. F11 com a pausa fechada liga a tela cheia pela Antena e não abre o menu
+	var tela_fechada := bool(Config.v("tela_cheia"))
+	_tecla(KEY_F11)
+	ok(
+		bool(Config.v("tela_cheia")) != tela_fechada and not pausa.aberto and not get_tree().paused,
+		"F11 com a pausa fechada liga a tela cheia e não abre o menu"
+	)
+	_tecla(KEY_F11)
+	ok(bool(Config.v("tela_cheia")) == tela_fechada, "F11 de novo volta ao que estava")
+
 	# 11. santuário: a pausa devolve ESC à navegação local; Ajustes fecha e restaura foco.
 	# O mundo sai antes: o Apresentacao devolve a escala da janela na saída, e o santuário precisa ter a dele.
 	mundo.queue_free()
@@ -429,6 +518,8 @@ func _fotos(pasta: String) -> void:
 	_tecla(KEY_ENTER)
 	_ir_para(pausa, "g:op:sombras")
 	await mundo.ap.foto(pasta.path_join("pausa_graficos.png"))
+	_ir_para(pausa, "g:qualidade")  # o topo da aba: Perfil, Detectar, Tela cheia, Baixar a qualidade e Mostrar FPS
+	await mundo.ap.foto(pasta.path_join("pausa_graficos_topo.png"))
 	_tecla(KEY_ESCAPE)
 	_ir_para(pausa, "audio")
 	_tecla(KEY_ENTER)

@@ -68,6 +68,8 @@ var _cfg := ConfigFile.new()
 signal graficos_mudou
 
 var _perfil_padrao := "alto"  # sem nada salvo: o perfil pela máquina (jogo de verdade) ou alto (testes e headless)
+var _temp: Dictionary = {}  # valores só da memória (baixa automática, g_temporario): ficam por cima do salvo e nunca vão ao arquivo
+var _temp_perfil := ""  # perfil só da memória ("" = nenhum); some ao mexer numa opção da aba ou ao recarregar
 
 
 func _ready() -> void:
@@ -79,6 +81,7 @@ func _ready() -> void:
 
 ## Lê user://opcoes.cfg de novo (ao abrir o jogo e nos testes de salvar e carregar). Faz a migração da qualidade antiga.
 func recarregar() -> void:
+	_zerar_temporario()  # o arquivo manda: o que era só da memória (baixa automática, testes) sai
 	_cfg = ConfigFile.new()  # load() não limpa o que já estava na memória: começa de um ConfigFile vazio
 	_cfg.load(arquivo)
 	# migração, uma vez: a "Qualidade gráfica" antiga (alta, media, baixa) vira o perfil novo
@@ -101,6 +104,8 @@ func recarregar() -> void:
 
 ## Valor atual de uma opção de graficos.json: o que o jogador salvou ou, se não mexeu, o do perfil base.
 func g(chave: String) -> Variant:
+	if _temp.has(chave):
+		return _temp[chave]
 	if _cfg.has_section_key("graficos", chave):
 		return _cfg.get_value("graficos", chave)
 	var perfis: Dictionary = Dados.json("graficos").get("perfis", {})
@@ -110,6 +115,8 @@ func g(chave: String) -> Variant:
 
 ## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado".
 func g_perfil() -> String:
+	if _temp_perfil != "":
+		return _temp_perfil
 	return str(_cfg.get_value("graficos", "perfil", _perfil_padrao))
 
 
@@ -118,6 +125,7 @@ func g_definir(chave: String, valor: Variant) -> void:
 	if g_opcao(chave).is_empty():
 		push_error("Opção de gráficos desconhecida: " + chave)
 		return
+	_zerar_temporario()  # o jogador escolheu: a baixa automática sai e vale o salvo, mais esta mudança
 	_cfg.set_value("graficos", chave, valor)
 	_cfg.set_value("graficos", "perfil", "personalizado")
 	_salvar_graficos()
@@ -125,17 +133,30 @@ func g_definir(chave: String, valor: Variant) -> void:
 
 ## Preenche TODAS as opções com o perfil ("baixo", "medio" ou "alto"). Salva e aplica na hora.
 func g_aplicar_perfil(nome: String) -> void:
+	_zerar_temporario()
 	_preencher(nome)
 	_cfg.set_value("graficos", "perfil", nome)
 	_cfg.set_value("graficos", "base", nome)
 	_salvar_graficos()
 
 
-## Como g_aplicar_perfil, mas só na memória (testes, --perfil=, a baixa automática de fps): não grava nas opções.
+## Como g_aplicar_perfil, mas só na memória (testes, --perfil=, a baixa automática de fps): não grava nas opções, nem quando
+## outra opção for salva depois (o temporário fica fora de _cfg). Vale por cima do salvo até o jogador mexer numa opção da aba
+## ou recarregar. Aplica vsync e limite de fps e avisa a tela (graficos_mudou).
 func g_perfil_temporario(nome: String) -> void:
-	_preencher(nome)
-	_cfg.set_value("graficos", "perfil", nome)
-	_cfg.set_value("graficos", "base", nome)
+	var perfis: Dictionary = Dados.json("graficos").get("perfis", {})
+	if not perfis.has(nome):
+		push_error("Perfil de gráficos desconhecido: " + nome)
+		return
+	_temp = perfis[nome].duplicate()
+	_temp_perfil = nome
+	aplicar_graficos()
+	graficos_mudou.emit()
+
+
+func _zerar_temporario() -> void:
+	_temp = {}
+	_temp_perfil = ""
 
 
 func _preencher(nome: String) -> void:
@@ -261,9 +282,9 @@ func temporario(chave: String, valor: Variant) -> void:
 	_cfg.set_value("opcoes", chave, valor)
 
 
-## Como temporario, mas para uma opção da aba Gráficos (dados/graficos.json). Só na memória, sem mudar o perfil.
+## Como temporario, mas para uma opção da aba Gráficos (dados/graficos.json). Só na memória, sem mudar o perfil: vai para _temp.
 func g_temporario(chave: String, valor: Variant) -> void:
-	_cfg.set_value("graficos", chave, valor)
+	_temp[chave] = valor
 
 
 func definir(chave: String, valor: Variant) -> void:
