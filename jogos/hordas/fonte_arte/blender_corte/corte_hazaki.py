@@ -427,7 +427,7 @@ def renderiza_e_monta():
     print("FOLHA OK", img.filepath_raw)
 
 
-if bpy.app.background:
+if __name__ == "__main__" and bpy.app.background:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     cena = bpy.context.scene
     monta_tudo()

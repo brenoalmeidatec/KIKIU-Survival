@@ -5,6 +5,7 @@ extends SceneTree
 
 var w
 var saida := ""
+var variante := "katana"  # --corte=ciano usa a variante ciano
 
 
 func _initialize() -> void:
@@ -15,6 +16,8 @@ func run() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--saida="):
 			saida = a.trim_prefix("--saida=")
+		if a.begins_with("--corte="):
+			variante = a.trim_prefix("--corte=")
 	if saida.is_empty():
 		quit(1)
 		return
@@ -35,6 +38,7 @@ func run() -> void:
 	w.combate.limpar_partida()
 	w.combate.diretor.ligado = false
 	w.combate.audio.mudo = true
+	w.combate.fx.variante = variante
 	w.heroi.imortal = true
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.mouse_forcado = w.heroi.centro() + Vector2(100, 0)

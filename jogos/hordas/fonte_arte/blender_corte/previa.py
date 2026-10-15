@@ -13,7 +13,10 @@ import numpy as np
 ARGS = sys.argv[sys.argv.index("--") + 1:]
 FOLHA, GIF = os.path.abspath(ARGS[0]), os.path.abspath(ARGS[1])
 TIRA = ARGS[2] if len(ARGS) > 2 else None
-TAM, N, ESC = 128, 16, 3
+TAM, ESC = 128, 3
+CIANO = "ciano" in os.path.basename(FOLHA)
+N = 12 if CIANO else 16
+RAMPA = np.array([(0.04, 0.55, 0.62), (0.10, 0.80, 0.85), (0.40, 0.95, 1.0), (0.92, 1.0, 1.0)], dtype=np.float32)
 FUNDO = np.array([0.17, 0.16, 0.20], dtype=np.float32)
 TINTAS = [((1.0, 0.92, 0.75), 1.0), ((0.85, 0.95, 1.0), -1.0)]   # cores dos 2 cortes do combo; lado 1 e -1
 
@@ -31,11 +34,17 @@ def aplica(q, cor, lado):
     if lado < 0:
         q = q[::-1]
     h, a = q[..., 0:1], q[..., 3:4]
+    if CIANO:  # mesma rampa do shader do jogo (modo fixo)
+        pos = np.clip(h[..., 0], 0, 1) * 3.0
+        i0 = np.clip(np.floor(pos).astype(int), 0, 2)
+        c = RAMPA[i0] * (1 - (pos - i0)[..., None]) + RAMPA[i0 + 1] * (pos - i0)[..., None]
+        return c * a * 2.0
     c = np.array(cor, dtype=np.float32) * (1 - h * 0.55) + h * 0.55   # mix(cor, branco, calor*0.55), igual ao jogo
     return c * a * 2.0                                                  # blend_add: rgb * alfa (mesmo fator de brilho do jogo)
 
 
 def quadro(folha, i, cor, lado):
+    i = min(i, N - 1)
     q = folha[:, i * TAM:(i + 1) * TAM]
     add = aplica(q, cor, lado)
     img = np.clip(FUNDO + add, 0, 1)
@@ -124,7 +133,7 @@ escreve_gif(seq, atr, GIF)
 print("GIF", GIF, len(seq), "quadros")
 
 if TIRA:
-    lin = [np.concatenate([quadro(folha, i, TINTAS[0][0], 1.0) for i in range(r * 8, r * 8 + 8)], axis=1) for r in range(N // 8)]
+    lin = [np.concatenate([quadro(folha, i, TINTAS[0][0], 1.0) for i in range(r * 8, r * 8 + 8)], axis=1) for r in range((N + 7) // 8)]
     tira = np.concatenate(lin, axis=0)
     img = bpy.data.images.new("tira", tira.shape[1], tira.shape[0], alpha=False)
     img.colorspace_settings.name = "Non-Color"
