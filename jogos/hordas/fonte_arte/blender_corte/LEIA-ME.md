@@ -13,3 +13,7 @@ com a cor do golpe (`dados/v2_combate.json`, `passos[].cor`) e espelha para `lad
 
 `gif_jogo.py` monta o GIF antes x depois a partir de `projeto/testes/captura_corte.gd` (captura do jogo, 60 fps fixos).
 Só o **corte** usa a folha; a **estocada** continua no shader procedural antigo.
+
+## Variantes guardadas (não usadas no jogo por padrão)
+- `corte_hazaki_ciano.py`: só a energia, arco ciano em pixel art grosso (o jogo já tem a folha, opção `variante = "ciano"` em `v2/efeitos.gd`).
+- `corte_hazaki_simples.py`: arco fino e afiado com flash branco, 10 quadros. Guardada porque parece magia; o corte da katana segue com `corte_hazaki.py` (katana + linha de anime).
