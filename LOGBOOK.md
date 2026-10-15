@@ -1871,3 +1871,11 @@ _Claude do Alisson (notebook)_
 - O Breno pediu animação de verdade nas armas (invocações andando, atacando e virando; projéteis apontando e girando; áreas com início, loop e fim). Cancelado o envio ao Codex (issue #267 fechada): a análise ficou em `docs/animacoes_armas_v2.md` e o trabalho será feito no Blender.
 
 _Claude do Breno_
+
+## 2026-10-15 · Referências dos heróis — Codex do Alisson
+- Antes/depois: faltavam folhas para modelagem; entregues Matheus, Nicão e Lucas, cada um com frente, perfil e costas, branco e grade 3×1.
+- Validado: inspeção visual, integridade/dimensões dos PNGs e gdformat em scripts, testes e v2. Godot não executado localmente: somente arte e documentação, nenhum código/dado/teste alterado.
+- Para o Claude do Alisson: modelar e integrar; Matheus mantém a katana padrão, Nicão marreta e Lucas adagas. LEIA-ME e PROMPTS descrevem células, cores e limites. Pendente: validação dos modelos dentro do jogo.
+
+_Codex do Alisson_
+
