@@ -17,6 +17,7 @@ Uso (so precisa de Pillow):
     python gerar_objetos.py armas     sprites das armas da v2 (fonte_armas_*.webp) -> projeto/assets/v2/armas/
     python gerar_objetos.py hud       molduras 9-slice do HUD (folhas do #290, fonte_arte/hud_molduras/) -> projeto/v2/hud/moldura_{retrato,barra,habilidade}.png
     python gerar_objetos.py icones    icones das cartas da v2 (folhas do #272, fonte_arte/icones_cartas/) -> projeto/assets/v2/icones_cartas/
+    python gerar_objetos.py marco4    8 estruturas do Marco 4 (fonte_arte/marco4/fonte_estruturas.png, grade 4x2) -> projeto/assets/v2/marco4/
     python gerar_objetos.py fusoes    moldura, halo, Ventania e icone das fusoes (fonte_arte/fusoes/) -> projeto/assets/v2/fusoes/
 
 Passos: fundo = alfa 0 (ou branco) ligado a borda, por flood fill; objetos = componentes do que sobrou,
@@ -1403,6 +1404,97 @@ def previa_icones(grandes, pequenos, caminho):
     tela.save(caminho)
 
 
+# ------------------------------------------------------------------ estruturas do Marco 4 (python gerar_objetos.py marco4)
+# Folha do Codex do Alisson (imagegen): fonte_arte/marco4/fonte_estruturas.png, 1774x887 sobre branco, grade 4x2.
+# O LEIA-ME pede completar com 2 px brancos a direita e 1 px embaixo (1776x888 = celulas de 444 px). Uma peca por celula.
+# Saida: projeto/assets/v2/marco4/ (enfeites.png, enfeites_normal.png e cenario.json, no formato do atlas da cara nova;
+# v2/cenario.gd le esta pasta junto com a dos enfeites). Nao toca nas outras pastas nem nos outros modos.
+MARCO4_FONTE = os.path.join(HORDAS, "fonte_arte", "marco4", "fonte_estruturas.png")
+MARCO4_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "marco4")
+MARCO4_PREVIA = os.path.join(HORDAS, "prints", "v2_marco4_estruturas.png")
+MARCO4_PREVIA_COLISAO = os.path.join(HORDAS, "prints", "v2_marco4_colisao.png")
+MARCO4_GRADE = (4, 2)        # colunas e linhas da folha (ordem: esquerda para a direita, de cima para baixo)
+MARCO4_CELULA = 444          # lado de cada celula (4 x 444 = 1776, 2 x 444 = 888)
+MARCO4_COR = 40              # paleta unica da folha toda, sem dithering (o teto dos enfeites)
+# (nome no mapa, eixo do alvo, tamanho alvo em px no jogo, colisao). Colisao: [] = atravessavel; cada elipse e
+# (x do centro, y da base e raio em x), em fracao da largura e da altura do sprite recortado (ry = 0,5 * rx).
+MARCO4_ITENS = [
+    # arco: duas pernas solidas, vao central livre (~47 px no jogo; o corpo do heroi tem 7 px de raio)
+    ("m4_ruina", "L", 130, [(0.39, 0.90, 0.09), (0.74, 0.90, 0.09)]),
+    # plinto de pedra: um disco na base
+    ("m4_altar", "L", 74, [(0.5, 0.95, 0.36)]),
+    # ponte de madeira: passa por cima, sem colisao (o caminho seguro dos espinhos e reto; ela ainda nao tem vao no mapa)
+    ("m4_ponte", "L", 220, []),
+    # corredor entre duas paredes de rocha: as paredes solidas, o chao livre (~82 px)
+    ("m4_passagem", "L", 170, [(0.20, 0.92, 0.20), (0.80, 0.92, 0.20)]),
+    # terraço: bloco solido (a escada e o topo nao sao caminho, como manda o LEIA-ME)
+    ("m4_plato", "L", 190, [(0.5, 0.92, 0.36)]),
+    # portao: os dois pilares solidos, o vao entre eles livre
+    ("m4_portao", "L", 150, [(0.15, 0.95, 0.10), (0.83, 0.95, 0.12)]),
+    ("m4_torre", "A", 170, [(0.5, 0.95, 0.31)]),
+    ("m4_mirante", "L", 150, [(0.62, 0.94, 0.25)]),
+]
+MARCO4_AJUDA = (
+    "Estruturas do Marco 4 da v2 (arte do Codex, folha em jogos/hordas/fonte_arte/marco4/). Nomes m4_* sao unicos no "
+    "jogo: o mapa os usa em dados/v2_medio.json (objetos). pe = base no chao (a posicao do objeto); colisao em elipses "
+    "relativas ao pe, como no atlas dos enfeites. Nao edite a mao: rode `python gerar_objetos.py marco4`."
+)
+
+
+def gerar_marco4():
+    cols, linhas = MARCO4_GRADE
+    largura, altura = cols * MARCO4_CELULA, linhas * MARCO4_CELULA
+    fonte = Image.open(MARCO4_FONTE).convert("RGB")
+    if fonte.width > largura or fonte.height > altura or largura - fonte.width > 2 or altura - fonte.height > 2:
+        raise SystemExit("%s: %dx%d, esperado %dx%d (aceita ate 2 px de diferenca)"
+                         % (MARCO4_FONTE, fonte.width, fonte.height, largura, altura))
+    if len(MARCO4_ITENS) != cols * linhas:
+        raise SystemExit("MARCO4_ITENS tem %d pecas, a grade tem %d celulas" % (len(MARCO4_ITENS), cols * linhas))
+    tela = Image.new("RGB", (largura, altura), (255, 255, 255))
+    tela.paste(fonte, (0, 0))
+    sprites = []
+    for k, (nome, eixo, alvo, colisao) in enumerate(MARCO4_ITENS):
+        x0 = (k % cols) * MARCO4_CELULA
+        y0 = (k // cols) * MARCO4_CELULA
+        rec = recortar_celula(tela.crop((x0, y0, x0 + MARCO4_CELULA, y0 + MARCO4_CELULA)))
+        rec = rec.crop(rec.getchannel("A").getbbox())
+        alb = contorno(binarizar(escalar(rec, eixo, alvo), LIMIAR_ALFA))
+        alb = alb.crop(alb.getbbox())
+        nor = normal_do_objeto(alb)
+        pe = pe_do_objeto(alb)
+        formas = [_forma(fx * alb.width - pe[0], fy * alb.height - pe[1], max(COLISAO_RX_MIN, fr * alb.width))
+                  for fx, fy, fr in colisao]
+        sprites.append((nome, 1, alb, nor, pe, formas))
+        print("  %-12s %3dx%-3d  (alvo %s %d)  pe %s  colisao %d" % (nome, alb.width, alb.height, eixo, alvo, pe, len(formas)))
+    pos, larg_folha, alt_folha = empacotar([(s[2].width, s[2].height) for s in sprites])
+    folha = Image.new("RGBA", (larg_folha, alt_folha), (0, 0, 0, 0))
+    folha_n = Image.new("RGBA", (larg_folha, alt_folha), (128, 128, 255, 0))
+    for (x, y), s in zip(pos, sprites):
+        folha.paste(s[2], (x, y))
+        folha_n.paste(s[3], (x, y))
+    folha = quantizar(folha, MARCO4_COR)
+    cores = len(folha.getcolors(1 << 20))
+    os.makedirs(MARCO4_SAIDA, exist_ok=True)
+    folha.save(os.path.join(MARCO4_SAIDA, "enfeites.png"))
+    folha_n.save(os.path.join(MARCO4_SAIDA, "enfeites_normal.png"))
+    itens = []
+    for (x, y), (nome, _peso, alb, _nor, pe, formas) in zip(pos, sprites):
+        itens.append({"nome": nome, "pe": pe, "regiao": [x, y, alb.width, alb.height], "colisao": formas})
+    cen = {
+        "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py marco4 (nao edite a mao)",
+        "_ajuda": MARCO4_AJUDA,
+        "enfeites": "enfeites.png",
+        "enfeites_normal": "enfeites_normal.png",
+        "itens": itens,
+    }
+    with open(os.path.join(MARCO4_SAIDA, "cenario.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(cen, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    previa_colisao(folha, pos, sprites, MARCO4_PREVIA_COLISAO)
+    previa([("fonte_estruturas.png", [(s[0], s[2], s[3]) for s in sprites])], MARCO4_PREVIA)
+    print("marco4: %d estruturas em %s, folha %dx%d, paleta de %d cores" % (
+        len(sprites), MARCO4_SAIDA, larg_folha, alt_folha, cores))
+    print("previas", MARCO4_PREVIA, MARCO4_PREVIA_COLISAO)
 # ------------------------------------------------------------------ molduras do HUD (modo "hud")
 # Folhas do Codex (#290): 3 x 3 celulas, fundo branco, pecas soltas (cantos, bordas, centro). Vira texturas de 9-slice na escala do HUD.
 HUD_FONTE = os.path.join(HORDAS, "fonte_arte", "hud_molduras")
@@ -1681,6 +1773,8 @@ if __name__ == "__main__":
         gerar_armas()
     elif len(sys.argv) > 1 and sys.argv[1] == "icones":
         gerar_icones()
+    elif len(sys.argv) > 1 and sys.argv[1] == "marco4":
+        gerar_marco4()
     elif len(sys.argv) > 1 and sys.argv[1] == "fusoes":
         gerar_fusoes()
     else:

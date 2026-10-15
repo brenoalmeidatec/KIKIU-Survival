@@ -11,6 +11,7 @@ const Sprites := preload("res://v2/sprites.gd")
 const OBJ_DIR := "res://prototipos/objetos"  # atlas dos objetos: albedo + normal, escala final a 960x540 (a floresta; "pastas" do mapa troca)
 const DEC_DIR := "res://prototipos/decalques"  # decalques de chão: albedo + normal
 const PISO_DIR := "res://prototipos/piso"
+const ATLAS_MARCO4 := "res://assets/v2/marco4"  # estruturas do Marco 4 (m4_*): atlas à parte, mesmo formato dos enfeites (gerar_objetos.py marco4)
 const MARGEM := 3  # px transparentes em volta de cada objeto recortado: o blur da sombra não corta na borda
 const CHUNK := 160  # lado do bloco, em px do mundo
 const MARGEM_BLOCO := 200.0  # margem (px) em volta da tela em que os blocos ficam visíveis (decalque grande tem até ~190 px de meia largura)
@@ -163,13 +164,19 @@ func _decalque(nome: String, pos: Vector2, espelha := false) -> void:
 
 ## Atlas de objetos de cenário (prototipos/objetos). Cada item é recortado UMA vez (com margem) e ganha a textura nítida, a borrada para a
 ## sombra do modo médio e a CanvasTexture com normal map, e guarda as formas de "colisao" do item (elipses no chão, v2/colisao.gd).
+## Os enfeites da pasta do mapa e as estruturas do Marco 4 (m4_*, atlas à parte): mesmo formato, nomes únicos.
 func _carregar_itens() -> void:
-	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(_obj_dir.path_join("cenario.json")))
-	var atlas := Sprites.png(_obj_dir.path_join(str(info.get("enfeites", "enfeites.png"))))
+	_carregar_atlas(_obj_dir)
+	_carregar_atlas(ATLAS_MARCO4)
+
+
+func _carregar_atlas(pasta: String) -> void:
+	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(pasta.path_join("cenario.json")))
+	var atlas := Sprites.png(pasta.path_join(str(info.get("enfeites", "enfeites.png"))))
 	atlas.convert(Image.FORMAT_RGBA8)
 	var norm: Image = null
 	if com_normal:
-		norm = Sprites.png(_obj_dir.path_join(str(info.get("enfeites_normal", "enfeites_normal.png"))))
+		norm = Sprites.png(pasta.path_join(str(info.get("enfeites_normal", "enfeites_normal.png"))))
 		norm.convert(Image.FORMAT_RGBA8)
 	for it in info.itens:
 		var r := Rect2i(int(it.regiao[0]), int(it.regiao[1]), int(it.regiao[2]), int(it.regiao[3]))
