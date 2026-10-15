@@ -310,7 +310,7 @@ func _criar_heroi() -> void:
 	herois = [heroi]
 	if _modo != "livre":  # foto e medição não dependem do teclado de quem estiver na máquina
 		heroi.entrada_forcada = _entrada_roteiro()
-	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite(combate.heroi_id, args.has("basico"))), p)
+	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite_da_partida(combate.heroi_id, args.has("basico"))), p)
 	# a tocha e a aura andam com o herói (a posição é o ponto no chão que a luz ilumina)
 	luzes.prender(luzes.criar("tocha", p), heroi, Vector2(-38, -32))
 	luzes.prender(luzes.criar("aura", p), heroi, Vector2(30, -8))

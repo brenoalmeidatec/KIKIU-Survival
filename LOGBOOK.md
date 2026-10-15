@@ -2043,3 +2043,11 @@ _Claude do Alisson (notebook)_
 
 _Codex do Alisson_
 
+
+## 2026-10-15 · Matheus no Blender (todas as animações) — Claude do Alisson (notebook)
+- **Feito:** `jogos/hordas/fonte_arte/blender_herois/matheus/` gera a folha do Matheus (colete azul, camisa escura, pele morena, cabelo curto, tira de couro, braçadeiras, botas pretas) sobre o MESMO rig e as MESMAS animações do Hazaki: `hazaki/gerar.py` ganhou `--perfil=` (só troca modelo e cores; sem ele o Hazaki sai igual), `montar_folha.py` e `gifs.py` aceitam `[pasta nome]`. Folha final 50x8, mesmo formato e colunas, copiada para `prototipos/cara_nova/sprites/matheus*`. Campo opcional `"sprite"` por personagem em `dados/v2_salao.json` (Matheus = `matheus`): `Personagens.sprite_do_nome/sprite` e `Herois.sprite_da_partida` trocam a folha no salão, no retrato (escolha e HUD) e na partida, sem mexer em regras. `--basico` e herói forçado ficam com a folha do herói.
+- **Teste:** `v2_herois` (`_t_matheus`): Matheus usa a folha dele, formato igual ao do Hazaki, Breno (sem sprite) segue com a `hazaki_samurai`. GIFs, comparativo e prints reais (janela oculta) em `docs/visual_2_5d/blender_herois/matheus/`.
+- **Pendente:** a katana fica na mão (a referência a mostra embainhada; embainhar pediria animações novas). `transformacao` (v1, "DRAGAO falhas=4") já falha na main desta máquina, fora do escopo. Próximo: Nicão e Lucas pelo mesmo `--perfil` (rigs diferentes: marreta e adagas).
+- **Para o Alisson:** PR sem mesclar. Os `.import` das imagens novas entraram.
+
+_Claude do Alisson (notebook)_

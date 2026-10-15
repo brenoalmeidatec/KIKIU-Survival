@@ -15,6 +15,7 @@ Mudou em relação ao estudo: pernas e braços recriados em repouso reto (com jo
 para o lado/baixo, herói mais largo (~31 px), e tudo preso a ossos.
 """
 import importlib
+import importlib.util
 import inspect
 import math
 import os
@@ -36,7 +37,16 @@ import ossos  # noqa: E402
 CODEX = AQUI.parent / "codex_estudo" / "criar_estudo.py"
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 SO_ANIM = next((a.split("=", 1)[1] for a in ARGS if a.startswith("--anim=")), None)
-SAIDA = AQUI / "quadros"
+# PERFIL: outro personagem sobre o MESMO rig e as MESMAS animações (ex.: ../matheus/perfil.py, rodado por ../matheus/gerar.py). Sem --perfil, é o Hazaki.
+# O perfil define NOME, PALETA, BRILHANTES e, opcionalmente, fonte(heroi_src, trocar) e ajustar(ns, heroi, OSSO_DE, apagar); ver ../matheus/perfil.py.
+_PERFIL = next((a.split("=", 1)[1] for a in ARGS if a.startswith("--perfil=")), None)
+perfil = None
+if _PERFIL:
+    _spec = importlib.util.spec_from_file_location("perfil_heroi", _PERFIL)
+    perfil = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(perfil)
+NOME = perfil.NOME if perfil else "hazaki"
+SAIDA = (Path(_PERFIL).resolve().parent if perfil else AQUI) / "quadros"
 
 W, H = 32, 44             # quadro do herói no jogo
 PPU = 24.5                # px por metro (câmera do jogo)
@@ -62,6 +72,8 @@ PALETA = {
     "Latão antigo": "#9a7a3e", "Olho": "#0a0c14",
 }
 BRILHANTES = {"Reflexo frio": "#8ea9c4"}
+if perfil:
+    PALETA, BRILHANTES = perfil.PALETA, perfil.BRILHANTES
 LUZ_PRINCIPAL = Vector((-0.80, -0.35, 0.50)).normalized()
 LUZ_CONTRA = Vector((0.60, 0.75, 0.30)).normalized()
 
@@ -96,6 +108,9 @@ def trocar(txt, de, para):
 # cabelo mais grosso e mechas mais compridas (lê melhor em 44 px), como no estudo aprovado
 heroi_src = trocar(heroi_src, "segment('Mecha de cabelo',root,tip,.105,0,hair,4)", "segment('Mecha de cabelo',root,tip,.15,0,hair,4)")
 heroi_src = trocar(heroi_src, "3.19+random.uniform(-.05,.13)", "3.23+random.uniform(-.05,.12)")
+
+if perfil and hasattr(perfil, "fonte"):
+    heroi_src = perfil.fonte(heroi_src, trocar)
 
 ns = {"__name__": "codex_estudo", "__file__": str(CODEX)}
 exec(compile(defs, str(CODEX), "exec"), ns)
@@ -155,6 +170,8 @@ for lado, s in (("esquerda", -1), ("direita", 1)):
         OSSO_DE[ns["line"]("Fio azul refletido", [tuple(lam_a + Vector((0, -.05, 0))), tuple(lam_b + Vector((0, -.05, 0)))], .028, ns["cyan"])] = "antebraco_d"
 novos = [o for o in bpy.data.objects if o not in ANT]
 heroi += novos
+if perfil and hasattr(perfil, "ajustar"):
+    perfil.ajustar(ns, heroi, OSSO_DE, apagar)
 
 # olhos/sobrancelhas mais grossos e lenço mais curto (como no estudo)
 for o in heroi:
@@ -431,7 +448,7 @@ cam.location = (0.0, -20.0 * math.cos(el), 20.0 * math.sin(el))
 cam.rotation_euler = (math.pi / 2 - el, 0.0, 0.0)
 cena.camera = cam
 
-TMP = Path(os.environ.get("TEMP", "/tmp")) / ("hazaki_gerar_%d" % os.getpid())
+TMP = Path(os.environ.get("TEMP", "/tmp")) / (NOME + "_gerar_%d" % os.getpid())
 TMP.mkdir(parents=True, exist_ok=True)
 
 
@@ -560,6 +577,6 @@ for o in CORPO:
     o.data.materials[0] = MAT_COR[o][0]
 arm.rotation_euler = (0, 0, 0)
 if not SO_ANIM:
-    bpy.ops.wm.save_as_mainfile(filepath=str(AQUI / "hazaki_rig.blend"), compress=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(SAIDA.parent / (NOME + "_rig.blend")), compress=True)
 shutil.rmtree(TMP, ignore_errors=True)
 print("HAZAKI_OK")

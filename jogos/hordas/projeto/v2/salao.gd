@@ -16,7 +16,7 @@ const Pausa := preload("res://v2/pausa.tscn")
 const Trilha := preload("res://v2/trilha.gd")
 const ESCOLHA := "res://v2/personagens.tscn"
 const FLORESTA := "res://v2/mundo.tscn"
-const SPRITE := "res://prototipos/cara_nova/sprites/hazaki_samurai"  # folha (_albedo.png) e quadro (.json) do herói
+const SPRITE := "res://prototipos/cara_nova/sprites/hazaki_samurai"  # folha (_albedo.png) e quadro (.json) do herói; o personagem pode trocar (dados/v2_salao.json "sprite")
 const LARG := 960
 const ALT := 540
 const CHAO_Y := 180.0  # a parede vai do topo até aqui; os portais ficam na base dela
@@ -95,8 +95,12 @@ func _ready() -> void:
 	set_anchors_preset(PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # a sala recebe o clique em _unhandled_input (andar até um alvo), não a tela inteira
 	_carregar_dados()
-	_sprite = load(SPRITE + "_albedo.png") as Texture2D
-	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(SPRITE + ".json"))
+	var folha := SPRITE
+	var propria := Personagens.sprite(Personagens.ativo())  # o personagem pode ter folha própria (Matheus); sem ela, a do herói
+	if propria != "":
+		folha = Personagens.PASTA_SPRITES + propria
+	_sprite = load(folha + "_albedo.png") as Texture2D
+	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(folha + ".json"))
 	_quadro_w = int(info.quadro[0])
 	_quadro_h = int(info.quadro[1])
 	_montar_cenario()

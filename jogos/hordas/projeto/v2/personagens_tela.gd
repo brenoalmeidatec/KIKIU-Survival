@@ -169,7 +169,7 @@ func _novo_botao(txt: String, acao: Callable, ao_focar: Callable) -> void:
 func _mostrar_personagem(id: String) -> void:
 	var r := Personagens.resumo(id)
 	_nome.text = str(r.nome)
-	_definir_retrato(_pasta_do_nome(str(r.nome)))
+	_definir_retrato(_pasta_do_nome(str(r.nome)), str(r.nome))
 	var linhas := ["Almas: %d" % int(r.almas), "Herói: %s" % _heroi_e_arma(Personagens.heroi(id))]
 	var efeitos := []
 	var niveis := Personagens.niveis(id)
@@ -186,7 +186,7 @@ func _mostrar_personagem(id: String) -> void:
 
 func _mostrar_nome(n: Dictionary) -> void:
 	_nome.text = str(n.nome)
-	_definir_retrato(str(n.pasta))
+	_definir_retrato(str(n.pasta), str(n.nome))
 	_info.text = "Santuário novo: sem almas e sem melhorias.\nHerói: %s." % _heroi_e_arma(Personagens.heroi_do_nome(str(n.nome)))
 
 
@@ -208,17 +208,24 @@ func _pasta_do_nome(nome_txt: String) -> String:
 
 
 ## O retrato: o rosto do personagem (assets/personagens/<pasta>/rosto.png) quando existe; senão o quadro parado do herói.
-func _definir_retrato(pasta: String) -> void:
+func _definir_retrato(pasta: String, nome_txt := "") -> void:
 	var rosto := "res://assets/personagens/%s/rosto.png" % pasta
 	if pasta != "" and ResourceLoader.exists(rosto):
 		_retrato.texture = load(rosto) as Texture2D
 		return
-	if _sprite == null:
+	var folha := _sprite
+	var tam := _quadro
+	var propria := Personagens.sprite_do_nome(nome_txt)  # folha própria do personagem (dados/v2_salao.json "sprite")
+	if propria != "":
+		folha = load(Personagens.PASTA_SPRITES + propria + "_albedo.png") as Texture2D
+		var info = JSON.parse_string(FileAccess.get_file_as_string(Personagens.PASTA_SPRITES + propria + ".json"))
+		tam = Vector2(float(info.quadro[0]), float(info.quadro[1]))
+	if folha == null:
 		_retrato.texture = null
 		return
 	var quadro := AtlasTexture.new()
-	quadro.atlas = _sprite
-	quadro.region = Rect2(0, 0, _quadro.x, _quadro.y)
+	quadro.atlas = folha
+	quadro.region = Rect2(0, 0, tam.x, tam.y)
 	_retrato.texture = quadro
 
 
