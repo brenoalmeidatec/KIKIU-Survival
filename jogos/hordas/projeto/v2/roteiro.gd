@@ -675,6 +675,9 @@ func _pt_iniciar() -> void:
 		"preso_t": 0.0,
 		"curto_pos": mundo.heroi.pos,
 		"curto_q": 0,
+		"desvio_t": 0.0,
+		"alvo": Vector2.ZERO,
+		"fuga": Vector2.ZERO,
 		"esquiva_q": 0,
 		"fim_q": 0,
 		"t_real": Time.get_ticks_msec(),
@@ -757,16 +760,19 @@ func _pt_jogar(dt: float) -> void:
 			fuga += dv / d * (150.0 - d) / 150.0
 			if d < 46.0:
 				colados += 1
-	# para onde ir: baú no chão, senão orbe perto, senão um ponto do mapa que muda de tempos em tempos
+	# para onde ir: baú no chão, senão orbe perto, senão um ponto do mapa que muda de tempos em tempos.
+	# Em desvio (acabou de ficar preso), só o ponto: sem rota, o baú do outro lado de uma árvore prende o herói nela.
 	var alvo: Vector2 = pt.ponto
 	var achou := false
 	var melhor := 700.0 * 700.0
+	pt.desvio_t = maxf(float(pt.desvio_t) - dt, 0.0)
+	var em_desvio: bool = pt.desvio_t > 0.0
 	for b in c.baus.lista:
-		if b.ativo and b.pos.distance_squared_to(h.pos) < melhor:
+		if not em_desvio and b.ativo and b.pos.distance_squared_to(h.pos) < melhor:
 			melhor = b.pos.distance_squared_to(h.pos)
 			alvo = b.pos
 			achou = true
-	if not achou:
+	if not achou and not em_desvio:
 		var o = c.orbes
 		melhor = 320.0 * 320.0
 		for i in o.estado.size():
@@ -782,11 +788,14 @@ func _pt_jogar(dt: float) -> void:
 	if dir.length() < 0.15:
 		dir = ir
 	h.entrada_forcada = dir.normalized() if dir.length() > 0.01 else Vector2.ZERO
-	# preso em parede ou árvore por 1,5 s: outro ponto
+	pt.alvo = alvo  # só para a mensagem de TRAVA
+	pt.fuga = fuga
+	# preso em parede ou árvore por 1,5 s: outro ponto, e 3 s sem perseguir baú nem orbe para dar a volta
 	pt.curto_q += 1
 	if pt.curto_q >= 90:
 		if h.pos.distance_squared_to(pt.curto_pos) < 4.0:
 			_pt_novo_ponto()
+			pt.desvio_t = 3.0
 		pt.curto_pos = h.pos
 		pt.curto_q = 0
 	# mira e golpe no mais perto
@@ -804,7 +813,7 @@ func _pt_jogar(dt: float) -> void:
 	pt.preso_t = float(pt.preso_t) + dt
 	if pt.preso_t >= SEG_TRAVA_PRESO:
 		if h.pos.distance_to(pt.preso_pos) < 6.0:
-			_pt_trava("heroi_preso pos=%s" % str(h.pos.round()))
+			_pt_trava("heroi_preso pos=%s alvo=%s bau=%s fuga=%s" % [str(h.pos.round()), str(pt.alvo.round()), str(achou), str(pt.fuga.round())])
 		pt.preso_pos = h.pos
 		pt.preso_t = 0.0
 
