@@ -14,12 +14,18 @@ Uso (a partir da raiz do repo; só biblioteca padrão do Python 3):
   python ferramentas/playtest_v2.py --simular ...                        só imprime os comandos, não roda nada
 Tudo depois de um `--` sozinho vai para o jogo, no fim da linha de cada partida (ex.: `-- --playtest_trava=cartas`).
 
+Guarda do save real (só Windows): antes e depois do lote, tira o retrato (sha256) dos arquivos regulares da raiz de `user://`
+(%APPDATA%/Godot/app_userdata/K.I.K.I.U/, sem olhar as pastas playtest/ e logs/). Se algo mudou, o relatório ganha a seção
+"SAVE REAL ALTERADO" e a saída é 4. `--sem-guarda-save` desliga (para depurar). No início do lote, também apaga os
+`meta_*.cfg*` órfãos de `user://playtest/` com mais de 1 hora.
+
 Código de saída: 0 sem trava, crash nem timeout; 1 se houve algum; 2 erro de uso (Godot, herói, mapa, semente);
-130 lote interrompido (Ctrl+C).
+4 o save real mudou durante o lote (vale mais que 1 e 130); 130 lote interrompido (Ctrl+C).
 """
 import argparse
 import concurrent.futures
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -41,6 +47,8 @@ MAX_JOGO_ROBO = 900.0  # o padrão do --playtest_max no roteiro.gd (usado só pa
 # desfecho que o robô grava no JSON -> desfecho do relatório
 DESFECHOS = {"vitoria": "vitoria", "morte": "derrota", "abandono": "derrota", "tempo": "tempo", "trava": "trava"}
 PROBLEMAS = ("trava", "sem_json")
+NOME_USER_PADRAO = "K.I.K.I.U"  # config/name do project.godot (pasta de user:// no Windows)
+ORFAO_SEGUNDOS = 3600.0  # meta_*.cfg de playtest mais velho que isso é órfão de partida morta
 
 _VIVOS = set()  # processos Godot rodando agora (para matar no timeout e no Ctrl+C)
 _TRAVA_VIVOS = threading.Lock()
@@ -49,6 +57,81 @@ _PARAR = threading.Event()
 
 class ErroUso(Exception):
     """Erro de configuração: vira mensagem e código 2, antes de criar pasta ou rodar partida."""
+
+
+# ------------------------------------------------------------------ guarda do save real
+
+
+def nome_user():
+    """O config/name do project.godot decide a pasta de user:// (o projeto não usa use_custom_user_dir)."""
+    try:
+        m = re.search(r'^config/name="([^"]+)"', (PROJETO / "project.godot").read_text(encoding="utf-8"), re.M)
+    except OSError:
+        m = None
+    return m.group(1) if m else NOME_USER_PADRAO
+
+
+def pasta_user():
+    """Raiz de user:// no Windows (%APPDATA%/Godot/app_userdata/<nome>); None fora do Windows ou sem %APPDATA%."""
+    base = os.environ.get("APPDATA") if os.name == "nt" else None
+    return Path(base) / "Godot" / "app_userdata" / nome_user() if base else None
+
+
+def retrato_user(pasta):
+    """{nome: (sha256, mtime_ns)} dos arquivos regulares da RAIZ de `pasta`. Subpastas (playtest/, logs/, shader_cache/) não entram."""
+    ret = {}
+    if pasta is None or not pasta.is_dir():
+        return ret
+    for f in sorted(pasta.iterdir()):
+        try:
+            if not f.is_file():
+                continue
+            mt = f.stat().st_mtime_ns
+            ret[f.name] = (hashlib.sha256(f.read_bytes()).hexdigest(), mt)
+        except OSError:
+            ret[f.name] = ("ILEGIVEL", 0)  # travado pelo jogo real, por exemplo
+    return ret
+
+
+def comparar_retratos(antes, depois):
+    """Lista de (nome, 'alterado'|'criado'|'apagado', mtime_ns de agora ou 0). Só o CONTEÚDO conta: mtime sozinho não acusa."""
+    difs = []
+    for nome in sorted(set(antes) | set(depois)):
+        a, d = antes.get(nome), depois.get(nome)
+        if a is None:
+            difs.append((nome, "criado", d[1]))
+        elif d is None:
+            difs.append((nome, "apagado", 0))
+        elif a[0] == "ILEGIVEL" or d[0] == "ILEGIVEL":
+            difs.append((nome, "ilegível (não deu para conferir: travado?)", d[1]))  # na dúvida, acusa
+        elif a[0] != d[0]:
+            difs.append((nome, "alterado", d[1]))
+    return difs
+
+
+def limpar_orfaos(pasta, agora=None, limite=ORFAO_SEGUNDOS):
+    """Apaga user://playtest/meta_*.cfg* com mais de `limite` s. Só os velhos: o de um lote paralelo ainda vivo é novo."""
+    pt = pasta / "playtest" if pasta else None
+    if pt is None or not pt.is_dir():
+        return 0
+    agora = time.time() if agora is None else agora
+    apagados = 0
+    for f in pt.glob("meta_*.cfg*"):
+        try:
+            if f.is_file() and agora - f.stat().st_mtime > limite:
+                f.unlink()
+                apagados += 1
+        except OSError:
+            pass
+    return apagados
+
+
+def texto_mtime(mt_ns, t_ini, t_fim):
+    if not mt_ns:
+        return ""
+    quando = datetime.datetime.fromtimestamp(mt_ns / 1e9).strftime("%Y-%m-%d %H:%M:%S")
+    dentro = t_ini <= mt_ns / 1e9 <= t_fim
+    return f"mtime {quando}" + (" (DENTRO do lote: o jogo real pode estar aberto)" if dentro else " (fora do lote)")
 
 
 # ------------------------------------------------------------------ argumentos
@@ -147,6 +230,8 @@ def criar_parser():
     p.add_argument("--timeout", type=float, default=1200.0, help="limite de tempo REAL por partida em s (padrão: 1200)")
     p.add_argument("--saida", default=None, help="pasta do relatório e dos logs (padrão: ferramentas/saida_playtest/<data-hora>)")
     p.add_argument("--janela", action="store_true", help="modo FPS: sem --headless e sem --fixed-fps, uma partida por vez (abre janela)")
+    p.add_argument("--sem-guarda-save", dest="sem_guarda", action="store_true",
+                   help="não confere se a raiz de user:// (o save real) mudou durante o lote (depuração)")
     p.add_argument("--simular", action="store_true", help="só imprime os comandos de cada partida, sem rodar nem criar pasta")
     return p
 
@@ -434,7 +519,10 @@ def escrever_relatorio(cfg, matriz_desc, res, duracao, interrompido):
     janela = cfg["janela"]
     conta = {d: sum(1 for r in res if r["desfecho"] == d) for d in ("vitoria", "derrota", "tempo", "trava", "sem_json")}
     problemas = conta["trava"] + conta["sem_json"]
+    g = cfg.get("guarda") or {"estado": "desligada", "mudancas": []}
     estado = "INTERROMPIDO" if interrompido else ("COM PROBLEMAS" if problemas else "OK")
+    if g["estado"] == "alterado":
+        estado = "SAVE REAL ALTERADO" + (" + " + estado if estado != "OK" else "")
     agora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     md = [f"# Playtest da v2: lote de {agora} ({estado})", ""]
     md += [
@@ -449,11 +537,20 @@ def escrever_relatorio(cfg, matriz_desc, res, duracao, interrompido):
         + f"; timeout real por partida: {cfg['timeout']:g} s",
         f"- **Argumentos extras para o jogo:** `{' '.join(cfg['extras'])}`" if cfg["extras"] else "- **Argumentos extras para o jogo:** nenhum",
         f"- **Tempo real do lote:** {fmt_tempo(duracao)}",
+        "- **Guarda do save real:** " + {"ok": "conferida, a raiz de `user://` não mudou", "alterado": "**ALTERADO** (veja a seção abaixo)",
+                                         "pulada": "pulada: " + g.get("motivo", ""), "desligada": "desligada (`--sem-guarda-save`)"}[g["estado"]],
         f"- **Resultado:** {plural(len(res), 'partida', 'partidas')}: {plural(conta['vitoria'], 'vitória', 'vitórias')}, "
         f"{plural(conta['derrota'], 'derrota', 'derrotas')}, {conta['tempo']} no teto de tempo, "
         f"**{plural(conta['trava'], 'trava', 'travas')}**, **{conta['sem_json']} sem JSON** (crash ou timeout)",
         "",
     ]
+    if g["estado"] == "alterado":
+        md += ["## SAVE REAL ALTERADO", "",
+               f"Arquivos da raiz de `{g['pasta']}` mudaram de conteúdo entre o começo e o fim do lote. O robô só deveria escrever em "
+               "`user://playtest/` e `user://logs/`. Duas causas: o jogo real estava aberto (ou foi aberto) durante o lote, ou o robô "
+               "escreveu onde não devia (bug: confira o desvio `Meta.caminho_save` no `mundo.gd`).", ""]
+        md += [f"- `{n}`: {t}" + (f"; {m}" if m else "") for n, t, m in g["mudancas"]]
+        md.append("")
     if interrompido:
         md += ["**O lote foi interrompido (Ctrl+C):** só as partidas que terminaram estão aqui.", ""]
 
@@ -600,14 +697,34 @@ def main(argv=None):
     (cfg["saida"] / "logs").mkdir(parents=True, exist_ok=True)
     print(f"Playtest v2: {desc}; {cfg['paralelas']} em paralelo; Godot {cfg['versao']}.")
     print(f"Saída: {cfg['saida']}", flush=True)
+    pasta = pasta_user()
+    n_orfaos = limpar_orfaos(pasta)
+    if n_orfaos:
+        print(f"playtest_v2: {plural(n_orfaos, 'save temporário órfão apagado', 'saves temporários órfãos apagados')} de user://playtest/.")
+    antes = None
+    if a.sem_guarda:
+        cfg["guarda"] = {"estado": "desligada", "mudancas": []}
+    elif pasta is None or not pasta.is_dir():
+        motivo = "só confere no Windows" if pasta is None else f"pasta {pasta} não existe (o jogo nunca foi aberto aqui?)"
+        cfg["guarda"] = {"estado": "pulada", "motivo": motivo, "mudancas": []}
+        print(f"playtest_v2: aviso: guarda do save real pulada: {motivo}.")
+    else:
+        antes = retrato_user(pasta)
+    t_ini = time.time()
     t0 = time.monotonic()
     res, interrompido = rodar_lote(cfg, matriz)
+    if antes is not None:
+        mud = [(n, t, texto_mtime(mt, t_ini, time.time())) for n, t, mt in comparar_retratos(antes, retrato_user(pasta))]
+        cfg["guarda"] = {"estado": "alterado" if mud else "ok", "mudancas": mud, "pasta": str(pasta)}
     problemas = escrever_relatorio(cfg, desc, res, time.monotonic() - t0, interrompido)
     conta = {d: sum(1 for r in res if r["desfecho"] == d) for d in ("vitoria", "derrota", "tempo", "trava", "sem_json")}
     print(f"Fim: {plural(conta['vitoria'], 'vitória', 'vitórias')}, {plural(conta['derrota'], 'derrota', 'derrotas')}, "
           f"{conta['tempo']} no teto, {plural(conta['trava'], 'trava', 'travas')}, "
           f"{conta['sem_json']} sem JSON, em {fmt_tempo(time.monotonic() - t0)}.")
     print(f"Relatório: {cfg['saida'] / 'relatorio.md'}")
+    if cfg["guarda"]["estado"] == "alterado":
+        print(f"playtest_v2: SAVE REAL ALTERADO: {', '.join(n for n, _, _ in cfg['guarda']['mudancas'])} (veja o relatório).", file=sys.stderr)
+        return 4
     if interrompido:
         return 130
     return 1 if problemas else 0

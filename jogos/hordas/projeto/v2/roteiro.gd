@@ -229,6 +229,7 @@ func _combate() -> void:
 				passo = 8
 		8:
 			mundo.get_tree().quit()
+			return
 
 
 func _correr() -> void:
@@ -246,6 +247,7 @@ func _correr() -> void:
 				passo = 2
 		2:
 			mundo.get_tree().quit()
+			return
 
 
 # ------------------------------------------------------------------ leva 3: build, elite, baú, chefe, vitória
@@ -290,6 +292,7 @@ func _r_build() -> void:
 				passo = 3
 		3:
 			mundo.get_tree().quit()
+			return
 
 
 func _r_elite() -> void:
@@ -346,6 +349,7 @@ func _r_elite() -> void:
 				passo = 7
 		7:
 			mundo.get_tree().quit()
+			return
 
 
 func _r_chefe() -> void:
@@ -387,6 +391,7 @@ func _r_chefe() -> void:
 				passo = 5
 		5:
 			mundo.get_tree().quit()
+			return
 
 
 func _r_vitoria() -> void:
@@ -418,6 +423,7 @@ func _r_vitoria() -> void:
 				passo = 3
 		3:
 			mundo.get_tree().quit()
+			return
 
 
 func _r_escolha() -> void:
@@ -457,6 +463,7 @@ func _r_escolha() -> void:
 				passo = 3
 		3:
 			mundo.get_tree().quit()
+			return
 
 
 # ------------------------------------------------------------------ leva 4: oclusão (herói atrás de árvore e coberto por monstro)
@@ -491,6 +498,7 @@ func _r_vitrine() -> void:
 				passo = 2
 		2:
 			mundo.get_tree().quit()
+			return
 
 
 ## Ordem de desenho: uma aranha grande (escala 2) logo atrás do herói e outra logo na frente, paradas. A de trás fica por baixo dele e a
@@ -513,6 +521,7 @@ func _r_ordem() -> void:
 				passo = 2
 		2:
 			mundo.get_tree().quit()
+			return
 
 
 ## Cerco: 34 monstros e 2 aranhas grandes (escala 2 e 3) caçando o herói parado. Depois de 3 s: foto "1_cerco" (eles formam uma roda em volta
@@ -541,6 +550,7 @@ func _r_cerco() -> void:
 				passo = 2
 		2:
 			mundo.get_tree().quit()
+			return
 
 
 func _r_ruptura() -> void:
@@ -604,6 +614,7 @@ func _r_ruptura() -> void:
 				passo = 8
 		8:
 			mundo.get_tree().quit()
+			return
 
 
 func _r_oclusao() -> void:
@@ -638,6 +649,7 @@ func _r_oclusao() -> void:
 				passo = 4
 		4:
 			mundo.get_tree().quit()
+			return
 
 
 # ------------------------------------------------------------------ robô de playtest (#301)

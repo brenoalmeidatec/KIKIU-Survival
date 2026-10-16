@@ -11,7 +11,9 @@ herói preso num canto) em todos os heróis e mapas sem precisar de alguém joga
 A cada quadro ele escolhe um destino nesta ordem: um **baú no chão** a até 700 px, senão um **orbe** de experiência a até 320 px,
 senão um **ponto aleatório** do mapa, que troca a cada 14 s ou quando ele chega lá. O movimento junta a ida ao destino com uma
 **fuga** dos monstros a menos de 150 px, que pesa o dobro. Ele mira o monstro mais perto e **golpeia** quando há um a até 78 px.
-Quando 5 ou mais monstros estão colados (46 px), ele **esquiva**, no máximo uma vez por segundo. Na tela de **cartas**, espera 20
+Quando 5 ou mais monstros estão colados (46 px), ou o chefe está a menos de 70 px, ou ele está dentro de um ataque anunciado
+(círculo ou faixa de `combate.avisos`), ele **esquiva**, no máximo uma vez por segundo. Do chefe ele foge mais cedo (260 px, peso 2),
+sai das áreas anunciadas e, perto da borda do mapa, corre ao longo dela em vez de ficar prensado. Na tela de **cartas**, espera 20
 quadros e pega sempre a de **maior raridade** (no empate, a primeira). Na tela de **baú**, espera 20 quadros e fecha.
 
 O herói é mortal (`imortal = false`). A partida termina em vitória, morte, no teto de tempo de jogo (`--playtest_max`, padrão 900 s)
@@ -66,7 +68,31 @@ Tudo depois de um `--` sozinho vai para o jogo, no fim da linha de cada partida.
 
 O código de saída é 0 quando não houve trava, crash nem timeout, e 1 quando houve algum. Erro de uso (Godot ausente ou de outra
 versão, herói ou mapa desconhecido, semente mal escrita) dá 2, antes de rodar qualquer coisa. Ctrl+C mata as partidas em andamento,
-escreve o relatório parcial e sai com 130.
+escreve o relatório parcial e sai com 130. O código **4** quer dizer que o save real mudou durante o lote (veja a guarda abaixo); ele
+vale mais que o 1 e o 130, para ninguém tomar um lote que mexeu no save do jogador por um lote limpo.
+
+### A guarda do save real
+
+O robô joga com um save temporário (`user://playtest/meta_<pid>.cfg`) e não deveria tocar em nada da raiz de `user://`. Para provar
+isso a cada lote, o runner tira um retrato (sha256) dos arquivos regulares da **raiz** de `user://` antes e depois do lote inteiro
+(Windows: `%APPDATA%\Godot\app_userdata\K.I.K.I.U\`). As subpastas, `playtest/` e `logs/` entre elas, não entram, e só o **conteúdo**
+conta: um arquivo regravado igual (mtime novo) não acusa. Se um arquivo mudou, foi criado ou foi apagado, o relatório ganha a seção
+"SAVE REAL ALTERADO" com o mtime de cada um (dizendo se caiu dentro da janela do lote) e a saída é 4. Duas causas possíveis: o jogo
+real estava aberto durante o lote (o normal) ou o robô escreveu onde não devia (bug: confira o desvio `Meta.caminho_save` no `mundo.gd`).
+`--sem-guarda-save` desliga a conferência, para depurar. Fora do Windows, ou se a pasta não existir, a guarda é pulada com um aviso (e uma
+linha no relatório). A cena `testes/v2_playtest.gd` confere o mesmo por dentro do Godot (md5 do save, do índice e dos slots, do
+`opcoes.cfg` e dos `.json` da v1), e o `ferramentas/teste_guarda_save.py` (sem Godot, roda no CI) prova que a guarda acusa byte
+alterado, arquivo criado e arquivo apagado e não acusa `playtest/`, `logs/` nem mtime sozinho.
+
+Medido em 2026-10-16 no PC do Alisson: abrir o jogo normal (cena principal, sem partida) por 600 quadros em `--headless` e por 900
+quadros com janela não mudou nada na raiz de `user://` (nem `opcoes.cfg`). Não se mediu uma partida jogada à mão até o fim, que grava
+recordes e save: se o jogo real for aberto durante um lote, o código 4 é esperado.
+
+Limites conhecidos da guarda: (1) ela só vê o que a partida grava, e a meta só é gravada no fim por morte, vitória ou abandono; um lote
+só de partidas curtas que acabam no teto (`--max`) não grava save, então não prova o desvio (a prova é a cena `v2_playtest`, que roda
+uma partida até a morte com `--playtest_fim=morte`; com o desvio quebrado ela falha, conferido em 2026-10-16). (2) Arquivo que não deu
+para ler (travado) acusa como "ilegível", na dúvida. (3) Com um `opcoes.cfg` de formato antigo, o `Config.recarregar()` do jogo migra
+e regrava o arquivo ao abrir, também no robô: a primeira rodada depois de uma atualização pode dar código 4 sem bug do robô.
 
 ## Como ler o relatório
 
@@ -116,7 +142,8 @@ O vigia e o robô contam **quadros**, não segundos: 600 quadros de relógio par
 trava em ~4 s e o robô desvia e esquiva em outro ritmo, então o desfecho dessas partidas não se compara com o do headless.
 
 A partida que o runner mata por timeout não chega a apagar o save temporário. Fica um `meta_<pid>.cfg` órfão em `user://playtest/`
-(no Windows, `%APPDATA%\Godot\app_userdata\K.I.K.I.U\playtest\`), que pode ser apagado quando nenhum robô estiver rodando.
+(no Windows, `%APPDATA%\Godot\app_userdata\K.I.K.I.U\playtest\`). O runner apaga, no **início** de cada lote, os `meta_*.cfg*` dali com mais de 1 hora (os mais novos podem ser de um lote
+paralelo ainda vivo, então ficam). Fora do Windows essa limpeza não roda.
 
 ## FPS: o headless é teto, o alvo é o i5-3470
 
