@@ -118,7 +118,16 @@ def formas_colisao(alb, pe, nome, cfg):
     return GO._elipse_da_base(alb, pe, nome)
 
 
+def pegadas_do_mapa(mapa):
+    """Pegadas de colisão feitas à mão (pegadas_<mapa>.json, ao lado deste script): {nome: [formas]} que substituem as calculadas."""
+    arq = AQUI / ("pegadas_%s.json" % mapa)
+    if not arq.exists():
+        return {}
+    return {n: d["formas"] for n, d in json.loads(arq.read_text(encoding="utf-8"))["itens"].items()}
+
+
 def montar_atlas_objetos(mapa, defs, saida):
+    pegadas = pegadas_do_mapa(mapa)
     itens, albs, nors = [], [], []
     for nome, cfg in defs.items():
         alb, nor, origem = processar_objeto(mapa, nome)
@@ -128,7 +137,7 @@ def montar_atlas_objetos(mapa, defs, saida):
             pe = [int(round(origem[0])), min(alb.height - 1, int(round(origem[1] + cfg["d"] * 11.315)))]
         else:
             pe = GO.pe_do_objeto(alb)
-        formas = formas_colisao(alb, pe, nome, cfg)
+        formas = pegadas[nome] if nome in pegadas else formas_colisao(alb, pe, nome, cfg)
         albs.append(alb)
         nors.append(nor)
         itens.append({"nome": nome, "peso": cfg.get("peso", 1), "pe": list(pe), "colisao": formas})
