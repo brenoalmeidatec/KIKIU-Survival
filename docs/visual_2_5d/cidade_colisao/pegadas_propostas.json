@@ -434,8 +434,8 @@
     ]
    }
   ],
-  "transparente": false,
-  "nota": "Cacamba: boca aberta vista de cima (~32 px) = profundidade do chao (meio 15); largura 82 (meio 41). O sprite tem 55 px de altura (regiao 88x55 no cenario.json), abaixo do corte de 60 do copas.gd: nao fica transparente. A textura de 61 px citada pelo verificador nao se reproduz nos dados. Se um dia passar de 60, vira transparente e a pegada nao muda."
+  "transparente": true,
+  "nota": "Cacamba: boca aberta vista de cima (~32 px) = profundidade do chao (meio 15); largura 82 (meio 41). O recorte tem 55 px, mas a textura do jogo soma a MARGEM de 3 px de cada lado (cenario.gd) e fica com 61 px, acima do corte de 60 do copas.gd: fica transparente. Fonte viva das pegadas: jogos/hordas/fonte_arte/pegadas_cidade.json."
  },
  "container_a": {
   "colide": true,
