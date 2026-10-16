@@ -519,6 +519,9 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 			armas.explodir(m.pos, float(dano) * float(armas.mods.explode) / 100.0, raio_e, COR_CRIT, m)
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dano), COR_CRIT if crit else COR_NUM, crit)
 		fx.flash(m, 0.1)
+		fx.folha("estrela", ponto, 15.0 if crit else 11.0, cor, 0.14)  # camada 1: a centelha de 2 quadros em todo acerto
+		if crit or pancada or passo.nome == "estocada":  # camada 2: a marca branca sustentada só no golpe forte
+			fx.flash(m, 0.45, Color.WHITE, 3)
 		fx.faiscas(ponto - longe * float(m.raio) * 0.5, dir, 10 if crit else 6, cor, 200.0 if crit else 160.0)
 		audio.tocar("critico" if crit else "impacto", randf_range(0.92, 1.1), 0.0, 0.03)
 		parada = maxf(parada, hit_stop_do_acerto(passo, crit))

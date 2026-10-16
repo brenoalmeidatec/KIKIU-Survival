@@ -148,9 +148,12 @@ func _ia(dt: float) -> void:
 				_comecar_ataque()
 		"aviso":
 			m.vel_ia = Vector2.ZERO
+			if _ataque != "chuva":  # a chuva dura vários círculos: a carga ficaria no máximo o tempo todo
+				m.carga = clampf(t_estado / float(cfg.ataques[_ataque].aviso), 0.0, 1.0)
 			if _ataque == "chuva":
 				_chuva(dt)
 			elif t_estado >= float(cfg.ataques[_ataque].aviso) + 0.05:
+				m.carga = 0.0
 				if _ataque == "investida":
 					estado = "investida"
 					t_estado = 0.0
@@ -190,6 +193,8 @@ func _comecar_ataque() -> void:
 	ataques_feitos += 1
 	var cor: Color = m.cor_elite
 	combate.audio.tocar("aviso", 1.0, -2.0, 0.1)
+	if _ataque != "chuva":  # na chuva há vários círculos, o retículo só confundiria
+		combate.avisos.reticulo(float(at.get("raio", 40.0)), float(at.aviso))
 	match _ataque:
 		"estouro":
 			combate.avisos.circulo(h.pos, float(at.raio), float(at.aviso), float(at.dano), cor)
@@ -227,6 +232,8 @@ func _chuva(dt: float) -> void:
 
 
 func _terminou_ataque() -> void:
+	if atual != null:
+		atual.carga = 0.0
 	estado = "recupera"
 	t_estado = 0.0
 	_ataque = ""
@@ -237,6 +244,7 @@ func ao_morrer(m) -> void:
 	if m != atual:
 		return
 	var mk := marca
+	m.carga = 0.0
 	atual = null
 	vivo = false
 	luz.enabled = false
