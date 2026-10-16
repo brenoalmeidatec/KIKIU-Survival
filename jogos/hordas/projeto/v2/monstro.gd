@@ -50,6 +50,7 @@ var vel_mult := 1.0
 var stun_mult := 1.0  # quanto do atordoamento vale (chefe: 0)
 var emp_mult := 1.0  # quanto do empurrão vale
 var tinta := Color.WHITE  # cor nova do sprite (chefes e elites)
+var carga := 0.0  # 0 a 1: o chefe armando o golpe (incha 6% e clareia até branco)
 var contorno: Sprite2D = null  # o contorno colorido da elite (camada glow, aditivo)
 var invoca_t := 0.0
 var barra_vida_elite: Node2D = null
@@ -135,6 +136,7 @@ func reviver(p: Vector2) -> void:
 	vel_ia = Vector2.ZERO
 	vel_v = Vector2.ZERO
 	tinta = Color.WHITE
+	carga = 0.0
 	v_cor = Color.WHITE
 	v_sx = 1.0
 	v_sy = 1.0
@@ -254,7 +256,7 @@ func _escolher_quadro(v: Vector2) -> void:
 ## O desenho do monstro com nós (elite e chefe): sprite, olho e contorno.
 func _visual_no(v: Vector2) -> void:
 	var k := clampf(_batida / 0.14, 0.0, 1.0)
-	sprite.scale = Vector2(1.0 + 0.2 * k, 1.0 - 0.16 * k) * escala
+	sprite.scale = Vector2(1.0 + 0.2 * k, 1.0 - 0.16 * k) * escala * (1.0 + 0.06 * carga)
 	sprite.position = (Vector2(float(rng.randi_range(-1, 1)), 0.0) if (atordoa_t > 0.0 and k > 0.0) else Vector2.ZERO)
 	_escolher_quadro(v)
 	if olho != null:
@@ -271,7 +273,9 @@ func _visual_no(v: Vector2) -> void:
 			cf = cf.lerp(Color(1.5, 0.8, 0.5), 0.55)
 		if lento_t > 0.0:
 			cf = cf.lerp(Color(0.6, 0.95, 1.4), 0.5)
-		sprite.modulate = cf
+		sprite.modulate = cf.lerp(Color(5.0, 5.0, 5.0), carga * carga) if carga > 0.0 else cf
+	elif carga > 0.0:
+		sprite.modulate = Color.WHITE.lerp(Color(5.0, 5.0, 5.0), carga * carga)
 	elif sprite.modulate != Color.WHITE:
 		sprite.modulate = Color.WHITE
 

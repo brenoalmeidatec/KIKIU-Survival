@@ -2082,6 +2082,17 @@ _Claude do Alisson (nuvem)_
 - **Pendente (fora do #302):** picos de quadro (medir com a máquina parada e pré-carregar recursos carregados sob demanda); perfis `--humano=...` no robô antes de calibrar equilíbrio (#137); dano por arma.
 
 _Claude do Alisson (PC)_
+## 2026-10-16 · Claude do Alisson (nuvem) · golpes do vídeo KiKiu: proposta e folhas no Blender
+- **Feito:** a análise do vídeo (PR #304) foi lida por um workflow (leitores Haiku, designer e revisores Sonnet, com cada proposta conferida contra o código). Os 3 golpes de maior impacto estão em `docs/visual_2_5d/referencia_kikiu/PROPOSTA_GOLPES.md`: cristal em toda explosão, impacto em 3 camadas e telégrafo do chefe. Há também 4 folhas próprias no Blender 5.2, no formato do corte ciano, em `fonte_arte/blender_efeitos/`: cristal, estrela, anel duplo e espiral.
+- **Pendente:** nenhum código do jogo mudou e as folhas não estão ligadas ao jogo. Falta o Alisson aprovar a implementação dos 3 golpes e escolher a cor da marca no monstro (padrão: branca, porque o vermelho é o dano que o herói sofre).
+- **Nota técnica:** o Blender roda no container da nuvem via `pip install bpy==5.2.2` (Python 3.13), e os scripts de `blender_corte` rodam sem mudança.
+
+_Claude do Alisson (nuvem)_
+
+## 2026-10-16 · Claude do Alisson (PC) · golpes do vídeo KiKiu ligados na v2 (PR de #306/#304)
+- **Feito:** os 3 golpes na v2, com marca **branca** (padrão aceito). (1) cristal em toda explosão: `armas.explodir`, `_explodir_runa` e o estouro do aviso do chefe chamam `efeitos.folha("cristal", ...)`; (2) impacto em 3 camadas: centelha `estrela` em todo acerto e marca branca sustentada (flash modo 3, no máximo 2) em crítico, estocada e pancada; (3) telégrafo do chefe: `monstro.carga` (incha 6% e clareia) e retículo laranja em `avisos.reticulo`. As 4 folhas (cristal, estrela, anel, espiral) estão em `assets/v2/efeitos/` e usam o shader do corte num pool fixo de 14 sprites; anel e espiral ficam prontos, ainda sem uso. Nova cena de fotos `--roteiro=golpes`.
+- **Conferido:** 38 cenas `v2_*` com `falhas=0`, gdformat limpo, prints antes/depois em `docs/visual_2_5d/referencia_kikiu/golpes/`, robô de playtest hazaki/floresta/s1 igual na main e aqui (vitória, nível 44, 1994 abates; proc p95 3,26 ms antes, 3,28 ms depois).
+- **Pendente:** esquiva com espiral (barata, `combate.gd` ~l.640); anel duplo como aura; o cristal foi visto nas fotos mas o vermelho do vídeo não entrou (marca é branca).
 
 ## 2026-10-16 · Claude do Alisson (PC) · Cidade com colisão de verdade e prédios translúcidos (#305)
 - **Feito:** a queixa do Alisson ("na Cidade não há colisão") era pegada errada, não falta de colisão: cada prédio tinha uma elipse fina na base. Agora `v2/colisao.gd` tem a forma "caixa" (corpo = raio x raio/2, a mesma convenção da elipse), as 41 pegadas da Cidade foram refeitas olhando o desenho (36 colidem; prédios, muros, containers, caçamba e carros em caixa), o gerador lê `fonte_arte/pegadas_cidade.json` (regerar não apaga) e objetos altos com caixa ficam inteiros a 40% de alfa quando o herói passa atrás (`copas.gd`; árvores seguem com o buraco circular).

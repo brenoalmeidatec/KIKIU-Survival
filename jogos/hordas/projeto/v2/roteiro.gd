@@ -13,6 +13,8 @@ extends RefCounted
 ##   --roteiro=vitrine|ordem|cerco   (leva 4, desempenho) vitrine: os 5 tipos parados em 3 fileiras, para comparar antes e depois do mesmo quadro;
 ##                         ordem: aranhas grandes (escala 2) atrás e na frente do herói (ordem de desenho); cerco: a horda com 2 aranhas grandes
 ##                         depois de 3 s de perseguição, com o herói parado (os monstros cercam e não entram no corpo dele).
+##   --roteiro=golpes      (golpes do vídeo KiKiu, PR #306) 1_cristal: explosão com o cristal 0,08 s depois; 2_marca: crítico com a marca branca; 3_telegrafo:
+##                         chefe com a carga cheia e o retículo. Fotos prefixo_1_cristal ... Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=oclusao     (leva 4) herói atrás de uma árvore (1_arvore) e herói coberto por uma aranha grande na frente (2_aranha).
 ##   --roteiro=ruptura     (tecla E) 24 monstros a caminho do herói parado, que carrega a ruptura. Fotos do viewport: 1_carga (meia carga:
 ##                         anel fantasma no raio final e anel interno), 2_cheia_perfeita (anel piscando na janela perfeita), 3_disparo (0,10 s
@@ -104,6 +106,8 @@ func atualizar(dt: float) -> void:
 				_r_cerco()
 			"ruptura":
 				_r_ruptura()
+			"golpes":
+				_r_golpes()
 
 
 # ------------------------------------------------------------------ robô e estresse
@@ -390,6 +394,53 @@ func _r_chefe() -> void:
 			elif t_passo > 14.0:
 				passo = 5
 		5:
+			mundo.get_tree().quit()
+			return
+
+
+func _r_golpes() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	var ch = c.chefes
+	match passo:
+		0:
+			_preparar()
+			var m = mundo.nascer_monstro("inimigo_cao_ossos", h.pos + Vector2(70, 10), true)
+			m.vida = m.vida_max * 9.0
+			m.vida_max = m.vida
+			c.armas.explodir(h.pos + Vector2(70, 10), 5.0, 56.0, Color(0.3, 0.9, 1.0), null)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo >= 0.08:
+				_foto("1_cristal")
+				passo = 2
+				t_passo = 0.0
+		2:
+			var m2 = mundo.nascer_monstro("inimigo_cao_ossos", h.pos + Vector2(-60, 10), true)
+			m2.vida = m2.vida_max * 9.0
+			m2.vida_max = m2.vida
+			c.fx.flash(m2, 0.45, Color.WHITE, 3)
+			c.fx.folha("estrela", m2.pos + Vector2(0, -8), 15.0, Color(0.3, 0.9, 1.0), 0.3)
+			passo = 3
+			t_passo = 0.0
+		3:
+			if t_passo >= 0.05:
+				_foto("2_marca")
+				passo = 4
+				t_passo = 0.0
+		4:
+			c.limpar_partida()
+			ch.nascer(ch.cfg.marcas[2], h.pos + Vector2(220, -30))
+			passo = 5
+			t_passo = 0.0
+		5:
+			if ch.atual != null and ch.atual.carga >= 0.9:
+				_foto("3_telegrafo")
+				passo = 6
+			elif t_passo > 14.0:
+				passo = 6
+		6:
 			mundo.get_tree().quit()
 			return
 
