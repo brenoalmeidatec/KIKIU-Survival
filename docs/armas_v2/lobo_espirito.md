@@ -14,7 +14,7 @@
 
 **Fusões e evoluções:** Sem fusão hoje. **Caçada Espiritual (proposta):** Lobo Espiritual nível 3 + Espírito Raposa nível 3. As duas somem e entra um golpe que chama lobo e raposa juntos. Dano e duração ficam a combinar.
 
-**Animação e efeitos:** Hoje, o placeholder é um brilho na cor da arma (a textura de brilho do jogo, a 60% da cor) com um pontinho branco de 5 px por cima. O espírito flutua 10 px acima do chão, balança 2 px de um lado para o outro e some nos últimos 0,5 s de vida. Não há rastro nem clarão.
+**Animação e efeitos:** Desde 15/10/2026, o lobo corre animado: folha `assets/v2/armas/lobo_espiritual_corre.png` (16 quadros de 82x42, 11 quadros por segundo), lobo branco com olho azul brilhando, a cauda virando chama e um rastro de espíritos e fiapos ficando para trás. Ele vira para o lado em que anda, pisa no chão (sem flutuar) e some nos últimos 0,5 s de vida. A arte vem da referência do Breno (`fonte_arte/blender_lobo/`). Ainda não há quadros próprios de mordida: ele usa a corrida também quando encosta no inimigo. Sem a folha, volta ao brilho antigo (brilho na cor da arma com pontinho branco, flutuando 10 px).
 Especificação do campo "arte" (para o Alisson substituir): um lobo branco-azulado, translúcido, de espírito, corre pelo chão atrás do inimigo e deixa um rastro de brilho frio. Ao alcançar o alvo, faz um pequeno clarão azul no contato. Cores: branco-azulado, azul gelo, branco. Tamanho: lobo de 36x28 px; rastro de 4 px; clarão de 20 px. Duração: o lobo some com um sopro de partículas ao fim da vida.
 
 **Mudanças em relação ao desenho original:** Nenhuma no desenho: segue o desenho original do PR #192. Números da ficha conferidos com armas_novas.gd e dados/v2_cartas.json (2026-10-12): sem diferença.
