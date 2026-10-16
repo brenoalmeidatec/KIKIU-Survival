@@ -153,6 +153,10 @@ func _ready() -> void:
 	_fotos = str(args.get("fotos", ""))
 	_seq = float(args.get("seq", 2.0))
 	_med["duracao"] = float(args.get("duracao", 6.0))
+	if args.has("playtest") and not modo_teste:  # robô de playtest (#301): save temporário próprio e sorteios pela semente
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://playtest"))
+		Meta.caminho_save = "user://playtest/meta_%d.cfg" % OS.get_process_id()
+		seed(int(args.get("semente", 1)))
 	Entrada.garantir()
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
 		Config.g_perfil_temporario(str(args.perfil))
@@ -293,7 +297,7 @@ func _montar() -> void:
 	atm.ambiente(cam.position)
 	_vinheta()
 	_ler_graficos()
-	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build"):
+	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build") or args.has("playtest"):
 		roteiro = Roteiro.new()
 		roteiro.montar(self, args)
 	avancar(0.0)

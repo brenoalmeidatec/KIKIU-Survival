@@ -18,6 +18,13 @@ extends RefCounted
 ##                         anel fantasma no raio final e anel interno), 2_cheia_perfeita (anel piscando na janela perfeita), 3_disparo (0,10 s
 ##                         depois de soltar: onda, rachaduras, números), 4_depois (0,6 s: monstros empurrados e atordoados, katana alaranjada
 ##                         no contragolpe) e 5_slot (HUD com o slot em recarga). Usar com --fotos=PASTA --nome=prefixo.
+##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
+##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
+##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
+##                         com código 3. Opções: --semente=N (sorteios), --playtest_max=S (teto de tempo de jogo, padrão 900),
+##                         --playtest_trava=cartas|bau (depuração: o robô para de responder àquela tela, para provar o vigia).
+##                         Usa um save temporário próprio (mundo.gd troca Meta.caminho_save), nunca o do jogador.
+##                         O lote, em paralelo e com relatório, roda pelo ferramentas/playtest_v2.py (docs/PLAYTEST_V2.md).
 ## Nada disto roda no jogo normal.
 
 var mundo
@@ -30,6 +37,8 @@ var t_passo := 0.0
 var ocupado := false
 var pasta := ""
 var prefixo := "v2"
+var playtest := false
+var pt := {}  # estado do robô de playtest (_pt_iniciar)
 
 
 func montar(m, a: Dictionary) -> void:
@@ -37,6 +46,9 @@ func montar(m, a: Dictionary) -> void:
 	args = a
 	estresse = int(a.get("estresse", 0))
 	robo = a.has("robo")
+	playtest = a.has("playtest")
+	if playtest:
+		_pt_iniciar()
 	roteiro = str(a.get("roteiro", ""))
 	pasta = str(a.get("fotos", ""))
 	prefixo = str(a.get("nome", "v2"))
@@ -51,11 +63,14 @@ func montar(m, a: Dictionary) -> void:
 
 
 func ativo() -> bool:
-	return estresse > 0 or robo or roteiro != ""
+	return estresse > 0 or robo or roteiro != "" or playtest
 
 
 func atualizar(dt: float) -> void:
 	if mundo.combate == null:
+		return
+	if playtest:
+		_playtest(dt)
 		return
 	if robo or estresse > 0:
 		_robo()
@@ -622,3 +637,278 @@ func _r_oclusao() -> void:
 				passo = 4
 		4:
 			mundo.get_tree().quit()
+
+
+# ------------------------------------------------------------------ robô de playtest (#301)
+
+const QUADROS_TRAVA_RELOGIO := 600  # 10 s de quadros sem o relógio da partida andar (jogando, sem pausa)
+const QUADROS_TRAVA_TELA := 1200  # 20 s de quadros com a mesma tela aberta (cartas, baú, queda, vitória)
+const SEG_TRAVA_PRESO := 30.0  # 30 s de jogo com o herói no mesmo lugar (menos de 6 px) querendo andar
+
+
+func _pt_iniciar() -> void:
+	var semente := int(args.get("semente", 1))
+	pt = {
+		"semente": semente,
+		"max": float(args.get("playtest_max", 900.0)),
+		"trava_forcada": str(args.get("playtest_trava", "")),
+		"rng": RandomNumberGenerator.new(),
+		"quadros": 0,
+		"us_ant": int(mundo._us_total),
+		"proc_ms": PackedFloat32Array(),
+		"quadro_ms": PackedFloat32Array(),
+		"pico_vivos": 0,
+		"cartas": [],
+		"baus": 0,
+		"elites": 0,
+		"chefes": [],
+		"evolucoes": [],
+		"linha": [],
+		"prox_linha": 60.0,
+		"estado": "",
+		"estado_q": 0,
+		"relogio_ant": -1.0,
+		"relogio_q": 0,
+		"ponto": Vector2.ZERO,
+		"ponto_t": 0.0,
+		"preso_pos": mundo.heroi.pos,
+		"preso_t": 0.0,
+		"curto_pos": mundo.heroi.pos,
+		"curto_q": 0,
+		"esquiva_q": 0,
+		"fim_q": 0,
+		"t_real": Time.get_ticks_msec(),
+	}
+	pt.rng.seed = semente
+	mundo.combate.cartas.rng.seed = semente * 7919 + 1
+	mundo.heroi.imortal = false
+	mundo.heroi.fonte = mundo.heroi.Fonte.MOUSE
+	mundo.elite_apareceu.connect(func(_n): pt.elites += 1)
+	mundo.chefe_apareceu.connect(func(n, _v): pt.chefes.append(n))
+	mundo.evolucao.connect(func(n, _d): pt.evolucoes.append(n))
+	_pt_novo_ponto()
+	print("PLAYTEST inicio heroi=%s mapa=%s semente=%d" % [mundo.combate.heroi_id, mundo.id_mapa, semente])
+
+
+func _playtest(dt: float) -> void:
+	var c = mundo.combate
+	var h = mundo.heroi
+	pt.quadros += 1
+	var us: int = int(mundo._us_total)
+	pt.proc_ms.append((us - int(pt.us_ant)) / 1000.0)
+	pt.us_ant = us
+	pt.quadro_ms.append(dt * 1000.0)
+	pt.pico_vivos = maxi(int(pt.pico_vivos), mundo.monstros.size())
+	if mundo.tempo_partida >= float(pt.prox_linha):
+		pt.prox_linha = float(pt.prox_linha) + 60.0
+		pt.linha.append(
+			{"t": roundi(mundo.tempo_partida), "nivel": h.nivel, "vida": roundi(h.vida), "vivos": mundo.monstros.size(), "abates": mundo.abates}
+		)
+		print("PLAYTEST t=%d nivel=%d vida=%d/%d vivos=%d abates=%d" % [mundo.tempo_partida, h.nivel, h.vida, h.vida_max, mundo.monstros.size(), mundo.abates])
+	# quanto tempo a mesma tela está aberta
+	if c.jogo != pt.estado:
+		pt.estado = c.jogo
+		pt.estado_q = 0
+	pt.estado_q += 1
+	match c.jogo:
+		"jogando":
+			_pt_jogar(dt)
+			_pt_vigiar_relogio()
+			if mundo.tempo_partida >= float(pt.max):
+				_pt_fim("tempo")
+				return
+		"escolha":
+			h.entrada_forcada = Vector2.ZERO
+			h.ataque_forcado = false
+			if pt.trava_forcada != "cartas" and pt.estado_q >= 20 and not c.progresso.cartas.is_empty():
+				_pt_escolher_carta()
+		"bau":
+			h.entrada_forcada = Vector2.ZERO
+			h.ataque_forcado = false
+			if pt.estado_q == 1:
+				pt.baus += 1
+			if pt.trava_forcada != "bau" and pt.estado_q >= 20 and c.telas.bau_pronto:
+				c.baus.fechar()
+		"morte", "vitoria", "abandono":
+			pt.fim_q += 1
+			if pt.fim_q > 30:  # deixa o resultado_meta gravar a partida (no save temporário)
+				_pt_fim(c.jogo)
+			return
+	if int(pt.estado_q) > QUADROS_TRAVA_TELA and c.jogo != "jogando":
+		_pt_trava("tela_%s" % c.jogo)
+
+
+## Anda, foge, golpeia e esquiva. Não precisa jogar bem: precisa jogar a partida inteira sem ficar parado.
+func _pt_jogar(dt: float) -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	var perto = null
+	var perto_d := 1e12
+	var fuga := Vector2.ZERO
+	var colados := 0
+	for m in mundo.monstros:
+		var dv: Vector2 = h.pos - m.pos
+		var d2 := dv.length_squared()
+		if d2 < perto_d:
+			perto_d = d2
+			perto = m
+		if d2 < 150.0 * 150.0:
+			var d := maxf(sqrt(d2), 8.0)
+			fuga += dv / d * (150.0 - d) / 150.0
+			if d < 46.0:
+				colados += 1
+	# para onde ir: baú no chão, senão orbe perto, senão um ponto do mapa que muda de tempos em tempos
+	var alvo: Vector2 = pt.ponto
+	var achou := false
+	var melhor := 700.0 * 700.0
+	for b in c.baus.lista:
+		if b.ativo and b.pos.distance_squared_to(h.pos) < melhor:
+			melhor = b.pos.distance_squared_to(h.pos)
+			alvo = b.pos
+			achou = true
+	if not achou:
+		var o = c.orbes
+		melhor = 320.0 * 320.0
+		for i in o.estado.size():
+			if o.estado[i] == 1 and o.pos[i].distance_squared_to(h.pos) < melhor:
+				melhor = o.pos[i].distance_squared_to(h.pos)
+				alvo = o.pos[i]
+	pt.ponto_t = float(pt.ponto_t) + dt
+	if pt.ponto_t > 14.0 or h.pos.distance_squared_to(pt.ponto) < 40.0 * 40.0:
+		_pt_novo_ponto()
+	var hp: Vector2 = h.pos
+	var ir: Vector2 = (alvo - hp).normalized() if alvo.distance_squared_to(h.pos) > 16.0 else Vector2.ZERO
+	var dir: Vector2 = ir * 0.7 + fuga * 1.4
+	if dir.length() < 0.15:
+		dir = ir
+	h.entrada_forcada = dir.normalized() if dir.length() > 0.01 else Vector2.ZERO
+	# preso em parede ou árvore por 1,5 s: outro ponto
+	pt.curto_q += 1
+	if pt.curto_q >= 90:
+		if h.pos.distance_squared_to(pt.curto_pos) < 4.0:
+			_pt_novo_ponto()
+		pt.curto_pos = h.pos
+		pt.curto_q = 0
+	# mira e golpe no mais perto
+	if perto != null:
+		mundo.mouse_forcado = perto.pos + Vector2(0, -6)
+	else:
+		mundo.mouse_forcado = h.centro() + h.entrada_forcada * 60.0
+	h.fonte = h.Fonte.MOUSE
+	h.ataque_forcado = perto != null and perto_d < 78.0 * 78.0
+	pt.esquiva_q += 1
+	if colados >= 5 and pt.esquiva_q > 60:
+		h.esquivar()
+		pt.esquiva_q = 0
+	# vigia: herói no mesmo lugar por muito tempo
+	pt.preso_t = float(pt.preso_t) + dt
+	if pt.preso_t >= SEG_TRAVA_PRESO:
+		if h.pos.distance_to(pt.preso_pos) < 6.0:
+			_pt_trava("heroi_preso pos=%s" % str(h.pos.round()))
+		pt.preso_pos = h.pos
+		pt.preso_t = 0.0
+
+
+func _pt_novo_ponto() -> void:
+	var r: Rect2 = mundo.limite_andavel.grow(-80.0)
+	pt.ponto = Vector2(pt.rng.randf_range(r.position.x, r.end.x), pt.rng.randf_range(r.position.y, r.end.y))
+	pt.ponto_t = 0.0
+
+
+## Maior raridade; no empate, a primeira.
+func _pt_escolher_carta() -> void:
+	var cs: Array = mundo.combate.progresso.cartas
+	var i := 0
+	for k in cs.size():
+		if int(cs[k].get("rar", 0)) > int(cs[i].get("rar", 0)):
+			i = k
+	pt.cartas.append(str(cs[i].get("id", "?")))
+	mundo.combate.progresso.escolher(i)
+
+
+func _pt_vigiar_relogio() -> void:
+	var c = mundo.combate
+	if c.pausado or c.parada_t > 0.0 or c.lento_t > 0.0:
+		pt.relogio_q = 0
+		return
+	if mundo.tempo_partida == float(pt.relogio_ant):
+		pt.relogio_q += 1
+		if pt.relogio_q > QUADROS_TRAVA_RELOGIO:
+			_pt_trava("relogio_parado")
+	else:
+		pt.relogio_q = 0
+	pt.relogio_ant = mundo.tempo_partida
+
+
+func _pt_trava(onde: String) -> void:
+	print("TRAVA: %s jogo=%s t=%.1f" % [onde, mundo.combate.jogo, mundo.tempo_partida])
+	_pt_fim("trava", onde)
+
+
+func _pt_fim(desfecho: String, trava := "") -> void:
+	if not playtest:
+		return
+	playtest = false
+	var c = mundo.combate
+	var h = mundo.heroi
+	var r := {
+		"desfecho": desfecho,
+		"trava": trava,
+		"heroi": c.heroi_id,
+		"mapa": mundo.id_mapa,
+		"semente": pt.semente,
+		"tempo_jogo": snappedf(mundo.tempo_partida, 0.1),
+		"nivel": h.nivel,
+		"abates": mundo.abates,
+		"maior_combo": mundo.maior_combo,
+		"vida_final": roundi(h.vida),
+		"vida_max": roundi(h.vida_max),
+		"dano_causado": roundi(c.dano_causado),
+		"dano_sofrido": roundi(c.dano_sofrido),
+		"golpes_tomados": c.golpes_tomados,
+		"almas": mundo.almas_partida,
+		"cartas": pt.cartas,
+		"build": c.progresso.melhorias,
+		"evolucoes": pt.evolucoes,
+		"baus": pt.baus,
+		"elites": pt.elites,
+		"chefes": pt.chefes,
+		"pico_vivos": pt.pico_vivos,
+		"quadros": pt.quadros,
+		"proc_ms": _pt_pcts(pt.proc_ms),
+		"quadro_ms": _pt_pcts(pt.quadro_ms),
+		"tempo_real_s": snappedf((Time.get_ticks_msec() - int(pt.t_real)) / 1000.0, 0.1),
+		"linha_tempo": pt.linha,
+		"args": " ".join(OS.get_cmdline_user_args()),
+	}
+	print("PLAYTEST_JSON: ", JSON.stringify(r))
+	_pt_apagar_save()
+	mundo.get_tree().quit(3 if desfecho == "trava" else 0)
+
+
+static func _pt_pcts(a: PackedFloat32Array) -> Dictionary:
+	if a.is_empty():
+		return {}
+	var s := a.duplicate()
+	s.sort()
+	var n := s.size()
+	var soma := 0.0
+	for v in s:
+		soma += v
+	return {
+		"media": snappedf(soma / n, 0.01),
+		"p50": snappedf(s[n / 2], 0.01),
+		"p95": snappedf(s[mini(n - 1, n * 95 / 100)], 0.01),
+		"p99": snappedf(s[mini(n - 1, n * 99 / 100)], 0.01),
+		"max": snappedf(s[n - 1], 0.01),
+	}
+
+
+## O save temporário do robô (mundo.gd apontou Meta.caminho_save para ele) sai junto com a partida.
+func _pt_apagar_save() -> void:
+	var base: String = mundo.Meta.caminho_save
+	if not base.begins_with("user://playtest/"):
+		return
+	for p in [base, base + ".tmp", base + ".bak"]:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
