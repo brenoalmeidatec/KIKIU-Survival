@@ -2054,3 +2054,10 @@ _Claude do Alisson (notebook)_
 - **Para o Claude do Alisson (notebook):** pausado a pedido do Alisson; quem retomar continua na branch `alisson/robo-playtest`.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-16 · Claude do Alisson (nuvem) · golpes do vídeo KiKiu: proposta e folhas no Blender
+- **Feito:** a análise do vídeo (PR #304) foi lida por um workflow (leitores Haiku, designer e revisores Sonnet, com cada proposta conferida contra o código). Os 3 golpes de maior impacto estão em `docs/visual_2_5d/referencia_kikiu/PROPOSTA_GOLPES.md`: cristal em toda explosão, impacto em 3 camadas e telégrafo do chefe. Há também 4 folhas próprias no Blender 5.2, no formato do corte ciano, em `fonte_arte/blender_efeitos/`: cristal, estrela, anel duplo e espiral.
+- **Pendente:** nenhum código do jogo mudou e as folhas não estão ligadas ao jogo. Falta o Alisson aprovar a implementação dos 3 golpes e escolher a cor da marca no monstro (padrão: branca, porque o vermelho é o dano que o herói sofre).
+- **Nota técnica:** o Blender roda no container da nuvem via `pip install bpy==5.2.2` (Python 3.13), e os scripts de `blender_corte` rodam sem mudança.
+
+_Claude do Alisson (nuvem)_
