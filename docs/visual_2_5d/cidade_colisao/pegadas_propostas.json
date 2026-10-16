@@ -268,12 +268,12 @@
     ],
     "raio": [
      9,
-     5
+     4.5
     ]
    }
   ],
   "transparente": false,
-  "nota": "Barril redondo de ~20 px."
+  "nota": "Barril redondo de ~20 px (elipse 2:1)."
  },
  "lixeira_metal": {
   "colide": true,
@@ -286,12 +286,12 @@
     ],
     "raio": [
      9.5,
-     5
+     4.8
     ]
    }
   ],
   "transparente": false,
-  "nota": "Lixeira cilíndrica de ~19 px."
+  "nota": "Lixeira cilindrica de ~19 px (elipse 2:1)."
  },
  "lixeira_rodas": {
   "colide": true,
@@ -412,12 +412,12 @@
     ],
     "raio": [
      29,
-     13
+     14.5
     ]
    }
   ],
   "transparente": false,
-  "nota": "Pilha de pneus: base elíptica ampla, ~58x26."
+  "nota": "Pilha de pneus: base eliptica ampla ~58x29 (2:1, igual ao corpo)."
  },
  "cacamba": {
   "colide": true,
@@ -435,7 +435,7 @@
    }
   ],
   "transparente": false,
-  "nota": "Caçamba: boca aberta visível de cima (~32 px) = profundidade do chão; largura 82. Sprite de 55 px: abaixo do corte do copas (60); se a baixar, vira transparente."
+  "nota": "Cacamba: boca aberta vista de cima (~32 px) = profundidade do chao (meio 15); largura 82 (meio 41). O sprite tem 55 px de altura (regiao 88x55 no cenario.json), abaixo do corte de 60 do copas.gd: nao fica transparente. A textura de 61 px citada pelo verificador nao se reproduz nos dados. Se um dia passar de 60, vira transparente e a pegada nao muda."
  },
  "container_a": {
   "colide": true,
@@ -490,12 +490,12 @@
     ],
     "raio": [
      27,
-     10
+     13.5
     ]
    }
   ],
   "transparente": false,
-  "nota": "Laje + escombros: só o bloco central colide (x local 29..77); pedras soltas ao redor não."
+  "nota": "Laje + escombros: so o bloco central colide (x local 29..77); pedras soltas ao redor nao. Elipse 2:1."
  },
  "muro_tijolo": {
   "colide": true,
@@ -555,7 +555,7 @@
     ],
     "raio": [
      3.5,
-     2.5
+     1.8
     ]
    }
   ],
@@ -641,16 +641,16 @@
     "tipo": "caixa",
     "centro": [
      0,
-     -49
+     -42
     ],
     "meio": [
-     28,
-     46
+     27,
+     38
     ]
    }
   ],
   "transparente": true,
-  "nota": "Carro de frente/atrás (vertical): largura 56 (meio 28), comprimento no chão ~92 (visto quase de cima): 3 px de folga na frente, ~19 px do alto do sprite ficam de altura. "
+  "nota": "Carro de frente/atras (vertical): largura 54 (meio 27, ~3 px de folga de cada lado), profundidade no chao 76 px (meio 38): frente 4 px acima do pe, traseira em y=-80. Remedido no recorte: os ~17 px de cima do desenho sao a altura do carro (capo/porta-malas vistos de cima), nao chao; a versao anterior (92 px) saia ~17 px alem da traseira. O corpo acima esconde o heroi que passa atras."
  },
  "carro_b_v": {
   "colide": true,
@@ -659,16 +659,16 @@
     "tipo": "caixa",
     "centro": [
      0,
-     -49
+     -42
     ],
     "meio": [
-     28,
-     46
+     27,
+     38
     ]
    }
   ],
   "transparente": true,
-  "nota": "Carro de frente/atrás (vertical): largura 56 (meio 28), comprimento no chão ~92 (visto quase de cima): 3 px de folga na frente, ~19 px do alto do sprite ficam de altura. "
+  "nota": "Carro de frente/atras (vertical): largura 54 (meio 27, ~3 px de folga de cada lado), profundidade no chao 76 px (meio 38): frente 4 px acima do pe, traseira em y=-80. Remedido no recorte: os ~17 px de cima do desenho sao a altura do carro (capo/porta-malas vistos de cima), nao chao; a versao anterior (92 px) saia ~17 px alem da traseira. O corpo acima esconde o heroi que passa atras."
  },
  "carro_c_v": {
   "colide": true,
@@ -677,15 +677,16 @@
     "tipo": "caixa",
     "centro": [
      0,
-     -49
+     -42
     ],
     "meio": [
-     28,
-     46
+     27,
+     38
     ]
    }
   ],
   "transparente": true,
-  "nota": "Carro de frente/atrás (vertical): largura 56 (meio 28), comprimento no chão ~92 (visto quase de cima): 3 px de folga na frente, ~19 px do alto do sprite ficam de altura. "
- }
+  "nota": "Carro de frente/atras (vertical): largura 54 (meio 27, ~3 px de folga de cada lado), profundidade no chao 76 px (meio 38): frente 4 px acima do pe, traseira em y=-80. Remedido no recorte: os ~17 px de cima do desenho sao a altura do carro (capo/porta-malas vistos de cima), nao chao; a versao anterior (92 px) saia ~17 px alem da traseira. O corpo acima esconde o heroi que passa atras."
+ },
+ "_convencao": "Corpo = elipse raio x raio/2 (chao 2:1), em x e em y, tanto contra elipse quanto contra caixa (v2/colisao.gd, ESCALA_Y=2). Caixas: meio-largura = largura visivel/2 menos 2-4 px de folga; frente 2-4 px acima do pe; heroi (raio 7) fica a 7 px em x e 3,5 px em y da face."
 }

@@ -5,12 +5,16 @@ extends RefCounted
 ## buraco (0 a 1) sobe e desce com transição, VEL por segundo. Só o herói conta: monstro atrás de árvore não muda nada.
 ## Entram os objetos com sprite de ALTURA_MIN px ou mais (árvores, pilares, torii, postes); toco e tronco caído são baixos.
 ## Árvores não usam a silhueta de monstro (oclusao.gd): aqui não há efeito duplo.
+## PRÉDIOS, carros, containers, muros e abrigos (objeto alto cuja "colisao" no cenario.json tem forma "caixa") não ganham buraco: o sprite
+## INTEIRO desce a ALFA_CAIXA com a mesma transição, enquanto o herói está atrás e o corpo dele cai no retângulo do desenho. Poste, placa e
+## árvore (formas "elipse") continuam com o buraco circular. Mesma busca (objetos dos blocos visíveis) e mesmo custo: nada novo por quadro.
 ## mundo.gd chama `montar` uma vez e `atualizar` a cada passo, com os objetos dos blocos visíveis (cenario.ativos).
 
 const ALTURA_MIN := 60  # px do sprite: abaixo disto não encobre o herói
 const RAIO := 40.0  # px: o buraco inteiro, com o alfa mínimo
 const BORDA := 12.0  # px: a borda suave, de RAIO até RAIO + BORDA
 const ALFA_MIN := 0.35  # alfa dentro do buraco
+const ALFA_CAIXA := 0.4  # alfa do sprite inteiro dos objetos de caixa (prédio, carro...) com o herói atrás
 const VEL := 3.0  # força por segundo: de 0 a 1 em ~0,33 s
 const SHADER := """shader_type canvas_item;
 uniform float fuerza : hint_range(0.0, 1.0) = 0.0;
@@ -30,7 +34,18 @@ void fragment() {
 }
 """
 
+const SHADER_CAIXA := """shader_type canvas_item;
+uniform float fuerza : hint_range(0.0, 1.0) = 0.0;
+uniform float alfa_min = 0.4;
+void fragment() {
+	vec4 c = texture(TEXTURE, UV);
+	c.a *= 1.0 - fuerza * (1.0 - alfa_min);
+	COLOR = c * COLOR;
+}
+"""
+
 var _altos: Dictionary = {}  # objeto alto -> Rect2 do sprite no mundo (calculado uma vez)
+var _caixas: Dictionary = {}  # objeto alto -> true se é de caixa (alfa do sprite inteiro, sem centro)
 var _forca: Dictionary = {}  # objeto alto -> força atual do buraco (só os que já foram tocados)
 var _acum := 0.0
 var _n := 0
@@ -38,14 +53,21 @@ var _n := 0
 
 ## Dá a cada objeto alto o material do buraco (shader com a força e o centro). Chamado uma vez, depois do cenário carregar.
 ## altura_min: sprite de pelo menos esta altura (px) encobre o herói; o mapa pode baixá-la (`mapa.copas_altura_min`: no laboratório, bancadas e armários também cobrem).
-func montar(objetos: Array, altura_min := float(ALTURA_MIN)) -> void:
+## cenario: quem diz se o item tem forma "caixa" (`tem_caixa(nome)`); sem ele (testes soltos) todo objeto alto ganha o buraco circular.
+func montar(objetos: Array, altura_min := float(ALTURA_MIN), cenario = null) -> void:
 	var sh := Shader.new()
 	sh.code = SHADER
+	var sh_caixa := Shader.new()
+	sh_caixa.code = SHADER_CAIXA
 	for a in objetos:
 		if a.sprite == null or a.sprite.texture == null or float(a.sprite.texture.get_height()) < altura_min:
 			continue
 		var m := ShaderMaterial.new()
-		m.shader = sh
+		var caixa: bool = cenario != null and cenario.tem_caixa(a.chave)
+		m.shader = sh_caixa if caixa else sh
+		if caixa:
+			m.set_shader_parameter("alfa_min", ALFA_CAIXA)
+			_caixas[a] = true
 		a.sprite.material = m
 		var r: Rect2 = a.sprite.get_rect()
 		_altos[a] = Rect2(a.pos + r.position, r.size)
@@ -76,7 +98,7 @@ func atualizar(dt: float, arvores: Array, heroi) -> void:
 			atual = move_toward(atual, alvo, VEL * passo)
 			_forca[a] = atual
 			a.sprite.material.set_shader_parameter("fuerza", atual)
-		if atual > 0.0:  # o herói anda enquanto o buraco está aberto: o centro segue
+		if atual > 0.0 and not _caixas.has(a):  # o herói anda enquanto o buraco está aberto: o centro segue
 			a.sprite.material.set_shader_parameter("centro", centro)
 
 

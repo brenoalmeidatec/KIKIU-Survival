@@ -5,9 +5,11 @@ extends RefCounted
 ## (a base vista a 45 graus). Lista vazia = objeto atravessável.
 ## Além da elipse há a CAIXA: retângulo alinhado aos eixos no chão (prédios, carros, muros retos),
 ## {"tipo": "caixa", "centro": [dx, dy], "meio": [mx, my]} (meio-largura e meia-profundidade, em px, relativas ao pé).
-## Contra a caixa, o corpo (círculo) é empurrado a partir do ponto mais próximo dela: nas faces o empurrão é só no
-## eixo da face (desliza), nas quinas sai na diagonal (contorna sem prender); com o centro dentro, sai pelo menor eixo.
-## Um corpo é um círculo de raio r. Contra uma elipse, o espaço é escalado em y por rx/ry: a elipse vira um
+## Contra a caixa vale a mesma convenção do corpo que contra a elipse: o corpo é a elipse de raio r em x e r/2 em y
+## (chão 2:1). A conta escala o y por ESCALA_Y (2), o corpo vira círculo de raio r e a caixa, meia-profundidade 2*my; o corpo
+## é empurrado a partir do ponto mais próximo dela: nas faces o empurrão é só no eixo da face (desliza), nas quinas sai
+## na diagonal (contorna sem prender); com o centro dentro, sai pelo menor eixo. O empurrão volta ao espaço normal (y / 2).
+## Um corpo é um círculo de raio r (no espaço escalado). Contra uma elipse, o espaço é escalado em y por rx/ry: a elipse vira um
 ## círculo de raio rx, o corpo continua círculo, e a conta é círculo contra círculo. A correção volta ao espaço
 ## normal (y * ry/rx). O empurrão sai só no sentido normal, então o corpo desliza ao longo de uma forma lisa e não
 ## prende nela. Sobra uma folga de FOLGA px, para o corpo não ficar tangente à forma (erro de ponto flutuante
@@ -28,6 +30,7 @@ const GRADE_H := 40
 const OFFSET_CELULAS := 4
 const PASSADAS := 4
 const FOLGA := 0.01
+const ESCALA_Y := 2.0  # chão 2:1: o corpo é a elipse r x r/2; escalando o y por 2 ele vira círculo
 const RAIO_BUSCA := 32.0  # corpo de até este raio usa a tabela de células "perto de alguma forma" (a maioria do mapa aberto passa sem conta)
 
 static var _cen := PackedVector2Array()  # centro de cada forma, no mundo
@@ -139,10 +142,16 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 	return p
 
 
-## Empurrão (no espaço normal) que tira o círculo (centro q relativo ao centro da caixa, raio) da caixa de meias
-## (mx, my); ZERO se não toca. Fora da caixa: a partir do ponto mais próximo (face = só um eixo; quina = diagonal).
-## Com o centro dentro: pelo menor eixo, até a face mais próxima.
-static func _empurrao_caixa(q: Vector2, mx: float, my: float, raio: float) -> Vector2:
+## Empurrão (no espaço normal) que tira o corpo (elipse raio x raio/2; centro q relativo ao centro da caixa) da caixa de
+## meias (mx, my); ZERO se não toca. Conta no espaço com y escalado por ESCALA_Y (corpo = círculo, meia-profundidade my * 2).
+## Fora da caixa: a partir do ponto mais próximo (face = só um eixo; quina = diagonal). Com o centro dentro: pelo menor eixo.
+static func _empurrao_caixa(q_real: Vector2, mx: float, my_real: float, raio: float) -> Vector2:
+	var q := Vector2(q_real.x, q_real.y * ESCALA_Y)
+	var my := my_real * ESCALA_Y
+	return _empurrao_caixa_escalado(q, mx, my, raio) * Vector2(1.0, 1.0 / ESCALA_Y)
+
+
+static func _empurrao_caixa_escalado(q: Vector2, mx: float, my: float, raio: float) -> Vector2:
 	var delta := q - Vector2(clampf(q.x, -mx, mx), clampf(q.y, -my, my))
 	var d := delta.length()
 	if d > 0.0001:
@@ -188,7 +197,8 @@ static func livre(pos: Vector2, raio: float) -> bool:
 			for i in grade[gx * GRADE_H + gy]:
 				var q := pos - cen[i]
 				if caixas[i] == 1:
-					if _empurrao_caixa(q, rxs[i], rys[i], raio) != Vector2.ZERO:
+					# raio - FOLGA: livre mede o toque real (como a elipse), sem a folga do empurrão, que o erro de ponto flutuante contaria como dentro
+					if _empurrao_caixa(q, rxs[i], rys[i], raio - FOLGA) != Vector2.ZERO:
 						return false
 					continue
 				if absf(q.x) >= rxs[i] + raio or absf(q.y) >= (rxs[i] + raio) / ks[i]:
