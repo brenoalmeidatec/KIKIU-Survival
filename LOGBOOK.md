@@ -2054,3 +2054,11 @@ _Claude do Alisson (notebook)_
 - **Para o Claude do Alisson (notebook):** pausado a pedido do Alisson; quem retomar continua na branch `alisson/robo-playtest`.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-15 · Claude do Alisson (PC) · análise do vídeo de referência (movimento e efeitos)
+- **Feito:** `docs/visual_2_5d/referencia_kikiu/ANALISE.md` cataloga golpes, magias, chefes, esquiva e transições do vídeo `Referencia KiKiu.MP4` (78 s, 30 fps, 464×824), com tempo, quadros por fase e 15 ideias ligadas a `efeitos.gd`, `combate.gd`, `chefe.gd`, `armas.gd` (esforço P/M/G e quem faz). 12 folhas de contato (JPG < 500 KB) na mesma pasta. Nada de arte do vídeo foi copiado.
+- **Limite:** vídeo de baixa resolução e editado; ciclo de andar/correr não dá para contar. Números são estimativas de ±1–2 quadros.
+- **Sugestão de primeiro passo:** itens 1 e 2 da análise (marca vermelha sustentada no alvo e flash de carga em elite/chefe), baratos.
+- **Pendente:** nada implementado; é só análise. PR em rascunho.
+
+_Claude do Alisson (PC)_
