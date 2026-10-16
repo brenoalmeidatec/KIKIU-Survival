@@ -1,7 +1,7 @@
 extends Node
 # Teste automático: colisão da v2 (v2/colisao.gd). Usa as formas reais do prototipos/objetos/cenario.json (torii,
 # muro, árvores) e casos sintéticos: 8 direções sem entrar na forma, deslizar na parede, passar entre os pilares,
-# não atravessar uma fila de árvores, e o desempenho (500 corpos x 150 objetos, uma passada de resolver).
+# não atravessar uma fila de árvores, a caixa (retângulo: 8 direções, deslizar, canto, nascer dentro) e o desempenho (500 corpos x 150 objetos, uma passada de resolver).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_colisao.tscn  (imprime "v2_colisao falhas=0")
 const Colisao := preload("res://v2/colisao.gd")
 const META_US := 2000  # meta: uma passada de resolver em menos de 2 ms
@@ -117,6 +117,115 @@ func teste_atravessaveis() -> void:
 	ok(Colisao.livre(Vector2(100, 100), 8.0), "atravessaveis: nao bloqueiam")
 
 
+# --- caixa: 8 direcoes a partir de fora, andando para o centro, nunca termina dentro e para encostado na face/canto
+func teste_caixa_oito_direcoes() -> void:
+	Colisao.limpar()
+	var pe := Vector2(300, 200)
+	Colisao.adicionar_objeto(pe, [{"tipo": "caixa", "centro": [0, -10], "meio": [20, 10]}])
+	var raio := 8.0
+	var c := pe + Vector2(0, -10)
+	var dentro := 0
+	var encostou := 0
+	for i in 8:
+		var dir := Vector2.RIGHT.rotated(i * TAU / 8.0)
+		var p := c + dir * 90.0
+		ok(Colisao.livre(p, raio), "caixa direcao %d: comeca livre" % i)
+		for _passo in 300:
+			p = Colisao.resolver(p + (c - p).normalized() * 0.5, raio)  # sempre rumo ao centro
+			if not Colisao.livre(p, raio):
+				dentro += 1
+		# distancia do centro do corpo ao retangulo = raio (com folga)
+		var q := p - c
+		var d := Vector2(maxf(absf(q.x) - 20.0, 0.0), maxf(absf(q.y) - 10.0, 0.0)).length()
+		if absf(d - raio) < 0.5 and absf(q.x) <= 20.0 + raio + 0.5 and absf(q.y) <= 10.0 + raio + 0.5:
+			encostou += 1
+	ok(dentro == 0, "caixa 8 direcoes: nenhum passo termina dentro (%d passos dentro)" % dentro)
+	ok(encostou == 8, "caixa 8 direcoes: para encostado (%d de 8)" % encostou)
+
+
+# --- caixa: diagonal contra a face de baixo, o corpo desliza ao longo dela e passa a ponta
+func teste_caixa_desliza() -> void:
+	Colisao.limpar()
+	Colisao.adicionar_objeto(Vector2(400, 300), [{"tipo": "caixa", "centro": [0, -15], "meio": [30, 15]}])  # x 370..430, y 270..300
+	var raio := 6.0
+	var p := Vector2(360, 340)
+	var dentro := 0
+	var x_saida := -1.0
+	for _passo in 400:
+		p = Colisao.resolver(p + Vector2(0.6, -0.8), raio)
+		if not Colisao.livre(p, raio):
+			dentro += 1
+		if p.x > 440.0:
+			x_saida = p.x
+			break
+	ok(dentro == 0, "caixa desliza: nunca entra (%d passos)" % dentro)
+	ok(x_saida > 440.0, "caixa desliza: anda ao longo da face e passa a ponta (x=%.1f; -1 = travou)" % x_saida)
+	# a face de baixo e plana: durante o deslize o corpo fica a raio + folga dela (y = 300 + raio)
+	var q := Vector2(400, 340)
+	for _passo in 100:
+		q = Colisao.resolver(q + Vector2(0, -1), raio)
+	ok(absf(q.y - (300.0 + raio)) < 0.1, "caixa desliza: para na face de baixo (y=%.2f, esperado %.2f)" % [q.y, 300.0 + raio])
+
+
+# --- caixa: canto convexo nao prende (mirando perto do canto, o corpo contorna e segue)
+func teste_caixa_canto() -> void:
+	Colisao.limpar()
+	Colisao.adicionar_objeto(Vector2(300, 210), [{"tipo": "caixa", "centro": [0, -20], "meio": [20, 20]}])  # x 280..320, y 170..210
+	var raio := 6.0
+	# canto superior esquerdo (280, 170): mira um pouco a direita (vai deslizar sobre o topo) e um pouco abaixo (face esquerda)
+	for caso in [
+		{"ini": Vector2(250, 140), "dir": Vector2(1, 0.9), "fim_x": 340.0, "fim_y": 1e9},
+		{"ini": Vector2(250, 140), "dir": Vector2(0.9, 1), "fim_x": 1e9, "fim_y": 230.0}
+	]:
+		var p: Vector2 = caso["ini"]
+		var dentro := 0
+		var passou := false
+		for _passo in 500:
+			p = Colisao.resolver(p + (caso["dir"] as Vector2).normalized(), raio)
+			if not Colisao.livre(p, raio):
+				dentro += 1
+			if p.x > caso["fim_x"] or p.y > caso["fim_y"]:
+				passou = true
+				break
+		ok(dentro == 0, "caixa canto %s: nunca entra" % str(caso["dir"]))
+		ok(passou, "caixa canto %s: contorna o canto sem prender (p=%s)" % [str(caso["dir"]), str(p)])
+
+
+# --- caixa: corpo nascido dentro sai pelo lado mais curto
+func teste_caixa_nascido_dentro() -> void:
+	Colisao.limpar()
+	Colisao.adicionar_objeto(Vector2(300, 210), [{"tipo": "caixa", "centro": [0, -20], "meio": [30, 20]}])  # centro (300, 190), x 270..330, y 170..210
+	var raio := 6.0
+	var c := Vector2(300, 190)
+	# (pos, eixo esperado, sinal)
+	var casos := [
+		[Vector2(325, 190), Vector2(1, 0)],  # perto da face direita
+		[Vector2(275, 190), Vector2(-1, 0)],  # perto da face esquerda
+		[Vector2(300, 175), Vector2(0, -1)],  # perto do topo
+		[Vector2(300, 205), Vector2(0, 1)],  # perto da base
+		[Vector2(310, 172), Vector2(0, -1)],  # perto do topo, fora do centro
+	]
+	for caso in casos:
+		var p0: Vector2 = caso[0]
+		var n: Vector2 = caso[1]
+		var p := Colisao.resolver(p0, raio)
+		ok(Colisao.livre(p, raio), "caixa dentro %s: termina livre (%s)" % [str(p0), str(p)])
+		var andou := p - p0
+		ok(andou.normalized().dot(n) > 0.999, "caixa dentro %s: sai pelo lado mais curto (andou %s, esperado eixo %s)" % [str(p0), str(andou), str(n)])
+		var lado := absf((p - c).x) if n.x != 0.0 else absf((p - c).y)
+		var meio := 30.0 if n.x != 0.0 else 20.0
+		ok(absf(lado - (meio + raio)) < 0.1, "caixa dentro %s: para a raio da face (%.2f)" % [str(p0), lado])
+	# o centro exato nao pode travar nem dar NaN
+	var pc := Colisao.resolver(c, raio)
+	ok(is_finite(pc.x) and is_finite(pc.y) and Colisao.livre(pc, raio), "caixa dentro: centro exato sai sem NaN (%s)" % str(pc))
+	# caixas e elipses juntas: a grade, o livre e a formas_no_retangulo enxergam os dois tipos
+	Colisao.adicionar_objeto(Vector2(500, 210), [{"tipo": "elipse", "centro": [0, -10], "raio": [20, 10]}])
+	var fs := Colisao.formas_no_retangulo(Rect2(0, 0, 800, 400))
+	ok(fs.size() == 2, "formas_no_retangulo: caixa e elipse (%d)" % fs.size())
+	ok(Colisao.segmento_perto(Vector2(250, 190), Vector2(275, 190), 6.0), "segmento_perto: enxerga a caixa")
+	ok(not Colisao.segmento_perto(Vector2(900, 900), Vector2(920, 900), 6.0), "segmento_perto: longe de tudo")
+
+
 # --- desempenho: 500 corpos x 150 objetos, uma passada de resolver
 func teste_desempenho() -> void:
 	Colisao.limpar()
@@ -167,6 +276,10 @@ func _ready() -> void:
 	teste_torii()
 	teste_fila_de_arvores()
 	teste_atravessaveis()
+	teste_caixa_oito_direcoes()
+	teste_caixa_desliza()
+	teste_caixa_canto()
+	teste_caixa_nascido_dentro()
 	teste_desempenho()
 	print("v2_colisao falhas=%d" % falhas)
 	get_tree().quit()

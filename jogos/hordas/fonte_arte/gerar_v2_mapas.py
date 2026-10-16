@@ -95,6 +95,11 @@ def formas_colisao(alb, pe, nome, cfg):
     tipo = cfg.get("col", "disco")
     if tipo == "passavel":
         return []
+    if tipo == "caixa" and cfg.get("forma") == "retangulo":
+        # objeto de pegada retangular sólida (prédio, carro, contêiner...): a caixa cheia w x d (o resolver 'caixa' usa centro e meio-tamanho em px),
+        # que cobre os cantos e o fundo que a elipse inscrita deixava passar; o pé é a frente da pegada
+        folga = cfg.get("folga", 1.0)
+        return [{"tipo": "caixa", "centro": [0.0, round(-cfg["d"] * 11.315, 1)], "meio": [round(cfg["w"] * 16.0 * folga, 1), round(cfg["d"] * 11.315 * folga, 1)]}]
     if tipo == "caixa":
         # pegada em metros (w x d): elipse inscrita, na projeção de verdade (1 m = 32 px de largura e 22,6 px de fundo); o pé é a frente da pegada
         rx = cfg["w"] * 16.0 * cfg.get("folga", 1.05)

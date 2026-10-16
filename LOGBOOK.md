@@ -2054,3 +2054,12 @@ _Claude do Alisson (notebook)_
 - **Para o Claude do Alisson (notebook):** pausado a pedido do Alisson; quem retomar continua na branch `alisson/robo-playtest`.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-16 · Claude do Alisson (nuvem) · colisão de verdade na Cidade e prédio translúcido
+- **Antes/depois:** a Cidade já tinha colisão, mas cada prédio, carro e contêiner era uma elipse inscrita na pegada (fina e arredondada): o herói atravessava os cantos e a parte de trás. Agora 23 tipos de objeto (prédios, carros, contêineres, caçamba, ponto de ônibus, barricadas, banco, sacos de areia, muros) usam uma **caixa** do tamanho da pegada `w x d`. Herói atrás de prédio, contêiner ou ponto de ônibus: o sprite inteiro cai a alfa 0,4 (antes era só o buraco de 40 px).
+- **Feito:** `v2/colisao.gd` ganhou a forma `{"tipo": "caixa", "centro": [dx, dy], "meio": [hx, hy]}` (grade própria; o caminho das elipses não muda; mediana do teste de desempenho igual à de antes, ~2,5 ms). F4 desenha as caixas. `v2/copas.gd` tem o modo inteiro, ligado por `mapa.copas_inteiro` (prefixos de nome) em `dados/v2_cidade.json`; os outros mapas não mudam. Monstros: nascer dentro de uma forma agora sai pela face mais perto (`mundo.nascer_monstro`) e a puxada da tempestade primordial passa por `mundo.mover`.
+- **Gerador:** `gerar_v2_mapas.py` emite caixa quando o item tem `"forma": "retangulo"` (marcado em `def_cidade.py`; o laboratório não muda). Os brutos do Blender não estavam na máquina, então o `cenario.json` da Cidade foi atualizado por `mapas_v2/colisao_caixa_cidade.py` (mesma conta; só o campo `colisao` muda).
+- **Testes:** suíte inteira com Godot 4.4.1 headless: 93 de 93 cenas ok (inclui o novo `v2_copas` e os casos de caixa no `v2_colisao`). Print real (OpenGL, xvfb) conferido: prédio translúcido com o herói atrás e caixas sobre prédios e carros. `gdformat -l 160 --check` limpo.
+- **Pendente/sugestões:** outros nascimentos diretos (roteiro, invocação de elite, chefe) passam por `nascer_monstro` e já saem da forma; um monstro parado sobreposto só sai quando se mexe. Laboratório pode usar a mesma caixa nas paredes (`"forma": "retangulo"` no `def_laboratorio.py`).
+
+_Claude do Alisson (nuvem)_

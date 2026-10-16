@@ -263,7 +263,7 @@ func _montar() -> void:
 	cenario = Cenario.new()
 	cenario.carregar(dados, no_mundo, luzes, sombras, sprites.com_normal)
 	copas = Copas.new()
-	copas.montar(cenario.objetos, float(dados.get("mapa", {}).get("copas_altura_min", Copas.ALTURA_MIN)))
+	copas.montar(cenario.objetos, float(dados.get("mapa", {}).get("copas_altura_min", Copas.ALTURA_MIN)), dados.get("mapa", {}).get("copas_inteiro", []))
 	dbg_colisao = Depuracao.new()
 	dbg_colisao.mundo = self
 	dbg_colisao.z_index = 400  # por cima do mundo inteiro (árvores, atores, sombras)
@@ -614,7 +614,7 @@ func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k
 	mo.aplicar_stats(combate.cfg.monstros[nome], k_vida * fator_pesadelo("vida_mult"), k_dano * fator_pesadelo("dano_mult"))
 	mo.cacador = cacador
 	mo.raio_vaga = 90.0
-	mo.reviver(p)
+	mo.reviver(Colisao.resolver(p, mo.raio))  # nascer dentro de um prédio ou carro: sai pela face mais perto
 	monstros.append(mo)
 	return mo
 

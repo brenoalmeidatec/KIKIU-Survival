@@ -28,11 +28,22 @@ MEIA_RUA_Y = 73.5                    # meia rua de 6,5 m na vertical (px)
 FRENTE = 11.315                      # do centro da pegada à frente dela: metade da profundidade projetada (px por metro, sen 45)
 BORDA_ANDAVEL = 150                  # a área andável é o mapa menos 150 px (mundo.gd)
 
-# nome: col = como colide (caixa = a pegada w x d, em elipse; passavel = o herói passa por cima). Vem de medidas_cidade.MEDIDAS.
-OBJETOS = {
-    nome: ({"col": "passavel", "d": m["d"]} if m["col"] is None else {"col": "caixa", "w": m["w"], "d": m["d"]})
-    for nome, m in med.MEDIDAS.items()
-}
+# nome: col = como colide (caixa = a pegada w x d, em elipse, ou em retângulo quando "forma" é "retangulo"; passavel = o herói passa por cima).
+# Vem de medidas_cidade.MEDIDAS. Retangular = o que tem pegada sólida de quina (prédio, carro, contêiner, caçamba, ponto de ônibus, barricada, banco,
+# sacos de areia, muro); poste, placa, semáforo, hidrante, cone, lixeira, pneus, entulho e barril continuam em elipse.
+RETANGULARES = ("predio_", "carro_", "container_", "cacamba", "ponto_onibus", "barricada_", "banco", "sacos_areia", "muro_")
+
+
+def _objeto(nome, m):
+    if m["col"] is None:
+        return {"col": "passavel", "d": m["d"]}
+    cfg = {"col": "caixa", "w": m["w"], "d": m["d"]}
+    if nome.startswith(RETANGULARES):
+        cfg["forma"] = "retangulo"
+    return cfg
+
+
+OBJETOS = {nome: _objeto(nome, m) for nome, m in med.MEDIDAS.items()}
 
 # o tipo de cada quarteirão, de cima para baixo (linha j) e da esquerda para a direita (coluna i):
 # P = prédio no lote; E = pátio com contêiner, caçamba e pneus; B = praça com ponto de ônibus, bancos e fogueira de barril;

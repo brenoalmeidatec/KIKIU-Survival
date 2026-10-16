@@ -10,6 +10,12 @@ extends RefCounted
 ## contaria como dentro). Limite conhecido: entre duas formas encostadas há uma quina côncava, e um resolver que
 ## recebe só a posição pode parar lá (os empurrões se cancelam). Por isso o muro é uma elipse larga, e as formas de
 ## cenário devem ficar separadas.
+## Segundo tipo de forma: a CAIXA, {"tipo": "caixa", "centro": [dx, dy], "meio": [hx, hy]}, um retângulo alinhado aos
+## eixos (prédios, carros, contêineres): centro relativo ao pé, meia-largura hx e meia-altura hy, em px. Corpo (círculo de
+## raio r) contra caixa: o ponto mais próximo da caixa sai de um clamp; se o centro do corpo está DENTRO da caixa, o
+## empurrão sai pelo eixo de menor penetração (o lado mais curto). O empurrão é só na normal (nas faces, desliza; no
+## canto convexo, o corpo contorna o arco de raio r e não prende), com a mesma FOLGA das elipses. As caixas ficam em
+## arrays e numa grade próprias, então o caminho das elipses não paga nada por elas.
 ## Árvores, tocos e tronco caído têm PEGADA: um ou mais círculos (elipses 2:1) que cobrem a base visual inteira, raízes
 ## incluídas (gerar_objetos.py, _pegada_de_base). Quem garante que o corpo não entra na base é essa cobertura; o teste
 ## testes/v2_arvores.tscn mede isso nas 8 direções.
@@ -31,6 +37,9 @@ static var _rx := PackedFloat32Array()  # raio em x
 static var _k := PackedFloat32Array()  # rx / ry: o fator que escala o y
 static var _grade: Array = []  # GRADE_W * GRADE_H células, cada uma um PackedInt32Array de índices de forma
 static var _rx_max := 0.0
+static var _bcen := PackedVector2Array()  # centro de cada caixa, no mundo
+static var _bmeio := PackedVector2Array()  # meia-largura e meia-altura de cada caixa
+static var _grade_b: Array = []  # mesma grade, só com índices de caixa
 static var _perto := PackedByteArray()  # por célula: 1 se alguma forma está a menos de RAIO_BUSCA dela (refeita quando entra forma nova)
 static var _sujo := true
 
@@ -40,8 +49,12 @@ static func limpar() -> void:
 	_rx = PackedFloat32Array()
 	_k = PackedFloat32Array()
 	_grade = []
+	_grade_b = []
 	for _i in GRADE_W * GRADE_H:
 		_grade.append(PackedInt32Array())
+		_grade_b.append(PackedInt32Array())
+	_bcen = PackedVector2Array()
+	_bmeio = PackedVector2Array()
 	_rx_max = 0.0
 	_sujo = true
 
@@ -51,7 +64,12 @@ static func adicionar_objeto(pos_pe: Vector2, formas: Array) -> void:
 	if _grade.is_empty():
 		limpar()
 	for f in formas:
-		if not (f is Dictionary) or f.get("tipo", "") != "elipse":
+		if not (f is Dictionary):
+			continue
+		if f.get("tipo", "") == "caixa":
+			_adicionar_caixa(pos_pe, f)
+			continue
+		if f.get("tipo", "") != "elipse":
 			continue
 		var c: Array = f["centro"]
 		var r: Array = f["raio"]
@@ -75,6 +93,22 @@ static func adicionar_objeto(pos_pe: Vector2, formas: Array) -> void:
 				_grade[gx * GRADE_H + gy] = lista
 
 
+static func _adicionar_caixa(pos_pe: Vector2, f: Dictionary) -> void:
+	var c: Array = f["centro"]
+	var m: Array = f["meio"]
+	var centro := pos_pe + Vector2(float(c[0]), float(c[1]))
+	var meio := Vector2(maxf(float(m[0]), 0.01), maxf(float(m[1]), 0.01))
+	var i := _bcen.size()
+	_bcen.append(centro)
+	_bmeio.append(meio)
+	_sujo = true
+	for gx in range(_coluna(centro.x - meio.x), _coluna(centro.x + meio.x) + 1):
+		for gy in range(_linha(centro.y - meio.y), _linha(centro.y + meio.y) + 1):
+			var lista: PackedInt32Array = _grade_b[gx * GRADE_H + gy]
+			lista.append(i)
+			_grade_b[gx * GRADE_H + gy] = lista
+
+
 ## Empurra o círculo (pos, raio) para fora de todas as formas que ele toca. Devolve a posição corrigida.
 ## A grade é consultada a cada passada, no ponto atual: a caixa cobre qualquer forma que possa tocar o círculo.
 static func resolver(pos: Vector2, raio: float) -> Vector2:
@@ -90,6 +124,7 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 	var ks := _k
 	var grade := _grade
 	var folga := raio + _rx_max
+	var tem_caixas := not _bcen.is_empty()
 	for _passada in PASSADAS:
 		var tocou := false
 		var ax := _coluna(p.x - folga)
@@ -112,9 +147,39 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 					var n: Vector2 = qs / d if d > 0.0001 else Vector2.UP
 					var empurrao: Vector2 = n * falta
 					p += Vector2(empurrao.x, empurrao.y / ks[i])  # de volta ao espaço normal
+		if tem_caixas:
+			var fb := raio  # a caixa está em toda célula que ela cobre: basta olhar as células do círculo
+			for gx in range(_coluna(p.x - fb), _coluna(p.x + fb) + 1):
+				for gy in range(_linha(p.y - fb), _linha(p.y + fb) + 1):
+					for i in _grade_b[gx * GRADE_H + gy]:
+						var empurrao_b := _empurrao_caixa(p, raio, i)
+						if empurrao_b != Vector2.ZERO:
+							tocou = true
+							p += empurrao_b
 		if not tocou:
 			break
 	return p
+
+
+## Empurrão (já com FOLGA) que tira o círculo (p, raio) da caixa i; Vector2.ZERO se não toca.
+static func _empurrao_caixa(p: Vector2, raio: float, i: int) -> Vector2:
+	var m := _bmeio[i]
+	var q := p - _bcen[i]
+	var ax := absf(q.x)
+	var ay := absf(q.y)
+	if ax >= m.x + raio or ay >= m.y + raio:
+		return Vector2.ZERO  # caixa rápida: longe em x ou em y
+	if ax <= m.x and ay <= m.y:
+		# centro dentro da caixa: sai pelo eixo de menor penetração (o lado mais curto)
+		if m.x - ax < m.y - ay:
+			return Vector2((m.x - ax + raio + FOLGA) * (-1.0 if q.x < 0.0 else 1.0), 0.0)
+		return Vector2(0.0, (m.y - ay + raio + FOLGA) * (-1.0 if q.y < 0.0 else 1.0))
+	var d := q - Vector2(clampf(q.x, -m.x, m.x), clampf(q.y, -m.y, m.y))  # do ponto mais próximo ao centro
+	var dist := d.length()
+	var falta := raio + FOLGA - dist
+	if falta <= 0.0:
+		return Vector2.ZERO
+	return d / dist * falta  # fora da caixa dist > 0
 
 
 ## Marca as células que têm alguma forma a menos de RAIO_BUSCA (o círculo de um corpo de até esse raio só toca forma assim).
@@ -130,6 +195,12 @@ static func _refazer_perto() -> void:
 		var by := _linha(_cen[i].y + ry + RAIO_BUSCA)
 		for gx in range(ax, bx + 1):
 			for gy in range(ay, by + 1):
+				_perto[gx * GRADE_H + gy] = 1
+	for i in _bcen.size():
+		var c := _bcen[i]
+		var m := _bmeio[i]
+		for gx in range(_coluna(c.x - m.x - RAIO_BUSCA), _coluna(c.x + m.x + RAIO_BUSCA) + 1):
+			for gy in range(_linha(c.y - m.y - RAIO_BUSCA), _linha(c.y + m.y + RAIO_BUSCA) + 1):
 				_perto[gx * GRADE_H + gy] = 1
 	_sujo = false
 
@@ -151,6 +222,21 @@ static func livre(pos: Vector2, raio: float) -> bool:
 					continue
 				if Vector2(q.x, q.y * ks[i]).length() < rxs[i] + raio:
 					return false
+	if not _bcen.is_empty():
+		var fb := raio  # a caixa está em toda célula que ela cobre: basta olhar as células do círculo
+		for gx in range(_coluna(pos.x - fb), _coluna(pos.x + fb) + 1):
+			for gy in range(_linha(pos.y - fb), _linha(pos.y + fb) + 1):
+				for i in _grade_b[gx * GRADE_H + gy]:
+					var m := _bmeio[i]
+					var q := pos - _bcen[i]
+					var ax := absf(q.x)
+					var ay := absf(q.y)
+					if ax >= m.x + raio or ay >= m.y + raio:
+						continue
+					if ax <= m.x and ay <= m.y:
+						return false
+					if Vector2(maxf(ax - m.x, 0.0), maxf(ay - m.y, 0.0)).length() < raio:
+						return false
 	return true
 
 
@@ -193,6 +279,14 @@ static func _segmento_sobrepoe_forma(min_x: float, max_x: float, min_y: float, m
 				if max_y + raio < _cen[i].y - ry or min_y - raio > _cen[i].y + ry:
 					continue
 				return true
+			for i in _grade_b[gx * GRADE_H + gy]:
+				var c := _bcen[i]
+				var m := _bmeio[i]
+				if max_x + raio < c.x - m.x or min_x - raio > c.x + m.x:
+					continue
+				if max_y + raio < c.y - m.y or min_y - raio > c.y + m.y:
+					continue
+				return true
 	return false
 
 
@@ -204,7 +298,10 @@ static func formas_no_retangulo(r: Rect2) -> Array:
 		var ry := rx / _k[i]
 		var caixa := Rect2(_cen[i] - Vector2(rx, ry), Vector2(rx, ry) * 2.0)
 		if caixa.intersects(r):
-			saida.append({"c": _cen[i], "rx": rx, "ry": ry})
+			saida.append({"tipo": "elipse", "c": _cen[i], "rx": rx, "ry": ry})
+	for i in _bcen.size():
+		if Rect2(_bcen[i] - _bmeio[i], _bmeio[i] * 2.0).intersects(r):
+			saida.append({"tipo": "caixa", "c": _bcen[i], "hx": _bmeio[i].x, "hy": _bmeio[i].y})
 	return saida
 
 

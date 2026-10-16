@@ -5,12 +5,15 @@ extends RefCounted
 ## buraco (0 a 1) sobe e desce com transição, VEL por segundo. Só o herói conta: monstro atrás de árvore não muda nada.
 ## Entram os objetos com sprite de ALTURA_MIN px ou mais (árvores, pilares, torii, postes); toco e tronco caído são baixos.
 ## Árvores não usam a silhueta de monstro (oclusao.gd): aqui não há efeito duplo.
+## Modo INTEIRO (por objeto; o mapa lista prefixos de nome em `mapa.copas_inteiro`): em vez do buraco, o sprite TODO cai a ALFA_INTEIRO
+## com a mesma transição e a mesma condição (herói atrás e corpo sob o sprite). Usado nos prédios e contêineres da Cidade.
 ## mundo.gd chama `montar` uma vez e `atualizar` a cada passo, com os objetos dos blocos visíveis (cenario.ativos).
 
 const ALTURA_MIN := 60  # px do sprite: abaixo disto não encobre o herói
 const RAIO := 40.0  # px: o buraco inteiro, com o alfa mínimo
 const BORDA := 12.0  # px: a borda suave, de RAIO até RAIO + BORDA
 const ALFA_MIN := 0.35  # alfa dentro do buraco
+const ALFA_INTEIRO := 0.4  # alfa do sprite inteiro no modo inteiro
 const VEL := 3.0  # força por segundo: de 0 a 1 em ~0,33 s
 const SHADER := """shader_type canvas_item;
 uniform float fuerza : hint_range(0.0, 1.0) = 0.0;
@@ -18,6 +21,8 @@ uniform vec2 centro = vec2(0.0);
 uniform float raio = 40.0;
 uniform float borda = 12.0;
 uniform float alfa_min = 0.35;
+uniform bool inteiro = false;
+uniform float alfa_inteiro = 0.4;
 varying vec2 pos_mundo;
 void vertex() {
 	pos_mundo = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
@@ -25,12 +30,17 @@ void vertex() {
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
 	float dentro = 1.0 - smoothstep(raio, raio + borda, distance(pos_mundo, centro));
-	c.a *= 1.0 - fuerza * dentro * (1.0 - alfa_min);
+	if (inteiro) {
+		c.a *= 1.0 - fuerza * (1.0 - alfa_inteiro);
+	} else {
+		c.a *= 1.0 - fuerza * dentro * (1.0 - alfa_min);
+	}
 	COLOR = c * COLOR;
 }
 """
 
 var _altos: Dictionary = {}  # objeto alto -> Rect2 do sprite no mundo (calculado uma vez)
+var _inteiros: Dictionary = {}  # objeto alto -> true quando usa o modo inteiro
 var _forca: Dictionary = {}  # objeto alto -> força atual do buraco (só os que já foram tocados)
 var _acum := 0.0
 var _n := 0
@@ -38,7 +48,7 @@ var _n := 0
 
 ## Dá a cada objeto alto o material do buraco (shader com a força e o centro). Chamado uma vez, depois do cenário carregar.
 ## altura_min: sprite de pelo menos esta altura (px) encobre o herói; o mapa pode baixá-la (`mapa.copas_altura_min`: no laboratório, bancadas e armários também cobrem).
-func montar(objetos: Array, altura_min := float(ALTURA_MIN)) -> void:
+func montar(objetos: Array, altura_min := float(ALTURA_MIN), prefixos_inteiro: Array = []) -> void:
 	var sh := Shader.new()
 	sh.code = SHADER
 	for a in objetos:
@@ -46,6 +56,12 @@ func montar(objetos: Array, altura_min := float(ALTURA_MIN)) -> void:
 			continue
 		var m := ShaderMaterial.new()
 		m.shader = sh
+		for pref in prefixos_inteiro:
+			if str(a.chave).begins_with(str(pref)):
+				m.set_shader_parameter("inteiro", true)
+				m.set_shader_parameter("alfa_inteiro", ALFA_INTEIRO)
+				_inteiros[a] = true
+				break
 		a.sprite.material = m
 		var r: Rect2 = a.sprite.get_rect()
 		_altos[a] = Rect2(a.pos + r.position, r.size)
@@ -76,8 +92,13 @@ func atualizar(dt: float, arvores: Array, heroi) -> void:
 			atual = move_toward(atual, alvo, VEL * passo)
 			_forca[a] = atual
 			a.sprite.material.set_shader_parameter("fuerza", atual)
-		if atual > 0.0:  # o herói anda enquanto o buraco está aberto: o centro segue
+		if atual > 0.0 and not _inteiros.has(a):  # o herói anda enquanto o buraco está aberto: o centro segue
 			a.sprite.material.set_shader_parameter("centro", centro)
+
+
+## Verdadeiro se o objeto usa o modo inteiro (sprite todo translúcido). Para os testes.
+func e_inteiro(a) -> bool:
+	return _inteiros.has(a)
 
 
 ## Força atual do buraco do objeto (0 = opaco, 1 = buraco inteiro). Para os testes.

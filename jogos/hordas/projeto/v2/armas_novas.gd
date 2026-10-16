@@ -261,7 +261,7 @@ func _puxar(p: Vector2, raio: float, forca: float) -> void:
 		var d: Vector2 = p - m.pos
 		if _eli(d).length() > raio:
 			continue
-		m.pos = m.pos + d.normalized() * minf(forca, d.length())
+		pai.mundo.mover(m, d.normalized() * minf(forca, d.length()))  # pela colisão: a puxada não enfia o monstro num prédio
 
 
 ## Dano do golpe; se o monstro já está lento e a arma tem `mult_lento`, o dano sobe (combo de lentidão).

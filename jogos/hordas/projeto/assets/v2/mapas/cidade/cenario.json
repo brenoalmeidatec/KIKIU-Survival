@@ -12,14 +12,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -29.4
      ],
-     "raio": [
-      104.2,
-      30.9
+     "meio": [
+      99.2,
+      29.4
      ]
     }
    ],
@@ -39,14 +39,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -29.4
      ],
-     "raio": [
-      94.1,
-      30.9
+     "meio": [
+      89.6,
+      29.4
      ]
     }
    ],
@@ -66,14 +66,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -23.8
      ],
-     "raio": [
-      90.7,
-      24.9
+     "meio": [
+      86.4,
+      23.8
      ]
     }
    ],
@@ -93,14 +93,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -23.8
      ],
-     "raio": [
-      90.7,
-      24.9
+     "meio": [
+      86.4,
+      23.8
      ]
     }
    ],
@@ -120,14 +120,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -22.6
      ],
-     "raio": [
-      94.1,
-      23.8
+     "meio": [
+      89.6,
+      22.6
      ]
     }
    ],
@@ -147,14 +147,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -24.9
      ],
-     "raio": [
-      97.4,
-      26.1
+     "meio": [
+      92.8,
+      24.9
      ]
     }
    ],
@@ -567,14 +567,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -6.8
      ],
-     "raio": [
-      30.2,
-      7.1
+     "meio": [
+      28.8,
+      6.8
      ]
     }
    ],
@@ -594,14 +594,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -9.1
      ],
-     "raio": [
-      43.7,
-      9.5
+     "meio": [
+      41.6,
+      9.1
      ]
     }
    ],
@@ -621,14 +621,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -11.3
      ],
-     "raio": [
-      73.9,
-      11.9
+     "meio": [
+      70.4,
+      11.3
      ]
     }
    ],
@@ -648,14 +648,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -10.2
      ],
-     "raio": [
-      53.8,
-      10.7
+     "meio": [
+      51.2,
+      10.2
      ]
     }
    ],
@@ -702,14 +702,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -14.7
      ],
-     "raio": [
-      42.0,
-      15.4
+     "meio": [
+      40.0,
+      14.7
      ]
     }
    ],
@@ -729,14 +729,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -27.2
      ],
-     "raio": [
-      100.8,
-      28.5
+     "meio": [
+      96.0,
+      27.2
      ]
     }
    ],
@@ -756,14 +756,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -27.2
      ],
-     "raio": [
-      100.8,
-      28.5
+     "meio": [
+      96.0,
+      27.2
      ]
     }
    ],
@@ -825,14 +825,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -4.5
      ],
-     "raio": [
-      50.4,
-      4.8
+     "meio": [
+      48.0,
+      4.5
      ]
     }
    ],
@@ -852,14 +852,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -4.5
      ],
-     "raio": [
-      50.4,
-      4.8
+     "meio": [
+      48.0,
+      4.5
      ]
     }
    ],
@@ -879,14 +879,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -14.7
      ],
-     "raio": [
-      57.1,
-      15.4
+     "meio": [
+      54.4,
+      14.7
      ]
     }
    ],
@@ -906,14 +906,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -21.5
      ],
-     "raio": [
-      75.6,
-      22.6
+     "meio": [
+      72.0,
+      21.5
      ]
     }
    ],
@@ -933,14 +933,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -21.5
      ],
-     "raio": [
-      75.6,
-      22.6
+     "meio": [
+      72.0,
+      21.5
      ]
     }
    ],
@@ -960,14 +960,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -21.5
      ],
-     "raio": [
-      75.6,
-      22.6
+     "meio": [
+      72.0,
+      21.5
      ]
     }
    ],
@@ -987,14 +987,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -21.5
      ],
-     "raio": [
-      75.6,
-      22.6
+     "meio": [
+      72.0,
+      21.5
      ]
     }
    ],
@@ -1014,14 +1014,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -50.9
      ],
-     "raio": [
-      31.9,
-      53.5
+     "meio": [
+      30.4,
+      50.9
      ]
     }
    ],
@@ -1041,14 +1041,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -50.9
      ],
-     "raio": [
-      31.9,
-      53.5
+     "meio": [
+      30.4,
+      50.9
      ]
     }
    ],
@@ -1068,14 +1068,14 @@
    ],
    "colisao": [
     {
-     "tipo": "elipse",
+     "tipo": "caixa",
      "centro": [
       0.0,
       -50.9
      ],
-     "raio": [
-      31.9,
-      53.5
+     "meio": [
+      30.4,
+      50.9
      ]
     }
    ],

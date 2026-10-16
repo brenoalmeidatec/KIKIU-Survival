@@ -1,6 +1,6 @@
 extends Node2D
 ## Depuração de colisão da v2 (tecla F4 no mundo, ou --colisao): desenha por cima do mundo o contorno fino de cada forma
-## registrada em v2/colisao.gd (amarelo: a pegada das árvores, pedras, muros etc.) e o círculo do corpo do herói e dos
+## registrada em v2/colisao.gd (amarelo: a pegada das árvores, pedras, muros etc. como elipse, e prédios, carros etc. como retângulo) e o círculo do corpo do herói e dos
 ## monstros (vermelho). Desligado por padrão e só desenha quando visível. Não altera a colisão: só lê.
 
 const Colisao := preload("res://v2/colisao.gd")
@@ -21,7 +21,10 @@ func _draw() -> void:
 		return
 	var tela: Rect2 = mundo.cam.retangulo().grow(8.0)
 	for f in Colisao.formas_no_retangulo(tela):
-		_elipse(f.c, f.rx, f.ry, COR_FORMA)
+		if f.tipo == "caixa":
+			draw_rect(Rect2(f.c - Vector2(f.hx, f.hy), Vector2(f.hx, f.hy) * 2.0), COR_FORMA, false, 1.0)
+		else:
+			_elipse(f.c, f.rx, f.ry, COR_FORMA)
 	var atores: Array = [mundo.heroi]
 	atores.append_array(mundo.monstros)
 	for a in atores:
