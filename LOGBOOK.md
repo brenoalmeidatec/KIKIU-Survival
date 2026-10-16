@@ -2101,3 +2101,11 @@ _Claude do Alisson (nuvem)_
 - **Em paralelo:** sessão própria implementando os 3 golpes do vídeo (#306, marca branca, padrão aceito).
 
 _Claude do Alisson (PC)_
+
+## 2026-10-16 · Claude do Alisson (PC) · Laboratório com pegadas em caixa (como a Cidade)
+- **Feito:** `fonte_arte/pegadas_laboratorio.json` (lido por `gerar_v2_mapas.py`) com caixas para os itens de base retangular: paredes a/b/c e porta blindada (centro [0,-6] meio [49,6]), bancada [0,-11] [49,11], estante [0,-7] [29,7], mesa [0,-9] [27,9], gerador [0,-15] [34,15], rack [0,-9] [15,9], armário [0,-8] [17,8]. Aplicado no `assets/v2/mapas/laboratorio/cenario.json` (sem o Blender; o gerador dá o mesmo resultado). Redondos (cápsula, maca, pilar, tanques, canos) mantêm a elipse.
+- **Teste novo:** `testes/v2_laboratorio_colisao` (clone do da Cidade para o Laboratório; 347 formas, 0 falhas). `v2_mapas`, `v2_colisao_caixa`, `v2_transparencia` e `v2_cidade_colisao` seguem com 0 falhas.
+- **Efeito colateral esperado:** paredes/bancadas/etc. agora têm forma "caixa", então entram na transparência de objeto alto (`copas.gd`), como os prédios da Cidade.
+- **Pendente:** conferir no olho (F4 / `--colisao`) se alguma bancada encostada na parede ficou apertada; não há captura automática da janela.
+
+_Claude do Alisson (PC)_
