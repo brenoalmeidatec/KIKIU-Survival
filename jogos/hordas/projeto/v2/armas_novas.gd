@@ -14,7 +14,15 @@ const MAX := 48
 const RAIO_PROJ := 10.0
 const PASTA_SPRITES := "res://assets/v2/armas/"
 const PASTA_FUSOES := "res://assets/v2/fusoes/"
+## Lobo Espiritual correndo (fonte_arte/blender_lobo/gerar_lobo_corre.py): 16 quadros em linha, olhando para a direita.
+const LOBO_FOLHA := "res://assets/v2/armas/lobo_espiritual_corre.png"
+const LOBO_QUADRO := Vector2(82, 42)
+const LOBO_QUADROS := 16
+const LOBO_FPS := 11.0
+const LOBO_PE := Vector2(48, 40)  # ponto do quadro que fica no chão (it.p): meio do corpo e linha das patas
 static var _tex_fumaca: Texture2D
+static var _tex_lobo: Texture2D
+static var _lobo_lido := false
 static var _sprites: Dictionary = {}
 static var _lidos := false
 
@@ -348,6 +356,8 @@ func _mover_aliado(it: Dictionary, h, dt: float, perto: Array) -> void:
 	var d: Vector2 = dest - it.p
 	if d.length() > 1.0:
 		it.p = it.p + d.normalized() * minf(float(st.vel) * dt, d.length())
+	if absf(d.x) > 2.0:
+		it.r = signf(d.x)  # aliado não usa raio: guarda para que lado olha (1 = direita, -1 = esquerda)
 	if alvo != null and float(it.t) <= 0.0 and _eli(alvo.pos - it.p).length() < 12.0 + float(alvo.raio):
 		it.t = float(st.tique)
 		var dir: Vector2 = (alvo.pos - it.p).normalized()
@@ -407,6 +417,8 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 					ci.draw_circle(Vector2.ZERO, raio * (1.2 - 0.4 * sumindo), Color(cor.r, cor.g, cor.b, 0.35 * sumindo))
 					ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			"aliado":
+				if str(a.id) == "lobo_espirito" and tex_lobo() != null:
+					continue  # o lobo animado é desenhado em desenhar_sprites, sem o brilho de placeholder
 				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
 				var alfa := clampf(float(it.vida) / 0.5, 0.0, 1.0)
 				ci.draw_texture_rect(tex, Rect2(sobe - Vector2(10, 10), Vector2(20, 20)), false, Color(cor.r, cor.g, cor.b, 0.6 * alfa))
@@ -428,10 +440,15 @@ func desenhar_corpo(ci: CanvasItem, tex: Texture2D) -> void:
 ## que cai (com a ponta para baixo) e de aliado (de pé, flutuando).
 func desenhar_sprites(ci: CanvasItem) -> void:
 	for it in itens:
-		var sp: Dictionary = it.sp
-		if float(it.vida) <= 0.0 or sp.is_empty():
+		if float(it.vida) <= 0.0:
 			continue
 		var p: Vector2 = (it.p as Vector2).round()
+		if str(it.k) == "aliado" and str(it.a.id) == "lobo_espirito" and tex_lobo() != null:
+			_desenhar_lobo(ci, it, p)
+			continue
+		var sp: Dictionary = it.sp
+		if sp.is_empty():
+			continue
 		match str(it.k):
 			"projetil":
 				_sprite(ci, sp, p, (it.v as Vector2).angle())
@@ -441,6 +458,25 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 			"aliado":
 				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
 				_sprite(ci, sp, sobe, 0.0, Color(1, 1, 1, clampf(float(it.vida) / 0.5, 0.0, 1.0)))
+
+
+## Folha do lobo correndo (carrega uma vez; null se o arquivo faltar, e o lobo volta ao brilho antigo).
+static func tex_lobo() -> Texture2D:
+	if not _lobo_lido:
+		_lobo_lido = true
+		_tex_lobo = load(LOBO_FOLHA) as Texture2D
+	return _tex_lobo
+
+
+## Quadro da corrida pela fase do espírito (cada lobo começa num ponto diferente do ciclo), espelhado para olhar para onde anda.
+## Pés em `p`; some nos últimos 0,5 s de vida, como os outros aliados.
+func _desenhar_lobo(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
+	var q := int(float(it.fase) / 6.0 * LOBO_FPS) % LOBO_QUADROS
+	var lado := -1.0 if float(it.r) < 0.0 else 1.0
+	var alfa := clampf(float(it.vida) / 0.5, 0.0, 1.0)
+	ci.draw_set_transform(p, 0.0, Vector2(lado, 1.0))
+	ci.draw_texture_rect_region(_tex_lobo, Rect2(-LOBO_PE, LOBO_QUADRO), Rect2(Vector2(q * LOBO_QUADRO.x, 0.0), LOBO_QUADRO), Color(1, 1, 1, alfa))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## O sprite centrado em `c`, girado `ang` (o projétil aponta para a direção do voo).
