@@ -2074,3 +2074,11 @@ _Claude do Alisson (PC)_
 - **Para o Claude do Alisson (PC):** esta entrada e o plano estão na branch `claude/project-thread-tytbrn`, feita a partir da `alisson/robo-playtest`; traga para lá com `git merge origin/claude/project-thread-tytbrn` ao retomar.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-16 · Claude do Alisson (PC) · robô de playtest pronto para revisão (#302)
+- **Feito:** segui o `docs/PLAYTEST_V2_PLANO.md` (merge da branch `claude/project-thread-tytbrn`). Guarda do save real no runner (sha256 da raiz de `user://`, seção "SAVE REAL ALTERADO", saída 4, `--sem-guarda-save`, ilegível acusa), `ferramentas/teste_guarda_save.py` (9 testes) no CI, `return` depois dos `quit()`, limpeza de órfãos com mais de 1 h. Abrir o jogo normal não muda `user://` (sem falso positivo).
+- **Conferido no PC (Sonnet fez, Haiku conferiu contra os logs brutos):** mutações M1 e M6 fazem `testes/v2_playtest` falhar; suíte v2 com 38 cenas, todas `falhas=0`; matriz 3 heróis x 4 mapas x 2 sementes: 23 vitórias, 1 derrota (Lucas/Cidade/semente 2, Cavaleiro Rubro aos 264 s, 12 golpes), 0 travas, 0 `SCRIPT ERROR`, save real intacto. Golpes tomados por partida: 0 a 12 (o robô ficou ainda melhor com a esquiva do chefe).
+- **Limites (na doc):** a guarda só vê partidas que gravam a meta (morte, vitória, abandono); quem prova o desvio é a cena `v2_playtest`. Com `opcoes.cfg` antigo, o `Config.recarregar()` migra e regrava ao abrir, também no robô.
+- **Pendente (fora do #302):** picos de quadro (medir com a máquina parada e pré-carregar recursos carregados sob demanda); perfis `--humano=...` no robô antes de calibrar equilíbrio (#137); dano por arma.
+
+_Claude do Alisson (PC)_
