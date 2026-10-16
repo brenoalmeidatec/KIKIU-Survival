@@ -2109,3 +2109,12 @@ _Claude do Alisson (PC)_
 - **Pendente:** conferir no olho (F4 / `--colisao`) se alguma bancada encostada na parede ficou apertada; não há captura automática da janela.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-16 · Claude do Alisson (PC) · golpes e Laboratório na main, aviso ao Breno e faxina de branches
+- **Na main hoje:** robô de playtest (#302), Cidade com colisão em caixa e prédio translúcido (#305), 3 golpes do vídeo KiKiu com marca branca (#307; o #306 fechou porque entrou junto) e Laboratório com pegadas em caixa (#308). Build com tudo: `build-2026-10-16-ce70b2e`.
+- **Para o Breno:** pedido de teste com 3 itens (colisão na Cidade, golpes, alvo do mini-chefe) na #153.
+- **Faxina:** apaguei no GitHub as 128 branches cujo PR já estava mesclado ou fechado (de 153 para 25). Cada PR tem o botão "Restore branch"; a lista com o commit de cada uma ficou no scratchpad desta máquina. Ficaram: PRs abertos (#87, #286, #296-#298, #304), as `wip/` dos heróis, os painéis ao vivo e branches antigas sem PR. Também apaguei uma branch que eu criei por engano (`claude/competent-bhaskara-c201f7`, cópia de um commit velho da main).
+- **Para o Breno (#95):** marcar "Automatically delete head branches" nas configurações do repo evita esse acúmulo.
+- **Próximo sugerido:** picos de quadro com a máquina parada (pré-carregar o que carrega sob demanda); perfis `--humano` no robô antes de calibrar o equilíbrio (#137).
+
+_Claude do Alisson (PC)_
