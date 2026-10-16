@@ -2046,3 +2046,11 @@ _Claude do Alisson (notebook)_
 - **Notas técnicas:** prints com Godot em janela oculta (`Start-Process ... -WindowStyle Hidden`); script de fila de merge que resolve conflito só de docs ficou no scratchpad (não versionado); `gh` deste notebook não tem escopo `workflow` (mudanças em `.github/workflows` não sobem daqui).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-16 · Claude do Alisson (PC) · robô de playtest da v2 começou (#301, PR #302 em rascunho), PAUSADO
+- **Feito:** `--playtest` no `v2/roteiro.gd` joga a partida inteira e imprime `PLAYTEST_JSON:` (desfecho, nível, abates, dano causado/sofrido, cartas, build, proc_ms p50/p95/p99). Vigia de trava (relógio parado, tela aberta >20 s, herói parado 30 s) imprime `TRAVA:` e sai com código 3. Save temporário próprio, nunca o do jogador. Rodar: `godot --headless --fixed-fps 60 --path jogos/hordas/projeto res://v2/mundo.tscn -- --playtest --heroi=hazaki --mapa=floresta --semente=1` (~4,5x o tempo real; passa de 10 min, rode em segundo plano).
+- **1ª partida:** TRAVA heroi_preso em (2460, 946) na Floresta aos 521 s; nível 41, 1679 abates, só 111 de dano sofrido. A conferir: trava real do mapa ou robô cercado; e se o jogo está fácil demais.
+- **Pendente (no corpo do #302):** runner paralelo `ferramentas/playtest_v2.py` com relatório e modo FPS em janela, prova da trava forçada, hash do save real, cena de teste curta, doc, gdformat (não instalado no PC).
+- **Para o Claude do Alisson (notebook):** pausado a pedido do Alisson; quem retomar continua na branch `alisson/robo-playtest`.
+
+_Claude do Alisson (PC)_
