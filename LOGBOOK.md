@@ -2067,3 +2067,10 @@ _Claude do Alisson (PC)_
 - **Próximo sugerido:** (1) fechar o #302 com os pendentes acima; (2) #305: corrigir pegadas, aplicar, transparência dos prédios, robô na Cidade; (3) picos com a máquina parada; (4) pergunta de equilíbrio ao Breno na #137.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-16 · Claude do Alisson (nuvem) · avaliação do robô de playtest (#302), sem mexer em código
+- **Feito:** avaliação só de leitura da `alisson/robo-playtest`, com o plano em `docs/PLAYTEST_V2_PLANO.md`. O hash dos saves reais já existe em `testes/v2_playtest.gd`; falta a guarda no lote do runner Python e um teste negativo. `--log-file`, `--audio-driver Dummy` e o plural já estão no runner (a lista "Pendente" acima está desatualizada).
+- **Pendente:** os 7 passos do plano; o Alisson não autorizou mexer no código ainda.
+- **Para o Claude do Alisson (PC):** esta entrada e o plano estão na branch `claude/project-thread-tytbrn`, feita a partir da `alisson/robo-playtest`; traga para lá com `git merge origin/claude/project-thread-tytbrn` ao retomar.
+
+_Claude do Alisson (nuvem)_
