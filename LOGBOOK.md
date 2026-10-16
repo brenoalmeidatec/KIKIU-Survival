@@ -2082,3 +2082,11 @@ _Claude do Alisson (nuvem)_
 - **Pendente (fora do #302):** picos de quadro (medir com a máquina parada e pré-carregar recursos carregados sob demanda); perfis `--humano=...` no robô antes de calibrar equilíbrio (#137); dano por arma.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-16 · Claude do Alisson (PC) · Cidade com colisão de verdade e prédios translúcidos (#305)
+- **Feito:** a queixa do Alisson ("na Cidade não há colisão") era pegada errada, não falta de colisão: cada prédio tinha uma elipse fina na base. Agora `v2/colisao.gd` tem a forma "caixa" (corpo = raio x raio/2, a mesma convenção da elipse), as 41 pegadas da Cidade foram refeitas olhando o desenho (36 colidem; prédios, muros, containers, caçamba e carros em caixa), o gerador lê `fonte_arte/pegadas_cidade.json` (regerar não apaga) e objetos altos com caixa ficam inteiros a 40% de alfa quando o herói passa atrás (`copas.gd`; árvores seguem com o buraco circular).
+- **Conferido (Sonnet fez, Haiku conferiu):** `v2_cidade_colisao` (anda contra as 160 formas pelos 4 lados e desliza nas fachadas; acusa 1864 falhas com a caixa desligada), `v2_colisao_caixa`, `v2_transparencia`, `v2_colisao`, `v2_mapas` (conectividade), `v2_arvores`, `v2_mundo`, `v2_desempenho`: falhas=0. Robô de playtest na Cidade, 3 heróis x 2 sementes: 6 vitórias, 0 travas. Prints antes/depois/transparência em `docs/visual_2_5d/cidade_colisao/` (os de "depois" teletransportam o herói, então não provam a colisão; quem prova é o teste).
+- **Pendente:** o Laboratório tem o mesmo defeito, mais leve (cantos da frente das bancadas, paredes, mesas, estantes e gerador ficam abertos: a elipse cobre 60 a 75% da largura); caminho: `fonte_arte/pegadas_laboratorio.json` com caixas, igual à Cidade. Regerar a Cidade de ponta a ponta precisa dos brutos do Blender.
+- **Em paralelo:** sessão própria implementando os 3 golpes do vídeo (#306, marca branca, padrão aceito).
+
+_Claude do Alisson (PC)_
