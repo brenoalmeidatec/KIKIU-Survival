@@ -204,6 +204,16 @@ func _carregar_atlas(pasta: String) -> void:
 		}
 
 
+## Verdadeiro se o item tem alguma forma de colisão "caixa" (prédio, carro, container, muro, abrigo): copas.gd o deixa translúcido inteiro.
+func tem_caixa(nome: String) -> bool:
+	if not _itens.has(nome):
+		return false
+	for f in _itens[nome].colisao:
+		if str(f.get("tipo", "")) == "caixa":
+			return true
+	return false
+
+
 ## Um objeto de cenário (escala 1 = escala final do jogo) + o dono da sombra dinâmica dele. Quanto mais alto o objeto, menor o comprimento
 ## máximo da sombra (a árvore de 150 px não deita 200 px de sombra no chão). Se há luz para o objeto (luz_objetos), cria a luz.
 func _objeto(nome: String, pos: Vector2, luz_obj: Dictionary) -> void:

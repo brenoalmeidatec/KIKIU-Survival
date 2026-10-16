@@ -3,7 +3,13 @@ extends RefCounted
 ## Cada forma é uma elipse no chão, em px do jogo e relativa ao pé do objeto: é o campo "colisao" de
 ## prototipos/objetos/cenario.json, {"tipo": "elipse", "centro": [dx, dy], "raio": [rx, ry]}, com ry = 0,5 * rx
 ## (a base vista a 45 graus). Lista vazia = objeto atravessável.
-## Um corpo é um círculo de raio r. Contra uma elipse, o espaço é escalado em y por rx/ry: a elipse vira um
+## Além da elipse há a CAIXA: retângulo alinhado aos eixos no chão (prédios, carros, muros retos),
+## {"tipo": "caixa", "centro": [dx, dy], "meio": [mx, my]} (meio-largura e meia-profundidade, em px, relativas ao pé).
+## Contra a caixa vale a mesma convenção do corpo que contra a elipse: o corpo é a elipse de raio r em x e r/2 em y
+## (chão 2:1). A conta escala o y por ESCALA_Y (2), o corpo vira círculo de raio r e a caixa, meia-profundidade 2*my; o corpo
+## é empurrado a partir do ponto mais próximo dela: nas faces o empurrão é só no eixo da face (desliza), nas quinas sai
+## na diagonal (contorna sem prender); com o centro dentro, sai pelo menor eixo. O empurrão volta ao espaço normal (y / 2).
+## Um corpo é um círculo de raio r (no espaço escalado). Contra uma elipse, o espaço é escalado em y por rx/ry: a elipse vira um
 ## círculo de raio rx, o corpo continua círculo, e a conta é círculo contra círculo. A correção volta ao espaço
 ## normal (y * ry/rx). O empurrão sai só no sentido normal, então o corpo desliza ao longo de uma forma lisa e não
 ## prende nela. Sobra uma folga de FOLGA px, para o corpo não ficar tangente à forma (erro de ponto flutuante
@@ -24,11 +30,14 @@ const GRADE_H := 40
 const OFFSET_CELULAS := 4
 const PASSADAS := 4
 const FOLGA := 0.01
+const ESCALA_Y := 2.0  # chão 2:1: o corpo é a elipse r x r/2; escalando o y por 2 ele vira círculo
 const RAIO_BUSCA := 32.0  # corpo de até este raio usa a tabela de células "perto de alguma forma" (a maioria do mapa aberto passa sem conta)
 
 static var _cen := PackedVector2Array()  # centro de cada forma, no mundo
 static var _rx := PackedFloat32Array()  # raio em x
-static var _k := PackedFloat32Array()  # rx / ry: o fator que escala o y
+static var _k := PackedFloat32Array()  # rx / ry: o fator que escala o y (na caixa, mx / my)
+static var _ry := PackedFloat32Array()  # meia-altura em y (elipse: ry; caixa: my)
+static var _caixa := PackedByteArray()  # 1 se a forma é caixa, 0 se é elipse
 static var _grade: Array = []  # GRADE_W * GRADE_H células, cada uma um PackedInt32Array de índices de forma
 static var _rx_max := 0.0
 static var _perto := PackedByteArray()  # por célula: 1 se alguma forma está a menos de RAIO_BUSCA dela (refeita quando entra forma nova)
@@ -39,6 +48,8 @@ static func limpar() -> void:
 	_cen = PackedVector2Array()
 	_rx = PackedFloat32Array()
 	_k = PackedFloat32Array()
+	_ry = PackedFloat32Array()
+	_caixa = PackedByteArray()
 	_grade = []
 	for _i in GRADE_W * GRADE_H:
 		_grade.append(PackedInt32Array())
@@ -51,18 +62,24 @@ static func adicionar_objeto(pos_pe: Vector2, formas: Array) -> void:
 	if _grade.is_empty():
 		limpar()
 	for f in formas:
-		if not (f is Dictionary) or f.get("tipo", "") != "elipse":
+		if not (f is Dictionary):
 			continue
+		var tipo: String = f.get("tipo", "")
+		if tipo != "elipse" and tipo != "caixa":
+			continue
+		var eh_caixa := tipo == "caixa"
 		var c: Array = f["centro"]
-		var r: Array = f["raio"]
+		var r: Array = f["meio"] if eh_caixa else f["raio"]
 		var centro := pos_pe + Vector2(float(c[0]), float(c[1]))
-		var rx := float(r[0])
+		var rx := maxf(float(r[0]), 0.01) if eh_caixa else float(r[0])
 		var ry := maxf(float(r[1]), 0.01)
 		var i := _cen.size()
 		_cen.append(centro)
 		_rx.append(rx)
 		_k.append(rx / ry)
-		_rx_max = maxf(_rx_max, rx)
+		_ry.append(ry)
+		_caixa.append(1 if eh_caixa else 0)
+		_rx_max = maxf(_rx_max, maxf(rx, ry) if eh_caixa else rx)
 		_sujo = true
 		var ax := _coluna(centro.x - rx)
 		var bx := _coluna(centro.x + rx)
@@ -88,6 +105,8 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 	var cen := _cen
 	var rxs := _rx
 	var ks := _k
+	var rys := _ry
+	var caixas := _caixa
 	var grade := _grade
 	var folga := raio + _rx_max
 	for _passada in PASSADAS:
@@ -100,6 +119,12 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 			for gy in range(ay, by + 1):
 				for i in grade[gx * GRADE_H + gy]:
 					var q := p - cen[i]
+					if caixas[i] == 1:
+						var empurrao_c := _empurrao_caixa(q, rxs[i], rys[i], raio)
+						if empurrao_c != Vector2.ZERO:
+							tocou = true
+							p += empurrao_c
+						continue
 					# caixa rápida: |qs| >= |q.x| e |qs| >= |q.y| * k, então longe em x ou em y não toca
 					if absf(q.x) >= rxs[i] + raio or absf(q.y) >= (rxs[i] + raio) / ks[i]:
 						continue
@@ -117,13 +142,35 @@ static func resolver(pos: Vector2, raio: float) -> Vector2:
 	return p
 
 
+## Empurrão (no espaço normal) que tira o corpo (elipse raio x raio/2; centro q relativo ao centro da caixa) da caixa de
+## meias (mx, my); ZERO se não toca. Conta no espaço com y escalado por ESCALA_Y (corpo = círculo, meia-profundidade my * 2).
+## Fora da caixa: a partir do ponto mais próximo (face = só um eixo; quina = diagonal). Com o centro dentro: pelo menor eixo.
+static func _empurrao_caixa(q_real: Vector2, mx: float, my_real: float, raio: float) -> Vector2:
+	var q := Vector2(q_real.x, q_real.y * ESCALA_Y)
+	var my := my_real * ESCALA_Y
+	return _empurrao_caixa_escalado(q, mx, my, raio) * Vector2(1.0, 1.0 / ESCALA_Y)
+
+
+static func _empurrao_caixa_escalado(q: Vector2, mx: float, my: float, raio: float) -> Vector2:
+	var delta := q - Vector2(clampf(q.x, -mx, mx), clampf(q.y, -my, my))
+	var d := delta.length()
+	if d > 0.0001:
+		var falta := raio + FOLGA - d
+		return delta * (falta / d) if falta > 0.0 else Vector2.ZERO
+	var sx := 1.0 if q.x >= 0.0 else -1.0
+	var sy := 1.0 if q.y >= 0.0 else -1.0
+	var px := mx - absf(q.x) + raio + FOLGA
+	var py := my - absf(q.y) + raio + FOLGA
+	return Vector2(sx * px, 0.0) if px <= py else Vector2(0.0, sy * py)
+
+
 ## Marca as células que têm alguma forma a menos de RAIO_BUSCA (o círculo de um corpo de até esse raio só toca forma assim).
 static func _refazer_perto() -> void:
 	_perto = PackedByteArray()
 	_perto.resize(GRADE_W * GRADE_H)
 	for i in _cen.size():
 		var rx := _rx[i]
-		var ry := rx / _k[i]
+		var ry := _ry[i]
 		var ax := _coluna(_cen[i].x - rx - RAIO_BUSCA)
 		var bx := _coluna(_cen[i].x + rx + RAIO_BUSCA)
 		var ay := _linha(_cen[i].y - ry - RAIO_BUSCA)
@@ -141,12 +188,19 @@ static func livre(pos: Vector2, raio: float) -> bool:
 	var cen := _cen
 	var rxs := _rx
 	var ks := _k
+	var rys := _ry
+	var caixas := _caixa
 	var grade := _grade
 	var folga := raio + _rx_max
 	for gx in range(_coluna(pos.x - folga), _coluna(pos.x + folga) + 1):
 		for gy in range(_linha(pos.y - folga), _linha(pos.y + folga) + 1):
 			for i in grade[gx * GRADE_H + gy]:
 				var q := pos - cen[i]
+				if caixas[i] == 1:
+					# raio - FOLGA: livre mede o toque real (como a elipse), sem a folga do empurrão, que o erro de ponto flutuante contaria como dentro
+					if _empurrao_caixa(q, rxs[i], rys[i], raio - FOLGA) != Vector2.ZERO:
+						return false
+					continue
 				if absf(q.x) >= rxs[i] + raio or absf(q.y) >= (rxs[i] + raio) / ks[i]:
 					continue
 				if Vector2(q.x, q.y * ks[i]).length() < rxs[i] + raio:
@@ -187,7 +241,7 @@ static func _segmento_sobrepoe_forma(min_x: float, max_x: float, min_y: float, m
 	for gx in range(ax, bx + 1):
 		for gy in range(ay, by + 1):
 			for i in _grade[gx * GRADE_H + gy]:
-				var ry: float = _rx[i] / _k[i]
+				var ry: float = _ry[i]
 				if max_x + raio < _cen[i].x - _rx[i] or min_x - raio > _cen[i].x + _rx[i]:
 					continue
 				if max_y + raio < _cen[i].y - ry or min_y - raio > _cen[i].y + ry:
@@ -201,10 +255,10 @@ static func formas_no_retangulo(r: Rect2) -> Array:
 	var saida: Array = []
 	for i in _cen.size():
 		var rx := _rx[i]
-		var ry := rx / _k[i]
+		var ry := _ry[i]
 		var caixa := Rect2(_cen[i] - Vector2(rx, ry), Vector2(rx, ry) * 2.0)
 		if caixa.intersects(r):
-			saida.append({"c": _cen[i], "rx": rx, "ry": ry})
+			saida.append({"c": _cen[i], "rx": rx, "ry": ry, "caixa": _caixa[i] == 1})
 	return saida
 
 
