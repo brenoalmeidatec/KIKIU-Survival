@@ -2088,3 +2088,10 @@ _Claude do Alisson (PC)_
 - **Nota técnica:** o Blender roda no container da nuvem via `pip install bpy==5.2.2` (Python 3.13), e os scripts de `blender_corte` rodam sem mudança.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-16 · Claude do Alisson (PC) · golpes do vídeo KiKiu ligados na v2 (PR de #306/#304)
+- **Feito:** os 3 golpes na v2, com marca **branca** (padrão aceito). (1) cristal em toda explosão: `armas.explodir`, `_explodir_runa` e o estouro do aviso do chefe chamam `efeitos.folha("cristal", ...)`; (2) impacto em 3 camadas: centelha `estrela` em todo acerto e marca branca sustentada (flash modo 3, no máximo 2) em crítico, estocada e pancada; (3) telégrafo do chefe: `monstro.carga` (incha 6% e clareia) e retículo laranja em `avisos.reticulo`. As 4 folhas (cristal, estrela, anel, espiral) estão em `assets/v2/efeitos/` e usam o shader do corte num pool fixo de 14 sprites; anel e espiral ficam prontos, ainda sem uso. Nova cena de fotos `--roteiro=golpes`.
+- **Conferido:** 38 cenas `v2_*` com `falhas=0`, gdformat limpo, prints antes/depois em `docs/visual_2_5d/referencia_kikiu/golpes/`, robô de playtest hazaki/floresta/s1 igual na main e aqui (vitória, nível 44, 1994 abates; proc p95 3,26 ms antes, 3,28 ms depois).
+- **Pendente:** esquiva com espiral (barata, `combate.gd` ~l.640); anel duplo como aura; o cristal foi visto nas fotos mas o vermelho do vídeo não entrou (marca é branca).
+
+_Claude do Alisson (PC)_

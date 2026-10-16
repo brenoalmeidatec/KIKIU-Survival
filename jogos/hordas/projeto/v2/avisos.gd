@@ -23,6 +23,9 @@ var efeito: Array = []  # Callable ou null: roda no instante do dano
 var disparados := 0  # quantos já dispararam (testes)
 var machucou := 0  # quantas vezes acertou o herói (testes)
 var _desenhou := false
+var ret_t := 9.0  # retículo do chefe sobre o herói: anel e cruz que giram durante o aviso
+var ret_dur := 1.0
+var ret_raio := 0.0
 
 
 func montar(c, camada: Node) -> void:
@@ -46,7 +49,15 @@ func montar(c, camada: Node) -> void:
 	efeito.resize(MAX)
 
 
+## O retículo laranja (anel e cruz girando) que persegue o herói durante o aviso do chefe.
+func reticulo(raio: float, espera: float) -> void:
+	ret_t = 0.0
+	ret_dur = espera
+	ret_raio = raio
+
+
 func limpar() -> void:
+	ret_t = 9.0
 	tipo.fill(0)
 	for i in MAX:
 		efeito[i] = null
@@ -107,9 +118,12 @@ func atualizar(dt: float) -> void:
 		t[i] += dt
 		if t[i] >= dur[i]:
 			_disparar(i)
-	if algum or _desenhou:
+	var ret := ret_t < ret_dur
+	if ret:
+		ret_t += dt
+	if algum or ret or _desenhou:
 		no.queue_redraw()
-	_desenhou = algum
+	_desenhou = algum or ret
 
 
 func _disparar(i: int) -> void:
@@ -123,6 +137,7 @@ func _disparar(i: int) -> void:
 			if h.levar_dano(dano[i], p):
 				machucou += 1
 		combate.fx.onda(p, Color(c.r, c.g, c.b, 0.95), r, 0.3)
+		combate.fx.folha("cristal", p, r * 1.1, c, 0.3)  # o golpe do chefe sai com o estouro de cristal
 		combate.fx.estouro(p + Vector2(0, -4), c, 10)
 		combate.fx.luz_rapida(p + Vector2(0, -6), c, 1.8, r * 2.6, 0.3)
 		combate.audio.tocar("runa", randf_range(0.75, 0.9), -2.0, 0.05)
@@ -160,6 +175,18 @@ func _elipse(p: Vector2, r: float, n: int) -> PackedVector2Array:
 
 
 func _desenhar() -> void:
+	if ret_t < ret_dur and mundo.heroi != null:
+		var k := ret_t / ret_dur
+		var c := Color(1.0, 0.55, 0.15, 0.55 + 0.4 * k)
+		var r := ret_raio * (1.25 - 0.25 * k)  # fecha sobre o herói
+		var anel: PackedVector2Array = _elipse(mundo.heroi.pos, r, 28)
+		anel.append(anel[0])
+		no.draw_polyline(anel, c, 2.0)
+		var a := ret_t * 3.0
+		for j in 4:
+			var u := Vector2.from_angle(a + j * PI * 0.5)
+			var q: Vector2 = mundo.heroi.pos
+			no.draw_line((q + _g2w(u * r * 0.55)).round(), (q + _g2w(u * r * 1.1)).round(), c, 2.0)
 	for i in MAX:
 		if tipo[i] == 0:
 			continue
