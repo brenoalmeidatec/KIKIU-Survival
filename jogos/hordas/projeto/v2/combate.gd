@@ -106,6 +106,9 @@ var _fila: Array = []  # monstros que morreram no quadro por golpe secundário o
 var anuncios := 0  # quantos anúncios saíram (testes)
 var ultimo_anuncio := ""
 var ferimentos := 0  # golpes secundários que feriram (testes)
+var dano_causado := 0.0  # soma do dano nos monstros na partida (robô de playtest, #301)
+var dano_sofrido := 0.0  # soma do dano que o herói tomou
+var golpes_tomados := 0
 var us_armas := 0  # microssegundos gastos em armas.atualizar (medição)
 var _cab := PackedInt32Array()  # grade de separação: primeira entrada de cada célula (hash)
 var _prox := PackedInt32Array()  # próximo monstro na mesma célula
@@ -600,6 +603,7 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	var dn := maxi(1, roundi(dano))
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
 	ferimentos += 1
+	dano_causado += dn
 	if numero:
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, critico)
 		fx.flash(m, 0.08)
@@ -684,6 +688,8 @@ func rastro_esquiva(h) -> void:
 
 func heroi_apanhou(valor: float) -> void:
 	var h = mundo.heroi
+	dano_sofrido += valor
+	golpes_tomados += 1
 	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), COR_DANO_HEROI, false)
 	fx.flash(h, 0.14, Color(1.0, 0.3, 0.3), 0, 0.9)
 	fx.faiscas(h.pos + Vector2(0, -16), h.emp.normalized(), 8, Color(1.0, 0.3, 0.25), 150.0)
@@ -843,6 +849,9 @@ func limpar_partida() -> void:
 	criticos = 0
 	mortes = 0
 	ferimentos = 0
+	dano_causado = 0.0
+	dano_sofrido = 0.0
+	golpes_tomados = 0
 	fim_emitido = false
 	venceu = false
 	mundo.xp_coletado = 0.0
