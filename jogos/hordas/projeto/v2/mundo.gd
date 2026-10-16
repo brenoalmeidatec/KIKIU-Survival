@@ -156,6 +156,9 @@ func _ready() -> void:
 	if args.has("playtest") and not modo_teste:  # robô de playtest (#301): save temporário próprio e sorteios pela semente
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://playtest"))
 		Meta.caminho_save = "user://playtest/meta_%d.cfg" % OS.get_process_id()
+		for orfao in [Meta.caminho_save, Meta.caminho_save + ".tmp", Meta.caminho_save + ".bak"]:  # órfão de um PID reaproveitado
+			if FileAccess.file_exists(orfao):
+				DirAccess.remove_absolute(ProjectSettings.globalize_path(orfao))
 		seed(int(args.get("semente", 1)))
 	Entrada.garantir()
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo

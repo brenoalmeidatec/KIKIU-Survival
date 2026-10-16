@@ -22,7 +22,8 @@ extends RefCounted
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
 ##                         com código 3. Opções: --semente=N (sorteios), --playtest_max=S (teto de tempo de jogo, padrão 900),
-##                         --playtest_trava=cartas|bau (depuração: o robô para de responder àquela tela, para provar o vigia).
+##                         --playtest_trava=cartas|bau (depuração: o robô para de responder àquela tela, para provar o vigia),
+##                         --playtest_fim=morte (partida curta que termina na morte real: parado, com 1 de vida, até um monstro matar).
 ##                         Usa um save temporário próprio (mundo.gd troca Meta.caminho_save), nunca o do jogador.
 ##                         O lote, em paralelo e com relatório, roda pelo ferramentas/playtest_v2.py (docs/PLAYTEST_V2.md).
 ## Nada disto roda no jogo normal.
@@ -643,6 +644,7 @@ func _r_oclusao() -> void:
 
 const QUADROS_TRAVA_RELOGIO := 600  # 10 s de quadros sem o relógio da partida andar (jogando, sem pausa)
 const QUADROS_TRAVA_TELA := 1200  # 20 s de quadros com a mesma tela aberta (cartas, baú, queda, vitória)
+const SEG_MORTE_INICIO := 1.0  # --playtest_fim=morte: a partir de 1 s de jogo o robô fica parado, com 1 de vida, até um monstro matá-lo
 const SEG_TRAVA_PRESO := 30.0  # 30 s de jogo com o herói no mesmo lugar (menos de 6 px) querendo andar
 
 
@@ -652,6 +654,7 @@ func _pt_iniciar() -> void:
 		"semente": semente,
 		"max": float(args.get("playtest_max", 900.0)),
 		"trava_forcada": str(args.get("playtest_trava", "")),
+		"fim": str(args.get("playtest_fim", "")),
 		"rng": RandomNumberGenerator.new(),
 		"quadros": 0,
 		"us_ant": int(mundo._us_total),
@@ -713,7 +716,10 @@ func _playtest(dt: float) -> void:
 	pt.estado_q += 1
 	match c.jogo:
 		"jogando":
-			_pt_jogar(dt)
+			if pt.fim == "morte" and mundo.tempo_partida >= SEG_MORTE_INICIO:
+				_pt_parar_para_morrer()
+			else:
+				_pt_jogar(dt)
 			_pt_vigiar_relogio()
 			if mundo.tempo_partida >= float(pt.max):
 				_pt_fim("tempo")
@@ -747,6 +753,7 @@ func _pt_jogar(dt: float) -> void:
 	var perto_d := 1e12
 	var fuga := Vector2.ZERO
 	var colados := 0
+	var chefe_colado := false
 	for m in mundo.monstros:
 		var dv: Vector2 = h.pos - m.pos
 		var d2 := dv.length_squared()
@@ -758,6 +765,26 @@ func _pt_jogar(dt: float) -> void:
 			fuga += dv / d * (150.0 - d) / 150.0
 			if d < 46.0:
 				colados += 1
+		if m.chefe and d2 < 260.0 * 260.0:  # chefe e mini-chefe: o contato tira 20+ a cada 0,9 s, então sai da frente mais cedo e mais forte
+			var dc := maxf(sqrt(d2), 8.0)
+			fuga += dv / dc * (260.0 - dc) / 260.0 * 2.0
+			if dc < 70.0:
+				chefe_colado = true
+	# ataque anunciado do chefe (círculo ou faixa piscando no chão): sai de dentro dele
+	var av = c.avisos
+	for i in av.tipo.size():
+		if av.tipo[i] == 1:
+			var rel: Vector2 = h.pos - av.pos[i]
+			var g := Vector2(rel.x, rel.y / 0.62)
+			if g.length() < float(av.tam[i]) + 40.0:
+				fuga += (rel.normalized() if rel.length() > 1.0 else Vector2.RIGHT) * 3.0
+				chefe_colado = true
+		elif av.tipo[i] == 2 and av.na_faixa(i, h.pos, 30.0):
+			var gd: Vector2 = av.dir[i]
+			var lado := Vector2(-gd.y, gd.x)
+			var rel2: Vector2 = h.pos - av.pos[i]
+			fuga += (lado if rel2.dot(lado) >= 0.0 else -lado) * 3.0
+			chefe_colado = true
 	# para onde ir: baú no chão, senão orbe perto, senão um ponto do mapa que muda de tempos em tempos.
 	# Em desvio (acabou de ficar preso), só o ponto: sem rota, o baú do outro lado de uma árvore prende o herói nela.
 	var alvo: Vector2 = pt.ponto
@@ -785,6 +812,16 @@ func _pt_jogar(dt: float) -> void:
 	var dir: Vector2 = ir * 0.7 + fuga * 1.4
 	if dir.length() < 0.15:
 		dir = ir
+	# perto da borda do mapa (50 px): corta o que empurra para a parede e corre ao longo dela, em vez de ficar prensado
+	var lim: Rect2 = mundo.limite_andavel
+	if (hp.x < lim.position.x + 50.0 and dir.x < 0.0) or (hp.x > lim.end.x - 50.0 and dir.x > 0.0):
+		dir.x = 0.0
+		if absf(dir.y) < 0.4:
+			dir.y = signf(fuga.y) if absf(fuga.y) > 0.1 else signf(lim.get_center().y - hp.y)
+	if (hp.y < lim.position.y + 50.0 and dir.y < 0.0) or (hp.y > lim.end.y - 50.0 and dir.y > 0.0):
+		dir.y = 0.0
+		if absf(dir.x) < 0.4:
+			dir.x = signf(fuga.x) if absf(fuga.x) > 0.1 else signf(lim.get_center().x - hp.x)
 	h.entrada_forcada = dir.normalized() if dir.length() > 0.01 else Vector2.ZERO
 	pt.alvo = alvo  # só para a mensagem de TRAVA
 	pt.fuga = fuga
@@ -804,7 +841,7 @@ func _pt_jogar(dt: float) -> void:
 	h.fonte = h.Fonte.MOUSE
 	h.ataque_forcado = perto != null and perto_d < 78.0 * 78.0
 	pt.esquiva_q += 1
-	if colados >= 5 and pt.esquiva_q > 60:
+	if (colados >= 5 or (chefe_colado and h.invenc <= 0.0)) and pt.esquiva_q > 60:
 		h.esquivar()
 		pt.esquiva_q = 0
 	# vigia: herói no mesmo lugar por muito tempo
@@ -814,6 +851,15 @@ func _pt_jogar(dt: float) -> void:
 			_pt_trava("heroi_preso pos=%s alvo=%s bau=%s fuga=%s" % [str(h.pos.round()), str(pt.alvo.round()), str(achou), str(pt.fuga.round())])
 		pt.preso_pos = h.pos
 		pt.preso_t = 0.0
+
+
+## --playtest_fim=morte: parado, sem golpe nem esquiva e com 1 de vida; quem mata é o dano normal dos monstros, então a morte segue o
+## caminho real (combate.jogo = "morte" -> resultado_meta -> Meta.registrar_partida, que grava o save temporário).
+func _pt_parar_para_morrer() -> void:
+	var h = mundo.heroi
+	h.entrada_forcada = Vector2.ZERO
+	h.ataque_forcado = false
+	h.vida = minf(h.vida, 1.0)
 
 
 func _pt_novo_ponto() -> void:
