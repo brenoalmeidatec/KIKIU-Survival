@@ -704,9 +704,7 @@ func _playtest(dt: float) -> void:
 	pt.pico_vivos = maxi(int(pt.pico_vivos), mundo.monstros.size())
 	if mundo.tempo_partida >= float(pt.prox_linha):
 		pt.prox_linha = float(pt.prox_linha) + 60.0
-		pt.linha.append(
-			{"t": roundi(mundo.tempo_partida), "nivel": h.nivel, "vida": roundi(h.vida), "vivos": mundo.monstros.size(), "abates": mundo.abates}
-		)
+		pt.linha.append({"t": roundi(mundo.tempo_partida), "nivel": h.nivel, "vida": roundi(h.vida), "vivos": mundo.monstros.size(), "abates": mundo.abates})
 		print("PLAYTEST t=%d nivel=%d vida=%d/%d vivos=%d abates=%d" % [mundo.tempo_partida, h.nivel, h.vida, h.vida_max, mundo.monstros.size(), mundo.abates])
 	# quanto tempo a mesma tela está aberta
 	if c.jogo != pt.estado:
