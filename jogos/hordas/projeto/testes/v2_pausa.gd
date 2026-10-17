@@ -14,7 +14,7 @@ extends Node
 # personalizado. A queda por fps (qualidade_auto) vale só na memória: o arquivo não recebe o perfil caído.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
-#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_graficos_topo, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (só o viewport).
+#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_graficos_topo, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (a janela inteira).
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Meta := preload("res://v2/meta.gd")
