@@ -341,7 +341,7 @@ func numeros(a: Dictionary) -> Dictionary:
 			intervalo = float(st.recarga) / vel_a
 			acertos_s = float(st.quantidade) / intervalo * RUNA_NO_ALVO  # só as que nascem sobre o monstro (`_ponto_runa`) explodem de pronto
 		"torre":
-			intervalo = float(st.tique)  # um virote a cada `tique` s, enquanto a torre está de pé (`duracao` de cada `recarga`)
+			intervalo = float(st.tique) / vel_a  # um virote a cada `tique` s, enquanto a torre está de pé (`duracao` de cada `recarga`)
 			var no_ar := minf(float(st.duracao) * vel_a / float(st.recarga), 1.0)
 			acertos_s = float(st.quantidade) / intervalo * no_ar
 		"granada":
