@@ -38,14 +38,14 @@ func _ready() -> void:
 func _tabela() -> void:
 	var casos := [
 		[Vector2(960, 540), [1.0, 1.0, 1.0, 1.0]],
-		[Vector2(1280, 720), [1.0, 1.0, 1.0, 1.0]],
-		[Vector2(1280, 800), [1.0, 1.0, 1.0, 1.0]],
-		[Vector2(1600, 900), [1.25, 1.0, 1.0, 1.5]],
-		[Vector2(1680, 1050), [1.25, 1.0, 1.0, 1.5]],
-		[Vector2(1920, 1080), [1.5, 1.0, 1.5, 2.0]],
-		[Vector2(2560, 1080), [1.5, 1.0, 1.5, 2.0]],
-		[Vector2(2560, 1440), [2.0, 1.5, 2.0, 2.5]],
-		[Vector2(3840, 2160), [3.0, 2.0, 3.0, 4.0]],
+		[Vector2(1280, 720), [1.25, 1.0, 1.0, 1.0]],
+		[Vector2(1280, 800), [1.25, 1.0, 1.0, 1.0]],
+		[Vector2(1600, 900), [1.5, 1.0, 1.0, 1.5]],
+		[Vector2(1680, 1050), [1.75, 1.0, 1.0, 1.5]],
+		[Vector2(1920, 1080), [2.0, 1.0, 1.5, 2.0]],
+		[Vector2(2560, 1080), [2.0, 1.0, 1.5, 2.0]],
+		[Vector2(2560, 1440), [2.5, 1.5, 2.0, 2.5]],
+		[Vector2(3840, 2160), [4.0, 2.0, 3.0, 4.0]],
 		[Vector2(800, 450), [800.0 / 960.0, 800.0 / 960.0, 800.0 / 960.0, 800.0 / 960.0]],
 	]
 	var opcoes := ["auto", "pequeno", "medio", "grande"]
@@ -61,8 +61,8 @@ func _tabela() -> void:
 			var gran := 4.0 if opcoes[i] == "auto" else 2.0
 			var passo := f * gran
 			ok(f < 1.0 or absf(passo - roundf(passo)) < 0.0001, "fator %s %s anda no passo certo (0,25 no automático, 0,5 nos fixos)" % [str(j), opcoes[i]])
-	var cv := EscalaUi.canvas(Vector2(1920, 1080), "auto")
-	ok(cv == Vector2(1280, 720), "1920x1080 automático = canvas 1280x720")
+	var cv := EscalaUi.canvas(Vector2(1920, 1080), "medio")
+	ok(cv == Vector2(1280, 720), "1920x1080 médio = canvas 1280x720")
 	ok(EscalaUi.deslocamento(cv) == Vector2(160, 90), "o bloco fica no centro do canvas")
 	ok(EscalaUi.cobertura(cv, Vector2(160, 90)) == Rect2(-160, -90, 1280, 720), "a cobertura começa em -deslocamento")
 	ok(EscalaUi.deslocamento(Vector2(960, 540)) == Vector2.ZERO, "canvas igual ao bloco: sem deslocamento")
@@ -84,10 +84,13 @@ func _tabela() -> void:
 		achou_v1 = achou_v1 or str(it.chave) == "tamanho_ui"
 	ok(not achou_v1, "a tela de Opções da v1 não lista Tamanho da interface")
 	opc_v1.free()
-	# o automático acompanha a janela: o canvas fica perto de 1280x720 em qualquer janela grande
-	for j in [Vector2(1920, 1080), Vector2(2560, 1440), Vector2(3840, 2160)]:
-		var c := EscalaUi.canvas(j, "auto")
-		ok(c.x >= 1280.0 and c.x < 1600.0, "automático %s fica entre 1280 e 1600 de largura: %s" % [str(j), str(c)])
+	# o automático é o maior que cabe (como o do Minecraft): nunca menor que o Grande e, de 1280x720 para cima, sempre maior que o Médio
+	for j in [Vector2(1280, 720), Vector2(1366, 768), Vector2(1600, 900), Vector2(1920, 1080), Vector2(2560, 1440), Vector2(3840, 2160)]:
+		var fa := EscalaUi.fator(j, "auto")
+		ok(fa >= EscalaUi.fator(j, "grande") - 0.0001, "automático %s >= Grande" % str(j))
+		ok(fa > EscalaUi.fator(j, "medio") + 0.0001, "automático %s é maior que o Médio (%.2f x %.2f)" % [str(j), fa, EscalaUi.fator(j, "medio")])
+		var encaixe := minf(j.x / 960.0, j.y / 540.0)
+		ok(encaixe - fa < 0.25 + 0.0001, "automático %s fica a menos de um passo de 0,25 do encaixe do bloco (%.3f x %.3f)" % [str(j), fa, encaixe])
 
 	# a opção: salva em opções, gira por Ajustes > Gráficos e cai em auto com lixo
 	ok(EscalaUi.opcao_atual() == "auto", "o padrão é Automático")
@@ -119,6 +122,7 @@ func _tabela() -> void:
 
 
 func _mundo() -> void:
+	Config.temporario("tamanho_ui", "medio")  # em 1920x1080: fator 1,5 e canvas 1280x720 (o Automático aqui encaixa o bloco, fator 2)
 	EscalaUi.janela_forcada = Vector2i(1920, 1080)
 	var w = Mundo.instantiate()
 	w.modo_teste = true
@@ -127,7 +131,7 @@ func _mundo() -> void:
 	w.heroi.entrada_forcada = Vector2.ZERO
 	await get_tree().process_frame
 	var ap = w.ap
-	ok(absf(ap.fator - 1.5) < 0.0001, "o mundo em 1920x1080 usa fator 1,5 (%.3f)" % ap.fator)
+	ok(absf(ap.fator - 1.5) < 0.0001, "o mundo em 1920x1080 (Médio) usa fator 1,5 (%.3f)" % ap.fator)
 	ok(ap.canvas == Vector2(1280, 720) and Vector2(ap.ui.size) == Vector2(1280, 720), "o SubViewport da UI tem o tamanho do canvas")
 	ok(ap.desloc == Vector2(160, 90), "o bloco fica no centro do canvas")
 	ok(absf(ap.tela_ui.size.x - 1920.0) < 0.5 and absf(ap.tela_ui.size.y - 1080.0) < 0.5, "a UI é mostrada na janela inteira (canvas x fator)")
@@ -185,10 +189,13 @@ func _mundo() -> void:
 	ok(perto(hud.offset + retrato.position, Vector2(6, 6)) and ap.desloc == Vector2(480, 270), "Pequeno: o retrato continua no canto do canvas")
 
 	# a janela muda de tamanho (size_changed): refaz tudo
-	Config.temporario("tamanho_ui", "auto")
+	Config.temporario("tamanho_ui", "medio")
 	EscalaUi.janela_forcada = Vector2i(2560, 1440)
 	ap.recalcular()
-	ok(absf(ap.fator - 2.0) < 0.0001 and ap.canvas == Vector2(1280, 720), "2560x1440 automático: fator 2, canvas 1280x720")
+	ok(absf(ap.fator - 2.0) < 0.0001 and ap.canvas == Vector2(1280, 720), "2560x1440 Médio: fator 2, canvas 1280x720")
+	Config.temporario("tamanho_ui", "auto")
+	ap.recalcular()
+	ok(absf(ap.fator - 2.5) < 0.0001 and ap.canvas == Vector2(1024, 576), "2560x1440 Automático: fator 2,5 (o maior que cabe), canvas 1024x576")
 	EscalaUi.janela_forcada = Vector2i(800, 450)
 	ap.recalcular()
 	ok(ap.canvas == Vector2(960, 540) and ap.fator < 1.0, "janela menor que o bloco: o bloco inteiro cabe (fator %.3f)" % ap.fator)

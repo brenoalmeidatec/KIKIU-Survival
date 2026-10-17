@@ -23,8 +23,7 @@ const BTN_Y := 440.0
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
 const ICONE := 32.0  # ícone próprio da carta (assets/v2/icones_cartas, 32x32): sai 1 para 1, pixel a pixel
 const TAM_TITULO := Paleta.TITULO_GRANDE  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
-const TAM_NOME := Paleta.TITULO_MEDIO  # múltiplo de 2 px da grade da Jersey 10 (cabe em uma linha na maioria dos nomes)
-const TAM_NOME_CURTO := Paleta.TITULO_PEQUENO  # nomes longos (Lâminas Rodopiantes) que não cabem em TAM_NOME
+const TAM_NOME := Paleta.TITULO_PEQUENO  # o nome da carta: UM tamanho só para todas (comum, rara, épica...), numa linha (Lâminas Rodopiantes não cabe em 37)
 const TAM_TEXTO := Paleta.TEXTO_TAMANHO  # grade da Spleen 8x16 (só 16 ou 32): o 5 e o S, o 0 e o O não se confundem
 const TAM_CONTAGEM := Paleta.TITULO_PEQUENO  # a contagem da trava usa a Jersey 10 na grade de 19 px (como os botões)
 const COR_TRAVA := Paleta.CARTA_APAGADA  # cartas apagadas na trava
@@ -172,9 +171,9 @@ func _montar_escolha() -> void:
 	_btn_r_txt = _btn_r.get_node("t")
 	_btn_b_txt = _btn_b.get_node("t")
 	_build = _rotulo("", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
-	_build.position = Vector2(60, 472)
-	_build.size = Vector2(LARG - 120, 36)
-	_build.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_build.position = Vector2(20, 472)
+	_build.size = Vector2(LARG - 40, 20)
+	_build.clip_text = true  # uma linha só: _texto_build já corta em "e mais N" o que não cabe
 	_escolha.add_child(_build)
 
 
@@ -222,7 +221,8 @@ func _montar_cartao(p: Panel, tecla: String) -> void:
 	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(icone)
-	_campo(p, "nome", TAM_NOME, true, Paleta.FOCO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 86, larg, 40)
+	var nome := _campo(p, "nome", TAM_NOME, true, Paleta.FOCO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 86, larg, 40)
+	nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER  # centrado entre o ícone e a descrição
 	_campo(p, "desc", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 128, larg, 54, true)
 	_campo(p, "proximo", TAM_TEXTO, false, Paleta.DICA, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 184, larg, 50, true)
 	var sep := ColorRect.new()
@@ -242,7 +242,6 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	var nome := p.get_node("nome") as Label
 	nome.text = str(c.nome)
 	nome.add_theme_color_override("font_color", cor.lerp(Paleta.BRANCO, 0.55))
-	_ajustar_nome(nome)
 	(p.get_node("desc") as Label).text = str(c.desc)
 	(p.get_node("proximo") as Label).text = str(c.get("proximo", ""))
 	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
@@ -256,12 +255,6 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	(p.get_node("faixa") as ColorRect).color = Color(LENDARIA_COR.r, LENDARIA_COR.g, LENDARIA_COR.b, 0.9) if lendaria else Color(cor.r, cor.g, cor.b, 0.9)
 	(p.get_node("icone") as TextureRect).texture = Dados.icone_carta(str(c.get("id", "")), str(c.get("icone", "")))
 	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(cor))
-
-
-## Nome numa linha só: o tamanho grande se cabe na largura do cartão, senão o pequeno (um nome longo não sai da carta).
-func _ajustar_nome(l: Label) -> void:
-	var largura := _fonte_t.get_string_size(l.text, HORIZONTAL_ALIGNMENT_CENTER, -1, TAM_NOME).x
-	l.add_theme_font_size_override("font_size", TAM_NOME if largura <= CARTA_L - 2.0 * MARGEM else TAM_NOME_CURTO)
 
 
 ## Moldura do ícone: fundo quase preto e borda da cor da raridade.
@@ -406,11 +399,20 @@ func _atualizar_botoes() -> void:
 	_btn_b.modulate = Paleta.BRANCO if pb else Paleta.alfa(Paleta.BRANCO, 0.4)
 
 
+## "Sua build" em UMA linha, sempre (o mesmo tamanho e a mesma altura com 1 golpe ou com 8): o que não cabe na largura vira "e mais N".
 func _texto_build() -> void:
 	var partes: Array = []
 	for r in combate.cartas.resumo():
 		partes.append("%s %s" % [r.nome, ("nv %d" % r.nivel) if int(r.nivel) > 0 else "(evoluído)"])
-	_build.text = "Sua build: " + ", ".join(partes) if not partes.is_empty() else "Sua build: só a katana (os golpes automáticos vêm pelas cartas)"
+	if partes.is_empty():
+		_build.text = "Sua build: só a katana (os golpes automáticos vêm pelas cartas)"
+		return
+	var texto := ""
+	for k in range(partes.size(), 0, -1):
+		texto = "Sua build: " + ", ".join(partes.slice(0, k)) + (" e mais %d" % (partes.size() - k) if k < partes.size() else "")
+		if _fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_TEXTO).x <= _build.size.x:
+			break
+	_build.text = texto
 
 
 func mostrar_resultado() -> void:
@@ -505,7 +507,6 @@ func _girar_slot(i: int) -> void:
 	var p := _bau_slots[i]
 	var nome_girando := p.get_node("nome") as Label
 	nome_girando.text = str(d.nome)
-	_ajustar_nome(nome_girando)
 	(p.get_node("nome") as Label).add_theme_color_override("font_color", cor.lerp(Paleta.BRANCO, 0.4))
 	var novo := _estilo(false, cor, r)
 	_bau_estilos[i].bg_color = novo.bg_color

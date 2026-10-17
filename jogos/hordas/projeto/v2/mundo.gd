@@ -11,7 +11,7 @@ extends Node
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
-##   --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
+##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
@@ -141,7 +141,7 @@ var _rng := RandomNumberGenerator.new()
 var _rotulo: Label
 var _rotulo_t := 0.0
 var _us_total := 0
-var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0]
+var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 var perfil := {}  # medição (--medir): microssegundos acumulados por parte do quadro
 var _ms_carga := 0.0
 
@@ -162,6 +162,8 @@ func _ready() -> void:
 				DirAccess.remove_absolute(ProjectSettings.globalize_path(orfao))
 		seed(int(args.get("semente", 1)))
 	Entrada.garantir()
+	if args.has("tamanho_ui") and not modo_teste:  # fotos: vale o tamanho da interface (auto, pequeno, medio, grande) sem gravar nas opções
+		Config.temporario("tamanho_ui", str(args.tamanho_ui))
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
 		Config.g_perfil_temporario(str(args.perfil))
 	if id_mapa == "":
@@ -977,6 +979,8 @@ func _medir_render() -> void:
 	_r_acum[1] += RenderingServer.viewport_get_measured_render_time_gpu(rid)
 	_r_acum[2] += RenderingServer.viewport_get_measured_render_time_cpu(raiz)
 	_r_acum[3] += RenderingServer.viewport_get_measured_render_time_gpu(raiz)
+	_r_acum[5] += RenderingServer.viewport_get_measured_render_time_cpu(ui.get_viewport_rid())
+	_r_acum[6] += RenderingServer.viewport_get_measured_render_time_gpu(ui.get_viewport_rid())
 	_r_acum[4] += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
 
 
@@ -993,6 +997,9 @@ func _medir() -> void:
 		perfil.clear()
 		RenderingServer.viewport_set_measure_render_time(sv.get_viewport_rid(), true)
 		RenderingServer.viewport_set_measure_render_time(get_tree().root.get_viewport_rid(), true)
+		RenderingServer.viewport_set_measure_render_time(ui.get_viewport_rid(), true)
+		if args.has("ui_congelada"):  # experimento: o SubViewport da UI para de redesenhar (o teto do que "só redesenhar quando muda" pouparia)
+			ui.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		return
 	_med["frames"] = int(_med["frames"]) + 1
 	_medir_render()
@@ -1032,12 +1039,14 @@ func _medir() -> void:
 		print("PERFIL ms/quadro: ", ", ".join(partes), " | horda: %d monstros em %d fatias" % [horda.n_lote, horda.n_fatias()])
 		print(
 			(
-				"RENDER ms/quadro: cpu mundo %.2f, gpu mundo %.2f, cpu janela %.2f, gpu janela %.2f; chamadas de desenho %.0f; objetos %d; fora do script %.2f"
+				"RENDER ms/quadro: cpu mundo %.2f, gpu mundo %.2f, cpu janela %.2f, gpu janela %.2f, cpu ui %.2f, gpu ui %.2f; chamadas de desenho %.0f; objetos %d; fora do script %.2f"
 				% [
 					_r_acum[0] / frames,
 					_r_acum[1] / frames,
 					_r_acum[2] / frames,
 					_r_acum[3] / frames,
+					_r_acum[5] / frames,
+					_r_acum[6] / frames,
 					_r_acum[4] / frames,
 					RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
 					dec * 1000.0 / frames - _us_total / 1000.0 / frames

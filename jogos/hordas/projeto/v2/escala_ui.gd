@@ -3,10 +3,11 @@ extends RefCounted
 ## Todo o layout da UI foi desenhado num "bloco" de 960x540. O fator diz quantos pixels de janela vale cada pixel da UI; a UI ganha
 ## então um canvas de janela / fator (maior que o bloco quando o fator é menor que o de encaixe), o bloco fica no centro dele e o que
 ## é de borda (HUD, minimapa, fundos) ancora no canvas, não no bloco. Assim a UI não vira gigante numa janela grande nem é cortada numa pequena.
-## Cada opção é um canvas-alvo (quanto de UI a pessoa quer ver); o fator é o maior passo (nunca menos que 1) que ainda deixa o
-## canvas com pelo menos esse tamanho, limitado ao encaixe do bloco (min(w/960, h/540)), de modo que nada é cortado.
-##   Grande 960x540 (o bloco ocupa a janela), Médio 1280x720, Pequeno 1600x900: passos de 0,5. Automático: alvo 1280x720 como o Médio, mas em
-##   passos de 0,25, então acompanha melhor a janela (1600x900 vira 1,25; o Médio ficaria em 1,0 até 1920x1080).
+## Cada opção é um canvas-alvo (quanto de UI a pessoa quer ver); o fator é o maior passo (nunca menos que 1) que ainda deixa o canvas com pelo menos
+## esse tamanho, limitado ao encaixe do bloco (min(w/960, h/540)), de modo que nada é cortado.
+##   Pequeno 1600x900 e Médio 1280x720 (passos de 0,5), Grande 960x540 (o bloco ocupa a janela, passos de 0,5).
+##   Automático, como o do Minecraft: o MAIOR tamanho que cabe (alvo 960x540, o próprio bloco) em passos de 0,25. Então acompanha a janela de perto
+##   (1280x720 = 1,25; 1680x1050 = 1,75; 1920x1080 = 2) e nunca fica igual ao Médio numa janela de 1280x720 para cima.
 ## Tudo aqui é conta pura sobre o tamanho da janela (os testes passam o tamanho), e fica um estado estático com o último resultado,
 ## que as telas leem sem precisar de referência ao mundo.
 
@@ -15,7 +16,7 @@ const ALT := 540.0
 const BLOCO := Vector2(LARG, ALT)
 const OPCOES := ["auto", "pequeno", "medio", "grande"]
 const ROTULOS := ["Automático", "Pequeno", "Médio", "Grande"]
-const ALVOS := {"auto": Vector2(1280, 720), "medio": Vector2(1280, 720), "pequeno": Vector2(1600, 900), "grande": Vector2(960, 540)}
+const ALVOS := {"auto": Vector2(960, 540), "medio": Vector2(1280, 720), "pequeno": Vector2(1600, 900), "grande": Vector2(960, 540)}
 const CHAVE := "tamanho_ui"
 
 ## Para os testes e as fotos: tamanho de janela forçado (zero = o da janela de verdade; em headless, o próprio bloco 960x540).
@@ -32,7 +33,7 @@ static func fator(janela: Vector2, opcao: String) -> float:
 	var encaixe := minf(j.x / LARG, j.y / ALT)
 	var alvo: Vector2 = ALVOS.get(opcao, ALVOS.auto)
 	var bruto := minf(j.x / alvo.x, j.y / alvo.y)
-	var gran := 4.0 if opcao == "auto" else 2.0  # o Automático afina em passos de 0,25 (1920x1080 não é mais 1,5 seco); os fixos andam de 0,5
+	var gran := 4.0 if opcao == "auto" else 2.0  # o Automático afina em passos de 0,25 e pega o maior que cabe; os fixos andam de 0,5
 	var passo := maxf(floorf(bruto * gran + 0.0001) / gran, 1.0)
 	return minf(passo, encaixe)
 
