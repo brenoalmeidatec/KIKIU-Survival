@@ -340,6 +340,14 @@ func numeros(a: Dictionary) -> Dictionary:
 		"runa":
 			intervalo = float(st.recarga) / vel_a
 			acertos_s = float(st.quantidade) / intervalo * RUNA_NO_ALVO  # só as que nascem sobre o monstro (`_ponto_runa`) explodem de pronto
+		"torre":
+			intervalo = float(st.tique)  # um virote a cada `tique` s, enquanto a torre está de pé (`duracao` de cada `recarga`)
+			var no_ar := minf(float(st.duracao) * vel_a / float(st.recarga), 1.0)
+			acertos_s = float(st.quantidade) / intervalo * no_ar
+		"granada":
+			intervalo = float(st.recarga) / vel_a
+			acertos_s = float(st.quantidade) / intervalo  # a explosão; os estilhaços (frac_estilhaco do dano) acertam só parte dos monstros
+			extra += float(st.get("estilhacos", 0.0)) * float(st.get("frac_estilhaco", 0.0)) * dano * float(st.quantidade) / intervalo * 0.25
 	return {"dano": dano, "intervalo": intervalo, "acertos": acertos_s, "dps": dano * acertos_s + extra}
 
 
@@ -370,7 +378,7 @@ func atualizar(dt: float) -> void:
 					_raio(a, h, vel_a, dt)
 				"runa":
 					_runas_gerar(a, h, dt, vel_a)
-				"projetil", "nuvem", "anel", "meteoro", "aliado":
+				"projetil", "nuvem", "anel", "meteoro", "aliado", "torre", "granada":
 					novas.golpe(a, h, dt, vel_a, _perto)
 	elif _perto.size() > 0 or _tem_pool():
 		_juntar_perto(h.pos, 340.0)

@@ -1372,6 +1372,14 @@ def gerar_icones():
         if cid not in icones and base in icones:
             icones[cid] = dict(icones[base], provisorio_de=base)
             print("  %-24s provisório: usa o ícone de %s" % (cid, base))
+    # icones desenhados em codigo (gerar_icones_ataques.py, "proprio": true) nao vem de folha: preserva as entradas do indice anterior
+    try:
+        with open(os.path.join(ICONES_SAIDA, "indice.json"), encoding="utf-8") as f:
+            for cid, entrada in json.load(f).get("icones", {}).items():
+                if entrada.get("proprio") and cid not in icones:
+                    icones[cid] = entrada
+    except (OSError, ValueError):
+        pass
     indice = {
         "_ajuda": ICONES_AJUDA,
         "_gerado_por": "jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py icones (nao edite a mao)",

@@ -117,10 +117,10 @@ func _ready() -> void:
 	# 0. dados
 	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
 	ok(
-		cfg.raridades.size() == 4 and cfg.golpes.size() == 50 and cfg.modificadores.size() == 8,
-		"4 raridades, 50 golpes secundários e 8 modificadores (4 de sempre, 2 do Nicão e 2 do Lucas, que só saem para eles)"
+		cfg.raridades.size() == 4 and cfg.golpes.size() == 52 and cfg.modificadores.size() == 8,
+		"4 raridades, 52 golpes secundários e 8 modificadores (4 de sempre, 2 do Nicão e 2 do Lucas, que só saem para eles)"
 	)
-	ok(cfg.evolucoes.size() == 25, "25 evoluções nos dados (4 antigas, 5 novas e 16 de 2, 3 e 4 peças)")
+	ok(cfg.evolucoes.size() == 27, "27 evoluções nos dados (4 antigas, 5 novas, 16 de 2, 3 e 4 peças e 2 da leva 6)")
 	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
 
 	# 1. a raridade sobe com o nível
@@ -241,7 +241,7 @@ func _ready() -> void:
 		if tp in ["orbita", "aura", "corvos", "raio", "runa"] or vistos.has(tp):
 			continue
 		vistos[tp] = true
-		var chave := "explode" if tp == "meteoro" else tp
+		var chave := {"meteoro": "explode", "torre": "projetil"}.get(tp, tp) as String  # o meteoro conta como "explode"; o virote da torre, como "projetil"
 		zerar()
 		var mn = monstro_a(60.0, 0.0)
 		mn.cacador = false
@@ -258,7 +258,7 @@ func _ready() -> void:
 				% [str(d.id), tp, ac, roundi(mn.vida), roundi(vn), w.combate.armas._perto.size(), str(w.combate.armas.novas.tem_ativos())]
 			)
 		)
-	ok(vistos.size() == 5, "os 5 tipos novos estão nos dados (%d)" % vistos.size())
+	ok(vistos.size() == 7, "os 7 tipos novos estão nos dados (%d)" % vistos.size())
 	# 3c. nuvens têm motivos, fades e feedback ligado à vida removida
 	ok(
 		(
