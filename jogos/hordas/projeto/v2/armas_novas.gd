@@ -76,6 +76,8 @@ var q_tipo := PackedByteArray()
 var q_cor := PackedColorArray()
 var q_ativas := 0
 var _qi := 0
+var _relogio := 0.0
+var _fogo_num := {}  # id do monstro -> (quando mostrou o último número dos Fogos, em s do relógio daqui, dano somado desde então)
 
 
 func montar(p) -> void:
@@ -221,6 +223,7 @@ func golpe(a: Dictionary, h, dt: float, vel_a: float, perto: Array) -> void:
 
 ## Um passo de todos os itens do pool. `h` é o herói; `perto` são os monstros dentro de 340 px (lista que o armas.gd monta).
 func quadro(h, dt: float, perto: Array) -> void:
+	_relogio += dt
 	for it in itens:
 		if float(it.vida) <= 0.0:
 			continue
@@ -296,7 +299,11 @@ func _quadro_partes(dt: float) -> void:
 					else:
 						vz = 0.0
 						vel *= 0.15
-			_:  # fumaça e brasa: sobem devagar e vão parando
+			PT_FUMACA, PT_FUMACA_QUENTE:  # a fumaça sobe quase sem freio (só o lado para): sobe de 40 a 60 px na vida dela
+				z += vz * dt
+				vel *= amorte
+				vz *= exp(-0.5 * dt)
+			_:  # a brasa sobe devagar e vai parando
 				z += vz * dt
 				vel *= amorte
 				vz *= amorte
@@ -1008,9 +1015,14 @@ func _explodir_granada(it: Dictionary) -> void:
 	pai.combate.audio.tocar("runa", randf_range(0.8, 0.95), -2.0, 0.05)
 
 
-## O dano de área do estouro dos Fogos: como `_dano_area`, mas o número sai pequeno e empurrado para fora do centro do estouro (em leque).
+## O dano de área do estouro dos Fogos: como `_dano_area`, mas o número sai pequeno e empurrado para fora do centro do estouro (em leque), e
+## cada monstro mostra no máximo um número a cada 0,22 s (o que bateu nesse meio tempo soma no próximo), senão uma cadeia de estouros empilha
+## dezenas de "13" no mesmo lugar. O dano e a piscada valem sempre.
 func _dano_fogo(p: Vector2, raio: float, dano: float, cor: Color) -> void:
 	var n := 0
+	var agora := _relogio
+	if _fogo_num.size() > 48:
+		_fogo_num.clear()
 	for m in pai.mundo.monstros:
 		if not m.vivo or m.morrendo:
 			continue
@@ -1019,7 +1031,13 @@ func _dano_fogo(p: Vector2, raio: float, dano: float, cor: Color) -> void:
 			continue
 		var fora := d.normalized() if d.length() > 0.5 else Vector2.from_angle(randf() * TAU)
 		pai.combate.ferir(m, dano, fora, 50.0, 0.05, cor, false)
-		pai.fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.7) + fora * 20.0, str(maxi(1, roundi(dano))), cor.lerp(Color.WHITE, 0.3), false, 12)
+		var id: int = m.get_instance_id()
+		var reg: Vector2 = _fogo_num.get(id, Vector2(-10.0, 0.0))  # x = quando mostrou o último (s), y = dano somado desde então
+		reg.y += dano
+		if agora - reg.x >= 0.22:
+			pai.fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.7) + fora * 20.0, str(maxi(1, roundi(reg.y))), cor.lerp(Color.WHITE, 0.3), false, 12)
+			reg = Vector2(agora, 0.0)
+		_fogo_num[id] = reg
 		pai.fx.flash(m, 0.08)
 		n += 1
 	if n > 0:
@@ -1403,9 +1421,9 @@ func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 			if kj < 0.0:
 				break
 			var q: Vector2 = (it.orig as Vector2).lerp(it.dest, kj) - p
-			ci.draw_circle(Vector2(q.x, q.y / ACHATA), 2.4 - 0.2 * float(j), Color(0, 0, 0, 0.3 * (1.0 - float(j) / 6.0)))
-	ci.draw_circle(Vector2.ZERO, 9.0 - 3.0 * alta, Color(0, 0, 0, 0.2))
-	ci.draw_circle(Vector2.ZERO, 7.0 - 2.5 * alta, Color(0, 0, 0, 0.45 - 0.15 * alta))
+			ci.draw_circle(Vector2(q.x, q.y / ACHATA), 3.6 - 0.3 * float(j), Color(0, 0, 0, 0.65 * (1.0 - float(j) / 6.0)))
+	ci.draw_circle(Vector2.ZERO, 11.0 - 2.0 * alta, Color(0, 0, 0, 0.3))
+	ci.draw_circle(Vector2.ZERO, 8.0 - 1.5 * alta, Color(0, 0, 0, 0.75))
 	var c := (p + Vector2(0, -z - 6.0)).round()
 	var achata := Vector2(1.5, 0.85) if float(it.aux) > 0.0 else Vector2(1.2, 1.2)
 	ci.draw_set_transform(c, float(it.r), achata)

@@ -256,7 +256,8 @@ func fotos(pasta: String) -> void:
 	pegar(ID)
 	await _foto_quando(func(): return _g_fase(0, 0.27), 400, pasta.path_join("cabaca_no_ar.png"))
 	await _foto_quando(func(): return _g_fase(3, 0.07), 400, pasta.path_join("cabaca_explosao.png"))
-	await _foto_quando(func(): return _g_fase(3, 0.3), 400, pasta.path_join("cabaca_explosao_depois.png"))  # fumaça, brasas, estilhaços e números abertos em leque
+	await _foto_quando(func(): return _g_fase(3, 0.12), 400, pasta.path_join("cabaca_explosao_meio.png"))  # estilhaços e números abertos em leque
+	await _foto_quando(func(): return _g_fase(3, 0.12), 400, pasta.path_join("cabaca_explosao_depois.png"), 31)  # a fumaça já subiu e as brasas ficaram
 	zerar()
 	grupo_e_isolado()
 	for i in 5:
@@ -264,7 +265,7 @@ func fotos(pasta: String) -> void:
 	armas.ativas[ID].t = 0.0
 	await _foto_quando(func(): return _g_fase(3, 0.8), 600, pasta.path_join("cabaca_brasa_nivel5.png"))  # o chão em brasa do nível 5
 	zerar()
-	grupo_e_isolado()
+	grupo_aberto()
 	for i in 3:
 		pegar(ID)
 		pegar("bola_fogo")
@@ -287,8 +288,9 @@ func _g_fase(est: int, idade: float) -> bool:
 	return false
 
 
-func _foto_quando(cond: Callable, max_passos: int, arquivo: String) -> void:
+func _foto_quando(cond: Callable, max_passos: int, arquivo: String, extra := 0) -> void:
 	var q := ate(cond, max_passos)
+	passos(extra)
 	await RenderingServer.frame_post_draw
 	var img: Image = w.sv.get_texture().get_image()
 	img.save_png(arquivo)
