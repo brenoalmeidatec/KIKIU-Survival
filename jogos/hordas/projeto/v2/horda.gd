@@ -333,20 +333,21 @@ func atualizar(t: float, rect: Rect2, quadro: int) -> void:
 			f.y0 = pr.y
 		if pr.y > f.y1:
 			f.y1 = pr.y
-		# ---- olhos (aditivos, na camada glow: coordenadas do mundo)
-		if bo.n >= bo.cap:
-			bo.crescer()
-		var ob := bo.buf
-		var oo := bo.n << 4
-		bo.n += 1
-		ob[oo] = w * sx
-		ob[oo + 3] = ox
-		ob[oo + 5] = h * sy
-		ob[oo + 7] = oy
-		ob[oo + 12] = cx
-		ob[oo + 13] = cy
-		ob[oo + 14] = fl
-		ob[oo + 15] = h
+		# ---- olhos (aditivos, na camada glow: coordenadas do mundo); a linha sem emissão (de costas) não gasta instância
+		if m.emite.is_empty() or m.emite[m.linha]:
+			if bo.n >= bo.cap:
+				bo.crescer()
+			var ob := bo.buf
+			var oo := bo.n << 4
+			bo.n += 1
+			ob[oo] = w * sx
+			ob[oo + 3] = ox
+			ob[oo + 5] = h * sy
+			ob[oo + 7] = oy
+			ob[oo + 12] = cx
+			ob[oo + 13] = cy
+			ob[oo + 14] = fl
+			ob[oo + 15] = h
 		if not com_sombra:
 			continue
 		# ---- sombras: mancha dos pés (todas as qualidades) e a silhueta inclinada (média e alta)

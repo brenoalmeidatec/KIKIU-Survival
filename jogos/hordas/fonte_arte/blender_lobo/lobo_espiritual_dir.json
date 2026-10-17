@@ -1,0 +1,16 @@
+{
+ "quadro": [
+  63,
+  60
+ ],
+ "pe_x": 32,
+ "pe_y": 46,
+ "quadros": 8,
+ "linhas": [
+  "frente",
+  "tres_quartos_frente",
+  "lado",
+  "tres_quartos_costas",
+  "costas"
+ ]
+}
