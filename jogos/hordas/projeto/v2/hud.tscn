@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://v2/hud.gd" id="1_hud"]
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_pedra.png" id="2_moldura"]
@@ -14,6 +14,7 @@
 [ext_resource type="Script" path="res://v2/hud_habilidades.gd" id="12_habilidades"]
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_retrato.png" id="13_retrato"]
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_barra.png" id="14_barra"]
+[ext_resource type="Script" path="res://v2/hud_golpes.gd" id="15_golpes"]
 
 [node name="Hud" type="CanvasLayer"]
 layer = 10
@@ -390,3 +391,7 @@ text = ""
 
 [node name="Habilidades" type="Control" parent="Raiz"]
 script = ExtResource("12_habilidades")
+
+[node name="Golpes" type="Control" parent="Raiz"]
+anchors_preset = 0
+script = ExtResource("15_golpes")

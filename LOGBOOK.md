@@ -2127,6 +2127,16 @@ _Claude do Alisson (PC)_
 
 _Claude do Alisson (PC)_
 
+## 2026-10-17 · Claude do Alisson (PC) · Faixa de golpes fixa no HUD
+- **Feito:** cada golpe automático ganho (bola de fogo, lâminas, corvos, raio, runa, aura, golem, lobo...) vira um quadradinho fixo no canto inferior esquerdo do HUD (`v2/hud_golpes.gd`, nó `Raiz/Golpes`): ícone da carta, linha de recarga, linha magenta do progresso da fusão e pips de nível. Pop, anel, faíscas e brilho ao ganhar, subir de nível ou fundir. Lê o combate a 20 Hz e só redesenha quando muda. Esconde com o card C aberto e na pausa. Teste `v2_hud_golpes` (e `v2_hud`, `v2_partida` verdes). DESIGN.md seção 4 e 7 atualizadas.
+- **Pendente:** modificadores da katana e cartas de atributo não entram na faixa (só golpes automáticos); ninguém jogou para sentir o tamanho dos quadradinhos; o ajuste de escala do HUD por resolução é tarefa separada.
+
+_Claude do Alisson (PC)_
+
+## 2026-10-17 · Claude do Alisson (PC) · Faixa de golpes: correções da verificação
+- **Feito:** o progresso de fusão da faixa ignora receita com peça já consumida por outra fusão (antes o `juizo_final` impossível aparecia como melhor opção); o "+N" do excedente saiu de cima do 13.º quadradinho e fica à direita da linha de baixo; a animação em curso espera enquanto a faixa está escondida (golpe vindo do baú); docs corrigidas: a faixa só se esconde com o card aberto ou no menu principal da pausa (em Ajustes e Sair fica sob o fundo, parada). Teste novo no `v2_hud_golpes` (peça consumida e posição do "+N").
+- **Pendente (aceito):** com golpe sem alvo por perto o timer volta a 0,3 s e a linha de recarga oscila; o pop (1,3) invade o vizinho por 0,5 s; Ventania, modificadores da katana e atributos fora da faixa.
+
 ## 2026-10-17 · Claude do Alisson (PC) · Tamanho da interface (estilo GUI Scale do Minecraft)
 - **Feito (branch `worktree-wf_eaf7c549-d44-4`, sem push):** menus, cartas e HUD estavam grandes porque toda a UI era desenhada em 960x540 e esticada para a janela inteira. Agora a UI tem um fator próprio: opção **Ajustes > Gráficos > Tamanho da interface (Automático / Pequeno / Médio / Grande)**, salva em opções (`tamanho_ui`, padrão Automático). Cada opção é um canvas-alvo (Grande 960x540, Médio = Automático 1280x720, Pequeno 1600x900) e o fator é o maior passo de 0,5 (mínimo 1) que cabe, nunca maior que o encaixe do bloco (nada é cortado). 1920x1080 automático = fator 1,5 (a UI fica 25% menor que antes); 2560x1440 = 2; 3840x2160 = 3.
 - **Como:** a partida ganhou um SubViewport próprio para a UI (`mundo.ui`, no `apresentacao.gd`), transparente e do tamanho do canvas, mostrado por cima do mundo com o mesmo sharp bilinear. O layout continua em coordenadas do "bloco" 960x540, que fica no centro do canvas (`CanvasLayer.offset`); HUD, minimapa, fps e a faixa do título **gruda nas bordas do canvas**, e fundos, escurecedores e vinheta cobrem o canvas (`EscalaUi.cobrir`). Título, santuário e escolha de personagem usam `CANVAS_ITEMS` + `EXPAND` + `content_scale_factor` (`ui_janela.gd`). O mouse da UI vem de `ap.mouse_ui()`.
