@@ -18,7 +18,7 @@ const LIDAS_NA_V2 := ["particulas_sim", "luz_relevo", "sombras", "tremor_clarao"
 const AJUDA_PERFIL := "Baixo, Médio e Alto mudam todas as opções de uma vez. Mexer numa opção deixa o perfil Personalizado."
 const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e número de processadores."
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
-const AJUDA_UI := "Tamanho de menus, cartas e HUD. Automático usa o maior tamanho que cabe na janela, sem cortar nada; os outros são fixos."
+const AJUDA_UI := "Tamanho de menus, cartas e HUD. Automático ajusta à janela num tamanho confortável, sem cortar nada; Pequeno, Médio e Grande são fixos."
 const AJUDA_TELA := "Ocupa a tela inteira. F11 também liga e desliga, em qualquer tela da v2."
 const AJUDA_QUALIDADE := "Se o fps ficar abaixo de 40 por 8 s, o perfil desce um degrau (Alto, Médio, Baixo) só nesta sessão, sem mudar o salvo. O Personalizado não muda."
 

@@ -38,14 +38,14 @@ func _ready() -> void:
 func _tabela() -> void:
 	var casos := [
 		[Vector2(960, 540), [1.0, 1.0, 1.0, 1.0]],
-		[Vector2(1280, 720), [1.25, 1.0, 1.0, 1.0]],
-		[Vector2(1280, 800), [1.25, 1.0, 1.0, 1.0]],
-		[Vector2(1600, 900), [1.5, 1.0, 1.0, 1.5]],
-		[Vector2(1680, 1050), [1.75, 1.0, 1.0, 1.5]],
-		[Vector2(1920, 1080), [2.0, 1.0, 1.5, 2.0]],
-		[Vector2(2560, 1080), [2.0, 1.0, 1.5, 2.0]],
-		[Vector2(2560, 1440), [2.5, 1.5, 2.0, 2.5]],
-		[Vector2(3840, 2160), [4.0, 2.0, 3.0, 4.0]],
+		[Vector2(1280, 720), [1.0, 1.0, 1.0, 1.0]],
+		[Vector2(1280, 800), [1.0, 1.0, 1.0, 1.0]],
+		[Vector2(1600, 900), [1.0, 1.0, 1.0, 1.5]],
+		[Vector2(1680, 1050), [1.0, 1.0, 1.0, 1.5]],
+		[Vector2(1920, 1080), [1.25, 1.0, 1.5, 2.0]],
+		[Vector2(2560, 1080), [1.25, 1.0, 1.5, 2.0]],
+		[Vector2(2560, 1440), [1.75, 1.5, 2.0, 2.5]],
+		[Vector2(3840, 2160), [2.5, 2.0, 3.0, 4.0]],
 		[Vector2(800, 450), [800.0 / 960.0, 800.0 / 960.0, 800.0 / 960.0, 800.0 / 960.0]],
 	]
 	var opcoes := ["auto", "pequeno", "medio", "grande"]
@@ -84,13 +84,13 @@ func _tabela() -> void:
 		achou_v1 = achou_v1 or str(it.chave) == "tamanho_ui"
 	ok(not achou_v1, "a tela de Opções da v1 não lista Tamanho da interface")
 	opc_v1.free()
-	# o automático é o maior que cabe (como o do Minecraft): nunca menor que o Grande e, de 1280x720 para cima, sempre maior que o Médio
+	# o automático fica entre o Pequeno e o Médio (o Alisson achou a UI encaixada grande demais) e nunca passa do encaixe do bloco
 	for j in [Vector2(1280, 720), Vector2(1366, 768), Vector2(1600, 900), Vector2(1920, 1080), Vector2(2560, 1440), Vector2(3840, 2160)]:
 		var fa := EscalaUi.fator(j, "auto")
-		ok(fa >= EscalaUi.fator(j, "grande") - 0.0001, "automático %s >= Grande" % str(j))
-		ok(fa > EscalaUi.fator(j, "medio") + 0.0001, "automático %s é maior que o Médio (%.2f x %.2f)" % [str(j), fa, EscalaUi.fator(j, "medio")])
-		var encaixe := minf(j.x / 960.0, j.y / 540.0)
-		ok(encaixe - fa < 0.25 + 0.0001, "automático %s fica a menos de um passo de 0,25 do encaixe do bloco (%.3f x %.3f)" % [str(j), fa, encaixe])
+		ok(fa >= EscalaUi.fator(j, "pequeno") - 0.0001, "automático %s >= Pequeno" % str(j))
+		ok(fa <= EscalaUi.fator(j, "medio") + 0.0001, "automático %s <= Médio (%.2f x %.2f)" % [str(j), fa, EscalaUi.fator(j, "medio")])
+		ok(fa <= minf(j.x / 960.0, j.y / 540.0) + 0.0001, "automático %s não passa do encaixe do bloco" % str(j))
+	ok(is_equal_approx(EscalaUi.fator(Vector2(1920, 1080), "auto"), 1.25), "1920x1080 automático = 1,25 (cartas em cerca de metade da tela)")
 
 	# a opção: salva em opções, gira por Ajustes > Gráficos e cai em auto com lixo
 	ok(EscalaUi.opcao_atual() == "auto", "o padrão é Automático")
@@ -195,7 +195,7 @@ func _mundo() -> void:
 	ok(absf(ap.fator - 2.0) < 0.0001 and ap.canvas == Vector2(1280, 720), "2560x1440 Médio: fator 2, canvas 1280x720")
 	Config.temporario("tamanho_ui", "auto")
 	ap.recalcular()
-	ok(absf(ap.fator - 2.5) < 0.0001 and ap.canvas == Vector2(1024, 576), "2560x1440 Automático: fator 2,5 (o maior que cabe), canvas 1024x576")
+	ok(absf(ap.fator - 1.75) < 0.0001 and ap.canvas == Vector2(1463, 823), "2560x1440 Automático: fator 1,75, canvas 1463x823")
 	EscalaUi.janela_forcada = Vector2i(800, 450)
 	ap.recalcular()
 	ok(ap.canvas == Vector2(960, 540) and ap.fator < 1.0, "janela menor que o bloco: o bloco inteiro cabe (fator %.3f)" % ap.fator)

@@ -6,8 +6,9 @@ extends RefCounted
 ## Cada opção é um canvas-alvo (quanto de UI a pessoa quer ver); o fator é o maior passo (nunca menos que 1) que ainda deixa o canvas com pelo menos
 ## esse tamanho, limitado ao encaixe do bloco (min(w/960, h/540)), de modo que nada é cortado.
 ##   Pequeno 1600x900 e Médio 1280x720 (passos de 0,5), Grande 960x540 (o bloco ocupa a janela, passos de 0,5).
-##   Automático, como o do Minecraft: o MAIOR tamanho que cabe (alvo 960x540, o próprio bloco) em passos de 0,25. Então acompanha a janela de perto
-##   (1280x720 = 1,25; 1680x1050 = 1,75; 1920x1080 = 2) e nunca fica igual ao Médio numa janela de 1280x720 para cima.
+##   Automático: canvas-alvo 1440x810 em passos de 0,25, entre o Pequeno e o Médio. O Alisson achou a UI antiga (o bloco encaixado na janela)
+##   grande demais; com este alvo, em 1920x1080 o fator é 1,25 e as cartas ocupam cerca de metade da largura em vez de 85%
+##   (1280x720 = 1; 2560x1440 = 1,75; 3840x2160 = 2,5). Quem quiser maior escolhe Médio ou Grande.
 ## Tudo aqui é conta pura sobre o tamanho da janela (os testes passam o tamanho), e fica um estado estático com o último resultado,
 ## que as telas leem sem precisar de referência ao mundo.
 
@@ -16,7 +17,7 @@ const ALT := 540.0
 const BLOCO := Vector2(LARG, ALT)
 const OPCOES := ["auto", "pequeno", "medio", "grande"]
 const ROTULOS := ["Automático", "Pequeno", "Médio", "Grande"]
-const ALVOS := {"auto": Vector2(960, 540), "medio": Vector2(1280, 720), "pequeno": Vector2(1600, 900), "grande": Vector2(960, 540)}
+const ALVOS := {"auto": Vector2(1440, 810), "medio": Vector2(1280, 720), "pequeno": Vector2(1600, 900), "grande": Vector2(960, 540)}
 const CHAVE := "tamanho_ui"
 
 ## Para os testes e as fotos: tamanho de janela forçado (zero = o da janela de verdade; em headless, o próprio bloco 960x540).
@@ -33,7 +34,7 @@ static func fator(janela: Vector2, opcao: String) -> float:
 	var encaixe := minf(j.x / LARG, j.y / ALT)
 	var alvo: Vector2 = ALVOS.get(opcao, ALVOS.auto)
 	var bruto := minf(j.x / alvo.x, j.y / alvo.y)
-	var gran := 4.0 if opcao == "auto" else 2.0  # o Automático afina em passos de 0,25 e pega o maior que cabe; os fixos andam de 0,5
+	var gran := 4.0 if opcao == "auto" else 2.0  # o Automático afina em passos de 0,25; os fixos andam de 0,5
 	var passo := maxf(floorf(bruto * gran + 0.0001) / gran, 1.0)
 	return minf(passo, encaixe)
 
