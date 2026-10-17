@@ -11,7 +11,7 @@ extends Node
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
-##   --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
+##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
@@ -69,6 +69,7 @@ var mouse_forcado: Variant = null  # testes: um Vector2 do mundo aqui vale no lu
 var dados: Dictionary = {}
 var ap
 var sv: SubViewport
+var ui: SubViewport  # a interface (HUD, cartas, pausa...): tem o próprio SubViewport, do tamanho do canvas da UI (v2/apresentacao.gd, v2/escala_ui.gd)
 var cam
 var luzes
 var sombras
@@ -140,7 +141,7 @@ var _rng := RandomNumberGenerator.new()
 var _rotulo: Label
 var _rotulo_t := 0.0
 var _us_total := 0
-var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0]
+var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 var perfil := {}  # medição (--medir): microssegundos acumulados por parte do quadro
 var _ms_carga := 0.0
 
@@ -161,6 +162,8 @@ func _ready() -> void:
 				DirAccess.remove_absolute(ProjectSettings.globalize_path(orfao))
 		seed(int(args.get("semente", 1)))
 	Entrada.garantir()
+	if args.has("tamanho_ui") and not modo_teste:  # fotos: vale o tamanho da interface (auto, pequeno, medio, grande) sem gravar nas opções
+		Config.temporario("tamanho_ui", str(args.tamanho_ui))
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
 		Config.g_perfil_temporario(str(args.perfil))
 	if id_mapa == "":
@@ -175,25 +178,26 @@ func _ready() -> void:
 	ap = Apresentacao.new()
 	add_child(ap)
 	sv = ap.montar(get_window(), args.has("escala_pura"))
+	ui = ap.ui
 	if not modo_teste and (_modo == "medir" or args.has("sem_vsync")):
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0
 	RenderingServer.set_default_clear_color(Color(0.02, 0.03, 0.03))
 	_montar()
-	sv.add_child(preload("res://v2/hud.gd").criar(self))
+	ui.add_child(preload("res://v2/hud.gd").criar(self))
 	minimapa = preload("res://v2/minimapa.tscn").instantiate().iniciar(self)
-	sv.add_child(minimapa)
+	ui.add_child(minimapa)
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
-	sv.add_child(pausa)
+	ui.add_child(pausa)
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
-	sv.add_child(status)
+	ui.add_child(status)
 	if _modo == "livre":  # medir e fotografar ficam sem música
 		trilha = Trilha.new()
 		add_child(trilha)
 		trilha.ligar(self)
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
-		sv.add_child(meta_res)
+		ui.add_child(meta_res)
 		meta_res.montar(self)
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
@@ -226,6 +230,8 @@ func _argumentos() -> Dictionary:
 
 func _ajustar_janela() -> void:
 	var janela := get_window()
+	if _modo == "foto":
+		janela.unfocusable = true  # a foto não rouba o foco de quem está jogando por cima
 	if args.has("janela"):
 		var wh := str(args.janela).split("x")
 		janela.size = Vector2i(int(wh[0]), int(wh[1]))
@@ -973,6 +979,8 @@ func _medir_render() -> void:
 	_r_acum[1] += RenderingServer.viewport_get_measured_render_time_gpu(rid)
 	_r_acum[2] += RenderingServer.viewport_get_measured_render_time_cpu(raiz)
 	_r_acum[3] += RenderingServer.viewport_get_measured_render_time_gpu(raiz)
+	_r_acum[5] += RenderingServer.viewport_get_measured_render_time_cpu(ui.get_viewport_rid())
+	_r_acum[6] += RenderingServer.viewport_get_measured_render_time_gpu(ui.get_viewport_rid())
 	_r_acum[4] += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
 
 
@@ -989,6 +997,9 @@ func _medir() -> void:
 		perfil.clear()
 		RenderingServer.viewport_set_measure_render_time(sv.get_viewport_rid(), true)
 		RenderingServer.viewport_set_measure_render_time(get_tree().root.get_viewport_rid(), true)
+		RenderingServer.viewport_set_measure_render_time(ui.get_viewport_rid(), true)
+		if args.has("ui_congelada"):  # experimento: o SubViewport da UI para de redesenhar (o teto do que "só redesenhar quando muda" pouparia)
+			ui.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		return
 	_med["frames"] = int(_med["frames"]) + 1
 	_medir_render()
@@ -1028,12 +1039,14 @@ func _medir() -> void:
 		print("PERFIL ms/quadro: ", ", ".join(partes), " | horda: %d monstros em %d fatias" % [horda.n_lote, horda.n_fatias()])
 		print(
 			(
-				"RENDER ms/quadro: cpu mundo %.2f, gpu mundo %.2f, cpu janela %.2f, gpu janela %.2f; chamadas de desenho %.0f; objetos %d; fora do script %.2f"
+				"RENDER ms/quadro: cpu mundo %.2f, gpu mundo %.2f, cpu janela %.2f, gpu janela %.2f, cpu ui %.2f, gpu ui %.2f; chamadas de desenho %.0f; objetos %d; fora do script %.2f"
 				% [
 					_r_acum[0] / frames,
 					_r_acum[1] / frames,
 					_r_acum[2] / frames,
 					_r_acum[3] / frames,
+					_r_acum[5] / frames,
+					_r_acum[6] / frames,
 					_r_acum[4] / frames,
 					RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
 					dec * 1000.0 / frames - _us_total / 1000.0 / frames

@@ -34,6 +34,11 @@ var _mundo_id := 0
 var _heroi_id := 0
 
 
+## O HUD gruda os slots na borda de baixo do canvas: d é o deslocamento em relação à posição do bloco.
+func deslocar(d: Vector2) -> void:
+	position = POSICAO + d
+
+
 func _ready() -> void:
 	position = POSICAO
 	size = Vector2(TAM_CARD.x * 2.0 + ESPACO_CARD, TAM_CARD.y)

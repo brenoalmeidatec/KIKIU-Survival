@@ -373,7 +373,7 @@ func _fotos(pasta: String) -> void:
 	if res == null:  # sem a tela do mundo (não deveria acontecer fora do modo de teste)
 		res = Resultado.new()
 		res.montar(m)
-		m.sv.add_child(res)
+		m.ui.add_child(res)
 	res._terminar({"tempo": 412.0, "abates": 58, "nivel": 8, "maior_combo": 34, "venceu": false, "almas": 46})
 	await get_tree().create_timer(0.55).timeout
 	await m.ap.foto(pasta.path_join("resultado_meio.png"))
