@@ -539,10 +539,15 @@ func _cadeia_eletrica(de, dano: float, saltos: int, lista: Array) -> void:
 		marcados.append(melhor)
 		pai.combate.ferir(melhor, dano, (melhor.pos - atual.pos).normalized(), 30.0, 0.1, pai.COR_RAIO)
 		pontos.append(melhor.pos + Vector2(0, -10))
+		pai.fx.faiscas(melhor.pos + Vector2(0, -10), (melhor.pos - atual.pos).normalized(), 3, pai.COR_RAIO, 120.0)
+		pai.fx.onda(melhor.pos, Color(0.7, 0.85, 1.0, 0.9), 20.0, 0.15)
 		atual = melhor
 	if pontos.size() > 1:
 		pai._raio_visual(pontos)
 		pai._acertou("raio")
+		pai.fx.luz_rapida(atual.pos + Vector2(0, -10), pai.COR_RAIO, 1.6, 110.0, 0.18)
+		pai.combate.audio.tocar("raio", randf_range(1.05, 1.2), -6.0, 0.08)
+		pai.mundo.cam.tremer(0.8, 0.08)
 
 
 ## Poeira de terra/lascas: `n` pontinhos que saem rasteiros e caem (o pool de partículas dos efeitos, sem nó novo).

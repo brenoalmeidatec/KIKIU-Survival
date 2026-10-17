@@ -90,6 +90,11 @@ func _ready() -> void:
 	var cs = w.combate.cartas
 	var armas = w.combate.armas
 	var novas = armas.novas
+	for a in OS.get_cmdline_user_args():  # só as fotos (com janela): sem o resto do teste, para o HUD não cobrir o mundo
+		if a.begins_with("--fotos="):
+			await fotos(a.trim_prefix("--fotos="))
+			get_tree().quit()
+			return
 
 	# 0. dados, ícone e escolha de cartas
 	var d: Dictionary = cs.definicao(ID)
@@ -201,6 +206,51 @@ func _ready() -> void:
 	print("custo do passo do pool com torres: %.0f us/quadro; acertos %s" % [media, armas.acertos])
 	print("v2_sentinela falhas=%d" % falhas)
 	get_tree().quit(1 if falhas > 0 else 0)
+
+
+## Fotos (com janela e `-- --fotos=PASTA`): a torre atirando e o Pagode do Trovão com o arco elétrico saltando entre os monstros.
+func fotos(pasta: String) -> void:
+	DirAccess.make_dir_recursive_absolute(pasta)
+	Config.g_aplicar_perfil("alto")
+	Config.temporario("pausar_fora", false)  # a janela sem foco não pode pausar a partida durante o print
+	var armas = w.combate.armas
+	zerar()
+	monstro_a(140, -50)
+	monstro_a(150, -10)
+	monstro_a(165, 28)
+	monstro_a(190, 60)
+	monstro_a(120, 40)
+	for i in 3:
+		pegar(ID)
+	await _foto_quando(func(): return _bolt_no_ar() and int(armas.acertos.get("projetil", 0)) > 2, 600, pasta.path_join("sentinela_atirando.png"))
+	zerar()
+	monstro_a(140, -40)
+	monstro_a(165, -5)
+	monstro_a(150, 30)
+	monstro_a(185, 55)
+	for i in 3:
+		pegar(ID)
+		pegar("raio")
+	await get_tree().create_timer(5.0).timeout  # o aviso da fusão sai da tela (relógio de parede)
+	passos(30)
+	var antes := int(armas.acertos.get("raio", 0))
+	await _foto_quando(func(): return int(armas.acertos.get("raio", 0)) > antes, 900, pasta.path_join("pagode_arco_eletrico.png"), 4)
+
+
+func _bolt_no_ar() -> bool:
+	for it in w.combate.armas.novas.itens:
+		if str(it.k) == "projetil" and float(it.vida) > 0.0 and float(it.vida) < 0.9:
+			return true
+	return false
+
+
+func _foto_quando(cond: Callable, max_passos: int, arquivo: String, extra := 0) -> void:
+	var q := ate(cond, max_passos)
+	passos(extra)
+	await RenderingServer.frame_post_draw
+	var img: Image = w.sv.get_texture().get_image()
+	img.save_png(arquivo)
+	print("FOTO ", arquivo, " ", img.get_size(), " depois de ", q, " quadros")
 
 
 func _evolucao(id: String) -> bool:

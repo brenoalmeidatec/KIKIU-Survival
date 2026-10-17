@@ -98,6 +98,11 @@ func _ready() -> void:
 	var cs = w.combate.cartas
 	var armas = w.combate.armas
 	var novas = armas.novas
+	for a in OS.get_cmdline_user_args():  # só as fotos (com janela): sem o resto do teste, para o HUD não cobrir o mundo
+		if a.begins_with("--fotos="):
+			await fotos(a.trim_prefix("--fotos="))
+			get_tree().quit()
+			return
 
 	# 0. dados, ícone e escolha de cartas
 	var d: Dictionary = cs.definicao(ID)
@@ -239,6 +244,42 @@ func _ready() -> void:
 	print("explosão em %d quadros (esperado %.0f); custo do passo do pool: %.0f us/quadro; acertos %s" % [quadros_explosao, esperado, media, armas.acertos])
 	print("v2_cabaca falhas=%d" % falhas)
 	get_tree().quit(1 if falhas > 0 else 0)
+
+
+## Fotos (com janela e `-- --fotos=PASTA`): a cabaça no ar, o clarão da explosão com os estilhaços e os fogos coloridos.
+func fotos(pasta: String) -> void:
+	DirAccess.make_dir_recursive_absolute(pasta)
+	Config.g_aplicar_perfil("alto")
+	Config.temporario("pausar_fora", false)  # a janela sem foco não pode pausar a partida durante o print
+	var armas = w.combate.armas
+	zerar()
+	grupo_e_isolado()
+	pegar(ID)
+	await _foto_quando(func(): return _g_fase(0, 0.27), 400, pasta.path_join("cabaca_no_ar.png"))
+	await _foto_quando(func(): return _g_fase(3, 0.07), 400, pasta.path_join("cabaca_explosao.png"))
+	zerar()
+	grupo_e_isolado()
+	for i in 3:
+		pegar(ID)
+		pegar("bola_fogo")
+	await get_tree().create_timer(5.0).timeout  # o aviso da fusão sai da tela (relógio de parede)
+	armas.acertos.clear()
+	await _foto_quando(func(): return int(armas.acertos.get("fogos", 0)) >= 3, 600, pasta.path_join("fogos_de_festival.png"))
+
+
+func _g_fase(est: int, idade: float) -> bool:
+	for it in w.combate.armas.novas.itens:
+		if str(it.k) == "granada" and float(it.vida) > 0.0 and int(it.est) == est and float(it.age) >= idade:
+			return true
+	return false
+
+
+func _foto_quando(cond: Callable, max_passos: int, arquivo: String) -> void:
+	var q := ate(cond, max_passos)
+	await RenderingServer.frame_post_draw
+	var img: Image = w.sv.get_texture().get_image()
+	img.save_png(arquivo)
+	print("FOTO ", arquivo, " ", img.get_size(), " depois de ", q, " quadros")
 
 
 func _brasa() -> bool:
