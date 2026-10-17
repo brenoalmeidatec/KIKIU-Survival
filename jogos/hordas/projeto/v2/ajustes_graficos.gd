@@ -7,7 +7,7 @@ extends RefCounted
 ## entrada são da pausa (pausa.gd), com a fonte da v2.
 ## O menu só mostra as opções que a v2 lê hoje (LIDAS_NA_V2), todas valendo na hora na partida. As outras do json seguem nos
 ## perfis (a v1 usa), mas sem linha aqui: opção que não faz nada na tela não aparece. Opção nova só entra na lista depois de ser lida.
-## Ids das linhas: "g:perfil", "g:detectar", "g:tela", "g:qualidade", "g:fps" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
+## Ids das linhas: "g:perfil", "g:detectar", "g:tela", "g:qualidade", "g:fps", "g:ui" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
 ## Tela cheia, a baixa automática e o contador de fps são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
 
 const PERFIS := ["baixo", "medio", "alto"]
@@ -18,6 +18,7 @@ const LIDAS_NA_V2 := ["particulas_sim", "luz_relevo", "sombras", "tremor_clarao"
 const AJUDA_PERFIL := "Baixo, Médio e Alto mudam todas as opções de uma vez. Mexer numa opção deixa o perfil Personalizado."
 const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e número de processadores."
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
+const AJUDA_UI := "Tamanho de menus, cartas e HUD. Automático escolhe pela janela: nunca enorme numa janela grande nem cortado numa pequena."
 const AJUDA_TELA := "Ocupa a tela inteira. F11 também liga e desliga, em qualquer tela da v2."
 const AJUDA_QUALIDADE := "Se o fps ficar abaixo de 40 por 8 s, o perfil desce um degrau (Alto, Médio, Baixo) só nesta sessão, sem mudar o salvo. O Personalizado não muda."
 
@@ -32,6 +33,7 @@ func itens() -> Array:
 		_it("g:tela", "Tela cheia (F11)", _sim_nao("tela_cheia"), AJUDA_TELA),
 		_it("g:qualidade", "Baixar a qualidade se travar", _sim_nao("qualidade_auto"), AJUDA_QUALIDADE),
 		_it("g:fps", "Mostrar FPS", _sim_nao("mostrar_fps"), AJUDA_FPS),
+		_it("g:ui", "Tamanho da interface", Config.rotulo("tamanho_ui"), AJUDA_UI),
 	]
 	var opcoes: Array = Config.g_opcoes()
 	for sec in SECOES:
@@ -55,6 +57,8 @@ func agir(id: String, passo: int) -> void:
 		_alternar("qualidade_auto")
 	elif id == "fps":
 		_alternar("mostrar_fps")
+	elif id == "ui":
+		Config.girar("tamanho_ui", passo)  # a apresentação e as telas refazem o layout na hora (Config.tamanho_ui_mudou)
 	elif id.begins_with("op:"):
 		_mudar_opcao(id.substr(3), passo)
 

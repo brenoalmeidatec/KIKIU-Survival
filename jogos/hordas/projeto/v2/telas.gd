@@ -10,6 +10,7 @@ extends RefCounted
 ## Os anúncios grandes e a barra do chefe são do HUD (v2/hud_anuncios.gd e hud.gd), que escutam os sinais do mundo.
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
 const LARG := 960
 const ALT := 540
 const LAYER_TELAS := 11  # cartas, baú e resultado: ACIMA da HUD (10), abaixo do resultado final (12) e da pausa (14); senão o HUD aparece por cima das cartas
@@ -92,7 +93,7 @@ func montar(c, sv: Node) -> void:
 	sv.add_child(camada)
 	_fundo = ColorRect.new()
 	_fundo.color = Paleta.alfa(Paleta.PAINEL, 0.62)
-	_fundo.size = Vector2(LARG, ALT)
+	EscalaUi.cobrir(_fundo)  # cobre o canvas inteiro, não só o bloco 960x540
 	_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fundo.visible = false
 	camada.add_child(_fundo)
@@ -626,11 +627,11 @@ func _pulsar_cartas() -> void:
 			_estilos[i].shadow_size = base + roundi((2.0 + 2.0 * rar) * (0.5 + 0.5 * sin(_t_ui * (3.0 + rar) + float(i))))
 
 
-## Posição do mouse na tela 960x540 (mouse_fn é o gancho dos testes; sem ele, o mouse de verdade).
+## Posição do mouse no bloco 960x540 da UI (mouse_fn é o gancho dos testes; sem ele, o mouse de verdade).
 func _mouse() -> Vector2:
 	if mouse_fn.is_valid():
 		return mouse_fn.call()
-	return mundo.ap.mouse_na_tela()
+	return mundo.ap.mouse_ui()
 
 
 ## Pausa aberta (v2/pausa.gd): a trava não anda. mundo.pausa é o nó do menu (mundo.gd); sem ele, nenhuma pausa conta.

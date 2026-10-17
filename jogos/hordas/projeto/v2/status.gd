@@ -21,6 +21,7 @@ extends CanvasLayer
 ## Criado pelo mundo.gd (uma linha no _ready), que guarda em `mundo.status`.
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
 const Meta := preload("res://v2/meta.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
@@ -104,6 +105,7 @@ static func criar(m) -> CanvasLayer:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # a pausa e a escolha de cartas param o mundo; o card segue atualizando
 	layer = LAYER_HUD
+	add_to_group("ui_escala")
 	_estilo = StyleBoxTexture.new()
 	_estilo.texture = MOLDURA
 	_estilo.texture_margin_left = 5
@@ -128,6 +130,11 @@ func _ready() -> void:
 	_timer.timeout.connect(_tique)
 	add_child(_timer)
 	visible = false  # escondido, o relógio parado: nada roda
+
+
+## A janela ou a opção "tamanho_ui" mudou: o painel central cobre o canvas novo.
+func ui_reencaixar(_canvas: Vector2, _desloc: Vector2) -> void:
+	_tela.queue_redraw()
 
 
 # ------------------------------------------------------------------ ligar e desligar
@@ -180,12 +187,10 @@ func entrada(e: InputEvent) -> bool:
 	return true
 
 
-## Converte o evento da janela para o viewport 960x540, desfazendo escala e corte como a apresentação.
+## Converte o evento da janela para o bloco 960x540 da UI (desfaz o fator e o deslocamento do bloco no canvas, ver apresentacao.pos_ui).
 ## Sem clamp: uma roda fora do jogo não deve atingir a borda do card.
 func _pos_na_tela(pos: Vector2) -> Vector2:
-	var janela: Vector2 = mundo.get_viewport().get_visible_rect().size
-	var escala := maxf(janela.x / TELA.size.x, janela.y / TELA.size.y)
-	return (pos - janela / 2.0) / maxf(escala, 0.001) + TELA.size / 2.0
+	return mundo.ap.pos_ui(pos)
 
 
 ## O C (e o Select do controle) vale com a partida de pé, na escolha de cartas e no baú;
@@ -703,7 +708,7 @@ func _pintar() -> void:
 	var rects: Array = _colunas()
 	var opaco: bool = _m != "hud"  # na pausa e no painel central: sem ver o que está atrás
 	if _m == "central":
-		_tela.draw_rect(TELA, COR_FUNDO_OPACO)  # o painel central cobre a tela toda: as cartas (camada 11) e o HUD ficam escondidos
+		_tela.draw_rect(EscalaUi.cobertura(EscalaUi.canvas_atual, EscalaUi.desloc_atual), COR_FUNDO_OPACO)  # o painel central cobre a tela toda: as cartas (camada 11) e o HUD ficam escondidos
 	for c in rects.size():
 		var r := _medir(c)
 		if opaco:
@@ -1152,7 +1157,7 @@ func _pintar_visual() -> void:
 	var alts := _visual(true)
 	var cols := colunas_visuais()
 	if _m == "central":
-		_tela.draw_rect(TELA, COR_FUNDO_OPACO)
+		_tela.draw_rect(EscalaUi.cobertura(EscalaUi.canvas_atual, EscalaUi.desloc_atual), COR_FUNDO_OPACO)
 	for c in cols.size():
 		var col: Rect2 = cols[c]
 		var r := Rect2(col.position, Vector2(col.size.x, minf(float(alts[c]), col.size.y)))

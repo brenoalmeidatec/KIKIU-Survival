@@ -17,6 +17,7 @@ extends CanvasLayer
 ## (Dados.fonte_texto, sempre em 16 px), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
@@ -75,7 +76,7 @@ var _sons_ui  # clique do santuário (sem partida): o áudio da v2 (assets/audio
 func iniciar(m) -> Node:
 	mundo = m
 	if mundo != null:
-		mouse_fn = Callable(mundo.ap, "mouse_na_tela")
+		mouse_fn = Callable(mundo.ap, "mouse_ui")
 		mundo.add_child(Antena.new(self))
 	return self
 
@@ -100,19 +101,35 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # com a árvore pausada, o menu continua recebendo entrada e desenhando
 	set_process_input(mundo == null)  # na partida a entrada vem da Antena (o SubViewport não recebe a janela)
 	layer = 14
+	add_to_group("ui_escala")
+	offset = EscalaUi.desloc_atual
 	_montar()
 	_desenhar()
 
 
+## O contador de fps fica no canto de baixo à esquerda do canvas (não do bloco 960x540).
+func _pos_fps() -> Vector2:
+	var d := EscalaUi.desloc_atual
+	return Vector2(6.0 - d.x, ALT + d.y - 16.0)
+
+
+## A janela ou a opção "tamanho_ui" mudou: o bloco volta para o centro do canvas e o fps para o canto.
+func ui_reencaixar(_canvas: Vector2, d: Vector2) -> void:
+	offset = d
+	if _fps != null:
+		_fps.position = _pos_fps()
+
+
 func _montar() -> void:
 	_raiz = Control.new()
-	_raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_raiz.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_raiz.size = EscalaUi.BLOCO  # o bloco 960x540; o fundo escuro abaixo cobre o canvas inteiro
 	_raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_raiz.visible = false
 	add_child(_raiz)
 	var fundo := ColorRect.new()
 	fundo.color = COR_FUNDO
-	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	EscalaUi.cobrir(fundo)
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_raiz.add_child(fundo)
 	var painel := Panel.new()
@@ -165,7 +182,7 @@ func _montar() -> void:
 		Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	_raiz.add_child(_dica)
-	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), Vector2(6, ALT - 16), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
+	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), _pos_fps(), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
 	add_child(_fps)  # fora de _raiz: o contador de fps aparece também com o menu fechado
 
@@ -412,7 +429,7 @@ func _linha_sob_mouse() -> int:
 func _mouse() -> Vector2:
 	if mouse_fn.is_valid():
 		return mouse_fn.call()
-	return get_viewport().get_mouse_position()
+	return get_viewport().get_mouse_position() - EscalaUi.desloc_atual  # santuário: a janela inteira é o canvas, e o bloco fica no centro dele
 
 
 # ------------------------------------------------------------------ ações

@@ -69,6 +69,7 @@ var mouse_forcado: Variant = null  # testes: um Vector2 do mundo aqui vale no lu
 var dados: Dictionary = {}
 var ap
 var sv: SubViewport
+var ui: SubViewport  # a interface (HUD, cartas, pausa...): tem o próprio SubViewport, do tamanho do canvas da UI (v2/apresentacao.gd, v2/escala_ui.gd)
 var cam
 var luzes
 var sombras
@@ -175,25 +176,26 @@ func _ready() -> void:
 	ap = Apresentacao.new()
 	add_child(ap)
 	sv = ap.montar(get_window(), args.has("escala_pura"))
+	ui = ap.ui
 	if not modo_teste and (_modo == "medir" or args.has("sem_vsync")):
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0
 	RenderingServer.set_default_clear_color(Color(0.02, 0.03, 0.03))
 	_montar()
-	sv.add_child(preload("res://v2/hud.gd").criar(self))
+	ui.add_child(preload("res://v2/hud.gd").criar(self))
 	minimapa = preload("res://v2/minimapa.tscn").instantiate().iniciar(self)
-	sv.add_child(minimapa)
+	ui.add_child(minimapa)
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
-	sv.add_child(pausa)
+	ui.add_child(pausa)
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
-	sv.add_child(status)
+	ui.add_child(status)
 	if _modo == "livre":  # medir e fotografar ficam sem música
 		trilha = Trilha.new()
 		add_child(trilha)
 		trilha.ligar(self)
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
-		sv.add_child(meta_res)
+		ui.add_child(meta_res)
 		meta_res.montar(self)
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)

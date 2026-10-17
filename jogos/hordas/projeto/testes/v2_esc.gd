@@ -94,7 +94,7 @@ func _montar_mundo() -> void:
 	mundo.set_process(false)  # o mundo anda só pelos passos do teste (e pelos quadros reais da seção 7)
 	await get_tree().process_frame
 	pausa = null
-	for c in mundo.sv.get_children():
+	for c in mundo.ui.get_children():
 		if c.has_method("abrir_sair"):
 			pausa = c
 	ok(pausa != null, "o mundo monta o menu de pausa")
@@ -489,7 +489,7 @@ func _t_escolha() -> void:
 	# Voltar ao santuário por cima da escolha: a partida acaba como abandonada, sem deixar a escolha aberta
 	_preparar()
 	var res = Resultado.new()  # o resultado com as almas (o mundo o monta fora do modo de teste)
-	mundo.sv.add_child(res)
+	mundo.ui.add_child(res)
 	res.montar(mundo)
 	var saldo_antes: int = Meta.saldo()
 	mundo.xp_coletado = 250.0  # 25 almas na partida

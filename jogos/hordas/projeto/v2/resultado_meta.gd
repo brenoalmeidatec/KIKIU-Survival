@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
 ## Resultado da partida com as almas da v2 (camada 12, por cima da tela de resultado de telas.gd, que não é tocada). Quando a
 ## partida acaba (o herói cai, ou o sinal partida_terminou do mundo, se existir), grava a partida em v2/meta.gd e mostra as almas
 ## ganhas subindo e o saldo somando; as conquistas cumpridas aparecem embaixo. "CONTINUAR" (clique, Enter, Espaço, E ou A) vai
@@ -50,7 +51,7 @@ func montar(m) -> void:
 	layer = 12  # por cima do HUD (camada 10): o resultado não divide a tela com o painel da partida
 	_fundo = ColorRect.new()
 	_fundo.color = Paleta.alfa(Paleta.PAINEL, 0.97)  # quase opaco: o HUD e o mundo ficam só de pano de fundo
-	_fundo.size = Vector2(LARG, ALT)
+	EscalaUi.cobrir(_fundo)  # cobre o canvas inteiro, não só o bloco 960x540
 	_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fundo.visible = false
 	add_child(_fundo)
