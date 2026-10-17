@@ -185,6 +185,23 @@ func _partida(w, hud, g) -> void:
 	g.avancar(LEITURA)
 	ok(g.visible, "ao fechar o card a faixa volta")
 	ok(Golpes.CAPACIDADE == 18, "capacidade de 18 golpes")
+	var extra: Vector2 = g.pos_excedente()
+	ok(extra.x >= Golpes.POR_LINHA * (Golpes.CAIXA + Golpes.ESPACO), "o +N fica fora dos quadradinhos (x %s)" % extra.x)
+
+	# 9. peça já consumida por outra fusão não conta: a receita impossível não vira o "melhor progresso"
+	# lobo_espirito e espirito_raposa viram a Caçada Espiritual (consome o lobo); espirito_urso nv 2 só tem urso_solar (2 de 6) como receita possível
+	# (a eclipse_de_almas, que daria 8 de 20 com o lobo consumido, é impossível)
+	_dar(w, "lobo_espirito")
+	_dar(w, "lobo_espirito")
+	_dar(w, "espirito_urso")
+	g.avancar(LEITURA)
+	_dar(w, "espirito_raposa")
+	_dar(w, "espirito_raposa")
+	_dar(w, "espirito_raposa")
+	g.avancar(LEITURA)
+	ok(_item(g, "lobo_espirito").is_empty() and not _item(g, "cacada_espiritual").is_empty(), "a Caçada Espiritual consumiu o lobo")
+	ok(int(w.combate.cartas.nivel_de("espirito_urso")) == 2, "espirito_urso segue no nível 2")
+	ok(int(_item(g, "espirito_urso").fus) == roundi(2.0 / 6.0 * 32.0), "fusão ignora receita com peça consumida (tem %s)" % _item(g, "espirito_urso").fus)
 
 
 func _fotos(w, hud, g, pasta: String) -> void:

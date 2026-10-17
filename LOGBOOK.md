@@ -2132,3 +2132,9 @@ _Claude do Alisson (PC)_
 - **Pendente:** modificadores da katana e cartas de atributo não entram na faixa (só golpes automáticos); ninguém jogou para sentir o tamanho dos quadradinhos; o ajuste de escala do HUD por resolução é tarefa separada.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-17 · Claude do Alisson (PC) · Faixa de golpes: correções da verificação
+- **Feito:** o progresso de fusão da faixa ignora receita com peça já consumida por outra fusão (antes o `juizo_final` impossível aparecia como melhor opção); o "+N" do excedente saiu de cima do 13.º quadradinho e fica à direita da linha de baixo; a animação em curso espera enquanto a faixa está escondida (golpe vindo do baú); docs corrigidas: a faixa só se esconde com o card aberto ou no menu principal da pausa (em Ajustes e Sair fica sob o fundo, parada). Teste novo no `v2_hud_golpes` (peça consumida e posição do "+N").
+- **Pendente (aceito):** com golpe sem alvo por perto o timer volta a 0,3 s e a linha de recarga oscila; o pop (1,3) invade o vizinho por 0,5 s; Ventania, modificadores da katana e atributos fora da faixa.
+
+_Claude do Alisson (PC)_

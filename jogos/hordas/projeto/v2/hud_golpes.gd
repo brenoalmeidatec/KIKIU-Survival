@@ -9,7 +9,8 @@ extends Control
 ## magenta. Tudo desenhado por código, em pixel inteiro, num só Control.
 ## Custo: lê o combate a 20 Hz (no máximo uns doze golpes), e só redesenha quando a chave (golpes, níveis, pixels de recarga e de fusão)
 ## muda ou enquanto há animação. Sem `combate` no mundo (mundo falso dos testes), a faixa fica escondida. Com o card da build aberto
-## (tecla C, que ocupa a coluna da esquerda) ou na pausa, a faixa se esconde: o card já lista os golpes.
+## (tecla C, que ocupa a coluna da esquerda, ou o menu principal da pausa, que mostra o card ao lado) a faixa se esconde: o card já lista os golpes.
+## Nas outras telas da pausa (Ajustes, Sair) ela fica desenhada sob o fundo escuro e parada. Escondida, a animação em curso espera.
 ## Lê, com get() e valor padrão: hud.mundo; mundo.combate (.armas.ativas, .cartas), mundo.heroi.m_vel_ataque, mundo.status.aberto().
 
 const Paleta := preload("res://v2/paleta.gd")
@@ -67,11 +68,13 @@ func avancar(dt: float) -> void:
 		_acumulado = 0.0
 		mudou = _ler()
 	var animando := false
-	for id in anims.keys():
-		anims[id].t = float(anims[id].t) - dt
-		if float(anims[id].t) <= 0.0:
-			anims.erase(id)
-		animando = true
+	# escondida (HUD coberto pela escolha do baú, card aberto), a animação espera: senão o pop acaba antes de alguém ver
+	if is_visible_in_tree():
+		for id in anims.keys():
+			anims[id].t = float(anims[id].t) - dt
+			if float(anims[id].t) <= 0.0:
+				anims.erase(id)
+			animando = true
 	_fase_quase = int(Time.get_ticks_msec() / 250) % 2
 	var pisca := false
 	for it in itens:
@@ -146,8 +149,9 @@ func _item(id: String, a: Dictionary, cartas, vel: float) -> Dictionary:
 	return it
 
 
-## O melhor progresso de fusão das receitas ainda livres que usam `id`: x = fração (soma dos níveis das peças limitados ao pedido sobre o
-## total pedido) e y = quantos níveis faltam no total. x = -1 quando nenhuma receita livre usa o golpe.
+## O melhor progresso de fusão das receitas ainda possíveis que usam `id`: x = fração (soma dos níveis das peças limitados ao pedido sobre o
+## total pedido) e y = quantos níveis faltam no total. x = -1 quando nenhuma receita possível usa o golpe. Receita com peça já consumida por
+## outra fusão (`usada`, que o jogo não conta mais como ativa) é impossível e não entra.
 func _fusao(id: String, cartas) -> Vector2:
 	var melhor := Vector2(-1.0, 99.0)
 	var cfg = _campo(cartas, "cfg")
@@ -155,9 +159,12 @@ func _fusao(id: String, cartas) -> Vector2:
 		return melhor
 	for ev in cfg.get("evolucoes", []):
 		var usa := false
+		var possivel := true
 		for p in ev.pecas:
 			usa = usa or str(p.id) == id
-		if not usa or (cartas.has_method("_evo_livre") and not cartas._evo_livre(ev)):
+			if cartas.has_method("ativa") and cartas.nivel_de(str(p.id)) > 0 and not cartas.ativa(str(p.id)):
+				possivel = false
+		if not usa or not possivel or (cartas.has_method("_evo_livre") and not cartas._evo_livre(ev)):
 			continue
 		var tem := 0
 		var total := 0
@@ -198,7 +205,12 @@ func _draw() -> void:
 		_desenhar_slot(i, itens[i])
 	if itens.size() > CAPACIDADE:
 		var f := get_theme_font("font")
-		draw_string(f, Vector2(0.0, 8.0), "+%d" % (itens.size() - CAPACIDADE), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Paleta.TEXTO_SECUNDARIO)
+		draw_string(f, pos_excedente(), "+%d" % (itens.size() - CAPACIDADE), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Paleta.TEXTO_SECUNDARIO)
+
+
+## Onde o "+N" fica: à direita da linha de baixo (x 234), na folga antes do selo de nível (x 262), sem cobrir nenhum quadradinho.
+func pos_excedente() -> Vector2:
+	return Vector2(POR_LINHA * (CAIXA + ESPACO) + 2.0, size.y - ALTURA + 12.0)
 
 
 func _origem(i: int) -> Vector2:
