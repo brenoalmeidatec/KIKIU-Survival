@@ -1,13 +1,14 @@
 {
  "quadro": [
-  82,
+  86,
   104
  ],
- "pe_x": 41,
+ "pe_x": 45,
  "pe_y": 83,
  "andar": 8,
  "ataque": 8,
  "impacto": 4,
+ "ciclo_px": 52.1,
  "linhas": [
   "frente",
   "tres_quartos_frente",

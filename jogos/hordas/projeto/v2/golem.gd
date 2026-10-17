@@ -9,26 +9,30 @@ extends RefCounted
 ##
 ## Estados do item (chaves do dicionário do pool): e = ANDANDO / ATACANDO / SURGINDO, et = tempo no estado, lin = linha da vista,
 ## pf = fase do passo (1 = um ciclo de andar completo, avança com a distância ANDADA: parado, o quadro não muda e o pé não escorrega),
-## mov = andou neste quadro, imp = a pancada deste ataque já caiu, ip = onde a pancada cai, sumiu = o desmoronar já soltou os torrões.
+## mov = andou neste quadro, imp = a pancada deste ataque já caiu, ip = onde a pancada cai, sumiu = o desmoronar já soltou os torrões,
+## deb = entulho (torrões que quicam e ficam no chão, poeira), rt = s desde a última pancada (as rachaduras no chão; -1 = nenhuma).
 ## O dano cai quando a animação cruza o quadro do impacto (não quando o ataque começa), em área no ponto `ip` guardado no início do golpe.
 
 const FOLHA := "res://assets/v2/armas/golem_barro_dir.png"
-const QUADRO := Vector2(82, 104)  # tamanho de cada quadro da folha (o teste confere com o png e o .json)
-const PE := Vector2(41, 83)  # ponto do quadro que fica no chão (it.p)
+const QUADRO := Vector2(86, 104)  # tamanho de cada quadro da folha (o teste confere com o png e o .json)
+const PE := Vector2(45, 83)  # ponto do quadro que fica no chão (it.p)
 const COL_ANDAR := 8
 const COL_ATAQUE := 8
 const LINHAS := 5
 const PASSO_LINHA := 45.0  # graus entre uma vista e a próxima
 const HISTERESE := 8.0  # graus de folga para não piscar de vista na fronteira
-const CICLO_PX := 40.0  # pixels andados por ciclo de andar (8 quadros) = 2 passos de ~20 px, a separação dos pés da arte (medida no perfil, quadro 2): o pé de apoio não escorrega
+const CICLO_PX := 52.0  # pixels andados por ciclo de andar (8 quadros) = 2 passos de 26 px: a separação dos pés no apoio duplo (quadros 2 e 6), de perfil, como a câmera vê (o gerador grava `ciclo_px` no .json): o pé de apoio não escorrega
+## De frente e de costas o passo aparece encurtado pela câmera (45 graus: o chão em profundidade vale ~0,71 na tela), então o mesmo passo da arte cobre menos pixels andados:
+## pixels por ciclo = CICLO_PX x isto, na linha da vista (frente, 3/4 frente, perfil, 3/4 costas, costas).
+const FATOR_LINHA := [0.71, 0.87, 1.0, 0.87, 0.71]
 const PARADO := 2  # quadro de andar usado parado (pernas afastadas, os dois pés no chão)
 const TEMPOS_ATAQUE := [0.09, 0.08, 0.08, 0.10, 0.06, 0.11, 0.10, 0.10]  # duração de cada quadro do ataque (s); soma 0,72 s, para caber no "tique" de 0,8 s da carta
 const QUADRO_IMPACTO := 4  # índice (dentro do ataque) do quadro da pancada
 const ALCANCE := 30.0  # distância (plano achatado) do alvo a partir da qual ele para e ataca
 const RAIO_IMPACTO := 42.0  # raio da pancada no chão
 const RESPIRO_MIN := 0.08  # menor pausa entre o fim de um ataque e o começo do próximo (a cadência vem do "tique" da carta: ciclo = max(tique, ataque + isto))
-const EMPURRA := 45.0  # empurrão da pancada em cada monstro (o golpe antigo, de contato, empurrava 30; o monstro divide pelo peso)
-const ATORDOA := 0.08  # atordoamento da pancada, em s (o golpe antigo dava 0,05)
+const EMPURRA := 30.0  # empurrão da pancada em cada monstro: o do golpe antigo (de contato, alvo único). O que mudou de verdade é a ÁREA (raio 42 px), não o empurrão por alvo
+const ATORDOA := 0.05  # atordoamento da pancada, em s: o do golpe antigo
 const SURGIR_T := 0.55  # sobe do chão
 const SUMIR_T := 0.6  # desmorona nos últimos segundos de vida
 const ACHATA := 0.62
@@ -39,6 +43,11 @@ const SURGINDO := 2
 const COR_BARRO := Color(0.66, 0.42, 0.27, 0.75)
 const COR_TORRAO := Color(0.55, 0.33, 0.2)
 const COR_PEDRA := Color(0.6, 0.57, 0.54)
+const COR_POEIRA := Color(0.74, 0.62, 0.48)
+const GRAV := 520.0  # gravidade dos torrões (px/s2 na altura)
+const MAX_DEB := 28  # entulho por golem (torrões que caem e ficam no chão, nuvens de poeira)
+const T_DEB := 11  # floats por peça: x, y (chão), z (altura), vx, vy, vz, tempo que falta, tempo total, tamanho, tipo (0 torrão, 1 pedra, 2 poeira), tom
+const T_RACHA := 1.8  # duração (s) das rachaduras que a pancada deixa no chão
 
 static var _tex: Texture2D
 static var _lida := false
@@ -116,6 +125,8 @@ static func zerar(it: Dictionary) -> void:
 	it.imp = false
 	it.ip = Vector2.ZERO
 	it.sumiu = false
+	it.deb = PackedFloat32Array()
+	it.rt = -1.0
 
 
 ## O item acaba de nascer: sobe do chão olhando para a câmera.
@@ -128,8 +139,8 @@ static func nascer(nv, it: Dictionary) -> void:
 	it.sumiu = false
 	var esc := escala(str(it.a.id))
 	var p: Vector2 = it.p
-	_torroes(nv, p, 8, 40.0 * esc, esc)
-	_poeira(nv, p, 6, 30.0 * esc, esc)
+	_torroes(nv, it, p, 8, 40.0 * esc, esc)
+	_poeira(nv, it, p, 6, 30.0 * esc, esc)
 	nv.pai.fx.onda(p, Color(0.85, 0.65, 0.45, 0.6), 22.0 * esc, 0.3)
 
 
@@ -140,13 +151,14 @@ static func mover(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
 	it.et = float(it.et) + dt
 	it.t = float(it.t) - dt  # a recarga do golpe (o armas_novas não conta o tempo do aliado)
 	it.mov = false
+	_entulho(it, dt)
 	if float(it.vida) <= SUMIR_T:
 		_desmoronar(nv, it, dt)
 		return
 	match int(it.e):
 		SURGINDO:
 			if randf() < dt * 24.0:
-				_poeira(nv, it.p, 1, 22.0 * escala(str(it.a.id)), escala(str(it.a.id)))
+				_poeira(nv, it, it.p, 1, 22.0 * escala(str(it.a.id)), escala(str(it.a.id)))
 			if float(it.et) >= SURGIR_T:
 				it.e = ANDANDO
 				it.et = 0.0
@@ -184,7 +196,7 @@ static func _andar(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
 		it.v = (it.v as Vector2).lerp(dir, clampf(dt * 10.0, 0.0, 1.0))  # suavizado: o quadro não pisca na virada
 		it.lin = linha_de(it.v, int(it.lin))
 		var antes := float(it.pf)
-		it.pf = antes + passo / (CICLO_PX * esc)
+		it.pf = antes + passo / (CICLO_PX * esc * float(FATOR_LINHA[int(it.lin)]))
 		it.mov = true
 		if floori((float(it.pf) - 0.25) * 2.0) != floori((antes - 0.25) * 2.0):  # cruzou o quadro 2 ou o 6: um pé bateu no chão
 			_pisada(nv, it, esc)
@@ -224,8 +236,9 @@ static func _impacto(nv, it: Dictionary) -> void:
 	fx.onda(p, Color(1.0, 0.8, 0.5, 0.6), raio * 0.55, 0.2)
 	fx.folha("anel", p, raio * 1.15, Color(0.85, 0.6, 0.4, 0.8), 0.3)
 	fx.luz_rapida(p + Vector2(0, -6), Color(1.0, 0.62, 0.3), 2.0, raio * 2.4, 0.25)
-	_torroes(nv, p, 12, 90.0 * esc, esc)
-	_poeira(nv, p, 9, 70.0 * esc, esc)
+	it.rt = 0.0
+	_torroes(nv, it, p, 16, 100.0 * esc, esc)
+	_poeira(nv, it, p, 10, 80.0 * esc, esc)
 	pai.combate.audio.tocar("impacto", randf_range(0.55, 0.7) / sqrt(esc), -1.0, 0.1)
 	if (pai.mundo.heroi.pos as Vector2).distance_to(p) < 360.0:
 		pai.mundo.cam.tremer(0.9 * esc, 0.12)
@@ -233,9 +246,9 @@ static func _impacto(nv, it: Dictionary) -> void:
 
 static func _pisada(nv, it: Dictionary, esc: float) -> void:
 	var p: Vector2 = it.p
-	_poeira(nv, p + Vector2(randf_range(-9.0, 9.0), 2.0) * esc, 2, 26.0 * esc, esc)
-	if randf() < 0.5:
-		_torroes(nv, p, 1, 40.0 * esc, esc)
+	_poeira(nv, it, p + Vector2(randf_range(-9.0, 9.0), 2.0) * esc, 3, 30.0 * esc, esc)
+	if randf() < 0.6:
+		_torroes(nv, it, p + Vector2(randf_range(-8.0, 8.0), 0.0) * esc, 1, 45.0 * esc, esc)
 	if (nv.pai.mundo.heroi.pos as Vector2).distance_to(p) < 240.0:
 		nv.pai.mundo.cam.tremer(0.35 * esc, 0.06)
 
@@ -247,34 +260,110 @@ static func _desmoronar(nv, it: Dictionary, dt: float) -> void:
 		it.sumiu = true
 		it.e = ANDANDO
 		var p: Vector2 = it.p
-		_torroes(nv, p + Vector2(0, -18.0 * esc), 12, 70.0 * esc, esc)
-		_poeira(nv, p, 6, 40.0 * esc, esc)
+		_torroes(nv, it, p + Vector2(0, -18.0 * esc), 12, 70.0 * esc, esc)
+		_poeira(nv, it, p, 7, 40.0 * esc, esc)
 		nv.pai.fx.onda(p, Color(0.8, 0.6, 0.42, 0.5), 30.0 * esc, 0.35)
 	if randf() < dt * 30.0:
-		_poeira(nv, it.p, 1, 28.0 * esc, esc)
+		_poeira(nv, it, it.p, 1, 28.0 * esc, esc)
 
 
-## `n` pedaços de barro e pedra que voam para cima e para fora e caem (partículas do pool de v2/efeitos.gd).
-static func _torroes(nv, p: Vector2, n: int, vel: float, esc: float) -> void:
+## `n` pedaços de barro e pedra que voam, caem, quicam uma vez e FICAM no chão um tempo (entulho do item, desenhado na camada normal, não aditiva: parece terra).
+static func _torroes(nv, it: Dictionary, p: Vector2, n: int, vel: float, esc: float) -> void:
 	var fx = nv.pai.fx
 	n = maxi(1, roundi(n * fx.fator_part))
 	for i in n:
 		var ang := randf() * TAU
-		var v := Vector2(cos(ang) * vel * randf_range(0.4, 1.0), sin(ang) * vel * 0.4 - randf_range(50.0, 130.0))
-		var cor := COR_PEDRA if randf() < 0.25 else COR_TORRAO.lerp(Color(0.85, 0.62, 0.42), randf() * 0.6)
-		fx.particula(p + Vector2(randf_range(-6.0, 6.0), randf_range(-14.0, -2.0)) * esc, v, randf_range(0.45, 0.8), 3.0 if randf() < 0.6 else 4.0, cor, 340.0)
-
-
-## `n` nuvenzinhas de poeira que se abrem e sobem devagar.
-static func _poeira(nv, p: Vector2, n: int, vel: float, esc: float) -> void:
-	var fx = nv.pai.fx
-	n = maxi(1, roundi(n * fx.fator_part))
-	for i in n:
-		var ang := randf() * TAU
-		var v := Vector2(cos(ang) * vel * randf_range(0.3, 1.0), sin(ang) * vel * 0.3 - randf_range(4.0, 20.0))
-		fx.particula(
-			p + Vector2(randf_range(-6.0, 6.0), randf_range(-3.0, 1.0)) * esc, v, randf_range(0.35, 0.6), randf_range(5.0, 8.0) * esc, COR_BARRO, -12.0
+		var pedra := randf() < 0.3
+		var tam := randf_range(4.0, 6.5) if not pedra else randf_range(3.0, 4.0)
+		_deb_add(
+			it,
+			p + Vector2(randf_range(-6.0, 6.0), randf_range(-5.0, 0.0)) * esc,
+			randf_range(6.0, 16.0) * esc,
+			Vector2(cos(ang) * vel * randf_range(0.35, 1.0), sin(ang) * vel * 0.35),
+			randf_range(90.0, 190.0) * (vel / 90.0 if vel > 90.0 else 1.0),
+			randf_range(1.2, 1.9),
+			tam,
+			1.0 if pedra else 0.0,
+			randf()
 		)
+	# um punhado de brasa de barro quente no ar (aditivo, curto): dá luz à pancada
+	for i in maxi(1, roundi(3.0 * fx.fator_part)):
+		var v := Vector2(randf_range(-1.0, 1.0) * vel * 0.8, -randf_range(30.0, 90.0))
+		fx.particula(p + Vector2(0, -6) * esc, v, randf_range(0.2, 0.35), 3.0, Color(1.0, 0.65, 0.3, 0.8), 200.0, true)
+
+
+## `n` nuvens de poeira que se abrem e sobem devagar (no entulho do item, camada normal; é terra, não luz).
+static func _poeira(nv, it: Dictionary, p: Vector2, n: int, vel: float, esc: float) -> void:
+	var fx = nv.pai.fx
+	n = maxi(1, roundi(n * fx.fator_part))
+	for i in n:
+		var ang := randf() * TAU
+		_deb_add(
+			it,
+			p + Vector2(randf_range(-6.0, 6.0), randf_range(-3.0, 1.0)) * esc,
+			randf_range(0.0, 3.0) * esc,
+			Vector2(cos(ang) * vel * randf_range(0.3, 1.0), sin(ang) * vel * 0.3),
+			randf_range(2.0, 7.0),
+			randf_range(0.5, 0.85),
+			randf_range(4.0, 7.0) * esc,
+			2.0,
+			randf()
+		)
+
+
+static func _deb_add(it: Dictionary, p: Vector2, z: float, v: Vector2, vz: float, vida: float, tam: float, tipo: float, tom: float) -> void:
+	var d: PackedFloat32Array = it.deb
+	if d.size() >= MAX_DEB * T_DEB:
+		return
+	d.append_array(PackedFloat32Array([p.x, p.y, z, v.x, v.y, vz, vida, vida, tam, tipo, tom]))
+	it.deb = d
+
+
+## Anda o entulho: torrão sob gravidade (quica uma vez, depois para), poeira que freia e sobe; some quando o tempo acaba. Também conta o tempo das rachaduras.
+static func _entulho(it: Dictionary, dt: float) -> void:
+	if float(it.rt) >= 0.0:
+		it.rt = float(it.rt) + dt
+		if float(it.rt) > T_RACHA:
+			it.rt = -1.0
+	var d: PackedFloat32Array = it.deb
+	if d.is_empty():
+		return
+	var n := d.size() / T_DEB
+	var dest := 0
+	var freio := exp(-3.0 * dt)
+	for k in n:
+		var o := k * T_DEB
+		var t := d[o + 6] - dt
+		if t <= 0.0:
+			continue
+		d[o + 6] = t
+		if d[o + 9] > 1.5:  # poeira: abre, freia e sobe devagar
+			d[o] += d[o + 3] * dt
+			d[o + 1] += d[o + 4] * dt
+			d[o + 3] *= freio
+			d[o + 4] *= freio
+			d[o + 2] += d[o + 5] * dt
+		elif d[o + 2] > 0.0 or d[o + 5] > 0.0:  # torrão no ar
+			d[o + 5] -= GRAV * dt
+			d[o + 2] += d[o + 5] * dt
+			d[o] += d[o + 3] * dt
+			d[o + 1] += d[o + 4] * dt
+			if d[o + 2] <= 0.0:
+				d[o + 2] = 0.0
+				if d[o + 5] < -70.0:  # quica uma vez, menor
+					d[o + 5] = -d[o + 5] * 0.3
+					d[o + 3] *= 0.4
+					d[o + 4] *= 0.4
+				else:  # parou: fica no chão
+					d[o + 5] = 0.0
+					d[o + 3] = 0.0
+					d[o + 4] = 0.0
+		if dest != k:
+			for j in T_DEB:
+				d[dest * T_DEB + j] = d[o + j]
+		dest += 1
+	d.resize(dest * T_DEB)
+	it.deb = d
 
 
 # ------------------------------------------------------------------ desenho
@@ -308,6 +397,9 @@ static func desenhar(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		k = clampf(float(it.vida) / SUMIR_T, 0.0, 1.0)
 	ci.draw_set_transform(p, 0.0, Vector2(esc, esc * ACHATA))
 	ci.draw_circle(Vector2.ZERO, 22.0 * (0.4 + 0.6 * k), Color(0.0, 0.0, 0.0, 0.3 * k))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_desenhar_rachaduras(ci, it, false)
+	_desenhar_entulho(ci, it, false)
 	var q := quadro_de(it)
 	var hv := QUADRO.y
 	var topo := -PE.y
@@ -321,6 +413,72 @@ static func desenhar(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 	var cor := Color(0.8, 0.82, 0.95) if id == COLOSSO else Color.WHITE
 	ci.draw_texture_rect_region(t, Rect2(Vector2(-PE.x, topo), Vector2(QUADRO.x, hv)), Rect2(origem, Vector2(QUADRO.x, hv)), cor)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_desenhar_entulho(ci, it, true)
+
+
+## As rachaduras que a pancada abre no chão (linhas quebradas saindo do ponto do impacto, achatadas como o chão); `brasa` = só a luz laranja de dentro, nos primeiros 0,5 s (camada aditiva).
+static func _desenhar_rachaduras(ci: CanvasItem, it: Dictionary, brasa: bool) -> void:
+	var rt := float(it.rt)
+	if rt < 0.0:
+		return
+	var esc := escala(str(it.a.id))
+	var raio := RAIO_IMPACTO * esc
+	var cresce := clampf(rt / 0.1, 0.0, 1.0)
+	var fade := clampf((T_RACHA - rt) / 0.6, 0.0, 1.0)
+	var ip: Vector2 = (it.ip as Vector2).round()
+	var semente := fposmod(ip.x * 0.37 + ip.y * 0.71, TAU)
+	ci.draw_set_transform(ip, 0.0, Vector2(1.0, ACHATA))
+	for r in 7:
+		var ang := semente + r * TAU / 7.0
+		var comp := raio * (0.55 + 0.4 * absf(sin(semente * 3.0 + r * 2.3))) * cresce
+		var dir := Vector2.from_angle(ang)
+		var lado := Vector2(-dir.y, dir.x)
+		var pts := PackedVector2Array(
+			[dir * comp * 0.15, dir * comp * 0.45 + lado * sin(r * 5.1 + semente) * 3.5, dir * comp * 0.75 - lado * sin(r * 3.7 + semente) * 3.0, dir * comp]
+		)
+		if brasa:
+			var kb := clampf(1.0 - rt / 0.5, 0.0, 1.0)
+			if kb > 0.0:
+				ci.draw_polyline(pts, Color(1.0, 0.5, 0.2, 0.5 * kb), 2.0)
+		else:
+			ci.draw_polyline(pts, Color(0.14, 0.08, 0.05, 0.75 * fade), 1.0)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## O entulho: `no_ar` = os que ainda estão no ar e as nuvens de poeira (por cima do golem); senão os torrões no chão (por baixo). Pixel quadrado, sombra no chão.
+static func _desenhar_entulho(ci: CanvasItem, it: Dictionary, no_ar: bool) -> void:
+	var d: PackedFloat32Array = it.deb
+	var n := d.size() / T_DEB
+	for k in n:
+		var o := k * T_DEB
+		var tipo := int(d[o + 9])
+		var alto := tipo == 2 or d[o + 2] > 0.5
+		if alto != no_ar:
+			continue
+		var restante := d[o + 6]
+		var total := d[o + 7]
+		var x := d[o]
+		var y := d[o + 1]
+		var z := d[o + 2]
+		var tam := d[o + 8]
+		var tom := d[o + 10]
+		if tipo == 2:  # poeira: um bafo redondo e macio que cresce e some
+			var kk := restante / total
+			var c := COR_POEIRA.lerp(Color(0.5, 0.4, 0.3), tom * 0.4)
+			c.a = 0.5 * kk
+			ci.draw_circle(Vector2(roundf(x), roundf(y - z)), tam * (0.8 + 0.9 * (1.0 - kk)), c)
+			continue
+		var cor := COR_PEDRA.lerp(Color(0.4, 0.38, 0.36), tom * 0.5) if tipo == 1 else COR_TORRAO.lerp(Color(0.85, 0.62, 0.42), tom * 0.6)
+		var a := clampf(restante / 0.35, 0.0, 1.0)
+		cor.a = a
+		var px := roundf(x)
+		var py := roundf(y)
+		if z > 0.5:
+			ci.draw_rect(Rect2(Vector2(px, py), Vector2(tam, 1.0)), Color(0.0, 0.0, 0.0, 0.3 * a))
+		var c0 := Vector2(px, roundf(y - z) - tam + 1.0)
+		ci.draw_rect(Rect2(c0, Vector2(tam, tam)), cor)
+		ci.draw_rect(Rect2(c0, Vector2(tam, 1.0)), Color(minf(cor.r + 0.2, 1.0), minf(cor.g + 0.18, 1.0), minf(cor.b + 0.15, 1.0), a))
+		ci.draw_rect(Rect2(c0 + Vector2(0, tam - 1.0), Vector2(tam, 1.0)), Color(cor.r * 0.55, cor.g * 0.55, cor.b * 0.55, a))
 
 
 ## Camada aditiva (`no_brilho`): o brasa do peito, o aviso no chão de onde a pancada vai cair e o clarão depois dela.
@@ -328,6 +486,7 @@ static func desenhar_brilho(ci: CanvasItem, it: Dictionary, p: Vector2, glow: Te
 	var esc := escala(str(it.a.id))
 	if float(it.vida) < SUMIR_T or int(it.e) == SURGINDO:
 		return
+	_desenhar_rachaduras(ci, it, true)
 	if int(it.lin) < 3:  # de costas o peito não aparece
 		var pulso := 0.5 + 0.5 * sin(float(it.fase) * 0.7)
 		var c := p + Vector2(0, -30.0 * esc)

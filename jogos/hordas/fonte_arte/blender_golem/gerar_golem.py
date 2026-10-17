@@ -10,7 +10,8 @@ Saída: projeto/assets/v2/armas/golem_barro_dir.png, 16 colunas x 5 linhas de qu
 O .json ao lado (e a cópia em assets/v2/armas/) guarda o tamanho do quadro e o pé (ponto do chão); o jogo (v2/golem.gd) tem as mesmas constantes e o teste confere.
 Uso (Blender 4.5 LTS), em segundo plano:
     blender -b -P gerar_golem.py                    # a folha final
-    blender -b -P gerar_golem.py -- previa <png>    # prévia pequena (2 vistas, alguns quadros) para ajustar o modelo
+    blender -b -P gerar_golem.py -- previa <png>    # prévia pequena (frente e perfil, 8 de andar + a pancada) para ajustar o modelo
+    blender -b -P gerar_golem.py -- diag            # sem render: o chão e a posição dos pés em cada quadro de andar (o pé de apoio não pode escorregar)
 """
 import json
 import math
@@ -29,6 +30,7 @@ from pixel3d import caixa, esfera  # noqa: E402
 
 ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 PREVIA = ARGS[1] if len(ARGS) >= 2 and ARGS[0] == "previa" else None
+DIAG = bool(ARGS) and ARGS[0] == "diag"
 SAIDA = os.path.normpath(os.path.join(AQUI, "..", "..", "projeto", "assets", "v2", "armas"))
 
 ELEVACAO = 45.0
@@ -79,10 +81,15 @@ def modelo():
     caixa("pelve", (1.35, 0.85, 0.5), (0, 0, 1.2), mat["barro_e"], corpo, chanfro=0.12)
     for lado, x in (("e", 0.45), ("d", -0.45)):
         quadril = junta("quadril_" + lado, (x, 0, 1.15), corpo)
-        caixa("coxa_" + lado, (0.6, 0.62, 1.0), (x, 0, 0.62), mat["barro"], quadril, chanfro=0.1)
-        caixa("pe_" + lado, (0.74, 1.0, 0.3), (x, -0.14, 0.15), mat["barro_e"], quadril, chanfro=0.07)
-        esfera("joelho_" + lado, 0.22, (x * 1.1, -0.28, 0.72), mat["terra"], quadril, escala=(1.0, 0.8, 0.8))
+        caixa("coxa_" + lado, (0.6, 0.62, 0.62), (x, 0, 0.86), mat["barro"], quadril, chanfro=0.1)
+        joelho = junta("joelho_" + lado, (x, 0, 0.58), quadril)
+        caixa("canela_" + lado, (0.56, 0.58, 0.46), (x, 0, 0.4), mat["barro"], joelho, chanfro=0.1)
+        esfera("joelheira_" + lado, 0.22, (x * 1.1, -0.28, 0.66), mat["terra"], joelho, escala=(1.0, 0.8, 0.8))
+        tornozelo = junta("tornozelo_" + lado, (x, 0, 0.3), joelho)
+        caixa("pe_" + lado, (0.74, 1.0, 0.3), (x, -0.14, 0.15), mat["barro_e"], tornozelo, chanfro=0.07)
         J["quadril_" + lado] = quadril
+        J["joelho_" + lado] = joelho
+        J["tornozelo_" + lado] = tornozelo
     # tronco largo, corcunda e ombros de pedregulho
     tronco = junta("tronco", (0, 0, 1.4), corpo)
     J["tronco"] = tronco
@@ -137,7 +144,42 @@ ATQ = (
     (-0.10, 0.18, -0.35, -0.30, 0.0, 0.15),      # 14 começa a se erguer
     (-0.02, 0.06, -0.20, -0.35, 0.0, 0.05),      # 15 volta ao repouso
 )
-MEMBROS = ("quadril_e", "quadril_d", "tronco", "ombro_e", "ombro_d", "cotovelo_e", "cotovelo_d")
+MEMBROS = ("quadril_e", "quadril_d", "joelho_e", "joelho_d", "tornozelo_e", "tornozelo_d", "tronco", "ombro_e", "ombro_d", "cotovelo_e", "cotovelo_d")
+
+# Andar: o pé é posicionado (não é um seno no ângulo do quadril): no apoio ele corre para trás em linha reta, em S/4 por quadro, e o
+# corpo avança a velocidade constante, então o pé NÃO escorrega. A perna e o pé de apoio ficam retos e o corpo desce o que a geometria manda.
+L = 0.85                 # do quadril ao tornozelo (a perna esticada)
+L2 = 0.58                # do joelho ao chão (a canela, para a flexão do joelho)
+TETA = 1.05              # ângulo máximo do quadril no apoio duplo (quadros 2 e 6)
+A = L * math.sin(TETA)   # o pé vai de +A a -A em relação ao quadril; separação no apoio duplo = 2A; o ciclo (2 passos) = 4A
+LEVANTA = 0.36           # quanto a perna que balança sobe acima do chão no meio do passo
+BALANCO_X = 0.15         # o corpo se desloca para o lado do pé de apoio
+ROLL = 0.14              # o tronco inclina para o lado do apoio
+
+
+def _suave(t):
+    return 0.5 - 0.5 * math.cos(math.pi * t)
+
+
+def _perna(phi):
+    """phi 0..1 = fase da perna (0 = o pé encosta à frente). Devolve (u = pé à frente do quadril, apoio?, progresso do balanço 0..1)."""
+    phi %= 1.0
+    if phi < 0.5:
+        return A * (1.0 - 4.0 * phi), True, 0.0
+    psi = (phi - 0.5) * 2.0
+    return -A + 2.0 * A * _suave(psi), False, psi
+
+
+def passo(q):
+    """Estado do andar no quadro q (0..7): dicionário por perna ('e', 'd') com ângulo do quadril, joelho, levantada e tornozelo, e o z do corpo."""
+    ph = {"d": (q - 2) / 8.0, "e": (q - 6) / 8.0}       # a perna d bate o pé à frente no quadro 2, a e no 6
+    est = {}
+    for lado in ("e", "d"):
+        u, apoio, psi = _perna(ph[lado])
+        est[lado] = {"u": u, "apoio": apoio, "psi": psi, "teta": -math.asin(max(-1.0, min(1.0, u / L)))}
+    ap = [e for e in est.values() if e["apoio"]]
+    z_corpo = -L * (1.0 - min(math.cos(e["teta"]) for e in ap))
+    return est, z_corpo
 
 
 def pose(J, q):
@@ -146,27 +188,60 @@ def pose(J, q):
     for n in MEMBROS:
         J[n].rotation_euler = (0, 0, 0)
         J[n].delta_location = (0, 0, 0)
+    corpo.rotation_euler = (0, 0, 0)
     if q < ANDAR:
+        est, z_corpo = passo(q)
         f = 2.0 * math.pi * q / ANDAR
-        s, c = math.sin(f), math.cos(f)
-        for lado, sg in (("e", 1.0), ("d", -1.0)):
-            J["quadril_" + lado].rotation_euler = (0.62 * s * sg, 0, 0)
-            # a perna que balança para a frente (c*sg negativo) sai do chão; a que fica no chão vai para trás em relação ao corpo (o pé não escorrega)
-            J["quadril_" + lado].delta_location = (0, 0, 0.16 * max(0.0, -c * sg))
-            J["ombro_" + lado].rotation_euler = (-0.12 - 0.50 * s * sg, 0, 0)
-            J["cotovelo_" + lado].rotation_euler = (-0.30 - 0.18 * max(0.0, -s * sg), 0, 0)
-        corpo.location = (0.03 * s, 0, -0.13 * abs(s) + 0.1)
-        tronco.rotation_euler = (0.10, 0.10 * s, 0.14 * s)
-        corpo.rotation_euler = (0, 0, 0)
+        for lado in ("e", "d"):
+            e = est[lado]
+            teta, joelho, sobe = e["teta"], 0.0, 0.0
+            if not e["apoio"]:
+                # a perna que balança sobe o que a geometria deixaria abaixo do chão, mais a passada por cima dele; o joelho dobra
+                afunda = max(0.0, -(z_corpo + L - L * math.cos(teta)))
+                lev = afunda + LEVANTA * math.sin(math.pi * e["psi"])
+                r_joelho = min(0.75 * lev, 0.9 * L2)
+                joelho = math.acos(1.0 - r_joelho / L2)
+                sobe = lev - r_joelho
+                teta -= 0.30 * math.sin(math.pi * e["psi"])       # a coxa vai à frente do pé enquanto a canela dobra
+            J["quadril_" + lado].rotation_euler = (teta, 0, 0)
+            J["quadril_" + lado].delta_location = (0, 0, sobe)
+            J["joelho_" + lado].rotation_euler = (joelho, 0, 0)
+            J["tornozelo_" + lado].rotation_euler = (-(teta + joelho) + 0.15 * math.sin(math.pi * e["psi"]), 0, 0)
+            # o braço balança contra a perna do mesmo lado (perna à frente = braço atrás)
+            J["ombro_" + lado].rotation_euler = (-0.15 + 0.80 * (e["u"] / A), 0, 0.05 * (1.0 if lado == "e" else -1.0))
+            J["cotovelo_" + lado].rotation_euler = (-0.30 - 0.25 * max(0.0, -e["u"] / A), 0, 0)
+        # peso: o corpo balança para o lado do pé de apoio, o tronco inclina e gira com o passo
+        lado_ap = math.cos(f)     # 1 = apoio na perna e (quadro 0), -1 = na d (quadro 4)
+        corpo.location = (BALANCO_X * lado_ap, 0, z_corpo)
+        tronco.rotation_euler = (0.10 + 0.04 * abs(math.sin(f)), -ROLL * lado_ap, 0.16 * math.sin(f))
+        corpo.rotation_euler = (0, 0.0, -0.08 * math.sin(f))
     else:
         z, lean, omb, cot, giro, abre = ATQ[q - ANDAR]
         corpo.location = (0, 0, z)
-        corpo.rotation_euler = (0, 0, 0)
         tronco.rotation_euler = (lean, 0, giro)
         for lado, sg in (("e", 1.0), ("d", -1.0)):
             J["ombro_" + lado].rotation_euler = (omb, 0, 0.06 * sg * (1.0 if omb < -1.0 else 0.0))
             J["cotovelo_" + lado].rotation_euler = (cot, 0, 0)
             J["quadril_" + lado].rotation_euler = (-abre * 0.3 * sg, 0, 0.0)
+
+
+def diag(J):
+    """Por quadro de andar: o ponto mais baixo de cada pé (z, tem de ser ~0 no apoio e acima de 0 no balanço) e o x do pé no sentido do passo
+    (y do modelo, a frente é -Y) em unidades do modelo; no apoio ele anda a mesma distância por quadro (o pé não escorrega)."""
+    from mathutils import Vector
+    J["raiz"].rotation_euler = (0, 0, 0)
+    for q in range(ANDAR):
+        pose(J, q)
+        bpy.context.view_layer.update()
+        linha = []
+        for lado in ("e", "d"):
+            o = bpy.data.objects["pe_" + lado]
+            cs = [o.matrix_world @ Vector(c) for c in o.bound_box]
+            zmin = min(c.z for c in cs)
+            frente = -sum(c.y for c in cs) / 8.0
+            linha.append("%s z=%.3f frente=%.3f" % (lado, zmin / ESCALA, frente / ESCALA))
+        print("DIAG q=%d  %s   corpo_z=%.3f" % (q, "   ".join(linha), J["corpo"].location.z))
+    print("DIAG A=%.4f separacao=%.4f ciclo_px=%.2f" % (A, 2 * A, 4 * A * ESCALA * PPU))
 
 
 def main():
@@ -176,11 +251,14 @@ def main():
     px3.luz()
     J = modelo()
     cena = bpy.context.scene
+    if DIAG:
+        diag(J)
+        return
     esc0 = cam.data.ortho_scale
     cena.render.resolution_x, cena.render.resolution_y = W0 * 3, H0 * 3
     cam.data.ortho_scale = esc0 * 3.0
     vistas = (0, 2) if PREVIA else range(len(VISTAS))
-    quadros = (0, 2, 4, 6, 9, 11, 12, 13) if PREVIA else range(ANDAR + ATAQUE)
+    quadros = (0, 1, 2, 3, 4, 5, 6, 7, 12) if PREVIA else range(ANDAR + ATAQUE)
     uniao = None
     raiz = J["raiz"]
     for v in vistas:
@@ -202,6 +280,18 @@ def main():
     from mathutils import Vector
     o = world_to_camera_view(cena, cam, Vector((0.0, 0.0, 0.0)))
     pe_x, pe_y = int(round(o.x * W - 0.5)), int(round((1.0 - o.y) * H - 0.5))
+    ciclo = 0.0
+    if not PREVIA:
+        # a passada como a câmera vê: a separação (px) dos dois pés no apoio duplo, de perfil (quadro 2). O corpo anda 2 x isso por ciclo de andar.
+        raiz.rotation_euler = (0, 0, -math.radians(VISTAS[2]))
+        pose(J, 2)
+        bpy.context.view_layer.update()
+        xs = []
+        for ld in ("e", "d"):
+            o = bpy.data.objects["pe_" + ld]
+            ctr = sum((o.matrix_world @ Vector(c) for c in o.bound_box), Vector()) / 8.0
+            xs.append(world_to_camera_view(cena, cam, ctr).x * W)
+        ciclo = round(2.0 * abs(xs[0] - xs[1]), 1)
     folha = np.zeros((H * len(vistas), W * len(quadros), 4), np.float32)
     for i, v in enumerate(vistas):
         raiz.rotation_euler = (0, 0, -math.radians(VISTAS[v]))
@@ -223,7 +313,7 @@ def main():
         return
     os.makedirs(SAIDA, exist_ok=True)
     px3.salvar_png(folha, os.path.join(SAIDA, "golem_barro_dir.png"))
-    info = {"quadro": [W, H], "pe_x": pe_x, "pe_y": pe_y, "andar": ANDAR, "ataque": ATAQUE, "impacto": 4,
+    info = {"quadro": [W, H], "pe_x": pe_x, "pe_y": pe_y, "andar": ANDAR, "ataque": ATAQUE, "impacto": 4, "ciclo_px": ciclo,
             "linhas": ["frente", "tres_quartos_frente", "lado", "tres_quartos_costas", "costas"]}
     for destino in (os.path.join(AQUI, "golem_barro_dir.json"), os.path.join(SAIDA, "golem_barro_dir.json")):
         with open(destino, "w", encoding="utf-8") as f:
