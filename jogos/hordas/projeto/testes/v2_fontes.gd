@@ -111,16 +111,7 @@ func _tamanhos() -> void:
 		MenuPrincipal.TAM_DICA
 	]:
 		ok(t in [16, 32], "tamanho %d da Spleen na grade (16, 32)" % t)
-	for t in [
-		Telas.TAM_TITULO,
-		Telas.TAM_NOME,
-		Telas.TAM_NOME_CURTO,
-		Telas.TAM_CONTAGEM,
-		Status.TAM_CAB,
-		Status.TAM_NOME_PEQ,
-		ResultadoMeta.TAM_TITULO,
-		MenuPrincipal.TAM_BOTAO
-	]:
+	for t in [Telas.TAM_TITULO, Telas.TAM_NOME, Telas.TAM_CONTAGEM, Status.TAM_CAB, Status.TAM_NOME_PEQ, ResultadoMeta.TAM_TITULO, MenuPrincipal.TAM_BOTAO]:
 		ok(t in [19, 37, 56], "tamanho %d da Jersey 10 na grade (19, 37, 56)" % t)
 	ok(MenuPrincipal.TAM_LOGO == 2 * 56, "o logo usa a exceção documentada de 2 x 56")
 	for t in [Status.TAM_NUM, Status.TAM_GRANDE]:

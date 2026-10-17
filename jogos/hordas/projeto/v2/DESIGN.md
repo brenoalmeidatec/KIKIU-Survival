@@ -3,7 +3,7 @@
 Guia visual dos menus e da interface da v2 (`jogos/hordas/projeto/v2/`). Leia antes de mexer em menu, HUD, cartas ou santuário. As cores e os tamanhos de fonte vêm de `v2/paleta.gd`; as referências de código abaixo localizam seus usos. Se o código mudar, atualize este arquivo no mesmo PR.
 
 **Regras de ouro**
-- Tudo cabe em 960x540, e o essencial fica dentro da área segura (seção 1).
+- Todo layout é desenhado no bloco de 960x540 e ancorado ao bloco ou ao canvas da UI (seção 1); nada de posição em px de janela nem de fundo com tamanho fixo.
 - Texto corrido só em Spleen 16 px. Títulos só em Jersey 19, 37 ou 56. Números em Press Start 2P (seção 3).
 - Use as cores da seção 2 antes de criar uma. Cor nova entra em `v2/paleta.gd` e na tabela.
 - Pouco texto: barra, pip, ícone e número grande antes de palavra.
@@ -11,16 +11,32 @@ Guia visual dos menus e da interface da v2 (`jogos/hordas/projeto/v2/`). Leia an
 
 ## 1. Resolução, escala e área segura
 
+Toda a UI é desenhada num **bloco de 960x540** ("UI px"). O que muda com a janela é o **fator** (px de janela por UI px) e o **canvas** da UI (janela / fator), que fica maior que o bloco quando o fator é menor que o de encaixe. É o "GUI Scale" do Minecraft: opção em Ajustes > Gráficos, **Tamanho da interface: Automático / Pequeno / Médio / Grande** (`Config` chave `tamanho_ui`, padrão Automático; conta pura em `v2/escala_ui.gd`).
+
 | Onde | Desenho | Escala |
 |---|---|---|
-| Partida: HUD, pausa, SUA BUILD, escolha, baú, resultado | SubViewport 960x540 (`apresentacao.gd:9-10, 28-33`) | `KEEP_ASPECT_COVERED` (`apresentacao.gd:40`), sharp bilinear (`:49-66`) |
-| Santuário (`altar.gd`) | direto na janela, sem SubViewport; a pausa fica na raiz (`v2/LEIA-ME.md:26`) | `CANVAS_ITEMS` 960x540 + `ASPECT_KEEP`, com faixas pretas (`altar.gd:120-125`) |
+| Partida: HUD, minimapa, pausa, SUA BUILD, escolha, baú, resultado | SubViewport próprio da UI (`mundo.ui`), transparente, do tamanho do canvas (`apresentacao.gd`) | por cima do mundo, com o mesmo sharp bilinear (blend pré-multiplicado); o mundo continua 960x540 em `KEEP_ASPECT_COVERED` |
+| Título, santuário, escolha de personagem | direto na janela (`ui_janela.gd`) | `CANVAS_ITEMS`, base 960x540, aspecto `EXPAND` (sem faixas), `content_scale_factor = fator / encaixe` |
+| Salão (`salao.gd`) | cena de 960x540 (a sala e o personagem), não UI | `CANVAS_ITEMS` + `KEEP`, com faixas pretas: não segue o tamanho da interface |
 
-- `project.godot` declara 640x360 e stretch viewport (`:40-45`), mas a v2 troca o modo em tempo de execução (`altar.gd:123-125`, `apresentacao.gd:27`).
-- O mouse da partida passa pelo mesmo corte (`apresentacao.gd:69-73`). Controles dentro do SubViewport não recebem mouse, então os botões são retângulos (`v2/LEIA-ME.md:26`).
-- Corte da partida: escala = `max(janela_w/960, janela_h/540)`. Corte por lado, em px do mundo: `480 - janela_w/(2·escala)` em x e `270 - janela_h/(2·escala)` em y.
+- **Fator**: cada opção é um canvas-alvo, e o fator é o maior passo (mínimo 1) que ainda deixa o canvas com pelo menos esse tamanho, limitado ao encaixe do bloco (`min(w/960, h/540)`): nunca corta nada. Pequeno = 1600x900, Médio = 1280x720 e Grande = 960x540 andam em passos de 0,5. O **Automático é o do Minecraft: o maior tamanho que cabe** (alvo 960x540) em passos de 0,25, então acompanha a janela de perto e, de 1280x720 para cima, é sempre maior que o Médio; coincide com o Grande onde o passo de 0,5 já encaixa (1920x1080, 3840x2160). O salão ignora a opção e fica sempre encaixado em "grande" (a sala 960x540 é cena, não menu).
 
-| Janela | Corte | Área segura no mundo |
+| Janela | Automático | Pequeno | Médio | Grande |
+|---|---|---|---|---|
+| 1280x720 | 1,25 (canvas 1024x576) | 1 | 1 | 1 |
+| 1920x1080 | 2 (960x540) | 1 (1920x1080) | 1,5 (1280x720) | 2 (960x540) |
+| 2560x1440 | 2,5 (1024x576) | 1,5 | 2 | 2,5 |
+| 3840x2160 | 4 (960x540) | 2 | 3 | 4 |
+
+- **O bloco fica no centro do canvas** (deslocamento `EscalaUi.desloc_atual`, em px inteiros). Telas modais (cartas, baú, resultado, pausa, Ajustes, SUA BUILD, título, santuário, personagens) mantêm as coordenadas do bloco: a CanvasLayer da UI tem `offset = desloc`. O que é de borda **gruda no canvas**: HUD (`hud.gd`, tabela `ANCORAS`: retrato e barras no canto de cima à esquerda, relógio, abates, combo e chefe no topo, XP e slots E/Q embaixo), minimapa (canto de cima à direita), contador de fps (canto de baixo à esquerda) e a faixa de dica do título.
+- **Fundo, escurecedor e vinheta cobrem o canvas, não o bloco**: `EscalaUi.cobrir(controle)` (e o grupo `ui_cobrir`, refeito a cada mudança). Nunca dimensione um fundo com `Vector2(LARG, ALT)`.
+- Nó que precisa refazer o layout quando a janela ou a opção mudam entra no grupo `ui_escala` e implementa `ui_reencaixar(canvas, desloc)` (o `Config.tamanho_ui_mudou` e o `size_changed` da janela disparam).
+- **Mouse**: o SubViewport da UI não recebe a entrada da janela (como o do mundo): pausa, cartas e SUA BUILD leem `mundo.ap.mouse_ui()` / `pos_ui()`, que devolvem coordenadas do bloco (negativas ou acima de 960x540 nas margens). A mira no mundo segue `mouse_na_tela()` (corte do mundo).
+- `project.godot` declara 640x360 e stretch viewport, mas a v2 troca o modo em tempo de execução (`apresentacao.gd`, `ui_janela.gd`).
+- Testes: `EscalaUi.janela_forcada` troca o tamanho da janela; em headless a janela vale 960x540 (fator 1, deslocamento zero), então os testes antigos não mudam.
+- Corte do mundo (só ele): escala = `max(janela_w/960, janela_h/540)`; a área segura do mundo na tabela abaixo vale para o que é desenhado NO mundo. A UI não precisa dela: o HUD gruda no canvas, que é a janela inteira.
+
+| Janela | Corte do mundo | Área segura no mundo |
 |---|---|---|
 | 16:9 (1280x720) | nenhum | x 0-960, y 0-540 |
 | 16:10 (1280x800) | ~48 px em x | x 48-912 |
@@ -83,6 +99,7 @@ XP dourado e ouro de seleção são papéis distintos. Fusão magenta continua d
 ## 5. Comportamento
 
 - **Esc e Start** abrem e fecham a pausa; dentro de Ajustes voltam um nível. Esc nunca fecha o jogo; Sair pede confirmação (`pausa.gd:3-4, 251-252, 314, 329-334`). No santuário, Esc abre direto a confirmação de sair (`pausa.gd:217-223`). Não abre na câmera lenta da morte e da vitória nem no resultado (`v2/LEIA-ME.md:26`).
+- **Cartas (escolha e baú)**: o nome da carta tem UM tamanho só, Jersey 19 (`Telas.TAM_NOME`), para comum, rara, épica e lendária, centrado na caixa entre o ícone e a descrição; nada de tamanho por largura do nome. A linha "Sua build" é uma linha só: o que não cabe em 920 px vira "e mais N" (`_texto_build`).
 - **Trava das cartas**: 3 s em tempo real (`dados/v2_cartas.json:10`, `espera_s`); 0,8 s após rerrolar ou banir (`rerrolar_espera_s`); baú 1,5 s (`dados/v2_cartas.json:304`, `telas.gd:461`). Clique, tecla e botão são descartados, e a contagem pulsa. Esc passa para a pausa. A trava congela com a pausa aberta (`telas.gd:7-9`). Cartas apagadas usam `#737373` (`telas.gd:27, 665`).
 - **Foco inicial**: a pausa abre em "Continuar" (`pausa.gd:245` põe "Não" nas confirmações); o santuário, em ENTRAR (`altar.gd:77`); a escolha, na carta 1 (`telas.gd:35`).
 - **Sons de UI**: fora da partida, a pausa usa `Som.ui("cursor")` (-6 dB) e `Som.ui("confirmar")` (-4 dB) (`scripts/hordas/som.gd:68-73`). Na partida, usa os sons de jogo `carta` e `escolher` (`pausa.gd:572-583`). Não existem `ui_cursor` nem `ui_confirmar`.
@@ -109,6 +126,7 @@ Comando: `godot --path jogos/hordas/projeto res://testes/<nome>.tscn`. A maioria
 | `v2_partida` | cartas, raridade, baú, resultado (`:51`) |
 | `v2_meta` | santuário e meta-progressão (`:51`) |
 | `v2_musica` | música de cada tela (`:59`) |
+| `v2_escala_ui` | fator por janela e opção (tabela), canvas, opção em Ajustes que gira e salva, HUD/minimapa/fundos/mouse no canvas, troca ao vivo |
 | `v2_fusoes` | arte da fusão: tamanhos (600 x 200, 48, 16, 64 x 32), borda de 12 px e a Ventania no registro de armas |
 
 Mexeu em cor ou fonte: rode `v2_fontes` e `v2_status`. Mexeu em estado de tela: rode `v2_esc` e `v2_pausa`.
@@ -125,6 +143,6 @@ Continuam duas diferenças de composição: cartões usam painel próprio sem mo
 
 1. Confira a seção 2 antes de criar cor. Se criar, registre aqui.
 2. Texto novo: fonte pela seção 3, tamanho na grade.
-3. Confira a área segura (seção 1) em 16:9 e em 4:3.
+3. Confira a seção 1: o que é de borda grudado no canvas, fundos com `EscalaUi.cobrir`, e olhe o resultado em 1280x720 e 1920x1080 (Automático e Pequeno; `--tamanho_ui=` nas fotos).
 4. Rode os testes da seção 7.
 5. Atualize este arquivo no mesmo PR se mudar cor, fonte ou comportamento.

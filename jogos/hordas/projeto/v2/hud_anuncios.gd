@@ -27,6 +27,7 @@ var _segura := SEGURA_T
 var _cor := Color.WHITE
 var _intensidade := 0
 var _y := 0.0
+var _y0 := 0.0
 
 @onready var _moldura: NinePatchRect = $Moldura
 @onready var _texto: Label = $Texto
@@ -34,8 +35,15 @@ var _y := 0.0
 
 func _ready() -> void:
 	_y = position.y
+	_y0 = _y
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
+
+
+## O HUD gruda a faixa no topo do canvas: dy é o quanto subir (ou descer) em relação ao .tscn.
+func ancorar(dy: float) -> void:
+	_y = _y0 + dy
+	position.y = _y
 
 
 ## Põe um anúncio na fila, ou na tela se ela estiver livre.
