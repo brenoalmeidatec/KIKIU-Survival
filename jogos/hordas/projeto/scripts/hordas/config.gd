@@ -47,6 +47,14 @@ const ITENS := [
 	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Baixar a qualidade se travar", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "verificar_versao", "grupo": "Gráfico", "nome": "Avisar versão nova", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
+	{
+		"chave": "tamanho_ui",
+		"grupo": "Gráfico",
+		"nome": "Tamanho da interface",
+		"valores": ["auto", "pequeno", "medio", "grande"],
+		"rotulos": ["Automático", "Pequeno", "Médio", "Grande"],
+		"padrao": "auto"
+	},
 	{"chave": "musica", "grupo": "Som", "nome": "Música", "valores": VOLUMES, "formato": "pct", "padrao": 0.6},
 	{"chave": "efeitos", "grupo": "Som", "nome": "Efeitos", "valores": VOLUMES, "formato": "pct", "padrao": 0.8},
 	{
@@ -67,6 +75,7 @@ var _cfg := ConfigFile.new()
 ## personalizado), "base" (o último perfil aplicado: preenche o que o jogador não mexeu) e uma chave por opção.
 
 signal graficos_mudou
+signal tamanho_ui_mudou  # a opção "tamanho_ui" (v2/escala_ui.gd) mudou: as telas abertas refazem o layout na hora
 
 var _perfil_padrao := "alto"  # sem nada salvo: o perfil pela máquina (jogo de verdade) ou alto (testes e headless)
 var _temp: Dictionary = {}  # valores só da memória (baixa automática, g_temporario): ficam por cima do salvo e nunca vão ao arquivo
@@ -331,6 +340,8 @@ func definir(chave: String, valor: Variant) -> void:
 	_cfg.set_value("opcoes", chave, valor)
 	_cfg.save(arquivo)
 	aplicar()
+	if chave == "tamanho_ui":
+		tamanho_ui_mudou.emit()
 
 
 ## Texto do valor atual (o que aparece na tela de Opções).

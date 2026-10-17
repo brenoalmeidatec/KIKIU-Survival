@@ -14,7 +14,7 @@ extends Node
 # personalizado. A queda por fps (qualidade_auto) vale só na memória: o arquivo não recebe o perfil caído.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
-#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_graficos_topo, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (só o viewport).
+#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_graficos_topo, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (a janela inteira).
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Meta := preload("res://v2/meta.gd")
@@ -148,7 +148,7 @@ func _testes() -> void:
 	add_child(mundo)
 	mundo.set_process(false)  # o mundo anda só pelos passos do teste (avancar)
 	await get_tree().process_frame
-	var sv: SubViewport = mundo.sv
+	var sv: SubViewport = mundo.ui
 	var pausa = _achar_pausa(sv)
 	ok(pausa != null, "o mundo monta o menu de pausa")
 	if pausa == null:
@@ -431,7 +431,7 @@ func _testes() -> void:
 	var saldo_antes := Meta.saldo()
 	mundo.xp_coletado = 250.0  # 25 almas na partida
 	var res = Resultado.new()
-	mundo.sv.add_child(res)
+	mundo.ui.add_child(res)
 	res.montar(mundo)  # o mesmo que o mundo faz fora do modo de teste
 	_tecla(KEY_ESCAPE)
 	_ir_para(pausa, "santuario")
@@ -509,7 +509,7 @@ func _fotos(pasta: String) -> void:
 	add_child(mundo)
 	mundo.set_process(false)
 	await get_tree().process_frame
-	var sv: SubViewport = mundo.sv
+	var sv: SubViewport = mundo.ui
 	var pausa = _achar_pausa(sv)
 	Config.g_aplicar_perfil("alto")
 	_tecla(KEY_ESCAPE)

@@ -1057,7 +1057,7 @@ func _contar_nos() -> int:
 
 func _hud_rects() -> Array:
 	var r: Array = []
-	for hud in w.sv.get_children():
+	for hud in w.ui.get_children():
 		if hud.has_node("Raiz/Combo"):
 			for nome in ["Vida", "Folego", "Tempo", "Abates", "Combo", "Xp", "Selo"]:
 				var no: Control = hud.get_node("Raiz/" + nome)
@@ -1069,14 +1069,14 @@ func _hud_rects() -> Array:
 
 ## O CanvasLayer do HUD da partida (hud.gd, camada 10), ou null.
 func _camada_hud():
-	for hud in w.sv.get_children():
+	for hud in w.ui.get_children():
 		if hud.has_node("Raiz/Combo"):
 			return hud
 	return null
 
 
 func _achar_pausa():
-	for no in w.sv.get_children():
+	for no in w.ui.get_children():
 		if no.has_method("abrir_sair"):
 			return no
 	return null
@@ -1946,9 +1946,7 @@ func _conferir_paginas_completas(st, contexto: String, modo: String) -> void:
 
 func _roda_status(pos: Vector2, botao: MouseButton) -> void:
 	var ev := InputEventMouseButton.new()
-	var tamanho := get_viewport().get_visible_rect().size
-	var escala := maxf(tamanho.x / 960.0, tamanho.y / 540.0)
-	ev.position = (pos - Vector2(480, 270)) * escala + tamanho / 2.0
+	ev.position = (pos + w.ap.desloc) * w.ap.fator  # bloco da UI -> janela: o inverso de apresentacao.pos_ui
 	ev.button_index = botao
 	ev.pressed = true
 	Input.parse_input_event(ev)
