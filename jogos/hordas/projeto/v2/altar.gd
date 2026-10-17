@@ -7,6 +7,8 @@ extends Control
 ## sem fingir progresso acumulado. ESC e VOLTAR retornam ao título; Ajustes fecha devolvendo foco ao botão.
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
+const UiJanela := preload("res://v2/ui_janela.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Trilha := preload("res://v2/trilha.gd")
@@ -27,7 +29,6 @@ const COR_ALMA := Paleta.ALMA
 const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Mouse também"
 const TEMPO_AVISO := 3.0
 
-var _antes := {}  # modo de escala da janela antes desta tela (volta ao sair)
 var _saldo: Label
 var _ultima: Label
 var _status: Label
@@ -68,7 +69,6 @@ func _ready() -> void:
 	if _abrir_v1():
 		return
 	_ajustar_janela()
-	set_anchors_preset(PRESET_FULL_RECT)
 	_montar()
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)
 	pausa.sair_no_frontend = false
@@ -120,21 +120,8 @@ func _abrir_v1() -> bool:
 	return true
 
 
-func _exit_tree() -> void:
-	var w := get_window()
-	if w != null and _antes.has("modo"):
-		w.content_scale_mode = _antes.modo
-		w.content_scale_size = _antes.tam
-		w.content_scale_aspect = _antes.aspecto
-		w.content_scale_stretch = _antes.escala
-
-
 func _ajustar_janela() -> void:
-	var w := get_window()
-	_antes = {"modo": w.content_scale_mode, "tam": w.content_scale_size, "aspecto": w.content_scale_aspect, "escala": w.content_scale_stretch}
-	w.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-	w.content_scale_size = Vector2i(LARG, ALT)
-	w.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	add_child(UiJanela.new().montar(self))  # fator da interface, canvas e bloco no centro (v2/ui_janela.gd, v2/escala_ui.gd); devolve a janela ao sair
 
 
 func _process(dt: float) -> void:
@@ -151,12 +138,12 @@ func _montar() -> void:
 	var fundo := TextureRect.new()
 	fundo.texture = FUNDO
 	fundo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	fundo.set_anchors_preset(PRESET_FULL_RECT)
+	EscalaUi.cobrir(fundo)  # a arte cobre o canvas inteiro, não só o bloco 960x540
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fundo)
 	var veu := ColorRect.new()
 	veu.color = Color(Paleta.PAINEL, 0.8)
-	veu.set_anchors_preset(PRESET_FULL_RECT)
+	EscalaUi.cobrir(veu)
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 

@@ -228,6 +228,8 @@ func _argumentos() -> Dictionary:
 
 func _ajustar_janela() -> void:
 	var janela := get_window()
+	if _modo == "foto":
+		janela.unfocusable = true  # a foto não rouba o foco de quem está jogando por cima
 	if args.has("janela"):
 		var wh := str(args.janela).split("x")
 		janela.size = Vector2i(int(wh[0]), int(wh[1]))

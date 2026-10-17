@@ -4,6 +4,8 @@ extends Control
 ## retrato grande, as almas, as melhorias e a arma inicial do herói (o foco na lista mostra o personagem). Escolher leva ao salão
 ## dele. ESC volta: da lista de nomes para a lista de personagens, e dela para o título. Botões do Godot: mouse, teclado e controle.
 
+const EscalaUi := preload("res://v2/escala_ui.gd")
+const UiJanela := preload("res://v2/ui_janela.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
@@ -32,14 +34,12 @@ var _info: Label
 var _aviso: Label
 var _sprite: Texture2D
 var _quadro := Vector2(32, 44)
-var _antes := {}
 
 
 func _ready() -> void:
 	Entrada.garantir()
 	Personagens.iniciar()
 	_ajustar_janela()
-	set_anchors_preset(PRESET_FULL_RECT)
 	_sprite = load(SPRITE + "_albedo.png") as Texture2D
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(SPRITE + ".json"))
 	_quadro = Vector2(float(info.quadro[0]), float(info.quadro[1]))
@@ -47,21 +47,8 @@ func _ready() -> void:
 	_montar_lista()
 
 
-func _exit_tree() -> void:
-	var w := get_window()
-	if w != null and _antes.has("modo"):
-		w.content_scale_mode = _antes.modo
-		w.content_scale_size = _antes.tam
-		w.content_scale_aspect = _antes.aspecto
-		w.content_scale_stretch = _antes.escala
-
-
 func _ajustar_janela() -> void:
-	var w := get_window()
-	_antes = {"modo": w.content_scale_mode, "tam": w.content_scale_size, "aspecto": w.content_scale_aspect, "escala": w.content_scale_stretch}
-	w.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-	w.content_scale_size = Vector2i(LARG, ALT)
-	w.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	add_child(UiJanela.new().montar(self))  # fator da interface, canvas e bloco no centro (v2/ui_janela.gd, v2/escala_ui.gd); devolve a janela ao sair
 
 
 # ------------------------------------------------------------------ montagem
@@ -71,12 +58,12 @@ func _montar() -> void:
 	var fundo := TextureRect.new()
 	fundo.texture = FUNDO
 	fundo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	fundo.set_anchors_preset(PRESET_FULL_RECT)
+	EscalaUi.cobrir(fundo)  # a arte cobre o canvas inteiro, não só o bloco 960x540
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fundo)
 	var veu := ColorRect.new()
 	veu.color = Color(0.02, 0.02, 0.04, 0.6)
-	veu.set_anchors_preset(PRESET_FULL_RECT)
+	EscalaUi.cobrir(veu)
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 	add_child(_rotulo("PERSONAGENS", Dados.fonte_titulo, 56, COR_OURO, Rect2(0, 22, LARG, 60), HORIZONTAL_ALIGNMENT_CENTER))
