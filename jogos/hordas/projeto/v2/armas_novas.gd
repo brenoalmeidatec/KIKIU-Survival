@@ -21,7 +21,16 @@ const LOBO_QUADROS := 16
 const LOBO_FPS := 11.0
 const LOBO_PE := Vector2(48, 40)  # ponto do quadro que fica no chão (it.p): meio do corpo e linha das patas
 static var _tex_fumaca: Texture2D
+## Lobo visto de frente, de costas e em 3/4 (fonte_arte/blender_lobo/gerar_lobo_direcoes.py): 8 quadros por linha; linhas = frente,
+## 3/4 frente, lado (não usada: o lado é a arte acima), 3/4 costas, costas. Olha para a direita; o pé do quadro é o ponto no chão.
+const LOBO_DIR_FOLHA := "res://assets/v2/armas/lobo_espiritual_dir.png"
+const LOBO_DIR_QUADRO := Vector2(63, 60)
+const LOBO_DIR_QUADROS := 8
+const LOBO_DIR_PE := Vector2(32, 46)
+const LOBO_VERTICAL_3_4 := 0.4  # fração vertical do movimento a partir da qual o lobo deixa o perfil e vira 3/4
+const LOBO_VERTICAL_FRENTE := 0.8  # e a partir da qual vira de frente (descendo) ou de costas (subindo)
 static var _tex_lobo: Texture2D
+static var _tex_lobo_dir: Texture2D
 static var _lobo_lido := false
 static var _sprites: Dictionary = {}
 static var _lidos := false
@@ -356,6 +365,8 @@ func _mover_aliado(it: Dictionary, h, dt: float, perto: Array) -> void:
 	var d: Vector2 = dest - it.p
 	if d.length() > 1.0:
 		it.p = it.p + d.normalized() * minf(float(st.vel) * dt, d.length())
+	if d.length() > 1.0:
+		it.v = (it.v as Vector2).lerp(d.normalized(), clampf(dt * 10.0, 0.0, 1.0))  # para onde corre (suavizado: o quadro não pisca na virada)
 	if absf(d.x) > 2.0:
 		it.r = signf(d.x)  # aliado não usa raio: guarda para que lado olha (1 = direita, -1 = esquerda)
 	if alvo != null and float(it.t) <= 0.0 and _eli(alvo.pos - it.p).length() < 12.0 + float(alvo.raio):
@@ -465,17 +476,36 @@ static func tex_lobo() -> Texture2D:
 	if not _lobo_lido:
 		_lobo_lido = true
 		_tex_lobo = load(LOBO_FOLHA) as Texture2D
+		_tex_lobo_dir = load(LOBO_DIR_FOLHA) as Texture2D  # sem ela o lobo corre só de lado, como antes
 	return _tex_lobo
 
 
-## Quadro da corrida pela fase do espírito (cada lobo começa num ponto diferente do ciclo), espelhado para olhar para onde anda.
-## Pés em `p`; some nos últimos 0,5 s de vida, como os outros aliados.
+## Linha da folha 3D pela direção da corrida (`v` unitário): -1 = perfil (usa a arte de lado), 0 = de frente, 1 = 3/4 de frente,
+## 3 = 3/4 de costas, 4 = de costas. Descendo na tela o lobo vem na direção da câmera; subindo, mostra as costas.
+static func linha_lobo(v: Vector2) -> int:
+	var vert := absf(v.y) / maxf(v.length(), 0.001)
+	if vert < LOBO_VERTICAL_3_4:
+		return -1
+	if vert < LOBO_VERTICAL_FRENTE:
+		return 1 if v.y > 0.0 else 3
+	return 0 if v.y > 0.0 else 4
+
+
+## Quadro da corrida pela fase do espírito (cada lobo começa num ponto diferente do ciclo), espelhado para olhar para onde anda,
+## e a vista pela direção do movimento (perfil, 3/4, frente ou costas). Pés em `p`; some nos últimos 0,5 s de vida, como os outros aliados.
 func _desenhar_lobo(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
-	var q := int(float(it.fase) / 6.0 * LOBO_FPS) % LOBO_QUADROS
 	var lado := -1.0 if float(it.r) < 0.0 else 1.0
 	var alfa := clampf(float(it.vida) / 0.5, 0.0, 1.0)
+	var fase := float(it.fase) / 6.0 * LOBO_FPS
+	var linha := linha_lobo(it.v) if _tex_lobo_dir != null else -1
 	ci.draw_set_transform(p, 0.0, Vector2(lado, 1.0))
-	ci.draw_texture_rect_region(_tex_lobo, Rect2(-LOBO_PE, LOBO_QUADRO), Rect2(Vector2(q * LOBO_QUADRO.x, 0.0), LOBO_QUADRO), Color(1, 1, 1, alfa))
+	if linha < 0:
+		var q := int(fase) % LOBO_QUADROS
+		ci.draw_texture_rect_region(_tex_lobo, Rect2(-LOBO_PE, LOBO_QUADRO), Rect2(Vector2(q * LOBO_QUADRO.x, 0.0), LOBO_QUADRO), Color(1, 1, 1, alfa))
+	else:
+		var qd := int(fase) % LOBO_DIR_QUADROS
+		var origem := Vector2(qd * LOBO_DIR_QUADRO.x, linha * LOBO_DIR_QUADRO.y)
+		ci.draw_texture_rect_region(_tex_lobo_dir, Rect2(-LOBO_DIR_PE, LOBO_DIR_QUADRO), Rect2(origem, LOBO_DIR_QUADRO), Color(1, 1, 1, alfa))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 

@@ -15,6 +15,9 @@ const CERCO_ENTRA := 70.0  # a esta distância do herói o monstro deixa de ir a
 const CERCO_SAI := 110.0
 const PASSO_ANIM := 0.16
 const AMORTECE_EMP := 9.0  # o empurrão perde força: emp *= exp(-9 dt)
+const LINHAS_DIRECOES := 5  # folha com 5 linhas: frente, 3/4 baixo, perfil, 3/4 costas, costas (vistas de 0, 45, 90, 135 e 180 graus)
+const PASSO_LINHA := 45.0  # graus entre uma linha e a próxima
+const HISTERESE_LINHA := 8.0  # graus além da fronteira (22,5) antes de trocar de linha: no limite o bicho não pisca entre duas
 
 var mundo
 var casa := Vector2.ZERO
@@ -70,6 +73,8 @@ var heroi_raio_atual := 6.0  # o raio do corpo do herói no último quadro (para
 var ang_cerco := 0.0  # onde, no anel em volta do herói, este monstro quer ficar (rad): eles cercam em vez de empilhar
 var _no_cerco := false
 var n_col := 4  # colunas da folha (quadros de andar)
+var n_lin := 2  # linhas da folha: 2 (frente, três quartos) ou 5 (as cinco direções, ver LINHAS_DIRECOES)
+var emite: Array = []  # por linha da folha: tem algum pixel de olho na folha de emissão? (a horda pula o olho das linhas vazias)
 var fw := 40.0  # tamanho do quadro e linha dos pés (px), e o canto da folha no atlas da horda: o que o lote precisa para desenhar
 var fh := 42.0
 var fpe := 40.0
@@ -89,6 +94,8 @@ func criar(m, _pai: Node, nome: String, t: Dictionary, p: Vector2, r: RandomNumb
 	_anim = rng.randf() * 4.0
 	_espera = rng.randf_range(0.0, 2.0)
 	n_col = int(t.info.colunas.size())
+	n_lin = int(t.info.get("linhas", []).size())
+	emite = t.get("emite", [])
 	fw = float(t.w)
 	fh = float(t.h)
 	fpe = float(t.pe)
@@ -218,16 +225,7 @@ func visual() -> void:
 	v_sx = (1.0 + 0.2 * k) * escala
 	v_sy = (1.0 - 0.16 * k) * escala
 	v_jx = float(rng.randi_range(-1, 1)) if (atordoa_t > 0.0 and k > 0.0) else 0.0
-	var v := vel_v  # (a escolha do quadro, inline: roda por monstro na tela por quadro)
-	var l := 0 if absf(v.x) < absf(v.y) * 0.5 else 1
-	var esp := espelha if absf(v.x) < 1.0 else v.x < 0.0
-	var c := int(_anim / PASSO_ANIM) % n_col
-	if v == Vector2.ZERO and atordoa_t > 0.0:
-		l = linha
-		c = coluna
-		esp = espelha
-	if l != linha or c != coluna or esp != espelha:
-		quadro(c, l, esp, esp != espelha)
+	_escolher_quadro(vel_v)
 	var queimando := queima_t > 0.0
 	if queimando or lento_t > 0.0 or tinta != Color.WHITE:
 		var cf := tinta
@@ -240,10 +238,19 @@ func visual() -> void:
 		v_cor = Color.WHITE
 
 
-## Linha (de frente ou de três quartos), espelho e coluna da folha, a partir da velocidade que a IA quis.
+## Linha, espelho e coluna da folha, a partir da velocidade que a IA quis. Folha de 2 linhas: frente se o movimento é mais vertical, senão
+## três quartos. Folha de 5 linhas: uma por direção (`_linha_de`). Parado, a 5 linhas mantém a última (o bicho não vira para a tela).
 func _escolher_quadro(v: Vector2) -> void:
-	var l := 0 if absf(v.x) < absf(v.y) * 0.5 else 1
-	var esp := espelha if absf(v.x) < 1.0 else v.x < 0.0
+	var l := linha
+	var esp := espelha
+	if n_lin >= LINHAS_DIRECOES:
+		if v.length_squared() >= 1.0:
+			l = _linha_de(v)
+			if l >= 1 and l <= 3 and absf(v.x) >= 1.0:  # de frente e de costas o espelho não importa: fica como está
+				esp = v.x < 0.0
+	else:
+		l = 0 if absf(v.x) < absf(v.y) * 0.5 else 1
+		esp = espelha if absf(v.x) < 1.0 else v.x < 0.0
 	var c := int(_anim / PASSO_ANIM) % n_col
 	if v == Vector2.ZERO and atordoa_t > 0.0:
 		l = linha
@@ -251,6 +258,15 @@ func _escolher_quadro(v: Vector2) -> void:
 		esp = espelha
 	if l != linha or c != coluna or esp != espelha:
 		quadro(c, l, esp, esp != espelha)
+
+
+## A linha (0 frente, 1 três quartos de frente, 2 perfil, 3 três quartos de costas, 4 costas) para andar na direção `v` (tela, y para baixo),
+## com histerese: perto da fronteira entre duas linhas fica na que já estava.
+func _linha_de(v: Vector2) -> int:
+	var ang := rad_to_deg(atan2(absf(v.x), v.y))  # 0 = descendo (frente), 90 = de lado, 180 = subindo (costas)
+	if linha >= 0 and linha < LINHAS_DIRECOES and absf(ang - linha * PASSO_LINHA) <= PASSO_LINHA * 0.5 + HISTERESE_LINHA:
+		return linha
+	return clampi(roundi(ang / PASSO_LINHA), 0, LINHAS_DIRECOES - 1)
 
 
 ## O desenho do monstro com nós (elite e chefe): sprite, olho e contorno.

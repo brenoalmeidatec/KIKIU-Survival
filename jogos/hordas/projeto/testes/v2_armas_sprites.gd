@@ -156,6 +156,16 @@ func foto(pasta: String) -> void:
 	print("FOTO ", pasta.path_join("golpes_com_sprite.png"), " ", img.get_size())
 
 
+## O Lobo Espiritual escolhe a vista pela direção: perfil na horizontal, 3/4 na diagonal, frente descendo, costas subindo.
+func checar_lobo_direcoes() -> void:
+	ok(Novas.linha_lobo(Vector2(1, 0)) == -1 and Novas.linha_lobo(Vector2(-1, 0.1).normalized()) == -1, "lobo: horizontal usa o perfil")
+	ok(Novas.linha_lobo(Vector2(1, 1).normalized()) == 1, "lobo: diagonal para baixo é 3/4 de frente")
+	ok(Novas.linha_lobo(Vector2(-1, -1).normalized()) == 3, "lobo: diagonal para cima é 3/4 de costas")
+	ok(Novas.linha_lobo(Vector2(0, 1)) == 0, "lobo: descendo mostra a frente")
+	ok(Novas.linha_lobo(Vector2(0.1, -1).normalized()) == 4, "lobo: subindo mostra as costas")
+	ok(load(Novas.LOBO_DIR_FOLHA) is Texture2D, "lobo: folha das direções existe")
+
+
 func _ready() -> void:
 	w = Mundo.instantiate()
 	w.modo_teste = true
@@ -163,6 +173,7 @@ func _ready() -> void:
 	w.set_process(false)
 	w.combate.audio.mudo = true
 	checar_indice()
+	checar_lobo_direcoes()
 	checar_golpes()
 	preparar_partida()
 	checar_partida()

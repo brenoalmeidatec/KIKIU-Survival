@@ -48,9 +48,18 @@ func tipo(nome: String) -> Dictionary:
 	ms_blur += (Time.get_ticks_usec() - t0) / 1000.0
 	if ResourceLoader.exists(_caminho(nome + "_emissao.png")):
 		d.emissao = ImageTexture.create_from_image(_imagem(nome + "_emissao.png"))
+		d["emite"] = _linhas_com_emissao(_imagem(nome + "_emissao.png"), d.h)
 	d["pe"] = int(info.get("pe_y", info.quadro[1] - 2))
 	_tipos[nome] = d
 	return d
+
+
+## Por linha da folha de emissão: tem algum pixel aceso? Quem desenha pula os olhos das linhas vazias (de costas, por exemplo).
+static func _linhas_com_emissao(im: Image, alt_quadro: int) -> Array:
+	var r: Array = []
+	for l in maxi(im.get_height() / maxi(alt_quadro, 1), 1):
+		r.append(im.get_region(Rect2i(0, l * alt_quadro, im.get_width(), alt_quadro)).get_used_rect().has_area())
+	return r
 
 
 ## As folhas dos monstros empilhadas num atlas só (para o lote da horda, v2/horda.gd: uma textura, uma chamada de desenho). Devolve
