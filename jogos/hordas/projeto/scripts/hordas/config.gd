@@ -78,6 +78,45 @@ func _ready() -> void:
 	recarregar()
 	# com opções de teste (--bot, --online, --print_tela...) só o som vale: os testes rodam em janela e sem limite de FPS
 	aplicar(OS.get_cmdline_user_args().is_empty())
+	_montar_proporcao()
+
+
+## ---------- janela sempre 16:9 ----------
+## O jogo é 16:9 e o Godot mantém a proporção por dentro, com barras pretas. Ao soltar a borda da janela (PAUSA_PROPORCAO s
+## sem mudar de tamanho), corrige o tamanho para 16:9 pelo lado que o jogador mexeu mais. Tela cheia e maximizada não mudam.
+const PROPORCAO := 16.0 / 9.0
+const PAUSA_PROPORCAO := 0.25
+var _prop_timer: Timer
+var _prop_ultimo := Vector2i.ZERO  # o último tamanho 16:9 que a janela teve
+
+
+func _montar_proporcao() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	_prop_timer = Timer.new()
+	_prop_timer.one_shot = true
+	_prop_timer.wait_time = PAUSA_PROPORCAO
+	_prop_timer.timeout.connect(_corrigir_proporcao)
+	add_child(_prop_timer)
+	_prop_ultimo = get_window().size
+	get_window().size_changed.connect(func(): _prop_timer.start())
+
+
+func _corrigir_proporcao() -> void:
+	var w := get_window()
+	if w.mode != Window.MODE_WINDOWED:
+		return
+	var t := w.size
+	var dx := absf(t.x - _prop_ultimo.x)
+	var dy := absf(t.y - _prop_ultimo.y) * PROPORCAO  # na mesma escala da largura
+	var novo := Vector2i(t.x, roundi(t.x / PROPORCAO)) if dx >= dy else Vector2i(roundi(t.y * PROPORCAO), t.y)
+	var util := DisplayServer.screen_get_usable_rect(w.current_screen).size - Vector2i(16, 48)  # borda e barra de título
+	if novo.x > util.x or novo.y > util.y:  # nunca maior que a tela
+		var k := minf(util.x / float(novo.x), util.y / float(novo.y))
+		novo = Vector2i(roundi(novo.x * k), roundi(novo.x * k / PROPORCAO))
+	_prop_ultimo = novo
+	if absi(novo.x - t.x) > 2 or absi(novo.y - t.y) > 2:
+		w.size = novo
 
 
 ## Lê user://opcoes.cfg de novo (ao abrir o jogo e nos testes de salvar e carregar). Faz a migração da qualidade antiga.
