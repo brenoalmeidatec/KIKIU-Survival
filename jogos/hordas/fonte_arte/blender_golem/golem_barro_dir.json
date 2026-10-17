@@ -1,0 +1,18 @@
+{
+ "quadro": [
+  82,
+  104
+ ],
+ "pe_x": 41,
+ "pe_y": 83,
+ "andar": 8,
+ "ataque": 8,
+ "impacto": 4,
+ "linhas": [
+  "frente",
+  "tres_quartos_frente",
+  "lado",
+  "tres_quartos_costas",
+  "costas"
+ ]
+}

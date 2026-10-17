@@ -2126,3 +2126,10 @@ _Claude do Alisson (PC)_
 - **Pendente:** Alisson/Breno jogarem para ver as direções e os golpes; picos de quadro com a máquina parada; Project Warlock no desktop (atalho do notebook, jogo não instalado aqui; decisão do Alisson).
 
 _Claude do Alisson (PC)_
+
+## 2026-10-17 · Claude do Alisson (PC) · Golem de Barro com 8 direções, andar e ataque
+- **Feito:** o Golem (carta "golem_barro" e o Colosso de Pedra, fusão) deixou de deslizar parado: modelo 3D procedural (`jogos/hordas/fonte_arte/blender_golem/gerar_golem.py`, 45 graus, 24,5 px/u) com 5 vistas x (8 quadros de andar + 8 de ataque) em `assets/v2/armas/golem_barro_dir.png`; lógica e desenho em `v2/golem.gd` (ligado ao pool de `armas_novas.gd`): vista pela direção com histerese, passo pela distância andada (pisada com poeira), ataque em área com antecipação, pancada (dano no quadro do impacto, onda, torrões, poeira, clarão, tremor leve), volta, e surgir/desmoronar do chão. Teste `testes/v2_golem.tscn`; prancha em `docs/visual_2_5d/golem/prancha.png`.
+- **Mudança de jogo:** o golpe virou pancada em área (raio 42 px, mesmo dano) em vez de toque em tique no alvo único. Se ficar forte demais, ajuste `RAIO_IMPACTO`/`RESPIRO` em `v2/golem.gd`.
+- **Pendente:** jogar para sentir o ritmo; tamanho do golem (escala 0.76 no gerador) conferir ao lado dos monstros.
+
+_Claude do Alisson (PC)_
