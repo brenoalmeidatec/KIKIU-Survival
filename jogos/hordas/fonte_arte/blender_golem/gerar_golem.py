@@ -151,7 +151,8 @@ def pose(J, q):
         s, c = math.sin(f), math.cos(f)
         for lado, sg in (("e", 1.0), ("d", -1.0)):
             J["quadril_" + lado].rotation_euler = (0.62 * s * sg, 0, 0)
-            J["quadril_" + lado].delta_location = (0, 0, 0.16 * max(0.0, c * sg))
+            # a perna que balança para a frente (c*sg negativo) sai do chão; a que fica no chão vai para trás em relação ao corpo (o pé não escorrega)
+            J["quadril_" + lado].delta_location = (0, 0, 0.16 * max(0.0, -c * sg))
             J["ombro_" + lado].rotation_euler = (-0.12 - 0.50 * s * sg, 0, 0)
             J["cotovelo_" + lado].rotation_euler = (-0.30 - 0.18 * max(0.0, -s * sg), 0, 0)
         corpo.location = (0.03 * s, 0, -0.13 * abs(s) + 0.1)

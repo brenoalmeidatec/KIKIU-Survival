@@ -2,6 +2,7 @@ extends Node
 ## O Golem de Barro da v2 (v2/golem.gd, ligado em v2/armas_novas.gd): a folha 3D confere com as constantes do código, a vista sai da direção
 ## (5 linhas, com histerese), o passo anda com a distância andada, o ciclo surgir -> andar -> atacar -> andar -> desmoronar acontece de verdade,
 ## parado durante o golpe, e o dano cai UMA vez por pancada, no quadro do impacto (não no começo do ataque). Nenhum nó novo na camada de desenho.
+## Também: a passada da arte bate com o ciclo do código (pé não escorrega), a pancada em área pega 3 alvos, o Colosso (escala 1,3) segue o tique da carta e sem a folha vale o caminho antigo.
 ## Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_golem.tscn  (imprime "v2_golem falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Golem := preload("res://v2/golem.gd")
@@ -56,8 +57,8 @@ func checar_funcoes() -> void:
 	var v := Vector2(sin(deg_to_rad(68.0)), cos(deg_to_rad(68.0)))
 	ok(Golem.linha_de(v, 1) == 1 and Golem.linha_de(v, 2) == 2, "histerese: perto da fronteira fica na vista que já estava")
 	ok(
-		absf(Golem.tempo_impacto() - 0.40) < 0.001 and Golem.tempo_ataque() > Golem.tempo_impacto() + 0.3,
-		"tempos do ataque: impacto em 0,40 s e a volta depois"
+		absf(Golem.tempo_impacto() - 0.35) < 0.001 and Golem.tempo_ataque() > Golem.tempo_impacto() + 0.3,
+		"tempos do ataque: impacto em 0,35 s e a volta depois"
 	)
 	ok(
 		Golem.quadro_ataque(0.0) == 0 and Golem.quadro_ataque(Golem.tempo_impacto() - 0.001) == Golem.QUADRO_IMPACTO - 1,
@@ -72,6 +73,145 @@ func checar_funcoes() -> void:
 		"o ciclo de andar dá a volta (8 quadros)"
 	)
 	ok(Golem.eh_golem("golem_barro") and Golem.eh_golem("colosso_de_pedra") and not Golem.eh_golem("lobo_espirito"), "quem é golem")
+
+
+## Separação (px) dos dois pés na vista de perfil no quadro PARADO, medida no png: o pé de apoio anda essa distância por passo
+## (-1 se não achar dois pés). O corpo anda CICLO_PX por ciclo = 2 passos; se a arte e o código discordam, o pé escorrega.
+func separacao_pes() -> float:
+	var img := Image.load_from_file(ProjectSettings.globalize_path(Golem.FOLHA))
+	if img == null:
+		return -1.0
+	var qw := int(Golem.QUADRO.x)
+	var qh := int(Golem.QUADRO.y)
+	var ox := Golem.PARADO * qw
+	var oy := 2 * qh  # linha 2 = perfil
+	var base := -1
+	for y in range(qh - 1, -1, -1):
+		for x in qw:
+			if img.get_pixel(ox + x, oy + y).a > 0.5:
+				base = y
+				break
+		if base >= 0:
+			break
+	if base < 0:
+		return -1.0
+	var grupos: Array = []
+	for x in qw:
+		var tem := false
+		for y in range(base - 5, base + 1):
+			if img.get_pixel(ox + x, oy + y).a > 0.5:
+				tem = true
+				break
+		if not tem:
+			continue
+		if not grupos.is_empty() and x - (grupos[-1][-1] as int) <= 2:
+			grupos[-1].append(x)
+		else:
+			grupos.append([x])
+	if grupos.size() != 2:
+		return -1.0
+	var c: Array = []
+	for g in grupos:
+		var soma := 0.0
+		for x in g:
+			soma += x
+		c.append(soma / g.size())
+	return absf(float(c[1]) - float(c[0]))
+
+
+func checar_passada() -> void:
+	var sep := separacao_pes()
+	ok(sep > 8.0, "arte: dois pés separados no perfil, quadro parado (%.1f px)" % sep)
+	ok(
+		sep > 0.0 and absf(2.0 * sep - Golem.CICLO_PX) <= 0.25 * Golem.CICLO_PX,
+		"a passada da arte (2 x %.1f px) bate com o ciclo do código (%.0f px): o pé não escorrega" % [sep, Golem.CICLO_PX]
+	)
+
+
+func preparar_mundo() -> void:
+	w.reiniciar()
+	w.combate.limpar_partida()
+	w.combate.diretor.ligado = false
+	w.heroi.imortal = true
+	w.heroi.entrada_forcada = Vector2.ZERO
+	w.heroi.ataque_forcado = null
+	w.heroi.fonte = Heroi.Fonte.MOUSE
+	passos(3)
+
+
+## Golem de Barro ou Colosso (evoluido) contra 3 alvos juntos: a pancada pega todos de uma vez, uma vez por ataque, e o ciclo segue o "tique" da carta.
+func checar_area(id: String, evoluido: bool) -> void:
+	preparar_mundo()
+	var tique := 0.0
+	if evoluido:
+		for ev in w.combate.cartas.cfg.evolucoes:
+			if str(ev.id) == id:
+				w.combate.armas.adicionar_evoluida(ev, 0.0)
+				tique = float(ev.arma.tique)
+	else:
+		w.combate.armas.definir_golpe(id, 1, 0.0)
+		tique = float(w.combate.armas.ativas[id].st.tique)
+	ok(tique > 0.0, "%s: achou o tique nos dados" % id)
+	var alvos := [monstro_a(150.0, 0.0), monstro_a(150.0, 22.0), monstro_a(150.0, -22.0)]
+	var it = null
+	for i in 600:
+		passos(1)
+		it = golem_ativo()
+		if it != null:
+			break
+	ok(it != null and str(it.a.id) == id, "%s: nasce como golem" % id)
+	if it == null:
+		return
+	ok(is_equal_approx(Golem.escala(id), 1.3 if evoluido else 1.0), "%s: escala do golem" % id)
+	var vidas: Array = []
+	for m in alvos:
+		vidas.append(float(m.vida))
+	var instantes: Array = []
+	var area_ok := true
+	var imp_ant := false
+	var t := 0.0
+	for i in 60 * 7:
+		passos(1)
+		t += PASSO
+		if float(it.vida) <= 0.0:
+			break
+		var imp := bool(it.imp) and int(it.e) == Golem.ATACANDO
+		if imp and not imp_ant:
+			instantes.append(t)
+			for k in alvos.size():
+				if float(alvos[k].vida) >= float(vidas[k]) - 0.01:
+					area_ok = false
+			for k in alvos.size():
+				vidas[k] = float(alvos[k].vida)
+		imp_ant = imp
+	ok(instantes.size() >= 3, "%s: pelo menos 3 pancadas em 7 s (%d)" % [id, instantes.size()])
+	ok(area_ok, "%s: cada pancada fere os 3 alvos juntos" % id)
+	if instantes.size() >= 3:
+		var periodo := (float(instantes[-1]) - float(instantes[1])) / float(instantes.size() - 2)
+		var esperado := maxf(tique, Golem.tempo_ataque() + Golem.RESPIRO_MIN)
+		ok(absf(periodo - esperado) <= 0.06, "%s: ciclo de %.3f s segue o tique da carta (%.2f s)" % [id, periodo, esperado])
+	print("%s: pancadas %d em %s" % [id, instantes.size(), instantes])
+
+
+## Sem a folha o aliado volta ao desenho antigo (não vira golem) e continua funcionando.
+func checar_sem_folha() -> void:
+	Golem._tex = null
+	Golem._lida = true
+	preparar_mundo()
+	w.combate.armas.definir_golpe("golem_barro", 1, 0.0)
+	monstro_a(150.0, 0.0)
+	var item = null
+	for i in 600:
+		passos(1)
+		for x in w.combate.armas.novas.itens:
+			if float(x.vida) > 0.0:
+				item = x
+		if item != null:
+			break
+	ok(item != null and not bool(item.g), "sem a folha: o aliado nasce pelo caminho antigo, sem estado de golem")
+	Golem._lida = false  # a próxima chamada de tex() carrega a folha de novo
+	Golem._tex = null
+	ok(Golem.tex() != null, "a folha volta a carregar depois do teste do fallback")
 
 
 func monstro_a(dx: float, dy: float):
@@ -175,7 +315,7 @@ func checar_partida() -> void:
 	ok(dano_fora == 0, "nenhum dano durante a antecipação, antes do impacto (%d)" % dano_fora)
 	ok(parado_no_golpe, "o golem fica plantado durante o golpe")
 	ok(andou > 3.0, "o golem andou até o alvo (%.0f px)" % andou)
-	ok(pf_andou > 0.0 and absf(pf_andou * Golem.CICLO_PX - andou) < 1.0, "o passo avança com a distância andada (pf %.3f, %.0f px)" % [pf_andou, andou])
+	ok(pf_andou > 0.0 and absf(pf_andou * Golem.CICLO_PX - andou) < 1.0, "o passo avança com a distância andada (pf %.3f, %.0f px)" % [pf_andou, andou])  # a relação com a ARTE está em checar_passada
 	ok(not linhas_vistas.is_empty(), "andou com alguma vista (linhas %s)" % [linhas_vistas.keys()])
 	ok(sumiu or float(it.vida) <= 0.0, "o golem desmorona no fim da duração")
 	var nos_depois: int = w.combate.armas.no_brilho.get_child_count() + w.combate.armas.no_corpo.get_child_count()
@@ -297,6 +437,10 @@ func _ready() -> void:
 	checar_folha()
 	checar_funcoes()
 	checar_partida()
+	checar_passada()
+	checar_area("golem_barro", false)
+	checar_area("colosso_de_pedra", true)
+	checar_sem_folha()
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--fotos="):
 			await fotos(a.trim_prefix("--fotos="))

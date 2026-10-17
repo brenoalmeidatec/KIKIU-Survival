@@ -20,13 +20,15 @@ const COL_ATAQUE := 8
 const LINHAS := 5
 const PASSO_LINHA := 45.0  # graus entre uma vista e a próxima
 const HISTERESE := 8.0  # graus de folga para não piscar de vista na fronteira
-const CICLO_PX := 80.0  # pixels andados por ciclo de andar (8 quadros): passo pesado, ~1 ciclo por segundo na velocidade base
+const CICLO_PX := 40.0  # pixels andados por ciclo de andar (8 quadros) = 2 passos de ~20 px, a separação dos pés da arte (medida no perfil, quadro 2): o pé de apoio não escorrega
 const PARADO := 2  # quadro de andar usado parado (pernas afastadas, os dois pés no chão)
-const TEMPOS_ATAQUE := [0.10, 0.09, 0.09, 0.12, 0.07, 0.12, 0.12, 0.11]  # duração de cada quadro do ataque (s)
+const TEMPOS_ATAQUE := [0.09, 0.08, 0.08, 0.10, 0.06, 0.11, 0.10, 0.10]  # duração de cada quadro do ataque (s); soma 0,72 s, para caber no "tique" de 0,8 s da carta
 const QUADRO_IMPACTO := 4  # índice (dentro do ataque) do quadro da pancada
 const ALCANCE := 30.0  # distância (plano achatado) do alvo a partir da qual ele para e ataca
 const RAIO_IMPACTO := 42.0  # raio da pancada no chão
-const RESPIRO := 0.25  # pausa entre o fim de um ataque e o começo do próximo
+const RESPIRO_MIN := 0.08  # menor pausa entre o fim de um ataque e o começo do próximo (a cadência vem do "tique" da carta: ciclo = max(tique, ataque + isto))
+const EMPURRA := 45.0  # empurrão da pancada em cada monstro (o golpe antigo, de contato, empurrava 30; o monstro divide pelo peso)
+const ATORDOA := 0.08  # atordoamento da pancada, em s (o golpe antigo dava 0,05)
 const SURGIR_T := 0.55  # sobe do chão
 const SUMIR_T := 0.6  # desmorona nos últimos segundos de vida
 const ACHATA := 0.62
@@ -81,6 +83,11 @@ static func tempo_impacto() -> float:
 	for i in QUADRO_IMPACTO:
 		s += float(TEMPOS_ATAQUE[i])
 	return s
+
+
+## Pausa depois do ataque: o "tique" da carta (dados/v2_cartas.json, sobe e desce com os níveis) é o ciclo inteiro; nunca menos que `RESPIRO_MIN`.
+static func respiro(it: Dictionary) -> float:
+	return maxf(RESPIRO_MIN, float(it.a.st.tique) - tempo_ataque())
 
 
 ## Quadro do ataque (0 a 7) para `t` segundos desde o começo dele.
@@ -201,7 +208,7 @@ static func _atacar(nv, it: Dictionary) -> void:
 	if et >= tempo_ataque():
 		it.e = ANDANDO
 		it.et = 0.0
-		it.t = RESPIRO
+		it.t = respiro(it)
 
 
 ## A pancada: dano em área no ponto guardado no início do golpe, onda no chão, torrões, poeira, clarão e um tremor leve.
@@ -211,7 +218,7 @@ static func _impacto(nv, it: Dictionary) -> void:
 	var esc := escala(str(a.id))
 	var p: Vector2 = it.ip
 	var raio := RAIO_IMPACTO * esc
-	pai._dano_area(p, raio, nv._dano(a.st), 170.0, 0.25, a.cor, "aliado")
+	pai._dano_area(p, raio, nv._dano(a.st), EMPURRA, ATORDOA, a.cor, "aliado")
 	var fx = pai.fx
 	fx.onda(p, Color(0.9, 0.65, 0.42, 0.9), raio, 0.3)
 	fx.onda(p, Color(1.0, 0.8, 0.5, 0.6), raio * 0.55, 0.2)
@@ -220,7 +227,8 @@ static func _impacto(nv, it: Dictionary) -> void:
 	_torroes(nv, p, 12, 90.0 * esc, esc)
 	_poeira(nv, p, 9, 70.0 * esc, esc)
 	pai.combate.audio.tocar("impacto", randf_range(0.55, 0.7) / sqrt(esc), -1.0, 0.1)
-	pai.mundo.cam.tremer(0.9 * esc, 0.12)
+	if (pai.mundo.heroi.pos as Vector2).distance_to(p) < 360.0:
+		pai.mundo.cam.tremer(0.9 * esc, 0.12)
 
 
 static func _pisada(nv, it: Dictionary, esc: float) -> void:
