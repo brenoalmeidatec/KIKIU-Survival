@@ -2118,3 +2118,11 @@ _Claude do Alisson (PC)_
 - **Próximo sugerido:** picos de quadro com a máquina parada (pré-carregar o que carrega sob demanda); perfis `--humano` no robô antes de calibrar o equilíbrio (#137).
 
 _Claude do Alisson (PC)_
+
+## 2026-10-17 · Claude do Alisson (PC) · CI em 3 shards, atalho de teste, tela de cartas/pausa e bichos com 8 direções
+- **Na main:** CI com os testes divididos em 3 máquinas e cache da importação (#314, de 4-6 min para ~3 min; v2_playtest e v2_status rodam sozinhos no fim do shard porque conferem arquivos reais); atalho de teste "KIKIU (teste)" na área de trabalho (`ferramentas/jogar_kikiu.ps1 -Instalar`: baixa a Release mais nova e abre; dados em `%USERPROFILE%\KIKIU-Teste`, porque a área de trabalho não desenhava ícone guardado em `AppData\Local` nesta máquina; `kikiu.ico` do jogo virou BMP em todos os tamanhos) (#310, #311, #313); janela sempre 16:9 ao redimensionar (#312); tela de cartas/baú acima do HUD, que some enquanto ela está aberta, e pausa com fundo mais escuro (#315).
+- **Bichos com 8 direções (#316):** os 5 monstros regerados no Blender com 5 vistas (frente, 3/4, perfil, 3/4 costas, costas; espelho dá as 8) e passo legível de frente e de costas; o gerador cortava o topo (rabo do lobo, espada do cavaleiro) e foi corrigido; `monstro.gd` escolhe a vista por octante com histerese e apaga os olhos de costas; folha antiga de 2 linhas continua funcionando; Lobo Espiritual ganhou frente/costas/3-4 do modelo 3D do lobo sombrio (de lado ficou a arte do Breno). Revisão de arte por bicho (espantalho e lobo sombrio reprovados e refeitos). `v2_direcoes_monstro` e o CI inteiro: verdes. Ninguém viu os bichos em movimento no jogo ainda: o print do cerco embola a horda.
+- **Processo:** agentes Sonnet médio e Haiku máximo; no PC, 1 Godot por vez e suíte inteira só no CI (o PC ficou lento com vários juntos).
+- **Pendente:** Alisson/Breno jogarem para ver as direções e os golpes; picos de quadro com a máquina parada; Project Warlock no desktop (atalho do notebook, jogo não instalado aqui; decisão do Alisson).
+
+_Claude do Alisson (PC)_
