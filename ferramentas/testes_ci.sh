@@ -15,6 +15,11 @@
 # bench_* ficam de fora. criacao e criacao2 gravam o mesmo arquivo de heroi
 # (user://teste_heroi_criado.json e user://teste_criacao2.json), por isso rodam
 # em sequencia dentro da mesma unidade, nunca em paralelo.
+# SOZINHAS: cenas que conferem que os arquivos reais do jogo (save, opcoes.cfg,
+# online.json) nao mudaram durante elas; com outra cena gravando em user:// ao
+# mesmo tempo, acusam falso positivo. Rodam no fim do shard, uma por vez, com
+# nada em paralelo.
+SOZINHAS=" v2_playtest v2_status "
 # Logs completos de cada cena ficam em $LOGS (pasta temporaria).
 
 set -u
@@ -145,7 +150,17 @@ export GODOT LOGS
 [ -n "$SHARD" ] && echo "Shard $SHARD: ${#unidades[@]} unidades, tempo somado estimado ${estimado}s (de ${#cenas_todas[@]} cenas no total)."
 echo "Cenas: $total para rodar (de ${#todas[@]} .tscn; bench_* fora: $bench). Paralelas: $P. Unidades: ${#unidades[@]}."
 inicio=$SECONDS
-printf '%s\n' "${unidades[@]}" | xargs -d '\n' -P "$P" -I{} bash "$SELF" --uma {}
+paralelas=()
+sozinhas=()
+for un in "${unidades[@]}"; do
+  if [[ "$SOZINHAS" == *" $un "* ]]; then sozinhas+=("$un"); else paralelas+=("$un"); fi
+done
+if [ ${#paralelas[@]} -gt 0 ]; then
+  printf '%s\n' "${paralelas[@]}" | xargs -d '\n' -P "$P" -I{} bash "$SELF" --uma {}
+fi
+for un in "${sozinhas[@]}"; do
+  bash "$SELF" --uma "$un"
+done
 dur=$((SECONDS - inicio))
 
 ok=0
