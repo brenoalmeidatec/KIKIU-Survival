@@ -2191,3 +2191,11 @@ _Claude do Alisson (PC)_
 - **Ferramentas:** `--tamanho_ui=auto|pequeno|medio|grande` no `mundo.gd` (vale nas fotos e medições sem gravar nas opções); o `RENDER` do `--medir` agora imprime `cpu ui` e `gpu ui`.
 - **Pendente:** medir no i5-3470; o salão segue fixo em "grande" (decisão registrada).
 _Claude do Alisson (PC)_
+
+## 2026-10-17 · Claude do Alisson (PC) · noite autônoma: golem, ataques novos, HUD de poderes e tamanho da interface
+- **Na main:** tamanho da interface Automático/Pequeno/Médio/Grande (#320; o Automático da frente era "o maior que cabe" e deixava as cartas com 85% da largura em 1080p, o mesmo tamanho de que o Alisson reclamou: corrigi para um alvo de 1440x810, cartas em cerca de metade da tela); HUD com a faixa dos poderes da partida, ícone, nível e recarga (#319; a faixa flutuava no meio da tela com a escala nova e foi ancorada no canto inferior esquerdo do canvas); Golem com 8 direções, andar e pancada no chão com poeira, torrões e onda (#317); ataques novos Sentinela de Bambu (torre que atira virotes; fusão Pagode do Trovão com o Raio) e Cabaça de Pólvora (granada em parábola que quica e solta estilhaços; fusão Fogos de Festival) (#318).
+- **Como:** workflow com 4 frentes em worktrees próprios (Sonnet alto construindo, Haiku máximo verificando, Opus leve revisando arte), depois polimento e integração aqui. Conflito golem x ataques em armas_novas.gd resolvido mantendo os dois.
+- **Ninguém jogou ainda:** tudo foi visto em testes e fotos paradas. Conferir jogando: passada do golem em diagonal, ritmo da pancada, tamanho da Sentinela, partículas da Cabaça, o Automático da interface na janela do Alisson.
+- **Outros:** imagegen do ChatGPT no navegador interno funciona (teste: ícone de granada; não entrou no jogo). Modo leve de CPU (2 núcleos, prioridade Idle) para quando o Alisson joga.
+
+_Claude do Alisson (PC)_
