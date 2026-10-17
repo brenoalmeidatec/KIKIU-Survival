@@ -512,8 +512,15 @@ func _r_escolha() -> void:
 			if c.telas.espera_escolha <= 0.0 and t_passo > 0.12:
 				_foto("21_escolha_liberada")
 				passo = 3
-		3:
-			mundo.get_tree().quit()
+		3:  # o menu de pausa por cima da escolha (cortina escura; os cards SUA BUILD e da arma ao lado). A árvore pausa: espera por um timer que roda pausado
+			passo = 4
+			ocupado = true
+			mundo.pausa.pausar()
+			await mundo.get_tree().create_timer(0.5, true, false, true).timeout
+			ocupado = false
+			await _foto("22_escolha_pausa")
+			mundo.get_tree().quit()  # pausada, a árvore não volta aqui no próximo quadro
+		4:
 			return
 
 

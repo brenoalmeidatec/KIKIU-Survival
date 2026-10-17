@@ -242,7 +242,8 @@ func avancar(dt: float) -> void:
 	var abates := roundi(_num(mundo, "abates", 0.0))
 	var combo := roundi(_num(mundo, "combo", 0.0))
 	_abates.text = "ABATES %d\nVIVOS %d" % [abates, roundi(_num(mundo, "monstros_vivos", 0.0))]
-	var cartas_na_tela := _cartas_na_tela()  # a escolha e o baú têm o título grande no alto: combo e faixa saem
+	var cartas_na_tela := _cartas_na_tela()  # a escolha e o baú ocupam a tela toda: a HUD inteira some (volta ao fechar), sem misturar com os botões
+	visible = not cartas_na_tela
 	_combo.visible = combo > 0 and not cartas_na_tela
 	_combo_num.text = "x%d" % combo
 	_checar_marcos(_combo_antes, combo)
