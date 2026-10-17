@@ -139,15 +139,39 @@ func separacao_pes() -> float:
 func checar_passada() -> void:
 	var sep := separacao_pes()
 	ok(sep > 8.0, "arte: dois pés separados no perfil, quadro parado (%.1f px, medida grosseira: pontas dos pés)" % sep)
-	# a passada de verdade vem do gerador (a câmera projeta o centro de cada pé no apoio duplo): o código tem de usar o mesmo número, senão o pé escorrega
+	# a passada de verdade vem do gerador, que mede NOS PIXELS o pé de apoio (renderizado sozinho, quadros 2 a 6) em cada vista: o código tem de andar o mesmo, senão o pé escorrega
 	var d = JSON.parse_string(FileAccess.get_file_as_string("res://assets/v2/armas/golem_barro_dir.json"))
-	var ciclo := float(d.get("ciclo_px", -1.0)) if d is Dictionary else -1.0
-	ok(ciclo > 30.0, "o .json traz a passada medida pelo gerador (ciclo_px %.1f)" % ciclo)
-	ok(absf(ciclo - Golem.CICLO_PX) <= 1.0, "o ciclo do código (%.0f px) é a passada da arte (%.1f px): o pé não escorrega" % [Golem.CICLO_PX, ciclo])
-	# passada larga: pelo menos 24 px entre os pés no apoio duplo (a anterior tinha 20)
-	ok(ciclo * 0.5 >= 24.0, "passada larga: %.1f px entre os pés no apoio duplo" % (ciclo * 0.5))
-	for f in Golem.FATOR_LINHA:
-		ok(float(f) > 0.5 and float(f) <= 1.0, "fator de passada por vista entre 0,5 e 1 (%.2f)" % float(f))
+	ok(d is Dictionary and d.has("ciclo_linha") and d.has("pe_apoio") and d.has("deslize_px"), "o .json traz a passada medida pelo gerador, por vista")
+	if not (d is Dictionary and d.has("ciclo_linha") and d.has("pe_apoio") and d.has("deslize_px")):
+		return
+	ok(d.ciclo_linha.size() == Golem.LINHAS and Golem.CICLO_LINHA.size() == Golem.LINHAS, "passada: um ciclo por vista (%d)" % Golem.LINHAS)
+	for v in Golem.LINHAS:
+		var arte := float(d.ciclo_linha[v])
+		ok(
+			absf(arte - float(Golem.CICLO_LINHA[v])) <= 0.6,
+			"vista %d: o ciclo do código (%.1f px) é a passada da arte (%.1f px): o pé não escorrega" % [v, Golem.CICLO_LINHA[v], arte]
+		)
+		# o pé de apoio anda em reta e a passos iguais entre os quadros 2 e 6 (na folha, em px): sem solavanco, sem recuar
+		var pts: Array = d.pe_apoio[v]
+		var total := Vector2(float(pts[4][0]) - float(pts[0][0]), float(pts[4][1]) - float(pts[0][1]))
+		ok(absf(2.0 * total.length() - arte) <= 0.6, "vista %d: o ciclo gravado é 2 x o deslocamento do pé de apoio (%.1f px)" % [v, 2.0 * total.length()])
+		var passo_medio := total / 4.0
+		var desvio := 0.0
+		for k in 4:
+			var passo := Vector2(float(pts[k + 1][0]) - float(pts[k][0]), float(pts[k + 1][1]) - float(pts[k][1]))
+			desvio = maxf(desvio, passo.distance_to(passo_medio))
+		ok(desvio <= 2.0, "vista %d: o pé de apoio anda a passos iguais (desvio %.1f px)" % [v, desvio])
+		ok(float(d.deslize_px[v]) <= 2.5, "vista %d: o pé de apoio não sai da reta (%.1f px)" % [v, float(d.deslize_px[v])])
+	# o pé de apoio anda para trás: de perfil (olhando para a direita) vai para a esquerda; de frente sobe na tela, de costas desce
+	ok(float(d.pe_apoio[2][4][0]) < float(d.pe_apoio[2][0][0]) - 20.0, "perfil: o pé de apoio corre para trás (esquerda)")
+	ok(float(d.pe_apoio[0][4][1]) < float(d.pe_apoio[0][0][1]) - 12.0, "de frente: o pé de apoio sobe na tela")
+	ok(float(d.pe_apoio[4][4][1]) > float(d.pe_apoio[4][0][1]) + 12.0, "de costas: o pé de apoio desce na tela")
+	# passada larga: pelo menos 24 px entre os pés no apoio duplo, de perfil (a anterior tinha 20)
+	ok(float(Golem.CICLO_LINHA[2]) * 0.5 >= 24.0, "passada larga: %.1f px entre os pés no apoio duplo" % (float(Golem.CICLO_LINHA[2]) * 0.5))
+	ok(
+		float(Golem.CICLO_LINHA[0]) < float(Golem.CICLO_LINHA[1]) and float(Golem.CICLO_LINHA[1]) < float(Golem.CICLO_LINHA[2]),
+		"a câmera encurta a passada de frente e nas diagonais"
+	)
 	ok(Golem.EMPURRA <= 30.0 and Golem.ATORDOA <= 0.05, "a pancada não empurra nem atordoa mais por alvo que o golpe antigo (30, 0,05 s)")
 
 
@@ -192,6 +216,8 @@ func checar_area(id: String, evoluido: bool) -> void:
 		vidas.append(float(m.vida))
 	var instantes: Array = []
 	var area_ok := true
+	var juntou := false
+	var esc_a := Golem.escala(id)
 	var imp_ant := false
 	var t := 0.0
 	for i in 60 * 7:
@@ -199,26 +225,83 @@ func checar_area(id: String, evoluido: bool) -> void:
 		t += PASSO
 		if float(it.vida) <= 0.0:
 			break
+		if int(it.e) == Golem.ATACANDO and not bool(it.imp) and float(it.et) >= Golem.tempo_impacto() - 0.05 and not juntou:
+			# a pancada é em área: os 3 alvos ficam juntos dentro dela (a 0,5 x o raio do ponto do golpe) um instante antes de cair, e TODOS têm de ser feridos
+			juntou = true
+			for k in alvos.size():
+				alvos[k].pos = (it.ip as Vector2) + [Vector2.ZERO, Vector2(9, 5), Vector2(-9, -5)][k] * esc_a
 		var imp := bool(it.imp) and int(it.e) == Golem.ATACANDO
+		if int(it.e) != Golem.ATACANDO:
+			juntou = false
 		if imp and not imp_ant:
 			instantes.append(t)
 			var feridos := 0
 			for k in alvos.size():
 				if float(alvos[k].vida) < float(vidas[k]) - 0.01:
 					feridos += 1
-			# a pancada é em área (elipse de 42 px de raio, achatada pelo chão): a primeira pega pelo menos 2 dos 3 juntos (os monstros se afastam uns dos outros e o 3º pode ficar uns pixels fora); as outras empurram os de fora (30 px por pancada), então pelo menos 1 tem de cair
-			if feridos < (2 if instantes.size() == 1 else 1):
+			if feridos < alvos.size():
 				area_ok = false
 			for k in alvos.size():
 				vidas[k] = float(alvos[k].vida)
 		imp_ant = imp
 	ok(instantes.size() >= 3, "%s: pelo menos 3 pancadas em 7 s (%d)" % [id, instantes.size()])
-	ok(area_ok, "%s: a primeira pancada fere pelo menos 2 dos 3 alvos juntos e as seguintes pelo menos um" % id)
+	ok(area_ok, "%s: toda pancada fere os 3 alvos que estão dentro dela" % id)
 	if instantes.size() >= 3:
 		var periodo := (float(instantes[-1]) - float(instantes[1])) / float(instantes.size() - 2)
 		var esperado := maxf(tique, Golem.tempo_ataque() + Golem.RESPIRO_MIN)
 		ok(absf(periodo - esperado) <= 0.06, "%s: ciclo de %.3f s segue o tique da carta (%.2f s)" % [id, periodo, esperado])
 	print("%s: pancadas %d em %s" % [id, instantes.size(), instantes])
+
+
+## O entulho e as rachaduras ficam no chão depois que o golem some (o slot do pool já é livre, mas o pool continua andando e desenhando o que sobrou).
+func checar_restos() -> void:
+	preparar_mundo()
+	w.combate.armas.definir_golpe("golem_barro", 1, 0.0)
+	monstro_a(150.0, 0.0)
+	var it = null
+	for i in 600:
+		passos(1)
+		it = golem_ativo()
+		if it != null:
+			break
+	ok(it != null, "restos: o golem nasce")
+	if it == null:
+		return
+	segurar_recarga("golem_barro")
+	it.vida = Golem.SUMIR_T + 0.05  # a vida acaba logo: o desmoronar solta a rajada de torrões com 0,6 s de vida restando
+	var peso_max := 0
+	for i in 60:
+		passos(1)
+		if float(it.vida) <= 0.0:
+			break
+		peso_max = maxi(peso_max, (it.deb as PackedFloat32Array).size() / Golem.T_DEB)
+	ok(float(it.vida) <= 0.0 and peso_max >= 8, "restos: o desmoronar solta o entulho (%d peças) antes de a vida acabar" % peso_max)
+	ok(Golem.tem_restos(it) and w.combate.armas.novas.tem_ativos(), "restos: o golem acabou e o entulho continua (e o pool segue ativo para desenhá-lo)")
+	var antes := (it.deb as PackedFloat32Array).size() / Golem.T_DEB
+	passos(12)  # 0,2 s depois: as peças de vida curta saem, os torrões (1,2 s ou mais) continuam
+	var depois := (it.deb as PackedFloat32Array).size() / Golem.T_DEB
+	ok(depois >= 1 and depois <= antes, "restos: 0,2 s depois do fim ainda há entulho no chão (%d de %d peças)" % [depois, antes])
+	var torroes := 0
+	var d: PackedFloat32Array = it.deb
+	for k in d.size() / Golem.T_DEB:
+		if d[k * Golem.T_DEB + 9] < 1.5 and d[k * Golem.T_DEB + 6] > 0.4:
+			torroes += 1
+	ok(torroes >= 3, "restos: os torrões seguem no chão com mais de 0,4 s pela frente (%d)" % torroes)
+	passos(60 * 3)
+	ok(not Golem.tem_restos(it) and not w.combate.armas.novas.tem_ativos(), "restos: 3 s depois tudo some e o pool volta a repousar")
+	# um slot com resto não é reaproveitado se houver outro livre e limpo
+	var n_livres_limpos := 0
+	for x in w.combate.armas.novas.itens:
+		if float(x.vida) <= 0.0 and not Golem.tem_restos(x):
+			n_livres_limpos += 1
+	ok(n_livres_limpos == w.combate.armas.novas.itens.size(), "restos: todos os slots voltam livres e limpos")
+	it.deb = PackedFloat32Array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 4.0, 0.0, 0.0])
+	it.vida = 0.0
+	var novo: Dictionary = w.combate.armas.novas._novo("projetil", w.combate.armas.ativas["golem_barro"], Vector2.ZERO, 1.0)
+	ok(not novo.is_empty() and not is_same(novo, it), "restos: um slot novo evita o que ainda guarda entulho")
+	novo.vida = 0.0
+	w.combate.armas.novas.limpar()
+	ok(not Golem.tem_restos(it), "restos: limpar() (nova partida) apaga o entulho")
 
 
 ## Sem a folha o aliado volta ao desenho antigo (não vira golem) e continua funcionando.
@@ -341,7 +424,7 @@ func checar_partida() -> void:
 			dano_fora += 1  # dano durante a antecipação, antes da pancada
 		if e == Golem.ANDANDO and bool(it.mov):
 			andou += (it.p as Vector2).distance_to(pos_antes)
-			pf_esperado += (it.p as Vector2).distance_to(pos_antes) / (Golem.CICLO_PX * float(Golem.FATOR_LINHA[int(it.lin)]))
+			pf_esperado += (it.p as Vector2).distance_to(pos_antes) / float(Golem.CICLO_LINHA[int(it.lin)])
 			pf_andou = float(it.pf) - pf_antes
 			linhas_vistas[Golem.quadro_de(it).y] = true
 		deb_max = maxi(deb_max, (it.deb as PackedFloat32Array).size() / Golem.T_DEB)
@@ -483,7 +566,41 @@ func fotos(pasta: String) -> void:
 func fotos_novas(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
 	Config.g_aplicar_perfil("alto")
-	var it = preparar_foto(Vector2(300, 0))
+	await faixa_andar(pasta.path_join("jogo_andar.png"), Vector2(300, 0))
+	await faixa_andar(pasta.path_join("jogo_andar_frente.png"), Vector2(0, 300))  # de frente: o pé de apoio sobe na tela, o corpo balança
+	var it = preparar_foto(Vector2(150, 0))
+	if it == null:
+		return
+	segurar_recarga("golem_barro")
+	var pancada: Array = []
+	var depois := [0, 4, 12, 30, 60]
+	var impacto_em := -1
+	for i in 60 * 5:
+		passos(1)
+		if float(it.vida) <= 0.0 or pancada.size() >= depois.size():
+			break
+		if impacto_em < 0 and bool(it.imp) and int(it.e) == Golem.ATACANDO:
+			impacto_em = i
+		if impacto_em >= 0 and i - impacto_em == int(depois[pancada.size()]):
+			pancada.append(await recorte(it, Vector2(100, 92), 130))
+	juntar(pancada, 3).save_png(pasta.path_join("jogo_pancada.png"))
+	# o fim do golem: o desmoronar solta o entulho, e ele continua no chão depois que o golem some
+	it = preparar_foto(Vector2(150, 0))
+	segurar_recarga("golem_barro")
+	it.vida = Golem.SUMIR_T + 0.05
+	var restos: Array = []
+	var quando := [1, 20, 40, 60, 90, 150]
+	for i in 160:
+		passos(1)
+		if restos.size() < quando.size() and i == int(quando[restos.size()]):
+			restos.append(await recorte(it, Vector2(70, 80), 100))
+	juntar(restos, 3).save_png(pasta.path_join("jogo_restos.png"))
+	print("FOTO ", pasta)
+
+
+## Os 8 quadros seguidos do ciclo de andar do golem indo para um alvo na direção `dir`.
+func faixa_andar(arquivo: String, dir: Vector2) -> void:
+	var it = preparar_foto(dir)
 	if it == null:
 		return
 	segurar_recarga("golem_barro")
@@ -500,22 +617,8 @@ func fotos_novas(pasta: String) -> void:
 			if q == proximo:
 				andar.append(await recorte(it, Vector2(60, 76), 100))
 				proximo = (proximo + 1) % 8
-	juntar(andar, 4).save_png(pasta.path_join("jogo_andar.png"))
-	it = preparar_foto(Vector2(150, 0))
-	segurar_recarga("golem_barro")
-	var pancada: Array = []
-	var depois := [0, 4, 12, 30, 60]
-	var impacto_em := -1
-	for i in 60 * 5:
-		passos(1)
-		if float(it.vida) <= 0.0 or pancada.size() >= depois.size():
-			break
-		if impacto_em < 0 and bool(it.imp) and int(it.e) == Golem.ATACANDO:
-			impacto_em = i
-		if impacto_em >= 0 and i - impacto_em == int(depois[pancada.size()]):
-			pancada.append(await recorte(it, Vector2(100, 92), 130))
-	juntar(pancada, 3).save_png(pasta.path_join("jogo_pancada.png"))
-	print("FOTO ", pasta)
+	if not andar.is_empty():
+		juntar(andar, 4).save_png(arquivo)
 
 
 func _ready() -> void:
@@ -530,6 +633,7 @@ func _ready() -> void:
 	checar_passada()
 	checar_area("golem_barro", false)
 	checar_area("colosso_de_pedra", true)
+	checar_restos()
 	checar_sem_folha()
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--fotos="):

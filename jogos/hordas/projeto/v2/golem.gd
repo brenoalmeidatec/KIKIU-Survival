@@ -15,20 +15,20 @@ extends RefCounted
 
 const FOLHA := "res://assets/v2/armas/golem_barro_dir.png"
 const QUADRO := Vector2(86, 104)  # tamanho de cada quadro da folha (o teste confere com o png e o .json)
-const PE := Vector2(45, 83)  # ponto do quadro que fica no chão (it.p)
+const PE := Vector2(40, 83)  # ponto do quadro que fica no chão (it.p)
 const COL_ANDAR := 8
 const COL_ATAQUE := 8
 const LINHAS := 5
 const PASSO_LINHA := 45.0  # graus entre uma vista e a próxima
 const HISTERESE := 8.0  # graus de folga para não piscar de vista na fronteira
-const CICLO_PX := 52.0  # pixels andados por ciclo de andar (8 quadros) = 2 passos de 26 px: a separação dos pés no apoio duplo (quadros 2 e 6), de perfil, como a câmera vê (o gerador grava `ciclo_px` no .json): o pé de apoio não escorrega
-## De frente e de costas o passo aparece encurtado pela câmera (45 graus: o chão em profundidade vale ~0,71 na tela), então o mesmo passo da arte cobre menos pixels andados:
-## pixels por ciclo = CICLO_PX x isto, na linha da vista (frente, 3/4 frente, perfil, 3/4 costas, costas).
-const FATOR_LINHA := [0.71, 0.87, 1.0, 0.87, 0.71]
+## Pixels que o golem anda por ciclo de andar (8 quadros = 2 passos), por linha da vista (frente, 3/4 frente, perfil, 3/4 costas, costas). O gerador mede NOS PIXELS
+## o pé de apoio (quadros 2 a 6) vista por vista e grava `ciclo_linha` no .json (2 x o quanto o pé anda na tela): o corpo tem de andar isso, senão o pé escorrega.
+## De frente e de costas a câmera (45 graus) encurta o passo: o chão em profundidade vale ~0,71 na tela, e nas diagonais ~0,87.
+const CICLO_LINHA := [36.0, 45.2, 52.0, 45.2, 36.0]
 const PARADO := 2  # quadro de andar usado parado (pernas afastadas, os dois pés no chão)
 const TEMPOS_ATAQUE := [0.09, 0.08, 0.08, 0.10, 0.06, 0.11, 0.10, 0.10]  # duração de cada quadro do ataque (s); soma 0,72 s, para caber no "tique" de 0,8 s da carta
 const QUADRO_IMPACTO := 4  # índice (dentro do ataque) do quadro da pancada
-const ALCANCE := 30.0  # distância (plano achatado) do alvo a partir da qual ele para e ataca
+const ALCANCE := 30.0  # distância (plano achatado) do alvo a partir da qual ele para e ataca; o punho no quadro da pancada, de perfil, alcança 23 px à frente do pé (medido na folha) e a pancada cai a 0,75 x isto = 22,5 px
 const RAIO_IMPACTO := 42.0  # raio da pancada no chão
 const RESPIRO_MIN := 0.08  # menor pausa entre o fim de um ataque e o começo do próximo (a cadência vem do "tique" da carta: ciclo = max(tique, ataque + isto))
 const EMPURRA := 30.0  # empurrão da pancada em cada monstro: o do golpe antigo (de contato, alvo único). O que mudou de verdade é a ÁREA (raio 42 px), não o empurrão por alvo
@@ -43,10 +43,10 @@ const SURGINDO := 2
 const COR_BARRO := Color(0.66, 0.42, 0.27, 0.75)
 const COR_TORRAO := Color(0.55, 0.33, 0.2)
 const COR_PEDRA := Color(0.6, 0.57, 0.54)
-const COR_POEIRA := Color(0.74, 0.62, 0.48)
+const COR_POEIRA := Color(0.86, 0.76, 0.6)  # clara: tem de aparecer contra o chão de barro e de grama
 const GRAV := 520.0  # gravidade dos torrões (px/s2 na altura)
-const MAX_DEB := 28  # entulho por golem (torrões que caem e ficam no chão, nuvens de poeira)
-const T_DEB := 11  # floats por peça: x, y (chão), z (altura), vx, vy, vz, tempo que falta, tempo total, tamanho, tipo (0 torrão, 1 pedra, 2 poeira), tom
+const MAX_DEB := 36  # entulho por golem (torrões que caem e ficam no chão, nuvens de poeira)
+const T_DEB := 11  # floats por peça: x, y (chão), z (altura), vx, vy, vz, tempo que falta, tempo total, tamanho, tipo (0 torrão, 1 pedra, 2 poeira que sobe, 3 poeira rasteira), tom
 const T_RACHA := 1.8  # duração (s) das rachaduras que a pancada deixa no chão
 
 static var _tex: Texture2D
@@ -158,7 +158,7 @@ static func mover(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
 	match int(it.e):
 		SURGINDO:
 			if randf() < dt * 24.0:
-				_poeira(nv, it, it.p, 1, 22.0 * escala(str(it.a.id)), escala(str(it.a.id)))
+				_poeira(nv, it, it.p, 1, 22.0 * escala(str(it.a.id)), escala(str(it.a.id)), true)
 			if float(it.et) >= SURGIR_T:
 				it.e = ANDANDO
 				it.et = 0.0
@@ -196,7 +196,7 @@ static func _andar(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
 		it.v = (it.v as Vector2).lerp(dir, clampf(dt * 10.0, 0.0, 1.0))  # suavizado: o quadro não pisca na virada
 		it.lin = linha_de(it.v, int(it.lin))
 		var antes := float(it.pf)
-		it.pf = antes + passo / (CICLO_PX * esc * float(FATOR_LINHA[int(it.lin)]))
+		it.pf = antes + passo / (float(CICLO_LINHA[int(it.lin)]) * esc)
 		it.mov = true
 		if floori((float(it.pf) - 0.25) * 2.0) != floori((antes - 0.25) * 2.0):  # cruzou o quadro 2 ou o 6: um pé bateu no chão
 			_pisada(nv, it, esc)
@@ -238,15 +238,15 @@ static func _impacto(nv, it: Dictionary) -> void:
 	fx.luz_rapida(p + Vector2(0, -6), Color(1.0, 0.62, 0.3), 2.0, raio * 2.4, 0.25)
 	it.rt = 0.0
 	_torroes(nv, it, p, 16, 100.0 * esc, esc)
-	_poeira(nv, it, p, 10, 80.0 * esc, esc)
+	_poeira(nv, it, p, 14, 95.0 * esc, esc)
 	pai.combate.audio.tocar("impacto", randf_range(0.55, 0.7) / sqrt(esc), -1.0, 0.1)
 	if (pai.mundo.heroi.pos as Vector2).distance_to(p) < 360.0:
-		pai.mundo.cam.tremer(0.9 * esc, 0.12)
+		pai.mundo.cam.tremer(1.6 * esc, 0.14)
 
 
 static func _pisada(nv, it: Dictionary, esc: float) -> void:
 	var p: Vector2 = it.p
-	_poeira(nv, it, p + Vector2(randf_range(-9.0, 9.0), 2.0) * esc, 3, 30.0 * esc, esc)
+	_poeira(nv, it, p + Vector2(randf_range(-9.0, 9.0), 2.0) * esc, 3, 34.0 * esc, esc, true)
 	if randf() < 0.6:
 		_torroes(nv, it, p + Vector2(randf_range(-8.0, 8.0), 0.0) * esc, 1, 45.0 * esc, esc)
 	if (nv.pai.mundo.heroi.pos as Vector2).distance_to(p) < 240.0:
@@ -264,7 +264,7 @@ static func _desmoronar(nv, it: Dictionary, dt: float) -> void:
 		_poeira(nv, it, p, 7, 40.0 * esc, esc)
 		nv.pai.fx.onda(p, Color(0.8, 0.6, 0.42, 0.5), 30.0 * esc, 0.35)
 	if randf() < dt * 30.0:
-		_poeira(nv, it, it.p, 1, 28.0 * esc, esc)
+		_poeira(nv, it, it.p, 1, 28.0 * esc, esc, true)
 
 
 ## `n` pedaços de barro e pedra que voam, caem, quicam uma vez e FICAM no chão um tempo (entulho do item, desenhado na camada normal, não aditiva: parece terra).
@@ -293,7 +293,8 @@ static func _torroes(nv, it: Dictionary, p: Vector2, n: int, vel: float, esc: fl
 
 
 ## `n` nuvens de poeira que se abrem e sobem devagar (no entulho do item, camada normal; é terra, não luz).
-static func _poeira(nv, it: Dictionary, p: Vector2, n: int, vel: float, esc: float) -> void:
+## `rasteira` = poeira dos passos e do surgir: pequena, rente ao chão e SEMPRE por baixo do golem (a grande, da pancada, sobe e passa por cima dele).
+static func _poeira(nv, it: Dictionary, p: Vector2, n: int, vel: float, esc: float, rasteira := false) -> void:
 	var fx = nv.pai.fx
 	n = maxi(1, roundi(n * fx.fator_part))
 	for i in n:
@@ -303,10 +304,10 @@ static func _poeira(nv, it: Dictionary, p: Vector2, n: int, vel: float, esc: flo
 			p + Vector2(randf_range(-6.0, 6.0), randf_range(-3.0, 1.0)) * esc,
 			randf_range(0.0, 3.0) * esc,
 			Vector2(cos(ang) * vel * randf_range(0.3, 1.0), sin(ang) * vel * 0.3),
-			randf_range(2.0, 7.0),
-			randf_range(0.5, 0.85),
-			randf_range(4.0, 7.0) * esc,
-			2.0,
+			0.0 if rasteira else randf_range(4.0, 12.0),
+			randf_range(0.4, 0.7) if rasteira else randf_range(0.6, 1.0),
+			(randf_range(3.0, 5.0) if rasteira else randf_range(6.0, 10.0)) * esc,
+			3.0 if rasteira else 2.0,
 			randf()
 		)
 
@@ -364,6 +365,28 @@ static func _entulho(it: Dictionary, dt: float) -> void:
 		dest += 1
 	d.resize(dest * T_DEB)
 	it.deb = d
+
+
+## O golem acabou (vida <= 0, o slot do pool já é livre), mas o entulho e as rachaduras dele ainda estão no chão: o pool continua andando e desenhando isso até acabar.
+static func tem_restos(it: Dictionary) -> bool:
+	return bool(it.g) and (float(it.rt) >= 0.0 or not (it.deb as PackedFloat32Array).is_empty())
+
+
+static func restos(it: Dictionary, dt: float) -> void:
+	_entulho(it, dt)
+
+
+## Limpa o entulho e as rachaduras (nova partida; o slot reaproveitado por outro aliado).
+static func limpar_restos(it: Dictionary) -> void:
+	it.deb = PackedFloat32Array()
+	it.rt = -1.0
+
+
+## O que sobra no chão depois que o golem some: rachaduras, torrões e a poeira que ainda não baixou (camada normal).
+static func desenhar_restos(ci: CanvasItem, it: Dictionary) -> void:
+	_desenhar_rachaduras(ci, it, false)
+	_desenhar_entulho(ci, it, false)
+	_desenhar_entulho(ci, it, true)
 
 
 # ------------------------------------------------------------------ desenho
@@ -452,7 +475,7 @@ static func _desenhar_entulho(ci: CanvasItem, it: Dictionary, no_ar: bool) -> vo
 	for k in n:
 		var o := k * T_DEB
 		var tipo := int(d[o + 9])
-		var alto := tipo == 2 or d[o + 2] > 0.5
+		var alto := tipo == 2 or (tipo < 2 and d[o + 2] > 0.5)
 		if alto != no_ar:
 			continue
 		var restante := d[o + 6]
@@ -462,11 +485,15 @@ static func _desenhar_entulho(ci: CanvasItem, it: Dictionary, no_ar: bool) -> vo
 		var z := d[o + 2]
 		var tam := d[o + 8]
 		var tom := d[o + 10]
-		if tipo == 2:  # poeira: um bafo redondo e macio que cresce e some
+		if tipo >= 2:  # poeira: um bafo redondo e macio que cresce e some
 			var kk := restante / total
-			var c := COR_POEIRA.lerp(Color(0.5, 0.4, 0.3), tom * 0.4)
-			c.a = 0.5 * kk
-			ci.draw_circle(Vector2(roundf(x), roundf(y - z)), tam * (0.8 + 0.9 * (1.0 - kk)), c)
+			var c := COR_POEIRA.lerp(Color(0.62, 0.5, 0.38), tom * 0.4)
+			var centro := Vector2(roundf(x), roundf(y - z))
+			var raio := tam * (0.7 + 0.9 * (1.0 - kk))
+			c.a = 0.62 * kk
+			ci.draw_circle(centro, raio, c)
+			c.a = 0.5 * kk  # miolo mais claro: dá volume ao bafo
+			ci.draw_circle(centro + Vector2(-raio * 0.2, -raio * 0.25), raio * 0.55, c.lightened(0.3))
 			continue
 		var cor := COR_PEDRA.lerp(Color(0.4, 0.38, 0.36), tom * 0.5) if tipo == 1 else COR_TORRAO.lerp(Color(0.85, 0.62, 0.42), tom * 0.6)
 		var a := clampf(restante / 0.35, 0.0, 1.0)

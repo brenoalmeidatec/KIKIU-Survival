@@ -67,6 +67,7 @@ func montar(p) -> void:
 func limpar() -> void:
 	for it in itens:
 		it.vida = 0.0
+		Golem.limpar_restos(it)
 
 
 func remover(a: Dictionary) -> void:
@@ -77,7 +78,7 @@ func remover(a: Dictionary) -> void:
 
 func tem_ativos() -> bool:
 	for it in itens:
-		if float(it.vida) > 0.0:
+		if float(it.vida) > 0.0 or Golem.tem_restos(it):  # o entulho do golem que acabou ainda está no chão
 			return true
 	return false
 
@@ -154,6 +155,8 @@ func golpe(a: Dictionary, h, dt: float, vel_a: float, perto: Array) -> void:
 func quadro(h, dt: float, perto: Array) -> void:
 	for it in itens:
 		if float(it.vida) <= 0.0:
+			if Golem.tem_restos(it):
+				Golem.restos(it, dt)
 			continue
 		it.vida = float(it.vida) - dt
 		it.fase = float(it.fase) + dt * 6.0
@@ -462,6 +465,8 @@ func desenhar_corpo(ci: CanvasItem, tex: Texture2D) -> void:
 func desenhar_sprites(ci: CanvasItem) -> void:
 	for it in itens:
 		if float(it.vida) <= 0.0:
+			if Golem.tem_restos(it):
+				Golem.desenhar_restos(ci, it)
 			continue
 		var p: Vector2 = (it.p as Vector2).round()
 		if bool(it.g):
@@ -619,10 +624,13 @@ func _desenhar_meteoro(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Colo
 
 func _novo(k: String, a: Dictionary, p: Vector2, vida: float) -> Dictionary:
 	var it := {}
-	for x in itens:
+	for x in itens:  # um slot livre e limpo; se não houver, o que ainda guarda o entulho de um golem (que some na hora)
 		if float(x.vida) <= 0.0:
-			it = x
-			break
+			if not Golem.tem_restos(x):
+				it = x
+				break
+			if it.is_empty():
+				it = x
 	if it.is_empty():
 		return it
 	it.k = k

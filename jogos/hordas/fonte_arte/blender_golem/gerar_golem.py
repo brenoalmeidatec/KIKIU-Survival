@@ -225,7 +225,7 @@ def pose(J, q):
             J["quadril_" + lado].rotation_euler = (-abre * 0.3 * sg, 0, 0.0)
 
 
-def diag(J):
+def diag(J, cam=None):
     """Por quadro de andar: o ponto mais baixo de cada pé (z, tem de ser ~0 no apoio e acima de 0 no balanço) e o x do pé no sentido do passo
     (y do modelo, a frente é -Y) em unidades do modelo; no apoio ele anda a mesma distância por quadro (o pé não escorrega)."""
     from mathutils import Vector
@@ -239,9 +239,44 @@ def diag(J):
             cs = [o.matrix_world @ Vector(c) for c in o.bound_box]
             zmin = min(c.z for c in cs)
             frente = -sum(c.y for c in cs) / 8.0
-            linha.append("%s z=%.3f frente=%.3f" % (lado, zmin / ESCALA, frente / ESCALA))
+            tela = ""
+            if cam is not None:
+                from bpy_extras.object_utils import world_to_camera_view
+                ys = [(1.0 - world_to_camera_view(bpy.context.scene, cam, c).y) * H0 for c in cs]
+                tela = " tela_base=%.1f" % max(ys)
+            linha.append("%s z=%.3f frente=%.3f%s" % (lado, zmin / ESCALA, frente / ESCALA, tela))
         print("DIAG q=%d  %s   corpo_z=%.3f" % (q, "   ".join(linha), J["corpo"].location.z))
     print("DIAG A=%.4f separacao=%.4f ciclo_px=%.2f" % (A, 2 * A, 4 * A * ESCALA * PPU))
+
+
+def medir_apoio(J, cena, cam, W, H):
+    """O pé de apoio (o d, quadros 2 a 6) como a câmera o vê, medido NOS PIXELS: com o resto do corpo escondido (os punhos balançam e, de frente,
+    descem até a altura dos pés e enganam qualquer medida na folha inteira), renderiza só o pé em cada vista e pega o centro do contorno dele.
+    Devolve (ciclo_linha, deslize, pes): `ciclo_linha[v]` = px que o corpo anda por ciclo de andar na vista v (2 x o deslocamento do pé de apoio
+    entre os quadros 2 e 6: se o corpo andar menos, o pé escorrega); `deslize[v]` = o quanto o pé sai da reta entre o quadro 2 e o 6 (px, 0 = não escorrega);
+    `pes[v]` = [x, y] do pé nos quadros 2 a 6, no mesmo sistema da folha (x já espelhado)."""
+    raiz = J["raiz"]
+    malhas = [o for o in bpy.data.objects if o.type == "MESH"]
+    pe = bpy.data.objects["pe_d"]
+    ciclos, desl, pes = [], [], []
+    for v in range(len(VISTAS)):
+        raiz.rotation_euler = (0, 0, -math.radians(VISTAS[v]))
+        for o in malhas:
+            o.hide_render = o is not pe
+        pts = []
+        for q in range(2, 7):
+            pose(J, q)
+            cx = px3.caixa_alfa(px3.render_rgba())
+            pts.append(((cx[0] + cx[2]) / 2.0, (cx[1] + cx[3]) / 2.0))
+        for o in malhas:
+            o.hide_render = False
+        pts = [(W - 1 - x, y) for x, y in pts]  # o espelho da folha
+        a, b = np.array(pts[0]), np.array(pts[-1])
+        ciclos.append(round(2.0 * float(np.linalg.norm(b - a)), 1))
+        reta = [a + (b - a) * (i / 4.0) for i in range(5)]
+        desl.append(round(max(float(np.linalg.norm(np.array(p) - r)) for p, r in zip(pts, reta)), 2))
+        pes.append([[round(x, 1), round(y, 1)] for x, y in pts])
+    return ciclos, desl, pes
 
 
 def main():
@@ -252,7 +287,7 @@ def main():
     J = modelo()
     cena = bpy.context.scene
     if DIAG:
-        diag(J)
+        diag(J, cam)
         return
     esc0 = cam.data.ortho_scale
     cena.render.resolution_x, cena.render.resolution_y = W0 * 3, H0 * 3
@@ -280,18 +315,12 @@ def main():
     from mathutils import Vector
     o = world_to_camera_view(cena, cam, Vector((0.0, 0.0, 0.0)))
     pe_x, pe_y = int(round(o.x * W - 0.5)), int(round((1.0 - o.y) * H - 0.5))
+    pe_x = W - 1 - pe_x  # a folha sai espelhada em x ([:, ::-1] abaixo, para o bicho olhar para a direita): o ponto do chão espelha junto
     ciclo = 0.0
+    ciclo_linha, deslize, pes_apoio = [], [], []
     if not PREVIA:
-        # a passada como a câmera vê: a separação (px) dos dois pés no apoio duplo, de perfil (quadro 2). O corpo anda 2 x isso por ciclo de andar.
-        raiz.rotation_euler = (0, 0, -math.radians(VISTAS[2]))
-        pose(J, 2)
-        bpy.context.view_layer.update()
-        xs = []
-        for ld in ("e", "d"):
-            o = bpy.data.objects["pe_" + ld]
-            ctr = sum((o.matrix_world @ Vector(c) for c in o.bound_box), Vector()) / 8.0
-            xs.append(world_to_camera_view(cena, cam, ctr).x * W)
-        ciclo = round(2.0 * abs(xs[0] - xs[1]), 1)
+        ciclo_linha, deslize, pes_apoio = medir_apoio(J, cena, cam, W, H)
+        ciclo = ciclo_linha[2]
     folha = np.zeros((H * len(vistas), W * len(quadros), 4), np.float32)
     for i, v in enumerate(vistas):
         raiz.rotation_euler = (0, 0, -math.radians(VISTAS[v]))
@@ -314,6 +343,7 @@ def main():
     os.makedirs(SAIDA, exist_ok=True)
     px3.salvar_png(folha, os.path.join(SAIDA, "golem_barro_dir.png"))
     info = {"quadro": [W, H], "pe_x": pe_x, "pe_y": pe_y, "andar": ANDAR, "ataque": ATAQUE, "impacto": 4, "ciclo_px": ciclo,
+            "ciclo_linha": ciclo_linha, "deslize_px": deslize, "pe_apoio": pes_apoio,
             "linhas": ["frente", "tres_quartos_frente", "lado", "tres_quartos_costas", "costas"]}
     for destino in (os.path.join(AQUI, "golem_barro_dir.json"), os.path.join(SAIDA, "golem_barro_dir.json")):
         with open(destino, "w", encoding="utf-8") as f:
