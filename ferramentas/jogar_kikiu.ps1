@@ -12,14 +12,22 @@ param([switch]$Instalar, [switch]$SemAbrir)  # -SemAbrir: só baixa e confere (t
 
 $ErrorActionPreference = "Stop"
 $Repo = "brenoalmeidatec/KIKIU-Survival"
-$Base = Join-Path $env:LOCALAPPDATA "KIKIU-Teste"
-$Builds = Join-Path $Base "builds"
-$ArqAtual = Join-Path $Base "atual.txt"
+$Base = "$env:LOCALAPPDATA\KIKIU-Teste"
+$Builds = "$Base\builds"
+$ArqAtual = "$Base\atual.txt"
 New-Item -ItemType Directory -Force -Path $Builds | Out-Null
+# tudo o que acontece vai para ultimo_log.txt (a janela do atalho fecha sozinha)
+try { Start-Transcript -Path "$Base\ultimo_log.txt" -Force | Out-Null } catch {}
 
 function Avisar([string]$texto) {
 	Add-Type -AssemblyName System.Windows.Forms
 	[System.Windows.Forms.MessageBox]::Show($texto, "KIKIU (teste)") | Out-Null
+}
+
+# qualquer erro não tratado aparece numa janela, com o caminho do log
+trap {
+	Avisar "Deu erro no atalho:`n`n$($_.Exception.Message)`n`nLinha $($_.InvocationInfo.ScriptLineNumber). Log: $Base\ultimo_log.txt"
+	exit 1
 }
 
 if ($Instalar) {
