@@ -12,30 +12,58 @@ param([switch]$Instalar, [switch]$SemAbrir)  # -SemAbrir: só baixa e confere (t
 
 $ErrorActionPreference = "Stop"
 $Repo = "brenoalmeidatec/KIKIU-Survival"
-$Base = Join-Path $env:LOCALAPPDATA "KIKIU-Teste"
-$Builds = Join-Path $Base "builds"
-$ArqAtual = Join-Path $Base "atual.txt"
+$Base = "$env:LOCALAPPDATA\KIKIU-Teste"
+$Builds = "$Base\builds"
+$ArqAtual = "$Base\atual.txt"
 New-Item -ItemType Directory -Force -Path $Builds | Out-Null
+# tudo o que acontece vai para ultimo_log.txt (a janela do atalho fecha sozinha)
+try { Start-Transcript -Path "$Base\ultimo_log.txt" -Force | Out-Null } catch {}
 
 function Avisar([string]$texto) {
 	Add-Type -AssemblyName System.Windows.Forms
 	[System.Windows.Forms.MessageBox]::Show($texto, "KIKIU (teste)") | Out-Null
 }
 
+# Ícone do atalho: tirado do próprio KIKIU.exe (o kikiu.ico do repo guarda PNG em todos os tamanhos e a área de trabalho
+# do Windows não desenha PNG nos tamanhos pequenos). Grava um .ico comum e aponta o atalho para ele.
+$Atalho = Join-Path ([Environment]::GetFolderPath("Desktop")) "KIKIU (teste).lnk"
+function Atualizar-Icone([string]$exe) {
+	if (-not $exe -or -not (Test-Path $exe)) { return }
+	Add-Type -AssemblyName System.Drawing
+	$icone = [System.Drawing.Icon]::ExtractAssociatedIcon($exe)
+	$f = [IO.File]::Create("$Base\kikiu.ico")
+	try { $icone.Save($f) } finally { $f.Close() }
+	if (Test-Path $Atalho) {
+		$lnk = (New-Object -ComObject WScript.Shell).CreateShortcut($Atalho)
+		$lnk.IconLocation = "$Base\kikiu.ico,0"
+		$lnk.Save()
+	}
+}
+
+function Exe-Da-Build([string]$t) {
+	if (-not $t -or -not (Test-Path "$Builds\$t")) { return $null }
+	Get-ChildItem "$Builds\$t" -Recurse -Filter *.exe | Where-Object { $_.Name -notlike "*console*" } | Select-Object -First 1
+}
+
+# qualquer erro não tratado aparece numa janela, com o caminho do log
+trap {
+	Avisar "Deu erro no atalho:`n`n$($_.Exception.Message)`n`nLinha $($_.InvocationInfo.ScriptLineNumber). Log: $Base\ultimo_log.txt"
+	exit 1
+}
+
 if ($Instalar) {
 	$destino = Join-Path $Base "jogar_kikiu.ps1"
 	Copy-Item -Force $PSCommandPath $destino
-	$ico = Join-Path $Base "kikiu.ico"
-	$icoRepo = Join-Path $PSScriptRoot "..\jogos\hordas\projeto\assets\icone\kikiu.ico"
-	if (Test-Path $icoRepo) { Copy-Item -Force $icoRepo $ico }
 	$sh = New-Object -ComObject WScript.Shell
-	$lnk = $sh.CreateShortcut((Join-Path ([Environment]::GetFolderPath("Desktop")) "KIKIU (teste).lnk"))
+	$lnk = $sh.CreateShortcut($Atalho)
 	$lnk.TargetPath = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
 	$lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File `"$destino`""
 	$lnk.WorkingDirectory = $Base
-	if (Test-Path $ico) { $lnk.IconLocation = $ico }
 	$lnk.Description = "K.I.K.I.U: baixa a build mais nova do GitHub e abre o jogo"
 	$lnk.Save()
+	$atual0 = if (Test-Path $ArqAtual) { (Get-Content $ArqAtual -Raw).Trim() } else { "" }
+	$e0 = Exe-Da-Build $atual0
+	if ($e0) { Atualizar-Icone $e0.FullName }  # sem build ainda: o ícone entra no primeiro download
 	Write-Host "Atalho 'KIKIU (teste)' criado na área de trabalho."
 	exit 0
 }
@@ -76,6 +104,8 @@ if ($tag -and ($tag -ne $atual -or -not (Test-Path (Join-Path $Builds $tag)))) {
 		$anterior = $atual
 		Get-ChildItem $Builds -Directory | Where-Object { $_.Name -ne $tag -and $_.Name -ne $anterior } | Remove-Item -Recurse -Force
 		$atual = $tag
+		$eNovo = Exe-Da-Build $tag
+		if ($eNovo) { Atualizar-Icone $eNovo.FullName }
 	} catch {
 		Write-Host "Falhou o download: $($_.Exception.Message)"
 	}
@@ -86,8 +116,8 @@ if (-not $atual -or -not (Test-Path (Join-Path $Builds $atual))) {
 	Avisar "Não consegui baixar o jogo e não há nenhuma build guardada. Confira a internet e tente de novo."
 	exit 1
 }
-$exe = Get-ChildItem (Join-Path $Builds $atual) -Recurse -Filter *.exe |
-	Where-Object { $_.Name -notlike "*console*" } | Select-Object -First 1
+$exe = Exe-Da-Build $atual
+if ($exe -and -not (Test-Path "$Base\kikiu.ico")) { Atualizar-Icone $exe.FullName }
 if (-not $exe) {
 	Avisar "A build $atual não tem o .exe do jogo. Avise no GitHub (issue #153)."
 	exit 1
