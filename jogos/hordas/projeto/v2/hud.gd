@@ -9,6 +9,8 @@ extends CanvasLayer
 ## onda_forte(numero), elite_apareceu(nome), chefe_apareceu(nome, vida_max), chefe_vida(vida), evolucao(nome), anuncio(texto, cor).
 ## Slot da ruptura (tecla E) logo abaixo da barra de fôlego, desenhado por código (sem PNG): lê em mundo.heroi, com padrão, rup_carga (0 a 1),
 ## rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max. Herói sem esses campos (mundo falso dos testes): o slot some.
+## Faixa de GOLPES (canto inferior esquerdo, v2/hud_golpes.gd): um quadradinho fixo por golpe automático ganho, com nível, recarga e progresso da fusão.
+## Lê mundo.combate.armas.ativas e mundo.combate.cartas; mundo sem combate (falso dos testes): a faixa some.
 ## Uso no mundo (uma linha no _ready):
 ##   ui.add_child(preload("res://v2/hud.gd").criar(self))
 ## Layout em v2/hud.tscn (coordenadas do bloco 960x540, que fica no centro do canvas da UI: v2/escala_ui.gd). Cada peça tem uma âncora
@@ -59,6 +61,7 @@ const ANCORAS := {
 	"Selo": Vector2(0, 1),
 	"Anel": Vector2(0, 1),
 	"Habilidades": Vector2(0, 1),
+	"Golpes": Vector2(-1, 1),  # faixa de golpes: canto inferior esquerdo do canvas, não do bloco (senão flutua sobre o campo)
 }
 const MARCOS := [10, 25, 50, 100, 200]
 const NOMES_MARCOS := ["SEQUÊNCIA!", "CARNIFICINA!", "MASSACRE!", "IMPARÁVEL!", "LENDÁRIO!"]

@@ -45,6 +45,7 @@ const PT_FUMACA_QUENTE := 3  # a fumaça da explosão: nasce alaranjada e esfria
 const GRAVIDADE_LASCA := 520.0
 const PASTA_SPRITES := "res://assets/v2/armas/"
 const PASTA_FUSOES := "res://assets/v2/fusoes/"
+const Golem := preload("res://v2/golem.gd")  # o Golem de Barro e o Colosso: andar, ataque e as 8 direções
 ## Lobo Espiritual correndo (fonte_arte/blender_lobo/gerar_lobo_corre.py): 16 quadros em linha, olhando para a direita.
 const LOBO_FOLHA := "res://assets/v2/armas/lobo_espiritual_corre.png"
 const LOBO_QUADRO := Vector2(82, 42)
@@ -91,6 +92,7 @@ func montar(p) -> void:
 	itens.clear()
 	for i in MAX:
 		itens.append(_item_vazio())
+		Golem.zerar(itens[itens.size() - 1])
 	q_pos.resize(MAX_PARTS)
 	q_z.resize(MAX_PARTS)
 	q_vel.resize(MAX_PARTS)
@@ -135,6 +137,7 @@ func _item_vazio() -> Dictionary:
 func limpar() -> void:
 	for it in itens:
 		it.vida = 0.0
+		Golem.limpar_restos(it)
 	q_vida.fill(0.0)
 	q_ativas = 0
 	_num_acum.clear()
@@ -151,7 +154,7 @@ func tem_ativos() -> bool:
 	if q_ativas > 0:
 		return true
 	for it in itens:
-		if float(it.vida) > 0.0:
+		if float(it.vida) > 0.0 or Golem.tem_restos(it):  # o entulho do golem que acabou ainda está no chão
 			return true
 	return false
 
@@ -233,6 +236,8 @@ func quadro(h, dt: float, perto: Array) -> void:
 	_relogio += dt
 	for it in itens:
 		if float(it.vida) <= 0.0:
+			if Golem.tem_restos(it):
+				Golem.restos(it, dt)
 			continue
 		it.vida = float(it.vida) - dt
 		it.fase = float(it.fase) + dt * 6.0
@@ -595,9 +600,14 @@ func _aliados(a: Dictionary, h) -> void:
 		if it.is_empty():
 			return
 		it.t = 0.0
+		if Golem.eh_golem(str(a.id)) and Golem.tex() != null:
+			Golem.nascer(self, it)
 
 
 func _mover_aliado(it: Dictionary, h, dt: float, perto: Array) -> void:
+	if bool(it.g):
+		Golem.mover(self, it, h, dt, perto)
+		return
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
 	it.t = float(it.t) - dt
@@ -1192,6 +1202,9 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 					ci.draw_circle(Vector2.ZERO, raio * (1.2 - 0.4 * sumindo), Color(cor.r, cor.g, cor.b, 0.35 * sumindo))
 					ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			"aliado":
+				if bool(it.g):
+					Golem.desenhar_brilho(ci, it, p, tex)
+					continue
 				if str(a.id) == "lobo_espirito" and tex_lobo() != null:
 					continue  # o lobo animado é desenhado em desenhar_sprites, sem o brilho de placeholder
 				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
@@ -1221,8 +1234,13 @@ func desenhar_corpo(ci: CanvasItem, tex: Texture2D) -> void:
 func desenhar_sprites(ci: CanvasItem) -> void:
 	for it in itens:
 		if float(it.vida) <= 0.0:
+			if Golem.tem_restos(it):
+				Golem.desenhar_restos(ci, it)
 			continue
 		var p: Vector2 = (it.p as Vector2).round()
+		if bool(it.g):
+			Golem.desenhar(ci, it, p)
+			continue
 		if str(it.k) == "aliado" and str(it.a.id) == "lobo_espirito" and tex_lobo() != null:
 			_desenhar_lobo(ci, it, p)
 			continue
@@ -1697,10 +1715,13 @@ func _desenhar_meteoro(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Colo
 
 func _novo(k: String, a: Dictionary, p: Vector2, vida: float) -> Dictionary:
 	var it := {}
-	for x in itens:
+	for x in itens:  # um slot livre e limpo; se não houver, o que ainda guarda o entulho de um golem (que some na hora)
 		if float(x.vida) <= 0.0:
-			it = x
-			break
+			if not Golem.tem_restos(x):
+				it = x
+				break
+			if it.is_empty():
+				it = x
 	if it.is_empty():
 		return it
 	it.k = k
@@ -1724,6 +1745,7 @@ func _novo(k: String, a: Dictionary, p: Vector2, vida: float) -> Dictionary:
 	it.aux = 0.0
 	(it.cand as Array).clear()
 	it.lista = null
+	Golem.zerar(it)
 	return it
 
 
