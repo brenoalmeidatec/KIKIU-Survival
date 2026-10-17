@@ -24,9 +24,22 @@ const DESMONTA := 0.35
 const QUIQUE_T := 0.18
 const EXPLOSAO_T := 0.45
 const FOGOS_CORES := [Color(1.0, 0.3, 0.25), Color(1.0, 0.82, 0.3), Color(0.4, 1.0, 0.5)]  # vermelho, dourado e verde dos Fogos de Festival
-const COR_BAMBU := Color(0.84, 0.7, 0.4)
-const COR_BAMBU_ESCURO := Color(0.5, 0.36, 0.18)
-const COR_CABACA := Color(0.8, 0.56, 0.2)
+const COR_BAMBU := Color(0.86, 0.76, 0.36)
+const COR_BAMBU_ESCURO := Color(0.5, 0.36, 0.15)
+const COR_CONTORNO := Color(0.1, 0.06, 0.03)
+const COR_CABACA := Color(0.95, 0.6, 0.18)
+## A geometria da torre (px acima dos pés): a plataforma, o eixo da balestra e a boca de onde sai o virote. Desenho, brilho e tiro usam estas.
+const TORRE_TOPO := -30.0
+const TORRE_PIVO := -38.0
+const TORRE_BOCA := 15.0
+## O pool de partículas deste arquivo (a camada normal, que recebe a luz): fumaça, lascas e brasas. `fx` só desenha em modo aditivo, que não
+## serve para fumaça escura nem para casca de cabaça.
+const MAX_PARTS := 96
+const PT_FUMACA := 0
+const PT_LASCA := 1
+const PT_BRASA := 2
+const PT_FUMACA_QUENTE := 3  # a fumaça da explosão: nasce alaranjada e esfria até o cinza
+const GRAVIDADE_LASCA := 520.0
 const PASTA_SPRITES := "res://assets/v2/armas/"
 const PASTA_FUSOES := "res://assets/v2/fusoes/"
 ## Lobo Espiritual correndo (fonte_arte/blender_lobo/gerar_lobo_corre.py): 16 quadros em linha, olhando para a direita.
@@ -52,6 +65,17 @@ static var _lidos := false
 
 var pai  # v2/armas.gd
 var itens: Array = []  # o pool: cada slot é um dicionário fixo; vida <= 0 é livre
+var q_pos := PackedVector2Array()  # as partículas: posição no chão, altura (z), velocidades, vida, tamanho, tipo e cor
+var q_z := PackedFloat32Array()
+var q_vel := PackedVector2Array()
+var q_vz := PackedFloat32Array()
+var q_vida := PackedFloat32Array()
+var q_max := PackedFloat32Array()
+var q_tam := PackedFloat32Array()
+var q_tipo := PackedByteArray()
+var q_cor := PackedColorArray()
+var q_ativas := 0
+var _qi := 0
 
 
 func montar(p) -> void:
@@ -60,6 +84,15 @@ func montar(p) -> void:
 	itens.clear()
 	for i in MAX:
 		itens.append(_item_vazio())
+	q_pos.resize(MAX_PARTS)
+	q_z.resize(MAX_PARTS)
+	q_vel.resize(MAX_PARTS)
+	q_vz.resize(MAX_PARTS)
+	q_vida.resize(MAX_PARTS)
+	q_max.resize(MAX_PARTS)
+	q_tam.resize(MAX_PARTS)
+	q_tipo.resize(MAX_PARTS)
+	q_cor.resize(MAX_PARTS)
 
 
 ## Um slot do pool. Campos da leva 6 (torre e granada): `orig`/`dest` (origem e destino do arremesso), `age` (relógio da fase), `est` (a fase:
@@ -95,6 +128,8 @@ func _item_vazio() -> Dictionary:
 func limpar() -> void:
 	for it in itens:
 		it.vida = 0.0
+	q_vida.fill(0.0)
+	q_ativas = 0
 
 
 func remover(a: Dictionary) -> void:
@@ -104,6 +139,8 @@ func remover(a: Dictionary) -> void:
 
 
 func tem_ativos() -> bool:
+	if q_ativas > 0:
+		return true
 	for it in itens:
 		if float(it.vida) > 0.0:
 			return true
@@ -208,6 +245,112 @@ func quadro(h, dt: float, perto: Array) -> void:
 		# O estilhaço dos Fogos de Festival estoura de novo onde acaba (no fim da vida ou ao acertar): `est` 1 marca quem ainda vai estourar.
 		if str(it.k) == "projetil" and int(it.est) == 1 and float(it.vida) <= 0.0:
 			_estourar_fogo(it)
+	if q_ativas > 0:
+		_quadro_partes(dt)
+
+
+# ------------------------------------------------------------------ partículas próprias (fumaça, lascas e brasas)
+
+
+## Solta uma partícula no pool (`pos` é o ponto no chão e `z` a altura). Se estiver cheio, sobrescreve a mais velha da fila. Não cria nó.
+func _parte(tipo: int, pos: Vector2, z: float, vel: Vector2, vz: float, vida: float, tam: float, cor: Color) -> void:
+	var i := _qi
+	_qi = (_qi + 1) % MAX_PARTS
+	if q_vida[i] <= 0.0:
+		q_ativas += 1
+	q_tipo[i] = tipo
+	q_pos[i] = pos
+	q_z[i] = z
+	q_vel[i] = vel
+	q_vz[i] = vz
+	q_vida[i] = vida
+	q_max[i] = vida
+	q_tam[i] = tam
+	q_cor[i] = cor
+
+
+func _quadro_partes(dt: float) -> void:
+	var amorte := exp(-2.5 * dt)
+	for i in MAX_PARTS:
+		var v := q_vida[i]
+		if v <= 0.0:
+			continue
+		v -= dt
+		if v <= 0.0:
+			q_vida[i] = 0.0
+			q_ativas -= 1
+			continue
+		q_vida[i] = v
+		var vel := q_vel[i]
+		var z := q_z[i]
+		var vz := q_vz[i]
+		match int(q_tipo[i]):
+			PT_LASCA:
+				vz -= GRAVIDADE_LASCA * dt
+				z += vz * dt
+				if z <= 0.0:
+					z = 0.0
+					if vz < -70.0:  # um quique curto e ela assenta
+						vz = -vz * 0.35
+						vel *= 0.5
+					else:
+						vz = 0.0
+						vel *= 0.15
+			_:  # fumaça e brasa: sobem devagar e vão parando
+				z += vz * dt
+				vel *= amorte
+				vz *= amorte
+		q_vel[i] = vel
+		q_vz[i] = vz
+		q_z[i] = z
+		q_pos[i] += vel * dt
+
+
+## A camada normal (recebe a luz): a fumaça que incha e some, e as lascas com a sombrinha no chão.
+func _desenhar_partes(ci: CanvasItem) -> void:
+	for i in MAX_PARTS:
+		var v := q_vida[i]
+		if v <= 0.0:
+			continue
+		var tipo := int(q_tipo[i])
+		if tipo == PT_BRASA:
+			continue
+		var k := v / q_max[i]
+		var c := q_cor[i]
+		var p := (q_pos[i] + Vector2(0, -q_z[i])).round()
+		if tipo == PT_FUMACA or tipo == PT_FUMACA_QUENTE:
+			var r := q_tam[i] * (1.0 + 0.9 * (1.0 - k))
+			c.a *= minf(1.0, k * 2.5) * minf(1.0, (1.0 - k) * 10.0)
+			if tipo == PT_FUMACA_QUENTE:
+				c = c.lerp(Color(1.0, 0.5, 0.15, c.a), clampf((k - 0.6) / 0.4, 0.0, 1.0) * 0.8)
+			ci.draw_circle(p, r, Color(c.r * 0.7, c.g * 0.7, c.b * 0.7, c.a))
+			ci.draw_circle(p + Vector2(-r * 0.2, -r * 0.25), r * 0.65, c)
+		else:
+			c.a *= minf(1.0, k * 3.0)
+			if q_z[i] > 1.0:
+				ci.draw_rect(Rect2(q_pos[i].round() + Vector2(-1, 0), Vector2(2, 1)), Color(0, 0, 0, 0.35 * c.a))
+			var t := q_tam[i]
+			ci.draw_rect(
+				Rect2(p - Vector2(t, t * 0.6) * 0.5 - Vector2.ONE, Vector2(t, t * 0.6) + Vector2(2, 2)),
+				Color(COR_CONTORNO.r, COR_CONTORNO.g, COR_CONTORNO.b, c.a)
+			)
+			ci.draw_rect(Rect2(p - Vector2(t, t * 0.6) * 0.5, Vector2(t, t * 0.6)), c)
+
+
+## A camada aditiva: as brasas (um ponto quente com um halo pequeno que pisca).
+func _brilho_partes(ci: CanvasItem, tex: Texture2D) -> void:
+	for i in MAX_PARTS:
+		var v := q_vida[i]
+		if v <= 0.0 or int(q_tipo[i]) != PT_BRASA:
+			continue
+		var k := v / q_max[i]
+		var c := q_cor[i]
+		var p := (q_pos[i] + Vector2(0, -q_z[i])).round()
+		var pisca := 0.7 + 0.3 * sin(v * 23.0 + float(i))
+		var a := minf(1.0, k * 2.0) * pisca
+		var t := q_tam[i]
+		ci.draw_texture_rect(tex, Rect2(p - Vector2(t, t) * 2.0, Vector2(t, t) * 4.0), false, Color(c.r, c.g, c.b, 0.55 * a))
+		ci.draw_rect(Rect2(p - Vector2(t, t) * 0.5, Vector2(t, t)), Color(1.0, 0.92, 0.6, a).lerp(Color(1.0, 0.3, 0.08, a), 1.0 - k))
 
 
 # ------------------------------------------------------------------ tipos
@@ -237,6 +380,13 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 	var p: Vector2 = it.p
 	# O virote da torre e o estilhaço da granada só enxergam os monstros perto DELES (`lista`): o herói pode estar longe dali.
 	var alvos: Array = perto if it.lista == null else it.lista
+	if str(a.tipo) == "torre":  # o rastro do virote: uma faísca a cada ~2 quadros, que apaga rápido
+		it.mira = float(it.mira) - dt
+		if float(it.mira) <= 0.0:
+			it.mira = 0.03
+			var pagode_t := st.has("cadeia")
+			var cor_t: Color = Color(0.55, 0.8, 1.0, 0.85) if pagode_t else Color(1.0, 0.7, 0.28, 0.85)
+			pai.fx.particula(p - (it.v as Vector2).normalized() * 6.0, Vector2(randf_range(-10.0, 10.0), randf_range(-10.0, 10.0)), 0.22, 3.0, cor_t, 0.0, true)
 	for m in alvos:
 		if not m.vivo or m.morrendo or (it.hit as Array).has(m):
 			continue
@@ -245,7 +395,10 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 		(it.hit as Array).append(m)
 		var dir: Vector2 = (it.v as Vector2).normalized()
 		var dano := _dano(st) * float(it.mult)
-		pai.combate.ferir(m, dano, dir, 40.0, 0.1, _cor_num(a.cor))
+		var estilhaco := str(a.tipo) == "granada"  # o número do estilhaço sai espalhado, não em cima do número da explosão
+		pai.combate.ferir(m, dano, dir, 40.0, 0.1, _cor_num(a.cor), not estilhaco)
+		if estilhaco:
+			_numero_estilhaco(m, dano, dir, a, it)
 		pai._acertou("projetil")
 		if str(a.tipo) == "torre" and int(st.get("cadeia", 0.0)) > 0:  # o Pagode do Trovão: o virote vira arco elétrico
 			_cadeia_eletrica(m, dano * 0.6, int(st.cadeia), alvos)
@@ -319,6 +472,16 @@ func _puxar(p: Vector2, raio: float, forca: float) -> void:
 
 
 ## Dano do golpe; se o monstro já está lento e a arma tem `mult_lento`, o dano sobe (combo de lentidão).
+## O número do estilhaço da cabaça: menor que o da explosão, quente (ou da cor do fogo) e empurrado 24 px no sentido do estilhaço, para os
+## números de uma mesma explosão abrirem em leque em vez de empilhar. Faz também a piscada de dano que o `ferir` pularia.
+func _numero_estilhaco(m, dano: float, dir: Vector2, a: Dictionary, it: Dictionary) -> void:
+	var cor := Color(1.0, 0.78, 0.4)
+	if a.st.has("fogos"):
+		cor = FOGOS_CORES[int(it.t) % 3].lerp(Color.WHITE, 0.3)
+	pai.fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.7) + dir * 24.0, str(maxi(1, roundi(dano))), cor, false, 12)
+	pai.fx.flash(m, 0.08)
+
+
 func _dano_em(m, st: Dictionary) -> float:
 	var d := _dano(st)
 	if st.has("mult_lento") and m.lento_t > 0.0:
@@ -453,7 +616,7 @@ func _mover_torre(it: Dictionary, h, dt: float) -> void:
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
 	it.age = float(it.age) + dt
-	it.aux = maxf(0.0, float(it.aux) - dt * 12.0)  # o recuo da balestra volta em ~0,08 s
+	it.aux = maxf(0.0, float(it.aux) - dt * 7.0)  # o recuo e o clarão da balestra voltam em ~0,14 s
 	it.mira = maxf(0.0, float(it.mira) - dt)
 	var est := int(it.est)
 	if float(it.vida) - DESMONTA <= 0.0:
@@ -502,19 +665,32 @@ func _atirar_torre(it: Dictionary, st: Dictionary) -> bool:
 	if alvo == null:
 		return false
 	var a: Dictionary = it.a
-	var boca: Vector2 = (it.p as Vector2) + Vector2(0, -30)
-	var dir: Vector2 = (alvo.pos + Vector2(0, -6) - boca).normalized()
+	var eixo: Vector2 = (it.p as Vector2) + Vector2(0, TORRE_PIVO)
+	var dir: Vector2 = (alvo.pos + Vector2(0, -6) - eixo).normalized()
+	var boca: Vector2 = eixo + dir * TORRE_BOCA
 	it.r = dir.angle()
 	it.mira = 0.7
 	it.aux = 1.0
 	var vel := float(st.get("vel", 420.0))
-	var b := _novo("projetil", a, boca + dir * 8.0, (alc + 70.0) * 1.15 / vel)
+	var b := _novo("projetil", a, boca, (alc + 70.0) * 1.15 / vel)
 	if not b.is_empty():
 		b.v = dir * vel
 		b.pen = int(st.get("perfura", 0.0))
 		b.lista = cand
 	var pagode := st.has("cadeia")
-	pai.fx.faiscas(boca + dir * 10.0, dir, 3, pai.COR_RAIO if pagode else Color(1.0, 0.75, 0.3), 200.0)
+	var cor_f: Color = pai.COR_RAIO if pagode else Color(1.0, 0.75, 0.3)
+	pai.fx.faiscas(boca, dir, 5, cor_f, 230.0)
+	for i in maxi(1, roundi(2.0 * pai.fx.fator_part)):  # a fumacinha do disparo
+		_parte(
+			PT_FUMACA,
+			boca,
+			0.0,
+			dir * randf_range(14.0, 30.0) + Vector2(randf_range(-6.0, 6.0), 0.0),
+			randf_range(8.0, 16.0),
+			randf_range(0.35, 0.55),
+			randf_range(2.5, 3.5),
+			Color(0.82, 0.8, 0.74, 0.5)
+		)
 	pai.combate.audio.tocar("estocada", randf_range(1.5, 1.8), -10.0, 0.06)
 	return true
 
@@ -544,6 +720,9 @@ func _cadeia_eletrica(de, dano: float, saltos: int, lista: Array) -> void:
 		atual = melhor
 	if pontos.size() > 1:
 		pai._raio_visual(pontos)
+		pai._raio_visual(pontos)  # duas descargas, tortas de jeitos diferentes: o arco fica grosso e vivo
+		for q in pontos:
+			pai.fx.particula(q, Vector2.ZERO, 0.2, 28.0, Color(0.55, 0.8, 1.0, 0.8), 0.0, true)
 		pai._acertou("raio")
 		pai.fx.luz_rapida(atual.pos + Vector2(0, -10), pai.COR_RAIO, 1.6, 110.0, 0.18)
 		pai.combate.audio.tocar("raio", randf_range(1.05, 1.2), -6.0, 0.08)
@@ -559,20 +738,79 @@ func _poeira(p: Vector2, n: int, cor: Color, vel := 60.0, vida := 0.4) -> void:
 		pai.fx.particula(p + Vector2(cos(ang) * 4.0, sin(ang) * 2.0), v, randf_range(0.6, 1.0) * vida, 2.0 + float(i % 2), cor, 60.0)
 
 
+## Nuvem de poeira no chão: `n` bolas que incham e somem (camada normal, tingida pela luz), saindo para os lados.
+func _nuvem_poeira(p: Vector2, n: int, cor: Color, vel: float, tam: float) -> void:
+	n = maxi(2, roundi(n * pai.fx.fator_part))
+	for i in n:
+		var ang := TAU * (float(i) + randf() * 0.6) / float(n)
+		var v := Vector2(cos(ang), sin(ang) * 0.45) * randf_range(0.6, 1.0) * vel
+		_parte(PT_FUMACA, p + v * 0.05, 1.0, v, randf_range(5.0, 14.0), randf_range(0.45, 0.7), tam * randf_range(0.7, 1.1), cor)
+
+
+## Fumaça que sobe de uma explosão: bolas escuras que nascem espalhadas na área e incham devagar.
+func _fumaca_subindo(p: Vector2, n: int, raio: float, tam: float) -> void:
+	n = maxi(2, roundi(n * pai.fx.fator_part))
+	for i in n:
+		var q := p + Vector2(randf_range(-0.3, 0.3) * raio, randf_range(-0.12, 0.12) * raio)
+		_parte(
+			PT_FUMACA_QUENTE,
+			q,
+			randf_range(2.0, 10.0),
+			Vector2(randf_range(-14.0, 14.0), 0.0),
+			randf_range(34.0, 62.0),
+			randf_range(0.8, 1.2),
+			tam * randf_range(0.7, 1.2),
+			Color(0.4, 0.36, 0.34, 0.8)
+		)
+
+
+## Brasas no chão (e subindo, se `sobe` > 0): pontos quentes que piscam e apagam devagar.
+func _brasas(p: Vector2, n: int, raio: float, vida: float, sobe: float, cor: Color) -> void:
+	n = maxi(1, roundi(n * pai.fx.fator_part))
+	for i in n:
+		var ang := randf() * TAU
+		var q := p + Vector2(cos(ang), sin(ang) * ACHATA) * raio * sqrt(randf())
+		_parte(
+			PT_BRASA,
+			q,
+			randf_range(0.0, 3.0),
+			Vector2(randf_range(-8.0, 8.0), randf_range(-3.0, 3.0)),
+			sobe * randf_range(0.4, 1.0),
+			vida * randf_range(0.6, 1.0),
+			3.0 if i % 3 == 0 else 2.0,
+			cor
+		)
+
+
+## Lascas de bambu/terra que voam para cima e para os lados e caem com sombrinha.
+func _lascas(p: Vector2, z: float, n: int, vel: float, c1: Color, c2: Color) -> void:
+	n = maxi(2, roundi(n * pai.fx.fator_part))
+	for i in n:
+		var ang := randf() * TAU
+		var v := Vector2(cos(ang), sin(ang) * 0.5) * randf_range(0.35, 1.0) * vel
+		_parte(PT_LASCA, p, z, v, randf_range(90.0, 190.0), randf_range(0.6, 0.9), 2.0 + float(i % 3), c1 if i % 2 == 0 else c2)
+
+
 func _pouso_torre(it: Dictionary) -> void:
 	var p: Vector2 = it.p
-	pai.fx.onda(p, Color(0.85, 0.75, 0.55, 0.7), 26.0, 0.2)
-	_poeira(p + Vector2(0, -2), 8, Color(0.7, 0.58, 0.4), 70.0, 0.45)
-	pai.fx.luz_rapida(p + Vector2(0, -6), Color(1.0, 0.8, 0.45), 0.9, 56.0, 0.12)
-	if it.a.st.has("cadeia"):
-		pai.fx.faiscas(p + Vector2(0, -12), Vector2.UP, 5, pai.COR_RAIO, 150.0)
+	var pagode: bool = it.a.st.has("cadeia")
+	pai.fx.onda(p, Color(0.85, 0.75, 0.55, 0.7), 30.0, 0.22)
+	pai.fx.onda(p, Color(1.0, 0.9, 0.6, 0.5), 18.0, 0.14)
+	_nuvem_poeira(p, 7, Color(0.66, 0.54, 0.38, 0.75), 85.0, 6.5)
+	_lascas(p, 3.0, 9, 80.0, Color(0.5, 0.38, 0.22), Color(0.36, 0.26, 0.15))
+	_poeira(p + Vector2(0, -2), 8, Color(0.75, 0.62, 0.42), 80.0, 0.45)
+	pai.fx.luz_rapida(p + Vector2(0, -6), Color(0.55, 0.78, 1.0) if pagode else Color(1.0, 0.8, 0.45), 1.1, 70.0, 0.14)
+	if pagode:
+		pai.fx.faiscas(p + Vector2(0, -12), Vector2.UP, 7, pai.COR_RAIO, 170.0)
 	pai.mundo.cam.tremer(2.0, 0.1)
 	pai.combate.audio.tocar("runa_poe", 1.2, -4.0, 0.05)
 
 
 func _lascas_torre(it: Dictionary) -> void:
 	var p: Vector2 = it.p
-	_poeira(p + Vector2(0, -12), 10, COR_BAMBU, 90.0, 0.5)
+	_lascas(p, 14.0, 12, 100.0, COR_BAMBU, COR_BAMBU_ESCURO)
+	_nuvem_poeira(p, 4, Color(0.62, 0.5, 0.34, 0.6), 50.0, 5.0)
+	_poeira(p + Vector2(0, -12), 6, COR_BAMBU, 90.0, 0.5)
 	pai.combate.audio.tocar("impacto", 1.4, -10.0, 0.06)
 
 
@@ -643,6 +881,11 @@ func _altura_granada(it: Dictionary) -> float:
 	return 0.0
 
 
+## A ponta do pavio na tela: o centro da cabaça (6 px acima do ponto no chão, mais a altura do voo) e o pavio girado com ela.
+func _ponta_pavio(it: Dictionary) -> Vector2:
+	return (it.p as Vector2) + Vector2(0, -_altura_granada(it) - 6.0) + Vector2(3.0, -13.0).rotated(float(it.r))
+
+
 func _mover_granada(it: Dictionary, dt: float) -> void:
 	var st: Dictionary = it.a.st
 	it.age = float(it.age) + dt
@@ -658,8 +901,22 @@ func _mover_granada(it: Dictionary, dt: float) -> void:
 		it.t = float(it.t) - dt
 		if float(it.t) <= 0.0:  # o pavio solta uma brasa a cada 0,05 s
 			it.t = 0.05
-			var c: Vector2 = (it.p as Vector2) + Vector2(0, -_altura_granada(it) - 5.0) + Vector2(2, -8.5).rotated(float(it.r))
-			pai.fx.particula(c, Vector2(randf_range(-12.0, 12.0), randf_range(-26.0, -8.0)), 0.28, 2.0, Color(1.0, 0.82, 0.3, 0.95), 20.0, true)
+			var c: Vector2 = _ponta_pavio(it)
+			pai.fx.particula(c, Vector2(randf_range(-16.0, 16.0), randf_range(-30.0, -8.0)), 0.3, 2.0, Color(1.0, 0.82, 0.3, 0.95), 80.0, true)
+			pai.fx.particula(c, Vector2(randf_range(-30.0, 30.0), randf_range(-10.0, 14.0)), 0.18, 2.0, Color(1.0, 0.55, 0.15, 0.9), 160.0, true)
+			it.mira = float(it.mira) - 0.05
+			if float(it.mira) <= 0.0:  # um fio de fumaça cinza que a cabaça deixa no arco
+				it.mira = 0.1
+				_parte(
+					PT_FUMACA,
+					c,
+					0.0,
+					Vector2(randf_range(-6.0, 6.0), 0.0),
+					randf_range(10.0, 20.0),
+					randf_range(0.35, 0.55),
+					randf_range(2.0, 3.0),
+					Color(0.62, 0.6, 0.56, 0.55)
+				)
 	match est:
 		0:
 			var k := clampf(age / float(st.get("voo", 0.55)), 0.0, 1.0)
@@ -688,6 +945,21 @@ func _mover_granada(it: Dictionary, dt: float) -> void:
 				_explodir_granada(it)
 		3:
 			if float(st.get("brasa_s", 0.0)) > 0.0 and age > 0.25:  # o chão em brasa queima quem fica em cima
+				it.mira = float(it.mira) - dt
+				if float(it.mira) <= 0.0:  # e solta brasas e uma fumacinha o tempo todo
+					it.mira = 0.12
+					_brasas(it.p, 1, float(st.raio) * 0.8, 0.9, 22.0, Color(1.0, 0.45, 0.1))
+					if randf() < 0.3:
+						_parte(
+							PT_FUMACA,
+							(it.p as Vector2) + Vector2(randf_range(-0.5, 0.5) * float(st.raio), 0.0),
+							2.0,
+							Vector2.ZERO,
+							randf_range(14.0, 24.0),
+							0.7,
+							5.0,
+							Color(0.3, 0.26, 0.24, 0.5)
+						)
 				it.t = float(it.t) - dt
 				if float(it.t) <= 0.0:
 					it.t = 0.5
@@ -723,18 +995,35 @@ func _explodir_granada(it: Dictionary) -> void:
 		if st.has("fogos"):
 			f.est = 1  # estoura de novo onde acabar
 			f.t = float(randi() % 3)  # a cor do fogo
-	# o clarão, a onda, o estouro, a luz, a fumaça e o tremor
+	# o clarão, a onda, o estouro, a luz, a casca que voa, a fumaça que sobe, as brasas no chão e o tremor
 	pai.fx.folha("cristal", p, raio * 1.1, cor, 0.25)
 	pai.fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), raio, 0.3)
+	pai.fx.onda(p, Color(1.0, 0.95, 0.75, 0.6), raio * 0.55, 0.16)
 	pai.fx.estouro(p + Vector2(0, -6), cor, 10)
 	pai.fx.luz_rapida(p + Vector2(0, -8), cor, 2.2, raio * 3.0, 0.25)
-	for i in maxi(2, roundi(4.0 * pai.fx.fator_part)):
-		var q := p + Vector2(randf_range(-0.4, 0.4) * raio, randf_range(-6.0, 0.0))
-		pai.fx.particula(
-			q, Vector2(randf_range(-14.0, 14.0), randf_range(-24.0, -10.0)), randf_range(0.5, 0.8), randf_range(6.0, 9.0), Color(0.5, 0.45, 0.42, 0.5), -8.0
-		)
+	_lascas(p, 6.0, 9, 150.0, COR_CABACA, Color(0.45, 0.25, 0.08))
+	_fumaca_subindo(p, 8, raio, 8.0)
+	_brasas(p, 16, raio * 0.9, 1.8, 6.0, Color(1.0, 0.5, 0.12))
 	pai.mundo.cam.tremer(3.0, 0.12)
 	pai.combate.audio.tocar("runa", randf_range(0.8, 0.95), -2.0, 0.05)
+
+
+## O dano de área do estouro dos Fogos: como `_dano_area`, mas o número sai pequeno e empurrado para fora do centro do estouro (em leque).
+func _dano_fogo(p: Vector2, raio: float, dano: float, cor: Color) -> void:
+	var n := 0
+	for m in pai.mundo.monstros:
+		if not m.vivo or m.morrendo:
+			continue
+		var d: Vector2 = m.pos - p
+		if not pai.na_elipse(d, raio + m.raio):
+			continue
+		var fora := d.normalized() if d.length() > 0.5 else Vector2.from_angle(randf() * TAU)
+		pai.combate.ferir(m, dano, fora, 50.0, 0.05, cor, false)
+		pai.fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.7) + fora * 20.0, str(maxi(1, roundi(dano))), cor.lerp(Color.WHITE, 0.3), false, 12)
+		pai.fx.flash(m, 0.08)
+		n += 1
+	if n > 0:
+		pai._acertou("granada")
 
 
 ## O fim do estilhaço dos Fogos de Festival: um estouro colorido pequeno (raio_fogo) com parte do dano.
@@ -745,7 +1034,7 @@ func _estourar_fogo(it: Dictionary) -> void:
 	var p: Vector2 = it.p
 	var cor: Color = FOGOS_CORES[int(it.t) % 3]
 	var raio := float(st.get("raio_fogo", 22.0))
-	pai._dano_area(p, raio, _dano(st) * float(st.get("frac_fogo", 0.5)), 50.0, 0.05, cor, "granada")
+	_dano_fogo(p, raio, _dano(st) * float(st.get("frac_fogo", 0.5)), cor)
 	pai._acertou("fogos")  # conta cada estouro dos fogos (com ou sem monstro dentro): é o que o teste v2_cabaca confere
 	pai.fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), raio, 0.18)
 	for i in maxi(2, roundi(6.0 * pai.fx.fator_part)):
@@ -817,6 +1106,7 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				_brilho_torre(ci, it, tex, p)
 			"granada":
 				_brilho_granada(ci, it, tex, p)
+	_brilho_partes(ci, tex)
 
 
 func desenhar_corpo(ci: CanvasItem, tex: Texture2D) -> void:
@@ -854,6 +1144,7 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 			"aliado":
 				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
 				_sprite(ci, sp, sobe, 0.0, Color(1, 1, 1, clampf(float(it.vida) / 0.5, 0.0, 1.0)))
+	_desenhar_partes(ci)
 
 
 ## Folha do lobo correndo (carrega uma vez; null se o arquivo faltar, e o lobo volta ao brilho antigo).
@@ -919,8 +1210,18 @@ func _queda(it: Dictionary) -> Vector2:
 # ------------------------------------------------------------------ desenho da torre e da granada (em código, sem folha de sprite)
 
 
-## A torre na camada normal (recebe a luz 2D): sombra, tripé de bambu que abre as pernas, balestra que gira, lanterna. Cai do alto
-## (0 a 0,25 s), arma (até 0,4 s), pisca no último segundo e desmonta (as pernas caem para os lados e ela some).
+## Uma linha com contorno escuro: `cont` true desenha só o contorno (mais grosso), false o miolo. O desenho passa duas vezes pelas peças
+## (primeiro todos os contornos, depois todos os miolos) para o contorno nunca comer a peça do lado.
+func _lc(ci: CanvasItem, a: Vector2, b: Vector2, larg: float, cor: Color, cont: bool, alfa: float) -> void:
+	if cont:
+		ci.draw_line(a.round(), b.round(), Color(COR_CONTORNO.r, COR_CONTORNO.g, COR_CONTORNO.b, 0.9 * alfa), larg + 2.0)
+	else:
+		ci.draw_line(a.round(), b.round(), cor, larg)
+
+
+## A torre na camada normal (recebe a luz 2D): sombra, tripé de bambu (4 px de perna, com contorno, nós e amarras), plataforma com aljava,
+## balestra grande que gira, bandeirola vermelha e lanterna. Cai do alto (0 a 0,25 s), arma (até 0,4 s), pisca no último segundo e
+## desmonta (as pernas caem para os lados e ela some). O Pagode do Trovão põe pilares, telhado azul e um orbe por cima.
 func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 	var st: Dictionary = it.a.st
 	var pagode := st.has("cadeia")
@@ -932,61 +1233,118 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 	var afunda := 0.0
 	if age < POUSO_T:
 		var k := age / POUSO_T
-		queda = 60.0 * (1.0 - k * k)  # acelera até o chão
+		queda = 70.0 * (1.0 - k * k)  # acelera até o chão
 	if util <= 0.0:
 		var d := clampf(1.0 - float(it.vida) / DESMONTA, 0.0, 1.0)
 		abre = 1.0 + d * 0.9
-		afunda = d * 8.0
+		afunda = d * 10.0
 		alfa = 1.0 - d
 	elif util < 1.0:
 		alfa = 0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0))
 	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
-	ci.draw_circle(Vector2.ZERO, maxf(4.0, 12.0 - queda * 0.08), Color(0, 0, 0, 0.28 * alfa))
+	var raio_s := maxf(5.0, 17.0 - queda * 0.1)
+	ci.draw_circle(Vector2.ZERO, raio_s + 2.0, Color(0, 0, 0, 0.18 * alfa))
+	ci.draw_circle(Vector2.ZERO, raio_s, Color(0, 0, 0, 0.32 * alfa))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var b := (p + Vector2(0, -queda + afunda)).round()
-	var topo := b + Vector2(0, -26)
+	var topo := b + Vector2(0, TORRE_TOPO)
 	var claro := Color(COR_BAMBU.r, COR_BAMBU.g, COR_BAMBU.b, alfa)
 	var escuro := Color(COR_BAMBU_ESCURO.r, COR_BAMBU_ESCURO.g, COR_BAMBU_ESCURO.b, alfa)
-	var pe_e := b + Vector2(-9.0 * abre - 1.0, 0.0)
-	var pe_d := b + Vector2(9.0 * abre + 1.0, 0.0)
-	ci.draw_line(topo, b + Vector2(0, -1), escuro, 2.0)  # a perna de trás
-	ci.draw_line(topo, pe_e.round(), claro, 3.0)
-	ci.draw_line(topo, pe_d.round(), claro, 3.0)
-	for f in [0.35, 0.7]:  # os nós do bambu
-		for pe in [pe_e, pe_d]:
-			var q: Vector2 = topo.lerp(pe, f).round()
-			ci.draw_line(q + Vector2(-2, 0), q + Vector2(2, 0), escuro, 1.0)
-	ci.draw_rect(Rect2(topo + Vector2(-6, -2), Vector2(12, 4)), escuro)
-	ci.draw_line(topo + Vector2(-6, -2), topo + Vector2(6, -2), claro, 1.0)
+	var corda := Color(0.62, 0.2, 0.12, alfa)
+	var contorno := Color(COR_CONTORNO.r, COR_CONTORNO.g, COR_CONTORNO.b, 0.9 * alfa)
+	var topo_e := topo + Vector2(-8, 0)
+	var topo_d := topo + Vector2(8, 0)
+	var pe_e := b + Vector2(-9.0 - 6.0 * abre, 0.0)
+	var pe_d := b + Vector2(9.0 + 6.0 * abre, 0.0)
+	var pe_t := b + Vector2(3, -5)
+	for passo in 2:
+		var cont := passo == 0
+		_lc(ci, topo, pe_t, 3.0, escuro, cont, alfa)  # a perna de trás
+		_lc(ci, topo_e, pe_e, 4.0, claro, cont, alfa)
+		_lc(ci, topo_d, pe_d, 4.0, claro, cont, alfa)
+		_lc(ci, topo_e.lerp(pe_e, 0.55), topo_d.lerp(pe_d, 0.55), 2.0, escuro, cont, alfa)  # o travessão
+		_lc(ci, topo + Vector2(0, -3), topo + Vector2(0, TORRE_PIVO - TORRE_TOPO), 3.0, escuro, cont, alfa)  # o cavalete da balestra
+	for f in [0.3, 0.66]:  # os nós do bambu e o brilho no lado da luz
+		for lado in 2:
+			var q: Vector2 = topo_e.lerp(pe_e, f) if lado == 0 else topo_d.lerp(pe_d, f)
+			ci.draw_line((q + Vector2(-3, 0)).round(), (q + Vector2(3, 0)).round(), escuro, 1.0)
+	ci.draw_line((topo_e + Vector2(-1, 1)).round(), (pe_e + Vector2(-1, -1)).round(), Color(1.0, 0.95, 0.6, 0.6 * alfa), 1.0)
+	ci.draw_line((topo_d + Vector2(-1, 1)).round(), (pe_d + Vector2(-1, -1)).round(), Color(1.0, 0.95, 0.6, 0.6 * alfa), 1.0)
+	ci.draw_rect(Rect2(topo + Vector2(-9, -1), Vector2(18, 3)), corda)  # a amarra de corda no topo
+	# a plataforma, a aljava (com virotes de reserva) e a lanterna pendurada
+	var plano := Rect2(topo + Vector2(-13, -4), Vector2(26, 7))
+	ci.draw_rect(plano.grow(1.0), contorno)
+	ci.draw_rect(plano, escuro)
+	ci.draw_rect(Rect2(plano.position, Vector2(26, 2)), claro)
+	var aljava := Rect2(topo + Vector2(-13, -10), Vector2(6, 6))
+	ci.draw_rect(aljava.grow(1.0), contorno)
+	ci.draw_rect(aljava, Color(0.4, 0.26, 0.12, alfa))
+	for k in 3:
+		var x := -12.0 + 2.0 * float(k)
+		ci.draw_line((topo + Vector2(x, -10)).round(), (topo + Vector2(x, -15 - k % 2)).round(), Color(0.95, 0.9, 0.7, alfa), 1.0)
+		ci.draw_rect(Rect2(topo + Vector2(x - 1, -16 - k % 2), Vector2(2, 2)), Color(0.85, 0.2, 0.15, alfa))
 	# a balestra: sobe com um estalo depois de armada, recua ao atirar
-	var pivo := topo + Vector2(0, -5.0 + (1.0 - abre) * 6.0)
+	var pivo := topo + Vector2(0, TORRE_PIVO - TORRE_TOPO + (1.0 - abre) * 6.0)
 	var pop := 1.0
 	if age >= ARMA_T:
-		pop = 1.0 + 0.15 * maxf(0.0, 1.0 - (age - ARMA_T) * 10.0)
+		pop = 1.0 + 0.2 * maxf(0.0, 1.0 - (age - ARMA_T) * 10.0)
 	var ang := float(it.r)
-	pivo -= Vector2.from_angle(ang) * float(it.aux) * 3.0
+	var aux := float(it.aux)
+	pivo -= Vector2.from_angle(ang) * aux * 4.0
+	var corda_arco := Color(0.98, 0.94, 0.82, 0.9 * alfa)
+	var recuo := 1.0 + aux * 2.5  # a corda estica para trás ao armar e solta no tiro
 	ci.draw_set_transform(pivo.round(), ang, Vector2(pop, pop))
-	ci.draw_line(Vector2(-7, 0), Vector2(7, 0), escuro, 3.0)  # a coronha
-	ci.draw_line(Vector2(3, -6), Vector2(3, 6), claro, 2.0)  # o arco
-	ci.draw_line(Vector2(3, -6), Vector2(-1.0 - float(it.aux) * 2.0, 0), Color(0.95, 0.92, 0.8, 0.8 * alfa), 1.0)  # a corda
-	ci.draw_line(Vector2(-1.0 - float(it.aux) * 2.0, 0), Vector2(3, 6), Color(0.95, 0.92, 0.8, 0.8 * alfa), 1.0)
-	if float(it.aux) < 0.4:
-		ci.draw_line(Vector2(-1, 0), Vector2(9, 0), Color(1.0, 0.9, 0.6, alfa), 1.5)  # o virote armado
+	for passo in 2:
+		var cont := passo == 0
+		_lc(ci, Vector2(-9, 0), Vector2(12, 0), 3.0, escuro, cont, alfa)  # a coronha e o trilho
+		_lc(ci, Vector2(6, -11), Vector2(8, -4), 3.0, claro, cont, alfa)  # o arco (a prod) em curva, de cima a baixo
+		_lc(ci, Vector2(8, -4), Vector2(8, 4), 3.0, claro, cont, alfa)
+		_lc(ci, Vector2(8, 4), Vector2(6, 11), 3.0, claro, cont, alfa)
+	ci.draw_line(Vector2(6, -11), Vector2(1.0 - recuo, 0), corda_arco, 1.0)
+	ci.draw_line(Vector2(1.0 - recuo, 0), Vector2(6, 11), corda_arco, 1.0)
+	ci.draw_line(Vector2(-7, 0), Vector2(11, 0), Color(0.7, 0.5, 0.25, alfa), 1.0)  # o fio de luz no trilho
+	if aux < 0.4:  # o virote armado, com a ponta de ferro
+		ci.draw_line(Vector2(1.0 - recuo, 0), Vector2(13, 0), Color(0.98, 0.94, 0.78, alfa), 2.0)
+		ci.draw_colored_polygon(PackedVector2Array([Vector2(16, 0), Vector2(12, -2.5), Vector2(12, 2.5)]), Color(0.9, 0.9, 0.95, alfa))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if pagode:  # a segunda camada do pagode: pilar, telhado azul e o orbe
-		ci.draw_line(topo + Vector2(-4, -2), topo + Vector2(-4, -12), escuro, 2.0)
-		ci.draw_line(topo + Vector2(4, -2), topo + Vector2(4, -12), escuro, 2.0)
-		ci.draw_colored_polygon(PackedVector2Array([topo + Vector2(-11, -11), topo + Vector2(11, -11), topo + Vector2(0, -21)]), Color(0.2, 0.28, 0.45, alfa))
-		ci.draw_line(topo + Vector2(-11, -11), topo + Vector2(11, -11), Color(0.55, 0.75, 1.0, alfa), 1.0)
-		ci.draw_circle(topo + Vector2(0, -23), 2.5, Color(0.55, 0.8, 1.0, alfa))
-		ci.draw_circle(topo + Vector2(0, -23), 1.1, Color(1, 1, 1, alfa))
-	else:  # a lanterna de papel no alto de uma haste
-		ci.draw_line(topo + Vector2(5, -2), topo + Vector2(7, -14), escuro, 1.0)
-		ci.draw_circle(topo + Vector2(7, -16), 3.0, Color(1.0, 0.5, 0.2, alfa))
-		ci.draw_circle(topo + Vector2(7, -16), 1.4, Color(1.0, 0.9, 0.5, alfa))
+	if pagode:  # a segunda camada do pagode: dois pilares, telhado azul de beiral levantado e o orbe
+		var base_t := topo + Vector2(0, -4)
+		var beiral := topo + Vector2(0, -19)
+		var tel := PackedVector2Array(
+			[beiral + Vector2(-18, 3), beiral + Vector2(-14, 0), beiral + Vector2(14, 0), beiral + Vector2(18, 3), beiral + Vector2(0, -13)]
+		)
+		for passo in 2:
+			var cont := passo == 0
+			_lc(ci, base_t + Vector2(-12, 0), beiral + Vector2(-12, 0), 3.0, escuro, cont, alfa)
+			_lc(ci, base_t + Vector2(12, 0), beiral + Vector2(12, 0), 3.0, escuro, cont, alfa)
+		ci.draw_colored_polygon(tel, contorno)
+		var tel_i := PackedVector2Array(
+			[beiral + Vector2(-15, 1), beiral + Vector2(-12, 0), beiral + Vector2(12, 0), beiral + Vector2(15, 1), beiral + Vector2(0, -11)]
+		)
+		ci.draw_colored_polygon(tel_i, Color(0.2, 0.34, 0.62, alfa))
+		ci.draw_line((beiral + Vector2(-15, 1)).round(), (beiral + Vector2(0, -11)).round(), Color(0.55, 0.8, 1.0, alfa), 1.0)
+		ci.draw_line((beiral + Vector2(-13, 0)).round(), (beiral + Vector2(13, 0)).round(), Color(0.7, 0.88, 1.0, alfa), 1.0)
+		ci.draw_circle(beiral + Vector2(0, -16), 3.5, Color(0.4, 0.7, 1.0, alfa))
+		ci.draw_circle(beiral + Vector2(0, -16), 1.6, Color(1, 1, 1, alfa))
+	else:  # a bandeirola vermelha numa haste e a lanterna de papel pendurada na plataforma
+		var haste := topo + Vector2(11, -3)
+		var ponta := haste + Vector2(0, -21)
+		var onda := sin(age * 6.0) * 2.0
+		for passo in 2:
+			_lc(ci, haste, ponta, 2.0, escuro, passo == 0, alfa)
+		var flag := PackedVector2Array([ponta, ponta + Vector2(-13 + onda * 0.5, 2.0 + onda), ponta + Vector2(0, 7)])
+		ci.draw_colored_polygon(flag, contorno)
+		var flag_i := PackedVector2Array([ponta + Vector2(-1, 1), ponta + Vector2(-11 + onda * 0.5, 2.0 + onda), ponta + Vector2(-1, 5)])
+		ci.draw_colored_polygon(flag_i, Color(0.88, 0.2, 0.14, alfa))
+		var lan := topo + Vector2(14, 9)
+		ci.draw_line((topo + Vector2(14, 3)).round(), lan.round(), contorno, 1.0)
+		ci.draw_circle(lan + Vector2(0, 3), 4.6, contorno)
+		ci.draw_circle(lan + Vector2(0, 3), 3.5, Color(1.0, 0.5, 0.2, alfa))
+		ci.draw_circle(lan + Vector2(0, 3), 1.7, Color(1.0, 0.92, 0.55, alfa))
 
 
-## O brilho da torre (camada aditiva): halo da lanterna (ou do orbe do pagode) que pulsa e o clarão da boca ao atirar.
+## O brilho da torre (camada aditiva): a luz da lanterna (ou do orbe do pagode) que pulsa e ergue o bambu da escuridão, o clarão da boca ao
+## atirar (estrela de 4 pontas) e, no pagode, fios elétricos que passeiam entre o orbe e as pontas do beiral.
 func _brilho_torre(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2) -> void:
 	if int(it.est) == 0:
 		return
@@ -999,23 +1357,36 @@ func _brilho_torre(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2) -
 		fade = clampf(float(it.vida) / DESMONTA, 0.0, 1.0)
 	elif util < 1.0:
 		fade = 0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0))
-	var topo := p + Vector2(0, -26)
+	var topo := p + Vector2(0, TORRE_TOPO)
 	var pulso := 0.5 + 0.5 * sin(age * 5.0)
+	var tom := Color(0.5, 0.75, 1.0) if pagode else Color(1.0, 0.62, 0.28)
+	ci.draw_texture_rect(tex, Rect2(topo + Vector2(-30, -26), Vector2(60, 60)), false, Color(tom.r, tom.g, tom.b, (0.1 + 0.05 * pulso) * fade))
 	if pagode:
-		var o := (topo + Vector2(0, -23)).round()
-		ci.draw_texture_rect(tex, Rect2(o - Vector2(12, 12), Vector2(24, 24)), false, Color(0.5, 0.75, 1.0, (0.35 + 0.25 * pulso) * fade))
+		var o := (topo + Vector2(0, -35)).round()
+		ci.draw_texture_rect(tex, Rect2(o - Vector2(18, 18), Vector2(36, 36)), false, Color(0.5, 0.75, 1.0, (0.4 + 0.25 * pulso) * fade))
+		var a0 := age * 11.0
+		for k in 2:  # dois fios elétricos curtos do orbe até as pontas do beiral
+			var ponta := (topo + Vector2(-17.0 + 34.0 * float(k), -16)).round()
+			var meio := o.lerp(ponta, 0.5) + Vector2(sin(a0 + float(k) * 3.0) * 4.0, cos(a0 * 1.3 + float(k)) * 3.0)
+			if sin(a0 * 1.7 + float(k) * 2.0) > -0.2:
+				ci.draw_polyline(PackedVector2Array([o, meio.round(), ponta]), Color(0.65, 0.85, 1.0, 0.75 * fade), 1.0)
 	else:
-		var l := (topo + Vector2(7, -16)).round()
-		ci.draw_texture_rect(tex, Rect2(l - Vector2(9, 9), Vector2(18, 18)), false, Color(1.0, 0.6, 0.25, (0.28 + 0.18 * pulso) * fade))
+		var l := (topo + Vector2(14, 12)).round()
+		ci.draw_texture_rect(tex, Rect2(l - Vector2(12, 12), Vector2(24, 24)), false, Color(1.0, 0.6, 0.25, (0.4 + 0.2 * pulso) * fade))
 	var aux := float(it.aux)
 	if aux > 0.0:
-		var boca := (topo + Vector2(0, -5) + Vector2.from_angle(float(it.r)) * 10.0).round()
-		var cor_b := Color(0.55, 0.8, 1.0) if pagode else Color(1.0, 0.8, 0.4)
-		ci.draw_texture_rect(tex, Rect2(boca - Vector2(10, 10), Vector2(20, 20)), false, Color(cor_b.r, cor_b.g, cor_b.b, 0.7 * aux * fade))
+		var dir := Vector2.from_angle(float(it.r))
+		var boca := (p + Vector2(0, TORRE_PIVO) + dir * (TORRE_BOCA - aux * 4.0)).round()
+		var cor_b := Color(0.6, 0.85, 1.0) if pagode else Color(1.0, 0.82, 0.4)
+		var t := 16.0 + 22.0 * aux
+		ci.draw_texture_rect(tex, Rect2(boca - Vector2(t, t) * 0.5, Vector2(t, t)), false, Color(cor_b.r, cor_b.g, cor_b.b, 0.9 * aux * fade))
+		var lado := dir.orthogonal()
+		ci.draw_line(boca - dir * 3.0, (boca + dir * (6.0 + 16.0 * aux)).round(), Color(1, 0.97, 0.85, aux * fade), 2.0)
+		ci.draw_line((boca - lado * 8.0 * aux).round(), (boca + lado * 8.0 * aux).round(), Color(1, 0.95, 0.8, 0.8 * aux * fade), 1.0)
 
 
-## O corpo da cabaça (camada normal): sombra no chão que encolhe com a altura, a cabaça girando (achata no quique) e o branco que pisca
-## no fim do pavio, cada vez mais rápido.
+## O corpo da cabaça (camada normal): a sombra no chão (mais escura, e o arco dela marcado em pontinhos), a cabaça girando com contorno e luz
+## (achata no quique) e o branco que pisca no fim do pavio, cada vez mais rápido.
 func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 	var est := int(it.est)
 	if est >= 3 or float(it.age) < 0.0:
@@ -1023,26 +1394,41 @@ func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 	var st: Dictionary = it.a.st
 	var p: Vector2 = (it.p as Vector2).round()
 	var z := _altura_granada(it)
+	var alta := clampf(z / 60.0, 0.0, 1.0)
 	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
-	ci.draw_circle(Vector2.ZERO, maxf(2.0, 6.0 - z * 0.04), Color(0, 0, 0, 0.3))
-	var c := (p + Vector2(0, -z - 5.0)).round()
-	var achata := Vector2(1.3, 0.7) if float(it.aux) > 0.0 else Vector2.ONE
+	if est == 0:  # o arco projetado no chão: pontinhos de sombra que ficam para trás e apagam
+		var k := clampf(float(it.age) / float(st.get("voo", 0.55)), 0.0, 1.0)
+		for j in range(1, 6):
+			var kj := k - 0.075 * float(j)
+			if kj < 0.0:
+				break
+			var q: Vector2 = (it.orig as Vector2).lerp(it.dest, kj) - p
+			ci.draw_circle(Vector2(q.x, q.y / ACHATA), 2.4 - 0.2 * float(j), Color(0, 0, 0, 0.3 * (1.0 - float(j) / 6.0)))
+	ci.draw_circle(Vector2.ZERO, 9.0 - 3.0 * alta, Color(0, 0, 0, 0.2))
+	ci.draw_circle(Vector2.ZERO, 7.0 - 2.5 * alta, Color(0, 0, 0, 0.45 - 0.15 * alta))
+	var c := (p + Vector2(0, -z - 6.0)).round()
+	var achata := Vector2(1.5, 0.85) if float(it.aux) > 0.0 else Vector2(1.2, 1.2)
 	ci.draw_set_transform(c, float(it.r), achata)
-	ci.draw_circle(Vector2(0, 1.5), 5.4, Color(0.2, 0.12, 0.05, 0.85))
-	ci.draw_circle(Vector2(0, -3.0), 3.8, Color(0.2, 0.12, 0.05, 0.85))
-	ci.draw_circle(Vector2(0, 1.5), 4.6, COR_CABACA)
-	ci.draw_circle(Vector2(0, -3.0), 3.0, COR_CABACA.darkened(0.12))
-	ci.draw_circle(Vector2(-1.5, 0.5), 1.2, COR_CABACA.lightened(0.35))
-	ci.draw_line(Vector2(-2.2, -1.2), Vector2(2.2, -1.2), Color(0.4, 0.26, 0.12), 1.0)  # a corda do gargalo
-	ci.draw_line(Vector2(0, -5.5), Vector2(2, -8.5), Color(0.3, 0.22, 0.12), 1.0)  # o pavio
+	var contorno := Color(COR_CONTORNO.r, COR_CONTORNO.g, COR_CONTORNO.b, 0.95)
+	ci.draw_line(Vector2(0, -7.5), Vector2(3, -11), contorno, 3.0)  # o pavio (contorno)
+	ci.draw_circle(Vector2(0, 2.0), 6.6, contorno)
+	ci.draw_circle(Vector2(0, -4.2), 4.8, contorno)
+	ci.draw_circle(Vector2(0, 2.0), 5.6, COR_CABACA)
+	ci.draw_circle(Vector2(0, -4.2), 3.8, COR_CABACA.darkened(0.08))
+	ci.draw_circle(Vector2(1.8, 3.4), 3.0, COR_CABACA.darkened(0.35))  # o lado sem luz
+	ci.draw_circle(Vector2(-1.9, 0.8), 1.9, COR_CABACA.lightened(0.5))  # o brilho
+	ci.draw_line(Vector2(-4.2, -1.0), Vector2(4.2, -1.0), Color(0.3, 0.16, 0.06), 1.5)  # a corda do gargalo
+	ci.draw_rect(Rect2(Vector2(-0.8, -1.8), Vector2(1.6, 1.6)), Color(0.85, 0.2, 0.15))  # o nó vermelho
+	ci.draw_line(Vector2(0, -7.5), Vector2(3, -11), Color(0.92, 0.85, 0.62), 1.2)  # o pavio
 	if est == 2:
 		var f := clampf(float(it.age) / float(st.get("pavio", 0.5)), 0.0, 1.0)
 		if fposmod(float(it.age) * (6.0 + 18.0 * f), 1.0) < 0.5:
-			ci.draw_circle(Vector2(0, 0), 5.2, Color(1, 1, 1, 0.7))
+			ci.draw_circle(Vector2(0, 0), 6.2, Color(1, 1, 1, 0.7))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-## O brilho da cabaça (camada aditiva): a faísca do pavio, o círculo de aviso que cresce até o raio, o clarão da explosão e as brasas.
+## O brilho da cabaça (camada aditiva): a faísca do pavio, a mira onde ela vai cair, o círculo de aviso que cresce até o raio, o clarão da
+## explosão (disco, anel e raios) e as brasas do nível 5.
 func _brilho_granada(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2) -> void:
 	var age := float(it.age)
 	if age < 0.0:
@@ -1051,11 +1437,19 @@ func _brilho_granada(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2)
 	var st: Dictionary = it.a.st
 	var cor: Color = it.a.cor
 	var raio := float(st.raio)
+	if est == 0:  # a mira no chão: um anel fino no ponto de queda que esquenta enquanto a cabaça desce
+		var k := clampf(age / float(st.get("voo", 0.55)), 0.0, 1.0)
+		var alvo: Vector2 = (it.dest as Vector2).round()
+		ci.draw_set_transform(alvo, 0.0, Vector2(1, ACHATA))
+		ci.draw_arc(Vector2.ZERO, raio * 0.6, 0.0, TAU, 28, Color(1.0, 0.5, 0.15, 0.1 + 0.2 * k), 1.0)
+		ci.draw_circle(Vector2.ZERO, 2.5 + 2.0 * k, Color(1.0, 0.6, 0.2, 0.2 + 0.2 * k))
+		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if est <= 2:
-		var c := p + Vector2(0, -_altura_granada(it) - 5.0)
-		var ponta := (c + Vector2(2, -8.5).rotated(float(it.r))).round()
-		ci.draw_texture_rect(tex, Rect2(ponta - Vector2(5, 5), Vector2(10, 10)), false, Color(1.0, 0.8, 0.3, 0.7 + 0.3 * sin(float(it.fase) * 3.0)))
-		ci.draw_circle(ponta, 1.2, Color(1, 1, 0.9, 0.95))
+		var ponta := _ponta_pavio(it).round()
+		ci.draw_texture_rect(tex, Rect2(ponta - Vector2(7, 7), Vector2(14, 14)), false, Color(1.0, 0.8, 0.3, 0.7 + 0.3 * sin(float(it.fase) * 3.0)))
+		ci.draw_circle(ponta, 1.6, Color(1, 1, 0.9, 0.95))
+		var c := p + Vector2(0, -_altura_granada(it) - 6.0)
+		ci.draw_texture_rect(tex, Rect2(c - Vector2(11, 11), Vector2(22, 22)), false, Color(1.0, 0.55, 0.15, 0.16))  # o calor em volta da cabaça
 	if est == 2:
 		var f := clampf(age / float(st.get("pavio", 0.5)), 0.0, 1.0)
 		ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
@@ -1067,12 +1461,18 @@ func _brilho_granada(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2)
 		var fade := 1.0 - k
 		var rr := raio * (0.35 + 0.75 * (1.0 - pow(1.0 - k, 3.0)))
 		ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
-		ci.draw_circle(Vector2.ZERO, rr, Color(1.0, 0.55, 0.15, 0.45 * fade))
-		ci.draw_circle(Vector2.ZERO, rr * 0.55, Color(1.0, 0.9, 0.55, 0.7 * fade))
+		ci.draw_circle(Vector2.ZERO, rr, Color(1.0, 0.55, 0.15, 0.45 * fade * fade * fade))
+		ci.draw_circle(Vector2.ZERO, rr * 0.55, Color(1.0, 0.9, 0.55, 0.65 * fade * fade))
 		ci.draw_arc(Vector2.ZERO, rr, 0.0, TAU, 40, Color(1.0, 0.85, 0.5, 0.9 * fade), 2.0)
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		var alto := rr * 1.5  # a bola de fogo que sobe do chão
-		ci.draw_texture_rect(tex, Rect2(p + Vector2(-rr * 0.8, -alto * 0.9), Vector2(rr * 1.6, alto)), false, Color(1.0, 0.6, 0.2, 0.55 * fade))
+		ci.draw_texture_rect(tex, Rect2(p + Vector2(-rr * 0.8, -alto * 0.9), Vector2(rr * 1.6, alto)), false, Color(1.0, 0.6, 0.2, 0.5 * fade))
+		if age < 0.2:  # os raios do estouro: 8 riscos que saem do centro nos primeiros quadros
+			var f2 := 1.0 - age / 0.2
+			var centro := p + Vector2(0, -6)
+			for n in 8:
+				var d := Vector2.from_angle(TAU * float(n) / 8.0 + float(it.fase)) * Vector2(1.0, 0.8)
+				ci.draw_line((centro + d * raio * 0.25).round(), (centro + d * raio * (0.55 + 0.6 * (1.0 - f2))).round(), Color(1.0, 0.9, 0.55, 0.8 * f2), 2.0)
 		if age < 0.05:
 			ci.draw_circle(p + Vector2(0, -6), raio * 0.8, Color(1, 1, 1, 0.35))
 	if est == 3 and float(st.get("brasa_s", 0.0)) > 0.0:

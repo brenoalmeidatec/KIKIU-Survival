@@ -222,7 +222,13 @@ func fotos(pasta: String) -> void:
 	monstro_a(120, 40)
 	for i in 3:
 		pegar(ID)
-	await _foto_quando(func(): return _bolt_no_ar() and int(armas.acertos.get("projetil", 0)) > 2, 600, pasta.path_join("sentinela_atirando.png"))
+	await _foto_quando(func(): return _torre_aux() > 0.75 and int(armas.acertos.get("projetil", 0)) > 2, 900, pasta.path_join("sentinela_atirando.png"))  # o clarão da boca
+	zerar()  # os alvos ficam parados (atordoados) a ~210 px da torre, para o virote voar por um bom pedaço antes de acertar
+	for dy in [-24.0, 6.0, 34.0]:
+		monstro_a(172.0, dy).atordoa_t = 60.0
+	for i in 3:
+		pegar(ID)
+	await _foto_quando(func(): return _bolt_no_ar() and _torre_aux() < 0.55, 900, pasta.path_join("sentinela_virote_no_ar.png"), 3)  # o virote com o rastro
 	zerar()
 	monstro_a(140, -40)
 	monstro_a(165, -5)
@@ -235,6 +241,13 @@ func fotos(pasta: String) -> void:
 	passos(30)
 	var antes := int(armas.acertos.get("raio", 0))
 	await _foto_quando(func(): return int(armas.acertos.get("raio", 0)) > antes, 900, pasta.path_join("pagode_arco_eletrico.png"), 4)
+
+
+func _torre_aux() -> float:
+	var m := 0.0
+	for it in torres_vivas():
+		m = maxf(m, float(it.aux))
+	return m
 
 
 func _bolt_no_ar() -> bool:

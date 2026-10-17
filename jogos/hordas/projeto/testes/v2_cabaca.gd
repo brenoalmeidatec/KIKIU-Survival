@@ -252,10 +252,17 @@ func fotos(pasta: String) -> void:
 	Config.temporario("pausar_fora", false)  # a janela sem foco não pode pausar a partida durante o print
 	var armas = w.combate.armas
 	zerar()
-	grupo_e_isolado()
+	grupo_aberto()
 	pegar(ID)
 	await _foto_quando(func(): return _g_fase(0, 0.27), 400, pasta.path_join("cabaca_no_ar.png"))
 	await _foto_quando(func(): return _g_fase(3, 0.07), 400, pasta.path_join("cabaca_explosao.png"))
+	await _foto_quando(func(): return _g_fase(3, 0.3), 400, pasta.path_join("cabaca_explosao_depois.png"))  # fumaça, brasas, estilhaços e números abertos em leque
+	zerar()
+	grupo_e_isolado()
+	for i in 5:
+		pegar(ID)
+	armas.ativas[ID].t = 0.0
+	await _foto_quando(func(): return _g_fase(3, 0.8), 600, pasta.path_join("cabaca_brasa_nivel5.png"))  # o chão em brasa do nível 5
 	zerar()
 	grupo_e_isolado()
 	for i in 3:
@@ -264,6 +271,13 @@ func fotos(pasta: String) -> void:
 	await get_tree().create_timer(5.0).timeout  # o aviso da fusão sai da tela (relógio de parede)
 	armas.acertos.clear()
 	await _foto_quando(func(): return int(armas.acertos.get("fogos", 0)) >= 3, 600, pasta.path_join("fogos_de_festival.png"))
+
+
+## Para as fotos: quatro monstros espalhados (30 a 50 px entre si) em volta do ponto de queda, para os números de dano abrirem sem empilhar.
+func grupo_aberto() -> void:
+	for d in [Vector2(168, -34), Vector2(200, -12), Vector2(172, 20), Vector2(204, 38)]:
+		monstro_a(d.x, d.y)
+	monstro_a(0.0, -100.0)
 
 
 func _g_fase(est: int, idade: float) -> bool:
