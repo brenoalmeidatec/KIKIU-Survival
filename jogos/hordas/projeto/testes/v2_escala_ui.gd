@@ -40,7 +40,8 @@ func _tabela() -> void:
 		[Vector2(960, 540), [1.0, 1.0, 1.0, 1.0]],
 		[Vector2(1280, 720), [1.0, 1.0, 1.0, 1.0]],
 		[Vector2(1280, 800), [1.0, 1.0, 1.0, 1.0]],
-		[Vector2(1600, 900), [1.0, 1.0, 1.0, 1.5]],
+		[Vector2(1600, 900), [1.25, 1.0, 1.0, 1.5]],
+		[Vector2(1680, 1050), [1.25, 1.0, 1.0, 1.5]],
 		[Vector2(1920, 1080), [1.5, 1.0, 1.5, 2.0]],
 		[Vector2(2560, 1080), [1.5, 1.0, 1.5, 2.0]],
 		[Vector2(2560, 1440), [2.0, 1.5, 2.0, 2.5]],
@@ -57,13 +58,32 @@ func _tabela() -> void:
 			ok(cv.x >= 960.0 and cv.y >= 540.0, "canvas %s %s não é menor que o bloco: %s" % [str(j), opcoes[i], str(cv)])
 			ok(cv.x * f >= j.x - 0.01 and cv.y * f >= j.y - 0.01, "canvas %s %s cobre a janela inteira" % [str(j), opcoes[i]])
 			ok(f <= minf(j.x / 960.0, j.y / 540.0) + 0.0001, "fator %s %s nunca corta o bloco" % [str(j), opcoes[i]])
-			var passo := f * 2.0
-			ok(f < 1.0 or absf(passo - roundf(passo)) < 0.0001, "fator %s %s é inteiro ou meio-passo" % [str(j), opcoes[i]])
+			var gran := 4.0 if opcoes[i] == "auto" else 2.0
+			var passo := f * gran
+			ok(f < 1.0 or absf(passo - roundf(passo)) < 0.0001, "fator %s %s anda no passo certo (0,25 no automático, 0,5 nos fixos)" % [str(j), opcoes[i]])
 	var cv := EscalaUi.canvas(Vector2(1920, 1080), "auto")
 	ok(cv == Vector2(1280, 720), "1920x1080 automático = canvas 1280x720")
 	ok(EscalaUi.deslocamento(cv) == Vector2(160, 90), "o bloco fica no centro do canvas")
 	ok(EscalaUi.cobertura(cv, Vector2(160, 90)) == Rect2(-160, -90, 1280, 720), "a cobertura começa em -deslocamento")
 	ok(EscalaUi.deslocamento(Vector2(960, 540)) == Vector2.ZERO, "canvas igual ao bloco: sem deslocamento")
+	# a opção forçada (o salão usa "grande"): ignora o que está salvo e encaixa o bloco na janela
+	Config.temporario("tamanho_ui", "pequeno")
+	EscalaUi.janela_forcada = Vector2i(1920, 1080)
+	ok(
+		is_equal_approx(EscalaUi.atualizar(null, "grande"), 2.0) and EscalaUi.canvas_atual == Vector2(960, 540),
+		"opção forçada grande: fator 2, canvas 960x540, mesmo com Pequeno salvo"
+	)
+	ok(is_equal_approx(EscalaUi.atualizar(null), 1.0) and EscalaUi.canvas_atual == Vector2(1920, 1080), "sem forçar, vale a opção salva (Pequeno)")
+	Config.temporario("tamanho_ui", "auto")
+	EscalaUi.atualizar(null)
+	# a v1 não mostra a linha do tamanho da interface (não faria nada)
+	var opc_v1 = load("res://scripts/hordas/tela_opcoes.gd").new()
+	opc_v1._ready()
+	var achou_v1 := false
+	for it in opc_v1._itens:
+		achou_v1 = achou_v1 or str(it.chave) == "tamanho_ui"
+	ok(not achou_v1, "a tela de Opções da v1 não lista Tamanho da interface")
+	opc_v1.free()
 	# o automático acompanha a janela: o canvas fica perto de 1280x720 em qualquer janela grande
 	for j in [Vector2(1920, 1080), Vector2(2560, 1440), Vector2(3840, 2160)]:
 		var c := EscalaUi.canvas(j, "auto")

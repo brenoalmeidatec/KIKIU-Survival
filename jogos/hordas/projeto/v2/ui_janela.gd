@@ -4,6 +4,7 @@ extends Node
 ## fator, e o `content_scale_factor` carrega a diferença entre o fator da UI e o de encaixe do bloco. A tela (um Control) vira o bloco
 ## 960x540, no centro do canvas; o que é de fundo usa EscalaUi.cobrir(). Muda a janela ou a opção "tamanho_ui": refaz tudo na hora.
 ## Ao sair da cena devolve à janela o modo que ela tinha (a partida e o jogo v1 usam outros) e zera o estado estático da escala.
+## `opcao` (opcional) fixa a opção de tamanho em vez de ler "tamanho_ui": o salão passa "grande", porque a sala 960x540 é cena e não pode encolher.
 ## Uso, no _ready da tela:  add_child(UiJanela.new().montar(self))
 
 const EscalaUi := preload("res://v2/escala_ui.gd")
@@ -11,10 +12,12 @@ const EscalaUi := preload("res://v2/escala_ui.gd")
 var _dono: Control
 var _janela: Window
 var _antes := {}
+var _opcao := ""
 
 
-func montar(dono: Control) -> Node:
+func montar(dono: Control, opcao := "") -> Node:
 	_dono = dono
+	_opcao = opcao
 	name = "UiJanela"
 	return self
 
@@ -57,7 +60,7 @@ func _exit_tree() -> void:
 func refazer() -> void:
 	if _janela == null or _dono == null or not is_instance_valid(_dono):
 		return
-	var f := EscalaUi.atualizar(_janela)
+	var f := EscalaUi.atualizar(_janela, _opcao)
 	var j := EscalaUi.janela_px(_janela)
 	_janela.content_scale_factor = f / minf(j.x / EscalaUi.LARG, j.y / EscalaUi.ALT)
 	_dono.set_anchors_preset(Control.PRESET_TOP_LEFT)

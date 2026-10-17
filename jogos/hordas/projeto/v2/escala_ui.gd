@@ -3,9 +3,10 @@ extends RefCounted
 ## Todo o layout da UI foi desenhado num "bloco" de 960x540. O fator diz quantos pixels de janela vale cada pixel da UI; a UI ganha
 ## então um canvas de janela / fator (maior que o bloco quando o fator é menor que o de encaixe), o bloco fica no centro dele e o que
 ## é de borda (HUD, minimapa, fundos) ancora no canvas, não no bloco. Assim a UI não vira gigante numa janela grande nem é cortada numa pequena.
-## Cada opção é um canvas-alvo (quanto de UI a pessoa quer ver); o fator é o maior passo de 0,5 (nunca menos que 1) que ainda deixa o
+## Cada opção é um canvas-alvo (quanto de UI a pessoa quer ver); o fator é o maior passo (nunca menos que 1) que ainda deixa o
 ## canvas com pelo menos esse tamanho, limitado ao encaixe do bloco (min(w/960, h/540)), de modo que nada é cortado.
-##   Grande 960x540 (o bloco ocupa a janela), Médio 1280x720, Pequeno 1600x900. Automático = Médio, acompanha a janela.
+##   Grande 960x540 (o bloco ocupa a janela), Médio 1280x720, Pequeno 1600x900: passos de 0,5. Automático: alvo 1280x720 como o Médio, mas em
+##   passos de 0,25, então acompanha melhor a janela (1600x900 vira 1,25; o Médio ficaria em 1,0 até 1920x1080).
 ## Tudo aqui é conta pura sobre o tamanho da janela (os testes passam o tamanho), e fica um estado estático com o último resultado,
 ## que as telas leem sem precisar de referência ao mundo.
 
@@ -31,7 +32,8 @@ static func fator(janela: Vector2, opcao: String) -> float:
 	var encaixe := minf(j.x / LARG, j.y / ALT)
 	var alvo: Vector2 = ALVOS.get(opcao, ALVOS.auto)
 	var bruto := minf(j.x / alvo.x, j.y / alvo.y)
-	var passo := maxf(floorf(bruto * 2.0 + 0.0001) / 2.0, 1.0)
+	var gran := 4.0 if opcao == "auto" else 2.0  # o Automático afina em passos de 0,25 (1920x1080 não é mais 1,5 seco); os fixos andam de 0,5
+	var passo := maxf(floorf(bruto * gran + 0.0001) / gran, 1.0)
 	return minf(passo, encaixe)
 
 
@@ -77,10 +79,10 @@ static func janela_px(w: Window) -> Vector2:
 	return Vector2(w.size)
 
 
-## Calcula para a janela e a opção atuais, guarda no estado estático e devolve o fator.
-static func atualizar(w: Window) -> float:
+## Calcula para a janela e a opção atuais (ou a `opcao_forcada`, que o salão usa para ficar sempre encaixado), guarda no estado estático e devolve o fator.
+static func atualizar(w: Window, opcao_forcada := "") -> float:
 	var j := janela_px(w)
-	var o := opcao_atual()
+	var o := opcao_forcada if OPCOES.has(opcao_forcada) else opcao_atual()
 	fator_atual = fator(j, o)
 	canvas_atual = canvas(j, o)
 	desloc_atual = deslocamento(canvas_atual)

@@ -113,7 +113,7 @@ func _ready() -> void:
 
 
 func _ajustar_janela() -> void:
-	add_child(UiJanela.new().montar(self))  # fator da interface, canvas e bloco no centro (v2/ui_janela.gd); a sala fica no bloco, a borda é o chão escuro
+	add_child(UiJanela.new().montar(self, "grande"))  # a sala 960x540 é cena, não menu: fica sempre encaixada na janela (o tamanho da interface não a encolhe); só a borda extra de janelas fora de 16:9 é chão escuro
 
 
 # ------------------------------------------------------------------ dados e alvos
@@ -155,7 +155,7 @@ func _alvo_perto(ponto: Vector2, raio: float) -> Dictionary:
 
 
 func _montar_cenario() -> void:
-	var borda := ColorRect.new()  # a sala é uma cena de 960x540: com a interface menor que a janela, o que sobra em volta é o chão escuro dela
+	var borda := ColorRect.new()  # a sala é uma cena de 960x540 sempre encaixada na janela: numa janela fora de 16:9 o que sobra dos lados é o chão escuro dela
 	borda.color = Color("#17191f")
 	borda.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	EscalaUi.cobrir(borda)

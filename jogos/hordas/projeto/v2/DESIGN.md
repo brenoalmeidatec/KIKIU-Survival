@@ -19,7 +19,7 @@ Toda a UI é desenhada num **bloco de 960x540** ("UI px"). O que muda com a jane
 | Título, santuário, escolha de personagem | direto na janela (`ui_janela.gd`) | `CANVAS_ITEMS`, base 960x540, aspecto `EXPAND` (sem faixas), `content_scale_factor = fator / encaixe` |
 | Salão (`salao.gd`) | cena de 960x540 (a sala e o personagem), não UI | `CANVAS_ITEMS` + `KEEP`, com faixas pretas: não segue o tamanho da interface |
 
-- **Fator**: cada opção é um canvas-alvo, e o fator é o maior passo de 0,5 (mínimo 1) que ainda deixa o canvas com pelo menos esse tamanho, limitado ao encaixe do bloco (`min(w/960, h/540)`): nunca corta nada. Grande = 960x540, Médio = Automático = 1280x720, Pequeno = 1600x900.
+- **Fator**: cada opção é um canvas-alvo, e o fator é o maior passo de 0,5 (mínimo 1) que ainda deixa o canvas com pelo menos esse tamanho, limitado ao encaixe do bloco (`min(w/960, h/540)`): nunca corta nada. Grande = 960x540, Médio = 1280x720, Pequeno = 1600x900; o Automático tem o alvo do Médio mas anda em passos de 0,25 (1600x900 = 1,25). O salão ignora a opção e fica sempre encaixado (a sala 960x540 é cena, não menu).
 
 | Janela | Automático | Pequeno | Médio | Grande |
 |---|---|---|---|---|
