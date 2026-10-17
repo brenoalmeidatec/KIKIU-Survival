@@ -12,6 +12,7 @@ extends RefCounted
 const Paleta := preload("res://v2/paleta.gd")
 const LARG := 960
 const ALT := 540
+const LAYER_TELAS := 11  # cartas, baú e resultado: ACIMA da HUD (10), abaixo do resultado final (12) e da pausa (14); senão o HUD aparece por cima das cartas
 const CARTA_L := 256.0
 const CARTA_A := 288.0
 const CARTA_Y := 146.0
@@ -87,7 +88,7 @@ func montar(c, sv: Node) -> void:
 	_fonte_t = Dados.fonte_titulo
 	_fonte_px = Dados.fonte
 	camada = CanvasLayer.new()
-	camada.layer = 5
+	camada.layer = LAYER_TELAS
 	sv.add_child(camada)
 	_fundo = ColorRect.new()
 	_fundo.color = Paleta.alfa(Paleta.PAINEL, 0.62)

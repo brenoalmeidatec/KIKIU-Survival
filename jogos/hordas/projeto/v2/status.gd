@@ -25,7 +25,7 @@ const Meta := preload("res://v2/meta.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const LAYER_HUD := 8
-const LAYER_CENTRAL := 13  # acima do HUD (10), do resultado (12) e das cartas (5); abaixo do menu de pausa (14)
+const LAYER_CENTRAL := 13  # acima do HUD (10), das cartas (11) e do resultado (12); abaixo do menu de pausa (14)
 const LAYER_PAUSA := 15  # acima do menu de pausa (camada 14) e do escurecimento dele
 const PERIODO := 0.25  # 4 Hz
 const ALFA_HUD := 0.92
@@ -703,7 +703,7 @@ func _pintar() -> void:
 	var rects: Array = _colunas()
 	var opaco: bool = _m != "hud"  # na pausa e no painel central: sem ver o que está atrás
 	if _m == "central":
-		_tela.draw_rect(TELA, COR_FUNDO_OPACO)  # o painel central cobre a tela toda: as cartas (camada 5) e o HUD ficam escondidos
+		_tela.draw_rect(TELA, COR_FUNDO_OPACO)  # o painel central cobre a tela toda: as cartas (camada 11) e o HUD ficam escondidos
 	for c in rects.size():
 		var r := _medir(c)
 		if opaco:
