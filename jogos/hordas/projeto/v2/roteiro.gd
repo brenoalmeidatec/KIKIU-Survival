@@ -15,6 +15,9 @@ extends RefCounted
 ##                         depois de 3 s de perseguição, com o herói parado (os monstros cercam e não entram no corpo dele).
 ##   --roteiro=golpes      (golpes do vídeo KiKiu, PR #306) 1_cristal: explosão com o cristal 0,08 s depois; 2_marca: crítico com a marca branca; 3_telegrafo:
 ##                         chefe com a carga cheia e o retículo. Fotos prefixo_1_cristal ... Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=hud_golpes  a faixa de golpes do HUD numa partida real: 9 golpes ganhos, horda caçando o herói. Fotos do viewport: 31_parado (faixa
+##                         esmaecida, parada), 32_pulso (0,15 s depois de subir o nível da runa: ícone claro, faixa opaca) e 33_novo (0,12 s
+##                         depois de ganhar um golpe novo: pop). Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=oclusao     (leva 4) herói atrás de uma árvore (1_arvore) e herói coberto por uma aranha grande na frente (2_aranha).
 ##   --roteiro=ruptura     (tecla E) 24 monstros a caminho do herói parado, que carrega a ruptura. Fotos do viewport: 1_carga (meia carga:
 ##                         anel fantasma no raio final e anel interno), 2_cheia_perfeita (anel piscando na janela perfeita), 3_disparo (0,10 s
@@ -108,6 +111,8 @@ func atualizar(dt: float) -> void:
 				_r_ruptura()
 			"golpes":
 				_r_golpes()
+			"hud_golpes":
+				_r_hud_golpes()
 
 
 # ------------------------------------------------------------------ robô e estresse
@@ -263,6 +268,48 @@ func armar_build() -> void:
 	for par in [["aura_fogo", 4], ["laminas", 2], ["corvos", 3], ["raio", 2], ["runa", 2]]:
 		for i in int(par[1]):
 			cs.aplicar(cs.montar_carta(cs.definicao(str(par[0])), 1 + (i % 3)))
+
+
+func _r_hud_golpes() -> void:
+	var cs = mundo.combate.cartas
+	match passo:
+		0:
+			_preparar()
+			var n := 0
+			for id in ["bola_fogo", "laminas", "corvos", "raio", "runa", "aura_fogo", "golem_barro", "lobo_espirito", "espirito_urso"]:
+				for i in 1 + (n % 3):  # níveis 1 a 3, em raridades variadas
+					cs.aplicar(cs.montar_carta(cs.definicao(id), 1 + (i % 3)))
+				n += 1
+			estresse = 18
+			robo = true
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 5.0:  # a faixa já esmaeceu
+				_foto("31_parado")
+				passo = 2
+				t_passo = 0.0
+		2:
+			if t_passo > 0.9:
+				cs.aplicar(cs.montar_carta(cs.definicao("runa"), 1))
+				passo = 3
+				t_passo = 0.0
+		3:
+			if t_passo > 0.15:
+				_foto("32_pulso")
+				passo = 4
+				t_passo = 0.0
+		4:
+			if t_passo > 1.0:
+				cs.aplicar(cs.montar_carta(cs.definicao("nuvem_veneno"), 1))
+				passo = 5
+				t_passo = 0.0
+		5:
+			if t_passo > 0.12:
+				_foto("33_novo")
+				passo = 6
+		6:
+			mundo.get_tree().quit()
 
 
 func _preparar(imortal := true) -> void:

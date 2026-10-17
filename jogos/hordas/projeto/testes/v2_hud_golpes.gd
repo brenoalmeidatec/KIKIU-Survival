@@ -123,24 +123,25 @@ func _partida(w, hud, g) -> void:
 	var a: Dictionary = w.combate.armas.ativas.bola_fogo
 	a.t = 0.0
 	g.avancar(LEITURA)
-	ok(int(_item(g, "bola_fogo").rec) == 32, "recarga zerada: linha cheia (tem %s)" % _item(g, "bola_fogo").rec)
+	ok(int(_item(g, "bola_fogo").rec) == Golpes.ICONE, "recarga zerada: pronta, linha cheia (tem %s)" % _item(g, "bola_fogo").rec)
 	a.t = float(a.st.recarga) / w.heroi.m_vel_ataque
 	g.avancar(LEITURA)
 	ok(int(_item(g, "bola_fogo").rec) == 0, "recarga recém-disparada: linha vazia (tem %s)" % _item(g, "bola_fogo").rec)
 	a.t = float(a.st.recarga) / w.heroi.m_vel_ataque / 2.0
 	g.avancar(LEITURA)
-	ok(absi(int(_item(g, "bola_fogo").rec) - 16) <= 1, "meia recarga: metade da linha (tem %s)" % _item(g, "bola_fogo").rec)
+	ok(absi(int(_item(g, "bola_fogo").rec) - Golpes.ICONE / 2) <= 1, "meia recarga: metade da linha (tem %s)" % _item(g, "bola_fogo").rec)
 	ok(int(_item(g, "laminas").rec) == -1, "lâmina bate sem parar: sem linha de recarga")
 
-	# 4. progresso da fusão: bola_fogo nv 2 de 3 e bolas_chumbo ausente = 2 de 6 níveis
-	ok(int(_item(g, "bola_fogo").fus) == roundi(2.0 / 6.0 * 32.0), "fusão: 2 de 6 níveis (tem %s)" % _item(g, "bola_fogo").fus)
+	# 4. marca de fusão: só quando falta UM nível para uma receita (bola_fogo nv 2 de 3 e bolas_chumbo ausente = 2 de 6 níveis: longe)
+	ok(not _item(g, "bola_fogo").quase, "fusão longe (2 de 6 níveis): sem marca")
+	ok(not _item(g, "bola_fogo").has("fus"), "sem barra de progresso da fusão")
 	_dar(w, "bola_fogo")
 	g.avancar(LEITURA)
-	ok(int(_item(g, "bola_fogo").fus) == 16 and not _item(g, "bola_fogo").quase, "fusão: 3 de 6 níveis, metade da linha")
+	ok(not _item(g, "bola_fogo").quase, "fusão: 3 de 6 níveis ainda sem marca")
 	_dar(w, "bolas_chumbo")
 	_dar(w, "bolas_chumbo")
 	g.avancar(LEITURA)
-	ok(int(_item(g, "bolas_chumbo").fus) == roundi(5.0 / 6.0 * 32.0) and _item(g, "bolas_chumbo").quase, "falta 1 nível: a linha de fusão pisca")
+	ok(_item(g, "bolas_chumbo").quase and _item(g, "bola_fogo").quase, "falta 1 nível (5 de 6): a marca de fusão acende nas duas peças")
 
 	# 5. a fusão troca as peças pela evolução; nada mais some
 	_passar(g, 0.6)
@@ -152,13 +153,20 @@ func _partida(w, hud, g) -> void:
 	ok(not _item(g, "laminas").is_empty(), "a fusão não tira outros golpes (lâminas continua)")
 	ok(g.anims.has("bola_incendiaria") and g.anims.bola_incendiaria.tipo == "fusao", "a fusão anima em magenta")
 	ok(Dados.icone_carta("bola_incendiaria") != null, "o ícone da evolução carrega")
-	ok(int(evo.fus) == -1, "evoluída não tem linha de fusão")
+	ok(not evo.quase, "evoluída não tem marca de fusão")
 	_passar(g, 0.6)
 
-	# 6. parada, a faixa não pede redesenho (só a leitura a 20 Hz roda)
+	# 6. parada, a faixa não pede redesenho (só a leitura a 20 Hz roda) e fica translúcida; ao mudar, fica opaca
+	_passar(g, 4.0)
 	var antes: int = g.pedidos
 	_passar(g, 1.0)
 	ok(g.pedidos == antes, "parada não pede redesenho (pediu %d)" % (g.pedidos - antes))
+	ok(g.modulate.a < 0.8 and g.modulate.a > 0.3, "parada, a faixa fica translúcida (alfa %s)" % g.modulate.a)
+	_dar(w, "laminas")
+	_passar(g, 0.4)
+	ok(g.modulate.a > 0.95, "ao subir de nível a faixa fica opaca (alfa %s)" % g.modulate.a)
+	_passar(g, 5.0)
+	ok(g.modulate.a < 0.8, "e volta a esmaecer depois (alfa %s)" % g.modulate.a)
 
 	# 7. dez golpes cabem em duas linhas e não cruzam nada do HUD
 	for id in ["corvos", "raio", "runa", "aura_fogo", "golem_barro", "lobo_espirito", "espirito_urso", "nuvem_veneno"]:
@@ -184,7 +192,7 @@ func _partida(w, hud, g) -> void:
 	w.status.visible = false
 	g.avancar(LEITURA)
 	ok(g.visible, "ao fechar o card a faixa volta")
-	ok(Golpes.CAPACIDADE == 18, "capacidade de 18 golpes")
+	ok(Golpes.CAPACIDADE == 24, "capacidade de 24 golpes")
 	var extra: Vector2 = g.pos_excedente()
 	ok(extra.x >= Golpes.POR_LINHA * (Golpes.CAIXA + Golpes.ESPACO), "o +N fica fora dos quadradinhos (x %s)" % extra.x)
 
@@ -201,7 +209,7 @@ func _partida(w, hud, g) -> void:
 	g.avancar(LEITURA)
 	ok(_item(g, "lobo_espirito").is_empty() and not _item(g, "cacada_espiritual").is_empty(), "a Caçada Espiritual consumiu o lobo")
 	ok(int(w.combate.cartas.nivel_de("espirito_urso")) == 2, "espirito_urso segue no nível 2")
-	ok(int(_item(g, "espirito_urso").fus) == roundi(2.0 / 6.0 * 32.0), "fusão ignora receita com peça consumida (tem %s)" % _item(g, "espirito_urso").fus)
+	ok(not _item(g, "espirito_urso").quase, "fusão ignora receita com peça consumida: sem marca")
 
 
 func _fotos(w, hud, g, pasta: String) -> void:
