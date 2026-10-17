@@ -222,25 +222,36 @@ func fotos(pasta: String) -> void:
 	monstro_a(120, 40)
 	for i in 3:
 		pegar(ID)
-	await _foto_quando(func(): return _torre_aux() > 0.75 and int(armas.acertos.get("projetil", 0)) > 2, 900, pasta.path_join("sentinela_atirando.png"))  # o clarão da boca
+	await _foto_quando(func(): return _torre_aux() > 0.75 and int(armas.acertos.get("projetil", 0)) > 2, 900, pasta.path_join("v2_sentinela_atirando.png"))  # o clarão da boca
 	zerar()  # os alvos ficam parados (atordoados) a ~210 px da torre, para o virote voar por um bom pedaço antes de acertar
 	for dy in [-24.0, 6.0, 34.0]:
 		monstro_a(172.0, dy).atordoa_t = 60.0
 	for i in 3:
 		pegar(ID)
-	await _foto_quando(func(): return _bolt_no_ar() and _torre_aux() < 0.55, 900, pasta.path_join("sentinela_virote_no_ar.png"), 3)  # o virote com o rastro
-	zerar()
-	monstro_a(140, -40)
-	monstro_a(165, -5)
-	monstro_a(150, 30)
-	monstro_a(185, 55)
+	await _foto_quando(func(): return _bolt_no_ar() and _torre_aux() < 0.55, 900, pasta.path_join("v2_sentinela_virote.png"), 3)  # o virote com o rastro
+	zerar()  # a torre recém-pousada: a poeira, as lascas e a onda (a arma só dispara com algum monstro por perto)
+	monstro_a(250.0, 0.0).atordoa_t = 60.0
+	pegar(ID)
+	await _foto_quando(func(): return _torre_pousou(), 900, pasta.path_join("v2_sentinela_pouso.png"), 5)
+	zerar()  # os monstros em fila, parados e a 45 px um do outro: o arco do Pagode salta de um para o outro (cadeia 2 = 3 monstros)
+	monstro_a(150, -50).atordoa_t = 60.0
+	monstro_a(175, -12).atordoa_t = 60.0
+	monstro_a(200, 26).atordoa_t = 60.0
+	monstro_a(228, 62).atordoa_t = 60.0
 	for i in 3:
 		pegar(ID)
 		pegar("raio")
 	await get_tree().create_timer(5.0).timeout  # o aviso da fusão sai da tela (relógio de parede)
 	passos(30)
 	var antes := int(armas.acertos.get("raio", 0))
-	await _foto_quando(func(): return int(armas.acertos.get("raio", 0)) > antes, 900, pasta.path_join("pagode_arco_eletrico.png"), 4)
+	await _foto_quando(func(): return int(armas.acertos.get("raio", 0)) > antes, 900, pasta.path_join("v2_pagode_trovao.png"), 1)
+
+
+func _torre_pousou() -> bool:
+	for it in torres_vivas():
+		if int(it.est) == 1 and float(it.age) < 0.3:
+			return true
+	return false
 
 
 func _torre_aux() -> float:

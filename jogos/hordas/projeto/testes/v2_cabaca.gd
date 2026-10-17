@@ -162,9 +162,11 @@ func _ready() -> void:
 			ok(z == 0.0, "no pavio a cabaça está no chão (z %.2f)" % z)
 		if int(g.est) == 3 and quadros_explosao < 0:
 			quadros_explosao = quadros
-			# o anel nasce com N estilhaços; no mesmo quadro um pode já ter batido num monstro colado na explosão (giro aleatório) e morrido
+			# o anel nasce com exatamente N estilhaços; no mesmo quadro um pode já ter batido num monstro colado na explosão (giro aleatório) e
+			# morrido, então os vivos são no máximo N, mas os CRIADOS (`ultimo_anel`) são sempre N
 			var n_est := int(armas.ativas[ID].st.estilhacos)
-			ok(estilhacos().size() <= n_est and estilhacos().size() >= n_est - 2, "a explosão solta %d estilhaços (%d)" % [n_est, estilhacos().size()])
+			ok(novas.ultimo_anel == n_est, "a explosão cria %d estilhaços (%d)" % [n_est, novas.ultimo_anel])
+			ok(estilhacos().size() <= n_est, "e nenhum estilhaço aparece a mais (%d vivos)" % estilhacos().size())
 			for e in estilhacos():
 				ok(float(e.vida) <= 0.36 and float(e.mult) < 1.0, "o estilhaço dura 0,35 s e leva parte do dano")
 			break
@@ -240,6 +242,28 @@ func _ready() -> void:
 	var q6 := ate(func(): return int(armas.acertos.get("fogos", 0)) >= 8, 600)
 	ok(q6 >= 0, "os estilhaços estouram de novo (estouros %d)" % int(armas.acertos.get("fogos", 0)))
 
+	# 6. o número somado: os golpes que batem na janela de 0,2 s saem num número só, que aparece sozinho quando a janela fecha
+	zerar()
+	var mf = monstro_a(40.0, 0.0)
+	var fx = w.combate.armas.fx
+	var antes_num: int = fx.usados.numeros
+	novas._dano_fogo(mf.pos, 60.0, 13.0, Color.WHITE)
+	novas._dano_fogo(mf.pos, 60.0, 13.0, Color.WHITE)
+	var reg: Array = novas._num_acum.get(mf.get_instance_id(), [])
+	ok(not reg.is_empty() and is_equal_approx(float(reg[1]), 26.0), "dois estouros na janela somam esperando (%s)" % str(reg.slice(0, 2)))
+	ok(fx.usados.numeros == antes_num, "e nenhum número saiu ainda (%d)" % (fx.usados.numeros - antes_num))
+	passos(20)  # 0,33 s
+	reg = novas._num_acum.get(mf.get_instance_id(), [])
+	ok(reg.is_empty() or float(reg[1]) == 0.0, "a soma sai sozinha quando a janela fecha (sobrou %s)" % str(reg.slice(0, 2)))
+	ok(fx.usados.numeros == antes_num + 1, "num número só, não dois (%d)" % (fx.usados.numeros - antes_num))
+	novas._dano_fogo(mf.pos, 60.0, 13.0, Color.WHITE)  # um golpe sozinho, sem outro depois, também sai
+	passos(20)
+	ok(fx.usados.numeros == antes_num + 2, "um golpe sozinho também aparece (%d)" % (fx.usados.numeros - antes_num))
+	mf.vida = 0.0
+	mf.vivo = false
+	passos(80)
+	ok(novas._num_acum.is_empty(), "o registro esquece quem saiu da rajada (%d)" % novas._num_acum.size())
+
 	print("explosão em %d quadros (esperado %.0f); custo do passo do pool: %.0f us/quadro; acertos %s" % [quadros_explosao, esperado, media, armas.acertos])
 	print("v2_cabaca falhas=%d" % falhas)
 	get_tree().quit(1 if falhas > 0 else 0)
@@ -254,16 +278,16 @@ func fotos(pasta: String) -> void:
 	zerar()
 	grupo_aberto()
 	pegar(ID)
-	await _foto_quando(func(): return _g_fase(0, 0.27), 400, pasta.path_join("cabaca_no_ar.png"))
-	await _foto_quando(func(): return _g_fase(3, 0.07), 400, pasta.path_join("cabaca_explosao.png"))
-	await _foto_quando(func(): return _g_fase(3, 0.12), 400, pasta.path_join("cabaca_explosao_meio.png"))  # estilhaços e números abertos em leque
-	await _foto_quando(func(): return _g_fase(3, 0.12), 400, pasta.path_join("cabaca_explosao_depois.png"), 31)  # a fumaça já subiu e as brasas ficaram
+	await _foto_quando(func(): return _g_fase(0, 0.27), 400, pasta.path_join("v2_cabaca_no_ar.png"))
+	await _foto_quando(func(): return _g_fase(3, 0.07), 400, pasta.path_join("v2_cabaca_explosao.png"))
+	await _foto_quando(func(): return _g_fase(3, 0.12), 400, pasta.path_join("v2_cabaca_meio.png"))  # estilhaços e números abertos em leque
+	await _foto_quando(func(): return _g_fase(3, 0.12), 400, pasta.path_join("v2_cabaca_depois.png"), 31)  # a fumaça já subiu e as brasas ficaram
 	zerar()
 	grupo_e_isolado()
 	for i in 5:
 		pegar(ID)
 	armas.ativas[ID].t = 0.0
-	await _foto_quando(func(): return _g_fase(3, 0.8), 600, pasta.path_join("cabaca_brasa_nivel5.png"))  # o chão em brasa do nível 5
+	await _foto_quando(func(): return _g_fase(3, 0.8), 600, pasta.path_join("v2_cabaca_brasa5.png"))  # o chão em brasa do nível 5
 	zerar()
 	grupo_aberto()
 	for i in 3:
@@ -271,7 +295,7 @@ func fotos(pasta: String) -> void:
 		pegar("bola_fogo")
 	await get_tree().create_timer(5.0).timeout  # o aviso da fusão sai da tela (relógio de parede)
 	armas.acertos.clear()
-	await _foto_quando(func(): return int(armas.acertos.get("fogos", 0)) >= 3, 600, pasta.path_join("fogos_de_festival.png"))
+	await _foto_quando(func(): return int(armas.acertos.get("fogos", 0)) >= 3, 600, pasta.path_join("v2_fogos_festival.png"))
 
 
 ## Para as fotos: quatro monstros espalhados (30 a 50 px entre si) em volta do ponto de queda, para os números de dano abrirem sem empilhar.

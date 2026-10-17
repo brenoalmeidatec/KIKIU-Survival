@@ -35,6 +35,9 @@ const TORRE_BOCA := 15.0
 ## O pool de partículas deste arquivo (a camada normal, que recebe a luz): fumaça, lascas e brasas. `fx` só desenha em modo aditivo, que não
 ## serve para fumaça escura nem para casca de cabaça.
 const MAX_PARTS := 96
+const SLOTS_NUM := [
+	Vector2(0, -8), Vector2(-26, -4), Vector2(26, -4), Vector2(-22, -20), Vector2(22, -20), Vector2(-30, -34), Vector2(30, -34), Vector2(0, -42)
+]
 const PT_FUMACA := 0
 const PT_LASCA := 1
 const PT_BRASA := 2
@@ -77,7 +80,9 @@ var q_cor := PackedColorArray()
 var q_ativas := 0
 var _qi := 0
 var _relogio := 0.0
-var _fogo_num := {}  # id do monstro -> (quando mostrou o último número dos Fogos, em s do relógio daqui, dano somado desde então)
+var _num_acum := {}  # id do monstro -> [quando abriu a janela da soma (s do relógio daqui, -1 = fechada), dano somado, monstro, direção, cor, quando mostrou o último]
+var _slot_num := {}  # id do monstro -> Vector2(quando saiu o último número em leque, quantos saíram nessa rajada)
+var ultimo_anel := 0  # quantos estilhaços a última explosão de cabaça criou (o teste confere)
 
 
 func montar(p) -> void:
@@ -132,6 +137,8 @@ func limpar() -> void:
 		it.vida = 0.0
 	q_vida.fill(0.0)
 	q_ativas = 0
+	_num_acum.clear()
+	_slot_num.clear()
 
 
 func remover(a: Dictionary) -> void:
@@ -250,6 +257,8 @@ func quadro(h, dt: float, perto: Array) -> void:
 			_estourar_fogo(it)
 	if q_ativas > 0:
 		_quadro_partes(dt)
+	if not _num_acum.is_empty():
+		_num_soltar()
 
 
 # ------------------------------------------------------------------ partículas próprias (fumaça, lascas e brasas)
@@ -478,17 +487,38 @@ func _puxar(p: Vector2, raio: float, forca: float) -> void:
 		m.pos = m.pos + d.normalized() * minf(forca, d.length())
 
 
-## Dano do golpe; se o monstro já está lento e a arma tem `mult_lento`, o dano sobe (combo de lentidão).
-## O número do estilhaço da cabaça: menor que o da explosão, quente (ou da cor do fogo) e empurrado 24 px no sentido do estilhaço, para os
-## números de uma mesma explosão abrirem em leque em vez de empilhar. Faz também a piscada de dano que o `ferir` pularia.
+## Onde sai o próximo número de um monstro: cada número da mesma rajada (0,7 s) ocupa um lugar diferente em volta dele (`SLOTS_NUM`: o meio,
+## depois um de cada lado, subindo), para não empilhar. `dir` escolhe o lado do segundo.
+func _pos_numero(m, dir: Vector2) -> Vector2:
+	var id: int = m.get_instance_id()
+	var reg: Vector2 = _slot_num.get(id, Vector2(-10.0, 0.0))
+	if _relogio - reg.x > 0.7:
+		reg.y = 0.0
+	var k := int(reg.y)
+	reg = Vector2(_relogio, reg.y + 1.0)
+	_slot_num[id] = reg
+	if _slot_num.size() > 64:  # só ficam os que ainda estão numa rajada
+		for outro in _slot_num.keys():
+			if _relogio - (_slot_num[outro] as Vector2).x > 0.7:
+				_slot_num.erase(outro)
+	var slot: Vector2 = SLOTS_NUM[k % SLOTS_NUM.size()]
+	if k % 2 == 1 and dir.x < 0.0:  # o segundo vai para o lado de onde veio o golpe
+		slot.x = -slot.x
+	return m.pos + slot + Vector2(0, -float(m.alt) * 0.8 - floorf(float(k) / float(SLOTS_NUM.size())) * 8.0)
+
+
+## O número do estilhaço da cabaça: pequeno, quente (ou da cor do fogo) e SOMADO por monstro: os estilhaços de uma explosão que acertam o mesmo
+## monstro saem num número só (`_num_somar`), num lugar só dele (`_pos_numero`), em vez de "7 7 7" empilhados. Faz também a piscada de dano que o
+## `ferir` pularia.
 func _numero_estilhaco(m, dano: float, dir: Vector2, a: Dictionary, it: Dictionary) -> void:
 	var cor := Color(1.0, 0.78, 0.4)
 	if a.st.has("fogos"):
 		cor = FOGOS_CORES[int(it.t) % 3].lerp(Color.WHITE, 0.3)
-	pai.fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.7) + dir * 24.0, str(maxi(1, roundi(dano))), cor, false, 12)
+	_num_somar(m, dano, dir, cor)
 	pai.fx.flash(m, 0.08)
 
 
+## Dano do golpe; se o monstro já está lento e a arma tem `mult_lento`, o dano sobe (combo de lentidão).
 func _dano_em(m, st: Dictionary) -> float:
 	var d := _dano(st)
 	if st.has("mult_lento") and m.lento_t > 0.0:
@@ -766,8 +796,8 @@ func _fumaca_subindo(p: Vector2, n: int, raio: float, tam: float) -> void:
 			Vector2(randf_range(-14.0, 14.0), 0.0),
 			randf_range(34.0, 62.0),
 			randf_range(0.8, 1.2),
-			tam * randf_range(0.7, 1.2),
-			Color(0.4, 0.36, 0.34, 0.8)
+			tam * randf_range(0.9, 1.4),
+			Color(0.6, 0.55, 0.52, 0.9)
 		)
 
 
@@ -971,7 +1001,7 @@ func _mover_granada(it: Dictionary, dt: float) -> void:
 				if float(it.t) <= 0.0:
 					it.t = 0.5
 					var dano := float(st.get("brasa_dps", 0.0)) * 0.5 * float(pai.mundo.heroi.m_dano)
-					pai._dano_area(it.p, float(st.raio) * 0.8, dano, 0.0, 0.0, it.a.cor, "granada")
+					_dano_granada(it.p, float(st.raio) * 0.8, dano, it.a.cor, 0.0, 0.0)
 
 
 func _explodir_granada(it: Dictionary) -> void:
@@ -980,7 +1010,7 @@ func _explodir_granada(it: Dictionary) -> void:
 	var p: Vector2 = it.p
 	var raio := float(st.raio)
 	var cor: Color = a.cor
-	pai._dano_area(p, raio, _dano(st), 140.0, 0.15, cor, "granada")
+	_dano_granada(p, raio, _dano(st), cor)
 	# estilhaços em anel: itens "projetil" que colidem com a lista da explosão (quem está a até ~150 px dela)
 	var cand: Array = it.cand
 	cand.clear()
@@ -990,10 +1020,12 @@ func _explodir_granada(it: Dictionary) -> void:
 	var n := int(st.get("estilhacos", 0.0))
 	var vel := float(st.get("vel_estilhaco", 300.0))
 	var giro := randf() * TAU
+	ultimo_anel = 0
 	for k in n:
 		var f := _novo("projetil", a, p + Vector2(0, -4), 0.35)
 		if f.is_empty():
 			break
+		ultimo_anel += 1
 		var ang := giro + TAU * float(k) / float(n)
 		f.v = Vector2(cos(ang), sin(ang) * 0.8) * vel
 		f.pen = 0
@@ -1015,14 +1047,10 @@ func _explodir_granada(it: Dictionary) -> void:
 	pai.combate.audio.tocar("runa", randf_range(0.8, 0.95), -2.0, 0.05)
 
 
-## O dano de área do estouro dos Fogos: como `_dano_area`, mas o número sai pequeno e empurrado para fora do centro do estouro (em leque), e
-## cada monstro mostra no máximo um número a cada 0,22 s (o que bateu nesse meio tempo soma no próximo), senão uma cadeia de estouros empilha
-## dezenas de "13" no mesmo lugar. O dano e a piscada valem sempre.
+## O dano de área do estouro dos Fogos: como `_dano_area`, mas o número é pequeno, SOMADO por monstro (`_num_somar`) e num lugar só dele
+## (`_pos_numero`), senão uma cadeia de estouros empilha dezenas de "13" no mesmo lugar. O dano e a piscada valem sempre.
 func _dano_fogo(p: Vector2, raio: float, dano: float, cor: Color) -> void:
 	var n := 0
-	var agora := _relogio
-	if _fogo_num.size() > 48:
-		_fogo_num.clear()
 	for m in pai.mundo.monstros:
 		if not m.vivo or m.morrendo:
 			continue
@@ -1031,17 +1059,71 @@ func _dano_fogo(p: Vector2, raio: float, dano: float, cor: Color) -> void:
 			continue
 		var fora := d.normalized() if d.length() > 0.5 else Vector2.from_angle(randf() * TAU)
 		pai.combate.ferir(m, dano, fora, 50.0, 0.05, cor, false)
-		var id: int = m.get_instance_id()
-		var reg: Vector2 = _fogo_num.get(id, Vector2(-10.0, 0.0))  # x = quando mostrou o último (s), y = dano somado desde então
-		reg.y += dano
-		if agora - reg.x >= 0.22:
-			pai.fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.7) + fora * 20.0, str(maxi(1, roundi(reg.y))), cor.lerp(Color.WHITE, 0.3), false, 12)
-			reg = Vector2(agora, 0.0)
-		_fogo_num[id] = reg
+		_num_somar(m, dano, fora, cor.lerp(Color.WHITE, 0.3))
 		pai.fx.flash(m, 0.08)
 		n += 1
 	if n > 0:
 		pai._acertou("granada")
+
+
+## O dano de área da explosão da cabaça (e do chão em brasa, com `empurra` e `atordoa` zerados): como `_dano_area`, mas o número entra na soma por monstro (`_num_somar`), junto com o dos estilhaços e
+## o das outras cabaças que caírem em cima, em vez de um "32" por cima do outro.
+func _dano_granada(p: Vector2, raio: float, dano: float, cor: Color, empurra := 140.0, atordoa := 0.15) -> void:
+	var n := 0
+	var cn: Color = _cor_num(cor)
+	for m in pai.mundo.monstros:
+		if not m.vivo or m.morrendo:
+			continue
+		var d: Vector2 = m.pos - p
+		if not pai.na_elipse(d, raio + m.raio):
+			continue
+		var fora := d.normalized() if d.length() > 0.5 else Vector2.RIGHT
+		pai.combate.ferir(m, dano, fora, empurra, atordoa, cn, false)
+		_num_somar(m, dano, fora, cn)
+		pai.fx.flash(m, 0.08)
+		n += 1
+	if n > 0:
+		pai._acertou("granada")
+
+
+## Soma `dano` no número que o monstro vai mostrar: o primeiro golpe abre uma janela de 0,2 s, o que bater nela soma, e `_num_soltar` mostra
+## a soma quando a janela fecha (ou o monstro morre), mesmo que não venha outro golpe.
+func _num_somar(m, dano: float, dir: Vector2, cor: Color) -> void:
+	var id: int = m.get_instance_id()
+	var reg: Array = _num_acum.get(id, [])
+	if reg.is_empty():
+		reg = [-1.0, 0.0, m, dir, cor, -10.0]
+		_num_acum[id] = reg
+	if float(reg[0]) < 0.0:
+		reg[0] = _relogio
+	reg[1] = float(reg[1]) + dano
+	reg[3] = dir
+	reg[4] = cor
+
+
+## Mostra a soma de um monstro (se tiver) e fecha a janela.
+func _num_mostrar(reg: Array) -> void:
+	var m = reg[2]
+	if is_instance_valid(m) and float(reg[1]) > 0.0:
+		pai.fx.numero(_pos_numero(m, reg[3]), str(maxi(1, roundi(float(reg[1])))), reg[4], false, 14, true)
+	reg[0] = -1.0
+	reg[1] = 0.0
+	reg[5] = _relogio
+
+
+## Todo quadro: mostra as somas cuja janela fechou (ou cujo monstro morreu) e esquece quem já saiu da rajada.
+func _num_soltar() -> void:
+	var sair: Array = []
+	for id in _num_acum:
+		var reg: Array = _num_acum[id]
+		var m = reg[2]
+		var vivo: bool = is_instance_valid(m) and m.vivo and not m.morrendo
+		if float(reg[1]) > 0.0 and (not vivo or _relogio - float(reg[0]) >= 0.2):
+			_num_mostrar(reg)
+		if float(reg[1]) <= 0.0 and (not vivo or _relogio - float(reg[5]) > 1.0):
+			sair.append(id)
+	for id in sair:
+		_num_acum.erase(id)
 
 
 ## O fim do estilhaço dos Fogos de Festival: um estouro colorido pequeno (raio_fogo) com parte do dano.
@@ -1455,13 +1537,23 @@ func _brilho_granada(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2)
 	var st: Dictionary = it.a.st
 	var cor: Color = it.a.cor
 	var raio := float(st.raio)
-	if est == 0:  # a mira no chão: um anel fino no ponto de queda que esquenta enquanto a cabaça desce
+	if est == 0:  # a mira no chão: disco e anel no ponto de queda, com um anel que fecha sobre ele e quatro riscas; esquenta enquanto a cabaça desce
 		var k := clampf(age / float(st.get("voo", 0.55)), 0.0, 1.0)
 		var alvo: Vector2 = (it.dest as Vector2).round()
+		var pulso := 0.8 + 0.2 * sin(float(it.fase) * 2.0)
 		ci.draw_set_transform(alvo, 0.0, Vector2(1, ACHATA))
-		ci.draw_arc(Vector2.ZERO, raio * 0.6, 0.0, TAU, 28, Color(1.0, 0.5, 0.15, 0.1 + 0.2 * k), 1.0)
-		ci.draw_circle(Vector2.ZERO, 2.5 + 2.0 * k, Color(1.0, 0.6, 0.2, 0.2 + 0.2 * k))
+		ci.draw_circle(Vector2.ZERO, raio * 0.6, Color(1.0, 0.4, 0.1, (0.1 + 0.12 * k) * pulso))
+		ci.draw_arc(Vector2.ZERO, raio * 0.6, 0.0, TAU, 32, Color(1.0, 0.55, 0.18, (0.4 + 0.45 * k) * pulso), 2.0)
+		ci.draw_arc(Vector2.ZERO, raio * (1.0 - 0.4 * k), 0.0, TAU, 32, Color(1.0, 0.8, 0.4, 0.5 * (1.0 - k) + 0.1), 1.0)
+		for n in 4:
+			var d := Vector2.from_angle(TAU * float(n) / 4.0 + 0.785)
+			ci.draw_line(d * raio * 0.5, d * raio * 0.72, Color(1.0, 0.75, 0.35, 0.55 + 0.35 * k), 2.0)
+		ci.draw_circle(Vector2.ZERO, 2.5 + 2.0 * k, Color(1.0, 0.7, 0.3, 0.35 + 0.3 * k))
 		ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if est <= 1:  # a luz da cabaça no chão, sob ela: a sombra preta quase some no chão escuro, mas a mancha quente em volta mostra onde ela passa
+		var alta := clampf(_altura_granada(it) / 60.0, 0.0, 1.0)
+		var tam := 30.0 - 8.0 * alta
+		ci.draw_texture_rect(tex, Rect2(p + Vector2(-tam, -tam * ACHATA), Vector2(tam, tam * ACHATA) * 2.0), false, Color(1.0, 0.5, 0.15, 0.42 - 0.18 * alta))
 	if est <= 2:
 		var ponta := _ponta_pavio(it).round()
 		ci.draw_texture_rect(tex, Rect2(ponta - Vector2(7, 7), Vector2(14, 14)), false, Color(1.0, 0.8, 0.3, 0.7 + 0.3 * sin(float(it.fase) * 3.0)))

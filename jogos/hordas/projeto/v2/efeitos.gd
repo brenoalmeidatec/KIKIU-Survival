@@ -512,10 +512,11 @@ func onda(pos: Vector2, cor: Color, raio: float, dur: float) -> void:
 
 ## Número de dano que salta, com contorno. `grande` = crítico (fonte 24; o normal é 16). Um dano que não é do golpe da katana (fogo,
 ## raio, aura...) usa `tam` menor se quiser.
-func numero(pos: Vector2, texto: String, cor: Color, grande := false, tam := 0) -> void:
+func numero(pos: Vector2, texto: String, cor: Color, grande := false, tam := 0, exato := false) -> void:
 	var i := _ni
 	_ni = (_ni + 1) % MAX_NUM
-	n_pos[i] = pos + Vector2(randf_range(-12.0, 12.0), -10.0 - float(_ni % 4) * 8.0)
+	# `exato`: quem chama já escolheu o lugar (os estilhaços abrem em leque), então sem o sorteio de lado e de altura
+	n_pos[i] = pos if exato else pos + Vector2(randf_range(-12.0, 12.0), -10.0 - float(_ni % 4) * 8.0)
 	n_t[i] = 0.0
 	n_dur[i] = 1.0 if grande else 0.75
 	n_txt[i] = texto
