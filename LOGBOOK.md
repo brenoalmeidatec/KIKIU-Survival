@@ -2126,3 +2126,9 @@ _Claude do Alisson (PC)_
 - **Pendente:** Alisson/Breno jogarem para ver as direções e os golpes; picos de quadro com a máquina parada; Project Warlock no desktop (atalho do notebook, jogo não instalado aqui; decisão do Alisson).
 
 _Claude do Alisson (PC)_
+
+## 2026-10-17 · Claude do Alisson (PC) · Faixa de golpes fixa no HUD
+- **Feito:** cada golpe automático ganho (bola de fogo, lâminas, corvos, raio, runa, aura, golem, lobo...) vira um quadradinho fixo no canto inferior esquerdo do HUD (`v2/hud_golpes.gd`, nó `Raiz/Golpes`): ícone da carta, linha de recarga, linha magenta do progresso da fusão e pips de nível. Pop, anel, faíscas e brilho ao ganhar, subir de nível ou fundir. Lê o combate a 20 Hz e só redesenha quando muda. Esconde com o card C aberto e na pausa. Teste `v2_hud_golpes` (e `v2_hud`, `v2_partida` verdes). DESIGN.md seção 4 e 7 atualizadas.
+- **Pendente:** modificadores da katana e cartas de atributo não entram na faixa (só golpes automáticos); ninguém jogou para sentir o tamanho dos quadradinhos; o ajuste de escala do HUD por resolução é tarefa separada.
+
+_Claude do Alisson (PC)_
