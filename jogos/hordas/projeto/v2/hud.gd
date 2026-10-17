@@ -61,6 +61,7 @@ const ANCORAS := {
 	"Selo": Vector2(0, 1),
 	"Anel": Vector2(0, 1),
 	"Habilidades": Vector2(0, 1),
+	"Golpes": Vector2(-1, 1),  # faixa de golpes: canto inferior esquerdo do canvas, não do bloco (senão flutua sobre o campo)
 }
 const MARCOS := [10, 25, 50, 100, 200]
 const NOMES_MARCOS := ["SEQUÊNCIA!", "CARNIFICINA!", "MASSACRE!", "IMPARÁVEL!", "LENDÁRIO!"]

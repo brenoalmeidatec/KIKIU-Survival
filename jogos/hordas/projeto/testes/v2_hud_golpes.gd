@@ -39,7 +39,7 @@ func _ready() -> void:
 	add_child(w)
 	w.set_process(false)
 	w.heroi.entrada_forcada = Vector2.ZERO
-	var hud = w.sv.get_node("Hud")
+	var hud = w.ui.get_node("Hud")  # a escala da interface (#320) pôs o HUD no SubViewport de UI
 	hud.set_process(false)
 	var g = hud.get_node("Raiz/Golpes")
 	g.set_process(false)
