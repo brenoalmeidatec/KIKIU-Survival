@@ -62,9 +62,13 @@ func checar_indice() -> void:
 func checar_golpes() -> void:
 	var novos := 0
 	var com := 0
+	var em_codigo := 0  # golpes da leva 6 (torre e granada): desenhados em código, sem folha de sprite (campo "desenho": "codigo")
 	for g in w.combate.cartas.cfg.golpes:
 		var id := str(g.id)
 		if id in ANTIGOS:
+			continue
+		if str(g.get("desenho", "")) == "codigo":
+			em_codigo += 1
 			continue
 		novos += 1
 		var sp: Dictionary = Novas.sprite_de(id)
@@ -77,8 +81,13 @@ func checar_golpes() -> void:
 	for id in ANTIGOS:
 		ok(not Novas.sprite_de(id).is_empty(), "golpe antigo %s tem sprite" % id)
 	var evolucoes: Array = w.combate.cartas.cfg.evolucoes
-	ok(evolucoes.size() == 25, "25 evolucoes nos dados")
+	ok(evolucoes.size() == 27, "27 evolucoes nos dados")
+	ok(em_codigo == 2, "2 golpes desenhados em código (Sentinela de Bambu e Cabaça de Pólvora): %d" % em_codigo)
+	var ev_codigo := 0
 	for ev in evolucoes:
+		if str(ev.get("desenho", "")) == "codigo":
+			ev_codigo += 1
+			continue
 		var sp: Dictionary = Novas.sprite_de(str(ev.id))
 		ok(not sp.is_empty(), "evolucao %s tem sprite proprio" % str(ev.id))
 		if not sp.is_empty():
@@ -86,6 +95,7 @@ func checar_golpes() -> void:
 			if textura is CanvasTexture:
 				textura = (textura as CanvasTexture).diffuse_texture
 			ok(textura.resource_path.get_file() == str(ev.id) + ".png", "evolucao %s usa a propria arte" % str(ev.id))
+	ok(ev_codigo == 2, "2 evoluções desenhadas em código (Pagode do Trovão e Fogos de Festival): %d" % ev_codigo)
 	print("cobertura: %d de %d golpes novos, 5 antigos e 25 evolucoes com sprite" % [com, novos])
 
 
