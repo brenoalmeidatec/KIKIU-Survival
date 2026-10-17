@@ -31,7 +31,7 @@ func _ready() -> void:
 	add_child(w)
 	w.set_process(false)  # os passos são nossos
 	w.heroi.entrada_forcada = Vector2.ZERO
-	m = w.sv.get_node_or_null("Minimapa")
+	m = w.ui.get_node_or_null("Minimapa")
 	ok(m != null, "o mundo monta o minimapa dentro da apresentação (sv)")
 	if m == null:
 		print("v2_minimapa falhas=%d" % falhas)

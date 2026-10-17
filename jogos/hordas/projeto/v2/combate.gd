@@ -147,7 +147,7 @@ func montar(m) -> void:
 	diretor = Diretor.new()
 	diretor.montar(self)
 	telas = Telas.new()
-	telas.montar(self, m.sv)
+	telas.montar(self, m.ui)
 	avisos = Avisos.new()
 	avisos.montar(self, m.glow)
 	ruptura = Ruptura.new()

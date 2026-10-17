@@ -191,7 +191,7 @@ func _testes() -> void:
 	add_child(w)
 	w.set_process(false)
 	w.heroi.entrada_forcada = Vector2.ZERO
-	var real = w.sv.get_node_or_null("Hud")
+	var real = w.ui.get_node_or_null("Hud")
 	ok(real != null, "o mundo da v2 põe o HUD na SubViewport")
 	if real != null:
 		ok(real.layer == 10, "o HUD fica na layer 10 (acima da vinheta, 3, e do rótulo, 4)")
@@ -338,7 +338,7 @@ func _testes_rotulo_e_cartas() -> void:
 	ok(w._rotulo != null and w._rotulo.visible, "F3 liga o texto de depuração")
 	w._input(tecla)
 	ok(w._rotulo != null and not w._rotulo.visible, "F3 desliga de novo")
-	var real = w.sv.get_node_or_null("Hud")
+	var real = w.ui.get_node_or_null("Hud")
 	ok(real != null, "o mundo da v2 tem o HUD (para o teste da escolha)")
 	if real != null:
 		w.combo = 12
@@ -538,7 +538,7 @@ func _fotos(pasta: String) -> void:
 	w.set_process(false)
 	w.heroi.entrada_forcada = Vector2.ZERO
 	var falso := MundoFalso.new()
-	w.sv.get_node("Hud").ligar(falso)
+	w.ui.get_node("Hud").ligar(falso)
 	for i in 60:
 		w.avancar(PASSO)
 	await _foto(w, pasta, "hud_inicio")

@@ -1,8 +1,8 @@
 extends CanvasLayer
 ## HUD da v2: vida, fôlego, XP com selo de nível, tempo, abates, monstros vivos, combo, brilho do nível novo, a faixa de anúncio
 ## (centro alto), a barra de chefe com fantasma e a vinheta de vida baixa.
-## Fica numa CanvasLayer (layer 10) dentro da SubViewport 960x540 do mundo: pixel art na mesma resolução do mundo (o sharp bilinear
-## escala junto), fonte PressStart2P sem anti-aliasing e sem hinting, e light_mask 0 para a luz do mundo não tocar nele.
+## Fica numa CanvasLayer (layer 10) dentro do SubViewport da interface (mundo.ui): pixel art na resolução da UI (o sharp bilinear
+## escala a UI inteira), fonte PressStart2P sem anti-aliasing e sem hinting, e light_mask 0 para a luz do mundo não tocar nele.
 ## Lê o mundo com get() e valor padrão: sem combate mostra vida cheia, XP 0 e nível 1. Campos lidos: em mundo.heroi, vida, vida_max,
 ## xp, xp_proximo, nivel, folego, folego_max, cansado (bool, padrão false: a barra de fôlego pisca); em mundo, abates, combo,
 ## tempo_partida (segundos), monstros_vivos. Sinais do mundo, cada um ligado só se o mundo tiver: nivel_subiu(nivel),
@@ -10,10 +10,13 @@ extends CanvasLayer
 ## Slot da ruptura (tecla E) logo abaixo da barra de fôlego, desenhado por código (sem PNG): lê em mundo.heroi, com padrão, rup_carga (0 a 1),
 ## rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max. Herói sem esses campos (mundo falso dos testes): o slot some.
 ## Uso no mundo (uma linha no _ready):
-##   sv.add_child(preload("res://v2/hud.gd").criar(self))
-## Layout em v2/hud.tscn (coordenadas de 960x540). O canto superior direito fica livre para o minimapa.
+##   ui.add_child(preload("res://v2/hud.gd").criar(self))
+## Layout em v2/hud.tscn (coordenadas do bloco 960x540, que fica no centro do canvas da UI: v2/escala_ui.gd). Cada peça tem uma âncora
+## (ANCORAS): a de canto/borda gruda no canvas (cima, baixo, esquerda), não no bloco, para o HUD não flutuar longe da borda quando a
+## interface é menor que a janela. O canto superior direito fica livre para o minimapa.
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
 const Herois := preload("res://v2/herois.gd")
 const CENA := "res://v2/hud.tscn"
 const SPRITES := "res://prototipos/cara_nova/sprites/"
@@ -38,10 +41,25 @@ const COR_ONDA := Paleta.PERIGO
 const COR_ELITE := Paleta.ANUNCIO_ELITE
 const COR_NIVEL := Paleta.ANUNCIO_NIVEL
 const RB_POS := Vector2(54, 40)  # o slot da ruptura (hoje escondido por hud_habilidades.gd): 22x22, logo abaixo da moldura das barras (y 6 a 36)
+const PESADELO_POS := Vector2(540.0, 10.0)  # o aviso PESADELO, ao lado do relógio
 const RB_TAM := 22
 const RB_POP_T := 0.15  # s do pop ao zerar a recarga
 const RB_LARANJA := Paleta.CARGA_LARANJA
 const RB_BORDA := Paleta.RUPTURA_BORDA
+## Onde cada peça do HUD gruda: -1 = na borda esquerda/de cima do canvas, +1 = na direita/de baixo, 0 = fica no meio (centro do bloco).
+const ANCORAS := {
+	"Retrato": Vector2(-1, -1),
+	"Vida": Vector2(-1, -1),
+	"Folego": Vector2(-1, -1),
+	"MolduraBarras": Vector2(-1, -1),
+	"Tempo": Vector2(0, -1),
+	"Abates": Vector2(0, -1),
+	"Chefe": Vector2(0, -1),
+	"Xp": Vector2(0, 1),
+	"Selo": Vector2(0, 1),
+	"Anel": Vector2(0, 1),
+	"Habilidades": Vector2(0, 1),
+}
 const MARCOS := [10, 25, 50, 100, 200]
 const NOMES_MARCOS := ["SEQUÊNCIA!", "CARNIFICINA!", "MASSACRE!", "IMPARÁVEL!", "LENDÁRIO!"]
 const CORES_MARCOS := Paleta.COMBO_MARCOS
@@ -86,6 +104,9 @@ var _fusao_desc: Label
 var _fusao_tween: Tween
 var _fusao_halos: Array = []  # os dois halos do cartão da fusão (tingidos pela cor dela)
 var _combo_y := 0.0
+var _bases := {}  # nome da peça -> posição do .tscn (no bloco), antes da âncora
+var _combo_y0 := 0.0
+var _desl := Vector2.ZERO  # deslocamento do bloco no canvas (EscalaUi.desloc_atual)
 var _cor_base := Color.WHITE  # cor do combo na contagem atual (sobe com os marcos)
 var _minuto_antes := 0
 var _relogio_pisca := 0.0
@@ -165,6 +186,9 @@ func _ready() -> void:
 			n.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_combo_x = _combo.position.x
 	_combo_y = _combo.position.y
+	_combo_y0 = _combo_y
+	for nome in ANCORAS:
+		_bases[nome] = (get_node("Raiz/" + nome) as Control).position
 	_combo_num.pivot_offset = Vector2(100, 13)
 	_selo.pivot_offset = Vector2(12, 12)
 	_anel.pivot_offset = Vector2(10, 10)
@@ -173,6 +197,32 @@ func _ready() -> void:
 	_retrato_do_heroi()
 	_criar_slot_ruptura()
 	_criar_selo_pesadelo()
+	EscalaUi.cobrir(_vinheta)
+	add_to_group("ui_escala")
+	ui_reencaixar(EscalaUi.canvas_atual, EscalaUi.desloc_atual)
+
+
+## A janela ou a opção "tamanho_ui" mudou: cada peça volta para a sua âncora no canvas novo. O combo e o anúncio (que se mexem sozinhos)
+## recebem só o deslocamento de cima; o slot da ruptura anda com as barras (canto de cima à esquerda).
+func ui_reencaixar(_canvas: Vector2, d: Vector2) -> void:
+	_desl = d
+	for nome in ANCORAS:
+		var no := get_node_or_null("Raiz/" + nome) as Control
+		if no == null:
+			continue
+		var a: Vector2 = ANCORAS[nome]
+		if nome == "Habilidades":
+			no.deslocar(a * d)
+		else:
+			no.position = (_bases[nome] as Vector2) + a * d
+	_combo_y = _combo_y0 - d.y
+	_anuncio.ancorar(-d.y)
+	if _selo_pesadelo != null:
+		_selo_pesadelo.position = PESADELO_POS + Vector2(0.0, -d.y)
+	if _rb != null:
+		_rb.position = RB_POS - d
+	if _ult != null:
+		_ult.position = RB_POS + Vector2(RB_TAM + 4, 0) - d
 
 
 ## O retrato: o quadro parado do herói da partida (linha "baixo", coluna "parado" da folha), sem filtro, dentro da moldura de pedra.
@@ -263,7 +313,7 @@ func avancar(dt: float) -> void:
 func _criar_selo_pesadelo() -> void:
 	_selo_pesadelo = Label.new()
 	_selo_pesadelo.text = "PESADELO"
-	_selo_pesadelo.position = Vector2(540.0, 10.0)
+	_selo_pesadelo.position = PESADELO_POS
 	_selo_pesadelo.add_theme_font_override("font", Dados.fonte_titulo)
 	_selo_pesadelo.add_theme_font_size_override("font_size", 20)
 	_selo_pesadelo.add_theme_color_override("font_color", VERMELHO_VINHETA)
@@ -322,7 +372,7 @@ func _ruptura(dt: float, h) -> void:
 	var treme := 0.0
 	if nega > 0.0:  # apertou na recarga: treme 2 px
 		treme = 2.0 if int(nega * 40.0) % 2 == 0 else -2.0
-	_rb.position = RB_POS + Vector2(treme, 0.0)
+	_rb.position = RB_POS - _desl + Vector2(treme, 0.0)
 	_rb.scale = Vector2.ONE * (1.0 + roundf(3.0 * _rb_pop / RB_POP_T) / 10.0)  # 1,3 para 1,0 em degraus de pixel art
 	_rb_pronta = rec <= 0.0
 	_rb_barra = roundi(f * 20.0)

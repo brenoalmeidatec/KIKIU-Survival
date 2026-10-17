@@ -6,6 +6,8 @@ extends Control
 ## A música é a do santuário (a mesma faixa "menu"): o Som não reinicia a faixa quando o santuário começa.
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
+const UiJanela := preload("res://v2/ui_janela.gd")
 const Altar := preload("res://v2/altar.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle da v2 (o A confirma e o B volta nos menus)
 const Pausa := preload("res://v2/pausa.tscn")
@@ -33,8 +35,9 @@ const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Mouse també
 var ao_jogar := Callable()  # gancho: os testes trocam a ida ao santuário; vazio = troca a cena
 var pausa  # o menu de pausa (pausa.gd) no modo do título: Ajustes, Créditos e a confirmação de Sair
 var _botoes: Array[Button] = []  # Jogar, Ajustes, Créditos e Sair, de cima para baixo
+var _faixa: ColorRect  # a faixa escura de baixo
+var _dica: Label
 var _ultimo: Button  # o último botão com foco: é nele que o foco volta quando um submenu fecha
-var _antes := {}  # modo de escala da janela antes desta tela (volta ao sair)
 var _trilha  # a faixa do santuário (trilha.gd)
 var atualizador := Atualizador.new()  # consulta a Release mais nova em segundo plano (#106); os testes ajustam antes do add_child
 var aviso_versao: Button  # "Versão nova disponível": só existe depois que a consulta achou uma Release mais nova
@@ -49,7 +52,6 @@ func _ready() -> void:
 		return
 	Entrada.garantir()
 	_ajustar_janela()
-	set_anchors_preset(PRESET_FULL_RECT)
 	_montar()
 	pausa = Pausa.instantiate().iniciar(null)
 	add_child(pausa)
@@ -63,21 +65,8 @@ func _ready() -> void:
 	atualizador.verificar()  # sem carimbo (build dev) ou com a opção desligada, não faz nada
 
 
-func _exit_tree() -> void:
-	var w := get_window()
-	if w != null and _antes.has("modo"):
-		w.content_scale_mode = _antes.modo
-		w.content_scale_size = _antes.tam
-		w.content_scale_aspect = _antes.aspecto
-		w.content_scale_stretch = _antes.escala
-
-
 func _ajustar_janela() -> void:
-	var w := get_window()
-	_antes = {"modo": w.content_scale_mode, "tam": w.content_scale_size, "aspecto": w.content_scale_aspect, "escala": w.content_scale_stretch}
-	w.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-	w.content_scale_size = Vector2i(LARG, ALT)
-	w.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	add_child(UiJanela.new().montar(self))  # fator da interface, canvas e bloco no centro (v2/ui_janela.gd, v2/escala_ui.gd); devolve a janela ao sair
 
 
 # ------------------------------------------------------------------ montagem
@@ -87,7 +76,7 @@ func _montar() -> void:
 	var fundo := TextureRect.new()
 	fundo.texture = FUNDO
 	fundo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	fundo.set_anchors_preset(PRESET_FULL_RECT)
+	EscalaUi.cobrir(fundo)  # a arte cobre o canvas inteiro, não só o bloco 960x540
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fundo)
 	add_child(_texto("K.I.K.I.U", TAM_LOGO, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, LOGO_Y, LARG, 130)))
@@ -104,13 +93,23 @@ func _montar() -> void:
 		b.mouse_entered.connect(b.grab_focus)
 		add_child(b)
 		_botoes.append(b)
-	var faixa := ColorRect.new()  # faixa escura atrás da dica: o chão da arte é claro ali embaixo
-	faixa.color = Color(Paleta.PAINEL, 0.6)
-	faixa.position = Vector2(0, ALT - 46)
-	faixa.size = Vector2(LARG, 46)
-	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(faixa)
-	add_child(_texto(DICA, TAM_DICA, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, ALT - 26, LARG, 20)))
+	_faixa = ColorRect.new()  # faixa escura atrás da dica: o chão da arte é claro ali embaixo
+	_faixa.color = Color(Paleta.PAINEL, 0.6)
+	_faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_faixa)
+	_dica = _texto(DICA, TAM_DICA, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, ALT - 26, LARG, 20))
+	add_child(_dica)
+	add_to_group("ui_escala")
+	ui_reencaixar(EscalaUi.canvas_atual, EscalaUi.desloc_atual)
+
+
+## A faixa e a dica ficam na borda de baixo do canvas (não do bloco 960x540), de ponta a ponta. Chamado também quando a janela ou a opção mudam.
+func ui_reencaixar(canvas: Vector2, desloc: Vector2) -> void:
+	if _faixa == null:
+		return
+	_faixa.position = Vector2(-desloc.x, ALT + desloc.y - 46.0)
+	_faixa.size = Vector2(canvas.x, 46.0)
+	_dica.position = Vector2(0.0, ALT + desloc.y - 26.0)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:

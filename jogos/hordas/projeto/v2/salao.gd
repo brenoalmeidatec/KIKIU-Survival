@@ -8,6 +8,8 @@ extends Control
 const Visual := preload("res://v2/salao_visual.gd")
 const Vivo := preload("res://v2/salao_vivo.gd")
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
+const UiJanela := preload("res://v2/ui_janela.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Personagens := preload("res://v2/personagens.gd")
@@ -43,7 +45,6 @@ var _p_rolagem: ScrollContainer
 var ao_entrar := Callable()  # gancho dos testes: recebe o caminho da cena da partida; vazio = troca a cena
 var pausa
 var _trilha
-var _antes := {}  # modo de escala da janela antes desta tela (volta ao sair)
 var _estruturas: Array = []  # dados/v2_salao.json: id, nome, x, y e melhorias ou conquistas
 var _alvos: Array = []  # o que se usa na sala: estruturas e portais, {tipo, id, nome, acao, pos}
 var _cenario: Node2D  # o chão, a parede e o que não se mexe (desenhado uma vez)
@@ -92,7 +93,6 @@ func _ready() -> void:
 		get_tree().change_scene_to_file.call_deferred(ESCOLHA)  # sem personagem não há santuário: escolhe ou cria um
 		return
 	_ajustar_janela()
-	set_anchors_preset(PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # a sala recebe o clique em _unhandled_input (andar até um alvo), não a tela inteira
 	_carregar_dados()
 	_sprite = load(SPRITE + "_albedo.png") as Texture2D
@@ -112,21 +112,8 @@ func _ready() -> void:
 	_atualizar_textos()
 
 
-func _exit_tree() -> void:
-	var w := get_window()
-	if w != null and _antes.has("modo"):
-		w.content_scale_mode = _antes.modo
-		w.content_scale_size = _antes.tam
-		w.content_scale_aspect = _antes.aspecto
-		w.content_scale_stretch = _antes.escala
-
-
 func _ajustar_janela() -> void:
-	var w := get_window()
-	_antes = {"modo": w.content_scale_mode, "tam": w.content_scale_size, "aspecto": w.content_scale_aspect, "escala": w.content_scale_stretch}
-	w.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-	w.content_scale_size = Vector2i(LARG, ALT)
-	w.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	add_child(UiJanela.new().montar(self, "grande"))  # a sala 960x540 é cena, não menu: fica sempre encaixada na janela (o tamanho da interface não a encolhe); só a borda extra de janelas fora de 16:9 é chão escuro
 
 
 # ------------------------------------------------------------------ dados e alvos
@@ -168,6 +155,11 @@ func _alvo_perto(ponto: Vector2, raio: float) -> Dictionary:
 
 
 func _montar_cenario() -> void:
+	var borda := ColorRect.new()  # a sala é uma cena de 960x540 sempre encaixada na janela: numa janela fora de 16:9 o que sobra dos lados é o chão escuro dela
+	borda.color = Color("#17191f")
+	borda.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	EscalaUi.cobrir(borda)
+	add_child(borda)
 	_cenario = Node2D.new()
 	_cenario.draw.connect(_pintar_cenario)
 	add_child(_cenario)
@@ -261,7 +253,7 @@ func _montar_painel() -> void:
 	add_child(_painel)
 	var veu := ColorRect.new()
 	veu.color = Paleta.alfa(Paleta.PAINEL, 0.66)
-	veu.set_anchors_preset(PRESET_FULL_RECT)
+	EscalaUi.cobrir(veu)  # o véu cobre o canvas inteiro
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_painel.add_child(veu)
 	var cartao := Panel.new()
@@ -434,7 +426,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		get_tree().change_scene_to_file.call_deferred(ESCOLHA)
 		get_viewport().set_input_as_handled()
 	elif e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-		var clicado := _alvo_perto(e.position, 56.0)
+		var clicado := _alvo_perto(e.position - EscalaUi.desloc_atual, 56.0)  # a sala fica no bloco, no centro do canvas
 		if not clicado.is_empty():
 			_destino = clicado.pos
 			_alvo_destino = clicado

@@ -1012,7 +1012,7 @@ func _tecla(k: Key) -> void:
 func _janela() -> void:
 	var h = w.heroi
 	var pausa = null
-	for c in w.sv.get_children():
+	for c in w.ui.get_children():
 		if c.has_method("abrir_sair"):
 			pausa = c
 	ok(pausa != null, "o mundo monta o menu de pausa")
