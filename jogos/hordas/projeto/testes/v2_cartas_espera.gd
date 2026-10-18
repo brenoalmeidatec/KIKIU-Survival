@@ -128,7 +128,7 @@ func rajada() -> void:
 	mouse_pos = _centro_carta(1)
 	w._input(_clique(mouse_pos))
 	w._input(_clique(mouse_pos, false))
-	for k in [KEY_1, KEY_2, KEY_3, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E, KEY_LEFT, KEY_RIGHT, KEY_R, KEY_B, KEY_X]:
+	for k in [KEY_1, KEY_2, KEY_3, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E, KEY_LEFT, KEY_RIGHT, KEY_R, KEY_B, KEY_X, KEY_Q]:
 		w._input(_tecla(k))
 		w._input(_tecla(k, false, false))
 	w._input(_acao("ui_accept"))
@@ -139,6 +139,12 @@ func rajada() -> void:
 	w._input(_clique(mouse_pos))
 	mouse_pos = t._btn_b.position + t._btn_b.size * 0.5
 	w._input(_clique(mouse_pos))
+	mouse_pos = t._btn_a.position + t._btn_a.size * 0.5
+	w._input(_clique(mouse_pos))
+	var y := InputEventJoypadButton.new()
+	y.button_index = JOY_BUTTON_Y
+	y.pressed = true
+	w._input(y)
 
 
 func _run() -> void:

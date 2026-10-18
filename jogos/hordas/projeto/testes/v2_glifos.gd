@@ -22,6 +22,7 @@ func _ready() -> void:
 	Glifos.ao_mudar(func() -> void: avisos += 1)
 	_nomes()
 	_troca()
+	_cartas()
 	_dica_e_titulo()
 	Glifos.definir(Glifos.Disp.TECLADO)
 	Glifos._ouvintes.clear()  # o ouvinte da linha 22 captura este nó: tirá-lo antes de sair evita o segfault (exit 139) no encerramento
@@ -81,6 +82,15 @@ func _troca() -> void:
 	Glifos.observar(k)
 	ok(Glifos.eh_controle(), "com o dispositivo travado a detecção para")
 	Glifos.forcado = false
+
+
+func _cartas() -> void:
+	var esperado := [["R", "Q", "B"], ["X", "Y", "LB"], ["Quad.", "Tri.", "L1"]]
+	for d in 3:
+		Glifos.definir(d)
+		var acoes := ["rerrolar", "automatico", "banir"]
+		for i in acoes.size():
+			ok(Glifos.texto(acoes[i]) == esperado[d][i], "carta: %s usa %s no dispositivo %d" % [acoes[i], esperado[d][i], d])
 
 
 func _dica_e_titulo() -> void:
