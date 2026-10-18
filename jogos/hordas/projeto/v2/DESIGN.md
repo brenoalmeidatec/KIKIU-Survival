@@ -127,6 +127,8 @@ Comando: `godot --path jogos/hordas/projeto res://testes/<nome>.tscn`. A maioria
 | `v2_hud_golpes` | faixa de golpes do HUD: aparece ao ganhar, nível sobe e anima, recarga, fusão troca as peças pela evolução, parada não redesenha, 10 golpes sem cruzar o HUD |
 | `v2_hud` | barras, combo, nível, chefe, vinheta, anúncios (cabeçalho de `testes/v2_hud.gd`) |
 | `v2_partida` | cartas, raridade, baú, resultado (`:51`) |
+| `v2_diretor` | níveis do mapa: sobe a cada `duracao_nivel`, o chefe nasce no nível dele e trava o nível, a barra do mapa, o fim no último nível |
+| `v2_chefe` | mini-chefes e o chefão: anúncio, ataques avisados, baú, matar o mini não é vitória, vitória e o mapa vencido no save |
 | `v2_meta` | santuário e meta-progressão (`:51`) |
 | `v2_musica` | música de cada tela (`:59`) |
 | `v2_escala_ui` | fator por janela e opção (tabela), canvas, opção em Ajustes que gira e salva, HUD/minimapa/fundos/mouse no canvas, troca ao vivo |

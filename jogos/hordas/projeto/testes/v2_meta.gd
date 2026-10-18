@@ -124,7 +124,11 @@ func _testes() -> void:
 	Meta.registrar_partida({"tempo": 10.0, "venceu": false, "almas": 0, "mapa": "floresta"})
 	ok(not Meta.mapa_vencido("floresta"), "perder no mapa não o marca como vencido")
 	Meta.registrar_partida({"tempo": 10.0, "venceu": true, "almas": 0, "mapa": "floresta"})
-	ok(Meta.mapa_vencido("floresta") and not Meta.mapa_vencido("laboratorio"), "vencer o chefão da Floresta marca só a Floresta")
+	ok(not Meta.mapa_vencido("floresta"), "o resultado não marca o mapa: quem marca é a vitória (combate.fim_de_partida)")
+	ok(
+		Meta.marcar_mapa_vencido("floresta") and Meta.mapa_vencido("floresta") and not Meta.mapa_vencido("laboratorio"),
+		"marcar_mapa_vencido marca só o mapa dado"
+	)
 	ok(Meta.marcar_mapa_vencido("laboratorio") and Meta.mapa_vencido("laboratorio"), "marcar_mapa_vencido grava direto")
 	ok(Meta.mapas_vencidos().size() == 2 and not Meta.marcar_mapa_vencido(""), "lista de vencidos e id vazio recusado")
 

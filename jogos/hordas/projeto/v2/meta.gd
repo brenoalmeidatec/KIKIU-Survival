@@ -323,8 +323,8 @@ static func almas_creditadas(bruto: int, bonus: float, mult := 1.0) -> int:
 
 
 ## Fim da partida: credita as almas (com o bônus de "almas"), marca conquistas e guarda o resumo.
-## `r` tem tempo, abates, nivel, maior_combo, venceu, almas, pesadelo (true = a partida foi no modo Pesadelo) e mapa (id; com venceu, marca o
-## mapa como vencido). Devolve antes, ganhas, depois e as conquistas novas.
+## `r` tem tempo, abates, nivel, maior_combo, venceu, almas, pesadelo (true = a partida foi no modo Pesadelo) e mapa (id, para o resumo).
+## Quem marca o mapa vencido é a vitória (combate.fim_de_partida). Devolve antes, ganhas, depois e as conquistas novas.
 static func registrar_partida(r: Dictionary) -> Dictionary:
 	erro_save = false
 	var cf := _ler()
@@ -345,8 +345,6 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
 	cf.set_value("ultima", "pesadelo", pesadelo)
-	if bool(r.get("venceu", false)) and str(r.get("mapa", "")) != "":
-		_marcar_vencido(cf, str(r.mapa))  # venceu o chefão do último nível: o mapa está vencido (mapa_vencido)
 	if not _gravar(cf):
 		erro_save = true
 		return {}

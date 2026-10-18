@@ -12,6 +12,7 @@ extends RefCounted
 const Efeitos := preload("res://v2/efeitos.gd")
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
+const Meta := preload("res://v2/meta.gd")
 const TempoLocal := preload("res://v2/tempo_local.gd")
 const Diretor := preload("res://v2/diretor.gd")
 const Telas := preload("res://v2/telas.gd")
@@ -810,6 +811,8 @@ func fim_de_partida(ganhou: bool) -> void:
 		"nivel_mapa": diretor.nivel,
 		"niveis_mapa": diretor.niveis_total
 	}
+	if ganhou:
+		Meta.marcar_mapa_vencido(str(mundo.id_mapa))  # o chefão do último nível foi vencido: o mapa fica vencido no save
 	mundo.resultado = r
 	mundo.partida_terminou.emit(r)
 

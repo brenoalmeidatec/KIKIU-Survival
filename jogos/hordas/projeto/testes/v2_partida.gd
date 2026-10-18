@@ -1,7 +1,7 @@
 extends Node
 # Teste automático da profundidade da partida da v2 (leva 3): raridade que sobe com o nível, cartas (stat, golpe, modificador), rerrolar e
-# banir, os 5 golpes secundários acertando, os modificadores da katana, as evoluções, a elite que solta baú e o baú que dá melhorias, o mini-chefe
-# aos 3 min e o chefe aos 10 (simulados), os ataques anunciados, a vitória e o sinal partida_terminou com os campos certos.
+# banir, os 5 golpes secundários acertando, os modificadores da katana, as evoluções, a elite que solta baú e o baú que dá melhorias, a
+# derrota e o sinal partida_terminou com os campos certos. Os níveis do mapa estão em v2_diretor.gd; os chefes e a vitória, em v2_chefe.gd.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_partida.tscn  (imprime "v2_partida falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
@@ -548,95 +548,8 @@ func _ready() -> void:
 	ate(func(): return w.combate.elites.nascidas > 0, 400)
 	ok(w.combate.elites.nascidas > 0, "a primeira elite nasce sozinha depois de %d s" % int(cfg.elites.primeira))
 
-	# 7. níveis do mapa (Floresta: 30 níveis, mini-chefes no 10 e no 20, chefão no 30), ataques anunciados
-	zerar()
-	w.combate.diretor.ligado = false
-	var dir = w.combate.diretor
-	ok(dir.nivel == 1 and dir.niveis_total == 30, "a Floresta começa no nível 1 de 30 (%d/%d)" % [dir.nivel, dir.niveis_total])
-	ok(dir.chefes_mapa.map(func(e): return e.nivel) == [10, 20, 30], "chefes nos níveis 10, 20 e 30")
-	ok(dir.chefes_mapa[0].mk.mini and dir.chefes_mapa[1].mk.mini and not dir.chefes_mapa[2].mk.mini, "só o do último nível é o chefão")
-	var seg: float = dir.seg_nivel()
-	dir.avancar_nivel(seg * 2.5)
-	ok(dir.nivel == 3 and absf(dir.t_nivel - seg * 0.5) < 0.2, "o nível sobe a cada %.0f s (nível %d)" % [seg, dir.nivel])
-	ok(absf(dir.fracao_mapa() - 2.5 / 29.0) < 0.02, "a barra do mapa anda com o nível (%.3f)" % dir.fracao_mapa())
-	dir.ir_para_nivel(9)
-	dir.t_nivel = seg - 0.5
-	passos(10)
-	ok(not w.combate.chefes.vivo and dir.nivel == 9, "no nível 9 ainda não tem mini-chefe")
-	passos(40)
-	ok(dir.nivel == 10 and w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "o mini-chefe nasce ao chegar no nível 10")
-	ok(w.combate.chefes.marca.nome == "Cavaleiro Rubro", "o do nível 10 é o Cavaleiro Rubro")
-	ok(dir.travado(), "com o mini-chefe vivo o nível trava")
-	dir.avancar_nivel(seg * 5.0)
-	ok(dir.nivel == 10 and dir.fracao_mapa() <= 9.0 / 29.0 + 0.001, "travado: o nível e a barra não andam (%d)" % dir.nivel)
-	var ch = w.combate.chefes.atual
-	ok(ch.chefe and ch.escala > 2.0 and ch.vida_max >= 1000.0, "o mini-chefe é grande e tem muita vida")
-	ok(conta("chefe") == 1 and sinais.get("chefe_vida_max", 0.0) == ch.vida_max, "sinal chefe_apareceu(nome, vida_max)")
-	ok(
-		str(sinais.get("anuncio_texto", "")).contains("MINI-CHEFE"),
-		"anuncio('MINI-CHEFE: ...') junto do chefe_apareceu (%s)" % str(sinais.get("anuncio_texto", ""))
-	)
-	ate(func(): return w.combate.avisos.ativos() > 0, 900)
-	ok(w.combate.avisos.ativos() > 0 and w.combate.chefes.ataques_feitos > 0, "o chefe anuncia o ataque com uma área piscando no chão")
-	var vida_h: float = w.heroi.vida
-	ate(func(): return w.combate.avisos.disparados > 0, 400)
-	ok(w.combate.avisos.disparados > 0, "depois do aviso a área dispara")
-	w.heroi.imortal = false
-	w.heroi.vida = w.heroi.vida_max
-	w.combate.avisos.circulo(w.heroi.pos, 40.0, 0.5, 15.0, Color.RED)
-	passos(10)
-	ok(w.heroi.vida == w.heroi.vida_max, "durante o aviso ninguém leva dano")
-	passos(40)
-	ok(w.heroi.vida < w.heroi.vida_max, "quem fica na área leva o dano quando ela dispara")
-	w.heroi.imortal = true
-	var chefe_v0: float = ch.vida
-	w.combate.ferir(ch, 50.0, Vector2.RIGHT, 500.0, 2.0, Color.WHITE)
-	ok(ch.vida < chefe_v0 and ch.emp.length() < 100.0 and ch.atordoa_t < 0.01, "o chefe apanha mas não sai voando nem fica atordoado")
-	passos(5)
-	ok(conta("chefe_vida") > 0, "sinal chefe_vida(vida) a cada mudança")
-	var baus0: int = w.combate.baus.soltos
-	w.combate.ferir(ch, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
-	w.combate.processar_mortes()
-	ok(not w.combate.chefes.vivo and float(sinais.get("chefe_vida_ultima", 1.0)) == 0.0, "a morte do chefe emite chefe_vida(0)")
-	ok(w.combate.baus.soltos == baus0 + 1, "o mini-chefe solta um baú")
-	ok(w.combate.jogo == "jogando", "matar o mini-chefe não é vitória")
-	ok(not dir.travado(), "mini-chefe morto: o nível destrava")
-	dir.avancar_nivel(seg + 0.01)
-	ok(dir.nivel == 11, "e segue para o nível 11")
-	dir.ir_para_nivel(20)
-	passos(2)
-	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "n20" and w.combate.chefes.marca.nome == "Rainha Tecelã", "nível 20: o segundo mini-chefe")
-	w.combate.ferir(w.combate.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
-	w.combate.processar_mortes()
-	ok(w.combate.jogo == "jogando", "matar o segundo mini-chefe também não é vitória")
-	dir.ir_para_nivel(29)
-	dir.t_nivel = 0.0
-	dir.avancar_nivel(seg + 0.01)
-	ok(dir.nivel == 30 and w.combate.chefes.vivo and not bool(w.combate.chefes.marca.mini), "o CHEFÃO nasce no nível 30, o último")
-	dir.avancar_nivel(seg * 10.0)
-	ok(dir.nivel == 30, "o mapa tem fim: não passa do nível 30")
-	ok(str(sinais.get("anuncio_texto", "")).contains("CHEFE"), "anuncia o chefe")
-	# 8. vencer o chefe é a vitória
-	w.abates = 321
-	w.maior_combo = 55
-	w.xp_coletado = 1234.0
-	w.combate.ferir(w.combate.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
-	w.combate.processar_mortes()
-	ok(w.combate.jogo == "vencendo" and w.monstros.is_empty(), "matar o chefe começa a vitória e os monstros estouram")
-	ate(func(): return w.combate.jogo == "vitoria", 300)
-	ok(w.combate.jogo == "vitoria" and w.combate.pausado and w.combate.telas.resultado_aberto, "a tela de resultado abre na vitória")
-	ok(w.combate.telas._res_titulo.text == "VITÓRIA", "a tela mostra VITÓRIA")
-	ok(conta("fim") == 1, "partida_terminou saiu uma vez")
-	var res: Dictionary = sinais.get("fim_res", {})
-	for k in ["tempo", "abates", "nivel", "maior_combo", "venceu", "almas", "mapa", "nivel_mapa", "niveis_mapa"]:
-		ok(res.has(k), "partida_terminou traz o campo %s" % k)
-	ok(res.get("venceu") == true and int(res.get("abates", 0)) >= 321 and int(res.get("maior_combo", 0)) == 55, "campos da vitória certos")
-	ok(int(res.get("almas", -1)) == 123 and w.almas_partida == 123, "almas = XP coletado / 10 arredondado (123)")
-	ok(int(res.get("nivel", 0)) >= 1, "nível do herói")
-	ok(str(res.get("mapa", "")) == "floresta" and int(res.get("nivel_mapa", 0)) == 30, "a vitória é no último nível da floresta")
-	ok(w.combate.telas._res_linhas.text.contains("Almas") and w.combate.telas._res_valores.text.contains("123"), "a tela mostra as almas ganhas")
-
 	# 9. derrota: partida_terminou com venceu = false
+	var res: Dictionary = {}
 	zerar()
 	w.heroi.imortal = false
 	w.abates = 12

@@ -648,6 +648,12 @@ func _fotos(pasta: String) -> void:
 	await get_tree().create_timer(0.5).timeout
 	await _foto(w, pasta, "hud_e_carga_cheia")
 
+	# A barra do chefe das fotos acima segue no HUD falso: zera e espera ela sumir (a fantasma desce devagar) antes de o HUD ir para o mundo de verdade.
+	falso.chefe_vida.emit(0)
+	for i in 900:
+		if not w.ui.get_node("Hud")._chefe.visible:
+			break
+		await get_tree().process_frame
 	# Nível do mapa com o mundo de verdade ligado ao HUD: nível 14, com a barra andando, e o chefão do nível 30 em campo (nível travado).
 	w.ui.get_node("Hud").ligar(w)
 	w.combate.diretor.ir_para_nivel(14)

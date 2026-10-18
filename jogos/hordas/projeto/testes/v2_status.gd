@@ -1627,10 +1627,8 @@ func _layouts(st, c) -> void:
 
 func _foto(nome: String, pasta: String) -> void:
 	await get_tree().create_timer(0.4).timeout  # o card se atualiza a 4 Hz: dá tempo de ele pintar o estado de agora (opaco na escolha e na pausa)
-	await RenderingServer.frame_post_draw
-	var img: Image = w.sv.get_texture().get_image()
-	img.save_png(pasta.path_join(nome + ".png"))
-	print("FOTO ", pasta.path_join(nome + ".png"), " ", img.get_size())
+	var tam = await w.ap.foto(pasta.path_join(nome + ".png"))  # a janela inteira: o HUD e o card ficam na camada da UI, fora do viewport do mundo
+	print("FOTO ", pasta.path_join(nome + ".png"), " ", tam)
 
 
 func _fotos(pasta: String) -> void:
@@ -1701,7 +1699,7 @@ func _fotos(pasta: String) -> void:
 	await get_tree().process_frame
 	await _foto("status_hud", pasta)
 	# 1b) com o mini-chefe em campo (a barra do chefe e o aviso aparecem): o card não passa por baixo de nada do HUD
-	w.tempo_partida = 181.0
+	w.combate.diretor.ir_para_nivel(10)
 	h.ataque_forcado = true
 	passos(45)
 	h.ataque_forcado = null
