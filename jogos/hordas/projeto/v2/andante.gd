@@ -72,6 +72,25 @@ const FICHAS := {
 		"sombra": 13.0,
 		"cor_fx": Color(0.55, 1.0, 0.65),
 	},
+	"serpente_ardente":
+	{
+		"folha": "res://assets/v2/armas/serpente_ardente_dir.png",
+		"quadro": Vector2(85, 86),
+		"pe": Vector2(27, 50),
+		# rasteja: a onda do corpo roda no relógio (ciclo_s) e fica no chão (sem `altura`); parada ela continua ondulando
+		"ciclo_s": 0.5,
+		# se enrosca, ergue o pescoço, arma o bote, dispara, BOTE (cabeça à frente de boca aberta), estala, recolhe, assenta: 0,42 s, cabe no tique de 0,5 s
+		"tempos": [0.07, 0.07, 0.06, 0.05, 0.06, 0.05, 0.03, 0.03],
+		"impacto": 4,
+		# a ponta da cabeça, no quadro do bote, chega 57,9 px à frente do centro (`alcance_pata_px` do .json)
+		"alcance": 50.0,
+		"frente": 46.0,
+		"raio": 22.0,
+		"empurra": 30.0,
+		"atordoa": 0.08,
+		"sombra": 16.0,
+		"cor_fx": Color(1.0, 0.55, 0.15),
+	},
 }
 
 static var _tex := {}

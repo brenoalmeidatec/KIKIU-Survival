@@ -191,7 +191,12 @@ func fotos(pasta: String) -> void:
 			it = r[0]
 			for i in 60 * 3:
 				passos(1)
-				if it != null and int(it.e) == Andante.ANDANDO and bool(it.mov) and (f.has("ciclo_s") or Andante.quadro_andar(float(it.pf)) == 3):  # quem flutua tem o ciclo no relógio: pega o primeiro quadro andando
+				if (
+					it != null
+					and int(it.e) == Andante.ANDANDO
+					and bool(it.mov)
+					and (f.has("ciclo_s") and float(it.et) >= 0.3 or Andante.quadro_andar(float(it.pf)) == 3)
+				):  # ciclo no relógio (flutua, rasteja): pega um quadro andando, com a vista já virada
 					rec.append(await recorte(it))
 					break
 		if not rec.is_empty():

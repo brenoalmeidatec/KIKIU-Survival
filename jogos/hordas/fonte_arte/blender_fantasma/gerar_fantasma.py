@@ -272,7 +272,7 @@ def main():
             "alcance_pata_px": round(alcance * ESCALA * PPU, 1),
             "linhas": ["frente", "tres_quartos_frente", "lado", "tres_quartos_costas", "costas"]}
     for destino in (os.path.join(AQUI, NOME + ".json"), os.path.join(SAIDA, NOME + ".json")):
-        with open(destino, "w", encoding="utf-8") as f:
+        with open(destino, "w", encoding="utf-8", newline="\n") as f:
             json.dump(info, f, indent=1)
             f.write("\n")
     print("FANTASMA OK", W, H, pe_x, pe_y, "alcance", info["alcance_pata_px"])
