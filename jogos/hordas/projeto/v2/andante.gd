@@ -178,13 +178,13 @@ const FICHAS := {
 	"lobo_espirito":
 	{
 		"folha": "res://assets/v2/armas/lobo_espiritual_dir.png",
-		"quadro": Vector2(80, 85),
-		"pe": Vector2(36, 53),
-		"ciclo": [33.0, 40.0, 46.0, 38.8, 33.0],
+		"quadro": Vector2(80, 91),
+		"pe": Vector2(32, 56),
+		"ciclo": [33.0, 40.0, 46.0, 41.0, 33.0],
 		# agacha, se encolhe, salta, pico do salto (boca escancarada), MORDIDA (focinho à frente, boca fechando), segura, levanta, volta: 0,46 s, cabe no tique de 0,6 s
 		"tempos": [0.06, 0.06, 0.05, 0.04, 0.05, 0.08, 0.06, 0.06],
 		"impacto": 4,
-		# o salto está na folha: no quadro da mordida o focinho chega 42,5 px à frente do centro do corpo (`alcance_pata_px` do .json)
+		# o salto está na folha: no quadro da mordida o focinho chega 45,4 px à frente do centro do corpo (`alcance_pata_px` do .json)
 		"alcance": 36.0,
 		"frente": 34.0,
 		"raio": 18.0,

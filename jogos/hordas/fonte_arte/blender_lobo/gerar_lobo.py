@@ -73,7 +73,7 @@ PAL = np.array([t for h in BASES.values() for t in _tons(h)] + [[int(c[i:i + 2],
 
 # medidas do esqueleto (em unidades do modelo, antes da ESCALA)
 QUADRIL_Z = 1.35         # altura do quadril e do ombro
-X_PERNA = 0.32
+X_PERNA = 0.46
 Y_FRENTE = -0.80         # ombros
 Y_TRAS = 0.80            # quadris (e o pivô do tronco)
 J_Z = 0.75               # joelho
@@ -103,44 +103,44 @@ def modelo():
     # o tronco gira no quadril (pivô atrás): costas, ombros, cabeça, cauda e pernas da frente vão junto
     tronco = junta("tronco", (0, Y_TRAS, QUADRIL_Z), corpo)
     J["tronco"] = tronco
-    esfera("lombo", 0.5, (0, 0.5, 1.72), mat["pelo"], tronco, escala=(0.85, 1.3, 0.85))
-    esfera("peito", 0.58, (0, -0.5, 1.72), mat["pelo"], tronco, escala=(0.88, 1.2, 1.0))
-    esfera("barriga", 0.4, (0, -0.05, 1.42), mat["pelo_e"], tronco, escala=(0.7, 1.55, 0.55))
+    esfera("lombo", 0.5, (0, 0.5, 1.72), mat["pelo"], tronco, escala=(1.08, 1.3, 0.9))
+    esfera("peito", 0.58, (0, -0.5, 1.72), mat["pelo"], tronco, escala=(1.22, 1.2, 1.05))
+    esfera("barriga", 0.4, (0, -0.05, 1.42), mat["pelo_e"], tronco, escala=(1.0, 1.55, 0.6))
     # juba arrepiada do pescoço às costas (o que dá a cara de lobo gelado) e o colar de pelo do pescoço
-    for nome, y, z, r, esc in (("juba1", -0.95, 2.12, 0.3, (0.9, 1.0, 0.8)), ("juba2", -0.45, 2.2, 0.28, (0.8, 1.2, 0.75)),
-                               ("juba3", 0.1, 2.12, 0.24, (0.75, 1.3, 0.7))):
+    for nome, y, z, r, esc in (("juba1", -0.95, 2.12, 0.34, (1.25, 1.0, 0.85)), ("juba2", -0.45, 2.2, 0.32, (1.15, 1.2, 0.8)),
+                               ("juba3", 0.1, 2.12, 0.28, (1.1, 1.3, 0.75))):
         esfera(nome, r, (0, y, z), mat["juba"], tronco, escala=esc)
-    esfera("colar", 0.46, (0, -1.08, 1.92), mat["pelo_e"], tronco, escala=(1.0, 0.8, 1.0))
+    esfera("colar", 0.46, (0, -1.08, 1.92), mat["pelo_e"], tronco, escala=(1.45, 0.8, 1.05))
     # cauda: chama fria que sobe e se desfaz (pivô na base), da cor da referência do Breno
     cauda = junta("cauda", (0, Y_TRAS + 0.3, 1.75), tronco)
     J["cauda"] = cauda
     for nome, pos, r, esc, m in (
-        ("cauda1", (0, 1.4, 1.78), 0.24, (0.9, 1.3, 0.9), "pelo"),
-        ("cauda2", (0, 1.8, 1.78), 0.32, (1.0, 1.4, 1.0), "chama"),
-        ("cauda3", (0, 2.2, 1.8), 0.34, (1.0, 1.4, 1.1), "chama"),
-        ("cauda4", (0, 2.55, 1.85), 0.27, (0.95, 1.3, 1.1), "chama"),
-        ("cauda_ponta", (0, 2.85, 1.92), 0.17, (0.8, 1.3, 1.2), "ponta"),
+        ("cauda1", (0, 1.4, 1.8), 0.28, (1.0, 1.2, 1.0), "pelo"),
+        ("cauda2", (0, 1.72, 1.98), 0.4, (1.1, 1.2, 1.1), "chama"),
+        ("cauda3", (0, 2.02, 2.25), 0.4, (1.1, 1.2, 1.2), "chama"),
+        ("cauda_ponta", (0, 2.25, 2.55), 0.22, (0.9, 1.2, 1.3), "ponta"),
     ):
         esfera(nome, r, pos, mat[m], cauda, escala=esc)
     # cabeça (gira no pescoço): crânio, focinho comprido de trufa escura, orelhas em pé, olhos de brilho frio, presas
     cabeca = junta("cabeca", (0, -1.1, 1.95), tronco)
     J["cabeca"] = cabeca
-    esfera("cranio", 0.37, (0, -1.4, 2.0), mat["pelo"], cabeca, escala=(0.95, 1.0, 0.9))
-    esfera("focinho", 0.21, (0, -1.85, 1.9), mat["pelo_e"], cabeca, escala=(0.62, 1.65, 0.55))
+    esfera("cranio", 0.37, (0, -1.4, 2.0), mat["pelo_e"], cabeca, escala=(1.25, 1.0, 0.95))
+    esfera("focinho", 0.23, (0, -1.85, 1.9), mat["pelo_e"], cabeca, escala=(0.8, 1.6, 0.6))
     esfera("nariz", 0.07, (0, -2.27, 1.95), mat["nariz"], cabeca)
-    for x in (0.27, -0.27):
-        esfera("bochecha", 0.17, (x, -1.45, 1.88), mat["juba"], cabeca, escala=(0.6, 1.15, 0.9))
-    for x in (0.22, -0.22):
-        cone("orelha", 0.17, 0.0, 0.58, (x, -1.28, 2.52), mat["pelo"], cabeca, vertices=4)
+    for x in (0.34, -0.34):
+        esfera("bochecha", 0.2, (x, -1.45, 1.88), mat["juba"], cabeca, escala=(0.7, 1.15, 0.9))
+    for x in (0.3, -0.3):
+        cone("orelha", 0.2, 0.0, 0.62, (x, -1.28, 2.52), mat["pelo"], cabeca, vertices=4)
         cone("orelha_i", 0.1, 0.0, 0.4, (x, -1.32, 2.46), mat["azul"], cabeca, vertices=4)
-        esfera("olho", 0.06, (x * 0.8, -1.74, 2.1), mat["olho"], cabeca)
+        esfera("olho", 0.07, (x * 0.8, -1.74, 2.1), mat["olho"], cabeca)
+    caixa("palato", (0.22, 0.5, 0.05), (0, -2.0, 1.8), mat["nariz"], cabeca)   # o céu da boca: escuro, aparece quando ela abre
     for x in (0.08, -0.08):
-        caixa("presa_sup", (0.04, 0.04, 0.12), (x, -2.12, 1.8), mat["osso"], cabeca)
+        caixa("presa_sup", (0.05, 0.05, 0.16), (x, -2.12, 1.78), mat["osso"], cabeca)
     mandibula = junta("mandibula", (0, -1.6, 1.84), cabeca)
     J["mandibula"] = mandibula
-    caixa("queixo", (0.2, 0.56, 0.08), (0, -2.0, 1.78), mat["pelo_e"], mandibula, chanfro=0.02)
+    caixa("queixo", (0.28, 0.56, 0.1), (0, -2.0, 1.78), mat["pelo_e"], mandibula, chanfro=0.02)
     for x in (0.08, -0.08):
-        caixa("presa_inf", (0.04, 0.04, 0.12), (x, -2.2, 1.86), mat["osso"], mandibula)
+        caixa("presa_inf", (0.05, 0.05, 0.16), (x, -2.2, 1.88), mat["osso"], mandibula)
     # pernas da frente (presas ao tronco)
     for lado, x in (("e", X_PERNA), ("d", -X_PERNA)):
         _perna_modelo(J, mat, "f" + lado, x, Y_FRENTE, tronco, grossa=1.05)
@@ -189,8 +189,21 @@ L2 = J_Z                            # do joelho ao chão (para a flexão do joel
 TETA = 0.95              # ângulo máximo do quadril no apoio duplo (quadros 2 e 6)
 A = L * math.sin(TETA)
 LEVANTA = 0.42           # quanto a pata que balança sobe acima do chão no meio do passo
+CABECA = 1.3
+CAUDA_LADO = (0.75, 0.0, 0.0, 0.0, -0.75)   # de frente e de costas a cauda cai para o lado, para não ficar empilhada em cima do corpo
+VISTA = [2]
+CAUDA_VISTA = (0.5, 0.8, 1.0, 0.8, 0.5)   # comprimento da cauda por vista
 BALANCO_X = 0.04
 ROLL = 0.04
+
+
+def _vista(J, v):
+    """Gira o lobo para a vista v e ajusta o comprimento da cauda: de frente e de costas ela ficaria empilhada em cima do corpo (uma coluna), então fica mais curta."""
+    J["raiz"].rotation_euler = (0, 0, -math.radians(VISTAS[v]))
+    k = CAUDA_VISTA[v]
+    J["cauda"].scale = (1.0, k, k)
+    VISTA[0] = v
+    J["cabeca"].scale = (CABECA, CABECA, CABECA)   # cabeça grande: é o que faz o bicho ler como lobo de frente e de costas
 
 
 def _suave(t):
@@ -249,8 +262,8 @@ def pose(J, q):
         lado_ap = math.cos(f)
         corpo.location = (BALANCO_X * lado_ap, 0, z_corpo)
         tronco.rotation_euler = (0, -ROLL * lado_ap, 0.03 * math.sin(f))   # sem arfar o tronco: as patas da frente saem do chão se ele inclina
-        J["cabeca"].rotation_euler = (0.10 + 0.05 * math.cos(2 * f), 0, -0.08 * math.sin(f))
-        J["cauda"].rotation_euler = (0.05 + 0.08 * math.sin(2 * f), 0, 0.28 * math.sin(f))
+        J["cabeca"].rotation_euler = (0.22 + 0.05 * math.cos(2 * f), 0, -0.08 * math.sin(f))
+        J["cauda"].rotation_euler = (0.05 + 0.08 * math.sin(2 * f), 0, 0.28 * math.sin(f) + CAUDA_LADO[VISTA[0]])
         corpo.rotation_euler = (0, 0.0, -0.04 * math.sin(f))
     else:
         _ataque(J, q - ANDAR)
@@ -405,7 +418,7 @@ def main():
     uniao = None
     raiz = J["raiz"]
     for v in range(len(VISTAS)):
-        raiz.rotation_euler = (0, 0, -math.radians(VISTAS[v]))
+        _vista(J, v)
         for q in quadros:
             pose(J, q)
             cx = px3.caixa_alfa(px3.render_rgba())
@@ -435,7 +448,7 @@ def main():
         quadros = range(ANDAR, ANDAR + ATAQUE)
     folha = np.zeros((H * len(vistas), W * len(quadros), 4), np.float32)
     for i, v in enumerate(vistas):
-        raiz.rotation_euler = (0, 0, -math.radians(VISTAS[v]))
+        _vista(J, v)
         for j, q in enumerate(quadros):
             pose(J, q)
             im = px3.pixelar(px3.render_rgba(), contorno=True, paleta=PAL, luz_borda=False)[:, ::-1]

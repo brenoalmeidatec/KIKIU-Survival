@@ -1203,7 +1203,7 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				ci.draw_texture_rect(tex, Rect2(sobe - Vector2(10, 10), Vector2(20, 20)), false, Color(cor.r, cor.g, cor.b, 0.6 * alfa))
 				ci.draw_circle(sobe + Vector2(0, 2), 4.5, Color(cor.r, cor.g, cor.b, 0.35 * alfa))
 				ci.draw_circle(sobe + Vector2(0, -2), 2.5, Color(1, 1, 1, 0.95 * alfa))
-				if str(a.id) == "fantasma_mata" or str(a.id) == "lobo_espirito":
+				if str(a.id) == "fantasma_mata":
 					ci.draw_circle(sobe + Vector2(-2, -2), 0.8, Color(0.18, 0.2, 0.35, alfa))
 					ci.draw_circle(sobe + Vector2(2, -2), 0.8, Color(0.18, 0.2, 0.35, alfa))
 			"torre":
