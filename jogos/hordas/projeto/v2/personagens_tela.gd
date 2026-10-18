@@ -23,7 +23,7 @@ const COR_TEXTO := Color(0.92, 0.9, 0.96)
 const COR_APAGADO := Color(0.55, 0.56, 0.64)
 const COR_FOCO := Color(1.0, 0.97, 0.8)
 const COR_AVISO := Color(1.0, 0.72, 0.56)
-const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Esc volta"
+const Glifos := preload("res://v2/glifos.gd")
 
 var ao_escolher := Callable()  # gancho dos testes: recebe o caminho do salão; vazio = troca a cena
 var _modo := "personagens"  # ou "nomes", quando se cria um personagem
@@ -92,7 +92,12 @@ func _montar() -> void:
 	faixa.size = Vector2(LARG, 42)
 	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(faixa)
-	add_child(_rotulo(DICA, Dados.fonte_texto, 16, COR_APAGADO, Rect2(0, ALT - 30, LARG, 22), HORIZONTAL_ALIGNMENT_CENTER))
+	var dica := Glifos.dica(
+		func() -> Array: return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]], HORIZONTAL_ALIGNMENT_CENTER, COR_APAGADO
+	)
+	dica.position = Vector2(0, ALT - 31)
+	dica.size = Vector2(LARG, 22)
+	add_child(dica)
 
 
 func _rotulo(txt: String, fonte: Font, tam: int, cor: Color, r: Rect2, alin: HorizontalAlignment) -> Label:

@@ -6,6 +6,8 @@ extends RefCounted
 ## secundário = escudo (v2/escudo.gd, por herói em dados/v2_secundario.json): botão direito do mouse e gatilho esquerdo do controle (segurar ergue);
 ## habilidade = ruptura (v2/ruptura.gd): tecla E e LB do controle (segurar carrega, soltar dispara); ultimate = Q e RB (reservado, sem efeito).
 
+const Glifos := preload("res://v2/glifos.gd")
+
 const TECLAS := {"esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT], "cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN]}
 const EIXOS := {
 	"esquerda": [JOY_AXIS_LEFT_X, -1.0],
@@ -34,6 +36,7 @@ static func _garantir_botoes_de_menu() -> void:
 
 
 static func garantir() -> void:
+	Glifos.instalar()  # escuta o último dispositivo usado (teclado, Xbox, PlayStation) para os rótulos de tecla
 	_garantir_botoes_de_menu()
 	for acao: String in EIXOS:
 		if InputMap.has_action(acao):

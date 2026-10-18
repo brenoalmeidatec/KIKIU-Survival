@@ -23,6 +23,7 @@ extends CanvasLayer
 const Paleta := preload("res://v2/paleta.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const Meta := preload("res://v2/meta.gd")
+const Glifos := preload("res://v2/glifos.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const LAYER_HUD := 8
@@ -102,10 +103,16 @@ static func criar(m) -> CanvasLayer:
 	return s
 
 
+func _redesenhar_dicas() -> void:
+	if _tela != null:
+		_tela.queue_redraw()
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # a pausa e a escolha de cartas param o mundo; o card segue atualizando
 	layer = LAYER_HUD
 	add_to_group("ui_escala")
+	Glifos.ao_mudar(_redesenhar_dicas)  # as dicas de tecla seguem o dispositivo em uso
 	_estilo = StyleBoxTexture.new()
 	_estilo.texture = MOLDURA
 	_estilo.texture_margin_left = 5
@@ -159,6 +166,8 @@ func entrada(e: InputEvent) -> bool:
 		elif e is InputEventJoypadButton and e.pressed:
 			if e.button_index == BOTAO_PAINEL:
 				alternar()  # Select: liga e desliga, como o C
+			elif e.button_index == JOY_BUTTON_Y:
+				alternar_detalhe()  # Y é o Tab: visual / detalhes
 			elif e.button_index == JOY_BUTTON_B:
 				_central = false  # B fecha o painel (o "voltar" das outras telas)
 				_aplicar()
@@ -850,8 +859,9 @@ func _coluna(c: int, r: Rect2, seco: bool) -> float:
 				_item(item.linha, x, item.y, w)
 				if str(item.linha.tipo) == "bloco" and "golpes" in _secoes_das_colunas()[c]:
 					_golpes_mostrados += 1
-		var teclas := "PgUp/PgDn" if _m == "hud" else "Q/E"
-		var nav := "%d/%d %s" % [pg + 1, paginas.size(), teclas] if paginas.size() > 1 else ("C fecha" if _m == "hud" else "Tab visual")
+		var teclas := (Glifos.texto("abas") if Glifos.eh_controle() else "PgUp/PgDn") if _m == "hud" else Glifos.texto("abas")
+		var fecha := ("%s fecha" % Glifos.texto("card")) if _m == "hud" else ("%s visual" % Glifos.texto("detalhes"))
+		var nav := "%d/%d %s" % [pg + 1, paginas.size(), teclas] if paginas.size() > 1 else fecha
 		_misto(nav, x, float(alturas[pg]), TAM, COR_DICA, COR_DICA)
 	return float(alturas[pg]) - r.position.y + PAD + ALT_LINHA
 
@@ -1107,7 +1117,9 @@ func _visual(seco: bool) -> Array:
 		if c == 0:
 			if not seco:
 				_texto_titulo("SUA BUILD", Vector2(x, y), COR_TITULO)
-				var dica := "[Tab] detalhes" if _m == "pausa" else "[Tab] detalhes [C] fecha"
+				var dica := "[%s] detalhes" % Glifos.texto("detalhes")
+				if _m != "pausa" and Glifos.texto("card") != "":
+					dica += " [%s] fecha" % Glifos.texto("card")
 				_tela.draw_string(_f_num, Vector2(x, y + 6.0 + _f_num.get_ascent(TAM_NUM)), dica, HORIZONTAL_ALIGNMENT_RIGHT, w, TAM_NUM, COR_ROTULO)
 			y += ALT_TITULO
 		for id in grupos[c]:
@@ -1310,7 +1322,7 @@ func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite
 		if not seco:
 			_texto(
 				Dados.fonte_texto,
-				"Página %d/%d  · Q E" % [_pag + 1, paginas],
+				"Página %d/%d  · %s" % [_pag + 1, paginas, Glifos.texto("abas").replace("/", " ")],
 				Vector2(x, limite - ALT_LINHA + 2.0),
 				w,
 				HORIZONTAL_ALIGNMENT_LEFT,

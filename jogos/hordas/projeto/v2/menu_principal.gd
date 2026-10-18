@@ -30,13 +30,13 @@ const BOTAO_LARG := 260.0
 const BOTAO_ALT := 44.0
 const BOTAO_Y0 := 300.0
 const BOTAO_PASSO := 52.0
-const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Mouse também   Esc pergunta se quer sair"
+const Glifos := preload("res://v2/glifos.gd")
 
 var ao_jogar := Callable()  # gancho: os testes trocam a ida ao santuário; vazio = troca a cena
 var pausa  # o menu de pausa (pausa.gd) no modo do título: Ajustes, Créditos e a confirmação de Sair
 var _botoes: Array[Button] = []  # Jogar, Ajustes, Créditos e Sair, de cima para baixo
 var _faixa: ColorRect  # a faixa escura de baixo
-var _dica: Label
+var _dica: Control
 var _ultimo: Button  # o último botão com foco: é nele que o foco volta quando um submenu fecha
 var _trilha  # a faixa do santuário (trilha.gd)
 var atualizador := Atualizador.new()  # consulta a Release mais nova em segundo plano (#106); os testes ajustam antes do add_child
@@ -97,10 +97,20 @@ func _montar() -> void:
 	_faixa.color = Color(Paleta.PAINEL, 0.6)
 	_faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_faixa)
-	_dica = _texto(DICA, TAM_DICA, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, ALT - 26, LARG, 20))
+	_dica = Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_APAGADO)
+	_dica.position = Vector2(0, ALT - 28)
+	_dica.size = Vector2(LARG, 22)
 	add_child(_dica)
 	add_to_group("ui_escala")
 	ui_reencaixar(EscalaUi.canvas_atual, EscalaUi.desloc_atual)
+
+
+## A dica de rodapé: só os botões do dispositivo em uso (teclado e mouse, ou o controle que foi tocado por último).
+func _itens_dica() -> Array:
+	var r: Array = [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["pausa", "Sair"]]
+	if not Glifos.eh_controle():
+		r.insert(2, ["", "Mouse também"])
+	return r
 
 
 ## A faixa e a dica ficam na borda de baixo do canvas (não do bloco 960x540), de ponta a ponta. Chamado também quando a janela ou a opção mudam.
@@ -109,7 +119,7 @@ func ui_reencaixar(canvas: Vector2, desloc: Vector2) -> void:
 		return
 	_faixa.position = Vector2(-desloc.x, ALT + desloc.y - 46.0)
 	_faixa.size = Vector2(canvas.x, 46.0)
-	_dica.position = Vector2(0.0, ALT + desloc.y - 26.0)
+	_dica.position = Vector2(0.0, ALT + desloc.y - 28.0)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:

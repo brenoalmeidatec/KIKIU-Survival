@@ -11,6 +11,7 @@ extends RefCounted
 
 const Paleta := preload("res://v2/paleta.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
+const Glifos := preload("res://v2/glifos.gd")
 const LARG := 960
 const ALT := 540
 const LAYER_TELAS := 11  # cartas, baú e resultado: ACIMA da HUD (10), abaixo do resultado final (12) e da pausa (14); senão o HUD aparece por cima das cartas
@@ -267,7 +268,14 @@ func _moldura(cor: Color) -> StyleBoxFlat:
 	return s
 
 
-func _botao(pos: Vector2, _id: String) -> Panel:
+## "ENTER ou clique" no teclado e no mouse; só o botão do controle (A, cruz...) quando o último dispositivo foi o controle.
+func _textos_dicas() -> void:
+	var quem := Glifos.texto("confirmar").to_upper() + ("" if Glifos.eh_controle() else " ou clique")
+	_bau_dica.text = "%s para continuar" % quem
+	_res_dica.text = "%s para jogar de novo" % quem
+
+
+func _botao(pos: Vector2, id: String) -> Panel:
 	var p := Panel.new()
 	p.position = pos
 	p.size = Vector2(240, 28)
@@ -278,6 +286,10 @@ func _botao(pos: Vector2, _id: String) -> Panel:
 	t.position = Vector2(4, 5)
 	t.size = Vector2(232, 18)
 	p.add_child(t)
+	var g := Glifos.glifo("rerrolar" if id == "r" else "banir")  # a tecla do botão: R / B no teclado, X / Y no controle
+	g.position = Vector2(6, 6)
+	g.size = Vector2(60, 16)
+	p.add_child(g)
 	_escolha.add_child(p)
 	return p
 
@@ -299,7 +311,7 @@ func _montar_bau() -> void:
 		_montar_cartao(p, "")
 		_bau.add_child(p)
 		_bau_slots.append(p)
-	_bau_dica = _rotulo("ENTER ou clique para continuar", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_bau_dica = _rotulo("", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
 	_bau_dica.position = Vector2(0, 450)
 	_bau_dica.size = Vector2(LARG, 20)
 	_bau.add_child(_bau_dica)
@@ -324,10 +336,12 @@ func _montar_resultado() -> void:
 	_res_valores.size = Vector2(120, 190)
 	_res_valores.add_theme_constant_override("line_spacing", 8)
 	_res.add_child(_res_valores)
-	_res_dica = _rotulo("ENTER ou clique para jogar de novo", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_res_dica = _rotulo("", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
 	_res_dica.position = Vector2(0, 410)
 	_res_dica.size = Vector2(LARG, 12)
 	_res.add_child(_res_dica)
+	_textos_dicas()
+	Glifos.ao_mudar(_textos_dicas)
 
 
 # ------------------------------------------------------------------ mostrar
@@ -406,8 +420,8 @@ func _atualizar_botoes() -> void:
 	var cs = combate.cartas
 	var pr: bool = cs.pode_rerrolar() and espera_escolha <= 0.0
 	var pb: bool = cs.pode_banir() and espera_escolha <= 0.0
-	_btn_r_txt.text = "[R] Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "[R] Rerrolar (já usou)"
-	_btn_b_txt.text = "[B] Banir a marcada (%d)" % cs.banimentos_restantes()
+	_btn_r_txt.text = "Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "Rerrolar (já usou)"
+	_btn_b_txt.text = "Banir a marcada (%d)" % cs.banimentos_restantes()
 	_btn_r.modulate = Paleta.BRANCO if pr else Paleta.alfa(Paleta.BRANCO, 0.4)
 	_btn_b.modulate = Paleta.BRANCO if pb else Paleta.alfa(Paleta.BRANCO, 0.4)
 
@@ -803,6 +817,14 @@ func _entrada_escolha(e: InputEvent) -> bool:
 		return true
 	if e is InputEventJoypadMotion:
 		return false  # o analógico não navega nem escolhe: cada quadro com ele acima do limite contaria como um aperto (o direcional e o A fazem isso)
+	if e is InputEventJoypadButton and e.pressed and e.button_index in [JOY_BUTTON_X, JOY_BUTTON_Y]:
+		if travada:
+			_pulso = PULSO_T
+		elif e.button_index == JOY_BUTTON_X:
+			_rerrolar()  # X rerrola (R no teclado)
+		else:
+			_banir()  # Y bane a marcada (B no teclado)
+		return true
 	if e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right") or e.is_action_pressed("ui_accept"):
 		if travada:
 			_pulso = PULSO_T

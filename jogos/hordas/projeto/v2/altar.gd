@@ -26,7 +26,7 @@ const COR_APAGADO := Paleta.TEXTO_APAGADO
 const COR_EFEITO := Paleta.TEXTO_SECUNDARIO
 const COR_FOCO := Paleta.FOCO  # texto do botão com foco ou sob o mouse (o fundo do botão é escuro)
 const COR_ALMA := Paleta.ALMA
-const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Mouse também"
+const Glifos := preload("res://v2/glifos.gd")
 const TEMPO_AVISO := 3.0
 
 var _saldo: Label
@@ -259,7 +259,18 @@ func _montar() -> void:
 	_estilo_botao(_voltar, Paleta.TITULO_PEQUENO)
 	_voltar.pressed.connect(_voltar_menu)
 	add_child(_voltar)
-	add_child(_texto(DICA, Paleta.NUMERO_PEQUENO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
+	var dica := Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_APAGADO)
+	dica.position = Vector2(0, 522)  # 4 px abaixo dos botões; a dica de 16 px termina em 538
+	dica.size = Vector2(LARG, 16)
+	add_child(dica)
+
+
+## A dica de rodapé: só os botões do dispositivo em uso.
+func _itens_dica() -> Array:
+	var r: Array = [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
+	if not Glifos.eh_controle():
+		r.insert(2, ["", "Mouse também"])
+	return r
 
 
 ## Botão de liga/desliga de um modo ou visual liberado por conquista (some enquanto a conquista não foi cumprida).
