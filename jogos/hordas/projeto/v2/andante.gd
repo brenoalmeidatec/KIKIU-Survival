@@ -104,9 +104,9 @@ const FICHAS := {
 		# recua, abre os braços, pico, começa o bote, BOTE (capuz e garras à frente), segura, volta, assenta: 0,30 s, cabe no tique de 0,4 s da carta
 		"tempos": [0.05, 0.04, 0.04, 0.04, 0.05, 0.04, 0.02, 0.02],
 		"impacto": 4,
-		# o capuz e as garras, no quadro do bote, chegam 47,9 px à frente do centro (`alcance_pata_px` do .json)
-		"alcance": 40.0,
-		"frente": 36.0,
+		# o capuz e as garras, no quadro do bote, chegam 47,9 px à frente do centro (`alcance_pata_px` do .json); o alcance e o golpe seguem os números de antes do polimento da arte
+		"alcance": 42.0,
+		"frente": 38.0,
 		"raio": 24.0,
 		"empurra": 40.0,
 		"atordoa": 0.1,
@@ -117,16 +117,16 @@ const FICHAS := {
 	"serpente_ardente":
 	{
 		"folha": "res://assets/v2/armas/serpente_ardente_dir.png",
-		"quadro": Vector2(93, 107),
-		"pe": Vector2(28, 60),
+		"quadro": Vector2(87, 97),
+		"pe": Vector2(27, 54),
 		# rasteja: a onda do corpo roda no relógio (ciclo_s) e fica no chão (sem `altura`); parada ela continua ondulando
 		"ciclo_s": 0.5,
 		# se enrosca, ergue o pescoço, arma o bote, dispara, BOTE (cabeça à frente de boca aberta), estala, recolhe, assenta: 0,42 s, cabe no tique de 0,5 s
 		"tempos": [0.07, 0.07, 0.06, 0.05, 0.06, 0.05, 0.03, 0.03],
 		"impacto": 4,
-		# a ponta da cabeça, no quadro do bote, chega 66,5 px à frente do centro (`alcance_pata_px` do .json)
-		"alcance": 57.0,
-		"frente": 53.0,
+		# a ponta da cabeça, no quadro do bote, chega 60,1 px à frente do centro (`alcance_pata_px` do .json); o alcance e o golpe seguem os números de antes do polimento da arte
+		"alcance": 50.0,
+		"frente": 46.0,
 		"raio": 22.0,
 		"empurra": 30.0,
 		"atordoa": 0.08,

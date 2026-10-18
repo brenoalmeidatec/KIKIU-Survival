@@ -112,7 +112,7 @@ def modelo():
     ponta.rotation_euler = (-0.55, 0, 0)         # a ponta do capuz cai para trás
     esfera("rosto", 0.31, (0, -0.2, OMBRO_Z + 0.42), mat["rosto"], cabeca, escala=(0.95, 0.62, 1.1))      # o vão do capuz: um buraco escuro grande, para os olhos saltarem
     for x in (0.1, -0.1):
-        esfera("olho", 0.085, (x * 1.1, -0.4, OMBRO_Z + 0.48), mat["olho"], cabeca, escala=(1.0, 0.7, 1.35))
+        esfera("olho", 0.1, (x * 1.1, -0.4, OMBRO_Z + 0.48), mat["olho"], cabeca, escala=(1.0, 0.7, 1.35))
     # boca: um oval escuro que abre no bote (a escala em Z é a abertura)
     boca = junta("boca", (0, -0.4, OMBRO_Z + 0.28), cabeca)
     J["boca"] = boca
@@ -192,12 +192,14 @@ def alcance_bote():
     return ponta / ESCALA
 
 
-def assar_transparencia(folha, H, pe_y):
+def assar_transparencia(folha, W, H, pe_y):
     """Faz o corpo meio transparente: mais firme em cima (capuz, ombros), mais ralo na barra. Olhos e contorno ficam firmes."""
     cheio = folha[:, :, 3] > 0.5
     ys = np.arange(folha.shape[0]) % H                       # a linha dentro do quadro
     sobe = np.clip((pe_y - ys) / 30.0, 0.0, 1.0)             # 0 na barra, 1 a 30 px acima do chão
-    corpo = (0.40 + 0.38 * sobe)[:, None]
+    col = (np.arange(folha.shape[1]) // W)[None, :]
+    reforco = np.where((col >= 11) & (col <= 13), 0.20, 0.0)     # no bote (quadros 11 a 13) o corpo fica mais firme: destaca do chão e leva o olho ao capuz
+    corpo = np.minimum(0.46 + 0.38 * sobe[:, None] + reforco, 0.92)
     olho = cheio & np.all(np.abs(folha[:, :, :3] - OLHO_RGB) < 0.02, axis=2)
     borda = cheio & np.all(np.abs(folha[:, :, :3] - CONT) < 1e-3, axis=2)
     garra = np.zeros_like(cheio)
@@ -205,7 +207,7 @@ def assar_transparencia(folha, H, pe_y):
         garra |= cheio & np.all(np.abs(folha[:, :, :3] - np.array(t)) < 2e-3, axis=2)
     novo = np.where(cheio, corpo, 0.0)
     novo = np.where(garra, np.maximum(novo, 0.92), novo)
-    novo = np.where(borda, np.maximum(novo, 0.75), novo)
+    novo = np.where(borda, np.maximum(novo, 0.92), novo)     # contorno verde-escuro de 1 px quase opaco: separa o fantasma do chão
     novo = np.where(olho, 1.0, novo)
     folha[:, :, 3] = novo
 
@@ -260,7 +262,7 @@ def main():
             im[:, :, :3][borda] = CONT
             folha[i * H:(i + 1) * H, j * W:(j + 1) * W] = im
     alcance = alcance_bote()
-    assar_transparencia(folha, H, pe_y)
+    assar_transparencia(folha, W, H, pe_y)
     if PREVIA:
         fundo = np.zeros_like(folha)
         fundo[:] = (0.13, 0.17, 0.12, 1.0)
