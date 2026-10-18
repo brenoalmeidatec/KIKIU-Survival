@@ -197,7 +197,7 @@ static func _andar(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
 	if d.length() > 1.0:
 		var dir := d.normalized()
 		var passo := minf(float(st.vel) * dt, d.length())
-		it.p = it.p + dir * passo
+		it.p = nv.pai.mundo.mover_ponto(it.p, dir * passo, nv.RAIO_ALIADO)
 		it.v = (it.v as Vector2).lerp(dir, clampf(dt * 10.0, 0.0, 1.0))  # suavizado: o quadro não pisca na virada
 		it.lin = linha_de(it.v, int(it.lin))
 		var antes := float(it.pf)
