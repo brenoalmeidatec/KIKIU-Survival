@@ -48,9 +48,9 @@ const RB_TAM := 22
 const RB_POP_T := 0.15  # s do pop ao zerar a recarga
 const RB_LARANJA := Paleta.CARGA_LARANJA
 const RB_BORDA := Paleta.RUPTURA_BORDA
-## Comprimento das barras de vida e de fôlego. No máximo de partida do herói escolhido (cfg do combate) a barra mede BARRA_BASE_PX,
-## como sempre; cada ponto de vida máxima acima da base soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO. O teto
-## (BARRA_TETO_PX) deixa a borda em x 378, antes do relógio (x 428). Ver _barras.
+## Comprimento das barras de vida e de fôlego. No máximo de partida do herói escolhido (cfg do combate) a barra mede BARRA_BASE_PX;
+## cada ponto de vida máxima acima da base soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO. O teto (BARRA_TETO_PX)
+## segura a moldura antes do relógio (x 428). Ver _barras.
 const BARRA_BASE_PX := 142.0
 const BARRA_PX_VIDA := 1.2
 const BARRA_PX_FOLEGO := 47.0
