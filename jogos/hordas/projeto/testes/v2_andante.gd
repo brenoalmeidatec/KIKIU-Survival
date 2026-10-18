@@ -91,8 +91,11 @@ func preparar(id: String, dir: Vector2, base := "", tent := 0):
 	for outro in w.combate.armas.novas.itens:
 		if outro != it and bool(outro.an) and float(outro.vida) > 0.0:
 			outro.vida = 0.0  # cartas com quantidade > 1 (o Fantasma nasce em dupla): só o acompanhado fica, senão o golpe do outro conta como dano fora do impacto
-	if base != "" and it != null and not str(it.fid).ends_with("/" + base) and tent < 12:
-		return preparar(id, dir, base, tent + 1)  # fusão com várias bases: tenta de novo até nascer a que se quer medir
+	if base != "" and it != null and not str(it.fid).ends_with("/" + base):
+		if tent < 12:
+			return preparar(id, dir, base, tent + 1)  # fusão com várias bases: tenta de novo até nascer a que se quer medir
+		ok(false, "%s: em 12 tentativas não nasceu a base %s (rodízio %s)" % [id, base, it.fid])
+		return [null, m]
 	return [it, m]
 
 
@@ -217,6 +220,28 @@ func checar_fusao(id: String) -> void:
 		if base.has("ciclo"):
 			for v in Andante.LINHAS:
 				ok(is_equal_approx(float(f.ciclo[v]), float(base.ciclo[v]) * e), "%s/%s vista %d: a passada escala (o pé não escorrega)" % [id, b, v])
+	# a fusão sem nenhuma base existente volta ao desenho antigo (FICHAS é const: testa-se a regra com a lista, que é a mesma que `bases` usa)
+	ok(Andante.existentes(["lobo_espirito", "nao_existe"]).is_empty(), "%s: lista só com bases inexistentes não dá base" % id)
+	ok(Andante.bases("carta_sem_ficha").is_empty() and not Andante.eh_andante("carta_sem_ficha"), "carta sem ficha nem alias não é andante (desenho antigo)")
+	ok(Andante.existentes(["lobo_espirito"] + al.como).size() == bs.size(), "%s: a base que falta não entra, as demais sim" % id)
+	# a fusão se distingue do aliado comum: escala maior, tinta mais escura que o branco, mistura aditiva e halo reforçado
+	ok(e > 1.0 and al.has("tinta") and al.has("mistura") and float(al.get("halo", 1.0)) > 1.0, "%s: escala, tinta, mistura e halo próprios" % id)
+	var tin: Color = al.tinta
+	ok(minf(tin.r, minf(tin.g, tin.b)) <= 0.75, "%s: a tinta baixa de verdade algum canal (multiplicar por quase branco não mudaria a cor)" % id)
+	if bool(al.get("gris", false)):
+		var cinza := Andante.tex_gris(str(bs[0])).get_image()
+		var cor_px := cinza.get_pixel(cinza.get_width() / 2, cinza.get_height() / 2)
+		var achou := false
+		for y in range(0, cinza.get_height(), 7):
+			for x in range(0, cinza.get_width(), 7):
+				cor_px = cinza.get_pixel(x, y)
+				if cor_px.a > 0.9:
+					achou = true
+					ok(is_equal_approx(cor_px.r, cor_px.g) and is_equal_approx(cor_px.g, cor_px.b), "%s: a folha gris é de fato cinza" % id)
+					break
+			if achou:
+				break
+		ok(achou, "%s: a folha gris tem pixel opaco" % id)
 	var vistos := {}
 	for i in bs.size() * 3:
 		vistos[Andante.escolher(id)] = true
@@ -226,7 +251,11 @@ func checar_fusao(id: String) -> void:
 		checar_direcoes(id, str(b))
 		var it = preparar(id, Vector2(150, 0), str(b))[0]
 		ok(
-			it != null and str(it.fid) == "%s/%s" % [id, b] and Andante.tex_de(it) == Andante.tex_base(str(b)),
+			(
+				it != null
+				and str(it.fid) == "%s/%s" % [id, b]
+				and Andante.tex_de(it) == (Andante.tex_gris(str(b)) if bool(al.get("gris", false)) else Andante.tex_base(str(b)))
+			),
 			"%s/%s: o item guarda a ficha e usa a folha da base" % [id, b]
 		)
 
@@ -271,7 +300,8 @@ func fotos(pasta: String) -> void:
 		var id: String = item[0]
 		var base: String = item[1]
 		var nome: String = item[2]
-		var r: Array = preparar(id, Vector2(150, 0), base)
+		var longe := 150.0 if base == "" else 210.0  # a fusão alcança mais longe (escala): sem o alvo mais afastado ela ataca sem andar
+		var r: Array = preparar(id, Vector2(longe, 0), base)
 		var it = r[0]
 		if it == null:
 			continue
