@@ -807,7 +807,9 @@ func _process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
 	avancar(minf(delta, 0.1))
 	if roteiro != null:
+		var r0 := Time.get_ticks_usec()
 		roteiro.atualizar(delta)
+		_perfil("roteiro", Time.get_ticks_usec() - r0)  # o robô e os roteiros de teste (não é o jogo)
 	_us_total += Time.get_ticks_usec() - t0
 	if picos != null:
 		picos.us_script += Time.get_ticks_usec() - t0
