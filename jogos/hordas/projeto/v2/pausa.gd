@@ -291,6 +291,8 @@ func _voltar_tela() -> void:
 				_ir("menu")
 			else:
 				fechar()
+		"avancado":
+			_ir("graficos")
 		"graficos", "audio", "creditos":
 			if tela == "creditos" and _origem == "":
 				fechar()  # Créditos abertos direto pelo título: não há Ajustes por trás
@@ -443,6 +445,8 @@ func _executar(id: String, passo: int) -> void:
 			_ir("ajustes")
 		"graficos":
 			_ir("graficos")
+		"g:avancado":
+			_ir("avancado", "graficos")
 		"audio":
 			_ir("audio")
 		"creditos":
@@ -519,6 +523,8 @@ func _itens() -> Array:
 			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"graficos":
 			return _graficos.itens()
+		"avancado":
+			return _graficos.itens_avancado()
 		"audio":
 			return [_it("musica", "Música", _pct(Config.v("musica"))), _it("efeitos", "Efeitos", _pct(Config.v("efeitos"))), _it("voltar", "Voltar")]
 		"confirmar_santuario":
@@ -538,6 +544,8 @@ func _titulo_tela() -> String:
 			return "AJUSTES"
 		"graficos":
 			return "GRÁFICOS"
+		"avancado":
+			return "AVANÇADO"
 		"audio":
 			return "ÁUDIO"
 		"creditos":
@@ -556,6 +564,8 @@ func _sub_tela() -> String:
 		return "Fecha o jogo de vez."
 	if tela == "graficos":
 		return _graficos.mensagem
+	if tela == "avancado":
+		return "CPU e GPU, uma opção por vez."
 	return ""
 
 
@@ -596,7 +606,7 @@ func _desenhar() -> void:
 func _texto_ajuda() -> String:
 	if tela == "audio":
 		return CREDITO_MUSICA
-	if (tela != "graficos" and tela != "creditos") or sel >= _itens_atuais.size():
+	if (tela != "graficos" and tela != "avancado" and tela != "creditos") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))
 

@@ -235,19 +235,23 @@ func _testes() -> void:
 	ok(pausa.tela == "graficos", "Gráficos abre a aba")
 	var ids_g: Array = _ids(pausa)
 	ok(
-		"g:perfil" in ids_g and "g:fps" in ids_g and "g:op:sombras" in ids_g and "g:op:luz_relevo" in ids_g,
-		"a aba Gráficos tem perfil, FPS e as opções do json"
+		"g:perfil" in ids_g and "g:fps" in ids_g and "g:avancado" in ids_g and not ("g:op:sombras" in ids_g),
+		"a aba Gráficos tem perfil, FPS e o Avançado; as opções soltas ficam no Avançado"
 	)
-	var cabs := 0
-	for it in pausa._itens_atuais:
-		if bool(it.get("cab", false)):
-			cabs += 1
-	ok(cabs == 2, "a aba tem as duas seções, CPU e GPU (cabeçalhos: %d)" % cabs)
 	_ir_para(pausa, "g:perfil")
 	_tecla(KEY_RIGHT)  # alto -> baixo
 	ok(Config.g_perfil() == "baixo", "trocar o perfil para Baixo muda a config (perfil = %s)" % Config.g_perfil())
 	ok(str(Config.g("sombras")) == "baixa" and int(Config.g("limite_fps")) == 60, "o perfil Baixo põe sombras baixa e limite de 60 fps")
 	ok(mundo.sombras.modo == Sombras.BAIXA, "a sombra do mundo acompanha o perfil ao vivo (graficos_mudou)")
+	_ir_para(pausa, "g:avancado")
+	_tecla(KEY_ENTER)
+	ok(pausa.tela == "avancado" and pausa._titulo.text == "AVANÇADO", "Avançado abre a tela das opções soltas")
+	var cabs := 0
+	for it in pausa._itens_atuais:
+		if bool(it.get("cab", false)):
+			cabs += 1
+	ok(cabs == 2, "o Avançado tem as duas seções, CPU e GPU (cabeçalhos: %d)" % cabs)
+	ok("g:op:sombras" in _ids(pausa) and "g:op:luz_relevo" in _ids(pausa) and "g:op:particulas_sim" in _ids(pausa), "o Avançado tem as opções do json")
 	_ir_para(pausa, "g:op:sombras")
 	_tecla(KEY_RIGHT)  # baixa -> media
 	ok(str(Config.g("sombras")) == "media" and mundo.sombras.modo == Sombras.MEDIA, "Sombras (lista) muda a config e a sombra do mundo")
@@ -272,6 +276,8 @@ func _testes() -> void:
 	var part_antes := str(Config.g("particulas_sim"))
 	_tecla(KEY_RIGHT)
 	ok(str(Config.g("particulas_sim")) != part_antes, "Partículas (lista) muda a config")
+	_tecla(KEY_ESCAPE)
+	ok(pausa.tela == "graficos" and pausa.aberto, "ESC no Avançado volta para Gráficos")
 	_ir_para(pausa, "g:fps")
 	var fps_antes := bool(Config.v("mostrar_fps"))
 	_tecla(KEY_ENTER)
@@ -280,12 +286,13 @@ func _testes() -> void:
 	await get_tree().process_frame
 	ok(pausa._fps.visible == (not fps_antes), "o contador de fps segue a opção ao vivo")
 
-	# 6b. Tela cheia, Baixar a qualidade e Mostrar FPS são opções fora do perfil: mexer nelas não vira personalizado
+	# 6b. Tela cheia, Dinâmico (qualidade_auto) e Mostrar FPS são opções fora do perfil: mexer nelas não vira personalizado
 	var ids_topo := _ids(pausa)
 	ok(
-		ids_topo.find("g:tela") >= 0 and ids_topo.find("g:tela") < ids_topo.find("g:qualidade") and ids_topo.find("g:qualidade") < ids_topo.find("g:fps"),
-		"a aba tem Tela cheia, Baixar a qualidade e Mostrar FPS no topo, nessa ordem"
+		ids_topo.find("g:perfil") >= 0 and ids_topo.find("g:perfil") < ids_topo.find("g:tela") and ids_topo.find("g:tela") < ids_topo.find("g:fps"),
+		"a aba tem Perfil, Tela cheia e Mostrar FPS nessa ordem"
 	)
+	ok(not ("g:qualidade" in ids_topo), "a opção solta 'Baixar a qualidade' saiu: virou o perfil Dinâmico")
 	Config.g_aplicar_perfil("alto")
 	_ir_para(pausa, "g:tela")
 	var tela_antes := bool(Config.v("tela_cheia"))
@@ -293,14 +300,33 @@ func _testes() -> void:
 	ok(bool(Config.v("tela_cheia")) != tela_antes and Config.g_perfil() == "alto", "Tela cheia liga e desliga pela linha, sem mudar o perfil")
 	_tecla(KEY_F11)
 	ok(bool(Config.v("tela_cheia")) == tela_antes and pausa.aberto, "F11 com o menu aberto volta a Tela cheia, e o menu continua aberto")
-	_ir_para(pausa, "g:qualidade")
-	var qual_antes := bool(Config.v("qualidade_auto"))
-	_tecla(KEY_ENTER)
-	ok(bool(Config.v("qualidade_auto")) != qual_antes and Config.g_perfil() == "alto", "Baixar a qualidade liga e desliga pela linha, sem mudar o perfil")
-	_tecla(KEY_ENTER)
-	ok(bool(Config.v("qualidade_auto")) == qual_antes, "Baixar a qualidade volta ao valor de antes")
+	# o perfil Dinâmico: a seta passa por Baixo, Médio, Alto, Dinâmico; só o Dinâmico liga a baixa e a subida automáticas
+	_ir_para(pausa, "g:perfil")
+	Config.definir("qualidade_auto", false)
+	Config.g_aplicar_perfil("baixo")
+	for nome in ["Médio", "Alto", "Dinâmico", "Baixo"]:
+		_tecla(KEY_RIGHT)
+		ok(str(pausa._itens_atuais[pausa.sel].valor) == nome, "a seta do Perfil chega em %s (mostra %s)" % [nome, str(pausa._itens_atuais[pausa.sel].valor)])
+		if nome == "Dinâmico":
+			ok(bool(Config.v("qualidade_auto")) and Config.g_perfil() == "alto", "Dinâmico liga a baixa automática e parte do Alto")
+			ok(
+				pausa._itens_atuais[pausa.sel + 1].get("cab", false) and "FPS" in str(pausa._itens_atuais[pausa.sel + 1].rotulo),
+				"o Dinâmico mostra a explicação curta logo abaixo"
+			)
+		else:
+			ok(not bool(Config.v("qualidade_auto")), "%s desliga a baixa automática" % nome)
+	_tecla(KEY_LEFT)
+	_tecla(KEY_LEFT)  # Baixo -> Dinâmico -> Alto, pela esquerda
+	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Alto", "a seta para a esquerda volta um perfil")
+	_tecla(KEY_RIGHT)
+	ok(
+		str(pausa._itens_atuais[pausa.sel].valor) == "Dinâmico" and "?" in str(pausa._itens_atuais[pausa.sel].rotulo),
+		"o Perfil tem o '?' e o rodapé explica o Dinâmico"
+	)
+	ok("Dinâmico" in pausa._ajuda.text, "o rodapé do Perfil explica o Dinâmico")
 
 	# 6c. a baixa automática (fps abaixo de 40 por 8 s) desce o perfil só na memória; o arquivo guarda o que o jogador escolheu
+	Config.definir("qualidade_auto", true)  # o Dinâmico
 	Config.g_aplicar_perfil("alto")
 	mundo._qualidade_ligada = true  # o jogo de verdade (no teste o mundo fica desligado de propósito)
 	for i in 500:
@@ -355,9 +381,38 @@ func _testes() -> void:
 	for i in 100:
 		sem_descer += qa.passo(0.5, 30.0, "baixo") + qa.passo(0.5, 30.0, "personalizado")
 	ok(sem_descer == "", "Baixo e Personalizado nunca descem")
+	# a subida: 30 s com o fps no alvo sobe um degrau; fps abaixo do alvo zera; no Alto não sobe; subiu e travou logo, a espera dobra
+	var qs := QualidadeAuto.new()
+	var antes_de_30s := ""
+	for i in 59:
+		antes_de_30s += qs.passo(0.5, 60.0, "baixo")
+	ok(antes_de_30s == "" and qs.passo(0.5, 60.0, "baixo") == "medio", "29,5 s com fps no alvo não sobe; aos 30 s sobe de Baixo para Médio")
+	qs.passo(0.5, 50.0, "medio")  # abaixo do alvo, mas acima de 40: nem sobe nem desce, e zera a contagem de subida
+	var depois_de_zerar_sobe := ""
+	for i in 59:
+		depois_de_zerar_sobe += qs.passo(0.5, 60.0, "medio")
+	ok(depois_de_zerar_sobe == "" and qs.passo(0.5, 60.0, "medio") == "alto", "fps abaixo do alvo zera a subida: outros 30 s para Médio -> Alto")
+	var sem_subir := ""
+	for i in 80:  # 40 s: dentro da janela de 60 s de ir e voltar
+		sem_subir += qs.passo(0.5, 60.0, "alto")
+	ok(sem_subir == "", "no Alto não sobe mais")
+	var travou := ""
+	for i in 15:
+		travou += qs.passo(0.5, 20.0, "alto")
+	ok(travou == "" and qs.passo(0.5, 20.0, "alto") == "medio", "subiu e travou: desce de novo")
+	var espera_dobrada := ""
+	for i in 59:
+		espera_dobrada += qs.passo(0.5, 60.0, "medio")
+	ok(espera_dobrada == "" and qs.passo(0.5, 60.0, "medio") == "", "depois de subir e travar logo, 30 s não bastam para subir (a espera dobrou para 60 s)")
+	var sobe_60s := ""
+	for i in 60:
+		sobe_60s += qs.passo(0.5, 60.0, "medio")
+	ok(sobe_60s == "alto", "com a espera dobrada, aos 60 s firmes sobe")
 	_ir_para(pausa, "g:detectar")
 	_tecla(KEY_ENTER)
 	ok(pausa._graficos.mensagem != "", "Detectar pela máquina dá um aviso (%s)" % pausa._graficos.mensagem)
+	_ir_para(pausa, "g:avancado")
+	_tecla(KEY_ENTER)
 	var todas_lidas := true
 	for it in pausa._itens_atuais:
 		var iid: String = str(it.get("id", ""))
@@ -372,6 +427,7 @@ func _testes() -> void:
 		not str(pausa._itens_atuais[pausa.sel].rotulo).ends_with("*") and not str(pausa._itens_atuais[pausa.sel].ajuda).contains("Etapa"),
 		"a ajuda das opções não cita etapa nem marca com *"
 	)
+	_tecla(KEY_ESCAPE)  # Avançado -> Gráficos
 	_tecla(KEY_ESCAPE)  # ESC dentro de Gráficos volta a Ajustes (um nível)
 	ok(pausa.tela == "ajustes" and pausa.aberto, "ESC em Gráficos volta um nível: a Ajustes, sem fechar a pausa")
 
@@ -519,10 +575,18 @@ func _fotos(pasta: String) -> void:
 	await mundo.ap.foto(pasta.path_join("pausa_ajustes.png"))
 	_ir_para(pausa, "graficos")
 	_tecla(KEY_ENTER)
-	_ir_para(pausa, "g:op:sombras")
-	await mundo.ap.foto(pasta.path_join("pausa_graficos.png"))
-	_ir_para(pausa, "g:qualidade")  # o topo da aba: Perfil, Detectar, Tela cheia, Baixar a qualidade e Mostrar FPS
+	Config.definir("qualidade_auto", true)
+	Config.g_aplicar_perfil("alto")
+	_ir_para(pausa, "g:perfil")  # o Dinâmico, com a explicação curta e o rodapé do '?'
 	await mundo.ap.foto(pasta.path_join("pausa_graficos_topo.png"))
+	_ir_para(pausa, "g:avancado")
+	await mundo.ap.foto(pasta.path_join("pausa_graficos.png"))
+	_tecla(KEY_ENTER)
+	_ir_para(pausa, "g:op:sombras")
+	await mundo.ap.foto(pasta.path_join("pausa_avancado.png"))
+	_ir_para(pausa, "g:op:limite_fps")
+	await mundo.ap.foto(pasta.path_join("pausa_avancado_gpu.png"))
+	_tecla(KEY_ESCAPE)
 	_tecla(KEY_ESCAPE)
 	_ir_para(pausa, "audio")
 	_tecla(KEY_ENTER)

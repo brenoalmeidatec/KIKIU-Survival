@@ -723,16 +723,23 @@ func _ler_graficos() -> void:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
 
 
-## Baixa automática (opção "qualidade_auto", "Baixar a qualidade se travar", aba Gráficos): fps abaixo de 40 por 8 s desce um
-## perfil, só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
+## Perfil Dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um,
+## só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
 func _baixar_qualidade(dt: float, fps: float) -> void:
 	if not _qualidade_ligada or not bool(Config.v("qualidade_auto")):
 		return
-	var nome := _qualidade.passo(dt, fps, Config.g_perfil())
+	var limite := int(Config.g("limite_fps"))
+	var alvo := 55.0 if limite <= 0 or limite >= 60 else limite * 0.92  # com limite baixo de fps, "firme" é perto do limite
+	var antes := Config.g_perfil()
+	var nome := _qualidade.passo(dt, fps, antes, alvo)
 	if nome == "":
 		return
 	Config.g_perfil_temporario(nome)
-	combate.anunciar("FPS baixo: qualidade gráfica %s" % ("média" if nome == "medio" else "baixa"), Color(1, 0.8, 0.4))
+	var degrau := {"alto": "alta", "medio": "média", "baixo": "baixa"}
+	if QualidadeAuto.DEGRAUS.find(nome) < QualidadeAuto.DEGRAUS.find(antes):
+		combate.anunciar("FPS firme: qualidade gráfica %s" % degrau[nome], Color(0.6, 1, 0.6))
+	else:
+		combate.anunciar("FPS baixo: qualidade gráfica %s" % degrau[nome], Color(1, 0.8, 0.4))
 
 
 # ------------------------------------------------------------------ movimento e mouse
