@@ -1,0 +1,55 @@
+{
+  "tamanho_quadro": 192,
+  "direcoes": [
+    "S",
+    "SE",
+    "L",
+    "NE",
+    "N",
+    "NO",
+    "O",
+    "SO"
+  ],
+  "clipes": {
+    "idle": {
+      "quadros": 24,
+      "fps": 12
+    },
+    "walk": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "raizes_gigantes": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "invocacao": {
+      "quadros": 21,
+      "fps": 12
+    },
+    "garras_sombras": {
+      "quadros": 21,
+      "fps": 12
+    },
+    "tempestade_raizes": {
+      "quadros": 31,
+      "fps": 12
+    },
+    "coracao_floresta": {
+      "quadros": 51,
+      "fps": 12
+    },
+    "transicao": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "hit": {
+      "quadros": 7,
+      "fps": 12
+    },
+    "death": {
+      "quadros": 31,
+      "fps": 12
+    }
+  }
+}
