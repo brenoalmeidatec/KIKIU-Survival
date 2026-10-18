@@ -1,6 +1,6 @@
 # Laboratório: planta proposta (18/10/2026)
 
-Desenho de um agente (Opus) a pedido do Alisson ("não dá pra seguir uma lógica de arrumação e disposição de objetos?"). Ainda NÃO implementado: o começo da implementação está na branch `wip/laboratorio-planta`.
+Desenho de um agente (Opus) a pedido do Alisson ("não dá pra seguir uma lógica de arrumação e disposição de objetos?"). Implementada no PR #324 (veja "Como ficou" no fim): o gerador `fonte_arte/mapas_v2/def_laboratorio.py` monta as 9 salas por receita.
 
 **Planta lógica do Laboratório: proposta só de desenho, nenhum arquivo foi editado.**
 
@@ -64,4 +64,21 @@ Recomendo **mudar o gerador, não o JSON**. Assim o resultado fica reproduzível
 
 Editar o JSON à mão serviria só como teste rápido de uma sala. Ele seria sobrescrito na próxima regeração.
 
-Worktree: `E:\Dev\KIKIU\.claude\worktrees\github-mds-review-7b8798`, branch `integra-ataques`. Não fiz commit nem alteração.
+## Como ficou (PR #324, 18/10/2026)
+
+Implementado em `def_laboratorio.py` (tabelas `COL`, `LIN`, `SALAS`, `PAREDES_S`, `ABERTURA_V`, `QUINA` e uma receita por sala dentro de `montar`) e conferido com
+`v2/passagens.gd` (`testes/v2_mapas`: corredores livres de ponta a ponta, centro das 9 salas alcançável, sem beco) e com fotos reais das 9 salas. Regerar:
+`python jogos/hordas/fonte_arte/gerar_v2_mapas.py laboratorio --so-mapa` (reaproveita o atlas e a colisão de `assets/v2/mapas/laboratorio/`, não precisa do Blender).
+A colisão é por TIPO (atlas), então mexer a posição de um objeto aqui move o desenho e a colisão juntos.
+
+Onde o desenho se afastou da planta (e por quê):
+
+- **Paredes só na frente das salas do norte e do meio** (y=560 e y=1000, com portas de 190 a 240 px), não nos quatro lados. A câmera olha de frente: uma parede esconde
+  os 85 px que ficam atrás dela. Na frente de cima da sala essa faixa cai dentro da sala; uma parede em y=720 ou y=1160 esconderia o corredor. Os lados de cima das salas
+  do meio e do sul ficam abertos para o corredor, definidos pelo próprio equipamento da sala.
+- **Lados verticais abertos**: não existe sprite de parede vertical (os módulos `parede_lab` são de frente). Cada lado que dá para V1/V2 tem só uma coluna curta de equipamento
+  no canto (`QUINA`) e uma abertura larga no meio (190 a 320 px).
+- **Orçamento**: 363 objetos (era 376) e 119 decalques (era 209). A borda perdeu uma fileira no sul, metade da fileira de trás no norte e a coluna de dentro no oeste e no leste
+  saiu da faixa andável (uma peça que cruza o limite andável faz o clamp empurrar o corpo de volta e ele entala).
+- **Quinas e lâmpadas**: pilar nas quinas das paredes (4 px dentro do corredor) e lâmpadas de emergência coladas na parede de frente, sem vão (um vão de ~10 px prende o corpo).
+- **Regra de encostar**: peça encostada no limite andável deixa 4 px de folga (N), 7,5 px (O/L) ou cruza 3 px (S), para não criar nicho de uma célula nem forma que o corpo não resolve.

@@ -130,6 +130,32 @@ func _dados_do_mapa(id: String) -> void:
 	ok(nasc.has("heroi") and nasc.get("monstros", []).size() >= 6, "%s: nascimento com herói e zonas de monstro" % id)
 
 
+## Laboratório (docs/laboratorio/PLANTA_PROPOSTA.md): os quatro corredores de 160 px ficam livres de ponta a ponta para o corpo largo da horda,
+## e o centro de cada uma das 9 salas se alcança a partir do herói (corpo largo também).
+func _corredores_e_salas_do_laboratorio(w) -> void:
+	var linhas := [
+		[Vector2(180, 640), Vector2(2700, 640)],
+		[Vector2(180, 1080), Vector2(2700, 1080)],
+		[Vector2(1080, 180), Vector2(1080, 1440)],
+		[Vector2(1800, 180), Vector2(1800, 1440)]
+	]
+	for l in linhas:
+		var a: Vector2 = l[0]
+		var b: Vector2 = l[1]
+		var n := int(a.distance_to(b) / 8.0)
+		var presos := 0
+		for i in n + 1:
+			if not Colisao.livre(a.lerp(b, float(i) / float(n)), Passagens.RAIO_HORDA):
+				presos += 1
+		ok(presos == 0, "laboratorio: o corredor de %s a %s está livre para a horda (%d pontos presos)" % [str(a), str(b), presos])
+	var salas: Array = []
+	for x in [575.0, 1440.0, 2305.0]:
+		for y in [355.0, 860.0, 1315.0]:
+			salas.append(Vector2(x, y))
+	var rel: Dictionary = Passagens.relatorio(w.limite_andavel, w.heroi.pos, salas, Passagens.RAIO_HORDA)
+	ok(rel.pontos_fora.is_empty(), "laboratorio: o centro das 9 salas tem caminho até o herói (corpo largo): fora = %s" % str(rel.pontos_fora))
+
+
 ## Passagens (v2/passagens.gd), objeto na frente do herói (copas.gd) e sombra base (sombras.gd), em cada mapa.
 func _passagens_e_vista(id: String) -> void:
 	var w = Mundo.instantiate()
@@ -154,6 +180,10 @@ func _passagens_e_vista(id: String) -> void:
 		)
 		if id == "laboratorio":  # o laboratório é desenhado com corredores: nada de beco fino (a floresta tem os dela, de árvores e tocos)
 			ok(rel.becos <= 4, "%s: sem becos finos sem saída (raio %.0f): %d células" % [id, raio, rel.becos])
+			var fundos: Array[Vector2i] = Passagens.becos(rel.grade, 12)
+			ok(fundos.size() <= 4, "%s: nenhum beco mais fundo que 6 células (raio %.0f): %d células com 12 camadas de poda" % [id, raio, fundos.size()])
+	if id == "laboratorio":
+		_corredores_e_salas_do_laboratorio(w)
 	# os quatro cantos andáveis ligam entre si (o corredor das bordas não fecha)
 	var g: Dictionary = Passagens.grade(w.limite_andavel, Passagens.RAIO_HEROI)
 	var a0: Rect2 = w.limite_andavel
