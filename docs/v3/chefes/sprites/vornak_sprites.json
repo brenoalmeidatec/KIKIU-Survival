@@ -54,6 +54,10 @@
     "run": {
       "quadros": 17,
       "fps": 12
+    },
+    "grito": {
+      "quadros": 36,
+      "fps": 12
     }
   },
   "observacao": "idle e attack_01 refeitos com o modelo novo (revisão 18/10); os outros clipes seguem com o modelo anterior"
