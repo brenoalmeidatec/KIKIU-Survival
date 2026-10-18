@@ -69,6 +69,24 @@ const FICHAS := {
 		"sombra": 10.0,
 		"cor_fx": Color(0.95, 0.93, 0.85),
 	},
+	"espirito_raposa":
+	{
+		"folha": "res://assets/v2/armas/raposa_espiritual_dir.png",
+		"quadro": Vector2(69, 70),
+		"pe": Vector2(32, 44),
+		"ciclo": [26.1, 32.8, 40.0, 34.4, 26.1],
+		# agacha, se encolhe, salta, pico do salto, BOTE (patas no chão), pousa, levanta, volta: 0,42 s, cabe no tique de 0,5 s da carta
+		"tempos": [0.06, 0.06, 0.05, 0.04, 0.04, 0.07, 0.05, 0.05],
+		"impacto": 4,
+		# o corpo vai à frente dentro do quadro (o bote está na folha): a pata da frente, no impacto, chega a 35 px à frente do centro (`alcance_pata_px` do .json)
+		"alcance": 30.0,
+		"frente": 27.0,
+		"raio": 18.0,
+		"empurra": 30.0,
+		"atordoa": 0.05,
+		"sombra": 9.0,
+		"cor_fx": Color(1.0, 0.72, 0.3),
+	},
 }
 
 static var _tex := {}
