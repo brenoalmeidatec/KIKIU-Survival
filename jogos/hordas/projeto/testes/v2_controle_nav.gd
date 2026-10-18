@@ -2,14 +2,20 @@ extends Node
 # Navegação com controle Xbox nas telas com glifo da v2: os apertos entram pelo caminho da janela (Input.parse_input_event), o mesmo do controle de
 # verdade. Cartas: X rerrola, LB bane e Y escolhe automaticamente (os rótulos contam os usos). Baú: A fecha quando a roleta acabou. Personagens e
 # Salão: A e B estão mapeados nas ações ui_accept e ui_cancel (quem decide é cada tela). O próprio teste trava o dispositivo em Xbox.
+# Índice, slots de personagem, save antigo e opções são isolados: o teste funciona também num user:// vazio, como o do CI.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_controle_nav.tscn  (imprime "v2_controle_nav falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Personagens := preload("res://v2/personagens.tscn")
 const Salao := preload("res://v2/salao.tscn")
 const Glifos := preload("res://v2/glifos.gd")
 const Meta := preload("res://v2/meta.gd")
-const SAVE_TESTE := "user://teste_v2_controle_nav_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_controle_nav_opcoes.cfg"
+const Slots := preload("res://v2/personagens.gd")
+const PASTA_TESTE := "user://teste_v2_controle_nav"
+const SAVE_TESTE := PASTA_TESTE + "/meta.cfg"
+const OPCOES_TESTE := PASTA_TESTE + "/opcoes.cfg"
+const INDICE_TESTE := PASTA_TESTE + "/indice.cfg"
+const BASE_TESTE := PASTA_TESTE + "/personagem_"
+const ANTIGO_TESTE := PASTA_TESTE + "/antigo.cfg"
 
 var falhas := 0
 
@@ -21,20 +27,47 @@ func ok(cond: bool, msg: String) -> void:
 
 
 func _ready() -> void:
+	var caminhos_antes := [Slots.caminho_indice, Slots.caminho_base, Slots.caminho_antigo, Meta.caminho_save, Config.arquivo]
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(PASTA_TESTE))
+	_limpar()
+	Slots.caminho_indice = INDICE_TESTE
+	Slots.caminho_base = BASE_TESTE
+	Slots.caminho_antigo = ANTIGO_TESTE
 	Meta.caminho_save = SAVE_TESTE
 	Config.arquivo = OPCOES_TESTE
+	Config.recarregar()
+	Slots.iniciar()
+	ok(Slots.lista().is_empty() and Slots.ativo() == "", "o cenário começa sem personagens nem save antigo de outro teste")
+	var id := Slots.criar("Breno")
+	var ativou := Slots.ativar(id)
+	ok(id != "" and ativou and Slots.ativo() == id, "o personagem temporário fica ativo antes de abrir o salão")
+	if not ativou:
+		_limpar()
+		print("v2_controle_nav falhas=%d" % falhas)
+		get_tree().quit(1)
+		return
 	Glifos.forcado = true
 	Glifos.definir(Glifos.Disp.XBOX)
+	print("v2_controle_nav: cartas (personagem temporário ativo)")
 	await _cartas()
+	print("v2_controle_nav: baú")
 	await _bau()
+	print("v2_controle_nav: personagens e salão")
 	await _mapeamento()
 	Glifos.forcado = false
-	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
-		if FileAccess.file_exists(c):
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
-	Config.arquivo = "user://opcoes.cfg"
+	_limpar()
+	Slots.caminho_indice = caminhos_antes[0]
+	Slots.caminho_base = caminhos_antes[1]
+	Slots.caminho_antigo = caminhos_antes[2]
+	Meta.caminho_save = caminhos_antes[3]
+	Config.arquivo = caminhos_antes[4]
 	print("v2_controle_nav falhas=%d" % falhas)
-	get_tree().quit()
+	get_tree().quit(1 if falhas > 0 else 0)
+
+
+func _limpar() -> void:
+	for nome in DirAccess.get_files_at(PASTA_TESTE):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(PASTA_TESTE.path_join(nome)))
 
 
 func _aperto(botao: int) -> void:
@@ -51,12 +84,14 @@ func _cartas() -> void:
 	var mundo = Mundo.instantiate()
 	mundo.modo_teste = true
 	add_child(mundo)
+	mundo.set_process(false)  # este teste envia entrada real, mas não precisa simular a partida entre os apertos
 	await get_tree().process_frame
 	var c = mundo.combate
 	c.limpar_partida()
 	c.diretor.ligado = false
 	mundo.heroi.imortal = true
 	var cs = c.cartas
+	cs.rng.seed = 777
 	for par in [["aura_fogo", 4], ["laminas", 2], ["corvos", 3], ["raio", 2], ["runa", 2]]:
 		for i in int(par[1]):
 			cs.aplicar(cs.montar_carta(cs.definicao(str(par[0])), 1 + (i % 3)))
@@ -97,6 +132,7 @@ func _bau() -> void:
 	var mundo = Mundo.instantiate()
 	mundo.modo_teste = true
 	add_child(mundo)
+	mundo.set_process(false)
 	await get_tree().process_frame
 	var c = mundo.combate
 	c.jogo = "bau"  # como bau.gd: o baú abre com jogo "bau" (fechar() só vale nesse estado)
@@ -113,12 +149,17 @@ func _bau() -> void:
 
 
 func _mapeamento() -> void:
+	var cena_teste := get_tree().current_scene
+	ok(cena_teste == self and Slots.ativo() != "", "o driver do teste e o personagem temporário estão prontos")
 	var p = Personagens.instantiate()
 	add_child(p)
 	await get_tree().process_frame
 	var s = Salao.instantiate()
 	add_child(s)
 	await get_tree().process_frame
+	await get_tree().process_frame  # inclui eventuais chamadas deferred de troca de cena
+	ok(get_tree().current_scene == cena_teste, "o salão mantém a cena de teste, sem redirecionar para a escolha")
+	ok(s.pausa != null and s._p_lista != null, "o salão terminou de montar a pausa e o painel com o personagem temporário")
 	var a := InputEventJoypadButton.new()
 	a.button_index = JOY_BUTTON_A
 	var b := InputEventJoypadButton.new()

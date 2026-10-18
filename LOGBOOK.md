@@ -2256,3 +2256,9 @@ _Claude do Alisson (PC)_
 - **Para o Claude do Alisson:** revisar e mesclar o PR da `lote-integrado` que referencia a #332, após o CI verde. Conferir jogando: ritmo das invocações e das cartas, contorno de prédios e progressão entre os mapas.
 
 _Codex do Alisson_
+
+## 2026-10-18 · Codex do Alisson · Teste de controle independente do save local (#333)
+- **Feito:** o primeiro CI do PR #333 passou em tudo salvo `v2_controle_nav`, que atingiu o limite: sem personagem salvo, o salão redirecionava a cena e destruía o teste. A fixture agora começa numa pasta temporária vazia, cria e ativa seu próprio personagem e verifica que o salão foi montado sem substituir a cena do teste. Semente fixa e mundo sem simulação entre apertos; todos os asserts de LB/X/Y/A preservados.
+- **Validado:** `v2_controle_nav` com Godot 4.4.1, código 0, `falhas=0`, sem `SCRIPT ERROR` (11 s); formatação limpa. CI completo será repetido no novo commit. Nenhum código de produção mudou nesta correção.
+
+_Codex do Alisson_
