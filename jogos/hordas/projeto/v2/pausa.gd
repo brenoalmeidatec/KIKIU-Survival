@@ -296,7 +296,7 @@ func _pode_pausar() -> bool:
 func _ir(nova: String, origem := "menu") -> void:
 	tela = nova
 	_origem = origem
-	sel = 1 if nova.begins_with("confirmar") else 0  # confirmação começa em "Não"
+	sel = 1 if nova.begins_with("confirmar") or nova == "avancado" else 0  # confirmação começa em "Não"; Avançado, na 1ª opção (o 0 é cabeçalho)
 	_topo = 0
 	_desenhar()
 

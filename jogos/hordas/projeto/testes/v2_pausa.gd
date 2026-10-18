@@ -266,7 +266,7 @@ func _testes() -> void:
 			em_cpu = str(it.rotulo).begins_with("CPU")
 		elif em_cpu and str(it.get("id", "")).begins_with("g:op:"):
 			linhas_cpu += 1
-	ok(linhas_cpu == 3, "a CPU do Avançado tem as três opções que a v2 lê (partículas, máximo de inimigos, cálculo dos monstros): %d" % linhas_cpu)
+	ok(linhas_cpu == 2, "a CPU do Avançado tem as duas opções que a v2 lê (partículas, cálculo dos monstros): %d" % linhas_cpu)
 	_ir_para(pausa, "g:op:sombras")
 	_tecla(KEY_RIGHT)  # baixa -> media
 	ok(str(Config.g("sombras")) == "media" and mundo.sombras.modo == Sombras.MEDIA, "Sombras (lista) muda a config e a sombra do mundo")
@@ -335,7 +335,11 @@ func _testes() -> void:
 	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Alto", "a seta para a esquerda volta um perfil")
 	_tecla(KEY_RIGHT)
 	ok(
-		str(pausa._itens_atuais[pausa.sel].valor) == "Dinâmico" and not ("?" in str(pausa._itens_atuais[pausa.sel].rotulo)) and bool(pausa._itens_atuais[pausa.sel].get("icone", false)),
+		(
+			str(pausa._itens_atuais[pausa.sel].valor) == "Dinâmico"
+			and not ("?" in str(pausa._itens_atuais[pausa.sel].rotulo))
+			and bool(pausa._itens_atuais[pausa.sel].get("icone", false))
+		),
 		"o Perfil tem o ícone '?' (o nome é só Perfil) e o rodapé explica o Dinâmico"
 	)
 	ok("Dinâmico" in pausa._ajuda.text, "o rodapé do Perfil explica o Dinâmico")
@@ -439,9 +443,13 @@ func _testes() -> void:
 	for i in 17:  # 8,5 s a 25 fps, abaixo do alvo de 27,6
 		desce_abaixo += abaixo_do_alvo.passo(0.5, 25.0, "alto", 27.6)
 	ok(desce_abaixo == "medio", "com limite de 30 fps, 8 s abaixo do alvo desce o perfil")
-	# 6f. as opções de CPU mudam a conta da v2: o teto de vivos (Máximo de inimigos) e o recálculo da separação (Cálculo dos monstros)
-	Config.g_definir("max_inimigos", 250)
-	ok(mundo.combate.diretor.teto() <= 250, "o teto de monstros vivos respeita o Máximo de inimigos (teto = %d)" % mundo.combate.diretor.teto())
+	# 6f. as opções de CPU mudam a conta da v2: o Máximo de inimigos saiu do menu (a v2 não o lê) e o recálculo da separação segue
+	var teto_base: int = mundo.combate.diretor.teto()
+	Config.g_definir("max_inimigos", 40)  # mexida à mão (ou de um json antigo), não derruba o teto da v2
+	ok(
+		teto_base > 40 and mundo.combate.diretor.teto() == teto_base,
+		"o teto da v2 ignora o Máximo de inimigos (teto %d com a opção em 40)" % mundo.combate.diretor.teto()
+	)
 	for par in [[2.0, 6], [0.5, 2], [1.0, 3]]:
 		Config.g_definir("calculo_monstros", par[0])
 		ok(mundo.combate._passo_sep() == par[1], "Cálculo dos monstros %s: a separação recalcula a cada %d quadros" % [str(par[0]), par[1]])
@@ -451,6 +459,7 @@ func _testes() -> void:
 	ok(pausa._graficos.mensagem != "", "Detectar pela máquina dá um aviso (%s)" % pausa._graficos.mensagem)
 	_ir_para(pausa, "g:avancado")
 	_tecla(KEY_ENTER)
+	ok(_sel_id(pausa) == "g:op:particulas_sim", "ao abrir o Avançado o foco cai na 1ª opção da CPU, não no cabeçalho (foco em %s)" % _sel_id(pausa))
 	var todas_lidas := true
 	for it in pausa._itens_atuais:
 		var iid: String = str(it.get("id", ""))
@@ -460,12 +469,12 @@ func _testes() -> void:
 		(
 			todas_lidas
 			and not ("g:op:escala_render" in _ids(pausa))
-			and "g:op:max_inimigos" in _ids(pausa)
+			and not ("g:op:max_inimigos" in _ids(pausa))
 			and "g:op:calculo_monstros" in _ids(pausa)
 			and not ("g:op:lod_monstros" in _ids(pausa))
 			and not ("g:op:restos_chao" in _ids(pausa))
 		),
-		"a aba só mostra opções que a v2 lê (sem escala de render, detalhe fora da tela nem tempo dos restos, que a v2 ainda não tem)"
+		"a aba só mostra opções que a v2 lê (sem escala de render, detalhe fora da tela, tempo dos restos nem máximo de inimigos: a v2 não lê essas)"
 	)
 	_ir_para(pausa, "g:op:luz_relevo")
 	ok(
