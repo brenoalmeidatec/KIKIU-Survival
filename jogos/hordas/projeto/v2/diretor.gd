@@ -37,9 +37,12 @@ func taxa(t: float) -> float:
 	return lerpf(float(cfg.taxa_ini), float(cfg.taxa_fim), clampf(t / float(cfg.tempo_taxa), 0.0, 1.0)) * mundo.fator_pesadelo("densidade_mult")
 
 
-## O máximo de monstros vivos de uma vez (o teto dos dados; no Pesadelo sobe com a densidade).
+## O máximo de monstros vivos de uma vez (o teto dos dados; no Pesadelo sobe com a densidade). A opção "Máximo de inimigos
+## vivos" (aba Gráficos, seção CPU) vale se for menor, como na v1 (scripts/hordas/diretor_hordas.gd).
 func teto() -> int:
-	return roundi(float(cfg.teto) * mundo.fator_pesadelo("densidade_mult"))
+	var base := roundi(float(cfg.teto) * mundo.fator_pesadelo("densidade_mult"))
+	var opcao = Config.g("max_inimigos")
+	return mini(base, int(opcao)) if opcao != null else base
 
 
 func limite(t: float) -> int:

@@ -279,6 +279,11 @@ func atualizar(dt: float) -> void:
 	mundo._perfil("c_orbes", Time.get_ticks_usec() - o0)
 
 
+## Quadros entre um recálculo da separação de cada monstro: PASSO_SEP x a opção Cálculo dos monstros (0,5 frequente, 1 normal, 2 espaçado).
+func _passo_sep() -> int:
+	return maxi(1, roundi(float(PASSO_SEP) * float(Config.g("calculo_monstros"))))
+
+
 ## Monstros colados se empurram: a horda faz uma roda em volta do herói em vez de virar uma pilha em cima dele. Uma grade espacial de
 ## CEL px (tabela de hash em vetores planos, sem Dictionary nem Array por célula) guarda os monstros pequenos; os grandes (elite, chefe)
 ## ficam numa lista à parte que todos consultam, porque o alcance deles passa de uma célula. Um terço dos monstros por quadro (o resultado
@@ -314,11 +319,12 @@ func _separar() -> void:
 		var h := ((int(p.x / CEL) * 73856093) ^ (int(p.y / CEL) * 19349663)) & (GRADE_N - 1)
 		_prox[i] = _cab[h]
 		_cab[h] = i
-	var i0 := _q % PASSO_SEP
+	var passo := _passo_sep()
+	var i0 := _q % passo
 	while i0 < n:
 		var m = ms[i0]
 		var k := i0
-		i0 += PASSO_SEP
+		i0 += passo
 		if m.atordoa_t > 0.0:
 			m.sep = Vector2.ZERO
 			continue

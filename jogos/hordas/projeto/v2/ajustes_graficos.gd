@@ -15,7 +15,7 @@ const ORDEM := ["baixo", "medio", "alto", "dinamico"]  # a ordem das setas do Pe
 const NOMES_PERFIL := {"baixo": "Baixo", "medio": "Médio", "alto": "Alto", "dinamico": "Dinâmico", "personalizado": "Personalizado"}
 const SECOES := ["cpu", "gpu"]
 const NOMES_SECAO := {"cpu": "CPU (simulação)", "gpu": "GPU (visual)"}
-const LIDAS_NA_V2 := ["particulas_sim", "luz_relevo", "sombras", "nevoa", "tremor_clarao", "limite_fps", "vsync"]
+const LIDAS_NA_V2 := ["max_inimigos", "particulas_sim", "calculo_monstros", "luz_relevo", "sombras", "nevoa", "tremor_clarao", "limite_fps", "vsync"]
 const AJUDA_PERFIL := (
 	"Baixo, Médio e Alto fixam tudo. Dinâmico começa no Alto, baixa sozinho se o jogo travar e sobe quando o FPS firma. "
 	+ "Mexer numa opção vira Personalizado."
@@ -31,7 +31,9 @@ var mensagem := ""  # aviso curto do detectar, mostrado no rodapé da pausa
 
 ## As linhas da tela Gráficos: o essencial. As opções soltas (CPU e GPU) ficam na tela Avançado (itens_avancado).
 func itens() -> Array:
-	var r: Array = [_it("g:perfil", "Perfil (?)", _nome_perfil(), AJUDA_PERFIL)]
+	var perfil := _it("g:perfil", "Perfil", _nome_perfil(), AJUDA_PERFIL)
+	perfil["icone"] = true  # o "?": a pausa desenha o ícone depois do nome; a ajuda sai no rodapé com o foco ou o mouse
+	var r: Array = [perfil]
 	if _dinamico():
 		r.append({"id": "", "rotulo": "Começa no Alto e ajusta pelo FPS", "valor": "", "ajuda": "", "cab": true})
 	(

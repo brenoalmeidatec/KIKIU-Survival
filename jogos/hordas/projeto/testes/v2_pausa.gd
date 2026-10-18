@@ -10,7 +10,7 @@ extends Node
 # escolhe a linha; ESC dentro de Ajustes volta um nível; o hit-stop e a câmera lenta seguem depois de pausar; Voltar ao santuário
 # despausa, abandona a partida (venceu = false) e credita as almas; perder o foco não pausa em headless; e no santuário o ESC
 # é devolvido à navegação local, e o botão Ajustes abre o submenu.
-# Tela cheia (linha e F11, com a pausa aberta ou fechada) e Baixar a qualidade se travar ficam fora do perfil: não viram
+# Tela cheia (linha e F11, com a pausa aberta ou fechada) e o Dinâmico (qualidade_auto) ficam fora do perfil: não viram
 # personalizado. A queda por fps (qualidade_auto) vale só na memória: o arquivo não recebe o perfil caído.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
@@ -239,6 +239,13 @@ func _testes() -> void:
 		"a aba Gráficos tem perfil, FPS e o Avançado; as opções soltas ficam no Avançado"
 	)
 	_ir_para(pausa, "g:perfil")
+	pausa._desenhar()
+	var linha_perfil: Dictionary = pausa._itens_atuais[0]
+	ok(str(linha_perfil.rotulo) == "Perfil" and bool(linha_perfil.get("icone", false)), "a linha Perfil leva o ícone ? e o nome é só Perfil (sem (?) no texto)")
+	var icone_visivel := false
+	for l in pausa._linhas:
+		icone_visivel = icone_visivel or (bool(l["linha"].visible) and bool(l["icone"].visible))
+	ok(icone_visivel, "o ícone ? aparece na linha Perfil")
 	_tecla(KEY_RIGHT)  # alto -> baixo
 	ok(Config.g_perfil() == "baixo", "trocar o perfil para Baixo muda a config (perfil = %s)" % Config.g_perfil())
 	ok(str(Config.g("sombras")) == "baixa" and int(Config.g("limite_fps")) == 60, "o perfil Baixo põe sombras baixa e limite de 60 fps")
@@ -252,6 +259,14 @@ func _testes() -> void:
 			cabs += 1
 	ok(cabs == 2, "o Avançado tem as duas seções, CPU e GPU (cabeçalhos: %d)" % cabs)
 	ok("g:op:sombras" in _ids(pausa) and "g:op:luz_relevo" in _ids(pausa) and "g:op:particulas_sim" in _ids(pausa), "o Avançado tem as opções do json")
+	var linhas_cpu := 0
+	var em_cpu := false
+	for it in pausa._itens_atuais:
+		if bool(it.get("cab", false)):
+			em_cpu = str(it.rotulo).begins_with("CPU")
+		elif em_cpu and str(it.get("id", "")).begins_with("g:op:"):
+			linhas_cpu += 1
+	ok(linhas_cpu == 3, "a CPU do Avançado tem as três opções que a v2 lê (partículas, máximo de inimigos, cálculo dos monstros): %d" % linhas_cpu)
 	_ir_para(pausa, "g:op:sombras")
 	_tecla(KEY_RIGHT)  # baixa -> media
 	ok(str(Config.g("sombras")) == "media" and mundo.sombras.modo == Sombras.MEDIA, "Sombras (lista) muda a config e a sombra do mundo")
@@ -320,8 +335,8 @@ func _testes() -> void:
 	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Alto", "a seta para a esquerda volta um perfil")
 	_tecla(KEY_RIGHT)
 	ok(
-		str(pausa._itens_atuais[pausa.sel].valor) == "Dinâmico" and "?" in str(pausa._itens_atuais[pausa.sel].rotulo),
-		"o Perfil tem o '?' e o rodapé explica o Dinâmico"
+		str(pausa._itens_atuais[pausa.sel].valor) == "Dinâmico" and not ("?" in str(pausa._itens_atuais[pausa.sel].rotulo)) and bool(pausa._itens_atuais[pausa.sel].get("icone", false)),
+		"o Perfil tem o ícone '?' (o nome é só Perfil) e o rodapé explica o Dinâmico"
 	)
 	ok("Dinâmico" in pausa._ajuda.text, "o rodapé do Perfil explica o Dinâmico")
 
@@ -408,6 +423,29 @@ func _testes() -> void:
 	for i in 60:
 		sobe_60s += qs.passo(0.5, 60.0, "medio")
 	ok(sobe_60s == "alto", "com a espera dobrada, aos 60 s firmes sobe")
+	# 6e. limite de fps baixo (30): com o alvo em 27,6, rodar a 30 é o jogo no próprio limite e não conta como travado
+	var no_limite := QualidadeAuto.new()
+	var desceu_no_limite := ""
+	for i in 60:  # 30 s a 30 fps
+		desceu_no_limite += no_limite.passo(0.5, 30.0, "alto", 27.6)
+	ok(desceu_no_limite == "", "com limite de 30 fps, rodar a 30 não desce o perfil (30 s)")
+	var sobe_no_limite := QualidadeAuto.new()
+	var sobe_limite := ""
+	for i in 60:  # 30 s firmes no alvo: sobem de Baixo para Médio
+		sobe_limite += sobe_no_limite.passo(0.5, 30.0, "baixo", 27.6)
+	ok(sobe_limite == "medio", "com limite de 30 fps, 30 s no alvo sobem o perfil")
+	var abaixo_do_alvo := QualidadeAuto.new()
+	var desce_abaixo := ""
+	for i in 17:  # 8,5 s a 25 fps, abaixo do alvo de 27,6
+		desce_abaixo += abaixo_do_alvo.passo(0.5, 25.0, "alto", 27.6)
+	ok(desce_abaixo == "medio", "com limite de 30 fps, 8 s abaixo do alvo desce o perfil")
+	# 6f. as opções de CPU mudam a conta da v2: o teto de vivos (Máximo de inimigos) e o recálculo da separação (Cálculo dos monstros)
+	Config.g_definir("max_inimigos", 250)
+	ok(mundo.combate.diretor.teto() <= 250, "o teto de monstros vivos respeita o Máximo de inimigos (teto = %d)" % mundo.combate.diretor.teto())
+	for par in [[2.0, 6], [0.5, 2], [1.0, 3]]:
+		Config.g_definir("calculo_monstros", par[0])
+		ok(mundo.combate._passo_sep() == par[1], "Cálculo dos monstros %s: a separação recalcula a cada %d quadros" % [str(par[0]), par[1]])
+	Config.g_aplicar_perfil("alto")
 	_ir_para(pausa, "g:detectar")
 	_tecla(KEY_ENTER)
 	ok(pausa._graficos.mensagem != "", "Detectar pela máquina dá um aviso (%s)" % pausa._graficos.mensagem)
@@ -419,8 +457,15 @@ func _testes() -> void:
 		if iid.begins_with("g:op:") and not pausa._graficos.lida_na_v2(iid.substr(5)):
 			todas_lidas = false
 	ok(
-		todas_lidas and not ("g:op:escala_render" in _ids(pausa)) and not ("g:op:max_inimigos" in _ids(pausa)),
-		"a aba só mostra opções que a v2 lê (sem escala de render nem máximo de inimigos)"
+		(
+			todas_lidas
+			and not ("g:op:escala_render" in _ids(pausa))
+			and "g:op:max_inimigos" in _ids(pausa)
+			and "g:op:calculo_monstros" in _ids(pausa)
+			and not ("g:op:lod_monstros" in _ids(pausa))
+			and not ("g:op:restos_chao" in _ids(pausa))
+		),
+		"a aba só mostra opções que a v2 lê (sem escala de render, detalhe fora da tela nem tempo dos restos, que a v2 ainda não tem)"
 	)
 	_ir_para(pausa, "g:op:luz_relevo")
 	ok(
@@ -582,6 +627,7 @@ func _fotos(pasta: String) -> void:
 	_ir_para(pausa, "g:avancado")
 	await mundo.ap.foto(pasta.path_join("pausa_graficos.png"))
 	_tecla(KEY_ENTER)
+	await mundo.ap.foto(pasta.path_join("pausa_avancado_cpu.png"))  # a CPU inteira, no topo da lista
 	_ir_para(pausa, "g:op:sombras")
 	await mundo.ap.foto(pasta.path_join("pausa_avancado.png"))
 	_ir_para(pausa, "g:op:limite_fps")
