@@ -12,9 +12,9 @@
 		{"id": "treino", "nome": "Treino de guerreiro", "frase": "Ataca mais vezes no mesmo tempo.", "desc": "+{v}% de velocidade de ataque", "stat": "treino", "valor": 5, "max": 4, "custo": 70, "cresce": 1.6, "requer": "sobreviva_5min"}
 	],
 	"conquistas": [
-		{"id": "sobreviva_5min", "nome": "Sobreviva 5 minutos", "desc": "Fique 5 minutos na floresta numa mesma partida.", "condicao": "tempo", "limite": 300, "recompensa": {"tipo": "melhoria", "id": "treino"}},
-		{"id": "derrota_chefe", "nome": "Derrote o chefe", "desc": "Vença o duelo contra o chefe da floresta.", "condicao": "venceu", "recompensa": {"tipo": "modo", "id": "pesadelo"}},
-		{"id": "combo_50", "nome": "Combo de cinquenta", "desc": "Chegue a um combo de 50 abates seguidos.", "condicao": "combo", "limite": 50, "recompensa": {"tipo": "visual", "id": "rastro_katana"}}
+		{"id": "sobreviva_5min", "nome": "Sobreviva 5 minutos", "frase": "Aguente cinco minutos na floresta sem morrer.", "desc": "Fique 5 minutos na floresta numa mesma partida.", "condicao": "tempo", "limite": 300, "recompensa": {"tipo": "melhoria", "id": "treino"}},
+		{"id": "derrota_chefe", "nome": "Derrote o chefe", "frase": "Derrube o chefe da floresta e encare o Pesadelo.", "desc": "Vença o duelo contra o chefe da floresta.", "condicao": "venceu", "recompensa": {"tipo": "modo", "id": "pesadelo"}},
+		{"id": "combo_50", "nome": "Combo de cinquenta", "frase": "Encadeie cinquenta abates seguidos sem parar.", "desc": "Chegue a um combo de 50 abates seguidos.", "condicao": "combo", "limite": 50, "recompensa": {"tipo": "visual", "id": "rastro_katana"}}
 	],
 	"modos": [
 		{

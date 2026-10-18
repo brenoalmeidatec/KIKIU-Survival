@@ -281,7 +281,7 @@ func _montar_painel() -> void:
 	cartao.add_theme_stylebox_override("panel", _caixa(Paleta.CARTAO, Paleta.BORDA))
 	cartao.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_painel.add_child(cartao)
-	_p_icone_estrutura = _caixa_icone(Rect2(56, 36, 48, 48))  # a arte da estrutura (assets/v2/santuario), reduzida
+	_p_icone_estrutura = _caixa_icone(Rect2(56, 36, 48, 48))  # o ícone da estrutura (assets/v2/icones_santuario): 24 px a 2x
 	_painel.add_child(_p_icone_estrutura)
 	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(112, 38, 330, 46), HORIZONTAL_ALIGNMENT_LEFT)
 	_painel.add_child(_p_titulo)
@@ -304,9 +304,9 @@ func _montar_painel() -> void:
 	_p_rolagem.add_child(_p_lista)
 	# Direita: ícone e título do item, uma frase amigável de uma linha e o card de barrinhas. Sem bloco de texto solto nem DETALHES.
 	var x := 410.0
-	_p_icone = _caixa_icone(Rect2(x, 98, 44, 44))
+	_p_icone = _caixa_icone(Rect2(x, 95, 48, 48))  # 24 px a 2x, igual ao cabeçalho; centrado no título
 	_painel.add_child(_p_icone)
-	_p_nome = _rotulo("", Dados.fonte_titulo, Paleta.TITULO_MEDIO, COR_OURO, Rect2(x + 54, 96, 432, 46), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_nome = _rotulo("", Dados.fonte_titulo, Paleta.TITULO_MEDIO, COR_OURO, Rect2(x + 58, 96, 428, 46), HORIZONTAL_ALIGNMENT_LEFT)
 	_p_nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_p_frase = _rotulo("", Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.TEXTO_SECUNDARIO, Rect2(x, 148, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
 	_p_frase.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS  # uma linha só, sempre
@@ -512,7 +512,7 @@ func abrir_estrutura(id: String) -> void:
 		return
 	_p_codice = bool(e.get("conquistas", false))
 	_p_titulo.text = str(e.nome)
-	_p_icone_estrutura.texture = _visual.texturas.get(id, Icones.textura(id))
+	_p_icone_estrutura.texture = Icones.textura(id)
 	_p_itens = _itens_da(e)
 	_montar_lista()
 	_p_atual = 0
@@ -683,7 +683,7 @@ func _mostrar_conquista(c: Dictionary) -> void:
 	for k in cumpridas:
 		if cumpridas[k]:
 			feitas += 1
-	_p_frase.text = str(c.desc)
+	_p_frase.text = str(c.get("frase", c.desc))
 	var item := Meta.item_da_recompensa(c.recompensa)
 	var linhas := [
 		{

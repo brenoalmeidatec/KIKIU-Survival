@@ -5,6 +5,7 @@ extends Control
 const Personagens = preload("res://v2/personagens.gd")
 const Meta = preload("res://v2/meta.gd")
 const Mapas = preload("res://v2/mapas.gd")
+const Icones = preload("res://v2/icones_santuario.gd")
 var falhas := 0
 var pasta := ""
 
@@ -191,7 +192,8 @@ func painel_graficos() -> void:
 	ok(s.comprar_item("vida") and s.comprar_item("vida"), "duas compras de vida para a barra ter o que mostrar")
 	for id in ["estatuas", "altar", "codice"]:
 		s.abrir_estrutura(id)
-		ok(s._p_icone_estrutura.texture != null, "icone da estrutura no cabecalho: " + id)
+		ok(s._p_icone_estrutura.texture == Icones.textura(id), "icone da estrutura no cabecalho e o do id (nao a arte da sala): " + id)
+		ok(s._p_icone_estrutura.size == Vector2(48, 48), "icone da estrutura a 2x (48 px): " + id)
 		for b in s._p_lista.get_children():
 			ok(b.icon != null, "icone em cada item da lista: " + b.text.get_slice(char(10), 0))
 		for filho in s._painel.get_children():
@@ -199,7 +201,7 @@ func painel_graficos() -> void:
 		for i in s._p_itens.size():
 			s._mostrar_item(i)
 			var it: Dictionary = s._p_itens[i]
-			ok(s._p_icone.texture != null, "icone no titulo do item " + str(it.id))
+			ok(s._p_icone.texture != null and s._p_icone.size == Vector2(48, 48), "icone no titulo do item, a 2x (48 px): " + str(it.id))
 			ok(s._p_frase.text != "" and s._p_frase.get_line_count() == 1, "subtitulo de uma linha: " + str(it.id))
 			var linhas: Array = s._p_card.linhas
 			ok(linhas.size() == 3, "card com tres linhas de barrinhas: " + str(it.id))

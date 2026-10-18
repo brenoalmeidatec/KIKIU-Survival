@@ -1,10 +1,11 @@
 extends Node
-# Fotos do salão/santuário numa janela real (sem --headless): salao_<nome>.png (sala) e salao_<nome>_<estrutura>.png (painéis das
-# ESTÁTUAS, do ALTAR e do CÓDICE). Com --compras=1, compra dois níveis de vida e cumpre a conquista de tempo antes, para as barras
-# terem o que mostrar.
+# Fotos do salão/santuário numa janela real (sem --headless): salao_<nome>.png (sala), salao_<nome>_<estrutura>.png (painéis das
+# ESTÁTUAS, do ALTAR e do CÓDICE) e salao_<nome>_item_<id>.png (card de um item das ESTÁTUAS, pedido em --itens). Com --compras=1,
+# compra dois níveis de vida e cumpre a conquista de tempo antes, para as barras terem o que mostrar. Com --max=1, compra a vida
+# até o último nível (card NO MÁXIMO). Sem --compras, o treino fica BLOQUEADA (falta a conquista).
 # Usa personagem e meta TEMPORÁRIOS (user://foto_salao_*). Só o viewport do jogo é salvo.
 # Roda: godot --path jogos/hordas/projeto res://testes/fotos/salao_fotos.tscn -- --fotos=<pasta> [--nome=x] [--almas=0] [--compras=1]
-# [--janela=1920x1080]
+# [--max=1] [--itens=treino,vida] [--janela=1920x1080]
 const Personagens := preload("res://v2/personagens.gd")
 const Meta := preload("res://v2/meta.gd")
 const Salao := preload("res://v2/salao.tscn")
@@ -28,6 +29,10 @@ func _ready() -> void:
 		Meta.comprar("vida")
 		Meta.comprar("vida")
 		Meta.registrar_partida({"tempo": 320.0})  # cumpre "Sobreviva 5 minutos" (libera o Treino de guerreiro)
+	if args.has("max"):  # a vida no último nível: o card mostra NO MÁXIMO
+		Meta.creditar(100000)
+		for _i in int(Meta.melhoria("vida").max):
+			Meta.comprar("vida")
 	if args.has("janela"):
 		var p := str(args.janela).split("x")
 		get_window().size = Vector2i(int(p[0]), int(p[1]))
@@ -46,6 +51,16 @@ func _ready() -> void:
 		await get_tree().create_timer(0.8).timeout
 		await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_png(pasta.path_join("salao_%s_%s.png" % [nome, id]))
+		s._fechar_painel()
+	# Um card por foto: treino (BLOQUEADA sem a conquista) e o que vier em --itens (ex.: vida, NO MÁXIMO com --max=1).
+	for item in str(args.get("itens", "")).split(",", false):
+		s.abrir_estrutura("estatuas")
+		for i in s._p_itens.size():
+			if str(s._p_itens[i].id) == item:
+				s._mostrar_item(i)
+		await get_tree().create_timer(0.8).timeout
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(pasta.path_join("salao_%s_item_%s.png" % [nome, item]))
 		s._fechar_painel()
 	print("FOTO ok ", get_window().size)
 	get_tree().quit()
