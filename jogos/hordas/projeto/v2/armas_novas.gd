@@ -46,6 +46,7 @@ const GRAVIDADE_LASCA := 520.0
 const PASTA_SPRITES := "res://assets/v2/armas/"
 const PASTA_FUSOES := "res://assets/v2/fusoes/"
 const Golem := preload("res://v2/golem.gd")  # o Golem de Barro e o Colosso: andar, ataque e as 8 direções
+const Andante := preload("res://v2/andante.gd")  # as outras invocações que andam de verdade (Espírito do Urso...): folha de 8 direções, andar e ataque
 ## Lobo Espiritual correndo (fonte_arte/blender_lobo/gerar_lobo_corre.py): 16 quadros em linha, olhando para a direita.
 const LOBO_FOLHA := "res://assets/v2/armas/lobo_espiritual_corre.png"
 const LOBO_QUADRO := Vector2(82, 42)
@@ -93,6 +94,7 @@ func montar(p) -> void:
 	for i in MAX:
 		itens.append(_item_vazio())
 		Golem.zerar(itens[itens.size() - 1])
+		Andante.zerar(itens[itens.size() - 1])
 	q_pos.resize(MAX_PARTS)
 	q_z.resize(MAX_PARTS)
 	q_vel.resize(MAX_PARTS)
@@ -602,11 +604,16 @@ func _aliados(a: Dictionary, h) -> void:
 		it.t = 0.0
 		if Golem.eh_golem(str(a.id)) and Golem.tex() != null:
 			Golem.nascer(self, it)
+		elif Andante.eh_andante(str(a.id)) and Andante.tex(str(a.id)) != null:
+			Andante.nascer(self, it)
 
 
 func _mover_aliado(it: Dictionary, h, dt: float, perto: Array) -> void:
 	if bool(it.g):
 		Golem.mover(self, it, h, dt, perto)
+		return
+	if bool(it.an):
+		Andante.mover(self, it, h, dt, perto)
 		return
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
@@ -1205,6 +1212,9 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				if bool(it.g):
 					Golem.desenhar_brilho(ci, it, p, tex)
 					continue
+				if bool(it.an):
+					Andante.desenhar_brilho(ci, it, p, tex)
+					continue
 				if str(a.id) == "lobo_espirito" and tex_lobo() != null:
 					continue  # o lobo animado é desenhado em desenhar_sprites, sem o brilho de placeholder
 				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
@@ -1240,6 +1250,9 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 		var p: Vector2 = (it.p as Vector2).round()
 		if bool(it.g):
 			Golem.desenhar(ci, it, p)
+			continue
+		if bool(it.an):
+			Andante.desenhar(ci, it, p)
 			continue
 		if str(it.k) == "aliado" and str(it.a.id) == "lobo_espirito" and tex_lobo() != null:
 			_desenhar_lobo(ci, it, p)
@@ -1746,6 +1759,7 @@ func _novo(k: String, a: Dictionary, p: Vector2, vida: float) -> Dictionary:
 	(it.cand as Array).clear()
 	it.lista = null
 	Golem.zerar(it)
+	Andante.zerar(it)
 	return it
 
 

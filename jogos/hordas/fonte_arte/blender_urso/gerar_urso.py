@@ -321,6 +321,7 @@ PLANTA_T = (0, 1, 2, 3, 4, 5, 6, 7)   # as de trás estão sempre
 def pata_da_frente():
     """Distância (unidades do modelo) do centro do corpo à frente da pata da frente, no quadro da patada: o jogo usa para o alcance."""
     from mathutils import Vector
+    J_GLOBAL["raiz"].rotation_euler = (0, 0, 0)  # depois do render a raiz fica girada na última vista (costas): mede de frente para -Y
     pose(J_GLOBAL, ANDAR + IMPACTO)
     bpy.context.view_layer.update()
     o = bpy.data.objects["pata_fe"]
