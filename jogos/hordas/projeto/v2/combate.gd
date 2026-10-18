@@ -25,7 +25,9 @@ const COR_CRIT := Color(1.0, 0.74, 0.2)
 const COR_DANO_HEROI := Color(1.0, 0.32, 0.32)
 const CEL := 26.0  # célula da grade de separação dos monstros
 const PASSO_SEP := 3  # cada monstro recalcula a separação a cada 3 quadros (o resultado vale por 3)
-const GRADE_N := 1024  # tamanho da tabela de hash da grade (potência de 2)
+const GRADE_X := 128  # a floresta e o laboratório têm até 2880 px (112 células)
+const GRADE_Y := 64  # e 1620 px (63 células); índice direto, sem colisões de hash
+const GRADE_N := GRADE_X * GRADE_Y
 const RAIO_GRANDE := 11.0  # acima disto o monstro (elite, chefe) fica na lista dos grandes, fora da grade
 const QUADRO_REF := 1.0 / 60.0  # o quadro de referência do "Combo completo" do card de status (vsync de 60 Hz)
 const CONTATO_BASE := 13.0  # raio do herói (6) + do cão (7): o `contato.alcance` dos dados vale para o cão; os outros encostam pelo raio
@@ -128,6 +130,8 @@ func passo_tempo(dt: float) -> float:
 		lento_t -= dt
 		if lento_t <= 0.0:
 			_fim_camera_lenta()
+			if pausado:
+				return 0.0
 		return dt * lento_escala
 	return dt
 
@@ -220,10 +224,12 @@ func _separar() -> void:
 		var r: float = m.raio
 		_pos[i] = p
 		_rad[i] = r
-		if r > RAIO_GRANDE:
+		var cx := int(p.x / CEL)
+		var cy := int(p.y / CEL)
+		if r > RAIO_GRANDE or cx < 0 or cx >= GRADE_X or cy < 0 or cy >= GRADE_Y:
 			_grandes.append(i)
 			continue
-		var h := ((int(p.x / CEL) * 73856093) ^ (int(p.y / CEL) * 19349663)) & (GRADE_N - 1)
+		var h := cy * GRADE_X + cx
 		_prox[i] = _cab[h]
 		_cab[h] = i
 	var i0 := _q % PASSO_SEP
@@ -242,7 +248,11 @@ func _separar() -> void:
 		var alcance := 1 if r <= RAIO_GRANDE else 3  # os grandes olham mais longe na grade
 		for dx in range(-alcance, alcance + 1):
 			for dy in range(-alcance, alcance + 1):
-				var j: int = _cab[(((cx + dx) * 73856093) ^ ((cy + dy) * 19349663)) & (GRADE_N - 1)]
+				var nx := cx + dx
+				var ny := cy + dy
+				if nx < 0 or nx >= GRADE_X or ny < 0 or ny >= GRADE_Y:
+					continue
+				var j: int = _cab[ny * GRADE_X + nx]
 				while j >= 0:
 					if j != k:
 						var d := p - _pos[j]
