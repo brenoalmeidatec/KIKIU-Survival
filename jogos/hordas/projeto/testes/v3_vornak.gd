@@ -75,7 +75,7 @@ func test_aviso_e_impacto() -> void:
 	rodar(v, 0.7)
 	ok(golpes.is_empty(), "aviso: nenhum dano durante o aviso")
 	rodar(v, 0.25)
-	ok(golpes.size() == 1 and golpes[0][0] == "raizes_corrompidas" and golpes[0][1] == 28.0, "impacto: sai uma vez com o dano 28")
+	ok(golpes.size() == 1 and golpes[0][0] == "raizes_corrompidas" and golpes[0][1] == 10.0, "impacto: sai uma vez com o dano 10")
 	rodar(v, 2.0)
 	ok(golpes.size() == 1, "impacto: não repete o dano sem novo aviso")
 

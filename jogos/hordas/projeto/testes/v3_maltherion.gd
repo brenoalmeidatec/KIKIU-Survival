@@ -57,12 +57,12 @@ func test_fases() -> void:
 	var m = novo_chefe()
 	var fases := []
 	m.fase_mudou.connect(func(f): fases.append(f))
-	m.receber_dano(9000.0 * 0.25)
+	m.receber_dano(5000.0 * 0.25)
 	ok(fases.is_empty() and m.fase == 1, "fases: ainda fase 1 com 75%")
-	m.receber_dano(9000.0 * 0.1)
+	m.receber_dano(5000.0 * 0.1)
 	ok(fases == [2] and m.fase == 2, "fases: fase 2 abaixo de 70%")
 	rodar(m, 2.0)
-	m.receber_dano(9000.0 * 0.5)
+	m.receber_dano(5000.0 * 0.5)
 	ok(fases == [2, 3] and m.fase == 3, "fases: fase 3 abaixo de 30%")
 
 
@@ -72,9 +72,9 @@ func test_coracao_so_na_fase3() -> void:
 	m.aviso_iniciou.connect(func(n, r): nomes.append(n))
 	rodar(m, 60.0)
 	ok(not nomes.has("coracao_da_floresta"), "coracao: não aparece na fase 1")
-	m.receber_dano(9000.0 * 0.5)
+	m.receber_dano(5000.0 * 0.5)
 	rodar(m, 2.0)
-	m.receber_dano(9000.0 * 0.25)
+	m.receber_dano(5000.0 * 0.25)
 	nomes.clear()
 	rodar(m, 60.0)
 	ok(nomes.has("coracao_da_floresta"), "coracao: aparece na fase 3 (%s)" % str(nomes))

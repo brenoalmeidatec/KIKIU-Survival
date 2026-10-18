@@ -7,12 +7,12 @@ const CONFIG := {
 	"vida": 1600.0,
 	"fase2": 0.35,
 	"ataques": [
-		{"nome": "investida_sombria", "clip": "investida", "aviso": 0.6, "recupera": 0.5, "recarga": 2.2, "raio": 2.5, "dano": 26.0, "fase": 1},
+		{"nome": "investida_sombria", "clip": "investida", "aviso": 0.6, "recupera": 0.5, "recarga": 2.2, "raio": 2.5, "dano": 7.0, "fase": 1},
 		{"nome": "nevoa_ocultante", "clip": "nevoa", "aviso": 0.5, "recupera": 0.6, "recarga": 2.5, "raio": 0.0, "dano": 0.0, "fase": 1},
-		{"nome": "golpe_em_arco", "clip": "golpe_arco", "aviso": 0.8, "recupera": 0.6, "recarga": 2.0, "raio": 1.8, "dano": 22.0, "fase": 1},
-		{"nome": "ilusoes_espectrais", "clip": "ilusao", "aviso": 0.4, "recupera": 0.6, "recarga": 3.0, "raio": 0.0, "dano": 0.0, "ilusao": true, "fase": 1},
-		{"nome": "investida_dupla", "clip": "investida", "aviso": 0.4, "recupera": 0.4, "recarga": 1.4, "raio": 2.8, "dano": 26.0, "fase": 2},
-		{"nome": "garras_de_caca", "clip": "golpe_arco", "aviso": 0.5, "recupera": 0.4, "recarga": 1.2, "raio": 2.0, "dano": 24.0, "fase": 2},
+		{"nome": "golpe_em_arco", "clip": "golpe_arco", "aviso": 0.8, "recupera": 0.6, "recarga": 2.0, "raio": 1.8, "dano": 6.0, "fase": 1},
+		{"nome": "ilusoes_espectrais", "clip": "ilusao", "aviso": 0.5, "recupera": 0.6, "recarga": 3.0, "raio": 0.0, "dano": 0.0, "ilusao": true, "fase": 1},
+		{"nome": "investida_dupla", "clip": "investida", "aviso": 0.5, "recupera": 0.4, "recarga": 1.4, "raio": 2.8, "dano": 7.0, "fase": 2},
+		{"nome": "garras_de_caca", "clip": "golpe_arco", "aviso": 0.5, "recupera": 0.4, "recarga": 1.2, "raio": 2.0, "dano": 7.0, "fase": 2},
 	],
 }
 

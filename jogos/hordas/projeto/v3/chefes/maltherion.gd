@@ -6,15 +6,15 @@ extends "res://v3/chefes/chefe_base.gd"
 ## A arena viva (raízes no chão, passagens, árvores) é do Alisson: este arquivo só cuida do chefe.
 
 const CONFIG := {
-	"vida": 9000.0,
+	"vida": 5000.0,
 	"fase2": 0.7,
 	"fase3": 0.3,
 	"ataques": [
-		{"nome": "raizes_gigantes", "clip": "raizes_gigantes", "aviso": 1.4, "recupera": 0.8, "recarga": 3.0, "raio": 3.2, "dano": 40.0, "fase": 1},
+		{"nome": "raizes_gigantes", "clip": "raizes_gigantes", "aviso": 1.4, "recupera": 0.8, "recarga": 3.0, "raio": 3.2, "dano": 5.0, "fase": 1},
 		{"nome": "invocacao_de_criaturas", "clip": "invocacao", "aviso": 1.0, "recupera": 0.6, "recarga": 6.0, "raio": 0.0, "dano": 0.0, "invoca": 2, "fase": 1},
-		{"nome": "garras_sombras", "clip": "garras_sombras", "aviso": 0.9, "recupera": 0.6, "recarga": 2.5, "raio": 2.2, "dano": 36.0, "fase": 1},
-		{"nome": "tempestade_de_raizes", "clip": "tempestade_raizes", "aviso": 1.0, "recupera": 0.8, "recarga": 3.5, "raio": 3.0, "dano": 30.0, "zonas": 3, "fase": 2},
-		{"nome": "coracao_da_floresta", "clip": "coracao_floresta", "aviso": 2.2, "recupera": 2.4, "recarga": 8.0, "raio": 4.2, "dano": 60.0, "janela": 2.4, "fase": 3},
+		{"nome": "garras_sombras", "clip": "garras_sombras", "aviso": 0.9, "recupera": 0.6, "recarga": 2.5, "raio": 2.2, "dano": 4.0, "fase": 1},
+		{"nome": "tempestade_de_raizes", "clip": "tempestade_raizes", "aviso": 1.0, "recupera": 0.8, "recarga": 3.5, "raio": 3.0, "dano": 4.0, "zonas": 3, "fase": 2},
+		{"nome": "coracao_da_floresta", "clip": "coracao_floresta", "aviso": 2.2, "recupera": 2.4, "recarga": 8.0, "raio": 4.2, "dano": 8.0, "janela": 2.4, "fase": 3},
 	],
 }
 
