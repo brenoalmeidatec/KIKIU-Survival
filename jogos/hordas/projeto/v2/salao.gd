@@ -16,6 +16,8 @@ const Personagens := preload("res://v2/personagens.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle (Enter e A confirmam, ESC e B voltam)
 const Pausa := preload("res://v2/pausa.tscn")
 const Trilha := preload("res://v2/trilha.gd")
+const Icones := preload("res://v2/icones_santuario.gd")
+const Card := preload("res://v2/card_santuario.gd")
 const ESCOLHA := "res://v2/personagens.tscn"
 const FLORESTA := "res://v2/mundo.tscn"
 const SPRITE := "res://prototipos/cara_nova/sprites/hazaki_samurai"  # folha (_albedo.png) e quadro (.json) do herói
@@ -24,7 +26,8 @@ const ALT := 540
 const CHAO_Y := 180.0  # a parede vai do topo até aqui; os portais ficam na base dela
 const ANDAR_MIN := Vector2(40, 214)
 const ANDAR_MAX := Vector2(920, 505)
-const VELOCIDADE := 130.0  # px/s andando
+const VELOCIDADE := 208.0  # px/s andando (1,6x a da primeira sala: o santuário é passagem, não pede caminhada lenta)
+const PASSOS_POR_S := 13.0  # quadros da animação de andar por segundo (sobe com a velocidade, senão o pé desliza)
 const ALCANCE := 70.0  # px entre os pés do herói e a estrutura ou portal para ele responder
 const ESCALA := 2.0
 const COR_OURO := Paleta.OURO
@@ -71,16 +74,14 @@ var _nome_lbl: Label
 var _painel: Control
 var _p_titulo: Label
 var _p_lista: VBoxContainer
+var _p_icone_estrutura: TextureRect
+var _p_icone: TextureRect
 var _p_nome: Label
-var _p_nivel: Label
-var _p_agora: Label
-var _p_proximo: Label
-var _p_custo: Label
+var _p_frase: Label  # subtítulo de uma linha: o que o item faz, em linguagem de gente
+var _p_card  # card_santuario.gd: as barrinhas (nível, efeito, custo; no códice, conquistas, meta e recompensa)
 var _p_saldo: Label
 var _p_aviso: Label
-var _p_detalhe: Label
 var _p_comprar: Button
-var _p_detalhes: Button
 var _p_itens: Array = []  # o que a estrutura aberta mostra (melhorias ou conquistas), na ordem da lista
 var _p_atual := 0  # índice do item selecionado em _p_itens
 var _p_codice := false
@@ -280,7 +281,9 @@ func _montar_painel() -> void:
 	cartao.add_theme_stylebox_override("panel", _caixa(Paleta.CARTAO, Paleta.BORDA))
 	cartao.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_painel.add_child(cartao)
-	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(60, 38, 380, 46), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_icone_estrutura = _caixa_icone(Rect2(56, 36, 48, 48))  # o ícone da estrutura (assets/v2/icones_santuario): 24 px a 2x
+	_painel.add_child(_p_icone_estrutura)
+	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(112, 38, 330, 46), HORIZONTAL_ALIGNMENT_LEFT)
 	_painel.add_child(_p_titulo)
 	var fechar := Button.new()
 	fechar.text = "VOLTAR Esc/B"
@@ -299,39 +302,46 @@ func _montar_painel() -> void:
 	_p_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_p_lista.add_theme_constant_override("separation", 8)
 	_p_rolagem.add_child(_p_lista)
+	# Direita: ícone e título do item, uma frase amigável de uma linha e o card de barrinhas. Sem bloco de texto solto nem DETALHES.
 	var x := 410.0
-	_p_nome = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(x, 96, 486, 86), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_nivel = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(x, 185, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_agora = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(x, 215, 486, 54), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_proximo = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(x, 271, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_custo = _rotulo("", Dados.fonte_texto, 16, COR_ALMA, Rect2(x, 314, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_icone = _caixa_icone(Rect2(x, 95, 48, 48))  # 24 px a 2x, igual ao cabeçalho; centrado no título
+	_painel.add_child(_p_icone)
+	_p_nome = _rotulo("", Dados.fonte_titulo, Paleta.TITULO_MEDIO, COR_OURO, Rect2(x + 58, 96, 428, 46), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_p_frase = _rotulo("", Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.TEXTO_SECUNDARIO, Rect2(x, 148, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_frase.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS  # uma linha só, sempre
+	_p_card = Card.new()
+	_p_card.position = Vector2(x, 178)
+	_p_card.size = Vector2(486, 244)
 	# O saldo fica no cabeçalho do próprio painel, ao lado do VOLTAR: o "ALMAS" da barra de cima da sala fica tapado com o painel aberto.
 	_p_saldo = _rotulo("", Dados.fonte_titulo, 37, COR_ALMA, Rect2(450, 38, 274, 46), HORIZONTAL_ALIGNMENT_RIGHT)
-	_p_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(x, 342, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_detalhe = _rotulo("", Dados.fonte_texto, 16, COR_APAGADO, Rect2(x, 410, 486, 42), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_detalhe.visible = false
-	for l in [_p_nome, _p_nivel, _p_agora, _p_proximo, _p_custo, _p_saldo, _p_aviso, _p_detalhe]:
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_p_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(x, 428, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_aviso.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	for l in [_p_nome, _p_frase, _p_card, _p_saldo, _p_aviso]:
 		_painel.add_child(l)
 	_p_comprar = Button.new()
 	_p_comprar.text = "COMPRAR"
 	_p_comprar.position = Vector2(x, 460)
-	_p_comprar.size = Vector2(226, 38)
+	_p_comprar.size = Vector2(486, 38)
 	_estilo_botao(_p_comprar, 19)
 	# Desligado tem de parecer desligado: sem fundo, borda e texto bem apagados (o estilo padrão de desligado tinha fundo escuro e lia como ativo).
 	_p_comprar.add_theme_stylebox_override("disabled", _caixa(Color(0, 0, 0, 0), Paleta.alfa(Paleta.TEXTO_APAGADO, 0.3)))
 	_p_comprar.add_theme_color_override("font_disabled_color", Paleta.alfa(COR_APAGADO, 0.5))
 	_p_comprar.pressed.connect(_comprar_atual)
 	_painel.add_child(_p_comprar)
-	_p_detalhes = Button.new()
-	_p_detalhes.text = "DETALHES"
-	_p_detalhes.position = Vector2(x + 244, 460)
-	_p_detalhes.size = Vector2(242, 38)
-	_estilo_botao(_p_detalhes, 19)
-	_p_detalhes.pressed.connect(func(): _p_detalhe.visible = not _p_detalhe.visible)
-	_painel.add_child(_p_detalhes)
 	_painel.add_child(_rotulo("Selecione para consultar", Dados.fonte_texto, 16, COR_APAGADO, Rect2(60, 474, 322, 24), HORIZONTAL_ALIGNMENT_LEFT))
+
+
+func _caixa_icone(r: Rect2) -> TextureRect:
+	var t := TextureRect.new()
+	t.position = r.position
+	t.size = r.size
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # pixel art: sem borrão
+	t.material = Card.sem_luz()
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return t
 
 
 func _rotulo(txt: String, fonte: Font, tam: int, cor: Color, r: Rect2, alin: HorizontalAlignment) -> Label:
@@ -409,7 +419,7 @@ func _process(dt: float) -> void:
 		_pos = (_pos + anda.limit_length(1.0) * VELOCIDADE * dt).clamp(ANDAR_MIN, ANDAR_MAX)
 		_dir = _linha_de(anda)
 		_tempo_passo += dt
-		_quadro = 1 + int(_tempo_passo * 8.0) % 4
+		_quadro = 1 + int(_tempo_passo * PASSOS_POR_S) % 4
 	else:
 		_tempo_passo = 0.0
 		_quadro = 0
@@ -502,10 +512,10 @@ func abrir_estrutura(id: String) -> void:
 		return
 	_p_codice = bool(e.get("conquistas", false))
 	_p_titulo.text = str(e.nome)
+	_p_icone_estrutura.texture = Icones.textura(id)
 	_p_itens = _itens_da(e)
 	_montar_lista()
 	_p_atual = 0
-	_p_detalhe.visible = false
 	_p_aviso.text = ""
 	_painel.visible = true
 	_mostrar_item(0)
@@ -529,16 +539,17 @@ func _montar_lista() -> void:
 	for filho in _p_lista.get_children():
 		filho.queue_free()
 		_p_lista.remove_child(filho)
-	var cumpridas: Dictionary = Meta.estado().conquistas
 	for i in _p_itens.size():
 		var it: Dictionary = _p_itens[i]
 		var b := Button.new()
-		b.text = (
-			("%s\n%s" % [it.nome, "cumprida" if cumpridas.get(str(it.id), false) else "falta"])
-			if _p_codice
-			else ("%s\n%d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)])
-		)
+		b.text = _texto_da_lista(it)
+		b.icon = Icones.textura(str(it.id))
+		b.add_theme_constant_override("icon_max_width", 32)
+		b.add_theme_constant_override("h_separation", 10)
+		b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		b.material = Card.sem_luz()  # o ícone na cor da paleta, sem a luz da sala por cima
 		b.custom_minimum_size = Vector2(300, 64)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT  # texto encostado no ícone, não solto no meio do botão
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.clip_text = false
@@ -548,6 +559,12 @@ func _montar_lista() -> void:
 		_p_lista.add_child(b)
 
 
+func _texto_da_lista(it: Dictionary) -> String:
+	if _p_codice:
+		return "%s\n%s" % [it.nome, "cumprida" if Meta.estado().conquistas.get(str(it.id), false) else "falta"]
+	return "%s\n%d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)]
+
+
 func _mostrar_item(i: int) -> void:
 	if _p_itens.is_empty():
 		return
@@ -555,7 +572,12 @@ func _mostrar_item(i: int) -> void:
 	var it: Dictionary = _p_itens[i]
 	_p_saldo.text = "ALMAS %d" % Meta.saldo()
 	_p_comprar.visible = not _p_codice
-	_p_custo.visible = not _p_codice
+	_p_icone.texture = Icones.textura(str(it.id))
+	_p_nome.text = str(it.nome)
+	# Nome comprido não quebra em duas linhas: desce para o tamanho de texto grande (o card de baixo não se mexe).
+	var fonte: Font = _p_nome.get_theme_font("font")
+	var cabe := fonte.get_string_size(_p_nome.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Paleta.TITULO_MEDIO).x <= _p_nome.size.x
+	_p_nome.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO if cabe else Paleta.TEXTO_GRANDE)
 	if _p_codice:
 		_mostrar_conquista(it)
 	else:
@@ -566,34 +588,134 @@ func _mostrar_melhoria(m: Dictionary) -> void:
 	var id := str(m.id)
 	var n := Meta.nivel(id)
 	var mx := int(m.max)
-	_p_nome.text = str(m.nome)
-	_p_nivel.text = "Nível %d de %d" % [n, mx]
-	_p_agora.text = "Agora: %s" % (Meta.texto_efeito(m, n) if n > 0 else "sem efeito ainda")
-	_p_proximo.text = "Nível máximo" if n >= mx else Meta.texto_proximo(m, n)
+	var saldo := Meta.saldo()
+	var liberada := _liberada(m)
 	var custo := Meta.custo_do_nivel(m, n) if n < mx else 0
-	_p_custo.text = "Custo: %d almas" % custo if n < mx else ""
-	_p_detalhe.text = "No nível máximo: %s." % Meta.texto_efeito(m, mx)
-	_p_comprar.disabled = n >= mx or not _liberada(m) or Meta.saldo() < custo
-	_p_comprar.text = "NO MÁXIMO" if n >= mx else ("BLOQUEADA" if not _liberada(m) else ("SEM ALMAS" if Meta.saldo() < custo else "COMPRAR"))
+	_p_frase.text = str(m.get("frase", Meta.texto_efeito(m, mx)))
+	var linhas := [
+		{"rotulo": "NÍVEL", "valor": "%d / %d" % [n, mx], "tipo": "segmentos", "n": n, "max": mx, "cor": Paleta.OURO, "nota": ""},
+		{
+			"rotulo": "EFEITO",
+			"valor": _valor_efeito(m, n),
+			"cor_valor": Paleta.FOCO if n < mx else Paleta.OURO,
+			"tipo": "barra",
+			"frac": float(n) / maxf(1.0, mx),
+			"fantasma": float(mini(n + 1, mx)) / maxf(1.0, mx),
+			"cor": Paleta.BONUS,
+			"nota": Meta.texto_efeito(m, n) if n > 0 else "Ainda sem efeito: compre o primeiro nível.",
+		},
+	]
+	if n >= mx:
+		linhas.append(
+			{"rotulo": "CUSTO", "valor": "COMPLETO", "cor_valor": Paleta.OURO, "tipo": "barra", "frac": 1.0, "cor": Paleta.OURO, "nota": "Tudo comprado aqui."}
+		)
+	elif not liberada:
+		var req := str(m.requer)
+		(
+			linhas
+			. append(
+				{
+					"rotulo": "BLOQUEADA",
+					"valor": "%d almas" % custo,
+					"cor_valor": COR_APAGADO,
+					"tipo": "barra",
+					"frac": 0.0,
+					"cor": COR_APAGADO,
+					"nota": "Falta a conquista: %s" % _nome_conquista(req),
+					"cor_nota": COR_AVISO,
+					"icone": Icones.textura(req),
+				}
+			)
+		)
+	else:
+		var falta := custo - saldo
+		(
+			linhas
+			. append(
+				{
+					"rotulo": "CUSTO",
+					"valor": "%d almas" % custo,
+					"cor_valor": COR_ALMA,
+					"tipo": "barra",
+					"frac": float(saldo) / maxf(1.0, custo),
+					"cor": COR_ALMA,
+					"nota": "Você tem %d. Faltam %d." % [saldo, falta] if falta > 0 else "Você tem %d. Dá para comprar!" % saldo,
+					"cor_nota": Paleta.TEXTO_SECUNDARIO if falta > 0 else Paleta.BONUS,
+				}
+			)
+		)
+	_p_card.mostrar(linhas)
+	_p_comprar.disabled = n >= mx or not liberada or saldo < custo
+	_p_comprar.text = "NO MÁXIMO" if n >= mx else ("BLOQUEADA" if not liberada else ("SEM ALMAS" if saldo < custo else "COMPRAR"))
 	_p_comprar.focus_mode = Control.FOCUS_NONE if _p_comprar.disabled else Control.FOCUS_ALL  # o foco dourado por cima fazia o desligado parecer clicável
 	if _p_comprar.disabled and _p_comprar.has_focus() and _p_atual < _p_lista.get_child_count():
 		_p_lista.get_child(_p_atual).grab_focus()
-	if not _liberada(m):
-		_p_aviso.text = "Falta a conquista: %s" % _nome_conquista(str(m.requer))
-	elif n < mx and Meta.saldo() < custo:
-		_p_aviso.text = "Faltam %d almas." % (custo - Meta.saldo())
-	else:
-		_p_aviso.text = ""
+
+
+## "+20 → +30": o valor de agora e o do próximo nível (só o de agora no máximo). Unidade "%" nos percentuais.
+func _valor_efeito(m: Dictionary, n: int) -> String:
+	var partes := str(m.desc).split("{v}")
+	var antes := partes[0]
+	var unidade := (partes[1] if partes.size() > 1 else "").split(" ")[0]
+	var agora := "%s%s%s" % [antes, Meta._numero(m, float(m.valor) * n), unidade]
+	if n >= int(m.max):
+		return agora
+	var seta := " → " if Dados.fonte_texto.has_char(0x2192) else " > "
+	return agora + seta + "%s%s%s" % [antes, Meta._numero(m, float(m.valor) * (n + 1)), unidade]
+
+
+## O que a conquista pede, curto, para o card do códice.
+func _meta_da_conquista(c: Dictionary) -> String:
+	match str(c.get("condicao", "")):
+		"tempo":
+			return "Sobreviver %d min numa partida" % roundi(float(c.get("limite", 0)) / 60.0)
+		"combo":
+			return "Fazer um combo de %d" % int(c.get("limite", 0))
+		"venceu":
+			return "Vencer o duelo contra o chefe"
+	return ""
 
 
 func _mostrar_conquista(c: Dictionary) -> void:
-	var feita := bool(Meta.estado().conquistas.get(str(c.id), false))
-	_p_nome.text = str(c.nome)
-	_p_nivel.text = "Cumprida" if feita else "Ainda não cumprida"
-	_p_agora.text = str(c.desc)
+	var cumpridas: Dictionary = Meta.estado().conquistas
+	var feita := bool(cumpridas.get(str(c.id), false))
+	var feitas := 0
+	for k in cumpridas:
+		if cumpridas[k]:
+			feitas += 1
+	_p_frase.text = str(c.get("frase", c.desc))
 	var item := Meta.item_da_recompensa(c.recompensa)
-	_p_proximo.text = "Libera: %s" % str(item.nome) if not item.is_empty() else ""
-	_p_detalhe.text = ""
+	var linhas := [
+		{
+			"rotulo": "CÓDICE",
+			"valor": "%d / %d" % [feitas, cumpridas.size()],
+			"tipo": "segmentos",
+			"n": feitas,
+			"max": cumpridas.size(),
+			"cor": Paleta.OURO,
+			"nota": "",
+		},
+		{
+			"rotulo": "META",
+			"valor": "CUMPRIDA" if feita else "FALTA",
+			"cor_valor": Paleta.BONUS if feita else COR_APAGADO,
+			"tipo": "barra",
+			"frac": 1.0 if feita else 0.0,
+			"cor": Paleta.BONUS,
+			"nota": _meta_da_conquista(c),
+			"cor_nota": COR_TEXTO,
+		},
+		{
+			"rotulo": "RECOMPENSA",
+			"valor": "LIBERADA" if feita else "TRANCADA",
+			"cor_valor": Paleta.BONUS if feita else COR_APAGADO,
+			"tipo": "",
+			"nota": str(item.nome) if not item.is_empty() else "",
+			"cor_nota": COR_OURO if feita else COR_TEXTO,
+			"icone": Icones.textura(str(c.recompensa.get("id", ""))),
+		},
+	]
+	_p_card.mostrar(linhas)
 	_p_aviso.text = ""
 
 
@@ -642,15 +764,13 @@ func _motivo_recusa(m: Dictionary) -> String:
 
 func _montar_lista_niveis() -> void:
 	for i in _p_lista.get_child_count():
-		var it: Dictionary = _p_itens[i]
 		var b: Button = _p_lista.get_child(i)
-		b.text = "%s\n%d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)]
+		b.text = _texto_da_lista(_p_itens[i])
 
 
 func _fechar_painel() -> void:
 	_painel.visible = false
 	_p_aviso.text = ""
-	_p_detalhe.visible = false
 
 
 ## Quando os Ajustes fecham (abertos da sala), o foco volta ao painel, se ele estiver aberto.
