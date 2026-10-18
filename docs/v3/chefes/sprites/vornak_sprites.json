@@ -16,7 +16,7 @@
       "fps": 12
     },
     "attack_01": {
-      "quadros": 21,
+      "quadros": 60,
       "fps": 12
     },
     "attack_02": {
@@ -55,5 +55,6 @@
       "quadros": 17,
       "fps": 12
     }
-  }
+  },
+  "observacao": "idle e attack_01 refeitos com o modelo novo (Vornak_v3_novo); demais clipes ainda sao do modelo antigo."
 }
