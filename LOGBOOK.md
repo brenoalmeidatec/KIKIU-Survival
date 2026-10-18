@@ -2199,3 +2199,16 @@ _Claude do Alisson (PC)_
 - **Outros:** imagegen do ChatGPT no navegador interno funciona (teste: ícone de granada; não entrou no jogo). Modo leve de CPU (2 núcleos, prioridade Idle) para quando o Alisson joga.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-18 · Claude do Alisson (PC) · PAUSA para um chat novo: estado e retomada
+- **Na main (tudo com CI verde):** robô de playtest (#302), Cidade e Laboratório com colisão em caixa (#305, #308), golpes do vídeo (#307), bichos com 8 direções (#316), CI em 3 shards (#314), atalho de teste (#310/#311/#313), janela 16:9 (#312), cartas por cima do HUD e pausa escura (#315), tamanho da interface (#320), HUD de poderes (#319), Golem com 8 direções e ataque (#317), ataques novos Sentinela de Bambu e Cabaça de Pólvora (#318). Build mais nova: Release "Latest" do GitHub.
+- **Pedidos do Alisson em aberto (jogou a build 26d2fdc em 18/10), com o trabalho começado em branches `wip/` (PRs em rascunho):**
+  1. Janela ESTÁTUAS do santuário: mostrar o saldo de almas no próprio painel (o "ALMAS 0" do santuário fica tapado) e o COMPRAR parecer desligado sem almas. — `wip/santuario-saldo-sala` (só scripts de foto da investigação).
+  2. Santuário aparece VAZIO (só título, botão "ESTÁTUAS" e rodapé). Suspeita: regressão do tamanho da interface (#320), que deixou o salão fixo em "grande". Comparar a build antiga `1f23843` (antes do #320; está em `%USERPROFILE%\KIKIU-Teste\builds`) com a atual. — mesma branch.
+  3. "Golem parado" era o **Espírito do Urso** (carta `espirito_urso`, sprite 2D parado que desliza). Pedido: todas as invocações com 8 direções, andar e ataque, no padrão do golem (`fonte_arte/blender_golem/gerar_golem.py` + `v2/golem.gd`). — `wip/invocacoes-urso` (modelo do urso no Blender começado em `fonte_arte/blender_urso/`).
+  4. Laboratório "com coisas espalhadas": reorganizar com lógica (alas, fileiras, objetos encostados), sem fechar caminho da horda. Planta desenhada em `docs/laboratorio/PLANTA_PROPOSTA.md`; o gerador começou a mudar em `wip/laboratorio-planta`.
+- **Ferramentas desta máquina:** `ferramentas/jogar_kikiu.ps1` (atalho "KIKIU (teste)": baixa a Release mais nova e abre; dados em `%USERPROFILE%\KIKIU-Teste`) e `ferramentas/vigia_leve.ps1` (quando o Alisson joga: Godot/Blender dos agentes em prioridade Idle, núcleos 10-11, sem som e fora da tela; parar com `-Parar`). Imagegen do ChatGPT funciona no navegador interno (conta dele) para ícones e conceitos; registrar em `docs/LICENCAS_ARTE.md`.
+- **Como o Alisson quer o trabalho:** português do Brasil sempre; agentes Sonnet médio/alto, Haiku máximo ou Opus leve; quando ele estiver jogando, pouca CPU, testes sem som e sem janela; suíte inteira só no CI; ele julga arte jogando, então sempre fotos reais + "o que ninguém viu em movimento".
+- **Próximo sugerido:** (1) saldo nas estátuas + sala do santuário; (2) Espírito do Urso e demais invocações; (3) laboratório pela planta; (4) picos de quadro com a máquina parada; (5) perfis "humanos" no robô antes de calibrar equilíbrio (#137).
+
+_Claude do Alisson (PC)_
