@@ -227,6 +227,21 @@ func fotos(pasta: String) -> void:
 					break
 		if not rec.is_empty():
 			juntar(rec, 4).save_png(pasta.path_join(id + "_direcoes.png"))
+		# as 8 direções no quadro do bote (impacto: o clarão do acerto cobre a ponta) e no quadro seguinte (segura: a boca à vista)
+		for depois in 2:
+			var bote: Array = []
+			for d in [
+				Vector2(150, 0), Vector2(-150, 0), Vector2(0, 130), Vector2(0, -130), Vector2(110, 90), Vector2(-110, 90), Vector2(110, -90), Vector2(-110, -90)
+			]:
+				r = preparar(id, d)
+				it = r[0]
+				for i in 60 * 4:
+					passos(1)
+					if it != null and int(it.e) == Andante.ATACANDO and Andante.quadro_ataque(f, float(it.et)) == int(f.impacto) + depois:
+						bote.append(await recorte(it))
+						break
+			if not bote.is_empty():
+				juntar(bote, 4).save_png(pasta.path_join("%s_bote8_%d.png" % [id, depois]))
 	print("FOTO ", pasta)
 
 
@@ -267,7 +282,7 @@ func _gravar(id: String, dir: Vector2) -> Array:
 	return [rec, cols]
 
 
-func recorte(it, meia := Vector2(64, 70), alto := 100) -> Image:
+func recorte(it, meia := Vector2(72, 80), alto := 120) -> Image:
 	await RenderingServer.frame_post_draw
 	var img: Image = w.sv.get_texture().get_image()
 	var c: Vector2 = Vector2(img.get_size()) * 0.5 + ((it.p as Vector2) - (w.cam.pos as Vector2) - (w.cam.deslocamento as Vector2))

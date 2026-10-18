@@ -49,7 +49,7 @@ W0, H0 = 72, 80          # ponto de partida; o quadro cresce até caber
 
 FAIXAS = (0.62, 0.82, 1.0)
 BASES = {"corpo": "f2641a", "ventre": "b8300e", "cabeca": "ffa030", "boca": "4a0a06", "presa": "fff0cc"}
-EMISSAO = {"chama": "ff9a28", "nucleo": "ffd84e", "olho": "fff7a8"}
+EMISSAO = {"chama": "ff9a28", "nucleo": "ffd84e", "olho": "fff7a8", "garganta": "ffc43c"}
 
 
 def _srgb(v):
@@ -110,13 +110,26 @@ def modelo():
     cab = junta("cabeca", (0, 0, 0), corpo)
     J["cabeca"] = cab
     esfera("cranio", 0.27, (0, -0.02, 0.02), mat["cabeca"], cab, escala=(1.0, 1.2, 0.82))
-    esfera("focinho", 0.17, (0, -0.3, -0.01), mat["cabeca"], cab, escala=(0.9, 1.25, 0.68))
-    mand = junta("mandibula", (0, -0.12, -0.1), cab)
+    # as mandíbulas giram na dobradiça (embaixo do crânio, atrás da boca): a de baixo desce e a de cima sobe, abrindo um vão com o forro escuro
+    # (palato e boca_p, vermelho-escuro) entre as presas; a brasa clara (garganta) só no fundo do vão e uma língua fina de brasa mais escura
+    dob = (0.0, 0.0, -0.12)
+
+    def rel(p):
+        return (p[0] - dob[0], p[1] - dob[1], p[2] - dob[2])
+
+    mand = junta("mandibula", dob, cab)
     J["mandibula"] = mand
-    esfera("mand_p", 0.15, (0, -0.28, -0.12), mat["ventre"], mand, escala=(0.9, 1.4, 0.45))
-    esfera("boca_p", 0.13, (0, -0.28, -0.06), mat["boca"], mand, escala=(0.85, 1.3, 0.35))
-    for x in (0.07, -0.07):
-        cone("presa", 0.0, 0.035, 0.15, (x, -0.38, -0.12), mat["presa"], cab)
+    esfera("mand_p", 0.16, rel((0, -0.26, -0.19)), mat["ventre"], mand, escala=(0.95, 1.75, 0.5))
+    esfera("boca_p", 0.15, rel((0, -0.27, -0.14)), mat["boca"], mand, escala=(0.8, 1.6, 0.3))
+    esfera("lingua", 0.08, rel((0, -0.3, -0.12)), mat["ventre"], mand, escala=(0.5, 2.2, 0.25))
+    maxi = junta("maxila", dob, cab)
+    J["maxila"] = maxi
+    esfera("focinho", 0.17, rel((0, -0.3, -0.01)), mat["cabeca"], maxi, escala=(0.9, 1.25, 0.68))
+    esfera("palato", 0.15, rel((0, -0.26, -0.085)), mat["boca"], maxi, escala=(0.85, 1.6, 0.3))
+    J["goela"] = esfera("goela", 0.11, (0, -0.2, -0.13), mat["garganta"], cab, escala=(0.7, 1.1, 0.9))   # a brasa no fundo do vão: lê de perfil entre as mandíbulas
+    for x in (0.08, -0.08):
+        cone("presa", 0.0, 0.05, 0.22, rel((x, -0.4, -0.12)), mat["presa"], maxi)
+        cone("presa_b", 0.0, 0.035, 0.14, rel((x * 0.9, -0.42, -0.11)), mat["presa"], mand).rotation_euler = (math.pi, 0, 0)
         esfera("olho", 0.075, (x * 2.0, -0.15, 0.13), mat["olho"], cab, escala=(1.0, 0.8, 1.2))
     for k, (x, y, h) in enumerate(((0.0, 0.1, 0.34), (0.14, 0.14, 0.26), (-0.14, 0.14, 0.26))):
         c = cone("crista%d" % k, 0.07, 0.0, h, (x, y, 0.28 + h / 2.0 - 0.05), mat["chama"], cab)
@@ -133,10 +146,10 @@ ATQ = (
     # cab_y, cau_y, alto (cabeça), pescoço (comprimento), amp (onda lateral), rip (ondulação vertical), boca, pitch (cabeça: + olha para cima), chama
     {"cab_y": -1.20, "cau_y": 1.50, "alto": 0.70, "pescoco": 1.0, "amp": 0.50, "rip": 0.10, "boca": 0.0, "pitch": 0.2, "chama": 0.9},     # 8  se enrosca
     {"cab_y": -0.85, "cau_y": 1.40, "alto": 1.10, "pescoco": 1.1, "amp": 0.60, "rip": 0.10, "boca": 0.2, "pitch": 0.0, "chama": 1.1},     # 9  ergue o pescoço
-    {"cab_y": -0.65, "cau_y": 1.30, "alto": 1.50, "pescoco": 1.2, "amp": 0.65, "rip": 0.08, "boca": 0.5, "pitch": -0.1, "chama": 1.3},    # 10 arma o bote (a cabeça de lado para a frente)
-    {"cab_y": -1.25, "cau_y": 1.00, "alto": 1.00, "pescoco": 1.0, "amp": 0.45, "rip": 0.06, "boca": 0.9, "pitch": -0.35, "chama": 1.3},   # 11 dispara
-    {"cab_y": -2.20, "cau_y": 0.55, "alto": 0.38, "pescoco": 0.8, "amp": 0.22, "rip": 0.03, "boca": 1.0, "pitch": -0.30, "chama": 1.5},   # 12 BOTE
-    {"cab_y": -2.10, "cau_y": 0.55, "alto": 0.32, "pescoco": 0.8, "amp": 0.20, "rip": 0.03, "boca": 1.0, "pitch": -0.25, "chama": 1.6},   # 13 segura e estala
+    {"cab_y": -0.75, "cau_y": 1.30, "alto": 1.15, "pescoco": 1.55, "amp": 0.65, "rip": 0.08, "boca": 0.5, "pitch": -0.1, "chama": 1.3},    # 10 arma o bote (a cabeça de lado para a frente)
+    {"cab_y": -1.25, "cau_y": 1.00, "alto": 1.00, "pescoco": 1.0, "amp": 0.45, "rip": 0.06, "boca": 0.9, "pitch": 0.1, "chama": 1.3, "esc": 1.5},   # 11 dispara
+    {"cab_y": -2.20, "cau_y": 0.55, "alto": 0.38, "pescoco": 0.8, "amp": 0.22, "rip": 0.03, "boca": 1.0, "pitch": 0.35, "chama": 1.5, "esc": 1.6},   # 12 BOTE
+    {"cab_y": -2.10, "cau_y": 0.55, "alto": 0.32, "pescoco": 0.8, "amp": 0.20, "rip": 0.03, "boca": 1.0, "pitch": 0.35, "chama": 1.6, "esc": 1.6},   # 13 segura e estala
     {"cab_y": -1.75, "cau_y": 0.95, "alto": 0.50, "pescoco": 0.9, "amp": 0.34, "rip": 0.05, "boca": 0.4, "pitch": 0.0, "chama": 1.2},    # 14 recolhe
     {"cab_y": -1.50, "cau_y": 1.40, "alto": 0.45, "pescoco": 1.0, "amp": 0.32, "rip": 0.07, "boca": 0.0, "pitch": 0.15, "chama": 1.0},    # 15 assenta
 )
@@ -180,8 +193,12 @@ def pose(J, q):
     cab.location = (topo[0], topo[1], topo[2])
     yaw = math.atan2(pts[0][0] - pts[2][0], pts[2][1] - pts[0][1]) * 0.6      # a cabeça acompanha a curva do pescoço
     cab.rotation_euler = (-p["pitch"], 0.0, yaw)       # rotação em X positiva baixa o focinho: pitch positivo olha para cima
-    cab.scale = (1.4, 1.4, 1.4)
-    J["mandibula"].rotation_euler = (p["boca"] * 0.95, 0, 0)
+    e = p.get("esc", 1.4)       # no bote a cabeça cresce (estilo desenho): a boca aberta precisa ler em poucos pixels
+    cab.scale = (e, e, e)
+    g = max(0.01, p["boca"] ** 1.5)      # a brasa do fundo só aparece com a boca aberta
+    J["goela"].scale = (g, g, g)
+    J["mandibula"].rotation_euler = (p["boca"] * 1.1, 0, 0)
+    J["maxila"].rotation_euler = (-p["boca"] * 0.6, 0, 0)
     if q >= ANDAR + IMPACTO:        # o estalo: a cabeça treme
         cab.location = (topo[0] + 0.03 * math.sin(f * 4.0), topo[1], topo[2])
     return Vector(topo)
