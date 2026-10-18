@@ -7,7 +7,7 @@
 		{"id": "lendario", "nome": "Lendário", "cor": [1.0, 0.74, 0.2], "mult": 3.2, "bonus_arma": 0.8, "peso_ini": 0.4, "peso_fim": 9}
 	],
 	"nivel_fim": 20,
-	"escolha": {"cartas": 3, "rerrolar_por_tela": 1, "rerrolar_total": 3, "banir_total": 2, "garantir_golpe_ate": 4, "peso_sinergia": 3.0, "espera_s": 1.0, "rerrolar_espera_s": 0.8},
+	"escolha": {"cartas": 3, "rerrolar_por_tela": 1, "rerrolar_total": 3, "banir_total": 2, "garantir_golpe_ate": 4, "peso_sinergia": 3.0, "espera_s": 1.0, "rerrolar_espera_s": 0.8, "auto_raridade_max": 1, "auto_queda": 1, "auto_golpes_alvo": 3},
 	"stats": [
 		{"id": "dano", "icone": "icone_katana", "nome": "Lâmina afiada", "desc": "+{v}% de dano", "stat": "dano", "valor": 15, "max": 8, "peso": 1.0},
 		{"id": "vel_ataque", "icone": "icone_overclock", "nome": "Punho ligeiro", "desc": "+{v}% de velocidade de ataque", "stat": "vel_ataque", "valor": 12, "max": 6, "peso": 1.0},

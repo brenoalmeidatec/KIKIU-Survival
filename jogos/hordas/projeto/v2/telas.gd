@@ -3,7 +3,8 @@ extends RefCounted
 ## RARIDADE, mais rerrolar e banir), a roleta do baú, a tela de resultado (VOCÊ CAIU ou VITÓRIA, com as almas ganhas), os anúncios grandes
 ## e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (DESLIGADO por padrão agora que o HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro
 ## do SubViewport 960x540; o mouse não chega nos Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_ui()) e a
-## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar) e B (banir a carta marcada).
+## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar), Q (AUTOMÁTICO: o sistema escolhe pelo que o herói já tem, com raridade menor) e B (banir a carta
+## marcada). No controle: A escolhe, X rerrola, Y é o automático e LB bane.
 ## TRAVA: a escolha abre com as cartas apagadas por 1 s de TEMPO REAL (0,8 s depois de rerrolar ou banir). Nesse tempo clique, tecla e
 ## botão são descartados (a contagem pulsa) e nada chega ao herói; ESC passa, é da pausa. O baú tem a sua trava (bau_espera_s). Os tempos
 ## vêm de dados/v2_cartas.json e a contagem corre no `atualizar` (relógio de parede), congelada com a pausa aberta (mundo.pausa.aberto).
@@ -20,6 +21,7 @@ const CARTA_Y := 146.0
 const LENDARIA_COR := Paleta.FUSAO  # magenta: a faixa e o rodapé de uma peça que fecha lendária
 const FOLGA := 20.0
 const BTN_Y := 440.0
+const BTN_L := 200.0  # largura dos três botões da escolha (Rerrolar, Automático, Banir)
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
 const ICONE := 32.0  # ícone próprio da carta (assets/v2/icones_cartas, 32x32): sai 1 para 1, pixel a pixel
 const TAM_TITULO := Paleta.TITULO_GRANDE  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
@@ -55,6 +57,9 @@ var _titulo: Label
 var _sub: Label
 var _btn_r: Panel
 var _btn_b: Panel
+var _btn_a: Panel
+var _btn_a_txt: Label
+var _auto_dica: Label
 var _btn_r_txt: Label
 var _btn_b_txt: Label
 var _build: Label
@@ -166,10 +171,21 @@ func _montar_escolha() -> void:
 		_escolha.add_child(p)
 		_cartas.append(p)
 	# rerrolar e banir
-	_btn_r = _botao(Vector2(LARG * 0.5 - 254, BTN_Y), "r")
-	_btn_b = _botao(Vector2(LARG * 0.5 + 14, BTN_Y), "b")
+	# Rerrolar, AUTOMÁTICO (no centro) e Banir: três botões de 200 px com 14 px entre eles, o do meio exatamente no meio da tela
+	_btn_r = _botao(Vector2(LARG * 0.5 - 100 - 14 - BTN_L, BTN_Y), "r")
+	_btn_a = _botao(Vector2(LARG * 0.5 - 100, BTN_Y), "a")
+	_btn_b = _botao(Vector2(LARG * 0.5 + 100 + 14, BTN_Y), "b")
 	_btn_r_txt = _btn_r.get_node("t")
+	_btn_a_txt = _btn_a.get_node("t")
 	_btn_b_txt = _btn_b.get_node("t")
+	_btn_a.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))  # o do meio com a borda de ouro: é o atalho
+	_auto_dica = _rotulo(
+		"Automático: o sistema completa a sua build, mas a carta vem de raridade menor.", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER
+	)
+	_auto_dica.position = Vector2(20, 496)
+	_auto_dica.size = Vector2(LARG - 40, 20)
+	_auto_dica.clip_text = true
+	_escolha.add_child(_auto_dica)
 	_build = _rotulo("", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
 	_build.position = Vector2(20, 472)
 	_build.size = Vector2(LARG - 40, 20)
@@ -270,13 +286,13 @@ func _moldura(cor: Color) -> StyleBoxFlat:
 func _botao(pos: Vector2, _id: String) -> Panel:
 	var p := Panel.new()
 	p.position = pos
-	p.size = Vector2(240, 28)
+	p.size = Vector2(BTN_L, 28)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_theme_stylebox_override("panel", _estilo(false, Paleta.BORDA))
 	var t := _rotulo("", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
 	t.name = "t"
 	t.position = Vector2(4, 5)
-	t.size = Vector2(232, 18)
+	t.size = Vector2(BTN_L - 8.0, 18)
 	p.add_child(t)
 	_escolha.add_child(p)
 	return p
@@ -408,6 +424,8 @@ func _atualizar_botoes() -> void:
 	var pb: bool = cs.pode_banir() and espera_escolha <= 0.0
 	_btn_r_txt.text = "[R] Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "[R] Rerrolar (já usou)"
 	_btn_b_txt.text = "[B] Banir a marcada (%d)" % cs.banimentos_restantes()
+	_btn_a_txt.text = "[Q] Automático"
+	_btn_a.modulate = Paleta.BRANCO if espera_escolha <= 0.0 else Paleta.alfa(Paleta.BRANCO, 0.4)
 	_btn_r.modulate = Paleta.BRANCO if pr else Paleta.alfa(Paleta.BRANCO, 0.4)
 	_btn_b.modulate = Paleta.BRANCO if pb else Paleta.alfa(Paleta.BRANCO, 0.4)
 
@@ -743,6 +761,8 @@ func _botao_sob_mouse() -> String:
 		return "r"
 	if Rect2(_btn_b.position, _btn_b.size).has_point(m):
 		return "b"
+	if Rect2(_btn_a.position, _btn_a.size).has_point(m):
+		return "a"
 	return ""
 
 
@@ -773,6 +793,9 @@ func _entrada_escolha(e: InputEvent) -> bool:
 			if b == "b":
 				_banir()
 				return true
+			if b == "a":
+				_automatico()
+				return true
 			var j := _carta_sob_mouse()
 			if j >= 0:
 				combate.progresso.escolher(j)
@@ -798,9 +821,24 @@ func _entrada_escolha(e: InputEvent) -> bool:
 				combate.progresso.escolher(sel)
 			KEY_R:
 				_rerrolar()
+			KEY_Q:
+				_automatico()
 			KEY_B, KEY_X:
 				_banir()
 		return true
+	if e is InputEventJoypadButton and e.pressed:  # controle: X rerrola, Y é o automático, LB bane (o A e o direcional já vêm pelas ações ui_*)
+		if travada:
+			_pulso = PULSO_T
+			return true
+		if e.button_index == JOY_BUTTON_X:
+			_rerrolar()
+			return true
+		if e.button_index == JOY_BUTTON_Y:
+			_automatico()
+			return true
+		if e.button_index == JOY_BUTTON_LEFT_SHOULDER:
+			_banir()
+			return true
 	if e is InputEventJoypadMotion:
 		return false  # o analógico não navega nem escolhe: cada quadro com ele acima do limite contaria como um aperto (o direcional e o A fazem isso)
 	if e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right") or e.is_action_pressed("ui_accept"):
@@ -818,6 +856,11 @@ func _entrada_escolha(e: InputEvent) -> bool:
 
 func _rerrolar() -> void:
 	if not combate.progresso.rerrolar():
+		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
+
+
+func _automatico() -> void:
+	if not combate.progresso.automatico():
 		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
 
 
