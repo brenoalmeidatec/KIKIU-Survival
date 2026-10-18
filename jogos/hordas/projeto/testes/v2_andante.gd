@@ -154,6 +154,13 @@ func checar_partida(id: String, base := "") -> void:
 	if base != "":
 		id = "%s (%s)" % [id, base]
 	ok(int(it.e) == Andante.SURGINDO and Andante.presenca(it) < 1.0, "%s: começa surgindo" % id)
+	# a recarga do brinde só corre depois que a leva some: com o bicho de pé, `a.t` fica parado (o fim da leva é `ate`)
+	var leva: Dictionary = it.a  # a própria arma (`ativas`): o `_aliados` marca nela o fim da leva (`ate`)
+	var resta := float(leva.get("ate", 0.0)) - float(w.combate.armas.novas._relogio)
+	ok(resta > 20.0, "%s: a leva fica de pé pelo menos 20 s (fim em %.0f s)" % [id, resta])
+	leva.t = 1.0
+	passos(30)  # meio segundo com o bicho de pé
+	ok(absf(float(leva.t) - 1.0) < 0.001, "%s: a recarga espera a leva sumir" % id)
 	it.vida = 6.0  # a duração da carta (4 s) dá 2 ou 3 golpes conforme onde ele nasce: com 6 s a conta do ritmo fica firme
 	var andou := false
 	var parou_em := -1.0

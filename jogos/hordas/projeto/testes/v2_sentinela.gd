@@ -121,7 +121,7 @@ func _ready() -> void:
 	var carta: Dictionary = cs.montar_carta(d, 0)
 	ok(str(carta.get("id", "")) == ID and str(carta.get("nome", "")) != "", "a carta monta com nome")
 
-	# 0. brinde temporário: toda invocação e torre das cartas dura de 25 a 60 s (nada fica indefinidamente) e tem recarga depois que some
+	# 0. brinde temporário: toda invocação e torre das cartas dura de 30 a 60 s (nada fica indefinidamente) e tem recarga depois que some
 	var dj: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://dados/v2_cartas.json"))
 	var temporarios := 0
 	var lista: Array = (dj.golpes as Array) + (dj.evolucoes as Array)
@@ -130,7 +130,7 @@ func _ready() -> void:
 			continue
 		var b: Dictionary = g.get("base", g.get("arma", {}))
 		temporarios += 1
-		ok(float(b.duracao) >= 25.0 and float(b.duracao) <= 60.0, "%s: duração de 25 a 60 s (%s)" % [g.id, b.duracao])
+		ok(float(b.duracao) >= 30.0 and float(b.duracao) <= 60.0, "%s: duração de 30 a 60 s (%s)" % [g.id, b.duracao])
 		ok(float(b.recarga) >= 15.0, "%s: recarga de 15 s ou mais, contada depois que a leva some (%s)" % [g.id, b.recarga])
 	ok(temporarios >= 16, "todas as invocações e torres foram conferidas (%d)" % temporarios)
 	ok(
