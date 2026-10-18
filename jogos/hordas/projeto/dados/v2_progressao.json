@@ -1,5 +1,5 @@
 {
-	"_ajuda": "Progressão do santuário da v2, lida por v2/progressao.gd (e v2/mapas.gd, v2/salao.gd). Para cada mapa (\"mapas\", ids de v2/mapas.gd) e cada estrutura do salão (\"estruturas\", ids de dados/v2_salao.json), a lista de condições que abrem o portal ou a estrutura. As condições são ALTERNATIVAS: basta cumprir uma. Lista vazia = aberto desde o começo. Tipos: {\"conquista\": id} (uma conquista de dados/v2_meta.json; vencer um mapa é a conquista vence_<mapa>, cumprida ao derrotar o chefe final daquele mapa), {\"partidas\": N} (partidas terminadas pelo personagem, vitória, morte ou abandono) e {\"conquistas\": N} (quantas conquistas cumpridas, quaisquer). Enquanto trancado, o santuário mostra um cadeado e a condição numa linha (o texto curto da conquista vem do campo \"curto\" dela, ou do nome) e Enter ou clique mostra o aviso completo. Ordem dos mapas: Floresta, Laboratório, Cidade, Ruínas da Floresta, cada um aberto ao vencer o anterior. Estátuas abertas desde o início; Altar ao vencer a Floresta ou depois de 5 partidas; Códice depois da 1ª conquista ou de 3 partidas. Saves de antes destas regras (que já tinham progresso) ficam com tudo aberto: v2/meta.gd marca [progressao] legado no save.",
+	"_ajuda": "Progressão do santuário da v2, lida por v2/progressao.gd (e v2/mapas.gd, v2/salao.gd). Para cada mapa (\"mapas\", ids de v2/mapas.gd) e cada estrutura do salão (\"estruturas\", ids de dados/v2_salao.json), a lista de condições que abrem o portal ou a estrutura. As condições são ALTERNATIVAS: basta cumprir uma. Lista vazia = aberto desde o começo. Tipos: {\"conquista\": id} (uma conquista de dados/v2_meta.json; vencer um mapa é a conquista vence_<mapa>, cumprida ao derrotar o chefe final daquele mapa), {\"partidas\": N} (partidas terminadas pelo personagem, vitória, morte ou abandono) e {\"conquistas\": N} (quantas conquistas cumpridas, quaisquer). Enquanto trancado, o santuário mostra um cadeado e a condição numa linha (o texto curto da conquista vem do campo \"curto\" dela, ou do nome) e Enter ou clique mostra o aviso completo. Ordem dos mapas: Floresta, Laboratório, Cidade, Ruínas da Floresta, cada um aberto ao vencer o anterior. Estátuas abertas desde o início; Altar ao vencer a Floresta; Códice depois da 1ª conquista (quaisquer). Os tipos \"partidas\" e \"conquistas\" servem para novas regras; hoje só o Códice usa \"conquistas\". Saves de antes destas regras (que já tinham progresso) ficam com tudo aberto: v2/meta.gd marca [progressao] legado no save.",
 	"mapas": {
 		"floresta": [],
 		"laboratorio": [{"conquista": "vence_floresta"}],
@@ -8,7 +8,7 @@
 	},
 	"estruturas": {
 		"estatuas": [],
-		"altar": [{"conquista": "vence_floresta"}, {"partidas": 5}],
-		"codice": [{"conquistas": 1}, {"partidas": 3}]
+		"altar": [{"conquista": "vence_floresta"}],
+		"codice": [{"conquistas": 1}]
 	}
 }

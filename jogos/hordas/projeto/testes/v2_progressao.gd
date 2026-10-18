@@ -2,7 +2,7 @@ extends Node
 # Teste das travas do santuário (v2/progressao.gd, dados/v2_progressao.json, v2/mapas.gd e o salão). Saves TEMPORÁRIOS com prefixo
 # único; os saves reais (user://v2_*) são conferidos por md5 no fim.
 # Confere: um personagem novo só tem a Floresta e as Estátuas abertas; vencer a Floresta abre o Laboratório e o Altar, e vencer outro
-# mapa não abre o Laboratório; 3 partidas (ou 1 conquista) abrem o Códice e 5 partidas o Altar; um save de antes das travas com
+# mapa não abre o Laboratório; a 1ª conquista abre o Códice e o Altar só abre vencendo a Floresta (partidas sozinhas não abrem nada); um save de antes das travas com
 # progresso fica com tudo aberto e ganha a marca de versão na próxima gravação; um slot novo não vira "antigo" depois de gravar; no
 # salão, portal e estrutura trancados mostram a trava, o prompt diz "Trancado" e Enter só avisa.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_progressao.tscn  (imprime "v2_progressao falhas=0")
@@ -76,9 +76,9 @@ func _testes() -> void:
 	ok(Mapas.condicao(Mapas.buscar("laboratorio")).begins_with("Fechado"), "o texto do portal trancado começa com Fechado")
 	ok(Mapas.curto(Mapas.buscar("laboratorio")) == "Vença a Floresta", "linha do cadeado do Laboratório (%s)" % Mapas.curto(Mapas.buscar("laboratorio")))
 	ok(Mapas.curto(Mapas.buscar("floresta")) == "", "a Floresta não tem linha de cadeado")
-	ok(Progressao.curto("estrutura", "altar") == "Vença a Floresta ou 5 partidas", "linha do Altar (%s)" % Progressao.curto("estrutura", "altar"))
-	ok(Progressao.curto("estrutura", "codice") == "1 conquista ou 3 partidas", "linha do Códice (%s)" % Progressao.curto("estrutura", "codice"))
-	ok(Progressao.aviso("estrutura", "altar").find("(0/5)") > 0, "o aviso do Altar mostra quanto falta (%s)" % Progressao.aviso("estrutura", "altar"))
+	ok(Progressao.curto("estrutura", "altar") == "Vença a Floresta", "linha do Altar (%s)" % Progressao.curto("estrutura", "altar"))
+	ok(Progressao.curto("estrutura", "codice") == "1 conquista", "linha do Códice (%s)" % Progressao.curto("estrutura", "codice"))
+	ok(Progressao.aviso("estrutura", "codice").find("(0/1)") > 0, "o aviso do Códice mostra quanto falta (%s)" % Progressao.aviso("estrutura", "codice"))
 
 	# 2. salão de um personagem novo: trava no desenho, no prompt e no Enter
 	var s = Salao.instantiate()
@@ -139,16 +139,12 @@ func _testes() -> void:
 	s2.queue_free()
 	await get_tree().process_frame
 
-	# 5. partidas: 3 abrem o Códice, 5 abrem o Altar (sem conquista nenhuma)
+	# 5. partidas sozinhas (sem vitória nem conquista) não abrem nada, mas ficam contadas no save
 	_novo("João")
-	for i in 3:
+	for i in 5:
 		_partida(false, "floresta")
-	ok(Progressao.partidas() == 3, "o save conta as partidas (%d)" % Progressao.partidas())
-	ok(Progressao.aberto("estrutura", "codice") and not Progressao.aberto("estrutura", "altar"), "3 partidas abrem o Códice, não o Altar")
-	ok(Progressao.aviso("estrutura", "altar").find("(3/5)") > 0, "o aviso do Altar mostra 3/5")
-	_partida(false, "floresta")
-	_partida(false, "floresta")
-	ok(Progressao.aberto("estrutura", "altar"), "5 partidas abrem o Altar")
+	ok(Progressao.partidas() == 5, "o save conta as partidas (%d)" % Progressao.partidas())
+	ok(not Progressao.aberto("estrutura", "codice") and not Progressao.aberto("estrutura", "altar"), "5 partidas sem conquista não abrem Altar nem Códice")
 	ok(not _abertos().has("laboratorio"), "partidas não abrem mapas")
 
 	# 6. save de antes das travas, com progresso: tudo aberto e marca de versão gravada na próxima escrita
