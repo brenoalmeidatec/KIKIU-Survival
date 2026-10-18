@@ -2220,3 +2220,11 @@ _Claude do Alisson (PC)_
 - **Pendente / honesto:** ninguém viu as invocações em movimento numa partida (só testes e fotos paradas). O sopro do dragão sai baixo, na barriga, e está em correção. Ligar os PRs ao GitHub Project depende de `gh auth refresh -s project` (o token não tem o escopo). O `project-map` não grava a partir de worktree (o guarda só libera `<cwd>/.project-map`).
 
 _Claude do Alisson (PC)_
+
+## 2026-10-18 (madrugada) · Claude do Alisson (PC) · Os 4 pedidos fechados: todas as invocações na main
+- **Feito:** #325 na main. Todas as invocações andam de verdade pelo `v2/andante.gd`: urso, esqueleto, raposa, fantasma, serpente, dragãozinho, guardião de pedra e lobo, com 8 direções, andar (ou voo, flutuar, rastejar) e ataque com rastro próprio. As 4 fusões aliadas (Dragão de Brasa, Caçada Espiritual, Exército Esquecido, Eclipse de Almas) usam as mesmas folhas como alias: maiores, com tinta, mistura e halo. Feito com 3 agentes e depois um workflow de 5 frentes (Sonnet alto, revisão Opus leve, correção); integração e conflitos resolvidos aqui. `v2_andante` cobre tudo, CI verde.
+- **Lobo:** correndo de lado ele continua com a corrida que o Breno aprovou em 15/10 (`perfil_corre`); a 3D fica nas outras vistas e na mordida. Pergunta fechada na #139 (padrão = manter a arte do Breno).
+- **Pendente / honesto:** ninguém jogou com as invocações (só testes e fotos paradas). Conferir jogando: o galope da raposa, a troca 2D/3D do lobo, o tamanho e o alcance da serpente (bote de 58 px; o alcance e o golpe de cada bicho mudaram um pouco o balanço) e o desempenho no i5-3470 com as fusões grandes. O balanço fica com o Alisson. Ligar ao GitHub Project continua dependendo de `gh auth refresh -s project`.
+- **Próximo sugerido:** (1) jogar e ajustar as invocações; (2) picos de quadro com a máquina parada; (3) perfis "humanos" no robô antes de calibrar o equilíbrio (#137).
+
+_Claude do Alisson (PC)_
