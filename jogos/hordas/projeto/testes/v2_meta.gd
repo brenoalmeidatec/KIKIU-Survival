@@ -120,6 +120,13 @@ func _testes() -> void:
 	ok(int(u.abates) == 7 and int(u.nivel) == 2 and int(u.ganhas) == 108, "o resumo da última partida fica no save")
 	r = Meta.registrar_partida({"tempo": 600.0, "abates": 90, "nivel": 9, "maior_combo": 20, "venceu": true, "almas": 0})
 	ok(bool(Meta.estado()["conquistas"]["derrota_chefe"]), "vencer marca a conquista do chefe")
+	ok(not Meta.mapa_vencido("floresta") and Meta.mapas_vencidos().is_empty(), "vencer sem dizer o mapa não marca mapa nenhum")
+	Meta.registrar_partida({"tempo": 10.0, "venceu": false, "almas": 0, "mapa": "floresta"})
+	ok(not Meta.mapa_vencido("floresta"), "perder no mapa não o marca como vencido")
+	Meta.registrar_partida({"tempo": 10.0, "venceu": true, "almas": 0, "mapa": "floresta"})
+	ok(Meta.mapa_vencido("floresta") and not Meta.mapa_vencido("laboratorio"), "vencer o chefão da Floresta marca só a Floresta")
+	ok(Meta.marcar_mapa_vencido("laboratorio") and Meta.mapa_vencido("laboratorio"), "marcar_mapa_vencido grava direto")
+	ok(Meta.mapas_vencidos().size() == 2 and not Meta.marcar_mapa_vencido(""), "lista de vencidos e id vazio recusado")
 
 	# 6. santuário: uma linha por melhoria e conquista, bloqueio, saldo na tela, compra pelo botão e o máximo
 	_apagar_save()

@@ -346,7 +346,7 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "ganhas", ganhas)
 	cf.set_value("ultima", "pesadelo", pesadelo)
 	if bool(r.get("venceu", false)) and str(r.get("mapa", "")) != "":
-		cf.set_value("mapas_vencidos", str(r.mapa), true)  # venceu o chefão do último nível: o mapa está vencido (mapa_vencido)
+		_marcar_vencido(cf, str(r.mapa))  # venceu o chefão do último nível: o mapa está vencido (mapa_vencido)
 	if not _gravar(cf):
 		erro_save = true
 		return {}
@@ -410,6 +410,20 @@ static func aplicar(mundo) -> void:
 static func almas_da_partida(mundo) -> int:
 	var v = mundo.get("almas_partida")
 	return int(v) if v != null else 0
+
+
+static func _marcar_vencido(cf: ConfigFile, id: String) -> void:
+	cf.set_value("mapas_vencidos", id, true)
+
+
+## Marca o mapa `id` como vencido (o chefão do último nível dele morreu) e grava o save. O fim da partida já faz isso sozinho em
+## `registrar_partida` (resultado `mapa` + `venceu`); esta é a porta direta (testes, a frente de progressão). Devolve false se não gravou.
+static func marcar_mapa_vencido(id: String) -> bool:
+	var cf := _ler()
+	if cf == null or id == "":
+		return false
+	_marcar_vencido(cf, id)
+	return _gravar(cf)
 
 
 ## O mapa `id` ("floresta", "laboratorio"...) já foi vencido alguma vez (o chefão do último nível dele morreu)? A frente de progressão usa

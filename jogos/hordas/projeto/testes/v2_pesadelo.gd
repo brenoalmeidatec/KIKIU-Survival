@@ -103,9 +103,9 @@ func _testes() -> void:
 	var dir = m.combate.diretor
 	var mk: Dictionary = dir.chefes_mapa[0].mk
 	var n_mini: int = dir.chefes_mapa[0].nivel
-	var t_normal: float = dir.duracao_nivel * float(n_mini - 1)
+	var t_mini_normal: float = dir.duracao_nivel * float(n_mini - 1)
 	var t_mini: float = dir.seg_nivel() * float(n_mini - 1) + 0.5
-	ok(t_mini < t_normal, "o tempo do Pesadelo cai antes do tempo normal do mini-chefe (%d x %d)" % [t_mini, t_normal])
+	ok(t_mini < t_mini_normal, "o tempo do Pesadelo cai antes do tempo normal do mini-chefe (%d x %d)" % [t_mini, t_mini_normal])
 	m.combate.limpar_partida()
 	dir.avancar_nivel(t_mini)
 	chefes.atualizar(0.0)
