@@ -12,7 +12,7 @@ extends Node
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --picos=MS (imprime cada quadro mais lento que MS ms, com as partes que pesaram nele, e um resumo no fim: v2/picos.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
-##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
+##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --maximizada (janela maximizada do SO, como no notebook) --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
@@ -236,10 +236,20 @@ func _argumentos() -> Dictionary:
 	return d
 
 
+## Só uma janela em modo normal aceita tamanho nosso. Maximizada ou em tela cheia o SO manda no tamanho: o Windows ignora o pedido, mas o
+## Window.size fica com o valor novo, o viewport encolhe e sobra uma faixa preta à direita e embaixo (o mundo e o HUD param antes dela).
+static func janela_ajustavel(modo: int) -> bool:
+	return modo == Window.MODE_WINDOWED
+
+
 func _ajustar_janela() -> void:
 	var janela := get_window()
 	if _modo == "foto":
 		janela.unfocusable = true  # a foto não rouba o foco de quem está jogando por cima
+	if args.has("maximizada"):  # a janela do notebook: o SO a estica para a área útil, que quase nunca é 16:9
+		janela.mode = Window.MODE_MAXIMIZED
+	if not janela_ajustavel(janela.mode):
+		return
 	if args.has("janela"):
 		var wh := str(args.janela).split("x")
 		janela.size = Vector2i(int(wh[0]), int(wh[1]))
@@ -1013,7 +1023,7 @@ func _texto_rotulo() -> void:
 func _salvar_foto() -> void:
 	var caminho := _fotos.path_join("%s.png" % str(args.get("nome", "v2")))
 	var tam: Vector2i = await ap.foto(caminho)
-	print("FOTO ", caminho, " ", tam, " t=%.2f heroi=%s cam=%s" % [t, str(heroi.pos), str(cam.position)])
+	print("FOTO ", caminho, " ", tam, " janela=", get_window().size, " t=%.2f heroi=%s cam=%s" % [t, str(heroi.pos), str(cam.position)])
 	get_tree().quit()
 
 

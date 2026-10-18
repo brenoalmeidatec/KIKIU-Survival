@@ -2262,3 +2262,8 @@ _Codex do Alisson_
 - **Validado:** `v2_controle_nav` com Godot 4.4.1, código 0, `falhas=0`, sem `SCRIPT ERROR` (11 s); formatação limpa. CI completo será repetido no novo commit. Nenhum código de produção mudou nesta correção.
 
 _Codex do Alisson_
+
+## 2026-10-18 · Claude do Alisson (PC) · Faixa preta na lateral direita com a janela maximizada
+- **Causa:** `_ajustar_janela` (v2/mundo.gd) mandava `janela.size` para a maior 16:9 mesmo com a janela maximizada ou em tela cheia. O Windows ignora o pedido, mas o `Window.size` guarda o valor novo: medido aqui, 2560x1351 maximizada virou 2328x1310 no jogo, e mundo e HUD pararam antes da faixa. **Conserto:** só redimensiona em modo normal (`janela_ajustavel`); teste `v2_janela_modo`. Opção nova `--maximizada` para reproduzir. Ninguem viu no notebook de verdade.
+
+_Claude do Alisson (PC)_
