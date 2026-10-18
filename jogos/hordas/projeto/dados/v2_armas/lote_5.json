@@ -151,7 +151,7 @@
     "tipo": "aliado",
     "max": 5,
     "peso": 1.2,
-    "cor": [0.75, 0.42, 0.32],
+    "cor": [0.9, 0.72, 0.36],
     "base": {"dano": 11, "recarga": 4.0, "quantidade": 1, "duracao": 7.0, "vel": 90, "tique": 0.8},
     "niveis": [
       {"texto": "+4 de dano", "dano": 4},
@@ -175,7 +175,7 @@
     "tipo": "aliado",
     "max": 5,
     "peso": 1.0,
-    "cor": [0.9, 0.12, 0.15],
+    "cor": [0.72, 0.84, 1.0],
     "base": {"dano": 10, "recarga": 3.5, "quantidade": 1, "duracao": 4.0, "vel": 180, "tique": 0.6},
     "niveis": [
       {"texto": "+4 de dano", "dano": 4},
@@ -188,7 +188,7 @@
       "cores": ["vermelho", "vermelho-escuro", "amarelo no sopro"],
       "tamanho": "dragão de 32x26 px; sopro de 30x14 px",
       "duracao": "o sopro dura 0,2 s",
-      "provisorio": "Um losango vermelho de 12 px em arco, com um leque curto de pontos amarelos no contato."
+      "provisorio": "Um losango ciano de 12 px em arco, com um leque curto de pontos amarelos no contato."
     }
   },
   {

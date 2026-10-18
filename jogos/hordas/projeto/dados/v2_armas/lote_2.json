@@ -171,11 +171,11 @@
     "id": "cortina_sangue",
     "icone": "icone_u_retalhador_sangrento",
     "nome": "Cortina de Sangue",
-    "desc": "Névoa vermelha de dano alto surge perto de você, em intervalos longos.",
+    "desc": "Névoa verde-menta de dano alto surge perto de você, em intervalos longos.",
     "tipo": "nuvem",
     "max": 5,
     "peso": 1.0,
-    "cor": [0.85, 0.08, 0.12],
+    "cor": [0.55, 0.95, 0.62],
     "base": {"dano": 18, "recarga": 4.5, "alcance": 150, "raio": 35, "duracao": 3.0, "tique": 0.5, "lentidao": 0},
     "niveis": [
       {"texto": "+3 de dano", "dano": 3},
@@ -184,11 +184,11 @@
       {"texto": "+4 de dano e dura mais", "dano": 4, "duracao": 1.0}
     ],
     "arte": {
-      "visual": "Uma névoa vermelho-sangue densa, com gotas escorrendo de dentro, aparece de uma vez no chão ao lado do herói. Referência de tela 960x540.",
-      "cores": ["vermelho-sangue", "vermelho escuro", "rosa-vivo nas bordas"],
+      "visual": "Uma névoa verde-menta densa, com gotas escorrendo de dentro, aparece de uma vez no chão ao lado do herói. Referência de tela 960x540.",
+      "cores": ["verde-menta", "verde-escuro", "branco-verde nas bordas"],
       "tamanho": "névoa de 70 px de diâmetro; gotas de 3 x 5 px",
       "duracao": "surge com flash de 0,15 s e some com fade no fim",
-      "provisorio": "Um círculo vermelho translúcido com 3 gotas escorrendo para baixo."
+      "provisorio": "Um círculo verde-menta translúcido com 3 gotas escorrendo para baixo."
     }
   },
   {

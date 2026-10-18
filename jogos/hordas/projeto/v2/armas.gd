@@ -1042,7 +1042,7 @@ func _img_corvo() -> Texture2D:
 				if x >= 19 and x <= 21 and y >= 8 and y <= 9:
 					im.set_pixel(ox + x, y, Color(0.95, 0.6, 0.2))  # bico
 				if x == 17 and y == 7:
-					im.set_pixel(ox + x, y, Color(1.0, 0.25, 0.2))  # olho
+					im.set_pixel(ox + x, y, Color(1.0, 0.86, 0.42))  # olho
 		# asa: triângulo com a base no corpo e a ponta para cima ou para baixo
 		var ay := 8.0 - cima
 		for y in 18:
