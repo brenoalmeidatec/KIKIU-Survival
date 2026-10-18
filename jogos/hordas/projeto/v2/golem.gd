@@ -74,6 +74,11 @@ static func escala(id: String) -> float:
 	return 1.3 if id == COLOSSO else 1.0
 
 
+## Px do pé até o alto do golem (a barrinha de tempo de vida dele fica aí).
+static func topo(it: Dictionary) -> float:
+	return PE.y * 0.62 * escala(str(it.a.id))
+
+
 ## A linha (0 frente, 1 3/4 frente, 2 perfil, 3 3/4 costas, 4 costas) para ir na direção `v` (tela, y para baixo), com histerese:
 ## perto da fronteira entre duas vistas fica na que já estava (`atual`).
 static func linha_de(v: Vector2, atual: int) -> int:

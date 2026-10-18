@@ -3,6 +3,8 @@
 **O que faz:** Chama um golem de barro lento que persegue o inimigo mais perto e o esmaga. Dura bastante, mas anda devagar.
 **Na prática:** Cada toque dá 11 de dano. Chama 1 golem a cada 4 s, se houver inimigo a até 340 px do herói (o bônus de velocidade de ataque deixa a recarga menor). O golem fica 7 s e anda 90 px por segundo, o segundo mais lento do grupo. Quando chega a 30 px do inimigo, para e bate no chão com os dois punhos a cada 0,8 s (o golpe leva 0,72 s e o dano cai no quadro da pancada, 0,35 s depois de o golpe começar). Sem inimigo por perto, tenta girar em volta do herói. Conta de média, sem bônus: cerca de 1,75 golem na tela no nível 1 e cerca de 2,4 no nível 5.
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **45 s** e some; só depois que o último da leva sumiu a recarga de **30 s** começa a contar, então nunca fica indefinidamente nem se acumula. Cada nível que mexe na duração soma 5 s (e a recarga cai uns 3 s nas melhorias de cadência). Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). **Onde este arquivo citar duração ou recarga de 2 a 8 s, vale o número desta caixa**; as contas de "quantos na tela" ficam bem menores, porque a recarga agora corre só depois que a leva some.
+
 **Níveis:**
 | Nível | O que muda |
 |---|---|
