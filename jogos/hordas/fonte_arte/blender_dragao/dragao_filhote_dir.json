@@ -1,17 +1,17 @@
 {
  "quadro": [
-  47,
-  48
+  60,
+  60
  ],
- "pe_x": 23,
- "pe_y": 25,
+ "pe_x": 29,
+ "pe_y": 32,
  "andar": 8,
  "ataque": 8,
  "impacto": 4,
  "ciclo_s": 0.5,
- "alcance_boca_px": 12.4,
+ "alcance_boca_px": 16.1,
  "sopro_px": 14.0,
- "alcance_pata_px": 26.4,
+ "alcance_pata_px": 30.1,
  "linhas": [
   "frente",
   "tres_quartos_frente",
