@@ -16,8 +16,8 @@
       {"texto": "+8 de dano e mais rápido", "dano": 8, "recarga": -0.5}
     ],
     "arte": {
-      "visual": "Um meteoro de fogo com cauda laranja desce do alto da tela, na referência de 960x540. Antes de cair, aparece no chão um círculo laranja-avermelhado que pisca.",
-      "cores": ["laranja", "vermelho", "amarelo"],
+      "visual": "Um meteoro de fogo com cauda laranja desce do alto da tela, na referência de 960x540. Antes de cair, aparece no chão um círculo laranja-âmbar que pisca.",
+      "cores": ["laranja", "âmbar", "amarelo"],
       "tamanho": "meteoro de 28 px com cauda; círculo de aviso do tamanho do raio",
       "duracao": "queda de 0,4 s; impacto de 0,3 s",
       "provisorio": "Um círculo laranja piscando no chão e um quadrado pequeno caindo com rastro de 2 px."

@@ -113,7 +113,7 @@
     ],
     "arte": {
       "visual": "Uma serpente longa feita de fogo, com corpo ondulado e cabeça de brasa, que rasteja pelo chão deixando um rastro de chamas baixas. No contato, a cabeça estala e solta faíscas.",
-      "cores": ["laranja-vivo", "vermelho-brasa", "amarelo no centro"],
+      "cores": ["laranja-vivo", "âmbar-brasa", "amarelo no centro"],
       "tamanho": "serpente de 40 px de comprimento; rastro de 10 px; faíscas de 4 px",
       "duracao": "o rastro some em 0,4 s",
       "provisorio": "Uma sequência de círculos laranja de 8 px que seguem o inimigo, diminuindo aos poucos."
@@ -160,22 +160,22 @@
       {"texto": "+4 dano e recarga menor", "dano": 4, "recarga": -0.4}
     ],
     "arte": {
-      "visual": "Um golem feito de barro marrom-avermelhado, com torrões que se soltam a cada passo. Anda pesado e, no contato, seus braços batem no chão espalhando lama.",
-      "cores": ["marrom-avermelhado", "barro escuro", "terra clara nos torrões"],
+      "visual": "Um golem feito de barro ocre, com torrões que se soltam a cada passo. Anda pesado e, no contato, seus braços batem no chão espalhando lama.",
+      "cores": ["ocre", "barro escuro", "terra clara nos torrões"],
       "tamanho": "golem de 46x54 px; torrões de 6 px; respingo de 26 px",
       "duracao": "o respingo de lama dura 0,3 s",
-      "provisorio": "Um quadrado marrom-avermelhado de 24 px com pontos de barro caindo a cada passo."
+      "provisorio": "Um quadrado ocre de 24 px com pontos de barro caindo a cada passo."
     }
   },
   {
     "id": "dragao_filhote",
     "icone": "icone_u_lanca_dragao",
     "nome": "Dragãozinho",
-    "desc": "Um dragãozinho vermelho voa até o inimigo mais perto e cospe fogo.",
+    "desc": "Um dragãozinho verde voa até o inimigo mais perto e cospe fogo.",
     "tipo": "aliado",
     "max": 5,
     "peso": 1.0,
-    "cor": [0.72, 0.84, 1.0],
+    "cor": [0.45, 0.92, 0.42],
     "base": {"dano": 10, "recarga": 3.5, "quantidade": 1, "duracao": 4.0, "vel": 180, "tique": 0.6},
     "niveis": [
       {"texto": "+4 de dano", "dano": 4},
@@ -184,11 +184,11 @@
       {"texto": "+5 de dano e mais veloz", "dano": 5, "vel": 30}
     ],
     "arte": {
-      "visual": "Um dragão pequeno vermelho, com asas abertas e cauda curta, que voa em arco até o inimigo. No contato, solta um pequeno sopro de fogo em leque para frente.",
-      "cores": ["vermelho", "vermelho-escuro", "amarelo no sopro"],
+      "visual": "Um dragão pequeno verde, com asas abertas e cauda curta, que voa em arco até o inimigo. No contato, solta um pequeno sopro de fogo em leque para frente.",
+      "cores": ["verde", "verde-escuro", "amarelo no sopro"],
       "tamanho": "dragão de 32x26 px; sopro de 30x14 px",
       "duracao": "o sopro dura 0,2 s",
-      "provisorio": "Um losango ciano de 12 px em arco, com um leque curto de pontos amarelos no contato."
+      "provisorio": "Um losango verde de 12 px em arco, com um leque curto de pontos amarelos no contato."
     }
   },
   {
