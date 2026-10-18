@@ -49,6 +49,7 @@ var _estruturas: Array = []  # dados/v2_salao.json: id, nome, x, y e melhorias o
 var _alvos: Array = []  # o que se usa na sala: estruturas e portais, {tipo, id, nome, acao, pos}
 var _cenario: Node2D  # o chão, a parede e o que não se mexe (desenhado uma vez)
 var _chamas: Node2D  # tochas e o brilho do altar (redesenhadas por quadro, são poucas)
+var _camadas: Array = []  # CanvasLayers da sala (fundo -3; cena -2 e brilho -1 do salao_vivo): o offset delas segue o bloco no centro do canvas
 var _heroi: Node2D
 var _sprite: Texture2D
 var _quadro_w := 32
@@ -155,11 +156,18 @@ func _alvo_perto(ponto: Vector2, raio: float) -> Dictionary:
 
 
 func _montar_cenario() -> void:
-	var borda := ColorRect.new()  # a sala é uma cena de 960x540 sempre encaixada na janela: numa janela fora de 16:9 o que sobra dos lados é o chão escuro dela
+	# A sala é uma cena de 960x540 sempre encaixada na janela: numa janela fora de 16:9 o que sobra dos lados é o chão escuro dela. O chão fica
+	# numa camada ABAIXO da sala (-3): o salao_vivo desenha cenário, portais e herói nas camadas -2 e -1, e um fundo opaco na camada padrão
+	# tampava a sala inteira (o "santuário vazio" do #320).
+	var fundo := CanvasLayer.new()
+	fundo.layer = -3
+	add_child(fundo)
+	var borda := ColorRect.new()
 	borda.color = Color("#17191f")
 	borda.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	EscalaUi.cobrir(borda)
-	add_child(borda)
+	fundo.add_child(borda)
+	_camadas.append(fundo)
 	_cenario = Node2D.new()
 	_cenario.draw.connect(_pintar_cenario)
 	add_child(_cenario)
@@ -173,6 +181,16 @@ func _montar_cenario() -> void:
 	var vivo := Vivo.new()  # luz, partículas e movimento por cima da arte (v2/salao_vivo.gd)
 	add_child(vivo)
 	vivo.montar(self)
+	_camadas.append_array([vivo._cena, vivo._glow])
+	add_to_group("ui_escala")
+	ui_reencaixar(EscalaUi.canvas_atual, EscalaUi.desloc_atual)
+
+
+## Chamado pela UiJanela quando a janela ou a opção mudam: as camadas da sala acompanham o bloco (a Control do salão já fica nele).
+func ui_reencaixar(_canvas: Vector2, desloc: Vector2) -> void:
+	for c in _camadas:
+		if is_instance_valid(c):
+			c.offset = desloc
 
 
 func _pintar_cenario() -> void:
@@ -262,7 +280,7 @@ func _montar_painel() -> void:
 	cartao.add_theme_stylebox_override("panel", _caixa(Paleta.CARTAO, Paleta.BORDA))
 	cartao.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_painel.add_child(cartao)
-	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(60, 38, 660, 46), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(60, 38, 380, 46), HORIZONTAL_ALIGNMENT_LEFT)
 	_painel.add_child(_p_titulo)
 	var fechar := Button.new()
 	fechar.text = "VOLTAR Esc/B"
@@ -287,8 +305,9 @@ func _montar_painel() -> void:
 	_p_agora = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(x, 215, 486, 54), HORIZONTAL_ALIGNMENT_LEFT)
 	_p_proximo = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(x, 271, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
 	_p_custo = _rotulo("", Dados.fonte_texto, 16, COR_ALMA, Rect2(x, 314, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_saldo = _rotulo("", Dados.fonte_texto, 16, COR_ALMA, Rect2(x, 340, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(x, 368, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
+	# O saldo fica no cabeçalho do próprio painel, ao lado do VOLTAR: o "ALMAS" da barra de cima da sala fica tapado com o painel aberto.
+	_p_saldo = _rotulo("", Dados.fonte_titulo, 37, COR_ALMA, Rect2(450, 38, 274, 46), HORIZONTAL_ALIGNMENT_RIGHT)
+	_p_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(x, 342, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
 	_p_detalhe = _rotulo("", Dados.fonte_texto, 16, COR_APAGADO, Rect2(x, 410, 486, 42), HORIZONTAL_ALIGNMENT_LEFT)
 	_p_detalhe.visible = false
 	for l in [_p_nome, _p_nivel, _p_agora, _p_proximo, _p_custo, _p_saldo, _p_aviso, _p_detalhe]:
@@ -300,6 +319,9 @@ func _montar_painel() -> void:
 	_p_comprar.position = Vector2(x, 460)
 	_p_comprar.size = Vector2(226, 38)
 	_estilo_botao(_p_comprar, 19)
+	# Desligado tem de parecer desligado: sem fundo, borda e texto bem apagados (o estilo padrão de desligado tinha fundo escuro e lia como ativo).
+	_p_comprar.add_theme_stylebox_override("disabled", _caixa(Color(0, 0, 0, 0), Paleta.alfa(Paleta.TEXTO_APAGADO, 0.3)))
+	_p_comprar.add_theme_color_override("font_disabled_color", Paleta.alfa(COR_APAGADO, 0.5))
 	_p_comprar.pressed.connect(_comprar_atual)
 	_painel.add_child(_p_comprar)
 	_p_detalhes = Button.new()
@@ -339,7 +361,12 @@ func _estilo_botao(b: Button, tam: int) -> void:
 	b.add_theme_stylebox_override("focus", _caixa(Color(0, 0, 0, 0), Paleta.OURO))
 	b.add_theme_stylebox_override("pressed", _caixa(Paleta.PAINEL, Paleta.OURO))
 	b.add_theme_stylebox_override("disabled", _caixa(Paleta.PAINEL, Paleta.TEXTO_APAGADO))
-	b.mouse_entered.connect(b.grab_focus)
+	b.mouse_entered.connect(_focar_sob_mouse.bind(b))
+
+
+func _focar_sob_mouse(b: Button) -> void:
+	if b.focus_mode != Control.FOCUS_NONE:  # o COMPRAR desligado não pega foco
+		b.grab_focus()
 
 
 func _caixa(fundo: Color, borda: Color) -> StyleBoxFlat:
@@ -526,7 +553,7 @@ func _mostrar_item(i: int) -> void:
 		return
 	_p_atual = i
 	var it: Dictionary = _p_itens[i]
-	_p_saldo.text = "Suas almas: %d" % Meta.saldo()
+	_p_saldo.text = "ALMAS %d" % Meta.saldo()
 	_p_comprar.visible = not _p_codice
 	_p_custo.visible = not _p_codice
 	if _p_codice:
@@ -547,6 +574,10 @@ func _mostrar_melhoria(m: Dictionary) -> void:
 	_p_custo.text = "Custo: %d almas" % custo if n < mx else ""
 	_p_detalhe.text = "No nível máximo: %s." % Meta.texto_efeito(m, mx)
 	_p_comprar.disabled = n >= mx or not _liberada(m) or Meta.saldo() < custo
+	_p_comprar.text = "NO MÁXIMO" if n >= mx else ("BLOQUEADA" if not _liberada(m) else ("SEM ALMAS" if Meta.saldo() < custo else "COMPRAR"))
+	_p_comprar.focus_mode = Control.FOCUS_NONE if _p_comprar.disabled else Control.FOCUS_ALL  # o foco dourado por cima fazia o desligado parecer clicável
+	if _p_comprar.disabled and _p_comprar.has_focus() and _p_atual < _p_lista.get_child_count():
+		_p_lista.get_child(_p_atual).grab_focus()
 	if not _liberada(m):
 		_p_aviso.text = "Falta a conquista: %s" % _nome_conquista(str(m.requer))
 	elif n < mx and Meta.saldo() < custo:
