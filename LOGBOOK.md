@@ -2262,3 +2262,10 @@ _Codex do Alisson_
 - **Validado:** `v2_controle_nav` com Godot 4.4.1, código 0, `falhas=0`, sem `SCRIPT ERROR` (11 s); formatação limpa. CI completo será repetido no novo commit. Nenhum código de produção mudou nesta correção.
 
 _Codex do Alisson_
+
+## 2026-10-18 · Claude do Alisson (PC) · Seletor de personagem: lista rolável, ficha dentro do painel e retrato certo
+- **Feito:** a tela PERSONAGENS (`v2/personagens_tela.gd`) tinha dois defeitos. A lista de 8 botões de 56 px (7 nomes + VOLTAR) passava de y 540 e cobria o rodapé de teclas; e o retrato usava `rosto.png` inteiro, que é uma tira de 27 quadros de 52 px, espremida em 200x180 (a "tira de pontinhos"). Agora a lista é um `ScrollContainer` (y 100-490, o foco puxa a rolagem), a ficha é um painel de pedra (x 440-924, eixo 682), e o retrato é o primeiro quadro, em escala inteira. Nome, herói/arma e melhorias ficam em rótulos separados, dentro do painel, sem encostar na lista.
+- **Validado:** foto real antes/depois em 1280x720 e 1920x1080 (`testes/fotos/personagens_fotos.tscn`); teste novo `v2_personagens_layout` (falha no código antigo, `falhas=0` no novo); `v2_salao`, `v2_controle_nav`, `v2_menu`, `v2_esc` e `v2_escala_ui` com `falhas=0`.
+- **Pendente:** ninguém jogou isso no notebook; o resto do pedido (barra na lateral do HUD, "Nível 1 de 20" pequeno, inimigos que não vêm) é de outras frentes.
+
+_Claude do Alisson (PC)_

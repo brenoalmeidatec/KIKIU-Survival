@@ -18,6 +18,16 @@ const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
 const SPRITE := "res://prototipos/cara_nova/sprites/hazaki_samurai"  # sem rosto, o retrato é o quadro parado do herói
 const LARG := 960
 const ALT := 540
+const COL_X := 36  # coluna da lista (x 36-416)
+const COL_L := 380
+const FICHA_X := 440  # coluna da ficha, 24 px depois da lista, até a margem direita (x 924)
+const FICHA_L := 484
+const FICHA_EIXO := 682  # centro da ficha: retrato, nome e linhas
+const TOPO := 100
+const FUNDO_Y := 490  # os controles terminam 8 px acima do início do rodapé (498)
+const RETRATO_Y := 168
+const RETRATO_ALT := 104
+const Paleta := preload("res://v2/paleta.gd")
 const COR_OURO := Color(1.0, 0.86, 0.42)
 const COR_TEXTO := Color(0.92, 0.9, 0.96)
 const COR_APAGADO := Color(0.55, 0.56, 0.64)
@@ -31,6 +41,7 @@ var _lista: VBoxContainer
 var _retrato: TextureRect
 var _nome: Label
 var _info: Label
+var _detalhe: Label
 var _aviso: Label
 var _sprite: Texture2D
 var _quadro := Vector2(32, 44)
@@ -67,24 +78,42 @@ func _montar() -> void:
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 	add_child(_rotulo("PERSONAGENS", Dados.fonte_titulo, 56, COR_OURO, Rect2(0, 22, LARG, 60), HORIZONTAL_ALIGNMENT_CENTER))
+	# Grade (DESIGN.md §1b): margem de 36, coluna da esquerda 36-416, a da direita 24 depois (440-924), tudo entre y 100 e y 490
+	# (o rodapé de teclas começa em 498). A lista rola quando tem mais botões do que cabem; o foco puxa a rolagem.
+	var rolagem := ScrollContainer.new()
+	rolagem.position = Vector2(COL_X, TOPO)
+	rolagem.size = Vector2(COL_L, FUNDO_Y - TOPO)
+	rolagem.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rolagem.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	rolagem.follow_focus = true
+	add_child(rolagem)
 	_lista = VBoxContainer.new()
-	_lista.position = Vector2(36, 110)  # margem lateral de 36 px (DESIGN.md §1b)
-	_lista.size = Vector2(380, 380)
-	_lista.add_theme_constant_override("separation", 10)
-	add_child(_lista)
-	_retrato = TextureRect.new()
-	_retrato.position = Vector2(470, 150)  # eixo da ficha em x 570: retrato, nome e linhas centrados nele
-	_retrato.size = Vector2(200, 180)
+	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lista.add_theme_constant_override("separation", 6)
+	rolagem.add_child(_lista)
+	var painel := Panel.new()
+	painel.position = Vector2(FICHA_X, TOPO)
+	painel.size = Vector2(FICHA_L, FUNDO_Y - TOPO)
+	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	painel.add_theme_stylebox_override("panel", _moldura())
+	add_child(painel)
+	_retrato = TextureRect.new()  # posição e tamanho vêm de _definir_retrato (escala inteira, centrado no eixo da ficha)
 	_retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_retrato.stretch_mode = TextureRect.STRETCH_SCALE
 	_retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_retrato)
-	_nome = _rotulo("", Dados.fonte_titulo, 56, COR_OURO, Rect2(450, 92, 240, 60), HORIZONTAL_ALIGNMENT_CENTER)
+	_nome = _rotulo("", Dados.fonte_titulo, 56, COR_OURO, Rect2(FICHA_X + 16, TOPO + 8, FICHA_L - 32, 58), HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_nome)
-	_info = _rotulo("", Dados.fonte_texto, 32, COR_TEXTO, Rect2(370, 336, 400, 130), HORIZONTAL_ALIGNMENT_CENTER)
+	_info = _rotulo("", Dados.fonte_texto, 32, COR_TEXTO, Rect2(FICHA_X + 16, 272, FICHA_L - 32, 70), HORIZONTAL_ALIGNMENT_CENTER)
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_info.clip_text = true
 	add_child(_info)
-	_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(40, ALT - 78, LARG - 80, 22), HORIZONTAL_ALIGNMENT_LEFT)
+	_detalhe = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(FICHA_X + 16, 344, FICHA_L - 32, 116), HORIZONTAL_ALIGNMENT_CENTER)
+	_detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detalhe.clip_text = true
+	add_child(_detalhe)
+	_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(FICHA_X + 16, FUNDO_Y - 28, FICHA_L - 32, 20), HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_aviso)
 	var faixa := ColorRect.new()
 	faixa.color = Color(0.01, 0.02, 0.035, 0.7)
@@ -148,7 +177,7 @@ func _montar_lista() -> void:
 func _novo_botao(txt: String, acao: Callable, ao_focar: Callable) -> void:
 	var b := Button.new()
 	b.text = txt
-	b.custom_minimum_size = Vector2(380, 56)
+	b.custom_minimum_size = Vector2(0, 42)
 	_estilo_botao(b)
 	b.pressed.connect(acao)
 	b.focus_entered.connect(ao_focar)
@@ -162,7 +191,8 @@ func _mostrar_personagem(id: String) -> void:
 	var r := Personagens.resumo(id)
 	_nome.text = str(r.nome)
 	_definir_retrato(_pasta_do_nome(str(r.nome)))
-	var linhas := ["Almas: %d" % int(r.almas), "Herói: %s" % _heroi_e_arma(Personagens.heroi(id))]
+	_info.text = "Almas: %d\nHerói: %s" % [int(r.almas), _heroi_e_arma(Personagens.heroi(id))]
+	var linhas := []
 	var efeitos := []
 	var niveis := Personagens.niveis(id)
 	for m in Meta.melhorias_visiveis():
@@ -173,19 +203,21 @@ func _mostrar_personagem(id: String) -> void:
 	linhas.append_array(efeitos.slice(0, 4))
 	if str(r.mapa) != "":
 		linhas.append("Último mapa: %s" % Mapas.buscar(str(r.mapa)).nome)
-	_info.text = "\n".join(PackedStringArray(linhas))
+	_detalhe.text = "\n".join(PackedStringArray(linhas))
 
 
 func _mostrar_nome(n: Dictionary) -> void:
 	_nome.text = str(n.nome)
 	_definir_retrato(str(n.pasta))
-	_info.text = "Santuário novo: sem almas e sem melhorias.\nHerói: %s." % _heroi_e_arma(Personagens.heroi_do_nome(str(n.nome)))
+	_info.text = "Herói: %s" % _heroi_e_arma(Personagens.heroi_do_nome(str(n.nome)))
+	_detalhe.text = "Santuário novo: sem almas e sem melhorias."
 
 
 func _mostrar_vazio() -> void:
 	_nome.text = ""
 	_info.text = ""
-	_definir_retrato("")
+	_detalhe.text = ""
+	_definir_retrato("", false)
 
 
 func _heroi_e_arma(heroi_id: String) -> String:
@@ -199,19 +231,44 @@ func _pasta_do_nome(nome_txt: String) -> String:
 	return ""
 
 
-## O retrato: o rosto do personagem (assets/personagens/<pasta>/rosto.png) quando existe; senão o quadro parado do herói.
-func _definir_retrato(pasta: String) -> void:
+## O retrato: o rosto do personagem (assets/personagens/<pasta>/rosto.png) quando existe; senão o quadro parado do herói. O
+## rosto.png é uma TIRA de quadros quadrados (altura x altura, 27 quadros): o retrato é só o primeiro, nunca a tira inteira.
+## A escala é inteira (pixel art nítida) e a imagem fica centrada no eixo da ficha, dentro da caixa RETRATO_ALT.
+func _definir_retrato(pasta: String, visivel := true) -> void:
+	var tex: Texture2D = null
 	var rosto := "res://assets/personagens/%s/rosto.png" % pasta
 	if pasta != "" and ResourceLoader.exists(rosto):
-		_retrato.texture = load(rosto) as Texture2D
+		var tira := load(rosto) as Texture2D
+		if tira != null:
+			tex = _quadro_de(tira, Rect2(0, 0, tira.get_height(), tira.get_height()))
+	elif _sprite != null:
+		tex = _quadro_de(_sprite, Rect2(0, 0, _quadro.x, _quadro.y))
+	_retrato.visible = visivel and tex != null
+	_retrato.texture = tex
+	if tex == null:
 		return
-	if _sprite == null:
-		_retrato.texture = null
-		return
+	var esc := maxi(1, int(floor(float(RETRATO_ALT) / tex.get_height())))
+	_retrato.size = tex.get_size() * esc
+	_retrato.position = Vector2(FICHA_EIXO - _retrato.size.x / 2.0, RETRATO_Y + (RETRATO_ALT - _retrato.size.y) / 2.0)
+
+
+func _quadro_de(atlas: Texture2D, regiao: Rect2) -> AtlasTexture:
 	var quadro := AtlasTexture.new()
-	quadro.atlas = _sprite
-	quadro.region = Rect2(0, 0, _quadro.x, _quadro.y)
-	_retrato.texture = quadro
+	quadro.atlas = atlas
+	quadro.region = regiao
+	return quadro
+
+
+## Moldura 9-patch de pedra do HUD (20x20, margem de 5 px), como a do santuário.
+func _moldura() -> StyleBoxTexture:
+	var s := StyleBoxTexture.new()
+	s.texture = MOLDURA
+	s.texture_margin_left = 5
+	s.texture_margin_top = 5
+	s.texture_margin_right = 5
+	s.texture_margin_bottom = 5
+	s.modulate_color = Paleta.MOLDURA_ESCURA
+	return s
 
 
 # ------------------------------------------------------------------ ações
