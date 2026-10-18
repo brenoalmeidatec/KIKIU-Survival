@@ -188,7 +188,29 @@ const FICHAS := {
 		"cor_fx": Color(1.0, 0.55, 0.15),
 		"rastro": "fogo",
 	},
-	# ---- fusões do tipo aliado (alias das fichas acima; o lobo_espirito ainda não tem ficha e é pulado: quem tem lobo usa o resto da lista)
+	"lobo_espirito":
+	{
+		"folha": "res://assets/v2/armas/lobo_espiritual_dir.png",
+		"quadro": Vector2(80, 91),
+		"pe": Vector2(32, 56),
+		"ciclo": [33.0, 40.0, 46.0, 41.0, 33.0],
+		# agacha, se encolhe, salta, pico do salto (boca escancarada), MORDIDA (focinho à frente, boca fechando), segura, levanta, volta: 0,46 s, cabe no tique de 0,6 s
+		"tempos": [0.06, 0.06, 0.05, 0.04, 0.05, 0.08, 0.06, 0.06],
+		"impacto": 4,
+		# o salto está na folha: no quadro da mordida o focinho chega 45,4 px à frente do centro do corpo (`alcance_pata_px` do .json)
+		"alcance": 36.0,
+		"frente": 34.0,
+		"raio": 18.0,
+		"empurra": 25.0,
+		"atordoa": 0.06,
+		"sombra": 11.0,
+		"cor_fx": Color(0.72, 0.84, 1.0),
+		"rastro": "bote",
+		# a corrida DE LADO é a arte que o Breno aprovou (fonte_arte/blender_lobo, 16 quadros de 82x42 olhando para a direita, pés na linha 40,
+		# corpo na coluna 48): fica até ele aprovar a troca pela folha 3D; as outras vistas e o ataque usam a 3D
+		"perfil_corre": {"folha": "res://assets/v2/armas/lobo_espiritual_corre.png", "quadro": Vector2(82, 42), "pe": Vector2(48, 40), "n": 16},
+	},
+	# ---- fusões do tipo aliado (alias das fichas acima)
 	"dragao_de_brasa":
 	{
 		"como": ["dragao_filhote"],
@@ -554,6 +576,12 @@ static func _folha(ci: CanvasItem, it: Dictionary, p: Vector2, f: Dictionary, t:
 	ci.draw_set_transform(p - Vector2(0.0, altura(it, f)), 0.0, Vector2(lado * esc, esc))
 	var q := quadro_de(it)
 	var origem := Vector2(q.x * quadro.x, q.y * quadro.y)
+	var pc := _perfil_corre(it, f)
+	if not pc.is_empty():  # corrida de lado desenhada à mão (o lobo): uma linha só, o quadro pela fase do passo
+		t = pc.tex
+		quadro = pc.quadro
+		pe = pc.pe
+		origem = Vector2(clampi(floori(fposmod(float(it.pf), 1.0) * int(pc.n)), 0, int(pc.n) - 1) * quadro.x, 0.0)
 	var corte := 0.0
 	var alfa := k
 	if int(it.e) == SURGINDO:
@@ -564,6 +592,21 @@ static func _folha(ci: CanvasItem, it: Dictionary, p: Vector2, f: Dictionary, t:
 	var r_folha := Rect2(origem + Vector2(0, corte), Vector2(quadro.x, quadro.y - corte))
 	ci.draw_texture_rect_region(t, r_tela, r_folha, Color(cor, cor.a * alfa))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## A corrida de perfil feita à mão, quando a ficha tem uma e o bicho está correndo de lado (fora do ataque, sem a folha cinza das fusões).
+static func _perfil_corre(it: Dictionary, f: Dictionary) -> Dictionary:
+	if not f.has("perfil_corre") or bool(f.get("gris", false)) or int(it.lin) != 2 or int(it.e) == ATACANDO or not bool(it.mov):
+		return {}
+	var pc: Dictionary = f.perfil_corre
+	var caminho := str(pc.folha)
+	if not _tex.has(caminho):
+		_tex[caminho] = load(caminho) as Texture2D
+	if _tex[caminho] == null:
+		return {}
+	var r := pc.duplicate()
+	r.tex = _tex[caminho]
+	return r
 
 
 ## Camada aditiva: o halo do espírito, a névoa de nascer e sumir, e o rastro das garras no golpe.

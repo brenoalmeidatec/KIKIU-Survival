@@ -21,4 +21,4 @@ Script de exemplo: `jogos/hordas/fonte_arte/blender_lobo/gerar_lobo_corre.py`.
 
 ## No jogo
 Folha com os quadros em linha em `assets/v2/armas/`. O desenho do golpe pega o quadro pela fase do item e espelha para o lado em que ele anda
-(`v2/armas_novas.gd`, `_desenhar_lobo`). O pé do bicho fica na posição do item no chão.
+(`v2/armas_novas.gd`; o Lobo Espiritual, que era o caso, agora é um andante 3D em `v2/andante.gd`). O pé do bicho fica na posição do item no chão.
