@@ -1105,6 +1105,18 @@ func colunas_visuais() -> Array:
 
 
 ## Desenha (ou só mede, com `seco`) a página visual; devolve, por coluna, a altura que o conteúdo pede.
+## Dicas de tecla do cabeçalho da SUA BUILD: cada par é [ação, texto]; o glifo do botão vem antes do texto, alinhado à direita da coluna.
+func _dica_teclas(pares: Array, x: float, w: float, base: float) -> void:
+	var total := 10.0 * float(pares.size() - 1)
+	for p in pares:
+		total += Glifos.largura_acao(p[0]) + 6.0 + _f_num.get_string_size(p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_NUM).x
+	var cx := x + w - total
+	for p in pares:
+		cx += Glifos.desenhar_acao(_tela, p[0], Vector2(cx, base - 12.0)) + 6.0
+		_tela.draw_string(_f_num, Vector2(cx, base), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_NUM, COR_ROTULO)
+		cx += _f_num.get_string_size(p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_NUM).x + 10.0
+
+
 func _visual(seco: bool) -> Array:
 	var cols: Array = colunas_visuais()
 	var grupos: Array = [["heroi", "partida"], ["katana", "golpes"]] if cols.size() == 2 else [["heroi", "partida"], ["katana"], ["golpes"]]
@@ -1117,10 +1129,10 @@ func _visual(seco: bool) -> Array:
 		if c == 0:
 			if not seco:
 				_texto_titulo("SUA BUILD", Vector2(x, y), COR_TITULO)
-				var dica := "[%s] detalhes" % Glifos.texto("detalhes")
-				if _m != "pausa" and Glifos.texto("card") != "":
-					dica += " [%s] fecha" % Glifos.texto("card")
-				_tela.draw_string(_f_num, Vector2(x, y + 6.0 + _f_num.get_ascent(TAM_NUM)), dica, HORIZONTAL_ALIGNMENT_RIGHT, w, TAM_NUM, COR_ROTULO)
+				var pares := [["detalhes", "detalhes"]]
+				if _m != "pausa":
+					pares.append(["card", "fecha"])
+				_dica_teclas(pares, x, w, y + 6.0 + _f_num.get_ascent(TAM_NUM))
 			y += ALT_TITULO
 		for id in grupos[c]:
 			var sec := _achar(str(id))

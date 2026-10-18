@@ -98,7 +98,7 @@ func _montar() -> void:
 	_faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_faixa)
 	_dica = Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_APAGADO)
-	_dica.position = Vector2(0, ALT - 28)
+	_dica.position = Vector2(0, ALT - 30)  # rodapé: caixa de 22 px a 8 px da borda (DESIGN.md §1b)
 	_dica.size = Vector2(LARG, 22)
 	add_child(_dica)
 	add_to_group("ui_escala")
@@ -119,7 +119,7 @@ func ui_reencaixar(canvas: Vector2, desloc: Vector2) -> void:
 		return
 	_faixa.position = Vector2(-desloc.x, ALT + desloc.y - 46.0)
 	_faixa.size = Vector2(canvas.x, 46.0)
-	_dica.position = Vector2(0.0, ALT + desloc.y - 28.0)
+	_dica.position = Vector2(0.0, ALT + desloc.y - 30.0)
 
 
 func _texto(txt: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment, r: Rect2) -> Label:

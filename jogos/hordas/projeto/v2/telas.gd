@@ -63,7 +63,7 @@ var _res: Control
 var _res_titulo: Label
 var _res_linhas: Label
 var _res_valores: Label
-var _res_dica: Label
+var _res_dica: Control  # Glifos.dica: glifo do botão + texto
 var _dep: Label
 var _dep_t := 0.0
 var _fonte: Font  # texto corrido (Spleen 8x16, sempre em 16 px)
@@ -79,7 +79,7 @@ var _bau_i := 0  # qual carta está girando
 var _bau_t := 0.0
 var _bau_fase := 0  # 0 = girando, 1 = pausa depois de revelar, 2 = tudo revelado
 var _bau_tick := 0.0
-var _bau_dica: Label
+var _bau_dica: Control  # Glifos.dica: glifo do botão + texto
 
 
 func montar(c, sv: Node) -> void:
@@ -268,13 +268,13 @@ func _moldura(cor: Color) -> StyleBoxFlat:
 	return s
 
 
-## "ENTER ou clique" no teclado e no mouse; só o botão do controle (A, cruz...) quando o último dispositivo foi o controle.
-func _textos_dicas() -> void:
-	if not is_instance_valid(_bau_dica) or not is_instance_valid(_res_dica):
-		return  # a partida acabou e os rótulos foram liberados; o Telas (RefCounted) ainda ouve
-	var quem := Glifos.texto("confirmar").to_upper() + ("" if Glifos.eh_controle() else " ou clique")
-	_bau_dica.text = "%s para continuar" % quem
-	_res_dica.text = "%s para jogar de novo" % quem
+## Dica do baú e do resultado: o botão do dispositivo em uso (Enter, A ou cruz) desenhado pelo Glifos; o Control se refaz sozinho na troca.
+func _gerador_continuar() -> Array:
+	return [["confirmar", "para continuar" if Glifos.eh_controle() else "ou clique para continuar"]]
+
+
+func _gerador_jogar_de_novo() -> Array:
+	return [["confirmar", "para jogar de novo" if Glifos.eh_controle() else "ou clique para jogar de novo"]]
 
 
 func _botao(pos: Vector2, id: String) -> Panel:
@@ -313,7 +313,7 @@ func _montar_bau() -> void:
 		_montar_cartao(p, "")
 		_bau.add_child(p)
 		_bau_slots.append(p)
-	_bau_dica = _rotulo("", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_bau_dica = Glifos.dica(_gerador_continuar, HORIZONTAL_ALIGNMENT_CENTER, Paleta.OURO)
 	_bau_dica.position = Vector2(0, 450)
 	_bau_dica.size = Vector2(LARG, 20)
 	_bau.add_child(_bau_dica)
@@ -338,12 +338,10 @@ func _montar_resultado() -> void:
 	_res_valores.size = Vector2(120, 190)
 	_res_valores.add_theme_constant_override("line_spacing", 8)
 	_res.add_child(_res_valores)
-	_res_dica = _rotulo("", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_res_dica = Glifos.dica(_gerador_jogar_de_novo, HORIZONTAL_ALIGNMENT_CENTER, Paleta.OURO)
 	_res_dica.position = Vector2(0, 410)
-	_res_dica.size = Vector2(LARG, 12)
+	_res_dica.size = Vector2(LARG, 20)
 	_res.add_child(_res_dica)
-	_textos_dicas()
-	Glifos.ao_mudar(_textos_dicas)
 
 
 # ------------------------------------------------------------------ mostrar

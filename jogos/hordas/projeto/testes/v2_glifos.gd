@@ -24,6 +24,7 @@ func _ready() -> void:
 	_troca()
 	_dica_e_titulo()
 	Glifos.definir(Glifos.Disp.TECLADO)
+	Glifos._ouvintes.clear()  # o ouvinte da linha 22 captura este nó: tirá-lo antes de sair evita o segfault (exit 139) no encerramento
 	print("v2_glifos falhas=%d" % falhas)
 	get_tree().quit()
 

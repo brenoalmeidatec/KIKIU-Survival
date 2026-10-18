@@ -173,7 +173,7 @@ func _montar() -> void:
 		_raiz.add_child(linha)
 		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val})
 	_ajuda = _rotulo(
-		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 22, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 44, HORIZONTAL_ALIGNMENT_LEFT
+		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 34, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 68, HORIZONTAL_ALIGNMENT_LEFT  # a mesma coluna do texto das linhas (margem 24 + 10 do painel da linha)
 	)
 	_ajuda.size.y = AJUDA_H
 	_ajuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

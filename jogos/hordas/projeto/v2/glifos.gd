@@ -158,6 +158,15 @@ static func largura_acao(acao: String) -> float:
 	return w
 
 
+## Desenha todos os glifos de uma ação (2 px entre eles) na posição e devolve a largura usada: para o que é desenhado por código.
+static func desenhar_acao(ci: CanvasItem, acao: String, pos: Vector2) -> float:
+	var ds := descritor(acao)
+	var x := 0.0
+	for i in ds.size():
+		x += desenhar(ci, ds[i], pos + Vector2(x, 0.0)) + (2.0 if i < ds.size() - 1 else 0.0)
+	return x
+
+
 ## Desenha o glifo na posição (canto de cima à esquerda) e devolve a largura usada.
 static func desenhar(ci: CanvasItem, d: Array, pos: Vector2) -> float:
 	var w := largura(d)

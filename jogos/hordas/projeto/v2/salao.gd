@@ -260,10 +260,10 @@ func _montar_hud() -> void:
 	add_child(ajustes)
 	var voltar := Button.new()
 	voltar.text = "VOLTAR"
-	_glifo_no_botao(voltar, "voltar")
 	voltar.position = Vector2(810, 507)
 	voltar.size = Vector2(136, 30)
 	_estilo_botao(voltar, 16)
+	_glifo_no_botao(voltar, "voltar")  # depois do tamanho: o glifo usa a largura do botão
 	voltar.pressed.connect(func(): get_tree().change_scene_to_file.call_deferred(ESCOLHA))
 	add_child(voltar)
 
@@ -299,10 +299,10 @@ func _montar_painel() -> void:
 	_painel.add_child(_p_titulo)
 	var fechar := Button.new()
 	fechar.text = "VOLTAR"
-	_glifo_no_botao(fechar, "voltar")
 	fechar.position = Vector2(742, 42)
 	fechar.size = Vector2(158, 34)
 	_estilo_botao(fechar, 16)
+	_glifo_no_botao(fechar, "voltar")  # depois do tamanho: o glifo usa a largura do botão
 	fechar.pressed.connect(_fechar_painel)
 	_painel.add_child(fechar)
 	_p_rolagem = ScrollContainer.new()
