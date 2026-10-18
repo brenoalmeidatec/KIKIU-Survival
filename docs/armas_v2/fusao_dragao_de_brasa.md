@@ -1,5 +1,7 @@
 # Dragão de Brasa (fusão dragao_de_brasa)
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **45 s** e some (as fusões e os mais fortes duram mais: 45 a 60 s); a recarga de **30 s** só começa a contar depois que o último da leva sumiu, então nunca fica indefinidamente. Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). Onde este arquivo citar duração ou recarga menores, vale este número.
+
 **Peças:** Dragãozinho (nível 3) + Serpente Ardente (nível 3). Fichas: dragao_filhote.md, serpente_ardente.md.
 
 **Vira:** três espíritos de brasa, do tipo aliado (um golpe secundário novo). Eles substituem o Dragãozinho e a Serpente, que saem do sorteio.

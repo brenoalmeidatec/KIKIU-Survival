@@ -1,5 +1,7 @@
 # Exército Esquecido (fusão exercito_esquecido)
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **50 s** e some (as fusões e os mais fortes duram mais: 45 a 60 s); a recarga de **30 s** só começa a contar depois que o último da leva sumiu, então nunca fica indefinidamente. Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). Onde este arquivo citar duração ou recarga menores, vale este número.
+
 **Peças:** Esqueleto Guerreiro (nível 3) + Fantasma da Mata (nível 3). Fichas: esqueleto_guerreiro.md, fantasma_mata.md.
 
 **Vira:** quatro espíritos aliados (esqueletos e fantasmas, um golpe secundário novo) que saem juntos. Substituem o Esqueleto e o Fantasma, que saem do sorteio.

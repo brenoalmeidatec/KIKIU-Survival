@@ -10,6 +10,8 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Novas := preload("res://v2/armas_novas.gd")
+const Golem := preload("res://v2/golem.gd")
+const Andante := preload("res://v2/andante.gd")
 const PASSO := 1.0 / 60.0
 const ID := "sentinela_bambu"
 var falhas := 0
@@ -95,6 +97,10 @@ func _ready() -> void:
 			await fotos(a.trim_prefix("--fotos="))
 			get_tree().quit()
 			return
+		if a.begins_with("--fotos_aliados="):
+			await fotos_aliados(a.trim_prefix("--fotos_aliados="))
+			get_tree().quit()
+			return
 
 	# 0. dados, ícone e escolha de cartas
 	var d: Dictionary = cs.definicao(ID)
@@ -127,6 +133,14 @@ func _ready() -> void:
 		ok(float(b.duracao) >= 25.0 and float(b.duracao) <= 60.0, "%s: duração de 25 a 60 s (%s)" % [g.id, b.duracao])
 		ok(float(b.recarga) >= 15.0, "%s: recarga de 15 s ou mais, contada depois que a leva some (%s)" % [g.id, b.recarga])
 	ok(temporarios >= 16, "todas as invocações e torres foram conferidas (%d)" % temporarios)
+	ok(
+		Golem.topo({"a": {"id": "golem_barro"}}) > 0.0 and Golem.topo({"a": {"id": "colosso_de_pedra"}}) > Golem.topo({"a": {"id": "golem_barro"}}),
+		"o colosso é mais alto que o golem: a barrinha sobe junto"
+	)
+	ok(
+		Andante.raio_marca({"a": {"id": "?"}, "k": "?"}) >= 10.0,
+		"o anel de amigo tem raio mínimo mesmo sem ficha (%s)" % Andante.raio_marca({"a": {"id": "?"}})
+	)
 
 	# 1. a torre cai depois da recarga, atira e machuca
 	zerar()
@@ -260,6 +274,21 @@ func fotos(pasta: String) -> void:
 	passos(30)
 	var antes := int(armas.acertos.get("raio", 0))
 	await _foto_quando(func(): return int(armas.acertos.get("raio", 0)) > antes, 900, pasta.path_join("v2_pagode_trovao.png"), 1)
+
+
+## Foto (com janela) da marca de amigo: anel verde no chão e barrinha verde de tempo sobre a cabeça, em aliado andante, golem e torre.
+func fotos_aliados(pasta: String) -> void:
+	DirAccess.make_dir_recursive_absolute(pasta)
+	Config.g_aplicar_perfil("alto")
+	Config.temporario("pausar_fora", false)
+	zerar()
+	monstro_a(260, -60).atordoa_t = 60.0
+	for id in ["lobo_espirito", "golem_barro", "espirito_urso", ID]:
+		pegar(id)
+	passos(150)
+	await _foto_quando(func(): return true, 1, pasta.path_join("v2_aliados_marca.png"), 0)
+	passos(1500)  # ~25 s: a barrinha já está pela metade e o lobo (35 s) perto de sumir
+	await _foto_quando(func(): return true, 1, pasta.path_join("v2_aliados_marca_meio.png"), 0)
 
 
 func _torre_pousou() -> bool:
