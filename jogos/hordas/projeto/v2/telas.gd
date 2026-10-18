@@ -270,6 +270,8 @@ func _moldura(cor: Color) -> StyleBoxFlat:
 
 ## "ENTER ou clique" no teclado e no mouse; só o botão do controle (A, cruz...) quando o último dispositivo foi o controle.
 func _textos_dicas() -> void:
+	if not is_instance_valid(_bau_dica) or not is_instance_valid(_res_dica):
+		return  # a partida acabou e os rótulos foram liberados; o Telas (RefCounted) ainda ouve
 	var quem := Glifos.texto("confirmar").to_upper() + ("" if Glifos.eh_controle() else " ou clique")
 	_bau_dica.text = "%s para continuar" % quem
 	_res_dica.text = "%s para jogar de novo" % quem

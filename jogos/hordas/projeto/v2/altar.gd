@@ -69,6 +69,7 @@ func _ready() -> void:
 	if _abrir_v1():
 		return
 	_ajustar_janela()
+	Glifos.instalar()  # escuta o último dispositivo (a dica do rodapé troca entre teclado, Xbox e PlayStation)
 	_montar()
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)
 	pausa.sair_no_frontend = false
@@ -260,7 +261,7 @@ func _montar() -> void:
 	_voltar.pressed.connect(_voltar_menu)
 	add_child(_voltar)
 	var dica := Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_APAGADO)
-	dica.position = Vector2(0, 522)  # 4 px abaixo dos botões; a dica de 16 px termina em 538
+	dica.position = Vector2(0, 524)  # 6 px abaixo dos botões; a dica de 16 px termina em 540
 	dica.size = Vector2(LARG, 16)
 	add_child(dica)
 

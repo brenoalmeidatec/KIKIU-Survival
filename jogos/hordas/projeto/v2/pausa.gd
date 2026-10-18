@@ -381,13 +381,9 @@ func entrada(e: InputEvent) -> bool:
 	return true
 
 
-## A dica da pausa: só os botões do dispositivo em uso. No menu principal ainda tem o SUA BUILD (abas e detalhes).
+## A dica da pausa: só os botões do dispositivo em uso. Detalhes e páginas do SUA BUILD ficam na dica do próprio card (não cabem aqui: 424 px).
 func _itens_dica() -> Array:
-	var r: Array = [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
-	if tela == "menu" and mundo != null and mundo.get("status") != null:
-		r.append(["detalhes", "Detalhes"])
-		r.append(["abas", "Página"])
-	return r
+	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
 
 
 ## ESC (tecla) ou Start do controle: os dois pausam e, com o menu aberto, voltam como o ui_cancel (B).

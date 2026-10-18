@@ -8,6 +8,7 @@ extends RefCounted
 ## No Godot o botão de baixo é o JOY_BUTTON_A nos dois controles (Xbox A = PlayStation cruz); direita = B = bola; esquerda = X = quadrado; cima = Y = triângulo.
 
 const Paleta := preload("res://v2/paleta.gd")
+const G := preload("res://v2/glifos.gd")  # as classes internas chamam o estático do arquivo por aqui
 
 enum Disp { TECLADO, XBOX, PS }
 
@@ -216,7 +217,7 @@ class No:
 	extends Node
 
 	func _input(e: InputEvent) -> void:
-		observar(e)
+		G.observar(e)
 
 
 class Dica:
@@ -230,7 +231,7 @@ class Dica:
 
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ao_mudar(atualizar)
+		G.ao_mudar(atualizar)
 
 	func _ready() -> void:
 		atualizar()
@@ -241,7 +242,7 @@ class Dica:
 		update_minimum_size()
 
 	func _get_minimum_size() -> Vector2:
-		return Vector2(_largura_total(), ALTURA)
+		return Vector2(_largura_total(), G.ALTURA)
 
 	func _largura_total() -> float:
 		var w := 0.0
@@ -254,7 +255,7 @@ class Dica:
 		return w
 
 	func _largura_item(it: Array) -> float:
-		var g := largura_acao(it[0]) if str(it[0]) != "" else 0.0
+		var g := G.largura_acao(it[0]) if str(it[0]) != "" else 0.0
 		var tx := Dados.fonte_texto.get_string_size(str(it[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x if str(it[1]) != "" else 0.0
 		if str(it[0]) != "" and g == 0.0:
 			return 0.0  # a ação não existe neste dispositivo: o par inteiro some (ex.: "Mouse também" no controle)
@@ -267,16 +268,16 @@ class Dica:
 			x = roundf((size.x - total) * 0.5)
 		elif alin == HORIZONTAL_ALIGNMENT_RIGHT:
 			x = size.x - total
-		var y0 := roundf((size.y - ALTURA) * 0.5)
+		var y0 := roundf((size.y - G.ALTURA) * 0.5)
 		var f: Font = Dados.fonte_texto
-		var base := y0 + roundf((ALTURA + f.get_ascent(tam) - f.get_descent(tam)) * 0.5)
+		var base := y0 + roundf((G.ALTURA + f.get_ascent(tam) - f.get_descent(tam)) * 0.5)
 		for it in _itens:
 			if _largura_item(it) <= 0.0:
 				continue
 			if str(it[0]) != "":
-				var ds := descritor(it[0])
+				var ds := G.descritor(it[0])
 				for i in ds.size():
-					x += desenhar(self, ds[i], Vector2(x, y0)) + (2.0 if i < ds.size() - 1 else 0.0)
+					x += G.desenhar(self, ds[i], Vector2(x, y0)) + (2.0 if i < ds.size() - 1 else 0.0)
 				if str(it[1]) != "":
 					x += 6.0
 			if str(it[1]) != "":
