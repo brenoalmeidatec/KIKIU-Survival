@@ -110,9 +110,9 @@ def modelo():
     esfera("capuz", 0.37, (0, 0.02, OMBRO_Z + 0.42), mat["capuz"], cabeca, escala=(0.95, 1.0, 1.1))
     ponta = cone("capuz_ponta", 0.2, 0.0, 0.5, (0, 0.2, OMBRO_Z + 0.88), mat["capuz"], cabeca)
     ponta.rotation_euler = (-0.55, 0, 0)         # a ponta do capuz cai para trás
-    esfera("rosto", 0.27, (0, -0.2, OMBRO_Z + 0.42), mat["rosto"], cabeca, escala=(0.9, 0.6, 1.05))
+    esfera("rosto", 0.31, (0, -0.2, OMBRO_Z + 0.42), mat["rosto"], cabeca, escala=(0.95, 0.62, 1.1))      # o vão do capuz: um buraco escuro grande, para os olhos saltarem
     for x in (0.1, -0.1):
-        esfera("olho", 0.06, (x, -0.38, OMBRO_Z + 0.48), mat["olho"], cabeca, escala=(1.0, 0.7, 1.3))
+        esfera("olho", 0.085, (x * 1.1, -0.4, OMBRO_Z + 0.48), mat["olho"], cabeca, escala=(1.0, 0.7, 1.35))
     # boca: um oval escuro que abre no bote (a escala em Z é a abertura)
     boca = junta("boca", (0, -0.4, OMBRO_Z + 0.28), cabeca)
     J["boca"] = boca
@@ -123,9 +123,9 @@ def modelo():
         b = junta("braco_" + lado, (x, -0.02, OMBRO_Z - 0.05), tronco)
         cone("manga_" + lado, 0.2, 0.1, 0.8, (x, -0.02, OMBRO_Z - 0.45), mat["capuz"], b)
         mao = junta("mao_" + lado, (x, -0.02, OMBRO_Z - 0.85), b)
-        esfera("palma_" + lado, 0.1, (x, -0.02, OMBRO_Z - 0.88), mat["garra"], mao, escala=(1.0, 1.0, 0.8))
+        esfera("palma_" + lado, 0.12, (x, -0.02, OMBRO_Z - 0.88), mat["garra"], mao, escala=(1.0, 1.0, 0.8))
         for k, dx in enumerate((-0.07, 0.0, 0.07)):
-            cone("garra_%s%d" % (lado, k), 0.045, 0.0, 0.3, (x + dx, -0.02, OMBRO_Z - 1.1), mat["garra"], mao)
+            cone("garra_%s%d" % (lado, k), 0.06, 0.0, 0.42, (x + dx * 1.3, -0.02, OMBRO_Z - 1.14), mat["garra"], mao)
         J["braco"][lado] = (b, mao)
     raiz.scale = (ESCALA, ESCALA, ESCALA)
     return J
@@ -138,9 +138,9 @@ ATQ = (
     (0.22, -0.05, -0.25, -0.2, 0.95, 0.2, -0.25, 0.0, 0.5),       # 8  recua e se encolhe, braços abertos para trás
     (0.12, 0.05, -0.35, -0.8, 1.15, -0.2, -0.30, 0.3, 0.6),       # 9  cresce, braços abrindo
     (0.05, 0.12, -0.35, -1.9, 0.9, -0.4, -0.35, 0.8, 0.5),        # 10 pico: braços para o alto, boca abrindo
-    (-0.20, 0.05, 0.15, -2.0, 0.5, -0.3, 0.15, 1.0, 0.7),         # 11 começa o bote
-    (-0.70, -0.05, 0.40, -2.0, 0.25, -0.1, 0.30, 1.0, 1.1),       # 12 BOTE: capuz à frente, garras estendidas
-    (-0.60, -0.04, 0.35, -1.9, 0.30, -0.1, 0.25, 0.9, 1.0),       # 13 segura
+    (-0.20, 0.05, 0.15, -1.8, 0.8, -0.3, 0.0, 1.0, 0.7),          # 11 começa o bote
+    (-0.70, -0.05, 0.30, -1.3, 1.25, -0.1, 0.0, 1.0, 1.1),        # 12 BOTE: capuz à frente, braços abertos e garras estendidas
+    (-0.60, -0.04, 0.28, -1.3, 1.25, -0.1, 0.0, 0.9, 1.0),        # 13 segura
     (-0.25, 0.0, 0.15, -1.2, 0.45, 0.0, 0.1, 0.3, 0.8),           # 14 volta
     (-0.05, 0.0, 0.05, -0.6, 0.4, 0.0, 0.0, 0.0, 0.7),            # 15 assenta
 )
@@ -200,7 +200,11 @@ def assar_transparencia(folha, H, pe_y):
     corpo = (0.40 + 0.38 * sobe)[:, None]
     olho = cheio & np.all(np.abs(folha[:, :, :3] - OLHO_RGB) < 0.02, axis=2)
     borda = cheio & np.all(np.abs(folha[:, :, :3] - CONT) < 1e-3, axis=2)
+    garra = np.zeros_like(cheio)
+    for t in _tons(BASES["garra"]):
+        garra |= cheio & np.all(np.abs(folha[:, :, :3] - np.array(t)) < 2e-3, axis=2)
     novo = np.where(cheio, corpo, 0.0)
+    novo = np.where(garra, np.maximum(novo, 0.92), novo)
     novo = np.where(borda, np.maximum(novo, 0.75), novo)
     novo = np.where(olho, 1.0, novo)
     folha[:, :, 3] = novo
