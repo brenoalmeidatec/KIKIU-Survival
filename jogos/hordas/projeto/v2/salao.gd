@@ -41,18 +41,6 @@ const CORES_MAPA := {
 }
 const COR_TRAVADO := Color(0.22, 0.22, 0.25)
 const DICA := "Setas / analógico: andar   Enter / A: usar   Clique: explorar"
-## Frase de uma linha, em linguagem de gente, de cada melhoria (sem número: os números ficam nas barrinhas do card).
-const FRASES := {
-	"vida": "Começa cada partida aguentando mais pancada.",
-	"dano": "Cada golpe da katana corta mais fundo.",
-	"velocidade": "Pés mais leves para escapar das hordas.",
-	"folego": "Mais fôlego para correr e esquivar.",
-	"treino": "Ataca mais vezes no mesmo tempo.",
-	"ima": "Puxa as almas caídas de mais longe.",
-	"almas": "Cada partida rende mais almas.",
-	"raridade": "Cartas raras aparecem com mais frequência.",
-	"rolagem": "Mais chances de trocar as cartas oferecidas.",
-}
 
 var _visual := Visual.new()
 var _p_rolagem: ScrollContainer
@@ -603,7 +591,7 @@ func _mostrar_melhoria(m: Dictionary) -> void:
 	var saldo := Meta.saldo()
 	var liberada := _liberada(m)
 	var custo := Meta.custo_do_nivel(m, n) if n < mx else 0
-	_p_frase.text = FRASES.get(id, Meta.texto_efeito(m, mx))
+	_p_frase.text = str(m.get("frase", Meta.texto_efeito(m, mx)))
 	var linhas := [
 		{"rotulo": "NÍVEL", "valor": "%d / %d" % [n, mx], "tipo": "segmentos", "n": n, "max": mx, "cor": Paleta.OURO, "nota": ""},
 		{
