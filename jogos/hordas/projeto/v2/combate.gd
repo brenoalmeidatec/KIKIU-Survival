@@ -12,6 +12,7 @@ extends RefCounted
 const Efeitos := preload("res://v2/efeitos.gd")
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
+const Meta := preload("res://v2/meta.gd")
 const TempoLocal := preload("res://v2/tempo_local.gd")
 const Diretor := preload("res://v2/diretor.gd")
 const Telas := preload("res://v2/telas.gd")
@@ -265,6 +266,7 @@ func atualizar(dt: float) -> void:
 		us_armas += t1 - t0
 		adagas.atualizar(dt)
 		elites.atualizar(dt)
+		diretor.avancar_nivel(dt)
 		chefes.atualizar(dt)
 		var t2 := Time.get_ticks_usec()
 		avisos.atualizar(dt)
@@ -804,8 +806,13 @@ func fim_de_partida(ganhou: bool) -> void:
 		"nivel": mundo.heroi.nivel,
 		"maior_combo": mundo.maior_combo,
 		"venceu": ganhou,
-		"almas": mundo.almas_partida
+		"almas": mundo.almas_partida,
+		"mapa": str(mundo.id_mapa),
+		"nivel_mapa": diretor.nivel,
+		"niveis_mapa": diretor.niveis_total
 	}
+	if ganhou:
+		r["mapa_vencido_agora"] = Meta.marcar_mapa_vencido(str(mundo.id_mapa))  # registra a vitória e preserva o anúncio da conquista no resultado
 	mundo.resultado = r
 	mundo.partida_terminou.emit(r)
 

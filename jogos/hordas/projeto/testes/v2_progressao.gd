@@ -187,11 +187,31 @@ func _testes() -> void:
 	var mv := Meta._ler()
 	ok(Meta.marcar_mapa_vencido("floresta", mv), "marcar_mapa_vencido marca a Floresta no cf")
 	ok(not Meta.marcar_mapa_vencido("floresta", mv), "marcar_mapa_vencido de novo não marca (já vencida)")
-	ok(not Meta.marcar_mapa_vencido("cidade", null), "marcar_mapa_vencido sem cf não faz nada")
+	ok(not Meta.marcar_mapa_vencido("", mv), "marcar_mapa_vencido recusa id vazio")
 	ok(not Meta.mapa_vencido("floresta"), "sem gravar, o save segue sem a Floresta vencida")
 	ok(Meta._gravar(mv), "grava o save com a Floresta vencida")
 	ok(Meta.mapa_vencido("floresta") and not Meta.mapa_vencido("cidade"), "depois de gravar: a Floresta vencida e a Cidade não")
 	ok(_abertos() == ["floresta", "laboratorio"], "o mapa vencido pela função abre o Laboratório (%s)" % str(_abertos()))
+	# 10. vitória pelo caminho real do combate: grava antes da tela de resultado, abre o portal e ainda anuncia a conquista.
+	_novo("Chefe")
+	var nova := Meta.marcar_mapa_vencido("floresta")
+	ok(nova and _abertos() == ["floresta", "laboratorio"], "a vitória grava direto e abre o Laboratório antes do resultado")
+	var resultado := Meta.registrar_partida({"venceu": true, "mapa": "floresta", "mapa_vencido_agora": nova})
+	ok(resultado.novas.count("vence_floresta") == 1, "a conquista da vitória aparece uma vez no resultado")
+	ok(Progressao.aberto("estrutura", "altar") and Progressao.aberto("estrutura", "codice"), "vitória direta abre Altar e Códice")
+	# 11. saves da frente de níveis: migra [mapas_vencidos], inclusive quando a versão da progressão já existe.
+	_novo("Migração")
+	var antigo_niveis := Meta._ler()
+	antigo_niveis.set_value("mapas_vencidos", "floresta", true)
+	antigo_niveis.set_value("mapas_vencidos", "cidade", false)
+	Meta._gravar(antigo_niveis)
+	ok(Meta.mapa_vencido("floresta") and not Meta.mapa_vencido("cidade"), "a leitura migra só os mapas vencidos")
+	ok(bool(Meta.estado().conquistas.vence_floresta), "o Códice lê a mesma conquista migrada")
+	ok(_abertos() == ["floresta", "laboratorio"], "o mapa migrado abre o próximo sem transformar o slot em legado")
+	Meta.creditar(1)
+	var migrado := ConfigFile.new()
+	migrado.load(Meta.caminho_save)
+	ok(not migrado.has_section("mapas_vencidos") and bool(migrado.get_value("conquistas", "vence_floresta", false)), "grava só o estado canônico")
 	fim = true
 
 

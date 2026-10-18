@@ -44,6 +44,8 @@ const COR_ELITE := Paleta.ANUNCIO_ELITE
 const COR_NIVEL := Paleta.ANUNCIO_NIVEL
 const RB_POS := Vector2(54, 40)  # o slot da ruptura (hoje escondido por hud_habilidades.gd): 22x22, logo abaixo da moldura das barras (y 6 a 36)
 const PESADELO_POS := Vector2(540.0, 10.0)  # o aviso PESADELO, ao lado do relógio
+const NIVEL_RECT := Rect2(312.0, 6.0, 112.0, 26.0)  # a placa do NÍVEL DO MAPA, à esquerda do relógio (que vai de x 428 a 532)
+const HudNivel := preload("res://v2/hud_nivel.gd")
 const RB_TAM := 22
 const RB_POP_T := 0.15  # s do pop ao zerar a recarga
 const RB_LARANJA := Paleta.CARGA_LARANJA
@@ -55,6 +57,7 @@ const ANCORAS := {
 	"Folego": Vector2(-1, -1),
 	"MolduraBarras": Vector2(-1, -1),
 	"Tempo": Vector2(0, -1),
+	"Nivel": Vector2(0, -1),
 	"Abates": Vector2(0, -1),
 	"Chefe": Vector2(0, -1),
 	"Xp": Vector2(0, 1),
@@ -102,6 +105,7 @@ var _tempo_vinheta := 0.0  # segundos com vida baixa (para o pulso da vinheta)
 var _combo_x := 0.0
 var _fusao: Control  # o cartão grande da fusão (montado na primeira fusão)
 var _selo_pesadelo: Label  # "PESADELO" ao lado do relógio (modo do santuário)
+var _nivel_mapa: Control  # a barra do mapa dentro da placa "Nivel" (v2/hud_nivel.gd)
 var _fusao_nome: Label
 var _fusao_desc: Label
 var _fusao_tween: Tween
@@ -190,6 +194,7 @@ func _ready() -> void:
 	_combo_x = _combo.position.x
 	_combo_y = _combo.position.y
 	_combo_y0 = _combo_y
+	_criar_nivel_mapa()
 	for nome in ANCORAS:
 		_bases[nome] = (get_node("Raiz/" + nome) as Control).position
 	_combo_num.pivot_offset = Vector2(100, 13)
@@ -292,6 +297,7 @@ func avancar(dt: float) -> void:
 	var tempo := maxf(_num(mundo, "tempo_partida", 0.0), 0.0)
 	_relogio.text = "%02d:%02d" % [int(tempo) / 60, int(tempo) % 60]
 	_checar_minuto(int(tempo) / 60)
+	_atualizar_nivel_mapa(dt)
 	var abates := roundi(_num(mundo, "abates", 0.0))
 	var combo := roundi(_num(mundo, "combo", 0.0))
 	_abates.text = "ABATES %d\nVIVOS %d" % [abates, roundi(_num(mundo, "monstros_vivos", 0.0))]
@@ -310,6 +316,44 @@ func avancar(dt: float) -> void:
 	_animar(dt)
 	_anuncio.avancar(dt)
 	_anuncio.visible = _anuncio.texto_ativo != "" and not cartas_na_tela
+
+
+## A placa do NÍVEL DO MAPA (moldura de pedra igual à do relógio) com a barra do mapa dentro.
+func _criar_nivel_mapa() -> void:
+	var placa := NinePatchRect.new()
+	placa.name = "Nivel"
+	placa.texture = ($Raiz/Tempo as NinePatchRect).texture
+	for lado in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		placa.set_patch_margin(lado, 5)
+	placa.axis_stretch_horizontal = NinePatchRect.AXIS_STRETCH_MODE_TILE_FIT
+	placa.axis_stretch_vertical = NinePatchRect.AXIS_STRETCH_MODE_TILE_FIT
+	placa.position = NIVEL_RECT.position
+	placa.size = NIVEL_RECT.size
+	placa.light_mask = 0
+	placa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_nivel_mapa = HudNivel.new()
+	_nivel_mapa.name = "Barra"
+	_nivel_mapa.size = NIVEL_RECT.size
+	_nivel_mapa.light_mask = 0
+	_nivel_mapa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	placa.add_child(_nivel_mapa)
+	$Raiz.add_child(placa)
+	$Raiz.move_child(placa, $Raiz/Tempo.get_index())
+	placa.visible = false  # só aparece quando o mundo tem o diretor com os níveis do mapa
+
+
+## Lê o nível do mapa do diretor (mundo.combate.diretor); um mundo sem ele (o mundo falso dos testes) deixa a placa escondida.
+func _atualizar_nivel_mapa(dt: float) -> void:
+	var c = _campo(mundo, "combate")
+	var d = _campo(c, "diretor")
+	var placa := _nivel_mapa.get_parent() as Control
+	placa.visible = d != null and d.has_method("fracao_mapa")
+	if not placa.visible:
+		return
+	var lista: Array = []
+	for e in d.chefes_mapa:
+		lista.append({"nivel": int(e.nivel), "mini": bool(e.mk.mini)})
+	_nivel_mapa.mostrar(d.nivel, d.niveis_total, d.fracao_mapa(), lista, d.travado(), dt)
 
 
 ## O aviso PESADELO, ao lado do relógio: só aparece quando a partida é no modo Pesadelo (mundo.pesadelo()).

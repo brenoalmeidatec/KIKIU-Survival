@@ -6,6 +6,7 @@ extends RefCounted
 ## arquivo temporário para não tocar no save real.
 ## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida;
 ## [progressao] versao, legado (save de antes das travas do santuário: tudo aberto) e partidas (v2/progressao.gd lê as travas).
+## Mapa vencido é a conquista vence_<id>; a seção antiga [mapas_vencidos] é migrada na leitura e não volta a ser gravada.
 
 const VERSAO_PROGRESSAO := 1
 
@@ -137,15 +138,21 @@ static func texto_item(item: Dictionary) -> String:
 ## melhoria, conquista ou almas), fica com tudo aberto (legado = true), porque antes estava tudo aberto. Só marca na memória:
 ## a próxima gravação persiste, e daí em diante o save não é mais tratado como antigo.
 static func _migrar(cf: ConfigFile) -> ConfigFile:
-	if cf == null or cf.has_section_key("progressao", "versao"):
-		return cf
-	var tinha := cf.has_section("ultima") or int(cf.get_value("moeda", "almas", 0)) > 0
-	for secao in ["melhorias", "conquistas"]:
-		if cf.has_section(secao):
-			for k in cf.get_section_keys(secao):
-				tinha = tinha or (int(cf.get_value(secao, k, 0)) > 0 if secao == "melhorias" else bool(cf.get_value(secao, k, false)))
-	cf.set_value("progressao", "versao", VERSAO_PROGRESSAO)
-	cf.set_value("progressao", "legado", tinha)
+	if cf == null:
+		return null
+	if not cf.has_section_key("progressao", "versao"):
+		var tinha := cf.has_section("ultima") or int(cf.get_value("moeda", "almas", 0)) > 0
+		for secao in ["melhorias", "conquistas", "mapas_vencidos"]:
+			if cf.has_section(secao):
+				for k in cf.get_section_keys(secao):
+					tinha = tinha or (int(cf.get_value(secao, k, 0)) > 0 if secao == "melhorias" else bool(cf.get_value(secao, k, false)))
+		cf.set_value("progressao", "versao", VERSAO_PROGRESSAO)
+		cf.set_value("progressao", "legado", tinha)
+	if cf.has_section("mapas_vencidos"):
+		for c in conquistas():
+			if c.has("mapa") and bool(cf.get_value("mapas_vencidos", str(c.mapa), false)):
+				cf.set_value("conquistas", str(c.id), true)
+		cf.erase_section("mapas_vencidos")
 	return cf
 
 
@@ -326,20 +333,51 @@ static func _conquistar(cf: ConfigFile, r: Dictionary) -> Array:
 	return novas
 
 
-## Mapa vencido: a conquista vence_<id> (dados/v2_meta.json, com "mapa": id) cumprida no save. Wrappers finos sobre ela, porque a
-## frente de níveis não existe nesta base (v2/DESIGN.md, "Progressão"). `cf` opcional: sem ele, lê o save.
+static func _conquista_do_mapa(id: String) -> String:
+	if id != "":
+		for c in conquistas():
+			if c.has("mapa") and str(c.mapa) == id:
+				return str(c.id)
+	return ""
+
+
+## Mapa vencido: a conquista vence_<id> (dados/v2_meta.json, com "mapa": id) cumprida no save. `cf` opcional: sem ele, lê o save.
 static func mapa_vencido(id: String, cf: ConfigFile = null) -> bool:
 	if cf == null:
 		cf = _ler()
-	return cf != null and bool(cf.get_value("conquistas", "vence_" + id, false))
+	var conquista := _conquista_do_mapa(id)
+	return cf != null and conquista != "" and bool(cf.get_value("conquistas", conquista, false))
 
 
-## Marca o mapa como vencido no `cf` (quem chama grava). True se marcou agora; False se já estava vencido ou `cf` é nulo.
-static func marcar_mapa_vencido(id: String, cf: ConfigFile) -> bool:
-	if cf == null or mapa_vencido(id, cf):
+## Marca a conquista do mapa no `cf` (quem chama grava). Sem `cf`, grava direto ao vencer o chefão. True só se marcou agora e,
+## na gravação direta, salvou. O combate põe esse retorno em resultado.mapa_vencido_agora para o anúncio da conquista no resultado.
+static func marcar_mapa_vencido(id: String, cf: ConfigFile = null) -> bool:
+	erro_save = false
+	var gravar := cf == null
+	if gravar:
+		cf = _ler()
+	if cf == null:
+		erro_save = true
 		return false
-	cf.set_value("conquistas", "vence_" + id, true)
+	var conquista := _conquista_do_mapa(id)
+	if conquista == "" or mapa_vencido(id, cf):
+		return false
+	cf.set_value("conquistas", conquista, true)
+	if gravar:
+		erro_save = not _gravar(cf)
+		return not erro_save
 	return true
+
+
+## Os ids dos mapas vencidos, derivados das conquistas: portais, chefes e códice leem o mesmo estado.
+static func mapas_vencidos() -> Array:
+	var cf := _ler()
+	var ids := []
+	if cf != null:
+		for c in conquistas():
+			if c.has("mapa") and bool(cf.get_value("conquistas", str(c.id), false)):
+				ids.append(str(c.mapa))
+	return ids
 
 
 ## Chamado no quadro durante a partida: conquistas de tempo e de combo que já foram cumpridas. Devolve os ids novos.
@@ -365,6 +403,7 @@ static func almas_creditadas(bruto: int, bonus: float, mult := 1.0) -> int:
 
 ## Fim da partida: credita as almas (com o bônus de "almas"), marca conquistas e guarda o resumo.
 ## `r` tem tempo, abates, nivel, maior_combo, venceu, mapa (id; a vitória abre o mapa seguinte), almas e pesadelo (true = a partida foi no modo Pesadelo). Devolve antes, ganhas, depois e as conquistas novas.
+## `mapa_vencido_agora` preserva o anúncio quando combate.fim_de_partida já gravou a conquista ao vencer o chefão.
 static func registrar_partida(r: Dictionary) -> Dictionary:
 	erro_save = false
 	var cf := _ler()
@@ -378,6 +417,10 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	var ganhas := almas_creditadas(bruto, _bonus("almas", cf), mult)
 	cf.set_value("moeda", "almas", antes + ganhas)
 	var novas := _conquistar(cf, r)
+	var conquista_mapa := _conquista_do_mapa(str(r.get("mapa", "")))
+	if bool(r.get("venceu", false)) and bool(r.get("mapa_vencido_agora", false)) and conquista_mapa != "":
+		if mapa_vencido(str(r.mapa), cf) and not novas.has(conquista_mapa):
+			novas.append(conquista_mapa)
 	cf.set_value("ultima", "tempo", float(r.get("tempo", 0.0)))
 	cf.set_value("ultima", "abates", int(r.get("abates", 0)))
 	cf.set_value("ultima", "maior_combo", int(r.get("maior_combo", 0)))
@@ -387,7 +430,7 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "pesadelo", pesadelo)
 	if r.has("mapa"):
 		cf.set_value("ultima", "mapa", str(r.mapa))
-	cf.set_value("progressao", "partidas", int(cf.get_value("progressao", "partidas", 0)) + 1)  # o Códice e o Altar abrem com N partidas
+	cf.set_value("progressao", "partidas", int(cf.get_value("progressao", "partidas", 0)) + 1)
 	if not _gravar(cf):
 		erro_save = true
 		return {}

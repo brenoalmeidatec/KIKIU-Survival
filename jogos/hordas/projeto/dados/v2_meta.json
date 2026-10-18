@@ -12,19 +12,13 @@
 		{"id": "treino", "nome": "Treino de guerreiro", "frase": "Ataca mais vezes no mesmo tempo.", "desc": "+{v}% de velocidade de ataque", "stat": "treino", "valor": 5, "max": 4, "custo": 70, "cresce": 1.6, "requer": "sobreviva_5min"}
 	],
 	"conquistas": [
-<<<<<<< HEAD
 		{"id": "sobreviva_5min", "nome": "Sobreviva 5 minutos", "frase": "Aguente cinco minutos na floresta sem morrer.", "desc": "Fique 5 minutos na floresta numa mesma partida.", "condicao": "tempo", "limite": 300, "recompensa": {"tipo": "melhoria", "id": "treino"}},
 		{"id": "derrota_chefe", "nome": "Derrote o chefe", "frase": "Derrube o chefe da floresta e encare o Pesadelo.", "desc": "Vença o duelo contra o chefe da floresta.", "condicao": "venceu", "recompensa": {"tipo": "modo", "id": "pesadelo"}},
-		{"id": "combo_50", "nome": "Combo de cinquenta", "frase": "Encadeie cinquenta abates seguidos sem parar.", "desc": "Chegue a um combo de 50 abates seguidos.", "condicao": "combo", "limite": 50, "recompensa": {"tipo": "visual", "id": "rastro_katana"}}
-=======
-		{"id": "sobreviva_5min", "nome": "Sobreviva 5 minutos", "desc": "Fique 5 minutos na floresta numa mesma partida.", "condicao": "tempo", "limite": 300, "recompensa": {"tipo": "melhoria", "id": "treino"}},
-		{"id": "derrota_chefe", "nome": "Derrote o chefe", "desc": "Vença o duelo contra o chefe da floresta.", "condicao": "venceu", "recompensa": {"tipo": "modo", "id": "pesadelo"}},
-		{"id": "combo_50", "nome": "Combo de cinquenta", "desc": "Chegue a um combo de 50 abates seguidos.", "condicao": "combo", "limite": 50, "recompensa": {"tipo": "visual", "id": "rastro_katana"}},
+		{"id": "combo_50", "nome": "Combo de cinquenta", "frase": "Encadeie cinquenta abates seguidos sem parar.", "desc": "Chegue a um combo de 50 abates seguidos.", "condicao": "combo", "limite": 50, "recompensa": {"tipo": "visual", "id": "rastro_katana"}},
 		{"id": "vence_floresta", "nome": "Vença a Floresta", "desc": "Derrote o chefe final da Floresta.", "condicao": "venceu", "mapa": "floresta", "recompensa": {"tipo": "progresso", "id": "laboratorio", "nome": "o Laboratório e o Altar"}},
 		{"id": "vence_laboratorio", "nome": "Vença o Laboratório", "desc": "Derrote o chefe final do Laboratório.", "condicao": "venceu", "mapa": "laboratorio", "recompensa": {"tipo": "progresso", "id": "cidade", "nome": "a Cidade"}},
 		{"id": "vence_cidade", "nome": "Vença a Cidade", "desc": "Derrote o chefe final da Cidade.", "condicao": "venceu", "mapa": "cidade", "recompensa": {"tipo": "progresso", "id": "medio", "nome": "as Ruínas da Floresta"}},
 		{"id": "vence_medio", "nome": "Vença as Ruínas", "desc": "Derrote o chefe final das Ruínas da Floresta, o último mapa.", "condicao": "venceu", "mapa": "medio", "recompensa": {"tipo": "progresso", "id": "", "nome": ""}}
->>>>>>> origin/lote-progressao
 	],
 	"modos": [
 		{
