@@ -53,6 +53,7 @@ static var _lidos := false
 
 var pai  # v2/armas.gd
 var itens: Array = []  # o pool: cada slot é um dicionário fixo; vida <= 0 é livre
+var fila_aquecer: Array = []  # folhas de invocação a carregar antes de nascerem (pedir_aquecer), uma por quadro com a tela de cartas aberta
 var q_pos := PackedVector2Array()  # as partículas: posição no chão, altura (z), velocidades, vida, tamanho, tipo e cor
 var q_z := PackedFloat32Array()
 var q_vel := PackedVector2Array()
@@ -575,6 +576,26 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 				f.t = float(st.aviso)
 				f["filho"] = true  # o filho não chama outro: a corrente tem só um elo
 	it.vida = 0.3  # o estouro fica um pouco
+
+
+## Põe na fila as folhas que a invocação `id` (carta ou fusão) ainda não carregou. Sem isso o primeiro bicho de cada tipo lê o png (e faz a
+## versão cinza das fusões) no quadro em que nasce, no meio do combate: de 2 a 8 ms aqui, num quadro só.
+func pedir_aquecer(id: String) -> void:
+	var pend: Array = ["golem"] if Golem.eh_golem(id) and not Golem.lida() else Andante.folhas_pendentes(id)
+	for item in pend:
+		if not fila_aquecer.has(item):
+			fila_aquecer.append(item)
+
+
+## Carrega um item da fila (telas.gd chama a cada quadro enquanto a escolha ou o baú estão abertos, com o mundo parado).
+func aquecer_um() -> void:
+	if fila_aquecer.is_empty():
+		return
+	var item: String = fila_aquecer.pop_front()
+	if item == "golem":
+		Golem.tex()
+	else:
+		Andante.aquecer(item)
 
 
 func _aliados(a: Dictionary, h) -> void:
