@@ -1,0 +1,1848 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+ERROR: Cannot open file 'res://.godot/imported/PressStart2P.ttf-7da6b572459d3f1e239a3e1f1e7491ec.fontdata'.
+   at: load (core/io/resource_format_binary.cpp:1225)
+ERROR: Failed loading resource: res://.godot/imported/PressStart2P.ttf-7da6b572459d3f1e239a3e1f1e7491ec.fontdata. Make sure resources have been imported by opening the project in the editor at least once.
+   at: _load (core/io/resource_loader.cpp:343)
+ERROR: Failed loading resource: res://assets/fonte/PressStart2P.ttf. Make sure resources have been imported by opening the project in the editor at least once.
+   at: _load (core/io/resource_loader.cpp:343)
+ERROR: Error loading custom project font 'res://assets/fonte/PressStart2P.ttf'
+   at: initialize_theme (scene/theme/theme_db.cpp:82)
+first_scan_filesystem: begin: Inicialização do Projeto steps: 5
+	first_scan_filesystem: step 0: Escaneando estrutura de arquivos...
+	first_scan_filesystem: step 1: Carregando nomes de classe globais...
+	first_scan_filesystem: step 2: Verificando GDExtensions...
+	first_scan_filesystem: step 3: Criando scripts autoload...
+	first_scan_filesystem: step 4: Inicializando plugins...
+	first_scan_filesystem: step 5: Iniciando escaneamento de arquivos...
+first_scan_filesystem: end
+update_scripts_classes: begin: Registrando classes globais... steps: 231
+	update_scripts_classes: step 0: 
+	update_scripts_classes: step 1: 
+	update_scripts_classes: step 2: 
+	update_scripts_classes: step 3: 
+	update_scripts_classes: step 4: 
+	update_scripts_classes: step 5: 
+	update_scripts_classes: step 6: 
+	update_scripts_classes: step 7: 
+	update_scripts_classes: step 8: 
+	update_scripts_classes: step 9: 
+	update_scripts_classes: step 10: 
+	update_scripts_classes: step 11: 
+	update_scripts_classes: step 12: 
+	update_scripts_classes: step 13: 
+	update_scripts_classes: step 14: 
+	update_scripts_classes: step 15: 
+	update_scripts_classes: step 16: 
+	update_scripts_classes: step 17: 
+	update_scripts_classes: step 18: 
+	update_scripts_classes: step 19: 
+	update_scripts_classes: step 20: 
+	update_scripts_classes: step 21: 
+	update_scripts_classes: step 22: 
+	update_scripts_classes: step 23: 
+	update_scripts_classes: step 24: 
+	update_scripts_classes: step 25: 
+	update_scripts_classes: step 26: 
+	update_scripts_classes: step 27: 
+	update_scripts_classes: step 28: 
+	update_scripts_classes: step 29: 
+	update_scripts_classes: step 30: 
+	update_scripts_classes: step 31: 
+	update_scripts_classes: step 32: 
+	update_scripts_classes: step 33: 
+	update_scripts_classes: step 34: 
+	update_scripts_classes: step 35: 
+	update_scripts_classes: step 36: 
+	update_scripts_classes: step 37: 
+	update_scripts_classes: step 38: 
+	update_scripts_classes: step 39: 
+	update_scripts_classes: step 40: 
+	update_scripts_classes: step 41: 
+	update_scripts_classes: step 42: 
+	update_scripts_classes: step 43: 
+	update_scripts_classes: step 44: 
+	update_scripts_classes: step 45: 
+	update_scripts_classes: step 46: 
+	update_scripts_classes: step 47: 
+	update_scripts_classes: step 48: 
+	update_scripts_classes: step 49: 
+	update_scripts_classes: step 50: 
+	update_scripts_classes: step 51: 
+	update_scripts_classes: step 52: 
+	update_scripts_classes: step 53: 
+	update_scripts_classes: step 54: 
+	update_scripts_classes: step 55: 
+	update_scripts_classes: step 56: 
+	update_scripts_classes: step 57: 
+	update_scripts_classes: step 58: 
+	update_scripts_classes: step 59: 
+	update_scripts_classes: step 60: 
+	update_scripts_classes: step 61: 
+	update_scripts_classes: step 62: 
+	update_scripts_classes: step 63: 
+	update_scripts_classes: step 64: 
+	update_scripts_classes: step 65: 
+	update_scripts_classes: step 66: 
+	update_scripts_classes: step 67: 
+	update_scripts_classes: step 68: 
+	update_scripts_classes: step 69: 
+	update_scripts_classes: step 70: 
+	update_scripts_classes: step 71: 
+	update_scripts_classes: step 72: 
+	update_scripts_classes: step 73: 
+	update_scripts_classes: step 74: 
+	update_scripts_classes: step 75: 
+	update_scripts_classes: step 76: 
+	update_scripts_classes: step 77: 
+	update_scripts_classes: step 78: 
+	update_scripts_classes: step 79: 
+	update_scripts_classes: step 80: 
+	update_scripts_classes: step 81: 
+	update_scripts_classes: step 82: 
+	update_scripts_classes: step 83: 
+	update_scripts_classes: step 84: 
+	update_scripts_classes: step 85: 
+	update_scripts_classes: step 86: 
+	update_scripts_classes: step 87: 
+	update_scripts_classes: step 88: 
+	update_scripts_classes: step 89: 
+	update_scripts_classes: step 90: 
+	update_scripts_classes: step 91: 
+	update_scripts_classes: step 92: 
+	update_scripts_classes: step 93: 
+	update_scripts_classes: step 94: 
+	update_scripts_classes: step 95: 
+	update_scripts_classes: step 96: 
+	update_scripts_classes: step 97: 
+	update_scripts_classes: step 98: 
+	update_scripts_classes: step 99: 
+	update_scripts_classes: step 100: 
+	update_scripts_classes: step 101: 
+	update_scripts_classes: step 102: 
+	update_scripts_classes: step 103: 
+	update_scripts_classes: step 104: 
+	update_scripts_classes: step 105: 
+	update_scripts_classes: step 106: 
+	update_scripts_classes: step 107: 
+	update_scripts_classes: step 108: 
+	update_scripts_classes: step 109: 
+	update_scripts_classes: step 110: 
+	update_scripts_classes: step 111: 
+	update_scripts_classes: step 112: 
+	update_scripts_classes: step 113: 
+	update_scripts_classes: step 114: 
+	update_scripts_classes: step 115: 
+	update_scripts_classes: step 116: 
+	update_scripts_classes: step 117: 
+	update_scripts_classes: step 118: 
+	update_scripts_classes: step 119: 
+	update_scripts_classes: step 120: 
+	update_scripts_classes: step 121: 
+	update_scripts_classes: step 122: 
+	update_scripts_classes: step 123: 
+	update_scripts_classes: step 124: 
+	update_scripts_classes: step 125: 
+	update_scripts_classes: step 126: 
+	update_scripts_classes: step 127: 
+	update_scripts_classes: step 128: 
+	update_scripts_classes: step 129: 
+	update_scripts_classes: step 130: 
+	update_scripts_classes: step 131: 
+	update_scripts_classes: step 132: 
+	update_scripts_classes: step 133: 
+	update_scripts_classes: step 134: 
+	update_scripts_classes: step 135: 
+	update_scripts_classes: step 136: 
+	update_scripts_classes: step 137: 
+	update_scripts_classes: step 138: 
+	update_scripts_classes: step 139: 
+	update_scripts_classes: step 140: 
+	update_scripts_classes: step 141: 
+	update_scripts_classes: step 142: 
+	update_scripts_classes: step 143: 
+	update_scripts_classes: step 144: 
+	update_scripts_classes: step 145: 
+	update_scripts_classes: step 146: 
+	update_scripts_classes: step 147: 
+	update_scripts_classes: step 148: 
+	update_scripts_classes: step 149: 
+	update_scripts_classes: step 150: 
+	update_scripts_classes: step 151: 
+	update_scripts_classes: step 152: 
+	update_scripts_classes: step 153: 
+	update_scripts_classes: step 154: 
+	update_scripts_classes: step 155: 
+	update_scripts_classes: step 156: 
+	update_scripts_classes: step 157: 
+	update_scripts_classes: step 158: 
+	update_scripts_classes: step 159: 
+	update_scripts_classes: step 160: 
+	update_scripts_classes: step 161: 
+	update_scripts_classes: step 162: 
+	update_scripts_classes: step 163: 
+	update_scripts_classes: step 164: 
+	update_scripts_classes: step 165: 
+	update_scripts_classes: step 166: 
+	update_scripts_classes: step 167: 
+	update_scripts_classes: step 168: 
+	update_scripts_classes: step 169: 
+	update_scripts_classes: step 170: 
+	update_scripts_classes: step 171: 
+	update_scripts_classes: step 172: 
+	update_scripts_classes: step 173: 
+	update_scripts_classes: step 174: 
+	update_scripts_classes: step 175: 
+	update_scripts_classes: step 176: 
+	update_scripts_classes: step 177: 
+	update_scripts_classes: step 178: 
+	update_scripts_classes: step 179: 
+	update_scripts_classes: step 180: 
+	update_scripts_classes: step 181: 
+	update_scripts_classes: step 182: 
+	update_scripts_classes: step 183: 
+	update_scripts_classes: step 184: 
+	update_scripts_classes: step 185: 
+	update_scripts_classes: step 186: 
+	update_scripts_classes: step 187: 
+	update_scripts_classes: step 188: 
+	update_scripts_classes: step 189: 
+	update_scripts_classes: step 190: 
+	update_scripts_classes: step 191: 
+	update_scripts_classes: step 192: 
+	update_scripts_classes: step 193: 
+	update_scripts_classes: step 194: 
+	update_scripts_classes: step 195: 
+	update_scripts_classes: step 196: 
+	update_scripts_classes: step 197: 
+	update_scripts_classes: step 198: 
+	update_scripts_classes: step 199: 
+	update_scripts_classes: step 200: 
+	update_scripts_classes: step 201: 
+	update_scripts_classes: step 202: 
+	update_scripts_classes: step 203: 
+	update_scripts_classes: step 204: 
+	update_scripts_classes: step 205: 
+	update_scripts_classes: step 206: 
+	update_scripts_classes: step 207: 
+	update_scripts_classes: step 208: 
+	update_scripts_classes: step 209: 
+	update_scripts_classes: step 210: 
+	update_scripts_classes: step 211: 
+	update_scripts_classes: step 212: 
+	update_scripts_classes: step 213: 
+	update_scripts_classes: step 214: 
+	update_scripts_classes: step 215: 
+	update_scripts_classes: step 216: 
+	update_scripts_classes: step 217: 
+	update_scripts_classes: step 218: 
+	update_scripts_classes: step 219: 
+	update_scripts_classes: step 220: 
+	update_scripts_classes: step 221: 
+	update_scripts_classes: step 222: 
+	update_scripts_classes: step 223: 
+	update_scripts_classes: step 224: 
+	update_scripts_classes: step 225: 
+	update_scripts_classes: step 226: 
+	update_scripts_classes: step 227: 
+	update_scripts_classes: step 228: 
+	update_scripts_classes: step 229: 
+	update_scripts_classes: step 230: 
+update_scripts_classes: end
+_update_scan_actions: begin: Escaneando ações... steps: 418
+	_update_scan_actions: step 0: abrir.wav
+	_update_scan_actions: step 1: acerto.wav
+	_update_scan_actions: step 2: blip.wav
+	_update_scan_actions: step 3: confirmar.wav
+	_update_scan_actions: step 4: cursor.wav
+	_update_scan_actions: step 5: derrota.wav
+	_update_scan_actions: step 6: erro.wav
+	_update_scan_actions: step 7: plim.wav
+	_update_scan_actions: step 8: queda.wav
+	_update_scan_actions: step 9: soco.wav
+	_update_scan_actions: step 10: tremor.wav
+	_update_scan_actions: step 11: vitoria.wav
+	_update_scan_actions: step 12: whoosh.wav
+	_update_scan_actions: step 13: chefe.ogg
+	_update_scan_actions: step 14: fim.ogg
+	_update_scan_actions: step 15: horror.ogg
+	_update_scan_actions: step 16: menu.ogg
+	_update_scan_actions: step 17: minijogo_retro.ogg
+	_update_scan_actions: step 18: minijogo_tenso.ogg
+	_update_scan_actions: step 19: minijogo_tenso_b.ogg
+	_update_scan_actions: step 20: aviso.wav
+	_update_scan_actions: step 21: bau.wav
+	_update_scan_actions: step 22: bau_cai.wav
+	_update_scan_actions: step 23: carta.wav
+	_update_scan_actions: step 24: chefe.wav
+	_update_scan_actions: step 25: corte1.wav
+	_update_scan_actions: step 26: corte2.wav
+	_update_scan_actions: step 27: corvo.wav
+	_update_scan_actions: step 28: critico.wav
+	_update_scan_actions: step 29: dano_heroi.wav
+	_update_scan_actions: step 30: derrota.wav
+	_update_scan_actions: step 31: elite.wav
+	_update_scan_actions: step 32: escolher.wav
+	_update_scan_actions: step 33: escudo_bloqueio.wav
+	_update_scan_actions: step 34: escudo_perfeito.wav
+	_update_scan_actions: step 35: esquiva.wav
+	_update_scan_actions: step 36: estocada.wav
+	_update_scan_actions: step 37: evolucao.wav
+	_update_scan_actions: step 38: fogo.wav
+	_update_scan_actions: step 39: impacto.wav
+	_update_scan_actions: step 40: morte.wav
+	_update_scan_actions: step 41: nivel.wav
+	_update_scan_actions: step 42: ofego.wav
+	_update_scan_actions: step 43: onda.wav
+	_update_scan_actions: step 44: orbe.wav
+	_update_scan_actions: step 45: raio.wav
+	_update_scan_actions: step 46: runa.wav
+	_update_scan_actions: step 47: runa_poe.wav
+	_update_scan_actions: step 48: ruptura_cancela.wav
+	_update_scan_actions: step 49: ruptura_carga.wav
+	_update_scan_actions: step 50: ruptura_disparo.wav
+	_update_scan_actions: step 51: ruptura_pronta.wav
+	_update_scan_actions: step 52: ruptura_solta.wav
+	_update_scan_actions: step 53: ruptura_tique.wav
+	_update_scan_actions: step 54: ui_confirmar.wav
+	_update_scan_actions: step 55: ui_cursor.wav
+	_update_scan_actions: step 56: vitoria.wav
+	_update_scan_actions: step 57: enfeites.png
+	_update_scan_actions: step 58: piso.png
+	_update_scan_actions: step 59: enfeites.png
+	_update_scan_actions: step 60: piso.png
+	_update_scan_actions: step 61: enfeites.png
+	_update_scan_actions: step 62: piso.png
+	_update_scan_actions: step 63: enfeites.png
+	_update_scan_actions: step 64: piso.png
+	_update_scan_actions: step 65: enfeites.png
+	_update_scan_actions: step 66: piso.png
+	_update_scan_actions: step 67: enfeites.png
+	_update_scan_actions: step 68: piso.png
+	_update_scan_actions: step 69: enfeites.png
+	_update_scan_actions: step 70: piso.png
+	_update_scan_actions: step 71: enfeites.png
+	_update_scan_actions: step 72: piso.png
+	_update_scan_actions: step 73: enfeites.png
+	_update_scan_actions: step 74: piso.png
+	_update_scan_actions: step 75: enfeites.png
+	_update_scan_actions: step 76: piso.png
+	_update_scan_actions: step 77: enfeites.png
+	_update_scan_actions: step 78: piso.png
+	_update_scan_actions: step 79: enfeites.png
+	_update_scan_actions: step 80: piso.png
+	_update_scan_actions: step 81: enfeites.png
+	_update_scan_actions: step 82: piso.png
+	_update_scan_actions: step 83: enfeites.png
+	_update_scan_actions: step 84: piso.png
+	_update_scan_actions: step 85: enfeites.png
+	_update_scan_actions: step 86: piso.png
+	_update_scan_actions: step 87: enfeites.png
+	_update_scan_actions: step 88: piso.png
+	_update_scan_actions: step 89: objetos.png
+	_update_scan_actions: step 90: parede.png
+	_update_scan_actions: step 91: piso.png
+	_update_scan_actions: step 92: enfeites.png
+	_update_scan_actions: step 93: piso.png
+	_update_scan_actions: step 94: enfeites.png
+	_update_scan_actions: step 95: piso.png
+	_update_scan_actions: step 96: enfeites.png
+	_update_scan_actions: step 97: piso.png
+	_update_scan_actions: step 98: enfeites.png
+	_update_scan_actions: step 99: piso.png
+	_update_scan_actions: step 100: enfeites.png
+	_update_scan_actions: step 101: piso.png
+	_update_scan_actions: step 102: enfeites.png
+	_update_scan_actions: step 103: piso.png
+	_update_scan_actions: step 104: enfeites.png
+	_update_scan_actions: step 105: piso.png
+	_update_scan_actions: step 106: enfeites.png
+	_update_scan_actions: step 107: piso.png
+	_update_scan_actions: step 108: enfeites.png
+	_update_scan_actions: step 109: piso.png
+	_update_scan_actions: step 110: Jersey10-Regular.ttf
+	_update_scan_actions: step 111: spleen-8x16.otf
+	_update_scan_actions: step 112: PressStart2P.ttf
+	_update_scan_actions: step 113: bau.png
+	_update_scan_actions: step 114: chao.png
+	_update_scan_actions: step 115: deco.png
+	_update_scan_actions: step 116: drop_berrante.png
+	_update_scan_actions: step 117: drop_comida.png
+	_update_scan_actions: step 118: gema_1.png
+	_update_scan_actions: step 119: gema_2.png
+	_update_scan_actions: step 120: gema_3.png
+	_update_scan_actions: step 121: icone_adaga.png
+	_update_scan_actions: step 122: icone_agua_coco.png
+	_update_scan_actions: step 123: icone_ampulheta.png
+	_update_scan_actions: step 124: icone_antena.png
+	_update_scan_actions: step 125: icone_apostila.png
+	_update_scan_actions: step 126: icone_armadura_samurai.png
+	_update_scan_actions: step 127: icone_arte_marcial.png
+	_update_scan_actions: step 128: icone_aura_hazaki.png
+	_update_scan_actions: step 129: icone_botas_guerra.png
+	_update_scan_actions: step 130: icone_bracadeiras_ferro.png
+	_update_scan_actions: step 131: icone_brasa_coracao.png
+	_update_scan_actions: step 132: icone_brasa_viva.png
+	_update_scan_actions: step 133: icone_cabeca_guerreiro.png
+	_update_scan_actions: step 134: icone_cabo_rede.png
+	_update_scan_actions: step 135: icone_cafe.png
+	_update_scan_actions: step 136: icone_centelha.png
+	_update_scan_actions: step 137: icone_ciclone.png
+	_update_scan_actions: step 138: icone_circulo_runico.png
+	_update_scan_actions: step 139: icone_corrente.png
+	_update_scan_actions: step 140: icone_corrente_carrasco.png
+	_update_scan_actions: step 141: icone_corvos.png
+	_update_scan_actions: step 142: icone_cristal_geada.png
+	_update_scan_actions: step 143: icone_ctrl_c_v.png
+	_update_scan_actions: step 144: icone_desert_eagles.png
+	_update_scan_actions: step 145: icone_dragao.png
+	_update_scan_actions: step 146: icone_energetico.png
+	_update_scan_actions: step 147: icone_espelho.png
+	_update_scan_actions: step 148: icone_feijao.png
+	_update_scan_actions: step 149: icone_fibra_optica.png
+	_update_scan_actions: step 150: icone_figa.png
+	_update_scan_actions: step 151: icone_fitinha.png
+	_update_scan_actions: step 152: icone_fogo_grego.png
+	_update_scan_actions: step 153: icone_furia_ceus.png
+	_update_scan_actions: step 154: icone_garrafada.png
+	_update_scan_actions: step 155: icone_garrafa_termica.png
+	_update_scan_actions: step 156: icone_geada.png
+	_update_scan_actions: step 157: icone_grimorio.png
+	_update_scan_actions: step 158: icone_inferno.png
+	_update_scan_actions: step 159: icone_katana.png
+	_update_scan_actions: step 160: icone_laminas.png
+	_update_scan_actions: step 161: icone_lanca.png
+	_update_scan_actions: step 162: icone_lanca_ardente.png
+	_update_scan_actions: step 163: icone_machado.png
+	_update_scan_actions: step 164: icone_machados_brasa.png
+	_update_scan_actions: step 165: icone_marmita.png
+	_update_scan_actions: step 166: icone_martelo.png
+	_update_scan_actions: step 167: icone_mascara_menpo.png
+	_update_scan_actions: step 168: icone_moeda.png
+	_update_scan_actions: step 169: icone_monitor.png
+	_update_scan_actions: step 170: icone_mouse.png
+	_update_scan_actions: step 171: icone_olho_falcao.png
+	_update_scan_actions: step 172: icone_overclock.png
+	_update_scan_actions: step 173: icone_pedra_amolar.png
+	_update_scan_actions: step 174: icone_pedra_ima.png
+	_update_scan_actions: step 175: icone_pena.png
+	_update_scan_actions: step 176: icone_pendrive.png
+	_update_scan_actions: step 177: icone_pergaminho.png
+	_update_scan_actions: step 178: icone_poder_elemental.png
+	_update_scan_actions: step 179: icone_presa_peconhenta.png
+	_update_scan_actions: step 180: icone_raio.png
+	_update_scan_actions: step 181: icone_revoada.png
+	_update_scan_actions: step 182: icone_roteador_5g.png
+	_update_scan_actions: step 183: icone_runas.png
+	_update_scan_actions: step 184: icone_sino.png
+	_update_scan_actions: step 185: icone_sino_juizo.png
+	_update_scan_actions: step 186: icone_tempestade_laminas.png
+	_update_scan_actions: step 187: icone_tenis.png
+	_update_scan_actions: step 188: icone_terremoto.png
+	_update_scan_actions: step 189: icone_u_adaga_sombria.png
+	_update_scan_actions: step 190: icone_u_arco_cacador.png
+	_update_scan_actions: step 191: icone_u_arco_lua_rubra.png
+	_update_scan_actions: step 192: icone_u_arco_sussurro.png
+	_update_scan_actions: step 193: icone_u_arco_tosco.png
+	_update_scan_actions: step 194: icone_u_baluarte_espinhoso.png
+	_update_scan_actions: step 195: icone_u_bastao_cristal.png
+	_update_scan_actions: step 196: icone_u_besta_pesada.png
+	_update_scan_actions: step 197: icone_u_cajado_eremita.png
+	_update_scan_actions: step 198: icone_u_cajado_galho.png
+	_update_scan_actions: step 199: icone_u_cetro_astral.png
+	_update_scan_actions: step 200: icone_u_chakram_alvorada.png
+	_update_scan_actions: step 201: icone_u_clava_espinhos.png
+	_update_scan_actions: step 202: icone_u_corrente_farpada.png
+	_update_scan_actions: step 203: icone_u_dardo_primitivo.png
+	_update_scan_actions: step 204: icone_u_disco_cortante.png
+	_update_scan_actions: step 205: icone_u_egide_dourada.png
+	_update_scan_actions: step 206: icone_u_escudo_couro.png
+	_update_scan_actions: step 207: icone_u_escudo_vigia.png
+	_update_scan_actions: step 208: icone_u_espada_treino.png
+	_update_scan_actions: step 209: icone_u_espinho_alvorada.png
+	_update_scan_actions: step 210: icone_u_estrela_matutina.png
+	_update_scan_actions: step 211: icone_u_faca_silex.png
+	_update_scan_actions: step 212: icone_u_foice_giratoria.png
+	_update_scan_actions: step 213: icone_u_frasco_incendiario.png
+	_update_scan_actions: step 214: icone_u_grimorio_rachado.png
+	_update_scan_actions: step 215: icone_u_kunai_corvo.png
+	_update_scan_actions: step 216: icone_u_lamina_alvorecer.png
+	_update_scan_actions: step 217: icone_u_lamina_tempestade.png
+	_update_scan_actions: step 218: icone_u_lanca_cacada.png
+	_update_scan_actions: step 219: icone_u_lanca_dragao.png
+	_update_scan_actions: step 220: icone_u_lanterna_fantasma.png
+	_update_scan_actions: step 221: icone_u_maca_estrelada.png
+	_update_scan_actions: step 222: icone_u_maca_lua_sangue.png
+	_update_scan_actions: step 223: icone_u_machadinha_enferrujada.png
+	_update_scan_actions: step 224: icone_u_machado_carrasco.png
+	_update_scan_actions: step 225: icone_u_machado_guerra.png
+	_update_scan_actions: step 226: icone_u_marreta_enferrujada.png
+	_update_scan_actions: step 227: icone_u_martelo_ferreiro.png
+	_update_scan_actions: step 228: icone_u_martelo_forjagelo.png
+	_update_scan_actions: step 229: icone_u_montante_carmesim.png
+	_update_scan_actions: step 230: icone_u_montante_lascado.png
+	_update_scan_actions: step 231: icone_u_pergaminho_runico.png
+	_update_scan_actions: step 232: icone_u_pique_real.png
+	_update_scan_actions: step 233: icone_u_pocao_corrosiva.png
+	_update_scan_actions: step 234: icone_u_punhal_peconhento.png
+	_update_scan_actions: step 235: icone_u_retalhador_sangrento.png
+	_update_scan_actions: step 236: icone_u_sino_ferro.png
+	_update_scan_actions: step 237: icone_u_tocha_ardente.png
+	_update_scan_actions: step 238: icone_u_totem_ossos.png
+	_update_scan_actions: step 239: icone_ventoinha.png
+	_update_scan_actions: step 240: icone_vento_sopro.png
+	_update_scan_actions: step 241: icone_vida.png
+	_update_scan_actions: step 242: icone_wifi.png
+	_update_scan_actions: step 243: inimigo_abominacao.png
+	_update_scan_actions: step 244: inimigo_abutre.png
+	_update_scan_actions: step 245: inimigo_afogado.png
+	_update_scan_actions: step 246: inimigo_aranha_tecela.png
+	_update_scan_actions: step 247: inimigo_arauto.png
+	_update_scan_actions: step 248: inimigo_bruxa_do_mato.png
+	_update_scan_actions: step 249: inimigo_bug.png
+	_update_scan_actions: step 250: inimigo_cao_ossos.png
+	_update_scan_actions: step 251: inimigo_carnical.png
+	_update_scan_actions: step 252: inimigo_cavaleiro_caos.png
+	_update_scan_actions: step 253: inimigo_cavaleiro_oco.png
+	_update_scan_actions: step 254: inimigo_cogumelo_errante.png
+	_update_scan_actions: step 255: inimigo_corvo_carniceiro.png
+	_update_scan_actions: step 256: inimigo_cultista.png
+	_update_scan_actions: step 257: inimigo_diabrete_gelo.png
+	_update_scan_actions: step 258: inimigo_escaravelho.png
+	_update_scan_actions: step 259: inimigo_escorpiao_gigante.png
+	_update_scan_actions: step 260: inimigo_espantalho.png
+	_update_scan_actions: step 261: inimigo_espectro.png
+	_update_scan_actions: step 262: inimigo_espirito_nevasca.png
+	_update_scan_actions: step 263: inimigo_esqueleto_areia.png
+	_update_scan_actions: step 264: inimigo_fogo_fatuo.png
+	_update_scan_actions: step 265: inimigo_galhudo.png
+	_update_scan_actions: step 266: inimigo_gigante_tempestade.png
+	_update_scan_actions: step 267: inimigo_golem_lodo.png
+	_update_scan_actions: step 268: inimigo_guerreiro_congelado.png
+	_update_scan_actions: step 269: inimigo_jacare_lodo.png
+	_update_scan_actions: step 270: inimigo_jarl_congelado.png
+	_update_scan_actions: step 271: inimigo_lobo_sombrio.png
+	_update_scan_actions: step 272: inimigo_mae_do_lodo.png
+	_update_scan_actions: step 273: inimigo_minerador.png
+	_update_scan_actions: step 274: inimigo_mumia.png
+	_update_scan_actions: step 275: inimigo_naja.png
+	_update_scan_actions: step 276: inimigo_popup.png
+	_update_scan_actions: step 277: inimigo_rainha_sapo.png
+	_update_scan_actions: step 278: inimigo_ransomware.png
+	_update_scan_actions: step 279: inimigo_rei_escaravelho.png
+	_update_scan_actions: step 280: inimigo_sacerdote_areia.png
+	_update_scan_actions: step 281: inimigo_sanguessuga.png
+	_update_scan_actions: step 282: inimigo_sapo_podre.png
+	_update_scan_actions: step 283: inimigo_sentinela_cristal.png
+	_update_scan_actions: step 284: inimigo_soberano_caos.png
+	_update_scan_actions: step 285: inimigo_spam.png
+	_update_scan_actions: step 286: inimigo_tela_azul.png
+	_update_scan_actions: step 287: inimigo_trojan.png
+	_update_scan_actions: step 288: inimigo_trojan_gigante.png
+	_update_scan_actions: step 289: inimigo_troll_gelo.png
+	_update_scan_actions: step 290: inimigo_urso_gelo.png
+	_update_scan_actions: step 291: inimigo_velho_carvalho.png
+	_update_scan_actions: step 292: marmita.png
+	_update_scan_actions: step 293: pira.png
+	_update_scan_actions: step 294: proj_adaga.png
+	_update_scan_actions: step 295: proj_bola_caos.png
+	_update_scan_actions: step 296: proj_bolha_veneno.png
+	_update_scan_actions: step 297: proj_cadeado.png
+	_update_scan_actions: step 298: proj_chama_fatuo.png
+	_update_scan_actions: step 299: proj_ciclone.png
+	_update_scan_actions: step 300: proj_cuspe_naja.png
+	_update_scan_actions: step 301: proj_email.png
+	_update_scan_actions: step 302: proj_esporo.png
+	_update_scan_actions: step 303: proj_estilhaco.png
+	_update_scan_actions: step 304: proj_estrela_caos.png
+	_update_scan_actions: step 305: proj_granizo.png
+	_update_scan_actions: step 306: proj_lamina.png
+	_update_scan_actions: step 307: proj_lodo.png
+	_update_scan_actions: step 308: proj_machado.png
+	_update_scan_actions: step 309: proj_machado_brasa.png
+	_update_scan_actions: step 310: proj_orbe_arauto.png
+	_update_scan_actions: step 311: proj_orbe_bruxa.png
+	_update_scan_actions: step 312: proj_orbe_espectral.png
+	_update_scan_actions: step 313: proj_orbe_geada.png
+	_update_scan_actions: step 314: proj_orbe_lapis.png
+	_update_scan_actions: step 315: proj_pendrive.png
+	_update_scan_actions: step 316: proj_sol_negro.png
+	_update_scan_actions: step 317: proj_teia.png
+	_update_scan_actions: step 318: proj_tempestade.png
+	_update_scan_actions: step 319: proj_ventoinha.png
+	_update_scan_actions: step 320: tomada.png
+	_update_scan_actions: step 321: wifi.png
+	_update_scan_actions: step 322: entrada.png
+	_update_scan_actions: step 323: kikiu_16.png
+	_update_scan_actions: step 324: kikiu_32.png
+	_update_scan_actions: step 325: kikiu_48.png
+	_update_scan_actions: step 326: kikiu_64.png
+	_update_scan_actions: step 327: kikiu_128.png
+	_update_scan_actions: step 328: kikiu_256.png
+	_update_scan_actions: step 329: andando_8.png
+	_update_scan_actions: step 330: rosto.png
+	_update_scan_actions: step 331: andando_8.png
+	_update_scan_actions: step 332: rosto.png
+	_update_scan_actions: step 333: andando_8.png
+	_update_scan_actions: step 334: rosto.png
+	_update_scan_actions: step 335: armadura_samurai.png
+	_update_scan_actions: step 336: botas.png
+	_update_scan_actions: step 337: bracadeiras.png
+	_update_scan_actions: step 338: cabeca_guerreiro.png
+	_update_scan_actions: step 339: cabelo.png
+	_update_scan_actions: step 340: katana_bainha.png
+	_update_scan_actions: step 341: katana_mao.png
+	_update_scan_actions: step 342: mascara.png
+	_update_scan_actions: step 343: pistolas.png
+	_update_scan_actions: step 344: cabeca.png
+	_update_scan_actions: step 345: cabeca_sem.png
+	_update_scan_actions: step 346: cauda.png
+	_update_scan_actions: step 347: cauda_sem.png
+	_update_scan_actions: step 348: corpo.png
+	_update_scan_actions: step 349: corpo_sem.png
+	_update_scan_actions: step 350: pernas_frente.png
+	_update_scan_actions: step 351: pernas_frente_sem.png
+	_update_scan_actions: step 352: pernas_tras.png
+	_update_scan_actions: step 353: pernas_tras_sem.png
+	_update_scan_actions: step 354: andando_8.png
+	_update_scan_actions: step 355: corpo.png
+	_update_scan_actions: step 356: rosto.png
+	_update_scan_actions: step 357: andando_8.png
+	_update_scan_actions: step 358: rosto.png
+	_update_scan_actions: step 359: andando_8.png
+	_update_scan_actions: step 360: rosto.png
+	_update_scan_actions: step 361: andando_8.png
+	_update_scan_actions: step 362: rosto.png
+	_update_scan_actions: step 363: andando_8.png
+	_update_scan_actions: step 364: rosto.png
+	_update_scan_actions: step 365: andando_8.png
+	_update_scan_actions: step 366: rosto.png
+	_update_scan_actions: step 367: fundo.png
+	_update_scan_actions: step 368: textos.csv
+	_update_scan_actions: step 369: decalques.png
+	_update_scan_actions: step 370: enfeites.png
+	_update_scan_actions: step 371: enfeites_normal.png
+	_update_scan_actions: step 372: piso.png
+	_update_scan_actions: step 373: piso_normal.png
+	_update_scan_actions: step 374: decalques.png
+	_update_scan_actions: step 375: enfeites.png
+	_update_scan_actions: step 376: enfeites_normal.png
+	_update_scan_actions: step 377: piso.png
+	_update_scan_actions: step 378: piso_normal.png
+	_update_scan_actions: step 379: floresta_enfeites_albedo.png
+	_update_scan_actions: step 380: floresta_piso.png
+	_update_scan_actions: step 381: hazaki_albedo.png
+	_update_scan_actions: step 382: hazaki_normal.png
+	_update_scan_actions: step 383: hazaki_samurai_albedo.png
+	_update_scan_actions: step 384: hazaki_samurai_normal.png
+	_update_scan_actions: step 385: inimigo_aranha_tecela_albedo.png
+	_update_scan_actions: step 386: inimigo_aranha_tecela_emissao.png
+	_update_scan_actions: step 387: inimigo_aranha_tecela_normal.png
+	_update_scan_actions: step 388: inimigo_cao_ossos_albedo.png
+	_update_scan_actions: step 389: inimigo_cao_ossos_emissao.png
+	_update_scan_actions: step 390: inimigo_cao_ossos_normal.png
+	_update_scan_actions: step 391: inimigo_cavaleiro_oco_albedo.png
+	_update_scan_actions: step 392: inimigo_cavaleiro_oco_emissao.png
+	_update_scan_actions: step 393: inimigo_cavaleiro_oco_normal.png
+	_update_scan_actions: step 394: inimigo_espantalho_albedo.png
+	_update_scan_actions: step 395: inimigo_espantalho_emissao.png
+	_update_scan_actions: step 396: inimigo_espantalho_normal.png
+	_update_scan_actions: step 397: inimigo_lobo_sombrio_albedo.png
+	_update_scan_actions: step 398: inimigo_lobo_sombrio_emissao.png
+	_update_scan_actions: step 399: inimigo_lobo_sombrio_normal.png
+	_update_scan_actions: step 400: decalques.png
+	_update_scan_actions: step 401: decalques_normal.png
+	_update_scan_actions: step 402: enfeites.png
+	_update_scan_actions: step 403: enfeites_normal.png
+	_update_scan_actions: step 404: piso.png
+	_update_scan_actions: step 405: piso_ia.png
+	_update_scan_actions: step 406: piso_ia_normal.png
+	_update_scan_actions: step 407: piso_normal.png
+	_update_scan_actions: step 408: anel_luz.png
+	_update_scan_actions: step 409: barra_fantasma.png
+	_update_scan_actions: step 410: barra_folego.png
+	_update_scan_actions: step 411: barra_fundo.png
+	_update_scan_actions: step 412: barra_vida.png
+	_update_scan_actions: step 413: barra_xp.png
+	_update_scan_actions: step 414: minimapa_moldura.png
+	_update_scan_actions: step 415: moldura_faixa.png
+	_update_scan_actions: step 416: moldura_pedra.png
+	_update_scan_actions: step 417: selo_nivel.png
+_update_scan_actions: end
+reimport: begin: (Re)Importando Recursos steps: 418
+	reimport: step 0: Preparando arquivos para reimportação...
+	reimport: step 1: Preparando arquivos para reimportação...
+	reimport: step 2: Preparando arquivos para reimportação...
+	reimport: step 3: Preparando arquivos para reimportação...
+	reimport: step 4: Preparando arquivos para reimportação...
+	reimport: step 5: Preparando arquivos para reimportação...
+	reimport: step 6: Preparando arquivos para reimportação...
+	reimport: step 7: Preparando arquivos para reimportação...
+	reimport: step 8: Preparando arquivos para reimportação...
+	reimport: step 9: Preparando arquivos para reimportação...
+	reimport: step 10: Preparando arquivos para reimportação...
+	reimport: step 11: Preparando arquivos para reimportação...
+	reimport: step 12: Preparando arquivos para reimportação...
+	reimport: step 13: Preparando arquivos para reimportação...
+	reimport: step 14: Preparando arquivos para reimportação...
+	reimport: step 15: Preparando arquivos para reimportação...
+	reimport: step 16: Preparando arquivos para reimportação...
+	reimport: step 17: Preparando arquivos para reimportação...
+	reimport: step 18: Preparando arquivos para reimportação...
+	reimport: step 19: Preparando arquivos para reimportação...
+	reimport: step 20: Preparando arquivos para reimportação...
+	reimport: step 21: Preparando arquivos para reimportação...
+	reimport: step 22: Preparando arquivos para reimportação...
+	reimport: step 23: Preparando arquivos para reimportação...
+	reimport: step 24: Preparando arquivos para reimportação...
+	reimport: step 25: Preparando arquivos para reimportação...
+	reimport: step 26: Preparando arquivos para reimportação...
+	reimport: step 27: Preparando arquivos para reimportação...
+	reimport: step 28: Preparando arquivos para reimportação...
+	reimport: step 29: Preparando arquivos para reimportação...
+	reimport: step 30: Preparando arquivos para reimportação...
+	reimport: step 31: Preparando arquivos para reimportação...
+	reimport: step 32: Preparando arquivos para reimportação...
+	reimport: step 33: Preparando arquivos para reimportação...
+	reimport: step 34: Preparando arquivos para reimportação...
+	reimport: step 35: Preparando arquivos para reimportação...
+	reimport: step 36: Preparando arquivos para reimportação...
+	reimport: step 37: Preparando arquivos para reimportação...
+	reimport: step 38: Preparando arquivos para reimportação...
+	reimport: step 39: Preparando arquivos para reimportação...
+	reimport: step 40: Preparando arquivos para reimportação...
+	reimport: step 41: Preparando arquivos para reimportação...
+	reimport: step 42: Preparando arquivos para reimportação...
+	reimport: step 43: Preparando arquivos para reimportação...
+	reimport: step 44: Preparando arquivos para reimportação...
+	reimport: step 45: Preparando arquivos para reimportação...
+	reimport: step 46: Preparando arquivos para reimportação...
+	reimport: step 47: Preparando arquivos para reimportação...
+	reimport: step 48: Preparando arquivos para reimportação...
+	reimport: step 49: Preparando arquivos para reimportação...
+	reimport: step 50: Preparando arquivos para reimportação...
+	reimport: step 51: Preparando arquivos para reimportação...
+	reimport: step 52: Preparando arquivos para reimportação...
+	reimport: step 53: Preparando arquivos para reimportação...
+	reimport: step 54: Preparando arquivos para reimportação...
+	reimport: step 55: Preparando arquivos para reimportação...
+	reimport: step 56: Preparando arquivos para reimportação...
+	reimport: step 57: Preparando arquivos para reimportação...
+	reimport: step 58: Preparando arquivos para reimportação...
+	reimport: step 59: Preparando arquivos para reimportação...
+	reimport: step 60: Preparando arquivos para reimportação...
+	reimport: step 61: Preparando arquivos para reimportação...
+	reimport: step 62: Preparando arquivos para reimportação...
+	reimport: step 63: Preparando arquivos para reimportação...
+	reimport: step 64: Preparando arquivos para reimportação...
+	reimport: step 65: Preparando arquivos para reimportação...
+	reimport: step 66: Preparando arquivos para reimportação...
+	reimport: step 67: Preparando arquivos para reimportação...
+	reimport: step 68: Preparando arquivos para reimportação...
+	reimport: step 69: Preparando arquivos para reimportação...
+	reimport: step 70: Preparando arquivos para reimportação...
+	reimport: step 71: Preparando arquivos para reimportação...
+	reimport: step 72: Preparando arquivos para reimportação...
+	reimport: step 73: Preparando arquivos para reimportação...
+	reimport: step 74: Preparando arquivos para reimportação...
+	reimport: step 75: Preparando arquivos para reimportação...
+	reimport: step 76: Preparando arquivos para reimportação...
+	reimport: step 77: Preparando arquivos para reimportação...
+	reimport: step 78: Preparando arquivos para reimportação...
+	reimport: step 79: Preparando arquivos para reimportação...
+	reimport: step 80: Preparando arquivos para reimportação...
+	reimport: step 81: Preparando arquivos para reimportação...
+	reimport: step 82: Preparando arquivos para reimportação...
+	reimport: step 83: Preparando arquivos para reimportação...
+	reimport: step 84: Preparando arquivos para reimportação...
+	reimport: step 85: Preparando arquivos para reimportação...
+	reimport: step 86: Preparando arquivos para reimportação...
+	reimport: step 87: Preparando arquivos para reimportação...
+	reimport: step 88: Preparando arquivos para reimportação...
+	reimport: step 89: Preparando arquivos para reimportação...
+	reimport: step 90: Preparando arquivos para reimportação...
+	reimport: step 91: Preparando arquivos para reimportação...
+	reimport: step 92: Preparando arquivos para reimportação...
+	reimport: step 93: Preparando arquivos para reimportação...
+	reimport: step 94: Preparando arquivos para reimportação...
+	reimport: step 95: Preparando arquivos para reimportação...
+	reimport: step 96: Preparando arquivos para reimportação...
+	reimport: step 97: Preparando arquivos para reimportação...
+	reimport: step 98: Preparando arquivos para reimportação...
+	reimport: step 99: Preparando arquivos para reimportação...
+	reimport: step 100: Preparando arquivos para reimportação...
+	reimport: step 101: Preparando arquivos para reimportação...
+	reimport: step 102: Preparando arquivos para reimportação...
+	reimport: step 103: Preparando arquivos para reimportação...
+	reimport: step 104: Preparando arquivos para reimportação...
+	reimport: step 105: Preparando arquivos para reimportação...
+	reimport: step 106: Preparando arquivos para reimportação...
+	reimport: step 107: Preparando arquivos para reimportação...
+	reimport: step 108: Preparando arquivos para reimportação...
+	reimport: step 109: Preparando arquivos para reimportação...
+	reimport: step 110: Preparando arquivos para reimportação...
+	reimport: step 111: Preparando arquivos para reimportação...
+	reimport: step 112: Preparando arquivos para reimportação...
+	reimport: step 113: Preparando arquivos para reimportação...
+	reimport: step 114: Preparando arquivos para reimportação...
+	reimport: step 115: Preparando arquivos para reimportação...
+	reimport: step 116: Preparando arquivos para reimportação...
+	reimport: step 117: Preparando arquivos para reimportação...
+	reimport: step 118: Preparando arquivos para reimportação...
+	reimport: step 119: Preparando arquivos para reimportação...
+	reimport: step 120: Preparando arquivos para reimportação...
+	reimport: step 121: Preparando arquivos para reimportação...
+	reimport: step 122: Preparando arquivos para reimportação...
+	reimport: step 123: Preparando arquivos para reimportação...
+	reimport: step 124: Preparando arquivos para reimportação...
+	reimport: step 125: Preparando arquivos para reimportação...
+	reimport: step 126: Preparando arquivos para reimportação...
+	reimport: step 127: Preparando arquivos para reimportação...
+	reimport: step 128: Preparando arquivos para reimportação...
+	reimport: step 129: Preparando arquivos para reimportação...
+	reimport: step 130: Preparando arquivos para reimportação...
+	reimport: step 131: Preparando arquivos para reimportação...
+	reimport: step 132: Preparando arquivos para reimportação...
+	reimport: step 133: Preparando arquivos para reimportação...
+	reimport: step 134: Preparando arquivos para reimportação...
+	reimport: step 135: Preparando arquivos para reimportação...
+	reimport: step 136: Preparando arquivos para reimportação...
+	reimport: step 137: Preparando arquivos para reimportação...
+	reimport: step 138: Preparando arquivos para reimportação...
+	reimport: step 139: Preparando arquivos para reimportação...
+	reimport: step 140: Preparando arquivos para reimportação...
+	reimport: step 141: Preparando arquivos para reimportação...
+	reimport: step 142: Preparando arquivos para reimportação...
+	reimport: step 143: Preparando arquivos para reimportação...
+	reimport: step 144: Preparando arquivos para reimportação...
+	reimport: step 145: Preparando arquivos para reimportação...
+	reimport: step 146: Preparando arquivos para reimportação...
+	reimport: step 147: Preparando arquivos para reimportação...
+	reimport: step 148: Preparando arquivos para reimportação...
+	reimport: step 149: Preparando arquivos para reimportação...
+	reimport: step 150: Preparando arquivos para reimportação...
+	reimport: step 151: Preparando arquivos para reimportação...
+	reimport: step 152: Preparando arquivos para reimportação...
+	reimport: step 153: Preparando arquivos para reimportação...
+	reimport: step 154: Preparando arquivos para reimportação...
+	reimport: step 155: Preparando arquivos para reimportação...
+	reimport: step 156: Preparando arquivos para reimportação...
+	reimport: step 157: Preparando arquivos para reimportação...
+	reimport: step 158: Preparando arquivos para reimportação...
+	reimport: step 159: Preparando arquivos para reimportação...
+	reimport: step 160: Preparando arquivos para reimportação...
+	reimport: step 161: Preparando arquivos para reimportação...
+	reimport: step 162: Preparando arquivos para reimportação...
+	reimport: step 163: Preparando arquivos para reimportação...
+	reimport: step 164: Preparando arquivos para reimportação...
+	reimport: step 165: Preparando arquivos para reimportação...
+	reimport: step 166: Preparando arquivos para reimportação...
+	reimport: step 167: Preparando arquivos para reimportação...
+	reimport: step 168: Preparando arquivos para reimportação...
+	reimport: step 169: Preparando arquivos para reimportação...
+	reimport: step 170: Preparando arquivos para reimportação...
+	reimport: step 171: Preparando arquivos para reimportação...
+	reimport: step 172: Preparando arquivos para reimportação...
+	reimport: step 173: Preparando arquivos para reimportação...
+	reimport: step 174: Preparando arquivos para reimportação...
+	reimport: step 175: Preparando arquivos para reimportação...
+	reimport: step 176: Preparando arquivos para reimportação...
+	reimport: step 177: Preparando arquivos para reimportação...
+	reimport: step 178: Preparando arquivos para reimportação...
+	reimport: step 179: Preparando arquivos para reimportação...
+	reimport: step 180: Preparando arquivos para reimportação...
+	reimport: step 181: Preparando arquivos para reimportação...
+	reimport: step 182: Preparando arquivos para reimportação...
+	reimport: step 183: Preparando arquivos para reimportação...
+	reimport: step 184: Preparando arquivos para reimportação...
+	reimport: step 185: Preparando arquivos para reimportação...
+	reimport: step 186: Preparando arquivos para reimportação...
+	reimport: step 187: Preparando arquivos para reimportação...
+	reimport: step 188: Preparando arquivos para reimportação...
+	reimport: step 189: Preparando arquivos para reimportação...
+	reimport: step 190: Preparando arquivos para reimportação...
+	reimport: step 191: Preparando arquivos para reimportação...
+	reimport: step 192: Preparando arquivos para reimportação...
+	reimport: step 193: Preparando arquivos para reimportação...
+	reimport: step 194: Preparando arquivos para reimportação...
+	reimport: step 195: Preparando arquivos para reimportação...
+	reimport: step 196: Preparando arquivos para reimportação...
+	reimport: step 197: Preparando arquivos para reimportação...
+	reimport: step 198: Preparando arquivos para reimportação...
+	reimport: step 199: Preparando arquivos para reimportação...
+	reimport: step 200: Preparando arquivos para reimportação...
+	reimport: step 201: Preparando arquivos para reimportação...
+	reimport: step 202: Preparando arquivos para reimportação...
+	reimport: step 203: Preparando arquivos para reimportação...
+	reimport: step 204: Preparando arquivos para reimportação...
+	reimport: step 205: Preparando arquivos para reimportação...
+	reimport: step 206: Preparando arquivos para reimportação...
+	reimport: step 207: Preparando arquivos para reimportação...
+	reimport: step 208: Preparando arquivos para reimportação...
+	reimport: step 209: Preparando arquivos para reimportação...
+	reimport: step 210: Preparando arquivos para reimportação...
+	reimport: step 211: Preparando arquivos para reimportação...
+	reimport: step 212: Preparando arquivos para reimportação...
+	reimport: step 213: Preparando arquivos para reimportação...
+	reimport: step 214: Preparando arquivos para reimportação...
+	reimport: step 215: Preparando arquivos para reimportação...
+	reimport: step 216: Preparando arquivos para reimportação...
+	reimport: step 217: Preparando arquivos para reimportação...
+	reimport: step 218: Preparando arquivos para reimportação...
+	reimport: step 219: Preparando arquivos para reimportação...
+	reimport: step 220: Preparando arquivos para reimportação...
+	reimport: step 221: Preparando arquivos para reimportação...
+	reimport: step 222: Preparando arquivos para reimportação...
+	reimport: step 223: Preparando arquivos para reimportação...
+	reimport: step 224: Preparando arquivos para reimportação...
+	reimport: step 225: Preparando arquivos para reimportação...
+	reimport: step 226: Preparando arquivos para reimportação...
+	reimport: step 227: Preparando arquivos para reimportação...
+	reimport: step 228: Preparando arquivos para reimportação...
+	reimport: step 229: Preparando arquivos para reimportação...
+	reimport: step 230: Preparando arquivos para reimportação...
+	reimport: step 231: Preparando arquivos para reimportação...
+	reimport: step 232: Preparando arquivos para reimportação...
+	reimport: step 233: Preparando arquivos para reimportação...
+	reimport: step 234: Preparando arquivos para reimportação...
+	reimport: step 235: Preparando arquivos para reimportação...
+	reimport: step 236: Preparando arquivos para reimportação...
+	reimport: step 237: Preparando arquivos para reimportação...
+	reimport: step 238: Preparando arquivos para reimportação...
+	reimport: step 239: Preparando arquivos para reimportação...
+	reimport: step 240: Preparando arquivos para reimportação...
+	reimport: step 241: Preparando arquivos para reimportação...
+	reimport: step 242: Preparando arquivos para reimportação...
+	reimport: step 243: Preparando arquivos para reimportação...
+	reimport: step 244: Preparando arquivos para reimportação...
+	reimport: step 245: Preparando arquivos para reimportação...
+	reimport: step 246: Preparando arquivos para reimportação...
+	reimport: step 247: Preparando arquivos para reimportação...
+	reimport: step 248: Preparando arquivos para reimportação...
+	reimport: step 249: Preparando arquivos para reimportação...
+	reimport: step 250: Preparando arquivos para reimportação...
+	reimport: step 251: Preparando arquivos para reimportação...
+	reimport: step 252: Preparando arquivos para reimportação...
+	reimport: step 253: Preparando arquivos para reimportação...
+	reimport: step 254: Preparando arquivos para reimportação...
+	reimport: step 255: Preparando arquivos para reimportação...
+	reimport: step 256: Preparando arquivos para reimportação...
+	reimport: step 257: Preparando arquivos para reimportação...
+	reimport: step 258: Preparando arquivos para reimportação...
+	reimport: step 259: Preparando arquivos para reimportação...
+	reimport: step 260: Preparando arquivos para reimportação...
+	reimport: step 261: Preparando arquivos para reimportação...
+	reimport: step 262: Preparando arquivos para reimportação...
+	reimport: step 263: Preparando arquivos para reimportação...
+	reimport: step 264: Preparando arquivos para reimportação...
+	reimport: step 265: Preparando arquivos para reimportação...
+	reimport: step 266: Preparando arquivos para reimportação...
+	reimport: step 267: Preparando arquivos para reimportação...
+	reimport: step 268: Preparando arquivos para reimportação...
+	reimport: step 269: Preparando arquivos para reimportação...
+	reimport: step 270: Preparando arquivos para reimportação...
+	reimport: step 271: Preparando arquivos para reimportação...
+	reimport: step 272: Preparando arquivos para reimportação...
+	reimport: step 273: Preparando arquivos para reimportação...
+	reimport: step 274: Preparando arquivos para reimportação...
+	reimport: step 275: Preparando arquivos para reimportação...
+	reimport: step 276: Preparando arquivos para reimportação...
+	reimport: step 277: Preparando arquivos para reimportação...
+	reimport: step 278: Preparando arquivos para reimportação...
+	reimport: step 279: Preparando arquivos para reimportação...
+	reimport: step 280: Preparando arquivos para reimportação...
+	reimport: step 281: Preparando arquivos para reimportação...
+	reimport: step 282: Preparando arquivos para reimportação...
+	reimport: step 283: Preparando arquivos para reimportação...
+	reimport: step 284: Preparando arquivos para reimportação...
+	reimport: step 285: Preparando arquivos para reimportação...
+	reimport: step 286: Preparando arquivos para reimportação...
+	reimport: step 287: Preparando arquivos para reimportação...
+	reimport: step 288: Preparando arquivos para reimportação...
+	reimport: step 289: Preparando arquivos para reimportação...
+	reimport: step 290: Preparando arquivos para reimportação...
+	reimport: step 291: Preparando arquivos para reimportação...
+	reimport: step 292: Preparando arquivos para reimportação...
+	reimport: step 293: Preparando arquivos para reimportação...
+	reimport: step 294: Preparando arquivos para reimportação...
+	reimport: step 295: Preparando arquivos para reimportação...
+	reimport: step 296: Preparando arquivos para reimportação...
+	reimport: step 297: Preparando arquivos para reimportação...
+	reimport: step 298: Preparando arquivos para reimportação...
+	reimport: step 299: Preparando arquivos para reimportação...
+	reimport: step 300: Preparando arquivos para reimportação...
+	reimport: step 301: Preparando arquivos para reimportação...
+	reimport: step 302: Preparando arquivos para reimportação...
+	reimport: step 303: Preparando arquivos para reimportação...
+	reimport: step 304: Preparando arquivos para reimportação...
+	reimport: step 305: Preparando arquivos para reimportação...
+	reimport: step 306: Preparando arquivos para reimportação...
+	reimport: step 307: Preparando arquivos para reimportação...
+	reimport: step 308: Preparando arquivos para reimportação...
+	reimport: step 309: Preparando arquivos para reimportação...
+	reimport: step 310: Preparando arquivos para reimportação...
+	reimport: step 311: Preparando arquivos para reimportação...
+	reimport: step 312: Preparando arquivos para reimportação...
+	reimport: step 313: Preparando arquivos para reimportação...
+	reimport: step 314: Preparando arquivos para reimportação...
+	reimport: step 315: Preparando arquivos para reimportação...
+	reimport: step 316: Preparando arquivos para reimportação...
+	reimport: step 317: Preparando arquivos para reimportação...
+	reimport: step 318: Preparando arquivos para reimportação...
+	reimport: step 319: Preparando arquivos para reimportação...
+	reimport: step 320: Preparando arquivos para reimportação...
+	reimport: step 321: Preparando arquivos para reimportação...
+	reimport: step 322: Preparando arquivos para reimportação...
+	reimport: step 323: Preparando arquivos para reimportação...
+	reimport: step 324: Preparando arquivos para reimportação...
+	reimport: step 325: Preparando arquivos para reimportação...
+	reimport: step 326: Preparando arquivos para reimportação...
+	reimport: step 327: Preparando arquivos para reimportação...
+	reimport: step 328: Preparando arquivos para reimportação...
+	reimport: step 329: Preparando arquivos para reimportação...
+	reimport: step 330: Preparando arquivos para reimportação...
+	reimport: step 331: Preparando arquivos para reimportação...
+	reimport: step 332: Preparando arquivos para reimportação...
+	reimport: step 333: Preparando arquivos para reimportação...
+	reimport: step 334: Preparando arquivos para reimportação...
+	reimport: step 335: Preparando arquivos para reimportação...
+	reimport: step 336: Preparando arquivos para reimportação...
+	reimport: step 337: Preparando arquivos para reimportação...
+	reimport: step 338: Preparando arquivos para reimportação...
+	reimport: step 339: Preparando arquivos para reimportação...
+	reimport: step 340: Preparando arquivos para reimportação...
+	reimport: step 341: Preparando arquivos para reimportação...
+	reimport: step 342: Preparando arquivos para reimportação...
+	reimport: step 343: Preparando arquivos para reimportação...
+	reimport: step 344: Preparando arquivos para reimportação...
+	reimport: step 345: Preparando arquivos para reimportação...
+	reimport: step 346: Preparando arquivos para reimportação...
+	reimport: step 347: Preparando arquivos para reimportação...
+	reimport: step 348: Preparando arquivos para reimportação...
+	reimport: step 349: Preparando arquivos para reimportação...
+	reimport: step 350: Preparando arquivos para reimportação...
+	reimport: step 351: Preparando arquivos para reimportação...
+	reimport: step 352: Preparando arquivos para reimportação...
+	reimport: step 353: Preparando arquivos para reimportação...
+	reimport: step 354: Preparando arquivos para reimportação...
+	reimport: step 355: Preparando arquivos para reimportação...
+	reimport: step 356: Preparando arquivos para reimportação...
+	reimport: step 357: Preparando arquivos para reimportação...
+	reimport: step 358: Preparando arquivos para reimportação...
+	reimport: step 359: Preparando arquivos para reimportação...
+	reimport: step 360: Preparando arquivos para reimportação...
+	reimport: step 361: Preparando arquivos para reimportação...
+	reimport: step 362: Preparando arquivos para reimportação...
+	reimport: step 363: Preparando arquivos para reimportação...
+	reimport: step 364: Preparando arquivos para reimportação...
+	reimport: step 365: Preparando arquivos para reimportação...
+	reimport: step 366: Preparando arquivos para reimportação...
+	reimport: step 367: Preparando arquivos para reimportação...
+	reimport: step 368: Preparando arquivos para reimportação...
+	reimport: step 369: Preparando arquivos para reimportação...
+	reimport: step 370: Preparando arquivos para reimportação...
+	reimport: step 371: Preparando arquivos para reimportação...
+	reimport: step 372: Preparando arquivos para reimportação...
+	reimport: step 373: Preparando arquivos para reimportação...
+	reimport: step 374: Preparando arquivos para reimportação...
+	reimport: step 375: Preparando arquivos para reimportação...
+	reimport: step 376: Preparando arquivos para reimportação...
+	reimport: step 377: Preparando arquivos para reimportação...
+	reimport: step 378: Preparando arquivos para reimportação...
+	reimport: step 379: Preparando arquivos para reimportação...
+	reimport: step 380: Preparando arquivos para reimportação...
+	reimport: step 381: Preparando arquivos para reimportação...
+	reimport: step 382: Preparando arquivos para reimportação...
+	reimport: step 383: Preparando arquivos para reimportação...
+	reimport: step 384: Preparando arquivos para reimportação...
+	reimport: step 385: Preparando arquivos para reimportação...
+	reimport: step 386: Preparando arquivos para reimportação...
+	reimport: step 387: Preparando arquivos para reimportação...
+	reimport: step 388: Preparando arquivos para reimportação...
+	reimport: step 389: Preparando arquivos para reimportação...
+	reimport: step 390: Preparando arquivos para reimportação...
+	reimport: step 391: Preparando arquivos para reimportação...
+	reimport: step 392: Preparando arquivos para reimportação...
+	reimport: step 393: Preparando arquivos para reimportação...
+	reimport: step 394: Preparando arquivos para reimportação...
+	reimport: step 395: Preparando arquivos para reimportação...
+	reimport: step 396: Preparando arquivos para reimportação...
+	reimport: step 397: Preparando arquivos para reimportação...
+	reimport: step 398: Preparando arquivos para reimportação...
+	reimport: step 399: Preparando arquivos para reimportação...
+	reimport: step 400: Preparando arquivos para reimportação...
+	reimport: step 401: Preparando arquivos para reimportação...
+	reimport: step 402: Preparando arquivos para reimportação...
+	reimport: step 403: Preparando arquivos para reimportação...
+	reimport: step 404: Preparando arquivos para reimportação...
+	reimport: step 405: Preparando arquivos para reimportação...
+	reimport: step 406: Preparando arquivos para reimportação...
+	reimport: step 407: Preparando arquivos para reimportação...
+	reimport: step 408: Preparando arquivos para reimportação...
+	reimport: step 409: Preparando arquivos para reimportação...
+	reimport: step 410: Preparando arquivos para reimportação...
+	reimport: step 411: Preparando arquivos para reimportação...
+	reimport: step 412: Preparando arquivos para reimportação...
+	reimport: step 413: Preparando arquivos para reimportação...
+	reimport: step 414: Preparando arquivos para reimportação...
+	reimport: step 415: Preparando arquivos para reimportação...
+	reimport: step 416: Preparando arquivos para reimportação...
+	reimport: step 417: Preparando arquivos para reimportação...
+	reimport: step 0: Executando operações pré-reimportação...
+	reimport: step 0: textos.csv
+	reimport: step 1: textos.csv
+res://assets/fonte/PressStart2P.ttf: Pixel font detected, disabling subpixel positioning.
+	reimport: step 2: spleen-8x16.otf
+	reimport: step 3: Jersey10-Regular.ttf
+	reimport: step 4: textos.csv
+	reimport: step 5: spleen-8x16.otf
+	reimport: step 6: Jersey10-Regular.ttf
+	reimport: step 7: PressStart2P.ttf
+	reimport: step 8: minijogo_tenso_b.ogg
+	reimport: step 9: minijogo_tenso.ogg
+	reimport: step 10: minijogo_retro.ogg
+	reimport: step 11: textos.csv
+	reimport: step 12: spleen-8x16.otf
+	reimport: step 13: Jersey10-Regular.ttf
+	reimport: step 14: PressStart2P.ttf
+	reimport: step 16: minijogo_tenso.ogg
+	reimport: step 17: minijogo_retro.ogg
+	reimport: step 18: menu.ogg
+	reimport: step 19: horror.ogg
+	reimport: step 20: fim.ogg
+	reimport: step 21: chefe.ogg
+	reimport: step 22: inimigo_sanguessuga.png
+	reimport: step 23: inimigo_sapo_podre.png
+	reimport: step 24: inimigo_sentinela_cristal.png
+	reimport: step 25: inimigo_soberano_caos.png
+	reimport: step 26: inimigo_spam.png
+	reimport: step 27: inimigo_tela_azul.png
+	reimport: step 28: inimigo_trojan.png
+	reimport: step 29: inimigo_trojan_gigante.png
+	reimport: step 30: inimigo_troll_gelo.png
+	reimport: step 31: inimigo_urso_gelo.png
+	reimport: step 32: inimigo_velho_carvalho.png
+	reimport: step 33: marmita.png
+	reimport: step 34: inimigo_sacerdote_areia.png
+	reimport: step 35: inimigo_rei_escaravelho.png
+	reimport: step 36: inimigo_ransomware.png
+	reimport: step 37: inimigo_rainha_sapo.png
+	reimport: step 38: inimigo_popup.png
+	reimport: step 39: inimigo_naja.png
+	reimport: step 40: inimigo_mumia.png
+	reimport: step 41: inimigo_minerador.png
+	reimport: step 42: inimigo_mae_do_lodo.png
+	reimport: step 43: inimigo_lobo_sombrio.png
+	reimport: step 44: inimigo_jarl_congelado.png
+	reimport: step 46: inimigo_guerreiro_congelado.png
+	reimport: step 47: icone_u_grimorio_rachado.png
+	reimport: step 48: icone_u_kunai_corvo.png
+	reimport: step 49: icone_u_lamina_alvorecer.png
+	reimport: step 50: proj_orbe_lapis.png
+	reimport: step 51: proj_orbe_geada.png
+	reimport: step 52: proj_orbe_espectral.png
+	reimport: step 53: proj_orbe_bruxa.png
+	reimport: step 54: proj_orbe_arauto.png
+	reimport: step 55: proj_machado_brasa.png
+	reimport: step 56: proj_machado.png
+	reimport: step 57: proj_lodo.png
+	reimport: step 58: proj_lamina.png
+	reimport: step 59: proj_granizo.png
+	reimport: step 60: proj_estrela_caos.png
+	reimport: step 61: proj_estilhaco.png
+	reimport: step 62: proj_esporo.png
+	reimport: step 63: proj_email.png
+	reimport: step 64: proj_cuspe_naja.png
+	reimport: step 65: proj_ciclone.png
+	reimport: step 66: proj_chama_fatuo.png
+	reimport: step 67: proj_cadeado.png
+	reimport: step 68: proj_bolha_veneno.png
+	reimport: step 69: proj_bola_caos.png
+	reimport: step 70: proj_adaga.png
+	reimport: step 71: pira.png
+	reimport: step 72: icone_wifi.png
+	reimport: step 73: icone_vida.png
+	reimport: step 74: icone_vento_sopro.png
+	reimport: step 75: icone_ventoinha.png
+	reimport: step 76: icone_u_totem_ossos.png
+	reimport: step 77: icone_u_tocha_ardente.png
+	reimport: step 78: icone_u_sino_ferro.png
+	reimport: step 79: icone_u_retalhador_sangrento.png
+	reimport: step 80: icone_u_punhal_peconhento.png
+	reimport: step 81: icone_u_pocao_corrosiva.png
+	reimport: step 82: icone_u_pique_real.png
+	reimport: step 83: icone_u_pergaminho_runico.png
+	reimport: step 84: icone_u_montante_lascado.png
+	reimport: step 85: icone_u_montante_carmesim.png
+	reimport: step 86: icone_u_martelo_forjagelo.png
+	reimport: step 87: icone_u_martelo_ferreiro.png
+	reimport: step 88: icone_u_marreta_enferrujada.png
+	reimport: step 89: icone_u_machado_guerra.png
+	reimport: step 90: icone_u_machado_carrasco.png
+	reimport: step 91: icone_u_machadinha_enferrujada.png
+	reimport: step 92: icone_u_maca_lua_sangue.png
+	reimport: step 93: icone_u_maca_estrelada.png
+	reimport: step 94: icone_u_lanterna_fantasma.png
+	reimport: step 95: icone_u_lanca_dragao.png
+	reimport: step 96: icone_u_lanca_cacada.png
+	reimport: step 97: inimigo_golem_lodo.png
+	reimport: step 98: inimigo_gigante_tempestade.png
+	reimport: step 99: inimigo_galhudo.png
+	reimport: step 100: inimigo_fogo_fatuo.png
+	reimport: step 101: inimigo_esqueleto_areia.png
+	reimport: step 102: icone_u_lamina_tempestade.png
+	reimport: step 103: inimigo_espirito_nevasca.png
+	reimport: step 104: inimigo_espectro.png
+	reimport: step 105: inimigo_espantalho.png
+	reimport: step 106: inimigo_escorpiao_gigante.png
+	reimport: step 107: inimigo_escaravelho.png
+	reimport: step 108: inimigo_diabrete_gelo.png
+	reimport: step 109: inimigo_cultista.png
+	reimport: step 111: inimigo_cogumelo_errante.png
+	reimport: step 112: inimigo_cavaleiro_oco.png
+	reimport: step 113: inimigo_cavaleiro_caos.png
+	reimport: step 114: inimigo_carnical.png
+	reimport: step 115: inimigo_cao_ossos.png
+	reimport: step 116: inimigo_bug.png
+	reimport: step 117: inimigo_bruxa_do_mato.png
+	reimport: step 118: inimigo_arauto.png
+	reimport: step 119: inimigo_aranha_tecela.png
+	reimport: step 120: inimigo_afogado.png
+	reimport: step 121: inimigo_abutre.png
+	reimport: step 122: inimigo_abominacao.png
+	reimport: step 123: inimigo_cavaleiro_oco_albedo.png
+	reimport: step 124: inimigo_cao_ossos_normal.png
+	reimport: step 125: inimigo_cao_ossos_emissao.png
+	reimport: step 126: inimigo_cao_ossos_albedo.png
+	reimport: step 127: inimigo_aranha_tecela_normal.png
+	reimport: step 128: inimigo_aranha_tecela_emissao.png
+	reimport: step 129: inimigo_aranha_tecela_albedo.png
+	reimport: step 130: hazaki_samurai_normal.png
+	reimport: step 131: hazaki_samurai_albedo.png
+	reimport: step 132: hazaki_normal.png
+	reimport: step 133: hazaki_albedo.png
+	reimport: step 134: floresta_piso.png
+	reimport: step 135: floresta_enfeites_albedo.png
+	reimport: step 136: piso_normal.png
+	reimport: step 137: piso.png
+	reimport: step 138: enfeites_normal.png
+	reimport: step 139: enfeites.png
+	reimport: step 140: decalques.png
+	reimport: step 141: piso_normal.png
+	reimport: step 142: piso.png
+	reimport: step 143: enfeites_normal.png
+	reimport: step 144: enfeites.png
+	reimport: step 145: decalques.png
+	reimport: step 146: fundo.png
+	reimport: step 147: rosto.png
+	reimport: step 148: selo_nivel.png
+	reimport: step 149: moldura_pedra.png
+	reimport: step 150: moldura_faixa.png
+	reimport: step 151: minimapa_moldura.png
+	reimport: step 152: barra_xp.png
+	reimport: step 153: barra_vida.png
+	reimport: step 154: barra_fundo.png
+	reimport: step 155: barra_folego.png
+	reimport: step 156: barra_fantasma.png
+	reimport: step 157: anel_luz.png
+	reimport: step 158: piso_normal.png
+	reimport: step 159: piso_ia_normal.png
+	reimport: step 160: piso_ia.png
+	reimport: step 161: piso.png
+	reimport: step 162: enfeites_normal.png
+	reimport: step 163: enfeites.png
+	reimport: step 164: decalques_normal.png
+	reimport: step 165: decalques.png
+	reimport: step 166: inimigo_lobo_sombrio_normal.png
+	reimport: step 167: inimigo_lobo_sombrio_emissao.png
+	reimport: step 168: inimigo_lobo_sombrio_albedo.png
+	reimport: step 169: inimigo_espantalho_normal.png
+	reimport: step 170: inimigo_espantalho_emissao.png
+	reimport: step 171: inimigo_espantalho_albedo.png
+	reimport: step 172: inimigo_cavaleiro_oco_normal.png
+	reimport: step 173: inimigo_cavaleiro_oco_emissao.png
+	reimport: step 174: cabelo.png
+	reimport: step 175: cabeca_guerreiro.png
+	reimport: step 176: bracadeiras.png
+	reimport: step 177: botas.png
+	reimport: step 178: armadura_samurai.png
+	reimport: step 179: rosto.png
+	reimport: step 180: andando_8.png
+	reimport: step 181: rosto.png
+	reimport: step 182: andando_8.png
+	reimport: step 183: rosto.png
+	reimport: step 184: andando_8.png
+	reimport: step 185: kikiu_256.png
+	reimport: step 186: kikiu_128.png
+	reimport: step 187: kikiu_64.png
+	reimport: step 188: kikiu_48.png
+	reimport: step 189: kikiu_32.png
+	reimport: step 190: kikiu_16.png
+	reimport: step 191: entrada.png
+	reimport: step 192: wifi.png
+	reimport: step 193: tomada.png
+	reimport: step 194: proj_ventoinha.png
+	reimport: step 195: proj_tempestade.png
+	reimport: step 196: proj_teia.png
+	reimport: step 197: proj_sol_negro.png
+	reimport: step 198: proj_pendrive.png
+	reimport: step 199: andando_8.png
+	reimport: step 200: rosto.png
+	reimport: step 201: andando_8.png
+	reimport: step 202: rosto.png
+	reimport: step 203: andando_8.png
+	reimport: step 204: rosto.png
+	reimport: step 205: andando_8.png
+	reimport: step 206: rosto.png
+	reimport: step 207: andando_8.png
+	reimport: step 208: rosto.png
+	reimport: step 209: corpo.png
+	reimport: step 210: andando_8.png
+	reimport: step 211: pernas_tras_sem.png
+	reimport: step 212: pernas_tras.png
+	reimport: step 213: pernas_frente_sem.png
+	reimport: step 214: pernas_frente.png
+	reimport: step 215: corpo_sem.png
+	reimport: step 216: corpo.png
+	reimport: step 217: cauda_sem.png
+	reimport: step 218: cauda.png
+	reimport: step 219: cabeca_sem.png
+	reimport: step 220: cabeca.png
+	reimport: step 221: pistolas.png
+	reimport: step 222: mascara.png
+	reimport: step 223: katana_mao.png
+	reimport: step 224: katana_bainha.png
+	reimport: step 225: drop_comida.png
+	reimport: step 226: drop_berrante.png
+	reimport: step 227: deco.png
+	reimport: step 228: chao.png
+	reimport: step 229: bau.png
+	reimport: step 230: piso.png
+	reimport: step 231: enfeites.png
+	reimport: step 232: piso.png
+	reimport: step 233: enfeites.png
+	reimport: step 234: piso.png
+	reimport: step 235: enfeites.png
+	reimport: step 236: piso.png
+	reimport: step 237: enfeites.png
+	reimport: step 238: piso.png
+	reimport: step 239: enfeites.png
+	reimport: step 240: piso.png
+	reimport: step 241: enfeites.png
+	reimport: step 242: piso.png
+	reimport: step 243: enfeites.png
+	reimport: step 244: icone_centelha.png
+	reimport: step 245: icone_cafe.png
+	reimport: step 246: icone_cabo_rede.png
+	reimport: step 247: icone_cabeca_guerreiro.png
+	reimport: step 248: icone_brasa_viva.png
+	reimport: step 249: icone_brasa_coracao.png
+	reimport: step 250: icone_bracadeiras_ferro.png
+	reimport: step 251: icone_botas_guerra.png
+	reimport: step 252: icone_aura_hazaki.png
+	reimport: step 253: icone_arte_marcial.png
+	reimport: step 254: icone_armadura_samurai.png
+	reimport: step 255: icone_apostila.png
+	reimport: step 256: icone_antena.png
+	reimport: step 257: icone_ampulheta.png
+	reimport: step 258: icone_agua_coco.png
+	reimport: step 259: icone_adaga.png
+	reimport: step 260: gema_3.png
+	reimport: step 261: gema_2.png
+	reimport: step 262: gema_1.png
+	reimport: step 263: enfeites.png
+	reimport: step 264: piso.png
+	reimport: step 265: enfeites.png
+	reimport: step 266: piso.png
+	reimport: step 267: enfeites.png
+	reimport: step 268: piso.png
+	reimport: step 269: enfeites.png
+	reimport: step 270: piso.png
+	reimport: step 271: enfeites.png
+	reimport: step 272: piso.png
+	reimport: step 273: enfeites.png
+	reimport: step 274: piso.png
+	reimport: step 275: enfeites.png
+	reimport: step 276: piso.png
+	reimport: step 277: enfeites.png
+	reimport: step 278: piso.png
+	reimport: step 279: enfeites.png
+	reimport: step 280: piso.png
+	reimport: step 281: enfeites.png
+	reimport: step 282: piso.png
+	reimport: step 283: enfeites.png
+	reimport: step 284: piso.png
+	reimport: step 285: enfeites.png
+	reimport: step 286: piso.png
+	reimport: step 287: parede.png
+	reimport: step 288: objetos.png
+	reimport: step 289: piso.png
+	reimport: step 290: enfeites.png
+	reimport: step 291: piso.png
+	reimport: step 292: enfeites.png
+	reimport: step 293: piso.png
+	reimport: step 294: enfeites.png
+	reimport: step 295: piso.png
+	reimport: step 296: enfeites.png
+	reimport: step 297: piso.png
+	reimport: step 298: enfeites.png
+	reimport: step 299: piso.png
+	reimport: step 300: enfeites.png
+	reimport: step 302: icone_u_baluarte_espinhoso.png
+	reimport: step 303: icone_u_arco_tosco.png
+	reimport: step 304: icone_u_arco_sussurro.png
+	reimport: step 305: icone_u_arco_lua_rubra.png
+	reimport: step 306: icone_u_arco_cacador.png
+	reimport: step 307: icone_u_adaga_sombria.png
+	reimport: step 308: icone_terremoto.png
+	reimport: step 309: icone_tenis.png
+	reimport: step 310: icone_tempestade_laminas.png
+	reimport: step 311: icone_sino_juizo.png
+	reimport: step 312: icone_sino.png
+	reimport: step 313: icone_runas.png
+	reimport: step 314: icone_roteador_5g.png
+	reimport: step 315: icone_revoada.png
+	reimport: step 316: icone_raio.png
+	reimport: step 317: icone_presa_peconhenta.png
+	reimport: step 318: icone_poder_elemental.png
+	reimport: step 319: icone_pergaminho.png
+	reimport: step 320: icone_pendrive.png
+	reimport: step 321: icone_u_frasco_incendiario.png
+	reimport: step 322: icone_u_foice_giratoria.png
+	reimport: step 323: icone_u_faca_silex.png
+	reimport: step 324: icone_u_estrela_matutina.png
+	reimport: step 325: icone_u_espinho_alvorada.png
+	reimport: step 326: icone_u_espada_treino.png
+	reimport: step 327: icone_u_escudo_vigia.png
+	reimport: step 328: icone_u_escudo_couro.png
+	reimport: step 329: icone_u_egide_dourada.png
+	reimport: step 330: icone_u_disco_cortante.png
+	reimport: step 331: icone_u_dardo_primitivo.png
+	reimport: step 332: icone_u_corrente_farpada.png
+	reimport: step 333: icone_u_clava_espinhos.png
+	reimport: step 334: icone_u_chakram_alvorada.png
+	reimport: step 335: icone_u_cetro_astral.png
+	reimport: step 336: icone_u_cajado_galho.png
+	reimport: step 337: icone_u_cajado_eremita.png
+	reimport: step 338: icone_u_besta_pesada.png
+	reimport: step 339: icone_u_bastao_cristal.png
+	reimport: step 340: icone_garrafa_termica.png
+	reimport: step 341: icone_garrafada.png
+	reimport: step 342: icone_furia_ceus.png
+	reimport: step 343: icone_fogo_grego.png
+	reimport: step 344: icone_fitinha.png
+	reimport: step 345: icone_figa.png
+	reimport: step 346: icone_fibra_optica.png
+	reimport: step 347: icone_feijao.png
+	reimport: step 348: icone_espelho.png
+	reimport: step 349: icone_energetico.png
+	reimport: step 350: icone_dragao.png
+	reimport: step 351: icone_desert_eagles.png
+	reimport: step 352: icone_ctrl_c_v.png
+	reimport: step 353: icone_cristal_geada.png
+	reimport: step 354: icone_corvos.png
+	reimport: step 355: icone_corrente_carrasco.png
+	reimport: step 356: icone_corrente.png
+	reimport: step 357: icone_circulo_runico.png
+	reimport: step 358: icone_ciclone.png
+	reimport: step 359: icone_pena.png
+	reimport: step 360: icone_pedra_ima.png
+	reimport: step 361: icone_pedra_amolar.png
+	reimport: step 362: icone_overclock.png
+	reimport: step 364: icone_mouse.png
+	reimport: step 365: icone_monitor.png
+	reimport: step 366: icone_moeda.png
+	reimport: step 367: icone_mascara_menpo.png
+	reimport: step 368: textos.csv
+	reimport: step 369: spleen-8x16.otf
+	reimport: step 370: Jersey10-Regular.ttf
+	reimport: step 371: PressStart2P.ttf
+	reimport: step 372: minijogo_tenso_b.ogg
+	reimport: step 373: minijogo_tenso.ogg
+	reimport: step 374: minijogo_retro.ogg
+	reimport: step 375: menu.ogg
+	reimport: step 376: horror.ogg
+	reimport: step 377: fim.ogg
+	reimport: step 378: chefe.ogg
+	reimport: step 379: inimigo_sanguessuga.png
+	reimport: step 380: inimigo_sapo_podre.png
+	reimport: step 381: inimigo_sentinela_cristal.png
+	reimport: step 382: inimigo_soberano_caos.png
+	reimport: step 383: inimigo_spam.png
+	reimport: step 384: inimigo_tela_azul.png
+	reimport: step 385: inimigo_trojan.png
+	reimport: step 386: inimigo_trojan_gigante.png
+	reimport: step 387: inimigo_troll_gelo.png
+	reimport: step 388: inimigo_urso_gelo.png
+	reimport: step 390: marmita.png
+	reimport: step 391: inimigo_sacerdote_areia.png
+	reimport: step 392: inimigo_rei_escaravelho.png
+	reimport: step 393: inimigo_ransomware.png
+	reimport: step 394: inimigo_rainha_sapo.png
+	reimport: step 395: inimigo_popup.png
+	reimport: step 396: inimigo_naja.png
+	reimport: step 397: inimigo_mumia.png
+	reimport: step 398: inimigo_minerador.png
+	reimport: step 399: inimigo_mae_do_lodo.png
+	reimport: step 400: inimigo_lobo_sombrio.png
+	reimport: step 401: inimigo_jarl_congelado.png
+	reimport: step 402: inimigo_jacare_lodo.png
+	reimport: step 403: inimigo_guerreiro_congelado.png
+	reimport: step 404: icone_u_grimorio_rachado.png
+	reimport: step 405: icone_u_kunai_corvo.png
+	reimport: step 406: icone_u_lamina_alvorecer.png
+	reimport: step 407: proj_orbe_lapis.png
+	reimport: step 408: proj_orbe_geada.png
+	reimport: step 409: proj_orbe_espectral.png
+	reimport: step 410: proj_orbe_bruxa.png
+	reimport: step 411: proj_orbe_arauto.png
+	reimport: step 412: proj_machado_brasa.png
+	reimport: step 413: proj_machado.png
+	reimport: step 414: proj_lodo.png
+	reimport: step 415: proj_lamina.png
+	reimport: step 416: proj_granizo.png
+	reimport: step 417: proj_estrela_caos.png
+	reimport: step 418: Finalizando Importação de Recursos...
+reimport: end
+update_script_paths_documentation: begin: Atualizando documentação dos scripts steps: 231
+	update_script_paths_documentation: step 0: plugin.gd
+	update_script_paths_documentation: step 1: cara_nova.gd
+	update_script_paths_documentation: step 2: teste_sombra_cara_nova.gd
+	update_script_paths_documentation: step 3: aura_energia.gd
+	update_script_paths_documentation: step 4: baforada.gd
+	update_script_paths_documentation: step 5: bumerangue.gd
+	update_script_paths_documentation: step 6: corvos.gd
+	update_script_paths_documentation: step 7: elemental.gd
+	update_script_paths_documentation: step 8: energia_draconica.gd
+	update_script_paths_documentation: step 9: garras.gd
+	update_script_paths_documentation: step 10: katana.gd
+	update_script_paths_documentation: step 11: lanca.gd
+	update_script_paths_documentation: step 12: marcial.gd
+	update_script_paths_documentation: step 13: pistolas.gd
+	update_script_paths_documentation: step 14: raio.gd
+	update_script_paths_documentation: step 15: rugido.gd
+	update_script_paths_documentation: step 16: runas.gd
+	update_script_paths_documentation: step 17: sismo.gd
+	update_script_paths_documentation: step 18: manha.gd
+	update_script_paths_documentation: step 19: onda.gd
+	update_script_paths_documentation: step 20: pose.gd
+	update_script_paths_documentation: step 21: abertura.gd
+	update_script_paths_documentation: step 22: ambiente.gd
+	update_script_paths_documentation: step 23: animacao_heroi.gd
+	update_script_paths_documentation: step 24: animacao_monstros.gd
+	update_script_paths_documentation: step 25: arena.gd
+	update_script_paths_documentation: step 26: armas.gd
+	update_script_paths_documentation: step 27: atlas_inimigos.gd
+	update_script_paths_documentation: step 28: calor.gd
+	update_script_paths_documentation: step 29: camada_objetivos.gd
+	update_script_paths_documentation: step 30: cartas.gd
+	update_script_paths_documentation: step 31: cenario.gd
+	update_script_paths_documentation: step 32: chao.gd
+	update_script_paths_documentation: step 33: chat.gd
+	update_script_paths_documentation: step 34: coleta.gd
+	update_script_paths_documentation: step 35: config.gd
+	update_script_paths_documentation: step 36: conjuntos.gd
+	update_script_paths_documentation: step 37: construcao.gd
+	update_script_paths_documentation: step 38: crescimento.gd
+	update_script_paths_documentation: step 39: criacao.gd
+	update_script_paths_documentation: step 40: dados.gd
+	update_script_paths_documentation: step 41: descobertas.gd
+	update_script_paths_documentation: step 42: direcao.gd
+	update_script_paths_documentation: step 43: diretor_hordas.gd
+	update_script_paths_documentation: step 44: dragao.gd
+	update_script_paths_documentation: step 45: duelo.gd
+	update_script_paths_documentation: step 46: efeitos.gd
+	update_script_paths_documentation: step 47: elementos.gd
+	update_script_paths_documentation: step 48: entradas.gd
+	update_script_paths_documentation: step 49: equipamento.gd
+	update_script_paths_documentation: step 50: escuridao.gd
+	update_script_paths_documentation: step 51: especial.gd
+	update_script_paths_documentation: step 52: finalizacao.gd
+	update_script_paths_documentation: step 53: ganchos.gd
+	update_script_paths_documentation: step 54: habilidades.gd
+	update_script_paths_documentation: step 55: hud.gd
+	update_script_paths_documentation: step 56: hud_setas.gd
+	update_script_paths_documentation: step 57: hud_slot.gd
+	update_script_paths_documentation: step 58: ia_luta.gd
+	update_script_paths_documentation: step 59: inimigos.gd
+	update_script_paths_documentation: step 60: interface.gd
+	update_script_paths_documentation: step 61: jogador.gd
+	update_script_paths_documentation: step 62: legibilidade.gd
+	update_script_paths_documentation: step 63: loja.gd
+	update_script_paths_documentation: step 64: main.gd
+	update_script_paths_documentation: step 65: mapa.gd
+	update_script_paths_documentation: step 66: missao_chefe.gd
+	update_script_paths_documentation: step 67: mochila.gd
+	update_script_paths_documentation: step 68: mortes.gd
+	update_script_paths_documentation: step 69: objetivos.gd
+	update_script_paths_documentation: step 70: online.gd
+	update_script_paths_documentation: step 71: paleta.gd
+	update_script_paths_documentation: step 72: perf.gd
+	update_script_paths_documentation: step 73: poca.gd
+	update_script_paths_documentation: step 74: provisoes.gd
+	update_script_paths_documentation: step 75: rede.gd
+	update_script_paths_documentation: step 76: regioes.gd
+	update_script_paths_documentation: step 77: remoto.gd
+	update_script_paths_documentation: step 78: resultado.gd
+	update_script_paths_documentation: step 79: rival.gd
+	update_script_paths_documentation: step 80: saida.gd
+	update_script_paths_documentation: step 81: salas.gd
+	update_script_paths_documentation: step 82: som.gd
+	update_script_paths_documentation: step 83: sorte.gd
+	update_script_paths_documentation: step 84: tela_calor.gd
+	update_script_paths_documentation: step 85: tela_criacao.gd
+	update_script_paths_documentation: step 86: tela_graficos.gd
+	update_script_paths_documentation: step 87: tela_herois.gd
+	update_script_paths_documentation: step 88: tela_mapa.gd
+	update_script_paths_documentation: step 89: tela_opcoes.gd
+	update_script_paths_documentation: step 90: tela_preparo.gd
+	update_script_paths_documentation: step 91: tela_status.gd
+	update_script_paths_documentation: step 92: transicao.gd
+	update_script_paths_documentation: step 93: universais.gd
+	update_script_paths_documentation: step 94: vinheta.gd
+	update_script_paths_documentation: step 95: visual.gd
+	update_script_paths_documentation: step 96: voz.gd
+	update_script_paths_documentation: step 97: tela_graficos_fotos.gd
+	update_script_paths_documentation: step 98: abertura.gd
+	update_script_paths_documentation: step 99: animacao.gd
+	update_script_paths_documentation: step 100: animacao_heroi.gd
+	update_script_paths_documentation: step 101: animacao_monstros.gd
+	update_script_paths_documentation: step 102: armas_novas.gd
+	update_script_paths_documentation: step 103: armas_universais.gd
+	update_script_paths_documentation: step 104: ataque_clique.gd
+	update_script_paths_documentation: step 105: bench_fim.gd
+	update_script_paths_documentation: step 106: bench_horda.gd
+	update_script_paths_documentation: step 107: bench_inicio.gd
+	update_script_paths_documentation: step 108: calor.gd
+	update_script_paths_documentation: step 109: cartas_comp.gd
+	update_script_paths_documentation: step 110: conjuntos.gd
+	update_script_paths_documentation: step 111: crescimento.gd
+	update_script_paths_documentation: step 112: criacao2.gd
+	update_script_paths_documentation: step 113: criacao.gd
+	update_script_paths_documentation: step 114: descobertas.gd
+	update_script_paths_documentation: step 115: desenho_lote.gd
+	update_script_paths_documentation: step 116: direcoes.gd
+	update_script_paths_documentation: step 117: elementos.gd
+	update_script_paths_documentation: step 118: entrada_cenas.gd
+	update_script_paths_documentation: step 119: equipamentos.gd
+	update_script_paths_documentation: step 120: esc_transicao.gd
+	update_script_paths_documentation: step 121: especiais.gd
+	update_script_paths_documentation: step 122: esquiva.gd
+	update_script_paths_documentation: step 123: golpes.gd
+	update_script_paths_documentation: step 124: golpe_remoto.gd
+	update_script_paths_documentation: step 125: graficos.gd
+	update_script_paths_documentation: step 126: horror.gd
+	update_script_paths_documentation: step 127: hud.gd
+	update_script_paths_documentation: step 128: legibilidade.gd
+	update_script_paths_documentation: step 129: loja_sala.gd
+	update_script_paths_documentation: step 130: mapa.gd
+	update_script_paths_documentation: step 131: mira.gd
+	update_script_paths_documentation: step 132: missao_chefe.gd
+	update_script_paths_documentation: step 133: mortes.gd
+	update_script_paths_documentation: step 134: movimento.gd
+	update_script_paths_documentation: step 135: objetivos.gd
+	update_script_paths_documentation: step 136: opcoes.gd
+	update_script_paths_documentation: step 137: pausa.gd
+	update_script_paths_documentation: step 138: preparo.gd
+	update_script_paths_documentation: step 139: prorrogacao.gd
+	update_script_paths_documentation: step 140: racas.gd
+	update_script_paths_documentation: step 141: rede.gd
+	update_script_paths_documentation: step 142: regioes.gd
+	update_script_paths_documentation: step 143: regras_armas.gd
+	update_script_paths_documentation: step 144: resultado.gd
+	update_script_paths_documentation: step 145: rolamento.gd
+	update_script_paths_documentation: step 146: santuarios2.gd
+	update_script_paths_documentation: step 147: status.gd
+	update_script_paths_documentation: step 148: suavidade.gd
+	update_script_paths_documentation: step 149: tela_graficos.gd
+	update_script_paths_documentation: step 150: tema.gd
+	update_script_paths_documentation: step 151: transformacao.gd
+	update_script_paths_documentation: step 152: transicao.gd
+	update_script_paths_documentation: step 153: ui.gd
+SCRIPT ERROR: Parse Error: Cannot infer the type of "impacto" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://v2/escudo.gd:201)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://v2/combate.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://v2/mundo.gd:0)
+ERROR: Failed to load script "res://v2/mundo.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript.cpp:3022)
+	update_script_paths_documentation: step 154: v2_arvores.gd
+	update_script_paths_documentation: step 155: v2_braseiro.gd
+	update_script_paths_documentation: step 156: v2_cartas_espera.gd
+	update_script_paths_documentation: step 157: v2_colisao.gd
+	update_script_paths_documentation: step 158: v2_combate.gd
+	update_script_paths_documentation: step 159: v2_desempenho.gd
+	update_script_paths_documentation: step 160: v2_esc.gd
+	update_script_paths_documentation: step 161: v2_escudo.gd
+	update_script_paths_documentation: step 162: v2_fontes.gd
+	update_script_paths_documentation: step 163: v2_fontes_folha.gd
+	update_script_paths_documentation: step 164: v2_fontes_prints.gd
+	update_script_paths_documentation: step 165: v2_hud.gd
+	update_script_paths_documentation: step 166: v2_mapas.gd
+	update_script_paths_documentation: step 167: v2_menu.gd
+	update_script_paths_documentation: step 168: v2_meta.gd
+	update_script_paths_documentation: step 169: v2_minimapa.gd
+	update_script_paths_documentation: step 170: v2_mundo.gd
+	update_script_paths_documentation: step 171: v2_musica.gd
+	update_script_paths_documentation: step 172: v2_oclusao.gd
+	update_script_paths_documentation: step 173: v2_partida.gd
+	update_script_paths_documentation: step 174: v2_pausa.gd
+	update_script_paths_documentation: step 175: v2_ruptura.gd
+	update_script_paths_documentation: step 176: v2_santuario.gd
+	update_script_paths_documentation: step 177: v2_status.gd
+	update_script_paths_documentation: step 178: variantes.gd
+	update_script_paths_documentation: step 179: vistas.gd
+	update_script_paths_documentation: step 180: ajustes_graficos.gd
+	update_script_paths_documentation: step 181: altar.gd
+	update_script_paths_documentation: step 182: apresentacao.gd
+	update_script_paths_documentation: step 183: armas.gd
+	update_script_paths_documentation: step 184: armas_novas.gd
+	update_script_paths_documentation: step 185: atmosfera.gd
+	update_script_paths_documentation: step 186: ator.gd
+	update_script_paths_documentation: step 187: audio.gd
+	update_script_paths_documentation: step 188: avisos.gd
+	update_script_paths_documentation: step 189: barra_vida_elite.gd
+	update_script_paths_documentation: step 190: bau.gd
+	update_script_paths_documentation: step 191: braseiros.gd
+	update_script_paths_documentation: step 192: camera_mundo.gd
+	update_script_paths_documentation: step 193: cartas.gd
+	update_script_paths_documentation: step 194: cenario.gd
+	update_script_paths_documentation: step 195: chefe.gd
+	update_script_paths_documentation: step 196: colisao.gd
+	update_script_paths_documentation: step 197: combate.gd
+	update_script_paths_documentation: step 198: copas.gd
+	update_script_paths_documentation: step 199: creditos.gd
+	update_script_paths_documentation: step 200: depuracao_colisao.gd
+	update_script_paths_documentation: step 201: diretor.gd
+	update_script_paths_documentation: step 202: efeitos.gd
+	update_script_paths_documentation: step 203: elites.gd
+	update_script_paths_documentation: step 204: entrada.gd
+	update_script_paths_documentation: step 205: escudo.gd
+	update_script_paths_documentation: step 206: heroi.gd
+	update_script_paths_documentation: step 207: horda.gd
+	update_script_paths_documentation: step 208: hud.gd
+	update_script_paths_documentation: step 209: hud_anuncios.gd
+	update_script_paths_documentation: step 210: hud_habilidades.gd
+	update_script_paths_documentation: step 211: luzes.gd
+	update_script_paths_documentation: step 212: mapas.gd
+	update_script_paths_documentation: step 213: menu_principal.gd
+	update_script_paths_documentation: step 214: meta.gd
+	update_script_paths_documentation: step 215: minimapa.gd
+	update_script_paths_documentation: step 216: monstro.gd
+	update_script_paths_documentation: step 217: mundo.gd
+	update_script_paths_documentation: step 218: oclusao.gd
+	update_script_paths_documentation: step 219: orbes.gd
+	update_script_paths_documentation: step 220: passagens.gd
+	update_script_paths_documentation: step 221: pausa.gd
+	update_script_paths_documentation: step 222: progresso.gd
+	update_script_paths_documentation: step 223: resultado_meta.gd
+	update_script_paths_documentation: step 224: roteiro.gd
+	update_script_paths_documentation: step 225: ruptura.gd
+	update_script_paths_documentation: step 226: sombras.gd
+	update_script_paths_documentation: step 227: sprites.gd
+	update_script_paths_documentation: step 228: status.gd
+	update_script_paths_documentation: step 229: telas.gd
+	update_script_paths_documentation: step 230: trilha.gd
+update_script_paths_documentation: end
+update_scene_groups: begin: Atualizando Grupos de Cenas steps: 93
+	update_scene_groups: step 0: hud.tscn
+	update_scene_groups: step 1: tela_graficos.tscn
+	update_scene_groups: step 2: cara_nova.tscn
+	update_scene_groups: step 3: tela_graficos_fotos.tscn
+	update_scene_groups: step 4: abertura.tscn
+	update_scene_groups: step 5: animacao.tscn
+	update_scene_groups: step 6: animacao_heroi.tscn
+	update_scene_groups: step 7: animacao_monstros.tscn
+	update_scene_groups: step 8: armas_novas.tscn
+	update_scene_groups: step 9: armas_universais.tscn
+	update_scene_groups: step 10: ataque_clique.tscn
+	update_scene_groups: step 11: bench_fim.tscn
+	update_scene_groups: step 12: bench_horda.tscn
+	update_scene_groups: step 13: bench_inicio.tscn
+	update_scene_groups: step 14: calor.tscn
+	update_scene_groups: step 15: cartas_comp.tscn
+	update_scene_groups: step 16: conjuntos.tscn
+	update_scene_groups: step 17: crescimento.tscn
+	update_scene_groups: step 18: criacao2.tscn
+	update_scene_groups: step 19: criacao.tscn
+	update_scene_groups: step 20: descobertas.tscn
+	update_scene_groups: step 21: desenho_lote.tscn
+	update_scene_groups: step 22: direcoes.tscn
+	update_scene_groups: step 23: elementos.tscn
+	update_scene_groups: step 24: entrada_cenas.tscn
+	update_scene_groups: step 25: equipamentos.tscn
+	update_scene_groups: step 26: esc_transicao.tscn
+	update_scene_groups: step 27: especiais.tscn
+	update_scene_groups: step 28: esquiva.tscn
+	update_scene_groups: step 29: golpes.tscn
+	update_scene_groups: step 30: golpe_remoto.tscn
+	update_scene_groups: step 31: graficos.tscn
+	update_scene_groups: step 32: horror.tscn
+	update_scene_groups: step 33: hud.tscn
+	update_scene_groups: step 34: legibilidade.tscn
+	update_scene_groups: step 35: loja_sala.tscn
+	update_scene_groups: step 36: mapa.tscn
+	update_scene_groups: step 37: mira.tscn
+	update_scene_groups: step 38: missao_chefe.tscn
+	update_scene_groups: step 39: mortes.tscn
+	update_scene_groups: step 40: movimento.tscn
+	update_scene_groups: step 41: objetivos.tscn
+	update_scene_groups: step 42: opcoes.tscn
+	update_scene_groups: step 43: pausa.tscn
+	update_scene_groups: step 44: preparo.tscn
+	update_scene_groups: step 45: prorrogacao.tscn
+	update_scene_groups: step 46: racas.tscn
+	update_scene_groups: step 47: rede.tscn
+	update_scene_groups: step 48: regioes.tscn
+	update_scene_groups: step 49: regras_armas.tscn
+	update_scene_groups: step 50: resultado.tscn
+	update_scene_groups: step 51: rolamento.tscn
+	update_scene_groups: step 52: santuarios2.tscn
+	update_scene_groups: step 53: status.tscn
+	update_scene_groups: step 54: suavidade.tscn
+	update_scene_groups: step 55: tela_graficos.tscn
+	update_scene_groups: step 56: tema.tscn
+	update_scene_groups: step 57: transformacao.tscn
+	update_scene_groups: step 58: transicao.tscn
+	update_scene_groups: step 59: ui.tscn
+	update_scene_groups: step 60: v2_arvores.tscn
+	update_scene_groups: step 61: v2_braseiro.tscn
+	update_scene_groups: step 62: v2_cartas_espera.tscn
+	update_scene_groups: step 63: v2_colisao.tscn
+	update_scene_groups: step 64: v2_combate.tscn
+	update_scene_groups: step 65: v2_desempenho.tscn
+	update_scene_groups: step 66: v2_esc.tscn
+	update_scene_groups: step 67: v2_escudo.tscn
+	update_scene_groups: step 68: v2_fontes.tscn
+	update_scene_groups: step 69: v2_fontes_folha.tscn
+	update_scene_groups: step 70: v2_fontes_prints.tscn
+	update_scene_groups: step 71: v2_hud.tscn
+	update_scene_groups: step 72: v2_mapas.tscn
+	update_scene_groups: step 73: v2_menu.tscn
+	update_scene_groups: step 74: v2_meta.tscn
+	update_scene_groups: step 75: v2_minimapa.tscn
+	update_scene_groups: step 76: v2_mundo.tscn
+	update_scene_groups: step 77: v2_musica.tscn
+	update_scene_groups: step 78: v2_oclusao.tscn
+	update_scene_groups: step 79: v2_partida.tscn
+	update_scene_groups: step 80: v2_pausa.tscn
+	update_scene_groups: step 81: v2_ruptura.tscn
+	update_scene_groups: step 82: v2_santuario.tscn
+	update_scene_groups: step 83: v2_status.tscn
+	update_scene_groups: step 84: variantes.tscn
+	update_scene_groups: step 85: vistas.tscn
+	update_scene_groups: step 86: altar.tscn
+	update_scene_groups: step 87: hud.tscn
+	update_scene_groups: step 88: menu_principal.tscn
+	update_scene_groups: step 89: minimapa.tscn
+	update_scene_groups: step 90: mundo.tscn
+	update_scene_groups: step 91: pausa.tscn
+	update_scene_groups: step 92: main.tscn
+update_scene_groups: end
+reimport: begin: (Re)Importando Recursos steps: 418
+	reimport: step 0: Executando operações pós-reimportação...
+reimport: end
+loading_editor_layout: begin: Carregando editor steps: 5
+	loading_editor_layout: step 0: Carregando layout do editor...
+loading_editor_layout: end

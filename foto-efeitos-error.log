@@ -1,0 +1,2 @@
+SCRIPT ERROR: Invalid access to property or key 'NORMAL' on a base object of type 'Dictionary'.
+   at: _ready (res://testes/_foto_efeitos.gd:24)
