@@ -12,6 +12,7 @@ extends RefCounted
 const Efeitos := preload("res://v2/efeitos.gd")
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
+const Meta := preload("res://v2/meta.gd")
 const TempoLocal := preload("res://v2/tempo_local.gd")
 const Diretor := preload("res://v2/diretor.gd")
 const Telas := preload("res://v2/telas.gd")
@@ -265,6 +266,7 @@ func atualizar(dt: float) -> void:
 		us_armas += t1 - t0
 		adagas.atualizar(dt)
 		elites.atualizar(dt)
+		diretor.avancar_nivel(dt)
 		chefes.atualizar(dt)
 		var t2 := Time.get_ticks_usec()
 		avisos.atualizar(dt)
@@ -277,6 +279,11 @@ func atualizar(dt: float) -> void:
 	var o0 := Time.get_ticks_usec()
 	orbes.atualizar(dt, h.pos + Vector2(0, -8), h.alcance_ima())
 	mundo._perfil("c_orbes", Time.get_ticks_usec() - o0)
+
+
+## Quadros entre um recálculo da separação de cada monstro: PASSO_SEP x a opção Cálculo dos monstros (0,5 frequente, 1 normal, 2 espaçado).
+func _passo_sep() -> int:
+	return maxi(1, roundi(float(PASSO_SEP) * float(Config.g("calculo_monstros"))))
 
 
 ## Monstros colados se empurram: a horda faz uma roda em volta do herói em vez de virar uma pilha em cima dele. Uma grade espacial de
@@ -314,11 +321,12 @@ func _separar() -> void:
 		var h := ((int(p.x / CEL) * 73856093) ^ (int(p.y / CEL) * 19349663)) & (GRADE_N - 1)
 		_prox[i] = _cab[h]
 		_cab[h] = i
-	var i0 := _q % PASSO_SEP
+	var passo := _passo_sep()
+	var i0 := _q % passo
 	while i0 < n:
 		var m = ms[i0]
 		var k := i0
-		i0 += PASSO_SEP
+		i0 += passo
 		if m.atordoa_t > 0.0:
 			m.sep = Vector2.ZERO
 			continue
@@ -804,8 +812,13 @@ func fim_de_partida(ganhou: bool) -> void:
 		"nivel": mundo.heroi.nivel,
 		"maior_combo": mundo.maior_combo,
 		"venceu": ganhou,
-		"almas": mundo.almas_partida
+		"almas": mundo.almas_partida,
+		"mapa": str(mundo.id_mapa),
+		"nivel_mapa": diretor.nivel,
+		"niveis_mapa": diretor.niveis_total
 	}
+	if ganhou:
+		r["mapa_vencido_agora"] = Meta.marcar_mapa_vencido(str(mundo.id_mapa))  # registra a vitória e preserva o anúncio da conquista no resultado
 	mundo.resultado = r
 	mundo.partida_terminou.emit(r)
 

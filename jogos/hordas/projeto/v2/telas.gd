@@ -3,7 +3,8 @@ extends RefCounted
 ## RARIDADE, mais rerrolar e banir), a roleta do baú, a tela de resultado (VOCÊ CAIU ou VITÓRIA, com as almas ganhas), os anúncios grandes
 ## e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (DESLIGADO por padrão agora que o HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro
 ## do SubViewport 960x540; o mouse não chega nos Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_ui()) e a
-## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar) e B (banir a carta marcada).
+## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar), Q (AUTOMÁTICO: o sistema escolhe pelo que o herói já tem, com raridade menor) e B (banir a carta
+## marcada). No controle: A escolhe, X rerrola, Y é o automático e LB bane.
 ## TRAVA: a escolha abre com as cartas apagadas por 1 s de TEMPO REAL (0,8 s depois de rerrolar ou banir). Nesse tempo clique, tecla e
 ## botão são descartados (a contagem pulsa) e nada chega ao herói; ESC passa, é da pausa. O baú tem a sua trava (bau_espera_s). Os tempos
 ## vêm de dados/v2_cartas.json e a contagem corre no `atualizar` (relógio de parede), congelada com a pausa aberta (mundo.pausa.aberto).
@@ -11,6 +12,7 @@ extends RefCounted
 
 const Paleta := preload("res://v2/paleta.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
+const Glifos := preload("res://v2/glifos.gd")
 const LARG := 960
 const ALT := 540
 const LAYER_TELAS := 11  # cartas, baú e resultado: ACIMA da HUD (10), abaixo do resultado final (12) e da pausa (14); senão o HUD aparece por cima das cartas
@@ -20,6 +22,7 @@ const CARTA_Y := 146.0
 const LENDARIA_COR := Paleta.FUSAO  # magenta: a faixa e o rodapé de uma peça que fecha lendária
 const FOLGA := 20.0
 const BTN_Y := 440.0
+const BTN_L := 200.0  # largura dos três botões da escolha (Rerrolar, Automático, Banir)
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
 const ICONE := 32.0  # ícone próprio da carta (assets/v2/icones_cartas, 32x32): sai 1 para 1, pixel a pixel
 const TAM_TITULO := Paleta.TITULO_GRANDE  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
@@ -55,6 +58,9 @@ var _titulo: Label
 var _sub: Label
 var _btn_r: Panel
 var _btn_b: Panel
+var _btn_a: Panel
+var _btn_a_txt: Label
+var _auto_dica: Label
 var _btn_r_txt: Label
 var _btn_b_txt: Label
 var _build: Label
@@ -62,7 +68,7 @@ var _res: Control
 var _res_titulo: Label
 var _res_linhas: Label
 var _res_valores: Label
-var _res_dica: Label
+var _res_dica: Control  # Glifos.dica: glifo do botão + texto
 var _dep: Label
 var _dep_t := 0.0
 var _fonte: Font  # texto corrido (Spleen 8x16, sempre em 16 px)
@@ -78,7 +84,7 @@ var _bau_i := 0  # qual carta está girando
 var _bau_t := 0.0
 var _bau_fase := 0  # 0 = girando, 1 = pausa depois de revelar, 2 = tudo revelado
 var _bau_tick := 0.0
-var _bau_dica: Label
+var _bau_dica: Control  # Glifos.dica: glifo do botão + texto
 
 
 func montar(c, sv: Node) -> void:
@@ -166,10 +172,21 @@ func _montar_escolha() -> void:
 		_escolha.add_child(p)
 		_cartas.append(p)
 	# rerrolar e banir
-	_btn_r = _botao(Vector2(LARG * 0.5 - 254, BTN_Y), "r")
-	_btn_b = _botao(Vector2(LARG * 0.5 + 14, BTN_Y), "b")
+	# Rerrolar, AUTOMÁTICO (no centro) e Banir: três botões de 200 px com 14 px entre eles, o do meio exatamente no meio da tela
+	_btn_r = _botao(Vector2(LARG * 0.5 - 100 - 14 - BTN_L, BTN_Y), "r")
+	_btn_a = _botao(Vector2(LARG * 0.5 - 100, BTN_Y), "a")
+	_btn_b = _botao(Vector2(LARG * 0.5 + 100 + 14, BTN_Y), "b")
 	_btn_r_txt = _btn_r.get_node("t")
+	_btn_a_txt = _btn_a.get_node("t")
 	_btn_b_txt = _btn_b.get_node("t")
+	_btn_a.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))  # o do meio com a borda de ouro: é o atalho
+	_auto_dica = _rotulo(
+		"Automático: o sistema completa a sua build, mas a carta vem de raridade menor.", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER
+	)
+	_auto_dica.position = Vector2(20, 496)
+	_auto_dica.size = Vector2(LARG - 40, 20)
+	_auto_dica.clip_text = true
+	_escolha.add_child(_auto_dica)
 	_build = _rotulo("", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
 	_build.position = Vector2(20, 472)
 	_build.size = Vector2(LARG - 40, 20)
@@ -267,17 +284,32 @@ func _moldura(cor: Color) -> StyleBoxFlat:
 	return s
 
 
-func _botao(pos: Vector2, _id: String) -> Panel:
+## Dica do baú e do resultado: o botão do dispositivo em uso (Enter, A ou cruz) desenhado pelo Glifos; o Control se refaz sozinho na troca.
+func _gerador_continuar() -> Array:
+	return [["confirmar", "para continuar" if Glifos.eh_controle() else "ou clique para continuar"]]
+
+
+func _gerador_jogar_de_novo() -> Array:
+	return [["confirmar", "para jogar de novo" if Glifos.eh_controle() else "ou clique para jogar de novo"]]
+
+
+func _botao(pos: Vector2, id: String) -> Panel:
 	var p := Panel.new()
 	p.position = pos
-	p.size = Vector2(240, 28)
+	p.size = Vector2(BTN_L, 28)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_theme_stylebox_override("panel", _estilo(false, Paleta.BORDA))
 	var t := _rotulo("", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
 	t.name = "t"
-	t.position = Vector2(4, 5)
-	t.size = Vector2(232, 18)
+	t.position = Vector2(40, 5)  # reserva uma coluna para o glifo, inclusive LB/L1 (24 px)
+	t.size = Vector2(BTN_L - 46.0, 18)
 	p.add_child(t)
+	var acoes := {"r": "rerrolar", "a": "automatico", "b": "banir"}
+	var g := Glifos.glifo(acoes[id], HORIZONTAL_ALIGNMENT_CENTER)
+	g.name = "glifo"
+	g.position = Vector2(6, 6)
+	g.size = Vector2(28, 16)
+	p.add_child(g)
 	_escolha.add_child(p)
 	return p
 
@@ -299,7 +331,7 @@ func _montar_bau() -> void:
 		_montar_cartao(p, "")
 		_bau.add_child(p)
 		_bau_slots.append(p)
-	_bau_dica = _rotulo("ENTER ou clique para continuar", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_bau_dica = Glifos.dica(_gerador_continuar, HORIZONTAL_ALIGNMENT_CENTER, Paleta.OURO)
 	_bau_dica.position = Vector2(0, 450)
 	_bau_dica.size = Vector2(LARG, 20)
 	_bau.add_child(_bau_dica)
@@ -324,9 +356,9 @@ func _montar_resultado() -> void:
 	_res_valores.size = Vector2(120, 190)
 	_res_valores.add_theme_constant_override("line_spacing", 8)
 	_res.add_child(_res_valores)
-	_res_dica = _rotulo("ENTER ou clique para jogar de novo", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_res_dica = Glifos.dica(_gerador_jogar_de_novo, HORIZONTAL_ALIGNMENT_CENTER, Paleta.OURO)
 	_res_dica.position = Vector2(0, 410)
-	_res_dica.size = Vector2(LARG, 12)
+	_res_dica.size = Vector2(LARG, 20)
 	_res.add_child(_res_dica)
 
 
@@ -406,8 +438,10 @@ func _atualizar_botoes() -> void:
 	var cs = combate.cartas
 	var pr: bool = cs.pode_rerrolar() and espera_escolha <= 0.0
 	var pb: bool = cs.pode_banir() and espera_escolha <= 0.0
-	_btn_r_txt.text = "[R] Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "[R] Rerrolar (já usou)"
-	_btn_b_txt.text = "[B] Banir a marcada (%d)" % cs.banimentos_restantes()
+	_btn_r_txt.text = "Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "Rerrolar (já usou)"
+	_btn_b_txt.text = "Banir a marcada (%d)" % cs.banimentos_restantes()
+	_btn_a_txt.text = "Automático"
+	_btn_a.modulate = Paleta.BRANCO if espera_escolha <= 0.0 else Paleta.alfa(Paleta.BRANCO, 0.4)
 	_btn_r.modulate = Paleta.BRANCO if pr else Paleta.alfa(Paleta.BRANCO, 0.4)
 	_btn_b.modulate = Paleta.BRANCO if pb else Paleta.alfa(Paleta.BRANCO, 0.4)
 
@@ -743,6 +777,8 @@ func _botao_sob_mouse() -> String:
 		return "r"
 	if Rect2(_btn_b.position, _btn_b.size).has_point(m):
 		return "b"
+	if Rect2(_btn_a.position, _btn_a.size).has_point(m):
+		return "a"
 	return ""
 
 
@@ -773,6 +809,9 @@ func _entrada_escolha(e: InputEvent) -> bool:
 			if b == "b":
 				_banir()
 				return true
+			if b == "a":
+				_automatico()
+				return true
 			var j := _carta_sob_mouse()
 			if j >= 0:
 				combate.progresso.escolher(j)
@@ -798,9 +837,24 @@ func _entrada_escolha(e: InputEvent) -> bool:
 				combate.progresso.escolher(sel)
 			KEY_R:
 				_rerrolar()
+			KEY_Q:
+				_automatico()
 			KEY_B, KEY_X:
 				_banir()
 		return true
+	if e is InputEventJoypadButton and e.pressed:  # controle: X rerrola, Y é o automático, LB bane (o A e o direcional já vêm pelas ações ui_*)
+		if travada:
+			_pulso = PULSO_T
+			return true
+		if e.button_index == JOY_BUTTON_X:
+			_rerrolar()
+			return true
+		if e.button_index == JOY_BUTTON_Y:
+			_automatico()
+			return true
+		if e.button_index == JOY_BUTTON_LEFT_SHOULDER:
+			_banir()
+			return true
 	if e is InputEventJoypadMotion:
 		return false  # o analógico não navega nem escolhe: cada quadro com ele acima do limite contaria como um aperto (o direcional e o A fazem isso)
 	if e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right") or e.is_action_pressed("ui_accept"):
@@ -818,6 +872,11 @@ func _entrada_escolha(e: InputEvent) -> bool:
 
 func _rerrolar() -> void:
 	if not combate.progresso.rerrolar():
+		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
+
+
+func _automatico() -> void:
+	if not combate.progresso.automatico():
 		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
 
 

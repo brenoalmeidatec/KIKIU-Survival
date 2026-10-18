@@ -74,6 +74,11 @@ static func escala(id: String) -> float:
 	return 1.3 if id == COLOSSO else 1.0
 
 
+## Px do pé até o alto do golem (a barrinha de tempo de vida dele fica aí).
+static func topo(it: Dictionary) -> float:
+	return PE.y * 0.62 * escala(str(it.a.id))
+
+
 ## A linha (0 frente, 1 3/4 frente, 2 perfil, 3 3/4 costas, 4 costas) para ir na direção `v` (tela, y para baixo), com histerese:
 ## perto da fronteira entre duas vistas fica na que já estava (`atual`).
 static func linha_de(v: Vector2, atual: int) -> int:
@@ -197,7 +202,7 @@ static func _andar(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
 	if d.length() > 1.0:
 		var dir := d.normalized()
 		var passo := minf(float(st.vel) * dt, d.length())
-		it.p = it.p + dir * passo
+		it.p = nv.pai.mundo.mover_ponto(it.p, dir * passo, nv.RAIO_ALIADO)
 		it.v = (it.v as Vector2).lerp(dir, clampf(dt * 10.0, 0.0, 1.0))  # suavizado: o quadro não pisca na virada
 		it.lin = linha_de(it.v, int(it.lin))
 		var antes := float(it.pf)

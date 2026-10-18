@@ -26,7 +26,7 @@ const COR_APAGADO := Paleta.TEXTO_APAGADO
 const COR_EFEITO := Paleta.TEXTO_SECUNDARIO
 const COR_FOCO := Paleta.FOCO  # texto do botão com foco ou sob o mouse (o fundo do botão é escuro)
 const COR_ALMA := Paleta.ALMA
-const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Mouse também"
+const Glifos := preload("res://v2/glifos.gd")
 const TEMPO_AVISO := 3.0
 
 var _saldo: Label
@@ -69,6 +69,7 @@ func _ready() -> void:
 	if _abrir_v1():
 		return
 	_ajustar_janela()
+	Glifos.instalar()  # escuta o último dispositivo (a dica do rodapé troca entre teclado, Xbox e PlayStation)
 	_montar()
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(null)
 	pausa.sair_no_frontend = false
@@ -148,9 +149,9 @@ func _montar() -> void:
 	add_child(veu)
 
 	add_child(_texto("SANTUÁRIO", Paleta.TITULO_GRANDE, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 6, LARG, 56)))
-	add_child(_painel(Rect2(700, 10, 240, 46)))
-	add_child(_texto("ALMAS", Paleta.NUMERO_PEQUENO, false, COR_ALMA, HORIZONTAL_ALIGNMENT_LEFT, Rect2(716, 14, 120, 12)))
-	_saldo = _texto("0", Paleta.TITULO_MEDIO, true, COR_ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(716, 16, 208, 38))
+	add_child(_painel(Rect2(684, 10, 240, 46)))  # a borda direita (924) é a da coluna CONQUISTAS e a do VOLTAR
+	add_child(_texto("ALMAS", Paleta.NUMERO_PEQUENO, false, COR_ALMA, HORIZONTAL_ALIGNMENT_LEFT, Rect2(700, 14, 120, 12)))
+	_saldo = _texto("0", Paleta.TITULO_MEDIO, true, COR_ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(700, 16, 208, 38))
 	add_child(_saldo)
 	_ultima = _texto("", Paleta.NUMERO_PEQUENO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 62, 920, 14))
 	add_child(_ultima)
@@ -160,7 +161,7 @@ func _montar() -> void:
 	var i := 0
 	for m in Meta.melhorias_visiveis():
 		var x := 36.0 + (i % 3) * 194.0
-		var y := 128.0 + floori(i / 3.0) * 86.0
+		var y := 128.0 + floori(i / 3.0) * 82.0  # cartões de 78 px, 4 px de folga: a grade acaba em y 370
 		add_child(_painel(Rect2(x, y, 184, 78)))
 		var selecionar := _botao_detalhe(Rect2(x + 4, y + 2, 176, 42))
 		selecionar.focus_entered.connect(_selecionar.bind(str(m.id)))
@@ -183,10 +184,10 @@ func _montar() -> void:
 			add_child(no)
 		_linhas[str(m.id)] = {"nome": nome, "efeito": efeito, "botao": botao, "cadeado": cadeado, "progresso": progresso, "selecionar": selecionar}
 		i += 1
-	add_child(_painel(Rect2(36, 392, 408, 66)))
-	_modo_btn = _botao_extra(Rect2(452, 392, 156, 31), "modo", "pesadelo")
-	_rastro_btn = _botao_extra(Rect2(452, 427, 156, 31), "visual", "rastro_katana")
-	_detalhe = _texto("", Paleta.TEXTO_TAMANHO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(48, 398, 384, 54))
+	add_child(_painel(Rect2(36, 380, 408, 60)))  # 10 px abaixo da grade e 6 px acima do rótulo MAPA
+	_modo_btn = _botao_extra(Rect2(452, 380, 156, 28), "modo", "pesadelo")
+	_rastro_btn = _botao_extra(Rect2(452, 412, 156, 28), "visual", "rastro_katana")
+	_detalhe = _texto("", Paleta.TEXTO_TAMANHO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(48, 386, 384, 54))
 	_detalhe.add_theme_font_override("font", Dados.fonte_texto)
 	_detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_detalhe)
@@ -223,11 +224,11 @@ func _montar() -> void:
 		_conq[str(c.id)] = {"cadeado": cadeado, "nome": nome, "desc": desc, "rec": rec, "barra": barra, "selecionar": selecionar}
 		i += 1
 
-	_status = _texto("", Paleta.NUMERO_PEQUENO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 464, 920, 14))
+	_status = _texto("", Paleta.NUMERO_PEQUENO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(300, 446, 360, 12))
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
-	_entrar.position = Vector2(300, 478)
+	_entrar.position = Vector2(300, 458)
 	_entrar.size = Vector2(360, 40)
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
 	_entrar.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO)
@@ -235,9 +236,9 @@ func _montar() -> void:
 	_entrar.add_theme_color_override("font_color", COR_OURO)
 	_entrar.pressed.connect(_entrar_floresta)
 	add_child(_entrar)
-	add_child(_texto("MAPA", Paleta.NUMERO_PEQUENO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 468, 120, 12)))
+	add_child(_texto("MAPA", Paleta.NUMERO_PEQUENO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 446, 120, 12)))
 	_mapa = Button.new()  # à esquerda de ENTRAR: clique ou Enter passa para o mapa seguinte
-	_mapa.position = Vector2(36, 482)
+	_mapa.position = Vector2(36, 458)
 	_mapa.size = Vector2(248, 40)
 	_estilo_botao(_mapa, Paleta.TITULO_PEQUENO)
 	_mapa.add_theme_color_override("font_color", COR_OURO)
@@ -245,7 +246,7 @@ func _montar() -> void:
 	add_child(_mapa)
 	_ajustes = Button.new()  # ao lado de ENTRAR: abre o mesmo submenu Ajustes da pausa (ligado no _ready)
 	_ajustes.text = "AJUSTES"
-	_ajustes.position = Vector2(672, 478)
+	_ajustes.position = Vector2(672, 458)
 	_ajustes.size = Vector2(124, 40)
 	_ajustes.add_theme_font_override("font", Dados.fonte_titulo)
 	_ajustes.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO)
@@ -254,12 +255,23 @@ func _montar() -> void:
 	add_child(_ajustes)
 	_voltar = Button.new()
 	_voltar.text = "VOLTAR"
-	_voltar.position = Vector2(808, 478)
+	_voltar.position = Vector2(808, 458)
 	_voltar.size = Vector2(116, 40)
 	_estilo_botao(_voltar, Paleta.TITULO_PEQUENO)
 	_voltar.pressed.connect(_voltar_menu)
 	add_child(_voltar)
-	add_child(_texto(DICA, Paleta.NUMERO_PEQUENO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 528, LARG, 12)))  # 10 px abaixo dos botões (antes 4: a dica encostava na borda deles)
+	var dica := Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_APAGADO)
+	dica.position = Vector2(0, 510)  # rodapé (DESIGN.md §1b): caixa de 22 px, glifo centrado em 513-529; os botões terminam em 498
+	dica.size = Vector2(LARG, 22)
+	add_child(dica)
+
+
+## A dica de rodapé: só os botões do dispositivo em uso.
+func _itens_dica() -> Array:
+	var r: Array = [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
+	if not Glifos.eh_controle():
+		r.insert(2, ["", "Mouse também"])
+	return r
 
 
 ## Botão de liga/desliga de um modo ou visual liberado por conquista (some enquanto a conquista não foi cumprida).
@@ -410,7 +422,7 @@ func _atualizar() -> void:
 		if str(c.condicao) == "tempo" and not feita:
 			apoio = "Última: %d/%d s" % [int(valor), int(limite)]
 		if str(c.condicao) == "venceu" and not feita:
-			apoio = "Vença o chefe da floresta"
+			apoio = str(c.desc)  # o texto da própria conquista: cada mapa tem o seu chefe
 		(v.desc as Label).text = apoio
 		(v.nome as Label).tooltip_text = str(c.desc)
 		(v.nome as Label).mouse_filter = Control.MOUSE_FILTER_IGNORE

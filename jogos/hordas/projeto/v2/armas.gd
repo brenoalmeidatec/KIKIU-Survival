@@ -341,8 +341,9 @@ func numeros(a: Dictionary) -> Dictionary:
 			intervalo = float(st.recarga) / vel_a
 			acertos_s = float(st.quantidade) / intervalo * RUNA_NO_ALVO  # só as que nascem sobre o monstro (`_ponto_runa`) explodem de pronto
 		"torre":
-			intervalo = float(st.tique) / vel_a  # um virote a cada `tique` s, enquanto a torre está de pé (`duracao` de cada `recarga`)
-			var no_ar := minf(float(st.duracao) * vel_a / float(st.recarga), 1.0)
+			intervalo = float(st.tique) / vel_a  # um virote a cada `tique` s depois de armar; a recarga só corre após desmontar
+			var ciclo := float(st.duracao) + Novas.DESMONTA + float(st.recarga) / vel_a
+			var no_ar := maxf(float(st.duracao) - Novas.ARMA_T, 0.0) / maxf(ciclo, 0.1)
 			acertos_s = float(st.quantidade) / intervalo * no_ar
 		"granada":
 			intervalo = float(st.recarga) / vel_a
@@ -1042,7 +1043,7 @@ func _img_corvo() -> Texture2D:
 				if x >= 19 and x <= 21 and y >= 8 and y <= 9:
 					im.set_pixel(ox + x, y, Color(0.95, 0.6, 0.2))  # bico
 				if x == 17 and y == 7:
-					im.set_pixel(ox + x, y, Color(1.0, 0.25, 0.2))  # olho
+					im.set_pixel(ox + x, y, Color(1.0, 0.86, 0.42))  # olho
 		# asa: triângulo com a base no corpo e a ponta para cima ou para baixo
 		var ay := 8.0 - cima
 		for y in 18:

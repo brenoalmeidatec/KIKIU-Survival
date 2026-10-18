@@ -3,6 +3,8 @@
 **O que faz:** Chama um dragãozinho vermelho que voa até o inimigo mais perto e o toca. O sopro de fogo é só arte: o código não tem fogo nem área.
 **Na prática:** Cada toque dá 10 de dano. Chama 1 dragãozinho a cada 3,5 s, se houver inimigo a até 340 px do herói (o bônus de velocidade de ataque deixa a recarga menor). O dragão fica 4 s e voa a 180 px por segundo: o segundo mais rápido do grupo, atrás da raposa (200). No nível 5 passa para 210 e vira o mais rápido. Enquanto estiver encostado no inimigo, toca a cada 0,6 s. Sem inimigo por perto, tenta girar em volta do herói. Conta de média, sem bônus: cerca de 1,1 dragão na tela no nível 1 e cerca de 2,9 no nível 5.
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **35 s** e some; só depois que o último da leva sumiu a recarga de **25 s** começa a contar, então nunca fica indefinidamente nem se acumula. Cada nível que mexe na duração soma 4 s (e a recarga cai uns 3 s nas melhorias de cadência). Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). **Onde este arquivo citar duração ou recarga de 2 a 8 s, vale o número desta caixa**; as contas de "quantos na tela" ficam bem menores, porque a recarga agora corre só depois que a leva some.
+
 **Níveis:**
 | Nível | O que muda |
 |---|---|

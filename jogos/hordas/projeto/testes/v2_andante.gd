@@ -12,6 +12,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Andante := preload("res://v2/andante.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Golem := preload("res://v2/golem.gd")
+const Colisao := preload("res://v2/colisao.gd")
 const PASSO := 1.0 / 60.0
 ## Quantas passadas de verdade a folha traz por ciclo de andar (o padrão é 1: o ciclo = a passada); o galope da raposa leva 2 passadas em 8 quadros.
 const PASSADAS_POR_CICLO := {"espirito_raposa": 2}
@@ -154,6 +155,13 @@ func checar_partida(id: String, base := "") -> void:
 	if base != "":
 		id = "%s (%s)" % [id, base]
 	ok(int(it.e) == Andante.SURGINDO and Andante.presenca(it) < 1.0, "%s: começa surgindo" % id)
+	# a recarga do brinde só corre depois que a leva some: com o bicho de pé, `a.t` fica parado (o fim da leva é `ate`)
+	var leva: Dictionary = it.a  # a própria arma (`ativas`): o `_aliados` marca nela o fim da leva (`ate`)
+	var resta := float(leva.get("ate", 0.0)) - float(w.combate.armas.novas._relogio)
+	ok(resta > 20.0, "%s: a leva fica de pé pelo menos 20 s (fim em %.0f s)" % [id, resta])
+	leva.t = 1.0
+	passos(30)  # meio segundo com o bicho de pé
+	ok(absf(float(leva.t) - 1.0) < 0.001, "%s: a recarga espera a leva sumir" % id)
 	it.vida = 6.0  # a duração da carta (4 s) dá 2 ou 3 golpes conforme onde ele nasce: com 6 s a conta do ritmo fica firme
 	var andou := false
 	var parou_em := -1.0
@@ -194,6 +202,7 @@ func checar_partida(id: String, base := "") -> void:
 
 ## Direções: a vista sai da direção do alvo (frente descendo, costas subindo, perfil de lado) e o lado esquerdo é o espelho.
 func checar_direcoes(id: String, base := "") -> void:
+	Colisao.limpar()  # sem barreiras no caminho: o aliado agora não atravessa árvore (v2_barreiras_npcs), e um desvio mudaria a vista do teste
 	for caso in [[Vector2(0, 150), 0], [Vector2(0, -150), 4], [Vector2(170, 0), 2], [Vector2(-170, 0), 2], [Vector2(120, 110), 1], [Vector2(-120, -110), 3]]:
 		var r: Array = preparar(id, caso[0], base)
 		var it = r[0]

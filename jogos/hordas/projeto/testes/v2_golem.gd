@@ -375,6 +375,8 @@ func checar_partida() -> void:
 		return
 	segurar_recarga("golem_barro")
 	ok(int(it.e) == Golem.SURGINDO and Golem.quadro_de(it).y == 0, "nasce subindo do chão, de frente")
+	ok(float(it.vida) >= 30.0 and float(it.vida) <= 60.0, "o golem é um brinde temporário: dura de 30 a 60 s (%.0f s)" % float(it.vida))
+	it.vida = minf(float(it.vida), 8.0)  # a duração real é de 45 s: o teste mede o fim da vida dentro dos 9 s do laço
 	var pos_antes: Vector2 = it.p
 	var pf_antes := float(it.pf)
 	var andou := 0.0

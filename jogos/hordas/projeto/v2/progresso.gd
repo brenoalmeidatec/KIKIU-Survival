@@ -110,6 +110,20 @@ func escolher(i: int) -> void:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
+## Escolha AUTOMÁTICA: o sistema escolhe a carta pelo que o herói já tem (cartas.escolha_automatica) e aplica na hora. Sem custo, mas a
+## raridade vem rebaixada. Devolve false se não está na escolha ou não sobrou carta nenhuma.
+func automatico() -> bool:
+	var cs = combate.cartas
+	if combate.jogo != "escolha":
+		return false
+	var c: Dictionary = cs.escolha_automatica(combate.mundo.heroi.nivel)
+	if c.is_empty():
+		return false
+	cartas = [c]
+	escolher(0)
+	return true
+
+
 ## Rerrola as 3 cartas (novas, sem repetir as que estavam na tela). Devolve false se não pode (acabaram os usos).
 func rerrolar() -> bool:
 	var cs = combate.cartas

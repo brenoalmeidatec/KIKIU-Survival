@@ -23,7 +23,7 @@ const COR_TEXTO := Color(0.92, 0.9, 0.96)
 const COR_APAGADO := Color(0.55, 0.56, 0.64)
 const COR_FOCO := Color(1.0, 0.97, 0.8)
 const COR_AVISO := Color(1.0, 0.72, 0.56)
-const DICA := "Setas ou analógico escolhem   Enter ou A confirma   Esc volta"
+const Glifos := preload("res://v2/glifos.gd")
 
 var ao_escolher := Callable()  # gancho dos testes: recebe o caminho do salão; vazio = troca a cena
 var _modo := "personagens"  # ou "nomes", quando se cria um personagem
@@ -68,20 +68,20 @@ func _montar() -> void:
 	add_child(veu)
 	add_child(_rotulo("PERSONAGENS", Dados.fonte_titulo, 56, COR_OURO, Rect2(0, 22, LARG, 60), HORIZONTAL_ALIGNMENT_CENTER))
 	_lista = VBoxContainer.new()
-	_lista.position = Vector2(40, 110)
+	_lista.position = Vector2(36, 110)  # margem lateral de 36 px (DESIGN.md §1b)
 	_lista.size = Vector2(380, 380)
 	_lista.add_theme_constant_override("separation", 10)
 	add_child(_lista)
 	_retrato = TextureRect.new()
-	_retrato.position = Vector2(470, 110)
-	_retrato.size = Vector2(200, 200)
+	_retrato.position = Vector2(470, 150)  # eixo da ficha em x 570: retrato, nome e linhas centrados nele
+	_retrato.size = Vector2(200, 180)
 	_retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(_retrato)
-	_nome = _rotulo("", Dados.fonte_titulo, 56, COR_OURO, Rect2(690, 110, 240, 60), HORIZONTAL_ALIGNMENT_LEFT)
+	_nome = _rotulo("", Dados.fonte_titulo, 56, COR_OURO, Rect2(450, 92, 240, 60), HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_nome)
-	_info = _rotulo("", Dados.fonte_texto, 32, COR_TEXTO, Rect2(470, 330, 460, 170), HORIZONTAL_ALIGNMENT_LEFT)
+	_info = _rotulo("", Dados.fonte_texto, 32, COR_TEXTO, Rect2(370, 336, 400, 130), HORIZONTAL_ALIGNMENT_CENTER)
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_info)
 	_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(40, ALT - 78, LARG - 80, 22), HORIZONTAL_ALIGNMENT_LEFT)
@@ -92,7 +92,12 @@ func _montar() -> void:
 	faixa.size = Vector2(LARG, 42)
 	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(faixa)
-	add_child(_rotulo(DICA, Dados.fonte_texto, 16, COR_APAGADO, Rect2(0, ALT - 30, LARG, 22), HORIZONTAL_ALIGNMENT_CENTER))
+	var dica := Glifos.dica(
+		func() -> Array: return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]], HORIZONTAL_ALIGNMENT_CENTER, COR_APAGADO
+	)
+	dica.position = Vector2(0, ALT - 30)  # rodapé (DESIGN.md §1b): caixa de 22 px a 8 px da borda
+	dica.size = Vector2(LARG, 22)
+	add_child(dica)
 
 
 func _rotulo(txt: String, fonte: Font, tam: int, cor: Color, r: Rect2, alin: HorizontalAlignment) -> Label:

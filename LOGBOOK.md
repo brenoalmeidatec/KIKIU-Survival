@@ -2238,3 +2238,27 @@ _Claude do Alisson (PC)_
 - **Próximo sugerido:** (1) o Breno joga a Release no i5 com as fusões e manda o F3 numa subida de nível e no mini-chefe; (2) cortar o custo do desenho das fusões aliadas; (3) perfis "humanos" no robô antes de calibrar o equilíbrio (#137).
 
 _Claude do Alisson (PC)_
+
+## 2026-10-18 · Claude do Alisson (PC) · Colisão: inimigos e aliados não atravessam barreiras
+- **Feito:** o movimento de quem não é Ator passa pela colisão. `mundo.mover_ponto(antes, desejado, raio)` é uma cópia de `mover` para os aliados (guardam a posição num dicionário). `mundo.mover` ficou igual à main, então herói e monstros não pagam nada a mais. Passam por `mover_ponto`: o andante, o golem e o aliado simples (raio 7). A puxada da tempestade (`_puxar`) passou a usar `mover`, que já tinha colisão. Quem bate numa caixa do cenário desliza ao longo dela, sem prender e sem entrar. Teste novo `testes/v2_barreiras_npcs`: inimigo perseguindo, puxão e os 4 aliados (andar próprio e aliado simples) nunca entram na caixa e contornam.
+- **Prova do aliado simples:** com a colisão dele desligada de propósito, os 4 casos "(simples)" falham (falhas=4). O caminho é exercido.
+- **Ajuste em `v2_andante`:** a checagem de vista por direção limpa as caixas antes. Sem isso, um aliado que desliza numa árvore muda de vista (3 em vez de 4). Só o teste mudou.
+- **FPS (não fechou):** `v2/fps.txt` tem 3 pares alternados main/branch, horda e santuário, medidos com `mover` como wrapper (versão anterior). Mediana da horda: 281 fps na main e 260 na branch; monstros: 0,64 e 0,69 ms. A mesma versão variou 2x entre rodadas, porque outros Godot de outros agentes rodavam na máquina. Depois disso `mover` voltou ao código da main: o diff de `v2/mundo.gd` só tem `mover_ponto`, então a horda roda o mesmo código e não há custo novo por construção. Não repeti o A/B.
+- **Pendente / honesto:** (1) o FPS só se confirma com o PC parado (`v2/medir_fps.sh`). (2) Sem foto: nenhum arquivo de desenho ou UI mudou. Tentei três capturas com janela (aliado ao lado de um prédio real da Cidade); o aliado não nasceu nas três, e não isolei a causa. Quem confere é jogando: um aliado ou monstro contornando prédio na Cidade. (3) O teste usa caixa sintética em mapa vazio; a Cidade e o Laboratório só têm `v2_cidade_colisao` e `v2_laboratorio_colisao` (passaram), sem contorno real. (4) Esta entrada no LOGBOOK foi pedida na verificação; vai conflitar com os outros `lote-*` no merge, e quem integra resolve.
+- **Próximo sugerido:** jogar a Cidade com um aliado e um monstro perto dos prédios; o A/B com a máquina parada.
+
+_Claude do Alisson (PC)_
+
+## 2026-10-18 · Codex do Alisson · Integração do lote da issue #332
+- **Feito:** as 12 branches das 11 frentes estão em `lote-integrado`, incluindo as duas colisões. Resolvidos o JSON com conflito antigo, a persistência única de mapa vencido (com migração), os glifos X/Y/LB, o espaço das barras e da placa de nível e quatro conquistas no resultado. Corrigidos a recarga visual dos aliados, o DPS da torre, o mini-chefe de exploração sendo substituído por chefe de nível e o Dinâmico medindo telas paradas.
+- **Validado:** Godot 4.4.1, importação concluída; 39 cenas afetadas com código 0, `falhas=0` e sem `SCRIPT ERROR`; `v2_status` isolado (67 s após uma tentativa que atingiu o limite local). Formatação completa limpa em 291 arquivos, nove testes Python do guarda-save e nove JSONs alterados válidos. Fotos reais conferidas em `docs/visual_2_5d/lote_2026_10_18/`.
+- **Pendente / honesto:** ninguém jogou o lote em partida humana nem mediu o i5-3470. A recarga base de aliados de 20–35 s veio no lote e precisa da decisão do Alisson antes de mesclar. As fotos são paradas e os controles foram exercitados por eventos sintéticos.
+- **Para o Claude do Alisson:** revisar e mesclar o PR da `lote-integrado` que referencia a #332, após o CI verde. Conferir jogando: ritmo das invocações e das cartas, contorno de prédios e progressão entre os mapas.
+
+_Codex do Alisson_
+
+## 2026-10-18 · Codex do Alisson · Teste de controle independente do save local (#333)
+- **Feito:** o primeiro CI do PR #333 passou em tudo salvo `v2_controle_nav`, que atingiu o limite: sem personagem salvo, o salão redirecionava a cena e destruía o teste. A fixture agora começa numa pasta temporária vazia, cria e ativa seu próprio personagem e verifica que o salão foi montado sem substituir a cena do teste. Semente fixa e mundo sem simulação entre apertos; todos os asserts de LB/X/Y/A preservados.
+- **Validado:** `v2_controle_nav` com Godot 4.4.1, código 0, `falhas=0`, sem `SCRIPT ERROR` (11 s); formatação limpa. CI completo será repetido no novo commit. Nenhum código de produção mudou nesta correção.
+
+_Codex do Alisson_

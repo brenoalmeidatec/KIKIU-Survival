@@ -3,6 +3,8 @@
 **O que faz:** Chama dois fantasmas verdes que saem do chão e assombram o inimigo mais perto. Tocam sem parar enquanto estão no alvo.
 **Na prática:** Cada toque dá 6 de dano. Chama 2 fantasmas a cada 3 s, se houver inimigo a até 340 px do herói (o bônus de velocidade de ataque deixa a recarga menor). Cada fantasma fica 4,5 s e anda 170 px por segundo. Enquanto estiver encostado no inimigo, toca a cada 0,4 s, o intervalo mais curto do grupo. Sem inimigo por perto, tenta girar em volta do herói. Conta de média, sem bônus: cerca de 3 fantasmas na tela no nível 1 e cerca de 5,5 no nível 5.
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **30 s** e some; só depois que o último da leva sumiu a recarga de **20 s** começa a contar, então nunca fica indefinidamente nem se acumula. Cada nível que mexe na duração soma 4 s (e a recarga cai uns 3 s nas melhorias de cadência). Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). **Onde este arquivo citar duração ou recarga de 2 a 8 s, vale o número desta caixa**; as contas de "quantos na tela" ficam bem menores, porque a recarga agora corre só depois que a leva some.
+
 **Níveis:**
 | Nível | O que muda |
 |---|---|
