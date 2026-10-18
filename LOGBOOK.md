@@ -2270,3 +2270,16 @@ _Codex do Alisson_
 - **Pendente:** ninguém jogou isto no notebook nem no i5-3470; o ritmo de 0,9 monstro/s no começo é o dos dados, não foi reajustado. O HUD do notebook (barra lateral, "Nível 1 de 20" pequeno, foto do seletor) é outro pedido, não entrou aqui.
 
 _Claude do Alisson (PC)_
+## 2026-10-18 · Claude do Alisson (PC) · Seletor de personagem: lista rolável, ficha dentro do painel e retrato certo
+- **Feito:** a tela PERSONAGENS (`v2/personagens_tela.gd`) tinha dois defeitos. A lista de 8 botões de 56 px (7 nomes + VOLTAR) passava de y 540 e cobria o rodapé de teclas; e o retrato usava `rosto.png` inteiro, que é uma tira de 27 quadros de 52 px, espremida em 200x180 (a "tira de pontinhos"). Agora a lista é um `ScrollContainer` (y 100-490, o foco puxa a rolagem), a ficha é um painel de pedra (x 440-924, eixo 682), e o retrato é o primeiro quadro, em escala inteira. Nome, herói/arma e melhorias ficam em rótulos separados, dentro do painel, sem encostar na lista.
+- **Validado:** foto real antes/depois em 1280x720 e 1920x1080 (`testes/fotos/personagens_fotos.tscn`); teste novo `v2_personagens_layout` (falha no código antigo, `falhas=0` no novo); `v2_salao`, `v2_controle_nav`, `v2_menu`, `v2_esc` e `v2_escala_ui` com `falhas=0`.
+- **Pendente:** ninguém jogou isso no notebook; o resto do pedido (barra na lateral do HUD, "Nível 1 de 20" pequeno, inimigos que não vêm) é de outras frentes.
+
+_Claude do Alisson (PC)_
+
+## 2026-10-18 · Claude do Alisson (PC) · Seletor: foco por dentro, herói em 3x, aviso fora da ficha (revisão do #335)
+- **Feito:** a conferência do #335 pegou o foco cortado pela rolagem (a borda do tema padrão saía 2 px da caixa) e o herói na metade do tamanho (retrato em 2x). Agora o foco é uma borda ouro de 2 px por dentro do botão, como no salão (em vez da margem de 4 px sugerida: a causa some, sem camada extra); o herói parado sai em 3x (96x132); o aviso de erro fica entre o título e a ficha; VOLTAR e NOVO PERSONAGEM explicam o que fazem no painel. `v2_personagens_layout` ganhou checagem geométrica (foco, tamanho do herói, sobreposição, pior caso de texto com dados reais).
+- **Validado:** `v2_personagens_layout`, `v2_salao`, `v2_controle_nav`, `v2_menu`, `v2_esc` e `v2_escala_ui` com `falhas=0` (Godot 4.4.1, headless); fotos reais em 1280x720 e 1920x1080. No HEAD o teste novo falhou (cortes de foco, herói em 88 px, aviso dentro da ficha, sem dica).
+- **Pendente:** ninguém jogou no notebook; a barra de rolagem segue a padrão do Godot (nenhuma tela da v2 tem estilo próprio para ela); HUD e inimigos presos seguem em outras frentes.
+
+_Claude do Alisson (PC)_
