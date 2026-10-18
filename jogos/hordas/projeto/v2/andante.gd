@@ -36,6 +36,13 @@ const SURGINDO := 2
 ## peito = px acima do pé em que nasce o rastro (padrão: um quinto do quadro; quem voa tem o pé no centro do corpo) e boca = px à frente dele em
 ## que o fogo sai (padrão 6); rastro = o desenho do golpe no impacto: garras (padrão), arco (corte de espada), fogo (sopro em leque), pancada (anel e
 ## lascas no chão), nevoa (fiapos que sobem) ou bote (estalo e fagulhas).
+## ALIAS (as fusões do tipo aliado): uma entrada com `como` = lista de fichas-base em vez de folha. Cada item nascido usa UMA delas (alterna na ordem;
+## a que não existe ainda é pulada, e sem nenhuma o aliado cai no desenho antigo) e guarda a escolha em `it.fid`. `escala` (padrão 1) engorda o desenho
+## e o alcance (alcance, frente, raio, sombra, altura, balanco e a passada); `tinta` (padrão branco) multiplica a cor da folha (escurece os canais que
+## não são da cor); `mistura` (cor + alfa) refaz o bicho por cima em modo aditivo, para a cor da fusão aparecer mesmo sobre uma base de outra cor;
+## `gris` (padrão falso) usa a folha em tons de cinza, para a tinta trocar a cor em vez de só escurecer;
+## `halo` (padrão 1) engrossa o halo do espírito; qualquer outro campo da ficha (cor_fx, tempos, rastro...) escrito no alias vale por cima da base.
+## Os números de jogo (dano, tique, vel) são os da carta da fusão.
 const FICHAS := {
 	"espirito_urso":
 	{
@@ -181,26 +188,175 @@ const FICHAS := {
 		"cor_fx": Color(1.0, 0.55, 0.15),
 		"rastro": "fogo",
 	},
+	# ---- fusões do tipo aliado (alias das fichas acima; o lobo_espirito ainda não tem ficha e é pulado: quem tem lobo usa o resto da lista)
+	"dragao_de_brasa":
+	{
+		"como": ["dragao_filhote"],
+		"escala": 1.5,
+		"tinta": Color(1.0, 0.7, 0.55),
+		"mistura": Color(1.0, 0.3, 0.05, 0.4),
+		"cor_fx": Color(1.0, 0.42, 0.1),
+		"halo": 2.6,
+	},
+	"cacada_espiritual":
+	{
+		"como": ["lobo_espirito", "espirito_raposa"],
+		"escala": 1.25,
+		"gris": true,
+		"tinta": Color(0.6, 0.9, 1.0),
+		"mistura": Color(0.3, 0.7, 1.0, 0.3),
+		"cor_fx": Color(0.55, 0.85, 1.0),
+		"halo": 2.6,
+	},
+	"exercito_esquecido":
+	{
+		"como": ["esqueleto_guerreiro", "fantasma_mata"],
+		"escala": 1.15,
+		"tinta": Color(0.68, 0.95, 0.74),
+		"mistura": Color(0.35, 1.0, 0.55, 0.4),
+		"cor_fx": Color(0.4, 1.0, 0.55),
+		"halo": 2.6,
+	},
+	"eclipse_de_almas":
+	{
+		"como": ["lobo_espirito", "espirito_raposa", "fantasma_mata", "espirito_urso"],
+		"escala": 1.3,
+		"gris": true,
+		"tinta": Color(0.75, 0.6, 1.0),
+		"mistura": Color(0.65, 0.35, 1.0, 0.3),
+		"cor_fx": Color(0.7, 0.45, 1.0),
+		"halo": 3.0,
+	},
 }
 
 static var _tex := {}
+static var _pronta := {}  # chave da ficha -> ficha já resolvida (alias aplicado)
+static var _rodizio := 0  # quantos aliados de fusão já nasceram (alterna a ficha-base entre os nascidos)
 
 
+## É andante quem tem ficha própria ou é fusão (alias) com pelo menos uma ficha-base que existe.
 static func eh_andante(id: String) -> bool:
-	return FICHAS.has(id)
+	return not bases(id).is_empty()
 
 
+static func eh_alias(id: String) -> bool:
+	return FICHAS.has(id) and FICHAS[id].has("como")
+
+
+## As fichas-base de uma carta: ela mesma, ou (alias) as da lista `como` que existem e não são outro alias (as que faltam são puladas).
+static func bases(id: String) -> Array:
+	if not FICHAS.has(id):
+		return []
+	if not eh_alias(id):
+		return [id]
+	return existentes(FICHAS[id].como)
+
+
+## Dentre uma lista de nomes, só os que têm ficha própria (os que faltam ou são outro alias ficam de fora).
+static func existentes(como: Array) -> Array:
+	var r: Array = []
+	for b in como:
+		if FICHAS.has(str(b)) and not eh_alias(str(b)):
+			r.append(str(b))
+	return r
+
+
+## Escolhe a ficha de um aliado que vai nascer: o id da carta se ela tem ficha própria, ou "fusão/base" (alterna entre as bases, na ordem).
+static func escolher(id: String) -> String:
+	var bs := bases(id)
+	if bs.is_empty() or not eh_alias(id):
+		return id
+	_rodizio += 1
+	return "%s/%s" % [id, bs[_rodizio % bs.size()]]
+
+
+## A ficha pronta de uma chave ("urso" ou "fusão/base"): a da base com o alias por cima (escala no alcance e no tamanho, tinta, campos trocados).
+## Sempre traz `esc` (escala do desenho) e `tinta` (cor que multiplica a folha).
+static func resolver(chave: String) -> Dictionary:
+	if _pronta.has(chave):
+		return _pronta[chave]
+	var partes := chave.split("/")
+	var base := str(partes[partes.size() - 1])
+	if not FICHAS.has(base):
+		return {}
+	var r: Dictionary = (FICHAS[base] as Dictionary).duplicate(true)
+	r.esc = 1.0
+	r.tinta = Color.WHITE
+	if partes.size() > 1 and FICHAS.has(str(partes[0])):
+		var al: Dictionary = FICHAS[str(partes[0])]
+		var e := float(al.get("escala", 1.0))
+		r.esc = e
+		for k in ["alcance", "frente", "raio", "sombra", "altura", "balanco", "peito", "boca"]:
+			if r.has(k):
+				r[k] = float(r[k]) * e
+		if r.has("ciclo"):
+			var c: Array = []
+			for x in r.ciclo:
+				c.append(float(x) * e)  # o pé corre `e` vezes mais por ciclo: o corpo maior não escorrega
+			r.ciclo = c
+		for k in al:
+			if k != "como" and k != "escala":
+				r[k] = al[k]
+	_pronta[chave] = r
+	return r
+
+
+## A ficha de um id de carta: a própria, ou (fusão) a da primeira base que existe. Para o item vivo use `ficha_de`.
 static func ficha(id: String) -> Dictionary:
-	return FICHAS.get(id, {})
+	var bs := bases(id)
+	if bs.is_empty():
+		return {}
+	return resolver(id if not eh_alias(id) else "%s/%s" % [id, bs[0]])
+
+
+## A ficha do item do pool (a escolhida no nascimento, `it.fid`).
+static func ficha_de(it: Dictionary) -> Dictionary:
+	var fid := str(it.get("fid", ""))
+	if fid != "":
+		return resolver(fid)
+	return ficha(str(it.a.id))
 
 
 ## A folha do bicho (carrega uma vez; null se faltar o arquivo, e o aliado volta ao desenho antigo).
 static func tex(id: String) -> Texture2D:
-	if not FICHAS.has(id):
+	var bs := bases(id)
+	if bs.is_empty():
 		return null
-	if not _tex.has(id):
-		_tex[id] = load(str(FICHAS[id].folha)) as Texture2D
-	return _tex[id]
+	return tex_base(str(bs[0]))
+
+
+## A folha do item vivo (a da base que ele sorteou).
+static func tex_de(it: Dictionary) -> Texture2D:
+	var fid := str(it.get("fid", ""))
+	if fid == "":
+		return tex(str(it.a.id))
+	var base: String = fid.split("/")[-1]
+	return tex_gris(base) if bool(ficha_de(it).get("gris", false)) else tex_base(base)
+
+
+static func tex_base(base: String) -> Texture2D:
+	if not _tex.has(base):
+		_tex[base] = load(str(FICHAS[base].folha)) as Texture2D
+	return _tex[base]
+
+
+## A folha em tons de cinza (só a luz e a sombra, com o mesmo alfa), feita uma vez: a tinta de uma fusão com `gris` TROCA a cor do bicho
+## (multiplicar uma raposa laranja por azul só dá oliva; multiplicar a raposa cinza por azul dá uma raposa azul).
+static func tex_gris(base: String) -> Texture2D:
+	var chave := base + "#gris"
+	if not _tex.has(chave):
+		var orig := tex_base(base)
+		var img := orig.get_image() if orig != null else null
+		if img == null:
+			_tex[chave] = orig
+		else:
+			img = img.duplicate()
+			if img.is_compressed():
+				img.decompress()
+			img.convert(Image.FORMAT_LA8)
+			img.convert(Image.FORMAT_RGBA8)
+			_tex[chave] = ImageTexture.create_from_image(img)
+	return _tex[chave]
 
 
 static func linha_de(v: Vector2, atual: int) -> int:
@@ -242,10 +398,12 @@ static func respiro(it: Dictionary, f: Dictionary) -> float:
 ## Chaves do item do pool (um slot reaproveitado nunca herda o estado de outro bicho). As de estado são as mesmas do golem (Golem.zerar).
 static func zerar(it: Dictionary) -> void:
 	it.an = false
+	it.fid = ""
 
 
 static func nascer(nv, it: Dictionary) -> void:
-	var f := ficha(str(it.a.id))
+	it.fid = escolher(str(it.a.id))
+	var f := ficha_de(it)
 	it.an = true
 	it.e = SURGINDO
 	it.et = 0.0
@@ -260,7 +418,7 @@ static func nascer(nv, it: Dictionary) -> void:
 
 
 static func mover(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
-	var f := ficha(str(it.a.id))
+	var f := ficha_de(it)
 	it.et = float(it.et) + dt
 	if f.has("ciclo_s") and int(it.e) != ATACANDO:
 		it.pf = float(it.pf) + dt / float(f.ciclo_s)
@@ -349,7 +507,7 @@ static func _impacto(nv, it: Dictionary, f: Dictionary) -> void:
 ## Coluna e linha da folha agora (o teste usa para conferir o ciclo andar -> atacar).
 static func quadro_de(it: Dictionary) -> Vector2i:
 	var col: int
-	var f := ficha(str(it.a.id))
+	var f := ficha_de(it)
 	if int(it.e) == ATACANDO:
 		col = COL_ANDAR + quadro_ataque(f, float(it.et))
 	elif bool(it.mov) or f.has("ciclo_s"):
@@ -376,18 +534,24 @@ static func presenca(it: Dictionary) -> float:
 ## Camada normal (a que recebe a luz): sombra e o quadro certo da folha, espelhado para olhar para onde vai. Surgindo, aparece de baixo
 ## para cima (a fatia de cima ainda é névoa); no fim, fica transparente.
 static func desenhar(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
-	var id := str(it.a.id)
-	var t := tex(id)
-	if t == null:
+	var f := ficha_de(it)
+	var t := tex_de(it)
+	if t == null or f.is_empty():
 		return
-	var f := ficha(id)
-	var quadro: Vector2 = f.quadro
-	var pe: Vector2 = f.pe
 	var k := presenca(it)
-	var lado := -1.0 if float(it.r) < 0.0 else 1.0
 	ci.draw_set_transform(p, 0.0, Vector2(1.0, ACHATA))
 	ci.draw_circle(Vector2.ZERO, float(f.sombra) * (0.5 + 0.5 * k), Color(0.0, 0.0, 0.0, float(f.get("sombra_a", 0.3)) * k))
-	ci.draw_set_transform(p - Vector2(0.0, altura(it, f)), 0.0, Vector2(lado, 1.0))
+	_folha(ci, it, p, f, t, f.tinta)
+
+
+## O quadro certo da folha, no tamanho da ficha (com a escala da fusão), com a cor `cor` (a tinta, ou a mistura aditiva).
+static func _folha(ci: CanvasItem, it: Dictionary, p: Vector2, f: Dictionary, t: Texture2D, cor: Color) -> void:
+	var quadro: Vector2 = f.quadro
+	var pe: Vector2 = f.pe
+	var esc := float(f.esc)
+	var k := presenca(it)
+	var lado := -1.0 if float(it.r) < 0.0 else 1.0
+	ci.draw_set_transform(p - Vector2(0.0, altura(it, f)), 0.0, Vector2(lado * esc, esc))
 	var q := quadro_de(it)
 	var origem := Vector2(q.x * quadro.x, q.y * quadro.y)
 	var corte := 0.0
@@ -398,19 +562,26 @@ static func desenhar(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		alfa = 0.35 + 0.65 * k
 	var r_tela := Rect2(Vector2(-pe.x, -pe.y + corte), Vector2(quadro.x, quadro.y - corte))
 	var r_folha := Rect2(origem + Vector2(0, corte), Vector2(quadro.x, quadro.y - corte))
-	ci.draw_texture_rect_region(t, r_tela, r_folha, Color(1, 1, 1, alfa))
+	ci.draw_texture_rect_region(t, r_tela, r_folha, Color(cor, cor.a * alfa))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## Camada aditiva: o halo do espírito, a névoa de nascer e sumir, e o rastro das garras no golpe.
 static func desenhar_brilho(ci: CanvasItem, it: Dictionary, p: Vector2, glow: Texture2D) -> void:
-	var f := ficha(str(it.a.id))
+	var f := ficha_de(it)
 	var cor: Color = f.cor_fx
 	var k := presenca(it)
-	var alto := float(f.quadro.y) * 0.35 + altura(it, f)
+	var alto := float(f.quadro.y) * float(f.esc) * 0.35 + altura(it, f)
 	var pulso := 0.5 + 0.5 * sin(float(it.fase) * 0.9)
-	var halo := float(f.sombra) * 2.4
-	ci.draw_texture_rect(glow, Rect2(p + Vector2(-halo, -alto - halo * 0.7), Vector2(halo * 2.0, halo * 1.4)), false, Color(cor, (0.07 + 0.04 * pulso) * k))
+	var forca_halo := float(f.get("halo", 1.0))  # fusão: halo maior e mais forte, para se ver que não é o aliado comum
+	var halo := float(f.sombra) * 2.4 * (1.0 + 0.25 * (forca_halo - 1.0))
+	ci.draw_texture_rect(
+		glow, Rect2(p + Vector2(-halo, -alto - halo * 0.7), Vector2(halo * 2.0, halo * 1.4)), false, Color(cor, (0.07 + 0.04 * pulso) * k * forca_halo)
+	)
+	if f.has("mistura"):  # fusão: o bicho refeito por cima em aditivo, na cor da fusão (a tinta sozinha não tira o laranja de uma raposa)
+		var tx := tex_de(it)
+		if tx != null:
+			_folha(ci, it, p, f, tx, f.mistura)
 	if k < 1.0:  # névoa: um bafo claro no chão enquanto nasce ou some
 		var n := 1.0 - k
 		ci.draw_set_transform(p, 0.0, Vector2(1.0, ACHATA))
@@ -425,7 +596,7 @@ static func desenhar_brilho(ci: CanvasItem, it: Dictionary, p: Vector2, glow: Te
 	var g := (et - ti) / DUR_RASTRO  # 0 = o golpe acabou de cair, 1 = o rastro sumiu
 	var ip: Vector2 = (it.ip as Vector2).round()
 	var dir: Vector2 = it.v
-	var corpo: Vector2 = p - Vector2(0.0, altura(it, f) + float(f.get("peito", float(f.quadro.y) * 0.2)))
+	var corpo: Vector2 = p - Vector2(0.0, altura(it, f) + float(f.get("peito", float(f.quadro.y) * float(f.esc) * 0.2)))
 	match str(f.get("rastro", "garras")):
 		"arco":
 			_rastro_arco(ci, corpo, dir, float(f.frente) + 4.0, cor, g)
