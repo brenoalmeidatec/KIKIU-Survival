@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Monta os mapas novos da v2 (laboratório, cidade) a partir dos brutos do Blender e das definições em mapas_v2/def_<mapa>.py.
 
-Uso:  python jogos/hordas/fonte_arte/gerar_v2_mapas.py <laboratorio|cidade> [--previa SAIDA.png] [--recorte=x,y,w,h]
+Uso:  python jogos/hordas/fonte_arte/gerar_v2_mapas.py <laboratorio|cidade> [--so-mapa] [--previa SAIDA.png] [--recorte=x,y,w,h]
+      --so-mapa: NÃO refaz atlas, piso nem decalques (não precisa dos brutos do Blender): lê os que já estão em assets/v2/mapas/<mapa>/ e só
+                 monta o desenho do mapa (def_<mapa>.montar) e reescreve dados/v2_<mapa>.json. É o modo para mexer em onde as coisas ficam.
 Antes: blender -b -P jogos/hordas/fonte_arte/modelos3d/mapas_v2.py -- <mapa>   (renderiza os objetos e o piso em mapas_v2/brutos/<mapa>/)
 
 Saída:
@@ -251,6 +253,18 @@ def previa(mapa_json, obj_info, obj_folha, dec_info, dec_folha, piso, caminho, r
     print("prévia ->", caminho)
 
 
+def carregar_existentes(saida):
+    """--so-mapa: relê os atlas já gerados (cenario.json + enfeites.png, decalques.json + decalques.png, piso.png) no lugar de refazê-los."""
+    cen = json.loads((saida / "cenario.json").read_text(encoding="utf-8"))
+    obj_info = {i["nome"]: i for i in cen["itens"]}
+    obj_folha = Image.open(saida / cen["enfeites"]).convert("RGBA")
+    dec = json.loads((saida / "decalques.json").read_text(encoding="utf-8"))
+    dec_info = {i["nome"]: i for i in dec["itens"]}
+    dec_folha = Image.open(saida / "decalques.png").convert("RGBA")
+    piso = Image.open(saida / "piso.png").convert("RGB")
+    return obj_info, obj_folha, dec_info, dec_folha, piso
+
+
 def main():
     mapa = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("--") else None
     if mapa is None:
@@ -260,9 +274,12 @@ def main():
     saida.mkdir(parents=True, exist_ok=True)
     rng = random.Random(mod.SEMENTE)
     print("== %s ==" % mapa)
-    obj_info, obj_folha = montar_atlas_objetos(mapa, mod.OBJETOS, saida)
-    piso = processar_piso(mapa, saida, getattr(mod, "detalhar_piso", None))
-    dec_info, dec_folha = montar_decalques(mod.DECALQUES, saida, random.Random(mod.SEMENTE + 1))
+    if "--so-mapa" in sys.argv:
+        obj_info, obj_folha, dec_info, dec_folha, piso = carregar_existentes(saida)
+    else:
+        obj_info, obj_folha = montar_atlas_objetos(mapa, mod.OBJETOS, saida)
+        piso = processar_piso(mapa, saida, getattr(mod, "detalhar_piso", None))
+        dec_info, dec_folha = montar_decalques(mod.DECALQUES, saida, random.Random(mod.SEMENTE + 1))
     tam = {n: (i["regiao"][2], i["regiao"][3], i["pe"]) for n, i in obj_info.items()}
     mapa_json = mod.montar(tam, rng)
     mapa_json["mapa"]["pastas"] = {"objetos": "res://assets/v2/mapas/" + mapa, "decalques": "res://assets/v2/mapas/" + mapa,

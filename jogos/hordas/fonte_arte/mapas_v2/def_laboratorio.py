@@ -484,7 +484,8 @@ def montar(tam, rng):
     return {
         "semente": SEMENTE,
         "mapa": {"tam": [W, H], "chao": {"piso": "piso", "ganho": 2.2, "verde": 1.0, "dessat": 0.3}, "ambiente": "16232d",
-                 "luar": {"e": 0.3, "h": 0.2, "ang": 70}, "ganho_objetos": 1.8, "ganho_decalques": 1.4, "borda_andavel": 150},
+                 "luar": {"e": 0.3, "h": 0.2, "ang": 70}, "ganho_objetos": 1.8, "ganho_decalques": 1.4, "borda_andavel": 150,
+                 "sombra_ambiente": {"e": 1.1, "ang": 58, "comp": 0.6}, "copas_altura_min": 52},
         "nascimento": {"heroi": [CX - 10, CY - 22], "monstros": monstros},
         "luz_tipos": LUZ_TIPOS,
         "luz_objetos": LUZ_OBJETOS,
