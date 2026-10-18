@@ -1,0 +1,59 @@
+{
+  "tamanho_quadro": 128,
+  "direcoes": [
+    "S",
+    "SE",
+    "L",
+    "NE",
+    "N",
+    "NO",
+    "O",
+    "SO"
+  ],
+  "clipes": {
+    "idle": {
+      "quadros": 24,
+      "fps": 12
+    },
+    "attack_01": {
+      "quadros": 21,
+      "fps": 12
+    },
+    "attack_02": {
+      "quadros": 17,
+      "fps": 12
+    },
+    "attack_03": {
+      "quadros": 23,
+      "fps": 12
+    },
+    "attack_04_segunda_forma": {
+      "quadros": 23,
+      "fps": 12
+    },
+    "hit": {
+      "quadros": 7,
+      "fps": 12
+    },
+    "phase_transition": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "ability": {
+      "quadros": 21,
+      "fps": 12
+    },
+    "death": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "walk": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "run": {
+      "quadros": 17,
+      "fps": 12
+    }
+  }
+}

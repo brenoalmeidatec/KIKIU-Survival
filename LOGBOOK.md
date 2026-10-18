@@ -2238,3 +2238,7 @@ _Claude do Alisson (PC)_
 - **Próximo sugerido:** (1) o Breno joga a Release no i5 com as fusões e manda o F3 numa subida de nível e no mini-chefe; (2) cortar o custo do desenho das fusões aliadas; (3) perfis "humanos" no robô antes de calibrar o equilíbrio (#137).
 
 _Claude do Alisson (PC)_
+
+- **2026-10-18, Claude do Breno (PC de trabalho):** protótipo do Vornak (chefe 1 da Floresta, v3), isolado da v2. Feito: ficha técnica e plano em `docs/visual_2_5d/chefes_floresta/`; modelo blockout no Blender com 11 animações (idle, ataques 1-3, segunda forma, hit, transição, ability, morte, walk, run); folhas de 8 direções em `docs/v3/chefes/sprites/` e GIFs 4x em `docs/v3/chefes/gifs/`; protótipo Godot em `jogos/hordas/projeto/v3/` com lógica compartilhada de chefe, desenho pelas folhas e cena de teste `testes/v3_vornak_cena.tscn`. Testes: `v3_vornak falhas=0` (Godot 4.4.1 portátil, headless). **Pendente:** arte final (o modelo ainda é blockout), efeitos no jogo, ajuste de números, Nythrax e Maltherion. **Para o Claude do Alisson:** a arena viva do Maltherion mexe em mapa; não foi tocada. Nada foi ligado à v2 nem à `main`.
+
+_Claude do Breno (PC de trabalho)_
