@@ -4,7 +4,7 @@ extends Control
 ## Quadradinhos pequenos (caixa de 26 px, ícone da carta reduzido de 32 para 24) para não poluir com 10 golpes: parada, a faixa fica
 ## translúcida; ao ganhar golpe, subir de nível ou fundir, ela fica opaca por ~1,5 s e volta a esmaecer.
 ## Cada quadradinho tem só três leituras: o ícone próprio da carta, os pips de nível embaixo e UMA linha fina de recarga no pé do ícone (só
-## enquanto recarrega, nos golpes que têm recarga: corvos, raio, runa, projétil, nuvem, anel, meteoro e aliado; lâmina e aura batem sem
+## enquanto recarrega, nos golpes que têm recarga: corvos, raio, runa, projétil, nuvem, anel, meteoro, aliado e torre; lâmina e aura batem sem
 ## parar). Sem barra de fusão: quando falta só UM nível para fundir uma receita, um losango magenta pisca no canto do ícone.
 ## A peça já fundida ganha a moldura dourada e os pips dourados cheios.
 ## Animação: golpe novo entra com pop curto (sem invadir o vizinho), anel, faíscas e brilho; nível novo dá um pulso que CLAREIA o ícone e o pip
@@ -35,7 +35,7 @@ const PIP_L := 4
 const PIP_A := 3
 const FUNDO := Color(Paleta.PAINEL, 0.88)
 const TRILHO := Color(Paleta.BARRA_BORDA, 0.6)
-const TIPOS_RECARGA := ["corvos", "raio", "runa", "projetil", "nuvem", "anel", "meteoro", "aliado"]
+const TIPOS_RECARGA := ["corvos", "raio", "runa", "projetil", "nuvem", "anel", "meteoro", "aliado", "torre"]
 
 ## O que está na faixa agora, em ordem de aquisição: [{id, nivel, max, evo, cor, rec (px 0..24 ou -1), quase}].
 var itens: Array = []
@@ -138,8 +138,9 @@ func _ler() -> bool:
 	if ativas is Dictionary:
 		var cartas = _campo(combate, "cartas")
 		var vel := maxf(float(_campo(_campo(mundo, "heroi"), "m_vel_ataque", 1.0)), 0.1)
+		var relogio := float(_campo(_campo(armas, "novas"), "_relogio", 0.0))
 		for id in ativas:
-			novos.append(_item(str(id), ativas[id], cartas, vel))
+			novos.append(_item(str(id), ativas[id], cartas, vel, relogio))
 	var st = _campo(mundo, "status")
 	var escondido: bool = novos.is_empty() or (st != null and st.has_method("aberto") and st.aberto())
 	if visible == escondido:
@@ -156,7 +157,7 @@ func _ler() -> bool:
 	return true
 
 
-func _item(id: String, a: Dictionary, cartas, vel: float) -> Dictionary:
+func _item(id: String, a: Dictionary, cartas, vel: float, relogio := 0.0) -> Dictionary:
 	var evo: bool = bool(a.get("evo", false))
 	var def = cartas.definicao(id) if cartas != null and cartas.has_method("definicao") else {}
 	var it := {
@@ -169,7 +170,9 @@ func _item(id: String, a: Dictionary, cartas, vel: float) -> Dictionary:
 		"quase": false
 	}
 	var st: Dictionary = a.get("st", {})
-	if TIPOS_RECARGA.has(str(a.get("tipo", ""))) and st.has("recarga"):
+	# Aliado e torre só recarregam depois que a leva some; durante a vida dela a barrinha sobre o corpo já mostra o tempo restante.
+	var leva_viva := relogio < float(a.get("ate", 0.0))
+	if not leva_viva and TIPOS_RECARGA.has(str(a.get("tipo", ""))) and st.has("recarga"):
 		var dur := maxf(float(st.recarga) / vel, 0.05)
 		it.rec = roundi((1.0 - clampf(float(a.get("t", 0.0)) / dur, 0.0, 1.0)) * ICONE)
 	if not evo and cartas != null:

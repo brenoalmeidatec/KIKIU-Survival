@@ -193,6 +193,7 @@ func _ready() -> void:
 	ui.add_child(minimapa)
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
 	ui.add_child(pausa)
+	pausa.fechou.connect(func(): _qualidade.interromper())  # a árvore não processa durante a pausa: a retomada começa uma medição nova
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
 	ui.add_child(status)
 	if _modo == "livre":  # medir e fotografar ficam sem música
@@ -726,7 +727,16 @@ func _ler_graficos() -> void:
 ## Perfil Dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um,
 ## só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
 func _baixar_qualidade(dt: float, fps: float) -> void:
-	if not _qualidade_ligada or not bool(Config.v("qualidade_auto")):
+	if (
+		not _qualidade_ligada
+		or not bool(Config.v("qualidade_auto"))
+		or combate == null
+		or combate.jogo != "jogando"
+		or combate.pausado
+		or combate.pausado_mundo
+		or get_tree().paused
+	):
+		_qualidade.interromper()  # cartas, baús e resultados têm FPS de tela estática; não contam nem somam trechos separados
 		return
 	var limite := int(Config.g("limite_fps"))
 	var alvo := 55.0 if limite <= 0 or limite >= 60 else limite * 0.92  # com limite baixo de fps, "firme" é perto do limite
@@ -750,24 +760,18 @@ func _baixar_qualidade(dt: float, fps: float) -> void:
 ## na área andável (o mapa menos "borda_andavel": as árvores das bordas fecham o mapa). Devolve o deslocamento que de fato aconteceu.
 func mover(a, desejado: Vector2) -> Vector2:
 	var antes: Vector2 = a.pos
-	var depois := mover_ponto(antes, desejado, a.raio)
-	a.definir_pos(depois)
-	return depois - antes
-
-
-## O mesmo movimento para quem não é um Ator (aliados, que guardam a posição num dicionário): devolve a nova posição de um corpo de
-## raio `raio` que sai de `antes` e quer andar `desejado`, já com as barreiras e a área andável aplicadas.
-func mover_ponto(antes: Vector2, desejado: Vector2, raio: float) -> Vector2:
 	var depois := antes + desejado
-	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, raio):
+	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, a.raio):
 		var n_passos := ceili(desejado.length() / MAX_PASSO_COLISAO)
 		var passo := desejado / n_passos
 		depois = antes
 		for _i in n_passos:
-			depois = Colisao.resolver(depois + passo, raio)
+			depois = Colisao.resolver(depois + passo, a.raio)
 	else:
-		depois = Colisao.resolver(depois, raio)
-	return depois.clamp(limite_andavel.position, limite_andavel.end)
+		depois = Colisao.resolver(depois, a.raio)
+	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
+	a.definir_pos(depois)
+	return depois - antes
 
 
 ## O mesmo `mover` para quem não é Ator (aliados, que guardam a posição num dicionário): devolve a nova posição de um corpo de raio

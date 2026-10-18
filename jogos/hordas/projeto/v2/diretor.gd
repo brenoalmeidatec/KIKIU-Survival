@@ -86,6 +86,8 @@ func travado() -> bool:
 ## Avança o relógio do nível (o combate chama a cada quadro de jogo, mesmo com o diretor desligado): sobe de nível a cada seg_nivel()
 ## e, ao chegar num nível de chefe, faz ele nascer. Com chefe vivo o relógio para; no último nível fica parado até a vitória.
 func avancar_nivel(dt: float) -> void:
+	if combate.chefes.vivo:
+		return  # inclui o mini-chefe de exploração das Ruínas: não avança nem substitui um chefe ainda em campo
 	var e := chefe_do_nivel(nivel)
 	if not e.is_empty() and not combate.chefes.feitos.has(e.mk.id):
 		combate.chefes.nascer(e.mk)  # nível de chefe sem o chefe (o 1 de um mapa, ou um teste que pulou de nível)

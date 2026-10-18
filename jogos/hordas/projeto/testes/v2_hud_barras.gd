@@ -106,6 +106,10 @@ func _testes() -> void:
 	)
 	var borda: float = hud._moldura_barras.position.x + hud._moldura_barras.size.x
 	ok(borda < RELOGIO_X - 8.0, "a moldura no teto para antes do relógio (borda em x %s)" % borda)
+	ok(
+		not hud._moldura_barras.get_global_rect().intersects(hud.get_node("Raiz/Nivel").get_global_rect()),
+		"as barras no teto não invadem a placa do nível do mapa"
+	)
 
 	# 4. volta ao normal: a barra encolhe junto
 	h.vida_max = 100.0

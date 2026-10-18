@@ -47,6 +47,7 @@ func _ready() -> void:
 		await _fotos(w, hud, g, pasta)
 	else:
 		_partida(w, hud, g)
+		_temporarios(w, g)
 		print("v2_hud_golpes falhas=%d" % falhas)
 	get_tree().quit()
 
@@ -210,6 +211,42 @@ func _partida(w, hud, g) -> void:
 	ok(_item(g, "lobo_espirito").is_empty() and not _item(g, "cacada_espiritual").is_empty(), "a Caçada Espiritual consumiu o lobo")
 	ok(int(w.combate.cartas.nivel_de("espirito_urso")) == 2, "espirito_urso segue no nível 2")
 	ok(not _item(g, "espirito_urso").quase, "fusão ignora receita com peça consumida: sem marca")
+
+
+## A recarga do ícone acompanha a leva real: enquanto o aliado/torre vive não aparece linha; depois de sumir a linha começa vazia e enche.
+func _temporarios(w, g) -> void:
+	for id in ["lobo_espirito", "sentinela_bambu"]:
+		w.reiniciar()
+		w.combate.limpar_partida()
+		w.combate.diretor.ligado = false
+		w.heroi.imortal = true
+		w.heroi.m_vel_ataque = 1.0
+		var m = w.nascer_monstro("inimigo_cao_ossos", w.heroi.pos + Vector2(100, 0))
+		m.vida = 100000.0
+		m.atordoa_t = 9999.0
+		m.emp_mult = 0.0
+		w.combate.armas.definir_golpe(id, 1, 0.0)
+		var a: Dictionary = w.combate.armas.ativas[id]
+		a.st.duracao = 0.8  # ciclo curto só para conferir as transições da leva sem simular 35 s
+		a.st.recarga = 2.0
+		a.st.quantidade = 1
+		for i in 90:  # respeita também a espera inicial de 0,4 s da carta recém-adquirida
+			w.avancar(PASSO)
+			if float(a.get("ate", 0.0)) > float(w.combate.armas.novas._relogio):
+				break
+		g.avancar(LEITURA)
+		ok(float(a.get("ate", 0.0)) > float(w.combate.armas.novas._relogio), "%s: a leva real nasceu" % id)
+		ok(int(_item(g, id).rec) == -1, "%s: a leva viva não mostra recarga congelada" % id)
+		for i in 180:
+			if float(a.get("ate", 0.0)) <= float(w.combate.armas.novas._relogio):
+				break
+			w.avancar(PASSO)
+		g.avancar(LEITURA)
+		ok(int(_item(g, id).rec) <= 1 and int(_item(g, id).rec) >= 0, "%s: depois que some, a recarga começa vazia" % id)
+		for i in 60:
+			w.avancar(PASSO)
+		g.avancar(LEITURA)
+		ok(absi(int(_item(g, id).rec) - Golpes.ICONE / 2) <= 1, "%s: 1 s após sumir, metade da recarga de 2 s" % id)
 
 
 func _fotos(w, hud, g, pasta: String) -> void:

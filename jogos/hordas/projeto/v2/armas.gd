@@ -341,8 +341,9 @@ func numeros(a: Dictionary) -> Dictionary:
 			intervalo = float(st.recarga) / vel_a
 			acertos_s = float(st.quantidade) / intervalo * RUNA_NO_ALVO  # só as que nascem sobre o monstro (`_ponto_runa`) explodem de pronto
 		"torre":
-			intervalo = float(st.tique) / vel_a  # um virote a cada `tique` s, enquanto a torre está de pé (`duracao` de cada `recarga`)
-			var no_ar := minf(float(st.duracao) * vel_a / float(st.recarga), 1.0)
+			intervalo = float(st.tique) / vel_a  # um virote a cada `tique` s depois de armar; a recarga só corre após desmontar
+			var ciclo := float(st.duracao) + Novas.DESMONTA + float(st.recarga) / vel_a
+			var no_ar := maxf(float(st.duracao) - Novas.ARMA_T, 0.0) / maxf(ciclo, 0.1)
 			acertos_s = float(st.quantidade) / intervalo * no_ar
 		"granada":
 			intervalo = float(st.recarga) / vel_a

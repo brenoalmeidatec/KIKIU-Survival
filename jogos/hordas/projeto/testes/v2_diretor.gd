@@ -116,5 +116,33 @@ func _ready() -> void:
 	dir.avancar_nivel(seg * 5.0)
 	ok(dir.nivel == 10 and dir.fracao_mapa() <= 9.0 / 29.0 + 0.001, "travado: o nível e a barra não andam (%d)" % dir.nivel)
 
+	# Mini-chefe da exploração das Ruínas: não perde a referência quando chega a hora de nascer o chefe de um nível.
+	zerar()
+	dir.ir_para_nivel(9)
+	dir.t_nivel = seg - 0.5
+	var marca_exploracao: Dictionary = Dados.json("v2_medio").marcadores.filter(func(m): return str(m.tipo) == "chefe")[0]
+	var exploracao = w.combate.chefes.nascer(w._marca_chefe(str(marca_exploracao.marca)), w.heroi.pos + Vector2(160, 0))
+	var fracao_antes: float = dir.fracao_mapa()
+	dir.avancar_nivel(seg * 3.0)
+	dir.avancar_nivel(PASSO)
+	ok(dir.nivel == 9 and is_equal_approx(dir.t_nivel, seg - 0.5), "chefe de exploração para o relógio sem acumular tempo devido")
+	ok(is_equal_approx(dir.fracao_mapa(), fracao_antes), "a barra preserva a fração do nível enquanto o chefe de exploração vive")
+	ok(w.combate.chefes.atual == exploracao and not w.combate.chefes.feitos.has("n10"), "o chefe do nível não substitui o mini-chefe em campo")
+	w.combate.ferir(exploracao, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	ok(not w.combate.chefes.vivo, "a morte do chefe de exploração continua ligada ao módulo de chefes")
+	dir.avancar_nivel(0.51)
+	ok(dir.nivel == 10 and w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "depois da exploração o relógio retoma e nasce o chefe do nível 10")
+	# Também protege um nível de chefe já alcançado (depuração ou outro chamador de ir_para_nivel).
+	zerar()
+	exploracao = w.combate.chefes.nascer(w._marca_chefe(str(marca_exploracao.marca)), w.heroi.pos + Vector2(160, 0))
+	dir.ir_para_nivel(10)
+	dir.avancar_nivel(seg)
+	ok(w.combate.chefes.atual == exploracao and not w.combate.chefes.feitos.has("n10"), "nível 10 já alcançado ainda espera o chefe de exploração morrer")
+	w.combate.ferir(exploracao, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	dir.avancar_nivel(PASSO)
+	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "sem chefe de exploração o nível pendente faz nascer o próprio chefe")
+
 	print("v2_diretor falhas=%d" % falhas)
 	get_tree().quit()

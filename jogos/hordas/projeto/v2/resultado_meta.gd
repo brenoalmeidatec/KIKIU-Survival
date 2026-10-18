@@ -86,12 +86,12 @@ func montar(m) -> void:
 	_saldo.size = Vector2(LARG, 20)
 	_res.add_child(_saldo)
 	_novas = _rotulo("", TAM_TEXTO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
-	_novas.position = Vector2(0, 432)
-	_novas.size = Vector2(LARG, 40)
+	_novas.position = Vector2(24, 432)
+	_novas.size = Vector2(LARG - 48, 48)
 	_novas.add_theme_constant_override("line_spacing", 4)
 	_res.add_child(_novas)
 	_botao = Control.new()
-	_botao.position = Vector2(300, 478)
+	_botao.position = Vector2(300, 490)
 	_botao.size = Vector2(360, 40)
 	_botao.modulate.a = 0.0
 	_botao.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -212,8 +212,12 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 	var seg := int(float(r.get("tempo", 0.0)))
 	_valores.text = "%02d:%02d\n%d\nx%d\n%d" % [floori(seg / 60.0), seg % 60, int(r.get("abates", 0)), int(r.get("maior_combo", 0)), int(r.get("nivel", 1))]
 	var linhas: Array = []
-	for id in novas:
-		linhas.append("Conquista: " + _nome_conquista(id))
+	# Até quatro marcos podem chegar juntos (tempo, combo, chefe e mapa). Dois por linha cabem acima do CONTINUAR sem reduzir a fonte.
+	for i in range(0, novas.size(), 2):
+		var pares: Array = []
+		for j in range(i, mini(i + 2, novas.size())):
+			pares.append("Conquista: " + _nome_conquista(novas[j]))
+		linhas.append("   ·   ".join(PackedStringArray(pares)))
 	_novas.text = "\n".join(PackedStringArray(linhas))
 	_almas_num.text = "+0"
 	_saldo.text = "Saldo: %d" % _antes

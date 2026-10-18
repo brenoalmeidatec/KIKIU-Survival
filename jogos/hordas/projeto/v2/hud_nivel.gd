@@ -1,5 +1,5 @@
 extends Control
-## A placa de NÍVEL DO MAPA do HUD da v2 (à esquerda do relógio): "NÍVEL 7/30" e, embaixo, a barra do mapa inteiro (do nível 1 ao último),
+## A placa de NÍVEL DO MAPA do HUD da v2 (abaixo das barras e à esquerda dos abates): "NÍVEL 7/30" e, embaixo, a barra do mapa inteiro (do nível 1 ao último),
 ## com uma marca em cada nível de chefe: losango laranja = mini-chefe, caveira vermelha = chefão (o fim do mapa). Com o chefe do nível em
 ## campo a ponta da barra pisca em vermelho (o nível está travado até ele morrer). Os números vêm do diretor (v2/diretor.gd) via hud.gd.
 

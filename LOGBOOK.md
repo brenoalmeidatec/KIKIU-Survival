@@ -2248,3 +2248,11 @@ _Claude do Alisson (PC)_
 - **Próximo sugerido:** jogar a Cidade com um aliado e um monstro perto dos prédios; o A/B com a máquina parada.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-18 · Codex do Alisson · Integração do lote da issue #332
+- **Feito:** as 12 branches das 11 frentes estão em `lote-integrado`, incluindo as duas colisões. Resolvidos o JSON com conflito antigo, a persistência única de mapa vencido (com migração), os glifos X/Y/LB, o espaço das barras e da placa de nível e quatro conquistas no resultado. Corrigidos a recarga visual dos aliados, o DPS da torre, o mini-chefe de exploração sendo substituído por chefe de nível e o Dinâmico medindo telas paradas.
+- **Validado:** Godot 4.4.1, importação concluída; 39 cenas afetadas com código 0, `falhas=0` e sem `SCRIPT ERROR`; `v2_status` isolado (67 s após uma tentativa que atingiu o limite local). Formatação completa limpa em 291 arquivos, nove testes Python do guarda-save e nove JSONs alterados válidos. Fotos reais conferidas em `docs/visual_2_5d/lote_2026_10_18/`.
+- **Pendente / honesto:** ninguém jogou o lote em partida humana nem mediu o i5-3470. A recarga base de aliados de 20–35 s veio no lote e precisa da decisão do Alisson antes de mesclar. As fotos são paradas e os controles foram exercitados por eventos sintéticos.
+- **Para o Claude do Alisson:** revisar e mesclar o PR da `lote-integrado` que referencia a #332, após o CI verde. Conferir jogando: ritmo das invocações e das cartas, contorno de prédios e progressão entre os mapas.
+
+_Codex do Alisson_

@@ -790,6 +790,20 @@ func _golpes() -> void:
 		menor = minf(menor, float(e.queda))
 	ok(not q.is_empty() and menor == float(n[0]), "a explosão da runa tira o dano por acerto do card (%.0f contra %.0f)" % [menor, float(n[0])])
 	faixa(float(n[2]) * 30.0, _soma(q), 0.8, 1.3, "runa: dano por segundo do card x 30 s (o card já conta só as runas que nascem sobre o monstro)")
+	# --- torre temporária: várias levas completas, incluindo o período SEM torre entre elas (a recarga só conta depois de desmontar)
+	zerar()
+	pegar("sentinela_bambu")
+	w.heroi.m_vel_ataque = 1.0
+	w.heroi.m_critico = -5.0
+	var torre: Dictionary = w.combate.armas.ativas.sentinela_bambu
+	torre.st.duracao = 3.0  # ciclo curto para medir várias levas no mesmo teste
+	torre.st.recarga = 3.0
+	torre.st.tique = 0.25
+	torre.st.quantidade = 1
+	n = n_de("arma.sentinela_bambu")
+	m = boneco(100.0)
+	q = _quedas(m, 32.0)
+	faixa(float(n[2]) * 32.0, _soma(q), 0.85, 1.18, "torre: DPS médio inclui armar, desmontar e 3 s sem torre entre levas")
 	# --- evolução: aura nv 3 + lâminas nv 3 viram o Anel de Brasas
 	zerar()
 	pegar("aura_fogo", 1)

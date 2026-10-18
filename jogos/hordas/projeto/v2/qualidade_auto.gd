@@ -19,14 +19,19 @@ var _relogio := 0.0  # soma dos dt, para medir o tempo entre uma subida e a qued
 var _subiu_em := -1000.0
 
 
+## Menus e pausas interrompem a medição contínua de FPS; a espera anti-oscilação é preservada.
+func interromper() -> void:
+	_lento = 0.0
+	_firme = 0.0
+
+
 ## Conta um quadro (dt em s, fps do quadro, perfil atual, fps alvo da subida) e devolve o perfil para o qual mudar, ou "" se nada
 ## muda agora. Depois de mudar, as contagens recomeçam do zero. Com limite de fps baixo, o "travado" é abaixo do alvo (e não
 ## abaixo de 40): rodar no próprio limite não é travamento, e sem isso o perfil desce sem parar até o Baixo.
 func passo(dt: float, fps: float, perfil: String, alvo := 55.0) -> String:
 	var i := DEGRAUS.find(perfil)
 	if i < 0:
-		_lento = 0.0
-		_firme = 0.0
+		interromper()
 		return ""
 	_relogio += dt
 	var minimo := minf(FPS_MINIMO, alvo)  # sem limite baixo (alvo 55) o mínimo é 40; com o limite em 30, o alvo é 27,6

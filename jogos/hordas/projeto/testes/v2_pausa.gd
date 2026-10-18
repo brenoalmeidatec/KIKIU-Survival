@@ -345,6 +345,7 @@ func _testes() -> void:
 	ok("Dinâmico" in pausa._ajuda.text, "o rodapé do Perfil explica o Dinâmico")
 
 	# 6c. a baixa automática (fps abaixo de 40 por 8 s) desce o perfil só na memória; o arquivo guarda o que o jogador escolheu
+	pausa.fechar()  # a medição de FPS só vale durante a jogabilidade, sem o menu aberto
 	Config.definir("qualidade_auto", true)  # o Dinâmico
 	Config.g_aplicar_perfil("alto")
 	mundo._qualidade_ligada = true  # o jogo de verdade (no teste o mundo fica desligado de propósito)
@@ -384,6 +385,7 @@ func _testes() -> void:
 		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
 	ok(Config.g_perfil() == "alto", "fora do jogo de verdade (testes, medições) a baixa não age")
 	Config.g_aplicar_perfil("alto")
+	_testar_janelas_qualidade(mundo, pausa)
 
 	# 6d. a contagem sozinha (v2/qualidade_auto.gd): 8 s abaixo de 40 fps desce um degrau; 40 fps zera; Baixo e Personalizado não descem
 	var qa := QualidadeAuto.new()
@@ -443,6 +445,8 @@ func _testes() -> void:
 	for i in 17:  # 8,5 s a 25 fps, abaixo do alvo de 27,6
 		desce_abaixo += abaixo_do_alvo.passo(0.5, 25.0, "alto", 27.6)
 	ok(desce_abaixo == "medio", "com limite de 30 fps, 8 s abaixo do alvo desce o perfil")
+	pausa.pausar()
+	pausa._ir("graficos")  # devolve ao menu que estava aberto antes das medições de jogabilidade
 	# 6f. as opções de CPU mudam a conta da v2: o Máximo de inimigos saiu do menu (a v2 não o lê) e o recálculo da separação segue
 	var teto_base: int = mundo.combate.diretor.teto()
 	Config.g_definir("max_inimigos", 40)  # mexida à mão (ou de um json antigo), não derruba o teto da v2
@@ -612,6 +616,43 @@ func _limpar_saves() -> void:
 
 ## Prints do menu (só o viewport): a pausa, Ajustes, Gráficos (rolada até uma opção com ajuda), Áudio, a confirmação de sair e
 ## o submenu no santuário.
+func _testar_janelas_qualidade(mundo, pausa) -> void:
+	mundo._qualidade_ligada = true
+	Config.definir("qualidade_auto", true)
+	Config.g_aplicar_perfil("medio")
+	for estado in ["escolha", "bau", "vitoria"]:
+		mundo.combate.jogo = estado
+		mundo.combate.pausado = true
+		mundo._baixar_qualidade(40.0, 60.0)
+		mundo._baixar_qualidade(10.0, 20.0)
+		ok(Config.g_perfil() == "medio", "o Dinâmico não mede a tela estática de " + estado)
+	mundo.combate.jogo = "jogando"
+	mundo._baixar_qualidade(40.0, 60.0)
+	ok(Config.g_perfil() == "medio", "a flag de pausa também interrompe a medição")
+	mundo.combate.pausado = false
+	mundo._baixar_qualidade(20.0, 60.0)
+	mundo.combate.jogo = "escolha"
+	mundo._baixar_qualidade(40.0, 60.0)
+	mundo.combate.jogo = "jogando"
+	mundo._baixar_qualidade(15.0, 60.0)
+	ok(Config.g_perfil() == "medio", "20 s antes das cartas não somam com 15 s depois: a subida pede FPS contínuo")
+	mundo._baixar_qualidade(15.0, 60.0)
+	ok(Config.g_perfil() == "alto", "30 s contínuos depois das cartas permitem a subida")
+	mundo._baixar_qualidade(5.0, 20.0)
+	pausa.pausar()
+	pausa.fechar()  # durante a pausa a árvore não chama o mundo; o sinal de fechamento deve limpar o intervalo
+	mundo._baixar_qualidade(4.0, 20.0)
+	ok(Config.g_perfil() == "alto", "5 s lentos antes da pausa não somam com 4 s depois")
+	mundo._baixar_qualidade(4.0, 20.0)
+	ok(Config.g_perfil() == "medio", "8 s lentos contínuos depois da pausa permitem a queda")
+	var espera_antes: float = mundo._qualidade._espera
+	pausa.pausar()
+	pausa.fechar()
+	ok(espera_antes > QualidadeAuto.SEGUNDOS_SUBIR and mundo._qualidade._espera == espera_antes, "pausar limpa a contagem sem apagar a espera anti-oscilação")
+	mundo._qualidade_ligada = false
+	Config.g_aplicar_perfil("alto")
+
+
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
 	var mundo = Mundo.instantiate()
