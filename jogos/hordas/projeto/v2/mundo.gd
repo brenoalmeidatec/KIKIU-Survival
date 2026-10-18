@@ -750,18 +750,24 @@ func _baixar_qualidade(dt: float, fps: float) -> void:
 ## na área andável (o mapa menos "borda_andavel": as árvores das bordas fecham o mapa). Devolve o deslocamento que de fato aconteceu.
 func mover(a, desejado: Vector2) -> Vector2:
 	var antes: Vector2 = a.pos
+	var depois := mover_ponto(antes, desejado, a.raio)
+	a.definir_pos(depois)
+	return depois - antes
+
+
+## O mesmo movimento para quem não é um Ator (aliados, que guardam a posição num dicionário): devolve a nova posição de um corpo de
+## raio `raio` que sai de `antes` e quer andar `desejado`, já com as barreiras e a área andável aplicadas.
+func mover_ponto(antes: Vector2, desejado: Vector2, raio: float) -> Vector2:
 	var depois := antes + desejado
-	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, a.raio):
+	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, raio):
 		var n_passos := ceili(desejado.length() / MAX_PASSO_COLISAO)
 		var passo := desejado / n_passos
 		depois = antes
 		for _i in n_passos:
-			depois = Colisao.resolver(depois + passo, a.raio)
+			depois = Colisao.resolver(depois + passo, raio)
 	else:
-		depois = Colisao.resolver(depois, a.raio)
-	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
-	a.definir_pos(depois)
-	return depois - antes
+		depois = Colisao.resolver(depois, raio)
+	return depois.clamp(limite_andavel.position, limite_andavel.end)
 
 
 ## O mesmo `mover` para quem não é Ator (aliados, que guardam a posição num dicionário): devolve a nova posição de um corpo de raio
