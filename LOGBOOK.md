@@ -2283,3 +2283,15 @@ _Claude do Alisson (PC)_
 - **Pendente:** ninguém jogou no notebook; a barra de rolagem segue a padrão do Godot (nenhuma tela da v2 tem estilo próprio para ela); HUD e inimigos presos seguem em outras frentes.
 
 _Claude do Alisson (PC)_
+## 2026-10-18 · Claude do Alisson (PC) · HUD da partida alinhado: nível legível, grade do topo e slots E/Q
+- **Feito:** placa do nível com o número em 16 px (o tamanho do relógio) e o rótulo em Spleen 16, abates e nível com o mesmo y e a mesma altura (38 a 74), combo, chefe e anúncio desceram para abrir a linha; slots E/Q com a borda direita na da faixa de XP e folga de 4 px; minimapa com a mesma margem de 6 px do retrato. Fotos antes e depois em `docs/visual_2_5d/hud_alinhado_2026_10_18/`; testes `v2_hud`, `v2_hud_barras`, `v2_hud_golpes`, `v2_escala_ui`, `v2_minimapa`, `v2_status`, `v2_chefe` com `falhas=0`.
+- **Pendente:** vida e fôlego têm comprimento independente por desenho (DESIGN.md), então a mais curta deixa um vão no quadro; não mexi, é decisão de design. A barra lateral no notebook e os inimigos parados não fazem parte deste PR.
+
+_Claude do Alisson (PC)_
+
+## 2026-10-18 · Claude do Alisson (PC) · Barras do HUD com o mesmo comprimento (sem vão)
+- **Feito:** vida e fôlego passam a ter o mesmo comprimento (o da meta maior) e a moldura é esse comprimento + 8 px. O vão de 185 px com fôlego no teto e vida de partida sumiu. `v2_hud_barras` falhava no HEAD (vida 142 contra fôlego 283) e passa agora. Fotos antes e depois em 1280x720, 1920x1080 e 1920x1020 em `docs/visual_2_5d/hud_barras_2026_10_18/`, com a placa NÍVEL 1/30 a 00:01 na mesma tela. Testes `v2_hud`, `v2_hud_barras`, `v2_escala_ui` e `v2_hud_golpes` com `falhas=0`.
+- **Pendente:** a janela 1920x1020 vira 1920x1080 em janela normal, porque `scripts/hordas/config.gd` (`_corrigir_proporcao`) força 16:9 a cada mudança de tamanho. É da branch `conserto-faixa-lateral`; o harness de foto desliga essa correção só no próprio teste (`v2_hud_barras --janela=WxH`).
+- **Próximo:** conferir o HUD jogando no notebook depois que a faixa lateral entrar.
+
+_Claude do Alisson (PC)_

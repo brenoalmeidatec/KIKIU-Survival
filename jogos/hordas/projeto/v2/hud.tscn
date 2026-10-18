@@ -161,9 +161,9 @@ text = "00:00"
 [node name="Abates" type="NinePatchRect" parent="Raiz"]
 layout_mode = 0
 offset_left = 428.0
-offset_top = 36.0
+offset_top = 38.0
 offset_right = 532.0
-offset_bottom = 64.0
+offset_bottom = 74.0
 texture = ExtResource("2_moldura")
 patch_margin_left = 5
 patch_margin_top = 5
@@ -190,9 +190,9 @@ text = "ABATES 0\nVIVOS 0"
 [node name="Combo" type="Control" parent="Raiz"]
 layout_mode = 0
 offset_left = 380.0
-offset_top = 68.0
+offset_top = 78.0
 offset_right = 580.0
-offset_bottom = 104.0
+offset_bottom = 114.0
 visible = false
 
 [node name="Rotulo" type="Label" parent="Raiz/Combo"]
@@ -291,9 +291,9 @@ expand_mode = 1
 visible = false
 layout_mode = 0
 offset_left = 190.0
-offset_top = 106.0
+offset_top = 118.0
 offset_right = 770.0
-offset_bottom = 152.0
+offset_bottom = 164.0
 texture = ExtResource("2_moldura")
 patch_margin_left = 5
 patch_margin_top = 5
@@ -356,9 +356,9 @@ text = "0/0"
 visible = false
 layout_mode = 0
 offset_left = 200.0
-offset_top = 160.0
+offset_top = 170.0
 offset_right = 760.0
-offset_bottom = 200.0
+offset_bottom = 210.0
 script = ExtResource("11_anuncios")
 
 [node name="Moldura" type="NinePatchRect" parent="Raiz/Anuncio"]

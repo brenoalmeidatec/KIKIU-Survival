@@ -2,16 +2,17 @@ extends Node
 # Teste do comprimento das barras de vida e de fôlego do HUD da v2 (v2/hud.gd, _barras). No máximo de partida a barra mede 142 px;
 # cada ponto de vida acima da base do herói (mundo.combate.cfg) soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO. A barra
 # desliza até o novo tamanho dentro de avancar; não corre com a escolha de carta na tela (a HUD some) e cresce quando ela volta; a
-# moldura de pedra acompanha a mais comprida; o teto segura a borda antes do relógio (x 428); e o deslocamento do bloco no canvas
+# moldura de pedra acompanha o comprimento comum das duas barras; o teto segura a borda antes do relógio (x 428); e o deslocamento do bloco no canvas
 # (janela 1280x720) move as peças presas à borda sem mudar o comprimento.
 # Roda: godot --headless --audio-driver Dummy --path jogos/hordas/projeto res://testes/v2_hud_barras.tscn  (imprime "v2_hud_barras falhas=0")
-# Prints: godot --path jogos/hordas/projeto res://testes/v2_hud_barras.tscn -- --fotos=PASTA  (o HUD do mundo real: antes, no meio do deslize, depois e teto; sai)
+# Prints: godot --path jogos/hordas/projeto res://testes/v2_hud_barras.tscn -- --fotos=PASTA --janela=WxH  (o HUD do mundo real: antes, no meio do deslize, depois, teto e fôlego no teto com vida de partida; com o tamanho pedido, confere o tamanho gravado e imprime os comprimentos; sai)
 const Hud := preload("res://v2/hud.gd")
 const Mundo := preload("res://v2/mundo.tscn")
 const PASSO := 1.0 / 60.0
 const RELOGIO_X := 428.0  # o Tempo do HUD começa aqui (hud.tscn, Raiz/Tempo)
 
 var falhas := 0
+var _janela := Vector2i.ZERO  # tamanho de janela das fotos (--janela=WxH); zero = o da janela do teste
 
 
 class Heroi:
@@ -82,7 +83,7 @@ func _testes() -> void:
 	ok(hud._moldura_barras.size.x == 150.0 and hud._vida_caixa.size.x == 150.0, "base: moldura e caixa da vida de 150 px")
 	ok(hud._vida_txt.size.x == 142.0, "texto da vida tem a largura da barra (%s)" % hud._vida_txt.size.x)
 
-	# 2. estátua (+50) e quatro cartas de vida (+80): 230 de vida dá 298 px; duas cargas a mais de fôlego dão 236 px
+	# 2. estátua (+50) e quatro cartas de vida (+80): 230 de vida dá 298 px; duas cargas a mais de fôlego (236 px na meta delas) usam o mesmo comprimento
 	h.vida_max = 230.0
 	h.vida = 230.0
 	h.folego_max = 5.0
@@ -92,8 +93,8 @@ func _testes() -> void:
 	ok(meio > 142.0 and meio < 298.0, "a barra desliza, não pula (no meio do caminho: %s)" % meio)
 	_passar(hud, 1.0)
 	ok(hud._vida_barra.size.x == 298.0, "vida 230 vira barra de 298 px (tem %s)" % hud._vida_barra.size.x)
-	ok(hud._folego.size.x == 236.0, "fôlego 5 vira barra de 236 px (tem %s)" % hud._folego.size.x)
-	ok(hud._moldura_barras.size.x == 306.0 and hud._vida_caixa.size.x == 306.0, "a moldura acompanha a barra mais comprida (%s)" % hud._moldura_barras.size.x)
+	ok(hud._folego.size.x == 298.0, "fôlego 5 (236 px pela meta dele) usa os 298 px da vida, sem vão (tem %s)" % hud._folego.size.x)
+	ok(hud._moldura_barras.size.x == 306.0 and hud._vida_caixa.size.x == 306.0, "a moldura acompanha as duas barras (%s)" % hud._moldura_barras.size.x)
 	ok(hud._vida_txt.size.x == 298.0, "o texto acompanha a barra da vida (%s)" % hud._vida_txt.size.x)
 
 	# 3. teto: 100 mil de vida e 999 de fôlego não passam de 320 px, e a moldura para antes do relógio
@@ -110,6 +111,16 @@ func _testes() -> void:
 		not hud._moldura_barras.get_global_rect().intersects(hud.get_node("Raiz/Nivel").get_global_rect()),
 		"as barras no teto não invadem a placa do nível do mapa"
 	)
+
+	# 3b. vida de partida com fôlego maior (o caso da conferência de 18/10): as duas barras têm o mesmo comprimento e a moldura é esse
+	# comprimento + 8. Antes deste conserto a vida ficava em 142 px e o fôlego em 283: um vão de 141 px dentro da moldura.
+	h.vida_max = 100.0
+	h.vida = 100.0
+	h.folego_max = 6.0
+	h.folego = 6.0
+	_passar(hud, 1.0)
+	var medidas := [hud._vida_barra.size.x, hud._folego.size.x, hud._moldura_barras.size.x]
+	ok(medidas == [283.0, 283.0, 291.0], "vida 100 e fôlego 6: as duas barras de 283 px e a moldura de 291 (%s)" % str(medidas))
 
 	# 4. volta ao normal: a barra encolhe junto
 	h.vida_max = 100.0
@@ -166,6 +177,13 @@ func _testes() -> void:
 ## depois (vida 230, fôlego 5) e no teto (vida 400, fôlego 7).
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--janela="):  # o mundo só ajusta a janela fora do modo de teste: a foto usa o tamanho pedido
+			var wh := a.trim_prefix("--janela=").split("x")
+			_janela = Vector2i(int(wh[0]), int(wh[1]))
+			for c in get_window().size_changed.get_connections():  # a Config (_corrigir_proporcao) força 16:9 a cada mudança de tamanho: a foto precisa do tamanho pedido
+				get_window().size_changed.disconnect(c.callable)
+			get_window().size = _janela
 	var w = Mundo.instantiate()
 	w.modo_teste = true
 	add_child(w)
@@ -188,11 +206,35 @@ func _fotos(pasta: String) -> void:
 	w.heroi.folego = 7.0
 	await get_tree().create_timer(0.8).timeout
 	await _foto(w, pasta, "barras_teto")
+	# O caso da conferência: fôlego no teto e vida de partida. Antes do conserto, a barra de vida para bem antes da borda da moldura.
+	w.heroi.vida_max = 100.0
+	w.heroi.vida = 100.0
+	w.heroi.folego_max = 7.0
+	w.heroi.folego = 7.0
+	await get_tree().create_timer(0.8).timeout
+	await _foto(w, pasta, "folego_teto_vida_base")
 
 
 func _foto(w, pasta: String, nome: String) -> void:
 	var tam = await w.ap.foto(pasta.path_join("%s.png" % nome))
-	print("FOTO %s %s" % [nome, tam])
+	print("FOTO %s %s %s janela %s modo %s" % [nome, tam, _medidas(w), get_window().size, DisplayServer.window_get_mode()])
+	if _janela != Vector2i.ZERO and tam != _janela:
+		print("FALHA: a foto saiu %s e o pedido era %s" % [tam, _janela])
+		get_tree().quit(1)
+
+
+## Números do HUD no quadro da foto: vida, fôlego, comprimento das barras e o nível do mapa (a placa só existe com o diretor).
+func _medidas(w) -> String:
+	var nivel := "sem diretor"
+	var d = w.combate.diretor
+	if d != null and d.has_method("fracao_mapa"):
+		nivel = "nivel %s/%s" % [d.nivel, d.niveis_total]
+	for c in w.ui.get_children():
+		if c.has_method("_base_barras"):
+			var heroi := "vida %s/%s folego %s/%s" % [w.heroi.vida, w.heroi.vida_max, w.heroi.folego, w.heroi.folego_max]
+			var barras := "base %s barras %s e %s moldura %s" % [c._base_barras(), c._vida_barra.size.x, c._folego.size.x, c._moldura_barras.size.x]
+			return "%s | %s | %s" % [heroi, barras, nivel]
+	return "sem hud"
 
 
 func _passar(hud, segundos: float) -> void:
