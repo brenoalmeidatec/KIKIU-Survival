@@ -160,7 +160,7 @@ func _mundo() -> void:
 	var xp: Control = hud.get_node("Raiz/Xp")
 	ok(perto(hud.offset + xp.position + Vector2(0, xp.size.y), Vector2(280 + 160, 720 - 6)), "a barra de XP gruda embaixo: %s" % str(hud.offset + xp.position))
 	var hab: Control = hud.get_node("Raiz/Habilidades")
-	ok(perto(hud.offset + hab.position, Vector2(596 + 160, 438 + 180)), "os slots E e Q colam embaixo junto com o XP: %s" % str(hud.offset + hab.position))
+	ok(perto(hud.offset + hab.position, Vector2(506 + 160, 434 + 180)), "os slots E e Q colam embaixo junto com o XP: %s" % str(hud.offset + hab.position))
 	var vinheta: Control = hud.get_node("Raiz/Vinheta")
 	ok(Rect2(vinheta.position, vinheta.size) == Rect2(-160, -90, 1280, 720), "a vinheta cobre o canvas: %s" % str(Rect2(vinheta.position, vinheta.size)))
 	var mini_dir: float = m.offset.x + m._quadro.position.x + m._quadro.size.x

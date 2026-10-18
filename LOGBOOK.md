@@ -2262,3 +2262,9 @@ _Codex do Alisson_
 - **Validado:** `v2_controle_nav` com Godot 4.4.1, código 0, `falhas=0`, sem `SCRIPT ERROR` (11 s); formatação limpa. CI completo será repetido no novo commit. Nenhum código de produção mudou nesta correção.
 
 _Codex do Alisson_
+
+## 2026-10-18 · Claude do Alisson (PC) · HUD da partida alinhado: nível legível, grade do topo e slots E/Q
+- **Feito:** placa do nível com o número em 16 px (o tamanho do relógio) e o rótulo em Spleen 16, abates e nível com o mesmo y e a mesma altura (38 a 74), combo, chefe e anúncio desceram para abrir a linha; slots E/Q com a borda direita na da faixa de XP e folga de 4 px; minimapa com a mesma margem de 6 px do retrato. Fotos antes e depois em `docs/visual_2_5d/hud_alinhado_2026_10_18/`; testes `v2_hud`, `v2_hud_barras`, `v2_hud_golpes`, `v2_escala_ui`, `v2_minimapa`, `v2_status`, `v2_chefe` com `falhas=0`.
+- **Pendente:** vida e fôlego têm comprimento independente por desenho (DESIGN.md), então a mais curta deixa um vão no quadro; não mexi, é decisão de design. A barra lateral no notebook e os inimigos parados não fazem parte deste PR.
+
+_Claude do Alisson (PC)_

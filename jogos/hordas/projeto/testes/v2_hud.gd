@@ -124,6 +124,26 @@ func _testes() -> void:
 	hud.avancar(PASSO)
 	ok(placa.get_node("Barra").travado and placa.get_node("Barra").nivel == 10, "com o chefe vivo a placa mostra o nível travado")
 	ok(placa.position.x + placa.size.x <= hud._relogio.get_parent().position.x + 4.0, "a placa fica à esquerda do relógio")
+	# grade do topo: relógio, nível e abates alinhados (mesmo y e altura entre nível e abates, folga igual, número do nível do tamanho do relógio)
+	var abates: Control = hud.get_node("Raiz/Abates")
+	var tempo_q: Control = hud.get_node("Raiz/Tempo")
+	ok(placa.position.y == abates.position.y and placa.size.y == abates.size.y, "o quadro do nível e o dos abates têm o mesmo y e a mesma altura")
+	ok(abates.position.x - (placa.position.x + placa.size.x) == 4.0, "folga de 4 px entre o nível e os abates")
+	ok(abates.position.y - (tempo_q.position.y + tempo_q.size.y) >= 4.0, "o quadro de baixo não encosta no relógio")
+	var nv: Control = placa.get_node("Barra")
+	ok(nv.TAM_NUMERO >= tempo_q.get_node("Relogio").get_theme_font_size("font_size"), "o número do nível é do tamanho do relógio")
+	ok(nv._barra_y() + nv.BARRA_A + 1.0 <= placa.size.y - nv.BORDA, "a barra do mapa cabe dentro da borda de baixo")
+	ok(nv.BORDA + 1.0 + float(nv.TAM_NUMERO) < nv._barra_y() - 1.0, "o número do nível não encosta na barra do mapa")
+	# o minimapa e o retrato usam a mesma margem de canto (6 px)
+	ok(
+		preload("res://v2/minimapa.gd").MARGEM_TELA == 6 and hud.get_node("Raiz/Retrato").position == Vector2(6, 6),
+		"minimapa e retrato com a mesma margem de 6 px"
+	)
+	# slots E/Q: borda direita na da faixa de XP, com folga em cima dela
+	var xp_q: Control = hud.get_node("Raiz/Xp")
+	var hab_q: Control = hud.get_node("Raiz/Habilidades")
+	ok(hab_q.position.x + hab_q.size.x == xp_q.position.x + xp_q.size.x, "os slots E/Q terminam na mesma borda direita da faixa de XP")
+	ok(xp_q.position.y - (hab_q.position.y + hab_q.size.y) >= 2.0, "os slots E/Q não encostam na faixa de XP")
 	falso.combate = null
 
 	# 1. sem combate: vida cheia, XP 0, nível 1, tempo zero, combo escondido
@@ -314,7 +334,7 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 	slots.sincronizar(h)
 	ok(slots._rotulo_e() == "RUPTURA", "E anuncia Ruptura pronta sem carga pendente")
 	var area := Rect2(slots.position, slots.size)
-	ok(area.position == Vector2(596, 438) and area.size == Vector2(174, 74), "E/Q ocupa a faixa inferior sem cobrir status/XP")
+	ok(area.position == Vector2(506, 434) and area.size == Vector2(174, 74), "E/Q ocupa a faixa inferior sem cobrir status/XP")
 	ok(Rect2(0, 0, 960, 540).encloses(area), "E/Q cabe integralmente dentro da tela")
 	ok(not area.intersects(ZONA_MINIMAPA), "E/Q não cobre o minimapa")
 	var xp = hud.get_node("Raiz/Xp")
