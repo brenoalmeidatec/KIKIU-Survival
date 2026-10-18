@@ -43,6 +43,18 @@ Toda a UI é desenhada num **bloco de 960x540** ("UI px"). O que muda com a jane
 | 4:3 (1024x768) | ~120 px em x | x 120-840 |
 | 21:9 (2560x1080) | ~68 px em y | y 68-472 |
 
+## 1b. Grade dos menus (960x540, o bloco de canvas)
+
+Regra provisória: até aqui o DESIGN não tinha valores para margens, colunas e rodapé. Os números abaixo são os que o código usa desde esta mudança (padrão adotado nesta entrega; a confirmar com o Alisson).
+
+- **Margem lateral de 36 px**: o conteúdo de tela inteira (santuário, personagens) vai de x 36 a x 924. Painel centrado (pausa, cartas) segue o próprio eixo.
+- **Colunas**: quando duas colunas dividem a tela, a da direita começa 24 px depois da esquerda e as bordas direitas coincidem. No santuário, MELHORIAS/MAPA/detalhes ficam em 36 a 608, CONQUISTAS, a caixa ALMAS e o VOLTAR terminam em 924.
+- **Eixo da ficha** (personagens): retrato, nome e linhas de atributo são centrados no mesmo eixo, x 570.
+- **Texto de ajuda e de crédito** (Ajustes, Créditos, Gráficos): começa na coluna do texto das linhas (margem 24 do painel + 10 da linha, x 34 do painel).
+- **Rodapé de teclas** (`Glifos.dica`): caixa de 22 px com o glifo de 16 px centrado; a caixa termina 8 px acima da borda inferior do bloco (y 510 a 532). Os controles da tela terminam pelo menos 12 px acima dela (santuário: botões até y 498).
+- **Linha de base**: o texto e o glifo de uma mesma linha compartilham a linha de base (`Dica` e `Glifos.desenhar_acao` usam a métrica da fonte do texto).
+- **Título de tela**: o alinhamento vertical segue cada tela (santuário e personagens ainda usam posições próprias; padronizar só com decisão do Alisson).
+
 ## 2. Paleta
 
 A fonte única da UI é `v2/paleta.gd`, com constantes GDScript. HUD, SUA BUILD, pausa, cartas, resultado, menu e Santuário usam as constantes por papel; o gerador Python `hud/gerar_molduras.py` lê esse mesmo arquivo para gerar as texturas. Transparência e animação podem variar sem criar outra cor semântica. Luz e sombra da textura de pedra/metal são materiais, não cores de estado.
@@ -107,7 +119,8 @@ XP dourado e ouro de seleção são papéis distintos. Fusão magenta continua d
 - **Trava das cartas**: 3 s em tempo real (`dados/v2_cartas.json:10`, `espera_s`); 0,8 s após rerrolar ou banir (`rerrolar_espera_s`); baú 1,5 s (`dados/v2_cartas.json:304`, `telas.gd:461`). Clique, tecla e botão são descartados, e a contagem pulsa. Esc passa para a pausa. A trava congela com a pausa aberta (`telas.gd:7-9`). Cartas apagadas usam `#737373` (`telas.gd:27, 665`).
 - **Foco inicial**: a pausa abre em "Continuar" (`pausa.gd:245` põe "Não" nas confirmações); o santuário, em ENTRAR (`altar.gd:77`); a escolha, na carta 1 (`telas.gd:35`).
 - **Sons de UI**: fora da partida, a pausa usa `Som.ui("cursor")` (-6 dB) e `Som.ui("confirmar")` (-4 dB) (`scripts/hordas/som.gd:68-73`). Na partida, usa os sons de jogo `carta` e `escolher` (`pausa.gd:572-583`). Não existem `ui_cursor` nem `ui_confirmar`.
-- **TAB** alterna visual/detalhes do SUA BUILD na pausa e no painel central. **Q/E** mudam as páginas de conteúdo em ambos os layouts. No HUD compacto, **PgUp/PgDn** ou a roda sobre uma coluna mudam a página; a roda fora do card segue livre. **C** liga/desliga o card. A tabela de detalhes quebra rótulos, valores e bônus em linhas e preserva dicas completas; cada coluna informa sua página atual/total. Teclado é necessário para Tab/Q/E; equivalência no controle permanece uma tarefa separada (#257).
+- **TAB** alterna visual/detalhes do SUA BUILD na pausa e no painel central. **Q/E** mudam as páginas de conteúdo em ambos os layouts. No HUD compacto, **PgUp/PgDn** ou a roda sobre uma coluna mudam a página; a roda fora do card segue livre. **C** liga/desliga o card. A tabela de detalhes quebra rótulos, valores e bônus em linhas e preserva dicas completas; cada coluna informa sua página atual/total. No controle: **Y** alterna visual/detalhes (o Tab), **LB/RB** mudam a página (Q/E) e **Select** liga o card (C).
+- **Glifos de controle** (`v2/glifos.gd`, módulo ÚNICO): o jogo detecta o último dispositivo usado (teclado e mouse, Xbox ou PlayStation, pelo `Input.get_joy_name`; qualquer controle desconhecido cai no layout do Xbox) e troca NA HORA os rótulos de todas as telas para só o botão certo (Esc no teclado, B no Xbox, bola no PlayStation). Nenhuma tela escreve "Esc/B" ou "Enter ou A" no texto: pede o papel (`confirmar`, `voltar`, `rerrolar`, `banir`, `abas`, `detalhes`, `navegar`...) e a tabela `TABELA` do módulo diz o que desenhar. `Glifos.dica(gerador)` devolve a faixa de rodapé (glifo de 16 px + texto Spleen 16, refeita sozinha na troca), `Glifos.glifo(acao)` um glifo só (dentro de botão, como o VOLTAR do salão), `Glifos.texto(acao)` só o texto curto (selo E/Q da HUD, linhas de navegação) e `Glifos.desenhar_acao(ci, acao, pos)` o glifo dentro de um desenho por código (cabeçalho da SUA BUILD: "detalhes" e "fecha"). Baú e resultado usam `Glifos.dica` (glifo + "para continuar" / "para jogar de novo"), nunca um Label com o nome do botão. Fotos antes (origin/main, edaa0f95) e depois desta entrega: `docs/visual_2_5d/controle/` (tela por tela, com o dispositivo no nome). O "Mouse também" some no controle. Para foto ou teste: `-- --controle=xbox|ps|teclado` trava o dispositivo. Controle: A/cruz confirma, B/bola volta, X/quadrado rerrola e Y/triângulo bane na escolha de cartas, Y alterna os detalhes do SUA BUILD e LB/RB mudam a página. Teste: `v2_glifos`.
 
 ## 6. Regras de conteúdo
 
@@ -123,6 +136,9 @@ Comando: `godot --path jogos/hordas/projeto res://testes/<nome>.tscn`. A maioria
 |---|---|
 | `v2_fontes` | fontes do Dados, grade, dígitos, caixas (`v2/LEIA-ME.md:53`) |
 | `v2_pausa` | 4 itens, Esc e Start, Ajustes, Sair com confirmação (`:51`) |
+| `v2_glifos` | dispositivo (teclado, Xbox, PS) pelo evento e pelo nome, troca na hora, dica refeita, título sem o mouse no controle |
+| `v2_controle_nav` | trava o Xbox no próprio teste: X rerrola e Y bane nas cartas, A fecha o baú, A e B mapeados em personagens e salão (apertos pela janela) |
+| `v2_controle_fotos` | ferramenta de foto, com janela: `-- --fotos=PASTA --prefixo=X --controle=xbox\|ps\|teclado` (título, Ajustes, Créditos, santuário, personagens, salão, HUD, pausa, SUA BUILD, cartas, baú, resultado); sem `--fotos` sai com `falhas=0` |
 | `v2_esc` | Esc em todos os estados, pela entrada da janela (`:55`) |
 | `v2_cartas_espera` | trava de 3 s, 0,8 s e clique segurado (`:57`) |
 | `v2_status` | cada número do SUA BUILD, nos três modos (`:61`, ~35 s) |

@@ -41,7 +41,7 @@ const COR_OURO := Paleta.OURO
 const COR_TEXTO := Paleta.TEXTO
 const COR_CAB := Paleta.CABECALHO  # cabeçalho de seção (não é selecionável)
 const COR_FUNDO := Color(Paleta.PAINEL, 0.9)  # #01030b a 0,9: o jogo (e a HUD) atrás fica escuro e não compete com o menu
-const DICA := "Setas escolhem   Enter confirma   Esc volta"
+const Glifos := preload("res://v2/glifos.gd")
 const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
 const AudioV2 := preload("res://v2/audio.gd")  # o clique do santuário (sem partida), com os WAV da v2
@@ -64,7 +64,7 @@ var _graficos := AjustesGraficos.new()
 var _raiz: Control
 var _titulo: Label
 var _sub: Label
-var _dica: Label
+var _dica: Control
 var _ajuda: Label
 var _linhas: Array = []  # uma por linha visível: {linha, marca, rotulo, valor}
 var _fps: Label
@@ -173,14 +173,14 @@ func _montar() -> void:
 		_raiz.add_child(linha)
 		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val})
 	_ajuda = _rotulo(
-		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 22, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 44, HORIZONTAL_ALIGNMENT_LEFT
+		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 34, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 68, HORIZONTAL_ALIGNMENT_LEFT  # a mesma coluna do texto das linhas (margem 24 + 10 do painel da linha)
 	)
 	_ajuda.size.y = AJUDA_H
 	_ajuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_raiz.add_child(_ajuda)
-	_dica = _rotulo(
-		Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER
-	)
+	_dica = Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_TEXTO)
+	_dica.position = Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y)
+	_dica.size = Vector2(PAINEL.size.x - 16, 22)
 	_raiz.add_child(_dica)
 	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), _pos_fps(), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
@@ -335,6 +335,14 @@ func entrada(e: InputEvent) -> bool:
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_Q, KEY_E] and tela == "menu" and mundo != null and mundo.get("status") != null:
 		mundo.status.paginar(-1 if e.keycode == KEY_Q else 1)
 		return true
+	# Controle: Y troca o card SUA BUILD para os detalhes (o Tab) e LB/RB mudam a página dos golpes (o Q e o E)
+	if e is InputEventJoypadButton and e.pressed and tela == "menu" and mundo != null and mundo.get("status") != null:
+		if e.button_index == JOY_BUTTON_Y:
+			mundo.status.alternar_detalhe()
+			return true
+		if e.button_index == JOY_BUTTON_LEFT_SHOULDER or e.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+			mundo.status.paginar(-1 if e.button_index == JOY_BUTTON_LEFT_SHOULDER else 1)
+			return true
 	if e is InputEventMouseMotion:
 		var i := _linha_sob_mouse()
 		if i >= 0 and i != sel:
@@ -371,6 +379,11 @@ func entrada(e: InputEvent) -> bool:
 	elif e.is_action_pressed("ui_accept"):
 		_acao_sel(1, true)
 	return true
+
+
+## A dica da pausa: só os botões do dispositivo em uso. Detalhes e páginas do SUA BUILD ficam na dica do próprio card (não cabem aqui: 424 px).
+func _itens_dica() -> Array:
+	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
 
 
 ## ESC (tecla) ou Start do controle: os dois pausam e, com o menu aberto, voltam como o ui_cancel (B).
@@ -571,8 +584,8 @@ func _desenhar() -> void:
 	_topo = clampi(_topo, 0, maxi(n - VISIVEIS, 0))
 	_titulo.text = _titulo_tela()
 	_sub.text = _sub_tela()
-	_dica.text = DICA
 	_ajuda.text = _texto_ajuda()
+	_dica.call("atualizar")
 	for i in _linhas.size():
 		var l: Dictionary = _linhas[i]
 		var idx := _topo + i

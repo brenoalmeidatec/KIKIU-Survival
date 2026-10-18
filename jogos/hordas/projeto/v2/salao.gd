@@ -41,7 +41,7 @@ const CORES_MAPA := {
 	"floresta": Color(0.3, 0.62, 0.36), "laboratorio": Color(0.3, 0.68, 0.78), "cidade": Color(0.85, 0.58, 0.3), "medio": Color(0.5, 0.55, 0.8)
 }
 const COR_TRAVADO := Color(0.22, 0.22, 0.25)
-const DICA := "Setas / analógico: andar   Enter / A: usar   Clique: explorar"
+const Glifos := preload("res://v2/glifos.gd")
 
 var _visual := Visual.new()
 var _p_rolagem: ScrollContainer
@@ -67,6 +67,8 @@ var _destino := Vector2.INF  # clique numa estrutura ou portal: anda até ele e 
 var _alvo_destino := {}
 var _prompt: Label
 var _prompt_de := ""
+var _prompt_acao := ""
+var _prompt_glifo: Control
 var _saldo_lbl: Label
 var _aviso_lbl: Label
 var _aviso_t := 0.0
@@ -239,6 +241,9 @@ func _montar_hud() -> void:
 	_prompt = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(0, 0, 440, 26), HORIZONTAL_ALIGNMENT_CENTER)
 	_prompt.add_theme_stylebox_override("normal", _caixa(Paleta.PAINEL, Paleta.BORDA))
 	_prompt.visible = false
+	_prompt_glifo = Glifos.dica(func() -> Array: return [["confirmar", _prompt_acao]], HORIZONTAL_ALIGNMENT_CENTER, COR_FOCO)
+	_prompt_glifo.size = _prompt.size
+	_prompt.add_child(_prompt_glifo)
 	_aviso_lbl = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(40, 455, 880, 40), HORIZONTAL_ALIGNMENT_CENTER)
 	_aviso_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_aviso_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -250,9 +255,7 @@ func _montar_hud() -> void:
 	faixa.size = Vector2(LARG, 35)
 	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(faixa)
-	for l in [
-		_nome_lbl, _saldo_lbl, _prompt, _aviso_lbl, _rotulo(DICA, Dados.fonte_texto, 16, COR_APAGADO, Rect2(20, 511, 650, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	]:
+	for l in [_nome_lbl, _saldo_lbl, _prompt, _aviso_lbl, _dica_salao()]:
 		add_child(l)
 	var ajustes := Button.new()
 	ajustes.text = "AJUSTES"
@@ -262,12 +265,24 @@ func _montar_hud() -> void:
 	ajustes.pressed.connect(func(): pausa.abrir_ajustes())
 	add_child(ajustes)
 	var voltar := Button.new()
-	voltar.text = "VOLTAR Esc/B"
+	voltar.text = "VOLTAR"
 	voltar.position = Vector2(810, 507)
 	voltar.size = Vector2(136, 30)
 	_estilo_botao(voltar, 16)
+	_glifo_no_botao(voltar, "voltar")  # depois do tamanho: o glifo usa a largura do botão
 	voltar.pressed.connect(func(): get_tree().change_scene_to_file.call_deferred(ESCOLHA))
 	add_child(voltar)
+
+
+func _dica_salao() -> Control:
+	var d := Glifos.dica(
+		func() -> Array: return [["andar", "Andar"], ["confirmar", "Usar"]] + ([] if Glifos.eh_controle() else [["", "Clique: explorar"]]),
+		HORIZONTAL_ALIGNMENT_LEFT,
+		COR_APAGADO
+	)
+	d.position = Vector2(20, 513)
+	d.size = Vector2(650, 22)
+	return d
 
 
 func _montar_painel() -> void:
@@ -291,10 +306,11 @@ func _montar_painel() -> void:
 	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(112, 38, 330, 46), HORIZONTAL_ALIGNMENT_LEFT)
 	_painel.add_child(_p_titulo)
 	var fechar := Button.new()
-	fechar.text = "VOLTAR Esc/B"
+	fechar.text = "VOLTAR"
 	fechar.position = Vector2(742, 42)
 	fechar.size = Vector2(158, 34)
 	_estilo_botao(fechar, 16)
+	_glifo_no_botao(fechar, "voltar")  # depois do tamanho: o glifo usa a largura do botão
 	fechar.pressed.connect(_fechar_painel)
 	_painel.add_child(fechar)
 	_p_rolagem = ScrollContainer.new()
@@ -379,6 +395,13 @@ func _estilo_botao(b: Button, tam: int) -> void:
 	b.mouse_entered.connect(_focar_sob_mouse.bind(b))
 
 
+## O glifo da ação (Esc no teclado, B no Xbox, bola no PlayStation) no canto direito do botão, trocado na hora pelo dispositivo.
+func _glifo_no_botao(b: Button, acao: String) -> void:
+	var g := Glifos.glifo(acao, HORIZONTAL_ALIGNMENT_RIGHT)
+	g.size = Vector2(b.size.x - 8.0, b.size.y)
+	b.add_child(g)
+
+
 func _focar_sob_mouse(b: Button) -> void:
 	if b.focus_mode != Control.FOCUS_NONE:  # o COMPRAR desligado não pega foco
 		b.grab_focus()
@@ -449,7 +472,10 @@ func _atualizar_prompt() -> void:
 	if _prompt_de != str(perto.id):
 		_prompt_de = str(perto.id)
 		var trava := str(perto.get("trava", ""))
-		_prompt.text = ("Trancado: %s" % trava) if trava != "" else ("Enter ou A: %s" % perto.acao)
+		_prompt.text = "Trancado: %s" % trava if trava != "" else ""
+		_prompt_glifo.visible = trava == ""
+		_prompt_acao = str(perto.acao)
+		_prompt_glifo.call("atualizar")
 	_prompt.position = Vector2(clampf(perto.pos.x - 220.0, 12.0, LARG - 452.0), clampf(perto.pos.y - 132.0, 62.0, 467.0))
 
 
