@@ -148,3 +148,7 @@ Continuam duas diferenças de composição: cartões usam painel próprio sem mo
 3. Confira a seção 1: o que é de borda grudado no canvas, fundos com `EscalaUi.cobrir`, e olhe o resultado em 1280x720 e 1920x1080 (Automático e Pequeno; `--tamanho_ui=` nas fotos).
 4. Rode os testes da seção 7.
 5. Atualize este arquivo no mesmo PR se mudar cor, fonte ou comportamento.
+
+## Ajustes > Gráficos (perfil Dinâmico e Avançado)
+A tela Gráficos tem só o essencial: **Perfil (?)** (Baixo, Médio, Alto, **Dinâmico**), Detectar pela máquina, Tela cheia, Mostrar FPS, Tamanho da interface e **Avançado**. Dinâmico = Alto com a baixa e a subida automáticas pelo fps medido (opção `qualidade_auto`, `v2/qualidade_auto.gd`: 8 s abaixo de 40 fps desce um degrau; 30 s firmes sobe, com a espera dobrando se subiu e travou em menos de 60 s). Abaixo do Perfil aparece a linha curta "Começa no Alto e ajusta pelo FPS", e o rodapé (foco ou mouse sobre a linha, que é o "?") explica por extenso. Escolher Baixo, Médio ou Alto desliga o Dinâmico; mexer numa opção vira Personalizado (o Dinâmico não age). A tela **Avançado** (`itens_avancado`) separa as opções em CPU e GPU e só lista o que a v2 lê (`LIDAS_NA_V2`). ESC volta Avançado, Gráficos, Ajustes.
+
