@@ -130,7 +130,7 @@ func _testes() -> void:
 	ok(s.usar_portal("cidade") and Mapas.escolhido() == "cidade", "o portal da cidade grava a escolha")
 	ok(cenas == [FLORESTA], "o portal leva Ã  cena da partida")
 	ok(Mapas.condicao({"requer": "combo_50"}) != "", "um mapa com conquista nÃ£o cumprida fica fechado e diz o porquÃª")
-	ok(Mapas.condicao({"requer": "combo_50"}).find("Fechado") == 0, "o texto do portal fechado comeÃ§a com Fechado")
+	ok(Mapas.condicao({"requer": "combo_50"}).find("Trancado") == 0, "o texto do portal trancado comeÃ§a com Trancado")
 	ok(Mapas.condicao({}) == "", "sem condiÃ§Ã£o o portal estÃ¡ aberto")
 
 	# 7. a partida termina: as almas entram no personagem ativo e o salÃ£o aberto de novo as mostra

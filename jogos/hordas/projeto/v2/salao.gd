@@ -12,6 +12,7 @@ const EscalaUi := preload("res://v2/escala_ui.gd")
 const UiJanela := preload("res://v2/ui_janela.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
+const Progressao := preload("res://v2/progressao.gd")  # travas das estruturas e portais (dados/v2_progressao.json)
 const Personagens := preload("res://v2/personagens.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle (Enter e A confirmam, ESC e B voltam)
 const Pausa := preload("res://v2/pausa.tscn")
@@ -125,14 +126,15 @@ func _carregar_dados() -> void:
 	_estruturas = Dados.json("v2_salao").get("estruturas", [])
 	_alvos.clear()
 	# Apenas apresentação: agrupa estações nas laterais sem alterar regras ou limites.
+	# "trava": a linha curta do cadeado ("" = aberto), lida uma vez para o desenho; usar e o prompt conferem de novo no save.
 	for e in _estruturas:
-		_alvos.append(
-			{"tipo": "estrutura", "id": str(e.id), "nome": str(e.nome), "acao": str(e.nome), "pos": Visual.posicao(str(e.id), Vector2(float(e.x), float(e.y)))}
-		)
+		var pos := Visual.posicao(str(e.id), Vector2(float(e.x), float(e.y)))
+		var trava := Progressao.curto("estrutura", str(e.id))
+		_alvos.append({"tipo": "estrutura", "id": str(e.id), "nome": str(e.nome), "acao": str(e.nome), "pos": pos, "trava": trava})
 	for i in Mapas.LISTA.size():
 		var m: Dictionary = Mapas.LISTA[i]
 		var x: float = lerp(180.0, 780.0, float(i) / maxf(1.0, Mapas.LISTA.size() - 1.0))
-		_alvos.append({"tipo": "portal", "id": str(m.id), "nome": str(m.nome), "acao": str(m.entrar), "pos": Vector2(x, CHAO_Y + 8.0)})
+		_alvos.append({"tipo": "portal", "id": str(m.id), "nome": str(m.nome), "acao": str(m.entrar), "pos": Vector2(x, CHAO_Y + 8.0), "trava": Mapas.curto(m)})
 
 
 func _estrutura(id: String) -> Dictionary:
@@ -239,6 +241,9 @@ func _montar_hud() -> void:
 	_prompt.visible = false
 	_aviso_lbl = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(40, 455, 880, 40), HORIZONTAL_ALIGNMENT_CENTER)
 	_aviso_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_aviso_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_aviso_lbl.add_theme_stylebox_override("normal", _caixa(Paleta.PAINEL, Paleta.BORDA))  # numa caixa: fica legível sobre os rótulos do chão
+	_aviso_lbl.visible = false
 	var faixa := ColorRect.new()
 	faixa.color = Paleta.alfa(Paleta.PAINEL, 0.88)
 	faixa.position = Vector2(0, 505)
@@ -401,6 +406,7 @@ func _process(dt: float) -> void:
 		_aviso_t -= dt
 		if _aviso_t <= 0.0:
 			_aviso_lbl.text = ""
+			_aviso_lbl.visible = false
 	if _painel.visible or pausa.aberto:
 		return
 	var anda := Input.get_vector("esquerda", "direita", "cima", "baixo")
@@ -442,7 +448,8 @@ func _atualizar_prompt() -> void:
 		return
 	if _prompt_de != str(perto.id):
 		_prompt_de = str(perto.id)
-		_prompt.text = "Enter ou A: %s" % perto.acao
+		var trava := str(perto.get("trava", ""))
+		_prompt.text = ("Trancado: %s" % trava) if trava != "" else ("Enter ou A: %s" % perto.acao)
 	_prompt.position = Vector2(clampf(perto.pos.x - 220.0, 12.0, LARG - 452.0), clampf(perto.pos.y - 132.0, 62.0, 467.0))
 
 
@@ -498,6 +505,10 @@ func usar_portal(id: String) -> bool:
 
 func _avisar(txt: String) -> void:
 	_aviso_lbl.text = txt
+	var w := minf(880.0, Dados.fonte_texto.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 32.0)  # a caixa abraça o texto
+	_aviso_lbl.size = Vector2(w, 40)
+	_aviso_lbl.position = Vector2(roundf((LARG - w) / 2.0), 455)
+	_aviso_lbl.visible = true
 	_aviso_t = 3.0
 	_p_aviso.text = txt
 
@@ -506,9 +517,14 @@ func _avisar(txt: String) -> void:
 
 
 ## Abre o painel de uma estrutura: as melhorias dela (com comprar), ou as conquistas no códice (só leitura).
+## Trancada (dados/v2_progressao.json), só mostra o aviso com o que falta.
 func abrir_estrutura(id: String) -> void:
 	var e := _estrutura(id)
 	if e.is_empty():
+		return
+	var trava := Progressao.aviso("estrutura", id)
+	if trava != "":
+		_avisar("%s trancado. %s" % [str(e.nome).capitalize(), trava])
 		return
 	_p_codice = bool(e.get("conquistas", false))
 	_p_titulo.text = str(e.nome)

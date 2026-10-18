@@ -5,6 +5,7 @@ extends RefCounted
 ## Sem class_name: carregue com preload, como o resto do projeto.
 
 const Meta := preload("res://v2/meta.gd")
+const Progressao := preload("res://v2/progressao.gd")  # travas dos portais (dados/v2_progressao.json)
 const PADRAO := "floresta"
 const LISTA := [
 	{"id": "floresta", "nome": "FLORESTA", "entrar": "ENTRAR NA FLORESTA", "dados": "v2_floresta"},
@@ -18,16 +19,26 @@ static func ids() -> Array:
 	return LISTA.map(func(m): return m.id)
 
 
-## O texto que fecha o portal do mapa, ou "" se ele está aberto. `requer` (opcional na LISTA) é o id de uma conquista do save do
-## personagem: sem ela o portal fica fechado e mostra a descrição da conquista. Nenhum mapa tem `requer` hoje.
+## O texto que fecha o portal do mapa, ou "" se ele está aberto. Duas travas: `requer` (opcional na LISTA, id de uma conquista do save
+## do personagem; nenhum mapa usa hoje) e a progressão de dados/v2_progressao.json (v2/progressao.gd: cada mapa abre ao vencer o
+## anterior). O texto começa com "Trancado".
 static func condicao(m: Dictionary) -> String:
 	var req := str(m.get("requer", ""))
-	if req == "" or Meta.estado().conquistas.get(req, false):
+	if req != "" and not Meta.estado().conquistas.get(req, false):
+		for c in Meta.conquistas():
+			if str(c.id) == req:
+				return "Trancado: %s" % c.desc
+		return "Trancado"
+	var aviso := Progressao.aviso("mapa", str(m.get("id", "")))
+	return "" if aviso == "" else "Trancado: %s" % aviso
+
+
+## A linha curta do portal trancado, ao lado do cadeado ("Vença a Floresta"); "" se aberto.
+static func curto(m: Dictionary) -> String:
+	if condicao(m) == "":
 		return ""
-	for c in Meta.conquistas():
-		if str(c.id) == req:
-			return "Fechado: %s" % c.desc
-	return "Fechado"
+	var t := Progressao.curto("mapa", str(m.get("id", "")))
+	return t if t != "" else "Trancado"
 
 
 ## O mapa da lista (ou o padrão, se o id não existir).
