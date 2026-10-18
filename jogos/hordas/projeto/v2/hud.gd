@@ -50,9 +50,9 @@ const RB_TAM := 22
 const RB_POP_T := 0.15  # s do pop ao zerar a recarga
 const RB_LARANJA := Paleta.CARGA_LARANJA
 const RB_BORDA := Paleta.RUPTURA_BORDA
-## Comprimento das barras de vida e de fôlego. No máximo de partida do herói escolhido (cfg do combate) a barra mede BARRA_BASE_PX;
-## cada ponto de vida máxima acima da base soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO. O teto (BARRA_TETO_PX)
-## segura a moldura antes do relógio (x 428). Ver _barras.
+## Comprimento das barras de vida e de fôlego, o mesmo para as duas. No máximo de partida do herói escolhido (cfg do combate) a barra mede BARRA_BASE_PX;
+## cada ponto de vida máxima acima da base soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO; vale a meta maior das duas. O teto
+## (BARRA_TETO_PX) segura a moldura antes do relógio (x 428). Ver _barras.
 const BARRA_BASE_PX := 142.0
 const BARRA_PX_VIDA := 1.2
 const BARRA_PX_FOLEGO := 47.0
@@ -149,8 +149,7 @@ var _rb_perf := false  # moldura piscando em branco (janela perfeita)
 var _rb_nega := false  # moldura vermelha
 var _rb_pop := 0.0
 var _rb_recarga_antes := 0.0
-var _vida_px := -1.0  # comprimento atual da barra de vida (desliza até o alvo em _barras); -1 até o primeiro quadro
-var _folego_px := -1.0  # o mesmo, para a barra de fôlego
+var _barra_px := -1.0  # comprimento atual das barras de vida e de fôlego (desliza até o alvo em _barras); -1 até o primeiro quadro
 
 @onready var _heroi_img: TextureRect = $Raiz/Retrato/Heroi
 @onready var _vida_barra: TextureProgressBar = $Raiz/Vida/Barra
@@ -512,22 +511,22 @@ func _cartas_na_tela() -> bool:
 	return _campo(telas, "escolha_aberta") == true or _campo(telas, "bau_aberto") == true
 
 
-## Comprimento das barras (ver BARRA_*). O alvo segue o máximo atual; o comprimento desliza até ele com dt (suavização exponencial).
-## Com a escolha de carta ou o baú na tela, dt vem 0 e a barra fica parada: cresce quando a HUD volta. A moldura de pedra acompanha o
-## maior dos dois. Tudo por size: a posição já anda com o deslocamento do bloco no canvas (ui_reencaixar).
+## Comprimento das barras (ver BARRA_*): vida e fôlego têm o mesmo, o da meta maior das duas, para que as duas cheguem à borda da moldura
+## em 100/100 sem vão. O alvo segue o máximo atual; o comprimento desliza até ele com dt (suavização exponencial). Com a escolha de carta
+## ou o baú na tela, dt vem 0 e a barra fica parada: cresce quando a HUD volta. A moldura de pedra é esse comprimento + 8 px. Tudo por size:
+## a posição já anda com o deslocamento do bloco no canvas (ui_reencaixar).
 func _barras(dt: float, vida_max: float, folego_max: float, base: Vector2) -> void:
-	var alvo_vida := clampf(BARRA_BASE_PX + BARRA_PX_VIDA * (vida_max - base.x), BARRA_MIN_PX, BARRA_TETO_PX)
-	var alvo_folego := clampf(BARRA_BASE_PX + BARRA_PX_FOLEGO * (folego_max - base.y), BARRA_MIN_PX, BARRA_TETO_PX)
-	if _vida_px < 0.0:  # primeiro quadro com o herói: começa no tamanho certo, sem animação de entrada
-		_vida_px = alvo_vida
-		_folego_px = alvo_folego
+	var alvo_vida := BARRA_BASE_PX + BARRA_PX_VIDA * (vida_max - base.x)
+	var alvo_folego := BARRA_BASE_PX + BARRA_PX_FOLEGO * (folego_max - base.y)
+	var alvo := clampf(maxf(alvo_vida, alvo_folego), BARRA_MIN_PX, BARRA_TETO_PX)
+	if _barra_px < 0.0:  # primeiro quadro com o herói: começa no tamanho certo, sem animação de entrada
+		_barra_px = alvo
 	var k := 1.0 - exp(-BARRA_VELOC * dt)
-	_vida_px = _deslizar(_vida_px, alvo_vida, k)
-	_folego_px = _deslizar(_folego_px, alvo_folego, k)
-	_vida_barra.size.x = roundf(_vida_px)
-	_vida_txt.size.x = roundf(_vida_px)
-	_folego.size.x = roundf(_folego_px)
-	var moldura := roundf(maxf(_vida_px, _folego_px) + 2.0 * BARRA_FOLGA)
+	_barra_px = _deslizar(_barra_px, alvo, k)
+	_vida_barra.size.x = roundf(_barra_px)
+	_vida_txt.size.x = roundf(_barra_px)
+	_folego.size.x = roundf(_barra_px)
+	var moldura := roundf(_barra_px + 2.0 * BARRA_FOLGA)
 	_vida_caixa.size.x = moldura
 	_moldura_barras.size.x = moldura
 

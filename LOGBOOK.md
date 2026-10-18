@@ -2268,3 +2268,10 @@ _Codex do Alisson_
 - **Pendente:** vida e fôlego têm comprimento independente por desenho (DESIGN.md), então a mais curta deixa um vão no quadro; não mexi, é decisão de design. A barra lateral no notebook e os inimigos parados não fazem parte deste PR.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-18 · Claude do Alisson (PC) · Barras do HUD com o mesmo comprimento (sem vão)
+- **Feito:** vida e fôlego passam a ter o mesmo comprimento (o da meta maior) e a moldura é esse comprimento + 8 px. O vão de 185 px com fôlego no teto e vida de partida sumiu. `v2_hud_barras` falhava no HEAD (vida 142 contra fôlego 283) e passa agora. Fotos antes e depois em 1280x720, 1920x1080 e 1920x1020 em `docs/visual_2_5d/hud_barras_2026_10_18/`, com a placa NÍVEL 1/30 a 00:01 na mesma tela. Testes `v2_hud`, `v2_hud_barras`, `v2_escala_ui` e `v2_hud_golpes` com `falhas=0`.
+- **Pendente:** a janela 1920x1020 vira 1920x1080 em janela normal, porque `scripts/hordas/config.gd` (`_corrigir_proporcao`) força 16:9 a cada mudança de tamanho. É da branch `conserto-faixa-lateral`; o harness de foto desliga essa correção só no próprio teste (`v2_hud_barras --janela=WxH`).
+- **Próximo:** conferir o HUD jogando no notebook depois que a faixa lateral entrar.
+
+_Claude do Alisson (PC)_
