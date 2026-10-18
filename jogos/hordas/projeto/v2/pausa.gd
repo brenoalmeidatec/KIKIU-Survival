@@ -171,7 +171,16 @@ func _montar() -> void:
 		var val := _rotulo(Dados.fonte_texto, TAM_VALOR, COR_TEXTO, Vector2(12, 8), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
 		linha.add_child(val)
 		_raiz.add_child(linha)
-		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val})
+		var ico := TextureRect.new()  # o "?" da linha Perfil: a linha pede o ícone (chave "icone") e _desenhar o põe depois do nome
+		ico.texture = _textura_ajuda()
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_SCALE
+		ico.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		ico.size = Vector2(16, 16)
+		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ico.visible = false
+		linha.add_child(ico)
+		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val, "icone": ico})
 	_ajuda = _rotulo(
 		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 34, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 68, HORIZONTAL_ALIGNMENT_LEFT  # a mesma coluna do texto das linhas (margem 24 + 10 do painel da linha)
 	)
@@ -200,6 +209,18 @@ func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin
 	l.add_theme_color_override("font_outline_color", Paleta.PRETO)
 	l.add_theme_constant_override("outline_size", 3)
 	return l
+
+
+## O "?" da linha Perfil: ícone de pixel 8x8 (os ícones da v2 são desenhados por código). Branco, para o `modulate` pintar na cor da linha.
+static func _textura_ajuda() -> Texture2D:
+	var padrao := ["..####..", ".##..##.", ".....##.", "....##..", "...##...", "...##...", "........", "...##..."]
+	var im := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+	im.fill(Color(0, 0, 0, 0))
+	for y in 8:
+		for x in 8:
+			if padrao[y].substr(x, 1) == "#":
+				im.set_pixel(x, y, Color.WHITE)
+	return ImageTexture.create_from_image(im)
 
 
 # ------------------------------------------------------------------ abrir e fechar
@@ -275,7 +296,7 @@ func _pode_pausar() -> bool:
 func _ir(nova: String, origem := "menu") -> void:
 	tela = nova
 	_origem = origem
-	sel = 1 if nova.begins_with("confirmar") else 0  # confirmação começa em "Não"
+	sel = 1 if nova.begins_with("confirmar") or nova == "avancado" else 0  # confirmação começa em "Não"; Avançado, na 1ª opção (o 0 é cabeçalho)
 	_topo = 0
 	_desenhar()
 
@@ -291,6 +312,8 @@ func _voltar_tela() -> void:
 				_ir("menu")
 			else:
 				fechar()
+		"avancado":
+			_ir("graficos")
 		"graficos", "audio", "creditos":
 			if tela == "creditos" and _origem == "":
 				fechar()  # Créditos abertos direto pelo título: não há Ajustes por trás
@@ -456,6 +479,8 @@ func _executar(id: String, passo: int) -> void:
 			_ir("ajustes")
 		"graficos":
 			_ir("graficos")
+		"g:avancado":
+			_ir("avancado", "graficos")
 		"audio":
 			_ir("audio")
 		"creditos":
@@ -532,6 +557,8 @@ func _itens() -> Array:
 			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"graficos":
 			return _graficos.itens()
+		"avancado":
+			return _graficos.itens_avancado()
 		"audio":
 			return [_it("musica", "Música", _pct(Config.v("musica"))), _it("efeitos", "Efeitos", _pct(Config.v("efeitos"))), _it("voltar", "Voltar")]
 		"confirmar_santuario":
@@ -551,6 +578,8 @@ func _titulo_tela() -> String:
 			return "AJUSTES"
 		"graficos":
 			return "GRÁFICOS"
+		"avancado":
+			return "AVANÇADO"
 		"audio":
 			return "ÁUDIO"
 		"creditos":
@@ -569,6 +598,8 @@ func _sub_tela() -> String:
 		return "Fecha o jogo de vez."
 	if tela == "graficos":
 		return _graficos.mensagem
+	if tela == "avancado":
+		return "CPU e GPU, uma opção por vez."
 	return ""
 
 
@@ -602,6 +633,12 @@ func _desenhar() -> void:
 		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
+		var ico: TextureRect = l["icone"]
+		ico.visible = bool(it.get("icone", false)) and not cab
+		if ico.visible:
+			var fonte: Font = l["rotulo"].get_theme_font("font")
+			ico.position = Vector2(12.0 + fonte.get_string_size(str(it.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_BOTAO).x + 10.0, 10.0)
+			ico.modulate = cor
 	_card_build()
 
 
@@ -609,7 +646,7 @@ func _desenhar() -> void:
 func _texto_ajuda() -> String:
 	if tela == "audio":
 		return CREDITO_MUSICA
-	if (tela != "graficos" and tela != "creditos") or sel >= _itens_atuais.size():
+	if (tela != "graficos" and tela != "avancado" and tela != "creditos") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))
 
