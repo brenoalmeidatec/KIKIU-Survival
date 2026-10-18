@@ -246,9 +246,9 @@ func checar_fusao(id: String) -> void:
 			for v in Andante.LINHAS:
 				ok(is_equal_approx(float(f.ciclo[v]), float(base.ciclo[v]) * e), "%s/%s vista %d: a passada escala (o pé não escorrega)" % [id, b, v])
 	# a fusão sem nenhuma base existente volta ao desenho antigo (FICHAS é const: testa-se a regra com a lista, que é a mesma que `bases` usa)
-	ok(Andante.existentes(["lobo_espirito", "nao_existe"]).is_empty(), "%s: lista só com bases inexistentes não dá base" % id)
+	ok(Andante.existentes(["bicho_que_nao_existe", "nao_existe"]).is_empty(), "%s: lista só com bases inexistentes não dá base" % id)
 	ok(Andante.bases("carta_sem_ficha").is_empty() and not Andante.eh_andante("carta_sem_ficha"), "carta sem ficha nem alias não é andante (desenho antigo)")
-	ok(Andante.existentes(["lobo_espirito"] + al.como).size() == bs.size(), "%s: a base que falta não entra, as demais sim" % id)
+	ok(Andante.existentes(["bicho_que_nao_existe"] + al.como).size() == bs.size(), "%s: a base que falta não entra, as demais sim" % id)
 	# a fusão se distingue do aliado comum: escala maior, tinta mais escura que o branco, mistura aditiva e halo reforçado
 	ok(e > 1.0 and al.has("tinta") and al.has("mistura") and float(al.get("halo", 1.0)) > 1.0, "%s: escala, tinta, mistura e halo próprios" % id)
 	var tin: Color = al.tinta
