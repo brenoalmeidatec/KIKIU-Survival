@@ -607,7 +607,7 @@ func _mostrar_conquista(c: Dictionary) -> void:
 	_p_nome.text = str(c.nome)
 	_p_nivel.text = "Cumprida" if feita else "Ainda não cumprida"
 	_p_agora.text = str(c.desc)
-	var item := Meta.item_da_recompensa(c.get("recompensa", {}))
+	var item := Meta.item_da_recompensa(c.recompensa)
 	_p_proximo.text = "Libera: %s" % str(item.nome) if not item.is_empty() else ""
 	_p_detalhe.text = ""
 	_p_aviso.text = ""

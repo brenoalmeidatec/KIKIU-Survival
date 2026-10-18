@@ -21,16 +21,16 @@ static func ids() -> Array:
 
 ## O texto que fecha o portal do mapa, ou "" se ele está aberto. Duas travas: `requer` (opcional na LISTA, id de uma conquista do save
 ## do personagem; nenhum mapa usa hoje) e a progressão de dados/v2_progressao.json (v2/progressao.gd: cada mapa abre ao vencer o
-## anterior). O texto começa com "Fechado".
+## anterior). O texto começa com "Trancado".
 static func condicao(m: Dictionary) -> String:
 	var req := str(m.get("requer", ""))
 	if req != "" and not Meta.estado().conquistas.get(req, false):
 		for c in Meta.conquistas():
 			if str(c.id) == req:
-				return "Fechado: %s" % c.desc
-		return "Fechado"
+				return "Trancado: %s" % c.desc
+		return "Trancado"
 	var aviso := Progressao.aviso("mapa", str(m.get("id", "")))
-	return "" if aviso == "" else "Fechado: %s" % aviso
+	return "" if aviso == "" else "Trancado: %s" % aviso
 
 
 ## A linha curta do portal trancado, ao lado do cadeado ("Vença a Floresta"); "" se aberto.
@@ -38,7 +38,7 @@ static func curto(m: Dictionary) -> String:
 	if condicao(m) == "":
 		return ""
 	var t := Progressao.curto("mapa", str(m.get("id", "")))
-	return t if t != "" else "Fechado"
+	return t if t != "" else "Trancado"
 
 
 ## O mapa da lista (ou o padrão, se o id não existir).

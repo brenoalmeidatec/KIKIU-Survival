@@ -102,7 +102,7 @@ func _ready() -> void:
 		ok(s._destino == Vector2.INF, "clique chega e usa " + str(a.id))
 		if s._painel.visible:
 			s._fechar_painel()
-	ok(Mapas.condicao({"requer": "combo_50"}).begins_with("Fechado"), "condicao bloqueada preservada")
+	ok(Mapas.condicao({"requer": "combo_50"}).begins_with("Trancado"), "condicao bloqueada preservada")
 	ok(Mapas.condicao({}) == "", "portais sem requisito abertos")
 	Meta.creditar(300)
 	s._atualizar_textos()

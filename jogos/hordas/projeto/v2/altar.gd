@@ -410,7 +410,7 @@ func _atualizar() -> void:
 		if str(c.condicao) == "tempo" and not feita:
 			apoio = "Última: %d/%d s" % [int(valor), int(limite)]
 		if str(c.condicao) == "venceu" and not feita:
-			apoio = "Vença o chefe da floresta"
+			apoio = str(c.desc)  # o texto da própria conquista: cada mapa tem o seu chefe
 		(v.desc as Label).text = apoio
 		(v.nome as Label).tooltip_text = str(c.desc)
 		(v.nome as Label).mouse_filter = Control.MOUSE_FILTER_IGNORE

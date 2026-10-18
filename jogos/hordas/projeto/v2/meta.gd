@@ -326,6 +326,22 @@ static func _conquistar(cf: ConfigFile, r: Dictionary) -> Array:
 	return novas
 
 
+## Mapa vencido: a conquista vence_<id> (dados/v2_meta.json, com "mapa": id) cumprida no save. Wrappers finos sobre ela, porque a
+## frente de níveis não existe nesta base (v2/DESIGN.md, "Progressão"). `cf` opcional: sem ele, lê o save.
+static func mapa_vencido(id: String, cf: ConfigFile = null) -> bool:
+	if cf == null:
+		cf = _ler()
+	return cf != null and bool(cf.get_value("conquistas", "vence_" + id, false))
+
+
+## Marca o mapa como vencido no `cf` (quem chama grava). True se marcou agora; False se já estava vencido ou `cf` é nulo.
+static func marcar_mapa_vencido(id: String, cf: ConfigFile) -> bool:
+	if cf == null or mapa_vencido(id, cf):
+		return false
+	cf.set_value("conquistas", "vence_" + id, true)
+	return true
+
+
 ## Chamado no quadro durante a partida: conquistas de tempo e de combo que já foram cumpridas. Devolve os ids novos.
 static func checar_ao_vivo(tempo: float, maior_combo: int) -> Array:
 	var cf := _ler()

@@ -73,7 +73,7 @@ func _testes() -> void:
 	ok(_abertos() == ["floresta"], "personagem novo: só a Floresta aberta (%s)" % str(_abertos()))
 	ok(Progressao.aberto("estrutura", "estatuas"), "Estátuas abertas desde o começo")
 	ok(not Progressao.aberto("estrutura", "altar") and not Progressao.aberto("estrutura", "codice"), "Altar e Códice trancados no começo")
-	ok(Mapas.condicao(Mapas.buscar("laboratorio")).begins_with("Fechado"), "o texto do portal trancado começa com Fechado")
+	ok(Mapas.condicao(Mapas.buscar("laboratorio")).begins_with("Trancado"), "o texto do portal trancado começa com Trancado")
 	ok(Mapas.curto(Mapas.buscar("laboratorio")) == "Vença a Floresta", "linha do cadeado do Laboratório (%s)" % Mapas.curto(Mapas.buscar("laboratorio")))
 	ok(Mapas.curto(Mapas.buscar("floresta")) == "", "a Floresta não tem linha de cadeado")
 	ok(Progressao.curto("estrutura", "altar") == "Vença a Floresta", "linha do Altar (%s)" % Progressao.curto("estrutura", "altar"))
@@ -93,7 +93,7 @@ func _testes() -> void:
 	ok(str(por_id.laboratorio.trava) == "Vença a Floresta" and str(por_id.floresta.trava) == "", "o alvo do portal leva a linha do cadeado")
 	ok(str(por_id.altar.trava) != "" and str(por_id.estatuas.trava) == "", "o alvo da estrutura leva a linha do cadeado")
 	ok(not s.usar_portal("laboratorio"), "portal trancado não entra")
-	ok(s._aviso_lbl.text.begins_with("Fechado"), "Enter no portal trancado avisa (%s)" % s._aviso_lbl.text)
+	ok(s._aviso_lbl.text.begins_with("Trancado"), "Enter no portal trancado avisa (%s)" % s._aviso_lbl.text)
 	s.abrir_estrutura("altar")
 	ok(not s._painel.visible, "estrutura trancada não abre o painel")
 	ok(s._aviso_lbl.text.begins_with("Altar trancado"), "estrutura trancada avisa (%s)" % s._aviso_lbl.text)
@@ -181,6 +181,17 @@ func _testes() -> void:
 	slot.load(Meta.caminho_save)
 	ok(not bool(slot.get_value("progressao", "legado", true)), "slot novo não é tratado como antigo")
 	ok(_abertos() == ["floresta"], "slot novo depois de uma partida: só a Floresta")
+	# 9. mapa vencido: marcar_mapa_vencido marca a conquista vence_<mapa> no cf (quem grava é o chamador); a trava lê o mesmo save
+	_novo("Mapa")
+	ok(not Meta.mapa_vencido("floresta"), "mapa_vencido: personagem novo não tem mapa vencido")
+	var mv := Meta._ler()
+	ok(Meta.marcar_mapa_vencido("floresta", mv), "marcar_mapa_vencido marca a Floresta no cf")
+	ok(not Meta.marcar_mapa_vencido("floresta", mv), "marcar_mapa_vencido de novo não marca (já vencida)")
+	ok(not Meta.marcar_mapa_vencido("cidade", null), "marcar_mapa_vencido sem cf não faz nada")
+	ok(not Meta.mapa_vencido("floresta"), "sem gravar, o save segue sem a Floresta vencida")
+	ok(Meta._gravar(mv), "grava o save com a Floresta vencida")
+	ok(Meta.mapa_vencido("floresta") and not Meta.mapa_vencido("cidade"), "depois de gravar: a Floresta vencida e a Cidade não")
+	ok(_abertos() == ["floresta", "laboratorio"], "o mapa vencido pela função abre o Laboratório (%s)" % str(_abertos()))
 	fim = true
 
 

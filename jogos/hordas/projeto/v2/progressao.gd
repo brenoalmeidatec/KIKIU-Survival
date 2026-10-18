@@ -42,6 +42,9 @@ static func partidas(cf: ConfigFile = null) -> int:
 
 static func _cumpre(cond: Dictionary, cf: ConfigFile) -> bool:
 	if cond.has("conquista"):
+		var c := _conquista(str(cond.conquista))
+		if c.has("mapa"):  # vencer um mapa é a conquista vence_<mapa>: lida pela função de mapa vencido (meta.gd)
+			return Meta.mapa_vencido(str(c.mapa), cf)
 		return bool(cf.get_value("conquistas", str(cond.conquista), false))
 	if cond.has("partidas"):
 		return partidas(cf) >= int(cond.partidas)
