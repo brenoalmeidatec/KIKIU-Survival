@@ -1,7 +1,10 @@
 extends Node
-# Fotos do salão/santuário numa janela real (sem --headless): salao_<nome>.png (sala) e salao_<nome>_estatuas.png (painel das estátuas).
+# Fotos do salão/santuário numa janela real (sem --headless): salao_<nome>.png (sala) e salao_<nome>_<estrutura>.png (painéis das
+# ESTÁTUAS, do ALTAR e do CÓDICE). Com --compras=1, compra dois níveis de vida e cumpre a conquista de tempo antes, para as barras
+# terem o que mostrar.
 # Usa personagem e meta TEMPORÁRIOS (user://foto_salao_*). Só o viewport do jogo é salvo.
-# Roda: godot --path jogos/hordas/projeto res://testes/fotos/salao_fotos.tscn -- --fotos=<pasta> [--nome=x] [--almas=0] [--janela=1849x1040]
+# Roda: godot --path jogos/hordas/projeto res://testes/fotos/salao_fotos.tscn -- --fotos=<pasta> [--nome=x] [--almas=0] [--compras=1]
+# [--janela=1920x1080]
 const Personagens := preload("res://v2/personagens.gd")
 const Meta := preload("res://v2/meta.gd")
 const Salao := preload("res://v2/salao.tscn")
@@ -21,6 +24,10 @@ func _ready() -> void:
 			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://" + f))
 	Personagens.ativar(Personagens.criar("Breno"))
 	Meta.creditar(int(args.get("almas", 0)))
+	if str(args.get("compras", "0")) == "1":
+		Meta.comprar("vida")
+		Meta.comprar("vida")
+		Meta.registrar_partida({"tempo": 320.0})  # cumpre "Sobreviva 5 minutos" (libera o Treino de guerreiro)
 	if args.has("janela"):
 		var p := str(args.janela).split("x")
 		get_window().size = Vector2i(int(p[0]), int(p[1]))
@@ -34,9 +41,11 @@ func _ready() -> void:
 	await get_tree().create_timer(1.5).timeout
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(pasta.path_join("salao_%s.png" % nome))
-	s.abrir_estrutura("estatuas")
-	await get_tree().create_timer(0.8).timeout
-	await RenderingServer.frame_post_draw
-	get_viewport().get_texture().get_image().save_png(pasta.path_join("salao_%s_estatuas.png" % nome))
+	for id in ["estatuas", "altar", "codice"]:
+		s.abrir_estrutura(id)
+		await get_tree().create_timer(0.8).timeout
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(pasta.path_join("salao_%s_%s.png" % [nome, id]))
+		s._fechar_painel()
 	print("FOTO ok ", get_window().size)
 	get_tree().quit()
