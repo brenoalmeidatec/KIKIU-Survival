@@ -284,8 +284,10 @@ func _testes_versao() -> void:
 	await get_tree().process_frame
 	f.aviso_versao.pressed.emit()
 	ok(url_aberta == A.PREFIXO_PAGINA, "URL de outro site na resposta é trocada pela página de Releases do repositório")
-	ok(A.aceita_url("https://github.com/brenoalmeidatec/KIKIU-Releases/releases/tag/build-2026-10-15-bbbbbbb"), "aceita a página de Release do KIKIU-Releases")
-	ok(not A.aceita_url("https://malicioso.example/x") and not A.aceita_url("https://github.com/brenoalmeidatec/KIKIU-Releases-falso/releases"), "recusa páginas de outros sites ou de nomes parecidos")
+	var pagina_releases := "https://github.com/brenoalmeidatec/KIKIU-Releases/releases/tag/build-2026-10-15-bbbbbbb"
+	ok(A.aceita_url(pagina_releases), "aceita a página de Release do KIKIU-Releases")
+	ok(not A.aceita_url("https://malicioso.example/x"), "recusa página de outro site")
+	ok(not A.aceita_url("https://github.com/brenoalmeidatec/KIKIU-Releases-falso/releases"), "recusa nome parecido com o nosso")
 	f.queue_free()
 	await get_tree().process_frame
 
