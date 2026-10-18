@@ -51,6 +51,45 @@ const FICHAS := {
 		"sombra": 17.0,
 		"cor_fx": Color(0.62, 1.0, 0.72),
 	},
+	"guardiao_pedra":
+	{
+		"folha": "res://assets/v2/armas/guardiao_pedra_dir.png",
+		"quadro": Vector2(77, 93),
+		"pe": Vector2(35, 72),
+		"ciclo": [32.0, 39.7, 46.0, 38.6, 32.0],
+		# antecipa, braços sobem, quase no alto, pico (punhos acima da cabeça), PANCADA, punhos no chão, começa a se erguer, volta: 0,98 s, cabe no tique de 1,2 s
+		"tempos": [0.1, 0.1, 0.1, 0.14, 0.08, 0.18, 0.14, 0.14],
+		"impacto": 4,
+		# os punhos, no quadro da pancada, ficam 18 px à frente do centro do corpo (`alcance_pata_px` do .json); a área de 26 px de raio cobre em volta
+		"alcance": 26.0,
+		"frente": 16.0,
+		"raio": 26.0,
+		"empurra": 55.0,
+		"atordoa": 0.25,
+		"sombra": 21.0,
+		"cor_fx": Color(0.78, 0.76, 0.68),
+	},
+	"dragao_filhote":
+	{
+		"folha": "res://assets/v2/armas/dragao_filhote_dir.png",
+		"quadro": Vector2(47, 48),
+		"pe": Vector2(23, 25),
+		"ciclo": [0.0, 0.0, 0.0, 0.0, 0.0],  # voa: o ciclo é o bater de asas no relógio (ciclo_s), sem passada no chão
+		"ciclo_s": 0.5,
+		"altura": 20.0,
+		"balanco": 3.0,
+		# recua a cabeça, enche o peito, boca abrindo, pico, SOPRO, sopro acabando, fecha a boca, volta: 0,46 s, cabe no tique de 0,6 s
+		"tempos": [0.05, 0.05, 0.05, 0.07, 0.05, 0.07, 0.06, 0.06],
+		"impacto": 4,
+		# no quadro do sopro a ponta do focinho fica 12 px à frente do centro do corpo e o leque de fogo passa dela 14 px (`alcance_pata_px` do .json = 26)
+		"alcance": 22.0,
+		"frente": 18.0,
+		"raio": 16.0,
+		"empurra": 30.0,
+		"atordoa": 0.05,
+		"sombra": 11.0,
+		"cor_fx": Color(1.0, 0.55, 0.15),
+	},
 }
 
 static var _tex := {}
