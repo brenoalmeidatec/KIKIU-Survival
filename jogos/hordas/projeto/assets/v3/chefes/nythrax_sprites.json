@@ -1,0 +1,51 @@
+{
+  "tamanho_quadro": 128,
+  "direcoes": [
+    "S",
+    "SE",
+    "L",
+    "NE",
+    "N",
+    "NO",
+    "O",
+    "SO"
+  ],
+  "clipes": {
+    "idle": {
+      "quadros": 24,
+      "fps": 12
+    },
+    "walk": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "run": {
+      "quadros": 17,
+      "fps": 12
+    },
+    "investida": {
+      "quadros": 21,
+      "fps": 12
+    },
+    "nevoa": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "golpe_arco": {
+      "quadros": 21,
+      "fps": 12
+    },
+    "ilusao": {
+      "quadros": 21,
+      "fps": 12
+    },
+    "hit": {
+      "quadros": 7,
+      "fps": 12
+    },
+    "death": {
+      "quadros": 25,
+      "fps": 12
+    }
+  }
+}
