@@ -115,6 +115,19 @@ func _ready() -> void:
 	var carta: Dictionary = cs.montar_carta(d, 0)
 	ok(str(carta.get("id", "")) == ID and str(carta.get("nome", "")) != "", "a carta monta com nome")
 
+	# 0. brinde temporário: toda invocação e torre das cartas dura de 25 a 60 s (nada fica indefinidamente) e tem recarga depois que some
+	var dj: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://dados/v2_cartas.json"))
+	var temporarios := 0
+	var lista: Array = (dj.golpes as Array) + (dj.evolucoes as Array)
+	for g in lista:
+		if str(g.get("tipo", "")) not in ["aliado", "torre"]:
+			continue
+		var b: Dictionary = g.get("base", g.get("arma", {}))
+		temporarios += 1
+		ok(float(b.duracao) >= 25.0 and float(b.duracao) <= 60.0, "%s: duração de 25 a 60 s (%s)" % [g.id, b.duracao])
+		ok(float(b.recarga) >= 15.0, "%s: recarga de 15 s ou mais, contada depois que a leva some (%s)" % [g.id, b.recarga])
+	ok(temporarios >= 16, "todas as invocações e torres foram conferidas (%d)" % temporarios)
+
 	# 1. a torre cai depois da recarga, atira e machuca
 	zerar()
 	var ms: Array = [monstro_a(150, -30), monstro_a(150, 0), monstro_a(150, 30)]
@@ -133,6 +146,7 @@ func _ready() -> void:
 	ok(int(armas.acertos.get("projetil", 0)) > 0, "em 3 s os virotes acertaram (acertos %d)" % int(armas.acertos.get("projetil", 0)))
 	ok(vida_perdida(ms) > 0.0, "os monstros perderam vida (%.0f)" % vida_perdida(ms))
 	ok(int(torre.est) == 1, "a torre armou (fase %d)" % int(torre.est))
+	ok(float(armas.ativas[ID].get("ate", 0.0)) - float(armas.novas._relogio) > 20.0, "a recarga fica parada enquanto a torre está de pé")
 
 	# 2. a torre não anda com o herói e continua atirando mesmo com ele longe
 	var acertos_antes := int(armas.acertos.get("projetil", 0))
@@ -147,7 +161,7 @@ func _ready() -> void:
 
 	# 3. depois da duração a torre é liberada; o pool e a camada de desenho não crescem
 	w.heroi.pos -= Vector2(500, 0)
-	var q2 := ate(func(): return torres_vivas().is_empty(), 700)
+	var q2 := ate(func(): return torres_vivas().is_empty(), 2400)
 	ok(q2 >= 0, "depois da duração a torre sai do pool (ainda vivas: %d)" % torres_vivas().size())
 	ok(novas.itens.size() == Novas.MAX, "o pool continua com %d slots" % Novas.MAX)
 	ok(armas.no_brilho.get_child_count() == 0 and armas.no_corpo.get_child_count() == 0, "nenhum nó novo nas camadas de desenho")
@@ -165,6 +179,7 @@ func _ready() -> void:
 	pegar(ID)
 	ok(int(armas.ativas[ID].st.quantidade) == 2, "nível 4: 2 torres")
 	armas.ativas[ID].t = 0.0
+	armas.ativas[ID].ate = 0.0
 	var q4 := ate(func(): return torres_vivas().size() == 2, 120)
 	ok(q4 >= 0, "no nível 4 caem 2 torres (%d)" % torres_vivas().size())
 	pegar(ID)

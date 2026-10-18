@@ -573,6 +573,19 @@ static func altura(it: Dictionary, f: Dictionary) -> float:
 	return roundf(float(f.altura) + sin(float(it.fase) * 1.3) * float(f.get("balanco", 2.0)))
 
 
+## Px do pé até o alto do corpo (onde a barrinha de tempo de vida do aliado fica) e o raio do anel verde dele no chão.
+static func topo(it: Dictionary) -> float:
+	var f := ficha_de(it)
+	if f.is_empty():
+		return 30.0
+	return float((f.pe as Vector2).y) * 0.62 * float(f.get("esc", 1.0)) + altura(it, f)  # 0,62: a folha tem folga em cima do desenho
+
+
+static func raio_marca(it: Dictionary) -> float:
+	var f := ficha_de(it)
+	return 14.0 if f.is_empty() else maxf(10.0, float(f.sombra) * float(f.get("esc", 1.0)) + 1.0)
+
+
 ## Quanto do bicho está "aceso" (0 a 1): sobe da névoa ao nascer e apaga no fim da vida.
 static func presenca(it: Dictionary) -> float:
 	if int(it.e) == SURGINDO:

@@ -189,6 +189,10 @@ static func sprite_de(id: String) -> Dictionary:
 
 ## Conta a recarga do golpe `a` e, quando ela zera, dispara. Sem inimigo por perto, espera um pouco e não gasta a recarga.
 func golpe(a: Dictionary, h, dt: float, vel_a: float, perto: Array) -> void:
+	# Brinde temporário (aliado e torre): a recarga só começa a contar quando o último da leva já sumiu; sem isso a leva nova nasceria antes
+	# da velha acabar e o aliado pareceria permanente.
+	if _relogio < float(a.get("ate", 0.0)):
+		return
 	a.t = float(a.t) - dt
 	if float(a.t) > 0.0:
 		return
@@ -600,6 +604,7 @@ func aquecer_um() -> void:
 
 func _aliados(a: Dictionary, h) -> void:
 	var st: Dictionary = a.st
+	a["ate"] = _relogio + float(st.duracao)
 	for k in int(st.quantidade):
 		var deslocado: Vector2 = h.pos + Vector2(randf_range(-30.0, 30.0), randf_range(-20.0, 20.0))
 		var it := _novo("aliado", a, deslocado, float(st.duracao))
@@ -657,6 +662,7 @@ func _torres(a: Dictionary, h, perto: Array) -> void:
 	for x in itens:
 		if float(x.vida) > DESMONTA and str(x.k) == "torre" and is_same(x.a, a):
 			x.vida = DESMONTA  # a velha desmonta (o `_mover_torre` solta as lascas)
+	a["ate"] = _relogio + float(st.duracao) + DESMONTA
 	var n := int(st.quantidade)
 	var lado := para.orthogonal()
 	for k in n:
@@ -1252,12 +1258,16 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 		var p: Vector2 = (it.p as Vector2).round()
 		if bool(it.g):
 			Golem.desenhar(ci, it, p)
+			_marca_amigo(ci, it, p, Golem.topo(it), 24.0 * Golem.escala(str(it.a.id)))
 			continue
 		if bool(it.an):
 			Andante.desenhar(ci, it, p)
+			_marca_amigo(ci, it, p, Andante.topo(it), Andante.raio_marca(it))
 			continue
 		if str(it.k) == "torre":
 			_desenhar_torre(ci, it, p)
+			if float(it.vida) > DESMONTA:  # desmontando já não é mais "tempo restante"
+				_marca_amigo(ci, it, p, -TORRE_TOPO + 12.0, 14.0, float(it.vida) - DESMONTA)
 			continue
 		if str(it.k) == "granada":
 			_desenhar_granada(ci, it)
@@ -1274,7 +1284,27 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 			"aliado":
 				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
 				_sprite(ci, sp, sobe, 0.0, Color(1, 1, 1, clampf(float(it.vida) / 0.5, 0.0, 1.0)))
+				_marca_amigo(ci, it, p, 30.0, 12.0)
 	_desenhar_partes(ci)
+
+
+## Como se reconhece um aliado temporário: um anel verde no chão (inimigo e perigo são vermelhos, então verde nunca é ameaça) e uma barrinha
+## verde sobre a cabeça que esvazia com o tempo que ainda lhe resta. `topo` = px do pé até o alto do corpo, `raio` = raio do anel,
+## `resta` = segundos que faltam (padrão: `it.vida`). Pequena de propósito: 18 px de largura, 3 de altura.
+func _marca_amigo(ci: CanvasItem, it: Dictionary, p: Vector2, topo: float, raio: float, resta: float = -1.0) -> void:
+	var st: Dictionary = it.a.st
+	var total := float(st.duracao)
+	var falta := float(it.vida) if resta < 0.0 else resta
+	var frac := clampf(falta / maxf(total, 0.1), 0.0, 1.0)
+	var pisca := 1.0 if (falta > 5.0 or fmod(_relogio, 0.4) < 0.25) else 0.35  # nos últimos 5 s a marca pisca: vai sumir
+	ci.draw_set_transform(p, 0.0, Vector2(1.0, 0.62))
+	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, Color(0.1, 0.35, 0.15, 0.45 * pisca), 2.5)
+	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, Color(0.45, 1.0, 0.5, 0.7 * pisca), 1.0)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var o := (p + Vector2(-9.0, -topo - 6.0)).round()
+	ci.draw_rect(Rect2(o + Vector2(-1, -1), Vector2(20, 5)), Color(0.04, 0.1, 0.05, 0.85 * pisca))
+	ci.draw_rect(Rect2(o, Vector2(18, 3)), Color(0.12, 0.25, 0.14, 0.9 * pisca))
+	ci.draw_rect(Rect2(o, Vector2(maxf(1.0, roundf(18.0 * frac)), 3)), Color(0.4, 1.0, 0.45, pisca))
 
 
 ## O sprite centrado em `c`, girado `ang` (o projétil aponta para a direção do voo).
