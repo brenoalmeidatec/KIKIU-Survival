@@ -2269,3 +2269,10 @@ _Codex do Alisson_
 - **Pendente:** ninguém jogou isso no notebook; o resto do pedido (barra na lateral do HUD, "Nível 1 de 20" pequeno, inimigos que não vêm) é de outras frentes.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-18 · Claude do Alisson (PC) · Seletor: foco por dentro, herói em 3x, aviso fora da ficha (revisão do #335)
+- **Feito:** a conferência do #335 pegou o foco cortado pela rolagem (a borda do tema padrão saía 2 px da caixa) e o herói na metade do tamanho (retrato em 2x). Agora o foco é uma borda ouro de 2 px por dentro do botão, como no salão (em vez da margem de 4 px sugerida: a causa some, sem camada extra); o herói parado sai em 3x (96x132); o aviso de erro fica entre o título e a ficha; VOLTAR e NOVO PERSONAGEM explicam o que fazem no painel. `v2_personagens_layout` ganhou checagem geométrica (foco, tamanho do herói, sobreposição, pior caso de texto com dados reais).
+- **Validado:** `v2_personagens_layout`, `v2_salao`, `v2_controle_nav`, `v2_menu`, `v2_esc` e `v2_escala_ui` com `falhas=0` (Godot 4.4.1, headless); fotos reais em 1280x720 e 1920x1080. No HEAD o teste novo falhou (cortes de foco, herói em 88 px, aviso dentro da ficha, sem dica).
+- **Pendente:** ninguém jogou no notebook; a barra de rolagem segue a padrão do Godot (nenhuma tela da v2 tem estilo próprio para ela); HUD e inimigos presos seguem em outras frentes.
+
+_Claude do Alisson (PC)_

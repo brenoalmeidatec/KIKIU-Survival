@@ -25,8 +25,17 @@ const FICHA_L := 484
 const FICHA_EIXO := 682  # centro da ficha: retrato, nome e linhas
 const TOPO := 100
 const FUNDO_Y := 490  # os controles terminam 8 px acima do início do rodapé (498)
-const RETRATO_Y := 168
-const RETRATO_ALT := 104
+const PEDRA := 5  # espessura da moldura de pedra: o conteúdo da ficha fica dentro dela (y 105 a 485)
+# A ficha empilha, de cima para baixo: nome (61 = linha do Jersey 56, que mede 60 a 60,8 conforme a escala da janela), retrato, linhas
+# (2 de 32 px) e detalhe (até 6 de 16 px, o pior caso). Soma 377 px, dentro do miolo da pedra (380).
+const NOME_Y := TOPO + PEDRA
+const NOME_ALT := 61
+const RETRATO_Y := NOME_Y + NOME_ALT
+const RETRATO_ALT := 132  # o herói parado (32x44) sai em 3x (96x132); o rosto (52x52) segue em 2x
+const INFO_Y := RETRATO_Y + RETRATO_ALT
+const INFO_ALT := 70
+const DETALHE_Y := INFO_Y + INFO_ALT
+const DETALHE_ALT := 114
 const Paleta := preload("res://v2/paleta.gd")
 const COR_OURO := Color(1.0, 0.86, 0.42)
 const COR_TEXTO := Color(0.92, 0.9, 0.96)
@@ -103,17 +112,18 @@ func _montar() -> void:
 	_retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_retrato)
-	_nome = _rotulo("", Dados.fonte_titulo, 56, COR_OURO, Rect2(FICHA_X + 16, TOPO + 8, FICHA_L - 32, 58), HORIZONTAL_ALIGNMENT_CENTER)
+	_nome = _rotulo("", Dados.fonte_titulo, 56, COR_OURO, Rect2(FICHA_X + 16, NOME_Y, FICHA_L - 32, NOME_ALT), HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_nome)
-	_info = _rotulo("", Dados.fonte_texto, 32, COR_TEXTO, Rect2(FICHA_X + 16, 272, FICHA_L - 32, 70), HORIZONTAL_ALIGNMENT_CENTER)
+	_info = _rotulo("", Dados.fonte_texto, 32, COR_TEXTO, Rect2(FICHA_X + 16, INFO_Y, FICHA_L - 32, INFO_ALT), HORIZONTAL_ALIGNMENT_CENTER)
 	_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_info.clip_text = true
 	add_child(_info)
-	_detalhe = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(FICHA_X + 16, 344, FICHA_L - 32, 116), HORIZONTAL_ALIGNMENT_CENTER)
+	_detalhe = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(FICHA_X + 16, DETALHE_Y, FICHA_L - 32, DETALHE_ALT), HORIZONTAL_ALIGNMENT_CENTER)
 	_detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detalhe.clip_text = true
 	add_child(_detalhe)
-	_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(FICHA_X + 16, FUNDO_Y - 28, FICHA_L - 32, 20), HORIZONTAL_ALIGNMENT_CENTER)
+	# entre o título e a ficha (y 80 a 100): dentro da ficha, o detalhe de 6 linhas (até y 481) ocuparia o lugar do aviso
+	_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(0, 80, LARG, 20), HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_aviso)
 	var faixa := ColorRect.new()
 	faixa.color = Color(0.01, 0.02, 0.035, 0.7)
@@ -151,6 +161,17 @@ func _estilo_botao(b: Button) -> void:
 	b.add_theme_color_override("font_hover_color", COR_FOCO)
 	b.add_theme_color_override("font_focus_color", COR_FOCO)
 	b.mouse_entered.connect(b.grab_focus)
+	b.add_theme_stylebox_override("focus", _foco())
+
+
+## Foco: borda ouro de 2 px por DENTRO da caixa do botão, como o do salão. O tema padrão desenha a borda 2 px para fora, e a
+## rolagem da lista cortava essa parte (topo e laterais do primeiro botão, base do último).
+func _foco() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.draw_center = false
+	s.set_border_width_all(2)
+	s.border_color = Paleta.OURO
+	return s
 
 
 ## A lista da esquerda: os personagens (modo "personagens") ou os nomes livres (modo "nomes").
@@ -162,16 +183,16 @@ func _montar_lista() -> void:
 	if _modo == "nomes":
 		for n in Personagens.nomes_livres():
 			_novo_botao(str(n.nome), _criar.bind(n), _mostrar_nome.bind(n))
-		_novo_botao("VOLTAR", _voltar_lista, _mostrar_vazio)
+		_novo_botao("VOLTAR", _voltar_lista, _mostrar_texto.bind("Volta à lista de personagens."))
 	else:
 		for id in Personagens.lista():
 			_novo_botao(Personagens.nome(id), _escolher.bind(id), _mostrar_personagem.bind(id))
 		if not Personagens.nomes_livres().is_empty():
-			_novo_botao("NOVO PERSONAGEM", _abrir_nomes, _mostrar_vazio)
+			_novo_botao("NOVO PERSONAGEM", _abrir_nomes, _mostrar_texto.bind("Cria um personagem com um dos nomes livres."))
 	if _lista.get_child_count() > 0:
 		_lista.get_child(0).grab_focus()
 	else:
-		_mostrar_vazio()
+		_mostrar_texto()
 
 
 func _novo_botao(txt: String, acao: Callable, ao_focar: Callable) -> void:
@@ -213,10 +234,11 @@ func _mostrar_nome(n: Dictionary) -> void:
 	_detalhe.text = "Santuário novo: sem almas e sem melhorias."
 
 
-func _mostrar_vazio() -> void:
+## Sem personagem na ficha: a ficha fica vazia; só o texto de ajuda do botão com o foco aparece.
+func _mostrar_texto(txt := "") -> void:
 	_nome.text = ""
 	_info.text = ""
-	_detalhe.text = ""
+	_detalhe.text = txt
 	_definir_retrato("", false)
 
 
