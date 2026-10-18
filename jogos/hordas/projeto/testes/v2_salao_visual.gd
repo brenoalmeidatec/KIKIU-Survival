@@ -45,6 +45,8 @@ func _ready() -> void:
 	await foto("01_salao")
 	ok(s._nome_lbl.text == "Matheus", "nome completo preservado")
 	assets()
+	camadas()
+	saldo_no_painel()
 	for filho in s.get_children():
 		if filho is Button:
 			var largura: float = (
@@ -145,6 +147,34 @@ func geometria() -> void:
 	ok(s._p_rolagem.follow_focus, "rolagem acompanha foco do controle")
 	for botao in s._p_lista.get_children():
 		ok(botao.size.x <= s._p_rolagem.size.x, "lista sem overflow horizontal")
+
+
+# Regressão do #320 ("santuário vazio"): a sala é desenhada pelo salao_vivo nas CanvasLayers -2 e -1, abaixo da camada padrão; um fundo
+# opaco na camada padrão tampa tudo. O chão das bordas tem de ficar numa camada abaixo da sala.
+func camadas() -> void:
+	ok(s._camadas.size() == 3, "tres camadas da sala (fundo, cena, brilho)")
+	ok(s._camadas[0].layer < s._camadas[1].layer and s._camadas[0].layer < s._camadas[2].layer, "chao das bordas abaixo da sala")
+	for filho in s.get_children():
+		if filho is ColorRect and filho.visible and filho.color.a > 0.95:
+			ok(filho.size.x * filho.size.y < 960.0 * 540.0 * 0.5, "nenhum fundo opaco na camada da interface tapa a sala: " + str(filho.name))
+	for c in s._camadas:
+		ok(c.offset == s.EscalaUi.desloc_atual, "camada da sala segue o bloco")
+
+
+# Pedido do Alisson (18/10): o saldo aparece no próprio painel e o COMPRAR sem almas parece desligado.
+func saldo_no_painel() -> void:
+	s.abrir_estrutura("estatuas")
+	s._mostrar_item(0)
+	ok(s._p_saldo.text == "ALMAS %d" % Meta.saldo(), "saldo no cabecalho do painel")
+	ok(Rect2(36, 26, 888, 70).encloses(s._p_saldo.get_rect()), "saldo no cabecalho, ao lado do VOLTAR")
+	ok(Meta.saldo() == 0 and s._p_comprar.disabled and s._p_comprar.text == "SEM ALMAS", "sem almas: botao desligado e diz por que")
+	ok(s._p_comprar.focus_mode == Control.FOCUS_NONE, "desligado nao recebe o foco dourado")
+	Meta.creditar(1000)
+	s._mostrar_item(0)
+	ok(not s._p_comprar.disabled and s._p_comprar.text == "COMPRAR" and s._p_comprar.focus_mode == Control.FOCUS_ALL, "com almas: COMPRAR ativo")
+	ok(s._p_saldo.text == "ALMAS 1000", "saldo do painel atualiza")
+	Meta.creditar(-1000)
+	s._fechar_painel()
 
 
 func assets() -> void:
