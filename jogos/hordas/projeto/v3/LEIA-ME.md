@@ -5,7 +5,10 @@ Pasta nova, **fora da v2**: nada aqui é carregado pelo jogo atual. A cena de te
 - `chefes/chefe_base.gd`: lógica compartilhada de chefe (vida, fase, estados andar, aviso, impacto, recupera, transição e morte). Só dados e sinais, sem nó.
 - `chefes/vornak.gd`: dados do Vornak (vida, ataques, fase 2 abaixo de 40%). Cada ataque aponta o clipe da folha.
 - `chefes/vornak_visual.gd`: desenho do Vornak a partir das folhas de 8 direções em `assets/v3/chefes/`.
-- `chefes/cena_vornak.gd` + `testes/v3_vornak_cena.tscn`: cena de teste. Tecla D = 100 de dano, R = reinicia.
+- `chefes/nythrax.gd`: lobo (investida, névoa, golpe em arco, ilusões sem dano, fase de caça abaixo de 35%).
+- `chefes/maltherion.gd`: chefão (três fases, raízes gigantes, invocações limitadas, Coração da Floresta com janela de contra-ataque). Arena viva: ver `docs/v3/chefes/ARENA_VIVA_PARA_ALISSON.md`.
+- `chefes/cena_chefe.gd` + `testes/v3_chefes_cena.tscn`: cena de teste. 1 Vornak, 2 Nythrax, 3 Maltherion; D = 100 de dano, R = reinicia.
+- `chefes/cena_vornak.gd` + `testes/v3_vornak_cena.tscn`: cena só do Vornak (da primeira entrega).
 
 ## Rodar
 
