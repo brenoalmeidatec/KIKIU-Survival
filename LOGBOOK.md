@@ -2228,3 +2228,13 @@ _Claude do Alisson (PC)_
 - **Próximo sugerido:** (1) jogar e ajustar as invocações; (2) picos de quadro com a máquina parada; (3) perfis "humanos" no robô antes de calibrar o equilíbrio (#137).
 
 _Claude do Alisson (PC)_
+
+## 2026-10-18 · Claude do Alisson (PC) · Picos de quadro com a máquina parada (#327)
+- **Medido (relatório completo em `docs/PERF_2026-10-18.md`):** novo `--picos=MS` (`v2/picos.gd`). Ele imprime cada quadro lento com as partes do perfil que pesaram nele e os recursos e texturas que nasceram, e no fim um resumo com p50/p99/p999/máximo. Usei o robô `--playtest --heroi=hazaki --mapa=floresta --semente=1` (é a mesma partida em todas as rodadas: 41.286 quadros) e o pior caso novo `--build=invocacoes` (todas as invocações no nível 5 mais as 5 fusões aliadas).
+- **Os 400 a 850 ms da matriz de 16/10 eram a máquina:** com ela parada, o pior quadro de script da `main` ficou entre 15 e 41 ms. Os quadros de centenas de ms só apareceram com rodadas sobrepostas ou na 1ª partida logo depois de reimportar (cache frio).
+- **Corrigido:** (1) `cartas.sortear` calculava a sinergia por carta, ~4 ms em toda subida de nível; agora faz uma passada só e custa ~0,5 ms. (2) As músicas do chefe e do resultado eram lidas (~7 ms cada) no quadro do mini-chefe e no da vitória; agora carregam no início da partida. (3) As folhas das invocações carregam uma por quadro na tela de cartas (escolha e baú), com o mundo parado, e não mais no quadro do combate em que o bicho nasce. O load custa 1,5 a 2,7 ms e a versão cinza das fusões, mais 2,5 a 5,4 ms.
+- **Antes e depois (headless):** script p999 de 6,5 a 12,9 ms para 4,1 a 4,2 ms. Quadros de escolha acima de 12 ms: de 5 a 27 para 0. Mini-chefe: de 8 a 27 ms para 1,3 ms. **Com janela neste PC a diferença não aparece**: o desenho domina e o render varia de uma rodada para outra.
+- **Pendente / honesto:** nada foi medido no i5-3470. O pior caso das invocações dá 112 fps aqui (o desenho das fusões custa 2,1 ms por quadro, com 1107 chamadas de desenho) e não mudou neste PR. Também ficam: o 1º quadro desenhado da partida (47 a 83 ms), os 3 a 9 ms do `mostrar_escolha` e um quadro de 209 ms, sem causa provada, no instante da linha do minuto 3 do robô (o perfil agora mostra o `roteiro` à parte). O `gdtoolkit` foi instalado neste PC: `python -m gdtoolkit.formatter -l 160 --check ...`.
+- **Próximo sugerido:** (1) o Breno joga a Release no i5 com as fusões e manda o F3 numa subida de nível e no mini-chefe; (2) cortar o custo do desenho das fusões aliadas; (3) perfis "humanos" no robô antes de calibrar o equilíbrio (#137).
+
+_Claude do Alisson (PC)_

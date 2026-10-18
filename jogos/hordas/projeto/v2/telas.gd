@@ -361,7 +361,20 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	if espera_escolha > 0.0:
 		_iniciar_trava()
 	_texto_build()
+	_aquecer_invocacoes(cartas)
 	combate.audio.tocar("carta", 1.0 + 0.12 * float(_rar_max(cartas)), 0.0, 0.0)
+
+
+## As folhas das invocações que podem nascer quando a tela fechar: as que o herói já tem (no baú as cartas e a fusão já entraram), as das
+## cartas na tela e a da fusão que cada carta ajudaria a fechar. Carregam uma por quadro em atualizar(), com o mundo parado.
+func _aquecer_invocacoes(cartas: Array) -> void:
+	var novas = combate.armas.novas
+	for id in combate.armas.ativas:
+		novas.pedir_aquecer(str(id))
+	for c in cartas:
+		var id := str(c.get("id", ""))
+		novas.pedir_aquecer(id)
+		novas.pedir_aquecer(combate.cartas.fusao_de(id))
 
 
 func _rar_max(cartas: Array) -> int:
@@ -464,6 +477,7 @@ func mostrar_bau(cartas: Array) -> void:
 	bau_pronto = false
 	espera_bau = float(combate.cartas.cfg.bau.bau_espera_s)
 	_bau_cartas = cartas
+	_aquecer_invocacoes(cartas)
 	_bau_i = 0
 	_bau_t = 0.0
 	_bau_fase = 0
@@ -595,6 +609,8 @@ func atualizar(dt: float) -> void:
 		_atualizar_escolha(dt)
 	if bau_aberto:
 		_atualizar_bau(dt)
+	if escolha_aberta or bau_aberto:
+		combate.armas.novas.aquecer_um()
 	if depuracao:
 		_dep_t -= dt
 		if _dep_t <= 0.0:

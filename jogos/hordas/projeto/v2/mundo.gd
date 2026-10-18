@@ -10,6 +10,7 @@ extends Node
 ##   --perfil=baixo|medio|alto (vale o perfil de gráficos inteiro: sombras, partículas e orçamento de luzes; sem gravar) --luzes=N (orçamento de luzes)
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
+##   --picos=MS (imprime cada quadro mais lento que MS ms, com as partes que pesaram nele, e um resumo no fim: v2/picos.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
 ## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
@@ -144,6 +145,7 @@ var _us_total := 0
 var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 var perfil := {}  # medição (--medir): microssegundos acumulados por parte do quadro
 var _ms_carga := 0.0
+var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 
 
 func _ready() -> void:
@@ -162,6 +164,8 @@ func _ready() -> void:
 				DirAccess.remove_absolute(ProjectSettings.globalize_path(orfao))
 		seed(int(args.get("semente", 1)))
 	Entrada.garantir()
+	if args.has("picos") and not modo_teste:
+		picos = preload("res://v2/picos.gd").new(float(args.picos))
 	if args.has("tamanho_ui") and not modo_teste:  # fotos: vale o tamanho da interface (auto, pequeno, medio, grande) sem gravar nas opções
 		Config.temporario("tamanho_ui", str(args.tamanho_ui))
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
@@ -214,6 +218,9 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if picos != null:
+		picos.resumo()
+		picos = null
 	if combate != null:
 		combate.liberar()
 		combate = null
@@ -795,11 +802,17 @@ func _input(e: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	if picos != null:
+		picos.quadro(self)
 	var t0 := Time.get_ticks_usec()
 	avancar(minf(delta, 0.1))
 	if roteiro != null:
+		var r0 := Time.get_ticks_usec()
 		roteiro.atualizar(delta)
+		_perfil("roteiro", Time.get_ticks_usec() - r0)  # o robô e os roteiros de teste (não é o jogo)
 	_us_total += Time.get_ticks_usec() - t0
+	if picos != null:
+		picos.us_script += Time.get_ticks_usec() - t0
 	if _rotulo != null and _rotulo.visible:
 		_rotulo_t += delta
 		if _rotulo_t > 0.3:

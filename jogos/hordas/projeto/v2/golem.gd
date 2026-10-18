@@ -61,6 +61,11 @@ static func tex() -> Texture2D:
 	return _tex
 
 
+## A folha já foi lida (ou tentada)? armas_novas.pedir_aquecer pula o golem quando sim.
+static func lida() -> bool:
+	return _lida
+
+
 static func eh_golem(id: String) -> bool:
 	return id == "golem_barro" or id == COLOSSO
 

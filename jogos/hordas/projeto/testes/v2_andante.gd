@@ -11,6 +11,7 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Andante := preload("res://v2/andante.gd")
 const Heroi := preload("res://v2/heroi.gd")
+const Golem := preload("res://v2/golem.gd")
 const PASSO := 1.0 / 60.0
 ## Quantas passadas de verdade a folha traz por ciclo de andar (o padrão é 1: o ciclo = a passada); o galope da raposa leva 2 passadas em 8 quadros.
 const PASSADAS_POR_CICLO := {"espirito_raposa": 2}
@@ -440,12 +441,35 @@ func juntar(recortes: Array, colunas: int) -> Image:
 	return folha
 
 
+## A tela de cartas aquece as folhas antes de o bicho nascer (armas_novas.pedir_aquecer / aquecer_um): a fusão cinza pede a base e a versão
+## cinza de cada base, um item por chamada, e depois de esvaziar a fila nada mais fica pendente (o nascimento não lê arquivo).
+func checar_aquecer() -> void:
+	var novas = w.combate.armas.novas
+	var pend: Array = Andante.folhas_pendentes("cacada_espiritual")
+	ok(pend.has("lobo_espirito") and pend.has("lobo_espirito#gris") and pend.has("espirito_raposa#gris"), "a caçada pede as bases e as cinzas: %s" % str(pend))
+	ok(not pend.has(str(Andante.FICHAS.lobo_espirito.perfil_corre.folha)), "a fusão cinza não usa a corrida de perfil do lobo")
+	ok(Andante.folhas_pendentes("lobo_espirito").has(str(Andante.FICHAS.lobo_espirito.perfil_corre.folha)), "o lobo pede a corrida de perfil")
+	for id in ["cacada_espiritual", "lobo_espirito", "golem_barro", "laminas", ""]:
+		novas.pedir_aquecer(id)
+	var n_fila: int = novas.fila_aquecer.size()
+	novas.aquecer_um()
+	ok(novas.fila_aquecer.size() == n_fila - 1, "aquecer_um carrega um item por vez")
+	for i in 20:
+		novas.aquecer_um()
+	ok(novas.fila_aquecer.is_empty(), "a fila esvazia")
+	ok(Andante.folhas_pendentes("cacada_espiritual").is_empty() and Andante.folhas_pendentes("lobo_espirito").is_empty(), "nada pendente depois")
+	ok(Golem.lida(), "o golem também foi lido")
+	novas.pedir_aquecer("cacada_espiritual")
+	ok(novas.fila_aquecer.is_empty(), "o que já está carregado não volta para a fila")
+
+
 func _ready() -> void:
 	w = Mundo.instantiate()
 	w.modo_teste = true
 	add_child(w)
 	w.set_process(false)
 	w.combate.audio.mudo = true
+	checar_aquecer()  # antes de tudo: as outras checagens enchem o cache das folhas
 	checar_funcoes()
 	for id in Andante.FICHAS:
 		if Andante.eh_alias(id):

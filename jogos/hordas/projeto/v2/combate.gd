@@ -242,7 +242,9 @@ func _fim_camera_lenta() -> void:
 func atualizar(dt: float) -> void:
 	_q += 1
 	var h = mundo.heroi
+	var m0 := Time.get_ticks_usec()
 	processar_mortes()  # fogo e golpes do quadro anterior
+	mundo._perfil("c_mortes", Time.get_ticks_usec() - m0)
 	if mundo.combo > 0:
 		combo_t -= dt
 		if combo_t <= 0.0:
@@ -255,16 +257,23 @@ func atualizar(dt: float) -> void:
 		_contato(h)
 		mundo._perfil("c_separar", s1 - s0)
 		mundo._perfil("c_contato", Time.get_ticks_usec() - s1)
+		var d0 := Time.get_ticks_usec()
 		diretor.atualizar(dt)
 		var t0 := Time.get_ticks_usec()
 		armas.atualizar(dt)
-		us_armas += Time.get_ticks_usec() - t0
+		var t1 := Time.get_ticks_usec()
+		us_armas += t1 - t0
 		adagas.atualizar(dt)
 		elites.atualizar(dt)
 		chefes.atualizar(dt)
+		var t2 := Time.get_ticks_usec()
 		avisos.atualizar(dt)
 		ruptura.atualizar(dt)
 		baus.atualizar(dt)
+		mundo._perfil("c_diretor", t0 - d0)
+		mundo._perfil("c_armas", t1 - t0)
+		mundo._perfil("c_elites_chefes", t2 - t1)
+		mundo._perfil("c_avisos_baus", Time.get_ticks_usec() - t2)
 	var o0 := Time.get_ticks_usec()
 	orbes.atualizar(dt, h.pos + Vector2(0, -8), h.alcance_ima())
 	mundo._perfil("c_orbes", Time.get_ticks_usec() - o0)

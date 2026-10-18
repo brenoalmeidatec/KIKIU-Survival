@@ -397,7 +397,13 @@ func _ready() -> void:
 
 	# 5. evoluções
 	zerar()
+	ok(not cs._pesos_sinergia().has("laminas"), "sem nenhuma peça, a outra peça não pesa mais no sorteio")
 	pegar("aura_fogo", 0)
+	var sin: Dictionary = cs._pesos_sinergia()
+	ok(
+		float(sin.get("laminas", 1.0)) == float(cs.cfg.escolha.peso_sinergia) and not sin.has("aura_fogo"),
+		"com a aura, as lâminas (a peça que falta) pesam peso_sinergia no sorteio e a aura não"
+	)
 	pegar("aura_fogo", 0)
 	pegar("laminas", 0)
 	pegar("laminas", 0)

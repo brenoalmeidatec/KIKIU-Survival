@@ -362,6 +362,33 @@ static func tex_base(base: String) -> Texture2D:
 	return _tex[base]
 
 
+## O que ainda falta carregar para a carta (ou fusão) `id` nascer sem ler arquivo no meio do combate, um item por folha, na ordem:
+## a base ("espirito_urso"), a versão cinza das fusões com `gris` ("espirito_raposa#gris") e a corrida de perfil (o caminho do png).
+## Cada item custa de 1,5 a 5 ms aqui (Ryzen 5600X); a tela de cartas aquece um por quadro (armas_novas.aquecer_um).
+static func folhas_pendentes(id: String) -> Array:
+	var r: Array = []
+	var gris := eh_alias(id) and bool(FICHAS[id].get("gris", false))
+	for b in bases(id):
+		if not _tex.has(b):
+			r.append(b)
+		if gris and not _tex.has(b + "#gris"):
+			r.append(b + "#gris")
+		var pc = FICHAS[b].get("perfil_corre")
+		if not gris and pc is Dictionary and not _tex.has(str(pc.folha)):
+			r.append(str(pc.folha))
+	return r
+
+
+## Carrega um item de `folhas_pendentes` (fica no cache de sempre: tex_base, tex_gris e a corrida de perfil).
+static func aquecer(item: String) -> void:
+	if item.ends_with("#gris"):
+		tex_gris(item.trim_suffix("#gris"))
+	elif FICHAS.has(item):
+		tex_base(item)
+	elif not _tex.has(item):
+		_tex[item] = load(item) as Texture2D
+
+
 ## A folha em tons de cinza (só a luz e a sombra, com o mesmo alfa), feita uma vez: a tinta de uma fusão com `gris` TROCA a cor do bicho
 ## (multiplicar uma raposa laranja por azul só dá oliva; multiplicar a raposa cinza por azul dá uma raposa azul).
 static func tex_gris(base: String) -> Texture2D:
