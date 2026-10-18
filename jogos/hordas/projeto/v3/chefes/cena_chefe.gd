@@ -1,10 +1,11 @@
 extends Node2D
-## Cena de teste dos chefes da v3 (isolada, fora da v2). Tecla 1 = Vornak, 2 = Nythrax, D = 100 de dano, R = reinicia.
+## Cena de teste dos chefes da v3 (isolada, fora da v2). Teclas 1 Vornak, 2 Nythrax, 3 Maltherion; D = 100 de dano; R = reinicia.
 ## Aviso no chão antes de cada golpe (círculo ou faixa), raízes no impacto do Vornak e partículas na absorção.
 ## Não entra no fluxo da v2.
 
 const Vornak := preload("res://v3/chefes/vornak.gd")
 const Nythrax := preload("res://v3/chefes/nythrax.gd")
+const Maltherion := preload("res://v3/chefes/maltherion.gd")
 const Visual := preload("res://v3/chefes/chefe_visual.gd")
 
 var origem := Vector2(320, 260)
@@ -23,7 +24,11 @@ func _ready() -> void:
 	origem = get_viewport_rect().size * Vector2(0.5, 0.72)
 	_rng.randomize()
 	## --chefe=nythrax na linha de comando abre o lobo (para testes e capturas)
-	_novo_chefe("nythrax" if "--chefe=nythrax" in OS.get_cmdline_user_args() else "vornak")
+	var escolhido := "vornak"
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--chefe="):
+			escolhido = a.trim_prefix("--chefe=")
+	_novo_chefe(escolhido)
 
 
 func _novo_chefe(novo_tipo: String) -> void:
@@ -33,9 +38,12 @@ func _novo_chefe(novo_tipo: String) -> void:
 	if tipo == "vornak":
 		chefe = Vornak.new()
 		chefe.iniciar(Vornak.CONFIG)
-	else:
+	elif tipo == "nythrax":
 		chefe = Nythrax.new()
 		chefe.iniciar(Nythrax.CONFIG)
+	else:
+		chefe = Maltherion.new()
+		chefe.iniciar(Maltherion.CONFIG)
 	visual = Visual.new()
 	visual.prefixo = tipo
 	visual.position = origem
@@ -79,6 +87,8 @@ func _input(event: InputEvent) -> void:
 			_novo_chefe("vornak")
 		elif event.keycode == KEY_2:
 			_novo_chefe("nythrax")
+		elif event.keycode == KEY_3:
+			_novo_chefe("maltherion")
 
 
 func _process(delta: float) -> void:
@@ -105,12 +115,12 @@ func _draw() -> void:
 		else:
 			var p: Vector2 = e.de.lerp(origem + Vector2(0, -60), k)
 			draw_circle(p, 3.0 * (1.0 - k * 0.5), Color(0.55, 1.0, 0.3, 1.0 - k * 0.6))
-	var nome := "Vornak" if tipo == "vornak" else "Nythrax"
+	var nome: String = {"vornak": "Vornak", "nythrax": "Nythrax", "maltherion": "Maltherion"}[tipo]
 	var linhas := [
 		"%s: %s, fase %d" % [nome, chefe.estado, chefe.fase],
 		"vida %d / %d" % [int(chefe.vida), int(chefe.vida_max)],
 		"golpes: %d" % golpes,
-		"1 Vornak  2 Nythrax  D dano  R reinicia",
+		"1 V  2 N  3 M  D dano  R reinicia",
 	]
 	for i in linhas.size():
 		draw_string(ThemeDB.fallback_font, Vector2(20, 36 + i * 26), linhas[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.9, 0.95, 0.85))

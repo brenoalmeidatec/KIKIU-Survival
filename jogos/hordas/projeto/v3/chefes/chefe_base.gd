@@ -19,6 +19,7 @@ var fase := 1
 var estado := "andar"
 var t_estado := 0.0
 var fase2_limiar := 0.4
+var fase3_limiar := -1.0  # só chefes com terceira fase (Maltherion) usam; -1 desliga
 var ataques: Array = []
 var ataque_atual: Dictionary = {}
 var _recarga := 0.0
@@ -29,6 +30,7 @@ func iniciar(cfg: Dictionary) -> void:
 	vida_max = float(cfg.vida)
 	vida = vida_max
 	fase2_limiar = float(cfg.get("fase2", 0.4))
+	fase3_limiar = float(cfg.get("fase3", -1.0))
 	ataques = cfg.ataques
 	fase = 1
 	_trocar("andar")
@@ -53,6 +55,11 @@ func receber_dano(valor: float) -> bool:
 		_trocar("morto")
 		morreu.emit()
 		return true
+	if fase < 3 and fase3_limiar > 0.0 and vida <= vida_max * fase3_limiar:
+		fase = 3
+		fase_mudou.emit(3)
+		_trocar("transicao")
+		return false
 	if fase == 1 and vida <= vida_max * fase2_limiar:
 		fase = 2
 		fase_mudou.emit(2)
