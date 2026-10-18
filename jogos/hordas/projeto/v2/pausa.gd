@@ -41,7 +41,7 @@ const COR_OURO := Paleta.OURO
 const COR_TEXTO := Paleta.TEXTO
 const COR_CAB := Paleta.CABECALHO  # cabeçalho de seção (não é selecionável)
 const COR_FUNDO := Color(Paleta.PAINEL, 0.9)  # #01030b a 0,9: o jogo (e a HUD) atrás fica escuro e não compete com o menu
-const DICA := "Setas escolhem   Enter confirma   Esc volta"
+const Glifos := preload("res://v2/glifos.gd")
 const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
 const AudioV2 := preload("res://v2/audio.gd")  # o clique do santuário (sem partida), com os WAV da v2
@@ -64,7 +64,7 @@ var _graficos := AjustesGraficos.new()
 var _raiz: Control
 var _titulo: Label
 var _sub: Label
-var _dica: Label
+var _dica: Control
 var _ajuda: Label
 var _linhas: Array = []  # uma por linha visível: {linha, marca, rotulo, valor}
 var _fps: Label
@@ -171,16 +171,25 @@ func _montar() -> void:
 		var val := _rotulo(Dados.fonte_texto, TAM_VALOR, COR_TEXTO, Vector2(12, 8), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
 		linha.add_child(val)
 		_raiz.add_child(linha)
-		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val})
+		var ico := TextureRect.new()  # o "?" da linha Perfil: a linha pede o ícone (chave "icone") e _desenhar o põe depois do nome
+		ico.texture = _textura_ajuda()
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_SCALE
+		ico.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		ico.size = Vector2(16, 16)
+		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ico.visible = false
+		linha.add_child(ico)
+		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val, "icone": ico})
 	_ajuda = _rotulo(
-		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 22, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 44, HORIZONTAL_ALIGNMENT_LEFT
+		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 34, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 68, HORIZONTAL_ALIGNMENT_LEFT  # a mesma coluna do texto das linhas (margem 24 + 10 do painel da linha)
 	)
 	_ajuda.size.y = AJUDA_H
 	_ajuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_raiz.add_child(_ajuda)
-	_dica = _rotulo(
-		Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER
-	)
+	_dica = Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_TEXTO)
+	_dica.position = Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y)
+	_dica.size = Vector2(PAINEL.size.x - 16, 22)
 	_raiz.add_child(_dica)
 	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), _pos_fps(), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
@@ -200,6 +209,18 @@ func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin
 	l.add_theme_color_override("font_outline_color", Paleta.PRETO)
 	l.add_theme_constant_override("outline_size", 3)
 	return l
+
+
+## O "?" da linha Perfil: ícone de pixel 8x8 (os ícones da v2 são desenhados por código). Branco, para o `modulate` pintar na cor da linha.
+static func _textura_ajuda() -> Texture2D:
+	var padrao := ["..####..", ".##..##.", ".....##.", "....##..", "...##...", "...##...", "........", "...##..."]
+	var im := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+	im.fill(Color(0, 0, 0, 0))
+	for y in 8:
+		for x in 8:
+			if padrao[y].substr(x, 1) == "#":
+				im.set_pixel(x, y, Color.WHITE)
+	return ImageTexture.create_from_image(im)
 
 
 # ------------------------------------------------------------------ abrir e fechar
@@ -275,7 +296,7 @@ func _pode_pausar() -> bool:
 func _ir(nova: String, origem := "menu") -> void:
 	tela = nova
 	_origem = origem
-	sel = 1 if nova.begins_with("confirmar") else 0  # confirmação começa em "Não"
+	sel = 1 if nova.begins_with("confirmar") or nova == "avancado" else 0  # confirmação começa em "Não"; Avançado, na 1ª opção (o 0 é cabeçalho)
 	_topo = 0
 	_desenhar()
 
@@ -291,6 +312,8 @@ func _voltar_tela() -> void:
 				_ir("menu")
 			else:
 				fechar()
+		"avancado":
+			_ir("graficos")
 		"graficos", "audio", "creditos":
 			if tela == "creditos" and _origem == "":
 				fechar()  # Créditos abertos direto pelo título: não há Ajustes por trás
@@ -335,6 +358,14 @@ func entrada(e: InputEvent) -> bool:
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_Q, KEY_E] and tela == "menu" and mundo != null and mundo.get("status") != null:
 		mundo.status.paginar(-1 if e.keycode == KEY_Q else 1)
 		return true
+	# Controle: Y troca o card SUA BUILD para os detalhes (o Tab) e LB/RB mudam a página dos golpes (o Q e o E)
+	if e is InputEventJoypadButton and e.pressed and tela == "menu" and mundo != null and mundo.get("status") != null:
+		if e.button_index == JOY_BUTTON_Y:
+			mundo.status.alternar_detalhe()
+			return true
+		if e.button_index == JOY_BUTTON_LEFT_SHOULDER or e.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+			mundo.status.paginar(-1 if e.button_index == JOY_BUTTON_LEFT_SHOULDER else 1)
+			return true
 	if e is InputEventMouseMotion:
 		var i := _linha_sob_mouse()
 		if i >= 0 and i != sel:
@@ -371,6 +402,11 @@ func entrada(e: InputEvent) -> bool:
 	elif e.is_action_pressed("ui_accept"):
 		_acao_sel(1, true)
 	return true
+
+
+## A dica da pausa: só os botões do dispositivo em uso. Detalhes e páginas do SUA BUILD ficam na dica do próprio card (não cabem aqui: 424 px).
+func _itens_dica() -> Array:
+	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
 
 
 ## ESC (tecla) ou Start do controle: os dois pausam e, com o menu aberto, voltam como o ui_cancel (B).
@@ -443,6 +479,8 @@ func _executar(id: String, passo: int) -> void:
 			_ir("ajustes")
 		"graficos":
 			_ir("graficos")
+		"g:avancado":
+			_ir("avancado", "graficos")
 		"audio":
 			_ir("audio")
 		"creditos":
@@ -519,6 +557,8 @@ func _itens() -> Array:
 			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"graficos":
 			return _graficos.itens()
+		"avancado":
+			return _graficos.itens_avancado()
 		"audio":
 			return [_it("musica", "Música", _pct(Config.v("musica"))), _it("efeitos", "Efeitos", _pct(Config.v("efeitos"))), _it("voltar", "Voltar")]
 		"confirmar_santuario":
@@ -538,6 +578,8 @@ func _titulo_tela() -> String:
 			return "AJUSTES"
 		"graficos":
 			return "GRÁFICOS"
+		"avancado":
+			return "AVANÇADO"
 		"audio":
 			return "ÁUDIO"
 		"creditos":
@@ -556,6 +598,8 @@ func _sub_tela() -> String:
 		return "Fecha o jogo de vez."
 	if tela == "graficos":
 		return _graficos.mensagem
+	if tela == "avancado":
+		return "CPU e GPU, uma opção por vez."
 	return ""
 
 
@@ -571,8 +615,8 @@ func _desenhar() -> void:
 	_topo = clampi(_topo, 0, maxi(n - VISIVEIS, 0))
 	_titulo.text = _titulo_tela()
 	_sub.text = _sub_tela()
-	_dica.text = DICA
 	_ajuda.text = _texto_ajuda()
+	_dica.call("atualizar")
 	for i in _linhas.size():
 		var l: Dictionary = _linhas[i]
 		var idx := _topo + i
@@ -589,6 +633,12 @@ func _desenhar() -> void:
 		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
+		var ico: TextureRect = l["icone"]
+		ico.visible = bool(it.get("icone", false)) and not cab
+		if ico.visible:
+			var fonte: Font = l["rotulo"].get_theme_font("font")
+			ico.position = Vector2(12.0 + fonte.get_string_size(str(it.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_BOTAO).x + 10.0, 10.0)
+			ico.modulate = cor
 	_card_build()
 
 
@@ -596,7 +646,7 @@ func _desenhar() -> void:
 func _texto_ajuda() -> String:
 	if tela == "audio":
 		return CREDITO_MUSICA
-	if (tela != "graficos" and tela != "creditos") or sel >= _itens_atuais.size():
+	if (tela != "graficos" and tela != "avancado" and tela != "creditos") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))
 

@@ -5,6 +5,7 @@ extends Control
 const Personagens = preload("res://v2/personagens.gd")
 const Meta = preload("res://v2/meta.gd")
 const Mapas = preload("res://v2/mapas.gd")
+const Icones = preload("res://v2/icones_santuario.gd")
 var falhas := 0
 var pasta := ""
 
@@ -35,6 +36,12 @@ func _ready() -> void:
 	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
 	var id := Personagens.criar("Matheus")
 	ok(Personagens.ativar(id), "slot isolado ativo")
+	# tudo liberado (os três mapas vencidos e 3 partidas): aqui se confere a sala aberta; as travas ficam no v2_progressao
+	var cf: ConfigFile = Meta._ler()
+	for c in ["vence_floresta", "vence_laboratorio", "vence_cidade"]:
+		cf.set_value("conquistas", c, true)
+	cf.set_value("progressao", "partidas", 3)
+	ok(Meta._gravar(cf), "save com tudo liberado")
 	DisplayServer.window_set_size(Vector2i(960, 540))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	s = load("res://v2/salao.tscn").instantiate()
@@ -47,6 +54,7 @@ func _ready() -> void:
 	assets()
 	camadas()
 	saldo_no_painel()
+	painel_graficos()
 	for filho in s.get_children():
 		if filho is Button:
 			var largura: float = (
@@ -73,7 +81,6 @@ func _ready() -> void:
 			await foto("painel_" + str(a.id))
 			for i in s._p_itens.size():
 				s._mostrar_item(i)
-				s._p_detalhe.visible = true
 				await get_tree().process_frame
 				geometria()
 				await foto("item_" + str(a.id) + "_%02d" % i)
@@ -96,7 +103,7 @@ func _ready() -> void:
 		ok(s._destino == Vector2.INF, "clique chega e usa " + str(a.id))
 		if s._painel.visible:
 			s._fechar_painel()
-	ok(Mapas.condicao({"requer": "combo_50"}).begins_with("Fechado"), "condicao bloqueada preservada")
+	ok(Mapas.condicao({"requer": "combo_50"}).begins_with("Trancado"), "condicao bloqueada preservada")
 	ok(Mapas.condicao({}) == "", "portais sem requisito abertos")
 	Meta.creditar(300)
 	s._atualizar_textos()
@@ -127,20 +134,7 @@ func foto(nome: String) -> void:
 
 func geometria() -> void:
 	var cartao := Rect2(36, 26, 888, 488)
-	for controle in [
-		s._p_titulo,
-		s._p_nome,
-		s._p_nivel,
-		s._p_agora,
-		s._p_proximo,
-		s._p_custo,
-		s._p_saldo,
-		s._p_aviso,
-		s._p_detalhe,
-		s._p_comprar,
-		s._p_detalhes,
-		s._p_rolagem
-	]:
+	for controle in [s._p_titulo, s._p_icone_estrutura, s._p_icone, s._p_nome, s._p_frase, s._p_card, s._p_saldo, s._p_aviso, s._p_comprar, s._p_rolagem]:
 		if controle.visible:
 			ok(cartao.encloses(controle.get_rect()), "conteudo dentro do cartao: " + str(controle.name))
 			ok(controle.get_minimum_size().y <= controle.size.y + 0.5, "altura minima medida cabe: " + str(controle.name))
@@ -195,3 +189,39 @@ func assets() -> void:
 		s._process(1.0 / 60.0)
 	for nome in cache:
 		ok(s._visual.texturas[nome] == cache[nome], "textura memoizada: " + nome)
+
+
+# Pedido do Alisson (18/10): o painel é título, uma frase de uma linha e um card de barrinhas; tudo com ícone; sem DETALHES; sala mais rápida.
+func painel_graficos() -> void:
+	ok(s.VELOCIDADE >= 130.0 * 1.6 - 0.5, "anda no santuario ~1,6x mais rapido")
+	Meta.creditar(500)
+	ok(s.comprar_item("vida") and s.comprar_item("vida"), "duas compras de vida para a barra ter o que mostrar")
+	for id in ["estatuas", "altar", "codice"]:
+		s.abrir_estrutura(id)
+		ok(s._p_icone_estrutura.texture == Icones.textura(id), "icone da estrutura no cabecalho e o do id (nao a arte da sala): " + id)
+		ok(s._p_icone_estrutura.size == Vector2(48, 48), "icone da estrutura a 2x (48 px): " + id)
+		for b in s._p_lista.get_children():
+			ok(b.icon != null, "icone em cada item da lista: " + b.text.get_slice(char(10), 0))
+		for filho in s._painel.get_children():
+			ok(not (filho is Button and filho.text == "DETALHES"), "sem botao DETALHES")
+		for i in s._p_itens.size():
+			s._mostrar_item(i)
+			var it: Dictionary = s._p_itens[i]
+			ok(s._p_icone.texture != null and s._p_icone.size == Vector2(48, 48), "icone no titulo do item, a 2x (48 px): " + str(it.id))
+			ok(s._p_frase.text != "" and s._p_frase.get_line_count() == 1, "subtitulo de uma linha: " + str(it.id))
+			var linhas: Array = s._p_card.linhas
+			ok(linhas.size() == 3, "card com tres linhas de barrinhas: " + str(it.id))
+			if linhas.size() < 3:
+				continue
+			if id == "codice":
+				ok(linhas[0].tipo == "segmentos" and int(linhas[0].max) == Meta.conquistas().size(), "codice: um segmento por conquista")
+				ok(linhas[2].get("icone") != null, "codice: icone da recompensa")
+			else:
+				var n := Meta.nivel(str(it.id))
+				ok(linhas[0].tipo == "segmentos" and int(linhas[0].max) == int(it.max) and int(linhas[0].n) == n, "nivel em segmentos: " + str(it.id))
+				ok(linhas[1].tipo == "barra" and is_equal_approx(float(linhas[1].frac), float(n) / int(it.max)), "efeito em barra: " + str(it.id))
+				if n < int(it.max) and s._liberada(it):
+					var custo := Meta.custo_do_nivel(it, n)
+					ok(is_equal_approx(float(linhas[2].frac), float(Meta.saldo()) / custo), "custo x saldo em barra: " + str(it.id))
+		s._fechar_painel()
+	Meta.creditar(-Meta.saldo())

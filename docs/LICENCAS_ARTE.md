@@ -86,3 +86,6 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 - Abalo sísmico, Peso de muralha, Chuva de adagas e Mira longa; fontes 02/03 próprias usadas apenas como referência de estilo. Nenhum novo material de terceiros.
 - Fonte original 1447×1087 preservada; ajuste do fundo vazio para 1448×1086, recorte e ligação ficam com Claude do Alisson. Prompts exatos e índice por ID ao lado da imagem.
 >
+
+## Ícones do santuário — Claude do Alisson (PC), 18/10/2026
+- jogos/hordas/fonte_arte/icones_santuario/gerar.py gera em código (Python, PIL) 22 ícones pixel art 24x24 em jogos/hordas/projeto/assets/v2/icones_santuario/*.png (melhorias, conquistas, modo Pesadelo, rastro de katana, estruturas, portais e um genérico). Arte própria desenhada por código, sem imagegen e sem material de terceiros; paleta de v2/paleta.gd.

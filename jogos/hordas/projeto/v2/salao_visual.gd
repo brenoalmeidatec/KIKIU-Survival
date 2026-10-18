@@ -18,10 +18,10 @@ static func posicao(id: String, original: Vector2) -> Vector2:
 	return POSICOES.get(id, original)
 
 
-func textura(n: Node2D, nome: String, r: Rect2) -> bool:
+func textura(n: Node2D, nome: String, r: Rect2, cor := Color.WHITE) -> bool:
 	if not texturas.has(nome):
 		return false
-	n.draw_texture_rect(texturas[nome], r, false)
+	n.draw_texture_rect(texturas[nome], r, false, cor)
 	return true
 
 
@@ -62,12 +62,16 @@ func portal(n: Node2D, a: Dictionary, fechado: bool, cor: Color) -> void:
 		rotulo_portal(n, a, fechado)
 
 
-## O nome do portal. 200 px entre portais: o nome mais longo usa duas linhas de Spleen 16.
+## O nome do portal. 200 px entre portais: o nome mais longo usa duas linhas de Spleen 16. Trancado (a.trava, dados/v2_progressao.json),
+## o nome fica numa linha só e a de baixo traz o cadeado e o que abre o portal.
 func rotulo_portal(n: Node2D, a: Dictionary, fechado: bool) -> void:
 	var p: Vector2 = a.pos
 	var linhas := [str(a.nome)]
-	if str(a.nome) == "RUÍNAS DA FLORESTA":
+	var trava := str(a.get("trava", ""))
+	if str(a.nome) == "RUÍNAS DA FLORESTA" and trava == "":
 		linhas = ["RUÍNAS DA", "FLORESTA"]
+	if trava != "":
+		linha_trava(n, Vector2(p.x, p.y + 37), trava)
 	for i in linhas.size():
 		n.draw_string(
 			Dados.fonte_texto,
@@ -87,7 +91,8 @@ func estrutura(n: Node2D, a: Dictionary) -> void:
 	n.draw_set_transform(p, 0, Vector2(1, 0.32))
 	n.draw_circle(Vector2.ZERO, 48, Color(0, 0, 0, 0.36))
 	n.draw_set_transform(Vector2.ZERO)
-	if not textura(n, id, Rect2(p.x - 56, p.y - 100, 112, 112)):
+	var trancada := str(a.get("trava", "")) != ""
+	if not textura(n, id, Rect2(p.x - 56, p.y - 100, 112, 112), Color(0.42, 0.42, 0.48) if trancada else Color.WHITE):
 		n.draw_rect(Rect2(p.x - 38, p.y - 9, 76, 16), Color("#55515b"))
 		if id == "altar":
 			n.draw_arc(p + Vector2(0, -46), 30, 0, TAU, 32, cor.darkened(0.3), 3)
@@ -111,9 +116,45 @@ func estrutura(n: Node2D, a: Dictionary) -> void:
 		rotulo_estrutura(n, a)
 
 
+## O nome da estrutura; trancada (a.trava), o nome apaga, um cadeado grande fica sobre ela e a linha de baixo diz o que a abre.
 func rotulo_estrutura(n: Node2D, a: Dictionary) -> void:
 	var p: Vector2 = a.pos
-	n.draw_string(Dados.fonte_titulo, Vector2(p.x - 100, p.y + 30), str(a.nome), HORIZONTAL_ALIGNMENT_CENTER, 200, 19, Paleta.OURO)
+	var trava := str(a.get("trava", ""))
+	n.draw_string(
+		Dados.fonte_titulo,
+		Vector2(p.x - 100, p.y + 30),
+		str(a.nome),
+		HORIZONTAL_ALIGNMENT_CENTER,
+		200,
+		19,
+		Paleta.TEXTO_APAGADO if trava != "" else Paleta.OURO
+	)
+	if trava != "":
+		cadeado(n, p + Vector2(0, -52), 3)
+		linha_trava(n, Vector2(p.x, p.y + 47), trava)
+
+
+## Cadeado de pixel (7 x 8 quadrados de `k` px) centrado em `c`.
+func cadeado(n: Node2D, c: Vector2, k: int) -> void:
+	var bits := [".#####.", "#.....#", "#.....#", "#######", "#######", "###.###", "###.###", "#######"]
+	var o := (c - Vector2(3.5, 4.0) * k).round()
+	for y in bits.size():
+		for x in bits[y].length():
+			if bits[y][x] == "#":
+				n.draw_rect(Rect2(o + Vector2(x, y) * k + Vector2(1, 1), Vector2(k, k)), Color(0, 0, 0, 0.6))  # sombra
+	for y in bits.size():
+		for x in bits[y].length():
+			if bits[y][x] == "#":
+				n.draw_rect(Rect2(o + Vector2(x, y) * k, Vector2(k, k)), Color(1.0, 0.8, 0.35))
+
+
+## Uma linha "cadeado + condição" centrada em x = c.x, com a base do texto em c.y (Spleen 16).
+func linha_trava(n: Node2D, c: Vector2, txt: String) -> void:
+	var largura := Dados.fonte_texto.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+	var x0 := roundf(c.x - (largura + 20.0) / 2.0)
+	cadeado(n, Vector2(x0 + 7.0, c.y - 6.0), 2)
+	n.draw_string(Dados.fonte_texto, Vector2(x0 + 21.0, c.y + 1.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0, 0, 0, 0.7))
+	n.draw_string(Dados.fonte_texto, Vector2(x0 + 20.0, c.y), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1.0, 0.8, 0.35))
 
 
 func chamas(n: Node2D, tempo: float) -> void:

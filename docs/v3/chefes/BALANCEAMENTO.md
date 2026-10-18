@@ -1,8 +1,8 @@
 # Chefes da Floresta (v3): balanceamento inicial
 
-**PROVISÓRIO.** Os números usam o herói da v2 como referência (Hazaki, 100 de vida: `jogos/hordas/projeto/dados/v2_combate.json` > `heroi.vida`). Quando a v3 tiver herói próprio, refaça a conta com a vida dele.
+**PROVISÓRIO.** Os números usam o herói da v2 como referência (Hazaki, 100 de vida: `v3/godot/dados/v2_combate.json` > `heroi.vida`). Quando a v3 tiver herói próprio, refaça a conta com a vida dele.
 
-Medição feita por `jogos/hordas/projeto/testes/v3_balanco.gd` (Godot 4.4.1, headless). A luta é simulada com um jogador que tira 80 de dano por segundo e **não esquiva** (pior caso). Não modela reação humana.
+Medição feita por `v3/godot/testes/v3_balanco.gd` (Godot 4.4.1, headless). A luta é simulada com um jogador que tira 80 de dano por segundo e **não esquiva** (pior caso). Não modela reação humana.
 
 ## Meta (pedido do coordenador)
 
@@ -38,4 +38,4 @@ Os testes conferem essas metas e a janela mínima. A vida do Maltherion baixou d
 - Dano por golpe com um jogador que esquiva (a conta acima é de quem para).
 - Se a janela de 0,5 s é justa com o controle e a câmera do jogo.
 
-Todos os números são iniciais e ajustáveis em `v3/chefes/*.gd` (`CONFIG`).
+Todos os números são iniciais e ajustáveis em `v3/godot/chefes/*.gd` (`CONFIG`).

@@ -16,6 +16,7 @@ extends RefCounted
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (igual ao armas.gd)
 const MAX := 64
 const RAIO_PROJ := 10.0
+const RAIO_ALIADO := 7.0  # corpo do aliado no chão (colisão: v2/colisao.gd, igual ao do Ator)
 ## Tempos da torre (s): queda, armar (pernas se abrem e a balestra sobe) e desmontar (some em lascas depois da `duracao`).
 const POUSO_T := 0.25
 const ARMA_T := 0.4
@@ -23,7 +24,7 @@ const DESMONTA := 0.35
 ## Tempos da granada (s): o quique depois do voo, o clarão da explosão e a altura do arremesso.
 const QUIQUE_T := 0.18
 const EXPLOSAO_T := 0.45
-const FOGOS_CORES := [Color(1.0, 0.3, 0.25), Color(1.0, 0.82, 0.3), Color(0.4, 1.0, 0.5)]  # vermelho, dourado e verde dos Fogos de Festival
+const FOGOS_CORES := [Color(0.5, 0.95, 1.0), Color(1.0, 0.82, 0.3), Color(0.4, 1.0, 0.5)]  # ciano, dourado e verde dos Fogos de Festival (vermelho fica so para perigo)
 const COR_BAMBU := Color(0.86, 0.76, 0.36)
 const COR_BAMBU_ESCURO := Color(0.5, 0.36, 0.15)
 const COR_CONTORNO := Color(0.1, 0.06, 0.03)
@@ -189,6 +190,10 @@ static func sprite_de(id: String) -> Dictionary:
 
 ## Conta a recarga do golpe `a` e, quando ela zera, dispara. Sem inimigo por perto, espera um pouco e não gasta a recarga.
 func golpe(a: Dictionary, h, dt: float, vel_a: float, perto: Array) -> void:
+	# Brinde temporário (aliado e torre): a recarga só começa a contar quando o último da leva já sumiu; sem isso a leva nova nasceria antes
+	# da velha acabar e o aliado pareceria permanente.
+	if _relogio < float(a.get("ate", 0.0)):
+		return
 	a.t = float(a.t) - dt
 	if float(a.t) > 0.0:
 		return
@@ -357,7 +362,7 @@ func _brilho_partes(ci: CanvasItem, tex: Texture2D) -> void:
 		var a := minf(1.0, k * 2.0) * pisca
 		var t := q_tam[i]
 		ci.draw_texture_rect(tex, Rect2(p - Vector2(t, t) * 2.0, Vector2(t, t) * 4.0), false, Color(c.r, c.g, c.b, 0.55 * a))
-		ci.draw_rect(Rect2(p - Vector2(t, t) * 0.5, Vector2(t, t)), Color(1.0, 0.92, 0.6, a).lerp(Color(1.0, 0.3, 0.08, a), 1.0 - k))
+		ci.draw_rect(Rect2(p - Vector2(t, t) * 0.5, Vector2(t, t)), Color(1.0, 0.92, 0.6, a).lerp(Color(1.0, 0.7, 0.25, a), 1.0 - k))
 
 
 # ------------------------------------------------------------------ tipos
@@ -475,7 +480,7 @@ func _puxar(p: Vector2, raio: float, forca: float) -> void:
 		var d: Vector2 = p - m.pos
 		if _eli(d).length() > raio:
 			continue
-		m.pos = m.pos + d.normalized() * minf(forca, d.length())
+		pai.mundo.mover(m, d.normalized() * minf(forca, d.length()))  # passa pela colisão: a tempestade não puxa ninguém para dentro de uma barreira
 
 
 ## Onde sai o próximo número de um monstro: cada número da mesma rajada (0,7 s) ocupa um lugar diferente em volta dele (`SLOTS_NUM`: o meio,
@@ -600,6 +605,7 @@ func aquecer_um() -> void:
 
 func _aliados(a: Dictionary, h) -> void:
 	var st: Dictionary = a.st
+	a["ate"] = _relogio + float(st.duracao)
 	for k in int(st.quantidade):
 		var deslocado: Vector2 = h.pos + Vector2(randf_range(-30.0, 30.0), randf_range(-20.0, 20.0))
 		var it := _novo("aliado", a, deslocado, float(st.duracao))
@@ -630,7 +636,7 @@ func _mover_aliado(it: Dictionary, h, dt: float, perto: Array) -> void:
 		dest = h.pos + Vector2.from_angle(float(it.fase)) * 50.0  # sem inimigo, gira em volta do herói
 	var d: Vector2 = dest - it.p
 	if d.length() > 1.0:
-		it.p = it.p + d.normalized() * minf(float(st.vel) * dt, d.length())
+		it.p = pai.mundo.mover_ponto(it.p, d.normalized() * minf(float(st.vel) * dt, d.length()), RAIO_ALIADO)
 	if d.length() > 1.0:
 		it.v = (it.v as Vector2).lerp(d.normalized(), clampf(dt * 10.0, 0.0, 1.0))  # para onde corre (suavizado: o quadro não pisca na virada)
 	if absf(d.x) > 2.0:
@@ -657,6 +663,7 @@ func _torres(a: Dictionary, h, perto: Array) -> void:
 	for x in itens:
 		if float(x.vida) > DESMONTA and str(x.k) == "torre" and is_same(x.a, a):
 			x.vida = DESMONTA  # a velha desmonta (o `_mover_torre` solta as lascas)
+	a["ate"] = _relogio + float(st.duracao) + DESMONTA
 	var n := int(st.quantidade)
 	var lado := para.orthogonal()
 	for k in n:
@@ -1252,12 +1259,16 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 		var p: Vector2 = (it.p as Vector2).round()
 		if bool(it.g):
 			Golem.desenhar(ci, it, p)
+			_marca_amigo(ci, it, p, Golem.topo(it), 24.0 * Golem.escala(str(it.a.id)))
 			continue
 		if bool(it.an):
 			Andante.desenhar(ci, it, p)
+			_marca_amigo(ci, it, p, Andante.topo(it), Andante.raio_marca(it))
 			continue
 		if str(it.k) == "torre":
 			_desenhar_torre(ci, it, p)
+			if float(it.vida) > DESMONTA:  # desmontando já não é mais "tempo restante"
+				_marca_amigo(ci, it, p, -TORRE_TOPO + 12.0, 14.0, float(it.vida) - DESMONTA)
 			continue
 		if str(it.k) == "granada":
 			_desenhar_granada(ci, it)
@@ -1274,7 +1285,27 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 			"aliado":
 				var sobe := (p + Vector2(0, -10.0 + sin(float(it.fase)) * 2.0)).round()
 				_sprite(ci, sp, sobe, 0.0, Color(1, 1, 1, clampf(float(it.vida) / 0.5, 0.0, 1.0)))
+				_marca_amigo(ci, it, p, 30.0, 12.0)
 	_desenhar_partes(ci)
+
+
+## Como se reconhece um aliado temporário: um anel verde no chão (inimigo e perigo são vermelhos, então verde nunca é ameaça) e uma barrinha
+## verde sobre a cabeça que esvazia com o tempo que ainda lhe resta. `topo` = px do pé até o alto do corpo, `raio` = raio do anel,
+## `resta` = segundos que faltam (padrão: `it.vida`). Pequena de propósito: 18 px de largura, 3 de altura.
+func _marca_amigo(ci: CanvasItem, it: Dictionary, p: Vector2, topo: float, raio: float, resta: float = -1.0) -> void:
+	var st: Dictionary = it.a.st
+	var total := float(st.duracao)
+	var falta := float(it.vida) if resta < 0.0 else resta
+	var frac := clampf(falta / maxf(total, 0.1), 0.0, 1.0)
+	var pisca := 1.0 if (falta > 5.0 or fmod(_relogio, 0.4) < 0.25) else 0.35  # nos últimos 5 s a marca pisca: vai sumir
+	ci.draw_set_transform(p, 0.0, Vector2(1.0, 0.62))
+	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, Color(0.1, 0.35, 0.15, 0.45 * pisca), 2.5)
+	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, Color(0.45, 1.0, 0.5, 0.7 * pisca), 1.0)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var o := (p + Vector2(-9.0, -topo - 6.0)).round()
+	ci.draw_rect(Rect2(o + Vector2(-1, -1), Vector2(20, 5)), Color(0.04, 0.1, 0.05, 0.85 * pisca))
+	ci.draw_rect(Rect2(o, Vector2(18, 3)), Color(0.12, 0.25, 0.14, 0.9 * pisca))
+	ci.draw_rect(Rect2(o, Vector2(maxf(1.0, roundf(18.0 * frac)), 3)), Color(0.4, 1.0, 0.45, pisca))
 
 
 ## O sprite centrado em `c`, girado `ang` (o projétil aponta para a direção do voo).
@@ -1342,7 +1373,7 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 	var topo := b + Vector2(0, TORRE_TOPO)
 	var claro := Color(COR_BAMBU.r, COR_BAMBU.g, COR_BAMBU.b, alfa)
 	var escuro := Color(COR_BAMBU_ESCURO.r, COR_BAMBU_ESCURO.g, COR_BAMBU_ESCURO.b, alfa)
-	var corda := Color(0.62, 0.2, 0.12, alfa)
+	var corda := Color(0.62, 0.45, 0.25, alfa)
 	var contorno := Color(COR_CONTORNO.r, COR_CONTORNO.g, COR_CONTORNO.b, 0.9 * alfa)
 	var topo_e := topo + Vector2(-8, 0)
 	var topo_d := topo + Vector2(8, 0)
@@ -1374,7 +1405,7 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 	for k in 3:
 		var x := -12.0 + 2.0 * float(k)
 		ci.draw_line((topo + Vector2(x, -10)).round(), (topo + Vector2(x, -15 - k % 2)).round(), Color(0.95, 0.9, 0.7, alfa), 1.0)
-		ci.draw_rect(Rect2(topo + Vector2(x - 1, -16 - k % 2), Vector2(2, 2)), Color(0.85, 0.2, 0.15, alfa))
+		ci.draw_rect(Rect2(topo + Vector2(x - 1, -16 - k % 2), Vector2(2, 2)), Color(0.45, 0.95, 0.55, alfa))
 	# a balestra: sobe com um estalo depois de armada, recua ao atirar
 	var pivo := topo + Vector2(0, TORRE_PIVO - TORRE_TOPO + (1.0 - abre) * 6.0)
 	var pop := 1.0
@@ -1427,7 +1458,7 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		var flag := PackedVector2Array([ponta, ponta + Vector2(-13 + onda * 0.5, 2.0 + onda), ponta + Vector2(0, 7)])
 		ci.draw_colored_polygon(flag, contorno)
 		var flag_i := PackedVector2Array([ponta + Vector2(-1, 1), ponta + Vector2(-11 + onda * 0.5, 2.0 + onda), ponta + Vector2(-1, 5)])
-		ci.draw_colored_polygon(flag_i, Color(0.88, 0.2, 0.14, alfa))
+		ci.draw_colored_polygon(flag_i, Color(0.45, 0.95, 0.55, alfa))
 		var lan := topo + Vector2(14, 9)
 		ci.draw_line((topo + Vector2(14, 3)).round(), lan.round(), contorno, 1.0)
 		ci.draw_circle(lan + Vector2(0, 3), 4.6, contorno)
@@ -1510,7 +1541,7 @@ func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 	ci.draw_circle(Vector2(1.8, 3.4), 3.0, COR_CABACA.darkened(0.35))  # o lado sem luz
 	ci.draw_circle(Vector2(-1.9, 0.8), 1.9, COR_CABACA.lightened(0.5))  # o brilho
 	ci.draw_line(Vector2(-4.2, -1.0), Vector2(4.2, -1.0), Color(0.3, 0.16, 0.06), 1.5)  # a corda do gargalo
-	ci.draw_rect(Rect2(Vector2(-0.8, -1.8), Vector2(1.6, 1.6)), Color(0.85, 0.2, 0.15))  # o nó vermelho
+	ci.draw_rect(Rect2(Vector2(-0.8, -1.8), Vector2(1.6, 1.6)), Color(1.0, 0.86, 0.42))  # o nó dourado
 	ci.draw_line(Vector2(0, -7.5), Vector2(3, -11), Color(0.92, 0.85, 0.62), 1.2)  # o pavio
 	if est == 2:
 		var f := clampf(float(it.age) / float(st.get("pavio", 0.5)), 0.0, 1.0)
@@ -1589,7 +1620,7 @@ func _brasas_chao(ci: CanvasItem, it: Dictionary, p: Vector2, cor: Color) -> voi
 		return
 	var raio := float(it.a.st.raio) * 0.8
 	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
-	ci.draw_circle(Vector2.ZERO, raio, Color(1.0, 0.3, 0.06, 0.12 * fade))
+	ci.draw_circle(Vector2.ZERO, raio, Color(1.0, 0.7, 0.25, 0.12 * fade))
 	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 32, Color(1.0, 0.45, 0.1, 0.3 * fade), 1.0)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	for n in 3:
@@ -1603,8 +1634,8 @@ func _desenhar_projetil(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Col
 	var id := str(it.a.get("id", ""))
 	match id:
 		"bola_fogo":
-			ci.draw_line((p - dir * 13.0).round(), p, Color(1.0, 0.3, 0.05, 0.55), 5.0)
-			ci.draw_circle(p, 7.0, Color(1.0, 0.28, 0.04, 0.45))
+			ci.draw_line((p - dir * 13.0).round(), p, Color(1.0, 0.7, 0.25, 0.55), 5.0)
+			ci.draw_circle(p, 7.0, Color(1.0, 0.7, 0.25, 0.45))
 			ci.draw_circle(p, 3.4, Color(1.0, 0.88, 0.35, 0.95))
 			ci.draw_texture_rect(tex, Rect2(p - Vector2(7, 7), Vector2(14, 14)), false, Color(1.0, 0.52, 0.12, 0.42))
 		"dardos_peconhentos":
@@ -1676,7 +1707,7 @@ func _desenhar_meteoro(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Colo
 	var fade := clampf(float(it.vida) / 0.3, 0.0, 1.0)
 	match id:
 		"meteoro_flamejante", "fogo_do_ceu", "pedras_vulcanicas":
-			ci.draw_line(p + Vector2(-4, -14), p + Vector2(3, 9), Color(1.0, 0.24, 0.05, 0.72 * (0.4 + k)), 4.0)
+			ci.draw_line(p + Vector2(-4, -14), p + Vector2(3, 9), Color(1.0, 0.7, 0.25, 0.72 * (0.4 + k)), 4.0)
 			ci.draw_line(p + Vector2(3, -11), p + Vector2(-1, 7), Color(1.0, 0.77, 0.2, 0.86 * (0.4 + k)), 1.5)
 		"cometa_gelado":
 			ci.draw_line(p + Vector2(-9, -13), p + Vector2(3, 8), Color(0.44, 0.77, 1.0, 0.68 * (0.4 + k)), 4.0)
@@ -1754,7 +1785,7 @@ func _desenhar_nuvem(ci: CanvasItem, it: Dictionary, st: Dictionary, cor: Color,
 			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.72, 0.54, 1.0), 6, 30.0, 1.20, 0.62)
 			_desenhar_sonolenta(ci, p, fase, fade)
 		"sangue":
-			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.72, 0.035, 0.08), 5, 38.0, 0.92, 0.58, 0.96)
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.55, 0.95, 0.62), 5, 38.0, 0.92, 0.58, 0.96)
 			_desenhar_sangue(ci, p, fase, fade, cor)
 		"bolhas":
 			if id == "nuvem_espora":

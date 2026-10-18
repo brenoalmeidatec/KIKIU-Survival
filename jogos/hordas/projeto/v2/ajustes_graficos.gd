@@ -7,34 +7,54 @@ extends RefCounted
 ## entrada são da pausa (pausa.gd), com a fonte da v2.
 ## O menu só mostra as opções que a v2 lê hoje (LIDAS_NA_V2), todas valendo na hora na partida. As outras do json seguem nos
 ## perfis (a v1 usa), mas sem linha aqui: opção que não faz nada na tela não aparece. Opção nova só entra na lista depois de ser lida.
-## Ids das linhas: "g:perfil", "g:detectar", "g:tela", "g:qualidade", "g:fps", "g:ui" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
-## Tela cheia, a baixa automática e o contador de fps são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
+## Ids das linhas: "g:perfil", "g:detectar", "g:tela", "g:fps", "g:ui" e "g:op:<chave>"; cabeçalhos de seção têm id "" e "cab": true.
+## Tela cheia, o Dinâmico (qualidade_auto) e o contador de fps são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
 
 const PERFIS := ["baixo", "medio", "alto"]
-const NOMES_PERFIL := {"baixo": "Baixo", "medio": "Médio", "alto": "Alto", "personalizado": "Personalizado"}
+const ORDEM := ["baixo", "medio", "alto", "dinamico"]  # a ordem das setas do Perfil; o Dinâmico é o Alto com a baixa e a subida automáticas
+const NOMES_PERFIL := {"baixo": "Baixo", "medio": "Médio", "alto": "Alto", "dinamico": "Dinâmico", "personalizado": "Personalizado"}
 const SECOES := ["cpu", "gpu"]
 const NOMES_SECAO := {"cpu": "CPU (simulação)", "gpu": "GPU (visual)"}
-const LIDAS_NA_V2 := ["particulas_sim", "luz_relevo", "sombras", "tremor_clarao", "limite_fps", "vsync"]
-const AJUDA_PERFIL := "Baixo, Médio e Alto mudam todas as opções de uma vez. Mexer numa opção deixa o perfil Personalizado."
+const LIDAS_NA_V2 := ["particulas_sim", "calculo_monstros", "luz_relevo", "sombras", "nevoa", "tremor_clarao", "limite_fps", "vsync"]
+const AJUDA_PERFIL := (
+	"Baixo, Médio e Alto fixam tudo. Dinâmico começa no Alto, baixa sozinho se o jogo travar e sobe quando o FPS firma. "
+	+ "Mexer numa opção vira Personalizado."
+)
+const AJUDA_AVANCADO := "Opção por opção, separadas pelo que pesa na CPU (a conta do jogo) e na GPU (o desenho na tela)."
 const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e número de processadores."
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
 const AJUDA_UI := "Tamanho de menus, cartas e HUD. Automático ajusta à janela num tamanho confortável, sem cortar nada; Pequeno, Médio e Grande são fixos."
 const AJUDA_TELA := "Ocupa a tela inteira. F11 também liga e desliga, em qualquer tela da v2."
-const AJUDA_QUALIDADE := "Se o fps ficar abaixo de 40 por 8 s, o perfil desce um degrau (Alto, Médio, Baixo) só nesta sessão, sem mudar o salvo. O Personalizado não muda."
 
 var mensagem := ""  # aviso curto do detectar, mostrado no rodapé da pausa
 
 
-## As linhas da aba, na ordem do json (seção por seção), com o valor atual lido da API.
+## As linhas da tela Gráficos: o essencial. As opções soltas (CPU e GPU) ficam na tela Avançado (itens_avancado).
 func itens() -> Array:
-	var r: Array = [
-		_it("g:perfil", "Perfil", NOMES_PERFIL.get(str(Config.g_perfil()), "Personalizado"), AJUDA_PERFIL),
-		_it("g:detectar", "Detectar pela máquina", "", AJUDA_DETECTAR),
-		_it("g:tela", "Tela cheia (F11)", _sim_nao("tela_cheia"), AJUDA_TELA),
-		_it("g:qualidade", "Baixar a qualidade se travar", _sim_nao("qualidade_auto"), AJUDA_QUALIDADE),
-		_it("g:fps", "Mostrar FPS", _sim_nao("mostrar_fps"), AJUDA_FPS),
-		_it("g:ui", "Tamanho da interface", Config.rotulo("tamanho_ui"), AJUDA_UI),
-	]
+	var perfil := _it("g:perfil", "Perfil", _nome_perfil(), AJUDA_PERFIL)
+	perfil["icone"] = true  # o "?": a pausa desenha o ícone depois do nome; a ajuda sai no rodapé com o foco ou o mouse
+	var r: Array = [perfil]
+	if _dinamico():
+		r.append({"id": "", "rotulo": "Começa no Alto e ajusta pelo FPS", "valor": "", "ajuda": "", "cab": true})
+	(
+		r
+		. append_array(
+			[
+				_it("g:detectar", "Detectar pela máquina", "", AJUDA_DETECTAR),
+				_it("g:tela", "Tela cheia (F11)", _sim_nao("tela_cheia"), AJUDA_TELA),
+				_it("g:fps", "Mostrar FPS", _sim_nao("mostrar_fps"), AJUDA_FPS),
+				_it("g:ui", "Tamanho da interface", Config.rotulo("tamanho_ui"), AJUDA_UI),
+				_it("g:avancado", "Avançado", "CPU e GPU", AJUDA_AVANCADO),
+				_it("voltar", "Voltar"),
+			]
+		)
+	)
+	return r
+
+
+## As linhas da tela Avançado: uma seção CPU e outra GPU, com as opções que a v2 lê (a ordem é a do json).
+func itens_avancado() -> Array:
+	var r: Array = []
 	var opcoes: Array = Config.g_opcoes()
 	for sec in SECOES:
 		r.append({"id": "", "rotulo": NOMES_SECAO[sec], "valor": "", "ajuda": "", "cab": true})
@@ -45,6 +65,19 @@ func itens() -> Array:
 	return r
 
 
+## O perfil que o jogador vê: Dinâmico (com o degrau de agora, quando já desceu), um dos três fixos ou Personalizado.
+func _nome_perfil() -> String:
+	if not _dinamico():
+		return NOMES_PERFIL.get(str(Config.g_perfil()), "Personalizado")
+	var agora := str(Config.g_perfil())
+	return "Dinâmico" if agora == "alto" else "Dinâmico (%s)" % NOMES_PERFIL.get(agora, agora)
+
+
+## O Dinâmico está valendo? (baixa e subida automáticas ligadas e nenhuma opção mexida à mão)
+func _dinamico() -> bool:
+	return bool(Config.v("qualidade_auto")) and Config.g_perfil() != "personalizado"
+
+
 ## Aplica a ação de uma linha. `id` vem sem o prefixo "g:"; passo é +1 ou -1 (setas, clique esquerdo, Enter).
 func agir(id: String, passo: int) -> void:
 	if id == "perfil":
@@ -53,8 +86,6 @@ func agir(id: String, passo: int) -> void:
 		_detectar()
 	elif id == "tela":
 		_alternar("tela_cheia")  # a F11 (pausa.gd) chama esta mesma linha
-	elif id == "qualidade":
-		_alternar("qualidade_auto")
 	elif id == "fps":
 		_alternar("mostrar_fps")
 	elif id == "ui":
@@ -91,18 +122,25 @@ func _texto_valor(op: Dictionary) -> String:
 
 
 func _trocar_perfil(passo: int) -> void:
-	var i := PERFIS.find(str(Config.g_perfil()))
+	var atual := "dinamico" if _dinamico() else str(Config.g_perfil())
+	var i := ORDEM.find(atual)
 	if i < 0:
-		i = 0 if passo > 0 else PERFIS.size() - 1  # personalizado: a seta começa de um lado ou do outro (como na v1)
+		i = 0 if passo > 0 else ORDEM.size() - 1  # personalizado: a seta começa de um lado ou do outro (como na v1)
 	else:
-		i = posmod(i + passo, PERFIS.size())
-	Config.g_aplicar_perfil(PERFIS[i])
+		i = posmod(i + passo, ORDEM.size())
+	aplicar_perfil(ORDEM[i])
+
+
+## Escolhe um perfil da lista: os três fixos desligam a baixa automática; o Dinâmico liga e parte do Alto.
+func aplicar_perfil(nome: String) -> void:
+	Config.definir("qualidade_auto", nome == "dinamico")
+	Config.g_aplicar_perfil("alto" if nome == "dinamico" else nome)
 
 
 func _detectar() -> void:
 	var r = Config.g_detectar()
 	if r is String and PERFIS.has(r):
-		Config.g_aplicar_perfil(r)
+		aplicar_perfil(r)
 		mensagem = "Detectado: %s" % NOMES_PERFIL[r]
 	else:
 		mensagem = "Não deu para detectar"

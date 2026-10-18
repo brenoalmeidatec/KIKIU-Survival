@@ -10,6 +10,8 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Novas := preload("res://v2/armas_novas.gd")
+const Golem := preload("res://v2/golem.gd")
+const Andante := preload("res://v2/andante.gd")
 const PASSO := 1.0 / 60.0
 const ID := "sentinela_bambu"
 var falhas := 0
@@ -95,6 +97,10 @@ func _ready() -> void:
 			await fotos(a.trim_prefix("--fotos="))
 			get_tree().quit()
 			return
+		if a.begins_with("--fotos_aliados="):
+			await fotos_aliados(a.trim_prefix("--fotos_aliados="))
+			get_tree().quit()
+			return
 
 	# 0. dados, ícone e escolha de cartas
 	var d: Dictionary = cs.definicao(ID)
@@ -115,6 +121,27 @@ func _ready() -> void:
 	var carta: Dictionary = cs.montar_carta(d, 0)
 	ok(str(carta.get("id", "")) == ID and str(carta.get("nome", "")) != "", "a carta monta com nome")
 
+	# 0. brinde temporário: toda invocação e torre das cartas dura de 30 a 60 s (nada fica indefinidamente) e tem recarga depois que some
+	var dj: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://dados/v2_cartas.json"))
+	var temporarios := 0
+	var lista: Array = (dj.golpes as Array) + (dj.evolucoes as Array)
+	for g in lista:
+		if str(g.get("tipo", "")) not in ["aliado", "torre"]:
+			continue
+		var b: Dictionary = g.get("base", g.get("arma", {}))
+		temporarios += 1
+		ok(float(b.duracao) >= 30.0 and float(b.duracao) <= 60.0, "%s: duração de 30 a 60 s (%s)" % [g.id, b.duracao])
+		ok(float(b.recarga) >= 15.0, "%s: recarga de 15 s ou mais, contada depois que a leva some (%s)" % [g.id, b.recarga])
+	ok(temporarios >= 16, "todas as invocações e torres foram conferidas (%d)" % temporarios)
+	ok(
+		Golem.topo({"a": {"id": "golem_barro"}}) > 0.0 and Golem.topo({"a": {"id": "colosso_de_pedra"}}) > Golem.topo({"a": {"id": "golem_barro"}}),
+		"o colosso é mais alto que o golem: a barrinha sobe junto"
+	)
+	ok(
+		Andante.raio_marca({"a": {"id": "?"}, "k": "?"}) >= 10.0,
+		"o anel de amigo tem raio mínimo mesmo sem ficha (%s)" % Andante.raio_marca({"a": {"id": "?"}})
+	)
+
 	# 1. a torre cai depois da recarga, atira e machuca
 	zerar()
 	var ms: Array = [monstro_a(150, -30), monstro_a(150, 0), monstro_a(150, 30)]
@@ -133,6 +160,7 @@ func _ready() -> void:
 	ok(int(armas.acertos.get("projetil", 0)) > 0, "em 3 s os virotes acertaram (acertos %d)" % int(armas.acertos.get("projetil", 0)))
 	ok(vida_perdida(ms) > 0.0, "os monstros perderam vida (%.0f)" % vida_perdida(ms))
 	ok(int(torre.est) == 1, "a torre armou (fase %d)" % int(torre.est))
+	ok(float(armas.ativas[ID].get("ate", 0.0)) - float(armas.novas._relogio) > 20.0, "a recarga fica parada enquanto a torre está de pé")
 
 	# 2. a torre não anda com o herói e continua atirando mesmo com ele longe
 	var acertos_antes := int(armas.acertos.get("projetil", 0))
@@ -147,7 +175,7 @@ func _ready() -> void:
 
 	# 3. depois da duração a torre é liberada; o pool e a camada de desenho não crescem
 	w.heroi.pos -= Vector2(500, 0)
-	var q2 := ate(func(): return torres_vivas().is_empty(), 700)
+	var q2 := ate(func(): return torres_vivas().is_empty(), 2400)
 	ok(q2 >= 0, "depois da duração a torre sai do pool (ainda vivas: %d)" % torres_vivas().size())
 	ok(novas.itens.size() == Novas.MAX, "o pool continua com %d slots" % Novas.MAX)
 	ok(armas.no_brilho.get_child_count() == 0 and armas.no_corpo.get_child_count() == 0, "nenhum nó novo nas camadas de desenho")
@@ -165,6 +193,7 @@ func _ready() -> void:
 	pegar(ID)
 	ok(int(armas.ativas[ID].st.quantidade) == 2, "nível 4: 2 torres")
 	armas.ativas[ID].t = 0.0
+	armas.ativas[ID].ate = 0.0
 	var q4 := ate(func(): return torres_vivas().size() == 2, 120)
 	ok(q4 >= 0, "no nível 4 caem 2 torres (%d)" % torres_vivas().size())
 	pegar(ID)
@@ -245,6 +274,21 @@ func fotos(pasta: String) -> void:
 	passos(30)
 	var antes := int(armas.acertos.get("raio", 0))
 	await _foto_quando(func(): return int(armas.acertos.get("raio", 0)) > antes, 900, pasta.path_join("v2_pagode_trovao.png"), 1)
+
+
+## Foto (com janela) da marca de amigo: anel verde no chão e barrinha verde de tempo sobre a cabeça, em aliado andante, golem e torre.
+func fotos_aliados(pasta: String) -> void:
+	DirAccess.make_dir_recursive_absolute(pasta)
+	Config.g_aplicar_perfil("alto")
+	Config.temporario("pausar_fora", false)
+	zerar()
+	monstro_a(260, -60).atordoa_t = 60.0
+	for id in ["lobo_espirito", "golem_barro", "espirito_urso", ID]:
+		pegar(id)
+	passos(150)
+	await _foto_quando(func(): return true, 1, pasta.path_join("v2_aliados_marca.png"), 0)
+	passos(1500)  # ~25 s: a barrinha já está pela metade e o lobo (35 s) perto de sumir
+	await _foto_quando(func(): return true, 1, pasta.path_join("v2_aliados_marca_meio.png"), 0)
 
 
 func _torre_pousou() -> bool:

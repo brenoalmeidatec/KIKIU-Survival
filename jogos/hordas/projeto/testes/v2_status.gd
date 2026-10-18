@@ -790,6 +790,20 @@ func _golpes() -> void:
 		menor = minf(menor, float(e.queda))
 	ok(not q.is_empty() and menor == float(n[0]), "a explosão da runa tira o dano por acerto do card (%.0f contra %.0f)" % [menor, float(n[0])])
 	faixa(float(n[2]) * 30.0, _soma(q), 0.8, 1.3, "runa: dano por segundo do card x 30 s (o card já conta só as runas que nascem sobre o monstro)")
+	# --- torre temporária: várias levas completas, incluindo o período SEM torre entre elas (a recarga só conta depois de desmontar)
+	zerar()
+	pegar("sentinela_bambu")
+	w.heroi.m_vel_ataque = 1.0
+	w.heroi.m_critico = -5.0
+	var torre: Dictionary = w.combate.armas.ativas.sentinela_bambu
+	torre.st.duracao = 3.0  # ciclo curto para medir várias levas no mesmo teste
+	torre.st.recarga = 3.0
+	torre.st.tique = 0.25
+	torre.st.quantidade = 1
+	n = n_de("arma.sentinela_bambu")
+	m = boneco(100.0)
+	q = _quedas(m, 32.0)
+	faixa(float(n[2]) * 32.0, _soma(q), 0.85, 1.18, "torre: DPS médio inclui armar, desmontar e 3 s sem torre entre levas")
 	# --- evolução: aura nv 3 + lâminas nv 3 viram o Anel de Brasas
 	zerar()
 	pegar("aura_fogo", 1)
@@ -1627,10 +1641,8 @@ func _layouts(st, c) -> void:
 
 func _foto(nome: String, pasta: String) -> void:
 	await get_tree().create_timer(0.4).timeout  # o card se atualiza a 4 Hz: dá tempo de ele pintar o estado de agora (opaco na escolha e na pausa)
-	await RenderingServer.frame_post_draw
-	var img: Image = w.sv.get_texture().get_image()
-	img.save_png(pasta.path_join(nome + ".png"))
-	print("FOTO ", pasta.path_join(nome + ".png"), " ", img.get_size())
+	var tam = await w.ap.foto(pasta.path_join(nome + ".png"))  # a janela inteira: o HUD e o card ficam na camada da UI, fora do viewport do mundo
+	print("FOTO ", pasta.path_join(nome + ".png"), " ", tam)
 
 
 func _fotos(pasta: String) -> void:
@@ -1701,7 +1713,7 @@ func _fotos(pasta: String) -> void:
 	await get_tree().process_frame
 	await _foto("status_hud", pasta)
 	# 1b) com o mini-chefe em campo (a barra do chefe e o aviso aparecem): o card não passa por baixo de nada do HUD
-	w.tempo_partida = 181.0
+	w.combate.diretor.ir_para_nivel(10)
 	h.ataque_forcado = true
 	passos(45)
 	h.ataque_forcado = null

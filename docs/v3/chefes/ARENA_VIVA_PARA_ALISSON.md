@@ -3,7 +3,7 @@
 Para o Alisson (dono do mapa). O Claude do Breno não mexeu em nada de mapa. Este texto diz o que o chefe precisa do mapa, para combinar.
 
 ## O que é do chefe (já feito no protótipo v3)
-- Zonas de raiz com aviso no chão (`raizes_gigantes`, `tempestade_de_raizes` em 3 zonas): `v3/chefes/maltherion.gd`, dados em `CONFIG`.
+- Zonas de raiz com aviso no chão (`raizes_gigantes`, `tempestade_de_raizes` em 3 zonas): `v3/godot/chefes/maltherion.gd`, dados em `CONFIG`.
 - Invocações limitadas (`max_vivas` = 3, `pode_invocar`): o chefe decide quantas saem; quem cria e posiciona as criaturas é o sistema de monstros.
 - Coração da Floresta (fase 3): aviso longo de 2,2 s e janela de contra-ataque de 2,4 s.
 

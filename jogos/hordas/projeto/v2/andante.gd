@@ -216,7 +216,7 @@ const FICHAS := {
 		"como": ["dragao_filhote"],
 		"escala": 1.5,
 		"tinta": Color(1.0, 0.7, 0.55),
-		"mistura": Color(1.0, 0.3, 0.05, 0.4),
+		"mistura": Color(1.0, 0.75, 0.25, 0.4),
 		"cor_fx": Color(1.0, 0.42, 0.1),
 		"halo": 2.6,
 	},
@@ -517,7 +517,7 @@ static func _andar(nv, it: Dictionary, f: Dictionary, h, dt: float, perto: Array
 	if d.length() > 1.0:
 		var dir := d.normalized()
 		var passo := minf(float(st.vel) * dt, d.length())
-		it.p = it.p + dir * passo
+		it.p = nv.pai.mundo.mover_ponto(it.p, dir * passo, nv.RAIO_ALIADO)
 		it.v = (it.v as Vector2).lerp(dir, clampf(dt * 10.0, 0.0, 1.0))  # suavizado: o quadro não pisca na virada
 		it.lin = linha_de(it.v, int(it.lin))
 		if not f.has("ciclo_s"):
@@ -571,6 +571,19 @@ static func altura(it: Dictionary, f: Dictionary) -> float:
 	if not f.has("altura"):
 		return 0.0
 	return roundf(float(f.altura) + sin(float(it.fase) * 1.3) * float(f.get("balanco", 2.0)))
+
+
+## Px do pé até o alto do corpo (onde a barrinha de tempo de vida do aliado fica) e o raio do anel verde dele no chão.
+static func topo(it: Dictionary) -> float:
+	var f := ficha_de(it)
+	if f.is_empty():
+		return 30.0
+	return float((f.pe as Vector2).y) * 0.62 * float(f.get("esc", 1.0)) + altura(it, f)  # 0,62: a folha tem folga em cima do desenho
+
+
+static func raio_marca(it: Dictionary) -> float:
+	var f := ficha_de(it)
+	return 14.0 if f.is_empty() else maxf(10.0, float(f.sombra) * float(f.get("esc", 1.0)) + 1.0)
 
 
 ## Quanto do bicho está "aceso" (0 a 1): sobe da névoa ao nascer e apaga no fim da vida.
@@ -704,14 +717,14 @@ static func _rastro_arco(ci: CanvasItem, corpo: Vector2, dir: Vector2, raio: flo
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-## Sopro de fogo em leque: bolas de fogo que saem da boca e se abrem, de amarelo a vermelho (dragão).
+## Sopro de fogo em leque: bolas de fogo que saem da boca e se abrem, de amarelo a âmbar (dragão).
 static func _rastro_fogo(ci: CanvasItem, corpo: Vector2, ip: Vector2, dir: Vector2, raio: float, alcance_boca: float, g: float) -> void:
 	var boca := corpo + dir * alcance_boca
 	var longe := (ip - boca).length() + raio
 	for k in 7:
 		var ang := dir.angle() + (k - 3) * 0.16
 		var d := longe * (0.35 + 0.65 * g) * (0.75 + 0.25 * absf(sin(k * 1.7)))
-		var c := Color(1.0, 0.9, 0.4).lerp(Color(1.0, 0.25, 0.05), g)
+		var c := Color(1.0, 0.9, 0.4).lerp(Color(1.0, 0.6, 0.15), g)
 		c.a = 0.75 * (1.0 - g)
 		ci.draw_circle(boca + Vector2.from_angle(ang) * d, 3.0 + 4.0 * g, c)
 	ci.draw_circle(boca, 4.0 * (1.0 - g), Color(1.0, 0.95, 0.6, 0.8 * (1.0 - g)))

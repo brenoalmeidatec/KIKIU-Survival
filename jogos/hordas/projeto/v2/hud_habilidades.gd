@@ -2,6 +2,7 @@ extends Control
 ## Dois slots de habilidade no HUD. E lê somente os campos publicados pelo herói; Q fica explicitamente reservada.
 
 const Paleta := preload("res://v2/paleta.gd")
+const Glifos := preload("res://v2/glifos.gd")
 const TAM_CARD := Vector2(86.0, 74.0)
 const ESPACO_CARD := 2.0
 const TAM_ICON := Vector2(48.0, 48.0)
@@ -40,6 +41,7 @@ func deslocar(d: Vector2) -> void:
 
 
 func _ready() -> void:
+	Glifos.ao_mudar(queue_redraw)  # o selo da tecla segue o dispositivo em uso (E/Q no teclado, LB/RB no controle)
 	position = POSICAO
 	size = Vector2(TAM_CARD.x * 2.0 + ESPACO_CARD, TAM_CARD.y)
 	process_priority = 100  # corre depois do HUD antigo e mantém os desenhos duplicados apagados
@@ -178,15 +180,17 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		Paleta.NUMERO_PEQUENO,
 		cor if tecla == "E" and e_disponivel else DESATIVADO
 	)
-	var selo := Rect2(origem + Vector2((TAM_CARD.x - 16.0) * 0.5, 64.0), Vector2(16.0, 10.0))
+	var nome_tecla := Glifos.texto("habilidade" if tecla == "E" else "ultimate")
+	var larg_selo := maxf(16.0, 8.0 * float(nome_tecla.length()) + 8.0)
+	var selo := Rect2(origem + Vector2((TAM_CARD.x - larg_selo) * 0.5, 64.0), Vector2(larg_selo, 10.0))
 	draw_rect(selo, Color(Paleta.PAINEL, 0.98))
 	_moldura(selo, cor if tecla == "E" and e_disponivel else DESATIVADO)
 	draw_string(
 		fonte,
-		selo.position + Vector2(4.0, 9.0),
-		tecla,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1.0,
+		selo.position + Vector2(0.0, 9.0),
+		nome_tecla,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		larg_selo,
 		Paleta.NUMERO_PEQUENO,
 		cor if tecla == "E" and e_disponivel else DESATIVADO
 	)

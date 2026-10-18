@@ -40,6 +40,26 @@ class HeroiComRuptura:
 	var contragolpe_max := 1.5
 
 
+class DiretorFalso:
+	extends RefCounted
+	var nivel := 1
+	var niveis_total := 30
+	var fracao := 0.0
+	var trava := false
+	var chefes_mapa: Array = [{"nivel": 10, "mk": {"mini": true}}, {"nivel": 30, "mk": {"mini": false}}]
+
+	func fracao_mapa() -> float:
+		return fracao
+
+	func travado() -> bool:
+		return trava
+
+
+class CombateFalso:
+	extends RefCounted
+	var diretor := DiretorFalso.new()
+
+
 class MundoFalso:
 	extends RefCounted
 	signal nivel_subiu(nivel)
@@ -54,6 +74,7 @@ class MundoFalso:
 	var combo := 0
 	var tempo_partida := 0.0
 	var monstros_vivos := 0
+	var combate = null
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -86,6 +107,24 @@ func _testes() -> void:
 	vista.add_child(hud)
 	hud.set_process(false)  # os passos são nossos
 	_teste_habilidades(hud, falso)
+
+	# 0. placa do NÍVEL DO MAPA: escondida sem o diretor; com ele mostra "NÍVEL n/total", a barra anda e o chefe trava
+	hud.avancar(PASSO)
+	var placa: Control = hud.get_node("Raiz/Nivel")
+	ok(not placa.visible, "sem diretor a placa do nível do mapa fica escondida")
+	falso.combate = CombateFalso.new()
+	var dir: DiretorFalso = falso.combate.diretor
+	dir.nivel = 7
+	dir.fracao = 6.5 / 29.0
+	hud.avancar(PASSO)
+	ok(placa.visible and placa.get_node("Barra").texto() == "NÍVEL 7/30", "a placa mostra NÍVEL 7/30")
+	ok(placa.get_node("Barra").chefes.size() == 2 and not placa.get_node("Barra").travado, "duas marcas de chefe, nível livre")
+	dir.nivel = 10
+	dir.trava = true
+	hud.avancar(PASSO)
+	ok(placa.get_node("Barra").travado and placa.get_node("Barra").nivel == 10, "com o chefe vivo a placa mostra o nível travado")
+	ok(placa.position.x + placa.size.x <= hud._relogio.get_parent().position.x + 4.0, "a placa fica à esquerda do relógio")
+	falso.combate = null
 
 	# 1. sem combate: vida cheia, XP 0, nível 1, tempo zero, combo escondido
 	hud.avancar(PASSO)
@@ -608,6 +647,22 @@ func _fotos(pasta: String) -> void:
 	h2.rup_carga = 1.0
 	await get_tree().create_timer(0.5).timeout
 	await _foto(w, pasta, "hud_e_carga_cheia")
+
+	# A barra do chefe das fotos acima segue no HUD falso: zera e espera ela sumir (a fantasma desce devagar) antes de o HUD ir para o mundo de verdade.
+	falso.chefe_vida.emit(0)
+	for i in 900:
+		if not w.ui.get_node("Hud")._chefe.visible:
+			break
+		await get_tree().process_frame
+	# Nível do mapa com o mundo de verdade ligado ao HUD: nível 14, com a barra andando, e o chefão do nível 30 em campo (nível travado).
+	w.ui.get_node("Hud").ligar(w)
+	w.combate.diretor.ir_para_nivel(14)
+	w.combate.diretor.t_nivel = w.combate.diretor.seg_nivel() * 0.5
+	await get_tree().create_timer(0.5).timeout
+	await _foto(w, pasta, "hud_nivel_mapa_14")
+	w.combate.diretor.ir_para_nivel(30)
+	await get_tree().create_timer(0.8).timeout
+	await _foto(w, pasta, "hud_nivel_mapa_30_chefao")
 
 
 func _foto(w, pasta: String, nome: String) -> void:

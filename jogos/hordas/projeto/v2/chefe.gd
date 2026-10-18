@@ -1,11 +1,12 @@
 extends RefCounted
-## Mini-chefes (aos 3 e aos 6 min) e chefe (aos 10 min) da v2 (leva 3). Usam o sprite de um monstro do protótipo, em escala maior e com cor
+## Mini-chefes e o CHEFÃO da v2. Nascem nos níveis de chefe do mapa (dados/v2_niveis.json, contados por v2/diretor.gd: na Floresta, nos
+## níveis 10 e 20 e o chefão no 30). Usam o sprite de um monstro do protótipo, em escala maior e com cor
 ## nova (arte própria fica para depois). Têm muita vida, não levam empurrão nem atordoamento e atacam sempre ANUNCIANDO: uma área no chão
 ## pisca (v2/avisos.gd) por ~1 s antes do dano, então dá para sair ou esquivar.
 ##   estouro   = um círculo grande sob o herói;   chuva = vários círculos pequenos em volta dele, um atrás do outro;
 ##   investida = uma faixa avisa o caminho e o chefe corre por ela.
-## Abaixo de `fase2` da vida o chefe fica mais rápido e a chuva ganha círculos. Vencer o CHEFE é a vitória da partida. Os números ficam em
-## dados/v2_cartas.json > "chefes". O mundo expõe os sinais chefe_apareceu(nome, vida_max) e chefe_vida(vida) para o HUD.
+## Abaixo de `fase2` da vida o chefe fica mais rápido e a chuva ganha círculos. Vencer o CHEFE é a vitória da partida. As fichas (marcas) ficam em
+## dados/v2_cartas.json > "chefes"; o diretor copia a marca com a vida do mapa e mini = false só no último nível. O mundo expõe os sinais chefe_apareceu(nome, vida_max) e chefe_vida(vida) para o HUD.
 
 var combate
 var mundo
@@ -61,13 +62,8 @@ func zerar() -> void:
 
 
 func atualizar(dt: float) -> void:
-	var t: float = mundo.tempo_partida
 	if atual == null:
-		for mk in cfg.marcas:
-			if not feitos.has(mk.id) and t >= float(mk.tempo) * mundo.fator_pesadelo("chefe_tempo_mult"):
-				nascer(mk)
-				break
-		return
+		return  # quem faz o chefe nascer é o nível do mapa (diretor.avancar_nivel)
 	if not atual.vivo:
 		return
 	luz.position = (atual.pos + Vector2(0, -float(atual.alt) * 0.5)).round()

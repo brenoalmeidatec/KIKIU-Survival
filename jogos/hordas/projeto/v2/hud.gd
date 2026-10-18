@@ -44,10 +44,24 @@ const COR_ELITE := Paleta.ANUNCIO_ELITE
 const COR_NIVEL := Paleta.ANUNCIO_NIVEL
 const RB_POS := Vector2(54, 40)  # o slot da ruptura (hoje escondido por hud_habilidades.gd): 22x22, logo abaixo da moldura das barras (y 6 a 36)
 const PESADELO_POS := Vector2(540.0, 10.0)  # o aviso PESADELO, ao lado do relógio
+const NIVEL_RECT := Rect2(312.0, 38.0, 112.0, 26.0)  # abaixo das barras expansíveis e à esquerda dos abates
+const HudNivel := preload("res://v2/hud_nivel.gd")
 const RB_TAM := 22
 const RB_POP_T := 0.15  # s do pop ao zerar a recarga
 const RB_LARANJA := Paleta.CARGA_LARANJA
 const RB_BORDA := Paleta.RUPTURA_BORDA
+## Comprimento das barras de vida e de fôlego. No máximo de partida do herói escolhido (cfg do combate) a barra mede BARRA_BASE_PX;
+## cada ponto de vida máxima acima da base soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO. O teto (BARRA_TETO_PX)
+## segura a moldura antes do relógio (x 428). Ver _barras.
+const BARRA_BASE_PX := 142.0
+const BARRA_PX_VIDA := 1.2
+const BARRA_PX_FOLEGO := 47.0
+const BARRA_TETO_PX := 320.0
+const BARRA_MIN_PX := 64.0  # cabe "999/999" em Press Start 2P de 8 px (56 px)
+const BARRA_FOLGA := 4.0  # a moldura de pedra fica 4 px fora de cada lado da barra de vida
+const BARRA_VELOC := 7.0  # quão rápido a barra desliza até o comprimento novo (suavização exponencial, por segundo)
+const BASE_VIDA := 100.0  # sem combate (mundo falso dos testes)
+const BASE_FOLEGO := 3.0
 ## Onde cada peça do HUD gruda: -1 = na borda esquerda/de cima do canvas, +1 = na direita/de baixo, 0 = fica no meio (centro do bloco).
 const ANCORAS := {
 	"Retrato": Vector2(-1, -1),
@@ -55,6 +69,7 @@ const ANCORAS := {
 	"Folego": Vector2(-1, -1),
 	"MolduraBarras": Vector2(-1, -1),
 	"Tempo": Vector2(0, -1),
+	"Nivel": Vector2(0, -1),
 	"Abates": Vector2(0, -1),
 	"Chefe": Vector2(0, -1),
 	"Xp": Vector2(0, 1),
@@ -102,6 +117,7 @@ var _tempo_vinheta := 0.0  # segundos com vida baixa (para o pulso da vinheta)
 var _combo_x := 0.0
 var _fusao: Control  # o cartão grande da fusão (montado na primeira fusão)
 var _selo_pesadelo: Label  # "PESADELO" ao lado do relógio (modo do santuário)
+var _nivel_mapa: Control  # a barra do mapa dentro da placa "Nivel" (v2/hud_nivel.gd)
 var _fusao_nome: Label
 var _fusao_desc: Label
 var _fusao_tween: Tween
@@ -133,11 +149,15 @@ var _rb_perf := false  # moldura piscando em branco (janela perfeita)
 var _rb_nega := false  # moldura vermelha
 var _rb_pop := 0.0
 var _rb_recarga_antes := 0.0
+var _vida_px := -1.0  # comprimento atual da barra de vida (desliza até o alvo em _barras); -1 até o primeiro quadro
+var _folego_px := -1.0  # o mesmo, para a barra de fôlego
 
 @onready var _heroi_img: TextureRect = $Raiz/Retrato/Heroi
 @onready var _vida_barra: TextureProgressBar = $Raiz/Vida/Barra
 @onready var _vida_txt: Label = $Raiz/Vida/Texto
 @onready var _folego: TextureProgressBar = $Raiz/Folego
+@onready var _vida_caixa: Control = $Raiz/Vida
+@onready var _moldura_barras: NinePatchRect = $Raiz/MolduraBarras
 @onready var _relogio: Label = $Raiz/Tempo/Relogio
 @onready var _abates: Label = $Raiz/Abates/Linhas
 @onready var _combo: Control = $Raiz/Combo
@@ -190,6 +210,7 @@ func _ready() -> void:
 	_combo_x = _combo.position.x
 	_combo_y = _combo.position.y
 	_combo_y0 = _combo_y
+	_criar_nivel_mapa()
 	for nome in ANCORAS:
 		_bases[nome] = (get_node("Raiz/" + nome) as Control).position
 	_combo_num.pivot_offset = Vector2(100, 13)
@@ -273,7 +294,7 @@ func avancar(dt: float) -> void:
 	_vida_barra.value = vida
 	_vida_txt.text = "%d/%d" % [roundi(vida), roundi(vida_max)]
 	_vida_baixa(dt, vida / vida_max)
-	var folego_max := maxf(_num(h, "folego_max", 100.0), 1.0)
+	var folego_max := maxf(_num(h, "folego_max", BASE_FOLEGO), 1.0)
 	_folego.max_value = folego_max
 	_folego.value = clampf(_num(h, "folego", folego_max), 0.0, folego_max)
 	# Herói cansado (corrida no Shift esgotou o fôlego): a barra pisca em vermelho até recuperar.
@@ -292,11 +313,13 @@ func avancar(dt: float) -> void:
 	var tempo := maxf(_num(mundo, "tempo_partida", 0.0), 0.0)
 	_relogio.text = "%02d:%02d" % [int(tempo) / 60, int(tempo) % 60]
 	_checar_minuto(int(tempo) / 60)
+	_atualizar_nivel_mapa(dt)
 	var abates := roundi(_num(mundo, "abates", 0.0))
 	var combo := roundi(_num(mundo, "combo", 0.0))
 	_abates.text = "ABATES %d\nVIVOS %d" % [abates, roundi(_num(mundo, "monstros_vivos", 0.0))]
 	var cartas_na_tela := _cartas_na_tela()  # a escolha e o baú ocupam a tela toda: a HUD inteira some (volta ao fechar), sem misturar com os botões
 	visible = not cartas_na_tela
+	_barras(0.0 if cartas_na_tela else dt, vida_max, folego_max, _base_barras())  # sem correr com a HUD escondida: a barra cresce quando ela volta
 	_combo.visible = combo > 0 and not cartas_na_tela
 	_combo_num.text = "x%d" % combo
 	_checar_marcos(_combo_antes, combo)
@@ -310,6 +333,44 @@ func avancar(dt: float) -> void:
 	_animar(dt)
 	_anuncio.avancar(dt)
 	_anuncio.visible = _anuncio.texto_ativo != "" and not cartas_na_tela
+
+
+## A placa do NÍVEL DO MAPA (moldura de pedra igual à do relógio) com a barra do mapa dentro.
+func _criar_nivel_mapa() -> void:
+	var placa := NinePatchRect.new()
+	placa.name = "Nivel"
+	placa.texture = ($Raiz/Tempo as NinePatchRect).texture
+	for lado in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		placa.set_patch_margin(lado, 5)
+	placa.axis_stretch_horizontal = NinePatchRect.AXIS_STRETCH_MODE_TILE_FIT
+	placa.axis_stretch_vertical = NinePatchRect.AXIS_STRETCH_MODE_TILE_FIT
+	placa.position = NIVEL_RECT.position
+	placa.size = NIVEL_RECT.size
+	placa.light_mask = 0
+	placa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_nivel_mapa = HudNivel.new()
+	_nivel_mapa.name = "Barra"
+	_nivel_mapa.size = NIVEL_RECT.size
+	_nivel_mapa.light_mask = 0
+	_nivel_mapa.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	placa.add_child(_nivel_mapa)
+	$Raiz.add_child(placa)
+	$Raiz.move_child(placa, $Raiz/Tempo.get_index())
+	placa.visible = false  # só aparece quando o mundo tem o diretor com os níveis do mapa
+
+
+## Lê o nível do mapa do diretor (mundo.combate.diretor); um mundo sem ele (o mundo falso dos testes) deixa a placa escondida.
+func _atualizar_nivel_mapa(dt: float) -> void:
+	var c = _campo(mundo, "combate")
+	var d = _campo(c, "diretor")
+	var placa := _nivel_mapa.get_parent() as Control
+	placa.visible = d != null and d.has_method("fracao_mapa")
+	if not placa.visible:
+		return
+	var lista: Array = []
+	for e in d.chefes_mapa:
+		lista.append({"nivel": int(e.nivel), "mini": bool(e.mk.mini)})
+	_nivel_mapa.mostrar(d.nivel, d.niveis_total, d.fracao_mapa(), lista, d.travado(), dt)
 
 
 ## O aviso PESADELO, ao lado do relógio: só aparece quando a partida é no modo Pesadelo (mundo.pesadelo()).
@@ -449,6 +510,42 @@ func _moldura(r: Rect2, cor: Color, redondo := false) -> void:
 func _cartas_na_tela() -> bool:
 	var telas = _campo(_campo(mundo, "combate"), "telas")
 	return _campo(telas, "escolha_aberta") == true or _campo(telas, "bau_aberto") == true
+
+
+## Comprimento das barras (ver BARRA_*). O alvo segue o máximo atual; o comprimento desliza até ele com dt (suavização exponencial).
+## Com a escolha de carta ou o baú na tela, dt vem 0 e a barra fica parada: cresce quando a HUD volta. A moldura de pedra acompanha o
+## maior dos dois. Tudo por size: a posição já anda com o deslocamento do bloco no canvas (ui_reencaixar).
+func _barras(dt: float, vida_max: float, folego_max: float, base: Vector2) -> void:
+	var alvo_vida := clampf(BARRA_BASE_PX + BARRA_PX_VIDA * (vida_max - base.x), BARRA_MIN_PX, BARRA_TETO_PX)
+	var alvo_folego := clampf(BARRA_BASE_PX + BARRA_PX_FOLEGO * (folego_max - base.y), BARRA_MIN_PX, BARRA_TETO_PX)
+	if _vida_px < 0.0:  # primeiro quadro com o herói: começa no tamanho certo, sem animação de entrada
+		_vida_px = alvo_vida
+		_folego_px = alvo_folego
+	var k := 1.0 - exp(-BARRA_VELOC * dt)
+	_vida_px = _deslizar(_vida_px, alvo_vida, k)
+	_folego_px = _deslizar(_folego_px, alvo_folego, k)
+	_vida_barra.size.x = roundf(_vida_px)
+	_vida_txt.size.x = roundf(_vida_px)
+	_folego.size.x = roundf(_folego_px)
+	var moldura := roundf(maxf(_vida_px, _folego_px) + 2.0 * BARRA_FOLGA)
+	_vida_caixa.size.x = moldura
+	_moldura_barras.size.x = moldura
+
+
+## Um passo da suavização. Com k 0 não se mexe (HUD escondida); perto do alvo, meio px, cola nele para o pixel parar de tremer.
+static func _deslizar(atual: float, alvo: float, k: float) -> float:
+	if k <= 0.0:
+		return atual
+	if absf(alvo - atual) < 0.5:
+		return alvo
+	return lerpf(atual, alvo, k)
+
+
+## Base da barra: a vida e o fôlego de partida do herói escolhido, o mesmo cfg do combate que o meta.gd soma os bônus por cima.
+## Sem combate (mundo falso dos testes), os padrões.
+func _base_barras() -> Vector2:
+	var cfg = _campo(_campo(mundo, "combate"), "cfg")
+	return Vector2(_num(_campo(cfg, "heroi"), "vida", BASE_VIDA), _num(_campo(cfg, "folego"), "max", BASE_FOLEGO))
 
 
 func _animar(dt: float) -> void:

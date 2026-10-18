@@ -120,6 +120,21 @@ func _testes() -> void:
 	ok(int(u.abates) == 7 and int(u.nivel) == 2 and int(u.ganhas) == 108, "o resumo da última partida fica no save")
 	r = Meta.registrar_partida({"tempo": 600.0, "abates": 90, "nivel": 9, "maior_combo": 20, "venceu": true, "almas": 0})
 	ok(bool(Meta.estado()["conquistas"]["derrota_chefe"]), "vencer marca a conquista do chefe")
+	ok(not Meta.mapa_vencido("floresta") and Meta.mapas_vencidos().is_empty(), "vencer sem dizer o mapa não marca mapa nenhum")
+	Meta.registrar_partida({"tempo": 10.0, "venceu": false, "almas": 0, "mapa": "floresta"})
+	ok(not Meta.mapa_vencido("floresta"), "perder no mapa não o marca como vencido")
+	r = Meta.registrar_partida({"tempo": 10.0, "venceu": true, "almas": 0, "mapa": "floresta"})
+	ok(Meta.mapa_vencido("floresta") and r.novas.has("vence_floresta"), "o resultado vencedor marca o mapa e anuncia a conquista")
+	ok(not Meta.marcar_mapa_vencido("floresta"), "mapa já vencido não é marcado como novo")
+	ok(Meta.marcar_mapa_vencido("laboratorio") and Meta.mapa_vencido("laboratorio"), "marcar_mapa_vencido grava direto")
+	r = Meta.registrar_partida({"venceu": true, "mapa": "laboratorio", "mapa_vencido_agora": true})
+	ok(r.novas.count("vence_laboratorio") == 1, "a conquista já gravada na vitória aparece uma vez no resultado")
+	r = Meta.registrar_partida({"venceu": true, "mapa": "laboratorio", "mapa_vencido_agora": Meta.marcar_mapa_vencido("laboratorio")})
+	ok(not r.novas.has("vence_laboratorio"), "vencer o mesmo mapa de novo não repete a conquista")
+	ok(Meta.mapas_vencidos() == ["floresta", "laboratorio"], "a lista de mapas vencidos deriva das conquistas")
+	ok(not Meta.marcar_mapa_vencido("") and not Meta.marcar_mapa_vencido("inexistente"), "ids vazios ou desconhecidos são recusados")
+	var vencidos := Meta._ler()
+	ok(not vencidos.has_section("mapas_vencidos") and bool(vencidos.get_value("conquistas", "vence_floresta", false)), "um único estado guarda a vitória")
 
 	# 6. santuário: uma linha por melhoria e conquista, bloqueio, saldo na tela, compra pelo botão e o máximo
 	_apagar_save()
@@ -228,6 +243,32 @@ func _testes() -> void:
 	m2.queue_free()
 	await get_tree().process_frame
 
+	# 7b. vitória real do combate: a gravação antes do sinal não perde o anúncio, e quatro conquistas cabem sem invadir CONTINUAR.
+	_apagar_save()
+	var m4 = Mundo.instantiate()
+	m4.modo_teste = true
+	m4.id_mapa = "floresta"
+	add_child(m4)
+	m4.set_process(false)
+	var r4 = Resultado.new()
+	r4.set_process(false)
+	r4.montar(m4)
+	m4.ui.add_child(r4)
+	m4.tempo_partida = 320.0
+	m4.maior_combo = 50
+	m4.abates = 70
+	m4.almas_partida = 46
+	m4.combate.fim_de_partida(true)
+	ok(bool(m4.resultado.get("mapa_vencido_agora", false)), "o combate marca a primeira vitória antes de emitir o sinal")
+	ok(r4.aberto and Meta.mapa_vencido("floresta"), "o sinal real abre o resultado com o mapa já vencido")
+	ok(Mapas.condicao(Mapas.buscar("laboratorio")) == "", "a primeira vitória real abre o Laboratório")
+	await _frames(2)
+	_conferir_quatro_conquistas(r4)
+	m4.combate.fim_de_partida(true)
+	ok(int(Meta._ler().get_value("progressao", "partidas", 0)) == 1, "um segundo fim não duplica a partida nem as almas")
+	m4.queue_free()
+	await get_tree().process_frame
+
 	# 8. sem o sinal do mundo: a conquista de tempo é gravada no meio da partida, e a tela com as almas abre sozinha
 	#    quando a tela de resultado (telas.gd) abre, que é quando o herói cai
 	_apagar_save()
@@ -329,6 +370,16 @@ func _frames(n: int) -> void:
 		await get_tree().process_frame
 
 
+func _conferir_quatro_conquistas(res) -> void:
+	for id in ["sobreviva_5min", "combo_50", "derrota_chefe", "vence_floresta"]:
+		ok(res._novas.text.count(res._nome_conquista(id)) == 1, "o resultado anuncia uma vez a conquista " + id)
+	ok(res._novas.get_line_count() == 2, "quatro conquistas ocupam duas linhas")
+	ok(res._novas.get_minimum_size().y <= res._novas.size.y, "a altura reservada comporta o texto das conquistas")
+	ok(res._novas.position.y + res._novas.size.y + 8 <= res._botao.position.y, "o texto das conquistas fica separado do CONTINUAR")
+	ok(res._novas.position.x + res._novas.get_minimum_size().x <= res.LARG, "os nomes cabem na largura do resultado")
+	ok(res._botao.position.y + res._botao.size.y <= res.ALT, "CONTINUAR cabe na altura da tela")
+
+
 func _foto_janela(caminho: String) -> void:
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png(caminho)
@@ -380,5 +431,25 @@ func _fotos(pasta: String) -> void:
 	await get_tree().create_timer(1.6).timeout
 	await m.ap.foto(pasta.path_join("resultado_fim.png"))
 	res._terminou = true
+	m.queue_free()
+	await get_tree().process_frame
+
+	# Quatro conquistas simultâneas pelo caminho real do combate e do sinal, com a interface efetivamente renderizada.
+	_apagar_save()
+	m = Mundo.instantiate()
+	m.id_mapa = "floresta"
+	add_child(m)
+	m.set_process(false)
+	res = m.meta_res
+	res.set_process(false)
+	m.tempo_partida = 320.0
+	m.maior_combo = 50
+	m.abates = 70
+	m.almas_partida = 46
+	m.combate.fim_de_partida(true)
+	res._animar(2.0)
+	await _frames(2)
+	_conferir_quatro_conquistas(res)
+	await m.ap.foto(pasta.path_join("resultado_quatro_conquistas.png"))
 	m.queue_free()
 	await get_tree().process_frame

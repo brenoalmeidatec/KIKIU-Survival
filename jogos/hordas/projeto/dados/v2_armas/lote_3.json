@@ -75,11 +75,11 @@
     "id": "grito_guerra",
     "icone": "icone_u_sino_ferro",
     "nome": "Grito de Guerra",
-    "desc": "Um anel vermelho lento e largo sai de você de tempos em tempos.",
+    "desc": "Um anel ciano lento e largo sai de você de tempos em tempos.",
     "tipo": "anel",
     "max": 5,
     "peso": 1.1,
-    "cor": [0.9, 0.15, 0.15],
+    "cor": [0.5, 0.95, 1.0],
     "base": { "dano": 14, "recarga": 4.0, "raio": 100, "vel": 160, "empurra": 60 },
     "niveis": [
       { "texto": "+5 de dano", "dano": 5 },
@@ -88,11 +88,11 @@
       { "texto": "+5 de dano e empurra", "dano": 5, "empurra": 10 }
     ],
     "arte": {
-      "visual": "Na tela de 960x540, um anel vermelho grosso e lento que se espalha como onda de grito, com linhas de vento vermelho por dentro. Expande devagar até a borda da área.",
-      "cores": ["vermelho", "carmim"],
+      "visual": "Na tela de 960x540, um anel ciano grosso e lento que se espalha como onda de grito, com linhas de vento ciano por dentro. Expande devagar até a borda da área.",
+      "cores": ["ciano", "azul-claro"],
       "tamanho": "borda de 6 px; linhas internas de 2 px",
       "duracao": "0,8 s de expansão",
-      "provisorio": "Círculo vermelho de 6 px de espessura que cresce devagar e some."
+      "provisorio": "Círculo ciano de 6 px de espessura que cresce devagar e some."
     }
   },
   {
