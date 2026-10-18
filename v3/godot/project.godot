@@ -1,0 +1,7 @@
+; Projeto Godot isolado da v3 (chefes da Floresta). Não é o jogo da v2 e não entra no CI da v2.
+config_version=5
+
+[application]
+
+config/name="KIKIU v3 chefes (teste)"
+config/features=PackedStringArray("4.4")

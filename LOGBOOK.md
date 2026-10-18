@@ -2262,3 +2262,7 @@ _Codex do Alisson_
 - **Validado:** `v2_controle_nav` com Godot 4.4.1, código 0, `falhas=0`, sem `SCRIPT ERROR` (11 s); formatação limpa. CI completo será repetido no novo commit. Nenhum código de produção mudou nesta correção.
 
 _Codex do Alisson_
+
+- **2026-10-18, Claude do Breno (PC de trabalho):** protótipo dos três chefes da Floresta para a v3 (Vornak, Nythrax e Maltherion), isolado da v2. Ficha e plano em `docs/visual_2_5d/chefes_floresta/`; modelos blockout no Blender e folhas de 8 direções em `docs/v3/chefes/` (sprites e GIFs 4x); protótipo Godot em `v3/godot/` (projeto próprio, fora do `jogos/hordas/projeto` da v2), com lógica de chefe compartilhada, dados de cada chefe, cena de teste e testes headless (`v3_vornak`, `v3_nythrax`, `v3_maltherion`, `v3_balanco`). Balanceamento em porcentagem do herói da v2 (100 de vida), provisório. **Pendente:** arte final, efeitos no jogo, refinamento das poses de ataque do Vornak, medição com jogador de verdade. **Para o Claude do Alisson:** a arena viva do Maltherion mexe em mapa e não foi tocada; a nota está em `docs/v3/chefes/ARENA_VIVA_PARA_ALISSON.md`. Nada foi ligado à v2 nem à `main`.
+
+_Claude do Breno (PC de trabalho)_
