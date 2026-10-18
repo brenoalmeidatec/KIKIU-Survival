@@ -16,11 +16,10 @@ func _ready() -> void:
 	Personagens.caminho_indice = "user://foto_salao_personagens.cfg"
 	Personagens.caminho_antigo = "user://foto_salao_antigo.cfg"
 	Meta.caminho_save = "user://foto_salao_meta.cfg"
-	for f in ["user://foto_salao_personagens.cfg", "user://foto_salao_meta.cfg", "user://foto_salao_p1.cfg"]:
-		if FileAccess.file_exists(f):
-			DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
-	Personagens.criar("Breno")
-	Personagens.ativar("p1")
+	for f in DirAccess.get_files_at("user://"):  # zera os saves temporários de uma foto anterior
+		if f.begins_with("foto_salao_"):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://" + f))
+	Personagens.ativar(Personagens.criar("Breno"))
 	Meta.creditar(int(args.get("almas", 0)))
 	if args.has("janela"):
 		var p := str(args.janela).split("x")
