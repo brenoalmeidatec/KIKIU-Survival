@@ -1,0 +1,47 @@
+{
+  "versao": "v3",
+  "status": "material pronto, fora do jogo atual (v2); os mapas são do Alisson e não foram tocados",
+  "mapas": {
+    "floresta": {
+      "status": "confirmado pelo Breno (18/10)",
+      "mini_chefes": [
+        {
+          "nome": "Vornak, o Devorador de Raízes",
+          "descricao": "Criatura ancestral que absorve a energia das árvores mortas e prende o jogador com raízes corrompidas."
+        },
+        {
+          "nome": "Nythrax, o Lobo do Véu Negro",
+          "descricao": "Predador espectral que some na névoa e ataca de surpresa, perseguindo o jogador."
+        }
+      ],
+      "chefao": {
+        "nome": "Maltherion, o Rei do Bosque Profanado",
+        "descricao": "Antigo soberano consumido pela escuridão. Controla raízes gigantes, invoca criaturas corrompidas e muda o terreno na batalha."
+      }
+    },
+    "laboratorio": {
+      "status": "proposta, aguarda confirmação do Breno",
+      "mini_chefes": [
+        {"nome": "Tubo Vazado", "descricao": ""},
+        {"nome": "Cientista Escorregadio", "descricao": ""}
+      ],
+      "chefao": {"nome": "Experimento 404", "descricao": ""}
+    },
+    "cidade": {
+      "status": "proposta, aguarda confirmação do Breno",
+      "mini_chefes": [
+        {"nome": "Poste Bêbado", "descricao": ""},
+        {"nome": "Cachorro de Calçada", "descricao": ""}
+      ],
+      "chefao": {"nome": "Prefeito Zumbi", "descricao": ""}
+    },
+    "ruinas_da_floresta": {
+      "status": "proposta, aguarda confirmação do Breno",
+      "mini_chefes": [
+        {"nome": "Estátua Insone", "descricao": ""},
+        {"nome": "Corvo Velho Rabugento", "descricao": ""}
+      ],
+      "chefao": {"nome": "Rei Sem Coroa", "descricao": ""}
+    }
+  }
+}
