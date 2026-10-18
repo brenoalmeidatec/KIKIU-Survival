@@ -47,7 +47,7 @@ func checar_folha(id: String) -> void:
 
 func checar_funcoes() -> void:
 	var f := Andante.ficha("espirito_urso")
-	ok(Andante.eh_andante("espirito_urso") and not Andante.eh_andante("golem_barro") and not Andante.eh_andante("lobo_espirito"), "quem é andante")
+	ok(Andante.eh_andante("espirito_urso") and Andante.eh_andante("lobo_espirito") and not Andante.eh_andante("golem_barro"), "quem é andante")
 	ok(Andante.quadro_andar(0.0) == 0 and Andante.quadro_andar(0.5) == 4 and Andante.quadro_andar(-0.1) == 7, "quadro de andar pela fase")
 	ok(Andante.quadro_ataque(f, 0.0) == 0 and Andante.quadro_ataque(f, Andante.tempo_impacto(f) + 0.001) == int(f.impacto), "quadro do impacto")
 	ok(Andante.quadro_ataque(f, 99.0) == Andante.COL_ATAQUE - 1, "o ataque termina no último quadro")
