@@ -265,6 +265,14 @@ func _correr() -> void:
 ## Uma build cheia sem evoluir: aura 4, lâminas 2, corvos 3, raio 2 e runa 2, em raridades variadas.
 func armar_build() -> void:
 	var cs = mundo.combate.cartas
+	if str(args.get("build", "")) == "invocacoes":  # medição de picos: todas as invocações no nível 5 e as fusões do tipo aliado juntas
+		for g in cs.cfg.golpes:
+			if str(g.get("tipo", "")) == "aliado":
+				mundo.combate.armas.definir_golpe(str(g.id), 5, 0.0)
+		for ev in cs.cfg.evolucoes:
+			if str(ev.get("tipo", "")) == "aliado":
+				mundo.combate.armas.adicionar_evoluida(ev, 0.0)
+		return
 	for par in [["aura_fogo", 4], ["laminas", 2], ["corvos", 3], ["raio", 2], ["runa", 2]]:
 		for i in int(par[1]):
 			cs.aplicar(cs.montar_carta(cs.definicao(str(par[0])), 1 + (i % 3)))
