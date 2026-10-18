@@ -234,25 +234,37 @@ func tira(pasta: String, id: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
 	Config.g_aplicar_perfil("alto")
 	for caso in [["frente", Vector2(0, 230)], ["costas", Vector2(0, -230)], ["lado", Vector2(200, 0)]]:
-		var r: Array = preparar(id, caso[1].normalized() * 150.0)  # perto, para ele nascer; depois o alvo vai para longe e dá uma caminhada comprida
-		var it = r[0]
-		var rec: Array = []
-		var log: Array = []
-		for i in 60 * 4:
-			r[1].pos = w.heroi.pos + (caso[1] as Vector2)  # o alvo fica parado a ~200 px (dentro do alcance de busca): ele anda reto até lá
-			passos(1)
-			if it == null or float(it.vida) <= 0.0:
+		var g: Array = []
+		for tentativa in 3:  # o aliado às vezes ataca antes de juntar 30 quadros andando: tenta de novo
+			g = await _gravar(id, caso[1])
+			if (g[0] as Array).size() >= 30:
 				break
-			if int(it.e) == Andante.ANDANDO and bool(it.mov) and (rec.size() > 0 or float(it.et) >= 0.2):
-				rec.append(await recorte(it, Vector2(36, 40), 64))
-				log.append(Andante.quadro_de(it).x)
-				if rec.size() >= 30:
-					break
-		if rec.size() >= 30:
-			juntar(rec, 6).save_png(pasta.path_join("%s_tira_%s.png" % [id, caso[0]]))
-		print("TIRA ", id, " ", caso[0], " quadros da folha por quadro do jogo: ", log)
-		ok(rec.size() >= 30, "%s: gravou 30 quadros seguidos andando (%s)" % [id, caso[0]])
+		if (g[0] as Array).size() >= 30:
+			juntar(g[0], 6).save_png(pasta.path_join("%s_tira_%s.png" % [id, caso[0]]))
+		print("TIRA ", id, " ", caso[0], " quadros da folha por quadro do jogo: ", g[1])
+		ok((g[0] as Array).size() >= 30, "%s: gravou 30 quadros seguidos andando (%s)" % [id, caso[0]])
 	print("TIRA ", pasta)
+
+
+## Grava até 30 quadros seguidos do bicho andando para `dir` (o alvo fica parado ali, dentro do alcance de busca). Devolve [recortes, coluna da folha de cada um].
+func _gravar(id: String, dir: Vector2) -> Array:
+	var r: Array = preparar(id, dir.normalized() * 150.0)  # perto, para ele nascer; depois o alvo vai para longe e dá uma caminhada comprida
+	var it = r[0]
+	var rec: Array = []
+	var cols: Array = []
+	for i in 60 * 4:
+		r[1].pos = w.heroi.pos + dir
+		passos(1)
+		if it == null or float(it.vida) <= 0.0:
+			break
+		if int(it.e) == Andante.ANDANDO and bool(it.mov) and (rec.size() > 0 or float(it.et) >= 0.2):
+			rec.append(await recorte(it, Vector2(36, 40), 64))
+			cols.append(Andante.quadro_de(it).x)
+			if rec.size() >= 30:
+				break
+		elif int(it.e) != Andante.ANDANDO and rec.size() > 0:
+			break  # atacou: a sequência seguida acabou
+	return [rec, cols]
 
 
 func recorte(it, meia := Vector2(64, 70), alto := 100) -> Image:
