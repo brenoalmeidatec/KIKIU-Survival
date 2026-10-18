@@ -180,6 +180,8 @@ func _resultado_do_mundo() -> Dictionary:
 func _terminar(r: Dictionary) -> void:
 	_terminou = true
 	r["pesadelo"] = mundo.pesadelo()  # o Pesadelo rende mais almas (Meta.registrar_partida)
+	if not r.has("mapa") and mundo.get("id_mapa") != null:
+		r["mapa"] = str(mundo.id_mapa)  # vencer um mapa abre o seguinte no santuário (vence_<mapa>, dados/v2_progressao.json)
 	if not r.has("almas"):
 		r["almas"] = Meta.almas_da_partida(mundo)
 	var res: Dictionary = Meta.registrar_partida(r)

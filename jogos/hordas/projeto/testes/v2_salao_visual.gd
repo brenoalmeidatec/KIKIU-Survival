@@ -35,6 +35,12 @@ func _ready() -> void:
 	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
 	var id := Personagens.criar("Matheus")
 	ok(Personagens.ativar(id), "slot isolado ativo")
+	# tudo liberado (os três mapas vencidos e 3 partidas): aqui se confere a sala aberta; as travas ficam no v2_progressao
+	var cf: ConfigFile = Meta._ler()
+	for c in ["vence_floresta", "vence_laboratorio", "vence_cidade"]:
+		cf.set_value("conquistas", c, true)
+	cf.set_value("progressao", "partidas", 3)
+	ok(Meta._gravar(cf), "save com tudo liberado")
 	DisplayServer.window_set_size(Vector2i(960, 540))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	s = load("res://v2/salao.tscn").instantiate()

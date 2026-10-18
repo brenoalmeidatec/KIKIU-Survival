@@ -4,7 +4,10 @@ extends RefCounted
 ## iniciar_heroi). Tudo fica em `caminho_save` (ConfigFile user://v2_progresso.cfg, separado do save da v1). Regras e textos
 ## vêm de dados/v2_meta.json. Não há estado em memória: cada leitura vem do arquivo, e os testes trocam `caminho_save` por um
 ## arquivo temporário para não tocar no save real.
-## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida.
+## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida;
+## [progressao] versao, legado (save de antes das travas do santuário: tudo aberto) e partidas (v2/progressao.gd lê as travas).
+
+const VERSAO_PROGRESSAO := 1
 
 static var caminho_save := "user://v2_progresso.cfg"
 static var erro_save := false
@@ -55,6 +58,8 @@ static func melhorias_visiveis() -> Array:
 static func item_da_recompensa(r: Dictionary) -> Dictionary:
 	var lista: Array = []
 	match str(r.get("tipo", "")):
+		"progresso":  # abre um portal ou estrutura do santuário (dados/v2_progressao.json): só o texto, sem item no catálogo
+			return {"id": str(r.get("id", "")), "nome": str(r.nome)} if str(r.get("nome", "")) != "" else {}
 		"melhoria":
 			lista = melhorias()
 		"modo":
@@ -128,7 +133,27 @@ static func texto_item(item: Dictionary) -> String:
 	return t
 
 
+## Migração das travas do santuário: um save sem [progressao] versao é de antes delas. Se ele já tinha progresso (alguma partida,
+## melhoria, conquista ou almas), fica com tudo aberto (legado = true), porque antes estava tudo aberto. Só marca na memória:
+## a próxima gravação persiste, e daí em diante o save não é mais tratado como antigo.
+static func _migrar(cf: ConfigFile) -> ConfigFile:
+	if cf == null or cf.has_section_key("progressao", "versao"):
+		return cf
+	var tinha := cf.has_section("ultima") or int(cf.get_value("moeda", "almas", 0)) > 0
+	for secao in ["melhorias", "conquistas"]:
+		if cf.has_section(secao):
+			for k in cf.get_section_keys(secao):
+				tinha = tinha or (int(cf.get_value(secao, k, 0)) > 0 if secao == "melhorias" else bool(cf.get_value(secao, k, false)))
+	cf.set_value("progressao", "versao", VERSAO_PROGRESSAO)
+	cf.set_value("progressao", "legado", tinha)
+	return cf
+
+
 static func _ler() -> ConfigFile:
+	return _migrar(_ler_arquivo())
+
+
+static func _ler_arquivo() -> ConfigFile:
 	var cf := ConfigFile.new()
 	var existe := FileAccess.file_exists(caminho_save)
 	if not existe:
@@ -284,8 +309,8 @@ static func _cumprida(c: Dictionary, r: Dictionary) -> bool:
 			return float(r.get("tempo", 0.0)) >= float(c.get("limite", 0.0))
 		"combo":
 			return int(r.get("maior_combo", 0)) >= int(c.get("limite", 0))
-		"venceu":
-			return bool(r.get("venceu", false))
+		"venceu":  # com "mapa": só a vitória naquele mapa (vence_floresta...)
+			return bool(r.get("venceu", false)) and (not c.has("mapa") or str(r.get("mapa", "")) == str(c.mapa))
 	return false
 
 
@@ -323,7 +348,7 @@ static func almas_creditadas(bruto: int, bonus: float, mult := 1.0) -> int:
 
 
 ## Fim da partida: credita as almas (com o bônus de "almas"), marca conquistas e guarda o resumo.
-## `r` tem tempo, abates, nivel, maior_combo, venceu, almas e pesadelo (true = a partida foi no modo Pesadelo). Devolve antes, ganhas, depois e as conquistas novas.
+## `r` tem tempo, abates, nivel, maior_combo, venceu, mapa (id; a vitória abre o mapa seguinte), almas e pesadelo (true = a partida foi no modo Pesadelo). Devolve antes, ganhas, depois e as conquistas novas.
 static func registrar_partida(r: Dictionary) -> Dictionary:
 	erro_save = false
 	var cf := _ler()
@@ -344,6 +369,9 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
 	cf.set_value("ultima", "pesadelo", pesadelo)
+	if r.has("mapa"):
+		cf.set_value("ultima", "mapa", str(r.mapa))
+	cf.set_value("progressao", "partidas", int(cf.get_value("progressao", "partidas", 0)) + 1)  # o Códice e o Altar abrem com N partidas
 	if not _gravar(cf):
 		erro_save = true
 		return {}
