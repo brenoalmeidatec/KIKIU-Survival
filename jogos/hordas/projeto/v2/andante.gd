@@ -32,8 +32,10 @@ const SURGINDO := 2
 ## empurra, atordoa = do golpe por alvo; sombra = raio da sombra; cor_fx = cor do espírito (névoa, rastro do golpe, brilho).
 ## Opcionais, para quem não anda com pernas: ciclo_s = s por ciclo do "andar" contado no RELÓGIO (asa batendo, corpo ondulando, véu do fantasma),
 ## que roda também parado (sem ele o ciclo anda com a distância e parado mostra o quadro `PARADO`); altura = px acima do chão em que ele flutua ou voa
-## (a sombra fica no chão e o corpo balança `balanco` px para cima e para baixo); rastro = o desenho do golpe no impacto: garras (padrão), arco
-## (corte de espada), fogo (sopro em leque), pancada (anel e lascas no chão), nevoa (fiapos que sobem) ou bote (estalo e fagulhas).
+## (a sombra fica no chão e o corpo balança `balanco` px para cima e para baixo; `sombra_a` = opacidade da sombra, 0,3 se faltar);
+## peito = px acima do pé em que nasce o rastro (padrão: um quinto do quadro; quem voa tem o pé no centro do corpo) e boca = px à frente dele em
+## que o fogo sai (padrão 6); rastro = o desenho do golpe no impacto: garras (padrão), arco (corte de espada), fogo (sopro em leque), pancada (anel e
+## lascas no chão), nevoa (fiapos que sobem) ou bote (estalo e fagulhas).
 const FICHAS := {
 	"espirito_urso":
 	{
@@ -156,22 +158,25 @@ const FICHAS := {
 	"dragao_filhote":
 	{
 		"folha": "res://assets/v2/armas/dragao_filhote_dir.png",
-		"quadro": Vector2(47, 48),
-		"pe": Vector2(23, 25),
+		"quadro": Vector2(60, 60),
+		"pe": Vector2(29, 32),
 		"ciclo": [0.0, 0.0, 0.0, 0.0, 0.0],  # voa: o ciclo é o bater de asas no relógio (ciclo_s), sem passada no chão
 		"ciclo_s": 0.5,
-		"altura": 20.0,
+		"altura": 22.0,
 		"balanco": 3.0,
 		# recua a cabeça, enche o peito, boca abrindo, pico, SOPRO, sopro acabando, fecha a boca, volta: 0,46 s, cabe no tique de 0,6 s
 		"tempos": [0.05, 0.05, 0.05, 0.07, 0.05, 0.07, 0.06, 0.06],
 		"impacto": 4,
-		# no quadro do sopro a ponta do focinho fica 12 px à frente do centro do corpo e o leque de fogo passa dela 14 px (`alcance_pata_px` do .json = 26)
-		"alcance": 22.0,
-		"frente": 18.0,
+		# no quadro do sopro a ponta do focinho fica 16 px à frente do centro do corpo e o leque de fogo passa dela 14 px (`alcance_pata_px` do .json = 30)
+		"alcance": 26.0,
+		"frente": 22.0,
 		"raio": 16.0,
 		"empurra": 30.0,
 		"atordoa": 0.05,
-		"sombra": 11.0,
+		"sombra": 15.0,
+		"sombra_a": 0.6,  # voa alto: a sombra no chão tem que aparecer
+		"peito": 5.0,  # o pé é o centro do corpo; o sopro sai da boca, um pouco acima dele e 16 px à frente (o focinho)
+		"boca": 16.0,
 		"cor_fx": Color(1.0, 0.55, 0.15),
 		"rastro": "fogo",
 	},
@@ -380,7 +385,7 @@ static func desenhar(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 	var k := presenca(it)
 	var lado := -1.0 if float(it.r) < 0.0 else 1.0
 	ci.draw_set_transform(p, 0.0, Vector2(1.0, ACHATA))
-	ci.draw_circle(Vector2.ZERO, float(f.sombra) * (0.5 + 0.5 * k), Color(0.0, 0.0, 0.0, 0.3 * k))
+	ci.draw_circle(Vector2.ZERO, float(f.sombra) * (0.5 + 0.5 * k), Color(0.0, 0.0, 0.0, float(f.get("sombra_a", 0.3)) * k))
 	ci.draw_set_transform(p - Vector2(0.0, altura(it, f)), 0.0, Vector2(lado, 1.0))
 	var q := quadro_de(it)
 	var origem := Vector2(q.x * quadro.x, q.y * quadro.y)
@@ -419,12 +424,12 @@ static func desenhar_brilho(ci: CanvasItem, it: Dictionary, p: Vector2, glow: Te
 	var g := (et - ti) / DUR_RASTRO  # 0 = o golpe acabou de cair, 1 = o rastro sumiu
 	var ip: Vector2 = (it.ip as Vector2).round()
 	var dir: Vector2 = it.v
-	var corpo: Vector2 = p - Vector2(0.0, altura(it, f) + float(f.quadro.y) * 0.2)
+	var corpo: Vector2 = p - Vector2(0.0, altura(it, f) + float(f.get("peito", float(f.quadro.y) * 0.2)))
 	match str(f.get("rastro", "garras")):
 		"arco":
 			_rastro_arco(ci, corpo, dir, float(f.frente) + 4.0, cor, g)
 		"fogo":
-			_rastro_fogo(ci, corpo, ip, dir, float(f.raio), g)
+			_rastro_fogo(ci, corpo, ip, dir, float(f.raio), float(f.get("boca", 6.0)), g)
 		"pancada":
 			_rastro_pancada(ci, ip, float(f.raio), cor, g)
 		"nevoa":
@@ -458,8 +463,8 @@ static func _rastro_arco(ci: CanvasItem, corpo: Vector2, dir: Vector2, raio: flo
 
 
 ## Sopro de fogo em leque: bolas de fogo que saem da boca e se abrem, de amarelo a vermelho (dragão).
-static func _rastro_fogo(ci: CanvasItem, corpo: Vector2, ip: Vector2, dir: Vector2, raio: float, g: float) -> void:
-	var boca := corpo + dir * 6.0
+static func _rastro_fogo(ci: CanvasItem, corpo: Vector2, ip: Vector2, dir: Vector2, raio: float, alcance_boca: float, g: float) -> void:
+	var boca := corpo + dir * alcance_boca
 	var longe := (ip - boca).length() + raio
 	for k in 7:
 		var ang := dir.angle() + (k - 3) * 0.16

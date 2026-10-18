@@ -40,12 +40,13 @@ NOME = "dragao_filhote_dir"
 
 ELEVACAO = 45.0
 PPU = 24.5               # igual aos monstros v2, ao herói e ao Golem
-ESCALA = 0.85            # escala geral do modelo (envergadura de ~45 px)
+ESCALA = 1.1             # escala geral do modelo (envergadura de ~58 px)
+CABECA_ESC = 1.25        # a cabeça maior que o natural, para ler bem em tamanho de jogo
 VISTAS = (0.0, 45.0, 90.0, 135.0, 180.0)
 ANDAR = 8
 ATAQUE = 8
 IMPACTO = 4
-W0, H0 = 40, 48          # ponto de partida; o quadro cresce até caber
+W0, H0 = 52, 60          # ponto de partida; o quadro cresce até caber
 CICLO_S = 0.5            # segundos por ciclo de bater de asas (o jogo conta no relógio)
 SOPRO_PX = 14.0          # o leque de fogo passa da ponta do focinho (em px): entra no alcance do golpe
 CONT = np.array([0x2a, 0x0e, 0x0e]) / 255.0
@@ -137,6 +138,7 @@ def modelo():
     esfera("papo", 0.1, (0, -0.33, 0.05), mat["barriga"], tronco, escala=(0.8, 0.9, 0.9))
     cabeca = junta("cabeca", (0, -0.5, 0.22), tronco)
     J["cabeca"] = cabeca
+    cabeca.scale = (CABECA_ESC, CABECA_ESC, CABECA_ESC)
     esfera("cranio", 0.19, (0, -0.58, 0.25), mat["verm"], cabeca, escala=(1.0, 1.05, 0.92))
     caixa("focinho", (0.2, 0.24, 0.12), (0, -0.76, 0.22), mat["verm"], cabeca, chanfro=0.03)
     caixa("ventas", (0.14, 0.04, 0.03), (0, -0.885, 0.26), mat["espinho"], cabeca)
