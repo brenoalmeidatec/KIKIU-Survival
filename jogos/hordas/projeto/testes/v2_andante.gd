@@ -63,6 +63,7 @@ func preparar(id: String, dir: Vector2):
 	w.heroi.fonte = Heroi.Fonte.MOUSE
 	passos(3)
 	w.combate.armas.definir_golpe(id, 1, 0.0)
+	w.combate.armas.ativas[id].st.quantidade = 1  # o teste mede UM bicho por vez (o dano de um segundo contaria como fora do quadro do impacto)
 	var m = monstro_a(dir.x, dir.y)
 	var it = null
 	for i in 400:

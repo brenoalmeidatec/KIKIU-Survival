@@ -51,6 +51,24 @@ const FICHAS := {
 		"sombra": 17.0,
 		"cor_fx": Color(0.62, 1.0, 0.72),
 	},
+	"esqueleto_guerreiro":
+	{
+		"folha": "res://assets/v2/armas/esqueleto_guerreiro_dir.png",
+		"quadro": Vector2(75, 85),
+		"pe": Vector2(37, 66),
+		"ciclo": [30.0, 36.1, 42.0, 35.8, 30.0],
+		# prepara, a espada sobe, sobe, pico atrás da cabeça, CORTE, a espada embaixo, recolhe, volta: 0,52 s, cabe no tique de 0,6 s da carta
+		"tempos": [0.06, 0.06, 0.06, 0.07, 0.05, 0.09, 0.06, 0.07],
+		"impacto": 4,
+		# a ponta da espada, no quadro do corte, chega a 35 px à frente do centro do corpo (`alcance_pata_px` do .json); o arco cai no meio da lâmina
+		"alcance": 28.0,
+		"frente": 25.0,
+		"raio": 19.0,
+		"empurra": 40.0,
+		"atordoa": 0.08,
+		"sombra": 10.0,
+		"cor_fx": Color(0.95, 0.93, 0.85),
+	},
 }
 
 static var _tex := {}
