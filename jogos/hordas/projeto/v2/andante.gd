@@ -216,7 +216,7 @@ const FICHAS := {
 		"como": ["dragao_filhote"],
 		"escala": 1.5,
 		"tinta": Color(1.0, 0.7, 0.55),
-		"mistura": Color(1.0, 0.3, 0.05, 0.4),
+		"mistura": Color(1.0, 0.75, 0.25, 0.4),
 		"cor_fx": Color(1.0, 0.42, 0.1),
 		"halo": 2.6,
 	},
@@ -717,14 +717,14 @@ static func _rastro_arco(ci: CanvasItem, corpo: Vector2, dir: Vector2, raio: flo
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-## Sopro de fogo em leque: bolas de fogo que saem da boca e se abrem, de amarelo a vermelho (dragão).
+## Sopro de fogo em leque: bolas de fogo que saem da boca e se abrem, de amarelo a âmbar (dragão).
 static func _rastro_fogo(ci: CanvasItem, corpo: Vector2, ip: Vector2, dir: Vector2, raio: float, alcance_boca: float, g: float) -> void:
 	var boca := corpo + dir * alcance_boca
 	var longe := (ip - boca).length() + raio
 	for k in 7:
 		var ang := dir.angle() + (k - 3) * 0.16
 		var d := longe * (0.35 + 0.65 * g) * (0.75 + 0.25 * absf(sin(k * 1.7)))
-		var c := Color(1.0, 0.9, 0.4).lerp(Color(1.0, 0.25, 0.05), g)
+		var c := Color(1.0, 0.9, 0.4).lerp(Color(1.0, 0.6, 0.15), g)
 		c.a = 0.75 * (1.0 - g)
 		ci.draw_circle(boca + Vector2.from_angle(ang) * d, 3.0 + 4.0 * g, c)
 	ci.draw_circle(boca, 4.0 * (1.0 - g), Color(1.0, 0.95, 0.6, 0.8 * (1.0 - g)))

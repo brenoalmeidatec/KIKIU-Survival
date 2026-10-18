@@ -18,6 +18,8 @@ extends RefCounted
 ##   --roteiro=hud_golpes  a faixa de golpes do HUD numa partida real: 9 golpes ganhos, horda caçando o herói. Fotos do viewport: 31_parado (faixa
 ##                         esmaecida, parada), 32_pulso (0,15 s depois de subir o nível da runa: ícone claro, faixa opaca) e 33_novo (0,12 s
 ##                         depois de ganhar um golpe novo: pop). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=cores       (cores de perigo) o herói com Fogo do Céu, Grito de Guerra, Cortina de Sangue e os aliados Golem de Barro e Dragãozinho,
+##                         cercado de monstros e um Explosivo ao lado. Fotos 1 a 3 (armas e aliados) e 4_aviso e 5_aviso (o aviso do Explosivo, 0,25 s e 0,5 s depois da morte). Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=oclusao     (leva 4) herói atrás de uma árvore (1_arvore) e herói coberto por uma aranha grande na frente (2_aranha).
 ##   --roteiro=ruptura     (tecla E) 24 monstros a caminho do herói parado, que carrega a ruptura. Fotos do viewport: 1_carga (meia carga:
 ##                         anel fantasma no raio final e anel interno), 2_cheia_perfeita (anel piscando na janela perfeita), 3_disparo (0,10 s
@@ -113,6 +115,52 @@ func atualizar(dt: float) -> void:
 				_r_golpes()
 			"hud_golpes":
 				_r_hud_golpes()
+			"cores":
+				_r_cores()
+
+
+## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
+## parado ao lado. Fotos 1 a 3 (armas e aliados, 0,5 s cada); o Explosivo morre no passo 4 e as fotos 4_aviso e 5_aviso saem 0,25 s e 0,5 s
+## depois da morte (o aviso dura 0,75 s).
+func _r_cores() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	match passo:
+		0:
+			_preparar()
+			for id in ["fogo_do_ceu", "grito_guerra", "cortina_sangue", "golem_barro", "dragao_filhote"]:
+				c.armas.definir_golpe(id, 3, 0.0)
+			for k in 8:
+				mundo.nascer_monstro("inimigo_cao_ossos", h.pos + Vector2.from_angle(TAU * k / 8.0) * 110.0, true)
+			var e = c.elites.nascer("inimigo_cavaleiro_oco", "explosivo", h.pos + Vector2(120, -10))
+			e.cacador = false
+			e.raio_vaga = 0.0
+			passo = 1
+			t_passo = 0.0
+		1, 2, 3:
+			if t_passo >= 0.5:
+				_foto("%d" % passo)
+				passo += 1
+				t_passo = 0.0
+		4:
+			if t_passo >= 0.5:
+				if not c.elites.vivas.is_empty():
+					c.ferir(c.elites.vivas[0], 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+					c.processar_mortes()
+				passo = 5
+				t_passo = 0.0
+		5:
+			if t_passo >= 0.25:
+				_foto("4_aviso")
+				passo = 6
+				t_passo = 0.0
+		6:
+			if t_passo >= 0.25:
+				_foto("5_aviso")
+				passo = 7
+				t_passo = 0.0
+		7:
+			mundo.get_tree().quit()
 
 
 # ------------------------------------------------------------------ robô e estresse
