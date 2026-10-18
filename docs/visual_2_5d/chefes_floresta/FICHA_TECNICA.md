@@ -1,4 +1,6 @@
-# Chefes da Floresta: ficha técnica visual
+# Chefes da Floresta: ficha técnica visual (v3)
+
+**Destino: v3.** Estes chefes são para a v3, não para a v2 atual (pedido do Breno, 18/10). Todo o material fica separado da v2: nada é ligado ao jogo atual nem entra no fluxo de merge da v2 sem o ok dele. Arte, cenas e scripts vão em pastas marcadas como v3.
 
 Base: folha de referência enviada pelo Breno em 18/10 (Vornak, Nythrax e Maltherion). Tudo aqui é provisório e ajustável; valores de jogo são iniciais.
 
