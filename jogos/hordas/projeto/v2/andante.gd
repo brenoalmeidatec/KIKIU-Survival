@@ -51,6 +51,27 @@ const FICHAS := {
 		"sombra": 17.0,
 		"cor_fx": Color(0.62, 1.0, 0.72),
 	},
+	"fantasma_mata":
+	{
+		"folha": "res://assets/v2/armas/fantasma_mata_dir.png",
+		"quadro": Vector2(82, 80),
+		"pe": Vector2(30, 63),
+		# flutua: o véu ondula no relógio (ciclo_s), sem pé no chão (por isso não tem `ciclo`)
+		"ciclo_s": 0.8,
+		"altura": 9.0,
+		"balanco": 2.0,
+		# recua, abre os braços, pico, começa o bote, BOTE (capuz e garras à frente), segura, volta, assenta: 0,30 s, cabe no tique de 0,4 s da carta
+		"tempos": [0.05, 0.04, 0.04, 0.04, 0.05, 0.04, 0.02, 0.02],
+		"impacto": 4,
+		# o capuz e as garras, no quadro do bote, chegam 49,8 px à frente do centro (`alcance_pata_px` do .json)
+		"alcance": 42.0,
+		"frente": 38.0,
+		"raio": 24.0,
+		"empurra": 40.0,
+		"atordoa": 0.1,
+		"sombra": 13.0,
+		"cor_fx": Color(0.55, 1.0, 0.65),
+	},
 }
 
 static var _tex := {}

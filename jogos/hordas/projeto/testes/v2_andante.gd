@@ -73,6 +73,9 @@ func preparar(id: String, dir: Vector2):
 	var a = w.combate.armas.ativas.get(id)
 	if a != null:
 		a.t = 999.0  # só este: a recarga mandaria outro antes deste sumir
+	for outro in w.combate.armas.novas.itens:
+		if outro != it and bool(outro.an) and float(outro.vida) > 0.0:
+			outro.vida = 0.0  # cartas com quantidade > 1 (o Fantasma nasce em dupla): só o acompanhado fica, senão o golpe do outro conta como dano fora do impacto
 	return [it, m]
 
 
@@ -188,7 +191,7 @@ func fotos(pasta: String) -> void:
 			it = r[0]
 			for i in 60 * 3:
 				passos(1)
-				if it != null and int(it.e) == Andante.ANDANDO and bool(it.mov) and Andante.quadro_andar(float(it.pf)) == 3:
+				if it != null and int(it.e) == Andante.ANDANDO and bool(it.mov) and (f.has("ciclo_s") or Andante.quadro_andar(float(it.pf)) == 3):  # quem flutua tem o ciclo no relógio: pega o primeiro quadro andando
 					rec.append(await recorte(it))
 					break
 		if not rec.is_empty():
