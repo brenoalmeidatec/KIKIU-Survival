@@ -29,6 +29,9 @@ const SURGINDO := 2
 ## é o que o pé de apoio corre na tela, então o corpo anda isso e o pé não escorrega); tempos = s de cada quadro do ataque; impacto = índice do golpe;
 ## alcance = distância (plano achatado) do alvo em que ele para e ataca; frente = a que distância à frente o golpe cai; raio = raio do golpe;
 ## empurra, atordoa = do golpe por alvo; sombra = raio da sombra; cor_fx = cor do espírito (névoa, rastro do golpe, brilho).
+## Opcionais, para quem não anda com pernas: ciclo_s = s por ciclo do "andar" contado no RELÓGIO (asa batendo, corpo ondulando, véu do fantasma),
+## que roda também parado (sem ele o ciclo anda com a distância e parado mostra o quadro `PARADO`); altura = px acima do chão em que ele flutua ou voa
+## (a sombra fica no chão e o corpo balança `balanco` px para cima e para baixo).
 const FICHAS := {
 	"espirito_urso":
 	{
@@ -129,6 +132,8 @@ static func nascer(nv, it: Dictionary) -> void:
 static func mover(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
 	var f := ficha(str(it.a.id))
 	it.et = float(it.et) + dt
+	if f.has("ciclo_s") and int(it.e) != ATACANDO:
+		it.pf = float(it.pf) + dt / float(f.ciclo_s)
 	it.t = float(it.t) - dt  # a recarga do golpe (o armas_novas não conta o tempo do aliado)
 	it.mov = false
 	if float(it.vida) <= SUMIR_T:
@@ -178,7 +183,8 @@ static func _andar(nv, it: Dictionary, f: Dictionary, h, dt: float, perto: Array
 		it.p = it.p + dir * passo
 		it.v = (it.v as Vector2).lerp(dir, clampf(dt * 10.0, 0.0, 1.0))  # suavizado: o quadro não pisca na virada
 		it.lin = linha_de(it.v, int(it.lin))
-		it.pf = float(it.pf) + passo / float(f.ciclo[int(it.lin)])
+		if not f.has("ciclo_s"):
+			it.pf = float(it.pf) + passo / float(f.ciclo[int(it.lin)])
 		it.mov = true
 
 
@@ -213,13 +219,21 @@ static func _impacto(nv, it: Dictionary, f: Dictionary) -> void:
 ## Coluna e linha da folha agora (o teste usa para conferir o ciclo andar -> atacar).
 static func quadro_de(it: Dictionary) -> Vector2i:
 	var col: int
+	var f := ficha(str(it.a.id))
 	if int(it.e) == ATACANDO:
-		col = COL_ANDAR + quadro_ataque(ficha(str(it.a.id)), float(it.et))
-	elif bool(it.mov):
+		col = COL_ANDAR + quadro_ataque(f, float(it.et))
+	elif bool(it.mov) or f.has("ciclo_s"):
 		col = quadro_andar(float(it.pf))
 	else:
 		col = PARADO
 	return Vector2i(col, int(it.lin))
+
+
+## Quantos px acima do chão o corpo está agora (quem flutua ou voa balança devagar; quem anda fica no chão).
+static func altura(it: Dictionary, f: Dictionary) -> float:
+	if not f.has("altura"):
+		return 0.0
+	return roundf(float(f.altura) + sin(float(it.fase) * 1.3) * float(f.get("balanco", 2.0)))
 
 
 ## Quanto do bicho está "aceso" (0 a 1): sobe da névoa ao nascer e apaga no fim da vida.
@@ -243,7 +257,7 @@ static func desenhar(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 	var lado := -1.0 if float(it.r) < 0.0 else 1.0
 	ci.draw_set_transform(p, 0.0, Vector2(1.0, ACHATA))
 	ci.draw_circle(Vector2.ZERO, float(f.sombra) * (0.5 + 0.5 * k), Color(0.0, 0.0, 0.0, 0.3 * k))
-	ci.draw_set_transform(p, 0.0, Vector2(lado, 1.0))
+	ci.draw_set_transform(p - Vector2(0.0, altura(it, f)), 0.0, Vector2(lado, 1.0))
 	var q := quadro_de(it)
 	var origem := Vector2(q.x * quadro.x, q.y * quadro.y)
 	var corte := 0.0
@@ -263,7 +277,7 @@ static func desenhar_brilho(ci: CanvasItem, it: Dictionary, p: Vector2, glow: Te
 	var f := ficha(str(it.a.id))
 	var cor: Color = f.cor_fx
 	var k := presenca(it)
-	var alto := float(f.quadro.y) * 0.35
+	var alto := float(f.quadro.y) * 0.35 + altura(it, f)
 	var pulso := 0.5 + 0.5 * sin(float(it.fase) * 0.9)
 	var halo := float(f.sombra) * 2.4
 	ci.draw_texture_rect(glow, Rect2(p + Vector2(-halo, -alto - halo * 0.7), Vector2(halo * 2.0, halo * 1.4)), false, Color(cor, (0.07 + 0.04 * pulso) * k))

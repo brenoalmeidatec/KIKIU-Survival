@@ -39,7 +39,7 @@ func checar_folha(id: String) -> void:
 	ok(Vector2(float(d.quadro[0]), float(d.quadro[1])) == q, "%s: quadro do .json = do código" % id)
 	ok(Vector2(float(d.pe_x), float(d.pe_y)) == f.pe, "%s: pé do .json = do código" % id)
 	ok(int(d.andar) == Andante.COL_ANDAR and int(d.ataque) == Andante.COL_ATAQUE and int(d.impacto) == int(f.impacto), "%s: colunas e impacto" % id)
-	for v in Andante.LINHAS:
+	for v in Andante.LINHAS if not f.has("ciclo_s") else 0:  # quem voa ou flutua tem o ciclo no relógio, sem pé no chão
 		ok(absf(float(d.ciclo_linha[v]) - float(f.ciclo[v])) <= 0.6, "%s vista %d: passada do código = da arte (o pé não escorrega)" % [id, v])
 	ok(float(f.frente) <= float(d.alcance_pata_px), "%s: o golpe cai onde a pata alcança (%s <= %s px)" % [id, f.frente, d.alcance_pata_px])
 	ok(f.tempos.size() == Andante.COL_ATAQUE, "%s: um tempo por quadro de ataque" % id)
@@ -119,7 +119,7 @@ func checar_partida(id: String) -> void:
 			break
 		if int(it.e) == Andante.ANDANDO and bool(it.mov):
 			andou = true
-		if not bool(it.mov) and float(it.pf) != pf_antes:
+		if not f.has("ciclo_s") and not bool(it.mov) and float(it.pf) != pf_antes:
 			pf_parado_ok = false
 		if int(it.e) == Andante.ATACANDO and parou_em < 0.0:
 			parou_em = w.combate.armas.novas._eli((m.pos as Vector2) - (it.p as Vector2)).length()
