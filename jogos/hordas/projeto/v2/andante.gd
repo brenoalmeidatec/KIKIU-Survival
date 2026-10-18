@@ -80,9 +80,10 @@ const FICHAS := {
 		"folha": "res://assets/v2/armas/raposa_espiritual_dir.png",
 		"quadro": Vector2(69, 70),
 		"pe": Vector2(32, 44),
-		"ciclo": [26.1, 32.8, 40.0, 34.4, 26.1],
-		# agacha, se encolhe, salta, pico do salto, BOTE (patas no chão), pousa, levanta, volta: 0,42 s, cabe no tique de 0,5 s da carta
-		"tempos": [0.06, 0.06, 0.05, 0.04, 0.04, 0.07, 0.05, 0.05],
+		# galope com tempo de voo: 2 passadas por ciclo de 8 quadros, cada passada de 44 a 66 px (de frente/costas ~4,5 passadas/s na vel 200, o quadro não pisca)
+		"ciclo": [88.4, 108.8, 132.2, 115.4, 88.4],
+		# agacha, se encolhe, salta, pico do salto, BOTE (patas no chão), pousa, pulinho para trás (no ar), assenta: 0,44 s, cabe no tique de 0,5 s da carta
+		"tempos": [0.06, 0.06, 0.05, 0.04, 0.04, 0.06, 0.07, 0.06],
 		"impacto": 4,
 		# o corpo vai à frente dentro do quadro (o bote está na folha): a pata da frente, no impacto, chega a 35 px à frente do centro (`alcance_pata_px` do .json)
 		"alcance": 30.0,
