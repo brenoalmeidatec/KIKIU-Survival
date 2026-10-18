@@ -323,7 +323,8 @@ static func almas_creditadas(bruto: int, bonus: float, mult := 1.0) -> int:
 
 
 ## Fim da partida: credita as almas (com o bônus de "almas"), marca conquistas e guarda o resumo.
-## `r` tem tempo, abates, nivel, maior_combo, venceu, almas e pesadelo (true = a partida foi no modo Pesadelo). Devolve antes, ganhas, depois e as conquistas novas.
+## `r` tem tempo, abates, nivel, maior_combo, venceu, almas, pesadelo (true = a partida foi no modo Pesadelo) e mapa (id; com venceu, marca o
+## mapa como vencido). Devolve antes, ganhas, depois e as conquistas novas.
 static func registrar_partida(r: Dictionary) -> Dictionary:
 	erro_save = false
 	var cf := _ler()
@@ -344,6 +345,8 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
 	cf.set_value("ultima", "pesadelo", pesadelo)
+	if bool(r.get("venceu", false)) and str(r.get("mapa", "")) != "":
+		cf.set_value("mapas_vencidos", str(r.mapa), true)  # venceu o chefão do último nível: o mapa está vencido (mapa_vencido)
 	if not _gravar(cf):
 		erro_save = true
 		return {}
@@ -407,3 +410,18 @@ static func aplicar(mundo) -> void:
 static func almas_da_partida(mundo) -> int:
 	var v = mundo.get("almas_partida")
 	return int(v) if v != null else 0
+
+
+## O mapa `id` ("floresta", "laboratorio"...) já foi vencido alguma vez (o chefão do último nível dele morreu)? A frente de progressão usa
+## isto para liberar o mapa seguinte. Lido do save a cada chamada.
+static func mapa_vencido(id: String) -> bool:
+	var cf := _ler()
+	return cf != null and bool(cf.get_value("mapas_vencidos", id, false))
+
+
+## Os ids dos mapas já vencidos.
+static func mapas_vencidos() -> Array:
+	var cf := _ler()
+	if cf == null or not cf.has_section("mapas_vencidos"):
+		return []
+	return Array(cf.get_section_keys("mapas_vencidos")).filter(func(k): return bool(cf.get_value("mapas_vencidos", k, false)))

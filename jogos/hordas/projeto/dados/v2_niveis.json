@@ -1,0 +1,35 @@
+{
+	"_ajuda": "Níveis de cada mapa da v2 (lido por v2/diretor.gd). Cada mapa tem um FIM: \"total\" níveis; o nível sobe a cada \"duracao_nivel\" segundos de partida (no Pesadelo, vezes chefe_tempo_mult do v2_meta.json). \"chefes\": em cada nível listado nasce o chefe da \"marca\" (id em v2_cartas.json > chefes.marcas) e o nível TRAVA até ele morrer. O do último nível é o CHEFÃO: vencer ele termina o mapa (VITÓRIA e o mapa fica marcado como vencido no save, Meta.mapa_vencido). Os outros são mini-chefes (soltam baú). \"vida\" (opcional) multiplica a vida da marca naquele mapa. Um mapa fora desta lista usa o \"padrao\". --duracao_nivel=<s> (depuração) troca a duração de todos.",
+	"padrao": "floresta",
+	"mapas": {
+		"floresta": {
+			"total": 30,
+			"duracao_nivel": 20,
+			"chefes": [{"nivel": 10, "marca": "mini1"}, {"nivel": 20, "marca": "mini2"}, {"nivel": 30, "marca": "chefe"}]
+		},
+		"laboratorio": {
+			"total": 36,
+			"duracao_nivel": 20,
+			"chefes": [{"nivel": 12, "marca": "mini1", "vida": 1.3}, {"nivel": 24, "marca": "mini2", "vida": 1.3}, {"nivel": 36, "marca": "chefe", "vida": 1.3}]
+		},
+		"cidade": {
+			"total": 40,
+			"duracao_nivel": 20,
+			"chefes": [
+				{"nivel": 10, "marca": "mini1", "vida": 1.5},
+				{"nivel": 20, "marca": "mini2", "vida": 1.5},
+				{"nivel": 30, "marca": "mini1", "vida": 2.2},
+				{"nivel": 40, "marca": "chefe", "vida": 1.6}
+			]
+		},
+		"medio": {
+			"total": 45,
+			"duracao_nivel": 20,
+			"chefes": [
+				{"nivel": 15, "marca": "mini1", "vida": 1.8},
+				{"nivel": 30, "marca": "mini2", "vida": 1.8},
+				{"nivel": 45, "marca": "chefe", "vida": 2.0}
+			]
+		}
+	}
+}

@@ -265,6 +265,7 @@ func atualizar(dt: float) -> void:
 		us_armas += t1 - t0
 		adagas.atualizar(dt)
 		elites.atualizar(dt)
+		diretor.avancar_nivel(dt)
 		chefes.atualizar(dt)
 		var t2 := Time.get_ticks_usec()
 		avisos.atualizar(dt)
@@ -804,7 +805,10 @@ func fim_de_partida(ganhou: bool) -> void:
 		"nivel": mundo.heroi.nivel,
 		"maior_combo": mundo.maior_combo,
 		"venceu": ganhou,
-		"almas": mundo.almas_partida
+		"almas": mundo.almas_partida,
+		"mapa": str(mundo.id_mapa),
+		"nivel_mapa": diretor.nivel,
+		"niveis_mapa": diretor.niveis_total
 	}
 	mundo.resultado = r
 	mundo.partida_terminou.emit(r)

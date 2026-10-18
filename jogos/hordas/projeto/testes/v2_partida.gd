@@ -121,7 +121,7 @@ func _ready() -> void:
 		"4 raridades, 52 golpes secundários e 8 modificadores (4 de sempre, 2 do Nicão e 2 do Lucas, que só saem para eles)"
 	)
 	ok(cfg.evolucoes.size() == 27, "27 evoluções nos dados (4 antigas, 5 novas, 16 de 2, 3 e 4 peças e 2 da leva 6)")
-	ok(cfg.chefes.marcas.size() == 3, "mini-chefes aos 3 e 6 min e o chefe aos 10")
+	ok(cfg.chefes.marcas.size() == 3, "3 fichas de chefe (2 mini-chefes e o chefão)")
 
 	# 1. a raridade sobe com o nível
 	zerar()
@@ -548,15 +548,27 @@ func _ready() -> void:
 	ate(func(): return w.combate.elites.nascidas > 0, 400)
 	ok(w.combate.elites.nascidas > 0, "a primeira elite nasce sozinha depois de %d s" % int(cfg.elites.primeira))
 
-	# 7. mini-chefes aos 3 e 6 min, chefe aos 10, ataques anunciados
+	# 7. níveis do mapa (Floresta: 30 níveis, mini-chefes no 10 e no 20, chefão no 30), ataques anunciados
 	zerar()
 	w.combate.diretor.ligado = false
-	w.tempo_partida = 170.0
-	passos(30)
-	ok(not w.combate.chefes.vivo, "aos 2:50 ainda não tem mini-chefe")
-	w.tempo_partida = 180.5
+	var dir = w.combate.diretor
+	ok(dir.nivel == 1 and dir.niveis_total == 30, "a Floresta começa no nível 1 de 30 (%d/%d)" % [dir.nivel, dir.niveis_total])
+	ok(dir.chefes_mapa.map(func(e): return e.nivel) == [10, 20, 30], "chefes nos níveis 10, 20 e 30")
+	ok(dir.chefes_mapa[0].mk.mini and dir.chefes_mapa[1].mk.mini and not dir.chefes_mapa[2].mk.mini, "só o do último nível é o chefão")
+	var seg: float = dir.seg_nivel()
+	dir.avancar_nivel(seg * 2.5)
+	ok(dir.nivel == 3 and absf(dir.t_nivel - seg * 0.5) < 0.2, "o nível sobe a cada %.0f s (nível %d)" % [seg, dir.nivel])
+	ok(absf(dir.fracao_mapa() - 2.5 / 29.0) < 0.02, "a barra do mapa anda com o nível (%.3f)" % dir.fracao_mapa())
+	dir.ir_para_nivel(9)
+	dir.t_nivel = seg - 0.5
 	passos(10)
-	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "mini1", "o mini-chefe nasce aos 3 min")
+	ok(not w.combate.chefes.vivo and dir.nivel == 9, "no nível 9 ainda não tem mini-chefe")
+	passos(40)
+	ok(dir.nivel == 10 and w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "o mini-chefe nasce ao chegar no nível 10")
+	ok(w.combate.chefes.marca.nome == "Cavaleiro Rubro", "o do nível 10 é o Cavaleiro Rubro")
+	ok(dir.travado(), "com o mini-chefe vivo o nível trava")
+	dir.avancar_nivel(seg * 5.0)
+	ok(dir.nivel == 10 and dir.fracao_mapa() <= 9.0 / 29.0 + 0.001, "travado: o nível e a barra não andam (%d)" % dir.nivel)
 	var ch = w.combate.chefes.atual
 	ok(ch.chefe and ch.escala > 2.0 and ch.vida_max >= 1000.0, "o mini-chefe é grande e tem muita vida")
 	ok(conta("chefe") == 1 and sinais.get("chefe_vida_max", 0.0) == ch.vida_max, "sinal chefe_apareceu(nome, vida_max)")
@@ -588,15 +600,21 @@ func _ready() -> void:
 	ok(not w.combate.chefes.vivo and float(sinais.get("chefe_vida_ultima", 1.0)) == 0.0, "a morte do chefe emite chefe_vida(0)")
 	ok(w.combate.baus.soltos == baus0 + 1, "o mini-chefe solta um baú")
 	ok(w.combate.jogo == "jogando", "matar o mini-chefe não é vitória")
-	w.tempo_partida = 360.5
-	passos(40)
-	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "mini2", "o segundo mini-chefe nasce aos 6 min")
+	ok(not dir.travado(), "mini-chefe morto: o nível destrava")
+	dir.avancar_nivel(seg + 0.01)
+	ok(dir.nivel == 11, "e segue para o nível 11")
+	dir.ir_para_nivel(20)
+	passos(2)
+	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "n20" and w.combate.chefes.marca.nome == "Rainha Tecelã", "nível 20: o segundo mini-chefe")
 	w.combate.ferir(w.combate.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
 	w.combate.processar_mortes()
 	ok(w.combate.jogo == "jogando", "matar o segundo mini-chefe também não é vitória")
-	w.tempo_partida = 600.5
-	passos(40)
-	ok(w.combate.chefes.vivo and w.combate.chefes.marca.id == "chefe", "o chefe nasce aos 10 min")
+	dir.ir_para_nivel(29)
+	dir.t_nivel = 0.0
+	dir.avancar_nivel(seg + 0.01)
+	ok(dir.nivel == 30 and w.combate.chefes.vivo and not bool(w.combate.chefes.marca.mini), "o CHEFÃO nasce no nível 30, o último")
+	dir.avancar_nivel(seg * 10.0)
+	ok(dir.nivel == 30, "o mapa tem fim: não passa do nível 30")
 	ok(str(sinais.get("anuncio_texto", "")).contains("CHEFE"), "anuncia o chefe")
 	# 8. vencer o chefe é a vitória
 	w.abates = 321
@@ -610,11 +628,12 @@ func _ready() -> void:
 	ok(w.combate.telas._res_titulo.text == "VITÓRIA", "a tela mostra VITÓRIA")
 	ok(conta("fim") == 1, "partida_terminou saiu uma vez")
 	var res: Dictionary = sinais.get("fim_res", {})
-	for k in ["tempo", "abates", "nivel", "maior_combo", "venceu", "almas"]:
+	for k in ["tempo", "abates", "nivel", "maior_combo", "venceu", "almas", "mapa", "nivel_mapa", "niveis_mapa"]:
 		ok(res.has(k), "partida_terminou traz o campo %s" % k)
 	ok(res.get("venceu") == true and int(res.get("abates", 0)) >= 321 and int(res.get("maior_combo", 0)) == 55, "campos da vitória certos")
 	ok(int(res.get("almas", -1)) == 123 and w.almas_partida == 123, "almas = XP coletado / 10 arredondado (123)")
-	ok(float(res.get("tempo", 0.0)) > 600.0 and int(res.get("nivel", 0)) >= 1, "tempo e nível")
+	ok(int(res.get("nivel", 0)) >= 1, "nível do herói")
+	ok(str(res.get("mapa", "")) == "floresta" and int(res.get("nivel_mapa", 0)) == 30, "a vitória é no último nível da floresta")
 	ok(w.combate.telas._res_linhas.text.contains("Almas") and w.combate.telas._res_valores.text.contains("123"), "a tela mostra as almas ganhas")
 
 	# 9. derrota: partida_terminou com venceu = false

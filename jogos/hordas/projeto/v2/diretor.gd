@@ -3,6 +3,8 @@ extends RefCounted
 ## mapa, nunca em cima de uma árvore). Começa leve e aperta com o tempo da partida: a taxa de nascimento e o teto de monstros vivos sobem
 ## aos poucos, os monstros ficam mais fortes por minuto e, a cada `onda_cada` segundos, vem uma ONDA FORTE (um anel de monstros de uma vez,
 ## com cavaleiros). Tudo vem de dados/v2_combate.json ("diretor"). O diretor roda no tempo do mundo (não conta durante hit-stop nem pausa).
+## Ele também conta o NÍVEL do mapa (dados/v2_niveis.json): o mapa tem `total` níveis, sobe um a cada `duracao_nivel` s e, nos níveis de
+## chefe, faz nascer o mini-chefe (ou o CHEFÃO, no último) e TRAVA até ele morrer. Vencer o chefão é a vitória e o fim do mapa.
 
 const Colisao := preload("res://v2/colisao.gd")
 
@@ -15,13 +17,41 @@ var ondas := 0  # quantas ondas fortes já vieram
 var nascidos := 0  # total nascido pelo diretor (testes)
 var rng := RandomNumberGenerator.new()
 var ligado := true
+# Nível do mapa (dados/v2_niveis.json): `nivel` vai de 1 a `niveis_total`; `t_nivel` é o relógio do nível atual, que só anda sem chefe vivo.
+var nivel := 1
+var niveis_total := 30
+var duracao_nivel := 20.0
+var t_nivel := 0.0
+var chefes_mapa: Array = []  # [{nivel, mk (a marca do chefe, já com a vida do mapa e mini = não é o último)}], em ordem de nível
 
 
 func montar(c) -> void:
 	combate = c
 	mundo = c.mundo
 	cfg = c.cfg.diretor
+	carregar_niveis(str(mundo.id_mapa))
 	zerar()
+
+
+## Lê os níveis do mapa `id` (ou do padrão) e monta a lista de chefes com as marcas de v2_cartas.json > chefes.marcas.
+func carregar_niveis(id: String) -> void:
+	var dn: Dictionary = Dados.json("v2_niveis")
+	var mapas: Dictionary = dn.mapas
+	var m: Dictionary = mapas.get(id, mapas[str(dn.padrao)])
+	niveis_total = int(m.total)
+	duracao_nivel = float(mundo.args.get("duracao_nivel", m.duracao_nivel))
+	var marcas := {}
+	for mk in combate.cartas.cfg.chefes.marcas:
+		marcas[str(mk.id)] = mk
+	chefes_mapa.clear()
+	for e in m.chefes:
+		var mk: Dictionary = marcas[str(e.marca)].duplicate(true)
+		var n := int(e.nivel)
+		mk.id = "n%d" % n
+		mk.vida = float(mk.vida) * float(e.get("vida", 1.0))
+		mk.mini = n < niveis_total
+		chefes_mapa.append({"nivel": n, "mk": mk})
+	chefes_mapa.sort_custom(func(a, b): return a.nivel < b.nivel)
 
 
 func zerar() -> void:
@@ -30,6 +60,70 @@ func zerar() -> void:
 	nascidos = 0
 	proxima_onda = float(cfg.onda_cada)
 	rng.seed = 7777
+	nivel = 1
+	t_nivel = 0.0
+
+
+## Segundos de cada nível nesta partida (o Pesadelo encurta, trazendo os chefes mais cedo).
+func seg_nivel() -> float:
+	return maxf(duracao_nivel * mundo.fator_pesadelo("chefe_tempo_mult"), 0.01)
+
+
+## O chefe do nível `n` ({nivel, mk}) ou {} se o nível não tem chefe.
+func chefe_do_nivel(n: int) -> Dictionary:
+	for e in chefes_mapa:
+		if int(e.nivel) == n:
+			return e
+	return {}
+
+
+## O nível está travado esperando o chefe dele morrer?
+func travado() -> bool:
+	var e := chefe_do_nivel(nivel)
+	return not e.is_empty() and (combate.chefes.vivo or not combate.chefes.feitos.has(e.mk.id))
+
+
+## Avança o relógio do nível (o combate chama a cada quadro de jogo, mesmo com o diretor desligado): sobe de nível a cada seg_nivel()
+## e, ao chegar num nível de chefe, faz ele nascer. Com chefe vivo o relógio para; no último nível fica parado até a vitória.
+func avancar_nivel(dt: float) -> void:
+	var e := chefe_do_nivel(nivel)
+	if not e.is_empty() and not combate.chefes.feitos.has(e.mk.id):
+		combate.chefes.nascer(e.mk)  # nível de chefe sem o chefe (o 1 de um mapa, ou um teste que pulou de nível)
+		return
+	if travado() or nivel >= niveis_total:
+		return
+	t_nivel += dt
+	var s := seg_nivel()
+	while t_nivel >= s and nivel < niveis_total:
+		t_nivel -= s
+		ir_para_nivel(nivel + 1)
+		if travado():
+			t_nivel = 0.0
+			return
+
+
+## Pula para o nível `n` (o avanço normal e os testes): se ele tem chefe, o chefe nasce agora.
+func ir_para_nivel(n: int) -> void:
+	nivel = clampi(n, 1, niveis_total)
+	var e := chefe_do_nivel(nivel)
+	if not e.is_empty() and not combate.chefes.feitos.has(e.mk.id) and not combate.chefes.vivo:
+		combate.chefes.nascer(e.mk)
+
+
+## O próximo nível de chefe a partir do atual (ou o total, se não houver).
+func proximo_chefe() -> int:
+	for e in chefes_mapa:
+		if int(e.nivel) >= nivel:
+			return int(e.nivel)
+	return niveis_total
+
+
+## Quanto do mapa já foi (0 a 1), contando a fração do nível atual: a barra do HUD.
+func fracao_mapa() -> float:
+	if niveis_total <= 1:
+		return 1.0
+	var parcial := 0.0 if travado() or nivel >= niveis_total else clampf(t_nivel / seg_nivel(), 0.0, 1.0)
+	return clampf((float(nivel - 1) + parcial) / float(niveis_total - 1), 0.0, 1.0)
 
 
 ## Taxa de nascimento (monstros/s) e teto de vivos no instante `t` da partida: sobem em linha reta até tempo_taxa/tempo_cap.

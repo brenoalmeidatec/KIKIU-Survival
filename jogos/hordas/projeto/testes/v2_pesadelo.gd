@@ -98,20 +98,23 @@ func _testes() -> void:
 	Meta.ligar("modo", "pesadelo", true)
 	Meta.aplicar(m)
 
-	# 3. o mini-chefe chega mais cedo
+	# 3. o mini-chefe chega mais cedo: os níveis do mapa ficam mais curtos (chefe_tempo_mult)
 	var chefes = m.combate.chefes
-	var mk: Dictionary = chefes.cfg.marcas[0]
-	var t_mini := float(mk.tempo) * float(regras.chefe_tempo_mult) + 1.0
-	ok(t_mini < float(mk.tempo), "o tempo do Pesadelo cai antes do tempo normal do mini-chefe (%d x %d)" % [t_mini, mk.tempo])
+	var dir = m.combate.diretor
+	var mk: Dictionary = dir.chefes_mapa[0].mk
+	var n_mini: int = dir.chefes_mapa[0].nivel
+	var t_normal: float = dir.duracao_nivel * float(n_mini - 1)
+	var t_mini: float = dir.seg_nivel() * float(n_mini - 1) + 0.5
+	ok(t_mini < t_normal, "o tempo do Pesadelo cai antes do tempo normal do mini-chefe (%d x %d)" % [t_mini, t_normal])
 	m.combate.limpar_partida()
-	m.tempo_partida = t_mini
+	dir.avancar_nivel(t_mini)
 	chefes.atualizar(0.0)
 	ok(chefes.atual != null and chefes.feitos.has(mk.id), "Pesadelo: o mini-chefe aparece antes do tempo normal")
 	ok(chefes.atual.vida_max >= float(mk.vida) * float(regras.vida_mult) - 0.01, "o mini-chefe também ganha a vida do Pesadelo (%s)" % chefes.atual.vida_max)
 	m.combate.limpar_partida()
 	Meta.ligar("modo", "pesadelo", false)
 	Meta.aplicar(m)
-	m.tempo_partida = t_mini
+	dir.avancar_nivel(t_mini)
 	chefes.atualizar(0.0)
 	ok(chefes.atual == null, "sem o Pesadelo nesse instante ainda não há mini-chefe")
 	Meta.ligar("modo", "pesadelo", true)
