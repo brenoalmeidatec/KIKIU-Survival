@@ -4,10 +4,14 @@ extends Node
 ## UMA vez por ataque, no quadro do impacto, e o ciclo segue o "tique" da carta.
 ## Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_andante.tscn  (imprime "v2_andante falhas=0")
 ## Fotos (com janela): ... res://testes/v2_andante.tscn -- --fotos=PASTA  (ataque e direções de cada bicho)
+## Tira (com janela): ... -- --tira=PASTA [--id=espirito_raposa]  (30 quadros SEGUIDOS do jogo a 60 fps andando de frente, de costas e de lado, e o log
+## do quadro da folha em cada um: serve para ver se pisca ou escorrega)
 const Mundo := preload("res://v2/mundo.tscn")
 const Andante := preload("res://v2/andante.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const PASSO := 1.0 / 60.0
+## Quantas passadas de verdade a folha traz por ciclo de andar (o padrão é 1: o ciclo = a passada); o galope da raposa leva 2 passadas em 8 quadros.
+const PASSADAS_POR_CICLO := {"espirito_raposa": 2}
 var falhas := 0
 var w
 
@@ -43,6 +47,27 @@ func checar_folha(id: String) -> void:
 		ok(absf(float(d.ciclo_linha[v]) - float(f.ciclo[v])) <= 0.6, "%s vista %d: passada do código = da arte (o pé não escorrega)" % [id, v])
 	ok(float(f.frente) <= float(d.alcance_pata_px), "%s: o golpe cai onde a pata alcança (%s <= %s px)" % [id, f.frente, d.alcance_pata_px])
 	ok(f.tempos.size() == Andante.COL_ATAQUE, "%s: um tempo por quadro de ataque" % id)
+	var golpe := _golpe(id)
+	if not golpe.is_empty():
+		var base: Dictionary = golpe.base
+		ok(
+			Andante.tempo_ataque(f) <= float(base.tique) + 0.0001,
+			"%s: os quadros do ataque (%s s) cabem no tique da carta (%s s)" % [id, Andante.tempo_ataque(f), base.tique]
+		)
+		if PASSADAS_POR_CICLO.has(id):  # a passada de verdade (não o ciclo da folha) tem de ser longa: senão as pernas piscam na vel da carta
+			for v in Andante.LINHAS:
+				var passada := float(f.ciclo[v]) / float(PASSADAS_POR_CICLO[id])
+				ok(
+					float(base.vel) / passada <= 5.0,
+					"%s vista %d: %.1f passadas/s na vel %s (passada de %.1f px) passa de 5" % [id, v, float(base.vel) / passada, base.vel, passada]
+				)
+
+
+func _golpe(id: String) -> Dictionary:
+	for g in Dados.json("v2_cartas").golpes:
+		if str(g.id) == id:
+			return g
+	return {}
 
 
 func checar_funcoes() -> void:
@@ -205,6 +230,31 @@ func fotos(pasta: String) -> void:
 	print("FOTO ", pasta)
 
 
+func tira(pasta: String, id: String) -> void:
+	DirAccess.make_dir_recursive_absolute(pasta)
+	Config.g_aplicar_perfil("alto")
+	for caso in [["frente", Vector2(0, 230)], ["costas", Vector2(0, -230)], ["lado", Vector2(200, 0)]]:
+		var r: Array = preparar(id, caso[1].normalized() * 150.0)  # perto, para ele nascer; depois o alvo vai para longe e dá uma caminhada comprida
+		var it = r[0]
+		var rec: Array = []
+		var log: Array = []
+		for i in 60 * 4:
+			r[1].pos = w.heroi.pos + (caso[1] as Vector2)  # o alvo fica parado a ~200 px (dentro do alcance de busca): ele anda reto até lá
+			passos(1)
+			if it == null or float(it.vida) <= 0.0:
+				break
+			if int(it.e) == Andante.ANDANDO and bool(it.mov) and (rec.size() > 0 or float(it.et) >= 0.2):
+				rec.append(await recorte(it, Vector2(36, 40), 64))
+				log.append(Andante.quadro_de(it).x)
+				if rec.size() >= 30:
+					break
+		if rec.size() >= 30:
+			juntar(rec, 6).save_png(pasta.path_join("%s_tira_%s.png" % [id, caso[0]]))
+		print("TIRA ", id, " ", caso[0], " quadros da folha por quadro do jogo: ", log)
+		ok(rec.size() >= 30, "%s: gravou 30 quadros seguidos andando (%s)" % [id, caso[0]])
+	print("TIRA ", pasta)
+
+
 func recorte(it, meia := Vector2(64, 70), alto := 100) -> Image:
 	await RenderingServer.frame_post_draw
 	var img: Image = w.sv.get_texture().get_image()
@@ -239,8 +289,14 @@ func _ready() -> void:
 		checar_folha(id)
 		checar_partida(id)
 		checar_direcoes(id)
+	var id_tira := "espirito_raposa"
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--id="):
+			id_tira = a.trim_prefix("--id=")
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--fotos="):
 			await fotos(a.trim_prefix("--fotos="))
+		elif a.begins_with("--tira="):
+			await tira(a.trim_prefix("--tira="), id_tira)
 	print("v2_andante falhas=%d" % falhas)
 	get_tree().quit()

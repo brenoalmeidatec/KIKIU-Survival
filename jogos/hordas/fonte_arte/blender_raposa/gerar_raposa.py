@@ -1,4 +1,4 @@
-"""Espírito Raposa (aliado "espirito_raposa") em 3D procedural, 5 vistas, ANDAR (trote rápido) e ATAQUE (bote: agacha, salta e cai com as patas sobre o inimigo).
+"""Espírito Raposa (aliado "espirito_raposa") em 3D procedural, 5 vistas, ANDAR (galope rápido) e ATAQUE (bote: agacha, salta e cai com as patas sobre o inimigo).
 
 Mesmo esquema de câmera dos monstros v2, do Golem e do Urso: 45 graus, ortográfica, 24,5 px por unidade, vistas 0/45/90/135/180
 (frente, 3/4 frente, lado, 3/4 costas, costas), o bicho olhando para a DIREITA (o jogo espelha para a esquerda).
@@ -6,7 +6,8 @@ Raposa laranja esguia, de patas escuras, orelhas grandes, olhos dourados e uma c
 névoa, brilho, faíscas, dissolver) é feito em código, em v2/andante.gd, por cima desta folha.
 
 Saída: projeto/assets/v2/armas/raposa_espiritual_dir.png, 16 colunas x 5 linhas de quadros do mesmo tamanho:
-  colunas 0-7  = ciclo de ANDAR (trote: pares diagonais, 2 PASSADAS de 4 quadros por ciclo, pisadas nos quadros 2/4/6/0, patas afastadas; o 2 também é o "parado"),
+  colunas 0-7  = ciclo de ANDAR (galope de pares diagonais, com tempo de voo: 2 PASSADAS de 4 quadros por ciclo, cada par pousa nos quadros 2/4/6/0 e fica no chão
+                 ~30% da passada, então a passada tem 44 px de frente e 66 de lado; o 2 também é o "parado"),
   colunas 8-15 = ATAQUE (8 agacha, 9 se encolhe, 10 salta, 11 pico do salto com a boca aberta, 12 BOTE = impacto, as patas da frente no chão,
                  13 pousa, 14 pulinho para trás, 15 assenta). O corpo vai para a frente DENTRO do quadro (o bicho não anda durante o ataque): o salto está na folha.
   linhas       = frente, 3/4 frente, lado, 3/4 costas, costas.
@@ -44,8 +45,9 @@ PPU = 24.5               # igual aos monstros v2, ao herói e ao Golem
 ESCALA = 0.42            # escala geral do modelo (bem menor que o urso, que é 0,80)
 VISTAS = (0.0, 45.0, 90.0, 135.0, 180.0)
 ANDAR = 8
-PASSADA = 4              # quadros de UMA passada (os 2 pares de patas pisam uma vez): a folha traz 2 passadas em 8 quadros, então o jogo só troca de quadro
-                         # a cada 2 pisadas e a passada em pixels (ciclo_linha) é o dobro: de frente/costas, onde ela é curta na tela, não pisca
+PASSADA = 4              # quadros de UMA passada (os 2 pares de patas pisam uma vez): a folha traz 2 passadas em 8 quadros (o `ciclo_linha` é o das 2)
+DUTY = 0.30              # fração da passada em que cada par de patas fica no chão (< 0,5 = GALOPE com tempo de voo): o corpo anda 2A/DUTY por passada,
+                         # então a passada fica ~1,6x a do trote (de frente/costas passa de 40 px na tela) sem esticar as pernas nem mexer na vel da carta
 ATAQUE = 8
 IMPACTO = 4
 PARADO = 2
@@ -170,7 +172,7 @@ MEMBROS = (
     "tronco", "cabeca", "mandibula", "cauda",
 )
 
-# Andar (trote): o pé é posicionado: no apoio ele corre para trás em linha reta, em S/4 por quadro, e o corpo avança a velocidade constante,
+# Andar (galope): o pé é posicionado: no apoio ele corre para trás em linha reta, em S/4 por quadro (S = 2A/DUTY), e o corpo avança a velocidade constante,
 # então o pé NÃO escorrega. Mesma conta do Urso; os pares diagonais (frente-esquerda com trás-direita) andam juntos, meio ciclo defasados.
 L = QUADRIL_Z - T_Z                 # do quadril ao tornozelo (a perna esticada)
 L2 = J_Z                            # do joelho ao chão (para a flexão do joelho)
@@ -186,11 +188,12 @@ def _suave(t):
 
 
 def _perna(phi):
-    """phi 0..1 = fase da perna (0 = a pata encosta à frente). Devolve (u = pata à frente do quadril, apoio?, progresso do balanço 0..1)."""
+    """phi 0..1 = fase da perna (0 = a pata encosta à frente). Devolve (u = pata à frente do quadril, apoio?, progresso do balanço 0..1).
+    No apoio (DUTY da passada) o pé corre de +A a -A em linha reta, na velocidade do corpo (2A/DUTY por passada): não escorrega."""
     phi %= 1.0
-    if phi < 0.5:
-        return A * (1.0 - 4.0 * phi), True, 0.0
-    psi = (phi - 0.5) * 2.0
+    if phi < DUTY:
+        return A * (1.0 - 2.0 * phi / DUTY), True, 0.0
+    psi = (phi - DUTY) / (1.0 - DUTY)
     return -A + 2.0 * A * _suave(psi), False, psi
 
 
@@ -220,7 +223,7 @@ def pose(J, q):
     if q < ANDAR:
         est, z_corpo = passo(q)
         f = 2.0 * math.pi * (q - 1) / PASSADA        # balanço do corpo: um por passada (o lado do apoio: +1 no quadro 1, -1 no 3)
-        f8 = 2.0 * math.pi * q / ANDAR               # cauda: balança mais devagar, uma vez por 2 passadas (os quadros q e q+4 não ficam idênticos)
+        f8 = 2.0 * math.pi * q / ANDAR               # cauda e cabeça: balançam bem pouco, uma vez por 2 passadas (os quadros q e q+4 quase iguais)
         for n, par in PARES.items():
             e = est[par]
             teta, joelho, sobe = e["teta"], 0.0, 0.0
@@ -238,8 +241,8 @@ def pose(J, q):
         lado_ap = math.cos(f)
         corpo.location = (BALANCO_X * lado_ap, 0, z_corpo)
         tronco.rotation_euler = (0, -ROLL * lado_ap, 0.03 * math.sin(f))   # sem arfar o tronco: as patas da frente saem do chão se ele inclina
-        J["cabeca"].rotation_euler = (0.10 + 0.05 * math.cos(2 * f), 0, -0.08 * math.sin(f8))
-        J["cauda"].rotation_euler = (0.25 + 0.12 * math.sin(2 * f), 0, 0.28 * math.sin(f8))
+        J["cabeca"].rotation_euler = (0.10, 0, -0.04 * math.sin(f8))
+        J["cauda"].rotation_euler = (0.25, 0, 0.12 * math.sin(f8))
         corpo.rotation_euler = (0, 0.0, -0.04 * math.sin(f))
     else:
         _ataque(J, q - ANDAR)
@@ -335,13 +338,14 @@ def diag(J, cam=None):
             cs = [o.matrix_world @ Vector(c) for c in o.bound_box]
             linha.append("%s z=%.3f frente=%.3f" % (n, min(c.z for c in cs) / ESCALA, -sum(c.y for c in cs) / 8.0 / ESCALA))
         print("DIAG q=%d  %s   corpo_z=%.3f" % (q, "   ".join(linha), J["corpo"].location.z))
-    print("DIAG A=%.4f separacao=%.4f ciclo_px=%.2f" % (A, 2 * A, ANDAR * A * ESCALA * PPU))
+    print("DIAG A=%.4f separacao=%.4f ciclo_px=%.2f" % (A, 2 * A, ANDAR * 2 * A / DUTY / PASSADA * ESCALA * PPU))
 
 
 def medir_apoio(J, cena, cam, W, H):
-    """A pata de apoio (a frente-esquerda, quadros 2 a 4) como a câmera a vê, medida NOS PIXELS: com o resto do corpo escondido, renderiza só a pata em
-    cada vista e pega o centro do contorno. Devolve (ciclo_linha, deslize, pes): `ciclo_linha[v]` = px que o corpo anda por ciclo de andar na vista v
-    (4 x o deslocamento da pata de apoio entre os quadros 2 e 4: o apoio dura 2 quadros e o corpo anda 8 quadros por ciclo); `deslize[v]` = o quanto a pata sai da reta (px); `pes[v]` = [x, y] nos quadros 2 a 4
+    """A pata de apoio (a frente-esquerda: pousa no quadro 2 e ainda está no chão no 3) como a câmera a vê, medida NOS PIXELS: com o resto do corpo escondido,
+    renderiza só a pata em cada vista e pega o centro do contorno nos quadros 2, 2,5 e 3. Devolve (ciclo_linha, deslize, pes): `ciclo_linha[v]` = px que o
+    corpo anda por ciclo de andar (8 quadros = 2 passadas) na vista v (8 x o deslocamento da pata de apoio entre os quadros 2 e 3: a cada quadro o corpo
+    anda o mesmo que a pata corre para trás); `deslize[v]` = o quanto o meio (2,5) sai da reta entre o 2 e o 3 (px); `pes[v]` = [x, y] nos 3 pontos
     (x já espelhado, como na folha)."""
     raiz = J["raiz"]
     malhas = [o for o in bpy.data.objects if o.type == "MESH"]
@@ -352,17 +356,16 @@ def medir_apoio(J, cena, cam, W, H):
         for o in malhas:
             o.hide_render = o is not pe
         pts = []
-        for q in range(2, 2 + PASSADA // 2 + 1):
+        for q in (2.0, 2.5, 3.0):
             pose(J, q)
             cx = px3.caixa_alfa(px3.render_rgba())
             pts.append(((cx[0] + cx[2]) / 2.0, (cx[1] + cx[3]) / 2.0))
         for o in malhas:
             o.hide_render = False
         pts = [(W - 1 - x, y) for x, y in pts]
-        a, b = np.array(pts[0]), np.array(pts[-1])
-        ciclos.append(round(ANDAR / (PASSADA / 2.0) * float(np.linalg.norm(b - a)), 1))
-        reta = [a + (b - a) * (i / float(len(pts) - 1)) for i in range(len(pts))]
-        desl.append(round(max(float(np.linalg.norm(np.array(p) - r)) for p, r in zip(pts, reta)), 2))
+        a, m, b = (np.array(p) for p in pts)
+        ciclos.append(round(ANDAR * float(np.linalg.norm(b - a)), 1))
+        desl.append(round(float(np.linalg.norm(m - (a + b) / 2.0)), 2))
         pes.append([[round(x, 1), round(y, 1)] for x, y in pts])
     return ciclos, desl, pes
 
@@ -447,7 +450,8 @@ def main():
             "alcance_pata_px": round(alcance * ESCALA * PPU, 1),
             "linhas": ["frente", "tres_quartos_frente", "lado", "tres_quartos_costas", "costas"]}
     for destino in (os.path.join(AQUI, NOME + ".json"), os.path.join(SAIDA, NOME + ".json")):
-        with open(destino, "w", encoding="utf-8") as f:
+        with open(destino, "w", encoding="utf-8", newline="
+") as f:
             json.dump(info, f, indent=1)
             f.write("\n")
     print("RAPOSA OK", W, H, pe_x, pe_y, "alcance_pata", info["alcance_pata_px"], "z_baixo", round(z_baixo, 3))
