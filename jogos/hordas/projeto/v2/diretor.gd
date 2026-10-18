@@ -151,15 +151,25 @@ func atualizar(dt: float) -> void:
 		proxima_onda += float(cfg.onda_cada)
 	var folga: float = 0.4 if combate.chefes.vivo else 1.0  # com chefe em campo a horda dá uma folga
 	acum += taxa(t) * dt * folga
+	if acum < 1.0:
+		return
+	# O limite da fase (`cap`) mede quem o diretor pôs para CAÇAR o herói. Os moradores do mapa (os 20 de "nascimento", que vagam longe e só
+	# perseguem de perto) não contam: contando, o cap inicial (14) ficava abaixo dos 20 moradores e nada nascia por ~45 s, a partida abria
+	# vazia. O teto geral (`teto()`) continua valendo sobre todos os vivos.
 	var vivos: int = mundo.monstros.size()
+	var cacando := 0
+	for m in mundo.monstros:
+		if m.cacador:
+			cacando += 1
 	var cap := roundi(float(limite(t)) * (0.6 if combate.chefes.vivo else 1.0))
 	while acum >= 1.0:
 		acum -= 1.0
-		if vivos >= cap or vivos >= teto():
+		if cacando >= cap or vivos >= teto():
 			acum = minf(acum, 1.0)  # no teto não junta devedor: quando abrir vaga, nasce um por vez
 			break
 		if nascer(sortear(t)):
 			vivos += 1
+			cacando += 1
 
 
 func sortear(t: float) -> String:
