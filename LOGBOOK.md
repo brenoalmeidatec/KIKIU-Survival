@@ -2238,3 +2238,13 @@ _Claude do Alisson (PC)_
 - **Próximo sugerido:** (1) o Breno joga a Release no i5 com as fusões e manda o F3 numa subida de nível e no mini-chefe; (2) cortar o custo do desenho das fusões aliadas; (3) perfis "humanos" no robô antes de calibrar o equilíbrio (#137).
 
 _Claude do Alisson (PC)_
+
+## 2026-10-18 · Claude do Alisson (PC) · Colisão: inimigos e aliados não atravessam barreiras
+- **Feito:** o movimento de quem não é Ator passa pela colisão. `mundo.mover_ponto(antes, desejado, raio)` é uma cópia de `mover` para os aliados (guardam a posição num dicionário). `mundo.mover` ficou igual à main, então herói e monstros não pagam nada a mais. Passam por `mover_ponto`: o andante, o golem e o aliado simples (raio 7). A puxada da tempestade (`_puxar`) passou a usar `mover`, que já tinha colisão. Quem bate numa caixa do cenário desliza ao longo dela, sem prender e sem entrar. Teste novo `testes/v2_barreiras_npcs`: inimigo perseguindo, puxão e os 4 aliados (andar próprio e aliado simples) nunca entram na caixa e contornam.
+- **Prova do aliado simples:** com a colisão dele desligada de propósito, os 4 casos "(simples)" falham (falhas=4). O caminho é exercido.
+- **Ajuste em `v2_andante`:** a checagem de vista por direção limpa as caixas antes. Sem isso, um aliado que desliza numa árvore muda de vista (3 em vez de 4). Só o teste mudou.
+- **FPS (não fechou):** `v2/fps.txt` tem 3 pares alternados main/branch, horda e santuário, medidos com `mover` como wrapper (versão anterior). Mediana da horda: 281 fps na main e 260 na branch; monstros: 0,64 e 0,69 ms. A mesma versão variou 2x entre rodadas, porque outros Godot de outros agentes rodavam na máquina. Depois disso `mover` voltou ao código da main: o diff de `v2/mundo.gd` só tem `mover_ponto`, então a horda roda o mesmo código e não há custo novo por construção. Não repeti o A/B.
+- **Pendente / honesto:** (1) o FPS só se confirma com o PC parado (`v2/medir_fps.sh`). (2) Sem foto: nenhum arquivo de desenho ou UI mudou. Tentei três capturas com janela (aliado ao lado de um prédio real da Cidade); o aliado não nasceu nas três, e não isolei a causa. Quem confere é jogando: um aliado ou monstro contornando prédio na Cidade. (3) O teste usa caixa sintética em mapa vazio; a Cidade e o Laboratório só têm `v2_cidade_colisao` e `v2_laboratorio_colisao` (passaram), sem contorno real. (4) Esta entrada no LOGBOOK foi pedida na verificação; vai conflitar com os outros `lote-*` no merge, e quem integra resolve.
+- **Próximo sugerido:** jogar a Cidade com um aliado e um monstro perto dos prédios; o A/B com a máquina parada.
+
+_Claude do Alisson (PC)_

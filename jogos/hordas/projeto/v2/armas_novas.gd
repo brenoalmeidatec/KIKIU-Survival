@@ -16,6 +16,7 @@ extends RefCounted
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (igual ao armas.gd)
 const MAX := 64
 const RAIO_PROJ := 10.0
+const RAIO_ALIADO := 7.0  # corpo do aliado no chão (colisão: v2/colisao.gd, igual ao do Ator)
 ## Tempos da torre (s): queda, armar (pernas se abrem e a balestra sobe) e desmontar (some em lascas depois da `duracao`).
 const POUSO_T := 0.25
 const ARMA_T := 0.4
@@ -479,7 +480,7 @@ func _puxar(p: Vector2, raio: float, forca: float) -> void:
 		var d: Vector2 = p - m.pos
 		if _eli(d).length() > raio:
 			continue
-		m.pos = m.pos + d.normalized() * minf(forca, d.length())
+		pai.mundo.mover(m, d.normalized() * minf(forca, d.length()))  # passa pela colisão: a tempestade não puxa ninguém para dentro de uma barreira
 
 
 ## Onde sai o próximo número de um monstro: cada número da mesma rajada (0,7 s) ocupa um lugar diferente em volta dele (`SLOTS_NUM`: o meio,
@@ -635,7 +636,7 @@ func _mover_aliado(it: Dictionary, h, dt: float, perto: Array) -> void:
 		dest = h.pos + Vector2.from_angle(float(it.fase)) * 50.0  # sem inimigo, gira em volta do herói
 	var d: Vector2 = dest - it.p
 	if d.length() > 1.0:
-		it.p = it.p + d.normalized() * minf(float(st.vel) * dt, d.length())
+		it.p = pai.mundo.mover_ponto(it.p, d.normalized() * minf(float(st.vel) * dt, d.length()), RAIO_ALIADO)
 	if d.length() > 1.0:
 		it.v = (it.v as Vector2).lerp(d.normalized(), clampf(dt * 10.0, 0.0, 1.0))  # para onde corre (suavizado: o quadro não pisca na virada)
 	if absf(d.x) > 2.0:

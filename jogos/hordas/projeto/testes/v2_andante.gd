@@ -12,6 +12,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Andante := preload("res://v2/andante.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Golem := preload("res://v2/golem.gd")
+const Colisao := preload("res://v2/colisao.gd")
 const PASSO := 1.0 / 60.0
 ## Quantas passadas de verdade a folha traz por ciclo de andar (o padrão é 1: o ciclo = a passada); o galope da raposa leva 2 passadas em 8 quadros.
 const PASSADAS_POR_CICLO := {"espirito_raposa": 2}
@@ -201,6 +202,7 @@ func checar_partida(id: String, base := "") -> void:
 
 ## Direções: a vista sai da direção do alvo (frente descendo, costas subindo, perfil de lado) e o lado esquerdo é o espelho.
 func checar_direcoes(id: String, base := "") -> void:
+	Colisao.limpar()  # sem barreiras no caminho: o aliado agora não atravessa árvore (v2_barreiras_npcs), e um desvio mudaria a vista do teste
 	for caso in [[Vector2(0, 150), 0], [Vector2(0, -150), 4], [Vector2(170, 0), 2], [Vector2(-170, 0), 2], [Vector2(120, 110), 1], [Vector2(-120, -110), 3]]:
 		var r: Array = preparar(id, caso[0], base)
 		var it = r[0]

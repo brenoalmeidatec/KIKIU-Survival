@@ -764,6 +764,22 @@ func mover(a, desejado: Vector2) -> Vector2:
 	return depois - antes
 
 
+## O mesmo `mover` para quem não é Ator (aliados, que guardam a posição num dicionário): devolve a nova posição de um corpo de raio
+## `raio` que sai de `antes` e quer andar `desejado`, com as barreiras e a área andável. É uma cópia de `mover` de propósito: o herói e
+## os monstros seguem com o código da main, sem uma chamada a mais por quadro.
+func mover_ponto(antes: Vector2, desejado: Vector2, raio: float) -> Vector2:
+	var depois := antes + desejado
+	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, raio):
+		var n_passos := ceili(desejado.length() / MAX_PASSO_COLISAO)
+		var passo := desejado / n_passos
+		depois = antes
+		for _i in n_passos:
+			depois = Colisao.resolver(depois + passo, raio)
+	else:
+		depois = Colisao.resolver(depois, raio)
+	return depois.clamp(limite_andavel.position, limite_andavel.end)
+
+
 ## Mouse nas coordenadas do mundo (a tela do mundo é 960x540 e a câmera já é inteira).
 func mouse_mundo() -> Vector2:
 	if mouse_forcado != null:
