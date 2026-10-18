@@ -20,6 +20,7 @@ const PARADO := 2
 const RESPIRO_MIN := 0.08
 const SURGIR_T := 0.45  # nasce de uma névoa (aparece de baixo para cima e acende)
 const SUMIR_T := 0.5  # some nos últimos instantes (apaga e solta a névoa)
+const DUR_RASTRO := 0.22  # s que o rastro do golpe fica no ar (garras, arco, fogo, pancada, névoa ou bote)
 const ACHATA := 0.62
 const ANDANDO := 0
 const ATACANDO := 1
@@ -31,7 +32,8 @@ const SURGINDO := 2
 ## empurra, atordoa = do golpe por alvo; sombra = raio da sombra; cor_fx = cor do espírito (névoa, rastro do golpe, brilho).
 ## Opcionais, para quem não anda com pernas: ciclo_s = s por ciclo do "andar" contado no RELÓGIO (asa batendo, corpo ondulando, véu do fantasma),
 ## que roda também parado (sem ele o ciclo anda com a distância e parado mostra o quadro `PARADO`); altura = px acima do chão em que ele flutua ou voa
-## (a sombra fica no chão e o corpo balança `balanco` px para cima e para baixo).
+## (a sombra fica no chão e o corpo balança `balanco` px para cima e para baixo); rastro = o desenho do golpe no impacto: garras (padrão), arco
+## (corte de espada), fogo (sopro em leque), pancada (anel e lascas no chão), nevoa (fiapos que sobem) ou bote (estalo e fagulhas).
 const FICHAS := {
 	"espirito_urso":
 	{
@@ -50,6 +52,128 @@ const FICHAS := {
 		"atordoa": 0.12,
 		"sombra": 17.0,
 		"cor_fx": Color(0.62, 1.0, 0.72),
+		"rastro": "garras",
+	},
+	"esqueleto_guerreiro":
+	{
+		"folha": "res://assets/v2/armas/esqueleto_guerreiro_dir.png",
+		"quadro": Vector2(75, 85),
+		"pe": Vector2(37, 66),
+		"ciclo": [30.0, 36.1, 42.0, 35.8, 30.0],
+		# prepara, a espada sobe, sobe, pico atrás da cabeça, CORTE, a espada embaixo, recolhe, volta: 0,52 s, cabe no tique de 0,6 s da carta
+		"tempos": [0.06, 0.06, 0.06, 0.07, 0.05, 0.09, 0.06, 0.07],
+		"impacto": 4,
+		# a ponta da espada, no quadro do corte, chega a 35 px à frente do centro do corpo (`alcance_pata_px` do .json); o arco cai no meio da lâmina
+		"alcance": 28.0,
+		"frente": 25.0,
+		"raio": 19.0,
+		"empurra": 40.0,
+		"atordoa": 0.08,
+		"sombra": 10.0,
+		"cor_fx": Color(0.95, 0.93, 0.85),
+		"rastro": "arco",
+	},
+	"espirito_raposa":
+	{
+		"folha": "res://assets/v2/armas/raposa_espiritual_dir.png",
+		"quadro": Vector2(69, 70),
+		"pe": Vector2(32, 44),
+		"ciclo": [26.1, 32.8, 40.0, 34.4, 26.1],
+		# agacha, se encolhe, salta, pico do salto, BOTE (patas no chão), pousa, levanta, volta: 0,42 s, cabe no tique de 0,5 s da carta
+		"tempos": [0.06, 0.06, 0.05, 0.04, 0.04, 0.07, 0.05, 0.05],
+		"impacto": 4,
+		# o corpo vai à frente dentro do quadro (o bote está na folha): a pata da frente, no impacto, chega a 35 px à frente do centro (`alcance_pata_px` do .json)
+		"alcance": 30.0,
+		"frente": 27.0,
+		"raio": 18.0,
+		"empurra": 30.0,
+		"atordoa": 0.05,
+		"sombra": 9.0,
+		"cor_fx": Color(1.0, 0.72, 0.3),
+		"rastro": "garras",
+	},
+	"fantasma_mata":
+	{
+		"folha": "res://assets/v2/armas/fantasma_mata_dir.png",
+		"quadro": Vector2(82, 80),
+		"pe": Vector2(30, 63),
+		# flutua: o véu ondula no relógio (ciclo_s), sem pé no chão (por isso não tem `ciclo`)
+		"ciclo_s": 0.8,
+		"altura": 9.0,
+		"balanco": 2.0,
+		# recua, abre os braços, pico, começa o bote, BOTE (capuz e garras à frente), segura, volta, assenta: 0,30 s, cabe no tique de 0,4 s da carta
+		"tempos": [0.05, 0.04, 0.04, 0.04, 0.05, 0.04, 0.02, 0.02],
+		"impacto": 4,
+		# o capuz e as garras, no quadro do bote, chegam 49,8 px à frente do centro (`alcance_pata_px` do .json)
+		"alcance": 42.0,
+		"frente": 38.0,
+		"raio": 24.0,
+		"empurra": 40.0,
+		"atordoa": 0.1,
+		"sombra": 13.0,
+		"cor_fx": Color(0.55, 1.0, 0.65),
+		"rastro": "nevoa",
+	},
+	"serpente_ardente":
+	{
+		"folha": "res://assets/v2/armas/serpente_ardente_dir.png",
+		"quadro": Vector2(85, 86),
+		"pe": Vector2(27, 50),
+		# rasteja: a onda do corpo roda no relógio (ciclo_s) e fica no chão (sem `altura`); parada ela continua ondulando
+		"ciclo_s": 0.5,
+		# se enrosca, ergue o pescoço, arma o bote, dispara, BOTE (cabeça à frente de boca aberta), estala, recolhe, assenta: 0,42 s, cabe no tique de 0,5 s
+		"tempos": [0.07, 0.07, 0.06, 0.05, 0.06, 0.05, 0.03, 0.03],
+		"impacto": 4,
+		# a ponta da cabeça, no quadro do bote, chega 57,9 px à frente do centro (`alcance_pata_px` do .json)
+		"alcance": 50.0,
+		"frente": 46.0,
+		"raio": 22.0,
+		"empurra": 30.0,
+		"atordoa": 0.08,
+		"sombra": 16.0,
+		"cor_fx": Color(1.0, 0.55, 0.15),
+		"rastro": "bote",
+	},
+	"guardiao_pedra":
+	{
+		"folha": "res://assets/v2/armas/guardiao_pedra_dir.png",
+		"quadro": Vector2(77, 93),
+		"pe": Vector2(35, 72),
+		"ciclo": [32.0, 39.7, 46.0, 38.6, 32.0],
+		# antecipa, braços sobem, quase no alto, pico (punhos acima da cabeça), PANCADA, punhos no chão, começa a se erguer, volta: 0,98 s, cabe no tique de 1,2 s
+		"tempos": [0.1, 0.1, 0.1, 0.14, 0.08, 0.18, 0.14, 0.14],
+		"impacto": 4,
+		# os punhos, no quadro da pancada, ficam 18 px à frente do centro do corpo (`alcance_pata_px` do .json); a área de 26 px de raio cobre em volta
+		"alcance": 26.0,
+		"frente": 16.0,
+		"raio": 26.0,
+		"empurra": 55.0,
+		"atordoa": 0.25,
+		"sombra": 21.0,
+		"cor_fx": Color(0.78, 0.76, 0.68),
+		"rastro": "pancada",
+	},
+	"dragao_filhote":
+	{
+		"folha": "res://assets/v2/armas/dragao_filhote_dir.png",
+		"quadro": Vector2(47, 48),
+		"pe": Vector2(23, 25),
+		"ciclo": [0.0, 0.0, 0.0, 0.0, 0.0],  # voa: o ciclo é o bater de asas no relógio (ciclo_s), sem passada no chão
+		"ciclo_s": 0.5,
+		"altura": 20.0,
+		"balanco": 3.0,
+		# recua a cabeça, enche o peito, boca abrindo, pico, SOPRO, sopro acabando, fecha a boca, volta: 0,46 s, cabe no tique de 0,6 s
+		"tempos": [0.05, 0.05, 0.05, 0.07, 0.05, 0.07, 0.06, 0.06],
+		"impacto": 4,
+		# no quadro do sopro a ponta do focinho fica 12 px à frente do centro do corpo e o leque de fogo passa dela 14 px (`alcance_pata_px` do .json = 26)
+		"alcance": 22.0,
+		"frente": 18.0,
+		"raio": 16.0,
+		"empurra": 30.0,
+		"atordoa": 0.05,
+		"sombra": 11.0,
+		"cor_fx": Color(1.0, 0.55, 0.15),
+		"rastro": "fogo",
 	},
 }
 
@@ -290,17 +414,87 @@ static func desenhar_brilho(ci: CanvasItem, it: Dictionary, p: Vector2, glow: Te
 		return
 	var et := float(it.et)
 	var ti := tempo_impacto(f)
-	if et < ti or et > ti + 0.2:
+	if et < ti or et > ti + DUR_RASTRO:
 		return
-	var g := (et - ti) / 0.2  # 0 = a pata acabou de cair, 1 = o rastro sumiu
+	var g := (et - ti) / DUR_RASTRO  # 0 = o golpe acabou de cair, 1 = o rastro sumiu
 	var ip: Vector2 = (it.ip as Vector2).round()
 	var dir: Vector2 = it.v
+	var corpo: Vector2 = p - Vector2(0.0, altura(it, f) + float(f.quadro.y) * 0.2)
+	match str(f.get("rastro", "garras")):
+		"arco":
+			_rastro_arco(ci, corpo, dir, float(f.frente) + 4.0, cor, g)
+		"fogo":
+			_rastro_fogo(ci, corpo, ip, dir, float(f.raio), g)
+		"pancada":
+			_rastro_pancada(ci, ip, float(f.raio), cor, g)
+		"nevoa":
+			_rastro_nevoa(ci, ip, float(f.raio), cor, g, float(it.fase))
+		"bote":
+			_rastro_bote(ci, ip, dir, float(f.raio), cor, g)
+		_:
+			_rastro_garras(ci, ip, dir, float(f.raio), cor, g)
+
+
+## Três garras: riscos curvos que cruzam o ponto do golpe, de cima para baixo (urso, raposa).
+static func _rastro_garras(ci: CanvasItem, ip: Vector2, dir: Vector2, raio: float, cor: Color, g: float) -> void:
 	var perp := Vector2(-dir.y, dir.x)
-	var raio := float(f.raio)
-	for r in 3:  # três garras: riscos curvos que cruzam o ponto do golpe, de cima para baixo
+	for r in 3:
 		var o := perp * (r - 1) * 7.0
 		var pts := PackedVector2Array()
 		for s in 6:
 			var u := float(s) / 5.0 - 0.5
 			pts.append(ip + o + Vector2(0, -12.0) + dir * u * raio * 1.2 + Vector2(0, u * 18.0) - perp * absf(u) * 4.0)
 		ci.draw_polyline(pts, Color(cor, 0.9 * (1.0 - g)), 2.0 * (1.0 - g) + 1.0)
+
+
+## Corte de espada: um arco em volta do corpo, na direção do golpe, que afina e apaga (esqueleto).
+static func _rastro_arco(ci: CanvasItem, corpo: Vector2, dir: Vector2, raio: float, cor: Color, g: float) -> void:
+	var a := dir.angle()
+	var abre := 1.1 + 0.4 * g
+	ci.draw_set_transform(corpo, 0.0, Vector2(1.0, 0.8))
+	ci.draw_arc(Vector2.ZERO, raio, a - abre, a + abre, 18, Color(cor, 0.85 * (1.0 - g)), 3.0 * (1.0 - g) + 1.0)
+	ci.draw_arc(Vector2.ZERO, raio - 4.0, a - abre * 0.8, a + abre * 0.8, 14, Color(1, 1, 1, 0.6 * (1.0 - g)), 1.0)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Sopro de fogo em leque: bolas de fogo que saem da boca e se abrem, de amarelo a vermelho (dragão).
+static func _rastro_fogo(ci: CanvasItem, corpo: Vector2, ip: Vector2, dir: Vector2, raio: float, g: float) -> void:
+	var boca := corpo + dir * 6.0
+	var longe := (ip - boca).length() + raio
+	for k in 7:
+		var ang := dir.angle() + (k - 3) * 0.16
+		var d := longe * (0.35 + 0.65 * g) * (0.75 + 0.25 * absf(sin(k * 1.7)))
+		var c := Color(1.0, 0.9, 0.4).lerp(Color(1.0, 0.25, 0.05), g)
+		c.a = 0.75 * (1.0 - g)
+		ci.draw_circle(boca + Vector2.from_angle(ang) * d, 3.0 + 4.0 * g, c)
+	ci.draw_circle(boca, 4.0 * (1.0 - g), Color(1.0, 0.95, 0.6, 0.8 * (1.0 - g)))
+
+
+## Pancada no chão: anel achatado que abre e lascas de pedra que pulam e caem (guardião).
+static func _rastro_pancada(ci: CanvasItem, ip: Vector2, raio: float, cor: Color, g: float) -> void:
+	ci.draw_set_transform(ip, 0.0, Vector2(1.0, ACHATA))
+	ci.draw_arc(Vector2.ZERO, raio * (0.5 + 0.7 * g), 0.0, TAU, 32, Color(cor, 0.7 * (1.0 - g)), 2.0 * (1.0 - g) + 1.0)
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	for k in 6:
+		var d := Vector2.from_angle(k * TAU / 6.0 + 0.4) * raio * 0.9 * g
+		var pos := ip + Vector2(d.x, d.y * ACHATA) - Vector2(0, sin(g * PI) * 10.0)
+		ci.draw_rect(Rect2(pos.round(), Vector2(2, 2)), Color(cor, 0.8 * (1.0 - g)))
+
+
+## Névoa que assombra: fiapos redondos que sobem e se espalham do ponto do golpe (fantasma).
+static func _rastro_nevoa(ci: CanvasItem, ip: Vector2, raio: float, cor: Color, g: float, fase: float) -> void:
+	for k in 5:
+		var ang := fase + k * TAU / 5.0
+		var pos := ip + Vector2(cos(ang), sin(ang) * ACHATA) * raio * 0.7 * g - Vector2(0, 8.0 + 10.0 * g)
+		ci.draw_circle(pos, 3.0 + 5.0 * g, Color(cor, 0.45 * (1.0 - g)))
+
+
+## Bote: um estalo de brasa onde a boca fecha e fagulhas em leque para a frente (serpente).
+static func _rastro_bote(ci: CanvasItem, ip: Vector2, dir: Vector2, raio: float, cor: Color, g: float) -> void:
+	var c := ip - Vector2(0, 6.0)
+	ci.draw_circle(c, raio * 0.45 * (1.0 - g), Color(1.0, 0.9, 0.5, 0.7 * (1.0 - g)))
+	for k in 6:
+		var ang := dir.angle() + (k - 2.5) * 0.35
+		var a := c + Vector2.from_angle(ang) * raio * 0.3 * g
+		var b := c + Vector2.from_angle(ang) * raio * (0.4 + 0.6 * g)
+		ci.draw_line(a, b, Color(cor, 0.85 * (1.0 - g)), 1.0)

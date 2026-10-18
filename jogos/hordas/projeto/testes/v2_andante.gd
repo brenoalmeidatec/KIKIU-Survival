@@ -63,6 +63,7 @@ func preparar(id: String, dir: Vector2):
 	w.heroi.fonte = Heroi.Fonte.MOUSE
 	passos(3)
 	w.combate.armas.definir_golpe(id, 1, 0.0)
+	w.combate.armas.ativas[id].st.quantidade = 1  # o teste mede UM bicho por vez (o dano de um segundo contaria como fora do quadro do impacto)
 	var m = monstro_a(dir.x, dir.y)
 	var it = null
 	for i in 400:
@@ -73,6 +74,9 @@ func preparar(id: String, dir: Vector2):
 	var a = w.combate.armas.ativas.get(id)
 	if a != null:
 		a.t = 999.0  # só este: a recarga mandaria outro antes deste sumir
+	for outro in w.combate.armas.novas.itens:
+		if outro != it and bool(outro.an) and float(outro.vida) > 0.0:
+			outro.vida = 0.0  # cartas com quantidade > 1 (o Fantasma nasce em dupla): só o acompanhado fica, senão o golpe do outro conta como dano fora do impacto
 	return [it, m]
 
 
@@ -188,7 +192,12 @@ func fotos(pasta: String) -> void:
 			it = r[0]
 			for i in 60 * 3:
 				passos(1)
-				if it != null and int(it.e) == Andante.ANDANDO and bool(it.mov) and Andante.quadro_andar(float(it.pf)) == 3:
+				if (
+					it != null
+					and int(it.e) == Andante.ANDANDO
+					and bool(it.mov)
+					and (f.has("ciclo_s") and float(it.et) >= 0.3 or Andante.quadro_andar(float(it.pf)) == 3)
+				):  # ciclo no relógio (flutua, rasteja): pega um quadro andando, com a vista já virada
 					rec.append(await recorte(it))
 					break
 		if not rec.is_empty():
