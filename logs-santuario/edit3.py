@@ -1,0 +1,17 @@
+from pathlib import Path
+p=Path('jogos/hordas/projeto/testes/v2_pausa.gd');s=p.read_text(encoding='utf-8');a=s.index('\t\t_tecla(KEY_ESCAPE)\n',s.index('# 11. santuário'));b=s.index('\t\taltar._ajustes.pressed.emit()',a);s=s[:a]+'''\t\tvar esc := InputEventKey.new()
+\t\tesc.keycode = KEY_ESCAPE
+\t\tesc.pressed = true
+\t\tok(not pa.entrada(esc), "pausa fechada do santuário devolve ESC à navegação local")
+\t\tok(not pa.aberto and saiu == saidas_antes, "santuário nunca abre Sair ao receber ESC")
+\t\tok(not get_tree().paused, "santuário não pausa a árvore")
+''' +s[b:];s=s.replace('ok(not pa.aberto, "no santuário, ESC em Ajustes fecha o submenu")','ok(not pa.aberto, "no santuário, ESC em Ajustes fecha o submenu")\n\t\tok(get_viewport().gui_get_focus_owner() == altar._ajustes, "fechar Ajustes restaura foco no botão")');s=s.replace('# 11. santuário: o ESC só abre a confirmação de sair (Não por padrão; Sim chama o gancho); o botão Ajustes abre o submenu.','# 11. santuário: a pausa devolve ESC à navegação local; Ajustes fecha e restaura foco.');s=s.replace('e no santuário o ESC\n#', 'e no santuário o ESC\n#');p.write_text(s,encoding='utf-8')
+p=Path('jogos/hordas/projeto/v2/altar.gd');s=p.read_text(encoding='utf-8');s=s.replace('_detalhe.text = _detalhe_melhoria(Meta.melhoria(id), Meta.estado())','_detalhe.text = str(Meta.melhoria(id).nome) + "\\n" + _detalhe_melhoria(Meta.melhoria(id), Meta.estado())');s=s.replace('var apoio := "Cumprida"', 'var apoio := "Cumprida"');s=s.replace('barra.show_percentage = false','''barra.show_percentage = false
+\t\tvar trilho := StyleBoxFlat.new()
+\t\ttrilho.bg_color = Color(0.16, 0.17, 0.22)
+\t\tvar preenchimento := StyleBoxFlat.new()
+\t\tpreenchimento.bg_color = COR_ALMA
+\t\tbarra.add_theme_stylebox_override("background", trilho)
+\t\tbarra.add_theme_stylebox_override("fill", preenchimento)''');p.write_text(s,encoding='utf-8')
+p=Path('jogos/hordas/projeto/v2/pausa.gd');s=p.read_text(encoding='utf-8').replace('## No santuário (altar.gd, sem mundo) o ESC abre só "Sair?", e abrir_ajustes() abre Ajustes (o botão do santuário).','## No título ESC abre "Sair?". O santuário desliga sair_no_frontend e trata ESC localmente; abrir_ajustes() é compartilhado.').replace('## Santuário (sem mundo): o ESC abre direto a confirmação de sair.','## Título (sem mundo): ESC abre a confirmação de sair quando sair_no_frontend está ativo.');p.write_text(s,encoding='utf-8')
+p=Path('jogos/hordas/projeto/v2/LEIA-ME.md');s=p.read_text(encoding='utf-8').replace('no santuário (só "Sair?" e o botão Ajustes)','no santuário (botão Ajustes; ESC local retorna ao título)').replace('Visual: arte de entrada escurecida e molduras de pedra (`hud/moldura_pedra.png`).','Visual: arte atual do título escurecida e molduras de pedra (`hud/moldura_pedra.png`), melhorias em grade 3×3 com marcadores de nível. Foco/mouse nos cartões ou conquistas mostra o detalhe compartilhado; cartões bloqueados e máximos continuam selecionáveis. Conquistas usam barra da **última partida**, sem progresso acumulado inventado. ESC/Start ou VOLTAR retornam ao título; ESC em Ajustes volta um nível e restaura foco. Só no título ESC abre Sair.');s += '\nTeste da navegação do santuário: `testes/v2_santuario.tscn` usa a entrada da janela, confere ESC/Start/VOLTAR, Ajustes com foco restaurado, seleção de bloqueados e conquistas e limites de textos/cartões em 960×540.\n';p.write_text(s,encoding='utf-8')

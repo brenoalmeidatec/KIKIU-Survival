@@ -1,0 +1,29 @@
+ERROR: 11 RID allocations of type 'N5GLES37TextureE' were leaked at exit.
+ERROR: Texture with GL ID of 332: leaked 131072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 333: leaked 131072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 471: leaked 1468 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 472: leaked 6288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 473: leaked 21844 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 474: leaked 21844 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 517: leaked 87380 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 521: leaked 174762 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 522: leaked 131072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 523: leaked 131072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: Texture with GL ID of 524: leaked 174762 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:77)
+ERROR: 5 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2378)
+ERROR: 4 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:614)

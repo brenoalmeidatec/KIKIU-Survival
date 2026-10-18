@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="C:/Dev/Breno/kikiu-santuario/logs-santuario/fotos_final.gd" id="1"]
+[node name="Fotos" type="Node"]
+script = ExtResource("1")

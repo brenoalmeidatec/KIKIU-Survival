@@ -1,0 +1,53 @@
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+
+first_scan_filesystem: begin: Inicialização do Projeto steps: 5
+	first_scan_filesystem: step 0: Escaneando estrutura de arquivos...
+	first_scan_filesystem: step 1: Carregando nomes de classe globais...
+	first_scan_filesystem: step 2: Verificando GDExtensions...
+	first_scan_filesystem: step 3: Criando scripts autoload...
+	first_scan_filesystem: step 4: Inicializando plugins...
+	first_scan_filesystem: step 5: Iniciando escaneamento de arquivos...
+first_scan_filesystem: end
+update_scripts_classes: begin: Registrando classes globais... steps: 6
+	update_scripts_classes: step 0: 
+	update_scripts_classes: step 1: 
+	update_scripts_classes: step 2: 
+	update_scripts_classes: step 3: 
+	update_scripts_classes: step 4: 
+	update_scripts_classes: step 5: 
+update_scripts_classes: end
+_update_scan_actions: begin: Escaneando ações... steps: 5
+	_update_scan_actions: step 0: decalques.png
+	_update_scan_actions: step 1: enfeites.png
+	_update_scan_actions: step 2: enfeites_normal.png
+	_update_scan_actions: step 3: piso.png
+	_update_scan_actions: step 4: piso_normal.png
+_update_scan_actions: end
+reimport: begin: (Re)Importando Recursos steps: 5
+	reimport: step 0: Preparando arquivos para reimportação...
+	reimport: step 1: Preparando arquivos para reimportação...
+	reimport: step 2: Preparando arquivos para reimportação...
+	reimport: step 3: Preparando arquivos para reimportação...
+	reimport: step 4: Preparando arquivos para reimportação...
+	reimport: step 0: Executando operações pré-reimportação...
+	reimport: step 0: decalques.png
+	reimport: step 1: enfeites.png
+	reimport: step 2: enfeites_normal.png
+	reimport: step 3: piso.png
+	reimport: step 4: piso_normal.png
+	reimport: step 5: Finalizando Importação de Recursos...
+reimport: end
+update_script_paths_documentation: begin: Atualizando documentação dos scripts steps: 6
+	update_script_paths_documentation: step 0: v2_mapas.gd
+	update_script_paths_documentation: step 1: v2_pausa.gd
+	update_script_paths_documentation: step 2: v2_santuario.gd
+	update_script_paths_documentation: step 3: altar.gd
+	update_script_paths_documentation: step 4: mapas.gd
+	update_script_paths_documentation: step 5: pausa.gd
+update_script_paths_documentation: end
+reimport: begin: (Re)Importando Recursos steps: 5
+	reimport: step 0: Executando operações pós-reimportação...
+reimport: end
+loading_editor_layout: begin: Carregando editor steps: 5
+	loading_editor_layout: step 0: Carregando layout do editor...
+loading_editor_layout: end
