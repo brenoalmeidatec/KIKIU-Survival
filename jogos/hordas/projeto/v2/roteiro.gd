@@ -18,6 +18,7 @@ extends RefCounted
 ##   --roteiro=hud_golpes  a faixa de golpes do HUD numa partida real: 9 golpes ganhos, horda caçando o herói. Fotos do viewport: 31_parado (faixa
 ##                         esmaecida, parada), 32_pulso (0,15 s depois de subir o nível da runa: ícone claro, faixa opaca) e 33_novo (0,12 s
 ##                         depois de ganhar um golpe novo: pop). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=inicio      a abertura real da partida (diretor ligado, herói parado): fotos aos 1, 10 e 20 s e a linha INICIO com o monstro mais perto.
 ##   --roteiro=cores       (cores de perigo) o herói com Fogo do Céu, Grito de Guerra, Cortina de Sangue e os aliados Golem de Barro e Dragãozinho,
 ##                         cercado de monstros e um Explosivo ao lado. Fotos 1 a 3 (armas e aliados) e 4_aviso e 5_aviso (o aviso do Explosivo, 0,25 s e 0,5 s depois da morte). Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=oclusao     (leva 4) herói atrás de uma árvore (1_arvore) e herói coberto por uma aranha grande na frente (2_aranha).
@@ -62,8 +63,8 @@ func montar(m, a: Dictionary) -> void:
 	prefixo = str(a.get("nome", "v2"))
 	if a.has("imortal") or roteiro != "":
 		mundo.heroi.imortal = true
-	if estresse > 0 or roteiro != "":
-		mundo.combate.diretor.ligado = false
+	if estresse > 0 or (roteiro != "" and roteiro != "inicio"):
+		mundo.combate.diretor.ligado = false  # "inicio" deixa o diretor ligado: é a abertura de verdade
 	if a.has("build"):
 		armar_build()
 	if estresse > 0:
@@ -117,6 +118,8 @@ func atualizar(dt: float) -> void:
 				_r_hud_golpes()
 			"cores":
 				_r_cores()
+			"inicio":
+				_r_inicio()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -305,6 +308,31 @@ func _correr() -> void:
 		2:
 			mundo.get_tree().quit()
 			return
+
+
+## A abertura de uma partida real (herói parado, diretor ligado): fotos aos 1, 10 e 20 s com a distância do monstro mais perto.
+func _r_inicio() -> void:
+	var alvos := [1.0, 10.0, 20.0]
+	if passo >= alvos.size():
+		mundo.get_tree().quit()
+		return
+	if t_passo < float(alvos[passo]):
+		return
+	var perto := 99999.0
+	var n_perto := 0
+	for m in mundo.monstros:
+		var d: float = m.pos.distance_to(mundo.heroi.pos)
+		perto = minf(perto, d)
+		if d < 300.0:
+			n_perto += 1
+	print(
+		(
+			"INICIO t=%.1f vivos=%d mais_perto=%.0f a_menos_de_300=%d nascidos=%d"
+			% [t_passo, mundo.monstros.size(), perto, n_perto, mundo.combate.diretor.nascidos]
+		)
+	)
+	_foto("inicio_%02d" % int(alvos[passo]))
+	passo += 1
 
 
 # ------------------------------------------------------------------ leva 3: build, elite, baú, chefe, vitória

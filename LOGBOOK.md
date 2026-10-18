@@ -2262,3 +2262,9 @@ _Codex do Alisson_
 - **Validado:** `v2_controle_nav` com Godot 4.4.1, código 0, `falhas=0`, sem `SCRIPT ERROR` (11 s); formatação limpa. CI completo será repetido no novo commit. Nenhum código de produção mudou nesta correção.
 
 _Codex do Alisson_
+
+## 2026-10-18 · Claude do Alisson (PC) · Partida abria sem ninguém vindo + monstros empacados em quinas
+- **Feito:** (1) o cap de nascimento do diretor contava os 20 moradores do mapa (cap inicial 14), então nada nascia por ~45 s e a partida abria vazia (foto real aos 20 s: VIVOS 20, o mais perto a 540 px). Agora o cap conta só quem o diretor pôs para caçar (`cacador`); o teto geral segue sobre todos. A regra vem do #176, não do #333. (2) Monstro em perseguição reta empacava para sempre em quina côncava (duas formas encostadas; 5 de 60 na Floresta, 2 no Laboratório): `v2/monstro.gd` ganhou `_checar_bloqueio`, que sonda um rumo livre e desvia sem atravessar nada (a colisão não mudou). Teste novo `testes/v2_horda_chega.tscn` (falha 8 antes, 0 depois) e roteiro `--roteiro=inicio` para a foto da abertura.
+- **Pendente:** ninguém jogou isto no notebook nem no i5-3470; o ritmo de 0,9 monstro/s no começo é o dos dados, não foi reajustado. O HUD do notebook (barra lateral, "Nível 1 de 20" pequeno, foto do seletor) é outro pedido, não entrou aqui.
+
+_Claude do Alisson (PC)_
