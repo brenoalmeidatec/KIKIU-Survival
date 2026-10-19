@@ -65,5 +65,26 @@ Roteiro para gerar ou procurar os áudios depois. Cada item diz o que soa, em qu
 - Volume: o grito e o ataque 4 mais altos; passos e respiração baixos.
 - Não usar som de animal real; o chefe é de madeira e energia.
 
+## Na Godot 3D (protótipo `v3/godot/cena_3d/`)
+Os tempos acima continuam valendo: os clipes do glb são os mesmos da rodada anterior (12 fps, quadro 1 = início). O que muda é que, no 3D, o som é disparado por **evento de combate** (`vornak_combate.gd`), e não por quadro da folha de sprites. Ainda não há áudio ligado; esta é a lista dos ganchos:
+
+| Evento (sinal ou estado) | Som | Quando acontece na Godot |
+|---|---|---|
+| `estado_mudou("aviso")` com `raizes` | antecipação + tom da marca no chão | início do Attack_01; o indicador de 2 anéis aparece junto |
+| `estado_mudou("impacto")` com `raizes` | golpe no chão + raízes saindo | quadro 22 do Attack_01 (1,75 s depois do aviso) |
+| `estado_mudou("impacto")` com `golpe` | varredura + onda de terra | quadro 8 do Attack_02 |
+| `estado_mudou("impacto")` com `absorcao` | brilho de energia convergindo | quadro 9 do Attack_03 |
+| `estado_mudou("impacto")` com `raizes_longas` | terra rachando, eco longo | quadro 14 do Attack_04_Segunda_Forma |
+| `estado_mudou("impacto")` com `tempestade` (fase 2) | pulsos de zumbido verde | quadro 12 da Ability |
+| `estado_mudou("recupera")` | rangido de raiz recolhendo | resto do clipe do ataque |
+| `heroi_atingido` | estalo de acerto no herói (camada nova) | uma vez por golpe |
+| `chefe_atingido` em `andar` | estalo seco de madeira (Hit) | cada golpe do herói |
+| `estado_mudou("stagger")` | madeira cedendo, grave | 150 de dano em 3 s |
+| `estado_mudou("transicao")` | mudança + pico (Phase_Transition) e depois o rugido do Grito | ao cair abaixo de 40% da vida |
+| `estado_mudou("morto")` | queda + afundar + zumbido se apagando | vida em 0 |
+| Walk/Run em `andar` | passos nos quadros 1 e 13 (walk) ou a cada 4 (run) | ligados à posição da animação, não ao estado |
+
+Novidade do 3D: a energia (fendas, olhos, boca) pulsa com a curva de intensidade de cada clipe (`assets/3d/vornak_energia.json`); o zumbido verde pode seguir essa mesma curva.
+
 ## Nota da rodada de 18/10 (noite)
 - O ataque 1 tem 2 quadros a mais no impacto (quadro 44 da fonte segurado), o ataque 2 tem 2 a mais no impacto (quadro 8), e o ataque 4 tem 2 a mais no impacto (quadro 14). A duração desses clipes sobe um pouco; o roteiro acima segue válido, com o impacto um pouco mais longo.

@@ -1,0 +1,149 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://cena_3d/vornak_3d_cena.gd" id="1_cena"]
+[ext_resource type="Script" path="res://cena_3d/vornak_combate.gd" id="2_comb"]
+[ext_resource type="Script" path="res://cena_3d/vornak_3d.gd" id="3_vis"]
+[ext_resource type="PackedScene" path="res://assets/3d/vornak.glb" id="4_glb"]
+[ext_resource type="Script" path="res://cena_3d/heroi_teste.gd" id="5_heroi"]
+[ext_resource type="Shader" path="res://cena_3d/toon_vornak.gdshader" id="6_toon"]
+[ext_resource type="Shader" path="res://cena_3d/contorno.gdshader" id="7_cont"]
+[ext_resource type="Shader" path="res://cena_3d/chao_ladrilho.gdshader" id="8_chao"]
+
+[sub_resource type="Environment" id="Env"]
+background_mode = 1
+background_color = Color(0.063, 0.078, 0.059, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.36, 0.42, 0.37, 1)
+ambient_light_energy = 0.6
+tonemap_mode = 0
+glow_enabled = true
+glow_intensity = 0.6
+glow_bloom = 0.05
+glow_hdr_threshold = 0.9
+
+[sub_resource type="ShaderMaterial" id="ContornoHeroi"]
+render_priority = 0
+shader = ExtResource("7_cont")
+
+[sub_resource type="ShaderMaterial" id="MatChao"]
+render_priority = 0
+shader = ExtResource("8_chao")
+
+[sub_resource type="PlaneMesh" id="PlanoChao"]
+size = Vector2(40, 40)
+
+[sub_resource type="ShaderMaterial" id="MatHeroi"]
+render_priority = 0
+next_pass = SubResource("ContornoHeroi")
+shader = ExtResource("6_toon")
+shader_parameter/cor_luz = Color(0.78, 0.8, 0.86, 1)
+shader_parameter/cor_sombra = Color(0.42, 0.45, 0.55, 1)
+shader_parameter/forca_emissao = 0.0
+shader_parameter/intensidade = 1.0
+shader_parameter/limiar = 0.15
+
+[sub_resource type="CapsuleMesh" id="CapsulaHeroi"]
+radius = 0.28
+height = 1.2
+
+[sub_resource type="CapsuleShape3D" id="FormaHeroi"]
+radius = 0.28
+height = 1.2
+
+[sub_resource type="StandardMaterial3D" id="MatGolpe"]
+shading_mode = 0
+albedo_color = Color(1, 1, 1, 1)
+
+[sub_resource type="TorusMesh" id="AnelGolpe"]
+inner_radius = 1.0
+outer_radius = 1.12
+
+[sub_resource type="LabelSettings" id="FonteHud"]
+font_size = 18
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
+
+[node name="Vornak3D" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cena")
+
+[node name="Tela" type="SubViewportContainer" parent="."]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+stretch_shrink = 4
+
+[node name="Viewport" type="SubViewport" parent="Tela"]
+handle_input_locally = false
+size = Vector2i(320, 180)
+render_target_update_mode = 4
+
+[node name="Mundo" type="Node3D" parent="Tela/Viewport"]
+script = ExtResource("2_comb")
+
+[node name="Camera" type="Camera3D" parent="Tela/Viewport/Mundo"]
+rotation_degrees = Vector3(-35.264, 45, 0)
+projection = 1
+size = 5.0
+near = 0.1
+far = 100.0
+
+[node name="Sol" type="DirectionalLight3D" parent="Tela/Viewport/Mundo"]
+rotation_degrees = Vector3(-38, 8, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+shadow_enabled = true
+directional_shadow_mode = 0
+directional_shadow_max_distance = 40.0
+
+[node name="Ambiente" type="WorldEnvironment" parent="Tela/Viewport/Mundo"]
+environment = SubResource("Env")
+
+[node name="Chao" type="MeshInstance3D" parent="Tela/Viewport/Mundo"]
+mesh = SubResource("PlanoChao")
+surface_material_override/0 = SubResource("MatChao")
+
+[node name="Vornak" type="Node3D" parent="Tela/Viewport/Mundo"]
+script = ExtResource("3_vis")
+
+[node name="Modelo" parent="Tela/Viewport/Mundo/Vornak" instance=ExtResource("4_glb")]
+
+[node name="Heroi" type="CharacterBody3D" parent="Tela/Viewport/Mundo"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 2.5)
+collision_layer = 2
+collision_mask = 1
+motion_mode = 1
+script = ExtResource("5_heroi")
+combate_path = NodePath("..")
+
+[node name="Corpo" type="MeshInstance3D" parent="Tela/Viewport/Mundo/Heroi"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+mesh = SubResource("CapsulaHeroi")
+surface_material_override/0 = SubResource("MatHeroi")
+
+[node name="Forma" type="CollisionShape3D" parent="Tela/Viewport/Mundo/Heroi"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("FormaHeroi")
+
+[node name="Golpe" type="MeshInstance3D" parent="Tela/Viewport/Mundo/Heroi"]
+transform = Transform3D(1, 0, 0, 0, 0.1, 0, 0, 0, 1, 0, 0.5, 0)
+visible = false
+mesh = SubResource("AnelGolpe")
+surface_material_override/0 = SubResource("MatGolpe")
+
+[node name="Hud" type="Label" parent="."]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = 900.0
+offset_bottom = 60.0
+label_settings = SubResource("FonteHud")
