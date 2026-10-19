@@ -1,19 +1,13 @@
 extends Node2D
-## Desenho de chefe da v3: toca as folhas de 8 direções (assets/v3/chefes/<prefixo>_<clipe>_8dir.png) e segue o estado do chefe.
-## Não decide nada de combate: recebe o chefe (chefe_base.gd e filhos) e mostra o quadro certo. Quadro de 160 px (lido do json), pé no centro de baixo.
-## Cada chefe diz o prefixo da sua folha ("vornak", "nythrax") e o json ao lado (<prefixo>_sprites.json).
+## Desenho de chefe da v3: toca as folhas de 8 direções (assets/chefes/<prefixo>_<clipe>_8dir.png) e segue o estado do chefe.
+## Não decide nada de combate: recebe o chefe (chefe_base.gd e filhos) e mostra o quadro certo.
+## Cada clipe tem o seu tamanho de quadro ("tamanho" no json, 192 ou 288 px, mesma escala de pixel); o pé fica na âncora
+## (0,5; 0,744) do quadro, igual em todos, então o jogo alinha pelo pé.
 
 const PASTA := "res://assets/chefes/"
-const VETORES := [
-	Vector2(0, 1),
-	Vector2(0.7071, 0.7071),
-	Vector2(1, 0),
-	Vector2(0.7071, -0.7071),
-	Vector2(0, -1),
-	Vector2(-0.7071, -0.7071),
-	Vector2(-1, 0),
-	Vector2(-0.7071, 0.7071)
-]
+const ANCORA := Vector2(0.5, 0.744)
+const VETORES := [Vector2(0, 1), Vector2(0.7071, 0.7071), Vector2(1, 0), Vector2(0.7071, -0.7071),
+	Vector2(0, -1), Vector2(-0.7071, -0.7071), Vector2(-1, 0), Vector2(-0.7071, 0.7071)]
 
 var prefixo := "vornak"
 var chefe
@@ -22,13 +16,13 @@ var direcao := 0
 var quadro := 0.0
 var _folhas := {}
 var _clipes := {}
-var quadro_tamanho := 192
+var tamanho_padrao := 192
 
 
 func _ready() -> void:
 	var dados = JSON.parse_string(FileAccess.get_file_as_string(PASTA + prefixo + "_sprites.json"))
 	if dados is Dictionary:
-		quadro_tamanho = int(dados.tamanho_quadro)
+		tamanho_padrao = int(dados.get("tamanho_quadro", 192))
 		_clipes = dados.clipes
 
 
@@ -49,6 +43,14 @@ func olhar_para(v: Vector2) -> void:
 			direcao = i
 
 
+func _info(nome: String) -> Dictionary:
+	return _clipes.get(nome, {"quadros": 1, "fps": 12, "tamanho": tamanho_padrao})
+
+
+func _tamanho(nome: String) -> int:
+	return int(_info(nome).get("tamanho", tamanho_padrao))
+
+
 func _folha(nome: String) -> Texture2D:
 	if not _folhas.has(nome):
 		var img := Image.load_from_file(ProjectSettings.globalize_path(PASTA + "%s_%s_8dir.png" % [prefixo, nome]))
@@ -60,10 +62,8 @@ func _process(delta: float) -> void:
 	if chefe == null:
 		return
 	clipe = chefe.clip_atual()
-	var info: Dictionary = _clipes.get(clipe, {"quadros": 1, "fps": 12})
-	var n := int(info.quadros)
-	var fps := float(info.fps)
-	quadro = fmod(quadro + delta * fps, float(n))
+	var info := _info(clipe)
+	quadro = fmod(quadro + delta * float(info.get("fps", 12.0)), float(info.quadros))
 	queue_redraw()
 
 
@@ -71,7 +71,8 @@ func _draw() -> void:
 	var tex := _folha(clipe)
 	if tex == null:
 		return
+	var t := _tamanho(clipe)
 	var q := int(quadro)
-	var r := Rect2(q * quadro_tamanho, direcao * quadro_tamanho, quadro_tamanho, quadro_tamanho)
-	var dest := Rect2(-quadro_tamanho / 2.0, -quadro_tamanho, quadro_tamanho, quadro_tamanho)
+	var r := Rect2(q * t, direcao * t, t, t)
+	var dest := Rect2(-t * ANCORA.x, -t * ANCORA.y, t, t)
 	draw_texture_rect_region(tex, dest, r)

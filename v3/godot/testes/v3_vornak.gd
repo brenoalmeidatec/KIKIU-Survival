@@ -44,7 +44,7 @@ func test_folhas() -> void:
 	ok(dados is Dictionary, "folhas: o json lê")
 	if not (dados is Dictionary):
 		return
-	ok(int(dados.tamanho_quadro) == 192, "folhas: quadro de 192 px")
+	ok(int(dados.tamanho_quadro) == 192, "folhas: quadro padrão de 192 px")
 	ok(dados.direcoes.size() == 8, "folhas: 8 direções")
 	for clipe in dados.clipes:
 		var info = dados.clipes[clipe]
@@ -53,7 +53,7 @@ func test_folhas() -> void:
 		if img == null:
 			continue
 		ok(
-			img.get_width() == int(info.quadros) * 192 and img.get_height() == 8 * 192,
+			img.get_width() == int(info.quadros) * int(info.tamanho) and img.get_height() == 8 * int(info.tamanho),
 			"folhas: %s tem %d quadros x 8 direções (tem %dx%d)" % [clipe, int(info.quadros), img.get_width(), img.get_height()]
 		)
 

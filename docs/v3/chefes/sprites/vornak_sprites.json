@@ -1,5 +1,4 @@
 {
-  "tamanho_quadro": 192,
   "direcoes": [
     "S",
     "SE",
@@ -14,55 +13,68 @@
     0.5,
     0.744
   ],
+  "tamanho_quadro": 192,
   "clipes": {
     "idle": {
       "quadros": 24,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "walk": {
       "quadros": 24,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "run": {
       "quadros": 16,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "attack_01": {
       "quadros": 62,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "attack_02": {
       "quadros": 19,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "attack_03": {
       "quadros": 23,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "attack_04_segunda_forma": {
       "quadros": 25,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 288
     },
     "hit": {
       "quadros": 7,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "phase_transition": {
       "quadros": 25,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "ability": {
       "quadros": 21,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 192
     },
     "death": {
       "quadros": 25,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 288
     },
     "grito": {
       "quadros": 36,
-      "fps": 12
+      "fps": 12,
+      "tamanho": 288
     }
   },
-  "observacao": "rodada grande 18/10 (noite): postura ereta, pés plantados com IK, olhos maiores, impactos segurados, câmera ortho 9.0 para todos os clipes; quadro 192 px com âncora no pé"
+  "observacao": "forma fiel 18/10 (noite): clipes de grito, ataque 4 e morte a 288 px, demais a 192 px; mesma escala de pixel (0,02917 m por px); âncora do pé em (0,5; 0,744)"
 }
