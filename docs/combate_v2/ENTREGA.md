@@ -19,6 +19,16 @@ Capturados do viewport do mundo por `testes/fotos/golpes_gif.tscn` e montados po
 | Meteoro Flamejante | magia de fogo | [meteoro.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/meteoro.gif?raw=true) |
 | Lança de Geada | magia de gelo | [lanca_geada.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/lanca_geada.gif?raw=true) |
 | Nuvem Venenosa | área que fica | [nuvem_veneno.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/nuvem_veneno.gif?raw=true) |
+| Corvos Famintos | invocação que voa e bica | [corvos.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/corvos.gif?raw=true) |
+| Runa Explosiva | armadilha (arma, pulsa, estoura) | [runa.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/runa.gif?raw=true) |
+| Raio em Cadeia | magia elétrica | [raio.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/raio.gif?raw=true) |
+| Aura de Fogo | área em volta do herói | [aura.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/aura.gif?raw=true) |
+| Lâminas Rodopiantes | órbita que gira | [laminas.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/laminas.gif?raw=true) |
+| Ventania (evolução da katana) | onda de vento e lanças | [ventania.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/ventania.gif?raw=true) |
+| Juízo Final (evolução) | meteoro evoluído | [juizo_final.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/juizo_final.gif?raw=true) |
+| Tempestade Primordial (evolução) | projétil evoluído | [tempestade_primordial.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/tempestade_primordial.gif?raw=true) |
+| Estrondo (evolução) | anel evoluído | [estrondo.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/estrondo.gif?raw=true) |
+| Furacão Glacial (evolução) | nuvem evoluída | [furacao_glacial.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/furacao_glacial.gif?raw=true) |
 
 As prévias de cada folha sozinha (sem o jogo em volta) estão em `docs/combate_v2/previas/`.
 
@@ -31,18 +41,18 @@ tinham quadros de verdade (folhas do Blender e de 8 direções) e não eram a ca
 ## 2. Arquivos modificados e criados
 Modificados:
 - `jogos/hordas/projeto/v2/armas_novas.gd`: as fases (PREPARO e ATIVO), o pool de impactos e marcas, o desenho pelas folhas, o crítico no tiro e o ricochete.
-- `jogos/hordas/projeto/v2/armas.gd`: as Lâminas Rodopiantes giram pela folha de 8 quadros (antes, o PNG parado girado na órbita).
+- `jogos/hordas/projeto/v2/armas.gd`: as Lâminas e o Anel de Brasas giram pela folha (antes, o PNG parado girado na órbita); os corvos batem as asas e mergulham para bicar pela folha (antes, o PNG com escala que respira); a aura de fogo ganhou o loop de chamas; a runa e o círculo rúnico armam, pulsam e estouram pela folha; o raio toca o estalo em cada alvo; a onda e a lança da katana (e a Ventania) voam pela folha.
 - `jogos/hordas/projeto/v2/heroi.gd`: `fase_golpe()` (pronto, preparo, ativo, recuperação) para ler a fase da katana.
-- `jogos/hordas/projeto/v2/roteiro.gd`: `--build=golpes` (os 36 projéteis, anéis, meteoros e nuvens no nível 5, para medir).
+- `jogos/hordas/projeto/v2/roteiro.gd`: `--build=golpes` (os 36 projéteis, anéis, meteoros e nuvens no nível 5, para medir) e `--build=tudo` (esses mais corvos, aura, raio, runa, lâminas e as evoluções desses tipos).
 - `docs/LICENCAS_ARTE.md`: o registro da arte nova.
 
 Criados:
 - `jogos/hordas/projeto/v2/anim_golpes.gd`: lê os índices das folhas e toca os quadros.
-- `jogos/hordas/projeto/assets/v2/armas_anim/`: 83 tiras PNG e 4 índices (`indice_projeteis.json`, `indice_meteoros.json`, `indice_aneis.json`, `indice_nuvens.json`).
-- `jogos/hordas/fonte_arte/armas_anim/gerar_{projeteis,meteoros,aneis,nuvens}.py`: os geradores da arte (rodar de novo dá as mesmas folhas).
+- `jogos/hordas/projeto/assets/v2/armas_anim/`: 138 tiras PNG e 8 índices (`indice_{projeteis,meteoros,aneis,nuvens,evo_projeteis,evo_met_aneis,evo_nuvens,magias}.json`).
+- `jogos/hordas/fonte_arte/armas_anim/gerar_{projeteis,meteoros,aneis,nuvens,evo_projeteis,evo_met_aneis,evo_nuvens,magias}.py`: os geradores da arte (rodar de novo dá as mesmas folhas; os de evolução importam os da base).
 - `jogos/hordas/projeto/testes/v2_combate_fases.{gd,tscn}`: o teste novo das fases.
 - `jogos/hordas/projeto/testes/fotos/golpes_gif.{gd,tscn}` e `ferramentas/gifs_golpes.py`: a captura dos GIFs.
-- `jogos/hordas/projeto/v2/medir_fps_golpes.ps1` e `v2/fps_golpes_{antes,depois}.txt`: a medição de FPS.
+- `jogos/hordas/projeto/v2/medir_fps_golpes.ps1`, `v2/fps_golpes_{antes,depois}.txt` e `v2/fps_tudo_{antes,depois}.txt`: a medição de FPS.
 - `docs/combate_v2/`: esta entrega, a auditoria, o SPEC da arte, as prévias e os GIFs.
 
 ## 3. Estrutura de nós
@@ -68,14 +78,19 @@ Completos no repositório (não é pseudocódigo):
 | Anel | 0,12 s: o 1º quadro pulsa crescendo no herói | a onda abre; o quadro mostrado é o que alcançou o raio real; cada monstro uma vez | número e empurrão | os últimos quadros afinam e somem |
 | Nuvem | 0,3 s: a folha `entrada` se forma, sem tique de dano | `loop` com os tiques | número | `saida` dissolve no fim da duração |
 | Meteoro | o aviso no chão (já existia) com a folha `queda` girada para baixo | a queda: dano em área no instante do pouso | `impacto` (clarão, onda, fagulhas) e `marca` no chão no mesmo instante | a marca esfria e some |
+| Runa | 0,5 s: a folha `armar` desenha o glifo, sem gatilho (a regra de 0,5 s já existia) | `loop` pulsando até um monstro pisar | `explosao` no instante do dano, do tamanho da área real | some com a explosão |
+| Corvos | nascem em volta do herói batendo as asas (`voo`) | descem e mergulham (`bicada`) quando estão a menos de 14 px do chão; a bicada fere a cada `tique` | faíscas e número | voltam a subir com o `voo` |
+| Raio | a escolha dos alvos (sem efeito antes) | o raio em código liga os alvos reais da cadeia | o `impacto` estala em cada alvo atingido | a linha some em 0,2 s |
+| Aura | não tem: é contínua | o `loop` de chamas no raio real, os tiques de dano | número | some quando a aura sai |
 
 Os tempos encolhem com a velocidade de ataque das cartas, mas presos entre 0,5x e 2,5x (`VEL_ANIM_MIN` e `VEL_ANIM_MAX`).
 
 ## 5. Recursos gráficos que ainda faltam
-- **Corvos** (folha ALI de 9 linhas): hoje o mesmo PNG com escala que respira. Não feito.
-- **Aura de fogo, runa, círculo rúnico, raio e ventania** (pacote ARE-F): continuam com o desenho antigo em código e o PNG esticado.
+Feito na segunda leva: corvos e Revoada de Trovões, aura de fogo e Anel de Brasas, runa e Círculo Rúnico, o estalo do raio, a onda, a lança e a Ventania da katana, e as 16 evoluções de projétil, meteoro, anel e nuvem. O que ainda falta:
+- **O raio em si** continua desenhado em código (uma linha torta que liga os alvos reais da cadeia, sorteada a cada queda). Decidi não trocar por folha: uma folha de tamanho fixo não liga dois monstros em posições quaisquer, e a linha já muda a cada raio. Ganhou o estalo animado em cada alvo.
+- **Corvos em 3 direções** (de frente e de costas, como as outras invocações): a folha nova é só de lado (o código espelha). Para corvos pequenos que voam rápido, o lado lê bem.
 - **Redemoinho verde** foi feito como anel que expande; a tabela antiga pedia um loop de 12 fps (giro contínuo). Se o Breno quiser o giro contínuo, falta essa folha.
-- **Evoluções e fusões** que usam projétil, anel, nuvem ou meteoro (`assets/v2/fusoes/` e as 25 evoluções): continuam com a imagem parada.
+- **Pagode do Trovão e Fogos de Festival** (torre e granada): já eram desenhados em código com fases próprias (cair, armar, atirar, desmontar; voar, quicar, pavio, explodir). Ficaram assim.
 - O herói não tem quadros de "lançar magia" para os golpes secundários: eles saem do corpo dele sem mudar a pose, como antes (os secundários são automáticos e continuam enquanto ele anda e golpeia).
 
 ## 6. Como importar e configurar as animações
@@ -83,7 +98,7 @@ Os tempos encolhem com a velocidade de ataque das cartas, mas presos entre 0,5x 
 2. Descreva no índice do grupo (`indice_<grupo>.json`): `armas` (os ids dos golpes) e, por animação, `arquivo`, `quadro`, `n`, `fps`, `loop`, `ancora` e `gira` (opcional).
 3. Abra o projeto no Godot 4.4.1 (ou rode `--headless --import`): o filtro *nearest* já é o padrão do projeto, não precisa de configuração no `.import`.
 4. Grupo novo: acrescente o nome em `GRUPOS` de `v2/anim_golpes.gd`.
-Os nomes de animação que o código procura: projétil `voo` e `impacto`; meteoro `queda`, `impacto` e `marca`; anel `expandir`; nuvem `entrada`, `loop` e `saida`.
+Os nomes de animação que o código procura: projétil `voo` e `impacto`; meteoro `queda`, `impacto` e `marca`; anel `expandir`; nuvem `entrada`, `loop` e `saida`; órbita `voo` (giro); aura `aura`; runa `armar`, `loop` e `explosao`; corvos `voo` e `bicada`; raio `impacto`; onda, lança e Ventania `voo`.
 
 ## 7. Como adicionar uma arma nova
 1. Em `dados/v2_cartas.json > golpes`, crie a entrada com `id`, `tipo` (`projetil`, `anel`, `nuvem` ou `meteoro`), `nome`, `cor`, `base` (dano, recarga e os números do tipo: `vel`, `alcance`, `quantidade`, `perfura`, `explosao`, `raio`, `duracao`, `tique`, `aviso`...) e os 4 `niveis`.
@@ -102,7 +117,9 @@ Todos no PC do trabalho, Godot 4.4.1 (`Godot_v4.4.1-stable_win64_console.exe`), 
 - `testes/v2_combate_fases.tscn` (novo): `falhas=0`. Confere as 83 folhas (tamanho = n x quadro), o tiro em preparo sem dano e acompanhando a boca, o impacto no acerto, um acerto por tiro, a velocidade de ataque 0,2x, 1x e 9x (preparo preso em 0,5x e 2,5x), o alvo que morre no meio do voo, o ricochete, o crítico do tiro, o anel sem dano no preparo e um acerto por monstro, a nuvem sem dano enquanto se forma, o meteoro com dano só na queda e impacto + marca, a katana só ferindo no quadro do acerto, e 36 golpes no nível 5 com 30 monstros por 10 s sem crescer o pool nem criar nó.
 - **Todos os 63 testes da v2** (`testes/v2_*.tscn`): `falhas=0` e sem `SCRIPT ERROR`. Rodaram 3 por vez; `v2_status` passou do limite de 150 s com os outros rodando junto e passou sozinho (178 s, `falhas=0`), e `v2_hud` pegou um arquivo no meio de uma edição minha e passou ao rodar de novo. Depois da última mudança (as lâminas) rodei de novo `v2_hud`, `v2_armas_sprites`, `v2_combate_fases`, `v2_hud_golpes` e `v2_status`: todos com `falhas=0`.
 - `gdformat -l 160 --check` em `v2`, `testes` e `scripts`: limpo.
-- Com janela: `testes/fotos/golpes_gif.tscn` gerou os 10 GIFs acima; olhei os quadros de cada um.
+- Com janela: `testes/fotos/golpes_gif.tscn` gerou os 20 GIFs acima; olhei os quadros de cada um.
+- **Segunda leva** (corvos, runa, raio, aura, lâminas, onda, Ventania e evoluções): `v2_combate_fases` ganhou a checagem das 138 tiras, da runa que não estoura enquanto se arma e estoura armada tocando a folha, do estalo do raio em cada alvo e do volume com corvos, aura, raio, runa e lâminas juntos: `falhas=0`. Os 63 testes da v2 rodaram de novo: 61 com `falhas=0` de primeira, `v2_status` passou sozinho (passa do limite com outros rodando junto) e `v2_partida` falhou 2 de 4 vezes no Lobo Espiritual. Investiguei: o mesmo acontece no código de antes (2 de 12 sementes falham nos dois), porque o lobo às vezes nasce em cima do monstro e não ataca. Não é desta mudança; o teste agora usa uma semente fixa nesse trecho e passou 3 de 3.
+- **FPS da segunda leva** (mesmo script com `-Build tudo`: os 36 mais corvos, aura, raio, runa, lâminas e 18 evoluções, 100 monstros): **antes 12,3 fps** (11,5 a 12,4) e **depois 12,5 fps** (11,9 a 13,1). Empate dentro da oscilação: as folhas novas não custaram FPS.
 - **FPS** (`v2/medir_fps_golpes.ps1`: perfil Baixo, 100 monstros caçando, os 36 golpes no nível 5, 3 rodadas de 6 s, sem outro Godot rodando, na Intel HD do PC do trabalho): **antes 12,6 fps** (11,9 a 13,4) e **depois 15,2 fps** (14,5 a 15,3). O desenho dos golpes caiu de ~13 ms para ~10 ms por quadro: a folha substitui parte do desenho em código (motivos do anel, rastros). Numa rodada anterior, também limpa, deu 11,7 contra 12,1; a máquina oscila, então o certo é dizer que **não piorou** e provavelmente melhorou um pouco. É um cenário de estresse (36 golpes ao mesmo tempo); uma partida normal tem 4 a 6.
 
 Não testado: ninguém jogou com mouse e teclado de verdade, nem no i5-3470 de casa; o CI do GitHub roda os testes de novo no PR.
@@ -113,4 +130,5 @@ Não testado: ninguém jogou com mouse e teclado de verdade, nem no i5-3470 de c
 - O anel e a nuvem esticam a folha até o raio real: em escala não inteira os pixels ficam de tamanhos um pouco diferentes.
 - O preparo de 0,1 s do tiro atrasa o primeiro acerto em 0,1 s (o DPS calculado no card de status não muda: a recarga é a mesma).
 - O crítico no tiro sobe o dano médio dos projéteis em ~10% (a chance base da katana é 10% com dano 2x).
-- Corvos, aura, runa, raio e as evoluções continuam com o desenho antigo (item 5). As Lâminas Rodopiantes ganharam a folha de giro (8 quadros) e giram pelos quadros na órbita.
+- A aura continua com o shader antigo por baixo das chamas da folha, e a runa com o brilho redondo; ficou de propósito, para não perder a leitura do raio da área.
+- O corvo de lado tem as asas do alto meio quadradas e a onda da katana é a folha mais simples do lote (o agente que desenhou apontou os dois como os primeiros a refazer).

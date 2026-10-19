@@ -11,7 +11,28 @@ const Herois := preload("res://v2/herois.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const PASSO := 1.0 / 60.0
 const RECORTE := Vector2i(200, 120)
-const CENAS := ["corte", "estocada", "combo", "bola_fogo", "adagas", "onda_choque", "terremoto", "meteoro", "lanca_geada", "nuvem_veneno"]
+const CENAS := [
+	"corte",
+	"estocada",
+	"combo",
+	"bola_fogo",
+	"adagas",
+	"onda_choque",
+	"terremoto",
+	"meteoro",
+	"lanca_geada",
+	"nuvem_veneno",
+	"corvos",
+	"runa",
+	"raio",
+	"aura",
+	"laminas",
+	"ventania",
+	"juizo_final",
+	"tempestade_primordial",
+	"estrondo",
+	"furacao_glacial"
+]
 
 var w
 var pasta := "user://golpes_gif"
@@ -88,6 +109,13 @@ func _golpe(id: String, quantidade := 1) -> Dictionary:
 	return a
 
 
+func _ev(id: String) -> Dictionary:
+	for ev in w.combate.cartas.cfg.evolucoes:
+		if str(ev.id) == id:
+			return ev
+	return {}
+
+
 func _cena(nome: String) -> void:
 	_zerar()
 	var n := 36
@@ -137,6 +165,39 @@ func _cena(nome: String) -> void:
 		"nuvem_veneno":
 			_monstros(4)
 			_golpe("nuvem_veneno")
+			n = 60
+		"corvos":
+			_monstros(3)
+			_golpe("corvos", 3)
+			n = 60
+		"runa":
+			_monstros(4)
+			_golpe("runa", 3)
+			n = 60
+		"raio":
+			_monstros(4)
+			_golpe("raio", 2)
+			n = 24
+		"aura":
+			_monstros(6, true)
+			w.combate.armas.definir_golpe("aura_fogo", 3, 0.0)
+			n = 30
+		"laminas":
+			_monstros(6, true)
+			w.combate.armas.definir_golpe("laminas", 3, 0.0)
+			n = 30
+		"ventania":
+			_monstros(3)
+			w.combate.armas.definir_modificador("onda", 60.0)
+			w.combate.armas.definir_modificador("fura", 60.0)
+			w.combate.armas.definir_evolucao_katana(_ev("ventania"))
+			w.heroi.ataque_forcado = true
+			n = 40
+		"juizo_final", "tempestade_primordial", "estrondo", "furacao_glacial":
+			_monstros(6, nome == "estrondo")
+			w.combate.armas.adicionar_evoluida(_ev(nome), 0.0)
+			var a: Dictionary = w.combate.armas.ativas[nome]
+			a.t = 0.05
 			n = 60
 	var dir := pasta.path_join(nome)
 	DirAccess.make_dir_recursive_absolute(dir)

@@ -64,6 +64,16 @@ func vivos(k: String) -> Array:
 	return r
 
 
+## O id é um golpe, um modificador ou uma evolução dos dados.
+func existe(id: String) -> bool:
+	if not w.combate.cartas.definicao(id).is_empty():
+		return true
+	for ev in w.combate.cartas.cfg.evolucoes:
+		if str(ev.id) == id:
+			return true
+	return false
+
+
 func checar_folhas() -> void:
 	var n := 0
 	for g in Anim.GRUPOS:
@@ -82,9 +92,14 @@ func checar_folhas() -> void:
 					ok(tex.get_size() == esperado, "%s/%s mede n x quadro (%s, esperado %s)" % [nome, an, tex.get_size(), esperado])
 				n += 1
 			for arma in d.folhas[nome].armas:
-				ok(w.combate.cartas.definicao(str(arma)).size() > 0, "%s serve %s, que existe nos dados" % [nome, arma])
+				ok(existe(str(arma)), "%s serve %s, que existe nos dados" % [nome, arma])
 	ok(n >= 83, "as folhas dos 4 grupos (%d animações)" % n)
-	for id in ["bola_fogo", "adagas_voadoras", "meteoro_flamejante", "chuva_pedras", "onda_choque", "nuvem_veneno"]:
+	var ids := ["bola_fogo", "adagas_voadoras", "meteoro_flamejante", "chuva_pedras", "onda_choque", "nuvem_veneno", "laminas"]
+	ids += ["corvos", "revoada_de_trovoes", "runa", "circulo_runico", "raio", "aura_fogo", "anel_de_brasas", "ventania", "onda", "fura"]
+	ids += ["urso_solar", "chuva_de_lacas", "bola_incendiaria", "chuva_de_ferro", "tempestade_primordial", "estrondo", "terra_partida"]
+	ids += ["juramento_sagrado", "pedreira_ardente", "cometa_duplo", "eclipse_negro", "juizo_final", "nevasca_congelante", "cinzas_acidas"]
+	ids += ["peste_negra", "furacao_glacial"]
+	for id in ids:
 		ok(not Anim.de(id).is_empty(), "%s tem folha animada" % id)
 	var voo: Dictionary = Anim.de("bola_fogo").voo
 	ok(Anim.quadro_em(voo, 0.0) == 0 and Anim.quadro_em(voo, 1.0 / 12.0 + 0.001) == 1, "o quadro anda no fps da folha")
@@ -269,6 +284,38 @@ func checar_meteoro() -> void:
 	ok(novas().impactos == imp0 + 2, "impacto e marca tocaram na queda (%d)" % (novas().impactos - imp0))
 
 
+## Runa: só arma depois de 0,5 s (o glifo se desenha sem gatilho) e o estouro toca no instante do dano; raio: o estalo toca em cada alvo.
+func checar_runa_raio() -> void:
+	zerar()
+	var m = alvo(70.0)
+	w.combate.armas.definir_golpe("runa", 1, 0.0)
+	var a: Dictionary = w.combate.armas.ativas["runa"]
+	a.t = 0.0
+	var armas = w.combate.armas
+	passos(1)
+	var i := -1
+	for j in armas.MAX_RUNAS:
+		if armas.r_vida[j] > 0.0:
+			i = j
+	ok(i >= 0, "a runa caiu no chão")
+	if i >= 0:
+		armas.r_pos[i] = m.pos  # em cima do monstro: só pode estourar depois de armada
+		var v0 := float(m.vida)
+		passos(20)
+		ok(float(m.vida) == v0, "a runa não estoura enquanto se arma")
+		var imp0: int = novas().impactos
+		passos(30)
+		ok(float(m.vida) < v0, "a runa armada estoura com o monstro em cima")
+		ok(novas().impactos > imp0, "o estouro da runa tocou a folha")
+	zerar()
+	var m2 = alvo(60.0)
+	w.combate.armas.definir_golpe("raio", 1, 0.0)
+	w.combate.armas.ativas["raio"].t = 0.0
+	var imp1: int = novas().impactos
+	passos(3)
+	ok(m2.vida < m2.vida_max and novas().impactos > imp1, "o raio fere e o estalo toca no alvo")
+
+
 ## A katana só fere no quadro do acerto (acerto_em) e uma vez por golpe.
 func checar_katana() -> void:
 	zerar()
@@ -301,6 +348,8 @@ func checar_volume() -> void:
 	for g in w.combate.cartas.cfg.golpes:
 		if str(g.get("tipo", "")) in ["projetil", "anel", "meteoro", "nuvem"]:
 			w.combate.armas.definir_golpe(str(g.id), 5, 0.0)
+	for id in ["corvos", "aura_fogo", "raio", "runa", "laminas"]:
+		w.combate.armas.definir_golpe(id, 5, 0.0)
 	w.heroi.m_vel_ataque = 3.0
 	passos(600)
 	ok(novas().itens.size() == Novas.MAX, "o pool continua com %d slots" % Novas.MAX)
@@ -326,6 +375,7 @@ func _ready() -> void:
 	checar_anel()
 	checar_nuvem()
 	checar_meteoro()
+	checar_runa_raio()
 	checar_katana()
 	checar_volume()
 	print("v2_combate_fases falhas=%d" % falhas)

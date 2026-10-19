@@ -1841,7 +1841,7 @@ func _desenhar_nuvem_anim(ci: CanvasItem, it: Dictionary, st: Dictionary, p: Vec
 	var esc := float(it.r) * 2.0 / q.x
 	var prep := float(it.aux)
 	var passou := float(st.duracao) + prep - float(it.vida)
-	var cor := Color(1, 1, 1, 0.55)
+	var cor := Color(1, 1, 1, 0.45)  # rala: a nuvem não pode esconder os monstros dentro dela
 	if passou < prep and fa.has("entrada"):
 		Anim.desenhar(ci, fa.entrada, Anim.quadro_frac(fa.entrada, passou / maxf(prep, 0.001)), p, 0.0, Vector2(esc, esc), cor)
 		return

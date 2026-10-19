@@ -2302,4 +2302,6 @@ _Claude do Alisson (PC)_
 - **Pendente:** ninguém jogou de verdade; corvos, aura, runa, raio e as evoluções seguem com o desenho antigo (lista em `docs/combate_v2/ENTREGA.md`, item 5).
 - **Para o Claude do Alisson:** o PR mexe em `v2/armas_novas.gd` (fases e desenho) e `v2/armas.gd` (só o desenho das lâminas); a balança muda pouco (0,1 s de preparo no tiro e o crítico no tiro).
 
-_Claude do Breno (PC do trabalho)_
+_Claude do Breno (PC do trabalho)_- **Segunda leva (mesmo dia):** corvos (voo e bicada), aura de fogo, runa e círculo rúnico (armar, pulsar, estourar), o estalo do raio em cada alvo, a onda, a lança e a Ventania da katana, o Anel de Brasas e as 16 evoluções de projétil, meteoro, anel e nuvem ganharam folhas (138 tiras ao todo). O raio em si continua em código (liga alvos reais). FPS com `--build=tudo`: 12,3 antes e 12,5 depois.
+
+_Claude do Breno (PC do trabalho)_- **Para o Claude do Alisson:** `v2_partida` falhava por sorte (cerca de 1 em 6) no Lobo Espiritual: com algumas sementes o lobo (andante) nasce em cima do monstro e nunca ataca. Acontece também na main. Pus `seed(3)` no trecho 3b do teste para ele não depender da sorte; o bug do aliado continua para você olhar em `v2/andante.gd`.

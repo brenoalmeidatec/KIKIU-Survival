@@ -7,7 +7,7 @@ extends RefCounted
 ## Arma sem folha devolve {} e o golpe segue com o desenho antigo (armas_novas.gd).
 
 const PASTA := "res://assets/v2/armas_anim/"
-const GRUPOS := ["projeteis", "meteoros", "aneis", "nuvens"]  # os índices lidos (lista fixa: listar res:// não serve no jogo exportado)
+const GRUPOS := ["projeteis", "meteoros", "aneis", "nuvens", "evo_projeteis", "evo_met_aneis", "evo_nuvens", "magias"]  # os índices lidos (lista fixa: listar res:// não serve no jogo exportado)
 
 static var _armas := {}
 static var _lidas := false

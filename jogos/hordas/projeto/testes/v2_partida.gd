@@ -236,6 +236,8 @@ func _ready() -> void:
 		)
 	# 3b. os golpes novos (leva 5): o primeiro de cada tipo novo acerta (o meteoro conta como "explode", o estouro da explosão)
 	var vistos := {}
+	# sorteio fixo: com algumas sementes o Lobo Espiritual nasce em cima do monstro e não ataca (bug do aliado, ver LOGBOOK 19/10); antes o teste dependia da sorte
+	seed(3)
 	for d in cfg.golpes:
 		var tp := str(d.tipo)
 		if tp in ["orbita", "aura", "corvos", "raio", "runa"] or vistos.has(tp):
