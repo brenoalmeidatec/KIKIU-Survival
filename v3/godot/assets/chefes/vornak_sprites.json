@@ -14,6 +14,17 @@
     0.744
   ],
   "tamanho_quadro": 192,
+  "paleta": [
+    "#6f9a3c",
+    "#4f7a2a",
+    "#34541f",
+    "#1e3514",
+    "#6b4a2e",
+    "#3f2c1c",
+    "#2a2f36",
+    "#b8ff4a",
+    "#1a1410"
+  ],
   "clipes": {
     "idle": {
       "quadros": 24,
@@ -76,5 +87,5 @@
       "tamanho": 288
     }
   },
-  "observacao": "forma fiel 18/10 (noite): clipes de grito, ataque 4 e morte a 288 px, demais a 192 px; mesma escala de pixel (0,02917 m por px); âncora do pé em (0,5; 0,744)"
+  "observacao": "paleta da folha conceitual (18/10 à noite): 9 cores, sem sombreado contínuo; escala de pixel igual; grito, ataque 4 e morte a 288 px; âncora do pé (0,5; 0,744)"
 }
