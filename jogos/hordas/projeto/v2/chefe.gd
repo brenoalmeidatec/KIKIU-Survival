@@ -8,6 +8,8 @@ extends RefCounted
 ## Abaixo de `fase2` da vida o chefe fica mais rápido e a chuva ganha círculos. Vencer o CHEFE é a vitória da partida. As fichas (marcas) ficam em
 ## dados/v2_cartas.json > "chefes"; o diretor copia a marca com a vida do mapa e mini = false só no último nível. O mundo expõe os sinais chefe_apareceu(nome, vida_max) e chefe_vida(vida) para o HUD.
 
+const Anim := preload("res://v2/anim_golpes.gd")  # as folhas dos ataques inimigos (docs/combate_v2)
+
 var combate
 var mundo
 var cfg: Dictionary = {}
@@ -27,6 +29,7 @@ var _faixa := -1
 var _chuva_n := 0
 var _chuva_t := 0.0
 var _chuva_dur := 0.0
+var _poeira_t := 0.0  # s até a próxima poeira da investida
 var _idx_ataque := 0
 var _vida_enviada := -1.0
 var _t_vida := 0.0
@@ -159,6 +162,12 @@ func _ia(dt: float) -> void:
 		"investida":
 			var at: Dictionary = cfg.ataques.investida
 			m.vel_ia = _dir * float(at.vel)
+			_poeira_t -= dt
+			if _poeira_t <= 0.0:  # a investida levanta poeira atrás do chefe (folha perigo_investida, pool de efeitos das armas)
+				_poeira_t = 0.07
+				var fp: Dictionary = Anim.de("perigo_investida").get("impacto", {})
+				if not fp.is_empty() and combate.armas != null:
+					combate.armas.novas.tocar_fx(fp, m.pos - _dir.normalized() * 10.0)
 			if t_estado >= float(at.compr) / float(at.vel):
 				_terminou_ataque()
 			elif h.vulneravel() and _encostou(h):
@@ -193,10 +202,10 @@ func _comecar_ataque() -> void:
 		combate.avisos.reticulo(float(at.get("raio", 40.0)), float(at.aviso))
 	match _ataque:
 		"estouro":
-			combate.avisos.circulo(h.pos, float(at.raio), float(at.aviso), float(at.dano), cor)
+			combate.avisos.com_estilo(combate.avisos.circulo(h.pos, float(at.raio), float(at.aviso), float(at.dano), cor), 2)  # o chão explode (docs/combate_v2)
 			if _fase2:  # na fúria, um segundo círculo logo ao lado
 				var lado := Vector2.from_angle(randf() * TAU) * float(at.raio) * 1.4
-				combate.avisos.circulo(h.pos + lado, float(at.raio), float(at.aviso) + 0.25, float(at.dano), cor)
+				combate.avisos.com_estilo(combate.avisos.circulo(h.pos + lado, float(at.raio), float(at.aviso) + 0.25, float(at.dano), cor), 2)
 		"chuva":
 			_chuva_n = int(at.n) + (3 if _fase2 else 0)
 			_chuva_t = 0.0
@@ -221,7 +230,7 @@ func _chuva(dt: float) -> void:
 		if _chuva_n % 2 == 0:
 			off *= 0.3  # metade cai perto do herói
 		var p: Vector2 = (h.pos + off).clamp(mundo.limite_andavel.position, mundo.limite_andavel.end)
-		combate.avisos.circulo(p, float(at.raio), float(at.aviso), float(at.dano), atual.cor_elite)
+		combate.avisos.com_estilo(combate.avisos.circulo(p, float(at.raio), float(at.aviso), float(at.dano), atual.cor_elite), 1)  # a pedra cai do céu
 		combate.audio.tocar("aviso", 1.3, -6.0, 0.05)
 	if _chuva_n <= 0 and t_estado >= _chuva_dur:
 		_terminou_ataque()

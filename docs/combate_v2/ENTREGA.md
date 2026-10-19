@@ -167,3 +167,21 @@ Pedido do Breno: várias magias que caem do céu eram só a imagem descendo, e e
 **Testes:** `v2_combate_fases` ganhou a queda que cintila no começo, acelera, é inclinada e chega ao chão no fim do aviso, e o martelo que cai sem ferir e depois abre a onda: `falhas=0`. Os 63 testes da v2: 61 com `falhas=0`; `v2_status` passou sozinho (passa do limite com outros rodando junto); `v2_pausa` falhou nesta máquina porque lê o `opcoes.cfg` de verdade do jogador (perfil Alto salvo nesta máquina): sem esse arquivo passou com `falhas=0`, e o arquivo foi devolvido igual (hash conferido). É um teste que depende da máquina, não desta mudança; o CI roda limpo.
 
 **FPS** (`-Build tudo`, 100 monstros, perfil Baixo): antes 11,5 fps (11,4 a 11,6) e depois 11,2 fps (10,1 a 11,3), com 2 cópias de rastro. Com 3 cópias deu 10,9, então ficaram 2. A diferença de 0,3 fps está dentro da oscilação desta máquina, mas o rastro tem custo: são 3 desenhos por meteoro em vez de 1, e com os 13 meteoros no nível 5 juntos isso aparece.
+
+## Quarta leva: os ataques dos inimigos (19/10/2026)
+Pedido do Breno: olhar se faltam mais ataques. **Auditoria:** todos os golpes do herói e as armas das cartas têm agora animação com quadros e fases. As invocações (folhas de 8 direções), a torre e a cabaça (desenhadas em código, com fases próprias) já eram animadas. A ruptura (tecla E) e o escudo são desenhados em código e se mexem. O que faltava eram os ataques anunciados dos **inimigos** (`v2/avisos.gd`): na chuva do chefe nada caía (só piscavam círculos), e o estouro do chefe, a explosão da elite explosiva e a investida usavam o mesmo efeito genérico.
+
+**O que mudou** (folhas novas em vermelho e roxo-escuro, a cor de perigo; arte do Opus 5.5 em `gerar_perigo.py`):
+- **Chuva do chefe:** em cada círculo, uma pedra de energia sombria aparece no alto quando passou 35% do aviso e cai acelerando em diagonal, com sombra que cresce e uma cópia de rastro. Ela chega ao chão no instante do dano, e então toca o impacto (clarão, onda, lascas e fumaça).
+- **Estouro do chefe e elite explosiva:** no disparo, o chão racha e explode do centro até a borda, do tamanho da área real.
+- **Investida do chefe:** levanta poeira atrás dele a cada 0,07 s enquanto corre.
+- O dano continua no mesmo instante de antes (o disparo do aviso). `v2_combate_fases` confere que nada toca nem fere antes do disparo e que os dois efeitos tocam junto com o dano.
+
+| Ataque | GIF |
+|---|---|
+| Chuva do chefe | [perigo_chuva.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/perigo_chuva.gif?raw=true) |
+| Estouro (chefe e elite) | [perigo_estouro.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/perigo_estouro.gif?raw=true) |
+
+**Desempenho:** só existe durante os ataques do chefe e da elite, com no máximo 24 avisos e 1 pedra por aviso. Não mudou o cenário de medição de FPS (36 golpes e 100 monstros, sem chefe), por isso não medi de novo.
+
+**Ainda fica de fora:** o corpo do chefe usa o sprite de um monstro do protótipo em escala maior (arte do Alisson), sem pose própria de ataque; os chefes com modelo 3D são da v3.

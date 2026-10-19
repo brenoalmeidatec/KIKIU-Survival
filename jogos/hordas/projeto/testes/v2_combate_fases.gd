@@ -66,6 +66,8 @@ func vivos(k: String) -> Array:
 
 ## O id é um golpe, um modificador ou uma evolução dos dados (ou a peça "<id>_queda" de um deles).
 func existe(id: String) -> bool:
+	if id.begins_with("perigo_"):  # os ataques inimigos (chefe e elite) não são golpes das cartas
+		return true
 	if id.ends_with("_queda"):  # a peça que cai antes do golpe ("martelo_trovao_queda"): vale o golpe de base
 		id = id.trim_suffix("_queda")
 	if not w.combate.cartas.definicao(id).is_empty():
@@ -267,6 +269,27 @@ func checar_martelo() -> void:
 	ok(float(m.vida) < v0, "a onda do martelo fere depois da queda")
 
 
+## Ataques inimigos com estilo: a pedra da chuva e o estouro tocam a folha no disparo (o mesmo instante do dano no herói), e não antes.
+func checar_perigo() -> void:
+	zerar()
+	var av = w.combate.avisos
+	w.heroi.imortal = false
+	w.heroi.vida = w.heroi.vida_max
+	w.heroi.invenc = 0.0
+	var i: int = av.circulo(w.heroi.pos, 30.0, 0.5, 5.0, Color(1, 0.3, 0.2))
+	av.com_estilo(i, 1)
+	var j: int = av.circulo(w.heroi.pos + Vector2(200, 0), 40.0, 0.5, 5.0, Color(1, 0.3, 0.2))
+	av.com_estilo(j, 2)
+	var imp0: int = novas().impactos
+	var v0: float = w.heroi.vida
+	passos(25)
+	ok(novas().impactos == imp0 and w.heroi.vida == v0, "nada toca nem fere antes do disparo")
+	passos(10)
+	ok(novas().impactos == imp0 + 2, "a pedra e o estouro tocam a folha no disparo (%d)" % (novas().impactos - imp0))
+	ok(w.heroi.vida < v0, "o dano do aviso saiu no mesmo instante")
+	w.heroi.imortal = true
+
+
 ## Nuvem: não fere enquanto se forma; fere depois.
 func checar_nuvem() -> void:
 	zerar()
@@ -412,6 +435,7 @@ func _ready() -> void:
 	checar_nuvem()
 	checar_meteoro()
 	checar_martelo()
+	checar_perigo()
 	checar_runa_raio()
 	checar_katana()
 	checar_volume()

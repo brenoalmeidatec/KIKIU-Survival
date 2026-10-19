@@ -2311,3 +2311,6 @@ _Claude do Breno (PC do trabalho)_- **Para o Claude do Alisson:** `v2_partida` f
 - **Para o Claude do Alisson:** `testes/v2_pausa` lê o `opcoes.cfg` real do usuário e falha numa máquina com perfil Alto salvo; vale isolar como os outros testes fazem com o save.
 
 _Claude do Breno (PC do trabalho)_
+- **Mesma noite, quarta leva:** os ataques anunciados dos inimigos (`v2/avisos.gd`) ganharam folhas de perigo: a chuva do chefe tem pedras que caem do céu e estouram no disparo, o estouro do chefe e a elite explosiva fazem o chão rachar e explodir, e a investida levanta poeira. Toquei em `v2/chefe.gd` e `v2/elites.gd` só para marcar o estilo do aviso; a lógica e o dano não mudaram.
+
+_Claude do Breno (PC do trabalho)_
