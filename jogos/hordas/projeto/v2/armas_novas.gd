@@ -1530,7 +1530,7 @@ func _area(ci: CanvasItem, sp: Dictionary, c: Vector2, r: float, cor: Color) -> 
 ## exato do dano (`_cair_meteoro`, aviso zerado).
 const QUEDA_ALTO := Vector2(-40.0, -100.0)  # de onde vem, a partir do ponto de queda (o x espelha com o lado)
 const QUEDA_CINTILA := 0.25  # fração do aviso em que ele só cintila no alto
-const QUEDA_RASTRO := 3  # cópias que ficam para trás e somem
+const QUEDA_RASTRO := 2  # cópias que ficam para trás e somem
 
 
 ## O progresso acelerado da descida: 0 no alto, 1 no chão; -1 enquanto ainda cintila.

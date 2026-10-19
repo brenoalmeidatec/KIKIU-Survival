@@ -132,3 +132,38 @@ Não testado: ninguém jogou com mouse e teclado de verdade, nem no i5-3470 de c
 - O crítico no tiro sobe o dano médio dos projéteis em ~10% (a chance base da katana é 10% com dano 2x).
 - A aura continua com o shader antigo por baixo das chamas da folha, e a runa com o brilho redondo; ficou de propósito, para não perder a leitura do raio da área.
 - O corvo de lado tem as asas do alto meio quadradas e a onda da katana é a folha mais simples do lote (o agente que desenhou apontou os dois como os primeiros a refazer).
+
+## Terceira leva: as magias que caem do céu (19/10/2026)
+Pedido do Breno: várias magias que caem do céu eram só a imagem descendo, e ele quer movimento também durante a queda.
+
+**Auditoria:** as 13 quedas (9 meteoros e 4 evoluções) já tinham folha, mas desciam em linha reta, na mesma velocidade, sempre apontando para baixo, e a folha da queda tinha só 4 quadros. O Fogo do Céu nem usava a sua folha de meteoro: o índice dos projéteis também o mandava para a folha da bola de fogo (corrigido em `gerar_projeteis.py`). O Martelo do Trovão era só o anel saindo do herói. O raio em cadeia ficava parado por 0,2 s. Chuva Ácida e Cinzas Vulcânicas (nuvens) e Raio Solar (projétil) já tinham fases e quadros da primeira leva; entram só nos GIFs.
+
+**O que mudou:**
+- **Antecipação:** no primeiro quarto do aviso o meteoro só cintila no alto (uma cruz de luz que cresce), mostrando de onde vem.
+- **Queda:** diagonal inclinada (o lado é sorteado; o elo do Juízo vem do outro lado), acelerando de devagar para rápido (a altura cai com o quadrado do tempo), virada para onde vai, com 2 cópias de rastro mais fracas e menores que ficam para trás, e a sombra no chão que cresce e escurece. Chega ao chão no instante exato do dano.
+- **Quadros da queda:** as 13 folhas refeitas com 8 quadros a 16 fps: chama que tremula e núcleo que pulsa, cauda dos cometas que ondula e solta fagulhas, pedras e espinho girando em 8 ângulos desenhados (não é rotação do PNG), estrela cintilando, raios novos a cada quadro no raio meteórico.
+- **Impacto:** além do estouro e da marca, poeira rasteira (5 partículas do pool) e um tremor curto nos meteoros grandes (raio de 40 px ou mais).
+- **Martelo do Trovão:** o martelo cai girando no herói (0,35 s, 8 quadros com raios estalando, sombra e rastro), bate com tremor e poeira, e só então a onda abre. Sem dano durante a queda.
+- **Raio em cadeia:** a linha estala a cada 0,05 s (os dentes do meio pulam).
+
+| Magia | GIF |
+|---|---|
+| Meteoro Flamejante | [meteoro.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/meteoro.gif?raw=true) |
+| Chuva de Pedras | [chuva_pedras.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/chuva_pedras.gif?raw=true) |
+| Chuva de Espinhos | [chuva_espinhos.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/chuva_espinhos.gif?raw=true) |
+| Cometa Gelado | [cometa_gelado.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/cometa_gelado.gif?raw=true) |
+| Cometa Negro | [cometa_negro.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/cometa_negro.gif?raw=true) |
+| Estrelas Cadentes | [estrelas_cadentes.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/estrelas_cadentes.gif?raw=true) |
+| Fogo do Céu | [fogo_do_ceu.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/fogo_do_ceu.gif?raw=true) |
+| Raio Meteórico | [raio_meteorico.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/raio_meteorico.gif?raw=true) |
+| Pedras Vulcânicas | [pedras_vulcanicas.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/pedras_vulcanicas.gif?raw=true) |
+| Juízo Final (evolução) | [juizo_final.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/juizo_final.gif?raw=true) |
+| Martelo do Trovão | [martelo_trovao.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/martelo_trovao.gif?raw=true) |
+| Raio em Cadeia | [raio.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/raio.gif?raw=true) |
+| Chuva Ácida | [chuva_acida.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/chuva_acida.gif?raw=true) |
+| Cinzas Vulcânicas | [cinzas_vulcanicas.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/cinzas_vulcanicas.gif?raw=true) |
+| Raio Solar | [raio_solar.gif](https://github.com/brenoalmeidatec/KIKIU-Survival/blob/claude/project-thread-b3o747/docs/combate_v2/gifs/raio_solar.gif?raw=true) |
+
+**Testes:** `v2_combate_fases` ganhou a queda que cintila no começo, acelera, é inclinada e chega ao chão no fim do aviso, e o martelo que cai sem ferir e depois abre a onda: `falhas=0`. Os 63 testes da v2: RESULTADO_LEVA3
+
+**FPS** (`-Build tudo`, 100 monstros, perfil Baixo): antes 11,5 fps (11,4 a 11,6) e depois 11,2 fps (10,1 a 11,3), com 2 cópias de rastro. Com 3 cópias deu 10,9, então ficaram 2. A diferença de 0,3 fps está dentro da oscilação desta máquina, mas o rastro tem custo: são 3 desenhos por meteoro em vez de 1, e com os 13 meteoros no nível 5 juntos isso aparece.
