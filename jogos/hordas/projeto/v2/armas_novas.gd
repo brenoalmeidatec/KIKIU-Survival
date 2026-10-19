@@ -48,6 +48,21 @@ const PASTA_SPRITES := "res://assets/v2/armas/"
 const PASTA_FUSOES := "res://assets/v2/fusoes/"
 const Golem := preload("res://v2/golem.gd")  # o Golem de Barro e o Colosso: andar, ataque e as 8 direções
 const Andante := preload("res://v2/andante.gd")  # as outras invocações que andam de verdade (Espírito do Urso...): folha de 8 direções, andar e ataque
+const Anim := preload("res://v2/anim_golpes.gd")  # as folhas animadas de projétil, meteoro, anel e nuvem (docs/combate_v2/SPEC_ARTE.md)
+## Fases dos golpes com folha (docs/combate_v2/ENTREGA.md): no PREPARO não há hitbox (o tiro carrega na boca, o anel junta força, a nuvem se
+## forma); no ATIVO a colisão vale e cada monstro é atingido uma vez por item; o IMPACTO e a marca no chão são só efeito (pool `x_*`), tocados no
+## evento real do acerto ou da queda. Os tempos encolhem com a velocidade de ataque, dentro de VEL_ANIM_MIN..VEL_ANIM_MAX; a arma pode
+## trocar o preparo com o número `preparo` dos dados.
+const F_PREPARO := 0
+const F_ATIVO := 1
+const PREPARO_PROJ := 0.1
+const PREPARO_ANEL := 0.12
+const ENTRADA_NUVEM := 0.3
+const VEL_ANIM_MIN := 0.5
+const VEL_ANIM_MAX := 2.5
+const MAX_FX := 48  # impactos e marcas tocando ao mesmo tempo; cheio, o mais velho dá lugar
+const COR_CRIT := Color(1.0, 0.74, 0.2)  # o número do crítico (o mesmo de combate.gd)
+const RICOCHETE_ALC := 110.0  # px: até onde o tiro com `ricochete` procura o próximo alvo
 static var _tex_fumaca: Texture2D
 static var _sprites: Dictionary = {}
 static var _lidos := false
@@ -70,6 +85,15 @@ var _relogio := 0.0
 var _num_acum := {}  # id do monstro -> [quando abriu a janela da soma (s do relógio daqui, -1 = fechada), dano somado, monstro, direção, cor, quando mostrou o último]
 var _slot_num := {}  # id do monstro -> Vector2(quando saiu o último número em leque, quantos saíram nessa rajada)
 var ultimo_anel := 0  # quantos estilhaços a última explosão de cabaça criou (o teste confere)
+var x_pos := PackedVector2Array()  # o pool de impactos e marcas: ponto, idade, duração (<= idade: livre), escala, folha e camada (0 = chão)
+var x_t := PackedFloat32Array()
+var x_dur := PackedFloat32Array()
+var x_esc := PackedFloat32Array()
+var x_folha: Array = []
+var x_chao := PackedByteArray()
+var x_ativos := 0
+var _xi := 0
+var impactos := 0  # quantos impactos tocaram (testes)
 
 
 func montar(p) -> void:
@@ -89,6 +113,14 @@ func montar(p) -> void:
 	q_tam.resize(MAX_PARTS)
 	q_tipo.resize(MAX_PARTS)
 	q_cor.resize(MAX_PARTS)
+	Anim.carregar()
+	x_pos.resize(MAX_FX)
+	x_t.resize(MAX_FX)
+	x_dur.resize(MAX_FX)
+	x_esc.resize(MAX_FX)
+	x_chao.resize(MAX_FX)
+	x_folha.resize(MAX_FX)
+	x_dur.fill(0.0)
 
 
 ## Um slot do pool. Campos da leva 6 (torre e granada): `orig`/`dest` (origem e destino do arremesso), `age` (relógio da fase), `est` (a fase:
@@ -117,7 +149,10 @@ func _item_vazio() -> Dictionary:
 		"mira": 0.0,
 		"aux": 0.0,
 		"cand": [],
-		"lista": null
+		"lista": null,
+		"fa": {},  # as folhas animadas da arma (Anim.de), {} = desenho antigo
+		"fk": F_ATIVO,  # a fase (F_PREPARO, F_ATIVO)
+		"ft": 0.0  # s que faltam do preparo
 	}
 
 
@@ -127,6 +162,8 @@ func limpar() -> void:
 		Golem.limpar_restos(it)
 	q_vida.fill(0.0)
 	q_ativas = 0
+	x_dur.fill(0.0)
+	x_ativos = 0
 	_num_acum.clear()
 	_slot_num.clear()
 
@@ -138,7 +175,7 @@ func remover(a: Dictionary) -> void:
 
 
 func tem_ativos() -> bool:
-	if q_ativas > 0:
+	if q_ativas > 0 or x_ativos > 0:
 		return true
 	for it in itens:
 		if float(it.vida) > 0.0 or Golem.tem_restos(it):  # o entulho do golem que acabou ainda está no chão
@@ -235,7 +272,10 @@ func quadro(h, dt: float, perto: Array) -> void:
 		it.pulso = maxf(0.0, float(it.pulso) - dt * 4.0)
 		match str(it.k):
 			"projetil":
-				_mover_projetil(it, dt, perto)
+				if int(it.fk) == F_PREPARO:
+					_preparar_projetil(it, h, dt)
+				else:
+					_mover_projetil(it, dt, perto)
 			"nuvem":
 				_tique_nuvem(it, dt)
 			"anel":
@@ -253,6 +293,8 @@ func quadro(h, dt: float, perto: Array) -> void:
 			_estourar_fogo(it)
 	if q_ativas > 0:
 		_quadro_partes(dt)
+	if x_ativos > 0:
+		_quadro_fx(dt)
 	if not _num_acum.is_empty():
 		_num_soltar()
 
@@ -376,13 +418,72 @@ func _disparar(a: Dictionary, h, perto: Array) -> void:
 	var saida: Vector2 = h.pos + Vector2(0, -14)  # o tiro sai do alto do herói, então a mira parte dali (senão a trajetória fica deslocada)
 	var direcao: Vector2 = (alvo.pos - saida).normalized()
 	var n := int(st.quantidade)
+	var fa := Anim.de(str(a.id))
+	# com folha, o tiro nasce em PREPARO: carrega na boca (sem hitbox) e só depois voa; sem folha sai na hora, como antes
+	var prep := float(st.get("preparo", PREPARO_PROJ)) / vel_anim(h) if fa.has("voo") else 0.0
 	for k in n:
-		var it := _novo("projetil", a, saida, 1.6)
+		var it := _novo("projetil", a, saida, 1.6 + prep)
 		if it.is_empty():
 			return
 		var ang := (float(k) - (n - 1) * 0.5) * 0.14  # tiros em leque curto
 		it.v = direcao.rotated(ang) * float(st.vel)
 		it.pen = int(st.get("perfura", 0.0))
+		it.aux = float(st.get("ricochete", 0.0))
+		if prep > 0.0:
+			it.fk = F_PREPARO
+			it.ft = prep
+			it.age = prep  # o preparo inteiro (o desenho da carga mede o progresso por ele)
+			it.orig = saida - h.pos  # a boca acompanha o herói enquanto carrega
+			it.dest = direcao.rotated(ang)
+
+
+## Fator de tempo das fases e das folhas: a velocidade de ataque encolhe o preparo, dentro de VEL_ANIM_MIN..VEL_ANIM_MAX (as cartas não
+## deixam o golpe sem antecipação nem o arrastam demais).
+func vel_anim(h) -> float:
+	return clampf(float(h.m_vel_ataque), VEL_ANIM_MIN, VEL_ANIM_MAX)
+
+
+## Toca a folha `f` (impacto ou marca no chão) uma vez em `p`. Só efeito: o dano já saiu no evento que chamou isto. Pool fixo, sem nó.
+func tocar_fx(f: Dictionary, p: Vector2, esc := 1.0, chao := false) -> void:
+	if f.is_empty():
+		return
+	var i := _xi
+	_xi = (_xi + 1) % MAX_FX
+	x_pos[i] = p
+	x_t[i] = 0.0
+	x_dur[i] = Anim.duracao(f)
+	x_esc[i] = esc
+	x_folha[i] = f
+	x_chao[i] = 1 if chao else 0
+	x_ativos += 1
+	impactos += 1
+
+
+func _quadro_fx(dt: float) -> void:
+	var n := 0
+	for i in MAX_FX:
+		if x_t[i] < x_dur[i]:
+			x_t[i] += dt
+			if x_t[i] < x_dur[i]:
+				n += 1
+	x_ativos = n
+
+
+## Desenha os impactos (`chao` false) ou as marcas no chão (true) que estão tocando.
+func _desenhar_fx(ci: CanvasItem, chao: bool) -> void:
+	for i in MAX_FX:
+		if x_t[i] >= x_dur[i] or (x_chao[i] == 1) != chao:
+			continue
+		var f: Dictionary = x_folha[i]
+		Anim.desenhar(ci, f, Anim.quadro_em(f, x_t[i]), x_pos[i], 0.0, Vector2(x_esc[i], x_esc[i]))
+
+
+## PREPARO do tiro: fica na boca (acompanha o herói), sem colidir; quando acaba, sai voando na direção guardada.
+func _preparar_projetil(it: Dictionary, h, dt: float) -> void:
+	it.p = h.pos + (it.orig as Vector2)
+	it.ft = float(it.ft) - dt
+	if float(it.ft) <= 0.0:
+		it.fk = F_ATIVO
 
 
 func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
@@ -408,7 +509,14 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 		var dir: Vector2 = (it.v as Vector2).normalized()
 		var dano := _dano(st) * float(it.mult)
 		var estilhaco := str(a.tipo) == "granada"  # o número do estilhaço sai espalhado, não em cima do número da explosão
-		pai.combate.ferir(m, dano, dir, 40.0, 0.1, _cor_num(a.cor), not estilhaco)
+		# o crítico das cartas (Olho de falcão) vale para o tiro do herói também: dano da regra da katana e número dourado
+		var crit: bool = str(a.tipo) == "projetil" and randf() < pai.combate.chance_critico()
+		if crit:
+			dano *= float(pai.combate.cfg.golpe.critico.mult)
+		pai.combate.ferir(m, dano, dir, 40.0, 0.1, COR_CRIT if crit else _cor_num(a.cor), not estilhaco, crit)
+		var fa: Dictionary = it.fa
+		if fa.has("impacto"):  # o impacto toca no ponto do acerto (o evento real), não no fim da animação do voo
+			tocar_fx(fa.impacto, p, 2.0 if crit else 1.0)
 		if estilhaco:
 			_numero_estilhaco(m, dano, dir, a, it)
 		pai._acertou("projetil")
@@ -419,6 +527,13 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 			pai.explodir(m.pos, dano, ex, a.cor, m)
 		if st.has("puxa"):  # a tempestade: cada impacto puxa os inimigos próximos para o ponto
 			_puxar(m.pos, float(st.get("puxa_raio", 90.0)), float(st.puxa))
+		if float(it.aux) >= 1.0 and str(a.tipo) == "projetil":  # ricochete (número `ricochete` da arma): muda de rumo para o vizinho mais perto
+			var prox = _mais_perto_sem(p, RICOCHETE_ALC, alvos, it.hit)
+			if prox != null:
+				it.aux = float(it.aux) - 1.0
+				it.v = (prox.pos - p).normalized() * (it.v as Vector2).length()
+				it.vida = maxf(float(it.vida), 0.5)
+				return
 		if int(it.pen) <= 0:
 			it.vida = 0.0
 			return
@@ -435,6 +550,11 @@ func _nuvem(a: Dictionary, h, perto: Array) -> void:
 		return
 	it.r = float(st.raio)
 	it.t = 0.05  # o primeiro tique já vem logo
+	if Anim.de(str(a.id)).has("entrada"):  # com folha: a nuvem se forma (entrada) e só então o primeiro tique cai
+		var prep := float(st.get("preparo", ENTRADA_NUVEM)) / vel_anim(h)
+		it.t = prep
+		it.vida = float(it.vida) + prep
+		it.aux = prep
 
 
 func _tique_nuvem(it: Dictionary, dt: float) -> void:
@@ -524,17 +644,27 @@ func _dano_em(m, st: Dictionary) -> float:
 
 func _anel(a: Dictionary, h) -> void:
 	var st: Dictionary = a.st
-	var it := _novo("anel", a, h.pos, float(st.raio) / float(st.vel) + 0.05)
+	var prep := float(st.get("preparo", PREPARO_ANEL)) / vel_anim(h) if Anim.de(str(a.id)).has("expandir") else 0.0
+	var it := _novo("anel", a, h.pos, float(st.raio) / float(st.vel) + 0.05 + prep)
 	if it.is_empty():
 		return
 	it.r = 0.0
+	if prep > 0.0:  # PREPARO: o anel junta força no herói (o primeiro quadro da folha pulsa), sem hitbox
+		it.fk = F_PREPARO
+		it.ft = prep
+		it.aux = prep
 
 
 func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
-	it.r = float(it.r) + float(st.vel) * dt
 	it.p = h.pos  # o anel sai do herói e anda com ele
+	if int(it.fk) == F_PREPARO:
+		it.ft = float(it.ft) - dt
+		if float(it.ft) > 0.0:
+			return
+		it.fk = F_ATIVO
+	it.r = float(it.r) + float(st.vel) * dt
 	var c: Vector2 = it.p
 	var r := float(it.r)
 	for m in perto:
@@ -573,6 +703,12 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
 	pai.explodir(it.p, _dano(st), float(st.raio), a.cor)
+	var fa: Dictionary = it.fa
+	if fa.has("impacto"):  # o impacto e a marca tocam no instante da queda, o mesmo do dano
+		var q: Vector2 = fa.impacto.quadro
+		tocar_fx(fa.impacto, it.p, maxf(1.0, roundf(float(st.raio) * 2.0 / q.x)))
+	if fa.has("marca"):
+		tocar_fx(fa.marca, it.p, 1.0, true)
 	if st.has("cadeia") and not bool(it.get("filho", false)):  # o juízo: cada queda chama outro meteoro no inimigo mais perto
 		var alvo = _mais_perto(it.p, 400.0, pai.mundo.monstros)
 		if alvo != null:
@@ -1185,23 +1321,36 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 		match str(it.k):
 			"projetil":
 				var dir: Vector2 = (it.v as Vector2).normalized()
-				_desenhar_projetil(ci, it, tex, cor, p, dir)
+				if (it.fa as Dictionary).has("voo"):
+					_brilho_projetil_anim(ci, it, tex, cor, p)
+				else:
+					_desenhar_projetil(ci, it, tex, cor, p, dir)
 			"nuvem":
-				var sp: Dictionary = it.sp
-				if not sp.is_empty():
-					var fade := opacidade_nuvem(float(it.vida), float(st.duracao))
-					_area(ci, sp, p, float(it.r), Color(1, 1, 1, 0.035 * fade))
+				var fa_n: Dictionary = it.fa
+				if fa_n.has("loop"):
+					_desenhar_nuvem_anim(ci, it, st, p)
+				else:
+					var sp: Dictionary = it.sp
+					if not sp.is_empty():
+						var fade := opacidade_nuvem(float(it.vida), float(st.duracao))
+						_area(ci, sp, p, float(it.r), Color(1, 1, 1, 0.035 * fade))
 				_desenhar_pulso_nuvem(ci, it, st, p)
 			"anel":
 				var r := float(it.r)
 				var fade_a := clampf(1.0 - r / float(st.raio), 0.0, 1.0)
 				var sp: Dictionary = it.sp
-				if not sp.is_empty():
+				if (it.fa as Dictionary).has("expandir"):
+					_desenhar_anel_anim(ci, it, st, p)
+					if int(it.fk) == F_PREPARO:
+						continue
+					fade_a *= 0.5  # a folha mostra a onda; o arco fino fica só como a borda real da hitbox
+				elif not sp.is_empty():
 					_area(ci, sp, p, r, Color(1, 1, 1, 0.12 * fade_a))
 				ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
 				ci.draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(cor.r, cor.g, cor.b, 0.85 * fade_a), 3.0)
 				ci.draw_arc(Vector2.ZERO, maxf(r - 4.0, 0.5), 0.0, TAU, 48, Color(1, 1, 1, 0.45 * fade_a), 1.5)
-				_desenhar_motivo_anel(ci, str(a.get("id", "")), r, float(it.fase), fade_a, cor)
+				if not (it.fa as Dictionary).has("expandir"):  # com folha o motivo (raios, cristais, rachaduras) já está nos quadros
+					_desenhar_motivo_anel(ci, str(a.get("id", "")), r, float(it.fase), fade_a, cor)
 				ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			"meteoro":
 				var raio := float(st.raio)
@@ -1213,7 +1362,12 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 					ci.draw_circle(Vector2.ZERO, raio * 0.35 * k, Color(cor.r, cor.g, cor.b, 0.25 * k))
 					ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 					var bola: Vector2 = (p + Vector2(0, -80.0 * (1.0 - k))).round()
-					_desenhar_meteoro(ci, it, tex, cor, bola, k)
+					if (it.fa as Dictionary).has("queda"):  # a folha já traz o rastro: aqui só o calor em volta da cabeça
+						ci.draw_texture_rect(tex, Rect2(bola - Vector2(10, 10), Vector2(20, 20)), false, Color(cor.r, cor.g, cor.b, 0.35))
+					else:
+						_desenhar_meteoro(ci, it, tex, cor, bola, k)
+				elif (it.fa as Dictionary).has("impacto"):
+					pass  # o impacto e a marca tocam no pool de efeitos (tocar_fx)
 				else:
 					var sumindo := clampf(float(it.vida) / 0.3, 0.0, 1.0)
 					ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
@@ -1246,11 +1400,15 @@ func desenhar_corpo(ci: CanvasItem, tex: Texture2D) -> void:
 		if float(it.vida) <= 0.0 or str(it.k) != "nuvem":
 			continue
 		_desenhar_nuvem(ci, it, it.a.st, it.a.cor, tex, (it.p as Vector2).round())
+	if x_ativos > 0:
+		_desenhar_fx(ci, false)  # os impactos (camada sem luz: o clarão não escurece no mapa escuro)
 
 
 ## Camada normal (`no_corpo`, a das sombras e dos corvos, que recebe a luz 2D): o sprite de projétil (virado para o voo), de meteoro
 ## que cai (com a ponta para baixo) e de aliado (de pé, flutuando).
 func desenhar_sprites(ci: CanvasItem) -> void:
+	if x_ativos > 0:
+		_desenhar_fx(ci, true)  # as marcas no chão vêm antes de tudo: ficam por baixo dos projéteis e dos aliados
 	for it in itens:
 		if float(it.vida) <= 0.0:
 			if Golem.tem_restos(it):
@@ -1272,6 +1430,17 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 			continue
 		if str(it.k) == "granada":
 			_desenhar_granada(ci, it)
+			continue
+		var fa: Dictionary = it.fa
+		if str(it.k) == "projetil" and fa.has("voo"):
+			if int(it.fk) == F_ATIVO:  # no preparo o tiro ainda é só a carga na boca (camada de brilho)
+				var voo: Dictionary = fa.voo
+				var giro := 0.0 if bool(voo.gira) else (it.v as Vector2).angle()
+				Anim.desenhar(ci, voo, Anim.quadro_em(voo, _relogio), p, giro, Vector2.ONE, Color(1, 1, 1, clampf(float(it.vida) / 0.12, 0.0, 1.0)))  # some no fim do alcance
+			continue
+		if str(it.k) == "meteoro" and fa.has("queda"):
+			if float(it.t) > 0.0:
+				Anim.desenhar(ci, fa.queda, Anim.quadro_em(fa.queda, _relogio), _queda(it), PI * 0.5)
 			continue
 		var sp: Dictionary = it.sp
 		if sp.is_empty():
@@ -1630,6 +1799,60 @@ func _brasas_chao(ci: CanvasItem, it: Dictionary, p: Vector2, cor: Color) -> voi
 # ------------------------------------------------------------------ auxiliares
 
 
+## O brilho (camada aditiva) do tiro com folha. PREPARO: a carga na boca, um anel da cor da arma que fecha enquanto o miolo acende (o jogador
+## vê de onde o tiro vai sair antes de ele sair). ATIVO: só um halo fraco; o corpo e o rastro estão nos quadros da folha.
+func _brilho_projetil_anim(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Color, p: Vector2) -> void:
+	if int(it.fk) == F_PREPARO:
+		var k := 1.0 - clampf(float(it.ft) / maxf(float(it.age), 0.001), 0.0, 1.0)
+		var boca := (p + (it.dest as Vector2) * 6.0).round()
+		ci.draw_arc(boca, roundf(9.0 - 6.0 * k), 0.0, TAU, 12, Color(cor.r, cor.g, cor.b, 0.35 + 0.5 * k), 1.0)
+		ci.draw_circle(boca, 1.0 + 2.0 * k, Color(1, 1, 1, 0.4 + 0.5 * k))
+		ci.draw_texture_rect(tex, Rect2(boca - Vector2(7, 7), Vector2(14, 14)), false, Color(cor.r, cor.g, cor.b, 0.5 * k))
+		return
+	ci.draw_texture_rect(tex, Rect2(p - Vector2(6, 6), Vector2(12, 12)), false, Color(cor.r, cor.g, cor.b, 0.3))
+
+
+## A frente de cada quadro de `expandir` em fração da borda da célula (docs/combate_v2/SPEC_ARTE.md; as folhas dos anéis seguem esta
+## linha do tempo): o quadro mostrado é o último cuja frente o raio real do golpe já alcançou, então a onda desenhada anda junto da hitbox.
+const FRENTE_ANEL := [0.16, 0.47, 0.69, 0.84, 0.94, 1.0]
+
+
+## O anel com folha (camada aditiva), esticado até o raio final do golpe. PREPARO: o 1º quadro pulsa crescendo no herói (junta força).
+func _desenhar_anel_anim(ci: CanvasItem, it: Dictionary, st: Dictionary, p: Vector2) -> void:
+	var f: Dictionary = it.fa.expandir
+	var q: Vector2 = f.quadro
+	var raio := float(st.raio)
+	var esc := raio * 2.0 / q.x
+	if int(it.fk) == F_PREPARO:
+		var k := 1.0 - clampf(float(it.ft) / maxf(float(it.aux), 0.001), 0.0, 1.0)
+		Anim.desenhar(ci, f, 0, p, 0.0, Vector2.ONE * esc * (0.6 + 0.4 * k), Color(1, 1, 1, 0.5 + 0.5 * k))
+		return
+	var fr := float(it.r) / maxf(raio, 1.0)
+	var i := 0
+	while i + 1 < FRENTE_ANEL.size() and fr >= float(FRENTE_ANEL[i + 1]):
+		i += 1
+	Anim.desenhar(ci, f, mini(i, int(f.n) - 1), p, 0.0, Vector2(esc, esc))
+
+
+## A nuvem com folha (camada aditiva), esticada até o raio real: entrada (se forma, sem dano), loop (os tiques) e saída (dissolve).
+func _desenhar_nuvem_anim(ci: CanvasItem, it: Dictionary, st: Dictionary, p: Vector2) -> void:
+	var fa: Dictionary = it.fa
+	var q: Vector2 = fa.loop.quadro
+	var esc := float(it.r) * 2.0 / q.x
+	var prep := float(it.aux)
+	var passou := float(st.duracao) + prep - float(it.vida)
+	var cor := Color(1, 1, 1, 0.45)  # rala: a nuvem não pode esconder os monstros dentro dela
+	if passou < prep and fa.has("entrada"):
+		Anim.desenhar(ci, fa.entrada, Anim.quadro_frac(fa.entrada, passou / maxf(prep, 0.001)), p, 0.0, Vector2(esc, esc), cor)
+		return
+	if fa.has("saida"):
+		var sai := Anim.duracao(fa.saida)
+		if float(it.vida) < sai:
+			Anim.desenhar(ci, fa.saida, Anim.quadro_frac(fa.saida, 1.0 - float(it.vida) / sai), p, 0.0, Vector2(esc, esc), cor)
+			return
+	Anim.desenhar(ci, fa.loop, Anim.quadro_em(fa.loop, passou - prep), p, 0.0, Vector2(esc, esc), cor)
+
+
 func _desenhar_projetil(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Color, p: Vector2, dir: Vector2) -> void:
 	var id := str(it.a.get("id", ""))
 	match id:
@@ -1732,6 +1955,9 @@ func _novo(k: String, a: Dictionary, p: Vector2, vida: float) -> Dictionary:
 	it.k = k
 	it.a = a
 	it.sp = sprite_de(str(a.id))
+	it.fa = Anim.de(str(a.id))
+	it.fk = F_ATIVO
+	it.ft = 0.0
 	it.p = p
 	it.v = Vector2.ZERO
 	it.vida = vida
@@ -2002,6 +2228,20 @@ func _mais_perto(p: Vector2, alc: float, perto: Array):
 	var md := alc * alc
 	for m in perto:
 		if not m.vivo or m.morrendo:
+			continue
+		var d2 := _eli(m.pos - p).length_squared()
+		if d2 < md:
+			md = d2
+			melhor = m
+	return melhor
+
+
+## Como `_mais_perto`, mas pulando quem já está em `fora` (os que o tiro já acertou: o ricochete não volta no mesmo).
+func _mais_perto_sem(p: Vector2, alc: float, perto: Array, fora: Array):
+	var melhor = null
+	var md := alc * alc
+	for m in perto:
+		if not m.vivo or m.morrendo or fora.has(m):
 			continue
 		var d2 := _eli(m.pos - p).length_squared()
 		if d2 < md:

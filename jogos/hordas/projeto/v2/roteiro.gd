@@ -7,6 +7,8 @@ extends RefCounted
 ##                         Usar com --fotos=PASTA --nome=prefixo (as fotos saem como prefixo_01_corte.png ...). Nunca captura a área de trabalho.
 ##   --roteiro=correr      foto do herói correndo com a poeira e a câmera adiantada
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
+##   --build=golpes        idem com os 36 projéteis, anéis, meteoros e nuvens no nível 5 (as folhas animadas de docs/combate_v2)
+##   --build=tudo          os 36 mais corvos, aura, raio, runa, lâminas e as evoluções desses tipos
 ##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, do mini-chefe e do chefe anunciando
 ##                         o ataque, da tela de vitória e da escolha com raridades (na trava, 20_escolha_trava, e depois de liberar,
 ##                         21_escolha_liberada). Fotos 11_build ... 21_escolha_liberada: a janela inteira (mundo e interface; em headless, só o viewport do mundo).
@@ -348,6 +350,17 @@ func armar_build() -> void:
 		for ev in cs.cfg.evolucoes:
 			if str(ev.get("tipo", "")) == "aliado":
 				mundo.combate.armas.adicionar_evoluida(ev, 0.0)
+		return
+	if str(args.get("build", "")) in ["golpes", "tudo"]:  # medição das folhas animadas (docs/combate_v2): projéteis, anéis, meteoros e nuvens no nível 5
+		var tipos := ["projetil", "anel", "meteoro", "nuvem"]
+		if str(args.build) == "tudo":  # e também corvos, aura, raio, runa, lâminas e as evoluções desses tipos
+			tipos += ["corvos", "aura", "raio", "runa", "orbita"]
+			for ev in cs.cfg.evolucoes:
+				if str(ev.get("tipo", "")) in tipos:
+					mundo.combate.armas.adicionar_evoluida(ev, 0.0)
+		for g in cs.cfg.golpes:
+			if str(g.get("tipo", "")) in tipos:
+				mundo.combate.armas.definir_golpe(str(g.id), 5, 0.0)
 		return
 	for par in [["aura_fogo", 4], ["laminas", 2], ["corvos", 3], ["raio", 2], ["runa", 2]]:
 		for i in int(par[1]):

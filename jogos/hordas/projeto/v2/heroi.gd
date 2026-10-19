@@ -552,6 +552,16 @@ func _iniciar_golpe() -> void:
 	mundo.combate.golpe_comecou(self, golpe_cfg, golpe_dir, golpe_dur)
 
 
+## A fase do golpe da katana agora (docs/combate_v2): "pronto" fora do golpe, "preparo" antes do quadro do acerto (sem dano), "ativo" no
+## quadro do acerto (combate.golpear, uma vez por golpe) e "recuperacao" depois dele, até o fim do golpe (a esquiva pode cancelar aqui).
+func fase_golpe() -> String:
+	if estado != Estado.GOLPE:
+		return "pronto"
+	if not golpe_acertou:
+		return "preparo"
+	return "ativo" if golpe_t <= golpe_dur * float(golpe_cfg.acerto_em) + 1.0 / 60.0 else "recuperacao"
+
+
 func _golpe(dt: float, v: Vector2) -> Vector2:
 	golpe_t += dt
 	var p := golpe_t / golpe_dur

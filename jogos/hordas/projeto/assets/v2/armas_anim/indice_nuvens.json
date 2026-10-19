@@ -1,0 +1,445 @@
+{
+  "folhas": {
+    "nuvem_veneno": {
+      "armas": [
+        "nuvem_veneno"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "nuvem_veneno_entrada.png",
+          "quadro": [
+            100,
+            64
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            50,
+            32
+          ]
+        },
+        "loop": {
+          "arquivo": "nuvem_veneno_loop.png",
+          "quadro": [
+            100,
+            64
+          ],
+          "n": 6,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            50,
+            32
+          ]
+        },
+        "saida": {
+          "arquivo": "nuvem_veneno_saida.png",
+          "quadro": [
+            100,
+            64
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            50,
+            32
+          ]
+        }
+      }
+    },
+    "nevoa_gelada": {
+      "armas": [
+        "nevoeiro_gelado"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "nevoa_gelada_entrada.png",
+          "quadro": [
+            120,
+            74
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            60,
+            37
+          ]
+        },
+        "loop": {
+          "arquivo": "nevoa_gelada_loop.png",
+          "quadro": [
+            120,
+            74
+          ],
+          "n": 6,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            60,
+            37
+          ]
+        },
+        "saida": {
+          "arquivo": "nevoa_gelada_saida.png",
+          "quadro": [
+            120,
+            74
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            60,
+            37
+          ]
+        }
+      }
+    },
+    "nuvem_cinzas": {
+      "armas": [
+        "cinzas_vulcanicas"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "nuvem_cinzas_entrada.png",
+          "quadro": [
+            160,
+            104
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            80,
+            52
+          ]
+        },
+        "loop": {
+          "arquivo": "nuvem_cinzas_loop.png",
+          "quadro": [
+            160,
+            104
+          ],
+          "n": 4,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            80,
+            52
+          ]
+        },
+        "saida": {
+          "arquivo": "nuvem_cinzas_saida.png",
+          "quadro": [
+            160,
+            104
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            80,
+            52
+          ]
+        }
+      }
+    },
+    "fumaca_sonolenta": {
+      "armas": [
+        "fumaca_sonolenta"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "fumaca_sonolenta_entrada.png",
+          "quadro": [
+            110,
+            57
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            55,
+            28
+          ]
+        },
+        "loop": {
+          "arquivo": "fumaca_sonolenta_loop.png",
+          "quadro": [
+            110,
+            57
+          ],
+          "n": 6,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            55,
+            28
+          ]
+        },
+        "saida": {
+          "arquivo": "fumaca_sonolenta_saida.png",
+          "quadro": [
+            110,
+            57
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            55,
+            28
+          ]
+        }
+      }
+    },
+    "chuva_acida": {
+      "armas": [
+        "chuva_acida"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "chuva_acida_entrada.png",
+          "quadro": [
+            120,
+            80
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            60,
+            40
+          ]
+        },
+        "loop": {
+          "arquivo": "chuva_acida_loop.png",
+          "quadro": [
+            120,
+            80
+          ],
+          "n": 6,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            60,
+            40
+          ]
+        },
+        "saida": {
+          "arquivo": "chuva_acida_saida.png",
+          "quadro": [
+            120,
+            80
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            60,
+            40
+          ]
+        }
+      }
+    },
+    "nuvem_neve": {
+      "armas": [
+        "nevasca"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "nuvem_neve_entrada.png",
+          "quadro": [
+            140,
+            91
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            70,
+            45
+          ]
+        },
+        "loop": {
+          "arquivo": "nuvem_neve_loop.png",
+          "quadro": [
+            140,
+            91
+          ],
+          "n": 4,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            70,
+            45
+          ]
+        },
+        "saida": {
+          "arquivo": "nuvem_neve_saida.png",
+          "quadro": [
+            140,
+            91
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            70,
+            45
+          ]
+        }
+      }
+    },
+    "nuvem_esporos": {
+      "armas": [
+        "nuvem_espora"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "nuvem_esporos_entrada.png",
+          "quadro": [
+            120,
+            77
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            60,
+            38
+          ]
+        },
+        "loop": {
+          "arquivo": "nuvem_esporos_loop.png",
+          "quadro": [
+            120,
+            77
+          ],
+          "n": 6,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            60,
+            38
+          ]
+        },
+        "saida": {
+          "arquivo": "nuvem_esporos_saida.png",
+          "quadro": [
+            120,
+            77
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            60,
+            38
+          ]
+        }
+      }
+    },
+    "nuvem_sangue": {
+      "armas": [
+        "cortina_sangue"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "nuvem_sangue_entrada.png",
+          "quadro": [
+            70,
+            50
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            35,
+            25
+          ]
+        },
+        "loop": {
+          "arquivo": "nuvem_sangue_loop.png",
+          "quadro": [
+            70,
+            50
+          ],
+          "n": 6,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            35,
+            25
+          ]
+        },
+        "saida": {
+          "arquivo": "nuvem_sangue_saida.png",
+          "quadro": [
+            70,
+            50
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            35,
+            25
+          ]
+        }
+      }
+    },
+    "nevoa_espectral": {
+      "armas": [
+        "nevoa_espectral"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "nevoa_espectral_entrada.png",
+          "quadro": [
+            100,
+            65
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            50,
+            32
+          ]
+        },
+        "loop": {
+          "arquivo": "nevoa_espectral_loop.png",
+          "quadro": [
+            100,
+            65
+          ],
+          "n": 6,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            50,
+            32
+          ]
+        },
+        "saida": {
+          "arquivo": "nevoa_espectral_saida.png",
+          "quadro": [
+            100,
+            65
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            50,
+            32
+          ]
+        }
+      }
+    }
+  }
+}

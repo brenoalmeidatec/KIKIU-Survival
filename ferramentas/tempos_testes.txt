@@ -89,3 +89,4 @@ v2_icones_cartas 0.7
 opcoes 0.6
 v2_pos_visual 0.6
 variantes 0.6
+v2_combate_fases 13
