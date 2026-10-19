@@ -7,31 +7,39 @@ extends Node3D
 signal estado_mudou(novo: String)
 signal heroi_atingido(dano: float)
 signal chefe_atingido(dano: float)
+signal heroi_caiu
 
-# ---------------- BALANÇO (PROVISÓRIO, tudo neste bloco) ----------------
-const VIDA_CHEFE := 1200.0       ## folha conceitual: 1.200 a 1.600
-const DANO_GOLPE_CHEFE := 20.0   ## PROVISÓRIO: a folha sugere 20 a 40; a vida de 100 do herói ainda não foi decidida
-const VIDA_HEROI := 100.0        ## PROVISÓRIO (herói de teste)
-const DANO_HEROI := 30.0         ## PROVISÓRIO: golpe do herói de teste no chefe
+# ---------------- BALANÇO (PROVISÓRIO até a v3 ter herói próprio; tudo neste bloco) ----------------
+# Números da folha conceitual: vida 1200 a 1600, dano 20 a 40 por golpe, velocidade 1,2 a 1,8, recarga 2 a 4 s.
+# O dano de cada golpe fica na tabela ATAQUES (raízes 30, golpe 20, absorção 0, raízes longas 35, tempestade 25).
+const VIDA_CHEFE := 1400.0       ## folha: 1200 a 1600
+const VIDA_HEROI := 900.0        ## herói de TESTE: com o herói parado apanhando, a luta dura 60 a 90 s (o da v2 tem 100)
+const DANO_HEROI := 10.0         ## golpe do herói de teste no chefe (espaço)
+const RECARGA_GOLPE_HEROI := 0.5 ## intervalo mínimo entre golpes do herói de teste (s)
+const VEL_HEROI := 1.5           ## folha: 1,2 a 1,8
 const ALCANCE_HEROI := 2.0
 const FASE2 := 0.4
-const VEL_ANDAR := 1.4           ## folha: 1,2 a 1,8
-const VEL_CORRER := 2.6
+const VEL_ANDAR := 1.5           ## folha: 1,2 a 1,8
+const VEL_CORRER := 1.8          ## topo da faixa da folha
 const DIST_CORRER := 6.0
 const ANDAR_MIN := 0.5           ## tempo mínimo andando entre ataques
 const STAGGER_DANO := 150.0      ## dano recebido dentro da janela que derruba o chefe
 const STAGGER_JANELA := 3.0
 const CURA_MAX := 180.0          ## teto de cura da absorção na luta toda
+const RECARGA_FASE2 := 0.85      ## na fase 2 as recargas encolhem 15%...
+const RECARGA_MIN := 2.5         ## ...mas nunca abaixo de 2,5 s
+const VEL_RECUPERA_MAX := 2.0    ## a recuperação acelera o clipe até 2x; o que sobrar do clipe é cortado
 const FPS_CLIPE := 12.0
-# -------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------
 
-## quadro = quadro de impacto no clipe (12 fps, roteiro de sons da rodada anterior); segura = quadros segurados no impacto.
+## aviso e recupera em segundos (VORNAK_COMBATE.md); quadro = quadro de impacto no clipe (12 fps, quadro 1 = início);
+## segura = quadros segurados no impacto. O clipe é reescalado para o quadro de impacto cair no fim do aviso.
 const ATAQUES := [
-	{"nome": "raizes", "clipe": "attack_01", "forma": "circulo", "raio": 3.0, "alcance": 3.2, "quadro": 22, "segura": 2, "recupera": 0.6, "recarga": 2.5, "fase": 1},
-	{"nome": "golpe", "clipe": "attack_02", "forma": "setor", "raio": 2.2, "angulo": 90.0, "alcance": 2.2, "quadro": 8, "segura": 2, "recupera": 0.6, "recarga": 2.0, "fase": 1},
-	{"nome": "absorcao", "clipe": "attack_03", "forma": "pontos", "raio": 0.8, "distancia": 2.2, "alcance": 3.0, "quadro": 9, "segura": 2, "recupera": 0.8, "recarga": 4.0, "fase": 1, "cura": 60.0},
-	{"nome": "raizes_longas", "clipe": "attack_04", "forma": "circulo", "raio": 3.6, "alcance": 3.8, "quadro": 14, "segura": 2, "recupera": 0.5, "recarga": 1.6, "fase": 2},
-	{"nome": "tempestade", "clipe": "ability", "forma": "pontos_heroi", "raio": 1.1, "distancia": 1.6, "alcance": 7.0, "quadro": 12, "segura": 2, "recupera": 0.4, "recarga": 3.0, "fase": 2},
+	{"nome": "raizes", "clipe": "attack_01", "forma": "circulo", "raio": 3.0, "alcance": 3.2, "quadro": 22, "segura": 2, "aviso": 0.9, "recupera": 0.6, "recarga": 3.0, "dano": 30.0, "fase": 1},
+	{"nome": "golpe", "clipe": "attack_02", "forma": "setor", "raio": 2.2, "angulo": 90.0, "alcance": 2.2, "quadro": 8, "segura": 2, "aviso": 0.7, "recupera": 0.6, "recarga": 2.5, "dano": 20.0, "fase": 1},
+	{"nome": "absorcao", "clipe": "attack_03", "forma": "pontos", "raio": 0.8, "distancia": 2.2, "alcance": 3.0, "quadro": 9, "segura": 2, "aviso": 1.2, "recupera": 0.8, "recarga": 4.0, "dano": 0.0, "fase": 1, "cura": 60.0},
+	{"nome": "raizes_longas", "clipe": "attack_04", "forma": "circulo", "raio": 3.6, "alcance": 3.8, "quadro": 14, "segura": 2, "aviso": 0.6, "recupera": 0.5, "recarga": 3.0, "dano": 35.0, "fase": 2},
+	{"nome": "tempestade", "clipe": "ability", "forma": "pontos_heroi", "raio": 1.1, "distancia": 1.6, "alcance": 7.0, "quadro": 12, "segura": 2, "aviso": 0.9, "recupera": 0.4, "recarga": 3.5, "dano": 25.0, "fase": 2},
 ]
 
 const COR_IND := Color("#b8ff4a")
@@ -60,6 +68,12 @@ var t_aviso := 0.0
 var t_recupera := 0.0
 var t_transicao := 0.0
 var historico: Array[String] = []
+var historico_t: Array[float] = []   ## relógio de cada mudança de estado (mesma ordem do historico)
+var ataques_feitos: Array[String] = []
+var vel_aviso := 1.0       ## velocidade do clipe no aviso do ataque atual
+var vel_recupera := 1.0    ## velocidade do clipe na recuperação do ataque atual
+var heroi_morto := false
+var ultimo_uso := {}       ## nome do ataque -> relógio do último uso (rodízio)
 var areas := {}         ## nome do ataque -> Array[Area3D]
 var indicadores := {}   ## nome do ataque -> Node3D
 
@@ -175,6 +189,7 @@ func _mudar(novo: String) -> void:
 	estado = novo
 	t_estado = 0.0
 	historico.append(novo)
+	historico_t.append(relogio)
 	estado_mudou.emit(novo)
 
 
@@ -209,20 +224,24 @@ func passo(dt: float) -> void:
 		"aviso":
 			if t_estado < t_aviso * 0.6:
 				_virar(para_heroi, dt, 3.0)
-			if t_estado >= t_aviso:
+			if t_estado >= t_aviso - 0.0001:
 				_mudar("impacto")
+				vornak.velocidade_anim(1.0)  # os quadros segurados do impacto tocam no ritmo do clipe
 				ja_acertou = false
 				indicadores[ataque.nome].visible = false
 				for ar in areas[ataque.nome]:
 					ar.monitoring = true
 		"impacto":
 			_conferir_acerto()
-			if t_estado >= float(ataque.segura) / FPS_CLIPE + 1.0 / 30.0:
+			if t_estado >= float(ataque.segura) / FPS_CLIPE - 0.0001:
 				for ar in areas[ataque.nome]:
 					ar.monitoring = false
+				vornak.velocidade_anim(vel_recupera)
 				_mudar("recupera")
 		"recupera":
-			if t_estado >= t_recupera:
+			if t_estado >= t_recupera - 0.0001:
+				# se o clipe ainda não acabou (Attack_01), ele é cortado aqui com uma mistura mais longa
+				vornak.tocar("idle", false, 0.3)
 				_mudar("andar")
 		"stagger":
 			if t_estado >= vornak.duracao("stagger"):
@@ -246,13 +265,20 @@ func _virar(dir: Vector3, dt: float, vel: float) -> void:
 	vornak.rotation.y = lerp_angle(vornak.rotation.y, alvo, clampf(vel * dt, 0.0, 1.0))
 
 
+## Entre os ataques prontos e no alcance, escolhe o usado há mais tempo (rodízio); na fase 2 os ataques
+## da fase 2 vêm antes. Empate: a ordem da tabela.
 func _escolher_ataque(dist: float) -> Dictionary:
+	var melhor: Dictionary = {}
+	var melhor_nota := INF
 	for a in ATAQUES:
 		if (fase >= int(a.fase)) and recargas[a.nome] <= 0.0 and dist <= float(a.alcance):
 			if fase == 2 and int(a.fase) == 1 and a.nome == "raizes":
 				continue  # na fase 2 as raízes viram raízes longas
-			return a
-	return {}
+			var nota := float(ultimo_uso.get(a.nome, -1000.0)) - (100.0 if fase == 2 and int(a.fase) == 2 else 0.0)
+			if nota < melhor_nota:
+				melhor_nota = nota
+				melhor = a
+	return melhor
 
 
 func forcar_ataque(nome: String) -> void:
@@ -263,10 +289,16 @@ func forcar_ataque(nome: String) -> void:
 
 func _iniciar_ataque(a: Dictionary) -> void:
 	ataque = a
-	recargas[a.nome] = float(a.recarga) * (0.7 if fase == 2 else 1.0)
-	t_aviso = (float(a.quadro) - 1.0) / FPS_CLIPE
-	var fim_impacto := t_aviso + float(a.segura) / FPS_CLIPE
-	t_recupera = maxf(float(a.recupera), vornak.duracao(a.clipe) - fim_impacto)
+	recargas[a.nome] = maxf(RECARGA_MIN, float(a.recarga) * (RECARGA_FASE2 if fase == 2 else 1.0))
+	ataques_feitos.append(a.nome)
+	ultimo_uso[a.nome] = relogio
+	# tempos da folha: o clipe é reescalado para o quadro de impacto cair no fim do aviso
+	var t_imp := t_impacto_clipe(a)
+	t_aviso = float(a.aviso)
+	vel_aviso = t_imp / t_aviso
+	t_recupera = float(a.recupera)
+	var resto: float = vornak.duracao(a.clipe) - t_imp - float(a.segura) / FPS_CLIPE
+	vel_recupera = clampf(resto / t_recupera, 1.0, VEL_RECUPERA_MAX)
 	if a.forma == "pontos_heroi":
 		var base := heroi.global_position
 		var lista: Array = areas[a.nome]
@@ -278,7 +310,19 @@ func _iniciar_ataque(a: Dictionary) -> void:
 			ind.get_child(i * 2 + 1).global_position = lista[i].global_position + Vector3(0, 0.03, 0)
 	indicadores[a.nome].visible = true
 	vornak.tocar(a.clipe, true)
+	vornak.velocidade_anim(vel_aviso)
 	_mudar("aviso")
+
+
+## Instante do quadro de impacto dentro do clipe original (12 fps, quadro 1 = 0 s).
+func t_impacto_clipe(a: Dictionary) -> float:
+	return (float(a.quadro) - 1.0) / FPS_CLIPE
+
+
+## Parte do clipe que não cabe na recuperação da folha (cortada), em segundos do clipe.
+func clipe_cortado(a: Dictionary) -> float:
+	var resto: float = vornak.duracao(a.clipe) - t_impacto_clipe(a) - float(a.segura) / FPS_CLIPE
+	return maxf(0.0, resto - float(a.recupera) * VEL_RECUPERA_MAX)
 
 
 func _conferir_acerto() -> void:
@@ -295,18 +339,31 @@ func _conferir_acerto() -> void:
 				if d.length() > 0.01 and rad_to_deg(frente.angle_to(d.normalized())) > float(ataque.angulo) * 0.5:
 					continue
 			ja_acertou = true
-			vida_heroi = maxf(0.0, vida_heroi - DANO_GOLPE_CHEFE)
-			heroi_atingido.emit(DANO_GOLPE_CHEFE)
+			var dano := float(ataque.dano)
+			vida_heroi = maxf(0.0, vida_heroi - dano)
+			heroi_atingido.emit(dano)
 			if ataque.has("cura") and curado < CURA_MAX:
 				var c := minf(float(ataque.cura), CURA_MAX - curado)
 				curado += c
 				vida = minf(VIDA_CHEFE, vida + c)
+			if vida_heroi <= 0.0 and not heroi_morto:
+				_heroi_caiu()
 			return
+
+
+## O herói de teste caiu: o chefe para de atacar e fica parado (fim da luta).
+func _heroi_caiu() -> void:
+	heroi_morto = true
+	_cancelar_ataque()
+	vornak.tocar("idle", false, 0.3)
+	_mudar("vitoria")
+	ativo = false
+	heroi_caiu.emit()
 
 
 # ---------------- dano no chefe ----------------
 func heroi_bate() -> bool:
-	if estado == "morto":
+	if estado == "morto" or heroi_morto:
 		return false
 	var d := heroi.global_position - vornak.global_position
 	d.y = 0

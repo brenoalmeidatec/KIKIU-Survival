@@ -66,12 +66,12 @@ Roteiro para gerar ou procurar os áudios depois. Cada item diz o que soa, em qu
 - Não usar som de animal real; o chefe é de madeira e energia.
 
 ## Na Godot 3D (protótipo `v3/godot/cena_3d/`)
-Os tempos acima continuam valendo: os clipes do glb são os mesmos da rodada anterior (12 fps, quadro 1 = início). O que muda é que, no 3D, o som é disparado por **evento de combate** (`vornak_combate.gd`), e não por quadro da folha de sprites. Ainda não há áudio ligado; esta é a lista dos ganchos:
+Os tempos acima continuam valendo: os clipes do glb são os mesmos da rodada anterior (12 fps, quadro 1 = início). A lista abaixo é a dos ganchos por evento de combate (`vornak_combate.gd`); o áudio que foi de fato ligado (por quadro do clipe) está na seção "Sons sintetizados ligados na Godot 3D". Ganchos:
 
 | Evento (sinal ou estado) | Som | Quando acontece na Godot |
 |---|---|---|
 | `estado_mudou("aviso")` com `raizes` | antecipação + tom da marca no chão | início do Attack_01; o indicador de 2 anéis aparece junto |
-| `estado_mudou("impacto")` com `raizes` | golpe no chão + raízes saindo | quadro 22 do Attack_01 (1,75 s depois do aviso) |
+| `estado_mudou("impacto")` com `raizes` | golpe no chão + raízes saindo | quadro 22 do Attack_01 (0,9 s depois do início do aviso, com o clipe reescalado) |
 | `estado_mudou("impacto")` com `golpe` | varredura + onda de terra | quadro 8 do Attack_02 |
 | `estado_mudou("impacto")` com `absorcao` | brilho de energia convergindo | quadro 9 do Attack_03 |
 | `estado_mudou("impacto")` com `raizes_longas` | terra rachando, eco longo | quadro 14 do Attack_04_Segunda_Forma |
@@ -85,6 +85,39 @@ Os tempos acima continuam valendo: os clipes do glb são os mesmos da rodada ant
 | Walk/Run em `andar` | passos nos quadros 1 e 13 (walk) ou a cada 4 (run) | ligados à posição da animação, não ao estado |
 
 Novidade do 3D: a energia (fendas, olhos, boca) pulsa com a curva de intensidade de cada clipe (`assets/3d/vornak_energia.json`); o zumbido verde pode seguir essa mesma curva.
+
+## Sons sintetizados ligados na Godot 3D (rodada de 19/10)
+
+Sete sons próprios, gerados por script (sem arquivo de terceiros): `docs/v3/chefes/sintetizar_sons_vornak.py` (Python + numpy, semente fixa). Saída em `v3/godot/assets/audio/vornak/`, WAV mono 16 bits 22050 Hz.
+
+| Arquivo | Como é feito | Duração |
+|---|---|---|
+| `passo.wav` | senoide caindo de 90 para 45 Hz + ruído de terra passa-baixa, eco curto | 0,59 s |
+| `rugido.wav` | senoides de 55, 82, 110 e 165 Hz com tremor de 7 Hz + ruído rouco, eco de floresta (4 repetições) | 3,12 s |
+| `estalo_madeira.wav` | ruído passa-alta com queda de 12 ms + "toc" de 420 Hz | 0,30 s |
+| `terra_rachando.wav` | ruído grave com envelope longo + 26 estalos curtos aleatórios | 1,40 s |
+| `zumbido_energia.wav` | senoide de 180 Hz + harmônicos, pulsando a 6 Hz | 1,00 s |
+| `golpe_chao.wav` | pancada grave de 85 para 35 Hz + estouro de ruído + poeira, eco | 1,26 s |
+| `succao_absorcao.wav` | ruído com passa-baixa subindo de 200 para 2600 Hz e volume crescente, corte seco | 1,30 s |
+
+Ligação: mapa de tempo `MAPA_SONS` em `cena_3d/vornak_3d.gd` (animação -> quadro do clipe -> som). O som toca quando a posição do clipe passa pelo quadro, então segue sozinho a reescala do combate (aviso mais rápido ou mais lento). Volume por som em `SONS` (rugido e golpe no chão mais altos, passos e zumbido baixos). 8 vozes `AudioStreamPlayer` em rodízio.
+
+| Clipe | Quadro -> som |
+|---|---|
+| Walk | 1 e 13 -> passo |
+| Run | 1, 5, 9, 13 -> passo |
+| Attack_01 | 4 -> zumbido (antecipação, com a marca no chão); 22 -> golpe no chão; 23 -> terra rachando; 25 e 28 -> estalo (raízes saindo) |
+| Attack_02 | 5 -> estalo (varredura); 8 -> golpe no chão (onda de terra) |
+| Attack_03 | 1 -> sucção; 9 -> zumbido (brilho) |
+| Attack_04_Segunda_Forma | 1 -> rugido; 9 e 12 -> estalo; 14 -> terra rachando |
+| Ability | 1 -> sucção; 4 -> zumbido |
+| Hit | 1 -> estalo |
+| Stagger | 1 -> estalo; 4 -> golpe no chão |
+| Phase_Transition | 1 -> zumbido; 12 -> golpe no chão + terra rachando |
+| Grito | 10 -> rugido |
+| Death | 1 -> estalo; 14 -> terra rachando |
+
+Ficou de fora: respiração, rangido de tronco, folhas, assobio de ar, estalo de acerto no herói e o zumbido de presença do Idle (sons sem síntese própria ainda). No Attack_01 o trecho da recuperação foi cortado (ver `VORNAK_COMBATE.md`), então o "rangido de raiz recolhendo" não teria onde tocar. O teste confere que os 7 arquivos carregam e que cada som foi disparado (contador `contador_sons`); no headless não há saída de áudio, então o som em si não foi ouvido no teste.
 
 ## Nota da rodada de 18/10 (noite)
 - O ataque 1 tem 2 quadros a mais no impacto (quadro 44 da fonte segurado), o ataque 2 tem 2 a mais no impacto (quadro 8), e o ataque 4 tem 2 a mais no impacto (quadro 14). A duração desses clipes sobe um pouco; o roteiro acima segue válido, com o impacto um pouco mais longo.

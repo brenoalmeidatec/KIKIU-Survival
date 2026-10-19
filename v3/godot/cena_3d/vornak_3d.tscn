@@ -16,10 +16,6 @@ ambient_light_source = 2
 ambient_light_color = Color(0.36, 0.42, 0.37, 1)
 ambient_light_energy = 0.6
 tonemap_mode = 0
-glow_enabled = true
-glow_intensity = 0.6
-glow_bloom = 0.05
-glow_hdr_threshold = 0.9
 
 [sub_resource type="ShaderMaterial" id="ContornoHeroi"]
 render_priority = 0
@@ -36,11 +32,12 @@ size = Vector2(40, 40)
 render_priority = 0
 next_pass = SubResource("ContornoHeroi")
 shader = ExtResource("6_toon")
-shader_parameter/cor_luz = Color(0.78, 0.8, 0.86, 1)
-shader_parameter/cor_sombra = Color(0.42, 0.45, 0.55, 1)
-shader_parameter/forca_emissao = 0.0
-shader_parameter/intensidade = 1.0
-shader_parameter/limiar = 0.15
+shader_parameter/tom_0 = Color(0.24, 0.26, 0.33, 1)
+shader_parameter/tom_1 = Color(0.42, 0.45, 0.55, 1)
+shader_parameter/tom_2 = Color(0.6, 0.62, 0.7, 1)
+shader_parameter/tom_3 = Color(0.78, 0.8, 0.86, 1)
+shader_parameter/tom_4 = Color(0.9, 0.91, 0.94, 1)
+shader_parameter/usa_detalhe = 0.0
 
 [sub_resource type="CapsuleMesh" id="CapsulaHeroi"]
 radius = 0.28
@@ -81,11 +78,11 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 stretch = true
-stretch_shrink = 4
+stretch_shrink = 2
 
 [node name="Viewport" type="SubViewport" parent="Tela"]
 handle_input_locally = false
-size = Vector2i(320, 180)
+size = Vector2i(640, 360)
 render_target_update_mode = 4
 
 [node name="Mundo" type="Node3D" parent="Tela/Viewport"]

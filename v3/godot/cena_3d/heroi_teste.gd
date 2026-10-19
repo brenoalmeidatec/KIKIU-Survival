@@ -1,9 +1,10 @@
 extends CharacterBody3D
 ## Herói de teste (cápsula) do protótipo 3D: anda com WASD ou setas (direções da câmera isométrica)
 ## e bate com espaço. Só serve para apanhar e bater no Vornak; não é o herói da v2.
+## Velocidade e intervalo entre golpes vêm do bloco de balanço de vornak_combate.gd (VEL_HEROI, RECARGA_GOLPE_HEROI).
 
 @export var combate_path: NodePath = ^".."
-@export var velocidade := 3.5
+var velocidade := 1.5
 var controle_ligado := true   ## os modos de demonstração e o teste desligam o teclado
 var espaco_antes := false
 var t_golpe := 0.0
@@ -12,6 +13,7 @@ var combate: Node
 
 func _ready() -> void:
 	combate = get_node(combate_path)
+	velocidade = combate.VEL_HEROI
 
 
 func _physics_process(dt: float) -> void:
@@ -40,7 +42,7 @@ func _physics_process(dt: float) -> void:
 func bater() -> bool:
 	if t_golpe > 0.0:
 		return false
-	t_golpe = 0.35
+	t_golpe = combate.RECARGA_GOLPE_HEROI
 	var v := get_node_or_null("Golpe") as Node3D
 	if v:
 		v.visible = true
