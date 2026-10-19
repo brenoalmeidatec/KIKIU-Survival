@@ -3,7 +3,8 @@
 
 Contrato: docs/combate_v2/SPEC_ARTE.md e docs/animacoes_armas_v2.md (pacote MET).
 Cada sprite tem 3 tiras horizontais em jogos/hordas/projeto/assets/v2/armas_anim/:
-  <sprite>_queda.png   4 quadros, 12 fps, loop (aponta para a direita, cabeça a 3/4 da largura)
+  <sprite>_queda.png   8 quadros, 16 fps, loop (aponta para a direita, cabeça a 3/4 da largura; chama que
+                       tremula, cauda que ondula, rocha/espinho que gira em 8 ângulos desenhados, brasas que ficam)
   <sprite>_impacto.png 8 quadros, 15 fps, uma vez (clarão, onda achatada, fagulhas, fumaça)
   <sprite>_marca.png   4 quadros,  8 fps, 48x32 (chão que esfria e some)
 e o índice indice_meteoros.json. As prévias GIF 4x ficam em docs/combate_v2/previas/<sprite>.gif.
@@ -207,47 +208,65 @@ def zigue(f, rng, x0, y0, x1, y1, c, passo=3, desvio=1.6):
 
 LUZ = np.array([-0.55, -0.62, 0.56])
 LUZ = LUZ / np.linalg.norm(LUZ)
+NQ = 8          # quadros da queda (loop: o último emenda no primeiro)
+FPS_QUEDA = 16
 
 
-def campo_rastro(w, h, ax, ay, r, L, t, rz, larg=1.15, afina=0.8, pot=1.0, ganho=1.25, ruido=0.42, esc=1.0):
-    """Calor do rastro atrás da cabeça. O ruído corre para a esquerda e fecha o ciclo em 4 quadros."""
+def campo_rastro(w, h, ax, ay, r, L, t, rz, larg=1.15, afina=0.8, pot=1.0, ganho=1.25, ruido=0.42, esc=1.0,
+                 onda=0.0, ciclos=1.0, pulso=0.0, tremor=0.0):
+    """Calor do rastro atrás da cabeça. O ruído corre para a esquerda e fecha o ciclo em NQ quadros.
+    onda: amplitude (px) de um seno que anda pela cauda; pulso: o núcleo perto da cabeça esquenta e esfria;
+    tremor: a largura da chama tremula (línguas que mudam de forma a cada quadro)."""
     X, Y = grade(w, h)
     cx, cy = ax + 0.5, ay + 0.5
     u = (cx - X) / L
     uc = np.clip(u, 0, 1)
+    ph = 2 * math.pi * t / NQ
+    if onda:
+        cy = cy + onda * uc ** 1.1 * np.sin(2 * math.pi * ciclos * uc - ph)
     hw = larg * r * (1 - uc) ** afina + 0.7
+    if tremor:
+        ct = 2.5 * esc
+        tl = rz[0]((X + ct * t * 4.0 / NQ) / ct, (Y - cy) / (1.6 * esc) + 30 + 1.2 * math.sin(ph))
+        hw = hw * (1 + tremor * (tl - 0.5) * (0.4 + uc))
     v = (Y - cy) / hw
     base = (1 - uc) ** pot * np.clip(1 - v * v, 0, None)
     frente = np.clip((cx + r * 0.5 - X) / (r * 0.5 + 1), 0, 1)
     base = base * frente * (u < 1.02)
-    ph = 2 * math.pi * t / 4
     c1, c2 = 6 * esc, 3.5 * esc
-    n = (0.5 * (rz[0]((X + c1 * t) / c1, Y / (3 * esc)) - 0.5)
-         + 0.35 * (rz[1]((X + c2 * t) / c2, Y / (2 * esc)) - 0.5)
-         + 0.30 * (rz[2]((X + 3 * esc * math.cos(ph)) / (4 * esc) + 7, (Y + 3 * esc * math.sin(ph)) / (2.5 * esc) + 7) - 0.5))
+    passo = 4.0 / NQ   # o ruído tem 4 células de período em x: anda 4 células em NQ quadros
+    n = (0.5 * (rz[0]((X + c1 * t * passo) / c1, (Y - cy) / (3 * esc)) - 0.5)
+         + 0.35 * (rz[1]((X + c2 * t * passo) / c2, (Y - cy) / (2 * esc)) - 0.5)
+         + 0.30 * (rz[2]((X + 3 * esc * math.cos(ph)) / (4 * esc) + 7, (Y - cy + 3 * esc * math.sin(ph)) / (2.5 * esc) + 7) - 0.5))
     amp = ruido * (0.45 + uc)
     calor = base * ganho + n * amp * 2
+    if pulso:
+        calor = calor + pulso * math.sin(ph) * (1 - uc) ** 3 * (base > 0)
     calor[base <= 0.0] = -1
     return calor
 
 
-def brasas(f, rng_seed, ax, ay, r, L, t, tons, n=6, vel=(3, 5), vertical=False):
-    """Brasas que se soltam do fim do rastro e esfriam; posição depende da idade (ciclo de 4)."""
+def brasas(f, rng_seed, ax, ay, r, L, t, tons, n=6, vel=(3, 5), vertical=False, cristal=None):
+    """Brasas que se soltam da cauda, ficam para trás e esfriam; posição depende da idade (ciclo de NQ).
+    cristal: cor de um brilho em cruz que algumas fazem no começo da vida (gelo, estrela)."""
     rg = np.random.default_rng(rng_seed)
     for i in range(n):
-        u0 = rg.uniform(0.35, 0.75)
+        u0 = rg.uniform(0.25, 0.7)
         lado = rg.choice([-1, 1])
         y0 = ay + lado * rg.uniform(0.4, 1.0) * r * (1 - u0) ** 0.8
-        vx = rg.uniform(*vel)
-        vy = lado * rg.uniform(0.2, 0.8)
-        fase = rg.uniform(0, 4)
-        idade = (t - fase) % 4
+        vx = rg.uniform(*vel) * 0.6
+        vy = lado * rg.uniform(0.15, 0.55)
+        fase = rg.uniform(0, NQ)
+        idade = (t - fase) % NQ
         x = ax - u0 * L - idade * vx
         y = y0 + idade * vy
-        c = tons[min(len(tons) - 1, int(idade))]
+        c = tons[min(len(tons) - 1, int(idade * len(tons) / NQ))]
         if x < 0:
             continue
-        ponto2(f, x, y, c, vertical)
+        if cristal is not None and i % 3 == 0 and idade < NQ * 0.4:
+            mais(f, x, y, cristal if idade < NQ * 0.2 else c, 1)
+        else:
+            ponto2(f, x, y, c, vertical)
 
 
 # ---------------------------------------------------------------- queda: cabeças
@@ -266,54 +285,93 @@ def esfera(w, h, cx, cy, raio_fn):
     return dentro, dx, dy, d, th, R, lam
 
 
-def cabeca_rocha(f, cx, cy, r, t, p, crateras=True, veios=None):
-    """Rocha que gira 45° por quadro (forma de simetria 2, fecha o ciclo em 4); luz fixa de cima-esquerda."""
+def gira3d(t, eixo=(0.32, 1.0, 0.38), voltas=1.0):
+    """Matriz de rotação (Rodrigues) do quadro t: `voltas` voltas inteiras em NQ quadros em torno de `eixo`."""
+    k = np.array(eixo, float)
+    k /= np.linalg.norm(k)
+    a = 2 * math.pi * voltas * t / NQ
+    K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
+    return np.eye(3) + math.sin(a) * K + (1 - math.cos(a)) * K @ K
+
+
+def _poliedro(forma, k):
+    """Rocha = interseção de k semiespaços (faces planas) com normais quase uniformes e alturas irregulares."""
+    rg = np.random.default_rng(9100 + forma)
+    i = np.arange(k) + 0.5
+    fi = np.arccos(1 - 2 * i / k)
+    th = math.pi * (1 + 5 ** 0.5) * i
+    n = np.stack([np.cos(th) * np.sin(fi), np.sin(th) * np.sin(fi), np.cos(fi)], 1) + rg.normal(0, 0.12, (k, 3))
+    n /= np.linalg.norm(n, axis=1, keepdims=True)
+    d = rg.uniform(0.9, 1.03, k)
+    furos = rg.normal(size=(2, 3))
+    furos /= np.linalg.norm(furos, axis=1, keepdims=True)
+    return n, d, furos
+
+
+def cabeca_rocha(f, cx, cy, r, t, p, crateras=True, veios=None, forma=0, veios2=None, voltas=1.0):
+    """Rocha facetada que capota de verdade: um poliedro 3D gira uma volta em NQ quadros e cada quadro é redesenhado
+    (silhueta, faces e arestas) com a luz fixa de cima-esquerda. veios: arestas em brasa no lado da sombra
+    (veios2: a cor delas nos quadros em que o núcleo pulsa)."""
     h, w = f.shape[:2]
-    rot = t * math.pi / 4
-    amp = 0.45 if r >= 4 else 0.3
-
-    def raio(th):
-        return r + amp * np.cos(2 * (th - rot) + 1.0) + 0.3 * amp * np.cos(4 * (th - rot) + 2.2)
-
-    dentro, dx, dy, d, th, R, lam = esfera(w, h, cx, cy, raio)
-    tom = np.full(lam.shape, 0)
-    tom[lam > 0.25] = 1
-    tom[lam > 0.62] = 2
-    tom[(lam > 0.9) & dentro] = 3
+    nf = 14 if r >= 5 else 12
+    n0, d, furos = _poliedro(forma, nf)
+    R = gira3d(t + forma * 0.37, voltas=voltas)
+    N = n0 @ R.T
+    X, Y = grade(w, h)
+    re = r * 0.92                       # o poliedro passa um pouco do raio nas quinas: volta ao tamanho da rocha antiga
+    sx = (X - (cx + 0.5)) / re
+    sy = (Y - (cy + 0.5)) / re
+    sup = np.full(sx.shape, np.inf)
+    sup2 = np.full(sx.shape, np.inf)
+    inf_ = np.full(sx.shape, -np.inf)
+    face = np.zeros(sx.shape, int)
+    ok = np.ones(sx.shape, bool)
+    for j in range(nf):
+        a = N[j, 2]
+        b = d[j] - N[j, 0] * sx - N[j, 1] * sy
+        if a > 1e-3:
+            z = b / a
+            menor = z < sup
+            sup2 = np.where(menor, sup, np.minimum(sup2, z))
+            face = np.where(menor, j, face)
+            sup = np.minimum(sup, z)
+        elif a < -1e-3:
+            inf_ = np.maximum(inf_, b / a)
+        else:
+            ok &= b >= 0
+    dentro = ok & (inf_ <= sup) & np.isfinite(sup)
+    lam = N[:, 0] * LUZ[0] + N[:, 1] * LUZ[1] + N[:, 2] * LUZ[2]
+    tom_face = np.digitize(lam, [0.12, 0.48, 0.8])
+    tom = tom_face[face]
+    # aresta entre duas faces da frente: a mais escura das duas ganha um risco de sombra (as arestas aparecem)
+    aresta = dentro & ((sup2 - sup) * re < 0.42)
     if crateras and r >= 5:
-        for k, (a, df, s) in enumerate([(0.6, 0.45, 1.25), (2.1, 0.5, 0.95)]):
-            for sim in (0, math.pi):
-                ang = a + rot + sim
-                qx = math.cos(ang) * df * r
-                qy = math.sin(ang) * df * r
-                dd = np.hypot(dx - qx, dy - qy)
-                m = (dd <= s) & dentro
-                tom[m] = np.maximum(tom[m] - 1, 0)
-                # borda de baixo-direita da cratera pega luz
-                rim = (np.hypot(dx - qx - 0.9, dy - qy - 0.9) <= s) & ~m & dentro & (dd <= s + 1.0)
-                tom[rim] = np.minimum(tom[rim] + 1, 2)
+        for fu in furos @ R.T:
+            if fu[2] < 0.3:
+                continue
+            qx, qy = fu[0] * r * 0.62, fu[1] * r * 0.62
+            s = 1.25 * fu[2] ** 0.5
+            dx, dy = X - (cx + 0.5), Y - (cy + 0.5)
+            dd = np.hypot(dx - qx, dy - qy)
+            m = (dd <= s) & dentro
+            tom[m] = np.maximum(tom[m] - 1, 0)
+            rim = (np.hypot(dx - qx - 0.9, dy - qy - 0.9) <= s) & ~m & dentro & (dd <= s + 1.0)
+            tom[rim] = np.minimum(tom[rim] + 1, 2)
+    tom = np.where(aresta & (tom >= 2), tom - 1, tom)
     paleta = [p["esc"], p["med"], p["clr"], p["bri"]]
     for i, c in enumerate(paleta):
         pinta(f, dentro & (tom == i), c)
     if veios:
-        # fendas em brasa no lado da sombra (giram com a rocha)
-        for a in (2.6, 3.6):
-            for sim in (0, math.pi):
-                ang = a + rot + sim
-                for s in np.linspace(0.15, 0.85, 7):
-                    x = cx + 0.5 + math.cos(ang) * s * r + math.sin(ang * 3 + s) * 0.6
-                    y = cy + 0.5 + math.sin(ang) * s * r
-                    xi, yi = int(math.floor(x)), int(math.floor(y))
-                    if 0 <= xi < w and 0 <= yi < h and dentro[yi, xi] and lam[yi, xi] < 0.45:
-                        px(f, xi, yi, veios)
+        cv = veios2 if (veios2 is not None and (t // 2) % 2 == 1) else veios
+        pinta(f, aresta & (lam[face] < 0.5), cv)
     pinta(f, borda4(dentro), p["cont"])
     return dentro
 
 
 def cabeca_cristal(f, cx, cy, r, t, p):
-    """Núcleo de gelo hexagonal que gira 15° por quadro (fecha em 60°)."""
+    """Núcleo de gelo hexagonal que gira 60°/NQ por quadro (fecha em 60°)."""
     h, w = f.shape[:2]
-    rot = t * math.pi / 12
+    rot = t * (math.pi / 3) / NQ
     pts = [(cx + 0.5 + math.cos(rot + i * math.pi / 3) * r, cy + 0.5 + math.sin(rot + i * math.pi / 3) * r) for i in range(6)]
     dentro = poligono(w, h, pts)
     X, Y = grade(w, h)
@@ -344,7 +402,7 @@ def cabeca_vazio(f, cx, cy, r, t, p, rz):
     h, w = f.shape[:2]
     dentro, dx, dy, d, th, R, lam = esfera(w, h, cx, cy, lambda th: r + 0 * th)
     q = d / r
-    ph = 2 * math.pi * t / 4
+    ph = 2 * math.pi * t / NQ
     tremor = rz((np.cos(th) * 2 + math.cos(ph) * 1.5) + 5, (np.sin(th) * 2 + math.sin(ph) * 1.5) + 5)
     frente = np.cos(th)  # 1 na frente (direita)
     # aro em crescente na frente (direita/baixo), mais grosso no meio, tremulando a cada quadro
@@ -363,11 +421,21 @@ def cabeca_vazio(f, cx, cy, r, t, p, rz):
 
 
 def cabeca_estrela(f, cx, cy, r, t, p):
-    """Estrela de 4 pontas que cintila: pontas compridas e diagonais se revezam."""
+    """Estrela de 4 pontas que cintila: pontas compridas e diagonais crescem e encolhem se revezando, e um brilho
+    em cruz pulsa por cima (ciclo de NQ)."""
     h, w = f.shape[:2]
-    longo = [1.0, 0.8, 0.6, 0.8][t]
-    diag = [0.35, 0.55, 0.7, 0.55][t]
-    rot = [0.0, 0.12, 0.0, -0.12][t]
+    ph = 2 * math.pi * t / NQ
+    longo = 0.82 + 0.2 * math.cos(ph)
+    diag = 0.52 - 0.2 * math.cos(ph)
+    rot = 0.13 * math.sin(ph)
+    # brilho em cruz: braços finos que crescem e somem, atrás do corpo da estrela
+    cruz = int(round(r * (0.75 + 0.55 * math.cos(ph + 0.8))))
+    if cruz > 0:
+        cc = p["miolo"] if math.cos(ph + 0.8) > 0.2 else p["corpo"]
+        alto = min(h // 2 - 1, 2 + cruz)
+        larg = min(w - cx - 2, 4 + cruz)
+        linha(f, cx, cy - alto, cx, cy + alto, cc)
+        linha(f, cx, cy, cx + larg, cy, cc)
     pts = []
     for i in range(8):
         a = rot + i * math.pi / 4
@@ -392,17 +460,17 @@ def cabeca_estrela(f, cx, cy, r, t, p):
 
 
 def cabeca_fogo(f, cx, cy, r, t, p, rz):
-    """Bola de fogo celeste: núcleo claro com borda que borbulha a cada quadro."""
+    """Bola de fogo celeste: núcleo claro que pulsa (claro/escuro) e borda que borbulha a cada quadro."""
     h, w = f.shape[:2]
-    ph = 2 * math.pi * t / 4
+    ph = 2 * math.pi * t / NQ
 
     def raio(th):
-        return r + 0.9 * (rz(np.cos(th) * 1.8 + math.cos(ph) * 1.2 + 3, np.sin(th) * 1.8 + math.sin(ph) * 1.2 + 3) - 0.5)
+        return r + 0.4 * math.sin(ph) + 1.1 * (rz(np.cos(th) * 1.8 + math.cos(ph) * 1.2 + 3, np.sin(th) * 1.8 + math.sin(ph) * 1.2 + 3) - 0.5)
 
     dentro, dx, dy, d, th, R, lam = esfera(w, h, cx, cy, raio)
     q = d / R
     tm = rz(dx / 2.2 + math.cos(ph) * 1.3 + 11, dy / 2.2 + math.sin(ph) * 1.3 + 11)
-    calor = (1 - q) * 1.1 + (lam - 0.3) * 0.5 + (tm - 0.5) * 0.45
+    calor = (1 - q) * 1.1 + (lam - 0.3) * 0.5 + (tm - 0.5) * 0.45 + 0.17 * math.sin(ph)
     tons = [p["branco"], p["claro"], p["medio"], p["borda"]]
     # atrás (lado do rastro) só entram os tons claros: a bola se funde com a chama, sem costura
     dentro = dentro & ((dx > -r * 0.15) | (calor > 0.5) | (f[:, :, 3] == 0))
@@ -414,42 +482,87 @@ def cabeca_fogo(f, cx, cy, r, t, p, rz):
 def cabeca_orbe(f, cx, cy, r, t, p, rz, rng):
     """Orbe elétrico: núcleo branco-azul, faixas de plasma que mudam, arcos que pulam em volta."""
     h, w = f.shape[:2]
-    ph = 2 * math.pi * t / 4
+    ph = 2 * math.pi * t / NQ
     dentro, dx, dy, d, th, R, lam = esfera(w, h, cx, cy, lambda th: r + 0 * th)
     q = d / r
     tm = rz(dx / 2.0 + math.cos(ph) * 1.6 + 4, dy / 2.0 + math.sin(ph) * 1.6 + 4)
-    calor = (1 - q) * 0.9 + (lam - 0.3) * 0.55 + (tm - 0.5) * 0.6
+    calor = (1 - q) * 0.9 + (lam - 0.3) * 0.55 + (tm - 0.5) * 0.6 + 0.12 * math.sin(2 * ph)
     faixas(f, calor, [p["branco"], p["claro"], p["medio"], p["escuro"]], [0.75, 0.48, 0.22, -9], dentro)
     pinta(f, borda4(dentro) & (f[:, :, 3] == 0), p["cont"])
-    # arcos elétricos em volta da cabeça (novos a cada quadro)
-    for _ in range(2):
-        a0 = rng.uniform(-2.2, 2.2)
-        a1 = a0 + rng.choice([-1, 1]) * rng.uniform(0.6, 1.1)
-        r0, r1 = r + 1.5, r + rng.uniform(2.5, 4.0)
-        zigue(f, rng, cx + 0.5 + math.cos(a0) * r0, cy + 0.5 + math.sin(a0) * r0,
-              cx + 0.5 + math.cos(a1) * r1, cy + 0.5 + math.sin(a1) * r1, p["arco"], passo=2, desvio=1.0)
+    # arcos elétricos em volta da cabeça (novos a cada quadro): um que abraça a esfera e dois que pulam para fora
+    a0 = rng.uniform(-math.pi, math.pi)
+    a1 = a0 + rng.choice([-1, 1]) * rng.uniform(1.2, 1.9)
+    pts = [(cx + 0.5 + math.cos(a0 + (a1 - a0) * s) * (r + 1.6 + rng.uniform(-0.6, 0.9)),
+            cy + 0.5 + math.sin(a0 + (a1 - a0) * s) * (r + 1.6 + rng.uniform(-0.6, 0.9))) for s in np.linspace(0, 1, 6)]
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        linha(f, x0, y0, x1, y1, p["arco"])
+    for k in range(2):
+        a0 = rng.uniform(-2.4, 2.4)
+        a1 = a0 + rng.choice([-1, 1]) * rng.uniform(0.5, 1.0)
+        r0, r1 = r + 1.5, r + rng.uniform(2.8, 4.5)
+        c_arco = p["arco"] if k == 0 else p["branco"]
+        pts = zigue(f, rng, cx + 0.5 + math.cos(a0) * r0, cy + 0.5 + math.sin(a0) * r0,
+                    cx + 0.5 + math.cos(a1) * r1, cy + 0.5 + math.sin(a1) * r1, c_arco, passo=2, desvio=1.1)
+        if k == 0 and len(pts) > 2:   # galho curto
+            bx, by = pts[1]
+            zigue(f, rng, bx, by, bx + rng.uniform(-3, 3), by + rng.uniform(-3, 3), p["claro"], passo=2, desvio=0.8)
     return dentro
 
 
 def cabeca_espinho(f, cx, cy, t, p):
-    """Espinho vegetal apontando para a direita; as farpas giram com o espinho (simetria 180°)."""
+    """Espinho vegetal apontando para a direita que gira no próprio eixo: três farpas (a 120°) e um sulco dão a volta
+    em NQ quadros; a que passa por trás fica escura e atrás do corpo, a da frente clara e por cima. Luz fixa de cima."""
     h, w = f.shape[:2]
-    # corpo: de x=1 (base) até a ponta em cx+2
-    pts = [(1, cy - 1.6), (4, cy - 0.9), (6.5, cy - 0.2), (cx + 2.95, cy + 0.5), (6.5, cy + 1.5), (4, cy + 2.5), (1, cy + 3.4)]
-    dentro = poligono(w, h, pts)
-    # farpas: uma por quadro numa posição do giro
-    fy = [(-1, 0), (-1, 1), (1, 0), (1, 1)][t]
-    lado, curta = fy
-    bx = cx - 2 - curta
-    if lado < 0:
-        farpa = [(bx - 1, cy - 0.4), (bx + 1.6, cy - 0.4), (bx - 1.2 + curta, cy - 2.6 + curta)]
-    else:
-        farpa = [(bx - 1, cy + 1.4), (bx + 1.6, cy + 1.4), (bx - 1.2 + curta, cy + 3.6 - curta)]
-    dentro |= poligono(w, h, farpa)
+    ey = cy + 0.5                       # eixo do espinho
+    x0, x1 = 0.6, cx + 2.95             # base e ponta
+    fi = 2 * math.pi * t / NQ
+
+    def meia(x):
+        s = np.clip((x - x0) / (x1 - x0), 0, 1)
+        return 2.3 * (1 - s) ** 0.85 + 0.25
+
     X, Y = grade(w, h)
-    pinta(f, dentro, p["med"])
-    pinta(f, dentro & (Y < cy + 0.5), p["clr"])
-    pinta(f, dentro & (Y > cy + 1.5), p["esc"])
+    corpo = (X >= x0) & (X <= x1) & (np.abs(Y - ey) <= meia(X))
+    farpas_tras, farpas_frente = [], []
+    for k in range(3):
+        a = fi + k * 2 * math.pi / 3
+        bx = [3.2, 4.6, 2.0][k]
+        s, c = math.sin(a), math.cos(a)
+        hb = float(meia(np.array(bx + 0.5)))
+        y_base = ey + s * hb
+        tri = [(bx - 0.2, y_base), (bx + 1.4, y_base), (bx - 1.0, ey + s * (hb + 2.0))]
+        m = poligono(w, h, tri) if abs(s) > 0.3 else np.zeros((h, w), bool)
+        (farpas_frente if c >= 0 else farpas_tras).append((m, a))
+    tras = np.zeros((h, w), bool)
+    for m, _ in farpas_tras:
+        tras |= m
+    pinta(f, tras & ~corpo, p["esc"])
+    pinta(f, corpo, p["med"])
+    pinta(f, corpo & (Y < ey - 0.6), p["clr"])
+    pinta(f, corpo & (Y > ey + 1.0), p["esc"])
+    # sulco em espiral: uma linha escura que rola pelo corpo (só a parte virada para a frente)
+    for k in (0, 1):
+        b = fi * 1.0 + k * math.pi + 0.4
+        if math.cos(b) < 0.15:
+            continue
+        for xi in range(int(x0), int(x1)):
+            hm = float(meia(np.array(xi + 0.5)))
+            yy = ey + math.sin(b + (xi - x0) * 0.35) * hm * 0.8
+            if corpo[int(yy), xi] if 0 <= int(yy) < h else False:
+                px(f, xi, yy, p["esc"] if yy < ey else p["cont"])
+    frente = np.zeros((h, w), bool)
+    for m, a in farpas_frente:
+        mm = m & ~corpo
+        pinta(f, mm, p["clr"] if math.sin(a) < 0 else p["med"])
+        frente |= m
+    # farpa de frente apontando para quem olha: ponto claro no corpo
+    for k in range(3):
+        a = fi + k * 2 * math.pi / 3
+        if math.cos(a) > 0.9:
+            bx = [3.2, 4.6, 2.0][k]
+            px(f, bx, ey - 0.5, p["clr"])
+            px(f, bx + 1, ey - 0.5, p["clr"])
+    dentro = corpo | tras | frente
     pinta(f, borda4(dentro), p["cont"])
     return dentro
 
@@ -770,9 +883,9 @@ ROCHA = dict(cont="#3b1f2e", esc="#5d3729", med="#7c4832", clr="#a8643a", bri="#
 def def_meteoros():
     return [
         dict(sprite="meteoro_flamejante", armas=["meteoro_flamejante"], queda=(46, 30), imp=72,
-             cabeca="rocha", r=6.6, rocha=ROCHA, veios="#f4ad3f",
+             cabeca="rocha", r=6.6, rocha=ROCHA, veios="#f4ad3f", veios2="#e64a1b",
              rastro=dict(tons=cores("#ebe8c2", "#f3c05f", "#f2843e", "#e64a1b", "#bf321c"), lim=[0.95, 0.72, 0.5, 0.3, 0.15],
-                         L=36, larg=1.2), brasas=cores("#f3c05f", "#f2843e", "#e64a1b", "#bf321c"),
+                         L=36, larg=1.2, tremor=0.4, pulso=0.2), brasas=cores("#f3c05f", "#f2843e", "#e64a1b", "#bf321c"),
              impacto=dict(fogo=FOGO, anel=cores("#f3c05f", "#f2843e", "#bf321c"), faisca=cores("#fffdf1", "#f3c05f", "#f2843e", "#bf321c"),
                           fumaca=FUMACA_FOGO, pedaco=cores("#5d3729", "#3b1f2e"), n_pedacos=7, n_faiscas=16, n_fumaca=8),
              marca=dict(chao=cores("#1c1410", "#2e1a1c", "#4a2c26"), trinca=cores("#f4ad3f", "#ea6123", "#a8301c", None),
@@ -780,7 +893,7 @@ def def_meteoros():
         dict(sprite="cometa_gelo", armas=["cometa_gelado"], queda=(36, 24), imp=48,
              cabeca="cristal", r=5.0, cristal=dict(cont="#24425e", esc="#487ba0", med="#6facd9", clr="#a2d5f3", bri="#eef8ff"),
              rastro=dict(tons=cores("#eef8ff", "#a2d5f3", "#6facd9", "#5490bf", "#487ba0"), lim=[1.0, 0.7, 0.48, 0.3, 0.17],
-                         L=28, larg=1.25), brasas=cores("#eef8ff", "#a2d5f3", "#6facd9", "#5490bf"),
+                         L=28, larg=1.25, onda=1.6, ciclos=1.2), brasas=cores("#eef8ff", "#a2d5f3", "#6facd9", "#5490bf"), brilho_brasa="#eef8ff",
              impacto=dict(fogo=cores("#ffffff", "#d9f6ff", "#a2d5f3", "#6facd9", "#487ba0"), anel=cores("#eef8ff", "#a2d5f3", "#6facd9"),
                           faisca=cores("#ffffff", "#d9f6ff", "#a2d5f3", "#6facd9"), fumaca=cores("#d9f6ff", "#a2cde3", "#6a9fc7"),
                           cristal=cores("#eef8ff", "#6facd9", "#24425e"), n_cristais=6, n_faiscas=8, n_fumaca=5, bola=0.85,
@@ -790,7 +903,7 @@ def def_meteoros():
         dict(sprite="cometa_roxo", armas=["cometa_negro"], queda=(64, 42), imp=72,
              cabeca="vazio", r=10.0, vazio=dict(cont="#120f19", miolo="#120f19", sombra="#1f172b", aro2="#7b3397", aro="#d680b5", reflexo="#9086a5"),
              rastro=dict(tons=cores("#d680b5", "#7b3397", "#59295c", "#382055", "#2a1d3b"), lim=[0.95, 0.7, 0.48, 0.3, 0.16],
-                         L=50, larg=1.1, esc=1.5), brasas=cores("#d680b5", "#9086a5", "#7a498c", "#5e446a"),
+                         L=50, larg=1.1, esc=1.5, onda=2.4, ciclos=1.0), brasas=cores("#d680b5", "#9086a5", "#7a498c", "#5e446a"), brilho_brasa="#d680b5",
              impacto=dict(fogo=cores("#fef6f6", "#d680b5", "#7b3397", "#382055", "#1f172b"), anel=cores("#d680b5", "#7b3397", "#59295c"),
                           faisca=cores("#fef6f6", "#d680b5", "#9086a5", "#7a498c"), fumaca=cores("#5e446a", "#382055", "#1f172b"),
                           vazio=cores("#120f19", "#d680b5"), n_faiscas=16, n_fumaca=8),
@@ -798,7 +911,7 @@ def def_meteoros():
         dict(sprite="estrela_cadente", armas=["estrelas_cadentes"], queda=(40, 18), imp=48,
              cabeca="estrela", r=6.0, estrela=dict(cont="#833019", borda="#f4ad3f", corpo="#f3c05f", miolo="#fffdf1"),
              rastro=dict(tons=cores("#ebe8c2", "#f0d798", "#f3c05f", "#f4ad3f", "#f2843e"), lim=[1.05, 0.75, 0.52, 0.34, 0.2],
-                         L=30, larg=0.62, afina=1.0), brasas=cores("#ebe8c2", "#f3c05f", "#f4ad3f", "#f2843e"),
+                         L=30, larg=0.62, afina=1.0, onda=0.9, ciclos=1.0), brasas=cores("#ebe8c2", "#f3c05f", "#f4ad3f", "#f2843e"), brilho_brasa="#fffdf1",
              impacto=dict(fogo=cores("#fffdf1", "#ebe8c2", "#f3c05f", "#f4ad3f", "#f2843e"), anel=cores("#f0d798", "#f3c05f", "#f4ad3f"),
                           faisca=cores("#fffdf1", "#f0d798", "#f3c05f", "#f4ad3f"), fumaca=cores("#f0d798", "#c9a46a", "#8a6a48"),
                           n_faiscas=10, n_fumaca=4, tipo_faisca="brilho", bola=0.85),
@@ -816,7 +929,7 @@ def def_meteoros():
         dict(sprite="pedra_vulcanica", armas=["pedras_vulcanicas"], queda=(16, 12), imp=48,
              cabeca="rocha", r=3.2, rocha=dict(cont="#1c1410", esc="#3b1f2e", med="#5d3729", clr="#7c4832", bri="#a8643a"), veios=None,
              rastro=dict(tons=cores("#f3c05f", "#f2843e", "#e64a1b", "#bf321c", "#833019"), lim=[1.0, 0.72, 0.5, 0.32, 0.18],
-                         L=12, larg=1.1, esc=0.6), brasas=cores("#f3c05f", "#e64a1b", "#bf321c", "#833019"),
+                         L=12, larg=1.1, esc=0.6, tremor=0.35, pulso=0.12), brasas=cores("#f3c05f", "#e64a1b", "#bf321c", "#833019"),
              impacto=dict(fogo=FOGO, anel=cores("#f2843e", "#e64a1b", "#833019"), faisca=cores("#f3c05f", "#f2843e", "#e64a1b", "#833019"),
                           fumaca=FUMACA_FOGO, pedaco=cores("#5d3729", "#3b1f2e"), n_pedacos=5, n_faiscas=10, n_fumaca=5, bola=0.85),
              marca=dict(chao=cores("#1c1410", "#2e1a1c", "#4a2c26"), trinca=cores("#f2843e", "#e64a1b", "#a8301c", None),
@@ -824,7 +937,7 @@ def def_meteoros():
         dict(sprite="pedra_cinza", armas=["chuva_pedras"], queda=(24, 16), imp=48,
              cabeca="rocha", r=4.3, rocha=dict(cont="#1c1822", esc="#373534", med="#56504c", clr="#7c7570", bri="#b0a8a0"), veios=None,
              rastro=dict(tons=cores("#d8d0c6", "#b0a8a0", "#8d857f", "#62585d", "#474441"), lim=[1.4, 0.95, 0.55, 0.36, 0.22],
-                         L=18, larg=0.85, ganho=1.0, ruido=0.5, esc=0.8), brasas=cores("#d8d0c6", "#b0a8a0", "#8d857f", "#62585d"),
+                         L=18, larg=0.85, ganho=1.0, ruido=0.5, esc=0.8, tremor=0.3), brasas=cores("#d8d0c6", "#b0a8a0", "#8d857f", "#62585d"),
              impacto=dict(fogo=cores("#e8e0d6", "#d8d0c6", "#b0a8a0", "#8d857f", "#62585d"), anel=cores("#d8d0c6", "#b0a8a0", "#8d857f"),
                           faisca=cores("#b0a8a0", "#8d857f", "#7c7570", "#56504c"), fumaca=cores("#d8d0c6", "#b0a8a0", "#8d857f"),
                           pedaco=cores("#7c7570", "#373534"), n_pedacos=9, n_faiscas=6, n_fumaca=6, forca=0.85, bola=0.9, poeira_chao=True, clarao=False),
@@ -833,7 +946,7 @@ def def_meteoros():
         dict(sprite="fogo_do_ceu", armas=["fogo_do_ceu"], queda=(38, 26), imp=72,
              cabeca="fogo", r=6.0, fogo=dict(cont="#a8301c", branco="#fffdf1", claro="#f0d798", medio="#f3c05f", borda="#f2843e"),
              rastro=dict(tons=cores("#fffdf1", "#f0d798", "#f3c05f", "#f4ad3f", "#f2843e"), lim=[1.12, 0.82, 0.56, 0.34, 0.17],
-                         L=30, larg=1.0, ruido=0.52), brasas=cores("#fffdf1", "#f3c05f", "#f4ad3f", "#f2843e"),
+                         L=30, larg=1.0, ruido=0.52, tremor=0.45, pulso=0.2), brasas=cores("#fffdf1", "#f3c05f", "#f4ad3f", "#f2843e"),
              impacto=dict(fogo=cores("#fffdf1", "#f0d798", "#f3c05f", "#f4ad3f", "#e8702a"), anel=cores("#f0d798", "#f3c05f", "#f2843e"),
                           faisca=cores("#fffdf1", "#f0d798", "#f3c05f", "#f2843e"), fumaca=cores("#8a7468", "#62585d", "#474441"),
                           n_faiscas=18, n_fumaca=7, bola=1.1),
@@ -842,13 +955,19 @@ def def_meteoros():
         dict(sprite="raio_meteorico", armas=["raio_meteorico"], queda=(48, 32), imp=48,
              cabeca="orbe", r=6.2, orbe=dict(cont="#1e222c", branco="#f2f7ff", claro="#a2d5f3", medio="#6facd9", escuro="#487ba0", arco="#d9f6ff"),
              rastro=dict(tons=cores("#f2f7ff", "#a2d5f3", "#6facd9", "#5490bf", "#3a5f86"), lim=[1.05, 0.74, 0.5, 0.32, 0.18],
-                         L=37, larg=1.05), raio_rastro="#f2f7ff", brasas=cores("#f2f7ff", "#d9f6ff", "#a2d5f3", "#6facd9"),
+                         L=37, larg=1.05, onda=1.0, ciclos=1.3), raio_rastro="#f2f7ff", brasas=cores("#f2f7ff", "#d9f6ff", "#a2d5f3", "#6facd9"), brilho_brasa="#f2f7ff",
              impacto=dict(fogo=cores("#ffffff", "#d9f6ff", "#a2d5f3", "#6facd9", "#3a5f86"), anel=cores("#d9f6ff", "#a2d5f3", "#5490bf"),
                           faisca=cores("#ffffff", "#d9f6ff", "#a2d5f3", "#6facd9"), fumaca=cores("#738b8a", "#4a5560", "#2b2e35"),
                           raios=cores("#ffffff", "#d9f6ff", "#a2d5f3"), n_faiscas=10, n_fumaca=5, bola=0.8),
              marca=dict(chao=cores("#17191d", "#1e222c", "#2b2e35"), trinca=cores("#6facd9", "#487ba0", "#3a5f86", None),
                         fios=cores("#f2f7ff", "#d9f6ff", "#a2d5f3", None), rx=17)),
     ]
+
+
+def params_rastro(rs):
+    """Os parâmetros de campo_rastro que a definição do rastro traz (o resto fica no padrão)."""
+    chaves = ("larg", "afina", "pot", "ganho", "ruido", "esc", "onda", "ciclos", "pulso", "tremor")
+    return {k: rs[k] for k in chaves if k in rs}
 
 
 def queda(d, semente):
@@ -858,17 +977,16 @@ def queda(d, semente):
     rz = [Ruido(rg, 4, 64), Ruido(rg, 4, 64), Ruido(rg)]
     rz_cab = Ruido(rg)
     quadros = []
-    for t in range(4):
+    for t in range(NQ):
         f = novo(w, h)
         rr = d.get("r", 3)
         rs = d["rastro"]
         if rs:
-            calor = campo_rastro(w, h, ax, ay, rr, rs["L"], t, rz, larg=rs.get("larg", 1.15), afina=rs.get("afina", 0.8),
-                                 ganho=rs.get("ganho", 1.25), ruido=rs.get("ruido", 0.42), esc=rs.get("esc", 1.0))
+            calor = campo_rastro(w, h, ax, ay, rr, rs["L"], t, rz, **params_rastro(rs))
             faixas(f, calor, rs["tons"], rs["lim"])
             limpa(f)
-            brasas(f, semente + 7, ax, ay, rr, rs["L"], t, d["brasas"], n=max(3, int(rs["L"] / 5)),
-                   vel=(rs["L"] / 10, rs["L"] / 6))
+            brasas(f, semente + 7, ax, ay, rr, rs["L"], t, d["brasas"], n=max(4, int(rs["L"] / 4)),
+                   vel=(rs["L"] / 10, rs["L"] / 6), cristal=cor(d["brilho_brasa"]) if d.get("brilho_brasa") else None)
             if d.get("raio_rastro"):
                 # um risco de raio novo a cada quadro, correndo pelo rastro
                 rr_ = np.random.default_rng(semente + 50 + t)
@@ -878,7 +996,8 @@ def queda(d, semente):
         cab = d["cabeca"]
         if cab == "rocha":
             p = {k: cor(v) for k, v in d["rocha"].items()}
-            cabeca_rocha(f, ax, ay, rr, t, p, crateras=True, veios=cor(d["veios"]) if d.get("veios") else None)
+            cabeca_rocha(f, ax, ay, rr, t, p, crateras=True, veios=cor(d["veios"]) if d.get("veios") else None,
+                         veios2=cor(d["veios2"]) if d.get("veios2") else None, forma=d.get("forma", 0))
         elif cab == "cristal":
             cabeca_cristal(f, ax, ay, rr, t, {k: cor(v) for k, v in d["cristal"].items()})
         elif cab == "vazio":
@@ -893,13 +1012,15 @@ def queda(d, semente):
             p = {k: cor(v) for k, v in d["espinho"].items()}
             # rastro do espinho: riscos de vento e folhinhas que ficam para trás
             tons = cores("#93b350", "#5f8a3a")
-            for i, (yy, x0, vel) in enumerate([(ay - 4, 3, 3), (ay + 5, 1, 2), (ay - 6, 0, 2.5), (ay + 3, 4, 3.5)]):
+            for i, (yy, x0, vel) in enumerate([(ay - 5, 3, 2.5), (ay + 5, 1, 1.25), (ay - 7, 6, 3.75), (ay + 6, 4, 2.5)]):
                 x = (x0 - t * vel) % 10 - 2
                 linha(f, x, yy, x + 2, yy, tons[i % 2])
-            lf = cor("#3adc3a")
-            fx = [3, 2, 1, 0][t]
-            fy = [ay - 3, ay - 2, ay - 2, ay - 3][t]
-            ponto2(f, fx, fy, lf, vertical=t % 2 == 1)
+            # duas folhinhas que se soltam e ficam para trás, virando (deitada/em pé) a cada dois quadros
+            for k, (lf, ly) in enumerate([(cor("#3adc3a"), ay - 3), (cor("#228a22"), ay + 3)]):
+                idade = (t + k * NQ // 2) % NQ
+                fx = 5 - idade * 0.75
+                fy = ly + (-1 if k == 0 else 1) * (idade // 3)
+                ponto2(f, fx, fy, lf, vertical=(idade // 2) % 2 == 1)
             limpa(f)
             cabeca_espinho(f, ax, ay, t, p)
         limpa(f)
@@ -996,7 +1117,7 @@ def main():
         q_marca = marca(d["marca"], base + 3)
         nome = d["sprite"]
         anims = {}
-        for anim, qs, fps, loop, ancora in (("queda", q_queda, 12, True, anc),
+        for anim, qs, fps, loop, ancora in (("queda", q_queda, FPS_QUEDA, True, anc),
                                             ("impacto", q_imp, 15, False, [d["imp"] // 2, d["imp"] // 2]),
                                             ("marca", q_marca, 8, False, [24, 16])):
             arq = f"{nome}_{anim}.png"
@@ -1004,7 +1125,7 @@ def main():
             h, w = qs[0].shape[:2]
             anims[anim] = {"arquivo": arq, "quadro": [w, h], "n": len(qs), "fps": fps, "loop": loop, "ancora": ancora}
         indice["folhas"][nome] = {"armas": d["armas"], "anims": anims}
-        previa(PREVIAS / f"{nome}.gif", [(q_queda, 12, 2), (q_imp, 15, 1), (q_marca, 8, 1)])
+        previa(PREVIAS / f"{nome}.gif", [(q_queda, FPS_QUEDA, 2), (q_imp, 15, 1), (q_marca, 8, 1)])
     with open(SAIDA / "indice_meteoros.json", "w", encoding="utf-8") as fp:
         json.dump(indice, fp, ensure_ascii=False, indent=2)
         fp.write("\n")

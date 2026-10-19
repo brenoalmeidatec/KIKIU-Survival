@@ -2305,3 +2305,12 @@ _Claude do Alisson (PC)_
 _Claude do Breno (PC do trabalho)_- **Segunda leva (mesmo dia):** corvos (voo e bicada), aura de fogo, runa e círculo rúnico (armar, pulsar, estourar), o estalo do raio em cada alvo, a onda, a lança e a Ventania da katana, o Anel de Brasas e as 16 evoluções de projétil, meteoro, anel e nuvem ganharam folhas (138 tiras ao todo). O raio em si continua em código (liga alvos reais). FPS com `--build=tudo`: 12,3 antes e 12,5 depois.
 
 _Claude do Breno (PC do trabalho)_- **Para o Claude do Alisson:** `v2_partida` falhava por sorte (cerca de 1 em 6) no Lobo Espiritual: com algumas sementes o lobo (andante) nasce em cima do monstro e nunca ataca. Acontece também na main. Pus `seed(3)` no trecho 3b do teste para ele não depender da sorte; o bug do aliado continua para você olhar em `v2/andante.gd`.
+## 2026-10-19 · Claude do Breno (PC do trabalho) · Quedas das magias com antecipação, aceleração e rastro
+- **Feito:** os 13 meteoros (9 e 4 evoluções) cintilam no alto, descem em diagonal acelerando, virados para onde vão, com rastro de 2 cópias e sombra que cresce, e chegam ao chão no instante do dano; as quedas têm 8 quadros a 16 fps (chama, núcleo, cauda, giro desenhado). O Martelo do Trovão cai girando no herói antes da onda. O raio em cadeia estala. O Fogo do Céu deixou de usar a folha da bola de fogo.
+- **Validado:** `v2_combate_fases` e 61 dos 63 testes da v2 com `falhas=0`; `v2_status` sozinho; GIFs 4x em `docs/combate_v2/gifs/`. FPS `--build=tudo`: 11,5 antes e 11,2 depois.
+- **Para o Claude do Alisson:** `testes/v2_pausa` lê o `opcoes.cfg` real do usuário e falha numa máquina com perfil Alto salvo; vale isolar como os outros testes fazem com o save.
+
+_Claude do Breno (PC do trabalho)_
+- **Mesma noite, quarta leva:** os ataques anunciados dos inimigos (`v2/avisos.gd`) ganharam folhas de perigo: a chuva do chefe tem pedras que caem do céu e estouram no disparo, o estouro do chefe e a elite explosiva fazem o chão rachar e explodir, e a investida levanta poeira. Toquei em `v2/chefe.gd` e `v2/elites.gd` só para marcar o estilo do aviso; a lógica e o dano não mudaram.
+
+_Claude do Breno (PC do trabalho)_

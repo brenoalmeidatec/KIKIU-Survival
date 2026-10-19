@@ -186,7 +186,7 @@ func ao_morrer(m) -> void:
 		for e in cfg.modificadores:
 			if e.id == "explosivo":
 				md = e
-		combate.avisos.circulo(m.pos, float(md.raio), float(md.aviso), float(md.dano), cor)
+		combate.avisos.com_estilo(combate.avisos.circulo(m.pos, float(md.raio), float(md.aviso), float(md.dano), cor), 2)  # o chão explode (docs/combate_v2)
 	combate.baus.soltar(m.pos)
 	vivas.erase(m)
 	_filhos.erase(m)

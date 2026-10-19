@@ -287,8 +287,7 @@
   },
   "bola_fogo": {
    "armas": [
-    "bola_fogo",
-    "fogo_do_ceu"
+    "bola_fogo"
    ],
    "anims": {
     "voo": {

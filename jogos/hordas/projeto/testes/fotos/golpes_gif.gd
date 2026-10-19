@@ -10,7 +10,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const PASSO := 1.0 / 60.0
-const RECORTE := Vector2i(200, 120)
+const RECORTE := Vector2i(220, 160)
 const CENAS := [
 	"corte",
 	"estocada",
@@ -31,7 +31,21 @@ const CENAS := [
 	"juizo_final",
 	"tempestade_primordial",
 	"estrondo",
-	"furacao_glacial"
+	"furacao_glacial",
+	"chuva_pedras",
+	"chuva_espinhos",
+	"cometa_gelado",
+	"cometa_negro",
+	"estrelas_cadentes",
+	"fogo_do_ceu",
+	"raio_meteorico",
+	"pedras_vulcanicas",
+	"martelo_trovao",
+	"chuva_acida",
+	"cinzas_vulcanicas",
+	"raio_solar",
+	"perigo_chuva",
+	"perigo_estouro"
 ]
 
 var w
@@ -199,6 +213,20 @@ func _cena(nome: String) -> void:
 			var a: Dictionary = w.combate.armas.ativas[nome]
 			a.t = 0.05
 			n = 60
+		"perigo_chuva":  # a chuva do chefe: pedras que caem do céu nos círculos de aviso (sem dano: o herói é imortal)
+			_monstros(2)
+			for k in 5:
+				var p: Vector2 = w.heroi.pos + Vector2(20.0 + 22.0 * k, (k % 2) * 18.0 - 6.0)
+				w.combate.avisos.com_estilo(w.combate.avisos.circulo(p, 16.0, 0.9 + 0.18 * k, 0.0, Color(1.0, 0.3, 0.22)), 1)
+			n = 50
+		"perigo_estouro":  # o estouro do chefe e a elite explosiva: o chão racha e explode
+			_monstros(2)
+			w.combate.avisos.com_estilo(w.combate.avisos.circulo(w.heroi.pos + Vector2(60, 0), 46.0, 0.9, 0.0, Color(1.0, 0.3, 0.22)), 2)
+			n = 44
+		_:  # as magias que caem do céu e as outras pelo id do golpe: 2 de uma vez, monstros em fila
+			_monstros(4)
+			_golpe(nome, 2)
+			n = 60
 	var dir := pasta.path_join(nome)
 	DirAccess.make_dir_recursive_absolute(dir)
 	for i in n:
@@ -206,7 +234,7 @@ func _cena(nome: String) -> void:
 		await RenderingServer.frame_post_draw
 		var img: Image = w.sv.get_texture().get_image()
 		var tam := img.get_size()
-		var centro := Vector2i(tam.x / 2 + 30, tam.y / 2 - 8)
+		var centro := Vector2i(tam.x / 2 + 30, tam.y / 2 - 26)
 		var r := Rect2i(centro - RECORTE / 2, RECORTE).intersection(Rect2i(Vector2i.ZERO, tam))
 		img.get_region(r).save_png(dir.path_join("q%03d.png" % i))
 	w.heroi.ataque_forcado = null

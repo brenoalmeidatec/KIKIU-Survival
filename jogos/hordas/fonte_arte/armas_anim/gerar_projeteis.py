@@ -1120,7 +1120,7 @@ SPRITES = {
     "laminas": dict(armas=["laminas"],
                     voo=dict(fn=laminas_voo, quadro=(24, 24), n=8, fps=16, loop=True, ancora=(12, 12), gira=True),
                     impacto=dict(fn=laminas_impacto, **IMP_A)),
-    "bola_fogo": dict(armas=["bola_fogo", "fogo_do_ceu"],
+    "bola_fogo": dict(armas=["bola_fogo"],  # fogo_do_ceu cai do céu: usa a folha de meteoro
                       voo=dict(fn=bola_fogo_voo, quadro=(26, 18), n=4, fps=12, loop=True, ancora=(19, 9)),
                       impacto=dict(fn=bola_fogo_impacto, **IMP_B)),
     "bola_chumbo": dict(armas=["bolas_chumbo"],

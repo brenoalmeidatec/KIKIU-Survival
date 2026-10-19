@@ -46,7 +46,7 @@ combo do Blender: nada disso entra aqui.
 | Projétil que aponta (flecha, lança, dardo, feixe) | `voo` 4q 12 fps loop, ponta para a **direita**, rastro curto para a esquerda; `impacto` 3q 20 fps, 20x20 | voo: a cabeça (3/4 da largura, meio da altura); impacto: centro |
 | Projétil que gira (adaga, shuriken, disco) | `voo` 8q 16 fps loop, uma volta completa, `gira: true`; `impacto` 3q 20 fps, 20x20 | centro |
 | Bola (bola de fogo, chumbo) | `voo` 4q 12 fps loop, aponta para a direita com chama/poeira atrás; `impacto` 6q 15 fps (explosão que abre e some), 56x56 | voo: a cabeça; impacto: centro |
-| Meteoro | `queda` 4q 12 fps loop, aponta para a **direita** com rastro longo (o código gira para baixo); `impacto` 8q 15 fps (clarão, onda, fagulhas), 72x72 nos grandes e 48x48 nos pequenos; `marca` 4q 8 fps, 48x32 achatado (chão queimado/rachado/gelado que esfria; o último quase transparente) | queda: a cabeça; impacto e marca: centro |
+| Meteoro | `queda` 8q 16 fps loop, aponta para a **direita** com rastro longo (o código gira para baixo); `impacto` 8q 15 fps (clarão, onda, fagulhas), 72x72 nos grandes e 48x48 nos pequenos; `marca` 4q 8 fps, 48x32 achatado (chão queimado/rachado/gelado que esfria; o último quase transparente) | queda: a cabeça; impacto e marca: centro |
 | Anel de choque | `expandir` 6q 20 fps: nasce pequeno no centro e chega à borda da célula, afinando e esmaecendo; visto no chão achatado (altura ~62% da largura) | centro |
 | Nuvem | `entrada` 3q 10 fps (se forma), `loop` 6q 6 fps (4q se a célula passa de 130 px de largura; o último emenda no primeiro; movimento **dentro** da nuvem: bolhas, flocos, gotas, turbilhão), `saida` 3q 10 fps (dissolve) | centro |
 

@@ -64,8 +64,12 @@ func vivos(k: String) -> Array:
 	return r
 
 
-## O id é um golpe, um modificador ou uma evolução dos dados.
+## O id é um golpe, um modificador ou uma evolução dos dados (ou a peça "<id>_queda" de um deles).
 func existe(id: String) -> bool:
+	if id.begins_with("perigo_"):  # os ataques inimigos (chefe e elite) não são golpes das cartas
+		return true
+	if id.ends_with("_queda"):  # a peça que cai antes do golpe ("martelo_trovao_queda"): vale o golpe de base
+		id = id.trim_suffix("_queda")
 	if not w.combate.cartas.definicao(id).is_empty():
 		return true
 	for ev in w.combate.cartas.cfg.evolucoes:
@@ -244,6 +248,48 @@ func checar_anel() -> void:
 	ok(perto.acertos == 1 and longe.acertos == 1, "o anel acerta cada monstro uma vez (%d e %d)" % [perto.acertos, longe.acertos])
 
 
+## Martelo do Trovão: o martelo cai no herói (preparo de QUEDA_ANEL, sem dano) e só então a onda abre.
+func checar_martelo() -> void:
+	zerar()
+	var m = alvo(30.0)
+	w.combate.armas.definir_golpe("martelo_trovao", 1, 0.0)
+	var a: Dictionary = w.combate.armas.ativas["martelo_trovao"]
+	a.st.recarga = 99.0
+	a.t = 0.0
+	passos(1)
+	var aneis := vivos("anel")
+	ok(
+		aneis.size() == 1 and absf(float(aneis[0].aux) - Novas.QUEDA_ANEL) < 0.001,
+		"o martelo cai antes da onda (preparo %.2f)" % (float(aneis[0].aux) if aneis.size() > 0 else -1.0)
+	)
+	var v0 := float(m.vida)
+	passos(int(Novas.QUEDA_ANEL / PASSO) - 2)
+	ok(float(m.vida) == v0, "nenhum dano enquanto o martelo cai")
+	passos(40)
+	ok(float(m.vida) < v0, "a onda do martelo fere depois da queda")
+
+
+## Ataques inimigos com estilo: a pedra da chuva e o estouro tocam a folha no disparo (o mesmo instante do dano no herói), e não antes.
+func checar_perigo() -> void:
+	zerar()
+	var av = w.combate.avisos
+	w.heroi.imortal = false
+	w.heroi.vida = w.heroi.vida_max
+	w.heroi.invenc = 0.0
+	var i: int = av.circulo(w.heroi.pos, 30.0, 0.5, 5.0, Color(1, 0.3, 0.2))
+	av.com_estilo(i, 1)
+	var j: int = av.circulo(w.heroi.pos + Vector2(200, 0), 40.0, 0.5, 5.0, Color(1, 0.3, 0.2))
+	av.com_estilo(j, 2)
+	var imp0: int = novas().impactos
+	var v0: float = w.heroi.vida
+	passos(25)
+	ok(novas().impactos == imp0 and w.heroi.vida == v0, "nada toca nem fere antes do disparo")
+	passos(10)
+	ok(novas().impactos == imp0 + 2, "a pedra e o estouro tocam a folha no disparo (%d)" % (novas().impactos - imp0))
+	ok(w.heroi.vida < v0, "o dano do aviso saiu no mesmo instante")
+	w.heroi.imortal = true
+
+
 ## Nuvem: não fere enquanto se forma; fere depois.
 func checar_nuvem() -> void:
 	zerar()
@@ -277,7 +323,20 @@ func checar_meteoro() -> void:
 		return
 	var v0 := float(m.vida)
 	var imp0: int = novas().impactos
-	passos(int(float(a.st.aviso) / PASSO) - 3)
+	var it: Dictionary = met[0]
+	ok(novas()._queda_e(it) < 0.0, "no começo do aviso o meteoro só cintila no alto")
+	passos(int(float(a.st.aviso) * 0.6 / PASSO))
+	var e1: float = novas()._queda_e(it)
+	var meio: Vector2 = novas()._queda(it)
+	passos(int(float(a.st.aviso) * 0.2 / PASSO))
+	var e2: float = novas()._queda_e(it)
+	ok(e1 >= 0.0 and e2 > e1 and (e2 - e1) > e1 * 0.5, "a queda acelera (%.2f -> %.2f)" % [e1, e2])
+	ok(absf(meio.x - (it.p as Vector2).x) > 2.0, "a trajetória é inclinada, não reta para baixo")
+	passos(int(float(a.st.aviso) * 0.2 / PASSO) - 2)
+	ok(
+		(novas()._queda(it) as Vector2).distance_to(it.p) < 24.0,
+		"no fim do aviso o meteoro chega perto do chão (%.0f px)" % (novas()._queda(it) as Vector2).distance_to(it.p)
+	)
 	ok(float(m.vida) == v0, "nada de dano durante o aviso")
 	passos(10)
 	ok(float(m.vida) < v0, "o meteoro fere na queda")
@@ -375,6 +434,8 @@ func _ready() -> void:
 	checar_anel()
 	checar_nuvem()
 	checar_meteoro()
+	checar_martelo()
+	checar_perigo()
 	checar_runa_raio()
 	checar_katana()
 	checar_volume()

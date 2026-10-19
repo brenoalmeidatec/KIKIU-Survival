@@ -1,0 +1,25 @@
+{
+  "folhas": {
+    "martelo_trovao_queda": {
+      "armas": [
+        "martelo_trovao_queda"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "martelo_trovao_queda.png",
+          "quadro": [
+            32,
+            32
+          ],
+          "n": 8,
+          "fps": 16,
+          "loop": true,
+          "ancora": [
+            16,
+            16
+          ]
+        }
+      }
+    }
+  }
+}

@@ -4,7 +4,7 @@
 Contrato: docs/combate_v2/SPEC_ARTE.md. Reaproveita as primitivas aprovadas de gerar_meteoros.py e gerar_aneis.py
 (mesma pasta, importadas sem alteracao) e desenha por cima delas as formas novas de cada evolucao.
 
-Meteoros evoluidos (3 tiras cada):  <id>_queda.png 4q 12 fps loop (aponta para a direita, cabeca a 3/4 da largura),
+Meteoros evoluidos (3 tiras cada):  <id>_queda.png 8q 16 fps loop (aponta para a direita, cabeca a 3/4 da largura),
                                     <id>_impacto.png 8q 15 fps 72x72, <id>_marca.png 4q 8 fps 48x32
   pedreira_ardente   rocha de lava com duas pedras em orbita
   cometa_duplo       dois cometas de gelo que se trancam no voo
@@ -50,8 +50,7 @@ def rastros(f, lista, t, rs, rz):
     h, w = f.shape[:2]
     calor = np.full((h, w), -1.0)
     for hx, hy, r, L in lista:
-        c = M.campo_rastro(w, h, hx, hy, r, L, t, rz, larg=rs.get("larg", 1.15), afina=rs.get("afina", 0.8),
-                           ganho=rs.get("ganho", 1.25), ruido=rs.get("ruido", 0.42), esc=rs.get("esc", 1.0))
+        c = M.campo_rastro(w, h, hx, hy, r, L, t, rz, **M.params_rastro(rs))
         calor = np.maximum(calor, c)
     M.faixas(f, calor, rs["tons"], rs["lim"])
     M.limpa(f)
@@ -62,21 +61,21 @@ def queda_pedreira(d, t, ax, ay, rz, rz_cab, semente):
     f = M.novo(w, h)
     p = {k: cor(v) for k, v in d["rocha"].items()}
     r = d["r"]
-    # duas pedras em orbita (fecham a volta em 4 quadros), uma na frente e outra atras da rocha
+    # duas pedras em orbita (fecham a volta em NQ quadros), uma na frente e outra atras da rocha
     sat = []
     for k in range(2):
-        a = 0.5 + t * PI / 2 + k * PI
+        a = 0.5 + t * TAU / M.NQ + k * PI
         sat.append((ax - 6 + 4.0 * math.cos(a), ay + 8.6 * math.sin(a), math.cos(a)))
     rs = d["rastro"]
     rastros(f, [(ax, ay, r, rs["L"])] + [(x, y, 2.4, 10) for x, y, _ in sat], t, rs, rz)
-    M.brasas(f, semente + 7, ax, ay, r, rs["L"], t, d["brasas"], n=6, vel=(rs["L"] / 10, rs["L"] / 6))
-    for x, y, z in sat:
+    M.brasas(f, semente + 7, ax, ay, r, rs["L"], t, d["brasas"], n=8, vel=(rs["L"] / 10, rs["L"] / 6))
+    for k, (x, y, z) in enumerate(sat):
         if z < 0:
-            M.cabeca_rocha(f, x, y, 2.3, t, p, crateras=False)
-    M.cabeca_rocha(f, ax, ay, r, t, p, crateras=True, veios=cor(d["veios"]))
-    for x, y, z in sat:
+            M.cabeca_rocha(f, x, y, 2.3, t, p, crateras=False, forma=1 + k)
+    M.cabeca_rocha(f, ax, ay, r, t, p, crateras=True, veios=cor(d["veios"]), veios2=cor(d["veios2"]), forma=3)
+    for k, (x, y, z) in enumerate(sat):
         if z >= 0:
-            M.cabeca_rocha(f, x, y, 2.3, (t + 1) % 4, p, crateras=False)
+            M.cabeca_rocha(f, x, y, 2.3, t, p, crateras=False, forma=1 + k)
     return f
 
 
@@ -84,18 +83,19 @@ def queda_duplo(d, t, ax, ay, rz, rz_cab, semente):
     w, h = d["queda"]
     f = M.novo(w, h)
     p = {k: cor(v) for k, v in d["cristal"].items()}
-    ph = t * PI / 2
+    ph = t * TAU / M.NQ
     sep = 4.4 + 1.1 * math.cos(ph)
     a = (ax + 1.6 * math.sin(ph), ay - sep, 4.6, d["rastro"]["L"])
     b = (ax - 4 - 1.6 * math.sin(ph), ay + sep, 3.6, d["rastro"]["L"] - 5)
     rs = d["rastro"]
     rastros(f, [a, b], t, rs, rz)
-    M.brasas(f, semente + 7, a[0], a[1], a[2], a[3], t, d["brasas"], n=4, vel=(3, 5))
-    M.brasas(f, semente + 8, b[0], b[1], b[2], b[3], t, d["brasas"], n=3, vel=(3, 4.5))
+    cb = cor(d["brilho_brasa"])
+    M.brasas(f, semente + 7, a[0], a[1], a[2], a[3], t, d["brasas"], n=6, vel=(3, 5), cristal=cb)
+    M.brasas(f, semente + 8, b[0], b[1], b[2], b[3], t, d["brasas"], n=5, vel=(3, 4.5), cristal=cb)
     # quem esta na frente (sin > 0 => o de cima vem para a frente) e desenhado por ultimo
     ordem = [b, a] if math.sin(ph) >= 0 else [a, b]
     for i, (x, y, r, _) in enumerate(ordem):
-        M.cabeca_cristal(f, x, y, r, (t + 2 * (x == b[0])) % 4, p)
+        M.cabeca_cristal(f, x, y, r, (t + M.NQ // 2 * (x == b[0])) % M.NQ, p)
     return f
 
 
@@ -105,7 +105,8 @@ def queda_eclipse(d, t, ax, ay, rz, rz_cab, semente):
     r = d["r"]
     rs = d["rastro"]
     rastros(f, [(ax, ay, r, rs["L"])], t, rs, rz)
-    M.brasas(f, semente + 7, ax, ay, r, rs["L"], t, d["brasas"], n=8, vel=(rs["L"] / 10, rs["L"] / 6))
+    M.brasas(f, semente + 7, ax, ay, r, rs["L"], t, d["brasas"], n=10, vel=(rs["L"] / 10, rs["L"] / 6),
+             cristal=cor(d["coroa"][0]))
     p = {k: cor(v) for k, v in d["vazio"].items()}
     M.cabeca_vazio(f, ax, ay, r, t, p, rz_cab)
     # coroa do eclipse: chamas rosa curtas por fora do contorno, que mudam a cada quadro
@@ -113,10 +114,11 @@ def queda_eclipse(d, t, ax, ay, rz, rz_cab, semente):
     dx, dy = X - (ax + 0.5), Y - (ay + 0.5)
     dd = np.hypot(dx, dy)
     th = np.arctan2(dy, dx)
-    ph = 2 * PI * t / 4
+    ph = 2 * PI * t / M.NQ
+    pulso = 0.95 + 0.25 * math.sin(ph)          # a coroa inteira cresce e encolhe
     n = rz_cab(np.cos(th) * 3 + math.cos(ph) * 1.4 + 17, np.sin(th) * 3 + math.sin(ph) * 1.4 + 17)
     lado = np.clip(np.cos(th - 0.2) + 0.45, 0, 1.2)
-    topo = r + 1.0 + lado * (0.8 + 3.2 * np.clip(n - 0.35, 0, 1))
+    topo = r + 1.0 + lado * (0.8 + 3.2 * np.clip(n - 0.35, 0, 1)) * pulso
     vazio = f[:, :, 3] == 0
     coroa = vazio & (dd > r + 0.8) & (dd <= topo)
     c1, c2 = cor(d["coroa"][0]), cor(d["coroa"][1])
@@ -131,17 +133,18 @@ def queda_juizo(d, t, ax, ay, rz, rz_cab, semente):
     r = d["r"]
     rs = d["rastro"]
     rastros(f, [(ax, ay, r, rs["L"])], t, rs, rz)
-    M.brasas(f, semente + 7, ax, ay, r, rs["L"], t, d["brasas"], n=9, vel=(rs["L"] / 10, rs["L"] / 6))
+    M.brasas(f, semente + 7, ax, ay, r, rs["L"], t, d["brasas"], n=11, vel=(rs["L"] / 10, rs["L"] / 6))
     # aura de fogo sagrado em volta da rocha (frente e lados), borbulhando a cada quadro
     X, Y = M.grade(w, h)
     dx, dy = X - (ax + 0.5), Y - (ay + 0.5)
     dd = np.hypot(dx, dy)
     th = np.arctan2(dy, dx)
-    ph = 2 * PI * t / 4
+    ph = 2 * PI * t / M.NQ
+    pulso = 0.93 + 0.2 * math.sin(ph)         # a aura inteira respira
     n = rz_cab(np.cos(th) * 4.0 + math.cos(ph) * 1.3 + 5, np.sin(th) * 4.0 + math.sin(ph) * 1.3 + 5)
     # chamas finas na frente, linguas maiores em cima e embaixo que puxam para tras
     lado = np.abs(np.sin(th)) * np.clip(1.2 - np.cos(th), 0, 1.2)
-    borda = r + 1.6 + (0.5 + 1.7 * lado) * (0.7 + 2.6 * np.clip(n - 0.25, 0, 1) ** 1.3)
+    borda = r + 1.6 * pulso + (0.5 + 1.7 * lado) * (0.7 + 2.6 * np.clip(n - 0.25, 0, 1) ** 1.3) * pulso
     aura = (dd <= borda) & (np.cos(th) > -0.8)
     ta = cores(*d["aura"])
     q = (dd - r) / np.maximum(borda - r, 0.5)
@@ -150,13 +153,13 @@ def queda_juizo(d, t, ax, ay, rz, rz_cab, semente):
     M.pinta(f, aura & (q <= 0.34), ta[0])
     M.limpa(f)
     p = {k: cor(v) for k, v in d["rocha"].items()}
-    M.cabeca_rocha(f, ax, ay, r, t, p, crateras=True, veios=cor(d["veios"]))
+    M.cabeca_rocha(f, ax, ay, r, t, p, crateras=True, veios=cor(d["veios"]), veios2=cor(d["aura"][1]), forma=4)
     # cintilacoes sagradas em cruz que se revezam no rastro
     brilho = cor(d["aura"][0])
     for k, (u, v) in enumerate([(0.35, -0.55), (0.6, 0.5), (0.85, -0.2), (0.5, 0.05)]):
-        if (k + t) % 2:
+        if (k + t // 2) % 2:
             continue
-        x = ax - u * rs["L"] - (t % 2) * 2
+        x = ax - u * rs["L"] - (t % 4) * 1.5
         y = ay + v * r
         M.mais(f, x, y, brilho, 1)
     return f
@@ -187,9 +190,9 @@ def coluna_luz(quadros, tons):
 def def_meteoros():
     return [
         dict(sprite="pedreira_ardente", queda=(36, 26), desenha=queda_pedreira, r=6.4,
-             rocha=dict(cont="#24181d", esc="#392c2e", med="#544644", clr="#784c37", bri="#a8735a"), veios="#f4ad3f",
+             rocha=dict(cont="#24181d", esc="#392c2e", med="#544644", clr="#784c37", bri="#a8735a"), veios="#f4ad3f", veios2="#dc4c12",
              rastro=dict(tons=cores("#f3c05f", "#ea8622", "#dc4c12", "#7b2a14", "#4e140f"), lim=[0.95, 0.7, 0.48, 0.3, 0.15],
-                         L=24, larg=1.2), brasas=cores("#f3c05f", "#ea8622", "#dc4c12", "#7b2a14"),
+                         L=24, larg=1.2, tremor=0.4, pulso=0.2), brasas=cores("#f3c05f", "#ea8622", "#dc4c12", "#7b2a14"),
              impacto=dict(fogo=M.FOGO, anel=cores("#ea8622", "#dc4c12", "#7b2a14"),
                           faisca=cores("#fffdf1", "#f3c05f", "#ea8622", "#7b2a14"), fumaca=M.FUMACA_FOGO,
                           pedaco=cores("#544644", "#392c2e"), n_pedacos=15, n_faiscas=16, n_fumaca=9, bola=1.05,
@@ -199,7 +202,7 @@ def def_meteoros():
         dict(sprite="cometa_duplo", queda=(50, 24), desenha=queda_duplo,
              cristal=dict(cont="#1f3a66", esc="#4781cb", med="#67a1e3", clr="#88bdef", bri="#e6f6ff"),
              rastro=dict(tons=cores("#e6f6ff", "#b0dcf8", "#88bdef", "#67a1e3", "#4781cb"), lim=[1.0, 0.72, 0.5, 0.31, 0.17],
-                         L=32, larg=1.15), brasas=cores("#e6f6ff", "#b0dcf8", "#88bdef", "#67a1e3"),
+                         L=32, larg=1.15, onda=1.5, ciclos=1.2), brasas=cores("#e6f6ff", "#b0dcf8", "#88bdef", "#67a1e3"), brilho_brasa="#e6f6ff",
              impacto=dict(fogo=cores("#ffffff", "#e6f6ff", "#b0dcf8", "#67a1e3", "#4781cb"), anel=cores("#e6f6ff", "#b0dcf8", "#67a1e3"),
                           faisca=cores("#ffffff", "#e6f6ff", "#b0dcf8", "#67a1e3"), fumaca=cores("#e6f6ff", "#a2cde3", "#6a9fc7"),
                           cristal=cores("#e6f6ff", "#67a1e3", "#1f3a66"), n_cristais=9, n_faiscas=12, n_fumaca=6, bola=0.95),
@@ -209,7 +212,7 @@ def def_meteoros():
              vazio=dict(cont="#120f19", miolo="#140a1a", sombra="#24181d", aro2="#782d70", aro="#d34c76", reflexo="#9c7384"),
              coroa=["#f08aa8", "#d34c76"],
              rastro=dict(tons=cores("#d34c76", "#9c7384", "#782d70", "#4e0f64", "#2a1235"), lim=[0.95, 0.7, 0.48, 0.3, 0.16],
-                         L=40, larg=1.12, esc=1.5), brasas=cores("#f08aa8", "#b8a2ae", "#9c7384", "#754f7a"),
+                         L=40, larg=1.12, esc=1.5, onda=2.2, ciclos=1.0), brasas=cores("#f08aa8", "#b8a2ae", "#9c7384", "#754f7a"),
              impacto=dict(fogo=cores("#fef6f6", "#d34c76", "#782d70", "#4e0f64", "#250c2c"), anel=cores("#d34c76", "#782d70", "#4e0f64"),
                           faisca=cores("#fef6f6", "#f08aa8", "#9c7384", "#754f7a"), fumaca=cores("#754f7a", "#4e0f64", "#250c2c"),
                           vazio=cores("#120f19", "#d34c76"), pedaco=cores("#392c2e", "#24181d"), n_pedacos=6, n_faiscas=20,
@@ -220,7 +223,7 @@ def def_meteoros():
              rocha=dict(cont="#24181d", esc="#392c2e", med="#572b22", clr="#784c37", bri="#b07a50"), veios="#fff1b0",
              aura=["#fffdf1", "#f3c05f", "#ea8622"],
              rastro=dict(tons=cores("#fffdf1", "#f0d798", "#f3c05f", "#ea8622", "#d34c76"), lim=[1.1, 0.8, 0.55, 0.34, 0.17],
-                         L=40, larg=1.25, ruido=0.5, esc=1.4), brasas=cores("#fffdf1", "#f3c05f", "#ea8622", "#d34c76"),
+                         L=40, larg=1.25, ruido=0.5, esc=1.4, tremor=0.4, pulso=0.2), brasas=cores("#fffdf1", "#f3c05f", "#ea8622", "#d34c76"),
              impacto=dict(fogo=cores("#fffdf1", "#f0d798", "#f3c05f", "#ea8622", "#c43337"), anel=cores("#f0d798", "#f3c05f", "#ea8622"),
                           faisca=cores("#fffdf1", "#f0d798", "#f3c05f", "#ea8622"), fumaca=cores("#8a7468", "#62585d", "#474441"),
                           pedaco=cores("#572b22", "#392c2e"), n_pedacos=8, n_faiscas=14, n_fumaca=8, bola=1.2,
@@ -238,7 +241,7 @@ def queda(d, semente):
     rz = [M.Ruido(rg, 4, 64), M.Ruido(rg, 4, 64), M.Ruido(rg)]
     rz_cab = M.Ruido(rg)
     quadros = []
-    for t in range(4):
+    for t in range(M.NQ):
         f = d["desenha"](d, t, ax, ay, rz, rz_cab, semente)
         M.limpa(f)
         quadros.append(f)
@@ -556,7 +559,7 @@ def main():
             if not contorno_cabeca(q, anc[0], anc[1], cont):
                 erros.append(f"{nome}_queda.png: quadro {k} sem contorno escuro na frente da cabeca")
         anims = {}
-        for anim, qs, fps, loop, ancora in (("queda", q_queda, 12, True, anc),
+        for anim, qs, fps, loop, ancora in (("queda", q_queda, M.FPS_QUEDA, True, anc),
                                             ("impacto", q_imp, 15, False, [36, 36]),
                                             ("marca", q_marca, 8, False, [24, 16])):
             arq = f"{nome}_{anim}.png"
@@ -564,7 +567,7 @@ def main():
             h, w = qs[0].shape[:2]
             anims[anim] = {"arquivo": arq, "quadro": [w, h], "n": len(qs), "fps": fps, "loop": loop, "ancora": ancora}
         indice["folhas"][nome] = {"armas": [nome], "anims": anims}
-        M.previa(PREVIAS / f"{nome}.gif", [(q_queda, 12, 3), (q_imp, 15, 1), (q_marca, 8, 1)])
+        M.previa(PREVIAS / f"{nome}.gif", [(q_queda, M.FPS_QUEDA, 2), (q_imp, 15, 1), (q_marca, 8, 1)])
     print("verificando meteoros:")
     erros += M.verifica(indice)
     print("verificando aneis:")
