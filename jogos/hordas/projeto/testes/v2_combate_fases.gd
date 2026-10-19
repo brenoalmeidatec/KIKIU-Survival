@@ -64,8 +64,10 @@ func vivos(k: String) -> Array:
 	return r
 
 
-## O id é um golpe, um modificador ou uma evolução dos dados.
+## O id é um golpe, um modificador ou uma evolução dos dados (ou a peça "<id>_queda" de um deles).
 func existe(id: String) -> bool:
+	if id.ends_with("_queda"):  # a peça que cai antes do golpe ("martelo_trovao_queda"): vale o golpe de base
+		id = id.trim_suffix("_queda")
 	if not w.combate.cartas.definicao(id).is_empty():
 		return true
 	for ev in w.combate.cartas.cfg.evolucoes:
@@ -254,7 +256,10 @@ func checar_martelo() -> void:
 	a.t = 0.0
 	passos(1)
 	var aneis := vivos("anel")
-	ok(aneis.size() == 1 and absf(float(aneis[0].aux) - Novas.QUEDA_ANEL) < 0.001, "o martelo cai antes da onda (preparo %.2f)" % (float(aneis[0].aux) if aneis.size() > 0 else -1.0))
+	ok(
+		aneis.size() == 1 and absf(float(aneis[0].aux) - Novas.QUEDA_ANEL) < 0.001,
+		"o martelo cai antes da onda (preparo %.2f)" % (float(aneis[0].aux) if aneis.size() > 0 else -1.0)
+	)
 	var v0 := float(m.vida)
 	passos(int(Novas.QUEDA_ANEL / PASSO) - 2)
 	ok(float(m.vida) == v0, "nenhum dano enquanto o martelo cai")

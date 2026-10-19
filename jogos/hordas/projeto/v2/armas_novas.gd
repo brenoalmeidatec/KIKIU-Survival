@@ -1528,8 +1528,8 @@ func _area(ci: CanvasItem, sp: Dictionary, c: Vector2, r: float, cor: Color) -> 
 ## A queda do meteoro (docs/combate_v2): no começo do aviso ele só cintila no alto (antecipação, `_queda_e` < 0); depois desce numa
 ## diagonal inclinada (o lado é sorteado: `it.r` = 1 ou -1), acelerando (devagar no alto, rápido perto do chão), e chega ao chão no instante
 ## exato do dano (`_cair_meteoro`, aviso zerado).
-const QUEDA_ALTO := Vector2(-44.0, -128.0)  # de onde vem, a partir do ponto de queda (o x espelha com o lado)
-const QUEDA_CINTILA := 0.3  # fração do aviso em que ele só cintila no alto
+const QUEDA_ALTO := Vector2(-40.0, -100.0)  # de onde vem, a partir do ponto de queda (o x espelha com o lado)
+const QUEDA_CINTILA := 0.25  # fração do aviso em que ele só cintila no alto
 const QUEDA_RASTRO := 3  # cópias que ficam para trás e somem
 
 

@@ -10,7 +10,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const PASSO := 1.0 / 60.0
-const RECORTE := Vector2i(200, 120)
+const RECORTE := Vector2i(220, 160)
 const CENAS := [
 	"corte",
 	"estocada",
@@ -222,7 +222,7 @@ func _cena(nome: String) -> void:
 		await RenderingServer.frame_post_draw
 		var img: Image = w.sv.get_texture().get_image()
 		var tam := img.get_size()
-		var centro := Vector2i(tam.x / 2 + 30, tam.y / 2 - 8)
+		var centro := Vector2i(tam.x / 2 + 30, tam.y / 2 - 26)
 		var r := Rect2i(centro - RECORTE / 2, RECORTE).intersection(Rect2i(Vector2i.ZERO, tam))
 		img.get_region(r).save_png(dir.path_join("q%03d.png" % i))
 	w.heroi.ataque_forcado = null
