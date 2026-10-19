@@ -7,7 +7,11 @@ extends Node
 
 signal nova_versao(tag: String, url: String)
 
+## Primeiro pergunta ao KIKIU-Releases (repositório público só de versões, #106). Se ele não tiver nenhuma Release (404) ou der
+## erro de rede, cai para o KIKIU-Survival: o aviso não fica mudo enquanto o repositório de versões não é publicado.
+const API_RELEASES := "https://api.github.com/repos/brenoalmeidatec/KIKIU-Releases/releases/latest"
 const API := "https://api.github.com/repos/brenoalmeidatec/KIKIU-Survival/releases/latest"
+const PREFIXO_RELEASES := "https://github.com/brenoalmeidatec/KIKIU-Releases/releases"
 const PREFIXO_PAGINA := "https://github.com/brenoalmeidatec/KIKIU-Survival/releases"
 const TIMEOUT := 5.0
 
@@ -36,22 +40,28 @@ func verificar() -> bool:
 	if resposta_simulada != "":
 		_tratar(resposta_simulada)
 		return true
+	return _consultar(API_RELEASES, true)
+
+
+func _consultar(url: String, pode_cair_para_fallback: bool) -> bool:
 	_req = HTTPRequest.new()
 	_req.timeout = TIMEOUT
 	add_child(_req)
-	_req.request_completed.connect(_ao_responder)
+	_req.request_completed.connect(_ao_responder.bind(pode_cair_para_fallback))
 	var cab := PackedStringArray(["User-Agent: KIKIU-Survival", "Accept: application/vnd.github+json"])
-	if _req.request(API, cab) != OK:
+	if _req.request(url, cab) != OK:
 		_req.queue_free()
 		return false
 	return true
 
 
-func _ao_responder(resultado: int, codigo: int, _cab: PackedStringArray, corpo: PackedByteArray) -> void:
-	if resultado == HTTPRequest.RESULT_SUCCESS and codigo == 200:
-		_tratar(corpo.get_string_from_utf8())
+func _ao_responder(resultado: int, codigo: int, _cab: PackedStringArray, corpo: PackedByteArray, pode_cair_para_fallback: bool) -> void:
 	if is_instance_valid(_req):
 		_req.queue_free()
+	if resultado == HTTPRequest.RESULT_SUCCESS and codigo == 200:
+		_tratar(corpo.get_string_from_utf8())
+	elif pode_cair_para_fallback:
+		_consultar(API, false)  # sem Release no KIKIU-Releases (ou sem rede): tenta o repositório do jogo
 
 
 func _tratar(texto: String) -> void:
@@ -61,10 +71,15 @@ func _tratar(texto: String) -> void:
 	var d: Dictionary = j.data
 	var tag := str(d.get("tag_name", ""))
 	var url := str(d.get("html_url", ""))
-	if not url.begins_with(PREFIXO_PAGINA):
-		url = PREFIXO_PAGINA  # só abrimos páginas deste repositório, nunca um endereço vindo da resposta
+	if not aceita_url(url):
+		url = PREFIXO_PAGINA  # só abrimos páginas dos nossos repositórios, nunca um endereço vindo da resposta
 	if mais_nova(tag, carimbo):
 		nova_versao.emit(tag, url)
+
+
+## A página que o aviso abre: só dos nossos dois repositórios de Release.
+static func aceita_url(url: String) -> bool:
+	return url.begins_with(PREFIXO_RELEASES) or url.begins_with(PREFIXO_PAGINA)
 
 
 ## `tag` ("build-2026-10-15-abc1234") é mais nova que o carimbo? Data maior, ou a mesma data com outro commit. Tag fora do
