@@ -1,5 +1,5 @@
 {
-  "tamanho_quadro": 128,
+  "tamanho_quadro": 160,
   "direcoes": [
     "S",
     "SE",
@@ -15,12 +15,20 @@
       "quadros": 24,
       "fps": 12
     },
+    "walk": {
+      "quadros": 25,
+      "fps": 12
+    },
+    "run": {
+      "quadros": 17,
+      "fps": 12
+    },
     "attack_01": {
-      "quadros": 60,
+      "quadros": 62,
       "fps": 12
     },
     "attack_02": {
-      "quadros": 17,
+      "quadros": 19,
       "fps": 12
     },
     "attack_03": {
@@ -28,7 +36,7 @@
       "fps": 12
     },
     "attack_04_segunda_forma": {
-      "quadros": 23,
+      "quadros": 25,
       "fps": 12
     },
     "hit": {
@@ -47,18 +55,10 @@
       "quadros": 25,
       "fps": 12
     },
-    "walk": {
-      "quadros": 25,
-      "fps": 12
-    },
-    "run": {
-      "quadros": 17,
-      "fps": 12
-    },
     "grito": {
       "quadros": 36,
       "fps": 12
     }
   },
-  "observacao": "todos os clipes refeitos no rig novo (18/10): enquadramento maior, partes presas aos ossos, movimento secundário com atraso"
+  "observacao": "quadro de 160 px; impactos de ataque 1, 2 e 4 seguram 2 quadros a mais; postura, pés e olhos sem re-render nesta rodada"
 }

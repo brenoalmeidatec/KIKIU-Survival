@@ -64,3 +64,6 @@ Roteiro para gerar ou procurar os áudios depois. Cada item diz o que soa, em qu
 - Camadas separadas facilitam misturar depois: grave, rangido, terra, zumbido verde, eco.
 - Volume: o grito e o ataque 4 mais altos; passos e respiração baixos.
 - Não usar som de animal real; o chefe é de madeira e energia.
+
+## Nota da rodada de 18/10 (noite)
+- O ataque 1 tem 2 quadros a mais no impacto (quadro 44 da fonte segurado), o ataque 2 tem 2 a mais no impacto (quadro 8), e o ataque 4 tem 2 a mais no impacto (quadro 14). A duração desses clipes sobe um pouco; o roteiro acima segue válido, com o impacto um pouco mais longo.

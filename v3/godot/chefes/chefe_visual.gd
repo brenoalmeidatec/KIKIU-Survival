@@ -1,6 +1,6 @@
 extends Node2D
 ## Desenho de chefe da v3: toca as folhas de 8 direções (assets/v3/chefes/<prefixo>_<clipe>_8dir.png) e segue o estado do chefe.
-## Não decide nada de combate: recebe o chefe (chefe_base.gd e filhos) e mostra o quadro certo. Quadro de 128 px, pé no centro de baixo.
+## Não decide nada de combate: recebe o chefe (chefe_base.gd e filhos) e mostra o quadro certo. Quadro de 160 px (lido do json), pé no centro de baixo.
 ## Cada chefe diz o prefixo da sua folha ("vornak", "nythrax") e o json ao lado (<prefixo>_sprites.json).
 
 const PASTA := "res://assets/chefes/"
@@ -22,7 +22,7 @@ var direcao := 0
 var quadro := 0.0
 var _folhas := {}
 var _clipes := {}
-var quadro_tamanho := 128
+var quadro_tamanho := 160
 
 
 func _ready() -> void:
