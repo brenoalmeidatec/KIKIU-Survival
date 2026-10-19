@@ -758,7 +758,12 @@ func _raio_visual(pontos: Array) -> void:
 func _raios_tempo(dt: float) -> void:
 	for i in MAX_RAIOS:
 		if z_t[i] < z_dur[i]:
+			var antes := int(z_t[i] / 0.05)
 			z_t[i] += dt
+			if int(z_t[i] / 0.05) != antes:  # o raio estala: a cada 0,05 s os dentes do meio pulam (as pontas ficam nos alvos)
+				var base := i * PTS
+				for j in range(1, z_n[i] - 1):
+					z_pts[base + j] += Vector2(randf_range(-2.5, 2.5), randf_range(-2.5, 2.5))
 
 
 # ------------------------------------------------------------------ runas

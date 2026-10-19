@@ -57,6 +57,7 @@ const F_PREPARO := 0
 const F_ATIVO := 1
 const PREPARO_PROJ := 0.1
 const PREPARO_ANEL := 0.12
+const QUEDA_ANEL := 0.35  # s da peça que cai antes do anel (Martelo do Trovão: a folha "<id>_queda")
 const ENTRADA_NUVEM := 0.3
 const VEL_ANIM_MIN := 0.5
 const VEL_ANIM_MAX := 2.5
@@ -645,6 +646,8 @@ func _dano_em(m, st: Dictionary) -> float:
 func _anel(a: Dictionary, h) -> void:
 	var st: Dictionary = a.st
 	var prep := float(st.get("preparo", PREPARO_ANEL)) / vel_anim(h) if Anim.de(str(a.id)).has("expandir") else 0.0
+	if Anim.de(str(a.id) + "_queda").has("queda"):  # o anel que vem de uma peça caindo (o Martelo do Trovão): o preparo é a queda dela
+		prep = float(st.get("preparo", QUEDA_ANEL)) / vel_anim(h)
 	var it := _novo("anel", a, h.pos, float(st.raio) / float(st.vel) + 0.05 + prep)
 	if it.is_empty():
 		return
@@ -664,6 +667,9 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 		if float(it.ft) > 0.0:
 			return
 		it.fk = F_ATIVO
+		if Anim.de(str(a.id) + "_queda").has("queda"):  # a peça bateu no chão: a onda nasce aqui, com tremor e poeira
+			pai.mundo.cam.tremer(1.5, 0.1)
+			_poeira(it.p, 6, Color(0.6, 0.62, 0.7), 80.0, 0.4)
 	it.r = float(it.r) + float(st.vel) * dt
 	var c: Vector2 = it.p
 	var r := float(it.r)
@@ -691,6 +697,7 @@ func _meteoros(a: Dictionary, h, perto: Array) -> void:
 		if it.is_empty():
 			return
 		it.t = float(st.aviso)  # o aviso no chão antes da queda
+		it.r = -1.0 if randi() % 2 == 0 else 1.0  # de que lado ele vem descendo (_queda)
 		it["filho"] = false
 
 
@@ -709,12 +716,17 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 		tocar_fx(fa.impacto, it.p, maxf(1.0, roundf(float(st.raio) * 2.0 / q.x)))
 	if fa.has("marca"):
 		tocar_fx(fa.marca, it.p, 1.0, true)
+	if fa.has("queda"):  # o peso da queda: poeira rasteira (pool de partículas, poucas) e um tremor curto nos grandes
+		_poeira(it.p, 5, Color(0.55, 0.5, 0.42), 70.0, 0.45)
+		if float(st.raio) >= 40.0:
+			pai.mundo.cam.tremer(1.0, 0.08)
 	if st.has("cadeia") and not bool(it.get("filho", false)):  # o juízo: cada queda chama outro meteoro no inimigo mais perto
 		var alvo = _mais_perto(it.p, 400.0, pai.mundo.monstros)
 		if alvo != null:
 			var f := _novo("meteoro", a, alvo.pos, float(st.aviso) + 0.3)
 			if not f.is_empty():
 				f.t = float(st.aviso)
+				f.r = -float(it.r) if float(it.r) != 0.0 else 1.0  # o elo vem do outro lado
 				f["filho"] = true  # o filho não chama outro: a corrente tem só um elo
 	it.vida = 0.3  # o estouro fica um pouco
 
@@ -1361,11 +1373,10 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 					ci.draw_arc(Vector2.ZERO, raio * (1.0 - 0.4 * k), 0.0, TAU, 32, Color(cor.r, cor.g, cor.b, 0.5 + 0.4 * pisca), 2.0)
 					ci.draw_circle(Vector2.ZERO, raio * 0.35 * k, Color(cor.r, cor.g, cor.b, 0.25 * k))
 					ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-					var bola: Vector2 = (p + Vector2(0, -80.0 * (1.0 - k))).round()
-					if (it.fa as Dictionary).has("queda"):  # a folha já traz o rastro: aqui só o calor em volta da cabeça
-						ci.draw_texture_rect(tex, Rect2(bola - Vector2(10, 10), Vector2(20, 20)), false, Color(cor.r, cor.g, cor.b, 0.35))
+					if (it.fa as Dictionary).has("queda"):  # a folha e o rastro estão na camada normal: aqui a cintilada e o calor da cabeça
+						_brilho_queda(ci, it, tex, cor)
 					else:
-						_desenhar_meteoro(ci, it, tex, cor, bola, k)
+						_desenhar_meteoro(ci, it, tex, cor, (p + Vector2(0, -80.0 * (1.0 - k))).round(), k)
 				elif (it.fa as Dictionary).has("impacto"):
 					pass  # o impacto e a marca tocam no pool de efeitos (tocar_fx)
 				else:
@@ -1440,7 +1451,29 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 			continue
 		if str(it.k) == "meteoro" and fa.has("queda"):
 			if float(it.t) > 0.0:
-				Anim.desenhar(ci, fa.queda, Anim.quadro_em(fa.queda, _relogio), _queda(it), PI * 0.5)
+				_desenhar_queda(ci, it, p)
+			continue
+		if str(it.k) == "anel" and int(it.fk) == F_PREPARO:  # a peça que cai no herói antes da onda (o martelo girando)
+			var cai: Dictionary = Anim.de(str(it.a.id) + "_queda").get("queda", {})
+			if not cai.is_empty():
+				var u := 1.0 - clampf(float(it.ft) / maxf(float(it.aux), 0.001), 0.0, 1.0)
+				var e := u * u  # acelera até o chão
+				ci.draw_set_transform(p, 0.0, Vector2(1.0, ACHATA))
+				ci.draw_circle(Vector2.ZERO, 3.0 + 8.0 * e, Color(0, 0, 0, 0.15 + 0.3 * e))
+				ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				var q := Anim.quadro_em(cai, _relogio)
+				for c in range(2, 0, -1):
+					var ec := maxf(e - 0.12 * float(c), 0.0)
+					Anim.desenhar(
+						ci,
+						cai,
+						(q + int(cai.n) - c) % int(cai.n),
+						p + Vector2(8, -116) * (1.0 - ec) + Vector2(0, -10),
+						0.0,
+						Vector2.ONE,
+						Color(1, 1, 1, 0.5 - 0.18 * float(c))
+					)
+				Anim.desenhar(ci, cai, q, p + Vector2(8, -116) * (1.0 - e) + Vector2(0, -10))
 			continue
 		var sp: Dictionary = it.sp
 		if sp.is_empty():
@@ -1492,11 +1525,75 @@ func _area(ci: CanvasItem, sp: Dictionary, c: Vector2, r: float, cor: Color) -> 
 	ci.draw_texture_rect(sp.tex, Rect2((c - Vector2(r, alt * 0.5)).round(), Vector2(r * 2.0, alt).round()), false, cor)
 
 
-## Posição do meteoro que cai: sobe 80 px no início do aviso e desce até o chão.
+## A queda do meteoro (docs/combate_v2): no começo do aviso ele só cintila no alto (antecipação, `_queda_e` < 0); depois desce numa
+## diagonal inclinada (o lado é sorteado: `it.r` = 1 ou -1), acelerando (devagar no alto, rápido perto do chão), e chega ao chão no instante
+## exato do dano (`_cair_meteoro`, aviso zerado).
+const QUEDA_ALTO := Vector2(-44.0, -128.0)  # de onde vem, a partir do ponto de queda (o x espelha com o lado)
+const QUEDA_CINTILA := 0.3  # fração do aviso em que ele só cintila no alto
+const QUEDA_RASTRO := 3  # cópias que ficam para trás e somem
+
+
+## O progresso acelerado da descida: 0 no alto, 1 no chão; -1 enquanto ainda cintila.
+func _queda_e(it: Dictionary) -> float:
+	var k := 1.0 - float(it.t) / maxf(float(it.a.st.aviso), 0.01)
+	if k < QUEDA_CINTILA:
+		return -1.0
+	var u := clampf((k - QUEDA_CINTILA) / (1.0 - QUEDA_CINTILA), 0.0, 1.0)
+	return u * u
+
+
+## De onde o meteoro vem (o ponto no alto, relativo ao ponto de queda).
+func _queda_de(it: Dictionary) -> Vector2:
+	return QUEDA_ALTO * Vector2(-1.0 if float(it.r) < 0.0 else 1.0, 1.0)
+
+
+## A posição na descida para o progresso `e` (0 no alto, 1 no chão).
+func _queda_em(it: Dictionary, e: float) -> Vector2:
+	return ((it.p as Vector2) + _queda_de(it) * (1.0 - clampf(e, 0.0, 1.0))).round()
+
+
+## Posição do meteoro que cai agora.
 func _queda(it: Dictionary) -> Vector2:
-	var st: Dictionary = it.a.st
-	var k := 1.0 - float(it.t) / float(st.aviso)
-	return ((it.p as Vector2).round() + Vector2(0, -80.0 * (1.0 - k))).round()
+	return _queda_em(it, maxf(_queda_e(it), 0.0))
+
+
+## O meteoro com folha caindo (camada normal): a sombra no chão cresce e escurece enquanto ele chega; na descida, o quadro da folha virado
+## para onde ele vai e um rastro de cópias mais fracas e menores, cada vez mais para trás.
+func _desenhar_queda(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
+	var e := _queda_e(it)
+	var se := maxf(e, 0.0)
+	ci.draw_set_transform(p, 0.0, Vector2(1.0, ACHATA))
+	ci.draw_circle(Vector2.ZERO, 3.0 + 9.0 * se, Color(0, 0, 0, 0.12 + 0.3 * se))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if e < 0.0:
+		return
+	var f: Dictionary = it.fa.queda
+	var ang := (-_queda_de(it)).angle()
+	var q := Anim.quadro_em(f, _relogio + float(it.fase))
+	for c in range(QUEDA_RASTRO, 0, -1):
+		var ec := e - 0.07 * float(c) * (0.35 + e)
+		if ec <= 0.0:
+			continue
+		var s := 1.0 - 0.12 * float(c)
+		Anim.desenhar(ci, f, (q + int(f.n) - c) % int(f.n), _queda_em(it, ec), ang, Vector2(s, s), Color(1, 1, 1, 0.55 - 0.15 * float(c)))
+	Anim.desenhar(ci, f, q, _queda_em(it, e), ang)
+
+
+## O brilho da queda (camada aditiva): no alto, a cintilada que avisa de onde ele vem; descendo, o calor em volta da cabeça.
+func _brilho_queda(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Color) -> void:
+	var e := _queda_e(it)
+	if e < 0.0:
+		var k := 1.0 - float(it.t) / maxf(float(it.a.st.aviso), 0.01)
+		var c := _queda_em(it, 0.0)
+		var cresce := clampf(k / QUEDA_CINTILA, 0.0, 1.0)
+		var pisca := 0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase))
+		var br := roundf(2.0 + 5.0 * cresce * pisca)
+		ci.draw_line(c - Vector2(br, 0), c + Vector2(br, 0), Color(1, 1, 1, 0.8 * cresce), 1.0)
+		ci.draw_line(c - Vector2(0, br), c + Vector2(0, br), Color(1, 1, 1, 0.8 * cresce), 1.0)
+		ci.draw_texture_rect(tex, Rect2(c - Vector2(8, 8), Vector2(16, 16)), false, Color(cor.r, cor.g, cor.b, 0.5 * cresce))
+		return
+	var b := _queda_em(it, e)
+	ci.draw_texture_rect(tex, Rect2(b - Vector2(11, 11), Vector2(22, 22)), false, Color(cor.r, cor.g, cor.b, 0.3 + 0.2 * e))
 
 
 # ------------------------------------------------------------------ desenho da torre e da granada (em código, sem folha de sprite)

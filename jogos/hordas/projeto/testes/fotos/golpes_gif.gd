@@ -31,7 +31,19 @@ const CENAS := [
 	"juizo_final",
 	"tempestade_primordial",
 	"estrondo",
-	"furacao_glacial"
+	"furacao_glacial",
+	"chuva_pedras",
+	"chuva_espinhos",
+	"cometa_gelado",
+	"cometa_negro",
+	"estrelas_cadentes",
+	"fogo_do_ceu",
+	"raio_meteorico",
+	"pedras_vulcanicas",
+	"martelo_trovao",
+	"chuva_acida",
+	"cinzas_vulcanicas",
+	"raio_solar"
 ]
 
 var w
@@ -198,6 +210,10 @@ func _cena(nome: String) -> void:
 			w.combate.armas.adicionar_evoluida(_ev(nome), 0.0)
 			var a: Dictionary = w.combate.armas.ativas[nome]
 			a.t = 0.05
+			n = 60
+		_:  # as magias que caem do céu e as outras pelo id do golpe: 2 de uma vez, monstros em fila
+			_monstros(4)
+			_golpe(nome, 2)
 			n = 60
 	var dir := pasta.path_join(nome)
 	DirAccess.make_dir_recursive_absolute(dir)

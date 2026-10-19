@@ -244,6 +244,24 @@ func checar_anel() -> void:
 	ok(perto.acertos == 1 and longe.acertos == 1, "o anel acerta cada monstro uma vez (%d e %d)" % [perto.acertos, longe.acertos])
 
 
+## Martelo do Trovão: o martelo cai no herói (preparo de QUEDA_ANEL, sem dano) e só então a onda abre.
+func checar_martelo() -> void:
+	zerar()
+	var m = alvo(30.0)
+	w.combate.armas.definir_golpe("martelo_trovao", 1, 0.0)
+	var a: Dictionary = w.combate.armas.ativas["martelo_trovao"]
+	a.st.recarga = 99.0
+	a.t = 0.0
+	passos(1)
+	var aneis := vivos("anel")
+	ok(aneis.size() == 1 and absf(float(aneis[0].aux) - Novas.QUEDA_ANEL) < 0.001, "o martelo cai antes da onda (preparo %.2f)" % (float(aneis[0].aux) if aneis.size() > 0 else -1.0))
+	var v0 := float(m.vida)
+	passos(int(Novas.QUEDA_ANEL / PASSO) - 2)
+	ok(float(m.vida) == v0, "nenhum dano enquanto o martelo cai")
+	passos(40)
+	ok(float(m.vida) < v0, "a onda do martelo fere depois da queda")
+
+
 ## Nuvem: não fere enquanto se forma; fere depois.
 func checar_nuvem() -> void:
 	zerar()
@@ -277,7 +295,20 @@ func checar_meteoro() -> void:
 		return
 	var v0 := float(m.vida)
 	var imp0: int = novas().impactos
-	passos(int(float(a.st.aviso) / PASSO) - 3)
+	var it: Dictionary = met[0]
+	ok(novas()._queda_e(it) < 0.0, "no começo do aviso o meteoro só cintila no alto")
+	passos(int(float(a.st.aviso) * 0.6 / PASSO))
+	var e1: float = novas()._queda_e(it)
+	var meio: Vector2 = novas()._queda(it)
+	passos(int(float(a.st.aviso) * 0.2 / PASSO))
+	var e2: float = novas()._queda_e(it)
+	ok(e1 >= 0.0 and e2 > e1 and (e2 - e1) > e1 * 0.5, "a queda acelera (%.2f -> %.2f)" % [e1, e2])
+	ok(absf(meio.x - (it.p as Vector2).x) > 2.0, "a trajetória é inclinada, não reta para baixo")
+	passos(int(float(a.st.aviso) * 0.2 / PASSO) - 2)
+	ok(
+		(novas()._queda(it) as Vector2).distance_to(it.p) < 24.0,
+		"no fim do aviso o meteoro chega perto do chão (%.0f px)" % (novas()._queda(it) as Vector2).distance_to(it.p)
+	)
 	ok(float(m.vida) == v0, "nada de dano durante o aviso")
 	passos(10)
 	ok(float(m.vida) < v0, "o meteoro fere na queda")
@@ -375,6 +406,7 @@ func _ready() -> void:
 	checar_anel()
 	checar_nuvem()
 	checar_meteoro()
+	checar_martelo()
 	checar_runa_raio()
 	checar_katana()
 	checar_volume()
