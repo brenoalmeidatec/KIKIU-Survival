@@ -22,7 +22,7 @@ var direcao := 0
 var quadro := 0.0
 var _folhas := {}
 var _clipes := {}
-var quadro_tamanho := 160
+var quadro_tamanho := 192
 
 
 func _ready() -> void:

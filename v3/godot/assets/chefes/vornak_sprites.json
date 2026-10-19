@@ -1,5 +1,5 @@
 {
-  "tamanho_quadro": 160,
+  "tamanho_quadro": 192,
   "direcoes": [
     "S",
     "SE",
@@ -10,17 +10,21 @@
     "O",
     "SO"
   ],
+  "ancora_pe": [
+    0.5,
+    0.744
+  ],
   "clipes": {
     "idle": {
       "quadros": 24,
       "fps": 12
     },
     "walk": {
-      "quadros": 25,
+      "quadros": 24,
       "fps": 12
     },
     "run": {
-      "quadros": 17,
+      "quadros": 16,
       "fps": 12
     },
     "attack_01": {
@@ -60,5 +64,5 @@
       "fps": 12
     }
   },
-  "observacao": "quadro de 160 px; impactos de ataque 1, 2 e 4 seguram 2 quadros a mais; postura, pés e olhos sem re-render nesta rodada"
+  "observacao": "rodada grande 18/10 (noite): postura ereta, pés plantados com IK, olhos maiores, impactos segurados, câmera ortho 9.0 para todos os clipes; quadro 192 px com âncora no pé"
 }
