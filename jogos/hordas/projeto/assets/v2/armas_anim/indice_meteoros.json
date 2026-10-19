@@ -1,0 +1,445 @@
+{
+  "folhas": {
+    "meteoro_flamejante": {
+      "armas": [
+        "meteoro_flamejante"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "meteoro_flamejante_queda.png",
+          "quadro": [
+            46,
+            30
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            34,
+            15
+          ]
+        },
+        "impacto": {
+          "arquivo": "meteoro_flamejante_impacto.png",
+          "quadro": [
+            72,
+            72
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            36,
+            36
+          ]
+        },
+        "marca": {
+          "arquivo": "meteoro_flamejante_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "cometa_gelo": {
+      "armas": [
+        "cometa_gelado"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "cometa_gelo_queda.png",
+          "quadro": [
+            36,
+            24
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            27,
+            12
+          ]
+        },
+        "impacto": {
+          "arquivo": "cometa_gelo_impacto.png",
+          "quadro": [
+            48,
+            48
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            24,
+            24
+          ]
+        },
+        "marca": {
+          "arquivo": "cometa_gelo_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "cometa_roxo": {
+      "armas": [
+        "cometa_negro"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "cometa_roxo_queda.png",
+          "quadro": [
+            64,
+            42
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            48,
+            21
+          ]
+        },
+        "impacto": {
+          "arquivo": "cometa_roxo_impacto.png",
+          "quadro": [
+            72,
+            72
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            36,
+            36
+          ]
+        },
+        "marca": {
+          "arquivo": "cometa_roxo_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "estrela_cadente": {
+      "armas": [
+        "estrelas_cadentes"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "estrela_cadente_queda.png",
+          "quadro": [
+            40,
+            18
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            30,
+            9
+          ]
+        },
+        "impacto": {
+          "arquivo": "estrela_cadente_impacto.png",
+          "quadro": [
+            48,
+            48
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            24,
+            24
+          ]
+        },
+        "marca": {
+          "arquivo": "estrela_cadente_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "espinho_verde": {
+      "armas": [
+        "chuva_espinhos"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "espinho_verde_queda.png",
+          "quadro": [
+            10,
+            16
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            7,
+            8
+          ]
+        },
+        "impacto": {
+          "arquivo": "espinho_verde_impacto.png",
+          "quadro": [
+            48,
+            48
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            24,
+            24
+          ]
+        },
+        "marca": {
+          "arquivo": "espinho_verde_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "pedra_vulcanica": {
+      "armas": [
+        "pedras_vulcanicas"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "pedra_vulcanica_queda.png",
+          "quadro": [
+            16,
+            12
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            12,
+            6
+          ]
+        },
+        "impacto": {
+          "arquivo": "pedra_vulcanica_impacto.png",
+          "quadro": [
+            48,
+            48
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            24,
+            24
+          ]
+        },
+        "marca": {
+          "arquivo": "pedra_vulcanica_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "pedra_cinza": {
+      "armas": [
+        "chuva_pedras"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "pedra_cinza_queda.png",
+          "quadro": [
+            24,
+            16
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            18,
+            8
+          ]
+        },
+        "impacto": {
+          "arquivo": "pedra_cinza_impacto.png",
+          "quadro": [
+            48,
+            48
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            24,
+            24
+          ]
+        },
+        "marca": {
+          "arquivo": "pedra_cinza_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "fogo_do_ceu": {
+      "armas": [
+        "fogo_do_ceu"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "fogo_do_ceu_queda.png",
+          "quadro": [
+            38,
+            26
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            28,
+            13
+          ]
+        },
+        "impacto": {
+          "arquivo": "fogo_do_ceu_impacto.png",
+          "quadro": [
+            72,
+            72
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            36,
+            36
+          ]
+        },
+        "marca": {
+          "arquivo": "fogo_do_ceu_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "raio_meteorico": {
+      "armas": [
+        "raio_meteorico"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "raio_meteorico_queda.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 12,
+          "loop": true,
+          "ancora": [
+            36,
+            16
+          ]
+        },
+        "impacto": {
+          "arquivo": "raio_meteorico_impacto.png",
+          "quadro": [
+            48,
+            48
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            24,
+            24
+          ]
+        },
+        "marca": {
+          "arquivo": "raio_meteorico_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    }
+  }
+}

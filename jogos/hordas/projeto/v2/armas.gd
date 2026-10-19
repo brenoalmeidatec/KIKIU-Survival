@@ -10,6 +10,7 @@ extends RefCounted
 
 const Colisao := preload("res://v2/colisao.gd")
 const Novas := preload("res://v2/armas_novas.gd")
+const Anim := preload("res://v2/anim_golpes.gd")
 const MAX_CORVOS := 16
 const MAX_RUNAS := 14
 const MAX_ONDAS := 8
@@ -1138,7 +1139,12 @@ func _desenhar_corpo_i() -> void:
 		for p in a.pts as PackedVector2Array:  # sombra de cada lâmina no chão
 			no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-7, -1), Vector2(14, 6)), false, Color(0, 0, 0, 0.45))
 		var sp := Novas.sprite_de(str(a.id))
-		if not sp.is_empty():
+		var giro: Dictionary = Anim.de(str(a.id)).get("voo", {})
+		if not giro.is_empty():  # a folha do giro (docs/combate_v2): cada lâmina gira pelos quadros, defasada das vizinhas; a órbita é daqui
+			var pts: PackedVector2Array = a.pts
+			for k in pts.size():
+				Anim.desenhar(no_corpo, giro, Anim.quadro_em(giro, _fase + 0.07 * k), pts[k] + Vector2(0, -14))
+		elif not sp.is_empty():
 			var pontos: PackedVector2Array = a.pts
 			for k in pontos.size():
 				var ang := float(a.ang) + TAU * float(k) / float(pontos.size())

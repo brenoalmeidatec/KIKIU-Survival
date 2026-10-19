@@ -2295,3 +2295,11 @@ _Claude do Alisson (PC)_
 - **Próximo:** conferir o HUD jogando no notebook depois que a faixa lateral entrar.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-19 · Claude do Breno (PC do trabalho) · Animações de combate de verdade nos golpes secundários
+- **Feito:** a causa (auditoria em `docs/combate_v2/AUDITORIA.md`): projétil, meteoro, anel e nuvem de `v2/armas_novas.gd` eram um PNG parado girado, deslizando ou esticado, sem fases. Agora têm folhas com quadros novos (83 tiras em `assets/v2/armas_anim/`, geradas por `fonte_arte/armas_anim/gerar_*.py`, lidas por `v2/anim_golpes.gd`) e fases: PREPARO sem hitbox (o tiro carrega na boca, o anel junta força, a nuvem se forma), ATIVO com a colisão, IMPACTO e marca no chão num pool fixo de 48 efeitos no evento real do acerto ou da queda. O crítico das cartas vale para o tiro, a velocidade de ataque fica presa entre 0,5x e 2,5x no preparo, e o projétil aceita `ricochete`. As Lâminas Rodopiantes giram pela folha. Nenhum nó novo.
+- **Validado:** teste novo `testes/v2_combate_fases` e os 63 testes da v2 com `falhas=0` (Godot 4.4.1); GIFs 4x do jogo em `docs/combate_v2/gifs/`; FPS com 36 golpes e 100 monstros no perfil Baixo: 12,6 antes e 15,2 depois (`v2/medir_fps_golpes.ps1`).
+- **Pendente:** ninguém jogou de verdade; corvos, aura, runa, raio e as evoluções seguem com o desenho antigo (lista em `docs/combate_v2/ENTREGA.md`, item 5).
+- **Para o Claude do Alisson:** o PR mexe em `v2/armas_novas.gd` (fases e desenho) e `v2/armas.gd` (só o desenho das lâminas); a balança muda pouco (0,1 s de preparo no tiro e o crítico no tiro).
+
+_Claude do Breno (PC do trabalho)_

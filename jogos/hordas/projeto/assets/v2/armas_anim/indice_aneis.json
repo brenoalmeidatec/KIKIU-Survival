@@ -1,0 +1,193 @@
+{
+  "folhas": {
+    "anel_onda_branca": {
+      "armas": [
+        "onda_choque"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "anel_onda_branca_expandir.png",
+          "quadro": [
+            128,
+            84
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            64,
+            42
+          ]
+        }
+      }
+    },
+    "anel_dourado": {
+      "armas": [
+        "pulso_sagrado"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "anel_dourado_expandir.png",
+          "quadro": [
+            128,
+            89
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            64,
+            44
+          ]
+        }
+      }
+    },
+    "anel_gelo": {
+      "armas": [
+        "anel_gelado"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "anel_gelo_expandir.png",
+          "quadro": [
+            128,
+            60
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            64,
+            30
+          ]
+        }
+      }
+    },
+    "anel_vermelho": {
+      "armas": [
+        "grito_guerra"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "anel_vermelho_expandir.png",
+          "quadro": [
+            128,
+            70
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            64,
+            35
+          ]
+        }
+      }
+    },
+    "terremoto_poeira": {
+      "armas": [
+        "terremoto"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "terremoto_poeira_expandir.png",
+          "quadro": [
+            150,
+            69
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            75,
+            34
+          ]
+        }
+      }
+    },
+    "anel_eletrico": {
+      "armas": [
+        "martelo_trovao"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "anel_eletrico_expandir.png",
+          "quadro": [
+            128,
+            63
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            64,
+            31
+          ]
+        }
+      }
+    },
+    "redemoinho_verde": {
+      "armas": [
+        "rajada_vento"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "redemoinho_verde_expandir.png",
+          "quadro": [
+            128,
+            73
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            64,
+            36
+          ]
+        }
+      }
+    },
+    "anel_espinhos_verdes": {
+      "armas": [
+        "anel_espinhos"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "anel_espinhos_verdes_expandir.png",
+          "quadro": [
+            128,
+            86
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            64,
+            43
+          ]
+        }
+      }
+    },
+    "anel_lunar": {
+      "armas": [
+        "anel_luar"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "anel_lunar_expandir.png",
+          "quadro": [
+            128,
+            89
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            64,
+            44
+          ]
+        }
+      }
+    }
+  }
+}
