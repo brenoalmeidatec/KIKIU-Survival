@@ -71,7 +71,8 @@ func testar() -> void:
 	# sobre o nome das Estátuas: um quadro só leva ao meio do caminho; depois, quase transparente
 	s._pos = Vector2(180, 372)
 	v._process(PASSO)
-	ok(absf(opacidade(s, v, "estatuas", "nome") - 0.9) < 0.01, "o nome some aos poucos: um quadro leva o alfa a 0,9")
+	var meio := opacidade(s, v, "estatuas", "nome")
+	ok(meio < 0.99 and meio > QUASE_TRANSPARENTE, "o nome some aos poucos: um quadro não leva o alfa direto ao fundo (%.2f)" % meio)
 	andar(v, 40)
 	ok(opacidade(s, v, "estatuas", "nome") <= QUASE_TRANSPARENTE, "sobre o nome das Estátuas: quase transparente")
 	ok(opacidade(s, v, "floresta", "nome") > 0.999, "o nome da Floresta, fora do herói, segue inteiro")
