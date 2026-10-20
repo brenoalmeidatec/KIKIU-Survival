@@ -88,11 +88,7 @@ func _montar() -> void:
 	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	painel.add_theme_stylebox_override("panel", EstiloPremium.painel())
 	_vitoria.add_child(painel)
-	var corpo := _rotulo(
-		"
-
-".join(PackedStringArray(_cfg.get("texto", []))), Paleta.TEXTO_TAMANHO, false, Paleta.TEXTO, Rect2(176, 258, LARG - 352, 168)
-	)
+	var corpo := _rotulo("\n\n".join(PackedStringArray(_cfg.get("texto", []))), Paleta.TEXTO_TAMANHO, false, Paleta.TEXTO, Rect2(176, 258, LARG - 352, 168))
 	corpo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	corpo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_vitoria.add_child(corpo)
