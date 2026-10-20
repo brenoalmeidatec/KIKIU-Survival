@@ -118,6 +118,8 @@ func atualizar(dt: float) -> void:
 				_r_golpes()
 			"hud_golpes":
 				_r_hud_golpes()
+			"close":
+				_r_close()
 			"cores":
 				_r_cores()
 			"inicio":
@@ -1179,3 +1181,32 @@ func _pt_apagar_save() -> void:
 	for p in [base, base + ".tmp", base + ".bak"]:
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(p))
+
+
+## Close de uma invocação para o GIF: só a invocação de --so=ID (no nível 5), o herói parado e as fotos 02 a 17, a cada 0,1 s.
+## Uso: --roteiro=close --so=espirito_raposa --fotos=PASTA
+func _r_close() -> void:
+	match passo:
+		0:
+			_preparar()
+			var so := str(args.get("so", ""))
+			for g in mundo.combate.cartas.cfg.golpes:
+				if str(g.get("id", "")) == so:
+					mundo.combate.armas.definir_golpe(so, 5, 0.0)
+			var alvo = mundo.nascer_monstro("inimigo_cao_ossos", mundo.heroi.pos + Vector2(150, 0), true)  # um alvo parado para o aliado atacar
+			alvo.vida = alvo.vida_max * 50.0
+			alvo.vida_max = alvo.vida
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 1.2:  # tempo para o aliado nascer e entrar na cena
+				passo = 2
+				t_passo = 0.0
+		_:
+			if passo > 17:
+				mundo.get_tree().quit()
+				return
+			if t_passo >= 0.1:
+				_foto("%02d" % passo)
+				passo += 1
+				t_passo = 0.0
