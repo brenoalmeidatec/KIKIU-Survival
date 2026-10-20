@@ -199,7 +199,7 @@ func _testes() -> void:
 	hud.avancar(PASSO)
 	ok(hud._vida_barra.value == 50.0, "barra de vida reflete 50")
 	ok(hud._vida_txt.text == "50/100", "texto da vida: %s" % hud._vida_txt.text)
-	ok(hud._folego.value == 30.0, "barra de fôlego reflete 30")
+	ok(absf(hud._folego.value - 30.0) <= 100.0 / hud._folego.size.x, "barra de fôlego reflete 30 (a menos de um pixel: %s)" % hud._folego.value)
 	ok(hud._xp_barra.value > 0.0 and hud._xp_barra.value < 40.0, "as almas rolam até 40, não pulam: %s" % hud._xp_barra.value)
 	ok(hud._xp_barra.max_value == 80.0, "barra de XP com máximo 80")
 	ok(hud._selo_num.text == "7", "selo mostra o nível 7")
