@@ -10,6 +10,7 @@ const EscalaUi := preload("res://v2/escala_ui.gd")
 ## Criada pelo mundo.gd (uma linha no _ready, fora do modo de teste); o mundo entrega a entrada a ela antes da tela de resultado.
 
 const Meta := preload("res://v2/meta.gd")
+const VitoriaFinal := preload("res://v2/vitoria_final.gd")
 const LARG := 960
 const ALT := 540
 const SANTUARIO := "res://v2/salao.tscn"
@@ -285,4 +286,4 @@ func _continuar() -> void:
 		return
 	_saindo = true
 	# A entrada do mundo ainda marca o evento no viewport: a troca só pode ocorrer depois dele.
-	mundo.get_tree().call_deferred("change_scene_to_file", SANTUARIO)
+	mundo.get_tree().call_deferred("change_scene_to_file", VitoriaFinal.destino(mundo.resultado, SANTUARIO))  # vencer o mapa final leva à vitória final e aos créditos
