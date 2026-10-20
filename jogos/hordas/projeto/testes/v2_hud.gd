@@ -406,11 +406,17 @@ func _testes_rotulo_e_cartas() -> void:
 		real._anuncio.anunciar("NÍVEL 3!", Color.WHITE)
 		real.avancar(PASSO)
 		ok(real._anuncio.visible, "a faixa de anúncio aparece na partida")
+		var texto0: String = real._anuncio.texto_ativo  # o marco do combo (x12) está na tela e o NÍVEL 3 espera atrás
 		w.combate.telas.escolha_aberta = true
 		real.avancar(PASSO)
 		ok(not real._combo.visible, "com a escolha aberta, o combo some")
 		ok(not real._anuncio.visible, "com a escolha aberta, a faixa some")
+		for i in 150:  # 2,5 s com a escolha aberta: o anúncio espera parado, não gasta o tempo escondido (ULTIMATE PRONTA durante as cartas)
+			real.avancar(PASSO)
+		ok(texto0 != "" and real._anuncio.texto_ativo == texto0, "com a escolha aberta o anúncio não expira escondido (%s)" % real._anuncio.texto_ativo)
 		w.combate.telas.escolha_aberta = false
+		real.avancar(PASSO)
+		ok(real._anuncio.visible and real._anuncio.texto_ativo == texto0, "fechada a escolha, o anúncio volta à tela inteiro")
 		w.combate.telas.bau_aberto = true
 		real.avancar(PASSO)
 		ok(not real._combo.visible and not real._anuncio.visible, "com o baú aberto, o combo e a faixa também somem")
@@ -452,6 +458,25 @@ func _testes_anuncios(vista: SubViewport) -> void:
 	ok(an.texto_ativo == "EVOLUÇÃO: LANÇA" and an.fila.size() == 0, "EVOLUÇÃO: vem com o nome em caixa-alta")
 	_passar(h, 2.0)
 	ok(an.texto_ativo == "" and not an.ocupado(), "a fila esvazia e a faixa fica livre")
+
+	# B3. ULTIMATE PRONTA fura a fila: entra na hora sobre o que está na tela (que volta se ainda não deu para ler) e não é interrompido por outro igual
+	f.onda_forte.emit(1)
+	f.elite_apareceu.emit("Lobo")
+	h.avancar(PASSO)
+	ok(an.texto_ativo == "ONDA FORTE!" and an.fila.size() == 1, "B3: ONDA FORTE na tela e ELITE esperando")
+	f.anuncio.emit("ULTIMATE PRONTA", Color.WHITE)
+	ok(an.texto_ativo == "ULTIMATE PRONTA", "B3: ULTIMATE PRONTA entra na hora, sem esperar a fila (%s)" % an.texto_ativo)
+	ok(an.fila.size() == 2 and an.fila[0]["texto"] == "ONDA FORTE!" and an.fila[1]["texto"] == "ELITE!", "B3: o que estava na tela volta à frente da fila")
+	_passar(h, 1.7)
+	ok(an.texto_ativo == "ONDA FORTE!" and an.fila.size() == 1, "B3: depois do ULTIMATE PRONTA o resto segue na ordem")
+	_passar(h, 12.0)
+	ok(not an.ocupado(), "B3: a fila esvazia")
+	f.onda_forte.emit(1)
+	h.avancar(PASSO)
+	_passar(h, 0.9)  # o ONDA FORTE já deu tempo de ser lido: não volta
+	f.anuncio.emit("ULTIMATE PRONTA", Color.WHITE)
+	ok(an.texto_ativo == "ULTIMATE PRONTA" and an.fila.is_empty(), "B3: o anúncio já lido não volta para a fila")
+	_passar(h, 12.0)
 
 	# C. a fila tem limite: com muitos anúncios, sai o mais antigo
 	for i in 8:

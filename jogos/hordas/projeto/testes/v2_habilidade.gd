@@ -235,9 +235,20 @@ func _comum(id: String) -> void:
 	h.esp_carga = h.esp_carga_max
 	ok(h.habilidade() and h.estado == Heroi.Estado.HABILIDADE, "%s: E em andamento" % id)
 	passos(5)
+	var eid: String = hab._id  # o id da E (investida_escudo, salto_adagas), não a chave do herói
+	ok(h.hab_t > 0.0 and h.hab_invul and eid != "", "%s: antes do Q a E tem o relógio, a invulnerabilidade e o id armados (hab_t %s)" % [id, h.hab_t])
+	var rec_corte: float = h.hab_recarga
 	ok(h.especial() and h.estado == Heroi.Estado.ESPECIAL, "%s: o Q corta a E e entra" % id)
+	# o corte tem de ENCERRAR a E (habilidade.cancelar): sem isso hab_t/hab_invul/_id ficam presos e o HUD (e_ativa = hab_t > 0) mostra a E ativa na recarga toda
+	ok(h.hab_t == 0.0 and not h.hab_invul and hab._id == "", "%s: o Q encerra a E (hab_t %s, invul %s, id '%s')" % [id, h.hab_t, h.hab_invul, hab._id])
+	ok(not hab.ultimo.is_empty() and str(hab.ultimo.get("id", "")) == eid, "%s: a E cortada ficou registrada em hab.ultimo" % id)
 	ok(not h.habilidade(), "%s: durante o Q a E não dispara" % id)
+	passos(20)
+	ok(h.hab_t == 0.0 and not h.hab_invul and hab._id == "", "%s: no meio do Q a E continua encerrada (nada reabre sozinho)" % id)
 	w.combate.especial.cancelar(h)
+	passos(5)
+	ok(h.estado == Heroi.Estado.LIVRE and h.hab_t == 0.0 and not h.hab_invul, "%s: depois do Q o herói volta ao normal e a E não fica presa" % id)
+	ok(h.hab_recarga <= rec_corte and h.hab_recarga > 0.0, "%s: a recarga da E cortada segue correndo (%s -> %s)" % [id, rec_corte, h.hab_recarga])
 	# pausa: não dispara
 	zerar()
 	w.combate.pausado = true
