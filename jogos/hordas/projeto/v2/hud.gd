@@ -22,7 +22,7 @@ const EscalaUi := preload("res://v2/escala_ui.gd")
 const Herois := preload("res://v2/herois.gd")
 const CENA := "res://v2/hud.tscn"
 const SPRITES := "res://prototipos/cara_nova/sprites/"
-const FONTE := "res://assets/fonte/PressStart2P.ttf"
+const FONTE := "res://assets/fonte/atkinson/AtkinsonHyperlegible-Regular.ttf"  # SIL OFL 1.1, legível em tamanho pequeno (trocou a Press Start 2P, #152 V1)
 const OURO := Paleta.OURO
 const PULSO_T := 0.25  # segundos do pulso do combo a cada abate
 const BRILHO_T := 1.2  # segundos do brilho da barra de XP ao subir de nível
@@ -195,11 +195,11 @@ func ligar(m) -> CanvasLayer:
 
 
 func _ready() -> void:
-	# A fonte do jogo sem anti-aliasing e sem hinting: a cópia é só deste HUD, o import compartilhado com a v1 não muda.
+	# A fonte com anti-aliasing (a Atkinson é lisa, não pixel) e hinting leve: a cópia é só deste HUD, o import compartilhado com a v1 não muda.
 	var fonte := (load(FONTE) as FontFile).duplicate() as FontFile
-	fonte.antialiasing = TextServer.FONT_ANTIALIASING_NONE
-	fonte.hinting = TextServer.HINTING_NONE
-	fonte.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
+	fonte.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
+	fonte.hinting = TextServer.HINTING_LIGHT
+	fonte.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
 	$Raiz.add_theme_font_override("font", fonte)
 	$Raiz.light_mask = 0
 	for n in $Raiz.find_children("*", "CanvasItem", true, false):
