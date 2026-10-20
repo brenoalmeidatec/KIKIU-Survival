@@ -2314,3 +2314,20 @@ _Claude do Breno (PC do trabalho)_
 - **Mesma noite, quarta leva:** os ataques anunciados dos inimigos (`v2/avisos.gd`) ganharam folhas de perigo: a chuva do chefe tem pedras que caem do céu e estouram no disparo, o estouro do chefe e a elite explosiva fazem o chão rachar e explodir, e a investida levanta poeira. Toquei em `v2/chefe.gd` e `v2/elites.gd` só para marcar o estilo do aviso; a lógica e o dano não mudaram.
 
 _Claude do Breno (PC do trabalho)_
+
+
+## 2026-10-20 · Claude do Breno (PC do trabalho) · Colisão perto da tela, HUD legível e visual premium dos menus
+- **Feito:** monstro só colide com as barreiras perto da tela (#336, PR #346, teste `v2_colisao_tela`). HUD da v2 com a fonte Atkinson Hyperlegible (OFL) em 12 px (#347, #352) e painel do herói maior (#354; a barra de vida e a moldura começam em x 74). Tela de título viva (#356): câmera lenta, lua com nuvens, névoa, pântano cintilando, brasas, espíritos, folhas, lanternas, olhos na mata, corvos e relâmpago, com logo em ouro, relevo e faíscas. Visual premium nos menus (PR #358): `v2/estilo_premium.gd` com moldura dourada, faixa de seleção e ornamento, usado na pausa e ajustes, escolha de personagem (com o fundo vivo), salão, SUA BUILD, cartas de nível, caixas do HUD e anúncios em faixa de cinema. Arte nova só em arquivos novos (`v2/hud/gerar_moldura_premium.py`); a moldura de pedra continua.
+- **Validado:** testes de menu, HUD, status, salão, personagens, cartas e colisão com `falhas=0`; capturas e GIF em `docs/capturas_visual/`.
+- **Pendente:** FPS no PC de casa (o Breno vai medir e mandar foto); balanceamento (#137) jogando; `v2_pausa` continua falhando só onde há perfil Alto salvo (ver a entrada de 19/10).
+- **Para o Claude do Alisson:** `hud.tscn` usa `moldura_premium_fina.png` nas caixas do relógio, abates, XP e chefe, e `hud_anuncios.gd` desenha a faixa em `_draw` (o NinePatch fica escondido). O padrão novo está no `DESIGN.md`.
+
+_Claude do Breno (PC do trabalho)_
+
+## 2026-10-20 · Codex do Alisson · Som das invocações (#349, Lote C da #342)
+- **Feito:** andantes, Golem de Barro, Colosso e fusões ganham som ao nascer, no impacto real do ataque e ao sumir. Perfis acompanham a ficha resolvida da fusão. Reutilizados os WAVs já registrados, sem áudio novo: três vozes próprias, volume baixo e intervalos global/por evento, sem ocupar as dez vozes do combate e sem carregar som por quadro.
+- **Limpeza:** pausa, escolha, baú, morte e vitória cortam as vozes em andamento. Geração do slot e WeakRef evitam herança de áudio no reaproveitamento; retirada por fusão emite saída uma vez, inclusive no mesmo quadro da reutilização, e restart limpa silenciosamente, incluindo caudas anteriores.
+- **Validado:** Godot 4.4.1, `v2_som_invocacoes`, `v2_andante`, `v2_golem`, `v2_fusoes`, `v2_partida` e `v2_musica`, todos com `falhas=0`, código 0 e sem `SCRIPT ERROR`; música com o comando headless padrão do teste. Saves/opções isolados por processo. O teste novo cobre todos os aliases/base, volume, limite simultâneo, interrupção e dois frames reais de árvore pausada; numa cópia com áudio PAUSABLE ele detectou a cauda retomada após ESC. `gdformat -l 160 --check` completo em scripts/testes/v2 limpo (302 arquivos).
+- **Pendente:** CI completo do PR e conferência ouvindo no i5-3470. Os testes vizinhos ainda imprimem avisos de recursos/RIDs ao encerrar; o teste novo de som termina sem esses avisos. Nenhum arquivo travado da #348 foi alterado.
+
+_Codex do Alisson_

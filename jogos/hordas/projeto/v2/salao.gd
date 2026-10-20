@@ -6,6 +6,7 @@ extends Control
 ## CANVAS_ITEMS, como o santuário. O desenho da sala é um só (não se redesenha); por quadro, só se mexem o personagem e as chamas.
 
 const Visual := preload("res://v2/salao_visual.gd")
+const EstiloPremium := preload("res://v2/estilo_premium.gd")
 const Vivo := preload("res://v2/salao_vivo.gd")
 const Paleta := preload("res://v2/paleta.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
@@ -298,7 +299,7 @@ func _montar_painel() -> void:
 	var cartao := Panel.new()
 	cartao.position = Vector2(36, 26)
 	cartao.size = Vector2(888, 488)
-	cartao.add_theme_stylebox_override("panel", _caixa(Paleta.CARTAO, Paleta.BORDA))
+	cartao.add_theme_stylebox_override("panel", EstiloPremium.painel())
 	cartao.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_painel.add_child(cartao)
 	_p_icone_estrutura = _caixa_icone(Rect2(56, 36, 48, 48))  # o ícone da estrutura (assets/v2/icones_santuario): 24 px a 2x
@@ -387,10 +388,7 @@ func _estilo_botao(b: Button, tam: int) -> void:
 	b.add_theme_color_override("font_hover_color", COR_FOCO)
 	b.add_theme_color_override("font_focus_color", COR_FOCO)
 	b.add_theme_color_override("font_disabled_color", COR_APAGADO)
-	b.add_theme_stylebox_override("normal", _caixa(Paleta.CARTAO, Paleta.BORDA))
-	b.add_theme_stylebox_override("hover", _caixa(Paleta.CARTAO_SELECIONADO, Paleta.OURO))
-	b.add_theme_stylebox_override("focus", _caixa(Color(0, 0, 0, 0), Paleta.OURO))
-	b.add_theme_stylebox_override("pressed", _caixa(Paleta.PAINEL, Paleta.OURO))
+	EstiloPremium.estilo_botao(b, 10.0)  # painel escuro com filete dourado; foco e mouse acendem a faixa dourada
 	b.add_theme_stylebox_override("disabled", _caixa(Paleta.PAINEL, Paleta.TEXTO_APAGADO))
 	b.mouse_entered.connect(_focar_sob_mouse.bind(b))
 

@@ -279,15 +279,15 @@ func _testes() -> void:
 	ok(no_minimapa == 0, "o canto superior direito fica livre para o minimapa (%d blocos)" % no_minimapa)
 	ok(quebrado == 0, "posições em pixel inteiro (%d fora)" % quebrado)
 
-	# 9. a luz do mundo não toca no HUD, e a fonte é a do jogo sem anti-aliasing e sem hinting
+	# 9. a luz do mundo não toca no HUD, e a fonte é a Atkinson (lisa, com anti-aliasing e hinting leve)
 	var luz_ok := true
 	for n in hud.find_children("*", "CanvasItem", true, false):
 		if n.light_mask != 0:
 			luz_ok = false
 	ok(luz_ok, "nenhum item do HUD recebe luz do mundo")
 	var fonte = raiz.get_theme_font("font")
-	ok(fonte is FontFile and fonte.antialiasing == TextServer.FONT_ANTIALIASING_NONE, "fonte do HUD sem anti-aliasing")
-	ok(fonte is FontFile and fonte.hinting == TextServer.HINTING_NONE, "fonte do HUD sem hinting")
+	ok(fonte is FontFile and fonte.antialiasing == TextServer.FONT_ANTIALIASING_GRAY, "fonte do HUD com anti-aliasing")
+	ok(fonte is FontFile and fonte.hinting == TextServer.HINTING_LIGHT, "fonte do HUD com hinting leve")
 
 	# 10. anúncios, marcos de combo, chefe, vinheta, relógio e sinais que faltam no mundo
 	_testes_anuncios(vista)

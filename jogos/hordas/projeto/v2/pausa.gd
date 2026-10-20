@@ -20,7 +20,7 @@ const Paleta := preload("res://v2/paleta.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
-const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
+const EstiloPremium := preload("res://v2/estilo_premium.gd")  # moldura dourada e faixa de seleção dos menus (#152 V6)
 const TAM_TITULO := Paleta.TITULO_GRANDE  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
 const TAM_BOTAO := Paleta.TITULO_PEQUENO  # botões e linhas (Jersey 10 na grade de 19)
 const TAM_SUB := Paleta.TEXTO_TAMANHO  # linha de apoio do título
@@ -136,16 +136,13 @@ func _montar() -> void:
 	painel.position = PAINEL.position
 	painel.size = PAINEL.size
 	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var caixa := StyleBoxTexture.new()
-	caixa.texture = MOLDURA
-	caixa.texture_margin_left = 5
-	caixa.texture_margin_top = 5
-	caixa.texture_margin_right = 5
-	caixa.texture_margin_bottom = 5
-	painel.add_theme_stylebox_override("panel", caixa)
+	painel.add_theme_stylebox_override("panel", EstiloPremium.painel())
 	_raiz.add_child(painel)
 	_titulo = _rotulo(Dados.fonte_titulo, TAM_TITULO, COR_OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 18), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	_raiz.add_child(_titulo)
+	var ornamento := EstiloPremium.ornamento(300.0)
+	ornamento.position = Vector2(PAINEL.position.x + (PAINEL.size.x - 300.0) / 2.0, PAINEL.position.y + 74)
+	_raiz.add_child(ornamento)
 	_sub = _rotulo(
 		Dados.fonte_texto, TAM_SUB, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER
 	)
@@ -156,15 +153,10 @@ func _montar() -> void:
 		linha.position = Vector2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H)
 		linha.size = Vector2(w, LINHA_ALT)
 		linha.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var est := StyleBoxFlat.new()
-		est.bg_color = Color(Paleta.OURO, 0.14)
-		est.border_color = COR_OURO
-		est.set_border_width_all(2)
-		est.set_corner_radius_all(0)
 		var marca := Panel.new()
 		marca.set_anchors_preset(Control.PRESET_FULL_RECT)
 		marca.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		marca.add_theme_stylebox_override("panel", est)
+		marca.add_theme_stylebox_override("panel", EstiloPremium.foco())  # a faixa dourada da linha escolhida
 		linha.add_child(marca)
 		var rot := _rotulo(Dados.fonte_titulo, TAM_BOTAO, COR_TEXTO, Vector2(12, 6), w - 24, HORIZONTAL_ALIGNMENT_LEFT)
 		linha.add_child(rot)
@@ -436,8 +428,8 @@ func _acao_sel(passo: int, confirmar: bool) -> void:
 	if _itens_atuais.is_empty():
 		return
 	var id := str(_itens_atuais[sel].id)
-	if id == "":
-		return
+	if id == "" or bool(_itens_atuais[sel].get("bloqueado", false)):
+		return  # cabeçalho ou linha apagada (Avançado com o Detalhe dinâmico ligado): não faz nada
 	if _eh_stepper(id):
 		_executar(id, passo)
 	elif confirmar:
@@ -446,7 +438,7 @@ func _acao_sel(passo: int, confirmar: bool) -> void:
 
 
 func _eh_stepper(id: String) -> bool:
-	return id in STEPPERS or id == "g:perfil" or id.begins_with("g:op:")
+	return id in STEPPERS or id == "g:perfil" or id == "g:dinamico" or id.begins_with("g:op:")
 
 
 ## Índice (na lista inteira) da linha visível sob o mouse; -1 se não há linha ali (ou é cabeçalho).
@@ -631,6 +623,8 @@ func _desenhar() -> void:
 		l["rotulo"].text = str(it.rotulo)
 		l["valor"].text = str(it.get("valor", ""))
 		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
+		if bool(it.get("bloqueado", false)):
+			cor = Color(COR_OURO, 0.6) if on else Color(COR_TEXTO, 0.38)  # linha apagada: continua com foco (a ajuda diz por quê), mas não muda
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
 		var ico: TextureRect = l["icone"]

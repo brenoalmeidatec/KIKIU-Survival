@@ -127,14 +127,19 @@ func _rotulo(texto: String, tam: int, titulo: bool, cor: Color, alin: Horizontal
 	return l
 
 
+## Cartão no visual premium (#152): fundo azul-noite quase preto com um toque da cor da raridade e borda dessa cor; o escolhido
+## esquenta o fundo, ganha borda dourada e brilho dourado em volta. As outras raras mantêm o brilho da própria cor.
 func _estilo(sel_: bool, cor: Color = Paleta.BORDA, rar := 0) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color = Paleta.alfa(Paleta.CARTAO_SELECIONADO, 0.97) if sel_ else Paleta.alfa(Paleta.CARTAO, 0.96)
-	s.bg_color = s.bg_color.lerp(cor, 0.1 + 0.05 * rar)
-	s.border_color = cor.lerp(Paleta.BRANCO, 0.45) if sel_ else cor
+	s.bg_color = Color(0.075, 0.06, 0.035, 0.97) if sel_ else Color(0.03, 0.035, 0.07, 0.95)
+	s.bg_color = s.bg_color.lerp(cor, 0.06 + 0.04 * rar)
+	s.border_color = Paleta.OURO if sel_ else cor.lerp(Paleta.PRETO, 0.15)
 	s.set_border_width_all(2 + (1 if rar >= 2 else 0) + (1 if sel_ else 0))
 	s.set_corner_radius_all(0)
-	if rar > 0:  # o brilho em volta: mais forte quanto mais rara
+	if sel_:
+		s.shadow_color = Color(Paleta.OURO, 0.35)
+		s.shadow_size = 10
+	elif rar > 0:  # o brilho em volta: mais forte quanto mais rara
 		s.shadow_color = Color(cor.r, cor.g, cor.b, 0.18 + 0.12 * rar)
 		s.shadow_size = 4 + 3 * rar
 	return s

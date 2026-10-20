@@ -4,12 +4,15 @@ extends Control
 ## cena, e só mudam de texto, cor e tamanho. O HUD chama `anunciar` e `avancar`.
 ## Entrada: escala de 1,4 (mais com a intensidade) até 1,0, com brilho; segura ~1,2 s (mais 0,1 s por intensidade); sai esmaecendo.
 ## A intensidade vai de 0 a 4 e é o marco de combo (SEQUÊNCIA a LENDÁRIO): cresce a escala, o tempo na tela e o tremor.
+## Visual premium (#152): uma faixa de cinema desenhada em `_draw` (escura, some nas pontas, com filetes e losangos na cor do
+## anúncio) no lugar da caixa; o NinePatch `Moldura` fica escondido.
 
 const CENTRO_X := 480.0
-const LARGURA_MAX := 560.0
-const ALTURA := 40.0
-const TAM_FONTE := 16
-const FOLGA := 40.0  # espaço do texto até a borda da moldura (somado, 20 px de cada lado)
+const LARGURA_MAX := 640.0
+const ALTURA := 44.0
+const TAM_FONTE := 22
+const FOLGA := 96.0  # espaço do texto até a ponta da faixa (somado): cabe o losango de cada lado
+const PONTA := 80.0  # quanto a faixa se estende além da caixa, sumindo
 const ENTRADA_T := 0.18
 const SAIDA_T := 0.25
 const SEGURA_T := 1.2
@@ -38,6 +41,8 @@ func _ready() -> void:
 	_y0 = _y
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
+	_moldura.visible = false  # a faixa é desenhada em _draw
+	_texto.add_theme_font_size_override("font_size", TAM_FONTE)
 
 
 ## O HUD gruda a faixa no topo do canvas: dy é o quanto subir (ou descer) em relação ao .tscn.
@@ -92,6 +97,37 @@ func _mostrar(anuncio: Dictionary) -> void:
 	pivot_offset = size * 0.5
 	position = Vector2(roundf(CENTRO_X - largura * 0.5), _y)
 	visible = true
+	queue_redraw()
+
+
+## A faixa: escura no meio e sumindo nas pontas, com um filete em cima e outro embaixo na cor do anúncio e um losango de cada lado
+## do texto.
+func _draw() -> void:
+	if not _ativo:
+		return
+	var w := size.x
+	var h := size.y
+	var escuro := Color(0.01, 0.012, 0.03, 0.86)
+	_degrade(Rect2(-PONTA, 4, PONTA, h - 8), Color(escuro, 0.0), escuro)
+	draw_rect(Rect2(0, 4, w, h - 8), escuro)
+	_degrade(Rect2(w, 4, PONTA, h - 8), escuro, Color(escuro, 0.0))
+	var cor := Color(_cor, 0.95)
+	for y in [3.0, h - 4.0]:
+		_degrade(Rect2(-PONTA, y, PONTA, 1), Color(cor, 0.0), cor)
+		draw_rect(Rect2(0, y, w, 1), cor)
+		_degrade(Rect2(w, y, PONTA, 1), cor, Color(cor, 0.0))
+	for x in [18.0, w - 18.0]:
+		_losango(Vector2(x, h / 2.0), 6.0, cor)
+		_losango(Vector2(x, h / 2.0), 2.0, Color(0.05, 0.03, 0.02))
+
+
+func _degrade(r: Rect2, c0: Color, c1: Color) -> void:
+	var pts := PackedVector2Array([r.position, r.position + Vector2(r.size.x, 0), r.end, r.position + Vector2(0, r.size.y)])
+	draw_polygon(pts, PackedColorArray([c0, c1, c1, c0]))
+
+
+func _losango(p: Vector2, r: float, cor: Color) -> void:
+	draw_colored_polygon(PackedVector2Array([p + Vector2(0, -r), p + Vector2(r, 0), p + Vector2(0, r), p + Vector2(-r, 0)]), cor)
 
 
 func _quadro() -> void:

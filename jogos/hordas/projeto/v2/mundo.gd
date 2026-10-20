@@ -13,7 +13,7 @@ extends Node
 ##   --picos=MS (imprime cada quadro mais lento que MS ms, com as partes que pesaram nele, e um resumo no fim: v2/picos.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
 ##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --maximizada (janela maximizada do SO, como no notebook) --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
-## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
+## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ESPECIAL do herói, Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
 ## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
@@ -735,8 +735,8 @@ func _ler_graficos() -> void:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
 
 
-## Perfil Dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um,
-## só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
+## Detalhe dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um, mas só
+## até o Perfil escolhido (o teto), só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
 func _baixar_qualidade(dt: float, fps: float) -> void:
 	if (
 		not _qualidade_ligada
@@ -752,15 +752,15 @@ func _baixar_qualidade(dt: float, fps: float) -> void:
 	var limite := int(Config.g("limite_fps"))
 	var alvo := 55.0 if limite <= 0 or limite >= 60 else limite * 0.92  # com limite baixo de fps, "firme" é perto do limite
 	var antes := Config.g_perfil()
-	var nome := _qualidade.passo(dt, fps, antes, alvo)
+	var nome := _qualidade.passo(dt, fps, antes, alvo, Config.g_perfil_escolhido())
 	if nome == "":
 		return
 	Config.g_perfil_temporario(nome)
-	var degrau := {"alto": "alta", "medio": "média", "baixo": "baixa"}
+	var degrau: String = QualidadeAuto.NOMES_ANUNCIO.get(nome, nome)
 	if QualidadeAuto.DEGRAUS.find(nome) < QualidadeAuto.DEGRAUS.find(antes):
-		combate.anunciar("FPS firme: qualidade gráfica %s" % degrau[nome], Color(0.6, 1, 0.6))
+		combate.anunciar("FPS firme: qualidade gráfica %s" % degrau, Color(0.6, 1, 0.6))
 	else:
-		combate.anunciar("FPS baixo: qualidade gráfica %s" % degrau[nome], Color(1, 0.8, 0.4))
+		combate.anunciar("FPS baixo: qualidade gráfica %s" % degrau, Color(1, 0.8, 0.4))
 
 
 # ------------------------------------------------------------------ movimento e mouse
