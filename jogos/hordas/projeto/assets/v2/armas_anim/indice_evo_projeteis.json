@@ -1,0 +1,252 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/armas_anim/gerar_evo_projeteis.py (nao edite a mao)",
+ "folhas": {
+  "urso_solar": {
+   "armas": [
+    "urso_solar"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "urso_solar_voo.png",
+     "quadro": [
+      42,
+      18
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      31,
+      9
+     ]
+    },
+    "impacto": {
+     "arquivo": "urso_solar_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "chuva_de_lacas": {
+   "armas": [
+    "chuva_de_lacas"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "chuva_de_lacas_voo.png",
+     "quadro": [
+      40,
+      12
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      30,
+      6
+     ]
+    },
+    "impacto": {
+     "arquivo": "chuva_de_lacas_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "bola_incendiaria": {
+   "armas": [
+    "bola_incendiaria"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "bola_incendiaria_voo.png",
+     "quadro": [
+      40,
+      20
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      30,
+      10
+     ]
+    },
+    "impacto": {
+     "arquivo": "bola_incendiaria_impacto.png",
+     "quadro": [
+      56,
+      56
+     ],
+     "n": 6,
+     "fps": 15,
+     "loop": false,
+     "ancora": [
+      28,
+      28
+     ]
+    }
+   }
+  },
+  "chuva_de_ferro": {
+   "armas": [
+    "chuva_de_ferro"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "chuva_de_ferro_voo.png",
+     "quadro": [
+      28,
+      28
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      14,
+      14
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "chuva_de_ferro_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "tempestade_primordial": {
+   "armas": [
+    "tempestade_primordial"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "tempestade_primordial_voo.png",
+     "quadro": [
+      72,
+      18
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      54,
+      9
+     ]
+    },
+    "impacto": {
+     "arquivo": "tempestade_primordial_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "anel_de_brasas": {
+   "armas": [
+    "anel_de_brasas"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "anel_de_brasas_voo.png",
+     "quadro": [
+      24,
+      24
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      12,
+      12
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "anel_de_brasas_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    },
+    "aura": {
+     "arquivo": "anel_de_brasas_aura.png",
+     "quadro": [
+      128,
+      82
+     ],
+     "n": 6,
+     "fps": 10,
+     "loop": true,
+     "ancora": [
+      64,
+      46
+     ]
+    }
+   }
+  },
+  "aura_fogo": {
+   "armas": [
+    "aura_fogo"
+   ],
+   "anims": {
+    "aura": {
+     "arquivo": "aura_fogo_aura.png",
+     "quadro": [
+      128,
+      82
+     ],
+     "n": 6,
+     "fps": 10,
+     "loop": true,
+     "ancora": [
+      64,
+      46
+     ]
+    }
+   }
+  }
+ }
+}

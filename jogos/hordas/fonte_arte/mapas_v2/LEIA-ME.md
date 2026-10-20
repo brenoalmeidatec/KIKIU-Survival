@@ -61,3 +61,6 @@ que ficam fora da área andável); a colisão do `colisao.gd` aceita qualquer `r
 ## Cidade integrada (2026-10-13)
 
 A Cidade da PR #211 integra a seleção junto de Floresta, Laboratório e Ruínas da Floresta. Fonte e regras próprias em `LEIA-ME_CIDADE.md`; assets e os 177 objetos/85 luzes preservados. Ruínas da Floresta é o nome exibido do id `medio`, sem regenerar o mapa nem mudar progresso salvo.
+
+## Laboratório por salas (18/10/2026)
+O desenho do laboratório agora segue `docs/laboratorio/PLANTA_PROPOSTA.md`: 9 salas em grade 3x3, quatro corredores de 160 px, uma receita por sala em `def_laboratorio.py`. Para mexer em onde as coisas ficam, mude o gerador e rode `python jogos/hordas/fonte_arte/gerar_v2_mapas.py laboratorio --so-mapa [--previa x.png]` (sem refazer atlas nem piso, então sem Blender; troque CRLF por LF no JSON gerado). Confira com `testes/v2_mapas` e `testes/v2_laboratorio_colisao`.

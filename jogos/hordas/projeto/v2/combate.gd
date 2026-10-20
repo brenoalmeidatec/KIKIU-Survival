@@ -12,6 +12,7 @@ extends RefCounted
 const Efeitos := preload("res://v2/efeitos.gd")
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
+const Meta := preload("res://v2/meta.gd")
 const TempoLocal := preload("res://v2/tempo_local.gd")
 const Diretor := preload("res://v2/diretor.gd")
 const Telas := preload("res://v2/telas.gd")
@@ -24,6 +25,8 @@ const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
 const Ruptura := preload("res://v2/ruptura.gd")
 const Escudo := preload("res://v2/escudo.gd")
+const Especial := preload("res://v2/especial.gd")
+const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
 const Adagas := preload("res://v2/adagas.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
@@ -55,6 +58,8 @@ var baus
 var chefes
 var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
+var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a ruptura continua em v2/ruptura.gd)
+var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Lucas (pool, v2/adagas.gd)
 var heroi_id := "hazaki"  # o herói da partida (v2/herois.gd)
 var fim_emitido := false  # partida_terminou já saiu
@@ -106,6 +111,9 @@ var _fila: Array = []  # monstros que morreram no quadro por golpe secundário o
 var anuncios := 0  # quantos anúncios saíram (testes)
 var ultimo_anuncio := ""
 var ferimentos := 0  # golpes secundários que feriram (testes)
+var dano_causado := 0.0  # soma do dano nos monstros na partida (robô de playtest, #301)
+var dano_sofrido := 0.0  # soma do dano que o herói tomou
+var golpes_tomados := 0
 var us_armas := 0  # microssegundos gastos em armas.atualizar (medição)
 var _cab := PackedInt32Array()  # grade de separação: primeira entrada de cada célula (hash)
 var _prox := PackedInt32Array()  # próximo monstro na mesma célula
@@ -144,13 +152,17 @@ func montar(m) -> void:
 	diretor = Diretor.new()
 	diretor.montar(self)
 	telas = Telas.new()
-	telas.montar(self, m.sv)
+	telas.montar(self, m.ui)
 	avisos = Avisos.new()
 	avisos.montar(self, m.glow)
 	ruptura = Ruptura.new()
 	ruptura.montar(self, m.glow)
 	escudo = Escudo.new()
 	escudo.montar(self, m.glow)
+	especial = Especial.new()
+	especial.montar(self, m.glow)
+	habilidade = Habilidade.new()
+	habilidade.montar(self)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
@@ -239,7 +251,9 @@ func _fim_camera_lenta() -> void:
 func atualizar(dt: float) -> void:
 	_q += 1
 	var h = mundo.heroi
+	var m0 := Time.get_ticks_usec()
 	processar_mortes()  # fogo e golpes do quadro anterior
+	mundo._perfil("c_mortes", Time.get_ticks_usec() - m0)
 	if mundo.combo > 0:
 		combo_t -= dt
 		if combo_t <= 0.0:
@@ -252,19 +266,33 @@ func atualizar(dt: float) -> void:
 		_contato(h)
 		mundo._perfil("c_separar", s1 - s0)
 		mundo._perfil("c_contato", Time.get_ticks_usec() - s1)
+		var d0 := Time.get_ticks_usec()
 		diretor.atualizar(dt)
 		var t0 := Time.get_ticks_usec()
 		armas.atualizar(dt)
-		us_armas += Time.get_ticks_usec() - t0
+		var t1 := Time.get_ticks_usec()
+		us_armas += t1 - t0
 		adagas.atualizar(dt)
 		elites.atualizar(dt)
+		diretor.avancar_nivel(dt)
 		chefes.atualizar(dt)
+		var t2 := Time.get_ticks_usec()
 		avisos.atualizar(dt)
 		ruptura.atualizar(dt)
+		especial.atualizar(dt)
 		baus.atualizar(dt)
+		mundo._perfil("c_diretor", t0 - d0)
+		mundo._perfil("c_armas", t1 - t0)
+		mundo._perfil("c_elites_chefes", t2 - t1)
+		mundo._perfil("c_avisos_baus", Time.get_ticks_usec() - t2)
 	var o0 := Time.get_ticks_usec()
 	orbes.atualizar(dt, h.pos + Vector2(0, -8), h.alcance_ima())
 	mundo._perfil("c_orbes", Time.get_ticks_usec() - o0)
+
+
+## Quadros entre um recálculo da separação de cada monstro: PASSO_SEP x a opção Cálculo dos monstros (0,5 frequente, 1 normal, 2 espaçado).
+func _passo_sep() -> int:
+	return maxi(1, roundi(float(PASSO_SEP) * float(Config.g("calculo_monstros"))))
 
 
 ## Monstros colados se empurram: a horda faz uma roda em volta do herói em vez de virar uma pilha em cima dele. Uma grade espacial de
@@ -302,11 +330,12 @@ func _separar() -> void:
 		var h := ((int(p.x / CEL) * 73856093) ^ (int(p.y / CEL) * 19349663)) & (GRADE_N - 1)
 		_prox[i] = _cab[h]
 		_cab[h] = i
-	var i0 := _q % PASSO_SEP
+	var passo := _passo_sep()
+	var i0 := _q % passo
 	while i0 < n:
 		var m = ms[i0]
 		var k := i0
-		i0 += PASSO_SEP
+		i0 += passo
 		if m.atordoa_t > 0.0:
 			m.sep = Vector2.ZERO
 			continue
@@ -388,6 +417,7 @@ func efeitos(dt: float) -> void:
 	fx.atualizar(dt)
 	ruptura.efeitos(dt)
 	escudo.efeitos(dt)
+	especial.efeitos(dt)
 	telas.atualizar(dt)
 
 
@@ -395,13 +425,21 @@ func efeitos(dt: float) -> void:
 
 
 ## Os números do golpe da katana COMO O JOGO OS USA (golpe_comecou e golpear leem daqui; o card de status, status.gd, também).
-## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance e arco com a área.
+## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance com a área e o nível; arco só com a área.
 func dano_do_passo(passo: Dictionary) -> float:
 	return float(passo.dano) * mundo.heroi.m_dano
 
 
-func alcance_do_passo(passo: Dictionary) -> float:
-	return float(passo.alcance) * mundo.heroi.m_area
+## Quanto o alcance do golpe do herói `h` cresce com o nível dele (fração do alcance do dado): dados > v2_combate.json > golpe.raio_por_nivel.
+func bonus_nivel_golpe(h) -> float:
+	return Progresso.bonus_por_nivel(int(h.nivel), cfg.golpe.raio_por_nivel)
+
+
+## O alcance do passo do herói `h` (o que golpeia; sem `h`, o herói do mundo): o do dado vezes a área dele (cartas, h.m_area) MAIS o crescimento por
+## nível (bonus_nivel_golpe), que se soma à área sem entrar nela. O acerto (golpear) e o desenho (fx.corte, em golpe_comecou) leem daqui, então batem.
+func alcance_do_passo(passo: Dictionary, h = null) -> float:
+	var quem = h if h != null else mundo.heroi
+	return float(passo.alcance) * (quem.m_area + bonus_nivel_golpe(quem))
 
 
 ## O arco com a área do herói, até 360 graus: a pancada do Nicão é em volta toda, e sem o teto 360 com a área vira 396 e o cosseno do acerto inverte.
@@ -464,7 +502,7 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	if str(passo.get("tipo", "melee")) == "adagas" or passo.nome == "pancada":  # sem corte desenhado: as adagas e o chão aparecem no acerto
 		audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
 		return
-	var alc: float = alcance_do_passo(passo)
+	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
 	fx.corte(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, arco, float(passo.lado), str(passo.nome), cor, vis)
@@ -474,9 +512,9 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 ## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
 func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
 	if str(passo.get("tipo", "melee")) == "adagas":  # o Lucas: as adagas saem (v2/adagas.gd) e acertam por conta própria
-		adagas.lancar(h, origem, dir, passo)
+		adagas.lancar(h, origem, dir, passo, true)  # true: o alcance das adagas do golpe cresce com o nível (as do especial Q, não)
 		return 0
-	var alc: float = alcance_do_passo(passo)
+	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
 	var pancada: bool = passo.nome == "pancada"  # o Nicão no chão: em volta, empurrão para fora
 	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nicão: empurra e atordoa mais
@@ -509,13 +547,18 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var longe: Vector2 = rel.normalized() if dist > 0.5 else dir
 		var rumo: Vector2 = longe if pancada else (dir * 0.55 + longe * 0.45).normalized()
 		var emp: Vector2 = rumo * float(passo.empurrao) * (1.25 if crit else 1.0) * forca
+		var util := minf(float(dano), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0) * (1.0 + (forca - 1.0) * 0.5))
+		especial.dano(util)
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
 			var raio_e: float = float(cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
 			armas.explodir(m.pos, float(dano) * float(armas.mods.explode) / 100.0, raio_e, COR_CRIT, m)
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.85), str(dano), COR_CRIT if crit else COR_NUM, crit)
 		fx.flash(m, 0.1)
+		fx.folha("estrela", ponto, 15.0 if crit else 11.0, cor, 0.14)  # camada 1: a centelha de 2 quadros em todo acerto
+		if crit or pancada or passo.nome == "estocada":  # camada 2: a marca branca sustentada só no golpe forte
+			fx.flash(m, 0.45, Color.WHITE, 3)
 		fx.faiscas(ponto - longe * float(m.raio) * 0.5, dir, 10 if crit else 6, cor, 200.0 if crit else 160.0)
 		audio.tocar("critico" if crit else "impacto", randf_range(0.92, 1.1), 0.0, 0.03)
 		parada = maxf(parada, hit_stop_do_acerto(passo, crit))
@@ -579,6 +622,7 @@ func matar(m) -> void:
 		orbes.soltar(m.pos, m.xp * mult)
 	if float(armas.mods.folego) > 0.0:  # modificador da katana: matar recupera fôlego
 		mundo.heroi.ganhar_folego(float(armas.mods.folego) / 100.0)
+	especial.abate(m)  # cada abate dá carga de bônus à ultimate (Q)
 	if m.elite:
 		elites.ao_morrer(m)
 	if m.chefe:
@@ -598,8 +642,11 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	if not m.vivo or m.morrendo:
 		return false
 	var dn := maxi(1, roundi(dano))
+	var util := minf(float(dn), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
+	especial.dano(util)
 	ferimentos += 1
+	dano_causado += dn
 	if numero:
 		fx.numero(m.pos + Vector2(0, -float(m.alt) * 0.8), str(dn), cor, critico)
 		fx.flash(m, 0.08)
@@ -684,6 +731,9 @@ func rastro_esquiva(h) -> void:
 
 func heroi_apanhou(valor: float) -> void:
 	var h = mundo.heroi
+	dano_sofrido += valor
+	golpes_tomados += 1
+	especial.recebeu(valor)  # apanhar também enche um pouco a ultimate (Q)
 	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), COR_DANO_HEROI, false)
 	fx.flash(h, 0.14, Color(1.0, 0.3, 0.3), 0, 0.9)
 	fx.faiscas(h.pos + Vector2(0, -16), h.emp.normalized(), 8, Color(1.0, 0.3, 0.25), 150.0)
@@ -698,6 +748,8 @@ func heroi_morreu() -> void:
 	mundo.cam.tremer(3.0, 0.3)
 	hit_stop(0.18)
 	jogo = "morrendo"
+	especial.fim_de_partida()
+	habilidade.fim_de_partida()
 	camera_lenta("morte", maxf(1.3, h.duracao_morte() + 0.25), 0.25)  # a queda do herói e o dissolve cabem antes da tela de resultado
 
 
@@ -765,6 +817,8 @@ func vitoria() -> void:
 	if jogo == "vencendo" or jogo == "vitoria" or jogo == "morrendo" or jogo == "morte":
 		return
 	jogo = "vencendo"
+	especial.fim_de_partida()
+	habilidade.fim_de_partida()
 	var a: Dictionary = cartas.cfg.anuncios.vitoria
 	anunciar(str(a.texto), _cor(a.cor), "", 3.0)
 	audio.tocar("vitoria", 1.0, 0.0, 0.0)
@@ -786,8 +840,13 @@ func fim_de_partida(ganhou: bool) -> void:
 		"nivel": mundo.heroi.nivel,
 		"maior_combo": mundo.maior_combo,
 		"venceu": ganhou,
-		"almas": mundo.almas_partida
+		"almas": mundo.almas_partida,
+		"mapa": str(mundo.id_mapa),
+		"nivel_mapa": diretor.nivel,
+		"niveis_mapa": diretor.niveis_total
 	}
+	if ganhou:
+		r["mapa_vencido_agora"] = Meta.marcar_mapa_vencido(str(mundo.id_mapa))  # registra a vitória e preserva o anúncio da conquista no resultado
 	mundo.resultado = r
 	mundo.partida_terminou.emit(r)
 
@@ -825,6 +884,8 @@ func limpar_partida() -> void:
 	avisos.limpar()
 	ruptura.limpar()
 	escudo.limpar()
+	especial.limpar()
+	habilidade.limpar()
 	baus.limpar()
 	elites.zerar()
 	chefes.zerar()
@@ -843,6 +904,9 @@ func limpar_partida() -> void:
 	criticos = 0
 	mortes = 0
 	ferimentos = 0
+	dano_causado = 0.0
+	dano_sofrido = 0.0
+	golpes_tomados = 0
 	fim_emitido = false
 	venceu = false
 	mundo.xp_coletado = 0.0
@@ -854,7 +918,9 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, elites, baus, chefes]:
+	if chefes != null:
+		chefes.liberar()  # o visual do chefe aponta de volta para ele e tem nós órfãos
+	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, especial, habilidade, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -871,6 +937,8 @@ func liberar() -> void:
 	avisos = null
 	ruptura = null
 	escudo = null
+	especial = null
+	habilidade = null
 	elites = null
 	baus = null
 	chefes = null

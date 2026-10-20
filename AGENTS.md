@@ -19,6 +19,8 @@ A mesma tabela está no fim do `CLAUDE.md`; quem mudar uma muda a outra.
 
 **Divisão FIXA (decisão do Alisson, 2026-10-14):** não mude esta divisão por conta própria nem por pedido de outro agente; só o Alisson muda.
 
+**Mudança (decisão do Alisson, 2026-10-18):** quando o Alisson mandar (issue com a etiqueta `para-o-codex`), o **Codex do Alisson também pega trabalho pesado de código**: integrar branches, resolver conflitos, rodar testes e abrir PR. Ele segue as mesmas regras do Claude do Alisson (Godot 4.4.1, testes do que mudou, fotos reais, PR com CI verde e entrada no `LOGBOOK.md`). Sem issue `para-o-codex`, ele continua só com imagens. O Claude do Alisson revisa e mescla.
+
 | Quem | Fica com | Área de arquivos |
 |---|---|---|
 | **Codex do Alisson (você)** | **Só geração de imagem (imagegen):** folhas de sprite, arte de título e de cenário, ícones, texturas e referências, no estilo do jogo e na especificação pedida. Entrega a imagem-fonte versionada e registrada; o recorte e a ligação no jogo ficam com o Claude do Alisson. | Imagens-fonte em `jogos/hordas/fonte_arte/` (e `assets/` só quando pedido), registro em `docs/LICENCAS_ARTE.md` |
@@ -31,6 +33,7 @@ A mesma tabela está no fim do `CLAUDE.md`; quem mudar uma muda a outra.
 3. **Uma só mão integra.** Quando dois PRs se cruzam, quem resolve o conflito é o Claude do Alisson. Não resolva conflito, não faça rebase nem reescreva o PR de outro agente sem avisar no PR.
 4. **Mescle só os próprios PRs**, com CI verde no mesmo commit. PR de outro agente: comente; quem mescla é o dono ou o integrador.
 5. Precisa de algo do Breno? **Uma pergunta curta e fechada** na issue (sim/não, ou A, B, C) com um padrão já escolhido; sem resposta, siga pelo padrão.
+6. **Travas de arquivo (decisão do Alisson, 2026-10-20):** antes de editar qualquer coisa, confira a issue de travas aberta (hoje a **#348**, até o fechamento de 23/10). Arquivo travado ali está com outro agente: não edite; se precisar, comente na issue e espere. No `LOGBOOK.md` e no `docs/LICENCAS_ARTE.md` só acrescente no fim, nunca edite o que já está lá.
 
 ## Arte (a sua frente, decisão do Alisson em 2026-10-14)
 Sua tarefa é **gerar imagens**. Você não altera código do jogo (`.gd`, `.tscn`, `.gdshader`, `dados/`), testes nem workflows: isso é do Claude do Alisson, que recorta, liga no jogo e testa.

@@ -277,6 +277,9 @@ func _md5(caminho: String) -> String:
 ## almas 2 (+16% de almas por partida).
 func _santuario() -> void:
 	Meta.registrar_partida({"tempo": 400.0, "abates": 0, "nivel": 1, "maior_combo": 0, "venceu": false, "almas": 5000})
+	# Raridade e rolagem só abrem ao vencer o Laboratório e a Cidade (dados/v2_meta.json, requer): libera de forma explícita.
+	for mapa in ["floresta", "laboratorio", "cidade"]:
+		Meta.marcar_mapa_vencido(mapa)
 	for par in [["vida", 2], ["dano", 2], ["velocidade", 1], ["folego", 1], ["ima", 1], ["treino", 1], ["raridade", 1], ["rolagem", 1], ["almas", 2]]:
 		for i in int(par[1]):
 			ok(Meta.comprar(str(par[0])), "comprou %s no Santuário de teste" % par[0])
@@ -790,6 +793,20 @@ func _golpes() -> void:
 		menor = minf(menor, float(e.queda))
 	ok(not q.is_empty() and menor == float(n[0]), "a explosão da runa tira o dano por acerto do card (%.0f contra %.0f)" % [menor, float(n[0])])
 	faixa(float(n[2]) * 30.0, _soma(q), 0.8, 1.3, "runa: dano por segundo do card x 30 s (o card já conta só as runas que nascem sobre o monstro)")
+	# --- torre temporária: várias levas completas, incluindo o período SEM torre entre elas (a recarga só conta depois de desmontar)
+	zerar()
+	pegar("sentinela_bambu")
+	w.heroi.m_vel_ataque = 1.0
+	w.heroi.m_critico = -5.0
+	var torre: Dictionary = w.combate.armas.ativas.sentinela_bambu
+	torre.st.duracao = 3.0  # ciclo curto para medir várias levas no mesmo teste
+	torre.st.recarga = 3.0
+	torre.st.tique = 0.25
+	torre.st.quantidade = 1
+	n = n_de("arma.sentinela_bambu")
+	m = boneco(100.0)
+	q = _quedas(m, 32.0)
+	faixa(float(n[2]) * 32.0, _soma(q), 0.85, 1.18, "torre: DPS médio inclui armar, desmontar e 3 s sem torre entre levas")
 	# --- evolução: aura nv 3 + lâminas nv 3 viram o Anel de Brasas
 	zerar()
 	pegar("aura_fogo", 1)
@@ -1057,7 +1074,7 @@ func _contar_nos() -> int:
 
 func _hud_rects() -> Array:
 	var r: Array = []
-	for hud in w.sv.get_children():
+	for hud in w.ui.get_children():
 		if hud.has_node("Raiz/Combo"):
 			for nome in ["Vida", "Folego", "Tempo", "Abates", "Combo", "Xp", "Selo"]:
 				var no: Control = hud.get_node("Raiz/" + nome)
@@ -1069,14 +1086,14 @@ func _hud_rects() -> Array:
 
 ## O CanvasLayer do HUD da partida (hud.gd, camada 10), ou null.
 func _camada_hud():
-	for hud in w.sv.get_children():
+	for hud in w.ui.get_children():
 		if hud.has_node("Raiz/Combo"):
 			return hud
 	return null
 
 
 func _achar_pausa():
-	for no in w.sv.get_children():
+	for no in w.ui.get_children():
 		if no.has_method("abrir_sair"):
 			return no
 	return null
@@ -1213,8 +1230,34 @@ func _interface() -> void:
 	# a página VISUAL (barras, pips e ícones) é a que abre; o Tab troca pela tabela de detalhes e volta
 	ok(st.pagina() == "visual", "a pausa abre o card na página visual (%s)" % st.pagina())
 	ok(not st.visual_cortada().has(true), "a página visual da pausa cabe na altura das colunas (%s)" % str(st.retangulos_visuais()))
+	ok(st.nomes_cortados().is_empty(), "nenhum nome de golpe ou modificador sai cortado na página visual da pausa (%s)" % str(st.nomes_cortados()))
+	_folgas_pausa(st, "[pausa]")
 	for rv in st.retangulos_visuais():
 		ok(not (rv as Rect2).intersects(painel) and Rect2(0, 0, 960, 540).encloses(rv), "a página visual fica ao lado do menu, na tela (%s)" % str(rv))
+	# os dois quadros laterais e o menu formam uma faixa alinhada: mesmo topo, mesma altura e o mesmo espaço dos dois lados (feedback do Alisson)
+	var visuais: Array = st.retangulos_visuais()
+	var lados: Array = [visuais, pr]  # a página visual e a tabela de detalhes
+	for conj in lados:
+		var esq := conj[0] as Rect2
+		var dir := conj[1] as Rect2
+		ok(
+			is_equal_approx(esq.position.y, painel.position.y) and is_equal_approx(dir.position.y, painel.position.y),
+			"os quadros laterais da pausa têm o mesmo topo do menu (%s e %s contra %s)" % [str(esq.position.y), str(dir.position.y), str(painel.position.y)]
+		)
+		ok(
+			is_equal_approx(esq.size.y, painel.size.y) and is_equal_approx(dir.size.y, painel.size.y),
+			"os quadros laterais da pausa têm a altura do menu (%s e %s contra %s)" % [str(esq.size.y), str(dir.size.y), str(painel.size.y)]
+		)
+		var vao_esq := painel.position.x - esq.end.x
+		var vao_dir := dir.position.x - painel.end.x
+		ok(
+			is_equal_approx(vao_esq, vao_dir) and vao_esq >= 8.0,
+			"o espaço entre os quadros e o menu é o mesmo dos dois lados (%s e %s)" % [str(vao_esq), str(vao_dir)]
+		)
+		ok(
+			is_equal_approx(esq.position.x, 960.0 - dir.end.x) and is_equal_approx(esq.size.x, dir.size.x),
+			"as margens da tela e a largura dos dois quadros laterais são iguais (%s e %s)" % [str(esq), str(dir)]
+		)
 	var tab := InputEventKey.new()
 	tab.keycode = KEY_TAB
 	tab.pressed = true
@@ -1371,7 +1414,7 @@ func pausa_entrada(ev: InputEvent) -> bool:
 
 
 ## Escolha de cartas e baú: o card compacto sai de cena, o C abre o painel CENTRAL por cima das cartas, nada é escolhido enquanto ele está
-## aberto, a trava de 1 s segue correndo, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
+## aberto, a trava de 1 s e o limite ficam parados, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
 func _escolha_e_bau(st, c, pausa) -> void:
 	var tela_c = c.telas
 	tecla(KEY_C)  # liga o card compacto (jogo rolando)
@@ -1407,14 +1450,11 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	for rc in rc3:
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "a coluna do painel central cabe na tela (%s)" % str(rc))
 	ok(st.retangulos_visuais().size() == 3 and not st.visual_cortada().has(true), "a página visual do painel central tem três colunas e cabe")
-	# --- a trava de 1 s das cartas segue correndo (tempo real) com o painel aberto
+	# --- a trava de 1 s das cartas fica PARADA com o painel aberto (quem lê a build não perde tempo; v2_cartas_limite cobre o limite de 8 s)
 	var trava0: float = tela_c.espera_escolha
 	ok(trava0 > 0.5, "a trava das cartas está correndo (%.2f s)" % trava0)
 	passos(15)
-	ok(
-		tela_c.espera_escolha < trava0 - 0.2 and tela_c.espera_escolha > 0.0,
-		"com o painel aberto a trava segue correndo em tempo real (%.2f s -> %.2f s depois de 0,25 s)" % [trava0, tela_c.espera_escolha]
-	)
+	ok(tela_c.espera_escolha == trava0, "com o painel aberto a trava fica parada (%.2f s -> %.2f s depois de 0,25 s)" % [trava0, tela_c.espera_escolha])
 	# --- libera a trava e prova que o PAINEL (não a trava) segura as teclas e os cliques
 	tela_c._liberar_cartas()
 	ok(tela_c.espera_escolha == 0.0, "trava liberada para o teste")
@@ -1443,20 +1483,35 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	await esperar()
 	ok(c.progresso.escolhidas == escolhidas0 and tela_c.sel == sel0, "nem o aperto nem a soltura mexem na seleção das cartas escondidas")
 	tela_c.mouse_fn = Callable()
-	# --- o ESC abre a pausa por cima do painel; ao fechar, o painel e as cartas voltam como estavam
+	# --- o ESC na escolha NÃO pausa: pede "Pausar agora?" e tira o painel central do caminho (ele cobriria o quadro e engoliria a entrada);
+	# ESC de novo é "Não". A pausa por cima do painel abre por outro caminho (perder o foco da janela) e, ao fechar, o painel e as cartas voltam.
 	tecla(KEY_ESCAPE)
 	await esperar()
-	ok(pausa.aberto and get_tree().paused, "o ESC abre a pausa com o painel central aberto")
+	ok(tela_c.conf_aberta and not pausa.aberto and not get_tree().paused, "o ESC pede confirmação (não pausa) com o painel central aberto")
+	ok(st._modo_atual != "central", "e o painel central sai do caminho da confirmação (%s)" % st._modo_atual)
+	tecla(KEY_ESCAPE)
+	await esperar()
+	ok(not tela_c.conf_aberta and c.jogo == "escolha" and c.progresso.escolhidas == escolhidas0, "ESC de novo é Não: a escolha segue")
+	tecla(KEY_C)
+	await esperar()
+	ok(st._modo_atual == "central", "C reabre o painel central")
+	pausa.pausar()
+	await esperar()
+	ok(pausa.aberto and get_tree().paused, "a pausa abre com o painel central aberto")
 	ok(st._modo_atual == "pausa", "com o menu aberto o card é o da pausa (%s)" % st._modo_atual)
 	pausa.fechar()
 	ok(not get_tree().paused and st._modo_atual == "central" and st.aberto(), "ao fechar a pausa o painel central volta (%s)" % st._modo_atual)
 	ok(c.progresso.escolhidas == escolhidas0 and c.jogo == "escolha" and c.pausado and tela_c.escolha_aberta and tela_c.sel == sel0, "e a escolha está intacta")
-	# --- o Start também abre a pausa por cima do painel: a Antena da pausa o recebe antes do card, como o ESC
+	# --- o Start faz o mesmo que o ESC na escolha: pede confirmação
 	botao(JOY_BUTTON_START)
 	await esperar()
-	ok(pausa.aberto and get_tree().paused, "o Start abre a pausa com o painel central aberto")
-	pausa.fechar()
-	ok(not get_tree().paused and st._modo_atual == "central" and st.aberto(), "ao fechar a pausa do Start o painel central volta (%s)" % st._modo_atual)
+	ok(tela_c.conf_aberta and not pausa.aberto, "o Start pede confirmação com o painel central aberto")
+	botao(JOY_BUTTON_START)
+	await esperar()
+	ok(not tela_c.conf_aberta and not get_tree().paused and c.jogo == "escolha", "o Start de novo é Não")
+	tecla(KEY_C)
+	await esperar()
+	ok(st._modo_atual == "central" and st.aberto(), "C reabre o painel central")
 	# --- C fecha o painel: as cartas voltam e as teclas da escolha funcionam
 	tecla(KEY_C)
 	await esperar()
@@ -1540,9 +1595,46 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	ok(c.jogo == "jogando", "o jogo voltou depois do baú")
 
 
+## A folga de dentro dos quadros laterais da pausa: o texto fica pelo menos FOLGA_PAUSA (8 px) depois do filete interno da moldura,
+## nos quatro lados e nos dois quadros na página visual (`folgas_visuais`, a área do texto). Na tabela de detalhes são a esquerda e a
+## direita (`folgas_tabela`); o topo da tabela não é conferido aqui, só na foto. O filete fica em FILETE_PAUSA da borda externa.
+func _folgas_pausa(st, contexto: String) -> void:
+	var lados := ["esquerda", "topo", "direita", "base"]
+	var minimo: float = Status.FOLGA_PAUSA - 0.001
+	var visuais: Array = st.folgas_visuais()
+	ok(visuais.size() == 2, "%s a página visual tem os dois quadros laterais (%s)" % [contexto, str(visuais)])
+	for c in visuais.size():
+		var quatro: Array = visuais[c]
+		for k in 4:
+			ok(
+				float(quatro[k]) >= minimo,
+				(
+					"%s página visual, quadro %d, lado %s: o texto tem %.1f px até o filete (mínimo %.1f)"
+					% [contexto, c + 1, lados[k], float(quatro[k]), Status.FOLGA_PAUSA]
+				)
+			)
+		ok(
+			absf(float(quatro[0]) - float(quatro[2])) < 0.5 and absf(float(quatro[1]) - float(quatro[3])) < 0.5,
+			"%s página visual, quadro %d: a folga é a mesma nos dois lados e em cima e embaixo (%s)" % [contexto, c + 1, str(quatro)]
+		)
+	for c in visuais.size():
+		ok(absf(float(visuais[c][0]) - float(visuais[1 - c][0])) < 0.5, "%s os dois quadros têm a mesma folga de dentro (%s)" % [contexto, str(visuais)])
+	var tabela: Array = st.folgas_tabela()
+	for c in tabela.size():
+		var dois: Array = tabela[c]
+		for k in 2:
+			ok(
+				float(dois[k]) >= minimo,
+				(
+					"%s tabela de detalhes, quadro %d, lado %s: a linha tem %.1f px até o filete (mínimo %.1f)"
+					% [contexto, c + 1, ["esquerda", "direita"][k], float(dois[k]), Status.FOLGA_PAUSA]
+				)
+			)
+
+
 ## Os três modos do card (HUD compacto, pausa e painel central) em quatro situações: build vazia (e Santuário sem compra), meio de partida,
 ## build máxima e a build extrema (os maiores números) com o Santuário todo comprado. Em todas: nenhuma linha estoura a coluna, nada é cortado, tudo cabe na tela, o HUD fica livre
-## e o menu da pausa também.
+## e o menu da pausa também (com a folga de dentro dos quadros laterais, `_folgas_pausa`).
 func _layouts(st, c) -> void:
 	var hud := _hud_rects()
 	var painel: Rect2 = Pausa.PAINEL
@@ -1603,6 +1695,10 @@ func _layouts(st, c) -> void:
 						ok(not (rc as Rect2).intersects(e.rect), "[%s / %s] a coluna %s não cobre %s" % [cenario, modo, str(rc), e.nome])
 				elif modo == "pausa":
 					ok(not (rc as Rect2).intersects(painel), "[%s / %s] a coluna fica ao lado do menu" % [cenario, modo])
+			if modo == "pausa":
+				ok(st.nomes_cortados().is_empty(), "[%s / pausa] nenhum nome de golpe ou modificador sai cortado (%s)" % [cenario, str(st.nomes_cortados())])
+				ok(not st.visual_cortada().has(true), "[%s / pausa] a página visual cabe na altura (%s)" % [cenario, str(st.visual_cortada())])
+				_folgas_pausa(st, "[%s / pausa]" % cenario)
 			if modo == "central":
 				for k in rs.size() - 1:
 					ok(not (rs[k] as Rect2).intersects(rs[k + 1]), "[%s / %s] as colunas do painel não se tocam" % [cenario, modo])
@@ -1627,10 +1723,8 @@ func _layouts(st, c) -> void:
 
 func _foto(nome: String, pasta: String) -> void:
 	await get_tree().create_timer(0.4).timeout  # o card se atualiza a 4 Hz: dá tempo de ele pintar o estado de agora (opaco na escolha e na pausa)
-	await RenderingServer.frame_post_draw
-	var img: Image = w.sv.get_texture().get_image()
-	img.save_png(pasta.path_join(nome + ".png"))
-	print("FOTO ", pasta.path_join(nome + ".png"), " ", img.get_size())
+	var tam = await w.ap.foto(pasta.path_join(nome + ".png"))  # a janela inteira: o HUD e o card ficam na camada da UI, fora do viewport do mundo
+	print("FOTO ", pasta.path_join(nome + ".png"), " ", tam)
 
 
 func _fotos(pasta: String) -> void:
@@ -1701,7 +1795,7 @@ func _fotos(pasta: String) -> void:
 	await get_tree().process_frame
 	await _foto("status_hud", pasta)
 	# 1b) com o mini-chefe em campo (a barra do chefe e o aviso aparecem): o card não passa por baixo de nada do HUD
-	w.tempo_partida = 181.0
+	w.combate.diretor.ir_para_nivel(10)
 	h.ataque_forcado = true
 	passos(45)
 	h.ataque_forcado = null
@@ -1946,9 +2040,7 @@ func _conferir_paginas_completas(st, contexto: String, modo: String) -> void:
 
 func _roda_status(pos: Vector2, botao: MouseButton) -> void:
 	var ev := InputEventMouseButton.new()
-	var tamanho := get_viewport().get_visible_rect().size
-	var escala := maxf(tamanho.x / 960.0, tamanho.y / 540.0)
-	ev.position = (pos - Vector2(480, 270)) * escala + tamanho / 2.0
+	ev.position = (pos + w.ap.desloc) * w.ap.fator  # bloco da UI -> janela: o inverso de apresentacao.pos_ui
 	ev.button_index = botao
 	ev.pressed = true
 	Input.parse_input_event(ev)

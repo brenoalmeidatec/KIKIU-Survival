@@ -1,0 +1,263 @@
+{
+  "folhas": {
+    "pedreira_ardente": {
+      "armas": [
+        "pedreira_ardente"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "pedreira_ardente_queda.png",
+          "quadro": [
+            36,
+            26
+          ],
+          "n": 8,
+          "fps": 16,
+          "loop": true,
+          "ancora": [
+            27,
+            13
+          ]
+        },
+        "impacto": {
+          "arquivo": "pedreira_ardente_impacto.png",
+          "quadro": [
+            72,
+            72
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            36,
+            36
+          ]
+        },
+        "marca": {
+          "arquivo": "pedreira_ardente_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "cometa_duplo": {
+      "armas": [
+        "cometa_duplo"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "cometa_duplo_queda.png",
+          "quadro": [
+            50,
+            24
+          ],
+          "n": 8,
+          "fps": 16,
+          "loop": true,
+          "ancora": [
+            37,
+            12
+          ]
+        },
+        "impacto": {
+          "arquivo": "cometa_duplo_impacto.png",
+          "quadro": [
+            72,
+            72
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            36,
+            36
+          ]
+        },
+        "marca": {
+          "arquivo": "cometa_duplo_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "eclipse_negro": {
+      "armas": [
+        "eclipse_negro"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "eclipse_negro_queda.png",
+          "quadro": [
+            56,
+            34
+          ],
+          "n": 8,
+          "fps": 16,
+          "loop": true,
+          "ancora": [
+            42,
+            17
+          ]
+        },
+        "impacto": {
+          "arquivo": "eclipse_negro_impacto.png",
+          "quadro": [
+            72,
+            72
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            36,
+            36
+          ]
+        },
+        "marca": {
+          "arquivo": "eclipse_negro_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "juizo_final": {
+      "armas": [
+        "juizo_final"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "juizo_final_queda.png",
+          "quadro": [
+            60,
+            36
+          ],
+          "n": 8,
+          "fps": 16,
+          "loop": true,
+          "ancora": [
+            45,
+            18
+          ]
+        },
+        "impacto": {
+          "arquivo": "juizo_final_impacto.png",
+          "quadro": [
+            72,
+            72
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            36,
+            36
+          ]
+        },
+        "marca": {
+          "arquivo": "juizo_final_marca.png",
+          "quadro": [
+            48,
+            32
+          ],
+          "n": 4,
+          "fps": 8,
+          "loop": false,
+          "ancora": [
+            24,
+            16
+          ]
+        }
+      }
+    },
+    "estrondo": {
+      "armas": [
+        "estrondo"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "estrondo_expandir.png",
+          "quadro": [
+            140,
+            95
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            70,
+            47
+          ]
+        }
+      }
+    },
+    "terra_partida": {
+      "armas": [
+        "terra_partida"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "terra_partida_expandir.png",
+          "quadro": [
+            150,
+            106
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            75,
+            53
+          ]
+        }
+      }
+    },
+    "juramento_sagrado": {
+      "armas": [
+        "juramento_sagrado"
+      ],
+      "anims": {
+        "expandir": {
+          "arquivo": "juramento_sagrado_expandir.png",
+          "quadro": [
+            140,
+            94
+          ],
+          "n": 6,
+          "fps": 20,
+          "loop": false,
+          "ancora": [
+            70,
+            47
+          ]
+        }
+      }
+    }
+  }
+}

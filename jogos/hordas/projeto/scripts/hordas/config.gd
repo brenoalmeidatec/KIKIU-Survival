@@ -44,9 +44,17 @@ const ITENS := [
 	{"chave": "tecla_status", "grupo": "Controles", "nome": "Status (inventário)", "valores": [""], "padrao": "", "acao": "status"},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	# Gráfico: perfil, CPU e GPU ficam em dados/graficos.json (Config.g / g_definir). Aqui só o que é do jogador, fora do perfil.
-	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Baixar a qualidade se travar", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Detalhe dinâmico", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "verificar_versao", "grupo": "Gráfico", "nome": "Avisar versão nova", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
+	{
+		"chave": "tamanho_ui",
+		"grupo": "Gráfico",
+		"nome": "Tamanho da interface",
+		"valores": ["auto", "pequeno", "medio", "grande"],
+		"rotulos": ["Automático", "Pequeno", "Médio", "Grande"],
+		"padrao": "auto"
+	},
 	{"chave": "musica", "grupo": "Som", "nome": "Música", "valores": VOLUMES, "formato": "pct", "padrao": 0.6},
 	{"chave": "efeitos", "grupo": "Som", "nome": "Efeitos", "valores": VOLUMES, "formato": "pct", "padrao": 0.8},
 	{
@@ -67,6 +75,7 @@ var _cfg := ConfigFile.new()
 ## personalizado), "base" (o último perfil aplicado: preenche o que o jogador não mexeu) e uma chave por opção.
 
 signal graficos_mudou
+signal tamanho_ui_mudou  # a opção "tamanho_ui" (v2/escala_ui.gd) mudou: as telas abertas refazem o layout na hora
 
 var _perfil_padrao := "alto"  # sem nada salvo: o perfil pela máquina (jogo de verdade) ou alto (testes e headless)
 var _temp: Dictionary = {}  # valores só da memória (baixa automática, g_temporario): ficam por cima do salvo e nunca vão ao arquivo
@@ -78,6 +87,45 @@ func _ready() -> void:
 	recarregar()
 	# com opções de teste (--bot, --online, --print_tela...) só o som vale: os testes rodam em janela e sem limite de FPS
 	aplicar(OS.get_cmdline_user_args().is_empty())
+	_montar_proporcao()
+
+
+## ---------- janela sempre 16:9 ----------
+## O jogo é 16:9 e o Godot mantém a proporção por dentro, com barras pretas. Ao soltar a borda da janela (PAUSA_PROPORCAO s
+## sem mudar de tamanho), corrige o tamanho para 16:9 pelo lado que o jogador mexeu mais. Tela cheia e maximizada não mudam.
+const PROPORCAO := 16.0 / 9.0
+const PAUSA_PROPORCAO := 0.25
+var _prop_timer: Timer
+var _prop_ultimo := Vector2i.ZERO  # o último tamanho 16:9 que a janela teve
+
+
+func _montar_proporcao() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	_prop_timer = Timer.new()
+	_prop_timer.one_shot = true
+	_prop_timer.wait_time = PAUSA_PROPORCAO
+	_prop_timer.timeout.connect(_corrigir_proporcao)
+	add_child(_prop_timer)
+	_prop_ultimo = get_window().size
+	get_window().size_changed.connect(func(): _prop_timer.start())
+
+
+func _corrigir_proporcao() -> void:
+	var w := get_window()
+	if w.mode != Window.MODE_WINDOWED:
+		return
+	var t := w.size
+	var dx := absf(t.x - _prop_ultimo.x)
+	var dy := absf(t.y - _prop_ultimo.y) * PROPORCAO  # na mesma escala da largura
+	var novo := Vector2i(t.x, roundi(t.x / PROPORCAO)) if dx >= dy else Vector2i(roundi(t.y * PROPORCAO), t.y)
+	var util := DisplayServer.screen_get_usable_rect(w.current_screen).size - Vector2i(16, 48)  # borda e barra de título
+	if novo.x > util.x or novo.y > util.y:  # nunca maior que a tela
+		var k := minf(util.x / float(novo.x), util.y / float(novo.y))
+		novo = Vector2i(roundi(novo.x * k), roundi(novo.x * k / PROPORCAO))
+	_prop_ultimo = novo
+	if absi(novo.x - t.x) > 2 or absi(novo.y - t.y) > 2:
+		w.size = novo
 
 
 ## Lê user://opcoes.cfg de novo (ao abrir o jogo e nos testes de salvar e carregar). Faz a migração da qualidade antiga.
@@ -98,6 +146,11 @@ func recarregar() -> void:
 	if sombra_antiga.has(sombra):
 		_cfg.set_value("graficos", "sombras", sombra_antiga[sombra])
 		_cfg.save(arquivo)
+	# migração, uma vez: com o Detalhe dinâmico ligado não há Personalizado (os detalhes ficam travados no Perfil). Um save com as duas
+	# coisas (o jogador montou à mão, v1 ou antes do dinâmico existir) abre com o dinâmico desligado: o que ele montou fica como está
+	if str(_cfg.get_value("graficos", "perfil", "")) == "personalizado" and bool(v("qualidade_auto")):
+		_cfg.set_value("opcoes", "qualidade_auto", false)
+		_cfg.save(arquivo)
 	# 1ª vez no jogo de verdade: a máquina fraca já começa em médio ou baixo (só em memória até o jogador mexer)
 	if OS.get_cmdline_user_args().is_empty() and DisplayServer.get_name() != "headless":
 		_perfil_padrao = g_detectar()
@@ -114,11 +167,26 @@ func g(chave: String) -> Variant:
 	return perfis.get(base, perfis.get("alto", {})).get(chave)
 
 
-## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado".
+## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado". Com o Detalhe dinâmico (qualidade_auto) pode estar um degrau
+## abaixo do escolhido, só na memória.
 func g_perfil() -> String:
 	if _temp_perfil != "":
 		return _temp_perfil
+	return g_perfil_escolhido()
+
+
+## O perfil que o jogador escolheu (o que está salvo), sem a queda só da memória do Detalhe dinâmico: é o teto da subida.
+func g_perfil_escolhido() -> String:
 	return str(_cfg.get_value("graficos", "perfil", _perfil_padrao))
+
+
+## Desfaz a queda só da memória (Detalhe dinâmico): volta ao perfil escolhido. Sem queda, não faz nada.
+func g_soltar_temporario() -> void:
+	if _temp_perfil == "":
+		return
+	_zerar_temporario()
+	aplicar_graficos()
+	graficos_mudou.emit()
 
 
 ## Muda uma opção da aba: o perfil vira "personalizado". Salva e aplica na hora.
@@ -292,6 +360,8 @@ func definir(chave: String, valor: Variant) -> void:
 	_cfg.set_value("opcoes", chave, valor)
 	_cfg.save(arquivo)
 	aplicar()
+	if chave == "tamanho_ui":
+		tamanho_ui_mudou.emit()
 
 
 ## Texto do valor atual (o que aparece na tela de Opções).

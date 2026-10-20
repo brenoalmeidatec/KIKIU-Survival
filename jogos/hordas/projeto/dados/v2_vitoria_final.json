@@ -1,0 +1,15 @@
+{
+	"_ajuda": "Fim de jogo da v2 (v2/vitoria_final.gd). \"mapa\" é o id do ÚLTIMO mapa (as Ruínas da Floresta, \"medio\"): vencer o chefão dele, depois do resultado, abre a tela de VITÓRIA FINAL e em seguida os créditos rolando, e ao fim volta ao menu principal. Os outros mapas só têm a vitória normal. Os TEXTOS abaixo são PROVISÓRIOS (o Breno troca quando tiver os finais): \"titulo\" e \"subtitulo\" ficam no alto, \"texto\" é uma lista de parágrafos (um por item, quebra sozinho) e \"agradecimento\" fecha os créditos. As linhas dos créditos (rótulo e valor) vêm de v2/creditos.gd, as mesmas de Ajustes > Créditos. \"velocidade\" é a rolagem dos créditos em px por segundo e \"tempo_aceita\" os segundos antes de aceitar pular (evita o clique de quem ainda estava jogando).",
+	"mapa": "medio",
+	"titulo": "VITÓRIA FINAL",
+	"subtitulo": "As Ruínas da Floresta caíram",
+	"texto": [
+		"O último chefe das Ruínas se desfez em cinzas, e o silêncio voltou a cobrir a floresta.",
+		"A névoa começa a subir. Pela primeira vez em muito tempo, dá para ver o céu.",
+		"Você sobreviveu. Mas toda ruína guarda uma história, e esta ainda não acabou."
+	],
+	"creditos_titulo": "CRÉDITOS",
+	"agradecimento": "Obrigado por jogar.",
+	"velocidade": 36.0,
+	"tempo_aceita": 0.6
+}

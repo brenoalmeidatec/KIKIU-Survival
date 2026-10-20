@@ -40,6 +40,31 @@ class HeroiComRuptura:
 	var contragolpe_max := 1.5
 
 
+class HeroiComEscudo:
+	extends Heroi
+	var escudo_ativo := false
+
+
+class DiretorFalso:
+	extends RefCounted
+	var nivel := 1
+	var niveis_total := 30
+	var fracao := 0.0
+	var trava := false
+	var chefes_mapa: Array = [{"nivel": 10, "mk": {"mini": true}}, {"nivel": 30, "mk": {"mini": false}}]
+
+	func fracao_mapa() -> float:
+		return fracao
+
+	func travado() -> bool:
+		return trava
+
+
+class CombateFalso:
+	extends RefCounted
+	var diretor := DiretorFalso.new()
+
+
 class MundoFalso:
 	extends RefCounted
 	signal nivel_subiu(nivel)
@@ -54,6 +79,7 @@ class MundoFalso:
 	var combo := 0
 	var tempo_partida := 0.0
 	var monstros_vivos := 0
+	var combate = null
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -86,6 +112,68 @@ func _testes() -> void:
 	vista.add_child(hud)
 	hud.set_process(false)  # os passos são nossos
 	_teste_habilidades(hud, falso)
+
+	# 0. placa do NÍVEL DO MAPA: escondida sem o diretor; com ele mostra "NÍVEL n/total", a barra anda e o chefe trava
+	hud.avancar(PASSO)
+	var placa: Control = hud.get_node("Raiz/Nivel")
+	ok(not placa.visible, "sem diretor a placa do nível do mapa fica escondida")
+	falso.combate = CombateFalso.new()
+	var dir: DiretorFalso = falso.combate.diretor
+	dir.nivel = 7
+	dir.fracao = 6.5 / 29.0
+	hud.avancar(PASSO)
+	ok(placa.visible and placa.get_node("Barra").texto() == "NÍVEL 7/30", "a placa mostra NÍVEL 7/30")
+	ok(placa.get_node("Barra").chefes.size() == 2 and not placa.get_node("Barra").travado, "duas marcas de chefe, nível livre")
+	dir.nivel = 10
+	dir.trava = true
+	hud.avancar(PASSO)
+	ok(placa.get_node("Barra").travado and placa.get_node("Barra").nivel == 10, "com o chefe vivo a placa mostra o nível travado")
+	ok(placa.position.x + placa.size.x <= hud._relogio.get_parent().position.x + 4.0, "a placa fica à esquerda do relógio")
+	# grade do topo: relógio, nível e abates alinhados (mesmo y e altura entre nível e abates, folga igual, número do nível do tamanho do relógio)
+	var abates: Control = hud.get_node("Raiz/Abates")
+	var tempo_q: Control = hud.get_node("Raiz/Tempo")
+	ok(placa.position.y == abates.position.y and placa.size.y == abates.size.y, "o quadro do nível e o dos abates têm o mesmo y e a mesma altura")
+	ok(abates.position.x - (placa.position.x + placa.size.x) == 4.0, "folga de 4 px entre o nível e os abates")
+	ok(abates.position.y - (tempo_q.position.y + tempo_q.size.y) >= 4.0, "o quadro de baixo não encosta no relógio")
+	var nv: Control = placa.get_node("Barra")
+	ok(nv.TAM_NUMERO >= tempo_q.get_node("Relogio").get_theme_font_size("font_size"), "o número do nível é do tamanho do relógio")
+	ok(nv._barra_y() + nv.BARRA_A + 1.0 <= placa.size.y - nv.BORDA, "a barra do mapa cabe dentro da borda de baixo")
+	ok(nv.BORDA + 1.0 + float(nv.TAM_NUMERO) < nv._barra_y() - 1.0, "o número do nível não encosta na barra do mapa")
+	# o minimapa (canto de cima à direita) e o retrato (canto de baixo à esquerda) usam a mesma margem de canto (6 px)
+	var retrato_q: Control = hud.get_node("Raiz/Retrato")
+	ok(
+		preload("res://v2/minimapa.gd").MARGEM_TELA == 6 and retrato_q.position == Vector2(6, 540 - 6 - retrato_q.size.y),
+		"minimapa e retrato com a mesma margem de 6 px (o retrato %s)" % retrato_q.position
+	)
+	# estilo Overwatch: a vida e o fôlego à direita do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
+	var barras_q: Control = hud.get_node("Raiz/MolduraBarras")
+	var folego_q: Control = hud.get_node("Raiz/Folego")
+	ok(
+		barras_q.position.y == retrato_q.position.y and barras_q.position.x > retrato_q.position.x + retrato_q.size.x,
+		"as barras ficam à direita do retrato, no topo dele"
+	)
+	ok(
+		folego_q.position.y > hud.get_node("Raiz/Vida/Barra").global_position.y + hud.get_node("Raiz/Vida/Barra").size.y - 1.0,
+		"o fôlego fica logo abaixo da barra de vida"
+	)
+	ok(folego_q.position.y + folego_q.size.y <= barras_q.position.y + barras_q.size.y, "o fôlego fica dentro da moldura das barras")
+	var xp_q: Control = hud.get_node("Raiz/Xp")
+	var ult_q: Control = hud.get_node("Raiz/Ultimate")
+	var ult_tam: Vector2 = ult_q.size * ult_q.scale  # o nó é escalado 1,5x: 96 px na tela
+	ok(ult_tam == Vector2(96, 96), "o círculo do Q mede 96 px na base 960x540 (%s)" % ult_tam)
+	ok(ult_q.position.x + ult_tam.x * 0.5 == xp_q.position.x + xp_q.size.x * 0.5, "o círculo do Q é centrado na faixa de XP")
+	ok(
+		xp_q.position.y - (ult_q.position.y + ult_tam.y) >= 2.0 and xp_q.position.y - (ult_q.position.y + ult_tam.y) <= 8.0,
+		"o Q fica logo acima da faixa de XP, sem encostar"
+	)
+	var hab_q: Control = hud.get_node("Raiz/Habilidades")
+	var hab_tam: Vector2 = hab_q.size * hab_q.scale
+	ok(
+		hab_q.position.x + hab_tam.x == 960 - 6 and hab_q.position.y + hab_tam.y == 540 - 6,
+		"o E e o secundário colam no canto de baixo à direita (margem de 6 px)"
+	)
+	ok(hab_q.position.x > xp_q.position.x + xp_q.size.x, "o E e o secundário ficam à direita da faixa de XP")
+	falso.combate = null
 
 	# 1. sem combate: vida cheia, XP 0, nível 1, tempo zero, combo escondido
 	hud.avancar(PASSO)
@@ -191,7 +279,7 @@ func _testes() -> void:
 	add_child(w)
 	w.set_process(false)
 	w.heroi.entrada_forcada = Vector2.ZERO
-	var real = w.sv.get_node_or_null("Hud")
+	var real = w.ui.get_node_or_null("Hud")
 	ok(real != null, "o mundo da v2 põe o HUD na SubViewport")
 	if real != null:
 		ok(real.layer == 10, "o HUD fica na layer 10 (acima da vinheta, 3, e do rótulo, 4)")
@@ -220,15 +308,15 @@ func _testes() -> void:
 	ok(no_minimapa == 0, "o canto superior direito fica livre para o minimapa (%d blocos)" % no_minimapa)
 	ok(quebrado == 0, "posições em pixel inteiro (%d fora)" % quebrado)
 
-	# 9. a luz do mundo não toca no HUD, e a fonte é a do jogo sem anti-aliasing e sem hinting
+	# 9. a luz do mundo não toca no HUD, e a fonte é a Atkinson (lisa, com anti-aliasing e hinting leve)
 	var luz_ok := true
 	for n in hud.find_children("*", "CanvasItem", true, false):
 		if n.light_mask != 0:
 			luz_ok = false
 	ok(luz_ok, "nenhum item do HUD recebe luz do mundo")
 	var fonte = raiz.get_theme_font("font")
-	ok(fonte is FontFile and fonte.antialiasing == TextServer.FONT_ANTIALIASING_NONE, "fonte do HUD sem anti-aliasing")
-	ok(fonte is FontFile and fonte.hinting == TextServer.HINTING_NONE, "fonte do HUD sem hinting")
+	ok(fonte is FontFile and fonte.antialiasing == TextServer.FONT_ANTIALIASING_GRAY, "fonte do HUD com anti-aliasing")
+	ok(fonte is FontFile and fonte.hinting == TextServer.HINTING_LIGHT, "fonte do HUD com hinting leve")
 
 	# 10. anúncios, marcos de combo, chefe, vinheta, relógio e sinais que faltam no mundo
 	_testes_anuncios(vista)
@@ -274,14 +362,40 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 	h.rup_carga = 0.0
 	slots.sincronizar(h)
 	ok(slots._rotulo_e() == "RUPTURA", "E anuncia Ruptura pronta sem carga pendente")
-	var area := Rect2(slots.position, slots.size)
-	ok(area.position == Vector2(596, 438) and area.size == Vector2(174, 74), "E/Q ocupa a faixa inferior sem cobrir status/XP")
-	ok(Rect2(0, 0, 960, 540).encloses(area), "E/Q cabe integralmente dentro da tela")
-	ok(not area.intersects(ZONA_MINIMAPA), "E/Q não cobre o minimapa")
+	# o secundário (botão direito, o escudo): apagado sem o campo; pronto, erguido (pulsa) e cansado (cortina de recarga até o fôlego voltar a 34%)
+	slots.sincronizar(mundo_falso.heroi)
+	ok(not slots.s_disponivel and not slots.s_pronta and slots._rotulo_s() == "INDISP.", "o secundário fica apagado sem o campo escudo_ativo no herói")
+	var he := HeroiComEscudo.new()
+	slots.sincronizar(he)
+	ok(slots.s_disponivel and slots.s_pronta and not slots.s_ativo and slots._rotulo_s() == "ESCUDO", "o secundário acende pronto com o herói descansado")
+	he.escudo_ativo = true
+	slots.sincronizar(he)
+	ok(slots.s_pronta and slots.s_ativo and slots._rotulo_s() == "ERGUIDO", "o secundário pulsa com o escudo erguido")
+	he.escudo_ativo = false
+	he.cansado = true
+	he.folego = 0.0
+	slots.sincronizar(he)
+	ok(not slots.s_pronta and slots.s_recarga_px == 20 and slots._rotulo_s() == "CANSADO", "cansado e sem fôlego: cortina cheia e CANSADO")
+	he.folego = 17.0
+	slots.sincronizar(he)
+	ok(slots.s_recarga_px == 10, "a cortina desce com o fôlego voltando (17 de 34 = metade, %d/20)" % slots.s_recarga_px)
+	he.cansado = false
+	slots.sincronizar(he)
+	ok(slots.s_pronta and slots.s_recarga_px == 0, "fim do cansaço: o secundário volta pronto, sem cortina")
+	var area := Rect2(slots.position, slots.size * slots.scale)
+	ok(area.position == Vector2(693, 423) and area.size == Vector2(261, 111), "E e secundário ocupam o canto de baixo à direita")
+	ok(Rect2(0, 0, 960, 540).encloses(area), "E e secundário cabem integralmente dentro da tela")
+	ok(not area.intersects(ZONA_MINIMAPA), "E e secundário não cobrem o minimapa")
 	var xp = hud.get_node("Raiz/Xp")
 	var zona_xp := Rect2(xp.position, xp.size)
-	ok(not area.intersects(zona_xp), "E/Q não cobre a faixa de XP real")
-	ok(not area.intersects(StatusHud.COLUNAS_HUD[1]), "E/Q não cobre a coluna direita do status")
+	ok(not area.intersects(zona_xp), "E e secundário não cobrem a faixa de XP real")
+	ok(not area.intersects(StatusHud.COLUNAS_HUD[1]), "E e secundário não cobrem a coluna direita do status")
+	ok(
+		not Rect2(hud.get_node("Raiz/Retrato").position, hud.get_node("Raiz/Retrato").size).intersects(StatusHud.COLUNAS_HUD[0]),
+		"o retrato não cobre a coluna esquerda do status"
+	)
+	var ult := Rect2(hud.get_node("Raiz/Ultimate").position, hud.get_node("Raiz/Ultimate").size * hud.get_node("Raiz/Ultimate").scale)
+	ok(not ult.intersects(zona_xp) and not ult.intersects(area), "o círculo do Q não cobre o XP nem o E e o secundário")
 
 
 ## Leva de interface: o texto de depuração (fps e atores) começa DESLIGADO na partida normal e a tecla F3 liga e desliga;
@@ -338,7 +452,7 @@ func _testes_rotulo_e_cartas() -> void:
 	ok(w._rotulo != null and w._rotulo.visible, "F3 liga o texto de depuração")
 	w._input(tecla)
 	ok(w._rotulo != null and not w._rotulo.visible, "F3 desliga de novo")
-	var real = w.sv.get_node_or_null("Hud")
+	var real = w.ui.get_node_or_null("Hud")
 	ok(real != null, "o mundo da v2 tem o HUD (para o teste da escolha)")
 	if real != null:
 		w.combo = 12
@@ -347,11 +461,17 @@ func _testes_rotulo_e_cartas() -> void:
 		real._anuncio.anunciar("NÍVEL 3!", Color.WHITE)
 		real.avancar(PASSO)
 		ok(real._anuncio.visible, "a faixa de anúncio aparece na partida")
+		var texto0: String = real._anuncio.texto_ativo  # o marco do combo (x12) está na tela e o NÍVEL 3 espera atrás
 		w.combate.telas.escolha_aberta = true
 		real.avancar(PASSO)
 		ok(not real._combo.visible, "com a escolha aberta, o combo some")
 		ok(not real._anuncio.visible, "com a escolha aberta, a faixa some")
+		for i in 150:  # 2,5 s com a escolha aberta: o anúncio espera parado, não gasta o tempo escondido (ULTIMATE PRONTA durante as cartas)
+			real.avancar(PASSO)
+		ok(texto0 != "" and real._anuncio.texto_ativo == texto0, "com a escolha aberta o anúncio não expira escondido (%s)" % real._anuncio.texto_ativo)
 		w.combate.telas.escolha_aberta = false
+		real.avancar(PASSO)
+		ok(real._anuncio.visible and real._anuncio.texto_ativo == texto0, "fechada a escolha, o anúncio volta à tela inteiro")
 		w.combate.telas.bau_aberto = true
 		real.avancar(PASSO)
 		ok(not real._combo.visible and not real._anuncio.visible, "com o baú aberto, o combo e a faixa também somem")
@@ -393,6 +513,25 @@ func _testes_anuncios(vista: SubViewport) -> void:
 	ok(an.texto_ativo == "EVOLUÇÃO: LANÇA" and an.fila.size() == 0, "EVOLUÇÃO: vem com o nome em caixa-alta")
 	_passar(h, 2.0)
 	ok(an.texto_ativo == "" and not an.ocupado(), "a fila esvazia e a faixa fica livre")
+
+	# B3. ULTIMATE PRONTA fura a fila: entra na hora sobre o que está na tela (que volta se ainda não deu para ler) e não é interrompido por outro igual
+	f.onda_forte.emit(1)
+	f.elite_apareceu.emit("Lobo")
+	h.avancar(PASSO)
+	ok(an.texto_ativo == "ONDA FORTE!" and an.fila.size() == 1, "B3: ONDA FORTE na tela e ELITE esperando")
+	f.anuncio.emit("ULTIMATE PRONTA", Color.WHITE)
+	ok(an.texto_ativo == "ULTIMATE PRONTA", "B3: ULTIMATE PRONTA entra na hora, sem esperar a fila (%s)" % an.texto_ativo)
+	ok(an.fila.size() == 2 and an.fila[0]["texto"] == "ONDA FORTE!" and an.fila[1]["texto"] == "ELITE!", "B3: o que estava na tela volta à frente da fila")
+	_passar(h, 1.7)
+	ok(an.texto_ativo == "ONDA FORTE!" and an.fila.size() == 1, "B3: depois do ULTIMATE PRONTA o resto segue na ordem")
+	_passar(h, 12.0)
+	ok(not an.ocupado(), "B3: a fila esvazia")
+	f.onda_forte.emit(1)
+	h.avancar(PASSO)
+	_passar(h, 0.9)  # o ONDA FORTE já deu tempo de ser lido: não volta
+	f.anuncio.emit("ULTIMATE PRONTA", Color.WHITE)
+	ok(an.texto_ativo == "ULTIMATE PRONTA" and an.fila.is_empty(), "B3: o anúncio já lido não volta para a fila")
+	_passar(h, 12.0)
 
 	# C. a fila tem limite: com muitos anúncios, sai o mais antigo
 	for i in 8:
@@ -538,7 +677,7 @@ func _fotos(pasta: String) -> void:
 	w.set_process(false)
 	w.heroi.entrada_forcada = Vector2.ZERO
 	var falso := MundoFalso.new()
-	w.sv.get_node("Hud").ligar(falso)
+	w.ui.get_node("Hud").ligar(falso)
 	for i in 60:
 		w.avancar(PASSO)
 	await _foto(w, pasta, "hud_inicio")
@@ -608,6 +747,22 @@ func _fotos(pasta: String) -> void:
 	h2.rup_carga = 1.0
 	await get_tree().create_timer(0.5).timeout
 	await _foto(w, pasta, "hud_e_carga_cheia")
+
+	# A barra do chefe das fotos acima segue no HUD falso: zera e espera ela sumir (a fantasma desce devagar) antes de o HUD ir para o mundo de verdade.
+	falso.chefe_vida.emit(0)
+	for i in 900:
+		if not w.ui.get_node("Hud")._chefe.visible:
+			break
+		await get_tree().process_frame
+	# Nível do mapa com o mundo de verdade ligado ao HUD: nível 14, com a barra andando, e o chefão do nível 30 em campo (nível travado).
+	w.ui.get_node("Hud").ligar(w)
+	w.combate.diretor.ir_para_nivel(14)
+	w.combate.diretor.t_nivel = w.combate.diretor.seg_nivel() * 0.5
+	await get_tree().create_timer(0.5).timeout
+	await _foto(w, pasta, "hud_nivel_mapa_14")
+	w.combate.diretor.ir_para_nivel(30)
+	await get_tree().create_timer(0.8).timeout
+	await _foto(w, pasta, "hud_nivel_mapa_30_chefao")
 
 
 func _foto(w, pasta: String, nome: String) -> void:

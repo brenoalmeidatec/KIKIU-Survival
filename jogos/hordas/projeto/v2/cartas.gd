@@ -133,21 +133,23 @@ func disponiveis() -> Array:
 	return r
 
 
-## Peso extra da carta que ajuda a fechar uma evolução (a outra peça já foi pega).
-func _peso_sinergia(id: String) -> float:
+## Peso extra de cada carta que ajuda a fechar uma evolução (as outras peças já foram pegas): {id: peso}; quem não está aqui pesa 1.
+## Uma passada pelas evoluções por sorteio (antes era uma por carta: ~4 ms em toda subida de nível).
+func _pesos_sinergia() -> Dictionary:
+	var r := {}
+	var peso := float(cfg.escolha.peso_sinergia)
 	for ev in cfg.evolucoes:
 		if not _evo_livre(ev):
 			continue
-		var tem_peca := false
-		var outras := 0
+		var tem := 0
 		for p in ev.pecas:
-			if p.id == id:
-				tem_peca = true
-			elif nivel_de(str(p.id)) > 0:
-				outras += 1
-		if tem_peca and outras >= ev.pecas.size() - 1:
-			return float(cfg.escolha.peso_sinergia)
-	return 1.0
+			if nivel_de(str(p.id)) > 0:
+				tem += 1
+		for p in ev.pecas:
+			var outras := tem - (1 if nivel_de(str(p.id)) > 0 else 0)
+			if outras >= ev.pecas.size() - 1:
+				r[str(p.id)] = peso
+	return r
 
 
 ## Evolução que ainda pode acontecer: não feita e, se for lendária, só enquanto nenhuma foi feita nesta partida.
@@ -183,6 +185,11 @@ func _sinergia_texto(id: String) -> String:
 ## Nome curto de uma peça: o `curto` do dado (o do card compacto), ou a primeira palavra do nome (Flechas Sombrias: Flechas).
 func _curto(id: String) -> String:
 	return str(_def[id].get("curto", str(_def[id].nome).split(" ")[0]))
+
+
+## O id da fusão (ainda livre) que esta peça ajuda a fechar, ou "" (a tela de cartas aquece a arte dela antes: telas._aquecer_invocacoes).
+func fusao_de(id: String) -> String:
+	return str(_sinergia_ev(id).get("id", ""))
 
 
 ## A evolução (ainda livre) que esta peça ajuda a fechar, ou {} se nenhuma.
@@ -236,12 +243,13 @@ func golpes_ativos() -> int:
 func sortear(n: int, nivel: int, bonus := 1.0, excluir: Array = []) -> Array:
 	var cand: Array = []
 	var pesos: Array = []
+	var sinergia := _pesos_sinergia()
 	for id in _def:
 		var d: Dictionary = _def[id]
 		if not _disponivel(d) or excluir.has(id):
 			continue
 		cand.append(d)
-		pesos.append(float(d.get("peso", 1.0)) * _peso_sinergia(str(id)))
+		pesos.append(float(d.get("peso", 1.0)) * float(sinergia.get(str(id), 1.0)))
 	var escolhidas: Array = []
 	for k in mini(n, cand.size()):
 		var total := 0.0
@@ -273,6 +281,57 @@ func sortear(n: int, nivel: int, bonus := 1.0, excluir: Array = []) -> Array:
 	for d in escolhidas:
 		cartas.append(montar_carta(d, sortear_raridade(nivel, bonus)))
 	return cartas
+
+
+## ESCOLHA AUTOMÁTICA (botão do meio da tela de cartas). Olha o que o herói já tem e escolhe sozinho, sem sorteio de 3: fecha uma fusão que
+## falta uma peça (+10 se esta carta já leva a peça ao nível pedido, +5 se só ajuda), sobe um golpe que já tem (+2), cobre o que falta
+## (golpe novo enquanto tem menos de `auto_golpes_alvo` golpes: +3; status ou modificador que ainda não tem: +1,5) e desempata no peso da
+## carta e num pouco de acaso. EM TROCA a raridade é rebaixada: a sorteada cai `auto_queda` degraus e nunca passa de `auto_raridade_max`
+## (1 = rara), então o automático quase nunca traz épica ou lendária; quem quer o brilho escolhe à mão. Devolve a carta pronta (montar_carta).
+func escolha_automatica(nivel: int) -> Dictionary:
+	var melhor: Dictionary = {}
+	var melhor_nota := -1.0e9
+	var alvo_golpes := int(cfg.escolha.get("auto_golpes_alvo", 3))
+	for id in _def:
+		var d: Dictionary = _def[id]
+		if not _disponivel(d):
+			continue
+		var nota := float(d.get("peso", 1.0)) + rng.randf() * 0.4
+		var cat: String = _cat[id]
+		var n := nivel_de(id)
+		if cat == "golpe":
+			if n > 0:
+				nota += 2.0
+			elif golpes_ativos() < alvo_golpes:
+				nota += 3.0
+		elif n == 0:
+			nota += 1.5
+		else:
+			nota += 0.5
+		nota += _nota_fusao(id)
+		if nota > melhor_nota:
+			melhor_nota = nota
+			melhor = d
+	if melhor.is_empty():
+		return {}
+	var r := maxi(sortear_raridade(nivel) - int(cfg.escolha.get("auto_queda", 1)), 0)
+	r = mini(r, int(cfg.escolha.get("auto_raridade_max", 1)))
+	return montar_carta(melhor, r)
+
+
+## Bônus de fusão da peça `id`: 0 se não fecha nada; +5 se as outras peças já estão no nível pedido; +10 se, além disso, esta carta sozinha
+## leva a peça ao nível pedido (a fusão acontece na hora).
+func _nota_fusao(id: String) -> float:
+	var ev := _sinergia_ev(id)
+	if ev.is_empty():
+		return 0.0
+	var minha := 0
+	for p in ev.pecas:
+		if str(p.id) == id:
+			minha = int(p.nivel)
+		elif not _peca_ok(p):
+			return 0.0
+	return 10.0 if nivel_de(id) + 1 >= minha else 5.0
 
 
 ## A carta `d` na raridade `r`: texto com o valor da raridade e o que o nível novo traz.

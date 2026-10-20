@@ -1,0 +1,359 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/armas_anim/gerar_projeteis.py (nao edite a mao)",
+ "folhas": {
+  "flecha_roxa": {
+   "armas": [
+    "flechas_sombrias"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "flecha_roxa_voo.png",
+     "quadro": [
+      24,
+      8
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      18,
+      4
+     ]
+    },
+    "impacto": {
+     "arquivo": "flecha_roxa_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "lanca_gelo": {
+   "armas": [
+    "lanca_geada"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "lanca_gelo_voo.png",
+     "quadro": [
+      30,
+      6
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      22,
+      3
+     ]
+    },
+    "impacto": {
+     "arquivo": "lanca_gelo_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "dardo_verde": {
+   "armas": [
+    "dardos_peconhentos"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "dardo_verde_voo.png",
+     "quadro": [
+      16,
+      8
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      12,
+      4
+     ]
+    },
+    "impacto": {
+     "arquivo": "dardo_verde_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "feixe_dourado": {
+   "armas": [
+    "raio_solar"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "feixe_dourado_voo.png",
+     "quadro": [
+      64,
+      6
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      48,
+      3
+     ]
+    },
+    "impacto": {
+     "arquivo": "feixe_dourado_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "adaga_aco": {
+   "armas": [
+    "adagas_voadoras"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "adaga_aco_voo.png",
+     "quadro": [
+      14,
+      14
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      7,
+      7
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "adaga_aco_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "shuriken_sombria": {
+   "armas": [
+    "estrelas_sombra"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "shuriken_sombria_voo.png",
+     "quadro": [
+      14,
+      14
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      7,
+      7
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "shuriken_sombria_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "disco_ferro": {
+   "armas": [
+    "bumerangue_ferro"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "disco_ferro_voo.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      10,
+      10
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "disco_ferro_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "laminas": {
+   "armas": [
+    "laminas"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "laminas_voo.png",
+     "quadro": [
+      24,
+      24
+     ],
+     "n": 8,
+     "fps": 16,
+     "loop": true,
+     "ancora": [
+      12,
+      12
+     ],
+     "gira": true
+    },
+    "impacto": {
+     "arquivo": "laminas_impacto.png",
+     "quadro": [
+      20,
+      20
+     ],
+     "n": 3,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      10,
+      10
+     ]
+    }
+   }
+  },
+  "bola_fogo": {
+   "armas": [
+    "bola_fogo"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "bola_fogo_voo.png",
+     "quadro": [
+      26,
+      18
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      19,
+      9
+     ]
+    },
+    "impacto": {
+     "arquivo": "bola_fogo_impacto.png",
+     "quadro": [
+      56,
+      56
+     ],
+     "n": 6,
+     "fps": 15,
+     "loop": false,
+     "ancora": [
+      28,
+      28
+     ]
+    }
+   }
+  },
+  "bola_chumbo": {
+   "armas": [
+    "bolas_chumbo"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "bola_chumbo_voo.png",
+     "quadro": [
+      24,
+      16
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      18,
+      8
+     ]
+    },
+    "impacto": {
+     "arquivo": "bola_chumbo_impacto.png",
+     "quadro": [
+      56,
+      56
+     ],
+     "n": 6,
+     "fps": 15,
+     "loop": false,
+     "ancora": [
+      28,
+      28
+     ]
+    }
+   }
+  }
+ }
+}

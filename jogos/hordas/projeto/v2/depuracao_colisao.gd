@@ -21,7 +21,10 @@ func _draw() -> void:
 		return
 	var tela: Rect2 = mundo.cam.retangulo().grow(8.0)
 	for f in Colisao.formas_no_retangulo(tela):
-		_elipse(f.c, f.rx, f.ry, COR_FORMA)
+		if f.caixa:
+			draw_rect(Rect2(f.c - Vector2(f.rx, f.ry), Vector2(f.rx, f.ry) * 2.0), COR_FORMA, false, 1.0)
+		else:
+			_elipse(f.c, f.rx, f.ry, COR_FORMA)
 	var atores: Array = [mundo.heroi]
 	atores.append_array(mundo.monstros)
 	for a in atores:

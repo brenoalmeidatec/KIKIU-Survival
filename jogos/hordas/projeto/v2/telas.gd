@@ -2,32 +2,43 @@ extends RefCounted
 ## Telas simples do combate da v2 (o HUD bonito é de outro módulo): a escolha de cartas ao subir de nível (3 cartas com cor e brilho pela
 ## RARIDADE, mais rerrolar e banir), a roleta do baú, a tela de resultado (VOCÊ CAIU ou VITÓRIA, com as almas ganhas), os anúncios grandes
 ## e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (DESLIGADO por padrão agora que o HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro
-## do SubViewport 960x540; o mouse não chega nos Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_na_tela()) e a
-## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar) e B (banir a carta marcada).
+## do SubViewport 960x540; o mouse não chega nos Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_ui()) e a
+## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar), Q (AUTOMÁTICO: o sistema escolhe pelo que o herói já tem, com raridade menor) e B (banir a carta
+## marcada). No controle: A escolhe, X rerrola, Y é o automático e LB bane.
 ## TRAVA: a escolha abre com as cartas apagadas por 1 s de TEMPO REAL (0,8 s depois de rerrolar ou banir). Nesse tempo clique, tecla e
 ## botão são descartados (a contagem pulsa) e nada chega ao herói; ESC passa, é da pausa. O baú tem a sua trava (bau_espera_s). Os tempos
 ## vêm de dados/v2_cartas.json e a contagem corre no `atualizar` (relógio de parede), congelada com a pausa aberta (mundo.pausa.aberto).
+## LIMITE: depois da trava as cartas valem por `escolha.limite_s` (8 s) de tempo real, com uma barra e a contagem no topo. Zerou, o sistema escolhe
+## sozinho pela MESMA regra do botão Automático (progresso.automatico) e o HUD avisa "Escolhida automaticamente". Rerrolar ou banir renovam o limite.
+## ESC (ou Start) na escolha NÃO pausa direto: a pausa.gd chama intercepta_pausa() e abre "Pausar agora? Você perde estas cartas" (Não é o padrão); com
+## ela aberta o tempo (trava e limite) fica parado. Sim descarta a rodada (nenhuma carta, sem reembolso) e abre a pausa; Não volta com o tempo que restava.
 ## Os anúncios grandes e a barra do chefe são do HUD (v2/hud_anuncios.gd e hud.gd), que escutam os sinais do mundo.
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
+const Glifos := preload("res://v2/glifos.gd")
 const LARG := 960
 const ALT := 540
+const LAYER_TELAS := 11  # cartas, baú e resultado: ACIMA da HUD (10), abaixo do resultado final (12) e da pausa (14); senão o HUD aparece por cima das cartas
 const CARTA_L := 256.0
 const CARTA_A := 288.0
 const CARTA_Y := 146.0
 const LENDARIA_COR := Paleta.FUSAO  # magenta: a faixa e o rodapé de uma peça que fecha lendária
 const FOLGA := 20.0
 const BTN_Y := 440.0
+const BTN_L := 200.0  # largura dos três botões da escolha (Rerrolar, Automático, Banir)
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
 const ICONE := 32.0  # ícone próprio da carta (assets/v2/icones_cartas, 32x32): sai 1 para 1, pixel a pixel
 const TAM_TITULO := Paleta.TITULO_GRANDE  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
-const TAM_NOME := Paleta.TITULO_MEDIO  # múltiplo de 2 px da grade da Jersey 10 (cabe em uma linha na maioria dos nomes)
-const TAM_NOME_CURTO := Paleta.TITULO_PEQUENO  # nomes longos (Lâminas Rodopiantes) que não cabem em TAM_NOME
+const TAM_NOME := Paleta.TITULO_PEQUENO  # o nome da carta: UM tamanho só para todas (comum, rara, épica...), numa linha (Lâminas Rodopiantes não cabe em 37)
 const TAM_TEXTO := Paleta.TEXTO_TAMANHO  # grade da Spleen 8x16 (só 16 ou 32): o 5 e o S, o 0 e o O não se confundem
 const TAM_CONTAGEM := Paleta.TITULO_PEQUENO  # a contagem da trava usa a Jersey 10 na grade de 19 px (como os botões)
 const COR_TRAVA := Paleta.CARTA_APAGADA  # cartas apagadas na trava
 const PULSO_T := 0.2  # s da pulsada da contagem quando um clique ou tecla cai na trava
 const ACENDER_T := 0.35  # s do brilho quando as cartas liberam
+const LIMITE_Y := 118.0  # a barra do limite de tempo (largura das 3 cartas): num vão de 5 px entre o título e a legenda
+const CONF := Rect2(250, 180, 460, 190)  # o quadro "Pausar agora?"
+const CONF_BTN := Vector2(170, 30)
 
 var combate
 var mundo
@@ -41,8 +52,17 @@ var bau_aberto := false
 var bau_pronto := false  # a roleta terminou de revelar tudo
 var espera_escolha := 0.0  # s REAIS até as cartas aceitarem clique ou tecla (0 = liberadas)
 var espera_bau := 0.0  # s REAIS até a roleta aceitar pular ou fechar (0 = liberada)
+var limite_t := 0.0  # s REAIS que faltam para o sistema escolher sozinho (só corre com as cartas liberadas; 0 também se o limite está desligado)
+var conf_aberta := false  # "Pausar agora? Você perde estas cartas": o tempo das cartas fica parado
+var conf_sel := 1  # 0 = Sim, 1 = Não (o padrão)
 var mouse_fn := Callable()  # testes: posição do mouse na tela (960x540); sem ela, o mouse de verdade (mundo.ap)
 var _espera_total := 0.0  # a trava que está correndo (base da barra de cada carta)
+var _limite_total := 0.0  # o limite desta rodada de cartas (dados: escolha.limite_s; 0 = sem limite)
+var _limite_barra: ColorRect
+var _limite_fundo: ColorRect
+var _conf: Control
+var _conf_btns: Array[Panel] = []
+var _conf_estilos: Array[StyleBoxFlat] = []
 var _acender := 0.0  # s que faltam do brilho de liberação
 var _pulso := 0.0  # s que faltam da pulsada da contagem
 
@@ -54,6 +74,9 @@ var _titulo: Label
 var _sub: Label
 var _btn_r: Panel
 var _btn_b: Panel
+var _btn_a: Panel
+var _btn_a_txt: Label
+var _auto_dica: Label
 var _btn_r_txt: Label
 var _btn_b_txt: Label
 var _build: Label
@@ -61,7 +84,7 @@ var _res: Control
 var _res_titulo: Label
 var _res_linhas: Label
 var _res_valores: Label
-var _res_dica: Label
+var _res_dica: Control  # Glifos.dica: glifo do botão + texto
 var _dep: Label
 var _dep_t := 0.0
 var _fonte: Font  # texto corrido (Spleen 8x16, sempre em 16 px)
@@ -77,7 +100,7 @@ var _bau_i := 0  # qual carta está girando
 var _bau_t := 0.0
 var _bau_fase := 0  # 0 = girando, 1 = pausa depois de revelar, 2 = tudo revelado
 var _bau_tick := 0.0
-var _bau_dica: Label
+var _bau_dica: Control  # Glifos.dica: glifo do botão + texto
 
 
 func montar(c, sv: Node) -> void:
@@ -87,11 +110,11 @@ func montar(c, sv: Node) -> void:
 	_fonte_t = Dados.fonte_titulo
 	_fonte_px = Dados.fonte
 	camada = CanvasLayer.new()
-	camada.layer = 5
+	camada.layer = LAYER_TELAS
 	sv.add_child(camada)
 	_fundo = ColorRect.new()
 	_fundo.color = Paleta.alfa(Paleta.PAINEL, 0.62)
-	_fundo.size = Vector2(LARG, ALT)
+	EscalaUi.cobrir(_fundo)  # cobre o canvas inteiro, não só o bloco 960x540
 	_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fundo.visible = false
 	camada.add_child(_fundo)
@@ -120,14 +143,19 @@ func _rotulo(texto: String, tam: int, titulo: bool, cor: Color, alin: Horizontal
 	return l
 
 
+## Cartão no visual premium (#152): fundo azul-noite quase preto com um toque da cor da raridade e borda dessa cor; o escolhido
+## esquenta o fundo, ganha borda dourada e brilho dourado em volta. As outras raras mantêm o brilho da própria cor.
 func _estilo(sel_: bool, cor: Color = Paleta.BORDA, rar := 0) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color = Paleta.alfa(Paleta.CARTAO_SELECIONADO, 0.97) if sel_ else Paleta.alfa(Paleta.CARTAO, 0.96)
-	s.bg_color = s.bg_color.lerp(cor, 0.1 + 0.05 * rar)
-	s.border_color = cor.lerp(Paleta.BRANCO, 0.45) if sel_ else cor
+	s.bg_color = Color(0.075, 0.06, 0.035, 0.97) if sel_ else Color(0.03, 0.035, 0.07, 0.95)
+	s.bg_color = s.bg_color.lerp(cor, 0.06 + 0.04 * rar)
+	s.border_color = Paleta.OURO if sel_ else cor.lerp(Paleta.PRETO, 0.15)
 	s.set_border_width_all(2 + (1 if rar >= 2 else 0) + (1 if sel_ else 0))
 	s.set_corner_radius_all(0)
-	if rar > 0:  # o brilho em volta: mais forte quanto mais rara
+	if sel_:
+		s.shadow_color = Color(Paleta.OURO, 0.35)
+		s.shadow_size = 10
+	elif rar > 0:  # o brilho em volta: mais forte quanto mais rara
 		s.shadow_color = Color(cor.r, cor.g, cor.b, 0.18 + 0.12 * rar)
 		s.shadow_size = 4 + 3 * rar
 	return s
@@ -139,7 +167,7 @@ func _montar_escolha() -> void:
 	_escolha.visible = false
 	camada.add_child(_escolha)
 	_titulo = _rotulo("", TAM_TITULO, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
-	_titulo.position = Vector2(0, 66)
+	_titulo.position = Vector2(0, 60)
 	_titulo.size = Vector2(LARG, 64)
 	_escolha.add_child(_titulo)
 	_sub = _rotulo("Escolha uma carta", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
@@ -147,6 +175,18 @@ func _montar_escolha() -> void:
 	_sub.size = Vector2(LARG, 20)
 	_escolha.add_child(_sub)
 	var x0 := (LARG - (3.0 * CARTA_L + 2.0 * FOLGA)) * 0.5
+	_limite_fundo = ColorRect.new()  # a barra do limite: um trilho escuro e o ouro que esvazia da direita para a esquerda
+	_limite_fundo.position = Vector2(x0, LIMITE_Y)
+	_limite_fundo.size = Vector2(3.0 * CARTA_L + 2.0 * FOLGA, 3.0)
+	_limite_fundo.color = Paleta.alfa(Paleta.PRETO, 0.6)
+	_limite_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_limite_fundo.visible = false
+	_escolha.add_child(_limite_fundo)
+	_limite_barra = ColorRect.new()
+	_limite_barra.size = _limite_fundo.size
+	_limite_barra.color = Paleta.OURO
+	_limite_barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_limite_fundo.add_child(_limite_barra)
 	for i in 3:
 		var p := Panel.new()
 		p.position = Vector2(x0 + i * (CARTA_L + FOLGA), CARTA_Y)
@@ -165,15 +205,73 @@ func _montar_escolha() -> void:
 		_escolha.add_child(p)
 		_cartas.append(p)
 	# rerrolar e banir
-	_btn_r = _botao(Vector2(LARG * 0.5 - 254, BTN_Y), "r")
-	_btn_b = _botao(Vector2(LARG * 0.5 + 14, BTN_Y), "b")
+	# Rerrolar, AUTOMÁTICO (no centro) e Banir: três botões de 200 px com 14 px entre eles, o do meio exatamente no meio da tela
+	_btn_r = _botao(Vector2(LARG * 0.5 - 100 - 14 - BTN_L, BTN_Y), "r")
+	_btn_a = _botao(Vector2(LARG * 0.5 - 100, BTN_Y), "a")
+	_btn_b = _botao(Vector2(LARG * 0.5 + 100 + 14, BTN_Y), "b")
 	_btn_r_txt = _btn_r.get_node("t")
+	_btn_a_txt = _btn_a.get_node("t")
 	_btn_b_txt = _btn_b.get_node("t")
+	_btn_a.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))  # o do meio com a borda de ouro: é o atalho
+	_auto_dica = _rotulo(
+		"Automático: o sistema completa a sua build, mas a carta vem de raridade menor.", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER
+	)
+	_auto_dica.position = Vector2(20, 496)
+	_auto_dica.size = Vector2(LARG - 40, 20)
+	_auto_dica.clip_text = true
+	_escolha.add_child(_auto_dica)
 	_build = _rotulo("", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
-	_build.position = Vector2(60, 472)
-	_build.size = Vector2(LARG - 120, 36)
-	_build.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_build.position = Vector2(20, 472)
+	_build.size = Vector2(LARG - 40, 20)
+	_build.clip_text = true  # uma linha só: _texto_build já corta em "e mais N" o que não cabe
 	_escolha.add_child(_build)
+	_montar_conf()
+
+
+## O quadro "Pausar agora? Você perde estas cartas" (Sim / Não): por cima das cartas, desenhado e testado por retângulo como o resto da tela.
+func _montar_conf() -> void:
+	_conf = Control.new()
+	_conf.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_conf.visible = false
+	_escolha.add_child(_conf)
+	var veu := ColorRect.new()
+	veu.color = Paleta.alfa(Paleta.PRETO, 0.55)
+	EscalaUi.cobrir(veu)
+	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_conf.add_child(veu)
+	var painel := Panel.new()
+	painel.position = CONF.position
+	painel.size = CONF.size
+	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	painel.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))
+	_conf.add_child(painel)
+	var tit := _rotulo("Pausar agora?", TAM_TITULO, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	tit.position = Vector2(CONF.position.x, CONF.position.y + 12)
+	tit.size = Vector2(CONF.size.x, 52)
+	_conf.add_child(tit)
+	var txt := _rotulo("Você perde estas cartas (nenhuma é escolhida).", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
+	txt.position = Vector2(CONF.position.x + 8, CONF.position.y + 74)
+	txt.size = Vector2(CONF.size.x - 16, 20)
+	_conf.add_child(txt)
+	var por_btn := CONF_BTN.x * 2.0 + 24.0
+	for i in 2:
+		var b := Panel.new()
+		b.position = Vector2(CONF.position.x + (CONF.size.x - por_btn) * 0.5 + i * (CONF_BTN.x + 24.0), CONF.position.y + 108)
+		b.size = CONF_BTN
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var st := _estilo(false, Paleta.BORDA)
+		b.add_theme_stylebox_override("panel", st)
+		var t := _rotulo("Sim, pausar" if i == 0 else "Não", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
+		t.position = Vector2(0, 6)
+		t.size = Vector2(CONF_BTN.x, 18)
+		b.add_child(t)
+		_conf.add_child(b)
+		_conf_btns.append(b)
+		_conf_estilos.append(st)
+	var dica := Glifos.dica(_gerador_conf, HORIZONTAL_ALIGNMENT_CENTER, Paleta.TEXTO_APAGADO)
+	dica.position = Vector2(CONF.position.x, CONF.position.y + 154)
+	dica.size = Vector2(CONF.size.x, 20)
+	_conf.add_child(dica)
 
 
 ## Um campo de texto do cartão (ou de qualquer tela de cartas): nó com nome, posição e tamanho dados.
@@ -220,7 +318,8 @@ func _montar_cartao(p: Panel, tecla: String) -> void:
 	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(icone)
-	_campo(p, "nome", TAM_NOME, true, Paleta.FOCO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 86, larg, 40)
+	var nome := _campo(p, "nome", TAM_NOME, true, Paleta.FOCO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 86, larg, 40)
+	nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER  # centrado entre o ícone e a descrição
 	_campo(p, "desc", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 128, larg, 54, true)
 	_campo(p, "proximo", TAM_TEXTO, false, Paleta.DICA, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 184, larg, 50, true)
 	var sep := ColorRect.new()
@@ -240,7 +339,6 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	var nome := p.get_node("nome") as Label
 	nome.text = str(c.nome)
 	nome.add_theme_color_override("font_color", cor.lerp(Paleta.BRANCO, 0.55))
-	_ajustar_nome(nome)
 	(p.get_node("desc") as Label).text = str(c.desc)
 	(p.get_node("proximo") as Label).text = str(c.get("proximo", ""))
 	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
@@ -256,12 +354,6 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(cor))
 
 
-## Nome numa linha só: o tamanho grande se cabe na largura do cartão, senão o pequeno (um nome longo não sai da carta).
-func _ajustar_nome(l: Label) -> void:
-	var largura := _fonte_t.get_string_size(l.text, HORIZONTAL_ALIGNMENT_CENTER, -1, TAM_NOME).x
-	l.add_theme_font_size_override("font_size", TAM_NOME if largura <= CARTA_L - 2.0 * MARGEM else TAM_NOME_CURTO)
-
-
 ## Moldura do ícone: fundo quase preto e borda da cor da raridade.
 func _moldura(cor: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
@@ -272,17 +364,36 @@ func _moldura(cor: Color) -> StyleBoxFlat:
 	return s
 
 
-func _botao(pos: Vector2, _id: String) -> Panel:
+## Dica do baú e do resultado: o botão do dispositivo em uso (Enter, A ou cruz) desenhado pelo Glifos; o Control se refaz sozinho na troca.
+func _gerador_continuar() -> Array:
+	return [["confirmar", "para continuar" if Glifos.eh_controle() else "ou clique para continuar"]]
+
+
+func _gerador_conf() -> Array:
+	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Não"]]
+
+
+func _gerador_jogar_de_novo() -> Array:
+	return [["confirmar", "para jogar de novo" if Glifos.eh_controle() else "ou clique para jogar de novo"]]
+
+
+func _botao(pos: Vector2, id: String) -> Panel:
 	var p := Panel.new()
 	p.position = pos
-	p.size = Vector2(240, 28)
+	p.size = Vector2(BTN_L, 28)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_theme_stylebox_override("panel", _estilo(false, Paleta.BORDA))
 	var t := _rotulo("", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
 	t.name = "t"
-	t.position = Vector2(4, 5)
-	t.size = Vector2(232, 18)
+	t.position = Vector2(40, 5)  # reserva uma coluna para o glifo, inclusive LB/L1 (24 px)
+	t.size = Vector2(BTN_L - 46.0, 18)
 	p.add_child(t)
+	var acoes := {"r": "rerrolar", "a": "automatico", "b": "banir"}
+	var g := Glifos.glifo(acoes[id], HORIZONTAL_ALIGNMENT_CENTER)
+	g.name = "glifo"
+	g.position = Vector2(6, 6)
+	g.size = Vector2(28, 16)
+	p.add_child(g)
 	_escolha.add_child(p)
 	return p
 
@@ -304,7 +415,7 @@ func _montar_bau() -> void:
 		_montar_cartao(p, "")
 		_bau.add_child(p)
 		_bau_slots.append(p)
-	_bau_dica = _rotulo("ENTER ou clique para continuar", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_bau_dica = Glifos.dica(_gerador_continuar, HORIZONTAL_ALIGNMENT_CENTER, Paleta.OURO)
 	_bau_dica.position = Vector2(0, 450)
 	_bau_dica.size = Vector2(LARG, 20)
 	_bau.add_child(_bau_dica)
@@ -329,9 +440,9 @@ func _montar_resultado() -> void:
 	_res_valores.size = Vector2(120, 190)
 	_res_valores.add_theme_constant_override("line_spacing", 8)
 	_res.add_child(_res_valores)
-	_res_dica = _rotulo("ENTER ou clique para jogar de novo", TAM_TEXTO, false, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	_res_dica = Glifos.dica(_gerador_jogar_de_novo, HORIZONTAL_ALIGNMENT_CENTER, Paleta.OURO)
 	_res_dica.position = Vector2(0, 410)
-	_res_dica.size = Vector2(LARG, 12)
+	_res_dica.size = Vector2(LARG, 20)
 	_res.add_child(_res_dica)
 
 
@@ -360,13 +471,30 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	var ec: Dictionary = combate.cartas.cfg.escolha
 	_espera_total = float(ec.rerrolar_espera_s) if refresh else float(ec.espera_s)
 	espera_escolha = _espera_total
+	_limite_total = maxf(float(ec.get("limite_s", 0.0)), 0.0)
+	limite_t = _limite_total  # só começa a correr quando a trava acaba
+	_fechar_conf()
 	_acender = 0.0
 	_marcar()
 	_atualizar_botoes()
 	if espera_escolha > 0.0:
 		_iniciar_trava()
+	_quadro_limite()
 	_texto_build()
+	_aquecer_invocacoes(cartas)
 	combate.audio.tocar("carta", 1.0 + 0.12 * float(_rar_max(cartas)), 0.0, 0.0)
+
+
+## As folhas das invocações que podem nascer quando a tela fechar: as que o herói já tem (no baú as cartas e a fusão já entraram), as das
+## cartas na tela e a da fusão que cada carta ajudaria a fechar. Carregam uma por quadro em atualizar(), com o mundo parado.
+func _aquecer_invocacoes(cartas: Array) -> void:
+	var novas = combate.armas.novas
+	for id in combate.armas.ativas:
+		novas.pedir_aquecer(str(id))
+	for c in cartas:
+		var id := str(c.get("id", ""))
+		novas.pedir_aquecer(id)
+		novas.pedir_aquecer(combate.cartas.fusao_de(id))
 
 
 func _rar_max(cartas: Array) -> int:
@@ -398,17 +526,28 @@ func _atualizar_botoes() -> void:
 	var cs = combate.cartas
 	var pr: bool = cs.pode_rerrolar() and espera_escolha <= 0.0
 	var pb: bool = cs.pode_banir() and espera_escolha <= 0.0
-	_btn_r_txt.text = "[R] Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "[R] Rerrolar (já usou)"
-	_btn_b_txt.text = "[B] Banir a marcada (%d)" % cs.banimentos_restantes()
+	_btn_r_txt.text = "Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "Rerrolar (já usou)"
+	_btn_b_txt.text = "Banir a marcada (%d)" % cs.banimentos_restantes()
+	_btn_a_txt.text = "Automático"
+	_btn_a.modulate = Paleta.BRANCO if espera_escolha <= 0.0 else Paleta.alfa(Paleta.BRANCO, 0.4)
 	_btn_r.modulate = Paleta.BRANCO if pr else Paleta.alfa(Paleta.BRANCO, 0.4)
 	_btn_b.modulate = Paleta.BRANCO if pb else Paleta.alfa(Paleta.BRANCO, 0.4)
 
 
+## "Sua build" em UMA linha, sempre (o mesmo tamanho e a mesma altura com 1 golpe ou com 8): o que não cabe na largura vira "e mais N".
 func _texto_build() -> void:
 	var partes: Array = []
 	for r in combate.cartas.resumo():
 		partes.append("%s %s" % [r.nome, ("nv %d" % r.nivel) if int(r.nivel) > 0 else "(evoluído)"])
-	_build.text = "Sua build: " + ", ".join(partes) if not partes.is_empty() else "Sua build: só a katana (os golpes automáticos vêm pelas cartas)"
+	if partes.is_empty():
+		_build.text = "Sua build: só a katana (os golpes automáticos vêm pelas cartas)"
+		return
+	var texto := ""
+	for k in range(partes.size(), 0, -1):
+		texto = "Sua build: " + ", ".join(partes.slice(0, k)) + (" e mais %d" % (partes.size() - k) if k < partes.size() else "")
+		if _fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_TEXTO).x <= _build.size.x:
+			break
+	_build.text = texto
 
 
 func mostrar_resultado() -> void:
@@ -436,6 +575,10 @@ func esconder() -> void:
 	bau_aberto = false
 	espera_escolha = 0.0
 	espera_bau = 0.0
+	limite_t = 0.0
+	_limite_total = 0.0
+	_fechar_conf()
+	_quadro_limite()
 	for p in _cartas:
 		p.modulate = Paleta.BRANCO
 		(p.get_node("espera") as ColorRect).visible = false
@@ -460,6 +603,7 @@ func mostrar_bau(cartas: Array) -> void:
 	bau_pronto = false
 	espera_bau = float(combate.cartas.cfg.bau.bau_espera_s)
 	_bau_cartas = cartas
+	_aquecer_invocacoes(cartas)
 	_bau_i = 0
 	_bau_t = 0.0
 	_bau_fase = 0
@@ -503,7 +647,6 @@ func _girar_slot(i: int) -> void:
 	var p := _bau_slots[i]
 	var nome_girando := p.get_node("nome") as Label
 	nome_girando.text = str(d.nome)
-	_ajustar_nome(nome_girando)
 	(p.get_node("nome") as Label).add_theme_color_override("font_color", cor.lerp(Paleta.BRANCO, 0.4))
 	var novo := _estilo(false, cor, r)
 	_bau_estilos[i].bg_color = novo.bg_color
@@ -592,6 +735,8 @@ func atualizar(dt: float) -> void:
 		_atualizar_escolha(dt)
 	if bau_aberto:
 		_atualizar_bau(dt)
+	if escolha_aberta or bau_aberto:
+		combate.armas.novas.aquecer_um()
 	if depuracao:
 		_dep_t -= dt
 		if _dep_t <= 0.0:
@@ -625,11 +770,11 @@ func _pulsar_cartas() -> void:
 			_estilos[i].shadow_size = base + roundi((2.0 + 2.0 * rar) * (0.5 + 0.5 * sin(_t_ui * (3.0 + rar) + float(i))))
 
 
-## Posição do mouse na tela 960x540 (mouse_fn é o gancho dos testes; sem ele, o mouse de verdade).
+## Posição do mouse no bloco 960x540 da UI (mouse_fn é o gancho dos testes; sem ele, o mouse de verdade).
 func _mouse() -> Vector2:
 	if mouse_fn.is_valid():
 		return mouse_fn.call()
-	return mundo.ap.mouse_na_tela()
+	return mundo.ap.mouse_ui()
 
 
 ## Pausa aberta (v2/pausa.gd): a trava não anda. mundo.pausa é o nó do menu (mundo.gd); sem ele, nenhuma pausa conta.
@@ -638,11 +783,18 @@ func _pausa_aberta() -> bool:
 	return p != null and bool(p.aberto)
 
 
+## O jogador está lendo o painel central da build (C / Select) sobre as cartas: o tempo delas não corre.
+func _painel_build_aberto() -> bool:
+	var st = mundo.get("status")
+	return st != null and st.central_aberto()
+
+
 ## Tempo REAL da escolha: a trava das cartas (1 s; 0,8 s depois de rerrolar ou banir), o brilho ao liberar e a pulsada da contagem.
 ## O dt vem do relógio de parede (combate.efeitos), então câmera lenta e hit-stop não mexem nele.
 func _atualizar_escolha(dt: float) -> void:
+	var parado := _pausa_aberta() or conf_aberta or _painel_build_aberto()  # a pausa, o "Pausar agora?" e o painel da build (C) param a trava e o limite
 	if espera_escolha > 0.0:
-		if not _pausa_aberta():
+		if not parado:
 			espera_escolha = maxf(0.0, espera_escolha - dt)
 			_pulso = maxf(0.0, _pulso - dt)
 		if espera_escolha > 0.0:
@@ -656,6 +808,151 @@ func _atualizar_escolha(dt: float) -> void:
 		for p in _cartas:
 			p.modulate = Color(1.0 + k, 1.0 + k, 1.0 + k, 1.0)
 	_pulsar_cartas()
+	if _limite_total > 0.0:
+		if not parado:
+			limite_t = maxf(0.0, limite_t - dt)
+		_quadro_limite()
+		if limite_t <= 0.0:
+			_tempo_esgotado()
+
+
+## A barra do limite (esvazia da direita para a esquerda, vira vermelha nos últimos `limite_urgente_s`) e a contagem na legenda.
+func _quadro_limite() -> void:
+	var ativo := escolha_aberta and _limite_total > 0.0
+	_limite_fundo.visible = ativo
+	if not ativo:
+		return
+	var frac := clampf(limite_t / _limite_total, 0.0, 1.0)
+	_limite_barra.size.x = _limite_fundo.size.x * frac
+	var urgente := float(combate.cartas.cfg.escolha.get("limite_urgente_s", 3.0))
+	var corre := espera_escolha <= 0.0
+	_limite_barra.color = Paleta.PERIGO if corre and limite_t <= urgente else Paleta.OURO
+	if corre:
+		var txt := "Escolha uma carta  ·  automático em %d s" % ceili(limite_t)
+		if _sub.text != txt:
+			_sub.text = txt
+		_sub.add_theme_color_override("font_color", Paleta.PERIGO if limite_t <= urgente else Paleta.TEXTO_SECUNDARIO)
+
+
+## O tempo acabou: o sistema escolhe pela MESMA regra do botão Automático (progresso.automatico). Se não houver carta para o automático
+## (não devia acontecer), fica a carta marcada. O aviso sai pelo anúncio do HUD.
+func _tempo_esgotado() -> void:
+	limite_t = 0.0
+	var antes: int = combate.progresso.escolhidas
+	if not combate.progresso.automatico():
+		combate.progresso.escolher(sel)
+	if combate.progresso.escolhidas > antes:
+		var nome: String = combate.progresso.ultima_nome
+		combate.anunciar("Escolhida automaticamente: %s" % nome if nome != "" else "Escolhida automaticamente", Paleta.OURO)
+
+
+## Intercepta o ESC e o Start que abririam a pausa (pausa.gd chama aqui antes de pausar). Na escolha de cartas eles NÃO pausam: abrem a
+## confirmação "Pausar agora? Você perde estas cartas" e, com ela aberta, fecham-na (= Não). Devolve true se tratou o pedido.
+func intercepta_pausa() -> bool:
+	if not escolha_aberta:
+		return false
+	if conf_aberta:
+		_fechar_conf()
+	else:
+		_abrir_conf()
+	return true
+
+
+func _abrir_conf() -> void:
+	var st = mundo.get("status")  # o painel central do C (camada 13) cobriria o quadro e engoliria a entrada dele: sai antes
+	if st != null and st.aberto() and str(st.get("_modo_atual")) == "central":
+		st.alternar()
+	conf_aberta = true
+	conf_sel = 1  # "Não" é o padrão: um aperto distraído nunca perde as cartas
+	_conf.visible = true
+	_marcar_conf()
+	combate.audio.tocar("carta", 0.9, -4.0, 0.0)
+
+
+func _fechar_conf() -> void:
+	conf_aberta = false
+	if _conf != null:
+		_conf.visible = false
+
+
+func _marcar_conf() -> void:
+	for i in 2:
+		var novo := _estilo(i == conf_sel, Paleta.BORDA)
+		_conf_estilos[i].bg_color = novo.bg_color
+		_conf_estilos[i].border_color = novo.border_color
+		_conf_estilos[i].shadow_color = novo.shadow_color
+		_conf_estilos[i].shadow_size = novo.shadow_size
+		_conf_estilos[i].set_border_width_all(2 + (1 if i == conf_sel else 0))
+
+
+## "Sim": a rodada de cartas é perdida (nenhuma carta escolhida, sem reembolso de rerrolar ou banir) e a pausa normal abre.
+func _conf_sim() -> void:
+	_fechar_conf()
+	combate.progresso.descartar_rodada()
+	var p = mundo.get("pausa")
+	if p != null:
+		p.pausar()
+
+
+func _conf_botao_sob_mouse() -> int:
+	var m := _mouse()
+	for i in 2:
+		if Rect2(_conf_btns[i].position, _conf_btns[i].size).has_point(m):
+			return i
+	return -1
+
+
+## Entrada com o "Pausar agora?" aberto: ele come tudo (as cartas, o rerrolar e o banir ficam quietos). Esquerda e direita trocam Sim/Não, confirmar
+## aciona o marcado e B/ESC/Start/N = Não. Nenhuma tecla de movimento (S, W...) confirma: Sim só por escolha explícita (navegar até ele e
+## confirmar, ou o clique). O mouse marca ao passar e aciona no aperto.
+func _entrada_conf(e: InputEvent) -> bool:
+	if e is InputEventMouseMotion:
+		var i := _conf_botao_sob_mouse()
+		if i >= 0 and i != conf_sel:
+			conf_sel = i
+			_marcar_conf()
+		return true
+	if e is InputEventMouseButton:
+		if not e.pressed:
+			return false
+		if e.button_index == MOUSE_BUTTON_LEFT:
+			var j := _conf_botao_sob_mouse()
+			if j == 0:
+				_conf_sim()
+			elif j == 1:
+				_fechar_conf()
+		return true
+	if e is InputEventKey:
+		if not e.pressed:
+			return false
+		if e.echo:
+			return true
+		match e.keycode:
+			KEY_ESCAPE, KEY_N:
+				_fechar_conf()
+			KEY_LEFT, KEY_A, KEY_RIGHT, KEY_D:
+				conf_sel = 1 - conf_sel
+				_marcar_conf()
+			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
+				_conf_agir()
+		return true
+	if e is InputEventJoypadMotion:
+		return false
+	if e.is_action_pressed("ui_cancel"):
+		_fechar_conf()
+	elif e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right"):
+		conf_sel = 1 - conf_sel
+		_marcar_conf()
+	elif e.is_action_pressed("ui_accept"):
+		_conf_agir()
+	return true
+
+
+func _conf_agir() -> void:
+	if conf_sel == 0:
+		_conf_sim()
+	else:
+		_fechar_conf()
 
 
 ## Começa a trava: cartas apagadas, uma barra vazia em cada carta e a contagem na legenda (fonte de título).
@@ -693,6 +990,7 @@ func _liberar_cartas() -> void:
 		(p.get_node("espera") as ColorRect).visible = false
 	_marcar()
 	_atualizar_botoes()
+	_quadro_limite()
 	combate.audio.tocar("carta", 1.4, -4.0, 0.0)
 
 
@@ -702,7 +1000,7 @@ func entrada(e: InputEvent) -> bool:
 		ligar_depuracao(not depuracao)
 		return true
 	if escolha_aberta:
-		return _entrada_escolha(e)
+		return _entrada_conf(e) if conf_aberta else _entrada_escolha(e)
 	if bau_aberto:
 		return _entrada_bau(e)
 	if resultado_aberto:
@@ -724,6 +1022,8 @@ func _botao_sob_mouse() -> String:
 		return "r"
 	if Rect2(_btn_b.position, _btn_b.size).has_point(m):
 		return "b"
+	if Rect2(_btn_a.position, _btn_a.size).has_point(m):
+		return "a"
 	return ""
 
 
@@ -754,6 +1054,9 @@ func _entrada_escolha(e: InputEvent) -> bool:
 			if b == "b":
 				_banir()
 				return true
+			if b == "a":
+				_automatico()
+				return true
 			var j := _carta_sob_mouse()
 			if j >= 0:
 				combate.progresso.escolher(j)
@@ -779,9 +1082,24 @@ func _entrada_escolha(e: InputEvent) -> bool:
 				combate.progresso.escolher(sel)
 			KEY_R:
 				_rerrolar()
+			KEY_Q:
+				_automatico()
 			KEY_B, KEY_X:
 				_banir()
 		return true
+	if e is InputEventJoypadButton and e.pressed:  # controle: X rerrola, Y é o automático, LB bane (o A e o direcional já vêm pelas ações ui_*)
+		if travada:
+			_pulso = PULSO_T
+			return true
+		if e.button_index == JOY_BUTTON_X:
+			_rerrolar()
+			return true
+		if e.button_index == JOY_BUTTON_Y:
+			_automatico()
+			return true
+		if e.button_index == JOY_BUTTON_LEFT_SHOULDER:
+			_banir()
+			return true
 	if e is InputEventJoypadMotion:
 		return false  # o analógico não navega nem escolhe: cada quadro com ele acima do limite contaria como um aperto (o direcional e o A fazem isso)
 	if e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right") or e.is_action_pressed("ui_accept"):
@@ -799,6 +1117,11 @@ func _entrada_escolha(e: InputEvent) -> bool:
 
 func _rerrolar() -> void:
 	if not combate.progresso.rerrolar():
+		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
+
+
+func _automatico() -> void:
+	if not combate.progresso.automatico():
 		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
 
 

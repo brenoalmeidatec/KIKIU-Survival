@@ -30,7 +30,8 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 | Arquivo(s) no jogo | Onde é usado | Autor | Fonte (link) | Licença | Crédito exigido? | Mudanças nossas | Data |
 |---|---|---|---|---|---|---|---|
 | `assets/fonte/jersey10/` | títulos da v2 | The Soft Type Project | Google Fonts (Jersey 10) | SIL OFL 1.1 | texto da licença (`OFL.txt`) e Créditos | nenhuma | 2026-10-11 |
-| `assets/fonte/PressStart2P.ttf` | números e HUD | CodeMan38 | Google Fonts (Press Start 2P) | SIL OFL 1.1 | Créditos | nenhuma | desde a v1 |
+| `assets/fonte/PressStart2P.ttf` | números e HUD da v1 (o HUD da v2 deixou de usar, em 2026-10-20) | CodeMan38 | Google Fonts (Press Start 2P) | SIL OFL 1.1 | Créditos | nenhuma | desde a v1 |
+| `assets/fonte/atkinson/` | HUD da v2 (texto nítido e legível em tamanho pequeno) | Braille Institute of America | Google Fonts (Atkinson Hyperlegible), `ofl/atkinsonhyperlegible` | SIL OFL 1.1 | texto da licença (`OFL.txt`) e Créditos | nenhuma | 2026-10-20 |
 | `assets/audio/musica/*.ogg` | música | Kevin MacLeod (incompetech.com) | incompetech.com | CC BY 4.0 | sim (Créditos e `LICENCAS_AUDIO.md`) | cortes, laço, ganho, OGG | 2026-10-12 |
 | ~~`assets/fonte/pixelify_sans/`~~ | removida em 2026-10-12 (o 5 saía como S: "500" lia-se "800"); trocada pela Spleen | The Pixelify Sans Project | Google Fonts (Pixelify Sans) | SIL OFL 1.1 | - | - | 2026-10-11 |
 | `assets/fonte/spleen/spleen-8x16.otf` | texto corrido e valores da v2 (`Dados.fonte_texto`), sempre em 16 px | Frederic Cambus | https://github.com/fcambus/spleen (release 2.2.0) | BSD de 2 cláusulas | sim: aviso de copyright e texto da licença (`LICENSE.txt` ao lado; linha na tela de Créditos) | nenhuma | 2026-10-12 |
@@ -88,3 +89,23 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 - Fonte original 1447×1087 preservada; ajuste do fundo vazio para 1448×1086, recorte e ligação ficam com Claude do Alisson. Prompts exatos e índice por ID ao lado da imagem.
 >
 - 2026-10-15 — jogos/hordas/fonte_arte/referencia_herois/*.png: referências de Matheus, Nicão e Lucas; arte própria gerada no Codex com imagegen, usando referências do projeto, sem material novo de terceiros. Prompts e grade ao lado; sem recorte ou integração.
+
+## Ícones do santuário — Claude do Alisson (PC), 18/10/2026
+- jogos/hordas/fonte_arte/icones_santuario/gerar.py gera em código (Python, PIL) 22 ícones pixel art 24x24 em jogos/hordas/projeto/assets/v2/icones_santuario/*.png (melhorias, conquistas, modo Pesadelo, rastro de katana, estruturas, portais e um genérico). Arte própria desenhada por código, sem imagegen e sem material de terceiros; paleta de v2/paleta.gd.
+
+## Folhas animadas dos golpes secundários — Claude do Breno (PC do trabalho), 19/10/2026
+- jogos/hordas/fonte_arte/armas_anim/gerar_{projeteis,meteoros,aneis,nuvens}.py geram em código (Python, Pillow, semente fixa, sem rede) 83 tiras animadas em jogos/hordas/projeto/assets/v2/armas_anim/*.png e os índices indice_{projeteis,meteoros,aneis,nuvens}.json. Arte própria desenhada pixel a pixel por código (sem imagegen e sem material de terceiros); as imagens paradas de assets/v2/armas/ e as fontes fonte_armas_*.webp serviram só de referência de cor, forma e silhueta, sem copiar pixels. Licença: a do projeto.
+- Projéteis (voo + impacto): flecha_roxa, lanca_gelo, dardo_verde, feixe_dourado, adaga_aco, shuriken_sombria, disco_ferro, laminas, bola_fogo e bola_chumbo.
+- Meteoros (queda + impacto + marca): meteoro_flamejante, cometa_gelo, cometa_roxo, estrela_cadente, espinho_verde, pedra_vulcanica e os três que faltavam (pedra_cinza, fogo_do_ceu e raio_meteorico).
+- Anéis (expandir): anel_onda_branca, anel_dourado, anel_gelo, anel_vermelho, terremoto_poeira, anel_eletrico, redemoinho_verde, anel_espinhos_verdes e anel_lunar.
+- Nuvens (entrada + loop + saída): nuvem_veneno, nevoa_gelada, nuvem_cinzas, fumaca_sonolenta, chuva_acida, nuvem_neve, nuvem_esporos, nuvem_sangue e nevoa_espectral.
+- Prévias ampliadas 4x em docs/combate_v2/previas/ e GIFs do jogo em docs/combate_v2/gifs/ (capturados por testes/fotos/golpes_gif.tscn): geração própria, não vão para o jogo. Nenhuma arte existente foi sobrescrita.- 2026-10-19, segunda leva (mesmo autor e mesma licença): gerar_{evo_projeteis,evo_met_aneis,evo_nuvens,magias}.py geram mais 55 tiras e os índices indice_{evo_projeteis,evo_met_aneis,evo_nuvens,magias}.json: as evoluções urso_solar, chuva_de_lacas, bola_incendiaria, chuva_de_ferro, tempestade_primordial, anel_de_brasas, pedreira_ardente, cometa_duplo, eclipse_negro, juizo_final, estrondo, terra_partida, juramento_sagrado, nevasca_congelante, cinzas_acidas, peste_negra e furacao_glacial; aura_fogo; corvos e revoada_de_trovoes; runa e circulo_runico; o impacto do raio; ventania, onda e fura. Arte própria por código, as imagens paradas de assets/v2/armas e assets/v2/fusoes só como referência, sem material de terceiros.- 2026-10-19, quarta leva (mesmo autor e licença): gerar_perigo.py gera perigo_chuva_{queda,impacto}.png, perigo_estouro_impacto.png, perigo_investida_impacto.png e indice_perigo.json, para os ataques do chefe e da elite. Arte própria por código, sem terceiros; gerar_martelo.py gera martelo_trovao_queda.png e indice_martelo.json.
+
+
+## Fontes da #349 — Codex do Alisson, 20/10/2026
+
+| Arquivo(s) no jogo | Onde é usado | Autor | Fonte (link) | Licença | Crédito exigido? | Mudanças nossas | Data |
+|---|---|---|---|---|---|---|---|
+| `jogos/hordas/fonte_arte/especial_q/*.png` | fontes dos ícones Q de Hazaki, Nicão e Lucas; integração pendente | Codex do Alisson | imagegen integrado; prompts em `jogos/hordas/fonte_arte/especial_q/PROMPTS.md` | arte própria gerada no Codex, licença do projeto | não há atribuição de terceiros | geração própria; fontes sem recorte | 2026-10-20 |
+| `jogos/hordas/fonte_arte/chefes_v2/*.png` | fontes dos bustos Cavaleiro Rubro, Rainha Tecelã e Rei Espantalho; integração pendente | Codex do Alisson | imagegen integrado; prompts em `jogos/hordas/fonte_arte/chefes_v2/PROMPTS.md` | arte própria gerada no Codex, licença do projeto | não há atribuição de terceiros | geração própria; fontes sem recorte | 2026-10-20 |
+| `jogos/hordas/projeto/assets/v2/especial_q/{hazaki,nicao,lucas}.png` | ícones do Q de cada herói no círculo do HUD (32x32), derivados de `jogos/hordas/fonte_arte/especial_q/*.png` (linha acima) | Claude do Alisson (recorte), arte do Codex do Alisson | `python jogos/hordas/prototipos/cara_nova/objetos/gerar_objetos.py especial_q` (caixa justa, BOX para 30 px, alfa binário a 25%, contorno de 1 px, paleta de 64 cores) | arte própria gerada no Codex, licença do projeto | não há atribuição de terceiros | recortada e reduzida das fontes do Codex | 2026-10-20 |

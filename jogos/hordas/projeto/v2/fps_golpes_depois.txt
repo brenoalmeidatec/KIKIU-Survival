@@ -1,0 +1,11 @@
+﻿
+rep1 MEDIDA sombra=baixa luzes_ligadas=6/87 atores_na_tela=118 blocos=60/151 fps=14.5 frames=87 seg=6.00
+rep1 SCRIPT ms/quadro=12.649 (sombras 0.000, golpes secundÃ¡rios 2.843, desenho deles 12.589)
+rep1 RENDER ms/quadro: cpu mundo 48.59, gpu mundo 0.00, cpu janela 0.66, gpu janela 0.00, cpu ui 4.31, gpu ui 0.00; chamadas de desenho 547; objetos 1410; fora do script 56.33
+rep2 MEDIDA sombra=baixa luzes_ligadas=6/87 atores_na_tela=117 blocos=60/151 fps=15.2 frames=92 seg=6.05
+rep2 SCRIPT ms/quadro=12.852 (sombras 0.000, golpes secundÃ¡rios 2.713, desenho deles 9.113)
+rep2 RENDER ms/quadro: cpu mundo 25.42, gpu mundo 0.00, cpu janela 0.59, gpu janela 0.00, cpu ui 3.88, gpu ui 0.00; chamadas de desenho 554; objetos 1661; fora do script 52.93
+rep3 MEDIDA sombra=baixa luzes_ligadas=6/87 atores_na_tela=118 blocos=60/151 fps=15.3 frames=92 seg=6.02
+rep3 SCRIPT ms/quadro=12.631 (sombras 0.000, golpes secundÃ¡rios 1.955, desenho deles 9.151)
+rep3 RENDER ms/quadro: cpu mundo 25.42, gpu mundo 0.00, cpu janela 0.65, gpu janela 0.00, cpu ui 3.97, gpu ui 0.00; chamadas de desenho 535; objetos 1669; fora do script 52.82
+mediana fps=15.2 (de 14,5, 15,2, 15,3)

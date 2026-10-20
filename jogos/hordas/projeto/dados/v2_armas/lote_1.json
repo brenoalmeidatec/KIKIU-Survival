@@ -113,7 +113,7 @@
     ],
     "arte": {
       "visual": "Esfera de fogo laranja com núcleo amarelo, que sai devagar e deixa faíscas caindo atrás. Ao chegar ao alvo, explode num círculo de fogo que se abre no chão e some em seguida.",
-      "cores": ["laranja", "amarelo", "vermelho"],
+      "cores": ["laranja", "amarelo", "âmbar"],
       "tamanho": "esfera de 16 px; explosão de 80 px de diâmetro",
       "duracao": "0,4 s na explosão",
       "provisorio": "Um círculo laranja de 16 px com 3 faíscas amarelas atrás, e um anel laranja que cresce até 80 px de diâmetro no impacto."

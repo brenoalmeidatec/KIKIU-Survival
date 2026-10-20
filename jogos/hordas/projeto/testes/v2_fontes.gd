@@ -17,6 +17,7 @@ const Status := preload("res://v2/status.gd")
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
 const MenuPrincipal := preload("res://v2/menu_principal.gd")
 const Pausa := preload("res://v2/pausa.gd")
+const Glifos := preload("res://v2/glifos.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const OPCOES_TESTE := "user://teste_v2_fontes_opcoes.cfg"
 const PT := "ãçéêõüÃÇÉÊÕÜáíóúâôàÁÍÓÚÂÔÀ"
@@ -111,16 +112,7 @@ func _tamanhos() -> void:
 		MenuPrincipal.TAM_DICA
 	]:
 		ok(t in [16, 32], "tamanho %d da Spleen na grade (16, 32)" % t)
-	for t in [
-		Telas.TAM_TITULO,
-		Telas.TAM_NOME,
-		Telas.TAM_NOME_CURTO,
-		Telas.TAM_CONTAGEM,
-		Status.TAM_CAB,
-		Status.TAM_NOME_PEQ,
-		ResultadoMeta.TAM_TITULO,
-		MenuPrincipal.TAM_BOTAO
-	]:
+	for t in [Telas.TAM_TITULO, Telas.TAM_NOME, Telas.TAM_CONTAGEM, Status.TAM_CAB, Status.TAM_NOME_PEQ, ResultadoMeta.TAM_TITULO, MenuPrincipal.TAM_BOTAO]:
 		ok(t in [19, 37, 56], "tamanho %d da Jersey 10 na grade (19, 37, 56)" % t)
 	ok(MenuPrincipal.TAM_LOGO == 2 * 56, "o logo usa a exceção documentada de 2 x 56")
 	for t in [Status.TAM_NUM, Status.TAM_GRANDE]:
@@ -210,10 +202,17 @@ func _menu_graficos() -> void:
 	print("v2_fontes: %d linhas de Gráficos medidas; a ajuda mais alta tem %d px (rodapé de %d)" % [itens.size(), maior_ajuda, Pausa.AJUDA_H])
 	var credito := _altura(f, Pausa.CREDITO_MUSICA, larg_ajuda, Pausa.TAM_AJUDA)
 	ok(credito <= Pausa.AJUDA_H, "o crédito da música cabe no rodapé do Áudio (%d px)" % credito)
-	ok(
-		f.get_string_size(Pausa.DICA, HORIZONTAL_ALIGNMENT_LEFT, -1, Pausa.TAM_DICA).x <= Pausa.PAINEL.size.x - 16.0,
-		"a dica de teclas cabe numa linha do painel"
-	)
+	# a dica da pausa cabe numa linha do painel em cada dispositivo (teclado, Xbox, PlayStation)
+	for d in 3:
+		Glifos.definir(d)
+		var dica := Glifos.dica(func() -> Array: return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]])
+		add_child(dica)
+		ok(
+			dica.get_minimum_size().x <= Pausa.PAINEL.size.x - 16.0,
+			"a dica de teclas cabe numa linha do painel (dispositivo %d: %d px)" % [d, dica.get_minimum_size().x]
+		)
+		dica.queue_free()
+	Glifos.definir(Glifos.Disp.TECLADO)
 
 
 ## Confere a fonte e o tamanho finais dos Labels, incluindo nomes adaptados depois de preencher cartas.

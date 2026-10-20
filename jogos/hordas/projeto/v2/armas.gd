@@ -10,6 +10,7 @@ extends RefCounted
 
 const Colisao := preload("res://v2/colisao.gd")
 const Novas := preload("res://v2/armas_novas.gd")
+const Anim := preload("res://v2/anim_golpes.gd")
 const MAX_CORVOS := 16
 const MAX_RUNAS := 14
 const MAX_ONDAS := 8
@@ -340,6 +341,15 @@ func numeros(a: Dictionary) -> Dictionary:
 		"runa":
 			intervalo = float(st.recarga) / vel_a
 			acertos_s = float(st.quantidade) / intervalo * RUNA_NO_ALVO  # só as que nascem sobre o monstro (`_ponto_runa`) explodem de pronto
+		"torre":
+			intervalo = float(st.tique) / vel_a  # um virote a cada `tique` s depois de armar; a recarga só corre após desmontar
+			var ciclo := float(st.duracao) + Novas.DESMONTA + float(st.recarga) / vel_a
+			var no_ar := maxf(float(st.duracao) - Novas.ARMA_T, 0.0) / maxf(ciclo, 0.1)
+			acertos_s = float(st.quantidade) / intervalo * no_ar
+		"granada":
+			intervalo = float(st.recarga) / vel_a
+			acertos_s = float(st.quantidade) / intervalo  # a explosão; os estilhaços (frac_estilhaco do dano) acertam só parte dos monstros
+			extra += float(st.get("estilhacos", 0.0)) * float(st.get("frac_estilhaco", 0.0)) * dano * float(st.quantidade) / intervalo * 0.25
 	return {"dano": dano, "intervalo": intervalo, "acertos": acertos_s, "dps": dano * acertos_s + extra}
 
 
@@ -370,7 +380,7 @@ func atualizar(dt: float) -> void:
 					_raio(a, h, vel_a, dt)
 				"runa":
 					_runas_gerar(a, h, dt, vel_a)
-				"projetil", "nuvem", "anel", "meteoro", "aliado":
+				"projetil", "nuvem", "anel", "meteoro", "aliado", "torre", "granada":
 					novas.golpe(a, h, dt, vel_a, _perto)
 	elif _perto.size() > 0 or _tem_pool():
 		_juntar_perto(h.pos, 340.0)
@@ -637,6 +647,7 @@ func _arco_eletrico(de, dano: float, h) -> void:
 	if melhor == null:
 		return
 	combate.ferir(melhor, dano, (melhor.pos - de.pos).normalized(), 30.0, 0.1, COR_RAIO)
+	_estalo_raio(melhor)
 	_acertou("raio")
 	_raio_visual([de.pos + Vector2(0, -10), melhor.pos + Vector2(0, -10)])
 
@@ -682,6 +693,7 @@ func _cair_raio(a: Dictionary, h, alvo) -> void:
 	var atual = alvo
 	var tocados: Array = [alvo]
 	combate.ferir(alvo, dano, Vector2.ZERO, 0.0, 0.2, COR_RAIO)
+	_estalo_raio(alvo)
 	_acertou("raio")
 	var raio_c := float(st.raio)
 	for j in int(st.cadeia):
@@ -700,6 +712,7 @@ func _cair_raio(a: Dictionary, h, alvo) -> void:
 		dano *= 0.85
 		combate.ferir(prox, dano, (prox.pos - atual.pos).normalized(), 40.0, 0.15, COR_RAIO)
 		pontos.append(prox.pos + Vector2(0, -8))
+		_estalo_raio(prox)
 		atual = prox
 		_acertou("raio")
 	_raio_visual(pontos)
@@ -707,6 +720,13 @@ func _cair_raio(a: Dictionary, h, alvo) -> void:
 	fx.onda(alvo.pos, Color(0.7, 0.85, 1.0, 0.9), 26.0, 0.2)
 	combate.audio.tocar("raio", randf_range(0.92, 1.1), -1.0, 0.08)
 	mundo.cam.tremer(1.0, 0.1)
+
+
+## O estalo do raio no alvo atingido (folha "impacto" do raio, docs/combate_v2): só efeito, o dano já saiu.
+func _estalo_raio(m) -> void:
+	var f: Dictionary = Anim.de("raio").get("impacto", {})
+	if not f.is_empty():
+		novas.tocar_fx(f, m.pos + Vector2(0, -8))
 
 
 ## Guarda um raio para desenhar: uma linha torta passando pelos pontos (cada trecho com ~4 dentes).
@@ -738,7 +758,12 @@ func _raio_visual(pontos: Array) -> void:
 func _raios_tempo(dt: float) -> void:
 	for i in MAX_RAIOS:
 		if z_t[i] < z_dur[i]:
+			var antes := int(z_t[i] / 0.05)
 			z_t[i] += dt
+			if int(z_t[i] / 0.05) != antes:  # o raio estala: a cada 0,05 s os dentes do meio pulam (as pontas ficam nos alvos)
+				var base := i * PTS
+				for j in range(1, z_n[i] - 1):
+					z_pts[base + j] += Vector2(randf_range(-2.5, 2.5), randf_range(-2.5, 2.5))
 
 
 # ------------------------------------------------------------------ runas
@@ -809,8 +834,12 @@ func _explodir_runa(i: int, a: Dictionary, h) -> void:
 	var raio := float(st.explosao) * k_area
 	var dano: float = float(st.dano) * h.m_dano
 	_dano_area(p, raio, dano, 160.0, 0.3, a.cor, "runa", float(st.get("lentidao", 0.0)))
+	var fr := Anim.de(str(a.id))
+	if fr.has("explosao"):  # o estouro do glifo toca no instante do dano, do tamanho da área real
+		novas.tocar_fx(fr.explosao, p, maxf(1.0, roundf(raio * 2.0 / (fr.explosao.quadro as Vector2).x)))
 	fx.estouro(p + Vector2(0, -4), a.cor, 12)
 	fx.onda(p, Color(a.cor.r, a.cor.g, a.cor.b, 0.9), raio, 0.3)
+	fx.folha("cristal", p, raio * 1.1, a.cor, 0.3)
 	fx.luz_rapida(p + Vector2(0, -6), a.cor, 2.0, raio * 2.6, 0.3)
 	combate.audio.tocar("runa", randf_range(0.9, 1.1), -1.0, 0.05)
 	mundo.cam.tremer(1.5, 0.12)
@@ -840,6 +869,7 @@ func explodir(p: Vector2, dano: float, raio: float, cor: Color, ignorar = null) 
 	_dano_area(p, raio, dano, 120.0, 0.2, cor, "explode", 0.0, ignorar)
 	fx.estouro(p + Vector2(0, -6), cor, 8)
 	fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), raio, 0.25)
+	fx.folha("cristal", p, raio * 1.1, cor, 0.25)
 	fx.luz_rapida(p + Vector2(0, -8), cor, 1.8, raio * 3.0, 0.25)
 	combate.audio.tocar("runa", randf_range(1.1, 1.3), -3.0, 0.05)
 
@@ -1032,7 +1062,7 @@ func _img_corvo() -> Texture2D:
 				if x >= 19 and x <= 21 and y >= 8 and y <= 9:
 					im.set_pixel(ox + x, y, Color(0.95, 0.6, 0.2))  # bico
 				if x == 17 and y == 7:
-					im.set_pixel(ox + x, y, Color(1.0, 0.25, 0.2))  # olho
+					im.set_pixel(ox + x, y, Color(1.0, 0.86, 0.42))  # olho
 		# asa: triângulo com a base no corpo e a ponta para cima ou para baixo
 		var ay := 8.0 - cima
 		for y in 18:
@@ -1127,7 +1157,12 @@ func _desenhar_corpo_i() -> void:
 		for p in a.pts as PackedVector2Array:  # sombra de cada lâmina no chão
 			no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-7, -1), Vector2(14, 6)), false, Color(0, 0, 0, 0.45))
 		var sp := Novas.sprite_de(str(a.id))
-		if not sp.is_empty():
+		var giro: Dictionary = Anim.de(str(a.id)).get("voo", {})
+		if not giro.is_empty():  # a folha do giro (docs/combate_v2): cada lâmina gira pelos quadros, defasada das vizinhas; a órbita é daqui
+			var pts: PackedVector2Array = a.pts
+			for k in pts.size():
+				Anim.desenhar(no_corpo, giro, Anim.quadro_em(giro, _fase + 0.07 * k), pts[k] + Vector2(0, -14))
+		elif not sp.is_empty():
 			var pontos: PackedVector2Array = a.pts
 			for k in pontos.size():
 				var ang := float(a.ang) + TAU * float(k) / float(pontos.size())
@@ -1140,8 +1175,13 @@ func _desenhar_corpo_i() -> void:
 		no_corpo.draw_texture_rect(tex_brilho, Rect2(p + Vector2(-8, -2), Vector2(16, 7)), false, Color(0, 0, 0, 0.45))
 		var c := (p + Vector2(0, -c_z[i])).round()
 		var lado := 1.0 if c_vel[i].x >= 0.0 else -1.0
-		var sp := Novas.sprite_de(str((c_arma[i] as Dictionary).get("id", "corvos"))) if c_arma[i] != null else {}
-		if not sp.is_empty():
+		var id_c := str((c_arma[i] as Dictionary).get("id", "corvos")) if c_arma[i] != null else "corvos"
+		var sp := Novas.sprite_de(id_c) if c_arma[i] != null else {}
+		var fc := Anim.de(id_c)
+		if fc.has("voo"):  # a folha (docs/combate_v2): bate as asas voando e mergulha com o bico quando desce para bicar
+			var f: Dictionary = fc.bicada if (c_z[i] < 14.0 and fc.has("bicada")) else fc.voo
+			Anim.desenhar(no_corpo, f, Anim.quadro_em(f, c_fase[i] / 17.0), c, 0.0, Vector2(lado, 1.0))
+		elif not sp.is_empty():
 			# O loader entrega CanvasTexture com normal map; o corpo recebe a luz do mundo.
 			_sprite_antigo(no_corpo, sp, c, 0.0, Vector2(lado, 1.0 + 0.035 * sin(c_fase[i])))
 		else:
@@ -1170,7 +1210,11 @@ func _desenhar_brilho_i() -> void:
 			_desenhar_laminas(a)
 		if str(a.tipo) == "aura" or (str(a.tipo) == "orbita" and a.st.has("aura_raio")):
 			var sp := Novas.sprite_de(str(a.id))
-			if not sp.is_empty() and str(sp.tipo) == "area":
+			var fa: Dictionary = Anim.de(str(a.id)).get("aura", {})
+			if not fa.is_empty():  # as chamas da folha dançam em volta do herói no raio real da aura (o shader segue por baixo)
+				var esc := float(a.get("RA", a.R)) * 2.0 / (fa.quadro as Vector2).x
+				Anim.desenhar(no_brilho, fa, Anim.quadro_em(fa, _fase), mundo.heroi.pos + Vector2(0, -1), 0.0, Vector2(esc, esc), Color(1, 1, 1, 0.45))
+			elif not sp.is_empty() and str(sp.tipo) == "area":
 				var raio := float(a.get("RA", a.R))
 				var tam := Vector2(raio * 2.0, raio * 2.0 * ACHATA)
 				# O shader continua responsável pela aura; a arte só marca o chão sem lavar o mundo.
@@ -1200,7 +1244,7 @@ func _desenhar_brilho_i() -> void:
 		no_brilho.draw_polyline(pts, Color(1, 1, 1, k), 1.0)
 		# z_* não guarda id de origem. O stamp genérico cobre apenas a primeira queda reamostrada.
 		var sp := Novas.sprite_de("raio")
-		if not sp.is_empty() and pts.size() > 1:
+		if not sp.is_empty() and pts.size() > 1 and not Anim.de("raio").has("impacto"):  # com a folha, o estalo em cada alvo substitui o carimbo esticado
 			var fim := pts[mini(8, pts.size() - 1)]
 			var trecho := fim - pts[0]
 			var original: Vector2 = sp.tam
@@ -1213,6 +1257,12 @@ func _desenhar_brilho_i() -> void:
 		var dir: Vector2 = w_dir[i]
 		var fade := clampf(w_dist[i] / 40.0, 0.0, 1.0)
 		# Ondas e lanças não guardam id de arma. Só o estado evoluído já existente escolhe a arte.
+		var id_w := "fura" if w_tipo[i] == 1 else ("ventania" if not ventania.is_empty() else "onda")
+		var fw: Dictionary = Anim.de(id_w).get("voo", {})
+		if not fw.is_empty():  # a folha (docs/combate_v2): o arco de vento ou a lança de luz em loop, girado para o voo
+			var esc_w := maxf(1.0, w_larg[i] / (fw.quadro as Vector2).y) if w_tipo[i] == 0 else 1.0
+			Anim.desenhar(no_brilho, fw, Anim.quadro_em(fw, w_t[i]), p, dir.angle(), Vector2(esc_w, esc_w), Color(1, 1, 1, fade))
+			continue
 		var sp := Novas.sprite_de("ventania") if not ventania.is_empty() else {}
 		if not sp.is_empty():
 			var tam: Vector2 = sp.tam
@@ -1278,6 +1328,16 @@ func _desenhar_runa(i: int) -> void:
 	no_brilho.draw_texture_rect(
 		tex_brilho, Rect2(p - Vector2(raio, raio * ACHATA) * 1.5, Vector2(raio, raio * ACHATA) * 3.0), false, Color(cor.r, cor.g, cor.b, 0.22 * al)
 	)
+	var fr := Anim.de(str(a.id))
+	if fr.has("loop"):  # a folha: o glifo se desenha (armar, sem gatilho até 0,5 s) e depois pulsa no chão até alguém pisar
+		var q: Vector2 = fr.loop.quadro
+		var esc := raio * 2.0 / q.x
+		var cor_r := Color(1, 1, 1, fade)
+		if not armada and fr.has("armar"):
+			Anim.desenhar(no_brilho, fr.armar, Anim.quadro_frac(fr.armar, idade / 0.5), p, 0.0, Vector2(esc, esc), cor_r)
+		else:
+			Anim.desenhar(no_brilho, fr.loop, Anim.quadro_em(fr.loop, idade - 0.5 + 0.13 * float(i)), p, 0.0, Vector2(esc, esc), cor_r)
+		return
 	var sp := Novas.sprite_de(str(a.id))
 	if not sp.is_empty():
 		var tam := Vector2(raio * surge * 2.0, raio * surge * 2.0 * ACHATA)

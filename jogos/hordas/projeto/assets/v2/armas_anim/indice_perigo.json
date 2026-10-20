@@ -1,0 +1,81 @@
+{
+  "folhas": {
+    "perigo_chuva": {
+      "armas": [
+        "perigo_chuva"
+      ],
+      "anims": {
+        "queda": {
+          "arquivo": "perigo_chuva_queda.png",
+          "quadro": [
+            36,
+            24
+          ],
+          "n": 8,
+          "fps": 16,
+          "loop": true,
+          "ancora": [
+            27,
+            12
+          ]
+        },
+        "impacto": {
+          "arquivo": "perigo_chuva_impacto.png",
+          "quadro": [
+            64,
+            64
+          ],
+          "n": 8,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            32,
+            32
+          ]
+        }
+      }
+    },
+    "perigo_estouro": {
+      "armas": [
+        "perigo_estouro"
+      ],
+      "anims": {
+        "impacto": {
+          "arquivo": "perigo_estouro_impacto.png",
+          "quadro": [
+            96,
+            60
+          ],
+          "n": 6,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            48,
+            30
+          ]
+        }
+      }
+    },
+    "perigo_investida": {
+      "armas": [
+        "perigo_investida"
+      ],
+      "anims": {
+        "impacto": {
+          "arquivo": "perigo_investida_impacto.png",
+          "quadro": [
+            32,
+            20
+          ],
+          "n": 5,
+          "fps": 15,
+          "loop": false,
+          "ancora": [
+            16,
+            14
+          ]
+        }
+      }
+    }
+  }
+}

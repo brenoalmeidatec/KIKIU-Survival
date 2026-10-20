@@ -3,6 +3,8 @@
 **O que faz:** Chama uma serpente de fogo que desliza até o inimigo mais perto e o atinge a cada toque. Não queima: não há fogo que continue depois do toque.
 **Na prática:** Cada toque dá 9 de dano. Chama 1 serpente a cada 3 s, se houver inimigo a até 340 px do herói (o bônus de velocidade de ataque deixa a recarga menor). A serpente fica 5 s e anda 140 px por segundo. Enquanto estiver encostada no inimigo, toca a cada 0,5 s. Sem inimigo por perto, tenta girar em volta do herói. Conta de média, sem bônus: cerca de 1,7 serpente na tela no nível 1 e cerca de 4,3 no nível 5.
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **35 s** e some; só depois que o último da leva sumiu a recarga de **25 s** começa a contar, então nunca fica indefinidamente nem se acumula. Cada nível que mexe na duração soma 5 s (e a recarga cai uns 3 s nas melhorias de cadência). Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). **Onde este arquivo citar duração ou recarga de 2 a 8 s, vale o número desta caixa**; as contas de "quantos na tela" ficam bem menores, porque a recarga agora corre só depois que a leva some.
+
 **Níveis:**
 | Nível | O que muda |
 |---|---|

@@ -3,6 +3,8 @@
 **O que faz:** Chama um urso de espírito que avança contra o inimigo mais perto com muita força. Cada toque é pesado, mas ele demora a bater de novo.
 **Na prática:** Cada toque dá 20 de dano, o maior do grupo. Chama 1 urso a cada 4,5 s, se houver inimigo a até 340 px do herói (o bônus de velocidade de ataque deixa a recarga menor). O urso fica 4 s e anda 120 px por segundo. Enquanto estiver encostado no inimigo, bate a cada 0,8 s. Sem inimigo por perto, tenta girar em volta do herói. Conta de média, sem bônus: cerca de 0,9 urso na tela no nível 1 e cerca de 2,5 no nível 5.
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **40 s** e some; só depois que o último da leva sumiu a recarga de **30 s** começa a contar, então nunca fica indefinidamente nem se acumula. Cada nível que mexe na duração soma 4 s (e a recarga cai uns 3 s nas melhorias de cadência). Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). **Onde este arquivo citar duração ou recarga de 2 a 8 s, vale o número desta caixa**; as contas de "quantos na tela" ficam bem menores, porque a recarga agora corre só depois que a leva some.
+
 **Níveis:**
 | Nível | O que muda |
 |---|---|
