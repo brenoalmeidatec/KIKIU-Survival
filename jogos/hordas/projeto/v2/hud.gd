@@ -41,6 +41,13 @@ const RELOGIO_PISCA_T := 0.8  # o tempo pisca dourado 0,8 s a cada minuto sobrev
 const ROLAGEM_XP := 9.0  # quão rápido o número das almas rola até o valor da barra de XP
 const CHEFE_ESPERA := 0.35  # segundos que a fantasma espera antes de descer atrás da barra real
 const CHEFE_QUEDA := 1.2  # quão rápido a fantasma desce atrás da real (fração da diferença por segundo)
+## Os bustos da barra do chefe (assets/v2/chefes/, 36 px, gerados por `gerar_objetos.py chefes`), pelo id da marca em campo (dados/v2_cartas.json, "marcas").
+## Chefe sem busto, ou sinal sem marca (mundo falso dos testes), deixa a barra sem o retrato.
+const BUSTOS := {
+	"mini1": preload("res://assets/v2/chefes/cavaleiro_rubro.png"),
+	"mini2": preload("res://assets/v2/chefes/rainha_tecela.png"),
+	"chefe": preload("res://assets/v2/chefes/rei_espantalho.png"),
+}
 const COR_ONDA := Paleta.PERIGO
 const COR_ELITE := Paleta.ANUNCIO_ELITE
 const COR_NIVEL := Paleta.ANUNCIO_NIVEL
@@ -158,6 +165,7 @@ var _barra_px := -1.0  # comprimento atual das barras de vida e de fôlego (desl
 @onready var _chefe_fantasma_barra: TextureProgressBar = $Raiz/Chefe/Fantasma
 @onready var _chefe_barra: TextureProgressBar = $Raiz/Chefe/Barra
 @onready var _chefe_txt: Label = $Raiz/Chefe/Texto
+@onready var _chefe_busto: TextureRect = $Raiz/Chefe/Busto
 @onready var _anuncio = $Raiz/Anuncio
 
 
@@ -602,6 +610,17 @@ func _chefe_apareceu(nome = "", vida_max = 1.0) -> void:
 	_chefe_barra.max_value = _chefe_max
 	_chefe_fantasma_barra.max_value = _chefe_max
 	_chefe.visible = true
+	var busto: Texture2D = BUSTOS.get(_marca_do_chefe(), null)
+	_chefe_busto.texture = busto
+	_chefe_busto.visible = busto != null
+
+
+## O id da marca do chefe em campo: combate.chefes.marca já está gravada quando o sinal sai (chefe.gd, nascer). Sem combate (mundo falso dos testes), "".
+func _marca_do_chefe() -> String:
+	var combate = mundo.get("combate") if mundo != null else null
+	var chefes = combate.get("chefes") if combate != null else null
+	var marca = chefes.get("marca") if chefes != null else null
+	return str(marca.get("id", "")) if marca is Dictionary else ""
 
 
 func _chefe_vida(vida = 0.0) -> void:
