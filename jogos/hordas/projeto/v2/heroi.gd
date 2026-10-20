@@ -20,11 +20,11 @@ extends "res://v2/ator.gd"
 ##    com carga mínima dispara em 360 graus (soltura perfeita na janela depois da carga cheia). Cancelam sem disparar e sem gastar recarga: a
 ##    esquiva, a pausa/escolha/baú/resultado (combate.jogo e pausado), a morte e o salto de relógio (ESC e perda de foco).
 ##  - ESPECIAL (ação "ultimate", tecla Q ou RB; um por herói, dados/v2_especial.json, disparo em v2/especial.gd): o APERTO dispara na hora. Estado.ESPECIAL
-##    dura `esp_dur` s, não golpeia nem corre, é INVULNERÁVEL e cancela a ruptura, o escudo e a esquiva. Na recarga o aperto é negado. A recarga corre
-##    sozinha (esp_recarga) e cada abate encurta (combate.matar chama especial.abate).
+##    dura `esp_dur` s, não golpeia nem corre, é INVULNERÁVEL e cancela a ruptura, o escudo e a esquiva. Sem a carga cheia o aperto é negado. A carga
+##    (esp_carga, 0 a 100) NÃO corre por tempo: enche por dano causado, abates e dano recebido (combate chama especial.dano, abate e recebeu) e zera ao disparar.
 ## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), da
 ## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max, e do especial esp_nome,
-## esp_rotulo, esp_cor, esp_recarga, esp_recarga_max, esp_nega_t e esp_t (s desde o disparo; 0 fora do especial).
+## esp_rotulo, esp_cor, esp_carga, esp_carga_max, esp_nega_t e esp_t (s desde o disparo; 0 fora do especial).
 
 const Herois := preload("res://v2/herois.gd")
 
@@ -118,8 +118,8 @@ var escudo_perfeitos := 0  # testes
 var esp_nome := ""  # o nome do especial do herói ("" = não tem): o HUD só acende o slot Q com ele
 var esp_rotulo := ""  # o texto curto do slot
 var esp_cor := Color.WHITE  # o brilho do slot e dos efeitos
-var esp_recarga := 0.0  # s até poder disparar de novo (o tempo do mundo corre e cada abate encurta)
-var esp_recarga_max := 1.0  # a recarga cheia, para o HUD desenhar a fração
+var esp_carga := 0.0  # a carga da ultimate, de 0 a esp_carga_max: enche por dano causado, abates e dano recebido (NUNCA por tempo); zera ao disparar
+var esp_carga_max := 100.0  # a carga cheia: com ela o Q dispara
 var esp_nega_t := 0.0  # s do "negado" (apertou na recarga): o slot do HUD treme
 var esp_t := 0.0  # s desde o disparo (0 fora do especial)
 var esp_dur := 1.0  # a duração do especial em andamento
@@ -273,15 +273,15 @@ func ruptura() -> void:
 		rup_pedido_t += maxf(golpe_dur - golpe_t, 0.0)
 
 
-## O botão do especial foi apertado (o mundo repassa o evento; os testes também chamam): dispara na hora, se o jogo está rolando e a recarga zerou.
-## Cancela o golpe, a ruptura em carga, o escudo e a esquiva. Na recarga é negado: som grave e o slot do HUD treme. Devolve true se disparou.
+## O botão do especial foi apertado (o mundo repassa o evento; os testes também chamam): dispara na hora, se o jogo está rolando e a carga está cheia.
+## Cancela o golpe, a ruptura em carga, o escudo e a esquiva. Sem a carga cheia é negado: som grave e o slot do HUD treme. Devolve true se disparou.
 func especial() -> bool:
 	var c = mundo.combate
 	if c.especial == null or c.jogo != "jogando" or c.pausado or _pausa_aberta() or estado == Estado.MORTO or estado == Estado.ESPECIAL:
 		return false
 	if esp_nome == "":
 		return false  # este herói não tem especial
-	if esp_recarga > 0.0:
+	if esp_carga < esp_carga_max:
 		esp_nega_t = float(c.especial.comum.nega_t)
 		esp_negados += 1
 		c.especial.negou(self)
@@ -417,8 +417,8 @@ func atualizar(dt: float) -> void:
 	pausa_t = maxf(0.0, pausa_t - dt)
 	if rup_recarga > 0.0 or rup_pedido_t > 0.0 or rup_nega_t > 0.0 or contragolpe_t > 0.0:
 		_rup_relogios(dt)
-	if esp_recarga > 0.0 or esp_nega_t > 0.0:
-		_esp_relogios(dt)
+	if esp_nega_t > 0.0:
+		esp_nega_t = maxf(0.0, esp_nega_t - dt)  # só o tremor do slot: a carga do Q não corre por tempo
 	_recuperar(dt, v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA))
 	var segurando := false
 	if real:
@@ -744,15 +744,6 @@ func _rup_relogios(dt: float) -> void:
 		rup_recarga = maxf(0.0, rup_recarga - dt)
 		if rup_recarga <= 0.0:
 			mundo.combate.ruptura.pronta(self)
-
-
-## Relógios do especial, no tempo do mundo (hit-stop e pausa congelam). Quando a recarga zera, avisa uma vez.
-func _esp_relogios(dt: float) -> void:
-	esp_nega_t = maxf(0.0, esp_nega_t - dt)
-	if esp_recarga > 0.0:
-		esp_recarga = maxf(0.0, esp_recarga - dt)
-		if esp_recarga <= 0.0:
-			mundo.combate.especial.pronta(self)
 
 
 func _iniciar_carga() -> void:

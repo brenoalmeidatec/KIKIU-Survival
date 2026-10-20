@@ -543,7 +543,9 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var longe: Vector2 = rel.normalized() if dist > 0.5 else dir
 		var rumo: Vector2 = longe if pancada else (dir * 0.55 + longe * 0.45).normalized()
 		var emp: Vector2 = rumo * float(passo.empurrao) * (1.25 if crit else 1.0) * forca
+		var util := minf(float(dano), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0) * (1.0 + (forca - 1.0) * 0.5))
+		especial.dano(util)
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
 			var raio_e: float = float(cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
@@ -616,7 +618,7 @@ func matar(m) -> void:
 		orbes.soltar(m.pos, m.xp * mult)
 	if float(armas.mods.folego) > 0.0:  # modificador da katana: matar recupera fôlego
 		mundo.heroi.ganhar_folego(float(armas.mods.folego) / 100.0)
-	especial.abate(m)  # cada abate encurta a recarga do especial (Q)
+	especial.abate(m)  # cada abate dá carga de bônus à ultimate (Q)
 	if m.elite:
 		elites.ao_morrer(m)
 	if m.chefe:
@@ -636,7 +638,9 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	if not m.vivo or m.morrendo:
 		return false
 	var dn := maxi(1, roundi(dano))
+	var util := minf(float(dn), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
+	especial.dano(util)
 	ferimentos += 1
 	dano_causado += dn
 	if numero:
@@ -725,6 +729,7 @@ func heroi_apanhou(valor: float) -> void:
 	var h = mundo.heroi
 	dano_sofrido += valor
 	golpes_tomados += 1
+	especial.recebeu(valor)  # apanhar também enche um pouco a ultimate (Q)
 	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), COR_DANO_HEROI, false)
 	fx.flash(h, 0.14, Color(1.0, 0.3, 0.3), 0, 0.9)
 	fx.faiscas(h.pos + Vector2(0, -16), h.emp.normalized(), 8, Color(1.0, 0.3, 0.25), 150.0)

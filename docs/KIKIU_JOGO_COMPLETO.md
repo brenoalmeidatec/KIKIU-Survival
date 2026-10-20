@@ -90,7 +90,7 @@ Notas de estado:
 | Golpe principal (katana) | Clique esquerdo (segurar repete o combo) | Gatilho (ver `v2/LEIA-ME.md`) |
 | Escudo | Botão direito | LT |
 | Ruptura (carregar e soltar) | E (segurar e soltar) | LB |
-| Especial do herói (um por herói: Hazaki, investida; Nicão, terremoto; Lucas, chuva de adagas) | Q (recarga longa; cada abate encurta) | RB |
+| Especial do herói (um por herói: Hazaki, investida; Nicão, terremoto; Lucas, chuva de adagas) | Q (ultimate: carga de 0 a 100 por dano causado, abates e dano recebido; não recarrega por tempo) | RB |
 | Esquiva | Espaço | Não confirmado |
 | Correr | Shift (gasta o mesmo fôlego) | Não confirmado |
 | Trocar sombra | 1, 2, 3 | Não confirmado |

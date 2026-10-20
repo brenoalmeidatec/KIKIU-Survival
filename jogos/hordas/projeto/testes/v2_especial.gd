@@ -1,11 +1,12 @@
 extends Node
 # Teste automático do ESPECIAL de cada herói, a tecla Q (v2/especial.gd, heroi.gd, combate.gd, hud_habilidades.gd, entrada.gd, dados/v2_especial.json):
 # dados e entrada (Q e RB = ação ultimate, e o evento dispara o especial), o mapa herói -> id (Hazaki: investida, Nicão: terremoto, Lucas: chuva), e
-# para CADA herói numa partida de verdade: nasce com a recarga de começo, o aperto na recarga é negado (slot treme, nada acontece), o aperto com a
-# recarga zerada dispara, o herói fica invulnerável e em Estado.ESPECIAL pela duração, o especial causa dano de verdade na horda (os alvos certos,
-# nem mais nem menos), entra em recarga cheia, não dispara de novo na recarga e dispara de novo quando ela zera. Também: cada abate encurta a
-# recarga (comum, elite), o especial cancela a ruptura e o escudo, não dispara em pausa, sem especial no herói ou com id desconhecido, e o slot Q do
-# HUD acende com o especial real. O mundo anda em passos fixos de 1/60 s.
+# para CADA herói numa partida de verdade: nasce com a carga em 0, o aperto sem a carga cheia é negado (slot treme, nada acontece), o aperto com a
+# carga cheia dispara, o herói fica invulnerável e em Estado.ESPECIAL pela duração, o especial causa dano de verdade na horda (os alvos certos,
+# nem mais nem menos), a carga volta a 0 e NÃO corre por tempo. A carga do Q (ultimate estilo Overwatch) enche por dano causado, por abate (comum,
+# elite, chefe) e por dano recebido; não enche durante o próprio Q (nem na graça depois dele), com o jogo pausado, nem passa de 100; ao chegar a 100
+# avisa "ULTIMATE PRONTA" uma vez. Também: o especial cancela a ruptura e o escudo, não dispara em pausa, sem especial no herói ou com id desconhecido,
+# e o slot Q do HUD mostra a % e acende com a carga cheia. O mundo anda em passos fixos de 1/60 s.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_especial.tscn  (imprime "v2_especial falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
@@ -61,7 +62,7 @@ func zerar() -> void:
 	h.fonte = Heroi.Fonte.MOUSE
 	w.mouse_forcado = h.centro() + Vector2(100, 0)
 	passos(3)
-	h.esp_recarga = 0.0
+	h.esp_carga = h.esp_carga_max
 	h.esp_nega_t = 0.0
 
 
@@ -116,8 +117,14 @@ func _dados() -> void:
 		var b: Dictionary = d.get(id, {})
 		ok(b.has("nome") and b.has("rotulo") and b.has("desc") and b.has("cor") and b.has("dur") and b.has("anim"), "bloco %s completo" % id)
 		ok(str(b.get("rotulo", "")).length() <= 10, "o rótulo de %s cabe no slot (até 10 letras)" % id)
-	var r := float(d.comum.recarga)
-	ok(r >= 45.0 and r <= 60.0, "recarga longa, de 45 a 60 s (%s)" % r)
+	var cg: Dictionary = d.comum.carga
+	ok(not d.comum.has("recarga") and not d.comum.has("inicio"), "o Q não tem recarga por tempo nos dados")
+	ok(float(cg.max) == 100.0 and float(cg.inicio) == 0.0, "carga de 0 a 100 e a partida começa em 0")
+	ok(float(cg.dano) > 0.0 and float(cg.recebido) >= 0.0 and float(cg.recebido) < float(cg.dano) * 4.0, "carga por dano causado e um pouco por dano recebido")
+	ok(
+		float(cg.abate.comum) < float(cg.abate.elite) and float(cg.abate.elite) < float(cg.abate.chefe),
+		"abate: comum pequeno, elite grande, chefe muito grande"
+	)
 
 
 func _entrada() -> void:
@@ -137,34 +144,35 @@ func _comum(id: String) -> void:
 	var esp = w.combate.especial
 	var b: Dictionary = esp.bloco_de(id)
 	ok(not b.is_empty() and h.esp_nome == str(b.nome), "%s: o herói publica o nome do especial (%s)" % [id, h.esp_nome])
-	# recém nascido: a recarga de começo
+	# recém nascido: carga 0
 	w.reiniciar()
-	ok(h.esp_recarga > 0.0 and h.esp_recarga <= float(esp.comum.recarga), "%s: nasce com a recarga de começo (%s s)" % [id, h.esp_recarga])
-	# na recarga: negado
+	ok(h.esp_carga == 0.0 and h.esp_carga_max == 100.0, "%s: a partida começa com a carga em 0 (%s)" % [id, h.esp_carga])
+	# sem a carga cheia: negado
 	zerar()
-	h.esp_recarga = 20.0
+	h.esp_carga = 99.0
 	var alvo = monstro_a(60)
 	var disparos0: int = esp.disparos
-	ok(not h.especial(), "%s: na recarga o aperto não dispara" % id)
-	ok(h.esp_nega_t > 0.0 and h.esp_negados == 1, "%s: o aperto na recarga é negado (o slot treme)" % id)
+	ok(not h.especial(), "%s: com 99%% de carga o aperto não dispara" % id)
+	ok(h.esp_nega_t > 0.0 and h.esp_negados == 1, "%s: o aperto sem carga cheia é negado (o slot treme)" % id)
 	passos(5)
 	ok(h.estado == Heroi.Estado.LIVRE and esp.disparos == disparos0 and perdeu(alvo) == 0.0, "%s: negado não faz nada" % id)
-	# pronto: dispara
+	# cheio: dispara
 	zerar()
 	var ring: Array = []
 	for i in 12:
 		var a := TAU * float(i) / 12.0
 		ring.append(monstro_a(cos(a) * 70.0, sin(a) * 70.0 * 0.62))
-	ok(h.especial(), "%s: com a recarga zerada o aperto dispara" % id)
+	ok(h.especial(), "%s: com a carga cheia o aperto dispara" % id)
 	ok(h.estado == Heroi.Estado.ESPECIAL and esp.disparos == disparos0 + 1, "%s: o herói entra em Estado.ESPECIAL" % id)
-	ok(h.esp_recarga > 44.0 and h.esp_recarga <= h.esp_recarga_max, "%s: entra em recarga cheia (%s de %s s)" % [id, h.esp_recarga, h.esp_recarga_max])
+	ok(h.esp_carga == 0.0, "%s: disparar zera a carga (%s)" % [id, h.esp_carga])
 	# invulnerável durante o especial
 	var vida0: float = h.vida
 	var m_c = monstro_a(8)
 	ok(not h.levar_dano(10.0, m_c.pos, m_c) and h.vida == vida0, "%s: invulnerável durante o especial" % id)
-	# não dispara de novo (em andamento nem na recarga)
-	ok(not h.especial() and esp.disparos == disparos0 + 1, "%s: não dispara de novo na recarga" % id)
-	# dura a dur e volta ao normal
+	ok(h.esp_carga == 0.0, "%s: não carrega durante o próprio Q" % id)
+	# não dispara de novo (em andamento nem sem carga)
+	ok(not h.especial() and esp.disparos == disparos0 + 1, "%s: não dispara de novo sem carga" % id)
+	# dura a dur e volta ao normal; o dano e os abates do próprio Q não enchem a carga
 	var n := 0
 	while h.estado == Heroi.Estado.ESPECIAL and n < 400:
 		passos(1)
@@ -172,6 +180,7 @@ func _comum(id: String) -> void:
 	var dur := float(b.dur)
 	ok(absf(float(n) * PASSO - dur) < 0.15, "%s: o especial dura ~%s s (durou %s)" % [id, dur, float(n) * PASSO])
 	ok(h.estado == Heroi.Estado.LIVRE and not h.esp_invul, "%s: acabou: herói livre e vulnerável de novo" % id)
+	ok(h.esp_carga == 0.0, "%s: o dano do próprio Q não enche a carga (%s)" % [id, h.esp_carga])
 	passos(80)  # a onda do Nicão ainda corre
 	var feridos := 0
 	for m in ring:
@@ -182,38 +191,100 @@ func _comum(id: String) -> void:
 	else:
 		ok(feridos >= 1, "%s: o especial feriu quem estava no caminho (%d de 12)" % [id, feridos])
 	ok(w.combate.dano_causado > 100.0, "%s: causou dano de verdade (%s)" % [id, w.combate.dano_causado])
-	# recarga corre sozinha
-	var r0: float = h.esp_recarga
-	passos(60)
-	ok(r0 - h.esp_recarga > 0.8 and r0 - h.esp_recarga < 1.2, "%s: a recarga corre ~1 s por segundo (%s para %s)" % [id, r0, h.esp_recarga])
-	ok(not h.especial() and h.esp_negados == 1, "%s: depois do especial, na recarga, o aperto é negado" % id)
-	# zerou: dispara de novo
-	h.esp_recarga = 0.0
-	ok(h.especial() and esp.disparos == disparos0 + 2, "%s: zerada a recarga, dispara de novo" % id)
+	ok(h.esp_carga == 0.0, "%s: depois do Q a carga continua em 0 (%s)" % [id, h.esp_carga])
+	# a carga NÃO corre por tempo
+	passos(60 * 20)
+	ok(h.esp_carga == 0.0, "%s: 20 s depois a carga continua em 0: não carrega por tempo (%s)" % [id, h.esp_carga])
+	ok(not h.especial() and h.esp_negados == 1, "%s: sem carga, o aperto é negado" % id)
+	# carga cheia de novo: dispara de novo
+	h.esp_carga = h.esp_carga_max
+	ok(h.especial() and esp.disparos == disparos0 + 2, "%s: com a carga cheia, dispara de novo" % id)
 	passos(3)
 	esp.cancelar(h)
 	ok(h.estado == Heroi.Estado.LIVRE, "%s: cancelar volta ao normal" % id)
-	# cada abate encurta a recarga
+	_carga(id)
+
+
+## A carga: dano causado (sem o excesso sobre a vida), abates (comum, elite, chefe), dano recebido, teto de 100, aviso uma vez, e nada de carga
+## durante o Q, na graça depois dele, no jogo pausado nem nas cartas.
+func _carga(id: String) -> void:
+	var h = w.heroi
+	var esp = w.combate.especial
+	var cg: Dictionary = esp.comum.carga
+	var k_dano := float(cg.dano)
+	# dano causado: pontos de dano x k; o que passa da vida do monstro não conta
 	zerar()
-	h.esp_recarga = 30.0
-	var fraco = monstro_a(120, 0, 1.0)
+	h.esp_carga = 0.0
+	var forte = monstro_a(120)
+	w.combate.ferir(forte, 100.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
+	ok(absf(h.esp_carga - 100.0 * k_dano) < 0.001, "%s: 100 de dano dão %s pontos de carga (%s)" % [id, 100.0 * k_dano, h.esp_carga])
+	var fraco = monstro_a(130, 0, 10.0)
+	h.esp_carga = 0.0
 	w.combate.ferir(fraco, 99999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
 	w.combate.processar_mortes()
 	ok(
-		absf(h.esp_recarga - (30.0 - float(esp.comum.abate.comum))) < 0.01,
-		"%s: um abate comum tira %s s da recarga (%s)" % [id, esp.comum.abate.comum, h.esp_recarga]
+		absf(h.esp_carga - (10.0 * k_dano + float(cg.abate.comum))) < 0.001,
+		"%s: matar um bicho de 10 de vida dá 10 de dano + o bônus de abate comum, sem contar o excesso (%s)" % [id, h.esp_carga]
 	)
-	var elite = monstro_a(130, 0, 1.0)
+	# abate de elite e de chefe
+	var elite = monstro_a(140, 0, 1.0)
 	elite.elite = true
-	h.esp_recarga = 30.0
+	h.esp_carga = 0.0
 	w.combate.ferir(elite, 99999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
 	w.combate.processar_mortes()
-	ok(absf(h.esp_recarga - (30.0 - float(esp.comum.abate.elite))) < 0.01, "%s: um abate de elite tira %s s (%s)" % [id, esp.comum.abate.elite, h.esp_recarga])
-	var ultimo = monstro_a(140, 0, 1.0)
-	h.esp_recarga = 0.1
-	w.combate.ferir(ultimo, 99999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
+	ok(absf(h.esp_carga - (k_dano + float(cg.abate.elite))) < 0.001, "%s: um abate de elite dá %s pontos de bônus (%s)" % [id, cg.abate.elite, h.esp_carga])
+	var chefe = monstro_a(150, 0, 1.0)
+	chefe.chefe = true
+	h.esp_carga = 0.0
+	w.combate.ferir(chefe, 99999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
 	w.combate.processar_mortes()
-	ok(h.esp_recarga == 0.0, "%s: o abate que zera a recarga deixa o especial pronto" % id)
+	ok(absf(h.esp_carga - (k_dano + float(cg.abate.chefe))) < 0.001, "%s: um abate de chefe dá %s pontos de bônus (%s)" % [id, cg.abate.chefe, h.esp_carga])
+	# dano recebido: um pouco
+	zerar()
+	h.esp_carga = 0.0
+	var agressor = monstro_a(30)
+	ok(h.levar_dano(20.0, agressor.pos, agressor, false), "%s: o herói levou o golpe" % id)
+	ok(absf(h.esp_carga - 20.0 * float(cg.recebido)) < 0.001, "%s: 20 de dano recebido dão %s pontos (%s)" % [id, 20.0 * float(cg.recebido), h.esp_carga])
+	ok(float(cg.recebido) < k_dano * 2.0, "%s: receber dano carrega bem menos que causar" % id)
+	# teto de 100 e o aviso uma vez só
+	zerar()
+	h.esp_carga = 99.9
+	var prontos0: int = esp.prontos
+	w.combate.ferir(monstro_a(120), 5000.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
+	ok(
+		h.esp_carga == 100.0 and esp.prontos == prontos0 + 1,
+		"%s: a carga para em 100 e avisa uma vez (%s, prontos %d)" % [id, h.esp_carga, esp.prontos - prontos0]
+	)
+	ok(w.combate.ultimo_anuncio == "ULTIMATE PRONTA", "%s: o HUD anuncia ULTIMATE PRONTA (%s)" % [id, w.combate.ultimo_anuncio])
+	w.combate.ferir(monstro_a(120), 5000.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
+	ok(h.esp_carga == 100.0 and esp.prontos == prontos0 + 1, "%s: cheia, não avisa de novo" % id)
+	# pausa e cartas: não carrega
+	zerar()
+	h.esp_carga = 0.0
+	w.combate.pausado = true
+	w.combate.ferir(monstro_a(120), 100.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
+	w.combate.pausado = false
+	ok(h.esp_carga == 0.0, "%s: pausado, não carrega" % id)
+	var jogo0: String = w.combate.jogo
+	w.combate.jogo = "escolha"
+	w.combate.ferir(monstro_a(120), 100.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
+	w.combate.jogo = jogo0
+	ok(h.esp_carga == 0.0, "%s: na tela de cartas, não carrega" % id)
+	# durante o Q e na graça: não carrega; passada a graça, volta
+	zerar()
+	ok(h.especial(), "%s: dispara para provar a graça" % id)
+	var alvo_q = monstro_a(120)
+	w.combate.ferir(alvo_q, 500.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
+	ok(h.esp_carga == 0.0, "%s: dano durante o Q não carrega (%s)" % [id, h.esp_carga])
+	var n := 0
+	while esp.ocupado() and n < 600:
+		passos(1)
+		n += 1
+	w.combate.ferir(alvo_q, 500.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
+	ok(h.esp_carga > 0.0, "%s: passada a graça do Q, o dano volta a carregar (%s)" % [id, h.esp_carga])
+	# partida nova zera
+	w.reiniciar()
+	ok(h.esp_carga == 0.0 and esp.prontos == 0, "%s: reiniciar zera a carga" % id)
 
 
 ## Hazaki: a investida atravessa e corta a faixa à frente e fecha com um corte em cruz onde para; o que ficou para trás não é ferido.
@@ -257,7 +328,7 @@ func _revisao_hazaki() -> void:
 	ok(esp._numeros >= int(esp.comum.numeros_max), "revisão: o primeiro Q gastou o limite de números (%s)" % esp._numeros)
 	passos(40)
 	h.definir_pos(inicio)  # volta ao começo: o fim da faixa andável está perto de onde o primeiro Q parou
-	h.esp_recarga = 0.0
+	h.esp_carga = h.esp_carga_max
 	w.mouse_forcado = h.centro() + Vector2(100, 0)
 	for i in 3:
 		monstro_a(50.0 + i * 40.0)
@@ -402,23 +473,29 @@ func _cancelamentos_e_bordas() -> void:
 	zerar()
 	ok(h.especial(), "dispara")
 	w.reiniciar()
-	ok(h.estado == Heroi.Estado.LIVRE and h.esp_recarga > 0.0 and not h.esp_invul, "reiniciar cancela o especial e rearma a recarga de começo")
+	ok(h.estado == Heroi.Estado.LIVRE and h.esp_carga == 0.0 and not h.esp_invul, "reiniciar cancela o especial e zera a carga")
 
 
 func _hud() -> void:
 	var h = w.heroi
 	var slots = HudHabilidades.new()
 	zerar()
-	h.esp_recarga = 0.0
+	h.esp_carga = h.esp_carga_max
 	slots.sincronizar(h)
-	ok(slots.q_implementada and slots.q_pronta, "HUD: o slot Q acende com o especial pronto")
-	ok(slots._rotulo_q() == h.esp_rotulo and slots.q_cor == h.esp_cor, "HUD: o slot mostra o rótulo e a cor do especial")
-	h.esp_recarga = h.esp_recarga_max * 0.5
+	ok(slots.q_implementada and slots.q_pronta and slots.q_carga_pct == 100, "HUD: o slot Q acende com a carga cheia (100%)")
+	ok(slots.q_cor == h.esp_cor and slots._rotulo_q() in ["PRONTA", h.esp_rotulo], "HUD: pronto, o slot alterna PRONTA e o rótulo do especial, na cor dele")
+	h.esp_carga = h.esp_carga_max * 0.5
 	slots.sincronizar(h)
 	ok(
-		not slots.q_pronta and slots.q_recarga_px == 10 and slots._rotulo_q() == "%d S" % ceili(h.esp_recarga),
-		"HUD: em recarga mostra a cortina (%d/20) e os segundos" % slots.q_recarga_px
+		not slots.q_pronta and slots.q_carga_px == 10 and slots._rotulo_q() == "50%",
+		"HUD: enchendo mostra a cortina (%d/20) e a porcentagem (%s)" % [slots.q_carga_px, slots._rotulo_q()]
 	)
+	h.esp_carga = h.esp_carga_max - 0.4
+	slots.sincronizar(h)
+	ok(not slots.q_pronta and slots._rotulo_q() == "99%", "HUD: 99,6%% ainda não é pronto e mostra 99%% (%s)" % slots._rotulo_q())
+	h.esp_carga = 0.0
+	slots.sincronizar(h)
+	ok(slots.q_implementada and not slots.q_pronta and slots._rotulo_q() == "0%", "HUD: vazio mostra 0%")
 	h.esp_nega_t = 0.2
 	slots.sincronizar(h)
 	ok(slots.q_negada, "HUD: o aperto negado treme o slot")

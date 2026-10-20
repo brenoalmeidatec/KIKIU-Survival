@@ -1,7 +1,10 @@
 extends RefCounted
 ## O ESPECIAL de cada herói da v2 (tecla Q ou RB do controle), no padrão Overwatch: botão direito = secundário (o escudo, v2/escudo.gd), E = habilidade
-## (a ruptura, v2/ruptura.gd), Q = especial. Aperta e dispara na hora; depois vem uma recarga longa (a conta corre sozinha e cada abate encurta). Durante
-## o especial o herói fica em Estado.ESPECIAL: não golpeia nem corre e é INVULNERÁVEL; a ruptura, o escudo e a esquiva em andamento são cancelados.
+## (a ruptura, v2/ruptura.gd), Q = especial. Aperta e dispara na hora. O Q é uma ULTIMATE no estilo Overwatch: NÃO recarrega por tempo. Tem uma carga de
+## 0 a 100 pontos (esp_carga) que começa a partida em 0 e enche por DANO CAUSADO (pontos de dano nos monstros, de qualquer fonte: golpe, ruptura, secundário,
+## fogo), por bônus de ABATE (comum pequeno, elite grande, chefe muito grande) e um pouco por DANO RECEBIDO. Não enche durante o próprio Q (nem
+## logo depois, enquanto as últimas adagas voam), nem com o jogo pausado ou nas cartas. Disparou, a carga volta a 0. Durante o especial o herói fica em
+## Estado.ESPECIAL: não golpeia nem corre e é INVULNERÁVEL; a ruptura, o escudo e a esquiva em andamento são cancelados.
 ##
 ## Qual especial cada herói tem é DADO (dados/v2_especial.json > padrao e herois > chave do herói), igual ao secundário. Os três de hoje:
 ##  - INVESTIDA (Hazaki, "Corte Relâmpago"): mira um instante, some num clarão na direção da mira cortando tudo na faixa e fecha com um corte em cruz em volta.
@@ -9,13 +12,14 @@ extends RefCounted
 ##  - CHUVA (Lucas, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
 ## Id desconhecido deixa a tecla Q sem efeito.
 ##
-## O herói (v2/heroi.gd) cuida da entrada (`especial()`), do estado (Estado.ESPECIAL), da recarga e dos campos que o HUD lê (esp_*); este módulo cuida do
+## O herói (v2/heroi.gd) cuida da entrada (`especial()`), do estado (Estado.ESPECIAL), da carga e dos campos que o HUD lê (esp_*); este módulo cuida do
 ## disparo (dano, controle, adagas), do visual (um Node2D aditivo na camada glow, redesenhado só enquanto há algo) e do som. Dono: o combate
 ## (`combate.especial`). Números em dados/v2_especial.json (veja o `_ajuda` de lá): nada de jogo fica fixo aqui.
 ##
-## API: montar(c, camada), limpar(), id_de(chave), bloco_de(chave), armar(h) [põe os campos esp_* e a recarga de começo], iniciar(h) -> bool,
-## quadro(h, dt, v) -> deslocamento [chamado pelo herói em Estado.ESPECIAL], cancelar(h), abate(m), pronta(h), negou(h), atualizar(dt) [tempo do mundo:
-## a onda do terremoto], efeitos(dt) [relógio de parede: o visual].
+## API: montar(c, camada), limpar(), id_de(chave), bloco_de(chave), armar(h) [põe os campos esp_* e a carga de começo], iniciar(h) -> bool,
+## quadro(h, dt, v) -> deslocamento [chamado pelo herói em Estado.ESPECIAL], cancelar(h), dano(valor) [dano causado a um monstro], recebeu(valor) [dano
+## que o herói levou], abate(m), carregar(h, pontos), pronta(h), negou(h), atualizar(dt) [tempo do mundo: a onda do terremoto e a graça pós-Q],
+## efeitos(dt) [relógio de parede: o visual].
 
 const Armas := preload("res://v2/armas.gd")
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
@@ -38,6 +42,9 @@ var no: Node2D
 var disparos := 0  # testes: quantos especiais saíram
 var ultimo: Dictionary = {}  # o último especial (testes): id, n (monstros atingidos no total), mortes
 var ondas := 0  # testes: quantas ondas de choque do terremoto saíram
+var prontos := 0  # quantas vezes a carga chegou a 100 na partida (o robô de playtest e os testes)
+var carga_total := {"dano": 0.0, "abate": 0.0, "recebido": 0.0}  # pontos de carga ganhos na partida por fonte (calibragem, robô de playtest)
+var _graca := 0.0  # s depois do fim do Q em que ainda não carrega (as últimas adagas voando)
 
 var _id := ""  # o especial em andamento ("" = nenhum)
 var _c: Dictionary = {}  # o bloco dele
@@ -109,7 +116,7 @@ func montar(c, camada: Node) -> void:
 	a_cor.resize(MAX_ANEIS)
 
 
-## Partida nova: nada em andamento, a recarga de começo no herói.
+## Partida nova: nada em andamento, a carga do herói em 0.
 func limpar() -> void:
 	_id = ""
 	_c = {}
@@ -123,6 +130,9 @@ func limpar() -> void:
 	_rastro_t = 0.0
 	disparos = 0
 	ondas = 0
+	prontos = 0
+	carga_total = {"dano": 0.0, "abate": 0.0, "recebido": 0.0}
+	_graca = 0.0
 	ultimo = {}
 	a_vivo.fill(0)
 	_desenhou = false
@@ -144,12 +154,12 @@ func bloco_de(chave: String) -> Dictionary:
 	return blocos[id] if id != "" else {}
 
 
-func _recarga_de(b: Dictionary) -> float:
-	return float(b.get("recarga", comum.recarga))
+func _carga_max() -> float:
+	return float(comum.carga.max)
 
 
-## Põe no herói o que o HUD lê (nome, rótulo, cor) e a recarga de começo: o especial não vem pronto no primeiro minuto. Chamado quando o herói
-## nasce e quando a partida recomeça.
+## Põe no herói o que o HUD lê (nome, rótulo, cor) e a carga de começo (0): o especial não vem pronto. Chamado quando o herói nasce e quando a
+## partida recomeça.
 func armar(h) -> void:
 	var b := bloco_de(str(h.chave))
 	h.esp_invul = false
@@ -158,14 +168,14 @@ func armar(h) -> void:
 	if b.is_empty():
 		h.esp_nome = ""
 		h.esp_rotulo = ""
-		h.esp_recarga = 0.0
-		h.esp_recarga_max = 1.0
+		h.esp_carga = 0.0
+		h.esp_carga_max = _carga_max()
 		return
 	h.esp_nome = str(b.nome)
 	h.esp_rotulo = str(b.rotulo)
 	h.esp_cor = _cor(b.cor)
-	h.esp_recarga_max = _recarga_de(b)
-	h.esp_recarga = minf(float(b.get("inicio", comum.inicio)), h.esp_recarga_max)
+	h.esp_carga_max = _carga_max()
+	h.esp_carga = minf(float(b.get("inicio", comum.carga.inicio)), h.esp_carga_max)
 
 
 ## O herói apertou Q e pode: começa o especial. Devolve false se este herói não tem (id desconhecido). O herói já cancelou o resto e entrou no estado.
@@ -197,8 +207,8 @@ func iniciar(h) -> bool:
 	h.esp_invul = true
 	h.esp_anim_passo = int(_c.anim.passo)
 	h.esp_anim_ciclos = float(_c.anim.ciclos)
-	h.esp_recarga_max = _recarga_de(_c)
-	h.esp_recarga = h.esp_recarga_max
+	h.esp_carga_max = _carga_max()
+	h.esp_carga = 0.0  # gastou tudo: a próxima ultimate se enche de novo
 	disparos += 1
 	var cor := _cor(_c.cor)
 	var c = combate
@@ -245,7 +255,7 @@ func fim_de_partida() -> void:
 		cancelar(mundo.heroi)
 
 
-## Desfaz o especial em andamento sem mais efeito (a recarga já correu). Idempotente.
+## Desfaz o especial em andamento sem mais efeito (a carga já foi gasta no disparo). Idempotente.
 func cancelar(h) -> void:
 	if _id == "":
 		return
@@ -255,6 +265,7 @@ func cancelar(h) -> void:
 func _encerrar(h) -> void:
 	ultimo = {"id": _id, "n": _n, "mortes": _mortes}
 	_id = ""
+	_graca = float(comum.carga.graca)
 	h.esp_invul = false
 	h.esp_t = 0.0
 	if h.estado == h.Estado.ESPECIAL:
@@ -411,6 +422,8 @@ func _bater(h) -> void:
 
 ## Um quadro da onda de choque (tempo do mundo): a frente cresce de `_onda_r0` a `_onda_r1` e fere uma vez quem ela alcança.
 func atualizar(dt: float) -> void:
+	if _graca > 0.0:
+		_graca = maxf(0.0, _graca - dt)
 	if _onda_t < 0.0:
 		return
 	_onda_t += dt
@@ -551,27 +564,63 @@ func _pulso(h, centro: Vector2, raio: float, dano_b: float, emp: float, atordoa:
 # ------------------------------------------------------------------ eventos (herói e combate chamam)
 
 
-## Um abate encurta a recarga (comum, elite ou chefe). Chamado por combate.matar.
-func abate(m) -> void:
-	var h = mundo.heroi
-	if h == null or h.esp_recarga <= 0.0:
+## O Q em andamento (ou logo depois dele) não enche a carga: nem o dano das adagas e da onda dele, nem os abates dele.
+func ocupado() -> bool:
+	return _id != "" or _onda_t >= 0.0 or _graca > 0.0
+
+
+## Soma `pontos` à carga do herói (para na carga máxima). Só com o jogo rolando, fora do próprio Q e com o herói vivo. Avisa uma vez ao chegar a 100.
+## `fonte`: "dano", "abate" ou "recebido" (só a contabilidade da calibragem).
+func carregar(h, pontos: float, fonte := "dano") -> void:
+	if h == null or pontos <= 0.0 or h.esp_nome == "" or h.esp_carga >= h.esp_carga_max:
 		return
-	var a: Dictionary = comum.abate
-	var s := float(a.chefe) if m.chefe else (float(a.elite) if m.elite else float(a.comum))
-	h.esp_recarga = maxf(0.0, h.esp_recarga - s)
-	if h.esp_recarga <= 0.0:
+	var c = combate
+	if c.jogo != "jogando" or c.pausado or ocupado() or h.estado == h.Estado.MORTO or h.estado == h.Estado.ESPECIAL:
+		return
+	var antes: float = h.esp_carga
+	# o herói fica mais forte a cada nível (dano e abates por segundo sobem), então o mesmo golpe vale menos carga: o Q segue a cada ~1 minuto e pouco
+	pontos /= 1.0 + float(comum.carga.nivel_k) * float(maxi(h.nivel - 1, 0))
+	h.esp_carga = minf(h.esp_carga + pontos, h.esp_carga_max)
+	carga_total[fonte] = float(carga_total[fonte]) + (h.esp_carga - antes)
+	if h.esp_carga >= h.esp_carga_max:
 		pronta(h)
 
 
-## A recarga zerou: um anel nos pés, um tique e o aviso sobre o herói, uma vez.
+## Dano causado a um monstro (pontos de dano, sem contar o que passou da vida dele). Chamado por combate.ferir e combate.golpear.
+func dano(valor: float) -> void:
+	if mundo == null or mundo.heroi == null:
+		return
+	carregar(mundo.heroi, valor * float(comum.carga.dano), "dano")
+
+
+## O herói levou dano de verdade (não o que o escudo bloqueou). Chamado por combate.heroi_apanhou.
+func recebeu(valor: float) -> void:
+	if mundo == null or mundo.heroi == null:
+		return
+	carregar(mundo.heroi, valor * float(comum.carga.recebido), "recebido")
+
+
+## Um abate dá carga de bônus: comum pequeno, elite grande, chefe muito grande. Chamado por combate.matar.
+func abate(m) -> void:
+	if mundo == null or mundo.heroi == null:
+		return
+	var a: Dictionary = comum.carga.abate
+	var s := float(a.chefe) if m.chefe else (float(a.elite) if m.elite else float(a.comum))
+	carregar(mundo.heroi, s, "abate")
+
+
+## A carga chegou a 100: um anel nos pés, o tique, o aviso sobre o herói e o anúncio "ULTIMATE PRONTA" no HUD, uma vez por carga.
 func pronta(h) -> void:
+	prontos += 1
 	var cor: Color = h.esp_cor
-	_anel(h.pos, 6.0, 26.0, 0.25, 2.0, cor.lerp(Color.WHITE, 0.4), 0.9)
-	combate.audio.tocar("ruptura_pronta", 1.2, -4.0, 0.0)
-	combate.fx.numero(h.pos + Vector2(0, -52), "ESPECIAL PRONTO", cor.lerp(Color.WHITE, 0.3), true)
+	_anel(h.pos, 6.0, 30.0, 0.3, 2.0, cor.lerp(Color.WHITE, 0.4), 0.9)
+	combate.audio.tocar("ruptura_pronta", 1.2, -2.0, 0.0)
+	combate.audio.tocar("nivel", 1.4, -8.0, 0.0)
+	combate.fx.numero(h.pos + Vector2(0, -52), "ULTIMATE PRONTA", cor.lerp(Color.WHITE, 0.3), true)
+	combate.anunciar("ULTIMATE PRONTA", cor.lerp(Color.WHITE, 0.25))
 
 
-## Apertou na recarga: o som grave (o slot do HUD treme pelo esp_nega_t do herói).
+## Apertou sem a carga cheia: o som grave (o slot do HUD treme pelo esp_nega_t do herói).
 func negou(_h) -> void:
 	combate.audio.tocar("ruptura_cancela", 0.7, -4.0, 0.0)
 

@@ -23,8 +23,8 @@ var e_disponivel := false
 var e_pronta := false
 var q_implementada := false  # Q só acende se o herói publica um especial real (esp_nome); sem os campos ela fica apagada.
 var q_pronta := false
-var q_recarga_px := 0
-var q_recarga_s := 0.0
+var q_carga_px := 0  # a carga da ultimate em 0 a 20 (a cortina que sobe no ícone)
+var q_carga_pct := 0  # a carga da ultimate em % (o texto do slot)
 var q_negada := false
 var q_ativa := false  # o especial está em andamento
 var q_rotulo := ""
@@ -83,20 +83,21 @@ func sincronizar(heroi) -> void:
 		_heroi_id = id_heroi
 	e_disponivel = _tem_propriedade(heroi, "rup_carga")
 	estado_e = "ruptura" if e_disponivel else "indisponivel"
-	q_implementada = _tem_propriedade(heroi, "esp_recarga") and str(_campo(heroi, "esp_nome", "")) != ""
+	q_implementada = _tem_propriedade(heroi, "esp_carga") and str(_campo(heroi, "esp_nome", "")) != ""
 	q_pronta = false
-	q_recarga_px = 0
-	q_recarga_s = 0.0
+	q_carga_px = 0
+	q_carga_pct = 0
 	q_negada = false
 	q_ativa = false
 	q_rotulo = ""
 	q_cor = Color.WHITE
 	if q_implementada:
-		var rec := maxf(float(_campo(heroi, "esp_recarga", 0.0)), 0.0)
-		var rec_max := maxf(float(_campo(heroi, "esp_recarga_max", 1.0)), 0.001)
-		q_pronta = rec <= 0.0
-		q_recarga_s = rec
-		q_recarga_px = mini(ceili(rec / rec_max * 20.0), 20) if rec > 0.0 else 0
+		var carga := maxf(float(_campo(heroi, "esp_carga", 0.0)), 0.0)
+		var carga_max := maxf(float(_campo(heroi, "esp_carga_max", 100.0)), 0.001)
+		var f := clampf(carga / carga_max, 0.0, 1.0)
+		q_pronta = f >= 1.0
+		q_carga_pct = 100 if q_pronta else mini(floori(f * 100.0), 99)  # 99% nunca arredonda para 100: só a carga cheia mostra pronta
+		q_carga_px = roundi(f * 20.0)
 		q_negada = float(_campo(heroi, "esp_nega_t", 0.0)) > 0.0
 		q_ativa = float(_campo(heroi, "esp_t", 0.0)) > 0.0
 		q_rotulo = str(_campo(heroi, "esp_rotulo", ""))
@@ -128,7 +129,7 @@ func sincronizar(heroi) -> void:
 	var fase_perfeita := int(Time.get_ticks_msec() / 50.0) % 2 if perfeita else 0
 	var fase_q := int(Time.get_ticks_msec() / 160.0) % 2 if q_pronta or q_ativa or q_negada else 0  # o brilho do slot pronto pulsa
 	var nova_chave := (
-		"%s|%s|%s|%d|%d|%d|%d|%s|%s|%s|%d|%s|%d|%s|%s|%d|%s"
+		"%s|%s|%s|%d|%d|%d|%d|%s|%s|%s|%d|%s|%d|%d|%s|%s|%d|%s"
 		% [
 			estado_e,
 			e_pronta,
@@ -142,7 +143,8 @@ func sincronizar(heroi) -> void:
 			rotulo,
 			fase_perfeita,
 			q_pronta,
-			q_recarga_px,
+			q_carga_px,
+			q_carga_pct,
 			_rotulo_q(),
 			q_negada,
 			fase_q,
@@ -225,14 +227,26 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 			draw_rect(Rect2(icon_pos + Vector2(2.0, 43.0), Vector2(44.0 * f, 3.0)), cor)
 		if contragolpe_px > 0:
 			draw_rect(Rect2(icon_pos + Vector2(2.0, 45.0), Vector2(44.0 * float(contragolpe_px) / 20.0, 2.0)), Paleta.CONTRAGOLPE)
-	if tecla == "Q" and q_implementada and q_recarga_px > 0:
-		var altura_q := 46.0 * clampf(float(q_recarga_px) / 20.0, 0.0, 1.0)
-		draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(46.0, altura_q)), Color(Paleta.PRETO, 0.56))
-		if q_recarga_px < 20:
-			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + altura_q), Vector2(46.0, 1.0)), Color(Paleta.RECARGA_LINHA, 0.95))
+	if tecla == "Q" and q_implementada:
+		# a carga da ultimate sobe como uma cortina de cor dentro do quadro do ícone (de baixo para cima) e uma barra fina embaixo; cheia, o quadro pulsa
+		var f_q := clampf(float(q_carga_px) / 20.0, 0.0, 1.0)
+		if q_pronta or q_ativa:
+			var pulso := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) / 1000.0 * TAU * 2.0)
+			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(46.0, 46.0)), Color(q_cor, 0.10 + 0.22 * pulso))
+			draw_rect(Rect2(icon_pos + Vector2(-2.0, -2.0), Vector2(52.0, 52.0)), Color(q_cor.lerp(Paleta.BRANCO, 0.5), 0.25 + 0.5 * pulso), false, 2.0)
+		elif q_carga_px > 0:
+			var altura_q := 46.0 * f_q
+			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + 46.0 - altura_q), Vector2(46.0, altura_q)), Color(q_cor, 0.34))
+			if q_carga_px < 20:
+				draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + 46.0 - altura_q), Vector2(46.0, 1.0)), Color(q_cor.lerp(Paleta.BRANCO, 0.4), 0.95))
+		draw_rect(Rect2(icon_pos + Vector2(2.0, 43.0), Vector2(44.0, 3.0)), Color(Paleta.PRETO, 0.6))
+		draw_rect(Rect2(icon_pos + Vector2(2.0, 43.0), Vector2(44.0 * f_q, 3.0)), q_cor if q_pronta or q_ativa else q_cor.darkened(0.15))
 	var rotulo := _rotulo_q() if tecla == "Q" else _rotulo_e()
 	var texto_aceso := (tecla == "E" and e_disponivel) or (tecla == "Q" and q_implementada and (q_pronta or q_ativa))
-	draw_string(fonte, Vector2(origem.x, 63.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor if texto_aceso else DESATIVADO)
+	var cor_texto := cor if texto_aceso else DESATIVADO
+	if tecla == "Q" and q_implementada and not texto_aceso:
+		cor_texto = q_cor.darkened(0.1)  # enchendo: a % já aparece na cor do herói
+	draw_string(fonte, Vector2(origem.x, 63.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor_texto)
 	var nome_tecla := Glifos.texto("habilidade" if tecla == "E" else "ultimate")
 	var larg_selo := maxf(16.0, 8.0 * float(nome_tecla.length()) + 8.0)
 	var selo := Rect2(origem + Vector2((TAM_CARD.x - larg_selo) * 0.5, 64.0), Vector2(larg_selo, 10.0))
@@ -243,13 +257,15 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	)
 
 
-## O texto do card Q: "EM BREVE" sem especial no herói, os segundos que faltam na recarga, ou o rótulo do especial quando pronto.
+## O texto do card Q: "EM BREVE" sem especial no herói, a % da carga enquanto enche, e com a carga cheia alterna "PRONTA" e o rótulo do especial.
 func _rotulo_q() -> String:
 	if not q_implementada:
 		return "EM BREVE"
-	if q_recarga_s > 0.0:
-		return "%d S" % ceili(q_recarga_s)
-	return q_rotulo
+	if q_ativa:
+		return q_rotulo
+	if q_carga_pct < 100:
+		return "%d%%" % q_carga_pct
+	return "PRONTA" if int(Time.get_ticks_msec() / 900.0) % 2 == 0 else q_rotulo
 
 
 func _rotulo_e() -> String:
