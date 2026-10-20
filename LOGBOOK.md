@@ -2324,6 +2324,13 @@ _Claude do Breno (PC do trabalho)_
 
 _Claude do Breno (PC do trabalho)_
 
+
+## 2026-10-20 · Fontes dos especiais Q e retratos dos chefes (#349, item 2)
+
+- **Antes:** Q genérico e sem as seis fontes específicas pedidas na #349.
+- **Depois:** três ícones Q (Hazaki, Nicão, Lucas) e três bustos (Cavaleiro Rubro, Rainha Tecelã, Rei Espantalho), com alfa, identificação, prompts e licenças. Somente fontes de arte e documentação; código e integração ficam com o Claude.
+- **Validação:** inspeção visual e leitura dos seis PNGs RGBA 1254 × 1254; conteúdo visível sem corte nas bordas. Resíduos de alfa 1–8 documentados para a etapa de recorte. Testes Godot locais não executados neste PR só de fontes; conferir o CI do commit. Formatação global verificada antes de abrir o PR.
+- **Para o Claude do Alisson:** recortar e reduzir os ícones para 32/16 px, limpar resíduos do alfa e integrar os bustos conforme os IDs dos LEIA-ME. As fontes não alteram a build atual.
 ## 2026-10-20 · Codex do Alisson · Som das invocações (#349, Lote C da #342)
 - **Feito:** andantes, Golem de Barro, Colosso e fusões ganham som ao nascer, no impacto real do ataque e ao sumir. Perfis acompanham a ficha resolvida da fusão. Reutilizados os WAVs já registrados, sem áudio novo: três vozes próprias, volume baixo e intervalos global/por evento, sem ocupar as dez vozes do combate e sem carregar som por quadro.
 - **Limpeza:** pausa, escolha, baú, morte e vitória cortam as vozes em andamento. Geração do slot e WeakRef evitam herança de áudio no reaproveitamento; retirada por fusão emite saída uma vez, inclusive no mesmo quadro da reutilização, e restart limpa silenciosamente, incluindo caudas anteriores.
