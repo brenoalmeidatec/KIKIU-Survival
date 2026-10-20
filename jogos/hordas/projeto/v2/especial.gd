@@ -615,7 +615,7 @@ func pronta(h) -> void:
 	var cor: Color = h.esp_cor
 	_anel(h.pos, 6.0, 30.0, 0.3, 2.0, cor.lerp(Color.WHITE, 0.4), 0.9)
 	combate.audio.tocar("ruptura_pronta", 1.2, -2.0, 0.0)
-	combate.audio.tocar("nivel", 1.4, -8.0, 0.0)
+	combate.audio.tocar("evolucao", 1.25, -5.0, 0.0)  # o sino grave da evolução, que não se confunde com o "nivel" do level up
 	combate.fx.numero(h.pos + Vector2(0, -52), "ULTIMATE PRONTA", cor.lerp(Color.WHITE, 0.3), true)
 	combate.anunciar("ULTIMATE PRONTA", cor.lerp(Color.WHITE, 0.25))
 

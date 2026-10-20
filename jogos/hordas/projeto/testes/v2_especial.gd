@@ -258,6 +258,9 @@ func _carga(id: String) -> void:
 	ok(w.combate.ultimo_anuncio == "ULTIMATE PRONTA", "%s: o HUD anuncia ULTIMATE PRONTA (%s)" % [id, w.combate.ultimo_anuncio])
 	w.combate.ferir(monstro_a(120), 5000.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE, false)
 	ok(h.esp_carga == 100.0 and esp.prontos == prontos0 + 1, "%s: cheia, não avisa de novo" % id)
+	w.combate.audio.ultimo = ""
+	esp.pronta(h)
+	ok(w.combate.audio.ultimo == "evolucao" and w.combate.audio.ultimo != "nivel", "%s: o som do aviso não é o do level up (%s)" % [id, w.combate.audio.ultimo])
 	# pausa e cartas: não carrega
 	zerar()
 	h.esp_carga = 0.0
