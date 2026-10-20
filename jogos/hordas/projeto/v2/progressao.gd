@@ -3,7 +3,8 @@ extends RefCounted
 ## dados/v2_progressao.json: para cada mapa e cada estrutura, uma lista de condições ALTERNATIVAS (basta cumprir uma); lista vazia =
 ## aberto desde o começo. Condições: {"conquista": id} (de dados/v2_meta.json, por exemplo vence_floresta), {"partidas": N} (partidas
 ## terminadas, contadas em Meta.registrar_partida) e {"conquistas": N} (quantas conquistas cumpridas, qualquer uma).
-## Saves de antes destas regras (com progresso e sem [progressao] versao) ficam com tudo aberto: Meta._ler marca [progressao] legado.
+## Save antigo segue as mesmas travas e mantém o que conquistou (Meta._migrar): não existe mais "tudo aberto" por ser save velho.
+## Mapa já vencido fica aberto mesmo que o anterior não conste no save (quem venceu um mapa já esteve nele).
 ## Lê o save a cada chamada, como o resto da meta-progressão. Sem class_name: carregue com preload.
 
 const Meta := preload("res://v2/meta.gd")
@@ -53,7 +54,7 @@ static func _cumpre(cond: Dictionary, cf: ConfigFile) -> bool:
 	return false
 
 
-## Aberto? Save antigo (legado) abre tudo; sem save legível, só o que não tem condição.
+## Aberto? Sem save legível, só o que não tem condição.
 static func aberto(tipo: String, id: String) -> bool:
 	var conds := condicoes(tipo, id)
 	if conds.is_empty():
@@ -61,7 +62,7 @@ static func aberto(tipo: String, id: String) -> bool:
 	var cf := Meta._ler()
 	if cf == null:
 		return false
-	if bool(cf.get_value("progressao", "legado", false)):
+	if tipo == "mapa" and Meta.mapa_vencido(id, cf):
 		return true
 	for c in conds:
 		if _cumpre(c, cf):

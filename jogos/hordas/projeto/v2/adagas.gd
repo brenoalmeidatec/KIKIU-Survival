@@ -100,11 +100,13 @@ func ativas() -> int:
 
 ## O arremesso do passo `passo`: `n` adagas em leque de `leque` graus, centrado em `dir`. O dano de cada uma já leva o dano do herói.
 ## Com `anel` (a Tempestade do especial) o leque é fixo: a área do herói não abre o círculo além de 360 graus.
-func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary) -> void:
+## Com `cresce_com_nivel` (só o golpe do herói, combate.golpear) o alcance ganha o crescimento por nível do golpe (combate.bonus_nivel_golpe).
+func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nivel := false) -> void:
 	var n := maxi(1, int(passo.get("n", 1)))
 	var abre: float = 1.0 if passo.get("anel", false) else 1.0 + (h.m_area - 1.0) * 0.5
 	var leque := deg_to_rad(float(passo.get("leque", 0.0)) * abre)
 	var mira := 1.0 + float(combate.armas.mods.mira) / 100.0
+	var alcance_k: float = mira * (1.0 + (combate.bonus_nivel_golpe(h) if cresce_com_nivel else 0.0))  # o golpe do Lucas cresce com o nível, o especial Q não
 	var cor := Color(passo.cor[0], passo.cor[1], passo.cor[2])
 	for k in n:
 		var ang := 0.0 if n == 1 else leque * (float(k) / float(n - 1) - 0.5)
@@ -113,7 +115,7 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary) -> void:
 			origem + dir.rotated(ang) * 10.0,
 			dir.rotated(ang),
 			float(passo.vel) * mira,
-			float(passo.alcance) * mira,
+			float(passo.alcance) * alcance_k,
 			float(passo.dano) * h.m_dano,
 			float(passo.empurrao),
 			float(passo.atordoa),
