@@ -307,7 +307,7 @@ func _desenhar_frente() -> void:
 			_pluma(frente, u, a)
 		"teia":
 			var p := float(m.tipo.pe)
-			_coroa(frente, u, 0.0, -p - 3.0 + 1.5 * sin(t * 2.0), 13.0, 6.0, Color(0.85, 1.0, 0.55), Color(0.2, 1.0, 0.35), a, 5)
+			_coroa(frente, u, 0.0, -0.9 * p + 1.5 * sin(t * 2.0), 13.0, 6.0, Color(0.85, 1.0, 0.55), Color(0.2, 1.0, 0.35), a, 5)
 		"coroa":
 			_corvos_orbita(frente, u, a, true)
 			_coroa_rei(frente, u, a)
@@ -330,7 +330,7 @@ func _pluma(ci: CanvasItem, u: float, a: float) -> void:
 	for k in 9:
 		var f := float(k)
 		var x := -f * 1.5 - sin(t * 3.2 + f * 0.6) * f * 0.3 + clampf(-m.vel_v.x * 0.02, -1.5, 1.5) * f * 0.2
-		var y := -p + 1.0 - 3.4 * f + 0.3 * f * f
+		var y := -0.9 * p - 3.4 * f + 0.3 * f * f
 		pts.append((Vector2(x, y) * u).round())
 	ci.draw_polyline(pts, Color(0.18, 0.02, 0.03, 0.9 * a), u * 5.5)
 	ci.draw_polyline(pts, Color(cor.r, cor.g * 0.55, cor.b * 0.5, a), u * 3.6)
