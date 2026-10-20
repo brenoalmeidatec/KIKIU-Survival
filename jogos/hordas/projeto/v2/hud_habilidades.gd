@@ -64,7 +64,6 @@ func _process(_delta: float) -> void:
 	# PR201 já cria os controles dos slots dinamicamente; esconde só esses dois desenhos para evitar duplicação.
 	# O módulo de combate, os atributos e qualquer outra parte do HUD continuam intactos.
 	_esconder_slot_anterior("_rb")
-	_esconder_slot_anterior("_ult")
 	visible = true
 	var mundo = _campo(_hud, "mundo", null)
 	var heroi = _campo(mundo, "heroi", null)

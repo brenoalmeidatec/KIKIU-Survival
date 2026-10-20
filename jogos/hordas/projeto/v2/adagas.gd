@@ -10,7 +10,7 @@ extends RefCounted
 ## Modificadores das cartas do Lucas (armas.mods): `chuva` (% de chance de cada acerto soltar uma adaga extra para um lado qualquer) e `mira`
 ## (% de alcance e velocidade). O crítico explosivo (`explode`) também vale aqui.
 
-const MAX := 48
+const MAX := 96  # cabe a Tempestade de Adagas (Q do Lucas: ~42 em voo + rodada final de 18) junto com as adagas normais
 const R_CAND := 560.0  # só monstros a até isto do herói entram na conta do quadro
 const R_ADAGA := 4.0  # raio de acerto da adaga (cresce com a área do herói)
 const COMPR := 16.0  # a lâmina desenhada: 16x5 px, apontando para a direita
@@ -99,9 +99,11 @@ func ativas() -> int:
 
 
 ## O arremesso do passo `passo`: `n` adagas em leque de `leque` graus, centrado em `dir`. O dano de cada uma já leva o dano do herói.
+## Com `anel` (a Tempestade do especial) o leque é fixo: a área do herói não abre o círculo além de 360 graus.
 func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary) -> void:
 	var n := maxi(1, int(passo.get("n", 1)))
-	var leque := deg_to_rad(float(passo.get("leque", 0.0)) * (1.0 + (h.m_area - 1.0) * 0.5))
+	var abre: float = 1.0 if passo.get("anel", false) else 1.0 + (h.m_area - 1.0) * 0.5
+	var leque := deg_to_rad(float(passo.get("leque", 0.0)) * abre)
 	var mira := 1.0 + float(combate.armas.mods.mira) / 100.0
 	var cor := Color(passo.cor[0], passo.cor[1], passo.cor[2])
 	for k in n:

@@ -139,7 +139,6 @@ var _chefe_fantasma := 1.0
 var _chefe_espera := 0.0
 # slot da ruptura: o que foi desenhado por último (só redesenha quando muda)
 var _rb: Control = null
-var _ult: Control = null  # o slot Q antigo: fica apagado e escondido, quem desenha o Q de verdade (o especial do herói) é hud_habilidades.gd
 var _rb_chave := ""
 var _rb_barra := 0  # px da barra de carga (0 a 20)
 var _rb_cortina := 0  # px da cortina da recarga (0 a 20)
@@ -244,8 +243,6 @@ func ui_reencaixar(_canvas: Vector2, d: Vector2) -> void:
 		_selo_pesadelo.position = PESADELO_POS + Vector2(0.0, -d.y)
 	if _rb != null:
 		_rb.position = RB_POS - d
-	if _ult != null:
-		_ult.position = RB_POS + Vector2(RB_TAM + 4, 0) - d
 
 
 ## O retrato: o quadro parado do herói da partida (linha "baixo", coluna "parado" da folha), sem filtro, dentro da moldura de pedra.
@@ -400,15 +397,6 @@ func _criar_slot_ruptura() -> void:
 	_rb.visible = false
 	_rb.draw.connect(_desenhar_slot)
 	$Raiz.add_child(_rb)
-	_ult = Control.new()
-	_ult.name = "SlotUltimate"
-	_ult.position = RB_POS + Vector2(RB_TAM + 4, 0)
-	_ult.size = Vector2(RB_TAM, RB_TAM)
-	_ult.light_mask = 0
-	_ult.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_ult.visible = false
-	_ult.draw.connect(_desenhar_ultimate)
-	$Raiz.add_child(_ult)
 
 
 ## Um quadro do slot: lê o herói, anima (pop, tremida) e pede redesenho só se algo mudou. Sem os campos da ruptura no herói, esconde.
@@ -418,8 +406,6 @@ func _ruptura(dt: float, h) -> void:
 	var tem: bool = h != null and _campo(h, "rup_carga") != null
 	if _rb.visible != tem:
 		_rb.visible = tem
-		_ult.visible = tem
-		_ult.queue_redraw()
 	if not tem:
 		return
 	var f := clampf(_num(h, "rup_carga", 0.0), 0.0, 1.0)
@@ -478,22 +464,6 @@ func _desenhar_slot() -> void:
 	# contragolpe aberto: faísca laranja de 1 px na borda de cima
 	if _rb_contra > 0:
 		_rb.draw_rect(Rect2(1, 0, float(_rb_contra), 1), Paleta.CONTRAGOLPE)
-
-
-## O slot Q antigo: moldura apagada e a letra Q. O hud_habilidades.gd o esconde (alfa zero) e desenha o slot do especial no lugar dele.
-func _desenhar_ultimate() -> void:
-	var s := float(RB_TAM)
-	var apagado := Paleta.HABILIDADE_DESATIVADA
-	_ult.draw_rect(Rect2(0, 0, s, s), Color(Paleta.HABILIDADE_FUNDO, 0.6))
-	_ult.draw_rect(Rect2(0, 0, s, 1), apagado)
-	_ult.draw_rect(Rect2(0, s - 1, s, 1), apagado)
-	_ult.draw_rect(Rect2(0, 1, 1, s - 2), apagado)
-	_ult.draw_rect(Rect2(s - 1, 1, 1, s - 2), apagado)
-	_ult.draw_rect(Rect2(6, 5, 8, 2), apagado)  # o Q: aro de 8x8 com o rabo
-	_ult.draw_rect(Rect2(6, 12, 8, 2), apagado)
-	_ult.draw_rect(Rect2(6, 7, 2, 5), apagado)
-	_ult.draw_rect(Rect2(12, 7, 2, 5), apagado)
-	_ult.draw_rect(Rect2(11, 12, 4, 4), apagado)
 
 
 ## Contorno de 1 px em retângulos cheios (draw_rect sem preencher borra em coordenada inteira). `redondo` corta os quatro cantos.

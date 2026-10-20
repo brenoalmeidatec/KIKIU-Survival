@@ -482,6 +482,7 @@ func _rodada(h, n: int, p: Dictionary) -> void:
 	var passo := {
 		"n": n,
 		"leque": 360.0 * float(n - 1) / float(n),  # n adagas a 360/n graus uma da outra
+		"anel": true,
 		"dano": float(p.dano),
 		"vel": float(p.get("vel", _c.adaga.vel)),
 		"alcance": float(p.alcance),
