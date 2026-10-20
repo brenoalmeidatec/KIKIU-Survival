@@ -1,0 +1,612 @@
+{
+ "_convencao": "Pegadas de colisao do mapa Cidade, lidas por gerar_v2_mapas.py e gravadas em colisao de cada item do cenario.json. formas = lista de caixas {tipo,centro,meio} em px relativos ao pe do sprite (y negativo = para tras). Item ausente aqui mantem a forma calculada pela definicao.",
+ "itens": {
+  "predio_loja": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -30
+     ],
+     "meio": [
+      101,
+      30
+     ]
+    }
+   ],
+   "nota": "Predio: pegada = fachada inteira (largura da parede menos ~5 px de cada lado) x profundidade do telhado visto de cima (borda da platibanda), com ~4 px de folga atras e frente em y=0 (pe). O corpo acima do telhado esconde o heroi que passa atras. Telhado ~64 px."
+  },
+  "predio_bar": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -30
+     ],
+     "meio": [
+      90,
+      30
+     ]
+    }
+   ],
+   "nota": "Predio: pegada = fachada inteira (largura da parede menos ~5 px de cada lado) x profundidade do telhado visto de cima (borda da platibanda), com ~4 px de folga atras e frente em y=0 (pe). O corpo acima do telhado esconde o heroi que passa atras. Telhado ~64 px."
+  },
+  "predio_apto_a": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -31
+     ],
+     "meio": [
+      87,
+      31
+     ]
+    }
+   ],
+   "nota": "Predio: pegada = fachada inteira (largura da parede menos ~5 px de cada lado) x profundidade do telhado visto de cima (borda da platibanda), com ~4 px de folga atras e frente em y=0 (pe). O corpo acima do telhado esconde o heroi que passa atras. Telhado ~66 px."
+  },
+  "predio_apto_b": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -27
+     ],
+     "meio": [
+      87,
+      27
+     ]
+    }
+   ],
+   "nota": "Predio: pegada = fachada inteira (largura da parede menos ~5 px de cada lado) x profundidade do telhado visto de cima (borda da platibanda), com ~4 px de folga atras e frente em y=0 (pe). O corpo acima do telhado esconde o heroi que passa atras. Telhado ~58 px."
+  },
+  "predio_torre": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -25
+     ],
+     "meio": [
+      90,
+      25
+     ]
+    }
+   ],
+   "nota": "Predio: pegada = fachada inteira (largura da parede menos ~5 px de cada lado) x profundidade do telhado visto de cima (borda da platibanda), com ~4 px de folga atras e frente em y=0 (pe). O corpo acima do telhado esconde o heroi que passa atras. Telhado ~54 px."
+  },
+  "predio_ruina": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -30
+     ],
+     "meio": [
+      93,
+      30
+     ]
+    }
+   ],
+   "nota": "Predio: pegada = fachada inteira (largura da parede menos ~5 px de cada lado) x profundidade do telhado visto de cima (borda da platibanda), com ~4 px de folga atras e frente em y=0 (pe). O corpo acima do telhado esconde o heroi que passa atras. Metade direita desabada (sem telhado, entulho alto); mantive o retangulo todo, e a mesma planta."
+  },
+  "poste_rua": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -3
+     ],
+     "raio": [
+      6,
+      3
+     ]
+    }
+   ],
+   "nota": "Poste: so o disco da base colide (~12 px). O braco/lampada no alto fica livre: o heroi passa por baixo. Fino demais para o buraco raio-x ter sentido (hoje o copas.gd o ativa por altura >= 60)."
+  },
+  "poste_rua_e": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -3
+     ],
+     "raio": [
+      6,
+      3
+     ]
+    }
+   ],
+   "nota": "Poste: so o disco da base colide (~12 px). O braco/lampada no alto fica livre: o heroi passa por baixo. Espelho do poste_rua; pe em x=62."
+  },
+  "poste_quebrado": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -3
+     ],
+     "raio": [
+      7,
+      3.5
+     ]
+    }
+   ],
+   "nota": "So a base (pe em 8,80). A cabeca caida no chao (x+32..+64, y+24..+40) e baixa e atravessavel: nao colide."
+  },
+  "semaforo": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -3
+     ],
+     "raio": [
+      6,
+      3
+     ]
+    }
+   ],
+   "nota": "Poste: so o disco da base colide (~12 px). O braco/lampada no alto fica livre: o heroi passa por baixo. Base de ~12 px."
+  },
+  "semaforo_torto": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -3
+     ],
+     "raio": [
+      6,
+      3
+     ]
+    }
+   ],
+   "nota": "Poste: so o disco da base colide (~12 px). O braco/lampada no alto fica livre: o heroi passa por baixo. Base de ~12 px; o poste inclinado fica livre."
+  },
+  "placa_pare": {
+   "formas": [],
+   "nota": "Haste de 3 px: decoracao, atravessar nao incomoda (y-sort resolve a frente/atras). Se preferir poste solido: elipse [0,-1.5] raio [3,2]."
+  },
+  "placa_rua": {
+   "formas": [],
+   "nota": "Haste de 3 px, igual a placa_pare."
+  },
+  "placa_neon": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -3
+     ],
+     "raio": [
+      6,
+      3
+     ]
+    }
+   ],
+   "nota": "Base de ~13 px colide. A placa grande (44x83) esconde o heroi por tras: buraco ok."
+  },
+  "hidrante": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -3
+     ],
+     "raio": [
+      6,
+      3
+     ]
+    }
+   ],
+   "nota": "Corpo de ~14 px de largura."
+  },
+  "cone": {
+   "formas": [],
+   "nota": "Decoracao leve: nao prender heroi e monstros em cone."
+  },
+  "cone_tombado": {
+   "formas": [],
+   "nota": "Decalque no chao."
+  },
+  "barril_fogo": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -5
+     ],
+     "raio": [
+      9,
+      4.5
+     ]
+    }
+   ],
+   "nota": "Barril redondo de ~20 px (elipse 2:1)."
+  },
+  "lixeira_metal": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0,
+      -5
+     ],
+     "raio": [
+      9.5,
+      4.8
+     ]
+    }
+   ],
+   "nota": "Lixeira cilindrica de ~19 px (elipse 2:1)."
+  },
+  "lixeira_rodas": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -5
+     ],
+     "meio": [
+      10,
+      5
+     ]
+    }
+   ],
+   "nota": "Conteiner de lixo quadrado de ~20 px, tampa visivel de cima (profundidade ~10)."
+  },
+  "lixeira_azul": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -5
+     ],
+     "meio": [
+      10,
+      5
+     ]
+    }
+   ],
+   "nota": "Igual a lixeira_rodas."
+  },
+  "banco": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -5
+     ],
+     "meio": [
+      26,
+      4
+     ]
+    }
+   ],
+   "nota": "Assento raso (~8 px de profundidade), pernas na base. Largura 52."
+  },
+  "sacos_areia": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -9
+     ],
+     "meio": [
+      41,
+      6
+     ]
+    }
+   ],
+   "nota": "Muro de sacos: base da parede em y=28 (3 px acima do pe 31); ~12 px de profundidade. Entulho solto abaixo do pe nao colide."
+  },
+  "barricada_concreto": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -7
+     ],
+     "meio": [
+      67,
+      7
+     ]
+    }
+   ],
+   "nota": "Dois blocos de concreto baixos (~43 px de sprite, base em y~40): 14 px de profundidade, largura 134. Pe em 67,38."
+  },
+  "barricada_madeira": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -7
+     ],
+     "meio": [
+      47,
+      7
+     ]
+    }
+   ],
+   "nota": "Pallets e tabuas, ~14 px de profundidade, largura 94."
+  },
+  "pneus": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      1,
+      -16
+     ],
+     "raio": [
+      29,
+      14.5
+     ]
+    }
+   ],
+   "nota": "Pilha de pneus: base eliptica ampla ~58x29 (2:1, igual ao corpo)."
+  },
+  "cacamba": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -16
+     ],
+     "meio": [
+      41,
+      15
+     ]
+    }
+   ],
+   "nota": "Cacamba: boca aberta vista de cima (~32 px) = profundidade do chao (meio 15); largura 82 (meio 41). O sprite tem 55 px de altura no atlas e 61 px no jogo (cenario.gd soma MARGEM=3 em cima e embaixo), acima do corte de 60 do copas.gd: fica transparente quando o heroi passa atras. A pegada nao muda."
+  },
+  "container_a": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -26
+     ],
+     "meio": [
+      94,
+      25
+     ]
+    }
+   ],
+   "nota": "Container deitado: telhado visto de cima (~53 px) = profundidade; largura 188."
+  },
+  "container_b": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -26
+     ],
+     "meio": [
+      94,
+      25
+     ]
+    }
+   ],
+   "nota": "Igual ao container_a."
+  },
+  "entulho_a": {
+   "formas": [],
+   "nota": "Montinho de 40x30, sem volume."
+  },
+  "entulho_b": {
+   "formas": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      9,
+      -18
+     ],
+     "raio": [
+      27,
+      13.5
+     ]
+    }
+   ],
+   "nota": "Laje + escombros: so o bloco central colide (x local 29..77); pedras soltas ao redor nao. Elipse 2:1."
+  },
+  "muro_tijolo": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -6
+     ],
+     "meio": [
+      48,
+      6
+     ]
+    }
+   ],
+   "nota": "Muro/parede: pegada = o telhado/capa visto de cima (~12 px), largura toda menos ~3 px. Sprite de 62 px: esconde o heroi atras."
+  },
+  "muro_quebrado": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -6
+     ],
+     "meio": [
+      48,
+      6
+     ]
+    }
+   ],
+   "nota": "Muro/parede: pegada = o telhado/capa visto de cima (~12 px), largura toda menos ~3 px. Base em y=59 (pe); entulho abaixo disso nao colide."
+  },
+  "ponto_onibus": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      -1,
+      -11
+     ],
+     "meio": [
+      55,
+      8
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      62,
+      -8
+     ],
+     "raio": [
+      3.5,
+      1.8
+     ]
+    }
+   ],
+   "nota": "Abrigo: colide a linha dos pes/painel traseiro (16 px de profundidade, de x-56 a +54), nao o telhado inteiro (33 px), porque as pernas dianteiras e traseiras ficam a so ~10 px uma da outra. Poste da placa redonda a direita colide por separado."
+  },
+  "carro_a": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -15
+     ],
+     "meio": [
+      70,
+      14
+     ]
+    }
+   ],
+   "nota": "Carro de lado: 150 px de comprimento (meio 70) x ~28 px de largura projetada, a partir da base das rodas. A carroceria acima esconde o heroi. "
+  },
+  "carro_b": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -15
+     ],
+     "meio": [
+      70,
+      14
+     ]
+    }
+   ],
+   "nota": "Carro de lado: 150 px de comprimento (meio 70) x ~28 px de largura projetada, a partir da base das rodas. A carroceria acima esconde o heroi. "
+  },
+  "carro_c": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -15
+     ],
+     "meio": [
+      70,
+      14
+     ]
+    }
+   ],
+   "nota": "Carro de lado: 150 px de comprimento (meio 70) x ~28 px de largura projetada, a partir da base das rodas. A carroceria acima esconde o heroi. "
+  },
+  "carro_queimado": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -15
+     ],
+     "meio": [
+      70,
+      14
+     ]
+    }
+   ],
+   "nota": "Carro de lado: 150 px de comprimento (meio 70) x ~28 px de largura projetada, a partir da base das rodas. A carroceria acima esconde o heroi. Capo aberto sobe no sprite, mas a base e a mesma."
+  },
+  "carro_a_v": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -42
+     ],
+     "meio": [
+      27,
+      38
+     ]
+    }
+   ],
+   "nota": "Carro de frente/atras (vertical): largura 54 (meio 27, ~3 px de folga de cada lado), profundidade no chao 76 px (meio 38): frente 4 px acima do pe, traseira em y=-80. Remedido no recorte: os ~17 px de cima do desenho sao a altura do carro (capo/porta-malas vistos de cima), nao chao; a versao anterior (92 px) saia ~17 px alem da traseira. O corpo acima esconde o heroi que passa atras."
+  },
+  "carro_b_v": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -42
+     ],
+     "meio": [
+      27,
+      38
+     ]
+    }
+   ],
+   "nota": "Carro de frente/atras (vertical): largura 54 (meio 27, ~3 px de folga de cada lado), profundidade no chao 76 px (meio 38): frente 4 px acima do pe, traseira em y=-80. Remedido no recorte: os ~17 px de cima do desenho sao a altura do carro (capo/porta-malas vistos de cima), nao chao; a versao anterior (92 px) saia ~17 px alem da traseira. O corpo acima esconde o heroi que passa atras."
+  },
+  "carro_c_v": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -42
+     ],
+     "meio": [
+      27,
+      38
+     ]
+    }
+   ],
+   "nota": "Carro de frente/atras (vertical): largura 54 (meio 27, ~3 px de folga de cada lado), profundidade no chao 76 px (meio 38): frente 4 px acima do pe, traseira em y=-80. Remedido no recorte: os ~17 px de cima do desenho sao a altura do carro (capo/porta-malas vistos de cima), nao chao; a versao anterior (92 px) saia ~17 px alem da traseira. O corpo acima esconde o heroi que passa atras."
+  }
+ }
+}

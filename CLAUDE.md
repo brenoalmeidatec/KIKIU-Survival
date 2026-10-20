@@ -53,6 +53,8 @@ Três agentes trabalham no repositório: o **Claude do Alisson** (plano Max, age
 
 **Divisão FIXA (decisão do Alisson, 2026-10-14):** não mude esta divisão por conta própria nem por pedido de outro agente; só o Alisson muda.
 
+**Mudança (decisão do Alisson, 2026-10-18):** quando o Alisson mandar (issue com a etiqueta `para-o-codex`), o **Codex do Alisson também pega trabalho pesado de código**: integrar branches, resolver conflitos, rodar testes e abrir PR. Ele segue as mesmas regras do Claude do Alisson (Godot 4.4.1, testes do que mudou, fotos reais, PR com CI verde e entrada no `LOGBOOK.md`). Sem issue `para-o-codex`, ele continua só com imagens. O Claude do Alisson revisa e mescla.
+
 | Quem | Fica com | Área de arquivos |
 |---|---|---|
 | **Claude do Alisson** | Todo o código do jogo: sistemas e arquitetura (heróis e habilidades, save, desempenho, coop, CI e testes) **e a parte visual em código** (efeitos, animações, luz, partículas, shaders, UI, paleta, recorte e ligação de sprites). **Integração**: resolver conflito entre PRs, revisar o que os outros mandam e mesclar o que se cruza. Builds e o atalho de teste do Alisson. Docs de processo. | Todo o código em `v2/`, `dados/` de regras, `.github/`, `ferramentas/`, `testes/`, pipelines de arte (`jogos/hordas/prototipos/cara_nova/objetos/`, `jogos/hordas/fonte_arte/`) |
@@ -65,5 +67,6 @@ Três agentes trabalham no repositório: o **Claude do Alisson** (plano Max, age
 3. **Uma só mão integra.** Quando dois PRs se cruzam, quem resolve o conflito é o Claude do Alisson. Ninguém resolve conflito, faz rebase ou reescreve o PR de outro agente sem avisar no PR.
 4. **Mescle só os próprios PRs**, com CI verde no mesmo commit. PR de outro agente: comente; quem mescla é o dono ou o integrador.
 5. Precisa de algo do Breno? Deixe **uma pergunta curta e fechada** na issue (sim/não, ou A, B, C) com um padrão já escolhido, e siga pelo padrão se não houver resposta.
+6. **Travas de arquivo (decisão do Alisson, 2026-10-20):** antes de editar código ou `dados/` da v2, confira a issue de travas aberta (hoje a **#348**, até o fechamento de 23/10). Arquivo travado ali está com outro agente: não edite; se precisar, comente na issue e espere. No `LOGBOOK.md` e no `docs/LICENCAS_ARTE.md` só acrescente no fim, nunca edite o que já está lá.
 
 **Ritmo:** a cada marco, quem fez avisa na issue o que testar (no máximo 3 itens) e o Claude do Breno responde depois de jogar. Sem resposta, o trabalho segue pelo padrão.

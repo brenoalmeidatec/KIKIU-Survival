@@ -28,6 +28,9 @@ func ligar(m) -> Node:
 	m.chefe_vida.connect(_chefe_vida)
 	m.partida_terminou.connect(_terminou)
 	tocar("partida")
+	for k in ["chefe", "resultado"]:  # no carregamento: ler o .ogg (~7 ms cada) no quadro em que o chefe aparece era um engasgo
+		if str(_faixas.get(k, "")) != "":
+			Som.preparar_musica(str(_faixas[k]))
 	return self
 
 

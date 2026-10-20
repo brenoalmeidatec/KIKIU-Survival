@@ -3,6 +3,8 @@
 **O que faz:** Chama um lobo de espírito que corre atrás do inimigo mais perto e morde. Depois de um tempo, o lobo some.
 **Na prática:** Cada mordida dá 12 de dano. Chama 1 lobo a cada 3,5 s, se houver inimigo a até 340 px do herói (o bônus de velocidade de ataque deixa a recarga menor). O lobo fica 4 s e anda 150 px por segundo. Enquanto estiver encostado no inimigo, morde a cada 0,6 s. Sem inimigo por perto, tenta girar em volta do herói. Conta de média, sem bônus: cerca de 1 lobo na tela no nível 1 e cerca de 1,6 no nível 5.
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **35 s** e some; só depois que o último da leva sumiu a recarga de **22 s** começa a contar, então nunca fica indefinidamente nem se acumula. Cada nível que mexe na duração soma 4 s (e a recarga cai uns 3 s nas melhorias de cadência). Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). **Onde este arquivo citar duração ou recarga de 2 a 8 s, vale o número desta caixa**; as contas de "quantos na tela" ficam bem menores, porque a recarga agora corre só depois que a leva some.
+
 **Níveis:**
 | Nível | O que muda |
 |---|---|
@@ -14,7 +16,7 @@
 
 **Fusões e evoluções:** Sem fusão hoje. **Caçada Espiritual (proposta):** Lobo Espiritual nível 3 + Espírito Raposa nível 3. As duas somem e entra um golpe que chama lobo e raposa juntos. Dano e duração ficam a combinar.
 
-**Animação e efeitos:** Hoje, o placeholder é um brilho na cor da arma (a textura de brilho do jogo, a 60% da cor) com um pontinho branco de 5 px por cima. O espírito flutua 10 px acima do chão, balança 2 px de um lado para o outro e some nos últimos 0,5 s de vida. Não há rastro nem clarão.
+**Animação e efeitos:** Desde 18/10/2026 o lobo é um andante (`v2/andante.gd`, ficha `lobo_espirito`), como o Espírito do Urso: folha 3D `assets/v2/armas/lobo_espiritual_dir.png` (16 x 5 quadros de 80x85: trote nas 5 vistas com o pé posicionado, e mordida em 8 quadros: agacha, se encolhe, salta, boca escancarada, mordida, segura, levanta, volta). Branco-azulado, de olhos frios e cauda em chama, na cor da referência do Breno (`fonte_arte/blender_lobo/`). Correndo de lado ele usa a corrida desenhada que o Breno aprovou (`lobo_espiritual_corre.png`, campo `perfil_corre` da ficha), até o Breno aprovar a troca pela 3D. Nasce de uma névoa, corre atrás do inimigo mais perto, salta e morde (o dano cai no quadro da mordida, com estalo e fagulhas) e some nos últimos 0,5 s de vida. Sem a folha, volta ao brilho antigo (brilho na cor da arma com pontinho branco, flutuando 10 px).
 Especificação do campo "arte" (para o Alisson substituir): um lobo branco-azulado, translúcido, de espírito, corre pelo chão atrás do inimigo e deixa um rastro de brilho frio. Ao alcançar o alvo, faz um pequeno clarão azul no contato. Cores: branco-azulado, azul gelo, branco. Tamanho: lobo de 36x28 px; rastro de 4 px; clarão de 20 px. Duração: o lobo some com um sopro de partículas ao fim da vida.
 
 **Mudanças em relação ao desenho original:** Nenhuma no desenho: segue o desenho original do PR #192. Números da ficha conferidos com armas_novas.gd e dados/v2_cartas.json (2026-10-12): sem diferença.

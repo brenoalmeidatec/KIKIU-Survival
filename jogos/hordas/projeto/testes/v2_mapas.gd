@@ -45,6 +45,12 @@ func _ready() -> void:
 	get_tree().quit(1 if falhas > 0 else 0)
 
 
+## Libera todos os mapas gravando a vitória nos três primeiros, como a partida real faz.
+func _liberar_mapas() -> void:
+	for id in ["floresta", "laboratorio", "cidade"]:
+		ok(Meta.marcar_mapa_vencido(id), "libera: vitória gravada em " + id)
+
+
 func _apagar_save() -> void:
 	var sufixos: Array[String] = ["", ".tmp", ".bak"]
 	for sufixo in sufixos:
@@ -58,12 +64,26 @@ func _lista_e_escolha() -> void:
 	ok(Mapas.ids().size() >= 2, "há pelo menos 2 mapas (floresta e laboratório): %s" % str(Mapas.ids()))
 	ok(Mapas.ids().has("floresta") and Mapas.ids().has("laboratorio"), "floresta e laboratório estão na lista")
 	ok(Mapas.escolhido() == "floresta", "sem save o mapa é a floresta (deu %s)" % Mapas.escolhido())
+	# Trancado (dados/v2_progressao.json): mapa que a progressão ainda não abriu não é gravado nem escolhido, nem por save antigo.
+	ok(not Mapas.escolher("laboratorio") and Mapas.escolhido() == "floresta", "mapa trancado não é gravado")
+	ok(Mapas.proximo("floresta") == "floresta", "sem outro mapa aberto, proximo devolve o mesmo")
+	var trancado := ConfigFile.new()
+	trancado.set_value("config", "mapa", "medio")
+	trancado.set_value("meta", "almas", 123)
+	trancado.save(SAVE_TESTE)
+	ok(Mapas.escolhido() == "floresta", "save antigo com escolha trancada volta à floresta (sem liberar tudo)")
+	_apagar_save()
+	# Daqui em diante os mapas estão liberados de forma explícita: cada vitória é gravada como o jogo grava (vence_<mapa>).
+	_liberar_mapas()
+	ok(Mapas.proximo("floresta") == "laboratorio", "com a floresta vencida, proximo pula para o laboratório")
 	Mapas.escolher("laboratorio")
 	ok(Mapas.escolhido() == "laboratorio", "escolher grava e escolhido lê de volta")
 	var legado := ConfigFile.new()
 	legado.set_value("config", "mapa", "medio")
 	legado.set_value("meta", "almas", 123)
-	ok(legado.save(SAVE_TESTE) == OK, "fixture de save antigo com id medio")
+	for id in ["floresta", "laboratorio", "cidade"]:
+		legado.set_value("mapas_vencidos", id, true)
+	ok(legado.save(SAVE_TESTE) == OK, "fixture de save antigo com id medio e os mapas vencidos")
 	ok(Mapas.escolhido() == "medio" and Mapas.buscar("medio").nome == "RUÍNAS DA FLORESTA", "save antigo medio preserva o id e mostra o nome novo")
 	Mapas.escolher("cidade")
 	var preservado := ConfigFile.new()
@@ -130,6 +150,32 @@ func _dados_do_mapa(id: String) -> void:
 	ok(nasc.has("heroi") and nasc.get("monstros", []).size() >= 6, "%s: nascimento com herói e zonas de monstro" % id)
 
 
+## Laboratório (docs/laboratorio/PLANTA_PROPOSTA.md): os quatro corredores de 160 px ficam livres de ponta a ponta para o corpo largo da horda,
+## e o centro de cada uma das 9 salas se alcança a partir do herói (corpo largo também).
+func _corredores_e_salas_do_laboratorio(w) -> void:
+	var linhas := [
+		[Vector2(180, 640), Vector2(2700, 640)],
+		[Vector2(180, 1080), Vector2(2700, 1080)],
+		[Vector2(1080, 180), Vector2(1080, 1440)],
+		[Vector2(1800, 180), Vector2(1800, 1440)]
+	]
+	for l in linhas:
+		var a: Vector2 = l[0]
+		var b: Vector2 = l[1]
+		var n := int(a.distance_to(b) / 8.0)
+		var presos := 0
+		for i in n + 1:
+			if not Colisao.livre(a.lerp(b, float(i) / float(n)), Passagens.RAIO_HORDA):
+				presos += 1
+		ok(presos == 0, "laboratorio: o corredor de %s a %s está livre para a horda (%d pontos presos)" % [str(a), str(b), presos])
+	var salas: Array = []
+	for x in [575.0, 1440.0, 2305.0]:
+		for y in [355.0, 860.0, 1315.0]:
+			salas.append(Vector2(x, y))
+	var rel: Dictionary = Passagens.relatorio(w.limite_andavel, w.heroi.pos, salas, Passagens.RAIO_HORDA)
+	ok(rel.pontos_fora.is_empty(), "laboratorio: o centro das 9 salas tem caminho até o herói (corpo largo): fora = %s" % str(rel.pontos_fora))
+
+
 ## Passagens (v2/passagens.gd), objeto na frente do herói (copas.gd) e sombra base (sombras.gd), em cada mapa.
 func _passagens_e_vista(id: String) -> void:
 	var w = Mundo.instantiate()
@@ -154,6 +200,10 @@ func _passagens_e_vista(id: String) -> void:
 		)
 		if id == "laboratorio":  # o laboratório é desenhado com corredores: nada de beco fino (a floresta tem os dela, de árvores e tocos)
 			ok(rel.becos <= 4, "%s: sem becos finos sem saída (raio %.0f): %d células" % [id, raio, rel.becos])
+			var fundos: Array[Vector2i] = Passagens.becos(rel.grade, 12)
+			ok(fundos.size() <= 4, "%s: nenhum beco mais fundo que 6 células (raio %.0f): %d células com 12 camadas de poda" % [id, raio, fundos.size()])
+	if id == "laboratorio":
+		_corredores_e_salas_do_laboratorio(w)
 	# os quatro cantos andáveis ligam entre si (o corredor das bordas não fecha)
 	var g: Dictionary = Passagens.grade(w.limite_andavel, Passagens.RAIO_HEROI)
 	var a0: Rect2 = w.limite_andavel

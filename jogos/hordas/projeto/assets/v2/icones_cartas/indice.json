@@ -663,6 +663,30 @@
    "categoria": "modificador",
    "folha": "folha_09.png",
    "celula": 4
+  },
+  "sentinela_bambu": {
+   "arquivo": "sentinela_bambu.png",
+   "pequeno": "16/sentinela_bambu.png",
+   "categoria": "golpe",
+   "proprio": true
+  },
+  "cabaca_polvora": {
+   "arquivo": "cabaca_polvora.png",
+   "pequeno": "16/cabaca_polvora.png",
+   "categoria": "golpe",
+   "proprio": true
+  },
+  "pagode_do_trovao": {
+   "arquivo": "pagode_do_trovao.png",
+   "pequeno": "16/pagode_do_trovao.png",
+   "categoria": "evolucao",
+   "proprio": true
+  },
+  "fogos_de_festival": {
+   "arquivo": "fogos_de_festival.png",
+   "pequeno": "16/fogos_de_festival.png",
+   "categoria": "evolucao",
+   "proprio": true
   }
  }
 }

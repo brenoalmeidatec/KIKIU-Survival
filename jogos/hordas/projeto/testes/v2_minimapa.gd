@@ -31,7 +31,7 @@ func _ready() -> void:
 	add_child(w)
 	w.set_process(false)  # os passos são nossos
 	w.heroi.entrada_forcada = Vector2.ZERO
-	m = w.sv.get_node_or_null("Minimapa")
+	m = w.ui.get_node_or_null("Minimapa")
 	ok(m != null, "o mundo monta o minimapa dentro da apresentação (sv)")
 	if m == null:
 		print("v2_minimapa falhas=%d" % falhas)
@@ -138,7 +138,10 @@ func _ready() -> void:
 	# 7d. mirante: revela o mapa inteiro de uma vez
 	m.revelar_tudo()
 	ok(m.revelado(Vector2(2600, 1300)) and m.revelado(Vector2(60, 60)), "o mirante revela o mapa todo")
-	ok(m._quadro.position.x + m._quadro.size.x <= 960.0 - 8.0 + 0.01 and m._quadro.position.y == 8.0, "o pequeno fica no canto superior direito")
+	ok(
+		m._quadro.position.x + m._quadro.size.x <= 960.0 - float(m.MARGEM_TELA) + 0.01 and m._quadro.position.y == float(m.MARGEM_TELA),
+		"o pequeno fica no canto superior direito"
+	)
 
 	# 7e. o Tab não abre o mapa grande com o card de status na tela, nem sobre a escolha de cartas ou o baú
 	m.ler_tecla(false)

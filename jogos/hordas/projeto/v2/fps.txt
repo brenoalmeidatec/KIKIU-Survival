@@ -103,3 +103,23 @@ horda baixa mediana=168 (161 a 170)
 horda media mediana=143 (142 a 144)
 horda alta mediana=132 (121 a 138)
 horda baixo mediana=169 (155 a 178)
+
+--- A/B da colisão (lote-colisao x main, 18/10): 3 pares alternados (main, branch, main, branch, main, branch), sombra media, 6 s medidos, mesma semente (--semente=1) e mesmo roteiro do herói (--estresse=100 --imortal na horda). Linhas "<rodada> <versão> <cenário> MEDIDA ..." abaixo.
+--- NÃO É MEDIÇÃO LIMPA: a máquina era compartilhada com outros Godot (de outros agentes). Em 2 rodadas havia outro Godot pesado (cpu_outros 6,69 e 3,5 s de CPU em 3 s, no ab.txt) e nas demais, um pouco de CPU de fundo. A mesma versão varia 2x (horda main: 161 a 321 fps), então a diferença entre versões fica dentro do ruído. Os números só servem de indício.
+horda      main:   mediana 281 fps (161 a 321); monstros 0,64 ms/quadro (1,04 / 0,59 / 0,64)
+horda      branch: mediana 260 fps (228 a 278); monstros 0,69 ms/quadro (0,79 / 0,64 / 0,69)
+santuario  main:   mediana 436 fps (320 a 595); monstros 0,14 ms/quadro (0,18 / 0,14 / 0,10)
+santuario  branch: mediana 488 fps (402 a 627); monstros 0,13 ms/quadro (0,14 / 0,13 / 0,09)
+1 main horda MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=161.5 frames=970 seg=6.01
+1 main santuario MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=320.0 frames=1921 seg=6.00
+1 branch horda MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=227.9 frames=1368 seg=6.00
+1 branch santuario MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=402.5 frames=2415 seg=6.00
+2 main horda MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=321.2 frames=1928 seg=6.00
+2 main santuario MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=436.3 frames=2618 seg=6.00
+2 branch horda MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=277.8 frames=1667 seg=6.00
+2 branch santuario MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=488.4 frames=2931 seg=6.00
+3 main horda MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=281.0 frames=1686 seg=6.00
+3 main santuario MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=595.4 frames=3573 seg=6.00
+3 branch horda MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=166 blocos=70/192 fps=260.2 frames=1562 seg=6.00
+3 branch santuario MEDIDA sombra=media luzes_ligadas=13/30 atores_na_tela=88 blocos=70/192 fps=626.9 frames=3762 seg=6.00
+--- nota: as medições acima são da versão com mover como wrapper de mover_ponto. Depois, mover voltou ao corpo da main (diff de v2/mundo.gd: só mover_ponto), e a horda passou a rodar o código da main. O A/B não foi repetido.

@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
 ## Resultado da partida com as almas da v2 (camada 12, por cima da tela de resultado de telas.gd, que não é tocada). Quando a
 ## partida acaba (o herói cai, ou o sinal partida_terminou do mundo, se existir), grava a partida em v2/meta.gd e mostra as almas
 ## ganhas subindo e o saldo somando; as conquistas cumpridas aparecem embaixo. "CONTINUAR" (clique, Enter, Espaço, E ou A) vai
@@ -9,6 +10,7 @@ const Paleta := preload("res://v2/paleta.gd")
 ## Criada pelo mundo.gd (uma linha no _ready, fora do modo de teste); o mundo entrega a entrada a ela antes da tela de resultado.
 
 const Meta := preload("res://v2/meta.gd")
+const VitoriaFinal := preload("res://v2/vitoria_final.gd")
 const LARG := 960
 const ALT := 540
 const SANTUARIO := "res://v2/salao.tscn"
@@ -50,7 +52,7 @@ func montar(m) -> void:
 	layer = 12  # por cima do HUD (camada 10): o resultado não divide a tela com o painel da partida
 	_fundo = ColorRect.new()
 	_fundo.color = Paleta.alfa(Paleta.PAINEL, 0.97)  # quase opaco: o HUD e o mundo ficam só de pano de fundo
-	_fundo.size = Vector2(LARG, ALT)
+	EscalaUi.cobrir(_fundo)  # cobre o canvas inteiro, não só o bloco 960x540
 	_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fundo.visible = false
 	add_child(_fundo)
@@ -85,12 +87,12 @@ func montar(m) -> void:
 	_saldo.size = Vector2(LARG, 20)
 	_res.add_child(_saldo)
 	_novas = _rotulo("", TAM_TEXTO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
-	_novas.position = Vector2(0, 432)
-	_novas.size = Vector2(LARG, 40)
+	_novas.position = Vector2(24, 432)
+	_novas.size = Vector2(LARG - 48, 48)
 	_novas.add_theme_constant_override("line_spacing", 4)
 	_res.add_child(_novas)
 	_botao = Control.new()
-	_botao.position = Vector2(300, 478)
+	_botao.position = Vector2(300, 490)
 	_botao.size = Vector2(360, 40)
 	_botao.modulate.a = 0.0
 	_botao.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -179,6 +181,8 @@ func _resultado_do_mundo() -> Dictionary:
 func _terminar(r: Dictionary) -> void:
 	_terminou = true
 	r["pesadelo"] = mundo.pesadelo()  # o Pesadelo rende mais almas (Meta.registrar_partida)
+	if not r.has("mapa") and mundo.get("id_mapa") != null:
+		r["mapa"] = str(mundo.id_mapa)  # vencer um mapa abre o seguinte no santuário (vence_<mapa>, dados/v2_progressao.json)
 	if not r.has("almas"):
 		r["almas"] = Meta.almas_da_partida(mundo)
 	var res: Dictionary = Meta.registrar_partida(r)
@@ -209,8 +213,12 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 	var seg := int(float(r.get("tempo", 0.0)))
 	_valores.text = "%02d:%02d\n%d\nx%d\n%d" % [floori(seg / 60.0), seg % 60, int(r.get("abates", 0)), int(r.get("maior_combo", 0)), int(r.get("nivel", 1))]
 	var linhas: Array = []
-	for id in novas:
-		linhas.append("Conquista: " + _nome_conquista(id))
+	# Até quatro marcos podem chegar juntos (tempo, combo, chefe e mapa). Dois por linha cabem acima do CONTINUAR sem reduzir a fonte.
+	for i in range(0, novas.size(), 2):
+		var pares: Array = []
+		for j in range(i, mini(i + 2, novas.size())):
+			pares.append("Conquista: " + _nome_conquista(novas[j]))
+		linhas.append("   ·   ".join(PackedStringArray(pares)))
 	_novas.text = "\n".join(PackedStringArray(linhas))
 	_almas_num.text = "+0"
 	_saldo.text = "Saldo: %d" % _antes
@@ -278,4 +286,4 @@ func _continuar() -> void:
 		return
 	_saindo = true
 	# A entrada do mundo ainda marca o evento no viewport: a troca só pode ocorrer depois dele.
-	mundo.get_tree().call_deferred("change_scene_to_file", SANTUARIO)
+	mundo.get_tree().call_deferred("change_scene_to_file", VitoriaFinal.destino(mundo.resultado, SANTUARIO))  # vencer o mapa final leva à vitória final e aos créditos

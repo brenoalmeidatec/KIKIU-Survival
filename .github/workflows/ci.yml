@@ -11,8 +11,14 @@ env:
   PROJETO: jogos/hordas/projeto
 jobs:
   testes:
+    # 3 shards equilibrados pelo tempo (ferramentas/tempos_testes.txt); o criterio continua no testes_ci.sh.
+    name: testes (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - name: Cache do Godot
@@ -28,12 +34,20 @@ jobs:
           curl -fsSL -o g.zip "https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
           unzip -q g.zip && rm g.zip
           mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot && chmod +x godot
-      - name: Importar o projeto (2x; segfault no fim e normal)
+      - name: Cache da importacao (.godot)
+        id: cache-import
+        uses: actions/cache@v4
+        with:
+          path: jogos/hordas/projeto/.godot
+          key: import-${{ env.GODOT_VERSION }}-${{ hashFiles('jogos/hordas/projeto/project.godot', 'jogos/hordas/projeto/**/*.png', 'jogos/hordas/projeto/**/*.ogg', 'jogos/hordas/projeto/**/*.wav', 'jogos/hordas/projeto/**/*.ttf', 'jogos/hordas/projeto/**/*.svg', 'jogos/hordas/projeto/**/*.import') }}
+      - name: Importar o projeto (2x sem cache, 1x com cache; segfault no fim e normal)
+        env:
+          VEZES: ${{ steps.cache-import.outputs.cache-hit == 'true' && '1' || '2' }}
         run: |
           cd "$PROJETO"
-          for i in 1 2; do ~/godot/godot --headless --path . --import || true; done
-      - name: Rodar as cenas de testes (4 em paralelo; criterio e relatorio no script)
-        run: bash ferramentas/testes_ci.sh ~/godot/godot 4
+          for i in $(seq "$VEZES"); do ~/godot/godot --headless --path . --import || true; done
+      - name: Rodar as cenas do shard ${{ matrix.shard }}/3 (4 em paralelo; criterio e relatorio no script)
+        run: bash ferramentas/testes_ci.sh ~/godot/godot 4 ${{ matrix.shard }}/3
   ortografia:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -42,6 +56,12 @@ jobs:
       - name: Instalar hunspell pt_BR
         run: sudo apt-get update -qq && sudo apt-get install -y -qq hunspell hunspell-pt-br
       - run: python3 -I ferramentas/ortografia.py
+  python_testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -I ferramentas/teste_guarda_save.py
   gdlint:
     runs-on: ubuntu-latest
     timeout-minutes: 5

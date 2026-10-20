@@ -1,5 +1,7 @@
 # Caçada Espiritual (fusão cacada_espiritual)
 
+> **Tempo de vida (aliado temporário, 18/10):** dura **45 s** e some (as fusões e os mais fortes duram mais: 45 a 60 s); a recarga de **28 s** só começa a contar depois que o último da leva sumiu, então nunca fica indefinidamente. Marca de amigo: anel verde no chão e barrinha verde pequena de tempo sobre a cabeça (pisca nos últimos 5 s). Onde este arquivo citar duração ou recarga menores, vale este número.
+
 **Peças:** Lobo Espiritual (nível 3) + Espírito Raposa (nível 3). Fichas: lobo_espirito.md, espirito_raposa.md.
 
 **Vira:** três espíritos de caça, do tipo aliado (um golpe secundário novo), que saem juntos. Substituem o Lobo e a Raposa, que saem do sorteio.

@@ -10,9 +10,10 @@ extends Node
 ##   --perfil=baixo|medio|alto (vale o perfil de gráficos inteiro: sombras, partículas e orçamento de luzes; sem gravar) --luzes=N (orçamento de luzes)
 ##   --sombra=baixa|media|alta|nenhuma (vale por cima da aba Gráficos) --particulas=nenhuma|poucas|medias|muitas --sem_vsync --sem_normal
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
+##   --picos=MS (imprime cada quadro mais lento que MS ms, com as partes que pesaram nele, e um resumo no fim: v2/picos.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
-##   --janela=1280x720 --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
-## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
+##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --maximizada (janela maximizada do SO, como no notebook) --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
+## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ESPECIAL do herói, Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
 ## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
@@ -47,6 +48,7 @@ const MAX_PASSO_COLISAO := 8.0  # menor pegada de árvore + círculo do herói o
 const ORCAMENTO_LUZES := {"desligada": 6, "so_heroi": 0, "tudo": 0}  # máximo de luzes ligadas por "luz_relevo" (0 = sem limite); o perfil Baixo usa "desligada"
 const PASSO_SOMBRA_CENARIO := 3  # a sombra de cada objeto parado recalcula a cada 3 quadros (a luz que a move muda devagar; o deslize suaviza)
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
+const MARGEM_COLISAO := 120.0  # monstro só colide com as barreiras a até 120 px da tela (#336)
 const Colisao := preload("res://v2/colisao.gd")
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
 const PESOS_MONSTRO := [4, 4, 3, 3, 1]
@@ -69,6 +71,7 @@ var mouse_forcado: Variant = null  # testes: um Vector2 do mundo aqui vale no lu
 var dados: Dictionary = {}
 var ap
 var sv: SubViewport
+var ui: SubViewport  # a interface (HUD, cartas, pausa...): tem o próprio SubViewport, do tamanho do canvas da UI (v2/apresentacao.gd, v2/escala_ui.gd)
 var cam
 var luzes
 var sombras
@@ -140,9 +143,10 @@ var _rng := RandomNumberGenerator.new()
 var _rotulo: Label
 var _rotulo_t := 0.0
 var _us_total := 0
-var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0]
+var _r_acum := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 var perfil := {}  # medição (--medir): microssegundos acumulados por parte do quadro
 var _ms_carga := 0.0
+var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 
 
 func _ready() -> void:
@@ -153,7 +157,18 @@ func _ready() -> void:
 	_fotos = str(args.get("fotos", ""))
 	_seq = float(args.get("seq", 2.0))
 	_med["duracao"] = float(args.get("duracao", 6.0))
+	if args.has("playtest") and not modo_teste:  # robô de playtest (#301): save temporário próprio e sorteios pela semente
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://playtest"))
+		Meta.caminho_save = "user://playtest/meta_%d.cfg" % OS.get_process_id()
+		for orfao in [Meta.caminho_save, Meta.caminho_save + ".tmp", Meta.caminho_save + ".bak"]:  # órfão de um PID reaproveitado
+			if FileAccess.file_exists(orfao):
+				DirAccess.remove_absolute(ProjectSettings.globalize_path(orfao))
+		seed(int(args.get("semente", 1)))
 	Entrada.garantir()
+	if args.has("picos") and not modo_teste:
+		picos = preload("res://v2/picos.gd").new(float(args.picos))
+	if args.has("tamanho_ui") and not modo_teste:  # fotos: vale o tamanho da interface (auto, pequeno, medio, grande) sem gravar nas opções
+		Config.temporario("tamanho_ui", str(args.tamanho_ui))
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
 		Config.g_perfil_temporario(str(args.perfil))
 	if id_mapa == "":
@@ -168,25 +183,27 @@ func _ready() -> void:
 	ap = Apresentacao.new()
 	add_child(ap)
 	sv = ap.montar(get_window(), args.has("escala_pura"))
+	ui = ap.ui
 	if not modo_teste and (_modo == "medir" or args.has("sem_vsync")):
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0
 	RenderingServer.set_default_clear_color(Color(0.02, 0.03, 0.03))
 	_montar()
-	sv.add_child(preload("res://v2/hud.gd").criar(self))
+	ui.add_child(preload("res://v2/hud.gd").criar(self))
 	minimapa = preload("res://v2/minimapa.tscn").instantiate().iniciar(self)
-	sv.add_child(minimapa)
+	ui.add_child(minimapa)
 	pausa = preload("res://v2/pausa.tscn").instantiate().iniciar(self)  # ESC ou Start pausam e abrem o menu (pausa.gd, com a Antena)
-	sv.add_child(pausa)
+	ui.add_child(pausa)
+	pausa.fechou.connect(func(): _qualidade.interromper())  # a árvore não processa durante a pausa: a retomada começa uma medição nova
 	status = preload("res://v2/status.gd").criar(self)  # card "SUA BUILD": C liga no HUD, a pausa mostra ao lado do menu (status.gd)
-	sv.add_child(status)
+	ui.add_child(status)
 	if _modo == "livre":  # medir e fotografar ficam sem música
 		trilha = Trilha.new()
 		add_child(trilha)
 		trilha.ligar(self)
 	if not modo_teste:
 		meta_res = ResultadoMeta.new()
-		sv.add_child(meta_res)
+		ui.add_child(meta_res)
 		meta_res.montar(self)
 	_ms_carga = (Time.get_ticks_usec() - t0) / 1000.0
 	Config.graficos_mudou.connect(_ler_graficos)
@@ -203,6 +220,9 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if picos != null:
+		picos.resumo()
+		picos = null
 	if combate != null:
 		combate.liberar()
 		combate = null
@@ -217,8 +237,20 @@ func _argumentos() -> Dictionary:
 	return d
 
 
+## Só uma janela em modo normal aceita tamanho nosso. Maximizada ou em tela cheia o SO manda no tamanho: o Windows ignora o pedido, mas o
+## Window.size fica com o valor novo, o viewport encolhe e sobra uma faixa preta à direita e embaixo (o mundo e o HUD param antes dela).
+static func janela_ajustavel(modo: int) -> bool:
+	return modo == Window.MODE_WINDOWED
+
+
 func _ajustar_janela() -> void:
 	var janela := get_window()
+	if _modo == "foto":
+		janela.unfocusable = true  # a foto não rouba o foco de quem está jogando por cima
+	if args.has("maximizada"):  # a janela do notebook: o SO a estica para a área útil, que quase nunca é 16:9
+		janela.mode = Window.MODE_MAXIMIZED
+	if not janela_ajustavel(janela.mode):
+		return
 	if args.has("janela"):
 		var wh := str(args.janela).split("x")
 		janela.size = Vector2i(int(wh[0]), int(wh[1]))
@@ -263,7 +295,7 @@ func _montar() -> void:
 	cenario = Cenario.new()
 	cenario.carregar(dados, no_mundo, luzes, sombras, sprites.com_normal)
 	copas = Copas.new()
-	copas.montar(cenario.objetos, float(dados.get("mapa", {}).get("copas_altura_min", Copas.ALTURA_MIN)))
+	copas.montar(cenario.objetos, float(dados.get("mapa", {}).get("copas_altura_min", Copas.ALTURA_MIN)), cenario)
 	dbg_colisao = Depuracao.new()
 	dbg_colisao.mundo = self
 	dbg_colisao.z_index = 400  # por cima do mundo inteiro (árvores, atores, sombras)
@@ -293,7 +325,7 @@ func _montar() -> void:
 	atm.ambiente(cam.position)
 	_vinheta()
 	_ler_graficos()
-	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build"):
+	if args.has("estresse") or args.has("robo") or args.has("roteiro") or args.has("imortal") or args.has("build") or args.has("playtest"):
 		roteiro = Roteiro.new()
 		roteiro.montar(self, args)
 	avancar(0.0)
@@ -703,16 +735,32 @@ func _ler_graficos() -> void:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
 
 
-## Baixa automática (opção "qualidade_auto", "Baixar a qualidade se travar", aba Gráficos): fps abaixo de 40 por 8 s desce um
-## perfil, só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
+## Detalhe dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um, mas só
+## até o Perfil escolhido (o teto), só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
 func _baixar_qualidade(dt: float, fps: float) -> void:
-	if not _qualidade_ligada or not bool(Config.v("qualidade_auto")):
+	if (
+		not _qualidade_ligada
+		or not bool(Config.v("qualidade_auto"))
+		or combate == null
+		or combate.jogo != "jogando"
+		or combate.pausado
+		or combate.pausado_mundo
+		or get_tree().paused
+	):
+		_qualidade.interromper()  # cartas, baús e resultados têm FPS de tela estática; não contam nem somam trechos separados
 		return
-	var nome := _qualidade.passo(dt, fps, Config.g_perfil())
+	var limite := int(Config.g("limite_fps"))
+	var alvo := 55.0 if limite <= 0 or limite >= 60 else limite * 0.92  # com limite baixo de fps, "firme" é perto do limite
+	var antes := Config.g_perfil()
+	var nome := _qualidade.passo(dt, fps, antes, alvo, Config.g_perfil_escolhido())
 	if nome == "":
 		return
 	Config.g_perfil_temporario(nome)
-	combate.anunciar("FPS baixo: qualidade gráfica %s" % ("média" if nome == "medio" else "baixa"), Color(1, 0.8, 0.4))
+	var degrau: String = QualidadeAuto.NOMES_ANUNCIO.get(nome, nome)
+	if QualidadeAuto.DEGRAUS.find(nome) < QualidadeAuto.DEGRAUS.find(antes):
+		combate.anunciar("FPS firme: qualidade gráfica %s" % degrau, Color(0.6, 1, 0.6))
+	else:
+		combate.anunciar("FPS baixo: qualidade gráfica %s" % degrau, Color(1, 0.8, 0.4))
 
 
 # ------------------------------------------------------------------ movimento e mouse
@@ -735,6 +783,40 @@ func mover(a, desejado: Vector2) -> Vector2:
 	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
 	a.definir_pos(depois)
 	return depois - antes
+
+
+## Movimento do monstro (#336): a colisão com as barreiras só vale perto da tela (MARGEM_COLISAO px além da borda). Fora dela o
+## monstro vem em linha reta até o herói. Se a colisão liga com o monstro já dentro de uma forma, ele segue sem colisão até sair dela
+## (`sem_colisao_ate_sair`), para não travar nem dar salto.
+func mover_monstro(a, desejado: Vector2) -> Vector2:
+	var antes: Vector2 = a.pos
+	var ligada: bool = cam == null or cam.retangulo(MARGEM_COLISAO).has_point(antes)
+	if ligada and not a.colisao_ligada:
+		a.sem_colisao_ate_sair = not Colisao.livre(antes, a.raio)
+	elif ligada and a.sem_colisao_ate_sair and Colisao.livre(antes, a.raio):
+		a.sem_colisao_ate_sair = false
+	a.colisao_ligada = ligada
+	if ligada and not a.sem_colisao_ate_sair:
+		return mover(a, desejado)
+	var depois := (antes + desejado).clamp(limite_andavel.position, limite_andavel.end)
+	a.definir_pos(depois)
+	return depois - antes
+
+
+## O mesmo `mover` para quem não é Ator (aliados, que guardam a posição num dicionário): devolve a nova posição de um corpo de raio
+## `raio` que sai de `antes` e quer andar `desejado`, com as barreiras e a área andável. É uma cópia de `mover` de propósito: o herói e
+## os monstros seguem com o código da main, sem uma chamada a mais por quadro.
+func mover_ponto(antes: Vector2, desejado: Vector2, raio: float) -> Vector2:
+	var depois := antes + desejado
+	if desejado.length_squared() > MAX_PASSO_COLISAO * MAX_PASSO_COLISAO and Colisao.segmento_perto(antes, depois, raio):
+		var n_passos := ceili(desejado.length() / MAX_PASSO_COLISAO)
+		var passo := desejado / n_passos
+		depois = antes
+		for _i in n_passos:
+			depois = Colisao.resolver(depois + passo, raio)
+	else:
+		depois = Colisao.resolver(depois, raio)
+	return depois.clamp(limite_andavel.position, limite_andavel.end)
 
 
 ## Mouse nas coordenadas do mundo (a tela do mundo é 960x540 e a câmera já é inteira).
@@ -782,11 +864,17 @@ func _input(e: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	if picos != null:
+		picos.quadro(self)
 	var t0 := Time.get_ticks_usec()
 	avancar(minf(delta, 0.1))
 	if roteiro != null:
+		var r0 := Time.get_ticks_usec()
 		roteiro.atualizar(delta)
+		_perfil("roteiro", Time.get_ticks_usec() - r0)  # o robô e os roteiros de teste (não é o jogo)
 	_us_total += Time.get_ticks_usec() - t0
+	if picos != null:
+		picos.us_script += Time.get_ticks_usec() - t0
 	if _rotulo != null and _rotulo.visible:
 		_rotulo_t += delta
 		if _rotulo_t > 0.3:
@@ -954,7 +1042,7 @@ func _texto_rotulo() -> void:
 func _salvar_foto() -> void:
 	var caminho := _fotos.path_join("%s.png" % str(args.get("nome", "v2")))
 	var tam: Vector2i = await ap.foto(caminho)
-	print("FOTO ", caminho, " ", tam, " t=%.2f heroi=%s cam=%s" % [t, str(heroi.pos), str(cam.position)])
+	print("FOTO ", caminho, " ", tam, " janela=", get_window().size, " t=%.2f heroi=%s cam=%s" % [t, str(heroi.pos), str(cam.position)])
 	get_tree().quit()
 
 
@@ -966,6 +1054,8 @@ func _medir_render() -> void:
 	_r_acum[1] += RenderingServer.viewport_get_measured_render_time_gpu(rid)
 	_r_acum[2] += RenderingServer.viewport_get_measured_render_time_cpu(raiz)
 	_r_acum[3] += RenderingServer.viewport_get_measured_render_time_gpu(raiz)
+	_r_acum[5] += RenderingServer.viewport_get_measured_render_time_cpu(ui.get_viewport_rid())
+	_r_acum[6] += RenderingServer.viewport_get_measured_render_time_gpu(ui.get_viewport_rid())
 	_r_acum[4] += RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
 
 
@@ -982,6 +1072,9 @@ func _medir() -> void:
 		perfil.clear()
 		RenderingServer.viewport_set_measure_render_time(sv.get_viewport_rid(), true)
 		RenderingServer.viewport_set_measure_render_time(get_tree().root.get_viewport_rid(), true)
+		RenderingServer.viewport_set_measure_render_time(ui.get_viewport_rid(), true)
+		if args.has("ui_congelada"):  # experimento: o SubViewport da UI para de redesenhar (o teto do que "só redesenhar quando muda" pouparia)
+			ui.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		return
 	_med["frames"] = int(_med["frames"]) + 1
 	_medir_render()
@@ -1021,12 +1114,14 @@ func _medir() -> void:
 		print("PERFIL ms/quadro: ", ", ".join(partes), " | horda: %d monstros em %d fatias" % [horda.n_lote, horda.n_fatias()])
 		print(
 			(
-				"RENDER ms/quadro: cpu mundo %.2f, gpu mundo %.2f, cpu janela %.2f, gpu janela %.2f; chamadas de desenho %.0f; objetos %d; fora do script %.2f"
+				"RENDER ms/quadro: cpu mundo %.2f, gpu mundo %.2f, cpu janela %.2f, gpu janela %.2f, cpu ui %.2f, gpu ui %.2f; chamadas de desenho %.0f; objetos %d; fora do script %.2f"
 				% [
 					_r_acum[0] / frames,
 					_r_acum[1] / frames,
 					_r_acum[2] / frames,
 					_r_acum[3] / frames,
+					_r_acum[5] / frames,
+					_r_acum[6] / frames,
 					_r_acum[4] / frames,
 					RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME),
 					dec * 1000.0 / frames - _us_total / 1000.0 / frames

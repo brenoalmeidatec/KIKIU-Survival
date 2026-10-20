@@ -7,7 +7,10 @@
  "ppu": 24.5,
  "linhas": [
   "frente",
-  "tres_quartos"
+  "tres_quartos",
+  "perfil",
+  "tres_quartos_costas",
+  "costas"
  ],
  "colunas": [
   "andar0",

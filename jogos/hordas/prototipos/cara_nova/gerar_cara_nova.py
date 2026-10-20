@@ -30,7 +30,7 @@ import numpy as np
 AQUI = os.path.dirname(os.path.abspath(__file__))
 HORDAS = os.path.normpath(os.path.join(AQUI, "..", ".."))
 GERADORES = os.path.join(HORDAS, "fonte_arte", "modelos3d")
-SAIDA = os.path.join(HORDAS, "projeto", "prototipos", "cara_nova", "sprites")  # dentro do projeto: o exe só lê res://
+SAIDA = os.environ.get("CARA_NOVA_SAIDA") or os.path.join(HORDAS, "projeto", "prototipos", "cara_nova", "sprites")  # dentro do projeto: o exe só lê res://
 sys.path.insert(0, GERADORES)
 import pixel3d as px3  # noqa: E402
 
@@ -382,6 +382,52 @@ def gerar_heroi():
 
 # ------------------------------------------------------------------ monstros
 
+VISTAS_MONSTRO = (0.0, 45.0, 90.0, 135.0, 180.0)     # frente, 3/4 (baixo), perfil, 3/4 costas, costas (a câmera do jogo não muda)
+LINHAS_MONSTRO = ["frente", "tres_quartos", "perfil", "tres_quartos_costas", "costas"]
+PERNAS_MONSTRO = ("fe", "fd", "te", "td", "perna_e", "perna_d")   # juntas que balançam em X e levantam do chão ao avançar
+
+
+def _eh_perna(nome):
+    return nome in PERNAS_MONSTRO or (len(nome) == 3 and nome[0] == "p" and nome[1].isdigit() and nome[2] in "ed")
+
+
+def _lado_perna(nome):
+    return 1.0 if nome.endswith("e") else -1.0
+
+
+def _angulo_perna(nome, j):
+    """Ângulo de balanço da junta e o sinal que o faz AVANÇAR (-Y, a cabeça): +X leva o pé pra trás; na aranha a pata varre em Z."""
+    if nome[0] == "p" and nome[1].isdigit():
+        return j.rotation_euler[2], -_lado_perna(nome)
+    return j.rotation_euler[0], -1.0
+
+
+def passo_legivel(pose, corpo, p, ang, fase, q, lev=0.3, quica=0.09, ginga=0.06, abre=0.5):
+    """Pose do modelo + exagero pro passo ler de frente e de costas (a 45 graus de câmera as patas somem sob o corpo e o balanço em Y
+    quase não aparece): quicada maior, ginga pro lado, e a perna que está avançando encurta (sai do chão). O peso é 1 de frente/costas,
+    0 no perfil (onde o passo já lê sozinho)."""
+    pose(fase, q)
+    w = math.cos(math.radians(ang)) ** 2
+    pernas = [n for n in p if _eh_perna(n)]
+    for n in pernas:
+        p[n].scale = (1.0, 1.0, 1.0)
+        p[n].rotation_euler[1] = 0.0
+    if w < 0.01:
+        return
+    antes = {n: _angulo_perna(n, p[n])[0] for n in pernas}
+    pose(fase + 0.2, q)
+    avanco = {n: max(0.0, (_angulo_perna(n, p[n])[0] - antes[n]) * _angulo_perna(n, p[n])[1]) for n in pernas}
+    pose(fase, q)
+    pico = max(avanco.values()) if avanco else 0.0
+    for n in pernas:
+        if pico > 0:
+            f = avanco[n] / pico
+            p[n].scale = (1.0, 1.0, 1.0 - lev * w * f)
+            if not (n[0] == "p" and n[1].isdigit()):          # a perna que avança abre pro lado: sai de baixo do corpo e aparece
+                p[n].rotation_euler[1] = -_lado_perna(n) * abre * w * f
+    corpo.location = (corpo.location[0] + ginga * w * math.sin(fase), corpo.location[1], corpo.location[2] + quica * w * abs(math.cos(fase)))
+
+
 def gerar_monstro(modulo, nome):
     import monstros
     monstros.rodar = lambda *a, **k: None            # não gera nada ao importar o módulo da região
@@ -398,27 +444,31 @@ def gerar_monstro(modulo, nome):
     m = mod.mats()
     raiz, corpo, p, pose = modelo(m)
     engrossar_olhos()
+    olhos = [o for o in bpy.data.objects if o.type == "MESH" and o.data.materials and (VARIANTES.get(_nome_base(o)) or {}).get("brilha")]
     trocar_passe("albedo")
     cam.data.shift_x = 0.0
     cam.data.shift_y = 0.0
     cena = bpy.context.scene
     esc0 = cam.data.ortho_scale
-    cena.render.resolution_x, cena.render.resolution_y = W * 2, H * 2
-    cam.data.ortho_scale = esc0 * 2.0
+    K = 3      # a medição roda numa tela K vezes maior pra nada ficar cortado (a cauda do lobo de frente estourava a tela 2x)
+    cena.render.resolution_x, cena.render.resolution_y = W * K, H * K
+    cam.data.ortho_scale = esc0 * K
     uniao = None
-    vistas = (0.0, 45.0)
+    vistas = VISTAS_MONSTRO
     for ang in vistas:
         raiz.rotation_euler = (0, 0, -math.radians(ang))
+        for o in olhos:
+            o.hide_render = ang > 100.0      # de costas os olhos (que ficam na face da frente) não aparecem
         for k, fase in enumerate(fases):
-            pose(fase, k)
+            passo_legivel(pose, corpo, p, ang, fase, k)
             cx = px3.caixa_alfa(px3.render_rgba())
             if cx is None:
                 raise RuntimeError("o modelo não apareceu no render")
             uniao = list(cx) if uniao is None else [min(uniao[0], cx[0]), min(uniao[1], cx[1]), max(uniao[2], cx[2]), max(uniao[3], cx[3])]
     uw, uh = uniao[2] - uniao[0] + 1, uniao[3] - uniao[1] + 1
-    Wn, Hn = max(W, int(math.ceil(uw)) + 2), max(H, int(math.ceil(uh)) + 3)
-    cx_n = (uniao[0] + uniao[2]) / 2.0 - W + Wn / 2.0
-    by_n = uniao[3] - H + Hn / 2.0
+    Wn, Hn = max(W, int(math.ceil(uw)) + 2), max(H, int(math.ceil(uh)) + 5)
+    cx_n = (uniao[0] + uniao[2]) / 2.0 - W * K / 2.0 + Wn / 2.0
+    by_n = uniao[3] - H * K / 2.0 + Hn / 2.0
     W, H = Wn, Hn
     cena.render.resolution_x, cena.render.resolution_y = W, H
     maior = max(W, H)
@@ -429,11 +479,13 @@ def gerar_monstro(modulo, nome):
     quadros = {}
     for v, ang in enumerate(vistas):
         raiz.rotation_euler = (0, 0, -math.radians(ang))
+        for o in olhos:
+            o.hide_render = ang > 100.0
         for q, fase in enumerate(fases):
-            pose(fase, q)
+            passo_legivel(pose, corpo, p, ang, fase, q)
             quadros[(v, q)] = render_tres(pal, True)     # o bicho olha pra esquerda no render: espelha pra olhar pra direita
     folhas = montar_folha(nome, quadros, len(vistas), N, W, H)
-    gravar("inimigo_" + nome, folhas, W, H, {"linhas": ["frente", "tres_quartos"], "colunas": ["andar%d" % k for k in range(N)],
+    gravar("inimigo_" + nome, folhas, W, H, {"linhas": LINHAS_MONSTRO, "colunas": ["andar%d" % k for k in range(N)],
                                            "pe_y": H - 2})
 
 

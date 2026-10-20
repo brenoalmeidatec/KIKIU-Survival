@@ -54,7 +54,7 @@ def lobo_sombrio(m):
     for i, y in enumerate((-0.32, -0.14, 0.04, 0.22)):
         espinho("eriçado%d" % i, (0, y, 0.84), (0, 0.6, 1), 0.2, 0.07, m["pelo_e"], corpo)
     caixa("pescoco", (0.2, 0.22, 0.24), (0, -0.5, 0.76), m["pelo"], corpo, chanfro=0.04)
-    caixa("cabeca", (0.26, 0.3, 0.24), (0, -0.64, 0.88), m["pelo"], corpo, chanfro=0.05)
+    caixa("cabeca", (0.32, 0.32, 0.28), (0, -0.64, 0.9), m["pelo"], corpo, chanfro=0.05)
     caixa("focinho", (0.14, 0.26, 0.12), (0, -0.86, 0.82), m["pelo_e"], corpo, chanfro=0.03)
     caixa("nariz", (0.06, 0.05, 0.05), (0, -0.99, 0.86), m["negro"], corpo)
     caixa("boca", (0.12, 0.2, 0.04), (0, -0.86, 0.74), m["carne_e"], corpo)
@@ -62,12 +62,14 @@ def lobo_sombrio(m):
         espinho("presa", (k, -0.94, 0.77), (0, -0.2, -1), 0.07, 0.022, m["osso"], corpo)
     for x in (0.075, -0.075):
         esfera("olho", 0.04, (x, -0.78, 0.94), m["olho_r"], corpo)
-        espinho("orelha", (x * 1.2, -0.58, 0.98), (x * 2.5, 0.25, 1), 0.17, 0.05, m["pelo_e"], corpo)
-    for nome, x, y in (("fe", 0.14, -0.36), ("fd", -0.14, -0.36), ("te", 0.14, 0.4), ("td", -0.14, 0.4)):
+        espinho("orelha", (x * 1.7, -0.58, 1.0), (x * 3.0, 0.2, 1), 0.27, 0.075, m["pelo_e"], corpo)
+    esfera("anca", 0.27, (0, 0.34, 0.64), m["pelo"], corpo, escala=(1.15, 1.0, 1.0))     # quadril largo: de costas o lobo lê como lobo
+    for nome, x, y in (("fe", 0.16, -0.36), ("fd", -0.16, -0.36), ("te", 0.19, 0.4), ("td", -0.19, 0.4)):
         p[nome] = braco("pata_" + nome, 0.1, 0.12, 0.56, (x, y, 0.58), m["pelo"], corpo)
         caixa("pe", (0.1, 0.14, 0.05), (x, y - 0.04, 0.03), m["pelo_e"], p[nome])
     p["cauda"] = junta("cauda", (0, 0.5, 0.72), corpo)
-    galho("cauda_g", (0, 0.5, 0.72), (0, 0.9, 0.82), 0.07, m["pelo_e"], p["cauda"])
+    galho("cauda_g", (0, 0.5, 0.72), (0, 0.92, 0.88), 0.1, m["pelo_e"], p["cauda"])
+    esfera("cauda_p", 0.1, (0, 0.96, 0.9), m["pelo_e"], p["cauda"], escala=(0.9, 1.4, 1.0))
 
     def pose(fase, q):
         s = math.sin(fase)
@@ -136,7 +138,7 @@ def espantalho(m):
         espinho("palha_gola", (0, 0, 1.3), (math.cos(a), math.sin(a), 0.5), 0.14, 0.035, m["palha"], corpo)
     esfera("cabeca", 0.2, (0, -0.02, 1.48), m["saco"], corpo, escala=(1.0, 0.95, 1.05))
     for x in (0.07, -0.07):
-        esfera("olho", 0.035, (x, -0.2, 1.52), m["fogo"], corpo)
+        esfera("olho", 0.04, (x, -0.225, 1.52), m["fogo"], corpo)
     for i, x in enumerate((-0.08, -0.03, 0.02, 0.07)):
         caixa("ponto%d" % i, (0.012, 0.02, 0.05), (x, -0.2, 1.4), m["negro"], corpo)   # boca costurada
     caixa("boca", (0.18, 0.02, 0.012), (0, -0.2, 1.4), m["negro"], corpo)
@@ -145,9 +147,10 @@ def espantalho(m):
 
     def pose(fase, q):
         s = math.sin(fase)
-        p["perna_e"].rotation_euler = (0.45 * s, 0, 0)
-        p["perna_d"].rotation_euler = (-0.45 * s, 0, 0)
-        p["bracos"].rotation_euler = (0, 0.12 * s, 0)
+        s = math.sin(fase + 0.4)      # fase deslocada: nunca as duas pernas juntas (de perfil virava um poste)
+        p["perna_e"].rotation_euler = (0.55 * s, 0, 0)
+        p["perna_d"].rotation_euler = (-0.55 * s, 0, 0)
+        p["bracos"].rotation_euler = (0, 0.12 * s, 0.6 + 0.2 * s)     # travessa torta: de perfil os braços não somem
         corpo.location = (0, 0, 0.07 * abs(math.sin(fase)))   # anda aos pulinhos
     return raiz, corpo, p, pose
 

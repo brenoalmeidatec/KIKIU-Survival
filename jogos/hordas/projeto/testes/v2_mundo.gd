@@ -30,6 +30,7 @@ func _ready() -> void:
 	w.modo_teste = true
 	add_child(w)
 	w.set_process(false)  # os passos são nossos
+	w.combate.diretor.ligado = false  # só os 20 moradores: o diretor faz nascer caçadores desde o 1º segundo (testes/v2_horda_chega.gd cobre isso)
 	w.heroi.entrada_forcada = Vector2.ZERO  # nenhuma tecla da máquina entra no teste
 	w.heroi.imortal = true  # monstro encostando empurra o herói (combate): aqui o assunto é mapa, câmera e movimento
 

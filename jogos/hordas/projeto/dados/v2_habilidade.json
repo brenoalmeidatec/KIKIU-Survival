@@ -1,0 +1,50 @@
+{
+	"_ajuda": "A HABILIDADE de cada herói, na tecla E (LB no controle), no padrão Overwatch: botão direito = secundário (o escudo, v2/escudo.gd), E = habilidade (v2/habilidade.gd e, no caso da ruptura, v2/ruptura.gd), Q = ultimate (v2/especial.gd, enche por dano e abates). A E tem recarga por TEMPO, curta (8 a 14 s), e a partida já começa com ela pronta; apertar na recarga é negado (som grave e o slot do HUD treme). A E é definida POR HERÓI: padrao é o id de quem não está em herois; herois mapeia a chave do herói (a mesma de `chave` no herói) para o id dele. Ids: ruptura (Hazaki: a ruptura de sempre, segurar carrega e soltar racha o chão; TODOS os números dela ficam em dados/v2_ruptura.json, inclusive a recarga e as trocas por herói), investida_escudo (Nicão) e salto_adagas (Lucas); id desconhecido deixa a tecla E sem efeito. Bloco comum: nega_t: tempo do slot do HUD tremendo quando o aperto cai na recarga; area_k: quanto a área do herói (cartas) amplia os raios, como na ruptura; piso: a menor recarga possível com as cartas de recarga (o teto de redução é o recarga_cartas_max da ruptura); numeros_max: números de dano mostrados por disparo (mais todo crítico). Cada id tem o seu bloco, com nome, rotulo (texto curto do slot do HUD, até 10 letras), icone (id de assets/v2/icones_cartas), desc e cor (RGB 0 a 1: o brilho do slot e dos efeitos). Os ids novos têm também: recarga (segundos entre dois usos, antes das cartas), dur (segundos do movimento, em que o herói fica INVULNERÁVEL e sem golpear; a ruptura, o escudo e a esquiva são cancelados ao apertar), distancia (px de chão andados, sempre inteiros em qualquer passo de tempo), anim (passo do combo cuja animação do herói toca e quantos ciclos dela cabem em dur) e foto (segundos de E em que o roteiro --roteiro=habilidade tira a foto). Distâncias em px de chão, empurrão em px/s (dividido pelo peso do monstro), atordoa e tempos em segundos; o dano passa pelo bônus de dano do herói e pelas cartas da E (Punho de terra, Pulso ligeiro e Estrondo valem para qualquer E; Contragolpe e Eco do chão só para a ruptura) e vale também para elite e chefe (elite vale metade do empurrão e chefe não é atordoado, como em qualquer golpe). INVESTIDA_ESCUDO (Nicão): alcance e largura: a faixa à frente do herói em que quem entra leva dano, empurrao (para a frente) e atordoa, uma vez só; final: no fim do avanço, uma pancada curta em volta (raio, dano, empurrao, atordoa, hit_stop, tremor). SALTO_ADAGAS (Lucas): o herói salta PARA TRÁS (contra a mira) e solta um leque de adagas para a frente na saida (decolagem) e outro, menor, no pouso; cada leque: n adagas em leque graus, com dano de CADA adaga, vel (px/s), alcance (px), perfura (monstros a mais que atravessa), empurrao e atordoa.",
+	"padrao": "ruptura",
+	"herois": {"hazaki": "ruptura", "nicao": "investida_escudo", "lucas": "salto_adagas"},
+	"comum": {
+		"nega_t": 0.25,
+		"area_k": 0.6,
+		"piso": 4.0,
+		"numeros_max": 10
+	},
+	"ruptura": {
+		"nome": "Ruptura",
+		"rotulo": "RUPTURA",
+		"icone": "ruptura",
+		"desc": "Segure para carregar e solte: o chão racha em volta do herói, causando dano, atordoando e empurrando tudo; depois a katana causa mais dano por um instante.",
+		"cor": [1.0, 0.55, 0.2]
+	},
+	"investida_escudo": {
+		"nome": "Investida de Escudo",
+		"rotulo": "INVESTIDA",
+		"icone": "escudo",
+		"desc": "Nicão investe para a frente com o escudo erguido, invulnerável, empurrando e atordoando a horda, e fecha com uma pancada onde para.",
+		"cor": [0.45, 0.9, 0.65],
+		"recarga": 10.0,
+		"dur": 0.42,
+		"distancia": 200,
+		"anim": {"passo": 0, "ciclos": 1},
+		"foto": 0.22,
+		"alcance": 60,
+		"largura": 30,
+		"dano": 34,
+		"empurrao": 560,
+		"atordoa": 1.2,
+		"final": {"raio": 66, "dano": 24, "empurrao": 380, "atordoa": 0.9, "hit_stop": 0.07, "tremor": 3.5}
+	},
+	"salto_adagas": {
+		"nome": "Salto das Adagas",
+		"rotulo": "SALTO",
+		"icone": "adagas_voadoras",
+		"desc": "Lucas salta para trás, invulnerável, soltando um leque de adagas para a frente na decolagem e outro menor ao pousar.",
+		"cor": [0.7, 0.95, 0.55],
+		"recarga": 8.0,
+		"dur": 0.34,
+		"distancia": 170,
+		"anim": {"passo": 2, "ciclos": 1},
+		"foto": 0.16,
+		"saida": {"n": 9, "leque": 70, "dano": 10, "vel": 470, "alcance": 260, "perfura": 1, "empurrao": 90, "atordoa": 0.25},
+		"pouso": {"n": 5, "leque": 36, "dano": 8, "vel": 470, "alcance": 230, "perfura": 1, "empurrao": 70, "atordoa": 0.15}
+	}
+}

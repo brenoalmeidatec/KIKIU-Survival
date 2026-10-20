@@ -16,6 +16,9 @@ CLAUDE.local.md
 # Cópias de trabalho temporárias dos agentes do Claude Code
 .claude/worktrees/
 
+# Saída do lote de playtest da v2 (ferramentas/playtest_v2.py): logs e relatórios de cada rodada
+ferramentas/saida_playtest/
+
 # Carimbo de versão do .exe, gerado por jogos/hordas/gerar_versao.sh antes de exportar
 jogos/hordas/projeto/dados/versao.json
 

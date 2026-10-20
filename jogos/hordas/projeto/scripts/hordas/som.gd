@@ -106,6 +106,11 @@ func musica(nome: String) -> void:
 	_aplicar_ganhos()
 
 
+## Carrega a faixa sem tocar (fica no cache do _stream), para a troca no meio da partida não ler o arquivo no quadro.
+func preparar_musica(nome: String) -> void:
+	_stream("res://assets/audio/musica/%s.ogg" % nome)
+
+
 func parar_musica() -> void:
 	_atual.stop()
 	_saida.stop()

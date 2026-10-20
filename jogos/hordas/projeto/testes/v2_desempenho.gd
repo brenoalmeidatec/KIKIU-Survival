@@ -96,7 +96,11 @@ func teste_lote() -> void:
 		soma += h.fatias[j].n
 	ok(soma == na_tela, "as fatias somam os monstros da tela (%d de %d)" % [soma, na_tela])
 	ok(h.usadas >= 1 and h.usadas <= na_tela / 2, "poucas fatias: %d para %d monstros" % [h.usadas, na_tela])
-	ok(h.lote_olhos.n == na_tela, "um olho por monstro (%d)" % h.lote_olhos.n)
+	var com_olho := 0  # um olho por monstro, menos quem está numa linha da folha sem emissão (de costas, por exemplo)
+	for m in h.ordem:
+		if m.emite.is_empty() or m.emite[m.linha]:
+			com_olho += 1
+	ok(h.lote_olhos.n == com_olho, "um olho por monstro com emissão (%d de %d)" % [h.lote_olhos.n, com_olho])
 	ok(h.lote_blob.n == na_tela, "uma mancha de pés por monstro (%d)" % h.lote_blob.n)
 	ok(h.lote_sombra.n > na_tela / 3, "a sombra em lote existe para eles (%d instâncias, média)" % h.lote_sombra.n)
 	var nos: int = w.no_mundo.get_child_count() - filhos0

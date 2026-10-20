@@ -1,0 +1,200 @@
+{
+  "folhas": {
+    "nevasca_congelante": {
+      "armas": [
+        "nevasca_congelante"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "nevasca_congelante_entrada.png",
+          "quadro": [
+            145,
+            114
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            72,
+            57
+          ]
+        },
+        "loop": {
+          "arquivo": "nevasca_congelante_loop.png",
+          "quadro": [
+            145,
+            114
+          ],
+          "n": 4,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            72,
+            57
+          ]
+        },
+        "saida": {
+          "arquivo": "nevasca_congelante_saida.png",
+          "quadro": [
+            145,
+            114
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            72,
+            57
+          ]
+        }
+      }
+    },
+    "cinzas_acidas": {
+      "armas": [
+        "cinzas_acidas"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "cinzas_acidas_entrada.png",
+          "quadro": [
+            150,
+            130
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            75,
+            65
+          ]
+        },
+        "loop": {
+          "arquivo": "cinzas_acidas_loop.png",
+          "quadro": [
+            150,
+            130
+          ],
+          "n": 4,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            75,
+            65
+          ]
+        },
+        "saida": {
+          "arquivo": "cinzas_acidas_saida.png",
+          "quadro": [
+            150,
+            130
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            75,
+            65
+          ]
+        }
+      }
+    },
+    "peste_negra": {
+      "armas": [
+        "peste_negra"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "peste_negra_entrada.png",
+          "quadro": [
+            130,
+            121
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            65,
+            60
+          ]
+        },
+        "loop": {
+          "arquivo": "peste_negra_loop.png",
+          "quadro": [
+            130,
+            121
+          ],
+          "n": 6,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            65,
+            60
+          ]
+        },
+        "saida": {
+          "arquivo": "peste_negra_saida.png",
+          "quadro": [
+            130,
+            121
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            65,
+            60
+          ]
+        }
+      }
+    },
+    "furacao_glacial": {
+      "armas": [
+        "furacao_glacial"
+      ],
+      "anims": {
+        "entrada": {
+          "arquivo": "furacao_glacial_entrada.png",
+          "quadro": [
+            160,
+            130
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            80,
+            65
+          ]
+        },
+        "loop": {
+          "arquivo": "furacao_glacial_loop.png",
+          "quadro": [
+            160,
+            130
+          ],
+          "n": 4,
+          "fps": 6,
+          "loop": true,
+          "ancora": [
+            80,
+            65
+          ]
+        },
+        "saida": {
+          "arquivo": "furacao_glacial_saida.png",
+          "quadro": [
+            160,
+            130
+          ],
+          "n": 3,
+          "fps": 10,
+          "loop": false,
+          "ancora": [
+            80,
+            65
+          ]
+        }
+      }
+    }
+  }
+}

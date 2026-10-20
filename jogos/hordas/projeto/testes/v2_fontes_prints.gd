@@ -71,7 +71,7 @@ func _mundo(pasta: String, prefixo: String) -> void:
 	add_child(mundo)
 	mundo.set_process(false)
 	await get_tree().process_frame
-	var sv: SubViewport = mundo.sv
+	var sv: SubViewport = mundo.ui
 	var pausa = _achar_pausa(sv)
 	Config.g_aplicar_perfil("alto")  # max_inimigos = 500
 	_tecla(KEY_ESCAPE)
