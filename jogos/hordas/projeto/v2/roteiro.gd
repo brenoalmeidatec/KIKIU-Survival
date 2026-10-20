@@ -38,7 +38,7 @@ extends RefCounted
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
 ##                         com código 3. Opções: --semente=N (sorteios), --playtest_max=S (teto de tempo de jogo, padrão 900),
-##                         --playtest_q (o robô aperta o Q quando enche; o JSON traz q_prontos, q_disparos e q_carga por fonte),
+##                         --playtest_q (o robô aperta o Q quando enche e a E quando pronta; o JSON traz q_prontos, q_disparos, e_disparos e q_carga por fonte),
 ##                         --playtest_trava=cartas|bau (depuração: o robô para de responder àquela tela, para provar o vigia),
 ##                         --playtest_fim=morte (partida curta que termina na morte real: parado, com 1 de vida, até um monstro matar).
 ##                         Usa um save temporário próprio (mundo.gd troca Meta.caminho_save), nunca o do jogador.
@@ -1058,6 +1058,7 @@ func _pt_iniciar() -> void:
 		"q_vistos": 0,
 		"q_prontos": [],
 		"q_disparos": [],
+		"e_disparos": 0,
 		"rng": RandomNumberGenerator.new(),
 		"quadros": 0,
 		"us_ant": int(mundo._us_total),
@@ -1251,6 +1252,8 @@ func _pt_jogar(dt: float) -> void:
 	h.ataque_forcado = perto != null and perto_d < 78.0 * 78.0
 	if pt.q and perto != null and perto_d < 150.0 * 150.0 and h.esp_carga >= h.esp_carga_max and h.especial():
 		pt.q_disparos.append(snappedf(mundo.tempo_partida, 0.1))
+	if pt.q and perto != null and perto_d < 130.0 * 130.0 and h.hab_id != "ruptura" and h.hab_recarga <= 0.0 and h.habilidade():
+		pt.e_disparos = int(pt.e_disparos) + 1  # a E dos heróis que não têm a ruptura (investida, salto)
 	pt.esquiva_q += 1
 	if (colados >= 5 or (chefe_colado and h.invenc <= 0.0)) and pt.esquiva_q > 60:
 		h.esquivar()
@@ -1340,6 +1343,7 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 		"pico_vivos": pt.pico_vivos,
 		"q_prontos": pt.q_prontos,
 		"q_disparos": pt.q_disparos,
+		"e_disparos": pt.e_disparos,
 		"q_carga":
 		{
 			"dano": snappedf(float(c.especial.carga_total.dano), 0.1),
