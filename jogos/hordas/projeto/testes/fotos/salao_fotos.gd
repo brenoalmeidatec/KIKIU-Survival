@@ -29,6 +29,11 @@ func _ready() -> void:
 		Meta.comprar("vida")
 		Meta.comprar("vida")
 		Meta.registrar_partida({"tempo": 320.0})  # cumpre "Sobreviva 5 minutos" (libera o Treino de guerreiro)
+	if args.has("partida"):  # --partida=tempo,combo: uma partida que não cumpre as conquistas, para o Códice mostrar progresso (3/5 min)
+		var pt := str(args.partida).split(",")
+		Meta.registrar_partida({"tempo": float(pt[0]), "maior_combo": int(pt[1])})
+	if args.has("venceu"):  # --venceu=floresta: vence o chefe do mapa (a conquista Vença a ... fica cumprida)
+		Meta.registrar_partida({"tempo": 100.0, "venceu": true, "mapa": str(args.venceu), "mapa_vencido_agora": false})
 	if args.has("max"):  # a vida no último nível: o card mostra NO MÁXIMO
 		Meta.creditar(100000)
 		for _i in int(Meta.melhoria("vida").max):
