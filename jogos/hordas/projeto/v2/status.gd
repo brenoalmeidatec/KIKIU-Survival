@@ -196,9 +196,18 @@ func _pos_na_tela(pos: Vector2) -> Vector2:
 
 
 ## O C (e o Select do controle) vale com a partida de pé, na escolha de cartas e no baú;
-## não vale com a pausa aberta (ela mostra o card dela) nem no fim da partida.
+## não vale com a pausa aberta (ela mostra o card dela), com o "Pausar agora?" das cartas aberto (ele come a entrada e o painel por cima
+## deixaria o tempo das cartas voltar a correr escondido) nem no fim da partida.
 func pode_alternar() -> bool:
-	return mundo != null and mundo.combate != null and not _pausa and str(mundo.combate.jogo) in JOGO_VIVO and not get_tree().paused
+	if mundo == null or mundo.combate == null or _pausa or not (str(mundo.combate.jogo) in JOGO_VIVO) or get_tree().paused:
+		return false
+	var tl = mundo.combate.get("telas")
+	return tl == null or not bool(tl.conf_aberta)
+
+
+## O painel central da build (C / Select sobre as cartas) está na tela agora.
+func central_aberto() -> bool:
+	return visible and _modo_atual == "central"
 
 
 ## Liga ou desliga: o painel central sobre as cartas, o card compacto no resto da partida.

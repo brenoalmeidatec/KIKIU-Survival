@@ -1388,7 +1388,7 @@ func pausa_entrada(ev: InputEvent) -> bool:
 
 
 ## Escolha de cartas e baú: o card compacto sai de cena, o C abre o painel CENTRAL por cima das cartas, nada é escolhido enquanto ele está
-## aberto, a trava de 1 s segue correndo, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
+## aberto, a trava de 1 s e o limite ficam parados, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
 func _escolha_e_bau(st, c, pausa) -> void:
 	var tela_c = c.telas
 	tecla(KEY_C)  # liga o card compacto (jogo rolando)
@@ -1424,14 +1424,11 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	for rc in rc3:
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "a coluna do painel central cabe na tela (%s)" % str(rc))
 	ok(st.retangulos_visuais().size() == 3 and not st.visual_cortada().has(true), "a página visual do painel central tem três colunas e cabe")
-	# --- a trava de 1 s das cartas segue correndo (tempo real) com o painel aberto
+	# --- a trava de 1 s das cartas fica PARADA com o painel aberto (quem lê a build não perde tempo; v2_cartas_limite cobre o limite de 8 s)
 	var trava0: float = tela_c.espera_escolha
 	ok(trava0 > 0.5, "a trava das cartas está correndo (%.2f s)" % trava0)
 	passos(15)
-	ok(
-		tela_c.espera_escolha < trava0 - 0.2 and tela_c.espera_escolha > 0.0,
-		"com o painel aberto a trava segue correndo em tempo real (%.2f s -> %.2f s depois de 0,25 s)" % [trava0, tela_c.espera_escolha]
-	)
+	ok(tela_c.espera_escolha == trava0, "com o painel aberto a trava fica parada (%.2f s -> %.2f s depois de 0,25 s)" % [trava0, tela_c.espera_escolha])
 	# --- libera a trava e prova que o PAINEL (não a trava) segura as teclas e os cliques
 	tela_c._liberar_cartas()
 	ok(tela_c.espera_escolha == 0.0, "trava liberada para o teste")
@@ -1460,20 +1457,35 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	await esperar()
 	ok(c.progresso.escolhidas == escolhidas0 and tela_c.sel == sel0, "nem o aperto nem a soltura mexem na seleção das cartas escondidas")
 	tela_c.mouse_fn = Callable()
-	# --- o ESC abre a pausa por cima do painel; ao fechar, o painel e as cartas voltam como estavam
+	# --- o ESC na escolha NÃO pausa: pede "Pausar agora?" e tira o painel central do caminho (ele cobriria o quadro e engoliria a entrada);
+	# ESC de novo é "Não". A pausa por cima do painel abre por outro caminho (perder o foco da janela) e, ao fechar, o painel e as cartas voltam.
 	tecla(KEY_ESCAPE)
 	await esperar()
-	ok(pausa.aberto and get_tree().paused, "o ESC abre a pausa com o painel central aberto")
+	ok(tela_c.conf_aberta and not pausa.aberto and not get_tree().paused, "o ESC pede confirmação (não pausa) com o painel central aberto")
+	ok(st._modo_atual != "central", "e o painel central sai do caminho da confirmação (%s)" % st._modo_atual)
+	tecla(KEY_ESCAPE)
+	await esperar()
+	ok(not tela_c.conf_aberta and c.jogo == "escolha" and c.progresso.escolhidas == escolhidas0, "ESC de novo é Não: a escolha segue")
+	tecla(KEY_C)
+	await esperar()
+	ok(st._modo_atual == "central", "C reabre o painel central")
+	pausa.pausar()
+	await esperar()
+	ok(pausa.aberto and get_tree().paused, "a pausa abre com o painel central aberto")
 	ok(st._modo_atual == "pausa", "com o menu aberto o card é o da pausa (%s)" % st._modo_atual)
 	pausa.fechar()
 	ok(not get_tree().paused and st._modo_atual == "central" and st.aberto(), "ao fechar a pausa o painel central volta (%s)" % st._modo_atual)
 	ok(c.progresso.escolhidas == escolhidas0 and c.jogo == "escolha" and c.pausado and tela_c.escolha_aberta and tela_c.sel == sel0, "e a escolha está intacta")
-	# --- o Start também abre a pausa por cima do painel: a Antena da pausa o recebe antes do card, como o ESC
+	# --- o Start faz o mesmo que o ESC na escolha: pede confirmação
 	botao(JOY_BUTTON_START)
 	await esperar()
-	ok(pausa.aberto and get_tree().paused, "o Start abre a pausa com o painel central aberto")
-	pausa.fechar()
-	ok(not get_tree().paused and st._modo_atual == "central" and st.aberto(), "ao fechar a pausa do Start o painel central volta (%s)" % st._modo_atual)
+	ok(tela_c.conf_aberta and not pausa.aberto, "o Start pede confirmação com o painel central aberto")
+	botao(JOY_BUTTON_START)
+	await esperar()
+	ok(not tela_c.conf_aberta and not get_tree().paused and c.jogo == "escolha", "o Start de novo é Não")
+	tecla(KEY_C)
+	await esperar()
+	ok(st._modo_atual == "central" and st.aberto(), "C reabre o painel central")
 	# --- C fecha o painel: as cartas voltam e as teclas da escolha funcionam
 	tecla(KEY_C)
 	await esperar()
