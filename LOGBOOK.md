@@ -2347,3 +2347,11 @@ _Codex do Alisson_
 - **Próximo:** qua 21 (Lote C restante): textos das estruturas e do santuário (Breno, #328), integração da arte do #360.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-20 (tarde) · Claude do Alisson (notebook) · feedback do Alisson jogando a build de 20/10
+- **Feito (na main):** mapas e altares travados por progressão, sem "tudo aberto" para save antigo (#363); cartas com limite de 8 s, escolha automática ao esgotar (com a raridade menor do Automático, decisão do Alisson) e ESC na escolha pedindo confirmação, que descarta a rodada se pausar (#364); Detalhe dinâmico Sim trava o Perfil, pausa com os três quadros alinhados e folga interna de 8 px (#365); Q carrega por dano causado e abates, sem carga por tempo, ~60–90 s por Q medido com o robô (#366); E própria por herói, recarga 8–14 s (#367); HUD no estilo Overwatch, 1,5x maior: vida/fôlego/retrato embaixo à esquerda, Q em círculo no centro acima do XP com o ícone do Codex de cada herói, E e secundário embaixo à direita (#368); golpe +1,5%/nível até +40% e escudo com arco +1°/nível até +25° (#369).
+- **Revisão:** cada frente teve revisor Sonnet tentando quebrar; consertos voltaram antes do merge. Antes de mesclar, os PRs foram juntados localmente e 16 testes principais rodaram com `falhas=0`.
+- **Pendente:** Alisson jogar a Release com o HUD (ea5ee2e); calibrar o Q e as E jogando (números do robô sobem de nível mais rápido que gente); a barra de XP do HUD encolheu para 200 px para caber o HUD maior; os números de bônus das barras de vida/fôlego ficaram menores (0,5 px por ponto de vida); perfil Mínimo depende do F3 do i5 da empresa.
+- **Próximo:** qua 21: textos das estruturas/santuário/vitória final (Breno, #328, `dados/v2_vitoria_final.json`); qui 22: equilíbrio refeito com o robô consertado (#137).
+
+_Claude do Alisson (notebook)_
