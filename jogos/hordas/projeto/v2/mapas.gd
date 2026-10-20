@@ -49,13 +49,18 @@ static func buscar(id: String) -> Dictionary:
 	return LISTA[0]
 
 
-## O mapa escolhido no santuário (lido do save a cada chamada, como o resto da meta-progressão).
+## O mapa escolhido no santuário (lido do save a cada chamada, como o resto da meta-progressão). Se o escolhido está trancado
+## (save editado, ou escolha de antes das travas), volta ao padrão: ninguém entra num mapa que a progressão ainda não abriu.
 static func escolhido() -> String:
 	var cf := Meta._ler()
-	return str(buscar(str(cf.get_value("config", "mapa", PADRAO)) if cf != null else PADRAO).id)
+	var m := buscar(str(cf.get_value("config", "mapa", PADRAO)) if cf != null else PADRAO)
+	return str(m.id) if condicao(m) == "" else PADRAO
 
 
+## Grava o mapa da próxima partida. Mapa trancado não é gravado (devolve false e o save fica como estava).
 static func escolher(id: String) -> bool:
+	if condicao(buscar(id)) != "":
+		return false
 	Meta.erro_save = false
 	var cf := Meta._ler()
 	if cf == null:
@@ -66,7 +71,11 @@ static func escolher(id: String) -> bool:
 	return not Meta.erro_save
 
 
-## O seguinte da lista (dando a volta), a partir do id dado.
+## O próximo mapa ABERTO da lista (dando a volta), a partir do id dado; sem outro aberto, o mesmo.
 static func proximo(id: String, passo := 1) -> String:
 	var i := ids().find(str(buscar(id).id))
-	return str(LISTA[posmod(i + passo, LISTA.size())].id)
+	for k in LISTA.size():
+		var m: Dictionary = LISTA[posmod(i + passo * (k + 1), LISTA.size())]
+		if condicao(m) == "":
+			return str(m.id)
+	return str(LISTA[i].id)

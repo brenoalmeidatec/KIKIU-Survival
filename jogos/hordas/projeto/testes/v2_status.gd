@@ -277,6 +277,9 @@ func _md5(caminho: String) -> String:
 ## almas 2 (+16% de almas por partida).
 func _santuario() -> void:
 	Meta.registrar_partida({"tempo": 400.0, "abates": 0, "nivel": 1, "maior_combo": 0, "venceu": false, "almas": 5000})
+	# Raridade e rolagem só abrem ao vencer o Laboratório e a Cidade (dados/v2_meta.json, requer): libera de forma explícita.
+	for mapa in ["floresta", "laboratorio", "cidade"]:
+		Meta.marcar_mapa_vencido(mapa)
 	for par in [["vida", 2], ["dano", 2], ["velocidade", 1], ["folego", 1], ["ima", 1], ["treino", 1], ["raridade", 1], ["rolagem", 1], ["almas", 2]]:
 		for i in int(par[1]):
 			ok(Meta.comprar(str(par[0])), "comprou %s no Santuário de teste" % par[0])

@@ -5,10 +5,11 @@ extends RefCounted
 ## vêm de dados/v2_meta.json. Não há estado em memória: cada leitura vem do arquivo, e os testes trocam `caminho_save` por um
 ## arquivo temporário para não tocar no save real.
 ## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida;
-## [progressao] versao, legado (save de antes das travas do santuário: tudo aberto) e partidas (v2/progressao.gd lê as travas).
+## [progressao] versao e partidas (v2/progressao.gd lê as travas). A chave legado das versões antigas não vale mais: save antigo
+## segue as mesmas travas, mantendo só o que conquistou.
 ## Mapa vencido é a conquista vence_<id>; a seção antiga [mapas_vencidos] é migrada na leitura e não volta a ser gravada.
 
-const VERSAO_PROGRESSAO := 1
+const VERSAO_PROGRESSAO := 2
 
 static var caminho_save := "user://v2_progresso.cfg"
 static var erro_save := false
@@ -134,20 +135,20 @@ static func texto_item(item: Dictionary) -> String:
 	return t
 
 
-## Migração das travas do santuário: um save sem [progressao] versao é de antes delas. Se ele já tinha progresso (alguma partida,
-## melhoria, conquista ou almas), fica com tudo aberto (legado = true), porque antes estava tudo aberto. Só marca na memória:
-## a próxima gravação persiste, e daí em diante o save não é mais tratado como antigo.
+## Migração das travas do santuário. Save de antes delas (sem [progressao] versao) já ficou "tudo aberto" (legado), mas isso
+## contrariava o combinado: mapas e altares abrem pela progressão. Agora o save antigo segue as mesmas travas e MANTÉM o que
+## conquistou: a conquista antiga Derrote o chefe (de antes dos mapas) vale como Vença a Floresta, e mapa vencido é mapa aberto
+## (Progressao.aberto). A chave legado de versões antigas é apagada. Só marca na memória: a próxima gravação persiste.
 static func _migrar(cf: ConfigFile) -> ConfigFile:
 	if cf == null:
 		return null
-	if not cf.has_section_key("progressao", "versao"):
-		var tinha := cf.has_section("ultima") or int(cf.get_value("moeda", "almas", 0)) > 0
-		for secao in ["melhorias", "conquistas", "mapas_vencidos"]:
-			if cf.has_section(secao):
-				for k in cf.get_section_keys(secao):
-					tinha = tinha or (int(cf.get_value(secao, k, 0)) > 0 if secao == "melhorias" else bool(cf.get_value(secao, k, false)))
+	var versao := int(cf.get_value("progressao", "versao", 0))
+	if versao < VERSAO_PROGRESSAO:
+		if cf.has_section_key("progressao", "legado"):
+			cf.erase_section_key("progressao", "legado")
+		if bool(cf.get_value("conquistas", "derrota_chefe", false)) and not bool(cf.get_value("conquistas", "vence_floresta", false)):
+			cf.set_value("conquistas", "vence_floresta", true)
 		cf.set_value("progressao", "versao", VERSAO_PROGRESSAO)
-		cf.set_value("progressao", "legado", tinha)
 	if cf.has_section("mapas_vencidos"):
 		for c in conquistas():
 			if c.has("mapa") and bool(cf.get_value("mapas_vencidos", str(c.mapa), false)):

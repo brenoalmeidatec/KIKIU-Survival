@@ -602,7 +602,10 @@ func _montar_lista() -> void:
 func _texto_da_lista(it: Dictionary) -> String:
 	if _p_codice:
 		return "%s\n%s" % [it.nome, "cumprida" if Meta.estado().conquistas.get(str(it.id), false) else "falta"]
-	return "%s\n%d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)]
+	var nivel := Meta.nivel(str(it.id))
+	if nivel < int(it.max) and not _liberada(it):  # trancada: a lista já diz o que abre (não some, não precisa abrir o item)
+		return "%s\n%d/%d - %s" % [it.nome, nivel, int(it.max), _nome_conquista(str(it.requer))]
+	return "%s\n%d/%d" % [it.nome, nivel, int(it.max)]
 
 
 func _mostrar_item(i: int) -> void:
