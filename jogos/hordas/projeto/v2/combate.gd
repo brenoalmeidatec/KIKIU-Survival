@@ -25,6 +25,7 @@ const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
 const Ruptura := preload("res://v2/ruptura.gd")
 const Escudo := preload("res://v2/escudo.gd")
+const Especial := preload("res://v2/especial.gd")
 const Herois := preload("res://v2/herois.gd")
 const Adagas := preload("res://v2/adagas.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
@@ -56,6 +57,7 @@ var baus
 var chefes
 var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
+var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Lucas (pool, v2/adagas.gd)
 var heroi_id := "hazaki"  # o herói da partida (v2/herois.gd)
 var fim_emitido := false  # partida_terminou já saiu
@@ -155,6 +157,8 @@ func montar(m) -> void:
 	ruptura.montar(self, m.glow)
 	escudo = Escudo.new()
 	escudo.montar(self, m.glow)
+	especial = Especial.new()
+	especial.montar(self, m.glow)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
@@ -271,6 +275,7 @@ func atualizar(dt: float) -> void:
 		var t2 := Time.get_ticks_usec()
 		avisos.atualizar(dt)
 		ruptura.atualizar(dt)
+		especial.atualizar(dt)
 		baus.atualizar(dt)
 		mundo._perfil("c_diretor", t0 - d0)
 		mundo._perfil("c_armas", t1 - t0)
@@ -408,6 +413,7 @@ func efeitos(dt: float) -> void:
 	fx.atualizar(dt)
 	ruptura.efeitos(dt)
 	escudo.efeitos(dt)
+	especial.efeitos(dt)
 	telas.atualizar(dt)
 
 
@@ -602,6 +608,7 @@ func matar(m) -> void:
 		orbes.soltar(m.pos, m.xp * mult)
 	if float(armas.mods.folego) > 0.0:  # modificador da katana: matar recupera fôlego
 		mundo.heroi.ganhar_folego(float(armas.mods.folego) / 100.0)
+	especial.abate(m)  # cada abate encurta a recarga do especial (Q)
 	if m.elite:
 		elites.ao_morrer(m)
 	if m.chefe:
@@ -856,6 +863,7 @@ func limpar_partida() -> void:
 	avisos.limpar()
 	ruptura.limpar()
 	escudo.limpar()
+	especial.limpar()
 	baus.limpar()
 	elites.zerar()
 	chefes.zerar()
@@ -888,7 +896,7 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, elites, baus, chefes]:
+	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, especial, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -905,6 +913,7 @@ func liberar() -> void:
 	avisos = null
 	ruptura = null
 	escudo = null
+	especial = null
 	elites = null
 	baus = null
 	chefes = null

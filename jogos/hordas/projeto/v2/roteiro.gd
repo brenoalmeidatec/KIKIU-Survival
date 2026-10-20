@@ -28,6 +28,9 @@ extends RefCounted
 ##                         anel fantasma no raio final e anel interno), 2_cheia_perfeita (anel piscando na janela perfeita), 3_disparo (0,10 s
 ##                         depois de soltar: onda, rachaduras, números), 4_depois (0,6 s: monstros empurrados e atordoados, katana alaranjada
 ##                         no contragolpe) e 5_slot (HUD com o slot em recarga). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=especial    (tecla Q) o ESPECIAL do herói escolhido (--heroi=hazaki|nicao|lucas) contra 30 monstros em volta (e uma fila à frente, para
+##                         a investida). Fotos do viewport: 1_pronto (o slot Q aceso, antes de apertar), 2_especial (o momento forte: a investida do
+##                         Hazaki, a batida e a onda do Nicão, a tempestade do Lucas) e 3_slot (0,25 s depois de acabar: o slot Q em recarga). Usar com --fotos=PASTA --nome=prefixo.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -114,6 +117,8 @@ func atualizar(dt: float) -> void:
 				_r_cerco()
 			"ruptura":
 				_r_ruptura()
+			"especial":
+				_r_especial()
 			"golpes":
 				_r_golpes()
 			"hud_golpes":
@@ -817,6 +822,62 @@ func _r_ruptura() -> void:
 		8:
 			mundo.get_tree().quit()
 			return
+
+
+## O especial (tecla Q) do herói escolhido: 30 monstros em volta, 6 em fila à frente (a faixa da investida) e o herói imortal e parado. A foto do
+## slot aceso sai aos 0,3 s e o especial dispara em seguida; a foto 2 sai no instante forte de cada herói (`foto` no bloco dele em dados/v2_especial.json)
+## e a 3 logo depois do fim.
+func _r_especial() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			mundo.mouse_forcado = h.centro() + Vector2(100, 0)
+			var tipos := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_lobo_sombrio", "inimigo_espantalho"]
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 23
+			for i in 30:
+				var a := TAU * float(i) / 30.0 + rng.randf_range(-0.1, 0.1)
+				var r := rng.randf_range(70.0, 230.0)
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(cos(a) * r, sin(a) * r * 0.62), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			for i in 6:
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(70.0 + 35.0 * float(i), rng.randf_range(-6.0, 6.0)), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			h.esp_recarga = 0.0
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.3:
+				_foto("1_pronto")
+				passo = 2
+				t_passo = 0.0
+		2:
+			h.especial()
+			passo = 3
+			t_passo = 0.0
+		3:
+			var b: Dictionary = mundo.combate.especial.bloco_de(str(h.chave))
+			if h.estado == h.Estado.ESPECIAL and h.esp_t >= float(b.get("foto", 0.5)):
+				_foto("2_especial")
+				passo = 4
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 4
+		4:
+			if h.estado != h.Estado.ESPECIAL:
+				passo = 5
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 5
+		5:
+			if t_passo > 0.25:
+				_foto("3_slot")
+				passo = 6
+		6:
+			mundo.get_tree().quit()
 
 
 func _r_oclusao() -> void:

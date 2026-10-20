@@ -139,7 +139,7 @@ var _chefe_fantasma := 1.0
 var _chefe_espera := 0.0
 # slot da ruptura: o que foi desenhado por último (só redesenha quando muda)
 var _rb: Control = null
-var _ult: Control = null  # o slot do ULTIMATE (tecla Q): reservado, vazio, sem mecânica ainda
+var _ult: Control = null  # o slot Q antigo: fica apagado e escondido, quem desenha o Q de verdade (o especial do herói) é hud_habilidades.gd
 var _rb_chave := ""
 var _rb_barra := 0  # px da barra de carga (0 a 20)
 var _rb_cortina := 0  # px da cortina da recarga (0 a 20)
@@ -480,7 +480,7 @@ func _desenhar_slot() -> void:
 		_rb.draw_rect(Rect2(1, 0, float(_rb_contra), 1), Paleta.CONTRAGOLPE)
 
 
-## O slot do ultimate (Q): moldura apagada e a letra Q, sem barra nem recarga (a mecânica ainda não existe).
+## O slot Q antigo: moldura apagada e a letra Q. O hud_habilidades.gd o esconde (alfa zero) e desenha o slot do especial no lugar dele.
 func _desenhar_ultimate() -> void:
 	var s := float(RB_TAM)
 	var apagado := Paleta.HABILIDADE_DESATIVADA

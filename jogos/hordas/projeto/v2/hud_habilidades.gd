@@ -1,5 +1,6 @@
 extends Control
-## Dois slots de habilidade no HUD. E lê somente os campos publicados pelo herói; Q fica explicitamente reservada.
+## Dois slots de habilidade no HUD. E (a ruptura) e Q (o especial do herói, v2/especial.gd) leem somente os campos publicados pelo herói: sem os
+## campos, o slot fica apagado (E "INDISP.", Q "EM BREVE") e nunca indica uma habilidade pronta que não existe.
 
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
@@ -20,7 +21,14 @@ const FOLGA_MOLDURA := 4.0  # espessura da borda de pedra: o quadro do ícone co
 var estado_e := "indisponivel"  # indisponivel | ruptura
 var e_disponivel := false
 var e_pronta := false
-var q_implementada := false  # Q nunca ganha disponibilidade sem uma mecânica publicada.
+var q_implementada := false  # Q só acende se o herói publica um especial real (esp_nome); sem os campos ela fica apagada.
+var q_pronta := false
+var q_recarga_px := 0
+var q_recarga_s := 0.0
+var q_negada := false
+var q_ativa := false  # o especial está em andamento
+var q_rotulo := ""
+var q_cor := Color.WHITE
 var carga_px := 0
 var recarga_px := 0
 var contragolpe_px := 0
@@ -76,7 +84,24 @@ func sincronizar(heroi) -> void:
 		_heroi_id = id_heroi
 	e_disponivel = _tem_propriedade(heroi, "rup_carga")
 	estado_e = "ruptura" if e_disponivel else "indisponivel"
-	q_implementada = false
+	q_implementada = _tem_propriedade(heroi, "esp_recarga") and str(_campo(heroi, "esp_nome", "")) != ""
+	q_pronta = false
+	q_recarga_px = 0
+	q_recarga_s = 0.0
+	q_negada = false
+	q_ativa = false
+	q_rotulo = ""
+	q_cor = Color.WHITE
+	if q_implementada:
+		var rec := maxf(float(_campo(heroi, "esp_recarga", 0.0)), 0.0)
+		var rec_max := maxf(float(_campo(heroi, "esp_recarga_max", 1.0)), 0.001)
+		q_pronta = rec <= 0.0
+		q_recarga_s = rec
+		q_recarga_px = mini(ceili(rec / rec_max * 20.0), 20) if rec > 0.0 else 0
+		q_negada = float(_campo(heroi, "esp_nega_t", 0.0)) > 0.0
+		q_ativa = float(_campo(heroi, "esp_t", 0.0)) > 0.0
+		q_rotulo = str(_campo(heroi, "esp_rotulo", ""))
+		q_cor = _campo(heroi, "esp_cor", Color.WHITE)
 	e_pronta = false
 	carga_px = 0
 	recarga_px = 0
@@ -102,9 +127,28 @@ func sincronizar(heroi) -> void:
 		negada = float(_campo(heroi, "rup_nega_t", 0.0)) > 0.0
 	var rotulo := _rotulo_e()
 	var fase_perfeita := int(Time.get_ticks_msec() / 50.0) % 2 if perfeita else 0
+	var fase_q := int(Time.get_ticks_msec() / 160.0) % 2 if q_pronta or q_ativa or q_negada else 0  # o brilho do slot pronto pulsa
 	var nova_chave := (
-		"%s|%s|%s|%d|%d|%d|%d|%s|%s|%s|%d"
-		% [estado_e, e_pronta, q_implementada, carga_px, carga_percentual, recarga_px, contragolpe_px, perfeita, negada, rotulo, fase_perfeita]
+		"%s|%s|%s|%d|%d|%d|%d|%s|%s|%s|%d|%s|%d|%s|%s|%d|%s"
+		% [
+			estado_e,
+			e_pronta,
+			q_implementada,
+			carga_px,
+			carga_percentual,
+			recarga_px,
+			contragolpe_px,
+			perfeita,
+			negada,
+			rotulo,
+			fase_perfeita,
+			q_pronta,
+			q_recarga_px,
+			_rotulo_q(),
+			q_negada,
+			fase_q,
+			q_ativa
+		]
 	)
 	if nova_chave != _chave:
 		_chave = nova_chave
@@ -120,7 +164,8 @@ func _draw() -> void:
 func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var card := Rect2(origem, TAM_CARD)
 	draw_rect(card, FUNDO_CARD)
-	_moldura_pedra(card, tecla == "E" and e_disponivel)
+	var ativo := e_disponivel if tecla == "E" else q_implementada
+	_moldura_pedra(card, ativo)
 	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, FOLGA_MOLDURA + 1.0)
 	var icone := Rect2(icon_pos, TAM_ICON)
 	var cor := CARGA_LARANJA if tecla == "E" and e_pronta else DESATIVADO
@@ -130,12 +175,23 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		cor = Paleta.PERIGO
 	if tecla == "E" and perfeita and int(Time.get_ticks_msec() / 50.0) % 2 == 0:
 		cor = Paleta.BRANCO
+	if tecla == "Q" and q_implementada:
+		cor = q_cor if q_pronta or q_ativa else DESATIVADO
+		if q_negada:
+			cor = Paleta.PERIGO
+		elif (q_pronta or q_ativa) and int(Time.get_ticks_msec() / 160.0) % 2 == 0:
+			cor = q_cor.lerp(Paleta.BRANCO, 0.45)  # pronto: o quadro do ícone pulsa
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
 	var arte := Dados.icone_carta("ruptura" if tecla == "E" else "ultimate_q")
 	if arte != null:
 		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro de 48; apagado quando não está disponível
-		draw_texture(arte, icon_pos + (TAM_ICON - arte.get_size()) * 0.5, Color.WHITE if tecla == "E" and e_disponivel else DESATIVADO)
+		var tinta := DESATIVADO
+		if tecla == "E" and e_disponivel:
+			tinta = Color.WHITE
+		elif tecla == "Q" and q_implementada:
+			tinta = q_cor.lerp(Paleta.BRANCO, 0.35) if q_pronta or q_ativa else DESATIVADO  # o selo cinza toma a cor do especial quando pronto
+		draw_texture(arte, icon_pos + (TAM_ICON - arte.get_size()) * 0.5, tinta)
 	elif tecla == "E":
 		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura (reserva, se o ícone faltar).
 		var p := icon_pos
@@ -170,30 +226,31 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 			draw_rect(Rect2(icon_pos + Vector2(2.0, 43.0), Vector2(44.0 * f, 3.0)), cor)
 		if contragolpe_px > 0:
 			draw_rect(Rect2(icon_pos + Vector2(2.0, 45.0), Vector2(44.0 * float(contragolpe_px) / 20.0, 2.0)), Paleta.CONTRAGOLPE)
-	var rotulo := "EM BREVE" if tecla == "Q" else _rotulo_e()
-	draw_string(
-		fonte,
-		Vector2(origem.x, 63.0),
-		rotulo,
-		HORIZONTAL_ALIGNMENT_CENTER,
-		TAM_CARD.x,
-		Paleta.NUMERO_PEQUENO,
-		cor if tecla == "E" and e_disponivel else DESATIVADO
-	)
+	if tecla == "Q" and q_implementada and q_recarga_px > 0:
+		var altura_q := 46.0 * clampf(float(q_recarga_px) / 20.0, 0.0, 1.0)
+		draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(46.0, altura_q)), Color(Paleta.PRETO, 0.56))
+		if q_recarga_px < 20:
+			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + altura_q), Vector2(46.0, 1.0)), Color(Paleta.RECARGA_LINHA, 0.95))
+	var rotulo := _rotulo_q() if tecla == "Q" else _rotulo_e()
+	var texto_aceso := (tecla == "E" and e_disponivel) or (tecla == "Q" and q_implementada and (q_pronta or q_ativa))
+	draw_string(fonte, Vector2(origem.x, 63.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor if texto_aceso else DESATIVADO)
 	var nome_tecla := Glifos.texto("habilidade" if tecla == "E" else "ultimate")
 	var larg_selo := maxf(16.0, 8.0 * float(nome_tecla.length()) + 8.0)
 	var selo := Rect2(origem + Vector2((TAM_CARD.x - larg_selo) * 0.5, 64.0), Vector2(larg_selo, 10.0))
 	draw_rect(selo, Color(Paleta.PAINEL, 0.98))
-	_moldura(selo, cor if tecla == "E" and e_disponivel else DESATIVADO)
+	_moldura(selo, cor if texto_aceso else DESATIVADO)
 	draw_string(
-		fonte,
-		selo.position + Vector2(0.0, 9.0),
-		nome_tecla,
-		HORIZONTAL_ALIGNMENT_CENTER,
-		larg_selo,
-		Paleta.NUMERO_PEQUENO,
-		cor if tecla == "E" and e_disponivel else DESATIVADO
+		fonte, selo.position + Vector2(0.0, 9.0), nome_tecla, HORIZONTAL_ALIGNMENT_CENTER, larg_selo, Paleta.NUMERO_PEQUENO, cor if texto_aceso else DESATIVADO
 	)
+
+
+## O texto do card Q: "EM BREVE" sem especial no herói, os segundos que faltam na recarga, ou o rótulo do especial quando pronto.
+func _rotulo_q() -> String:
+	if not q_implementada:
+		return "EM BREVE"
+	if q_recarga_s > 0.0:
+		return "%d S" % ceili(q_recarga_s)
+	return q_rotulo
 
 
 func _rotulo_e() -> String:
