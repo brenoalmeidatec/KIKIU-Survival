@@ -29,12 +29,13 @@ extends RefCounted
 ##                         depois de soltar: onda, rachaduras, números), 4_depois (0,6 s: monstros empurrados e atordoados, katana alaranjada
 ##                         no contragolpe) e 5_slot (HUD com o slot em recarga). Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=especial    (tecla Q) o ESPECIAL do herói escolhido (--heroi=hazaki|nicao|lucas) contra 30 monstros em volta (e uma fila à frente, para
-##                         a investida). Fotos do viewport: 1_pronto (o slot Q aceso, antes de apertar), 2_especial (o momento forte: a investida do
-##                         Hazaki, a batida e a onda do Nicão, a tempestade do Lucas) e 3_slot (0,25 s depois de acabar: o slot Q em recarga). Usar com --fotos=PASTA --nome=prefixo.
+##                         a investida). Fotos do viewport: 0_vazio (o slot Q com 0% de carga) e 0b_meio (55%), 1_pronto (o slot Q cheio e pulsando, antes de apertar), 2_especial (o momento forte: a investida do
+##                         Hazaki, a batida e a onda do Nicão, a tempestade do Lucas) e 3_slot (0,25 s depois de acabar: o slot Q vazio de novo). Usar com --fotos=PASTA --nome=prefixo.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
 ##                         com código 3. Opções: --semente=N (sorteios), --playtest_max=S (teto de tempo de jogo, padrão 900),
+##                         --playtest_q (o robô aperta o Q quando enche; o JSON traz q_prontos, q_disparos e q_carga por fonte),
 ##                         --playtest_trava=cartas|bau (depuração: o robô para de responder àquela tela, para provar o vigia),
 ##                         --playtest_fim=morte (partida curta que termina na morte real: parado, com 1 de vida, até um monstro matar).
 ##                         Usa um save temporário próprio (mundo.gd troca Meta.caminho_save), nunca o do jogador.
@@ -876,7 +877,25 @@ func _r_especial() -> void:
 				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(70.0 + 35.0 * float(i), rng.randf_range(-6.0, 6.0)), true)
 				m.vida = 99999.0
 				m.vida_max = 99999.0
-			h.esp_recarga = 0.0
+			h.esp_carga = 0.0
+			passo = 10
+			t_passo = 0.0
+		10:  # o slot Q vazio (0%), depois no meio (55%) e por fim cheio e pulsando (a foto é assíncrona: a carga só muda no passo seguinte)
+			if t_passo > 0.3:
+				_foto("0_vazio")
+				passo = 12
+				t_passo = 0.0
+		12:
+			h.esp_carga = h.esp_carga_max * 0.55
+			passo = 11
+			t_passo = 0.0
+		11:
+			if t_passo > 0.3:
+				_foto("0b_meio")
+				passo = 13
+				t_passo = 0.0
+		13:
+			h.esp_carga = h.esp_carga_max
 			passo = 1
 			t_passo = 0.0
 		1:
@@ -960,6 +979,10 @@ func _pt_iniciar() -> void:
 		"max": float(args.get("playtest_max", 900.0)),
 		"trava_forcada": str(args.get("playtest_trava", "")),
 		"fim": str(args.get("playtest_fim", "")),
+		"q": args.has("playtest_q"),  # --playtest_q: o robô aperta o Q assim que a carga enche
+		"q_vistos": 0,
+		"q_prontos": [],
+		"q_disparos": [],
 		"rng": RandomNumberGenerator.new(),
 		"quadros": 0,
 		"us_ant": int(mundo._us_total),
@@ -1010,6 +1033,9 @@ func _playtest(dt: float) -> void:
 	pt.us_ant = us
 	pt.quadro_ms.append(dt * 1000.0)
 	pt.pico_vivos = maxi(int(pt.pico_vivos), mundo.monstros.size())
+	while int(pt.q_vistos) < int(c.especial.prontos):  # a carga do Q chegou a 100: anota o segundo de jogo
+		pt.q_vistos = int(pt.q_vistos) + 1
+		pt.q_prontos.append(snappedf(mundo.tempo_partida, 0.1))
 	if mundo.tempo_partida >= float(pt.prox_linha):
 		pt.prox_linha = float(pt.prox_linha) + 60.0
 		pt.linha.append({"t": roundi(mundo.tempo_partida), "nivel": h.nivel, "vida": roundi(h.vida), "vivos": mundo.monstros.size(), "abates": mundo.abates})
@@ -1148,6 +1174,8 @@ func _pt_jogar(dt: float) -> void:
 		mundo.mouse_forcado = h.centro() + h.entrada_forcada * 60.0
 	h.fonte = h.Fonte.MOUSE
 	h.ataque_forcado = perto != null and perto_d < 78.0 * 78.0
+	if pt.q and perto != null and perto_d < 150.0 * 150.0 and h.esp_carga >= h.esp_carga_max and h.especial():
+		pt.q_disparos.append(snappedf(mundo.tempo_partida, 0.1))
 	pt.esquiva_q += 1
 	if (colados >= 5 or (chefe_colado and h.invenc <= 0.0)) and pt.esquiva_q > 60:
 		h.esquivar()
@@ -1235,6 +1263,14 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 		"elites": pt.elites,
 		"chefes": pt.chefes,
 		"pico_vivos": pt.pico_vivos,
+		"q_prontos": pt.q_prontos,
+		"q_disparos": pt.q_disparos,
+		"q_carga":
+		{
+			"dano": snappedf(float(c.especial.carga_total.dano), 0.1),
+			"abate": snappedf(float(c.especial.carga_total.abate), 0.1),
+			"recebido": snappedf(float(c.especial.carga_total.recebido), 0.1)
+		},
 		"quadros": pt.quadros,
 		"proc_ms": _pt_pcts(pt.proc_ms),
 		"quadro_ms": _pt_pcts(pt.quadro_ms),
