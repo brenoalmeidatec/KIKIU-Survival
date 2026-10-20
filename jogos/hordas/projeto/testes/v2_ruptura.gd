@@ -785,7 +785,7 @@ func _ready() -> void:
 	)
 	ok(rp.somas.dano == 0.0 and rp.disparos == 0, "reiniciar zera os bônus das cartas da ruptura")
 
-	# 24. HUD: o slot aparece com o herói da ruptura e some no mundo falso
+	# 24. HUD: o slot E (v2/hud_habilidades.gd, canto de baixo à direita) lê a ruptura do herói e fica apagado no mundo falso
 	zerar()
 	var vista := SubViewport.new()
 	vista.size = Vector2i(960, 540)
@@ -795,28 +795,30 @@ func _ready() -> void:
 	vista.add_child(hud)
 	hud.set_process(false)
 	hud.avancar(PASSO)
-	ok(hud._rb != null and hud._rb.visible, "o slot da ruptura aparece com o herói da v2")
-	ok(hud._rb.light_mask == 0 and hud._rb.mouse_filter == Control.MOUSE_FILTER_IGNORE, "o slot é fora da luz e não pega o mouse")
+	var slot = hud.get_node("Raiz/Habilidades")
+	slot.sincronizar(h)
+	ok(slot.e_disponivel and slot.estado_e == "ruptura", "o slot E mostra a ruptura com o herói da v2")
+	ok(slot.light_mask == 0 and slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "o slot é fora da luz e não pega o mouse")
 	segurar()
 	passos(30)
-	hud.avancar(PASSO)
-	ok(hud._rb_barra > 5, "em carga a barra do slot enche (%d px)" % hud._rb_barra)
+	slot.sincronizar(h)
+	ok(slot.carga_px > 5, "em carga a barra do slot enche (%d px)" % slot.carga_px)
 	h.cancelar_ruptura(false)
 	h.rup_recarga = 1.3
 	h.rup_recarga_max = 2.6
-	hud.avancar(PASSO)
-	ok(hud._rb_cortina >= 9 and hud._rb_cortina <= 11 and not hud._rb_pronta, "em recarga a cortina cobre a fração que falta (%d px)" % hud._rb_cortina)
+	slot.sincronizar(h)
+	ok(slot.recarga_px >= 9 and slot.recarga_px <= 11 and not slot.e_pronta, "em recarga a cortina cobre a fração que falta (%d px)" % slot.recarga_px)
 	h.rup_recarga = 0.0
-	hud.avancar(PASSO)
-	ok(hud._rb_pronta and hud._rb_pop > 0.0, "recarga zerada: pop de 'pronta'")
+	slot.sincronizar(h)
+	ok(slot.e_pronta, "recarga zerada: o slot volta pronto")
 	h.rup_nega_t = 0.2
-	hud.avancar(PASSO)
-	ok(hud._rb_nega, "negado: moldura vermelha")
+	slot.sincronizar(h)
+	ok(slot.negada, "negado: moldura vermelha")
 	h.rup_nega_t = 0.0
 	h.contragolpe_t = 0.75
 	h.contragolpe_max = 1.5
-	hud.avancar(PASSO)
-	ok(hud._rb_contra == 10, "contragolpe aberto: faísca proporcional (%d px)" % hud._rb_contra)
+	slot.sincronizar(h)
+	ok(slot.contragolpe_px == 10, "contragolpe aberto: faísca proporcional (%d px)" % slot.contragolpe_px)
 	h.contragolpe_t = 0.0
 	hud.queue_free()
 	var vista2 := SubViewport.new()
@@ -826,13 +828,17 @@ func _ready() -> void:
 	vista2.add_child(hud2)
 	hud2.set_process(false)
 	hud2.avancar(PASSO)
-	ok(hud2._rb != null and not hud2._rb.visible, "sem os campos da ruptura no herói o slot fica invisível")
+	var slot2 = hud2.get_node("Raiz/Habilidades")
+	slot2.sincronizar(hud2.mundo.heroi)
+	ok(not slot2.e_disponivel and slot2._rotulo_e() == "INDISP.", "sem os campos da ruptura no herói o slot fica apagado")
 	hud2.queue_free()
 	var hud3 = Hud.criar(null)
 	vista2.add_child(hud3)
 	hud3.set_process(false)
 	hud3.avancar(PASSO)
-	ok(not hud3._rb.visible, "sem mundo o slot fica invisível")
+	var slot3 = hud3.get_node("Raiz/Habilidades")
+	slot3.sincronizar(null)
+	ok(not slot3.e_disponivel, "sem mundo o slot fica apagado")
 	hud3.queue_free()
 
 	# 25. painel de status: resumo() e linha()
