@@ -1,0 +1,58 @@
+{
+	"_ajuda": "O ESPECIAL de cada herói, na tecla Q (RB no controle), no padrão Overwatch: botão direito = secundário (o escudo, v2/escudo.gd), E = habilidade (a ruptura, v2/ruptura.gd), Q = especial (v2/especial.gd). Apertar dispara na hora (não se segura); na recarga o aperto é negado (som grave e o slot do HUD treme). O especial é definido POR HERÓI: padrao é o id de quem não está em herois; herois mapeia a chave do herói (a mesma de `chave` no herói) para o id dele. Ids: investida (Hazaki), terremoto (Nicão) e chuva (Lucas); id desconhecido deixa a tecla Q sem efeito. Bloco comum: recarga: segundos entre dois especiais (conta desde o disparo); inicio: segundos de recarga que a partida já começa com (o especial não vem pronto no primeiro minuto); abate: segundos que cada abate tira da recarga (comum, elite e chefe); nega_t: tempo do slot do HUD tremendo quando o aperto cai na recarga; area_k: quanto a área do herói (cartas) amplia os raios do especial, como na ruptura. Cada id tem o seu bloco, com nome e rotulo (mostrados no slot do HUD; o rotulo é o texto curto de até 10 letras), desc, cor (RGB 0 a 1: o brilho do slot, do anel e dos efeitos), dur (segundos que o herói fica no especial, sem andar normal, sem golpear e INVULNERÁVEL; a ruptura, o escudo e a esquiva são cancelados ao apertar), anim (passo do combo cuja animação do herói toca, e quantos ciclos dela cabem em dur) e foto (segundos de especial em que o roteiro --roteiro=especial tira a foto). Distâncias em px de chão, empurrão em px/s (dividido pelo peso do monstro), atordoa e tempos em segundos; o dano passa pelo bônus de dano do herói e as cartas e vale também para elite e chefe (elite vale metade do empurrão e chefe não é atordoado, como em qualquer golpe). INVESTIDA (Hazaki, Corte Relâmpago): prep: tempo de mira antes de sair; avanco_t e distancia: o avanço na direção da mira, atravessando e cortando quem estiver na faixa de largura px (dano, empurrao, atordoa por alvo, uma vez só); final: no fim do avanço, um corte em cruz em volta (raio, dano, empurrao, atordoa, hit_stop, tremor). TERREMOTO (Nicão): golpe: segundo da dur em que a marreta bate; batida: pancada em volta (raio, dano, empurrao, atordoa, hit_stop, tremor); onda: logo depois uma onda de choque sai da batida até raio px em dur segundos e fere uma vez quem ela alcança (dano, empurrao, atordoa); chefe_lento: segundos de lentidão no chefe e nos mini-chefes, que não são atordoados nem empurrados. CHUVA (Lucas, Tempestade de Adagas): a cada `cada` s sai uma rodada de n adagas em círculo, girando giro graus por rodada, durante dur s, com o herói andando a mov da velocidade e girando; adaga: dano de CADA adaga, vel (px/s), alcance (px), perfura (monstros a mais que atravessa), empurrao e atordoa; final: a última rodada, maior (n, dano, alcance, perfura, empurrao, atordoa).",
+	"padrao": "investida",
+	"herois": {"hazaki": "investida", "nicao": "terremoto", "lucas": "chuva"},
+	"comum": {
+		"recarga": 50,
+		"inicio": 25,
+		"abate": {"comum": 0.25, "elite": 2.5, "chefe": 12},
+		"nega_t": 0.25,
+		"area_k": 0.6,
+		"numeros_max": 10
+	},
+	"investida": {
+		"nome": "Corte Relâmpago",
+		"rotulo": "RELÂMPAGO",
+		"desc": "Hazaki some num clarão, atravessa a horda na direção da mira e fecha com um corte em cruz em volta.",
+		"cor": [0.55, 0.85, 1.0],
+		"dur": 0.8,
+		"anim": {"passo": 2, "ciclos": 1},
+		"foto": 0.27,
+		"prep": 0.14,
+		"avanco_t": 0.2,
+		"distancia": 250,
+		"largura": 22,
+		"dano": 46,
+		"empurrao": 260,
+		"atordoa": 0.5,
+		"final": {"raio": 100, "dano": 78, "empurrao": 380, "atordoa": 1.3, "hit_stop": 0.1, "tremor": 4.5}
+	},
+	"terremoto": {
+		"nome": "Terremoto",
+		"rotulo": "TERREMOTO",
+		"desc": "Nicão ergue a marreta e racha o chão: uma pancada enorme em volta e uma onda de choque que varre a horda.",
+		"cor": [1.0, 0.7, 0.35],
+		"dur": 1.05,
+		"anim": {"passo": 2, "ciclos": 1},
+		"foto": 0.72,
+		"golpe": 0.55,
+		"batida": {"raio": 125, "dano": 95, "empurrao": 540, "atordoa": 1.8, "hit_stop": 0.13, "tremor": 7},
+		"onda": {"raio": 280, "dur": 0.5, "dano": 50, "empurrao": 360, "atordoa": 1.0},
+		"chefe_lento": 1.6
+	},
+	"chuva": {
+		"nome": "Tempestade de Adagas",
+		"rotulo": "TEMPESTADE",
+		"desc": "Lucas gira soltando adagas em todas as direções, sem parar, e fecha com uma rodada enorme.",
+		"cor": [0.85, 0.6, 1.0],
+		"dur": 1.5,
+		"anim": {"passo": 2, "ciclos": 5},
+		"foto": 0.8,
+		"cada": 0.07,
+		"n": 5,
+		"giro": 29,
+		"mov": 0.35,
+		"adaga": {"dano": 12, "vel": 440, "alcance": 260, "perfura": 2, "empurrao": 70, "atordoa": 0.15},
+		"final": {"n": 18, "dano": 22, "alcance": 330, "perfura": 3, "empurrao": 170, "atordoa": 0.45}
+	}
+}

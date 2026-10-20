@@ -126,6 +126,7 @@ static func quadro_andar(pf: float) -> int:
 
 ## Chaves novas do item do pool (o `montar` e o `_novo` do armas_novas usam: um slot reaproveitado nunca herda o estado de outro golem).
 static func zerar(it: Dictionary) -> void:
+	_limpar_som(it, true)
 	it.g = false
 	it.e = ANDANDO
 	it.et = 0.0
@@ -148,6 +149,7 @@ static func nascer(nv, it: Dictionary) -> void:
 	it.v = Vector2(0, 1)
 	it.sumiu = false
 	var esc := escala(str(it.a.id))
+	nv.pai.combate.audio.registrar_invocacao(it, "golem", 0.65 / sqrt(esc))
 	var p: Vector2 = it.p
 	_torroes(nv, it, p, 8, 40.0 * esc, esc)
 	_poeira(nv, it, p, 6, 30.0 * esc, esc)
@@ -249,7 +251,7 @@ static func _impacto(nv, it: Dictionary) -> void:
 	it.rt = 0.0
 	_torroes(nv, it, p, 16, 100.0 * esc, esc)
 	_poeira(nv, it, p, 14, 95.0 * esc, esc)
-	pai.combate.audio.tocar("impacto", randf_range(0.55, 0.7) / sqrt(esc), -1.0, 0.1)
+	pai.combate.audio.invocacao(it, "atacar")
 	if (pai.mundo.heroi.pos as Vector2).distance_to(p) < 360.0:
 		pai.mundo.cam.tremer(1.6 * esc, 0.14)
 
@@ -269,6 +271,7 @@ static func _desmoronar(nv, it: Dictionary, dt: float) -> void:
 	if not bool(it.sumiu):
 		it.sumiu = true
 		it.e = ANDANDO
+		nv.pai.combate.audio.invocacao(it, "sumir")
 		var p: Vector2 = it.p
 		_torroes(nv, it, p + Vector2(0, -18.0 * esc), 12, 70.0 * esc, esc)
 		_poeira(nv, it, p, 7, 40.0 * esc, esc)
@@ -388,8 +391,22 @@ static func restos(it: Dictionary, dt: float) -> void:
 
 ## Limpa o entulho e as rachaduras (nova partida; o slot reaproveitado por outro aliado).
 static func limpar_restos(it: Dictionary) -> void:
+	_limpar_som(it)
 	it.deb = PackedFloat32Array()
 	it.rt = -1.0
+
+
+## WeakRef evita o ciclo áudio -> item -> áudio. O restart é silencioso; reutilizar completa a saída ainda não observada da geração anterior.
+static func _limpar_som(it: Dictionary, retirada := false) -> void:
+	var ref = it.get("som_inv_audio")
+	var audio = ref.get_ref() if ref is WeakRef else null
+	if audio != null:
+		audio.cancelar_invocacao(int(it.get("som_inv_id", 0)), retirada)
+		if not retirada:
+			audio.cancelar_slot_invocacao(it)
+	it.som_inv_id = 0
+	# Até um projétil que reutilizou o slot pode guardar uma cauda curta da invocação anterior. Só a limpeza final solta este WeakRef.
+	it.som_inv_audio = ref if retirada and audio != null else null
 
 
 ## O que sobra no chão depois que o golem some: rachaduras, torrões e a poeira que ainda não baixou (camada normal).

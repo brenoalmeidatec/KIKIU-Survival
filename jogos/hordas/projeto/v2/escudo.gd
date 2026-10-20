@@ -1,6 +1,6 @@
 extends RefCounted
 ## O tiro SECUNDÁRIO da v2 (botão direito do mouse ou gatilho esquerdo), no padrão Overwatch: botão direito = secundário (definido por herói),
-## E / LB = habilidade (a ruptura, v2/ruptura.gd), Q = ultimate (reservado: só a ação de entrada e um slot vazio no HUD). Para o herói de hoje o
+## E / LB = habilidade (a ruptura, v2/ruptura.gd), Q / RB = especial (um por herói, v2/especial.gd). Para o herói de hoje o
 ## secundário é o ESCUDO: segurar ergue um escudo na frente do herói (arco de ~120 graus na direção da mira) que bloqueia o dano que vem de
 ## dentro do arco (contato dos monstros, ataques anunciados e ataques do chefe). O herói anda a ~60%, não corre nem golpeia e o escudo gasta o
 ## MESMO fôlego da corrida; zerar o fôlego deixa cansado e o escudo cai. Bloqueio PERFEITO (nos primeiros ~0,15 s depois de erguer): não gasta

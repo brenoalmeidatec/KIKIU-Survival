@@ -19,14 +19,17 @@ extends "res://v2/ator.gd"
 ##    (evento) pede, a POSSE (polling) carrega. Estado.CARGA anda a 45%, não corre nem golpeia, NÃO é invencível e apanhar não cancela. Soltar
 ##    com carga mínima dispara em 360 graus (soltura perfeita na janela depois da carga cheia). Cancelam sem disparar e sem gastar recarga: a
 ##    esquiva, a pausa/escolha/baú/resultado (combate.jogo e pausado), a morte e o salto de relógio (ESC e perda de foco).
-##  - ULTIMATE (ação "ultimate", tecla Q ou RB): RESERVADO, ainda sem mecânica (só a ação de entrada e um slot vazio no HUD).
-## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), e da
-## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max.
+##  - ESPECIAL (ação "ultimate", tecla Q ou RB; um por herói, dados/v2_especial.json, disparo em v2/especial.gd): o APERTO dispara na hora. Estado.ESPECIAL
+##    dura `esp_dur` s, não golpeia nem corre, é INVULNERÁVEL e cancela a ruptura, o escudo e a esquiva. Na recarga o aperto é negado. A recarga corre
+##    sozinha (esp_recarga) e cada abate encurta (combate.matar chama especial.abate).
+## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), da
+## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max, e do especial esp_nome,
+## esp_rotulo, esp_cor, esp_recarga, esp_recarga_max, esp_nega_t e esp_t (s desde o disparo; 0 fora do especial).
 
 const Herois := preload("res://v2/herois.gd")
 
 enum Fonte { ANDA, MOUSE, STICK }
-enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA }  # CARGA no fim: nada é renumerado
+enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL }  # CARGA e ESPECIAL no fim: nada é renumerado
 const VEL := 100.0  # px/s
 const PASSO_ANIM := 0.13  # s por quadro de andar
 const MORTE_DISSOLVE := 0.3  # s de jogo (relógio do herói: hit-stop e câmera lenta esticam) que o corpo leva para se desfazer
@@ -111,6 +114,20 @@ var escudo_ativo := false  # o escudo está erguido (lido pelo desenho e pelo le
 var escudo_t := 0.0  # s desde que ergueu (tempo do mundo): a janela do bloqueio perfeito
 var escudo_bloqueios := 0  # testes
 var escudo_perfeitos := 0  # testes
+# especial (tecla Q, v2/especial.gd)
+var esp_nome := ""  # o nome do especial do herói ("" = não tem): o HUD só acende o slot Q com ele
+var esp_rotulo := ""  # o texto curto do slot
+var esp_cor := Color.WHITE  # o brilho do slot e dos efeitos
+var esp_recarga := 0.0  # s até poder disparar de novo (o tempo do mundo corre e cada abate encurta)
+var esp_recarga_max := 1.0  # a recarga cheia, para o HUD desenhar a fração
+var esp_nega_t := 0.0  # s do "negado" (apertou na recarga): o slot do HUD treme
+var esp_t := 0.0  # s desde o disparo (0 fora do especial)
+var esp_dur := 1.0  # a duração do especial em andamento
+var esp_invul := false  # invulnerável enquanto dura (lido por vulneravel)
+var esp_anim_passo := 2  # o passo do combo cuja animação toca no especial
+var esp_anim_ciclos := 1.0  # quantas vezes ela toca durante a duração
+var esp_disparos := 0  # testes
+var esp_negados := 0  # testes
 # ruptura (tecla E)
 var rup_carga := 0.0  # fração da carga (0 a 1) lida pelo HUD e pelo desenho do anel
 var rup_carga_t := 0.0  # s de carga (tempo do mundo)
@@ -160,6 +177,9 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	correndo = false
 	escudo_ativo = false
 	escudo_t = 0.0
+	var esp = mundo.combate.especial
+	if esp != null:
+		esp.armar(self)  # o nome, a cor e a recarga de começo do especial deste herói
 	_atraso_t = 0.0
 	esq_dur = float(cfg.esquiva.tempo)
 	esq_inv = float(cfg.esquiva.invulneravel)
@@ -198,6 +218,12 @@ func resetar(p: Vector2) -> void:
 	_rup_apos_acerto = false
 	rup_disparos = 0
 	rup_cancelados = 0
+	if mundo.combate.especial != null:
+		mundo.combate.especial.cancelar(self)
+	esp_disparos = 0
+	esp_negados = 0
+	esp_t = 0.0
+	esp_invul = false
 	_rup_tique = 0
 	_rup_punch = 0.0
 	avanco_camera = Vector2.ZERO
@@ -247,9 +273,41 @@ func ruptura() -> void:
 		rup_pedido_t += maxf(golpe_dur - golpe_t, 0.0)
 
 
+## O botão do especial foi apertado (o mundo repassa o evento; os testes também chamam): dispara na hora, se o jogo está rolando e a recarga zerou.
+## Cancela o golpe, a ruptura em carga, o escudo e a esquiva. Na recarga é negado: som grave e o slot do HUD treme. Devolve true se disparou.
+func especial() -> bool:
+	var c = mundo.combate
+	if c.especial == null or c.jogo != "jogando" or c.pausado or _pausa_aberta() or estado == Estado.MORTO or estado == Estado.ESPECIAL:
+		return false
+	if esp_nome == "":
+		return false  # este herói não tem especial
+	if esp_recarga > 0.0:
+		esp_nega_t = float(c.especial.comum.nega_t)
+		esp_negados += 1
+		c.especial.negou(self)
+		return false
+	cancelar_ruptura(false)
+	_baixar_escudo()
+	estado = Estado.ESPECIAL
+	pedido_t = 0.0
+	combo_t = 0.0
+	proximo = 0
+	rup_pedido_t = 0.0
+	esq_pedido = 0.0
+	_rup_apos_acerto = false
+	correndo = false
+	if not c.especial.iniciar(self):
+		estado = Estado.LIVRE
+		return false
+	esp_disparos += 1
+	return true
+
+
 func entrada_evento(e: InputEvent) -> void:
 	if e.is_action_pressed("atacar", false, true):
 		atacar()
+	elif InputMap.has_action("ultimate") and e.is_action_pressed("ultimate", false, true):
+		especial()
 	elif InputMap.has_action("esquiva") and e.is_action_pressed("esquiva", false, true):
 		esquivar()
 	elif InputMap.has_action("ruptura") and e.is_action_pressed("ruptura", false, true):
@@ -270,6 +328,8 @@ func centro() -> Vector2:
 ## Dano que o herói pode levar agora? (fora da invencibilidade e dos i-frames da esquiva)
 func vulneravel() -> bool:
 	if estado == Estado.MORTO or imortal or invenc > 0.0:
+		return false
+	if estado == Estado.ESPECIAL and esp_invul:
 		return false
 	return not (estado == Estado.ESQUIVA and esq_t < esq_inv)
 
@@ -357,6 +417,8 @@ func atualizar(dt: float) -> void:
 	pausa_t = maxf(0.0, pausa_t - dt)
 	if rup_recarga > 0.0 or rup_pedido_t > 0.0 or rup_nega_t > 0.0 or contragolpe_t > 0.0:
 		_rup_relogios(dt)
+	if esp_recarga > 0.0 or esp_nega_t > 0.0:
+		_esp_relogios(dt)
 	_recuperar(dt, v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA))
 	var segurando := false
 	if real:
@@ -368,7 +430,7 @@ func atualizar(dt: float) -> void:
 		segurando = bool(ataque_forcado)
 	# mira (sempre calculada: o golpe sai para ela)
 	var c := centro()
-	if fonte == Fonte.MOUSE and estado != Estado.GOLPE:
+	if fonte == Fonte.MOUSE and estado != Estado.GOLPE and estado != Estado.ESPECIAL:
 		var d: Vector2 = mundo.mouse_mundo() - c
 		if d.length() > 4.0:
 			dir_olhar = d.normalized()
@@ -383,6 +445,8 @@ func atualizar(dt: float) -> void:
 			desl = _esquiva(dt)
 		Estado.CARGA:
 			desl = _carga(dt, v)
+		Estado.ESPECIAL:
+			desl = mundo.combate.especial.quadro(self, dt, v)
 	if emp.length_squared() > 4.0:
 		desl += emp * dt
 		emp *= exp(-11.0 * dt)
@@ -682,6 +746,15 @@ func _rup_relogios(dt: float) -> void:
 			mundo.combate.ruptura.pronta(self)
 
 
+## Relógios do especial, no tempo do mundo (hit-stop e pausa congelam). Quando a recarga zera, avisa uma vez.
+func _esp_relogios(dt: float) -> void:
+	esp_nega_t = maxf(0.0, esp_nega_t - dt)
+	if esp_recarga > 0.0:
+		esp_recarga = maxf(0.0, esp_recarga - dt)
+		if esp_recarga <= 0.0:
+			mundo.combate.especial.pronta(self)
+
+
 func _iniciar_carga() -> void:
 	estado = Estado.CARGA
 	rup_carga = 0.0
@@ -818,6 +891,8 @@ func _visual(dt: float, v: Vector2) -> void:
 	var piscando := invenc > 0.0 and int(Time.get_ticks_msec() / 1000.0 * float(mundo.combate.cfg.heroi.pisca_hz) * 2.0) % 2 == 0
 	if estado == Estado.ESQUIVA:
 		sprite.modulate = Color(1, 1, 1, 0.78)
+	elif estado == Estado.ESPECIAL:
+		sprite.modulate = Color.WHITE.lerp(esp_cor, 0.45)  # o corpo toma a cor do especial
 	elif piscando:
 		sprite.modulate = Color(1, 0.55, 0.55, 0.38)
 	elif estado == Estado.CARGA:
@@ -937,6 +1012,11 @@ func _coluna_acao(dt: float) -> int:
 	if estado == Estado.ESQUIVA and _tem_anim("rolamento"):
 		var n := (tipo.info.animacoes.rolamento.colunas as Array).size()
 		return _coluna_anim("rolamento", int(clampf(esq_t / maxf(esq_dur, 0.001), 0.0, 0.999) * n))
+	if estado == Estado.ESPECIAL and _tem_anim("combo"):  # o especial toca um passo do combo (esp_anim_passo), repetido esp_anim_ciclos vezes
+		var por_golpe := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
+		var passo := mini(esp_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
+		var p := fposmod(esp_t / maxf(esp_dur, 0.001) * esp_anim_ciclos, 0.999)
+		return _coluna_anim("combo", passo * por_golpe + int(p * por_golpe))
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)
 	return -1
