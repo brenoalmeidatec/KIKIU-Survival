@@ -43,6 +43,10 @@ const ALT_CAB := 18.0
 const ALT_TITULO := 22.0
 const ALT_BLOCO_COMPACTO := 18.0  # ícone de 16 px e 2 de respiro: um golpe ou modificador por linha no HUD
 const PAD := 8.0
+const FILETE_PAUSA := 6.0  # o filete interno da moldura premium fica no pixel 6 da borda externa do quadro (o miolo começa no 7); medido na foto
+const FOLGA_PAUSA := 8.0  # vão livre entre esse filete e o texto dos quadros laterais da pausa, nos quatro lados (escala com a UI)
+const INTERNA_PAUSA := FILETE_PAUSA + 1.0 + FOLGA_PAUSA  # da borda externa do quadro ao texto: 15 px na base 960x540
+const TINTA_TITULO := 6.0  # a caixa de um título (Jersey 10, TAM_CAB) fica 6 px acima da tinta da maiúscula
 const ICONE := 16.0
 const ICONE_FUSAO := preload("res://assets/v2/fusoes/icone.png")  # junção de duas setas (16 x 16): marca a linha de peça já fundida
 const TELA := Rect2(0, 0, 960, 540)
@@ -85,6 +89,7 @@ var _meta: Dictionary = {}  # níveis do Santuário, lidos uma vez quando o card
 var _tela: Control
 var _estilo: StyleBoxTexture
 var _f_num: Font  # Press Start 2P sem anti-aliasing (como o HUD)
+var _caixas_visuais: Array = []  # por coluna da página visual: a área do texto (x, topo da tinta do título, largura, base), de `_visual`
 var _re := RegEx.create_from_string("[+\\-]?[0-9]+(?:[,.][0-9]+)?%?")  # um número: sinal, dígitos, decimais e % (vão na fonte dos números)
 var _re_palavras := RegEx.create_from_string("\\s+|\\S+")  # preserva palavras, espaços e estilo dos trechos
 var _timer: Timer  # o relógio de 4 Hz: só corre com o card ligado (sem _process, nada roda por quadro)
@@ -722,6 +727,11 @@ func _pintar() -> void:
 		_coluna(c, rects[c], false)
 
 
+## A folga de dentro de um quadro, da borda externa ao texto: na pausa, a faixa da moldura mais a folga (INTERNA_PAUSA); fora dela, PAD como antes.
+func _margem() -> float:
+	return INTERNA_PAUSA if _m == "pausa" else PAD
+
+
 ## O modo em que as medidas valem: o da tela agora ou, com o card escondido, o compacto do HUD (os testes medem o layout sem abrir o card).
 func _modo_de_medida() -> String:
 	return _modo_atual if _modo_atual != "" else "hud"
@@ -766,7 +776,7 @@ func linhas_que_estouram() -> Array:
 	var rects: Array = _colunas()
 	var grupos: Array = _secoes_das_colunas()
 	for c in rects.size():
-		var w: float = (rects[c] as Rect2).size.x - 2.0 * PAD
+		var w: float = (rects[c] as Rect2).size.x - 2.0 * _margem()
 		for id in grupos[c]:
 			for l in _achar(str(id)).get("linhas", []):
 				if _estoura(l, w):
@@ -807,10 +817,11 @@ func _estoura(l: Dictionary, w: float) -> bool:
 
 ## Desenha (ou só mede, com `seco`) a coluna `c` dentro de `r`. Devolve a altura que o conteúdo pede, com a moldura.
 func _coluna(c: int, r: Rect2, seco: bool) -> float:
-	var x := r.position.x + PAD
-	var w := r.size.x - 2.0 * PAD
-	var topo := r.position.y + PAD
-	var limite := r.end.y - PAD - ALT_LINHA
+	var m := _margem()
+	var x := r.position.x + m
+	var w := r.size.x - 2.0 * m
+	var topo := r.position.y + m - (1.0 if _m == "pausa" else 0.0)  # na pausa, o título da 1ª seção (1 px acima da linha) põe o acento de "HERÓI" na folga de dentro
+	var limite := r.end.y - m - ALT_LINHA
 	var paginas: Array = [[]]
 	var alturas: Array = [topo]
 	var pagina_atual := 0
@@ -865,7 +876,7 @@ func _coluna(c: int, r: Rect2, seco: bool) -> float:
 		var fecha := ("%s fecha" % Glifos.texto("card")) if _m == "hud" else ("%s visual" % Glifos.texto("detalhes"))
 		var nav := "%d/%d %s" % [pg + 1, paginas.size(), teclas] if paginas.size() > 1 else fecha
 		_misto(nav, x, float(alturas[pg]), TAM, COR_DICA, COR_DICA)
-	return float(alturas[pg]) - r.position.y + PAD + ALT_LINHA
+	return float(alturas[pg]) - r.position.y + m + ALT_LINHA
 
 
 ## Todas as páginas da tabela, por coluna. Nenhum atributo é removido.
@@ -1123,11 +1134,16 @@ func _visual(seco: bool) -> Array:
 	var cols: Array = colunas_visuais()
 	var grupos: Array = [["heroi", "partida"], ["katana", "golpes"]] if cols.size() == 2 else [["heroi", "partida"], ["katana"], ["golpes"]]
 	var alts: Array = []
+	_caixas_visuais.clear()
 	for c in cols.size():
 		var r: Rect2 = cols[c]
-		var x := r.position.x + PAD
-		var w := r.size.x - 2.0 * PAD
-		var y := r.position.y + PAD - 2.0
+		var m := _margem()
+		var x := r.position.x + m
+		var w := r.size.x - 2.0 * m
+		var y := r.position.y + m - 2.0
+		if _m == "pausa" and c > 0:
+			y -= TINTA_TITULO  # sem o "SUA BUILD", a 1ª seção (KATANA, desenhada 2 px abaixo do topo) põe a tinta dela na folga de dentro
+		var tinta_topo := y + (2.0 if c == 0 else 8.0)  # a tinta mais alta da coluna: a tecla do cabeçalho (y + 2) ou o título da 1ª seção (y + 8)
 		if c == 0:
 			if not seco:
 				_texto_titulo("SUA BUILD", Vector2(x, y), COR_TITULO)
@@ -1152,9 +1168,10 @@ func _visual(seco: bool) -> Array:
 				"katana":
 					y = _v_katana(x, y, w, seco)
 				"golpes":
-					y = _v_golpes(sec, x, y, w, seco, r.end.y - PAD)
+					y = _v_golpes(sec, x, y, w, seco, r.end.y - m)
 			y += 4.0
-		alts.append(y - r.position.y + PAD - 2.0)
+		alts.append(y - r.position.y + m - 2.0)
+		_caixas_visuais.append(Rect2(x, tinta_topo, w, r.end.y - m - tinta_topo))
 	return alts
 
 
@@ -1176,6 +1193,60 @@ func visual_cortada() -> Array:
 	var r: Array = []
 	for c in alts.size():
 		r.append(float(alts[c]) > (colunas_visuais()[c] as Rect2).size.y)
+	return r
+
+
+## Por coluna da página visual, a folga da área do texto até o filete interno da moldura: [esq, topo, dir, base], em px do canvas.
+## A área é a de `_visual` (a coluna sem a margem, a partir da tinta do 1º título até a base da coluna menos a margem). Na pausa, FOLGA_PAUSA ou mais.
+func folgas_visuais() -> Array:
+	_m = _modo_de_medida()
+	var cols := colunas_visuais()
+	_visual(true)
+	var filete := FILETE_PAUSA + 1.0
+	var r: Array = []
+	for c in cols.size():
+		var col: Rect2 = cols[c]
+		var caixa: Rect2 = _caixas_visuais[c]
+		r.append(
+			[
+				caixa.position.x - (col.position.x + filete),
+				caixa.position.y - (col.position.y + filete),
+				(col.end.x - filete) - caixa.end.x,
+				(col.end.y - filete) - caixa.end.y
+			]
+		)
+	return r
+
+
+## Na tabela de detalhes, por coluna, a menor folga de uma linha até o filete interno da moldura: [esq, dir].
+func folgas_tabela() -> Array:
+	retangulos()  # mede as colunas e enche o diagnóstico com as linhas de todas elas
+	var cols := _colunas()
+	var filete := FILETE_PAUSA + 1.0
+	var r: Array = []
+	for c in cols.size():
+		var col: Rect2 = cols[c]
+		var esq := INF
+		var dir := INF
+		for d in _diagnostico:
+			if int(d.coluna) == c:
+				var rect: Rect2 = d.rect
+				esq = minf(esq, rect.position.x - (col.position.x + filete))
+				dir = minf(dir, (col.end.x - filete) - rect.end.x)
+		r.append([esq, dir])
+	return r
+
+
+## Golpes e modificadores da página visual cujo nome sai cortado (com "."): vazio = nenhum nome foi cortado.
+func nomes_cortados() -> Array:
+	_m = _modo_de_medida()
+	var cols := colunas_visuais()
+	var w := (cols[cols.size() - 1] as Rect2).size.x - 2.0 * _margem()
+	var r: Array = []
+	for id in ["katana", "golpes"]:
+		for l in _achar(id).get("linhas", []):
+			if str(l.tipo) == "bloco" and _cabe(str(l.nome_curto), _largura_nome(l, w)) != str(l.nome_curto):
+				r.append(str(l.id))
 	return r
 
 
@@ -1316,9 +1387,11 @@ func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite
 		if str(l.tipo) == "bloco":
 			blocos.append(l)
 	if blocos.is_empty():
+		var linhas := _quebrar("Nenhum ainda: vêm das cartas.", TAM, w)  # quebrada em linhas que cabem na folga: numa só, cortaria o fim
 		if not seco:
-			_texto(Dados.fonte_texto, "Nenhum ainda: vêm das cartas.", Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
-		return y + ALT_LINHA
+			for i in linhas.size():
+				_texto(Dados.fonte_texto, linhas[i], Vector2(x, y + i * ALT_LINHA), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+		return y + linhas.size() * ALT_LINHA
 	var pg := _paginas_golpes(blocos.size(), limite - y)
 	var por: int = pg[0]
 	var paginas: int = pg[1]
@@ -1383,17 +1456,33 @@ func paginas_golpes() -> Dictionary:
 	return {"pagina": _pag + 1, "paginas": _npag_golpes}
 
 
+## Largura dos pips de um golpe ou modificador na página visual: um quadrado de 5 px a cada 8 (o último sem o espaço); evoluído, o ícone de 16 px.
+func _largura_pips(l: Dictionary) -> float:
+	var nc := str(l.nivel_curto)
+	if nc == "evo":
+		return 16.0
+	var p := nc.split("/")
+	var total := int(p[1]) if p.size() > 1 else int(p[0])
+	return maxf(0.0, total * 8.0 - 3.0)
+
+
+## O que sobra para o nome da linha: depois do ícone (22 px), os pips do tamanho deles (`_largura_pips`), 3 px de vão e os números
+## à direita, com 4 px entre os pips e os números. Com 5 níveis, "Espírito Urso" (104 px) cabe em 210 px de coluna.
+func _largura_nome(l: Dictionary, w: float) -> float:
+	return w - 22.0 - _largura_pips(l) - 7.0 - _larg_trechos(l.uma)
+
+
 ## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em pips (estrela dourada se evoluído) e o número.
 func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 	var cor: Color = l.cor
 	var num_w := _larg_trechos(l.uma)
 	_tela.draw_rect(Rect2(x - 1.0, y - 1.0, 18.0, 18.0), cor.darkened(0.55))
 	_desenhar_icone(l, x, y)
-	var nome_w := w - 22.0 - 60.0 - num_w
+	var nome_w := _largura_nome(l, w)
 	_texto(
 		Dados.fonte_texto, _cabe(str(l.nome_curto), nome_w), Vector2(x + 22.0, y + 2.0), nome_w, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor.lerp(Paleta.BRANCO, 0.35)
 	)
-	var pipx := x + w - num_w - 56.0
+	var pipx := x + w - num_w - 4.0 - _largura_pips(l)
 	var nc := str(l.nivel_curto)
 	if nc == "evo":
 		_icone8("critico", Vector2(pipx, y + 1.0), COR_TITULO)

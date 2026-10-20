@@ -1227,6 +1227,8 @@ func _interface() -> void:
 	# a página VISUAL (barras, pips e ícones) é a que abre; o Tab troca pela tabela de detalhes e volta
 	ok(st.pagina() == "visual", "a pausa abre o card na página visual (%s)" % st.pagina())
 	ok(not st.visual_cortada().has(true), "a página visual da pausa cabe na altura das colunas (%s)" % str(st.retangulos_visuais()))
+	ok(st.nomes_cortados().is_empty(), "nenhum nome de golpe ou modificador sai cortado na página visual da pausa (%s)" % str(st.nomes_cortados()))
+	_folgas_pausa(st, "[pausa]")
 	for rv in st.retangulos_visuais():
 		ok(not (rv as Rect2).intersects(painel) and Rect2(0, 0, 960, 540).encloses(rv), "a página visual fica ao lado do menu, na tela (%s)" % str(rv))
 	# os dois quadros laterais e o menu formam uma faixa alinhada: mesmo topo, mesma altura e o mesmo espaço dos dois lados (feedback do Alisson)
@@ -1578,9 +1580,46 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	ok(c.jogo == "jogando", "o jogo voltou depois do baú")
 
 
+## A folga de dentro dos quadros laterais da pausa: o texto fica pelo menos FOLGA_PAUSA (8 px) depois do filete interno da moldura,
+## nos quatro lados e nos dois quadros na página visual (`folgas_visuais`, a área do texto). Na tabela de detalhes são a esquerda e a
+## direita (`folgas_tabela`); o topo da tabela não é conferido aqui, só na foto. O filete fica em FILETE_PAUSA da borda externa.
+func _folgas_pausa(st, contexto: String) -> void:
+	var lados := ["esquerda", "topo", "direita", "base"]
+	var minimo: float = Status.FOLGA_PAUSA - 0.001
+	var visuais: Array = st.folgas_visuais()
+	ok(visuais.size() == 2, "%s a página visual tem os dois quadros laterais (%s)" % [contexto, str(visuais)])
+	for c in visuais.size():
+		var quatro: Array = visuais[c]
+		for k in 4:
+			ok(
+				float(quatro[k]) >= minimo,
+				(
+					"%s página visual, quadro %d, lado %s: o texto tem %.1f px até o filete (mínimo %.1f)"
+					% [contexto, c + 1, lados[k], float(quatro[k]), Status.FOLGA_PAUSA]
+				)
+			)
+		ok(
+			absf(float(quatro[0]) - float(quatro[2])) < 0.5 and absf(float(quatro[1]) - float(quatro[3])) < 0.5,
+			"%s página visual, quadro %d: a folga é a mesma nos dois lados e em cima e embaixo (%s)" % [contexto, c + 1, str(quatro)]
+		)
+	for c in visuais.size():
+		ok(absf(float(visuais[c][0]) - float(visuais[1 - c][0])) < 0.5, "%s os dois quadros têm a mesma folga de dentro (%s)" % [contexto, str(visuais)])
+	var tabela: Array = st.folgas_tabela()
+	for c in tabela.size():
+		var dois: Array = tabela[c]
+		for k in 2:
+			ok(
+				float(dois[k]) >= minimo,
+				(
+					"%s tabela de detalhes, quadro %d, lado %s: a linha tem %.1f px até o filete (mínimo %.1f)"
+					% [contexto, c + 1, ["esquerda", "direita"][k], float(dois[k]), Status.FOLGA_PAUSA]
+				)
+			)
+
+
 ## Os três modos do card (HUD compacto, pausa e painel central) em quatro situações: build vazia (e Santuário sem compra), meio de partida,
 ## build máxima e a build extrema (os maiores números) com o Santuário todo comprado. Em todas: nenhuma linha estoura a coluna, nada é cortado, tudo cabe na tela, o HUD fica livre
-## e o menu da pausa também.
+## e o menu da pausa também (com a folga de dentro dos quadros laterais, `_folgas_pausa`).
 func _layouts(st, c) -> void:
 	var hud := _hud_rects()
 	var painel: Rect2 = Pausa.PAINEL
@@ -1641,6 +1680,10 @@ func _layouts(st, c) -> void:
 						ok(not (rc as Rect2).intersects(e.rect), "[%s / %s] a coluna %s não cobre %s" % [cenario, modo, str(rc), e.nome])
 				elif modo == "pausa":
 					ok(not (rc as Rect2).intersects(painel), "[%s / %s] a coluna fica ao lado do menu" % [cenario, modo])
+			if modo == "pausa":
+				ok(st.nomes_cortados().is_empty(), "[%s / pausa] nenhum nome de golpe ou modificador sai cortado (%s)" % [cenario, str(st.nomes_cortados())])
+				ok(not st.visual_cortada().has(true), "[%s / pausa] a página visual cabe na altura (%s)" % [cenario, str(st.visual_cortada())])
+				_folgas_pausa(st, "[%s / pausa]" % cenario)
 			if modo == "central":
 				for k in rs.size() - 1:
 					ok(not (rs[k] as Rect2).intersects(rs[k + 1]), "[%s / %s] as colunas do painel não se tocam" % [cenario, modo])
