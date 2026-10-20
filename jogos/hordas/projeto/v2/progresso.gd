@@ -33,6 +33,12 @@ func cura_por_nivel() -> float:
 	return combate.mundo.heroi.vida_max * float(cfg.heroi.cura_nivel)
 
 
+## Fração a mais por nível acima do 1 (regra = {por_nivel, teto}, de dados): nível 1 = 0; sobe `por_nivel` a cada nível e para no `teto`.
+## Serve ao alcance do golpe (dados/v2_combate.json > golpe.raio_por_nivel, lido em combate.gd) e ao raio e ao arco do escudo (dados/v2_secundario.json > escudo).
+static func bonus_por_nivel(nivel: int, regra: Dictionary) -> float:
+	return minf(float(maxi(nivel - 1, 0)) * float(regra.por_nivel), float(regra.teto))
+
+
 func zerar() -> void:
 	melhorias.clear()
 	pendentes = 0

@@ -12,13 +12,14 @@ extends RefCounted
 ## O herói (v2/heroi.gd) cuida da entrada e do estado (`escudo_ativo`, `escudo_t`, velocidade, fôlego); este módulo cuida da geometria
 ## (`cobre`), do bloqueio (`bloquear`), do visual (um Node2D aditivo na camada glow, sem nó por quadro) e do som. Dono: o combate (`combate.escudo`).
 ##
-## API: montar(c, camada), limpar(), id_de(chave) -> String, ativo_para(chave) -> bool, para_heroi(chave), cobre(h, de) -> bool,
+## API: montar(c, camada), limpar(), id_de(chave) -> String, ativo_para(chave) -> bool, para_heroi(chave), cobre(h, de) -> bool, raio(h) -> float, arco(h) -> float, pontos_do_arco(h),
 ## ergueu(h), abaixou(h), bloquear(h, valor, de, quem) -> bool [perfeito?], efeitos(dt) [relógio de parede: o visual], resumo().
 
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura e dos avisos)
 const COR_AZUL := Color(0.45, 0.82, 1.0)
 const COR_OURO := Color(1.0, 0.85, 0.3)
 const PTS := 20  # pontos do arco desenhado
+const Progresso := preload("res://v2/progresso.gd")  # bonus_por_nivel: o crescimento do raio por nível (a mesma regra do golpe, outra tabela)
 
 var combate
 var mundo
@@ -72,6 +73,32 @@ func ativo_para(chave: String) -> bool:
 	return id_de(chave) == "escudo"
 
 
+## O raio do desenho deste herói agora: o do dado MAIS o crescimento por nível (dados > escudo.raio_por_nivel). Não usa a área das cartas
+## (h.m_area): o escudo do nível 1 é o de antes, para todo herói. Lido pelo desenho (pontos_do_arco) e pelo ponto da faísca.
+func raio(h) -> float:
+	return float(cfg.raio) * (1.0 + Progresso.bonus_por_nivel(int(h.nivel), cfg.raio_por_nivel))
+
+
+## A abertura do escudo deste herói agora, em graus: a do dado MAIS o crescimento por nível (dados > escudo.arco_por_nivel). É a COBERTURA
+## do bloqueio (`cobre` barra tudo o que vem dentro dela) e o arco do desenho: o escudo cresce em quanto protege, não só em quanto aparece.
+func arco(h) -> float:
+	return float(cfg.arco) + Progresso.bonus_por_nivel(int(h.nivel), cfg.arco_por_nivel)
+
+
+## Os pontos do arco da base do escudo no chão (projetados na tela, de `h.pos + (0, -8)`): é daqui que o desenho tira o raio e a abertura,
+## e é isto que o teste mede.
+func pontos_do_arco(h) -> PackedVector2Array:
+	var c: Vector2 = h.pos + Vector2(0, -8)
+	var a0: float = atan2(h.dir_olhar.y / ACHATA, h.dir_olhar.x)  # o ângulo no chão, de volta para a tela
+	var meio := deg_to_rad(arco(h) * 0.5)
+	var r := raio(h)
+	var pts := PackedVector2Array()
+	for i in PTS + 1:
+		var a := a0 - meio + 2.0 * meio * float(i) / float(PTS)
+		pts.append(c + Vector2(cos(a) * r, sin(a) * r * ACHATA))
+	return pts
+
+
 ## O dano que vem de `de` (posição no mundo) cai dentro do arco do escudo? A conta é no chão (y dividido pela achatada), a mesma do desenho.
 func cobre(h, de: Vector2) -> bool:
 	var rel: Vector2 = de - h.pos
@@ -79,7 +106,7 @@ func cobre(h, de: Vector2) -> bool:
 	if rel.length() < 0.5:
 		return true  # em cima do herói: vem da frente de quem está encostado
 	var d := Vector2(h.dir_olhar.x, h.dir_olhar.y / ACHATA).normalized()
-	return rel.normalized().dot(d) >= cos(deg_to_rad(float(cfg.arco) * 0.5))
+	return rel.normalized().dot(d) >= cos(deg_to_rad(arco(h) * 0.5))
 
 
 func ergueu(_h) -> void:
@@ -114,7 +141,7 @@ func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 	var entrada := Vector2(de.x - h.pos.x, (de.y - h.pos.y) / ACHATA).normalized()
 	if entrada.length_squared() < 0.1:
 		entrada = Vector2(h.dir_olhar.x, h.dir_olhar.y / ACHATA).normalized()
-	_impacto = Vector2(entrada.x, entrada.y * ACHATA) * float(cfg.raio) + Vector2(0, -20)
+	_impacto = Vector2(entrada.x, entrada.y * ACHATA) * raio(h) + Vector2(0, -20)
 	var ponto: Vector2 = h.pos + _impacto
 	var cor := COR_OURO if perfeito else COR_AZUL
 	fx.estouro(ponto, cor, 6 if perfeito else 3)
@@ -135,7 +162,7 @@ func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 ## Os números de agora para o painel de status.
 func resumo() -> Dictionary:
 	return {
-		"arco": float(cfg.arco),
+		"arco": arco(mundo.heroi) if mundo.heroi != null else float(cfg.arco),
 		"mov": float(cfg.mov),
 		"gasto": float(cfg.gasto),
 		"perfeito_janela": float((cfg.perfeito as Dictionary).janela),
@@ -158,9 +185,6 @@ func _desenhar() -> void:
 	if h == null or not h.escudo_ativo:
 		return
 	var c: Vector2 = h.pos + Vector2(0, -8)
-	var a0: float = atan2(h.dir_olhar.y / ACHATA, h.dir_olhar.x)  # o ângulo no chão, de volta para a tela
-	var meio := deg_to_rad(float(cfg.arco) * 0.5)
-	var r := float(cfg.raio)
 	var cor := COR_AZUL
 	var alfa := 0.2
 	if _perf_t > 0.0:
@@ -172,10 +196,7 @@ func _desenhar() -> void:
 	elif h.escudo_t <= float((cfg.perfeito as Dictionary).janela):
 		cor = COR_OURO.lerp(COR_AZUL, h.escudo_t / maxf(float((cfg.perfeito as Dictionary).janela), 0.001))  # a janela perfeita se lê no arco
 		alfa = 0.35
-	var pts := PackedVector2Array()
-	for i in PTS + 1:
-		var a := a0 - meio + 2.0 * meio * float(i) / float(PTS)
-		pts.append(c + Vector2(cos(a) * r, sin(a) * r * ACHATA))
+	var pts := pontos_do_arco(h)
 	var leque := PackedVector2Array([c])
 	leque.append_array(pts)
 	# Barreira curva elevada: a base continua no mesmo arco de cobertura.
