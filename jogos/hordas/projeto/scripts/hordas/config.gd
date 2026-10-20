@@ -44,7 +44,7 @@ const ITENS := [
 	{"chave": "tecla_status", "grupo": "Controles", "nome": "Status (inventário)", "valores": [""], "padrao": "", "acao": "status"},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	# Gráfico: perfil, CPU e GPU ficam em dados/graficos.json (Config.g / g_definir). Aqui só o que é do jogador, fora do perfil.
-	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Baixar a qualidade se travar", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Detalhe dinâmico", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "verificar_versao", "grupo": "Gráfico", "nome": "Avisar versão nova", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{
@@ -162,11 +162,26 @@ func g(chave: String) -> Variant:
 	return perfis.get(base, perfis.get("alto", {})).get(chave)
 
 
-## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado".
+## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado". Com o Detalhe dinâmico (qualidade_auto) pode estar um degrau
+## abaixo do escolhido, só na memória.
 func g_perfil() -> String:
 	if _temp_perfil != "":
 		return _temp_perfil
+	return g_perfil_escolhido()
+
+
+## O perfil que o jogador escolheu (o que está salvo), sem a queda só da memória do Detalhe dinâmico: é o teto da subida.
+func g_perfil_escolhido() -> String:
 	return str(_cfg.get_value("graficos", "perfil", _perfil_padrao))
+
+
+## Desfaz a queda só da memória (Detalhe dinâmico): volta ao perfil escolhido. Sem queda, não faz nada.
+func g_soltar_temporario() -> void:
+	if _temp_perfil == "":
+		return
+	_zerar_temporario()
+	aplicar_graficos()
+	graficos_mudou.emit()
 
 
 ## Muda uma opção da aba: o perfil vira "personalizado". Salva e aplica na hora.

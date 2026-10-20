@@ -10,8 +10,10 @@ extends Node
 # escolhe a linha; ESC dentro de Ajustes volta um nível; o hit-stop e a câmera lenta seguem depois de pausar; Voltar ao santuário
 # despausa, abandona a partida (venceu = false) e credita as almas; perder o foco não pausa em headless; e no santuário o ESC
 # é devolvido à navegação local, e o botão Ajustes abre o submenu.
-# Tela cheia (linha e F11, com a pausa aberta ou fechada) e o Dinâmico (qualidade_auto) ficam fora do perfil: não viram
-# personalizado. A queda por fps (qualidade_auto) vale só na memória: o arquivo não recebe o perfil caído.
+# Tela cheia (linha e F11, com a pausa aberta ou fechada) e o Detalhe dinâmico (qualidade_auto) ficam fora do perfil: não viram
+# personalizado. O Perfil tem só Baixo, Médio e Alto; o Detalhe dinâmico é uma linha própria logo abaixo, e o Perfil escolhido é o
+# teto da subida. A queda por fps (qualidade_auto) vale só na memória: o arquivo não recebe o perfil caído. Save antigo
+# (qualidade_auto ligada com o perfil Alto, o antigo "Dinâmico") vira Perfil Alto + Detalhe dinâmico Sim.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
 #   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_graficos_topo, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (a janela inteira).
@@ -307,7 +309,7 @@ func _testes() -> void:
 		ids_topo.find("g:perfil") >= 0 and ids_topo.find("g:perfil") < ids_topo.find("g:tela") and ids_topo.find("g:tela") < ids_topo.find("g:fps"),
 		"a aba tem Perfil, Tela cheia e Mostrar FPS nessa ordem"
 	)
-	ok(not ("g:qualidade" in ids_topo), "a opção solta 'Baixar a qualidade' saiu: virou o perfil Dinâmico")
+	ok(ids_topo.find("g:dinamico") == ids_topo.find("g:perfil") + 1, "a linha Detalhe dinâmico fica logo abaixo do Perfil")
 	Config.g_aplicar_perfil("alto")
 	_ir_para(pausa, "g:tela")
 	var tela_antes := bool(Config.v("tela_cheia"))
@@ -315,38 +317,52 @@ func _testes() -> void:
 	ok(bool(Config.v("tela_cheia")) != tela_antes and Config.g_perfil() == "alto", "Tela cheia liga e desliga pela linha, sem mudar o perfil")
 	_tecla(KEY_F11)
 	ok(bool(Config.v("tela_cheia")) == tela_antes and pausa.aberto, "F11 com o menu aberto volta a Tela cheia, e o menu continua aberto")
-	# o perfil Dinâmico: a seta passa por Baixo, Médio, Alto, Dinâmico; só o Dinâmico liga a baixa e a subida automáticas
+	# o Perfil só tem Baixo, Médio e Alto; o Detalhe dinâmico é a linha de baixo e não muda com as setas do Perfil
 	_ir_para(pausa, "g:perfil")
-	Config.definir("qualidade_auto", false)
+	Config.definir("qualidade_auto", true)
 	Config.g_aplicar_perfil("baixo")
-	for nome in ["Médio", "Alto", "Dinâmico", "Baixo"]:
+	for nome in ["Médio", "Alto", "Baixo", "Médio"]:
 		_tecla(KEY_RIGHT)
 		ok(str(pausa._itens_atuais[pausa.sel].valor) == nome, "a seta do Perfil chega em %s (mostra %s)" % [nome, str(pausa._itens_atuais[pausa.sel].valor)])
-		if nome == "Dinâmico":
-			ok(bool(Config.v("qualidade_auto")) and Config.g_perfil() == "alto", "Dinâmico liga a baixa automática e parte do Alto")
-			ok(
-				pausa._itens_atuais[pausa.sel + 1].get("cab", false) and "FPS" in str(pausa._itens_atuais[pausa.sel + 1].rotulo),
-				"o Dinâmico mostra a explicação curta logo abaixo"
-			)
-		else:
-			ok(not bool(Config.v("qualidade_auto")), "%s desliga a baixa automática" % nome)
+		ok(bool(Config.v("qualidade_auto")), "trocar o Perfil (%s) não mexe no Detalhe dinâmico" % nome)
 	_tecla(KEY_LEFT)
-	_tecla(KEY_LEFT)  # Baixo -> Dinâmico -> Alto, pela esquerda
-	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Alto", "a seta para a esquerda volta um perfil")
-	_tecla(KEY_RIGHT)
+	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Baixo", "a seta para a esquerda volta um perfil")
+	_tecla(KEY_LEFT)
+	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Alto", "o Perfil dá a volta: só os três fixos (sem Dinâmico entre o Alto e o Baixo)")
 	ok(
-		(
-			str(pausa._itens_atuais[pausa.sel].valor) == "Dinâmico"
-			and not ("?" in str(pausa._itens_atuais[pausa.sel].rotulo))
-			and bool(pausa._itens_atuais[pausa.sel].get("icone", false))
-		),
-		"o Perfil tem o ícone '?' (o nome é só Perfil) e o rodapé explica o Dinâmico"
+		not ("?" in str(pausa._itens_atuais[pausa.sel].rotulo)) and bool(pausa._itens_atuais[pausa.sel].get("icone", false)),
+		"o Perfil tem o ícone '?' (o nome é só Perfil)"
 	)
-	ok("Dinâmico" in pausa._ajuda.text, "o rodapé do Perfil explica o Dinâmico")
+	ok("Personalizado" in pausa._ajuda.text, "o rodapé do Perfil explica o Personalizado")
+	# o Detalhe dinâmico: Sim/Não, com a ajuda no rodapé, e mexer nele não vira Personalizado
+	Config.g_aplicar_perfil("medio")
+	Config.definir("qualidade_auto", true)
+	_ir_para(pausa, "g:dinamico")
+	ok(
+		str(pausa._itens_atuais[pausa.sel].rotulo) == "Detalhe dinâmico" and str(pausa._itens_atuais[pausa.sel].valor) == "Sim",
+		"a linha Detalhe dinâmico existe e mostra Sim"
+	)
+	ok(
+		"sem passar do Perfil escolhido" in pausa._ajuda.text and "Personalizado" in pausa._ajuda.text,
+		"o rodapé do Detalhe dinâmico explica o teto e o Personalizado"
+	)
+	_tecla(KEY_ENTER)
+	ok(not bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Não", "Enter desliga o Detalhe dinâmico")
+	ok(Config.g_perfil() == "medio", "mexer no Detalhe dinâmico não vira Personalizado (o perfil segue Médio)")
+	_tecla(KEY_ENTER)
+	ok(
+		bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Sim" and Config.g_perfil() == "medio",
+		"Enter alterna de volta para Sim (como Tela cheia e Mostrar FPS, a linha é de Enter)"
+	)
+	ok(str(pausa._itens_atuais[pausa.sel - 1].valor) == "Médio", "o Perfil mostra só Médio enquanto o perfil não caiu")
+	# o Detectar escolhe o Perfil e deixa o Detalhe dinâmico como está
+	_ir_para(pausa, "g:detectar")
+	_tecla(KEY_ENTER)
+	ok(bool(Config.v("qualidade_auto")) and Config.g_perfil() == Config.g_detectar(), "Detectar escolhe o perfil da máquina e o Detalhe dinâmico segue Sim")
 
-	# 6c. a baixa automática (fps abaixo de 40 por 8 s) desce o perfil só na memória; o arquivo guarda o que o jogador escolheu
+	# 6c. o Detalhe dinâmico (fps abaixo de 40 por 8 s) desce o perfil só na memória; o arquivo guarda o que o jogador escolheu
 	pausa.fechar()  # a medição de FPS só vale durante a jogabilidade, sem o menu aberto
-	Config.definir("qualidade_auto", true)  # o Dinâmico
+	Config.definir("qualidade_auto", true)  # o Detalhe dinâmico
 	Config.g_aplicar_perfil("alto")
 	mundo._qualidade_ligada = true  # o jogo de verdade (no teste o mundo fica desligado de propósito)
 	for i in 500:
@@ -385,6 +401,7 @@ func _testes() -> void:
 		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
 	ok(Config.g_perfil() == "alto", "fora do jogo de verdade (testes, medições) a baixa não age")
 	Config.g_aplicar_perfil("alto")
+	await _testar_teto_e_migracao(mundo, pausa)
 	_testar_janelas_qualidade(mundo, pausa)
 
 	# 6d. a contagem sozinha (v2/qualidade_auto.gd): 8 s abaixo de 40 fps desce um degrau; 40 fps zera; Baixo e Personalizado não descem
@@ -398,6 +415,14 @@ func _testes() -> void:
 	for i in 15:
 		depois_de_zerar += qa.passo(0.5, 30.0, "medio")
 	ok(depois_de_zerar == "" and qa.passo(0.5, 30.0, "medio") == "baixo", "40 fps zera a contagem: são outros 8 s para descer de médio para baixo")
+	var sem_teto := QualidadeAuto.new()
+	var sobe_ate_teto := ""
+	for i in 60:
+		sobe_ate_teto += sem_teto.passo(0.5, 60.0, "baixo", 55.0, "medio")
+	var passa_do_teto := ""
+	for i in 400:
+		passa_do_teto += sem_teto.passo(0.5, 60.0, "medio", 55.0, "medio")
+	ok(sobe_ate_teto == "medio" and passa_do_teto == "", "com o teto em Médio, a subida para no Médio")
 	var sem_descer := ""
 	for i in 100:
 		sem_descer += qa.passo(0.5, 30.0, "baixo") + qa.passo(0.5, 30.0, "personalizado")
@@ -619,7 +644,8 @@ func _limpar_saves() -> void:
 func _testar_janelas_qualidade(mundo, pausa) -> void:
 	mundo._qualidade_ligada = true
 	Config.definir("qualidade_auto", true)
-	Config.g_aplicar_perfil("medio")
+	Config.g_aplicar_perfil("alto")  # o teto
+	Config.g_perfil_temporario("medio")  # e a queda de agora, para a subida ter para onde ir
 	for estado in ["escolha", "bau", "vitoria"]:
 		mundo.combate.jogo = estado
 		mundo.combate.pausado = true
@@ -653,6 +679,79 @@ func _testar_janelas_qualidade(mundo, pausa) -> void:
 	Config.g_aplicar_perfil("alto")
 
 
+## O Perfil escolhido é o teto do Detalhe dinâmico, o Perfil mostra "(dinâmico)" quando o fps o derrubou e o save antigo migra.
+func _testar_teto_e_migracao(mundo, pausa) -> void:
+	mundo._qualidade = QualidadeAuto.new()
+	mundo._qualidade_ligada = true
+	mundo.combate.jogo = "jogando"
+	Config.definir("qualidade_auto", true)
+	Config.g_aplicar_perfil("medio")
+	for i in 500:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "baixo" and Config.g_perfil_escolhido() == "medio", "Médio + dinâmico desce para Baixo, e o escolhido segue Médio")
+	var linhas: Array = pausa._graficos.itens()
+	ok(str(linhas[0].valor) == "Baixo (dinâmico)", "o Perfil mostra o de agora e '(dinâmico)' quando desceu (mostra %s)" % str(linhas[0].valor))
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "baixo", "no Baixo com o dinâmico ligado não há para onde descer")
+	for i in 2000:  # 33 s no alvo: sobe um degrau
+		mundo._baixar_qualidade(1.0 / 60.0, 60.0)
+	ok(
+		Config.g_perfil() == "medio" and str(pausa._graficos.itens()[0].valor) == "Médio",
+		"fps firme sobe de volta ao Médio e o Perfil volta a mostrar só Médio"
+	)
+	for i in 20000:  # mais de 5 min de fps ótimo: o Alto não é do jogador, não sobe
+		mundo._baixar_qualidade(1.0 / 60.0, 60.0)
+	ok(Config.g_perfil() == "medio", "o Perfil escolhido é o teto: Médio nunca sobe para Alto")
+	for i in 500:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "baixo", "cai de novo para Baixo")
+	pausa._graficos.agir("perfil", 1)  # as setas partem do escolhido (Médio), não do Baixo caído
+	ok(
+		Config.g_perfil() == "alto" and Config.g_perfil_escolhido() == "alto" and bool(Config.v("qualidade_auto")),
+		"a seta do Perfil parte do escolhido (Médio -> Alto) e tira a queda"
+	)
+	Config.g_aplicar_perfil("medio")
+	for i in 500:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	pausa._graficos.agir("dinamico", 1)
+	ok(not bool(Config.v("qualidade_auto")) and Config.g_perfil() == "medio", "desligar o Detalhe dinâmico com o perfil caído volta na hora ao escolhido")
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "medio", "desligado, o fps baixo não derruba o perfil")
+	Config.definir("qualidade_auto", true)
+	Config.g_definir("max_inimigos", 300)  # Personalizado
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(
+		Config.g_perfil() == "personalizado" and str(pausa._graficos.itens()[0].valor) == "Personalizado",
+		"no Personalizado o dinâmico não age e o Perfil mostra Personalizado"
+	)
+	mundo._qualidade_ligada = false
+	# save antigo: qualidade_auto ligada + perfil Alto (o antigo "Dinâmico") = Perfil Alto + Detalhe dinâmico Sim; os outros casos ficam como estavam
+	var casos := [["alto", true, "Alto", "Sim"], ["alto", false, "Alto", "Não"], ["medio", true, "Médio", "Sim"], ["baixo", false, "Baixo", "Não"]]
+	for c in casos:
+		var cfg := ConfigFile.new()
+		cfg.set_value("graficos", "perfil", c[0])
+		cfg.set_value("graficos", "base", c[0])
+		cfg.set_value("opcoes", "qualidade_auto", c[1])
+		cfg.save(OPCOES_TESTE)
+		Config.recarregar()
+		var l: Array = pausa._graficos.itens()
+		ok(
+			str(l[0].valor) == c[2] and str(l[1].valor) == c[3] and Config.g_perfil_escolhido() == c[0],
+			(
+				"save antigo (%s, qualidade_auto %s) abre como Perfil %s e Detalhe dinâmico %s (mostra %s e %s)"
+				% [c[0], str(c[1]), c[2], c[3], str(l[0].valor), str(l[1].valor)]
+			)
+		)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(OPCOES_TESTE))
+	Config.recarregar()
+	ok(bool(Config.v("qualidade_auto")), "sem nada salvo (máquina nova) o Detalhe dinâmico vem Sim")
+	Config.g_aplicar_perfil("alto")
+	await get_tree().process_frame
+
+
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
 	var mundo = Mundo.instantiate()
@@ -672,7 +771,7 @@ func _fotos(pasta: String) -> void:
 	_tecla(KEY_ENTER)
 	Config.definir("qualidade_auto", true)
 	Config.g_aplicar_perfil("alto")
-	_ir_para(pausa, "g:perfil")  # o Dinâmico, com a explicação curta e o rodapé do '?'
+	_ir_para(pausa, "g:dinamico")  # a linha Detalhe dinâmico, com a ajuda no rodapé
 	await mundo.ap.foto(pasta.path_join("pausa_graficos_topo.png"))
 	_ir_para(pausa, "g:avancado")
 	await mundo.ap.foto(pasta.path_join("pausa_graficos.png"))
