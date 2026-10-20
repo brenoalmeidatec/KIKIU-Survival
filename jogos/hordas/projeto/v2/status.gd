@@ -4,7 +4,7 @@ extends CanvasLayer
 ##     jogo: cada um vem do getter do módulo que o usa (heroi.vel_andar, combate.dano_do_passo, armas.numeros, progresso.cura_por_nivel...),
 ##     nunca de uma fórmula copiada aqui. Cada linha tem `id`, `rotulo`, `valor` (o texto), `bonus` (o que passa da base, em outra cor) e `n`
 ##     (os números crus, em ordem; é o que o teste v2_status compara com o que o jogo FAZ).
-##  2. O desenho, em TRÊS modos (`_modo()`), todos com a moldura de pedra do HUD (hud/moldura_pedra.png). Títulos na Jersey 10, texto na
+##  2. O desenho, em TRÊS modos (`_modo()`), todos com a moldura dourada dos menus (v2/estilo_premium.gd). Títulos na Jersey 10, texto na
 ##     Spleen 8x16 em 16 px e NÚMEROS na Press Start 2P (a fonte do HUD). Tudo é desenhado num Control só (draw_*): nenhum nó por linha, nenhum nó criado ao atualizar.
 ## Onde aparece:
 ##  - "pausa": na tela "menu" da pausa, duas colunas ladeiam o menu (pausa.gd chama `na_pausa(true/false)`), por cima da pausa (camada 15).
@@ -25,7 +25,7 @@ const EscalaUi := preload("res://v2/escala_ui.gd")
 const Meta := preload("res://v2/meta.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const Pausa := preload("res://v2/pausa.gd")
-const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
+const EstiloPremium := preload("res://v2/estilo_premium.gd")
 const LAYER_HUD := 8
 const LAYER_CENTRAL := 13  # acima do HUD (10), das cartas (11) e do resultado (12); abaixo do menu de pausa (14)
 const LAYER_PAUSA := 15  # acima do menu de pausa (camada 14) e do escurecimento dele
@@ -113,14 +113,7 @@ func _ready() -> void:
 	layer = LAYER_HUD
 	add_to_group("ui_escala")
 	Glifos.ao_mudar(_redesenhar_dicas)  # as dicas de tecla seguem o dispositivo em uso
-	_estilo = StyleBoxTexture.new()
-	_estilo.texture = MOLDURA
-	_estilo.texture_margin_left = 5
-	_estilo.texture_margin_top = 5
-	_estilo.texture_margin_right = 5
-	_estilo.texture_margin_bottom = 5
-	_estilo.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
-	_estilo.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
+	_estilo = EstiloPremium.painel()  # a moldura dourada dos menus (o texto fica a PAD = 8 px da borda, fora do bisel e dos losangos)
 	_f_num = (Dados.fonte as FontFile).duplicate() as FontFile
 	(_f_num as FontFile).antialiasing = TextServer.FONT_ANTIALIASING_NONE
 	(_f_num as FontFile).hinting = TextServer.HINTING_NONE
