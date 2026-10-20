@@ -1,6 +1,7 @@
 extends Control
-## Dois slots de habilidade no HUD. E (a ruptura) e Q (o especial do herói, v2/especial.gd) leem somente os campos publicados pelo herói: sem os
-## campos, o slot fica apagado (E "INDISP.", Q "EM BREVE") e nunca indica uma habilidade pronta que não existe.
+## Dois slots de habilidade no HUD. E (a habilidade do herói: a ruptura do Hazaki, a investida do Nicão, o salto do Lucas; v2/habilidade.gd) e Q (a ultimate
+## do herói, v2/especial.gd) leem somente os campos publicados pelo herói: sem os campos, o slot fica apagado (E "INDISP.", Q "EM BREVE") e nunca indica
+## uma habilidade pronta que não existe. Quem tem a ruptura (hab_id "ruptura" ou sem hab_*) usa os rup_*; as outras E usam os hab_* (nome, ícone, cor, recarga).
 
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
@@ -18,7 +19,11 @@ const MOLDURA_MARGEM := Vector2(11.0, 11.0)
 const MOLDURA_APAGADA := Color(1.0, 1.0, 1.0, 0.75)  # slot desabilitado: a mesma moldura a 0,75 de alfa (DESIGN.md, botões)
 const FOLGA_MOLDURA := 4.0  # espessura da borda de pedra: o quadro do ícone começa depois dela
 
-var estado_e := "indisponivel"  # indisponivel | ruptura
+var estado_e := "indisponivel"  # indisponivel | ruptura | habilidade
+var e_icone := "ruptura"  # o id do ícone da E (assets/v2/icones_cartas)
+var e_texto := "RUPTURA"  # o rótulo do slot E quando pronta
+var e_cor := Paleta.CARGA_LARANJA  # a cor do slot E pronto
+var e_ativa := false  # a E (que não é a ruptura) está em andamento
 var e_disponivel := false
 var e_pronta := false
 var q_implementada := false  # Q só acende se o herói publica um especial real (esp_nome); sem os campos ela fica apagada.
@@ -81,8 +86,13 @@ func sincronizar(heroi) -> void:
 	if id_heroi != _heroi_id:
 		_cache_propriedades.erase(_heroi_id)
 		_heroi_id = id_heroi
-	e_disponivel = _tem_propriedade(heroi, "rup_carga")
-	estado_e = "ruptura" if e_disponivel else "indisponivel"
+	var e_outra := _tem_propriedade(heroi, "hab_recarga") and str(_campo(heroi, "hab_id", "ruptura")) != "ruptura"
+	e_disponivel = _tem_propriedade(heroi, "rup_carga") if not e_outra else str(_campo(heroi, "hab_nome", "")) != ""
+	estado_e = ("habilidade" if e_outra else "ruptura") if e_disponivel else "indisponivel"
+	e_icone = "ruptura"
+	e_texto = "RUPTURA"
+	e_cor = Paleta.CARGA_LARANJA
+	e_ativa = false
 	q_implementada = _tem_propriedade(heroi, "esp_carga") and str(_campo(heroi, "esp_nome", "")) != ""
 	q_pronta = false
 	q_carga_px = 0
@@ -110,7 +120,18 @@ func sincronizar(heroi) -> void:
 	carga_percentual = 0
 	perfeita = false
 	negada = false
-	if e_disponivel:
+	if e_disponivel and e_outra:
+		var rec_h := maxf(float(_campo(heroi, "hab_recarga", 0.0)), 0.0)
+		var rec_h_max := maxf(float(_campo(heroi, "hab_recarga_max", 1.0)), 0.001)
+		e_ativa = float(_campo(heroi, "hab_t", 0.0)) > 0.0
+		e_icone = str(_campo(heroi, "hab_icone", "ruptura"))
+		e_texto = str(_campo(heroi, "hab_rotulo", ""))
+		e_cor = _campo(heroi, "hab_cor", Paleta.CARGA_LARANJA)
+		e_pronta = rec_h <= 0.0 or e_ativa
+		recarga_s = 0.0 if e_ativa else rec_h
+		recarga_px = 0 if e_ativa or rec_h <= 0.0 else mini(ceili(rec_h / rec_h_max * 20.0), 20)
+		negada = float(_campo(heroi, "hab_nega_t", 0.0)) > 0.0
+	elif e_disponivel:
 		var carga := clampf(float(heroi.get("rup_carga")), 0.0, 1.0)
 		var recarga := maxf(float(_campo(heroi, "rup_recarga", 0.0)), 0.0)
 		var recarga_max := maxf(float(_campo(heroi, "rup_recarga_max", 1.0)), 0.001)
@@ -127,9 +148,9 @@ func sincronizar(heroi) -> void:
 		negada = float(_campo(heroi, "rup_nega_t", 0.0)) > 0.0
 	var rotulo := _rotulo_e()
 	var fase_perfeita := int(Time.get_ticks_msec() / 50.0) % 2 if perfeita else 0
-	var fase_q := int(Time.get_ticks_msec() / 160.0) % 2 if q_pronta or q_ativa or q_negada else 0  # o brilho do slot pronto pulsa
+	var fase_q := int(Time.get_ticks_msec() / 160.0) % 2 if q_pronta or q_ativa or q_negada or e_ativa else 0  # o brilho do slot pronto (Q) e da E em andamento pulsa
 	var nova_chave := (
-		"%s|%s|%s|%d|%d|%d|%d|%s|%s|%s|%d|%s|%d|%d|%s|%s|%d|%s"
+		"%s|%s|%s|%d|%d|%d|%d|%s|%s|%s|%d|%s|%d|%d|%s|%s|%d|%s|%s|%s"
 		% [
 			estado_e,
 			e_pronta,
@@ -148,7 +169,9 @@ func sincronizar(heroi) -> void:
 			_rotulo_q(),
 			q_negada,
 			fase_q,
-			q_ativa
+			q_ativa,
+			e_icone,
+			e_ativa
 		]
 	)
 	if nova_chave != _chave:
@@ -169,7 +192,9 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	_moldura_pedra(card, ativo)
 	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, FOLGA_MOLDURA + 1.0)
 	var icone := Rect2(icon_pos, TAM_ICON)
-	var cor := CARGA_LARANJA if tecla == "E" and e_pronta else DESATIVADO
+	var cor := e_cor if tecla == "E" and e_pronta else DESATIVADO
+	if tecla == "E" and e_ativa and int(Time.get_ticks_msec() / 160.0) % 2 == 0:
+		cor = e_cor.lerp(Paleta.BRANCO, 0.45)  # a E em andamento: o quadro do ícone pulsa
 	if tecla == "E" and not e_disponivel:
 		cor = DESATIVADO
 	if tecla == "E" and negada:
@@ -184,7 +209,7 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 			cor = q_cor.lerp(Paleta.BRANCO, 0.45)  # pronto: o quadro do ícone pulsa
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
-	var arte := Dados.icone_carta("ruptura" if tecla == "E" else "ultimate_q")
+	var arte := Dados.icone_carta(e_icone if tecla == "E" else "ultimate_q")
 	if arte != null:
 		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro de 48; apagado quando não está disponível
 		var tinta := DESATIVADO
@@ -275,7 +300,7 @@ func _rotulo_e() -> String:
 		return "%.1f S" % recarga_s
 	if carga_percentual > 0:
 		return "%d%%" % carga_percentual
-	return "RUPTURA"
+	return e_texto
 
 
 ## A moldura de pedra do slot (9-slice, centro transparente). O estado (pronto, recarga, negado) continua no quadro de 1 px do ícone.

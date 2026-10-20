@@ -31,6 +31,9 @@ extends RefCounted
 ##   --roteiro=especial    (tecla Q) o ESPECIAL do herói escolhido (--heroi=hazaki|nicao|lucas) contra 30 monstros em volta (e uma fila à frente, para
 ##                         a investida). Fotos do viewport: 0_vazio (o slot Q com 0% de carga) e 0b_meio (55%), 1_pronto (o slot Q cheio e pulsando, antes de apertar), 2_especial (o momento forte: a investida do
 ##                         Hazaki, a batida e a onda do Nicão, a tempestade do Lucas) e 3_slot (0,25 s depois de acabar: o slot Q vazio de novo). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=habilidade  (tecla E) a HABILIDADE do herói escolhido (--heroi=hazaki|nicao|lucas: a ruptura, a investida de escudo ou o salto das adagas)
+##                         contra 30 monstros em volta (e uma fila à frente). Fotos do viewport: 1_pronto (slots E pronto e Q a 55%), 2_habilidade (o momento
+##                         forte) e 3_recarga (0,4 s depois: o slot E em recarga). Usar com --fotos=PASTA --nome=prefixo.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -122,6 +125,8 @@ func atualizar(dt: float) -> void:
 				_r_ruptura()
 			"especial":
 				_r_especial()
+			"habilidade":
+				_r_habilidade()
 			"golpes":
 				_r_golpes()
 			"hud_golpes":
@@ -926,6 +931,76 @@ func _r_especial() -> void:
 				_foto("3_slot")
 				passo = 6
 		6:
+			mundo.get_tree().quit()
+
+
+## A habilidade (tecla E) do herói escolhido: 30 monstros em volta (e uma fila à frente, para a investida do Nicão) e o herói imortal e parado, com a
+## ultimate (Q) a 55% para o HUD mostrar os dois slots. Fotos 1_pronto (slot E pronto), 2_habilidade (o momento forte; no Hazaki, a ruptura recém solta) e
+## 3_recarga (0,4 s depois de acabar: o slot E em recarga). O Hazaki segura a E (ruptura_forcada) por 1,1 s; os outros disparam no aperto.
+func _r_habilidade() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			mundo.mouse_forcado = h.centro() + Vector2(100, 0)
+			var tipos := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_lobo_sombrio", "inimigo_espantalho"]
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 23
+			for i in 30:
+				var a := TAU * float(i) / 30.0 + rng.randf_range(-0.1, 0.1)
+				var r := rng.randf_range(70.0, 230.0)
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(cos(a) * r, sin(a) * r * 0.62), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			for i in 6:
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(70.0 + 35.0 * float(i), rng.randf_range(-6.0, 6.0)), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			h.esp_carga = h.esp_carga_max * 0.55
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.3:
+				_foto("1_pronto")
+				passo = 2
+				t_passo = 0.0
+		2:
+			if h.hab_id == "ruptura":
+				h.ruptura_forcada = true
+				h.ruptura()
+			else:
+				h.habilidade()
+			passo = 3
+			t_passo = 0.0
+		3:
+			var b: Dictionary = mundo.combate.habilidade.bloco_de(str(h.chave))
+			if h.hab_id == "ruptura":
+				if t_passo > 1.1:
+					h.ruptura_forcada = false
+					passo = 5
+					t_passo = 0.0
+			elif h.estado == h.Estado.HABILIDADE and h.hab_t >= float(b.get("foto", 0.2)):
+				_foto("2_habilidade")
+				passo = 4
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 4
+		4:
+			if h.estado != h.Estado.HABILIDADE:
+				passo = 7
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 7
+		5:  # o Hazaki: a ruptura saiu agora; a foto sai um instante depois, com a onda no ar
+			if t_passo > 0.1:
+				_foto("2_habilidade")
+				passo = 7
+				t_passo = 0.0
+		7:
+			if t_passo > 0.4:
+				_foto("3_recarga")
+				passo = 8
+		8:
 			mundo.get_tree().quit()
 
 
