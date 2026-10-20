@@ -82,6 +82,24 @@ func desligar() -> void:
 	no_voo.queue_redraw()
 
 
+## Sai da partida: libera os nós (os que nunca entraram na árvore são órfãos e não se liberam sozinhos) e desfaz as referências cruzadas.
+func liberar() -> void:
+	for n in [atras, frente, no_voo]:
+		if is_instance_valid(n):
+			if n.get_parent() == null:
+				n.free()
+			else:
+				n.queue_free()
+	atras = null
+	frente = null
+	no_voo = null
+	m = null
+	chefe = null
+	combate = null
+	mundo = null
+	voos.clear()
+
+
 func atualizar(dt: float) -> void:
 	t += dt
 	if m != null and m.vivo and adorno != "":

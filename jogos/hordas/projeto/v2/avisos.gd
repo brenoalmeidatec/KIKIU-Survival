@@ -30,7 +30,7 @@ var estilo := PackedByteArray()
 var no_corpo: Node2D  # a pedra que cai (mistura normal, sem luz: a fumaça escura aparece)
 var efeito: Array = []  # Callable ou null: roda no instante do dano
 var dono: Array = []  # quem criou o aviso (ou null): `cancelar` tira só os avisos de um dono (o chefe que morre)
-var acertou := false  # o último aviso a disparar machucou o herói? (vale dentro do `quando` dele: a teia só prende quem apanhou)
+var acertou := false  # o último aviso a disparar TIROU VIDA do herói? (vale dentro do `quando` dele: a teia só prende quem perdeu vida; escudo, esquiva e invencível não contam)
 var disparados := 0  # quantos já dispararam (testes)
 var machucou := 0  # quantas vezes acertou o herói (testes)
 var _desenhou := false
@@ -194,8 +194,8 @@ func atualizar(dt: float) -> void:
 
 func _disparar(i: int) -> void:
 	disparados += 1
-	var antes := machucou
 	var h = mundo.heroi
+	var vida_antes: float = h.vida
 	var p: Vector2 = pos[i]
 	var c: Color = cor[i]
 	if tipo[i] == 1:
@@ -217,7 +217,7 @@ func _disparar(i: int) -> void:
 			if h.levar_dano(dano[i], p):
 				machucou += 1
 		combate.fx.onda(p, Color(c.r, c.g, c.b, 0.6), 22.0, 0.2)
-	acertou = machucou > antes
+	acertou = h.vida < vida_antes
 	var f = efeito[i]
 	efeito[i] = null
 	dono[i] = null

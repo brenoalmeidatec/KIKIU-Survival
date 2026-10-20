@@ -67,6 +67,15 @@ func montar(c) -> void:
 	zerar()
 
 
+## Sai da partida (combate.liberar): o visual aponta de volta para este controlador, então é preciso soltá-lo para nenhum dos dois ficar vivo.
+func liberar() -> void:
+	if visual != null:
+		visual.liberar()
+		visual = null
+	combate = null
+	mundo = null
+
+
 func zerar() -> void:
 	if luz != null:
 		luz.enabled = false

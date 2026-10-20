@@ -175,6 +175,21 @@ func identidade_dos_chefes() -> void:
 	ok(ch._teia_t == 0.0, "teia (esquiva): quem não levou dano não fica lento")
 	ok(ch._filhotes.size() == int(ch.cfg.ataques.teia.filhotes), "teia (esquiva): os filhotes nascem mesmo assim")
 	h.estado = Heroi.Estado.LIVRE
+	# escudo erguido de frente para a teia: o escudo consome o golpe (levar_dano devolve true), mas a vida fica intacta e o herói NÃO fica lento
+	m = ate_o_aviso(1)
+	h.escudo_forcado = true
+	ate(func(): return av.t[0] >= av.dur[0] - 2.0 * PASSO, 150)
+	ok(h.escudo_ativo, "teia (escudo): o escudo está erguido no disparo")
+	var bl0: int = w.combate.escudo.bloqueios
+	d0 = av.disparados
+	ate(func(): return av.disparados > d0, 30)
+	h.escudo_forcado = false
+	ok(av.disparados == d0 + 1 and h.vida == h.vida_max, "teia (escudo): o escudo segura o golpe, a vida fica intacta")
+	ok(w.combate.escudo.bloqueios == bl0 + 1, "teia (escudo): o golpe foi bloqueado pelo escudo")
+	ok(not av.acertou and ch._teia_t == 0.0, "teia (escudo): quem bloqueou não perdeu vida e não fica lento")
+	ok(ch._filhotes.size() == int(ch.cfg.ataques.teia.filhotes), "teia (escudo): os filhotes nascem mesmo assim")
+	passos(3)
+	h.estado = Heroi.Estado.LIVRE
 	# a lentidão só corta o andar LIVRE: esquiva, golpe e carga andam à vontade (o herói "andou" 10 px no quadro)
 	for e in [Heroi.Estado.LIVRE, Heroi.Estado.ESQUIVA, Heroi.Estado.GOLPE, Heroi.Estado.CARGA]:
 		h.estado = e
@@ -238,6 +253,41 @@ func identidade_dos_chefes() -> void:
 	h.imortal = true
 
 
+## Sair do mapa libera os controladores e os nós do visual do chefe (a referência cruzada chefe <-> visual não pode segurá-los), com e sem chefe.
+func liberacao() -> void:
+	for com_chefe in [false, true]:
+		var w2 = Mundo.instantiate()
+		w2.modo_teste = true
+		add_child(w2)
+		w2.set_process(false)
+		w2.combate.audio.mudo = true
+		var ch = w2.combate.chefes
+		if com_chefe:
+			ch.nascer(ch.cfg.marcas[2], w2.heroi.pos + Vector2(120, 0))
+			w2.avancar(PASSO)
+		var v = ch.visual
+		var refs := {
+			"combate": weakref(w2.combate),
+			"chefes": weakref(ch),
+			"visual": weakref(v),
+			"atras": weakref(v.atras),
+			"frente": weakref(v.frente),
+			"no_voo": weakref(v.no_voo)
+		}
+		var etiqueta := "com chefe" if com_chefe else "sem chefe"
+		ok(
+			v.atras.get_parent() != null if com_chefe else v.atras.get_parent() == null,
+			"liberação (%s): o adorno %s" % [etiqueta, "está no corpo" if com_chefe else "ainda é órfão"]
+		)
+		v = null
+		ch = null
+		remove_child(w2)
+		w2.free()
+		await get_tree().process_frame
+		for k in refs:
+			ok(refs[k].get_ref() == null, "liberação (%s): %s é liberado ao sair da partida" % [etiqueta, k])
+
+
 func _ready() -> void:
 	w = Mundo.instantiate()
 	w.modo_teste = true
@@ -285,6 +335,7 @@ func _ready() -> void:
 	)
 
 	identidade_dos_chefes()
+	await liberacao()
 
 	# save de teste: a vitória marca o mapa como vencido nele, nunca no save de verdade
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_TESTE))
