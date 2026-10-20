@@ -428,8 +428,8 @@ func _acao_sel(passo: int, confirmar: bool) -> void:
 	if _itens_atuais.is_empty():
 		return
 	var id := str(_itens_atuais[sel].id)
-	if id == "":
-		return
+	if id == "" or bool(_itens_atuais[sel].get("bloqueado", false)):
+		return  # cabeçalho ou linha apagada (Avançado com o Detalhe dinâmico ligado): não faz nada
 	if _eh_stepper(id):
 		_executar(id, passo)
 	elif confirmar:
@@ -438,7 +438,7 @@ func _acao_sel(passo: int, confirmar: bool) -> void:
 
 
 func _eh_stepper(id: String) -> bool:
-	return id in STEPPERS or id == "g:perfil" or id.begins_with("g:op:")
+	return id in STEPPERS or id == "g:perfil" or id == "g:dinamico" or id.begins_with("g:op:")
 
 
 ## Índice (na lista inteira) da linha visível sob o mouse; -1 se não há linha ali (ou é cabeçalho).
@@ -623,6 +623,8 @@ func _desenhar() -> void:
 		l["rotulo"].text = str(it.rotulo)
 		l["valor"].text = str(it.get("valor", ""))
 		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
+		if bool(it.get("bloqueado", false)):
+			cor = Color(COR_OURO, 0.6) if on else Color(COR_TEXTO, 0.38)  # linha apagada: continua com foco (a ajuda diz por quê), mas não muda
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
 		var ico: TextureRect = l["icone"]
