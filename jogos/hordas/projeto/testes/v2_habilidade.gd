@@ -266,8 +266,8 @@ func _lucas() -> void:
 	var adagas = w.combate.adagas
 	zerar()
 	var frente = monstro_a(120)
-	var frente2 = monstro_a(190, 18)
-	var lado = monstro_a(0, 140)  # fora do leque
+	var frente2 = monstro_a(200, 0)  # na mesma linha: a adaga do meio fura o primeiro e chega nele
+	var lado = monstro_a(0, 200)  # fora do leque (a ~50 graus da mira de onde ele pousa)
 	var fora = monstro_a(700)
 	var p0: Vector2 = h.pos
 	var lancadas0: int = adagas.lancadas
@@ -276,7 +276,7 @@ func _lucas() -> void:
 	var saida := int(hab.bloco_de("lucas").saida.n)
 	ok(adagas.lancadas - lancadas0 >= saida, "lucas: o primeiro leque sai na decolagem (%d adagas)" % (adagas.lancadas - lancadas0))
 	var vida0: float = h.vida
-	var m_c = monstro_a(6)
+	var m_c = monstro_a(-6)  # atrás: a adaga do meio não fura ele antes dos alvos da frente
 	ok(not h.levar_dano(10.0, m_c.pos, m_c) and h.vida == vida0, "lucas: invulnerável durante o salto")
 	var n := 0
 	while h.estado == Heroi.Estado.HABILIDADE and n < 200:
