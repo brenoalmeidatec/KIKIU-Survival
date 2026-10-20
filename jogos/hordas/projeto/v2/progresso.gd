@@ -11,6 +11,7 @@ var melhorias := {}  # id da carta -> quantas vezes pegou
 var pendentes := 0  # níveis subidos que ainda esperam a escolha
 var cartas: Array = []  # as cartas na tela
 var escolhidas := 0  # quantas cartas o jogador já escolheu (testes)
+var ultima_nome := ""  # o nome da última carta escolhida (o aviso da escolha automática diz qual foi)
 
 
 func montar(c) -> void:
@@ -97,6 +98,7 @@ func escolher(i: int) -> void:
 	var c: Dictionary = cartas[i]
 	aplicar(c)
 	escolhidas += 1
+	ultima_nome = str(c.get("nome", ""))
 	pendentes = maxi(0, pendentes - 1)
 	cartas = []
 	combate.telas.esconder()

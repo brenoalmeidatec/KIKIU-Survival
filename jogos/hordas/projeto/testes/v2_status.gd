@@ -1385,7 +1385,7 @@ func pausa_entrada(ev: InputEvent) -> bool:
 
 
 ## Escolha de cartas e baú: o card compacto sai de cena, o C abre o painel CENTRAL por cima das cartas, nada é escolhido enquanto ele está
-## aberto, a trava de 1 s segue correndo, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
+## aberto, a trava de 1 s e o limite ficam parados, o ESC abre a pausa e, fechado o painel, as cartas voltam intactas.
 func _escolha_e_bau(st, c, pausa) -> void:
 	var tela_c = c.telas
 	tecla(KEY_C)  # liga o card compacto (jogo rolando)
@@ -1421,14 +1421,11 @@ func _escolha_e_bau(st, c, pausa) -> void:
 	for rc in rc3:
 		ok(Rect2(0, 0, 960, 540).encloses(rc), "a coluna do painel central cabe na tela (%s)" % str(rc))
 	ok(st.retangulos_visuais().size() == 3 and not st.visual_cortada().has(true), "a página visual do painel central tem três colunas e cabe")
-	# --- a trava de 1 s das cartas segue correndo (tempo real) com o painel aberto
+	# --- a trava de 1 s das cartas fica PARADA com o painel aberto (quem lê a build não perde tempo; v2_cartas_limite cobre o limite de 8 s)
 	var trava0: float = tela_c.espera_escolha
 	ok(trava0 > 0.5, "a trava das cartas está correndo (%.2f s)" % trava0)
 	passos(15)
-	ok(
-		tela_c.espera_escolha < trava0 - 0.2 and tela_c.espera_escolha > 0.0,
-		"com o painel aberto a trava segue correndo em tempo real (%.2f s -> %.2f s depois de 0,25 s)" % [trava0, tela_c.espera_escolha]
-	)
+	ok(tela_c.espera_escolha == trava0, "com o painel aberto a trava fica parada (%.2f s -> %.2f s depois de 0,25 s)" % [trava0, tela_c.espera_escolha])
 	# --- libera a trava e prova que o PAINEL (não a trava) segura as teclas e os cliques
 	tela_c._liberar_cartas()
 	ok(tela_c.espera_escolha == 0.0, "trava liberada para o teste")

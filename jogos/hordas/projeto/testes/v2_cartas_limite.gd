@@ -4,7 +4,7 @@ extends Node
 # ficam vermelhas nos últimos 3 s; ao zerar o sistema escolhe pela MESMA regra do botão Automático (progresso.automatico) e o HUD avisa
 # "Escolhida automaticamente"; rerrolar e banir renovam o limite; limite_s = 0 desliga. O ESC (e o Start do controle) na escolha NÃO pausa: abre
 # "Pausar agora? Você perde estas cartas" com "Não" marcado; com ela aberta a trava e o limite ficam parados, as cartas não reagem; Não (ESC, B, Enter,
-# N, clique) volta com o tempo que restava; Sim (S, Enter com Sim marcado, A, clique) descarta a rodada (nenhuma carta, sem reembolso, nível pendente
+# N, clique) volta com o tempo que restava; Sim (só por escolha explícita: seta até Sim e Enter, A, clique; S e as outras teclas de andar NUNCA confirmam) descarta a rodada (nenhuma carta, sem reembolso, nível pendente
 # consumido) e abre a pausa normal. O baú segue pausando direto. A entrada vai pela JANELA (Input.parse_input_event), a rota do jogador de verdade.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cartas_limite.tscn  (imprime "v2_cartas_limite falhas=0")
 # Fotos: godot --path jogos/hordas/projeto res://testes/v2_cartas_limite.tscn -- --fotos=PASTA  (barra do limite e confirmação; grava e sai)
@@ -56,6 +56,14 @@ func _start() -> void:
 	for p in [true, false]:
 		var e := InputEventJoypadButton.new()
 		e.button_index = JOY_BUTTON_START
+		e.pressed = p
+		Input.parse_input_event(e)
+
+
+func _select() -> void:  # o Select do controle (abre/fecha o painel central da build)
+	for p in [true, false]:
+		var e := InputEventJoypadButton.new()
+		e.button_index = JOY_BUTTON_BACK
 		e.pressed = p
 		Input.parse_input_event(e)
 
@@ -189,7 +197,11 @@ func _testes() -> void:
 	ok(c.jogo == "jogando" and not t.escolha_aberta and not c.pausado, "o jogo volta a rodar")
 	ok(c.progresso.escolhidas == esc0 + 1, "uma carta foi escolhida")
 	ok(cs.nivel_de(id) == nv_antes + 1, "a carta é a do botão Automático (%s: %d -> %d)" % [id, nv_antes, cs.nivel_de(id)])
-	ok(c.anuncios == anuncios0 + 1 and c.ultimo_anuncio == "Escolhida automaticamente", "o HUD avisa 'Escolhida automaticamente' (%s)" % c.ultimo_anuncio)
+	ok(
+		c.anuncios == anuncios0 + 1 and c.ultimo_anuncio == "Escolhida automaticamente: %s" % c.progresso.ultima_nome and c.progresso.ultima_nome != "",
+		"o HUD avisa qual carta foi escolhida (%s)" % c.ultimo_anuncio
+	)
+	ok(c.progresso.ultima_nome == str(esperada.nome), "e é o nome da carta do Automático (%s)" % c.progresso.ultima_nome)
 	ok(not t._limite_fundo.visible, "a barra some com a escolha")
 
 	# 4. o botão Automático e a escolha à mão NÃO mostram o aviso
@@ -296,7 +308,8 @@ func _testes() -> void:
 	var pend: int = c.progresso.pendentes
 	var habil: Array = cs.resumo()
 	_toque(KEY_ESCAPE)
-	_toque(KEY_S)
+	_toque(KEY_LEFT)
+	_toque(KEY_ENTER)
 	ok(not t.conf_aberta and not t.escolha_aberta, "Sim fecha a confirmação e a escolha")
 	ok(w.pausa.aberto and get_tree().paused and w.pausa.tela == "menu", "e abre a pausa normal")
 	ok(c.progresso.escolhidas == esc0 and cs.resumo() == habil, "nenhuma carta foi escolhida nem aplicada")
@@ -335,11 +348,78 @@ func _testes() -> void:
 	c.progresso.abrir_escolha()
 	liberar()
 	_toque(KEY_ESCAPE)
-	_toque(KEY_S)
+	_toque(KEY_LEFT)
+	_toque(KEY_ENTER)
 	ok(c.progresso.pendentes == 1 and c.lento_acao == "nivel", "com 2 níveis, Sim perde um e arma o seguinte")
 	w.pausa.fechar()
 	ate(func(): return c.jogo == "escolha", 120)
 	ok(c.jogo == "escolha" and t.escolha_aberta and lim() == limite, "a rodada seguinte abre com o limite cheio")
+	t._automatico()
+
+	# 13. o painel central da build (C / Select) sobre as cartas PARA o limite (e a trava) e ele volta ao fechar
+	zerar()
+	subir_nivel()
+	liberar()
+	passos(60 * 2)
+	var resto_c := lim()
+	_toque(KEY_C)
+	ok(w.status.central_aberto() and c.jogo == "escolha", "C na escolha abre o painel central")
+	passos(60 * 9)
+	ok(c.jogo == "escolha" and t.escolha_aberta and c.progresso.escolhidas == 0, "com o painel aberto 9 s a escolha NÃO fecha sozinha")
+	ok(lim() == resto_c, "e o limite ficou parado (%.3f contra %.3f)" % [lim(), resto_c])
+	_toque(KEY_C)
+	ok(not w.status.central_aberto(), "C de novo fecha o painel")
+	passos(60)
+	ok(lim() < resto_c - 0.9 and lim() > resto_c - 1.2, "ao fechar o tempo volta a correr de onde parou (%.2f)" % lim())
+	zerar()  # o Select do controle faz o mesmo, e na trava também
+	subir_nivel()
+	var trava_s: float = t.espera_escolha
+	ok(trava_s > 0.0, "(Select) a trava está rodando")
+	_select()
+	ok(w.status.central_aberto(), "(Select) abre o painel central")
+	passos(60)
+	ok(t.espera_escolha == trava_s, "(Select) o painel também para a trava")
+	_select()
+	liberar()
+	passos(60)
+	var resto_s := lim()
+	_select()
+	passos(60 * 9)
+	ok(c.jogo == "escolha" and lim() == resto_s, "(Select) com o painel aberto 9 s o limite fica parado")
+	_select()
+	t._automatico()
+
+	# 14. a tecla S (andar para baixo no WASD) e as outras teclas de movimento NUNCA confirmam o Sim
+	zerar()
+	subir_nivel()
+	liberar()
+	esc0 = c.progresso.escolhidas
+	_toque(KEY_ESCAPE)
+	for k in [KEY_S, KEY_W, KEY_SHIFT, KEY_UP, KEY_DOWN]:
+		_toque(k)
+	ok(t.conf_aberta and not w.pausa.aberto and t.conf_sel == 1, "ESC e depois S, W, Shift, cima e baixo: a confirmação segue aberta em Não")
+	ok(c.progresso.escolhidas == esc0 and c.jogo == "escolha" and c.progresso.cartas.size() > 0, "e a rodada de cartas não se perdeu")
+	_toque(KEY_ESCAPE)
+	ok(not t.conf_aberta and not w.pausa.aberto and c.jogo == "escolha", "ESC fecha a confirmação (Não) e as cartas seguem")
+	t._automatico()
+
+	# 15. com a confirmação aberta C e Select não fazem nada (nem painel por cima, nem tempo correndo escondido)
+	zerar()
+	subir_nivel()
+	liberar()
+	passos(60)
+	var resto_k := lim()
+	_toque(KEY_ESCAPE)
+	_toque(KEY_C)
+	ok(t.conf_aberta and not w.status.central_aberto(), "C com a confirmação aberta não abre o painel central")
+	_select()
+	ok(t.conf_aberta and not w.status.central_aberto(), "e o Select do controle também não")
+	passos(60 * 9)
+	ok(c.jogo == "escolha" and lim() == resto_k, "e o tempo segue parado (%.3f)" % lim())
+	_toque(KEY_ESCAPE)
+	ok(not t.conf_aberta and not w.status.central_aberto() and c.jogo == "escolha", "ESC volta às cartas, sem painel por cima")
+	passos(60)
+	ok(lim() < resto_k - 0.9, "e o limite volta a correr, à vista (%.2f)" % lim())
 	t._automatico()
 
 	# 12. o baú segue pausando direto no ESC (nada de confirmação: as cartas dele já foram dadas)

@@ -783,10 +783,16 @@ func _pausa_aberta() -> bool:
 	return p != null and bool(p.aberto)
 
 
+## O jogador está lendo o painel central da build (C / Select) sobre as cartas: o tempo delas não corre.
+func _painel_build_aberto() -> bool:
+	var st = mundo.get("status")
+	return st != null and st.central_aberto()
+
+
 ## Tempo REAL da escolha: a trava das cartas (1 s; 0,8 s depois de rerrolar ou banir), o brilho ao liberar e a pulsada da contagem.
 ## O dt vem do relógio de parede (combate.efeitos), então câmera lenta e hit-stop não mexem nele.
 func _atualizar_escolha(dt: float) -> void:
-	var parado := _pausa_aberta() or conf_aberta  # a pausa e o "Pausar agora?" param a trava e o limite
+	var parado := _pausa_aberta() or conf_aberta or _painel_build_aberto()  # a pausa, o "Pausar agora?" e o painel da build (C) param a trava e o limite
 	if espera_escolha > 0.0:
 		if not parado:
 			espera_escolha = maxf(0.0, espera_escolha - dt)
@@ -836,7 +842,8 @@ func _tempo_esgotado() -> void:
 	if not combate.progresso.automatico():
 		combate.progresso.escolher(sel)
 	if combate.progresso.escolhidas > antes:
-		combate.anunciar("Escolhida automaticamente", Paleta.OURO)
+		var nome: String = combate.progresso.ultima_nome
+		combate.anunciar("Escolhida automaticamente: %s" % nome if nome != "" else "Escolhida automaticamente", Paleta.OURO)
 
 
 ## Intercepta o ESC e o Start que abririam a pausa (pausa.gd chama aqui antes de pausar). Na escolha de cartas eles NÃO pausam: abrem a
@@ -896,7 +903,8 @@ func _conf_botao_sob_mouse() -> int:
 
 
 ## Entrada com o "Pausar agora?" aberto: ele come tudo (as cartas, o rerrolar e o banir ficam quietos). Esquerda e direita trocam Sim/Não, confirmar
-## aciona o marcado, B/ESC/Start/N = Não e S = Sim. O mouse marca ao passar e aciona no aperto.
+## aciona o marcado e B/ESC/Start/N = Não. Nenhuma tecla de movimento (S, W...) confirma: Sim só por escolha explícita (navegar até ele e
+## confirmar, ou o clique). O mouse marca ao passar e aciona no aperto.
 func _entrada_conf(e: InputEvent) -> bool:
 	if e is InputEventMouseMotion:
 		var i := _conf_botao_sob_mouse()
@@ -922,8 +930,6 @@ func _entrada_conf(e: InputEvent) -> bool:
 		match e.keycode:
 			KEY_ESCAPE, KEY_N:
 				_fechar_conf()
-			KEY_S:
-				_conf_sim()
 			KEY_LEFT, KEY_A, KEY_RIGHT, KEY_D:
 				conf_sel = 1 - conf_sel
 				_marcar_conf()
