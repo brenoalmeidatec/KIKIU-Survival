@@ -731,6 +731,7 @@ func heroi_morreu() -> void:
 	mundo.cam.tremer(3.0, 0.3)
 	hit_stop(0.18)
 	jogo = "morrendo"
+	especial.fim_de_partida()
 	camera_lenta("morte", maxf(1.3, h.duracao_morte() + 0.25), 0.25)  # a queda do herói e o dissolve cabem antes da tela de resultado
 
 
@@ -798,6 +799,7 @@ func vitoria() -> void:
 	if jogo == "vencendo" or jogo == "vitoria" or jogo == "morrendo" or jogo == "morte":
 		return
 	jogo = "vencendo"
+	especial.fim_de_partida()
 	var a: Dictionary = cartas.cfg.anuncios.vitoria
 	anunciar(str(a.texto), _cor(a.cor), "", 3.0)
 	audio.tocar("vitoria", 1.0, 0.0, 0.0)

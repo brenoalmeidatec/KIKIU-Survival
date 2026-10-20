@@ -116,6 +116,7 @@ func limpar() -> void:
 	_t = 0.0
 	_fase = 0
 	_ja.clear()
+	_numeros = 0
 	_onda_t = -1.0
 	_rach.clear()
 	_rach_t = -1.0
@@ -178,6 +179,7 @@ func iniciar(h) -> bool:
 	_fase = 0
 	_ja.clear()
 	_n = 0
+	_numeros = 0
 	_mortes = 0
 	_dash_t = 0.0
 	_rastro_t = 0.0
@@ -236,6 +238,13 @@ func quadro(h, dt: float, v: Vector2) -> Vector2:
 	return desl
 
 
+## A partida acabou (vitória ou derrota) com um especial no ar: desfaz o estado, a invulnerabilidade e a onda, que não andariam mais.
+func fim_de_partida() -> void:
+	_onda_t = -1.0
+	if mundo != null and mundo.heroi != null:
+		cancelar(mundo.heroi)
+
+
 ## Desfaz o especial em andamento sem mais efeito (a recarga já correu). Idempotente.
 func cancelar(h) -> void:
 	if _id == "":
@@ -260,6 +269,9 @@ func _q_investida(h, dt: float) -> Vector2:
 	var c = combate
 	var cor := _cor(_c.cor)
 	var desl := Vector2.ZERO
+	if _fase == 2:  # o corte final sai um quadro depois do último passo: aí h.pos já é onde o herói parou de verdade (colisão, limites)
+		_fase = 3
+		_final_investida(h)
 	if _fase == 0 and _t >= float(_c.prep):
 		_fase = 1
 		_origem = h.pos
@@ -283,7 +295,6 @@ func _q_investida(h, dt: float) -> Vector2:
 				)
 		if _dash_t >= dur_av:
 			_fase = 2
-			_final_investida(h)
 	return desl
 
 

@@ -93,6 +93,11 @@ func _ready() -> void:
 	await novo("lucas")
 	_lucas()
 	await novo("hazaki")
+	_revisao_hazaki()
+	for id in ["hazaki", "nicao", "lucas"]:
+		await novo(id)
+		_fim_de_partida(id)
+	await novo("hazaki")
 	_cancelamentos_e_bordas()
 	await novo("hazaki")
 	_hud()
@@ -227,6 +232,63 @@ func _hazaki() -> void:
 	ok(perdeu(fim) > 30.0, "hazaki: o corte em cruz pega quem está onde ele para (%s)" % perdeu(fim))
 	ok(perdeu(atras) == 0.0 and perdeu(lado) == 0.0, "hazaki: quem ficou para trás ou fora da faixa não é ferido")
 	ok(w.combate.especial.ultimo.get("id") == "investida", "hazaki: o último especial foi a investida")
+
+
+## Revisão do PR 351: o corte final sai onde o herói parou de verdade (em qualquer passo de tempo) e o limite de números não passa de um Q para o outro.
+func _revisao_hazaki() -> void:
+	var h = w.heroi
+	var esp = w.combate.especial
+	for dt in [1.0 / 20.0, 1.0 / 45.0, 1.0 / 30.0, 1.0 / 60.0]:
+		zerar()
+		var p0: Vector2 = h.pos
+		var borda = monstro_a(330)  # na linha da mira, a ~90 px de onde ele para (raio do corte final: 100) e além do alcance da faixa no último passo
+		ok(h.especial(), "revisão: dispara (dt %s)" % dt)
+		for i in int(ceil(1.0 / dt)):
+			w.avancar(dt)
+		ok((h.pos - p0).x > 235.0, "revisão: parou na distância cheia (dt %s, %s px)" % [dt, (h.pos - p0).x])
+		ok(perdeu(borda) > 30.0, "revisão: o corte final pega quem está na borda do raio em volta da parada (dt %s, perdeu %s)" % [dt, perdeu(borda)])
+	# dois Q seguidos contra vários alvos: os dois mostram números
+	zerar()
+	var inicio: Vector2 = h.pos
+	for i in 14:
+		monstro_a(250.0 + cos(i) * 60.0, sin(i) * 60.0)
+	ok(h.especial(), "revisão: primeiro Q")
+	passos(60)
+	ok(esp._numeros >= int(esp.comum.numeros_max), "revisão: o primeiro Q gastou o limite de números (%s)" % esp._numeros)
+	passos(40)
+	h.definir_pos(inicio)  # volta ao começo: o fim da faixa andável está perto de onde o primeiro Q parou
+	h.esp_recarga = 0.0
+	w.mouse_forcado = h.centro() + Vector2(100, 0)
+	for i in 3:
+		monstro_a(50.0 + i * 40.0)
+	ok(h.especial(), "revisão: segundo Q")
+	ok(esp._numeros == 0, "revisão: o segundo Q começa sem herdar o limite do primeiro (%s)" % esp._numeros)
+	passos(15)
+	ok(esp._numeros > 0, "revisão: o segundo Q também mostra números (%s)" % esp._numeros)
+	esp._numeros = 5
+	esp.limpar()
+	ok(esp._numeros == 0, "revisão: limpar zera os números")
+
+
+## Acabar a partida (vitória; no Hazaki também a derrota) com o Q ativo desfaz estado, invulnerabilidade e onda.
+func _fim_de_partida(id: String) -> void:
+	var h = w.heroi
+	var esp = w.combate.especial
+	zerar()
+	ok(h.especial(), "fim de partida: %s dispara" % id)
+	passos(40 if id == "nicao" else 12)
+	ok(h.estado == Heroi.Estado.ESPECIAL and h.esp_invul, "fim de partida: %s está no especial" % id)
+	if id == "nicao":
+		ok(esp._onda_t >= 0.0, "fim de partida: a onda do terremoto está no ar")
+	w.combate.vitoria()
+	ok(h.estado != Heroi.Estado.ESPECIAL and not h.esp_invul and esp._id == "", "fim de partida: %s sai do especial na vitória" % id)
+	ok(esp._onda_t < 0.0, "fim de partida: %s sem onda depois da vitória" % id)
+	if id == "hazaki":
+		zerar()
+		ok(h.especial(), "fim de partida: dispara de novo")
+		passos(12)
+		w.combate.heroi_morreu()
+		ok(h.estado != Heroi.Estado.ESPECIAL and not h.esp_invul and esp._id == "", "fim de partida: sai do especial na derrota")
 
 
 ## Nicão: a batida fere e empurra quem está perto, a onda de choque fere quem está longe depois, e quem está fora de tudo não é ferido.
