@@ -97,6 +97,8 @@ var chave_y := 0.0  # onde a fatia do lote em que ele está fica na ordem de y d
 var sid := 0  # número de série (a horda espalha a conta da luz entre os quadros)
 var _ponto = null  # a `raiz` do monstro em lote (um Ponto de ator.gd)
 var _no_raiz: Node2D = null  # os nós da elite e do chefe, criados na primeira vez
+var colisao_ligada := false  # a colisão com as barreiras valeu no último passo (mundo.mover_monstro, #336)
+var sem_colisao_ate_sair := false  # ligou dentro de uma forma: anda sem colisão até sair dela
 
 
 func criar(m, _pai: Node, nome: String, t: Dictionary, p: Vector2, r: RandomNumberGenerator) -> void:
@@ -220,7 +222,7 @@ func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
 	if sep != Vector2.ZERO:
 		desl += sep * dt
 	if desl != Vector2.ZERO:
-		var feito: Vector2 = mundo.mover(self, desl)
+		var feito: Vector2 = mundo.mover_monstro(self, desl)
 		if _caca_longe and v != Vector2.ZERO:
 			_checar_bloqueio(dt, v, feito)
 	# o corpo do herói é sólido: quem entrou nele é empurrado para fora (suave: 80% da penetração por quadro; passa por mundo.mover, a colisão manda)

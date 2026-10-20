@@ -48,6 +48,7 @@ const MAX_PASSO_COLISAO := 8.0  # menor pegada de árvore + círculo do herói o
 const ORCAMENTO_LUZES := {"desligada": 6, "so_heroi": 0, "tudo": 0}  # máximo de luzes ligadas por "luz_relevo" (0 = sem limite); o perfil Baixo usa "desligada"
 const PASSO_SOMBRA_CENARIO := 3  # a sombra de cada objeto parado recalcula a cada 3 quadros (a luz que a move muda devagar; o deslize suaviza)
 const MARGEM_SOMBRA := 96.0  # só ator a até 96 px da tela tem sombra
+const MARGEM_COLISAO := 120.0  # monstro só colide com as barreiras a até 120 px da tela (#336)
 const Colisao := preload("res://v2/colisao.gd")
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
 const PESOS_MONSTRO := [4, 4, 3, 3, 1]
@@ -780,6 +781,24 @@ func mover(a, desejado: Vector2) -> Vector2:
 	else:
 		depois = Colisao.resolver(depois, a.raio)
 	depois = depois.clamp(limite_andavel.position, limite_andavel.end)
+	a.definir_pos(depois)
+	return depois - antes
+
+
+## Movimento do monstro (#336): a colisão com as barreiras só vale perto da tela (MARGEM_COLISAO px além da borda). Fora dela o
+## monstro vem em linha reta até o herói. Se a colisão liga com o monstro já dentro de uma forma, ele segue sem colisão até sair dela
+## (`sem_colisao_ate_sair`), para não travar nem dar salto.
+func mover_monstro(a, desejado: Vector2) -> Vector2:
+	var antes: Vector2 = a.pos
+	var ligada: bool = cam == null or cam.retangulo(MARGEM_COLISAO).has_point(antes)
+	if ligada and not a.colisao_ligada:
+		a.sem_colisao_ate_sair = not Colisao.livre(antes, a.raio)
+	elif ligada and a.sem_colisao_ate_sair and Colisao.livre(antes, a.raio):
+		a.sem_colisao_ate_sair = false
+	a.colisao_ligada = ligada
+	if ligada and not a.sem_colisao_ate_sair:
+		return mover(a, desejado)
+	var depois := (antes + desejado).clamp(limite_andavel.position, limite_andavel.end)
 	a.definir_pos(depois)
 	return depois - antes
 
