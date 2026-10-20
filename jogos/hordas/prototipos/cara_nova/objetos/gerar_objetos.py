@@ -19,6 +19,7 @@ Uso (so precisa de Pillow):
     python gerar_objetos.py icones    icones das cartas da v2 (folhas do #272, fonte_arte/icones_cartas/) -> projeto/assets/v2/icones_cartas/
     python gerar_objetos.py marco4    8 estruturas do Marco 4 (fonte_arte/marco4/fonte_estruturas.png, grade 4x2) -> projeto/assets/v2/marco4/
     python gerar_objetos.py fusoes    moldura, halo, Ventania e icone das fusoes (fonte_arte/fusoes/) -> projeto/assets/v2/fusoes/
+    python gerar_objetos.py especial_q  icone do Q de cada heroi (fonte_arte/especial_q/, #349) -> projeto/assets/v2/especial_q/ (32 px)
 
 Passos: fundo = alfa 0 (ou branco) ligado a borda, por flood fill; objetos = componentes do que sobrou,
 juntados por proximidade; ordem = linha e coluna; BOX para a escala do jogo; alfa binario a 50%;
@@ -1774,8 +1775,36 @@ def gerar_fusoes():
     print("previa", FUSOES_PREVIA)
 
 
+# ------------------------------------------------------------------ icones do Q por heroi (v2): fontes do Codex (#349) -> 32 px
+ESPECIAL_Q_FONTE = os.path.join(HORDAS, "fonte_arte", "especial_q")
+ESPECIAL_Q_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "especial_q")
+ESPECIAL_Q_HEROIS = ("hazaki", "nicao", "lucas")  # o nome do arquivo e a chave do heroi (v2/herois.gd): o circulo do Q (v2/hud_ultimate.gd) o procura por ela
+
+
+def icone_especial_q(caminho):
+    """Icone 32 x 32 pelo caminho dos icones de carta. A fonte (1254 px) traz residuos de alfa 1 a 8 nas bordas: so o alfa acima de LIMITE_FUNDO
+    entra na caixa justa. Depois: quadrado, BOX em 30 px (1 px de folga), alfa binario a 25% e contorno escuro de 1 px."""
+    im = Image.open(caminho).convert("RGBA")
+    im = im.crop(im.getchannel("A").point(lambda v: 255 if v > LIMITE_FUNDO else 0).getbbox())
+    lado = max(im.size)
+    quadrado = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+    quadrado.paste(im, ((lado - im.width) // 2, (lado - im.height) // 2))
+    img = binarizar(fit_em_caixa(quadrado, ICONES_TAM - 2, ICONES_TAM - 2), ICONES_LIMIAR)
+    return contorno(em_tela(img, ICONES_TAM, ICONES_TAM, "centro"))
+
+
+def gerar_especiais_q():
+    os.makedirs(ESPECIAL_Q_SAIDA, exist_ok=True)
+    feitos = [icone_especial_q(os.path.join(ESPECIAL_Q_FONTE, h + ".png")) for h in ESPECIAL_Q_HEROIS]
+    for h, img in zip(ESPECIAL_Q_HEROIS, quantizar_lista(feitos, ICONES_COR)):
+        img.save(os.path.join(ESPECIAL_Q_SAIDA, h + ".png"))
+        print("  %-7s %dx%d" % (h, img.width, img.height))
+
+
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "hud":
+    if len(sys.argv) > 1 and sys.argv[1] == "especial_q":
+        gerar_especiais_q()
+    elif len(sys.argv) > 1 and sys.argv[1] == "hud":
         gerar_hud()
     elif len(sys.argv) > 1 and sys.argv[1] == "armas":
         gerar_armas()

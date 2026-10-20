@@ -152,15 +152,26 @@ func _mundo() -> void:
 	for c in w.ui.get_children():
 		if c.has_method("abrir_sair"):
 			pausa = c
-	# HUD: o retrato no canto do canvas (6, 6), o XP e o relógio nas bordas, o centro continua centrado
+	# HUD (estilo Overwatch): o retrato no canto de baixo à esquerda do canvas, o XP e o Q embaixo no centro, o E e o secundário embaixo à direita, o relógio em cima
 	var retrato: Control = hud.get_node("Raiz/Retrato")
-	ok(perto(hud.offset + retrato.position, Vector2(6, 6)), "o retrato gruda no canto de cima à esquerda do canvas: %s" % str(hud.offset + retrato.position))
+	ok(
+		perto(hud.offset + retrato.position + Vector2(0, retrato.size.y), Vector2(6, 720 - 6)),
+		"o retrato gruda no canto de baixo à esquerda do canvas: %s" % str(hud.offset + retrato.position)
+	)
 	var tempo: Control = hud.get_node("Raiz/Tempo")
 	ok(perto(hud.offset + tempo.position, Vector2(428 + 160, 6)), "o relógio gruda no topo e fica no centro: %s" % str(hud.offset + tempo.position))
 	var xp: Control = hud.get_node("Raiz/Xp")
-	ok(perto(hud.offset + xp.position + Vector2(0, xp.size.y), Vector2(280 + 160, 720 - 6)), "a barra de XP gruda embaixo: %s" % str(hud.offset + xp.position))
+	ok(perto(hud.offset + xp.position + Vector2(0, xp.size.y), Vector2(380 + 160, 720 - 6)), "a barra de XP gruda embaixo: %s" % str(hud.offset + xp.position))
 	var hab: Control = hud.get_node("Raiz/Habilidades")
-	ok(perto(hud.offset + hab.position, Vector2(506 + 160, 434 + 180)), "os slots E e Q colam embaixo junto com o XP: %s" % str(hud.offset + hab.position))
+	ok(
+		perto(hud.offset + hab.position + hab.size * hab.scale, Vector2(1280 - 6, 720 - 6)),
+		"o E e o secundário colam no canto de baixo à direita do canvas: %s" % str(hud.offset + hab.position)
+	)
+	var ult: Control = hud.get_node("Raiz/Ultimate")
+	ok(
+		perto(hud.offset + ult.position + ult.size * ult.scale * 0.5, Vector2(640, 720 - 6 - xp.size.y - 4 - ult.size.y * ult.scale.y * 0.5)),
+		"o círculo do Q fica no centro, logo acima do XP: %s" % str(hud.offset + ult.position)
+	)
 	var vinheta: Control = hud.get_node("Raiz/Vinheta")
 	ok(Rect2(vinheta.position, vinheta.size) == Rect2(-160, -90, 1280, 720), "a vinheta cobre o canvas: %s" % str(Rect2(vinheta.position, vinheta.size)))
 	var mini_dir: float = m.offset.x + m._quadro.position.x + m._quadro.size.x
@@ -180,13 +191,16 @@ func _mundo() -> void:
 	Config.temporario("tamanho_ui", "grande")
 	Config.tamanho_ui_mudou.emit()
 	ok(absf(ap.fator - 2.0) < 0.0001 and ap.canvas == Vector2(960, 540) and ap.desloc == Vector2.ZERO, "Grande em 1920x1080: fator 2, canvas 960x540")
-	ok(hud.offset == Vector2.ZERO and perto(retrato.position, Vector2(6, 6)) and perto(xp.position, Vector2(280, 512)), "o HUD volta às posições do bloco")
+	ok(hud.offset == Vector2.ZERO and perto(retrato.position, Vector2(6, 426)) and perto(xp.position, Vector2(380, 512)), "o HUD volta às posições do bloco")
 	ok(Rect2(fundo.position, fundo.size) == Rect2(0, 0, 960, 540), "o fundo das cartas volta a 960x540")
 	ok(m.offset.x + m._quadro.position.x + m._quadro.size.x <= 960.0, "o minimapa volta para o canto do bloco")
 	Config.temporario("tamanho_ui", "pequeno")
 	Config.tamanho_ui_mudou.emit()
 	ok(absf(ap.fator - 1.0) < 0.0001 and ap.canvas == Vector2(1920, 1080), "Pequeno em 1920x1080: fator 1, canvas 1920x1080")
-	ok(perto(hud.offset + retrato.position, Vector2(6, 6)) and ap.desloc == Vector2(480, 270), "Pequeno: o retrato continua no canto do canvas")
+	ok(
+		perto(hud.offset + retrato.position + Vector2(0, retrato.size.y), Vector2(6, 1080 - 6)) and ap.desloc == Vector2(480, 270),
+		"Pequeno: o retrato continua no canto de baixo do canvas"
+	)
 
 	# a janela muda de tamanho (size_changed): refaz tudo
 	Config.temporario("tamanho_ui", "medio")

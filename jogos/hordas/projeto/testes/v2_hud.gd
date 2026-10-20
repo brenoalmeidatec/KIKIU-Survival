@@ -40,6 +40,11 @@ class HeroiComRuptura:
 	var contragolpe_max := 1.5
 
 
+class HeroiComEscudo:
+	extends Heroi
+	var escudo_ativo := false
+
+
 class DiretorFalso:
 	extends RefCounted
 	var nivel := 1
@@ -134,16 +139,40 @@ func _testes() -> void:
 	ok(nv.TAM_NUMERO >= tempo_q.get_node("Relogio").get_theme_font_size("font_size"), "o número do nível é do tamanho do relógio")
 	ok(nv._barra_y() + nv.BARRA_A + 1.0 <= placa.size.y - nv.BORDA, "a barra do mapa cabe dentro da borda de baixo")
 	ok(nv.BORDA + 1.0 + float(nv.TAM_NUMERO) < nv._barra_y() - 1.0, "o número do nível não encosta na barra do mapa")
-	# o minimapa e o retrato usam a mesma margem de canto (6 px)
+	# o minimapa (canto de cima à direita) e o retrato (canto de baixo à esquerda) usam a mesma margem de canto (6 px)
+	var retrato_q: Control = hud.get_node("Raiz/Retrato")
 	ok(
-		preload("res://v2/minimapa.gd").MARGEM_TELA == 6 and hud.get_node("Raiz/Retrato").position == Vector2(6, 6),
-		"minimapa e retrato com a mesma margem de 6 px"
+		preload("res://v2/minimapa.gd").MARGEM_TELA == 6 and retrato_q.position == Vector2(6, 540 - 6 - retrato_q.size.y),
+		"minimapa e retrato com a mesma margem de 6 px (o retrato %s)" % retrato_q.position
 	)
-	# slots E/Q: borda direita na da faixa de XP, com folga em cima dela
+	# estilo Overwatch: a vida e o fôlego à direita do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
+	var barras_q: Control = hud.get_node("Raiz/MolduraBarras")
+	var folego_q: Control = hud.get_node("Raiz/Folego")
+	ok(
+		barras_q.position.y == retrato_q.position.y and barras_q.position.x > retrato_q.position.x + retrato_q.size.x,
+		"as barras ficam à direita do retrato, no topo dele"
+	)
+	ok(
+		folego_q.position.y > hud.get_node("Raiz/Vida/Barra").global_position.y + hud.get_node("Raiz/Vida/Barra").size.y - 1.0,
+		"o fôlego fica logo abaixo da barra de vida"
+	)
+	ok(folego_q.position.y + folego_q.size.y <= barras_q.position.y + barras_q.size.y, "o fôlego fica dentro da moldura das barras")
 	var xp_q: Control = hud.get_node("Raiz/Xp")
+	var ult_q: Control = hud.get_node("Raiz/Ultimate")
+	var ult_tam: Vector2 = ult_q.size * ult_q.scale  # o nó é escalado 1,5x: 96 px na tela
+	ok(ult_tam == Vector2(96, 96), "o círculo do Q mede 96 px na base 960x540 (%s)" % ult_tam)
+	ok(ult_q.position.x + ult_tam.x * 0.5 == xp_q.position.x + xp_q.size.x * 0.5, "o círculo do Q é centrado na faixa de XP")
+	ok(
+		xp_q.position.y - (ult_q.position.y + ult_tam.y) >= 2.0 and xp_q.position.y - (ult_q.position.y + ult_tam.y) <= 8.0,
+		"o Q fica logo acima da faixa de XP, sem encostar"
+	)
 	var hab_q: Control = hud.get_node("Raiz/Habilidades")
-	ok(hab_q.position.x + hab_q.size.x == xp_q.position.x + xp_q.size.x, "os slots E/Q terminam na mesma borda direita da faixa de XP")
-	ok(xp_q.position.y - (hab_q.position.y + hab_q.size.y) >= 2.0, "os slots E/Q não encostam na faixa de XP")
+	var hab_tam: Vector2 = hab_q.size * hab_q.scale
+	ok(
+		hab_q.position.x + hab_tam.x == 960 - 6 and hab_q.position.y + hab_tam.y == 540 - 6,
+		"o E e o secundário colam no canto de baixo à direita (margem de 6 px)"
+	)
+	ok(hab_q.position.x > xp_q.position.x + xp_q.size.x, "o E e o secundário ficam à direita da faixa de XP")
 	falso.combate = null
 
 	# 1. sem combate: vida cheia, XP 0, nível 1, tempo zero, combo escondido
@@ -333,14 +362,40 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 	h.rup_carga = 0.0
 	slots.sincronizar(h)
 	ok(slots._rotulo_e() == "RUPTURA", "E anuncia Ruptura pronta sem carga pendente")
-	var area := Rect2(slots.position, slots.size)
-	ok(area.position == Vector2(506, 434) and area.size == Vector2(174, 74), "E/Q ocupa a faixa inferior sem cobrir status/XP")
-	ok(Rect2(0, 0, 960, 540).encloses(area), "E/Q cabe integralmente dentro da tela")
-	ok(not area.intersects(ZONA_MINIMAPA), "E/Q não cobre o minimapa")
+	# o secundário (botão direito, o escudo): apagado sem o campo; pronto, erguido (pulsa) e cansado (cortina de recarga até o fôlego voltar a 34%)
+	slots.sincronizar(mundo_falso.heroi)
+	ok(not slots.s_disponivel and not slots.s_pronta and slots._rotulo_s() == "INDISP.", "o secundário fica apagado sem o campo escudo_ativo no herói")
+	var he := HeroiComEscudo.new()
+	slots.sincronizar(he)
+	ok(slots.s_disponivel and slots.s_pronta and not slots.s_ativo and slots._rotulo_s() == "ESCUDO", "o secundário acende pronto com o herói descansado")
+	he.escudo_ativo = true
+	slots.sincronizar(he)
+	ok(slots.s_pronta and slots.s_ativo and slots._rotulo_s() == "ERGUIDO", "o secundário pulsa com o escudo erguido")
+	he.escudo_ativo = false
+	he.cansado = true
+	he.folego = 0.0
+	slots.sincronizar(he)
+	ok(not slots.s_pronta and slots.s_recarga_px == 20 and slots._rotulo_s() == "CANSADO", "cansado e sem fôlego: cortina cheia e CANSADO")
+	he.folego = 17.0
+	slots.sincronizar(he)
+	ok(slots.s_recarga_px == 10, "a cortina desce com o fôlego voltando (17 de 34 = metade, %d/20)" % slots.s_recarga_px)
+	he.cansado = false
+	slots.sincronizar(he)
+	ok(slots.s_pronta and slots.s_recarga_px == 0, "fim do cansaço: o secundário volta pronto, sem cortina")
+	var area := Rect2(slots.position, slots.size * slots.scale)
+	ok(area.position == Vector2(693, 423) and area.size == Vector2(261, 111), "E e secundário ocupam o canto de baixo à direita")
+	ok(Rect2(0, 0, 960, 540).encloses(area), "E e secundário cabem integralmente dentro da tela")
+	ok(not area.intersects(ZONA_MINIMAPA), "E e secundário não cobrem o minimapa")
 	var xp = hud.get_node("Raiz/Xp")
 	var zona_xp := Rect2(xp.position, xp.size)
-	ok(not area.intersects(zona_xp), "E/Q não cobre a faixa de XP real")
-	ok(not area.intersects(StatusHud.COLUNAS_HUD[1]), "E/Q não cobre a coluna direita do status")
+	ok(not area.intersects(zona_xp), "E e secundário não cobrem a faixa de XP real")
+	ok(not area.intersects(StatusHud.COLUNAS_HUD[1]), "E e secundário não cobrem a coluna direita do status")
+	ok(
+		not Rect2(hud.get_node("Raiz/Retrato").position, hud.get_node("Raiz/Retrato").size).intersects(StatusHud.COLUNAS_HUD[0]),
+		"o retrato não cobre a coluna esquerda do status"
+	)
+	var ult := Rect2(hud.get_node("Raiz/Ultimate").position, hud.get_node("Raiz/Ultimate").size * hud.get_node("Raiz/Ultimate").scale)
+	ok(not ult.intersects(zona_xp) and not ult.intersects(area), "o círculo do Q não cobre o XP nem o E e o secundário")
 
 
 ## Leva de interface: o texto de depuração (fps e atores) começa DESLIGADO na partida normal e a tecla F3 liga e desliga;
