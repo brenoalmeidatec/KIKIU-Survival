@@ -8,6 +8,10 @@ extends RefCounted
 ## TRAVA: a escolha abre com as cartas apagadas por 1 s de TEMPO REAL (0,8 s depois de rerrolar ou banir). Nesse tempo clique, tecla e
 ## botão são descartados (a contagem pulsa) e nada chega ao herói; ESC passa, é da pausa. O baú tem a sua trava (bau_espera_s). Os tempos
 ## vêm de dados/v2_cartas.json e a contagem corre no `atualizar` (relógio de parede), congelada com a pausa aberta (mundo.pausa.aberto).
+## LIMITE: depois da trava as cartas valem por `escolha.limite_s` (8 s) de tempo real, com uma barra e a contagem no topo. Zerou, o sistema escolhe
+## sozinho pela MESMA regra do botão Automático (progresso.automatico) e o HUD avisa "Escolhida automaticamente". Rerrolar ou banir renovam o limite.
+## ESC (ou Start) na escolha NÃO pausa direto: a pausa.gd chama intercepta_pausa() e abre "Pausar agora? Você perde estas cartas" (Não é o padrão); com
+## ela aberta o tempo (trava e limite) fica parado. Sim descarta a rodada (nenhuma carta, sem reembolso) e abre a pausa; Não volta com o tempo que restava.
 ## Os anúncios grandes e a barra do chefe são do HUD (v2/hud_anuncios.gd e hud.gd), que escutam os sinais do mundo.
 
 const Paleta := preload("res://v2/paleta.gd")
@@ -32,6 +36,9 @@ const TAM_CONTAGEM := Paleta.TITULO_PEQUENO  # a contagem da trava usa a Jersey 
 const COR_TRAVA := Paleta.CARTA_APAGADA  # cartas apagadas na trava
 const PULSO_T := 0.2  # s da pulsada da contagem quando um clique ou tecla cai na trava
 const ACENDER_T := 0.35  # s do brilho quando as cartas liberam
+const LIMITE_Y := 118.0  # a barra do limite de tempo (largura das 3 cartas): num vão de 5 px entre o título e a legenda
+const CONF := Rect2(250, 180, 460, 190)  # o quadro "Pausar agora?"
+const CONF_BTN := Vector2(170, 30)
 
 var combate
 var mundo
@@ -45,8 +52,17 @@ var bau_aberto := false
 var bau_pronto := false  # a roleta terminou de revelar tudo
 var espera_escolha := 0.0  # s REAIS até as cartas aceitarem clique ou tecla (0 = liberadas)
 var espera_bau := 0.0  # s REAIS até a roleta aceitar pular ou fechar (0 = liberada)
+var limite_t := 0.0  # s REAIS que faltam para o sistema escolher sozinho (só corre com as cartas liberadas; 0 também se o limite está desligado)
+var conf_aberta := false  # "Pausar agora? Você perde estas cartas": o tempo das cartas fica parado
+var conf_sel := 1  # 0 = Sim, 1 = Não (o padrão)
 var mouse_fn := Callable()  # testes: posição do mouse na tela (960x540); sem ela, o mouse de verdade (mundo.ap)
 var _espera_total := 0.0  # a trava que está correndo (base da barra de cada carta)
+var _limite_total := 0.0  # o limite desta rodada de cartas (dados: escolha.limite_s; 0 = sem limite)
+var _limite_barra: ColorRect
+var _limite_fundo: ColorRect
+var _conf: Control
+var _conf_btns: Array[Panel] = []
+var _conf_estilos: Array[StyleBoxFlat] = []
 var _acender := 0.0  # s que faltam do brilho de liberação
 var _pulso := 0.0  # s que faltam da pulsada da contagem
 
@@ -151,7 +167,7 @@ func _montar_escolha() -> void:
 	_escolha.visible = false
 	camada.add_child(_escolha)
 	_titulo = _rotulo("", TAM_TITULO, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
-	_titulo.position = Vector2(0, 66)
+	_titulo.position = Vector2(0, 60)
 	_titulo.size = Vector2(LARG, 64)
 	_escolha.add_child(_titulo)
 	_sub = _rotulo("Escolha uma carta", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
@@ -159,6 +175,18 @@ func _montar_escolha() -> void:
 	_sub.size = Vector2(LARG, 20)
 	_escolha.add_child(_sub)
 	var x0 := (LARG - (3.0 * CARTA_L + 2.0 * FOLGA)) * 0.5
+	_limite_fundo = ColorRect.new()  # a barra do limite: um trilho escuro e o ouro que esvazia da direita para a esquerda
+	_limite_fundo.position = Vector2(x0, LIMITE_Y)
+	_limite_fundo.size = Vector2(3.0 * CARTA_L + 2.0 * FOLGA, 3.0)
+	_limite_fundo.color = Paleta.alfa(Paleta.PRETO, 0.6)
+	_limite_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_limite_fundo.visible = false
+	_escolha.add_child(_limite_fundo)
+	_limite_barra = ColorRect.new()
+	_limite_barra.size = _limite_fundo.size
+	_limite_barra.color = Paleta.OURO
+	_limite_barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_limite_fundo.add_child(_limite_barra)
 	for i in 3:
 		var p := Panel.new()
 		p.position = Vector2(x0 + i * (CARTA_L + FOLGA), CARTA_Y)
@@ -197,6 +225,53 @@ func _montar_escolha() -> void:
 	_build.size = Vector2(LARG - 40, 20)
 	_build.clip_text = true  # uma linha só: _texto_build já corta em "e mais N" o que não cabe
 	_escolha.add_child(_build)
+	_montar_conf()
+
+
+## O quadro "Pausar agora? Você perde estas cartas" (Sim / Não): por cima das cartas, desenhado e testado por retângulo como o resto da tela.
+func _montar_conf() -> void:
+	_conf = Control.new()
+	_conf.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_conf.visible = false
+	_escolha.add_child(_conf)
+	var veu := ColorRect.new()
+	veu.color = Paleta.alfa(Paleta.PRETO, 0.55)
+	EscalaUi.cobrir(veu)
+	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_conf.add_child(veu)
+	var painel := Panel.new()
+	painel.position = CONF.position
+	painel.size = CONF.size
+	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	painel.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))
+	_conf.add_child(painel)
+	var tit := _rotulo("Pausar agora?", TAM_TITULO, true, Paleta.OURO, HORIZONTAL_ALIGNMENT_CENTER)
+	tit.position = Vector2(CONF.position.x, CONF.position.y + 12)
+	tit.size = Vector2(CONF.size.x, 52)
+	_conf.add_child(tit)
+	var txt := _rotulo("Você perde estas cartas (nenhuma é escolhida).", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
+	txt.position = Vector2(CONF.position.x + 8, CONF.position.y + 74)
+	txt.size = Vector2(CONF.size.x - 16, 20)
+	_conf.add_child(txt)
+	var por_btn := CONF_BTN.x * 2.0 + 24.0
+	for i in 2:
+		var b := Panel.new()
+		b.position = Vector2(CONF.position.x + (CONF.size.x - por_btn) * 0.5 + i * (CONF_BTN.x + 24.0), CONF.position.y + 108)
+		b.size = CONF_BTN
+		b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var st := _estilo(false, Paleta.BORDA)
+		b.add_theme_stylebox_override("panel", st)
+		var t := _rotulo("Sim, pausar" if i == 0 else "Não", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_CENTER)
+		t.position = Vector2(0, 6)
+		t.size = Vector2(CONF_BTN.x, 18)
+		b.add_child(t)
+		_conf.add_child(b)
+		_conf_btns.append(b)
+		_conf_estilos.append(st)
+	var dica := Glifos.dica(_gerador_conf, HORIZONTAL_ALIGNMENT_CENTER, Paleta.TEXTO_APAGADO)
+	dica.position = Vector2(CONF.position.x, CONF.position.y + 154)
+	dica.size = Vector2(CONF.size.x, 20)
+	_conf.add_child(dica)
 
 
 ## Um campo de texto do cartão (ou de qualquer tela de cartas): nó com nome, posição e tamanho dados.
@@ -292,6 +367,10 @@ func _moldura(cor: Color) -> StyleBoxFlat:
 ## Dica do baú e do resultado: o botão do dispositivo em uso (Enter, A ou cruz) desenhado pelo Glifos; o Control se refaz sozinho na troca.
 func _gerador_continuar() -> Array:
 	return [["confirmar", "para continuar" if Glifos.eh_controle() else "ou clique para continuar"]]
+
+
+func _gerador_conf() -> Array:
+	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Não"]]
 
 
 func _gerador_jogar_de_novo() -> Array:
@@ -392,11 +471,15 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	var ec: Dictionary = combate.cartas.cfg.escolha
 	_espera_total = float(ec.rerrolar_espera_s) if refresh else float(ec.espera_s)
 	espera_escolha = _espera_total
+	_limite_total = maxf(float(ec.get("limite_s", 0.0)), 0.0)
+	limite_t = _limite_total  # só começa a correr quando a trava acaba
+	_fechar_conf()
 	_acender = 0.0
 	_marcar()
 	_atualizar_botoes()
 	if espera_escolha > 0.0:
 		_iniciar_trava()
+	_quadro_limite()
 	_texto_build()
 	_aquecer_invocacoes(cartas)
 	combate.audio.tocar("carta", 1.0 + 0.12 * float(_rar_max(cartas)), 0.0, 0.0)
@@ -492,6 +575,10 @@ func esconder() -> void:
 	bau_aberto = false
 	espera_escolha = 0.0
 	espera_bau = 0.0
+	limite_t = 0.0
+	_limite_total = 0.0
+	_fechar_conf()
+	_quadro_limite()
 	for p in _cartas:
 		p.modulate = Paleta.BRANCO
 		(p.get_node("espera") as ColorRect).visible = false
@@ -699,8 +786,9 @@ func _pausa_aberta() -> bool:
 ## Tempo REAL da escolha: a trava das cartas (1 s; 0,8 s depois de rerrolar ou banir), o brilho ao liberar e a pulsada da contagem.
 ## O dt vem do relógio de parede (combate.efeitos), então câmera lenta e hit-stop não mexem nele.
 func _atualizar_escolha(dt: float) -> void:
+	var parado := _pausa_aberta() or conf_aberta  # a pausa e o "Pausar agora?" param a trava e o limite
 	if espera_escolha > 0.0:
-		if not _pausa_aberta():
+		if not parado:
 			espera_escolha = maxf(0.0, espera_escolha - dt)
 			_pulso = maxf(0.0, _pulso - dt)
 		if espera_escolha > 0.0:
@@ -714,6 +802,151 @@ func _atualizar_escolha(dt: float) -> void:
 		for p in _cartas:
 			p.modulate = Color(1.0 + k, 1.0 + k, 1.0 + k, 1.0)
 	_pulsar_cartas()
+	if _limite_total > 0.0:
+		if not parado:
+			limite_t = maxf(0.0, limite_t - dt)
+		_quadro_limite()
+		if limite_t <= 0.0:
+			_tempo_esgotado()
+
+
+## A barra do limite (esvazia da direita para a esquerda, vira vermelha nos últimos `limite_urgente_s`) e a contagem na legenda.
+func _quadro_limite() -> void:
+	var ativo := escolha_aberta and _limite_total > 0.0
+	_limite_fundo.visible = ativo
+	if not ativo:
+		return
+	var frac := clampf(limite_t / _limite_total, 0.0, 1.0)
+	_limite_barra.size.x = _limite_fundo.size.x * frac
+	var urgente := float(combate.cartas.cfg.escolha.get("limite_urgente_s", 3.0))
+	var corre := espera_escolha <= 0.0
+	_limite_barra.color = Paleta.PERIGO if corre and limite_t <= urgente else Paleta.OURO
+	if corre:
+		var txt := "Escolha uma carta  ·  automático em %d s" % ceili(limite_t)
+		if _sub.text != txt:
+			_sub.text = txt
+		_sub.add_theme_color_override("font_color", Paleta.PERIGO if limite_t <= urgente else Paleta.TEXTO_SECUNDARIO)
+
+
+## O tempo acabou: o sistema escolhe pela MESMA regra do botão Automático (progresso.automatico). Se não houver carta para o automático
+## (não devia acontecer), fica a carta marcada. O aviso sai pelo anúncio do HUD.
+func _tempo_esgotado() -> void:
+	limite_t = 0.0
+	var antes: int = combate.progresso.escolhidas
+	if not combate.progresso.automatico():
+		combate.progresso.escolher(sel)
+	if combate.progresso.escolhidas > antes:
+		combate.anunciar("Escolhida automaticamente", Paleta.OURO)
+
+
+## Intercepta o ESC e o Start que abririam a pausa (pausa.gd chama aqui antes de pausar). Na escolha de cartas eles NÃO pausam: abrem a
+## confirmação "Pausar agora? Você perde estas cartas" e, com ela aberta, fecham-na (= Não). Devolve true se tratou o pedido.
+func intercepta_pausa() -> bool:
+	if not escolha_aberta:
+		return false
+	if conf_aberta:
+		_fechar_conf()
+	else:
+		_abrir_conf()
+	return true
+
+
+func _abrir_conf() -> void:
+	var st = mundo.get("status")  # o painel central do C (camada 13) cobriria o quadro e engoliria a entrada dele: sai antes
+	if st != null and st.aberto() and str(st.get("_modo_atual")) == "central":
+		st.alternar()
+	conf_aberta = true
+	conf_sel = 1  # "Não" é o padrão: um aperto distraído nunca perde as cartas
+	_conf.visible = true
+	_marcar_conf()
+	combate.audio.tocar("carta", 0.9, -4.0, 0.0)
+
+
+func _fechar_conf() -> void:
+	conf_aberta = false
+	if _conf != null:
+		_conf.visible = false
+
+
+func _marcar_conf() -> void:
+	for i in 2:
+		var novo := _estilo(i == conf_sel, Paleta.BORDA)
+		_conf_estilos[i].bg_color = novo.bg_color
+		_conf_estilos[i].border_color = novo.border_color
+		_conf_estilos[i].shadow_color = novo.shadow_color
+		_conf_estilos[i].shadow_size = novo.shadow_size
+		_conf_estilos[i].set_border_width_all(2 + (1 if i == conf_sel else 0))
+
+
+## "Sim": a rodada de cartas é perdida (nenhuma carta escolhida, sem reembolso de rerrolar ou banir) e a pausa normal abre.
+func _conf_sim() -> void:
+	_fechar_conf()
+	combate.progresso.descartar_rodada()
+	var p = mundo.get("pausa")
+	if p != null:
+		p.pausar()
+
+
+func _conf_botao_sob_mouse() -> int:
+	var m := _mouse()
+	for i in 2:
+		if Rect2(_conf_btns[i].position, _conf_btns[i].size).has_point(m):
+			return i
+	return -1
+
+
+## Entrada com o "Pausar agora?" aberto: ele come tudo (as cartas, o rerrolar e o banir ficam quietos). Esquerda e direita trocam Sim/Não, confirmar
+## aciona o marcado, B/ESC/Start/N = Não e S = Sim. O mouse marca ao passar e aciona no aperto.
+func _entrada_conf(e: InputEvent) -> bool:
+	if e is InputEventMouseMotion:
+		var i := _conf_botao_sob_mouse()
+		if i >= 0 and i != conf_sel:
+			conf_sel = i
+			_marcar_conf()
+		return true
+	if e is InputEventMouseButton:
+		if not e.pressed:
+			return false
+		if e.button_index == MOUSE_BUTTON_LEFT:
+			var j := _conf_botao_sob_mouse()
+			if j == 0:
+				_conf_sim()
+			elif j == 1:
+				_fechar_conf()
+		return true
+	if e is InputEventKey:
+		if not e.pressed:
+			return false
+		if e.echo:
+			return true
+		match e.keycode:
+			KEY_ESCAPE, KEY_N:
+				_fechar_conf()
+			KEY_S:
+				_conf_sim()
+			KEY_LEFT, KEY_A, KEY_RIGHT, KEY_D:
+				conf_sel = 1 - conf_sel
+				_marcar_conf()
+			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
+				_conf_agir()
+		return true
+	if e is InputEventJoypadMotion:
+		return false
+	if e.is_action_pressed("ui_cancel"):
+		_fechar_conf()
+	elif e.is_action_pressed("ui_left") or e.is_action_pressed("ui_right"):
+		conf_sel = 1 - conf_sel
+		_marcar_conf()
+	elif e.is_action_pressed("ui_accept"):
+		_conf_agir()
+	return true
+
+
+func _conf_agir() -> void:
+	if conf_sel == 0:
+		_conf_sim()
+	else:
+		_fechar_conf()
 
 
 ## Começa a trava: cartas apagadas, uma barra vazia em cada carta e a contagem na legenda (fonte de título).
@@ -751,6 +984,7 @@ func _liberar_cartas() -> void:
 		(p.get_node("espera") as ColorRect).visible = false
 	_marcar()
 	_atualizar_botoes()
+	_quadro_limite()
 	combate.audio.tocar("carta", 1.4, -4.0, 0.0)
 
 
@@ -760,7 +994,7 @@ func entrada(e: InputEvent) -> bool:
 		ligar_depuracao(not depuracao)
 		return true
 	if escolha_aberta:
-		return _entrada_escolha(e)
+		return _entrada_conf(e) if conf_aberta else _entrada_escolha(e)
 	if bau_aberto:
 		return _entrada_bau(e)
 	if resultado_aberto:

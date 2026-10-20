@@ -341,6 +341,9 @@ func entrada(e: InputEvent) -> bool:
 				return false
 			abrir_sair()
 			return true
+		var tl = mundo.combate.telas if mundo.combate != null else null  # na escolha de cartas o ESC pede confirmação (telas.gd), não pausa
+		if tl != null and tl.intercepta_pausa():
+			return true
 		return pausar()
 	# Tab: o card "SUA BUILD" ao lado do menu troca a página visual pela de detalhes (status.gd)
 	if e is InputEventKey and e.keycode == KEY_TAB and e.pressed and not e.echo and tela == "menu" and mundo != null and mundo.get("status") != null:

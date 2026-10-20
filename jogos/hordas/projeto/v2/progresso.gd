@@ -110,6 +110,20 @@ func escolher(i: int) -> void:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
+## Perde a rodada de cartas aberta (o "Sim" de "Pausar agora?" na escolha): nenhuma carta é aplicada, o nível pendente é consumido e não
+## há reembolso de rerrolar nem de banir. Com mais níveis pendentes a próxima rodada abre depois, como depois de uma escolha.
+func descartar_rodada() -> void:
+	if combate.jogo != "escolha":
+		return
+	pendentes = maxi(0, pendentes - 1)
+	cartas = []
+	combate.telas.esconder()
+	combate.pausado = false
+	combate.jogo = "jogando"
+	if pendentes > 0:
+		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
+
+
 ## Escolha AUTOMÁTICA: o sistema escolhe a carta pelo que o herói já tem (cartas.escolha_automatica) e aplica na hora. Sem custo, mas a
 ## raridade vem rebaixada. Devolve false se não está na escolha ou não sobrou carta nenhuma.
 func automatico() -> bool:
