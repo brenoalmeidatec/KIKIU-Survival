@@ -269,6 +269,33 @@ func _testes() -> void:
 		elif em_cpu and str(it.get("id", "")).begins_with("g:op:"):
 			linhas_cpu += 1
 	ok(linhas_cpu == 2, "a CPU do Avançado tem as duas opções que a v2 lê (partículas, cálculo dos monstros): %d" % linhas_cpu)
+	# com o Detalhe dinâmico ligado (o padrão) os detalhes ficam apagados: não mudam com Enter, setas nem clique, e a ajuda diz por quê
+	ok(bool(Config.v("qualidade_auto")), "o Detalhe dinâmico vem ligado (padrão)")
+	var todos_bloqueados := true
+	for it in pausa._itens_atuais:
+		if str(it.get("id", "")).begins_with("g:op:") and not bool(it.get("bloqueado", false)):
+			todos_bloqueados = false
+	ok(todos_bloqueados, "com o Detalhe dinâmico Sim, todos os detalhes do Avançado estão bloqueados (apagados)")
+	_ir_para(pausa, "g:op:sombras")
+	var sombras_antes := str(Config.g("sombras"))
+	_tecla(KEY_RIGHT)
+	_tecla(KEY_LEFT)
+	_tecla(KEY_ENTER)
+	pausa._acao_sel(1, true)  # o caminho do clique esquerdo
+	pausa._acao_sel(-1, false)  # e o do direito
+	ok(
+		str(Config.g("sombras")) == sombras_antes and Config.g_perfil() == "baixo",
+		"bloqueado: setas, Enter e clique não mudam o detalhe nem viram Personalizado"
+	)
+	ok("Controlado pelo Detalhe dinâmico" in pausa._ajuda.text and "Desligue-o" in pausa._ajuda.text, "a ajuda do detalhe bloqueado diz que o dinâmico manda")
+	ok(pausa._linhas[pausa.sel - pausa._topo]["rotulo"].get_theme_color("font_color").a < 0.7, "a linha bloqueada aparece apagada")
+	Config.definir("qualidade_auto", false)  # desliga: tudo volta a ser editável
+	pausa._desenhar()
+	var algum_bloqueado := false
+	for it in pausa._itens_atuais:
+		if bool(it.get("bloqueado", false)):
+			algum_bloqueado = true
+	ok(not algum_bloqueado, "com o Detalhe dinâmico Não, os detalhes voltam a ser editáveis")
 	_ir_para(pausa, "g:op:sombras")
 	_tecla(KEY_RIGHT)  # baixa -> media
 	ok(str(Config.g("sombras")) == "media" and mundo.sombras.modo == Sombras.MEDIA, "Sombras (lista) muda a config e a sombra do mundo")
@@ -343,8 +370,8 @@ func _testes() -> void:
 		"a linha Detalhe dinâmico existe e mostra Sim"
 	)
 	ok(
-		"sem passar do Perfil escolhido" in pausa._ajuda.text and "Personalizado" in pausa._ajuda.text,
-		"o rodapé do Detalhe dinâmico explica o teto e o Personalizado"
+		"sem passar do Perfil escolhido" in pausa._ajuda.text and "travados" in pausa._ajuda.text,
+		"o rodapé do Detalhe dinâmico explica o teto e que os detalhes ficam travados"
 	)
 	_tecla(KEY_ENTER)
 	ok(not bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Não", "Enter desliga o Detalhe dinâmico")
@@ -352,8 +379,21 @@ func _testes() -> void:
 	_tecla(KEY_ENTER)
 	ok(
 		bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Sim" and Config.g_perfil() == "medio",
-		"Enter alterna de volta para Sim (como Tela cheia e Mostrar FPS, a linha é de Enter)"
+		"Enter alterna de volta para Sim"
 	)
+	_tecla(KEY_LEFT)
+	ok(not bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Não", "a seta esquerda alterna a linha (Sim -> Não)")
+	_tecla(KEY_RIGHT)
+	ok(
+		bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Sim" and Config.g_perfil() == "medio",
+		"a seta direita alterna a linha (Não -> Sim)"
+	)
+	# com o dinâmico Sim, Perfil, Detectar, Tela cheia, Mostrar FPS e Tamanho da interface seguem livres
+	var livres := true
+	for it in pausa._itens_atuais:
+		if bool(it.get("bloqueado", false)):
+			livres = false
+	ok(livres, "com o Detalhe dinâmico Sim, as linhas da tela Gráficos (Perfil, Detectar, Tela cheia, FPS, interface) não ficam apagadas")
 	ok(str(pausa._itens_atuais[pausa.sel - 1].valor) == "Médio", "o Perfil mostra só Médio enquanto o perfil não caiu")
 	# o Detectar escolhe o Perfil e deixa o Detalhe dinâmico como está
 	_ir_para(pausa, "g:detectar")
@@ -729,7 +769,13 @@ func _testar_teto_e_migracao(mundo, pausa) -> void:
 	)
 	mundo._qualidade_ligada = false
 	# save antigo: qualidade_auto ligada + perfil Alto (o antigo "Dinâmico") = Perfil Alto + Detalhe dinâmico Sim; os outros casos ficam como estavam
-	var casos := [["alto", true, "Alto", "Sim"], ["alto", false, "Alto", "Não"], ["medio", true, "Médio", "Sim"], ["baixo", false, "Baixo", "Não"]]
+	var casos := [
+		["alto", true, "Alto", "Sim"],
+		["alto", false, "Alto", "Não"],
+		["medio", true, "Médio", "Sim"],
+		["baixo", false, "Baixo", "Não"],
+		["personalizado", true, "Personalizado", "Não"]
+	]
 	for c in casos:
 		var cfg := ConfigFile.new()
 		cfg.set_value("graficos", "perfil", c[0])
@@ -745,6 +791,21 @@ func _testar_teto_e_migracao(mundo, pausa) -> void:
 				% [c[0], str(c[1]), c[2], c[3], str(l[0].valor), str(l[1].valor)]
 			)
 		)
+	# Personalizado + dinâmico ligado (montado à mão antes): abre com o dinâmico Não e o que ele montou fica editável
+	var pers := ConfigFile.new()
+	pers.set_value("graficos", "perfil", "personalizado")
+	pers.set_value("graficos", "base", "alto")
+	pers.set_value("graficos", "sombras", "baixa")
+	pers.save(OPCOES_TESTE)  # sem qualidade_auto salvo: o padrão (Sim) também não pode ficar com o Personalizado
+	Config.recarregar()
+	ok(
+		not bool(Config.v("qualidade_auto")) and Config.g_perfil() == "personalizado" and str(Config.g("sombras")) == "baixa",
+		"save Personalizado sem a opção salva abre com o dinâmico Não e mantém o montado à mão"
+	)
+	var salvo_pers := ConfigFile.new()
+	salvo_pers.load(OPCOES_TESTE)
+	ok(not bool(salvo_pers.get_value("opcoes", "qualidade_auto", true)), "e grava o dinâmico como Não (a migração não repete)")
+	ok(not bool(pausa._graficos.itens_avancado()[1].get("bloqueado", false)), "no save Personalizado os detalhes abrem editáveis")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(OPCOES_TESTE))
 	Config.recarregar()
 	ok(bool(Config.v("qualidade_auto")), "sem nada salvo (máquina nova) o Detalhe dinâmico vem Sim")

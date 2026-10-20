@@ -11,7 +11,10 @@ extends RefCounted
 ## Perfil tem só Baixo, Médio e Alto (e Personalizado, quando uma opção é mexida à mão). O Detalhe dinâmico (qualidade_auto) é uma linha
 ## própria, logo abaixo do Perfil: com ele ligado a partida começa no Perfil escolhido, desce um degrau por vez se o fps travar e sobe de
 ## volta só até o Perfil escolhido (v2/qualidade_auto.gd; o Config guarda o escolhido em g_perfil_escolhido e a queda só na memória).
-## No Personalizado ele não age. Detectar pela máquina escolhe o Perfil e deixa o Detalhe dinâmico como está (o padrão de máquina nova é Sim).
+## Com ele ligado, as opções soltas da tela Avançado ficam apagadas (linha com "bloqueado": true: a pausa não deixa mudar) e a ajuda diz que
+## quem manda é o Detalhe dinâmico; por isso com ele ligado não há Personalizado (o Config.recarregar abre um save Personalizado como Não).
+## Desligado, tudo volta a ser editável e mexer numa opção vira Personalizado. Perfil, Detectar pela máquina, Tela cheia e Mostrar FPS ficam
+## sempre livres. Detectar escolhe o Perfil e deixa o Detalhe dinâmico como está (o padrão de máquina nova é Sim).
 ## Tela cheia, o Detalhe dinâmico e o contador de fps são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
 
 const PERFIS := ["baixo", "medio", "alto"]
@@ -20,7 +23,8 @@ const SECOES := ["cpu", "gpu"]
 const NOMES_SECAO := {"cpu": "CPU (simulação)", "gpu": "GPU (visual)"}
 const LIDAS_NA_V2 := ["particulas_sim", "calculo_monstros", "luz_relevo", "sombras", "nevoa", "tremor_clarao", "limite_fps", "vsync"]
 const AJUDA_PERFIL := "Baixo, Médio e Alto fixam tudo. Mexer numa opção vira Personalizado."
-const AJUDA_DINAMICO := "Baixa a qualidade sozinho se o jogo travar e volta quando o FPS firmar, sem passar do Perfil escolhido. " + "No Personalizado não age."
+const AJUDA_DINAMICO := "Baixa a qualidade sozinho se o jogo travar e volta quando o FPS firmar, sem passar do Perfil escolhido. Ligado, os detalhes do Avançado ficam travados."
+const AJUDA_BLOQUEADO := "Controlado pelo Detalhe dinâmico. Desligue-o para ajustar à mão."
 const AJUDA_AVANCADO := "Opção por opção, separadas pelo que pesa na CPU (a conta do jogo) e na GPU (o desenho na tela)."
 const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e número de processadores."
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
@@ -110,7 +114,11 @@ func _sim_nao(chave: String) -> String:
 
 func _linha_opcao(op: Dictionary) -> Dictionary:
 	var chave := str(op.get("chave", ""))
-	return _it("g:op:" + chave, str(op.get("nome", chave)), _texto_valor(op), str(op.get("ajuda", "")))
+	var linha := _it("g:op:" + chave, str(op.get("nome", chave)), _texto_valor(op), str(op.get("ajuda", "")))
+	if bool(Config.v("qualidade_auto")):
+		linha["bloqueado"] = true
+		linha["ajuda"] = AJUDA_BLOQUEADO
+	return linha
 
 
 func _texto_valor(op: Dictionary) -> String:
@@ -146,6 +154,8 @@ func _detectar() -> void:
 
 ## Uma opção do json: slider soma o passo (arredondado à grade), menu e sim_nao dão a volta na lista de valores.
 func _mudar_opcao(chave: String, passo: int) -> void:
+	if bool(Config.v("qualidade_auto")):
+		return  # o Detalhe dinâmico manda (a linha aparece apagada): defesa para quem chamar sem passar pela pausa
 	var op: Dictionary = Config.g_opcao(chave)
 	if op.is_empty():
 		return

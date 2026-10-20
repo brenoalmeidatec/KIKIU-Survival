@@ -146,6 +146,11 @@ func recarregar() -> void:
 	if sombra_antiga.has(sombra):
 		_cfg.set_value("graficos", "sombras", sombra_antiga[sombra])
 		_cfg.save(arquivo)
+	# migração, uma vez: com o Detalhe dinâmico ligado não há Personalizado (os detalhes ficam travados no Perfil). Um save com as duas
+	# coisas (o jogador montou à mão, v1 ou antes do dinâmico existir) abre com o dinâmico desligado: o que ele montou fica como está
+	if str(_cfg.get_value("graficos", "perfil", "")) == "personalizado" and bool(v("qualidade_auto")):
+		_cfg.set_value("opcoes", "qualidade_auto", false)
+		_cfg.save(arquivo)
 	# 1ª vez no jogo de verdade: a máquina fraca já começa em médio ou baixo (só em memória até o jogador mexer)
 	if OS.get_cmdline_user_args().is_empty() and DisplayServer.get_name() != "headless":
 		_perfil_padrao = g_detectar()
