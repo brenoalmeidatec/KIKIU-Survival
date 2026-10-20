@@ -1119,19 +1119,17 @@ func _pt_jogar(dt: float) -> void:
 		_pt_novo_ponto()
 	var hp: Vector2 = h.pos
 	var ir: Vector2 = (alvo - hp).normalized() if alvo.distance_squared_to(h.pos) > 16.0 else Vector2.ZERO
-	var dir: Vector2 = ir * 0.7 + fuga * 1.4
-	if dir.length() < 0.15:
-		dir = ir
-	# perto da borda do mapa (50 px): corta o que empurra para a parede e corre ao longo dela, em vez de ficar prensado
+	# perto da borda do mapa (50 px): tira da fuga só o que empurra para a parede; o alvo (baú ou orbe dentro da faixa) continua valendo.
+	# Sem sobra (canto), vai para o alvo ou para o centro, nunca para dentro da parede.
 	var lim: Rect2 = mundo.limite_andavel
-	if (hp.x < lim.position.x + 50.0 and dir.x < 0.0) or (hp.x > lim.end.x - 50.0 and dir.x > 0.0):
-		dir.x = 0.0
-		if absf(dir.y) < 0.4:
-			dir.y = signf(fuga.y) if absf(fuga.y) > 0.1 else signf(lim.get_center().y - hp.y)
-	if (hp.y < lim.position.y + 50.0 and dir.y < 0.0) or (hp.y > lim.end.y - 50.0 and dir.y > 0.0):
-		dir.y = 0.0
-		if absf(dir.x) < 0.4:
-			dir.x = signf(fuga.x) if absf(fuga.x) > 0.1 else signf(lim.get_center().x - hp.x)
+	var fg: Vector2 = fuga
+	if (hp.x < lim.position.x + 50.0 and fg.x < 0.0) or (hp.x > lim.end.x - 50.0 and fg.x > 0.0):
+		fg.x = 0.0
+	if (hp.y < lim.position.y + 50.0 and fg.y < 0.0) or (hp.y > lim.end.y - 50.0 and fg.y > 0.0):
+		fg.y = 0.0
+	var dir: Vector2 = ir * 0.7 + fg * 1.4
+	if dir.length() < 0.15:
+		dir = ir if ir != Vector2.ZERO else (lim.get_center() - hp).normalized()
 	h.entrada_forcada = dir.normalized() if dir.length() > 0.01 else Vector2.ZERO
 	pt.alvo = alvo  # só para a mensagem de TRAVA
 	pt.fuga = fuga
