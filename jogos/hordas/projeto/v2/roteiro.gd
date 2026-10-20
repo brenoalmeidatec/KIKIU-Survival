@@ -9,8 +9,8 @@ extends RefCounted
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
 ##   --build=golpes        idem com os 36 projéteis, anéis, meteoros e nuvens no nível 5 (as folhas animadas de docs/combate_v2)
 ##   --build=tudo          os 36 mais corvos, aura, raio, runa, lâminas e as evoluções desses tipos
-##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, do mini-chefe e do chefe anunciando
-##                         o ataque, da tela de vitória e da escolha com raridades (na trava, 20_escolha_trava, e depois de liberar,
+##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, dos três chefes (Cavaleiro Rubro, Rainha Tecelã e Rei Espantalho) anunciando
+##                         o ataque próprio e logo depois do disparo, e do chefão na fúria, da tela de vitória e da escolha com raridades (na trava, 20_escolha_trava, e depois de liberar,
 ##                         21_escolha_liberada). Fotos 11_build ... 21_escolha_liberada: a janela inteira (mundo e interface; em headless, só o viewport do mundo).
 ##   --roteiro=vitrine|ordem|cerco   (leva 4, desempenho) vitrine: os 5 tipos parados em 3 fileiras, para comparar antes e depois do mesmo quadro;
 ##                         ordem: aranhas grandes (escala 2) atrás e na frente do herói (ordem de desenho); cerco: a horda com 2 aranhas grandes
@@ -53,6 +53,8 @@ var pasta := ""
 var prefixo := "v2"
 var playtest := false
 var pt := {}  # estado do robô de playtest (_pt_iniciar)
+var pt_disparos := 0  # quantos avisos já tinham disparado quando o chefe nasceu (a foto do disparo)
+var pt_fogo := -1.0  # t_passo em que o primeiro aviso disparou (a foto do disparo sai 0,12 s depois)
 
 
 func montar(m, a: Dictionary) -> void:
@@ -511,40 +513,66 @@ func _r_chefe() -> void:
 	var h = mundo.heroi
 	var c = mundo.combate
 	var ch = c.chefes
-	match passo:
+	# três chefes, quatro passos cada: nasce e anuncia o ataque PRÓPRIO (a foto do aviso), o disparo (a foto logo depois) e a troca; no fim a fúria do chefão
+	var nomes := [["17_minichefe_aviso", "17c_minichefe_leque"], ["17b_rainha_aviso", "17d_rainha_teia"], ["18_chefe_aviso", "18b_chefe_revoada"]]
+	var k := passo / 4
+	if passo >= 12:
+		_r_chefe_furia()
+		return
+	match passo % 4:
 		0:
 			_preparar()
-			ch.nascer(ch.cfg.marcas[0], h.pos + Vector2(200, -30))
-			passo = 1
+			ch.nascer(ch.cfg.marcas[k], h.pos + Vector2(110, 150))
+			pt_disparos = c.avisos.disparados
+			pt_fogo = -1.0
+			passo += 1
 			t_passo = 0.0
 		1:
-			if c.avisos.ativos() > 0 and c.avisos.t[0] > 0.35 and t_passo > 2.0:
-				_foto("17_minichefe_aviso")
-				passo = 2
+			if c.avisos.ativos() > 0 and c.avisos.t[0] > 0.6 and t_passo > 2.0:
+				_foto(nomes[k][0])
+				passo += 1
 				t_passo = 0.0
 			elif t_passo > 14.0:
-				passo = 2
+				passo += 1
+				t_passo = 0.0
 		2:
-			if ch.atual != null:
+			if pt_fogo < 0.0 and c.avisos.disparados > pt_disparos:
+				pt_fogo = t_passo
+			if pt_fogo >= 0.0 and t_passo - pt_fogo > 0.12:
+				_foto(nomes[k][1])
+				passo += 1
+				t_passo = 0.0
+			elif t_passo > 8.0:
+				passo += 1
+				t_passo = 0.0
+		3:
+			if k < 2 and ch.atual != null:  # matar o chefão seria a vitória: ele só some na troca de cena
 				c.ferir(ch.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
 				c.processar_mortes()
 			c.avisos.limpar()
-			passo = 3
+			c.jogo = "jogando"
+			c.baus.limpar()
+			passo += 1
 			t_passo = 0.0
-		3:
-			if t_passo > 1.0:
-				c.jogo = "jogando"
-				c.baus.limpar()
-				ch.nascer(ch.cfg.marcas[2], h.pos + Vector2(220, -30))
-				passo = 4
-				t_passo = 0.0
-		4:
-			if c.avisos.ativos() > 0 and c.avisos.t[0] > 0.35 and t_passo > 2.0:
-				_foto("18_chefe_aviso")
-				passo = 5
-			elif t_passo > 14.0:
-				passo = 5
-		5:
+
+
+## A fúria do chefão (menos de metade da vida): a coroa brilha e os corvos giram mais rápido.
+func _r_chefe_furia() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	var ch = c.chefes
+	match passo:
+		12:
+			_preparar()
+			ch.nascer(ch.cfg.marcas[2], h.pos + Vector2(110, 150))
+			ch.atual.vida = ch.atual.vida_max * 0.4
+			passo = 13
+			t_passo = 0.0
+		13:
+			if t_passo > 1.4:
+				_foto("18c_chefe_furia")
+				passo = 14
+		14:
 			mundo.get_tree().quit()
 			return
 
@@ -1061,6 +1089,11 @@ func _pt_jogar(dt: float) -> void:
 			var lado := Vector2(-gd.y, gd.x)
 			var rel2: Vector2 = h.pos - av.pos[i]
 			fuga += (lado if rel2.dot(lado) >= 0.0 else -lado) * 3.0
+			chefe_colado = true
+		elif av.tipo[i] == 3 and av.na_setor(i, h.pos, 30.0):  # o leque: foge para longe de quem bate (e do lado do setor)
+			var rel3: Vector2 = h.pos - av.pos[i]
+			var lado3 := Vector2(-av.dir[i].y, av.dir[i].x)
+			fuga += (rel3.normalized() if rel3.length() > 1.0 else Vector2.RIGHT) * 2.0 + (lado3 if rel3.dot(lado3) >= 0.0 else -lado3) * 2.0
 			chefe_colado = true
 	# para onde ir: baú no chão, senão orbe perto, senão um ponto do mapa que muda de tempos em tempos.
 	# Em desvio (acabou de ficar preso), só o ponto: sem rota, o baú do outro lado de uma árvore prende o herói nela.

@@ -898,6 +898,8 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
+	if chefes != null:
+		chefes.liberar()  # o visual do chefe aponta de volta para ele e tem nós órfãos
 	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, especial, elites, baus, chefes]:
 		if m == null:
 			continue
