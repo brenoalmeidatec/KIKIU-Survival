@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource type="Script" path="res://v2/hud.gd" id="1_hud"]
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_premium_fina.png" id="2_moldura"]
@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_retrato.png" id="13_retrato"]
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_barra.png" id="14_barra"]
 [ext_resource type="Script" path="res://v2/hud_golpes.gd" id="15_golpes"]
+[ext_resource type="Script" path="res://v2/hud_ultimate.gd" id="16_ultimate"]
 
 [node name="Hud" type="CanvasLayer"]
 layer = 10
@@ -37,9 +38,9 @@ stretch_mode = 0
 [node name="Retrato" type="ColorRect" parent="Raiz"]
 layout_mode = 0
 offset_left = 6.0
-offset_top = 6.0
+offset_top = 462.0
 offset_right = 66.0
-offset_bottom = 78.0
+offset_bottom = 534.0
 color = Color(0.003921569, 0.011764706, 0.043137256, 1)
 
 [node name="Heroi" type="TextureRect" parent="Raiz/Retrato"]
@@ -70,16 +71,16 @@ axis_stretch_vertical = 1
 layout_mode = 3
 anchors_preset = 0
 offset_left = 74.0
-offset_top = 6.0
+offset_top = 462.0
 offset_right = 274.0
-offset_bottom = 36.0
+offset_bottom = 506.0
 
 [node name="Barra" type="TextureProgressBar" parent="Raiz/Vida"]
 layout_mode = 0
 offset_left = 4.0
 offset_top = 4.0
 offset_right = 196.0
-offset_bottom = 18.0
+offset_bottom = 26.0
 value = 100.0
 texture_under = ExtResource("3_fundo")
 texture_progress = ExtResource("4_vida")
@@ -94,7 +95,7 @@ layout_mode = 0
 offset_left = 4.0
 offset_top = 4.0
 offset_right = 196.0
-offset_bottom = 18.0
+offset_bottom = 26.0
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "100/100"
@@ -102,9 +103,9 @@ text = "100/100"
 [node name="Folego" type="TextureProgressBar" parent="Raiz"]
 layout_mode = 0
 offset_left = 78.0
-offset_top = 26.0
+offset_top = 492.0
 offset_right = 270.0
-offset_bottom = 32.0
+offset_bottom = 502.0
 value = 100.0
 texture_under = ExtResource("3_fundo")
 texture_progress = ExtResource("5_folego")
@@ -117,9 +118,9 @@ stretch_margin_bottom = 1
 [node name="MolduraBarras" type="NinePatchRect" parent="Raiz"]
 layout_mode = 0
 offset_left = 74.0
-offset_top = 6.0
+offset_top = 462.0
 offset_right = 282.0
-offset_bottom = 36.0
+offset_bottom = 506.0
 texture = ExtResource("14_barra")
 patch_margin_left = 11
 patch_margin_top = 11
@@ -389,7 +390,20 @@ vertical_alignment = 1
 clip_text = true
 text = ""
 
+[node name="Ultimate" type="Control" parent="Raiz"]
+layout_mode = 0
+offset_left = 448.0
+offset_top = 444.0
+offset_right = 512.0
+offset_bottom = 508.0
+script = ExtResource("16_ultimate")
+
 [node name="Habilidades" type="Control" parent="Raiz"]
+layout_mode = 0
+offset_left = 780.0
+offset_top = 460.0
+offset_right = 954.0
+offset_bottom = 534.0
 script = ExtResource("12_habilidades")
 
 [node name="Golpes" type="Control" parent="Raiz"]

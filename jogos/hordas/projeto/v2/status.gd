@@ -48,10 +48,10 @@ const ICONE_FUSAO := preload("res://assets/v2/fusoes/icone.png")  # junção de 
 const TELA := Rect2(0, 0, 960, 540)
 const JOGO_VIVO := ["jogando", "escolha", "bau"]  # estados do combate em que o C vale
 const JOGO_CARTAS := ["escolha", "bau"]  # as telas de cartas: aí o C abre o painel central
-## Colunas de cada modo: x, y, largura e altura máxima. HUD: a da esquerda sob a vida e o fôlego (y 40) e fora da barra do chefe (x até 190);
-## a da direita sob o minimapa (que acaba em y 112) e fora da barra do chefe e dos anúncios (x a partir de 772). Pausa: colada nos dois lados
+## Colunas de cada modo: x, y, largura e altura máxima. HUD: a da esquerda acima do retrato e das barras de vida e fôlego (que começam em y 462) e fora
+## da barra do chefe (x até 190); a da direita sob o minimapa (que acaba em y 112), acima do E e do secundário (y 460) e fora da barra do chefe e dos anúncios (x a partir de 772). Pausa: colada nos dois lados
 ## do painel do menu (`Pausa.PAINEL`, x 260 a 700). Central: três colunas lado a lado, a tela toda é do painel.
-const COLUNAS_HUD := [Rect2(6, 40, 184, 466), Rect2(772, 118, 182, 388)]
+const COLUNAS_HUD := [Rect2(6, 6, 184, 452), Rect2(772, 118, 182, 338)]
 const COLUNAS_PAUSA := [
 	Rect2(8, 14, Pausa.PAINEL.position.x - 16.0, 512),
 	Rect2(Pausa.PAINEL.position.x + Pausa.PAINEL.size.x + 8.0, 14, 944.0 - Pausa.PAINEL.position.x - Pausa.PAINEL.size.x, 512)

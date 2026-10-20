@@ -43,6 +43,7 @@ const TABELA := {
 	"andar": [[[TECLA, "Setas"]], [[TECLA, "Stick"]], [[TECLA, "Stick"]]],
 	"habilidade": [[[TECLA, "E"]], [[TECLA, "LB"]], [[TECLA, "L1"]]],
 	"ultimate": [[[TECLA, "Q"]], [[TECLA, "RB"]], [[TECLA, "R1"]]],
+	"secundario": [[[TECLA, "Mouse D"]], [[TECLA, "LT"]], [[TECLA, "L2"]]],
 	"esquiva": [[[TECLA, "Espaço"]], [[FACE, "B"]], [[PS, "o"]]],
 }
 
