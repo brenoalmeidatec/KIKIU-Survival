@@ -6,7 +6,8 @@ extends Node
 ##
 ## Camadas (CanvasLayer, abaixo da interface do salão, que fica na tela padrão):
 ##   -2 cena: o cenário e o herói (movidos para cá), o vão animado dos portais, as luzes, as sombras e o CanvasModulate;
-##   -1 brilho: halos, poças de luz, chamas, runas, partículas e névoa (aditivos; sem CanvasModulate).
+##   -1 brilho: halos, poças de luz, chamas, runas, partículas e névoa (aditivos; sem CanvasModulate), e os nomes dos portais e das
+##      estruturas (sem luz: ficam por cima do herói e apagam quando ele os cobre, _letreiros_vivos).
 ## Perfis (dados/graficos.json): luz_relevo (2/6/10 luzes), sombras (modo de sombras.gd), nevoa, particulas_sim (20/45/80 partículas).
 
 const Paleta := preload("res://v2/paleta.gd")
@@ -43,6 +44,9 @@ const RUNAS := [
 	[".###.", "#...#", "..#..", ".#.#.", "..#.."]
 ]
 const N_RUNAS := 8
+const ESCALA_HEROI := 2.0  # a escala em que salao.gd desenha o herói (ESCALA lá; testes/v2_letreiros.gd trava a igualdade)
+const OPACIDADE_NOME_COBERTO := 0.25  # o nome que o herói cobre fica quase transparente, para ver o herói por baixo dele
+const VELOCIDADE_NOME := 6.0  # 1/s: o nome some ou volta em uns 0,13 s
 const CADEADO_BITS := [".#####.", "#.....#", "#.....#", "#######", "#######", "###.###", "###.###", "#######"]
 
 
@@ -128,6 +132,7 @@ var _po_tapete: CPUParticles2D
 var _altar := Vector2.ZERO
 var _tex_runas: Array[Texture2D] = []
 var _particulas: Array[CPUParticles2D] = []
+var _letreiros: Array[Dictionary] = []  # um nó por pedaço de nome (texto, cadeado, linha de baixo): {no, caixa, opacidade}; ver _montar_letreiros
 var _perfil_pendente := false
 # perfil
 var lim_luzes := 6
@@ -171,13 +176,13 @@ func montar(ctx) -> void:
 	var sem_luz := CanvasItemMaterial.new()
 	sem_luz.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
 	_rotulos.material = sem_luz
-	_rotulos.draw.connect(_pintar_rotulos)
 	_glow = CanvasLayer.new()
 	_glow.layer = -1
 	add_child(_glow)
 	_fx = Node2D.new()
 	_glow.add_child(_fx)
 	_glow.add_child(_rotulos)  # nomes sem CanvasModulate, por cima dos brilhos
+	_montar_letreiros()
 	_ler_niveis()
 	_montar_portais()
 	ctx._heroi.reparent(_mundo, false)
@@ -253,12 +258,37 @@ func _reaplicar_perfil() -> void:
 		_mundo.move_child(_vinheta, _mundo.get_child_count() - 1)  # a sombra remontada põe o herói no fim: a vinheta volta por cima
 
 
-func _pintar_rotulos() -> void:
+## Um nó por pedaço do nome (texto, cadeado, linha de baixo), filho de _rotulos (sem luz): o herói que cobre a caixa de um pedaço apaga
+## só esse pedaço (_letreiros_vivos).
+func _montar_letreiros() -> void:
 	for a in _ctx._alvos:
-		if a.tipo == "portal":
-			_ctx._visual.rotulo_portal(_rotulos, a, Mapas.condicao(Mapas.buscar(str(a.id))) != "")
-		else:
-			_ctx._visual.rotulo_estrutura(_rotulos, a)
+		for parte in _ctx._visual.partes_rotulo(a):
+			var no := Node2D.new()
+			no.use_parent_material = true  # herda o material sem luz do _rotulos
+			no.draw.connect(_pintar_letreiro.bind(a, no, str(parte.parte)))
+			_rotulos.add_child(no)
+			_letreiros.append({"no": no, "caixa": parte.caixa, "opacidade": 1.0})
+
+
+func _pintar_letreiro(a: Dictionary, no: Node2D, parte: String) -> void:
+	var fechado: bool = str(a.tipo) == "portal" and Mapas.condicao(Mapas.buscar(str(a.id))) != ""
+	_ctx._visual.desenha_parte(no, a, parte, fechado)
+
+
+## O herói passa por cima dos nomes: o quadro dele (o mesmo que salao.gd _pintar_heroi desenha) apaga cada pedaço do nome que ele cobre,
+## e o pedaço volta quando ele sai. Nenhum nó novo: só muda a opacidade do nó que já existe, e só quando ela muda.
+func _letreiros_vivos(pes: Vector2, dt: float) -> void:
+	var w: float = _ctx._quadro_w * ESCALA_HEROI
+	var h: float = _ctx._quadro_h * ESCALA_HEROI
+	var corpo := Rect2(pes.x - w / 2.0, pes.y - h + 6.0, w, h)
+	for l in _letreiros:
+		var caixa: Rect2 = l.caixa
+		var alvo := OPACIDADE_NOME_COBERTO if caixa.intersects(corpo) else 1.0
+		var op := move_toward(float(l.opacidade), alvo, dt * VELOCIDADE_NOME)
+		if op != float(l.opacidade):
+			l.opacidade = op
+			var no: Node2D = l.no
+			no.modulate.a = op
 
 
 # ------------------------------------------------------------------ texturas (uma vez só)
@@ -816,6 +846,7 @@ func _process(dt: float) -> void:
 	_pos_ant = pos
 	var andando: bool = c._quadro > 0
 	_heroi_vivo(c, pos, andando)
+	_letreiros_vivos(c._heroi.position, dt)
 	var ciclo := 1.0 + (AMPLITUDE_CICLO * sin(TAU * _tempo / PERIODO_CICLO) if com_ciclo else 0.0)
 	if _modulador != null:
 		_modulador.color = Color(MODULADO.r * ciclo, MODULADO.g * ciclo, MODULADO.b * ciclo)
