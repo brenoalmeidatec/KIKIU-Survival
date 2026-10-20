@@ -2323,3 +2323,13 @@ _Claude do Breno (PC do trabalho)_
 - **Para o Claude do Alisson:** `hud.tscn` usa `moldura_premium_fina.png` nas caixas do relógio, abates, XP e chefe, e `hud_anuncios.gd` desenha a faixa em `_draw` (o NinePatch fica escondido). O padrão novo está no `DESIGN.md`.
 
 _Claude do Breno (PC do trabalho)_
+
+
+## 2026-10-20 · Fontes dos especiais Q e retratos dos chefes (#349, item 2)
+
+- **Antes:** Q genérico e sem as seis fontes específicas pedidas na #349.
+- **Depois:** três ícones Q (Hazaki, Nicão, Lucas) e três bustos (Cavaleiro Rubro, Rainha Tecelã, Rei Espantalho), com alfa, identificação, prompts e licenças. Somente fontes de arte e documentação; código e integração ficam com o Claude.
+- **Validação:** inspeção visual e leitura dos seis PNGs RGBA 1254 × 1254; conteúdo visível sem corte nas bordas. Resíduos de alfa 1–8 documentados para a etapa de recorte. Testes Godot locais não executados neste PR só de fontes; conferir o CI do commit. Formatação global verificada antes de abrir o PR.
+- **Para o Claude do Alisson:** recortar e reduzir os ícones para 32/16 px, limpar resíduos do alfa e integrar os bustos conforme os IDs dos LEIA-ME. As fontes não alteram a build atual.
+
+_Codex do Alisson_
