@@ -523,7 +523,12 @@ func _atualizar_mapa() -> void:
 
 
 func _trocar_mapa() -> void:
-	if not Mapas.escolher(Mapas.proximo(_mapa_id)):
+	var seguinte := Mapas.proximo(_mapa_id)
+	if seguinte == _mapa_id:  # só este mapa está aberto: o seguinte da lista mostra o que falta para abrir
+		var trancado: Dictionary = Mapas.LISTA[posmod(Mapas.ids().find(_mapa_id) + 1, Mapas.LISTA.size())]
+		_avisar(Mapas.condicao(trancado) if Mapas.condicao(trancado) != "" else "Só há este mapa")
+		return
+	if not Mapas.escolher(seguinte):
 		_avisar("Não foi possível salvar")
 		return
 	_atualizar_mapa()

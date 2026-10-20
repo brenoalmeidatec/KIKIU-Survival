@@ -3,7 +3,8 @@ extends Node
 # único; os saves reais (user://v2_*) são conferidos por md5 no fim.
 # Confere: um personagem novo só tem a Floresta e as Estátuas abertas; vencer a Floresta abre o Laboratório e o Altar, e vencer outro
 # mapa não abre o Laboratório; a 1ª conquista abre o Códice e o Altar só abre vencendo a Floresta (partidas sozinhas não abrem nada); um save de antes das travas com
-# progresso fica com tudo aberto e ganha a marca de versão na próxima gravação; um slot novo não vira "antigo" depois de gravar; no
+# progresso NÃO fica com tudo aberto: segue as travas e mantém só o que conquistou (Derrote o chefe vale como Vença a Floresta, mapa
+# vencido fica aberto) e ganha a marca de versão na próxima gravação; um slot novo não vira "antigo" depois de gravar; no
 # salão, portal e estrutura trancados mostram a trava, o prompt diz "Trancado" e Enter só avisa.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_progressao.tscn  (imprime "v2_progressao falhas=0")
 # Fotos (com janela): godot --path jogos/hordas/projeto res://testes/v2_progressao.tscn -- --prints=<pasta>
@@ -147,7 +148,7 @@ func _testes() -> void:
 	ok(not Progressao.aberto("estrutura", "codice") and not Progressao.aberto("estrutura", "altar"), "5 partidas sem conquista não abrem Altar nem Códice")
 	ok(not _abertos().has("laboratorio"), "partidas não abrem mapas")
 
-	# 6. save de antes das travas, com progresso: tudo aberto e marca de versão gravada na próxima escrita
+	# 6. save de antes das travas, com progresso mas SEM vitória: segue as travas (não fica "tudo aberto" por ser velho)
 	var antigo := "user://" + prefixo + "legado.cfg"
 	var cf := ConfigFile.new()
 	cf.set_value("moeda", "almas", 120)
@@ -155,15 +156,45 @@ func _testes() -> void:
 	cf.set_value("ultima", "tempo", 50.0)
 	cf.save(antigo)
 	Meta.caminho_save = antigo
-	ok(_abertos() == Mapas.ids(), "save antigo com progresso: todos os mapas abertos")
-	ok(Progressao.aberto("estrutura", "altar") and Progressao.aberto("estrutura", "codice"), "save antigo: todas as estruturas abertas")
+	ok(_abertos() == ["floresta"], "save antigo sem vitória: só a Floresta aberta (%s)" % str(_abertos()))
+	ok(not Progressao.aberto("estrutura", "altar"), "save antigo sem vitória: Altar trancado")
 	Meta.creditar(1)
 	var gravado := ConfigFile.new()
 	gravado.load(antigo)
 	ok(int(gravado.get_value("progressao", "versao", 0)) == Meta.VERSAO_PROGRESSAO, "a gravação persiste a versão")
-	ok(bool(gravado.get_value("progressao", "legado", false)), "a gravação persiste o legado")
+	ok(not gravado.has_section_key("progressao", "legado"), "a gravação não grava legado")
 	_partida(false, "floresta")
-	ok(_abertos() == Mapas.ids(), "depois de uma partida o save antigo continua todo aberto")
+	ok(_abertos() == ["floresta"], "depois de uma partida sem vitória o save antigo continua com as travas")
+	# 6b. o que o save antigo já conquistou continua conquistado: Derrote o chefe (de antes dos mapas) vale como Vença a Floresta
+	var com_chefe := "user://" + prefixo + "legado_chefe.cfg"
+	var cc := ConfigFile.new()
+	cc.set_value("moeda", "almas", 300)
+	cc.set_value("conquistas", "derrota_chefe", true)
+	cc.save(com_chefe)
+	Meta.caminho_save = com_chefe
+	ok(_abertos() == ["floresta", "laboratorio"], "save antigo que derrotou o chefe: Laboratório aberto (%s)" % str(_abertos()))
+	ok(Progressao.aberto("estrutura", "altar") and Progressao.aberto("estrutura", "codice"), "save antigo que derrotou o chefe: Altar e Códice abertos")
+	# 6c. save antigo que já tinha o save com legado = true gravado pelo #333: a marca é ignorada e apagada
+	var com_marca := "user://" + prefixo + "legado_marca.cfg"
+	var cm := ConfigFile.new()
+	cm.set_value("progressao", "versao", 1)
+	cm.set_value("progressao", "legado", true)
+	cm.set_value("moeda", "almas", 500)
+	cm.set_value("conquistas", "vence_cidade", true)
+	cm.save(com_marca)
+	Meta.caminho_save = com_marca
+	ok(
+		_abertos() == ["floresta", "cidade", "medio"],
+		"legado=true de antes é ignorado: a Cidade já vencida fica aberta e abre as Ruínas (%s)" % str(_abertos())
+	)
+	ok(not Progressao.aberto("estrutura", "altar"), "legado=true de antes é ignorado: Altar segue trancado sem vencer a Floresta")
+	Meta.creditar(1)
+	var limpo := ConfigFile.new()
+	limpo.load(com_marca)
+	ok(
+		not limpo.has_section_key("progressao", "legado") and int(limpo.get_value("progressao", "versao", 0)) == Meta.VERSAO_PROGRESSAO,
+		"a marca legado some na próxima gravação"
+	)
 
 	# 7. save antigo SEM progresso (só a escolha de mapa) não vira legado
 	var vazio := "user://" + prefixo + "vazio.cfg"
@@ -179,7 +210,7 @@ func _testes() -> void:
 	_partida(false, "floresta")
 	var slot := ConfigFile.new()
 	slot.load(Meta.caminho_save)
-	ok(not bool(slot.get_value("progressao", "legado", true)), "slot novo não é tratado como antigo")
+	ok(not slot.has_section_key("progressao", "legado"), "slot novo não tem a marca de save antigo")
 	ok(_abertos() == ["floresta"], "slot novo depois de uma partida: só a Floresta")
 	# 9. mapa vencido: marcar_mapa_vencido marca a conquista vence_<mapa> no cf (quem grava é o chamador); a trava lê o mesmo save
 	_novo("Mapa")
@@ -212,6 +243,35 @@ func _testes() -> void:
 	var migrado := ConfigFile.new()
 	migrado.load(Meta.caminho_save)
 	ok(not migrado.has_section("mapas_vencidos") and bool(migrado.get_value("conquistas", "vence_floresta", false)), "grava só o estado canônico")
+	# 12. as melhorias do Altar abrem pelos mapas vencidos: Olho para o raro (Laboratório) e Segunda chance (Cidade), com o requisito escrito
+	_novo("Altar")
+	Meta.creditar(2000)
+	ok(Meta.marcar_mapa_vencido("floresta"), "12: vence a Floresta")
+	ok(Meta.comprar("ima") and Meta.comprar("almas"), "12: com o Altar aberto, Ímã e Almas abundantes compram")
+	ok(not Meta.comprar("raridade") and Meta.nivel("raridade") == 0, "12: Olho para o raro segue trancada sem vencer o Laboratório")
+	ok(not Meta.comprar("rolagem") and Meta.nivel("rolagem") == 0, "12: Segunda chance segue trancada sem vencer a Cidade")
+	var s3 = Salao.instantiate()
+	add_child(s3)
+	await get_tree().process_frame
+	s3.abrir_estrutura("altar")
+	var pos_rar := -1
+	for i in s3._p_itens.size():
+		if str(s3._p_itens[i].id) == "raridade":
+			pos_rar = i
+	ok(pos_rar >= 0, "12: o Altar lista Olho para o raro mesmo trancada (não some)")
+	s3._p_atual = pos_rar
+	s3._mostrar_item(pos_rar)
+	ok(s3._p_comprar.text == "BLOQUEADA" and s3._p_comprar.disabled, "12: o botão diz BLOQUEADA (%s)" % s3._p_comprar.text)
+	ok(
+		s3._motivo_recusa(s3._p_itens[pos_rar]) == "Falta a conquista: Vença o Laboratório",
+		"12: o motivo escreve o requisito (%s)" % s3._motivo_recusa(s3._p_itens[pos_rar])
+	)
+	await foto("05_altar_melhoria_trancada")
+	s3.queue_free()
+	await get_tree().process_frame
+	ok(Meta.marcar_mapa_vencido("laboratorio") and Meta.comprar("raridade"), "12: vencer o Laboratório libera Olho para o raro")
+	ok(not Meta.comprar("rolagem"), "12: o Laboratório não libera a Segunda chance")
+	ok(Meta.marcar_mapa_vencido("cidade") and Meta.comprar("rolagem"), "12: vencer a Cidade libera Segunda chance")
 	fim = true
 
 

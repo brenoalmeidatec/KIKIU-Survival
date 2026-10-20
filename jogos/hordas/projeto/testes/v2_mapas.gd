@@ -45,6 +45,12 @@ func _ready() -> void:
 	get_tree().quit(1 if falhas > 0 else 0)
 
 
+## Libera todos os mapas gravando a vitória nos três primeiros, como a partida real faz.
+func _liberar_mapas() -> void:
+	for id in ["floresta", "laboratorio", "cidade"]:
+		ok(Meta.marcar_mapa_vencido(id), "libera: vitória gravada em " + id)
+
+
 func _apagar_save() -> void:
 	var sufixos: Array[String] = ["", ".tmp", ".bak"]
 	for sufixo in sufixos:
@@ -58,12 +64,26 @@ func _lista_e_escolha() -> void:
 	ok(Mapas.ids().size() >= 2, "há pelo menos 2 mapas (floresta e laboratório): %s" % str(Mapas.ids()))
 	ok(Mapas.ids().has("floresta") and Mapas.ids().has("laboratorio"), "floresta e laboratório estão na lista")
 	ok(Mapas.escolhido() == "floresta", "sem save o mapa é a floresta (deu %s)" % Mapas.escolhido())
+	# Trancado (dados/v2_progressao.json): mapa que a progressão ainda não abriu não é gravado nem escolhido, nem por save antigo.
+	ok(not Mapas.escolher("laboratorio") and Mapas.escolhido() == "floresta", "mapa trancado não é gravado")
+	ok(Mapas.proximo("floresta") == "floresta", "sem outro mapa aberto, proximo devolve o mesmo")
+	var trancado := ConfigFile.new()
+	trancado.set_value("config", "mapa", "medio")
+	trancado.set_value("meta", "almas", 123)
+	trancado.save(SAVE_TESTE)
+	ok(Mapas.escolhido() == "floresta", "save antigo com escolha trancada volta à floresta (sem liberar tudo)")
+	_apagar_save()
+	# Daqui em diante os mapas estão liberados de forma explícita: cada vitória é gravada como o jogo grava (vence_<mapa>).
+	_liberar_mapas()
+	ok(Mapas.proximo("floresta") == "laboratorio", "com a floresta vencida, proximo pula para o laboratório")
 	Mapas.escolher("laboratorio")
 	ok(Mapas.escolhido() == "laboratorio", "escolher grava e escolhido lê de volta")
 	var legado := ConfigFile.new()
 	legado.set_value("config", "mapa", "medio")
 	legado.set_value("meta", "almas", 123)
-	ok(legado.save(SAVE_TESTE) == OK, "fixture de save antigo com id medio")
+	for id in ["floresta", "laboratorio", "cidade"]:
+		legado.set_value("mapas_vencidos", id, true)
+	ok(legado.save(SAVE_TESTE) == OK, "fixture de save antigo com id medio e os mapas vencidos")
 	ok(Mapas.escolhido() == "medio" and Mapas.buscar("medio").nome == "RUÍNAS DA FLORESTA", "save antigo medio preserva o id e mostra o nome novo")
 	Mapas.escolher("cidade")
 	var preservado := ConfigFile.new()
