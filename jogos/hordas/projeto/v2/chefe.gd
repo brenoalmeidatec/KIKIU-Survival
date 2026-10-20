@@ -150,6 +150,11 @@ func nascer(mk: Dictionary, onde: Variant = null):
 	return m
 
 
+## O aviso `i` é meu: se eu morrer antes de ele disparar, `ao_morrer` o cancela (os avisos da elite e de outras fontes ficam).
+func _meu(i: int) -> int:
+	return combate.avisos.de(i, self)
+
+
 func _intervalo() -> float:
 	return float(marca.intervalo) * (0.7 if _fase2 else 1.0)
 
@@ -231,10 +236,10 @@ func _comecar_ataque() -> void:
 		combate.avisos.reticulo(float(at.get("raio", 40.0)), float(at.aviso))
 	match _ataque:
 		"estouro":
-			combate.avisos.com_estilo(combate.avisos.circulo(h.pos, float(at.raio), float(at.aviso), float(at.dano), cor), 2)  # o chão explode (docs/combate_v2)
+			combate.avisos.com_estilo(_meu(combate.avisos.circulo(h.pos, float(at.raio), float(at.aviso), float(at.dano), cor)), 2)  # o chão explode (docs/combate_v2)
 			if _fase2:  # na fúria, um segundo círculo logo ao lado
 				var lado := Vector2.from_angle(randf() * TAU) * float(at.raio) * 1.4
-				combate.avisos.com_estilo(combate.avisos.circulo(h.pos + lado, float(at.raio), float(at.aviso) + 0.25, float(at.dano), cor), 2)
+				combate.avisos.com_estilo(_meu(combate.avisos.circulo(h.pos + lado, float(at.raio), float(at.aviso) + 0.25, float(at.dano), cor)), 2)
 		"chuva":
 			_chuva_n = int(at.n) + (3 if _fase2 else 0)
 			_chuva_t = 0.0
@@ -250,7 +255,7 @@ func _comecar_ataque() -> void:
 			d = d if d.length() > 1.0 else Vector2.RIGHT
 			var dg := Vector2(d.x, d.y / 0.62).normalized()  # direção no chão
 			_dir = Vector2(dg.x, dg.y * 0.62)  # a mesma direção na tela: o chefe corre por cima da faixa
-			_faixa = combate.avisos.faixa(m.pos, d, float(at.compr), float(at.larg), float(at.aviso), 0.0, cor)
+			_faixa = _meu(combate.avisos.faixa(m.pos, d, float(at.compr), float(at.larg), float(at.aviso), 0.0, cor))
 	_prox_ataque = _intervalo()
 
 
@@ -259,25 +264,23 @@ func _leque(at: Dictionary) -> void:
 	var m = atual
 	var d: Vector2 = mundo.heroi.pos - m.pos
 	d = d if d.length() > 1.0 else Vector2.RIGHT
-	combate.avisos.setor(m.pos, d, float(at.raio), float(at.abertura), float(at.aviso), float(at.dano), m.cor_elite)
+	_meu(combate.avisos.setor(m.pos, d, float(at.raio), float(at.abertura), float(at.aviso), float(at.dano), m.cor_elite))
 	if _fase2:
 		_aviso_dur += 0.3
-		combate.avisos.setor(m.pos, -d, float(at.raio), float(at.abertura), _aviso_dur, float(at.dano), m.cor_elite)
+		_meu(combate.avisos.setor(m.pos, -d, float(at.raio), float(at.abertura), _aviso_dur, float(at.dano), m.cor_elite))
 
 
 ## A TEIA da Rainha Tecelã: um círculo de teia sobre o herói; ao disparar, quem está dentro fica lento e a teia solta filhotes de aranha.
 func _teia(at: Dictionary) -> void:
 	var centro: Vector2 = mundo.heroi.pos
-	var i: int = combate.avisos.circulo(centro, float(at.raio), float(at.aviso), float(at.dano), atual.cor_elite, _teia_disparou.bind(centro, at))
+	var i: int = _meu(combate.avisos.circulo(centro, float(at.raio), float(at.aviso), float(at.dano), atual.cor_elite, _teia_disparou.bind(centro, at)))
 	combate.avisos.com_estilo(i, 3)
 
 
 func _teia_disparou(centro: Vector2, at: Dictionary) -> void:
 	var h = mundo.heroi
 	var achata: float = combate.avisos.ACHATA
-	var r: float = float(at.raio) + h.raio
-	var rel: Vector2 = h.pos - centro
-	if h.vivo() and rel.x * rel.x + (rel.y / achata) * (rel.y / achata) < r * r:
+	if combate.avisos.acertou:  # a mesma regra do dano: quem esquivou (i-frames) ou já estava invulnerável não fica preso. Os filhotes nascem de qualquer jeito
 		_teia_t = float(at.lento)
 		_teia_mult = float(at.lento_mult)
 		combate.fx.flash(h, 0.35, Color(0.6, 1.0, 0.5), 0, 0.8)
@@ -294,6 +297,7 @@ func _teia_disparou(centro: Vector2, at: Dictionary) -> void:
 		combate.fx.estouro(p + Vector2(0, -4), Color(0.6, 1.0, 0.5), 5)
 
 
+## A lentidão por desfazer deslocamento é provisória: ela vai morar em v2/heroi.gd num PR depois do #351 (travado pela #348) e esta função some.
 ## Enquanto o herói está lento pela teia, o que ele andou a pé no quadro (andando ou correndo, nunca na esquiva, no golpe ou na carga) é cortado para
 ## `_teia_mult` e fios verdes sobem dos pés dele (o aviso de que está preso). Fica aqui, no chefe, e não no herói: é um efeito só da Rainha.
 func _teia_atualizar(dt: float) -> void:
@@ -335,7 +339,7 @@ func _revoada(at: Dictionary) -> void:
 	for k in n:
 		var off := (float(k) - float(n - 1) * 0.5) * float(at.espaco)
 		var o: Vector2 = m.pos + Vector2(perp.x * off, perp.y * off * achata) + Vector2(g.x, g.y * achata) * 20.0
-		combate.avisos.faixa(o, d, compr, float(at.larg), float(at.aviso), float(at.dano), m.cor_elite, visual.revoada.bind(o, g, compr, float(at.larg)))
+		_meu(combate.avisos.faixa(o, d, compr, float(at.larg), float(at.aviso), float(at.dano), m.cor_elite, visual.revoada.bind(o, g, compr, float(at.larg))))
 
 
 func _chuva(dt: float) -> void:
@@ -349,7 +353,7 @@ func _chuva(dt: float) -> void:
 		if _chuva_n % 2 == 0:
 			off *= 0.3  # metade cai perto do herói
 		var p: Vector2 = (h.pos + off).clamp(mundo.limite_andavel.position, mundo.limite_andavel.end)
-		combate.avisos.com_estilo(combate.avisos.circulo(p, float(at.raio), float(at.aviso), float(at.dano), atual.cor_elite), 1)  # a pedra cai do céu
+		combate.avisos.com_estilo(_meu(combate.avisos.circulo(p, float(at.raio), float(at.aviso), float(at.dano), atual.cor_elite)), 1)  # a pedra cai do céu
 		combate.audio.tocar("aviso", 1.3, -6.0, 0.05)
 	if _chuva_n <= 0 and t_estado >= _chuva_dur:
 		_terminou_ataque()
@@ -369,6 +373,8 @@ func ao_morrer(m) -> void:
 		return
 	var mk := marca
 	m.carga = 0.0
+	combate.avisos.cancelar(self)  # a revoada, a teia e o resto pendentes não saem depois da morte (nem na câmera lenta da vitória)
+	combate.avisos.ret_t = 9.0
 	atual = null
 	vivo = false
 	luz.enabled = false

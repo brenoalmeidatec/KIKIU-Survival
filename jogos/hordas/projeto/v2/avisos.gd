@@ -29,6 +29,8 @@ var cor := PackedColorArray()
 var estilo := PackedByteArray()
 var no_corpo: Node2D  # a pedra que cai (mistura normal, sem luz: a fumaça escura aparece)
 var efeito: Array = []  # Callable ou null: roda no instante do dano
+var dono: Array = []  # quem criou o aviso (ou null): `cancelar` tira só os avisos de um dono (o chefe que morre)
+var acertou := false  # o último aviso a disparar machucou o herói? (vale dentro do `quando` dele: a teia só prende quem apanhou)
 var disparados := 0  # quantos já dispararam (testes)
 var machucou := 0  # quantas vezes acertou o herói (testes)
 var _desenhou := false
@@ -63,6 +65,7 @@ func montar(c, camada: Node) -> void:
 	dano.resize(MAX)
 	cor.resize(MAX)
 	efeito.resize(MAX)
+	dono.resize(MAX)
 
 
 ## O retículo laranja (anel e cruz girando) que persegue o herói durante o aviso do chefe.
@@ -78,6 +81,25 @@ func limpar() -> void:
 	estilo.fill(0)
 	for i in MAX:
 		efeito[i] = null
+		dono[i] = null
+	no.queue_redraw()
+	no_corpo.queue_redraw()
+
+
+## Marca `quem` como dono do aviso `i` e devolve `i`.
+func de(i: int, quem) -> int:
+	dono[i] = quem
+	return i
+
+
+## Tira de cena, sem disparar nem dar dano, os avisos de `quem` (e os `quando` deles): o chefe que morre não deixa ataque pendente.
+func cancelar(quem) -> void:
+	for i in MAX:
+		if tipo[i] != 0 and dono[i] == quem:
+			tipo[i] = 0
+			estilo[i] = 0
+			efeito[i] = null
+			dono[i] = null
 	no.queue_redraw()
 	no_corpo.queue_redraw()
 
@@ -172,6 +194,7 @@ func atualizar(dt: float) -> void:
 
 func _disparar(i: int) -> void:
 	disparados += 1
+	var antes := machucou
 	var h = mundo.heroi
 	var p: Vector2 = pos[i]
 	var c: Color = cor[i]
@@ -194,8 +217,10 @@ func _disparar(i: int) -> void:
 			if h.levar_dano(dano[i], p):
 				machucou += 1
 		combate.fx.onda(p, Color(c.r, c.g, c.b, 0.6), 22.0, 0.2)
+	acertou = machucou > antes
 	var f = efeito[i]
 	efeito[i] = null
+	dono[i] = null
 	tipo[i] = 0
 	if f != null:
 		f.call()

@@ -12,7 +12,7 @@ extends RefCounted
 const Anim := preload("res://v2/anim_golpes.gd")  # a folha dos corvos (assets/v2/armas_anim, a mesma do golpe de corvos do herói)
 const ACHATA := 0.62  # o chão é uma elipse (igual a v2/avisos.gd)
 const ENTRADA_S := 0.9  # s para o adorno aparecer por inteiro quando o chefe nasce
-const VOO_S := 0.5  # s que a revoada leva para varrer a faixa
+const VOO_S := 0.15  # s que a revoada leva para varrer a faixa: o dano sai no disparo, então os corvos têm de passar junto com ele
 const CORVOS_POR_FAIXA := 6
 const CORVOS_ORBITA := 4
 
@@ -113,7 +113,7 @@ func revoada(origem: Vector2, g: Vector2, compr: float, larg: float) -> void:
 					"c": compr,
 					"off": randf_range(-0.4, 0.4) * larg,
 					"z": randf_range(8.0, 22.0),
-					"t": -randf() * 0.2,
+					"t": -randf() * 0.05,
 					"ph": randf() * 10.0,
 				}
 			)

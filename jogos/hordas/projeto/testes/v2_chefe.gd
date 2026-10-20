@@ -76,6 +76,32 @@ func ate_o_aviso(idx: int, fase2 := false):
 	return m
 
 
+## O chefe morre no meio do aviso (revoada do chefão, teia da Rainha): os avisos dele são cancelados, então nada dispara depois (nem dano, nem
+## filhote, nem lentidão), mas o aviso de outra fonte (aqui um círculo sem dono, como o da elite explosiva) continua.
+func morte_no_aviso() -> void:
+	var ch = w.combate.chefes
+	var h = w.heroi
+	var av = w.combate.avisos
+	for idx in [2, 1]:
+		ate_o_aviso(idx)
+		h.xp_proximo = 1.0e9  # matar o chefe não pode abrir a escolha de nível
+		ate(func(): return av.t[0] >= av.dur[0] - 0.15, 120)  # quase no disparo: a câmera lenta da vitória não segura o que sobrou
+		var estranho: int = av.circulo(h.pos + Vector2(300, 0), 30.0, 0.3, 0.0, Color.WHITE)  # dispara depois do aviso do chefe
+		ok(av.ativos() > 1, "morte no aviso (%s): há avisos pendentes do chefe" % ch.marca.nome)
+		var d0: int = av.disparados
+		w.combate.ferir(ch.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+		w.combate.processar_mortes()
+		ok(not ch.vivo and av.ativos() == 1 and av.tipo[estranho] == 1, "morte no aviso (%s): só os avisos do chefe saem de cena" % ch.marca.nome)
+		w.combate.jogo = "jogando"
+		passos(100)
+		ok(av.disparados == d0 + 1, "morte no aviso (%s): nada do chefe dispara (disparados +%d)" % [ch.marca.nome, av.disparados - d0])
+		ok(
+			h.vida == h.vida_max and ch._teia_t == 0.0 and ch._filhotes.is_empty() and ch.visual.voos.is_empty(),
+			"morte no aviso (%s): sem dano, lentidão, filhote nem corvo" % ch.marca.nome
+		)
+		w.combate.jogo = "jogando"
+
+
 ## Cada marca tem identidade: um ataque só dela (anunciado, esquivável) e uma aparência própria (v2/chefe_visual.gd).
 func identidade_dos_chefes() -> void:
 	var ch = w.combate.chefes
@@ -136,6 +162,33 @@ func identidade_dos_chefes() -> void:
 	d0 = av.disparados
 	ate(func(): return av.disparados > d0, 150)
 	ok(h.vida == h.vida_max and ch._teia_t == 0.0, "teia: dá para esquivar (sair do círculo)")
+	# esquiva com i-frames no disparo: não leva dano, então não fica lento (os filhotes nascem de qualquer jeito: são monstros)
+	m = ate_o_aviso(1)
+	ate(func(): return av.t[0] >= av.dur[0] - 2.0 * PASSO, 150)
+	h.estado = Heroi.Estado.ESQUIVA
+	h.esq_t = 0.0
+	var dentro: float = (h.pos - av.pos[0]).length()
+	ok(dentro < float(ch.cfg.ataques.teia.raio) * 0.5, "teia (esquiva): o herói esquiva de dentro do círculo (%.0f px do centro)" % dentro)
+	d0 = av.disparados
+	ate(func(): return av.disparados > d0, 30)
+	ok(av.disparados == d0 + 1 and not av.acertou and h.vida == h.vida_max, "teia (esquiva): os i-frames evitam o dano")
+	ok(ch._teia_t == 0.0, "teia (esquiva): quem não levou dano não fica lento")
+	ok(ch._filhotes.size() == int(ch.cfg.ataques.teia.filhotes), "teia (esquiva): os filhotes nascem mesmo assim")
+	h.estado = Heroi.Estado.LIVRE
+	# a lentidão só corta o andar LIVRE: esquiva, golpe e carga andam à vontade (o herói "andou" 10 px no quadro)
+	for e in [Heroi.Estado.LIVRE, Heroi.Estado.ESQUIVA, Heroi.Estado.GOLPE, Heroi.Estado.CARGA]:
+		h.estado = e
+		ch._teia_t = 5.0
+		ch._h_antes = h.pos - Vector2(10, 0)
+		var antes: Vector2 = h.pos
+		ch._teia_atualizar(0.0)
+		var cortou: float = (antes - h.pos).x
+		if e == Heroi.Estado.LIVRE:
+			ok(is_equal_approx(cortou, 10.0 * (1.0 - ch._teia_mult)), "teia: corta o andar livre (%.1f px)" % cortou)
+		else:
+			ok(h.pos == antes, "teia: não corta o estado %d" % e)
+	h.estado = Heroi.Estado.LIVRE
+	ch._teia_t = 0.0
 	m = ate_o_aviso(1, true)
 	ate(func(): return not ch._filhotes.is_empty(), 150)
 	ok(ch._filhotes.size() == int(ch.cfg.ataques.teia.filhotes_fase2), "teia na fúria: mais filhotes (%d)" % ch._filhotes.size())
@@ -150,7 +203,8 @@ func identidade_dos_chefes() -> void:
 	ok(av.disparados == d0 + linhas and h.vida < h.vida_max, "revoada: as faixas disparam juntas e a que passa por cima do herói machuca")
 	ok(is_equal_approx(h.vida_max - h.vida, float(ch.cfg.ataques.revoada.dano)), "revoada: leva o dano uma vez só")
 	ok(ch.visual.voos.size() == linhas * ch.visual.CORVOS_POR_FAIXA, "revoada: os corvos voam pelas faixas")
-	ate(func(): return ch.visual.voos.is_empty(), 180)  # o acerto no herói dá um instante de hit-stop
+	var varreu: int = ate(func(): return ch.visual.voos.is_empty(), 180)  # o acerto no herói dá um instante de hit-stop
+	ok(varreu >= 0 and ch.visual.VOO_S <= 0.2, "revoada: os corvos varrem a faixa em %.2f s, junto com o dano e não meio segundo depois" % ch.visual.VOO_S)
 	ok(ch.visual.voos.is_empty(), "revoada: os corvos somem depois de varrer")
 	m = ate_o_aviso(2)
 	var g := Vector2(h.pos.x - m.pos.x, (h.pos.y - m.pos.y) / 0.62).normalized()
@@ -161,6 +215,7 @@ func identidade_dos_chefes() -> void:
 	ok(av.disparados == d0 + linhas and h.vida == h.vida_max, "revoada: dá para esquivar (ficar no vão entre as faixas)")
 	m = ate_o_aviso(2, true)
 	ok(ch._fase2 and conta_tipo(av, 2) == int(ch.cfg.ataques.revoada.linhas_fase2), "revoada na fúria: mais faixas")
+	morte_no_aviso()
 	# --- a aparência: o adorno é desenhado sobre o corpo de cada chefe e some quando ele morre
 	for i in marcas.size():
 		zerar()
