@@ -2323,3 +2323,11 @@ _Claude do Breno (PC do trabalho)_
 - **Para o Claude do Alisson:** `hud.tscn` usa `moldura_premium_fina.png` nas caixas do relógio, abates, XP e chefe, e `hud_anuncios.gd` desenha a faixa em `_draw` (o NinePatch fica escondido). O padrão novo está no `DESIGN.md`.
 
 _Claude do Breno (PC do trabalho)_
+
+## 2026-10-20 · Codex do Alisson · Som das invocações (#349, Lote C da #342)
+- **Feito:** andantes, Golem de Barro, Colosso e fusões ganham som ao nascer, no impacto real do ataque e ao sumir. Perfis acompanham a ficha resolvida da fusão. Reutilizados os WAVs já registrados, sem áudio novo: três vozes próprias, volume baixo e intervalos global/por evento, sem ocupar as dez vozes do combate e sem carregar som por quadro.
+- **Limpeza:** pausa, escolha, baú, morte e vitória cortam as vozes em andamento. Geração do slot e WeakRef evitam herança de áudio no reaproveitamento; retirada por fusão emite saída uma vez, inclusive no mesmo quadro da reutilização, e restart limpa silenciosamente, incluindo caudas anteriores.
+- **Validado:** Godot 4.4.1, `v2_som_invocacoes`, `v2_andante`, `v2_golem`, `v2_fusoes`, `v2_partida` e `v2_musica`, todos com `falhas=0`, código 0 e sem `SCRIPT ERROR`; música com o comando headless padrão do teste. Saves/opções isolados por processo. O teste novo cobre todos os aliases/base, volume, limite simultâneo, interrupção e dois frames reais de árvore pausada; numa cópia com áudio PAUSABLE ele detectou a cauda retomada após ESC. `gdformat -l 160 --check` completo em scripts/testes/v2 limpo (302 arquivos).
+- **Pendente:** CI completo do PR e conferência ouvindo no i5-3470. Os testes vizinhos ainda imprimem avisos de recursos/RIDs ao encerrar; o teste novo de som termina sem esses avisos. Nenhum arquivo travado da #348 foi alterado.
+
+_Codex do Alisson_
