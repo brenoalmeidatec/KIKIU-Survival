@@ -1229,6 +1229,30 @@ func _interface() -> void:
 	ok(not st.visual_cortada().has(true), "a página visual da pausa cabe na altura das colunas (%s)" % str(st.retangulos_visuais()))
 	for rv in st.retangulos_visuais():
 		ok(not (rv as Rect2).intersects(painel) and Rect2(0, 0, 960, 540).encloses(rv), "a página visual fica ao lado do menu, na tela (%s)" % str(rv))
+	# os dois quadros laterais e o menu formam uma faixa alinhada: mesmo topo, mesma altura e o mesmo espaço dos dois lados (feedback do Alisson)
+	var visuais: Array = st.retangulos_visuais()
+	var lados: Array = [visuais, pr]  # a página visual e a tabela de detalhes
+	for conj in lados:
+		var esq := conj[0] as Rect2
+		var dir := conj[1] as Rect2
+		ok(
+			is_equal_approx(esq.position.y, painel.position.y) and is_equal_approx(dir.position.y, painel.position.y),
+			"os quadros laterais da pausa têm o mesmo topo do menu (%s e %s contra %s)" % [str(esq.position.y), str(dir.position.y), str(painel.position.y)]
+		)
+		ok(
+			is_equal_approx(esq.size.y, painel.size.y) and is_equal_approx(dir.size.y, painel.size.y),
+			"os quadros laterais da pausa têm a altura do menu (%s e %s contra %s)" % [str(esq.size.y), str(dir.size.y), str(painel.size.y)]
+		)
+		var vao_esq := painel.position.x - esq.end.x
+		var vao_dir := dir.position.x - painel.end.x
+		ok(
+			is_equal_approx(vao_esq, vao_dir) and vao_esq >= 8.0,
+			"o espaço entre os quadros e o menu é o mesmo dos dois lados (%s e %s)" % [str(vao_esq), str(vao_dir)]
+		)
+		ok(
+			is_equal_approx(esq.position.x, 960.0 - dir.end.x) and is_equal_approx(esq.size.x, dir.size.x),
+			"as margens da tela e a largura dos dois quadros laterais são iguais (%s e %s)" % [str(esq), str(dir)]
+		)
 	var tab := InputEventKey.new()
 	tab.keycode = KEY_TAB
 	tab.pressed = true

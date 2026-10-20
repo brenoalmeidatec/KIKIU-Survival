@@ -50,12 +50,15 @@ const JOGO_VIVO := ["jogando", "escolha", "bau"]  # estados do combate em que o 
 const JOGO_CARTAS := ["escolha", "bau"]  # as telas de cartas: aí o C abre o painel central
 ## Colunas de cada modo: x, y, largura e altura máxima. HUD: a da esquerda sob a vida e o fôlego (y 40) e fora da barra do chefe (x até 190);
 ## a da direita sob o minimapa (que acaba em y 112) e fora da barra do chefe e dos anúncios (x a partir de 772). Pausa: colada nos dois lados
-## do painel do menu (`Pausa.PAINEL`, x 260 a 700). Central: três colunas lado a lado, a tela toda é do painel.
+## do painel do menu (`Pausa.PAINEL`, x 260 a 700), com o MESMO topo e a MESMA altura dele: os três quadros formam uma faixa alinhada. Central: três
+## colunas lado a lado, a tela toda é do painel.
 const COLUNAS_HUD := [Rect2(6, 40, 184, 466), Rect2(772, 118, 182, 388)]
+const MARGEM_PAUSA := 8.0  # do quadro lateral à borda da tela (a mesma nos dois lados)
+const VAO_PAUSA := 12.0  # do quadro lateral ao painel do menu (o mesmo nos dois lados)
 const COLUNAS_PAUSA := [
-	Rect2(8, 14, Pausa.PAINEL.position.x - 16.0, 512),
-	Rect2(Pausa.PAINEL.position.x + Pausa.PAINEL.size.x + 8.0, 14, 944.0 - Pausa.PAINEL.position.x - Pausa.PAINEL.size.x, 512)
-]  # coladas nos dois lados do painel do menu (`Pausa.PAINEL`)
+	Rect2(MARGEM_PAUSA, Pausa.PAINEL.position.y, Pausa.PAINEL.position.x - VAO_PAUSA - MARGEM_PAUSA, Pausa.PAINEL.size.y),
+	Rect2(Pausa.PAINEL.end.x + VAO_PAUSA, Pausa.PAINEL.position.y, TELA.size.x - MARGEM_PAUSA - Pausa.PAINEL.end.x - VAO_PAUSA, Pausa.PAINEL.size.y)
+]  # nos dois lados do painel do menu (`Pausa.PAINEL`): mesmo topo, mesma altura e o mesmo espaço para o painel e para a borda da tela
 const COLUNAS_CENTRAL := [Rect2(14, 14, 296, 512), Rect2(332, 14, 296, 512), Rect2(650, 14, 296, 512)]
 const SECOES_DUAS := [["heroi", "partida", "santuario"], ["katana", "golpes"]]
 const SECOES_TRES := [["heroi", "partida", "santuario"], ["katana"], ["golpes"]]
@@ -747,7 +750,13 @@ func _medir(c: int) -> Rect2:
 	var r: Rect2 = _colunas()[c]
 	var alt := _coluna(c, r, true)
 	_sobrou[c] = alt > r.size.y
-	return Rect2(r.position, Vector2(r.size.x, minf(alt, r.size.y)))
+	return Rect2(r.position, Vector2(r.size.x, _alt_quadro(r, alt)))
+
+
+## A altura do quadro: a que o conteúdo pede, sem passar da coluna; na pausa é sempre a da coluna (a do painel do menu), para os três quadros
+## terem o mesmo topo e o mesmo fundo.
+func _alt_quadro(col: Rect2, conteudo: float) -> float:
+	return col.size.y if _m == "pausa" else minf(conteudo, col.size.y)
 
 
 ## IDs com conteúdo que ultrapassa a largura, depois das quebras reais de texto. Vazio = tudo cabe.
@@ -1156,7 +1165,7 @@ func retangulos_visuais() -> Array:
 	var r: Array = []
 	for c in alts.size():
 		var col: Rect2 = colunas_visuais()[c]
-		r.append(Rect2(col.position, Vector2(col.size.x, minf(float(alts[c]), col.size.y))))
+		r.append(Rect2(col.position, Vector2(col.size.x, _alt_quadro(col, float(alts[c])))))
 	return r
 
 
@@ -1177,7 +1186,7 @@ func _pintar_visual() -> void:
 		_tela.draw_rect(EscalaUi.cobertura(EscalaUi.canvas_atual, EscalaUi.desloc_atual), COR_FUNDO_OPACO)
 	for c in cols.size():
 		var col: Rect2 = cols[c]
-		var r := Rect2(col.position, Vector2(col.size.x, minf(float(alts[c]), col.size.y)))
+		var r := Rect2(col.position, Vector2(col.size.x, _alt_quadro(col, float(alts[c]))))
 		_tela.draw_rect(r, COR_FUNDO_OPACO)
 		_tela.draw_style_box(_estilo, r)
 	_visual(false)
