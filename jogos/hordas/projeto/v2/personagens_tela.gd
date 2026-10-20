@@ -13,8 +13,8 @@ const Herois := preload("res://v2/herois.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle (Enter e A confirmam, ESC e B voltam)
 const SALAO := "res://v2/salao.tscn"
 const TITULO := "res://v2/menu_principal.tscn"
-const FUNDO := preload("res://assets/titulo/fundo.png")
-const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
+const TituloVivo := preload("res://v2/titulo_vivo.gd")  # o mesmo fundo vivo do título
+const EstiloPremium := preload("res://v2/estilo_premium.gd")
 const SPRITE := "res://prototipos/cara_nova/sprites/hazaki_samurai"  # sem rosto, o retrato é o quadro parado do herói
 const LARG := 960
 const ALT := 540
@@ -36,7 +36,6 @@ const INFO_Y := RETRATO_Y + RETRATO_ALT
 const INFO_ALT := 70
 const DETALHE_Y := INFO_Y + INFO_ALT
 const DETALHE_ALT := 114
-const Paleta := preload("res://v2/paleta.gd")
 const COR_OURO := Color(1.0, 0.86, 0.42)
 const COR_TEXTO := Color(0.92, 0.9, 0.96)
 const COR_APAGADO := Color(0.55, 0.56, 0.64)
@@ -75,18 +74,16 @@ func _ajustar_janela() -> void:
 
 
 func _montar() -> void:
-	var fundo := TextureRect.new()
-	fundo.texture = FUNDO
-	fundo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	EscalaUi.cobrir(fundo)  # a arte cobre o canvas inteiro, não só o bloco 960x540
-	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(fundo)
+	add_child(TituloVivo.new())  # cobre o canvas inteiro, não só o bloco 960x540
 	var veu := ColorRect.new()
-	veu.color = Color(0.02, 0.02, 0.04, 0.6)
+	veu.color = Color(0.02, 0.02, 0.04, 0.5)
 	EscalaUi.cobrir(veu)
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 	add_child(_rotulo("PERSONAGENS", Dados.fonte_titulo, 56, COR_OURO, Rect2(0, 22, LARG, 60), HORIZONTAL_ALIGNMENT_CENTER))
+	var ornamento := EstiloPremium.ornamento(360.0)
+	ornamento.position = Vector2((LARG - 360) / 2.0, 68)
+	add_child(ornamento)
 	# Grade (DESIGN.md §1b): margem de 36, coluna da esquerda 36-416, a da direita 24 depois (440-924), tudo entre y 100 e y 490
 	# (o rodapé de teclas começa em 498). A lista rola quando tem mais botões do que cabem; o foco puxa a rolagem.
 	var rolagem := ScrollContainer.new()
@@ -104,7 +101,7 @@ func _montar() -> void:
 	painel.position = Vector2(FICHA_X, TOPO)
 	painel.size = Vector2(FICHA_L, FUNDO_Y - TOPO)
 	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	painel.add_theme_stylebox_override("panel", _moldura())
+	painel.add_theme_stylebox_override("panel", EstiloPremium.painel())
 	add_child(painel)
 	_retrato = TextureRect.new()  # posição e tamanho vêm de _definir_retrato (escala inteira, centrado no eixo da ficha)
 	_retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -161,17 +158,8 @@ func _estilo_botao(b: Button) -> void:
 	b.add_theme_color_override("font_hover_color", COR_FOCO)
 	b.add_theme_color_override("font_focus_color", COR_FOCO)
 	b.mouse_entered.connect(b.grab_focus)
-	b.add_theme_stylebox_override("focus", _foco())
-
-
-## Foco: borda ouro de 2 px por DENTRO da caixa do botão, como o do salão. O tema padrão desenha a borda 2 px para fora, e a
-## rolagem da lista cortava essa parte (topo e laterais do primeiro botão, base do último).
-func _foco() -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.draw_center = false
-	s.set_border_width_all(2)
-	s.border_color = Paleta.OURO
-	return s
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	EstiloPremium.estilo_botao(b, 18.0)  # o foco é a faixa dourada, desenhada por dentro da caixa (a rolagem não corta)
 
 
 ## A lista da esquerda: os personagens (modo "personagens") ou os nomes livres (modo "nomes").
@@ -279,18 +267,6 @@ func _quadro_de(atlas: Texture2D, regiao: Rect2) -> AtlasTexture:
 	quadro.atlas = atlas
 	quadro.region = regiao
 	return quadro
-
-
-## Moldura 9-patch de pedra do HUD (20x20, margem de 5 px), como a do santuário.
-func _moldura() -> StyleBoxTexture:
-	var s := StyleBoxTexture.new()
-	s.texture = MOLDURA
-	s.texture_margin_left = 5
-	s.texture_margin_top = 5
-	s.texture_margin_right = 5
-	s.texture_margin_bottom = 5
-	s.modulate_color = Paleta.MOLDURA_ESCURA
-	return s
 
 
 # ------------------------------------------------------------------ ações

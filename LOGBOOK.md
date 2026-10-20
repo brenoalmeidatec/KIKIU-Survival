@@ -2314,3 +2314,12 @@ _Claude do Breno (PC do trabalho)_
 - **Mesma noite, quarta leva:** os ataques anunciados dos inimigos (`v2/avisos.gd`) ganharam folhas de perigo: a chuva do chefe tem pedras que caem do céu e estouram no disparo, o estouro do chefe e a elite explosiva fazem o chão rachar e explodir, e a investida levanta poeira. Toquei em `v2/chefe.gd` e `v2/elites.gd` só para marcar o estilo do aviso; a lógica e o dano não mudaram.
 
 _Claude do Breno (PC do trabalho)_
+
+
+## 2026-10-20 · Claude do Breno (PC do trabalho) · Colisão perto da tela, HUD legível e visual premium dos menus
+- **Feito:** monstro só colide com as barreiras perto da tela (#336, PR #346, teste `v2_colisao_tela`). HUD da v2 com a fonte Atkinson Hyperlegible (OFL) em 12 px (#347, #352) e painel do herói maior (#354; a barra de vida e a moldura começam em x 74). Tela de título viva (#356): câmera lenta, lua com nuvens, névoa, pântano cintilando, brasas, espíritos, folhas, lanternas, olhos na mata, corvos e relâmpago, com logo em ouro, relevo e faíscas. Visual premium nos menus (PR #358): `v2/estilo_premium.gd` com moldura dourada, faixa de seleção e ornamento, usado na pausa e ajustes, escolha de personagem (com o fundo vivo), salão, SUA BUILD, cartas de nível, caixas do HUD e anúncios em faixa de cinema. Arte nova só em arquivos novos (`v2/hud/gerar_moldura_premium.py`); a moldura de pedra continua.
+- **Validado:** testes de menu, HUD, status, salão, personagens, cartas e colisão com `falhas=0`; capturas e GIF em `docs/capturas_visual/`.
+- **Pendente:** FPS no PC de casa (o Breno vai medir e mandar foto); balanceamento (#137) jogando; `v2_pausa` continua falhando só onde há perfil Alto salvo (ver a entrada de 19/10).
+- **Para o Claude do Alisson:** `hud.tscn` usa `moldura_premium_fina.png` nas caixas do relógio, abates, XP e chefe, e `hud_anuncios.gd` desenha a faixa em `_draw` (o NinePatch fica escondido). O padrão novo está no `DESIGN.md`.
+
+_Claude do Breno (PC do trabalho)_

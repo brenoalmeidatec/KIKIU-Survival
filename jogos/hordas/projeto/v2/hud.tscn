@@ -1,7 +1,7 @@
 [gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://v2/hud.gd" id="1_hud"]
-[ext_resource type="Texture2D" path="res://v2/hud/moldura_pedra.png" id="2_moldura"]
+[ext_resource type="Texture2D" path="res://v2/hud/moldura_premium_fina.png" id="2_moldura"]
 [ext_resource type="Texture2D" path="res://v2/hud/barra_fundo.png" id="3_fundo"]
 [ext_resource type="Texture2D" path="res://v2/hud/barra_vida.png" id="4_vida"]
 [ext_resource type="Texture2D" path="res://v2/hud/barra_folego.png" id="5_folego"]
