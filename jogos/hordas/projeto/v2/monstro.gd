@@ -6,6 +6,7 @@ extends "res://v2/ator.gd"
 ## O monstro comum não tem nó nenhum: ele é uma linha de números e quem o desenha é o lote da horda (v2/horda.gd, MultiMesh). Elites e chefes
 ## são poucos e viram nós sob demanda (`virar_no`), com sprite, olhos e sombra próprios; ao renascer como comum voltam ao lote.
 
+const Colisao := preload("res://v2/colisao.gd")
 const VEL_VAGA := 24.0
 const VEL_CACA := 54.0
 const RAIO_VER := 170.0  # começa a perseguir
@@ -15,6 +16,15 @@ const CERCO_ENTRA := 70.0  # a esta distância do herói o monstro deixa de ir a
 const CERCO_SAI := 110.0
 const PASSO_ANIM := 0.16
 const AMORTECE_EMP := 9.0  # o empurrão perde força: emp *= exp(-9 dt)
+const LINHAS_DIRECOES := 5  # folha com 5 linhas: frente, 3/4 baixo, perfil, 3/4 costas, costas (vistas de 0, 45, 90, 135 e 180 graus)
+const PASSO_LINHA := 45.0  # graus entre uma linha e a próxima
+const BLOQ_PROGRESSO := 0.3  # andou menos que esta fração do que a IA quis = bloqueado de frente (deslizar numa parede anda mais que isso)
+const BLOQ_TEMPO := 0.25  # s bloqueado seguidos até o monstro desviar
+const DESVIO_INI := 0.8  # s do primeiro desvio de lado; um bloqueio logo depois (mesmo lado) estende até DESVIO_MAX
+const DESVIO_MAX := 3.0
+const DESVIO_ANGULOS := [1.2, 1.9, 2.6]  # rad (~70, 110 e 150 graus) para o lado, afastando-se da quina em que o corpo empacou
+const SONDA_DESVIO := 16.0  # px à frente em que se testa se o rumo do desvio está livre
+const HISTERESE_LINHA := 8.0  # graus além da fronteira (22,5) antes de trocar de linha: no limite o bicho não pisca entre duas
 
 var mundo
 var casa := Vector2.ZERO
@@ -50,6 +60,7 @@ var vel_mult := 1.0
 var stun_mult := 1.0  # quanto do atordoamento vale (chefe: 0)
 var emp_mult := 1.0  # quanto do empurrão vale
 var tinta := Color.WHITE  # cor nova do sprite (chefes e elites)
+var carga := 0.0  # 0 a 1: o chefe armando o golpe (incha 6% e clareia até branco)
 var contorno: Sprite2D = null  # o contorno colorido da elite (camada glow, aditivo)
 var invoca_t := 0.0
 var barra_vida_elite: Node2D = null
@@ -58,6 +69,13 @@ var _base_raio := 7.0
 var _queima_tick := 0.0
 var _alvo := Vector2.ZERO
 var _espera := 0.0
+var _caca_longe := false  # a IA de perseguição em linha reta está valendo neste quadro (_ia): só então vale a conta do bloqueio
+var _bloq := 0.0  # s seguidos sem andar na direção que a IA quis
+var _desvio_t := 0.0  # s que faltam do desvio de lado
+var _desvio_dur := DESVIO_INI
+var _desvio_lado := 1.0  # +1 ou -1: o lado preferido do desvio (mantido enquanto o bloqueio se repete)
+var _desvio_ang := 0.0  # rad: quanto o rumo gira durante o desvio (escolhido por _rumo_livre)
+var _desvio_sem := 99.0  # s desde o fim do último desvio
 var _anim := 0.0
 var _batida := 0.0  # s do "soco" visual (encolhe na vertical) depois de apanhar
 var vel_v := Vector2.ZERO  # a velocidade que a IA quis no último quadro (escolhe a linha e o espelho da folha)
@@ -69,6 +87,8 @@ var heroi_raio_atual := 6.0  # o raio do corpo do herói no último quadro (para
 var ang_cerco := 0.0  # onde, no anel em volta do herói, este monstro quer ficar (rad): eles cercam em vez de empilhar
 var _no_cerco := false
 var n_col := 4  # colunas da folha (quadros de andar)
+var n_lin := 2  # linhas da folha: 2 (frente, três quartos) ou 5 (as cinco direções, ver LINHAS_DIRECOES)
+var emite: Array = []  # por linha da folha: tem algum pixel de olho na folha de emissão? (a horda pula o olho das linhas vazias)
 var fw := 40.0  # tamanho do quadro e linha dos pés (px), e o canto da folha no atlas da horda: o que o lote precisa para desenhar
 var fh := 42.0
 var fpe := 40.0
@@ -77,6 +97,8 @@ var chave_y := 0.0  # onde a fatia do lote em que ele está fica na ordem de y d
 var sid := 0  # número de série (a horda espalha a conta da luz entre os quadros)
 var _ponto = null  # a `raiz` do monstro em lote (um Ponto de ator.gd)
 var _no_raiz: Node2D = null  # os nós da elite e do chefe, criados na primeira vez
+var colisao_ligada := false  # a colisão com as barreiras valeu no último passo (mundo.mover_monstro, #336)
+var sem_colisao_ate_sair := false  # ligou dentro de uma forma: anda sem colisão até sair dela
 
 
 func criar(m, _pai: Node, nome: String, t: Dictionary, p: Vector2, r: RandomNumberGenerator) -> void:
@@ -88,6 +110,8 @@ func criar(m, _pai: Node, nome: String, t: Dictionary, p: Vector2, r: RandomNumb
 	_anim = rng.randf() * 4.0
 	_espera = rng.randf_range(0.0, 2.0)
 	n_col = int(t.info.colunas.size())
+	n_lin = int(t.info.get("linhas", []).size())
+	emite = t.get("emite", [])
 	fw = float(t.w)
 	fh = float(t.h)
 	fpe = float(t.pe)
@@ -135,6 +159,7 @@ func reviver(p: Vector2) -> void:
 	vel_ia = Vector2.ZERO
 	vel_v = Vector2.ZERO
 	tinta = Color.WHITE
+	carga = 0.0
 	v_cor = Color.WHITE
 	v_sx = 1.0
 	v_sy = 1.0
@@ -148,6 +173,9 @@ func reviver(p: Vector2) -> void:
 		barra_vida_elite.visible = false
 	persegue = false
 	_no_cerco = false
+	_bloq = 0.0
+	_desvio_t = 0.0
+	_desvio_sem = 99.0
 	casa = p
 	_alvo = p
 	_espera = rng.randf_range(0.0, 1.0)
@@ -194,7 +222,9 @@ func atualizar(dt: float, heroi_pos: Vector2, heroi_raio := 6.0) -> void:
 	if sep != Vector2.ZERO:
 		desl += sep * dt
 	if desl != Vector2.ZERO:
-		mundo.mover(self, desl)
+		var feito: Vector2 = mundo.mover_monstro(self, desl)
+		if _caca_longe and v != Vector2.ZERO:
+			_checar_bloqueio(dt, v, feito)
 	# o corpo do herói é sólido: quem entrou nele é empurrado para fora (suave: 80% da penetração por quadro; passa por mundo.mover, a colisão manda)
 	var dxh := pos.x - heroi_pos.x
 	var dyh := pos.y - heroi_pos.y
@@ -216,16 +246,7 @@ func visual() -> void:
 	v_sx = (1.0 + 0.2 * k) * escala
 	v_sy = (1.0 - 0.16 * k) * escala
 	v_jx = float(rng.randi_range(-1, 1)) if (atordoa_t > 0.0 and k > 0.0) else 0.0
-	var v := vel_v  # (a escolha do quadro, inline: roda por monstro na tela por quadro)
-	var l := 0 if absf(v.x) < absf(v.y) * 0.5 else 1
-	var esp := espelha if absf(v.x) < 1.0 else v.x < 0.0
-	var c := int(_anim / PASSO_ANIM) % n_col
-	if v == Vector2.ZERO and atordoa_t > 0.0:
-		l = linha
-		c = coluna
-		esp = espelha
-	if l != linha or c != coluna or esp != espelha:
-		quadro(c, l, esp, esp != espelha)
+	_escolher_quadro(vel_v)
 	var queimando := queima_t > 0.0
 	if queimando or lento_t > 0.0 or tinta != Color.WHITE:
 		var cf := tinta
@@ -238,10 +259,19 @@ func visual() -> void:
 		v_cor = Color.WHITE
 
 
-## Linha (de frente ou de três quartos), espelho e coluna da folha, a partir da velocidade que a IA quis.
+## Linha, espelho e coluna da folha, a partir da velocidade que a IA quis. Folha de 2 linhas: frente se o movimento é mais vertical, senão
+## três quartos. Folha de 5 linhas: uma por direção (`_linha_de`). Parado, a 5 linhas mantém a última (o bicho não vira para a tela).
 func _escolher_quadro(v: Vector2) -> void:
-	var l := 0 if absf(v.x) < absf(v.y) * 0.5 else 1
-	var esp := espelha if absf(v.x) < 1.0 else v.x < 0.0
+	var l := linha
+	var esp := espelha
+	if n_lin >= LINHAS_DIRECOES:
+		if v.length_squared() >= 1.0:
+			l = _linha_de(v)
+			if l >= 1 and l <= 3 and absf(v.x) >= 1.0:  # de frente e de costas o espelho não importa: fica como está
+				esp = v.x < 0.0
+	else:
+		l = 0 if absf(v.x) < absf(v.y) * 0.5 else 1
+		esp = espelha if absf(v.x) < 1.0 else v.x < 0.0
 	var c := int(_anim / PASSO_ANIM) % n_col
 	if v == Vector2.ZERO and atordoa_t > 0.0:
 		l = linha
@@ -251,10 +281,19 @@ func _escolher_quadro(v: Vector2) -> void:
 		quadro(c, l, esp, esp != espelha)
 
 
+## A linha (0 frente, 1 três quartos de frente, 2 perfil, 3 três quartos de costas, 4 costas) para andar na direção `v` (tela, y para baixo),
+## com histerese: perto da fronteira entre duas linhas fica na que já estava.
+func _linha_de(v: Vector2) -> int:
+	var ang := rad_to_deg(atan2(absf(v.x), v.y))  # 0 = descendo (frente), 90 = de lado, 180 = subindo (costas)
+	if linha >= 0 and linha < LINHAS_DIRECOES and absf(ang - linha * PASSO_LINHA) <= PASSO_LINHA * 0.5 + HISTERESE_LINHA:
+		return linha
+	return clampi(roundi(ang / PASSO_LINHA), 0, LINHAS_DIRECOES - 1)
+
+
 ## O desenho do monstro com nós (elite e chefe): sprite, olho e contorno.
 func _visual_no(v: Vector2) -> void:
 	var k := clampf(_batida / 0.14, 0.0, 1.0)
-	sprite.scale = Vector2(1.0 + 0.2 * k, 1.0 - 0.16 * k) * escala
+	sprite.scale = Vector2(1.0 + 0.2 * k, 1.0 - 0.16 * k) * escala * (1.0 + 0.06 * carga)
 	sprite.position = (Vector2(float(rng.randi_range(-1, 1)), 0.0) if (atordoa_t > 0.0 and k > 0.0) else Vector2.ZERO)
 	_escolher_quadro(v)
 	if olho != null:
@@ -271,7 +310,9 @@ func _visual_no(v: Vector2) -> void:
 			cf = cf.lerp(Color(1.5, 0.8, 0.5), 0.55)
 		if lento_t > 0.0:
 			cf = cf.lerp(Color(0.6, 0.95, 1.4), 0.5)
-		sprite.modulate = cf
+		sprite.modulate = cf.lerp(Color(5.0, 5.0, 5.0), carga * carga) if carga > 0.0 else cf
+	elif carga > 0.0:
+		sprite.modulate = Color.WHITE.lerp(Color(5.0, 5.0, 5.0), carga * carga)
 	elif sprite.modulate != Color.WHITE:
 		sprite.modulate = Color.WHITE
 
@@ -360,6 +401,7 @@ func _voltar_lote() -> void:
 func _ia(dt: float, heroi_pos: Vector2) -> Vector2:
 	var d := heroi_pos - pos
 	var dist := d.length()
+	_caca_longe = false
 	if cacador:
 		persegue = true
 	elif persegue and dist > RAIO_PERDER:
@@ -374,7 +416,11 @@ func _ia(dt: float, heroi_pos: Vector2) -> Vector2:
 		if dist > CERCO_ENTRA:
 			if dist > CERCO_SAI:
 				_no_cerco = false
-			return d / dist * vel_caca * k_vel
+			_caca_longe = true
+			var rumo := d / dist
+			if _desvio_t > 0.0:
+				rumo = rumo.rotated(_desvio_ang)
+			return rumo * vel_caca * k_vel
 		# perto: cada um vai ao seu ponto do anel em volta do herói (o raio do corpo dele + o do monstro): o grande fica mais longe
 		if not _no_cerco:
 			_no_cerco = true
@@ -395,6 +441,43 @@ func _ia(dt: float, heroi_pos: Vector2) -> Vector2:
 		_alvo = casa + Vector2(cos(a), sin(a) * 0.6) * raio_vaga * sqrt(rng.randf())
 		return Vector2.ZERO
 	return ate.normalized() * VEL_VAGA
+
+
+## A perseguição é em linha reta e a colisão (colisao.gd) só empurra para fora: numa quina côncava (duas formas encostadas, ou caixa e
+## elipse) o empurrão cancela a vontade e o monstro empaca. Bloqueado por BLOQ_TEMPO s, ele escolhe um rumo LIVRE (sondando a colisão) e
+## anda nele por um tempo, sem atravessar nada (o desvio também passa por mundo.mover), e depois volta ao herói; bloqueado de novo logo
+## depois, mantém o lado e desvia por mais tempo (o prédio é largo; trocar de lado faria oscilar).
+func _checar_bloqueio(dt: float, v: Vector2, feito: Vector2) -> void:
+	if _desvio_t > 0.0:
+		_desvio_t -= dt
+		return
+	_desvio_sem += dt
+	var quis := v.length() * dt
+	if feito.length() < quis * BLOQ_PROGRESSO:
+		_bloq += dt
+		if _bloq >= BLOQ_TEMPO:
+			_bloq = 0.0
+			if _desvio_sem > DESVIO_MAX:
+				_desvio_lado = -1.0 if rng.randf() < 0.5 else 1.0
+				_desvio_dur = DESVIO_INI
+			else:
+				_desvio_dur = minf(_desvio_dur * 1.6, DESVIO_MAX)
+			_desvio_ang = _rumo_livre(v.normalized())
+			_desvio_t = _desvio_dur
+			_desvio_sem = 0.0
+	else:
+		_bloq = maxf(_bloq - dt, 0.0)
+
+
+## O desvio (rad, com sinal) do rumo `rumo` ao primeiro rumo livre entre os ângulos de DESVIO_ANGULOS, o lado preferido primeiro: sonda um
+## ponto à frente com a colisão. Sem nenhum livre, volta de costas (PI).
+func _rumo_livre(rumo: Vector2) -> float:
+	for ang in DESVIO_ANGULOS:
+		for lado in [_desvio_lado, -_desvio_lado]:
+			var a: float = ang * lado
+			if Colisao.livre(pos + rumo.rotated(a) * SONDA_DESVIO, raio):
+				return a
+	return PI
 
 
 # ------------------------------------------------------------------ fogo, lentidão, tamanho e contorno (leva 3)

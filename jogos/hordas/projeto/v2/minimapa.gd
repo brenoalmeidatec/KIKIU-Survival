@@ -12,6 +12,7 @@ extends CanvasLayer
 ## Testes: passar(dt) e ler_tecla(pressionada) são os passos (sem relógio de parede); testes/v2_minimapa.tscn.
 
 const Heroi := preload("res://v2/heroi.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
 const MOLDURA := preload("res://v2/hud/minimapa_moldura.png")
 
 const LARG := 960
@@ -19,7 +20,7 @@ const ALT := 540
 const MAPA_LARG := 150  # px do minimapa
 const MAPA_ALT := 84
 const MARGEM := 10  # a moldura tem 10 px de borda e miolo transparente (v2/hud/gerar_minimapa_moldura.py)
-const MARGEM_TELA := 8  # distância do minimapa pequeno à borda direita e ao topo
+const MARGEM_TELA := 6  # distância do minimapa pequeno à borda direita e ao topo (a mesma margem de 6 px do resto do HUD)
 const ESCALA_GRANDE := 4  # o mapa grande é o mesmo desenho ampliado em número inteiro: pixel art nítida
 const PERIODO := 0.1  # 10 Hz
 const RAIO_REVELA := 230.0  # px do mundo que a névoa revela em volta do herói
@@ -107,6 +108,7 @@ func _ready() -> void:
 		queue_free()
 		return
 	grande = _opcao("minimapa") == "grande"
+	add_to_group("ui_escala")
 	_montar_nos()
 	_gerar_fundo()
 	_nevoa_img = Image.create(MAPA_LARG, MAPA_ALT, false, Image.FORMAT_RGBA8)
@@ -117,10 +119,16 @@ func _ready() -> void:
 	_layout()
 
 
-## O mundo chama isto antes de entrar na árvore: `sv.add_child(...instantiate().iniciar(self))`.
+## O mundo chama isto antes de entrar na árvore: `ui.add_child(...instantiate().iniciar(self))`.
 func iniciar(m) -> CanvasLayer:
 	mundo = m
 	return self
+
+
+## A janela ou a opção "tamanho_ui" mudou: o minimapa volta para o canto do canvas novo.
+func ui_reencaixar(_canvas: Vector2, _desloc: Vector2) -> void:
+	if _quadro != null:
+		_layout()
 
 
 func _opcao(nome: String) -> String:
@@ -137,7 +145,7 @@ func _opcao(nome: String) -> String:
 func _montar_nos() -> void:
 	_escurecer = ColorRect.new()  # só no mapa grande: escurece um pouco o mundo por trás
 	_escurecer.color = Color(C_NEVOA, 0.45)
-	_escurecer.size = Vector2(LARG, ALT)
+	EscalaUi.cobrir(_escurecer)  # cobre o canvas inteiro, não só o bloco 960x540
 	_escurecer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_escurecer.visible = false
 	add_child(_escurecer)
@@ -260,7 +268,8 @@ func _layout() -> void:
 	var quadro_tam := mapa_px + Vector2(MARGEM, MARGEM) * 2.0
 	var quadro_pos := (Vector2(LARG, ALT) - quadro_tam) / 2.0
 	if not grande:
-		quadro_pos = Vector2(LARG - MARGEM_TELA - quadro_tam.x, MARGEM_TELA)
+		var d := EscalaUi.desloc_atual  # no canto do canvas, não do bloco 960x540
+		quadro_pos = Vector2(LARG + d.x - MARGEM_TELA - quadro_tam.x, MARGEM_TELA - d.y)
 	_quadro.position = quadro_pos
 	_quadro.size = quadro_tam
 	_desenho.position = quadro_pos + Vector2(MARGEM, MARGEM)

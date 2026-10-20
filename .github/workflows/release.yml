@@ -157,3 +157,16 @@ jobs:
           T=${{ steps.v.outputs.tag }}
           gh release create "$T" pacotes/KIKIU-*.zip --target "$GITHUB_SHA" \
             --title "$T" --notes "Build automatico do commit $GITHUB_SHA na main. O .exe traz icone e versao."
+      # Também publica no repositório público só de versões (#106), que o atualizador do jogo consulta primeiro.
+      # Sem o segredo RELEASES_TOKEN o passo é pulado sem falhar, para o release do jogo nunca depender dele.
+      - name: Publicar também no KIKIU-Releases
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "RELEASES_TOKEN ausente: pulando a publicação no KIKIU-Releases"
+            exit 0
+          fi
+          T=${{ steps.v.outputs.tag }}
+          gh release create "$T" pacotes/KIKIU-*.zip --repo brenoalmeidatec/KIKIU-Releases \
+            --title "$T" --notes "Build automatico do KIKIU-Survival (commit $GITHUB_SHA). O .exe traz icone e versao."

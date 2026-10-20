@@ -14,6 +14,16 @@ const MAX_CORTES := 4
 const MAX_FLASH := 24
 const MAX_LUZES := 3
 const MAX_ONDAS := 6
+const MAX_FOLHAS := 14  # efeitos de folha (Blender): 0..5 cristal, anel e espiral; 6..13 a centelha de acerto
+const PRIM_CENTELHA := 6
+const MAX_MARCAS := 2  # marcas sustentadas ao mesmo tempo
+# nome -> [folha, quadros]; feitas no Blender em fonte_arte/blender_efeitos, mesmo formato do corte (RGB = calor, A = intensidade)
+const FOLHAS := {
+	"cristal": [preload("res://assets/v2/efeitos/efeito_cristal_folha.png"), 14.0],
+	"estrela": [preload("res://assets/v2/efeitos/efeito_estrela_folha.png"), 9.0],
+	"anel": [preload("res://assets/v2/efeitos/efeito_anel_folha.png"), 18.0],
+	"espiral": [preload("res://assets/v2/efeitos/efeito_espiral_folha.png"), 12.0],
+}
 const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
 const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_hazaki_ciano.png")  # variante: so a energia ciano, 12 quadros
 
@@ -164,7 +174,15 @@ var _fl_esc := PackedFloat32Array()  # tamanho do ator (elite e chefe são maior
 var _fl_modo := PackedByteArray()  # 0 = piscada de dano, 1 = morte (encolhe e some), 2 = rastro da esquiva
 var _fi := 0
 
-var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0}  # contadores para os testes
+# efeitos de folha (cristal, estrela, anel, espiral): mesmo shader do corte, em modo folha
+var _fo: Array[Sprite2D] = []
+var _fo_t := PackedFloat32Array()
+var _fo_dur := PackedFloat32Array()
+var _fo_cristal := PackedByteArray()  # 1 = o slot mostra um cristal (para ignorar explosões coladas)
+var _fo_i := 0
+var _ce_i := PRIM_CENTELHA
+
+var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0}  # contadores para os testes
 
 
 func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
@@ -207,6 +225,7 @@ func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
 	_montar_cortes()
 	_montar_luzes(sv)
 	_montar_flashes()
+	_montar_folhas()
 
 
 func _montar_cortes() -> void:
@@ -228,6 +247,28 @@ func _montar_cortes() -> void:
 	_cortes_dur.resize(MAX_CORTES)
 	_cortes_t.fill(9.0)
 	_cortes_dur.fill(1.0)
+
+
+func _montar_folhas() -> void:
+	var sh := Shader.new()
+	sh.code = SHADER_CORTE
+	var tex: Texture2D = _cortes[0].texture
+	for i in MAX_FOLHAS:
+		var s := Sprite2D.new()
+		s.texture = tex
+		var mat := ShaderMaterial.new()
+		mat.shader = sh
+		mat.set_shader_parameter("modo", 2.0)
+		mat.set_shader_parameter("lado", 1.0)
+		s.material = mat
+		s.visible = false
+		raiz.add_child(s)
+		_fo.append(s)
+	_fo_t.resize(MAX_FOLHAS)
+	_fo_dur.resize(MAX_FOLHAS)
+	_fo_cristal.resize(MAX_FOLHAS)
+	_fo_t.fill(9.0)
+	_fo_dur.fill(1.0)
 
 
 func _montar_luzes(sv: Node) -> void:
@@ -308,6 +349,38 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	luz_rapida(origem + Vector2.from_angle(ang) * alcance * 0.55, cor, 1.7 if tipo == "estocada" else 1.35, alcance * 2.3, dur * 0.9)
 
 
+## Efeito de folha do Blender no chão ("cristal", "anel", "espiral") ou a centelha de acerto ("estrela", no ar). `raio` = metade da largura
+## do desenho; o chão achata em 0,62 no Y. Reaproveita o shader do corte e um pool fixo: não cria nó.
+func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> void:
+	var cristal := nome == "cristal"
+	var estrela := nome == "estrela"
+	if cristal:  # crítico explosivo em horda densa: uma explosão colada na anterior não gasta slot
+		for j in PRIM_CENTELHA:
+			if _fo_cristal[j] == 1 and _fo_t[j] < 0.05 and _fo_t[j] < _fo_dur[j] and _fo[j].position.distance_to(p) < 20.0:
+				return
+	var i: int
+	if estrela:
+		i = _ce_i
+		_ce_i = PRIM_CENTELHA + (_ce_i - PRIM_CENTELHA + 1) % (MAX_FOLHAS - PRIM_CENTELHA)
+	else:
+		i = _fo_i
+		_fo_i = (_fo_i + 1) % PRIM_CENTELHA
+	var d: Array = FOLHAS[nome]
+	var s := _fo[i]
+	s.position = p.round()
+	s.scale = Vector2(raio / 32.0, raio / 32.0 * (1.0 if estrela else 0.62))
+	s.visible = true
+	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("folha", d[0])
+	mat.set_shader_parameter("quadros", d[1])
+	mat.set_shader_parameter("cor", cor)
+	mat.set_shader_parameter("prog", 0.0)
+	_fo_t[i] = 0.0
+	_fo_dur[i] = dur
+	_fo_cristal[i] = 1 if cristal else 0
+	usados.folhas += 1
+
+
 func luz_rapida(pos: Vector2, cor: Color, energia: float, raio: float, dur: float) -> void:
 	var i := _li
 	_li = (_li + 1) % MAX_LUZES
@@ -322,11 +395,24 @@ func luz_rapida(pos: Vector2, cor: Color, energia: float, raio: float, dur: floa
 	_luzes_e[i] = energia
 
 
-## Silhueta sobre o ator (branca por padrão). modo 0 = piscada de dano (segue o ator), 1 = morte (fica onde estava, encolhe e sobe), 2 = rastro da esquiva.
+## Silhueta sobre o ator (branca por padrão). modo 0 = piscada de dano (segue o ator), 1 = morte (fica onde estava, encolhe e sobe), 2 = rastro da esquiva,
+## 3 = marca sustentada do golpe forte (segue o ator, fica cheia e só some no fim; no máximo MAX_MARCAS, o revezamento a pula).
 func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	if a == null or a.tipo.is_empty():
 		return
+	if modo == 3:
+		var marcas := 0
+		for j in MAX_FLASH:
+			if _fl_modo[j] == 3 and _fl_t[j] < _fl_dur[j]:
+				marcas += 1
+		if marcas >= MAX_MARCAS:
+			return
+		usados.marcas += 1
 	var i := _fi
+	for _k in MAX_FLASH:  # o revezamento não pisa numa marca que ainda dura
+		if _fl_modo[i] == 3 and _fl_t[i] < _fl_dur[i]:
+			i = (i + 1) % MAX_FLASH
+	_fi = i
 	# reaproveita o flash que já segue este ator (piscadas seguidas não gastam slot)
 	if modo == 0:
 		for j in MAX_FLASH:
@@ -349,7 +435,7 @@ func flash(a, dur: float, cor := Color.WHITE, modo := 0, forca := 1.0) -> void:
 	mat.set_shader_parameter("cor", cor)
 	mat.set_shader_parameter("k", forca)
 	mat.set_shader_parameter("dissolver", 0.0)
-	_fl_alvo[i] = a if modo == 0 else null
+	_fl_alvo[i] = a if (modo == 0 or modo == 3) else null
 	_fl_t[i] = 0.0
 	_fl_dur[i] = dur
 	_fl_modo[i] = modo
@@ -426,10 +512,11 @@ func onda(pos: Vector2, cor: Color, raio: float, dur: float) -> void:
 
 ## Número de dano que salta, com contorno. `grande` = crítico (fonte 24; o normal é 16). Um dano que não é do golpe da katana (fogo,
 ## raio, aura...) usa `tam` menor se quiser.
-func numero(pos: Vector2, texto: String, cor: Color, grande := false, tam := 0) -> void:
+func numero(pos: Vector2, texto: String, cor: Color, grande := false, tam := 0, exato := false) -> void:
 	var i := _ni
 	_ni = (_ni + 1) % MAX_NUM
-	n_pos[i] = pos + Vector2(randf_range(-12.0, 12.0), -10.0 - float(_ni % 4) * 8.0)
+	# `exato`: quem chama já escolheu o lugar (os estilhaços abrem em leque), então sem o sorteio de lado e de altura
+	n_pos[i] = pos if exato else pos + Vector2(randf_range(-12.0, 12.0), -10.0 - float(_ni % 4) * 8.0)
 	n_t[i] = 0.0
 	n_dur[i] = 1.0 if grande else 0.75
 	n_txt[i] = texto
@@ -447,10 +534,13 @@ func limpar() -> void:
 	o_t.fill(9.0)
 	_cortes_t.fill(9.0)
 	_fl_t.fill(9.0)
+	_fo_t.fill(9.0)
 	_luzes_t.fill(9.0)
 	for s in _cortes:
 		s.visible = false
 	for s in _fl:
+		s.visible = false
+	for s in _fo:
 		s.visible = false
 	for l in _luzes:
 		l.enabled = false
@@ -515,6 +605,15 @@ func atualizar(dt: float) -> void:
 			s.visible = false
 			continue
 		(s.material as ShaderMaterial).set_shader_parameter("prog", _cortes_t[i] / _cortes_dur[i])
+	# folhas
+	for i in MAX_FOLHAS:
+		if _fo_t[i] >= _fo_dur[i]:
+			continue
+		_fo_t[i] += dt
+		if _fo_t[i] >= _fo_dur[i]:
+			_fo[i].visible = false
+			continue
+		(_fo[i].material as ShaderMaterial).set_shader_parameter("prog", _fo_t[i] / _fo_dur[i])
 	# luzes
 	for i in MAX_LUZES:
 		if _luzes_t[i] >= _luzes_dur[i]:
@@ -546,6 +645,13 @@ func atualizar(dt: float) -> void:
 					s.region_rect = a.regiao
 					s.flip_h = a.espelha
 				mat.set_shader_parameter("k", 1.0 - k * k)
+			3:
+				var a = _fl_alvo[i]
+				if a != null:
+					s.position = a.raiz.position
+					s.region_rect = a.regiao
+					s.flip_h = a.espelha
+				mat.set_shader_parameter("k", 1.0 if k < 0.65 else (1.0 - k) / 0.35)
 			1:
 				mat.set_shader_parameter("dissolver", k)
 				s.scale = Vector2(1.0 + 0.25 * k, 1.0 - 0.35 * k) * _fl_esc[i]

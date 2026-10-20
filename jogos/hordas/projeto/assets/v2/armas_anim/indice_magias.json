@@ -1,0 +1,257 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/armas_anim/gerar_magias.py (nao edite a mao)",
+ "folhas": {
+  "corvos": {
+   "armas": [
+    "corvos"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "corvos_voo.png",
+     "quadro": [
+      36,
+      30
+     ],
+     "n": 6,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      19,
+      17
+     ]
+    },
+    "bicada": {
+     "arquivo": "corvos_bicada.png",
+     "quadro": [
+      36,
+      30
+     ],
+     "n": 4,
+     "fps": 14,
+     "loop": true,
+     "ancora": [
+      15,
+      14
+     ]
+    }
+   }
+  },
+  "revoada_de_trovoes": {
+   "armas": [
+    "revoada_de_trovoes"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "revoada_de_trovoes_voo.png",
+     "quadro": [
+      36,
+      30
+     ],
+     "n": 6,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      19,
+      17
+     ]
+    },
+    "bicada": {
+     "arquivo": "revoada_de_trovoes_bicada.png",
+     "quadro": [
+      36,
+      30
+     ],
+     "n": 4,
+     "fps": 14,
+     "loop": true,
+     "ancora": [
+      15,
+      14
+     ]
+    }
+   }
+  },
+  "runa": {
+   "armas": [
+    "runa"
+   ],
+   "anims": {
+    "armar": {
+     "arquivo": "runa_armar.png",
+     "quadro": [
+      72,
+      46
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": false,
+     "ancora": [
+      36,
+      27
+     ]
+    },
+    "loop": {
+     "arquivo": "runa_loop.png",
+     "quadro": [
+      72,
+      46
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      36,
+      27
+     ]
+    },
+    "explosao": {
+     "arquivo": "runa_explosao.png",
+     "quadro": [
+      72,
+      46
+     ],
+     "n": 6,
+     "fps": 15,
+     "loop": false,
+     "ancora": [
+      36,
+      27
+     ]
+    }
+   }
+  },
+  "circulo_runico": {
+   "armas": [
+    "circulo_runico"
+   ],
+   "anims": {
+    "armar": {
+     "arquivo": "circulo_runico_armar.png",
+     "quadro": [
+      100,
+      72
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": false,
+     "ancora": [
+      50,
+      43
+     ]
+    },
+    "loop": {
+     "arquivo": "circulo_runico_loop.png",
+     "quadro": [
+      100,
+      72
+     ],
+     "n": 4,
+     "fps": 6,
+     "loop": true,
+     "ancora": [
+      50,
+      43
+     ]
+    },
+    "explosao": {
+     "arquivo": "circulo_runico_explosao.png",
+     "quadro": [
+      100,
+      72
+     ],
+     "n": 6,
+     "fps": 15,
+     "loop": false,
+     "ancora": [
+      50,
+      43
+     ]
+    }
+   }
+  },
+  "raio": {
+   "armas": [
+    "raio"
+   ],
+   "anims": {
+    "impacto": {
+     "arquivo": "raio_impacto.png",
+     "quadro": [
+      32,
+      32
+     ],
+     "n": 4,
+     "fps": 20,
+     "loop": false,
+     "ancora": [
+      16,
+      16
+     ]
+    }
+   }
+  },
+  "ventania": {
+   "armas": [
+    "ventania"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "ventania_voo.png",
+     "quadro": [
+      64,
+      32
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      32,
+      16
+     ]
+    }
+   }
+  },
+  "onda": {
+   "armas": [
+    "onda"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "onda_voo.png",
+     "quadro": [
+      48,
+      28
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      24,
+      14
+     ]
+    }
+   }
+  },
+  "fura": {
+   "armas": [
+    "fura"
+   ],
+   "anims": {
+    "voo": {
+     "arquivo": "fura_voo.png",
+     "quadro": [
+      40,
+      10
+     ],
+     "n": 4,
+     "fps": 12,
+     "loop": true,
+     "ancora": [
+      30,
+      5
+     ]
+    }
+   }
+  }
+ }
+}

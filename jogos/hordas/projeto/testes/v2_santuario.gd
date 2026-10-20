@@ -97,6 +97,7 @@ func _ver_visual(a) -> void:
 		a._conq[id].selecionar.grab_focus()
 		ok(a._detalhe.text.contains(str(Meta.conquistas().filter(func(c): return str(c.id) == id)[0].desc)), "conquista %s tem detalhe por foco" % id)
 		ok(a._detalhe.get_minimum_size().y <= a._detalhe.size.y, "detalhe conquista %s cabe" % id)
+	a._conq["combo_50"].selecionar.grab_focus()  # a última do laço é uma conquista de progresso (vence_medio), sem recompensa
 	ok(
 		a._detalhe.text.contains("Libera: Rastro de katana") and not a._detalhe.text.contains("sem efeito"),
 		"a recompensa do rastro aparece no detalhe, sem aviso de efeito pendente"

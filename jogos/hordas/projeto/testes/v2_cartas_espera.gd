@@ -5,7 +5,7 @@ extends Node
 # aberta; câmera lenta e hit-stop não mudam o tempo da trava; um clique segurado desde antes não escolhe; ESC passa pela trava; a
 # contagem e a barra aparecem, e as cartas acendem ao liberar. O ESC e o Start entram pela JANELA (Input.parse_input_event, a rota do
 # teclado de verdade; a pausa mora no SubViewport e só recebe pelo mundo._input) e abrem a pausa na partida, na escolha e no baú, com a
-# trava congelada; o clique que escolhe a carta não vira golpe do herói (o botão segue apertado no Input).
+# trava congelada (na escolha o ESC pede confirmação em vez de pausar: v2_cartas_limite); o clique que escolhe a carta não vira golpe do herói (o botão segue apertado no Input).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cartas_espera.tscn  (imprime "v2_cartas_espera falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
@@ -128,7 +128,7 @@ func rajada() -> void:
 	mouse_pos = _centro_carta(1)
 	w._input(_clique(mouse_pos))
 	w._input(_clique(mouse_pos, false))
-	for k in [KEY_1, KEY_2, KEY_3, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E, KEY_LEFT, KEY_RIGHT, KEY_R, KEY_B, KEY_X]:
+	for k in [KEY_1, KEY_2, KEY_3, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E, KEY_LEFT, KEY_RIGHT, KEY_R, KEY_B, KEY_X, KEY_Q]:
 		w._input(_tecla(k))
 		w._input(_tecla(k, false, false))
 	w._input(_acao("ui_accept"))
@@ -139,6 +139,12 @@ func rajada() -> void:
 	w._input(_clique(mouse_pos))
 	mouse_pos = t._btn_b.position + t._btn_b.size * 0.5
 	w._input(_clique(mouse_pos))
+	mouse_pos = t._btn_a.position + t._btn_a.size * 0.5
+	w._input(_clique(mouse_pos))
+	var y := InputEventJoypadButton.new()
+	y.button_index = JOY_BUTTON_Y
+	y.pressed = true
+	w._input(y)
 
 
 func _run() -> void:
@@ -184,7 +190,7 @@ func _run() -> void:
 	# 3. depois da trava: as cartas acendem e a tecla 2 escolhe
 	var esc0: int = w.combate.progresso.escolhidas
 	ate(func(): return trava() <= 0.0, 60)
-	ok(trava() <= 0.0 and t._sub.text == "Escolha uma carta", "a trava acaba e a legenda volta ao normal")
+	ok(trava() <= 0.0 and t._sub.text.begins_with("Escolha uma carta"), "a trava acaba e a legenda volta ao normal (%s)" % t._sub.text)
 	passos(1)
 	ok(t._cartas[1].modulate.r > 1.2, "as cartas acendem ao liberar (%.2f)" % t._cartas[1].modulate.r)
 	ok(t._cartas[0].position.y == CARTA_Y - 8.0, "a carta marcada aparece depois da trava")
@@ -330,7 +336,8 @@ func _run() -> void:
 	Input.parse_input_event(_start())
 	ok(not w.pausa.aberto and not get_tree().paused, "Start de novo fecha")
 
-	# 12. ESC na escolha de carta: abre a pausa SOBRE a escolha, a trava congela de verdade (árvore pausada), nada escolhe e fechar volta
+	# 12. ESC na escolha de carta NÃO abre a pausa: pede "Pausar agora?" e a trava congela enquanto a confirmação está aberta (a árvore segue
+	# andando); nada escolhe; o segundo ESC é "Não" e a trava volta a andar. A pausa de verdade abre por outro caminho (perder o foco) e congela a trava.
 	zerar()
 	subir_nivel()
 	passos(30)
@@ -338,19 +345,25 @@ func _run() -> void:
 	var escolhidas0: int = w.combate.progresso.escolhidas
 	Input.parse_input_event(_tecla(KEY_ESCAPE))
 	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
-	ok(w.pausa.aberto and get_tree().paused, "ESC na escolha abre a pausa")
+	ok(not w.pausa.aberto and not get_tree().paused, "ESC na escolha NÃO abre a pausa")
+	ok(w.combate.telas.conf_aberta, "ESC na escolha abre a confirmação")
 	ok(w.combate.jogo == "escolha" and w.combate.telas.escolha_aberta, "e a escolha continua aberta por baixo")
 	passos(120)
-	ok(trava() == t_antes, "com a pausa aberta na escolha a trava não anda (%.3f contra %.3f)" % [trava(), t_antes])
-	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B]:  # a pausa come a entrada: nada chega às cartas
+	ok(trava() == t_antes, "com a confirmação aberta a trava não anda (%.3f contra %.3f)" % [trava(), t_antes])
+	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B]:  # a confirmação come a entrada: nada chega às cartas
 		Input.parse_input_event(_tecla(k))
 		Input.parse_input_event(_tecla(k, false, false))
-	ok(w.combate.progresso.escolhidas == escolhidas0 and w.combate.jogo == "escolha", "com a pausa aberta as teclas não escolhem carta")
+	ok(w.combate.progresso.escolhidas == escolhidas0 and w.combate.jogo == "escolha", "com a confirmação aberta as teclas não escolhem carta")
 	Input.parse_input_event(_tecla(KEY_ESCAPE))
 	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
-	ok(not w.pausa.aberto and not get_tree().paused and w.combate.jogo == "escolha", "ESC de novo fecha o menu e a escolha segue")
+	ok(not w.combate.telas.conf_aberta and not w.pausa.aberto and w.combate.jogo == "escolha", "ESC de novo é 'Não': a escolha segue")
 	passos(30)
-	ok(trava() < t_antes, "fechada a pausa, a trava volta a andar")
+	ok(trava() < t_antes, "fechada a confirmação, a trava volta a andar")
+	w.pausa.pausar()  # perder o foco da janela
+	var t_pausa := trava()
+	passos(60)
+	ok(w.pausa.aberto and trava() == t_pausa, "com a pausa aberta (foco) a trava segue parada")
+	w.pausa.fechar()
 	ate(func(): return trava() <= 0.0, 200)
 	w._input(_tecla(KEY_2))
 	ok(w.combate.progresso.escolhidas == escolhidas0 + 1 and w.combate.jogo == "jogando", "depois da trava a carta é escolhida normalmente")
@@ -372,8 +385,7 @@ func _run() -> void:
 	ok(not w.pausa.aberto and not get_tree().paused and w.combate.jogo == "bau", "ESC de novo volta ao baú")
 	zerar()
 	subir_nivel()
-	Input.parse_input_event(_tecla(KEY_ESCAPE))
-	Input.parse_input_event(_tecla(KEY_ESCAPE, false, false))
+	w.pausa.pausar()
 	w.pausa._executar("santuario", 0)
 	w.pausa._executar("ok_santuario", 0)
 	ok(w.combate.jogo == "abandono" and not get_tree().paused, "Voltar ao santuário a partir da escolha abandona a partida")

@@ -1,0 +1,165 @@
+{
+ "_convencao": "Pegadas de colisao do mapa Laboratorio, lidas por gerar_v2_mapas.py (mesma convencao de pegadas_cidade.json). Redondos (capsula, maca, pilar, tanques, canos) mantem a elipse calculada.",
+ "itens": {
+  "parede_lab_a": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -6
+     ],
+     "meio": [
+      49,
+      6
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "parede_lab_b": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -6
+     ],
+     "meio": [
+      49,
+      6
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "parede_lab_c": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -6
+     ],
+     "meio": [
+      49,
+      6
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "porta_blindada": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -6
+     ],
+     "meio": [
+      49,
+      6
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "bancada_lab": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -11
+     ],
+     "meio": [
+      49,
+      11
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "estante_amostras": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -7
+     ],
+     "meio": [
+      29,
+      7
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "mesa_lab": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -9
+     ],
+     "meio": [
+      27,
+      9
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "gerador": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -15
+     ],
+     "meio": [
+      34,
+      15
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "rack_servidores": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -9
+     ],
+     "meio": [
+      15,
+      9
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  },
+  "armario_aco": {
+   "formas": [
+    {
+     "tipo": "caixa",
+     "centro": [
+      0,
+      -8
+     ],
+     "meio": [
+      17,
+      8
+     ]
+    }
+   ],
+   "nota": "Base retangular: caixa cobrindo a largura do sprite (meia-largura-1) x profundidade da base; frente em y=0 (pe). Elipse deixava os cantos da frente abertos."
+  }
+ }
+}

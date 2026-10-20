@@ -1,13 +1,16 @@
 {
  "quadro": [
-  38,
-  45
+  54,
+  53
  ],
  "elevacao": 45.0,
  "ppu": 24.5,
  "linhas": [
   "frente",
-  "tres_quartos"
+  "tres_quartos",
+  "perfil",
+  "tres_quartos_costas",
+  "costas"
  ],
  "colunas": [
   "andar0",
@@ -15,5 +18,5 @@
   "andar2",
   "andar3"
  ],
- "pe_y": 43
+ "pe_y": 51
 }

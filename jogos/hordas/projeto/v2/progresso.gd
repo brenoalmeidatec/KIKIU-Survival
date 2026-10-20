@@ -11,6 +11,7 @@ var melhorias := {}  # id da carta -> quantas vezes pegou
 var pendentes := 0  # níveis subidos que ainda esperam a escolha
 var cartas: Array = []  # as cartas na tela
 var escolhidas := 0  # quantas cartas o jogador já escolheu (testes)
+var ultima_nome := ""  # o nome da última carta escolhida (o aviso da escolha automática diz qual foi)
 
 
 func montar(c) -> void:
@@ -31,6 +32,12 @@ func xp_para(n: int) -> float:
 ## Vida que o herói recupera a cada nível que sobe (a fração `cura_nivel` da vida máxima de agora). O card de status mostra este valor.
 func cura_por_nivel() -> float:
 	return combate.mundo.heroi.vida_max * float(cfg.heroi.cura_nivel)
+
+
+## Fração a mais por nível acima do 1 (regra = {por_nivel, teto}, de dados): nível 1 = 0; sobe `por_nivel` a cada nível e para no `teto`.
+## Serve ao alcance do golpe (dados/v2_combate.json > golpe.raio_por_nivel, lido em combate.gd) e ao raio e ao arco do escudo (dados/v2_secundario.json > escudo).
+static func bonus_por_nivel(nivel: int, regra: Dictionary) -> float:
+	return minf(float(maxi(nivel - 1, 0)) * float(regra.por_nivel), float(regra.teto))
 
 
 func zerar() -> void:
@@ -97,6 +104,7 @@ func escolher(i: int) -> void:
 	var c: Dictionary = cartas[i]
 	aplicar(c)
 	escolhidas += 1
+	ultima_nome = str(c.get("nome", ""))
 	pendentes = maxi(0, pendentes - 1)
 	cartas = []
 	combate.telas.esconder()
@@ -108,6 +116,34 @@ func escolher(i: int) -> void:
 	combate.fx.onda(h.pos + Vector2(0, -12), Color(cor.r, cor.g, cor.b, 0.9), 44.0 + 16.0 * float(c.get("rar", 0)), 0.25)
 	if pendentes > 0:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
+
+
+## Perde a rodada de cartas aberta (o "Sim" de "Pausar agora?" na escolha): nenhuma carta é aplicada, o nível pendente é consumido e não
+## há reembolso de rerrolar nem de banir. Com mais níveis pendentes a próxima rodada abre depois, como depois de uma escolha.
+func descartar_rodada() -> void:
+	if combate.jogo != "escolha":
+		return
+	pendentes = maxi(0, pendentes - 1)
+	cartas = []
+	combate.telas.esconder()
+	combate.pausado = false
+	combate.jogo = "jogando"
+	if pendentes > 0:
+		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
+
+
+## Escolha AUTOMÁTICA: o sistema escolhe a carta pelo que o herói já tem (cartas.escolha_automatica) e aplica na hora. Sem custo, mas a
+## raridade vem rebaixada. Devolve false se não está na escolha ou não sobrou carta nenhuma.
+func automatico() -> bool:
+	var cs = combate.cartas
+	if combate.jogo != "escolha":
+		return false
+	var c: Dictionary = cs.escolha_automatica(combate.mundo.heroi.nivel)
+	if c.is_empty():
+		return false
+	cartas = [c]
+	escolher(0)
+	return true
 
 
 ## Rerrola as 3 cartas (novas, sem repetir as que estavam na tela). Devolve false se não pode (acabaram os usos).

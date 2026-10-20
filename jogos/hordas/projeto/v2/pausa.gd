@@ -17,9 +17,10 @@ extends CanvasLayer
 ## (Dados.fonte_texto, sempre em 16 px), e o contador de fps na Press Start 2P (Dados.fonte, HUD). Cada uso escolhe a sua em _rotulo.
 
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
-const MOLDURA := preload("res://v2/hud/moldura_pedra.png")
+const EstiloPremium := preload("res://v2/estilo_premium.gd")  # moldura dourada e faixa de seleção dos menus (#152 V6)
 const TAM_TITULO := Paleta.TITULO_GRANDE  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
 const TAM_BOTAO := Paleta.TITULO_PEQUENO  # botões e linhas (Jersey 10 na grade de 19)
 const TAM_SUB := Paleta.TEXTO_TAMANHO  # linha de apoio do título
@@ -39,8 +40,8 @@ const DICA_Y := 406.0  # PAINEL.size.y - 24
 const COR_OURO := Paleta.OURO
 const COR_TEXTO := Paleta.TEXTO
 const COR_CAB := Paleta.CABECALHO  # cabeçalho de seção (não é selecionável)
-const COR_FUNDO := Color(Paleta.PAINEL, 0.72)  # #01030b a 0,7 (hud_menus.md, seção 4)
-const DICA := "Setas escolhem   Enter confirma   Esc volta"
+const COR_FUNDO := Color(Paleta.PAINEL, 0.9)  # #01030b a 0,9: o jogo (e a HUD) atrás fica escuro e não compete com o menu
+const Glifos := preload("res://v2/glifos.gd")
 const CREDITO_MUSICA := "Música: Kevin MacLeod (incompetech.com)\nLicença Creative Commons Atribuição 4.0 (CC BY 4.0)"  # atribuição pedida pelo autor; lista completa em docs/LICENCAS_AUDIO.md
 const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a direita também valem
 const AudioV2 := preload("res://v2/audio.gd")  # o clique do santuário (sem partida), com os WAV da v2
@@ -63,7 +64,7 @@ var _graficos := AjustesGraficos.new()
 var _raiz: Control
 var _titulo: Label
 var _sub: Label
-var _dica: Label
+var _dica: Control
 var _ajuda: Label
 var _linhas: Array = []  # uma por linha visível: {linha, marca, rotulo, valor}
 var _fps: Label
@@ -75,7 +76,7 @@ var _sons_ui  # clique do santuário (sem partida): o áudio da v2 (assets/audio
 func iniciar(m) -> Node:
 	mundo = m
 	if mundo != null:
-		mouse_fn = Callable(mundo.ap, "mouse_na_tela")
+		mouse_fn = Callable(mundo.ap, "mouse_ui")
 		mundo.add_child(Antena.new(self))
 	return self
 
@@ -100,35 +101,48 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # com a árvore pausada, o menu continua recebendo entrada e desenhando
 	set_process_input(mundo == null)  # na partida a entrada vem da Antena (o SubViewport não recebe a janela)
 	layer = 14
+	add_to_group("ui_escala")
+	offset = EscalaUi.desloc_atual
 	_montar()
 	_desenhar()
 
 
+## O contador de fps fica no canto de baixo à esquerda do canvas (não do bloco 960x540).
+func _pos_fps() -> Vector2:
+	var d := EscalaUi.desloc_atual
+	return Vector2(6.0 - d.x, ALT + d.y - 16.0)
+
+
+## A janela ou a opção "tamanho_ui" mudou: o bloco volta para o centro do canvas e o fps para o canto.
+func ui_reencaixar(_canvas: Vector2, d: Vector2) -> void:
+	offset = d
+	if _fps != null:
+		_fps.position = _pos_fps()
+
+
 func _montar() -> void:
 	_raiz = Control.new()
-	_raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_raiz.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_raiz.size = EscalaUi.BLOCO  # o bloco 960x540; o fundo escuro abaixo cobre o canvas inteiro
 	_raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_raiz.visible = false
 	add_child(_raiz)
 	var fundo := ColorRect.new()
 	fundo.color = COR_FUNDO
-	fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	EscalaUi.cobrir(fundo)
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_raiz.add_child(fundo)
 	var painel := Panel.new()
 	painel.position = PAINEL.position
 	painel.size = PAINEL.size
 	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var caixa := StyleBoxTexture.new()
-	caixa.texture = MOLDURA
-	caixa.texture_margin_left = 5
-	caixa.texture_margin_top = 5
-	caixa.texture_margin_right = 5
-	caixa.texture_margin_bottom = 5
-	painel.add_theme_stylebox_override("panel", caixa)
+	painel.add_theme_stylebox_override("panel", EstiloPremium.painel())
 	_raiz.add_child(painel)
 	_titulo = _rotulo(Dados.fonte_titulo, TAM_TITULO, COR_OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 18), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	_raiz.add_child(_titulo)
+	var ornamento := EstiloPremium.ornamento(300.0)
+	ornamento.position = Vector2(PAINEL.position.x + (PAINEL.size.x - 300.0) / 2.0, PAINEL.position.y + 74)
+	_raiz.add_child(ornamento)
 	_sub = _rotulo(
 		Dados.fonte_texto, TAM_SUB, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER
 	)
@@ -139,33 +153,37 @@ func _montar() -> void:
 		linha.position = Vector2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H)
 		linha.size = Vector2(w, LINHA_ALT)
 		linha.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var est := StyleBoxFlat.new()
-		est.bg_color = Color(Paleta.OURO, 0.14)
-		est.border_color = COR_OURO
-		est.set_border_width_all(2)
-		est.set_corner_radius_all(0)
 		var marca := Panel.new()
 		marca.set_anchors_preset(Control.PRESET_FULL_RECT)
 		marca.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		marca.add_theme_stylebox_override("panel", est)
+		marca.add_theme_stylebox_override("panel", EstiloPremium.foco())  # a faixa dourada da linha escolhida
 		linha.add_child(marca)
 		var rot := _rotulo(Dados.fonte_titulo, TAM_BOTAO, COR_TEXTO, Vector2(12, 6), w - 24, HORIZONTAL_ALIGNMENT_LEFT)
 		linha.add_child(rot)
 		var val := _rotulo(Dados.fonte_texto, TAM_VALOR, COR_TEXTO, Vector2(12, 8), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
 		linha.add_child(val)
 		_raiz.add_child(linha)
-		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val})
+		var ico := TextureRect.new()  # o "?" da linha Perfil: a linha pede o ícone (chave "icone") e _desenhar o põe depois do nome
+		ico.texture = _textura_ajuda()
+		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ico.stretch_mode = TextureRect.STRETCH_SCALE
+		ico.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		ico.size = Vector2(16, 16)
+		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ico.visible = false
+		linha.add_child(ico)
+		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val, "icone": ico})
 	_ajuda = _rotulo(
-		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 22, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 44, HORIZONTAL_ALIGNMENT_LEFT
+		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 34, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 68, HORIZONTAL_ALIGNMENT_LEFT  # a mesma coluna do texto das linhas (margem 24 + 10 do painel da linha)
 	)
 	_ajuda.size.y = AJUDA_H
 	_ajuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_raiz.add_child(_ajuda)
-	_dica = _rotulo(
-		Dados.fonte_texto, TAM_DICA, COR_TEXTO, Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y), PAINEL.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER
-	)
+	_dica = Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_TEXTO)
+	_dica.position = Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y)
+	_dica.size = Vector2(PAINEL.size.x - 16, 22)
 	_raiz.add_child(_dica)
-	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), Vector2(6, ALT - 16), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
+	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), _pos_fps(), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
 	add_child(_fps)  # fora de _raiz: o contador de fps aparece também com o menu fechado
 
@@ -183,6 +201,18 @@ func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin
 	l.add_theme_color_override("font_outline_color", Paleta.PRETO)
 	l.add_theme_constant_override("outline_size", 3)
 	return l
+
+
+## O "?" da linha Perfil: ícone de pixel 8x8 (os ícones da v2 são desenhados por código). Branco, para o `modulate` pintar na cor da linha.
+static func _textura_ajuda() -> Texture2D:
+	var padrao := ["..####..", ".##..##.", ".....##.", "....##..", "...##...", "...##...", "........", "...##..."]
+	var im := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+	im.fill(Color(0, 0, 0, 0))
+	for y in 8:
+		for x in 8:
+			if padrao[y].substr(x, 1) == "#":
+				im.set_pixel(x, y, Color.WHITE)
+	return ImageTexture.create_from_image(im)
 
 
 # ------------------------------------------------------------------ abrir e fechar
@@ -258,7 +288,7 @@ func _pode_pausar() -> bool:
 func _ir(nova: String, origem := "menu") -> void:
 	tela = nova
 	_origem = origem
-	sel = 1 if nova.begins_with("confirmar") else 0  # confirmação começa em "Não"
+	sel = 1 if nova.begins_with("confirmar") or nova == "avancado" else 0  # confirmação começa em "Não"; Avançado, na 1ª opção (o 0 é cabeçalho)
 	_topo = 0
 	_desenhar()
 
@@ -274,6 +304,8 @@ func _voltar_tela() -> void:
 				_ir("menu")
 			else:
 				fechar()
+		"avancado":
+			_ir("graficos")
 		"graficos", "audio", "creditos":
 			if tela == "creditos" and _origem == "":
 				fechar()  # Créditos abertos direto pelo título: não há Ajustes por trás
@@ -309,6 +341,9 @@ func entrada(e: InputEvent) -> bool:
 				return false
 			abrir_sair()
 			return true
+		var tl = mundo.combate.telas if mundo.combate != null else null  # na escolha de cartas o ESC pede confirmação (telas.gd), não pausa
+		if tl != null and tl.intercepta_pausa():
+			return true
 		return pausar()
 	# Tab: o card "SUA BUILD" ao lado do menu troca a página visual pela de detalhes (status.gd)
 	if e is InputEventKey and e.keycode == KEY_TAB and e.pressed and not e.echo and tela == "menu" and mundo != null and mundo.get("status") != null:
@@ -318,6 +353,14 @@ func entrada(e: InputEvent) -> bool:
 	if e is InputEventKey and e.pressed and not e.echo and e.keycode in [KEY_Q, KEY_E] and tela == "menu" and mundo != null and mundo.get("status") != null:
 		mundo.status.paginar(-1 if e.keycode == KEY_Q else 1)
 		return true
+	# Controle: Y troca o card SUA BUILD para os detalhes (o Tab) e LB/RB mudam a página dos golpes (o Q e o E)
+	if e is InputEventJoypadButton and e.pressed and tela == "menu" and mundo != null and mundo.get("status") != null:
+		if e.button_index == JOY_BUTTON_Y:
+			mundo.status.alternar_detalhe()
+			return true
+		if e.button_index == JOY_BUTTON_LEFT_SHOULDER or e.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+			mundo.status.paginar(-1 if e.button_index == JOY_BUTTON_LEFT_SHOULDER else 1)
+			return true
 	if e is InputEventMouseMotion:
 		var i := _linha_sob_mouse()
 		if i >= 0 and i != sel:
@@ -356,6 +399,11 @@ func entrada(e: InputEvent) -> bool:
 	return true
 
 
+## A dica da pausa: só os botões do dispositivo em uso. Detalhes e páginas do SUA BUILD ficam na dica do próprio card (não cabem aqui: 424 px).
+func _itens_dica() -> Array:
+	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
+
+
 ## ESC (tecla) ou Start do controle: os dois pausam e, com o menu aberto, voltam como o ui_cancel (B).
 func _pede_menu(e: InputEvent) -> bool:
 	if e is InputEventKey:
@@ -383,8 +431,8 @@ func _acao_sel(passo: int, confirmar: bool) -> void:
 	if _itens_atuais.is_empty():
 		return
 	var id := str(_itens_atuais[sel].id)
-	if id == "":
-		return
+	if id == "" or bool(_itens_atuais[sel].get("bloqueado", false)):
+		return  # cabeçalho ou linha apagada (Avançado com o Detalhe dinâmico ligado): não faz nada
 	if _eh_stepper(id):
 		_executar(id, passo)
 	elif confirmar:
@@ -393,7 +441,7 @@ func _acao_sel(passo: int, confirmar: bool) -> void:
 
 
 func _eh_stepper(id: String) -> bool:
-	return id in STEPPERS or id == "g:perfil" or id.begins_with("g:op:")
+	return id in STEPPERS or id == "g:perfil" or id == "g:dinamico" or id.begins_with("g:op:")
 
 
 ## Índice (na lista inteira) da linha visível sob o mouse; -1 se não há linha ali (ou é cabeçalho).
@@ -412,7 +460,7 @@ func _linha_sob_mouse() -> int:
 func _mouse() -> Vector2:
 	if mouse_fn.is_valid():
 		return mouse_fn.call()
-	return get_viewport().get_mouse_position()
+	return get_viewport().get_mouse_position() - EscalaUi.desloc_atual  # santuário: a janela inteira é o canvas, e o bloco fica no centro dele
 
 
 # ------------------------------------------------------------------ ações
@@ -426,6 +474,8 @@ func _executar(id: String, passo: int) -> void:
 			_ir("ajustes")
 		"graficos":
 			_ir("graficos")
+		"g:avancado":
+			_ir("avancado", "graficos")
 		"audio":
 			_ir("audio")
 		"creditos":
@@ -502,6 +552,8 @@ func _itens() -> Array:
 			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"graficos":
 			return _graficos.itens()
+		"avancado":
+			return _graficos.itens_avancado()
 		"audio":
 			return [_it("musica", "Música", _pct(Config.v("musica"))), _it("efeitos", "Efeitos", _pct(Config.v("efeitos"))), _it("voltar", "Voltar")]
 		"confirmar_santuario":
@@ -521,6 +573,8 @@ func _titulo_tela() -> String:
 			return "AJUSTES"
 		"graficos":
 			return "GRÁFICOS"
+		"avancado":
+			return "AVANÇADO"
 		"audio":
 			return "ÁUDIO"
 		"creditos":
@@ -539,6 +593,8 @@ func _sub_tela() -> String:
 		return "Fecha o jogo de vez."
 	if tela == "graficos":
 		return _graficos.mensagem
+	if tela == "avancado":
+		return "CPU e GPU, uma opção por vez."
 	return ""
 
 
@@ -554,8 +610,8 @@ func _desenhar() -> void:
 	_topo = clampi(_topo, 0, maxi(n - VISIVEIS, 0))
 	_titulo.text = _titulo_tela()
 	_sub.text = _sub_tela()
-	_dica.text = DICA
 	_ajuda.text = _texto_ajuda()
+	_dica.call("atualizar")
 	for i in _linhas.size():
 		var l: Dictionary = _linhas[i]
 		var idx := _topo + i
@@ -570,8 +626,16 @@ func _desenhar() -> void:
 		l["rotulo"].text = str(it.rotulo)
 		l["valor"].text = str(it.get("valor", ""))
 		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
+		if bool(it.get("bloqueado", false)):
+			cor = Color(COR_OURO, 0.6) if on else Color(COR_TEXTO, 0.38)  # linha apagada: continua com foco (a ajuda diz por quê), mas não muda
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", cor)
+		var ico: TextureRect = l["icone"]
+		ico.visible = bool(it.get("icone", false)) and not cab
+		if ico.visible:
+			var fonte: Font = l["rotulo"].get_theme_font("font")
+			ico.position = Vector2(12.0 + fonte.get_string_size(str(it.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_BOTAO).x + 10.0, 10.0)
+			ico.modulate = cor
 	_card_build()
 
 
@@ -579,7 +643,7 @@ func _desenhar() -> void:
 func _texto_ajuda() -> String:
 	if tela == "audio":
 		return CREDITO_MUSICA
-	if (tela != "graficos" and tela != "creditos") or sel >= _itens_atuais.size():
+	if (tela != "graficos" and tela != "avancado" and tela != "creditos") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))
 

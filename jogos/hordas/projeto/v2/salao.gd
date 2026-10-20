@@ -6,14 +6,20 @@ extends Control
 ## CANVAS_ITEMS, como o santuário. O desenho da sala é um só (não se redesenha); por quadro, só se mexem o personagem e as chamas.
 
 const Visual := preload("res://v2/salao_visual.gd")
+const EstiloPremium := preload("res://v2/estilo_premium.gd")
 const Vivo := preload("res://v2/salao_vivo.gd")
 const Paleta := preload("res://v2/paleta.gd")
+const EscalaUi := preload("res://v2/escala_ui.gd")
+const UiJanela := preload("res://v2/ui_janela.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
+const Progressao := preload("res://v2/progressao.gd")  # travas das estruturas e portais (dados/v2_progressao.json)
 const Personagens := preload("res://v2/personagens.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle (Enter e A confirmam, ESC e B voltam)
 const Pausa := preload("res://v2/pausa.tscn")
 const Trilha := preload("res://v2/trilha.gd")
+const Icones := preload("res://v2/icones_santuario.gd")
+const Card := preload("res://v2/card_santuario.gd")
 const ESCOLHA := "res://v2/personagens.tscn"
 const FLORESTA := "res://v2/mundo.tscn"
 const SPRITE := "res://prototipos/cara_nova/sprites/hazaki_samurai"  # folha (_albedo.png) e quadro (.json) do herói; o personagem pode trocar (dados/v2_salao.json "sprite")
@@ -22,7 +28,8 @@ const ALT := 540
 const CHAO_Y := 180.0  # a parede vai do topo até aqui; os portais ficam na base dela
 const ANDAR_MIN := Vector2(40, 214)
 const ANDAR_MAX := Vector2(920, 505)
-const VELOCIDADE := 130.0  # px/s andando
+const VELOCIDADE := 208.0  # px/s andando (1,6x a da primeira sala: o santuário é passagem, não pede caminhada lenta)
+const PASSOS_POR_S := 13.0  # quadros da animação de andar por segundo (sobe com a velocidade, senão o pé desliza)
 const ALCANCE := 70.0  # px entre os pés do herói e a estrutura ou portal para ele responder
 const ESCALA := 2.0
 const COR_OURO := Paleta.OURO
@@ -35,7 +42,7 @@ const CORES_MAPA := {
 	"floresta": Color(0.3, 0.62, 0.36), "laboratorio": Color(0.3, 0.68, 0.78), "cidade": Color(0.85, 0.58, 0.3), "medio": Color(0.5, 0.55, 0.8)
 }
 const COR_TRAVADO := Color(0.22, 0.22, 0.25)
-const DICA := "Setas / analógico: andar   Enter / A: usar   Clique: explorar"
+const Glifos := preload("res://v2/glifos.gd")
 
 var _visual := Visual.new()
 var _p_rolagem: ScrollContainer
@@ -43,11 +50,11 @@ var _p_rolagem: ScrollContainer
 var ao_entrar := Callable()  # gancho dos testes: recebe o caminho da cena da partida; vazio = troca a cena
 var pausa
 var _trilha
-var _antes := {}  # modo de escala da janela antes desta tela (volta ao sair)
 var _estruturas: Array = []  # dados/v2_salao.json: id, nome, x, y e melhorias ou conquistas
 var _alvos: Array = []  # o que se usa na sala: estruturas e portais, {tipo, id, nome, acao, pos}
 var _cenario: Node2D  # o chão, a parede e o que não se mexe (desenhado uma vez)
 var _chamas: Node2D  # tochas e o brilho do altar (redesenhadas por quadro, são poucas)
+var _camadas: Array = []  # CanvasLayers da sala (fundo -3; cena -2 e brilho -1 do salao_vivo): o offset delas segue o bloco no centro do canvas
 var _heroi: Node2D
 var _sprite: Texture2D
 var _quadro_w := 32
@@ -61,6 +68,8 @@ var _destino := Vector2.INF  # clique numa estrutura ou portal: anda até ele e 
 var _alvo_destino := {}
 var _prompt: Label
 var _prompt_de := ""
+var _prompt_acao := ""
+var _prompt_glifo: Control
 var _saldo_lbl: Label
 var _aviso_lbl: Label
 var _aviso_t := 0.0
@@ -69,16 +78,14 @@ var _nome_lbl: Label
 var _painel: Control
 var _p_titulo: Label
 var _p_lista: VBoxContainer
+var _p_icone_estrutura: TextureRect
+var _p_icone: TextureRect
 var _p_nome: Label
-var _p_nivel: Label
-var _p_agora: Label
-var _p_proximo: Label
-var _p_custo: Label
+var _p_frase: Label  # subtítulo de uma linha: o que o item faz, em linguagem de gente
+var _p_card  # card_santuario.gd: as barrinhas (nível, efeito, custo; no códice, conquistas, meta e recompensa)
 var _p_saldo: Label
 var _p_aviso: Label
-var _p_detalhe: Label
 var _p_comprar: Button
-var _p_detalhes: Button
 var _p_itens: Array = []  # o que a estrutura aberta mostra (melhorias ou conquistas), na ordem da lista
 var _p_atual := 0  # índice do item selecionado em _p_itens
 var _p_codice := false
@@ -92,7 +99,6 @@ func _ready() -> void:
 		get_tree().change_scene_to_file.call_deferred(ESCOLHA)  # sem personagem não há santuário: escolhe ou cria um
 		return
 	_ajustar_janela()
-	set_anchors_preset(PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # a sala recebe o clique em _unhandled_input (andar até um alvo), não a tela inteira
 	_carregar_dados()
 	var folha := SPRITE
@@ -116,21 +122,8 @@ func _ready() -> void:
 	_atualizar_textos()
 
 
-func _exit_tree() -> void:
-	var w := get_window()
-	if w != null and _antes.has("modo"):
-		w.content_scale_mode = _antes.modo
-		w.content_scale_size = _antes.tam
-		w.content_scale_aspect = _antes.aspecto
-		w.content_scale_stretch = _antes.escala
-
-
 func _ajustar_janela() -> void:
-	var w := get_window()
-	_antes = {"modo": w.content_scale_mode, "tam": w.content_scale_size, "aspecto": w.content_scale_aspect, "escala": w.content_scale_stretch}
-	w.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-	w.content_scale_size = Vector2i(LARG, ALT)
-	w.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	add_child(UiJanela.new().montar(self, "grande"))  # a sala 960x540 é cena, não menu: fica sempre encaixada na janela (o tamanho da interface não a encolhe); só a borda extra de janelas fora de 16:9 é chão escuro
 
 
 # ------------------------------------------------------------------ dados e alvos
@@ -140,14 +133,15 @@ func _carregar_dados() -> void:
 	_estruturas = Dados.json("v2_salao").get("estruturas", [])
 	_alvos.clear()
 	# Apenas apresentação: agrupa estações nas laterais sem alterar regras ou limites.
+	# "trava": a linha curta do cadeado ("" = aberto), lida uma vez para o desenho; usar e o prompt conferem de novo no save.
 	for e in _estruturas:
-		_alvos.append(
-			{"tipo": "estrutura", "id": str(e.id), "nome": str(e.nome), "acao": str(e.nome), "pos": Visual.posicao(str(e.id), Vector2(float(e.x), float(e.y)))}
-		)
+		var pos := Visual.posicao(str(e.id), Vector2(float(e.x), float(e.y)))
+		var trava := Progressao.curto("estrutura", str(e.id))
+		_alvos.append({"tipo": "estrutura", "id": str(e.id), "nome": str(e.nome), "acao": str(e.nome), "pos": pos, "trava": trava})
 	for i in Mapas.LISTA.size():
 		var m: Dictionary = Mapas.LISTA[i]
 		var x: float = lerp(180.0, 780.0, float(i) / maxf(1.0, Mapas.LISTA.size() - 1.0))
-		_alvos.append({"tipo": "portal", "id": str(m.id), "nome": str(m.nome), "acao": str(m.entrar), "pos": Vector2(x, CHAO_Y + 8.0)})
+		_alvos.append({"tipo": "portal", "id": str(m.id), "nome": str(m.nome), "acao": str(m.entrar), "pos": Vector2(x, CHAO_Y + 8.0), "trava": Mapas.curto(m)})
 
 
 func _estrutura(id: String) -> Dictionary:
@@ -172,6 +166,18 @@ func _alvo_perto(ponto: Vector2, raio: float) -> Dictionary:
 
 
 func _montar_cenario() -> void:
+	# A sala é uma cena de 960x540 sempre encaixada na janela: numa janela fora de 16:9 o que sobra dos lados é o chão escuro dela. O chão fica
+	# numa camada ABAIXO da sala (-3): o salao_vivo desenha cenário, portais e herói nas camadas -2 e -1, e um fundo opaco na camada padrão
+	# tampava a sala inteira (o "santuário vazio" do #320).
+	var fundo := CanvasLayer.new()
+	fundo.layer = -3
+	add_child(fundo)
+	var borda := ColorRect.new()
+	borda.color = Color("#17191f")
+	borda.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	EscalaUi.cobrir(borda)
+	fundo.add_child(borda)
+	_camadas.append(fundo)
 	_cenario = Node2D.new()
 	_cenario.draw.connect(_pintar_cenario)
 	add_child(_cenario)
@@ -185,6 +191,16 @@ func _montar_cenario() -> void:
 	var vivo := Vivo.new()  # luz, partículas e movimento por cima da arte (v2/salao_vivo.gd)
 	add_child(vivo)
 	vivo.montar(self)
+	_camadas.append_array([vivo._cena, vivo._glow])
+	add_to_group("ui_escala")
+	ui_reencaixar(EscalaUi.canvas_atual, EscalaUi.desloc_atual)
+
+
+## Chamado pela UiJanela quando a janela ou a opção mudam: as camadas da sala acompanham o bloco (a Control do salão já fica nele).
+func ui_reencaixar(_canvas: Vector2, desloc: Vector2) -> void:
+	for c in _camadas:
+		if is_instance_valid(c):
+			c.offset = desloc
 
 
 func _pintar_cenario() -> void:
@@ -230,17 +246,21 @@ func _montar_hud() -> void:
 	_prompt = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(0, 0, 440, 26), HORIZONTAL_ALIGNMENT_CENTER)
 	_prompt.add_theme_stylebox_override("normal", _caixa(Paleta.PAINEL, Paleta.BORDA))
 	_prompt.visible = false
+	_prompt_glifo = Glifos.dica(func() -> Array: return [["confirmar", _prompt_acao]], HORIZONTAL_ALIGNMENT_CENTER, COR_FOCO)
+	_prompt_glifo.size = _prompt.size
+	_prompt.add_child(_prompt_glifo)
 	_aviso_lbl = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(40, 455, 880, 40), HORIZONTAL_ALIGNMENT_CENTER)
 	_aviso_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_aviso_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_aviso_lbl.add_theme_stylebox_override("normal", _caixa(Paleta.PAINEL, Paleta.BORDA))  # numa caixa: fica legível sobre os rótulos do chão
+	_aviso_lbl.visible = false
 	var faixa := ColorRect.new()
 	faixa.color = Paleta.alfa(Paleta.PAINEL, 0.88)
 	faixa.position = Vector2(0, 505)
 	faixa.size = Vector2(LARG, 35)
 	faixa.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(faixa)
-	for l in [
-		_nome_lbl, _saldo_lbl, _prompt, _aviso_lbl, _rotulo(DICA, Dados.fonte_texto, 16, COR_APAGADO, Rect2(20, 511, 650, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	]:
+	for l in [_nome_lbl, _saldo_lbl, _prompt, _aviso_lbl, _dica_salao()]:
 		add_child(l)
 	var ajustes := Button.new()
 	ajustes.text = "AJUSTES"
@@ -250,12 +270,24 @@ func _montar_hud() -> void:
 	ajustes.pressed.connect(func(): pausa.abrir_ajustes())
 	add_child(ajustes)
 	var voltar := Button.new()
-	voltar.text = "VOLTAR Esc/B"
+	voltar.text = "VOLTAR"
 	voltar.position = Vector2(810, 507)
 	voltar.size = Vector2(136, 30)
 	_estilo_botao(voltar, 16)
+	_glifo_no_botao(voltar, "voltar")  # depois do tamanho: o glifo usa a largura do botão
 	voltar.pressed.connect(func(): get_tree().change_scene_to_file.call_deferred(ESCOLHA))
 	add_child(voltar)
+
+
+func _dica_salao() -> Control:
+	var d := Glifos.dica(
+		func() -> Array: return [["andar", "Andar"], ["confirmar", "Usar"]] + ([] if Glifos.eh_controle() else [["", "Clique: explorar"]]),
+		HORIZONTAL_ALIGNMENT_LEFT,
+		COR_APAGADO
+	)
+	d.position = Vector2(20, 513)
+	d.size = Vector2(650, 22)
+	return d
 
 
 func _montar_painel() -> void:
@@ -265,22 +297,25 @@ func _montar_painel() -> void:
 	add_child(_painel)
 	var veu := ColorRect.new()
 	veu.color = Paleta.alfa(Paleta.PAINEL, 0.66)
-	veu.set_anchors_preset(PRESET_FULL_RECT)
+	EscalaUi.cobrir(veu)  # o véu cobre o canvas inteiro
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_painel.add_child(veu)
 	var cartao := Panel.new()
 	cartao.position = Vector2(36, 26)
 	cartao.size = Vector2(888, 488)
-	cartao.add_theme_stylebox_override("panel", _caixa(Paleta.CARTAO, Paleta.BORDA))
+	cartao.add_theme_stylebox_override("panel", EstiloPremium.painel())
 	cartao.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_painel.add_child(cartao)
-	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(60, 38, 660, 46), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_icone_estrutura = _caixa_icone(Rect2(56, 36, 48, 48))  # o ícone da estrutura (assets/v2/icones_santuario): 24 px a 2x
+	_painel.add_child(_p_icone_estrutura)
+	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(112, 38, 330, 46), HORIZONTAL_ALIGNMENT_LEFT)
 	_painel.add_child(_p_titulo)
 	var fechar := Button.new()
-	fechar.text = "VOLTAR Esc/B"
+	fechar.text = "VOLTAR"
 	fechar.position = Vector2(742, 42)
 	fechar.size = Vector2(158, 34)
 	_estilo_botao(fechar, 16)
+	_glifo_no_botao(fechar, "voltar")  # depois do tamanho: o glifo usa a largura do botão
 	fechar.pressed.connect(_fechar_painel)
 	_painel.add_child(fechar)
 	_p_rolagem = ScrollContainer.new()
@@ -293,35 +328,46 @@ func _montar_painel() -> void:
 	_p_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_p_lista.add_theme_constant_override("separation", 8)
 	_p_rolagem.add_child(_p_lista)
+	# Direita: ícone e título do item, uma frase amigável de uma linha e o card de barrinhas. Sem bloco de texto solto nem DETALHES.
 	var x := 410.0
-	_p_nome = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(x, 96, 486, 86), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_nivel = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(x, 185, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_agora = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(x, 215, 486, 54), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_proximo = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(x, 271, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_custo = _rotulo("", Dados.fonte_texto, 16, COR_ALMA, Rect2(x, 314, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_saldo = _rotulo("", Dados.fonte_texto, 16, COR_ALMA, Rect2(x, 340, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(x, 368, 486, 40), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_detalhe = _rotulo("", Dados.fonte_texto, 16, COR_APAGADO, Rect2(x, 410, 486, 42), HORIZONTAL_ALIGNMENT_LEFT)
-	_p_detalhe.visible = false
-	for l in [_p_nome, _p_nivel, _p_agora, _p_proximo, _p_custo, _p_saldo, _p_aviso, _p_detalhe]:
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_p_icone = _caixa_icone(Rect2(x, 95, 48, 48))  # 24 px a 2x, igual ao cabeçalho; centrado no título
+	_painel.add_child(_p_icone)
+	_p_nome = _rotulo("", Dados.fonte_titulo, Paleta.TITULO_MEDIO, COR_OURO, Rect2(x + 58, 96, 428, 46), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_nome.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_p_frase = _rotulo("", Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.TEXTO_SECUNDARIO, Rect2(x, 148, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_frase.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS  # uma linha só, sempre
+	_p_card = Card.new()
+	_p_card.position = Vector2(x, 178)
+	_p_card.size = Vector2(486, 244)
+	# O saldo fica no cabeçalho do próprio painel, ao lado do VOLTAR: o "ALMAS" da barra de cima da sala fica tapado com o painel aberto.
+	_p_saldo = _rotulo("", Dados.fonte_titulo, 37, COR_ALMA, Rect2(450, 38, 274, 46), HORIZONTAL_ALIGNMENT_RIGHT)
+	_p_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(x, 428, 486, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_aviso.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	for l in [_p_nome, _p_frase, _p_card, _p_saldo, _p_aviso]:
 		_painel.add_child(l)
 	_p_comprar = Button.new()
 	_p_comprar.text = "COMPRAR"
 	_p_comprar.position = Vector2(x, 460)
-	_p_comprar.size = Vector2(226, 38)
+	_p_comprar.size = Vector2(486, 38)
 	_estilo_botao(_p_comprar, 19)
+	# Desligado tem de parecer desligado: sem fundo, borda e texto bem apagados (o estilo padrão de desligado tinha fundo escuro e lia como ativo).
+	_p_comprar.add_theme_stylebox_override("disabled", _caixa(Color(0, 0, 0, 0), Paleta.alfa(Paleta.TEXTO_APAGADO, 0.3)))
+	_p_comprar.add_theme_color_override("font_disabled_color", Paleta.alfa(COR_APAGADO, 0.5))
 	_p_comprar.pressed.connect(_comprar_atual)
 	_painel.add_child(_p_comprar)
-	_p_detalhes = Button.new()
-	_p_detalhes.text = "DETALHES"
-	_p_detalhes.position = Vector2(x + 244, 460)
-	_p_detalhes.size = Vector2(242, 38)
-	_estilo_botao(_p_detalhes, 19)
-	_p_detalhes.pressed.connect(func(): _p_detalhe.visible = not _p_detalhe.visible)
-	_painel.add_child(_p_detalhes)
 	_painel.add_child(_rotulo("Selecione para consultar", Dados.fonte_texto, 16, COR_APAGADO, Rect2(60, 474, 322, 24), HORIZONTAL_ALIGNMENT_LEFT))
+
+
+func _caixa_icone(r: Rect2) -> TextureRect:
+	var t := TextureRect.new()
+	t.position = r.position
+	t.size = r.size
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	t.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # pixel art: sem borrão
+	t.material = Card.sem_luz()
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return t
 
 
 func _rotulo(txt: String, fonte: Font, tam: int, cor: Color, r: Rect2, alin: HorizontalAlignment) -> Label:
@@ -346,12 +392,21 @@ func _estilo_botao(b: Button, tam: int) -> void:
 	b.add_theme_color_override("font_hover_color", COR_FOCO)
 	b.add_theme_color_override("font_focus_color", COR_FOCO)
 	b.add_theme_color_override("font_disabled_color", COR_APAGADO)
-	b.add_theme_stylebox_override("normal", _caixa(Paleta.CARTAO, Paleta.BORDA))
-	b.add_theme_stylebox_override("hover", _caixa(Paleta.CARTAO_SELECIONADO, Paleta.OURO))
-	b.add_theme_stylebox_override("focus", _caixa(Color(0, 0, 0, 0), Paleta.OURO))
-	b.add_theme_stylebox_override("pressed", _caixa(Paleta.PAINEL, Paleta.OURO))
+	EstiloPremium.estilo_botao(b, 10.0)  # painel escuro com filete dourado; foco e mouse acendem a faixa dourada
 	b.add_theme_stylebox_override("disabled", _caixa(Paleta.PAINEL, Paleta.TEXTO_APAGADO))
-	b.mouse_entered.connect(b.grab_focus)
+	b.mouse_entered.connect(_focar_sob_mouse.bind(b))
+
+
+## O glifo da ação (Esc no teclado, B no Xbox, bola no PlayStation) no canto direito do botão, trocado na hora pelo dispositivo.
+func _glifo_no_botao(b: Button, acao: String) -> void:
+	var g := Glifos.glifo(acao, HORIZONTAL_ALIGNMENT_RIGHT)
+	g.size = Vector2(b.size.x - 8.0, b.size.y)
+	b.add_child(g)
+
+
+func _focar_sob_mouse(b: Button) -> void:
+	if b.focus_mode != Control.FOCUS_NONE:  # o COMPRAR desligado não pega foco
+		b.grab_focus()
 
 
 func _caixa(fundo: Color, borda: Color) -> StyleBoxFlat:
@@ -376,6 +431,7 @@ func _process(dt: float) -> void:
 		_aviso_t -= dt
 		if _aviso_t <= 0.0:
 			_aviso_lbl.text = ""
+			_aviso_lbl.visible = false
 	if _painel.visible or pausa.aberto:
 		return
 	var anda := Input.get_vector("esquerda", "direita", "cima", "baixo")
@@ -394,7 +450,7 @@ func _process(dt: float) -> void:
 		_pos = (_pos + anda.limit_length(1.0) * VELOCIDADE * dt).clamp(ANDAR_MIN, ANDAR_MAX)
 		_dir = _linha_de(anda)
 		_tempo_passo += dt
-		_quadro = 1 + int(_tempo_passo * 8.0) % 4
+		_quadro = 1 + int(_tempo_passo * PASSOS_POR_S) % 4
 	else:
 		_tempo_passo = 0.0
 		_quadro = 0
@@ -417,7 +473,11 @@ func _atualizar_prompt() -> void:
 		return
 	if _prompt_de != str(perto.id):
 		_prompt_de = str(perto.id)
-		_prompt.text = "Enter ou A: %s" % perto.acao
+		var trava := str(perto.get("trava", ""))
+		_prompt.text = "Trancado: %s" % trava if trava != "" else ""
+		_prompt_glifo.visible = trava == ""
+		_prompt_acao = str(perto.acao)
+		_prompt_glifo.call("atualizar")
 	_prompt.position = Vector2(clampf(perto.pos.x - 220.0, 12.0, LARG - 452.0), clampf(perto.pos.y - 132.0, 62.0, 467.0))
 
 
@@ -438,7 +498,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		get_tree().change_scene_to_file.call_deferred(ESCOLHA)
 		get_viewport().set_input_as_handled()
 	elif e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-		var clicado := _alvo_perto(e.position, 56.0)
+		var clicado := _alvo_perto(e.position - EscalaUi.desloc_atual, 56.0)  # a sala fica no bloco, no centro do canvas
 		if not clicado.is_empty():
 			_destino = clicado.pos
 			_alvo_destino = clicado
@@ -473,6 +533,10 @@ func usar_portal(id: String) -> bool:
 
 func _avisar(txt: String) -> void:
 	_aviso_lbl.text = txt
+	var w := minf(880.0, Dados.fonte_texto.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 32.0)  # a caixa abraça o texto
+	_aviso_lbl.size = Vector2(w, 40)
+	_aviso_lbl.position = Vector2(roundf((LARG - w) / 2.0), 455)
+	_aviso_lbl.visible = true
 	_aviso_t = 3.0
 	_p_aviso.text = txt
 
@@ -481,16 +545,21 @@ func _avisar(txt: String) -> void:
 
 
 ## Abre o painel de uma estrutura: as melhorias dela (com comprar), ou as conquistas no códice (só leitura).
+## Trancada (dados/v2_progressao.json), só mostra o aviso com o que falta.
 func abrir_estrutura(id: String) -> void:
 	var e := _estrutura(id)
 	if e.is_empty():
 		return
+	var trava := Progressao.aviso("estrutura", id)
+	if trava != "":
+		_avisar("%s trancado. %s" % [str(e.nome).capitalize(), trava])
+		return
 	_p_codice = bool(e.get("conquistas", false))
 	_p_titulo.text = str(e.nome)
+	_p_icone_estrutura.texture = Icones.textura(id)
 	_p_itens = _itens_da(e)
 	_montar_lista()
 	_p_atual = 0
-	_p_detalhe.visible = false
 	_p_aviso.text = ""
 	_painel.visible = true
 	_mostrar_item(0)
@@ -514,16 +583,17 @@ func _montar_lista() -> void:
 	for filho in _p_lista.get_children():
 		filho.queue_free()
 		_p_lista.remove_child(filho)
-	var cumpridas: Dictionary = Meta.estado().conquistas
 	for i in _p_itens.size():
 		var it: Dictionary = _p_itens[i]
 		var b := Button.new()
-		b.text = (
-			("%s\n%s" % [it.nome, "cumprida" if cumpridas.get(str(it.id), false) else "falta"])
-			if _p_codice
-			else ("%s\n%d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)])
-		)
+		b.text = _texto_da_lista(it)
+		b.icon = Icones.textura(str(it.id))
+		b.add_theme_constant_override("icon_max_width", 32)
+		b.add_theme_constant_override("h_separation", 10)
+		b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		b.material = Card.sem_luz()  # o ícone na cor da paleta, sem a luz da sala por cima
 		b.custom_minimum_size = Vector2(300, 64)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT  # texto encostado no ícone, não solto no meio do botão
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.clip_text = false
@@ -533,14 +603,28 @@ func _montar_lista() -> void:
 		_p_lista.add_child(b)
 
 
+func _texto_da_lista(it: Dictionary) -> String:
+	if _p_codice:
+		return "%s\n%s" % [it.nome, "cumprida" if Meta.estado().conquistas.get(str(it.id), false) else "falta"]
+	var nivel := Meta.nivel(str(it.id))
+	if nivel < int(it.max) and not _liberada(it):  # trancada: a lista já diz o que abre (não some, não precisa abrir o item)
+		return "%s\n%d/%d - %s" % [it.nome, nivel, int(it.max), _nome_conquista(str(it.requer))]
+	return "%s\n%d/%d" % [it.nome, nivel, int(it.max)]
+
+
 func _mostrar_item(i: int) -> void:
 	if _p_itens.is_empty():
 		return
 	_p_atual = i
 	var it: Dictionary = _p_itens[i]
-	_p_saldo.text = "Suas almas: %d" % Meta.saldo()
+	_p_saldo.text = "ALMAS %d" % Meta.saldo()
 	_p_comprar.visible = not _p_codice
-	_p_custo.visible = not _p_codice
+	_p_icone.texture = Icones.textura(str(it.id))
+	_p_nome.text = str(it.nome)
+	# Nome comprido não quebra em duas linhas: desce para o tamanho de texto grande (o card de baixo não se mexe).
+	var fonte: Font = _p_nome.get_theme_font("font")
+	var cabe := fonte.get_string_size(_p_nome.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Paleta.TITULO_MEDIO).x <= _p_nome.size.x
+	_p_nome.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO if cabe else Paleta.TEXTO_GRANDE)
 	if _p_codice:
 		_mostrar_conquista(it)
 	else:
@@ -551,30 +635,134 @@ func _mostrar_melhoria(m: Dictionary) -> void:
 	var id := str(m.id)
 	var n := Meta.nivel(id)
 	var mx := int(m.max)
-	_p_nome.text = str(m.nome)
-	_p_nivel.text = "Nível %d de %d" % [n, mx]
-	_p_agora.text = "Agora: %s" % (Meta.texto_efeito(m, n) if n > 0 else "sem efeito ainda")
-	_p_proximo.text = "Nível máximo" if n >= mx else Meta.texto_proximo(m, n)
+	var saldo := Meta.saldo()
+	var liberada := _liberada(m)
 	var custo := Meta.custo_do_nivel(m, n) if n < mx else 0
-	_p_custo.text = "Custo: %d almas" % custo if n < mx else ""
-	_p_detalhe.text = "No nível máximo: %s." % Meta.texto_efeito(m, mx)
-	_p_comprar.disabled = n >= mx or not _liberada(m) or Meta.saldo() < custo
-	if not _liberada(m):
-		_p_aviso.text = "Falta a conquista: %s" % _nome_conquista(str(m.requer))
-	elif n < mx and Meta.saldo() < custo:
-		_p_aviso.text = "Faltam %d almas." % (custo - Meta.saldo())
+	_p_frase.text = str(m.get("frase", Meta.texto_efeito(m, mx)))
+	var linhas := [
+		{"rotulo": "NÍVEL", "valor": "%d / %d" % [n, mx], "tipo": "segmentos", "n": n, "max": mx, "cor": Paleta.OURO, "nota": ""},
+		{
+			"rotulo": "EFEITO",
+			"valor": _valor_efeito(m, n),
+			"cor_valor": Paleta.FOCO if n < mx else Paleta.OURO,
+			"tipo": "barra",
+			"frac": float(n) / maxf(1.0, mx),
+			"fantasma": float(mini(n + 1, mx)) / maxf(1.0, mx),
+			"cor": Paleta.BONUS,
+			"nota": Meta.texto_efeito(m, n) if n > 0 else "Ainda sem efeito: compre o primeiro nível.",
+		},
+	]
+	if n >= mx:
+		linhas.append(
+			{"rotulo": "CUSTO", "valor": "COMPLETO", "cor_valor": Paleta.OURO, "tipo": "barra", "frac": 1.0, "cor": Paleta.OURO, "nota": "Tudo comprado aqui."}
+		)
+	elif not liberada:
+		var req := str(m.requer)
+		(
+			linhas
+			. append(
+				{
+					"rotulo": "BLOQUEADA",
+					"valor": "%d almas" % custo,
+					"cor_valor": COR_APAGADO,
+					"tipo": "barra",
+					"frac": 0.0,
+					"cor": COR_APAGADO,
+					"nota": "Falta a conquista: %s" % _nome_conquista(req),
+					"cor_nota": COR_AVISO,
+					"icone": Icones.textura(req),
+				}
+			)
+		)
 	else:
-		_p_aviso.text = ""
+		var falta := custo - saldo
+		(
+			linhas
+			. append(
+				{
+					"rotulo": "CUSTO",
+					"valor": "%d almas" % custo,
+					"cor_valor": COR_ALMA,
+					"tipo": "barra",
+					"frac": float(saldo) / maxf(1.0, custo),
+					"cor": COR_ALMA,
+					"nota": "Você tem %d. Faltam %d." % [saldo, falta] if falta > 0 else "Você tem %d. Dá para comprar!" % saldo,
+					"cor_nota": Paleta.TEXTO_SECUNDARIO if falta > 0 else Paleta.BONUS,
+				}
+			)
+		)
+	_p_card.mostrar(linhas)
+	_p_comprar.disabled = n >= mx or not liberada or saldo < custo
+	_p_comprar.text = "NO MÁXIMO" if n >= mx else ("BLOQUEADA" if not liberada else ("SEM ALMAS" if saldo < custo else "COMPRAR"))
+	_p_comprar.focus_mode = Control.FOCUS_NONE if _p_comprar.disabled else Control.FOCUS_ALL  # o foco dourado por cima fazia o desligado parecer clicável
+	if _p_comprar.disabled and _p_comprar.has_focus() and _p_atual < _p_lista.get_child_count():
+		_p_lista.get_child(_p_atual).grab_focus()
+
+
+## "+20 → +30": o valor de agora e o do próximo nível (só o de agora no máximo). Unidade "%" nos percentuais.
+func _valor_efeito(m: Dictionary, n: int) -> String:
+	var partes := str(m.desc).split("{v}")
+	var antes := partes[0]
+	var unidade := (partes[1] if partes.size() > 1 else "").split(" ")[0]
+	var agora := "%s%s%s" % [antes, Meta._numero(m, float(m.valor) * n), unidade]
+	if n >= int(m.max):
+		return agora
+	var seta := " → " if Dados.fonte_texto.has_char(0x2192) else " > "
+	return agora + seta + "%s%s%s" % [antes, Meta._numero(m, float(m.valor) * (n + 1)), unidade]
+
+
+## O que a conquista pede, curto, para o card do códice.
+func _meta_da_conquista(c: Dictionary) -> String:
+	match str(c.get("condicao", "")):
+		"tempo":
+			return "Sobreviver %d min numa partida" % roundi(float(c.get("limite", 0)) / 60.0)
+		"combo":
+			return "Fazer um combo de %d" % int(c.get("limite", 0))
+		"venceu":
+			return "Vencer o duelo contra o chefe"
+	return ""
 
 
 func _mostrar_conquista(c: Dictionary) -> void:
-	var feita := bool(Meta.estado().conquistas.get(str(c.id), false))
-	_p_nome.text = str(c.nome)
-	_p_nivel.text = "Cumprida" if feita else "Ainda não cumprida"
-	_p_agora.text = str(c.desc)
+	var cumpridas: Dictionary = Meta.estado().conquistas
+	var feita := bool(cumpridas.get(str(c.id), false))
+	var feitas := 0
+	for k in cumpridas:
+		if cumpridas[k]:
+			feitas += 1
+	_p_frase.text = str(c.get("frase", c.desc))
 	var item := Meta.item_da_recompensa(c.recompensa)
-	_p_proximo.text = "Libera: %s" % str(item.nome) if not item.is_empty() else ""
-	_p_detalhe.text = ""
+	var linhas := [
+		{
+			"rotulo": "CÓDICE",
+			"valor": "%d / %d" % [feitas, cumpridas.size()],
+			"tipo": "segmentos",
+			"n": feitas,
+			"max": cumpridas.size(),
+			"cor": Paleta.OURO,
+			"nota": "",
+		},
+		{
+			"rotulo": "META",
+			"valor": "CUMPRIDA" if feita else "FALTA",
+			"cor_valor": Paleta.BONUS if feita else COR_APAGADO,
+			"tipo": "barra",
+			"frac": 1.0 if feita else 0.0,
+			"cor": Paleta.BONUS,
+			"nota": _meta_da_conquista(c),
+			"cor_nota": COR_TEXTO,
+		},
+		{
+			"rotulo": "RECOMPENSA",
+			"valor": "LIBERADA" if feita else "TRANCADA",
+			"cor_valor": Paleta.BONUS if feita else COR_APAGADO,
+			"tipo": "",
+			"nota": str(item.nome) if not item.is_empty() else "",
+			"cor_nota": COR_OURO if feita else COR_TEXTO,
+			"icone": Icones.textura(str(c.recompensa.get("id", ""))),
+		},
+	]
+	_p_card.mostrar(linhas)
 	_p_aviso.text = ""
 
 
@@ -623,15 +811,13 @@ func _motivo_recusa(m: Dictionary) -> String:
 
 func _montar_lista_niveis() -> void:
 	for i in _p_lista.get_child_count():
-		var it: Dictionary = _p_itens[i]
 		var b: Button = _p_lista.get_child(i)
-		b.text = "%s\n%d/%d" % [it.nome, Meta.nivel(str(it.id)), int(it.max)]
+		b.text = _texto_da_lista(_p_itens[i])
 
 
 func _fechar_painel() -> void:
 	_painel.visible = false
 	_p_aviso.text = ""
-	_p_detalhe.visible = false
 
 
 ## Quando os Ajustes fecham (abertos da sala), o foco volta ao painel, se ele estiver aberto.

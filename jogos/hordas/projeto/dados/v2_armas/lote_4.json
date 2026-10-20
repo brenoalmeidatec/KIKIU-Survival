@@ -16,8 +16,8 @@
       {"texto": "+8 de dano e mais rápido", "dano": 8, "recarga": -0.5}
     ],
     "arte": {
-      "visual": "Um meteoro de fogo com cauda laranja desce do alto da tela, na referência de 960x540. Antes de cair, aparece no chão um círculo laranja-avermelhado que pisca.",
-      "cores": ["laranja", "vermelho", "amarelo"],
+      "visual": "Um meteoro de fogo com cauda laranja desce do alto da tela, na referência de 960x540. Antes de cair, aparece no chão um círculo laranja-âmbar que pisca.",
+      "cores": ["laranja", "âmbar", "amarelo"],
       "tamanho": "meteoro de 28 px com cauda; círculo de aviso do tamanho do raio",
       "duracao": "queda de 0,4 s; impacto de 0,3 s",
       "provisorio": "Um círculo laranja piscando no chão e um quadrado pequeno caindo com rastro de 2 px."
@@ -127,7 +127,7 @@
     "tipo": "meteoro",
     "max": 5,
     "peso": 1.1,
-    "cor": [0.95, 0.2, 0.25],
+    "cor": [1.0, 0.86, 0.42],
     "base": {"dano": 16, "recarga": 2.8, "quantidade": 2, "alcance": 230, "raio": 45, "aviso": 1.0},
     "niveis": [
       {"texto": "+5 de dano", "dano": 5},
@@ -136,11 +136,11 @@
       {"texto": "+6 de dano e mais rápido", "dano": 6, "recarga": -0.4}
     ],
     "arte": {
-      "visual": "Colunas de fogo vermelho e amarelo descem do alto da tela e batem no chão em pontos perto do herói, com um círculo vermelho piscando antes.",
-      "cores": ["vermelho", "amarelo", "laranja"],
+      "visual": "Colunas de fogo dourado e amarelo descem do alto da tela e batem no chão em pontos perto do herói, com um círculo dourado piscando antes.",
+      "cores": ["dourado", "amarelo", "laranja"],
       "tamanho": "coluna de 24x80 px; círculo de aviso do tamanho do raio",
       "duracao": "queda de 0,3 s; chama de 0,4 s no impacto",
-      "provisorio": "Um retângulo vermelho e amarelo caindo do alto e um círculo vermelho piscando no chão."
+      "provisorio": "Um retângulo dourado e amarelo caindo do alto e um círculo dourado piscando no chão."
     }
   },
   {
@@ -151,7 +151,7 @@
     "tipo": "meteoro",
     "max": 5,
     "peso": 0.9,
-    "cor": [0.6, 0.2, 0.1],
+    "cor": [0.95, 0.7, 0.3],
     "base": {"dano": 5, "recarga": 1.6, "quantidade": 4, "alcance": 120, "raio": 25, "aviso": 0.7},
     "niveis": [
       {"texto": "+2 de dano", "dano": 2},
@@ -160,11 +160,11 @@
       {"texto": "+1 pedra e recarga menor", "quantidade": 1, "recarga": -0.3}
     ],
     "arte": {
-      "visual": "Pedras escuras com brilho laranja caem em volta do herói, bem perto, cada uma com um círculo de aviso vermelho-escuro no chão.",
-      "cores": ["marrom escuro", "laranja", "vermelho escuro"],
+      "visual": "Pedras escuras com brilho laranja caem em volta do herói, bem perto, cada uma com um círculo de aviso dourado-escuro no chão.",
+      "cores": ["marrom escuro", "laranja", "dourado escuro"],
       "tamanho": "pedra de 10x10 px; impacto de 25 px de raio",
       "duracao": "queda de 0,25 s; brilho de 0,2 s no impacto",
-      "provisorio": "Um quadrado marrom escuro com ponto laranja caindo e um círculo vermelho-escuro no chão."
+      "provisorio": "Um quadrado marrom escuro com ponto laranja caindo e um círculo dourado-escuro no chão."
     }
   },
   {
