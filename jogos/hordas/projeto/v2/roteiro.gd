@@ -1134,7 +1134,9 @@ func _playtest(dt: float) -> void:
 		"escolha":
 			h.entrada_forcada = Vector2.ZERO
 			h.ataque_forcado = false
-			if pt.trava_forcada != "cartas" and pt.estado_q >= 20 and not c.progresso.cartas.is_empty():
+			if pt.trava_forcada == "cartas":
+				c.telas.limite_t = 1.0e9  # a prova do vigia precisa da tela aberta: o limite de 8 s das cartas escolheria sozinho
+			elif pt.estado_q >= 20 and not c.progresso.cartas.is_empty():
 				_pt_escolher_carta()
 		"bau":
 			h.entrada_forcada = Vector2.ZERO

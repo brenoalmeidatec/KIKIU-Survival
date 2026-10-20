@@ -425,13 +425,21 @@ func efeitos(dt: float) -> void:
 
 
 ## Os números do golpe da katana COMO O JOGO OS USA (golpe_comecou e golpear leem daqui; o card de status, status.gd, também).
-## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance e arco com a área.
+## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance com a área e o nível; arco só com a área.
 func dano_do_passo(passo: Dictionary) -> float:
 	return float(passo.dano) * mundo.heroi.m_dano
 
 
-func alcance_do_passo(passo: Dictionary) -> float:
-	return float(passo.alcance) * mundo.heroi.m_area
+## Quanto o alcance do golpe do herói `h` cresce com o nível dele (fração do alcance do dado): dados > v2_combate.json > golpe.raio_por_nivel.
+func bonus_nivel_golpe(h) -> float:
+	return Progresso.bonus_por_nivel(int(h.nivel), cfg.golpe.raio_por_nivel)
+
+
+## O alcance do passo do herói `h` (o que golpeia; sem `h`, o herói do mundo): o do dado vezes a área dele (cartas, h.m_area) MAIS o crescimento por
+## nível (bonus_nivel_golpe), que se soma à área sem entrar nela. O acerto (golpear) e o desenho (fx.corte, em golpe_comecou) leem daqui, então batem.
+func alcance_do_passo(passo: Dictionary, h = null) -> float:
+	var quem = h if h != null else mundo.heroi
+	return float(passo.alcance) * (quem.m_area + bonus_nivel_golpe(quem))
 
 
 ## O arco com a área do herói, até 360 graus: a pancada do Nicão é em volta toda, e sem o teto 360 com a área vira 396 e o cosseno do acerto inverte.
@@ -494,7 +502,7 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	if str(passo.get("tipo", "melee")) == "adagas" or passo.nome == "pancada":  # sem corte desenhado: as adagas e o chão aparecem no acerto
 		audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
 		return
-	var alc: float = alcance_do_passo(passo)
+	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
 	fx.corte(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, arco, float(passo.lado), str(passo.nome), cor, vis)
@@ -504,9 +512,9 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 ## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
 func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
 	if str(passo.get("tipo", "melee")) == "adagas":  # o Lucas: as adagas saem (v2/adagas.gd) e acertam por conta própria
-		adagas.lancar(h, origem, dir, passo)
+		adagas.lancar(h, origem, dir, passo, true)  # true: o alcance das adagas do golpe cresce com o nível (as do especial Q, não)
 		return 0
-	var alc: float = alcance_do_passo(passo)
+	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
 	var pancada: bool = passo.nome == "pancada"  # o Nicão no chão: em volta, empurrão para fora
 	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nicão: empurra e atordoa mais
