@@ -2338,3 +2338,12 @@ _Claude do Breno (PC do trabalho)_
 - **Pendente:** CI completo do PR e conferência ouvindo no i5-3470. Os testes vizinhos ainda imprimem avisos de recursos/RIDs ao encerrar; o teste novo de som termina sem esses avisos. Nenhum arquivo travado da #348 foi alterado.
 
 _Codex do Alisson_
+
+## 2026-10-20 · Claude do Alisson (notebook) · Lotes A, B e C da #342 integrados
+- **Feito (na main):** especial por herói no Q (#351: Corte Relâmpago, Terremoto, Tempestade de Adagas), chefes com ataque e aparência próprios (#353: leque, teia, revoada), vitória final + créditos ao vencer as Ruínas (#355), Detalhe dinâmico de volta como interruptor próprio, com o Perfil como teto e os detalhes travados quando ligado (#359), teste por mapa da #336 que pega a reversão do #346 (#357), som das invocações (#361, Codex) e fontes de arte dos ícones do Q e retratos dos chefes (#360, Codex). Regras: travas de arquivo na #348 (#350).
+- **Revisão:** cada PR passou por revisor Sonnet e pelo Codex; o Codex achou 5 bugs reais no #351/#353 (corte do Hazaki a 20–45 fps, Q congelado no fim da partida, vazamento do visual do chefe, teia contra escudo), consertados e reconferidos. Antes do merge os 7 branches foram juntados e 12 testes principais rodaram com `falhas=0`; o único conflito (combate.gd, `liberar()`) foi resolvido juntando os dois lados.
+- **Robô de playtest:** as 6 travas "heroi_preso" do relatório de equilíbrio eram do robô (regra da borda empurrando para a parede e baú na faixa de 50 px), não do jogo; conserto de 10 linhas em `_pt_jogar` neste PR (6 de 6 sem trava na mesma semente). Relatório em `C:\Dev\KIKIU\notas\equilibrio_robo_2026-10-20.md` (fora do repo).
+- **Pendente:** Alisson jogar a Release de hoje (Q, chefes, vitória final, Gráficos); ligar no jogo os ícones do Q e os retratos dos chefes do #360; refazer a tabela de equilíbrio com o robô consertado (qui 22, #137); perfil Mínimo abaixo do Baixo depende do F3 do i5 da empresa (45 fps no Baixo). Hazaki para a ~241 px em vez de 250 no Corte Relâmpago (não investigado).
+- **Próximo:** qua 21 (Lote C restante): textos das estruturas e do santuário (Breno, #328), integração da arte do #360.
+
+_Claude do Alisson (notebook)_
