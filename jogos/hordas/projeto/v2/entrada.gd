@@ -4,7 +4,8 @@ extends RefCounted
 ## jogador trocou em Opções > Controles continuam valendo. Andar = ações esquerda, direita, cima e baixo (WASD, setas e analógico esquerdo);
 ## mirar com o controle = mira_* (analógico direito); golpe principal = atacar (botão esquerdo do mouse e gatilho direito); esquiva = Espaço e botão B; correr = Shift e L3 (analógico apertado);
 ## secundário = escudo (v2/escudo.gd, por herói em dados/v2_secundario.json): botão direito do mouse e gatilho esquerdo do controle (segurar ergue);
-## habilidade = ruptura (v2/ruptura.gd): tecla E e LB do controle (segurar carrega, soltar dispara); ultimate = Q e RB (reservado, sem efeito).
+## habilidade = ruptura (v2/ruptura.gd): tecla E e LB do controle (segurar carrega, soltar dispara); especial = ação ultimate (v2/especial.gd, por herói em
+## dados/v2_especial.json): tecla Q e RB do controle (apertar dispara).
 
 const Glifos := preload("res://v2/glifos.gd")
 
@@ -94,8 +95,7 @@ static func garantir() -> void:
 		lt.axis = JOY_AXIS_TRIGGER_LEFT
 		lt.axis_value = 1.0
 		InputMap.action_add_event("escudo", lt)
-	# ULTIMATE (Q / RB): RESERVADO. Só a ação existe; nada a lê ainda (o slot vazio do HUD é só aviso). Quando a mecânica chegar, o herói
-	# passa a ler `ultimate` como lê `ruptura`.
+	# ESPECIAL (Q / RB): a ação se chama `ultimate`; o herói (heroi.gd, entrada_evento) dispara o especial dele (v2/especial.gd) ao apertar.
 	if not InputMap.has_action("ultimate"):
 		InputMap.add_action("ultimate", 0.4)
 		var q := InputEventKey.new()

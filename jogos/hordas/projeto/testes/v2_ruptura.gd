@@ -163,7 +163,7 @@ func _ready() -> void:
 		ok(not (e is InputEventMouseButton), "ruptura: nenhum botão do mouse (o direito é do escudo)")
 	ok(tem_direito, "ruptura: tecla E")
 	ok(tem_gatilho, "ruptura: LB do controle")
-	ok(InputMap.has_action("ultimate") and InputMap.has_action("escudo"), "as ações escudo e ultimate (reservada) existem")
+	ok(InputMap.has_action("ultimate") and InputMap.has_action("escudo"), "as ações escudo e ultimate (o especial) existem")
 	var atacar_esquerdo := false
 	for e in InputMap.action_get_events("atacar"):
 		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
