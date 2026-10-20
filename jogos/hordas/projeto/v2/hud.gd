@@ -49,12 +49,13 @@ const NIVEL_RECT := Rect2(284.0, 38.0, 140.0, 36.0)  # linha 2 da grade do topo:
 const HudNivel := preload("res://v2/hud_nivel.gd")
 ## Comprimento das barras de vida e de fôlego, o mesmo para as duas. No máximo de partida do herói escolhido (cfg do combate) a barra mede BARRA_BASE_PX;
 ## cada ponto de vida máxima acima da base soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO; vale a meta maior das duas. O teto
-## (BARRA_TETO_PX) segura a moldura antes do círculo do Q (x 448). Ver _barras.
-const BARRA_BASE_PX := 142.0
-const BARRA_PX_VIDA := 1.2
-const BARRA_PX_FOLEGO := 47.0
-const BARRA_TETO_PX := 320.0  # a moldura (320 + 8) começa em x 74 e acaba em 402, antes do círculo do Q
-const BARRA_MIN_PX := 64.0  # cabe "999/999" em Press Start 2P de 8 px (56 px)
+## (BARRA_TETO_PX) segura a moldura antes do selo de nível e do Q (x 432). Ver _barras.
+const BARRA_BASE_PX := 208.0
+const BARRA_PX_VIDA := 0.5
+const BARRA_PX_FOLEGO := 18.0
+const BARRA_TETO_PX := 244.0  # a moldura (244 + 8) começa em x 104 e acaba em 356, antes do selo de nível (x 362) que fica na altura delas
+const BARRA_MIN_PX := 110.0  # cabe "999/999" na Atkinson de 24 px (uns 100 px)
+const ESCALA_RETRATO := 1.5  # o quadro do herói é desenhado 1,5x (pixel art parado, nearest)
 const BARRA_FOLGA := 4.0  # a moldura de pedra fica 4 px fora de cada lado da barra de vida
 const BARRA_VELOC := 7.0  # quão rápido a barra desliza até o comprimento novo (suavização exponencial, por segundo)
 const BASE_VIDA := 100.0  # sem combate (mundo falso dos testes)
@@ -239,7 +240,7 @@ func _retrato_do_heroi() -> void:
 	recorte.region = Rect2(Vector2.ZERO, quadro)
 	_heroi_img.texture = recorte
 	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_heroi_img.size = quadro
+	_heroi_img.size = quadro * ESCALA_RETRATO
 
 
 func _exit_tree() -> void:

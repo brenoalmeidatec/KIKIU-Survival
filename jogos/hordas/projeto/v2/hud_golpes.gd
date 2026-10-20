@@ -23,11 +23,12 @@ const ICONE := 24  # lado do ícone desenhado (a arte da carta tem 32 e é reduz
 const CAIXA := 26  # lado da caixa do ícone: moldura de 1 px em volta
 const ALTURA := 32  # caixa (26) + pips (3) + folgas
 const ESPACO := 3
-const POR_LINHA := 8  # 8 por linha: a faixa acaba em x 235, antes do selo de nível (x 262)
+const POR_LINHA := 8  # 8 por linha: a faixa (1,5x na tela) acaba em x 354, antes do Q (x 432)
 const LINHAS_MAX := 3  # 24 golpes; passou disso, o excedente vira um "+N"
 const CAPACIDADE := POR_LINHA * LINHAS_MAX
 const MARGEM := 6.0  # folga até a borda esquerda do pai
-const MARGEM_BAIXO := 82.0  # até a borda de baixo: 6 de folga, 72 do retrato e 4 de respiro (a faixa fica acima do bloco do herói)
+const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó é escalado (`scale`); o desenho e `size` ficam no espaço de 26x32 por golpe
+const MARGEM_BAIXO := 118.0  # até a borda de baixo (na tela): 6 de folga, 108 do retrato e 4 de respiro (a faixa fica acima do bloco do herói)
 const LEITURA_S := 0.05  # lê o combate a 20 Hz
 const ANIM_S := 0.5  # duração do pop/pulso
 const DESTAQUE_S := 1.5  # quanto tempo a faixa fica opaca depois de uma mudança
@@ -64,8 +65,9 @@ func _ready() -> void:
 	anchor_bottom = 1.0
 	offset_left = MARGEM
 	offset_right = MARGEM + tam.x
-	offset_top = -MARGEM_BAIXO - tam.y
-	offset_bottom = -MARGEM_BAIXO
+	scale = Vector2(ESCALA, ESCALA)
+	offset_top = -MARGEM_BAIXO - tam.y * ESCALA  # o nó mede tam.y e aparece com tam.y * ESCALA: a base dele fica em -MARGEM_BAIXO
+	offset_bottom = offset_top + tam.y
 	light_mask = 0
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # o ícone de 32 px é reduzido a 24: com nearest sairia serrilhado
@@ -127,7 +129,7 @@ func area_ocupada() -> Rect2:
 		return Rect2()
 	var colunas := mini(n, POR_LINHA)
 	var linhas := ceili(float(n) / POR_LINHA)
-	return Rect2(position.x, position.y + size.y - linhas * ALTURA, colunas * (CAIXA + ESPACO) - ESPACO, linhas * ALTURA)
+	return Rect2(position.x, position.y + (size.y - linhas * ALTURA) * ESCALA, (colunas * (CAIXA + ESPACO) - ESPACO) * ESCALA, linhas * ALTURA * ESCALA)
 
 
 ## Lê o combate e monta `itens`; dispara as animações do que chegou ou subiu. Devolve true se a chave visível mudou.
@@ -249,7 +251,7 @@ func _draw() -> void:
 		draw_string(f, pos_excedente(), "+%d" % (itens.size() - CAPACIDADE), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Paleta.TEXTO_SECUNDARIO)
 
 
-## Onde o "+N" fica: à direita da linha de baixo, na folga antes do selo de nível (x 262), sem cobrir nenhum quadradinho.
+## Onde o "+N" fica: à direita da linha de baixo, na folga antes do Q (x 432), sem cobrir nenhum quadradinho.
 func pos_excedente() -> Vector2:
 	return Vector2(POR_LINHA * (CAIXA + ESPACO) + 2.0, size.y - ALTURA + 12.0)
 

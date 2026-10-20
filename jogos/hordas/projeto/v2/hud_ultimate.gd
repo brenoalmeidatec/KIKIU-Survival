@@ -10,6 +10,7 @@ const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const EstiloPremium := preload("res://v2/estilo_premium.gd")
 const DIAMETRO := 64.0  # o nó inteiro: o círculo (60) e, embaixo, a tecla Q por cima da borda
+const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó é escalado (`scale`): 96 px na tela, o desenho segue no espaço de 64
 const RAIO_FUNDO := 29.0
 const RAIO_ANEL := 26.5  # o centro do anel de carga
 const LARG_ANEL := 4.0
@@ -28,6 +29,7 @@ var _icone_chave := "#"  # nenhuma chave de herói é "#": força o primeiro car
 
 
 func _ready() -> void:
+	scale = Vector2(ESCALA, ESCALA)
 	size = Vector2(DIAMETRO, DIAMETRO)
 	process_priority = 101  # depois de "Habilidades" (100): lê o estado do mesmo quadro
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -106,7 +106,7 @@ func _retangulos(hud, canvas: Vector2, d: Vector2) -> Dictionary:
 	var r := {}
 	for nome in BLOCOS:
 		var no: Control = hud.get_node("Raiz/" + nome)
-		r[nome] = Rect2(no.position + d, no.size)
+		r[nome] = Rect2(no.position + d, no.size * no.scale)  # o Q, o E/secundário e os golpes são escalados (1,5x) pelo nó
 	r["Minimapa"] = Rect2(canvas.x - MARGEM_MINIMAPA - MINIMAPA.x, 0.0, MINIMAPA.x, MINIMAPA.y)
 	return r
 
@@ -158,8 +158,9 @@ func _barras_no_teto(hud, falso: MundoFalso) -> void:
 	ok(r.size.x == Hud.BARRA_TETO_PX + 8.0, "a moldura no teto tem %s px" % r.size.x)
 	for nome in ["Xp", "Selo", "Ultimate", "Habilidades"]:
 		var no: Control = hud.get_node("Raiz/" + nome)
-		ok(not r.intersects(Rect2(no.position, no.size)), "no teto, a moldura das barras %s não cobre %s" % [r, nome])
+		ok(not r.intersects(Rect2(no.position, no.size * no.scale)), "no teto, a moldura das barras %s não cobre %s" % [r, nome])
 	ok(hud.get_node("Raiz/Ultimate").position.x - r.end.x >= 8.0, "no teto, ainda sobra espaço entre as barras e o círculo do Q")
+	ok(hud.get_node("Raiz/Selo").position.x - r.end.x >= 4.0, "no teto, a moldura das barras não toca o selo de nível")
 	falso.heroi.vida_max = 100.0
 	falso.heroi.vida = 100.0
 	falso.heroi.folego_max = 3.0
@@ -180,7 +181,7 @@ func _colunas_do_card(hud) -> void:
 			var no: Control = hud.get_node("Raiz/" + nome)
 			if nome in ["Chefe", "Anuncio", "Combo", "Tempo", "Abates", "Nivel"]:
 				continue  # o card já foi desenhado para ficar fora destes (v2_status confere com a build máxima)
-			ok(not col.intersects(Rect2(no.position, no.size)), "a coluna %d do card %s cobre %s" % [c, col, nome])
+			ok(not col.intersects(Rect2(no.position, no.size * no.scale)), "a coluna %d do card %s cobre %s" % [c, col, nome])
 
 
 ## O Q: a 99,6% ainda não está pronto; a 100% fica pronto (anel completo, ícone aceso e pulso) e o estado do círculo muda. Cada herói tem o ícone dele.

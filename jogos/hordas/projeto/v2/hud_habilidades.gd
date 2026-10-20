@@ -9,6 +9,7 @@ extends Control
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const TAM_CARD := Vector2(86.0, 74.0)
+const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó inteiro é escalado (`scale`): o desenho e `size` ficam no espaço de 86x74 por card
 const ESPACO_CARD := 2.0
 const TAM_ICON := Vector2(48.0, 48.0)
 const CARGA_LARANJA := Paleta.CARGA_LARANJA
@@ -60,6 +61,7 @@ var _heroi_id := 0
 
 func _ready() -> void:
 	Glifos.ao_mudar(queue_redraw)  # o selo da tecla segue o dispositivo em uso (E e botão direito no teclado, LB e LT no controle)
+	scale = Vector2(ESCALA, ESCALA)  # o tamanho na tela é size * scale (261x111)
 	size = Vector2(TAM_CARD.x * 2.0 + ESPACO_CARD, TAM_CARD.y)  # a posição é do hud.tscn (canto inferior direito; o HUD cola na borda do canvas)
 	process_priority = 100  # corre depois do HUD; o círculo do Q (101) lê o estado que este nó acabou de sincronizar
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

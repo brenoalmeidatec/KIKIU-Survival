@@ -38,17 +38,17 @@ stretch_mode = 0
 [node name="Retrato" type="ColorRect" parent="Raiz"]
 layout_mode = 0
 offset_left = 6.0
-offset_top = 462.0
-offset_right = 66.0
+offset_top = 426.0
+offset_right = 96.0
 offset_bottom = 534.0
 color = Color(0.003921569, 0.011764706, 0.043137256, 1)
 
 [node name="Heroi" type="TextureRect" parent="Raiz/Retrato"]
 layout_mode = 0
-offset_left = 6.0
+offset_left = 9.0
 offset_top = 6.0
-offset_right = 54.0
-offset_bottom = 70.0
+offset_right = 81.0
+offset_bottom = 102.0
 expand_mode = 1
 stretch_mode = 0
 
@@ -70,17 +70,17 @@ axis_stretch_vertical = 1
 [node name="Vida" type="Control" parent="Raiz"]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 74.0
-offset_top = 462.0
-offset_right = 274.0
-offset_bottom = 506.0
+offset_left = 104.0
+offset_top = 426.0
+offset_right = 320.0
+offset_bottom = 534.0
 
 [node name="Barra" type="TextureProgressBar" parent="Raiz/Vida"]
 layout_mode = 0
 offset_left = 4.0
 offset_top = 4.0
-offset_right = 196.0
-offset_bottom = 26.0
+offset_right = 212.0
+offset_bottom = 70.0
 value = 100.0
 texture_under = ExtResource("3_fundo")
 texture_progress = ExtResource("4_vida")
@@ -94,18 +94,19 @@ stretch_margin_bottom = 1
 layout_mode = 0
 offset_left = 4.0
 offset_top = 4.0
-offset_right = 196.0
-offset_bottom = 26.0
+offset_right = 212.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 24
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "100/100"
 
 [node name="Folego" type="TextureProgressBar" parent="Raiz"]
 layout_mode = 0
-offset_left = 78.0
-offset_top = 492.0
-offset_right = 270.0
-offset_bottom = 502.0
+offset_left = 108.0
+offset_top = 500.0
+offset_right = 316.0
+offset_bottom = 530.0
 value = 100.0
 texture_under = ExtResource("3_fundo")
 texture_progress = ExtResource("5_folego")
@@ -117,10 +118,10 @@ stretch_margin_bottom = 1
 
 [node name="MolduraBarras" type="NinePatchRect" parent="Raiz"]
 layout_mode = 0
-offset_left = 74.0
-offset_top = 462.0
-offset_right = 282.0
-offset_bottom = 506.0
+offset_left = 104.0
+offset_top = 426.0
+offset_right = 320.0
+offset_bottom = 534.0
 texture = ExtResource("14_barra")
 patch_margin_left = 11
 patch_margin_top = 11
@@ -216,9 +217,9 @@ text = "x0"
 
 [node name="Xp" type="NinePatchRect" parent="Raiz"]
 layout_mode = 0
-offset_left = 280.0
+offset_left = 380.0
 offset_top = 512.0
-offset_right = 680.0
+offset_right = 580.0
 offset_bottom = 534.0
 texture = ExtResource("2_moldura")
 patch_margin_left = 5
@@ -232,7 +233,7 @@ axis_stretch_vertical = 1
 layout_mode = 0
 offset_left = 5.0
 offset_top = 5.0
-offset_right = 395.0
+offset_right = 195.0
 offset_bottom = 17.0
 value = 0.0
 texture_under = ExtResource("3_fundo")
@@ -260,9 +261,9 @@ text = "0/100"
 
 [node name="Selo" type="TextureRect" parent="Raiz"]
 layout_mode = 0
-offset_left = 262.0
+offset_left = 362.0
 offset_top = 511.0
-offset_right = 286.0
+offset_right = 386.0
 offset_bottom = 535.0
 texture = ExtResource("7_selo")
 expand_mode = 1
@@ -281,9 +282,9 @@ text = "1"
 [node name="Anel" type="TextureRect" parent="Raiz"]
 visible = false
 layout_mode = 0
-offset_left = 264.0
+offset_left = 364.0
 offset_top = 513.0
-offset_right = 284.0
+offset_right = 384.0
 offset_bottom = 533.0
 texture = ExtResource("9_anel")
 expand_mode = 1
@@ -392,18 +393,18 @@ text = ""
 
 [node name="Ultimate" type="Control" parent="Raiz"]
 layout_mode = 0
-offset_left = 448.0
-offset_top = 444.0
-offset_right = 512.0
-offset_bottom = 508.0
+offset_left = 432.0
+offset_top = 412.0
+offset_right = 496.0
+offset_bottom = 476.0
 script = ExtResource("16_ultimate")
 
 [node name="Habilidades" type="Control" parent="Raiz"]
 layout_mode = 0
-offset_left = 780.0
-offset_top = 460.0
-offset_right = 954.0
-offset_bottom = 534.0
+offset_left = 693.0
+offset_top = 423.0
+offset_right = 867.0
+offset_bottom = 497.0
 script = ExtResource("12_habilidades")
 
 [node name="Golpes" type="Control" parent="Raiz"]

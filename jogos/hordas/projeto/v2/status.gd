@@ -52,11 +52,11 @@ const ICONE_FUSAO := preload("res://assets/v2/fusoes/icone.png")  # junção de 
 const TELA := Rect2(0, 0, 960, 540)
 const JOGO_VIVO := ["jogando", "escolha", "bau"]  # estados do combate em que o C vale
 const JOGO_CARTAS := ["escolha", "bau"]  # as telas de cartas: aí o C abre o painel central
-## Colunas de cada modo: x, y, largura e altura máxima. HUD: a da esquerda acima do retrato e das barras de vida e fôlego (que começam em y 462) e fora
-## da barra do chefe (x até 190); a da direita sob o minimapa (que acaba em y 112), acima do E e do secundário (y 460) e fora da barra do chefe e dos anúncios (x a partir de 772). Pausa: colada nos dois lados
+## Colunas de cada modo: x, y, largura e altura máxima. HUD: a da esquerda acima do retrato e das barras de vida e fôlego (que começam em y 426) e fora
+## da barra do chefe (x até 190); a da direita sob o minimapa (que acaba em y 112), acima do E e do secundário (y 423) e fora da barra do chefe e dos anúncios (x a partir de 772). Pausa: colada nos dois lados
 ## do painel do menu (`Pausa.PAINEL`, x 260 a 700), com o MESMO topo e a MESMA altura dele: os três quadros formam uma faixa alinhada. Central: três
 ## colunas lado a lado, a tela toda é do painel.
-const COLUNAS_HUD := [Rect2(6, 6, 184, 452), Rect2(772, 118, 182, 338)]
+const COLUNAS_HUD := [Rect2(6, 6, 184, 416), Rect2(772, 118, 182, 301)]
 const MARGEM_PAUSA := 8.0  # do quadro lateral à borda da tela (a mesma nos dois lados)
 const VAO_PAUSA := 12.0  # do quadro lateral ao painel do menu (o mesmo nos dois lados)
 const COLUNAS_PAUSA := [

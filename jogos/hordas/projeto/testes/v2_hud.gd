@@ -159,14 +159,17 @@ func _testes() -> void:
 	ok(folego_q.position.y + folego_q.size.y <= barras_q.position.y + barras_q.size.y, "o fôlego fica dentro da moldura das barras")
 	var xp_q: Control = hud.get_node("Raiz/Xp")
 	var ult_q: Control = hud.get_node("Raiz/Ultimate")
-	ok(ult_q.position.x + ult_q.size.x * 0.5 == xp_q.position.x + xp_q.size.x * 0.5, "o círculo do Q é centrado na faixa de XP")
+	var ult_tam: Vector2 = ult_q.size * ult_q.scale  # o nó é escalado 1,5x: 96 px na tela
+	ok(ult_tam == Vector2(96, 96), "o círculo do Q mede 96 px na base 960x540 (%s)" % ult_tam)
+	ok(ult_q.position.x + ult_tam.x * 0.5 == xp_q.position.x + xp_q.size.x * 0.5, "o círculo do Q é centrado na faixa de XP")
 	ok(
-		xp_q.position.y - (ult_q.position.y + ult_q.size.y) >= 2.0 and xp_q.position.y - (ult_q.position.y + ult_q.size.y) <= 8.0,
+		xp_q.position.y - (ult_q.position.y + ult_tam.y) >= 2.0 and xp_q.position.y - (ult_q.position.y + ult_tam.y) <= 8.0,
 		"o Q fica logo acima da faixa de XP, sem encostar"
 	)
 	var hab_q: Control = hud.get_node("Raiz/Habilidades")
+	var hab_tam: Vector2 = hab_q.size * hab_q.scale
 	ok(
-		hab_q.position.x + hab_q.size.x == 960 - 6 and hab_q.position.y + hab_q.size.y == 540 - 6,
+		hab_q.position.x + hab_tam.x == 960 - 6 and hab_q.position.y + hab_tam.y == 540 - 6,
 		"o E e o secundário colam no canto de baixo à direita (margem de 6 px)"
 	)
 	ok(hab_q.position.x > xp_q.position.x + xp_q.size.x, "o E e o secundário ficam à direita da faixa de XP")
@@ -379,8 +382,8 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 	he.cansado = false
 	slots.sincronizar(he)
 	ok(slots.s_pronta and slots.s_recarga_px == 0, "fim do cansaço: o secundário volta pronto, sem cortina")
-	var area := Rect2(slots.position, slots.size)
-	ok(area.position == Vector2(780, 460) and area.size == Vector2(174, 74), "E e secundário ocupam o canto de baixo à direita")
+	var area := Rect2(slots.position, slots.size * slots.scale)
+	ok(area.position == Vector2(693, 423) and area.size == Vector2(261, 111), "E e secundário ocupam o canto de baixo à direita")
 	ok(Rect2(0, 0, 960, 540).encloses(area), "E e secundário cabem integralmente dentro da tela")
 	ok(not area.intersects(ZONA_MINIMAPA), "E e secundário não cobrem o minimapa")
 	var xp = hud.get_node("Raiz/Xp")
@@ -391,7 +394,7 @@ func _teste_habilidades(hud, mundo_falso: MundoFalso) -> void:
 		not Rect2(hud.get_node("Raiz/Retrato").position, hud.get_node("Raiz/Retrato").size).intersects(StatusHud.COLUNAS_HUD[0]),
 		"o retrato não cobre a coluna esquerda do status"
 	)
-	var ult := Rect2(hud.get_node("Raiz/Ultimate").position, hud.get_node("Raiz/Ultimate").size)
+	var ult := Rect2(hud.get_node("Raiz/Ultimate").position, hud.get_node("Raiz/Ultimate").size * hud.get_node("Raiz/Ultimate").scale)
 	ok(not ult.intersects(zona_xp) and not ult.intersects(area), "o círculo do Q não cobre o XP nem o E e o secundário")
 
 

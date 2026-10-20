@@ -161,15 +161,15 @@ func _mundo() -> void:
 	var tempo: Control = hud.get_node("Raiz/Tempo")
 	ok(perto(hud.offset + tempo.position, Vector2(428 + 160, 6)), "o relógio gruda no topo e fica no centro: %s" % str(hud.offset + tempo.position))
 	var xp: Control = hud.get_node("Raiz/Xp")
-	ok(perto(hud.offset + xp.position + Vector2(0, xp.size.y), Vector2(280 + 160, 720 - 6)), "a barra de XP gruda embaixo: %s" % str(hud.offset + xp.position))
+	ok(perto(hud.offset + xp.position + Vector2(0, xp.size.y), Vector2(380 + 160, 720 - 6)), "a barra de XP gruda embaixo: %s" % str(hud.offset + xp.position))
 	var hab: Control = hud.get_node("Raiz/Habilidades")
 	ok(
-		perto(hud.offset + hab.position + hab.size, Vector2(1280 - 6, 720 - 6)),
+		perto(hud.offset + hab.position + hab.size * hab.scale, Vector2(1280 - 6, 720 - 6)),
 		"o E e o secundário colam no canto de baixo à direita do canvas: %s" % str(hud.offset + hab.position)
 	)
 	var ult: Control = hud.get_node("Raiz/Ultimate")
 	ok(
-		perto(hud.offset + ult.position + ult.size * 0.5, Vector2(640, 720 - 6 - xp.size.y - 4 - ult.size.y * 0.5)),
+		perto(hud.offset + ult.position + ult.size * ult.scale * 0.5, Vector2(640, 720 - 6 - xp.size.y - 4 - ult.size.y * ult.scale.y * 0.5)),
 		"o círculo do Q fica no centro, logo acima do XP: %s" % str(hud.offset + ult.position)
 	)
 	var vinheta: Control = hud.get_node("Raiz/Vinheta")
@@ -191,7 +191,7 @@ func _mundo() -> void:
 	Config.temporario("tamanho_ui", "grande")
 	Config.tamanho_ui_mudou.emit()
 	ok(absf(ap.fator - 2.0) < 0.0001 and ap.canvas == Vector2(960, 540) and ap.desloc == Vector2.ZERO, "Grande em 1920x1080: fator 2, canvas 960x540")
-	ok(hud.offset == Vector2.ZERO and perto(retrato.position, Vector2(6, 462)) and perto(xp.position, Vector2(280, 512)), "o HUD volta às posições do bloco")
+	ok(hud.offset == Vector2.ZERO and perto(retrato.position, Vector2(6, 426)) and perto(xp.position, Vector2(380, 512)), "o HUD volta às posições do bloco")
 	ok(Rect2(fundo.position, fundo.size) == Rect2(0, 0, 960, 540), "o fundo das cartas volta a 960x540")
 	ok(m.offset.x + m._quadro.position.x + m._quadro.size.x <= 960.0, "o minimapa volta para o canto do bloco")
 	Config.temporario("tamanho_ui", "pequeno")
