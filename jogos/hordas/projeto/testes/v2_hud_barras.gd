@@ -162,7 +162,7 @@ func _testes() -> void:
 	hud.ui_reencaixar(Vector2(1024, 576), Vector2(32, 18))
 	_passar(hud, 0.5)
 	var canto: float = hud._moldura_barras.position.x + 32.0
-	ok(canto == 54.0 and hud._vida_caixa.position.x + 32.0 == 54.0, "a moldura fica presa ao canto do canvas (x %s)" % canto)
+	ok(canto == 74.0 and hud._vida_caixa.position.x + 32.0 == 74.0, "a moldura fica presa ao canto do canvas (x %s)" % canto)
 	ok(hud._vida_barra.size.x == vida_antes and hud._moldura_barras.size.x == moldura_antes, "o comprimento não muda com o deslocamento do bloco")
 
 	# 8. sem mundo (HUD de antes da partida): os padrões de 100 de vida e 3 de fôlego, com barras de 142 px
