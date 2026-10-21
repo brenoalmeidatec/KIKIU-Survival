@@ -10,12 +10,14 @@ O bootstrap recarrega as opções, remove os temporários do Config, fixa o perf
 restaura os volumes. Reiniciar o Mundo ou passar por morte, resultado e salão continua
 usando os caminhos da fixture; não se restaura o caminho do jogador ao terminar.
 
-## Gancho inicial necessário
+## Gancho inicial do Config
 
-A base não chega antes dos autoloads. `Config._ready` lê opções e pode gravar migrações;
-por isso precisa chamar `Ambiente.preparar_config(self)` antes de `recarregar`. Sem esse
-gancho, esta preparação não garante que as opções externas deixaram de ser lidas ou
-migradas. A liberação desse trecho compartilhado está pendente na issue #348.
+A base não chega antes dos autoloads. `Config._ready` chama
+`Ambiente.preparar_config(self)` antes de `recarregar`, que lê opções e pode gravar
+migrações. O helper só é carregado quando a linha de comando ou o ambiente do filho
+identifica uma cena de teste da v2, fora do editor e com o recurso de testes presente.
+Assim, as opções são redirecionadas antes da primeira leitura ou migração. O trecho
+compartilhado foi liberado pelo Claude na issue #348 em 21/10/2026.
 
 O helper identifica a cena `.tscn` na linha de comando. Processos filhos herdam
 `KIKIU_TESTE_V2_CENA` e `KIKIU_TESTE_V2_DONO`; o filho usa um subdiretório `processo_<pid>`.
