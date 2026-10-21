@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Menu de pausa da v2 (camada 14, acima de tudo). Na partida, ESC ou Start pausam o mundo (get_tree().paused) e abrem o menu;
-## ESC, Start, B ou "Continuar" fecham. Pausa: Continuar, Ajustes, Voltar ao santuário (com confirmação: a partida conta como
+## ESC, Start, B ou "Continuar" fecham. Pausa: Continuar, Conquistas (a lista de v2/conquistas.gd, a mesma do Códice), Ajustes, Voltar ao santuário (com confirmação: a partida conta como
 ## abandonada, pelo caminho da morte, combate.abandonar -> partida_terminou com venceu = false) e Sair do jogo (com confirmação).
 ## Ajustes: Gráficos (o menu completo da aba, em ajustes_graficos.gd, dirigido pelo dados/graficos.json e pelo Config) e Áudio
 ## (Música e Efeitos, as chaves musica e efeitos da v1). ESC dentro de Ajustes volta um nível, sem fechar a pausa de uma vez.
@@ -20,6 +20,8 @@ const Paleta := preload("res://v2/paleta.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
+const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas, a mesma do Códice do santuário (#373)
+const Icones := preload("res://v2/icones_santuario.gd")
 const EstiloPremium := preload("res://v2/estilo_premium.gd")  # moldura dourada e faixa de seleção dos menus (#152 V6)
 const TAM_TITULO := Paleta.TITULO_GRANDE  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
 const TAM_BOTAO := Paleta.TITULO_PEQUENO  # botões e linhas (Jersey 10 na grade de 19)
@@ -203,8 +205,13 @@ func _rotulo(fonte: Font, tam: int, cor: Color, pos: Vector2, ancho: float, alin
 	return l
 
 
+static var _tex_ajuda: Texture2D  # guardada: o _desenhar pede o "?" a cada quadro de seleção
+
+
 ## O "?" da linha Perfil: ícone de pixel 8x8 (os ícones da v2 são desenhados por código). Branco, para o `modulate` pintar na cor da linha.
 static func _textura_ajuda() -> Texture2D:
+	if _tex_ajuda != null:
+		return _tex_ajuda
 	var padrao := ["..####..", ".##..##.", ".....##.", "....##..", "...##...", "...##...", "........", "...##..."]
 	var im := Image.create(8, 8, false, Image.FORMAT_RGBA8)
 	im.fill(Color(0, 0, 0, 0))
@@ -212,7 +219,8 @@ static func _textura_ajuda() -> Texture2D:
 		for x in 8:
 			if padrao[y].substr(x, 1) == "#":
 				im.set_pixel(x, y, Color.WHITE)
-	return ImageTexture.create_from_image(im)
+	_tex_ajuda = ImageTexture.create_from_image(im)
+	return _tex_ajuda
 
 
 # ------------------------------------------------------------------ abrir e fechar
@@ -306,6 +314,10 @@ func _voltar_tela() -> void:
 				fechar()
 		"avancado":
 			_ir("graficos")
+		"conquistas":
+			_ir("menu")
+			sel = 1  # volta parado em "Conquistas", onde o jogador estava
+			_desenhar()
 		"graficos", "audio", "creditos":
 			if tela == "creditos" and _origem == "":
 				fechar()  # Créditos abertos direto pelo título: não há Ajustes por trás
@@ -472,6 +484,8 @@ func _executar(id: String, passo: int) -> void:
 			fechar()
 		"ajustes":
 			_ir("ajustes")
+		"conquistas":
+			_ir("conquistas")
 		"graficos":
 			_ir("graficos")
 		"g:avancado":
@@ -535,7 +549,10 @@ func _pct(v: Variant) -> String:
 func _itens() -> Array:
 	match tela:
 		"menu":
-			var r := [_it("continuar", "Continuar"), _it("ajustes", "Ajustes")]
+			var r := [_it("continuar", "Continuar")]
+			if mundo != null:  # só na partida: no santuário o Códice é a mesma lista
+				r.append(_it("conquistas", "Conquistas"))
+			r.append(_it("ajustes", "Ajustes"))
 			if mundo != null:
 				r.append(_it("santuario", "Voltar ao santuário"))
 			r.append(_it("sair", "Sair do jogo"))
@@ -550,6 +567,8 @@ func _itens() -> Array:
 			]
 		"creditos":
 			return Creditos.itens() + [_it("voltar", "Voltar")]
+		"conquistas":
+			return _itens_conquistas()
 		"graficos":
 			return _graficos.itens()
 		"avancado":
@@ -561,6 +580,27 @@ func _itens() -> Array:
 		"confirmar_sair":
 			return [_it("ok_sair", "Sim"), _it("nao", "Não")]
 	return []
+
+
+## O que a partida em andamento já fez: vale no progresso se passar do recorde (o jogador vê o 3/5 min crescer).
+func _linhas_conquistas() -> Array:
+	var vivo := {}
+	if mundo != null:
+		vivo = {"tempo": float(mundo.get("tempo_partida")), "combo": int(mundo.get("maior_combo"))}
+	return Conquistas.linhas(vivo)
+
+
+## Uma linha por conquista: ícone e nome à esquerda, o progresso (3/5 min) ou CUMPRIDA à direita; embaixo, o que fazer e o prêmio.
+func _itens_conquistas() -> Array:
+	var r := []
+	for l in _linhas_conquistas():
+		var it := _it("c:%s" % l.id, str(l.nome), "CUMPRIDA" if l.feita else str(l.progresso))
+		it["textura"] = Icones.textura(str(l.icone))
+		it["feita"] = l.feita
+		it["ajuda"] = "%s\nPrêmio: %s" % [l.fazer, l.premio] if str(l.premio) != "" else str(l.fazer)
+		r.append(it)
+	r.append(_it("voltar", "Voltar"))
+	return r
 
 
 func _it(id: String, rotulo: String, valor := "") -> Dictionary:
@@ -579,6 +619,8 @@ func _titulo_tela() -> String:
 			return "ÁUDIO"
 		"creditos":
 			return "CRÉDITOS"
+		"conquistas":
+			return "CONQUISTAS"
 		"confirmar_santuario":
 			return "VOLTAR?"
 		"confirmar_sair":
@@ -595,6 +637,8 @@ func _sub_tela() -> String:
 		return _graficos.mensagem
 	if tela == "avancado":
 		return "CPU e GPU, uma opção por vez."
+	if tela == "conquistas":
+		return "%d de %d cumpridas" % Conquistas.contagem(_linhas_conquistas())
 	return ""
 
 
@@ -628,11 +672,20 @@ func _desenhar() -> void:
 		var cor := COR_CAB if cab else (COR_OURO if on else COR_TEXTO)
 		if bool(it.get("bloqueado", false)):
 			cor = Color(COR_OURO, 0.6) if on else Color(COR_TEXTO, 0.38)  # linha apagada: continua com foco (a ajuda diz por quê), mas não muda
+		if bool(it.get("feita", false)):
+			cor = COR_OURO  # conquista cumprida: nome em dourado, mesmo sem o foco
 		l["rotulo"].add_theme_color_override("font_color", cor)
-		l["valor"].add_theme_color_override("font_color", cor)
+		l["valor"].add_theme_color_override("font_color", Paleta.BONUS if bool(it.get("feita", false)) else cor)
 		var ico: TextureRect = l["icone"]
-		ico.visible = bool(it.get("icone", false)) and not cab
-		if ico.visible:
+		var tex: Texture2D = it.get("textura")
+		l["rotulo"].position.x = 42.0 if tex != null else 12.0  # com o ícone da conquista (24 px) o nome começa depois dele
+		ico.texture = tex if tex != null else _textura_ajuda()
+		ico.modulate = Color.WHITE if tex != null else cor
+		ico.size = Vector2(24, 24) if tex != null else Vector2(16, 16)
+		if tex != null:
+			ico.position = Vector2(10, 4)
+		ico.visible = (tex != null or bool(it.get("icone", false))) and not cab
+		if ico.visible and tex == null:
 			var fonte: Font = l["rotulo"].get_theme_font("font")
 			ico.position = Vector2(12.0 + fonte.get_string_size(str(it.rotulo), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_BOTAO).x + 10.0, 10.0)
 			ico.modulate = cor
@@ -643,7 +696,7 @@ func _desenhar() -> void:
 func _texto_ajuda() -> String:
 	if tela == "audio":
 		return CREDITO_MUSICA
-	if (tela != "graficos" and tela != "avancado" and tela != "creditos") or sel >= _itens_atuais.size():
+	if (tela != "graficos" and tela != "avancado" and tela != "creditos" and tela != "conquistas") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))
 

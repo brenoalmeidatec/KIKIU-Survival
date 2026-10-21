@@ -19,6 +19,7 @@ const Entrada := preload("res://v2/entrada.gd")  # garante as ações de control
 const Pausa := preload("res://v2/pausa.tscn")
 const Trilha := preload("res://v2/trilha.gd")
 const Icones := preload("res://v2/icones_santuario.gd")
+const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas do Códice (a mesma da pausa)
 const Card := preload("res://v2/card_santuario.gd")
 const ESCOLHA := "res://v2/personagens.tscn"
 const FLORESTA := "res://v2/mundo.tscn"
@@ -41,6 +42,7 @@ const COR_ALMA := Paleta.ALMA
 const CORES_MAPA := {
 	"floresta": Color(0.3, 0.62, 0.36), "laboratorio": Color(0.3, 0.68, 0.78), "cidade": Color(0.85, 0.58, 0.3), "medio": Color(0.5, 0.55, 0.8)
 }
+const LINHA_CONQUISTA := 72.0  # altura de cada conquista no Códice
 const COR_TRAVADO := Color(0.22, 0.22, 0.25)
 const Glifos := preload("res://v2/glifos.gd")
 
@@ -86,6 +88,7 @@ var _p_card  # card_santuario.gd: as barrinhas (nível, efeito, custo; no códic
 var _p_saldo: Label
 var _p_aviso: Label
 var _p_comprar: Button
+var _p_dica: Label  # "Selecione para consultar", só nas estruturas de melhoria
 var _p_itens: Array = []  # o que a estrutura aberta mostra (melhorias ou conquistas), na ordem da lista
 var _p_atual := 0  # índice do item selecionado em _p_itens
 var _p_codice := false
@@ -281,7 +284,7 @@ func _montar_hud() -> void:
 
 func _dica_salao() -> Control:
 	var d := Glifos.dica(
-		func() -> Array: return [["andar", "Andar"], ["confirmar", "Usar"]] + ([] if Glifos.eh_controle() else [["", "Clique: explorar"]]),
+		func() -> Array: return [["andar", "Andar"], ["confirmar", "Usar"]] + ([] if Glifos.eh_controle() else [["clique", "explorar"]]),
 		HORIZONTAL_ALIGNMENT_LEFT,
 		COR_APAGADO
 	)
@@ -355,7 +358,8 @@ func _montar_painel() -> void:
 	_p_comprar.add_theme_color_override("font_disabled_color", Paleta.alfa(COR_APAGADO, 0.5))
 	_p_comprar.pressed.connect(_comprar_atual)
 	_painel.add_child(_p_comprar)
-	_painel.add_child(_rotulo("Selecione para consultar", Dados.fonte_texto, 16, COR_APAGADO, Rect2(60, 474, 322, 24), HORIZONTAL_ALIGNMENT_LEFT))
+	_p_dica = _rotulo("Selecione para consultar", Dados.fonte_texto, 16, COR_APAGADO, Rect2(60, 474, 322, 24), HORIZONTAL_ALIGNMENT_LEFT)
+	_painel.add_child(_p_dica)
 
 
 func _caixa_icone(r: Rect2) -> TextureRect:
@@ -555,6 +559,7 @@ func abrir_estrutura(id: String) -> void:
 		_avisar("%s trancado. %s" % [str(e.nome).capitalize(), trava])
 		return
 	_p_codice = bool(e.get("conquistas", false))
+	_ajustar_painel()
 	_p_titulo.text = str(e.nome)
 	_p_icone_estrutura.texture = Icones.textura(id)
 	_p_itens = _itens_da(e)
@@ -570,7 +575,7 @@ func abrir_estrutura(id: String) -> void:
 func _itens_da(e: Dictionary) -> Array:
 	var itens := []
 	if bool(e.get("conquistas", false)):
-		itens.append_array(Meta.conquistas())
+		itens.append_array(Conquistas.linhas())
 	else:
 		for id in e.get("melhorias", []):
 			var m := Meta.melhoria(str(id))
@@ -583,6 +588,9 @@ func _montar_lista() -> void:
 	for filho in _p_lista.get_children():
 		filho.queue_free()
 		_p_lista.remove_child(filho)
+	if _p_codice:
+		_montar_lista_codice()
+		return
 	for i in _p_itens.size():
 		var it: Dictionary = _p_itens[i]
 		var b := Button.new()
@@ -603,9 +611,81 @@ func _montar_lista() -> void:
 		_p_lista.add_child(b)
 
 
+## O Códice é só a lista (sem o painel da direita, sem COMPRAR): a lista ocupa a largura toda e o cabeçalho conta as cumpridas.
+## As outras estruturas voltam ao desenho de sempre (lista estreita à esquerda, item à direita).
+func _ajustar_painel() -> void:
+	for w in [_p_icone, _p_nome, _p_frase, _p_card, _p_aviso, _p_dica]:
+		w.visible = not _p_codice
+	_p_comprar.visible = not _p_codice
+	_p_rolagem.size = Vector2(828, 376) if _p_codice else Vector2(322, 360)
+
+
+## Uma linha por conquista: ícone, nome, o que fazer, progresso (3/5 min) com barra e o prêmio. Cumprida fica em dourado, com o
+## progresso cheio e "CUMPRIDA" em verde. A linha é um botão (teclado, controle e mouse focam como nas melhorias).
+func _montar_lista_codice() -> void:
+	_p_saldo.text = "%d / %d CUMPRIDAS" % Conquistas.contagem(_p_itens)
+	for i in _p_itens.size():
+		var l: Dictionary = _p_itens[i]
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(0, LINHA_CONQUISTA)
+		b.material = Card.sem_luz()  # a luz da sala não pinta a linha (os filhos herdam o material)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_estilo_botao(b, 10)
+		if l.feita:
+			var dourada := _caixa(Paleta.alfa(COR_OURO, 0.1), Paleta.alfa(COR_OURO, 0.85))
+			dourada.set_border_width_all(2)
+			b.add_theme_stylebox_override("normal", dourada)
+		var ic := _caixa_icone(Rect2(12, 12, 48, 48))
+		ic.texture = Icones.textura(str(l.icone))
+		b.add_child(ic)
+		var cor_nome := COR_OURO if l.feita else COR_TEXTO
+		var nome := _rotulo(str(l.nome), Dados.fonte_titulo, Paleta.TITULO_MEDIO, cor_nome, Rect2(72, 2, 420, 42), HORIZONTAL_ALIGNMENT_LEFT)
+		nome.add_theme_constant_override("outline_size", 0)
+		b.add_child(nome)
+		var fazer := _rotulo(str(l.fazer), Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.TEXTO_SECUNDARIO, Rect2(72, 44, 420, 22), HORIZONTAL_ALIGNMENT_LEFT)
+		fazer.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		b.add_child(fazer)
+		var cor_prog := Paleta.BONUS if l.feita else COR_TEXTO
+		b.add_child(_rotulo(str(l.progresso), Dados.fonte_texto, Paleta.TEXTO_TAMANHO, cor_prog, Rect2(504, 6, 150, 22), HORIZONTAL_ALIGNMENT_LEFT))
+		if l.feita:
+			b.add_child(_rotulo("CUMPRIDA", Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.BONUS, Rect2(654, 6, 130, 22), HORIZONTAL_ALIGNMENT_RIGHT))
+		var fundo := ColorRect.new()  # a barra: o trilho escuro e o que já foi feito por cima
+		fundo.color = Paleta.alfa(Paleta.TEXTO_APAGADO, 0.28)
+		fundo.position = Vector2(504, 30)
+		fundo.size = Vector2(280, 10)
+		fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(fundo)
+		var cheio := ColorRect.new()
+		cheio.color = Paleta.BONUS if l.feita else COR_OURO
+		cheio.size = Vector2(280.0 * float(l.frac), 10)
+		cheio.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fundo.add_child(cheio)
+		if str(l.premio) != "":
+			if str(l.icone_premio) != "":  # sem item (o fim da jornada) não há ícone; o texto segue na mesma coluna
+				var pi := _caixa_icone(Rect2(504, 46, 16, 16))
+				pi.texture = Icones.textura(str(l.icone_premio))
+				b.add_child(pi)
+			var premio := _rotulo(
+				"Prêmio: %s" % l.premio,
+				Dados.fonte_texto,
+				Paleta.TEXTO_TAMANHO,
+				COR_OURO if l.feita else COR_TEXTO,
+				Rect2(526, 45, 262, 22),
+				HORIZONTAL_ALIGNMENT_LEFT
+			)
+			premio.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			b.add_child(premio)
+		for f in b.get_children():  # rótulos e barras usam o material sem luz do botão (os ícones já têm o seu)
+			if f is Label or f is ColorRect:
+				f.use_parent_material = true
+				for neto in f.get_children():
+					neto.use_parent_material = true
+		b.focus_entered.connect(_mostrar_item.bind(i))
+		b.pressed.connect(_mostrar_item.bind(i))
+		_p_lista.add_child(b)
+
+
 func _texto_da_lista(it: Dictionary) -> String:
-	if _p_codice:
-		return "%s\n%s" % [it.nome, "cumprida" if Meta.estado().conquistas.get(str(it.id), false) else "falta"]
 	var nivel := Meta.nivel(str(it.id))
 	if nivel < int(it.max) and not _liberada(it):  # trancada: a lista já diz o que abre (não some, não precisa abrir o item)
 		return "%s\n%d/%d - %s" % [it.nome, nivel, int(it.max), _nome_conquista(str(it.requer))]
@@ -616,19 +696,18 @@ func _mostrar_item(i: int) -> void:
 	if _p_itens.is_empty():
 		return
 	_p_atual = i
+	if _p_codice:
+		return  # o Códice é só a lista: cada linha já traz tudo (ícone, o que fazer, progresso e prêmio)
 	var it: Dictionary = _p_itens[i]
 	_p_saldo.text = "ALMAS %d" % Meta.saldo()
-	_p_comprar.visible = not _p_codice
+	_p_comprar.visible = true
 	_p_icone.texture = Icones.textura(str(it.id))
 	_p_nome.text = str(it.nome)
 	# Nome comprido não quebra em duas linhas: desce para o tamanho de texto grande (o card de baixo não se mexe).
 	var fonte: Font = _p_nome.get_theme_font("font")
 	var cabe := fonte.get_string_size(_p_nome.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Paleta.TITULO_MEDIO).x <= _p_nome.size.x
 	_p_nome.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO if cabe else Paleta.TEXTO_GRANDE)
-	if _p_codice:
-		_mostrar_conquista(it)
-	else:
-		_mostrar_melhoria(it)
+	_mostrar_melhoria(it)
 
 
 func _mostrar_melhoria(m: Dictionary) -> void:
@@ -709,61 +788,6 @@ func _valor_efeito(m: Dictionary, n: int) -> String:
 		return agora
 	var seta := " → " if Dados.fonte_texto.has_char(0x2192) else " > "
 	return agora + seta + "%s%s%s" % [antes, Meta._numero(m, float(m.valor) * (n + 1)), unidade]
-
-
-## O que a conquista pede, curto, para o card do códice.
-func _meta_da_conquista(c: Dictionary) -> String:
-	match str(c.get("condicao", "")):
-		"tempo":
-			return "Sobreviver %d min numa partida" % roundi(float(c.get("limite", 0)) / 60.0)
-		"combo":
-			return "Fazer um combo de %d" % int(c.get("limite", 0))
-		"venceu":
-			return "Vencer o duelo contra o chefe"
-	return ""
-
-
-func _mostrar_conquista(c: Dictionary) -> void:
-	var cumpridas: Dictionary = Meta.estado().conquistas
-	var feita := bool(cumpridas.get(str(c.id), false))
-	var feitas := 0
-	for k in cumpridas:
-		if cumpridas[k]:
-			feitas += 1
-	_p_frase.text = str(c.get("frase", c.desc))
-	var item := Meta.item_da_recompensa(c.recompensa)
-	var linhas := [
-		{
-			"rotulo": "CÓDICE",
-			"valor": "%d / %d" % [feitas, cumpridas.size()],
-			"tipo": "segmentos",
-			"n": feitas,
-			"max": cumpridas.size(),
-			"cor": Paleta.OURO,
-			"nota": "",
-		},
-		{
-			"rotulo": "META",
-			"valor": "CUMPRIDA" if feita else "FALTA",
-			"cor_valor": Paleta.BONUS if feita else COR_APAGADO,
-			"tipo": "barra",
-			"frac": 1.0 if feita else 0.0,
-			"cor": Paleta.BONUS,
-			"nota": _meta_da_conquista(c),
-			"cor_nota": COR_TEXTO,
-		},
-		{
-			"rotulo": "RECOMPENSA",
-			"valor": "LIBERADA" if feita else "TRANCADA",
-			"cor_valor": Paleta.BONUS if feita else COR_APAGADO,
-			"tipo": "",
-			"nota": str(item.nome) if not item.is_empty() else "",
-			"cor_nota": COR_OURO if feita else COR_TEXTO,
-			"icone": Icones.textura(str(c.recompensa.get("id", ""))),
-		},
-	]
-	_p_card.mostrar(linhas)
-	_p_aviso.text = ""
 
 
 func _liberada(m: Dictionary) -> bool:
