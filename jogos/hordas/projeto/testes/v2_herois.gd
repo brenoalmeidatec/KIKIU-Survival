@@ -121,6 +121,7 @@ func _testes() -> void:
 	_t_dados()
 	_t_escolha()
 	await _t_hazaki()
+	await _t_matheus()
 	await _t_nicao()
 	await _t_lucas()
 	await _t_cartas()
@@ -245,6 +246,68 @@ func _t_hazaki() -> void:
 	ok(m.vida < m.vida_max and m.vida >= m.vida_max - 14.0 * 1.2 - 0.01, "Hazaki: o primeiro corte tira ~12 (vida %d de %d)" % [m.vida, m.vida_max])
 	ok(w.combate.adagas.lancadas == 0, "Hazaki não joga adaga")
 	_t_animacoes("Hazaki")
+
+
+## A folha por personagem (campo "sprite" de dados/v2_salao.json): o Matheus joga de Hazaki mas com a folha dele; o Breno (sem sprite) segue com a do Hazaki.
+func _t_matheus() -> void:
+	ok(Personagens.sprite_do_nome("Matheus") == "matheus", "o Matheus tem folha própria (campo sprite)")
+	ok(
+		Personagens.sprite_do_nome("Breno") == "" and Personagens.sprite_do_nome("Nicão") == "" and Personagens.sprite_do_nome("Ninguém") == "",
+		"quem não tem sprite fica sem folha própria"
+	)
+	var mat: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + "matheus.json"))
+	var haz: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + "hazaki_samurai.json"))
+	ok(
+		mat.quadro == haz.quadro and mat.linhas == haz.linhas and mat.colunas == haz.colunas and mat.pe_y == haz.pe_y,
+		"a folha do Matheus tem o formato da do Hazaki (quadro, linhas, colunas, pé)"
+	)
+	ok(mat.animacoes.keys() == haz.animacoes.keys() and mat.grade == haz.grade, "e as mesmas animações e a mesma grade")
+	var colunas_iguais := true
+	for anim in haz.animacoes:  # E (ruptura), Q (estocada = passo 2 do combo), rolamento, escudo, dano e morte tocam estas colunas: a folha nova as tem nos mesmos lugares
+		colunas_iguais = colunas_iguais and mat.animacoes[anim].colunas == haz.animacoes[anim].colunas
+	ok(
+		colunas_iguais and mat.animacoes.combo.golpes == 3 and mat.animacoes.combo.quadros_por_golpe == 6,
+		"as colunas de cada animação (combo, rolamento, escudo, dano, morte) são as do Hazaki"
+	)
+	ok(
+		ResourceLoader.exists(PASTA_SPRITES + "matheus_albedo.png") and ResourceLoader.exists(PASTA_SPRITES + "matheus_normal.png"),
+		"as imagens da folha do Matheus existem"
+	)
+	var id_h := Personagens.criar("Breno", Personagens.heroi_do_nome("Breno"))
+	var id_m := Personagens.criar("Matheus", Personagens.heroi_do_nome("Matheus"))
+	ok(
+		Personagens.heroi(id_m) == "hazaki" and Personagens.sprite(id_m) == "matheus" and Personagens.sprite(id_h) == "",
+		"o Matheus joga de Hazaki, com a folha dele"
+	)
+	ok(Personagens.ativar(id_m) and Herois.sprite_da_partida("hazaki") == "matheus", "partida do Matheus: a folha é a dele")
+	ok(
+		Herois.sprite_da_partida("hazaki", true) == "hazaki" and Herois.sprite_da_partida("nicao") == "nicao",
+		"--basico e outro herói forçado ficam com a folha do herói"
+	)
+	await novo("hazaki")
+	var h = w.heroi
+	var tm = w.sprites.tipo("matheus")
+	ok(h.tipo.alb == tm.alb and h.chave == "hazaki" and h.vida_max == 100.0, "o herói da partida do Matheus usa a folha dele, com as regras do Hazaki")
+	var retrato: TextureRect = null
+	for n in w.ui.get_children():
+		if n.has_node("Raiz/Retrato/Heroi"):
+			retrato = n.get_node("Raiz/Retrato/Heroi")
+	ok(
+		retrato != null and retrato.texture is AtlasTexture and retrato.texture.atlas.resource_path == PASTA_SPRITES + "matheus_albedo.png",
+		"o retrato do HUD na partida do Matheus é o quadro parado da folha dele"
+	)
+	var c := 0
+	for y in mat.quadro[1]:
+		for x in mat.quadro[0]:
+			c += 1 if h.tipo.alb.get_image().get_pixel(x, y).a > 0.5 else 0
+	ok(c > 200, "a folha do Matheus tem o corpo desenhado no quadro parado (%d px)" % c)
+	ok(Personagens.ativar(id_h) and Herois.sprite_da_partida("hazaki") == "hazaki_samurai", "partida do Breno: continua com a folha do Hazaki")
+	await novo("hazaki")
+	ok(w.heroi.tipo.alb == w.sprites.tipo("hazaki_samurai").alb and w.heroi.tipo.alb != tm.alb, "o herói do Breno usa a folha do Hazaki")
+	Meta.caminho_save = SAVE_TESTE
+	_apagar_save()
+	var hud_base: String = Herois.sprite_da_partida(Herois.escolhido())
+	ok(hud_base == "hazaki_samurai", "o retrato da partida do Breno é o do Hazaki")
 
 
 ## Primeira e última coluna da animação `nome` na folha do herói da partida (o json de animações da folha do Blender).

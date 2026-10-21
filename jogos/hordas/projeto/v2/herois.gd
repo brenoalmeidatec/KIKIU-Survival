@@ -59,6 +59,19 @@ static func sprite(id: String, basico := false) -> String:
 	return str(heroi(id).sprite)
 
 
+## A folha da PARTIDA: a do personagem ativo (campo "sprite" de dados/v2_salao.json) quando ele joga o herói `id`; senão, a do herói (`sprite`).
+## O `basico` (--basico) e um herói forçado por teste ou linha de comando (diferente do herói do personagem) ficam com a folha do herói.
+static func sprite_da_partida(id: String, basico := false) -> String:
+	if not basico:
+		var pers = load("res://v2/personagens.gd")  # load e não preload: o Meta chama este script (ciclo)
+		var ativo := str(pers.ativo())
+		if ativo != "" and str(pers.heroi(ativo)) == id:
+			var s := str(pers.sprite(ativo))
+			if s != "":
+				return s
+	return sprite(id, basico)
+
+
 ## `base` (o v2_combate.json) copiado e coberto pelo cfg do herói: dicionários se mesclam por chave, o resto (listas, números) substitui.
 static func cfg_para(base: Dictionary, id: String) -> Dictionary:
 	return mesclar(base.duplicate(true), heroi(id).get("cfg", {}))

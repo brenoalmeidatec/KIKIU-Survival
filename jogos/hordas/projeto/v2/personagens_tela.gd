@@ -199,7 +199,7 @@ func _novo_botao(txt: String, acao: Callable, ao_focar: Callable) -> void:
 func _mostrar_personagem(id: String) -> void:
 	var r := Personagens.resumo(id)
 	_nome.text = str(r.nome)
-	_definir_retrato(_pasta_do_nome(str(r.nome)))
+	_definir_retrato(_pasta_do_nome(str(r.nome)), true, str(r.nome))
 	_info.text = "Almas: %d\nHerói: %s" % [int(r.almas), _heroi_e_arma(Personagens.heroi(id))]
 	var linhas := []
 	var efeitos := []
@@ -217,7 +217,7 @@ func _mostrar_personagem(id: String) -> void:
 
 func _mostrar_nome(n: Dictionary) -> void:
 	_nome.text = str(n.nome)
-	_definir_retrato(str(n.pasta))
+	_definir_retrato(str(n.pasta), true, str(n.nome))
 	_info.text = "Herói: %s" % _heroi_e_arma(Personagens.heroi_do_nome(str(n.nome)))
 	_detalhe.text = "Santuário novo: sem almas e sem melhorias."
 
@@ -244,15 +244,22 @@ func _pasta_do_nome(nome_txt: String) -> String:
 ## O retrato: o rosto do personagem (assets/personagens/<pasta>/rosto.png) quando existe; senão o quadro parado do herói. O
 ## rosto.png é uma TIRA de quadros quadrados (altura x altura, 27 quadros): o retrato é só o primeiro, nunca a tira inteira.
 ## A escala é inteira (pixel art nítida) e a imagem fica centrada no eixo da ficha, dentro da caixa RETRATO_ALT.
-func _definir_retrato(pasta: String, visivel := true) -> void:
+func _definir_retrato(pasta: String, visivel := true, nome_txt := "") -> void:
 	var tex: Texture2D = null
 	var rosto := "res://assets/personagens/%s/rosto.png" % pasta
 	if pasta != "" and ResourceLoader.exists(rosto):
 		var tira := load(rosto) as Texture2D
 		if tira != null:
 			tex = _quadro_de(tira, Rect2(0, 0, tira.get_height(), tira.get_height()))
-	elif _sprite != null:
-		tex = _quadro_de(_sprite, Rect2(0, 0, _quadro.x, _quadro.y))
+	else:
+		var propria := Personagens.sprite_do_nome(nome_txt)  # folha própria do personagem (dados/v2_salao.json "sprite")
+		if propria != "":
+			var folha := load(Personagens.PASTA_SPRITES + propria + "_albedo.png") as Texture2D
+			var info = JSON.parse_string(FileAccess.get_file_as_string(Personagens.PASTA_SPRITES + propria + ".json"))
+			if folha != null and info is Dictionary:
+				tex = _quadro_de(folha, Rect2(0, 0, float(info.quadro[0]), float(info.quadro[1])))
+		elif _sprite != null:
+			tex = _quadro_de(_sprite, Rect2(0, 0, _quadro.x, _quadro.y))
 	_retrato.visible = visivel and tex != null
 	_retrato.texture = tex
 	if tex == null:

@@ -235,7 +235,7 @@ func ui_reencaixar(_canvas: Vector2, d: Vector2) -> void:
 ## O retrato: o quadro parado do herói da partida (linha "baixo", coluna "parado" da folha), sem filtro, dentro da moldura de pedra.
 ## Sem a folha ou sem o json, o retrato fica vazio (só moldura e fundo).
 func _retrato_do_heroi() -> void:
-	var base := SPRITES + Herois.sprite(Herois.escolhido())
+	var base := SPRITES + Herois.sprite_da_partida(Herois.escolhido())
 	var folha := load(base + "_albedo.png") as Texture2D
 	if folha == null or not FileAccess.file_exists(base + ".json"):
 		return
