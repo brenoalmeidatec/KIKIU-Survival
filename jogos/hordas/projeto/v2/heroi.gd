@@ -148,6 +148,9 @@ var hab_dur := 1.0  # a duração da E em andamento
 var hab_invul := false  # invulnerável enquanto dura (lido por vulneravel)
 var hab_anim_passo := 0  # o passo do combo cuja animação toca na E
 var hab_anim_ciclos := 1.0  # quantas vezes ela toca durante a duração
+var hab_anim_antes := ""  # animação da folha ("animacoes", ex.: "escudo") que toca no começo da E, antes do passo do combo (vazio = só o passo)
+var hab_anim_antes_ate := 0.0  # até que fração da duração ela vale; o passo do combo ocupa o resto
+var hab_anim_quadros: Array = []  # quais quadros do passo tocam nesse resto (vazio = o passo inteiro)
 var hab_disparos := 0  # testes
 var hab_negados := 0  # testes
 # ruptura (tecla E)
@@ -173,6 +176,7 @@ var _ofego_t := 0.0
 var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
+var _parado_t := 0.0  # há quanto tempo está livre e parado: toca a animação "parado" da folha (colunas 0, 7, 8 e 9)
 var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
 var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
@@ -943,8 +947,14 @@ func _visual(dt: float, v: Vector2) -> void:
 		if _tem_anim("andar"):  # o tempo do andar vem da folha (animacoes.andar.s_por_quadro), então ajusta pelo JSON
 			passo = float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM))
 		c = 1 + int(_anim / passo) % (int(tipo.info.colunas.size()) - 1)
+		_parado_t = 0.0
 	else:
 		_anim = 0.0
+		if estado == Estado.LIVRE and _tem_anim("parado"):  # respira: os 4 quadros do "parado" da folha em ciclo (sem ela, a coluna 0)
+			_parado_t = fmod(_parado_t + dt, maxf(_duracao_anim("parado"), 0.001))
+			c = _coluna_por_tempo("parado", _parado_t)
+		else:
+			_parado_t = 0.0
 	var ca := _coluna_acao(dt)
 	if ca >= 0:
 		c = ca
@@ -1119,7 +1129,15 @@ func _coluna_acao(dt: float) -> int:
 	if estado == Estado.HABILIDADE and _tem_anim("combo"):  # a E toca um passo do combo (hab_anim_passo), repetido hab_anim_ciclos vezes
 		var por_golpe_h := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo_h := mini(hab_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
-		var p_h := fposmod(hab_t / maxf(hab_dur, 0.001) * hab_anim_ciclos, 0.999)
+		var k_h := hab_t / maxf(hab_dur, 0.001)
+		var de_h := 0.0
+		if hab_anim_antes != "" and _tem_anim(hab_anim_antes):  # a pose própria da E primeiro (Nicão: a marreta de través, de escudo), depois o golpe
+			if k_h < hab_anim_antes_ate:
+				return _coluna_por_tempo(hab_anim_antes, hab_t)
+			de_h = hab_anim_antes_ate
+		var p_h := fposmod((k_h - de_h) / maxf(1.0 - de_h, 0.001) * hab_anim_ciclos, 0.999)
+		if not hab_anim_quadros.is_empty():
+			return _coluna_anim("combo", passo_h * por_golpe_h + int(hab_anim_quadros[int(p_h * hab_anim_quadros.size())]))
 		return _coluna_anim("combo", passo_h * por_golpe_h + int(p_h * por_golpe_h))
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)
