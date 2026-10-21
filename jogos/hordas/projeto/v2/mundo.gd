@@ -99,7 +99,7 @@ var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, 
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
 var maior_combo := 0
-var xp_coletado := 0.0  # soma do XP dos orbes pegos (com o bônus do combo)
+var xp_coletado := 0.0  # XP BASE dos orbes pegos, com combo e sem dificuldade: calcula almas/mercador; o bônus de XP vai só ao herói
 var resultado: Dictionary = {}  # o último resultado de partida (vazio enquanto joga)
 var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredondado (a meta-progressão lê isto)
 	get:
@@ -649,7 +649,6 @@ func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k
 	mo.cacador = cacador
 	var dif := preload("res://v2/dificuldade.gd").da_partida(self)
 	mo.vel_caca *= float(dif.vel_mult)
-	mo.xp *= float(dif.xp_mult)
 	mo.raio_vaga = 90.0
 	mo.reviver(p)
 	monstros.append(mo)

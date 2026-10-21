@@ -9,6 +9,8 @@ const Herois := preload("res://v2/herois.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Dificuldade := preload("res://v2/dificuldade.gd")
 const Colisao := preload("res://v2/colisao.gd")
+const Resultado := preload("res://v2/resultado_meta.gd")
+const Status := preload("res://v2/status.gd")
 const SAVE_A := "user://teste_v2_dificuldade_a.cfg"
 const SAVE_B := "user://teste_v2_dificuldade_b.cfg"
 const INDICE := "user://teste_v2_dificuldade_indice.cfg"
@@ -139,6 +141,9 @@ func _ready() -> void:
 		_monstros(i, true)
 		_diretor(i, true)
 		_chefe(i, true)
+	for i in IDS.size():
+		for pesadelo in [false, true]:
+			_fluxo_real(i, pesadelo)
 	_snapshot_e_resultado()
 	_creditos_e_conquistas()
 	remove_child(w)
@@ -204,7 +209,7 @@ func _monstros(i: int, pesadelo: bool) -> void:
 	var m = w.nascer_monstro(MONSTRO, w.heroi.pos + Vector2(200, 0), true)
 	var instancia: int = m.get_instance_id()
 	for ciclo in 4:
-		perto(float(m.xp), float(base.xp) * float(XP[i]), rotulo + " XP do monstro/pool")
+		perto(float(m.xp), float(base.xp), rotulo + " XP base do monstro/pool não recebe bônus antes da coleta")
 		perto(float(m.vel_caca), float(base.vel) * float(VELOCIDADE[i]), rotulo + " velocidade do monstro/pool")
 		var pm := Meta.regras_pesadelo() if pesadelo else {}
 		perto(float(m.vida_max), float(base.vida) * float(pm.get("vida_mult", 1.0)), rotulo + " vida compõe só Pesadelo")
@@ -277,7 +282,7 @@ func _chefe(i: int, pesadelo: bool) -> void:
 	var m = w.combate.chefes.nascer(mk, w.heroi.pos + Vector2(200, 0))
 	var rotulo := "%s chefe pesadelo=%s" % [IDS[i], pesadelo]
 	ok(m != null and m.chefe, rotulo + " nasceu pelo módulo real do chefe")
-	perto(m.xp, float(mk.xp) * float(XP[i]), rotulo + " mantém o bônus XP ao substituir os stats da marca")
+	perto(m.xp, float(mk.xp), rotulo + " mantém XP base ao substituir os stats da marca")
 	perto(m.vel_caca, float(mk.vel) * float(VELOCIDADE[i]), rotulo + " mantém o bônus de velocidade da dificuldade")
 	var pm := Meta.regras_pesadelo() if pesadelo else {}
 	perto(m.vida_max, float(mk.vida) * float(pm.get("vida_mult", 1.0)), rotulo + " vida do Pesadelo continua composta")
@@ -334,23 +339,129 @@ func _ataque(i: int) -> void:
 	ok(h.golpe_calor_t == 0.0 and h.folego == h.folego_max, str(IDS[i]) + " reinício limpa calor e recupera fôlego")
 
 
+## O XP residual sozinho esconde o que já virou níveis. Soma os custos consumidos sem abrir/selecionar cartas na fixture.
+func _xp_total() -> float:
+	var total: float = w.heroi.xp
+	for nivel in range(1, int(w.heroi.nivel)):
+		total += w.combate.progresso.xp_para(nivel)
+	return total
+
+
+func _conferir_status(bruto: int, creditadas: int, rotulo: String) -> void:
+	var linha: Dictionary = Status.linha(Status.coletar(w), "partida.almas")
+	var numeros: Array = linha.get("n", [])
+	ok(numeros == [bruto, creditadas] and str(linha.get("valor", "")) == str(creditadas), rotulo + " card mostra bruto e crédito final reais")
+
+
+## O pool chama coletar/ganhar_xp, sem avançar a câmera lenta das subidas e abrir escolhas durante a fixture.
+func _coletar_orbes() -> void:
+	for quadro in 240:
+		w.combate.orbes.atualizar(PASSO, w.heroi.pos + Vector2(0, -8), 2000.0)
+		if w.combate.orbes.ativos == 0:
+			break
+
+
+func _fluxo_real(i: int, pesadelo: bool) -> void:
+	_preparar(str(IDS[i]), pesadelo)
+	var rotulo := "%s fluxo real pesadelo=%s" % [IDS[i], pesadelo]
+	var c = w.combate
+	var h = w.heroi
+	var base: Dictionary = c.cfg.monstros.inimigo_cavaleiro_oco
+	var m = w.nascer_monstro("inimigo_cavaleiro_oco", h.pos + Vector2(60, 0), true)
+	c.matar(m)
+	var mk: Dictionary = c.diretor.chefes_mapa[0].mk
+	ok(bool(mk.mini), rotulo + " usa mini-chefe sem disparar a vitória e suas mortes extras")
+	var chefe = c.chefes.nascer(mk, h.pos + Vector2(80, 0))
+	c.matar(chefe)
+	var combo_mult := minf(1.0 + float(c.cfg.combo_abates.xp_por_abate), float(c.cfg.combo_abates.xp_max))
+	var esperado_base := float(base.xp) * int(base.orbes) + float(mk.xp) * int(mk.orbes) * combo_mult
+	var esperado_orbes := int(base.orbes) + int(mk.orbes)
+	var guardado := 0.0
+	for n in c.orbes.MAX:
+		if c.orbes.estado[n] != 0:
+			guardado += float(c.orbes.valor[n])
+	perto(guardado, esperado_base, rotulo + " morte guarda XP base + combo no pool de orbes", 0.02)
+	ok(c.orbes.ativos == esperado_orbes and w.abates == 2, rotulo + " monstro e chefe soltaram seus orbes reais")
+	var pegos: int = c.orbes.pegos
+	_coletar_orbes()
+	ok(c.orbes.ativos == 0 and c.orbes.pegos - pegos == esperado_orbes, rotulo + " todos os orbes chegaram pela coleta real")
+	perto(w.xp_coletado, esperado_base, rotulo + " contador de moeda preserva XP base + combo", 0.02)
+	perto(_xp_total(), esperado_base * float(XP[i]), rotulo + " só o XP entregue à progressão recebe o bônus", 0.02)
+	var bruto := roundi(esperado_base / 10.0)
+	var mult := float(ALMAS[i]) * (float(Meta.regras_pesadelo().almas_mult) if pesadelo else 1.0)
+	ok(w.almas_partida == bruto, rotulo + " moedas disponíveis independem do bônus XP")
+	_conferir_status(bruto, roundi(float(bruto) * mult), rotulo + " antes do mercador")
+	var mercador := {"tipo": "mercador", "pos": h.pos, "feito": false, "custo": 8, "forcar": 1}
+	w._tocar_marca(mercador)
+	ok(bool(mercador.feito) and w._almas_gastas == 8 and w.almas_partida == bruto - 8, rotulo + " mercador desconta suas oito moedas base")
+	w._tocar_marca(mercador)
+	ok(w._almas_gastas == 8 and w.almas_partida == bruto - 8, rotulo + " mesma compra não desconta duas vezes")
+	perto(w.xp_coletado, esperado_base, rotulo + " gasto de moeda preserva contador XP base", 0.02)
+	perto(_xp_total(), esperado_base * float(XP[i]), rotulo + " gasto de moeda não tira XP do herói", 0.02)
+	var esperadas := roundi(float(bruto - 8) * mult)
+	_conferir_status(bruto - 8, esperadas, rotulo + " depois do mercador")
+	# Liga o consumidor real do sinal: ele acrescenta o Pesadelo e chama Meta, sem injetar r.almas nem registrar duas vezes.
+	var res := Resultado.new()
+	res.montar(w)
+	w.sv.add_child(res)
+	res.set_process(false)
+	var antes := Meta.saldo()
+	c.fim_de_partida(true)
+	ok(int(w.resultado.almas) == bruto - 8 and str(w.resultado.dificuldade) == str(IDS[i]), rotulo + " fim real fotografa moeda e dificuldade")
+	ok(
+		res._save_ok and res._ganhas == esperadas and Meta.saldo() == antes + esperadas,
+		rotulo + " sinal credita o mesmo valor previsto pelo card uma única vez"
+	)
+	ok(int(Meta.estado().ultima.ganhas) == esperadas and bool(Meta.estado().ultima.pesadelo) == pesadelo, rotulo + " crédito e Pesadelo persistidos no resumo")
+	c.fim_de_partida(true)
+	ok(Meta.saldo() == antes + esperadas, rotulo + " fim repetido não duplica crédito")
+	res.free()
+	w.reiniciar()
+	ok(w.xp_coletado == 0.0 and w._almas_gastas == 0 and w.almas_partida == 0, rotulo + " reinício zera moeda base e gastos")
+	ok(_xp_total() == 0.0 and w.resultado.is_empty() and c.orbes.ativos == 0, rotulo + " reinício zera XP, resultado e orbes")
+	# A próxima coleta usa a mesma regra, inclusive se o monstro veio do pool utilizado pelo chefe.
+	c.limpar_partida()
+	c.diretor.ligado = false
+	w.combo = 0
+	m = w.nascer_monstro("inimigo_cavaleiro_oco", h.pos + Vector2(60, 0), true)
+	c.matar(m)
+	_coletar_orbes()
+	var base_reinicio := float(base.xp) * int(base.orbes)
+	perto(w.xp_coletado, base_reinicio, rotulo + " nova partida coleta base sem carregar bônus anteriores")
+	perto(_xp_total(), base_reinicio * float(XP[i]), rotulo + " nova partida aplica bônus XP uma vez")
+	ok(w.almas_partida == roundi(base_reinicio / 10.0), rotulo + " moeda da nova partida não herda o mercador")
+
+
 func _snapshot_e_resultado() -> void:
 	_preparar("medio")
 	var foto: Dictionary = Dificuldade.da_partida(w).duplicate(true)
 	ok(Meta.escolher_dificuldade("dificil"), "altera preferência durante uma partida Média")
 	ok(Dificuldade.da_partida(w) == foto, "mudar o save não altera o snapshot da partida")
 	_monstros(1, false)
+	var mk: Dictionary = w.combate.diretor.chefes_mapa[0].mk
+	var chefe = w.combate.chefes.nascer(mk, w.heroi.pos + Vector2(80, 0))
+	w.combate.matar(chefe)
+	_coletar_orbes()
+	var bruto := roundi(float(mk.xp) * int(mk.orbes) / 10.0)
+	var esperadas := roundi(float(bruto) * float(ALMAS[1]))
+	ok(w.almas_partida == bruto, "snapshot calcula almas a partir do mini-chefe e dos orbes reais")
+	perto(_xp_total(), float(mk.xp) * int(mk.orbes) * float(XP[1]), "coleta usa o XP do snapshot Médio após mudar a preferência")
+	var res := Resultado.new()
+	res.montar(w)
+	w.sv.add_child(res)
+	res.set_process(false)
 	w.combate.fim_de_partida(true)
 	ok(str(w.resultado.get("dificuldade", "")) == "medio", "sinal real de fim usa a dificuldade da partida e não a preferência nova")
-	var r: Dictionary = w.resultado.duplicate(true)
-	r.almas = 100
-	var entrega := Meta.registrar_partida(r)
-	ok(int(entrega.ganhas) == 125 and str(Meta.estado().ultima.dificuldade) == "medio", "crédito e última partida usam o snapshot Médio")
+	ok(res._save_ok and res._ganhas == esperadas and str(Meta.estado().ultima.dificuldade) == "medio", "crédito e última partida usam o snapshot Médio")
 	ok(
 		bool(Meta.estado().conquistas.vence_dificuldade_medio) and not bool(Meta.estado().conquistas.vence_dificuldade_dificil),
 		"resultado Médio não concede vitória no Difícil"
 	)
-	ok(Meta.mapa_vencido("floresta") and entrega.novas.has("vence_floresta"), "conquista canônica do mapa sobrevive ao registro antecipado do combate")
+	ok(
+		Meta.mapa_vencido("floresta") and res._novas.text.count(res._nome_conquista("vence_floresta")) == 1,
+		"conquista canônica do mapa é anunciada uma vez após o registro antecipado do combate"
+	)
+	res.free()
 	w.reiniciar()
 	ok(str(Dificuldade.da_partida(w).id) == "dificil", "a próxima partida passa a usar a preferência nova")
 
