@@ -4,55 +4,22 @@ var falhas := 0
 var w
 const Meta := preload("res://v2/meta.gd")
 const Slots := preload("res://v2/personagens.gd")
-const FIXTURE := "user://testes_v2/v2_ritmo/"
-var anteriores: Array = []
+const Ambiente := preload("res://testes/ambiente_v2.gd")
 
 
-func _isolar() -> void:
-	anteriores = [Meta.caminho_save, Slots.caminho_indice, Slots.caminho_base, Slots.caminho_antigo, Config.arquivo]
-	Meta.caminho_save = FIXTURE + "meta.cfg"
-	Slots.caminho_indice = FIXTURE + "indice.cfg"
-	Slots.caminho_base = FIXTURE + "slot_"
-	Slots.caminho_antigo = FIXTURE + "antigo.cfg"
-	Config.arquivo = FIXTURE + "opcoes.cfg"
-	_limpar_fixture(FIXTURE)
-	DirAccess.make_dir_recursive_absolute(FIXTURE)
-	Config.recarregar()
-
-
-func _limpar_fixture(pasta: String) -> void:
-	var d := DirAccess.open(pasta)
-	if d == null:
-		return
-	d.include_hidden = true
-	d.list_dir_begin()
-	var nome := d.get_next()
-	while nome != "":
-		var p := pasta.path_join(nome)
-		if d.current_is_dir():
-			_limpar_fixture(p)
-		else:
-			ok(DirAccess.remove_absolute(p) == OK, "limpa arquivo QA")
-		nome = d.get_next()
-	d.list_dir_end()
-	ok(DirAccess.remove_absolute(pasta) == OK, "limpa diretorio QA")
+func _init() -> void:
+	Ambiente.iniciar(get_script().resource_path)
 
 
 func _exit_tree() -> void:
-	_finalizar()
+	Ambiente.finalizar()
 
 
 func _finalizar() -> void:
-	if anteriores.is_empty():
-		return
-	_limpar_fixture(FIXTURE)
-	if not anteriores.is_empty():
-		Meta.caminho_save = anteriores[0]
-		Slots.caminho_indice = anteriores[1]
-		Slots.caminho_base = anteriores[2]
-		Slots.caminho_antigo = anteriores[3]
-		Config.arquivo = anteriores[4]
-	anteriores.clear()
+	Ambiente.finalizar()
+	ok(not DirAccess.dir_exists_absolute(Ambiente.raiz), "fixture removida antes do resumo")
+	for caminho in [Meta.caminho_save, Slots.caminho_indice, Slots.caminho_base, Slots.caminho_antigo, Config.arquivo]:
+		ok(caminho.begins_with(Ambiente.raiz), "callback tardio permanece no sandbox")
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -66,7 +33,9 @@ func igual(a: float, b: float) -> bool:
 
 
 func _ready() -> void:
-	_isolar()
+	for caminho in [Meta.caminho_save, Slots.caminho_indice, Slots.caminho_base, Slots.caminho_antigo, Config.arquivo]:
+		ok(caminho.begins_with(Ambiente.raiz), "isolamento antes de criar Mundo")
+	ok(Slots.lista().is_empty() and Meta.saldo() == 0, "fixture inicia sem perfil herdado")
 	w = Mundo.instantiate()
 	w.modo_teste = true
 	add_child(w)

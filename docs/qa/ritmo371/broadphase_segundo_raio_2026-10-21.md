@@ -13,3 +13,5 @@ Após a correção, a mesma prova passa (`v2_ritmo falhas=0`), inclusive os cont
 Esta é uma prova localizada de geometria. Os relatórios comparativos anteriores permanecem históricos; uma nova matriz AFTER será registrada separadamente pelo responsável pela comparação.
 
 Validação local: v2_ritmo, v2_especial, v2_raio_por_nivel, v2_combate, v2_herois, v2_status e v2_partida encerraram com código 0 e falhas=0, sem SCRIPT ERROR. gdformat -l 160 --check no escopo scripts/testes/v2: 329 arquivos limpos; git diff --check limpo.
+
+Após integrar #397/#391, v2_ritmo adotou AmbienteV2 canônico em _init, antes do Mundo, e finaliza antes do resumo sem restaurar caminhos do jogador. Repetição local nas variantes base e migrável Nicão: código 0, falhas=0, sem SCRIPT ERROR; os seis CFG de cada cópia QA, origem e golden mantiveram hashes e tamanhos; sentinelas antigos (inclusive oculto) foram removidos e a pasta da fixture terminou ausente. Esta alteração é exclusivamente de teste.
