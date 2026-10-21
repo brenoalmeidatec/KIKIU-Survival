@@ -1254,13 +1254,16 @@ func _pt_jogar(dt: float) -> void:
 	if (colados >= 5 or (chefe_colado and h.invenc <= 0.0)) and pt.esquiva_q > 60:
 		h.esquivar()
 		pt.esquiva_q = 0
-	# vigia: herói no mesmo lugar por muito tempo
-	pt.preso_t = float(pt.preso_t) + dt
-	if pt.preso_t >= SEG_TRAVA_PRESO:
-		if h.pos.distance_to(pt.preso_pos) < 6.0:
-			_pt_trava("heroi_preso pos=%s alvo=%s bau=%s fuga=%s" % [str(h.pos.round()), str(pt.alvo.round()), str(achou), str(pt.fuga.round())])
+	# Vigia por deslocamento acumulado em passos de 6 px; um retorno ao início não apaga que houve movimento no intervalo.
+	if h.pos.distance_to(pt.preso_pos) >= 6.0:
 		pt.preso_pos = h.pos
 		pt.preso_t = 0.0
+	else:
+		pt.preso_t = float(pt.preso_t) + dt
+		if pt.preso_t >= SEG_TRAVA_PRESO:
+			_pt_trava("heroi_preso pos=%s alvo=%s bau=%s fuga=%s" % [str(h.pos.round()), str(pt.alvo.round()), str(achou), str(pt.fuga.round())])
+			pt.preso_pos = h.pos
+			pt.preso_t = 0.0
 
 
 ## Remove somente componentes que apontam para fora na faixa de borda. Se a projeção zera, usa uma tangente cardinal estável, sem

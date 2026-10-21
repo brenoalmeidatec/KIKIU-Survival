@@ -205,12 +205,38 @@ func _testar_fluxo_real() -> void:
 			% [str(inicio), str(h.pos), str(h.estado), str(h.andando)]
 		)
 	)
-	# O detector de posição permanece intacto: uma parada simulada acima do limiar ainda chama a trava original.
+	# Ida e volta de 70 px dentro dos mesmos 30 s não pode ser confundida com imobilidade só porque os extremos coincidem.
 	h.definir_pos(inicio)
-	inimigo.pos = inicio + Vector2.UP * 100.0
 	roteiro.pt.preso_pos = inicio
-	roteiro.pt.preso_t = 30.0 - PASSO
-	roteiro._pt_jogar(PASSO)
-	ok(roteiro.travas.size() == 1 and roteiro.travas[0].begins_with("heroi_preso"), "vigia existente acusa uma parada forçada com movimento pedido")
+	roteiro.pt.preso_t = 0.0
+	roteiro.travas.clear()
+	var caminho := [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 60.0, 50.0, 40.0, 30.0, 0.0]
+	for x in caminho:
+		h.definir_pos(inicio + Vector2(x, 0.0))
+		inimigo.pos = h.pos + Vector2.UP * 100.0
+		roteiro.pt.ponto = h.pos + Vector2.UP * 120.0
+		roteiro._pt_jogar(2.5)
+	ok(roteiro.travas.is_empty(), "ida e volta de 70 px em 30 s não acusa herói preso")
+	ok(roteiro.pt.preso_t < 0.01, "cada excursão de 6 px reinicia o relógio de imobilidade")
+	# Uma parada real e um jitter de 2 px continuam abaixo do limiar de movimento e disparam após 30 s.
+	for jitter in [false, true]:
+		h.definir_pos(inicio)
+		inimigo.pos = inicio + Vector2.UP * 100.0
+		roteiro.pt.ponto = inicio + Vector2.UP * 120.0
+		roteiro.pt.preso_pos = inicio
+		roteiro.pt.preso_t = 0.0
+		roteiro.travas.clear()
+		for quadro in 60:
+			if jitter:
+				h.definir_pos(inicio + Vector2(2.0 if quadro % 2 == 0 else 0.0, 0.0))
+			roteiro.pt.ponto = h.pos + Vector2.UP * 120.0
+			inimigo.pos = h.pos + Vector2.UP * 100.0
+			roteiro._pt_jogar(0.5)
+			if quadro < 59:
+				ok(roteiro.travas.is_empty(), "quadro %d: espera 30 s antes de acusar %s" % [quadro, "jitter" if jitter else "parada"])
+		ok(
+			roteiro.travas.size() == 1 and roteiro.travas[0].begins_with("heroi_preso"),
+			"%s abaixo de 6 px continua detectado em 30 s" % ("jitter" if jitter else "parada")
+		)
 	mundo.queue_free()
 	await get_tree().process_frame
