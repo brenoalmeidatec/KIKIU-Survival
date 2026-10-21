@@ -158,6 +158,9 @@ func iniciar(h) -> bool:
 	h.hab_invul = true
 	h.hab_anim_passo = int(_c.anim.passo)
 	h.hab_anim_ciclos = float(_c.anim.ciclos)
+	h.hab_anim_antes = str(_c.anim.get("antes", ""))
+	h.hab_anim_antes_ate = float(_c.anim.get("antes_ate", 0.0))
+	h.hab_anim_quadros = _c.anim.get("quadros", [])
 	h.hab_recarga_max = recarga_de(_c)
 	h.hab_recarga = h.hab_recarga_max
 	disparos += 1

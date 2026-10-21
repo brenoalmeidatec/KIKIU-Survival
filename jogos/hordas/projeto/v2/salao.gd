@@ -15,6 +15,7 @@ const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Progressao := preload("res://v2/progressao.gd")  # travas das estruturas e portais (dados/v2_progressao.json)
 const Personagens := preload("res://v2/personagens.gd")
+const Herois := preload("res://v2/herois.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle (Enter e A confirmam, ESC e B voltam)
 const Pausa := preload("res://v2/pausa.tscn")
 const Trilha := preload("res://v2/trilha.gd")
@@ -23,7 +24,6 @@ const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas d
 const Card := preload("res://v2/card_santuario.gd")
 const ESCOLHA := "res://v2/personagens.tscn"
 const FLORESTA := "res://v2/mundo.tscn"
-const Herois := preload("res://v2/herois.gd")
 const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"  # a folha (_albedo.png) e o quadro (.json) do herói do personagem ativo ficam aqui
 const LARG := 960
 const ALT := 540
@@ -62,7 +62,8 @@ var _heroi: Node2D
 var _sprite: Texture2D
 var _quadro_w := 32
 var _quadro_h := 44
-var _passos := 4  # quadros do andar na folha do herói (colunas - 1)
+var _pe_y := 42  # linha do quadro onde ficam os pés (info.pe_y; sem ele, 2 px acima da base, como no Hazaki)
+var _passos := 4  # quadros do andar (as colunas da folha menos o "parado"): 4 no Hazaki, 6 no Nicão e no Lucas
 var _pos := Vector2(480, 400)  # onde estão os pés do herói
 var _dir := 0  # linha da folha de sprites: baixo, esquerda, direita, cima
 var _quadro := 0  # coluna da folha: parado (0) ou um dos passos da animação (1 a 4)
@@ -109,9 +110,10 @@ func _ready() -> void:
 	var folha: String = PASTA_SPRITES + str(Herois.sprite(Herois.escolhido()))  # o herói do personagem (Hazaki, Nicão ou Lucas)
 	_sprite = load(folha + "_albedo.png") as Texture2D
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(folha + ".json"))
-	_passos = maxi(int(info.colunas.size()) - 1, 1)
 	_quadro_w = int(info.quadro[0])
 	_quadro_h = int(info.quadro[1])
+	_pe_y = int(info.get("pe_y", _quadro_h - 2))
+	_passos = maxi(int(info.colunas.size()) - 1, 1)
 	_montar_cenario()
 	_montar_hud()
 	_montar_painel()
@@ -234,7 +236,7 @@ func _pintar_heroi() -> void:
 		return
 	var w := _quadro_w * ESCALA
 	var h := _quadro_h * ESCALA
-	_heroi.draw_texture_rect_region(_sprite, Rect2(-w / 2.0, -h + 6.0, w, h), Rect2(_quadro * _quadro_w, _dir * _quadro_h, _quadro_w, _quadro_h))
+	_heroi.draw_texture_rect_region(_sprite, Rect2(-w / 2.0, 2.0 - _pe_y * ESCALA, w, h), Rect2(_quadro * _quadro_w, _dir * _quadro_h, _quadro_w, _quadro_h))
 
 
 func _montar_hud() -> void:
@@ -454,7 +456,7 @@ func _process(dt: float) -> void:
 		_pos = (_pos + anda.limit_length(1.0) * VELOCIDADE * dt).clamp(ANDAR_MIN, ANDAR_MAX)
 		_dir = _linha_de(anda)
 		_tempo_passo += dt
-		_quadro = 1 + int(_tempo_passo * PASSOS_POR_S) % _passos
+		_quadro = 1 + int(_tempo_passo * PASSOS_POR_S * _passos / 4.0) % _passos  # o ciclo inteiro (4 ou 6 passos) dura o mesmo
 	else:
 		_tempo_passo = 0.0
 		_quadro = 0

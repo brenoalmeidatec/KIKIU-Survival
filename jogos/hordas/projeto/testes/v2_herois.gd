@@ -320,7 +320,10 @@ func _t_nicao() -> void:
 	ok(h.vida_max == 180.0 and h.vida == 180.0, "Nicão: 180 de vida (Meta.aplicar não voltou para 100)")
 	ok(h.vel_base == 78.0 and h.raio == 8.0, "Nicão: anda a 78 px/s e o corpo é maior (raio 8)")
 	ok(absf(h.m_area - 1.2) < 0.001, "Nicão: bônus de área 1,2 (%.2f)" % h.m_area)
-	ok(h.tipo.w == 64 and h.tipo.h == 60 and h.tipo.has("alb") and h.sprite.texture != null, "Nicão: folha própria, de quadro maior")
+	ok(
+		h.tipo.w == 64 and h.tipo.h == 96 and h.tipo.has("alb") and h.sprite.texture != null,
+		"Nicão: folha própria do Blender, de quadro maior (64x96, a marreta passa da cabeça)"
+	)
 	ok(w.combate.cfg.golpe.passos.size() == 2 and w.combate.cfg.golpe.passos[1].nome == "pancada", "Nicão: combo curto, batida e pancada no chão")
 	w.reiniciar()
 	ok(h.vida_max == 180.0 and absf(h.m_area - 1.2) < 0.001 and h.vel_base == 78.0, "jogar de novo: os números do Nicão continuam (valores absolutos)")
@@ -379,6 +382,116 @@ func _t_nicao() -> void:
 	passos(2)
 	ok(w.combate.armas.lancadas > l0, "com o Abalo, a pancada solta uma onda de choque (lançadas %d -> %d)" % [l0, w.combate.armas.lancadas])
 	ok(alvo.vida < alvo.vida_max, "o alvo apanhou")
+	_t_nicao_animacoes()
+
+
+## As animações do Nicão feitas no Blender (folha de 38 colunas, quadro 64x96) ligadas ao herói: combo de 2 golpes (batida e pancada), rolamento,
+## defesa, dano e morte. As colunas vêm do JSON da folha (`animacoes`), então o teste vale para qualquer reordenação da folha.
+func _t_nicao_animacoes() -> void:
+	var h = w.heroi
+	var an: Dictionary = h.tipo.info.get("animacoes", {})
+	ok(an.has("combo") and an.has("rolamento") and an.has("escudo") and an.has("dano") and an.has("morte"), "Nicão: a folha traz as animações de ação")
+	ok(int(an.combo.golpes) == 2 and int(an.combo.quadros_por_golpe) == 6 and (an.combo.colunas as Array).size() == 12, "Nicão: combo de 2 golpes x 6 quadros")
+	ok(h.tipo.info.colunas.size() == 7 and h.tipo.info.has("pe_y"), "Nicão: 'colunas' é só o andar (parado + 6) e a folha tem pe_y")
+	var cc: Array = an.combo.colunas
+	var cr: Array = an.rolamento.colunas
+	var ce: Array = an.escudo.colunas
+	var cd: Array = an.dano.colunas
+	var cm: Array = an.morte.colunas
+	# batida: colunas do golpe 1
+	zerar()
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	h.atacar()
+	ate(func(): return h.estado == Heroi.Estado.GOLPE, 20)
+	passos(2)
+	ok(h.coluna >= int(cc[0]) and h.coluna <= int(cc[5]), "batida: usa as colunas do golpe 1 (%d a %d; coluna %d)" % [int(cc[0]), int(cc[5]), h.coluna])
+	# o impacto (acerto_em) cai no quadro 3 do golpe, o da marreta batendo
+	ate(func(): return h.golpe_acertou, 80)
+	ok(h.coluna == int(cc[3]), "batida: o dano sai no quadro de IMPACTO (coluna %d, impacto %d)" % [h.coluna, int(cc[3])])
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	# pancada: golpe 2 (colunas 6 a 11 do combo)
+	h.atacar()
+	ate(func(): return h.estado == Heroi.Estado.GOLPE, 20)
+	passos(2)
+	ok(
+		h.golpe_cfg.nome == "pancada" and h.coluna >= int(cc[6]) and h.coluna <= int(cc[11]),
+		"pancada: usa as colunas do golpe 2 (%d a %d; coluna %d)" % [int(cc[6]), int(cc[11]), h.coluna]
+	)
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	# rolamento
+	zerar()
+	h.entrada_forcada = Vector2(1, 0)
+	h.esquivar()
+	ate(func(): return h.estado == Heroi.Estado.ESQUIVA, 20)
+	passos(3)
+	ok(h.coluna >= int(cr[0]) and h.coluna <= int(cr[5]), "esquiva: usa as colunas do rolamento (coluna %d)" % h.coluna)
+	ok(is_zero_approx(h.sprite.rotation), "esquiva: o sprite não gira (o rolamento é da folha)")
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	# defesa
+	zerar()
+	h.escudo_forcado = true
+	passos(30)
+	ok(h.escudo_ativo and h.coluna >= int(ce[0]) and h.coluna <= int(ce[1]), "defesa: usa as 2 colunas da guarda (coluna %d)" % h.coluna)
+	ok(h.coluna == int(ce[1]), "defesa: segurando, fica no quadro da guarda (coluna %d)" % h.coluna)
+	h.escudo_forcado = null
+	passos(5)
+	# dano
+	zerar()
+	h.imortal = false
+	h.invenc = 0.0
+	h.levar_dano(1.0, h.pos + Vector2(30, 0))
+	ate(func(): return h.coluna >= int(cd[0]) and h.coluna <= int(cd[1]), 60)
+	ok(h.coluna >= int(cd[0]) and h.coluna <= int(cd[1]), "dano: usa as colunas do dano (coluna %d)" % h.coluna)
+	ate(func(): return h.coluna < int(cd[0]) or h.coluna > int(cd[1]), 600)
+	ok(h.coluna < int(cd[0]) or h.coluna > int(cd[1]), "dano: a animação acaba e volta ao parado (coluna %d)" % h.coluna)
+	# morte: cai de lado e trava no último quadro
+	h.invenc = 0.0
+	h.levar_dano(100000.0, h.pos + Vector2(30, 0))
+	ate(func(): return h.coluna >= int(cm[0]), 120)
+	ok(h.estado == Heroi.Estado.MORTO and h.coluna >= int(cm[0]) and h.coluna <= int(cm[5]), "morte: usa as colunas da morte (coluna %d)" % h.coluna)
+	ate(func(): return h.coluna == int(cm[5]), 1200)
+	ok(h.coluna == int(cm[5]), "morte: trava no último quadro, deitado (coluna %d)" % h.coluna)
+	ok(is_zero_approx(h.sprite.rotation), "morte: o sprite não gira 90 graus (rotação %.2f)" % h.sprite.rotation)
+	_t_nicao_e_q(cc, ce)
+	w.reiniciar()
+
+
+## E (investida) e Q (terremoto) do Nicão com quadros coerentes da folha: a E segura a guarda (marreta de través) e fecha na pancada até o impacto;
+## o Q toca a pancada inteira (antecipação, impacto no `golpe` do terremoto, volta). Sem pose própria: reaproveitam a defesa e o combo.
+func _t_nicao_e_q(cc: Array, ce: Array) -> void:
+	var h = w.heroi
+	zerar()
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	ok(h.habilidade(), "E: a investida dispara")
+	var ce_i := ce.map(func(x): return int(x))
+	var vistas := []
+	for i in 40:
+		passos(1)
+		if h.estado != Heroi.Estado.HABILIDADE:
+			break
+		if vistas.is_empty() or vistas[vistas.size() - 1] != h.coluna:
+			vistas.append(h.coluna)
+	ok(vistas.size() >= 3 and int(vistas[0]) == int(ce[0]), "E: começa na guarda do escudo (colunas %s)" % [vistas])
+	var fim := int(vistas[vistas.size() - 1])
+	ok(fim == int(cc[9]), "E: termina no quadro de impacto da pancada (coluna %d, impacto %d)" % [fim, int(cc[9])])
+	for c in vistas:
+		ok(ce_i.has(int(c)) or (int(c) >= int(cc[6]) and int(c) <= int(cc[11])), "E: só usa colunas da guarda e da pancada (coluna %d)" % int(c))
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 60)
+	zerar()
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	h.esp_carga = h.esp_carga_max
+	ok(h.especial(), "Q: o terremoto dispara")
+	var q := []
+	for i in 120:
+		passos(1)
+		if h.estado != Heroi.Estado.ESPECIAL:
+			break
+		if q.is_empty() or q[q.size() - 1] != h.coluna:
+			q.append(h.coluna)
+	ok(q.size() == 6 and int(q[0]) == int(cc[6]) and int(q[5]) == int(cc[11]), "Q: toca os 6 quadros da pancada (colunas %s)" % [q])
+	var tempo: float = float(w.combate.especial.blocos.terremoto.golpe)
+	var dur: float = float(w.combate.especial.blocos.terremoto.dur)
+	ok(tempo >= dur * 3.0 / 6.0 and tempo < dur * 4.0 / 6.0, "Q: o quadro de impacto da pancada cobre o instante do golpe (%.2f s de %.2f s)" % [tempo, dur])
 
 
 # ------------------------------------------------------------------ Lucas

@@ -39,7 +39,7 @@
 		"desc": "Nicão ergue a marreta e racha o chão: uma pancada enorme em volta e uma onda de choque que varre a horda.",
 		"cor": [1.0, 0.7, 0.35],
 		"dur": 1.05,
-		"anim": {"passo": 2, "ciclos": 1},
+		"anim": {"passo": 1, "ciclos": 1},
 		"foto": 0.72,
 		"golpe": 0.55,
 		"batida": {"raio": 125, "dano": 95, "empurrao": 540, "atordoa": 1.8, "hit_stop": 0.13, "tremor": 7},

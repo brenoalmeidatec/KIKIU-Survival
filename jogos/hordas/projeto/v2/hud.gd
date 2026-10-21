@@ -63,7 +63,6 @@ const BARRA_PX_FOLEGO := 18.0
 const BARRA_TETO_PX := 244.0  # a moldura (244 + 8) começa em x 104 e acaba em 356, antes do selo de nível (x 362) que fica na altura delas
 const BARRA_MIN_PX := 110.0  # cabe "999/999" na Atkinson de 24 px (uns 100 px)
 const CAIXA_RETRATO := Vector2(90, 108)  # a moldura do retrato (hud.tscn, Raiz/Retrato)
-const ESCALA_RETRATO := 1.5  # o quadro do herói é desenhado 1,5x (pixel art parado, nearest)
 const BARRA_FOLGA := 4.0  # a moldura de pedra fica 4 px fora de cada lado da barra de vida
 const BARRA_VELOC := 7.0  # quão rápido a barra desliza até o comprimento novo (suavização exponencial, por segundo)
 const BASE_VIDA := 100.0  # sem combate (mundo falso dos testes)
@@ -243,15 +242,20 @@ func _retrato_do_heroi() -> void:
 	var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
 	if not info is Dictionary or not info.has("quadro"):
 		return
-	var quadro := Vector2(float(info.quadro[0]), float(info.quadro[1]))
+	var regiao := Rect2(0.0, 0.0, float(info.quadro[0]), float(info.quadro[1]))
+	var propria: Variant = info.get("retrato", null)  # folha com quadro grande e vazio em volta (Nicão): só o corpo, recortado
+	if propria is Dictionary:
+		var r: Array = propria.regiao
+		regiao = Rect2(float(r[0]), float(r[1]), float(r[2]), float(r[3]))
 	var recorte := AtlasTexture.new()
 	recorte.atlas = folha
-	recorte.region = Rect2(Vector2.ZERO, quadro)
+	recorte.region = regiao
 	_heroi_img.texture = recorte
 	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	var escala := float(info.get("retrato_escala", ESCALA_RETRATO))  # o json da folha pode pedir outra escala (Lucas: 2x, inteira)
-	_heroi_img.size = quadro * escala
-	_heroi_img.position = ((CAIXA_RETRATO - _heroi_img.size) / 2.0).round()  # centrado na moldura de pedra
+	# escala INTEIRA para todo herói (pixel art nítida): a maior que ainda cabe na moldura, e o retrato centrado nela
+	var escala := maxf(floorf(minf(CAIXA_RETRATO.x / regiao.size.x, CAIXA_RETRATO.y / regiao.size.y)), 1.0)
+	_heroi_img.size = regiao.size * escala
+	_heroi_img.position = ((CAIXA_RETRATO - _heroi_img.size) / 2.0).round()
 
 
 func _exit_tree() -> void:
