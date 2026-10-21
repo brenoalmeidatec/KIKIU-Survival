@@ -8,6 +8,8 @@ extends Node
 
 const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
+const Meta := preload("res://v2/meta.gd")
+const Personagens := preload("res://v2/personagens.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const PASSO := 1.0 / 60.0
 const CENAS := ["hud", "parado", "andar", "combo", "habilidade", "especial", "rolamento", "escudo", "dano", "morte"]
@@ -35,18 +37,27 @@ func _ready() -> void:
 		print("FOTOS: passe --fotos=PASTA")
 		get_tree().quit()
 		return
+	Config.arquivo = "user://qa_hgif_opcoes.cfg"
+	Config.temporario("pausar_fora", false)
+	Config.temporario("qualidade_auto", false)
+	Config.g_perfil_temporario("alto")
+	Meta.caminho_save = "user://qa_hgif_meta.cfg"
+	Personagens.caminho_indice = "user://qa_hgif_indice.cfg"
+	Personagens.caminho_base = "user://qa_hgif_p"
+	Personagens.caminho_antigo = "user://qa_hgif_antigo.cfg"
 	Herois.forcado = id
 	w = Mundo.instantiate()
 	w.modo_teste = false
 	add_child(w)
 	w.set_process(false)
 	w.combate.audio.mudo = true
-	Config.g_aplicar_perfil("alto")
 	await _quadros(3)
 	for c in CENAS:
 		if so != "" and c != so:
 			continue
 		await _cena(c, pasta)
+	w.queue_free()
+	await _quadros(3)
 	get_tree().quit()
 
 

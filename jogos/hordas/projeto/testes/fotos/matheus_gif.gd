@@ -31,10 +31,14 @@ func _ready() -> void:
 			ativo = a.trim_prefix("--ativo=")
 		elif a == "--colisao":
 			colisao = true
-	Meta.caminho_save = "user://mgif.cfg"
-	Personagens.caminho_indice = "user://mgif_indice.cfg"
-	Personagens.caminho_base = "user://mgif_p"
-	Personagens.caminho_antigo = "user://mgif_antigo.cfg"
+	Config.arquivo = "user://qa_mgif_opcoes.cfg"
+	Config.temporario("pausar_fora", false)
+	Config.temporario("qualidade_auto", false)
+	Config.g_perfil_temporario("alto")
+	Meta.caminho_save = "user://qa_mgif_meta.cfg"
+	Personagens.caminho_indice = "user://qa_mgif_indice.cfg"
+	Personagens.caminho_base = "user://qa_mgif_p"
+	Personagens.caminho_antigo = "user://qa_mgif_antigo.cfg"
 	var nome := "Matheus" if ativo == "matheus" else "Breno"
 	var id := Personagens.criar(nome, Personagens.heroi_do_nome(nome))
 	Personagens.ativar(id)
@@ -44,7 +48,6 @@ func _ready() -> void:
 	add_child(w)
 	w.set_process(false)
 	w.combate.audio.mudo = true
-	Config.g_aplicar_perfil("alto")
 	await _quadros(3)
 	print("FOLHA ", Herois.sprite_da_partida(w.combate.heroi_id))
 	for c in CENAS:
@@ -52,8 +55,10 @@ func _ready() -> void:
 			continue
 		await _cena(c)
 	for f in DirAccess.get_files_at("user://"):
-		if f.begins_with("mgif"):
+		if f.begins_with("qa_mgif_"):
 			DirAccess.remove_absolute("user://" + f)
+	w.queue_free()
+	await _quadros(3)
 	get_tree().quit()
 
 
