@@ -1,7 +1,7 @@
 extends Node
 ## Captura as transições entre telas da v2 (#377) com as cenas de verdade: um PNG por quadro desenhado, em pastas por trecho, com o
 ## instante (ms) de cada quadro no nome (para montar o GIF no ritmo real). Roda com janela (precisa de GPU).
-## Uso: Godot --path jogos/hordas/projeto --position -3000,0 --resolution 960x540 res://testes/captura_transicoes.tscn -- --saida=<pasta> [--reduzido]
+## Uso: Godot --path jogos/hordas/projeto --position -3000,0 --resolution 960x540 res://testes/fotos/transicoes_fotos.tscn -- --saida=<pasta> [--reduzido]
 ## Usa saves TEMPORÁRIOS (user://captura_transicoes_*): o save real e as opções reais não são tocados.
 ## Trechos: 01_titulo_personagens, 02_personagens_santuario, 03_santuario_partida, 04_pausa_abre, 05_pausa_ajustes, 05b_pausa_conquistas, 06_pausa_fecha,
 ## 07_resultado, 08_resultado_santuario, 09_santuario_painel, 10_painel_fecha, 11_santuario_personagens. Com --reduzido, a opção "Reduzir animações" vale.
