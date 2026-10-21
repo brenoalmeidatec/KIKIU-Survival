@@ -86,11 +86,16 @@ func _copiar(heroi) -> void:
 	_sil.modulate = Color(1.0, 1.0, 1.0, _alfa)
 
 
-## Corpo de um ator no mundo (o mesmo retângulo do sprite: o pé no ponto `p`, `e` vezes o tamanho do quadro).
+## Corpo de um ator no mundo. Folhas grandes com `retrato.regiao` já delimitam o corpo sem o vazio e a arma:
+## esse recorte também é o contrato da oclusão (não deve ser apertado só para mudar a composição do retrato).
+## Sem recorte explícito, mantém a aproximação das folhas antigas.
 static func _corpo(p: Vector2, t: Dictionary, e: float) -> Rect2:
 	var w := float(t.w)
 	var h := float(t.h)
 	var pe := float(t.pe)
+	var recorte: Array = t.get("info", {}).get("retrato", {}).get("regiao", [])
+	if recorte.size() == 4:
+		return Rect2(p + (Vector2(-w * 0.5, -pe) + Vector2(recorte[0], recorte[1])) * e, Vector2(recorte[2], recorte[3]) * e)
 	return Rect2(p + Vector2(-w, -pe) * (e * 0.5), Vector2(w, h) * e)
 
 
