@@ -2036,6 +2036,21 @@ _Claude do Alisson (notebook)_
 - **Para o Alisson:** o PR não foi mesclado. Os `.import` dos dois PNGs novos entraram no commit; os gerados pela importação em outras pastas ficaram de fora.
 
 _Claude do Alisson (notebook)_
+## 2026-10-15 · Referências dos heróis — Codex do Alisson
+- Antes/depois: faltavam folhas para modelagem; entregues Matheus, Nicão e Lucas, cada um com frente, perfil e costas, branco e grade 3×1.
+- Validado: inspeção visual, integridade/dimensões dos PNGs e gdformat em scripts, testes e v2. Godot não executado localmente: somente arte e documentação, nenhum código/dado/teste alterado.
+- Para o Claude do Alisson: modelar e integrar; Matheus mantém a katana padrão, Nicão marreta e Lucas adagas. LEIA-ME e PROMPTS descrevem células, cores e limites. Pendente: validação dos modelos dentro do jogo.
+
+_Codex do Alisson_
+
+
+## 2026-10-15 · Lucas no Blender (todas as animações) — Claude do Alisson (notebook)
+- **Feito:** o Lucas (adagas) ganhou o mesmo processo do Hazaki (#293) em `jogos/hordas/fonte_arte/blender_herois/lucas/`: `modelo.py` monta o modelo por script a partir da referência do Codex (`referencia_herois/lucas.png`: capuz roxo pontudo, lenço dourado com ponta longa, túnica roxa, bandoleira com três adagas, braçadeiras, botas altas), `gerar.py` (rig com joelho e cotovelo, 4 faixas, contorno, Cycles em pixel nativo 32x44, 8 direções, cor e normal), uma `anim_<nome>.py` por animação e `montar_folha.py`. Animações: parado 4, andar 6, **combo de arremesso 12** (3 arremessos x 4 quadros: puxa, lança, braço estendido, volta; o 3º é o leque com as duas mãos), rolamento 6, **secundário/defesa 2** (as duas adagas cruzadas), dano 2 e morte 6 (de lado, enrolada e deitada, encolhida 12% para caber nos 32 px). A adaga da mão (`ossos.adaga`) some do quadro quando é lançada. Folha de 38 colunas no jogo (`sprites/lucas_*`, que trocou o sprite de 40x46): `heroi.gd` já lia `animacoes` do json, então só entrou o json (`combo.golpes` = 3, `quadros_por_golpe` = 4). Nada em `heroi.gd`, Hazaki e Nicão intactos.
+- **Salão:** o Santuário mostrava sempre o Hazaki; `v2/salao.gd` agora usa a folha do herói do personagem ativo (e o número de quadros de andar vem do json). O retrato de `personagens_tela.gd` continua com o Hazaki.
+- **Testes:** `v2_herois` generalizado (`_t_animacoes`, colunas lidas do json; vale para Hazaki e Lucas) e a foto de cada animação agora sai para os dois heróis do Blender. `v2_herois`, `v2_partida`, `v2_salao`, `v2_mundo`, `v2_morte_heroi`, `v2_mapas` e `v2_status` com `falhas=0`; a suíte v2 inteira (37 cenas, 2 em paralelo): 35 passaram de primeira e as duas que estouraram os 120 s (`v2_mapas`, `v2_status`) passaram sozinhas logo depois (outra sessão usava a máquina). `gdformat -l 160 --check` limpo.
+- **Evidências:** GIFs, comparativo com o sprite antigo, comparativo com a referência e prints reais (partida e Santuário, janela oculta) em `docs/visual_2_5d/blender_herois/lucas/`; detalhes e limites (bordas, morte, leque) no `LEIA-ME.md` da pasta.
+- **Pendente:** o rosto em 32x44 são dois olhos e a pele (a identidade vem do capuz e do lenço); a morte fica enrolada, não esticada, por causa dos 32 px; o retrato do Santuário (`personagens_tela.gd`) ainda é o do Hazaki. Matheus e Nicão seguem o mesmo molde (copiar a pasta, trocar `modelo.py` e as poses).
+- **Para o Alisson:** o PR não foi mesclado.
 
 ## 2026-10-15 · Claude do Alisson (notebook) · fim do turno: estado e retomada
 - **Na main hoje:** salão vivo e visual do Salão (#242/#261/#263), Nicão e Lucas no sistema de personagens do #242, ícones próprios de todas as cartas (#274, #283 via lote #291), lote #291 (controle no SUA BUILD #257, passe pixel no Alto, dissolve da morte do herói), Hazaki do Blender com todas as animações e morte de lado (#293), aba Gráficos completa (#287), aviso de versão nova (#284), Pesadelo e Rastro de katana com efeito (#285), dissolve dos monstros (#253), arte do Codex ligada: fusões (#294), molduras do HUD (#292), estruturas do Marco 4 (#295). Divisão FIXA: Claude faz todo o código, Codex só gera imagens (#265).

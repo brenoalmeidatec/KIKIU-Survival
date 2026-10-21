@@ -62,6 +62,7 @@ const BARRA_PX_VIDA := 0.5
 const BARRA_PX_FOLEGO := 18.0
 const BARRA_TETO_PX := 244.0  # a moldura (244 + 8) começa em x 104 e acaba em 356, antes do selo de nível (x 362) que fica na altura delas
 const BARRA_MIN_PX := 110.0  # cabe "999/999" na Atkinson de 24 px (uns 100 px)
+const CAIXA_RETRATO := Vector2(90, 108)  # a moldura do retrato (hud.tscn, Raiz/Retrato)
 const ESCALA_RETRATO := 1.5  # o quadro do herói é desenhado 1,5x (pixel art parado, nearest)
 const BARRA_FOLGA := 4.0  # a moldura de pedra fica 4 px fora de cada lado da barra de vida
 const BARRA_VELOC := 7.0  # quão rápido a barra desliza até o comprimento novo (suavização exponencial, por segundo)
@@ -248,7 +249,9 @@ func _retrato_do_heroi() -> void:
 	recorte.region = Rect2(Vector2.ZERO, quadro)
 	_heroi_img.texture = recorte
 	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_heroi_img.size = quadro * ESCALA_RETRATO
+	var escala := float(info.get("retrato_escala", ESCALA_RETRATO))  # o json da folha pode pedir outra escala (Lucas: 2x, inteira)
+	_heroi_img.size = quadro * escala
+	_heroi_img.position = ((CAIXA_RETRATO - _heroi_img.size) / 2.0).round()  # centrado na moldura de pedra
 
 
 func _exit_tree() -> void:

@@ -23,7 +23,8 @@ const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas d
 const Card := preload("res://v2/card_santuario.gd")
 const ESCOLHA := "res://v2/personagens.tscn"
 const FLORESTA := "res://v2/mundo.tscn"
-const SPRITE := "res://prototipos/cara_nova/sprites/hazaki_samurai"  # folha (_albedo.png) e quadro (.json) do herói
+const Herois := preload("res://v2/herois.gd")
+const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"  # a folha (_albedo.png) e o quadro (.json) do herói do personagem ativo ficam aqui
 const LARG := 960
 const ALT := 540
 const CHAO_Y := 180.0  # a parede vai do topo até aqui; os portais ficam na base dela
@@ -61,6 +62,7 @@ var _heroi: Node2D
 var _sprite: Texture2D
 var _quadro_w := 32
 var _quadro_h := 44
+var _passos := 4  # quadros do andar na folha do herói (colunas - 1)
 var _pos := Vector2(480, 400)  # onde estão os pés do herói
 var _dir := 0  # linha da folha de sprites: baixo, esquerda, direita, cima
 var _quadro := 0  # coluna da folha: parado (0) ou um dos passos da animação (1 a 4)
@@ -104,8 +106,10 @@ func _ready() -> void:
 	_ajustar_janela()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # a sala recebe o clique em _unhandled_input (andar até um alvo), não a tela inteira
 	_carregar_dados()
-	_sprite = load(SPRITE + "_albedo.png") as Texture2D
-	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(SPRITE + ".json"))
+	var folha: String = PASTA_SPRITES + str(Herois.sprite(Herois.escolhido()))  # o herói do personagem (Hazaki, Nicão ou Lucas)
+	_sprite = load(folha + "_albedo.png") as Texture2D
+	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(folha + ".json"))
+	_passos = maxi(int(info.colunas.size()) - 1, 1)
 	_quadro_w = int(info.quadro[0])
 	_quadro_h = int(info.quadro[1])
 	_montar_cenario()
@@ -450,7 +454,7 @@ func _process(dt: float) -> void:
 		_pos = (_pos + anda.limit_length(1.0) * VELOCIDADE * dt).clamp(ANDAR_MIN, ANDAR_MAX)
 		_dir = _linha_de(anda)
 		_tempo_passo += dt
-		_quadro = 1 + int(_tempo_passo * PASSOS_POR_S) % 4
+		_quadro = 1 + int(_tempo_passo * PASSOS_POR_S) % _passos
 	else:
 		_tempo_passo = 0.0
 		_quadro = 0

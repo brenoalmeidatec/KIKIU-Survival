@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://testes/fotos/heroi_gif.gd" id="1"]
+
+[node name="HeroiGif" type="Node"]
+script = ExtResource("1")

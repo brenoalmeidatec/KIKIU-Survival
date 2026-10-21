@@ -145,6 +145,14 @@ func _testes() -> void:
 		preload("res://v2/minimapa.gd").MARGEM_TELA == 6 and retrato_q.position == Vector2(6, 540 - 6 - retrato_q.size.y),
 		"minimapa e retrato com a mesma margem de 6 px (o retrato %s)" % retrato_q.position
 	)
+	# o herói do retrato fica DENTRO da moldura e centrado nela (a escala vem da folha: 1,5x por padrão, 2x no Lucas)
+	var img: Control = hud.get_node("Raiz/Retrato/Heroi")
+	if img.size.x > 0.0:
+		var livre := retrato_q.size - img.size
+		ok(
+			img.position.x >= 0.0 and img.position.y >= 0.0 and absf(img.position.x - livre.x / 2.0) <= 1.0 and absf(img.position.y - livre.y / 2.0) <= 1.0,
+			"o herói do retrato está centrado na moldura (%s em %s)" % [img.position, retrato_q.size]
+		)
 	# estilo Overwatch: a vida e o fôlego à direita do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
 	var barras_q: Control = hud.get_node("Raiz/MolduraBarras")
 	var folego_q: Control = hud.get_node("Raiz/Folego")
