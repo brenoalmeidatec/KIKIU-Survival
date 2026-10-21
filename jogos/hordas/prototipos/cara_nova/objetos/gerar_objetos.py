@@ -20,6 +20,7 @@ Uso (so precisa de Pillow):
     python gerar_objetos.py marco4    8 estruturas do Marco 4 (fonte_arte/marco4/fonte_estruturas.png, grade 4x2) -> projeto/assets/v2/marco4/
     python gerar_objetos.py fusoes    moldura, halo, Ventania e icone das fusoes (fonte_arte/fusoes/) -> projeto/assets/v2/fusoes/
     python gerar_objetos.py especial_q  icone do Q de cada heroi (fonte_arte/especial_q/, #349) -> projeto/assets/v2/especial_q/ (32 px)
+    python gerar_objetos.py chefes      busto de cada chefe da v2 (fonte_arte/chefes_v2/, #360) -> projeto/assets/v2/chefes/ (36 px, barra do chefe)
 
 Passos: fundo = alfa 0 (ou branco) ligado a borda, por flood fill; objetos = componentes do que sobrou,
 juntados por proximidade; ordem = linha e coluna; BOX para a escala do jogo; alfa binario a 50%;
@@ -1801,6 +1802,32 @@ def gerar_especiais_q():
         print("  %-7s %dx%d" % (h, img.width, img.height))
 
 
+# ------------------------------------------------------------------ bustos dos chefes da v2 (#360): fontes do Codex (#349) -> barra do chefe, 36 px
+CHEFES_FONTE = os.path.join(HORDAS, "fonte_arte", "chefes_v2")
+CHEFES_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "chefes")
+CHEFES_BUSTOS = ("cavaleiro_rubro", "rainha_tecela", "rei_espantalho")  # o nome do arquivo e a chave do busto em v2/hud.gd (BUSTOS)
+CHEFES_TAM = 36  # a barra do chefe tem 46 px com a moldura de pedra de 5 px: o busto cabe no miolo, sem encostar na moldura
+
+
+def icone_chefe(caminho):
+    """Busto 36 x 36: a mesma receita do Q (caixa justa, sem os residuos de alfa 1 a 8 das fontes, BOX em 34 px, alfa binario a 25%, contorno de 1 px)."""
+    im = Image.open(caminho).convert("RGBA")
+    im = im.crop(im.getchannel("A").point(lambda v: 255 if v > LIMITE_FUNDO else 0).getbbox())
+    lado = max(im.size)
+    quadrado = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+    quadrado.paste(im, ((lado - im.width) // 2, (lado - im.height) // 2))
+    img = binarizar(fit_em_caixa(quadrado, CHEFES_TAM - 2, CHEFES_TAM - 2), ICONES_LIMIAR)
+    return contorno(em_tela(img, CHEFES_TAM, CHEFES_TAM, "centro"))
+
+
+def gerar_chefes():
+    os.makedirs(CHEFES_SAIDA, exist_ok=True)
+    feitos = [icone_chefe(os.path.join(CHEFES_FONTE, b + ".png")) for b in CHEFES_BUSTOS]
+    for b, img in zip(CHEFES_BUSTOS, quantizar_lista(feitos, ICONES_COR)):
+        img.save(os.path.join(CHEFES_SAIDA, b + ".png"))
+        print("  %-14s %dx%d" % (b, img.width, img.height))
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "especial_q":
         gerar_especiais_q()
@@ -1814,5 +1841,7 @@ if __name__ == "__main__":
         gerar_marco4()
     elif len(sys.argv) > 1 and sys.argv[1] == "fusoes":
         gerar_fusoes()
+    elif len(sys.argv) > 1 and sys.argv[1] == "chefes":
+        gerar_chefes()
     else:
         main()

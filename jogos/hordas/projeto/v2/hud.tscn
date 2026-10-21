@@ -307,7 +307,7 @@ axis_stretch_vertical = 1
 
 [node name="Nome" type="Label" parent="Raiz/Chefe"]
 layout_mode = 0
-offset_left = 5.0
+offset_left = 48.0
 offset_top = 4.0
 offset_right = 575.0
 offset_bottom = 16.0
@@ -318,7 +318,7 @@ text = "CHEFE"
 
 [node name="Fantasma" type="TextureProgressBar" parent="Raiz/Chefe"]
 layout_mode = 0
-offset_left = 5.0
+offset_left = 48.0
 offset_top = 20.0
 offset_right = 575.0
 offset_bottom = 36.0
@@ -333,7 +333,7 @@ stretch_margin_bottom = 1
 
 [node name="Barra" type="TextureProgressBar" parent="Raiz/Chefe"]
 layout_mode = 0
-offset_left = 5.0
+offset_left = 48.0
 offset_top = 20.0
 offset_right = 575.0
 offset_bottom = 36.0
@@ -347,13 +347,24 @@ stretch_margin_bottom = 1
 
 [node name="Texto" type="Label" parent="Raiz/Chefe"]
 layout_mode = 0
-offset_left = 5.0
+offset_left = 48.0
 offset_top = 20.0
 offset_right = 575.0
 offset_bottom = 36.0
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "0/0"
+
+[node name="Busto" type="TextureRect" parent="Raiz/Chefe"]
+visible = false
+layout_mode = 0
+offset_left = 6.0
+offset_top = 5.0
+offset_right = 42.0
+offset_bottom = 41.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Anuncio" type="Control" parent="Raiz"]
 visible = false
