@@ -1,8 +1,12 @@
 Prova com cópia de save real — issue #387
 
-Estado em 21/10/2026: PENDENTE. O relatorio_2026-10-21.json registra somente preparação, importação Godot 4.4.1 e hashes de preservação.
-O probe de caminhos não abriu engine: ficou aguardando a fila e foi retirado sem filho Godot no repasse para continuação pelo Claude. Não é falha do produto.
-Nenhuma cena da suíte, smoke ou playtest foi executada nessa prova com save sujo. Não considerar o status da importação como aprovação da suíte.
+Estado final em 21/10/2026: CONCLUÍDO no commit dcde5a53c1d627cc3597faccfa6d5d89dfdb1002.
+O relatorio_2026-10-21_final.json registra as quatro rodadas: 76 cenas em série e v2_playtest isolado,
+nas variantes base e migrável. Cada rodada teve probe de user_dir aprovado antes dos testes.
+Todos os processos terminaram com código 0, falhas=0 e sem SCRIPT ERROR; as guardas SHA256/tamanho
+confirmaram origem, golden e QA inalterados após cada processo e fixtures limpas.
+O relatorio_2026-10-21.json mantém o estado histórico PENDENTE da preparação anterior; não é resultado desta continuação.
+A prova foi headless. Ferramentas de fotos sem flags não validam imagens (veja Limites abaixo).
 
 Arquivos desta pasta não contêm saves, dados pessoais do save, caminhos absolutos da máquina ou logs brutos.
 Os manifestos usam raízes lógicas e pares nome/tamanho/SHA256. Os CFG e os runners locais ficam externos ao Git.

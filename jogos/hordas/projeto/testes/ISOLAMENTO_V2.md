@@ -74,3 +74,20 @@ validação separada, em outro diretório de QA. O helper da v2 não afirma isol
 SHA-256 inalterado prova preservação de conteúdo; sozinho não prova ausência de leitura.
 Para revelar o antigo problema de Config, uma segunda cópia pode conter opções antigas
 que exigiriam migração, com o manifesto calculado depois dessa preparação.
+
+## Resultado da prova de 21/10/2026
+
+A continuação no commit `dcde5a53c1d627cc3597faccfa6d5d89dfdb1002` concluiu as 76 cenas
+em série e `v2_playtest` sozinho nas duas variantes graváveis (base e migrável).
+Os quatro probes confirmaram o diretório QA; cada processo terminou com código 0,
+`falhas=0`, sem `SCRIPT ERROR` e sem resíduos da fixture. SHA-256 e tamanho dos CFG
+na origem, golden e QA permaneceram iguais após cada processo. Evidência sanitizada:
+[relatório final](qa_save_real/relatorio_2026-10-21_final.json). O relatório histórico
+pendente da preparação foi preservado.
+
+A execução headless não comprova composição visual nem experiência humana. Ferramentas
+como `v2_controle_fotos`, `v2_fontes_prints`, `v2_icones_prints` e `v2_fontes_folha`,
+sem `--fotos` ou `--spec`, exercitam inicialização e limpeza, sem produzir capturas;
+outras cenas também pulam partes visuais em headless. Hashes finais iguais não provam
+ausência de leitura nem de escrita transitória restaurada. O CI integral permanece
+uma verificação separada, inclusive para as cenas v1.
