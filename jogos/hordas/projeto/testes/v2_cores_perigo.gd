@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automatico: vermelho so para o que machuca o jogador (v2/DESIGN.md, secao 2).
 #   - nenhuma arma nem aliado do heroi tem cor vermelha: os golpes e as evolucoes de dados/v2_cartas.json (o jogo le esse arquivo)
 #     e o registro dos lotes em dados/v2_armas/lote_*.json;

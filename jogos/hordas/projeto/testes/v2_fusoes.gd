@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da arte das fusões (assets/v2/fusoes/, gerada por `gerar_objetos.py fusoes`, PR #289 do Codex integrado):
 # o cartão FUSÃO é 600 x 200 com borda de 12 px (9-slice), o halo 48 x 48, o ícone 16 x 16 e a onda da Ventania 64 x 32.
 # A Ventania entra pelo registro de armas (v2/armas_novas.gd lê o índice da fusão por último, então vale por cima da arte da arma base).

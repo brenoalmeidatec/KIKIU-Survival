@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do comprimento das barras de vida e de fôlego do HUD da v2 (v2/hud.gd, _barras). No máximo de partida a barra mede 208 px;
 # cada ponto de vida acima da base do herói (mundo.combate.cfg) soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO. A barra
 # desliza até o novo tamanho dentro de avancar; não corre com a escolha de carta na tela (a HUD some) e cresce quando ela volta; a

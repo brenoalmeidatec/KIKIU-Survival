@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do card "SUA BUILD" da v2 (v2/status.gd). A pergunta de cada bloco é: o número que o card mostra é o que o jogo FAZ?
 # Cada número do card é conferido contra o jogo em movimento: acerta um boneco com o combo e compara o dano, mede o alcance de cada passo,
 # anda e corre e mede a velocidade, cura o herói subindo de nível, mede a recuperação do fôlego, solta orbes na borda do ímã, conta as
@@ -24,10 +24,10 @@ const Meta := preload("res://v2/meta.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const PASSO := 1.0 / 60.0
 const PASSO_FINO := 1.0 / 240.0  # a medição do ciclo do combo e do avanço do golpe sem o arredondamento por quadro
-const SAVE_TESTE := "user://teste_v2_status_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_status_opcoes.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const OPCOES_REAL := "user://opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_status/teste_v2_status_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_status/teste_v2_status_opcoes.cfg"
+const SAVE_REAL := "user://testes_v2/v2_status/v2_progresso.cfg"
+const OPCOES_REAL := "user://testes_v2/v2_status/opcoes.cfg"
 
 var falhas := 0
 var w

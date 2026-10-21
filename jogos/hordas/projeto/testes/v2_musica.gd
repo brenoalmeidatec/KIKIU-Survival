@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da música da v2 (v2/trilha.gd, o bus "Musica" de scripts/hordas/som.gd e dados/v2_musica.json). Usa saves
 # TEMPORÁRIOS (meta e opções); o user://opcoes.cfg real não é tocado.
 # Confere: o bus Musica existe, sai no Master e as duas faixas do Som tocam nele; cada momento do JSON aponta para um .ogg que existe
@@ -10,8 +10,8 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Meta := preload("res://v2/meta.gd")
-const SAVE_TESTE := "user://teste_v2_musica_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_musica_opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_musica/teste_v2_musica_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_musica/teste_v2_musica_opcoes.cfg"
 const PASTA_MUSICA := "res://assets/audio/musica/"
 const LICENCAS := "../../../docs/LICENCAS_AUDIO.md"  # relativo à pasta do projeto (só existe com o repositório inteiro)
 
@@ -29,7 +29,7 @@ func _ready() -> void:
 	Config.arquivo = OPCOES_TESTE
 	await _testes()
 	Som.parar_musica()
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_musica/opcoes.cfg"
 	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
