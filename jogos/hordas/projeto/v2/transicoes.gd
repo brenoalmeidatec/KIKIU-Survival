@@ -181,6 +181,8 @@ func reencaixar_ui(canvas: Vector2, desloc: Vector2) -> void:
 		if atual.distance_to(antes[item]) > 0.01:
 			var base: Dictionary = item.get_meta("tr_base")
 			base.pos = atual
+			if base.mov:
+				_aplicar_deslize(item, base)
 
 
 func _posicao(c: CanvasItem) -> Vector2:
@@ -189,6 +191,27 @@ func _posicao(c: CanvasItem) -> Vector2:
 	if c is Node2D:
 		return (c as Node2D).position
 	return Vector2.ZERO
+
+
+func _definir_posicao(c: CanvasItem, pos: Vector2) -> void:
+	if c is Control:
+		(c as Control).position = pos
+	elif c is Node2D:
+		(c as Node2D).position = pos
+
+
+func _aplicar_deslize(c: CanvasItem, base: Dictionary) -> void:
+	var inicio: Vector2 = base.get("deslize_inicio", Vector2.ZERO)
+	var fim: Vector2 = base.get("deslize_fim", Vector2.ZERO)
+	var progresso: float = base.get("progresso", 1.0)
+	_definir_posicao(c, base.pos + inicio.lerp(fim, progresso))
+
+
+func _atualizar_deslize(progresso: float, c: CanvasItem, base: Dictionary) -> void:
+	if not is_instance_valid(c):
+		return
+	base.progresso = progresso
+	_aplicar_deslize(c, base)
 
 
 func _process(_dt: float) -> void:
@@ -219,23 +242,24 @@ func entrar(c: CanvasItem, desloc := DESLIZE_PAINEL, alfa0 := 0.0, dur := DUR_EN
 	if not is_instance_valid(c):
 		return
 	var base := _base(c)
+	var ja_animava := animando(c)
 	c.visible = true
 	var d := duracao(dur)
 	if d <= 0.0 or not c.is_inside_tree():
 		_fixar(c, base)
 		return
 	var cima := _desloc(c, desloc)
-	if not animando(c):  # no meio de um sair, volta de onde está em vez de recomeçar do zero
+	if not ja_animava:  # no meio de um sair, volta de onde está em vez de recomeçar do zero
 		c.modulate.a = alfa0 * base.a
-		if c is Control:
-			(c as Control).position = base.pos + cima
-		elif c is Node2D:
-			(c as Node2D).position = base.pos + cima
+		_definir_posicao(c, base.pos + cima)
 	var tw := _novo_tween(c)
 	tw.tween_property(c, "modulate:a", base.a, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	if cima != Vector2.ZERO:
+	if cima != Vector2.ZERO or base.mov:
 		base.mov = true
-		tw.parallel().tween_property(c, "position", base.pos, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		base.deslize_inicio = _posicao(c) - base.pos
+		base.deslize_fim = Vector2.ZERO
+		base.progresso = 0.0
+		tw.parallel().tween_method(_atualizar_deslize.bind(c, base), 0.0, 1.0, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.finished.connect(_fixar.bind(c, base))
 
 
@@ -256,9 +280,12 @@ func sair(c: CanvasItem, desloc := DESLIZE_PAINEL * 0.5, dur := DUR_SAIR, fim :=
 	var cima := _desloc(c, desloc)
 	var tw := _novo_tween(c)
 	tw.tween_property(c, "modulate:a", 0.0, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	if cima != Vector2.ZERO:
+	if cima != Vector2.ZERO or base.mov:
 		base.mov = true
-		tw.parallel().tween_property(c, "position", base.pos + cima, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		base.deslize_inicio = _posicao(c) - base.pos
+		base.deslize_fim = cima
+		base.progresso = 0.0
+		tw.parallel().tween_method(_atualizar_deslize.bind(c, base), 0.0, 1.0, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.finished.connect(
 		func():
 			_fixar(c, base)

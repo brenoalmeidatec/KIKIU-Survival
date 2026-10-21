@@ -197,15 +197,25 @@ func _reencaixe() -> void:
 	await _esperar(0.04)
 	_simular_reencaixe(c, Vector2(210, 130))
 	ok(c.get_meta("tr_base").pos == Vector2(210, 130), "reflow durante o slide atualiza a base do painel")
+	await _quadros(1)
+	ok(
+		Transicoes.animando(c) and c.modulate.a < 1.0 and is_equal_approx(c.position.x, 210.0) and c.position.y >= 130.0 and c.position.y <= 140.0,
+		"o restante do slide de entrada segue o layout novo durante o fade (%s)" % c.position
+	)
 	Transicoes.entrar(c, Vector2.ZERO)
 	await _esperar(Transicoes.DUR_ENTRAR + 0.15)
-	ok(c.position == Vector2(210, 130) and c.modulate.a == 1.0, "interromper o slide com fade puro respeita o novo layout (%s)" % c.position)
-	# Saída também devolve ao lugar reencaixado, embora o tween ainda aponte para a posição anterior.
+	ok(_perto(c.position, Vector2(210, 130)) and c.modulate.a == 1.0, "interromper o slide com fade puro respeita o novo layout (%s)" % c.position)
+	# Saída também acompanha o lugar reencaixado durante o movimento.
 	Transicoes.sair(c)
 	await _esperar(0.03)
 	_simular_reencaixe(c, Vector2(305, 210))
+	await _quadros(1)
+	ok(
+		Transicoes.animando(c) and is_equal_approx(c.position.x, 305.0) and c.position.y >= 210.0 and c.position.y <= 215.0,
+		"o restante do slide de saída parte do layout novo (%s)" % c.position
+	)
 	await _esperar(Transicoes.DUR_SAIR + 0.15)
-	ok(not c.visible and c.position == Vector2(305, 210), "sair durante resize preserva o novo layout (%s)" % c.position)
+	ok(not c.visible and _perto(c.position, Vector2(305, 210)), "sair durante resize preserva o novo layout (%s)" % c.position)
 	# com deslize a posição de repouso continua sendo devolvida
 	c.position = Vector2(30, 40)
 	Transicoes.entrar(c)
