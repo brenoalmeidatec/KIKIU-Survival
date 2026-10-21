@@ -1,4 +1,4 @@
-extends Control
+extends "res://testes/isolamento_v2_control.gd"
 # Salão vivo (v2/salao_vivo.gd): limites por perfil, pausa, nenhum nó novo por quadro, níveis das estações (só leitura), herói vivo.
 # Saves com prefixo único; hashes dos saves reais conferidos no fim. Com --prints=<pasta> (e janela de verdade) grava um print por perfil.
 # godot --headless --path jogos/hordas/projeto res://testes/v2_salao_vivo.tscn
@@ -25,14 +25,14 @@ func _ready() -> void:
 		if arg.begins_with("--so="):
 			so = arg.trim_prefix("--so=")
 	prefixo = "qa_vivo_%d_" % Time.get_ticks_usec()
-	var d := DirAccess.open("user://")
+	var d := DirAccess.open("user://testes_v2/v2_salao_vivo/")
 	for arquivo in d.get_files():
 		if not arquivo.begins_with("qa_") and not arquivo.begins_with("teste_"):  # arquivos de teste, que rodam em paralelo no mesmo user://
-			reais[arquivo] = FileAccess.get_md5("user://" + arquivo)
-	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
-	Personagens.caminho_base = "user://" + prefixo + "p"
-	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
-	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
+			reais[arquivo] = FileAccess.get_md5("user://testes_v2/v2_salao_vivo/" + arquivo)
+	Personagens.caminho_indice = "user://testes_v2/v2_salao_vivo/" + prefixo + "indice.cfg"
+	Personagens.caminho_base = "user://testes_v2/v2_salao_vivo/" + prefixo + "p"
+	Personagens.caminho_antigo = "user://testes_v2/v2_salao_vivo/" + prefixo + "antigo.cfg"
+	Meta.caminho_save = "user://testes_v2/v2_salao_vivo/" + prefixo + "meta.cfg"
 	ok(Personagens.ativar(Personagens.criar("Matheus")), "slot isolado ativo")
 	DisplayServer.window_set_size(Vector2i(960, 540))
 	for perfil in ["baixo", "medio", "alto"]:
@@ -42,7 +42,7 @@ func _ready() -> void:
 		await niveis_e_heroi()
 		await observacoes_reais()
 	for arquivo in reais:
-		ok(FileAccess.get_md5("user://" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
+		ok(FileAccess.get_md5("user://testes_v2/v2_salao_vivo/" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
 	for arquivo in d.get_files():
 		if arquivo.begins_with(prefixo):
 			d.remove(arquivo)

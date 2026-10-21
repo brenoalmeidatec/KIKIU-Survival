@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da oclusão da v2 (leva 4): o jogador sempre enxerga o herói.
 #   - herói ATRÁS de uma árvore: o buraco raio-x da árvore liga (força 1, centro no herói) e a silhueta fica desligada (sem duplicar);
 #   - campo aberto, sem nada na frente: os dois desligam;

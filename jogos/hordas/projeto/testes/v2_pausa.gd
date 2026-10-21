@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do menu de pausa da v2 (v2/pausa.gd, v2/ajustes_graficos.gd, ligado ao mundo e ao santuário). Usa saves
 # TEMPORÁRIOS: a meta (user://teste_v2_pausa_meta.cfg) e as opções (user://teste_v2_pausa_opcoes.cfg). O save real
 # (user://v2_progresso.cfg) e user://opcoes.cfg não são tocados, e a conferência por md5 garante isso.
@@ -24,10 +24,10 @@ const Resultado := preload("res://v2/resultado_meta.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const Sombras := preload("res://v2/sombras.gd")
 const QualidadeAuto := preload("res://v2/qualidade_auto.gd")
-const SAVE_TESTE := "user://teste_v2_pausa_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_pausa_opcoes.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const OPCOES_REAL := "user://opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_pausa/teste_v2_pausa_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_pausa/teste_v2_pausa_opcoes.cfg"
+const SAVE_REAL := "user://testes_v2/v2_pausa/v2_progresso.cfg"
+const OPCOES_REAL := "user://testes_v2/v2_pausa/opcoes.cfg"
 
 var falhas := 0
 var saiu := 0  # o gancho ao_sair conta aqui: o processo de teste não fecha
@@ -61,7 +61,7 @@ func _limpar() -> void:
 	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_pausa/opcoes.cfg"
 
 
 func _md5(caminho: String) -> String:

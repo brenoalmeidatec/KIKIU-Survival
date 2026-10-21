@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da Sentinela de Bambu (torreta, tipo "torre") e da fusão Pagode do Trovão (v2/armas_novas.gd, dados/v2_cartas.json):
 #  - a carta existe com 5 níveis, ícone próprio de 32 e 16 px, e aparece na escolha de cartas;
 #  - com inimigos por perto, depois da recarga existe 1 torre; ela atira virotes ("projetil") e machuca os monstros;

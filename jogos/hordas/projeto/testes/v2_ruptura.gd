@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da RUPTURA, a habilidade da tecla E (LB no controle) (v2/ruptura.gd, heroi.gd, combate.gd, cartas.gd, hud.gd, dados/v2_ruptura.json):
 # dados, ação de entrada (tecla E e LB), carga que cresce, toque curto que cancela, disparo em 360 graus pela elipse do chão
 # (cheio, parcial, perfeito), apanhar sem cancelar, esquiva que cancela, pausa/escolha/baú/morte que cancelam e não deixam o clique vazar, salto de

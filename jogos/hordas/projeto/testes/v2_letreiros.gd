@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Letreiros do santuário (v2/salao_vivo.gd e v2/salao_visual.gd): cada pedaço do nome (o texto, o cadeado grande e a linha de baixo) fica
 # quase transparente enquanto o herói está sobre ele e volta quando ele sai; fora disso, todos seguem legíveis.
 # godot --headless --path jogos/hordas/projeto res://testes/v2_letreiros.tscn
@@ -25,10 +25,10 @@ func _ready() -> void:
 		if a.begins_with("--") and a.contains("="):
 			args[a.get_slice("=", 0).substr(2)] = a.get_slice("=", 1)
 	var prefixo := "qa_letr_%d_" % Time.get_ticks_usec()  # saves isolados: não toca no save real
-	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
-	Personagens.caminho_base = "user://" + prefixo + "p"
-	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
-	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
+	Personagens.caminho_indice = "user://testes_v2/v2_letreiros/" + prefixo + "indice.cfg"
+	Personagens.caminho_base = "user://testes_v2/v2_letreiros/" + prefixo + "p"
+	Personagens.caminho_antigo = "user://testes_v2/v2_letreiros/" + prefixo + "antigo.cfg"
+	Meta.caminho_save = "user://testes_v2/v2_letreiros/" + prefixo + "meta.cfg"
 	Personagens.ativar(Personagens.criar("Breno"))
 	if args.has("janela"):
 		var p := str(args.janela).split("x")
@@ -38,7 +38,7 @@ func _ready() -> void:
 		await fotos(str(args.fotos), str(args.get("nome", "x")), str(args.get("janela", "padrao")))
 	else:
 		await testar()
-	var d := DirAccess.open("user://")
+	var d := DirAccess.open("user://testes_v2/v2_letreiros/")
 	for arquivo in d.get_files():
 		if arquivo.begins_with(prefixo):
 			d.remove(arquivo)

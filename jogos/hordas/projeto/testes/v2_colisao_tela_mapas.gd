@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste por mapa da colisão de monstro só perto da tela (#336). Para cada mapa de dados/v2_niveis.json, com o mundo de verdade (as formas
 # do mapa), confere: 1) a horda chega ao herói nos primeiros segundos (partida de verdade, diretor ligado, herói parado);
 # 2) nenhum monstro visível atravessa uma forma (passa de fora para dentro de uma forma com a tela à vista; quem já estava dentro quando

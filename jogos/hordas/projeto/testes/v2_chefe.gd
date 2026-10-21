@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste dos CHEFES da v2 (v2/chefe.gd): a IDENTIDADE de cada marca (ataque próprio anunciado e esquivável, adorno) e o mini-chefe do nível 10 (anúncio, barra, ataques anunciados que disparam, dano, baú, e matá-lo
 # não é vitória), o do nível 20 e o CHEFÃO do nível 30, que é a vitória: o mapa fica vencido no save (combate.fim_de_partida chama
 # Meta.marcar_mapa_vencido). Os níveis em si estão em testes/v2_diretor.gd.
@@ -7,7 +7,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Heroi := preload("res://v2/heroi.gd")
 const Meta := preload("res://v2/meta.gd")
 const PASSO := 1.0 / 60.0
-const SAVE_TESTE := "user://teste_v2_chefe.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_chefe/teste_v2_chefe.cfg"
 var falhas := 0
 var w
 var sinais := {}
