@@ -375,15 +375,15 @@
       "protected_saves_unchanged": true,
       "golden_unchanged": true,
       "root_inventory_six": true,
-      "no_unexpected_outside_fixture": null,
+      "no_unexpected_outside_fixture": true,
       "fixture_clean": true,
-      "scene_fixture_removed": null,
-      "tests_v2_empty": null,
-      "fixture_sentinels_before": null,
-      "fixture_sentinels_removed": null,
-      "product_source_tree_sha256": null,
-      "product_source_tree_unchanged": null,
-      "wip_head": null,
+      "scene_fixture_removed": true,
+      "tests_v2_empty": true,
+      "fixture_sentinels_before": 0,
+      "fixture_sentinels_removed": true,
+      "product_source_tree_sha256": "9911483f7369fad163044accf8aa74328ab4370e05852c915959c69c2e5946d7",
+      "product_source_tree_unchanged": true,
+      "wip_head": "07c0e6d5c2d692e48a6b11b7ee765e39725b99b3",
       "passed": true
     },
     {
@@ -586,5 +586,30 @@
       "wip_head": "d66da75734245d838bdc86762408447ab43c56e2",
       "passed": true
     }
-  ]
+  ],
+  "historical_diagnostic_results": [
+    {
+      "scene": "v2_isolamento",
+      "variant": "base",
+      "exit_code": 0,
+      "falhas_zero": true,
+      "script_error": false,
+      "protected_saves_unchanged": true,
+      "golden_unchanged": true,
+      "root_inventory_six": true,
+      "no_unexpected_outside_fixture": null,
+      "fixture_clean": true,
+      "scene_fixture_removed": null,
+      "tests_v2_empty": null,
+      "fixture_sentinels_before": null,
+      "fixture_sentinels_removed": null,
+      "product_source_tree_sha256": null,
+      "product_source_tree_unchanged": null,
+      "wip_head": null,
+      "passed": true,
+      "historical_note": "Smoke anterior preservado como histórico; não media a árvore de origem nem as guardas completas."
+    }
+  ],
+  "additional_historical_launches": 4,
+  "total_launches": 33
 }
