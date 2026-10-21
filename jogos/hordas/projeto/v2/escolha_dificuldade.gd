@@ -127,6 +127,7 @@ func _montar_cartao(pai: Control, i: int) -> void:
 	_texto(cartao, str(d.nome).to_upper(), Rect2(18, 38, 240, 44), 37, cor, true)
 	var desc := _texto(cartao, str(d.desc), Rect2(18, 86, 240, 44), 16, Paleta.TEXTO_SECUNDARIO)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.size = Vector2(240, 44)  # a quebra reduz o mínimo: devolve a largura que o texto sem quebra expandiu
 	var bonus := roundi((float(d.almas_mult) - 1.0) * 100.0)
 	_texto(cartao, "+%d%%" % bonus, Rect2(18, 148, 110, 24), 16, cor, false, true)
 	_texto(cartao, "ALMAS E XP", Rect2(142, 148, 116, 24), 16, Paleta.TEXTO)

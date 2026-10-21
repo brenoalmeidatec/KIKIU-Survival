@@ -6,8 +6,8 @@
     {"id": "dificil", "nome": "Difícil", "desc": "Hordas intensas. Poupe fôlego para sobreviver.", "almas_mult": 1.6, "xp_mult": 1.6, "vel_mult": 1.2, "densidade_mult": 1.5, "onda_tempo_mult": 0.8, "elite_tempo_mult": 0.8, "chefe_tempo_mult": 0.9, "golpe_custo": 0.32, "golpe_calor": 3.0}
   ],
   "conquistas": [
-    {"id": "vence_dificuldade_facil", "nome": "Primeiros passos", "desc": "Vencer um mapa no Fácil", "condicao": "venceu", "dificuldade": "facil", "icone": "portal_floresta"},
-    {"id": "vence_dificuldade_medio", "nome": "Ritmo de guerreiro", "desc": "Vencer um mapa no Médio", "condicao": "venceu", "dificuldade": "medio", "icone": "portal_laboratorio"},
-    {"id": "vence_dificuldade_dificil", "nome": "Sobrevivente implacável", "desc": "Vencer um mapa no Difícil", "condicao": "venceu", "dificuldade": "dificil", "icone": "portal_medio"}
+    {"id": "vence_dificuldade_facil", "nome": "Primeiros passos", "desc": "Vencer um mapa no Fácil", "condicao": "venceu", "dificuldade": "facil", "icone": "portal_floresta", "recompensa": {"tipo": "nenhuma", "id": "", "nome": ""}},
+    {"id": "vence_dificuldade_medio", "nome": "Ritmo de guerreiro", "desc": "Vencer um mapa no Médio", "condicao": "venceu", "dificuldade": "medio", "icone": "portal_laboratorio", "recompensa": {"tipo": "nenhuma", "id": "", "nome": ""}},
+    {"id": "vence_dificuldade_dificil", "nome": "Sobrevivente implacável", "desc": "Vencer um mapa no Difícil", "condicao": "venceu", "dificuldade": "dificil", "icone": "portal_medio", "recompensa": {"tipo": "nenhuma", "id": "", "nome": ""}}
   ]
 }

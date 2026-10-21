@@ -20,6 +20,8 @@ func _ready() -> void:
 	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
 	Config.arquivo = "user://" + prefixo + "opcoes.cfg"
 	Config.recarregar()
+	if Config._prop_timer != null:
+		Config._prop_timer.process_mode = Node.PROCESS_MODE_DISABLED  # a foto exata pode ultrapassar a área útil do monitor
 	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
 	Personagens.caminho_base = "user://" + prefixo + "p"
 	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
@@ -39,7 +41,13 @@ func _ready() -> void:
 		tamanhos = [Vector2i(int(partes[0]), int(partes[1]))]
 	for tamanho in tamanhos:
 		get_window().size = tamanho
+		await get_tree().process_frame
 		ajuste.refazer()
+		var cursor := InputEventMouseMotion.new()
+		cursor.position = get_viewport().get_final_transform() * Vector2.ZERO
+		cursor.global_position = cursor.position
+		Input.parse_input_event(cursor)
+		Input.flush_buffered_events()
 		for id in ["facil", "medio", "dificil"]:
 			Meta.escolher_dificuldade(id)
 			escolha.abrir("Ruínas da Floresta")
