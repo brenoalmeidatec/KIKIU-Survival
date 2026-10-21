@@ -11,7 +11,7 @@ extends RefCounted
 ## (% de alcance e velocidade). O crítico explosivo (`explode`) também vale aqui.
 
 const MAX := 96  # cabe a Tempestade de Adagas (Q do Lucas: ~42 em voo + rodada final de 18) junto com as adagas normais
-const R_CAND := 560.0  # só monstros a até isto do herói entram na conta do quadro
+const ALCANCE_EXTRA := 120.0  # a Chuva pode nascer e andar ainda neste quadro
 const R_ADAGA := 4.0  # raio de acerto da adaga (cresce com a área do herói)
 const COMPR := 16.0  # a lâmina desenhada: 16x5 px, apontando para a direita
 
@@ -163,7 +163,6 @@ func _nova(
 
 
 func atualizar(dt: float) -> void:
-	var h = mundo.heroi
 	var ativo := false
 	for i in MAX:
 		if a_rest[i] > 0.0:
@@ -175,12 +174,7 @@ func atualizar(dt: float) -> void:
 			no_corpo.queue_redraw()
 			no_brilho.queue_redraw()
 		return
-	_cand.clear()
-	var c: Vector2 = h.pos
-	var r2 := R_CAND * R_CAND
-	for m in mundo.monstros:
-		if m.vivo and not m.morrendo and (m.pos - c).length_squared() < r2:
-			_cand.append(m)
+	_selecionar_candidatos(dt)
 	for i in MAX:
 		if a_rest[i] <= 0.0:
 			continue
@@ -188,6 +182,40 @@ func atualizar(dt: float) -> void:
 	_desenha = true
 	no_corpo.queue_redraw()
 	no_brilho.queue_redraw()
+
+
+## Busca O(MAX + monstros), independente da distância atual do herói. A união cobre os
+## segmentos deste quadro e o raio de cada lâmina; o corpo do monstro usa o mesmo peito do narrowphase.
+func _selecionar_candidatos(dt: float) -> void:
+	_cand.clear()
+	var uniao := Rect2()
+	var primeiro := true
+	var pode_extra := false
+	for i in MAX:
+		if a_rest[i] <= 0.0:
+			continue
+		var fim := a_pos[i] + a_dir[i] * minf(a_vel[i] * dt, a_rest[i])
+		var segmento := Rect2(a_pos[i], Vector2.ZERO).expand(fim).grow(a_raio[i])
+		uniao = segmento if primeiro else uniao.merge(segmento)
+		primeiro = false
+		pode_extra = pode_extra or a_extra[i] == 0
+	if primeiro:
+		return
+	if pode_extra and float(combate.armas.mods.chuva) > 0.0:
+		# Uma extra nasce no centro de quem sofreu o acerto, até um raio de corpo além
+		# da união. Ela anda no máximo 120 px e nasce 2 px acima do peito; não gera outras.
+		var maior_raio := 0.0
+		for m in mundo.monstros:
+			if m.vivo and not m.morrendo:
+				maior_raio = maxf(maior_raio, float(m.raio))
+		uniao = uniao.grow(maior_raio + 2.0 + ALCANCE_EXTRA)
+	for m in mundo.monstros:
+		if not m.vivo or m.morrendo:
+			continue
+		var peito: Vector2 = m.pos + Vector2(0, -6)
+		var raio := Vector2.ONE * float(m.raio)
+		if uniao.intersects(Rect2(peito - raio, raio * 2.0), true):
+			_cand.append(m)
 
 
 func _mover(i: int, dt: float) -> void:
@@ -244,7 +272,7 @@ func _acertar(i: int, m, p: Vector2) -> void:
 		combate.armas.explodir(m.pos, d * float(combate.armas.mods.explode) / 100.0, raio_e, Color(1.0, 0.74, 0.2), m)
 	if not a_extra[i] and randf() * 100.0 < float(combate.armas.mods.chuva):  # "Chuva de adagas": uma extra para um lado qualquer
 		var a := randf() * TAU
-		var j := _nova(m.pos + Vector2(0, -8), Vector2.from_angle(a), a_vel[i], 120.0, a_dano[i] * 0.6, a_emp[i], a_atord[i], cor, 0, true, a_raio[i])
+		var j := _nova(m.pos + Vector2(0, -8), Vector2.from_angle(a), a_vel[i], ALCANCE_EXTRA, a_dano[i] * 0.6, a_emp[i], a_atord[i], cor, 0, true, a_raio[i])
 		a_u0[j] = m  # a extra não volta no monstro que a soltou
 
 
