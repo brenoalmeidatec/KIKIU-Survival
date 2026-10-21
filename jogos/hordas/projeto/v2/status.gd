@@ -448,7 +448,8 @@ static func _sec_katana(m) -> Dictionary:
 	var lin: Array = []
 	lin.append(_l("katana.dano", "Dano", "/".join(t_danos), danos, _mais_pct((h.m_dano - 1.0) * 100.0)))
 	lin.append(_l("katana.vel", "Vel. de ataque", _mais_pct((h.m_vel_ataque - 1.0) * 100.0) if h.m_vel_ataque != 1.0 else "base", [h.m_vel_ataque]))
-	lin.append(_l("katana.combo", "Combo completo", "%s s" % _v(ciclo, 2), [ciclo]))
+	var combo_rotulo := "Combo estimado" if str(passos[0].get("tipo", "melee")) == "adagas" else "Combo completo"
+	lin.append(_l("katana.combo", combo_rotulo, "%s s" % _v(ciclo, 2), [ciclo]))
 	lin.append(_l("katana.alcance", "Alcance", "/".join(t_alc) + " px", alcances))
 	lin.append(_l("katana.area", "Área do corte", _mais_pct((h.m_area - 1.0) * 100.0) if h.m_area != 1.0 else "base", [h.m_area]))
 	lin.append(_l("katana.critico", "Crítico x%s" % _v(mult, 1), "%s%%" % _p(chance * 100.0), [chance, mult], _mais_pct(h.m_critico * 100.0)))

@@ -1,0 +1,134 @@
+[
+	{
+		"ciclo_modelo": 0.883333333333333,
+		"ciclo_real": 0.883333333333333,
+		"dano_8_combos": 467.0,
+		"dps_real": 66.0849056603774,
+		"erro_s": 0.000000000000000111022302462516,
+		"hit_stops": 0,
+		"hz": 60,
+		"impacto": false,
+		"velocidade": 1.0
+	},
+	{
+		"ciclo_modelo": 0.933333333333333,
+		"ciclo_real": 0.933333333333333,
+		"dano_8_combos": 467.0,
+		"dps_real": 62.5446428571429,
+		"erro_s": 0.000000000000000111022302462516,
+		"hit_stops": 48,
+		"hz": 60,
+		"impacto": true,
+		"velocidade": 1.0
+	},
+	{
+		"ciclo_modelo": 0.616666666666667,
+		"ciclo_real": 0.616666666666667,
+		"dano_8_combos": 467.0,
+		"dps_real": 94.6621621621622,
+		"erro_s": 0.000000000000000111022302462516,
+		"hit_stops": 0,
+		"hz": 60,
+		"impacto": false,
+		"velocidade": 1.5
+	},
+	{
+		"ciclo_modelo": 0.666666666666667,
+		"ciclo_real": 0.666666666666667,
+		"dano_8_combos": 467.0,
+		"dps_real": 87.5625,
+		"erro_s": 0.000000000000000111022302462516,
+		"hit_stops": 48,
+		"hz": 60,
+		"impacto": true,
+		"velocidade": 1.5
+	},
+	{
+		"ciclo_modelo": 0.383333333333333,
+		"ciclo_real": 0.383333333333333,
+		"dano_8_combos": 470.0,
+		"dps_real": 153.260869565217,
+		"erro_s": 0.0000000000000000555111512312578,
+		"hit_stops": 0,
+		"hz": 60,
+		"impacto": false,
+		"velocidade": 3.0
+	},
+	{
+		"ciclo_modelo": 0.416666666666667,
+		"ciclo_real": 0.416666666666667,
+		"dano_8_combos": 470.0,
+		"dps_real": 141.0,
+		"erro_s": 0.0,
+		"hit_stops": 32,
+		"hz": 60,
+		"impacto": true,
+		"velocidade": 3.0
+	},
+	{
+		"ciclo_modelo": 0.841666666666667,
+		"ciclo_real": 0.841666666666667,
+		"dano_8_combos": 463.0,
+		"dps_real": 68.7623762376238,
+		"erro_s": 0.0,
+		"hit_stops": 0,
+		"hz": 120,
+		"impacto": false,
+		"velocidade": 1.0
+	},
+	{
+		"ciclo_modelo": 0.891666666666667,
+		"ciclo_real": 0.891666666666667,
+		"dano_8_combos": 463.0,
+		"dps_real": 64.9065420560748,
+		"erro_s": 0.000000000000000111022302462516,
+		"hit_stops": 48,
+		"hz": 120,
+		"impacto": true,
+		"velocidade": 1.0
+	},
+	{
+		"ciclo_modelo": 0.591666666666667,
+		"ciclo_real": 0.591666666666667,
+		"dano_8_combos": 467.0,
+		"dps_real": 98.6619718309859,
+		"erro_s": 0.0,
+		"hit_stops": 0,
+		"hz": 120,
+		"impacto": false,
+		"velocidade": 1.5
+	},
+	{
+		"ciclo_modelo": 0.641666666666667,
+		"ciclo_real": 0.641666666666667,
+		"dano_8_combos": 467.0,
+		"dps_real": 90.974025974026,
+		"erro_s": 0.000000000000000111022302462516,
+		"hit_stops": 48,
+		"hz": 120,
+		"impacto": true,
+		"velocidade": 1.5
+	},
+	{
+		"ciclo_modelo": 0.358333333333333,
+		"ciclo_real": 0.358333333333333,
+		"dano_8_combos": 472.0,
+		"dps_real": 164.651162790698,
+		"erro_s": 0.0000000000000000555111512312578,
+		"hit_stops": 0,
+		"hz": 120,
+		"impacto": false,
+		"velocidade": 3.0
+	},
+	{
+		"ciclo_modelo": 0.391666666666667,
+		"ciclo_real": 0.391666666666667,
+		"dano_8_combos": 472.0,
+		"dps_real": 150.63829787234,
+		"erro_s": 0.0000000000000000555111512312578,
+		"hit_stops": 32,
+		"hz": 120,
+		"impacto": true,
+		"velocidade": 3.0
+	}
+]

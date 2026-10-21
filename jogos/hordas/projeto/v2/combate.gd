@@ -107,6 +107,9 @@ var criticos := 0
 var mortes := 0
 var hit_stops := 0
 var ultimo_hit_stop := 0.0
+var _ciclo_adagas_chave: Array = []  # uma única entrada; nunca guarda histórico de builds/consultas
+var _ciclo_adagas_valor := 0.0
+var _ciclo_adagas_calculos := 0  # diagnóstico para provar reutilização/invalidação do modelo
 var _plim_t := 0.0
 var _plim_n := 0
 var _fila: Array = []  # monstros que morreram no quadro por golpe secundário ou fogo (saem em processar_mortes)
@@ -463,10 +466,10 @@ func alcance_efetivo_do_passo(passo: Dictionary) -> float:
 	return alcance_do_passo(passo) + float(passo.get("avanco", 0.0))  # sem avanço no passo (as adagas): 0, como o lunge do heroi.gd
 
 
-## Hit-stop (s) de um acerto do passo: o do crítico se `crit`, senão o do passo. `golpear` e o card de status usam esta.
+## Pedido nominal de hit-stop (s): corpo a corpo usa crítico/passo; adagas têm um pedido por arremesso, sujeito ao cooldown do grupo.
 func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
-	if str(passo.get("tipo", "melee")) == "adagas":  # as adagas não param o tempo no acerto (v2/adagas.gd não chama o hit-stop)
-		return 0.0
+	if str(passo.get("tipo", "melee")) == "adagas":  # primeiro acerto do arremesso, sujeito ao cooldown; crítico não aumenta esta pausa
+		return float(cfg.golpe.get("impacto_adagas", {}).get("hit_stop", 0.0))
 	return float(cfg.golpe.critico.hit_stop) if crit else float(passo.hit_stop)
 
 
@@ -476,6 +479,8 @@ func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
 ## velocidade base, onde só a soma dos passos daria 0,88 s). O hit-stop é o médio (com a chance de crítico) e supõe que todo passo acerta; sem
 ## mortes no meio (cada abate soma `morte.hit_stop`). O teste v2_status mede o ciclo de verdade em vários `dt` e compara.
 func ciclo_do_combo(dt := QUADRO_REF) -> float:
+	if str(cfg.golpe.passos[0].get("tipo", "melee")) == "adagas":
+		return _ciclo_adagas(dt)
 	var pc := clampf(chance_critico(), 0.0, 1.0)
 	var quadros := float(_quadros(float(cfg.golpe.pausa_fim_combo), dt))
 	for i in cfg.golpe.passos.size():
@@ -483,6 +488,62 @@ func ciclo_do_combo(dt := QUADRO_REF) -> float:
 		quadros += 1.0 + float(_quadros(mundo.heroi.duracao_do_passo(i), dt))
 		quadros += lerpf(float(_quadros(hit_stop_do_acerto(p, false), dt)), float(_quadros(hit_stop_do_acerto(p, true), dt)), pc)
 	return quadros * dt
+
+
+## Estimativa para alvo próximo: primeiro acerto no quadro do arremesso. A distância pode
+## atrasar/mudar a elegibilidade. O cooldown usa tempo simulado, sem contar os quadros congelados.
+## Aquece oito ciclos e mede 32, pois em ataque rápido a elegibilidade pode atravessar o combo.
+func _ciclo_adagas(dt: float) -> float:
+	var impacto: Dictionary = cfg.golpe.get("impacto_adagas", {})
+	var chave: Array = [dt, float(cfg.golpe.pausa_fim_combo), float(impacto.get("hit_stop", 0.0)), float(impacto.get("recarga", 0.0))]
+	for i in cfg.golpe.passos.size():
+		chave.append(mundo.heroi.duracao_do_passo(i))
+		chave.append(float(cfg.golpe.passos[i].acerto_em))
+	if chave == _ciclo_adagas_chave:
+		return _ciclo_adagas_valor
+	_ciclo_adagas_calculos += 1
+	var recarga := float(impacto.get("recarga", 0.0))
+	var cooldown := 0
+	while recarga > 0.0:  # mesma subtração usada pelo cooldown real, inclusive o arredondamento float
+		recarga = maxf(0.0, recarga - dt)
+		cooldown += 1
+	var pausa := _quadros(float(impacto.get("hit_stop", 0.0)), dt)
+	var sim := 0
+	var ultimo := -1000000
+	var total := 0
+	var passos := PackedInt32Array()
+	var acertos_nominais := PackedInt32Array()
+	for i in cfg.golpe.passos.size():
+		var dur: float = mundo.heroi.duracao_do_passo(i)
+		passos.append(1 + _quadros_golpe_adagas(dur, 1.0, dt))
+		acertos_nominais.append(1 + _quadros_golpe_adagas(dur, float(cfg.golpe.passos[i].acerto_em), dt))
+	for ciclo in 40:
+		var real_ciclo := _quadros(float(cfg.golpe.pausa_fim_combo), dt)
+		for i in cfg.golpe.passos.size():
+			var acerto := sim + acertos_nominais[i]
+			if acerto - ultimo >= cooldown:
+				real_ciclo += pausa
+				ultimo = acerto
+			var passo := passos[i]
+			sim += passo
+			real_ciclo += passo
+		sim += _quadros(float(cfg.golpe.pausa_fim_combo), dt)
+		if ciclo >= 8:
+			total += real_ciclo
+	_ciclo_adagas_chave = chave
+	_ciclo_adagas_valor = float(total) * dt / 32.0
+	return _ciclo_adagas_valor
+
+
+## heroi._golpe soma dt e compara a fase; divisão/ceil com epsilon perde um quadro em
+## durações como 0,2 s a 60/120 Hz. Repete só esse relógio, sem simular combate ou consumir RNG.
+static func _quadros_golpe_adagas(dur: float, fase: float, dt: float) -> int:
+	var t := 0.0
+	var n := 0
+	while t / dur < fase:
+		t += dt
+		n += 1
+	return n
 
 
 ## Quantos quadros de `dt` o jogo gasta para vencer `s` segundos (um quadro inteiro por vez, para cima).
