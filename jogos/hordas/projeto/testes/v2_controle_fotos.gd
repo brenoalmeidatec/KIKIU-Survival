@@ -139,10 +139,11 @@ func _partida() -> void:
 	await get_tree().process_frame
 	var sv: SubViewport = mundo.ui
 	await mundo.ap.foto(pasta.path_join(prefixo + "_hud.png"))
-	# pausa, depois Ajustes (o primeiro item do menu é Continuar; o segundo abre Ajustes)
+	# pausa, depois Ajustes (Continuar, Conquistas e Ajustes: o terceiro item abre Ajustes)
 	var pausa = _pausa_de(sv)
 	_tecla(KEY_ESCAPE)
 	await mundo.ap.foto(pasta.path_join(prefixo + "_pausa.png"))
+	_tecla(KEY_DOWN)
 	_tecla(KEY_DOWN)
 	_tecla(KEY_ENTER)
 	await mundo.ap.foto(pasta.path_join(prefixo + "_ajustes_partida.png"))

@@ -303,7 +303,7 @@ func _t_caminho_da_janela() -> void:
 	ok(mundo.combate.jogo == "jogando" and not get_tree().paused, "a partida começa em jogando, com a árvore rodando")
 	_esc()
 	ok(pausa.aberto and get_tree().paused, "ESC (entregue pela janela) abre a pausa na partida")
-	ok(pausa.tela == "menu" and _ids() == ["continuar", "ajustes", "santuario", "sair"], "a pausa abre no menu de 4 itens (%s)" % str(_ids()))
+	ok(pausa.tela == "menu" and _ids() == ["continuar", "conquistas", "ajustes", "santuario", "sair"], "a pausa abre no menu de 5 itens (%s)" % str(_ids()))
 	_esc()
 	ok(not pausa.aberto and not get_tree().paused, "ESC de novo fecha a pausa e despausa")
 	_start()
@@ -318,7 +318,7 @@ func _t_caminho_da_janela() -> void:
 	ok(not pausa.aberto and not get_tree().paused, "clicar em Continuar (mouse pela janela) fecha a pausa")
 	_esc()
 	ok(pausa.aberto, "ESC abre a pausa antes do segundo clique")
-	_clique(_linha(1))
+	_clique(_linha(2))
 	ok(pausa.aberto and pausa.tela == "ajustes", "clicar em Ajustes (mouse pela janela) abre o submenu")
 	_esc()
 	ok(pausa.tela == "menu" and pausa.aberto, "ESC em Ajustes volta um nível, sem fechar a pausa")
@@ -411,14 +411,14 @@ func _t_soltar_botao() -> void:
 	_fechar_se_aberta()
 	# o clique inteiro dentro do menu continua valendo (aperto e soltura com o menu aberto)
 	_esc()
-	_clique(_linha(1))
+	_clique(_linha(2))
 	ok(pausa.tela == "ajustes", "o clique completo com o menu aberto abre a linha")
 	_fechar_com_esc()
 	_fechar_se_aberta()
 	# a soltura vale uma vez: soltar de novo sem apertar não faz nada
 	_esc()
-	_botao(_linha(1), true)
-	_botao(_linha(1), false)  # abre Ajustes
+	_botao(_linha(2), true)
+	_botao(_linha(2), false)  # abre Ajustes
 	_botao(_linha(0), false)  # soltura solta: Ajustes tem "Gráficos" na linha 0
 	ok(pausa.tela == "ajustes", "uma soltura sem aperto não aciona a linha")
 	_fechar_com_esc()
