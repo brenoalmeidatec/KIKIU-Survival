@@ -296,11 +296,22 @@ func _t_matheus() -> void:
 		retrato != null and retrato.texture is AtlasTexture and retrato.texture.atlas.resource_path == PASTA_SPRITES + "matheus_albedo.png",
 		"o retrato do HUD na partida do Matheus é o quadro parado da folha dele"
 	)
+	if retrato != null:  # como os outros três: dentro da moldura de 90x108, centrado e em escala inteira
+		var caixa := retrato.get_parent() as Control
+		var rect := Rect2(retrato.position, retrato.size)
+		var k := retrato.size.x / float(mat.quadro[0])
+		ok(Rect2(Vector2.ZERO, caixa.size).encloses(rect), "retrato do Matheus cabe na moldura (%s em %s)" % [rect, caixa.size])
+		ok(k >= 1.0 and k == floorf(k), "retrato do Matheus em escala inteira (%sx)" % k)
+		ok(
+			absf(rect.get_center().x - caixa.size.x / 2.0) <= 1.0 and absf(rect.get_center().y - caixa.size.y / 2.0) <= 1.0,
+			"retrato do Matheus centrado na moldura (%s)" % rect.get_center()
+		)
 	var c := 0
 	for y in mat.quadro[1]:
 		for x in mat.quadro[0]:
 			c += 1 if h.tipo.alb.get_image().get_pixel(x, y).a > 0.5 else 0
 	ok(c > 200, "a folha do Matheus tem o corpo desenhado no quadro parado (%d px)" % c)
+	_t_animacoes("Matheus")
 	ok(Personagens.ativar(id_h) and Herois.sprite_da_partida("hazaki") == "hazaki_samurai", "partida do Breno: continua com a folha do Hazaki")
 	await novo("hazaki")
 	ok(w.heroi.tipo.alb == w.sprites.tipo("hazaki_samurai").alb and w.heroi.tipo.alb != tm.alb, "o herói do Breno usa a folha do Hazaki")
@@ -327,6 +338,17 @@ func _t_animacoes(quem: String) -> void:
 	var esc := _cols("escudo")
 	var dano := _cols("dano")
 	var morte := _cols("morte")
+	# parado: os 4 quadros da folha (colunas 0, 7, 8 e 9) tocam em ciclo; ao andar volta aos passos 1 a 6
+	zerar()
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	var vistos := {}
+	for i in 300:  # 5 s parado
+		passos(1)
+		vistos[h.coluna] = true
+	ok(
+		vistos.has(0) and vistos.has(7) and vistos.has(8) and vistos.has(9) and vistos.size() == 4,
+		"%s: parado toca as colunas 0, 7, 8 e 9 (vistas %s)" % [quem, vistos.keys()]
+	)
 	# golpe
 	zerar()
 	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)

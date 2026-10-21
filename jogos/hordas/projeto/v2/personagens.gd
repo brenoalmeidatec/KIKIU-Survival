@@ -71,6 +71,18 @@ static func sprite(id: String) -> String:
 	return sprite_do_nome(nome(id))
 
 
+## A folha que o personagem `id` desenha (retrato sem rosto, etc.): a própria (Matheus) ou, sem ela, a do herói dele (Hazaki, Nicão, Lucas).
+static func folha(id: String) -> String:
+	var s := sprite(id)
+	return s if s != "" else Herois.sprite(heroi(id))
+
+
+## O mesmo para um NOME ainda sem save (a oferta da tela de escolha).
+static func folha_do_nome(nome_txt: String) -> String:
+	var s := sprite_do_nome(nome_txt)
+	return s if s != "" else Herois.sprite(heroi_do_nome(nome_txt))
+
+
 ## A arma inicial do herói do personagem (dados/v2_herois.json), em caixa de título.
 static func arma_inicial(heroi_id: String) -> String:
 	return str(Herois.heroi(heroi_id).get("arma", "")).capitalize()

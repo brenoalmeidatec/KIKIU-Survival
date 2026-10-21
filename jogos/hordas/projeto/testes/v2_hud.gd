@@ -12,6 +12,8 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Hud := preload("res://v2/hud.gd")
 const StatusHud := preload("res://v2/status.gd")
 const Herois := preload("res://v2/herois.gd")
+const Personagens := preload("res://v2/personagens.gd")
+const Meta := preload("res://v2/meta.gd")
 const PASSO := 1.0 / 60.0
 const ZONA_MINIMAPA := Rect2(800, 0, 160, 130)  # canto superior direito: o minimapa (de outro agente)
 
@@ -147,8 +149,16 @@ func _testes() -> void:
 		"minimapa e retrato com a mesma margem de 6 px (o retrato %s)" % retrato_q.position
 	)
 	# o retrato de CADA herói cabe na moldura de 90x108, centrado nela e em escala INTEIRA (o Nicão sai recortado no corpo)
-	for id in ["hazaki", "nicao", "lucas"]:
-		Herois.forcado = id
+	var pers_antes := [Personagens.caminho_base, Personagens.caminho_indice, Personagens.caminho_antigo, Meta.caminho_save]
+	Personagens.caminho_base = "user://teste_v2_hud_p"  # o Matheus é um PERSONAGEM (joga de Hazaki com a folha dele): save isolado, o real não é tocado
+	Personagens.caminho_indice = "user://teste_v2_hud_personagens.cfg"
+	Personagens.caminho_antigo = "user://teste_v2_hud_antigo.cfg"
+	for id in ["hazaki", "matheus", "nicao", "lucas"]:
+		if id == "matheus":
+			Herois.forcado = ""
+			Personagens.ativar(Personagens.criar("Matheus", Personagens.heroi_do_nome("Matheus")))
+		else:
+			Herois.forcado = id
 		var h2 = Hud.criar(falso)
 		vista.add_child(h2)
 		var caixa: Control = h2.get_node("Raiz/Retrato")
@@ -165,8 +175,17 @@ func _testes() -> void:
 		)
 		if id == "nicao":
 			ok(reg.x < 64.0 and reg.y < 96.0, "retrato do Nicão: recorte do corpo, sem o vazio do quadro (%s)" % reg)
+		if id == "matheus":
+			ok((img.texture as AtlasTexture).atlas.resource_path.ends_with("matheus_albedo.png"), "retrato do Matheus: a folha dele, não a do Hazaki")
 		h2.queue_free()
 	Herois.forcado = ""
+	DirAccess.remove_absolute(Personagens.caminho_indice)
+	for slot in ["p1", "p2"]:
+		DirAccess.remove_absolute(Personagens.caminho_do_save(slot))
+	Personagens.caminho_base = pers_antes[0]
+	Personagens.caminho_indice = pers_antes[1]
+	Personagens.caminho_antigo = pers_antes[2]
+	Meta.caminho_save = pers_antes[3]
 	# estilo Overwatch: a vida e o fôlego à direita do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
 	var barras_q: Control = hud.get_node("Raiz/MolduraBarras")
 	var folego_q: Control = hud.get_node("Raiz/Folego")

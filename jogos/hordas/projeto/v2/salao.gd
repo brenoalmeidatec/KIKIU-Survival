@@ -69,6 +69,9 @@ var _dir := 0  # linha da folha de sprites: baixo, esquerda, direita, cima
 var _quadro := 0  # coluna da folha: parado (0) ou um dos passos da animação (1 a 4)
 var _tempo := 0.0
 var _tempo_passo := 0.0
+var _tempo_parado := 0.0
+var _parado: Array = [0]  # colunas da animação "parado" da folha (Hazaki, Matheus, Lucas e Nicão: 0, 7, 8 e 9)
+var _parado_s := 0.25  # segundos por quadro do parado
 var _destino := Vector2.INF  # clique numa estrutura ou portal: anda até ele e usa
 var _alvo_destino := {}
 var _prompt: Label
@@ -115,6 +118,10 @@ func _ready() -> void:
 	_quadro_h = int(info.quadro[1])
 	_pe_y = int(info.get("pe_y", _quadro_h - 2))
 	_passos = maxi(int(info.colunas.size()) - 1, 1)
+	var anim_parado: Dictionary = info.get("animacoes", {}).get("parado", {})
+	if (anim_parado.get("colunas", []) as Array).size() > 0:
+		_parado = anim_parado.colunas
+		_parado_s = maxf(float(anim_parado.get("s_por_quadro", 0.25)), 0.05)
 	_montar_cenario()
 	_montar_hud()
 	_montar_painel()
@@ -460,7 +467,8 @@ func _process(dt: float) -> void:
 		_quadro = 1 + int(_tempo_passo * PASSOS_POR_S * _passos / 4.0) % _passos  # o ciclo inteiro (4 ou 6 passos) dura o mesmo
 	else:
 		_tempo_passo = 0.0
-		_quadro = 0
+		_tempo_parado += dt
+		_quadro = int(_parado[int(_tempo_parado / _parado_s) % _parado.size()])
 	_heroi.position = _pos
 	_heroi.queue_redraw()
 	_atualizar_prompt()

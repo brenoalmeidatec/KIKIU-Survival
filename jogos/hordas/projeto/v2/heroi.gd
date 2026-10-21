@@ -176,6 +176,7 @@ var _ofego_t := 0.0
 var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
+var _parado_t := 0.0  # há quanto tempo está livre e parado: toca a animação "parado" da folha (colunas 0, 7, 8 e 9)
 var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
 var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
@@ -946,8 +947,14 @@ func _visual(dt: float, v: Vector2) -> void:
 		if _tem_anim("andar"):  # o tempo do andar vem da folha (animacoes.andar.s_por_quadro), então ajusta pelo JSON
 			passo = float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM))
 		c = 1 + int(_anim / passo) % (int(tipo.info.colunas.size()) - 1)
+		_parado_t = 0.0
 	else:
 		_anim = 0.0
+		if estado == Estado.LIVRE and _tem_anim("parado"):  # respira: os 4 quadros do "parado" da folha em ciclo (sem ela, a coluna 0)
+			_parado_t = fmod(_parado_t + dt, maxf(_duracao_anim("parado"), 0.001))
+			c = _coluna_por_tempo("parado", _parado_t)
+		else:
+			_parado_t = 0.0
 	var ca := _coluna_acao(dt)
 	if ca >= 0:
 		c = ca

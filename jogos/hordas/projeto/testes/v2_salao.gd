@@ -178,3 +178,43 @@ func _testes() -> void:
 	ok(s3._sprite.resource_path.ends_with("nicao_albedo.png"), "e a textura é a do Nicão (%s)" % s3._sprite.resource_path)
 	remove_child(s3)
 	s3.queue_free()
+
+	# 10. a MESMA regra para os quatro: o salão desenha a folha do personagem (Matheus tem a dele) ou, sem ela, a do herói (Hazaki, Lucas, Nicão);
+	# o andar usa o ciclo inteiro (6 passos) e o parado toca os 4 quadros (colunas 0, 7, 8 e 9)
+	var casos := [
+		["Breno", "hazaki", "hazaki_samurai_albedo.png", Vector2i(32, 44), 42],
+		["Matheus", "hazaki", "matheus_albedo.png", Vector2i(32, 44), 42],
+		["Lucas", "lucas", "lucas_albedo.png", Vector2i(32, 44), 42],
+		["Nicão", "nicao", "nicao_albedo.png", Vector2i(64, 96), 74],
+	]
+	for c in casos:
+		var id_c := Personagens.criar(str(c[0]), str(c[1]))
+		ok(Personagens.ativar(id_c), "ativa o personagem %s (herói %s)" % [c[0], c[1]])
+		var sc = Salao.instantiate()
+		add_child(sc)
+		ok(sc._sprite.resource_path.ends_with(str(c[2])), "salão de %s: a folha é %s (%s)" % [c[0], c[2], sc._sprite.resource_path])
+		ok(
+			Vector2i(sc._quadro_w, sc._quadro_h) == c[3] and sc._pe_y == int(c[4]),
+			"salão de %s: quadro %dx%d, pés na linha %d" % [c[0], sc._quadro_w, sc._quadro_h, sc._pe_y]
+		)
+		ok(sc._passos == 6, "salão de %s: andar com o ciclo completo de 6 passos (%d)" % [c[0], sc._passos])
+		var vistos := {}
+		for i in 80:  # parado, quadro a quadro de 1/20 s: 4 s, mais que o ciclo inteiro do parado
+			sc._process(0.05)
+			vistos[sc._quadro] = true
+		ok(
+			vistos.has(0) and vistos.has(7) and vistos.has(8) and vistos.has(9) and vistos.size() == 4,
+			"salão de %s: o parado toca as colunas 0, 7, 8 e 9 (vistas %s)" % [c[0], vistos.keys()]
+		)
+		remove_child(sc)
+		sc.queue_free()
+	# na escolha de personagem, quem não tem rosto.png mostra a folha do herói dele (ou a própria do personagem), não sempre a do Hazaki
+	var tela = Tela.instantiate()
+	add_child(tela)
+	for c in casos:
+		var id_t := Personagens.criar(str(c[0]), str(c[1]))
+		tela._definir_retrato("", true, Personagens.folha(id_t))  # pasta vazia = sem rosto.png
+		var tex = tela._retrato.texture
+		ok(tex is AtlasTexture and tex.atlas.resource_path.ends_with(str(c[2])), "escolha de personagem: %s sem rosto mostra a folha %s" % [c[0], c[2]])
+	remove_child(tela)
+	tela.queue_free()
