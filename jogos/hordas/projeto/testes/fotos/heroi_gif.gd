@@ -38,6 +38,7 @@ func _ready() -> void:
 		get_tree().quit()
 		return
 	Config.arquivo = "user://qa_hgif_opcoes.cfg"
+	Config.recarregar()
 	Config.temporario("pausar_fora", false)
 	Config.temporario("qualidade_auto", false)
 	Config.g_perfil_temporario("alto")

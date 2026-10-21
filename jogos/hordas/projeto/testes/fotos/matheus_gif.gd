@@ -32,6 +32,7 @@ func _ready() -> void:
 		elif a == "--colisao":
 			colisao = true
 	Config.arquivo = "user://qa_mgif_opcoes.cfg"
+	Config.recarregar()
 	Config.temporario("pausar_fora", false)
 	Config.temporario("qualidade_auto", false)
 	Config.g_perfil_temporario("alto")

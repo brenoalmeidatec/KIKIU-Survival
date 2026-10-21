@@ -20,3 +20,13 @@ Depois, o alfa volta a 0 com o corpo livre, sem mudar a cor nem a invulnerabilid
 `oclusao.gd` usa o recorte explícito `retrato.regiao` quando a folha o oferece: no Nicão, 38x42 px delimitam o corpo sem o vazio e a marreta.
 Esse recorte serve também à detecção de cobertura: se a composição do retrato mudar, preserve os limites do corpo. Folhas sem recorte mantêm a
 aproximação anterior. `v2_oclusao` cobre a roda após o Q e um cavaleiro realmente na frente, que continua ativando a silhueta.
+
+## Isolamento dos helpers GIF
+
+`matheus_gif` e `heroi_gif` usam caminhos próprios de Config, Meta e Personagens antes de criar Mundo, e o perfil Alto só na memória.
+Config reconhece essas duas cenas explícitas antes de carregar/migrar opções no autoload; isso evita gravar até um `opcoes.cfg` antigo.
+Os helpers recarregam suas próprias opções para não herdar o estado do jogador. Editor e jogo normal mantêm o comportamento anterior.
+
+`ferramentas/teste_gifs_isolados.ps1 -AppDataQA PASTA_QA -FilaGodot CAMINHO_DA_FILA` executa os dois helpers com APPDATA descartável,
+captura o HUD e compara SHA256 de opções antigas migráveis, índice de personagens e dois saves de progresso. Também confere que nenhum
+save real novo apareceu. Como controle negativo, abre o jogo normal na cópia descartável e confirma que a migração normal continua funcionando.

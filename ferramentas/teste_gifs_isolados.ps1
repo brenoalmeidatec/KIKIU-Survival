@@ -10,7 +10,8 @@ $execucao = Join-Path ([IO.Path]::GetFullPath($AppDataQA)) ('gifs_' + [guid]::Ne
 $userQA = Join-Path $execucao 'Godot\app_userdata\K.I.K.I.U'
 New-Item -ItemType Directory -Path $userQA -Force | Out-Null
 $sentinelas = @{
-    'opcoes.cfg' = "[opcoes]`nqualidade_auto=false`n[graficos]`nperfil=`"baixo`"`n"
+    # O autoload migraria e gravaria essa opção antiga antes do _ready do helper.
+    'opcoes.cfg' = "[opcoes]`nqualidade=`"baixa`"`nqualidade_auto=false`n"
     'v2_personagens.cfg' = "[geral]`nlista=[`"p1`"]`nativo=`"p1`"`n[p1]`nnome=`"Breno`"`nheroi=`"hazaki`"`n"
     'v2_personagem_p1.cfg' = "[moeda]`nalmas=12345`n[melhorias]`nvida=3`n"
     'v2_progresso.cfg' = "[moeda]`nalmas=67890`n"
@@ -42,6 +43,13 @@ try {
         if ($extras.Count -gt 0) { throw "$helper criou arquivo fora do isolamento: $($extras.Name -join ', ')" }
         Write-Output "$helper : HUD capturado; quatro sentinelas SHA256 intactas; nenhum save real novo"
     }
+    # Controle negativo: o jogo normal continua migrando a opção antiga, na mesma cópia descartável.
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $FilaGodot --headless --path (Join-Path $repo 'jogos\hordas\projeto') --quit-after 1 *> (Join-Path $execucao 'jogo_normal.log')
+    if ($LASTEXITCODE -ne 0) { throw "Jogo normal falhou: $LASTEXITCODE" }
+    $opcoes = Join-Path $userQA 'opcoes.cfg'
+    if ((Get-FileHash -LiteralPath $opcoes).Hash -eq $antes['opcoes.cfg']) { throw 'Guard de QA impediu migração no jogo normal' }
+    if (-not (Select-String -LiteralPath $opcoes -SimpleMatch '[graficos]')) { throw 'Migração normal não gerou perfil gráfico' }
+    Write-Output 'jogo normal : migração preservada fora dos dois helpers'
 } finally {
     $env:APPDATA = $appDataAnterior
 }
