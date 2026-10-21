@@ -1,0 +1,724 @@
+{
+  "data": "2026-10-21",
+  "godot": "4.4.1",
+  "commit_executado": "8ff3b69a44ab38c21d9ff9e2d7585910c530d735",
+  "runner_codigo": 0,
+  "modo": "headless --fixed-fps 60, processos sequenciais pela fila",
+  "politica": {
+    "mapa": "floresta",
+    "dificuldade": "facil",
+    "semente": 1,
+    "usar_q": true,
+    "teto_segundos": 900,
+    "paralelas": 1
+  },
+  "guarda_qa": "Conferida: raiz exclusiva precriada e inalterada; nenhum perfil real usado.",
+  "duracao_real_segundos": 535.125,
+  "resumo": {
+    "vitorias": 3,
+    "derrotas": 0,
+    "teto": 0,
+    "travas": 0,
+    "sem_json": 0
+  },
+  "limites": [
+    "Sanidade conjunta, sem comparacao direta com a matriz semQ do PR390.",
+    "Uma semente, um mapa e uma dificuldade; nao aprova equilibrio humano dos quatro mapas.",
+    "Headless nao mede FPS renderizado.",
+    "A prova suja das fixtures e separada no PR391 e no lote conjunto de cenas.",
+    "Manifesto dos bytes Windows de v2/dados; Git pode normalizar LF/CRLF.",
+    "Merges posteriores de documentos/testes nao alteraram os hashes deste manifesto."
+  ],
+  "casos": [
+    {
+      "heroi": "hazaki",
+      "mapa": "floresta",
+      "semente": 1,
+      "desfecho": "vitoria",
+      "codigo": 0,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "hazaki",
+        "mapa": "floresta",
+        "semente": 1,
+        "desfecho": "vitoria",
+        "tempo_jogo": 736.4,
+        "nivel": 48,
+        "abates": 2866,
+        "almas": 2823,
+        "dano_causado": 271902,
+        "dano_sofrido": 99,
+        "golpes_tomados": 9,
+        "vida_final": 142,
+        "vida_max": 164,
+        "pico_vivos": 84,
+        "q_disparos": [
+          70.8,
+          161.2,
+          231.6,
+          295.6,
+          349.7,
+          397.3,
+          462.4,
+          514.5,
+          559.0,
+          610.6,
+          664.5,
+          723.4
+        ],
+        "q_prontos": [
+          70.8,
+          161.2,
+          231.6,
+          295.6,
+          349.7,
+          397.3,
+          458.3,
+          514.5,
+          559.0,
+          610.6,
+          664.5,
+          723.4
+        ],
+        "e_disparos": 0,
+        "q_carga": {
+          "abate": 102.8,
+          "dano": 1124.4,
+          "recebido": 1.7
+        },
+        "linha_tempo": [
+          {
+            "abates": 52,
+            "nivel": 6,
+            "t": 60,
+            "vida": 100,
+            "vivos": 53
+          },
+          {
+            "abates": 124,
+            "nivel": 10,
+            "t": 120,
+            "vida": 92,
+            "vivos": 57
+          },
+          {
+            "abates": 248,
+            "nivel": 15,
+            "t": 180,
+            "vida": 100,
+            "vivos": 83
+          },
+          {
+            "abates": 403,
+            "nivel": 22,
+            "t": 240,
+            "vida": 93,
+            "vivos": 80
+          },
+          {
+            "abates": 650,
+            "nivel": 27,
+            "t": 300,
+            "vida": 100,
+            "vivos": 80
+          },
+          {
+            "abates": 931,
+            "nivel": 31,
+            "t": 360,
+            "vida": 100,
+            "vivos": 84
+          },
+          {
+            "abates": 1269,
+            "nivel": 34,
+            "t": 420,
+            "vida": 164,
+            "vivos": 84
+          },
+          {
+            "abates": 1478,
+            "nivel": 40,
+            "t": 480,
+            "vida": 164,
+            "vivos": 84
+          },
+          {
+            "abates": 1825,
+            "nivel": 43,
+            "t": 540,
+            "vida": 164,
+            "vivos": 84
+          },
+          {
+            "abates": 2184,
+            "nivel": 45,
+            "t": 600,
+            "vida": 164,
+            "vivos": 84
+          },
+          {
+            "abates": 2535,
+            "nivel": 47,
+            "t": 660,
+            "vida": 164,
+            "vivos": 84
+          },
+          {
+            "abates": 2760,
+            "nivel": 48,
+            "t": 720,
+            "vida": 164,
+            "vivos": 84
+          }
+        ],
+        "ritmo": {
+          "almas_atraidas": 37,
+          "coletados": {
+            "cura": 5,
+            "curandeiro": 0,
+            "ima": 4
+          },
+          "cura_efetiva": 8.0,
+          "multiplicadores": {
+            "coleta": 1.75,
+            "densidade": 1.15,
+            "ima": 1.5,
+            "q_area": 1.35,
+            "q_dano": 2.0
+          },
+          "soltos": {
+            "cura": 15,
+            "curandeiro": 1,
+            "ima": 5
+          }
+        },
+        "proc_ms": {
+          "max": 32.9,
+          "media": 1.99,
+          "p50": 1.56,
+          "p95": 4.19,
+          "p99": 5.35
+        },
+        "baus": 3,
+        "elites": 11,
+        "chefes": [
+          "Cavaleiro Rubro",
+          "Rainha Tecelã",
+          "Rei Espantalho"
+        ]
+      }
+    },
+    {
+      "heroi": "nicao",
+      "mapa": "floresta",
+      "semente": 1,
+      "desfecho": "vitoria",
+      "codigo": 0,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "nicao",
+        "mapa": "floresta",
+        "semente": 1,
+        "desfecho": "vitoria",
+        "tempo_jogo": 682.1,
+        "nivel": 49,
+        "abates": 2795,
+        "almas": 2884,
+        "dano_causado": 269731,
+        "dano_sofrido": 26,
+        "golpes_tomados": 1,
+        "vida_final": 244,
+        "vida_max": 244,
+        "pico_vivos": 85,
+        "q_disparos": [
+          68.6,
+          153.7,
+          237.9,
+          303.0,
+          368.2,
+          427.8,
+          486.5,
+          542.9,
+          597.0,
+          642.1
+        ],
+        "q_prontos": [
+          68.6,
+          153.7,
+          237.9,
+          303.0,
+          368.2,
+          427.8,
+          486.5,
+          542.9,
+          596.8,
+          642.1
+        ],
+        "e_disparos": 60,
+        "q_carga": {
+          "abate": 95.6,
+          "dano": 999.5,
+          "recebido": 0.1
+        },
+        "linha_tempo": [
+          {
+            "abates": 57,
+            "nivel": 6,
+            "t": 60,
+            "vida": 180,
+            "vivos": 53
+          },
+          {
+            "abates": 171,
+            "nivel": 11,
+            "t": 120,
+            "vida": 180,
+            "vivos": 60
+          },
+          {
+            "abates": 317,
+            "nivel": 17,
+            "t": 180,
+            "vida": 180,
+            "vivos": 72
+          },
+          {
+            "abates": 468,
+            "nivel": 26,
+            "t": 240,
+            "vida": 180,
+            "vivos": 62
+          },
+          {
+            "abates": 711,
+            "nivel": 29,
+            "t": 300,
+            "vida": 180,
+            "vivos": 84
+          },
+          {
+            "abates": 1002,
+            "nivel": 33,
+            "t": 360,
+            "vida": 244,
+            "vivos": 84
+          },
+          {
+            "abates": 1333,
+            "nivel": 36,
+            "t": 420,
+            "vida": 244,
+            "vivos": 84
+          },
+          {
+            "abates": 1596,
+            "nivel": 41,
+            "t": 480,
+            "vida": 244,
+            "vivos": 84
+          },
+          {
+            "abates": 1961,
+            "nivel": 44,
+            "t": 540,
+            "vida": 244,
+            "vivos": 84
+          },
+          {
+            "abates": 2328,
+            "nivel": 46,
+            "t": 600,
+            "vida": 244,
+            "vivos": 84
+          },
+          {
+            "abates": 2677,
+            "nivel": 48,
+            "t": 660,
+            "vida": 244,
+            "vivos": 84
+          }
+        ],
+        "ritmo": {
+          "almas_atraidas": 0,
+          "coletados": {
+            "cura": 6,
+            "curandeiro": 0,
+            "ima": 1
+          },
+          "cura_efetiva": 0.0,
+          "multiplicadores": {
+            "coleta": 1.75,
+            "densidade": 1.15,
+            "ima": 1.5,
+            "q_area": 1.35,
+            "q_dano": 2.0
+          },
+          "soltos": {
+            "cura": 19,
+            "curandeiro": 1,
+            "ima": 5
+          }
+        },
+        "proc_ms": {
+          "max": 30.27,
+          "media": 1.53,
+          "p50": 1.32,
+          "p95": 3.22,
+          "p99": 3.95
+        },
+        "baus": 4,
+        "elites": 11,
+        "chefes": [
+          "Cavaleiro Rubro",
+          "Rainha Tecelã",
+          "Rei Espantalho"
+        ]
+      }
+    },
+    {
+      "heroi": "lucas",
+      "mapa": "floresta",
+      "semente": 1,
+      "desfecho": "vitoria",
+      "codigo": 0,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "lucas",
+        "mapa": "floresta",
+        "semente": 1,
+        "desfecho": "vitoria",
+        "tempo_jogo": 716.0,
+        "nivel": 47,
+        "abates": 2584,
+        "almas": 2639,
+        "dano_causado": 284284,
+        "dano_sofrido": 91,
+        "golpes_tomados": 7,
+        "vida_final": 63,
+        "vida_max": 70,
+        "pico_vivos": 84,
+        "q_disparos": [
+          87.5,
+          183.9,
+          261.6,
+          303.7,
+          351.3,
+          394.6,
+          437.7,
+          493.4,
+          543.3,
+          600.1,
+          646.0,
+          709.3
+        ],
+        "q_prontos": [
+          87.5,
+          183.9,
+          261.6,
+          303.7,
+          351.3,
+          394.6,
+          437.7,
+          493.4,
+          543.3,
+          599.4,
+          646.0,
+          708.8
+        ],
+        "e_disparos": 82,
+        "q_carga": {
+          "abate": 103.7,
+          "dano": 1108.6,
+          "recebido": 0.8
+        },
+        "linha_tempo": [
+          {
+            "abates": 52,
+            "nivel": 5,
+            "t": 60,
+            "vida": 70,
+            "vivos": 57
+          },
+          {
+            "abates": 105,
+            "nivel": 8,
+            "t": 120,
+            "vida": 70,
+            "vivos": 71
+          },
+          {
+            "abates": 185,
+            "nivel": 10,
+            "t": 180,
+            "vida": 65,
+            "vivos": 80
+          },
+          {
+            "abates": 288,
+            "nivel": 13,
+            "t": 240,
+            "vida": 53,
+            "vivos": 80
+          },
+          {
+            "abates": 459,
+            "nivel": 18,
+            "t": 300,
+            "vida": 70,
+            "vivos": 84
+          },
+          {
+            "abates": 738,
+            "nivel": 25,
+            "t": 360,
+            "vida": 70,
+            "vivos": 84
+          },
+          {
+            "abates": 1051,
+            "nivel": 30,
+            "t": 420,
+            "vida": 70,
+            "vivos": 84
+          },
+          {
+            "abates": 1327,
+            "nivel": 38,
+            "t": 480,
+            "vida": 70,
+            "vivos": 83
+          },
+          {
+            "abates": 1682,
+            "nivel": 41,
+            "t": 540,
+            "vida": 70,
+            "vivos": 84
+          },
+          {
+            "abates": 2034,
+            "nivel": 43,
+            "t": 600,
+            "vida": 42,
+            "vivos": 84
+          },
+          {
+            "abates": 2389,
+            "nivel": 46,
+            "t": 660,
+            "vida": 70,
+            "vivos": 84
+          }
+        ],
+        "ritmo": {
+          "almas_atraidas": 13,
+          "coletados": {
+            "cura": 4,
+            "curandeiro": 0,
+            "ima": 2
+          },
+          "cura_efetiva": 11.2,
+          "multiplicadores": {
+            "coleta": 1.75,
+            "densidade": 1.15,
+            "ima": 1.5,
+            "q_area": 1.35,
+            "q_dano": 2.0
+          },
+          "soltos": {
+            "cura": 13,
+            "curandeiro": 1,
+            "ima": 4
+          }
+        },
+        "proc_ms": {
+          "max": 25.35,
+          "media": 1.43,
+          "p50": 1.34,
+          "p95": 2.53,
+          "p99": 3.91
+        },
+        "baus": 4,
+        "elites": 11,
+        "chefes": [
+          "Cavaleiro Rubro",
+          "Rainha Tecelã",
+          "Rei Espantalho"
+        ]
+      }
+    }
+  ],
+  "sha256_fontes": {
+    "jogos/hordas/projeto/v2/adagas.gd": "f4ca2c6c9f6ea18c2663dc96019fb1ef723e242163bf5a24ff06cb8c42204a88",
+    "jogos/hordas/projeto/v2/ajustes_graficos.gd": "e62e29cb72866de7ae7c7c10f56162099047e641a95ffce62bbbe943d82e7591",
+    "jogos/hordas/projeto/v2/altar.gd": "41d7ddd1b57c9e05ba552f1209b04414b085cfe5f8a654581736a50e0d4213c0",
+    "jogos/hordas/projeto/v2/altar.tscn": "ca23b24b6645b261329a253da72694b453e1a6d43fd40f8b8cf4c7f4049b95c8",
+    "jogos/hordas/projeto/v2/andante.gd": "348971efae90b5f9305a204800169ef83814542f81b9aedcf9d05b285a0e7309",
+    "jogos/hordas/projeto/v2/anim_golpes.gd": "f8d3332c6e8eaf20415618646ea4aa9e0d83cf48a83c0b564941db01ab490df8",
+    "jogos/hordas/projeto/v2/apresentacao.gd": "923bdf7c2ebea3a79d93ffcab23ebae89b17322aeac574bc5230695be0154b52",
+    "jogos/hordas/projeto/v2/armas.gd": "c64edb59ce7d43be7d2ce686ad395bba6ced10628de34ba6c691e754ccd52d6e",
+    "jogos/hordas/projeto/v2/armas_novas.gd": "c1615a7886cdc2e153f8b1914a4ed38eae87df7cfc1b911cecb52bac4587a933",
+    "jogos/hordas/projeto/v2/atmosfera.gd": "2ea31e46e505c54c79ea1bf527d61c286c11191968184d951f67c226e4d2f955",
+    "jogos/hordas/projeto/v2/ator.gd": "19e1c6b012360752d36f4197cb68fc7c577a76aeee8ec1a719f9b4d558f8e1d8",
+    "jogos/hordas/projeto/v2/atualizador.gd": "337ce5c73da9f67a845a7d8a3ecd1cf851ca27bfec7a2a0c4f26c5f837cfd446",
+    "jogos/hordas/projeto/v2/audio.gd": "b66ba60fcde1d9c41ec1784a682c25f78c1f9df2640621b842a8726063a6ee22",
+    "jogos/hordas/projeto/v2/avisos.gd": "601f24fb80735a37905b5b965b232e672726b558e08f52b3132ecf333e2bf81f",
+    "jogos/hordas/projeto/v2/barra_vida_elite.gd": "142fff894c6197f6a5229626976f842d1b5e45ad337dd7eb6def980e7ff7eeaf",
+    "jogos/hordas/projeto/v2/bau.gd": "91077bb049aabb8dbc573b31336e9afcc2ccbe2459d3f720c7f9ae1921b7e4b8",
+    "jogos/hordas/projeto/v2/braseiros.gd": "a0654a4d53d64f9c974d30e0d2901d14b872265e0c209acc8e0d7c2075c94835",
+    "jogos/hordas/projeto/v2/camera_mundo.gd": "c3bd1a920e9a3885f8385566d611b1e0bbcaf80ada68b172a2e599c0aa23c24e",
+    "jogos/hordas/projeto/v2/card_santuario.gd": "8479f1cd2b8f430ad73241304d8d93a4b247a3be2cc2a97353622b785ddce4f2",
+    "jogos/hordas/projeto/v2/cartas.gd": "1f6f20d36b0ee124779c247957b590cac05642b2303dd66461eceb481a61caaa",
+    "jogos/hordas/projeto/v2/cenario.gd": "6cf24f1842c3c32c54730332d0a44e8199743f1bf2dbb856e6afd4000f4d30d9",
+    "jogos/hordas/projeto/v2/chefe.gd": "6d6985847a24e9322e91d7a544b565b98e9f2487e027b08031e708677ad99eb6",
+    "jogos/hordas/projeto/v2/chefe_visual.gd": "36d234aa2e5183330c6ada00abc814281496b158572cccbcf56798793b0fdb5b",
+    "jogos/hordas/projeto/v2/colisao.gd": "1d05764b149cd1d483c103fe65fa9bf6960c1096ffbc64661d1da76ff86df8d9",
+    "jogos/hordas/projeto/v2/combate.gd": "873999ebb89ca3574a55d87362ad4ab9773cead9f3a7a292ab5631b2dfef35f1",
+    "jogos/hordas/projeto/v2/conquistas.gd": "d99ae782e5420c9a23d28068e5c46f406a1f9bd77501392f324b300471b2525b",
+    "jogos/hordas/projeto/v2/copas.gd": "fc4f1cbfeaa5f34612b844a6d15097fa93e4fd639300b8755295309c7dbc0cd0",
+    "jogos/hordas/projeto/v2/creditos.gd": "0f7fa1c298e26a6bc8152ee9167dc3182262fac6a8e5856e0c411d959d0873b3",
+    "jogos/hordas/projeto/v2/curva_golpe.gd": "3573aa07495eb2c9f9fb743a5d2946d2a58d39e2251403def0ca204bdca969a6",
+    "jogos/hordas/projeto/v2/depuracao_colisao.gd": "e2ceba849390457679569e4a60b88b947e323209aed3764321833ba83b077ed6",
+    "jogos/hordas/projeto/v2/dificuldade.gd": "abe1e1acdbf825b89e237d8f3ac6629e78a68d0d7bb36f410d2ae39959a39789",
+    "jogos/hordas/projeto/v2/diretor.gd": "3ba807252402ffa4af5192aa480b96d4e31b037e9b0e1a9cd8b250f9ca611b48",
+    "jogos/hordas/projeto/v2/efeitos.gd": "c58ebec979afc4914ecfe03d50a97a7397d0e6eb22816ab2bf12c13a016b06a2",
+    "jogos/hordas/projeto/v2/elites.gd": "7aaeaf8b03b4f08ead79a18319a0ce091314f6291ac22a45c65c4426380c4051",
+    "jogos/hordas/projeto/v2/entrada.gd": "ee41c0bcb77bdda26a9926f4f69fc2952fccd9f4f2e1acc092c911263e81f225",
+    "jogos/hordas/projeto/v2/escala_ui.gd": "a24d6a8eaffb0229f86d8b99da0a572fb50b4118dcf3d834b07fec8923ef32f1",
+    "jogos/hordas/projeto/v2/escolha_dificuldade.gd": "98b3421ba836244fb3f4e4008dbf11bc8b493d5d2a23c9c009f4705d60f0b98b",
+    "jogos/hordas/projeto/v2/escudo.gd": "6b8cbf99ce5e301fd3f07e88879c2a021e35de2fa893dd6a3f2c662601962c35",
+    "jogos/hordas/projeto/v2/especial.gd": "9a827872b80ae828738dfb1c0e75379b9cb49da112649dc32545e548a8230d10",
+    "jogos/hordas/projeto/v2/estilo_premium.gd": "7780d68bbbc7579684e0bfb214852110199e464bef19cce75f30fa0c937d4ad0",
+    "jogos/hordas/projeto/v2/glifos.gd": "0812b892ff73bc07c09af1e1a9dc84f4a956e28224de672b197b87ad8451b788",
+    "jogos/hordas/projeto/v2/golem.gd": "3718782055cda443c3bca62864fe2f5ff8909f053ea1ee93594131b99076a7f2",
+    "jogos/hordas/projeto/v2/habilidade.gd": "2b1c6322beac5c197732aec767c89271c61ae37c9cc77939df216b8e400ba687",
+    "jogos/hordas/projeto/v2/heroi.gd": "18647484ca3b2e7673d6f20630fd479cc84961b8df642be16bf8878462279d3c",
+    "jogos/hordas/projeto/v2/herois.gd": "4d309469b0dd48fbadc614704ad016d75676d80504f9eb1c773411a65000132c",
+    "jogos/hordas/projeto/v2/horda.gd": "1968a4ae8a162684309e9b50ef107274869dd073c5307a09262f3a6f0e59a356",
+    "jogos/hordas/projeto/v2/hud/molduras_codex.json": "3469b46e1925eb373938f66d1fe573ca8f62dd3bee7431c20fc54caa2ae79edb",
+    "jogos/hordas/projeto/v2/hud.gd": "f909e42b471e166d43564a72fee84e75a3ee4d20b1a447a56d80e9ac4923a906",
+    "jogos/hordas/projeto/v2/hud.tscn": "755b1122e9a7178f898e2555972e1359d4598059947626f70f79c40c48dd9bf7",
+    "jogos/hordas/projeto/v2/hud_anuncios.gd": "bf1e11e6c30e21e8629ac5cc700d0eac9c822468acd9f0c1cdd223794f9afa28",
+    "jogos/hordas/projeto/v2/hud_golpes.gd": "526c37c0d0c387b0439f36c21cd222af870c6c27952275a605f8a62ef201dce8",
+    "jogos/hordas/projeto/v2/hud_habilidades.gd": "d13f61e9b017594a6f3ddd09c66249b5bab6f0a0c5f495c5d087ceba97ef3402",
+    "jogos/hordas/projeto/v2/hud_nivel.gd": "3d3d4fb095397a457b11611932e9cbab38b903895e2ee201323108d43e8c2704",
+    "jogos/hordas/projeto/v2/hud_ultimate.gd": "96e8694aa574f9bdb643b53bd19cd9483c3bf4ba022f6275253b62a2aa4da79e",
+    "jogos/hordas/projeto/v2/icones_santuario.gd": "563a5be7c706f58bfdca7354e50b7d4dd281f763eb2ac10a1b3f161451d2863e",
+    "jogos/hordas/projeto/v2/luzes.gd": "08c9e59e73bc1b4c9a7c92326f8cf50a77efe55d18c19a67b2639efa583bd972",
+    "jogos/hordas/projeto/v2/mapas.gd": "86a3bffe69fd67508f50a9fde2ad26c576f343a9fcc9231fd19ace55013d47ab",
+    "jogos/hordas/projeto/v2/menu_principal.gd": "f599039c4239fd3d48a43f556432a592512d969d946f6acec55af8a7b43834e5",
+    "jogos/hordas/projeto/v2/menu_principal.tscn": "d3a6a7a0f83e162e95be9210516ba84917ad4b6a7a239b90f59b4759485b95e4",
+    "jogos/hordas/projeto/v2/meta.gd": "67513b8cb663f0d6efc067a45e9e91d91c09a99e3120831c8fdbf52d8afc30cc",
+    "jogos/hordas/projeto/v2/minimapa.gd": "c8aac953e963b6d3a187e8b3dce4d5019297d5e56bae3cb45a9a4993a747120c",
+    "jogos/hordas/projeto/v2/minimapa.tscn": "35a2d07bfa6f72a3cc7832cdf95ec1fc9e7477233507038e3b22d0696c2f9738",
+    "jogos/hordas/projeto/v2/monstro.gd": "64a92451779fe1f10e1637188ac3bdcc418a43163e7133e6cd7bbd8ecd2d7fd5",
+    "jogos/hordas/projeto/v2/mundo.gd": "3c401fe5cf551f147d325442b765b0e98c5083022c3263c6507b6a3ec1f49e2b",
+    "jogos/hordas/projeto/v2/mundo.tscn": "e699f6d8ed4763f913745dab3d6712490a42ed6a2426e57192c98f10427781e8",
+    "jogos/hordas/projeto/v2/oclusao.gd": "fd404b59005fcd7b72dc1c16257dd096d8541477ccae07793963099daef17c90",
+    "jogos/hordas/projeto/v2/orbes.gd": "fbe10bb2b40e9e22bdc6ed364b30070daac5337a1495eb40ec76c57932c966b0",
+    "jogos/hordas/projeto/v2/paleta.gd": "f1d13d7980fb3e069c18d7a106608c7127de32468dc0b6c85863be733445d86d",
+    "jogos/hordas/projeto/v2/passagens.gd": "4f395bad8ebe8cb4685fa4bba33a080b7758ec43ca1e157795923181376661b0",
+    "jogos/hordas/projeto/v2/pausa.gd": "7babd78d9272cf278e0f229a1cf88ed1af24cc2639ee813e6099a5ce30f2715e",
+    "jogos/hordas/projeto/v2/pausa.tscn": "96eca07be760994acb0ffd3b0a9bc8ea2406d4beb0067092a1198d341a03e268",
+    "jogos/hordas/projeto/v2/personagens.gd": "fe4d0d456b9ceb03c545415e561955641eeef3ba52f69ce38b65e0036976473e",
+    "jogos/hordas/projeto/v2/personagens.tscn": "202c6d065e14770d97f7f9d4cb0c38702682135774d0b7d5ac9eb09b4eb76443",
+    "jogos/hordas/projeto/v2/personagens_tela.gd": "d92a53a01496778e4383826a09fb7d09481705791dfc8778065df7f11e12133a",
+    "jogos/hordas/projeto/v2/picos.gd": "82e95c6b774ce56a72e24cef926cd43c4a8cedc6f4008ae9a75ec255c1a58ea2",
+    "jogos/hordas/projeto/v2/pos_visual.gd": "6c5334b33a218ab493473a239758d8ec99efa5bba004b3d74855f0777a67d90c",
+    "jogos/hordas/projeto/v2/progressao.gd": "a70f17ea48889b12ece0d27848044ea088fe36a20a61ba3e299bf90e0c96dd60",
+    "jogos/hordas/projeto/v2/progresso.gd": "1f43135e86a8f317342b06b1de1714e3973ddb55215ef4a34f140dfb53338937",
+    "jogos/hordas/projeto/v2/qualidade_auto.gd": "f46d252d95e645872a045ff6127571fa010e0700aa1d12f1c72a4303b097a9e6",
+    "jogos/hordas/projeto/v2/resultado_meta.gd": "dca9df37407368771aa022d49ed3e6a6a8d355acc789ffcc322137922476dde9",
+    "jogos/hordas/projeto/v2/ritmo.gd": "ad081f93b2ce34fae9bf1dbb6b995351dba8ab2eda6fef1ce1a20ff6766336f9",
+    "jogos/hordas/projeto/v2/roteiro.gd": "2a17f08f397e42172fe06419ddcaea7b8aee7fb09f1bf1c3e2a48f78dde5e559",
+    "jogos/hordas/projeto/v2/ruptura.gd": "d307bb4c519cc94ab72379dcaff93bc19b5bd83902e30f08ccfb2079f1385d61",
+    "jogos/hordas/projeto/v2/salao.gd": "ea99729349c76ab5d43e76156c6dbc2d754d49e2b971c1b0443de3256fc5a37f",
+    "jogos/hordas/projeto/v2/salao.tscn": "22d9c1759af1213135b64c85b0ced50f9d8e527323c21703b05a379f2c9f7676",
+    "jogos/hordas/projeto/v2/salao_visual.gd": "cfc0c78002e1bf90b7f29e7378c3a80fafe8f583491185444ceb247207bd4f1d",
+    "jogos/hordas/projeto/v2/salao_vivo.gd": "96169c3aa6f2a616c2cca3eae40299596e667c70bbd200a8ac5b8d68bd903226",
+    "jogos/hordas/projeto/v2/salao_vivo.gdshader": "d36c9d4e0623475576683ca1313f3df02afa3a6dd14b74a9b9b2653c56f62833",
+    "jogos/hordas/projeto/v2/silhueta.gdshader": "6f2383261594c71048e971a953c0a7e2cdec75c370bc6c83a4bb06403cf14b34",
+    "jogos/hordas/projeto/v2/sombras.gd": "5999888e88284a399ba27b366dc0f21c307316984412190973e556172dea619b",
+    "jogos/hordas/projeto/v2/sprites.gd": "55650c6d87dc7097313bf5234275a7295dacf9545fda95a2eaf9c232ea37a258",
+    "jogos/hordas/projeto/v2/status.gd": "63d9cb29f3fecc47eccc5c345ca2c4b59b6918ad6c79e5dcad03a75d90be7e6a",
+    "jogos/hordas/projeto/v2/telas.gd": "89834924f34af7a738a68920708911cce6feeb01265bb776c4cc63ac2fa6f300",
+    "jogos/hordas/projeto/v2/tempo_local.gd": "9e00bb96a820d2ca1084cfa372bb5b57119eb6f221b9f14ae917a2fc81fc4756",
+    "jogos/hordas/projeto/v2/titulo_fundo.gdshader": "f44320fd14b68c64f4d59aba44cd19d393cb30fc8ee9581b4c5944cc06804eed",
+    "jogos/hordas/projeto/v2/titulo_logo.gdshader": "023026b845fa38af677a42883782b9de90f18774fbce298293bd44564dca75a0",
+    "jogos/hordas/projeto/v2/titulo_vivo.gd": "21a12af022175c323378cae3aa9df5a57f180d79d74fc006e9f4c4bfb3109563",
+    "jogos/hordas/projeto/v2/transicoes.gd": "e3c2b8bc1860057745579a99584dba964ee7c17c51000e988917d1a820c20620",
+    "jogos/hordas/projeto/v2/trilha.gd": "e98007a2f94b5d6496dffe5171e9f07d32dac24b56c4d33d9819adafc1c0de1a",
+    "jogos/hordas/projeto/v2/ui_janela.gd": "6cf4a2d0af87bce29ea2bfdcebad8a7745f083a125e8ebf614a2289cf29e29ec",
+    "jogos/hordas/projeto/v2/vitoria_final.gd": "12aed761bbdace10cfb80fe556a80922b4e181ae009b2181443b2bf4673315f5",
+    "jogos/hordas/projeto/v2/vitoria_final.tscn": "c512ec270fe6a53c3ffb57e4cdc1b6e3bfa1eb25f925801ed06922378c3bf1d1",
+    "jogos/hordas/projeto/dados/animacao.json": "9a60f7638d321b721d8c9f539f8d5269d27939ddec92d5de69c0a5564cc7569a",
+    "jogos/hordas/projeto/dados/animacao_monstros.json": "a59193bda0fbf2d1210caae30cf0100b2dc5ebc9d55695b858bca1bc82480bf5",
+    "jogos/hordas/projeto/dados/aparencia.json": "e7601a98fb5ee4555c752f63343c598e7ecb46384c53198d5a7be18b61421ded",
+    "jogos/hordas/projeto/dados/armas.json": "2e0d44dfc8d0778819ae0a70bad28b6822d9181b7191f805b9ea7edec910bc29",
+    "jogos/hordas/projeto/dados/armas_universais.json": "086875170d37efa47d0ee23dad1a3c115a3a267c1d177110d28bfef16b761508",
+    "jogos/hordas/projeto/dados/atributos.json": "e399a0049b4c7f07b68abe8551c975077927281af1dda75e044574525e74b812",
+    "jogos/hordas/projeto/dados/calor.json": "f88f7fb224650fd23330920347a4c6801a918e8f80998ecb651d8d9c8c6c15dc",
+    "jogos/hordas/projeto/dados/cenarios.json": "2819e981127ba4693c542e27f74531dfeb069c00b31e532e9d8b80bca3ce5cee",
+    "jogos/hordas/projeto/dados/classes.json": "3bd037e1c1123ac61d1ac947839bbf8348f478a44974d0c3b934e0d716efe303",
+    "jogos/hordas/projeto/dados/coletaveis.json": "20ad249b9827a8b4a0f2c380e39fba25a7cfd3c9595710da38e6ad88289a0e77",
+    "jogos/hordas/projeto/dados/comportamentos.json": "c44678250e0b1c595eb9e26bf9b9d76af0a257baace05894df1a3d7ee7c623e5",
+    "jogos/hordas/projeto/dados/conjuntos.json": "cfbf224f68ca79049a64957aba92d152d2c086083d78f55b46d7facafc5088c5",
+    "jogos/hordas/projeto/dados/corrida.json": "4f293fdca1fd5965973f19d9619f0ae07dd19e66995825e44e78ea65cf2c25df",
+    "jogos/hordas/projeto/dados/crescimento_armas.json": "687cbedc07cf3fae8ef98342cc5f142b9059887e5142d0e26436fcb589028be1",
+    "jogos/hordas/projeto/dados/dadivas.json": "a4327396acc4efd6926fa95d25337df2ca3e03e45e09c9e218da29bb7bad974c",
+    "jogos/hordas/projeto/dados/defeitos.json": "dddb1e1de634e6179019a18a219c35e6d6c744b6bbeb0bdd6fd6efea647c05f9",
+    "jogos/hordas/projeto/dados/descobertas.json": "29024464a0363e2e03d4579f649af093c80656db814325ed6022f310483cb593",
+    "jogos/hordas/projeto/dados/dicionario.json": "2fe813ced1ad47507f520855a095029cfd4dd08610ae9f403a71769ad4595234",
+    "jogos/hordas/projeto/dados/elementos.json": "e7a4efc5615874206f52862ed1352a8a7d49d8c623715db75e1a761ad53515bd",
+    "jogos/hordas/projeto/dados/entrada.json": "5e8d2d355420d0588f701e0c6a9c0cc5e8a40ded6cb37fa76a06af251fa99dc4",
+    "jogos/hordas/projeto/dados/equipamentos.json": "da702c417c12fc654ff422c7030eb2f3004303bc9e596f87854ad81876f1d3ae",
+    "jogos/hordas/projeto/dados/especiais.json": "571a62cbe71ed9522b578dbbddf624f01e11894915594be63ded40093a9dc4f1",
+    "jogos/hordas/projeto/dados/evolucoes.json": "5f56248290520b565e1df59834e03472ffe5d751b09275d54d04f3d1d745ebbb",
+    "jogos/hordas/projeto/dados/fase.json": "afacb237445c61d254cb13e43ce88ffde80a662d69cddbdeabb8006c4b32c879",
+    "jogos/hordas/projeto/dados/finalizacoes.json": "118e5bbb9559c1760dbad7ce24e9b492488c96c6b3547543301aaf7a0112f939",
+    "jogos/hordas/projeto/dados/graficos.json": "979a82ee43a4cf1843bb8a8b1d77d797d993e6783b6f22f8d866a3bbc7615a2f",
+    "jogos/hordas/projeto/dados/habilidades.json": "af68b0535ffae5b4c548142ae679c62f2493ae7972605d01ab7534192bf03936",
+    "jogos/hordas/projeto/dados/herois.json": "d93b0278e1f36b9a18a5988a632c2f8c8b4210d839bbd4de0e0121a1b7f508af",
+    "jogos/hordas/projeto/dados/inimigos.json": "57b91aa199fc64ff0241c0dba3a81cc2e5353759a1f64102c1fb4061ec98e159",
+    "jogos/hordas/projeto/dados/itens.json": "cc6d5397d6443519d777603001bb432c57316d3d0628d90fbb36acfab9f35c00",
+    "jogos/hordas/projeto/dados/mapa.json": "8c208c27c60d0076f3e83f54726b06b07abe0f1fe838e8c7046b399727c77712",
+    "jogos/hordas/projeto/dados/mira.json": "5ac01087c7f4035ec56d261cccecf894a7e34c3669a727238feeefe279b6d36b",
+    "jogos/hordas/projeto/dados/missoes_chefe.json": "3b9996faf1e95d3365199d32d6bce6ff41aa8942f681fd5afda8e7826d6e0ad5",
+    "jogos/hordas/projeto/dados/mochila.json": "8cf172d84503fbb370216c973671104096fafe2876f407721209dbd8954e3b98",
+    "jogos/hordas/projeto/dados/mortes.json": "9686ab6df6c792deb6ac097d9b83f8012214960cf18ad71c1d85bc319cb33868",
+    "jogos/hordas/projeto/dados/movimento.json": "aff0c1968340d95b959b88d5c6886ab3ac0e489702c1a86bc8993a0f5a8be769",
+    "jogos/hordas/projeto/dados/objetivos.json": "5c2381e3477ae084f2bbb0931c7af41442725d564ac1fe9458e9f74673a23099",
+    "jogos/hordas/projeto/dados/passivos.json": "1ac55e17040e0b8068ef40ca46dcbc50b65994acdf31206732a3b8d4eebef22d",
+    "jogos/hordas/projeto/dados/prorrogacao.json": "bdc477eeace509bcaeda391664412ee320e1af524e104c177a4d0d3c92d48393",
+    "jogos/hordas/projeto/dados/pvp.json": "794191381256536c7ec8e01faf5be89b3708c9ed3986ba789380969b34f3f40b",
+    "jogos/hordas/projeto/dados/quadros_monstros.json": "8979462f475772bf4dcb96767be51f364606864f8c9e294508defc56e72efb25",
+    "jogos/hordas/projeto/dados/racas.json": "c51b686b5a9978c6b00b5a4c6c70021d01bfc9f3422ce290053efd9395c0e4c2",
+    "jogos/hordas/projeto/dados/regioes.json": "075822d245fc6ba26aac3f8eb2837fb4d42e8a6a293c9310520179f207730607",
+    "jogos/hordas/projeto/dados/v2_armas/lote_1.json": "56c42cf6086a4d31862f21cb353460665078b71662c96f7d300f5ab68014d705",
+    "jogos/hordas/projeto/dados/v2_armas/lote_2.json": "bb5c7cb4865ac4196f52329e98213ed388cd8f334f06c073419fc22499bb8789",
+    "jogos/hordas/projeto/dados/v2_armas/lote_3.json": "27411d43cfb2d3f67c85d11d3d9047577e72912c1acb9432d2671eadee09f2a1",
+    "jogos/hordas/projeto/dados/v2_armas/lote_4.json": "be547f27860309f8f806f6e71a594919b328dcbedda32805bc4f10fb1b606bd0",
+    "jogos/hordas/projeto/dados/v2_armas/lote_5.json": "3fe1e21bb960dd6855f73d816907293f2bd757698dccf35328c8b3bc9d524d62",
+    "jogos/hordas/projeto/dados/v2_cartas.json": "3fb26b49443b67be8e28971ba515588611e26377001a822bef562bc232e0c8b7",
+    "jogos/hordas/projeto/dados/v2_cidade.json": "198fb0ce5269dbd24ffa1d60b3d26220bdead5d2b8237e8bcec8111c6f442c9e",
+    "jogos/hordas/projeto/dados/v2_combate.json": "29f569826651006f428265ed0259b88d71fd01fbe2e0652fa1b06486d41118ae",
+    "jogos/hordas/projeto/dados/v2_dificuldade.json": "69771e24979a44fbc7d2bf1aacbf40b2984c0c13460f07089b9c99d8d92891d4",
+    "jogos/hordas/projeto/dados/v2_especial.json": "d3777ce0b119a2bc1306cca0f22cd757fb7f39884c27b9581222ab8cdde362c4",
+    "jogos/hordas/projeto/dados/v2_floresta.json": "1677a04b6d7119af2b6617d0d5e61879cf2488f29d4891cfbb8eec5d5608b512",
+    "jogos/hordas/projeto/dados/v2_habilidade.json": "f14007b9084617355f54eb0e796e2768b17973795480458b07fba6751bc8ea9f",
+    "jogos/hordas/projeto/dados/v2_herois.json": "436995cb5e7569f52ae555f244dffb42db5cf214d45b8ea5540070d5307b3399",
+    "jogos/hordas/projeto/dados/v2_laboratorio.json": "5dae8d0a06efc4204d1a0964f2f705a92bd2d5fce47de0706767c17c9b846200",
+    "jogos/hordas/projeto/dados/v2_medio.json": "174e4e013a85adc6c1aaa607220c46470ba00df5ac3d08bf5285f993a7b1259f",
+    "jogos/hordas/projeto/dados/v2_meta.json": "57910e5c5c7d040ceb065f514baac97f60c6ea12e15ba0909caa87210587244c",
+    "jogos/hordas/projeto/dados/v2_musica.json": "87f7a1eed4f7fd45527a45ec622f9607339b16b171cd092b0ffc0bcab21d822e",
+    "jogos/hordas/projeto/dados/v2_niveis.json": "fd3ca02b3aefe5aabc0dd66d635e4e668438d0f6084e307802d96eb26bf65b33",
+    "jogos/hordas/projeto/dados/v2_progressao.json": "73767cd53f5304daa3c9df1491d84c1139457d7101a8814e4b8e78e1e01b94d8",
+    "jogos/hordas/projeto/dados/v2_ritmo.json": "667a3de1e4e1e6640b7b45254a7d3229ff3bc4051354d5b90479af48187ce743",
+    "jogos/hordas/projeto/dados/v2_ruptura.json": "0e04f3d639f6a4964687f99bf88d0676b0d58b092041bd309efec5215818ec4b",
+    "jogos/hordas/projeto/dados/v2_salao.json": "71f1010d14ff64720a901b3ecbc779b85b63eeb54353fb96b6ff09ef8f387d7b",
+    "jogos/hordas/projeto/dados/v2_secundario.json": "f82f8eac192f6e3da57a5708ac477b94fc1c4a6069cc73aa7feef76b64c9e19f",
+    "jogos/hordas/projeto/dados/v2_vitoria_final.json": "de9731f0aa58ef4a61f220c60b45dac8a8f6d15a948f22137fb6e8b55d8dcd83"
+  }
+}
