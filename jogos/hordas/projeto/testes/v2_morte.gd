@@ -1,11 +1,11 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Percorre morte -> resultado -> entrada real -> salão na cena atual, sem modo_teste.
 ## Save exclusivo (um personagem de teste, em arquivos temporários); também confere saída do resultado quando a gravação falha.
 const Mundo := preload("res://v2/mundo.tscn")
 const Meta := preload("res://v2/meta.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Personagens := preload("res://v2/personagens.gd")
-const SAVE_REAL := "user://v2_progresso.cfg"
+const SAVE_REAL := "user://testes_v2/v2_morte/v2_progresso.cfg"
 var falhas := 0
 var caminho := ""
 
@@ -24,13 +24,13 @@ func _rodar() -> void:
 	var real_antes := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
 	var antigo := Meta.caminho_save
 	# o salão precisa de um personagem ativo: usa um de teste, em arquivos temporários (os saves reais ficam fora)
-	var prefixo := "user://teste_v2_morte_%s_" % Time.get_ticks_usec()
+	var prefixo := "user://testes_v2/v2_morte/teste_v2_morte_%s_" % Time.get_ticks_usec()
 	Personagens.caminho_base = prefixo + "personagem_"
 	Personagens.caminho_indice = prefixo + "personagens.cfg"
 	Personagens.caminho_antigo = prefixo + "antigo.cfg"
 	var personagem := Personagens.criar("Breno")
 	Personagens.ativar(personagem)
-	caminho = "user://teste_v2_morte_%s.cfg" % Time.get_ticks_usec()
+	caminho = "user://testes_v2/v2_morte/teste_v2_morte_%s.cfg" % Time.get_ticks_usec()
 	Meta.caminho_save = caminho
 	# Não pode pertencer à cena que a troca destruirá: mantém o teste vivo na raiz.
 	reparent(get_tree().root)

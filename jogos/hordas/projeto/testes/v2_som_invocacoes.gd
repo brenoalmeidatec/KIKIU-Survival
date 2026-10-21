@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Teste dos eventos reais dos andantes/golem/fusões, orçamento separado e cancelamento de voz por geração do pool.
 ## Usa os módulos reais e efeitos sem desenho; sem inimigos/texturas. O teste das vozes usa um WAV silencioso em vez de som audível.
 const AudioV2 := preload("res://v2/audio.gd")

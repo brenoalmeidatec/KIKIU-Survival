@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático: transparência dos objetos de caixa (prédio, carro, container, muro, abrigo) da Cidade, em v2/copas.gd.
 #   - herói ATRÁS do objeto, com o corpo sob o desenho: a força sobe a 1 (o sprite inteiro desce ao alfa de ALFA_CAIXA);
 #   - herói na frente, ou atrás mas fora do retângulo do desenho: volta a 0;

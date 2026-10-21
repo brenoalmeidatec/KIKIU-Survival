@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste da etapa 0 do coop (docs/ONLINE_V2_PLANO.md): `mundo.herois` (lista; o solo tem 1), `alvo_mais_perto` para os monstros, e o tempo
 # separado em "do mundo" e "do herói local" (hit-stop, câmera lenta e pausa). No solo nada muda: dt_mundo == dt_local. Com 2 heróis na
 # lista o monstro persegue o mais perto; o herói caído não é alvo; com `tempo_local_separado` o hit-stop só trava o herói local.

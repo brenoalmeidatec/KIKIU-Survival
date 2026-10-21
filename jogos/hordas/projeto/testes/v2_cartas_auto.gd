@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste da escolha AUTOMÁTICA das cartas da v2 (cartas.escolha_automatica, progresso.automatico, o botão do meio e as teclas Q / Y do controle).
 # Confere: completa uma fusão a que falta uma peça; sobe um golpe que o herói já tem; cobre o que falta (golpe novo); a raridade sai rebaixada
 # (nunca passa de rara e sai mais comum que no sorteio normal); aplica a carta de verdade e fecha a escolha sem gastar rerrolar nem banir; o botão,

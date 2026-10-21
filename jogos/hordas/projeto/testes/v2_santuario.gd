@@ -1,9 +1,9 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Navegação real do frontend e legibilidade do santuário em 960x540. Save/opções isolados.
 const Meta := preload("res://v2/meta.gd")
 const Altar := preload("res://v2/altar.tscn")
-const SAVE := "user://teste_v2_santuario.cfg"
-const OPCOES := "user://teste_v2_santuario_opcoes.cfg"
+const SAVE := "user://testes_v2/v2_santuario/teste_v2_santuario.cfg"
+const OPCOES := "user://testes_v2/v2_santuario/teste_v2_santuario_opcoes.cfg"
 var falhas := 0
 
 

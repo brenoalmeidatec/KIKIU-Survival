@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da faixa de GOLPES do HUD da v2 (v2/hud_golpes.gd, no hud.tscn): cada golpe automático que o herói ganha aparece como
 # parte fixa do HUD, com nível, recarga e progresso da fusão; o nível sobe e anima; a fusão troca as peças pela evolução e nada mais some;
 # parada, a faixa não pede redesenho; com mundo sem combate fica escondida; não cruza nenhum outro bloco do HUD (e se esconde com o card C).

@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste dos mapas da v2 (v2/mapas.gd e os json de cada mapa em dados/v2_*.json). Usa um save TEMPORÁRIO (user://teste_v2_mapas.cfg).
 # Confere: a lista de mapas e a escolha gravada (padrão, trocar, id desconhecido, dar a volta); cada mapa tem os objetos e decalques que
 # o json cita nos atlas dele, as luzes e o minimapa só citam nomes que existem, o herói e as zonas de monstros nascem fora de qualquer
@@ -13,7 +13,7 @@ const Altar := preload("res://v2/altar.tscn")
 const Colisao := preload("res://v2/colisao.gd")
 const Passagens := preload("res://v2/passagens.gd")
 const Sombras := preload("res://v2/sombras.gd")
-const SAVE_TESTE := "user://teste_v2_mapas.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_mapas/teste_v2_mapas.cfg"
 const PASSO := 1.0 / 60.0
 const PADRAO_OBJ := "res://prototipos/objetos"
 const PADRAO_DEC := "res://prototipos/decalques"

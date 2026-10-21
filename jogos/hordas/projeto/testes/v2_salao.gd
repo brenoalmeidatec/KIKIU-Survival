@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automÃ¡tico do personagem, do salÃ£o e da escolha de personagem da v2 (v2/personagens.gd, v2/salao.gd e
 # v2/personagens_tela.gd). Usa arquivos TEMPORÃRIOS (user://teste_salao_*): o save real da meta (user://v2_progresso.cfg) e os saves
 # dos personagens de verdade nÃ£o sÃ£o tocados; a conferÃªncia por md5 garante isso.
@@ -13,11 +13,11 @@ const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Salao := preload("res://v2/salao.tscn")
 const Tela := preload("res://v2/personagens.tscn")
-const PREFIXO := "user://teste_salao_p"
-const INDICE := "user://teste_salao_personagens.cfg"
-const ANTIGO := "user://teste_salao_progresso.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const SAVE_META_TESTE := "user://teste_salao_meta.cfg"
+const PREFIXO := "user://testes_v2/v2_salao/teste_salao_p"
+const INDICE := "user://testes_v2/v2_salao/teste_salao_personagens.cfg"
+const ANTIGO := "user://testes_v2/v2_salao/teste_salao_progresso.cfg"
+const SAVE_REAL := "user://testes_v2/v2_salao/v2_progresso.cfg"
+const SAVE_META_TESTE := "user://testes_v2/v2_salao/teste_salao_meta.cfg"
 const FLORESTA := "res://v2/mundo.tscn"
 
 var falhas := 0

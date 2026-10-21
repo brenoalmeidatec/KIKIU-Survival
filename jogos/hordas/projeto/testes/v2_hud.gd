@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do HUD da v2 (v2/hud.tscn + v2/hud.gd). Monta o HUD sobre um "mundo" falso (heroi, abates, combo, tempo, monstros
 # vivos e o sinal nivel_subiu), muda os valores e confere que barras e textos refletem; que o combo pulsa a cada abate, some quando zera
 # e volta à posição de repouso; que o brilho do XP acende com nivel_subiu e apaga; que o HUD aguenta mundo nulo ou sem campos; que o

@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Prints de conferência das fontes da v2 (precisa de janela, não roda em --headless). Só o viewport do Godot; nunca a área de trabalho.
 ##   godot --path jogos/hordas/projeto res://testes/v2_fontes_prints.tscn -- --fotos=PASTA --prefixo=antes
 ## Grava PREFIXO_graficos_500.png (pausa > Ajustes > Gráficos na linha "Máximo de inimigos vivos", valor 500, com o "*" de "sem efeito"),
@@ -8,8 +8,8 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Meta := preload("res://v2/meta.gd")
 const Resultado := preload("res://v2/resultado_meta.gd")
-const SAVE_TESTE := "user://teste_v2_fontes_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_fontes_opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_fontes_prints/teste_v2_fontes_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_fontes_prints/teste_v2_fontes_opcoes.cfg"
 
 
 func _ready() -> void:
@@ -32,7 +32,7 @@ func _ready() -> void:
 	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_fontes_prints/opcoes.cfg"
 	print("v2_fontes_prints em ", pasta)
 	get_tree().quit()
 

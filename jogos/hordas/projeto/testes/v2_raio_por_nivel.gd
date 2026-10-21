@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do CRESCIMENTO POR NÍVEL do alcance do golpe (katana) e do raio do escudo (v2/combate.gd alcance_do_passo, v2/progresso.gd
 # bonus_por_nivel e bonus_nivel_golpe, v2/escudo.gd raio, arco e pontos_do_arco, v2/adagas.gd lancar; dados/v2_combate.json > golpe.raio_por_nivel e dados/v2_secundario.json >
 # escudo.raio_por_nivel e arco_por_nivel): nível 1 igual ao de antes, cresce por nível e para no teto, o golpe soma com a área do herói

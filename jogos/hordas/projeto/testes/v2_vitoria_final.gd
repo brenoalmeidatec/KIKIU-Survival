@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Teste do FIM DE JOGO da v2 (v2/vitoria_final.gd). Fluxo real, sem modo_teste: vencer o chefão das RUÍNAS (o mapa final) -> resultado
 ## -> CONTINUAR -> tela de VITÓRIA FINAL -> créditos -> menu principal; vencer o chefão de outro mapa vai ao santuário e NÃO mostra a
 ## vitória final; pular (Enter/A passam de etapa, Esc/Start/B pulam tudo, entrada cedo demais é ignorada) e a rolagem até o fim.
@@ -9,7 +9,7 @@ const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const VitoriaFinal := preload("res://v2/vitoria_final.gd")
 const Creditos := preload("res://v2/creditos.gd")
-const SAVE_REAL := "user://v2_progresso.cfg"
+const SAVE_REAL := "user://testes_v2/v2_vitoria_final/v2_progresso.cfg"
 var falhas := 0
 var caminho := ""
 
@@ -31,13 +31,13 @@ func _rodar() -> void:
 			pasta = a.trim_prefix("--fotos=")
 	var real_antes := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
 	var antigo := Meta.caminho_save
-	var prefixo := "user://teste_v2_vitoria_final_%s_" % Time.get_ticks_usec()
+	var prefixo := "user://testes_v2/v2_vitoria_final/teste_v2_vitoria_final_%s_" % Time.get_ticks_usec()
 	Personagens.caminho_base = prefixo + "personagem_"
 	Personagens.caminho_indice = prefixo + "personagens.cfg"
 	Personagens.caminho_antigo = prefixo + "antigo.cfg"
 	var personagem := Personagens.criar("Breno")
 	Personagens.ativar(personagem)
-	caminho = "user://teste_v2_vitoria_final_%s.cfg" % Time.get_ticks_usec()
+	caminho = "user://testes_v2/v2_vitoria_final/teste_v2_vitoria_final_%s.cfg" % Time.get_ticks_usec()
 	Meta.caminho_save = caminho
 	reparent(get_tree().root)  # a troca de cena não pode levar o teste junto
 	get_tree().current_scene = null

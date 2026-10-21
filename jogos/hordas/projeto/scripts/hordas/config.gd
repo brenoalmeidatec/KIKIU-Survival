@@ -85,10 +85,43 @@ var _temp_perfil := ""  # perfil só da memória ("" = nenhum); some ao mexer nu
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_isolar_captura_gif()
+	# A fixture precisa apontar opcoes.cfg antes de qualquer leitura/migração do autoload (#387).
+	# Só carrega código de teste quando a CLI (ou o robô filho) identifica uma cena v2_.
+	var cena_teste := OS.get_environment("KIKIU_TESTE_V2_CENA")
+	for argumento in OS.get_cmdline_args():
+		var nome := str(argumento).replace("\\", "/").get_file()
+		if nome.begins_with("v2_") and nome.ends_with(".tscn"):
+			cena_teste = nome.get_basename()
+			break
+	if (
+		not Engine.is_editor_hint()
+		and cena_teste.begins_with("v2_")
+		and cena_teste.is_valid_identifier()
+		and ResourceLoader.exists("res://testes/ambiente_v2.gd")
+	):
+		var ambiente_teste = load("res://testes/ambiente_v2.gd")
+		ambiente_teste.preparar_config(self)
 	recarregar()
 	# com opções de teste (--bot, --online, --print_tela...) só o som vale: os testes rodam em janela e sem limite de FPS
 	aplicar(OS.get_cmdline_user_args().is_empty())
 	_montar_proporcao()
+
+
+## Os helpers só podem apontar Config no próprio _ready depois do autoload: tarde para as migrações de recarregar().
+## Reconhece apenas estas cenas de QA explícitas, existentes no projeto; editor e jogo/export sem elas seguem normais.
+func _isolar_captura_gif() -> void:
+	var argumentos := OS.get_cmdline_args()
+	if Engine.is_editor_hint() or "--editor" in argumentos or "-e" in argumentos or "--project-manager" in argumentos:
+		return
+	var capturas := {
+		"res://testes/fotos/matheus_gif.tscn": "user://qa_mgif_opcoes.cfg",
+		"res://testes/fotos/heroi_gif.tscn": "user://qa_hgif_opcoes.cfg",
+	}
+	for cena in capturas:
+		if cena in argumentos and ResourceLoader.exists(cena):
+			arquivo = capturas[cena]
+			return
 
 
 ## ---------- janela sempre 16:9 ----------
