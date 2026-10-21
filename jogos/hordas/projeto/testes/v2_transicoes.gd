@@ -3,9 +3,11 @@ extends Node
 # (user://teste_v2_transicoes_*): o save real, os personagens e user://opcoes.cfg não são tocados (conferido por md5).
 # Confere: a duração de cada transição fica entre 0,15 e 0,25 s; "Reduzir animações" (Config, Acessibilidade) zera tudo e o painel
 # aparece e some na hora; entrar/sair animam de verdade (alfa e posição) e voltam ao repouso, inclusive com a árvore pausada e
-# com um sair no meio de um entrar; um painel dentro de Container só faz fade; Enter duplo pede UMA troca de cena (a segunda é
-# descartada), a entrada logo depois da troca chega à cena nova uma vez só e o ESC no meio da transição ainda volta uma tela;
-# e o fluxo de verdade título -> personagens -> santuário -> partida -> pausa (ESC) -> santuário, com cenas reais, não trava.
+# com um sair no meio de um entrar; um painel dentro de Container só faz fade e um sem deslize não tem a posição desfeita por um
+# reencaixe de layout no meio do fade; no perfil Baixo não há foto (véu); Enter duplo pede UMA troca de cena (a segunda é
+# descartada); com a foto da tela antiga ainda visível Enter e ESC (inclusive ESC duplo) são descartados e a primeira entrada
+# depois do fade vale, uma vez só; ir_para durante o fade anterior o cancela; e o fluxo de verdade título -> personagens ->
+# santuário -> partida -> pausa (ESC) -> santuário, com cenas reais, não trava.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_transicoes.tscn  (imprime "v2_transicoes falhas=0")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
@@ -117,7 +119,9 @@ func _testes() -> void:
 	await _quadros(5)  # o primeiro quadro do Godot tem um delta enorme; as animações medidas começam depois dele
 	_constantes()
 	_opcao()
+	_perfil_baixo()
 	await _painel()
+	await _reencaixe()
 	await _fluxo()
 
 
@@ -142,6 +146,45 @@ func _opcao() -> void:
 	c.queue_free()
 	Config.definir("reduzir_animacoes", false)
 	ok(not Transicoes.reduzido(), "desligar a opção devolve as transições")
+
+
+## Perfil Baixo: a foto custa uma espera da GPU, então não se fotografa; o véu de cor faz o fade.
+func _perfil_baixo() -> void:
+	ok(Transicoes.usa_foto() == (DisplayServer.get_name() != "headless"), "fora do Baixo fotografa quando há renderizador")
+	Config.g_perfil_temporario("baixo")
+	ok(Config.g_perfil() == "baixo" and not Transicoes.usa_foto(), "no perfil Baixo não se fotografa: o véu faz o papel")
+	Config.g_soltar_temporario()
+	ok(Transicoes.usa_foto() == (DisplayServer.get_name() != "headless"), "soltar o perfil temporário devolve a foto")
+
+
+## Um reencaixe de layout (resize) no meio do fade não pode ser desfeito pelo fim da animação quando ela não deslizou.
+func _reencaixe() -> void:
+	var c := ColorRect.new()
+	c.position = Vector2(0, 498)
+	c.size = Vector2(100, 40)
+	add_child(c)
+	Transicoes.entrar(c, Vector2.ZERO)
+	await _esperar(0.04)
+	c.position = Vector2(-320, 678)
+	await _esperar(Transicoes.DUR_ENTRAR + 0.15)
+	ok(c.modulate.a == 1.0 and c.position == Vector2(-320, 678), "entrar sem deslize deixa o reencaixe do meio do fade como está (%s)" % c.position)
+	Transicoes.sair(c, Vector2.ZERO)
+	await _esperar(0.03)
+	c.position = Vector2(12, 34)
+	await _esperar(Transicoes.DUR_SAIR + 0.15)
+	ok(not c.visible and c.modulate.a == 1.0 and c.position == Vector2(12, 34), "sair sem deslize também (%s)" % c.position)
+	# com deslize a posição de repouso continua sendo devolvida
+	c.position = Vector2(30, 40)
+	Transicoes.entrar(c)
+	await _esperar(Transicoes.DUR_ENTRAR + 0.15)
+	ok(_perto(c.position, Vector2(30, 40)) and c.modulate.a == 1.0, "entrar com deslize termina no lugar (%s)" % c.position)
+	# o callback de sair roda no fim do fade e `esconder` false deixa o painel visível
+	var fim := [0]
+	Transicoes.sair(c, Vector2.ZERO, Transicoes.DUR_SAIR, func(): fim[0] += 1, false)
+	ok(fim[0] == 0 and Transicoes.animando(c), "o callback de sair não roda antes do fim do fade")
+	await _esperar(Transicoes.DUR_SAIR + 0.15)
+	ok(fim[0] == 1 and c.visible and c.modulate.a == 1.0, "e roda uma vez no fim; com esconder=false o painel fica visível e opaco")
+	c.queue_free()
 
 
 func _painel() -> void:
@@ -212,26 +255,45 @@ func _fluxo() -> void:
 	ok(chegou, "Enter no título leva à escolha de personagem")
 	ok(Transicoes.trocas == trocas0 + 1, "Enter duplo pede uma troca só (%d)" % (Transicoes.trocas - trocas0))
 	ok(Transicoes.ativa(), "logo depois da troca a transição ainda está rodando")
+	# a foto do título ainda está na tela: Enter impaciente (escolheria o personagem às cegas) e ESC duplo (iria ao título e abriria
+	# "Sair") são descartados
+	await _impaciente([KEY_ENTER, KEY_ESCAPE, KEY_ESCAPE], ESCOLHA)
 	var t0 := Time.get_ticks_msec()
-	await _ate(func(): return not Transicoes.ativa(), 2.0)
+	await _fim_transicao()
 	var dur := (Time.get_ticks_msec() - t0) / 1000.0
-	ok(not Transicoes.ativa() and dur <= 3.0, "a transição termina sozinha (%.2f s depois da troca)" % dur)
-	# ESC na escolha volta ao título, uma vez
+	ok(dur <= 3.0, "a transição termina sozinha (%.2f s depois da troca)" % dur)
+	# a primeira entrada depois do fade vale: ESC na escolha volta ao título, uma vez
 	var trocas1: int = Transicoes.trocas
 	_tecla(KEY_ESCAPE)
 	chegou = await _ate(func(): return _na_cena(TITULO), 4.0)
 	ok(chegou and Transicoes.trocas == trocas1 + 1, "ESC na escolha volta ao título, uma vez só")
-	await _quadros(3)
-	# com a transição de volta ainda rodando, Enter vai à escolha de novo (a entrada não se perde)
+	ok(chegou and not _cena().pausa.aberto, "e o ESC não abriu o Sair do título")
+	await _impaciente([KEY_ENTER], TITULO)
+	await _fim_transicao()
+	# Enter no título depois do fade vale, uma vez (a entrada descartada não ficou guardada para repetir)
 	var trocas2: int = Transicoes.trocas
 	_tecla(KEY_ENTER)
 	chegou = await _ate(func(): return _na_cena(ESCOLHA), 4.0)
-	ok(chegou and Transicoes.trocas == trocas2 + 1, "Enter durante a transição de volta ainda vale")
-	await _quadros(4)
+	ok(chegou and Transicoes.trocas == trocas2 + 1, "Enter depois do fade vai à escolha, uma vez só")
+	# ir_para durante o fade da troca anterior: cancela o fade (foto e véu somem) e a nova troca acontece
+	ok(Transicoes.ativa(), "o fade da ida à escolha está rodando")
+	var trocas3: int = Transicoes.trocas
+	ok(Transicoes.ir_para(_cena(), TITULO, true), "ir_para durante o fade da troca anterior é aceito")
+	ok(not Transicoes._foto.visible and not Transicoes._veu.visible and Transicoes.ativa(), "e cancela o fade anterior na hora (nada de foto fantasma)")
+	ok(not Transicoes.ir_para(_cena(), TITULO, true), "mas dois pedidos no mesmo instante continuam valendo um só")
+	chegou = await _ate(func(): return _na_cena(TITULO), 4.0)
+	ok(chegou and Transicoes.trocas == trocas3 + 1, "a segunda troca leva ao título (%d)" % (Transicoes.trocas - trocas3))
+	await _fim_transicao()
+	ok(not Transicoes._foto.visible and not Transicoes._veu.visible and Transicoes._foto.texture == null, "no fim não sobram foto nem véu nem textura guardada")
+	_tecla(KEY_ENTER)
+	chegou = await _ate(func(): return _na_cena(ESCOLHA), 4.0)
+	ok(chegou, "Enter no título volta à escolha")
+	await _fim_transicao()
 	# escolhe o personagem (Enter na linha dele) e entra no santuário
 	_tecla(KEY_ENTER)
 	chegou = await _ate(func(): return _na_cena(SALAO), 4.0)
 	ok(chegou, "a escolha leva ao santuário")
+	await _fim_transicao()
 	await _quadros(6)
 	var salao := _cena()
 	var id_salao := salao.get_instance_id() if salao != null else 0
@@ -242,6 +304,7 @@ func _fluxo() -> void:
 	ok(salao.usar_portal("floresta"), "o portal da Floresta está aberto")
 	chegou = await _ate(func(): return _na_cena(PARTIDA), 5.0)
 	ok(chegou, "o portal leva à partida")
+	await _fim_transicao()
 	await _esperar(0.6)
 	var mundo := _cena()
 	if mundo == null or mundo.scene_file_path != PARTIDA:
@@ -250,7 +313,7 @@ func _fluxo() -> void:
 	ok(pausa != null, "a partida montou a pausa")
 	if pausa == null:
 		return
-	# ESC logo depois da transição de entrada na partida: a pausa responde
+	# ESC assim que a transição de entrada na partida acaba: a pausa responde
 	_tecla(KEY_ESCAPE)
 	ok(pausa.aberto and get_tree().paused, "o ESC pausa a partida mesmo logo depois da transição")
 	ok(pausa._raiz.visible, "o menu de pausa aparece")
@@ -278,6 +341,26 @@ func _fluxo() -> void:
 	if _cena() != null:
 		_cena().queue_free()
 	await _quadros(2)
+
+
+## Com a foto da tela antiga ainda visível, as teclas são descartadas: nada vale na cena nova, nenhuma troca nova.
+func _impaciente(teclas: Array, cena: String) -> void:
+	var atual := _cena()
+	var trocas: int = Transicoes.trocas
+	ok(
+		Transicoes.ativa() and Transicoes.entrada_bloqueada() and get_tree().root.gui_disable_input,
+		"com a foto da tela antiga na tela a entrada está bloqueada"
+	)
+	for k in teclas:
+		_tecla(k)
+	await _quadros(3)
+	ok(_cena() == atual and _na_cena(cena) and Transicoes.trocas == trocas, "a entrada impaciente é descartada (a cena e as trocas ficam como estavam)")
+
+
+## Espera o fim do fade: a entrada volta e não sobra foto, véu nem bloqueio.
+func _fim_transicao() -> void:
+	var fim := await _ate(func(): return not Transicoes.ativa(), 6.0)  # no CI cheio a pintura da cena nova demora
+	ok(fim and not Transicoes.entrada_bloqueada() and not get_tree().root.gui_disable_input, "no fim do fade a entrada volta (fim=%s)" % fim)
 
 
 func _achar_pausa(pai: Node) -> Node:

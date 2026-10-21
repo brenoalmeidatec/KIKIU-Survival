@@ -1285,6 +1285,35 @@ func _interface() -> void:
 	tecla(KEY_C)
 	await esperar()
 	ok(not st.aberto(), "C desliga o HUD depois da pausa")
+	# --- o card da pausa acompanha o fade do menu (#377): entra e sai com fade em vez de aparecer e sumir de uma vez
+	await get_tree().create_timer(Transicoes.DUR_SAIR + 0.15, true, false, true).timeout  # assenta qualquer fade das pausas de antes
+	pausa.pausar()
+	ok(
+		st.aberto() and st._modo_atual == "pausa" and Transicoes.animando(st._tela) and st._tela.modulate.a < 1.0,
+		"ao abrir a pausa o card entra com fade, junto com o menu"
+	)
+	await get_tree().create_timer(Transicoes.DUR_ENTRAR + 0.15, true, false, true).timeout
+	ok(st._tela.modulate.a == 1.0 and not Transicoes.animando(st._tela), "e termina opaco")
+	pausa.fechar()
+	ok(
+		not st.aberto() and st.visible and st._modo_atual == "" and Transicoes.animando(st._tela),
+		"ao fechar, o card segue na tela enquanto some (fade), mas já não conta como aberto"
+	)
+	await get_tree().create_timer(Transicoes.DUR_SAIR + 0.15, true, false, true).timeout
+	ok(not st.visible and st._tela.visible and st._tela.modulate.a == 1.0 and not st._saindo, "e some no fim do fade, pronto para a próxima")
+	pausa.pausar()
+	pausa.fechar()
+	pausa.pausar()  # reabre no meio do fade de saída: o card volta e fica
+	ok(st.aberto() and not st._saindo and st._modo_atual == "pausa", "reabrir a pausa no meio do fade de saída devolve o card")
+	await get_tree().create_timer(Transicoes.DUR_ENTRAR + 0.15, true, false, true).timeout
+	ok(st.aberto() and st.visible and st._tela.modulate.a == 1.0, "e ele termina aberto e opaco")
+	pausa.fechar()
+	await get_tree().create_timer(Transicoes.DUR_SAIR + 0.15, true, false, true).timeout
+	Config.definir("reduzir_animacoes", true)
+	pausa.pausar()
+	pausa.fechar()
+	ok(not st.visible and not st._saindo and st._tela.modulate.a == 1.0, "com Reduzir animações o card some na hora")
+	Config.definir("reduzir_animacoes", false)
 	# --- o fim da partida desliga o card sozinho
 	tecla(KEY_C)
 	await esperar()

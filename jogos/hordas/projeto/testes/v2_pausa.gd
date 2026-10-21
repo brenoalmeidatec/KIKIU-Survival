@@ -131,6 +131,14 @@ func _ir_para(pausa, id: String) -> void:
 		_tecla(KEY_DOWN)
 
 
+func _linhas_visiveis(pausa) -> int:
+	var n := 0
+	for l in pausa._linhas:
+		if l["linha"].visible:
+			n += 1
+	return n
+
+
 func _ids(pausa) -> Array:
 	var r: Array = []
 	for it in pausa._itens_atuais:
@@ -234,6 +242,25 @@ func _testes() -> void:
 		pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "animacoes", "versao", "creditos", "voltar"],
 		"Ajustes abre com Gráficos, Áudio, Reduzir animações, aviso de versão, Créditos e Voltar"
 	)
+	# as seis linhas aparecem de uma vez (sem rodapé de ajuda cabe uma a mais): o "Voltar", a última, não pode sumir da lista
+	ok(
+		_linhas_visiveis(pausa) == 6 and pausa._topo == 0,
+		"Ajustes mostra as 6 linhas, sem rolar (%d visíveis, topo %d)" % [_linhas_visiveis(pausa), pausa._topo]
+	)
+	var l_voltar: Dictionary = pausa._linhas[5]
+	ok(l_voltar["linha"].visible and l_voltar["rotulo"].text == "Voltar", "a 6ª linha de Ajustes é o Voltar e está visível")
+	ok(
+		Pausa.PAINEL.position.y + Pausa.LINHA0 + 5 * Pausa.LINHA_H + Pausa.LINHA_ALT < Pausa.PAINEL.position.y + Pausa.DICA_Y,
+		"a 6ª linha termina acima da dica do rodapé"
+	)
+	pausa.mouse_fn = Callable(self, "_mouse_teste")
+	_mouse_alvo = Vector2(354, Pausa.PAINEL.position.y + Pausa.LINHA0 + 5 * Pausa.LINHA_H + 16.0)
+	_clique(_mouse_alvo)
+	ok(pausa.tela == "menu" and pausa.aberto, "clicar no Voltar (6ª linha) volta ao menu da pausa")
+	pausa.mouse_fn = Callable()
+	_ir_para(pausa, "ajustes")
+	_tecla(KEY_ENTER)
+	ok(pausa.tela == "ajustes", "de volta a Ajustes para seguir o teste")
 	_ir_para(pausa, "graficos")
 	_tecla(KEY_ENTER)
 	ok(pausa.tela == "graficos", "Gráficos abre a aba")
@@ -571,6 +598,7 @@ func _testes() -> void:
 		if str(it.rotulo) == "Motor do jogo" and str(it.ajuda).contains("MIT") and str(it.ajuda).contains("Juan Linietsky"):
 			motor_ok = true
 	ok(motor_ok and vazios == 0, "os créditos trazem o aviso da licença MIT do Godot e nenhuma linha vazia")
+	ok(_linhas_visiveis(pausa) == mini(Pausa.VISIVEIS, pausa._itens_atuais.size()), "com rodapé de ajuda (Créditos) seguem 5 linhas, sem invadir o rodapé")
 	_ir_para(pausa, "c:2")
 	ok(pausa._ajuda.text.contains("Godot Engine"), "o rodapé mostra o aviso da linha escolhida")
 	_tecla(KEY_ESCAPE)

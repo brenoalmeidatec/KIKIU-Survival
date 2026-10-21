@@ -1,7 +1,7 @@
 extends Node
 ## Captura as transições entre telas da v2 (#377) com as cenas de verdade: um PNG por quadro desenhado, em pastas por trecho, com o
 ## instante (ms) de cada quadro no nome (para montar o GIF no ritmo real). Roda com janela (precisa de GPU).
-## Uso: Godot --path jogos/hordas/projeto --position -3000,0 --resolution 960x540 res://testes/fotos/transicoes_fotos.tscn -- --saida=<pasta> [--reduzido]
+## Uso: Godot --path jogos/hordas/projeto --position -3000,0 --resolution 960x540 res://testes/fotos/transicoes_fotos.tscn -- --saida=<pasta> [--reduzido] [--perfil=baixo|medio|alto]
 ## Usa saves TEMPORÁRIOS (user://captura_transicoes_*): o save real e as opções reais não são tocados.
 ## Trechos: 01_titulo_personagens, 02_personagens_santuario, 03_santuario_partida, 04_pausa_abre, 05_pausa_ajustes, 05b_pausa_conquistas, 06_pausa_fecha,
 ## 07_resultado, 08_resultado_santuario, 09_santuario_painel, 10_painel_fecha, 11_santuario_personagens. Com --reduzido, a opção "Reduzir animações" vale.
@@ -19,6 +19,7 @@ var gravando := ""
 var contador := 0
 var t0 := 0
 var reduzido := false
+var perfil := "medio"
 var imagens: Array = []  # [pasta, nome, Image]
 
 
@@ -32,6 +33,8 @@ func run() -> void:
 			saida = a.trim_prefix("--saida=")
 		if a == "--reduzido":
 			reduzido = true
+		if a.begins_with("--perfil="):
+			perfil = a.trim_prefix("--perfil=")
 	if saida.is_empty():
 		get_tree().quit(1)
 		return
@@ -44,7 +47,7 @@ func run() -> void:
 	Config.arquivo = OPCOES
 	_limpar()
 	Config.definir("reduzir_animacoes", reduzido)
-	Config.g_perfil_temporario("medio")
+	Config.g_perfil_temporario(perfil)
 	var id: String = Personagens.criar("Alisson")
 	Personagens.ativar(id)
 	RenderingServer.frame_post_draw.connect(_pos_desenho)

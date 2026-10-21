@@ -3,9 +3,11 @@ extends CanvasLayer
 ## É um autoload ("Transicoes"). Dois usos, os dois só desenho por cima: a lógica do jogo nunca espera por eles.
 ##
 ## 1. Troca de cena: `Transicoes.ir_para(self, caminho)` no lugar de get_tree().change_scene_to_file. Tira uma foto da tela, troca
-##    a cena e deixa a foto sumir por cima (fade + um deslize de poucos pixels), então a cena nova já está viva e recebendo
-##    entrada desde o primeiro quadro: nada de entrada engolida. O segundo pedido de troca no mesmo instante (Enter duplo) é
-##    ignorado: uma ida, uma cena.
+##    a cena e deixa a foto sumir por cima (fade + um deslize de poucos pixels). No perfil Baixo (e sem renderizador) não há foto:
+##    um véu escuro some no lugar (a foto custa ~3,5 ms de espera pela GPU). Enquanto a foto/véu está na tela, a entrada (teclas,
+##    mouse, controle) é descartada: o jogador ainda vê a tela antiga, então um Enter impaciente não pode valer na cena nova.
+##    Ao fim do fade a entrada volta e a primeira vale normalmente, uma vez só. O segundo pedido de troca no mesmo instante (Enter
+##    duplo) é ignorado: uma ida, uma cena. Um pedido durante o fade da troca anterior cancela esse fade antes de fotografar.
 ## 2. Painel dentro da tela: `entrar(c)` aparece com fade + deslize, `sair(c)` some do mesmo jeito (pausa, ajustes, Códice,
 ##    resultado, créditos). O estado do painel (aberto, fechado, pausa da árvore) muda na hora, só a imagem é suave.
 ##
@@ -26,6 +28,7 @@ var _t0 := -1  # Time.get_ticks_usec() do início do fade; -1 = a cena nova aind
 var _dir := -1.0  # -1: a tela antiga sai para a esquerda (avançar); +1: para a direita (voltar)
 var _pendente := false  # ir_para já pediu e a troca ainda não aconteceu
 var _animando := false
+var _bloqueando := false  # a entrada da janela está desligada (gui_disable_input) durante a foto/véu
 var trocas := 0  # quantas trocas de cena passaram por aqui (teste/medição)
 var ultimo_caminho := ""
 
@@ -71,23 +74,39 @@ func ir_para(no: Node, caminho: String, voltando := false) -> bool:
 	if _pendente:
 		return false
 	var arvore := no.get_tree() if is_instance_valid(no) and no.is_inside_tree() else get_tree()
+	var havia_fade := _animando
+	_encerrar()  # um fade da troca anterior ainda rodando é cancelado antes de fotografar
 	_pendente = true
 	trocas += 1
 	ultimo_caminho = caminho
 	_dir = 1.0 if voltando else -1.0
 	_dur = duracao(DUR_TROCA)
-	_animando = false
-	_foto.visible = false
-	_veu.visible = false
+	if _dur > 0.0:
+		_bloquear(arvore)
+	if havia_fade and _dur > 0.0:
+		_fotografar_depois(arvore, caminho)  # o último quadro desenhado ainda tem a foto antiga: espera um quadro sem ela
+		return true
 	if _dur > 0.0:
 		_fotografar(arvore)
 	_trocar.call_deferred(arvore, caminho)
 	return true
 
 
+## Dá para fotografar a tela: há renderizador e o perfil não é o Baixo (get_image espera a GPU terminar o quadro). Senão vai o véu.
+func usa_foto() -> bool:
+	return DisplayServer.get_name() != "headless" and Config.g_perfil() != "baixo"
+
+
+func _fotografar_depois(arvore: SceneTree, caminho: String) -> void:
+	await arvore.process_frame
+	if _dur > 0.0 and is_instance_valid(arvore):
+		_fotografar(arvore)
+	_trocar.call_deferred(arvore, caminho)
+
+
 func _fotografar(arvore: SceneTree) -> void:
 	var img: Image = null
-	if DisplayServer.get_name() != "headless":
+	if usa_foto():
 		var tex := arvore.root.get_texture()
 		if tex != null:
 			img = tex.get_image()
@@ -105,11 +124,45 @@ func _fotografar(arvore: SceneTree) -> void:
 func _trocar(arvore: SceneTree, caminho: String) -> void:
 	_pendente = false
 	if not is_instance_valid(arvore):
+		_encerrar()
 		return
 	arvore.change_scene_to_file(caminho)
 	if _dur > 0.0:
 		_animando = true
 		_t0 = -1  # o relógio só começa depois do primeiro quadro com a cena nova: um carregamento pesado não engole o fade
+	else:
+		_encerrar()
+
+
+## Esconde a foto e o véu, solta a textura da foto (não fica uma tela inteira guardada durante a partida) e devolve a entrada.
+func _encerrar() -> void:
+	_animando = false
+	_foto.visible = false
+	_foto.texture = null
+	_veu.visible = false
+	_liberar()
+
+
+## Liga/desliga a entrada da janela inteira. O Input (tecla segurada, eixos) segue valendo para quem lê por polling: só os
+## eventos que chegam às cenas (_input, GUI, _unhandled_input) são descartados.
+func _bloquear(arvore: SceneTree) -> void:
+	_bloqueando = true
+	arvore.root.gui_disable_input = true
+
+
+func _liberar() -> void:
+	if _bloqueando and is_inside_tree():
+		get_tree().root.gui_disable_input = false
+	_bloqueando = false
+
+
+## A entrada está descartada agora (a foto/véu da troca ainda está na tela).
+func entrada_bloqueada() -> bool:
+	return _bloqueando
+
+
+func _exit_tree() -> void:
+	_liberar()
 
 
 func _process(_dt: float) -> void:
@@ -129,9 +182,7 @@ func _process(_dt: float) -> void:
 	_foto.offset_right = dx
 	_veu.modulate.a = 0.6 * (1.0 - suave)
 	if p >= 1.0:
-		_animando = false
-		_foto.visible = false
-		_veu.visible = false
+		_encerrar()
 
 
 # ------------------------------------------------------------------ painel dentro da tela
@@ -157,30 +208,38 @@ func entrar(c: CanvasItem, desloc := DESLIZE_PAINEL, alfa0 := 0.0, dur := DUR_EN
 	var tw := _novo_tween(c)
 	tw.tween_property(c, "modulate:a", base.a, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	if cima != Vector2.ZERO:
+		base.mov = true
 		tw.parallel().tween_property(c, "position", base.pos, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.finished.connect(_fixar.bind(c, base))
 
 
 ## `c` some: fade até 0 (com um pequeno deslize), e no fim fica invisível e volta ao estado normal. Sem animação, some na hora.
-func sair(c: CanvasItem, desloc := DESLIZE_PAINEL * 0.5, dur := DUR_SAIR) -> void:
+## `fim` (opcional) roda quando o fade acaba (ou na hora, sem animação); `esconder` false deixa `c` visível no fim (quem chama decide).
+func sair(c: CanvasItem, desloc := DESLIZE_PAINEL * 0.5, dur := DUR_SAIR, fim := Callable(), esconder := true) -> void:
 	if not is_instance_valid(c):
 		return
 	var base := _base(c)
 	var d := duracao(dur)
 	if d <= 0.0 or not c.is_inside_tree() or not c.visible:
 		_fixar(c, base)
-		c.visible = false
+		if esconder:
+			c.visible = false
+		if fim.is_valid():
+			fim.call()
 		return
 	var cima := _desloc(c, desloc)
 	var tw := _novo_tween(c)
 	tw.tween_property(c, "modulate:a", 0.0, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	if cima != Vector2.ZERO:
+		base.mov = true
 		tw.parallel().tween_property(c, "position", base.pos + cima, d).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.finished.connect(
 		func():
 			_fixar(c, base)
-			if is_instance_valid(c):
+			if is_instance_valid(c) and esconder:
 				c.visible = false
+			if fim.is_valid():
+				fim.call()
 	)
 
 
@@ -198,7 +257,7 @@ func _base(c: CanvasItem) -> Dictionary:
 		pos = (c as Control).position
 	elif c is Node2D:
 		pos = (c as Node2D).position
-	var b := {"pos": pos, "a": c.modulate.a}
+	var b := {"pos": pos, "a": c.modulate.a, "mov": false}  # "mov": a animação mexeu na posição (só então o fim a repõe)
 	c.set_meta("tr_base", b)
 	return b
 
@@ -232,8 +291,9 @@ func _fixar(c: CanvasItem, base: Dictionary) -> void:
 			tw.kill()
 		c.remove_meta("tr_tween")
 	c.modulate.a = base.a
-	if c is Control:
-		(c as Control).position = base.pos
-	elif c is Node2D:
-		(c as Node2D).position = base.pos
+	if base.mov:  # sem deslize a posição não é nossa: um reencaixe de layout no meio do fade (resize) não pode ser desfeito
+		if c is Control:
+			(c as Control).position = base.pos
+		elif c is Node2D:
+			(c as Node2D).position = base.pos
 	c.remove_meta("tr_base")

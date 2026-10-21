@@ -35,7 +35,9 @@ const PAINEL := Rect2(260, 55, 440, 430)  # 440 de largura: a Spleen é mais lar
 const LINHA0 := 118.0  # primeira linha, a partir do topo do painel
 const LINHA_H := 36.0
 const LINHA_ALT := 32.0  # altura da faixa de cada linha
-const VISIVEIS := 5  # linhas visíveis de uma vez; a lista rola com a seleção
+const VISIVEIS := 5  # linhas visíveis de uma vez nas telas com rodapé de ajuda; a lista rola com a seleção
+const VISIVEIS_LIVRES := 6  # sem rodapé (pausa, Ajustes, confirmações) cabe uma a mais: o Ajustes tem 6 linhas e o "Voltar" é a última
+const TELAS_COM_RODAPE := ["audio", "graficos", "avancado", "creditos", "conquistas"]  # as que usam o espaço de AJUDA_Y
 const AJUDA_Y := LINHA0 + VISIVEIS * LINHA_H + 8.0  # rodapé com a ajuda da linha escolhida
 const AJUDA_H := 96.0
 const DICA_Y := 406.0  # PAINEL.size.y - 24
@@ -154,7 +156,7 @@ func _montar() -> void:
 		Dados.fonte_texto, TAM_SUB, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER
 	)
 	_conteudo.add_child(_sub)
-	for i in VISIVEIS:
+	for i in VISIVEIS_LIVRES:
 		var w := PAINEL.size.x - 48
 		var linha := Control.new()
 		linha.position = Vector2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H)
@@ -463,10 +465,15 @@ func _eh_stepper(id: String) -> bool:
 	return id in STEPPERS or id == "g:perfil" or id == "g:dinamico" or id.begins_with("g:op:")
 
 
+## Quantas linhas cabem na tela de agora: as que têm rodapé de ajuda perdem a última para ele.
+func _visiveis() -> int:
+	return VISIVEIS if tela in TELAS_COM_RODAPE else VISIVEIS_LIVRES
+
+
 ## Índice (na lista inteira) da linha visível sob o mouse; -1 se não há linha ali (ou é cabeçalho).
 func _linha_sob_mouse() -> int:
 	var m := _mouse()
-	for i in _linhas.size():
+	for i in mini(_linhas.size(), _visiveis()):
 		var idx := _topo + i
 		if idx >= _itens_atuais.size():
 			break
@@ -656,12 +663,13 @@ func _sub_tela() -> String:
 func _desenhar() -> void:
 	_itens_atuais = _itens()
 	var n := _itens_atuais.size()
+	var vis := _visiveis()
 	sel = clampi(sel, 0, maxi(n - 1, 0))
 	if sel < _topo:
 		_topo = sel
-	elif sel >= _topo + VISIVEIS:
-		_topo = sel - VISIVEIS + 1
-	_topo = clampi(_topo, 0, maxi(n - VISIVEIS, 0))
+	elif sel >= _topo + vis:
+		_topo = sel - vis + 1
+	_topo = clampi(_topo, 0, maxi(n - vis, 0))
 	_titulo.text = _titulo_tela()
 	_sub.text = _sub_tela()
 	_ajuda.text = _texto_ajuda()
@@ -669,7 +677,7 @@ func _desenhar() -> void:
 	for i in _linhas.size():
 		var l: Dictionary = _linhas[i]
 		var idx := _topo + i
-		var mostra: bool = idx < n
+		var mostra: bool = idx < n and i < vis
 		l["linha"].visible = mostra
 		if not mostra:
 			continue
