@@ -5,8 +5,9 @@ extends Node
 const Escolha := preload("res://v2/escolha_dificuldade.gd")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
-const UiJanela := preload("res://v2/ui_janela.gd")
 const Glifos := preload("res://v2/glifos.gd")
+
+var _viewport: SubViewport
 
 
 func _ready() -> void:
@@ -16,21 +17,24 @@ func _ready() -> void:
 			args[a.get_slice("=", 0).trim_prefix("--")] = a.get_slice("=", 1)
 	var pasta := str(args.get("fotos", "user://"))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(pasta))
-	var prefixo := "foto_dificuldade_%d_" % Time.get_ticks_usec()
-	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
-	Config.arquivo = "user://" + prefixo + "opcoes.cfg"
+	var pasta_save := "user://foto_dificuldade_%d" % Time.get_ticks_usec()
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(pasta_save))
+	Meta.caminho_save = pasta_save.path_join("meta.cfg")
+	Config.arquivo = pasta_save.path_join("opcoes.cfg")
 	Config.recarregar()
-	if Config._prop_timer != null:
-		Config._prop_timer.process_mode = Node.PROCESS_MODE_DISABLED  # a foto exata pode ultrapassar a área útil do monitor
-	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
-	Personagens.caminho_base = "user://" + prefixo + "p"
-	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
+	Personagens.caminho_indice = pasta_save.path_join("indice.cfg")
+	Personagens.caminho_base = pasta_save.path_join("p")
+	Personagens.caminho_antigo = pasta_save.path_join("antigo.cfg")
 	print("dificuldade_fotos user_dir=", OS.get_user_data_dir())
+	# O viewport próprio garante os pixels solicitados mesmo quando o monitor não comporta uma janela 1920x1080.
+	_viewport = SubViewport.new()
+	_viewport.disable_3d = true
+	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(_viewport)
 	var tela := Control.new()
+	tela.size = Vector2(960, 540)
 	tela.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(tela)
-	var ajuste := UiJanela.new().montar(tela, "grande")
-	tela.add_child(ajuste)
+	_viewport.add_child(tela)
 	var escolha := Escolha.new()
 	tela.add_child(escolha)
 	Glifos.forcado = true
@@ -40,25 +44,19 @@ func _ready() -> void:
 		var partes := str(args.janela).split("x")
 		tamanhos = [Vector2i(int(partes[0]), int(partes[1]))]
 	for tamanho in tamanhos:
-		get_window().size = tamanho
-		await get_tree().process_frame
-		ajuste.refazer()
-		var cursor := InputEventMouseMotion.new()
-		cursor.position = get_viewport().get_final_transform() * Vector2.ZERO
-		cursor.global_position = cursor.position
-		Input.parse_input_event(cursor)
-		Input.flush_buffered_events()
+		_viewport.size = tamanho
+		_viewport.canvas_transform = Transform2D.IDENTITY.scaled(Vector2(tamanho) / Vector2(960, 540))
 		for id in ["facil", "medio", "dificil"]:
 			Meta.escolher_dificuldade(id)
 			escolha.abrir("Ruínas da Floresta")
 			await _foto(pasta.path_join("dificuldade_%dx%d_%s.png" % [tamanho.x, tamanho.y, id]))
 	Glifos.definir(Glifos.Disp.XBOX)
-	await _foto(pasta.path_join("dificuldade_%dx%d_dificil_xbox.png" % [get_window().size.x, get_window().size.y]))
+	await _foto(pasta.path_join("dificuldade_%dx%d_dificil_xbox.png" % [_viewport.size.x, _viewport.size.y]))
 	tela.queue_free()
 	await get_tree().process_frame
-	for f in DirAccess.get_files_at("user://"):
-		if f.begins_with(prefixo):
-			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://" + f))
+	for f in DirAccess.get_files_at(pasta_save):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(pasta_save.path_join(f)))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(pasta_save))
 	get_tree().quit()
 
 
@@ -66,5 +64,5 @@ func _foto(caminho: String) -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await RenderingServer.frame_post_draw
-	get_viewport().get_texture().get_image().save_png(caminho)
+	_viewport.get_texture().get_image().save_png(caminho)
 	print("FOTO ", caminho)

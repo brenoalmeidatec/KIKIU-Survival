@@ -104,7 +104,10 @@ func _testar() -> void:
 			ok(escolha._painel.get_global_rect().encloses(cartao.get_global_rect()), "cartão dentro do painel em " + str(tamanho))
 			for filho in cartao.get_children():
 				if filho is Label:
-					ok(cartao.get_global_rect().encloses(filho.get_global_rect()), "texto dentro do cartão em " + str(tamanho))
+					ok(
+						cartao.get_global_rect().encloses(filho.get_global_rect()),
+						"texto '%s' %s dentro do cartão %s em %s" % [filho.text, filho.get_global_rect(), cartao.get_global_rect(), tamanho]
+					)
 		ok(escolha._aviso.get_minimum_size().y <= escolha._aviso.size.y, "o aviso cabe em " + str(tamanho))
 		ok(escolha._aviso.get_global_rect().end.y < escolha._entrar.get_global_rect().position.y, "aviso separado de Entrar em " + str(tamanho))
 	EscalaUi.janela_forcada = Vector2i.ZERO

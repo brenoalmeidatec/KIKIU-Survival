@@ -125,25 +125,25 @@ func _montar_cartao(pai: Control, i: int) -> void:
 	marca.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_marcas.append(marca)
 	_texto(cartao, str(d.nome).to_upper(), Rect2(18, 38, 240, 44), 37, cor, true)
-	var desc := _texto(cartao, str(d.desc), Rect2(18, 86, 240, 44), 16, Paleta.TEXTO_SECUNDARIO)
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.size = Vector2(240, 44)  # a quebra reduz o mínimo: devolve a largura que o texto sem quebra expandiu
+	_texto(cartao, str(d.desc), Rect2(18, 86, 240, 44), 16, Paleta.TEXTO_SECUNDARIO, false, false, true)
 	var bonus := roundi((float(d.almas_mult) - 1.0) * 100.0)
 	_texto(cartao, "+%d%%" % bonus, Rect2(18, 148, 110, 24), 16, cor, false, true)
 	_texto(cartao, "ALMAS E XP", Rect2(142, 148, 116, 24), 16, Paleta.TEXTO)
 
 
-func _texto(pai: Control, txt: String, r: Rect2, tam: int, cor: Color, titulo := false, numero := false) -> Label:
+func _texto(pai: Control, txt: String, r: Rect2, tam: int, cor: Color, titulo := false, numero := false, quebra := false) -> Label:
 	var l := Label.new()
+	if quebra:
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.text = txt
-	l.position = r.position
-	l.size = r.size
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_override("font", Dados.fonte if numero else (Dados.fonte_titulo if titulo else Dados.fonte_texto))
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
 	l.add_theme_color_override("font_outline_color", Paleta.PRETO)
 	l.add_theme_constant_override("outline_size", 2 if titulo else 0)
+	l.position = r.position
+	l.size = r.size  # aplica depois da fonte/quebra: o mínimo da fonte anterior não expande o retângulo
 	pai.add_child(l)
 	return l
 
