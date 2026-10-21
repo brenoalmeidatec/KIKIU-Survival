@@ -4,8 +4,17 @@ const Heroi = preload("res://v2/heroi.gd")
 const Herois = preload("res://v2/herois.gd")
 const Personagens = preload("res://v2/personagens.gd")
 const Meta = preload("res://v2/meta.gd")
+const Ambiente = preload("res://testes/ambiente_v2.gd")
 var w
 var falhas := 0
+
+
+func _init() -> void:
+	Ambiente.iniciar(get_script().resource_path)
+
+
+func _exit_tree() -> void:
+	Ambiente.finalizar()
 
 
 func ok(c: bool, msg: String) -> void:
@@ -98,12 +107,11 @@ func medir(hz: int, velocidade: float, impacto: bool) -> Dictionary:
 
 
 func _ready() -> void:
-	Config.arquivo = "user://teste_adagas_impacto_opcoes.cfg"
-	Config.recarregar()
+	print("ISOLAMENTO_USERDIR ", OS.get_user_data_dir())
+	ok(Personagens.lista().is_empty(), "fixture começa sem slots herdados")
+	ok(Meta.saldo() == 0 and Meta.nivel("vida") == 0, "fixture começa sem progresso herdado")
+	ok(Config.arquivo.begins_with(Ambiente.raiz) and Personagens.caminho_antigo.begins_with(Ambiente.raiz), "opções e save antigo já isolados antes do ready")
 	Config.temporario("pausar_fora", false)
-	Meta.caminho_save = "user://teste_adagas_impacto_meta.cfg"
-	Personagens.caminho_indice = "user://teste_adagas_impacto_indice.cfg"
-	Personagens.caminho_base = "user://teste_adagas_impacto_p"
 	Personagens.ativar(Personagens.criar("Lucas", "lucas"))
 	Herois.forcado = ""
 	w = Mundo.instantiate()
@@ -203,5 +211,9 @@ func _ready() -> void:
 	w.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
+	Ambiente.finalizar()
+	ok(not DirAccess.dir_exists_absolute(Ambiente.raiz), "remove índice, slots, opções e resíduos da fixture")
+	for caminho in [Config.arquivo, Meta.caminho_save, Personagens.caminho_indice, Personagens.caminho_base, Personagens.caminho_antigo]:
+		ok(caminho.begins_with(Ambiente.raiz), "callback tardio mantém caminho no sandbox")
 	print("v2_adagas_impacto falhas=", falhas)
 	get_tree().quit(1 if falhas else 0)

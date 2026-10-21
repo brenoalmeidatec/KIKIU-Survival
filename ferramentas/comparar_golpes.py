@@ -1,4 +1,4 @@
-"""Compara saídas de testes/fotos/contrato_golpes.tscn: antes.json depois.json resumo.json."""
+"""Compara saídas de testes/fotos/v2_contrato_golpes.tscn: antes.json depois.json resumo.json."""
 
 import hashlib
 import json

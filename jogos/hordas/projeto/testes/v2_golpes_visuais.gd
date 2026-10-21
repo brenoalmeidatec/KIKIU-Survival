@@ -5,7 +5,16 @@ const Heroi = preload("res://v2/heroi.gd")
 const Herois = preload("res://v2/herois.gd")
 const Personagens = preload("res://v2/personagens.gd")
 const Meta = preload("res://v2/meta.gd")
+const Ambiente = preload("res://testes/ambiente_v2.gd")
 var falhas := 0
+
+
+func _init() -> void:
+	Ambiente.iniciar(get_script().resource_path)
+
+
+func _exit_tree() -> void:
+	Ambiente.finalizar()
 
 
 func ok(c: bool, msg: String) -> void:
@@ -15,6 +24,7 @@ func ok(c: bool, msg: String) -> void:
 
 
 func _ready() -> void:
+	print("ISOLAMENTO_USERDIR ", OS.get_user_data_dir())
 	for acerto in [0.25, 0.42, 0.5]:
 		ok(Curva.corpo(0, acerto) == Vector2.ZERO, "começa neutro")
 		ok(Curva.corpo(acerto * 0.5, acerto).x == -2, "preparo de dois pixels")
@@ -26,12 +36,10 @@ func _ready() -> void:
 			ok(atual.x >= -2 and atual.x <= 3 and atual.y >= 0 and atual.y <= 1, "teto pequeno")
 			ok(absf(atual.x - anterior.x) < 0.07, "sem salto contínuo entre fases")
 			anterior = atual
-	Config.arquivo = "user://teste_golpes_visuais_opcoes.cfg"
-	Config.recarregar()
+	ok(Personagens.lista().is_empty(), "fixture começa sem slots herdados")
+	ok(Meta.saldo() == 0 and Meta.nivel("vida") == 0, "fixture começa sem progresso herdado")
+	ok(Config.arquivo.begins_with(Ambiente.raiz) and Personagens.caminho_antigo.begins_with(Ambiente.raiz), "opções e save antigo já isolados antes do ready")
 	Config.temporario("pausar_fora", false)
-	Meta.caminho_save = "user://teste_golpes_visuais_meta.cfg"
-	Personagens.caminho_indice = "user://teste_golpes_visuais_indice.cfg"
-	Personagens.caminho_base = "user://teste_golpes_visuais_p"
 	for nome in ["Breno", "Matheus", "Nicão", "Lucas"]:
 		var id = Personagens.criar(nome, Personagens.heroi_do_nome(nome))
 		Personagens.ativar(id)
@@ -114,5 +122,9 @@ func _ready() -> void:
 		w.queue_free()
 		await get_tree().process_frame
 		await get_tree().process_frame
+	Ambiente.finalizar()
+	ok(not DirAccess.dir_exists_absolute(Ambiente.raiz), "remove índice, slots, opções e resíduos da fixture")
+	for caminho in [Config.arquivo, Meta.caminho_save, Personagens.caminho_indice, Personagens.caminho_base, Personagens.caminho_antigo]:
+		ok(caminho.begins_with(Ambiente.raiz), "callback tardio mantém caminho no sandbox")
 	print("v2_golpes_visuais falhas=", falhas)
 	get_tree().quit(1 if falhas else 0)

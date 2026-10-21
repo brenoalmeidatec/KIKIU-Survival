@@ -3,23 +3,28 @@ extends Node
 const Mundo = preload("res://v2/mundo.tscn")
 const Heroi = preload("res://v2/heroi.gd")
 const Herois = preload("res://v2/herois.gd")
-const Meta = preload("res://v2/meta.gd")
 const Personagens = preload("res://v2/personagens.gd")
-var saida := "user://contrato_golpes.json"
+const Meta = preload("res://v2/meta.gd")
+const Ambiente = preload("res://testes/ambiente_v2.gd")
+var saida := ""
+
+
+func _init() -> void:
+	Ambiente.iniciar(get_script().resource_path)
+
+
+func _exit_tree() -> void:
+	Ambiente.finalizar()
 
 
 func _ready() -> void:
+	print("ISOLAMENTO_USERDIR ", OS.get_user_data_dir())
+	saida = Ambiente.arquivo("contrato_golpes.json")
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--saida="):
 			saida = a.trim_prefix("--saida=")
-	Config.arquivo = "user://qa_contrato_opcoes.cfg"
-	Config.recarregar()
 	Config.temporario("pausar_fora", false)
 	Config.temporario("qualidade_auto", false)
-	Meta.caminho_save = "user://qa_contrato_meta.cfg"
-	Personagens.caminho_indice = "user://qa_contrato_indice.cfg"
-	Personagens.caminho_base = "user://qa_contrato_p"
-	Personagens.caminho_antigo = "user://qa_contrato_antigo.cfg"
 	var casos := []
 	for nome in ["Breno", "Matheus", "Nicão", "Lucas"]:
 		for hz in [60, 120]:
@@ -89,5 +94,15 @@ func _ready() -> void:
 	var f := FileAccess.open(saida, FileAccess.WRITE)
 	f.store_string(JSON.stringify(casos))
 	f.close()
-	print("contrato_golpes: ", casos.size(), " casos gravados em ", saida)
+	Ambiente.finalizar()
+	if DirAccess.dir_exists_absolute(Ambiente.raiz):
+		print("FALHOU: fixture do contrato não foi removida")
+		get_tree().quit(1)
+		return
+	for caminho in [Config.arquivo, Meta.caminho_save, Personagens.caminho_indice, Personagens.caminho_base, Personagens.caminho_antigo]:
+		if not caminho.begins_with(Ambiente.raiz):
+			print("FALHOU: callback do contrato escapou do sandbox")
+			get_tree().quit(1)
+			return
+	print("contrato_golpes: ", casos.size(), " casos; ", "fixture limpa (sem exportação)" if saida.begins_with(Ambiente.raiz) else "exportados em " + saida)
 	get_tree().quit()
