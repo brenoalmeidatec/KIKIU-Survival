@@ -58,7 +58,7 @@ a **pancada** levanta a marreta acima e atrás da cabeça, arqueia, desce por ci
 Candidatos a módulo compartilhado com o Hazaki, se um terceiro herói chegar: `normais.py` (idêntico), as seções 2 a 5 do `gerar.py` (materiais, contorno, rig, cena: só mudam as constantes do quadro) e `montar_folha.py`/`gifs.py` (mudam as listas de animação).
 
 ## Limites conhecidos
-- O Salão (`v2/salao.gd`) desenha sempre o Hazaki (constante `SPRITE`); os prints do Nicão nele (`docs/visual_2_5d/blender_herois/nicao/`) trocam só a textura num QA (`testes/fotos/nicao_salao_fotos.gd`).
+- O Salão (`v2/salao.gd`) desenha a folha do herói do personagem ativo (`Herois.sprite`), com os pés em `pe_y`; os prints dele estão em `docs/visual_2_5d/nicao_2026_10_21/` (`testes/fotos/nicao_salao_fotos.gd`).
 - O jogo desenha por cima o arco branco de corte e o escudo azul que já existiam (os mesmos do Hazaki): não são da folha.
 - O quadro de 64x96 deixa o sprite com mais área transparente que o do Hazaki (32x44), mas o de antes já tinha 64 de largura (a sombra-blob do jogo usa `largura x 0,75`, igual a antes).
 - `parado` no jogo é só a coluna 0 (o `heroi.gd` não anima o parado); as colunas 7 a 9 existem para quando ele animar.
@@ -69,3 +69,9 @@ Candidatos a módulo compartilhado com o Hazaki, se um terceiro herói chegar: `
 - **Andar de lado:** a marreta inclina mais para a frente (0,30 rad em vez de 0,22, e 0,10 de avanço), então a cabeça dela sai do tronco e a silhueta deixa de ser um bloco; mais que isso corta na borda do quadro nas diagonais.
 - **Barba:** maior e com duas costeletas, para ler nas diagonais.
 - **Escala e quadro:** o Nicão e o Hazaki usam os mesmos 24,5 px/m e o jogo desenha as folhas a 1:1 (sem escala; `sprites.gd` só alinha pela linha do pé), então a escala bate (anão de 1,65 m = 40 px, Hazaki 44 px). A célula de 64x96 continua necessária: a marreta tem 43 px e vai para o lado e para cima; 32x44 cortaria. Medido de novo: o andar, o rolamento e a morte não têm pixel na borda; no combo só sobram 1 a 5 px de poeira do impacto (quadros 9 e 10) e 5 px da cabeça da marreta no quadro 4 de perfil.
+
+## Integração com a main de 21/10 (PR #298)
+- **E (investida de escudo, `dados/v2_habilidade.json`):** não há pose própria de investida. Toca a guarda (`animacoes.escudo`, colunas 28 e 29: marreta de través, segura no último quadro) até 60% da duração e fecha com os quadros 1, 2, 3 e 3 da pancada (antecipação funda, golpe, impacto), que caem no instante da pancada final em volta (`_fim` em `habilidade.gd`). Chaves novas do `anim`: `antes`, `antes_ate` e `quadros` (lidas por `heroi.gd`, `_coluna_acao`).
+- **Q (terremoto, `dados/v2_especial.json`):** a pancada inteira (passo 1 do combo, 6 quadros em 1,05 s); o quadro de impacto cobre o `golpe` de 0,55 s.
+- **Secundário (escudo):** a guarda (colunas 28 e 29). Rolamento, dano e morte já tinham folha própria.
+- **Retrato do HUD:** a chave `retrato` do `nicao.json` (`regiao` no quadro parado de frente, `escala`) recorta o corpo (38x42) e o HUD o desenha em 2x, centrado na caixa de 90x108. `montar_folha.py` já a emite.

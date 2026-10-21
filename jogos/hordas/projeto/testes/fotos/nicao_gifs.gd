@@ -102,7 +102,8 @@ func _cena(nome: String) -> void:
 			h.ataque_forcado = true
 			n = 60
 		"habilidade":
-			_monstros(8, Vector2.RIGHT)
+			w.mouse_forcado = h.centro() + Vector2(0, 100)  # para baixo: o chão do círculo de pedra está livre, sem ruína na frente
+			_monstros(8, Vector2.DOWN)
 			passos(2)
 			h.habilidade()
 			n = 34
