@@ -12,6 +12,8 @@ O teste `v2_status` foi repetido em saves base e migrável após a guarda do har
 
 Foram concluídos 29 processos Godot 4.4.1 na matriz final, todos com saída 0, `falhas=0`, sem `SCRIPT ERROR`, fixture limpa e hashes protegidos intactos: 14 cenas em base e migrável, mais `v2_isolamento` em base. As 14 cenas pareadas foram `v2_adagas_impacto`, `v2_combate`, `v2_combate_fases`, `v2_golpes_visuais`, `v2_hud`, `v2_hud_barras`, `v2_hud_busto`, `v2_hud_golpes`, `v2_hud_layout`, `v2_pesadelo`, `v2_ritmo`, `v2_robo_borda`, `v2_status` e `v2_transicoes`.
 
+Os resultados sanitizados por cena e variante, sem conteúdo ou caminhos privados dos saves, estão em [cenas.json](cenas.json).
+
 Houve três execuções diagnósticas adicionais: duas repetições de `v2_status` base (uma identificou apenas o falso positivo do snapshot recursivo; a outra passou antes da semeadura explícita) e uma execução prévia de `v2_transicoes` base com uma asserção desatualizada para a tela de dificuldade integrada. O teste foi corrigido no commit de origem `72f7c5dc2603793d5bec0190b6d2d7dd357ed8f9` para confirmar a dificuldade pela entrada real; as variantes base e migrável passaram depois dessa correção. O erro do harness anterior à inicialização do Godot não conta como processo.
 
 `gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes jogos/hordas/projeto/v2` verificou 347 arquivos sem mudanças necessárias.
@@ -22,7 +24,7 @@ O runner da bateria conjunta terminou com código 0. Hazaki, Nicão e Lucas venc
 
 ## Origens e merges locais
 
-Cada linha registra o HEAD de origem e o merge local correspondente. Todos foram merges `ort` normais; não houve conflito textual para resolver.
+Cada linha registra o HEAD de origem e o merge local correspondente. Os pontos sobrepostos foram conciliados na integração: Config mantém os redirecionamentos de GIF/fixture antes de `recarregar()` sem duplicar o catálogo; o HUD preserva os retratos junto das barras menores; os testes do HUD e das conquistas mantêm os dois fluxos; licenças e LOGBOOK receberam acréscimos; `adagas.gd` conserva o raio extra do broadphase com o micro hit-stop. Não há marcadores de conflito pendentes. Os merges tardios de #389, da documentação #396 e do append do LOGBOOK foram executados sem conflito textual.
 
 | Commit de origem | Merge local | Assunto da origem |
 | --- | --- | --- |
@@ -43,5 +45,6 @@ Cada linha registra o HEAD de origem e o merge local correspondente. Todos foram
 | `511ce161a5846f43935cf0e72f24d9d9c3dafed9` | `8ff3b69a44ab38c21d9ff9e2d7585910c530d735` | Fixture isolada e propagação de falhas das transições |
 | `72f7c5dc2603793d5bec0190b6d2d7dd357ed8f9` | `d66da75734245d838bdc86762408447ab43c56e2` | Confirma a dificuldade real no fluxo integrado |
 | `8b1411c1ebb0d0465ca1217efc795414d61af4c1` | `7ce429ca4c9e5342b787c60a47d4109071fe9e36` | Documentação após a margem completa da adaga extra |
+| `d49989b7050ad67c7073337a9e5063702119054d` | `69c11c9f14e9c5128547bf050f792dd042bf3217` | Append final do LOGBOOK, somente adição ao fim |
 
-O workflow ainda não foi executado neste HEAD final: ele não tem gatilho `push`; falta integrar o append autorizado do `LOGBOOK` e então solicitar `workflow_dispatch` para o SHA final, aguardando os sete jobs terminarem verdes.
+O workflow não tem gatilho `push`. Depois de publicar o HEAD deste relatório, será disparado por `workflow_dispatch` e acompanhado até os sete jobs terminarem verdes.
