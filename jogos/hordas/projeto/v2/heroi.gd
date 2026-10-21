@@ -32,6 +32,7 @@ extends "res://v2/ator.gd"
 ## hab_rotulo, hab_icone, hab_cor, hab_recarga, hab_recarga_max, hab_nega_t e hab_t (a ruptura segue publicando rup_*).
 
 const Herois := preload("res://v2/herois.gd")
+const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
@@ -961,16 +962,14 @@ func _visual(dt: float, v: Vector2) -> void:
 	if l != linha or c != coluna:
 		quadro(c, l)
 	# corpo: o "soco" do golpe (esticada na direção do corte), o giro da esquiva e o pisca de quem acabou de apanhar
-	var punch_k := 0.0
 	if _punch > 0.0:
 		_punch = maxf(0.0, _punch - dt / 0.16)
-		punch_k = _punch
 	var desloca := Vector2.ZERO
 	var esc := Vector2.ONE
 	if estado == Estado.GOLPE:
-		var ant := clampf(golpe_t / (golpe_dur * float(golpe_cfg.acerto_em)), 0.0, 1.0)
-		desloca = (golpe_dir * (-2.0 * (1.0 - ant) + 3.0 * punch_k)).round()  # puxa para trás e solta
-		esc = Vector2(1.0 + 0.1 * punch_k, 1.0 - 0.07 * punch_k)
+		var corpo := CurvaGolpe.corpo(golpe_t / golpe_dur, float(golpe_cfg.acerto_em))
+		desloca = (golpe_dir * corpo.x).round()
+		esc = Vector2(1.0 + 0.1 * corpo.y, 1.0 - 0.07 * corpo.y)
 	elif estado == Estado.CARGA:  # agacha, treme um pixel na carga cheia
 		esc = Vector2(1.0 + 0.05 * rup_carga, 1.0 - 0.09 * rup_carga)
 		if rup_carga >= 1.0:
