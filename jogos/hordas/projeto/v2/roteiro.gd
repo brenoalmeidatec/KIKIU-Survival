@@ -685,6 +685,7 @@ func _r_escolha() -> void:
 			c.progresso.cartas = c.cartas.sortear(3, 20)
 			c.jogo = "escolha"
 			c.pausado = true
+			c.telas.roleta_ligada = false  # a foto da trava quer as cartas paradas (a roleta do #376 tem as fotos dela)
 			c.telas.mostrar_escolha(c.progresso.cartas, 20)
 			passo = 1
 			t_passo = 0.0

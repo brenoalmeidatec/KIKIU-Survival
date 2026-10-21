@@ -192,7 +192,7 @@ func abrir(b: Dictionary) -> void:
 	if n <= 0:
 		n = sortear_quantidade()
 	var h = mundo.heroi
-	var cartas: Array = combate.cartas.sortear(n, h.nivel, float(cfg.bonus_raridade) * float(b.bonus))
+	var cartas: Array = combate.cartas.sortear(n, h.nivel, float(cfg.bonus_raridade) * float(b.bonus), [], int(cfg.get("piso_raridade", 0)))
 	if cartas.is_empty():
 		cartas = [
 			{
