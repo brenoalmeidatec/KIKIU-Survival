@@ -657,9 +657,10 @@ func _montar_lista_codice() -> void:
 		cheio.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		fundo.add_child(cheio)
 		if str(l.premio) != "":
-			var pi := _caixa_icone(Rect2(504, 46, 16, 16))
-			pi.texture = Icones.textura(str(l.icone_premio))
-			b.add_child(pi)
+			if str(l.icone_premio) != "":  # sem item (o fim da jornada) não há ícone; o texto segue na mesma coluna
+				var pi := _caixa_icone(Rect2(504, 46, 16, 16))
+				pi.texture = Icones.textura(str(l.icone_premio))
+				b.add_child(pi)
 			var premio := _rotulo(
 				"Prêmio: %s" % l.premio,
 				Dados.fonte_texto,

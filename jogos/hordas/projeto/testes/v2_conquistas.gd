@@ -18,6 +18,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const SAVE_TESTE := "user://teste_v2_conquistas_meta.cfg"
 const OPCOES_TESTE := "user://teste_v2_conquistas_opcoes.cfg"
 const SAVE_REAL := "user://v2_progresso.cfg"
+const SEM_PREMIO := ["vence_pesadelo"]  # conquistas sem item de recompensa (marco): não têm linha "Prêmio"
 
 var falhas := 0
 
@@ -38,6 +39,7 @@ func _ready() -> void:
 	_limpar()
 	_dados()
 	_progresso()
+	_pesadelo()
 	await _codice()
 	await _pausa()
 	_limpar()
@@ -74,12 +76,15 @@ func _dados() -> void:
 	ok(linhas.size() == Meta.conquistas().size(), "uma linha por conquista")
 	for l in linhas:
 		ok(str(l.nome) != "" and str(l.fazer) != "" and str(l.progresso).contains("/"), "linha completa: " + str(l.id))
-		ok(l.premio != "" and Icones.textura(str(l.icone)) != null, "premio e icone: " + str(l.id))
+		ok((str(l.premio) == "") == (str(l.id) in SEM_PREMIO), "premio so onde ha item (o Pesadelo e so um marco): " + str(l.id))
+		ok(Icones.textura(str(l.icone)) != null and Icones.textura(str(l.icone)) != Icones.textura("generico"), "icone proprio, nunca o generico: " + str(l.id))
+		ok(str(l.icone_premio) == "" or Icones.textura(str(l.icone_premio)) != Icones.textura("generico"), "icone do premio existe, ou nao ha: " + str(l.id))
 		ok(not l.feita and l.frac == 0.0, "save zerado: nada cumprido " + str(l.id))
 	for id in ["vence_floresta", "vence_laboratorio", "vence_cidade", "vence_medio"]:
 		var l := _linha(linhas, id)
 		ok(not l.is_empty() and Icones.textura(str(l.icone)) != Icones.textura("generico"), "a conquista de mapa tem icone proprio: " + id)
 	ok(str(_linha(linhas, "sobreviva_5min").progresso) == "0/5 min", "tempo comeca em 0/5 min (%s)" % _linha(linhas, "sobreviva_5min").progresso)
+	ok(str(_linha(linhas, "vence_medio").icone_premio) == "", "o fim da jornada (Ruinas) nao tem icone de premio")
 	ok(str(_linha(linhas, "combo_50").progresso) == "0/50 abates", "combo comeca em 0/50 abates")
 	ok(Conquistas.contagem(linhas) == [0, linhas.size()], "contagem zerada")
 
@@ -101,6 +106,8 @@ func _progresso() -> void:
 	ok(str(_linha(linhas, "sobreviva_5min").progresso) == "4/5 min", "a partida viva (245 s) passa o recorde")
 	ok(str(_linha(linhas, "combo_50").progresso) == "33/50 abates", "o recorde vale quando a partida viva fez menos")
 	ok(not Meta.estado().conquistas.sobreviva_5min, "o progresso vivo nao cumpre a conquista sozinho")
+	var vivos: Array = Meta.checar_ao_vivo(300.0, 10)  # o resultado_meta.gd chama isto a cada 0.5 s na partida: tempo e combo cumprem ao vivo
+	ok(vivos.has("sobreviva_5min") and _linha(Conquistas.linhas(), "sobreviva_5min").feita, "a conquista de tempo cumpre ao vivo, sem esperar o fim da partida")
 	Meta.registrar_partida({"tempo": 320.0, "maior_combo": 10})
 	t = _linha(Conquistas.linhas(), "sobreviva_5min")
 	ok(t.feita and t.frac == 1.0 and str(t.progresso) == "5/5 min", "cumprida mostra o progresso cheio (%s)" % t.progresso)
@@ -109,6 +116,19 @@ func _progresso() -> void:
 	ok(lab.feita and str(lab.progresso) == "1/1 chefe", "vencer o mapa cumpre a conquista dele (%s)" % lab.progresso)
 	ok(not _linha(Conquistas.linhas(), "vence_floresta").feita, "so a do mapa vencido")
 	ok(Conquistas.contagem(Conquistas.linhas()) == [3, Meta.conquistas().size()], "contagem: tempo, Derrote o chefe (qualquer vitoria) e laboratorio")
+
+
+## A conquista do Pesadelo: só a vitória no modo Pesadelo conta (em qualquer mapa) e não tem prêmio.
+func _pesadelo() -> void:
+	var p := _linha(Conquistas.linhas(), "vence_pesadelo")
+	ok(not p.is_empty() and not p.feita and str(p.progresso) == "0/1 chefe", "a conquista do Pesadelo comeca em 0/1 chefe")
+	Meta.registrar_partida({"tempo": 100.0, "venceu": true, "pesadelo": false, "mapa": "cidade", "mapa_vencido_agora": false})
+	ok(not _linha(Conquistas.linhas(), "vence_pesadelo").feita, "vencer no modo normal nao cumpre a do Pesadelo")
+	Meta.registrar_partida({"tempo": 100.0, "venceu": false, "pesadelo": true, "mapa": "floresta", "mapa_vencido_agora": false})
+	ok(not _linha(Conquistas.linhas(), "vence_pesadelo").feita, "Pesadelo sem vitoria nao cumpre")
+	Meta.registrar_partida({"tempo": 100.0, "venceu": true, "pesadelo": true, "mapa": "medio", "mapa_vencido_agora": false})
+	p = _linha(Conquistas.linhas(), "vence_pesadelo")
+	ok(p.feita and str(p.progresso) == "1/1 chefe", "vencer no Pesadelo, em qualquer mapa, cumpre (%s)" % p.get("progresso", ""))
 
 
 ## O Códice: uma linha rica por conquista, a cumprida em destaque e o cabeçalho com a contagem.
@@ -178,7 +198,10 @@ func _pausa() -> void:
 		str(combo.valor) == "33/50 abates" and str(combo.ajuda).contains("Prêmio: Rastro de katana"),
 		"progresso e premio na linha do combo (%s)" % combo.get("valor")
 	)
-	ok(pausa._sub.text == "3 de %d cumpridas" % linhas.size(), "o subtitulo conta as cumpridas (%s)" % pausa._sub.text)
+	ok(
+		pausa._sub.text == "6 de %d cumpridas" % linhas.size(),
+		"o subtitulo conta as cumpridas: tempo, chefe, Laboratorio, Cidade, Ruinas e Pesadelo (%s)" % pausa._sub.text
+	)
 	pausa._ir("conquistas")
 	pausa.sel = 0
 	pausa._desenhar()

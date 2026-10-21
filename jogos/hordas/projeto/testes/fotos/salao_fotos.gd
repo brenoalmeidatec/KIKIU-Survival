@@ -5,7 +5,7 @@ extends Node
 # até o último nível (card NO MÁXIMO). Sem --compras, o treino fica BLOQUEADA (falta a conquista).
 # Usa personagem e meta TEMPORÁRIOS (user://foto_salao_*). Só o viewport do jogo é salvo.
 # Roda: godot --path jogos/hordas/projeto res://testes/fotos/salao_fotos.tscn -- --fotos=<pasta> [--nome=x] [--almas=0] [--compras=1]
-# [--max=1] [--itens=treino,vida] [--janela=1920x1080]
+# [--max=1] [--itens=treino,vida] [--janela=1920x1080] [--codice_fim=1] (o Códice rolado até o fim: salao_<nome>_codice_fim.png)
 const Personagens := preload("res://v2/personagens.gd")
 const Meta := preload("res://v2/meta.gd")
 const Salao := preload("res://v2/salao.tscn")
@@ -56,6 +56,14 @@ func _ready() -> void:
 		await get_tree().create_timer(0.8).timeout
 		await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_png(pasta.path_join("salao_%s_%s.png" % [nome, id]))
+		s._fechar_painel()
+	if args.has("codice_fim"):  # o Códice rolado até o fim: a última linha (Vença as Ruínas, "o fim da jornada") e a Pesadelo
+		s.abrir_estrutura("codice")
+		await get_tree().create_timer(0.8).timeout
+		s._p_rolagem.scroll_vertical = int(s._p_rolagem.get_v_scroll_bar().max_value)
+		await get_tree().create_timer(0.3).timeout
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(pasta.path_join("salao_%s_codice_fim.png" % nome))
 		s._fechar_painel()
 	# Um card por foto: treino (BLOQUEADA sem a conquista) e o que vier em --itens (ex.: vida, NO MÁXIMO com --max=1).
 	for item in str(args.get("itens", "")).split(",", false):

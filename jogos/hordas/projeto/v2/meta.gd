@@ -323,8 +323,12 @@ static func _cumprida(c: Dictionary, r: Dictionary) -> bool:
 			return float(r.get("tempo", 0.0)) >= float(c.get("limite", 0.0))
 		"combo":
 			return int(r.get("maior_combo", 0)) >= int(c.get("limite", 0))
-		"venceu":  # com "mapa": só a vitória naquele mapa (vence_floresta...)
-			return bool(r.get("venceu", false)) and (not c.has("mapa") or str(r.get("mapa", "")) == str(c.mapa))
+		"venceu":  # com "mapa": só a vitória naquele mapa (vence_floresta...); com "pesadelo": true, só a vitória no modo Pesadelo
+			return (
+				bool(r.get("venceu", false))
+				and (not c.has("mapa") or str(r.get("mapa", "")) == str(c.mapa))
+				and (not bool(c.get("pesadelo", false)) or bool(r.get("pesadelo", false)))
+			)
 	return false
 
 

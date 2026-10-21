@@ -41,7 +41,7 @@ static func linhas(vivo := {}) -> Array:
 			"frac": frac,
 			"progresso": "%d/%d %s" % [int(mostra), int(lim), unidade],
 			"premio": premio(c),
-			"icone": "portal_%s" % c.mapa if c.has("mapa") else str(c.id),
+			"icone": icone_da_conquista(c),
 			"icone_premio": icone_do_premio(c.get("recompensa", {})),
 		}
 		out.append(linha)
@@ -66,11 +66,22 @@ static func premio(c: Dictionary) -> String:
 	return "o fim da jornada" if str(c.get("recompensa", {}).get("tipo", "")) == "progresso" else ""
 
 
+## O ícone da conquista: o "icone" do catálogo, o portal do mapa (vence_<mapa>) ou o próprio id (assets/v2/icones_santuario/<x>.png).
+static func icone_da_conquista(c: Dictionary) -> String:
+	if c.has("icone"):
+		return str(c.icone)
+	return "portal_%s" % c.mapa if c.has("mapa") else str(c.id)
+
+
 ## O ícone do prêmio: o id do item, ou o portal que a vitória abre (assets/v2/icones_santuario/portal_<id>.png).
+## Sem id (o último mapa, "o fim da jornada") não há ícone: "" (antes caía no genérico, portal_ não existe).
 static func icone_do_premio(r: Dictionary) -> String:
+	var id := str(r.get("id", ""))
+	if id == "":
+		return ""
 	if str(r.get("tipo", "")) == "progresso":
-		return "portal_%s" % r.get("id", "")
-	return str(r.get("id", ""))
+		return "portal_%s" % id
+	return id
 
 
 ## Quantas estão cumpridas e quantas existem: [feitas, total].
