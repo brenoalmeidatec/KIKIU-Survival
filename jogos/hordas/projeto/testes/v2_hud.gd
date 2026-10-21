@@ -186,12 +186,15 @@ func _testes() -> void:
 	Personagens.caminho_indice = pers_antes[1]
 	Personagens.caminho_antigo = pers_antes[2]
 	Meta.caminho_save = pers_antes[3]
-	# estilo Overwatch: a vida e o fôlego à direita do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
+	# estilo Overwatch: a vida e o fôlego à direita e centralizados na altura do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
 	var barras_q: Control = hud.get_node("Raiz/MolduraBarras")
 	var folego_q: Control = hud.get_node("Raiz/Folego")
 	ok(
-		barras_q.position.y == retrato_q.position.y and barras_q.position.x > retrato_q.position.x + retrato_q.size.x,
-		"as barras ficam à direita do retrato, no topo dele"
+		(
+			absf(barras_q.position.y + barras_q.size.y * 0.5 - retrato_q.position.y - retrato_q.size.y * 0.5) <= 0.5
+			and barras_q.position.x > retrato_q.position.x + retrato_q.size.x
+		),
+		"as barras ficam à direita e centralizadas na altura do retrato"
 	)
 	ok(
 		folego_q.position.y > hud.get_node("Raiz/Vida/Barra").global_position.y + hud.get_node("Raiz/Vida/Barra").size.y - 1.0,

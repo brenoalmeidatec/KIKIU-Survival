@@ -82,6 +82,14 @@ func _testes() -> void:
 	ok(hud._vida_barra.size.x == 208.0 and hud._folego.size.x == 208.0, "base: barras de 208 px (%s, %s)" % [hud._vida_barra.size.x, hud._folego.size.x])
 	ok(hud._moldura_barras.size.x == 216.0 and hud._vida_caixa.size.x == 216.0, "base: moldura e caixa da vida de 216 px")
 	ok(hud._vida_txt.size.x == 208.0, "texto da vida tem a largura da barra (%s)" % hud._vida_txt.size.x)
+	ok(hud._vida_barra.size.y == 24.0 and hud._vida_txt.size.y == 30.0 and hud._folego.size.y == 8.0, "vida tem 24 px, rótulo 30 px e fôlego 8 px")
+	ok(hud._moldura_barras.size.y == 66.0, "a moldura compacta tem 66 px de altura (%s)" % hud._moldura_barras.size.y)
+	var r_moldura: Rect2 = hud._moldura_barras.get_global_rect()
+	var r_vida: Rect2 = hud._vida_barra.get_global_rect()
+	var r_texto: Rect2 = hud._vida_txt.get_global_rect()
+	var r_folego: Rect2 = hud._folego.get_global_rect()
+	ok(r_moldura.encloses(r_vida) and r_moldura.encloses(r_texto) and r_moldura.encloses(r_folego), "as barras e o rótulo cabem dentro da moldura")
+	ok(not r_vida.intersects(r_folego) and not r_texto.intersects(r_folego), "a vida e o fôlego não se sobrepõem")
 
 	# 2. estátua (+50): 150 de vida dá 233 px; uma carga a mais de fôlego (226 px na meta dela) usa o mesmo comprimento
 	h.vida_max = 150.0
@@ -170,8 +178,10 @@ func _testes() -> void:
 	h.vida = 100.0
 	h.folego_max = 3.0
 	hud.ui_reencaixar(Vector2(960, 540), Vector2.ZERO)
+	h.vida = 52.0
 	h.folego = 1.37
 	_passar(hud, 1.0)
+	ok(hud._vida_barra.value == 52.0 and hud._vida_txt.text == "52/100", "vida pela metade mostra 52/100")
 	ok(absf(hud._folego.value - 1.37) < 3.0 / hud._folego.size.x, "fôlego 1,37 de 3 mostra 1,37 na barra, não 1 (value %s)" % hud._folego.value)
 	var vistos := {}
 	for i in 601:
@@ -186,6 +196,13 @@ func _testes() -> void:
 	h.folego = 3.0
 	hud.avancar(PASSO)
 	ok(is_equal_approx(hud._folego.value, 3.0), "fôlego cheio enche a barra (value %s)" % hud._folego.value)
+	ok(hud._vida_barra.value == 52.0, "vida parcial continua visível com fôlego cheio")
+	h.vida = 100.0
+	hud.avancar(PASSO)
+	ok(hud._vida_barra.value == 100.0 and hud._vida_txt.text == "100/100", "vida cheia enche a barra")
+	h.vida = 0.0
+	hud.avancar(PASSO)
+	ok(hud._vida_barra.value == 0.0 and hud._vida_txt.text == "0/100", "vida zerada esvazia a barra")
 	h.folego = 0.0
 	hud.avancar(PASSO)
 	ok(is_equal_approx(hud._folego.value, 0.0), "fôlego zerado esvazia a barra (value %s)" % hud._folego.value)
