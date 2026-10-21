@@ -217,6 +217,7 @@ func _ready() -> void:
 	_provar_q_real()
 	_provar_alcance_composto()
 	_provar_broadphase_extra()
+	_provar_segundo_raio_extra()
 	# Cada familia de Q: dado original intacto, dano snapshot e area uma vez, inclusive rodada final.
 	var e = c.especial
 	var original: Dictionary = e.blocos.duplicate(true)
@@ -421,3 +422,90 @@ func _provar_broadphase_extra() -> void:
 			feridos += 1
 	ok(a.lancadas == 2 and a.acertos == 2 and feridos == 1, "extra nasce e acerta fora AABB original no mesmo quadro")
 	ok(a.a_rest.size() == a.MAX and a.a_extra.size() == a.MAX, "pool permanece fixo com extra")
+
+
+## Build real, dt máximo do Mundo e uma lâmina envelhecida até o último pixel.
+func _provar_segundo_raio_extra() -> void:
+	var c = w.combate
+	var h = w.heroi
+	var a = c.adagas
+	var e = c.especial
+	c.limpar_partida()
+	var pos_anterior: Vector2 = h.pos
+	h.pos = Vector2(300, 800)
+	h.chave = "lucas"
+	h.nivel = 20
+	h.m_area = 1.0
+	h.m_dano = 1.0
+	h.m_critico = -1.0
+	for id in ["area", "mira", "chuva"]:
+		for j in int(c.cartas._def[id].max):
+			c.cartas.aplicar(c.cartas.montar_carta(c.cartas._def[id], 3))
+	ok(igual(h.m_area, 3.304) and igual(c.armas.mods.mira, 192.0), "build real maxima de area/Mira")
+	e.armar(h)
+	h.esp_carga = h.esp_carga_max
+	ok(h.especial(), "Q real da regressao segundo raio")
+	e._giro = 0.0
+	e._rodada(h, 1, e._c.adaga)
+	while a.a_rest[0] > 1.01:
+		a.atualizar(minf(0.1, (a.a_rest[0] - 1.0) / a.a_vel[0]))
+	var p: Vector2 = a.a_pos[0]
+	var dir: Vector2 = a.a_dir[0]
+	var vel: float = a.a_vel[0]
+	var raio: float = a.a_raio[0]
+	var rest: float = a.a_rest[0]
+	var dano: float = a.a_dano[0]
+	var perf: int = a.a_perf[0]
+	var primeiro = w.nascer_monstro("inimigo_cao_ossos", p)
+	primeiro.vida_max = 10000.0
+	primeiro.vida = 10000.0
+	primeiro.peso = 1000000.0
+	var rm: float = primeiro.raio
+	primeiro.pos = p + dir * (rest + raio + rm - 0.1) + Vector2(0, 6)
+	# Busca só a semente da direção usando o acerto real, sem substituir o sorteador.
+	var escolhida := -1
+	var direcao_extra := Vector2.ZERO
+	for tentativa in 2000:
+		a.limpar()
+		a._nova(p, dir, vel, rest, dano, 0.0, 0.0, Color.WHITE, perf, false, raio)
+		primeiro.vida = 10000.0
+		seed(tentativa)
+		a.atualizar(0.1)
+		if a.lancadas == 2 and a.a_dir[1].dot(Vector2.RIGHT) > 0.9998:
+			escolhida = tentativa
+			direcao_extra = a.a_dir[1]
+			break
+	ok(escolhida >= 0, "semente real gera extra quase horizontal")
+	if escolhida < 0:
+		c.limpar_partida()
+		h.pos = pos_anterior
+		return
+	var origem_extra: Vector2 = primeiro.pos + Vector2(0, -8)
+	var segundo = w.nascer_monstro("inimigo_cao_ossos", origem_extra)
+	segundo.vida_max = 10000.0
+	segundo.peso = 1000000.0
+	var fora = w.nascer_monstro("inimigo_cao_ossos", origem_extra)
+	fora.vida_max = 10000.0
+	fora.peso = 1000000.0
+	segundo.pos = origem_extra + direcao_extra * (120.0 + raio + segundo.raio - 1.0) + Vector2(0, 6)
+	fora.pos = origem_extra + direcao_extra * (120.0 + raio + fora.raio + 1.0) + Vector2(0, 6)
+	var antiga := Rect2(p, Vector2.ZERO).expand(p + dir * rest).grow(raio + rm + 2.0 + 120.0)
+	var corpo := Rect2(segundo.pos + Vector2(0, -6) - Vector2.ONE * segundo.raio, Vector2.ONE * segundo.raio * 2.0)
+	ok(not antiga.intersects(corpo, true), "segundo corpo inteiro fora do bound anterior")
+	h.pos = p - Vector2(10, 0)
+	ok(h.pos.distance_to(segundo.pos) < 560.0, "regressao dentro do antigo circulo 560")
+	a.limpar()
+	a._nova(p, dir, vel, rest, dano, 0.0, 0.0, Color.WHITE, perf, false, raio)
+	primeiro.vida = 10000.0
+	segundo.vida = 10000.0
+	fora.vida = 10000.0
+	seed(escolhida)
+	a.atualizar(0.1)
+	ok(a.lancadas == 2 and a.a_dir[1].is_equal_approx(direcao_extra), "extra real mesma seed mesmo quadro")
+	ok(segundo.vida < 10000.0, "extra atinge corpo alem do bound pelo segundo raio")
+	ok(fora.vida == 10000.0, "extra nao atinge corpo alem do alcance real")
+	ok(a.a_rest.size() == a.MAX, "segundo raio preserva pool fixo")
+	h.pos = pos_anterior
+	print("segundo_raio seed=%d raio=%f monstro=%f vel=%f" % [escolhida, raio, rm, vel])
+	e.cancelar(h)
+	c.limpar_partida()
