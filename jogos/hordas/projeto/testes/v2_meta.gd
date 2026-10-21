@@ -7,7 +7,7 @@ extends "res://testes/isolamento_v2.gd"
 # e por conquista, trava o que está bloqueado e atualiza o saldo ao comprar; e o resultado sobe as almas até o total.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_meta.tscn  (imprime "v2_meta falhas=0")
 # Prints (precisa de janela, não de --headless): godot --path jogos/hordas/projeto res://testes/v2_meta.tscn -- --fotos=PASTA
-#   grava santuario_sem_almas.png, santuario_com_almas.png, resultado_meio.png e resultado_fim.png (só o viewport) e sai.
+#   grava santuário, resultado no meio/fim e resultado_quatro/cinco/seis_conquistas.png (só o viewport) e sai.
 const Meta := preload("res://v2/meta.gd")
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
@@ -36,7 +36,8 @@ func _ready() -> void:
 	if pasta != "":
 		await _fotos(pasta)
 		_apagar_save()
-		get_tree().quit()
+		print("v2_meta fotos falhas=%d" % falhas)
+		get_tree().quit(0 if falhas == 0 else 1)
 		return
 	await _testes()
 	_apagar_save()
@@ -243,31 +244,24 @@ func _testes() -> void:
 	m2.queue_free()
 	await get_tree().process_frame
 
-	# 7b. vitória real do combate: a gravação antes do sinal não perde o anúncio, e quatro conquistas cabem sem invadir CONTINUAR.
-	_apagar_save()
-	var m4 = Mundo.instantiate()
-	m4.modo_teste = true
-	m4.id_mapa = "floresta"
-	add_child(m4)
-	m4.set_process(false)
-	var r4 = Resultado.new()
-	r4.set_process(false)
-	r4.montar(m4)
-	m4.ui.add_child(r4)
-	m4.tempo_partida = 320.0
-	m4.maior_combo = 50
-	m4.abates = 70
-	m4.almas_partida = 46
-	m4.combate.fim_de_partida(true)
-	ok(bool(m4.resultado.get("mapa_vencido_agora", false)), "o combate marca a primeira vitória antes de emitir o sinal")
-	ok(r4.aberto and Meta.mapa_vencido("floresta"), "o sinal real abre o resultado com o mapa já vencido")
-	ok(Mapas.condicao(Mapas.buscar("laboratorio")) == "", "a primeira vitória real abre o Laboratório")
-	await _frames(2)
-	_conferir_quatro_conquistas(r4)
-	m4.combate.fim_de_partida(true)
-	ok(int(Meta._ler().get_value("progressao", "partidas", 0)) == 1, "um segundo fim não duplica a partida nem as almas")
-	m4.queue_free()
-	await get_tree().process_frame
+	# 7b. vitória real: quatro, cinco e seis conquistas completas cabem acima de CONTINUAR, inclusive a primeira vitória no Pesadelo.
+	for quantidade in [4, 5, 6]:
+		var caso := _montar_resultado_conquistas(quantidade)
+		var mundo_resultado = caso.mundo
+		var resultado = caso.resultado
+		ok(bool(mundo_resultado.resultado.get("mapa_vencido_agora", false)), "o combate marca a primeira vitória antes de emitir o sinal")
+		ok(resultado.aberto and Meta.mapa_vencido("floresta"), "o sinal real abre o resultado com o mapa já vencido")
+		ok(Mapas.condicao(Mapas.buscar("laboratorio")) == "", "a primeira vitória real abre o Laboratório")
+		await _frames(2)
+		_conferir_conquistas(resultado, caso.ids)
+		var saldo_resultado := Meta.saldo()
+		mundo_resultado.combate.fim_de_partida(true)
+		ok(
+			int(Meta._ler().get_value("progressao", "partidas", 0)) == int(caso.partidas_antes) + 1 and Meta.saldo() == saldo_resultado,
+			"um segundo fim não duplica a partida nem as almas (%d conquistas)" % quantidade
+		)
+		mundo_resultado.queue_free()
+		await get_tree().process_frame
 
 	# 8. sem o sinal do mundo: a conquista de tempo é gravada no meio da partida, e a tela com as almas abre sozinha
 	#    quando a tela de resultado (telas.gd) abre, que é quando o herói cai
@@ -370,14 +364,62 @@ func _frames(n: int) -> void:
 		await get_tree().process_frame
 
 
-func _conferir_quatro_conquistas(res) -> void:
-	for id in ["sobreviva_5min", "combo_50", "derrota_chefe", "vence_floresta"]:
-		ok(res._novas.text.count(res._nome_conquista(id)) == 1, "o resultado anuncia uma vez a conquista " + id)
-	ok(res._novas.get_line_count() == 2, "quatro conquistas ocupam duas linhas")
-	ok(res._novas.get_minimum_size().y <= res._novas.size.y, "a altura reservada comporta o texto das conquistas")
-	ok(res._novas.position.y + res._novas.size.y + 8 <= res._botao.position.y, "o texto das conquistas fica separado do CONTINUAR")
-	ok(res._novas.position.x + res._novas.get_minimum_size().x <= res.LARG, "os nomes cabem na largura do resultado")
-	ok(res._botao.position.y + res._botao.size.y <= res.ALT, "CONTINUAR cabe na altura da tela")
+## As mesmas vitórias reais alimentam os testes e as fotos; nenhum nome é injetado na lista do resultado.
+func _montar_resultado_conquistas(quantidade: int, foto := false) -> Dictionary:
+	_apagar_save()
+	ok(Meta.escolher_dificuldade("facil"), "prepara a dificuldade da vitória com %d conquistas" % quantidade)
+	if quantidade == 6:
+		Meta.registrar_partida({"venceu": true, "almas": 0})  # desbloqueia o modo pela API normal antes de iniciar a partida
+		ok(Meta.ligar("modo", "pesadelo", true), "liga Pesadelo para a vitória de seis conquistas")
+	var m = Mundo.instantiate()
+	m.modo_teste = not foto
+	m.id_mapa = "floresta"
+	add_child(m)
+	m.set_process(false)
+	var res = m.meta_res
+	if res == null:
+		res = Resultado.new()
+		res.montar(m)
+		m.ui.add_child(res)
+	res.set_process(false)
+	var ids: Array = ["derrota_chefe", "combo_50", "vence_floresta", "vence_dificuldade_facil"]
+	if quantidade >= 5:
+		ids.append("sobreviva_5min")
+	if quantidade == 6:
+		# O mundo já capturou o modo liberado. A fixture limpa só as conquistas do save, preservando o toggle e o snapshot da partida.
+		var cf := Meta._ler()
+		cf.erase_section("conquistas")
+		ok(Meta._gravar(cf) and bool(cf.get_value("config", "pesadelo", false)) and m.pesadelo(), "fixture preserva o Pesadelo da partida")
+		ids.append("vence_pesadelo")
+	m.tempo_partida = 120.0 if quantidade == 4 else 320.0
+	m.maior_combo = 50
+	m.abates = 70
+	m.xp_coletado = 460.0
+	var partidas_antes := int(Meta._ler().get_value("progressao", "partidas", 0))
+	m.combate.fim_de_partida(true)
+	res._animar(2.0)
+	return {"mundo": m, "resultado": res, "ids": ids, "partidas_antes": partidas_antes}
+
+
+func _conferir_conquistas(res, ids: Array) -> void:
+	var rotulo := "%d conquistas: " % ids.size()
+	for id in ids:
+		ok(res._novas.text.count(res._nome_conquista(id)) == 1, rotulo + "anuncia uma vez o nome completo de " + str(id))
+	ok(res._novas.text.count("Conquista: ") == ids.size(), rotulo + "a lista contém somente os marcos esperados")
+	var linhas: PackedStringArray = res._novas.text.split("\n")
+	var total_linhas := ceili(float(ids.size()) / 2.0)
+	ok(linhas.size() == total_linhas and res._novas.get_line_count() == total_linhas, rotulo + "ocupa até três linhas sem quebra adicional")
+	for i in linhas.size():
+		ok(linhas[i].count("Conquista: ") == mini(2, ids.size() - i * 2), rotulo + "mostra até dois nomes na linha %d" % (i + 1))
+	ok(res._novas.get_visible_line_count() == total_linhas and not res._novas.clip_text, rotulo + "nenhuma linha é cortada")
+	ok(res._novas.get_theme_font("font") == Dados.fonte_texto and res._novas.get_theme_font_size("font_size") == 16, rotulo + "mantém Spleen de 16 px")
+	var minimo: Vector2 = res._novas.get_minimum_size()
+	ok(minimo.y <= res._novas.size.y and minimo.x <= res._novas.size.x, rotulo + "a caixa comporta o texto completo")
+	var lista: Rect2 = res._novas.get_rect()
+	ok(lista.position.x >= 24 and lista.end.x <= res.LARG - 24, rotulo + "preserva as margens laterais")
+	ok(lista.position.y >= res._saldo.position.y + res._saldo.size.y + 4, rotulo + "não sobrepõe o saldo")
+	ok(lista.end.y + 8 <= res._botao.position.y, rotulo + "mantém oito pixels livres antes de CONTINUAR")
+	ok(res._botao.position.y + res._botao.size.y + 8 <= res.ALT, rotulo + "CONTINUAR preserva a margem inferior")
 
 
 func _foto_janela(caminho: String) -> void:
@@ -434,22 +476,13 @@ func _fotos(pasta: String) -> void:
 	m.queue_free()
 	await get_tree().process_frame
 
-	# Quatro conquistas simultâneas pelo caminho real do combate e do sinal, com a interface efetivamente renderizada.
-	_apagar_save()
-	m = Mundo.instantiate()
-	m.id_mapa = "floresta"
-	add_child(m)
-	m.set_process(false)
-	res = m.meta_res
-	res.set_process(false)
-	m.tempo_partida = 320.0
-	m.maior_combo = 50
-	m.abates = 70
-	m.almas_partida = 46
-	m.combate.fim_de_partida(true)
-	res._animar(2.0)
-	await _frames(2)
-	_conferir_quatro_conquistas(res)
-	await m.ap.foto(pasta.path_join("resultado_quatro_conquistas.png"))
-	m.queue_free()
-	await get_tree().process_frame
+	# A rota --fotos sai antes de _testes: os três casos também precisam ser montados e medidos aqui.
+	for caso_foto in [{"n": 4, "nome": "quatro"}, {"n": 5, "nome": "cinco"}, {"n": 6, "nome": "seis"}]:
+		var caso := _montar_resultado_conquistas(int(caso_foto.n), true)
+		m = caso.mundo
+		res = caso.resultado
+		await _frames(2)
+		_conferir_conquistas(res, caso.ids)
+		await m.ap.foto(pasta.path_join("resultado_%s_conquistas.png" % str(caso_foto.nome)))
+		m.queue_free()
+		await get_tree().process_frame

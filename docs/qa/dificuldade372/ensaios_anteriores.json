@@ -1,0 +1,128 @@
+{
+  "godot": "4.4.1",
+  "estado": "Ensaios de desenvolvimento, anteriores à correção XP/moeda e à integração da main dc497dd. Não substituem o robô no commit final.",
+  "origem": "ferramentas/playtest_v2.py por adaptador externo que encaminha todas as chamadas ao wrapper obrigatório do notebook.",
+  "limites": "O lote completo foi interrompido enquanto aguardava a fila. Estes são apenas casos que produziram PLAYTEST_JSON; não se afirma sucesso da matriz nem código de saída de casos sem relatório final.",
+  "casos": [
+    {
+      "heroi": "hazaki",
+      "mapa": "floresta",
+      "semente": 1,
+      "args": "--playtest --heroi=hazaki --mapa=floresta --semente=1 --playtest_max=900 --dificuldade=dificil",
+      "desfecho": "vitoria",
+      "trava": "",
+      "tempo_jogo": 595.5,
+      "tempo_real_s": 546.3,
+      "nivel": 61,
+      "abates": 3436,
+      "almas": 5481,
+      "vida_final": 100,
+      "vida_max": 100,
+      "proc_ms": {
+        "max": 140.39,
+        "media": 5.82,
+        "p50": 5.18,
+        "p95": 10.7,
+        "p99": 17.03
+      },
+      "dificuldade": "dificil",
+      "erros_script_no_stdout": 0
+    },
+    {
+      "heroi": "nicao",
+      "mapa": "floresta",
+      "semente": 1,
+      "args": "--playtest --heroi=nicao --mapa=floresta --semente=1 --playtest_max=900 --dificuldade=dificil",
+      "desfecho": "vitoria",
+      "trava": "",
+      "tempo_jogo": 591.5,
+      "tempo_real_s": 608.9,
+      "nivel": 59,
+      "abates": 3383,
+      "almas": 5172,
+      "vida_final": 244,
+      "vida_max": 244,
+      "proc_ms": {
+        "max": 202.87,
+        "media": 6.61,
+        "p50": 5.84,
+        "p95": 12.8,
+        "p99": 22.02
+      },
+      "dificuldade": "dificil",
+      "erros_script_no_stdout": 0
+    },
+    {
+      "heroi": "hazaki",
+      "mapa": "floresta",
+      "semente": 1,
+      "args": "--playtest --heroi=hazaki --mapa=floresta --semente=1 --playtest_max=900 --dificuldade=facil",
+      "desfecho": "vitoria",
+      "trava": "",
+      "tempo_jogo": 740.2,
+      "tempo_real_s": 692.1,
+      "nivel": 55,
+      "abates": 2566,
+      "almas": 4180,
+      "vida_final": 100,
+      "vida_max": 100,
+      "proc_ms": {
+        "max": 236.96,
+        "media": 5.94,
+        "p50": 5.37,
+        "p95": 10.35,
+        "p99": 18.05
+      },
+      "dificuldade": "facil",
+      "erros_script_no_stdout": 0
+    },
+    {
+      "heroi": "lucas",
+      "mapa": "floresta",
+      "semente": 1,
+      "args": "--playtest --heroi=lucas --mapa=floresta --semente=1 --playtest_max=900 --dificuldade=facil",
+      "desfecho": "vitoria",
+      "trava": "",
+      "tempo_jogo": 699.3,
+      "tempo_real_s": 281.7,
+      "nivel": 46,
+      "abates": 2297,
+      "almas": 2529,
+      "vida_final": 134,
+      "vida_max": 134,
+      "proc_ms": {
+        "max": 51.24,
+        "media": 2.92,
+        "p50": 2.5,
+        "p95": 5.68,
+        "p99": 7.55
+      },
+      "dificuldade": "facil",
+      "erros_script_no_stdout": 0
+    },
+    {
+      "heroi": "nicao",
+      "mapa": "floresta",
+      "semente": 1,
+      "args": "--playtest --heroi=nicao --mapa=floresta --semente=1 --playtest_max=900 --dificuldade=facil",
+      "desfecho": "trava",
+      "trava": "heroi_preso pos=(1394.0, 1417.0) alvo=(1442.0, 1380.0) bau=false fuga=(0.0, 0.0)",
+      "tempo_jogo": 166.8,
+      "tempo_real_s": 46.8,
+      "nivel": 16,
+      "abates": 284,
+      "almas": 127,
+      "vida_final": 180,
+      "vida_max": 180,
+      "proc_ms": {
+        "max": 36.26,
+        "media": 2.47,
+        "p50": 2.1,
+        "p95": 4.61,
+        "p99": 6.45
+      },
+      "dificuldade": "facil",
+      "erros_script_no_stdout": 0
+    }
+  ]
+}

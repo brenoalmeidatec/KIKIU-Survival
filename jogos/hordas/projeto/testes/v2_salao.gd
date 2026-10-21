@@ -29,6 +29,16 @@ func ok(cond: bool, msg: String) -> void:
 		print("FALHOU: ", msg)
 
 
+func _tecla(k: Key) -> void:
+	for pressionado in [true, false]:
+		var e := InputEventKey.new()
+		e.keycode = k
+		e.physical_keycode = k
+		e.pressed = pressionado
+		Input.parse_input_event(e)
+		Input.flush_buffered_events()
+
+
 func _ready() -> void:
 	Personagens.caminho_base = PREFIXO
 	Personagens.caminho_indice = INDICE
@@ -130,7 +140,31 @@ func _testes() -> void:
 	ok(not s.usar_portal("cidade") and cenas.is_empty(), "o portal da cidade está trancado até vencer o Laboratório")
 	ok(Mapas.escolhido() == "floresta", "a escolha trancada de um save antigo não vale")
 	ok(Meta.marcar_mapa_vencido("floresta") and Meta.marcar_mapa_vencido("laboratorio"), "libera de forma explícita: vence Floresta e Laboratório")
-	ok(s.usar_portal("cidade") and Mapas.escolhido() == "cidade", "o portal da cidade grava a escolha")
+	ok(Mapas.escolher("floresta") and Meta.escolher_dificuldade("facil"), "prepara mapa e dificuldade anteriores ao portal")
+	var hash_antes := FileAccess.get_md5(Meta.caminho_save)
+	s._destino = Vector2(100, 200)
+	s._alvo_destino = {"tipo": "portal", "id": "floresta"}
+	ok(s.usar_portal("cidade") and s._escolha_dificuldade.visible, "portal aberto pede dificuldade antes de entrar")
+	ok(cenas.is_empty() and FileAccess.get_md5(Meta.caminho_save) == hash_antes, "abrir escolha não grava mapa/dificuldade nem troca cena")
+	ok(s._destino == Vector2.INF and s._alvo_destino.is_empty() and not s._painel.visible, "o modal encerra caminho clicado e painel anterior")
+	var pos_antes: Vector2 = s._pos
+	Input.action_press("direita")
+	s._process(0.5)
+	Input.action_release("direita")
+	ok(s._pos == pos_antes, "não anda enquanto escolhe dificuldade")
+	s.abrir_estrutura("estatuas")
+	ok(not s._painel.visible and not s.usar_portal("floresta"), "modal bloqueia outra estrutura e outro portal")
+	_tecla(KEY_RIGHT)
+	_tecla(KEY_ESCAPE)
+	ok(not s._escolha_dificuldade.visible and s._mapa_pendente == "", "Esc cancela no modal sem sair do salão")
+	ok(cenas.is_empty() and FileAccess.get_md5(Meta.caminho_save) == hash_antes, "cancelar preserva mapa, dificuldade e personagem")
+	ok(s.usar_portal("cidade"), "reabre portal depois de cancelar")
+	_tecla(KEY_RIGHT)
+	_tecla(KEY_ENTER)
+	ok(Mapas.escolhido() == "cidade" and Meta.dificuldade() == "medio", "Enter grava mapa e dificuldade selecionados no personagem")
+	ok(not s._escolha_dificuldade.visible and s._entrando, "confirmar fecha o modal e bloqueia nova interação enquanto entra")
+	s._escolha_dificuldade._confirmar()
+	ok(not s.usar_portal("floresta"), "confirmação repetida não agenda outra entrada")
 	ok(cenas == [FLORESTA], "o portal leva Ã  cena da partida")
 	ok(Mapas.condicao({"requer": "combo_50"}) != "", "um mapa com conquista nÃ£o cumprida fica fechado e diz o porquÃª")
 	ok(Mapas.condicao({"requer": "combo_50"}).find("Trancado") == 0, "o texto do portal trancado comeÃ§a com Trancado")

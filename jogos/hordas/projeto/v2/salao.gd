@@ -22,6 +22,7 @@ const Trilha := preload("res://v2/trilha.gd")
 const Icones := preload("res://v2/icones_santuario.gd")
 const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas do Códice (a mesma da pausa)
 const Card := preload("res://v2/card_santuario.gd")
+const EscolhaDificuldade := preload("res://v2/escolha_dificuldade.gd")
 const ESCOLHA := "res://v2/personagens.tscn"
 const FLORESTA := "res://v2/mundo.tscn"
 const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"  # a folha (_albedo.png) e o quadro (.json) do personagem ativo ficam aqui
@@ -99,6 +100,9 @@ var _p_dica: Label  # "Selecione para consultar", só nas estruturas de melhoria
 var _p_itens: Array = []  # o que a estrutura aberta mostra (melhorias ou conquistas), na ordem da lista
 var _p_atual := 0  # índice do item selecionado em _p_itens
 var _p_codice := false
+var _escolha_dificuldade
+var _mapa_pendente := ""
+var _entrando := false
 
 
 func _ready() -> void:
@@ -133,6 +137,10 @@ func _ready() -> void:
 	_trilha = Trilha.new()
 	add_child(_trilha)
 	_trilha.tocar("santuario")
+	_escolha_dificuldade = EscolhaDificuldade.new()
+	add_child(_escolha_dificuldade)
+	_escolha_dificuldade.confirmou.connect(_confirmar_dificuldade)
+	_escolha_dificuldade.cancelou.connect(func(): _mapa_pendente = "")
 	_atualizar_textos()
 
 
@@ -447,7 +455,7 @@ func _process(dt: float) -> void:
 		if _aviso_t <= 0.0:
 			_aviso_lbl.text = ""
 			_aviso_lbl.visible = false
-	if _painel.visible or pausa.aberto:
+	if _painel.visible or pausa.aberto or _escolha_dificuldade.visible or _entrando:
 		return
 	var anda := Input.get_vector("esquerda", "direita", "cima", "baixo")
 	if anda != Vector2.ZERO:
@@ -499,7 +507,7 @@ func _atualizar_prompt() -> void:
 
 
 func _unhandled_input(e: InputEvent) -> void:
-	if pausa.aberto:
+	if pausa.aberto or _escolha_dificuldade.visible or _entrando:
 		return
 	if _painel.visible:
 		if e.is_action_pressed("ui_cancel"):
@@ -531,16 +539,39 @@ func _usar(a: Dictionary) -> void:
 		abrir_estrutura(str(a.id))
 
 
-## Usa um portal: se estiver aberto, grava o mapa escolhido no save do personagem e leva à partida. Devolve true se foi.
+## Portal aberto pede a dificuldade antes de gravar o mapa e entrar. True indica que abriu a escolha.
 func usar_portal(id: String) -> bool:
+	if _escolha_dificuldade == null or _escolha_dificuldade.visible or pausa.aberto or _entrando or not Mapas.ids().has(id):
+		return false
 	var m := Mapas.buscar(id)
+	if m.is_empty():
+		return false
 	var fechado := Mapas.condicao(m)
+	if fechado != "":
+		_avisar(fechado)
+		return false
+	_destino = Vector2.INF
+	_alvo_destino = {}
+	_fechar_painel()
+	_mapa_pendente = id
+	_escolha_dificuldade.abrir(str(m.nome))
+	return true
+
+
+## O componente já gravou a dificuldade. O ponto existente de troca de cena permanece abaixo.
+func _confirmar_dificuldade(_id: String) -> bool:
+	var id := _mapa_pendente
+	_mapa_pendente = ""
+	if id == "":
+		return false
+	var fechado := Mapas.condicao(Mapas.buscar(id))
 	if fechado != "":
 		_avisar(fechado)
 		return false
 	if not Mapas.escolher(id):
 		_avisar("Não foi possível gravar a escolha de mapa.")
 		return false
+	_entrando = true
 	if ao_entrar.is_valid():
 		ao_entrar.call(FLORESTA)
 	else:
@@ -564,6 +595,8 @@ func _avisar(txt: String) -> void:
 ## Abre o painel de uma estrutura: as melhorias dela (com comprar), ou as conquistas no códice (só leitura).
 ## Trancada (dados/v2_progressao.json), só mostra o aviso com o que falta.
 func abrir_estrutura(id: String) -> void:
+	if _escolha_dificuldade != null and _escolha_dificuldade.visible:
+		return
 	var e := _estrutura(id)
 	if e.is_empty():
 		return

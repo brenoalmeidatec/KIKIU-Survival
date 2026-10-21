@@ -68,6 +68,7 @@ var folego := 3.0  # fôlego em cargas (fracionário), gasto por esquiva (um blo
 var folego_max := 3.0
 var _credito_abate := 1.0  # fôlego que os abates ainda podem devolver agora (ver ganhar_folego_abate)
 var cansado := false  # fôlego zerou: sem correr nem esquivar até recuperar
+var golpe_calor_t := 0.0  # Médio/Difícil: ao zerar fôlego, o ataque principal espera o calor baixar.
 var correndo := false
 var vel_base := VEL  # px/s de andar do herói escolhido (cfg.heroi.vel, v2/herois.gd); o VEL é só o padrão
 
@@ -194,6 +195,7 @@ func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
 
 ## Lê as vidas e as regras do dados/v2_combate.json (chamado pelo combate depois de criar o herói).
 func iniciar_stats(cfg: Dictionary) -> void:
+	golpe_calor_t = 0.0
 	vel_base = float(cfg.heroi.get("vel", VEL))
 	vida_max = float(cfg.heroi.vida)
 	vida = vida_max
@@ -506,6 +508,7 @@ func atualizar(dt: float) -> void:
 	_anda_ant = v
 	# relógios
 	invenc = maxf(0.0, invenc - dt)
+	golpe_calor_t = maxf(0.0, golpe_calor_t - dt)
 	pedido_t = maxf(0.0, pedido_t - dt)
 	esq_pedido = maxf(0.0, esq_pedido - dt)
 	pausa_t = maxf(0.0, pausa_t - dt)
@@ -578,8 +581,8 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 		return _escudo(dt, v)
 	_baixar_escudo()
 	if (pedido_t > 0.0 or segurando) and pausa_t <= 0.0:  # o golpe tem prioridade sobre a corrida
-		_iniciar_golpe()
-		return Vector2.ZERO
+		if _iniciar_golpe():
+			return Vector2.ZERO
 	if not andando:
 		return Vector2.ZERO
 	if fonte == Fonte.ANDA:
@@ -700,7 +703,18 @@ func _camera_adiantada(dt: float) -> void:
 # ------------------------------------------------------------------ golpe
 
 
-func _iniciar_golpe() -> void:
+func _iniciar_golpe() -> bool:
+	var dif := preload("res://v2/dificuldade.gd").da_partida(mundo)
+	var custo := float(dif.golpe_custo)
+	if custo > 0.0:
+		if golpe_calor_t > 0.0:
+			return false
+		if folego <= 0.0:
+			golpe_calor_t = float(dif.golpe_calor)
+			return false
+		_gastar(custo)
+		if folego <= 0.0:
+			golpe_calor_t = float(dif.golpe_calor)
 	var passos: Array = mundo.combate.cfg.golpe.passos
 	golpe_i = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
 	golpe_cfg = passos[golpe_i]
@@ -715,6 +729,7 @@ func _iniciar_golpe() -> void:
 	golpes += 1
 	_punch = 0.0
 	mundo.combate.golpe_comecou(self, golpe_cfg, golpe_dir, golpe_dur)
+	return true
 
 
 ## A fase do golpe da katana agora (docs/combate_v2): "pronto" fora do golpe, "preparo" antes do quadro do acerto (sem dano), "ativo" no

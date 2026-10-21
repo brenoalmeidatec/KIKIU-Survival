@@ -86,7 +86,10 @@ func _ready() -> void:
 				await foto("item_" + str(a.id) + "_%02d" % i)
 			s._fechar_painel()
 		else:
-			ok(chamadas.size() > 0 and Mapas.escolhido() == str(a.id), "A usa portal " + str(a.id))
+			ok(s._escolha_dificuldade.visible and s._mapa_pendente == str(a.id), "A abre dificuldade do portal " + str(a.id))
+			ok(chamadas.is_empty(), "portal aguarda confirmar a dificuldade: " + str(a.id))
+			await foto("dificuldade_" + str(a.id))
+			s._escolha_dificuldade._cancelar()
 	# Clique passa pelo handler da sala; simula deslocamento acelerado sem trocar cenas.
 	for a in s._alvos:
 		s._pos = Vector2(480, 480)
@@ -103,6 +106,9 @@ func _ready() -> void:
 		ok(s._destino == Vector2.INF, "clique chega e usa " + str(a.id))
 		if s._painel.visible:
 			s._fechar_painel()
+		if a.tipo == "portal":
+			ok(s._escolha_dificuldade.visible and s._mapa_pendente == str(a.id), "clique abre dificuldade do portal " + str(a.id))
+			s._escolha_dificuldade._cancelar()
 	ok(Mapas.condicao({"requer": "combo_50"}).begins_with("Trancado"), "condicao bloqueada preservada")
 	ok(Mapas.condicao({}) == "", "portais sem requisito abertos")
 	Meta.creditar(300)
@@ -111,6 +117,9 @@ func _ready() -> void:
 	s._pos = Vector2(480, 400)
 	s._destino = Vector2.INF
 	await foto("02_salao_almas")
+	ok(s.usar_portal("floresta"), "portal abre a confirmação final")
+	s._escolha_dificuldade._confirmar()
+	ok(chamadas == [s.FLORESTA] and Mapas.escolhido() == "floresta", "confirmar dificuldade entra uma única vez no mapa")
 
 	for arquivo in reais:
 		ok(FileAccess.get_md5("user://testes_v2/v2_salao_visual/" + arquivo) == reais[arquivo], "save real intacto " + arquivo)

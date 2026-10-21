@@ -54,6 +54,7 @@ Regra provisória: até aqui o DESIGN não tinha valores para margens, colunas e
 - **Rodapé de teclas** (`Glifos.dica`): caixa de 22 px com o glifo de 16 px centrado; a caixa termina 8 px acima da borda inferior do bloco (y 510 a 532). Os controles da tela terminam pelo menos 12 px acima dela (santuário: botões até y 498).
 - **Linha de base**: o texto e o glifo de uma mesma linha compartilham a linha de base (`Dica` e `Glifos.desenhar_acao` usam a métrica da fonte do texto).
 - **Título de tela**: o alinhamento vertical segue cada tela (santuário e personagens ainda usam posições próprias; padronizar só com decisão do Alisson).
+- **Escolha de dificuldade** (`escolha_dificuldade.gd`, #372): painel modal centrado no bloco, com três cartões de Fácil/Médio/Difícil, bônus de almas/XP, aviso de fôlego e Entrar/Voltar. Selecionar destaca o cartão; somente Entrar confirma e salva. Mouse, teclado e controle usam o mesmo estado. O aviso de Pesadelo explica o modificador independente. Contrato e integração em `DIFICULDADE.md`.
 
 ## 2. Paleta
 

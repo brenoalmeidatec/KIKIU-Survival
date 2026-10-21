@@ -18,7 +18,7 @@ const Mundo := preload("res://v2/mundo.tscn")
 const SAVE_TESTE := "user://testes_v2/v2_conquistas/teste_v2_conquistas_meta.cfg"
 const OPCOES_TESTE := "user://testes_v2/v2_conquistas/teste_v2_conquistas_opcoes.cfg"
 const SAVE_REAL := "user://testes_v2/v2_conquistas/v2_progresso.cfg"
-const SEM_PREMIO := ["vence_pesadelo"]  # conquistas sem item de recompensa (marco): não têm linha "Prêmio"
+const SEM_PREMIO := ["vence_pesadelo", "vence_dificuldade_facil", "vence_dificuldade_medio", "vence_dificuldade_dificil"]  # marcos sem prêmio
 
 var falhas := 0
 

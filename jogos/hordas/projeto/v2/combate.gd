@@ -678,7 +678,8 @@ func coletar(valor: float, _de: Vector2) -> void:
 	var h = mundo.heroi
 	mundo.xp_coletado += valor
 	fx.particula(h.pos + Vector2(randf_range(-4, 4), -18), Vector2(randf_range(-10, 10), -30), 0.28, 9.0, Color(0.5, 0.95, 1.0, 0.7), -10.0, true)
-	progresso.ganhar_xp(valor)
+	# O orbe guarda base + combo para as almas; dificuldade aumenta XP e almas independentemente (Meta credita as almas no fim).
+	progresso.ganhar_xp(valor * preload("res://v2/dificuldade.gd").fator(mundo, "xp_mult"))
 
 
 # ------------------------------------------------------------------ herói
@@ -843,6 +844,7 @@ func fim_de_partida(ganhou: bool) -> void:
 		"almas": mundo.almas_partida,
 		"mapa": str(mundo.id_mapa),
 		"nivel_mapa": diretor.nivel,
+		"dificuldade": str(preload("res://v2/dificuldade.gd").da_partida(mundo).id),
 		"niveis_mapa": diretor.niveis_total
 	}
 	if ganhou:
