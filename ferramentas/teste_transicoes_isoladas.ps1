@@ -46,7 +46,7 @@ try {
         $erroAnterior = $ErrorActionPreference
         try {
             $ErrorActionPreference = 'Continue'
-            & powershell -NoProfile -ExecutionPolicy Bypass -File $FilaGodot --headless --path (Join-Path $repo 'jogos\hordas\projeto') "res://testes/$cena.tscn" *> $log
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $FilaGodot --headless --quit-after 18000 --path (Join-Path $repo 'jogos\hordas\projeto') "res://testes/$cena.tscn" *> $log
             $codigo = $LASTEXITCODE
         } finally { $ErrorActionPreference = $erroAnterior }
         $iguais = $true

@@ -354,6 +354,12 @@ func _fluxo() -> void:
 		return
 	# portal da Floresta -> partida
 	ok(salao.usar_portal("floresta"), "o portal da Floresta está aberto")
+	# Com #390, o portal primeiro abre a escolha; confirma pela mesma entrada real do jogador.
+	if salao.has_method("_confirmar_dificuldade"):
+		ok(_na_cena(SALAO), "a escolha de dificuldade mantém o santuário antes de confirmar")
+		var escolha = salao.get("_escolha_dificuldade")
+		ok(is_instance_valid(escolha) and escolha.visible, "o portal mostra a escolha de dificuldade")
+		_tecla(KEY_ENTER)
 	chegou = await _ate(func(): return _na_cena(PARTIDA), 5.0)
 	ok(chegou, "o portal leva à partida")
 	await _fim_transicao()
