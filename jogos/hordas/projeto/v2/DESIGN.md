@@ -189,3 +189,7 @@ O Detalhe dinâmico mede só a jogabilidade ativa: cartas, baús, resultado e pa
 ### Conferência da integração de 18/10
 
 Fotos reais da integração em [`docs/visual_2_5d/lote_2026_10_18/`](../../../../docs/visual_2_5d/lote_2026_10_18/): barras no teto com a placa do nível livre, quatro conquistas no resultado, marcas verdes de aliados, cartas com Xbox/PlayStation e Gráficos Dinâmico. As imagens Xbox, HUD e resultado têm 1280x720; a captura PlayStation solicitada em 1920x1080 ficou em 1918x1078 pela janela disponível (dimensão preservada no nome). A matriz de testes de escala cobre 1920x1080. São fotos paradas; o ritmo do combate e o balanço das recargas ainda precisam de uma partida humana.
+
+## Recursos de ritmo (#371)
+
+Corações e ímãs reutilizam os ícones de cartas; o curandeiro usa o Guardião de Pedra parado, com coração e anel verde. Pool fixo, duração e cura ficam em dados/v2_ritmo.json. As curvas e o contrato estão em v2/RITMO.md. O ímã usa somente a parte visível do mundo após corte da TextureRect e transformação da câmera.

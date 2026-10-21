@@ -87,6 +87,17 @@ func atrair_todos(alvo: Vector2, raio: float) -> void:
 			voo[i] = ima_vel
 
 
+## O ímã de pickup atrai somente as almas dentro da tela, sem alterar valores nem criar XP.
+func atrair_em_rect(tela: Rect2) -> int:
+	var atraidos := 0
+	for i in MAX:
+		if estado[i] == 1 and tela.has_point(pos[i]):
+			estado[i] = 2
+			voo[i] = ima_vel
+			atraidos += 1
+	return atraidos
+
+
 func atualizar(dt: float, alvo: Vector2, raio_ima: float) -> void:
 	if ativos <= 0:
 		return

@@ -148,6 +148,7 @@ func taxa(t: float) -> float:
 		lerpf(float(cfg.taxa_ini), float(cfg.taxa_fim), clampf(t / float(cfg.tempo_taxa), 0.0, 1.0))
 		* mundo.fator_pesadelo("densidade_mult")
 		* dificuldade("densidade_mult")
+		* combate.ritmo.multiplicador("densidade", mundo.heroi.nivel)
 	)
 
 
@@ -157,11 +158,15 @@ func teto() -> int:
 
 
 func limite(t: float) -> int:
-	return roundi(
-		(
-			lerpf(float(cfg.cap_ini), float(cfg.cap_fim), clampf(t / float(cfg.tempo_cap), 0.0, 1.0))
-			* mundo.fator_pesadelo("densidade_mult")
-			* dificuldade("densidade_mult")
+	return mini(
+		teto(),
+		roundi(
+			(
+				lerpf(float(cfg.cap_ini), float(cfg.cap_fim), clampf(t / float(cfg.tempo_cap), 0.0, 1.0))
+				* mundo.fator_pesadelo("densidade_mult")
+				* dificuldade("densidade_mult")
+				* combate.ritmo.multiplicador("densidade", mundo.heroi.nivel)
+			)
 		)
 	)
 

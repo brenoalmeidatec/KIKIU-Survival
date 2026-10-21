@@ -31,7 +31,7 @@ func xp_para(n: int) -> float:
 
 ## Vida que o herói recupera a cada nível que sobe (a fração `cura_nivel` da vida máxima de agora). O card de status mostra este valor.
 func cura_por_nivel() -> float:
-	return combate.mundo.heroi.vida_max * float(cfg.heroi.cura_nivel)
+	return combate.mundo.heroi.vida_max * float(cfg.heroi.cura_nivel) * float(combate.ritmo.cfg.cura_nivel_mult)
 
 
 ## Fração a mais por nível acima do 1 (regra = {por_nivel, teto}, de dados): nível 1 = 0; sobe `por_nivel` a cada nível e para no `teto`.

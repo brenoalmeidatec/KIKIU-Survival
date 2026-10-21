@@ -346,7 +346,9 @@ func _heroi() -> void:
 	perto(float(n_de("heroi.vida")[0]), antes - 10.0, 0.001, "a vida do card cai com o dano que o herói leva")
 	# cura por nível: o card diz quanto volta; subir de nível cura exatamente isso
 	var cura := float(n_de("heroi.cura")[0])
-	perto(cura, h.vida_max * float(cfg.heroi.cura_nivel), 0.001, "cura por nível = fração da vida máxima")
+	perto(
+		cura, h.vida_max * float(cfg.heroi.cura_nivel) * float(w.combate.ritmo.cfg.cura_nivel_mult), 0.001, "cura por nível = fração da vida máxima com ritmo"
+	)
 	h.vida = 20.0
 	w.combate.progresso.ganhar_xp(h.xp_proximo)
 	w.combate.lento_t = 0.0  # não abre a escolha
@@ -409,7 +411,7 @@ func _heroi() -> void:
 	descartar(alvo_fo)
 	# ímã: um orbe um pouco dentro do alcance é atraído, um pouco fora fica no chão
 	var ima := float(n_de("heroi.ima")[0])
-	perto(ima, 56.0 * h.m_ima, 0.01, "ímã = raio dos dados x bônus de ímã")
+	perto(ima, 56.0 * h.m_ima * w.combate.ritmo.multiplicador("coleta", h.nivel), 0.01, "ímã = raio dos dados x bônus de ímã x curva de nível")
 	var alvo: Vector2 = h.pos + Vector2(0, -8)
 	var o = w.combate.orbes
 	var dentro := _orbe(alvo + Vector2(ima - 3.0, 0))

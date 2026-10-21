@@ -430,7 +430,7 @@ func vel_correr() -> float:
 
 ## Alcance do ímã de almas (px): a distância em que o orbe começa a voar para o herói (combate.atualizar).
 func alcance_ima() -> float:
-	return float(mundo.combate.cfg.heroi.ima_raio) * m_ima
+	return float(mundo.combate.cfg.heroi.ima_raio) * m_ima * mundo.combate.ritmo.multiplicador("coleta", nivel)
 
 
 ## Duração (s) do passo `i` do combo com a velocidade de ataque de agora.
