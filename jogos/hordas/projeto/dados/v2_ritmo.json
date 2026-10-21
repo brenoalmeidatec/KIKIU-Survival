@@ -1,0 +1,52 @@
+{
+	"_ajuda": "Ritmo #371. Curvas: fração adicional por nível acima do primeiro, limitada pelo teto. Coleta e densidade multiplicam os valores atuais, preservando cartas/dificuldade e teto técnico. Q: dano e raio capturados uma vez por disparo; não alteram carga nem duração. Cura por nível recebe 80% da base anterior; drops curam 8% da vida máxima. Chance de cura por abate = chance * (1 + baixa_vida * (1 - vida/vida_max)^2), com intervalo entre drops e limite no chão. Ímã atrai só almas visíveis ao ser coletado, sem gerar XP. Sorteios têm RNG próprio. Tempos em segundos de jogo ativo; pool fixo, sem crescimento durante combate.",
+	"pool": 4,
+	"coleta_raio": 26,
+	"cura_nivel_mult": 0.8,
+	"curvas": {
+		"coleta": {
+			"por_nivel": 0.025,
+			"teto": 0.75
+		},
+		"q_dano": {
+			"por_nivel": 0.035,
+			"teto": 1.0
+		},
+		"q_area": {
+			"por_nivel": 0.0125,
+			"teto": 0.35
+		},
+		"densidade": {
+			"por_nivel": 0.005,
+			"teto": 0.15
+		},
+		"ima": {
+			"por_nivel": 0.02,
+			"teto": 0.5
+		}
+	},
+	"cura": {
+		"chance": 0.008,
+		"baixa_vida": 3.0,
+		"fracao": 0.08,
+		"intervalo": 8,
+		"max_chao": 2,
+		"duracao": 20
+	},
+	"ima": {
+		"chance": 0.0015,
+		"intervalo": 35,
+		"max_chao": 1,
+		"duracao": 25
+	},
+	"curandeiro": {
+		"chance": 0.001,
+		"baixa_vida": 3.0,
+		"intervalo": 90,
+		"max_chao": 1,
+		"duracao": 12,
+		"raio": 64,
+		"por_s": 0.02,
+		"teto_cura": 0.12
+	}
+}

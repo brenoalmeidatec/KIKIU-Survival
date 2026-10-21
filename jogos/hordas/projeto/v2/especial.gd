@@ -178,13 +178,23 @@ func armar(h) -> void:
 	h.esp_carga = minf(float(b.get("inicio", comum.carga.inicio)), h.esp_carga_max)
 
 
-## O herói apertou Q e pode: começa o especial. Devolve false se este herói não tem (id desconhecido). O herói já cancelou o resto e entrou no estado.
+## Escala a cópia privada do disparo, sem alterar o catálogo compartilhado.
+func _escalar_danos(bloco: Dictionary, fator: float) -> void:
+	for chave in bloco:
+		if chave == "dano":
+			bloco[chave] = float(bloco[chave]) * fator
+		elif bloco[chave] is Dictionary:
+			_escalar_danos(bloco[chave], fator)
+
+
+## O herói apertou Q e pode: começa o especial com números capturados neste nível.
 func iniciar(h) -> bool:
 	var id := id_de(str(h.chave))
 	if id == "":
 		return false
 	_id = id
-	_c = blocos[id]
+	_c = blocos[id].duplicate(true)
+	_escalar_danos(_c, combate.ritmo.multiplicador("q_dano", h.nivel))
 	_t = 0.0
 	_fase = 0
 	_ja.clear()
@@ -195,7 +205,7 @@ func iniciar(h) -> bool:
 	_rastro_t = 0.0
 	_tick_t = 0.0
 	_giro = randf() * TAU
-	_escala = 1.0 + (float(h.m_area) - 1.0) * float(comum.area_k)
+	_escala = (1.0 + (float(h.m_area) - 1.0) * float(comum.area_k)) * combate.ritmo.multiplicador("q_area", h.nivel)
 	var d: Vector2 = h.mira_mundo - h.centro()
 	_dir = d.normalized() if d.length() > 4.0 else h.dir_olhar
 	if _dir.length_squared() < 0.01:
@@ -312,7 +322,7 @@ func _q_investida(h, dt: float) -> Vector2:
 ## Quem está na faixa à frente do herói (screen space: `along` ao longo da mira, `perp` de lado) leva o corte, uma vez só.
 func _faixa(h, olhar: float) -> void:
 	var c = combate
-	var largura := float(_c.largura)
+	var largura := float(_c.largura) * _escala
 	var cor := _cor(_c.cor)
 	var chance: float = c.chance_critico()
 	var variacao := float(c.cfg.golpe.variacao)
@@ -509,7 +519,7 @@ func _rodada(h, n: int, p: Dictionary) -> void:
 		"anel": true,
 		"dano": float(p.dano),
 		"vel": float(p.get("vel", _c.adaga.vel)),
-		"alcance": float(p.alcance),
+		"alcance": float(p.alcance) * _escala,
 		"perfura": int(p.perfura),
 		"empurrao": float(p.empurrao),
 		"atordoa": float(p.atordoa),
@@ -733,7 +743,7 @@ func _desenhar() -> void:
 func _desenhar_investida(h) -> void:
 	var cor := _cor(_c.cor)
 	var lado := Vector2(-_dir.y, _dir.x)
-	var larg := float(_c.largura)
+	var larg := float(_c.largura) * _escala
 	var base: Vector2 = h.pos + Vector2(0, -6)
 	if _fase == 0:
 		var k := clampf(_t / maxf(float(_c.prep), 0.001), 0.0, 1.0)

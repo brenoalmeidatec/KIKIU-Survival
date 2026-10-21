@@ -1397,6 +1397,7 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 		"elites": pt.elites,
 		"chefes": pt.chefes,
 		"pico_vivos": pt.pico_vivos,
+		"ritmo": c.ritmo.relatorio(),
 		"q_prontos": pt.q_prontos,
 		"q_disparos": pt.q_disparos,
 		"e_disparos": pt.e_disparos,

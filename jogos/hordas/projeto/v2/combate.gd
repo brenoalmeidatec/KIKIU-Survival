@@ -25,6 +25,7 @@ const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
 const Ruptura := preload("res://v2/ruptura.gd")
 const Escudo := preload("res://v2/escudo.gd")
+const Ritmo := preload("res://v2/ritmo.gd")
 const Especial := preload("res://v2/especial.gd")
 const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
@@ -59,6 +60,7 @@ var chefes
 var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
 var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a ruptura continua em v2/ruptura.gd)
+var ritmo
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Lucas (pool, v2/adagas.gd)
 var heroi_id := "hazaki"  # o herói da partida (v2/herois.gd)
@@ -169,6 +171,8 @@ func montar(m) -> void:
 	baus.montar(self)
 	chefes = Chefes.new()
 	chefes.montar(self)
+	ritmo = Ritmo.new()
+	ritmo.montar(self)
 
 
 ## Liga o herói às regras dos dados (vida, fôlego, curva de XP). Chamado quando o herói nasce e quando a partida recomeça.
@@ -281,6 +285,7 @@ func atualizar(dt: float) -> void:
 		ruptura.atualizar(dt)
 		especial.atualizar(dt)
 		baus.atualizar(dt)
+		ritmo.atualizar(dt)
 		mundo._perfil("c_diretor", t0 - d0)
 		mundo._perfil("c_armas", t1 - t0)
 		mundo._perfil("c_elites_chefes", t2 - t1)
@@ -622,6 +627,7 @@ func matar(m) -> void:
 		orbes.soltar(m.pos, m.xp * mult)
 	if float(armas.mods.folego) > 0.0:  # modificador da katana: matar recupera fôlego
 		mundo.heroi.ganhar_folego_abate(float(armas.mods.folego) / 100.0)
+	ritmo.abate(m.pos)
 	especial.abate(m)  # cada abate dá carga de bônus à ultimate (Q)
 	if m.elite:
 		elites.ao_morrer(m)
@@ -750,6 +756,7 @@ func heroi_morreu() -> void:
 	hit_stop(0.18)
 	jogo = "morrendo"
 	especial.fim_de_partida()
+	ritmo.encerrar()
 	habilidade.fim_de_partida()
 	camera_lenta("morte", maxf(1.3, h.duracao_morte() + 0.25), 0.25)  # a queda do herói e o dissolve cabem antes da tela de resultado
 
@@ -819,6 +826,7 @@ func vitoria() -> void:
 		return
 	jogo = "vencendo"
 	especial.fim_de_partida()
+	ritmo.encerrar()
 	habilidade.fim_de_partida()
 	var a: Dictionary = cartas.cfg.anuncios.vitoria
 	anunciar(str(a.texto), _cor(a.cor), "", 3.0)
@@ -881,6 +889,7 @@ func limpar_partida() -> void:
 		mundo.devolver_monstro(m)
 	_fila.clear()
 	orbes.limpar()
+	ritmo.limpar()
 	armas.limpar()
 	adagas.limpar()
 	avisos.limpar()
@@ -922,7 +931,7 @@ func limpar_partida() -> void:
 func liberar() -> void:
 	if chefes != null:
 		chefes.liberar()  # o visual do chefe aponta de volta para ele e tem nós órfãos
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, especial, habilidade, elites, baus, chefes]:
+	for m in [ritmo, orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, especial, habilidade, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -939,6 +948,7 @@ func liberar() -> void:
 	avisos = null
 	ruptura = null
 	escudo = null
+	ritmo = null
 	especial = null
 	habilidade = null
 	elites = null

@@ -407,7 +407,7 @@ static func _sec_heroi(m) -> Dictionary:
 	var c = m.combate
 	var cfg: Dictionary = c.cfg
 	var cura: float = c.progresso.cura_por_nivel()
-	var frac := float(cfg.heroi.cura_nivel) * 100.0
+	var frac: float = cura / h.vida_max * 100.0
 	var seguidas := int(floorf(h.folego_max / float(cfg.esquiva.gasto)))
 	var rp := float(cfg.folego.regen_parado)
 	var ra := float(cfg.folego.regen_andando)
