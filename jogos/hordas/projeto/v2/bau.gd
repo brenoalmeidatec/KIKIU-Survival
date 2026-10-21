@@ -1,6 +1,7 @@
 extends RefCounted
 ## O baú da v2 (leva 3): a elite e o mini-chefe soltam um baú dourado que brilha no chão. Encostar nele abre: o mundo pára, uma roleta curta de
-## cartas gira (v2/telas.gd) e o herói ganha de 1 a 3 melhorias DE GRAÇA, com chance maior de raridade alta (dados/v2_cartas.json > "bau").
+## cartas de raridade maior (dados/v2_cartas.json > "bau") aparece na tela da escolha de nível e o herói PEGA 1 ou 2 delas em até 12 s (bau.limite_s), com a
+## mais rara sendo escolhida sozinha ao zerar; com 3 melhorias, número fixado no mapa (forcar) ou sem melhoria para sortear, ele dá tudo DE GRAÇA com a roleta de revelação (telas.mostrar_bau).
 ## O baú não tem arte pronta: o desenho é um pixel art de 22x20 gerado aqui, uma vez, e o brilho dourado (aditivo, na camada glow) e a luz
 ## são o que o faz aparecer no escuro. Pool de 4 baús criados na abertura; nada de nó novo durante a partida.
 
@@ -180,7 +181,10 @@ func atualizar(dt: float) -> void:
 				return
 
 
-## Abre o baú `b`: sorteia as cartas, aplica na hora e mostra a roleta (o mundo pára até o jogador confirmar).
+## Abre o baú `b`. O baú sorteado (elite e mini-chefe) dá 1 a 3 melhorias e deixa o jogador ESCOLHER entre 3 cartas de raridade melhor, com `bau.limite_s`
+## (12 s, contra os 8 s da carta de nível) e escolha automática no fim: 1 ou 2 melhorias = pega 1 ou 2 das 3 na mesma tela da escolha de nível. Sem
+## escolha de verdade, o baú entrega tudo de graça na hora e mostra a roleta de revelação (o mundo pára até o jogador confirmar): 3 melhorias (não
+## sobra o que escolher), baú com número fixado no mapa (`forcar`, "cartas do baú") e a cura de reserva quando não resta melhoria para sortear.
 func abrir(b: Dictionary) -> void:
 	b.ativo = false
 	b.raiz.visible = false
@@ -189,10 +193,19 @@ func abrir(b: Dictionary) -> void:
 	b.luz.enabled = false
 	abertos += 1
 	var n: int = int(b.forcar)
+	var fixo := n > 0
 	if n <= 0:
 		n = sortear_quantidade()
 	var h = mundo.heroi
-	var cartas: Array = combate.cartas.sortear(n, h.nivel, float(cfg.bonus_raridade) * float(b.bonus), [], int(cfg.get("piso_raridade", 0)))
+	var bonus := float(cfg.bonus_raridade) * float(b.bonus)
+	var piso := int(cfg.get("piso_raridade", 0))
+	var qtd := int(combate.cartas.cfg.escolha.cartas)
+	if not fixo and n < qtd:
+		var candidatas: Array = combate.cartas.sortear(qtd, h.nivel, bonus, [], piso)
+		if candidatas.size() > n:
+			_abrir_escolha(b, candidatas, n)
+			return
+	var cartas: Array = combate.cartas.sortear(n, h.nivel, bonus, [], piso)
 	if cartas.is_empty():
 		cartas = [
 			{
@@ -215,12 +228,24 @@ func abrir(b: Dictionary) -> void:
 	for c in cartas:
 		combate.cartas.aplicar(c)
 	ultimas = cartas
-	combate.fx.onda(b.pos, Color(1.0, 0.9, 0.5, 0.95), 60.0, 0.5)
-	combate.fx.faiscas(b.pos + Vector2(0, -10), Vector2(0, -1), 14, Color(1.0, 0.9, 0.5), 180.0)
-	combate.audio.tocar("bau", 1.0, 0.0, 0.1)
+	_efeitos_de_abertura(b)
 	combate.jogo = "bau"
 	combate.pausado = true
 	combate.telas.mostrar_bau(cartas)
+
+
+## O baú com escolha: nada é aplicado ainda; a tela de escolha (progresso.abrir_escolha_bau) aplica cada carta que o jogador pega, ou a mais rara
+## quando o tempo acaba. `ultimas` vai enchendo com as pegas.
+func _abrir_escolha(b: Dictionary, candidatas: Array, picks: int) -> void:
+	ultimas = []
+	_efeitos_de_abertura(b)
+	combate.progresso.abrir_escolha_bau(candidatas, picks)
+
+
+func _efeitos_de_abertura(b: Dictionary) -> void:
+	combate.fx.onda(b.pos, Color(1.0, 0.9, 0.5, 0.95), 60.0, 0.5)
+	combate.fx.faiscas(b.pos + Vector2(0, -10), Vector2(0, -1), 14, Color(1.0, 0.9, 0.5), 180.0)
+	combate.audio.tocar("bau", 1.0, 0.0, 0.1)
 
 
 func sortear_quantidade() -> int:

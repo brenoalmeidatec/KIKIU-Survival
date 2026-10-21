@@ -1,9 +1,11 @@
 extends Node
 # Teste da ROLETA das cartas de nível e do BAÚ melhor da v2 (#376; dados/v2_cartas.json: escolha.roleta_s = 1,2 s, bau.bonus_raridade, bau.piso_raridade).
-# Roleta: ao abrir a escolha de nível as cartas descem em rolos e param uma a uma (esquerda -> direita) em no máximo 1,2 s de tempo real; clique, Enter,
-# Espaço e A (ui_accept) pulam para o fim; nada escolhe durante os rolos; a trava de 1 s corre junto e o limite de 8 s só começa quando TODAS pararam;
-# ESC durante a roleta abre o "Pausar agora?" (o tempo dela fica parado; Não volta, Sim descarta a rodada); rerrolar não rola; escolher no meio desfaz
-# os rolos; roleta_s = 0 e roleta_ligada = false mostram as cartas direto. Baú: raridade melhor que a escolha comum (estatística com semente) e nunca comum.
+# Roleta: ao abrir a escolha de nível as cartas descem em rolos e param uma a uma (esquerda -> direita) em no máximo 1,2 s de tempo real; depois de 0,3 s
+# só o Enter, o A do controle e o clique SOBRE as cartas pulam para o fim (Espaço, E e o clique fora são esquiva, habilidade e ataque e não pulam); nada escolhe
+# durante os rolos; a trava de 1 s corre junto e o limite de 8 s só começa quando TODAS pararam; ESC durante a roleta abre o "Pausar agora?" (o tempo dela
+# fica parado; Não volta, Sim descarta a rodada); rerrolar não rola; escolher no meio desfaz os rolos; roleta_s = 0 e roleta_ligada = false mostram as
+# cartas direto. O enfeite dos rolos usa um sorteador próprio. Baú: raridade melhor que a escolha comum (estatística com semente), nunca comum, e a
+# ESCOLHA com 12 s (bau.limite_s) contra os 8 s do nível: 1 ou 2 melhorias para pegar entre 3 cartas, automático (a mais rara) ao zerar o tempo.
 # Os outros testes nascem com a roleta desligada (mundo.modo_teste); este liga.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_roleta.tscn  (imprime "v2_roleta falhas=0")
 # GIF: godot --path jogos/hordas/projeto res://testes/v2_roleta.tscn -- --fotos=PASTA  (grava os quadros da roleta e sai)
@@ -100,6 +102,15 @@ func subir_nivel() -> void:
 	h.xp = h.xp_proximo - 0.1
 	w.combate.progresso.ganhar_xp(0.2)
 	ate(func(): return w.combate.jogo == "escolha", 120)
+
+
+## Solta um baú em cima do herói e espera abrir. `picks` = quantas melhorias o sorteio dá (1 ou 2); `forcar` = o número fixado no mapa (0 = sorteia).
+func abrir_bau(picks: int, forcar := 0) -> void:
+	var pesos: Array = [0, 0, 0]
+	pesos[picks - 1] = 1
+	w.combate.cartas.cfg.bau.n_pesos = pesos
+	w.combate.baus.soltar(w.heroi.pos + Vector2(8, 0), 1.0, forcar)
+	ate(func(): return w.combate.jogo != "jogando", 120)
 
 
 func lim() -> float:
@@ -236,26 +247,23 @@ func _testes() -> void:
 	ok(absf(lim() - (limite - 1.0)) < 0.1, "1 s depois da roleta faltam %.1f s (%.2f)" % [limite - 1.0, lim()])
 	t._automatico()
 
-	# 5. pular: clique, Enter, Espaço, E, A (ui_accept), botão A do controle
-	for modo in ["clique", "enter", "espaco", "ui_accept", "joy_a", "e"]:
+	# 5. pular: só o clique SOBRE as cartas, o Enter e o botão A do controle, e só depois de 0,3 s
+	ok(t.ROLETA_PULO_MIN == 0.3, "o pulo vale a partir de 0,3 s de roleta")
+	for modo in ["clique", "enter", "joy_a", "kp_enter"]:
 		zerar()
 		subir_nivel()
-		passos(12)  # 0,2 s
-		ok(t.roleta_ativa and t.espera_escolha > 0.5, "(%s) a roleta ainda gira com a trava correndo" % modo)
+		passos(20)  # 0,33 s
+		ok(t.roleta_ativa and t.roleta_t >= 0.3 and t.espera_escolha > 0.5, "(%s) a roleta ainda gira com a trava correndo" % modo)
 		esc0 = c.progresso.escolhidas
 		match modo:
 			"clique":
 				_clique(Vector2(480, 300))
 			"enter":
 				_toque(KEY_ENTER)
-			"espaco":
-				_toque(KEY_SPACE)
-			"ui_accept":
-				_acao("ui_accept")
+			"kp_enter":
+				_toque(KEY_KP_ENTER)
 			"joy_a":
 				_botao_joy(JOY_BUTTON_A)
-			"e":
-				_toque(KEY_E)
 		ok(not t.roleta_ativa, "(%s) pula a roleta" % modo)
 		ok(c.progresso.escolhidas == esc0 and c.jogo == "escolha", "(%s) pular não escolhe carta" % modo)
 		for i in 3:
@@ -271,6 +279,37 @@ func _testes() -> void:
 		ok(lim() < limite - 0.9 and lim() > limite - 1.3, "(%s) vencida a trava o limite corre (%.2f)" % [modo, lim()])
 		_toque(KEY_2)
 		ok(c.progresso.escolhidas == esc0 + 1 and c.jogo == "jogando", "(%s) e a carta 2 escolhe" % modo)
+
+	# 5b. o que NÃO pula: Espaço (esquiva), E (habilidade), o clique fora das cartas (ataque), a ação ui_accept solta e qualquer pulo antes de 0,3 s
+	for modo in ["espaco", "e", "ui_accept", "clique_fora", "enter_cedo", "clique_cedo", "joy_a_cedo"]:
+		zerar()
+		subir_nivel()
+		passos(8 if modo.ends_with("_cedo") else 20)
+		esc0 = c.progresso.escolhidas
+		match modo:
+			"espaco":
+				_toque(KEY_SPACE)
+			"e":
+				_toque(KEY_E)
+			"ui_accept":
+				_acao("ui_accept")
+			"clique_fora":
+				_clique(Vector2(30, 30))
+			"enter_cedo":
+				_toque(KEY_ENTER)
+			"clique_cedo":
+				_clique(Vector2(480, 300))
+			"joy_a_cedo":
+				_botao_joy(JOY_BUTTON_A)
+		ok(t.roleta_ativa and c.jogo == "escolha", "(%s) não pula a roleta" % modo)
+		ok(c.progresso.escolhidas == esc0, "(%s) e não escolhe nada" % modo)
+		passos(3)
+		ok(t.roleta_ativa, "(%s) a roleta segue girando" % modo)
+		if modo == "enter_cedo":
+			passos(14)
+			ok(t.roleta_t >= 0.3, "(enter_cedo) já passou de 0,3 s")
+			_toque(KEY_ENTER)
+			ok(not t.roleta_ativa, "(enter_cedo) o mesmo Enter, depois de 0,3 s, pula")
 
 	# 6. depois da trava, pular ainda acende as cartas e libera na hora
 	zerar()
@@ -355,6 +394,7 @@ func _testes() -> void:
 	# 10. rerrolar e banir não rolam
 	zerar()
 	subir_nivel()
+	passos(20)
 	_toque(KEY_ENTER)
 	ate(func(): return t.espera_escolha <= 0.0, 120)
 	passos(2)
@@ -379,7 +419,15 @@ func _testes() -> void:
 	ok(not t.roleta_ativa and t._cartas[2].visible, "roleta_s = 0 desliga a roleta")
 	t._automatico()
 	cs.cfg.escolha["roleta_s"] = roleta_s
-	ok(t.REDUZIR_ANIMACAO == false, "a constante REDUZIR_ANIMACAO existe e vem desligada")
+	ok(not t.animacao_reduzida(), "a opção de reduzir animações vem desligada")
+	if not Config.item(t.OPCAO_REDUZIR).is_empty():  # o #377 cria a opção "reduzir_animacoes": com ela ligada a roleta não roda
+		zerar()
+		Config.temporario(t.OPCAO_REDUZIR, true)
+		ok(t.animacao_reduzida(), "com a opção ligada animacao_reduzida() vale")
+		subir_nivel()
+		ok(not t.roleta_ativa and t._cartas[0].visible and t._cartas[2].visible, "e a roleta não roda")
+		t._automatico()
+		Config.temporario(t.OPCAO_REDUZIR, false)
 
 	# 12. com duas cartas só dois rolos giram, e a roleta também fecha em até 1,2 s
 	zerar()
@@ -394,6 +442,154 @@ func _testes() -> void:
 	t.esconder()
 	c.pausado = false
 	c.jogo = "jogando"
+
+	# 13. BAÚ COM ESCOLHA: 12 s (contra os 8 s do nível), 1 ou 2 melhorias para PEGAR entre 3 cartas raras, automático no fim
+	var pesos0: Array = bau.n_pesos.duplicate()
+	var lim_bau := float(bau.limite_s)
+	ok(lim_bau == 12.0 and lim_bau > limite, "o baú dá mais tempo para escolher que o nível: %.0f s contra %.0f s" % [lim_bau, limite])
+	# 13a. uma melhoria (n_pesos [1, 0, 0]): a escolha abre na tela do nível, com a roleta, 12 s e sem rerrolar nem banir
+	zerar()
+	abrir_bau(1)
+	ok(c.jogo == "escolha" and t.escolha_aberta and not t.bau_aberto, "o baú de 1 melhoria abre a escolha (não a roleta de revelação): %s" % c.jogo)
+	ok(c.progresso.bau_picks == 1 and t._escolha_do_bau() and t._titulo.text == "BAÚ!", "é a escolha do baú (%d a pegar)" % c.progresso.bau_picks)
+	var cand: Array = c.progresso.cartas.duplicate()
+	ok(cand.size() == 3, "com 3 cartas (%d)" % cand.size())
+	var todas_raras := true
+	for carta in cand:
+		todas_raras = todas_raras and int(carta.rar) >= int(bau.piso_raridade)
+	ok(todas_raras, "todas raras ou melhores (o piso do baú)")
+	ok(t.roleta_ativa, "a roleta das cartas gira também no baú")
+	ok(lim() == lim_bau and t._limite_total == lim_bau, "o limite abre com os 12 s do baú (%.2f)" % lim())
+	ok(not t._btn_r.visible and not t._btn_b.visible and t._btn_a.visible, "sem Rerrolar nem Banir, só o Automático")
+	ok(not c.progresso.rerrolar() and not c.progresso.banir(0), "e rerrolar e banir são recusados no código também")
+	var nivel0: int = c.progresso.pendentes
+	ok(c.baus.ultimas.is_empty(), "nenhuma carta foi aplicada antes de escolher")
+	var gasto_bau: int = ate(func(): return c.jogo != "escolha", 60 * 15)
+	ok(gasto_bau >= 60 * 13.2 - 4 and gasto_bau <= 60 * 13.2 + 6, "sem mexer, o baú escolhe sozinho em 1,2 + 12 s (%d quadros)" % gasto_bau)
+	var melhor: Dictionary = cand[0]
+	for carta in cand:
+		if int(carta.rar) > int(melhor.rar):
+			melhor = carta
+	ok(c.baus.ultimas.size() == 1 and c.baus.ultimas[0].id == melhor.id, "e pega a mais rara (%s)" % str(c.baus.ultimas.map(func(x): return x.id)))
+	ok(c.jogo == "jogando" and not c.pausado and c.progresso.bau_picks == 0 and not t.escolha_aberta, "o jogo volta")
+	ok(c.progresso.pendentes == nivel0, "sem mexer nos níveis pendentes")
+	# 13b. escolher à mão: pular a roleta, esperar a trava e apertar 3
+	zerar()
+	abrir_bau(1)
+	cand = c.progresso.cartas.duplicate()
+	passos(20)
+	_toque(KEY_ENTER)
+	ate(func(): return t.espera_escolha <= 0.0, 120)
+	passos(2)
+	_toque(KEY_3)
+	ok(c.jogo == "jogando" and c.baus.ultimas.size() == 1 and c.baus.ultimas[0].id == cand[2].id, "a tecla 3 pega a terceira carta do baú")
+	# 13c. duas melhorias: pega uma, as outras duas ficam na tela sem roleta e o limite recomeça com 12 s
+	zerar()
+	abrir_bau(2)
+	cand = c.progresso.cartas.duplicate()
+	ok(c.progresso.bau_picks == 2 and cand.size() == 3, "o baú de 2 melhorias abre com 3 cartas e 2 a pegar")
+	ok(t._texto_escolha() == "Escolha uma carta (faltam 2)", "a legenda diz quantas faltam (%s)" % t._texto_escolha())
+	passos(20)
+	_toque(KEY_ENTER)
+	ate(func(): return t.espera_escolha <= 0.0, 120)
+	passos(60 * 3)
+	ok(lim() < lim_bau - 2.5, "o limite do baú correu (%.2f)" % lim())
+	_toque(KEY_1)
+	ok(c.jogo == "escolha" and c.progresso.bau_picks == 1 and c.progresso.cartas.size() == 2, "pegou a primeira: sobram 2 cartas para 1 escolha")
+	ok(c.baus.ultimas.size() == 1 and c.baus.ultimas[0].id == cand[0].id, "a primeira pega é a carta 1")
+	ok(not t.roleta_ativa and t._titulo.text == "BAÚ!", "a segunda escolha não rola e segue sendo a do baú")
+	ok(lim() == lim_bau, "o limite recomeça cheio (%.2f)" % lim())
+	ok(not c.progresso.cartas.has(cand[0]), "a carta pega sai da tela")
+	ate(func(): return t.espera_escolha <= 0.0, 120)
+	passos(2)
+	_toque(KEY_2)
+	ok(
+		c.jogo == "jogando" and c.baus.ultimas.size() == 2 and c.baus.ultimas[0].id != c.baus.ultimas[1].id,
+		"a segunda pega fecha o baú com 2 cartas diferentes"
+	)
+	# 13d. o tempo acaba na primeira de duas: a mais rara das 3 e depois a mais rara das 2; o jogo volta
+	zerar()
+	abrir_bau(2)
+	var antes_auto: int = ate(func(): return c.progresso.bau_picks == 1, 60 * 15)
+	ok(antes_auto >= 60 * 13.2 - 4, "a primeira escolha automática só no fim dos 12 s (%d quadros)" % antes_auto)
+	ok(c.jogo == "escolha" and c.progresso.cartas.size() == 2, "e a segunda fica esperando")
+	ate(func(): return c.jogo != "escolha", 60 * 15)
+	ok(c.jogo == "jogando" and c.baus.ultimas.size() == 2, "a segunda também sai sozinha")
+	# 13e. Automático (botão) no baú também fica com a mais rara; "Pausar agora? Sim" perde o baú sem gastar nível
+	zerar()
+	abrir_bau(1)
+	cand = c.progresso.cartas.duplicate()
+	melhor = cand[0]
+	for carta in cand:
+		if int(carta.rar) > int(melhor.rar):
+			melhor = carta
+	passos(20)
+	_toque(KEY_ENTER)
+	ate(func(): return t.espera_escolha <= 0.0, 120)
+	passos(2)
+	t._automatico()
+	ok(c.baus.ultimas.size() == 1 and c.baus.ultimas[0].id == melhor.id, "o botão Automático do baú pega a mais rara")
+	zerar()
+	abrir_bau(1)
+	nivel0 = c.progresso.pendentes
+	passos(15)
+	_toque(KEY_ESCAPE)
+	ok(t.conf_aberta, "ESC no baú abre o 'Pausar agora?'")
+	_toque(KEY_LEFT)
+	_toque(KEY_ENTER)
+	ok(w.pausa.aberto and c.jogo == "jogando" and c.progresso.bau_picks == 0 and c.baus.ultimas.is_empty(), "Sim perde as cartas do baú")
+	ok(c.progresso.pendentes == nivel0, "e não gasta nenhum nível pendente")
+	# 13f. o que não tem escolha segue de graça com a roleta de revelação: número fixado no mapa (forcar)
+	zerar()
+	abrir_bau(1, 1)
+	ok(c.jogo == "bau" and t.bau_aberto and c.baus.ultimas.size() == 1, "baú com número fixado (forcar) dá de graça com a roleta de revelação")
+	c.baus.fechar()
+	bau.n_pesos = pesos0
+	zerar()
+	subir_nivel()
+	ok(
+		c.progresso.bau_picks == 0 and t._btn_r.visible and t._btn_b.visible and t._titulo.text.begins_with("NÍVEL"),
+		"a escolha de nível segue com Rerrolar e Banir"
+	)
+	ok(t._limite_total == limite, "e com os 8 s")
+	t._automatico()
+
+	# 14. o enfeite dos rolos usa o sorteador PRÓPRIO: o randi() global (semeado pelo playtest) não anda
+	zerar()
+	var c3: Array = cs.sortear(3, 3)
+	c.progresso.cartas = c3
+	c.jogo = "escolha"
+	c.pausado = true
+	seed(4242)
+	var sem_roleta: int = randi()
+	seed(4242)
+	t._rng_roleta.seed = 99
+	t.mostrar_escolha(c3, 3)
+	var ids_a: Array = []
+	for i in 3:
+		ids_a.append(t._rolo_seq[i].map(func(x): return "%s:%d" % [x.id, x.rar]))
+	var com_roleta: int = randi()
+	ok(sem_roleta == com_roleta, "montar os rolos não gasta nenhum sorteio do randi() global (%d e %d)" % [sem_roleta, com_roleta])
+	t.esconder()
+	t._rng_roleta.seed = 99
+	t.mostrar_escolha(c3, 3)
+	var ids_b: Array = []
+	for i in 3:
+		ids_b.append(t._rolo_seq[i].map(func(x): return "%s:%d" % [x.id, x.rar]))
+	ok(ids_a == ids_b, "e os mesmos rolos saem da mesma semente da roleta")
+	t.esconder()
+	t._rng_roleta.seed = 100
+	t.mostrar_escolha(c3, 3)
+	var ids_c: Array = []
+	for i in 3:
+		ids_c.append(t._rolo_seq[i].map(func(x): return "%s:%d" % [x.id, x.rar]))
+	ok(ids_a != ids_c, "e outra semente muda os rolos")
+	ok(t._faces_roleta.size() == cs.disponiveis().size(), "a lista de faces tem as cartas disponíveis, montada uma vez (%d)" % t._faces_roleta.size())
+	t.esconder()
+	c.pausado = false
+	c.jogo = "jogando"
+	passos(60)
+	ok(t._fila_icones.is_empty(), "os ícones das cartas foram carregados aos poucos enquanto se jogava")
 
 
 func _fotos(pasta: String) -> void:
@@ -412,6 +608,16 @@ func _fotos(pasta: String) -> void:
 	passos(45)
 	var tam = await w.ap.foto(pasta.path_join("roleta_%02d.png" % quadro))
 	print("FOTOS roleta %d quadros %s" % [quadro + 1, tam])
+	# o baú com escolha de 12 s: logo depois de abrir (rolos) e com as cartas e a barra de tempo já correndo
+	var pesos0: Array = w.combate.cartas.cfg.bau.n_pesos.duplicate()
+	zerar()
+	abrir_bau(1)
+	passos(18)
+	await w.ap.foto(pasta.path_join("bau_escolha_rolos.png"))
+	passos(150)  # roleta (1,2 s) e trava (1 s) já passaram; a barra dos 12 s está gastando
+	await w.ap.foto(pasta.path_join("bau_escolha.png"))
+	print("FOTOS bau limite %.1f de %.1f s" % [t.limite_t, t._limite_total])
+	w.combate.cartas.cfg.bau.n_pesos = pesos0
 
 
 func _ready() -> void:

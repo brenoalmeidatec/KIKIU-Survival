@@ -13,9 +13,11 @@ extends RefCounted
 ## ESC (ou Start) na escolha NÃO pausa direto: a pausa.gd chama intercepta_pausa() e abre "Pausar agora? Você perde estas cartas" (Não é o padrão); com
 ## ela aberta o tempo (trava e limite) fica parado. Sim descarta a rodada (nenhuma carta, sem reembolso) e abre a pausa; Não volta com o tempo que restava.
 ## ROLETA (#376): ao abrir a escolha de NÍVEL as cartas descem em rolos de caça-níquel e param uma a uma, da esquerda para a direita, em no máximo
-## `escolha.roleta_s` (1,2 s) de tempo real. Clique, Enter, Espaço, E ou A pulam para o fim. A trava corre junto com a roleta e o limite de 8 s só
+## `escolha.roleta_s` (1,2 s) de tempo real. Depois de 0,3 s, só o Enter, o A do controle e o clique SOBRE as cartas pulam para o fim (Espaço, E e o
+## clique fora são esquiva, habilidade e ataque do jogo e não pulam). A trava corre junto com a roleta e o limite de 8 s só
 ## começa quando TODAS pararam; ESC durante a roleta abre o "Pausar agora?" (o tempo dela fica parado). Rerrolar e banir não rolam, e o baú tem a sua
-## roleta de revelação. `roleta_ligada` = false (opção reduzir animação, REDUZIR_ANIMACAO; nos testes o mundo começa desligado) mostra as cartas direto.
+## roleta de revelação. `roleta_ligada` = false (nos testes o mundo começa desligado) e a opção de acessibilidade "reduzir animações" (animacao_reduzida())
+## mostram as cartas direto.
 ## Os anúncios grandes e a barra do chefe são do HUD (v2/hud_anuncios.gd e hud.gd), que escutam os sinais do mundo.
 
 const Paleta := preload("res://v2/paleta.gd")
@@ -41,7 +43,11 @@ const COR_TRAVA := Paleta.CARTA_APAGADA  # cartas apagadas na trava
 const PULSO_T := 0.2  # s da pulsada da contagem quando um clique ou tecla cai na trava
 const ACENDER_T := 0.35  # s do brilho quando as cartas liberam
 const LIMITE_Y := 118.0  # a barra do limite de tempo (largura das 3 cartas): num vão de 5 px entre o título e a legenda
-const REDUZIR_ANIMACAO := false  # o jogo ainda não tem a opção "reduzir animação" nos Ajustes: true desliga a roleta das cartas de nível
+const OPCAO_REDUZIR := "reduzir_animacoes"  # a opção de acessibilidade (scripts/hordas/config.gd; chega com o #377): ligada, a roleta não roda
+const ROLETA_PULO_MIN := 0.3  # s REAIS de roleta antes de o clique ou o Enter/A poderem pular (a câmera lenta do nível ainda deixa o jogador atacando)
+const AQUECER_POR_QUADRO := 2  # ícones de carta carregados por quadro enquanto se joga (para a roleta não achar nenhum frio)
+const AUTO_DICA := "Automático: o sistema completa a sua build, mas a carta vem de raridade menor."
+const AUTO_DICA_BAU := "Automático: o sistema fica com a carta mais rara que sobrou."
 const ROLETA_V := 1800.0  # px/s de velocidade alvo de cada rolo (cada um acerta a distância em cartas inteiras para parar alinhado)
 const ROLETA_FREIO := 0.3  # s do freio final de cada rolo (menos nos rolos curtos)
 const ROLETA_ESCURO := Color(0.7, 0.7, 0.78, 1.0)  # as cartas que passam girando ficam um pouco mais escuras que a que vale
@@ -62,7 +68,7 @@ var bau_pronto := false  # a roleta terminou de revelar tudo
 var espera_escolha := 0.0  # s REAIS até as cartas aceitarem clique ou tecla (0 = liberadas)
 var espera_bau := 0.0  # s REAIS até a roleta aceitar pular ou fechar (0 = liberada)
 var limite_t := 0.0  # s REAIS que faltam para o sistema escolher sozinho (só corre com as cartas liberadas; 0 também se o limite está desligado)
-var roleta_ligada := true  # false = sem roleta (reduzir animação; nos testes começa false, montar)
+var roleta_ligada := true  # false = sem roleta (nos testes começa false, montar; a opção do jogador é animacao_reduzida())
 var roleta_ativa := false  # os rolos das cartas de nível estão girando (a trava corre, o limite de 8 s não)
 var roleta_t := 0.0  # s REAIS desde que os rolos começaram a girar
 var roleta_total := 0.0  # a roleta desta rodada (dados: escolha.roleta_s)
@@ -87,6 +93,10 @@ var _rolo_parada: Array[float] = [0.0, 0.0, 0.0]  # em que s da roleta o rolo te
 var _rolo_freio: Array[float] = [0.0, 0.0, 0.0]
 var _rolo_feito: Array[bool] = [true, true, true]
 var _roleta_tique := 0.0
+var _rng_roleta := RandomNumberGenerator.new()  # só o enfeite dos rolos: o randi() global é semeado pelo playtest e não pode andar por causa dele
+var _faces_roleta: Array = []  # as faces de enfeite desta roleta (montadas uma vez em _iniciar_roleta)
+var _fila_icones: Array = []  # [id, ícone] das cartas ainda frias, aquecidas aos poucos em atualizar()
+var _fila_icones_pronta := false
 var _acender := 0.0  # s que faltam do brilho de liberação
 var _pulso := 0.0  # s que faltam da pulsada da contagem
 
@@ -142,7 +152,8 @@ func montar(c, sv: Node) -> void:
 	_fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fundo.visible = false
 	camada.add_child(_fundo)
-	roleta_ligada = not REDUZIR_ANIMACAO and not bool(mundo.modo_teste)  # os testes (cada um com o seu foco) nascem sem roleta; v2_roleta liga
+	roleta_ligada = not bool(mundo.modo_teste)  # os testes (cada um com o seu foco) nascem sem roleta; v2_roleta liga
+	_rng_roleta.randomize()
 	_montar_escolha()
 	_montar_bau()
 	_montar_resultado()
@@ -238,9 +249,7 @@ func _montar_escolha() -> void:
 	_btn_a_txt = _btn_a.get_node("t")
 	_btn_b_txt = _btn_b.get_node("t")
 	_btn_a.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))  # o do meio com a borda de ouro: é o atalho
-	_auto_dica = _rotulo(
-		"Automático: o sistema completa a sua build, mas a carta vem de raridade menor.", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER
-	)
+	_auto_dica = _rotulo(AUTO_DICA, TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
 	_auto_dica.position = Vector2(20, 496)
 	_auto_dica.size = Vector2(LARG - 40, 20)
 	_auto_dica.clip_text = true
@@ -484,7 +493,11 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 		_encerrar_roleta()  # cartas novas (rerrolar ou banir): sem roleta, os rolos que sobraram somem
 	_fundo.visible = true
 	_escolha.visible = true
-	_titulo.text = "NÍVEL %d" % nivel
+	var do_bau := _escolha_do_bau()
+	_titulo.text = "BAÚ!" if do_bau else "NÍVEL %d" % nivel
+	_btn_r.visible = not do_bau  # o baú não rerrola nem bane: a raridade dele não passaria pelo sorteio do baú
+	_btn_b.visible = not do_bau
+	_auto_dica.text = AUTO_DICA_BAU if do_bau else AUTO_DICA
 	var maxn := cartas.size()
 	sel = clampi(sel, 0, maxi(maxn - 1, 0))
 	for i in 3:
@@ -499,7 +512,7 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	var ec: Dictionary = combate.cartas.cfg.escolha
 	_espera_total = float(ec.rerrolar_espera_s) if refresh else float(ec.espera_s)
 	espera_escolha = _espera_total
-	_limite_total = maxf(float(ec.get("limite_s", 0.0)), 0.0)
+	_limite_total = _limite_da_escolha(do_bau)
 	limite_t = _limite_total  # só começa a correr quando a trava acaba
 	_fechar_conf()
 	_acender = 0.0
@@ -514,6 +527,23 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	_aquecer_invocacoes(cartas)
 	if not roleta_ativa:  # com a roleta o som da raridade fica para o rolo que para
 		combate.audio.tocar("carta", 1.0 + 0.12 * float(_rar_max(cartas)), 0.0, 0.0)
+
+
+## A escolha aberta é a do baú (progresso.abrir_escolha_bau), não a de nível.
+func _escolha_do_bau() -> bool:
+	return combate.progresso.bau_picks > 0
+
+
+## O limite de tempo desta escolha: o do baú (dados: bau.limite_s, 12 s) ou o da carta de nível (escolha.limite_s, 8 s). 0 = sem limite.
+func _limite_da_escolha(do_bau: bool) -> float:
+	var cfg: Dictionary = combate.cartas.cfg
+	return maxf(float(cfg.bau.get("limite_s", 0.0)) if do_bau else float(cfg.escolha.get("limite_s", 0.0)), 0.0)
+
+
+## A legenda da escolha. No baú com mais de uma melhoria a pegar, diz quantas faltam.
+func _texto_escolha() -> String:
+	var faltam: int = combate.progresso.bau_picks
+	return "Escolha uma carta (faltam %d)" % faltam if faltam > 1 else "Escolha uma carta"
 
 
 ## As folhas das invocações que podem nascer quando a tela fechar: as que o herói já tem (no baú as cartas e a fusão já entraram), as das
@@ -673,8 +703,8 @@ func _girar_slot(i: int) -> void:
 	# um sorteio qualquer de nome e raridade, só para parecer uma roleta (não muda nada do jogo)
 	var cs = combate.cartas
 	var todas: Array = cs.disponiveis()
-	var d: Dictionary = todas[randi() % todas.size()] if not todas.is_empty() else {"nome": "?"}
-	var r: int = randi() % cs.rar.size()
+	var d: Dictionary = todas[_rng_roleta.randi() % todas.size()] if not todas.is_empty() else {"nome": "?"}
+	var r: int = _rng_roleta.randi() % cs.rar.size()
 	var cor: Color = Paleta.RARIDADES[r]
 	var p := _bau_slots[i]
 	var nome_girando := p.get_node("nome") as Label
@@ -760,6 +790,8 @@ func _pular_bau() -> void:
 
 func atualizar(dt: float) -> void:
 	_t_ui += dt
+	if not _fila_icones_pronta or not _fila_icones.is_empty():
+		_aquecer_icones()
 	if resultado_aberto:
 		mostrada_t += dt
 		_res_dica.visible = int(mostrada_t * 2.0) % 2 == 0 or mostrada_t < 0.6
@@ -869,7 +901,7 @@ func _quadro_limite() -> void:
 	var corre := espera_escolha <= 0.0 and not roleta_ativa  # o limite só corre com a trava vencida E todos os rolos parados
 	_limite_barra.color = Paleta.PERIGO if corre and limite_t <= urgente else Paleta.OURO
 	if corre:
-		var txt := "Escolha uma carta  ·  automático em %d s" % ceili(limite_t)
+		var txt := "%s  ·  automático em %d s" % [_texto_escolha(), ceili(limite_t)]
 		if _sub.text != txt:
 			_sub.text = txt
 		_sub.add_theme_color_override("font_color", Paleta.PERIGO if limite_t <= urgente else Paleta.TEXTO_SECUNDARIO)
@@ -1027,7 +1059,7 @@ func _liberar_cartas() -> void:
 	espera_escolha = 0.0
 	_pulso = 0.0
 	_acender = ACENDER_T
-	_sub.text = "Escolha uma carta"
+	_sub.text = _texto_escolha()
 	_sub.add_theme_font_override("font", _fonte)
 	_sub.add_theme_font_size_override("font_size", TAM_TEXTO)
 	_sub.add_theme_color_override("font_color", Paleta.TEXTO_SECUNDARIO)
@@ -1069,11 +1101,37 @@ func _montar_rolos() -> void:
 		_rolo_seq.append([])
 
 
-## Uma carta de enfeite para os rolos: nome e ícone de uma carta qualquer numa raridade qualquer (sorteio visual, não mexe no jogo).
+## A opção "Reduzir animações" do jogador (Acessibilidade). Enquanto ela não existe em Config.ITENS (chega com o #377) vale false; depois que
+## existir, a roleta passa a respeitá-la sem mudar nada aqui.
+static func animacao_reduzida() -> bool:
+	return not Config.item(OPCAO_REDUZIR).is_empty() and bool(Config.v(OPCAO_REDUZIR))
+
+
+## As faces de enfeite dos rolos, montadas UMA vez por roleta: id, ícone e nome das cartas disponíveis (a raridade é sorteada na hora).
+func _montar_faces_roleta() -> void:
+	_faces_roleta.clear()
+	for d in combate.cartas.disponiveis():
+		_faces_roleta.append({"id": str(d.id), "icone": str(d.get("icone", "")), "nome": str(d.nome)})
+	if _faces_roleta.is_empty():
+		_faces_roleta.append({"id": "", "icone": "", "nome": "?"})
+
+
+## Uma carta de enfeite para os rolos: nome e ícone de uma das faces da roleta numa raridade qualquer (sorteio visual, não mexe no jogo).
 func _face_falsa() -> Dictionary:
-	var todas: Array = combate.cartas.disponiveis()
-	var d: Dictionary = todas[randi() % todas.size()] if not todas.is_empty() else {"id": "", "nome": "?", "icone": ""}
-	return {"id": str(d.id), "icone": str(d.get("icone", "")), "nome": str(d.nome), "desc": "", "rar": randi() % Paleta.RARIDADES.size(), "rar_nome": ""}
+	var f: Dictionary = _faces_roleta[_rng_roleta.randi() % _faces_roleta.size()]
+	return {"id": f.id, "icone": f.icone, "nome": f.nome, "desc": "", "rar": _rng_roleta.randi() % Paleta.RARIDADES.size(), "rar_nome": ""}
+
+
+## Carrega os ícones das cartas aos poucos (AQUECER_POR_QUADRO por quadro, em atualizar) para os rolos não acharem nenhum frio: o primeiro
+## quadro da roleta, com os ícones lidos do disco, chegou a 7-31 ms. Dados.icone_carta guarda o resultado.
+func _aquecer_icones() -> void:
+	if not _fila_icones_pronta:
+		_fila_icones_pronta = true
+		for d in combate.cartas.disponiveis():
+			_fila_icones.append([str(d.id), str(d.get("icone", ""))])
+	for k in mini(AQUECER_POR_QUADRO, _fila_icones.size()):
+		var par: Array = _fila_icones.pop_back()
+		Dados.icone_carta(par[0], par[1])
 
 
 func _pintar_face(i: int, k: int, c: Dictionary, falsa: bool) -> void:
@@ -1094,8 +1152,9 @@ func _pintar_face(i: int, k: int, c: Dictionary, falsa: bool) -> void:
 ## Começa a roleta: cada rolo gira e para no s `total * (i + 1) / n` (esquerda para a direita, o último em `total`). `total` 0 desliga.
 func _iniciar_roleta(cartas: Array, total: float) -> void:
 	var n := mini(cartas.size(), 3)
-	if not roleta_ligada or total <= 0.0 or n <= 0:
+	if not roleta_ligada or animacao_reduzida() or total <= 0.0 or n <= 0:
 		return
+	_montar_faces_roleta()
 	roleta_ativa = true
 	roleta_t = 0.0
 	roleta_total = total
@@ -1213,21 +1272,28 @@ func _encerrar_roleta() -> void:
 		_rolo_feito[i] = true
 
 
-## Entrada durante os rolos: clique, Enter, Espaço, E e A pulam para o fim; ESC e Start passam (são da pausa, que abre o "Pausar agora?");
-## o resto é engolido para não virar golpe nem escolha.
+## Pular a roleta só vale depois de ROLETA_PULO_MIN s de rolos: a câmera lenta do nível dura 0,4 s com o jogador ainda atacando, e um aperto
+## reflexo logo ao abrir não pode matar a animação.
+func _pode_pular_roleta() -> bool:
+	return roleta_t >= ROLETA_PULO_MIN
+
+
+## Entrada durante os rolos. Pulam para o fim SÓ o Enter, o A do controle (confirmar) e o clique do mouse SOBRE as cartas; Espaço, E e o clique
+## fora delas são esquiva, habilidade e ataque do jogo e não pulam. ESC e Start passam (são da pausa, que abre o "Pausar agora?"); o resto é
+## engolido para não virar golpe nem escolha.
 func _entrada_roleta(e: InputEvent) -> bool:
 	if e is InputEventMouseMotion:
 		return true
 	if e is InputEventMouseButton:
 		if not e.pressed:
 			return false
-		if e.button_index == MOUSE_BUTTON_LEFT:
+		if e.button_index == MOUSE_BUTTON_LEFT and _pode_pular_roleta() and _rolo_sob_mouse() >= 0:
 			_pular_roleta()
 		return true
 	if e is InputEventKey:
 		if not e.pressed or e.keycode == KEY_ESCAPE:
 			return false
-		if not e.echo and e.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E]:
+		if not e.echo and e.keycode in [KEY_ENTER, KEY_KP_ENTER] and _pode_pular_roleta():
 			_pular_roleta()
 		return true
 	if e is InputEventJoypadMotion:
@@ -1235,13 +1301,19 @@ func _entrada_roleta(e: InputEvent) -> bool:
 	if e is InputEventJoypadButton:
 		if not e.pressed or e.button_index == JOY_BUTTON_START:
 			return false
-		if e.button_index == JOY_BUTTON_A:
+		if e.button_index == JOY_BUTTON_A and _pode_pular_roleta():
 			_pular_roleta()
 		return true
-	if e.is_action_pressed("ui_accept"):
-		_pular_roleta()
-		return true
 	return false
+
+
+## O rolo (a carta) sob o mouse, ou -1. Usa a janela do rolo, que fica parada (a carta marcada sobe 8 px).
+func _rolo_sob_mouse() -> int:
+	var m := _mouse()
+	for i in mini(combate.progresso.cartas.size(), 3):
+		if Rect2(_rolos[i].position, _rolos[i].size).grow(6.0).has_point(m):
+			return i
+	return -1
 
 
 ## Entrada das telas. Devolve true se o evento foi usado (escolha de carta, baú, jogar de novo, F1).
@@ -1268,9 +1340,9 @@ func _carta_sob_mouse() -> int:
 
 func _botao_sob_mouse() -> String:
 	var m := _mouse()
-	if Rect2(_btn_r.position, _btn_r.size).has_point(m):
+	if _btn_r.visible and Rect2(_btn_r.position, _btn_r.size).has_point(m):
 		return "r"
-	if Rect2(_btn_b.position, _btn_b.size).has_point(m):
+	if _btn_b.visible and Rect2(_btn_b.position, _btn_b.size).has_point(m):
 		return "b"
 	if Rect2(_btn_a.position, _btn_a.size).has_point(m):
 		return "a"

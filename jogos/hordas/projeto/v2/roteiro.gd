@@ -279,7 +279,7 @@ func _combate() -> void:
 			passo = 5
 			t_passo = 0.0
 		5:
-			if c.jogo == "escolha" and t_passo > 0.35:
+			if c.jogo == "escolha" and t_passo > 0.35 and not c.telas.roleta_ativa:  # espera os rolos da roleta pararem
 				_foto("04_nivel")
 				passo = 6
 				t_passo = 0.0
