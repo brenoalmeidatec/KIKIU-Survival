@@ -95,6 +95,7 @@ func _dados() -> void:
 
 ## Põe uma partida de verdade no mapa, mata o chefão e devolve o mundo já com o resultado aberto.
 func _partida_ate_resultado(mapa: String):
+	await _assentar()
 	Meta.caminho_save = caminho
 	var tree := get_tree()
 	var w = Mundo.instantiate()
@@ -130,6 +131,7 @@ func _continuar(w) -> void:
 	ok(res._saindo, "CONTINUAR no resultado aceitou a entrada")
 	await get_tree().process_frame
 	await get_tree().process_frame
+	await _assentar()
 
 
 func _fluxo_final() -> void:
@@ -199,6 +201,7 @@ func _cena() -> Control:
 
 func _cena_pular() -> void:
 	var tree := get_tree()
+	await _assentar()
 	# Enter: vitória -> créditos -> menu
 	var c := _cena()
 	c._process(1.0)
@@ -331,3 +334,10 @@ func _pad(botao: JoyButton) -> void:
 		e.pressed = pressionado
 		Input.parse_input_event(e)
 		Input.flush_buffered_events()
+
+
+## Espera o fim do fade da troca de cena (#377): enquanto a foto da tela antiga está na tela a entrada da janela é descartada.
+func _assentar() -> void:
+	var t0 := Time.get_ticks_msec()
+	while Transicoes.ativa() and Time.get_ticks_msec() - t0 < 6000:
+		await get_tree().process_frame
