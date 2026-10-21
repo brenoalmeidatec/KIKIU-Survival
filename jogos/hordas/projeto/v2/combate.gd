@@ -843,6 +843,7 @@ func fim_de_partida(ganhou: bool) -> void:
 		"almas": mundo.almas_partida,
 		"mapa": str(mundo.id_mapa),
 		"nivel_mapa": diretor.nivel,
+		"dificuldade": str(preload("res://v2/dificuldade.gd").da_partida(mundo).id),
 		"niveis_mapa": diretor.niveis_total
 	}
 	if ganhou:

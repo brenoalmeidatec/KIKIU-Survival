@@ -7,6 +7,7 @@ extends RefCounted
 ## chefe, faz nascer o mini-chefe (ou o CHEFÃO, no último) e TRAVA até ele morrer. Vencer o chefão é a vitória e o fim do mapa.
 
 const Colisao := preload("res://v2/colisao.gd")
+const Dificuldade := preload("res://v2/dificuldade.gd")
 
 var combate
 var mundo
@@ -58,7 +59,7 @@ func zerar() -> void:
 	acum = 0.0
 	ondas = 0
 	nascidos = 0
-	proxima_onda = float(cfg.onda_cada)
+	proxima_onda = intervalo_onda()
 	rng.seed = 7777
 	nivel = 1
 	t_nivel = 0.0
@@ -66,7 +67,20 @@ func zerar() -> void:
 
 ## Segundos de cada nível nesta partida (o Pesadelo encurta, trazendo os chefes mais cedo).
 func seg_nivel() -> float:
-	return maxf(duracao_nivel * mundo.fator_pesadelo("chefe_tempo_mult"), 0.01)
+	return maxf(duracao_nivel * mundo.fator_pesadelo("chefe_tempo_mult") * dificuldade("chefe_tempo_mult"), 0.01)
+
+
+## Ponto único de leitura das regras para o diretor e o relógio de elites.
+func dificuldade(chave: String) -> float:
+	return Dificuldade.fator(mundo, chave)
+
+
+func intervalo_onda() -> float:
+	return float(cfg.onda_cada) * dificuldade("onda_tempo_mult")
+
+
+func intervalo_elite(base: float) -> float:
+	return base * dificuldade("elite_tempo_mult")
 
 
 ## O chefe do nível `n` ({nivel, mk}) ou {} se o nível não tem chefe.
@@ -130,16 +144,26 @@ func fracao_mapa() -> float:
 
 ## Taxa de nascimento (monstros/s) e teto de vivos no instante `t` da partida: sobem em linha reta até tempo_taxa/tempo_cap.
 func taxa(t: float) -> float:
-	return lerpf(float(cfg.taxa_ini), float(cfg.taxa_fim), clampf(t / float(cfg.tempo_taxa), 0.0, 1.0)) * mundo.fator_pesadelo("densidade_mult")
+	return (
+		lerpf(float(cfg.taxa_ini), float(cfg.taxa_fim), clampf(t / float(cfg.tempo_taxa), 0.0, 1.0))
+		* mundo.fator_pesadelo("densidade_mult")
+		* dificuldade("densidade_mult")
+	)
 
 
 ## O máximo de monstros vivos de uma vez (o teto dos dados; no Pesadelo sobe com a densidade).
 func teto() -> int:
-	return roundi(float(cfg.teto) * mundo.fator_pesadelo("densidade_mult"))
+	return roundi(float(cfg.teto) * mundo.fator_pesadelo("densidade_mult") * dificuldade("densidade_mult"))
 
 
 func limite(t: float) -> int:
-	return roundi(lerpf(float(cfg.cap_ini), float(cfg.cap_fim), clampf(t / float(cfg.tempo_cap), 0.0, 1.0)) * mundo.fator_pesadelo("densidade_mult"))
+	return roundi(
+		(
+			lerpf(float(cfg.cap_ini), float(cfg.cap_fim), clampf(t / float(cfg.tempo_cap), 0.0, 1.0))
+			* mundo.fator_pesadelo("densidade_mult")
+			* dificuldade("densidade_mult")
+		)
+	)
 
 
 func atualizar(dt: float) -> void:
@@ -148,7 +172,7 @@ func atualizar(dt: float) -> void:
 	var t: float = mundo.tempo_partida
 	if t >= proxima_onda:
 		onda_forte()
-		proxima_onda += float(cfg.onda_cada)
+		proxima_onda += intervalo_onda()
 	var folga: float = 0.4 if combate.chefes.vivo else 1.0  # com chefe em campo a horda dá uma folga
 	acum += taxa(t) * dt * folga
 	if acum < 1.0:
@@ -235,7 +259,7 @@ func onda_forte() -> void:
 	var t: float = mundo.tempo_partida
 	var elite := int(cfg.onda_elite) * ondas
 	var folga: int = teto() - mundo.monstros.size()
-	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult")) + elite, maxi(folga, 0))
+	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult") * dificuldade("densidade_mult")) + elite, maxi(folga, 0))
 	for i in n:
 		var nome := "inimigo_cavaleiro_oco" if i < elite else sortear(t)
 		nascer(nome)

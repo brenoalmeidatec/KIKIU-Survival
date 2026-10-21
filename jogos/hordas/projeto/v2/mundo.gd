@@ -308,6 +308,8 @@ func _montar() -> void:
 	oclusao = Oclusao.new().montar(sv, heroi)
 	combate.iniciar_heroi()
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
+	combate.diretor.zerar()  # os primeiros relógios também usam a dificuldade recém-lida
+	combate.elites.zerar()
 	horda = Horda.new()
 	horda.montar(self)
 	braseiros = Braseiros.new()
@@ -645,6 +647,9 @@ func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k
 		mo = lista.pop_back()
 	mo.aplicar_stats(combate.cfg.monstros[nome], k_vida * fator_pesadelo("vida_mult"), k_dano * fator_pesadelo("dano_mult"))
 	mo.cacador = cacador
+	var dif := preload("res://v2/dificuldade.gd").da_partida(self)
+	mo.vel_caca *= float(dif.vel_mult)
+	mo.xp *= float(dif.xp_mult)
 	mo.raio_vaga = 90.0
 	mo.reviver(p)
 	monstros.append(mo)
@@ -983,6 +988,8 @@ func reiniciar() -> void:
 	heroi.resetar(Vector2(float(c[0]), float(c[1])))
 	combate.iniciar_heroi()
 	Meta.aplicar(self)
+	combate.diretor.zerar()
+	combate.elites.zerar()
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_popular_inicial()
 	if is_instance_valid(minimapa):

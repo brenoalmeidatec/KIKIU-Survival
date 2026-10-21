@@ -10,6 +10,7 @@ extends RefCounted
 ## Mapa vencido é a conquista vence_<id>; a seção antiga [mapas_vencidos] é migrada na leitura e não volta a ser gravada.
 
 const VERSAO_PROGRESSAO := 2
+const Dificuldade := preload("res://v2/dificuldade.gd")
 
 static var caminho_save := "user://v2_progresso.cfg"
 static var erro_save := false
@@ -36,7 +37,22 @@ static func melhorias() -> Array:
 
 
 static func conquistas() -> Array:
-	return catalogo().get("conquistas", [])
+	return catalogo().get("conquistas", []) + Dados.json("v2_dificuldade").get("conquistas", [])
+
+
+static func dificuldade() -> String:
+	var cf := _ler()
+	return Dificuldade.normalizar(str(cf.get_value("config", "dificuldade", "facil"))) if cf != null else "facil"
+
+
+static func escolher_dificuldade(id: String) -> bool:
+	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return false
+	cf.set_value("config", "dificuldade", Dificuldade.normalizar(id))
+	erro_save = not _gravar(cf)
+	return not erro_save
 
 
 static func melhoria(id: String) -> Dictionary:
@@ -327,6 +343,7 @@ static func _cumprida(c: Dictionary, r: Dictionary) -> bool:
 			return (
 				bool(r.get("venceu", false))
 				and (not c.has("mapa") or str(r.get("mapa", "")) == str(c.mapa))
+				and (not c.has("dificuldade") or (r.has("dificuldade") and Dificuldade.normalizar(str(r.dificuldade)) == str(c.dificuldade)))
 				and (not bool(c.get("pesadelo", false)) or bool(r.get("pesadelo", false)))
 			)
 	return false
@@ -425,6 +442,8 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	var bruto := int(r.get("almas", 0))
 	var pesadelo := bool(r.get("pesadelo", false))
 	var mult := float(regras_pesadelo().get("almas_mult", 1.0)) if pesadelo else 1.0
+	var dif := Dificuldade.regras(str(r.get("dificuldade", "facil")))
+	mult *= float(dif.almas_mult)
 	var ganhas := almas_creditadas(bruto, _bonus("almas", cf), mult)
 	cf.set_value("moeda", "almas", antes + ganhas)
 	var novas := _conquistar(cf, r)
@@ -439,6 +458,9 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
 	cf.set_value("ultima", "pesadelo", pesadelo)
+	cf.set_value("ultima", "dificuldade", str(dif.id) if r.has("dificuldade") else "")
+	if r.has("dificuldade") and bool(r.get("venceu", false)) and str(r.get("mapa", "")) != "":
+		cf.set_value("dificuldades_vencidas", "%s_%s" % [str(r.mapa), str(dif.id)], true)
 	cf.set_value("recordes", "tempo", maxf(float(cf.get_value("recordes", "tempo", 0.0)), float(r.get("tempo", 0.0))))
 	cf.set_value("recordes", "combo", maxi(int(cf.get_value("recordes", "combo", 0)), int(r.get("maior_combo", 0))))
 	if r.has("mapa"):
@@ -482,6 +504,8 @@ static func texto_proximo(m: Dictionary, n: int) -> String:
 ## bônus), então chamar de novo não soma em cima. Os bônus de raridade, rolagem e almas (e as regras do Pesadelo, se ligado) ficam em mundo.meta_bonus; o Rastro de katana troca mundo.combate.fx.variante.
 static func aplicar(mundo) -> void:
 	var cf := _ler()
+	var dif := Dificuldade.regras(str(mundo.args.get("dificuldade", dificuldade())))
+	mundo.meta_bonus["dificuldade"] = dif
 	if cf == null:
 		return
 	var h = mundo.heroi
@@ -494,7 +518,12 @@ static func aplicar(mundo) -> void:
 	h.m_vel_mov = 1.0 + _bonus("velocidade", cf)
 	h.m_ima = 1.0 + _bonus("ima", cf)
 	h.m_vel_ataque = 1.0 + _bonus("treino", cf)
-	mundo.meta_bonus = {"raridade": _bonus("raridade", cf), "rolagem": int(_total("rolagem", cf)), "almas": _bonus("almas", cf)}
+	mundo.meta_bonus = {
+		"raridade": _bonus("raridade", cf),
+		"rolagem": int(_total("rolagem", cf)),
+		"almas": (1.0 + _bonus("almas", cf)) * float(dif.almas_mult) - 1.0,
+		"dificuldade": dif
+	}
 	if ligado("modo", "pesadelo"):
 		mundo.meta_bonus["pesadelo"] = regras_pesadelo()  # as regras do modo; sem a chave a partida é normal (mundo.fator_pesadelo)
 	if mundo.combate != null and mundo.combate.fx != null:  # visual do santuário: a folha do corte da katana (só cosmético, o dano é o mesmo)
