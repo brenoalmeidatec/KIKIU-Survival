@@ -11,6 +11,7 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Hud := preload("res://v2/hud.gd")
 const StatusHud := preload("res://v2/status.gd")
+const Herois := preload("res://v2/herois.gd")
 const PASSO := 1.0 / 60.0
 const ZONA_MINIMAPA := Rect2(800, 0, 160, 130)  # canto superior direito: o minimapa (de outro agente)
 
@@ -145,6 +146,25 @@ func _testes() -> void:
 		preload("res://v2/minimapa.gd").MARGEM_TELA == 6 and retrato_q.position == Vector2(6, 540 - 6 - retrato_q.size.y),
 		"minimapa e retrato com a mesma margem de 6 px (o retrato %s)" % retrato_q.position
 	)
+	# o retrato de cada herói cabe na caixa de 90x108: o Nicão (quadro 64x96 com vazio em volta) sai recortado no corpo, em escala inteira e centrado
+	for id in ["hazaki", "nicao", "lucas"]:
+		Herois.forcado = id
+		var h2 = Hud.criar(falso)
+		vista.add_child(h2)
+		var caixa: Control = h2.get_node("Raiz/Retrato")
+		var img: TextureRect = h2.get_node("Raiz/Retrato/Heroi")
+		var rect := Rect2(img.position, img.size)
+		ok(img.texture != null and Rect2(Vector2.ZERO, caixa.size).encloses(rect), "retrato de %s cabe na caixa do HUD (%s em %s)" % [id, rect, caixa.size])
+		ok(img.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "retrato de %s sem suavizar" % id)
+		if id == "nicao":
+			var reg: Rect2 = (img.texture as AtlasTexture).region
+			ok(reg.size.x < 64.0 and reg.size.y < 96.0 and reg.size.x * 2.0 == img.size.x, "retrato do Nicão: recorte do corpo em 2x (%s)" % reg)
+			ok(
+				absf(rect.get_center().x - caixa.size.x / 2.0) <= 1.0 and absf(rect.get_center().y - caixa.size.y / 2.0) <= 1.0,
+				"retrato do Nicão centrado na caixa"
+			)
+		h2.queue_free()
+	Herois.forcado = ""
 	# estilo Overwatch: a vida e o fôlego à direita do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
 	var barras_q: Control = hud.get_node("Raiz/MolduraBarras")
 	var folego_q: Control = hud.get_node("Raiz/Folego")

@@ -1,12 +1,10 @@
 extends Control
-## Prints do Nicão (folha do Blender) no Salão da v2, em 960x540. Não roda no CI (fica em testes/fotos/). O Salão (v2/salao.gd) desenha SEMPRE o Hazaki
-## (a constante SPRITE dele); este QA só troca a textura do herói pela folha do Nicão (a do jogo, prototipos/cara_nova/sprites/nicao) para ver como ele
-## fica na cena. O jogo não muda. Usa um personagem isolado (user://qa_nicao_*), sem tocar nos saves reais.
+## Prints do Nicão (folha do Blender) no Salão da v2, em 960x540. Não roda no CI (fica em testes/fotos/). O Salão (v2/salao.gd) desenha a folha do herói
+## do personagem ativo (Herois.sprite); aqui o ativo joga o Nicão. Usa um personagem isolado (user://qa_nicao_*), sem tocar nos saves reais.
 ## Uso (janela oculta): godot --path jogos/hordas/projeto res://testes/fotos/nicao_salao_fotos.tscn -- --fotos=PASTA
 ## Grava salao_parado.png (coluna 0, de frente), salao_andando.png (andar3, direita) e salao_andando_baixo.png (andar1, de frente).
 const Personagens = preload("res://v2/personagens.gd")
 const Meta = preload("res://v2/meta.gd")
-const FOLHA := "res://prototipos/cara_nova/sprites/nicao"
 var pasta := "user://nicao_salao"
 
 
@@ -14,21 +12,18 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--fotos="):
 			pasta = a.trim_prefix("--fotos=")
+	Config.temporario("pausar_fora", false)  # a janela fora da tela perde o foco: a pausa abriria sobre os prints
 	DirAccess.make_dir_recursive_absolute(pasta)
 	var prefixo := "qa_nicao_%d_" % Time.get_ticks_usec()
 	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
 	Personagens.caminho_base = "user://" + prefixo + "p"
 	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
 	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
-	Personagens.ativar(Personagens.criar("Nicão"))
+	Personagens.ativar(Personagens.criar("Nicão", "nicao"))
 	DisplayServer.window_set_size(Vector2i(960, 540))
 	var s = load("res://v2/salao.tscn").instantiate()
 	add_child(s)
 	await get_tree().process_frame
-	s._sprite = load(FOLHA + "_albedo.png") as Texture2D
-	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FOLHA + ".json"))
-	s._quadro_w = int(info.quadro[0])
-	s._quadro_h = int(info.quadro[1])
 	s.set_process(false)
 	s.set_process_input(false)
 	s.set_process_unhandled_input(false)

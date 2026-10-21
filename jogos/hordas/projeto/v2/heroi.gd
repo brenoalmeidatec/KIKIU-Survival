@@ -147,6 +147,9 @@ var hab_dur := 1.0  # a duração da E em andamento
 var hab_invul := false  # invulnerável enquanto dura (lido por vulneravel)
 var hab_anim_passo := 0  # o passo do combo cuja animação toca na E
 var hab_anim_ciclos := 1.0  # quantas vezes ela toca durante a duração
+var hab_anim_antes := ""  # animação da folha ("animacoes", ex.: "escudo") que toca no começo da E, antes do passo do combo (vazio = só o passo)
+var hab_anim_antes_ate := 0.0  # até que fração da duração ela vale; o passo do combo ocupa o resto
+var hab_anim_quadros: Array = []  # quais quadros do passo tocam nesse resto (vazio = o passo inteiro)
 var hab_disparos := 0  # testes
 var hab_negados := 0  # testes
 # ruptura (tecla E)
@@ -1103,7 +1106,15 @@ func _coluna_acao(dt: float) -> int:
 	if estado == Estado.HABILIDADE and _tem_anim("combo"):  # a E toca um passo do combo (hab_anim_passo), repetido hab_anim_ciclos vezes
 		var por_golpe_h := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo_h := mini(hab_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
-		var p_h := fposmod(hab_t / maxf(hab_dur, 0.001) * hab_anim_ciclos, 0.999)
+		var k_h := hab_t / maxf(hab_dur, 0.001)
+		var de_h := 0.0
+		if hab_anim_antes != "" and _tem_anim(hab_anim_antes):  # a pose própria da E primeiro (Nicão: a marreta de través, de escudo), depois o golpe
+			if k_h < hab_anim_antes_ate:
+				return _coluna_por_tempo(hab_anim_antes, hab_t)
+			de_h = hab_anim_antes_ate
+		var p_h := fposmod((k_h - de_h) / maxf(1.0 - de_h, 0.001) * hab_anim_ciclos, 0.999)
+		if not hab_anim_quadros.is_empty():
+			return _coluna_anim("combo", passo_h * por_golpe_h + int(hab_anim_quadros[int(p_h * hab_anim_quadros.size())]))
 		return _coluna_anim("combo", passo_h * por_golpe_h + int(p_h * por_golpe_h))
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)

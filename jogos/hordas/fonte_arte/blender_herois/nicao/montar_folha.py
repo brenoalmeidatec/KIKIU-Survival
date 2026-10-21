@@ -94,6 +94,7 @@ def main():
         "elevacao": 45.0,
         "ppu": 24.5,
         "pe_y": PE_Y,
+        "retrato": {"regiao": [10, 34, 38, 42], "escala": 2},  # recorte do quadro parado de frente (linha baixo) que o HUD mostra, sem o vazio em volta
         "linhas": DIRECOES,
         "colunas": ["parado"] + ["andar%d" % i for i in range(6)],
         "render": "Cycles, pixel nativo 64x96 (anao ~40 px), 1 amostra, sem bloom (gerar.py, 8 direcoes, cor e normal)",

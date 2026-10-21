@@ -437,7 +437,46 @@ func _t_nicao_animacoes() -> void:
 	ate(func(): return h.coluna == int(cm[5]), 1200)
 	ok(h.coluna == int(cm[5]), "morte: trava no último quadro, deitado (coluna %d)" % h.coluna)
 	ok(is_zero_approx(h.sprite.rotation), "morte: o sprite não gira 90 graus (rotação %.2f)" % h.sprite.rotation)
+	_t_nicao_e_q(cc, ce)
 	w.reiniciar()
+
+
+## E (investida) e Q (terremoto) do Nicão com quadros coerentes da folha: a E segura a guarda (marreta de través) e fecha na pancada até o impacto;
+## o Q toca a pancada inteira (antecipação, impacto no `golpe` do terremoto, volta). Sem pose própria: reaproveitam a defesa e o combo.
+func _t_nicao_e_q(cc: Array, ce: Array) -> void:
+	var h = w.heroi
+	zerar()
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	ok(h.habilidade(), "E: a investida dispara")
+	var ce_i := ce.map(func(x): return int(x))
+	var vistas := []
+	for i in 40:
+		passos(1)
+		if h.estado != Heroi.Estado.HABILIDADE:
+			break
+		if vistas.is_empty() or vistas[vistas.size() - 1] != h.coluna:
+			vistas.append(h.coluna)
+	ok(vistas.size() >= 3 and int(vistas[0]) == int(ce[0]), "E: começa na guarda do escudo (colunas %s)" % [vistas])
+	var fim := int(vistas[vistas.size() - 1])
+	ok(fim == int(cc[9]), "E: termina no quadro de impacto da pancada (coluna %d, impacto %d)" % [fim, int(cc[9])])
+	for c in vistas:
+		ok(ce_i.has(int(c)) or (int(c) >= int(cc[6]) and int(c) <= int(cc[11])), "E: só usa colunas da guarda e da pancada (coluna %d)" % int(c))
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 60)
+	zerar()
+	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
+	h.esp_carga = h.esp_carga_max
+	ok(h.especial(), "Q: o terremoto dispara")
+	var q := []
+	for i in 120:
+		passos(1)
+		if h.estado != Heroi.Estado.ESPECIAL:
+			break
+		if q.is_empty() or q[q.size() - 1] != h.coluna:
+			q.append(h.coluna)
+	ok(q.size() == 6 and int(q[0]) == int(cc[6]) and int(q[5]) == int(cc[11]), "Q: toca os 6 quadros da pancada (colunas %s)" % [q])
+	var tempo: float = float(w.combate.especial.blocos.terremoto.golpe)
+	var dur: float = float(w.combate.especial.blocos.terremoto.dur)
+	ok(tempo >= dur * 3.0 / 6.0 and tempo < dur * 4.0 / 6.0, "Q: o quadro de impacto da pancada cobre o instante do golpe (%.2f s de %.2f s)" % [tempo, dur])
 
 
 # ------------------------------------------------------------------ Lucas

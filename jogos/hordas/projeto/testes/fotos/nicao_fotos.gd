@@ -21,6 +21,7 @@ func _ready() -> void:
 		elif a.begins_with("--prefixo="):
 			prefixo = a.trim_prefix("--prefixo=")
 	DirAccess.make_dir_recursive_absolute(pasta)
+	Config.temporario("pausar_fora", false)  # a janela fora da tela perde o foco: a pausa abriria sobre os prints
 	Herois.forcado = "nicao"
 	w = Mundo.instantiate()
 	w.modo_teste = false

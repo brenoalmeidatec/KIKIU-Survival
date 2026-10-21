@@ -145,6 +145,7 @@ func _testes() -> void:
 	var s2 = Salao.instantiate()
 	add_child(s2)
 	ok(s2.saldo() == 137, "ao voltar, o salÃ£o mostra as almas da partida (%d)" % s2.saldo())
+	ok(s2._quadro_w == 32 and s2._pe_y == 42, "o Hazaki no salão segue com a folha de 32x44 e os pés na linha 42")
 	remove_child(s2)
 	s2.queue_free()
 
@@ -164,3 +165,16 @@ func _testes() -> void:
 	ok(cenas.back() == "res://v2/salao.tscn", "criar leva ao salÃ£o")
 	remove_child(t)
 	t.queue_free()
+
+	# 9. o personagem que joga o Nicão anda no salão com a folha do Nicão (64x96, pés na linha 74, andar de 6 quadros; o do Hazaki segue na folha dele)
+	var id_nicao := Personagens.criar("Nicão", "nicao")
+	ok(Personagens.heroi(id_nicao) == "nicao" and Personagens.ativar(id_nicao), "o Nicão joga o herói nicao")
+	var s3 = Salao.instantiate()
+	add_child(s3)
+	ok(
+		s3._quadro_w == 64 and s3._quadro_h == 96 and s3._pe_y == 74 and s3._passos == 6,
+		"o salão do Nicão usa a folha dele (%dx%d, pés %d, %d passos)" % [s3._quadro_w, s3._quadro_h, s3._pe_y, s3._passos]
+	)
+	ok(s3._sprite.resource_path.ends_with("nicao_albedo.png"), "e a textura é a do Nicão (%s)" % s3._sprite.resource_path)
+	remove_child(s3)
+	s3.queue_free()

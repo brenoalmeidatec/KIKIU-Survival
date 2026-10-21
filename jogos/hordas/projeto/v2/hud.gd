@@ -243,12 +243,21 @@ func _retrato_do_heroi() -> void:
 	if not info is Dictionary or not info.has("quadro"):
 		return
 	var quadro := Vector2(float(info.quadro[0]), float(info.quadro[1]))
+	var regiao := Rect2(Vector2.ZERO, quadro)
+	var escala := ESCALA_RETRATO
+	var propria: Variant = info.get("retrato", null)  # folha com quadro grande e vazio em volta (Nicão): só o corpo, em escala inteira, centrado na caixa
+	if propria is Dictionary:
+		var r: Array = propria.regiao
+		regiao = Rect2(float(r[0]), float(r[1]), float(r[2]), float(r[3]))
+		escala = float(propria.get("escala", escala))
 	var recorte := AtlasTexture.new()
 	recorte.atlas = folha
-	recorte.region = Rect2(Vector2.ZERO, quadro)
+	recorte.region = regiao
 	_heroi_img.texture = recorte
 	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_heroi_img.size = quadro * ESCALA_RETRATO
+	_heroi_img.size = regiao.size * escala
+	if propria is Dictionary:
+		_heroi_img.position = ((_heroi_img.get_parent() as Control).size - _heroi_img.size) / 2.0
 
 
 func _exit_tree() -> void:
