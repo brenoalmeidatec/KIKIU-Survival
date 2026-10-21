@@ -1045,6 +1045,8 @@ const QUADROS_TRAVA_RELOGIO := 600  # 10 s de quadros sem o relógio da partida 
 const QUADROS_TRAVA_TELA := 1200  # 20 s de quadros com a mesma tela aberta (cartas, baú, queda, vitória)
 const SEG_MORTE_INICIO := 1.0  # --playtest_fim=morte: a partir de 1 s de jogo o robô fica parado, com 1 de vida, até um monstro matá-lo
 const SEG_TRAVA_PRESO := 30.0  # 30 s de jogo com o herói no mesmo lugar (menos de 6 px) querendo andar
+const MARGEM_BORDA_ROBO := 50.0
+const EPS_DIRECAO_BORDA := 0.0001
 
 
 func _pt_iniciar() -> void:
@@ -1223,17 +1225,9 @@ func _pt_jogar(dt: float) -> void:
 		_pt_novo_ponto()
 	var hp: Vector2 = h.pos
 	var ir: Vector2 = (alvo - hp).normalized() if alvo.distance_squared_to(h.pos) > 16.0 else Vector2.ZERO
-	# perto da borda do mapa (50 px): tira da fuga só o que empurra para a parede; o alvo (baú ou orbe dentro da faixa) continua valendo.
-	# Sem sobra (canto), vai para o alvo ou para o centro, nunca para dentro da parede.
 	var lim: Rect2 = mundo.limite_andavel
-	var fg: Vector2 = fuga
-	if (hp.x < lim.position.x + 50.0 and fg.x < 0.0) or (hp.x > lim.end.x - 50.0 and fg.x > 0.0):
-		fg.x = 0.0
-	if (hp.y < lim.position.y + 50.0 and fg.y < 0.0) or (hp.y > lim.end.y - 50.0 and fg.y > 0.0):
-		fg.y = 0.0
-	var dir: Vector2 = ir * 0.7 + fg * 1.4
-	if dir.length() < 0.15:
-		dir = ir if ir != Vector2.ZERO else (lim.get_center() - hp).normalized()
+	# Projeta a soma pronta: zerar só a fuga antes de somar deixa a direção trocar de sinal ao cruzar a faixa.
+	var dir: Vector2 = _pt_direcao_final(hp, lim, ir * 0.7 + fuga * 1.4, ir)
 	h.entrada_forcada = dir.normalized() if dir.length() > 0.01 else Vector2.ZERO
 	pt.alvo = alvo  # só para a mensagem de TRAVA
 	pt.fuga = fuga
@@ -1260,13 +1254,72 @@ func _pt_jogar(dt: float) -> void:
 	if (colados >= 5 or (chefe_colado and h.invenc <= 0.0)) and pt.esquiva_q > 60:
 		h.esquivar()
 		pt.esquiva_q = 0
-	# vigia: herói no mesmo lugar por muito tempo
-	pt.preso_t = float(pt.preso_t) + dt
-	if pt.preso_t >= SEG_TRAVA_PRESO:
-		if h.pos.distance_to(pt.preso_pos) < 6.0:
-			_pt_trava("heroi_preso pos=%s alvo=%s bau=%s fuga=%s" % [str(h.pos.round()), str(pt.alvo.round()), str(achou), str(pt.fuga.round())])
+	# Vigia por deslocamento acumulado em passos de 6 px; um retorno ao início não apaga que houve movimento no intervalo.
+	if h.pos.distance_to(pt.preso_pos) >= 6.0:
 		pt.preso_pos = h.pos
 		pt.preso_t = 0.0
+	else:
+		pt.preso_t = float(pt.preso_t) + dt
+		if pt.preso_t >= SEG_TRAVA_PRESO:
+			_pt_trava("heroi_preso pos=%s alvo=%s bau=%s fuga=%s" % [str(h.pos.round()), str(pt.alvo.round()), str(achou), str(pt.fuga.round())])
+			pt.preso_pos = h.pos
+			pt.preso_t = 0.0
+
+
+## Remove somente componentes que apontam para fora na faixa de borda. Se a projeção zera, usa uma tangente cardinal estável, sem
+## restaurar a direção que apontava para fora.
+static func _pt_direcao_borda(hp: Vector2, lim: Rect2, direcao: Vector2, ir: Vector2) -> Vector2:
+	var esquerda := hp.x <= lim.position.x + MARGEM_BORDA_ROBO
+	var direita := hp.x >= lim.end.x - MARGEM_BORDA_ROBO
+	var cima := hp.y <= lim.position.y + MARGEM_BORDA_ROBO
+	var baixo := hp.y >= lim.end.y - MARGEM_BORDA_ROBO
+	if not esquerda and not direita and not cima and not baixo:
+		return direcao
+	var projetada := _pt_projetar_borda(direcao, esquerda, direita, cima, baixo)
+	if projetada.length_squared() > EPS_DIRECAO_BORDA:
+		return projetada
+	# O alvo direto para dentro faria o robô atravessar o limiar e reativar a fuga externa no quadro seguinte.
+	# No zero da projeção, conserva só a preferência tangencial do alvo; sem ela, usa +X/+Y de modo estável.
+	# Em cantos, a tangente escolhida também aponta para dentro da outra borda.
+	if cima or baixo:
+		return _pt_tangente_borda(0, ir.x, esquerda, direita)
+	if esquerda or direita:
+		return _pt_tangente_borda(1, ir.y, cima, baixo)
+	return Vector2.ZERO
+
+
+static func _pt_na_faixa_borda(hp: Vector2, lim: Rect2) -> bool:
+	return (
+		hp.x <= lim.position.x + MARGEM_BORDA_ROBO
+		or hp.x >= lim.end.x - MARGEM_BORDA_ROBO
+		or hp.y <= lim.position.y + MARGEM_BORDA_ROBO
+		or hp.y >= lim.end.y - MARGEM_BORDA_ROBO
+	)
+
+
+static func _pt_direcao_final(hp: Vector2, lim: Rect2, direcao: Vector2, ir: Vector2) -> Vector2:
+	var resultado := direcao
+	if resultado.length() < 0.15 and not _pt_na_faixa_borda(hp, lim):
+		resultado = ir if ir != Vector2.ZERO else (lim.get_center() - hp).normalized()
+	return _pt_direcao_borda(hp, lim, resultado, ir)
+
+
+static func _pt_projetar_borda(dir: Vector2, esquerda: bool, direita: bool, cima: bool, baixo: bool) -> Vector2:
+	var resultado := dir
+	if (esquerda and resultado.x < 0.0) or (direita and resultado.x > 0.0):
+		resultado.x = 0.0
+	if (cima and resultado.y < 0.0) or (baixo and resultado.y > 0.0):
+		resultado.y = 0.0
+	return resultado
+
+
+static func _pt_tangente_borda(eixo: int, preferencia: float, negativo_bloqueado: bool, positivo_bloqueado: bool) -> Vector2:
+	var sinal := -1.0 if preferencia < -0.001 else 1.0
+	if (sinal < 0.0 and negativo_bloqueado) or (sinal > 0.0 and positivo_bloqueado):
+		sinal = -sinal
+	if eixo == 0:
+		return Vector2(sinal, 0.0)
+	return Vector2(0.0, sinal)
 
 
 ## --playtest_fim=morte: parado, sem golpe nem esquiva e com 1 de vida; quem mata é o dano normal dos monstros, então a morte segue o
