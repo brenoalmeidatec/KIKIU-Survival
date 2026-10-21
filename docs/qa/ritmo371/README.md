@@ -1,5 +1,7 @@
 # Ritmo da v2 — comparação de 21/10/2026
 
+**Evidência mais recente:** [POS_RAIO_EXTRA.md](POS_RAIO_EXTRA.md) e [JSON final](robo_pos_raio_extra_2026-10-21.json), com os seis AFTER repetidos no `72149ec` após incluir o segundo raio da Chuva e integrar a fixture canônica. As referências anteriores abaixo identificam seus próprios produtos e foram preservadas.
+
 **Evidência posterior ao conserto do alcance:** veja [POS_ALCANCE.md](POS_ALCANCE.md) e [JSON do produto corrigido](robo_pos_alcance_2026-10-21.json). A fase AFTER foi repetida no `e5bdd32`; a comparação abaixo permanece como registro do runtime anterior, sem aprovação retroativa do caso de área composta.
 
 Seis pares executados pelo runner versionado `ferramentas/playtest_v2.py`, com adaptador externo que encaminha toda engine pela fila do notebook. Godot 4.4.1, APPDATA exclusivo do robô separado dos testes unitários, uma partida por vez em cada fase; a fila global limita a duas engines. Floresta/Fácil, sementes 1 e 2, três arquétipos, teto300 segundos de jogo, `--playtest_q` nas duas fases. Os consertos de direção/vigia do robô foram aplicados de forma idêntica nos dois lados. O fonte inteiro de roteiro é igual após remover somente a linha de telemetria do ritmo; SHA256 comum `a0cc4e265e49d6617d7f7ccb3a60e4d4b4cb6c026b18835ace9aa14bd008d487`. Hazaki e Matheus compartilham regras; o quarto visual é validado no #394. O E de ruptura do Hazaki não é acionado pela política existente.
