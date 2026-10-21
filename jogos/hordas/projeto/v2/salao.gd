@@ -70,6 +70,7 @@ var _quadro := 0  # coluna da folha: parado (0) ou um dos passos da animação (
 var _tempo := 0.0
 var _tempo_passo := 0.0
 var _tempo_parado := 0.0
+var _andando := false  # o herói anda (a coluna sozinha não diz: o parado também passa por várias colunas); o salao_vivo lê
 var _parado: Array = [0]  # colunas da animação "parado" da folha (Hazaki, Matheus, Lucas e Nicão: 0, 7, 8 e 9)
 var _parado_s := 0.25  # segundos por quadro do parado
 var _destino := Vector2.INF  # clique numa estrutura ou portal: anda até ele e usa
@@ -460,6 +461,7 @@ func _process(dt: float) -> void:
 			return
 		anda = _pos.direction_to(_destino)
 	var andando := anda != Vector2.ZERO
+	_andando = andando
 	if andando:
 		_pos = (_pos + anda.limit_length(1.0) * VELOCIDADE * dt).clamp(ANDAR_MIN, ANDAR_MAX)
 		_dir = _linha_de(anda)
