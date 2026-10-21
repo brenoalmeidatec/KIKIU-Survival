@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático: a horda CHEGA ao herói, nos três mapas (Floresta, Cidade e Laboratório). Dois casos que o jogador viu quebrados:
 #  1) ABERTURA REAL (diretor ligado, herói parado): o cap de nascimento só conta quem o diretor pôs para caçar, não os 20 moradores do mapa.
 #     Contando todos, o cap inicial (14) ficava abaixo dos 20 moradores e nada nascia por ~45 s: a partida abria vazia, sem ninguém vindo.

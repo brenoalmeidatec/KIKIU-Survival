@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da meta-progressão da v2 (v2/meta.gd, v2/altar.gd e v2/resultado_meta.gd). Usa um save TEMPORÁRIO
 # (user://teste_v2_meta.cfg): o save real (user://v2_progresso.cfg) não é tocado, e a conferência por md5 garante isso.
 # Confere: comprar desconta as almas e sobe o nível; sem almas não compra; o save é gravado no arquivo; aplicar muda a vida e o dano
@@ -13,10 +13,10 @@ const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Resultado := preload("res://v2/resultado_meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
-const SAVE_TESTE := "user://teste_v2_meta.cfg"
-const SAVE_CORRUPTO := "user://teste_v2_meta_corrupto.cfg"
-const SAVE_FALHA := "user://teste_v2_meta_falha.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_meta/teste_v2_meta.cfg"
+const SAVE_CORRUPTO := "user://testes_v2/v2_meta/teste_v2_meta_corrupto.cfg"
+const SAVE_FALHA := "user://testes_v2/v2_meta/teste_v2_meta_falha.cfg"
+const SAVE_REAL := "user://testes_v2/v2_meta/v2_progresso.cfg"
 
 var falhas := 0
 

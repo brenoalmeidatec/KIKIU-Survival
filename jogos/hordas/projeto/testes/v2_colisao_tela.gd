@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste da colisão de monstro só perto da tela (#336). mundo.mover_monstro: fora da tela + margem o monstro anda sem colisão;
 # dentro da margem a barreira segura; se a colisão liga com o monstro já dentro de uma forma, ele segue sem colisão até sair.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_colisao_tela.tscn  (imprime "v2_colisao_tela falhas=0")

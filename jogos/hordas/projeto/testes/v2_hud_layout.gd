@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do LAYOUT do HUD da partida no estilo Overwatch (v2/hud.tscn, hud.gd, hud_habilidades.gd, hud_ultimate.gd): vida e fôlego no canto de baixo
 # à esquerda, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita. Confere que NENHUM bloco do HUD cobre outro (retrato e barras,
 # faixa de golpes, tempo, abates, nível do mapa, combo, barra do chefe, anúncio, XP, Q, E/secundário, minimapa) em 960x540 e nas telas maiores (16:9 e 21:9, em todos

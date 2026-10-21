@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do combate e do laço de jogo da v2 (leva 2): golpe no clique (só sai com clique, na direção do cursor), combo de 3 que
 # encadeia e repete segurando, dano/atordoamento/empurrão/hit-stop/número/flash, morte com orbe, orbe voando para o herói e dando XP, nível
 # com escolha de melhoria (e o mundo parado enquanto escolhe), contato que tira vida com invencibilidade, esquiva com i-frames, correr

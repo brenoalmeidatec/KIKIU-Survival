@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático dos dois itens que voltaram ao Santuário (#213): o modo Pesadelo e o visual Rastro de katana.
 # Pesadelo: só liga com a conquista cumprida; monstros nascem com +50% de vida e +25% de dano; o diretor sobe a taxa, o teto de vivos e o
 # tamanho das ondas; o mini-chefe chega mais cedo; o fim da partida credita +50% de almas; o HUD mostra PESADELO e o resultado também.
@@ -8,7 +8,7 @@ extends Node
 const Meta := preload("res://v2/meta.gd")
 const Mundo := preload("res://v2/mundo.tscn")
 const Resultado := preload("res://v2/resultado_meta.gd")
-const SAVE_TESTE := "user://teste_v2_pesadelo.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_pesadelo/teste_v2_pesadelo.cfg"
 
 var falhas := 0
 

@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do busto do chefe na barra (v2/hud.gd BUSTOS, nó Raiz/Chefe/Busto em v2/hud.tscn, arte em assets/v2/chefes/ gerada por
 # `gerar_objetos.py chefes`). Confere que cada marca de dados/v2_cartas.json tem o seu busto e que nenhum busto sobra; que cada PNG é 36 x 36, RGBA,
 # com alfa só 0 ou 255, borda transparente e miolo visível; que o HUD põe o busto pelo id da marca em campo (combate.chefes.marca) e esconde o busto para

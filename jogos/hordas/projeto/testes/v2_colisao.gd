@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático: colisão da v2 (v2/colisao.gd). Usa as formas reais do prototipos/objetos/cenario.json (torii,
 # muro, árvores) e casos sintéticos: 8 direções sem entrar na forma, deslizar na parede, passar entre os pilares,
 # não atravessar uma fila de árvores, e o desempenho (500 corpos x 150 objetos, uma passada de resolver).

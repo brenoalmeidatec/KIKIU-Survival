@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da Cabaça de Pólvora (granada, tipo "granada") e da fusão Fogos de Festival (v2/armas_novas.gd, dados/v2_cartas.json):
 #  - a carta existe com 5 níveis, ícone próprio de 32 e 16 px, e aparece na escolha de cartas;
 #  - o arremesso vai para o maior GRUPO (5 monstros a 180 px), não para o monstro isolado mais perto (a 100 px);

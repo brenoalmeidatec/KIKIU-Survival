@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do minimapa da v2 (v2/minimapa.tscn, montado pelo mundo dentro da apresentação). Converte uma posição do mundo para o minimapa
 # e volta; o fundo é gerado uma vez (150x84, a mesma textura sempre) e tem o santuário dourado; a névoa começa escura e revela em volta
 # do herói, de forma permanente; os monstros a até 600 px viram marcadores; as luzes fortes aparecem quando reveladas; os marcadores
