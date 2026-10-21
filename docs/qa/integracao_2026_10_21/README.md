@@ -4,7 +4,7 @@ Ramo de QA: `wip/integracao-v2-2026-10-21`, iniciado em `origin/main` (`dc497dd0
 
 ## Integridade do produto
 
-A árvore rastreada de `jogos/hordas/projeto`, excluindo `testes/`, foi idêntica em toda a bateria: SHA-256 `9911483f7369fad163044accf8aa74328ab4370e05852c915959c69c2e5946d7` (2.448 arquivos). Os merges posteriores às primeiras cenas verdes alteraram documentação e testes; `v2_transicoes.gd` recebeu a compatibilidade com o modal de dificuldade antes de sua prova final.
+A árvore rastreada de `jogos/hordas/projeto`, excluindo `testes/`, foi idêntica em toda a bateria: SHA-256 `9911483f7369fad163044accf8aa74328ab4370e05852c915959c69c2e5946d7` (2.448 arquivos; serialização ordenada pelo PowerShell 5.1 do runner). Os merges posteriores às primeiras cenas verdes alteraram documentação e testes; `v2_transicoes.gd` recebeu a compatibilidade com o modal de dificuldade antes de sua prova final.
 
 O teste `v2_status` foi repetido em saves base e migrável após a guarda do harness ser dividida em: hashes e tamanhos dos seis saves raiz; remoção da fixture da cena e ausência de resíduos em `testes_v2`; inventário raiz sem arquivos ou diretórios inesperados. Três sentinelas sintéticos dentro da fixture foram removidos em ambas as variantes. Os seis saves e o conjunto golden permaneceram inalterados. A primeira medição recursiva do harness foi preservada como erro do próprio harness: contou artefatos temporários da fixture como saves protegidos; o processo Godot terminou com `falhas=0`, e a guarda corrigida foi repetida.
 
@@ -12,7 +12,7 @@ O teste `v2_status` foi repetido em saves base e migrável após a guarda do har
 
 Foram concluídos 29 processos Godot 4.4.1 na matriz final, todos com saída 0, `falhas=0`, sem `SCRIPT ERROR`, fixture limpa e hashes protegidos intactos: 14 cenas em base e migrável, mais `v2_isolamento` em base. As 14 cenas pareadas foram `v2_adagas_impacto`, `v2_combate`, `v2_combate_fases`, `v2_golpes_visuais`, `v2_hud`, `v2_hud_barras`, `v2_hud_busto`, `v2_hud_golpes`, `v2_hud_layout`, `v2_pesadelo`, `v2_ritmo`, `v2_robo_borda`, `v2_status` e `v2_transicoes`.
 
-Os resultados sanitizados por cena e variante, sem conteúdo ou caminhos privados dos saves, estão em [cenas.json](cenas.json).
+Os resultados sanitizados por cena e variante, sem conteúdo ou caminhos privados dos saves, estão em [cenas.json](cenas.json). Nos manifests das cenas anteriores à atualização do helper, `protected_inventory_six` verifica os seis arquivos diretos da raiz e `fixture_clean` percorre recursivamente `testes_v2`; `no_unexpected_outside_fixture`, `scene_fixture_removed` e `tests_v2_empty` ficam `null` quando não foram medidos como campos separados. Os resultados finais de `v2_status` e `v2_transicoes` incluem essas guardas explícitas; `null` não é contado como aprovação adicional.
 
 Houve três execuções diagnósticas adicionais: duas repetições de `v2_status` base (uma identificou apenas o falso positivo do snapshot recursivo; a outra passou antes da semeadura explícita) e uma execução prévia de `v2_transicoes` base com uma asserção desatualizada para a tela de dificuldade integrada. O teste foi corrigido no commit de origem `72f7c5dc2603793d5bec0190b6d2d7dd357ed8f9` para confirmar a dificuldade pela entrada real; as variantes base e migrável passaram depois dessa correção. O erro do harness anterior à inicialização do Godot não conta como processo.
 
@@ -24,7 +24,7 @@ O runner da bateria conjunta terminou com código 0. Hazaki, Nicão e Lucas venc
 
 ## Origens e merges locais
 
-Cada linha registra o HEAD de origem e o merge local correspondente. Os pontos sobrepostos foram conciliados na integração: Config mantém os redirecionamentos de GIF/fixture antes de `recarregar()` sem duplicar o catálogo; o HUD preserva os retratos junto das barras menores; os testes do HUD e das conquistas mantêm os dois fluxos; licenças e LOGBOOK receberam acréscimos; `adagas.gd` conserva o raio extra do broadphase com o micro hit-stop. Não há marcadores de conflito pendentes. Os merges tardios de #389, da documentação #396 e do append do LOGBOOK foram executados sem conflito textual.
+Cada linha registra o HEAD de origem e o merge local correspondente. A conciliação preserva os redirecionamentos de GIF/fixture antes de `recarregar()` sem duplicar o catálogo de opções; os retratos junto das barras menores; os testes do HUD e das conquistas; acréscimos de licença e LOGBOOK; e o raio extra do broadphase junto do micro hit-stop das adagas. Os commits de integração registram essas alterações sobrepostas. Não há marcadores de conflito pendentes. Os merges tardios de #389, da documentação #396 e do append do LOGBOOK foram executados sem conflito textual.
 
 | Commit de origem | Merge local | Assunto da origem |
 | --- | --- | --- |
