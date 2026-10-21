@@ -1,6 +1,6 @@
 extends Node
 # Teste automático das transições suaves entre telas da v2 (#377, v2/transicoes.gd, autoload "Transicoes"). Usa saves TEMPORÁRIOS
-# (user://teste_v2_transicoes_*): o save real, os personagens e user://opcoes.cfg não são tocados (conferido por md5).
+# em user://testes_v2/v2_transicoes/: prepara antes do ready e remove a fixture inteira antes de informar o resultado.
 # Confere: a duração de cada transição fica entre 0,15 e 0,25 s; "Reduzir animações" (Config, Acessibilidade) zera tudo e o painel
 # aparece e some na hora; entrar/sair animam de verdade (alfa e posição) e voltam ao repouso, inclusive com a árvore pausada e
 # com um sair no meio de um entrar; Container só faz fade; resize durante fades com e sem deslize preserva o novo layout, inclusive
@@ -12,13 +12,7 @@ extends Node
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const VitoriaFinal := preload("res://v2/vitoria_final.gd")
-const PREFIXO := "user://teste_v2_transicoes_p"
-const INDICE := "user://teste_v2_transicoes_personagens.cfg"
-const ANTIGO := "user://teste_v2_transicoes_progresso.cfg"
-const META_TESTE := "user://teste_v2_transicoes_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_transicoes_opcoes.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const OPCOES_REAL := "user://opcoes.cfg"
+const Ambiente := preload("res://testes/ambiente_v2.gd")
 const TITULO := "res://v2/menu_principal.tscn"
 const ESCOLHA := "res://v2/personagens.tscn"
 const SALAO := "res://v2/salao.tscn"
@@ -29,6 +23,14 @@ var _alvo_layout: Control
 var _pos_layout := Vector2.ZERO
 
 
+func _init() -> void:
+	Ambiente.iniciar(get_script().resource_path)
+
+
+func _exit_tree() -> void:
+	Ambiente.finalizar()
+
+
 func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
@@ -36,39 +38,26 @@ func ok(cond: bool, msg: String) -> void:
 
 
 func _ready() -> void:
-	Personagens.caminho_base = PREFIXO
-	Personagens.caminho_indice = INDICE
-	Personagens.caminho_antigo = ANTIGO
-	Meta.caminho_save = META_TESTE
-	Config.arquivo = OPCOES_TESTE
-	var md5_save := _md5(SAVE_REAL)
-	var md5_opc := _md5(OPCOES_REAL)
-	_limpar()
+	print("ISOLAMENTO_USERDIR ", OS.get_user_data_dir())
+	ok(Personagens.lista().is_empty() and Meta.saldo() == 0, "fixture começa sem slots ou progresso herdados")
+	for caminho in [Config.arquivo, Meta.caminho_save, Personagens.caminho_indice, Personagens.caminho_base, Personagens.caminho_antigo]:
+		ok(caminho.begins_with(Ambiente.raiz), "caminho isolado antes de criar cenas reais")
 	await _testes()
-	_limpar()
 	get_tree().paused = false
-	ok(_md5(SAVE_REAL) == md5_save, "o save real da meta não foi tocado")
-	ok(_md5(OPCOES_REAL) == md5_opc, "as opções reais não foram tocadas")
+	# Drena trocas pendentes e libera a última cena, inclusive se o fluxo retornou cedo.
+	# current_scene é substituída no fluxo; nunca libera o próprio runner que ainda está aguardando.
+	await _quadros(2)
+	var cena := get_tree().current_scene
+	if is_instance_valid(cena) and cena != self:
+		cena.queue_free()
+		await _quadros(2)
+	Transicoes._encerrar()
+	Ambiente.finalizar()
+	ok(not DirAccess.dir_exists_absolute(Ambiente.raiz), "fixture removida antes do resultado, incluindo índice, slots e resíduos")
+	for caminho in [Config.arquivo, Meta.caminho_save, Personagens.caminho_indice, Personagens.caminho_base, Personagens.caminho_antigo]:
+		ok(caminho.begins_with(Ambiente.raiz), "callbacks tardios continuam no sandbox")
 	print("v2_transicoes falhas=%d" % falhas)
-	get_tree().quit()
-
-
-func _md5(caminho: String) -> String:
-	return FileAccess.get_md5(caminho) if FileAccess.file_exists(caminho) else ""
-
-
-func _limpar() -> void:
-	for c in [INDICE, ANTIGO, ANTIGO + ".bak", META_TESTE, META_TESTE + ".bak", META_TESTE + ".tmp", OPCOES_TESTE]:
-		_apagar(c)
-	for i in range(1, 6):
-		var base := Personagens.caminho_do_save("p%d" % i)
-		for s in ["", ".bak", ".tmp"]:
-			_apagar(base + s)
-
-
-func _apagar(caminho: String) -> void:
-	if FileAccess.file_exists(caminho):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho))
+	get_tree().quit(1 if falhas else 0)
 
 
 ## Espera `s` segundos reais e mais dois quadros: o timer dispara antes dos tweens do mesmo quadro, e num quadro longo (CI cheio) a
