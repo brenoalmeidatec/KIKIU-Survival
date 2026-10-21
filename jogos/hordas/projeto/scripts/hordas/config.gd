@@ -22,6 +22,7 @@ const ITENS := [
 		"padrao": "normal"
 	},
 	{"chave": "daltonico", "grupo": "Acessibilidade", "nome": "Modo daltônico", "valores": [false, true], "rotulos": ["Não", "Paleta segura"], "padrao": false},
+	{"chave": "reduzir_animacoes", "grupo": "Acessibilidade", "nome": "Reduzir animações", "valores": [false, true], "formato": "sim_nao", "padrao": false},  # zera as transições entre telas (v2/transicoes.gd, #377)
 	# Leitura da tela (#125). Nome, grupo e rótulos são chaves de tradução (assets/traducao/textos.csv); o texto passa por tr() ao desenhar.
 	# "texto_hud" guarda "normal" (1x), "medio" (1,5x) ou "grande" (2x): "normal" e "grande" já existiam nos arquivos de opções salvos.
 	{

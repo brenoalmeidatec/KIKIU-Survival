@@ -231,8 +231,8 @@ func _testes() -> void:
 	_ir_para(pausa, "ajustes")
 	_tecla(KEY_ENTER)
 	ok(
-		pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "versao", "creditos", "voltar"],
-		"Ajustes abre com Gráficos, Áudio, aviso de versão, Créditos e Voltar"
+		pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "animacoes", "versao", "creditos", "voltar"],
+		"Ajustes abre com Gráficos, Áudio, Reduzir animações, aviso de versão, Créditos e Voltar"
 	)
 	_ir_para(pausa, "graficos")
 	_tecla(KEY_ENTER)

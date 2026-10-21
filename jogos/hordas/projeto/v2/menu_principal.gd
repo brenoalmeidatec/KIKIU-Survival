@@ -301,7 +301,7 @@ func _jogar() -> void:
 	if ao_jogar.is_valid():
 		ao_jogar.call()
 	else:
-		get_tree().change_scene_to_file(ESCOLHA)
+		Transicoes.ir_para(self, ESCOLHA)
 
 
 func _abrir_ajustes() -> void:

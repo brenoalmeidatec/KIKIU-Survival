@@ -301,7 +301,7 @@ func _ir_ao_salao() -> void:
 	if ao_escolher.is_valid():
 		ao_escolher.call(SALAO)
 	else:
-		get_tree().change_scene_to_file.call_deferred(SALAO)
+		Transicoes.ir_para(self, SALAO)
 
 
 func _unhandled_input(e: InputEvent) -> void:
@@ -311,4 +311,4 @@ func _unhandled_input(e: InputEvent) -> void:
 	if _modo == "nomes":
 		_voltar_lista()
 	else:
-		get_tree().change_scene_to_file.call_deferred(TITULO)
+		Transicoes.ir_para(self, TITULO, true)

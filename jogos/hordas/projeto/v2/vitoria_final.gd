@@ -186,6 +186,8 @@ func _ir(f: Fase) -> void:
 	_dica.visible = f != Fase.FIM
 	_vitoria.modulate.a = 0.0
 	if f == Fase.CREDITOS:
+		for c: CanvasItem in [_cred_painel, _recorte, _faixa]:
+			Transicoes.entrar(c, Vector2.ZERO)
 		_cred_y = _recorte.position.y + _recorte.size.y  # começa logo abaixo da área recortada e sobe
 		_posicionar_creditos()
 	if f == Fase.FIM:
@@ -257,4 +259,4 @@ func _sair() -> void:
 	if ao_menu.is_valid():
 		ao_menu.call()
 	else:
-		get_tree().change_scene_to_file.call_deferred(MENU)
+		Transicoes.ir_para(self, MENU)

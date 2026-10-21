@@ -64,6 +64,7 @@ var _origem := "menu"  # para onde "Não" de uma confirmação volta; "" = fecha
 var _itens_atuais: Array = []
 var _graficos := AjustesGraficos.new()
 var _raiz: Control
+var _conteudo: Control  # tudo menos o fundo escuro: a troca de tela do menu (Ajustes, Conquistas...) desliza só isto (#377)
 var _titulo: Label
 var _sub: Label
 var _dica: Control
@@ -134,21 +135,25 @@ func _montar() -> void:
 	EscalaUi.cobrir(fundo)
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_raiz.add_child(fundo)
+	_conteudo = Control.new()
+	_conteudo.size = EscalaUi.BLOCO
+	_conteudo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_raiz.add_child(_conteudo)
 	var painel := Panel.new()
 	painel.position = PAINEL.position
 	painel.size = PAINEL.size
 	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	painel.add_theme_stylebox_override("panel", EstiloPremium.painel())
-	_raiz.add_child(painel)
+	_conteudo.add_child(painel)
 	_titulo = _rotulo(Dados.fonte_titulo, TAM_TITULO, COR_OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 18), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-	_raiz.add_child(_titulo)
+	_conteudo.add_child(_titulo)
 	var ornamento := EstiloPremium.ornamento(300.0)
 	ornamento.position = Vector2(PAINEL.position.x + (PAINEL.size.x - 300.0) / 2.0, PAINEL.position.y + 74)
-	_raiz.add_child(ornamento)
+	_conteudo.add_child(ornamento)
 	_sub = _rotulo(
 		Dados.fonte_texto, TAM_SUB, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER
 	)
-	_raiz.add_child(_sub)
+	_conteudo.add_child(_sub)
 	for i in VISIVEIS:
 		var w := PAINEL.size.x - 48
 		var linha := Control.new()
@@ -164,7 +169,7 @@ func _montar() -> void:
 		linha.add_child(rot)
 		var val := _rotulo(Dados.fonte_texto, TAM_VALOR, COR_TEXTO, Vector2(12, 8), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
 		linha.add_child(val)
-		_raiz.add_child(linha)
+		_conteudo.add_child(linha)
 		var ico := TextureRect.new()  # o "?" da linha Perfil: a linha pede o ícone (chave "icone") e _desenhar o põe depois do nome
 		ico.texture = _textura_ajuda()
 		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -180,11 +185,11 @@ func _montar() -> void:
 	)
 	_ajuda.size.y = AJUDA_H
 	_ajuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_raiz.add_child(_ajuda)
+	_conteudo.add_child(_ajuda)
 	_dica = Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_TEXTO)
 	_dica.position = Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y)
 	_dica.size = Vector2(PAINEL.size.x - 16, 22)
-	_raiz.add_child(_dica)
+	_conteudo.add_child(_dica)
 	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), _pos_fps(), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
 	add_child(_fps)  # fora de _raiz: o contador de fps aparece também com o menu fechado
@@ -234,7 +239,7 @@ func pausar() -> bool:
 	_arvore_antes = get_tree().paused
 	_apertos.clear()
 	aberto = true
-	_raiz.visible = true
+	Transicoes.entrar(_raiz)
 	_ir("menu")
 	get_tree().paused = true
 	return true
@@ -245,7 +250,7 @@ func fechar() -> void:
 	if not aberto:
 		return
 	aberto = false
-	_raiz.visible = false
+	Transicoes.sair(_raiz)  # só a imagem é suave: o estado (aberto, árvore pausada) já mudou
 	_apertos.clear()
 	if mundo != null:
 		get_tree().paused = _arvore_antes
@@ -264,7 +269,7 @@ func abrir_sair() -> void:
 	if aberto:
 		return
 	aberto = true
-	_raiz.visible = true
+	Transicoes.entrar(_raiz)
 	_ir("confirmar_sair", "")
 
 
@@ -273,7 +278,7 @@ func abrir_ajustes() -> void:
 	if aberto:
 		return
 	aberto = true
-	_raiz.visible = true
+	Transicoes.entrar(_raiz)
 	_ir("ajustes", "")
 
 
@@ -282,7 +287,7 @@ func abrir_creditos() -> void:
 	if aberto:
 		return
 	aberto = true
-	_raiz.visible = true
+	Transicoes.entrar(_raiz)
 	_ir("creditos", "")
 
 
@@ -294,6 +299,8 @@ func _pode_pausar() -> bool:
 
 
 func _ir(nova: String, origem := "menu") -> void:
+	if nova != tela and _raiz.visible and not Transicoes.animando(_raiz):
+		Transicoes.entrar(_conteudo, Vector2(10.0, 0.0), 0.0)  # troca de tela dentro do menu: o texto desliza, o fundo fica
 	tela = nova
 	_origem = origem
 	sel = 1 if nova.begins_with("confirmar") or nova == "avancado" else 0  # confirmação começa em "Não"; Avançado, na 1ª opção (o 0 é cabeçalho)
@@ -511,6 +518,8 @@ func _executar(id: String, passo: int) -> void:
 			_sair()
 		"musica", "efeitos":
 			_volume(id, passo)
+		"animacoes":
+			Config.definir(Transicoes.OPCAO, not Transicoes.reduzido())
 		"versao":
 			Config.definir("verificar_versao", not bool(Config.v("verificar_versao")))
 		_:
@@ -561,6 +570,7 @@ func _itens() -> Array:
 			return [
 				_it("graficos", "Gráficos"),
 				_it("audio", "Áudio"),
+				_it("animacoes", "Reduzir animações", "Sim" if Transicoes.reduzido() else "Não"),
 				_it("versao", "Avisar versão nova", "Sim" if bool(Config.v("verificar_versao")) else "Não"),
 				_it("creditos", "Créditos"),
 				_it("voltar", "Voltar")
