@@ -4,7 +4,7 @@ extends RefCounted
 ## iniciar_heroi). Tudo fica em `caminho_save` (ConfigFile user://v2_progresso.cfg, separado do save da v1). Regras e textos
 ## vêm de dados/v2_meta.json. Não há estado em memória: cada leitura vem do arquivo, e os testes trocam `caminho_save` por um
 ## arquivo temporário para não tocar no save real.
-## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida;
+## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida; [recordes] tempo e combo máximos;
 ## [progressao] versao e partidas (v2/progressao.gd lê as travas). A chave legado das versões antigas não vale mais: save antigo
 ## segue as mesmas travas, mantendo só o que conquistou.
 ## Mapa vencido é a conquista vence_<id>; a seção antiga [mapas_vencidos] é migrada na leitura e não volta a ser gravada.
@@ -242,7 +242,7 @@ static func _gravar(cf: ConfigFile) -> bool:
 	return true
 
 
-## Foto do save para a tela: saldo, nível de cada melhoria, conquistas cumpridas e o resumo da última partida.
+## Foto do save para a tela: saldo, nível de cada melhoria, conquistas cumpridas, o resumo da última partida e os recordes (tempo e combo).
 static func estado() -> Dictionary:
 	var cf := _ler()
 	var niveis := {}
@@ -255,7 +255,13 @@ static func estado() -> Dictionary:
 	if cf != null and cf.has_section("ultima"):
 		for k in cf.get_section_keys("ultima"):
 			ultima[k] = cf.get_value("ultima", k)
-	return {"almas": int(cf.get_value("moeda", "almas", 0)) if cf != null else 0, "niveis": niveis, "conquistas": cumpridas, "ultima": ultima}
+	var recordes := {"tempo": 0.0, "combo": 0}  # o melhor de todas as partidas: é o progresso das conquistas de tempo e de combo (Conquistas.linhas)
+	if cf != null:
+		recordes.tempo = float(cf.get_value("recordes", "tempo", 0.0))
+		recordes.combo = int(cf.get_value("recordes", "combo", 0))
+	return {
+		"almas": int(cf.get_value("moeda", "almas", 0)) if cf != null else 0, "niveis": niveis, "conquistas": cumpridas, "ultima": ultima, "recordes": recordes
+	}
 
 
 static func saldo() -> int:
@@ -317,8 +323,12 @@ static func _cumprida(c: Dictionary, r: Dictionary) -> bool:
 			return float(r.get("tempo", 0.0)) >= float(c.get("limite", 0.0))
 		"combo":
 			return int(r.get("maior_combo", 0)) >= int(c.get("limite", 0))
-		"venceu":  # com "mapa": só a vitória naquele mapa (vence_floresta...)
-			return bool(r.get("venceu", false)) and (not c.has("mapa") or str(r.get("mapa", "")) == str(c.mapa))
+		"venceu":  # com "mapa": só a vitória naquele mapa (vence_floresta...); com "pesadelo": true, só a vitória no modo Pesadelo
+			return (
+				bool(r.get("venceu", false))
+				and (not c.has("mapa") or str(r.get("mapa", "")) == str(c.mapa))
+				and (not bool(c.get("pesadelo", false)) or bool(r.get("pesadelo", false)))
+			)
 	return false
 
 
@@ -429,6 +439,8 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
 	cf.set_value("ultima", "pesadelo", pesadelo)
+	cf.set_value("recordes", "tempo", maxf(float(cf.get_value("recordes", "tempo", 0.0)), float(r.get("tempo", 0.0))))
+	cf.set_value("recordes", "combo", maxi(int(cf.get_value("recordes", "combo", 0)), int(r.get("maior_combo", 0))))
 	if r.has("mapa"):
 		cf.set_value("ultima", "mapa", str(r.mapa))
 	cf.set_value("progressao", "partidas", int(cf.get_value("progressao", "partidas", 0)) + 1)

@@ -2,7 +2,7 @@ extends Node
 # Teste automático do menu de pausa da v2 (v2/pausa.gd, v2/ajustes_graficos.gd, ligado ao mundo e ao santuário). Usa saves
 # TEMPORÁRIOS: a meta (user://teste_v2_pausa_meta.cfg) e as opções (user://teste_v2_pausa_opcoes.cfg). O save real
 # (user://v2_progresso.cfg) e user://opcoes.cfg não são tocados, e a conferência por md5 garante isso.
-# Confere: a pausa tem 4 itens (Continuar, Ajustes, Voltar ao santuário, Sair do jogo); ESC e Start pausam e despausam;
+# Confere: a pausa tem 5 itens (Continuar, Conquistas, Ajustes, Voltar ao santuário, Sair do jogo); ESC e Start pausam e despausam;
 # Continuar fecha; na escolha de cartas e no baú o ESC abre a pausa por cima (e na morte não abre); Sair pede confirmação e só o
 # Sim chama o gancho; a entrada vem pelo caminho da janela (Input.parse_input_event), o mesmo do jogador;
 # Ajustes abre Gráficos (com CPU e GPU) e Áudio; trocar o perfil muda a config (e a sombra do mundo, ao vivo); Sombras,
@@ -164,8 +164,8 @@ func _testes() -> void:
 	_tecla(KEY_ESCAPE)
 	ok(pausa.aberto and get_tree().paused, "ESC pausa a partida e abre o menu")
 	ok(
-		_ids(pausa) == ["continuar", "ajustes", "santuario", "sair"],
-		"a pausa tem 4 itens: Continuar, Ajustes, Voltar ao santuário, Sair (%s)" % str(_ids(pausa))
+		_ids(pausa) == ["continuar", "conquistas", "ajustes", "santuario", "sair"],
+		"a pausa tem 5 itens: Continuar, Conquistas, Ajustes, Voltar ao santuário, Sair (%s)" % str(_ids(pausa))
 	)
 	_tecla(KEY_ESCAPE)
 	ok(not pausa.aberto and not get_tree().paused, "ESC de novo fecha o menu e despausa")
@@ -601,10 +601,10 @@ func _testes() -> void:
 	_tecla(KEY_ESCAPE)
 	ok(not pausa.aberto and not get_tree().paused, "ESC na pausa fecha e despausa")
 
-	# 8. o clique do mouse escolhe a linha (Ajustes é a linha 2 do menu: a lista começa no topo)
+	# 8. o clique do mouse escolhe a linha (Ajustes é a linha 3 do menu: a lista começa no topo)
 	_tecla(KEY_ESCAPE)
 	pausa.mouse_fn = Callable(self, "_mouse_teste")
-	_mouse_alvo = Vector2(354, 55 + 118 + 1 * 36 + 16)  # Ajustes: linha 2 (PAINEL, LINHA0, LINHA_H de pausa.gd)
+	_mouse_alvo = Vector2(354, 55 + 118 + 2 * 36 + 16)  # Ajustes: linha 3 (PAINEL, LINHA0, LINHA_H de pausa.gd)
 	_clique(_mouse_alvo)
 	ok(pausa.tela == "ajustes", "clique com o mouse abre a linha clicada")
 	_tecla(KEY_ESCAPE)

@@ -2370,3 +2370,19 @@ _Claude do Alisson (notebook)_
 - **Próximo:** qua 21: textos das estruturas/santuário/vitória final (Breno, #328, `dados/v2_vitoria_final.json`); qui 22: equilíbrio refeito com o robô consertado (#137).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-21 · Claude do Alisson (PC) · Lote de quarta (#342): conquistas, glifos, letreiros e bustos dos chefes
+- **Feito (na main):**
+  - lista de conquistas clara no Códice e na pausa, com o que fazer, progresso e prêmio, mais conquistas por mapa vencido e "Vença no Pesadelo" (#380, fecha a #373);
+  - ícones pixel art de mouse e teclas, e o fôlego descendo pixel a pixel (#381, Refs #374);
+  - os nomes do santuário apagam quando o herói passa por cima (#382, #375);
+  - o busto dos chefes na barra do HUD (#383, #360).
+- **Como:** workflow com 4 frentes (Sonnet alto e Haiku máximo construindo, Haiku máximo conferindo e ajustando), cada uma no próprio PR com CI verde.
+- **Pendente:**
+  - o PR #384 (teto de fôlego por abate, 1 s, valor chutado) está em rascunho esperando o aval do Alisson. A investigação mostrou que o fôlego rápido no nível 30 é balanceamento (a carta Fôlego de caçador não tem teto), e não bug;
+  - a #374 continua aberta, porque as barras ainda não foram afinadas;
+  - o prêmio do Laboratório encosta na borda do Códice em 1920x1080;
+  - `v2_pesadelo` e `v2_status` falham só neste PC, porque leem o save real (no CI passam).
+- **Próximo:** qui 22, ritmo viciante (#371), dificuldade F/M/D (#372) e equilíbrio com o robô (#137).
+
+_Claude do Alisson (PC)_
