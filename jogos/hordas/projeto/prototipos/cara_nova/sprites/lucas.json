@@ -6,6 +6,7 @@
  "elevacao": 45.0,
  "ppu": 24.5,
  "pe_y": 42,
+ "retrato_escala": 2,
  "linhas": [
   "baixo",
   "esquerda",
