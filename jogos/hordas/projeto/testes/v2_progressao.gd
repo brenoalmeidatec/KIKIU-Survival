@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste das travas do santuário (v2/progressao.gd, dados/v2_progressao.json, v2/mapas.gd e o salão). Saves TEMPORÁRIOS com prefixo
 # único; os saves reais (user://v2_*) são conferidos por md5 no fim.
 # Confere: um personagem novo só tem a Floresta e as Estátuas abertas; vencer a Floresta abre o Laboratório e o Altar, e vencer outro
@@ -33,20 +33,20 @@ func _ready() -> void:
 		if arg.begins_with("--prints="):
 			pasta = arg.trim_prefix("--prints=")
 	prefixo = "teste_progressao_%d_" % Time.get_ticks_usec()
-	var d := DirAccess.open("user://")
+	var d := DirAccess.open("user://testes_v2/v2_progressao/")
 	for arquivo in d.get_files():
 		if arquivo.begins_with("v2_"):
-			reais[arquivo] = FileAccess.get_md5("user://" + arquivo)
-	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
-	Personagens.caminho_base = "user://" + prefixo + "p"
-	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
-	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
+			reais[arquivo] = FileAccess.get_md5("user://testes_v2/v2_progressao/" + arquivo)
+	Personagens.caminho_indice = "user://testes_v2/v2_progressao/" + prefixo + "indice.cfg"
+	Personagens.caminho_base = "user://testes_v2/v2_progressao/" + prefixo + "p"
+	Personagens.caminho_antigo = "user://testes_v2/v2_progressao/" + prefixo + "antigo.cfg"
+	Meta.caminho_save = "user://testes_v2/v2_progressao/" + prefixo + "meta.cfg"
 	if pasta != "":
 		DisplayServer.window_set_size(Vector2i(960, 540))
 	await _testes()
 	ok(fim, "o teste chegou ao fim")
 	for arquivo in reais:
-		ok(FileAccess.get_md5("user://" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
+		ok(FileAccess.get_md5("user://testes_v2/v2_progressao/" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
 	for arquivo in d.get_files():
 		if arquivo.begins_with(prefixo):
 			d.remove(arquivo)
@@ -149,7 +149,7 @@ func _testes() -> void:
 	ok(not _abertos().has("laboratorio"), "partidas não abrem mapas")
 
 	# 6. save de antes das travas, com progresso mas SEM vitória: segue as travas (não fica "tudo aberto" por ser velho)
-	var antigo := "user://" + prefixo + "legado.cfg"
+	var antigo := "user://testes_v2/v2_progressao/" + prefixo + "legado.cfg"
 	var cf := ConfigFile.new()
 	cf.set_value("moeda", "almas", 120)
 	cf.set_value("melhorias", "vida", 1)
@@ -166,7 +166,7 @@ func _testes() -> void:
 	_partida(false, "floresta")
 	ok(_abertos() == ["floresta"], "depois de uma partida sem vitória o save antigo continua com as travas")
 	# 6b. o que o save antigo já conquistou continua conquistado: Derrote o chefe (de antes dos mapas) vale como Vença a Floresta
-	var com_chefe := "user://" + prefixo + "legado_chefe.cfg"
+	var com_chefe := "user://testes_v2/v2_progressao/" + prefixo + "legado_chefe.cfg"
 	var cc := ConfigFile.new()
 	cc.set_value("moeda", "almas", 300)
 	cc.set_value("conquistas", "derrota_chefe", true)
@@ -175,7 +175,7 @@ func _testes() -> void:
 	ok(_abertos() == ["floresta", "laboratorio"], "save antigo que derrotou o chefe: Laboratório aberto (%s)" % str(_abertos()))
 	ok(Progressao.aberto("estrutura", "altar") and Progressao.aberto("estrutura", "codice"), "save antigo que derrotou o chefe: Altar e Códice abertos")
 	# 6c. save antigo que já tinha o save com legado = true gravado pelo #333: a marca é ignorada e apagada
-	var com_marca := "user://" + prefixo + "legado_marca.cfg"
+	var com_marca := "user://testes_v2/v2_progressao/" + prefixo + "legado_marca.cfg"
 	var cm := ConfigFile.new()
 	cm.set_value("progressao", "versao", 1)
 	cm.set_value("progressao", "legado", true)
@@ -197,7 +197,7 @@ func _testes() -> void:
 	)
 
 	# 7. save antigo SEM progresso (só a escolha de mapa) não vira legado
-	var vazio := "user://" + prefixo + "vazio.cfg"
+	var vazio := "user://testes_v2/v2_progressao/" + prefixo + "vazio.cfg"
 	var cv := ConfigFile.new()
 	cv.set_value("config", "mapa", "cidade")
 	cv.save(vazio)

@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do ESPECIAL de cada herói, a tecla Q (v2/especial.gd, heroi.gd, combate.gd, hud_habilidades.gd, entrada.gd, dados/v2_especial.json):
 # dados e entrada (Q e RB = ação ultimate, e o evento dispara o especial), o mapa herói -> id (Hazaki: investida, Nicão: terremoto, Lucas: chuva), e
 # para CADA herói numa partida de verdade: nasce com a carga em 0, o aperto sem a carga cheia é negado (slot treme, nada acontece), o aperto com a

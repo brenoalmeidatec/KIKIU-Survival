@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático dos sprites das armas da v2 (assets/v2/armas/indice.json, ligados em v2/armas_novas.gd): o índice lê e cada PNG
 # carrega com o tamanho que ele diz; cada golpe novo (45) tem sprite com textura; cada arma citada no índice é um golpe ou evolução que existe;
 # com os 45 golpes ligados ao mesmo tempo, todos os tipos acertam, o pool continua do mesmo tamanho, nenhum nó novo aparece no

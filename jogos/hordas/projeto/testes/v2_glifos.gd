@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste dos glifos de controle da v2 (v2/glifos.gd): o último dispositivo usado (teclado e mouse, Xbox ou PlayStation) decide o botão de cada
 # ação e a troca é na hora (avisa quem ouviu); o nome do controle cai no Xbox ou no PlayStation; cada ação existe nos três; a dica desenhada
 # se refaz na troca; o título esconde o "Mouse também" no controle.

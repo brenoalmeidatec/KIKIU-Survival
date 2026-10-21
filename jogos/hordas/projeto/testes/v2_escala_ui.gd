@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do tamanho da interface (v2/escala_ui.gd, v2/apresentacao.gd): o fator por tamanho de janela e opção (tabela), o canvas
 # que nunca é menor que o bloco 960x540 nem deixa a janela sem cobertura, a opção "Tamanho da interface" em Ajustes > Gráficos (gira e
 # salva em opções), e o mundo da v2 reagindo: o SubViewport da UI ganha o tamanho do canvas, as CanvasLayers vão para o centro, o HUD,
@@ -8,7 +8,7 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
-const OPCOES_TESTE := "user://teste_v2_escala_ui_opcoes.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_escala_ui/teste_v2_escala_ui_opcoes.cfg"
 
 var falhas := 0
 
@@ -29,7 +29,7 @@ func _ready() -> void:
 	await _mundo()
 	EscalaUi.janela_forcada = Vector2i.ZERO
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(OPCOES_TESTE))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_escala_ui/opcoes.cfg"
 	print("v2_escala_ui falhas=%d" % falhas)
 	get_tree().quit()
 

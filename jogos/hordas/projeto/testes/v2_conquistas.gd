@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da lista de conquistas (#373): v2/conquistas.gd (a conta do progresso, a mesma do Códice e da pausa), o recorde
 # no save, o Códice do santuário (v2/salao.gd) e o atalho "Conquistas" da pausa (v2/pausa.gd). Usa saves TEMPORÁRIOS (meta, personagens
 # e opções); o save real da meta não é tocado (conferência por md5).
@@ -15,9 +15,9 @@ const Icones := preload("res://v2/icones_santuario.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const Salao := preload("res://v2/salao.tscn")
 const Mundo := preload("res://v2/mundo.tscn")
-const SAVE_TESTE := "user://teste_v2_conquistas_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_conquistas_opcoes.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_conquistas/teste_v2_conquistas_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_conquistas/teste_v2_conquistas_opcoes.cfg"
+const SAVE_REAL := "user://testes_v2/v2_conquistas/v2_progresso.cfg"
 const SEM_PREMIO := ["vence_pesadelo"]  # conquistas sem item de recompensa (marco): não têm linha "Prêmio"
 
 var falhas := 0
@@ -33,9 +33,9 @@ func _ready() -> void:
 	var md5_real := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""
 	Meta.caminho_save = SAVE_TESTE
 	Config.arquivo = OPCOES_TESTE
-	Personagens.caminho_base = "user://teste_v2_conquistas_p"
-	Personagens.caminho_indice = "user://teste_v2_conquistas_personagens.cfg"
-	Personagens.caminho_antigo = "user://teste_v2_conquistas_antigo.cfg"
+	Personagens.caminho_base = "user://testes_v2/v2_conquistas/teste_v2_conquistas_p"
+	Personagens.caminho_indice = "user://testes_v2/v2_conquistas/teste_v2_conquistas_personagens.cfg"
+	Personagens.caminho_antigo = "user://testes_v2/v2_conquistas/teste_v2_conquistas_antigo.cfg"
 	_limpar()
 	_dados()
 	_progresso()
@@ -51,9 +51,9 @@ func _ready() -> void:
 
 func _limpar() -> void:
 	get_tree().paused = false
-	for f in DirAccess.get_files_at("user://"):
+	for f in DirAccess.get_files_at("user://testes_v2/v2_conquistas/"):
 		if f.begins_with("teste_v2_conquistas_"):
-			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://" + f))
+			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://testes_v2/v2_conquistas/" + f))
 
 
 func _linha(linhas: Array, id: String) -> Dictionary:

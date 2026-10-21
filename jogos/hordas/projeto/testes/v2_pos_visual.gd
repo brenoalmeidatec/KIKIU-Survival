@@ -1,9 +1,9 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Passe de pixel (pos_visual.gd) na apresentação da v2: só o perfil Alto desenha; Baixo, Médio e Personalizado ficam com o
 # retângulo oculto e sem material (sem custo de screen texture). Troca de perfil em tempo de execução liga e desliga o passe.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pos_visual.tscn  (imprime "v2_pos_visual falhas=0")
 const Apresentacao := preload("res://v2/apresentacao.gd")
-const OPCOES_TESTE := "user://teste_v2_pos_visual_opcoes.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_pos_visual/teste_v2_pos_visual_opcoes.cfg"
 
 var falhas := 0
 

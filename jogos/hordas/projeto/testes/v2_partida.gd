@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da profundidade da partida da v2 (leva 3): raridade que sobe com o nível, cartas (stat, golpe, modificador), rerrolar e
 # banir, os 5 golpes secundários acertando, os modificadores da katana, as evoluções, a elite que solta baú e o baú que dá melhorias, a
 # derrota e o sinal partida_terminou com os campos certos. Os níveis do mapa estão em v2_diretor.gd; os chefes e a vitória, em v2_chefe.gd.

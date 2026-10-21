@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático das fases dos golpes secundários com folha animada (v2/anim_golpes.gd ligado em v2/armas_novas.gd; docs/combate_v2):
 # as folhas dos índices carregam com o tamanho certo; o tiro nasce em PREPARO (na boca, sem hitbox) e só fere depois; cada monstro leva um
 # acerto por tiro; o impacto toca no acerto (não no fim do voo); a velocidade de ataque encolhe o preparo dentro dos limites; o anel não fere

@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do Braseiro Antigo (v2/braseiros.gd): o braseiro do mapa começa apagado; o herói perto por 3 s SEGUIDOS acende (aviso no HUD
 # pelo sinal anuncio); aceso, deixa os monstros dentro do raio lentos; depois de 20 s apaga e só acende de novo após a recarga. Também confere
 # a Area2D de verdade (o herói andando até o braseiro dispara o sinal) e que nada novo roda por quadro quando está tudo apagado.

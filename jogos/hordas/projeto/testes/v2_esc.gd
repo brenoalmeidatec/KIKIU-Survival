@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do ESC na partida da v2 ("ESC parou de funcionar no meio da partida"). Os testes antigos do menu (v2_pausa) injetavam a
 # tecla com sv.push_input, direto no SubViewport, caminho que o jogador nunca usa: a janela só entrega teclado, controle e mouse à
 # viewport RAIZ. Aqui TUDO entra por Input.parse_input_event (o caminho do sistema operacional) e o mundo, o menu e as telas são os de
@@ -19,10 +19,10 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Meta := preload("res://v2/meta.gd")
 const Resultado := preload("res://v2/resultado_meta.gd")
-const SAVE_TESTE := "user://teste_v2_esc_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_esc_opcoes.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const OPCOES_REAL := "user://opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_esc/teste_v2_esc_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_esc/teste_v2_esc_opcoes.cfg"
+const SAVE_REAL := "user://testes_v2/v2_esc/v2_progresso.cfg"
+const OPCOES_REAL := "user://testes_v2/v2_esc/opcoes.cfg"
 const PASSO := 1.0 / 60.0
 const MAX_FALHAS_IMPRESSAS := 30
 const PAINEL_X := 290.0  # pausa.gd: PAINEL, LINHA0 e LINHA_H
@@ -77,7 +77,7 @@ func _limpar() -> void:
 	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_esc/opcoes.cfg"
 
 
 func _md5(caminho: String) -> String:

@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste da TRAVA das cartas e do baú da v2 (tempo real, dados/v2_cartas.json: escolha.espera_s, escolha.rerrolar_espera_s, bau.bau_espera_s).
 # Nada escolhe nos primeiros 1,0 s depois de a escolha abrir (clique, 1/2/3, Enter, Espaço, E, direcional, ui_accept, R, B, botões);
 # depois escolhe. Rerrolar e banir travam 0,8 s; nível pendente trava 1 s de novo; o baú trava 1 s; a contagem congela com a pausa

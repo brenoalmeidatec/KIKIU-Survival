@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da tela de título da v2 (v2/menu_principal.gd): a cena principal abre com Jogar, Ajustes, Créditos e Sair; o foco
 # começa em Jogar e anda com as setas, o D-pad e o mouse (passar o cursor põe o foco); Jogar leva ao santuário (gancho ao_jogar, e a
 # cena existe); Ajustes abre o submenu da pausa (Gráficos e Áudio) e fechar devolve o foco; Créditos abre a tela de Créditos e o
@@ -10,7 +10,7 @@ extends Node
 #   grava menu_principal, menu_ajustes, menu_creditos e menu_sair (só o viewport).
 const Menu := preload("res://v2/menu_principal.gd")
 const Titulo := preload("res://v2/menu_principal.tscn")
-const OPCOES_TESTE := "user://teste_v2_menu_opcoes.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_menu/teste_v2_menu_opcoes.cfg"
 
 var falhas := 0
 var saiu := 0  # o gancho ao_sair da pausa conta aqui
@@ -42,7 +42,7 @@ func _limpar() -> void:
 	get_tree().paused = false
 	if FileAccess.file_exists(OPCOES_TESTE):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(OPCOES_TESTE))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_menu/opcoes.cfg"
 
 
 # ------------------------------------------------------------------ entrada (pela janela, como o jogador)
