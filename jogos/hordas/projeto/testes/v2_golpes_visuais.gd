@@ -79,7 +79,7 @@ func _ready() -> void:
 		ok(m.vida < m.vida_max and m.vivo, nome + " combo atinge alvo vivo")
 		if nome == "Lucas":
 			ok(cauda_no_acerto, "adagas ativas com cauda no quadro do acerto")
-			ok(not pausa_no_acerto, "Lucas preserva ausência de hit-stop em alvo vivo")
+			ok(pausa_no_acerto, "Lucas tem micro hit-stop no primeiro acerto do arremesso")
 		else:
 			ok(pausa_no_acerto, nome + " hit-stop curto por acerto preservado")
 			ok(rastro_no_acerto, nome + " rastro visível no quadro do acerto")

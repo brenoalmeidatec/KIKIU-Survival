@@ -33,6 +33,10 @@ var a_atord := PackedFloat32Array()
 var a_raio := PackedFloat32Array()
 var a_perf := PackedInt32Array()  # monstros que ainda pode furar (-1 = acabou)
 var a_extra := PackedByteArray()  # 1 = veio do modificador "chuva" (não solta outra)
+var a_grupo := PackedInt64Array()  # arremesso principal; tamanho fixo MAX, sem histórico crescente
+var a_pausa := PackedByteArray()  # 1 até o primeiro acerto de qualquer lâmina desse grupo
+var _grupo := 0
+var _pausa_recarga := 0.0
 var a_cor := PackedColorArray()
 var a_u0: Array = []  # os últimos monstros que cada adaga acertou (não repete)
 var a_u1: Array = []
@@ -57,6 +61,8 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	a_raio.resize(MAX)
 	a_perf.resize(MAX)
 	a_extra.resize(MAX)
+	a_grupo.resize(MAX)
+	a_pausa.resize(MAX)
 	a_cor.resize(MAX)
 	a_u0.resize(MAX)
 	a_u1.resize(MAX)
@@ -74,6 +80,10 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 
 func limpar() -> void:
 	a_rest.fill(0.0)
+	a_grupo.fill(0)
+	a_pausa.fill(0)
+	_grupo = 0
+	_pausa_recarga = 0.0
 	for i in MAX:
 		a_u0[i] = null
 		a_u1[i] = null
@@ -108,10 +118,11 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 	var mira := 1.0 + float(combate.armas.mods.mira) / 100.0
 	var alcance_k: float = mira * (1.0 + (combate.bonus_nivel_golpe(h) if cresce_com_nivel else 0.0))  # o golpe do Lucas cresce com o nível, o especial Q não
 	var cor := Color(passo.cor[0], passo.cor[1], passo.cor[2])
+	_grupo += 1
 	for k in n:
 		var ang := 0.0 if n == 1 else leque * (float(k) / float(n - 1) - 0.5)
 		ang += randf_range(-0.025, 0.025)
-		_nova(
+		var i := _nova(
 			origem + dir.rotated(ang) * 10.0,
 			dir.rotated(ang),
 			float(passo.vel) * mira,
@@ -124,6 +135,9 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 			false,
 			R_ADAGA * sqrt(h.m_area)
 		)
+		if cresce_com_nivel:  # só combate.golpear; Q e chuva nunca recebem grupo elegível
+			a_grupo[i] = _grupo
+			a_pausa[i] = 1
 	combate.fx.faiscas(origem + dir * 12.0, dir, 3, cor, 110.0)
 
 
@@ -151,6 +165,8 @@ func _nova(
 	a_raio[i] = raio
 	a_perf[i] = perfura
 	a_extra[i] = 1 if extra else 0
+	a_grupo[i] = 0
+	a_pausa[i] = 0
 	a_cor[i] = cor
 	a_u0[i] = null
 	a_u1[i] = null
@@ -163,6 +179,7 @@ func _nova(
 
 
 func atualizar(dt: float) -> void:
+	_pausa_recarga = maxf(0.0, _pausa_recarga - dt)
 	var h = mundo.heroi
 	var ativo := false
 	for i in MAX:
@@ -237,6 +254,7 @@ func _acertar(i: int, m, p: Vector2) -> void:
 	var dir: Vector2 = a_dir[i]
 	var cor: Color = a_cor[i]
 	combate.ferir(m, d, dir, a_emp[i] * (1.25 if crit else 1.0), a_atord[i] * (1.3 if crit else 1.0), cor.lerp(Color.WHITE, 0.45), true, crit)
+	_pausar_grupo(i)
 	combate.fx.faiscas(m.pos + Vector2(0, -8), dir, 6 if crit else 3, cor, 150.0 if crit else 110.0)
 	combate.audio.tocar("critico" if crit else "impacto", randf_range(1.25, 1.5), -7.0, 0.05)
 	if crit and float(combate.armas.mods.explode) > 0.0:
@@ -246,6 +264,25 @@ func _acertar(i: int, m, p: Vector2) -> void:
 		var a := randf() * TAU
 		var j := _nova(m.pos + Vector2(0, -8), Vector2.from_angle(a), a_vel[i], 120.0, a_dano[i] * 0.6, a_emp[i], a_atord[i], cor, 0, true, a_raio[i])
 		a_u0[j] = m  # a extra não volta no monstro que a soltou
+
+
+## Um pedido por arremesso principal, não por lâmina/perfuração. Mesmo bloqueado pelo cooldown,
+## o primeiro acerto consome o grupo: não pode pedir uma pausa atrasada ao atravessar a horda.
+func _pausar_grupo(i: int) -> void:
+	if a_pausa[i] == 0:
+		return
+	var grupo := a_grupo[i]
+	for j in MAX:
+		if a_grupo[j] == grupo:
+			a_pausa[j] = 0
+	if _pausa_recarga > 0.0:
+		return
+	var cfg: Dictionary = combate.cfg.golpe.get("impacto_adagas", {})
+	var dur := float(cfg.get("hit_stop", 0.0))
+	if dur <= 0.0:
+		return
+	_pausa_recarga = float(cfg.get("recarga", 0.0))
+	combate.hit_stop(dur)
 
 
 # ------------------------------------------------------------------ desenho

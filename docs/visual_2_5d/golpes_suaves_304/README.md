@@ -27,6 +27,29 @@ Os oito GIFs desta pasta vêm dos helpers isolados `matheus_gif` (`--ativo=breno
 
 ![Quadros reais do combo](quadros.png)
 
-`v2_golpes_visuais` prova rastro visível e pausa curta em acertos reais corpo a corpo, ondas da pancada e adagas ativas com cauda no impacto. **Limite do envelope:** o Lucas legado não chama `hit_stop` em alvo vivo (`adagas._acertar` → `combate.ferir`); o contrato preserva zero. Isso não equivale a cumprir o pedido de hit-stop dos quatro, e uma eventual mudança mecânica deve ter commit e evidência próprios.
+`v2_golpes_visuais` prova rastro visível e pausa curta em acertos reais corpo a corpo, ondas da pancada e adagas ativas com cauda no impacto. **Separação da evidência:** `contrato.json` compara só o envelope do commit `dd10ad2` com a base. Nesse primeiro commit o Lucas ainda preservava zero hit-stop. O PNG de contato e os GIFs dos outros três personagens mostram esse envelope; o GIF `lucas_depois.gif` foi atualizado para incluir a etapa seguinte abaixo.
 
 Os processos concluíram com código 0; os helpers e testes emitiram avisos de recursos/RID no encerramento já presentes na base. Não houve `SCRIPT ERROR`. Capturas não são benchmark de FPS nem avaliação subjetiva por controle físico.
+
+## Micro hit-stop do Lucas (conserto separado)
+
+O primeiro acerto de cada arremesso principal pede **14 ms** no relógio existente do combate: global no solo; conserva a separação local de tempo do coop. O cooldown de **100 ms simulados** fica congelado em menus e hit-stop. Todas as lâminas/perfurações do mesmo grupo consomem juntas a elegibilidade no primeiro acerto, mesmo se o cooldown negar a pausa. Assim uma adaga sobrevivente não causa uma segunda pausa tardia. Q, chuva e projéteis secundários não são elegíveis. Os dois vetores de metadados têm tamanho fixo do pool (96); reiniciar limpa grupos/cooldown, sem lista crescente de impactos.
+
+`v2_adagas_impacto` atravessa colisões reais com várias lâminas e alvos, verifica uma única pausa, ausência sem alvo vivo, cooldown, pausa de menu, Q real, chuva, reinício e o limite do pool. `contrato_impacto.json` compara o envelope com esta etapa: seis casos dos outros personagens continuam exatamente iguais por passo; Lucas preserva dano por evento, RNG, fôlego e posição física final, mas muda os passos/tempos dos eventos, como esperado. Reproduza com o comparador acrescentando `--impacto-lucas`.
+
+`cadencia_lucas.json` guarda as 12 medições de combate real, mesmo código com a configuração de pausa desligada/ligada, alvo vivo a 30 px, semente 7, oito combos medidos depois de oito de aquecimento. O dano dos oito combos ficou **igual entre desligado/ligado em cada par** (463–472 entre cenários de Hz/velocidade diferentes). A pausa de 14 ms ocupa um quadro a 60 Hz e dois a 120 Hz. Em velocidade 3×, o cooldown permite só dois impactos por combo; não há uma pausa por adaga.
+
+O contador `hit_stops` no JSON inclui aquecimento e medição. A comparação desligado/ligado usa a mesma implementação e desliga somente o dado `hit_stop`, isolando a alteração de tempo; o contrato anterior preservado em `dd10ad2` também compara a implementação antiga com o envelope sem nenhuma pausa nova.
+
+O card usa **Combo estimado** para as adagas. O modelo reproduz os instantes nominais de arremesso, cooldown e arredondamento real do relógio de cada passo. Nas 12 medições próximas, erro observado menor que 10⁻¹² s; o teste permite no máximo um quadro por combo para diferenças de chegada/quantização. A distância, o movimento dos alvos e errar arremessos podem alterar o ciclo real e o DPS, portanto esta estimativa não promete um DPS universal. O cálculo tem cache de **uma entrada** por parâmetros de tempo/velocidade/dados; consultas repetidas do Status não repetem a simulação. O teste prova reutilização e invalidação de todos os parâmetros relevantes.
+
+| Hz | Velocidade | Ciclo antes → depois (s) | DPS antes → depois | Variação DPS |
+| --- | --- | --- | --- | --- |
+| 60 | 1.0× | 0.8833 → 0.9333 | 66.08 → 62.54 | -5.36% |
+| 60 | 1.5× | 0.6167 → 0.6667 | 94.66 → 87.56 | -7.50% |
+| 60 | 3.0× | 0.3833 → 0.4167 | 153.26 → 141.00 | -8.00% |
+| 120 | 1.0× | 0.8417 → 0.8917 | 68.76 → 64.91 | -5.61% |
+| 120 | 1.5× | 0.5917 → 0.6417 | 98.66 → 90.97 | -7.79% |
+| 120 | 3.0× | 0.3583 → 0.3917 | 164.65 → 150.64 | -8.51% |
+
+Validação local: `v2_adagas_impacto`, `v2_golpes_visuais`, `v2_status`, `v2_herois`, `v2_combate`, `v2_combate_fases`, `animacao_heroi`, `v2_ruptura`, `v2_especial`, `v2_habilidade` e `v2_escudo`, todos com `falhas=0`; os contratos acima também passaram. `gdformat -l 160 --check` completo limpo, 331 scripts (base: 327). Importação final Godot 4.4.1 sem erro de script. Sem medição nova de FPS.
