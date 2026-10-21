@@ -262,6 +262,13 @@ func _t_matheus() -> void:
 		"a folha do Matheus tem o formato da do Hazaki (quadro, linhas, colunas, pé)"
 	)
 	ok(mat.animacoes.keys() == haz.animacoes.keys() and mat.grade == haz.grade, "e as mesmas animações e a mesma grade")
+	var colunas_iguais := true
+	for anim in haz.animacoes:  # E (ruptura), Q (estocada = passo 2 do combo), rolamento, escudo, dano e morte tocam estas colunas: a folha nova as tem nos mesmos lugares
+		colunas_iguais = colunas_iguais and mat.animacoes[anim].colunas == haz.animacoes[anim].colunas
+	ok(
+		colunas_iguais and mat.animacoes.combo.golpes == 3 and mat.animacoes.combo.quadros_por_golpe == 6,
+		"as colunas de cada animação (combo, rolamento, escudo, dano, morte) são as do Hazaki"
+	)
 	ok(
 		ResourceLoader.exists(PASTA_SPRITES + "matheus_albedo.png") and ResourceLoader.exists(PASTA_SPRITES + "matheus_normal.png"),
 		"as imagens da folha do Matheus existem"
@@ -281,6 +288,14 @@ func _t_matheus() -> void:
 	var h = w.heroi
 	var tm = w.sprites.tipo("matheus")
 	ok(h.tipo.alb == tm.alb and h.chave == "hazaki" and h.vida_max == 100.0, "o herói da partida do Matheus usa a folha dele, com as regras do Hazaki")
+	var retrato: TextureRect = null
+	for n in w.ui.get_children():
+		if n.has_node("Raiz/Retrato/Heroi"):
+			retrato = n.get_node("Raiz/Retrato/Heroi")
+	ok(
+		retrato != null and retrato.texture is AtlasTexture and retrato.texture.atlas.resource_path == PASTA_SPRITES + "matheus_albedo.png",
+		"o retrato do HUD na partida do Matheus é o quadro parado da folha dele"
+	)
 	var c := 0
 	for y in mat.quadro[1]:
 		for x in mat.quadro[0]:

@@ -32,3 +32,9 @@ O salão, o retrato da escolha (quando o personagem não tem rosto) e a partida 
 Prints reais (janela oculta): `qa/qa_matheus_jogo.gd` (copie para `testes/` de uma cópia do projeto para rodar; não é teste de CI).
 
 GIFs, comparativo e prints: `docs/visual_2_5d/blender_herois/matheus/`.
+
+## Em jogo, 21/10 (integração com a main de 21/10)
+`jogos/hordas/projeto/testes/fotos/matheus_gif.tscn` (não roda no CI) grava os quadros reais do jogo com o Matheus (`--ativo=matheus`) ou com o Breno/Hazaki (`--ativo=breno`, o "antes"):
+parado, andar, andar na diagonal, combo, E, Q, rolamento, escudo, dano, morte, círculo de colisão e HUD. E e Q do Matheus usam as mesmas colunas da folha que as do Hazaki:
+a E (ruptura) segura o quadro de carga e solta o corte (passo 1 do combo), o Q (investida) toca o passo 3 do combo (a estocada, `anim.passo` 2). Nenhuma pose nova foi precisa.
+Fotos e GIFs: `docs/visual_2_5d/matheus_em_jogo_2026_10_21/`.
