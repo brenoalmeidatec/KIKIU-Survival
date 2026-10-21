@@ -133,6 +133,10 @@ var _altar := Vector2.ZERO
 var _tex_runas: Array[Texture2D] = []
 var _particulas: Array[CPUParticles2D] = []
 var _letreiros: Array[Dictionary] = []  # um nó por pedaço de nome (texto, cadeado, linha de baixo): {no, caixa, opacidade}; ver _montar_letreiros
+var _corpo_tex: Texture2D  # a folha que _corpo_caixas lê; se o herói trocar de folha ou de tamanho de quadro, lê de novo
+var _corpo_tamanho := Vector2i.ZERO
+var _corpo_img: Image
+var _corpo_caixas := {}  # (coluna, linha) do quadro -> caixa do corpo, em px do quadro; medida na primeira vez que o herói mostra o quadro
 var _perfil_pendente := false
 # perfil
 var lim_luzes := 6
@@ -275,20 +279,55 @@ func _pintar_letreiro(a: Dictionary, no: Node2D, parte: String) -> void:
 	_ctx._visual.desenha_parte(no, a, parte, fechado)
 
 
-## O herói passa por cima dos nomes: o quadro dele (o mesmo que salao.gd _pintar_heroi desenha) apaga cada pedaço do nome que ele cobre,
-## e o pedaço volta quando ele sai. Nenhum nó novo: só muda a opacidade do nó que já existe, e só quando ela muda.
+## O herói passa por cima dos nomes: a caixa do corpo dele (_caixa_corpo) apaga cada pedaço do nome que ela cobre, e o pedaço volta
+## quando ele sai. Nenhum nó novo: só muda a opacidade do nó que já existe, e só quando ela muda.
 func _letreiros_vivos(pes: Vector2, dt: float) -> void:
-	var w: float = _ctx._quadro_w * ESCALA_HEROI
-	var h: float = _ctx._quadro_h * ESCALA_HEROI
-	var corpo := Rect2(pes.x - w / 2.0, pes.y - h + 6.0, w, h)
+	var corpo := _caixa_corpo(pes)
 	for l in _letreiros:
 		var caixa: Rect2 = l.caixa
-		var alvo := OPACIDADE_NOME_COBERTO if caixa.intersects(corpo) else 1.0
+		var alvo := OPACIDADE_NOME_COBERTO if corpo.has_area() and caixa.intersects(corpo) else 1.0
 		var op := move_toward(float(l.opacidade), alvo, dt * VELOCIDADE_NOME)
 		if op != float(l.opacidade):
 			l.opacidade = op
 			var no: Node2D = l.no
 			no.modulate.a = op
+
+
+## A caixa do corpo que o herói mostra agora, em px do mundo: a caixa do quadro dele (_caixa_quadro) no lugar em que salao.gd
+## _pintar_heroi desenha o quadro (canto em (-w/2, -h + 6) do pé, na escala ESCALA_HEROI). Sem folha, vale o quadro inteiro.
+func _caixa_corpo(pes: Vector2) -> Rect2:
+	if _ctx._sprite != _corpo_tex or Vector2i(_ctx._quadro_w, _ctx._quadro_h) != _corpo_tamanho:
+		_corpo_tex = _ctx._sprite
+		_corpo_tamanho = Vector2i(_ctx._quadro_w, _ctx._quadro_h)
+		_corpo_img = _corpo_tex.get_image() if _corpo_tex != null else null
+		_corpo_caixas.clear()
+	var chave := Vector2i(_ctx._quadro, _ctx._dir)
+	if _corpo_img != null and not _corpo_caixas.has(chave):
+		_corpo_caixas[chave] = _caixa_quadro(_corpo_img, chave.x, chave.y, _corpo_tamanho.x, _corpo_tamanho.y)
+	var qw := float(_corpo_tamanho.x)
+	var qh := float(_corpo_tamanho.y)
+	var area: Rect2 = _corpo_caixas.get(chave, Rect2(0, 0, qw, qh))
+	var canto := Vector2(pes.x - qw * ESCALA_HEROI / 2.0, pes.y - qh * ESCALA_HEROI + 6.0)
+	return Rect2(canto + area.position * ESCALA_HEROI, area.size * ESCALA_HEROI)
+
+
+## A caixa do corpo de um quadro da folha (coluna c, linha l), em px do quadro: começa na primeira linha com pelo menos 4 pixels opacos
+## (pixels soltos no topo, como um fio de cabelo ou um ponto de luz, não contam) e vai até a base e às laterais da área com alfa.
+static func _caixa_quadro(img: Image, c: int, l: int, qw: int, qh: int) -> Rect2:
+	if (c + 1) * qw > img.get_width() or (l + 1) * qh > img.get_height():
+		return Rect2(0, 0, qw, qh)
+	var quadro := img.get_region(Rect2i(c * qw, l * qh, qw, qh))
+	var area := quadro.get_used_rect()
+	if not area.has_area():
+		return Rect2()
+	for y in range(area.position.y, area.end.y):
+		var opacos := 0
+		for x in qw:
+			if quadro.get_pixel(x, y).a >= 0.5:
+				opacos += 1
+		if opacos >= 4:
+			return Rect2(area.position.x, y, area.size.x, area.end.y - y)
+	return Rect2(area)
 
 
 # ------------------------------------------------------------------ texturas (uma vez só)

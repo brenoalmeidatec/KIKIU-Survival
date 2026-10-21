@@ -82,8 +82,26 @@ func testar() -> void:
 	ok(opacidade(s, v, "altar", "cadeado") <= QUASE_TRANSPARENTE, "o cadeado do altar apaga quando o herói está sobre ele")
 	ok(opacidade(s, v, "altar", "nome") > 0.999, "o nome do altar segue inteiro (o herói não o cobre)")
 	ok(opacidade(s, v, "altar", "trava") > 0.999, "a linha do altar segue inteira (o herói não a cobre)")
-	ok(opacidade(s, v, "medio", "trava") <= QUASE_TRANSPARENTE, "a linha das Ruínas (trancadas) apaga: o herói a cobre")
+	# a cabeça fica abaixo da linha das Ruínas (a margem transparente do topo do quadro não conta): a linha segue inteira
+	ok(v._caixa_corpo(s._pos).position.y > s._pos.y - s._quadro_h * 2.0 + 6.0, "a caixa do corpo começa abaixo do topo do quadro (não caiu no quadro inteiro)")
+	ok(opacidade(s, v, "medio", "trava") > 0.999, "a linha das Ruínas segue inteira: a cabeça do herói fica abaixo dela")
 	ok(opacidade(s, v, "medio", "nome") > 0.999, "o nome das Ruínas segue inteiro")
+	# andando, a caixa muda com o quadro e a direção: a linha das Ruínas segue inteira em todos os quadros que a sala mostra
+	var apagou := false
+	for d in 8:
+		for q in 5:
+			s._dir = d
+			s._quadro = q
+			v._process(PASSO)
+			apagou = apagou or opacidade(s, v, "medio", "trava") < 0.999
+	s._dir = 0
+	s._quadro = 0
+	ok(not apagou, "andando (quadros 0 a 4, oito direções), a linha das Ruínas não apaga")
+	# a cabeça (a partir de y 220) cruza a linha de baixo das Ruínas (y 212 a 229): ela apaga, e o nome de cima (y 195 a 212) segue inteiro
+	s._pos = Vector2(780, 290)
+	andar(v, 40)
+	ok(opacidade(s, v, "medio", "trava") <= QUASE_TRANSPARENTE, "a cabeça cruza a linha das Ruínas: ela apaga")
+	ok(opacidade(s, v, "medio", "nome") > 0.999, "o nome das Ruínas, acima da cabeça, segue inteiro")
 	# por trás do cadeado (pés acima da base do altar): o cadeado também apaga, porque a sala não ordena pelo y
 	s._pos = Vector2(780, 262)
 	andar(v, 40)
@@ -174,4 +192,4 @@ func ponto_do_pedaco(a: Dictionary, parte: String) -> Vector2:
 		return p + Vector2(0, -52)
 	if str(a.tipo) == "portal":
 		return p + Vector2(0, 20 if parte == "nome" else 37)
-	return p + Vector2(0, 22 if parte == "nome" else 42)
+	return p + Vector2(0, 30 if parte == "nome" else 47)
