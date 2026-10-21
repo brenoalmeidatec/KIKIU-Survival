@@ -203,8 +203,8 @@ func _terminar(r: Dictionary) -> void:
 func _mostrar(r: Dictionary, novas: Array) -> void:
 	aberto = true
 	_t = 0.0
-	_fundo.visible = true
-	_res.visible = true
+	Transicoes.entrar(_fundo, Vector2.ZERO)
+	Transicoes.entrar(_res)
 	var venceu := bool(r.get("venceu", false))
 	_titulo.text = "VITÓRIA" if venceu else "VOCÊ CAIU"
 	if bool(r.get("pesadelo", false)):
@@ -286,4 +286,4 @@ func _continuar() -> void:
 		return
 	_saindo = true
 	# A entrada do mundo ainda marca o evento no viewport: a troca só pode ocorrer depois dele.
-	mundo.get_tree().call_deferred("change_scene_to_file", VitoriaFinal.destino(mundo.resultado, SANTUARIO))  # vencer o mapa final leva à vitória final e aos créditos
+	Transicoes.ir_para(mundo, VitoriaFinal.destino(mundo.resultado, SANTUARIO))  # vencer o mapa final leva à vitória final e aos créditos

@@ -106,7 +106,7 @@ func _ready() -> void:
 	Personagens.iniciar()
 	if Personagens.ativo() == "":
 		process_mode = Node.PROCESS_MODE_DISABLED
-		get_tree().change_scene_to_file.call_deferred(ESCOLHA)  # sem personagem não há santuário: escolhe ou cria um
+		Transicoes.ir_para(self, ESCOLHA)  # sem personagem não há santuário: escolhe ou cria um
 		return
 	_ajustar_janela()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # a sala recebe o clique em _unhandled_input (andar até um alvo), não a tela inteira
@@ -289,7 +289,7 @@ func _montar_hud() -> void:
 	voltar.size = Vector2(136, 30)
 	_estilo_botao(voltar, 16)
 	_glifo_no_botao(voltar, "voltar")  # depois do tamanho: o glifo usa a largura do botão
-	voltar.pressed.connect(func(): get_tree().change_scene_to_file.call_deferred(ESCOLHA))
+	voltar.pressed.connect(func(): Transicoes.ir_para(self, ESCOLHA, true))
 	add_child(voltar)
 
 
@@ -512,7 +512,7 @@ func _unhandled_input(e: InputEvent) -> void:
 			_usar(perto)
 			get_viewport().set_input_as_handled()
 	elif e.is_action_pressed("ui_cancel"):
-		get_tree().change_scene_to_file.call_deferred(ESCOLHA)
+		Transicoes.ir_para(self, ESCOLHA, true)
 		get_viewport().set_input_as_handled()
 	elif e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
 		var clicado := _alvo_perto(e.position - EscalaUi.desloc_atual, 56.0)  # a sala fica no bloco, no centro do canvas
@@ -544,7 +544,7 @@ func usar_portal(id: String) -> bool:
 	if ao_entrar.is_valid():
 		ao_entrar.call(FLORESTA)
 	else:
-		get_tree().change_scene_to_file.call_deferred(FLORESTA)
+		Transicoes.ir_para(self, FLORESTA)
 	return true
 
 
@@ -579,7 +579,7 @@ func abrir_estrutura(id: String) -> void:
 	_montar_lista()
 	_p_atual = 0
 	_p_aviso.text = ""
-	_painel.visible = true
+	Transicoes.entrar(_painel, Vector2.ZERO)  # só fade: o painel cobre a tela inteira (#377)
 	_mostrar_item(0)
 	if _p_lista.get_child_count() > 0:
 		_p_lista.get_child(0).grab_focus()
