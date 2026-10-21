@@ -30,3 +30,8 @@ Os helpers recarregam suas próprias opções para não herdar o estado do jogad
 `ferramentas/teste_gifs_isolados.ps1 -AppDataQA PASTA_QA -FilaGodot CAMINHO_DA_FILA` executa os dois helpers com APPDATA descartável,
 captura o HUD e compara SHA256 de opções antigas migráveis, índice de personagens e dois saves de progresso. Também confere que nenhum
 save real novo apareceu. Como controle negativo, abre o jogo normal na cópia descartável e confirma que a migração normal continua funcionando.
+
+## Comparação de desempenho
+
+[Benchmark Baixo](benchmark_baixo/LEIA-ME.md): metodologia, 24 sumários por repetição/ref/personagem e harness portátil. O produto medido é
+`4b73d157daed8f132ee105f1bfc6bbe2ce157f4e`, anterior ao commit documental que publica a evidência.
