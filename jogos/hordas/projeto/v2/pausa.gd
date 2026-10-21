@@ -477,7 +477,8 @@ func _linha_sob_mouse() -> int:
 		var idx := _topo + i
 		if idx >= _itens_atuais.size():
 			break
-		var r := Rect2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H, PAINEL.size.x - 48, LINHA_ALT)
+		# A linha inteira acompanha o slide de _raiz e _conteudo. O retângulo global é do canvas, como _mouse() sem o offset da camada.
+		var r: Rect2 = (_linhas[i]["linha"] as Control).get_global_rect()
 		if r.has_point(m):
 			return idx if str(_itens_atuais[idx].id) != "" else -1
 	return -1

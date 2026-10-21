@@ -167,6 +167,7 @@ func _testes() -> void:
 		return
 	pausa.ao_sair = Callable(self, "_marcar_saida")
 	ok(pausa.process_mode == Node.PROCESS_MODE_ALWAYS, "o menu roda com a árvore pausada (PROCESS_MODE_ALWAYS)")
+	await _testar_mouse_transicoes(pausa)
 
 	# 1. ESC pausa e de novo despausa; Start do controle faz o mesmo
 	_tecla(KEY_ESCAPE)
@@ -720,6 +721,72 @@ func _testes() -> void:
 	ok(_md5(SAVE_REAL) == md5_save, "o save real (v2_progresso.cfg) não foi tocado")
 	ok(_md5(OPCOES_REAL) == md5_opc, "as opções reais (opcoes.cfg) não foram tocadas")
 	_limpar_saves()
+
+
+## Congela o Tween real num quadro intermediário: evita depender da duração de um frame do runner de CI.
+func _quadro_intermediario(c: CanvasItem, segundos: float) -> void:
+	var tw: Tween = c.get_meta("tr_tween")
+	tw.pause()
+	tw.custom_step(segundos)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	ok(Transicoes.animando(c) and c.modulate.a > 0.0 and c.modulate.a < 1.0, "o teste de mouse observa um quadro intermediário real")
+
+
+func _assentar_transicao(c: CanvasItem) -> void:
+	if c.has_meta("tr_tween"):
+		var tw: Tween = c.get_meta("tr_tween")
+		tw.custom_step(10.0)
+
+
+## As bordas que recebem clique devem acompanhar a geometria realmente desenhada, inclusive durante os slides.
+func _testar_mouse_transicoes(pausa) -> void:
+	var reduzido := Transicoes.reduzido()
+	Config.temporario(Transicoes.OPCAO, false)
+	var mouse_antes: Callable = pausa.mouse_fn
+	var ap = pausa.mundo.ap
+	var desloc_antes: Vector2 = ap.desloc
+	var fator_antes: float = ap.fator
+	var offset_antes: Vector2 = pausa.offset
+	ap.desloc = Vector2(32, 18)
+	ap.fator = 1.25
+	pausa.offset = ap.desloc
+	pausa.mouse_fn = func(): return ap.pos_ui(_mouse_alvo)  # mesma conversão da partida, com deslocamento e escala não triviais
+	pausa.pausar()
+	await _quadro_intermediario(pausa._raiz, 0.02)
+	var linha: Control = pausa._linhas[0].linha
+	ok(linha.size == Vector2(Pausa.PAINEL.size.x - 48, Pausa.LINHA_ALT), "a linha mantém a área clicável inteira de 392x32, não só a tinta do rótulo")
+	var r := linha.get_global_rect()
+	_mouse_alvo = (Vector2(r.get_center().x, r.end.y - 1.0) + ap.desloc) * ap.fator
+	ok(pausa._linha_sob_mouse() == 0, "durante entrar, a borda inferior de Continuar pertence a Continuar, não a Conquistas")
+	_clique(_mouse_alvo)
+	ok(not pausa.aberto and not get_tree().paused, "clicar no Continuar desenhado durante o slide fecha a pausa")
+	# A saída já não captura entrada, mas a geometria da linha continua acompanhando a imagem.
+	pausa.fechar()
+	await _quadro_intermediario(pausa._raiz, 0.10)
+	r = linha.get_global_rect()
+	_mouse_alvo = (Vector2(r.get_center().x, r.end.y - 1.0) + ap.desloc) * ap.fator
+	ok(pausa._linha_sob_mouse() == 0, "durante sair, a borda da linha acompanha a posição desenhada")
+	_clique(_mouse_alvo)
+	ok(not pausa.aberto, "a imagem saindo não captura clique nem reabre a pausa")
+	_assentar_transicao(pausa._raiz)
+	pausa.pausar()
+	_assentar_transicao(pausa._raiz)
+	pausa._ir("ajustes")
+	await _quadro_intermediario(pausa._conteudo, 0.02)
+	r = linha.get_global_rect()
+	_mouse_alvo = (Vector2(r.end.x - 1.0, r.get_center().y) + ap.desloc) * ap.fator
+	ok(pausa._linha_sob_mouse() == 0, "na troca de página, a borda direita de Gráficos acompanha o slide horizontal")
+	_clique(_mouse_alvo)
+	ok(pausa.tela == "graficos", "clicar no Gráficos desenhado durante a troca de página abre Gráficos")
+	pausa.fechar()
+	_assentar_transicao(pausa._raiz)
+	_assentar_transicao(pausa._conteudo)
+	pausa.mouse_fn = mouse_antes
+	ap.desloc = desloc_antes
+	ap.fator = fator_antes
+	pausa.offset = offset_antes
+	Config.temporario(Transicoes.OPCAO, reduzido)
 
 
 func _limpar_saves() -> void:
