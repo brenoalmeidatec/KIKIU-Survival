@@ -21,24 +21,37 @@ do portal e o contrato visual atualizado. Localmente, `v2_dificuldade` terminou
 com saída 0, falhas=0 e sem SCRIPT ERROR, incluindo monstro, orbes, XP, Status,
 mercador, crédito único e reinício nas seis combinações dificuldade/Pesadelo.
 
-## Pendências do repasse
+## Validação final de 21/10
 
-- Repetir o robô versionado nas três dificuldades no código final. A rodada Médio
-  não chegou a executar; não contar espera da fila como teste aprovado.
-- Comparar Nicão/Fácil/Floresta/semente 1 na main e na branch, com teto inicial
-  de 200 s. Uma rodada anterior marcou `heroi_preso` em 166,8 s. Colisão, mapa e
-  robô são iguais na main; o detector compara apenas as extremidades de 30 s,
-  portanto a causa continua inconclusiva. Não alterar o detector para esconder a
-  ocorrência.
-- Gerar e conferir fotos de cinco e seis conquistas por
-  `testes/v2_meta.tscn -- --fotos=PASTA`, em um user_dir de QA.
+O runner versionado ferramentas/playtest_v2.py foi executado com um adaptador
+externo que prefixa o wrapper da fila, sem alterar o fonte do robô. APPDATA
+exclusivo por worktree, Godot 4.4.1, Floresta, Hazaki, semente 1: Fácil, Médio e
+Difícil terminaram com vitória, código 0 e nenhum erro de script ou trava.
+O relatório sanitizado robo_final_2026-10-21.json guarda os três casos completos,
+o commit do jogo e um hash dos fontes/dados, sem caminhos da máquina.
+
+A investigação de Nicão/Fácil usou o mesmo mapa e semente na main dc497dd e na
+branch 0553f9c. Ambas reproduziram heroi_preso em 166,8 s, posição (1394,1417),
+alvo (1442,1380), com mesma build, nível 16 e 284 abates. Os dois runners saíram
+com código 1; não são aprovados. A igualdade demonstra comportamento anterior à
+dificuldade, mas não distingue imobilidade real de falso positivo do vigia.
+Ocorrência registrada na issue #137; detector e colisão não foram modificados.
+
+As capturas resultado/resultado_cinco_conquistas.png e
+resultado/resultado_seis_conquistas.png foram geradas pelo caminho real de
+combate/resultado no helper v2_meta, em janela renderizada e APPDATA de QA.
+Inspeção visual: três linhas completas, sem tocar no saldo ou CONTINUAR.
+O helper confere os nomes/margens durante a captura e agora imprime seu total
+de falhas e devolve código não zero se uma conferência falhar. Na execução final:
+v2_meta fotos falhas=0, código 0, sem SCRIPT ERROR/FALHOU. O encerramento ainda
+registra avisos de recursos/RIDs de renderização já observados nos vizinhos.
 
 `ensaios_anteriores.json` preserva os cinco casos de desenvolvimento que produziram
 PLAYTEST_JSON, com quatro vitórias e uma trava. São anteriores à correção XP/moeda
 e à integração de main; não substituem o robô no commit final. O lote completo
 não terminou, e não se afirma código de saída de casos sem relatório final.
 
-As repetições locais restantes foram retiradas enquanto só aguardavam vaga, sem
-iniciar Godot. Nenhum processo próprio de Godot ficou ativo. O processo de teste
-de outra sessão foi preservado, conforme decisão do Alisson; a coordenação da fila
-está na issue #348. O PR permanece em rascunho até concluir essas pendências.
+Este ensaio usa um mapa/semente por dificuldade e não substitui balanceamento
+humano nem uma matriz exaustiva de personagens. Não se mede FPS real em headless
+com fixed-fps; o custo de lógica e o desfecho são as métricas úteis dessa rodada.
+Todos os processos dessas execuções terminaram; a coordenação da fila está na #348.

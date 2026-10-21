@@ -36,7 +36,8 @@ func _ready() -> void:
 	if pasta != "":
 		await _fotos(pasta)
 		_apagar_save()
-		get_tree().quit()
+		print("v2_meta fotos falhas=%d" % falhas)
+		get_tree().quit(0 if falhas == 0 else 1)
 		return
 	await _testes()
 	_apagar_save()
