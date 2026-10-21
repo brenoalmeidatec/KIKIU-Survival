@@ -215,6 +215,8 @@ func _ready() -> void:
 	w.ap.tela.size = tam_anterior
 	w.sv.canvas_transform = transform_anterior
 	_provar_q_real()
+	_provar_alcance_composto()
+	_provar_broadphase_extra()
 	# Cada familia de Q: dado original intacto, dano snapshot e area uma vez, inclusive rodada final.
 	var e = c.especial
 	var original: Dictionary = e.blocos.duplicate(true)
@@ -335,3 +337,87 @@ func _provar_q_real() -> void:
 					ok(igual(10000.0 - m.vida, roundf(float(b[fase].dano) * k * 1.5)), "Lucas %s acerto real n%d" % [fase, nivel])
 					m.morrendo = true
 			e.cancelar(h)
+
+
+## Regressão: a rodada final real do Q cresce além do antigo corte de 560 px.
+func _provar_alcance_composto() -> void:
+	var c = w.combate
+	var h = w.heroi
+	var e = c.especial
+	for afastar in [false, true]:
+		c.limpar_partida()
+		h.chave = "lucas"
+		h.nivel = 20
+		h.m_area = 1.72
+		h.m_dano = 1.0
+		h.m_critico = -1.0
+		e.armar(h)
+		h.esp_carga = h.esp_carga_max
+		ok(h.especial(), "Q real com area das seis cartas")
+		var origem: Vector2 = h.pos + h.ORIGEM_GOLPE
+		e._t = float(e._c.dur)
+		e._q_chuva(h, 1.0 / 60.0, Vector2.ZERO)
+		var dir: Vector2 = c.adagas.a_dir[0]
+		var dentro = _alvo(origem + dir * 575.0 + Vector2(0, 6))
+		var fora = _alvo(origem + dir * 620.0 + Vector2(0, 6))
+		ok(c.adagas.ativas() == int(e._c.final.n), "rodada final usa pool real")
+		ok(igual(c.adagas.a_rest[0], 584.793), "alcance final composto 584,793")
+		var pos: Vector2 = h.pos
+		if afastar:
+			h.pos -= dir * 900.0
+		for i in 160:
+			c.adagas.atualizar(1.0 / 60.0)
+		ok(dentro.vida < 10000.0, "Q atinge 575px com heroi afastado=%s" % afastar)
+		ok(fora.vida == 10000.0, "Q nao atinge fora do alcance composto")
+		ok(c.adagas.a_rest.size() == c.adagas.MAX and c.adagas.a_dir.size() == c.adagas.MAX, "pool nao cresce")
+		h.pos = pos
+		e.cancelar(h)
+
+
+## Corpo grande intersecta a caixa mesmo com o peito fora. A Chuva nasce nesse peito
+## e pode alcançar uma roda fora da caixa original ainda na mesma atualização.
+func _provar_broadphase_extra() -> void:
+	var c = w.combate
+	var h = w.heroi
+	c.limpar_partida()
+	c.cfg.golpe.variacao = 0.0
+	h.m_critico = -1.0
+	c.armas.mods.chuva = 0.0
+	var a = c.adagas
+	var base_sem_chuva: Vector2 = h.pos + Vector2(200, 0)
+	var corpo_sem_chuva = _alvo(base_sem_chuva + Vector2(70, 6))
+	corpo_sem_chuva.raio = 60.0
+	a._nova(base_sem_chuva, Vector2.RIGHT, 7200.0, 20.0, 10.0, 0.0, 0.0, Color.WHITE, 0, false, 4.0)
+	a._selecionar_candidatos(1.0 / 60.0)
+	ok(a._cand.has(corpo_sem_chuva), "sem Chuva: corpo entra com peito fora da caixa")
+	a.atualizar(1.0 / 60.0)
+	ok(corpo_sem_chuva.vida == 9990.0, "sem Chuva: narrowphase acerta corpo grande")
+	c.limpar_partida()
+	c.armas.mods.chuva = 100.0
+	var base: Vector2 = h.pos + Vector2(200, 0)
+	var grande = _alvo(base + Vector2(70, 6))
+	grande.raio = 60.0
+	var origem_extra: Vector2 = grande.pos + Vector2(0, -8)
+	var roda: Array = []
+	for i in 32:
+		var pos: Vector2 = origem_extra + Vector2.from_angle(TAU * float(i) / 32.0) * 60.0
+		var m = _alvo(pos + Vector2(0, 6))
+		m.raio = 8.0
+		roda.append(m)
+	a._nova(base, Vector2.RIGHT, 7200.0, 20.0, 10.0, 0.0, 0.0, Color.WHITE, 0, false, 4.0)
+	seed(371)
+	var esperado := randi()
+	seed(371)
+	a._selecionar_candidatos(1.0 / 60.0)
+	ok(randi() == esperado, "broadphase nao gasta RNG global")
+	ok(a._cand.has(grande), "corpo intersecta mesmo com peito fora da caixa")
+	for m in roda:
+		ok(a._cand.has(m), "bound cobre destino possivel da extra mesmo quadro")
+	a.atualizar(1.0 / 60.0)
+	ok(grande.vida == 9990.0, "narrowphase acerta corpo grande")
+	var feridos := 0
+	for m in roda:
+		if m.vida < 10000.0:
+			feridos += 1
+	ok(a.lancadas == 2 and a.acertos == 2 and feridos == 1, "extra nasce e acerta fora AABB original no mesmo quadro")
+	ok(a.a_rest.size() == a.MAX and a.a_extra.size() == a.MAX, "pool permanece fixo com extra")
