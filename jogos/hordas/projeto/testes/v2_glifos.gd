@@ -136,7 +136,10 @@ func _mouse_e_teclas() -> void:
 		ok(acesos["e"].size() == acesos["d"].size(), "os dois botões têm o mesmo tamanho (altura %s)" % altura)
 		for q in ["e", "d", "m"]:
 			ok(Glifos.pixels_mouse(q, altura).size() == ref.size(), "o botão aceso não muda a silhueta (altura %s)" % altura)
-	ok(Glifos.largura_mini(sec[0]) == 9.0, "o mouse mini tem 9 px de largura")
+	ok(Glifos.largura_mini(sec[0]) == 7.0, "o mouse mini tem 7 px de largura (mais alto que largo: 10 px)")
+	ok(Glifos.MOUSE_MINI.size() > Glifos.MOUSE_MINI[0].length(), "o mouse mini é mais alto que largo")
+	var cupula: String = Glifos.MOUSE_MINI[0]
+	ok(cupula.strip_edges().length() < Glifos.MOUSE_MINI[4].strip_edges().length(), "o mini tem cúpula: a linha de cima é mais estreita que a da costura")
 	ok(Glifos.texto("secundario") == "Mouse D", "o texto do mouse (para quem só lê texto) segue 'Mouse D'")
 	Glifos.definir(Glifos.Disp.XBOX)
 	ok(Glifos.descritor("secundario")[0] == [Glifos.TECLA, "LT"], "Xbox: o secundário continua o gatilho LT")

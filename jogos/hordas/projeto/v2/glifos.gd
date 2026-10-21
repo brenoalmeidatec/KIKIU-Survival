@@ -52,16 +52,16 @@ const MOUSE_GRANDE := [
 	" ########## ",
 ]
 const MOUSE_MINI := [
-	" ####### ",
-	"#LL#M#RR#",
-	"#LL#M#RR#",
-	"#LL#M#RR#",
-	"#LL#M#RR#",
-	"#########",
-	"#.......#",
-	"#.......#",
-	"#.......#",
-	" ####### ",
+	"  ###  ",
+	" #LMR# ",
+	"#LL#RR#",
+	"#LL#RR#",
+	"#######",
+	"#.....#",
+	"#.....#",
+	"#.....#",
+	"#.....#",
+	" ##### ",
 ]
 
 ## ação -> [teclado, xbox, ps]; cada um é uma lista de [tipo, texto]. Vazio = não existe nesse dispositivo.

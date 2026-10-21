@@ -621,7 +621,7 @@ func matar(m) -> void:
 	for i in m.n_orbes:
 		orbes.soltar(m.pos, m.xp * mult)
 	if float(armas.mods.folego) > 0.0:  # modificador da katana: matar recupera fôlego
-		mundo.heroi.ganhar_folego_abate(float(armas.mods.folego) / 100.0)
+		mundo.heroi.ganhar_folego(float(armas.mods.folego) / 100.0)
 	especial.abate(m)  # cada abate dá carga de bônus à ultimate (Q)
 	if m.elite:
 		elites.ao_morrer(m)

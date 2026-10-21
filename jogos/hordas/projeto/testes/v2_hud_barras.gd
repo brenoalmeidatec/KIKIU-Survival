@@ -248,6 +248,15 @@ func _fotos(pasta: String) -> void:
 	w.heroi.folego = 1.43
 	await get_tree().create_timer(0.1).timeout
 	await _foto(w, pasta, "folego_143_de_3")
+	# #374: o selo do mouse no card do botão direito, aceso (fôlego cheio: o botão branco) e apagado (cansado: tudo cinza), no HUD de partida
+	w.heroi.folego = w.heroi.folego_max
+	w.heroi.cansado = false
+	await get_tree().create_timer(0.3).timeout
+	await _foto(w, pasta, "selo_mouse_aceso")
+	w.heroi.folego = 0.0
+	w.heroi.cansado = true
+	await get_tree().create_timer(0.3).timeout
+	await _foto(w, pasta, "selo_mouse_cinza")
 
 
 func _foto(w, pasta: String, nome: String) -> void:

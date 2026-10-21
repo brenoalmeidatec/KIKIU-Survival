@@ -66,7 +66,6 @@ var xp_proximo := 5.0
 var nivel := 1
 var folego := 3.0  # fôlego em cargas (fracionário), gasto por esquiva (um bloco) e corrida (por segundo)
 var folego_max := 3.0
-var _credito_abate := 1.0  # fôlego que os abates ainda podem devolver agora (ver ganhar_folego_abate)
 var cansado := false  # fôlego zerou: sem correr nem esquivar até recuperar
 var correndo := false
 var vel_base := VEL  # px/s de andar do herói escolhido (cfg.heroi.vel, v2/herois.gd); o VEL é só o padrão
@@ -436,19 +435,7 @@ func duracao_do_passo(i: int) -> float:
 	return float(mundo.combate.cfg.golpe.passos[i].duracao) / m_vel_ataque
 
 
-## O que o abate devolve de fôlego (modificador "Fôlego de caçador"), com o TETO por segundo de dados/v2_combate.json (folego.abate_max_s). Sem ele, 4 cartas
-## (12% a 38% por abate cada, vezes a raridade) numa horda de dezenas de abates por segundo enchiam a barra na hora e o fôlego nunca acabava (nível 30, #374).
-## O crédito é um balde: enche abate_max_s por segundo até abate_max_s (1 s de folga) e cada abate gasta dele; teto 0 ou ausente = sem limite.
-func ganhar_folego_abate(x: float) -> void:
-	var teto := float(mundo.combate.cfg.folego.get("abate_max_s", 0.0))
-	if teto > 0.0:
-		x = minf(x, _credito_abate)
-		_credito_abate -= x
-	if x > 0.0:
-		ganhar_folego(x)
-
-
-## Fôlego que volta: sai do cansaço se passar do limite.
+## Fôlego que volta (matar com o modificador "Fôlego de caçador"): sai do cansaço se passar do limite.
 func ganhar_folego(x: float) -> void:
 	folego = minf(folego_max, folego + x)
 	if cansado and folego >= float(mundo.combate.cfg.folego.cansado_ate) * folego_max:
@@ -670,9 +657,6 @@ func _gastar(x: float) -> void:
 ## Recuperação: espera o atraso depois do último gasto; parado volta mais rápido do que andando. Cansado sai do cansaço ao passar de 30%.
 func _recuperar(dt: float, parado: bool) -> void:
 	var f: Dictionary = mundo.combate.cfg.folego
-	var teto_abate := float(f.get("abate_max_s", 0.0))
-	if teto_abate > 0.0:
-		_credito_abate = minf(teto_abate, _credito_abate + teto_abate * dt)
 	if _atraso_t > 0.0:
 		_atraso_t -= dt
 	elif folego < folego_max:
