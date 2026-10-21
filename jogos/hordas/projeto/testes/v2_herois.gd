@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático dos heróis da v2 (v2/herois.gd, adagas.gd, personagens.gd, dados/v2_herois.json): Hazaki (padrão), Nicão (marreta) e Lucas
 # (adagas). Usa um save TEMPORÁRIO (user://teste_v2_herois.cfg): o save real não é tocado. Confere: o JSON (3 heróis, folhas de sprites que
 # existem, o Hazaki repetindo os números do v2_combate.json); a escolha (sem chave = Hazaki, grava e relê, id inválido ignorado, o resto do
@@ -16,12 +16,12 @@ const Heroi := preload("res://v2/heroi.gd")
 const Herois := preload("res://v2/herois.gd")
 const Meta := preload("res://v2/meta.gd")
 const Status := preload("res://v2/status.gd")  # o card SUA BUILD (tecla C)
-const SAVE_TESTE := "user://teste_v2_herois.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const INDICE_REAL := "user://v2_personagens.cfg"
-const INDICE_TESTE := "user://teste_v2_herois_indice.cfg"
-const PREFIXO_TESTE := "user://teste_v2_herois_p"
-const ANTIGO_TESTE := "user://teste_v2_herois_antigo.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_herois/teste_v2_herois.cfg"
+const SAVE_REAL := "user://testes_v2/v2_herois/v2_progresso.cfg"
+const INDICE_REAL := "user://testes_v2/v2_herois/v2_personagens.cfg"
+const INDICE_TESTE := "user://testes_v2/v2_herois/teste_v2_herois_indice.cfg"
+const PREFIXO_TESTE := "user://testes_v2/v2_herois/teste_v2_herois_p"
+const ANTIGO_TESTE := "user://testes_v2/v2_herois/teste_v2_herois_antigo.cfg"
 const PASSO := 1.0 / 60.0
 const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"
 

@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da HABILIDADE de cada herói, a tecla E (v2/habilidade.gd, heroi.gd, combate.gd, hud_habilidades.gd, dados/v2_habilidade.json,
 # dados/v2_ruptura.json > cartas): o mapa herói -> id (Hazaki: ruptura, Nicão: investida_escudo, Lucas: salto_adagas), os campos hab_* que o HUD lê, e para
 # CADA herói numa partida de verdade: a E nasce pronta, o aperto dispara (a ruptura do Hazaki pelo caminho antigo, segurando; as outras na hora), o herói

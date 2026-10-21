@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do TETO de fôlego que os abates devolvem (#374, "o fôlego cresce rápido demais no nível 30"): a carta Fôlego de caçador devolve valor% de uma carga por
 # abate (12% a 38%, até 4 cartas), e numa horda de dezenas de abates por segundo isso enchia a barra na hora. dados/v2_combate.json folego.abate_max_s limita
 # o que os abates devolvem por segundo (um balde que enche com o tempo); 0 desliga o teto. A regeneração normal (parado/andando) não muda.

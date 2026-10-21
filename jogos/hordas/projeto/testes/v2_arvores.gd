@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da colisão das árvores da v2 (pegada). Para cada tipo de árvore e de tronco do mapa (arvore, arvore_pantano,
 # arvore_morta, toco, tronco), o herói anda das 8 direções até a árvore pelo caminho de verdade (mundo.mover) e confere que:
 #   - a árvore está registrada no mundo (o centro da base não é livre);

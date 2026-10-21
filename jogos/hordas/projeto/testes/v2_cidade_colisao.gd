@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático: herói e monstro NÃO entram andando nos objetos da Cidade (v2/colisao.gd + Mundo.mover, o ponto único de movimento).
 # Para cada forma (caixa ou elipse) de cada objeto da Cidade, um corpo (herói, raio 6; monstro comum, raio 7) nasce a 60 px de cada um dos
 # 4 lados e anda 2 s em direção ao centro da forma, só por mundo.mover(). Dois passes:

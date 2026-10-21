@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do LIMITE DE TEMPO da escolha de cartas da v2 e do ESC na escolha (dados/v2_cartas.json: escolha.limite_s = 8 s, limite_urgente_s = 3 s).
 # Confere: o limite abre cheio e só corre depois da trava de 1 s (que continua valendo: nada escolhe nela); a barra e a contagem na legenda andam e
 # ficam vermelhas nos últimos 3 s; ao zerar o sistema escolhe pela MESMA regra do botão Automático (progresso.automatico) e o HUD avisa

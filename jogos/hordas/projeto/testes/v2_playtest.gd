@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do robô de playtest da v2 (#301, funções _pt_* do v2/roteiro.gd). Roda o jogo de verdade num SUBPROCESSO do Godot, com a
 # mesma linha que o lote usa (ferramentas/playtest_v2.py), e confere:
 #   a) partida curta (--playtest_max=30): código 0, uma linha PLAYTEST_JSON válida, desfecho "tempo" no teto e nível >= 1;
@@ -11,6 +11,8 @@ extends Node
 # é morto (OS.kill) e o teste falha, sem deixar processo órfão. A saída de cada filho vai para um log próprio (--log-file), lido
 # depois que ele termina. A espera usa só get_process_exit_code: no Godot 4.4.1 para Linux, is_process_running guarda o status cru
 # do waitpid, e o código 3 viraria 768.
+# No notebook, KIKIU_GODOT_FILA aponta para o wrapper PowerShell: rode esta cena sozinha (pai e filho usam as duas vagas).
+# O marcador do helper identifica o Godot real; a espera da fila não gasta o prazo e um timeout nunca mata o wrapper.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_playtest.tscn  (imprime "v2_playtest falhas=0")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
@@ -18,13 +20,19 @@ const TETO_CURTA := 30  # segundos de JOGO da partida curta (uns 8 s reais)
 const TETO_MORTE := 90  # segundos de JOGO até um monstro matar o robô parado (a Floresta leva uns 50 s de jogo, uns 12 s reais)
 const TETO_VIGIA := 150  # a 1ª tela de cartas abre perto de 62 s de jogo; se não abrir, a partida acaba em "tempo" e o teste falha
 const PRAZO_S := 80  # prazo do teste inteiro, em segundos reais (o CI corta a cena em 120 s)
-const PASTA := "user://playtest"
+const PASTA := "user://playtest"  # contrato do robô de produção: um save temporário por PID
 const SEM_ARQUIVO := "(não existe)"
 # arquivos da v1 que uma partida da v2 não deveria tocar (conferidos de quebra)
-const OUTROS_REAIS := ["user://calor.json", "user://recordes.json", "user://online.json", "user://heroi_criado.json"]
+const OUTROS_REAIS := [
+	"user://testes_v2/v2_playtest/calor.json",
+	"user://testes_v2/v2_playtest/recordes.json",
+	"user://testes_v2/v2_playtest/online.json",
+	"user://testes_v2/v2_playtest/heroi_criado.json"
+]
 
 var falhas := 0
 var t0 := 0
+var _fila_ms := 0  # espera do wrapper fica fora do prazo do jogo; o CI sem wrapper mantém o prazo de antes
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -69,10 +77,10 @@ func _retrato_real() -> Dictionary:
 	for p in [Meta.caminho_save, Personagens.caminho_indice, Personagens.caminho_antigo, Config.arquivo] + OUTROS_REAIS:
 		lista.append_array([p, p + ".tmp", p + ".bak"])
 	var prefixo := Personagens.caminho_base.get_file()  # o save de cada personagem: v2_personagem_<id>.cfg (e .tmp, .bak)
-	if DirAccess.dir_exists_absolute("user://"):
-		for f in DirAccess.get_files_at("user://"):
+	if DirAccess.dir_exists_absolute("user://testes_v2/v2_playtest/"):
+		for f in DirAccess.get_files_at("user://testes_v2/v2_playtest/"):
 			if f.begins_with(prefixo):
-				lista.append("user://" + f)
+				lista.append("user://testes_v2/v2_playtest/" + f)
 	var r := {}
 	for arq in lista:
 		r[arq] = FileAccess.get_md5(arq) if FileAccess.file_exists(arq) else SEM_ARQUIVO
@@ -80,7 +88,7 @@ func _retrato_real() -> Dictionary:
 
 
 func _decorrido() -> float:
-	return (Time.get_ticks_msec() - t0) / 1000.0
+	return (Time.get_ticks_msec() - t0 - _fila_ms) / 1000.0
 
 
 ## Roda uma partida do robô num processo novo e devolve {nome, pid, codigo, saida, s}. codigo -1: não terminou no prazo (foi morto).
@@ -89,31 +97,64 @@ func _partida(nome: String, extras: Array) -> Dictionary:
 	if _decorrido() > PRAZO_S:
 		ok(false, "%s: sem tempo para rodar (o prazo de %d s do teste já passou)" % [nome, PRAZO_S])
 		return r
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(PASTA))
-	var log_partida := "%s/teste_v2_playtest_%d_%s.log" % [PASTA, OS.get_process_id(), nome]
+	var log_partida := AmbienteTesteV2.arquivo("playtest_%s.log" % nome)
 	_apagar(log_partida)
 	var args := PackedStringArray(["--headless", "--fixed-fps", "60", "--path", ProjectSettings.globalize_path("res://")])
 	args.append_array(["--log-file", ProjectSettings.globalize_path(log_partida), "res://v2/mundo.tscn"])
 	args.append_array(["--", "--playtest", "--heroi=hazaki", "--mapa=floresta", "--semente=1"])
 	args.append_array(extras)
+	# O notebook exige a fila para qualquer Godot novo, inclusive o filho. O CI Linux não define esta variável.
+	var fila := OS.get_environment("KIKIU_GODOT_FILA")
+	var pela_fila := fila != ""
+	var executavel := OS.get_executable_path()
+	var pid_arquivo := AmbienteTesteV2.arquivo("playtest_%s.pid" % nome)
+	var pid_env_anterior := OS.get_environment(AmbienteTesteV2.ENV_PID)
+	if pela_fila:
+		if OS.get_name() != "Windows" or not FileAccess.file_exists(fila):
+			ok(false, "%s: KIKIU_GODOT_FILA exige um script PowerShell existente no Windows" % nome)
+			return r
+		executavel = "powershell.exe"
+		var argumentos_fila := PackedStringArray(["-NoProfile", "-File", fila])
+		argumentos_fila.append_array(args)
+		args = argumentos_fila
+		_apagar(pid_arquivo)
+		OS.set_environment(AmbienteTesteV2.ENV_PID, pid_arquivo)
 	var inicio := Time.get_ticks_msec()
-	var pid := OS.create_process(OS.get_executable_path(), args)
-	r.pid = pid
-	if pid <= 0:
+	var launcher_pid := OS.create_process(executavel, args)
+	if pela_fila:
+		OS.set_environment(AmbienteTesteV2.ENV_PID, pid_env_anterior)
+	r.pid = -1 if pela_fila else launcher_pid
+	if launcher_pid <= 0:
 		ok(false, "%s: OS.create_process falhou" % nome)
 		return r
 	var codigo := -1
+	var ultimo := inicio
+	var esgotou := false
 	while codigo == -1:
-		if _decorrido() > PRAZO_S:
-			OS.kill(pid)
-			ok(false, "%s: a partida passou do prazo de %d s do teste; processo %d morto" % [nome, PRAZO_S, pid])
+		if pela_fila and int(r.pid) <= 0:
+			# O hook inicial da fixture escreve o PID antes do jogo. Até lá o wrapper pode estar só esperando uma vaga.
+			var agora := Time.get_ticks_msec()
+			_fila_ms += agora - ultimo
+			ultimo = agora
+			if FileAccess.file_exists(pid_arquivo):
+				r.pid = int(FileAccess.get_file_as_string(pid_arquivo))
+		if not esgotou and int(r.pid) > 0 and _decorrido() > PRAZO_S:
+			esgotou = true
+			var erro_matar := OS.kill(int(r.pid))
+			ok(erro_matar == OK, "%s: não foi possível encerrar o Godot %d (%d)" % [nome, int(r.pid), erro_matar])
+			ok(false, "%s: a partida passou do prazo de %d s do teste; encerrando Godot %d" % [nome, PRAZO_S, int(r.pid)])
 			# no Linux o kill já espera o fim do processo; no Windows o TerminateProcess não, e o pid sai do mapa (get_process_exit_code
 			# volta -1 para sempre): um respiro curto antes de ler e apagar o log
 			OS.delay_msec(300)
-			break
+			if not pela_fila:
+				break
+			# Nunca mata o wrapper: espera seu finally liberar a vaga após o Godot terminar.
 		OS.delay_msec(100)
-		codigo = OS.get_process_exit_code(pid)
-	r.codigo = codigo
+		codigo = OS.get_process_exit_code(launcher_pid)
+	if pela_fila:
+		ok(int(r.pid) > 0, "%s: filho sem marcador de PID; falta o hook inicial da fixture" % nome)
+		_apagar(pid_arquivo)
+	r.codigo = -1 if esgotou else codigo
 	r.s = (Time.get_ticks_msec() - inicio) / 1000.0
 	if FileAccess.file_exists(log_partida):
 		r.saida = FileAccess.get_file_as_string(log_partida)

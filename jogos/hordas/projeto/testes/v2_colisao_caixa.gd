@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático: forma "caixa" (retângulo alinhado aos eixos no chão) de v2/colisao.gd. O corpo é a elipse r x r/2 (chão 2:1),
 # a mesma convenção da elipse: folga de r em x e de r/2 em y.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_colisao_caixa.tscn  (imprime "v2_colisao_caixa falhas=0")

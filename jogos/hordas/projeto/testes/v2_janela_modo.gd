@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da faixa preta lateral (v2/mundo.gd, _ajustar_janela): maximizada ou em tela cheia o SO manda no tamanho da janela; se o
 # jogo pedir outro, o Windows ignora mas o Window.size guarda o valor pedido, o viewport encolhe e sobra uma faixa à direita e embaixo
 # (visto no notebook, 2560x1351 maximizada virou 2328x1310). Só o modo normal pode ser redimensionado, e a guarda vem antes de qualquer

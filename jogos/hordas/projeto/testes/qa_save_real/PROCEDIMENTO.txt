@@ -1,0 +1,48 @@
+Prova com cópia de save real — issue #387
+
+Estado final em 21/10/2026: CONCLUÍDO no commit dcde5a53c1d627cc3597faccfa6d5d89dfdb1002.
+O relatorio_2026-10-21_final.json registra as quatro rodadas: 76 cenas em série e v2_playtest isolado,
+nas variantes base e migrável. Cada rodada teve probe de user_dir aprovado antes dos testes.
+Todos os processos terminaram com código 0, falhas=0 e sem SCRIPT ERROR; as guardas SHA256/tamanho
+confirmaram origem, golden e QA inalterados após cada processo e fixtures limpas.
+O relatorio_2026-10-21.json mantém o estado histórico PENDENTE da preparação anterior; não é resultado desta continuação.
+A prova foi headless. Ferramentas de fotos sem flags não validam imagens (veja Limites abaixo).
+
+Arquivos desta pasta não contêm saves, dados pessoais do save, caminhos absolutos da máquina ou logs brutos.
+Os manifestos usam raízes lógicas e pares nome/tamanho/SHA256. Os CFG e os runners locais ficam externos ao Git.
+Os runners locais não foram versionados porque contêm caminhos específicos da máquina.
+
+Preparação reproduzível:
+1. Defina externamente origem do user:// real, pasta de evidências fora de qualquer Git e dois novos user:// QA.
+2. Selecione somente v2_*.cfg e opcoes.cfg da raiz, incluindo .bak/.tmp existentes. Rejeite links/junctions e destinos existentes.
+3. Faça snapshot nome/tamanho/SHA256 da origem, copie bytes reais para golden, confira origem depois == golden == origem antes.
+4. Marque os arquivos golden como somente leitura. Faça duas cópias reais graváveis em QA; nunca altere ou restaure a origem.
+5. Variante base preserva todos os bytes. Variante migrável modifica só a segunda QA:
+   opcoes.cfg com [graficos] perfil="personalizado", base="alto", sombras="projetadas" e [opcoes] qualidade_auto=true;
+   slot p1 ativo com heroi="nicao" e nome="Nicão"; almas=987654 e melhorias no máximo do catálogo.
+   Registre novos hashes depois dessas alterações controladas, sem expor conteúdo original.
+6. Guarde o override local anterior e prepare overrides externos; confira o destino QA antes da troca e não mantenha processos próprios ativos.
+
+Contrato da execução:
+- Config._ready deve chamar a fixture antes de recarregar(), somente para CLI/ENV de teste, fora do editor e com recurso de teste existente.
+- O namespace aprovado é user://testes_v2/<cena>/. Não renomear a constante da fixture para reproduzir exemplos de outros nomes.
+- Use Godot 4.4.1 exclusivamente pelo wrapper de fila configurado pelo operador. Todo filho herda KIKIU_GODOT_FILA.
+- Herde APPDATA; não crie links nem altere o save real. Aponte config/use_custom_user_dir e config/custom_user_dir_name exatamente à QA.
+- Confirme OS.get_user_data_dir() por probe serial antes da suíte. O probe deve usar ENV KIKIU_TESTE_V2_CENA=v2_prova387_usuario
+  antes dos autoloads, verificar Config.arquivo/Meta.caminho_save/Slots.caminho_indice dentro da fixture, saldo zero e slots vazios,
+  realizar gravação na fixture e chamar finalizar(). Exigir a remoção da fixture ao sair.
+- Faça import e smoke v2_isolamento antes da bateria. Execute as cenas listadas em cenas_v2.txt em série para cada variante.
+- Rode v2_playtest sozinho, após combinar duas vagas globais livres; pai e filho ocupam ambas. Não misture outros pais na janela.
+- O runner externo não deve impor timeout que mate o wrapper. Aguarde finally liberar a vaga; não interrompa testes válidos.
+- Capture stdout, log da engine, código e duração em pasta externa nova. Exigir exit0, falhas=0 e ausência de SCRIPT ERROR/Parse Error/FALHOU.
+  ERROR isolado pode ser um teste negativo intencional, conforme o executor CI existente.
+- Antes/depois de cada processo compare SHA256+tamanho de todos os CFG protegidos na origem, golden e QA.
+  Exija ausência de arquivos/diretórios em testes_v2, incluindo hidden, .bak e .tmp; o diretório pai vazio é permitido.
+- Na falha, preserve evidências. Nunca restaure/limpe saves reais ou CFG sujos para esconder mudanças.
+
+Limites:
+- Hashes finais não demonstram ausência de leitura ou de escrita transitória restaurada.
+- Sem --fotos ou --spec, controle_fotos/fontes_prints/icones_prints/fontes_folha são ferramentas sem execução visual;
+  apenas a inicialização e a limpeza da fixture são exercidas. Outras cenas pulam parte das capturas em headless.
+- O resultado final deve derivar dos comparativos finais; não imprimir sucesso com qualquer hash divergente.
+- Python -O/PYTHONOPTIMIZE não pode desativar as guardas de filesystem ou de liberação.

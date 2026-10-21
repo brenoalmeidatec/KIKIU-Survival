@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste dos ícones próprios das cartas da v2 (arte do PR #272, assets/v2/icones_cartas, gerados por gerar_objetos.py icones).
 #  - o índice indice.json existe, traz _ajuda e tem entrada para cada ID de carta de dados/v2_cartas.json (stats, golpes,
 #    modificadores e evoluções) e para katana, escudo, ruptura e ultimate_q;

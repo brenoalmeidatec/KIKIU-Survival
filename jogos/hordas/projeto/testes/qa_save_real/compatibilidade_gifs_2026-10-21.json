@@ -1,0 +1,59 @@
+{
+  "data": "2026-10-21",
+  "base_git": "7e9caad4163adc771130283a7a63644398b9f626",
+  "status": "APROVADO",
+  "config_sha256": "f71833ae3aae09a39f012bc70de84aa011b0cef74c176a980dfc7dd6d804a074",
+  "escopo": "Guard GIF do #394 preservado antes da fixture v2 e de recarregar; prova curta nas duas copias sujas apos a conciliacao.",
+  "rodadas": [
+    {
+      "variante": "base",
+      "sucesso": true,
+      "origem_inalterada": true,
+      "golden_inalterado": true,
+      "qa_inalterado": true,
+      "processos": [
+        {
+          "nome": "probe_fixture",
+          "codigo": 0,
+          "segundos_inclui_fila": 0.828,
+          "erros": [],
+          "residuos_fixture": []
+        },
+        {
+          "nome": "v2_isolamento",
+          "codigo": 0,
+          "segundos_inclui_fila": 0.906,
+          "erros": [],
+          "residuos_fixture": []
+        }
+      ]
+    },
+    {
+      "variante": "migravel",
+      "sucesso": true,
+      "origem_inalterada": true,
+      "golden_inalterado": true,
+      "qa_inalterado": true,
+      "processos": [
+        {
+          "nome": "probe_fixture",
+          "codigo": 0,
+          "segundos_inclui_fila": 0.781,
+          "erros": [],
+          "residuos_fixture": []
+        },
+        {
+          "nome": "v2_isolamento",
+          "codigo": 0,
+          "segundos_inclui_fila": 0.906,
+          "erros": [],
+          "residuos_fixture": []
+        }
+      ]
+    }
+  ],
+  "limites": [
+    "A prova completa continua identificada pelo commit dcde5a5 no relatorio final; esta repeticao curta cobre o acrescimo do guard GIF.",
+    "Os recursos GIF estao no #394; a prova de migracao desses helpers foi feita naquele PR. Este acrescimo preserva o mesmo metodo sem mudar sua logica."
+  ]
+}

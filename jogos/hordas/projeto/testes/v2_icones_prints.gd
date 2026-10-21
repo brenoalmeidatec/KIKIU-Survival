@@ -1,12 +1,12 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Prints dos ícones próprios das cartas da v2 (arte do PR #272), em 960x540: a escolha de cartas, o SUA BUILD no HUD (tecla C)
 ## e o SUA BUILD ao lado do menu de pausa. Precisa de janela (não roda em --headless); só o viewport do Godot.
 ##   godot --path jogos/hordas/projeto res://testes/v2_icones_prints.tscn -- --fotos=PASTA --prefixo=depois
 ## Grava PREFIXO_escolha.png, PREFIXO_sua_build_hud.png e PREFIXO_sua_build_pausa.png. Sem --fotos só responde falhas=0 (o CI roda toda cena).
 const Mundo := preload("res://v2/mundo.tscn")
 const Meta := preload("res://v2/meta.gd")
-const SAVE_TESTE := "user://teste_v2_icones_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_icones_opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_icones_prints/teste_v2_icones_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_icones_prints/teste_v2_icones_opcoes.cfg"
 # a build da foto: golpes e modificadores da katana, com níveis e raridades diferentes
 const BUILD := [
 	["laminas", 2], ["aura_fogo", 2], ["corvos", 2], ["raio", 1], ["runa", 1], ["flechas_sombrias", 1], ["onda", 1], ["fura", 1], ["explode", 1], ["folego", 1]
@@ -77,7 +77,7 @@ func _ready() -> void:
 	for arq in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(arq):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(arq))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_icones_prints/opcoes.cfg"
 	print("v2_icones_prints em ", pasta)
 	get_tree().quit()
 

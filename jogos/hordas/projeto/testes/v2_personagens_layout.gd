@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Layout da tela PERSONAGENS da v2 (v2/personagens_tela.gd). Regressões desta tela:
 # - a lista (com VOLTAR) fica acima do rodapé de teclas e rola até o último botão;
 # - o foco de cada botão cabe na área visível da rolagem, inclusive o da primeira e o da última linha (a borda fica por dentro);
@@ -13,10 +13,10 @@ const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Herois := preload("res://v2/herois.gd")
 const Tela := preload("res://v2/personagens.tscn")
-const INDICE := "user://teste_pers_layout_indice.cfg"
-const PREFIXO := "user://teste_pers_layout_p"
-const ANTIGO := "user://teste_pers_layout_antigo.cfg"
-const META := "user://teste_pers_layout_meta.cfg"
+const INDICE := "user://testes_v2/v2_personagens_layout/teste_pers_layout_indice.cfg"
+const PREFIXO := "user://testes_v2/v2_personagens_layout/teste_pers_layout_p"
+const ANTIGO := "user://testes_v2/v2_personagens_layout/teste_pers_layout_antigo.cfg"
+const META := "user://testes_v2/v2_personagens_layout/teste_pers_layout_meta.cfg"
 const RODAPE_Y := 498.0  # o rodapé de teclas começa aqui (DESIGN.md §1b)
 const PEDRA := 5.0  # espessura da moldura de pedra: o conteúdo da ficha fica dentro dela
 # Altura da caixa do nome: a linha do Jersey 56 na janela real (ascent 45 + descent 15 = 60; a 1920x1080 mede 60,8). O --headless

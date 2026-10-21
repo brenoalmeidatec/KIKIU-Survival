@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## As invocações que andam de verdade (v2/andante.gd, ligado em v2/armas_novas.gd): para cada ficha, a folha e o .json do gerador batem com o
 ## código; o ciclo surgir -> andar -> atacar -> andar -> sumir acontece; ele para em alcance; o passo só anda quando ele anda; o golpe fere
 ## UMA vez por ataque, no quadro do impacto, e o ciclo segue o "tique" da carta.

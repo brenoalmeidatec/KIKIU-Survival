@@ -5,12 +5,8 @@ const Roteiro := preload("res://v2/roteiro.gd")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const Herois := preload("res://v2/herois.gd")
+const Ambiente := preload("res://testes/ambiente_v2.gd")
 const PASSO := 1.0 / 60.0
-const SAVE_TESTE := "user://teste_v2_robo_borda_meta.cfg"
-const INDICE_TESTE := "user://teste_v2_robo_borda_indice.cfg"
-const SLOTS_TESTE := "user://teste_v2_robo_borda_personagem_"
-const ANTIGO_TESTE := "user://teste_v2_robo_borda_antigo.cfg"
-const OPCOES_TESTE := "user://teste_v2_robo_borda_opcoes.cfg"
 
 
 class RoteiroCaptura:
@@ -28,8 +24,14 @@ class MonstroTeste:
 
 
 var falhas := 0
-var originais := {}
-var protegidos := {}
+
+
+func _init() -> void:
+	Ambiente.iniciar(get_script().resource_path)
+
+
+func _exit_tree() -> void:
+	Ambiente.finalizar()
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -39,10 +41,24 @@ func ok(cond: bool, msg: String) -> void:
 
 
 func _ready() -> void:
-	_isolar()
+	Herois.forcado = "hazaki"
+	ok(
+		(
+			Config.arquivo.begins_with(Ambiente.raiz)
+			and Meta.caminho_save.begins_with(Ambiente.raiz)
+			and Personagens.caminho_indice.begins_with(Ambiente.raiz)
+			and Personagens.caminho_base.begins_with(Ambiente.raiz)
+			and Personagens.caminho_antigo.begins_with(Ambiente.raiz)
+		),
+		"opções, meta e saves de personagens começam isolados antes do fluxo"
+	)
+	ok(Personagens.lista().is_empty() and Meta.saldo() == 0, "fixture começa sem dados herdados")
 	_testar_projecao()
 	await _testar_fluxo_real()
-	_restaurar()
+	Ambiente.finalizar()
+	ok(not DirAccess.dir_exists_absolute(Ambiente.raiz), "fixture do robô removida antes do resumo")
+	for caminho in [Config.arquivo, Meta.caminho_save, Personagens.caminho_indice, Personagens.caminho_base, Personagens.caminho_antigo]:
+		ok(caminho.begins_with(Ambiente.raiz), "callback tardio continua no sandbox: " + caminho)
 	print("v2_robo_borda falhas=%d" % falhas)
 	get_tree().quit(1 if falhas > 0 else 0)
 
@@ -101,67 +117,6 @@ func _sem_saida(pos: Vector2, lim: Rect2, dir: Vector2) -> bool:
 	if pos.y >= lim.end.y - Roteiro.MARGEM_BORDA_ROBO and dir.y > 0.001:
 		return false
 	return true
-
-
-func _md5(caminho: String) -> String:
-	return FileAccess.get_md5(caminho) if FileAccess.file_exists(caminho) else "ausente"
-
-
-func _isolar() -> void:
-	originais = {
-		"meta": Meta.caminho_save,
-		"indice": Personagens.caminho_indice,
-		"slots": Personagens.caminho_base,
-		"antigo": Personagens.caminho_antigo,
-		"opcoes": Config.arquivo,
-		"cfg": Config._cfg,
-		"temp": Config._temp.duplicate(true),
-		"temp_perfil": Config._temp_perfil,
-		"meta_erro": Meta.erro_save,
-		"heroi": Herois.forcado,
-	}
-	var arquivos: Array = [Meta.caminho_save, Personagens.caminho_indice, Personagens.caminho_antigo, Config.arquivo]
-	for id in Personagens.lista():
-		arquivos.append(Personagens.caminho_do_save(str(id)))
-	for caminho in arquivos:
-		for sufixo in ["", ".bak", ".tmp"]:
-			protegidos[str(caminho) + sufixo] = _md5(str(caminho) + sufixo)
-	Meta.caminho_save = SAVE_TESTE
-	Personagens.caminho_indice = INDICE_TESTE
-	Personagens.caminho_base = SLOTS_TESTE
-	Personagens.caminho_antigo = ANTIGO_TESTE
-	Config.arquivo = OPCOES_TESTE
-	_limpar()
-	Config.recarregar()
-	Herois.forcado = "hazaki"
-
-
-func _restaurar() -> void:
-	for caminho in protegidos:
-		ok(_md5(caminho) == protegidos[caminho], "arquivo do jogador preservado: " + caminho)
-	_limpar()
-	Meta.caminho_save = originais.meta
-	Personagens.caminho_indice = originais.indice
-	Personagens.caminho_base = originais.slots
-	Personagens.caminho_antigo = originais.antigo
-	Config.arquivo = originais.opcoes
-	Config._cfg = originais.cfg
-	Config._temp = originais.temp
-	Config._temp_perfil = originais.temp_perfil
-	Meta.erro_save = originais.meta_erro
-	Herois.forcado = originais.heroi
-
-
-func _limpar() -> void:
-	for caminho in [SAVE_TESTE, INDICE_TESTE, ANTIGO_TESTE, OPCOES_TESTE]:
-		for sufixo in ["", ".bak", ".tmp"]:
-			if FileAccess.file_exists(caminho + sufixo):
-				DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho + sufixo))
-	for i in range(1, 5):
-		var caminho := SLOTS_TESTE + "p%d.cfg" % i
-		for sufixo in ["", ".bak", ".tmp"]:
-			if FileAccess.file_exists(caminho + sufixo):
-				DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho + sufixo))
 
 
 func _testar_fluxo_real() -> void:

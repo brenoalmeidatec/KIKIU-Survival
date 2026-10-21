@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do visual da morte do herói (#253): o corpo ganha o shader de dissolução ao morrer, o progresso anda no relógio de jogo (parado no
 # hit-stop da morte e na pausa, sem TIME no shader), termina em 1 e o recomeço limpa tudo.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_morte_heroi.tscn  (imprime "v2_morte_heroi falhas=0")

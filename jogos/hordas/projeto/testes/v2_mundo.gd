@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da v2 (primeira leva): o mundo de v2/mundo.tscn. Carrega o mapa de dados/v2_floresta.json, faz o herói andar 2 s para a
 # direita e confere que a câmera seguiu e ficou nos limites (e com posição inteira), que a luz fora da tela está desligada, que só ator na
 # tela tem sombra, que o herói olha para o mouse e para onde anda, que o monstro persegue, que o modo de sombra e as partículas leem a aba
