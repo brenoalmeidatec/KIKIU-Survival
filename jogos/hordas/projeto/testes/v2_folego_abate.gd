@@ -80,8 +80,8 @@ func _ready() -> void:
 	ok(is_equal_approx(h.folego, minf(1.536, h.folego_max)), "teto 0 desliga o limite: o abate devolve tudo (%s)" % h.folego)
 	cfg.folego["abate_max_s"] = teto
 
-	# sai do cansaço ao passar do limite, como antes
-	h.folego = 0.3
+	# sai do cansaço ao passar do limite, como antes (começa meio crédito abaixo do limite, então um abate cruza)
+	h.folego = maxf(0.0, float(cfg.folego.cansado_ate) * h.folego_max - teto * 0.5)
 	h.cansado = true
 	h._credito_abate = teto
 	_abates(h, 1)
