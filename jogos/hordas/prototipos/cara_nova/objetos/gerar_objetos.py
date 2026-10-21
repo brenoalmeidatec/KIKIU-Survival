@@ -20,6 +20,7 @@ Uso (so precisa de Pillow):
     python gerar_objetos.py marco4    8 estruturas do Marco 4 (fonte_arte/marco4/fonte_estruturas.png, grade 4x2) -> projeto/assets/v2/marco4/
     python gerar_objetos.py fusoes    moldura, halo, Ventania e icone das fusoes (fonte_arte/fusoes/) -> projeto/assets/v2/fusoes/
     python gerar_objetos.py especial_q  icone do Q de cada heroi (fonte_arte/especial_q/, #349) -> projeto/assets/v2/especial_q/ (32 px)
+    python gerar_objetos.py habilidade_e  icones da E de Nicao/Lucas (fonte_arte/habilidade_e/, #387) -> projeto/assets/v2/habilidade_e/ (32 px)
     python gerar_objetos.py chefes      busto de cada chefe da v2 (fonte_arte/chefes_v2/, #360) -> projeto/assets/v2/chefes/ (36 px, barra do chefe)
 
 Passos: fundo = alfa 0 (ou branco) ligado a borda, por flood fill; objetos = componentes do que sobrou,
@@ -1802,6 +1803,18 @@ def gerar_especiais_q():
         print("  %-7s %dx%d" % (h, img.width, img.height))
 
 
+# ------------------------------------------------------------------ icones da E (#387): mesma receita/paleta do Q, sem substituir icones de cartas ou escudo secundario
+def gerar_habilidades_e():
+    fonte = os.path.join(HORDAS, "fonte_arte", "habilidade_e")
+    saida = os.path.join(HORDAS, "projeto", "assets", "v2", "habilidade_e")
+    herois = ("nicao", "lucas")
+    os.makedirs(saida, exist_ok=True)
+    feitos = [icone_especial_q(os.path.join(fonte, h + ".png")) for h in herois]
+    for h, img in zip(herois, quantizar_lista(feitos, ICONES_COR)):
+        img.save(os.path.join(saida, h + ".png"))
+        print("  %-7s %dx%d" % (h, img.width, img.height))
+
+
 # ------------------------------------------------------------------ bustos dos chefes da v2 (#360): fontes do Codex (#349) -> barra do chefe, 36 px
 CHEFES_FONTE = os.path.join(HORDAS, "fonte_arte", "chefes_v2")
 CHEFES_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "chefes")
@@ -1831,6 +1844,8 @@ def gerar_chefes():
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "especial_q":
         gerar_especiais_q()
+    elif len(sys.argv) > 1 and sys.argv[1] == "habilidade_e":
+        gerar_habilidades_e()
     elif len(sys.argv) > 1 and sys.argv[1] == "hud":
         gerar_hud()
     elif len(sys.argv) > 1 and sys.argv[1] == "armas":
