@@ -208,6 +208,7 @@ func _selecionar_candidatos(dt: float) -> void:
 	var uniao := Rect2()
 	var primeiro := true
 	var pode_extra := false
+	var maior_raio_primario := 0.0
 	for i in MAX:
 		if a_rest[i] <= 0.0:
 			continue
@@ -215,7 +216,9 @@ func _selecionar_candidatos(dt: float) -> void:
 		var segmento := Rect2(a_pos[i], Vector2.ZERO).expand(fim).grow(a_raio[i])
 		uniao = segmento if primeiro else uniao.merge(segmento)
 		primeiro = false
-		pode_extra = pode_extra or a_extra[i] == 0
+		if a_extra[i] == 0:
+			pode_extra = true
+			maior_raio_primario = maxf(maior_raio_primario, a_raio[i])
 	if primeiro:
 		return
 	if pode_extra and float(combate.armas.mods.chuva) > 0.0:
@@ -225,7 +228,8 @@ func _selecionar_candidatos(dt: float) -> void:
 		for m in mundo.monstros:
 			if m.vivo and not m.morrendo:
 				maior_raio = maxf(maior_raio, float(m.raio))
-		uniao = uniao.grow(maior_raio + 2.0 + ALCANCE_EXTRA)
+		# O primeiro raio cobriu o contato primario; o corpo da extra precisa de outro raio.
+		uniao = uniao.grow(maior_raio + 2.0 + ALCANCE_EXTRA + maior_raio_primario)
 	for m in mundo.monstros:
 		if not m.vivo or m.morrendo:
 			continue
