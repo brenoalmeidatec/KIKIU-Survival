@@ -3,14 +3,15 @@ extends Node
 # (user://teste_v2_transicoes_*): o save real, os personagens e user://opcoes.cfg não são tocados (conferido por md5).
 # Confere: a duração de cada transição fica entre 0,15 e 0,25 s; "Reduzir animações" (Config, Acessibilidade) zera tudo e o painel
 # aparece e some na hora; entrar/sair animam de verdade (alfa e posição) e voltam ao repouso, inclusive com a árvore pausada e
-# com um sair no meio de um entrar; um painel dentro de Container só faz fade e um sem deslize não tem a posição desfeita por um
-# reencaixe de layout no meio do fade; no perfil Baixo não há foto (véu); Enter duplo pede UMA troca de cena (a segunda é
+# com um sair no meio de um entrar; Container só faz fade; resize durante fades com e sem deslize preserva o novo layout, inclusive
+# interrupção e os créditos reais; no perfil Baixo não há foto (véu); Enter duplo pede UMA troca de cena (a segunda é
 # descartada); com a foto da tela antiga ainda visível Enter e ESC (inclusive ESC duplo) são descartados e a primeira entrada
 # depois do fade vale, uma vez só; ir_para durante o fade anterior o cancela; e o fluxo de verdade título -> personagens ->
 # santuário -> partida -> pausa (ESC) -> santuário, com cenas reais, não trava.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_transicoes.tscn  (imprime "v2_transicoes falhas=0")
 const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
+const VitoriaFinal := preload("res://v2/vitoria_final.gd")
 const PREFIXO := "user://teste_v2_transicoes_p"
 const INDICE := "user://teste_v2_transicoes_personagens.cfg"
 const ANTIGO := "user://teste_v2_transicoes_progresso.cfg"
@@ -24,6 +25,8 @@ const SALAO := "res://v2/salao.tscn"
 const PARTIDA := "res://v2/mundo.tscn"
 
 var falhas := 0
+var _alvo_layout: Control
+var _pos_layout := Vector2.ZERO
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -107,6 +110,21 @@ func _perto(a: Vector2, b: Vector2) -> bool:
 	return a.distance_to(b) < 0.01
 
 
+## Reflow fake usado pelos controles independentes deste teste; créditos reais usam o próprio ui_reencaixar.
+func ui_reencaixar(_canvas: Vector2, _desloc: Vector2) -> void:
+	if is_instance_valid(_alvo_layout):
+		_alvo_layout.position = _pos_layout
+
+
+func _simular_reencaixe(c: Control, nova_pos: Vector2) -> void:
+	_alvo_layout = c
+	_pos_layout = nova_pos
+	add_to_group("ui_escala")
+	Transicoes.reencaixar_ui(Vector2(1024, 576), Vector2(32, 18))
+	remove_from_group("ui_escala")
+	_alvo_layout = null
+
+
 func _cena() -> Node:
 	return get_tree().current_scene
 
@@ -165,14 +183,29 @@ func _reencaixe() -> void:
 	add_child(c)
 	Transicoes.entrar(c, Vector2.ZERO)
 	await _esperar(0.04)
-	c.position = Vector2(-320, 678)
+	_simular_reencaixe(c, Vector2(-320, 678))
 	await _esperar(Transicoes.DUR_ENTRAR + 0.15)
 	ok(c.modulate.a == 1.0 and c.position == Vector2(-320, 678), "entrar sem deslize deixa o reencaixe do meio do fade como está (%s)" % c.position)
 	Transicoes.sair(c, Vector2.ZERO)
 	await _esperar(0.03)
-	c.position = Vector2(12, 34)
+	_simular_reencaixe(c, Vector2(12, 34))
 	await _esperar(Transicoes.DUR_SAIR + 0.15)
 	ok(not c.visible and c.modulate.a == 1.0 and c.position == Vector2(12, 34), "sair sem deslize também (%s)" % c.position)
+	# O resize pode acontecer durante um slide; uma interrupção para fade puro deve terminar no novo lugar do layout.
+	c.position = Vector2(30, 40)
+	Transicoes.entrar(c)
+	await _esperar(0.04)
+	_simular_reencaixe(c, Vector2(210, 130))
+	ok(c.get_meta("tr_base").pos == Vector2(210, 130), "reflow durante o slide atualiza a base do painel")
+	Transicoes.entrar(c, Vector2.ZERO)
+	await _esperar(Transicoes.DUR_ENTRAR + 0.15)
+	ok(c.position == Vector2(210, 130) and c.modulate.a == 1.0, "interromper o slide com fade puro respeita o novo layout (%s)" % c.position)
+	# Saída também devolve ao lugar reencaixado, embora o tween ainda aponte para a posição anterior.
+	Transicoes.sair(c)
+	await _esperar(0.03)
+	_simular_reencaixe(c, Vector2(305, 210))
+	await _esperar(Transicoes.DUR_SAIR + 0.15)
+	ok(not c.visible and c.position == Vector2(305, 210), "sair durante resize preserva o novo layout (%s)" % c.position)
 	# com deslize a posição de repouso continua sendo devolvida
 	c.position = Vector2(30, 40)
 	Transicoes.entrar(c)
@@ -185,6 +218,24 @@ func _reencaixe() -> void:
 	await _esperar(Transicoes.DUR_SAIR + 0.15)
 	ok(fim[0] == 1 and c.visible and c.modulate.a == 1.0, "e roda uma vez no fim; com esconder=false o painel fica visível e opaco")
 	c.queue_free()
+	await _reencaixe_creditos()
+
+
+## Os três painéis reais de Créditos entram só com fade e precisam manter o layout que a tela recalcula no resize.
+func _reencaixe_creditos() -> void:
+	var cena = load(VitoriaFinal.CENA).instantiate()
+	cena.set_process(false)
+	get_tree().root.add_child(cena)
+	await _quadros(2)
+	cena.proxima()  # vitória -> créditos: animação real da tela
+	await _esperar(0.04)
+	Transicoes.reencaixar_ui(Vector2(1024, 576), Vector2(32, 18))
+	var pos := Vector2(150, -8)
+	ok(cena._cred_painel.position == pos, "a tela real de Créditos se reencaixa durante o fade")
+	await _esperar(Transicoes.DUR_ENTRAR + 0.15)
+	ok(cena._cred_painel.position == pos and cena._recorte.position.y == 6.0, "o fim do fade preserva o layout refeito dos Créditos")
+	cena.queue_free()
+	await _quadros(2)
 
 
 func _painel() -> void:
@@ -234,8 +285,10 @@ func _painel() -> void:
 	var pos := filho.position
 	Transicoes.entrar(filho)
 	ok(_perto(filho.position, pos) and filho.modulate.a < 0.5, "em Container o painel só faz fade")
+	await _esperar(0.04)
+	_simular_reencaixe(filho, Vector2(18, 26))
 	await _esperar(Transicoes.DUR_ENTRAR + 0.15)
-	ok(filho.modulate.a == 1.0 and _perto(filho.position, pos), "e termina opaco no mesmo lugar")
+	ok(filho.modulate.a == 1.0 and _perto(filho.position, Vector2(18, 26)), "e termina opaco no lugar refeito pelo Container")
 	caixa.queue_free()
 
 

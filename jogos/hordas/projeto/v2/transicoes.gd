@@ -20,6 +20,7 @@ const DUR_SAIR := 0.15  # painel que some (o mais curto: quem fecha quer ver o j
 const DESLIZE_TROCA := 22.0  # px que a foto antiga anda até sumir
 const DESLIZE_PAINEL := Vector2(0.0, 10.0)  # de onde o painel desliza até o lugar
 const OPCAO := "reduzir_animacoes"
+const GRUPO_ATIVOS := "ui_transicoes_ativas"
 
 var _foto := TextureRect.new()  # a tela de antes da troca
 var _veu := ColorRect.new()  # quando não dá para fotografar (sem renderizador), um véu escuro fraco faz o papel
@@ -165,6 +166,31 @@ func _exit_tree() -> void:
 	_liberar()
 
 
+## Refaz o layout da UI e atualiza a posição-base dos painéis animados que o layout moveu.
+## Assim, o fim ou uma interrupção da animação não devolve um controle à posição anterior ao resize.
+func reencaixar_ui(canvas: Vector2, desloc: Vector2) -> void:
+	var antes: Dictionary = {}
+	for item in get_tree().get_nodes_in_group(GRUPO_ATIVOS):
+		if is_instance_valid(item):
+			antes[item] = _posicao(item)
+	get_tree().call_group("ui_escala", "ui_reencaixar", canvas, desloc)
+	for item in antes:
+		if not is_instance_valid(item) or not item.has_meta("tr_base"):
+			continue
+		var atual := _posicao(item)
+		if atual.distance_to(antes[item]) > 0.01:
+			var base: Dictionary = item.get_meta("tr_base")
+			base.pos = atual
+
+
+func _posicao(c: CanvasItem) -> Vector2:
+	if c is Control:
+		return (c as Control).position
+	if c is Node2D:
+		return (c as Node2D).position
+	return Vector2.ZERO
+
+
 func _process(_dt: float) -> void:
 	if not _animando:
 		return
@@ -259,6 +285,8 @@ func _base(c: CanvasItem) -> Dictionary:
 		pos = (c as Node2D).position
 	var b := {"pos": pos, "a": c.modulate.a, "mov": false}  # "mov": a animação mexeu na posição (só então o fim a repõe)
 	c.set_meta("tr_base", b)
+	if c is Control or c is Node2D:
+		c.add_to_group(GRUPO_ATIVOS)
 	return b
 
 
@@ -290,6 +318,7 @@ func _fixar(c: CanvasItem, base: Dictionary) -> void:
 		if tw != null and tw.is_valid():
 			tw.kill()
 		c.remove_meta("tr_tween")
+	c.remove_from_group(GRUPO_ATIVOS)
 	c.modulate.a = base.a
 	if base.mov:  # sem deslize a posição não é nossa: um reencaixe de layout no meio do fade (resize) não pode ser desfeito
 		if c is Control:

@@ -128,7 +128,7 @@ func recalcular() -> void:
 	if is_inside_tree():
 		for c in get_tree().get_nodes_in_group("ui_cobrir"):
 			EscalaUi.cobrir(c)
-		get_tree().call_group("ui_escala", "ui_reencaixar", canvas, desloc)
+		Transicoes.reencaixar_ui(canvas, desloc)
 
 
 ## Toda CanvasLayer que entra no `ui` já nasce no lugar do bloco.
