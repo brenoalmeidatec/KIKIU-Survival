@@ -39,8 +39,10 @@ TextureRect, respeitando crop, câmera e zoom. Não cria XP nem coleta fora da t
 Esses números são uma hipótese conservadora de partida, não balanço humano
 aprovado. Os limites evitam cascatas de drops, cura ilimitada e crescimento de
 pool durante o combate. Contadores de oferta, coleta, cura efetiva e almas
-atraídas aparecem no JSON do robô; sua IA não foi alterada. Comparações precisam
-usar `--playtest_q` nas duas referências, mesmas sementes, mapas e dificuldade.
+atraídas aparecem no JSON do robô. As curvas não alteram a política da IA;
+esta branch herda os consertos de borda e vigia do #397, aplicados também à
+referência da comparação. Os dois lados usam `--playtest_q`, mesmas sementes,
+mapas e dificuldade; dados e limites estão em `docs/qa/ritmo371/` na raiz.
 O RNG de drops é próprio: com `--semente`, deriva `semente+371`; sem ela, randomiza.
 Pausa congela duração/intervalos, término esconde itens e reinício limpa contadores.
 

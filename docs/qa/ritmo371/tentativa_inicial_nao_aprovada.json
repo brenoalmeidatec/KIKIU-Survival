@@ -1,0 +1,1441 @@
+{
+  "data": "2026-10-21",
+  "estado": "NAO_APROVADA",
+  "contexto": "Primeira tentativa #371, controlador original de #390, --playtest_q, Floresta/Facil, sementes1/2, tres arquetipos, max300s.",
+  "codigo": "WIP anterior a guarda de jogo/pausa em ritmo.abate; fonte identificada por hashes, sem alegar CI desse WIP.",
+  "runner_codigo": 4,
+  "invalidacoes": [
+    "Nicão/semente1 TRAVA aos138.6s; cinco outros casos atingiram300s.",
+    "Teste v2_status concorrente criou/alterou dois arquivos de fixture na raiz do mesmo APPDATA QA; guarda externa acusou divergencia.",
+    "Somente APPDATA QA envolvido; nao se rodou este lote no perfil do jogador. A divergencia nao foi restaurada para ocultar a falha."
+  ],
+  "casos": [
+    {
+      "heroi": "hazaki",
+      "mapa": "floresta",
+      "semente": 1,
+      "desfecho": "tempo",
+      "codigo": 0,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "hazaki",
+        "mapa": "floresta",
+        "semente": 1,
+        "desfecho": "tempo",
+        "tempo_jogo": 300.0,
+        "nivel": 29,
+        "abates": 672,
+        "dano_causado": 35164,
+        "dano_sofrido": 77,
+        "vida_final": 100,
+        "vida_max": 100,
+        "q_disparos": [
+          70.8,
+          158.0,
+          221.1,
+          288.8
+        ],
+        "e_disparos": 0,
+        "ritmo": {
+          "almas_atraidas": 4,
+          "coletados": {
+            "cura": 1,
+            "curandeiro": 0,
+            "ima": 3
+          },
+          "cura_efetiva": 8.0,
+          "multiplicadores": {
+            "coleta": 1.7,
+            "densidade": 1.14,
+            "ima": 1.5,
+            "q_area": 1.35,
+            "q_dano": 1.98
+          },
+          "soltos": {
+            "cura": 4,
+            "curandeiro": 0,
+            "ima": 3
+          }
+        },
+        "trava": ""
+      }
+    },
+    {
+      "heroi": "hazaki",
+      "mapa": "floresta",
+      "semente": 2,
+      "desfecho": "tempo",
+      "codigo": 0,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "hazaki",
+        "mapa": "floresta",
+        "semente": 2,
+        "desfecho": "tempo",
+        "tempo_jogo": 300.0,
+        "nivel": 29,
+        "abates": 724,
+        "dano_causado": 41543,
+        "dano_sofrido": 17,
+        "vida_final": 194,
+        "vida_max": 194,
+        "q_disparos": [
+          70.0,
+          159.6,
+          240.6
+        ],
+        "e_disparos": 0,
+        "ritmo": {
+          "almas_atraidas": 0,
+          "coletados": {
+            "cura": 4,
+            "curandeiro": 0,
+            "ima": 0
+          },
+          "cura_efetiva": 0.0,
+          "multiplicadores": {
+            "coleta": 1.7,
+            "densidade": 1.14,
+            "ima": 1.5,
+            "q_area": 1.35,
+            "q_dano": 1.98
+          },
+          "soltos": {
+            "cura": 7,
+            "curandeiro": 2,
+            "ima": 0
+          }
+        },
+        "trava": ""
+      }
+    },
+    {
+      "heroi": "nicao",
+      "mapa": "floresta",
+      "semente": 1,
+      "desfecho": "trava",
+      "codigo": 3,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "nicao",
+        "mapa": "floresta",
+        "semente": 1,
+        "desfecho": "trava",
+        "tempo_jogo": 138.6,
+        "nivel": 14,
+        "abates": 225,
+        "dano_causado": 7020,
+        "dano_sofrido": 0,
+        "vida_final": 180,
+        "vida_max": 180,
+        "q_disparos": [
+          69.0
+        ],
+        "e_disparos": 13,
+        "ritmo": {
+          "almas_atraidas": 0,
+          "coletados": {
+            "cura": 1,
+            "curandeiro": 0,
+            "ima": 0
+          },
+          "cura_efetiva": 0.0,
+          "multiplicadores": {
+            "coleta": 1.325,
+            "densidade": 1.065,
+            "ima": 1.26,
+            "q_area": 1.1625,
+            "q_dano": 1.455
+          },
+          "soltos": {
+            "cura": 2,
+            "curandeiro": 0,
+            "ima": 1
+          }
+        },
+        "trava": "heroi_preso pos=(1189.0, 1420.0) alvo=(1210.0, 1336.0) bau=false fuga=(1.0, 2.0)"
+      }
+    },
+    {
+      "heroi": "nicao",
+      "mapa": "floresta",
+      "semente": 2,
+      "desfecho": "tempo",
+      "codigo": 0,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "nicao",
+        "mapa": "floresta",
+        "semente": 2,
+        "desfecho": "tempo",
+        "tempo_jogo": 300.0,
+        "nivel": 30,
+        "abates": 771,
+        "dano_causado": 50887,
+        "dano_sofrido": 11,
+        "vida_final": 224,
+        "vida_max": 224,
+        "q_disparos": [
+          64.7,
+          149.0,
+          221.3,
+          294.2
+        ],
+        "e_disparos": 25,
+        "ritmo": {
+          "almas_atraidas": 0,
+          "coletados": {
+            "cura": 3,
+            "curandeiro": 0,
+            "ima": 0
+          },
+          "cura_efetiva": 0.0,
+          "multiplicadores": {
+            "coleta": 1.725,
+            "densidade": 1.145,
+            "ima": 1.5,
+            "q_area": 1.35,
+            "q_dano": 2.0
+          },
+          "soltos": {
+            "cura": 6,
+            "curandeiro": 2,
+            "ima": 1
+          }
+        },
+        "trava": ""
+      }
+    },
+    {
+      "heroi": "lucas",
+      "mapa": "floresta",
+      "semente": 1,
+      "desfecho": "tempo",
+      "codigo": 0,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "lucas",
+        "mapa": "floresta",
+        "semente": 1,
+        "desfecho": "tempo",
+        "tempo_jogo": 300.0,
+        "nivel": 27,
+        "abates": 717,
+        "dano_causado": 44755,
+        "dano_sofrido": 33,
+        "vida_final": 90,
+        "vida_max": 90,
+        "q_disparos": [
+          60.9,
+          141.9,
+          227.4,
+          297.8
+        ],
+        "e_disparos": 34,
+        "ritmo": {
+          "almas_atraidas": 0,
+          "coletados": {
+            "cura": 0,
+            "curandeiro": 0,
+            "ima": 1
+          },
+          "cura_efetiva": 0.0,
+          "multiplicadores": {
+            "coleta": 1.65,
+            "densidade": 1.13,
+            "ima": 1.5,
+            "q_area": 1.325,
+            "q_dano": 1.91
+          },
+          "soltos": {
+            "cura": 2,
+            "curandeiro": 0,
+            "ima": 2
+          }
+        },
+        "trava": ""
+      }
+    },
+    {
+      "heroi": "lucas",
+      "mapa": "floresta",
+      "semente": 2,
+      "desfecho": "tempo",
+      "codigo": 0,
+      "erros_script": 0,
+      "jogo": {
+        "heroi": "lucas",
+        "mapa": "floresta",
+        "semente": 2,
+        "desfecho": "tempo",
+        "tempo_jogo": 300.0,
+        "nivel": 21,
+        "abates": 444,
+        "dano_causado": 26478,
+        "dano_sofrido": 45,
+        "vida_final": 86,
+        "vida_max": 100,
+        "q_disparos": [
+          110.0,
+          168.3,
+          262.6
+        ],
+        "e_disparos": 33,
+        "ritmo": {
+          "almas_atraidas": 0,
+          "coletados": {
+            "cura": 1,
+            "curandeiro": 0,
+            "ima": 0
+          },
+          "cura_efetiva": 0.0,
+          "multiplicadores": {
+            "coleta": 1.5,
+            "densidade": 1.1,
+            "ima": 1.4,
+            "q_area": 1.25,
+            "q_dano": 1.7
+          },
+          "soltos": {
+            "cura": 3,
+            "curandeiro": 1,
+            "ima": 0
+          }
+        },
+        "trava": ""
+      }
+    }
+  ],
+  "sha256_fontes": {
+    "jogos/hordas/projeto/v2/adagas.gd": "cdc217db12621e12e1d0d92dc7ec95f4913ceb9d87566e9f3d256963e3f593d7",
+    "jogos/hordas/projeto/v2/ajustes_graficos.gd": "e62e29cb72866de7ae7c7c10f56162099047e641a95ffce62bbbe943d82e7591",
+    "jogos/hordas/projeto/v2/altar.gd": "2ed071a5bc6ebce8b149d374ea539a6caafc8d45687101e321e0d37ca6e5ffde",
+    "jogos/hordas/projeto/v2/altar.tscn": "ca23b24b6645b261329a253da72694b453e1a6d43fd40f8b8cf4c7f4049b95c8",
+    "jogos/hordas/projeto/v2/andante.gd": "348971efae90b5f9305a204800169ef83814542f81b9aedcf9d05b285a0e7309",
+    "jogos/hordas/projeto/v2/anim_golpes.gd": "f8d3332c6e8eaf20415618646ea4aa9e0d83cf48a83c0b564941db01ab490df8",
+    "jogos/hordas/projeto/v2/apresentacao.gd": "26baae9552b3ab52830a76e73b30f8838fa50446871afb842f39ffe157e5c625",
+    "jogos/hordas/projeto/v2/armas.gd": "c64edb59ce7d43be7d2ce686ad395bba6ced10628de34ba6c691e754ccd52d6e",
+    "jogos/hordas/projeto/v2/armas_novas.gd": "c1615a7886cdc2e153f8b1914a4ed38eae87df7cfc1b911cecb52bac4587a933",
+    "jogos/hordas/projeto/v2/atmosfera.gd": "2ea31e46e505c54c79ea1bf527d61c286c11191968184d951f67c226e4d2f955",
+    "jogos/hordas/projeto/v2/ator.gd": "19e1c6b012360752d36f4197cb68fc7c577a76aeee8ec1a719f9b4d558f8e1d8",
+    "jogos/hordas/projeto/v2/atualizador.gd": "337ce5c73da9f67a845a7d8a3ecd1cf851ca27bfec7a2a0c4f26c5f837cfd446",
+    "jogos/hordas/projeto/v2/audio.gd": "b66ba60fcde1d9c41ec1784a682c25f78c1f9df2640621b842a8726063a6ee22",
+    "jogos/hordas/projeto/v2/avisos.gd": "601f24fb80735a37905b5b965b232e672726b558e08f52b3132ecf333e2bf81f",
+    "jogos/hordas/projeto/v2/barra_vida_elite.gd": "142fff894c6197f6a5229626976f842d1b5e45ad337dd7eb6def980e7ff7eeaf",
+    "jogos/hordas/projeto/v2/bau.gd": "95fc8ba2b7c496041a144bb4b60ba04042f033611848d4b99968e67501f6a754",
+    "jogos/hordas/projeto/v2/braseiros.gd": "a0654a4d53d64f9c974d30e0d2901d14b872265e0c209acc8e0d7c2075c94835",
+    "jogos/hordas/projeto/v2/camera_mundo.gd": "c3bd1a920e9a3885f8385566d611b1e0bbcaf80ada68b172a2e599c0aa23c24e",
+    "jogos/hordas/projeto/v2/card_santuario.gd": "8479f1cd2b8f430ad73241304d8d93a4b247a3be2cc2a97353622b785ddce4f2",
+    "jogos/hordas/projeto/v2/cartas.gd": "472ba0a945e5a536879f5714030ca250b59f3fcfb959a9aa55076c0e113e5638",
+    "jogos/hordas/projeto/v2/cenario.gd": "6cf24f1842c3c32c54730332d0a44e8199743f1bf2dbb856e6afd4000f4d30d9",
+    "jogos/hordas/projeto/v2/chefe.gd": "6d6985847a24e9322e91d7a544b565b98e9f2487e027b08031e708677ad99eb6",
+    "jogos/hordas/projeto/v2/chefe_visual.gd": "36d234aa2e5183330c6ada00abc814281496b158572cccbcf56798793b0fdb5b",
+    "jogos/hordas/projeto/v2/colisao.gd": "1d05764b149cd1d483c103fe65fa9bf6960c1096ffbc64661d1da76ff86df8d9",
+    "jogos/hordas/projeto/v2/combate.gd": "618a6fe5f12145b813d6d0a06343437ebbd2e56b02f79dc0f0e33a22c06462c9",
+    "jogos/hordas/projeto/v2/conquistas.gd": "d99ae782e5420c9a23d28068e5c46f406a1f9bd77501392f324b300471b2525b",
+    "jogos/hordas/projeto/v2/copas.gd": "fc4f1cbfeaa5f34612b844a6d15097fa93e4fd639300b8755295309c7dbc0cd0",
+    "jogos/hordas/projeto/v2/creditos.gd": "0f7fa1c298e26a6bc8152ee9167dc3182262fac6a8e5856e0c411d959d0873b3",
+    "jogos/hordas/projeto/v2/depuracao_colisao.gd": "e2ceba849390457679569e4a60b88b947e323209aed3764321833ba83b077ed6",
+    "jogos/hordas/projeto/v2/dificuldade.gd": "abe1e1acdbf825b89e237d8f3ac6629e78a68d0d7bb36f410d2ae39959a39789",
+    "jogos/hordas/projeto/v2/diretor.gd": "f6a2ddec3a2c7dbc61635f59863bb57243c90d21d82806e4a6ae24278bef8fef",
+    "jogos/hordas/projeto/v2/efeitos.gd": "c58ebec979afc4914ecfe03d50a97a7397d0e6eb22816ab2bf12c13a016b06a2",
+    "jogos/hordas/projeto/v2/elites.gd": "7aaeaf8b03b4f08ead79a18319a0ce091314f6291ac22a45c65c4426380c4051",
+    "jogos/hordas/projeto/v2/entrada.gd": "ee41c0bcb77bdda26a9926f4f69fc2952fccd9f4f2e1acc092c911263e81f225",
+    "jogos/hordas/projeto/v2/escala_ui.gd": "a24d6a8eaffb0229f86d8b99da0a572fb50b4118dcf3d834b07fec8923ef32f1",
+    "jogos/hordas/projeto/v2/escolha_dificuldade.gd": "98b3421ba836244fb3f4e4008dbf11bc8b493d5d2a23c9c009f4705d60f0b98b",
+    "jogos/hordas/projeto/v2/escudo.gd": "6b8cbf99ce5e301fd3f07e88879c2a021e35de2fa893dd6a3f2c662601962c35",
+    "jogos/hordas/projeto/v2/especial.gd": "7cc24c746937d5f47acf5573c05609014fea6a6ac5a0d0033754b631450641c5",
+    "jogos/hordas/projeto/v2/estilo_premium.gd": "7780d68bbbc7579684e0bfb214852110199e464bef19cce75f30fa0c937d4ad0",
+    "jogos/hordas/projeto/v2/glifos.gd": "0812b892ff73bc07c09af1e1a9dc84f4a956e28224de672b197b87ad8451b788",
+    "jogos/hordas/projeto/v2/golem.gd": "3718782055cda443c3bca62864fe2f5ff8909f053ea1ee93594131b99076a7f2",
+    "jogos/hordas/projeto/v2/habilidade.gd": "80ff109cd8e8f878e68426ba3b287f67dd74a150ff2e7d8d3257080a8f53c504",
+    "jogos/hordas/projeto/v2/heroi.gd": "21600c9b6cd2b552a96f4d23113804121896af49b7336e40b13afcc1687918e3",
+    "jogos/hordas/projeto/v2/herois.gd": "9aa64ab46da5504f2d1b6e34196d839d93bffe30d41e5c3c6aeca9cfb4b312f5",
+    "jogos/hordas/projeto/v2/horda.gd": "1968a4ae8a162684309e9b50ef107274869dd073c5307a09262f3a6f0e59a356",
+    "jogos/hordas/projeto/v2/hud/molduras_codex.json": "3469b46e1925eb373938f66d1fe573ca8f62dd3bee7431c20fc54caa2ae79edb",
+    "jogos/hordas/projeto/v2/hud.gd": "3f3f62d8c1a73748b0bf1c8351bda3c17c02ab5ae65c48dbf978a4ea77ee6bf0",
+    "jogos/hordas/projeto/v2/hud.tscn": "b66e5a7c5a7a9c0029e714239efdf066b79bd07cc6371815c6cafd5242ca8997",
+    "jogos/hordas/projeto/v2/hud_anuncios.gd": "bf1e11e6c30e21e8629ac5cc700d0eac9c822468acd9f0c1cdd223794f9afa28",
+    "jogos/hordas/projeto/v2/hud_golpes.gd": "526c37c0d0c387b0439f36c21cd222af870c6c27952275a605f8a62ef201dce8",
+    "jogos/hordas/projeto/v2/hud_habilidades.gd": "602b7ea176de6d441ebd98a7335cefa57f9ade0bf7104739b8a02d9b1bf605fd",
+    "jogos/hordas/projeto/v2/hud_nivel.gd": "3d3d4fb095397a457b11611932e9cbab38b903895e2ee201323108d43e8c2704",
+    "jogos/hordas/projeto/v2/hud_ultimate.gd": "96e8694aa574f9bdb643b53bd19cd9483c3bf4ba022f6275253b62a2aa4da79e",
+    "jogos/hordas/projeto/v2/icones_santuario.gd": "563a5be7c706f58bfdca7354e50b7d4dd281f763eb2ac10a1b3f161451d2863e",
+    "jogos/hordas/projeto/v2/luzes.gd": "08c9e59e73bc1b4c9a7c92326f8cf50a77efe55d18c19a67b2639efa583bd972",
+    "jogos/hordas/projeto/v2/mapas.gd": "86a3bffe69fd67508f50a9fde2ad26c576f343a9fcc9231fd19ace55013d47ab",
+    "jogos/hordas/projeto/v2/menu_principal.gd": "d389982bef9385836d522a40dd5395ca8e4e95819936602f2ca50fb1ba13884b",
+    "jogos/hordas/projeto/v2/menu_principal.tscn": "d3a6a7a0f83e162e95be9210516ba84917ad4b6a7a239b90f59b4759485b95e4",
+    "jogos/hordas/projeto/v2/meta.gd": "67513b8cb663f0d6efc067a45e9e91d91c09a99e3120831c8fdbf52d8afc30cc",
+    "jogos/hordas/projeto/v2/minimapa.gd": "c8aac953e963b6d3a187e8b3dce4d5019297d5e56bae3cb45a9a4993a747120c",
+    "jogos/hordas/projeto/v2/minimapa.tscn": "35a2d07bfa6f72a3cc7832cdf95ec1fc9e7477233507038e3b22d0696c2f9738",
+    "jogos/hordas/projeto/v2/monstro.gd": "64a92451779fe1f10e1637188ac3bdcc418a43163e7133e6cd7bbd8ecd2d7fd5",
+    "jogos/hordas/projeto/v2/mundo.gd": "a621b49588c39139de073bc909b983e50f056c765ec0cb32ca670c20596098ec",
+    "jogos/hordas/projeto/v2/mundo.tscn": "e699f6d8ed4763f913745dab3d6712490a42ed6a2426e57192c98f10427781e8",
+    "jogos/hordas/projeto/v2/oclusao.gd": "cb5db3dd08ee74ff7a26126e0d46a863a4bd46306f9c5bf51bd9f9c29d238aa3",
+    "jogos/hordas/projeto/v2/orbes.gd": "d2cc69c6637315af2ba5ca146eff4ff9fb3a42310ff2c3bfa6d3ff53d1bfd286",
+    "jogos/hordas/projeto/v2/paleta.gd": "f1d13d7980fb3e069c18d7a106608c7127de32468dc0b6c85863be733445d86d",
+    "jogos/hordas/projeto/v2/passagens.gd": "4f395bad8ebe8cb4685fa4bba33a080b7758ec43ca1e157795923181376661b0",
+    "jogos/hordas/projeto/v2/pausa.gd": "0a2da4c354c666d9841715ee73eb307c91dec1473168fddb609adde6089b8ac8",
+    "jogos/hordas/projeto/v2/pausa.tscn": "96eca07be760994acb0ffd3b0a9bc8ea2406d4beb0067092a1198d341a03e268",
+    "jogos/hordas/projeto/v2/personagens.gd": "cbf2f11463a73282edd1e6fc05d45486d5f1fb512dfec8306dbb7e02affa5c60",
+    "jogos/hordas/projeto/v2/personagens.tscn": "202c6d065e14770d97f7f9d4cb0c38702682135774d0b7d5ac9eb09b4eb76443",
+    "jogos/hordas/projeto/v2/personagens_tela.gd": "17961a8131b6e2adbfdfa5cfb06ed08fd575aee00c1cba3229fa40dd7c660e6b",
+    "jogos/hordas/projeto/v2/picos.gd": "82e95c6b774ce56a72e24cef926cd43c4a8cedc6f4008ae9a75ec255c1a58ea2",
+    "jogos/hordas/projeto/v2/pos_visual.gd": "6c5334b33a218ab493473a239758d8ec99efa5bba004b3d74855f0777a67d90c",
+    "jogos/hordas/projeto/v2/progressao.gd": "a70f17ea48889b12ece0d27848044ea088fe36a20a61ba3e299bf90e0c96dd60",
+    "jogos/hordas/projeto/v2/progresso.gd": "d574811e839390e9c1bfdf87f76ca57d3fc2019c044e4a04e28fb828f60b261f",
+    "jogos/hordas/projeto/v2/qualidade_auto.gd": "f46d252d95e645872a045ff6127571fa010e0700aa1d12f1c72a4303b097a9e6",
+    "jogos/hordas/projeto/v2/resultado_meta.gd": "927c363776d22e6baa83f9843cafd1dcb82fad296506f5c165b1d4f1be3e429b",
+    "jogos/hordas/projeto/v2/ritmo.gd": "c3f25687b408bfc5330855f4e2a32308f64c04aaa0c342ac4b2a304219d89d7a",
+    "jogos/hordas/projeto/v2/roteiro.gd": "f88a787d60f96bc89fe061beddba7e6daece3913987b133e34dfd8057022edf8",
+    "jogos/hordas/projeto/v2/ruptura.gd": "d307bb4c519cc94ab72379dcaff93bc19b5bd83902e30f08ccfb2079f1385d61",
+    "jogos/hordas/projeto/v2/salao.gd": "43951818f7f5a8bbf9799f5f6bd5044248c6c44afde5ff90cd56efd46405bd7b",
+    "jogos/hordas/projeto/v2/salao.tscn": "22d9c1759af1213135b64c85b0ced50f9d8e527323c21703b05a379f2c9f7676",
+    "jogos/hordas/projeto/v2/salao_visual.gd": "cfc0c78002e1bf90b7f29e7378c3a80fafe8f583491185444ceb247207bd4f1d",
+    "jogos/hordas/projeto/v2/salao_vivo.gd": "222f84cd818e2886381c59b140947f40344eef633b16ad3034022ea1cc693e72",
+    "jogos/hordas/projeto/v2/salao_vivo.gdshader": "d36c9d4e0623475576683ca1313f3df02afa3a6dd14b74a9b9b2653c56f62833",
+    "jogos/hordas/projeto/v2/silhueta.gdshader": "6f2383261594c71048e971a953c0a7e2cdec75c370bc6c83a4bb06403cf14b34",
+    "jogos/hordas/projeto/v2/sombras.gd": "5999888e88284a399ba27b366dc0f21c307316984412190973e556172dea619b",
+    "jogos/hordas/projeto/v2/sprites.gd": "55650c6d87dc7097313bf5234275a7295dacf9545fda95a2eaf9c232ea37a258",
+    "jogos/hordas/projeto/v2/status.gd": "5b4f9bbde05556bb3c1b1503a7332513b3b83db047a77ebf56d6f8801b7da8cd",
+    "jogos/hordas/projeto/v2/telas.gd": "294ce32424bd7c3be192c923fcfcf83f14d4eca4e61d182afafb7342f87eaa71",
+    "jogos/hordas/projeto/v2/tempo_local.gd": "9e00bb96a820d2ca1084cfa372bb5b57119eb6f221b9f14ae917a2fc81fc4756",
+    "jogos/hordas/projeto/v2/titulo_fundo.gdshader": "f44320fd14b68c64f4d59aba44cd19d393cb30fc8ee9581b4c5944cc06804eed",
+    "jogos/hordas/projeto/v2/titulo_logo.gdshader": "023026b845fa38af677a42883782b9de90f18774fbce298293bd44564dca75a0",
+    "jogos/hordas/projeto/v2/titulo_vivo.gd": "21a12af022175c323378cae3aa9df5a57f180d79d74fc006e9f4c4bfb3109563",
+    "jogos/hordas/projeto/v2/trilha.gd": "e98007a2f94b5d6496dffe5171e9f07d32dac24b56c4d33d9819adafc1c0de1a",
+    "jogos/hordas/projeto/v2/ui_janela.gd": "0f98a92e9280e6ce2f6aec0c2f913884246a495576885242a64c1ecd747c5ae7",
+    "jogos/hordas/projeto/v2/vitoria_final.gd": "77b625a5daffbc76820145e3a495591ea362546230e1cc45f77903fea596e78e",
+    "jogos/hordas/projeto/v2/vitoria_final.tscn": "c512ec270fe6a53c3ffb57e4cdc1b6e3bfa1eb25f925801ed06922378c3bf1d1",
+    "jogos/hordas/projeto/dados/animacao.json": "9a60f7638d321b721d8c9f539f8d5269d27939ddec92d5de69c0a5564cc7569a",
+    "jogos/hordas/projeto/dados/animacao_monstros.json": "a59193bda0fbf2d1210caae30cf0100b2dc5ebc9d55695b858bca1bc82480bf5",
+    "jogos/hordas/projeto/dados/aparencia.json": "e7601a98fb5ee4555c752f63343c598e7ecb46384c53198d5a7be18b61421ded",
+    "jogos/hordas/projeto/dados/armas.json": "2e0d44dfc8d0778819ae0a70bad28b6822d9181b7191f805b9ea7edec910bc29",
+    "jogos/hordas/projeto/dados/armas_universais.json": "086875170d37efa47d0ee23dad1a3c115a3a267c1d177110d28bfef16b761508",
+    "jogos/hordas/projeto/dados/atributos.json": "e399a0049b4c7f07b68abe8551c975077927281af1dda75e044574525e74b812",
+    "jogos/hordas/projeto/dados/calor.json": "f88f7fb224650fd23330920347a4c6801a918e8f80998ecb651d8d9c8c6c15dc",
+    "jogos/hordas/projeto/dados/cenarios.json": "2819e981127ba4693c542e27f74531dfeb069c00b31e532e9d8b80bca3ce5cee",
+    "jogos/hordas/projeto/dados/classes.json": "3bd037e1c1123ac61d1ac947839bbf8348f478a44974d0c3b934e0d716efe303",
+    "jogos/hordas/projeto/dados/coletaveis.json": "20ad249b9827a8b4a0f2c380e39fba25a7cfd3c9595710da38e6ad88289a0e77",
+    "jogos/hordas/projeto/dados/comportamentos.json": "c44678250e0b1c595eb9e26bf9b9d76af0a257baace05894df1a3d7ee7c623e5",
+    "jogos/hordas/projeto/dados/conjuntos.json": "cfbf224f68ca79049a64957aba92d152d2c086083d78f55b46d7facafc5088c5",
+    "jogos/hordas/projeto/dados/corrida.json": "4f293fdca1fd5965973f19d9619f0ae07dd19e66995825e44e78ea65cf2c25df",
+    "jogos/hordas/projeto/dados/crescimento_armas.json": "687cbedc07cf3fae8ef98342cc5f142b9059887e5142d0e26436fcb589028be1",
+    "jogos/hordas/projeto/dados/dadivas.json": "a4327396acc4efd6926fa95d25337df2ca3e03e45e09c9e218da29bb7bad974c",
+    "jogos/hordas/projeto/dados/defeitos.json": "dddb1e1de634e6179019a18a219c35e6d6c744b6bbeb0bdd6fd6efea647c05f9",
+    "jogos/hordas/projeto/dados/descobertas.json": "29024464a0363e2e03d4579f649af093c80656db814325ed6022f310483cb593",
+    "jogos/hordas/projeto/dados/dicionario.json": "2fe813ced1ad47507f520855a095029cfd4dd08610ae9f403a71769ad4595234",
+    "jogos/hordas/projeto/dados/elementos.json": "e7a4efc5615874206f52862ed1352a8a7d49d8c623715db75e1a761ad53515bd",
+    "jogos/hordas/projeto/dados/entrada.json": "5e8d2d355420d0588f701e0c6a9c0cc5e8a40ded6cb37fa76a06af251fa99dc4",
+    "jogos/hordas/projeto/dados/equipamentos.json": "da702c417c12fc654ff422c7030eb2f3004303bc9e596f87854ad81876f1d3ae",
+    "jogos/hordas/projeto/dados/especiais.json": "571a62cbe71ed9522b578dbbddf624f01e11894915594be63ded40093a9dc4f1",
+    "jogos/hordas/projeto/dados/evolucoes.json": "5f56248290520b565e1df59834e03472ffe5d751b09275d54d04f3d1d745ebbb",
+    "jogos/hordas/projeto/dados/fase.json": "afacb237445c61d254cb13e43ce88ffde80a662d69cddbdeabb8006c4b32c879",
+    "jogos/hordas/projeto/dados/finalizacoes.json": "118e5bbb9559c1760dbad7ce24e9b492488c96c6b3547543301aaf7a0112f939",
+    "jogos/hordas/projeto/dados/graficos.json": "979a82ee43a4cf1843bb8a8b1d77d797d993e6783b6f22f8d866a3bbc7615a2f",
+    "jogos/hordas/projeto/dados/habilidades.json": "af68b0535ffae5b4c548142ae679c62f2493ae7972605d01ab7534192bf03936",
+    "jogos/hordas/projeto/dados/herois.json": "d93b0278e1f36b9a18a5988a632c2f8c8b4210d839bbd4de0e0121a1b7f508af",
+    "jogos/hordas/projeto/dados/inimigos.json": "57b91aa199fc64ff0241c0dba3a81cc2e5353759a1f64102c1fb4061ec98e159",
+    "jogos/hordas/projeto/dados/itens.json": "cc6d5397d6443519d777603001bb432c57316d3d0628d90fbb36acfab9f35c00",
+    "jogos/hordas/projeto/dados/mapa.json": "8c208c27c60d0076f3e83f54726b06b07abe0f1fe838e8c7046b399727c77712",
+    "jogos/hordas/projeto/dados/mira.json": "5ac01087c7f4035ec56d261cccecf894a7e34c3669a727238feeefe279b6d36b",
+    "jogos/hordas/projeto/dados/missoes_chefe.json": "3b9996faf1e95d3365199d32d6bce6ff41aa8942f681fd5afda8e7826d6e0ad5",
+    "jogos/hordas/projeto/dados/mochila.json": "8cf172d84503fbb370216c973671104096fafe2876f407721209dbd8954e3b98",
+    "jogos/hordas/projeto/dados/mortes.json": "9686ab6df6c792deb6ac097d9b83f8012214960cf18ad71c1d85bc319cb33868",
+    "jogos/hordas/projeto/dados/movimento.json": "aff0c1968340d95b959b88d5c6886ab3ac0e489702c1a86bc8993a0f5a8be769",
+    "jogos/hordas/projeto/dados/objetivos.json": "5c2381e3477ae084f2bbb0931c7af41442725d564ac1fe9458e9f74673a23099",
+    "jogos/hordas/projeto/dados/passivos.json": "1ac55e17040e0b8068ef40ca46dcbc50b65994acdf31206732a3b8d4eebef22d",
+    "jogos/hordas/projeto/dados/prorrogacao.json": "bdc477eeace509bcaeda391664412ee320e1af524e104c177a4d0d3c92d48393",
+    "jogos/hordas/projeto/dados/pvp.json": "794191381256536c7ec8e01faf5be89b3708c9ed3986ba789380969b34f3f40b",
+    "jogos/hordas/projeto/dados/quadros_monstros.json": "8979462f475772bf4dcb96767be51f364606864f8c9e294508defc56e72efb25",
+    "jogos/hordas/projeto/dados/racas.json": "c51b686b5a9978c6b00b5a4c6c70021d01bfc9f3422ce290053efd9395c0e4c2",
+    "jogos/hordas/projeto/dados/regioes.json": "075822d245fc6ba26aac3f8eb2837fb4d42e8a6a293c9310520179f207730607",
+    "jogos/hordas/projeto/dados/v2_armas/lote_1.json": "56c42cf6086a4d31862f21cb353460665078b71662c96f7d300f5ab68014d705",
+    "jogos/hordas/projeto/dados/v2_armas/lote_2.json": "bb5c7cb4865ac4196f52329e98213ed388cd8f334f06c073419fc22499bb8789",
+    "jogos/hordas/projeto/dados/v2_armas/lote_3.json": "27411d43cfb2d3f67c85d11d3d9047577e72912c1acb9432d2671eadee09f2a1",
+    "jogos/hordas/projeto/dados/v2_armas/lote_4.json": "be547f27860309f8f806f6e71a594919b328dcbedda32805bc4f10fb1b606bd0",
+    "jogos/hordas/projeto/dados/v2_armas/lote_5.json": "3fe1e21bb960dd6855f73d816907293f2bd757698dccf35328c8b3bc9d524d62",
+    "jogos/hordas/projeto/dados/v2_cartas.json": "5854498cddaf057d70d453a5c3eaff07a38aa8444db9b881e6a0336ba7614965",
+    "jogos/hordas/projeto/dados/v2_cidade.json": "198fb0ce5269dbd24ffa1d60b3d26220bdead5d2b8237e8bcec8111c6f442c9e",
+    "jogos/hordas/projeto/dados/v2_combate.json": "29f569826651006f428265ed0259b88d71fd01fbe2e0652fa1b06486d41118ae",
+    "jogos/hordas/projeto/dados/v2_dificuldade.json": "69771e24979a44fbc7d2bf1aacbf40b2984c0c13460f07089b9c99d8d92891d4",
+    "jogos/hordas/projeto/dados/v2_especial.json": "71598e315d5298090212af741023e15c6acc97e7ec080aad976a2ef81b086bb7",
+    "jogos/hordas/projeto/dados/v2_floresta.json": "1677a04b6d7119af2b6617d0d5e61879cf2488f29d4891cfbb8eec5d5608b512",
+    "jogos/hordas/projeto/dados/v2_habilidade.json": "86264fc888700002a13a31d36814d6116511287f75ed57cd4daa5b1a72ba0ee8",
+    "jogos/hordas/projeto/dados/v2_herois.json": "b552fa47f18a0173dc4594ea673083e8f7b213db6a8ca9eac9518ee3bccd0b5a",
+    "jogos/hordas/projeto/dados/v2_laboratorio.json": "5dae8d0a06efc4204d1a0964f2f705a92bd2d5fce47de0706767c17c9b846200",
+    "jogos/hordas/projeto/dados/v2_medio.json": "174e4e013a85adc6c1aaa607220c46470ba00df5ac3d08bf5285f993a7b1259f",
+    "jogos/hordas/projeto/dados/v2_meta.json": "57910e5c5c7d040ceb065f514baac97f60c6ea12e15ba0909caa87210587244c",
+    "jogos/hordas/projeto/dados/v2_musica.json": "87f7a1eed4f7fd45527a45ec622f9607339b16b171cd092b0ffc0bcab21d822e",
+    "jogos/hordas/projeto/dados/v2_niveis.json": "fd3ca02b3aefe5aabc0dd66d635e4e668438d0f6084e307802d96eb26bf65b33",
+    "jogos/hordas/projeto/dados/v2_progressao.json": "73767cd53f5304daa3c9df1491d84c1139457d7101a8814e4b8e78e1e01b94d8",
+    "jogos/hordas/projeto/dados/v2_ritmo.json": "dae0c0e542f36c071507ffc0b98710efe38e96c7314a3f79515b46d644da9163",
+    "jogos/hordas/projeto/dados/v2_ruptura.json": "0e04f3d639f6a4964687f99bf88d0676b0d58b092041bd309efec5215818ec4b",
+    "jogos/hordas/projeto/dados/v2_salao.json": "eab335e0585c2b777079c02df62cea919398b153a2f494912d4480ab9b951a58",
+    "jogos/hordas/projeto/dados/v2_secundario.json": "f82f8eac192f6e3da57a5708ac477b94fc1c4a6069cc73aa7feef76b64c9e19f",
+    "jogos/hordas/projeto/dados/v2_vitoria_final.json": "de9731f0aa58ef4a61f220c60b45dac8a8f6d15a948f22137fb6e8b55d8dcd83"
+  },
+  "diagnostico": {
+    "engine_saida": 3,
+    "tempo_jogo": 138.6,
+    "quadros": 9385,
+    "sha256_ritmo": "c3f25687b408bfc5330855f4e2a32308f64c04aaa0c342ac4b2a304219d89d7a",
+    "sha256_trace": "86fd19dec0b5384da3ba467dd97084eb1b6f5fc728e4687a7d541575dc63fc61",
+    "limite_inferior": 1470,
+    "limiar_fuga": 1420,
+    "leitura": "A entrada troca de sinal vertical ao cruzar o corte de fuga. Sondas puras nao detectaram bloqueio de colisao; nao havia hit-stop ativo no evento.",
+    "limite_detector": "Compara checkpoint inicial/final; o heroi esteve70px longe antes de voltar5.25px do checkpoint. Nao prova imobilidade continua. Detector sera preservado.",
+    "amostras": [
+      {
+        "alvo": [
+          1181.02,
+          1337.81
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.072,
+          0.555
+        ],
+        "hit_stops": 65,
+        "input": [
+          0.886,
+          0.463
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 89.33,
+        "monstros": 32,
+        "monstros_150px": 3,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1119.36,
+          1387.42
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 7.22,
+        "t_alvo": 118.0,
+        "t_atual": 118.017,
+        "t_real": 11.42,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.61,
+          2.074
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.868,
+          -0.496
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 76.21,
+        "monstros": 37,
+        "monstros_150px": 9,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1173.34,
+          1421.02
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.77,
+        "t_alvo": 138.35,
+        "t_atual": 138.357,
+        "t_real": 14.08,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.642,
+          2.119
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.874,
+          -0.485
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 74.82,
+        "monstros": 37,
+        "monstros_150px": 9,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1174.6,
+          1420.3
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.78,
+        "t_alvo": 138.367,
+        "t_atual": 138.373,
+        "t_real": 14.08,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.675,
+          2.162
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.453,
+          0.892
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 73.48,
+        "monstros": 37,
+        "monstros_150px": 9,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1175.88,
+          1419.59
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.8,
+        "t_alvo": 138.383,
+        "t_atual": 138.39,
+        "t_real": 14.09,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.678,
+          2.157
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.879,
+          -0.477
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 73.88,
+        "monstros": 37,
+        "monstros_150px": 9,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1176.54,
+          1420.89
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.82,
+        "t_alvo": 138.4,
+        "t_atual": 138.407,
+        "t_real": 14.09,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.712,
+          2.199
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.885,
+          -0.466
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 72.58,
+        "monstros": 37,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1177.82,
+          1420.2
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.83,
+        "t_alvo": 138.417,
+        "t_atual": 138.423,
+        "t_real": 14.09,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.746,
+          2.248
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.458,
+          0.889
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 71.32,
+        "monstros": 37,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1179.1,
+          1419.52
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.85,
+        "t_alvo": 138.433,
+        "t_atual": 138.44,
+        "t_real": 14.09,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.749,
+          2.242
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.888,
+          -0.459
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 71.73,
+        "monstros": 37,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1179.77,
+          1420.81
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.87,
+        "t_alvo": 138.45,
+        "t_atual": 138.457,
+        "t_real": 14.1,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.784,
+          2.289
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.894,
+          -0.449
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 70.52,
+        "monstros": 37,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1181.07,
+          1420.14
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.88,
+        "t_alvo": 138.467,
+        "t_atual": 138.473,
+        "t_real": 14.1,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.82,
+          2.333
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.465,
+          0.886
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 69.36,
+        "monstros": 37,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1182.37,
+          1419.49
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.9,
+        "t_alvo": 138.483,
+        "t_atual": 138.49,
+        "t_real": 14.1,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.822,
+          2.327
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.897,
+          -0.441
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 69.78,
+        "monstros": 37,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1183.04,
+          1420.78
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.92,
+        "t_alvo": 138.5,
+        "t_atual": 138.507,
+        "t_real": 14.1,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.859,
+          2.37
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.902,
+          -0.431
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 68.67,
+        "monstros": 37,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1184.35,
+          1420.14
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.93,
+        "t_alvo": 138.517,
+        "t_atual": 138.523,
+        "t_real": 14.1,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.894,
+          2.403
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.473,
+          0.881
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 67.6,
+        "monstros": 38,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1185.66,
+          1419.51
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.95,
+        "t_alvo": 138.533,
+        "t_atual": 138.54,
+        "t_real": 14.11,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.891,
+          2.392
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.904,
+          -0.427
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 68.03,
+        "monstros": 38,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1186.35,
+          1420.79
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.97,
+        "t_alvo": 138.55,
+        "t_atual": 138.557,
+        "t_real": 14.11,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.926,
+          2.422
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.908,
+          -0.418
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 67.01,
+        "monstros": 38,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1187.67,
+          1420.17
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 29.98,
+        "t_alvo": 138.567,
+        "t_atual": 138.573,
+        "t_real": 14.12,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      },
+      {
+        "alvo": [
+          1209.54,
+          1335.77
+        ],
+        "desvio_t": 0.0,
+        "fuga": [
+          0.962,
+          2.451
+        ],
+        "hit_stops": 78,
+        "input": [
+          0.482,
+          0.876
+        ],
+        "jogo": "jogando",
+        "lento_t": 0.0,
+        "mais_perto": 66.02,
+        "monstros": 38,
+        "monstros_150px": 10,
+        "monstros_46px": 0,
+        "parada_t": -0.007,
+        "pausado": false,
+        "pos": [
+          1188.99,
+          1419.56
+        ],
+        "preso_pos": [
+          1184.12,
+          1417.6
+        ],
+        "preso_t": 30.0,
+        "t_alvo": 138.583,
+        "t_atual": 138.59,
+        "t_real": 14.12,
+        "tipo": "amostra",
+        "ultimo_hit_stop": 0.11
+      }
+    ],
+    "sondas": [
+      {
+        "direcoes": {
+          "L": [
+            {
+              "correcao": 0.0,
+              "d": 8.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 16.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 24.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 32.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 48.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 64.0,
+              "dentro_limite": true,
+              "livre": true
+            }
+          ],
+          "N": [
+            {
+              "correcao": 0.0,
+              "d": 8.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 16.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 24.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 32.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 48.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 64.0,
+              "dentro_limite": true,
+              "livre": true
+            }
+          ],
+          "O": [
+            {
+              "correcao": 0.0,
+              "d": 8.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 16.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 24.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 32.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 48.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 64.0,
+              "dentro_limite": true,
+              "livre": true
+            }
+          ],
+          "S": [
+            {
+              "correcao": 0.0,
+              "d": 8.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 16.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 24.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 32.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 48.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 64.0,
+              "dentro_limite": false,
+              "livre": true
+            }
+          ]
+        },
+        "limite": [
+          150.0,
+          150.0,
+          2730.0,
+          1470.0
+        ],
+        "momento": "antes_do_vigia",
+        "pos": [
+          1173.3408203125,
+          1421.02099609375
+        ],
+        "raio": 8.0,
+        "t": 138.357,
+        "tipo": "sonda"
+      },
+      {
+        "direcoes": {
+          "L": [
+            {
+              "correcao": 0.0,
+              "d": 8.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 16.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 24.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 32.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 48.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 64.0,
+              "dentro_limite": true,
+              "livre": true
+            }
+          ],
+          "N": [
+            {
+              "correcao": 0.0,
+              "d": 8.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 16.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 24.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 32.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 48.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 64.0,
+              "dentro_limite": true,
+              "livre": true
+            }
+          ],
+          "O": [
+            {
+              "correcao": 0.0,
+              "d": 8.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 16.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 24.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 32.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 48.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 64.0,
+              "dentro_limite": true,
+              "livre": true
+            }
+          ],
+          "S": [
+            {
+              "correcao": 0.0,
+              "d": 8.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 16.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 24.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 32.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 48.0,
+              "dentro_limite": true,
+              "livre": true
+            },
+            {
+              "correcao": 0.0,
+              "d": 64.0,
+              "dentro_limite": false,
+              "livre": true
+            }
+          ]
+        },
+        "limite": [
+          150.0,
+          150.0,
+          2730.0,
+          1470.0
+        ],
+        "momento": "depois_do_fim",
+        "pos": [
+          1188.99084472656,
+          1419.56127929688
+        ],
+        "raio": 8.0,
+        "t": 138.607,
+        "tipo": "sonda"
+      }
+    ]
+  }
+}
