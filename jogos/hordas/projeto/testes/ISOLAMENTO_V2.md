@@ -91,3 +91,17 @@ sem `--fotos` ou `--spec`, exercitam inicialização e limpeza, sem produzir cap
 outras cenas também pulam partes visuais em headless. Hashes finais iguais não provam
 ausência de leitura nem de escrita transitória restaurada. O CI integral permanece
 uma verificação separada, inclusive para as cenas v1.
+
+## Compatibilidade com os geradores do PR #394
+
+Config conserva também o guard específico de matheus_gif e heroi_gif do #394.
+As opções de GIF são apontadas antes de recarregar(), sem interferir na fixture
+das cenas v2_*. O guard só atua com a cena de captura explícita e existente,
+fora do editor; jogo normal e export sem helpers mantêm o comportamento original.
+
+Na integração, preservar os dois guards antes de recarregar(). O arquivo deste
+PR já contém essa união. Se houver conflito no início de _ready, manter a chamada
+_isolar_captura_gif() e o bloco da fixture, nesta ordem. O item de acessibilidade
+do #389 fica no catálogo e também deve ser mantido. Esta compatibilidade recebe
+nova prova de caminhos/isolamento com as duas cópias sujas e CI no commit enviado;
+a prova completa anterior continua identificada pelo seu commit no relatório.
