@@ -38,5 +38,6 @@ de velocidade depois de receber os atributos próprios da marca.
 outras interações enquanto o modal estiver visível. Os testes do componente e das
 regras ficam em `testes/v2_escolha_dificuldade` e `testes/v2_dificuldade`.
 
-Na preparação do PR #390, a ligação ao portal e o ajuste da lista de cinco/seis
-conquistas no resultado aguardam a liberação dos trechos compartilhados na #348.
+O portal monta o componente no salão e preserva o ponto existente de troca de
+cena. A lista de conquistas do resultado comporta até seis nomes em três linhas,
+acima de CONTINUAR, sem diminuir a fonte.

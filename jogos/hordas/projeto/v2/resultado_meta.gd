@@ -88,8 +88,8 @@ func montar(m) -> void:
 	_res.add_child(_saldo)
 	_novas = _rotulo("", TAM_TEXTO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER)
 	_novas.position = Vector2(24, 432)
-	_novas.size = Vector2(LARG - 48, 48)
-	_novas.add_theme_constant_override("line_spacing", 4)
+	_novas.size = Vector2(LARG - 48, 50)  # três linhas de 16 px, com 1 px entre elas e 8 px livres até CONTINUAR
+	_novas.add_theme_constant_override("line_spacing", 1)
 	_res.add_child(_novas)
 	_botao = Control.new()
 	_botao.position = Vector2(300, 490)
@@ -213,7 +213,7 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 	var seg := int(float(r.get("tempo", 0.0)))
 	_valores.text = "%02d:%02d\n%d\nx%d\n%d" % [floori(seg / 60.0), seg % 60, int(r.get("abates", 0)), int(r.get("maior_combo", 0)), int(r.get("nivel", 1))]
 	var linhas: Array = []
-	# Até quatro marcos podem chegar juntos (tempo, combo, chefe e mapa). Dois por linha cabem acima do CONTINUAR sem reduzir a fonte.
+	# Até seis marcos podem chegar juntos (tempo, combo, chefe, mapa, dificuldade e Pesadelo): dois por linha, sem reduzir a fonte.
 	for i in range(0, novas.size(), 2):
 		var pares: Array = []
 		for j in range(i, mini(i + 2, novas.size())):
