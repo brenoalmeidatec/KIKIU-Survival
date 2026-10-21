@@ -1,0 +1,250 @@
+{
+  "issue": 387,
+  "data": "2026-10-21",
+  "status": "PENDENTE",
+  "resumo": "Preparação e importação validadas. Probe, smoke, playtest e suíte com save sujo NÃO executados.",
+  "motivo": "O probe permaneceu somente esperando vaga na fila e foi retirado, sem filho Godot, por decisão de encerrar as pendências para continuação pelo Claude.",
+  "nao_classificar_como": "Falha de teste ou de produto: o código do probe não chegou a rodar.",
+  "base_git": "52f84ba2f6789f73e3f77c2f3d2d0e475ccc7f67",
+  "versao_godot": "4.4.1-stable",
+  "namespace_fixture": "user://testes_v2/<cena>/",
+  "validacoes": {
+    "importacao": {
+      "codigo": 0,
+      "erros": [],
+      "segundos_incluindo_fila": 100.781
+    },
+    "probe_engine_iniciada": false,
+    "runtime_user_data_dir_confirmado": false,
+    "smoke_v2_isolamento_executado": false,
+    "v2_playtest_executado": false,
+    "suite_v2_executada": false,
+    "python_compila": true,
+    "gdformat_l160_hook_e_probe": true,
+    "controles_negativos_sem_godot": [
+      "sem liberação",
+      "Python otimizado",
+      "userdir errado",
+      "override errado",
+      "golden já existente"
+    ],
+    "controles_negativos_ok": true,
+    "revisao_independente_runner": true,
+    "cfg_protegidos": {
+      "origem_igual_antes": true,
+      "golden_igual_antes": true,
+      "qa_base_igual_antes": true,
+      "qa_migravel_nicao_igual_antes": true
+    },
+    "residuos_fixture": []
+  },
+  "selecao_arquivos": "Somente CFG na raiz: v2_*.cfg e opcoes.cfg, incluindo sufixos .bak/.tmp existentes.",
+  "snapshot_origem_antes": {
+    "opcoes.cfg": {
+      "bytes": 817,
+      "sha256": "1f53e22f8246b145c16207d03547ad5cdcb39e7beef84b4ee0a3b0c9d0c87581"
+    },
+    "v2_personagem_p1.cfg": {
+      "bytes": 276,
+      "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+    },
+    "v2_personagem_p1.cfg.bak": {
+      "bytes": 276,
+      "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+    },
+    "v2_personagens.cfg": {
+      "bytes": 68,
+      "sha256": "43b96fc2f97845f576fe88d78156508e6b469a972e9c7854370a59edb5a534be"
+    },
+    "v2_progresso.cfg": {
+      "bytes": 270,
+      "sha256": "296a2bc4260fadc016c9f97791d5432cc8ad9f6a5fda92917a71c9d30b338484"
+    },
+    "v2_progresso.cfg.bak": {
+      "bytes": 270,
+      "sha256": "1258d72b781957bd3ed60c83feceb051f87027505487e24ea30c8bbc573acd23"
+    }
+  },
+  "snapshot_origem_depois": {
+    "opcoes.cfg": {
+      "bytes": 817,
+      "sha256": "1f53e22f8246b145c16207d03547ad5cdcb39e7beef84b4ee0a3b0c9d0c87581"
+    },
+    "v2_personagem_p1.cfg": {
+      "bytes": 276,
+      "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+    },
+    "v2_personagem_p1.cfg.bak": {
+      "bytes": 276,
+      "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+    },
+    "v2_personagens.cfg": {
+      "bytes": 68,
+      "sha256": "43b96fc2f97845f576fe88d78156508e6b469a972e9c7854370a59edb5a534be"
+    },
+    "v2_progresso.cfg": {
+      "bytes": 270,
+      "sha256": "296a2bc4260fadc016c9f97791d5432cc8ad9f6a5fda92917a71c9d30b338484"
+    },
+    "v2_progresso.cfg.bak": {
+      "bytes": 270,
+      "sha256": "1258d72b781957bd3ed60c83feceb051f87027505487e24ea30c8bbc573acd23"
+    }
+  },
+  "snapshot_golden": {
+    "opcoes.cfg": {
+      "bytes": 817,
+      "sha256": "1f53e22f8246b145c16207d03547ad5cdcb39e7beef84b4ee0a3b0c9d0c87581"
+    },
+    "v2_personagem_p1.cfg": {
+      "bytes": 276,
+      "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+    },
+    "v2_personagem_p1.cfg.bak": {
+      "bytes": 276,
+      "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+    },
+    "v2_personagens.cfg": {
+      "bytes": 68,
+      "sha256": "43b96fc2f97845f576fe88d78156508e6b469a972e9c7854370a59edb5a534be"
+    },
+    "v2_progresso.cfg": {
+      "bytes": 270,
+      "sha256": "296a2bc4260fadc016c9f97791d5432cc8ad9f6a5fda92917a71c9d30b338484"
+    },
+    "v2_progresso.cfg.bak": {
+      "bytes": 270,
+      "sha256": "1258d72b781957bd3ed60c83feceb051f87027505487e24ea30c8bbc573acd23"
+    }
+  },
+  "variantes": {
+    "base": {
+      "raiz_logica": "qa/base/",
+      "mudancas_controladas": [],
+      "snapshot_antes": {
+        "opcoes.cfg": {
+          "bytes": 817,
+          "sha256": "1f53e22f8246b145c16207d03547ad5cdcb39e7beef84b4ee0a3b0c9d0c87581"
+        },
+        "v2_personagem_p1.cfg": {
+          "bytes": 276,
+          "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "bytes": 276,
+          "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+        },
+        "v2_personagens.cfg": {
+          "bytes": 68,
+          "sha256": "43b96fc2f97845f576fe88d78156508e6b469a972e9c7854370a59edb5a534be"
+        },
+        "v2_progresso.cfg": {
+          "bytes": 270,
+          "sha256": "296a2bc4260fadc016c9f97791d5432cc8ad9f6a5fda92917a71c9d30b338484"
+        },
+        "v2_progresso.cfg.bak": {
+          "bytes": 270,
+          "sha256": "1258d72b781957bd3ed60c83feceb051f87027505487e24ea30c8bbc573acd23"
+        }
+      },
+      "snapshot_depois": {
+        "opcoes.cfg": {
+          "bytes": 817,
+          "sha256": "1f53e22f8246b145c16207d03547ad5cdcb39e7beef84b4ee0a3b0c9d0c87581"
+        },
+        "v2_personagem_p1.cfg": {
+          "bytes": 276,
+          "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "bytes": 276,
+          "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+        },
+        "v2_personagens.cfg": {
+          "bytes": 68,
+          "sha256": "43b96fc2f97845f576fe88d78156508e6b469a972e9c7854370a59edb5a534be"
+        },
+        "v2_progresso.cfg": {
+          "bytes": 270,
+          "sha256": "296a2bc4260fadc016c9f97791d5432cc8ad9f6a5fda92917a71c9d30b338484"
+        },
+        "v2_progresso.cfg.bak": {
+          "bytes": 270,
+          "sha256": "1258d72b781957bd3ed60c83feceb051f87027505487e24ea30c8bbc573acd23"
+        }
+      }
+    },
+    "migravel_nicao": {
+      "raiz_logica": "qa/migravel_nicao/",
+      "mudancas_controladas": [
+        "opções migráveis: sombras=projetadas; perfil personalizado com qualidade_auto=true",
+        "slot p1 Nicão ativo",
+        "almas=987654; melhorias no máximo; conquistas de progressão"
+      ],
+      "snapshot_antes": {
+        "opcoes.cfg": {
+          "bytes": 832,
+          "sha256": "4460068092a569d7604a01bd9a8817dd411d7aa539b0879b14d0481e97dfe2b0"
+        },
+        "v2_personagem_p1.cfg": {
+          "bytes": 429,
+          "sha256": "d02acdf43f1cca57a9a677bd5b4c4f242c2a488733cde93103fb9c6e2c64b801"
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "bytes": 276,
+          "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+        },
+        "v2_personagens.cfg": {
+          "bytes": 68,
+          "sha256": "19fff9c696ebd5f7e686b096de8e52ad439f8af07a112ddc423b114701010d07"
+        },
+        "v2_progresso.cfg": {
+          "bytes": 450,
+          "sha256": "c9ad5789938e1f5be7d2115972b260c464385a3221081ccc77799709fac3a525"
+        },
+        "v2_progresso.cfg.bak": {
+          "bytes": 270,
+          "sha256": "1258d72b781957bd3ed60c83feceb051f87027505487e24ea30c8bbc573acd23"
+        }
+      },
+      "snapshot_depois": {
+        "opcoes.cfg": {
+          "bytes": 832,
+          "sha256": "4460068092a569d7604a01bd9a8817dd411d7aa539b0879b14d0481e97dfe2b0"
+        },
+        "v2_personagem_p1.cfg": {
+          "bytes": 429,
+          "sha256": "d02acdf43f1cca57a9a677bd5b4c4f242c2a488733cde93103fb9c6e2c64b801"
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "bytes": 276,
+          "sha256": "582416a21be3044a1d06858d505eaeb832478a39c0953704f63d747c8b832d94"
+        },
+        "v2_personagens.cfg": {
+          "bytes": 68,
+          "sha256": "19fff9c696ebd5f7e686b096de8e52ad439f8af07a112ddc423b114701010d07"
+        },
+        "v2_progresso.cfg": {
+          "bytes": 450,
+          "sha256": "c9ad5789938e1f5be7d2115972b260c464385a3221081ccc77799709fac3a525"
+        },
+        "v2_progresso.cfg.bak": {
+          "bytes": 270,
+          "sha256": "1258d72b781957bd3ed60c83feceb051f87027505487e24ea30c8bbc573acd23"
+        }
+      }
+    }
+  },
+  "pendencias": [
+    "Confirmar duas vagas globais com os donos; não alterar semáforo nem interromper testes válidos",
+    "Executar probe e confirmar OS.get_user_data_dir na cópia QA escolhida",
+    "Executar v2_isolamento antes da suíte",
+    "Executar v2_playtest sozinho em cada variante (pai e filho utilizam duas vagas)",
+    "Executar demais v2_*.tscn em série em cada variante, comparando hashes e resíduos após cada processo"
+  ],
+  "limites": [
+    "Hashes mostram preservação final dos bytes; não provam ausência de leitura ou de escrita transitória restaurada",
+    "Sem argumentos --fotos/--spec, v2_controle_fotos, v2_fontes_prints, v2_icones_prints e v2_fontes_folha só exercitam inicialização e limpeza",
+    "Runners locais contêm caminhos da máquina e permanecem externos ao Git; nenhum save ou log bruto foi versionado"
+  ]
+}
