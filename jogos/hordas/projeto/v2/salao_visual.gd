@@ -65,13 +65,14 @@ func portal(n: Node2D, a: Dictionary, fechado: bool, cor: Color) -> void:
 ## O nome do portal. 200 px entre portais: o nome mais longo usa duas linhas de Spleen 16. Trancado (a.trava, dados/v2_progressao.json),
 ## o nome fica numa linha só e a de baixo traz o cadeado e o que abre o portal.
 func rotulo_portal(n: Node2D, a: Dictionary, fechado: bool) -> void:
+	nome_portal(n, a, fechado)
+	trava_portal(n, a)
+
+
+## O texto do nome do portal, uma ou duas linhas (base em y + 20, de 17 em 17).
+func nome_portal(n: Node2D, a: Dictionary, fechado: bool) -> void:
 	var p: Vector2 = a.pos
-	var linhas := [str(a.nome)]
-	var trava := str(a.get("trava", ""))
-	if str(a.nome) == "RUÍNAS DA FLORESTA" and trava == "":
-		linhas = ["RUÍNAS DA", "FLORESTA"]
-	if trava != "":
-		linha_trava(n, Vector2(p.x, p.y + 37), trava)
+	var linhas := linhas_portal(a)
 	for i in linhas.size():
 		n.draw_string(
 			Dados.fonte_texto,
@@ -82,6 +83,56 @@ func rotulo_portal(n: Node2D, a: Dictionary, fechado: bool) -> void:
 			16,
 			Paleta.TEXTO_APAGADO if fechado else Paleta.TEXTO
 		)
+
+
+## A linha de baixo do portal trancado: cadeado e condição.
+func trava_portal(n: Node2D, a: Dictionary) -> void:
+	var p: Vector2 = a.pos
+	var trava := str(a.get("trava", ""))
+	if trava != "":
+		linha_trava(n, Vector2(p.x, p.y + 37), trava)
+
+
+## As linhas do nome do portal (a mesma conta que nome_portal desenha e que partes_rotulo mede).
+func linhas_portal(a: Dictionary) -> Array:
+	if str(a.nome) == "RUÍNAS DA FLORESTA" and str(a.get("trava", "")) == "":
+		return ["RUÍNAS DA", "FLORESTA"]
+	return [str(a.nome)]
+
+
+## Os pedaços do nome, cada um com a caixa dele na sala: "nome" (o texto), "trava" (a linha de baixo, trancado) e "cadeado" (o grande,
+## da estrutura trancada). O salão vivo apaga cada pedaço sozinho quando o herói o cobre (salao_vivo.gd _letreiros_vivos). As caixas
+## espelham as bases de nome_portal (y + 20), trava_portal (y + 37), nome_estrutura (y + 30), cadeado_estrutura (y - 52) e
+## trava_estrutura (y + 47): se uma base mudar, mude a caixa dela.
+func partes_rotulo(a: Dictionary) -> Array[Dictionary]:
+	var p: Vector2 = a.pos
+	var trancado := str(a.get("trava", "")) != ""
+	var partes: Array[Dictionary] = []
+	if str(a.tipo) == "portal":
+		partes.append({"parte": "nome", "caixa": Rect2(p.x - 106, p.y + 7, 212, 17.0 * linhas_portal(a).size())})
+		if trancado:
+			partes.append({"parte": "trava", "caixa": Rect2(p.x - 106, p.y + 24, 212, 17)})
+	else:
+		partes.append({"parte": "nome", "caixa": Rect2(p.x - 100, p.y + 15, 200, 20)})
+		if trancado:
+			partes.append({"parte": "cadeado", "caixa": Rect2(p.x - 11, p.y - 64, 22, 24)})
+			partes.append({"parte": "trava", "caixa": Rect2(p.x - 100, p.y + 34, 200, 17)})
+	return partes
+
+
+## Desenha um pedaço de partes_rotulo ("nome", "cadeado" ou "trava") no nó n.
+func desenha_parte(n: Node2D, a: Dictionary, parte: String, fechado: bool) -> void:
+	if str(a.tipo) == "portal":
+		if parte == "nome":
+			nome_portal(n, a, fechado)
+		else:
+			trava_portal(n, a)
+	elif parte == "nome":
+		nome_estrutura(n, a)
+	elif parte == "cadeado":
+		cadeado_estrutura(n, a)
+	else:
+		trava_estrutura(n, a)
 
 
 func estrutura(n: Node2D, a: Dictionary) -> void:
@@ -118,6 +169,13 @@ func estrutura(n: Node2D, a: Dictionary) -> void:
 
 ## O nome da estrutura; trancada (a.trava), o nome apaga, um cadeado grande fica sobre ela e a linha de baixo diz o que a abre.
 func rotulo_estrutura(n: Node2D, a: Dictionary) -> void:
+	nome_estrutura(n, a)
+	cadeado_estrutura(n, a)
+	trava_estrutura(n, a)
+
+
+## O nome da estrutura (base em y + 30); trancada, o nome apaga.
+func nome_estrutura(n: Node2D, a: Dictionary) -> void:
 	var p: Vector2 = a.pos
 	var trava := str(a.get("trava", ""))
 	n.draw_string(
@@ -129,8 +187,20 @@ func rotulo_estrutura(n: Node2D, a: Dictionary) -> void:
 		19,
 		Paleta.TEXTO_APAGADO if trava != "" else Paleta.OURO
 	)
-	if trava != "":
+
+
+## O cadeado grande sobre a estrutura trancada (centro em y - 52).
+func cadeado_estrutura(n: Node2D, a: Dictionary) -> void:
+	var p: Vector2 = a.pos
+	if str(a.get("trava", "")) != "":
 		cadeado(n, p + Vector2(0, -52), 3)
+
+
+## A linha de baixo da estrutura trancada: cadeado e condição (base em y + 47).
+func trava_estrutura(n: Node2D, a: Dictionary) -> void:
+	var p: Vector2 = a.pos
+	var trava := str(a.get("trava", ""))
+	if trava != "":
 		linha_trava(n, Vector2(p.x, p.y + 47), trava)
 
 

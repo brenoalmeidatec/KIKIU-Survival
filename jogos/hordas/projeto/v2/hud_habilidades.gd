@@ -259,7 +259,17 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var texto_aceso := e_disponivel if e else s_pronta
 	var cor_texto := cor if texto_aceso else DESATIVADO
 	draw_string(fonte, Vector2(origem.x, 63.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor_texto)
-	var nome_tecla := Glifos.texto("habilidade" if e else "secundario")
+	var acao := "habilidade" if e else "secundario"
+	var ds := Glifos.descritor(acao)
+	if not ds.is_empty() and ds[0][0] == Glifos.MOUSE:  # o botão do mouse vai desenhado (ícone de mouse com o botão aceso), não escrito
+		var aceso_mouse: bool = e_disponivel if e else s_pronta
+		var cor_mouse := cor if aceso_mouse else DESATIVADO
+		var botao := Paleta.BRANCO if aceso_mouse else DESATIVADO  # o contorno leva a cor do slot e o botão a apertar fica branco (apagado: cinza)
+		Glifos.desenhar_mouse(
+			self, str(ds[0][1]), origem + Vector2(roundf((TAM_CARD.x - Glifos.largura_mini(ds[0])) * 0.5), 64.0), Glifos.ALTURA_MINI, botao, cor_mouse
+		)
+		return
+	var nome_tecla := Glifos.texto(acao)
 	var larg_selo := maxf(16.0, 8.0 * float(nome_tecla.length()) + 8.0)
 	var selo := Rect2(origem + Vector2((TAM_CARD.x - larg_selo) * 0.5, 64.0), Vector2(larg_selo, 10.0))
 	draw_rect(selo, Color(Paleta.PAINEL, 0.98))
