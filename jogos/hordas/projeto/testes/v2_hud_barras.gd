@@ -165,6 +165,31 @@ func _testes() -> void:
 	ok(canto == 104.0 and hud._vida_caixa.position.x + 32.0 == 104.0, "a moldura fica presa ao canto do canvas (x %s)" % canto)
 	ok(hud._vida_barra.size.x == vida_antes and hud._moldura_barras.size.x == moldura_antes, "o comprimento não muda com o deslocamento do bloco")
 
+	# 9. o fôlego desce pixel a pixel, não em 4 degraus (#374): com 3 cargas o `step` padrão do Range (1) arredondava o valor para 0, 1, 2 ou 3
+	h.vida_max = 100.0
+	h.vida = 100.0
+	h.folego_max = 3.0
+	hud.ui_reencaixar(Vector2(960, 540), Vector2.ZERO)
+	h.folego = 1.37
+	_passar(hud, 1.0)
+	ok(absf(hud._folego.value - 1.37) < 3.0 / hud._folego.size.x, "fôlego 1,37 de 3 mostra 1,37 na barra, não 1 (value %s)" % hud._folego.value)
+	var vistos := {}
+	for i in 601:
+		h.folego = 3.0 * (1.0 - float(i) / 600.0)
+		hud.avancar(PASSO)
+		vistos[hud._folego.value] = true
+	ok(vistos.size() >= 100, "o fôlego desce em 100 pontos ou mais ao esvaziar (%d valores distintos)" % vistos.size())
+	ok(
+		vistos.size() <= int(hud._folego.size.x) + 1,
+		"e não passa de um valor por pixel da barra (%d valores, barra de %s px)" % [vistos.size(), hud._folego.size.x]
+	)
+	h.folego = 3.0
+	hud.avancar(PASSO)
+	ok(is_equal_approx(hud._folego.value, 3.0), "fôlego cheio enche a barra (value %s)" % hud._folego.value)
+	h.folego = 0.0
+	hud.avancar(PASSO)
+	ok(is_equal_approx(hud._folego.value, 0.0), "fôlego zerado esvazia a barra (value %s)" % hud._folego.value)
+
 	# 8. sem mundo (HUD de antes da partida): os padrões de 100 de vida e 3 de fôlego, com barras de 208 px
 	var sem = Hud.criar(null)
 	vista.add_child(sem)
@@ -213,6 +238,25 @@ func _fotos(pasta: String) -> void:
 	w.heroi.folego = 7.0
 	await get_tree().create_timer(0.8).timeout
 	await _foto(w, pasta, "folego_teto_vida_base")
+	# #374: o fôlego pela metade e a 1,37 de 3 (pixel a pixel, não em 4 degraus), com as barras no tamanho de partida
+	w.heroi.vida_max = 70.0
+	w.heroi.vida = 52.0
+	w.heroi.folego_max = 3.0
+	w.heroi.folego = 1.37
+	await get_tree().create_timer(0.8).timeout
+	await _foto(w, pasta, "folego_137_de_3")
+	w.heroi.folego = 1.43
+	await get_tree().create_timer(0.1).timeout
+	await _foto(w, pasta, "folego_143_de_3")
+	# #374: o selo do mouse no card do botão direito, aceso (fôlego cheio: o botão branco) e apagado (cansado: tudo cinza), no HUD de partida
+	w.heroi.folego = w.heroi.folego_max
+	w.heroi.cansado = false
+	await get_tree().create_timer(0.3).timeout
+	await _foto(w, pasta, "selo_mouse_aceso")
+	w.heroi.folego = 0.0
+	w.heroi.cansado = true
+	await get_tree().create_timer(0.3).timeout
+	await _foto(w, pasta, "selo_mouse_cinza")
 
 
 func _foto(w, pasta: String, nome: String) -> void:

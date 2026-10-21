@@ -295,6 +295,7 @@ func avancar(dt: float) -> void:
 	var cartas_na_tela := _cartas_na_tela()  # a escolha e o baú ocupam a tela toda: a HUD inteira some (volta ao fechar), sem misturar com os botões
 	visible = not cartas_na_tela
 	_barras(0.0 if cartas_na_tela else dt, vida_max, folego_max, _base_barras())  # sem correr com a HUD escondida: a barra cresce quando ela volta
+	_folego_em_pixels()
 	_combo.visible = combo > 0 and not cartas_na_tela
 	_combo_num.text = "x%d" % combo
 	_checar_marcos(_combo_antes, combo)
@@ -387,6 +388,14 @@ func _barras(dt: float, vida_max: float, folego_max: float, base: Vector2) -> vo
 	var moldura := roundf(_barra_px + 2.0 * BARRA_FOLGA)
 	_vida_caixa.size.x = moldura
 	_moldura_barras.size.x = moldura
+
+
+## O fôlego desce pixel a pixel: o valor da barra vai para a fração do comprimento arredondada em pixels inteiros (a barra tem 208 a 244, então são 208 a 244
+## passos, e não os 4 degraus de antes: o `step` padrão do Range é 1 e o máximo é 3 cargas, então o valor fracionário caía para 0, 1, 2 ou 3).
+func _folego_em_pixels() -> void:
+	var px := maxf(roundf(_folego.size.x), 1.0)
+	var fracao := clampf(_folego.value / maxf(_folego.max_value, 0.001), 0.0, 1.0)
+	_folego.value = roundf(fracao * px) / px * _folego.max_value
 
 
 ## Um passo da suavização. Com k 0 não se mexe (HUD escondida); perto do alvo, meio px, cola nele para o pixel parar de tremer.

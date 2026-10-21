@@ -280,7 +280,7 @@ func _montar_hud() -> void:
 
 func _dica_salao() -> Control:
 	var d := Glifos.dica(
-		func() -> Array: return [["andar", "Andar"], ["confirmar", "Usar"]] + ([] if Glifos.eh_controle() else [["", "Clique: explorar"]]),
+		func() -> Array: return [["andar", "Andar"], ["confirmar", "Usar"]] + ([] if Glifos.eh_controle() else [["clique", "explorar"]]),
 		HORIZONTAL_ALIGNMENT_LEFT,
 		COR_APAGADO
 	)
