@@ -91,6 +91,23 @@ func _tabela() -> void:
 		ok(fa <= EscalaUi.fator(j, "medio") + 0.0001, "automático %s <= Médio (%.2f x %.2f)" % [str(j), fa, EscalaUi.fator(j, "medio")])
 		ok(fa <= minf(j.x / 960.0, j.y / 540.0) + 0.0001, "automático %s não passa do encaixe do bloco" % str(j))
 	ok(is_equal_approx(EscalaUi.fator(Vector2(1920, 1080), "auto"), 1.25), "1920x1080 automático = 1,25 (cartas em cerca de metade da tela)")
+	# DPI do sistema (Windows 125/150/175%): o Automático cresce junto; os fixos não; nunca passa do encaixe
+	var tab_dpi := [[1.0, 1.25], [1.25, 1.5], [1.5, 2.0], [1.75, 2.0], [2.0, 2.0]]
+	for t in tab_dpi:
+		var fd := EscalaUi.fator(Vector2(1920, 1080), "auto", t[0])
+		ok(is_equal_approx(fd, t[1]), "1920x1080 automático com DPI %d%% = %.2f (deu %.2f)" % [int(t[0] * 100), t[1], fd])
+	ok(is_equal_approx(EscalaUi.fator(Vector2(2560, 1440), "auto", 1.25), 2.0), "2560x1440 automático a 125%% = 2")
+	ok(is_equal_approx(EscalaUi.fator(Vector2(1366, 768), "auto", 1.5), 1.25), "1366x768 automático a 150%% = 1,25")
+	for o in ["pequeno", "medio", "grande"]:
+		ok(is_equal_approx(EscalaUi.fator(Vector2(1920, 1080), o, 1.5), EscalaUi.fator(Vector2(1920, 1080), o)), "%s ignora o DPI" % o)
+	ok(is_equal_approx(EscalaUi.fator(Vector2(1920, 1080), "auto", 0.5), 1.25), "DPI abaixo de 100%% não encolhe a UI")
+	ok(is_equal_approx(EscalaUi.escala_dpi(null), 1.0), "headless: DPI 1")
+	EscalaUi.dpi_forcado = 1.5
+	EscalaUi.janela_forcada = Vector2i(1920, 1080)
+	ok(is_equal_approx(EscalaUi.atualizar(null, "auto"), 2.0) and EscalaUi.canvas_atual == Vector2(960, 540), "atualizar lê o DPI forçado (150%% em 1080p = 2)")
+	EscalaUi.dpi_forcado = 0.0
+	EscalaUi.janela_forcada = Vector2i.ZERO
+	EscalaUi.atualizar(null)
 
 	# a opção: salva em opções, gira por Ajustes > Gráficos e cai em auto com lixo
 	ok(EscalaUi.opcao_atual() == "auto", "o padrão é Automático")
