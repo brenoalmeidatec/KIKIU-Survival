@@ -82,7 +82,7 @@ em série e `v2_playtest` sozinho nas duas variantes graváveis (base e migráve
 Os quatro probes confirmaram o diretório QA; cada processo terminou com código 0,
 `falhas=0`, sem `SCRIPT ERROR` e sem resíduos da fixture. SHA-256 e tamanho dos CFG
 na origem, golden e QA permaneceram iguais após cada processo. Evidência sanitizada:
-[relatório final](qa_save_real/relatorio_2026-10-21_final.json). O relatório histórico
+[resumo e anexo histórico](../../../../docs/qa/save_real_2026_10_21.md). O relatório histórico
 pendente da preparação foi preservado.
 
 A execução headless não comprova composição visual nem experiência humana. Ferramentas
