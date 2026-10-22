@@ -657,10 +657,17 @@ func _anel(a: Dictionary, h) -> void:
 		return
 	it.r = 0.0
 	fumaca_impacto(h.pos, 30.0, a.cor, 0.5)  # o sopro da onda saindo: poeira rasteira na cor dela
+	if prep <= 0.0:
+		pai.fx.explosao(h.pos, float(st.raio), a.cor, 0.0, _dur_onda(st))
 	if prep > 0.0:  # PREPARO: o anel junta força no herói (o primeiro quadro da folha pulsa), sem hitbox
 		it.fk = F_PREPARO
 		it.ft = prep
 		it.aux = prep
+
+
+## Duração da explosão que acompanha a onda do anel: o anel de energia do shader chega à borda em 40% dela, junto da frente real.
+func _dur_onda(st: Dictionary) -> float:
+	return clampf(float(st.raio) / maxf(float(st.vel), 1.0) / 0.4, 0.5, 2.0)
 
 
 func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
@@ -672,10 +679,12 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 		if float(it.ft) > 0.0:
 			return
 		it.fk = F_ATIVO
+		pai.fx.explosao(it.p, float(st.raio), a.cor, 0.0, _dur_onda(st))  # a onda sai: os anéis de energia abrem junto dela até a borda
 		if Anim.de(str(a.id) + "_queda").has("queda"):  # a peça bateu no chão: a onda nasce aqui, com tremor e poeira
 			pai.mundo.cam.tremer(1.5, 0.1)
 			_poeira(it.p, 6, Color(0.6, 0.62, 0.7), 80.0, 0.4)
 			fumaca_impacto(it.p, 40.0, a.cor)
+			pai.fx.explosao(it.p, 44.0, a.cor)
 	it.r = float(it.r) + float(st.vel) * dt
 	var c: Vector2 = it.p
 	var r := float(it.r)

@@ -97,6 +97,54 @@ void fragment() {
 }
 """
 
+## A explosão grande dos golpes de impacto (referência: docs/visual_2_5d/referencia_kikiu, magia M2 e cristal M6): núcleo branco que
+## estoura, dois anéis de energia em arcos que giram em sentidos opostos e abrem com ease-out, a "bolha" que fica dentro e some, e espinhos
+## radiais no começo. Tudo num quad só (aditivo), com a grade de pixel do jogo (`px` = pixels de tela na largura) e a intensidade em degraus.
+const SHADER_EXPLOSAO := """
+shader_type canvas_item;
+render_mode blend_add, unshaded;
+uniform float prog = 0.0;
+uniform vec4 cor : source_color = vec4(1.0);
+uniform float px = 128.0;
+uniform float semente = 0.0;
+uniform float espinhos = 1.0;
+float h(float x) { return fract(sin(x * 127.1 + semente * 31.7) * 43758.5453); }
+void fragment() {
+	vec2 uv = (floor(UV * px) + 0.5) / px;
+	vec2 p = (uv - 0.5) * 2.0;
+	float r = length(p);
+	float a = atan(p.y, p.x);
+	float t = prog;
+	float core = (1.0 - smoothstep(0.0, 0.22, t)) * exp(-r * r / (0.02 + 0.3 * t));
+	float e1 = 1.0 - pow(1.0 - clamp(t / 0.4, 0.0, 1.0), 3.0);
+	float r1 = 0.12 + 0.72 * e1;
+	float w1 = 0.035 + 0.05 * (1.0 - e1);
+	float g1 = smoothstep(0.2, 0.85, 0.5 + 0.5 * sin(a * 3.0 + t * 16.0 + semente * 6.0));
+	float anel1 = exp(-pow((r - r1) / w1, 2.0)) * (0.45 + 0.55 * g1);
+	float e2 = 1.0 - pow(1.0 - clamp((t - 0.05) / 0.5, 0.0, 1.0), 3.0);
+	float r2 = 0.08 + 0.88 * e2;
+	float g2 = smoothstep(0.35, 0.95, 0.5 + 0.5 * sin(-a * 2.0 + t * 11.0 + semente * 3.0));
+	float anel2 = exp(-pow((r - r2) / 0.03, 2.0)) * g2 * step(0.05, t);
+	float bolha = (1.0 - smoothstep(r1 - 0.3, r1, r)) * 0.16 * e1 * (0.7 + 0.3 * sin(a * 5.0 - t * 9.0));
+	float setor = floor((a + 3.14159) / 6.28318 * 14.0);
+	float meio = (setor + 0.5) / 14.0 * 6.28318 - 3.14159;
+	float da = abs(mod(a - meio + 3.14159, 6.28318) - 3.14159);
+	float st = 1.0 - pow(1.0 - clamp(t / 0.2, 0.0, 1.0), 2.0);
+	float lp = (0.45 + 0.55 * h(setor)) * (0.25 + 0.95 * st);
+	float larg = 0.13 * clamp(1.0 - r / max(lp, 0.01), 0.0, 1.0);
+	float espinho = step(r, lp) * (1.0 - smoothstep(larg * 0.4, larg, da)) * (1.0 - smoothstep(0.12, 0.35, t)) * espinhos;
+	float some = 1.0 - smoothstep(0.5, 1.0, t);
+	float k = core * 1.6 + (anel1 + anel2 + bolha) * some + espinho;
+	k = floor(clamp(k, 0.0, 1.6) * 6.0 + 0.5) / 6.0;
+	vec3 c = mix(cor.rgb, vec3(1.0), clamp(core * 1.3 + anel1 * 0.3 + espinho * 0.5, 0.0, 1.0));
+	COLOR = vec4(c * k * 1.7, min(k, 1.0));
+}
+"""
+const MAX_EXPLOSOES := 6  # explosões grandes ao mesmo tempo (a mais velha é reaproveitada)
+const EXPLOSAO_DUR := 0.75
+const MAX_ECOS := 4
+const ECO_ESCALA := 1.18  # o eco do corte é 18% maior que o rastro (só o desenho; o alcance do golpe é o mesmo)
+
 const SHADER_FLASH := """
 shader_type canvas_item;
 render_mode unshaded;
@@ -191,7 +239,19 @@ var _fo_cristal := PackedByteArray()  # 1 = o slot mostra um cristal (para ignor
 var _fo_i := 0
 var _ce_i := PRIM_CENTELHA
 
-var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0}  # contadores para os testes
+# explosões grandes (SHADER_EXPLOSAO)
+var _ex: Array[Sprite2D] = []
+var _ex_t := PackedFloat32Array()
+var _ex_dur := PackedFloat32Array()
+# eco do corte: um crescente branco maior por trás da folha do Blender (pool próprio: não mexe em _ci, que o v2_ruptura lê)
+var _eco: Array[Sprite2D] = []
+var _eco_t := PackedFloat32Array()
+var _eco_dur := PackedFloat32Array()
+var _eco_i := 0
+var _ex_i := 0
+var _rng := RandomNumberGenerator.new()  # sorteio dos enfeites novos: fora do randf() global, de que o jogo e os testes dependem
+
+var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0, "explosoes": 0}  # contadores para os testes
 
 
 func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
@@ -235,6 +295,7 @@ func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
 	_montar_luzes(sv)
 	_montar_flashes()
 	_montar_folhas()
+	_montar_explosoes()
 
 
 func _montar_cortes() -> void:
@@ -279,6 +340,41 @@ func _montar_folhas() -> void:
 	_fo_cristal.resize(MAX_FOLHAS)
 	_fo_t.fill(9.0)
 	_fo_dur.fill(1.0)
+
+
+func _montar_explosoes() -> void:
+	var sh := Shader.new()
+	sh.code = SHADER_EXPLOSAO
+	var tex: Texture2D = _cortes[0].texture
+	for i in MAX_EXPLOSOES:
+		var s := Sprite2D.new()
+		s.texture = tex
+		var mat := ShaderMaterial.new()
+		mat.shader = sh
+		s.material = mat
+		s.visible = false
+		raiz.add_child(s)
+		_ex.append(s)
+	_ex_t.resize(MAX_EXPLOSOES)
+	_ex_dur.resize(MAX_EXPLOSOES)
+	_ex_t.fill(9.0)
+	_ex_dur.fill(1.0)
+	var sh_c := Shader.new()
+	sh_c.code = SHADER_CORTE
+	for i in MAX_ECOS:
+		var s := Sprite2D.new()
+		s.texture = tex
+		var mat := ShaderMaterial.new()
+		mat.shader = sh_c
+		mat.set_shader_parameter("modo", 0.0)
+		s.material = mat
+		s.visible = false
+		raiz.add_child(s)
+		_eco.append(s)
+	_eco_t.resize(MAX_ECOS)
+	_eco_dur.resize(MAX_ECOS)
+	_eco_t.fill(9.0)
+	_eco_dur.fill(1.0)
 
 
 func _montar_luzes(sv: Node) -> void:
@@ -358,6 +454,16 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	_cortes_t[i] = 0.0
 	_cortes_dur[i] = dur
 	usados.cortes += 1
+	if Anim.suave and tipo == "corte":  # brilhos ao longo do arco que ficam um instante no ar e escorregam na direção do corte
+		var meio := deg_to_rad(arco_graus) * 0.5
+		var claro := cor.lerp(Color.WHITE, 0.5)
+		var n := roundi(10 * fator_part)
+		for k in n:
+			var aa := ang + lerpf(-meio, meio, (float(k) + _rng.randf()) / float(n))
+			var pt := origem + Vector2.from_angle(aa) * alcance * _rng.randf_range(0.8, 1.15)
+			var tang := Vector2.from_angle(aa + PI * 0.5 * lado) * _rng.randf_range(40.0, 110.0)
+			particula(pt, tang, _rng.randf_range(0.3, 0.55), _rng.randf_range(7.0, 12.0), Color(claro.r, claro.g, claro.b, 0.95), -24.0, true)
+		_corte_eco(origem, ang, alcance * ECO_ESCALA, arco_graus * 1.1, lado, Color(claro.r * 0.55, claro.g * 0.55, claro.b * 0.55), dur * 0.9)
 	luz_rapida(origem + Vector2.from_angle(ang) * alcance * 0.55, cor, 1.7 if tipo == "estocada" else 1.35, alcance * 2.3, dur * 0.9)
 
 
@@ -392,6 +498,60 @@ func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> voi
 	_fo_dur[i] = dur
 	_fo_cristal[i] = 1 if cristal else 0
 	usados.folhas += 1
+
+
+## O eco do corte: o crescente procedural (modo 0 do shader do corte), branco-claro e maior, varrendo junto da folha do Blender.
+func _corte_eco(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado: float, cor: Color, dur: float) -> void:
+	var i := _eco_i
+	_eco_i = (_eco_i + 1) % MAX_ECOS
+	var s := _eco[i]
+	s.position = origem.round()
+	s.rotation = ang
+	s.scale = Vector2.ONE * (alcance * 1.25 / 32.0)
+	s.visible = true
+	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("prog", 0.0)
+	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
+	mat.set_shader_parameter("lado", lado)
+	mat.set_shader_parameter("cor", cor)
+	_eco_t[i] = 0.0
+	_eco_dur[i] = dur
+
+
+## A explosão grande de impacto em `p` (chão achatado), com `raio` = o da área do golpe: os anéis param na borda real (~1,05 raio) e só o
+## anel de fora e os espinhos passam um pouco dela. `espinhos` 0 tira o estouro de cristal (raio, anel saindo). Mais os brilhos que sobem
+## e ficam no ar depois (pool de partículas). Só desenho: o dano já saiu em quem chamou. Com Anim.suave desligado (perfil Baixo), nada.
+func explosao(p: Vector2, raio: float, cor: Color, espinhos := 1.0, dur := EXPLOSAO_DUR) -> void:
+	if not Anim.suave:
+		return
+	var i := _ex_i
+	_ex_i = (_ex_i + 1) % MAX_EXPLOSOES
+	var s := _ex[i]
+	var r := raio * 1.25
+	s.position = p.round()
+	s.scale = Vector2(r / 32.0, r / 32.0 * 0.62)
+	s.visible = true
+	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("prog", 0.0)
+	mat.set_shader_parameter("cor", cor)
+	mat.set_shader_parameter("px", roundf(r * 2.0))
+	mat.set_shader_parameter("semente", _rng.randf() * 10.0)
+	mat.set_shader_parameter("espinhos", espinhos)
+	_ex_t[i] = 0.0
+	_ex_dur[i] = maxf(dur, 0.2)
+	usados.explosoes += 1
+	brilhos(p, raio, cor, roundi(clampf(raio / 6.0, 4.0, 14.0)))
+
+
+## Brilhos que ficam no ar: pontos de luz que abrem do centro, flutuam subindo devagar e apagam em 0,5 a 1 s (a "cauda" do impacto).
+func brilhos(p: Vector2, raio: float, cor: Color, n: int) -> void:
+	n = roundi(n * fator_part)
+	var claro := cor.lerp(Color.WHITE, 0.45)
+	for k in n:
+		var ang := _rng.randf() * TAU
+		var d := raio * _rng.randf_range(0.25, 0.95)
+		var v := Vector2(cos(ang), sin(ang) * 0.62) * d * _rng.randf_range(1.2, 2.0)
+		particula(p + Vector2(0, -6), v, _rng.randf_range(0.5, 1.0), _rng.randf_range(5.0, 9.0), Color(claro.r, claro.g, claro.b, 0.85), -28.0, true)
 
 
 func luz_rapida(pos: Vector2, cor: Color, energia: float, raio: float, dur: float) -> void:
@@ -555,6 +715,12 @@ func limpar() -> void:
 		s.visible = false
 	for s in _fo:
 		s.visible = false
+	_ex_t.fill(9.0)
+	_eco_t.fill(9.0)
+	for s in _ex:
+		s.visible = false
+	for s in _eco:
+		s.visible = false
 	for l in _luzes:
 		l.enabled = false
 	add.queue_redraw()
@@ -622,6 +788,23 @@ func atualizar(dt: float) -> void:
 		if Anim.suave:  # abre rápido e assenta (ease-out), em vez de nascer já do tamanho final
 			var k := clampf(pr / CORTE_CRESCE, 0.0, 1.0)
 			s.scale = Vector2.ONE * _cortes_esc[i] * (0.88 + 0.12 * (1.0 - (1.0 - k) * (1.0 - k)))
+	# explosões grandes
+	for i in MAX_EXPLOSOES:
+		if _ex_t[i] >= _ex_dur[i]:
+			continue
+		_ex_t[i] += dt
+		if _ex_t[i] >= _ex_dur[i]:
+			_ex[i].visible = false
+			continue
+		(_ex[i].material as ShaderMaterial).set_shader_parameter("prog", _ex_t[i] / _ex_dur[i])
+	for i in MAX_ECOS:
+		if _eco_t[i] >= _eco_dur[i]:
+			continue
+		_eco_t[i] += dt
+		if _eco_t[i] >= _eco_dur[i]:
+			_eco[i].visible = false
+			continue
+		(_eco[i].material as ShaderMaterial).set_shader_parameter("prog", _eco_t[i] / _eco_dur[i])
 	# folhas
 	for i in MAX_FOLHAS:
 		if _fo_t[i] >= _fo_dur[i]:
