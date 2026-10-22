@@ -11,7 +11,7 @@ const Glifos := preload("res://v2/glifos.gd")
 const TAM_CARD := Vector2(86.0, 74.0)
 const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó inteiro é escalado (`scale`): o desenho e `size` ficam no espaço de 86x74 por card
 const ESPACO_CARD := 2.0
-const TAM_ICON := Vector2(48.0, 48.0)
+const TAM_ICON := Vector2(44.0, 44.0)  # o ícone (32 px) com 6 px de folga; era 48 e encolheu para o selo da tecla caber com 16 px de altura
 const CARGA_LARANJA := Paleta.CARGA_LARANJA
 const COR_ESCUDO := Color(0.45, 0.82, 1.0)  # o azul do escudo (o mesmo do desenho dele no mundo, v2/escudo.gd)
 const FOLEGO_MIN_PADRAO := 0.15  # fôlego mínimo para erguer o escudo e fração de volta do cansaço: lidos do cfg do combate; estes só valem sem combate
@@ -226,12 +226,12 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	_moldura(icone, cor)
 	var arte: Texture2D = arte_e() if e else Dados.icone_carta("escudo")
 	if arte != null:
-		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro de 48; apagado quando não está disponível
+		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro; apagado quando não está disponível
 		var tinta := Color.WHITE if (e_disponivel if e else s_pronta) else DESATIVADO
 		draw_texture(arte, icon_pos + (TAM_ICON - arte.get_size()) * 0.5, tinta)
 	elif e:
 		# Duas placas de solo afastadas; o vazio ramificado central é a ruptura (reserva, se o ícone faltar).
-		var p := icon_pos
+		var p := icon_pos + (TAM_ICON - Vector2(48.0, 48.0)) * 0.5  # o desenho de reserva foi feito num quadro de 48: fica centrado no atual
 		var esquerda := PackedVector2Array([Vector2(6, 14), Vector2(18, 8), Vector2(21, 16), Vector2(17, 23), Vector2(21, 30), Vector2(17, 38), Vector2(6, 32)])
 		var direita := PackedVector2Array(
 			[Vector2(27, 8), Vector2(41, 14), Vector2(41, 32), Vector2(25, 39), Vector2(29, 29), Vector2(25, 23), Vector2(29, 16)]
@@ -251,36 +251,20 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 		var f := clampf(float(carga_px) / 20.0, 0.0, 1.0)
 		_cortina(icon_pos, recarga_px)
 		if recarga_px <= 0 and carga_px > 0:
-			draw_rect(Rect2(icon_pos + Vector2(2.0, 43.0), Vector2(44.0 * f, 3.0)), cor)
+			draw_rect(Rect2(icon_pos + Vector2(2.0, TAM_ICON.y - 5.0), Vector2((TAM_ICON.x - 4.0) * f, 3.0)), cor)
 		if contragolpe_px > 0:
-			draw_rect(Rect2(icon_pos + Vector2(2.0, 45.0), Vector2(44.0 * float(contragolpe_px) / 20.0, 2.0)), Paleta.CONTRAGOLPE)
+			draw_rect(Rect2(icon_pos + Vector2(2.0, TAM_ICON.y - 3.0), Vector2((TAM_ICON.x - 4.0) * float(contragolpe_px) / 20.0, 2.0)), Paleta.CONTRAGOLPE)
 	elif not e and s_disponivel:
 		_cortina(icon_pos, s_recarga_px)
 		if s_ativo:  # erguido: o quadro pulsa
 			var pulso := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) / 1000.0 * TAU * 2.0)
-			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(46.0, 46.0)), Color(COR_ESCUDO, 0.10 + 0.22 * pulso))
+			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), TAM_ICON - Vector2(2.0, 2.0)), Color(COR_ESCUDO, 0.10 + 0.22 * pulso))
 	var rotulo := _rotulo_e() if e else _rotulo_s()
 	var texto_aceso := e_disponivel if e else s_pronta
 	var cor_texto := cor if texto_aceso else DESATIVADO
-	draw_string(fonte, Vector2(origem.x, 63.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor_texto)
-	var acao := "habilidade" if e else "secundario"
-	var ds := Glifos.descritor(acao)
-	if not ds.is_empty() and ds[0][0] == Glifos.MOUSE:  # o botão do mouse vai desenhado (ícone de mouse com o botão aceso), não escrito
-		var aceso_mouse: bool = e_disponivel if e else s_pronta
-		var cor_mouse := cor if aceso_mouse else DESATIVADO
-		var botao := Paleta.BRANCO if aceso_mouse else DESATIVADO  # o contorno leva a cor do slot e o botão a apertar fica branco (apagado: cinza)
-		Glifos.desenhar_mouse(
-			self, str(ds[0][1]), origem + Vector2(roundf((TAM_CARD.x - Glifos.largura_mini(ds[0])) * 0.5), 64.0), Glifos.ALTURA_MINI, botao, cor_mouse
-		)
-		return
-	var nome_tecla := Glifos.texto(acao)
-	var larg_selo := maxf(16.0, 8.0 * float(nome_tecla.length()) + 8.0)
-	var selo := Rect2(origem + Vector2((TAM_CARD.x - larg_selo) * 0.5, 64.0), Vector2(larg_selo, 10.0))
-	draw_rect(selo, Color(Paleta.PAINEL, 0.98))
-	_moldura(selo, cor if texto_aceso else DESATIVADO)
-	draw_string(
-		fonte, selo.position + Vector2(0.0, 9.0), nome_tecla, HORIZONTAL_ALIGNMENT_CENTER, larg_selo, Paleta.NUMERO_PEQUENO, cor if texto_aceso else DESATIVADO
-	)
+	draw_string(fonte, Vector2(origem.x, 57.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor_texto)
+	# o selo da tecla na borda de baixo do card (E e LB numa teclinha, o botão direito no mouse desenhado), do mesmo tamanho dos glifos das telas
+	Glifos.desenhar_selo(self, "habilidade" if e else "secundario", origem.x + TAM_CARD.x * 0.5, TAM_CARD.y - Glifos.ALTURA_SELO, cor, texto_aceso, DESATIVADO)
 
 
 ## A cor do quadro do ícone: a do estado do slot (pronto, em andamento, negado, apagado).
@@ -305,10 +289,10 @@ func _cor_do_card(e: bool, pulsa: bool) -> Color:
 func _cortina(icon_pos: Vector2, px: int) -> void:
 	if px <= 0:
 		return
-	var altura := 46.0 * clampf(float(px) / 20.0, 0.0, 1.0)
-	draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(46.0, altura)), Color(Paleta.PRETO, 0.56))
+	var altura := (TAM_ICON.y - 2.0) * clampf(float(px) / 20.0, 0.0, 1.0)
+	draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), Vector2(TAM_ICON.x - 2.0, altura)), Color(Paleta.PRETO, 0.56))
 	if px < 20:
-		draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + altura), Vector2(46.0, 1.0)), Color(Paleta.RECARGA_LINHA, 0.95))
+		draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + altura), Vector2(TAM_ICON.x - 2.0, 1.0)), Color(Paleta.RECARGA_LINHA, 0.95))
 
 
 ## Arte própria da E; os ícones antigos continuam sendo a reserva (inclusive a Ruptura do Hazaki).

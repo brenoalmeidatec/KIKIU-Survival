@@ -29,10 +29,10 @@ const MOUSE := "mouse"  # mouse em pixel art; o texto é o botão destacado: "e"
 const COR_MOUSE_CORPO := Color("#2b2838")
 const COR_MOUSE_BOTAO := Color("#3d3a52")
 const COR_MOUSE_ATIVO := Color("#ffd166")  # o botão a apertar, em ouro; sem o tom da acao, no HUD o selo troca pela cor do slot
-const ALTURA_MINI := 10.0  # a variante compacta (o selo de tecla do HUD, 10 px dentro de um nó com escala 1,5)
+const ALTURA_SELO := 16.0  # o selo de tecla do HUD (E, Q, secundário): a mesma altura dos glifos, num nó com escala 1,5 (24 px de canvas)
+const TAM_SELO := 12  # a letra do selo do HUD: 1,5x a de 8 que ele tinha (o Alisson achou o E, o Q e o mouse pequenos demais)
 
 ## O mouse desenhado pixel a pixel (cada caractere é um pixel inteiro): '#' contorno, 'L' botão esquerdo, 'M' roda, 'R' botão direito, '.' corpo e espaço = transparente.
-## ALTURA (16 px) para as dicas e a variante mini (10 px) para o selo do HUD.
 const MOUSE_GRANDE := [
 	"  ########  ",
 	"#LLL#MM#RRR#",
@@ -51,19 +51,6 @@ const MOUSE_GRANDE := [
 	"#..........#",
 	" ########## ",
 ]
-const MOUSE_MINI := [
-	"  ###  ",
-	" #LMR# ",
-	"#LL#RR#",
-	"#LL#RR#",
-	"#######",
-	"#.....#",
-	"#.....#",
-	"#.....#",
-	"#.....#",
-	" ##### ",
-]
-
 ## ação -> [teclado, xbox, ps]; cada um é uma lista de [tipo, texto]. Vazio = não existe nesse dispositivo.
 const TABELA := {
 	"confirmar": [[[TECLA, "Enter"]], [[FACE, "A"]], [[PS, "x"]]],
@@ -220,7 +207,7 @@ static func desenhar(ci: CanvasItem, d: Array, pos: Vector2) -> float:
 	var c := pos + Vector2(w * 0.5, ALTURA * 0.5)
 	match d[0]:
 		MOUSE:
-			desenhar_mouse(ci, String(d[1]), pos, ALTURA)
+			desenhar_mouse(ci, String(d[1]), pos)
 		TECLA:
 			var r := Rect2(pos, Vector2(w, ALTURA))
 			ci.draw_rect(r, COR_TECLA_BAIXO)
@@ -248,12 +235,10 @@ static func desenhar(ci: CanvasItem, d: Array, pos: Vector2) -> float:
 	return w
 
 
-## O mouse em pixel art na posição (canto de cima à esquerda), com o botão `qual` aceso ("e", "d", "m" ou "" para nenhum). `altura` 16 (ALTURA) ou 10
-## (ALTURA_MINI); devolve a largura. `acento` é a cor do botão aceso e do contorno aceso (no HUD, a cor do slot).
-static func desenhar_mouse(
-	ci: CanvasItem, qual: String, pos: Vector2, altura: float = ALTURA, acento: Color = COR_MOUSE_ATIVO, contorno: Color = COR_TECLA_BORDA
-) -> float:
-	for px in pixels_mouse(qual, altura):
+## O mouse em pixel art na posição (canto de cima à esquerda), com o botão `qual` aceso ("e", "d", "m" ou "" para nenhum); devolve a largura.
+## `acento` é a cor do botão aceso e `contorno` a do contorno (no HUD, a cor do slot).
+static func desenhar_mouse(ci: CanvasItem, qual: String, pos: Vector2, acento: Color = COR_MOUSE_ATIVO, contorno: Color = COR_TECLA_BORDA) -> float:
+	for px in pixels_mouse(qual):
 		var cor: Color
 		match px[1]:
 			"#":
@@ -265,13 +250,13 @@ static func desenhar_mouse(
 			_:
 				cor = COR_MOUSE_CORPO
 		ci.draw_rect(Rect2(pos + Vector2(px[0]), Vector2.ONE), cor)
-	return float(String(MOUSE_GRANDE[0] if altura > ALTURA_MINI else MOUSE_MINI[0]).length())
+	return float(String(MOUSE_GRANDE[0]).length())
 
 
 ## Os pixels do mouse: lista de [Vector2i, tipo], com tipo "#" (contorno), "A" (botão aceso), "B" (botão apagado) ou "." (corpo). O que desenhar_mouse pinta, e o
 ## que o teste confere.
-static func pixels_mouse(qual: String, altura: float = ALTURA) -> Array:
-	var mapa: Array = MOUSE_MINI if altura <= ALTURA_MINI else MOUSE_GRANDE
+static func pixels_mouse(qual: String) -> Array:
+	var mapa: Array = MOUSE_GRANDE
 	var aceso := {"e": "L", "d": "R", "m": "M"}.get(qual, "") as String
 	var r: Array = []
 	for y in mapa.size():
@@ -287,14 +272,37 @@ static func pixels_mouse(qual: String, altura: float = ALTURA) -> Array:
 	return r
 
 
-## Largura do glifo de um descritor na variante mini (o selo do HUD): o mouse encolhe, o resto não existe nessa variante.
-static func largura_mini(d: Array) -> float:
-	return float(String(MOUSE_MINI[0]).length()) if d[0] == MOUSE else 0.0
+## Largura do selo de tecla do HUD de uma ação: o mouse inteiro (12 px) ou a teclinha com a letra na TAM_SELO e 4 px de folga de cada lado.
+static func largura_selo(acao: String) -> float:
+	var ds := descritor(acao)
+	if ds.is_empty():
+		return 0.0
+	if ds[0][0] == MOUSE:
+		return largura(ds[0])
+	return maxf(ALTURA_SELO, Dados.fonte.get_string_size(texto(acao), HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_SELO).x + 8.0)
 
 
-static func _letra(ci: CanvasItem, txt: String, centro: Vector2, cor: Color) -> void:
+## O selo de tecla do HUD (E, Q e secundário), centrado em `centro_x` com o topo em `topo`. Aceso: o contorno na cor do slot e a letra (ou o botão do
+## mouse) em BRANCO, o máximo de contraste sobre o fundo escuro; apagado, tudo em `apagado`.
+static func desenhar_selo(ci: CanvasItem, acao: String, centro_x: float, topo: float, cor: Color, aceso: bool, apagado: Color) -> void:
+	var w := largura_selo(acao)
+	if w <= 0.0:
+		return
+	var pos := Vector2(roundf(centro_x - w * 0.5), topo)
+	var borda := cor if aceso else apagado
+	var tinta := Paleta.BRANCO if aceso else apagado
+	var ds := descritor(acao)
+	if ds[0][0] == MOUSE:
+		desenhar_mouse(ci, String(ds[0][1]), pos, tinta, borda)
+		return
+	var r := Rect2(pos, Vector2(w, ALTURA_SELO))
+	ci.draw_rect(r, borda)
+	ci.draw_rect(r.grow(-1.0), Color(Paleta.PAINEL, 0.98))
+	_letra(ci, texto(acao), r.get_center(), tinta, TAM_SELO)
+
+
+static func _letra(ci: CanvasItem, txt: String, centro: Vector2, cor: Color, tam: int = 8) -> void:
 	var f: Font = Dados.fonte
-	var tam := 8
 	var l := f.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x
 	var base := centro.y + (f.get_ascent(tam) - f.get_descent(tam)) * 0.5
 	ci.draw_string(f, Vector2(roundf(centro.x - l * 0.5), roundf(base)), txt, HORIZONTAL_ALIGNMENT_LEFT, -1.0, tam, cor)
