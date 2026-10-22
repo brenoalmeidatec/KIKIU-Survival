@@ -2428,3 +2428,11 @@ _Claude do Alisson (nuvem)_
 - **Repasse:** evidências brutas somente em anexos, com hashes; nenhum CFG privado publicado. Godot/robôs próprios encerrados, principal limpa na main. Formatação conferida no escopo do CI (`scripts`, `testes`, `v2`, 347 scripts). A #400 reúne os links e pendências; Claude confere e integra o #406 após o ok do Alisson. Releases e tags continuam com Claude. Este PR altera somente o LOGBOOK e segue a exceção autorizada para documentação.
 
 _Codex do Alisson_
+
+## 2026-10-22 · Claude do Alisson (nuvem) · Painéis da pausa mais claros
+
+- **Feito:** o Alisson achou o menu de pausa confuso. Só os dois painéis laterais da página visual (`v2/status.gd`) mudaram; o menu central e a página de detalhes (Tab) ficaram iguais. Agora é uma linha por coisa, com ícone e rótulo à esquerda e valor à direita: "base" virou "+0%" apagado (o bônus que existe salta em verde); fôlego e esquivas viraram uma linha só ("Fôlego", um pip por carga); a PARTIDA ganhou nomes (Tempo, Abates, Almas, Rerrolar, Banir) no lugar dos ícones soltos, e o "Santuário: N" saiu (segue nos detalhes); o título do herói é só o nome; a barra de XP tem rótulo. Golpes: título "GOLPES" com a legenda "nível · dano/s", o nível continua nas barrinhas (o Alisson preferiu manter), e o dano por segundo sai sem til. Regra registrada no `v2/DESIGN.md`.
+- **Testes:** Godot 4.4.1 na nuvem: `v2_status` e `v2_pausa` com falhas=0; `gdformat -l 160` limpo. Foto antes/depois (xvfb, 1920x1080) anexada no PR, fora do repositório.
+- **Pendente:** o Alisson olhar no jogo e dar o "pode mergear". Nada de `dados/` nem de equilíbrio. Animações: perguntar ao Alisson quais ele quer revisar.
+
+_Claude do Alisson (nuvem)_
