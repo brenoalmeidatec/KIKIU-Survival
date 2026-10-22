@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## UI da dificuldade: a seleção não grava, confirmar grava antes do sinal e uma falha conserva a tela aberta.
 ## Meta, Config e slots usam prefixo único; os arquivos existentes em user:// são conferidos por MD5.
 
