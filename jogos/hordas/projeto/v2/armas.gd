@@ -718,6 +718,7 @@ func _cair_raio(a: Dictionary, h, alvo) -> void:
 	_raio_visual(pontos)
 	fx.luz_rapida(alvo.pos + Vector2(0, -10), COR_RAIO, 2.2, 150.0, 0.22)
 	fx.onda(alvo.pos, Color(0.7, 0.85, 1.0, 0.9), 26.0, 0.2)
+	novas.fumaca_impacto(alvo.pos, 22.0, COR_RAIO, 0.6)  # o chão queimado solta um fio de fumaça
 	combate.audio.tocar("raio", randf_range(0.92, 1.1), -1.0, 0.08)
 	mundo.cam.tremer(1.0, 0.1)
 
@@ -841,6 +842,7 @@ func _explodir_runa(i: int, a: Dictionary, h) -> void:
 	fx.onda(p, Color(a.cor.r, a.cor.g, a.cor.b, 0.9), raio, 0.3)
 	fx.folha("cristal", p, raio * 1.1, a.cor, 0.3)
 	fx.luz_rapida(p + Vector2(0, -6), a.cor, 2.0, raio * 2.6, 0.3)
+	novas.fumaca_impacto(p, raio, a.cor)
 	combate.audio.tocar("runa", randf_range(0.9, 1.1), -1.0, 0.05)
 	mundo.cam.tremer(1.5, 0.12)
 
@@ -871,6 +873,7 @@ func explodir(p: Vector2, dano: float, raio: float, cor: Color, ignorar = null) 
 	fx.onda(p, Color(cor.r, cor.g, cor.b, 0.9), raio, 0.25)
 	fx.folha("cristal", p, raio * 1.1, cor, 0.25)
 	fx.luz_rapida(p + Vector2(0, -8), cor, 1.8, raio * 3.0, 0.25)
+	novas.fumaca_impacto(p, raio, cor)
 	combate.audio.tocar("runa", randf_range(1.1, 1.3), -3.0, 0.05)
 
 
@@ -1161,7 +1164,7 @@ func _desenhar_corpo_i() -> void:
 		if not giro.is_empty():  # a folha do giro (docs/combate_v2): cada lâmina gira pelos quadros, defasada das vizinhas; a órbita é daqui
 			var pts: PackedVector2Array = a.pts
 			for k in pts.size():
-				Anim.desenhar(no_corpo, giro, Anim.quadro_em(giro, _fase + 0.07 * k), pts[k] + Vector2(0, -14))
+				Anim.desenhar_suave(no_corpo, giro, Anim.quadro_em_f(giro, _fase + 0.07 * k), pts[k] + Vector2(0, -14))
 		elif not sp.is_empty():
 			var pontos: PackedVector2Array = a.pts
 			for k in pontos.size():
@@ -1180,7 +1183,7 @@ func _desenhar_corpo_i() -> void:
 		var fc := Anim.de(id_c)
 		if fc.has("voo"):  # a folha (docs/combate_v2): bate as asas voando e mergulha com o bico quando desce para bicar
 			var f: Dictionary = fc.bicada if (c_z[i] < 14.0 and fc.has("bicada")) else fc.voo
-			Anim.desenhar(no_corpo, f, Anim.quadro_em(f, c_fase[i] / 17.0), c, 0.0, Vector2(lado, 1.0))
+			Anim.desenhar_suave(no_corpo, f, Anim.quadro_em_f(f, c_fase[i] / 17.0), c, 0.0, Vector2(lado, 1.0))
 		elif not sp.is_empty():
 			# O loader entrega CanvasTexture com normal map; o corpo recebe a luz do mundo.
 			_sprite_antigo(no_corpo, sp, c, 0.0, Vector2(lado, 1.0 + 0.035 * sin(c_fase[i])))
@@ -1213,7 +1216,9 @@ func _desenhar_brilho_i() -> void:
 			var fa: Dictionary = Anim.de(str(a.id)).get("aura", {})
 			if not fa.is_empty():  # as chamas da folha dançam em volta do herói no raio real da aura (o shader segue por baixo)
 				var esc := float(a.get("RA", a.R)) * 2.0 / (fa.quadro as Vector2).x
-				Anim.desenhar(no_brilho, fa, Anim.quadro_em(fa, _fase), mundo.heroi.pos + Vector2(0, -1), 0.0, Vector2(esc, esc), Color(1, 1, 1, 0.45))
+				Anim.desenhar_suave(
+					no_brilho, fa, Anim.quadro_em_f(fa, _fase), mundo.heroi.pos + Vector2(0, -1), 0.0, Vector2(esc, esc), Color(1, 1, 1, 0.45), true
+				)
 			elif not sp.is_empty() and str(sp.tipo) == "area":
 				var raio := float(a.get("RA", a.R))
 				var tam := Vector2(raio * 2.0, raio * 2.0 * ACHATA)
@@ -1261,7 +1266,7 @@ func _desenhar_brilho_i() -> void:
 		var fw: Dictionary = Anim.de(id_w).get("voo", {})
 		if not fw.is_empty():  # a folha (docs/combate_v2): o arco de vento ou a lança de luz em loop, girado para o voo
 			var esc_w := maxf(1.0, w_larg[i] / (fw.quadro as Vector2).y) if w_tipo[i] == 0 else 1.0
-			Anim.desenhar(no_brilho, fw, Anim.quadro_em(fw, w_t[i]), p, dir.angle(), Vector2(esc_w, esc_w), Color(1, 1, 1, fade))
+			Anim.desenhar_suave(no_brilho, fw, Anim.quadro_em_f(fw, w_t[i]), p, dir.angle(), Vector2(esc_w, esc_w), Color(1, 1, 1, fade), true)
 			continue
 		var sp := Novas.sprite_de("ventania") if not ventania.is_empty() else {}
 		if not sp.is_empty():
@@ -1334,9 +1339,9 @@ func _desenhar_runa(i: int) -> void:
 		var esc := raio * 2.0 / q.x
 		var cor_r := Color(1, 1, 1, fade)
 		if not armada and fr.has("armar"):
-			Anim.desenhar(no_brilho, fr.armar, Anim.quadro_frac(fr.armar, idade / 0.5), p, 0.0, Vector2(esc, esc), cor_r)
+			Anim.desenhar_suave(no_brilho, fr.armar, Anim.quadro_frac_f(fr.armar, idade / 0.5), p, 0.0, Vector2(esc, esc), cor_r, true)
 		else:
-			Anim.desenhar(no_brilho, fr.loop, Anim.quadro_em(fr.loop, idade - 0.5 + 0.13 * float(i)), p, 0.0, Vector2(esc, esc), cor_r)
+			Anim.desenhar_suave(no_brilho, fr.loop, Anim.quadro_em_f(fr.loop, idade - 0.5 + 0.13 * float(i)), p, 0.0, Vector2(esc, esc), cor_r, true)
 		return
 	var sp := Novas.sprite_de(str(a.id))
 	if not sp.is_empty():

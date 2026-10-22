@@ -4,7 +4,8 @@ extends Node
 ## (30 quadros por segundo de jogo), recortado em volta do herói. O ferramentas/gifs_golpes.py junta os PNG num GIF ampliado 4x sem suavizar.
 ## Uso: godot --path jogos/hordas/projeto res://testes/fotos/golpes_gif.tscn -- --fotos=PASTA [--cena=nome]
 ## Cenas: corte (katana, golpe leve), estocada (o 3º golpe do combo, pesado), combo, bola_fogo (projétil), adagas (projétil que gira),
-## onda_choque (área), terremoto (área), meteoro (magia de fogo), lanca_geada (magia de gelo), nuvem_veneno (área que fica).
+## onda_choque (área), terremoto (área), meteoro (magia de fogo), lanca_geada (magia de gelo), nuvem_veneno (área que fica), grito_guerra
+## (anel), revoada_de_trovoes (corvos evoluídos).
 
 const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
@@ -44,6 +45,8 @@ const CENAS := [
 	"chuva_acida",
 	"cinzas_vulcanicas",
 	"raio_solar",
+	"grito_guerra",
+	"revoada_de_trovoes",
 	"perigo_chuva",
 	"perigo_estouro"
 ]
@@ -207,7 +210,7 @@ func _cena(nome: String) -> void:
 			w.combate.armas.definir_evolucao_katana(_ev("ventania"))
 			w.heroi.ataque_forcado = true
 			n = 40
-		"juizo_final", "tempestade_primordial", "estrondo", "furacao_glacial":
+		"juizo_final", "tempestade_primordial", "estrondo", "furacao_glacial", "revoada_de_trovoes":
 			_monstros(6, nome == "estrondo")
 			w.combate.armas.adicionar_evoluida(_ev(nome), 0.0)
 			var a: Dictionary = w.combate.armas.ativas[nome]
@@ -226,7 +229,7 @@ func _cena(nome: String) -> void:
 		_:  # as magias que caem do céu e as outras pelo id do golpe: 2 de uma vez, monstros em fila
 			_monstros(4)
 			_golpe(nome, 2)
-			n = 60
+			n = 96 if nome == "cometa_negro" else 60  # o aviso do cometa é de 2 s: sem os quadros a mais o GIF acaba antes da queda
 	var dir := pasta.path_join(nome)
 	DirAccess.make_dir_recursive_absolute(dir)
 	for i in n:

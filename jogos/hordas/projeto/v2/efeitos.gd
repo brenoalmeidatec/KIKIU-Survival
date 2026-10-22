@@ -26,6 +26,8 @@ const FOLHAS := {
 }
 const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
 const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_hazaki_ciano.png")  # variante: so a energia ciano, 12 quadros
+const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (golpes suaves ligados pela opção de partículas)
+const CORTE_CRESCE := 0.3  # fração do corte em que o rastro abre de 88% a 100% do tamanho (ease-out; nunca passa do alcance)
 
 const SHADER_CORTE := """
 shader_type canvas_item;
@@ -37,12 +39,18 @@ uniform float modo = 0.0;
 uniform vec4 cor : source_color = vec4(1.0);
 uniform float quadros = 16.0;
 uniform float fixo = 0.0;  // 1 = rampa ciano fixa (variante ciano) em vez da cor do golpe
+uniform float suave = 1.0;  // 1 = funde o quadro com o próximo (o meio-quadro que a folha não tem; Anim.suave)
 uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 16 quadros em linha, RGB = calor, A = intensidade
 float pos(float x) { return floor(x * 8.0 + 0.5) / 8.0; }
 void fragment() {
 	if (modo > 1.5) {
-		float q = min(floor(prog * quadros), quadros - 1.0);
-		vec4 t = texture(folha, vec2((UV.x + q) / quadros, lado > 0.0 ? UV.y : 1.0 - UV.y));
+		float fq = prog * quadros;
+		float q = min(floor(fq), quadros - 1.0);
+		float vy = lado > 0.0 ? UV.y : 1.0 - UV.y;
+		vec4 t = texture(folha, vec2((UV.x + q) / quadros, vy));
+		if (suave > 0.5 && q < quadros - 1.0) {
+			t = mix(t, texture(folha, vec2((UV.x + q + 1.0) / quadros, vy)), fract(fq));
+		}
 		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.85);
 		if (fixo > 0.5) {
 			float h = clamp(t.r, 0.0, 1.0) * 3.0;
@@ -155,6 +163,7 @@ var _oi := 0
 var _cortes: Array[Sprite2D] = []
 var _cortes_t := PackedFloat32Array()
 var _cortes_dur := PackedFloat32Array()
+var _cortes_esc := PackedFloat32Array()  # a escala final de cada corte (o rastro cresce até ela)
 var _ci := 0
 var variante := "katana"  # qual folha o corte usa: "katana" (katana + linha de anime) ou "ciano" (so a energia ciano)
 
@@ -245,6 +254,7 @@ func _montar_cortes() -> void:
 		_cortes.append(s)
 	_cortes_t.resize(MAX_CORTES)
 	_cortes_dur.resize(MAX_CORTES)
+	_cortes_esc.resize(MAX_CORTES)
 	_cortes_t.fill(9.0)
 	_cortes_dur.fill(1.0)
 
@@ -331,9 +341,11 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	var r := alcance * (1.45 if folha else 1.25)  # na folha o arco ocupa 0,8 da meia-largura
 	s.position = origem.round()
 	s.rotation = ang
-	s.scale = Vector2.ONE * (r / 32.0)
+	_cortes_esc[i] = r / 32.0
+	s.scale = Vector2.ONE * (r / 32.0) * (0.88 if Anim.suave else 1.0)
 	s.visible = true
 	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("suave", 1.0 if Anim.suave else 0.0)
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
 	mat.set_shader_parameter("lado", lado)
@@ -375,6 +387,7 @@ func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> voi
 	mat.set_shader_parameter("quadros", d[1])
 	mat.set_shader_parameter("cor", cor)
 	mat.set_shader_parameter("prog", 0.0)
+	mat.set_shader_parameter("suave", 1.0 if Anim.suave else 0.0)
 	_fo_t[i] = 0.0
 	_fo_dur[i] = dur
 	_fo_cristal[i] = 1 if cristal else 0
@@ -604,7 +617,11 @@ func atualizar(dt: float) -> void:
 		if _cortes_t[i] >= _cortes_dur[i]:
 			s.visible = false
 			continue
-		(s.material as ShaderMaterial).set_shader_parameter("prog", _cortes_t[i] / _cortes_dur[i])
+		var pr := _cortes_t[i] / _cortes_dur[i]
+		(s.material as ShaderMaterial).set_shader_parameter("prog", pr)
+		if Anim.suave:  # abre rápido e assenta (ease-out), em vez de nascer já do tamanho final
+			var k := clampf(pr / CORTE_CRESCE, 0.0, 1.0)
+			s.scale = Vector2.ONE * _cortes_esc[i] * (0.88 + 0.12 * (1.0 - (1.0 - k) * (1.0 - k)))
 	# folhas
 	for i in MAX_FOLHAS:
 		if _fo_t[i] >= _fo_dur[i]:

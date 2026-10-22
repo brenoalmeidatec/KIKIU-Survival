@@ -24,6 +24,7 @@ const CameraMundo := preload("res://v2/camera_mundo.gd")
 const Atmosfera := preload("res://v2/atmosfera.gd")
 const Luzes := preload("res://v2/luzes.gd")
 const Sombras := preload("res://v2/sombras.gd")
+const AnimGolpes := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (meio-quadro e rastros), pela opção de partículas
 const Cenario := preload("res://v2/cenario.gd")
 const Sprites := preload("res://v2/sprites.gd")
 const Heroi := preload("res://v2/heroi.gd")
@@ -735,6 +736,7 @@ func _ler_graficos() -> void:
 	var nivel := str(args.get("particulas", Config.g("particulas_sim")))
 	var f: Dictionary = Config.PART_NIVEL.get(nivel, {})
 	atm.definir_fatores(float(f.get("amb_particulas", 1.0)), float(f.get("efe_particulas", 1.0)))
+	AnimGolpes.suave = nivel in ["medias", "muitas"]  # golpes suaves custam uma chamada a mais por golpe: o perfil Baixo (poucas) fica sem
 	if combate != null:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
 
