@@ -73,6 +73,7 @@ const COR_VALOR := Paleta.VALOR
 const COR_BONUS := Paleta.BONUS
 const COR_SANTUARIO := Paleta.ALMA
 const COR_DICA := Paleta.DICA
+const COR_APAGADO := Paleta.TEXTO_APAGADO
 const COR_LINHA := Color(Paleta.DIVISOR, 0.5)
 ## Estilo de um trecho de texto (veja `_bloco`): 0 = apoio, 1 = número em destaque, 2 = bônus.
 const CORES_TRECHO := [COR_ROTULO, COR_VALOR, COR_BONUS]
@@ -1180,7 +1181,10 @@ func _visual(seco: bool) -> Array:
 			if sec.is_empty():
 				continue
 			if not seco:
-				_texto_titulo(str(sec.titulo).replace(" (CLIQUE)", ""), Vector2(x, y + 2.0), sec.cor)
+				var tit := str(sec.titulo).replace(" (CLIQUE)", "").trim_prefix("HERÓI: ")
+				_texto_titulo("GOLPES" if str(id) == "golpes" else tit, Vector2(x, y + 2.0), sec.cor)  # GOLPES curto: a legenda cabe ao lado
+				if str(id) == "golpes":  # a legenda das duas colunas da direita das linhas de golpe
+					_texto(Dados.fonte_texto, "nível · dano/s", Vector2(x, y + 2.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_APAGADO)
 				_tela.draw_line(Vector2(x, y + ALT_CAB + 2.0), Vector2(x + w, y + ALT_CAB + 2.0), COR_LINHA, 1.0)
 			y += ALT_CAB + 7.0
 			match str(id):
@@ -1323,62 +1327,65 @@ func _pips(pos: Vector2, cheios: float, total: int, cor: Color, lado := 8.0) -> 
 			_tela.draw_rect(Rect2(r.position, Vector2(roundf(lado * f), lado)), cor)
 
 
-## Uma linha de atributo: ícone, rótulo e o número grande à direita.
+## Uma linha de atributo: ícone, rótulo e o número grande à direita. A cor do valor (`cor_valor`) apaga o que não mudou, para o que mudou saltar.
 func _stat(ic: String, cor_ic: Color, rotulo: String, valor: String, x: float, y: float, w: float, cor_valor := COR_VALOR) -> void:
 	_icone8(ic, Vector2(x, y + 1.0), cor_ic)
 	_texto(Dados.fonte_texto, rotulo, Vector2(x + 22.0, y + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
 	_num(valor, Vector2(x, y + 1.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM_GRANDE if valor.length() <= 6 else TAM_NUM, cor_valor)
 
 
+## Bônus de um multiplicador em porcentagem: "+35%", e "+0%" quando não há bônus (no lugar do antigo "base", que confundia).
 static func _bonus_pct(mult: float) -> String:
+	return "%+d%%" % roundi((mult - 1.0) * 100.0)
+
+
+## A cor do valor de um bônus: verde se ganhou, vermelho se perdeu, apagado se está no zero.
+static func _cor_bonus(mult: float) -> Color:
 	var p := roundi((mult - 1.0) * 100.0)
-	return "base" if p == 0 else ("%+d%%" % p)
+	return COR_BONUS if p > 0 else (COR_VIDA if p < 0 else COR_APAGADO)
 
 
+## Herói: nível com a barra de XP, vida, fôlego (cada pip é uma esquiva) e os dois bônus de corpo. Uma linha por coisa, rótulo à
+## esquerda e valor à direita, sem rótulo solto do outro lado da coluna.
 func _v_heroi(x: float, y: float, w: float, seco: bool) -> float:
 	var h = mundo.heroi
 	if not seco:
-		_num("NV%d" % h.nivel, Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM_GRANDE, COR_TITULO)  # nível grande e a barra de XP ao lado
-		_barra(Rect2(x + 80.0, y + 4.0, w - 80.0, 8.0), h.xp / maxf(1.0, h.xp_proximo), COR_XP)
-		_icone8("vida", Vector2(x, y + 22.0), COR_VIDA)  # vida: barra grossa com o número dentro
-		_barra(Rect2(x + 22.0, y + 22.0, w - 22.0, 16.0), h.vida / maxf(1.0, h.vida_max), COR_VIDA)
-		_num("%d/%d" % [roundi(h.vida), roundi(h.vida_max)], Vector2(x + 22.0, y + 26.0), w - 22.0, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Paleta.BRANCO)
-		_icone8("folego", Vector2(x, y + 44.0), COR_FOLEGO)  # fôlego em cargas (pips) e quantas esquivas seguidas dá
-		_pips(Vector2(x + 22.0, y + 48.0), h.folego, ceili(h.folego_max - 0.01), COR_FOLEGO)
-		_texto(Dados.fonte_texto, "fôlego", Vector2(x, y + 44.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
-		var seg := int(linha(secoes, "heroi.esquiva").get("n", [0])[0])
-		_icone8("esquiva", Vector2(x, y + 64.0), COR_DICA)
-		_pips(Vector2(x + 22.0, y + 68.0), seg, seg, COR_DICA)
-		_texto(Dados.fonte_texto, "esquivas", Vector2(x, y + 64.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
-		_stat("vel", COR_BONUS, "Velocidade", _bonus_pct(h.m_vel_mov), x, y + 86.0, w, COR_BONUS if h.m_vel_mov > 1.0 else COR_ROTULO)
-		_stat("ima", COR_SANTUARIO, "Ímã", _bonus_pct(h.m_ima), x, y + 86.0 + ALT_STAT, w, COR_BONUS if h.m_ima > 1.0 else COR_ROTULO)
-	return y + 86.0 + 2.0 * ALT_STAT
+		var nv := "NV%d" % h.nivel
+		_num(nv, Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM_GRANDE, COR_TITULO)  # nível grande e a barra de XP ao lado, com o rótulo
+		var bx := x + _f_num.get_string_size(nv, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_GRANDE).x + 10.0
+		_texto(Dados.fonte_texto, "XP", Vector2(bx, y + 1.0), 20.0, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+		_barra(Rect2(bx + 20.0, y + 5.0, x + w - bx - 20.0, 8.0), h.xp / maxf(1.0, h.xp_proximo), COR_XP)
+		_icone8("vida", Vector2(x, y + ALT_STAT + 2.0), COR_VIDA)  # vida: barra grossa com o número dentro
+		_barra(Rect2(x + 22.0, y + ALT_STAT + 2.0, w - 22.0, 16.0), h.vida / maxf(1.0, h.vida_max), COR_VIDA)
+		_num(
+			"%d/%d" % [roundi(h.vida), roundi(h.vida_max)], Vector2(x + 22.0, y + ALT_STAT + 6.0), w - 22.0, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Paleta.BRANCO
+		)
+		var yf := y + 2.0 * ALT_STAT + 4.0  # fôlego: rótulo e os pips (cada carga cheia é uma esquiva) à direita
+		_icone8("folego", Vector2(x, yf + 1.0), COR_FOLEGO)
+		_texto(Dados.fonte_texto, "Fôlego", Vector2(x + 22.0, yf + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+		var total := ceili(h.folego_max - 0.01)
+		_pips(Vector2(x + w - (total * 11.0 - 3.0), yf + 5.0), h.folego, total, COR_FOLEGO)
+		_stat("vel", COR_BONUS, "Velocidade", _bonus_pct(h.m_vel_mov), x, y + 3.0 * ALT_STAT + 4.0, w, _cor_bonus(h.m_vel_mov))
+		_stat("ima", COR_SANTUARIO, "Ímã de almas", _bonus_pct(h.m_ima), x, y + 4.0 * ALT_STAT + 4.0, w, _cor_bonus(h.m_ima))
+	return y + 5.0 * ALT_STAT + 4.0
 
 
+## Partida: uma linha com rótulo por número (antes eram ícones soltos sem nome).
 func _v_partida(x: float, y: float, w: float, seco: bool) -> float:
+	var itens: Array = []
+	var t := float(linha(secoes, "partida.tempo").get("n", [0])[0])
+	var ab := int(linha(secoes, "partida.abates").get("n", [0])[0])
+	var al := int(linha(secoes, "partida.almas").get("n", [0, 0])[1])
+	var rb: Array = linha(secoes, "partida.rerrolar").get("n", [0, 0])  # as cartas: rerrolar e banir que restam
+	itens.append(["tempo", COR_DICA, "Tempo", _tempo(t)])
+	itens.append(["abates", COR_ROTULO, "Abates", str(ab)])
+	itens.append(["almas", COR_SANTUARIO, "Almas", str(al)])
+	itens.append(["rerrolar", COR_DICA, "Rerrolar", str(int(rb[0]))])
+	itens.append(["banir", COR_VIDA, "Banir", str(int(rb[1]))])
 	if not seco:
-		var t := float(linha(secoes, "partida.tempo").get("n", [0])[0])
-		var ab := int(linha(secoes, "partida.abates").get("n", [0])[0])
-		var al := int(linha(secoes, "partida.almas").get("n", [0, 0])[1])
-		var cw := w / 3.0
-		var itens := [["tempo", COR_DICA, _tempo(t)], ["abates", COR_ROTULO, str(ab)], ["almas", COR_SANTUARIO, str(al)]]
 		for i in itens.size():
-			var cx := x + i * cw
-			_icone8(str(itens[i][0]), Vector2(cx + (cw - 16.0) / 2.0, y), itens[i][1])
-			_num(str(itens[i][2]), Vector2(cx, y + 20.0), cw, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, COR_VALOR)
-		var rb: Array = linha(secoes, "partida.rerrolar").get("n", [0, 0])  # as cartas: rerrolar e banir que restam
-		var yy := y + 36.0
-		_icone8("rerrolar", Vector2(x, yy), COR_DICA)
-		_num(str(int(rb[0])), Vector2(x + 20.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, COR_VALOR)
-		_icone8("banir", Vector2(x + 56.0, yy), COR_VIDA)
-		_num(str(int(rb[1])), Vector2(x + 76.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, COR_VALOR)
-		var nm := 0
-		for l in _achar("santuario").get("linhas", []):
-			if str(l.id) != "santuario.nenhuma":
-				nm += 1
-		if nm > 0:
-			_texto(Dados.fonte_texto, "Santuário: %d" % nm, Vector2(x, yy + 2.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_SANTUARIO)
-	return y + 56.0
+			_stat(str(itens[i][0]), itens[i][1], str(itens[i][2]), str(itens[i][3]), x, y + i * ALT_STAT, w)
+	return y + itens.size() * ALT_STAT
 
 
 func _v_katana(x: float, y: float, w: float, seco: bool) -> float:
@@ -1390,8 +1397,8 @@ func _v_katana(x: float, y: float, w: float, seco: bool) -> float:
 		var cr: Array = linha(secoes, "katana.critico").get("n", [0, 1])
 		_stat("dano", COR_VALOR, "Dano", str(roundi(maior)), x, y, w)
 		_stat("critico", COR_TITULO, "Crítico", "%s%%" % _p(float(cr[0]) * 100.0), x, y + ALT_STAT, w)
-		_stat("ritmo", COR_DICA, "Vel. ataque", _bonus_pct(h.m_vel_ataque), x, y + 2.0 * ALT_STAT, w, COR_BONUS if h.m_vel_ataque > 1.0 else COR_ROTULO)
-		_stat("area", COR_BONUS, "Área", _bonus_pct(h.m_area), x, y + 3.0 * ALT_STAT, w, COR_BONUS if h.m_area > 1.0 else COR_ROTULO)
+		_stat("ritmo", COR_DICA, "Vel. ataque", _bonus_pct(h.m_vel_ataque), x, y + 2.0 * ALT_STAT, w, _cor_bonus(h.m_vel_ataque))
+		_stat("area", COR_BONUS, "Área", _bonus_pct(h.m_area), x, y + 3.0 * ALT_STAT, w, _cor_bonus(h.m_area))
 	y += 4.0 * ALT_STAT
 	for l in _achar("katana").get("linhas", []):  # os modificadores da katana: uma linha cada, como os golpes
 		if str(l.tipo) == "bloco":
@@ -1489,16 +1496,25 @@ func _largura_pips(l: Dictionary) -> float:
 	return maxf(0.0, total * 8.0 - 3.0)
 
 
-## O que sobra para o nome da linha: depois do ícone (22 px), os pips do tamanho deles (`_largura_pips`), 3 px de vão e os números
-## à direita, com 4 px entre os pips e os números. Com 5 níveis, "Espírito Urso" (104 px) cabe em 210 px de coluna.
+## O número da linha: o dano por segundo, sem o til (a legenda "dano/s" do título da seção já diz que é estimativa).
+static func _numero_visual(l: Dictionary) -> Array:
+	var r: Array = []
+	for tr in l.uma:
+		r.append([str(tr[0]).trim_prefix("~"), tr[1]])
+	return r
+
+
+## O que sobra para o nome da linha: depois do ícone (22 px), os pips do tamanho deles (`_largura_pips`), 3 px de vão e o número
+## à direita, com 4 px entre os pips e o número.
 func _largura_nome(l: Dictionary, w: float) -> float:
-	return w - 22.0 - _largura_pips(l) - 7.0 - _larg_trechos(l.uma)
+	return w - 22.0 - _largura_pips(l) - 7.0 - _larg_trechos(_numero_visual(l))
 
 
-## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em pips (estrela dourada se evoluído) e o número.
+## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em pips (estrela dourada se evoluído) e o dano por segundo.
 func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 	var cor: Color = l.cor
-	var num_w := _larg_trechos(l.uma)
+	var num := _numero_visual(l)
+	var num_w := _larg_trechos(num)
 	_tela.draw_rect(Rect2(x - 1.0, y - 1.0, 18.0, 18.0), cor.darkened(0.55))
 	_desenhar_icone(l, x, y)
 	var nome_w := _largura_nome(l, w)
@@ -1513,7 +1529,7 @@ func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 		var p := nc.split("/")
 		var niv := int(p[0])
 		_pips(Vector2(pipx, y + 5.0), niv, int(p[1]) if p.size() > 1 else niv, cor, 5.0)
-	_desenhar_trechos_em(l.uma, x + w - num_w, y + 2.0)
+	_desenhar_trechos_em(num, x + w - num_w, y + 2.0)
 
 
 func _desenhar_trechos_em(trechos: Array, x: float, y: float) -> void:

@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Dificuldade da v2 (#372): regras no Mundo real, pool, diretor/elites, fôlego do ataque e resultado persistido.
 ## Meta, índice/slots e Config são isolados ANTES do Mundo; nenhum arquivo do jogador é usado como fixture.
 ## Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_dificuldade.tscn (v2_dificuldade falhas=0).
