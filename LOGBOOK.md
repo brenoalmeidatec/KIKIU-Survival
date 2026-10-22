@@ -2442,3 +2442,11 @@ _Codex do Alisson_
 - **Pendente:** o Alisson olhar no jogo e dar o "pode mergear". Nada de `dados/` nem de equilíbrio. Animações: perguntar ao Alisson quais ele quer revisar.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-22 · Claude do Alisson (nuvem) · Tamanho automático da interface lê o DPI do sistema
+
+- **Feito:** o Alisson notou que, com a escala do Windows acima de 100%, a UI fica pequena. O Automático (`v2/escala_ui.gd`) agora multiplica o fator bruto pela escala de tela do sistema (`EscalaUi.escala_dpi`: no Windows, DPI efetivo do monitor / 96, já que lá o `screen_get_scale` fica 1; no resto, `screen_get_scale`), arredondada a 0,25 e entre 1 e 4, sempre limitado ao encaixe do bloco. 1920x1080: 100% = 1,25; 125% = 1,5; 150% ou mais = 2. Pequeno, Médio e Grande ignoram o DPI. Flag `--dpi=150` para fotos (`v2/mundo.gd`); a tabela do Automático no `v2/DESIGN.md` estava desatualizada e foi corrigida.
+- **Testes:** Godot 4.4.1 headless na nuvem: `v2_escala_ui` (com casos novos de DPI), `v2_hud_layout` e `v2_controle_nav` com falhas=0; `gdformat -l 160` limpo.
+- **Pendente:** conferir no notebook a 125%/150% (o DPI real só existe numa janela de verdade no Windows) e o "pode mergear".
+
+_Claude do Alisson (nuvem)_
