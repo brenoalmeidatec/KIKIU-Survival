@@ -48,7 +48,7 @@ func zerar() -> void:
 	vivas.clear()
 	_filhos.clear()
 	nascidas = 0
-	proxima = float(cfg.primeira)
+	proxima = combate.diretor.intervalo_elite(float(cfg.primeira))
 	_rng.seed = 424242
 
 
@@ -70,7 +70,7 @@ func atualizar(dt: float) -> void:
 		proxima = t + 4.0
 		return
 	if nascer() != null:
-		proxima = t + float(cfg.cada)
+		proxima = t + combate.diretor.intervalo_elite(float(cfg.cada))
 	else:
 		proxima = t + 1.0
 

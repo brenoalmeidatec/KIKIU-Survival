@@ -35,7 +35,9 @@ const PAINEL := Rect2(260, 55, 440, 430)  # 440 de largura: a Spleen é mais lar
 const LINHA0 := 118.0  # primeira linha, a partir do topo do painel
 const LINHA_H := 36.0
 const LINHA_ALT := 32.0  # altura da faixa de cada linha
-const VISIVEIS := 5  # linhas visíveis de uma vez; a lista rola com a seleção
+const VISIVEIS := 5  # linhas visíveis de uma vez nas telas com rodapé de ajuda; a lista rola com a seleção
+const VISIVEIS_LIVRES := 6  # sem rodapé (pausa, Ajustes, confirmações) cabe uma a mais: o Ajustes tem 6 linhas e o "Voltar" é a última
+const TELAS_COM_RODAPE := ["audio", "graficos", "avancado", "creditos", "conquistas"]  # as que usam o espaço de AJUDA_Y
 const AJUDA_Y := LINHA0 + VISIVEIS * LINHA_H + 8.0  # rodapé com a ajuda da linha escolhida
 const AJUDA_H := 96.0
 const DICA_Y := 406.0  # PAINEL.size.y - 24
@@ -64,6 +66,7 @@ var _origem := "menu"  # para onde "Não" de uma confirmação volta; "" = fecha
 var _itens_atuais: Array = []
 var _graficos := AjustesGraficos.new()
 var _raiz: Control
+var _conteudo: Control  # tudo menos o fundo escuro: a troca de tela do menu (Ajustes, Conquistas...) desliza só isto (#377)
 var _titulo: Label
 var _sub: Label
 var _dica: Control
@@ -134,22 +137,26 @@ func _montar() -> void:
 	EscalaUi.cobrir(fundo)
 	fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_raiz.add_child(fundo)
+	_conteudo = Control.new()
+	_conteudo.size = EscalaUi.BLOCO
+	_conteudo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_raiz.add_child(_conteudo)
 	var painel := Panel.new()
 	painel.position = PAINEL.position
 	painel.size = PAINEL.size
 	painel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	painel.add_theme_stylebox_override("panel", EstiloPremium.painel())
-	_raiz.add_child(painel)
+	_conteudo.add_child(painel)
 	_titulo = _rotulo(Dados.fonte_titulo, TAM_TITULO, COR_OURO, Vector2(PAINEL.position.x, PAINEL.position.y + 18), PAINEL.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-	_raiz.add_child(_titulo)
+	_conteudo.add_child(_titulo)
 	var ornamento := EstiloPremium.ornamento(300.0)
 	ornamento.position = Vector2(PAINEL.position.x + (PAINEL.size.x - 300.0) / 2.0, PAINEL.position.y + 74)
-	_raiz.add_child(ornamento)
+	_conteudo.add_child(ornamento)
 	_sub = _rotulo(
 		Dados.fonte_texto, TAM_SUB, COR_TEXTO, Vector2(PAINEL.position.x + 12, PAINEL.position.y + 88), PAINEL.size.x - 24, HORIZONTAL_ALIGNMENT_CENTER
 	)
-	_raiz.add_child(_sub)
-	for i in VISIVEIS:
+	_conteudo.add_child(_sub)
+	for i in VISIVEIS_LIVRES:
 		var w := PAINEL.size.x - 48
 		var linha := Control.new()
 		linha.position = Vector2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H)
@@ -164,7 +171,7 @@ func _montar() -> void:
 		linha.add_child(rot)
 		var val := _rotulo(Dados.fonte_texto, TAM_VALOR, COR_TEXTO, Vector2(12, 8), w - 24, HORIZONTAL_ALIGNMENT_RIGHT)
 		linha.add_child(val)
-		_raiz.add_child(linha)
+		_conteudo.add_child(linha)
 		var ico := TextureRect.new()  # o "?" da linha Perfil: a linha pede o ícone (chave "icone") e _desenhar o põe depois do nome
 		ico.texture = _textura_ajuda()
 		ico.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -180,11 +187,11 @@ func _montar() -> void:
 	)
 	_ajuda.size.y = AJUDA_H
 	_ajuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_raiz.add_child(_ajuda)
+	_conteudo.add_child(_ajuda)
 	_dica = Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_TEXTO)
 	_dica.position = Vector2(PAINEL.position.x + 8, PAINEL.position.y + DICA_Y)
 	_dica.size = Vector2(PAINEL.size.x - 16, 22)
-	_raiz.add_child(_dica)
+	_conteudo.add_child(_dica)
 	_fps = _rotulo(Dados.fonte, Paleta.NUMERO_PEQUENO, Color(Paleta.BRANCO, 0.92), _pos_fps(), 200.0, HORIZONTAL_ALIGNMENT_LEFT)  # HUD: Press Start 2P
 	_fps.visible = false
 	add_child(_fps)  # fora de _raiz: o contador de fps aparece também com o menu fechado
@@ -234,7 +241,7 @@ func pausar() -> bool:
 	_arvore_antes = get_tree().paused
 	_apertos.clear()
 	aberto = true
-	_raiz.visible = true
+	Transicoes.entrar(_raiz)
 	_ir("menu")
 	get_tree().paused = true
 	return true
@@ -245,7 +252,7 @@ func fechar() -> void:
 	if not aberto:
 		return
 	aberto = false
-	_raiz.visible = false
+	Transicoes.sair(_raiz)  # só a imagem é suave: o estado (aberto, árvore pausada) já mudou
 	_apertos.clear()
 	if mundo != null:
 		get_tree().paused = _arvore_antes
@@ -264,7 +271,7 @@ func abrir_sair() -> void:
 	if aberto:
 		return
 	aberto = true
-	_raiz.visible = true
+	Transicoes.entrar(_raiz)
 	_ir("confirmar_sair", "")
 
 
@@ -273,7 +280,7 @@ func abrir_ajustes() -> void:
 	if aberto:
 		return
 	aberto = true
-	_raiz.visible = true
+	Transicoes.entrar(_raiz)
 	_ir("ajustes", "")
 
 
@@ -282,7 +289,7 @@ func abrir_creditos() -> void:
 	if aberto:
 		return
 	aberto = true
-	_raiz.visible = true
+	Transicoes.entrar(_raiz)
 	_ir("creditos", "")
 
 
@@ -294,6 +301,8 @@ func _pode_pausar() -> bool:
 
 
 func _ir(nova: String, origem := "menu") -> void:
+	if nova != tela and _raiz.visible and not Transicoes.animando(_raiz):
+		Transicoes.entrar(_conteudo, Vector2(10.0, 0.0), 0.0)  # troca de tela dentro do menu: o texto desliza, o fundo fica
 	tela = nova
 	_origem = origem
 	sel = 1 if nova.begins_with("confirmar") or nova == "avancado" else 0  # confirmação começa em "Não"; Avançado, na 1ª opção (o 0 é cabeçalho)
@@ -456,14 +465,20 @@ func _eh_stepper(id: String) -> bool:
 	return id in STEPPERS or id == "g:perfil" or id == "g:dinamico" or id.begins_with("g:op:")
 
 
+## Quantas linhas cabem na tela de agora: as que têm rodapé de ajuda perdem a última para ele.
+func _visiveis() -> int:
+	return VISIVEIS if tela in TELAS_COM_RODAPE else VISIVEIS_LIVRES
+
+
 ## Índice (na lista inteira) da linha visível sob o mouse; -1 se não há linha ali (ou é cabeçalho).
 func _linha_sob_mouse() -> int:
 	var m := _mouse()
-	for i in _linhas.size():
+	for i in mini(_linhas.size(), _visiveis()):
 		var idx := _topo + i
 		if idx >= _itens_atuais.size():
 			break
-		var r := Rect2(PAINEL.position.x + 24, PAINEL.position.y + LINHA0 + i * LINHA_H, PAINEL.size.x - 48, LINHA_ALT)
+		# A linha inteira acompanha o slide de _raiz e _conteudo. O retângulo global é do canvas, como _mouse() sem o offset da camada.
+		var r: Rect2 = (_linhas[i]["linha"] as Control).get_global_rect()
 		if r.has_point(m):
 			return idx if str(_itens_atuais[idx].id) != "" else -1
 	return -1
@@ -511,6 +526,8 @@ func _executar(id: String, passo: int) -> void:
 			_sair()
 		"musica", "efeitos":
 			_volume(id, passo)
+		"animacoes":
+			Config.definir(Transicoes.OPCAO, not Transicoes.reduzido())
 		"versao":
 			Config.definir("verificar_versao", not bool(Config.v("verificar_versao")))
 		_:
@@ -561,6 +578,7 @@ func _itens() -> Array:
 			return [
 				_it("graficos", "Gráficos"),
 				_it("audio", "Áudio"),
+				_it("animacoes", "Reduzir animações", "Sim" if Transicoes.reduzido() else "Não"),
 				_it("versao", "Avisar versão nova", "Sim" if bool(Config.v("verificar_versao")) else "Não"),
 				_it("creditos", "Créditos"),
 				_it("voltar", "Voltar")
@@ -646,12 +664,13 @@ func _sub_tela() -> String:
 func _desenhar() -> void:
 	_itens_atuais = _itens()
 	var n := _itens_atuais.size()
+	var vis := _visiveis()
 	sel = clampi(sel, 0, maxi(n - 1, 0))
 	if sel < _topo:
 		_topo = sel
-	elif sel >= _topo + VISIVEIS:
-		_topo = sel - VISIVEIS + 1
-	_topo = clampi(_topo, 0, maxi(n - VISIVEIS, 0))
+	elif sel >= _topo + vis:
+		_topo = sel - vis + 1
+	_topo = clampi(_topo, 0, maxi(n - vis, 0))
 	_titulo.text = _titulo_tela()
 	_sub.text = _sub_tela()
 	_ajuda.text = _texto_ajuda()
@@ -659,7 +678,7 @@ func _desenhar() -> void:
 	for i in _linhas.size():
 		var l: Dictionary = _linhas[i]
 		var idx := _topo + i
-		var mostra: bool = idx < n
+		var mostra: bool = idx < n and i < vis
 		l["linha"].visible = mostra
 		if not mostra:
 			continue

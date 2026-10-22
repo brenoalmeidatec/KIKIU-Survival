@@ -12,6 +12,7 @@ var pendentes := 0  # níveis subidos que ainda esperam a escolha
 var cartas: Array = []  # as cartas na tela
 var escolhidas := 0  # quantas cartas o jogador já escolheu (testes)
 var ultima_nome := ""  # o nome da última carta escolhida (o aviso da escolha automática diz qual foi)
+var bau_picks := 0  # quantas cartas do baú aberto ainda faltam pegar (0 = a escolha na tela, se houver, é a de nível)
 
 
 func montar(c) -> void:
@@ -31,7 +32,7 @@ func xp_para(n: int) -> float:
 
 ## Vida que o herói recupera a cada nível que sobe (a fração `cura_nivel` da vida máxima de agora). O card de status mostra este valor.
 func cura_por_nivel() -> float:
-	return combate.mundo.heroi.vida_max * float(cfg.heroi.cura_nivel)
+	return combate.mundo.heroi.vida_max * float(cfg.heroi.cura_nivel) * float(combate.ritmo.cfg.cura_nivel_mult)
 
 
 ## Fração a mais por nível acima do 1 (regra = {por_nivel, teto}, de dados): nível 1 = 0; sobe `por_nivel` a cada nível e para no `teto`.
@@ -43,6 +44,7 @@ static func bonus_por_nivel(nivel: int, regra: Dictionary) -> float:
 func zerar() -> void:
 	melhorias.clear()
 	pendentes = 0
+	bau_picks = 0
 	cartas.clear()
 	escolhidas = 0
 	if combate.cartas != null:
@@ -82,6 +84,17 @@ func abrir_escolha() -> void:
 	combate.telas.mostrar_escolha(cartas, combate.mundo.heroi.nivel)
 
 
+## Abre a escolha do BAÚ (v2/bau.gd): as mesmas cartas na mesma tela da escolha de nível, com a raridade melhor do baú, mais tempo (bau.limite_s)
+## e sem rerrolar nem banir. O jogador pega `picks` delas, uma por vez; as que sobram continuam na tela. Não mexe nos níveis pendentes.
+func abrir_escolha_bau(candidatas: Array, picks: int) -> void:
+	combate.cartas.rerrolar_na_tela = 0
+	bau_picks = picks
+	cartas = candidatas
+	combate.jogo = "escolha"
+	combate.pausado = true
+	combate.telas.mostrar_escolha(cartas, combate.mundo.heroi.nivel)
+
+
 func _carta_cura() -> Dictionary:
 	return {
 		"id": "cura",
@@ -105,16 +118,26 @@ func escolher(i: int) -> void:
 	aplicar(c)
 	escolhidas += 1
 	ultima_nome = str(c.get("nome", ""))
-	pendentes = maxi(0, pendentes - 1)
-	cartas = []
-	combate.telas.esconder()
-	combate.pausado = false
-	combate.jogo = "jogando"
 	combate.audio.tocar("escolher", 1.0, 0.0, 0.0)
 	var h = combate.mundo.heroi
 	var cor: Color = c.get("cor", Color(1.0, 0.9, 0.6))
 	combate.fx.onda(h.pos + Vector2(0, -12), Color(cor.r, cor.g, cor.b, 0.9), 44.0 + 16.0 * float(c.get("rar", 0)), 0.25)
-	if pendentes > 0:
+	var do_bau := bau_picks > 0
+	if do_bau:  # o baú: a carta pega sai da tela e, se ainda falta pegar, as que sobraram ficam esperando (sem roleta, com a trava curta)
+		combate.baus.ultimas.append(c)
+		bau_picks -= 1
+		cartas.remove_at(i)
+		if bau_picks > 0 and not cartas.is_empty():
+			combate.telas.mostrar_escolha(cartas, h.nivel, true)
+			return
+		bau_picks = 0
+	else:
+		pendentes = maxi(0, pendentes - 1)
+	cartas = []
+	combate.telas.esconder()
+	combate.pausado = false
+	combate.jogo = "jogando"
+	if not do_bau and pendentes > 0:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
@@ -123,12 +146,15 @@ func escolher(i: int) -> void:
 func descartar_rodada() -> void:
 	if combate.jogo != "escolha":
 		return
-	pendentes = maxi(0, pendentes - 1)
+	var do_bau := bau_picks > 0  # perder a rodada do baú perde as cartas dele, mas não consome nível
+	bau_picks = 0
+	if not do_bau:
+		pendentes = maxi(0, pendentes - 1)
 	cartas = []
 	combate.telas.esconder()
 	combate.pausado = false
 	combate.jogo = "jogando"
-	if pendentes > 0:
+	if not do_bau and pendentes > 0:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
@@ -138,6 +164,15 @@ func automatico() -> bool:
 	var cs = combate.cartas
 	if combate.jogo != "escolha":
 		return false
+	if bau_picks > 0:  # no baú vale a mais rara das que estão na tela (a primeira em caso de empate), sem rebaixar nada
+		var melhor := -1
+		for i in cartas.size():
+			if melhor < 0 or int(cartas[i].get("rar", 0)) > int(cartas[melhor].get("rar", 0)):
+				melhor = i
+		if melhor < 0:
+			return false
+		escolher(melhor)
+		return true
 	var c: Dictionary = cs.escolha_automatica(combate.mundo.heroi.nivel)
 	if c.is_empty():
 		return false
@@ -146,10 +181,10 @@ func automatico() -> bool:
 	return true
 
 
-## Rerrola as 3 cartas (novas, sem repetir as que estavam na tela). Devolve false se não pode (acabaram os usos).
+## Rerrola as 3 cartas (novas, sem repetir as que estavam na tela). Devolve false se não pode (acabaram os usos). Não vale no baú.
 func rerrolar() -> bool:
 	var cs = combate.cartas
-	if not combate.jogo == "escolha" or not cs.pode_rerrolar():
+	if not combate.jogo == "escolha" or bau_picks > 0 or not cs.pode_rerrolar():
 		return false
 	var ids: Array = []
 	for c in cartas:
@@ -164,10 +199,10 @@ func rerrolar() -> bool:
 	return true
 
 
-## Bane a carta `i`: nunca mais sai nesta partida, e uma carta nova toma o lugar dela. Devolve false se acabaram os banimentos.
+## Bane a carta `i`: nunca mais sai nesta partida, e uma carta nova toma o lugar dela. Devolve false se acabaram os banimentos. Não vale no baú.
 func banir(i: int) -> bool:
 	var cs = combate.cartas
-	if combate.jogo != "escolha" or i < 0 or i >= cartas.size() or not cs.pode_banir():
+	if combate.jogo != "escolha" or bau_picks > 0 or i < 0 or i >= cartas.size() or not cs.pode_banir():
 		return false
 	var velha: Dictionary = cartas[i]
 	if str(velha.id) == "cura":

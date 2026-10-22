@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do LAYOUT do HUD da partida no estilo Overwatch (v2/hud.tscn, hud.gd, hud_habilidades.gd, hud_ultimate.gd): vida e fôlego no canto de baixo
 # à esquerda, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita. Confere que NENHUM bloco do HUD cobre outro (retrato e barras,
 # faixa de golpes, tempo, abates, nível do mapa, combo, barra do chefe, anúncio, XP, Q, E/secundário, minimapa) em 960x540 e nas telas maiores (16:9 e 21:9, em todos
@@ -144,7 +144,7 @@ func _nao_se_cobrem(hud, janela: Vector2, opcao: String) -> void:
 	ok(absf(xp.end.y - (canvas.y - 6.0)) <= 1.0 and ult.end.y < xp.position.y, "%s: o Q fica acima do XP, que cola embaixo" % rotulo)
 
 
-## Com vida e fôlego no máximo (barra de 320 px) a moldura de pedra acaba antes do Q e não passa por cima da faixa de XP nem do selo.
+## No teto de capacidade, a moldura compacta de 252x66 px cabe em todas as resoluções e fica antes do Q, da faixa de XP e do selo.
 func _barras_no_teto(hud, falso: MundoFalso) -> void:
 	falso.heroi.vida_max = 100000.0
 	falso.heroi.vida = 100000.0
@@ -156,11 +156,14 @@ func _barras_no_teto(hud, falso: MundoFalso) -> void:
 	var barras: Control = hud.get_node("Raiz/MolduraBarras")
 	var r := Rect2(barras.position, barras.size)
 	ok(r.size.x == Hud.BARRA_TETO_PX + 8.0, "a moldura no teto tem %s px" % r.size.x)
+	ok(r.size.y == 66.0, "a moldura no teto continua fina (66 px de altura)")
 	for nome in ["Xp", "Selo", "Ultimate", "Habilidades"]:
 		var no: Control = hud.get_node("Raiz/" + nome)
 		ok(not r.intersects(Rect2(no.position, no.size * no.scale)), "no teto, a moldura das barras %s não cobre %s" % [r, nome])
 	ok(hud.get_node("Raiz/Ultimate").position.x - r.end.x >= 8.0, "no teto, ainda sobra espaço entre as barras e o círculo do Q")
 	ok(hud.get_node("Raiz/Selo").position.x - r.end.x >= 4.0, "no teto, a moldura das barras não toca o selo de nível")
+	for tela in TELAS:
+		_nao_se_cobrem(hud, tela[0], tela[1])  # as mesmas garantias com as barras já no teto, em cada tela e tamanho de interface
 	falso.heroi.vida_max = 100.0
 	falso.heroi.vida = 100.0
 	falso.heroi.folego_max = 3.0

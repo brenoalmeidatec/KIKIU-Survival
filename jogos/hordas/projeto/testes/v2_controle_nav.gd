@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Navegação com controle Xbox nas telas com glifo da v2: os apertos entram pelo caminho da janela (Input.parse_input_event), o mesmo do controle de
 # verdade. Cartas: X rerrola, LB bane e Y escolhe automaticamente (os rótulos contam os usos). Baú: A fecha quando a roleta acabou. Personagens e
 # Salão: A e B estão mapeados nas ações ui_accept e ui_cancel (quem decide é cada tela). O próprio teste trava o dispositivo em Xbox.
@@ -10,7 +10,7 @@ const Salao := preload("res://v2/salao.tscn")
 const Glifos := preload("res://v2/glifos.gd")
 const Meta := preload("res://v2/meta.gd")
 const Slots := preload("res://v2/personagens.gd")
-const PASTA_TESTE := "user://teste_v2_controle_nav"
+const PASTA_TESTE := "user://testes_v2/v2_controle_nav/teste_v2_controle_nav"
 const SAVE_TESTE := PASTA_TESTE + "/meta.cfg"
 const OPCOES_TESTE := PASTA_TESTE + "/opcoes.cfg"
 const INDICE_TESTE := PASTA_TESTE + "/indice.cfg"

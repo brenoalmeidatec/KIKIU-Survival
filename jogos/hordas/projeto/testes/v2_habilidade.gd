@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da HABILIDADE de cada herói, a tecla E (v2/habilidade.gd, heroi.gd, combate.gd, hud_habilidades.gd, dados/v2_habilidade.json,
 # dados/v2_ruptura.json > cartas): o mapa herói -> id (Hazaki: ruptura, Nicão: investida_escudo, Lucas: salto_adagas), os campos hab_* que o HUD lê, e para
 # CADA herói numa partida de verdade: a E nasce pronta, o aperto dispara (a ruptura do Hazaki pelo caminho antigo, segurando; as outras na hora), o herói
@@ -399,6 +399,13 @@ func _hud(id: String) -> void:
 	slots.sincronizar(h)
 	ok(slots.e_disponivel and slots.e_pronta, "HUD %s: o slot E acende com a E pronta" % id)
 	ok(slots.e_icone == (h.hab_icone if id != "hazaki" else "ruptura"), "HUD %s: o ícone é o da E do herói (%s)" % [id, slots.e_icone])
+	var arte: Texture2D = slots.arte_e()
+	ok(arte != null, "HUD %s: a arte da E é carregada de verdade" % id)
+	if id != "hazaki" and arte != null:
+		ok(arte.resource_path == "res://assets/v2/habilidade_e/%s.png" % id, "HUD %s: usa a arte própria, sem reutilizar carta ou Q" % id)
+		ok(arte.get_size() == Vector2(32, 32), "HUD %s: a arte integrada tem 32x32" % id)
+	elif arte != null:
+		ok(arte == Dados.icone_carta("ruptura"), "Hazaki mantém a Ruptura; o escudo secundário continua no catálogo de cartas")
 	if id == "hazaki":
 		ok(slots._rotulo_e() == "RUPTURA" and slots.estado_e == "ruptura", "HUD hazaki: a E é a ruptura (%s)" % slots._rotulo_e())
 		return

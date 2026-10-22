@@ -32,6 +32,7 @@ extends "res://v2/ator.gd"
 ## hab_rotulo, hab_icone, hab_cor, hab_recarga, hab_recarga_max, hab_nega_t e hab_t (a ruptura segue publicando rup_*).
 
 const Herois := preload("res://v2/herois.gd")
+const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
@@ -68,6 +69,7 @@ var folego := 3.0  # fôlego em cargas (fracionário), gasto por esquiva (um blo
 var folego_max := 3.0
 var _credito_abate := 1.0  # fôlego que os abates ainda podem devolver agora (ver ganhar_folego_abate)
 var cansado := false  # fôlego zerou: sem correr nem esquivar até recuperar
+var golpe_calor_t := 0.0  # Médio/Difícil: ao zerar fôlego, o ataque principal espera o calor baixar.
 var correndo := false
 var vel_base := VEL  # px/s de andar do herói escolhido (cfg.heroi.vel, v2/herois.gd); o VEL é só o padrão
 
@@ -148,6 +150,9 @@ var hab_dur := 1.0  # a duração da E em andamento
 var hab_invul := false  # invulnerável enquanto dura (lido por vulneravel)
 var hab_anim_passo := 0  # o passo do combo cuja animação toca na E
 var hab_anim_ciclos := 1.0  # quantas vezes ela toca durante a duração
+var hab_anim_antes := ""  # animação da folha ("animacoes", ex.: "escudo") que toca no começo da E, antes do passo do combo (vazio = só o passo)
+var hab_anim_antes_ate := 0.0  # até que fração da duração ela vale; o passo do combo ocupa o resto
+var hab_anim_quadros: Array = []  # quais quadros do passo tocam nesse resto (vazio = o passo inteiro)
 var hab_disparos := 0  # testes
 var hab_negados := 0  # testes
 # ruptura (tecla E)
@@ -173,6 +178,7 @@ var _ofego_t := 0.0
 var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
+var _parado_t := 0.0  # há quanto tempo está livre e parado: toca a animação "parado" da folha (colunas 0, 7, 8 e 9)
 var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
 var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
@@ -190,6 +196,7 @@ func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
 
 ## Lê as vidas e as regras do dados/v2_combate.json (chamado pelo combate depois de criar o herói).
 func iniciar_stats(cfg: Dictionary) -> void:
+	golpe_calor_t = 0.0
 	vel_base = float(cfg.heroi.get("vel", VEL))
 	vida_max = float(cfg.heroi.vida)
 	vida = vida_max
@@ -428,7 +435,7 @@ func vel_correr() -> float:
 
 ## Alcance do ímã de almas (px): a distância em que o orbe começa a voar para o herói (combate.atualizar).
 func alcance_ima() -> float:
-	return float(mundo.combate.cfg.heroi.ima_raio) * m_ima
+	return float(mundo.combate.cfg.heroi.ima_raio) * m_ima * mundo.combate.ritmo.multiplicador("coleta", nivel)
 
 
 ## Duração (s) do passo `i` do combo com a velocidade de ataque de agora.
@@ -502,6 +509,7 @@ func atualizar(dt: float) -> void:
 	_anda_ant = v
 	# relógios
 	invenc = maxf(0.0, invenc - dt)
+	golpe_calor_t = maxf(0.0, golpe_calor_t - dt)
 	pedido_t = maxf(0.0, pedido_t - dt)
 	esq_pedido = maxf(0.0, esq_pedido - dt)
 	pausa_t = maxf(0.0, pausa_t - dt)
@@ -574,8 +582,8 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 		return _escudo(dt, v)
 	_baixar_escudo()
 	if (pedido_t > 0.0 or segurando) and pausa_t <= 0.0:  # o golpe tem prioridade sobre a corrida
-		_iniciar_golpe()
-		return Vector2.ZERO
+		if _iniciar_golpe():
+			return Vector2.ZERO
 	if not andando:
 		return Vector2.ZERO
 	if fonte == Fonte.ANDA:
@@ -696,7 +704,18 @@ func _camera_adiantada(dt: float) -> void:
 # ------------------------------------------------------------------ golpe
 
 
-func _iniciar_golpe() -> void:
+func _iniciar_golpe() -> bool:
+	var dif := preload("res://v2/dificuldade.gd").da_partida(mundo)
+	var custo := float(dif.golpe_custo)
+	if custo > 0.0:
+		if golpe_calor_t > 0.0:
+			return false
+		if folego <= 0.0:
+			golpe_calor_t = float(dif.golpe_calor)
+			return false
+		_gastar(custo)
+		if folego <= 0.0:
+			golpe_calor_t = float(dif.golpe_calor)
 	var passos: Array = mundo.combate.cfg.golpe.passos
 	golpe_i = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
 	golpe_cfg = passos[golpe_i]
@@ -711,6 +730,7 @@ func _iniciar_golpe() -> void:
 	golpes += 1
 	_punch = 0.0
 	mundo.combate.golpe_comecou(self, golpe_cfg, golpe_dir, golpe_dur)
+	return true
 
 
 ## A fase do golpe da katana agora (docs/combate_v2): "pronto" fora do golpe, "preparo" antes do quadro do acerto (sem dano), "ativo" no
@@ -943,24 +963,28 @@ func _visual(dt: float, v: Vector2) -> void:
 		if _tem_anim("andar"):  # o tempo do andar vem da folha (animacoes.andar.s_por_quadro), então ajusta pelo JSON
 			passo = float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM))
 		c = 1 + int(_anim / passo) % (int(tipo.info.colunas.size()) - 1)
+		_parado_t = 0.0
 	else:
 		_anim = 0.0
+		if estado == Estado.LIVRE and _tem_anim("parado"):  # respira: os 4 quadros do "parado" da folha em ciclo (sem ela, a coluna 0)
+			_parado_t = fmod(_parado_t + dt, maxf(_duracao_anim("parado"), 0.001))
+			c = _coluna_por_tempo("parado", _parado_t)
+		else:
+			_parado_t = 0.0
 	var ca := _coluna_acao(dt)
 	if ca >= 0:
 		c = ca
 	if l != linha or c != coluna:
 		quadro(c, l)
 	# corpo: o "soco" do golpe (esticada na direção do corte), o giro da esquiva e o pisca de quem acabou de apanhar
-	var punch_k := 0.0
 	if _punch > 0.0:
 		_punch = maxf(0.0, _punch - dt / 0.16)
-		punch_k = _punch
 	var desloca := Vector2.ZERO
 	var esc := Vector2.ONE
 	if estado == Estado.GOLPE:
-		var ant := clampf(golpe_t / (golpe_dur * float(golpe_cfg.acerto_em)), 0.0, 1.0)
-		desloca = (golpe_dir * (-2.0 * (1.0 - ant) + 3.0 * punch_k)).round()  # puxa para trás e solta
-		esc = Vector2(1.0 + 0.1 * punch_k, 1.0 - 0.07 * punch_k)
+		var corpo := CurvaGolpe.corpo(golpe_t / golpe_dur, float(golpe_cfg.acerto_em))
+		desloca = (golpe_dir * corpo.x).round()
+		esc = Vector2(1.0 + 0.1 * corpo.y, 1.0 - 0.07 * corpo.y)
 	elif estado == Estado.CARGA:  # agacha, treme um pixel na carga cheia
 		esc = Vector2(1.0 + 0.05 * rup_carga, 1.0 - 0.09 * rup_carga)
 		if rup_carga >= 1.0:
@@ -1119,7 +1143,15 @@ func _coluna_acao(dt: float) -> int:
 	if estado == Estado.HABILIDADE and _tem_anim("combo"):  # a E toca um passo do combo (hab_anim_passo), repetido hab_anim_ciclos vezes
 		var por_golpe_h := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
 		var passo_h := mini(hab_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
-		var p_h := fposmod(hab_t / maxf(hab_dur, 0.001) * hab_anim_ciclos, 0.999)
+		var k_h := hab_t / maxf(hab_dur, 0.001)
+		var de_h := 0.0
+		if hab_anim_antes != "" and _tem_anim(hab_anim_antes):  # a pose própria da E primeiro (Nicão: a marreta de través, de escudo), depois o golpe
+			if k_h < hab_anim_antes_ate:
+				return _coluna_por_tempo(hab_anim_antes, hab_t)
+			de_h = hab_anim_antes_ate
+		var p_h := fposmod((k_h - de_h) / maxf(1.0 - de_h, 0.001) * hab_anim_ciclos, 0.999)
+		if not hab_anim_quadros.is_empty():
+			return _coluna_anim("combo", passo_h * por_golpe_h + int(hab_anim_quadros[int(p_h * hab_anim_quadros.size())]))
 		return _coluna_anim("combo", passo_h * por_golpe_h + int(p_h * por_golpe_h))
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)

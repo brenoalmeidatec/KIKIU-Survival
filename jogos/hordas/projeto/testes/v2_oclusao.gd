@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da oclusão da v2 (leva 4): o jogador sempre enxerga o herói.
 #   - herói ATRÁS de uma árvore: o buraco raio-x da árvore liga (força 1, centro no herói) e a silhueta fica desligada (sem duplicar);
 #   - campo aberto, sem nada na frente: os dois desligam;
@@ -8,6 +8,7 @@ extends Node
 #   - desempenho: o custo por atualização com 100 atores só imprime no CI (padrão do testes/v2_colisao.gd).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_oclusao.tscn  (imprime "v2_oclusao falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
+const Oclusao := preload("res://v2/oclusao.gd")
 const PASSO := 1.0 / 60.0
 const ABERTO := Vector2(1440.0, 820.0)  # ponto de nascimento do herói: campo aberto, sem árvore atrás dele
 const META_US := 400  # µs por atualização com 100 atores (só imprime no CI, onde a máquina é compartilhada)
@@ -43,6 +44,7 @@ func _ready() -> void:
 	w.heroi.imortal = true  # o contato dos monstros do teste não derruba o herói no meio da conta
 	w.combate.diretor.ligado = false  # nada de ondas nascendo na frente do herói durante o teste
 	w.combate.limpar_partida()  # os monstros da abertura saem: o teste põe os seus
+	_t_nicao_sem_vazio()
 
 	# 1. herói atrás de uma árvore do meio do mapa: o buraco liga; a silhueta não (a árvore não é monstro)
 	var arvore = null
@@ -114,3 +116,22 @@ func _ready() -> void:
 
 	print("v2_oclusao falhas=%d" % falhas)
 	get_tree().quit()
+
+
+## A roda do Q deixa dois cavaleiros a +/-32, +60: o quadro 64x96 do Nicão cruza os dois,
+## mas o corpo 38x42 fica livre. Antes a silhueta inteira clareava o herói mesmo após o especial.
+func _t_nicao_sem_vazio() -> void:
+	var t: Dictionary = w.sprites.tipo("nicao")
+	var heroi := {"pos": Vector2.ZERO, "tipo": t}
+	var cavaleiro: Dictionary = w.sprites.tipo("inimigo_cavaleiro_oco")
+	var roda: Array = [
+		{"pos": Vector2(-32, 60), "tipo": cavaleiro, "escala": 1.0},
+		{"pos": Vector2(32, 60), "tipo": cavaleiro, "escala": 1.0},
+	]
+	var oc = Oclusao.new()
+	ok(Oclusao._corpo(Vector2.ZERO, t, 1.0) == Rect2(-22, -40, 38, 42), "Nicão: corpo sem o vazio do quadro e a marreta")
+	ok(not oc._coberto(heroi, roda), "Nicão depois do Q: cavaleiros ao lado não acendem silhueta sobre o corpo livre")
+	var cobrindo: Array = [{"pos": Vector2(0, 12), "tipo": cavaleiro, "escala": 1.0}]
+	ok(oc._coberto(heroi, cobrindo), "Nicão realmente coberto por cavaleiro: a silhueta continua disponível")
+	var simples := {"w": 32, "h": 44, "pe": 42}
+	ok(Oclusao._corpo(Vector2.ZERO, simples, 1.0) == Rect2(-16, -21, 32, 44), "folha sem recorte mantém a cobertura anterior")

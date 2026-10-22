@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do HUD da v2 (v2/hud.tscn + v2/hud.gd). Monta o HUD sobre um "mundo" falso (heroi, abates, combo, tempo, monstros
 # vivos e o sinal nivel_subiu), muda os valores e confere que barras e textos refletem; que o combo pulsa a cada abate, some quando zera
 # e volta à posição de repouso; que o brilho do XP acende com nivel_subiu e apaga; que o HUD aguenta mundo nulo ou sem campos; que o
@@ -11,6 +11,9 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Hud := preload("res://v2/hud.gd")
 const StatusHud := preload("res://v2/status.gd")
+const Herois := preload("res://v2/herois.gd")
+const Personagens := preload("res://v2/personagens.gd")
+const Meta := preload("res://v2/meta.gd")
 const PASSO := 1.0 / 60.0
 const ZONA_MINIMAPA := Rect2(800, 0, 160, 130)  # canto superior direito: o minimapa (de outro agente)
 
@@ -145,12 +148,53 @@ func _testes() -> void:
 		preload("res://v2/minimapa.gd").MARGEM_TELA == 6 and retrato_q.position == Vector2(6, 540 - 6 - retrato_q.size.y),
 		"minimapa e retrato com a mesma margem de 6 px (o retrato %s)" % retrato_q.position
 	)
-	# estilo Overwatch: a vida e o fôlego à direita do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
+	# o retrato de CADA herói cabe na moldura de 90x108, centrado nela e em escala INTEIRA (o Nicão sai recortado no corpo)
+	var pers_antes := [Personagens.caminho_base, Personagens.caminho_indice, Personagens.caminho_antigo, Meta.caminho_save]
+	Personagens.caminho_base = "user://teste_v2_hud_p"  # o Matheus é um PERSONAGEM (joga de Hazaki com a folha dele): save isolado, o real não é tocado
+	Personagens.caminho_indice = "user://teste_v2_hud_personagens.cfg"
+	Personagens.caminho_antigo = "user://teste_v2_hud_antigo.cfg"
+	for id in ["hazaki", "matheus", "nicao", "lucas"]:
+		if id == "matheus":
+			Herois.forcado = ""
+			Personagens.ativar(Personagens.criar("Matheus", Personagens.heroi_do_nome("Matheus")))
+		else:
+			Herois.forcado = id
+		var h2 = Hud.criar(falso)
+		vista.add_child(h2)
+		var caixa: Control = h2.get_node("Raiz/Retrato")
+		var img: TextureRect = h2.get_node("Raiz/Retrato/Heroi")
+		var rect := Rect2(img.position, img.size)
+		ok(img.texture != null and Rect2(Vector2.ZERO, caixa.size).encloses(rect), "retrato de %s cabe na moldura do HUD (%s em %s)" % [id, rect, caixa.size])
+		ok(img.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST, "retrato de %s sem suavizar" % id)
+		var reg: Vector2 = (img.texture as AtlasTexture).region.size
+		var k: float = img.size.x / reg.x
+		ok(k >= 1.0 and k == floorf(k) and img.size.y == reg.y * k, "retrato de %s em escala inteira (%sx)" % [id, k])
+		ok(
+			absf(rect.get_center().x - caixa.size.x / 2.0) <= 1.0 and absf(rect.get_center().y - caixa.size.y / 2.0) <= 1.0,
+			"retrato de %s centrado na moldura (%s)" % [id, rect.get_center()]
+		)
+		if id == "nicao":
+			ok(reg.x < 64.0 and reg.y < 96.0, "retrato do Nicão: recorte do corpo, sem o vazio do quadro (%s)" % reg)
+		if id == "matheus":
+			ok((img.texture as AtlasTexture).atlas.resource_path.ends_with("matheus_albedo.png"), "retrato do Matheus: a folha dele, não a do Hazaki")
+		h2.queue_free()
+	Herois.forcado = ""
+	DirAccess.remove_absolute(Personagens.caminho_indice)
+	for slot in ["p1", "p2"]:
+		DirAccess.remove_absolute(Personagens.caminho_do_save(slot))
+	Personagens.caminho_base = pers_antes[0]
+	Personagens.caminho_indice = pers_antes[1]
+	Personagens.caminho_antigo = pers_antes[2]
+	Meta.caminho_save = pers_antes[3]
+	# estilo Overwatch: a vida e o fôlego à direita e centralizados na altura do retrato, o Q em círculo no centro acima do XP, o E e o secundário no canto de baixo à direita
 	var barras_q: Control = hud.get_node("Raiz/MolduraBarras")
 	var folego_q: Control = hud.get_node("Raiz/Folego")
 	ok(
-		barras_q.position.y == retrato_q.position.y and barras_q.position.x > retrato_q.position.x + retrato_q.size.x,
-		"as barras ficam à direita do retrato, no topo dele"
+		(
+			absf(barras_q.position.y + barras_q.size.y * 0.5 - retrato_q.position.y - retrato_q.size.y * 0.5) <= 0.5
+			and barras_q.position.x > retrato_q.position.x + retrato_q.size.x
+		),
+		"as barras ficam à direita e centralizadas na altura do retrato"
 	)
 	ok(
 		folego_q.position.y > hud.get_node("Raiz/Vida/Barra").global_position.y + hud.get_node("Raiz/Vida/Barra").size.y - 1.0,

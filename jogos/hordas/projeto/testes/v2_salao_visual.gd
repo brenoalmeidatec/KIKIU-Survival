@@ -1,4 +1,4 @@
-extends Control
+extends "res://testes/isolamento_v2_control.gd"
 # QA visual 960x540: contratos de PNG/cache, geometria medida, proximidade e interacao.
 # Saves com prefixo unico; hashes dos saves reais conferidos no fim. Sem benchmark.
 # godot --headless --path jogos/hordas/projeto res://testes/v2_salao_visual.tscn
@@ -26,14 +26,14 @@ func _ready() -> void:
 		if arg.begins_with("--prints="):
 			pasta = arg.trim_prefix("--prints=")
 	prefixo = "qa_visual_%d_" % Time.get_ticks_usec()
-	var d := DirAccess.open("user://")
+	var d := DirAccess.open("user://testes_v2/v2_salao_visual/")
 	for arquivo in d.get_files():
 		if arquivo.begins_with("v2_"):
-			reais[arquivo] = FileAccess.get_md5("user://" + arquivo)
-	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
-	Personagens.caminho_base = "user://" + prefixo + "p"
-	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
-	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
+			reais[arquivo] = FileAccess.get_md5("user://testes_v2/v2_salao_visual/" + arquivo)
+	Personagens.caminho_indice = "user://testes_v2/v2_salao_visual/" + prefixo + "indice.cfg"
+	Personagens.caminho_base = "user://testes_v2/v2_salao_visual/" + prefixo + "p"
+	Personagens.caminho_antigo = "user://testes_v2/v2_salao_visual/" + prefixo + "antigo.cfg"
+	Meta.caminho_save = "user://testes_v2/v2_salao_visual/" + prefixo + "meta.cfg"
 	var id := Personagens.criar("Matheus")
 	ok(Personagens.ativar(id), "slot isolado ativo")
 	# tudo liberado (os três mapas vencidos e 3 partidas): aqui se confere a sala aberta; as travas ficam no v2_progressao
@@ -86,7 +86,10 @@ func _ready() -> void:
 				await foto("item_" + str(a.id) + "_%02d" % i)
 			s._fechar_painel()
 		else:
-			ok(chamadas.size() > 0 and Mapas.escolhido() == str(a.id), "A usa portal " + str(a.id))
+			ok(s._escolha_dificuldade.visible and s._mapa_pendente == str(a.id), "A abre dificuldade do portal " + str(a.id))
+			ok(chamadas.is_empty(), "portal aguarda confirmar a dificuldade: " + str(a.id))
+			await foto("dificuldade_" + str(a.id))
+			s._escolha_dificuldade._cancelar()
 	# Clique passa pelo handler da sala; simula deslocamento acelerado sem trocar cenas.
 	for a in s._alvos:
 		s._pos = Vector2(480, 480)
@@ -103,6 +106,9 @@ func _ready() -> void:
 		ok(s._destino == Vector2.INF, "clique chega e usa " + str(a.id))
 		if s._painel.visible:
 			s._fechar_painel()
+		if a.tipo == "portal":
+			ok(s._escolha_dificuldade.visible and s._mapa_pendente == str(a.id), "clique abre dificuldade do portal " + str(a.id))
+			s._escolha_dificuldade._cancelar()
 	ok(Mapas.condicao({"requer": "combo_50"}).begins_with("Trancado"), "condicao bloqueada preservada")
 	ok(Mapas.condicao({}) == "", "portais sem requisito abertos")
 	Meta.creditar(300)
@@ -111,9 +117,12 @@ func _ready() -> void:
 	s._pos = Vector2(480, 400)
 	s._destino = Vector2.INF
 	await foto("02_salao_almas")
+	ok(s.usar_portal("floresta"), "portal abre a confirmação final")
+	s._escolha_dificuldade._confirmar()
+	ok(chamadas == [s.FLORESTA] and Mapas.escolhido() == "floresta", "confirmar dificuldade entra uma única vez no mapa")
 
 	for arquivo in reais:
-		ok(FileAccess.get_md5("user://" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
+		ok(FileAccess.get_md5("user://testes_v2/v2_salao_visual/" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
 	for arquivo in d.get_files():
 		if arquivo.begins_with(prefixo):
 			d.remove(arquivo)

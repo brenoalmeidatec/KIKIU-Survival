@@ -883,7 +883,7 @@ func _process(dt: float) -> void:
 	var pos: Vector2 = c._pos
 	var vel := (pos - _pos_ant) / maxf(dt, 0.0001)
 	_pos_ant = pos
-	var andando: bool = c._quadro > 0
+	var andando: bool = c._andando
 	_heroi_vivo(c, pos, andando)
 	_letreiros_vivos(c._heroi.position, dt)
 	var ciclo := 1.0 + (AMPLITUDE_CICLO * sin(TAU * _tempo / PERIODO_CICLO) if com_ciclo else 0.0)

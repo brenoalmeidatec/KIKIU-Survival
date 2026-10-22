@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automÃ¡tico do personagem, do salÃ£o e da escolha de personagem da v2 (v2/personagens.gd, v2/salao.gd e
 # v2/personagens_tela.gd). Usa arquivos TEMPORÃRIOS (user://teste_salao_*): o save real da meta (user://v2_progresso.cfg) e os saves
 # dos personagens de verdade nÃ£o sÃ£o tocados; a conferÃªncia por md5 garante isso.
@@ -13,11 +13,11 @@ const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Salao := preload("res://v2/salao.tscn")
 const Tela := preload("res://v2/personagens.tscn")
-const PREFIXO := "user://teste_salao_p"
-const INDICE := "user://teste_salao_personagens.cfg"
-const ANTIGO := "user://teste_salao_progresso.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const SAVE_META_TESTE := "user://teste_salao_meta.cfg"
+const PREFIXO := "user://testes_v2/v2_salao/teste_salao_p"
+const INDICE := "user://testes_v2/v2_salao/teste_salao_personagens.cfg"
+const ANTIGO := "user://testes_v2/v2_salao/teste_salao_progresso.cfg"
+const SAVE_REAL := "user://testes_v2/v2_salao/v2_progresso.cfg"
+const SAVE_META_TESTE := "user://testes_v2/v2_salao/teste_salao_meta.cfg"
 const FLORESTA := "res://v2/mundo.tscn"
 
 var falhas := 0
@@ -27,6 +27,16 @@ func ok(cond: bool, msg: String) -> void:
 	if not cond:
 		falhas += 1
 		print("FALHOU: ", msg)
+
+
+func _tecla(k: Key) -> void:
+	for pressionado in [true, false]:
+		var e := InputEventKey.new()
+		e.keycode = k
+		e.physical_keycode = k
+		e.pressed = pressionado
+		Input.parse_input_event(e)
+		Input.flush_buffered_events()
 
 
 func _ready() -> void:
@@ -130,7 +140,31 @@ func _testes() -> void:
 	ok(not s.usar_portal("cidade") and cenas.is_empty(), "o portal da cidade está trancado até vencer o Laboratório")
 	ok(Mapas.escolhido() == "floresta", "a escolha trancada de um save antigo não vale")
 	ok(Meta.marcar_mapa_vencido("floresta") and Meta.marcar_mapa_vencido("laboratorio"), "libera de forma explícita: vence Floresta e Laboratório")
-	ok(s.usar_portal("cidade") and Mapas.escolhido() == "cidade", "o portal da cidade grava a escolha")
+	ok(Mapas.escolher("floresta") and Meta.escolher_dificuldade("facil"), "prepara mapa e dificuldade anteriores ao portal")
+	var hash_antes := FileAccess.get_md5(Meta.caminho_save)
+	s._destino = Vector2(100, 200)
+	s._alvo_destino = {"tipo": "portal", "id": "floresta"}
+	ok(s.usar_portal("cidade") and s._escolha_dificuldade.visible, "portal aberto pede dificuldade antes de entrar")
+	ok(cenas.is_empty() and FileAccess.get_md5(Meta.caminho_save) == hash_antes, "abrir escolha não grava mapa/dificuldade nem troca cena")
+	ok(s._destino == Vector2.INF and s._alvo_destino.is_empty() and not s._painel.visible, "o modal encerra caminho clicado e painel anterior")
+	var pos_antes: Vector2 = s._pos
+	Input.action_press("direita")
+	s._process(0.5)
+	Input.action_release("direita")
+	ok(s._pos == pos_antes, "não anda enquanto escolhe dificuldade")
+	s.abrir_estrutura("estatuas")
+	ok(not s._painel.visible and not s.usar_portal("floresta"), "modal bloqueia outra estrutura e outro portal")
+	_tecla(KEY_RIGHT)
+	_tecla(KEY_ESCAPE)
+	ok(not s._escolha_dificuldade.visible and s._mapa_pendente == "", "Esc cancela no modal sem sair do salão")
+	ok(cenas.is_empty() and FileAccess.get_md5(Meta.caminho_save) == hash_antes, "cancelar preserva mapa, dificuldade e personagem")
+	ok(s.usar_portal("cidade"), "reabre portal depois de cancelar")
+	_tecla(KEY_RIGHT)
+	_tecla(KEY_ENTER)
+	ok(Mapas.escolhido() == "cidade" and Meta.dificuldade() == "medio", "Enter grava mapa e dificuldade selecionados no personagem")
+	ok(not s._escolha_dificuldade.visible and s._entrando, "confirmar fecha o modal e bloqueia nova interação enquanto entra")
+	s._escolha_dificuldade._confirmar()
+	ok(not s.usar_portal("floresta"), "confirmação repetida não agenda outra entrada")
 	ok(cenas == [FLORESTA], "o portal leva Ã  cena da partida")
 	ok(Mapas.condicao({"requer": "combo_50"}) != "", "um mapa com conquista nÃ£o cumprida fica fechado e diz o porquÃª")
 	ok(Mapas.condicao({"requer": "combo_50"}).find("Trancado") == 0, "o texto do portal trancado comeÃ§a com Trancado")
@@ -145,6 +179,7 @@ func _testes() -> void:
 	var s2 = Salao.instantiate()
 	add_child(s2)
 	ok(s2.saldo() == 137, "ao voltar, o salÃ£o mostra as almas da partida (%d)" % s2.saldo())
+	ok(s2._quadro_w == 32 and s2._pe_y == 42, "o Hazaki no salão segue com a folha de 32x44 e os pés na linha 42")
 	remove_child(s2)
 	s2.queue_free()
 
@@ -164,3 +199,56 @@ func _testes() -> void:
 	ok(cenas.back() == "res://v2/salao.tscn", "criar leva ao salÃ£o")
 	remove_child(t)
 	t.queue_free()
+
+	# 9. o personagem que joga o Nicão anda no salão com a folha do Nicão (64x96, pés na linha 74, andar de 6 quadros; o do Hazaki segue na folha dele)
+	var id_nicao := Personagens.criar("Nicão", "nicao")
+	ok(Personagens.heroi(id_nicao) == "nicao" and Personagens.ativar(id_nicao), "o Nicão joga o herói nicao")
+	var s3 = Salao.instantiate()
+	add_child(s3)
+	ok(
+		s3._quadro_w == 64 and s3._quadro_h == 96 and s3._pe_y == 74 and s3._passos == 6,
+		"o salão do Nicão usa a folha dele (%dx%d, pés %d, %d passos)" % [s3._quadro_w, s3._quadro_h, s3._pe_y, s3._passos]
+	)
+	ok(s3._sprite.resource_path.ends_with("nicao_albedo.png"), "e a textura é a do Nicão (%s)" % s3._sprite.resource_path)
+	remove_child(s3)
+	s3.queue_free()
+
+	# 10. a MESMA regra para os quatro: o salão desenha a folha do personagem (Matheus tem a dele) ou, sem ela, a do herói (Hazaki, Lucas, Nicão);
+	# o andar usa o ciclo inteiro (6 passos) e o parado toca os 4 quadros (colunas 0, 7, 8 e 9)
+	var casos := [
+		["Breno", "hazaki", "hazaki_samurai_albedo.png", Vector2i(32, 44), 42],
+		["Matheus", "hazaki", "matheus_albedo.png", Vector2i(32, 44), 42],
+		["Lucas", "lucas", "lucas_albedo.png", Vector2i(32, 44), 42],
+		["Nicão", "nicao", "nicao_albedo.png", Vector2i(64, 96), 74],
+	]
+	for c in casos:
+		var id_c := Personagens.criar(str(c[0]), str(c[1]))
+		ok(Personagens.ativar(id_c), "ativa o personagem %s (herói %s)" % [c[0], c[1]])
+		var sc = Salao.instantiate()
+		add_child(sc)
+		ok(sc._sprite.resource_path.ends_with(str(c[2])), "salão de %s: a folha é %s (%s)" % [c[0], c[2], sc._sprite.resource_path])
+		ok(
+			Vector2i(sc._quadro_w, sc._quadro_h) == c[3] and sc._pe_y == int(c[4]),
+			"salão de %s: quadro %dx%d, pés na linha %d" % [c[0], sc._quadro_w, sc._quadro_h, sc._pe_y]
+		)
+		ok(sc._passos == 6, "salão de %s: andar com o ciclo completo de 6 passos (%d)" % [c[0], sc._passos])
+		var vistos := {}
+		for i in 80:  # parado, quadro a quadro de 1/20 s: 4 s, mais que o ciclo inteiro do parado
+			sc._process(0.05)
+			vistos[sc._quadro] = true
+		ok(
+			vistos.has(0) and vistos.has(7) and vistos.has(8) and vistos.has(9) and vistos.size() == 4,
+			"salão de %s: o parado toca as colunas 0, 7, 8 e 9 (vistas %s)" % [c[0], vistos.keys()]
+		)
+		remove_child(sc)
+		sc.queue_free()
+	# na escolha de personagem, quem não tem rosto.png mostra a folha do herói dele (ou a própria do personagem), não sempre a do Hazaki
+	var tela = Tela.instantiate()
+	add_child(tela)
+	for c in casos:
+		var id_t := Personagens.criar(str(c[0]), str(c[1]))
+		tela._definir_retrato("", true, Personagens.folha(id_t))  # pasta vazia = sem rosto.png
+		var tex = tela._retrato.texture
+		ok(tex is AtlasTexture and tex.atlas.resource_path.ends_with(str(c[2])), "escolha de personagem: %s sem rosto mostra a folha %s" % [c[0], c[2]])
+	remove_child(tela)
+	tela.queue_free()

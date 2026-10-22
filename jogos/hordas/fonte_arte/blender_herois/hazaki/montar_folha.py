@@ -1,6 +1,6 @@
 """Monta a FOLHA FINAL do Hazaki (todas as animações) no formato que v2/sprites.gd e v2/heroi.gd leem (Python com Pillow).
 
-    python montar_folha.py
+    python montar_folha.py [pasta_do_personagem nome]     (sem argumentos: o Hazaki; ex. do Matheus: python montar_folha.py ../matheus matheus)
 
 Lê quadros/<anim>/<direcao>_<i>_{cor,normal}.png (saída do gerar.py) e grava nesta pasta:
   hazaki_final_albedo.png e hazaki_final_normal.png: grade de 8 linhas x 50 colunas, quadros 32x44 (cor e normal, mesma silhueta)
@@ -13,10 +13,12 @@ Por isso "colunas" do JSON continua com as 7 do andar; as animações novas est�
 """
 import json
 import os
+import sys
 
 from PIL import Image
 
-AQUI = os.path.dirname(os.path.abspath(__file__))
+AQUI = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.dirname(os.path.abspath(__file__))  # pasta dos quadros e da saída
+NOME = sys.argv[2] if len(sys.argv) > 2 else "hazaki"
 W, H = 32, 44
 DIRECOES = ["baixo", "esquerda", "direita", "cima", "baixo_esq", "baixo_dir", "cima_esq", "cima_dir"]
 FUNDO = (34, 34, 42)
@@ -84,12 +86,12 @@ def main():
     # a silhueta da cor e da normal tem de ser a mesma, coluna a coluna
     if albedo.getchannel("A").tobytes() != normal.getchannel("A").tobytes():
         raise SystemExit("silhueta da normal difere da cor")
-    albedo.save(os.path.join(AQUI, "hazaki_final_albedo.png"))
-    normal.save(os.path.join(AQUI, "hazaki_final_normal.png"))
+    albedo.save(os.path.join(AQUI, NOME + "_final_albedo.png"))
+    normal.save(os.path.join(AQUI, NOME + "_final_normal.png"))
 
     previa = Image.new("RGBA", (albedo.width * 4, albedo.height * 4), FUNDO + (255,))
     previa.alpha_composite(albedo.resize((albedo.width * 4, albedo.height * 4), Image.NEAREST))
-    previa.convert("RGB").save(os.path.join(AQUI, "hazaki_final_previa_x4.png"))
+    previa.convert("RGB").save(os.path.join(AQUI, NOME + "_final_previa_x4.png"))
 
     info = {
         "quadro": [W, H],
@@ -118,7 +120,7 @@ def main():
     info["animacoes"]["combo"]["quadros_por_golpe"] = 6
     info["animacoes"]["combo"]["golpes_tipo"] = ["horizontal", "diagonal", "estocada"]
     info["animacoes"]["combo"]["quadros_do_golpe"] = ["antecipacao", "antecipacao_funda", "golpe_com_rastro", "impacto_com_rastro", "hold", "volta"]
-    with open(os.path.join(AQUI, "hazaki_final.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(AQUI, NOME + "_final.json"), "w", encoding="utf-8") as f:
         json.dump(info, f, ensure_ascii=False, indent=1)
         f.write("\n")
     print("folha %dx%d (%d colunas x %d linhas)" % (albedo.width, albedo.height, len(COLUNAS), len(DIRECOES)))

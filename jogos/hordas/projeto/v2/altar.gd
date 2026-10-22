@@ -535,7 +535,7 @@ func _trocar_mapa() -> void:
 
 
 func _entrar_floresta() -> void:
-	get_tree().change_scene_to_file(FLORESTA)
+	Transicoes.ir_para(self, FLORESTA)
 
 
 class Marcadores:
@@ -575,7 +575,7 @@ func _unhandled_input(e: InputEvent) -> void:
 
 
 func _voltar_menu() -> void:
-	get_tree().change_scene_to_file("res://v2/menu_principal.tscn")
+	Transicoes.ir_para(self, "res://v2/menu_principal.tscn", true)
 
 
 func _botao_detalhe(r: Rect2) -> Button:

@@ -99,7 +99,7 @@ var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, 
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
 var maior_combo := 0
-var xp_coletado := 0.0  # soma do XP dos orbes pegos (com o bônus do combo)
+var xp_coletado := 0.0  # XP BASE dos orbes pegos, com combo e sem dificuldade: calcula almas/mercador; o bônus de XP vai só ao herói
 var resultado: Dictionary = {}  # o último resultado de partida (vazio enquanto joga)
 var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredondado (a meta-progressão lê isto)
 	get:
@@ -308,6 +308,8 @@ func _montar() -> void:
 	oclusao = Oclusao.new().montar(sv, heroi)
 	combate.iniciar_heroi()
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
+	combate.diretor.zerar()  # os primeiros relógios também usam a dificuldade recém-lida
+	combate.elites.zerar()
 	horda = Horda.new()
 	horda.montar(self)
 	braseiros = Braseiros.new()
@@ -342,7 +344,7 @@ func _criar_heroi() -> void:
 	herois = [heroi]
 	if _modo != "livre":  # foto e medição não dependem do teclado de quem estiver na máquina
 		heroi.entrada_forcada = _entrada_roteiro()
-	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite(combate.heroi_id, args.has("basico"))), p)
+	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite_da_partida(combate.heroi_id, args.has("basico"))), p)
 	# a tocha e a aura andam com o herói (a posição é o ponto no chão que a luz ilumina)
 	luzes.prender(luzes.criar("tocha", p), heroi, Vector2(-38, -32))
 	luzes.prender(luzes.criar("aura", p), heroi, Vector2(30, -8))
@@ -645,6 +647,8 @@ func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k
 		mo = lista.pop_back()
 	mo.aplicar_stats(combate.cfg.monstros[nome], k_vida * fator_pesadelo("vida_mult"), k_dano * fator_pesadelo("dano_mult"))
 	mo.cacador = cacador
+	var dif := preload("res://v2/dificuldade.gd").da_partida(self)
+	mo.vel_caca *= float(dif.vel_mult)
 	mo.raio_vaga = 90.0
 	mo.reviver(p)
 	monstros.append(mo)
@@ -983,6 +987,8 @@ func reiniciar() -> void:
 	heroi.resetar(Vector2(float(c[0]), float(c[1])))
 	combate.iniciar_heroi()
 	Meta.aplicar(self)
+	combate.diretor.zerar()
+	combate.elites.zerar()
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_popular_inicial()
 	if is_instance_valid(minimapa):

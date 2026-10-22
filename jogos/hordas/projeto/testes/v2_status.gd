@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do card "SUA BUILD" da v2 (v2/status.gd). A pergunta de cada bloco é: o número que o card mostra é o que o jogo FAZ?
 # Cada número do card é conferido contra o jogo em movimento: acerta um boneco com o combo e compara o dano, mede o alcance de cada passo,
 # anda e corre e mede a velocidade, cura o herói subindo de nível, mede a recuperação do fôlego, solta orbes na borda do ímã, conta as
@@ -24,10 +24,10 @@ const Meta := preload("res://v2/meta.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const PASSO := 1.0 / 60.0
 const PASSO_FINO := 1.0 / 240.0  # a medição do ciclo do combo e do avanço do golpe sem o arredondamento por quadro
-const SAVE_TESTE := "user://teste_v2_status_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_status_opcoes.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const OPCOES_REAL := "user://opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_status/teste_v2_status_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_status/teste_v2_status_opcoes.cfg"
+const SAVE_REAL := "user://testes_v2/v2_status/v2_progresso.cfg"
+const OPCOES_REAL := "user://testes_v2/v2_status/opcoes.cfg"
 
 var falhas := 0
 var w
@@ -346,7 +346,9 @@ func _heroi() -> void:
 	perto(float(n_de("heroi.vida")[0]), antes - 10.0, 0.001, "a vida do card cai com o dano que o herói leva")
 	# cura por nível: o card diz quanto volta; subir de nível cura exatamente isso
 	var cura := float(n_de("heroi.cura")[0])
-	perto(cura, h.vida_max * float(cfg.heroi.cura_nivel), 0.001, "cura por nível = fração da vida máxima")
+	perto(
+		cura, h.vida_max * float(cfg.heroi.cura_nivel) * float(w.combate.ritmo.cfg.cura_nivel_mult), 0.001, "cura por nível = fração da vida máxima com ritmo"
+	)
 	h.vida = 20.0
 	w.combate.progresso.ganhar_xp(h.xp_proximo)
 	w.combate.lento_t = 0.0  # não abre a escolha
@@ -409,7 +411,7 @@ func _heroi() -> void:
 	descartar(alvo_fo)
 	# ímã: um orbe um pouco dentro do alcance é atraído, um pouco fora fica no chão
 	var ima := float(n_de("heroi.ima")[0])
-	perto(ima, 56.0 * h.m_ima, 0.01, "ímã = raio dos dados x bônus de ímã")
+	perto(ima, 56.0 * h.m_ima * w.combate.ritmo.multiplicador("coleta", h.nivel), 0.01, "ímã = raio dos dados x bônus de ímã x curva de nível")
 	var alvo: Vector2 = h.pos + Vector2(0, -8)
 	var o = w.combate.orbes
 	var dentro := _orbe(alvo + Vector2(ima - 3.0, 0))
@@ -1285,6 +1287,35 @@ func _interface() -> void:
 	tecla(KEY_C)
 	await esperar()
 	ok(not st.aberto(), "C desliga o HUD depois da pausa")
+	# --- o card da pausa acompanha o fade do menu (#377): entra e sai com fade em vez de aparecer e sumir de uma vez
+	await get_tree().create_timer(Transicoes.DUR_SAIR + 0.15, true, false, true).timeout  # assenta qualquer fade das pausas de antes
+	pausa.pausar()
+	ok(
+		st.aberto() and st._modo_atual == "pausa" and Transicoes.animando(st._tela) and st._tela.modulate.a < 1.0,
+		"ao abrir a pausa o card entra com fade, junto com o menu"
+	)
+	await get_tree().create_timer(Transicoes.DUR_ENTRAR + 0.15, true, false, true).timeout
+	ok(st._tela.modulate.a == 1.0 and not Transicoes.animando(st._tela), "e termina opaco")
+	pausa.fechar()
+	ok(
+		not st.aberto() and st.visible and st._modo_atual == "" and Transicoes.animando(st._tela),
+		"ao fechar, o card segue na tela enquanto some (fade), mas já não conta como aberto"
+	)
+	await get_tree().create_timer(Transicoes.DUR_SAIR + 0.15, true, false, true).timeout
+	ok(not st.visible and st._tela.visible and st._tela.modulate.a == 1.0 and not st._saindo, "e some no fim do fade, pronto para a próxima")
+	pausa.pausar()
+	pausa.fechar()
+	pausa.pausar()  # reabre no meio do fade de saída: o card volta e fica
+	ok(st.aberto() and not st._saindo and st._modo_atual == "pausa", "reabrir a pausa no meio do fade de saída devolve o card")
+	await get_tree().create_timer(Transicoes.DUR_ENTRAR + 0.15, true, false, true).timeout
+	ok(st.aberto() and st.visible and st._tela.modulate.a == 1.0, "e ele termina aberto e opaco")
+	pausa.fechar()
+	await get_tree().create_timer(Transicoes.DUR_SAIR + 0.15, true, false, true).timeout
+	Config.definir("reduzir_animacoes", true)
+	pausa.pausar()
+	pausa.fechar()
+	ok(not st.visible and not st._saindo and st._tela.modulate.a == 1.0, "com Reduzir animações o card some na hora")
+	Config.definir("reduzir_animacoes", false)
 	# --- o fim da partida desliga o card sozinho
 	tecla(KEY_C)
 	await esperar()

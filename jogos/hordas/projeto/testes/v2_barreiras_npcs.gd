@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Teste automático: NENHUM npc atravessa uma barreira (caixa do cenário): nem inimigo (horda, perseguindo o herói, e puxado pela
 ## tempestade) nem aliado (andante, golem e o aliado simples de armas_novas). Uma caixa estreita e alta fica no meio do caminho entre
 ## o bicho e o alvo (desencontrada em y, para ele ter de deslizar pela face); a cada quadro o corpo tem de estar fora da caixa, e no fim

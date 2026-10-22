@@ -15,6 +15,10 @@ const TAM_ICON := Vector2(48.0, 48.0)
 const CARGA_LARANJA := Paleta.CARGA_LARANJA
 const COR_ESCUDO := Color(0.45, 0.82, 1.0)  # o azul do escudo (o mesmo do desenho dele no mundo, v2/escudo.gd)
 const FOLEGO_MIN_PADRAO := 0.15  # fôlego mínimo para erguer o escudo e fração de volta do cansaço: lidos do cfg do combate; estes só valem sem combate
+const ICONES_E := {
+	"nicao": preload("res://assets/v2/habilidade_e/nicao.png"),
+	"lucas": preload("res://assets/v2/habilidade_e/lucas.png"),
+}
 const CANSADO_ATE_PADRAO := 0.34
 const BORDA := Paleta.HABILIDADE_BORDA
 const DESATIVADO := Paleta.HABILIDADE_DESATIVADA
@@ -220,7 +224,7 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var cor := _cor_do_card(e, pulsa)
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
-	var arte := Dados.icone_carta(e_icone if e else "escudo")
+	var arte: Texture2D = arte_e() if e else Dados.icone_carta("escudo")
 	if arte != null:
 		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro de 48; apagado quando não está disponível
 		var tinta := Color.WHITE if (e_disponivel if e else s_pronta) else DESATIVADO
@@ -307,8 +311,14 @@ func _cortina(icon_pos: Vector2, px: int) -> void:
 		draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0 + altura), Vector2(46.0, 1.0)), Color(Paleta.RECARGA_LINHA, 0.95))
 
 
-## Tudo o que o círculo do Q desenha, numa chave: o nó "Ultimate" (v2/hud_ultimate.gd) só redesenha quando ela muda, ou a cada quadro enquanto o Q está
-## pronto, em andamento ou negado (que pulsam).
+## Arte própria da E; os ícones antigos continuam sendo a reserva (inclusive a Ruptura do Hazaki).
+func arte_e() -> Texture2D:
+	if estado_e == "habilidade" and ICONES_E.has(q_heroi):  # chave do herói já sincronizada para o Q; a E usa a mesma identidade
+		return ICONES_E[q_heroi]
+	return Dados.icone_carta(e_icone)
+
+
+## Tudo o que o círculo do Q desenha, numa chave: só redesenha quando ela muda, ou enquanto pulsa.
 func q_chave() -> String:
 	return "%s|%s|%d|%s|%s|%s|%s|%s" % [q_implementada, q_pronta, q_carga_pct, q_negada, q_ativa, q_rotulo, q_cor.to_html(), q_heroi]
 

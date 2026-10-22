@@ -83,6 +83,7 @@ var atualizacoes := 0  # quantas vezes recoletou (os testes conferem que escondi
 var _hud := false  # o jogador ligou o card compacto com C (durante a partida)
 var _central := false  # o jogador abriu o painel central com C (sobre a escolha de cartas ou o baú)
 var _pausa := false  # a pausa pediu o card ao lado do menu
+var _saindo := false  # o card da pausa está sumindo (fade junto com o menu, #377): a camada segue visível até o fim
 var _modo_atual := ""  # o modo que está na tela agora ("" = escondido)
 var _m := "hud"  # o modo em que `_medir`, `_coluna` e o desenho trabalham agora
 var _meta: Dictionary = {}  # níveis do Santuário, lidos uma vez quando o card abre (o save não muda durante a partida)
@@ -229,7 +230,7 @@ func alternar() -> void:
 
 ## O card está na tela agora (HUD ligado pelo C, painel central, ou ao lado do menu de pausa).
 func aberto() -> bool:
-	return visible
+	return visible and not _saindo
 
 
 ## A pausa pede o card ao lado do menu (tela "menu") ou o tira (outras telas e fechar). Uma chamada só, de pausa.gd.
@@ -280,18 +281,29 @@ func _aplicar() -> void:
 		_paginas_detalhes = [1, 1, 1]
 	if _modo_atual != "" and not visible:
 		_pag = 0  # o card abre na primeira página dos golpes
-	visible = _modo_atual != ""
+	_saindo = anterior == "pausa" and _modo_atual == "" and visible
+	visible = _modo_atual != "" or _saindo
 	if _hud or _central or _pausa:
 		if _timer.is_stopped():
 			_timer.start()
 	else:
 		_timer.stop()
+	if _saindo:  # fechar a pausa: o card some junto com o menu em vez de piscar para fora (sem animação, esconde na hora)
+		Transicoes.sair(_tela, Vector2.ZERO, Transicoes.DUR_SAIR, _fim_saida, false)
+		return
 	if not visible:
 		return
 	_m = _modo_atual
 	layer = LAYER_PAUSA if _m == "pausa" else (LAYER_CENTRAL if _m == "central" else LAYER_HUD)
 	_meta = Meta.estado().get("niveis", {})
 	_recoletar()
+	if _modo_atual == "pausa" and anterior == "":
+		Transicoes.entrar(_tela, Vector2.ZERO)  # abre junto com o menu: o fade do card acompanha o do menu
+
+
+func _fim_saida() -> void:
+	_saindo = false
+	visible = _modo_atual != ""
 
 
 ## A cada 0,25 s com o card ligado: confere se a partida segue de pé e se o modo mudou (as cartas abriram ou fecharam) e atualiza os números.
@@ -313,7 +325,8 @@ func _recoletar() -> void:
 	secoes = coletar(mundo, _meta)
 	atualizacoes += 1
 	# na pausa e no painel central o card fica opaco (a pessoa quer ler); no jogo rolando é semitransparente
-	_tela.modulate.a = ALFA_HUD if _modo_atual == "hud" else 1.0
+	if not Transicoes.animando(_tela):  # no meio do fade da pausa quem manda no alfa é a transição
+		_tela.modulate.a = ALFA_HUD if _modo_atual == "hud" else 1.0
 	_tela.queue_redraw()
 
 
@@ -394,7 +407,7 @@ static func _sec_heroi(m) -> Dictionary:
 	var c = m.combate
 	var cfg: Dictionary = c.cfg
 	var cura: float = c.progresso.cura_por_nivel()
-	var frac := float(cfg.heroi.cura_nivel) * 100.0
+	var frac: float = cura / h.vida_max * 100.0
 	var seguidas := int(floorf(h.folego_max / float(cfg.esquiva.gasto)))
 	var rp := float(cfg.folego.regen_parado)
 	var ra := float(cfg.folego.regen_andando)
@@ -435,7 +448,8 @@ static func _sec_katana(m) -> Dictionary:
 	var lin: Array = []
 	lin.append(_l("katana.dano", "Dano", "/".join(t_danos), danos, _mais_pct((h.m_dano - 1.0) * 100.0)))
 	lin.append(_l("katana.vel", "Vel. de ataque", _mais_pct((h.m_vel_ataque - 1.0) * 100.0) if h.m_vel_ataque != 1.0 else "base", [h.m_vel_ataque]))
-	lin.append(_l("katana.combo", "Combo completo", "%s s" % _v(ciclo, 2), [ciclo]))
+	var combo_rotulo := "Combo estimado" if str(passos[0].get("tipo", "melee")) == "adagas" else "Combo completo"
+	lin.append(_l("katana.combo", combo_rotulo, "%s s" % _v(ciclo, 2), [ciclo]))
 	lin.append(_l("katana.alcance", "Alcance", "/".join(t_alc) + " px", alcances))
 	lin.append(_l("katana.area", "Área do corte", _mais_pct((h.m_area - 1.0) * 100.0) if h.m_area != 1.0 else "base", [h.m_area]))
 	lin.append(_l("katana.critico", "Crítico x%s" % _v(mult, 1), "%s%%" % _p(chance * 100.0), [chance, mult], _mais_pct(h.m_critico * 100.0)))

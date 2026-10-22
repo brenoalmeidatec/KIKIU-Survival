@@ -1,9 +1,9 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Navegação real do frontend e legibilidade do santuário em 960x540. Save/opções isolados.
 const Meta := preload("res://v2/meta.gd")
 const Altar := preload("res://v2/altar.tscn")
-const SAVE := "user://teste_v2_santuario.cfg"
-const OPCOES := "user://teste_v2_santuario_opcoes.cfg"
+const SAVE := "user://testes_v2/v2_santuario/teste_v2_santuario.cfg"
+const OPCOES := "user://testes_v2/v2_santuario/teste_v2_santuario_opcoes.cfg"
 var falhas := 0
 
 
@@ -58,6 +58,7 @@ func _ready() -> void:
 			_tecla(KEY_ENTER)
 		await _frames(3)
 		ok(get_tree().current_scene.scene_file_path == "res://v2/menu_principal.tscn", "%s volta ao título" % acao)
+		await _assentar()
 	# O título continua pedindo Sair por ESC; o processo permanece vivo.
 	_tecla(KEY_ESCAPE)
 	await _frames(1)
@@ -143,3 +144,10 @@ func _limpar() -> void:
 	for caminho in [SAVE, SAVE + ".bak", SAVE + ".tmp", OPCOES, OPCOES + ".bak", OPCOES + ".tmp"]:
 		if FileAccess.file_exists(caminho):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho))
+
+
+## Espera o fim do fade da troca de cena (#377): enquanto a foto da tela antiga está na tela a entrada da janela é descartada.
+func _assentar() -> void:
+	var t0 := Time.get_ticks_msec()
+	while Transicoes.ativa() and Time.get_ticks_msec() - t0 < 6000:
+		await get_tree().process_frame

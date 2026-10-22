@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Folha de comparação de fontes da v2 (ferramenta de olhar, não é teste automático).
 ## Lê uma especificação JSON e desenha cada fonte candidata exatamente como o jogo desenha texto: dentro de um SubViewport com filtro
 ## nearest, sem anti-aliasing, sem hinting e sem posição de subpixel (as mesmas opções dos .import das fontes da v2), em tamanhos

@@ -1,0 +1,342 @@
+[
+  {
+    "personagem": "Breno",
+    "hz": 60,
+    "folha": "hazaki_samurai",
+    "passos_iguais": 180,
+    "sha256_mecanica_antes_e_depois": "c0c51697e1fe9120f4f8e649a48928db7e06c34869b9e1ecfd4e60a7f3526dc9",
+    "rng_final_igual": 257574583,
+    "eventos": [
+      {
+        "passo": 6,
+        "dano": 13.0,
+        "golpe": 0,
+        "golpe_t": 0.1,
+        "hit_stop": 0.045
+      },
+      {
+        "passo": 26,
+        "dano": 13.0,
+        "golpe": 1,
+        "golpe_t": 0.1,
+        "hit_stop": 0.045
+      },
+      {
+        "passo": 49,
+        "dano": 27.0,
+        "golpe": 2,
+        "golpe_t": 0.15,
+        "hit_stop": 0.07
+      }
+    ],
+    "sha256_colunas_fx_antes_e_depois": "24a8368ae27e610ab5a6b4a204a342cfd54084764d08f736ef83f9e08f0a3e9f",
+    "quadros_corpo_alterados": 0
+  },
+  {
+    "personagem": "Breno",
+    "hz": 120,
+    "folha": "hazaki_samurai",
+    "passos_iguais": 360,
+    "sha256_mecanica_antes_e_depois": "330b74e5df6ee6dab12c5a543b0fc16c724a7f21091020776505894e7efd898c",
+    "rng_final_igual": 4238402014,
+    "eventos": [
+      {
+        "passo": 11,
+        "dano": 13.0,
+        "golpe": 0,
+        "golpe_t": 0.0916666666666667,
+        "hit_stop": 0.045
+      },
+      {
+        "passo": 50,
+        "dano": 13.0,
+        "golpe": 1,
+        "golpe_t": 0.0916666666666667,
+        "hit_stop": 0.045
+      },
+      {
+        "passo": 96,
+        "dano": 27.0,
+        "golpe": 2,
+        "golpe_t": 0.15,
+        "hit_stop": 0.07
+      }
+    ],
+    "sha256_colunas_fx_antes_e_depois": "595df043f1decc911a5735fdfed917e240fd4cdd67c3a615e8f364be9c01e9ce",
+    "quadros_corpo_alterados": 0
+  },
+  {
+    "personagem": "Matheus",
+    "hz": 60,
+    "folha": "matheus",
+    "passos_iguais": 180,
+    "sha256_mecanica_antes_e_depois": "c0c51697e1fe9120f4f8e649a48928db7e06c34869b9e1ecfd4e60a7f3526dc9",
+    "rng_final_igual": 257574583,
+    "eventos": [
+      {
+        "passo": 6,
+        "dano": 13.0,
+        "golpe": 0,
+        "golpe_t": 0.1,
+        "hit_stop": 0.045
+      },
+      {
+        "passo": 26,
+        "dano": 13.0,
+        "golpe": 1,
+        "golpe_t": 0.1,
+        "hit_stop": 0.045
+      },
+      {
+        "passo": 49,
+        "dano": 27.0,
+        "golpe": 2,
+        "golpe_t": 0.15,
+        "hit_stop": 0.07
+      }
+    ],
+    "sha256_colunas_fx_antes_e_depois": "24a8368ae27e610ab5a6b4a204a342cfd54084764d08f736ef83f9e08f0a3e9f",
+    "quadros_corpo_alterados": 0
+  },
+  {
+    "personagem": "Matheus",
+    "hz": 120,
+    "folha": "matheus",
+    "passos_iguais": 360,
+    "sha256_mecanica_antes_e_depois": "330b74e5df6ee6dab12c5a543b0fc16c724a7f21091020776505894e7efd898c",
+    "rng_final_igual": 4238402014,
+    "eventos": [
+      {
+        "passo": 11,
+        "dano": 13.0,
+        "golpe": 0,
+        "golpe_t": 0.0916666666666667,
+        "hit_stop": 0.045
+      },
+      {
+        "passo": 50,
+        "dano": 13.0,
+        "golpe": 1,
+        "golpe_t": 0.0916666666666667,
+        "hit_stop": 0.045
+      },
+      {
+        "passo": 96,
+        "dano": 27.0,
+        "golpe": 2,
+        "golpe_t": 0.15,
+        "hit_stop": 0.07
+      }
+    ],
+    "sha256_colunas_fx_antes_e_depois": "595df043f1decc911a5735fdfed917e240fd4cdd67c3a615e8f364be9c01e9ce",
+    "quadros_corpo_alterados": 0
+  },
+  {
+    "personagem": "Nicão",
+    "hz": 60,
+    "folha": "nicao",
+    "passos_iguais": 180,
+    "sha256_mecanica_antes_e_depois": "b242081c0b786c6af358394a65c684feb5a7d5406b80225548809563bb8fd6d7",
+    "rng_final_igual": 1713903179,
+    "eventos": [
+      {
+        "passo": 17,
+        "dano": 26.0,
+        "golpe": 0,
+        "golpe_t": 0.283333333333333,
+        "hit_stop": 0.075
+      },
+      {
+        "passo": 64,
+        "dano": 42.0,
+        "golpe": 1,
+        "golpe_t": 0.416666666666667,
+        "hit_stop": 0.11
+      },
+      {
+        "passo": 127,
+        "dano": 26.0,
+        "golpe": 0,
+        "golpe_t": 0.283333333333333,
+        "hit_stop": 0.075
+      }
+    ],
+    "sha256_colunas_fx_antes_e_depois": "c66af4d1f5ca96b8e1e167a63e8b968c925b8bdfa0b7626e261b7a5ffa1b8131",
+    "quadros_corpo_alterados": 0
+  },
+  {
+    "personagem": "Nicão",
+    "hz": 120,
+    "folha": "nicao",
+    "passos_iguais": 360,
+    "sha256_mecanica_antes_e_depois": "bd4dbcb51c1a794841e08a678b43187beba9bb49c3b4437e13a4d9091bfef43b",
+    "rng_final_igual": 4288972372,
+    "eventos": [
+      {
+        "passo": 33,
+        "dano": 26.0,
+        "golpe": 0,
+        "golpe_t": 0.275,
+        "hit_stop": 0.075
+      },
+      {
+        "passo": 127,
+        "dano": 40.0,
+        "golpe": 1,
+        "golpe_t": 0.416666666666667,
+        "hit_stop": 0.11
+      },
+      {
+        "passo": 251,
+        "dano": 26.0,
+        "golpe": 0,
+        "golpe_t": 0.275,
+        "hit_stop": 0.075
+      }
+    ],
+    "sha256_colunas_fx_antes_e_depois": "9ab2baf6af61c3cce7ecb3f12b3a37af400190e1b319ec38b42f2957a1c50de8",
+    "quadros_corpo_alterados": 0
+  },
+  {
+    "personagem": "Lucas",
+    "hz": 60,
+    "eventos_envelope": [
+      {
+        "passo": 5,
+        "dano": 7.0,
+        "golpe": 0,
+        "hit_stop": 0.0
+      },
+      {
+        "passo": 6,
+        "dano": 6.0,
+        "golpe": 0,
+        "hit_stop": 0.0
+      },
+      {
+        "passo": 19,
+        "dano": 7.0,
+        "golpe": 1,
+        "hit_stop": 0.0
+      },
+      {
+        "passo": 20,
+        "dano": 7.0,
+        "golpe": 1,
+        "hit_stop": 0.0
+      },
+      {
+        "passo": 37,
+        "dano": 17.0,
+        "golpe": 2,
+        "hit_stop": 0.0
+      }
+    ],
+    "eventos_hit_stop": [
+      {
+        "passo": 5,
+        "dano": 7.0,
+        "golpe": 0,
+        "hit_stop": 0.014
+      },
+      {
+        "passo": 7,
+        "dano": 6.0,
+        "golpe": 0,
+        "hit_stop": -0.00266666666666667
+      },
+      {
+        "passo": 20,
+        "dano": 7.0,
+        "golpe": 1,
+        "hit_stop": 0.014
+      },
+      {
+        "passo": 22,
+        "dano": 7.0,
+        "golpe": 1,
+        "hit_stop": -0.00266666666666667
+      },
+      {
+        "passo": 39,
+        "dano": 17.0,
+        "golpe": 2,
+        "hit_stop": 0.014
+      }
+    ],
+    "rng_final_igual": 3285516072,
+    "dano_folego_posicao_final_iguais": true,
+    "mecanica_por_passo_igual": false
+  },
+  {
+    "personagem": "Lucas",
+    "hz": 120,
+    "eventos_envelope": [
+      {
+        "passo": 11,
+        "dano": 7.0,
+        "golpe": 0,
+        "hit_stop": 0.0
+      },
+      {
+        "passo": 12,
+        "dano": 6.0,
+        "golpe": 0,
+        "hit_stop": 0.0
+      },
+      {
+        "passo": 37,
+        "dano": 7.0,
+        "golpe": 1,
+        "hit_stop": 0.0
+      },
+      {
+        "passo": 38,
+        "dano": 7.0,
+        "golpe": 1,
+        "hit_stop": 0.0
+      },
+      {
+        "passo": 69,
+        "dano": 17.0,
+        "golpe": 2,
+        "hit_stop": 0.0
+      }
+    ],
+    "eventos_hit_stop": [
+      {
+        "passo": 11,
+        "dano": 7.0,
+        "golpe": 0,
+        "hit_stop": 0.014
+      },
+      {
+        "passo": 14,
+        "dano": 6.0,
+        "golpe": 0,
+        "hit_stop": -0.00266666666666667
+      },
+      {
+        "passo": 39,
+        "dano": 7.0,
+        "golpe": 1,
+        "hit_stop": 0.014
+      },
+      {
+        "passo": 42,
+        "dano": 7.0,
+        "golpe": 1,
+        "hit_stop": -0.00266666666666667
+      },
+      {
+        "passo": 73,
+        "dano": 17.0,
+        "golpe": 2,
+        "hit_stop": 0.014
+      }
+    ],
+    "rng_final_igual": 3285516072,
+    "dano_folego_posicao_final_iguais": true,
+    "mecanica_por_passo_igual": false
+  }
+]

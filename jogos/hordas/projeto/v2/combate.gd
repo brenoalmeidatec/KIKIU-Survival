@@ -25,6 +25,7 @@ const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
 const Ruptura := preload("res://v2/ruptura.gd")
 const Escudo := preload("res://v2/escudo.gd")
+const Ritmo := preload("res://v2/ritmo.gd")
 const Especial := preload("res://v2/especial.gd")
 const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
@@ -59,6 +60,7 @@ var chefes
 var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
 var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a ruptura continua em v2/ruptura.gd)
+var ritmo
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Lucas (pool, v2/adagas.gd)
 var heroi_id := "hazaki"  # o herói da partida (v2/herois.gd)
@@ -105,6 +107,9 @@ var criticos := 0
 var mortes := 0
 var hit_stops := 0
 var ultimo_hit_stop := 0.0
+var _ciclo_adagas_chave: Array = []  # uma única entrada; nunca guarda histórico de builds/consultas
+var _ciclo_adagas_valor := 0.0
+var _ciclo_adagas_calculos := 0  # diagnóstico para provar reutilização/invalidação do modelo
 var _plim_t := 0.0
 var _plim_n := 0
 var _fila: Array = []  # monstros que morreram no quadro por golpe secundário ou fogo (saem em processar_mortes)
@@ -169,6 +174,8 @@ func montar(m) -> void:
 	baus.montar(self)
 	chefes = Chefes.new()
 	chefes.montar(self)
+	ritmo = Ritmo.new()
+	ritmo.montar(self)
 
 
 ## Liga o herói às regras dos dados (vida, fôlego, curva de XP). Chamado quando o herói nasce e quando a partida recomeça.
@@ -281,6 +288,7 @@ func atualizar(dt: float) -> void:
 		ruptura.atualizar(dt)
 		especial.atualizar(dt)
 		baus.atualizar(dt)
+		ritmo.atualizar(dt)
 		mundo._perfil("c_diretor", t0 - d0)
 		mundo._perfil("c_armas", t1 - t0)
 		mundo._perfil("c_elites_chefes", t2 - t1)
@@ -458,10 +466,10 @@ func alcance_efetivo_do_passo(passo: Dictionary) -> float:
 	return alcance_do_passo(passo) + float(passo.get("avanco", 0.0))  # sem avanço no passo (as adagas): 0, como o lunge do heroi.gd
 
 
-## Hit-stop (s) de um acerto do passo: o do crítico se `crit`, senão o do passo. `golpear` e o card de status usam esta.
+## Pedido nominal de hit-stop (s): corpo a corpo usa crítico/passo; adagas têm um pedido por arremesso, sujeito ao cooldown do grupo.
 func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
-	if str(passo.get("tipo", "melee")) == "adagas":  # as adagas não param o tempo no acerto (v2/adagas.gd não chama o hit-stop)
-		return 0.0
+	if str(passo.get("tipo", "melee")) == "adagas":  # primeiro acerto do arremesso, sujeito ao cooldown; crítico não aumenta esta pausa
+		return float(cfg.golpe.get("impacto_adagas", {}).get("hit_stop", 0.0))
 	return float(cfg.golpe.critico.hit_stop) if crit else float(passo.hit_stop)
 
 
@@ -471,6 +479,8 @@ func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
 ## velocidade base, onde só a soma dos passos daria 0,88 s). O hit-stop é o médio (com a chance de crítico) e supõe que todo passo acerta; sem
 ## mortes no meio (cada abate soma `morte.hit_stop`). O teste v2_status mede o ciclo de verdade em vários `dt` e compara.
 func ciclo_do_combo(dt := QUADRO_REF) -> float:
+	if str(cfg.golpe.passos[0].get("tipo", "melee")) == "adagas":
+		return _ciclo_adagas(dt)
 	var pc := clampf(chance_critico(), 0.0, 1.0)
 	var quadros := float(_quadros(float(cfg.golpe.pausa_fim_combo), dt))
 	for i in cfg.golpe.passos.size():
@@ -478,6 +488,62 @@ func ciclo_do_combo(dt := QUADRO_REF) -> float:
 		quadros += 1.0 + float(_quadros(mundo.heroi.duracao_do_passo(i), dt))
 		quadros += lerpf(float(_quadros(hit_stop_do_acerto(p, false), dt)), float(_quadros(hit_stop_do_acerto(p, true), dt)), pc)
 	return quadros * dt
+
+
+## Estimativa para alvo próximo: primeiro acerto no quadro do arremesso. A distância pode
+## atrasar/mudar a elegibilidade. O cooldown usa tempo simulado, sem contar os quadros congelados.
+## Aquece oito ciclos e mede 32, pois em ataque rápido a elegibilidade pode atravessar o combo.
+func _ciclo_adagas(dt: float) -> float:
+	var impacto: Dictionary = cfg.golpe.get("impacto_adagas", {})
+	var chave: Array = [dt, float(cfg.golpe.pausa_fim_combo), float(impacto.get("hit_stop", 0.0)), float(impacto.get("recarga", 0.0))]
+	for i in cfg.golpe.passos.size():
+		chave.append(mundo.heroi.duracao_do_passo(i))
+		chave.append(float(cfg.golpe.passos[i].acerto_em))
+	if chave == _ciclo_adagas_chave:
+		return _ciclo_adagas_valor
+	_ciclo_adagas_calculos += 1
+	var recarga := float(impacto.get("recarga", 0.0))
+	var cooldown := 0
+	while recarga > 0.0:  # mesma subtração usada pelo cooldown real, inclusive o arredondamento float
+		recarga = maxf(0.0, recarga - dt)
+		cooldown += 1
+	var pausa := _quadros(float(impacto.get("hit_stop", 0.0)), dt)
+	var sim := 0
+	var ultimo := -1000000
+	var total := 0
+	var passos := PackedInt32Array()
+	var acertos_nominais := PackedInt32Array()
+	for i in cfg.golpe.passos.size():
+		var dur: float = mundo.heroi.duracao_do_passo(i)
+		passos.append(1 + _quadros_golpe_adagas(dur, 1.0, dt))
+		acertos_nominais.append(1 + _quadros_golpe_adagas(dur, float(cfg.golpe.passos[i].acerto_em), dt))
+	for ciclo in 40:
+		var real_ciclo := _quadros(float(cfg.golpe.pausa_fim_combo), dt)
+		for i in cfg.golpe.passos.size():
+			var acerto := sim + acertos_nominais[i]
+			if acerto - ultimo >= cooldown:
+				real_ciclo += pausa
+				ultimo = acerto
+			var passo := passos[i]
+			sim += passo
+			real_ciclo += passo
+		sim += _quadros(float(cfg.golpe.pausa_fim_combo), dt)
+		if ciclo >= 8:
+			total += real_ciclo
+	_ciclo_adagas_chave = chave
+	_ciclo_adagas_valor = float(total) * dt / 32.0
+	return _ciclo_adagas_valor
+
+
+## heroi._golpe soma dt e compara a fase; divisão/ceil com epsilon perde um quadro em
+## durações como 0,2 s a 60/120 Hz. Repete só esse relógio, sem simular combate ou consumir RNG.
+static func _quadros_golpe_adagas(dur: float, fase: float, dt: float) -> int:
+	var t := 0.0
+	var n := 0
+	while t / dur < fase:
+		t += dt
+		n += 1
+	return n
 
 
 ## Quantos quadros de `dt` o jogo gasta para vencer `s` segundos (um quadro inteiro por vez, para cima).
@@ -622,6 +688,7 @@ func matar(m) -> void:
 		orbes.soltar(m.pos, m.xp * mult)
 	if float(armas.mods.folego) > 0.0:  # modificador da katana: matar recupera fôlego
 		mundo.heroi.ganhar_folego_abate(float(armas.mods.folego) / 100.0)
+	ritmo.abate(m.pos)
 	especial.abate(m)  # cada abate dá carga de bônus à ultimate (Q)
 	if m.elite:
 		elites.ao_morrer(m)
@@ -678,7 +745,8 @@ func coletar(valor: float, _de: Vector2) -> void:
 	var h = mundo.heroi
 	mundo.xp_coletado += valor
 	fx.particula(h.pos + Vector2(randf_range(-4, 4), -18), Vector2(randf_range(-10, 10), -30), 0.28, 9.0, Color(0.5, 0.95, 1.0, 0.7), -10.0, true)
-	progresso.ganhar_xp(valor)
+	# O orbe guarda base + combo para as almas; dificuldade aumenta XP e almas independentemente (Meta credita as almas no fim).
+	progresso.ganhar_xp(valor * preload("res://v2/dificuldade.gd").fator(mundo, "xp_mult"))
 
 
 # ------------------------------------------------------------------ herói
@@ -749,6 +817,7 @@ func heroi_morreu() -> void:
 	hit_stop(0.18)
 	jogo = "morrendo"
 	especial.fim_de_partida()
+	ritmo.encerrar()
 	habilidade.fim_de_partida()
 	camera_lenta("morte", maxf(1.3, h.duracao_morte() + 0.25), 0.25)  # a queda do herói e o dissolve cabem antes da tela de resultado
 
@@ -818,6 +887,7 @@ func vitoria() -> void:
 		return
 	jogo = "vencendo"
 	especial.fim_de_partida()
+	ritmo.encerrar()
 	habilidade.fim_de_partida()
 	var a: Dictionary = cartas.cfg.anuncios.vitoria
 	anunciar(str(a.texto), _cor(a.cor), "", 3.0)
@@ -843,6 +913,7 @@ func fim_de_partida(ganhou: bool) -> void:
 		"almas": mundo.almas_partida,
 		"mapa": str(mundo.id_mapa),
 		"nivel_mapa": diretor.nivel,
+		"dificuldade": str(preload("res://v2/dificuldade.gd").da_partida(mundo).id),
 		"niveis_mapa": diretor.niveis_total
 	}
 	if ganhou:
@@ -879,6 +950,7 @@ func limpar_partida() -> void:
 		mundo.devolver_monstro(m)
 	_fila.clear()
 	orbes.limpar()
+	ritmo.limpar()
 	armas.limpar()
 	adagas.limpar()
 	avisos.limpar()
@@ -920,7 +992,7 @@ func limpar_partida() -> void:
 func liberar() -> void:
 	if chefes != null:
 		chefes.liberar()  # o visual do chefe aponta de volta para ele e tem nós órfãos
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, especial, habilidade, elites, baus, chefes]:
+	for m in [ritmo, orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, especial, habilidade, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -937,6 +1009,7 @@ func liberar() -> void:
 	avisos = null
 	ruptura = null
 	escudo = null
+	ritmo = null
 	especial = null
 	habilidade = null
 	elites = null
