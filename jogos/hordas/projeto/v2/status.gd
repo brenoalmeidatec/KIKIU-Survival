@@ -1486,16 +1486,14 @@ func paginas_golpes() -> Dictionary:
 	return {"pagina": _pag + 1, "paginas": _npag_golpes}
 
 
-## O nível de um golpe ou modificador na página visual, em texto curto: "nv 2", "MÁX" no último nível e "EVO" na peça evoluída
-## (antes eram 5 quadradinhos de 5 px colados no número, que pareciam uma barra de outra coisa).
-static func _nivel_visual(l: Dictionary) -> String:
+## Largura dos pips de um golpe ou modificador na página visual: um quadrado de 5 px a cada 8 (o último sem o espaço); evoluído, o ícone de 16 px.
+func _largura_pips(l: Dictionary) -> float:
 	var nc := str(l.nivel_curto)
 	if nc == "evo":
-		return "EVO"
+		return 16.0
 	var p := nc.split("/")
-	if p.size() > 1 and int(p[0]) >= int(p[1]):
-		return "MÁX"
-	return "nv %s" % p[0]
+	var total := int(p[1]) if p.size() > 1 else int(p[0])
+	return maxf(0.0, total * 8.0 - 3.0)
 
 
 ## O número da linha: o dano por segundo, sem o til (a legenda "dano/s" do título da seção já diz que é estimativa).
@@ -1506,16 +1504,13 @@ static func _numero_visual(l: Dictionary) -> Array:
 	return r
 
 
-## Largura da coluna do nível (fixa, para os números e os níveis ficarem alinhados de uma linha para a outra).
-const LARG_NIVEL := 34.0
-
-
-## O que sobra para o nome da linha: depois do ícone (22 px), a coluna do nível, 8 px de vão e o número à direita.
+## O que sobra para o nome da linha: depois do ícone (22 px), os pips do tamanho deles (`_largura_pips`), 3 px de vão e o número
+## à direita, com 4 px entre os pips e o número.
 func _largura_nome(l: Dictionary, w: float) -> float:
-	return w - 22.0 - LARG_NIVEL - 8.0 - _larg_trechos(_numero_visual(l))
+	return w - 22.0 - _largura_pips(l) - 7.0 - _larg_trechos(_numero_visual(l))
 
 
-## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em texto e o dano por segundo à direita.
+## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em pips (estrela dourada se evoluído) e o dano por segundo.
 func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 	var cor: Color = l.cor
 	var num := _numero_visual(l)
@@ -1526,10 +1521,14 @@ func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 	_texto(
 		Dados.fonte_texto, _cabe(str(l.nome_curto), nome_w), Vector2(x + 22.0, y + 2.0), nome_w, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor.lerp(Paleta.BRANCO, 0.35)
 	)
-	var nv := _nivel_visual(l)
-	var cor_nv := COR_TITULO if nv == "EVO" or nv == "MÁX" else COR_APAGADO
-	var nv_w := Dados.fonte_texto.get_string_size(nv, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM).x
-	_texto(Dados.fonte_texto, nv, Vector2(x + w - num_w - 8.0 - nv_w, y + 2.0), -1, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor_nv)
+	var pipx := x + w - num_w - 4.0 - _largura_pips(l)
+	var nc := str(l.nivel_curto)
+	if nc == "evo":
+		_icone8("critico", Vector2(pipx, y + 1.0), COR_TITULO)
+	else:
+		var p := nc.split("/")
+		var niv := int(p[0])
+		_pips(Vector2(pipx, y + 5.0), niv, int(p[1]) if p.size() > 1 else niv, cor, 5.0)
 	_desenhar_trechos_em(num, x + w - num_w, y + 2.0)
 
 
