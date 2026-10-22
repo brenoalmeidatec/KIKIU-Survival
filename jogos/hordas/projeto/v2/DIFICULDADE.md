@@ -17,6 +17,13 @@ sem alterar a preferência persistida.
 | `chefe_tempo_mult` | Duração dos níveis do mapa antes dos chefes |
 | `golpe_custo`, `golpe_calor` | Fôlego por golpe e espera após zerá-lo |
 
+O golpe gasta fôlego mas **não adia a recuperação** (correr, esquivar e escudo
+adiam). Com golpes a cada ~0,35 s, o atraso de 0,6 s nunca vencia e a barra só
+descia: segurando o ataque, zerava em ~4,7 s no Médio e ~3,3 s no Difícil
+(relato do Alisson, 22/10). Agora a regeneração andando (0,5/s) desconta o gasto:
+o mesmo ataque segurado dura ~22 s no Médio e ~8 s no Difícil, e parado quase
+se sustenta. O robô grava `golpe_bloq_s` e `cansado_s` no JSON do playtest.
+
 XP e almas têm bases independentes: os orbes carregam o XP-base com o bônus de
 combo. `xp_coletado` guarda essa base para a moeda e o mercador; somente o XP
 entregue à progressão recebe `xp_mult`. O crédito final aplica `almas_mult` uma

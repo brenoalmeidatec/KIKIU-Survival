@@ -664,10 +664,12 @@ func pode_esquivar() -> bool:
 	return not cansado and folego >= float(mundo.combate.cfg.esquiva.gasto)
 
 
-## Gasta fôlego; zerar deixa cansado. Gastar adia a recuperação.
-func _gastar(x: float) -> void:
+## Gasta fôlego; zerar deixa cansado. Gastar adia a recuperação, menos no ataque principal (adia = false): com golpes a cada ~0,35 s
+## o atraso de 0,6 s nunca vencia e o fôlego não voltava enquanto se lutava, então zerava em 3 a 5 s no Médio e no Difícil.
+func _gastar(x: float, adia := true) -> void:
 	folego = maxf(0.0, folego - x)
-	_atraso_t = float(mundo.combate.cfg.folego.atraso)
+	if adia:
+		_atraso_t = float(mundo.combate.cfg.folego.atraso)
 	if folego <= 0.001 and not cansado:
 		cansado = true
 		correndo = false
@@ -713,7 +715,7 @@ func _iniciar_golpe() -> bool:
 		if folego <= 0.0:
 			golpe_calor_t = float(dif.golpe_calor)
 			return false
-		_gastar(custo)
+		_gastar(custo, false)
 		if folego <= 0.0:
 			golpe_calor_t = float(dif.golpe_calor)
 	var passos: Array = mundo.combate.cfg.golpe.passos
