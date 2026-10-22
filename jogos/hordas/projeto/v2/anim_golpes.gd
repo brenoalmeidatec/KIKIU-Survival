@@ -11,6 +11,9 @@ const GRUPOS := ["projeteis", "meteoros", "aneis", "nuvens", "evo_projeteis", "e
 
 static var _armas := {}
 static var _lidas := false
+## Quadros intermediários (#golpes-suaves): `desenhar_suave` funde o quadro atual com o próximo pela fração do tempo, e a folha de 6 a
+## 12 quadros parece ter o dobro. Custa uma chamada de desenho a mais por golpe; a partida desliga com partículas em "nenhuma"/"poucas".
+static var suave := true
 
 
 static func carregar() -> void:
@@ -79,3 +82,41 @@ static func desenhar(ci: CanvasItem, f: Dictionary, i: int, pos: Vector2, ang :=
 	ci.draw_set_transform(pos.round(), ang, escala)
 	ci.draw_texture_rect_region(f.tex, Rect2(-(f.ancora as Vector2), q), Rect2(Vector2(q.x * float(i), 0.0), q), cor)
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## O quadro depois de `t` segundos, com a fração (3.4 = 40% do caminho entre o quadro 3 e o 4). Sem loop trava no último.
+static func quadro_em_f(f: Dictionary, t: float) -> float:
+	var x := maxf(t, 0.0) * float(f.fps)
+	var n := float(f.n)
+	if bool(f.loop):
+		return fmod(x, n)
+	return minf(x, n - 1.0)
+
+
+## O quadro pelo progresso `k` (0 a 1), com a fração: o último quadro chega junto com o fim da fase.
+static func quadro_frac_f(f: Dictionary, k: float) -> float:
+	return clampf(k, 0.0, 1.0) * (float(f.n) - 1.0)
+
+
+## Desenha o quadro fracionário `qf` fundindo o quadro de baixo com o próximo (o "meio-quadro" que a folha não tem). Na camada aditiva
+## (`aditivo`) os pesos somam 1 e o brilho não pisca; na normal o de baixo some mais devagar (1 - u²) para o corpo não ficar ralo no meio.
+## Sem `suave`, ou com a fração quase inteira, é o `desenhar` de sempre.
+static func desenhar_suave(
+	ci: CanvasItem, f: Dictionary, qf: float, pos: Vector2, ang := 0.0, escala := Vector2.ONE, cor := Color.WHITE, aditivo := false
+) -> void:
+	var n := int(f.n)
+	var i := clampi(int(floorf(qf)), 0, n - 1)
+	var u := qf - float(i)
+	var j := (i + 1) % n if bool(f.loop) else mini(i + 1, n - 1)
+	if not suave or u < 0.06 or j == i:
+		desenhar(ci, f, i, pos, ang, escala, cor)
+		return
+	if u > 0.94:
+		desenhar(ci, f, j, pos, ang, escala, cor)
+		return
+	var c0 := cor
+	var c1 := cor
+	c0.a *= (1.0 - u) if aditivo else (1.0 - u * u)
+	c1.a *= u
+	desenhar(ci, f, i, pos, ang, escala, c0)
+	desenhar(ci, f, j, pos, ang, escala, c1)
