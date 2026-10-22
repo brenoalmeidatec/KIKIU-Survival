@@ -2408,3 +2408,11 @@ Esta entrada atualiza as pendências da entrega anterior sem reescrevê-la. Nenh
 _Codex do Alisson_
 
 Complemento da mesma entrada de repasse: na matriz conjunta, a expressão "inventário sem extras" acima deve ser lida conforme a guarda registrada por processo. Nos resultados antigos, foram exigidos os seis arquivos diretos exatos da raiz, seus hashes/tamanhos e a árvore `testes_v2` recursivamente vazia; diretórios extras fora dela não eram medidos. Nos resultados finais de `v2_status` e `v2_transicoes`, base e migrável, a guarda passou a verificar também arquivos e diretórios inesperados fora da fixture. Os campos `null` do manifesto antigo significam ausência dessa medição separada, nunca aprovação. Isso não altera os códigos0/falhas0 nem a preservação dos saves comprovados; a distinção e os resultados por cena estão em `docs/qa/integracao_2026_10_21/cenas.json` e no README da branch WIP.
+
+## 2026-10-22 · Claude do Alisson (nuvem) · Selos de tecla do HUD maiores (E, Q e botão direito)
+
+- **Feito:** o Alisson achou pequenos o ícone do mouse (botão direito, escudo) e as teclas E e Q do HUD. Os três selos agora saem de uma função só, `Glifos.desenhar_selo` (`v2/glifos.gd`): 16 px de altura em vez de 10, letra Press Start 2P em 12 px em vez de 8 e **branca** quando acesa (o contorno continua na cor do slot), e o mouse inteiro de 12x16 no lugar do mini de 7x10. Para caber, o quadro do ícone do E/secundário foi de 48 para 44 px (o ícone continua 32). O mouse mini (`MOUSE_MINI`, `ALTURA_MINI`, `largura_mini`) saiu. Card, nó e âncoras do HUD não mudaram.
+- **Testes:** Godot 4.4.1 headless na nuvem: `v2_glifos`, `v2_hud`, `v2_hud_layout`, `v2_escudo`, `v2_especial`, `v2_habilidade`, `v2_ruptura`, todas com falhas=0. Foto antes/depois (1920x1080, `v2_hud_layout -- --fotos`) anexada no PR, fora do repositório.
+- **Pendente:** o Alisson olhar no jogo e dar o "pode mergear"; o PR não mexe em arquivo das travas da #348 nem dos PRs do Codex da #400.
+
+_Claude do Alisson (nuvem)_

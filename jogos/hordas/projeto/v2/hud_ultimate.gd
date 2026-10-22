@@ -84,15 +84,8 @@ func _draw() -> void:
 		draw_string(fonte, c + Vector2(-DIAMETRO * 0.5, 4.0), "EM BREVE", HORIZONTAL_ALIGNMENT_CENTER, DIAMETRO, TAM_VAZIO, Paleta.HABILIDADE_DESATIVADA)
 	elif not pronta:
 		_texto_contornado(fonte, c, _slots._rotulo_q(), cor_heroi.lerp(Paleta.BRANCO, 0.35))
-	# a tecla por cima da borda de baixo do círculo
-	var nome_tecla := Glifos.texto("ultimate")
-	var larg := maxf(16.0, 8.0 * float(nome_tecla.length()) + 8.0)
-	var selo := Rect2(Vector2(c.x - larg * 0.5, DIAMETRO - 10.0), Vector2(larg, 10.0))
-	var aceso := tem and (pronta or f >= 1.0)
-	draw_rect(selo, Color(Paleta.PAINEL, 0.98))
-	var cor_selo: Color = cor if aceso else Paleta.HABILIDADE_DESATIVADA
-	_moldura(selo, cor_selo)
-	draw_string(fonte, selo.position + Vector2(0.0, 9.0), nome_tecla, HORIZONTAL_ALIGNMENT_CENTER, larg, Paleta.NUMERO_PEQUENO, cor_selo)
+	# a tecla por cima da borda de baixo do círculo (o mesmo selo do E e do secundário, v2/glifos.gd)
+	Glifos.desenhar_selo(self, "ultimate", c.x, DIAMETRO - Glifos.ALTURA_SELO, cor, tem and (pronta or f >= 1.0), Paleta.HABILIDADE_DESATIVADA)
 
 
 ## O ícone do Q do herói da partida (assets/v2/especial_q/<chave>.png), com o genérico de reserva. Guardado numa variável: o `load` solto devolve outra
@@ -112,10 +105,3 @@ func _texto_contornado(fonte: Font, c: Vector2, texto: String, cor: Color) -> vo
 	var pos := Vector2(c.x - tam.x * 0.5, c.y + fonte.get_ascent(TAM_PORCENTO) * 0.5 - 1.0)
 	draw_string_outline(fonte, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_PORCENTO, 4, Color(0.0, 0.0, 0.0, 0.9))
 	draw_string(fonte, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_PORCENTO, cor)
-
-
-func _moldura(r: Rect2, cor: Color) -> void:
-	draw_rect(Rect2(r.position.x, r.position.y, r.size.x, 1.0), cor)
-	draw_rect(Rect2(r.position.x, r.end.y - 1.0, r.size.x, 1.0), cor)
-	draw_rect(Rect2(r.position.x, r.position.y + 1.0, 1.0, r.size.y - 2.0), cor)
-	draw_rect(Rect2(r.end.x - 1.0, r.position.y + 1.0, 1.0, r.size.y - 2.0), cor)

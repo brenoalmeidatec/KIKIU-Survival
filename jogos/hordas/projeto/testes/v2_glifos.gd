@@ -113,13 +113,13 @@ func _mouse_e_teclas() -> void:
 		var dd := Glifos.descritor(t[1])
 		ok(dd[0][0] == Glifos.TECLA and dd[0][1] == t[0], "teclado: %s é a teclinha '%s' (%s)" % [t[1], t[0], str(dd)])
 	# os pixels: cada botão aceso só pinta a sua metade, e o resto do mouse é igual
-	for altura in [Glifos.ALTURA, Glifos.ALTURA_MINI]:
-		var ref := Glifos.pixels_mouse("", altura)
+	for altura in [Glifos.ALTURA]:
+		var ref := Glifos.pixels_mouse("")
 		ok(ref.size() > 40, "o mouse de %s px tem pixels (%d)" % [altura, ref.size()])
 		var acesos := {}
 		for q in ["e", "d", "m", ""]:
 			var cel := []
-			for px in Glifos.pixels_mouse(q, altura):
+			for px in Glifos.pixels_mouse(q):
 				if px[1] == "A":
 					cel.append(px[0])
 			acesos[q] = cel
@@ -135,11 +135,11 @@ func _mouse_e_teclas() -> void:
 		ok(acesos["m"].all(func(c): return absf(float(c.x) + 0.5 - meio) <= 1.5), "a roda fica no meio (altura %s)" % altura)
 		ok(acesos["e"].size() == acesos["d"].size(), "os dois botões têm o mesmo tamanho (altura %s)" % altura)
 		for q in ["e", "d", "m"]:
-			ok(Glifos.pixels_mouse(q, altura).size() == ref.size(), "o botão aceso não muda a silhueta (altura %s)" % altura)
-	ok(Glifos.largura_mini(sec[0]) == 7.0, "o mouse mini tem 7 px de largura (mais alto que largo: 10 px)")
-	ok(Glifos.MOUSE_MINI.size() > Glifos.MOUSE_MINI[0].length(), "o mouse mini é mais alto que largo")
-	var cupula: String = Glifos.MOUSE_MINI[0]
-	ok(cupula.strip_edges().length() < Glifos.MOUSE_MINI[4].strip_edges().length(), "o mini tem cúpula: a linha de cima é mais estreita que a da costura")
+			ok(Glifos.pixels_mouse(q).size() == ref.size(), "o botão aceso não muda a silhueta (altura %s)" % altura)
+	# o selo do HUD (E, Q e secundário) usa o mouse inteiro e a teclinha na altura dos glifos, com a letra maior que a das dicas
+	ok(Glifos.largura_selo("secundario") == 12.0, "o selo do secundário é o mouse inteiro, 12 px (%s)" % Glifos.largura_selo("secundario"))
+	ok(Glifos.ALTURA_SELO == Glifos.ALTURA and Glifos.TAM_SELO > 8, "o selo do HUD tem 16 px de altura e a letra maior que 8")
+	ok(Glifos.largura_selo("habilidade") >= Glifos.ALTURA_SELO, "o selo do E é pelo menos quadrado (%s)" % Glifos.largura_selo("habilidade"))
 	ok(Glifos.texto("secundario") == "Mouse D", "o texto do mouse (para quem só lê texto) segue 'Mouse D'")
 	Glifos.definir(Glifos.Disp.XBOX)
 	ok(Glifos.descritor("secundario")[0] == [Glifos.TECLA, "LT"], "Xbox: o secundário continua o gatilho LT")
@@ -190,12 +190,10 @@ class Folha:
 				if x > size.x - 40.0:
 					break
 		Glifos.definir(Glifos.Disp.TECLADO)
-		# o mini (selo do HUD) em cada botão aceso, ao lado
+		# o mouse em cada botão aceso, ao lado
 		var xm := 58.0
 		for q in ["e", "d", "m", ""]:
-			xm += Glifos.desenhar_mouse(self, q, Vector2(xm, 96), Glifos.ALTURA_MINI) + 6.0
-		for q in ["e", "d", "m", ""]:
-			xm += Glifos.desenhar_mouse(self, q, Vector2(xm, 92), Glifos.ALTURA) + 6.0
+			xm += Glifos.desenhar_mouse(self, q, Vector2(xm, 92)) + 6.0
 
 
 func _fotos(pasta: String) -> void:
