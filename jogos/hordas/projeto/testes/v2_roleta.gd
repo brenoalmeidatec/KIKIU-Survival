@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste da ROLETA das cartas de nível e do BAÚ melhor da v2 (#376; dados/v2_cartas.json: escolha.roleta_s = 1,2 s, bau.bonus_raridade, bau.piso_raridade).
 # Roleta: ao abrir a escolha de nível as cartas descem em rolos e param uma a uma (esquerda -> direita) em no máximo 1,2 s de tempo real; depois de 0,3 s
 # só o Enter, o A do controle e o clique SOBRE as cartas pulam para o fim (Espaço, E e o clique fora são esquiva, habilidade e ataque e não pulam); nada escolhe
