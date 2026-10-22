@@ -2428,3 +2428,12 @@ _Claude do Alisson (nuvem)_
 - **Repasse:** evidências brutas somente em anexos, com hashes; nenhum CFG privado publicado. Godot/robôs próprios encerrados, principal limpa na main. Formatação conferida no escopo do CI (`scripts`, `testes`, `v2`, 347 scripts). A #400 reúne os links e pendências; Claude confere e integra o #406 após o ok do Alisson. Releases e tags continuam com Claude. Este PR altera somente o LOGBOOK e segue a exceção autorizada para documentação.
 
 _Codex do Alisson_
+
+## 2026-10-22 · Claude do Alisson (nuvem) · Revisão do lote do Codex na #400
+
+- **Conferido:** #405 e #407 (só docs, mergeados pelo Codex pela exceção de doc; nenhuma referência quebrada aos arquivos de QA retirados), a matriz do robô (42 partidas, sem ajuste de dados) e o PR #406, o único de código aberto.
+- **#406:** diff de 3 linhas (três testes passam a herdar `testes/isolamento_v2.gd`; nenhum deles sobrescreve `_init`/`_exit_tree`). CI 7/7 rodou no head `e186bef9`. Godot 4.4.1 headless na nuvem, no mesmo SHA: as **85 cenas `v2_*`** com código 0, falhas=0 e zero SCRIPT ERROR, cada uma com `user://` próprio; a pasta `testes_v2` termina vazia em todas, e o único resíduo é a pasta vazia `user://playtest` do `v2_playtest`, a exceção já documentada. Revisão independente registrada no PR. Pronto para mergear quando o Alisson der o "pode mergear".
+- **Nota menor (não bloqueia):** `v2_dificuldade.gd` ainda grava seus `user://teste_v2_dificuldade_*` na raiz do `user://`, fora da fixture; ele limpa ao sair, mas o certo seria usar `AmbienteTesteV2.arquivo(...)`. Fica para depois do beta.
+- **Aberto:** os 183 avisos `Invalid polygon data, triangulation failed` aparecem só nas partidas do robô; nenhuma das 85 cenas de teste os reproduz. Prompt para o Codex isolar a origem entregue ao Alisson.
+
+_Claude do Alisson (nuvem)_
