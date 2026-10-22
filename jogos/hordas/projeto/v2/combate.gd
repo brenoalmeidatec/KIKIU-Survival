@@ -10,6 +10,7 @@ extends RefCounted
 ## (v2/ruptura.gd) é um módulo daqui (`ruptura`): o contragolpe dela entra em golpe_comecou e golpear.
 
 const Efeitos := preload("res://v2/efeitos.gd")
+const Anim := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (tremor mínimo e soco de zoom no acerto da katana)
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
 const Meta := preload("res://v2/meta.gd")
@@ -647,6 +648,10 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		hit_stop(parada)
 		if tremor > 0.0:
 			mundo.cam.tremer(tremor, 0.17)
+		elif Anim.suave:  # o corte leve também pesa um pouco: 1 px
+			mundo.cam.tremer(1.0, 0.08)
+		if Anim.suave:  # o soco de zoom do acerto: cresce com o tremor do passo (estocada, crítico, morte)
+			mundo.cam.socar(0.008 + 0.006 * tremor)
 	elif pancada:
 		mundo.cam.tremer(float(passo.tremor) * 0.5, 0.15)  # o chão treme mesmo sem acertar ninguém
 	return n

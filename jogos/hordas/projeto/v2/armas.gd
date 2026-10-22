@@ -722,7 +722,8 @@ func _cair_raio(a: Dictionary, h, alvo) -> void:
 	fx.explosao(alvo.pos, 28.0, COR_RAIO, 0.0)
 	fx.marca_chao(alvo.pos, 16.0, COR_RAIO)
 	combate.audio.tocar("raio", randf_range(0.92, 1.1), -1.0, 0.08)
-	mundo.cam.tremer(1.0, 0.1)
+	mundo.cam.tremer(2.0 if Anim.suave else 1.0, 0.12 if Anim.suave else 0.1)
+	fx.clarao(Color(0.7, 0.85, 1.0, 0.18), 0.12)  # o relâmpago acende a tela
 
 
 ## O estalo do raio no alvo atingido (folha "impacto" do raio, docs/combate_v2): só efeito, o dano já saiu.
@@ -848,7 +849,9 @@ func _explodir_runa(i: int, a: Dictionary, h) -> void:
 	fx.explosao(p, raio, a.cor)
 	fx.marca_chao(p, raio * 0.7, a.cor)
 	combate.audio.tocar("runa", randf_range(0.9, 1.1), -1.0, 0.05)
-	mundo.cam.tremer(1.5, 0.12)
+	mundo.cam.tremer(2.5 if Anim.suave else 1.5, 0.16 if Anim.suave else 0.12)
+	if Anim.suave:
+		mundo.cam.socar(0.025)
 
 
 ## Dano em área (círculo no chão = elipse na tela) para todos perto de `p`. Devolve quantos acertou.
@@ -880,6 +883,9 @@ func explodir(p: Vector2, dano: float, raio: float, cor: Color, ignorar = null) 
 	novas.fumaca_impacto(p, raio, cor)
 	fx.explosao(p, raio, cor)
 	fx.marca_chao(p, raio * 0.75, cor)
+	if Anim.suave:  # o peso do estouro: tremor e soco de zoom pelo tamanho (as opções de tremor escalam os dois)
+		mundo.cam.tremer(clampf(raio / 30.0, 1.0, 3.0), 0.14)
+		mundo.cam.socar(clampf(raio / 3000.0, 0.01, 0.03))
 	combate.audio.tocar("runa", randf_range(1.1, 1.3), -3.0, 0.05)
 
 

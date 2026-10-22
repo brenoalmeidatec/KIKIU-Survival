@@ -522,6 +522,11 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 		var fa: Dictionary = it.fa
 		if fa.has("impacto"):  # o impacto toca no ponto do acerto (o evento real), não no fim da animação do voo
 			tocar_fx(fa.impacto, p, 2.0 if crit else 1.0)
+		if Anim.suave:  # brilhos no acerto; o crítico estoura com anéis e soca a câmera
+			pai.fx.brilhos(p, 12.0, a.cor, 3)
+			if crit:
+				pai.fx.explosao(p, 24.0, COR_CRIT, 1.0, 0.45)
+				pai.mundo.cam.socar(0.012)
 		if estilhaco:
 			_numero_estilhaco(m, dano, dir, a, it)
 		pai._acertou("projetil")
@@ -595,6 +600,9 @@ func _tique_nuvem(it: Dictionary, dt: float) -> void:
 	if dano_total > 0.0:
 		# O brilho acompanha a vida realmente removida; um tique sem alvo ou sem dano não pulsa.
 		it.pulso = clampf(dano_total / maxf(1.0, _dano(st) * 4.0), 0.0, 1.0)
+		if Anim.suave:  # o tique que dói respinga: brilhos e um fio de vapor dentro da nuvem
+			pai.fx.brilhos(it.p, float(it.r) * 0.8, a.cor, 4)
+			fumaca_impacto(it.p, float(it.r) * 0.5, a.cor, 0.4)
 
 
 ## Puxa os monstros dentro de `raio` até `forca` px na direção de `p` (a tempestade primordial).
@@ -659,10 +667,19 @@ func _anel(a: Dictionary, h) -> void:
 	fumaca_impacto(h.pos, 30.0, a.cor, 0.5)  # o sopro da onda saindo: poeira rasteira na cor dela
 	if prep <= 0.0:
 		pai.fx.explosao(h.pos, float(st.raio), a.cor, 0.0, _dur_onda(st))
+		_empurrao_onda(st)
 	if prep > 0.0:  # PREPARO: o anel junta força no herói (o primeiro quadro da folha pulsa), sem hitbox
 		it.fk = F_PREPARO
 		it.ft = prep
 		it.aux = prep
+
+
+## O tranco da onda saindo do herói: tremor curto e um soco de zoom, maiores nos anéis largos. Só com os golpes suaves ligados.
+func _empurrao_onda(st: Dictionary) -> void:
+	if not Anim.suave:
+		return
+	pai.mundo.cam.tremer(clampf(float(st.raio) / 60.0, 1.0, 2.5), 0.14)
+	pai.mundo.cam.socar(clampf(float(st.raio) / 4000.0, 0.01, 0.03))
 
 
 ## Duração da explosão que acompanha a onda do anel: o anel de energia do shader chega à borda em 40% dela, junto da frente real.
@@ -680,8 +697,12 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 			return
 		it.fk = F_ATIVO
 		pai.fx.explosao(it.p, float(st.raio), a.cor, 0.0, _dur_onda(st))  # a onda sai: os anéis de energia abrem junto dela até a borda
+		_empurrao_onda(st)
 		if Anim.de(str(a.id) + "_queda").has("queda"):  # a peça bateu no chão: a onda nasce aqui, com tremor e poeira
-			pai.mundo.cam.tremer(1.5, 0.1)
+			pai.mundo.cam.tremer(4.0 if Anim.suave else 1.5, 0.25 if Anim.suave else 0.1)
+			if Anim.suave:  # o martelo bate: soco de zoom e clarão
+				pai.mundo.cam.socar(0.045)
+				pai.fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)
 			_poeira(it.p, 6, Color(0.6, 0.62, 0.7), 80.0, 0.4)
 			fumaca_impacto(it.p, 40.0, a.cor)
 			pai.fx.explosao(it.p, 44.0, a.cor)
@@ -734,7 +755,11 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 		tocar_fx(fa.marca, it.p, 1.0, true)
 	if fa.has("queda"):  # o peso da queda: poeira rasteira (pool de partículas, poucas) e um tremor curto nos grandes
 		_poeira(it.p, 5, Color(0.55, 0.5, 0.42), 70.0, 0.45)
-		if float(st.raio) >= 40.0:
+		if Anim.suave:  # o cometa pesa: tremor e soco de zoom pelo tamanho, e o clarão na cor dele
+			pai.mundo.cam.tremer(clampf(float(st.raio) / 22.0, 1.5, 4.0), 0.2)
+			pai.mundo.cam.socar(clampf(float(st.raio) / 2500.0, 0.015, 0.04))
+			pai.fx.clarao(Color(a.cor.r, a.cor.g, a.cor.b, 0.22), 0.16)
+		elif float(st.raio) >= 40.0:
 			pai.mundo.cam.tremer(1.0, 0.08)
 		if Anim.suave:  # a segunda onda, mais larga e lenta, e o clarão branco no centro (só desenho: o dano já saiu acima)
 			pai.fx.onda(it.p, Color(1, 1, 1, 0.55), float(st.raio) * 0.8, 0.4)

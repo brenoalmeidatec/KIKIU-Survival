@@ -262,6 +262,10 @@ var _mc_cor := PackedColorArray()
 var _mc_pts := PackedVector2Array()  # MAX_MARCAS_CHAO * RACHAS * RACHA_PTS, relativos ao centro
 var _mc_i := 0
 var _mc_ativas := false
+# clarão de tela (impacto grande): um retângulo aditivo do tamanho da câmera que some rápido
+var _cl_t := 9.0
+var _cl_dur := 0.15
+var _cl_cor := Color.WHITE
 var _ex_i := 0
 var _rng := RandomNumberGenerator.new()  # sorteio dos enfeites novos: fora do randf() global, de que o jogo e os testes dependem
 
@@ -500,6 +504,8 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	elif Anim.suave and tipo == "estocada":  # o golpe pesado: estoura na ponta e racha o chão
 		var ponta := origem + Vector2.from_angle(ang) * alcance
 		explosao(ponta + Vector2(0, 10), alcance * 0.4, cor, 1.0, 0.5)
+		if mundo != null and mundo.get("cam") != null:
+			mundo.cam.socar(0.03)
 		marca_chao(ponta + Vector2(0, 12), alcance * 0.3, cor)
 	luz_rapida(origem + Vector2.from_angle(ang) * alcance * 0.55, cor, 1.7 if tipo == "estocada" else 1.35, alcance * 2.3, dur * 0.9)
 
@@ -553,6 +559,25 @@ func _corte_eco(origem: Vector2, ang: float, alcance: float, arco_graus: float, 
 	mat.set_shader_parameter("cor", cor)
 	_eco_t[i] = 0.0
 	_eco_dur[i] = dur
+
+
+## Clarão de tela na cor `cor` (o alfa é a força, 0,1 a 0,4), que some em `dur` s. Escala com a opção "Tremor e clarões"; em 0% não
+## acende. Um clarão mais fraco não apaga um mais forte em andamento.
+func clarao(cor: Color, dur := 0.15) -> void:
+	if not Anim.suave:
+		return
+	var f = Config.g("tremor_clarao")
+	if f != null:
+		cor.a *= clampf(float(f) / 100.0, 0.0, 1.0)
+	if cor.a <= 0.0:
+		return
+	var agora := _cl_cor.a * (1.0 - clampf(_cl_t / _cl_dur, 0.0, 1.0))
+	if cor.a < agora:
+		return
+	_cl_cor = cor
+	_cl_dur = maxf(dur, 0.05)
+	_cl_t = 0.0
+	add.queue_redraw()
 
 
 ## Marca de dano no chão em `p`: cratera escura achatada e rachaduras tortas saindo do centro, que ficam MARCA_DUR s e somem; nos
@@ -782,6 +807,7 @@ func limpar() -> void:
 	_eco_t.fill(9.0)
 	_mc_t.fill(99.0)
 	_mc_ativas = false
+	_cl_t = 9.0
 	if chao != null:
 		chao.queue_redraw()
 	for s in _ex:
@@ -855,6 +881,10 @@ func atualizar(dt: float) -> void:
 		if Anim.suave:  # abre rápido e assenta (ease-out), em vez de nascer já do tamanho final
 			var k := clampf(pr / CORTE_CRESCE, 0.0, 1.0)
 			s.scale = Vector2.ONE * _cortes_esc[i] * (0.88 + 0.12 * (1.0 - (1.0 - k) * (1.0 - k)))
+	# clarão
+	if _cl_t < _cl_dur:
+		_cl_t += dt
+		add.queue_redraw()
 	# marcas no chão
 	if _mc_ativas:
 		var alguma := false
@@ -943,6 +973,9 @@ func atualizar(dt: float) -> void:
 
 
 func _desenhar_add() -> void:
+	if _cl_t < _cl_dur and mundo != null and mundo.get("cam") != null:
+		var k := 1.0 - _cl_t / _cl_dur
+		add.draw_rect(mundo.cam.retangulo(16.0), Color(_cl_cor.r, _cl_cor.g, _cl_cor.b, _cl_cor.a * k * k))
 	if _mc_ativas:  # as rachaduras acesas na cor do golpe, apagando
 		for i in MAX_MARCAS_CHAO:
 			var t := _mc_t[i]
