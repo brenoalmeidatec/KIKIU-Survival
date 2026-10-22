@@ -1327,7 +1327,7 @@ func _pips(pos: Vector2, cheios: float, total: int, cor: Color, lado := 8.0) -> 
 			_tela.draw_rect(Rect2(r.position, Vector2(roundf(lado * f), lado)), cor)
 
 
-## Uma linha de atributo: ícone, rótulo e o número grande à direita. Valor que não mudou (`neutro`) sai apagado, para o que mudou saltar.
+## Uma linha de atributo: ícone, rótulo e o número grande à direita. A cor do valor (`cor_valor`) apaga o que não mudou, para o que mudou saltar.
 func _stat(ic: String, cor_ic: Color, rotulo: String, valor: String, x: float, y: float, w: float, cor_valor := COR_VALOR) -> void:
 	_icone8(ic, Vector2(x, y + 1.0), cor_ic)
 	_texto(Dados.fonte_texto, rotulo, Vector2(x + 22.0, y + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
