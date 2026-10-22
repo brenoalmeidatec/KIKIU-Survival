@@ -720,6 +720,7 @@ func _cair_raio(a: Dictionary, h, alvo) -> void:
 	fx.onda(alvo.pos, Color(0.7, 0.85, 1.0, 0.9), 26.0, 0.2)
 	novas.fumaca_impacto(alvo.pos, 22.0, COR_RAIO, 0.6)  # o chão queimado solta um fio de fumaça
 	fx.explosao(alvo.pos, 28.0, COR_RAIO, 0.0)
+	fx.marca_chao(alvo.pos, 16.0, COR_RAIO)
 	combate.audio.tocar("raio", randf_range(0.92, 1.1), -1.0, 0.08)
 	mundo.cam.tremer(1.0, 0.1)
 
@@ -845,6 +846,7 @@ func _explodir_runa(i: int, a: Dictionary, h) -> void:
 	fx.luz_rapida(p + Vector2(0, -6), a.cor, 2.0, raio * 2.6, 0.3)
 	novas.fumaca_impacto(p, raio, a.cor)
 	fx.explosao(p, raio, a.cor)
+	fx.marca_chao(p, raio * 0.7, a.cor)
 	combate.audio.tocar("runa", randf_range(0.9, 1.1), -1.0, 0.05)
 	mundo.cam.tremer(1.5, 0.12)
 
@@ -877,6 +879,7 @@ func explodir(p: Vector2, dano: float, raio: float, cor: Color, ignorar = null) 
 	fx.luz_rapida(p + Vector2(0, -8), cor, 1.8, raio * 3.0, 0.25)
 	novas.fumaca_impacto(p, raio, cor)
 	fx.explosao(p, raio, cor)
+	fx.marca_chao(p, raio * 0.75, cor)
 	combate.audio.tocar("runa", randf_range(1.1, 1.3), -3.0, 0.05)
 
 

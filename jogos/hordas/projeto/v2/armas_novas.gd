@@ -685,6 +685,7 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 			_poeira(it.p, 6, Color(0.6, 0.62, 0.7), 80.0, 0.4)
 			fumaca_impacto(it.p, 40.0, a.cor)
 			pai.fx.explosao(it.p, 44.0, a.cor)
+			pai.fx.marca_chao(it.p, 34.0, a.cor)
 	it.r = float(it.r) + float(st.vel) * dt
 	var c: Vector2 = it.p
 	var r := float(it.r)
@@ -1032,6 +1033,14 @@ func fumaca_impacto(p: Vector2, raio: float, cor: Color, forca := 1.0) -> void:
 			tam * r.randf_range(1.0, 1.4),
 			Color(tinta.r, tinta.g, tinta.b, 0.5)
 		)
+	var claro := cor.lerp(Color(1.0, 0.9, 0.7), 0.4)
+	for i in maxi(2, roundi(float(n) * pai.fx.fator_part)):  # lascas do chão que pulam e quicam, e brasas na cor do golpe que sobem
+		var ang := r.randf() * TAU
+		var v := Vector2(cos(ang), sin(ang) * 0.5) * r.randf_range(0.4, 1.0) * (60.0 + raio * 1.2)
+		var lasca := Color(0.32, 0.27, 0.24) if i % 2 == 0 else Color(0.5, 0.44, 0.38)
+		_parte(PT_LASCA, p, 3.0, v, r.randf_range(90.0, 180.0), r.randf_range(0.6, 0.9), 2.0 + float(i % 2), lasca)
+		var q := p + Vector2(cos(ang), sin(ang) * ACHATA) * raio * 0.6 * sqrt(r.randf())
+		_parte(PT_BRASA, q, r.randf_range(0.0, 4.0), Vector2(r.randf_range(-10.0, 10.0), 0.0), r.randf_range(12.0, 30.0), r.randf_range(0.6, 1.2), 2.0, claro)
 
 
 ## Brasas no chão (e subindo, se `sobe` > 0): pontos quentes que piscam e apagam devagar.

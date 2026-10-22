@@ -143,6 +143,11 @@ void fragment() {
 const MAX_EXPLOSOES := 6  # explosões grandes ao mesmo tempo (a mais velha é reaproveitada)
 const EXPLOSAO_DUR := 0.75
 const MAX_ECOS := 4
+const MAX_MARCAS_CHAO := 10  # marcas de dano no chão (cratera, rachaduras) ao mesmo tempo; a mais velha é reaproveitada
+const RACHAS := 7  # rachaduras por marca
+const RACHA_PTS := 4  # pontos de cada rachadura (polilinha: sem triangular nada)
+const MARCA_DUR := 3.5
+const MARCA_BRASA := 1.2  # quanto tempo as rachaduras ficam acesas na cor do golpe (camada aditiva)
 const ECO_ESCALA := 1.18  # o eco do corte é 18% maior que o rastro (só o desenho; o alcance do golpe é o mesmo)
 
 const SHADER_FLASH := """
@@ -248,10 +253,19 @@ var _eco: Array[Sprite2D] = []
 var _eco_t := PackedFloat32Array()
 var _eco_dur := PackedFloat32Array()
 var _eco_i := 0
+# marcas de dano no chão: um nó no mundo (z -60: acima do piso e dos decalques, abaixo das sombras e dos atores), recebe a luz da cena
+var chao: Node2D
+var _mc_pos := PackedVector2Array()
+var _mc_raio := PackedFloat32Array()
+var _mc_t := PackedFloat32Array()
+var _mc_cor := PackedColorArray()
+var _mc_pts := PackedVector2Array()  # MAX_MARCAS_CHAO * RACHAS * RACHA_PTS, relativos ao centro
+var _mc_i := 0
+var _mc_ativas := false
 var _ex_i := 0
 var _rng := RandomNumberGenerator.new()  # sorteio dos enfeites novos: fora do randf() global, de que o jogo e os testes dependem
 
-var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0, "explosoes": 0}  # contadores para os testes
+var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0, "explosoes": 0, "chao": 0}  # contadores para os testes
 
 
 func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
@@ -296,6 +310,7 @@ func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
 	_montar_flashes()
 	_montar_folhas()
 	_montar_explosoes()
+	_montar_chao(m)
 
 
 func _montar_cortes() -> void:
@@ -340,6 +355,22 @@ func _montar_folhas() -> void:
 	_fo_cristal.resize(MAX_FOLHAS)
 	_fo_t.fill(9.0)
 	_fo_dur.fill(1.0)
+
+
+func _montar_chao(m) -> void:
+	_mc_pos.resize(MAX_MARCAS_CHAO)
+	_mc_raio.resize(MAX_MARCAS_CHAO)
+	_mc_t.resize(MAX_MARCAS_CHAO)
+	_mc_t.fill(99.0)
+	_mc_cor.resize(MAX_MARCAS_CHAO)
+	_mc_pts.resize(MAX_MARCAS_CHAO * RACHAS * RACHA_PTS)
+	var no = m.get("no_mundo") if m != null else null
+	if not (no is Node):
+		return
+	chao = Node2D.new()
+	chao.z_index = -60
+	chao.draw.connect(_desenhar_chao)
+	no.add_child(chao)
 
 
 func _montar_explosoes() -> void:
@@ -462,8 +493,14 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 			var aa := ang + lerpf(-meio, meio, (float(k) + _rng.randf()) / float(n))
 			var pt := origem + Vector2.from_angle(aa) * alcance * _rng.randf_range(0.8, 1.15)
 			var tang := Vector2.from_angle(aa + PI * 0.5 * lado) * _rng.randf_range(40.0, 110.0)
-			particula(pt, tang, _rng.randf_range(0.3, 0.55), _rng.randf_range(7.0, 12.0), Color(claro.r, claro.g, claro.b, 0.95), -24.0, true)
-		_corte_eco(origem, ang, alcance * ECO_ESCALA, arco_graus * 1.1, lado, Color(claro.r * 0.55, claro.g * 0.55, claro.b * 0.55), dur * 0.9)
+			particula(pt, tang, _rng.randf_range(0.3, 0.55), _rng.randf_range(10.0, 16.0), Color(claro.r, claro.g, claro.b, 0.95), -24.0, true)
+		_corte_eco(origem, ang, alcance * ECO_ESCALA, arco_graus * 1.1, lado, Color(claro.r * 0.75, claro.g * 0.75, claro.b * 0.75), dur * 0.9)
+		var ponta := origem + Vector2.from_angle(ang + meio * lado) * alcance * 0.95  # onde o arco termina: a estrela que pisca no fim da varrida
+		folha("estrela", ponta, alcance * 0.45, claro, dur * 0.8)
+	elif Anim.suave and tipo == "estocada":  # o golpe pesado: estoura na ponta e racha o chão
+		var ponta := origem + Vector2.from_angle(ang) * alcance
+		explosao(ponta + Vector2(0, 10), alcance * 0.4, cor, 1.0, 0.5)
+		marca_chao(ponta + Vector2(0, 12), alcance * 0.3, cor)
 	luz_rapida(origem + Vector2.from_angle(ang) * alcance * 0.55, cor, 1.7 if tipo == "estocada" else 1.35, alcance * 2.3, dur * 0.9)
 
 
@@ -516,6 +553,32 @@ func _corte_eco(origem: Vector2, ang: float, alcance: float, arco_graus: float, 
 	mat.set_shader_parameter("cor", cor)
 	_eco_t[i] = 0.0
 	_eco_dur[i] = dur
+
+
+## Marca de dano no chão em `p`: cratera escura achatada e rachaduras tortas saindo do centro, que ficam MARCA_DUR s e somem; nos
+## primeiros MARCA_BRASA s as rachaduras brilham na cor do golpe. Só desenho (pool fixo, polilinhas). Com Anim.suave desligado, nada.
+func marca_chao(p: Vector2, raio: float, cor: Color) -> void:
+	if not Anim.suave or chao == null:
+		return
+	var i := _mc_i
+	_mc_i = (_mc_i + 1) % MAX_MARCAS_CHAO
+	_mc_pos[i] = p.round()
+	_mc_raio[i] = raio
+	_mc_t[i] = 0.0
+	_mc_cor[i] = cor
+	var base := i * RACHAS * RACHA_PTS
+	var giro := _rng.randf() * TAU
+	for r in RACHAS:
+		var ang := giro + TAU * (float(r) + _rng.randf_range(-0.3, 0.3)) / float(RACHAS)
+		var comp := raio * _rng.randf_range(0.55, 1.0)
+		var q := Vector2.ZERO
+		for k in RACHA_PTS:
+			if k > 0:
+				ang += _rng.randf_range(-0.5, 0.5)
+				q += Vector2(cos(ang), sin(ang) * 0.62) * comp / float(RACHA_PTS - 1)
+			_mc_pts[base + r * RACHA_PTS + k] = q.round()
+	_mc_ativas = true
+	usados.chao += 1
 
 
 ## A explosão grande de impacto em `p` (chão achatado), com `raio` = o da área do golpe: os anéis param na borda real (~1,05 raio) e só o
@@ -717,6 +780,10 @@ func limpar() -> void:
 		s.visible = false
 	_ex_t.fill(9.0)
 	_eco_t.fill(9.0)
+	_mc_t.fill(99.0)
+	_mc_ativas = false
+	if chao != null:
+		chao.queue_redraw()
 	for s in _ex:
 		s.visible = false
 	for s in _eco:
@@ -788,6 +855,17 @@ func atualizar(dt: float) -> void:
 		if Anim.suave:  # abre rápido e assenta (ease-out), em vez de nascer já do tamanho final
 			var k := clampf(pr / CORTE_CRESCE, 0.0, 1.0)
 			s.scale = Vector2.ONE * _cortes_esc[i] * (0.88 + 0.12 * (1.0 - (1.0 - k) * (1.0 - k)))
+	# marcas no chão
+	if _mc_ativas:
+		var alguma := false
+		for i in MAX_MARCAS_CHAO:
+			if _mc_t[i] < MARCA_DUR:
+				_mc_t[i] += dt
+				alguma = true
+		_mc_ativas = alguma
+		if chao != null:
+			chao.queue_redraw()
+		add.queue_redraw()
 	# explosões grandes
 	for i in MAX_EXPLOSOES:
 		if _ex_t[i] >= _ex_dur[i]:
@@ -865,6 +943,20 @@ func atualizar(dt: float) -> void:
 
 
 func _desenhar_add() -> void:
+	if _mc_ativas:  # as rachaduras acesas na cor do golpe, apagando
+		for i in MAX_MARCAS_CHAO:
+			var t := _mc_t[i]
+			if t >= MARCA_BRASA:
+				continue
+			var k := 1.0 - t / MARCA_BRASA
+			var c := _mc_cor[i].lerp(Color(1.0, 0.85, 0.6), 0.35)
+			c.a = k * k
+			var base := i * RACHAS * RACHA_PTS
+			for r in RACHAS:
+				var linha := PackedVector2Array()
+				for j in RACHA_PTS:
+					linha.append(_mc_pos[i] + _mc_pts[base + r * RACHA_PTS + j])
+				add.draw_polyline(linha, c, 2.0)
 	for i in MAX_PART:
 		var v := p_vida[i]
 		if v <= 0.0:
@@ -887,6 +979,27 @@ func _desenhar_add() -> void:
 		c.a *= 1.0 - k
 		var r := o_raio[i] * (1.0 - (1.0 - k) * (1.0 - k))
 		add.draw_arc(o_pos[i].round(), r, 0.0, TAU, 28, c, 2.0)
+
+
+## A cratera e as rachaduras (camada do mundo, normal): escurecem o chão e somem no último terço.
+func _desenhar_chao() -> void:
+	for i in MAX_MARCAS_CHAO:
+		var t := _mc_t[i]
+		if t >= MARCA_DUR:
+			continue
+		var fade := 1.0 - smoothstep(MARCA_DUR * 0.6, MARCA_DUR, t)
+		var p := _mc_pos[i]
+		var r := _mc_raio[i]
+		var cresce := minf(1.0, t / 0.08)
+		var tam := Vector2(r * 1.5, r * 0.93) * cresce
+		chao.draw_texture_rect(tex_brilho, Rect2(p - tam * 0.5, tam), false, Color(0, 0, 0, 0.65 * fade))
+		chao.draw_texture_rect(tex_brilho, Rect2(p - tam * 0.25, tam * 0.5), false, Color(0.02, 0.01, 0.01, 0.55 * fade))
+		var base := i * RACHAS * RACHA_PTS
+		for k in RACHAS:
+			var linha := PackedVector2Array()
+			for j in RACHA_PTS:
+				linha.append(p + _mc_pts[base + k * RACHA_PTS + j] * cresce)
+			chao.draw_polyline(linha, Color(0.05, 0.03, 0.03, 0.9 * fade), 3.0 if r >= 40.0 else 2.0)
 
 
 func _desenhar_numeros() -> void:
