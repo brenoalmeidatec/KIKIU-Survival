@@ -2468,3 +2468,14 @@ _Claude do Alisson (nuvem)_
 - **Pendente:** conferir no notebook a 125%/150% (o DPI real só existe numa janela de verdade no Windows) e o "pode mergear".
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-22 · Claude do Alisson (nuvem) · Ataque principal não acaba mais em 3 a 5 s no Médio e no Difícil
+
+- **Sintoma (Alisson):** no Médio e no Difícil o ataque principal "acaba muito rápido" e o jogo fica difícil demais.
+- **Causa:** cada golpe gastava fôlego (0,22 M / 0,32 D) e, pelo `_gastar`, ainda reiniciava o atraso de 0,6 s da recuperação. Com golpes a cada ~0,35 s o atraso nunca vencia: segurando o ataque a barra zerava em ~4,7 s (M) e ~3,3 s (D), seguida de 2/3 s sem atacar e do cansaço (sem esquiva).
+- **Feito:** `heroi._gastar(x, adia := true)`: o ataque principal gasta sem adiar a recuperação (correr, esquivar e escudo seguem adiando). `dados/v2_dificuldade.json`: espera 2 → 1,5 s (M) e 3 → 2 s (D); custo do Difícil 0,32 → 0,30. Segurando o ataque, andando: ~22 s (M) e ~8 s (D). Fácil sem mudança (custo 0 não passa por esse caminho). Tela de escolha mostra "1,5 s" com vírgula. O robô (`v2/roteiro.gd`) grava `golpe_bloq_s` e `cansado_s` no JSON.
+- **Robô, 3 heróis × 4 mapas, 600 s, antes → depois:** Médio: ataque travado 6,7% → 0,3% do tempo, cansado 12,3% → 0,6%, dano sofrido 975 → 760, 1 derrota nos dois. Difícil: travado 10,1% → 1,6%, cansado 8,9% → 2,6%, dano sofrido 1006 → 729. A dificuldade continua vindo da densidade e da velocidade da horda.
+- **Testes:** `v2_dificuldade` e `v2_escolha_dificuldade` falhas=0 (Godot 4.4.1 headless); `gdformat -l 160` limpo.
+- **Para o Codex do Alisson:** mexi em `heroi.gd` (golpe/fôlego) e em `dados/v2_dificuldade.json` por pedido direto do Alisson; registrado na #400.
+
+_Claude do Alisson (nuvem)_

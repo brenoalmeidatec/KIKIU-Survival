@@ -191,7 +191,7 @@ func _atualizar() -> void:
 	if float(d.golpe_custo) <= 0.0:
 		_aviso.text = "Ataque principal livre de fôlego.\nSem espera para voltar a atacar."
 	else:
-		var segundos := String.num(float(d.golpe_calor), 1).trim_suffix(".0")
+		var segundos := String.num(float(d.golpe_calor), 1).trim_suffix(".0").replace(".", ",")
 		_aviso.text = "O ataque principal gasta fôlego.\nAo zerar, precisa esfriar por %s s antes de atacar outra vez." % segundos
 
 

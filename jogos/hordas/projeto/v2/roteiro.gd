@@ -1062,6 +1062,8 @@ func _pt_iniciar() -> void:
 		"q_prontos": [],
 		"q_disparos": [],
 		"e_disparos": 0,
+		"golpe_bloq_s": 0.0,  # s em que o ataque principal estava esfriando (fôlego zerado no Médio/Difícil)
+		"cansado_s": 0.0,  # s cansado (sem correr nem esquivar)
 		"rng": RandomNumberGenerator.new(),
 		"quadros": 0,
 		"us_ant": int(mundo._us_total),
@@ -1251,6 +1253,10 @@ func _pt_jogar(dt: float) -> void:
 		pt.q_disparos.append(snappedf(mundo.tempo_partida, 0.1))
 	if pt.q and perto != null and perto_d < 130.0 * 130.0 and h.hab_id != "ruptura" and h.hab_recarga <= 0.0 and h.habilidade():
 		pt.e_disparos = int(pt.e_disparos) + 1  # a E dos heróis que não têm a ruptura (investida, salto)
+	if h.golpe_calor_t > 0.0:
+		pt.golpe_bloq_s = float(pt.golpe_bloq_s) + dt
+	if h.cansado:
+		pt.cansado_s = float(pt.cansado_s) + dt
 	pt.esquiva_q += 1
 	if (colados >= 5 or (chefe_colado and h.invenc <= 0.0)) and pt.esquiva_q > 60:
 		h.esquivar()
@@ -1401,6 +1407,8 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 		"q_prontos": pt.q_prontos,
 		"q_disparos": pt.q_disparos,
 		"e_disparos": pt.e_disparos,
+		"golpe_bloq_s": snappedf(float(pt.golpe_bloq_s), 0.1),
+		"cansado_s": snappedf(float(pt.cansado_s), 0.1),
 		"q_carga":
 		{
 			"dano": snappedf(float(c.especial.carga_total.dano), 0.1),

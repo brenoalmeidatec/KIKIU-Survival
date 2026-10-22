@@ -24,8 +24,8 @@ const VELOCIDADE := [1.0, 1.1, 1.2]
 const DENSIDADE := [1.0, 1.25, 1.5]
 const ONDA := [1.0, 0.9, 0.8]
 const CHEFE := [1.0, 0.95, 0.9]
-const CUSTO := [0.0, 0.22, 0.32]
-const CALOR := [0.0, 2.0, 3.0]
+const CUSTO := [0.0, 0.22, 0.3]
+const CALOR := [0.0, 1.5, 2.0]
 const PASSO := 1.0 / 60.0
 const MONSTRO := "inimigo_cao_ossos"
 
@@ -294,10 +294,13 @@ func _ataque(i: int) -> void:
 	var h = w.heroi
 	var antes := float(h.folego)
 	var golpes := int(h.golpes)
+	h._atraso_t = 0.0
 	h.atacar()
 	passos(1)
 	ok(h.golpes == golpes + 1 and h.estado == Heroi.Estado.GOLPE, str(IDS[i]) + " ataque real começa")
-	perto(antes - float(h.folego), float(CUSTO[i]), str(IDS[i]) + " custo exato do ataque principal")
+	# um quadro de recuperação pode entrar junto: o golpe não adia mais a recuperação
+	perto(antes - float(h.folego), float(CUSTO[i]), str(IDS[i]) + " custo do ataque principal", 0.02)
+	ok(h._atraso_t <= 0.0, str(IDS[i]) + " ataque principal não adia a recuperação do fôlego")
 	if i == 0:
 		passos(35)
 		h.folego = 0.0
@@ -317,7 +320,7 @@ func _ataque(i: int) -> void:
 	h.atacar()
 	passos(1)
 	perto(h.folego, 0.0, str(IDS[i]) + " último golpe zera o fôlego")
-	perto(h.golpe_calor_t, float(CALOR[i]), str(IDS[i]) + " calor inicial de 2/3 s")
+	perto(h.golpe_calor_t, float(CALOR[i]), str(IDS[i]) + " calor inicial de 1,5/2 s")
 	golpes = int(h.golpes)
 	h.entrada_forcada = Vector2.RIGHT
 	h.ataque_forcado = true
