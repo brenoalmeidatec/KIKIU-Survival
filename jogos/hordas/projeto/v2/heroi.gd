@@ -455,6 +455,15 @@ func ganhar_folego_abate(x: float) -> void:
 		ganhar_folego(x)
 
 
+## Enche o fôlego de uma vez (subir de nível ou abrir baú no Médio e no Difícil, dados/v2_dificuldade.json > folego_cheio): sai do cansaço,
+## do calor do golpe e do atraso da recuperação.
+func encher_folego() -> void:
+	folego = folego_max
+	cansado = false
+	golpe_calor_t = 0.0
+	_atraso_t = 0.0
+
+
 ## Fôlego que volta: sai do cansaço se passar do limite.
 func ganhar_folego(x: float) -> void:
 	folego = minf(folego_max, folego + x)
