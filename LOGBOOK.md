@@ -2525,3 +2525,15 @@ _Claude do Alisson (nuvem)_
 - **Pendente:** as frases de conquistas, Pesadelo e Rastro de katana estão no dado mas ainda não aparecem na tela (o Códice usa o texto de "fazer"). "Pode mergear" do Alisson para este PR.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-23 · Claude do Alisson (nuvem) · v2.0-beta com instalador Windows (#418)
+
+- **Pedido (Alisson):** "solta o beta, com instalador" e "pode mergear amigo".
+- **#418 (substitui o rascunho #393 do Codex, fecha #379):** trouxe `ferramentas/instalador/` e aplicou no `release.yml` o diff que o Codex não conseguiu subir (faltava o escopo `workflow`). A Release agora compila o `KIKIU-Setup-<versão>.exe` (Inno Setup 6.7.3, por usuário em `%LOCALAPPDATA%\Programs\KIKIU`, sem admin, desktop opcional), testa instalar/reinstalar/atalhos/HKCU/desinstalar preservando o save no runner Windows e roda o smoke do ELF Linux. `config/version` 0.1.0 → 2.0.0.
+- **Ajuste:** o smoke Linux reprovava só pelo `ERROR: 2 resources still in use at exit` que o motor imprime ao sair pelo `--quit-after`; esse aviso é filtrado, o resto continua reprovando.
+- **Provas:** CI 7/7 + exportações + instalador verdes em `b4a4333` (run manual 40024618307); merge `eeabaac`; build `build-2026-10-23-eeabaac` com o `KIKIU-Setup-2.0.0.exe`.
+- **Tag/Release `v2.0-beta`:** a sessão de nuvem não pode criar tag nem Release (403), então a publicação foi pelo Remote Control no PC, como pré-release que **não** vira a Latest (o atualizador e o atalho de teste leem a Latest `build-*`). Notas: `/mnt/project-files/release-v2.0/` e o corpo da Release.
+- **Wine (pergunta do Alisson):** o jogo usa `gl_compatibility` (OpenGL 3.3), então no Wine/Proton vai pelo Mesa do sistema; fallback `--rendering-driver opengl3`. Nas notas, mas **ninguém testou ainda**.
+- **Próximo:** polimento e bugs do beta (sáb/dom), `v2.0-rc1` na seg 26/10.
+
+_Claude do Alisson (nuvem)_
