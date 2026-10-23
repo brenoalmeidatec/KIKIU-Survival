@@ -2480,6 +2480,20 @@ _Claude do Alisson (nuvem)_
 
 _Claude do Alisson (nuvem)_
 
+## 2026-10-23: suíte completa na main depois do #409 ao #412 (PC)
+- **Feito:** `main` local atualizada até `323bfee5` (merge do #412; #409 pausa, #410 golpes, #411 HUD por DPI e #412 fôlego dentro). Import + as 140 cenas de `testes/` (sem `bench_*`) no Godot 4.4.1 headless, 6 em paralelo, no commit combinado (o CI de testes só tinha rodado em cada PR separado; na `main` roda só a Release).
+- **Resultado:** 139/140 com falhas=0 de primeira, incluindo `v2_escala_ui`, `v2_dificuldade`, `v2_escolha_dificuldade`, `v2_partida`, `v2_status` e `v2_pausa`. A falha foi `cartas_comp` ("troca no meio da troca continua tocando"): o teste usa espera de tempo real na troca de música e perdeu o prazo com 6 Godots juntos; sozinha passou 3 de 3. Teste antigo (#198), não ligado ao #409–#412. `teste_guarda_save.py` 9/9. `ortografia.py` e `gdformat` não rodam neste PC (sem `hunspell`/`gdtoolkit`); passaram no CI dos quatro PRs.
+- **Pendente:** instalador (#393) segue em rascunho, sem pedido. Worktrees antigos em `.claude/worktrees/` têm mudanças locais (o `agent-aa95…` com 102 arquivos): não mexi.
+- **Próximo:** v2.0-beta hoje (23/10).
+
+_Claude do Alisson (PC)_
+## 2026-10-23 · Claude do Alisson (nuvem) · Pesquisa: o que os survivors de sucesso têm e o KIKIU não
+
+- **Feito:** só pesquisa, nada no jogo (dia da v2.0-beta). Comparei a v2 atual com VS, Brotato, Halls of Torment, HoloCure, DRG Survivor e clones Godot abertos. Resultado em `docs/PESQUISA_SURVIVORS_2026-10-23.md`, com tabela de impacto x esforço.
+- **Antes da RC (candidatos):** dano por golpe na tela de fim; mais conquistas que destravam coisas; dica de evolução no pause; recorde por herói x mapa x dificuldade.
+- **v3:** mais heróis, modo infinito, maldição/calor, fusão de golpes, overclock, coleção, missões longas, equipamento, objetivo no mapa, retomar partida, coop local.
+- **Código aberto:** os clones Godot achados são tutoriais menores que a v2; um é GPL v3 (copyleft, não usar). Nada para importar.
+- **Pendente:** o Alisson escolher o que entra antes do congelamento de domingo.
 ## 2026-10-23 · Claude do Alisson (nuvem) · Fôlego enche ao subir de nível e no baú (M/D) e cresce por nível
 
 - **Pedido (Alisson):** no Médio e no Difícil, subir de nível ou ganhar baú enche o fôlego; e o fôlego fica maior a cada nível, até o último.
@@ -2488,5 +2502,16 @@ _Claude do Alisson (nuvem)_
 - **Testes:** `v2_dificuldade` ganhou o caso de nível, teto, reinício e baú por dificuldade (inverter a regra derruba 4 checagens). Suíte completa local 140/140, CI 7/7 no `c3304fc`, `gdformat` limpo.
 - **Robô (3 heróis × floresta e cidade, 360 s, semente 1, antes → depois):** Médio: ataque travado 8 → 2 s somados, cansado 23 → 2 s, dano sofrido 425 → 260, 1 morte → 0 (Lucas na cidade). Difícil: travado 40 → 2 s, cansado 61 → 3 s, dano 316 → 287, 0 mortes nos dois. O robô passa do nível 20 em ~3 min, então nele o teto chega cedo; gente sobe mais devagar.
 - **Pendente:** "pode mergear" do Alisson. Se o Médio/Difícil ficarem fáceis demais, o botão é `folego.por_nivel` (crescimento) ou `folego_cheio` (enche), sem mexer em código.
+
+_Claude do Alisson (nuvem)_
+
+## 2026-10-23 · Claude do Alisson (nuvem) · Extras da RC: dano por golpe, conquistas 11 → 25 e recorde por herói x mapa x dificuldade
+
+- **Pedido (Alisson):** os três itens "antes da RC" da pesquisa de survivors (PR #414). As outras três ideias viraram a issue #416 (v3).
+- **Dano por golpe na tela de fim:** `combate.dano_por_fonte` soma o dano útil por fonte; cada golpe põe `combate.fonte_dano` antes do `ferir()` ("principal", "especial", "habilidade", "ruptura" ou o id do golpe secundário; as adagas guardam a fonte do arremesso e o fogo guarda quem acendeu). `resultado_meta.gd` mostra os 5 maiores à direita dos números, com nome, total, % e barra que cresce junto com as almas.
+- **Conquistas:** 14 novas em `dados/v2_meta.json` (abates, nível e evoluções numa partida, partidas jogadas, abates no total, combo 150, 10 min e "vença com" cada herói). Prêmios novos: `almas` (entra no saldo uma vez) e `nivel_max` (+1 nível no máximo de uma melhoria do santuário; `Meta.melhorias()` já devolve o máximo somado). Com mais de 6 conquistas de uma vez, a tela de fim mostra 5 e "+N conquistas".
+- **Recorde:** `[recordes_hmd]` no save guarda, por herói x mapa x dificuldade, o maior tempo, os abates dele e se já venceu. A escolha de dificuldade mostra "RECORDE 12:34 · VENCEU" / "· 618 ABATES" / "SEM RECORDE" em cada cartão (cartão 4 px mais alto).
+- **Testes:** novo `testes/v2_rc_extras` (falhas=0); `v2_meta` (fixture sem herói do catálogo), `v2_conquistas` e `v2_escolha_dificuldade` com falhas=0; suíte inteira no Godot 4.4.1 headless; `gdformat -l 160` e ortografia limpos. Fotos (xvfb) anexadas no PR, fora do repositório.
+- **Pendente:** "pode mergear" do Alisson. Depois do merge, liberar as travas na #348.
 
 _Claude do Alisson (nuvem)_
