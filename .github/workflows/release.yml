@@ -59,16 +59,27 @@ jobs:
           test -s ../build/linux/KIKIU.x86_64 && test -s ../build/web/index.html
       - name: Smoke do executavel Linux exportado (nativo, sem projeto-fonte)
         run: bash ferramentas/instalador/testar_linux.sh "$PROJETO/../build/linux/KIKIU.x86_64" "$RUNNER_TEMP/kikiu-linux-smoke/godot.log"
+      - name: Montar o AppImage (appimagetool fixado, sem FUSE no runner)
+        run: bash ferramentas/appimage/montar.sh "$PROJETO/../build/linux/KIKIU.x86_64" "$PROJETO/../build/appimage"
+      - name: Smoke do AppImage (extrai e roda a cena principal)
+        run: bash ferramentas/appimage/testar.sh "$PROJETO"/../build/appimage/KIKIU-*-x86_64.AppImage "$RUNNER_TEMP/kikiu-appimage-smoke/godot.log"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: linux-smoke-logs
-          path: ${{ runner.temp }}/kikiu-linux-smoke
+          path: |
+            ${{ runner.temp }}/kikiu-linux-smoke
+            ${{ runner.temp }}/kikiu-appimage-smoke
           if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: linux
           path: jogos/hordas/build/linux
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: jogos/hordas/build/appimage/KIKIU-*-x86_64.AppImage
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
@@ -183,14 +194,19 @@ jobs:
           test "${#instaladores[@]}" -eq 1
           test -s "${instaladores[0]}"
           cp -- "${instaladores[0]}" pacotes/
+          appimages=(baixados/linux-appimage/KIKIU-*-x86_64.AppImage)
+          test "${#appimages[@]}" -eq 1
+          test -s "${appimages[0]}"
+          cp -- "${appimages[0]}" pacotes/
+          chmod +x pacotes/KIKIU-*-x86_64.AppImage
           ls -la pacotes
       - name: Publicar Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           T=${{ steps.v.outputs.tag }}
-          gh release create "$T" pacotes/KIKIU-*.zip pacotes/KIKIU-Setup-*.exe --target "$GITHUB_SHA" \
-            --title "$T" --notes "Build automatico do commit $GITHUB_SHA na main. ZIPs portateis e instalador Windows por usuario (preserva saves ao desinstalar)."
+          gh release create "$T" pacotes/KIKIU-*.zip pacotes/KIKIU-Setup-*.exe pacotes/KIKIU-*-x86_64.AppImage --target "$GITHUB_SHA" \
+            --title "$T" --notes "Build automatico do commit $GITHUB_SHA na main. ZIPs portateis, instalador Windows por usuario (preserva saves ao desinstalar) e AppImage Linux."
       # Também publica no repositório público só de versões (#106), que o atualizador do jogo consulta primeiro.
       # Sem o segredo RELEASES_TOKEN o passo é pulado sem falhar, para o release do jogo nunca depender dele.
       - name: Publicar também no KIKIU-Releases
@@ -202,5 +218,5 @@ jobs:
             exit 0
           fi
           T=${{ steps.v.outputs.tag }}
-          gh release create "$T" pacotes/KIKIU-*.zip pacotes/KIKIU-Setup-*.exe --repo brenoalmeidatec/KIKIU-Releases \
-            --title "$T" --notes "Build automatico do KIKIU-Survival (commit $GITHUB_SHA). ZIPs portateis e instalador Windows por usuario (preserva saves ao desinstalar)."
+          gh release create "$T" pacotes/KIKIU-*.zip pacotes/KIKIU-Setup-*.exe pacotes/KIKIU-*-x86_64.AppImage --repo brenoalmeidatec/KIKIU-Releases \
+            --title "$T" --notes "Build automatico do KIKIU-Survival (commit $GITHUB_SHA). ZIPs portateis, instalador Windows por usuario (preserva saves ao desinstalar) e AppImage Linux."
