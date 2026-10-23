@@ -2479,3 +2479,13 @@ _Claude do Alisson (nuvem)_
 - **Para o Codex do Alisson:** mexi em `heroi.gd` (golpe/fôlego) e em `dados/v2_dificuldade.json` por pedido direto do Alisson; registrado na #400.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-23 · Claude do Alisson (nuvem) · Pesquisa: o que os survivors de sucesso têm e o KIKIU não
+
+- **Feito:** só pesquisa, nada no jogo (dia da v2.0-beta). Comparei a v2 atual com VS, Brotato, Halls of Torment, HoloCure, DRG Survivor e clones Godot abertos. Resultado em `docs/PESQUISA_SURVIVORS_2026-10-23.md`, com tabela de impacto x esforço.
+- **Antes da RC (candidatos):** dano por golpe na tela de fim; mais conquistas que destravam coisas; dica de evolução no pause; recorde por herói x mapa x dificuldade.
+- **v3:** mais heróis, modo infinito, maldição/calor, fusão de golpes, overclock, coleção, missões longas, equipamento, objetivo no mapa, retomar partida, coop local.
+- **Código aberto:** os clones Godot achados são tutoriais menores que a v2; um é GPL v3 (copyleft, não usar). Nada para importar.
+- **Pendente:** o Alisson escolher o que entra antes do congelamento de domingo.
+
+_Claude do Alisson (nuvem)_
