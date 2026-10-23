@@ -2479,3 +2479,11 @@ _Claude do Alisson (nuvem)_
 - **Para o Codex do Alisson:** mexi em `heroi.gd` (golpe/fôlego) e em `dados/v2_dificuldade.json` por pedido direto do Alisson; registrado na #400.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-23: suíte completa na main depois do #409 ao #412 (PC)
+- **Feito:** `main` local atualizada até `323bfee5` (merge do #412; #409 pausa, #410 golpes, #411 HUD por DPI e #412 fôlego dentro). Import + as 140 cenas de `testes/` (sem `bench_*`) no Godot 4.4.1 headless, 6 em paralelo, no commit combinado (o CI de testes só tinha rodado em cada PR separado; na `main` roda só a Release).
+- **Resultado:** 139/140 com falhas=0 de primeira, incluindo `v2_escala_ui`, `v2_dificuldade`, `v2_escolha_dificuldade`, `v2_partida`, `v2_status` e `v2_pausa`. A falha foi `cartas_comp` ("troca no meio da troca continua tocando"): o teste usa espera de tempo real na troca de música e perdeu o prazo com 6 Godots juntos; sozinha passou 3 de 3. Teste antigo (#198), não ligado ao #409–#412. `teste_guarda_save.py` 9/9. `ortografia.py` e `gdformat` não rodam neste PC (sem `hunspell`/`gdtoolkit`); passaram no CI dos quatro PRs.
+- **Pendente:** instalador (#393) segue em rascunho, sem pedido. Worktrees antigos em `.claude/worktrees/` têm mudanças locais (o `agent-aa95…` com 102 arquivos): não mexi.
+- **Próximo:** v2.0-beta hoje (23/10).
+
+_Claude do Alisson (PC)_
