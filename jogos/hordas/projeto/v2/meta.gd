@@ -5,7 +5,8 @@ extends RefCounted
 ## vêm de dados/v2_meta.json. Não há estado em memória: cada leitura vem do arquivo, e os testes trocam `caminho_save` por um
 ## arquivo temporário para não tocar no save real.
 ## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida; [recordes] tempo e combo máximos;
-## [progressao] versao e partidas (v2/progressao.gd lê as travas). A chave legado das versões antigas não vale mais: save antigo
+## [progressao] versao e partidas (v2/progressao.gd lê as travas); [totais] abates somados de todas as partidas; [recordes_hmd]
+## o melhor de cada herói x mapa x dificuldade (chave heroi_mapa_dificuldade = [tempo, abates, venceu], v2/escolha_dificuldade.gd mostra). A chave legado das versões antigas não vale mais: save antigo
 ## segue as mesmas travas, mantendo só o que conquistou.
 ## Mapa vencido é a conquista vence_<id>; a seção antiga [mapas_vencidos] é migrada na leitura e não volta a ser gravada.
 
@@ -32,8 +33,34 @@ static func catalogo() -> Dictionary:
 	return Dados.json("v2_meta")
 
 
-static func melhorias() -> Array:
-	return catalogo().get("melhorias", [])
+## As melhorias do catálogo com o "max" já somado dos níveis extras que as conquistas liberaram (recompensa "nivel_max");
+## "max_base" guarda o do catálogo. `cf` opcional: sem ele, lê o save.
+static func melhorias(cf: ConfigFile = null) -> Array:
+	var lista: Array = catalogo().get("melhorias", [])
+	if cf == null:
+		cf = _ler()
+	var extra := _niveis_extras(cf)
+	if extra.is_empty():
+		return lista
+	var out: Array = []
+	for m in lista:
+		var c: Dictionary = m.duplicate()
+		c["max_base"] = int(m.max)
+		c["max"] = int(m.max) + int(extra.get(str(m.id), 0))
+		out.append(c)
+	return out
+
+
+## Níveis a mais de cada melhoria, das conquistas cumpridas com recompensa "nivel_max": {id: n}.
+static func _niveis_extras(cf: ConfigFile) -> Dictionary:
+	var extra := {}
+	if cf == null:
+		return extra
+	for c in conquistas():
+		var r: Dictionary = c.get("recompensa", {})
+		if str(r.get("tipo", "")) == "nivel_max" and bool(cf.get_value("conquistas", str(c.id), false)):
+			extra[str(r.id)] = int(extra.get(str(r.id), 0)) + int(r.get("n", 1))
+	return extra
 
 
 static func conquistas() -> Array:
@@ -55,8 +82,8 @@ static func escolher_dificuldade(id: String) -> bool:
 	return not erro_save
 
 
-static func melhoria(id: String) -> Dictionary:
-	for m in melhorias():
+static func melhoria(id: String, cf: ConfigFile = null) -> Dictionary:
+	for m in melhorias(cf):
 		if m.id == id:
 			return m
 	return {}
@@ -68,8 +95,10 @@ static func oculto(item: Dictionary) -> bool:
 
 
 ## As melhorias que o santuário e o card SUA BUILD mostram (sem as ocultas).
-static func melhorias_visiveis() -> Array:
-	return melhorias().filter(func(m): return not oculto(m))
+## `ler_save` false devolve o catálogo puro (sem os níveis extras), sem abrir o save: é o que o card SUA BUILD usa no tique da partida.
+static func melhorias_visiveis(ler_save := true) -> Array:
+	var lista: Array = melhorias() if ler_save else catalogo().get("melhorias", [])
+	return lista.filter(func(m): return not oculto(m))
 
 
 ## O item (melhoria, modo ou visual do catálogo) que uma recompensa de conquista libera; {} se não achar.
@@ -78,6 +107,14 @@ static func item_da_recompensa(r: Dictionary) -> Dictionary:
 	match str(r.get("tipo", "")):
 		"progresso":  # abre um portal ou estrutura do santuário (dados/v2_progressao.json): só o texto, sem item no catálogo
 			return {"id": str(r.get("id", "")), "nome": str(r.nome)} if str(r.get("nome", "")) != "" else {}
+		"almas":  # almas creditadas uma vez, quando a conquista é cumprida
+			return {"id": "almas", "nome": "+%d almas" % int(r.get("n", 0))}
+		"nivel_max":  # um nível a mais no máximo de uma melhoria do santuário
+			var m: Dictionary = {}
+			for x in catalogo().get("melhorias", []):
+				if str(x.id) == str(r.get("id", "")):
+					m = x
+			return {"id": str(r.id), "nome": "+%d nível em %s" % [int(r.get("n", 1)), str(m.nome)]} if not m.is_empty() else {}
 		"melhoria":
 			lista = melhorias()
 		"modo":
@@ -262,7 +299,7 @@ static func _gravar(cf: ConfigFile) -> bool:
 static func estado() -> Dictionary:
 	var cf := _ler()
 	var niveis := {}
-	for m in melhorias():
+	for m in melhorias(cf):
 		niveis[m.id] = int(cf.get_value("melhorias", m.id, 0)) if cf != null else 0
 	var cumpridas := {}
 	for c in conquistas():
@@ -271,10 +308,14 @@ static func estado() -> Dictionary:
 	if cf != null and cf.has_section("ultima"):
 		for k in cf.get_section_keys("ultima"):
 			ultima[k] = cf.get_value("ultima", k)
-	var recordes := {"tempo": 0.0, "combo": 0}  # o melhor de todas as partidas: é o progresso das conquistas de tempo e de combo (Conquistas.linhas)
+	var recordes := {"tempo": 0.0, "combo": 0, "abates": 0, "nivel": 0, "evolucoes": 0, "partidas": 0, "abates_total": 0}  # o melhor de todas as partidas: é o progresso das conquistas (Conquistas.linhas)
 	if cf != null:
 		recordes.tempo = float(cf.get_value("recordes", "tempo", 0.0))
 		recordes.combo = int(cf.get_value("recordes", "combo", 0))
+		for k in ["abates", "nivel", "evolucoes"]:
+			recordes[k] = int(cf.get_value("recordes", k, 0))
+		recordes.partidas = int(cf.get_value("progressao", "partidas", 0))
+		recordes.abates_total = int(cf.get_value("totais", "abates", 0))
 	return {
 		"almas": int(cf.get_value("moeda", "almas", 0)) if cf != null else 0, "niveis": niveis, "conquistas": cumpridas, "ultima": ultima, "recordes": recordes
 	}
@@ -298,12 +339,12 @@ static func custo_do_nivel(m: Dictionary, n: int) -> int:
 ## Pode comprar? (tem nível sobrando, a conquista que a libera está cumprida e as almas bastam). Não mexe em nada.
 static func comprar(id: String) -> bool:
 	erro_save = false
-	var m := melhoria(id)
-	if m.is_empty():
-		return false
 	var cf := _ler()
 	if cf == null:
 		erro_save = true
+		return false
+	var m := melhoria(id, cf)
+	if m.is_empty():
 		return false
 	var n := int(cf.get_value("melhorias", id, 0))
 	if n >= int(m.max) or not _liberada(m, cf):
@@ -333,8 +374,20 @@ static func creditar(n: int) -> void:
 	erro_save = not _gravar(cf)
 
 
-static func _cumprida(c: Dictionary, r: Dictionary) -> bool:
+static func _cumprida(c: Dictionary, r: Dictionary, cf: ConfigFile = null) -> bool:
+	if c.has("heroi") and str(r.get("heroi", "")) != str(c.heroi):  # conquista de um herói só: vale a partida com ele
+		return false
 	match str(c.condicao):
+		"abates":
+			return int(r.get("abates", 0)) >= int(c.get("limite", 0))
+		"nivel":
+			return int(r.get("nivel", 1)) >= int(c.get("limite", 0))
+		"evolucoes":
+			return int(r.get("evolucoes", 0)) >= int(c.get("limite", 0))
+		"partidas":  # somadas no save (registrar_partida conta antes de conferir)
+			return cf != null and int(cf.get_value("progressao", "partidas", 0)) >= int(c.get("limite", 0))
+		"abates_total":
+			return cf != null and int(cf.get_value("totais", "abates", 0)) >= int(c.get("limite", 0))
 		"tempo":
 			return float(r.get("tempo", 0.0)) >= float(c.get("limite", 0.0))
 		"combo":
@@ -355,9 +408,12 @@ static func _conquistar(cf: ConfigFile, r: Dictionary) -> Array:
 	for c in conquistas():
 		if bool(cf.get_value("conquistas", c.id, false)):
 			continue
-		if _cumprida(c, r):
+		if _cumprida(c, r, cf):
 			cf.set_value("conquistas", c.id, true)
 			novas.append(c.id)
+			var premio: Dictionary = c.get("recompensa", {})
+			if str(premio.get("tipo", "")) == "almas":  # o prêmio em almas entra no saldo junto com a conquista (quem chama grava)
+				cf.set_value("moeda", "almas", int(cf.get_value("moeda", "almas", 0)) + int(premio.get("n", 0)))
 	return novas
 
 
@@ -408,13 +464,16 @@ static func mapas_vencidos() -> Array:
 	return ids
 
 
-## Chamado no quadro durante a partida: conquistas de tempo e de combo que já foram cumpridas. Devolve os ids novos.
-static func checar_ao_vivo(tempo: float, maior_combo: int) -> Array:
+## Chamado no quadro durante a partida: conquistas de tempo, combo (e, com `extra`, abates, nível, evoluções e herói) já cumpridas.
+## Devolve os ids novos.
+static func checar_ao_vivo(tempo: float, maior_combo: int, extra := {}) -> Array:
 	var cf := _ler()
 	if cf == null:
 		erro_save = true
 		return []
-	var novas := _conquistar(cf, {"tempo": tempo, "maior_combo": maior_combo, "venceu": false})
+	var r := {"tempo": tempo, "maior_combo": maior_combo, "venceu": false}
+	r.merge(extra)
+	var novas := _conquistar(cf, r)
 	if not novas.is_empty():
 		if not _gravar(cf):
 			erro_save = true
@@ -446,7 +505,10 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	mult *= float(dif.almas_mult)
 	var ganhas := almas_creditadas(bruto, _bonus("almas", cf), mult)
 	cf.set_value("moeda", "almas", antes + ganhas)
+	cf.set_value("progressao", "partidas", int(cf.get_value("progressao", "partidas", 0)) + 1)  # antes das conquistas: "partidas" já conta esta
+	cf.set_value("totais", "abates", int(cf.get_value("totais", "abates", 0)) + int(r.get("abates", 0)))
 	var novas := _conquistar(cf, r)
+	var premios := int(cf.get_value("moeda", "almas", 0)) - (antes + ganhas)  # almas de prêmio das conquistas novas
 	var conquista_mapa := _conquista_do_mapa(str(r.get("mapa", "")))
 	if bool(r.get("venceu", false)) and bool(r.get("mapa_vencido_agora", false)) and conquista_mapa != "":
 		if mapa_vencido(str(r.mapa), cf) and not novas.has(conquista_mapa):
@@ -463,18 +525,49 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 		cf.set_value("dificuldades_vencidas", "%s_%s" % [str(r.mapa), str(dif.id)], true)
 	cf.set_value("recordes", "tempo", maxf(float(cf.get_value("recordes", "tempo", 0.0)), float(r.get("tempo", 0.0))))
 	cf.set_value("recordes", "combo", maxi(int(cf.get_value("recordes", "combo", 0)), int(r.get("maior_combo", 0))))
+	for k in ["abates", "nivel", "evolucoes"]:  # o progresso das conquistas de abates, nível e evoluções (Conquistas.linhas)
+		cf.set_value("recordes", k, maxi(int(cf.get_value("recordes", k, 0)), int(r.get(k, 0))))
 	if r.has("mapa"):
 		cf.set_value("ultima", "mapa", str(r.mapa))
-	cf.set_value("progressao", "partidas", int(cf.get_value("progressao", "partidas", 0)) + 1)
+		if r.has("heroi") and r.has("dificuldade"):
+			_guardar_recorde_hmd(cf, r, str(dif.id))
 	if not _gravar(cf):
 		erro_save = true
 		return {}
-	return {"antes": antes, "ganhas": ganhas, "depois": antes + ganhas, "novas": novas}
+	return {"antes": antes, "ganhas": ganhas, "depois": antes + ganhas + premios, "novas": novas, "premios": premios}
+
+
+static func _chave_hmd(heroi: String, mapa: String, dif: String) -> String:
+	return "%s_%s_%s" % [heroi, mapa, dif]
+
+
+## O melhor de um herói num mapa e numa dificuldade: o maior tempo (vitória conta como o tempo dela), os abates dessa partida e se já venceu.
+static func _guardar_recorde_hmd(cf: ConfigFile, r: Dictionary, dif: String) -> void:
+	var chave := _chave_hmd(str(r.heroi), str(r.mapa), dif)
+	var atual := recorde_hmd_de(cf, chave)
+	var tempo := float(r.get("tempo", 0.0))
+	var venceu := bool(r.get("venceu", false)) or bool(atual.venceu)
+	if tempo > float(atual.tempo):
+		cf.set_value("recordes_hmd", chave, [tempo, int(r.get("abates", 0)), venceu])
+	elif venceu != bool(atual.venceu):
+		cf.set_value("recordes_hmd", chave, [float(atual.tempo), int(atual.abates), venceu])
+
+
+static func recorde_hmd_de(cf: ConfigFile, chave: String) -> Dictionary:
+	var v = cf.get_value("recordes_hmd", chave, []) if cf != null else []
+	if not (v is Array) or v.size() < 3:
+		return {"tempo": 0.0, "abates": 0, "venceu": false, "tem": false}
+	return {"tempo": float(v[0]), "abates": int(v[1]), "venceu": bool(v[2]), "tem": true}
+
+
+## O recorde de um herói num mapa e numa dificuldade, para a tela de escolha: {tempo, abates, venceu, tem}.
+static func recorde_hmd(heroi: String, mapa: String, dif: String) -> Dictionary:
+	return recorde_hmd_de(_ler(), _chave_hmd(heroi, mapa, Dificuldade.normalizar(dif)))
 
 
 ## Valor total de uma melhoria (valor de um nível vezes os níveis comprados).
 static func _total(id: String, cf: ConfigFile) -> float:
-	return float(melhoria(id).get("valor", 0.0)) * int(cf.get_value("melhorias", id, 0))
+	return float(melhoria(id, cf).get("valor", 0.0)) * int(cf.get_value("melhorias", id, 0))
 
 
 static func _bonus(id: String, cf: ConfigFile) -> float:
@@ -530,6 +623,19 @@ static func aplicar(mundo) -> void:
 		var rastro := ligado("visual", "rastro_katana")
 		mundo.combate.fx.variante = str(item_extra("visual", "rastro_katana").get("variante", "katana")) if rastro else "katana"
 	preload("res://v2/herois.gd").aplicar_bonus(mundo)  # bônus do herói escolhido (área, sorte...) por cima das melhorias
+
+
+## O que a partida em andamento já fez, para as conquistas ao vivo e o progresso da pausa: abates, nível, evoluções e o herói.
+static func vivo_da_partida(mundo) -> Dictionary:
+	if mundo == null:
+		return {}
+	var c = mundo.get("combate")
+	var h = mundo.get("heroi")
+	var v := {"abates": int(mundo.get("abates")) if mundo.get("abates") != null else 0, "nivel": int(h.nivel) if h != null else 1}
+	if c != null:
+		v["evolucoes"] = int(c.cartas.evolucoes_feitas) if c.cartas != null else 0
+		v["heroi"] = str(c.heroi_id)
+	return v
 
 
 ## Almas que a partida trouxe. `almas_partida` ainda não existe na v2 (o agente das cartas e dos chefes expõe): até lá vale 0.

@@ -719,7 +719,7 @@ static func _sec_partida(m) -> Dictionary:
 static func _sec_santuario(_m, meta_niveis: Variant) -> Dictionary:
 	var niveis: Dictionary = meta_niveis if meta_niveis is Dictionary else Meta.estado().get("niveis", {})
 	var lin: Array = []
-	for md in Meta.melhorias_visiveis():
+	for md in Meta.melhorias_visiveis(false):  # só id, nome e valor: sem reler o save no tique do card
 		var n := int(niveis.get(md.id, 0))
 		if n <= 0:
 			continue

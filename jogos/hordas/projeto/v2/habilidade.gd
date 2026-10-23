@@ -241,6 +241,7 @@ func _faixa(h) -> void:
 		if crit:
 			d *= float(c.cfg.golpe.critico.mult)
 		var dn := maxi(1, roundi(d))
+		c.fonte_dano = "habilidade"
 		if c.ferir(m, d, fora, float(_c.empurrao), _bonus_atordoa(float(_c.atordoa)), COR_NUM, false):
 			_mortes += 1
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
@@ -269,6 +270,7 @@ func _leque(h, p: Dictionary) -> void:
 		"atordoa": _bonus_atordoa(float(p.atordoa)),
 		"cor": [cor.r, cor.g, cor.b],
 	}
+	combate.fonte_dano = "habilidade"
 	combate.adagas.lancar(h, h.pos + h.ORIGEM_GOLPE, _mira, passo)
 	combate.audio.tocar("corte2", randf_range(1.2, 1.5), -4.0, 0.04)
 
@@ -317,6 +319,7 @@ func _pulso(h, centro: Vector2, raio: float, dano_b: float, emp: float, atordoa:
 		if crit:
 			d *= float(c.cfg.golpe.critico.mult)
 		var dn := maxi(1, roundi(d))
+		c.fonte_dano = "habilidade"
 		if c.ferir(m, d, fora, emp, atordoa, COR_NUM, false):
 			_mortes += 1
 		n += 1

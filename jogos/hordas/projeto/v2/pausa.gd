@@ -21,6 +21,7 @@ const EscalaUi := preload("res://v2/escala_ui.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
 const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas, a mesma do Códice do santuário (#373)
+const Meta := preload("res://v2/meta.gd")
 const Icones := preload("res://v2/icones_santuario.gd")
 const EstiloPremium := preload("res://v2/estilo_premium.gd")  # moldura dourada e faixa de seleção dos menus (#152 V6)
 const TAM_TITULO := Paleta.TITULO_GRANDE  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
@@ -605,6 +606,7 @@ func _linhas_conquistas() -> Array:
 	var vivo := {}
 	if mundo != null:
 		vivo = {"tempo": float(mundo.get("tempo_partida")), "combo": int(mundo.get("maior_combo"))}
+		vivo.merge(Meta.vivo_da_partida(mundo))
 	return Conquistas.linhas(vivo)
 
 
