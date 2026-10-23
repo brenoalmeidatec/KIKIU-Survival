@@ -1,8 +1,8 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do menu de pausa da v2 (v2/pausa.gd, v2/ajustes_graficos.gd, ligado ao mundo e ao santuário). Usa saves
 # TEMPORÁRIOS: a meta (user://teste_v2_pausa_meta.cfg) e as opções (user://teste_v2_pausa_opcoes.cfg). O save real
 # (user://v2_progresso.cfg) e user://opcoes.cfg não são tocados, e a conferência por md5 garante isso.
-# Confere: a pausa tem 4 itens (Continuar, Ajustes, Voltar ao santuário, Sair do jogo); ESC e Start pausam e despausam;
+# Confere: a pausa tem 5 itens (Continuar, Conquistas, Ajustes, Voltar ao santuário, Sair do jogo); ESC e Start pausam e despausam;
 # Continuar fecha; na escolha de cartas e no baú o ESC abre a pausa por cima (e na morte não abre); Sair pede confirmação e só o
 # Sim chama o gancho; a entrada vem pelo caminho da janela (Input.parse_input_event), o mesmo do jogador;
 # Ajustes abre Gráficos (com CPU e GPU) e Áudio; trocar o perfil muda a config (e a sombra do mundo, ao vivo); Sombras,
@@ -10,21 +10,24 @@ extends Node
 # escolhe a linha; ESC dentro de Ajustes volta um nível; o hit-stop e a câmera lenta seguem depois de pausar; Voltar ao santuário
 # despausa, abandona a partida (venceu = false) e credita as almas; perder o foco não pausa em headless; e no santuário o ESC
 # é devolvido à navegação local, e o botão Ajustes abre o submenu.
-# Tela cheia (linha e F11, com a pausa aberta ou fechada) e o Dinâmico (qualidade_auto) ficam fora do perfil: não viram
-# personalizado. A queda por fps (qualidade_auto) vale só na memória: o arquivo não recebe o perfil caído.
+# Tela cheia (linha e F11, com a pausa aberta ou fechada) e o Detalhe dinâmico (qualidade_auto) ficam fora do perfil: não viram
+# personalizado. O Perfil tem só Baixo, Médio e Alto; o Detalhe dinâmico é uma linha própria logo abaixo, e o Perfil escolhido é o
+# teto da subida. A queda por fps (qualidade_auto) vale só na memória: o arquivo não recebe o perfil caído. Save antigo
+# (qualidade_auto ligada com o perfil Alto, o antigo "Dinâmico") vira Perfil Alto + Detalhe dinâmico Sim.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_pausa.tscn  (imprime "v2_pausa falhas=0")
 # Prints (com janela): godot --path jogos/hordas/projeto res://testes/v2_pausa.tscn -- --fotos=PASTA
-#   grava pausa_menu, pausa_ajustes, pausa_graficos, pausa_graficos_topo, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (a janela inteira).
+#   grava pausa_menu, pausa_menu_detalhes, pausa_ajustes, pausa_graficos, pausa_graficos_topo, pausa_audio, pausa_creditos, pausa_confirmar_sair e santuario_ajustes (a janela inteira).
 const Mundo := preload("res://v2/mundo.tscn")
 const Altar := preload("res://v2/altar.tscn")
 const Meta := preload("res://v2/meta.gd")
 const Resultado := preload("res://v2/resultado_meta.gd")
+const Pausa := preload("res://v2/pausa.gd")
 const Sombras := preload("res://v2/sombras.gd")
 const QualidadeAuto := preload("res://v2/qualidade_auto.gd")
-const SAVE_TESTE := "user://teste_v2_pausa_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_pausa_opcoes.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const OPCOES_REAL := "user://opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_pausa/teste_v2_pausa_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_pausa/teste_v2_pausa_opcoes.cfg"
+const SAVE_REAL := "user://testes_v2/v2_pausa/v2_progresso.cfg"
+const OPCOES_REAL := "user://testes_v2/v2_pausa/opcoes.cfg"
 
 var falhas := 0
 var saiu := 0  # o gancho ao_sair conta aqui: o processo de teste não fecha
@@ -58,7 +61,7 @@ func _limpar() -> void:
 	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_pausa/opcoes.cfg"
 
 
 func _md5(caminho: String) -> String:
@@ -128,6 +131,14 @@ func _ir_para(pausa, id: String) -> void:
 		_tecla(KEY_DOWN)
 
 
+func _linhas_visiveis(pausa) -> int:
+	var n := 0
+	for l in pausa._linhas:
+		if l["linha"].visible:
+			n += 1
+	return n
+
+
 func _ids(pausa) -> Array:
 	var r: Array = []
 	for it in pausa._itens_atuais:
@@ -156,13 +167,14 @@ func _testes() -> void:
 		return
 	pausa.ao_sair = Callable(self, "_marcar_saida")
 	ok(pausa.process_mode == Node.PROCESS_MODE_ALWAYS, "o menu roda com a árvore pausada (PROCESS_MODE_ALWAYS)")
+	await _testar_mouse_transicoes(pausa)
 
 	# 1. ESC pausa e de novo despausa; Start do controle faz o mesmo
 	_tecla(KEY_ESCAPE)
 	ok(pausa.aberto and get_tree().paused, "ESC pausa a partida e abre o menu")
 	ok(
-		_ids(pausa) == ["continuar", "ajustes", "santuario", "sair"],
-		"a pausa tem 4 itens: Continuar, Ajustes, Voltar ao santuário, Sair (%s)" % str(_ids(pausa))
+		_ids(pausa) == ["continuar", "conquistas", "ajustes", "santuario", "sair"],
+		"a pausa tem 5 itens: Continuar, Conquistas, Ajustes, Voltar ao santuário, Sair (%s)" % str(_ids(pausa))
 	)
 	_tecla(KEY_ESCAPE)
 	ok(not pausa.aberto and not get_tree().paused, "ESC de novo fecha o menu e despausa")
@@ -223,13 +235,33 @@ func _testes() -> void:
 
 	# 6. Ajustes e Gráficos: a aba tem CPU e GPU; trocar o perfil muda a config e a sombra do mundo; as linhas gravam
 	Config.g_aplicar_perfil("alto")  # ponto de partida conhecido (o save do jogador pode ter outro perfil)
+	Config.definir("qualidade_auto", false)  # o Perfil à mão só vale com o Detalhe dinâmico Não (com Sim ele fica travado, testado abaixo)
 	_tecla(KEY_ESCAPE)
 	_ir_para(pausa, "ajustes")
 	_tecla(KEY_ENTER)
 	ok(
-		pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "versao", "creditos", "voltar"],
-		"Ajustes abre com Gráficos, Áudio, aviso de versão, Créditos e Voltar"
+		pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "animacoes", "versao", "creditos", "voltar"],
+		"Ajustes abre com Gráficos, Áudio, Reduzir animações, aviso de versão, Créditos e Voltar"
 	)
+	# as seis linhas aparecem de uma vez (sem rodapé de ajuda cabe uma a mais): o "Voltar", a última, não pode sumir da lista
+	ok(
+		_linhas_visiveis(pausa) == 6 and pausa._topo == 0,
+		"Ajustes mostra as 6 linhas, sem rolar (%d visíveis, topo %d)" % [_linhas_visiveis(pausa), pausa._topo]
+	)
+	var l_voltar: Dictionary = pausa._linhas[5]
+	ok(l_voltar["linha"].visible and l_voltar["rotulo"].text == "Voltar", "a 6ª linha de Ajustes é o Voltar e está visível")
+	ok(
+		Pausa.PAINEL.position.y + Pausa.LINHA0 + 5 * Pausa.LINHA_H + Pausa.LINHA_ALT < Pausa.PAINEL.position.y + Pausa.DICA_Y,
+		"a 6ª linha termina acima da dica do rodapé"
+	)
+	pausa.mouse_fn = Callable(self, "_mouse_teste")
+	_mouse_alvo = Vector2(354, Pausa.PAINEL.position.y + Pausa.LINHA0 + 5 * Pausa.LINHA_H + 16.0)
+	_clique(_mouse_alvo)
+	ok(pausa.tela == "menu" and pausa.aberto, "clicar no Voltar (6ª linha) volta ao menu da pausa")
+	pausa.mouse_fn = Callable()
+	_ir_para(pausa, "ajustes")
+	_tecla(KEY_ENTER)
+	ok(pausa.tela == "ajustes", "de volta a Ajustes para seguir o teste")
 	_ir_para(pausa, "graficos")
 	_tecla(KEY_ENTER)
 	ok(pausa.tela == "graficos", "Gráficos abre a aba")
@@ -267,6 +299,35 @@ func _testes() -> void:
 		elif em_cpu and str(it.get("id", "")).begins_with("g:op:"):
 			linhas_cpu += 1
 	ok(linhas_cpu == 2, "a CPU do Avançado tem as duas opções que a v2 lê (partículas, cálculo dos monstros): %d" % linhas_cpu)
+	# com o Detalhe dinâmico ligado (o padrão) os detalhes ficam apagados: não mudam com Enter, setas nem clique, e a ajuda diz por quê
+	ok(bool(Config.item("qualidade_auto").get("padrao", false)), "o Detalhe dinâmico vem ligado de fábrica (padrão)")
+	Config.definir("qualidade_auto", true)
+	pausa._desenhar()
+	var todos_bloqueados := true
+	for it in pausa._itens_atuais:
+		if str(it.get("id", "")).begins_with("g:op:") and not bool(it.get("bloqueado", false)):
+			todos_bloqueados = false
+	ok(todos_bloqueados, "com o Detalhe dinâmico Sim, todos os detalhes do Avançado estão bloqueados (apagados)")
+	_ir_para(pausa, "g:op:sombras")
+	var sombras_antes := str(Config.g("sombras"))
+	_tecla(KEY_RIGHT)
+	_tecla(KEY_LEFT)
+	_tecla(KEY_ENTER)
+	pausa._acao_sel(1, true)  # o caminho do clique esquerdo
+	pausa._acao_sel(-1, false)  # e o do direito
+	ok(
+		str(Config.g("sombras")) == sombras_antes and Config.g_perfil() == "baixo" and pausa.tela == "avancado",
+		"bloqueado: setas, Enter e clique não mudam o detalhe nem viram Personalizado"
+	)
+	ok("Controlado pelo Detalhe dinâmico" in pausa._ajuda.text and "Desligue-o" in pausa._ajuda.text, "a ajuda do detalhe bloqueado diz que o dinâmico manda")
+	ok(pausa._linhas[pausa.sel - pausa._topo]["rotulo"].get_theme_color("font_color").a < 0.7, "a linha bloqueada aparece apagada")
+	Config.definir("qualidade_auto", false)  # desliga: tudo volta a ser editável
+	pausa._desenhar()
+	var algum_bloqueado := false
+	for it in pausa._itens_atuais:
+		if bool(it.get("bloqueado", false)):
+			algum_bloqueado = true
+	ok(not algum_bloqueado, "com o Detalhe dinâmico Não, os detalhes voltam a ser editáveis")
 	_ir_para(pausa, "g:op:sombras")
 	_tecla(KEY_RIGHT)  # baixa -> media
 	ok(str(Config.g("sombras")) == "media" and mundo.sombras.modo == Sombras.MEDIA, "Sombras (lista) muda a config e a sombra do mundo")
@@ -307,7 +368,7 @@ func _testes() -> void:
 		ids_topo.find("g:perfil") >= 0 and ids_topo.find("g:perfil") < ids_topo.find("g:tela") and ids_topo.find("g:tela") < ids_topo.find("g:fps"),
 		"a aba tem Perfil, Tela cheia e Mostrar FPS nessa ordem"
 	)
-	ok(not ("g:qualidade" in ids_topo), "a opção solta 'Baixar a qualidade' saiu: virou o perfil Dinâmico")
+	ok(ids_topo.find("g:dinamico") == ids_topo.find("g:perfil") + 1, "a linha Detalhe dinâmico fica logo abaixo do Perfil")
 	Config.g_aplicar_perfil("alto")
 	_ir_para(pausa, "g:tela")
 	var tela_antes := bool(Config.v("tela_cheia"))
@@ -315,38 +376,66 @@ func _testes() -> void:
 	ok(bool(Config.v("tela_cheia")) != tela_antes and Config.g_perfil() == "alto", "Tela cheia liga e desliga pela linha, sem mudar o perfil")
 	_tecla(KEY_F11)
 	ok(bool(Config.v("tela_cheia")) == tela_antes and pausa.aberto, "F11 com o menu aberto volta a Tela cheia, e o menu continua aberto")
-	# o perfil Dinâmico: a seta passa por Baixo, Médio, Alto, Dinâmico; só o Dinâmico liga a baixa e a subida automáticas
+	# o Perfil só tem Baixo, Médio e Alto; o Detalhe dinâmico é a linha de baixo e não muda com as setas do Perfil
 	_ir_para(pausa, "g:perfil")
-	Config.definir("qualidade_auto", false)
+	Config.definir("qualidade_auto", false)  # o Perfil à mão: só com o Detalhe dinâmico Não
 	Config.g_aplicar_perfil("baixo")
-	for nome in ["Médio", "Alto", "Dinâmico", "Baixo"]:
+	for nome in ["Médio", "Alto", "Baixo", "Médio"]:
 		_tecla(KEY_RIGHT)
 		ok(str(pausa._itens_atuais[pausa.sel].valor) == nome, "a seta do Perfil chega em %s (mostra %s)" % [nome, str(pausa._itens_atuais[pausa.sel].valor)])
-		if nome == "Dinâmico":
-			ok(bool(Config.v("qualidade_auto")) and Config.g_perfil() == "alto", "Dinâmico liga a baixa automática e parte do Alto")
-			ok(
-				pausa._itens_atuais[pausa.sel + 1].get("cab", false) and "FPS" in str(pausa._itens_atuais[pausa.sel + 1].rotulo),
-				"o Dinâmico mostra a explicação curta logo abaixo"
-			)
-		else:
-			ok(not bool(Config.v("qualidade_auto")), "%s desliga a baixa automática" % nome)
+		ok(not bool(Config.v("qualidade_auto")), "trocar o Perfil (%s) não mexe no Detalhe dinâmico" % nome)
 	_tecla(KEY_LEFT)
-	_tecla(KEY_LEFT)  # Baixo -> Dinâmico -> Alto, pela esquerda
-	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Alto", "a seta para a esquerda volta um perfil")
+	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Baixo", "a seta para a esquerda volta um perfil")
+	_tecla(KEY_LEFT)
+	ok(str(pausa._itens_atuais[pausa.sel].valor) == "Alto", "o Perfil dá a volta: só os três fixos (sem Dinâmico entre o Alto e o Baixo)")
+	ok(
+		not ("?" in str(pausa._itens_atuais[pausa.sel].rotulo)) and bool(pausa._itens_atuais[pausa.sel].get("icone", false)),
+		"o Perfil tem o ícone '?' (o nome é só Perfil)"
+	)
+	ok("Personalizado" in pausa._ajuda.text, "o rodapé do Perfil explica o Personalizado")
+	# o Detalhe dinâmico: Sim/Não, com a ajuda no rodapé, e mexer nele não vira Personalizado
+	Config.g_aplicar_perfil("medio")
+	Config.definir("qualidade_auto", true)
+	_ir_para(pausa, "g:dinamico")
+	ok(
+		str(pausa._itens_atuais[pausa.sel].rotulo) == "Detalhe dinâmico" and str(pausa._itens_atuais[pausa.sel].valor) == "Sim",
+		"a linha Detalhe dinâmico existe e mostra Sim"
+	)
+	ok(
+		"sem passar do Perfil escolhido" in pausa._ajuda.text and "travados" in pausa._ajuda.text,
+		"o rodapé do Detalhe dinâmico explica o teto e que os detalhes ficam travados"
+	)
+	_tecla(KEY_ENTER)
+	ok(not bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Não", "Enter desliga o Detalhe dinâmico")
+	ok(Config.g_perfil() == "medio", "mexer no Detalhe dinâmico não vira Personalizado (o perfil segue Médio)")
+	_tecla(KEY_ENTER)
+	ok(
+		bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Sim" and Config.g_perfil() == "medio",
+		"Enter alterna de volta para Sim"
+	)
+	_tecla(KEY_LEFT)
+	ok(not bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Não", "a seta esquerda alterna a linha (Sim -> Não)")
 	_tecla(KEY_RIGHT)
 	ok(
-		(
-			str(pausa._itens_atuais[pausa.sel].valor) == "Dinâmico"
-			and not ("?" in str(pausa._itens_atuais[pausa.sel].rotulo))
-			and bool(pausa._itens_atuais[pausa.sel].get("icone", false))
-		),
-		"o Perfil tem o ícone '?' (o nome é só Perfil) e o rodapé explica o Dinâmico"
+		bool(Config.v("qualidade_auto")) and str(pausa._itens_atuais[pausa.sel].valor) == "Sim" and Config.g_perfil() == "medio",
+		"a seta direita alterna a linha (Não -> Sim)"
 	)
-	ok("Dinâmico" in pausa._ajuda.text, "o rodapé do Perfil explica o Dinâmico")
+	# com o dinâmico Sim, só o Perfil (o seletor manual de detalhe) fica apagado; Detectar, Tela cheia, Mostrar FPS e interface seguem livres
+	var apagadas: Array = []
+	for it in pausa._itens_atuais:
+		if bool(it.get("bloqueado", false)):
+			apagadas.append(str(it.id))
+	ok(apagadas == ["g:perfil"], "com o Detalhe dinâmico Sim, só o Perfil fica apagado na tela Gráficos (apagadas: %s)" % str(apagadas))
+	ok(str(pausa._itens_atuais[pausa.sel - 1].valor) == "Médio", "o Perfil mostra só Médio enquanto o perfil não caiu")
+	await _testar_perfil_travado(pausa)
+	# o Detectar escolhe o Perfil e deixa o Detalhe dinâmico como está
+	_ir_para(pausa, "g:detectar")
+	_tecla(KEY_ENTER)
+	ok(bool(Config.v("qualidade_auto")) and Config.g_perfil() == Config.g_detectar(), "Detectar escolhe o perfil da máquina e o Detalhe dinâmico segue Sim")
 
-	# 6c. a baixa automática (fps abaixo de 40 por 8 s) desce o perfil só na memória; o arquivo guarda o que o jogador escolheu
+	# 6c. o Detalhe dinâmico (fps abaixo de 40 por 8 s) desce o perfil só na memória; o arquivo guarda o que o jogador escolheu
 	pausa.fechar()  # a medição de FPS só vale durante a jogabilidade, sem o menu aberto
-	Config.definir("qualidade_auto", true)  # o Dinâmico
+	Config.definir("qualidade_auto", true)  # o Detalhe dinâmico
 	Config.g_aplicar_perfil("alto")
 	mundo._qualidade_ligada = true  # o jogo de verdade (no teste o mundo fica desligado de propósito)
 	for i in 500:
@@ -385,6 +474,7 @@ func _testes() -> void:
 		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
 	ok(Config.g_perfil() == "alto", "fora do jogo de verdade (testes, medições) a baixa não age")
 	Config.g_aplicar_perfil("alto")
+	await _testar_teto_e_migracao(mundo, pausa)
 	_testar_janelas_qualidade(mundo, pausa)
 
 	# 6d. a contagem sozinha (v2/qualidade_auto.gd): 8 s abaixo de 40 fps desce um degrau; 40 fps zera; Baixo e Personalizado não descem
@@ -398,6 +488,14 @@ func _testes() -> void:
 	for i in 15:
 		depois_de_zerar += qa.passo(0.5, 30.0, "medio")
 	ok(depois_de_zerar == "" and qa.passo(0.5, 30.0, "medio") == "baixo", "40 fps zera a contagem: são outros 8 s para descer de médio para baixo")
+	var sem_teto := QualidadeAuto.new()
+	var sobe_ate_teto := ""
+	for i in 60:
+		sobe_ate_teto += sem_teto.passo(0.5, 60.0, "baixo", 55.0, "medio")
+	var passa_do_teto := ""
+	for i in 400:
+		passa_do_teto += sem_teto.passo(0.5, 60.0, "medio", 55.0, "medio")
+	ok(sobe_ate_teto == "medio" and passa_do_teto == "", "com o teto em Médio, a subida para no Médio")
 	var sem_descer := ""
 	for i in 100:
 		sem_descer += qa.passo(0.5, 30.0, "baixo") + qa.passo(0.5, 30.0, "personalizado")
@@ -501,6 +599,7 @@ func _testes() -> void:
 		if str(it.rotulo) == "Motor do jogo" and str(it.ajuda).contains("MIT") and str(it.ajuda).contains("Juan Linietsky"):
 			motor_ok = true
 	ok(motor_ok and vazios == 0, "os créditos trazem o aviso da licença MIT do Godot e nenhuma linha vazia")
+	ok(_linhas_visiveis(pausa) == mini(Pausa.VISIVEIS, pausa._itens_atuais.size()), "com rodapé de ajuda (Créditos) seguem 5 linhas, sem invadir o rodapé")
 	_ir_para(pausa, "c:2")
 	ok(pausa._ajuda.text.contains("Godot Engine"), "o rodapé mostra o aviso da linha escolhida")
 	_tecla(KEY_ESCAPE)
@@ -531,10 +630,10 @@ func _testes() -> void:
 	_tecla(KEY_ESCAPE)
 	ok(not pausa.aberto and not get_tree().paused, "ESC na pausa fecha e despausa")
 
-	# 8. o clique do mouse escolhe a linha (Ajustes é a linha 2 do menu: a lista começa no topo)
+	# 8. o clique do mouse escolhe a linha (Ajustes é a linha 3 do menu: a lista começa no topo)
 	_tecla(KEY_ESCAPE)
 	pausa.mouse_fn = Callable(self, "_mouse_teste")
-	_mouse_alvo = Vector2(354, 55 + 118 + 1 * 36 + 16)  # Ajustes: linha 2 (PAINEL, LINHA0, LINHA_H de pausa.gd)
+	_mouse_alvo = Vector2(354, 55 + 118 + 2 * 36 + 16)  # Ajustes: linha 3 (PAINEL, LINHA0, LINHA_H de pausa.gd)
 	_clique(_mouse_alvo)
 	ok(pausa.tela == "ajustes", "clique com o mouse abre a linha clicada")
 	_tecla(KEY_ESCAPE)
@@ -597,6 +696,22 @@ func _testes() -> void:
 		ok(not get_tree().paused, "santuário não pausa a árvore")
 		altar._ajustes.pressed.emit()  # o botão Ajustes do santuário
 		ok(pa.aberto and pa.tela == "ajustes", "o botão Ajustes do santuário abre o submenu")
+		# o mesmo menu, sem partida (título e santuário): Dinâmico Sim trava o Perfil também aqui
+		Config.g_aplicar_perfil("medio")
+		Config.definir("qualidade_auto", true)
+		pa._ir("graficos")
+		_ir_para(pa, "g:perfil")
+		_tecla(KEY_RIGHT)
+		_tecla(KEY_ENTER)
+		ok(
+			Config.g_perfil_escolhido() == "medio" and bool(pa._itens_atuais[pa.sel].get("bloqueado", false)),
+			"no menu sem partida, Dinâmico Sim também trava o Perfil"
+		)
+		_ir_para(pa, "g:avancado")
+		_tecla(KEY_ENTER)
+		_tecla(KEY_RIGHT)
+		ok(Config.g_perfil() == "medio" and pa.tela == "avancado", "e as opções do Avançado")
+		pa._ir("ajustes")
 		_tecla(KEY_ESCAPE)  # no santuário, ESC em Ajustes fecha (não há pausa por trás)
 		ok(not pa.aberto, "no santuário, ESC em Ajustes fecha o submenu")
 		ok(get_viewport().gui_get_focus_owner() == altar._ajustes, "fechar Ajustes restaura foco no botão")
@@ -606,6 +721,72 @@ func _testes() -> void:
 	ok(_md5(SAVE_REAL) == md5_save, "o save real (v2_progresso.cfg) não foi tocado")
 	ok(_md5(OPCOES_REAL) == md5_opc, "as opções reais (opcoes.cfg) não foram tocadas")
 	_limpar_saves()
+
+
+## Congela o Tween real num quadro intermediário: evita depender da duração de um frame do runner de CI.
+func _quadro_intermediario(c: CanvasItem, segundos: float) -> void:
+	var tw: Tween = c.get_meta("tr_tween")
+	tw.pause()
+	tw.custom_step(segundos)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	ok(Transicoes.animando(c) and c.modulate.a > 0.0 and c.modulate.a < 1.0, "o teste de mouse observa um quadro intermediário real")
+
+
+func _assentar_transicao(c: CanvasItem) -> void:
+	if c.has_meta("tr_tween"):
+		var tw: Tween = c.get_meta("tr_tween")
+		tw.custom_step(10.0)
+
+
+## As bordas que recebem clique devem acompanhar a geometria realmente desenhada, inclusive durante os slides.
+func _testar_mouse_transicoes(pausa) -> void:
+	var reduzido := Transicoes.reduzido()
+	Config.temporario(Transicoes.OPCAO, false)
+	var mouse_antes: Callable = pausa.mouse_fn
+	var ap = pausa.mundo.ap
+	var desloc_antes: Vector2 = ap.desloc
+	var fator_antes: float = ap.fator
+	var offset_antes: Vector2 = pausa.offset
+	ap.desloc = Vector2(32, 18)
+	ap.fator = 1.25
+	pausa.offset = ap.desloc
+	pausa.mouse_fn = func(): return ap.pos_ui(_mouse_alvo)  # mesma conversão da partida, com deslocamento e escala não triviais
+	pausa.pausar()
+	await _quadro_intermediario(pausa._raiz, 0.02)
+	var linha: Control = pausa._linhas[0].linha
+	ok(linha.size == Vector2(Pausa.PAINEL.size.x - 48, Pausa.LINHA_ALT), "a linha mantém a área clicável inteira de 392x32, não só a tinta do rótulo")
+	var r := linha.get_global_rect()
+	_mouse_alvo = (Vector2(r.get_center().x, r.end.y - 1.0) + ap.desloc) * ap.fator
+	ok(pausa._linha_sob_mouse() == 0, "durante entrar, a borda inferior de Continuar pertence a Continuar, não a Conquistas")
+	_clique(_mouse_alvo)
+	ok(not pausa.aberto and not get_tree().paused, "clicar no Continuar desenhado durante o slide fecha a pausa")
+	# A saída já não captura entrada, mas a geometria da linha continua acompanhando a imagem.
+	pausa.fechar()
+	await _quadro_intermediario(pausa._raiz, 0.10)
+	r = linha.get_global_rect()
+	_mouse_alvo = (Vector2(r.get_center().x, r.end.y - 1.0) + ap.desloc) * ap.fator
+	ok(pausa._linha_sob_mouse() == 0, "durante sair, a borda da linha acompanha a posição desenhada")
+	_clique(_mouse_alvo)
+	ok(not pausa.aberto, "a imagem saindo não captura clique nem reabre a pausa")
+	_assentar_transicao(pausa._raiz)
+	pausa.pausar()
+	_assentar_transicao(pausa._raiz)
+	pausa._ir("ajustes")
+	await _quadro_intermediario(pausa._conteudo, 0.02)
+	r = linha.get_global_rect()
+	_mouse_alvo = (Vector2(r.end.x - 1.0, r.get_center().y) + ap.desloc) * ap.fator
+	ok(pausa._linha_sob_mouse() == 0, "na troca de página, a borda direita de Gráficos acompanha o slide horizontal")
+	_clique(_mouse_alvo)
+	ok(pausa.tela == "graficos", "clicar no Gráficos desenhado durante a troca de página abre Gráficos")
+	pausa.fechar()
+	_assentar_transicao(pausa._raiz)
+	_assentar_transicao(pausa._conteudo)
+	pausa.mouse_fn = mouse_antes
+	ap.desloc = desloc_antes
+	ap.fator = fator_antes
+	pausa.offset = offset_antes
+	Config.temporario(Transicoes.OPCAO, reduzido)
 
 
 func _limpar_saves() -> void:
@@ -619,7 +800,8 @@ func _limpar_saves() -> void:
 func _testar_janelas_qualidade(mundo, pausa) -> void:
 	mundo._qualidade_ligada = true
 	Config.definir("qualidade_auto", true)
-	Config.g_aplicar_perfil("medio")
+	Config.g_aplicar_perfil("alto")  # o teto
+	Config.g_perfil_temporario("medio")  # e a queda de agora, para a subida ter para onde ir
 	for estado in ["escolha", "bau", "vitoria"]:
 		mundo.combate.jogo = estado
 		mundo.combate.pausado = true
@@ -653,6 +835,211 @@ func _testar_janelas_qualidade(mundo, pausa) -> void:
 	Config.g_aplicar_perfil("alto")
 
 
+## Clique completo com o botão dado: a ação do menu é no soltar.
+func _clique_botao(pos: Vector2, botao: MouseButton) -> void:
+	for pressionado in [true, false]:
+		var e := InputEventMouseButton.new()
+		e.button_index = botao
+		e.pressed = pressionado
+		e.position = pos
+		_enviar(e)
+
+
+## Feedback do Alisson (build de 20/10): "marcar Sim em Detalhe dinâmico não está travando o seletor manual de detalhes". O seletor manual
+## é o Perfil (Baixo, Médio e Alto fixam todos os detalhes de uma vez) tanto quanto as opções soltas do Avançado. O teste faz o caminho dele,
+## tudo pela entrada da janela: teclado, controle e mouse (esquerdo e direito), em cada Perfil, na tela Gráficos e no Avançado, e de novo
+## depois de reabrir o jogo (Config.recarregar). No código antigo o Perfil mudava com Sim e este teste falhava.
+func _testar_perfil_travado(pausa) -> void:
+	var mouse_antes: Callable = pausa.mouse_fn
+	pausa.mouse_fn = Callable(self, "_mouse_teste")
+	ok(bool(Config.v("qualidade_auto")) and pausa.tela == "graficos", "travar o Perfil: parte da tela Gráficos com o dinâmico Sim")
+	var x_linha: float = Pausa.PAINEL.position.x + 120.0
+	var y_perfil: float = Pausa.PAINEL.position.y + Pausa.LINHA0 + 16.0
+	for nome in ["baixo", "medio", "alto"]:
+		Config.g_aplicar_perfil(nome)
+		pausa._ir("graficos")
+		_ir_para(pausa, "g:perfil")
+		var ids_antes: Array = _ids(pausa)
+		for gesto in ["direita", "esquerda", "enter", "pad_direita", "pad_esquerda", "pad_a", "mouse_esq", "mouse_dir"]:
+			match gesto:
+				"direita":
+					_tecla(KEY_RIGHT)
+				"esquerda":
+					_tecla(KEY_LEFT)
+				"enter":
+					_tecla(KEY_ENTER)
+				"pad_direita":
+					_pad(JOY_BUTTON_DPAD_RIGHT)
+				"pad_esquerda":
+					_pad(JOY_BUTTON_DPAD_LEFT)
+				"pad_a":
+					_pad(JOY_BUTTON_A)
+				"mouse_esq":
+					_mouse_alvo = Vector2(x_linha, y_perfil)
+					_clique_botao(_mouse_alvo, MOUSE_BUTTON_LEFT)
+				"mouse_dir":
+					_clique_botao(_mouse_alvo, MOUSE_BUTTON_RIGHT)
+			ok(
+				Config.g_perfil_escolhido() == nome and Config.g_perfil() == nome and pausa.tela == "graficos" and _ids(pausa) == ids_antes,
+				"Dinâmico Sim, Perfil %s: %s não muda o Perfil (agora %s)" % [nome, gesto, Config.g_perfil_escolhido()]
+			)
+		ok(bool(pausa._itens_atuais[pausa.sel].get("bloqueado", false)) and _sel_id(pausa) == "g:perfil", "o Perfil %s aparece bloqueado" % nome)
+		ok(
+			"Travado" in pausa._ajuda.text and "Detalhe dinâmico" in pausa._ajuda.text and "Desligue" in pausa._ajuda.text,
+			"o rodapé do Perfil travado diz que o dinâmico manda e como destravar"
+		)
+		ok(pausa._linhas[0]["rotulo"].get_theme_color("font_color").a < 0.7, "a linha do Perfil bloqueado é desenhada apagada")
+		# o Avançado, pelo mesmo caminho (o clique do mouse numa linha de detalhe)
+		var sombras_antes := str(Config.g("sombras"))
+		_ir_para(pausa, "g:avancado")
+		_tecla(KEY_ENTER)
+		_mouse_alvo = Vector2(x_linha, Pausa.PAINEL.position.y + Pausa.LINHA0 + 1 * Pausa.LINHA_H + 16.0)  # a 1ª opção (a 0 é o cabeçalho CPU)
+		_clique_botao(_mouse_alvo, MOUSE_BUTTON_LEFT)
+		_clique_botao(_mouse_alvo, MOUSE_BUTTON_RIGHT)
+		_tecla(KEY_RIGHT)
+		_pad(JOY_BUTTON_DPAD_LEFT)
+		_pad(JOY_BUTTON_A)
+		ok(
+			pausa.tela == "avancado" and Config.g_perfil() == nome and str(Config.g("sombras")) == sombras_antes,
+			"Dinâmico Sim, Perfil %s: clique, setas e A no Avançado não mudam nenhum detalhe (agora %s)" % [nome, Config.g_perfil()]
+		)
+		_tecla(KEY_ESCAPE)  # Avançado -> Gráficos
+	# reabrir o jogo: o arquivo manda e o Perfil segue travado com o dinâmico Sim
+	Config.g_aplicar_perfil("medio")
+	Config.recarregar()
+	pausa._ir("graficos")
+	ok(
+		bool(pausa._graficos.itens()[0].get("bloqueado", false)) and bool(Config.v("qualidade_auto")),
+		"depois de reabrir o jogo o Perfil segue travado com o dinâmico Sim"
+	)
+	_tecla(KEY_RIGHT)
+	ok(Config.g_perfil_escolhido() == "medio", "depois de reabrir o jogo a seta não muda o Perfil")
+	# ligar na hora: Não -> Sim trava o que estava livre
+	_ir_para(pausa, "g:dinamico")
+	_tecla(KEY_ENTER)
+	ok(not bool(Config.v("qualidade_auto")) and not bool(pausa._graficos.itens()[0].get("bloqueado", false)), "Dinâmico Não: o Perfil fica livre")
+	_ir_para(pausa, "g:perfil")
+	_tecla(KEY_RIGHT)
+	ok(Config.g_perfil_escolhido() == "alto" and Config.g_perfil() == "alto", "Dinâmico Não: a seta troca o Perfil (Médio -> Alto)")
+	_ir_para(pausa, "g:dinamico")
+	_tecla(KEY_ENTER)
+	ok(bool(Config.v("qualidade_auto")) and bool(pausa._graficos.itens()[0].get("bloqueado", false)), "ligar na hora (Não -> Sim) trava o Perfil")
+	_ir_para(pausa, "g:perfil")
+	_tecla(KEY_RIGHT)
+	ok(Config.g_perfil_escolhido() == "alto", "recém ligado, a seta não troca o Perfil: o Alto fica como teto")
+	# Personalizado + ligar o dinâmico: sem Perfil para escolher e sem Personalizado com ele ligado, então a máquina escolhe o teto
+	_ir_para(pausa, "g:dinamico")
+	_tecla(KEY_ENTER)  # Não
+	Config.g_definir("max_inimigos", 300)  # Personalizado (o jogador mexeu num detalhe à mão)
+	ok(Config.g_perfil() == "personalizado", "montado à mão: Personalizado")
+	_tecla(KEY_ENTER)  # Sim
+	ok(
+		bool(Config.v("qualidade_auto")) and Config.g_perfil_escolhido() == Config.g_detectar(),
+		"ligar o dinâmico estando em Personalizado aplica o perfil da máquina (sem Perfil travado em Personalizado)"
+	)
+	Config.g_aplicar_perfil("medio")
+	pausa._ir("graficos")
+	pausa.mouse_fn = mouse_antes
+
+
+## O Perfil escolhido é o teto do Detalhe dinâmico, o Perfil mostra "(dinâmico)" quando o fps o derrubou e o save antigo migra.
+func _testar_teto_e_migracao(mundo, pausa) -> void:
+	mundo._qualidade = QualidadeAuto.new()
+	mundo._qualidade_ligada = true
+	mundo.combate.jogo = "jogando"
+	Config.definir("qualidade_auto", true)
+	Config.g_aplicar_perfil("medio")
+	for i in 500:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "baixo" and Config.g_perfil_escolhido() == "medio", "Médio + dinâmico desce para Baixo, e o escolhido segue Médio")
+	var linhas: Array = pausa._graficos.itens()
+	ok(str(linhas[0].valor) == "Baixo (dinâmico)", "o Perfil mostra o de agora e '(dinâmico)' quando desceu (mostra %s)" % str(linhas[0].valor))
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "baixo", "no Baixo com o dinâmico ligado não há para onde descer")
+	for i in 2000:  # 33 s no alvo: sobe um degrau
+		mundo._baixar_qualidade(1.0 / 60.0, 60.0)
+	ok(
+		Config.g_perfil() == "medio" and str(pausa._graficos.itens()[0].valor) == "Médio",
+		"fps firme sobe de volta ao Médio e o Perfil volta a mostrar só Médio"
+	)
+	for i in 20000:  # mais de 5 min de fps ótimo: o Alto não é do jogador, não sobe
+		mundo._baixar_qualidade(1.0 / 60.0, 60.0)
+	ok(Config.g_perfil() == "medio", "o Perfil escolhido é o teto: Médio nunca sobe para Alto")
+	for i in 500:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "baixo", "cai de novo para Baixo")
+	pausa._graficos.agir("perfil", 1)  # com o dinâmico Sim o Perfil é teto travado: a seta não muda nada nem tira a queda
+	ok(
+		Config.g_perfil() == "baixo" and Config.g_perfil_escolhido() == "medio" and bool(Config.v("qualidade_auto")),
+		"com o dinâmico Sim a seta do Perfil não mexe no teto nem na queda"
+	)
+	Config.definir("qualidade_auto", false)
+	pausa._graficos.agir("perfil", 1)  # as setas partem do escolhido (Médio), não do Baixo caído
+	ok(Config.g_perfil() == "alto" and Config.g_perfil_escolhido() == "alto", "a seta do Perfil parte do escolhido (Médio -> Alto) e tira a queda")
+	Config.definir("qualidade_auto", true)
+	Config.g_aplicar_perfil("medio")
+	for i in 500:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	pausa._graficos.agir("dinamico", 1)
+	ok(not bool(Config.v("qualidade_auto")) and Config.g_perfil() == "medio", "desligar o Detalhe dinâmico com o perfil caído volta na hora ao escolhido")
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(Config.g_perfil() == "medio", "desligado, o fps baixo não derruba o perfil")
+	Config.definir("qualidade_auto", true)
+	Config.g_definir("max_inimigos", 300)  # Personalizado
+	for i in 600:
+		mundo._baixar_qualidade(1.0 / 60.0, 30.0)
+	ok(
+		Config.g_perfil() == "personalizado" and str(pausa._graficos.itens()[0].valor) == "Personalizado",
+		"no Personalizado o dinâmico não age e o Perfil mostra Personalizado"
+	)
+	mundo._qualidade_ligada = false
+	# save antigo: qualidade_auto ligada + perfil Alto (o antigo "Dinâmico") = Perfil Alto + Detalhe dinâmico Sim; os outros casos ficam como estavam
+	var casos := [
+		["alto", true, "Alto", "Sim"],
+		["alto", false, "Alto", "Não"],
+		["medio", true, "Médio", "Sim"],
+		["baixo", false, "Baixo", "Não"],
+		["personalizado", true, "Personalizado", "Não"]
+	]
+	for c in casos:
+		var cfg := ConfigFile.new()
+		cfg.set_value("graficos", "perfil", c[0])
+		cfg.set_value("graficos", "base", c[0])
+		cfg.set_value("opcoes", "qualidade_auto", c[1])
+		cfg.save(OPCOES_TESTE)
+		Config.recarregar()
+		var l: Array = pausa._graficos.itens()
+		ok(
+			str(l[0].valor) == c[2] and str(l[1].valor) == c[3] and Config.g_perfil_escolhido() == c[0],
+			(
+				"save antigo (%s, qualidade_auto %s) abre como Perfil %s e Detalhe dinâmico %s (mostra %s e %s)"
+				% [c[0], str(c[1]), c[2], c[3], str(l[0].valor), str(l[1].valor)]
+			)
+		)
+	# Personalizado + dinâmico ligado (montado à mão antes): abre com o dinâmico Não e o que ele montou fica editável
+	var pers := ConfigFile.new()
+	pers.set_value("graficos", "perfil", "personalizado")
+	pers.set_value("graficos", "base", "alto")
+	pers.set_value("graficos", "sombras", "baixa")
+	pers.save(OPCOES_TESTE)  # sem qualidade_auto salvo: o padrão (Sim) também não pode ficar com o Personalizado
+	Config.recarregar()
+	ok(
+		not bool(Config.v("qualidade_auto")) and Config.g_perfil() == "personalizado" and str(Config.g("sombras")) == "baixa",
+		"save Personalizado sem a opção salva abre com o dinâmico Não e mantém o montado à mão"
+	)
+	var salvo_pers := ConfigFile.new()
+	salvo_pers.load(OPCOES_TESTE)
+	ok(not bool(salvo_pers.get_value("opcoes", "qualidade_auto", true)), "e grava o dinâmico como Não (a migração não repete)")
+	ok(not bool(pausa._graficos.itens_avancado()[1].get("bloqueado", false)), "no save Personalizado os detalhes abrem editáveis")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(OPCOES_TESTE))
+	Config.recarregar()
+	ok(bool(Config.v("qualidade_auto")), "sem nada salvo (máquina nova) o Detalhe dinâmico vem Sim")
+	Config.g_aplicar_perfil("alto")
+	await get_tree().process_frame
+
+
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
 	var mundo = Mundo.instantiate()
@@ -665,6 +1052,9 @@ func _fotos(pasta: String) -> void:
 	Config.g_aplicar_perfil("alto")
 	_tecla(KEY_ESCAPE)
 	await mundo.ap.foto(pasta.path_join("pausa_menu.png"))
+	_tecla(KEY_TAB)  # a tabela de detalhes do SUA BUILD: os quadros laterais mantêm o topo e a altura do menu
+	await mundo.ap.foto(pasta.path_join("pausa_menu_detalhes.png"))
+	_tecla(KEY_TAB)
 	_ir_para(pausa, "ajustes")
 	_tecla(KEY_ENTER)
 	await mundo.ap.foto(pasta.path_join("pausa_ajustes.png"))
@@ -672,7 +1062,7 @@ func _fotos(pasta: String) -> void:
 	_tecla(KEY_ENTER)
 	Config.definir("qualidade_auto", true)
 	Config.g_aplicar_perfil("alto")
-	_ir_para(pausa, "g:perfil")  # o Dinâmico, com a explicação curta e o rodapé do '?'
+	_ir_para(pausa, "g:dinamico")  # a linha Detalhe dinâmico, com a ajuda no rodapé
 	await mundo.ap.foto(pasta.path_join("pausa_graficos_topo.png"))
 	_ir_para(pausa, "g:avancado")
 	await mundo.ap.foto(pasta.path_join("pausa_graficos.png"))

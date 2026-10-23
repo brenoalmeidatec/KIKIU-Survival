@@ -1,6 +1,6 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do ESCUDO, o tiro secundário do botão direito (v2/escudo.gd, heroi.gd, combate.gd, entrada.gd, dados/v2_secundario.json):
-# dados e entrada (botão direito e LT = escudo, E e LB = ruptura, Q = ultimate reservado), bloqueio da frente (sim) e das costas e lados (não),
+# dados e entrada (botão direito e LT = escudo, E e LB = ruptura, Q = ultimate, o especial), bloqueio da frente (sim) e das costas e lados (não),
 # bloqueio perfeito (empurra e atordoa quem bateu, sem gasto), bloqueio comum (gasta um pouco de fôlego), fôlego que gasta por segundo,
 # velocidade de ~60%, sem correr nem golpear, cansaço que derruba o escudo, ruptura (E) que troca o escudo, contato de verdade com um monstro,
 # o secundário por herói (dados > herois) e soltar que volta ao fôlego normal. O mundo anda em passos fixos de 1/60 s.
@@ -98,7 +98,7 @@ func _ready() -> void:
 	for ev in InputMap.action_get_events("ultimate"):
 		if ev is InputEventKey and ev.physical_keycode == KEY_Q:
 			tem_q = true
-	ok(tem_q, "ultimate: tecla Q (reservada, sem efeito)")
+	ok(tem_q, "ultimate: tecla Q (o especial do herói)")
 	ok(
 		ResourceLoader.exists("res://assets/audio/v2/impacto.wav") and ResourceLoader.exists("res://assets/audio/v2/ruptura_tique.wav"),
 		"os sons do escudo existem"

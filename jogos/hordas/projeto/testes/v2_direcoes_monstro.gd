@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## A linha da folha do monstro por direção do movimento (v2/monstro.gd): folha de 5 linhas (frente, 3/4 baixo, perfil, 3/4 costas, costas)
 ## e retrocompatibilidade com a folha de 2 linhas (frente, três quartos). Também confere as folhas reais carregadas por v2/sprites.gd.
 const Monstro := preload("res://v2/monstro.gd")

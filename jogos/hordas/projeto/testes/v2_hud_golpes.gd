@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da faixa de GOLPES do HUD da v2 (v2/hud_golpes.gd, no hud.tscn): cada golpe automático que o herói ganha aparece como
 # parte fixa do HUD, com nível, recarga e progresso da fusão; o nível sobe e anima; a fusão troca as peças pela evolução e nada mais some;
 # parada, a faixa não pede redesenho; com mundo sem combate fica escondida; não cruza nenhum outro bloco do HUD (e se esconde com o card C).
@@ -177,7 +177,7 @@ func _partida(w, hud, g) -> void:
 	_passar(g, 0.6)
 	var area: Rect2 = g.area_ocupada()
 	ok(Rect2(0, 0, 960, 540).encloses(area), "a faixa cabe na tela de 960x540: %s" % area)
-	ok(area.size.y == 2 * Golpes.ALTURA and area.end.x < 262.0, "dez golpes em duas linhas, antes do selo de nível: %s" % area)
+	ok(area.size.y == 2 * Golpes.ALTURA * Golpes.ESCALA and area.end.x < 360.0, "dez golpes em duas linhas (1,5x), antes do selo de nível e do Q: %s" % area)
 	var raiz: Control = hud.get_node("Raiz")
 	for caminho in ["Retrato", "Vida", "Tempo", "Abates", "Combo", "Xp", "Selo", "Chefe", "Anuncio", "Habilidades"]:
 		var r: Rect2 = raiz.get_node(caminho).get_global_rect()

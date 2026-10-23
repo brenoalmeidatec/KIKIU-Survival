@@ -89,8 +89,8 @@ Notas de estado:
 | Mirar | Mouse | Analógico direito |
 | Golpe principal (katana) | Clique esquerdo (segurar repete o combo) | Gatilho (ver `v2/LEIA-ME.md`) |
 | Escudo | Botão direito | LT |
-| Ruptura (carregar e soltar) | E (segurar e soltar) | LB |
-| Ultimate | Q (**reservado, sem efeito ainda**) | RB (reservado) |
+| Habilidade do herói (Hazaki: ruptura, carregar e soltar; Nicão: investida de escudo; Lucas: salto das adagas; recarga por tempo) | E | LB |
+| Especial do herói (um por herói: Hazaki, investida; Nicão, terremoto; Lucas, chuva de adagas) | Q (ultimate: carga de 0 a 100 por dano causado, abates e dano recebido; não recarrega por tempo) | RB |
 | Esquiva | Espaço | Não confirmado |
 | Correr | Shift (gasta o mesmo fôlego) | Não confirmado |
 | Trocar sombra | 1, 2, 3 | Não confirmado |
@@ -127,7 +127,7 @@ Notas:
 - **Vida, velocidade e sorte** são os números do herói como vêm no arquivo (`cfg.heroi`); os bônus são multiplicadores. "Sorte" é a chance de uma carta comum subir para rara, somada à do santuário.
 - **Mover durante o golpe** (`mov_golpe`): Hazaki 55%, Nicão 30%, Lucas 80% da velocidade de andar.
 - **Escudo (botão direito):** `dados/v2_secundario.json` atribui o escudo aos três heróis.
-- **Ruptura (E ou LB):** vale para qualquer herói; cada um pode ter números próprios em `dados/v2_ruptura.json`.
+- **Habilidade (E ou LB):** uma por herói, em `dados/v2_habilidade.json`: Hazaki tem a ruptura (números em `dados/v2_ruptura.json`), Nicão a investida de escudo e Lucas o salto das adagas.
 
 ### Combo da katana (Hazaki, base antes dos bônus)
 
@@ -585,7 +585,7 @@ Os chefes da v3 não seguem o pipeline de sprites: são **modelos 3D reais anima
 | `salao.gd`, `altar.gd` | Santuário |
 | `status.gd` | Card da build (cartas e melhorias da partida) |
 | `hud.gd`, `hud_golpes.gd`, `hud_habilidades.gd`, `minimapa.gd` | HUD |
-| `ruptura.gd`, `escudo.gd` | Ruptura (E) e escudo (botão direito) |
+| `habilidade.gd`, `ruptura.gd`, `escudo.gd` | Habilidade de cada herói (E; a ruptura é a do Hazaki) e escudo (botão direito) |
 | `qualidade_auto.gd`, `ajustes_graficos.gd` | Perfis de gráficos e ajuste automático |
 | `atualizador.gd` | Aviso de versão nova |
 
@@ -598,7 +598,8 @@ Os números do jogo estão em `dados/` (JSON). Os da v2 têm o prefixo `v2_`:
 | `v2_herois.json` | Heróis jogáveis |
 | `v2_secundario.json` | Tiro secundário (escudo) por herói |
 | `v2_combate.json` | Golpe da katana, herói, laço de combate |
-| `v2_ruptura.json` | Ruptura (E): dano, carga, recarga, cartas |
+| `v2_ruptura.json` | Ruptura (E do Hazaki): dano, carga, recarga, cartas da E |
+| `v2_habilidade.json` | Habilidade E de cada herói (mapa herói -> id; investida de escudo e salto das adagas) |
 | `v2_cartas.json` | Cartas, raridades, golpes, modificadores, fusões, elites, chefes, baús |
 | `v2_armas/lote_1..5.json` | As 45 armas novas |
 | `v2_meta.json` | Almas, melhorias, conquistas, modo Pesadelo |

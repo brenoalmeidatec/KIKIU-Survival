@@ -19,14 +19,23 @@ extends "res://v2/ator.gd"
 ##    (evento) pede, a POSSE (polling) carrega. Estado.CARGA anda a 45%, não corre nem golpeia, NÃO é invencível e apanhar não cancela. Soltar
 ##    com carga mínima dispara em 360 graus (soltura perfeita na janela depois da carga cheia). Cancelam sem disparar e sem gastar recarga: a
 ##    esquiva, a pausa/escolha/baú/resultado (combate.jogo e pausado), a morte e o salto de relógio (ESC e perda de foco).
-##  - ULTIMATE (ação "ultimate", tecla Q ou RB): RESERVADO, ainda sem mecânica (só a ação de entrada e um slot vazio no HUD).
-## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), e da
-## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max.
+##  - ESPECIAL (ação "ultimate", tecla Q ou RB; um por herói, dados/v2_especial.json, disparo em v2/especial.gd): o APERTO dispara na hora. Estado.ESPECIAL
+##    dura `esp_dur` s, não golpeia nem corre, é INVULNERÁVEL e cancela a ruptura, o escudo e a esquiva. Sem a carga cheia o aperto é negado. A carga
+##    (esp_carga, 0 a 100) NÃO corre por tempo: enche por dano causado, abates e dano recebido (combate chama especial.dano, abate e recebeu) e zera ao disparar.
+##  - HABILIDADE (ação "ruptura", tecla E ou LB; UMA POR HERÓI, dados/v2_habilidade.json, disparo em v2/habilidade.gd): `hab_id` diz qual. "ruptura" (Hazaki)
+##    segue o caminho da RUPTURA acima (rup_*). Os outros (investida_escudo do Nicão, salto_adagas do Lucas) disparam no APERTO: Estado.HABILIDADE dura `hab_dur` s,
+##    não golpeia nem corre, é INVULNERÁVEL e cancela a ruptura, o escudo e a esquiva; o Q cancela a E. Na recarga o aperto é negado. A recarga corre por tempo
+##    (hab_recarga) e a partida começa com a E pronta.
+## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), da
+## ruptura rup_carga (0 a 1), rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max, e do especial esp_nome,
+## esp_rotulo, esp_cor, esp_carga, esp_carga_max, esp_nega_t e esp_t (s desde o disparo; 0 fora do especial), e da habilidade hab_id, hab_nome,
+## hab_rotulo, hab_icone, hab_cor, hab_recarga, hab_recarga_max, hab_nega_t e hab_t (a ruptura segue publicando rup_*).
 
 const Herois := preload("res://v2/herois.gd")
+const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 
 enum Fonte { ANDA, MOUSE, STICK }
-enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA }  # CARGA no fim: nada é renumerado
+enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
 const VEL := 100.0  # px/s
 const PASSO_ANIM := 0.13  # s por quadro de andar
 const MORTE_DISSOLVE := 0.3  # s de jogo (relógio do herói: hit-stop e câmera lenta esticam) que o corpo leva para se desfazer
@@ -58,7 +67,9 @@ var xp_proximo := 5.0
 var nivel := 1
 var folego := 3.0  # fôlego em cargas (fracionário), gasto por esquiva (um bloco) e corrida (por segundo)
 var folego_max := 3.0
+var _credito_abate := 1.0  # fôlego que os abates ainda podem devolver agora (ver ganhar_folego_abate)
 var cansado := false  # fôlego zerou: sem correr nem esquivar até recuperar
+var golpe_calor_t := 0.0  # Médio/Difícil: ao zerar fôlego, o ataque principal espera o calor baixar.
 var correndo := false
 var vel_base := VEL  # px/s de andar do herói escolhido (cfg.heroi.vel, v2/herois.gd); o VEL é só o padrão
 
@@ -111,6 +122,39 @@ var escudo_ativo := false  # o escudo está erguido (lido pelo desenho e pelo le
 var escudo_t := 0.0  # s desde que ergueu (tempo do mundo): a janela do bloqueio perfeito
 var escudo_bloqueios := 0  # testes
 var escudo_perfeitos := 0  # testes
+# especial (tecla Q, v2/especial.gd)
+var esp_nome := ""  # o nome do especial do herói ("" = não tem): o HUD só acende o slot Q com ele
+var esp_rotulo := ""  # o texto curto do slot
+var esp_cor := Color.WHITE  # o brilho do slot e dos efeitos
+var esp_carga := 0.0  # a carga da ultimate, de 0 a esp_carga_max: enche por dano causado, abates e dano recebido (NUNCA por tempo); zera ao disparar
+var esp_carga_max := 100.0  # a carga cheia: com ela o Q dispara
+var esp_nega_t := 0.0  # s do "negado" (apertou na recarga): o slot do HUD treme
+var esp_t := 0.0  # s desde o disparo (0 fora do especial)
+var esp_dur := 1.0  # a duração do especial em andamento
+var esp_invul := false  # invulnerável enquanto dura (lido por vulneravel)
+var esp_anim_passo := 2  # o passo do combo cuja animação toca no especial
+var esp_anim_ciclos := 1.0  # quantas vezes ela toca durante a duração
+var esp_disparos := 0  # testes
+var esp_negados := 0  # testes
+# habilidade (tecla E, v2/habilidade.gd; a ruptura de quem tem hab_id "ruptura" usa os rup_* acima)
+var hab_id := "ruptura"  # qual E o herói tem: "ruptura" (rup_*), investida_escudo, salto_adagas... ("" = nenhuma)
+var hab_nome := ""  # o nome da E (o HUD)
+var hab_rotulo := ""  # o texto curto do slot
+var hab_icone := ""  # o id do ícone (assets/v2/icones_cartas)
+var hab_cor := Color.WHITE  # o brilho do slot e dos efeitos
+var hab_recarga := 0.0  # s até poder usar a E de novo (por tempo; o tempo do mundo corre)
+var hab_recarga_max := 1.0  # a recarga cheia, para o HUD desenhar a fração
+var hab_nega_t := 0.0  # s do "negado" (apertou na recarga): o slot do HUD treme
+var hab_t := 0.0  # s desde o disparo (0 fora da E)
+var hab_dur := 1.0  # a duração da E em andamento
+var hab_invul := false  # invulnerável enquanto dura (lido por vulneravel)
+var hab_anim_passo := 0  # o passo do combo cuja animação toca na E
+var hab_anim_ciclos := 1.0  # quantas vezes ela toca durante a duração
+var hab_anim_antes := ""  # animação da folha ("animacoes", ex.: "escudo") que toca no começo da E, antes do passo do combo (vazio = só o passo)
+var hab_anim_antes_ate := 0.0  # até que fração da duração ela vale; o passo do combo ocupa o resto
+var hab_anim_quadros: Array = []  # quais quadros do passo tocam nesse resto (vazio = o passo inteiro)
+var hab_disparos := 0  # testes
+var hab_negados := 0  # testes
 # ruptura (tecla E)
 var rup_carga := 0.0  # fração da carga (0 a 1) lida pelo HUD e pelo desenho do anel
 var rup_carga_t := 0.0  # s de carga (tempo do mundo)
@@ -134,6 +178,7 @@ var _ofego_t := 0.0
 var _punch := 0.0
 var _anda_ant := Vector2.ZERO
 var _anim := 0.0
+var _parado_t := 0.0  # há quanto tempo está livre e parado: toca a animação "parado" da folha (colunas 0, 7, 8 e 9)
 var _dano_t := -1.0  # s desde que apanhou (animação de dano da folha); negativo = fora da animação
 var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
@@ -151,6 +196,7 @@ func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
 
 ## Lê as vidas e as regras do dados/v2_combate.json (chamado pelo combate depois de criar o herói).
 func iniciar_stats(cfg: Dictionary) -> void:
+	golpe_calor_t = 0.0
 	vel_base = float(cfg.heroi.get("vel", VEL))
 	vida_max = float(cfg.heroi.vida)
 	vida = vida_max
@@ -160,6 +206,12 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	correndo = false
 	escudo_ativo = false
 	escudo_t = 0.0
+	var esp = mundo.combate.especial
+	if esp != null:
+		esp.armar(self)  # o nome, a cor e a carga (0) do especial deste herói
+	var hab = mundo.combate.habilidade
+	if hab != null:
+		hab.armar(self)  # a E deste herói (id, nome, ícone, cor) pronta
 	_atraso_t = 0.0
 	esq_dur = float(cfg.esquiva.tempo)
 	esq_inv = float(cfg.esquiva.invulneravel)
@@ -198,6 +250,20 @@ func resetar(p: Vector2) -> void:
 	_rup_apos_acerto = false
 	rup_disparos = 0
 	rup_cancelados = 0
+	if mundo.combate.especial != null:
+		mundo.combate.especial.cancelar(self)
+	esp_disparos = 0
+	esp_negados = 0
+	esp_t = 0.0
+	esp_invul = false
+	if mundo.combate.habilidade != null:
+		mundo.combate.habilidade.cancelar(self)
+	hab_disparos = 0
+	hab_negados = 0
+	hab_t = 0.0
+	hab_invul = false
+	hab_recarga = 0.0
+	hab_nega_t = 0.0
 	_rup_tique = 0
 	_rup_punch = 0.0
 	avanco_camera = Vector2.ZERO
@@ -234,6 +300,9 @@ func exigir_soltar_ataque() -> void:
 ## Na recarga (mais que o buffer) é negado: som grave e o slot do HUD treme. Antes do quadro de acerto de um golpe, o pedido espera o golpe acabar.
 func ruptura() -> void:
 	var c = mundo.combate
+	if hab_id != "ruptura":  # a E deste herói não é a ruptura: dispara na hora (ou não faz nada, se não tem E)
+		habilidade()
+		return
 	if c.ruptura == null or c.jogo != "jogando" or c.pausado or _pausa_aberta() or estado == Estado.MORTO or estado == Estado.CARGA:
 		return
 	var buffer := float(c.cfg.golpe.buffer)
@@ -247,9 +316,81 @@ func ruptura() -> void:
 		rup_pedido_t += maxf(golpe_dur - golpe_t, 0.0)
 
 
+## O botão da E foi apertado e a E do herói NÃO é a ruptura (investida do Nicão, salto do Lucas): dispara na hora, se o jogo está rolando e a recarga
+## zerou. Cancela o golpe, a ruptura em carga, o escudo e a esquiva. Na recarga é negado: som grave e o slot do HUD treme. Devolve true se disparou.
+func habilidade() -> bool:
+	var c = mundo.combate
+	if (
+		c.habilidade == null
+		or c.jogo != "jogando"
+		or c.pausado
+		or _pausa_aberta()
+		or estado == Estado.MORTO
+		or estado == Estado.HABILIDADE
+		or estado == Estado.ESPECIAL
+	):
+		return false
+	if hab_nome == "" or hab_id == "ruptura":
+		return false  # este herói não tem E (ou a dele é a ruptura)
+	if hab_recarga > 0.0:
+		hab_nega_t = float(c.habilidade.comum.nega_t)
+		hab_negados += 1
+		c.habilidade.negou(self)
+		return false
+	cancelar_ruptura(false)
+	_baixar_escudo()
+	estado = Estado.HABILIDADE
+	pedido_t = 0.0
+	combo_t = 0.0
+	proximo = 0
+	rup_pedido_t = 0.0
+	esq_pedido = 0.0
+	_rup_apos_acerto = false
+	correndo = false
+	if not c.habilidade.iniciar(self):
+		estado = Estado.LIVRE
+		return false
+	hab_disparos += 1
+	return true
+
+
+## O botão do especial foi apertado (o mundo repassa o evento; os testes também chamam): dispara na hora, se o jogo está rolando e a carga está cheia.
+## Cancela o golpe, a ruptura em carga, o escudo e a esquiva. Sem a carga cheia é negado: som grave e o slot do HUD treme. Devolve true se disparou.
+func especial() -> bool:
+	var c = mundo.combate
+	if c.especial == null or c.jogo != "jogando" or c.pausado or _pausa_aberta() or estado == Estado.MORTO or estado == Estado.ESPECIAL:
+		return false
+	if esp_nome == "":
+		return false  # este herói não tem especial
+	if esp_carga < esp_carga_max:
+		esp_nega_t = float(c.especial.comum.nega_t)
+		esp_negados += 1
+		c.especial.negou(self)
+		return false
+	cancelar_ruptura(false)
+	_baixar_escudo()
+	if c.habilidade != null:
+		c.habilidade.cancelar(self)  # o Q corta a E em andamento
+	estado = Estado.ESPECIAL
+	pedido_t = 0.0
+	combo_t = 0.0
+	proximo = 0
+	rup_pedido_t = 0.0
+	esq_pedido = 0.0
+	_rup_apos_acerto = false
+	correndo = false
+	if not c.especial.iniciar(self):
+		estado = Estado.LIVRE
+		return false
+	esp_disparos += 1
+	return true
+
+
 func entrada_evento(e: InputEvent) -> void:
 	if e.is_action_pressed("atacar", false, true):
 		atacar()
+	elif InputMap.has_action("ultimate") and e.is_action_pressed("ultimate", false, true):
+		especial()
 	elif InputMap.has_action("esquiva") and e.is_action_pressed("esquiva", false, true):
 		esquivar()
 	elif InputMap.has_action("ruptura") and e.is_action_pressed("ruptura", false, true):
@@ -271,6 +412,10 @@ func centro() -> Vector2:
 func vulneravel() -> bool:
 	if estado == Estado.MORTO or imortal or invenc > 0.0:
 		return false
+	if estado == Estado.ESPECIAL and esp_invul:
+		return false
+	if estado == Estado.HABILIDADE and hab_invul:
+		return false
 	return not (estado == Estado.ESQUIVA and esq_t < esq_inv)
 
 
@@ -290,7 +435,7 @@ func vel_correr() -> float:
 
 ## Alcance do ímã de almas (px): a distância em que o orbe começa a voar para o herói (combate.atualizar).
 func alcance_ima() -> float:
-	return float(mundo.combate.cfg.heroi.ima_raio) * m_ima
+	return float(mundo.combate.cfg.heroi.ima_raio) * m_ima * mundo.combate.ritmo.multiplicador("coleta", nivel)
 
 
 ## Duração (s) do passo `i` do combo com a velocidade de ataque de agora.
@@ -298,7 +443,28 @@ func duracao_do_passo(i: int) -> float:
 	return float(mundo.combate.cfg.golpe.passos[i].duracao) / m_vel_ataque
 
 
-## Fôlego que volta (matar com o modificador "Fôlego de caçador"): sai do cansaço se passar do limite.
+## O que o abate devolve de fôlego (modificador "Fôlego de caçador"), com o TETO por segundo de dados/v2_combate.json (folego.abate_max_s). Sem ele, 4 cartas
+## (12% a 38% por abate cada, vezes a raridade) numa horda de dezenas de abates por segundo enchiam a barra na hora e o fôlego nunca acabava (nível 30, #374).
+## O crédito é um balde: enche abate_max_s por segundo até abate_max_s (1 s de folga) e cada abate gasta dele; teto 0 ou ausente = sem limite.
+func ganhar_folego_abate(x: float) -> void:
+	var teto := float(mundo.combate.cfg.folego.get("abate_max_s", 0.0))
+	if teto > 0.0:
+		x = minf(x, _credito_abate)
+		_credito_abate -= x
+	if x > 0.0:
+		ganhar_folego(x)
+
+
+## Enche o fôlego de uma vez (subir de nível ou abrir baú no Médio e no Difícil, dados/v2_dificuldade.json > folego_cheio): sai do cansaço,
+## do calor do golpe e do atraso da recuperação.
+func encher_folego() -> void:
+	folego = folego_max
+	cansado = false
+	golpe_calor_t = 0.0
+	_atraso_t = 0.0
+
+
+## Fôlego que volta: sai do cansaço se passar do limite.
 func ganhar_folego(x: float) -> void:
 	folego = minf(folego_max, folego + x)
 	if cansado and folego >= float(mundo.combate.cfg.folego.cansado_ate) * folego_max:
@@ -352,11 +518,16 @@ func atualizar(dt: float) -> void:
 	_anda_ant = v
 	# relógios
 	invenc = maxf(0.0, invenc - dt)
+	golpe_calor_t = maxf(0.0, golpe_calor_t - dt)
 	pedido_t = maxf(0.0, pedido_t - dt)
 	esq_pedido = maxf(0.0, esq_pedido - dt)
 	pausa_t = maxf(0.0, pausa_t - dt)
 	if rup_recarga > 0.0 or rup_pedido_t > 0.0 or rup_nega_t > 0.0 or contragolpe_t > 0.0:
 		_rup_relogios(dt)
+	if hab_recarga > 0.0 or hab_nega_t > 0.0:
+		_hab_relogios(dt)
+	if esp_nega_t > 0.0:
+		esp_nega_t = maxf(0.0, esp_nega_t - dt)  # só o tremor do slot: a carga do Q não corre por tempo
 	_recuperar(dt, v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA))
 	var segurando := false
 	if real:
@@ -368,7 +539,7 @@ func atualizar(dt: float) -> void:
 		segurando = bool(ataque_forcado)
 	# mira (sempre calculada: o golpe sai para ela)
 	var c := centro()
-	if fonte == Fonte.MOUSE and estado != Estado.GOLPE:
+	if fonte == Fonte.MOUSE and estado != Estado.GOLPE and estado != Estado.ESPECIAL and estado != Estado.HABILIDADE:
 		var d: Vector2 = mundo.mouse_mundo() - c
 		if d.length() > 4.0:
 			dir_olhar = d.normalized()
@@ -383,6 +554,10 @@ func atualizar(dt: float) -> void:
 			desl = _esquiva(dt)
 		Estado.CARGA:
 			desl = _carga(dt, v)
+		Estado.ESPECIAL:
+			desl = mundo.combate.especial.quadro(self, dt, v)
+		Estado.HABILIDADE:
+			desl = mundo.combate.habilidade.quadro(self, dt, v)
 	if emp.length_squared() > 4.0:
 		desl += emp * dt
 		emp *= exp(-11.0 * dt)
@@ -416,8 +591,8 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 		return _escudo(dt, v)
 	_baixar_escudo()
 	if (pedido_t > 0.0 or segurando) and pausa_t <= 0.0:  # o golpe tem prioridade sobre a corrida
-		_iniciar_golpe()
-		return Vector2.ZERO
+		if _iniciar_golpe():
+			return Vector2.ZERO
 	if not andando:
 		return Vector2.ZERO
 	if fonte == Fonte.ANDA:
@@ -498,10 +673,12 @@ func pode_esquivar() -> bool:
 	return not cansado and folego >= float(mundo.combate.cfg.esquiva.gasto)
 
 
-## Gasta fôlego; zerar deixa cansado. Gastar adia a recuperação.
-func _gastar(x: float) -> void:
+## Gasta fôlego; zerar deixa cansado. Gastar adia a recuperação, menos no ataque principal (adia = false): com golpes a cada ~0,35 s
+## o atraso de 0,6 s nunca vencia e o fôlego não voltava enquanto se lutava, então zerava em 3 a 5 s no Médio e no Difícil.
+func _gastar(x: float, adia := true) -> void:
 	folego = maxf(0.0, folego - x)
-	_atraso_t = float(mundo.combate.cfg.folego.atraso)
+	if adia:
+		_atraso_t = float(mundo.combate.cfg.folego.atraso)
 	if folego <= 0.001 and not cansado:
 		cansado = true
 		correndo = false
@@ -512,6 +689,9 @@ func _gastar(x: float) -> void:
 ## Recuperação: espera o atraso depois do último gasto; parado volta mais rápido do que andando. Cansado sai do cansaço ao passar de 30%.
 func _recuperar(dt: float, parado: bool) -> void:
 	var f: Dictionary = mundo.combate.cfg.folego
+	var teto_abate := float(f.get("abate_max_s", 0.0))
+	if teto_abate > 0.0:
+		_credito_abate = minf(teto_abate, _credito_abate + teto_abate * dt)
 	if _atraso_t > 0.0:
 		_atraso_t -= dt
 	elif folego < folego_max:
@@ -535,7 +715,18 @@ func _camera_adiantada(dt: float) -> void:
 # ------------------------------------------------------------------ golpe
 
 
-func _iniciar_golpe() -> void:
+func _iniciar_golpe() -> bool:
+	var dif := preload("res://v2/dificuldade.gd").da_partida(mundo)
+	var custo := float(dif.golpe_custo)
+	if custo > 0.0:
+		if golpe_calor_t > 0.0:
+			return false
+		if folego <= 0.0:
+			golpe_calor_t = float(dif.golpe_calor)
+			return false
+		_gastar(custo, false)
+		if folego <= 0.0:
+			golpe_calor_t = float(dif.golpe_calor)
 	var passos: Array = mundo.combate.cfg.golpe.passos
 	golpe_i = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
 	golpe_cfg = passos[golpe_i]
@@ -550,6 +741,7 @@ func _iniciar_golpe() -> void:
 	golpes += 1
 	_punch = 0.0
 	mundo.combate.golpe_comecou(self, golpe_cfg, golpe_dir, golpe_dur)
+	return true
 
 
 ## A fase do golpe da katana agora (docs/combate_v2): "pronto" fora do golpe, "preparo" antes do quadro do acerto (sem dano), "ativo" no
@@ -682,6 +874,15 @@ func _rup_relogios(dt: float) -> void:
 			mundo.combate.ruptura.pronta(self)
 
 
+## Relógios da E (a que não é a ruptura), no tempo do mundo (hit-stop e pausa congelam). Quando a recarga zera, avisa uma vez.
+func _hab_relogios(dt: float) -> void:
+	hab_nega_t = maxf(0.0, hab_nega_t - dt)
+	if hab_recarga > 0.0 and estado != Estado.HABILIDADE:  # a recarga só corre depois da E (durante ela fica cheia)
+		hab_recarga = maxf(0.0, hab_recarga - dt)
+		if hab_recarga <= 0.0:
+			mundo.combate.habilidade.pronta(self)
+
+
 func _iniciar_carga() -> void:
 	estado = Estado.CARGA
 	rup_carga = 0.0
@@ -773,24 +974,28 @@ func _visual(dt: float, v: Vector2) -> void:
 		if _tem_anim("andar"):  # o tempo do andar vem da folha (animacoes.andar.s_por_quadro), então ajusta pelo JSON
 			passo = float(tipo.info.animacoes.andar.get("s_por_quadro", PASSO_ANIM))
 		c = 1 + int(_anim / passo) % (int(tipo.info.colunas.size()) - 1)
+		_parado_t = 0.0
 	else:
 		_anim = 0.0
+		if estado == Estado.LIVRE and _tem_anim("parado"):  # respira: os 4 quadros do "parado" da folha em ciclo (sem ela, a coluna 0)
+			_parado_t = fmod(_parado_t + dt, maxf(_duracao_anim("parado"), 0.001))
+			c = _coluna_por_tempo("parado", _parado_t)
+		else:
+			_parado_t = 0.0
 	var ca := _coluna_acao(dt)
 	if ca >= 0:
 		c = ca
 	if l != linha or c != coluna:
 		quadro(c, l)
 	# corpo: o "soco" do golpe (esticada na direção do corte), o giro da esquiva e o pisca de quem acabou de apanhar
-	var punch_k := 0.0
 	if _punch > 0.0:
 		_punch = maxf(0.0, _punch - dt / 0.16)
-		punch_k = _punch
 	var desloca := Vector2.ZERO
 	var esc := Vector2.ONE
 	if estado == Estado.GOLPE:
-		var ant := clampf(golpe_t / (golpe_dur * float(golpe_cfg.acerto_em)), 0.0, 1.0)
-		desloca = (golpe_dir * (-2.0 * (1.0 - ant) + 3.0 * punch_k)).round()  # puxa para trás e solta
-		esc = Vector2(1.0 + 0.1 * punch_k, 1.0 - 0.07 * punch_k)
+		var corpo := CurvaGolpe.corpo(golpe_t / golpe_dur, float(golpe_cfg.acerto_em))
+		desloca = (golpe_dir * corpo.x).round()
+		esc = Vector2(1.0 + 0.1 * corpo.y, 1.0 - 0.07 * corpo.y)
 	elif estado == Estado.CARGA:  # agacha, treme um pixel na carga cheia
 		esc = Vector2(1.0 + 0.05 * rup_carga, 1.0 - 0.09 * rup_carga)
 		if rup_carga >= 1.0:
@@ -818,6 +1023,10 @@ func _visual(dt: float, v: Vector2) -> void:
 	var piscando := invenc > 0.0 and int(Time.get_ticks_msec() / 1000.0 * float(mundo.combate.cfg.heroi.pisca_hz) * 2.0) % 2 == 0
 	if estado == Estado.ESQUIVA:
 		sprite.modulate = Color(1, 1, 1, 0.78)
+	elif estado == Estado.ESPECIAL:
+		sprite.modulate = Color.WHITE.lerp(esp_cor, 0.45)  # o corpo toma a cor do especial
+	elif estado == Estado.HABILIDADE:
+		sprite.modulate = Color.WHITE.lerp(hab_cor, 0.4)  # o corpo toma a cor da E
 	elif piscando:
 		sprite.modulate = Color(1, 0.55, 0.55, 0.38)
 	elif estado == Estado.CARGA:
@@ -937,6 +1146,24 @@ func _coluna_acao(dt: float) -> int:
 	if estado == Estado.ESQUIVA and _tem_anim("rolamento"):
 		var n := (tipo.info.animacoes.rolamento.colunas as Array).size()
 		return _coluna_anim("rolamento", int(clampf(esq_t / maxf(esq_dur, 0.001), 0.0, 0.999) * n))
+	if estado == Estado.ESPECIAL and _tem_anim("combo"):  # o especial toca um passo do combo (esp_anim_passo), repetido esp_anim_ciclos vezes
+		var por_golpe := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
+		var passo := mini(esp_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
+		var p := fposmod(esp_t / maxf(esp_dur, 0.001) * esp_anim_ciclos, 0.999)
+		return _coluna_anim("combo", passo * por_golpe + int(p * por_golpe))
+	if estado == Estado.HABILIDADE and _tem_anim("combo"):  # a E toca um passo do combo (hab_anim_passo), repetido hab_anim_ciclos vezes
+		var por_golpe_h := maxi(int(tipo.info.animacoes.combo.get("quadros_por_golpe", 6)), 1)
+		var passo_h := mini(hab_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
+		var k_h := hab_t / maxf(hab_dur, 0.001)
+		var de_h := 0.0
+		if hab_anim_antes != "" and _tem_anim(hab_anim_antes):  # a pose própria da E primeiro (Nicão: a marreta de través, de escudo), depois o golpe
+			if k_h < hab_anim_antes_ate:
+				return _coluna_por_tempo(hab_anim_antes, hab_t)
+			de_h = hab_anim_antes_ate
+		var p_h := fposmod((k_h - de_h) / maxf(1.0 - de_h, 0.001) * hab_anim_ciclos, 0.999)
+		if not hab_anim_quadros.is_empty():
+			return _coluna_anim("combo", passo_h * por_golpe_h + int(hab_anim_quadros[int(p_h * hab_anim_quadros.size())]))
+		return _coluna_anim("combo", passo_h * por_golpe_h + int(p_h * por_golpe_h))
 	if escudo_ativo and estado == Estado.LIVRE and _tem_anim("escudo"):
 		return _coluna_por_tempo("escudo", escudo_t)
 	return -1

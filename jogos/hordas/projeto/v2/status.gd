@@ -43,19 +43,26 @@ const ALT_CAB := 18.0
 const ALT_TITULO := 22.0
 const ALT_BLOCO_COMPACTO := 18.0  # ícone de 16 px e 2 de respiro: um golpe ou modificador por linha no HUD
 const PAD := 8.0
+const FILETE_PAUSA := 6.0  # o filete interno da moldura premium fica no pixel 6 da borda externa do quadro (o miolo começa no 7); medido na foto
+const FOLGA_PAUSA := 8.0  # vão livre entre esse filete e o texto dos quadros laterais da pausa, nos quatro lados (escala com a UI)
+const INTERNA_PAUSA := FILETE_PAUSA + 1.0 + FOLGA_PAUSA  # da borda externa do quadro ao texto: 15 px na base 960x540
+const TINTA_TITULO := 6.0  # a caixa de um título (Jersey 10, TAM_CAB) fica 6 px acima da tinta da maiúscula
 const ICONE := 16.0
 const ICONE_FUSAO := preload("res://assets/v2/fusoes/icone.png")  # junção de duas setas (16 x 16): marca a linha de peça já fundida
 const TELA := Rect2(0, 0, 960, 540)
 const JOGO_VIVO := ["jogando", "escolha", "bau"]  # estados do combate em que o C vale
 const JOGO_CARTAS := ["escolha", "bau"]  # as telas de cartas: aí o C abre o painel central
-## Colunas de cada modo: x, y, largura e altura máxima. HUD: a da esquerda sob a vida e o fôlego (y 40) e fora da barra do chefe (x até 190);
-## a da direita sob o minimapa (que acaba em y 112) e fora da barra do chefe e dos anúncios (x a partir de 772). Pausa: colada nos dois lados
-## do painel do menu (`Pausa.PAINEL`, x 260 a 700). Central: três colunas lado a lado, a tela toda é do painel.
-const COLUNAS_HUD := [Rect2(6, 40, 184, 466), Rect2(772, 118, 182, 388)]
+## Colunas de cada modo: x, y, largura e altura máxima. HUD: a da esquerda acima do retrato e das barras de vida e fôlego (que começam em y 426) e fora
+## da barra do chefe (x até 190); a da direita sob o minimapa (que acaba em y 112), acima do E e do secundário (y 423) e fora da barra do chefe e dos anúncios (x a partir de 772). Pausa: colada nos dois lados
+## do painel do menu (`Pausa.PAINEL`, x 260 a 700), com o MESMO topo e a MESMA altura dele: os três quadros formam uma faixa alinhada. Central: três
+## colunas lado a lado, a tela toda é do painel.
+const COLUNAS_HUD := [Rect2(6, 6, 184, 416), Rect2(772, 118, 182, 301)]
+const MARGEM_PAUSA := 8.0  # do quadro lateral à borda da tela (a mesma nos dois lados)
+const VAO_PAUSA := 12.0  # do quadro lateral ao painel do menu (o mesmo nos dois lados)
 const COLUNAS_PAUSA := [
-	Rect2(8, 14, Pausa.PAINEL.position.x - 16.0, 512),
-	Rect2(Pausa.PAINEL.position.x + Pausa.PAINEL.size.x + 8.0, 14, 944.0 - Pausa.PAINEL.position.x - Pausa.PAINEL.size.x, 512)
-]  # coladas nos dois lados do painel do menu (`Pausa.PAINEL`)
+	Rect2(MARGEM_PAUSA, Pausa.PAINEL.position.y, Pausa.PAINEL.position.x - VAO_PAUSA - MARGEM_PAUSA, Pausa.PAINEL.size.y),
+	Rect2(Pausa.PAINEL.end.x + VAO_PAUSA, Pausa.PAINEL.position.y, TELA.size.x - MARGEM_PAUSA - Pausa.PAINEL.end.x - VAO_PAUSA, Pausa.PAINEL.size.y)
+]  # nos dois lados do painel do menu (`Pausa.PAINEL`): mesmo topo, mesma altura e o mesmo espaço para o painel e para a borda da tela
 const COLUNAS_CENTRAL := [Rect2(14, 14, 296, 512), Rect2(332, 14, 296, 512), Rect2(650, 14, 296, 512)]
 const SECOES_DUAS := [["heroi", "partida", "santuario"], ["katana", "golpes"]]
 const SECOES_TRES := [["heroi", "partida", "santuario"], ["katana"], ["golpes"]]
@@ -66,6 +73,7 @@ const COR_VALOR := Paleta.VALOR
 const COR_BONUS := Paleta.BONUS
 const COR_SANTUARIO := Paleta.ALMA
 const COR_DICA := Paleta.DICA
+const COR_APAGADO := Paleta.TEXTO_APAGADO
 const COR_LINHA := Color(Paleta.DIVISOR, 0.5)
 ## Estilo de um trecho de texto (veja `_bloco`): 0 = apoio, 1 = número em destaque, 2 = bônus.
 const CORES_TRECHO := [COR_ROTULO, COR_VALOR, COR_BONUS]
@@ -76,12 +84,14 @@ var atualizacoes := 0  # quantas vezes recoletou (os testes conferem que escondi
 var _hud := false  # o jogador ligou o card compacto com C (durante a partida)
 var _central := false  # o jogador abriu o painel central com C (sobre a escolha de cartas ou o baú)
 var _pausa := false  # a pausa pediu o card ao lado do menu
+var _saindo := false  # o card da pausa está sumindo (fade junto com o menu, #377): a camada segue visível até o fim
 var _modo_atual := ""  # o modo que está na tela agora ("" = escondido)
 var _m := "hud"  # o modo em que `_medir`, `_coluna` e o desenho trabalham agora
 var _meta: Dictionary = {}  # níveis do Santuário, lidos uma vez quando o card abre (o save não muda durante a partida)
 var _tela: Control
 var _estilo: StyleBoxTexture
 var _f_num: Font  # Press Start 2P sem anti-aliasing (como o HUD)
+var _caixas_visuais: Array = []  # por coluna da página visual: a área do texto (x, topo da tinta do título, largura, base), de `_visual`
 var _re := RegEx.create_from_string("[+\\-]?[0-9]+(?:[,.][0-9]+)?%?")  # um número: sinal, dígitos, decimais e % (vão na fonte dos números)
 var _re_palavras := RegEx.create_from_string("\\s+|\\S+")  # preserva palavras, espaços e estilo dos trechos
 var _timer: Timer  # o relógio de 4 Hz: só corre com o card ligado (sem _process, nada roda por quadro)
@@ -196,9 +206,18 @@ func _pos_na_tela(pos: Vector2) -> Vector2:
 
 
 ## O C (e o Select do controle) vale com a partida de pé, na escolha de cartas e no baú;
-## não vale com a pausa aberta (ela mostra o card dela) nem no fim da partida.
+## não vale com a pausa aberta (ela mostra o card dela), com o "Pausar agora?" das cartas aberto (ele come a entrada e o painel por cima
+## deixaria o tempo das cartas voltar a correr escondido) nem no fim da partida.
 func pode_alternar() -> bool:
-	return mundo != null and mundo.combate != null and not _pausa and str(mundo.combate.jogo) in JOGO_VIVO and not get_tree().paused
+	if mundo == null or mundo.combate == null or _pausa or not (str(mundo.combate.jogo) in JOGO_VIVO) or get_tree().paused:
+		return false
+	var tl = mundo.combate.get("telas")
+	return tl == null or not bool(tl.conf_aberta)
+
+
+## O painel central da build (C / Select sobre as cartas) está na tela agora.
+func central_aberto() -> bool:
+	return visible and _modo_atual == "central"
 
 
 ## Liga ou desliga: o painel central sobre as cartas, o card compacto no resto da partida.
@@ -212,7 +231,7 @@ func alternar() -> void:
 
 ## O card está na tela agora (HUD ligado pelo C, painel central, ou ao lado do menu de pausa).
 func aberto() -> bool:
-	return visible
+	return visible and not _saindo
 
 
 ## A pausa pede o card ao lado do menu (tela "menu") ou o tira (outras telas e fechar). Uma chamada só, de pausa.gd.
@@ -263,18 +282,29 @@ func _aplicar() -> void:
 		_paginas_detalhes = [1, 1, 1]
 	if _modo_atual != "" and not visible:
 		_pag = 0  # o card abre na primeira página dos golpes
-	visible = _modo_atual != ""
+	_saindo = anterior == "pausa" and _modo_atual == "" and visible
+	visible = _modo_atual != "" or _saindo
 	if _hud or _central or _pausa:
 		if _timer.is_stopped():
 			_timer.start()
 	else:
 		_timer.stop()
+	if _saindo:  # fechar a pausa: o card some junto com o menu em vez de piscar para fora (sem animação, esconde na hora)
+		Transicoes.sair(_tela, Vector2.ZERO, Transicoes.DUR_SAIR, _fim_saida, false)
+		return
 	if not visible:
 		return
 	_m = _modo_atual
 	layer = LAYER_PAUSA if _m == "pausa" else (LAYER_CENTRAL if _m == "central" else LAYER_HUD)
 	_meta = Meta.estado().get("niveis", {})
 	_recoletar()
+	if _modo_atual == "pausa" and anterior == "":
+		Transicoes.entrar(_tela, Vector2.ZERO)  # abre junto com o menu: o fade do card acompanha o do menu
+
+
+func _fim_saida() -> void:
+	_saindo = false
+	visible = _modo_atual != ""
 
 
 ## A cada 0,25 s com o card ligado: confere se a partida segue de pé e se o modo mudou (as cartas abriram ou fecharam) e atualiza os números.
@@ -296,7 +326,8 @@ func _recoletar() -> void:
 	secoes = coletar(mundo, _meta)
 	atualizacoes += 1
 	# na pausa e no painel central o card fica opaco (a pessoa quer ler); no jogo rolando é semitransparente
-	_tela.modulate.a = ALFA_HUD if _modo_atual == "hud" else 1.0
+	if not Transicoes.animando(_tela):  # no meio do fade da pausa quem manda no alfa é a transição
+		_tela.modulate.a = ALFA_HUD if _modo_atual == "hud" else 1.0
 	_tela.queue_redraw()
 
 
@@ -377,7 +408,7 @@ static func _sec_heroi(m) -> Dictionary:
 	var c = m.combate
 	var cfg: Dictionary = c.cfg
 	var cura: float = c.progresso.cura_por_nivel()
-	var frac := float(cfg.heroi.cura_nivel) * 100.0
+	var frac: float = cura / h.vida_max * 100.0
 	var seguidas := int(floorf(h.folego_max / float(cfg.esquiva.gasto)))
 	var rp := float(cfg.folego.regen_parado)
 	var ra := float(cfg.folego.regen_andando)
@@ -418,7 +449,8 @@ static func _sec_katana(m) -> Dictionary:
 	var lin: Array = []
 	lin.append(_l("katana.dano", "Dano", "/".join(t_danos), danos, _mais_pct((h.m_dano - 1.0) * 100.0)))
 	lin.append(_l("katana.vel", "Vel. de ataque", _mais_pct((h.m_vel_ataque - 1.0) * 100.0) if h.m_vel_ataque != 1.0 else "base", [h.m_vel_ataque]))
-	lin.append(_l("katana.combo", "Combo completo", "%s s" % _v(ciclo, 2), [ciclo]))
+	var combo_rotulo := "Combo estimado" if str(passos[0].get("tipo", "melee")) == "adagas" else "Combo completo"
+	lin.append(_l("katana.combo", combo_rotulo, "%s s" % _v(ciclo, 2), [ciclo]))
 	lin.append(_l("katana.alcance", "Alcance", "/".join(t_alc) + " px", alcances))
 	lin.append(_l("katana.area", "Área do corte", _mais_pct((h.m_area - 1.0) * 100.0) if h.m_area != 1.0 else "base", [h.m_area]))
 	lin.append(_l("katana.critico", "Crítico x%s" % _v(mult, 1), "%s%%" % _p(chance * 100.0), [chance, mult], _mais_pct(h.m_critico * 100.0)))
@@ -719,6 +751,11 @@ func _pintar() -> void:
 		_coluna(c, rects[c], false)
 
 
+## A folga de dentro de um quadro, da borda externa ao texto: na pausa, a faixa da moldura mais a folga (INTERNA_PAUSA); fora dela, PAD como antes.
+func _margem() -> float:
+	return INTERNA_PAUSA if _m == "pausa" else PAD
+
+
 ## O modo em que as medidas valem: o da tela agora ou, com o card escondido, o compacto do HUD (os testes medem o layout sem abrir o card).
 func _modo_de_medida() -> String:
 	return _modo_atual if _modo_atual != "" else "hud"
@@ -747,7 +784,13 @@ func _medir(c: int) -> Rect2:
 	var r: Rect2 = _colunas()[c]
 	var alt := _coluna(c, r, true)
 	_sobrou[c] = alt > r.size.y
-	return Rect2(r.position, Vector2(r.size.x, minf(alt, r.size.y)))
+	return Rect2(r.position, Vector2(r.size.x, _alt_quadro(r, alt)))
+
+
+## A altura do quadro: a que o conteúdo pede, sem passar da coluna; na pausa é sempre a da coluna (a do painel do menu), para os três quadros
+## terem o mesmo topo e o mesmo fundo.
+func _alt_quadro(col: Rect2, conteudo: float) -> float:
+	return col.size.y if _m == "pausa" else minf(conteudo, col.size.y)
 
 
 ## IDs com conteúdo que ultrapassa a largura, depois das quebras reais de texto. Vazio = tudo cabe.
@@ -757,7 +800,7 @@ func linhas_que_estouram() -> Array:
 	var rects: Array = _colunas()
 	var grupos: Array = _secoes_das_colunas()
 	for c in rects.size():
-		var w: float = (rects[c] as Rect2).size.x - 2.0 * PAD
+		var w: float = (rects[c] as Rect2).size.x - 2.0 * _margem()
 		for id in grupos[c]:
 			for l in _achar(str(id)).get("linhas", []):
 				if _estoura(l, w):
@@ -798,10 +841,11 @@ func _estoura(l: Dictionary, w: float) -> bool:
 
 ## Desenha (ou só mede, com `seco`) a coluna `c` dentro de `r`. Devolve a altura que o conteúdo pede, com a moldura.
 func _coluna(c: int, r: Rect2, seco: bool) -> float:
-	var x := r.position.x + PAD
-	var w := r.size.x - 2.0 * PAD
-	var topo := r.position.y + PAD
-	var limite := r.end.y - PAD - ALT_LINHA
+	var m := _margem()
+	var x := r.position.x + m
+	var w := r.size.x - 2.0 * m
+	var topo := r.position.y + m - (1.0 if _m == "pausa" else 0.0)  # na pausa, o título da 1ª seção (1 px acima da linha) põe o acento de "HERÓI" na folga de dentro
+	var limite := r.end.y - m - ALT_LINHA
 	var paginas: Array = [[]]
 	var alturas: Array = [topo]
 	var pagina_atual := 0
@@ -856,7 +900,7 @@ func _coluna(c: int, r: Rect2, seco: bool) -> float:
 		var fecha := ("%s fecha" % Glifos.texto("card")) if _m == "hud" else ("%s visual" % Glifos.texto("detalhes"))
 		var nav := "%d/%d %s" % [pg + 1, paginas.size(), teclas] if paginas.size() > 1 else fecha
 		_misto(nav, x, float(alturas[pg]), TAM, COR_DICA, COR_DICA)
-	return float(alturas[pg]) - r.position.y + PAD + ALT_LINHA
+	return float(alturas[pg]) - r.position.y + m + ALT_LINHA
 
 
 ## Todas as páginas da tabela, por coluna. Nenhum atributo é removido.
@@ -1114,11 +1158,16 @@ func _visual(seco: bool) -> Array:
 	var cols: Array = colunas_visuais()
 	var grupos: Array = [["heroi", "partida"], ["katana", "golpes"]] if cols.size() == 2 else [["heroi", "partida"], ["katana"], ["golpes"]]
 	var alts: Array = []
+	_caixas_visuais.clear()
 	for c in cols.size():
 		var r: Rect2 = cols[c]
-		var x := r.position.x + PAD
-		var w := r.size.x - 2.0 * PAD
-		var y := r.position.y + PAD - 2.0
+		var m := _margem()
+		var x := r.position.x + m
+		var w := r.size.x - 2.0 * m
+		var y := r.position.y + m - 2.0
+		if _m == "pausa" and c > 0:
+			y -= TINTA_TITULO  # sem o "SUA BUILD", a 1ª seção (KATANA, desenhada 2 px abaixo do topo) põe a tinta dela na folga de dentro
+		var tinta_topo := y + (2.0 if c == 0 else 8.0)  # a tinta mais alta da coluna: a tecla do cabeçalho (y + 2) ou o título da 1ª seção (y + 8)
 		if c == 0:
 			if not seco:
 				_texto_titulo("SUA BUILD", Vector2(x, y), COR_TITULO)
@@ -1132,7 +1181,10 @@ func _visual(seco: bool) -> Array:
 			if sec.is_empty():
 				continue
 			if not seco:
-				_texto_titulo(str(sec.titulo).replace(" (CLIQUE)", ""), Vector2(x, y + 2.0), sec.cor)
+				var tit := str(sec.titulo).replace(" (CLIQUE)", "").trim_prefix("HERÓI: ")
+				_texto_titulo("GOLPES" if str(id) == "golpes" else tit, Vector2(x, y + 2.0), sec.cor)  # GOLPES curto: a legenda cabe ao lado
+				if str(id) == "golpes":  # a legenda das duas colunas da direita das linhas de golpe
+					_texto(Dados.fonte_texto, "nível · dano/s", Vector2(x, y + 2.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_APAGADO)
 				_tela.draw_line(Vector2(x, y + ALT_CAB + 2.0), Vector2(x + w, y + ALT_CAB + 2.0), COR_LINHA, 1.0)
 			y += ALT_CAB + 7.0
 			match str(id):
@@ -1143,9 +1195,10 @@ func _visual(seco: bool) -> Array:
 				"katana":
 					y = _v_katana(x, y, w, seco)
 				"golpes":
-					y = _v_golpes(sec, x, y, w, seco, r.end.y - PAD)
+					y = _v_golpes(sec, x, y, w, seco, r.end.y - m)
 			y += 4.0
-		alts.append(y - r.position.y + PAD - 2.0)
+		alts.append(y - r.position.y + m - 2.0)
+		_caixas_visuais.append(Rect2(x, tinta_topo, w, r.end.y - m - tinta_topo))
 	return alts
 
 
@@ -1156,7 +1209,7 @@ func retangulos_visuais() -> Array:
 	var r: Array = []
 	for c in alts.size():
 		var col: Rect2 = colunas_visuais()[c]
-		r.append(Rect2(col.position, Vector2(col.size.x, minf(float(alts[c]), col.size.y))))
+		r.append(Rect2(col.position, Vector2(col.size.x, _alt_quadro(col, float(alts[c])))))
 	return r
 
 
@@ -1170,6 +1223,60 @@ func visual_cortada() -> Array:
 	return r
 
 
+## Por coluna da página visual, a folga da área do texto até o filete interno da moldura: [esq, topo, dir, base], em px do canvas.
+## A área é a de `_visual` (a coluna sem a margem, a partir da tinta do 1º título até a base da coluna menos a margem). Na pausa, FOLGA_PAUSA ou mais.
+func folgas_visuais() -> Array:
+	_m = _modo_de_medida()
+	var cols := colunas_visuais()
+	_visual(true)
+	var filete := FILETE_PAUSA + 1.0
+	var r: Array = []
+	for c in cols.size():
+		var col: Rect2 = cols[c]
+		var caixa: Rect2 = _caixas_visuais[c]
+		r.append(
+			[
+				caixa.position.x - (col.position.x + filete),
+				caixa.position.y - (col.position.y + filete),
+				(col.end.x - filete) - caixa.end.x,
+				(col.end.y - filete) - caixa.end.y
+			]
+		)
+	return r
+
+
+## Na tabela de detalhes, por coluna, a menor folga de uma linha até o filete interno da moldura: [esq, dir].
+func folgas_tabela() -> Array:
+	retangulos()  # mede as colunas e enche o diagnóstico com as linhas de todas elas
+	var cols := _colunas()
+	var filete := FILETE_PAUSA + 1.0
+	var r: Array = []
+	for c in cols.size():
+		var col: Rect2 = cols[c]
+		var esq := INF
+		var dir := INF
+		for d in _diagnostico:
+			if int(d.coluna) == c:
+				var rect: Rect2 = d.rect
+				esq = minf(esq, rect.position.x - (col.position.x + filete))
+				dir = minf(dir, (col.end.x - filete) - rect.end.x)
+		r.append([esq, dir])
+	return r
+
+
+## Golpes e modificadores da página visual cujo nome sai cortado (com "."): vazio = nenhum nome foi cortado.
+func nomes_cortados() -> Array:
+	_m = _modo_de_medida()
+	var cols := colunas_visuais()
+	var w := (cols[cols.size() - 1] as Rect2).size.x - 2.0 * _margem()
+	var r: Array = []
+	for id in ["katana", "golpes"]:
+		for l in _achar(id).get("linhas", []):
+			if str(l.tipo) == "bloco" and _cabe(str(l.nome_curto), _largura_nome(l, w)) != str(l.nome_curto):
+				r.append(str(l.id))
+	return r
+
+
 func _pintar_visual() -> void:
 	var alts := _visual(true)
 	var cols := colunas_visuais()
@@ -1177,7 +1284,7 @@ func _pintar_visual() -> void:
 		_tela.draw_rect(EscalaUi.cobertura(EscalaUi.canvas_atual, EscalaUi.desloc_atual), COR_FUNDO_OPACO)
 	for c in cols.size():
 		var col: Rect2 = cols[c]
-		var r := Rect2(col.position, Vector2(col.size.x, minf(float(alts[c]), col.size.y)))
+		var r := Rect2(col.position, Vector2(col.size.x, _alt_quadro(col, float(alts[c]))))
 		_tela.draw_rect(r, COR_FUNDO_OPACO)
 		_tela.draw_style_box(_estilo, r)
 	_visual(false)
@@ -1220,62 +1327,65 @@ func _pips(pos: Vector2, cheios: float, total: int, cor: Color, lado := 8.0) -> 
 			_tela.draw_rect(Rect2(r.position, Vector2(roundf(lado * f), lado)), cor)
 
 
-## Uma linha de atributo: ícone, rótulo e o número grande à direita.
+## Uma linha de atributo: ícone, rótulo e o número grande à direita. A cor do valor (`cor_valor`) apaga o que não mudou, para o que mudou saltar.
 func _stat(ic: String, cor_ic: Color, rotulo: String, valor: String, x: float, y: float, w: float, cor_valor := COR_VALOR) -> void:
 	_icone8(ic, Vector2(x, y + 1.0), cor_ic)
 	_texto(Dados.fonte_texto, rotulo, Vector2(x + 22.0, y + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
 	_num(valor, Vector2(x, y + 1.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM_GRANDE if valor.length() <= 6 else TAM_NUM, cor_valor)
 
 
+## Bônus de um multiplicador em porcentagem: "+35%", e "+0%" quando não há bônus (no lugar do antigo "base", que confundia).
 static func _bonus_pct(mult: float) -> String:
+	return "%+d%%" % roundi((mult - 1.0) * 100.0)
+
+
+## A cor do valor de um bônus: verde se ganhou, vermelho se perdeu, apagado se está no zero.
+static func _cor_bonus(mult: float) -> Color:
 	var p := roundi((mult - 1.0) * 100.0)
-	return "base" if p == 0 else ("%+d%%" % p)
+	return COR_BONUS if p > 0 else (COR_VIDA if p < 0 else COR_APAGADO)
 
 
+## Herói: nível com a barra de XP, vida, fôlego (cada pip é uma esquiva) e os dois bônus de corpo. Uma linha por coisa, rótulo à
+## esquerda e valor à direita, sem rótulo solto do outro lado da coluna.
 func _v_heroi(x: float, y: float, w: float, seco: bool) -> float:
 	var h = mundo.heroi
 	if not seco:
-		_num("NV%d" % h.nivel, Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM_GRANDE, COR_TITULO)  # nível grande e a barra de XP ao lado
-		_barra(Rect2(x + 80.0, y + 4.0, w - 80.0, 8.0), h.xp / maxf(1.0, h.xp_proximo), COR_XP)
-		_icone8("vida", Vector2(x, y + 22.0), COR_VIDA)  # vida: barra grossa com o número dentro
-		_barra(Rect2(x + 22.0, y + 22.0, w - 22.0, 16.0), h.vida / maxf(1.0, h.vida_max), COR_VIDA)
-		_num("%d/%d" % [roundi(h.vida), roundi(h.vida_max)], Vector2(x + 22.0, y + 26.0), w - 22.0, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Paleta.BRANCO)
-		_icone8("folego", Vector2(x, y + 44.0), COR_FOLEGO)  # fôlego em cargas (pips) e quantas esquivas seguidas dá
-		_pips(Vector2(x + 22.0, y + 48.0), h.folego, ceili(h.folego_max - 0.01), COR_FOLEGO)
-		_texto(Dados.fonte_texto, "fôlego", Vector2(x, y + 44.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
-		var seg := int(linha(secoes, "heroi.esquiva").get("n", [0])[0])
-		_icone8("esquiva", Vector2(x, y + 64.0), COR_DICA)
-		_pips(Vector2(x + 22.0, y + 68.0), seg, seg, COR_DICA)
-		_texto(Dados.fonte_texto, "esquivas", Vector2(x, y + 64.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_ROTULO)
-		_stat("vel", COR_BONUS, "Velocidade", _bonus_pct(h.m_vel_mov), x, y + 86.0, w, COR_BONUS if h.m_vel_mov > 1.0 else COR_ROTULO)
-		_stat("ima", COR_SANTUARIO, "Ímã", _bonus_pct(h.m_ima), x, y + 86.0 + ALT_STAT, w, COR_BONUS if h.m_ima > 1.0 else COR_ROTULO)
-	return y + 86.0 + 2.0 * ALT_STAT
+		var nv := "NV%d" % h.nivel
+		_num(nv, Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM_GRANDE, COR_TITULO)  # nível grande e a barra de XP ao lado, com o rótulo
+		var bx := x + _f_num.get_string_size(nv, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_GRANDE).x + 10.0
+		_texto(Dados.fonte_texto, "XP", Vector2(bx, y + 1.0), 20.0, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+		_barra(Rect2(bx + 20.0, y + 5.0, x + w - bx - 20.0, 8.0), h.xp / maxf(1.0, h.xp_proximo), COR_XP)
+		_icone8("vida", Vector2(x, y + ALT_STAT + 2.0), COR_VIDA)  # vida: barra grossa com o número dentro
+		_barra(Rect2(x + 22.0, y + ALT_STAT + 2.0, w - 22.0, 16.0), h.vida / maxf(1.0, h.vida_max), COR_VIDA)
+		_num(
+			"%d/%d" % [roundi(h.vida), roundi(h.vida_max)], Vector2(x + 22.0, y + ALT_STAT + 6.0), w - 22.0, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, Paleta.BRANCO
+		)
+		var yf := y + 2.0 * ALT_STAT + 4.0  # fôlego: rótulo e os pips (cada carga cheia é uma esquiva) à direita
+		_icone8("folego", Vector2(x, yf + 1.0), COR_FOLEGO)
+		_texto(Dados.fonte_texto, "Fôlego", Vector2(x + 22.0, yf + 2.0), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+		var total := ceili(h.folego_max - 0.01)
+		_pips(Vector2(x + w - (total * 11.0 - 3.0), yf + 5.0), h.folego, total, COR_FOLEGO)
+		_stat("vel", COR_BONUS, "Velocidade", _bonus_pct(h.m_vel_mov), x, y + 3.0 * ALT_STAT + 4.0, w, _cor_bonus(h.m_vel_mov))
+		_stat("ima", COR_SANTUARIO, "Ímã de almas", _bonus_pct(h.m_ima), x, y + 4.0 * ALT_STAT + 4.0, w, _cor_bonus(h.m_ima))
+	return y + 5.0 * ALT_STAT + 4.0
 
 
+## Partida: uma linha com rótulo por número (antes eram ícones soltos sem nome).
 func _v_partida(x: float, y: float, w: float, seco: bool) -> float:
+	var itens: Array = []
+	var t := float(linha(secoes, "partida.tempo").get("n", [0])[0])
+	var ab := int(linha(secoes, "partida.abates").get("n", [0])[0])
+	var al := int(linha(secoes, "partida.almas").get("n", [0, 0])[1])
+	var rb: Array = linha(secoes, "partida.rerrolar").get("n", [0, 0])  # as cartas: rerrolar e banir que restam
+	itens.append(["tempo", COR_DICA, "Tempo", _tempo(t)])
+	itens.append(["abates", COR_ROTULO, "Abates", str(ab)])
+	itens.append(["almas", COR_SANTUARIO, "Almas", str(al)])
+	itens.append(["rerrolar", COR_DICA, "Rerrolar", str(int(rb[0]))])
+	itens.append(["banir", COR_VIDA, "Banir", str(int(rb[1]))])
 	if not seco:
-		var t := float(linha(secoes, "partida.tempo").get("n", [0])[0])
-		var ab := int(linha(secoes, "partida.abates").get("n", [0])[0])
-		var al := int(linha(secoes, "partida.almas").get("n", [0, 0])[1])
-		var cw := w / 3.0
-		var itens := [["tempo", COR_DICA, _tempo(t)], ["abates", COR_ROTULO, str(ab)], ["almas", COR_SANTUARIO, str(al)]]
 		for i in itens.size():
-			var cx := x + i * cw
-			_icone8(str(itens[i][0]), Vector2(cx + (cw - 16.0) / 2.0, y), itens[i][1])
-			_num(str(itens[i][2]), Vector2(cx, y + 20.0), cw, HORIZONTAL_ALIGNMENT_CENTER, TAM_NUM, COR_VALOR)
-		var rb: Array = linha(secoes, "partida.rerrolar").get("n", [0, 0])  # as cartas: rerrolar e banir que restam
-		var yy := y + 36.0
-		_icone8("rerrolar", Vector2(x, yy), COR_DICA)
-		_num(str(int(rb[0])), Vector2(x + 20.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, COR_VALOR)
-		_icone8("banir", Vector2(x + 56.0, yy), COR_VIDA)
-		_num(str(int(rb[1])), Vector2(x + 76.0, yy + 4.0), 40.0, HORIZONTAL_ALIGNMENT_LEFT, TAM_NUM, COR_VALOR)
-		var nm := 0
-		for l in _achar("santuario").get("linhas", []):
-			if str(l.id) != "santuario.nenhuma":
-				nm += 1
-		if nm > 0:
-			_texto(Dados.fonte_texto, "Santuário: %d" % nm, Vector2(x, yy + 2.0), w, HORIZONTAL_ALIGNMENT_RIGHT, TAM, COR_SANTUARIO)
-	return y + 56.0
+			_stat(str(itens[i][0]), itens[i][1], str(itens[i][2]), str(itens[i][3]), x, y + i * ALT_STAT, w)
+	return y + itens.size() * ALT_STAT
 
 
 func _v_katana(x: float, y: float, w: float, seco: bool) -> float:
@@ -1287,8 +1397,8 @@ func _v_katana(x: float, y: float, w: float, seco: bool) -> float:
 		var cr: Array = linha(secoes, "katana.critico").get("n", [0, 1])
 		_stat("dano", COR_VALOR, "Dano", str(roundi(maior)), x, y, w)
 		_stat("critico", COR_TITULO, "Crítico", "%s%%" % _p(float(cr[0]) * 100.0), x, y + ALT_STAT, w)
-		_stat("ritmo", COR_DICA, "Vel. ataque", _bonus_pct(h.m_vel_ataque), x, y + 2.0 * ALT_STAT, w, COR_BONUS if h.m_vel_ataque > 1.0 else COR_ROTULO)
-		_stat("area", COR_BONUS, "Área", _bonus_pct(h.m_area), x, y + 3.0 * ALT_STAT, w, COR_BONUS if h.m_area > 1.0 else COR_ROTULO)
+		_stat("ritmo", COR_DICA, "Vel. ataque", _bonus_pct(h.m_vel_ataque), x, y + 2.0 * ALT_STAT, w, _cor_bonus(h.m_vel_ataque))
+		_stat("area", COR_BONUS, "Área", _bonus_pct(h.m_area), x, y + 3.0 * ALT_STAT, w, _cor_bonus(h.m_area))
 	y += 4.0 * ALT_STAT
 	for l in _achar("katana").get("linhas", []):  # os modificadores da katana: uma linha cada, como os golpes
 		if str(l.tipo) == "bloco":
@@ -1307,9 +1417,11 @@ func _v_golpes(sec: Dictionary, x: float, y: float, w: float, seco: bool, limite
 		if str(l.tipo) == "bloco":
 			blocos.append(l)
 	if blocos.is_empty():
+		var linhas := _quebrar("Nenhum ainda: vêm das cartas.", TAM, w)  # quebrada em linhas que cabem na folga: numa só, cortaria o fim
 		if not seco:
-			_texto(Dados.fonte_texto, "Nenhum ainda: vêm das cartas.", Vector2(x, y), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
-		return y + ALT_LINHA
+			for i in linhas.size():
+				_texto(Dados.fonte_texto, linhas[i], Vector2(x, y + i * ALT_LINHA), w, HORIZONTAL_ALIGNMENT_LEFT, TAM, COR_ROTULO)
+		return y + linhas.size() * ALT_LINHA
 	var pg := _paginas_golpes(blocos.size(), limite - y)
 	var por: int = pg[0]
 	var paginas: int = pg[1]
@@ -1374,17 +1486,42 @@ func paginas_golpes() -> Dictionary:
 	return {"pagina": _pag + 1, "paginas": _npag_golpes}
 
 
-## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em pips (estrela dourada se evoluído) e o número.
+## Largura dos pips de um golpe ou modificador na página visual: um quadrado de 5 px a cada 8 (o último sem o espaço); evoluído, o ícone de 16 px.
+func _largura_pips(l: Dictionary) -> float:
+	var nc := str(l.nivel_curto)
+	if nc == "evo":
+		return 16.0
+	var p := nc.split("/")
+	var total := int(p[1]) if p.size() > 1 else int(p[0])
+	return maxf(0.0, total * 8.0 - 3.0)
+
+
+## O número da linha: o dano por segundo, sem o til (a legenda "dano/s" do título da seção já diz que é estimativa).
+static func _numero_visual(l: Dictionary) -> Array:
+	var r: Array = []
+	for tr in l.uma:
+		r.append([str(tr[0]).trim_prefix("~"), tr[1]])
+	return r
+
+
+## O que sobra para o nome da linha: depois do ícone (22 px), os pips do tamanho deles (`_largura_pips`), 3 px de vão e o número
+## à direita, com 4 px entre os pips e o número.
+func _largura_nome(l: Dictionary, w: float) -> float:
+	return w - 22.0 - _largura_pips(l) - 7.0 - _larg_trechos(_numero_visual(l))
+
+
+## Um golpe (ou modificador) numa linha: ícone na cor dele, nome curto, nível em pips (estrela dourada se evoluído) e o dano por segundo.
 func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 	var cor: Color = l.cor
-	var num_w := _larg_trechos(l.uma)
+	var num := _numero_visual(l)
+	var num_w := _larg_trechos(num)
 	_tela.draw_rect(Rect2(x - 1.0, y - 1.0, 18.0, 18.0), cor.darkened(0.55))
 	_desenhar_icone(l, x, y)
-	var nome_w := w - 22.0 - 60.0 - num_w
+	var nome_w := _largura_nome(l, w)
 	_texto(
 		Dados.fonte_texto, _cabe(str(l.nome_curto), nome_w), Vector2(x + 22.0, y + 2.0), nome_w, HORIZONTAL_ALIGNMENT_LEFT, TAM, cor.lerp(Paleta.BRANCO, 0.35)
 	)
-	var pipx := x + w - num_w - 56.0
+	var pipx := x + w - num_w - 4.0 - _largura_pips(l)
 	var nc := str(l.nivel_curto)
 	if nc == "evo":
 		_icone8("critico", Vector2(pipx, y + 1.0), COR_TITULO)
@@ -1392,7 +1529,7 @@ func _golpe(l: Dictionary, x: float, y: float, w: float) -> void:
 		var p := nc.split("/")
 		var niv := int(p[0])
 		_pips(Vector2(pipx, y + 5.0), niv, int(p[1]) if p.size() > 1 else niv, cor, 5.0)
-	_desenhar_trechos_em(l.uma, x + w - num_w, y + 2.0)
+	_desenhar_trechos_em(num, x + w - num_w, y + 2.0)
 
 
 func _desenhar_trechos_em(trechos: Array, x: float, y: float) -> void:

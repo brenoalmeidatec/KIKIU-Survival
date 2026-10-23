@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático do tamanho da interface (v2/escala_ui.gd, v2/apresentacao.gd): o fator por tamanho de janela e opção (tabela), o canvas
 # que nunca é menor que o bloco 960x540 nem deixa a janela sem cobertura, a opção "Tamanho da interface" em Ajustes > Gráficos (gira e
 # salva em opções), e o mundo da v2 reagindo: o SubViewport da UI ganha o tamanho do canvas, as CanvasLayers vão para o centro, o HUD,
@@ -8,7 +8,7 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
-const OPCOES_TESTE := "user://teste_v2_escala_ui_opcoes.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_escala_ui/teste_v2_escala_ui_opcoes.cfg"
 
 var falhas := 0
 
@@ -29,7 +29,7 @@ func _ready() -> void:
 	await _mundo()
 	EscalaUi.janela_forcada = Vector2i.ZERO
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(OPCOES_TESTE))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_escala_ui/opcoes.cfg"
 	print("v2_escala_ui falhas=%d" % falhas)
 	get_tree().quit()
 
@@ -91,6 +91,23 @@ func _tabela() -> void:
 		ok(fa <= EscalaUi.fator(j, "medio") + 0.0001, "automático %s <= Médio (%.2f x %.2f)" % [str(j), fa, EscalaUi.fator(j, "medio")])
 		ok(fa <= minf(j.x / 960.0, j.y / 540.0) + 0.0001, "automático %s não passa do encaixe do bloco" % str(j))
 	ok(is_equal_approx(EscalaUi.fator(Vector2(1920, 1080), "auto"), 1.25), "1920x1080 automático = 1,25 (cartas em cerca de metade da tela)")
+	# DPI do sistema (Windows 125/150/175%): o Automático cresce junto; os fixos não; nunca passa do encaixe
+	var tab_dpi := [[1.0, 1.25], [1.25, 1.5], [1.5, 2.0], [1.75, 2.0], [2.0, 2.0]]
+	for t in tab_dpi:
+		var fd := EscalaUi.fator(Vector2(1920, 1080), "auto", t[0])
+		ok(is_equal_approx(fd, t[1]), "1920x1080 automático com DPI %d%% = %.2f (deu %.2f)" % [int(t[0] * 100), t[1], fd])
+	ok(is_equal_approx(EscalaUi.fator(Vector2(2560, 1440), "auto", 1.25), 2.0), "2560x1440 automático a 125%% = 2")
+	ok(is_equal_approx(EscalaUi.fator(Vector2(1366, 768), "auto", 1.5), 1.25), "1366x768 automático a 150%% = 1,25")
+	for o in ["pequeno", "medio", "grande"]:
+		ok(is_equal_approx(EscalaUi.fator(Vector2(1920, 1080), o, 1.5), EscalaUi.fator(Vector2(1920, 1080), o)), "%s ignora o DPI" % o)
+	ok(is_equal_approx(EscalaUi.fator(Vector2(1920, 1080), "auto", 0.5), 1.25), "DPI abaixo de 100%% não encolhe a UI")
+	ok(is_equal_approx(EscalaUi.escala_dpi(null), 1.0), "headless: DPI 1")
+	EscalaUi.dpi_forcado = 1.5
+	EscalaUi.janela_forcada = Vector2i(1920, 1080)
+	ok(is_equal_approx(EscalaUi.atualizar(null, "auto"), 2.0) and EscalaUi.canvas_atual == Vector2(960, 540), "atualizar lê o DPI forçado (150%% em 1080p = 2)")
+	EscalaUi.dpi_forcado = 0.0
+	EscalaUi.janela_forcada = Vector2i.ZERO
+	EscalaUi.atualizar(null)
 
 	# a opção: salva em opções, gira por Ajustes > Gráficos e cai em auto com lixo
 	ok(EscalaUi.opcao_atual() == "auto", "o padrão é Automático")
@@ -152,15 +169,26 @@ func _mundo() -> void:
 	for c in w.ui.get_children():
 		if c.has_method("abrir_sair"):
 			pausa = c
-	# HUD: o retrato no canto do canvas (6, 6), o XP e o relógio nas bordas, o centro continua centrado
+	# HUD (estilo Overwatch): o retrato no canto de baixo à esquerda do canvas, o XP e o Q embaixo no centro, o E e o secundário embaixo à direita, o relógio em cima
 	var retrato: Control = hud.get_node("Raiz/Retrato")
-	ok(perto(hud.offset + retrato.position, Vector2(6, 6)), "o retrato gruda no canto de cima à esquerda do canvas: %s" % str(hud.offset + retrato.position))
+	ok(
+		perto(hud.offset + retrato.position + Vector2(0, retrato.size.y), Vector2(6, 720 - 6)),
+		"o retrato gruda no canto de baixo à esquerda do canvas: %s" % str(hud.offset + retrato.position)
+	)
 	var tempo: Control = hud.get_node("Raiz/Tempo")
 	ok(perto(hud.offset + tempo.position, Vector2(428 + 160, 6)), "o relógio gruda no topo e fica no centro: %s" % str(hud.offset + tempo.position))
 	var xp: Control = hud.get_node("Raiz/Xp")
-	ok(perto(hud.offset + xp.position + Vector2(0, xp.size.y), Vector2(280 + 160, 720 - 6)), "a barra de XP gruda embaixo: %s" % str(hud.offset + xp.position))
+	ok(perto(hud.offset + xp.position + Vector2(0, xp.size.y), Vector2(380 + 160, 720 - 6)), "a barra de XP gruda embaixo: %s" % str(hud.offset + xp.position))
 	var hab: Control = hud.get_node("Raiz/Habilidades")
-	ok(perto(hud.offset + hab.position, Vector2(506 + 160, 434 + 180)), "os slots E e Q colam embaixo junto com o XP: %s" % str(hud.offset + hab.position))
+	ok(
+		perto(hud.offset + hab.position + hab.size * hab.scale, Vector2(1280 - 6, 720 - 6)),
+		"o E e o secundário colam no canto de baixo à direita do canvas: %s" % str(hud.offset + hab.position)
+	)
+	var ult: Control = hud.get_node("Raiz/Ultimate")
+	ok(
+		perto(hud.offset + ult.position + ult.size * ult.scale * 0.5, Vector2(640, 720 - 6 - xp.size.y - 4 - ult.size.y * ult.scale.y * 0.5)),
+		"o círculo do Q fica no centro, logo acima do XP: %s" % str(hud.offset + ult.position)
+	)
 	var vinheta: Control = hud.get_node("Raiz/Vinheta")
 	ok(Rect2(vinheta.position, vinheta.size) == Rect2(-160, -90, 1280, 720), "a vinheta cobre o canvas: %s" % str(Rect2(vinheta.position, vinheta.size)))
 	var mini_dir: float = m.offset.x + m._quadro.position.x + m._quadro.size.x
@@ -180,13 +208,16 @@ func _mundo() -> void:
 	Config.temporario("tamanho_ui", "grande")
 	Config.tamanho_ui_mudou.emit()
 	ok(absf(ap.fator - 2.0) < 0.0001 and ap.canvas == Vector2(960, 540) and ap.desloc == Vector2.ZERO, "Grande em 1920x1080: fator 2, canvas 960x540")
-	ok(hud.offset == Vector2.ZERO and perto(retrato.position, Vector2(6, 6)) and perto(xp.position, Vector2(280, 512)), "o HUD volta às posições do bloco")
+	ok(hud.offset == Vector2.ZERO and perto(retrato.position, Vector2(6, 426)) and perto(xp.position, Vector2(380, 512)), "o HUD volta às posições do bloco")
 	ok(Rect2(fundo.position, fundo.size) == Rect2(0, 0, 960, 540), "o fundo das cartas volta a 960x540")
 	ok(m.offset.x + m._quadro.position.x + m._quadro.size.x <= 960.0, "o minimapa volta para o canto do bloco")
 	Config.temporario("tamanho_ui", "pequeno")
 	Config.tamanho_ui_mudou.emit()
 	ok(absf(ap.fator - 1.0) < 0.0001 and ap.canvas == Vector2(1920, 1080), "Pequeno em 1920x1080: fator 1, canvas 1920x1080")
-	ok(perto(hud.offset + retrato.position, Vector2(6, 6)) and ap.desloc == Vector2(480, 270), "Pequeno: o retrato continua no canto do canvas")
+	ok(
+		perto(hud.offset + retrato.position + Vector2(0, retrato.size.y), Vector2(6, 1080 - 6)) and ap.desloc == Vector2(480, 270),
+		"Pequeno: o retrato continua no canto de baixo do canvas"
+	)
 
 	# a janela muda de tamanho (size_changed): refaz tudo
 	Config.temporario("tamanho_ui", "medio")

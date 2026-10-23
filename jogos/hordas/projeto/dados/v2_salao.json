@@ -1,11 +1,11 @@
 {
-	"_ajuda": "Salão da v2 (v2/salao.gd) e escolha de personagem (v2/personagens_tela.gd). \"nomes\": quem pode ser criado, na ordem de oferta; \"heroi\" (opcional, id de dados/v2_herois.json; ausente = hazaki) é o herói que o personagem joga: vida, velocidade, combo, arma e cartas dele; \"pasta\" = pasta em assets/personagens com o rosto (rosto.png) do retrato; sem rosto, o retrato é o sprite do herói. \"arma_inicial\": o que o herói leva no começo da partida (mostrado na escolha). \"estruturas\": o que fica no salão. Cada uma cuida de uma categoria: \"melhorias\" lista os ids de dados/v2_meta.json que ela vende; \"conquistas\": true faz da estrutura o códice (lista as conquistas e o que cada uma libera). O custo e o efeito de cada melhoria continuam em v2_meta.json, aqui só muda onde ela aparece. \"x\" é a posição da estrutura no chão do salão (960 x 540 px).",
+	"_ajuda": "Salão da v2 (v2/salao.gd) e escolha de personagem (v2/personagens_tela.gd). \"nomes\": quem pode ser criado, na ordem de oferta; \"heroi\" (opcional, id de dados/v2_herois.json; ausente = hazaki) é o herói que o personagem joga: vida, velocidade, combo, arma e cartas dele; \"sprite\" (opcional) = nome da folha de sprites (prototipos/cara_nova/sprites, sem extensão) que o personagem usa no lugar da folha do herói dele, no salão, no retrato e na partida (regras, números e animações continuam as do herói; a folha tem de ter o mesmo formato, ver fonte_arte/blender_herois/matheus); \"pasta\" = pasta em assets/personagens com o rosto (rosto.png) do retrato; sem rosto, o retrato é o sprite do herói. \"arma_inicial\": o que o herói leva no começo da partida (mostrado na escolha). \"estruturas\": o que fica no salão. Cada uma cuida de uma categoria: \"melhorias\" lista os ids de dados/v2_meta.json que ela vende; \"conquistas\": true faz da estrutura o códice (lista as conquistas e o que cada uma libera). O custo e o efeito de cada melhoria continuam em v2_meta.json, aqui só muda onde ela aparece. \"x\" é a posição da estrutura no chão do salão (960 x 540 px).",
 	"nomes": [
 		{"nome": "Breno", "pasta": ""},
 		{"nome": "Nicão", "pasta": "nicao", "heroi": "nicao"},
 		{"nome": "Lucas", "pasta": "lucas", "heroi": "lucas"},
 		{"nome": "João", "pasta": "joao"},
-		{"nome": "Matheus", "pasta": "matheus"},
+		{"nome": "Matheus", "pasta": "matheus", "sprite": "matheus"},
 		{"nome": "Beto", "pasta": "beto"},
 		{"nome": "Lukako", "pasta": "lukako"},
 		{"nome": "Fábio", "pasta": "fabio"}

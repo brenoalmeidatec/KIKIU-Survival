@@ -10,6 +10,7 @@ extends RefCounted
 ## (v2/ruptura.gd) é um módulo daqui (`ruptura`): o contragolpe dela entra em golpe_comecou e golpear.
 
 const Efeitos := preload("res://v2/efeitos.gd")
+const Anim := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (tremor mínimo e soco de zoom no acerto da katana)
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
 const Meta := preload("res://v2/meta.gd")
@@ -25,6 +26,9 @@ const Baus := preload("res://v2/bau.gd")
 const Chefes := preload("res://v2/chefe.gd")
 const Ruptura := preload("res://v2/ruptura.gd")
 const Escudo := preload("res://v2/escudo.gd")
+const Ritmo := preload("res://v2/ritmo.gd")
+const Especial := preload("res://v2/especial.gd")
+const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
 const Adagas := preload("res://v2/adagas.gd")
 const COR_NUM := Color(1.0, 0.96, 0.84)
@@ -56,6 +60,9 @@ var baus
 var chefes
 var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
+var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a ruptura continua em v2/ruptura.gd)
+var ritmo
+var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Lucas (pool, v2/adagas.gd)
 var heroi_id := "hazaki"  # o herói da partida (v2/herois.gd)
 var fim_emitido := false  # partida_terminou já saiu
@@ -101,6 +108,9 @@ var criticos := 0
 var mortes := 0
 var hit_stops := 0
 var ultimo_hit_stop := 0.0
+var _ciclo_adagas_chave: Array = []  # uma única entrada; nunca guarda histórico de builds/consultas
+var _ciclo_adagas_valor := 0.0
+var _ciclo_adagas_calculos := 0  # diagnóstico para provar reutilização/invalidação do modelo
 var _plim_t := 0.0
 var _plim_n := 0
 var _fila: Array = []  # monstros que morreram no quadro por golpe secundário ou fogo (saem em processar_mortes)
@@ -155,12 +165,18 @@ func montar(m) -> void:
 	ruptura.montar(self, m.glow)
 	escudo = Escudo.new()
 	escudo.montar(self, m.glow)
+	especial = Especial.new()
+	especial.montar(self, m.glow)
+	habilidade = Habilidade.new()
+	habilidade.montar(self)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
 	baus.montar(self)
 	chefes = Chefes.new()
 	chefes.montar(self)
+	ritmo = Ritmo.new()
+	ritmo.montar(self)
 
 
 ## Liga o herói às regras dos dados (vida, fôlego, curva de XP). Chamado quando o herói nasce e quando a partida recomeça.
@@ -271,7 +287,9 @@ func atualizar(dt: float) -> void:
 		var t2 := Time.get_ticks_usec()
 		avisos.atualizar(dt)
 		ruptura.atualizar(dt)
+		especial.atualizar(dt)
 		baus.atualizar(dt)
+		ritmo.atualizar(dt)
 		mundo._perfil("c_diretor", t0 - d0)
 		mundo._perfil("c_armas", t1 - t0)
 		mundo._perfil("c_elites_chefes", t2 - t1)
@@ -408,6 +426,7 @@ func efeitos(dt: float) -> void:
 	fx.atualizar(dt)
 	ruptura.efeitos(dt)
 	escudo.efeitos(dt)
+	especial.efeitos(dt)
 	telas.atualizar(dt)
 
 
@@ -415,13 +434,21 @@ func efeitos(dt: float) -> void:
 
 
 ## Os números do golpe da katana COMO O JOGO OS USA (golpe_comecou e golpear leem daqui; o card de status, status.gd, também).
-## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance e arco com a área.
+## Dano MÉDIO de um passo do combo, com o bônus de dano do herói (cada acerto varia +-`golpe.variacao` e arredonda); alcance com a área e o nível; arco só com a área.
 func dano_do_passo(passo: Dictionary) -> float:
 	return float(passo.dano) * mundo.heroi.m_dano
 
 
-func alcance_do_passo(passo: Dictionary) -> float:
-	return float(passo.alcance) * mundo.heroi.m_area
+## Quanto o alcance do golpe do herói `h` cresce com o nível dele (fração do alcance do dado): dados > v2_combate.json > golpe.raio_por_nivel.
+func bonus_nivel_golpe(h) -> float:
+	return Progresso.bonus_por_nivel(int(h.nivel), cfg.golpe.raio_por_nivel)
+
+
+## O alcance do passo do herói `h` (o que golpeia; sem `h`, o herói do mundo): o do dado vezes a área dele (cartas, h.m_area) MAIS o crescimento por
+## nível (bonus_nivel_golpe), que se soma à área sem entrar nela. O acerto (golpear) e o desenho (fx.corte, em golpe_comecou) leem daqui, então batem.
+func alcance_do_passo(passo: Dictionary, h = null) -> float:
+	var quem = h if h != null else mundo.heroi
+	return float(passo.alcance) * (quem.m_area + bonus_nivel_golpe(quem))
 
 
 ## O arco com a área do herói, até 360 graus: a pancada do Nicão é em volta toda, e sem o teto 360 com a área vira 396 e o cosseno do acerto inverte.
@@ -440,10 +467,10 @@ func alcance_efetivo_do_passo(passo: Dictionary) -> float:
 	return alcance_do_passo(passo) + float(passo.get("avanco", 0.0))  # sem avanço no passo (as adagas): 0, como o lunge do heroi.gd
 
 
-## Hit-stop (s) de um acerto do passo: o do crítico se `crit`, senão o do passo. `golpear` e o card de status usam esta.
+## Pedido nominal de hit-stop (s): corpo a corpo usa crítico/passo; adagas têm um pedido por arremesso, sujeito ao cooldown do grupo.
 func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
-	if str(passo.get("tipo", "melee")) == "adagas":  # as adagas não param o tempo no acerto (v2/adagas.gd não chama o hit-stop)
-		return 0.0
+	if str(passo.get("tipo", "melee")) == "adagas":  # primeiro acerto do arremesso, sujeito ao cooldown; crítico não aumenta esta pausa
+		return float(cfg.golpe.get("impacto_adagas", {}).get("hit_stop", 0.0))
 	return float(cfg.golpe.critico.hit_stop) if crit else float(passo.hit_stop)
 
 
@@ -453,6 +480,8 @@ func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
 ## velocidade base, onde só a soma dos passos daria 0,88 s). O hit-stop é o médio (com a chance de crítico) e supõe que todo passo acerta; sem
 ## mortes no meio (cada abate soma `morte.hit_stop`). O teste v2_status mede o ciclo de verdade em vários `dt` e compara.
 func ciclo_do_combo(dt := QUADRO_REF) -> float:
+	if str(cfg.golpe.passos[0].get("tipo", "melee")) == "adagas":
+		return _ciclo_adagas(dt)
 	var pc := clampf(chance_critico(), 0.0, 1.0)
 	var quadros := float(_quadros(float(cfg.golpe.pausa_fim_combo), dt))
 	for i in cfg.golpe.passos.size():
@@ -460,6 +489,62 @@ func ciclo_do_combo(dt := QUADRO_REF) -> float:
 		quadros += 1.0 + float(_quadros(mundo.heroi.duracao_do_passo(i), dt))
 		quadros += lerpf(float(_quadros(hit_stop_do_acerto(p, false), dt)), float(_quadros(hit_stop_do_acerto(p, true), dt)), pc)
 	return quadros * dt
+
+
+## Estimativa para alvo próximo: primeiro acerto no quadro do arremesso. A distância pode
+## atrasar/mudar a elegibilidade. O cooldown usa tempo simulado, sem contar os quadros congelados.
+## Aquece oito ciclos e mede 32, pois em ataque rápido a elegibilidade pode atravessar o combo.
+func _ciclo_adagas(dt: float) -> float:
+	var impacto: Dictionary = cfg.golpe.get("impacto_adagas", {})
+	var chave: Array = [dt, float(cfg.golpe.pausa_fim_combo), float(impacto.get("hit_stop", 0.0)), float(impacto.get("recarga", 0.0))]
+	for i in cfg.golpe.passos.size():
+		chave.append(mundo.heroi.duracao_do_passo(i))
+		chave.append(float(cfg.golpe.passos[i].acerto_em))
+	if chave == _ciclo_adagas_chave:
+		return _ciclo_adagas_valor
+	_ciclo_adagas_calculos += 1
+	var recarga := float(impacto.get("recarga", 0.0))
+	var cooldown := 0
+	while recarga > 0.0:  # mesma subtração usada pelo cooldown real, inclusive o arredondamento float
+		recarga = maxf(0.0, recarga - dt)
+		cooldown += 1
+	var pausa := _quadros(float(impacto.get("hit_stop", 0.0)), dt)
+	var sim := 0
+	var ultimo := -1000000
+	var total := 0
+	var passos := PackedInt32Array()
+	var acertos_nominais := PackedInt32Array()
+	for i in cfg.golpe.passos.size():
+		var dur: float = mundo.heroi.duracao_do_passo(i)
+		passos.append(1 + _quadros_golpe_adagas(dur, 1.0, dt))
+		acertos_nominais.append(1 + _quadros_golpe_adagas(dur, float(cfg.golpe.passos[i].acerto_em), dt))
+	for ciclo in 40:
+		var real_ciclo := _quadros(float(cfg.golpe.pausa_fim_combo), dt)
+		for i in cfg.golpe.passos.size():
+			var acerto := sim + acertos_nominais[i]
+			if acerto - ultimo >= cooldown:
+				real_ciclo += pausa
+				ultimo = acerto
+			var passo := passos[i]
+			sim += passo
+			real_ciclo += passo
+		sim += _quadros(float(cfg.golpe.pausa_fim_combo), dt)
+		if ciclo >= 8:
+			total += real_ciclo
+	_ciclo_adagas_chave = chave
+	_ciclo_adagas_valor = float(total) * dt / 32.0
+	return _ciclo_adagas_valor
+
+
+## heroi._golpe soma dt e compara a fase; divisão/ceil com epsilon perde um quadro em
+## durações como 0,2 s a 60/120 Hz. Repete só esse relógio, sem simular combate ou consumir RNG.
+static func _quadros_golpe_adagas(dur: float, fase: float, dt: float) -> int:
+	var t := 0.0
+	var n := 0
+	while t / dur < fase:
+		t += dt
+		n += 1
+	return n
 
 
 ## Quantos quadros de `dt` o jogo gasta para vencer `s` segundos (um quadro inteiro por vez, para cima).
@@ -484,7 +569,7 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	if str(passo.get("tipo", "melee")) == "adagas" or passo.nome == "pancada":  # sem corte desenhado: as adagas e o chão aparecem no acerto
 		audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
 		return
-	var alc: float = alcance_do_passo(passo)
+	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
 	var vis := minf(dur * 0.95, float(passo.acerto_em) * dur / (0.5 if passo.nome == "estocada" else 0.42))
 	fx.corte(h.pos + h.ORIGEM_GOLPE, dir.angle(), alc, arco, float(passo.lado), str(passo.nome), cor, vis)
@@ -494,9 +579,9 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 ## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
 func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
 	if str(passo.get("tipo", "melee")) == "adagas":  # o Lucas: as adagas saem (v2/adagas.gd) e acertam por conta própria
-		adagas.lancar(h, origem, dir, passo)
+		adagas.lancar(h, origem, dir, passo, true)  # true: o alcance das adagas do golpe cresce com o nível (as do especial Q, não)
 		return 0
-	var alc: float = alcance_do_passo(passo)
+	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
 	var pancada: bool = passo.nome == "pancada"  # o Nicão no chão: em volta, empurrão para fora
 	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nicão: empurra e atordoa mais
@@ -529,7 +614,9 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var longe: Vector2 = rel.normalized() if dist > 0.5 else dir
 		var rumo: Vector2 = longe if pancada else (dir * 0.55 + longe * 0.45).normalized()
 		var emp: Vector2 = rumo * float(passo.empurrao) * (1.25 if crit else 1.0) * forca
+		var util := minf(float(dano), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0) * (1.0 + (forca - 1.0) * 0.5))
+		especial.dano(util)
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
 			var raio_e: float = float(cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
@@ -561,6 +648,10 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		hit_stop(parada)
 		if tremor > 0.0:
 			mundo.cam.tremer(tremor, 0.17)
+		elif Anim.suave:  # o corte leve também pesa um pouco: 1 px
+			mundo.cam.tremer(1.0, 0.08)
+		if Anim.suave:  # o soco de zoom do acerto: cresce com o tremor do passo (estocada, crítico, morte)
+			mundo.cam.socar(0.008 + 0.006 * tremor)
 	elif pancada:
 		mundo.cam.tremer(float(passo.tremor) * 0.5, 0.15)  # o chão treme mesmo sem acertar ninguém
 	return n
@@ -601,7 +692,9 @@ func matar(m) -> void:
 	for i in m.n_orbes:
 		orbes.soltar(m.pos, m.xp * mult)
 	if float(armas.mods.folego) > 0.0:  # modificador da katana: matar recupera fôlego
-		mundo.heroi.ganhar_folego(float(armas.mods.folego) / 100.0)
+		mundo.heroi.ganhar_folego_abate(float(armas.mods.folego) / 100.0)
+	ritmo.abate(m.pos)
+	especial.abate(m)  # cada abate dá carga de bônus à ultimate (Q)
 	if m.elite:
 		elites.ao_morrer(m)
 	if m.chefe:
@@ -621,7 +714,9 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	if not m.vivo or m.morrendo:
 		return false
 	var dn := maxi(1, roundi(dano))
+	var util := minf(float(dn), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
+	especial.dano(util)
 	ferimentos += 1
 	dano_causado += dn
 	if numero:
@@ -655,7 +750,8 @@ func coletar(valor: float, _de: Vector2) -> void:
 	var h = mundo.heroi
 	mundo.xp_coletado += valor
 	fx.particula(h.pos + Vector2(randf_range(-4, 4), -18), Vector2(randf_range(-10, 10), -30), 0.28, 9.0, Color(0.5, 0.95, 1.0, 0.7), -10.0, true)
-	progresso.ganhar_xp(valor)
+	# O orbe guarda base + combo para as almas; dificuldade aumenta XP e almas independentemente (Meta credita as almas no fim).
+	progresso.ganhar_xp(valor * preload("res://v2/dificuldade.gd").fator(mundo, "xp_mult"))
 
 
 # ------------------------------------------------------------------ herói
@@ -710,6 +806,7 @@ func heroi_apanhou(valor: float) -> void:
 	var h = mundo.heroi
 	dano_sofrido += valor
 	golpes_tomados += 1
+	especial.recebeu(valor)  # apanhar também enche um pouco a ultimate (Q)
 	fx.numero(h.pos + Vector2(0, -44), str(roundi(valor)), COR_DANO_HEROI, false)
 	fx.flash(h, 0.14, Color(1.0, 0.3, 0.3), 0, 0.9)
 	fx.faiscas(h.pos + Vector2(0, -16), h.emp.normalized(), 8, Color(1.0, 0.3, 0.25), 150.0)
@@ -724,6 +821,9 @@ func heroi_morreu() -> void:
 	mundo.cam.tremer(3.0, 0.3)
 	hit_stop(0.18)
 	jogo = "morrendo"
+	especial.fim_de_partida()
+	ritmo.encerrar()
+	habilidade.fim_de_partida()
 	camera_lenta("morte", maxf(1.3, h.duracao_morte() + 0.25), 0.25)  # a queda do herói e o dissolve cabem antes da tela de resultado
 
 
@@ -791,6 +891,9 @@ func vitoria() -> void:
 	if jogo == "vencendo" or jogo == "vitoria" or jogo == "morrendo" or jogo == "morte":
 		return
 	jogo = "vencendo"
+	especial.fim_de_partida()
+	ritmo.encerrar()
+	habilidade.fim_de_partida()
 	var a: Dictionary = cartas.cfg.anuncios.vitoria
 	anunciar(str(a.texto), _cor(a.cor), "", 3.0)
 	audio.tocar("vitoria", 1.0, 0.0, 0.0)
@@ -815,6 +918,7 @@ func fim_de_partida(ganhou: bool) -> void:
 		"almas": mundo.almas_partida,
 		"mapa": str(mundo.id_mapa),
 		"nivel_mapa": diretor.nivel,
+		"dificuldade": str(preload("res://v2/dificuldade.gd").da_partida(mundo).id),
 		"niveis_mapa": diretor.niveis_total
 	}
 	if ganhou:
@@ -851,11 +955,14 @@ func limpar_partida() -> void:
 		mundo.devolver_monstro(m)
 	_fila.clear()
 	orbes.limpar()
+	ritmo.limpar()
 	armas.limpar()
 	adagas.limpar()
 	avisos.limpar()
 	ruptura.limpar()
 	escudo.limpar()
+	especial.limpar()
+	habilidade.limpar()
 	baus.limpar()
 	elites.zerar()
 	chefes.zerar()
@@ -888,7 +995,9 @@ func limpar_partida() -> void:
 
 ## Desfaz as referências cruzadas entre os módulos (RefCounted que se apontam não são liberados sozinhos). O mundo chama ao sair da cena.
 func liberar() -> void:
-	for m in [orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, elites, baus, chefes]:
+	if chefes != null:
+		chefes.liberar()  # o visual do chefe aponta de volta para ele e tem nós órfãos
+	for m in [ritmo, orbes, progresso, diretor, telas, fx, cartas, armas, adagas, avisos, ruptura, escudo, especial, habilidade, elites, baus, chefes]:
 		if m == null:
 			continue
 		for campo in ["combate", "mundo"]:
@@ -905,6 +1014,9 @@ func liberar() -> void:
 	avisos = null
 	ruptura = null
 	escudo = null
+	ritmo = null
+	especial = null
+	habilidade = null
 	elites = null
 	baus = null
 	chefes = null

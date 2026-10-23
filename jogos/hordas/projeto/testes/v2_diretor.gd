@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste dos NÍVEIS do mapa (v2/diretor.gd e dados/v2_niveis.json): a Floresta tem 30 níveis, o nível sobe a cada seg_nivel() segundos e,
 # nos níveis de chefe, o diretor faz nascer o mini-chefe (o chefão no último) e o nível TRAVA até ele morrer. Os chefes e a vitória
 # ficam em testes/v2_chefe.gd.

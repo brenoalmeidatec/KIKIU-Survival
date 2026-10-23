@@ -1,6 +1,6 @@
 extends Control
 ## Faixa de GOLPES do HUD da v2: um quadradinho fixo por golpe automático que o herói tem (bola de fogo, lâminas rodopiantes, corvos, raio,
-## runa, aura, golem, lobo...), no canto inferior esquerdo, ao lado do selo de nível. Antes isto só aparecia na pausa ("GOLPES AUTOMÁTICOS").
+## runa, aura, golem, lobo...), no canto inferior esquerdo, acima do retrato e das barras de vida e fôlego. Antes isto só aparecia na pausa ("GOLPES AUTOMÁTICOS").
 ## Quadradinhos pequenos (caixa de 26 px, ícone da carta reduzido de 32 para 24) para não poluir com 10 golpes: parada, a faixa fica
 ## translúcida; ao ganhar golpe, subir de nível ou fundir, ela fica opaca por ~1,5 s e volta a esmaecer.
 ## Cada quadradinho tem só três leituras: o ícone próprio da carta, os pips de nível embaixo e UMA linha fina de recarga no pé do ícone (só
@@ -9,7 +9,8 @@ extends Control
 ## A peça já fundida ganha a moldura dourada e os pips dourados cheios.
 ## Animação: golpe novo entra com pop curto (sem invadir o vizinho), anel, faíscas e brilho; nível novo dá um pulso que CLAREIA o ícone e o pip
 ## novo pisca; a fusão dá o mesmo em magenta. Tudo desenhado por código, em pixel inteiro, num só Control.
-## Posição: âncora no canto inferior esquerdo do pai (a Raiz do HUD), sem coordenada absoluta de tela; acha o HUD subindo pela árvore.
+## Posição: âncora no canto inferior esquerdo do pai (a Raiz do HUD), logo ACIMA do retrato e das barras de vida e fôlego (MARGEM_BAIXO), sem coordenada
+## absoluta de tela; acha o HUD subindo pela árvore.
 ## Custo: lê o combate a 20 Hz (no máximo uns doze golpes), e só redesenha quando a chave (golpes, níveis, pixels de recarga e a marca de
 ## fusão) muda ou enquanto há animação; a translucidez é o `modulate` do nó e não redesenha. Sem `combate` no mundo (mundo falso dos testes),
 ## a faixa fica escondida. Com o card da build aberto (tecla C, que ocupa a coluna da esquerda, ou o menu principal da pausa, que mostra o
@@ -22,10 +23,12 @@ const ICONE := 24  # lado do ícone desenhado (a arte da carta tem 32 e é reduz
 const CAIXA := 26  # lado da caixa do ícone: moldura de 1 px em volta
 const ALTURA := 32  # caixa (26) + pips (3) + folgas
 const ESPACO := 3
-const POR_LINHA := 8  # 8 por linha: a faixa acaba em x 235, antes do selo de nível (x 262)
+const POR_LINHA := 8  # 8 por linha: a faixa (1,5x na tela) acaba em x 354, antes do Q (x 432)
 const LINHAS_MAX := 3  # 24 golpes; passou disso, o excedente vira um "+N"
 const CAPACIDADE := POR_LINHA * LINHAS_MAX
-const MARGEM := 6.0  # folga até a borda esquerda e a de baixo do pai
+const MARGEM := 6.0  # folga até a borda esquerda do pai
+const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó é escalado (`scale`); o desenho e `size` ficam no espaço de 26x32 por golpe
+const MARGEM_BAIXO := 118.0  # até a borda de baixo (na tela): 6 de folga, 108 do retrato e 4 de respiro (a faixa fica acima do bloco do herói)
 const LEITURA_S := 0.05  # lê o combate a 20 Hz
 const ANIM_S := 0.5  # duração do pop/pulso
 const DESTAQUE_S := 1.5  # quanto tempo a faixa fica opaca depois de uma mudança
@@ -62,8 +65,9 @@ func _ready() -> void:
 	anchor_bottom = 1.0
 	offset_left = MARGEM
 	offset_right = MARGEM + tam.x
-	offset_top = -MARGEM - tam.y
-	offset_bottom = -MARGEM
+	scale = Vector2(ESCALA, ESCALA)
+	offset_top = -MARGEM_BAIXO - tam.y * ESCALA  # o nó mede tam.y e aparece com tam.y * ESCALA: a base dele fica em -MARGEM_BAIXO
+	offset_bottom = offset_top + tam.y
 	light_mask = 0
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR  # o ícone de 32 px é reduzido a 24: com nearest sairia serrilhado
@@ -125,7 +129,7 @@ func area_ocupada() -> Rect2:
 		return Rect2()
 	var colunas := mini(n, POR_LINHA)
 	var linhas := ceili(float(n) / POR_LINHA)
-	return Rect2(position.x, position.y + size.y - linhas * ALTURA, colunas * (CAIXA + ESPACO) - ESPACO, linhas * ALTURA)
+	return Rect2(position.x, position.y + (size.y - linhas * ALTURA) * ESCALA, (colunas * (CAIXA + ESPACO) - ESPACO) * ESCALA, linhas * ALTURA * ESCALA)
 
 
 ## Lê o combate e monta `itens`; dispara as animações do que chegou ou subiu. Devolve true se a chave visível mudou.
@@ -247,7 +251,7 @@ func _draw() -> void:
 		draw_string(f, pos_excedente(), "+%d" % (itens.size() - CAPACIDADE), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Paleta.TEXTO_SECUNDARIO)
 
 
-## Onde o "+N" fica: à direita da linha de baixo, na folga antes do selo de nível (x 262), sem cobrir nenhum quadradinho.
+## Onde o "+N" fica: à direita da linha de baixo, na folga antes do Q (x 432), sem cobrir nenhum quadradinho.
 func pos_excedente() -> Vector2:
 	return Vector2(POR_LINHA * (CAIXA + ESPACO) + 2.0, size.y - ALTURA + 12.0)
 

@@ -26,6 +26,8 @@ const FOLHAS := {
 }
 const FOLHA_CORTE := preload("res://assets/v2/efeitos/corte_hazaki.png")  # 16 quadros 128x128, feita no Blender (fonte_arte/blender_corte)
 const FOLHA_CORTE_CIANO := preload("res://assets/v2/efeitos/corte_hazaki_ciano.png")  # variante: so a energia ciano, 12 quadros
+const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (golpes suaves ligados pela opção de partículas)
+const CORTE_CRESCE := 0.3  # fração do corte em que o rastro abre de 88% a 100% do tamanho (ease-out; nunca passa do alcance)
 
 const SHADER_CORTE := """
 shader_type canvas_item;
@@ -37,12 +39,18 @@ uniform float modo = 0.0;
 uniform vec4 cor : source_color = vec4(1.0);
 uniform float quadros = 16.0;
 uniform float fixo = 0.0;  // 1 = rampa ciano fixa (variante ciano) em vez da cor do golpe
+uniform float suave = 1.0;  // 1 = funde o quadro com o próximo (o meio-quadro que a folha não tem; Anim.suave)
 uniform sampler2D folha : filter_nearest;  // corte feito no Blender (fonte_arte/blender_corte): 16 quadros em linha, RGB = calor, A = intensidade
 float pos(float x) { return floor(x * 8.0 + 0.5) / 8.0; }
 void fragment() {
 	if (modo > 1.5) {
-		float q = min(floor(prog * quadros), quadros - 1.0);
-		vec4 t = texture(folha, vec2((UV.x + q) / quadros, lado > 0.0 ? UV.y : 1.0 - UV.y));
+		float fq = prog * quadros;
+		float q = min(floor(fq), quadros - 1.0);
+		float vy = lado > 0.0 ? UV.y : 1.0 - UV.y;
+		vec4 t = texture(folha, vec2((UV.x + q) / quadros, vy));
+		if (suave > 0.5 && q < quadros - 1.0) {
+			t = mix(t, texture(folha, vec2((UV.x + q + 1.0) / quadros, vy)), fract(fq));
+		}
 		vec3 c = mix(cor.rgb, vec3(1.0), t.r * 0.85);
 		if (fixo > 0.5) {
 			float h = clamp(t.r, 0.0, 1.0) * 3.0;
@@ -88,6 +96,59 @@ void fragment() {
 	}
 }
 """
+
+## A explosão grande dos golpes de impacto (referência: docs/visual_2_5d/referencia_kikiu, magia M2 e cristal M6): núcleo branco que
+## estoura, dois anéis de energia em arcos que giram em sentidos opostos e abrem com ease-out, a "bolha" que fica dentro e some, e espinhos
+## radiais no começo. Tudo num quad só (aditivo), com a grade de pixel do jogo (`px` = pixels de tela na largura) e a intensidade em degraus.
+const SHADER_EXPLOSAO := """
+shader_type canvas_item;
+render_mode blend_add, unshaded;
+uniform float prog = 0.0;
+uniform vec4 cor : source_color = vec4(1.0);
+uniform float px = 128.0;
+uniform float semente = 0.0;
+uniform float espinhos = 1.0;
+float h(float x) { return fract(sin(x * 127.1 + semente * 31.7) * 43758.5453); }
+void fragment() {
+	vec2 uv = (floor(UV * px) + 0.5) / px;
+	vec2 p = (uv - 0.5) * 2.0;
+	float r = length(p);
+	float a = atan(p.y, p.x);
+	float t = prog;
+	float core = (1.0 - smoothstep(0.0, 0.22, t)) * exp(-r * r / (0.02 + 0.3 * t));
+	float e1 = 1.0 - pow(1.0 - clamp(t / 0.4, 0.0, 1.0), 3.0);
+	float r1 = 0.12 + 0.72 * e1;
+	float w1 = 0.035 + 0.05 * (1.0 - e1);
+	float g1 = smoothstep(0.2, 0.85, 0.5 + 0.5 * sin(a * 3.0 + t * 16.0 + semente * 6.0));
+	float anel1 = exp(-pow((r - r1) / w1, 2.0)) * (0.45 + 0.55 * g1);
+	float e2 = 1.0 - pow(1.0 - clamp((t - 0.05) / 0.5, 0.0, 1.0), 3.0);
+	float r2 = 0.08 + 0.88 * e2;
+	float g2 = smoothstep(0.35, 0.95, 0.5 + 0.5 * sin(-a * 2.0 + t * 11.0 + semente * 3.0));
+	float anel2 = exp(-pow((r - r2) / 0.03, 2.0)) * g2 * step(0.05, t);
+	float bolha = (1.0 - smoothstep(r1 - 0.3, r1, r)) * 0.16 * e1 * (0.7 + 0.3 * sin(a * 5.0 - t * 9.0));
+	float setor = floor((a + 3.14159) / 6.28318 * 14.0);
+	float meio = (setor + 0.5) / 14.0 * 6.28318 - 3.14159;
+	float da = abs(mod(a - meio + 3.14159, 6.28318) - 3.14159);
+	float st = 1.0 - pow(1.0 - clamp(t / 0.2, 0.0, 1.0), 2.0);
+	float lp = (0.45 + 0.55 * h(setor)) * (0.25 + 0.95 * st);
+	float larg = 0.13 * clamp(1.0 - r / max(lp, 0.01), 0.0, 1.0);
+	float espinho = step(r, lp) * (1.0 - smoothstep(larg * 0.4, larg, da)) * (1.0 - smoothstep(0.12, 0.35, t)) * espinhos;
+	float some = 1.0 - smoothstep(0.5, 1.0, t);
+	float k = core * 1.6 + (anel1 + anel2 + bolha) * some + espinho;
+	k = floor(clamp(k, 0.0, 1.6) * 6.0 + 0.5) / 6.0;
+	vec3 c = mix(cor.rgb, vec3(1.0), clamp(core * 1.3 + anel1 * 0.3 + espinho * 0.5, 0.0, 1.0));
+	COLOR = vec4(c * k * 1.7, min(k, 1.0));
+}
+"""
+const MAX_EXPLOSOES := 6  # explosões grandes ao mesmo tempo (a mais velha é reaproveitada)
+const EXPLOSAO_DUR := 0.75
+const MAX_ECOS := 4
+const MAX_MARCAS_CHAO := 10  # marcas de dano no chão (cratera, rachaduras) ao mesmo tempo; a mais velha é reaproveitada
+const RACHAS := 7  # rachaduras por marca
+const RACHA_PTS := 4  # pontos de cada rachadura (polilinha: sem triangular nada)
+const MARCA_DUR := 3.5
+const MARCA_BRASA := 1.2  # quanto tempo as rachaduras ficam acesas na cor do golpe (camada aditiva)
+const ECO_ESCALA := 1.18  # o eco do corte é 18% maior que o rastro (só o desenho; o alcance do golpe é o mesmo)
 
 const SHADER_FLASH := """
 shader_type canvas_item;
@@ -155,6 +216,7 @@ var _oi := 0
 var _cortes: Array[Sprite2D] = []
 var _cortes_t := PackedFloat32Array()
 var _cortes_dur := PackedFloat32Array()
+var _cortes_esc := PackedFloat32Array()  # a escala final de cada corte (o rastro cresce até ela)
 var _ci := 0
 var variante := "katana"  # qual folha o corte usa: "katana" (katana + linha de anime) ou "ciano" (so a energia ciano)
 
@@ -182,7 +244,32 @@ var _fo_cristal := PackedByteArray()  # 1 = o slot mostra um cristal (para ignor
 var _fo_i := 0
 var _ce_i := PRIM_CENTELHA
 
-var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0}  # contadores para os testes
+# explosões grandes (SHADER_EXPLOSAO)
+var _ex: Array[Sprite2D] = []
+var _ex_t := PackedFloat32Array()
+var _ex_dur := PackedFloat32Array()
+# eco do corte: um crescente branco maior por trás da folha do Blender (pool próprio: não mexe em _ci, que o v2_ruptura lê)
+var _eco: Array[Sprite2D] = []
+var _eco_t := PackedFloat32Array()
+var _eco_dur := PackedFloat32Array()
+var _eco_i := 0
+# marcas de dano no chão: um nó no mundo (z -60: acima do piso e dos decalques, abaixo das sombras e dos atores), recebe a luz da cena
+var chao: Node2D
+var _mc_pos := PackedVector2Array()
+var _mc_raio := PackedFloat32Array()
+var _mc_t := PackedFloat32Array()
+var _mc_cor := PackedColorArray()
+var _mc_pts := PackedVector2Array()  # MAX_MARCAS_CHAO * RACHAS * RACHA_PTS, relativos ao centro
+var _mc_i := 0
+var _mc_ativas := false
+# clarão de tela (impacto grande): um retângulo aditivo do tamanho da câmera que some rápido
+var _cl_t := 9.0
+var _cl_dur := 0.15
+var _cl_cor := Color.WHITE
+var _ex_i := 0
+var _rng := RandomNumberGenerator.new()  # sorteio dos enfeites novos: fora do randf() global, de que o jogo e os testes dependem
+
+var usados := {"cortes": 0, "flashes": 0, "particulas": 0, "numeros": 0, "folhas": 0, "marcas": 0, "explosoes": 0, "chao": 0}  # contadores para os testes
 
 
 func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
@@ -226,6 +313,8 @@ func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
 	_montar_luzes(sv)
 	_montar_flashes()
 	_montar_folhas()
+	_montar_explosoes()
+	_montar_chao(m)
 
 
 func _montar_cortes() -> void:
@@ -245,6 +334,7 @@ func _montar_cortes() -> void:
 		_cortes.append(s)
 	_cortes_t.resize(MAX_CORTES)
 	_cortes_dur.resize(MAX_CORTES)
+	_cortes_esc.resize(MAX_CORTES)
 	_cortes_t.fill(9.0)
 	_cortes_dur.fill(1.0)
 
@@ -269,6 +359,57 @@ func _montar_folhas() -> void:
 	_fo_cristal.resize(MAX_FOLHAS)
 	_fo_t.fill(9.0)
 	_fo_dur.fill(1.0)
+
+
+func _montar_chao(m) -> void:
+	_mc_pos.resize(MAX_MARCAS_CHAO)
+	_mc_raio.resize(MAX_MARCAS_CHAO)
+	_mc_t.resize(MAX_MARCAS_CHAO)
+	_mc_t.fill(99.0)
+	_mc_cor.resize(MAX_MARCAS_CHAO)
+	_mc_pts.resize(MAX_MARCAS_CHAO * RACHAS * RACHA_PTS)
+	var no = m.get("no_mundo") if m != null else null
+	if not (no is Node):
+		return
+	chao = Node2D.new()
+	chao.z_index = -60
+	chao.draw.connect(_desenhar_chao)
+	no.add_child(chao)
+
+
+func _montar_explosoes() -> void:
+	var sh := Shader.new()
+	sh.code = SHADER_EXPLOSAO
+	var tex: Texture2D = _cortes[0].texture
+	for i in MAX_EXPLOSOES:
+		var s := Sprite2D.new()
+		s.texture = tex
+		var mat := ShaderMaterial.new()
+		mat.shader = sh
+		s.material = mat
+		s.visible = false
+		raiz.add_child(s)
+		_ex.append(s)
+	_ex_t.resize(MAX_EXPLOSOES)
+	_ex_dur.resize(MAX_EXPLOSOES)
+	_ex_t.fill(9.0)
+	_ex_dur.fill(1.0)
+	var sh_c := Shader.new()
+	sh_c.code = SHADER_CORTE
+	for i in MAX_ECOS:
+		var s := Sprite2D.new()
+		s.texture = tex
+		var mat := ShaderMaterial.new()
+		mat.shader = sh_c
+		mat.set_shader_parameter("modo", 0.0)
+		s.material = mat
+		s.visible = false
+		raiz.add_child(s)
+		_eco.append(s)
+	_eco_t.resize(MAX_ECOS)
+	_eco_dur.resize(MAX_ECOS)
+	_eco_t.fill(9.0)
+	_eco_dur.fill(1.0)
 
 
 func _montar_luzes(sv: Node) -> void:
@@ -331,9 +472,11 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	var r := alcance * (1.45 if folha else 1.25)  # na folha o arco ocupa 0,8 da meia-largura
 	s.position = origem.round()
 	s.rotation = ang
-	s.scale = Vector2.ONE * (r / 32.0)
+	_cortes_esc[i] = r / 32.0
+	s.scale = Vector2.ONE * (r / 32.0) * (0.88 if Anim.suave else 1.0)
 	s.visible = true
 	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("suave", 1.0 if Anim.suave else 0.0)
 	mat.set_shader_parameter("prog", 0.0)
 	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
 	mat.set_shader_parameter("lado", lado)
@@ -346,6 +489,24 @@ func corte(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado:
 	_cortes_t[i] = 0.0
 	_cortes_dur[i] = dur
 	usados.cortes += 1
+	if Anim.suave and tipo == "corte":  # brilhos ao longo do arco que ficam um instante no ar e escorregam na direção do corte
+		var meio := deg_to_rad(arco_graus) * 0.5
+		var claro := cor.lerp(Color.WHITE, 0.5)
+		var n := roundi(10 * fator_part)
+		for k in n:
+			var aa := ang + lerpf(-meio, meio, (float(k) + _rng.randf()) / float(n))
+			var pt := origem + Vector2.from_angle(aa) * alcance * _rng.randf_range(0.8, 1.15)
+			var tang := Vector2.from_angle(aa + PI * 0.5 * lado) * _rng.randf_range(40.0, 110.0)
+			particula(pt, tang, _rng.randf_range(0.3, 0.55), _rng.randf_range(10.0, 16.0), Color(claro.r, claro.g, claro.b, 0.95), -24.0, true)
+		_corte_eco(origem, ang, alcance * ECO_ESCALA, arco_graus * 1.1, lado, Color(claro.r * 0.75, claro.g * 0.75, claro.b * 0.75), dur * 0.9)
+		var ponta := origem + Vector2.from_angle(ang + meio * lado) * alcance * 0.95  # onde o arco termina: a estrela que pisca no fim da varrida
+		folha("estrela", ponta, alcance * 0.45, claro, dur * 0.8)
+	elif Anim.suave and tipo == "estocada":  # o golpe pesado: estoura na ponta e racha o chão
+		var ponta := origem + Vector2.from_angle(ang) * alcance
+		explosao(ponta + Vector2(0, 10), alcance * 0.4, cor, 1.0, 0.5)
+		if mundo != null and mundo.get("cam") != null:
+			mundo.cam.socar(0.03)
+		marca_chao(ponta + Vector2(0, 12), alcance * 0.3, cor)
 	luz_rapida(origem + Vector2.from_angle(ang) * alcance * 0.55, cor, 1.7 if tipo == "estocada" else 1.35, alcance * 2.3, dur * 0.9)
 
 
@@ -375,10 +536,110 @@ func folha(nome: String, p: Vector2, raio: float, cor: Color, dur: float) -> voi
 	mat.set_shader_parameter("quadros", d[1])
 	mat.set_shader_parameter("cor", cor)
 	mat.set_shader_parameter("prog", 0.0)
+	mat.set_shader_parameter("suave", 1.0 if Anim.suave else 0.0)
 	_fo_t[i] = 0.0
 	_fo_dur[i] = dur
 	_fo_cristal[i] = 1 if cristal else 0
 	usados.folhas += 1
+
+
+## O eco do corte: o crescente procedural (modo 0 do shader do corte), branco-claro e maior, varrendo junto da folha do Blender.
+func _corte_eco(origem: Vector2, ang: float, alcance: float, arco_graus: float, lado: float, cor: Color, dur: float) -> void:
+	var i := _eco_i
+	_eco_i = (_eco_i + 1) % MAX_ECOS
+	var s := _eco[i]
+	s.position = origem.round()
+	s.rotation = ang
+	s.scale = Vector2.ONE * (alcance * 1.25 / 32.0)
+	s.visible = true
+	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("prog", 0.0)
+	mat.set_shader_parameter("arco", deg_to_rad(arco_graus))
+	mat.set_shader_parameter("lado", lado)
+	mat.set_shader_parameter("cor", cor)
+	_eco_t[i] = 0.0
+	_eco_dur[i] = dur
+
+
+## Clarão de tela na cor `cor` (o alfa é a força, 0,1 a 0,4), que some em `dur` s. Escala com a opção "Tremor e clarões"; em 0% não
+## acende. Um clarão mais fraco não apaga um mais forte em andamento.
+func clarao(cor: Color, dur := 0.15) -> void:
+	if not Anim.suave:
+		return
+	var f = Config.g("tremor_clarao")
+	if f != null:
+		cor.a *= clampf(float(f) / 100.0, 0.0, 1.0)
+	if cor.a <= 0.0:
+		return
+	var agora := _cl_cor.a * (1.0 - clampf(_cl_t / _cl_dur, 0.0, 1.0))
+	if cor.a < agora:
+		return
+	_cl_cor = cor
+	_cl_dur = maxf(dur, 0.05)
+	_cl_t = 0.0
+	add.queue_redraw()
+
+
+## Marca de dano no chão em `p`: cratera escura achatada e rachaduras tortas saindo do centro, que ficam MARCA_DUR s e somem; nos
+## primeiros MARCA_BRASA s as rachaduras brilham na cor do golpe. Só desenho (pool fixo, polilinhas). Com Anim.suave desligado, nada.
+func marca_chao(p: Vector2, raio: float, cor: Color) -> void:
+	if not Anim.suave or chao == null:
+		return
+	var i := _mc_i
+	_mc_i = (_mc_i + 1) % MAX_MARCAS_CHAO
+	_mc_pos[i] = p.round()
+	_mc_raio[i] = raio
+	_mc_t[i] = 0.0
+	_mc_cor[i] = cor
+	var base := i * RACHAS * RACHA_PTS
+	var giro := _rng.randf() * TAU
+	for r in RACHAS:
+		var ang := giro + TAU * (float(r) + _rng.randf_range(-0.3, 0.3)) / float(RACHAS)
+		var comp := raio * _rng.randf_range(0.55, 1.0)
+		var q := Vector2.ZERO
+		for k in RACHA_PTS:
+			if k > 0:
+				ang += _rng.randf_range(-0.5, 0.5)
+				q += Vector2(cos(ang), sin(ang) * 0.62) * comp / float(RACHA_PTS - 1)
+			_mc_pts[base + r * RACHA_PTS + k] = q.round()
+	_mc_ativas = true
+	usados.chao += 1
+
+
+## A explosão grande de impacto em `p` (chão achatado), com `raio` = o da área do golpe: os anéis param na borda real (~1,05 raio) e só o
+## anel de fora e os espinhos passam um pouco dela. `espinhos` 0 tira o estouro de cristal (raio, anel saindo). Mais os brilhos que sobem
+## e ficam no ar depois (pool de partículas). Só desenho: o dano já saiu em quem chamou. Com Anim.suave desligado (perfil Baixo), nada.
+func explosao(p: Vector2, raio: float, cor: Color, espinhos := 1.0, dur := EXPLOSAO_DUR) -> void:
+	if not Anim.suave:
+		return
+	var i := _ex_i
+	_ex_i = (_ex_i + 1) % MAX_EXPLOSOES
+	var s := _ex[i]
+	var r := raio * 1.25
+	s.position = p.round()
+	s.scale = Vector2(r / 32.0, r / 32.0 * 0.62)
+	s.visible = true
+	var mat := s.material as ShaderMaterial
+	mat.set_shader_parameter("prog", 0.0)
+	mat.set_shader_parameter("cor", cor)
+	mat.set_shader_parameter("px", roundf(r * 2.0))
+	mat.set_shader_parameter("semente", _rng.randf() * 10.0)
+	mat.set_shader_parameter("espinhos", espinhos)
+	_ex_t[i] = 0.0
+	_ex_dur[i] = maxf(dur, 0.2)
+	usados.explosoes += 1
+	brilhos(p, raio, cor, roundi(clampf(raio / 6.0, 4.0, 14.0)))
+
+
+## Brilhos que ficam no ar: pontos de luz que abrem do centro, flutuam subindo devagar e apagam em 0,5 a 1 s (a "cauda" do impacto).
+func brilhos(p: Vector2, raio: float, cor: Color, n: int) -> void:
+	n = roundi(n * fator_part)
+	var claro := cor.lerp(Color.WHITE, 0.45)
+	for k in n:
+		var ang := _rng.randf() * TAU
+		var d := raio * _rng.randf_range(0.25, 0.95)
+		var v := Vector2(cos(ang), sin(ang) * 0.62) * d * _rng.randf_range(1.2, 2.0)
+		particula(p + Vector2(0, -6), v, _rng.randf_range(0.5, 1.0), _rng.randf_range(5.0, 9.0), Color(claro.r, claro.g, claro.b, 0.85), -28.0, true)
 
 
 func luz_rapida(pos: Vector2, cor: Color, energia: float, raio: float, dur: float) -> void:
@@ -542,6 +803,17 @@ func limpar() -> void:
 		s.visible = false
 	for s in _fo:
 		s.visible = false
+	_ex_t.fill(9.0)
+	_eco_t.fill(9.0)
+	_mc_t.fill(99.0)
+	_mc_ativas = false
+	_cl_t = 9.0
+	if chao != null:
+		chao.queue_redraw()
+	for s in _ex:
+		s.visible = false
+	for s in _eco:
+		s.visible = false
 	for l in _luzes:
 		l.enabled = false
 	add.queue_redraw()
@@ -604,7 +876,43 @@ func atualizar(dt: float) -> void:
 		if _cortes_t[i] >= _cortes_dur[i]:
 			s.visible = false
 			continue
-		(s.material as ShaderMaterial).set_shader_parameter("prog", _cortes_t[i] / _cortes_dur[i])
+		var pr := _cortes_t[i] / _cortes_dur[i]
+		(s.material as ShaderMaterial).set_shader_parameter("prog", pr)
+		if Anim.suave:  # abre rápido e assenta (ease-out), em vez de nascer já do tamanho final
+			var k := clampf(pr / CORTE_CRESCE, 0.0, 1.0)
+			s.scale = Vector2.ONE * _cortes_esc[i] * (0.88 + 0.12 * (1.0 - (1.0 - k) * (1.0 - k)))
+	# clarão
+	if _cl_t < _cl_dur:
+		_cl_t += dt
+		add.queue_redraw()
+	# marcas no chão
+	if _mc_ativas:
+		var alguma := false
+		for i in MAX_MARCAS_CHAO:
+			if _mc_t[i] < MARCA_DUR:
+				_mc_t[i] += dt
+				alguma = true
+		_mc_ativas = alguma
+		if chao != null:
+			chao.queue_redraw()
+		add.queue_redraw()
+	# explosões grandes
+	for i in MAX_EXPLOSOES:
+		if _ex_t[i] >= _ex_dur[i]:
+			continue
+		_ex_t[i] += dt
+		if _ex_t[i] >= _ex_dur[i]:
+			_ex[i].visible = false
+			continue
+		(_ex[i].material as ShaderMaterial).set_shader_parameter("prog", _ex_t[i] / _ex_dur[i])
+	for i in MAX_ECOS:
+		if _eco_t[i] >= _eco_dur[i]:
+			continue
+		_eco_t[i] += dt
+		if _eco_t[i] >= _eco_dur[i]:
+			_eco[i].visible = false
+			continue
+		(_eco[i].material as ShaderMaterial).set_shader_parameter("prog", _eco_t[i] / _eco_dur[i])
 	# folhas
 	for i in MAX_FOLHAS:
 		if _fo_t[i] >= _fo_dur[i]:
@@ -665,6 +973,23 @@ func atualizar(dt: float) -> void:
 
 
 func _desenhar_add() -> void:
+	if _cl_t < _cl_dur and mundo != null and mundo.get("cam") != null:
+		var k := 1.0 - _cl_t / _cl_dur
+		add.draw_rect(mundo.cam.retangulo(16.0), Color(_cl_cor.r, _cl_cor.g, _cl_cor.b, _cl_cor.a * k * k))
+	if _mc_ativas:  # as rachaduras acesas na cor do golpe, apagando
+		for i in MAX_MARCAS_CHAO:
+			var t := _mc_t[i]
+			if t >= MARCA_BRASA:
+				continue
+			var k := 1.0 - t / MARCA_BRASA
+			var c := _mc_cor[i].lerp(Color(1.0, 0.85, 0.6), 0.35)
+			c.a = k * k
+			var base := i * RACHAS * RACHA_PTS
+			for r in RACHAS:
+				var linha := PackedVector2Array()
+				for j in RACHA_PTS:
+					linha.append(_mc_pos[i] + _mc_pts[base + r * RACHA_PTS + j])
+				add.draw_polyline(linha, c, 2.0)
 	for i in MAX_PART:
 		var v := p_vida[i]
 		if v <= 0.0:
@@ -687,6 +1012,27 @@ func _desenhar_add() -> void:
 		c.a *= 1.0 - k
 		var r := o_raio[i] * (1.0 - (1.0 - k) * (1.0 - k))
 		add.draw_arc(o_pos[i].round(), r, 0.0, TAU, 28, c, 2.0)
+
+
+## A cratera e as rachaduras (camada do mundo, normal): escurecem o chão e somem no último terço.
+func _desenhar_chao() -> void:
+	for i in MAX_MARCAS_CHAO:
+		var t := _mc_t[i]
+		if t >= MARCA_DUR:
+			continue
+		var fade := 1.0 - smoothstep(MARCA_DUR * 0.6, MARCA_DUR, t)
+		var p := _mc_pos[i]
+		var r := _mc_raio[i]
+		var cresce := minf(1.0, t / 0.08)
+		var tam := Vector2(r * 1.5, r * 0.93) * cresce
+		chao.draw_texture_rect(tex_brilho, Rect2(p - tam * 0.5, tam), false, Color(0, 0, 0, 0.65 * fade))
+		chao.draw_texture_rect(tex_brilho, Rect2(p - tam * 0.25, tam * 0.5), false, Color(0.02, 0.01, 0.01, 0.55 * fade))
+		var base := i * RACHAS * RACHA_PTS
+		for k in RACHAS:
+			var linha := PackedVector2Array()
+			for j in RACHA_PTS:
+				linha.append(p + _mc_pts[base + k * RACHA_PTS + j] * cresce)
+			chao.draw_polyline(linha, Color(0.05, 0.03, 0.03, 0.9 * fade), 3.0 if r >= 40.0 else 2.0)
 
 
 func _desenhar_numeros() -> void:

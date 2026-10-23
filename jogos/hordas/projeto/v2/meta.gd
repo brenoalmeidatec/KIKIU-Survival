@@ -4,11 +4,13 @@ extends RefCounted
 ## iniciar_heroi). Tudo fica em `caminho_save` (ConfigFile user://v2_progresso.cfg, separado do save da v1). Regras e textos
 ## vêm de dados/v2_meta.json. Não há estado em memória: cada leitura vem do arquivo, e os testes trocam `caminho_save` por um
 ## arquivo temporário para não tocar no save real.
-## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida;
-## [progressao] versao, legado (save de antes das travas do santuário: tudo aberto) e partidas (v2/progressao.gd lê as travas).
+## Seções do save: [moeda] almas; [melhorias] id = nível; [conquistas] id = true; [ultima] resumo da última partida; [recordes] tempo e combo máximos;
+## [progressao] versao e partidas (v2/progressao.gd lê as travas). A chave legado das versões antigas não vale mais: save antigo
+## segue as mesmas travas, mantendo só o que conquistou.
 ## Mapa vencido é a conquista vence_<id>; a seção antiga [mapas_vencidos] é migrada na leitura e não volta a ser gravada.
 
-const VERSAO_PROGRESSAO := 1
+const VERSAO_PROGRESSAO := 2
+const Dificuldade := preload("res://v2/dificuldade.gd")
 
 static var caminho_save := "user://v2_progresso.cfg"
 static var erro_save := false
@@ -35,7 +37,22 @@ static func melhorias() -> Array:
 
 
 static func conquistas() -> Array:
-	return catalogo().get("conquistas", [])
+	return catalogo().get("conquistas", []) + Dados.json("v2_dificuldade").get("conquistas", [])
+
+
+static func dificuldade() -> String:
+	var cf := _ler()
+	return Dificuldade.normalizar(str(cf.get_value("config", "dificuldade", "facil"))) if cf != null else "facil"
+
+
+static func escolher_dificuldade(id: String) -> bool:
+	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return false
+	cf.set_value("config", "dificuldade", Dificuldade.normalizar(id))
+	erro_save = not _gravar(cf)
+	return not erro_save
 
 
 static func melhoria(id: String) -> Dictionary:
@@ -134,20 +151,20 @@ static func texto_item(item: Dictionary) -> String:
 	return t
 
 
-## Migração das travas do santuário: um save sem [progressao] versao é de antes delas. Se ele já tinha progresso (alguma partida,
-## melhoria, conquista ou almas), fica com tudo aberto (legado = true), porque antes estava tudo aberto. Só marca na memória:
-## a próxima gravação persiste, e daí em diante o save não é mais tratado como antigo.
+## Migração das travas do santuário. Save de antes delas (sem [progressao] versao) já ficou "tudo aberto" (legado), mas isso
+## contrariava o combinado: mapas e altares abrem pela progressão. Agora o save antigo segue as mesmas travas e MANTÉM o que
+## conquistou: a conquista antiga Derrote o chefe (de antes dos mapas) vale como Vença a Floresta, e mapa vencido é mapa aberto
+## (Progressao.aberto). A chave legado de versões antigas é apagada. Só marca na memória: a próxima gravação persiste.
 static func _migrar(cf: ConfigFile) -> ConfigFile:
 	if cf == null:
 		return null
-	if not cf.has_section_key("progressao", "versao"):
-		var tinha := cf.has_section("ultima") or int(cf.get_value("moeda", "almas", 0)) > 0
-		for secao in ["melhorias", "conquistas", "mapas_vencidos"]:
-			if cf.has_section(secao):
-				for k in cf.get_section_keys(secao):
-					tinha = tinha or (int(cf.get_value(secao, k, 0)) > 0 if secao == "melhorias" else bool(cf.get_value(secao, k, false)))
+	var versao := int(cf.get_value("progressao", "versao", 0))
+	if versao < VERSAO_PROGRESSAO:
+		if cf.has_section_key("progressao", "legado"):
+			cf.erase_section_key("progressao", "legado")
+		if bool(cf.get_value("conquistas", "derrota_chefe", false)) and not bool(cf.get_value("conquistas", "vence_floresta", false)):
+			cf.set_value("conquistas", "vence_floresta", true)
 		cf.set_value("progressao", "versao", VERSAO_PROGRESSAO)
-		cf.set_value("progressao", "legado", tinha)
 	if cf.has_section("mapas_vencidos"):
 		for c in conquistas():
 			if c.has("mapa") and bool(cf.get_value("mapas_vencidos", str(c.mapa), false)):
@@ -241,7 +258,7 @@ static func _gravar(cf: ConfigFile) -> bool:
 	return true
 
 
-## Foto do save para a tela: saldo, nível de cada melhoria, conquistas cumpridas e o resumo da última partida.
+## Foto do save para a tela: saldo, nível de cada melhoria, conquistas cumpridas, o resumo da última partida e os recordes (tempo e combo).
 static func estado() -> Dictionary:
 	var cf := _ler()
 	var niveis := {}
@@ -254,7 +271,13 @@ static func estado() -> Dictionary:
 	if cf != null and cf.has_section("ultima"):
 		for k in cf.get_section_keys("ultima"):
 			ultima[k] = cf.get_value("ultima", k)
-	return {"almas": int(cf.get_value("moeda", "almas", 0)) if cf != null else 0, "niveis": niveis, "conquistas": cumpridas, "ultima": ultima}
+	var recordes := {"tempo": 0.0, "combo": 0}  # o melhor de todas as partidas: é o progresso das conquistas de tempo e de combo (Conquistas.linhas)
+	if cf != null:
+		recordes.tempo = float(cf.get_value("recordes", "tempo", 0.0))
+		recordes.combo = int(cf.get_value("recordes", "combo", 0))
+	return {
+		"almas": int(cf.get_value("moeda", "almas", 0)) if cf != null else 0, "niveis": niveis, "conquistas": cumpridas, "ultima": ultima, "recordes": recordes
+	}
 
 
 static func saldo() -> int:
@@ -316,8 +339,13 @@ static func _cumprida(c: Dictionary, r: Dictionary) -> bool:
 			return float(r.get("tempo", 0.0)) >= float(c.get("limite", 0.0))
 		"combo":
 			return int(r.get("maior_combo", 0)) >= int(c.get("limite", 0))
-		"venceu":  # com "mapa": só a vitória naquele mapa (vence_floresta...)
-			return bool(r.get("venceu", false)) and (not c.has("mapa") or str(r.get("mapa", "")) == str(c.mapa))
+		"venceu":  # com "mapa": só a vitória naquele mapa (vence_floresta...); com "pesadelo": true, só a vitória no modo Pesadelo
+			return (
+				bool(r.get("venceu", false))
+				and (not c.has("mapa") or str(r.get("mapa", "")) == str(c.mapa))
+				and (not c.has("dificuldade") or (r.has("dificuldade") and Dificuldade.normalizar(str(r.dificuldade)) == str(c.dificuldade)))
+				and (not bool(c.get("pesadelo", false)) or bool(r.get("pesadelo", false)))
+			)
 	return false
 
 
@@ -414,6 +442,8 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	var bruto := int(r.get("almas", 0))
 	var pesadelo := bool(r.get("pesadelo", false))
 	var mult := float(regras_pesadelo().get("almas_mult", 1.0)) if pesadelo else 1.0
+	var dif := Dificuldade.regras(str(r.get("dificuldade", "facil")))
+	mult *= float(dif.almas_mult)
 	var ganhas := almas_creditadas(bruto, _bonus("almas", cf), mult)
 	cf.set_value("moeda", "almas", antes + ganhas)
 	var novas := _conquistar(cf, r)
@@ -428,6 +458,11 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
 	cf.set_value("ultima", "pesadelo", pesadelo)
+	cf.set_value("ultima", "dificuldade", str(dif.id) if r.has("dificuldade") else "")
+	if r.has("dificuldade") and bool(r.get("venceu", false)) and str(r.get("mapa", "")) != "":
+		cf.set_value("dificuldades_vencidas", "%s_%s" % [str(r.mapa), str(dif.id)], true)
+	cf.set_value("recordes", "tempo", maxf(float(cf.get_value("recordes", "tempo", 0.0)), float(r.get("tempo", 0.0))))
+	cf.set_value("recordes", "combo", maxi(int(cf.get_value("recordes", "combo", 0)), int(r.get("maior_combo", 0))))
 	if r.has("mapa"):
 		cf.set_value("ultima", "mapa", str(r.mapa))
 	cf.set_value("progressao", "partidas", int(cf.get_value("progressao", "partidas", 0)) + 1)
@@ -469,6 +504,8 @@ static func texto_proximo(m: Dictionary, n: int) -> String:
 ## bônus), então chamar de novo não soma em cima. Os bônus de raridade, rolagem e almas (e as regras do Pesadelo, se ligado) ficam em mundo.meta_bonus; o Rastro de katana troca mundo.combate.fx.variante.
 static func aplicar(mundo) -> void:
 	var cf := _ler()
+	var dif := Dificuldade.regras(str(mundo.args.get("dificuldade", dificuldade())))
+	mundo.meta_bonus["dificuldade"] = dif
 	if cf == null:
 		return
 	var h = mundo.heroi
@@ -481,7 +518,12 @@ static func aplicar(mundo) -> void:
 	h.m_vel_mov = 1.0 + _bonus("velocidade", cf)
 	h.m_ima = 1.0 + _bonus("ima", cf)
 	h.m_vel_ataque = 1.0 + _bonus("treino", cf)
-	mundo.meta_bonus = {"raridade": _bonus("raridade", cf), "rolagem": int(_total("rolagem", cf)), "almas": _bonus("almas", cf)}
+	mundo.meta_bonus = {
+		"raridade": _bonus("raridade", cf),
+		"rolagem": int(_total("rolagem", cf)),
+		"almas": (1.0 + _bonus("almas", cf)) * float(dif.almas_mult) - 1.0,
+		"dificuldade": dif
+	}
 	if ligado("modo", "pesadelo"):
 		mundo.meta_bonus["pesadelo"] = regras_pesadelo()  # as regras do modo; sem a chave a partida é normal (mundo.fator_pesadelo)
 	if mundo.combate != null and mundo.combate.fx != null:  # visual do santuário: a folha do corte da katana (só cosmético, o dano é o mesmo)

@@ -7,14 +7,16 @@ extends CanvasLayer
 ## xp, xp_proximo, nivel, folego, folego_max, cansado (bool, padrão false: a barra de fôlego pisca); em mundo, abates, combo,
 ## tempo_partida (segundos), monstros_vivos. Sinais do mundo, cada um ligado só se o mundo tiver: nivel_subiu(nivel),
 ## onda_forte(numero), elite_apareceu(nome), chefe_apareceu(nome, vida_max), chefe_vida(vida), evolucao(nome), anuncio(texto, cor).
-## Slot da ruptura (tecla E) logo abaixo da barra de fôlego, desenhado por código (sem PNG): lê em mundo.heroi, com padrão, rup_carga (0 a 1),
-## rup_recarga, rup_recarga_max, rup_perfeita, rup_nega_t, contragolpe_t e contragolpe_max. Herói sem esses campos (mundo falso dos testes): o slot some.
-## Faixa de GOLPES (canto inferior esquerdo, v2/hud_golpes.gd): um quadradinho fixo por golpe automático ganho, com nível, recarga e progresso da fusão.
+## Layout no estilo OVERWATCH: embaixo à ESQUERDA o retrato, a barra de vida e, logo abaixo, a de fôlego (as esquivas são cargas do fôlego); embaixo no CENTRO o Q
+## (a ultimate) em círculo com a % de carga (v2/hud_ultimate.gd), logo acima da barra de XP com o nível; embaixo à DIREITA o E (a habilidade do herói) e o SECUNDÁRIO
+## (botão direito: o escudo), v2/hud_habilidades.gd; no topo ao centro o tempo, os abates, o combo e o nível do mapa; o minimapa fica no canto de cima à direita.
+## Os slots E/secundário e o Q leem em mundo.heroi, com padrão, os campos de rup_*, hab_*, esp_* e escudo_ativo (herói sem eles, como o mundo falso dos testes: apagados).
+## Faixa de GOLPES (canto inferior esquerdo, logo acima do retrato, v2/hud_golpes.gd): um quadradinho fixo por golpe automático ganho, com nível, recarga e progresso da fusão.
 ## Lê mundo.combate.armas.ativas e mundo.combate.cartas; mundo sem combate (falso dos testes): a faixa some.
 ## Uso no mundo (uma linha no _ready):
 ##   ui.add_child(preload("res://v2/hud.gd").criar(self))
 ## Layout em v2/hud.tscn (coordenadas do bloco 960x540, que fica no centro do canvas da UI: v2/escala_ui.gd). Cada peça tem uma âncora
-## (ANCORAS): a de canto/borda gruda no canvas (cima, baixo, esquerda), não no bloco, para o HUD não flutuar longe da borda quando a
+## (ANCORAS): a de canto/borda gruda no canvas (cima, baixo, esquerda, direita), não no bloco, para o HUD não flutuar longe da borda quando a
 ## interface é menor que a janela. O canto superior direito fica livre para o minimapa.
 
 const Paleta := preload("res://v2/paleta.gd")
@@ -39,35 +41,38 @@ const RELOGIO_PISCA_T := 0.8  # o tempo pisca dourado 0,8 s a cada minuto sobrev
 const ROLAGEM_XP := 9.0  # quão rápido o número das almas rola até o valor da barra de XP
 const CHEFE_ESPERA := 0.35  # segundos que a fantasma espera antes de descer atrás da barra real
 const CHEFE_QUEDA := 1.2  # quão rápido a fantasma desce atrás da real (fração da diferença por segundo)
+## Os bustos da barra do chefe (assets/v2/chefes/, 36 px, gerados por `gerar_objetos.py chefes`), pelo id da marca em campo (dados/v2_cartas.json, "marcas").
+## Chefe sem busto, ou sinal sem marca (mundo falso dos testes), deixa a barra sem o retrato.
+const BUSTOS := {
+	"mini1": preload("res://assets/v2/chefes/cavaleiro_rubro.png"),
+	"mini2": preload("res://assets/v2/chefes/rainha_tecela.png"),
+	"chefe": preload("res://assets/v2/chefes/rei_espantalho.png"),
+}
 const COR_ONDA := Paleta.PERIGO
 const COR_ELITE := Paleta.ANUNCIO_ELITE
 const COR_NIVEL := Paleta.ANUNCIO_NIVEL
-const RB_POS := Vector2(54, 40)  # o slot da ruptura (hoje escondido por hud_habilidades.gd): 22x22, logo abaixo da moldura das barras (y 6 a 36)
 const PESADELO_POS := Vector2(540.0, 10.0)  # o aviso PESADELO, ao lado do relógio
 const NIVEL_RECT := Rect2(284.0, 38.0, 140.0, 36.0)  # linha 2 da grade do topo: mesma altura e mesmo y dos abates (428, 38, 104x36), logo à esquerda dele e abaixo das barras
 const HudNivel := preload("res://v2/hud_nivel.gd")
-const RB_TAM := 22
-const RB_POP_T := 0.15  # s do pop ao zerar a recarga
-const RB_LARANJA := Paleta.CARGA_LARANJA
-const RB_BORDA := Paleta.RUPTURA_BORDA
 ## Comprimento das barras de vida e de fôlego, o mesmo para as duas. No máximo de partida do herói escolhido (cfg do combate) a barra mede BARRA_BASE_PX;
 ## cada ponto de vida máxima acima da base soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO; vale a meta maior das duas. O teto
-## (BARRA_TETO_PX) segura a moldura antes do relógio (x 428). Ver _barras.
-const BARRA_BASE_PX := 142.0
-const BARRA_PX_VIDA := 1.2
-const BARRA_PX_FOLEGO := 47.0
-const BARRA_TETO_PX := 320.0
-const BARRA_MIN_PX := 64.0  # cabe "999/999" em Press Start 2P de 8 px (56 px)
+## (BARRA_TETO_PX) segura a moldura antes do selo de nível e do Q (x 432). Ver _barras.
+const BARRA_BASE_PX := 208.0
+const BARRA_PX_VIDA := 0.5
+const BARRA_PX_FOLEGO := 18.0
+const BARRA_TETO_PX := 244.0  # a moldura (244 + 8) começa em x 104 e acaba em 356, antes do selo de nível (x 362) que fica na altura delas
+const BARRA_MIN_PX := 110.0  # cabe "999/999" na Atkinson de 24 px (uns 100 px)
+const CAIXA_RETRATO := Vector2(90, 108)  # a moldura do retrato (hud.tscn, Raiz/Retrato)
 const BARRA_FOLGA := 4.0  # a moldura de pedra fica 4 px fora de cada lado da barra de vida
 const BARRA_VELOC := 7.0  # quão rápido a barra desliza até o comprimento novo (suavização exponencial, por segundo)
 const BASE_VIDA := 100.0  # sem combate (mundo falso dos testes)
 const BASE_FOLEGO := 3.0
 ## Onde cada peça do HUD gruda: -1 = na borda esquerda/de cima do canvas, +1 = na direita/de baixo, 0 = fica no meio (centro do bloco).
 const ANCORAS := {
-	"Retrato": Vector2(-1, -1),
-	"Vida": Vector2(-1, -1),
-	"Folego": Vector2(-1, -1),
-	"MolduraBarras": Vector2(-1, -1),
+	"Retrato": Vector2(-1, 1),
+	"Vida": Vector2(-1, 1),
+	"Folego": Vector2(-1, 1),
+	"MolduraBarras": Vector2(-1, 1),
 	"Tempo": Vector2(0, -1),
 	"Nivel": Vector2(0, -1),
 	"Abates": Vector2(0, -1),
@@ -75,7 +80,8 @@ const ANCORAS := {
 	"Xp": Vector2(0, 1),
 	"Selo": Vector2(0, 1),
 	"Anel": Vector2(0, 1),
-	"Habilidades": Vector2(0, 1),
+	"Ultimate": Vector2(0, 1),  # o Q em círculo, no centro e logo acima da barra de XP
+	"Habilidades": Vector2(1, 1),  # o E e o secundário: canto inferior direito do canvas
 	"Golpes": Vector2(-1, 1),  # faixa de golpes: canto inferior esquerdo do canvas, não do bloco (senão flutua sobre o campo)
 }
 const MARCOS := [10, 25, 50, 100, 200]
@@ -125,7 +131,6 @@ var _fusao_halos: Array = []  # os dois halos do cartão da fusão (tingidos pel
 var _combo_y := 0.0
 var _bases := {}  # nome da peça -> posição do .tscn (no bloco), antes da âncora
 var _combo_y0 := 0.0
-var _desl := Vector2.ZERO  # deslocamento do bloco no canvas (EscalaUi.desloc_atual)
 var _cor_base := Color.WHITE  # cor do combo na contagem atual (sobe com os marcos)
 var _minuto_antes := 0
 var _relogio_pisca := 0.0
@@ -137,18 +142,6 @@ var _chefe_max := 1.0
 var _chefe_real := 1.0
 var _chefe_fantasma := 1.0
 var _chefe_espera := 0.0
-# slot da ruptura: o que foi desenhado por último (só redesenha quando muda)
-var _rb: Control = null
-var _ult: Control = null  # o slot do ULTIMATE (tecla Q): reservado, vazio, sem mecânica ainda
-var _rb_chave := ""
-var _rb_barra := 0  # px da barra de carga (0 a 20)
-var _rb_cortina := 0  # px da cortina da recarga (0 a 20)
-var _rb_contra := 0  # px da faísca do contragolpe (0 a 20)
-var _rb_pronta := true
-var _rb_perf := false  # moldura piscando em branco (janela perfeita)
-var _rb_nega := false  # moldura vermelha
-var _rb_pop := 0.0
-var _rb_recarga_antes := 0.0
 var _barra_px := -1.0  # comprimento atual das barras de vida e de fôlego (desliza até o alvo em _barras); -1 até o primeiro quadro
 
 @onready var _heroi_img: TextureRect = $Raiz/Retrato/Heroi
@@ -172,6 +165,7 @@ var _barra_px := -1.0  # comprimento atual das barras de vida e de fôlego (desl
 @onready var _chefe_fantasma_barra: TextureProgressBar = $Raiz/Chefe/Fantasma
 @onready var _chefe_barra: TextureProgressBar = $Raiz/Chefe/Barra
 @onready var _chefe_txt: Label = $Raiz/Chefe/Texto
+@onready var _chefe_busto: TextureRect = $Raiz/Chefe/Busto
 @onready var _anuncio = $Raiz/Anuncio
 
 
@@ -218,7 +212,6 @@ func _ready() -> void:
 	_vinheta.texture = _textura_vinheta()
 	_vinheta.visible = false
 	_retrato_do_heroi()
-	_criar_slot_ruptura()
 	_criar_selo_pesadelo()
 	EscalaUi.cobrir(_vinheta)
 	add_to_group("ui_escala")
@@ -226,45 +219,43 @@ func _ready() -> void:
 
 
 ## A janela ou a opção "tamanho_ui" mudou: cada peça volta para a sua âncora no canvas novo. O combo e o anúncio (que se mexem sozinhos)
-## recebem só o deslocamento de cima; o slot da ruptura anda com as barras (canto de cima à esquerda).
+## recebem só o deslocamento de cima.
 func ui_reencaixar(_canvas: Vector2, d: Vector2) -> void:
-	_desl = d
 	for nome in ANCORAS:
 		var no := get_node_or_null("Raiz/" + nome) as Control
 		if no == null:
 			continue
-		var a: Vector2 = ANCORAS[nome]
-		if nome == "Habilidades":
-			no.deslocar(a * d)
-		else:
-			no.position = (_bases[nome] as Vector2) + a * d
+		no.position = (_bases[nome] as Vector2) + (ANCORAS[nome] as Vector2) * d
 	_combo_y = _combo_y0 - d.y
 	_anuncio.ancorar(-d.y)
 	if _selo_pesadelo != null:
 		_selo_pesadelo.position = PESADELO_POS + Vector2(0.0, -d.y)
-	if _rb != null:
-		_rb.position = RB_POS - d
-	if _ult != null:
-		_ult.position = RB_POS + Vector2(RB_TAM + 4, 0) - d
 
 
 ## O retrato: o quadro parado do herói da partida (linha "baixo", coluna "parado" da folha), sem filtro, dentro da moldura de pedra.
 ## Sem a folha ou sem o json, o retrato fica vazio (só moldura e fundo).
 func _retrato_do_heroi() -> void:
-	var base := SPRITES + Herois.sprite(Herois.escolhido())
+	var base := SPRITES + Herois.sprite_da_partida(Herois.escolhido())
 	var folha := load(base + "_albedo.png") as Texture2D
 	if folha == null or not FileAccess.file_exists(base + ".json"):
 		return
 	var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
 	if not info is Dictionary or not info.has("quadro"):
 		return
-	var quadro := Vector2(float(info.quadro[0]), float(info.quadro[1]))
+	var regiao := Rect2(0.0, 0.0, float(info.quadro[0]), float(info.quadro[1]))
+	var propria: Variant = info.get("retrato", null)  # folha com quadro grande e vazio em volta (Nicão): só o corpo, recortado
+	if propria is Dictionary:
+		var r: Array = propria.regiao
+		regiao = Rect2(float(r[0]), float(r[1]), float(r[2]), float(r[3]))
 	var recorte := AtlasTexture.new()
 	recorte.atlas = folha
-	recorte.region = Rect2(Vector2.ZERO, quadro)
+	recorte.region = regiao
 	_heroi_img.texture = recorte
 	_heroi_img.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_heroi_img.size = quadro
+	# escala INTEIRA para todo herói (pixel art nítida): a maior que ainda cabe na moldura, e o retrato centrado nela
+	var escala := maxf(floorf(minf(CAIXA_RETRATO.x / regiao.size.x, CAIXA_RETRATO.y / regiao.size.y)), 1.0)
+	_heroi_img.size = regiao.size * escala
+	_heroi_img.position = ((CAIXA_RETRATO - _heroi_img.size) / 2.0).round()
 
 
 func _exit_tree() -> void:
@@ -319,6 +310,7 @@ func avancar(dt: float) -> void:
 	var cartas_na_tela := _cartas_na_tela()  # a escolha e o baú ocupam a tela toda: a HUD inteira some (volta ao fechar), sem misturar com os botões
 	visible = not cartas_na_tela
 	_barras(0.0 if cartas_na_tela else dt, vida_max, folego_max, _base_barras())  # sem correr com a HUD escondida: a barra cresce quando ela volta
+	_folego_em_pixels()
 	_combo.visible = combo > 0 and not cartas_na_tela
 	_combo_num.text = "x%d" % combo
 	_checar_marcos(_combo_antes, combo)
@@ -328,7 +320,6 @@ func avancar(dt: float) -> void:
 	_combo_antes = combo
 	_cor_base = _cor_do_combo(combo)
 	_chefe_quadro(dt)
-	_ruptura(dt, h)
 	_animar(dt)
 	_anuncio.avancar(dt)
 	_anuncio.visible = _anuncio.texto_ativo != "" and not cartas_na_tela
@@ -388,123 +379,6 @@ func _criar_selo_pesadelo() -> void:
 	$Raiz.add_child(_selo_pesadelo)
 
 
-## O slot da ruptura: um Control criado aqui (o laço de _ready que zera luz e mouse já rodou, então zera de novo).
-func _criar_slot_ruptura() -> void:
-	_rb = Control.new()
-	_rb.name = "SlotRuptura"
-	_rb.position = RB_POS
-	_rb.size = Vector2(RB_TAM, RB_TAM)
-	_rb.pivot_offset = Vector2(RB_TAM, RB_TAM) / 2.0
-	_rb.light_mask = 0
-	_rb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_rb.visible = false
-	_rb.draw.connect(_desenhar_slot)
-	$Raiz.add_child(_rb)
-	_ult = Control.new()
-	_ult.name = "SlotUltimate"
-	_ult.position = RB_POS + Vector2(RB_TAM + 4, 0)
-	_ult.size = Vector2(RB_TAM, RB_TAM)
-	_ult.light_mask = 0
-	_ult.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_ult.visible = false
-	_ult.draw.connect(_desenhar_ultimate)
-	$Raiz.add_child(_ult)
-
-
-## Um quadro do slot: lê o herói, anima (pop, tremida) e pede redesenho só se algo mudou. Sem os campos da ruptura no herói, esconde.
-func _ruptura(dt: float, h) -> void:
-	if _rb == null:
-		return
-	var tem: bool = h != null and _campo(h, "rup_carga") != null
-	if _rb.visible != tem:
-		_rb.visible = tem
-		_ult.visible = tem
-		_ult.queue_redraw()
-	if not tem:
-		return
-	var f := clampf(_num(h, "rup_carga", 0.0), 0.0, 1.0)
-	var rec := maxf(_num(h, "rup_recarga", 0.0), 0.0)
-	var rec_max := maxf(_num(h, "rup_recarga_max", 1.0), 0.001)
-	var nega := maxf(_num(h, "rup_nega_t", 0.0), 0.0)
-	var contra := maxf(_num(h, "contragolpe_t", 0.0), 0.0)
-	var contra_max := maxf(_num(h, "contragolpe_max", 1.5), 0.001)
-	if _rb_recarga_antes > 0.0 and rec <= 0.0:
-		_rb_pop = RB_POP_T
-	_rb_recarga_antes = rec
-	_rb_pop = maxf(_rb_pop - dt, 0.0)
-	var treme := 0.0
-	if nega > 0.0:  # apertou na recarga: treme 2 px
-		treme = 2.0 if int(nega * 40.0) % 2 == 0 else -2.0
-	_rb.position = RB_POS - _desl + Vector2(treme, 0.0)
-	_rb.scale = Vector2.ONE * (1.0 + roundf(3.0 * _rb_pop / RB_POP_T) / 10.0)  # 1,3 para 1,0 em degraus de pixel art
-	_rb_pronta = rec <= 0.0
-	_rb_barra = roundi(f * 20.0)
-	_rb_cortina = ceili(rec / rec_max * 20.0) if rec > 0.0 else 0
-	_rb_contra = ceili(contra / contra_max * 20.0) if contra > 0.0 else 0
-	_rb_perf = _campo(h, "rup_perfeita") == true and int(Time.get_ticks_msec() / 50.0) % 2 == 0
-	_rb_nega = nega > 0.0
-	var chave := "%d|%d|%d|%s|%s|%s" % [_rb_barra, _rb_cortina, _rb_contra, _rb_pronta, _rb_perf, _rb_nega]
-	if chave != _rb_chave:
-		_rb_chave = chave
-		_rb.queue_redraw()
-
-
-func _desenhar_slot() -> void:
-	var s := float(RB_TAM)
-	_rb.draw_rect(Rect2(0, 0, s, s), Color(Paleta.HABILIDADE_FUNDO, 0.85))
-	var borda := RB_BORDA
-	if _rb_nega:
-		borda = Paleta.PERIGO
-	elif _rb_perf:
-		borda = Color.WHITE
-	_moldura(Rect2(0, 0, s, s), borda)
-	# a tecla da habilidade: a letra E (7x9 px)
-	var tecla := RB_LARANJA if _rb_pronta else Paleta.TECLA_APAGADA
-	_rb.draw_rect(Rect2(7, 5, 2, 9), tecla)
-	_rb.draw_rect(Rect2(9, 5, 5, 2), tecla)
-	_rb.draw_rect(Rect2(9, 8, 4, 2), tecla)
-	_rb.draw_rect(Rect2(9, 12, 5, 2), tecla)
-	# recarga: cortina escura do topo para baixo, a fração que falta
-	if _rb_cortina > 0:
-		_rb.draw_rect(Rect2(1, 1, s - 2.0, float(_rb_cortina)), Color(0.0, 0.0, 0.0, 0.7))
-		if _rb_cortina < 20:
-			_rb.draw_rect(Rect2(1, 1 + _rb_cortina, s - 2.0, 1), Color(Paleta.RECARGA_BORDA, 0.8))  # a borda da cortina: a varredura se lê
-	# carga: barra vertical de 3 px na borda direita, de baixo para cima, de laranja a branco, com marcas em 25, 50 e 75%
-	_rb.draw_rect(Rect2(18, 1, 3, 20), Color(0.0, 0.0, 0.0, 0.5))
-	if _rb_barra > 0:
-		_rb.draw_rect(Rect2(18, 21 - _rb_barra, 3, _rb_barra), RB_LARANJA.lerp(Color.WHITE, float(_rb_barra) / 20.0))
-		for marca in [5, 10, 15]:
-			_rb.draw_rect(Rect2(18, 21 - marca, 3, 1), Color(Paleta.CARGA_MARCA, 0.9))
-	# contragolpe aberto: faísca laranja de 1 px na borda de cima
-	if _rb_contra > 0:
-		_rb.draw_rect(Rect2(1, 0, float(_rb_contra), 1), Paleta.CONTRAGOLPE)
-
-
-## O slot do ultimate (Q): moldura apagada e a letra Q, sem barra nem recarga (a mecânica ainda não existe).
-func _desenhar_ultimate() -> void:
-	var s := float(RB_TAM)
-	var apagado := Paleta.HABILIDADE_DESATIVADA
-	_ult.draw_rect(Rect2(0, 0, s, s), Color(Paleta.HABILIDADE_FUNDO, 0.6))
-	_ult.draw_rect(Rect2(0, 0, s, 1), apagado)
-	_ult.draw_rect(Rect2(0, s - 1, s, 1), apagado)
-	_ult.draw_rect(Rect2(0, 1, 1, s - 2), apagado)
-	_ult.draw_rect(Rect2(s - 1, 1, 1, s - 2), apagado)
-	_ult.draw_rect(Rect2(6, 5, 8, 2), apagado)  # o Q: aro de 8x8 com o rabo
-	_ult.draw_rect(Rect2(6, 12, 8, 2), apagado)
-	_ult.draw_rect(Rect2(6, 7, 2, 5), apagado)
-	_ult.draw_rect(Rect2(12, 7, 2, 5), apagado)
-	_ult.draw_rect(Rect2(11, 12, 4, 4), apagado)
-
-
-## Contorno de 1 px em retângulos cheios (draw_rect sem preencher borra em coordenada inteira). `redondo` corta os quatro cantos.
-func _moldura(r: Rect2, cor: Color, redondo := false) -> void:
-	var c := 1.0 if redondo else 0.0
-	_rb.draw_rect(Rect2(r.position.x + c, r.position.y, r.size.x - 2.0 * c, 1), cor)
-	_rb.draw_rect(Rect2(r.position.x + c, r.end.y - 1, r.size.x - 2.0 * c, 1), cor)
-	_rb.draw_rect(Rect2(r.position.x, r.position.y + 1, 1, r.size.y - 2), cor)
-	_rb.draw_rect(Rect2(r.end.x - 1, r.position.y + 1, 1, r.size.y - 2), cor)
-
-
 ## Verdadeiro com a escolha de carta ou o baú abertos (telas.gd). Sem combate no mundo (testes), é falso.
 func _cartas_na_tela() -> bool:
 	var telas = _campo(_campo(mundo, "combate"), "telas")
@@ -529,6 +403,14 @@ func _barras(dt: float, vida_max: float, folego_max: float, base: Vector2) -> vo
 	var moldura := roundf(_barra_px + 2.0 * BARRA_FOLGA)
 	_vida_caixa.size.x = moldura
 	_moldura_barras.size.x = moldura
+
+
+## O fôlego desce pixel a pixel: o valor da barra vai para a fração do comprimento arredondada em pixels inteiros (a barra tem 208 a 244, então são 208 a 244
+## passos, e não os 4 degraus de antes: o `step` padrão do Range é 1 e o máximo é 3 cargas, então o valor fracionário caía para 0, 1, 2 ou 3).
+func _folego_em_pixels() -> void:
+	var px := maxf(roundf(_folego.size.x), 1.0)
+	var fracao := clampf(_folego.value / maxf(_folego.max_value, 0.001), 0.0, 1.0)
+	_folego.value = roundf(fracao * px) / px * _folego.max_value
 
 
 ## Um passo da suavização. Com k 0 não se mexe (HUD escondida); perto do alvo, meio px, cola nele para o pixel parar de tremer.
@@ -744,6 +626,17 @@ func _chefe_apareceu(nome = "", vida_max = 1.0) -> void:
 	_chefe_barra.max_value = _chefe_max
 	_chefe_fantasma_barra.max_value = _chefe_max
 	_chefe.visible = true
+	var busto: Texture2D = BUSTOS.get(_marca_do_chefe(), null)
+	_chefe_busto.texture = busto
+	_chefe_busto.visible = busto != null
+
+
+## O id da marca do chefe em campo: combate.chefes.marca já está gravada quando o sinal sai (chefe.gd, nascer). Sem combate (mundo falso dos testes), "".
+func _marca_do_chefe() -> String:
+	var combate = mundo.get("combate") if mundo != null else null
+	var chefes = combate.get("chefes") if combate != null else null
+	var marca = chefes.get("marca") if chefes != null else null
+	return str(marca.get("id", "")) if marca is Dictionary else ""
 
 
 func _chefe_vida(vida = 0.0) -> void:

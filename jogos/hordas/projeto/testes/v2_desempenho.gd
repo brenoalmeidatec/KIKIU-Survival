@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da horda em lote e da física dos monstros (v2/horda.gd, v2/monstro.gd, v2/combate.gd): 100 monstros sobem como linhas de números
 # (sem sprite, sem nó) e saem em poucas fatias de MultiMesh; a sombra e a mancha deles existem em lote (média e alta) e só a mancha na baixa; a ordem
 # de desenho em relação ao herói, ao cenário e à elite (nó) é a do y-sort; nenhum monstro termina dentro do corpo do herói depois de 3 s de

@@ -240,7 +240,8 @@ func golpes_ativos() -> int:
 
 ## Sorteia `n` cartas diferentes. `bonus` = quanto o baú favorece as raridades altas. Até o nível `garantir_golpe_ate`, quem ainda não tem
 ## nenhum golpe secundário vê pelo menos um na escolha (o começo da build). `excluir` = ids que não podem sair nesta rodada (rerrolar).
-func sortear(n: int, nivel: int, bonus := 1.0, excluir: Array = []) -> Array:
+## `piso` = a menor raridade que pode sair (o baú dá `bau.piso_raridade`, 1 = nunca comum).
+func sortear(n: int, nivel: int, bonus := 1.0, excluir: Array = [], piso := 0) -> Array:
 	var cand: Array = []
 	var pesos: Array = []
 	var sinergia := _pesos_sinergia()
@@ -279,7 +280,7 @@ func sortear(n: int, nivel: int, bonus := 1.0, excluir: Array = []) -> Array:
 				escolhidas[escolhidas.size() - 1] = gs[rng.randi() % gs.size()]
 	var cartas: Array = []
 	for d in escolhidas:
-		cartas.append(montar_carta(d, sortear_raridade(nivel, bonus)))
+		cartas.append(montar_carta(d, maxi(sortear_raridade(nivel, bonus), piso)))
 	return cartas
 
 

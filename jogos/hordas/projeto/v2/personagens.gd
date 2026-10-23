@@ -14,6 +14,7 @@ static var caminho_indice := "user://v2_personagens.cfg"
 static var caminho_base := "user://v2_personagem_"  # o arquivo de cada slot é caminho_base + id + ".cfg"
 static var caminho_antigo := "user://v2_progresso.cfg"
 const HEROI_PADRAO := "hazaki"
+const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"
 
 
 static func nomes() -> Array:
@@ -53,6 +54,33 @@ static func heroi_do_nome(nome_txt: String) -> String:
 		if str(n.nome) == nome_txt and Herois.existe(str(n.get("heroi", ""))):
 			return str(n.heroi)
 	return HEROI_PADRAO
+
+
+## A folha de sprites que o NOME usa (campo opcional "sprite" de dados/v2_salao.json: nome da folha, sem extensão, em prototipos/cara_nova/sprites).
+## Vazio = o personagem usa a folha do herói dele. Folha que não existe no disco também vale como vazio (o jogo cai na do herói).
+static func sprite_do_nome(nome_txt: String) -> String:
+	for n in nomes():
+		if str(n.nome) == nome_txt:
+			var s := str(n.get("sprite", ""))
+			return s if s != "" and FileAccess.file_exists(PASTA_SPRITES + s + ".json") else ""
+	return ""
+
+
+## A folha do personagem `id` (slot do save), ou vazio.
+static func sprite(id: String) -> String:
+	return sprite_do_nome(nome(id))
+
+
+## A folha que o personagem `id` desenha (retrato sem rosto, etc.): a própria (Matheus) ou, sem ela, a do herói dele (Hazaki, Nicão, Lucas).
+static func folha(id: String) -> String:
+	var s := sprite(id)
+	return s if s != "" else Herois.sprite(heroi(id))
+
+
+## O mesmo para um NOME ainda sem save (a oferta da tela de escolha).
+static func folha_do_nome(nome_txt: String) -> String:
+	var s := sprite_do_nome(nome_txt)
+	return s if s != "" else Herois.sprite(heroi_do_nome(nome_txt))
 
 
 ## A arma inicial do herói do personagem (dados/v2_herois.json), em caixa de título.

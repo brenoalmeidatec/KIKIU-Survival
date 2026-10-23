@@ -1,0 +1,273 @@
+{
+  "base_389": "511ce161a5846f43935cf0e72f24d9d9c3dafed9",
+  "qa_combinada": "8ff3b69a44ab38c21d9ff9e2d7585910c530d735",
+  "alteracao_candidato": "mesmo v2_transicoes.gd em ambos; nenhuma mudança de produção",
+  "casos": {
+    "sem_390": {
+      "perfil": "QA sintética migrável; raízes lógicas",
+      "protegidos": {
+        "v2_progresso.cfg": {
+          "bytes": 40,
+          "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05"
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "bytes": 60,
+          "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB"
+        },
+        "opcoes.cfg": {
+          "bytes": 114,
+          "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88"
+        },
+        "v2_personagem_p1.cfg.tmp": {
+          "bytes": 34,
+          "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0"
+        },
+        "v2_personagens.cfg.tmp": {
+          "bytes": 34,
+          "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0"
+        },
+        "v2_personagens.cfg.bak": {
+          "bytes": 85,
+          "sha256": "02FC7FE5AE93E4F1B8B11F00B9B3361B0FE73A70E1D4BF85E87DB14EAFA2E878"
+        },
+        "opcoes.cfg.tmp": {
+          "bytes": 34,
+          "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0"
+        },
+        "v2_progresso.cfg.tmp": {
+          "bytes": 34,
+          "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0"
+        },
+        "v2_personagem_p1.cfg": {
+          "bytes": 40,
+          "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675"
+        },
+        "v2_personagens.cfg": {
+          "bytes": 65,
+          "sha256": "10F1A7533D16D80F3639F34FFB40C96E4B5D55BEB33E6CF451A110B3BB4395F8"
+        },
+        "opcoes.cfg.bak": {
+          "bytes": 134,
+          "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB"
+        },
+        "v2_progresso.cfg.bak": {
+          "bytes": 60,
+          "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF"
+        }
+      },
+      "execucoes": [
+        {
+          "codigo": 0,
+          "extras_raiz": [],
+          "script_error": false,
+          "hashes_iguais": true,
+          "fixture_limpa": true,
+          "passou": true,
+          "cena": "v2_transicoes",
+          "user_dir_confirmado": true,
+          "arquivos_depois": {
+            "v2_progresso.cfg.bak": {
+              "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF",
+              "bytes": 60,
+              "existe": true
+            },
+            "v2_personagens.cfg.bak": {
+              "sha256": "02FC7FE5AE93E4F1B8B11F00B9B3361B0FE73A70E1D4BF85E87DB14EAFA2E878",
+              "bytes": 85,
+              "existe": true
+            },
+            "v2_personagens.cfg": {
+              "sha256": "10F1A7533D16D80F3639F34FFB40C96E4B5D55BEB33E6CF451A110B3BB4395F8",
+              "bytes": 65,
+              "existe": true
+            },
+            "opcoes.cfg.bak": {
+              "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB",
+              "bytes": 134,
+              "existe": true
+            },
+            "opcoes.cfg.tmp": {
+              "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0",
+              "bytes": 34,
+              "existe": true
+            },
+            "v2_progresso.cfg.tmp": {
+              "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0",
+              "bytes": 34,
+              "existe": true
+            },
+            "v2_progresso.cfg": {
+              "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05",
+              "bytes": 40,
+              "existe": true
+            },
+            "v2_personagem_p1.cfg": {
+              "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675",
+              "bytes": 40,
+              "existe": true
+            },
+            "v2_personagens.cfg.tmp": {
+              "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0",
+              "bytes": 34,
+              "existe": true
+            },
+            "opcoes.cfg": {
+              "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88",
+              "bytes": 114,
+              "existe": true
+            },
+            "v2_personagem_p1.cfg.bak": {
+              "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB",
+              "bytes": 60,
+              "existe": true
+            },
+            "v2_personagem_p1.cfg.tmp": {
+              "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0",
+              "bytes": 34,
+              "existe": true
+            }
+          }
+        }
+      ],
+      "estado": "falhas=0"
+    },
+    "com_390": {
+      "perfil": "QA sintética migrável; raízes lógicas",
+      "protegidos": {
+        "v2_progresso.cfg": {
+          "bytes": 40,
+          "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05"
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "bytes": 60,
+          "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB"
+        },
+        "opcoes.cfg": {
+          "bytes": 114,
+          "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88"
+        },
+        "v2_personagem_p1.cfg.tmp": {
+          "bytes": 34,
+          "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0"
+        },
+        "v2_personagens.cfg.tmp": {
+          "bytes": 34,
+          "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0"
+        },
+        "v2_personagens.cfg.bak": {
+          "bytes": 85,
+          "sha256": "02FC7FE5AE93E4F1B8B11F00B9B3361B0FE73A70E1D4BF85E87DB14EAFA2E878"
+        },
+        "opcoes.cfg.tmp": {
+          "bytes": 34,
+          "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0"
+        },
+        "v2_progresso.cfg.tmp": {
+          "bytes": 34,
+          "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0"
+        },
+        "v2_personagem_p1.cfg": {
+          "bytes": 40,
+          "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675"
+        },
+        "v2_personagens.cfg": {
+          "bytes": 65,
+          "sha256": "10F1A7533D16D80F3639F34FFB40C96E4B5D55BEB33E6CF451A110B3BB4395F8"
+        },
+        "opcoes.cfg.bak": {
+          "bytes": 134,
+          "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB"
+        },
+        "v2_progresso.cfg.bak": {
+          "bytes": 60,
+          "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF"
+        }
+      },
+      "execucoes": [
+        {
+          "codigo": 0,
+          "extras_raiz": [],
+          "script_error": false,
+          "hashes_iguais": true,
+          "fixture_limpa": true,
+          "passou": true,
+          "cena": "v2_transicoes",
+          "user_dir_confirmado": true,
+          "arquivos_depois": {
+            "v2_progresso.cfg.bak": {
+              "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF",
+              "bytes": 60,
+              "existe": true
+            },
+            "v2_personagens.cfg.bak": {
+              "sha256": "02FC7FE5AE93E4F1B8B11F00B9B3361B0FE73A70E1D4BF85E87DB14EAFA2E878",
+              "bytes": 85,
+              "existe": true
+            },
+            "v2_personagens.cfg": {
+              "sha256": "10F1A7533D16D80F3639F34FFB40C96E4B5D55BEB33E6CF451A110B3BB4395F8",
+              "bytes": 65,
+              "existe": true
+            },
+            "opcoes.cfg.bak": {
+              "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB",
+              "bytes": 134,
+              "existe": true
+            },
+            "opcoes.cfg.tmp": {
+              "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0",
+              "bytes": 34,
+              "existe": true
+            },
+            "v2_progresso.cfg.tmp": {
+              "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0",
+              "bytes": 34,
+              "existe": true
+            },
+            "v2_progresso.cfg": {
+              "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05",
+              "bytes": 40,
+              "existe": true
+            },
+            "v2_personagem_p1.cfg": {
+              "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675",
+              "bytes": 40,
+              "existe": true
+            },
+            "v2_personagens.cfg.tmp": {
+              "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0",
+              "bytes": 34,
+              "existe": true
+            },
+            "opcoes.cfg": {
+              "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88",
+              "bytes": 114,
+              "existe": true
+            },
+            "v2_personagem_p1.cfg.bak": {
+              "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB",
+              "bytes": 60,
+              "existe": true
+            },
+            "v2_personagem_p1.cfg.tmp": {
+              "sha256": "11D5E30E763102986834B81C3FE551E7737806DB710A7071ADD5E4878F31D4F0",
+              "bytes": 34,
+              "existe": true
+            }
+          }
+        }
+      ],
+      "estado": "falhas=0"
+    }
+  },
+  "fontes_sha256_lf_utf8_sem_bom": {
+    "jogos/hordas/projeto/testes/v2_transicoes.gd": "213d984ae2493cc7ac5f853a11c4090f0fcf6ea0f00d1945df1443c9098606e6",
+    "ferramentas/teste_transicoes_isoladas.ps1": "dad6e20fa4c3637064d18c0035eb489facbfebe305299c950fafbef25db03089"
+  },
+  "bound": "18000 quadros no executor final; primeira coleta sem390 anterior à inclusão do bound",
+  "controles_combinados": [
+    "v2_pausa",
+    "v2_controle_nav",
+    "v2_escala_ui"
+  ]
+}

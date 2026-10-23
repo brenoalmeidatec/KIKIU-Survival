@@ -14,6 +14,15 @@ no `CONTRIBUTING.md`. Escreva em português do Brasil.
 - **Limites:** nada de senhas, chaves ou credenciais no repositório; sem force-push na `main`; nada pago sem o Breno; a Cairu fica como está.
 - **Antes de cada PR:** `gdformat -l 160 --check jogos/hordas/projeto/scripts jogos/hordas/projeto/testes jogos/hordas/projeto/v2` limpo e os testes afetados com `falhas=0` (veja `ferramentas/testes_ci.sh`). Se não rodou o Godot, diga isso no PR.
 
+## Fechamento da v2, 22 e 23/10 (decisão do Alisson, 2026-10-22)
+A mesma seção está no `CLAUDE.md` e no `AGENTS.md`; quem mudar uma muda a outra.
+- **Canal só por arquivo e GitHub:** o Claude e o Codex conversam **apenas** pelos `.md` do repositório, issues, PRs e `LOGBOOK.md`. Nenhum agente aciona o outro direto (nada de `codex exec`, `codex queue`, `claude -p` ou MCP de um no outro) nem lê a conversa do outro para tomar decisão. Quem leva prompt de um lado para o outro é o Alisson.
+- **Quem conduz:** em 22 e 23/10 o **Codex do Alisson conduz o código da v2**, pela issue `para-o-codex` do dia (hoje a **#400**). O Claude do Alisson revisa e integra quando o Alisson chamar.
+- **Quem mergeia:** o Codex escreve e abre o PR, mas **não mergeia código**. Ele avisa na issue do dia, e quem confere e mergeia é o **Claude do Alisson**. A exceção é PR só de doc ou `LOGBOOK.md`, que o Codex pode mergear sozinho. Todo merge de código na `main` precisa das três coisas: (1) "pode mergear" do Alisson escrito na issue ou no PR (ou repassado por ele); (2) CI 7/7 verde que **rodou** no mesmo commit, porque "no checks reported" não conta; (3) revisão independente registrada no PR. Congelamento, Releases e as tags `v2.0-beta`, `v2.0-rc1` e `v2.0` ficam com o Claude do Alisson, com o ok do Alisson.
+- **Prazo (decisão do Alisson, 2026-10-22):** sex 23/10 sai a tag `v2.0-beta` com Release; sáb 24 e dom 25 são de polimento e bugs do beta, com recurso novo congelado na noite de domingo; seg 26/10 sai a `v2.0-rc1`, e depois dela só entra correção de bug. A `v2.0` final vem depois da RC, quando o Alisson decidir. Onde este arquivo, a #400 ou a #342 falarem em "`v2.0` na sexta", vale esta linha.
+- **No notebook** (o Alisson usa até 17h): todo Godot passa pela fila `C:\Dev\KIKIU\notas\godot_fila.ps1`, com `APPDATA` própria por worktree. Feche todo Godot e robô ao terminar. Nunca rode `find` ou busca no disco inteiro. Até 16h30 tudo vai para o GitHub, e nada fica rodando depois disso. O PC entra a partir das 19h.
+- **Evidência de QA não vai para o repositório:** JSON bruto de robô, relatório grande, tentativa reprovada e GIF de prova vão como artefato do CI ou anexo, com um resumo curto no PR. Nada de QA dentro de `jogos/hordas/projeto/`, porque essa pasta entra no export.
+
 ## Divisão de trabalho (decisão do Alisson, 2026-10-14)
 A mesma tabela está no fim do `CLAUDE.md`; quem mudar uma muda a outra.
 

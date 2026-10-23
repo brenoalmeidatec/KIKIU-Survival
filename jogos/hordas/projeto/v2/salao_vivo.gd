@@ -6,7 +6,8 @@ extends Node
 ##
 ## Camadas (CanvasLayer, abaixo da interface do salão, que fica na tela padrão):
 ##   -2 cena: o cenário e o herói (movidos para cá), o vão animado dos portais, as luzes, as sombras e o CanvasModulate;
-##   -1 brilho: halos, poças de luz, chamas, runas, partículas e névoa (aditivos; sem CanvasModulate).
+##   -1 brilho: halos, poças de luz, chamas, runas, partículas e névoa (aditivos; sem CanvasModulate), e os nomes dos portais e das
+##      estruturas (sem luz: ficam por cima do herói e apagam quando ele os cobre, _letreiros_vivos).
 ## Perfis (dados/graficos.json): luz_relevo (2/6/10 luzes), sombras (modo de sombras.gd), nevoa, particulas_sim (20/45/80 partículas).
 
 const Paleta := preload("res://v2/paleta.gd")
@@ -43,6 +44,9 @@ const RUNAS := [
 	[".###.", "#...#", "..#..", ".#.#.", "..#.."]
 ]
 const N_RUNAS := 8
+const ESCALA_HEROI := 2.0  # a escala em que salao.gd desenha o herói (ESCALA lá; testes/v2_letreiros.gd trava a igualdade)
+const OPACIDADE_NOME_COBERTO := 0.25  # o nome que o herói cobre fica quase transparente, para ver o herói por baixo dele
+const VELOCIDADE_NOME := 6.0  # 1/s: o nome some ou volta em uns 0,13 s
 const CADEADO_BITS := [".#####.", "#.....#", "#.....#", "#######", "#######", "###.###", "###.###", "#######"]
 
 
@@ -128,6 +132,11 @@ var _po_tapete: CPUParticles2D
 var _altar := Vector2.ZERO
 var _tex_runas: Array[Texture2D] = []
 var _particulas: Array[CPUParticles2D] = []
+var _letreiros: Array[Dictionary] = []  # um nó por pedaço de nome (texto, cadeado, linha de baixo): {no, caixa, opacidade}; ver _montar_letreiros
+var _corpo_tex: Texture2D  # a folha que _corpo_caixas lê; se o herói trocar de folha ou de tamanho de quadro, lê de novo
+var _corpo_tamanho := Vector2i.ZERO
+var _corpo_img: Image
+var _corpo_caixas := {}  # (coluna, linha) do quadro -> caixa do corpo, em px do quadro; medida na primeira vez que o herói mostra o quadro
 var _perfil_pendente := false
 # perfil
 var lim_luzes := 6
@@ -171,13 +180,13 @@ func montar(ctx) -> void:
 	var sem_luz := CanvasItemMaterial.new()
 	sem_luz.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
 	_rotulos.material = sem_luz
-	_rotulos.draw.connect(_pintar_rotulos)
 	_glow = CanvasLayer.new()
 	_glow.layer = -1
 	add_child(_glow)
 	_fx = Node2D.new()
 	_glow.add_child(_fx)
 	_glow.add_child(_rotulos)  # nomes sem CanvasModulate, por cima dos brilhos
+	_montar_letreiros()
 	_ler_niveis()
 	_montar_portais()
 	ctx._heroi.reparent(_mundo, false)
@@ -253,12 +262,72 @@ func _reaplicar_perfil() -> void:
 		_mundo.move_child(_vinheta, _mundo.get_child_count() - 1)  # a sombra remontada põe o herói no fim: a vinheta volta por cima
 
 
-func _pintar_rotulos() -> void:
+## Um nó por pedaço do nome (texto, cadeado, linha de baixo), filho de _rotulos (sem luz): o herói que cobre a caixa de um pedaço apaga
+## só esse pedaço (_letreiros_vivos).
+func _montar_letreiros() -> void:
 	for a in _ctx._alvos:
-		if a.tipo == "portal":
-			_ctx._visual.rotulo_portal(_rotulos, a, Mapas.condicao(Mapas.buscar(str(a.id))) != "")
-		else:
-			_ctx._visual.rotulo_estrutura(_rotulos, a)
+		for parte in _ctx._visual.partes_rotulo(a):
+			var no := Node2D.new()
+			no.use_parent_material = true  # herda o material sem luz do _rotulos
+			no.draw.connect(_pintar_letreiro.bind(a, no, str(parte.parte)))
+			_rotulos.add_child(no)
+			_letreiros.append({"no": no, "caixa": parte.caixa, "opacidade": 1.0})
+
+
+func _pintar_letreiro(a: Dictionary, no: Node2D, parte: String) -> void:
+	var fechado: bool = str(a.tipo) == "portal" and Mapas.condicao(Mapas.buscar(str(a.id))) != ""
+	_ctx._visual.desenha_parte(no, a, parte, fechado)
+
+
+## O herói passa por cima dos nomes: a caixa do corpo dele (_caixa_corpo) apaga cada pedaço do nome que ela cobre, e o pedaço volta
+## quando ele sai. Nenhum nó novo: só muda a opacidade do nó que já existe, e só quando ela muda.
+func _letreiros_vivos(pes: Vector2, dt: float) -> void:
+	var corpo := _caixa_corpo(pes)
+	for l in _letreiros:
+		var caixa: Rect2 = l.caixa
+		var alvo := OPACIDADE_NOME_COBERTO if corpo.has_area() and caixa.intersects(corpo) else 1.0
+		var op := move_toward(float(l.opacidade), alvo, dt * VELOCIDADE_NOME)
+		if op != float(l.opacidade):
+			l.opacidade = op
+			var no: Node2D = l.no
+			no.modulate.a = op
+
+
+## A caixa do corpo que o herói mostra agora, em px do mundo: a caixa do quadro dele (_caixa_quadro) no lugar em que salao.gd
+## _pintar_heroi desenha o quadro (canto em (-w/2, -h + 6) do pé, na escala ESCALA_HEROI). Sem folha, vale o quadro inteiro.
+func _caixa_corpo(pes: Vector2) -> Rect2:
+	if _ctx._sprite != _corpo_tex or Vector2i(_ctx._quadro_w, _ctx._quadro_h) != _corpo_tamanho:
+		_corpo_tex = _ctx._sprite
+		_corpo_tamanho = Vector2i(_ctx._quadro_w, _ctx._quadro_h)
+		_corpo_img = _corpo_tex.get_image() if _corpo_tex != null else null
+		_corpo_caixas.clear()
+	var chave := Vector2i(_ctx._quadro, _ctx._dir)
+	if _corpo_img != null and not _corpo_caixas.has(chave):
+		_corpo_caixas[chave] = _caixa_quadro(_corpo_img, chave.x, chave.y, _corpo_tamanho.x, _corpo_tamanho.y)
+	var qw := float(_corpo_tamanho.x)
+	var qh := float(_corpo_tamanho.y)
+	var area: Rect2 = _corpo_caixas.get(chave, Rect2(0, 0, qw, qh))
+	var canto := Vector2(pes.x - qw * ESCALA_HEROI / 2.0, pes.y - qh * ESCALA_HEROI + 6.0)
+	return Rect2(canto + area.position * ESCALA_HEROI, area.size * ESCALA_HEROI)
+
+
+## A caixa do corpo de um quadro da folha (coluna c, linha l), em px do quadro: começa na primeira linha com pelo menos 4 pixels opacos
+## (pixels soltos no topo, como um fio de cabelo ou um ponto de luz, não contam) e vai até a base e às laterais da área com alfa.
+static func _caixa_quadro(img: Image, c: int, l: int, qw: int, qh: int) -> Rect2:
+	if (c + 1) * qw > img.get_width() or (l + 1) * qh > img.get_height():
+		return Rect2(0, 0, qw, qh)
+	var quadro := img.get_region(Rect2i(c * qw, l * qh, qw, qh))
+	var area := quadro.get_used_rect()
+	if not area.has_area():
+		return Rect2()
+	for y in range(area.position.y, area.end.y):
+		var opacos := 0
+		for x in qw:
+			if quadro.get_pixel(x, y).a >= 0.5:
+				opacos += 1
+		if opacos >= 4:
+			return Rect2(area.position.x, y, area.size.x, area.end.y - y)
+	return Rect2(area)
 
 
 # ------------------------------------------------------------------ texturas (uma vez só)
@@ -814,8 +883,9 @@ func _process(dt: float) -> void:
 	var pos: Vector2 = c._pos
 	var vel := (pos - _pos_ant) / maxf(dt, 0.0001)
 	_pos_ant = pos
-	var andando: bool = c._quadro > 0
+	var andando: bool = c._andando
 	_heroi_vivo(c, pos, andando)
+	_letreiros_vivos(c._heroi.position, dt)
 	var ciclo := 1.0 + (AMPLITUDE_CICLO * sin(TAU * _tempo / PERIODO_CICLO) if com_ciclo else 0.0)
 	if _modulador != null:
 		_modulador.color = Color(MODULADO.r * ciclo, MODULADO.g * ciclo, MODULADO.b * ciclo)

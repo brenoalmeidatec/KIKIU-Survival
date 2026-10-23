@@ -230,7 +230,7 @@ func _desenhar_seletor() -> void:
 func _itens_dica() -> Array:
 	var r: Array = [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["pausa", "Sair"]]
 	if not Glifos.eh_controle():
-		r.insert(2, ["", "Mouse também"])
+		r.insert(2, ["mouse", "também"])
 	return r
 
 
@@ -301,7 +301,7 @@ func _jogar() -> void:
 	if ao_jogar.is_valid():
 		ao_jogar.call()
 	else:
-		get_tree().change_scene_to_file(ESCOLHA)
+		Transicoes.ir_para(self, ESCOLHA)
 
 
 func _abrir_ajustes() -> void:

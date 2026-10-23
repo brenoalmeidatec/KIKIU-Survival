@@ -460,6 +460,7 @@ static func nascer(nv, it: Dictionary) -> void:
 	it.pf = 0.0
 	it.v = Vector2(0, 1)
 	it.sumiu = false
+	nv.pai.combate.audio.registrar_invocacao(it, str(f.get("rastro", "garras")))
 	nv.pai.fx.onda(it.p, Color(f.cor_fx, 0.55), 26.0, 0.4)
 
 
@@ -477,6 +478,7 @@ static func mover(nv, it: Dictionary, h, dt: float, perto: Array) -> void:
 		if not bool(it.sumiu):
 			it.sumiu = true
 			it.e = ANDANDO
+			nv.pai.combate.audio.invocacao(it, "sumir")
 			nv.pai.fx.onda(it.p, Color(f.cor_fx, 0.45), 30.0, 0.45)
 		return
 	match int(it.e):
@@ -545,7 +547,7 @@ static func _impacto(nv, it: Dictionary, f: Dictionary) -> void:
 	pai.fx.onda(p, Color(f.cor_fx, 0.7), raio, 0.22)
 	pai.fx.faiscas(p, it.v, 6, f.cor_fx, 130.0)
 	pai.fx.luz_rapida(p + Vector2(0, -6), f.cor_fx, 1.4, raio * 2.2, 0.2)
-	pai.combate.audio.tocar("impacto", randf_range(0.8, 0.95), -3.0, 0.1)
+	pai.combate.audio.invocacao(it, "atacar")
 	if (pai.mundo.heroi.pos as Vector2).distance_to(p) < 300.0:
 		pai.mundo.cam.tremer(0.8, 0.1)
 

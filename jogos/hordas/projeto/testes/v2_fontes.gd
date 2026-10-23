@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste das fontes da v2 (regra em v2/LEIA-ME.md). Roda sem janela e confere o que se pode medir sem olhar:
 #  - as fontes vêm do lugar central (Dados) e estão sem anti-aliasing, sem hinting e sem posição de subpixel (o pixel da fonte cai no
 #    pixel da tela; é isso que mantém o desenho nítido no shader sharp bilinear);
@@ -19,7 +19,7 @@ const MenuPrincipal := preload("res://v2/menu_principal.gd")
 const Pausa := preload("res://v2/pausa.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
-const OPCOES_TESTE := "user://teste_v2_fontes_opcoes.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_fontes/teste_v2_fontes_opcoes.cfg"
 const PT := "ãçéêõüÃÇÉÊÕÜáíóúâôàÁÍÓÚÂÔÀ"
 const SIMBOLOS := "0123456789*()%+-/:.,'\"x[]°×"
 const PARES := [["5", "S"], ["0", "O"], ["1", "I"], ["1", "l"], ["I", "l"], ["2", "Z"], ["6", "G"], ["8", "B"], ["0", "D"], ["3", "8"], ["6", "b"]]
@@ -43,7 +43,7 @@ func _ready() -> void:
 	_menu_graficos()
 	if FileAccess.file_exists(OPCOES_TESTE):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(OPCOES_TESTE))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_fontes/opcoes.cfg"
 	print("v2_fontes falhas=%d" % falhas)
 	get_tree().quit()
 

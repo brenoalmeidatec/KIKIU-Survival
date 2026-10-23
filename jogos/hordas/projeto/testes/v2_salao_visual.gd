@@ -1,4 +1,4 @@
-extends Control
+extends "res://testes/isolamento_v2_control.gd"
 # QA visual 960x540: contratos de PNG/cache, geometria medida, proximidade e interacao.
 # Saves com prefixo unico; hashes dos saves reais conferidos no fim. Sem benchmark.
 # godot --headless --path jogos/hordas/projeto res://testes/v2_salao_visual.tscn
@@ -26,14 +26,14 @@ func _ready() -> void:
 		if arg.begins_with("--prints="):
 			pasta = arg.trim_prefix("--prints=")
 	prefixo = "qa_visual_%d_" % Time.get_ticks_usec()
-	var d := DirAccess.open("user://")
+	var d := DirAccess.open("user://testes_v2/v2_salao_visual/")
 	for arquivo in d.get_files():
 		if arquivo.begins_with("v2_"):
-			reais[arquivo] = FileAccess.get_md5("user://" + arquivo)
-	Personagens.caminho_indice = "user://" + prefixo + "indice.cfg"
-	Personagens.caminho_base = "user://" + prefixo + "p"
-	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
-	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
+			reais[arquivo] = FileAccess.get_md5("user://testes_v2/v2_salao_visual/" + arquivo)
+	Personagens.caminho_indice = "user://testes_v2/v2_salao_visual/" + prefixo + "indice.cfg"
+	Personagens.caminho_base = "user://testes_v2/v2_salao_visual/" + prefixo + "p"
+	Personagens.caminho_antigo = "user://testes_v2/v2_salao_visual/" + prefixo + "antigo.cfg"
+	Meta.caminho_save = "user://testes_v2/v2_salao_visual/" + prefixo + "meta.cfg"
 	var id := Personagens.criar("Matheus")
 	ok(Personagens.ativar(id), "slot isolado ativo")
 	# tudo liberado (os três mapas vencidos e 3 partidas): aqui se confere a sala aberta; as travas ficam no v2_progressao
@@ -86,7 +86,10 @@ func _ready() -> void:
 				await foto("item_" + str(a.id) + "_%02d" % i)
 			s._fechar_painel()
 		else:
-			ok(chamadas.size() > 0 and Mapas.escolhido() == str(a.id), "A usa portal " + str(a.id))
+			ok(s._escolha_dificuldade.visible and s._mapa_pendente == str(a.id), "A abre dificuldade do portal " + str(a.id))
+			ok(chamadas.is_empty(), "portal aguarda confirmar a dificuldade: " + str(a.id))
+			await foto("dificuldade_" + str(a.id))
+			s._escolha_dificuldade._cancelar()
 	# Clique passa pelo handler da sala; simula deslocamento acelerado sem trocar cenas.
 	for a in s._alvos:
 		s._pos = Vector2(480, 480)
@@ -103,6 +106,9 @@ func _ready() -> void:
 		ok(s._destino == Vector2.INF, "clique chega e usa " + str(a.id))
 		if s._painel.visible:
 			s._fechar_painel()
+		if a.tipo == "portal":
+			ok(s._escolha_dificuldade.visible and s._mapa_pendente == str(a.id), "clique abre dificuldade do portal " + str(a.id))
+			s._escolha_dificuldade._cancelar()
 	ok(Mapas.condicao({"requer": "combo_50"}).begins_with("Trancado"), "condicao bloqueada preservada")
 	ok(Mapas.condicao({}) == "", "portais sem requisito abertos")
 	Meta.creditar(300)
@@ -111,9 +117,12 @@ func _ready() -> void:
 	s._pos = Vector2(480, 400)
 	s._destino = Vector2.INF
 	await foto("02_salao_almas")
+	ok(s.usar_portal("floresta"), "portal abre a confirmação final")
+	s._escolha_dificuldade._confirmar()
+	ok(chamadas == [s.FLORESTA] and Mapas.escolhido() == "floresta", "confirmar dificuldade entra uma única vez no mapa")
 
 	for arquivo in reais:
-		ok(FileAccess.get_md5("user://" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
+		ok(FileAccess.get_md5("user://testes_v2/v2_salao_visual/" + arquivo) == reais[arquivo], "save real intacto " + arquivo)
 	for arquivo in d.get_files():
 		if arquivo.begins_with(prefixo):
 			d.remove(arquivo)
@@ -201,9 +210,21 @@ func painel_graficos() -> void:
 		ok(s._p_icone_estrutura.texture == Icones.textura(id), "icone da estrutura no cabecalho e o do id (nao a arte da sala): " + id)
 		ok(s._p_icone_estrutura.size == Vector2(48, 48), "icone da estrutura a 2x (48 px): " + id)
 		for b in s._p_lista.get_children():
-			ok(b.icon != null, "icone em cada item da lista: " + b.text.get_slice(char(10), 0))
+			if id == "codice":
+				var icones: Array = b.get_children().filter(func(f): return f is TextureRect)
+				ok(icones.size() >= 1 and icones[0].texture != null, "codice: icone em cada conquista da lista")
+			else:
+				ok(b.icon != null, "icone em cada item da lista: " + b.text.get_slice(char(10), 0))
 		for filho in s._painel.get_children():
 			ok(not (filho is Button and filho.text == "DETALHES"), "sem botao DETALHES")
+		if id == "codice":  # o Códice é só a lista: o painel da direita e o COMPRAR somem e a lista ocupa a largura toda (#373)
+			ok(not s._p_card.visible and not s._p_comprar.visible and not s._p_icone.visible, "codice: sem painel da direita nem COMPRAR")
+			ok(s._p_rolagem.size.x > 800.0 and Rect2(36, 26, 888, 488).encloses(s._p_rolagem.get_rect()), "codice: lista larga e dentro do cartao")
+			ok(s._p_saldo.text.ends_with("CUMPRIDAS"), "codice: o cabecalho conta as cumpridas")
+			ok(s._p_lista.get_child_count() == Meta.conquistas().size(), "codice: uma linha por conquista")
+			ok(s._p_lista.get_child(0).size.y >= 72.0 - 0.5, "codice: linha com altura de duas informacoes")
+			s._fechar_painel()
+			continue
 		for i in s._p_itens.size():
 			s._mostrar_item(i)
 			var it: Dictionary = s._p_itens[i]
@@ -213,15 +234,11 @@ func painel_graficos() -> void:
 			ok(linhas.size() == 3, "card com tres linhas de barrinhas: " + str(it.id))
 			if linhas.size() < 3:
 				continue
-			if id == "codice":
-				ok(linhas[0].tipo == "segmentos" and int(linhas[0].max) == Meta.conquistas().size(), "codice: um segmento por conquista")
-				ok(linhas[2].get("icone") != null, "codice: icone da recompensa")
-			else:
-				var n := Meta.nivel(str(it.id))
-				ok(linhas[0].tipo == "segmentos" and int(linhas[0].max) == int(it.max) and int(linhas[0].n) == n, "nivel em segmentos: " + str(it.id))
-				ok(linhas[1].tipo == "barra" and is_equal_approx(float(linhas[1].frac), float(n) / int(it.max)), "efeito em barra: " + str(it.id))
-				if n < int(it.max) and s._liberada(it):
-					var custo := Meta.custo_do_nivel(it, n)
-					ok(is_equal_approx(float(linhas[2].frac), float(Meta.saldo()) / custo), "custo x saldo em barra: " + str(it.id))
+			var n := Meta.nivel(str(it.id))
+			ok(linhas[0].tipo == "segmentos" and int(linhas[0].max) == int(it.max) and int(linhas[0].n) == n, "nivel em segmentos: " + str(it.id))
+			ok(linhas[1].tipo == "barra" and is_equal_approx(float(linhas[1].frac), float(n) / int(it.max)), "efeito em barra: " + str(it.id))
+			if n < int(it.max) and s._liberada(it):
+				var custo := Meta.custo_do_nivel(it, n)
+				ok(is_equal_approx(float(linhas[2].frac), float(Meta.saldo()) / custo), "custo x saldo em barra: " + str(it.id))
 		s._fechar_painel()
 	Meta.creditar(-Meta.saldo())

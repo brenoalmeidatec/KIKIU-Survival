@@ -22,6 +22,7 @@ const ITENS := [
 		"padrao": "normal"
 	},
 	{"chave": "daltonico", "grupo": "Acessibilidade", "nome": "Modo daltônico", "valores": [false, true], "rotulos": ["Não", "Paleta segura"], "padrao": false},
+	{"chave": "reduzir_animacoes", "grupo": "Acessibilidade", "nome": "Reduzir animações", "valores": [false, true], "formato": "sim_nao", "padrao": false},  # zera as transições entre telas (v2/transicoes.gd, #377)
 	# Leitura da tela (#125). Nome, grupo e rótulos são chaves de tradução (assets/traducao/textos.csv); o texto passa por tr() ao desenhar.
 	# "texto_hud" guarda "normal" (1x), "medio" (1,5x) ou "grande" (2x): "normal" e "grande" já existiam nos arquivos de opções salvos.
 	{
@@ -44,7 +45,7 @@ const ITENS := [
 	{"chave": "tecla_status", "grupo": "Controles", "nome": "Status (inventário)", "valores": [""], "padrao": "", "acao": "status"},
 	{"chave": "tela_cheia", "grupo": "Gráfico", "nome": "Tela cheia (F11)", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	# Gráfico: perfil, CPU e GPU ficam em dados/graficos.json (Config.g / g_definir). Aqui só o que é do jogador, fora do perfil.
-	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Baixar a qualidade se travar", "valores": [false, true], "formato": "sim_nao", "padrao": true},
+	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Detalhe dinâmico", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "verificar_versao", "grupo": "Gráfico", "nome": "Avisar versão nova", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{
@@ -84,10 +85,43 @@ var _temp_perfil := ""  # perfil só da memória ("" = nenhum); some ao mexer nu
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_isolar_captura_gif()
+	# A fixture precisa apontar opcoes.cfg antes de qualquer leitura/migração do autoload (#387).
+	# Só carrega código de teste quando a CLI (ou o robô filho) identifica uma cena v2_.
+	var cena_teste := OS.get_environment("KIKIU_TESTE_V2_CENA")
+	for argumento in OS.get_cmdline_args():
+		var nome := str(argumento).replace("\\", "/").get_file()
+		if nome.begins_with("v2_") and nome.ends_with(".tscn"):
+			cena_teste = nome.get_basename()
+			break
+	if (
+		not Engine.is_editor_hint()
+		and cena_teste.begins_with("v2_")
+		and cena_teste.is_valid_identifier()
+		and ResourceLoader.exists("res://testes/ambiente_v2.gd")
+	):
+		var ambiente_teste = load("res://testes/ambiente_v2.gd")
+		ambiente_teste.preparar_config(self)
 	recarregar()
 	# com opções de teste (--bot, --online, --print_tela...) só o som vale: os testes rodam em janela e sem limite de FPS
 	aplicar(OS.get_cmdline_user_args().is_empty())
 	_montar_proporcao()
+
+
+## Os helpers só podem apontar Config no próprio _ready depois do autoload: tarde para as migrações de recarregar().
+## Reconhece apenas estas cenas de QA explícitas, existentes no projeto; editor e jogo/export sem elas seguem normais.
+func _isolar_captura_gif() -> void:
+	var argumentos := OS.get_cmdline_args()
+	if Engine.is_editor_hint() or "--editor" in argumentos or "-e" in argumentos or "--project-manager" in argumentos:
+		return
+	var capturas := {
+		"res://testes/fotos/matheus_gif.tscn": "user://qa_mgif_opcoes.cfg",
+		"res://testes/fotos/heroi_gif.tscn": "user://qa_hgif_opcoes.cfg",
+	}
+	for cena in capturas:
+		if cena in argumentos and ResourceLoader.exists(cena):
+			arquivo = capturas[cena]
+			return
 
 
 ## ---------- janela sempre 16:9 ----------
@@ -146,6 +180,11 @@ func recarregar() -> void:
 	if sombra_antiga.has(sombra):
 		_cfg.set_value("graficos", "sombras", sombra_antiga[sombra])
 		_cfg.save(arquivo)
+	# migração, uma vez: com o Detalhe dinâmico ligado não há Personalizado (os detalhes ficam travados no Perfil). Um save com as duas
+	# coisas (o jogador montou à mão, v1 ou antes do dinâmico existir) abre com o dinâmico desligado: o que ele montou fica como está
+	if str(_cfg.get_value("graficos", "perfil", "")) == "personalizado" and bool(v("qualidade_auto")):
+		_cfg.set_value("opcoes", "qualidade_auto", false)
+		_cfg.save(arquivo)
 	# 1ª vez no jogo de verdade: a máquina fraca já começa em médio ou baixo (só em memória até o jogador mexer)
 	if OS.get_cmdline_user_args().is_empty() and DisplayServer.get_name() != "headless":
 		_perfil_padrao = g_detectar()
@@ -162,11 +201,26 @@ func g(chave: String) -> Variant:
 	return perfis.get(base, perfis.get("alto", {})).get(chave)
 
 
-## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado".
+## Nome do perfil atual: "baixo", "medio", "alto" ou "personalizado". Com o Detalhe dinâmico (qualidade_auto) pode estar um degrau
+## abaixo do escolhido, só na memória.
 func g_perfil() -> String:
 	if _temp_perfil != "":
 		return _temp_perfil
+	return g_perfil_escolhido()
+
+
+## O perfil que o jogador escolheu (o que está salvo), sem a queda só da memória do Detalhe dinâmico: é o teto da subida.
+func g_perfil_escolhido() -> String:
 	return str(_cfg.get_value("graficos", "perfil", _perfil_padrao))
+
+
+## Desfaz a queda só da memória (Detalhe dinâmico): volta ao perfil escolhido. Sem queda, não faz nada.
+func g_soltar_temporario() -> void:
+	if _temp_perfil == "":
+		return
+	_zerar_temporario()
+	aplicar_graficos()
+	graficos_mudou.emit()
 
 
 ## Muda uma opção da aba: o perfil vira "personalizado". Salva e aplica na hora.

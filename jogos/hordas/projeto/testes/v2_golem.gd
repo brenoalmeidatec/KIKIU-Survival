@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## O Golem de Barro da v2 (v2/golem.gd, ligado em v2/armas_novas.gd): a folha 3D confere com as constantes do código, a vista sai da direção
 ## (5 linhas, com histerese), o passo anda com a distância andada, o ciclo surgir -> andar -> atacar -> andar -> desmoronar acontece de verdade,
 ## parado durante o golpe, e o dano cai UMA vez por pancada, no quadro do impacto (não no começo do ataque). Nenhum nó novo na camada de desenho.

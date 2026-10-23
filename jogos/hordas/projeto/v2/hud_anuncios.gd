@@ -18,6 +18,10 @@ const SAIDA_T := 0.25
 const SEGURA_T := 1.2
 const CAPACIDADE := 5
 const INTENSIDADE_MAX := 4
+## Anúncios que furam a fila: entram na hora, por cima do que está na tela (o ULTIMATE PRONTA não pode esperar atrás de NÍVEL, ONDA ou ELITE,
+## porque o jogador precisa saber já que o Q está pronto). O que estava na tela volta à frente da fila, se ainda não deu tempo de ler.
+const PRIORITARIOS := ["ULTIMATE PRONTA"]
+const LIDO_T := 0.6  # s de anúncio na tela a partir dos quais ele conta como lido (não volta à fila se for interrompido)
 
 ## Anúncios esperando: cada um é {texto, cor, intensidade}.
 var fila: Array = []
@@ -57,6 +61,13 @@ func anunciar(texto: String, cor: Color = Color.WHITE, intensidade: int = 0) -> 
 	if not _ativo:
 		_mostrar(anuncio)
 		return
+	if PRIORITARIOS.has(texto) and not PRIORITARIOS.has(texto_ativo):
+		if _t < ENTRADA_T + LIDO_T:
+			fila.push_front({"texto": texto_ativo, "cor": _cor, "intensidade": _intensidade})
+			if fila.size() > CAPACIDADE:
+				fila.pop_back()
+		_mostrar(anuncio)
+		return
 	fila.append(anuncio)
 	if fila.size() > CAPACIDADE:
 		fila.pop_front()
@@ -69,6 +80,8 @@ func ocupado() -> bool:
 
 ## Um quadro: avança o anúncio da tela (e puxa o próximo da fila quando ele acaba).
 func avancar(dt: float) -> void:
+	if _hud_escondido():
+		return  # o HUD está escondido (escolha de carta, baú): o anúncio espera parado e aparece inteiro quando ele voltar
 	if not _ativo:
 		if fila.is_empty():
 			return
@@ -80,6 +93,16 @@ func avancar(dt: float) -> void:
 		visible = false
 		return
 	_quadro()
+
+
+## Algum pai (o HUD é uma CanvasLayer, que is_visible_in_tree não olha) está escondido.
+func _hud_escondido() -> bool:
+	var n := get_parent()
+	while n != null:
+		if (n is CanvasItem or n is CanvasLayer) and not n.visible:
+			return true
+		n = n.get_parent()
+	return false
 
 
 func _mostrar(anuncio: Dictionary) -> void:

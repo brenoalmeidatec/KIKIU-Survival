@@ -12,6 +12,8 @@ var tremor_amp := 0.0  # px do tremor de câmera (golpe forte, crítico, morte):
 var tremor_dur := 0.16
 var tremor_t := 0.0
 var deslocamento := Vector2.ZERO  # o tremor deste quadro (inteiro)
+var soco := 0.0  # o "soco" de zoom do impacto (0,04 = 4% mais perto), que volta sozinho em ~0,2 s
+var _rng := RandomNumberGenerator.new()  # o sorteio do tremor: fora do randf() global, de que o jogo e os testes (seed) dependem
 
 
 func _ready() -> void:
@@ -41,8 +43,14 @@ func seguir(alvo: Vector2, dt: float) -> void:
 		tremor_t -= dt
 		var a := roundi(tremor_amp * clampf(tremor_t / tremor_dur, 0.0, 1.0))
 		if a > 0:
-			deslocamento = Vector2(randi_range(-a, a), randi_range(-a, a))
+			deslocamento = Vector2(_rng.randi_range(-a, a), _rng.randi_range(-a, a))
 	position = pos.round() + deslocamento
+	if soco > 0.0005:
+		soco *= exp(-14.0 * dt)
+		zoom = Vector2.ONE * (1.0 + soco)
+	elif soco > 0.0:
+		soco = 0.0
+		zoom = Vector2.ONE
 
 
 ## Tremor de câmera: `amp` px no começo, caindo até zero em `dur` s. Um tremor mais fraco não atropela um mais forte em andamento.
@@ -57,6 +65,15 @@ func tremer(amp: float, dur := 0.16) -> void:
 		tremor_amp = amp
 		tremor_dur = maxf(dur, 0.01)
 		tremor_t = dur
+
+
+## Soco de zoom do impacto: a câmera chega `forca` mais perto (0,03 = 3%) num instante e volta com ease-out. Só desenho; a mira e o
+## recorte da tela (`retangulo`) seguem no tamanho normal. Escala com a opção "Tremor e clarões" como o tremor; em 0% não soca.
+func socar(forca: float) -> void:
+	var f = Config.g("tremor_clarao")
+	if f != null:
+		forca *= clampf(float(f) / 100.0, 0.0, 1.0)
+	soco = clampf(maxf(soco, forca), 0.0, 0.08)
 
 
 ## O centro da câmera sem o tremor (a mira do mouse usa este).

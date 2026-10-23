@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste do ESC na partida da v2 ("ESC parou de funcionar no meio da partida"). Os testes antigos do menu (v2_pausa) injetavam a
 # tecla com sv.push_input, direto no SubViewport, caminho que o jogador nunca usa: a janela só entrega teclado, controle e mouse à
 # viewport RAIZ. Aqui TUDO entra por Input.parse_input_event (o caminho do sistema operacional) e o mundo, o menu e as telas são os de
@@ -19,10 +19,10 @@ extends Node
 const Mundo := preload("res://v2/mundo.tscn")
 const Meta := preload("res://v2/meta.gd")
 const Resultado := preload("res://v2/resultado_meta.gd")
-const SAVE_TESTE := "user://teste_v2_esc_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_esc_opcoes.cfg"
-const SAVE_REAL := "user://v2_progresso.cfg"
-const OPCOES_REAL := "user://opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_esc/teste_v2_esc_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_esc/teste_v2_esc_opcoes.cfg"
+const SAVE_REAL := "user://testes_v2/v2_esc/v2_progresso.cfg"
+const OPCOES_REAL := "user://testes_v2/v2_esc/opcoes.cfg"
 const PASSO := 1.0 / 60.0
 const MAX_FALHAS_IMPRESSAS := 30
 const PAINEL_X := 290.0  # pausa.gd: PAINEL, LINHA0 e LINHA_H
@@ -77,7 +77,7 @@ func _limpar() -> void:
 	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_esc/opcoes.cfg"
 
 
 func _md5(caminho: String) -> String:
@@ -163,6 +163,12 @@ func _tecla(k: Key, solta := true) -> void:
 
 func _esc() -> void:
 	_tecla(KEY_ESCAPE)
+
+
+## A pausa abre sem passar pelo ESC (perder o foco da janela chama pausa.pausar()): é o caminho que sobra para pausar POR CIMA da escolha de
+## cartas, porque o ESC e o Start lá pedem confirmação (telas.intercepta_pausa).
+func _pausa_foco() -> void:
+	pausa.pausar()
 
 
 func _start() -> void:
@@ -297,7 +303,7 @@ func _t_caminho_da_janela() -> void:
 	ok(mundo.combate.jogo == "jogando" and not get_tree().paused, "a partida começa em jogando, com a árvore rodando")
 	_esc()
 	ok(pausa.aberto and get_tree().paused, "ESC (entregue pela janela) abre a pausa na partida")
-	ok(pausa.tela == "menu" and _ids() == ["continuar", "ajustes", "santuario", "sair"], "a pausa abre no menu de 4 itens (%s)" % str(_ids()))
+	ok(pausa.tela == "menu" and _ids() == ["continuar", "conquistas", "ajustes", "santuario", "sair"], "a pausa abre no menu de 5 itens (%s)" % str(_ids()))
 	_esc()
 	ok(not pausa.aberto and not get_tree().paused, "ESC de novo fecha a pausa e despausa")
 	_start()
@@ -312,7 +318,7 @@ func _t_caminho_da_janela() -> void:
 	ok(not pausa.aberto and not get_tree().paused, "clicar em Continuar (mouse pela janela) fecha a pausa")
 	_esc()
 	ok(pausa.aberto, "ESC abre a pausa antes do segundo clique")
-	_clique(_linha(1))
+	_clique(_linha(2))
 	ok(pausa.aberto and pausa.tela == "ajustes", "clicar em Ajustes (mouse pela janela) abre o submenu")
 	_esc()
 	ok(pausa.tela == "menu" and pausa.aberto, "ESC em Ajustes volta um nível, sem fechar a pausa")
@@ -405,14 +411,14 @@ func _t_soltar_botao() -> void:
 	_fechar_se_aberta()
 	# o clique inteiro dentro do menu continua valendo (aperto e soltura com o menu aberto)
 	_esc()
-	_clique(_linha(1))
+	_clique(_linha(2))
 	ok(pausa.tela == "ajustes", "o clique completo com o menu aberto abre a linha")
 	_fechar_com_esc()
 	_fechar_se_aberta()
 	# a soltura vale uma vez: soltar de novo sem apertar não faz nada
 	_esc()
-	_botao(_linha(1), true)
-	_botao(_linha(1), false)  # abre Ajustes
+	_botao(_linha(2), true)
+	_botao(_linha(2), false)  # abre Ajustes
 	_botao(_linha(0), false)  # soltura solta: Ajustes tem "Gráficos" na linha 0
 	ok(pausa.tela == "ajustes", "uma soltura sem aperto não aciona a linha")
 	_fechar_com_esc()
@@ -422,7 +428,7 @@ func _t_soltar_botao() -> void:
 	_abrir_escolha()
 	var antes := _snap(true)
 	_botao(_linha(3), true)  # aperto sobre o painel (sem carta ali: a escolha ignora)
-	_esc()
+	_pausa_foco()
 	_botao(_linha(3), false)
 	ok(pausa.aberto and pausa.tela == "menu", "na escolha, soltar depois do ESC não aciona 'Sair do jogo' (tela=%s)" % pausa.tela)
 	_fechar_com_esc()
@@ -444,8 +450,13 @@ func _t_escolha() -> void:
 	c.telas.sel = 2
 	c.telas._marcar()
 	var antes := _snap()
+	# o ESC na escolha NÃO pausa: pede "Pausar agora? Você perde estas cartas" e o segundo ESC volta (o detalhe está em v2_cartas_limite)
 	_esc()
-	ok(pausa.aberto and get_tree().paused, "ESC sobre a escolha abre a pausa por cima")
+	ok(c.telas.conf_aberta and not pausa.aberto and not get_tree().paused, "ESC sobre a escolha pede confirmação em vez de pausar")
+	_esc()
+	ok(not c.telas.conf_aberta and not pausa.aberto and _snap() == antes, "ESC de novo é 'Não': a escolha volta intacta")
+	_pausa_foco()
+	ok(pausa.aberto and get_tree().paused, "a pausa abre por cima da escolha por outro caminho (perder o foco da janela)")
 	ok(_snap(true) == _sem_arvore(antes), "com a pausa aberta a escolha segue exatamente como estava")
 	# as teclas e os cliques da escolha não passam pelo menu: nada escolhe, rerrola, bane nem muda a seleção
 	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B, KEY_X, KEY_A, KEY_D, KEY_E]:
@@ -461,7 +472,7 @@ func _t_escolha() -> void:
 	ok(c.cartas.banidas.has(banida) and c.cartas.rerrolar_usados == antes.rr_usados, "banir e rerrolar continuam gastos")
 
 	# Ajustes por cima da escolha e volta
-	_esc()
+	_pausa_foco()
 	_ir_para("ajustes")
 	_tecla(KEY_ENTER)
 	_ir_para("audio")
@@ -471,7 +482,7 @@ func _t_escolha() -> void:
 	ok(gastos == 3 and _snap() == antes, "Áudio, Ajustes e pausa se desfazem em 3 ESC e a escolha volta intacta (gastou %d)" % gastos)
 
 	# 'Não' nas confirmações também devolve o estado
-	_esc()
+	_pausa_foco()
 	_ir_para("sair")
 	_tecla(KEY_ENTER)
 	ok(pausa.tela == "confirmar_sair", "Sair do jogo pede confirmação por cima da escolha")
@@ -494,7 +505,7 @@ func _t_escolha() -> void:
 	var saldo_antes: int = Meta.saldo()
 	mundo.xp_coletado = 250.0  # 25 almas na partida
 	_abrir_escolha()
-	_esc()
+	_pausa_foco()
 	_ir_para("santuario")
 	_tecla(KEY_ENTER)
 	ok(pausa.tela == "confirmar_santuario", "Voltar ao santuário pede confirmação por cima da escolha")
@@ -660,7 +671,7 @@ func _t_intercalacoes() -> void:
 	_andar(3)
 	ok(c.jogo == "escolha" and c.telas.escolha_aberta, "depois da pausa a escolha abre normalmente")
 	_esc()
-	ok(pausa.aberto and c.jogo == "escolha", "e o ESC abre a pausa sobre a escolha recém-aberta")
+	ok(c.telas.conf_aberta and not pausa.aberto and c.jogo == "escolha", "e o ESC pede confirmação sobre a escolha recém-aberta")
 	_esc()
 	ok(c.jogo == "escolha" and c.pausado and c.telas.escolha_aberta and not get_tree().paused, "e volta intacta")
 
@@ -746,7 +757,7 @@ func _t_quadros_reais() -> void:
 	for i in 3:
 		await get_tree().process_frame
 	var ui0: float = c.telas._t_ui
-	_esc()
+	_pausa_foco()
 	for i in 8:
 		await get_tree().process_frame
 	ok(c.telas._t_ui == ui0, "a escolha não anima com a pausa aberta (%.3f -> %.3f)" % [ui0, c.telas._t_ui])
@@ -843,7 +854,12 @@ func _t_fuzz() -> void:
 		var antes := _snap()
 		var deve: bool = c.jogo in ["jogando", "escolha", "bau"]
 		_esc()
-		if deve:
+		if c.jogo == "escolha":  # na escolha o ESC pede confirmação (não pausa) e o segundo ESC volta com tudo parado
+			contagem.escolha += 1
+			ok(c.telas.conf_aberta and not pausa.aberto and not get_tree().paused, "fuzz passo %d: ESC na escolha pede confirmação (ação %d)" % [passo, a])
+			_esc()
+			ok(not c.telas.conf_aberta and not pausa.aberto and _snap() == antes, "fuzz passo %d: e o segundo ESC volta idêntico" % passo)
+		elif deve:
 			contagem[c.jogo] += 1
 			ok(pausa.aberto and get_tree().paused, "fuzz passo %d: ESC em %s tem que abrir a pausa (ação %d)" % [passo, antes.jogo, a])
 			if rng.randf() < 0.6:

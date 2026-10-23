@@ -9,8 +9,8 @@ extends RefCounted
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
 ##   --build=golpes        idem com os 36 projéteis, anéis, meteoros e nuvens no nível 5 (as folhas animadas de docs/combate_v2)
 ##   --build=tudo          os 36 mais corvos, aura, raio, runa, lâminas e as evoluções desses tipos
-##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, do mini-chefe e do chefe anunciando
-##                         o ataque, da tela de vitória e da escolha com raridades (na trava, 20_escolha_trava, e depois de liberar,
+##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, dos três chefes (Cavaleiro Rubro, Rainha Tecelã e Rei Espantalho) anunciando
+##                         o ataque próprio e logo depois do disparo, e do chefão na fúria, da tela de vitória e da escolha com raridades (na trava, 20_escolha_trava, e depois de liberar,
 ##                         21_escolha_liberada). Fotos 11_build ... 21_escolha_liberada: a janela inteira (mundo e interface; em headless, só o viewport do mundo).
 ##   --roteiro=vitrine|ordem|cerco   (leva 4, desempenho) vitrine: os 5 tipos parados em 3 fileiras, para comparar antes e depois do mesmo quadro;
 ##                         ordem: aranhas grandes (escala 2) atrás e na frente do herói (ordem de desenho); cerco: a horda com 2 aranhas grandes
@@ -28,10 +28,17 @@ extends RefCounted
 ##                         anel fantasma no raio final e anel interno), 2_cheia_perfeita (anel piscando na janela perfeita), 3_disparo (0,10 s
 ##                         depois de soltar: onda, rachaduras, números), 4_depois (0,6 s: monstros empurrados e atordoados, katana alaranjada
 ##                         no contragolpe) e 5_slot (HUD com o slot em recarga). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=especial    (tecla Q) o ESPECIAL do herói escolhido (--heroi=hazaki|nicao|lucas) contra 30 monstros em volta (e uma fila à frente, para
+##                         a investida). Fotos do viewport: 0_vazio (o slot Q com 0% de carga) e 0b_meio (55%), 1_pronto (o slot Q cheio e pulsando, antes de apertar), 2_especial (o momento forte: a investida do
+##                         Hazaki, a batida e a onda do Nicão, a tempestade do Lucas) e 3_slot (0,25 s depois de acabar: o slot Q vazio de novo). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=habilidade  (tecla E) a HABILIDADE do herói escolhido (--heroi=hazaki|nicao|lucas: a ruptura, a investida de escudo ou o salto das adagas)
+##                         contra 30 monstros em volta (e uma fila à frente). Fotos do viewport: 1_pronto (slots E pronto e Q a 55%), 2_habilidade (o momento
+##                         forte) e 3_recarga (0,4 s depois: o slot E em recarga). Usar com --fotos=PASTA --nome=prefixo.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
 ##                         com código 3. Opções: --semente=N (sorteios), --playtest_max=S (teto de tempo de jogo, padrão 900),
+##                         --playtest_q (o robô aperta o Q quando enche e a E quando pronta; o JSON traz q_prontos, q_disparos, e_disparos e q_carga por fonte),
 ##                         --playtest_trava=cartas|bau (depuração: o robô para de responder àquela tela, para provar o vigia),
 ##                         --playtest_fim=morte (partida curta que termina na morte real: parado, com 1 de vida, até um monstro matar).
 ##                         Usa um save temporário próprio (mundo.gd troca Meta.caminho_save), nunca o do jogador.
@@ -50,6 +57,8 @@ var pasta := ""
 var prefixo := "v2"
 var playtest := false
 var pt := {}  # estado do robô de playtest (_pt_iniciar)
+var pt_disparos := 0  # quantos avisos já tinham disparado quando o chefe nasceu (a foto do disparo)
+var pt_fogo := -1.0  # t_passo em que o primeiro aviso disparou (a foto do disparo sai 0,12 s depois)
 
 
 func montar(m, a: Dictionary) -> void:
@@ -114,6 +123,10 @@ func atualizar(dt: float) -> void:
 				_r_cerco()
 			"ruptura":
 				_r_ruptura()
+			"especial":
+				_r_especial()
+			"habilidade":
+				_r_habilidade()
 			"golpes":
 				_r_golpes()
 			"hud_golpes":
@@ -266,7 +279,7 @@ func _combate() -> void:
 			passo = 5
 			t_passo = 0.0
 		5:
-			if c.jogo == "escolha" and t_passo > 0.35:
+			if c.jogo == "escolha" and t_passo > 0.35 and not c.telas.roleta_ativa:  # espera os rolos da roleta pararem
 				_foto("04_nivel")
 				passo = 6
 				t_passo = 0.0
@@ -506,40 +519,66 @@ func _r_chefe() -> void:
 	var h = mundo.heroi
 	var c = mundo.combate
 	var ch = c.chefes
-	match passo:
+	# três chefes, quatro passos cada: nasce e anuncia o ataque PRÓPRIO (a foto do aviso), o disparo (a foto logo depois) e a troca; no fim a fúria do chefão
+	var nomes := [["17_minichefe_aviso", "17c_minichefe_leque"], ["17b_rainha_aviso", "17d_rainha_teia"], ["18_chefe_aviso", "18b_chefe_revoada"]]
+	var k := passo / 4
+	if passo >= 12:
+		_r_chefe_furia()
+		return
+	match passo % 4:
 		0:
 			_preparar()
-			ch.nascer(ch.cfg.marcas[0], h.pos + Vector2(200, -30))
-			passo = 1
+			ch.nascer(ch.cfg.marcas[k], h.pos + Vector2(110, 150))
+			pt_disparos = c.avisos.disparados
+			pt_fogo = -1.0
+			passo += 1
 			t_passo = 0.0
 		1:
-			if c.avisos.ativos() > 0 and c.avisos.t[0] > 0.35 and t_passo > 2.0:
-				_foto("17_minichefe_aviso")
-				passo = 2
+			if c.avisos.ativos() > 0 and c.avisos.t[0] > 0.6 and t_passo > 2.0:
+				_foto(nomes[k][0])
+				passo += 1
 				t_passo = 0.0
 			elif t_passo > 14.0:
-				passo = 2
+				passo += 1
+				t_passo = 0.0
 		2:
-			if ch.atual != null:
+			if pt_fogo < 0.0 and c.avisos.disparados > pt_disparos:
+				pt_fogo = t_passo
+			if pt_fogo >= 0.0 and t_passo - pt_fogo > 0.12:
+				_foto(nomes[k][1])
+				passo += 1
+				t_passo = 0.0
+			elif t_passo > 8.0:
+				passo += 1
+				t_passo = 0.0
+		3:
+			if k < 2 and ch.atual != null:  # matar o chefão seria a vitória: ele só some na troca de cena
 				c.ferir(ch.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
 				c.processar_mortes()
 			c.avisos.limpar()
-			passo = 3
+			c.jogo = "jogando"
+			c.baus.limpar()
+			passo += 1
 			t_passo = 0.0
-		3:
-			if t_passo > 1.0:
-				c.jogo = "jogando"
-				c.baus.limpar()
-				ch.nascer(ch.cfg.marcas[2], h.pos + Vector2(220, -30))
-				passo = 4
-				t_passo = 0.0
-		4:
-			if c.avisos.ativos() > 0 and c.avisos.t[0] > 0.35 and t_passo > 2.0:
-				_foto("18_chefe_aviso")
-				passo = 5
-			elif t_passo > 14.0:
-				passo = 5
-		5:
+
+
+## A fúria do chefão (menos de metade da vida): a coroa brilha e os corvos giram mais rápido.
+func _r_chefe_furia() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	var ch = c.chefes
+	match passo:
+		12:
+			_preparar()
+			ch.nascer(ch.cfg.marcas[2], h.pos + Vector2(110, 150))
+			ch.atual.vida = ch.atual.vida_max * 0.4
+			passo = 13
+			t_passo = 0.0
+		13:
+			if t_passo > 1.4:
+				_foto("18c_chefe_furia")
+				passo = 14
+		14:
 			mundo.get_tree().quit()
 			return
 
@@ -646,6 +685,7 @@ func _r_escolha() -> void:
 			c.progresso.cartas = c.cartas.sortear(3, 20)
 			c.jogo = "escolha"
 			c.pausado = true
+			c.telas.roleta_ligada = false  # a foto da trava quer as cartas paradas (a roleta do #376 tem as fotos dela)
 			c.telas.mostrar_escolha(c.progresso.cartas, 20)
 			passo = 1
 			t_passo = 0.0
@@ -821,6 +861,150 @@ func _r_ruptura() -> void:
 			return
 
 
+## O especial (tecla Q) do herói escolhido: 30 monstros em volta, 6 em fila à frente (a faixa da investida) e o herói imortal e parado. A foto do
+## slot aceso sai aos 0,3 s e o especial dispara em seguida; a foto 2 sai no instante forte de cada herói (`foto` no bloco dele em dados/v2_especial.json)
+## e a 3 logo depois do fim.
+func _r_especial() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			mundo.mouse_forcado = h.centro() + Vector2(100, 0)
+			var tipos := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_lobo_sombrio", "inimigo_espantalho"]
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 23
+			for i in 30:
+				var a := TAU * float(i) / 30.0 + rng.randf_range(-0.1, 0.1)
+				var r := rng.randf_range(70.0, 230.0)
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(cos(a) * r, sin(a) * r * 0.62), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			for i in 6:
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(70.0 + 35.0 * float(i), rng.randf_range(-6.0, 6.0)), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			h.esp_carga = 0.0
+			passo = 10
+			t_passo = 0.0
+		10:  # o slot Q vazio (0%), depois no meio (55%) e por fim cheio e pulsando (a foto é assíncrona: a carga só muda no passo seguinte)
+			if t_passo > 0.3:
+				_foto("0_vazio")
+				passo = 12
+				t_passo = 0.0
+		12:
+			h.esp_carga = h.esp_carga_max * 0.55
+			passo = 11
+			t_passo = 0.0
+		11:
+			if t_passo > 0.3:
+				_foto("0b_meio")
+				passo = 13
+				t_passo = 0.0
+		13:
+			h.esp_carga = h.esp_carga_max
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.3:
+				_foto("1_pronto")
+				passo = 2
+				t_passo = 0.0
+		2:
+			h.especial()
+			passo = 3
+			t_passo = 0.0
+		3:
+			var b: Dictionary = mundo.combate.especial.bloco_de(str(h.chave))
+			if h.estado == h.Estado.ESPECIAL and h.esp_t >= float(b.get("foto", 0.5)):
+				_foto("2_especial")
+				passo = 4
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 4
+		4:
+			if h.estado != h.Estado.ESPECIAL:
+				passo = 5
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 5
+		5:
+			if t_passo > 0.25:
+				_foto("3_slot")
+				passo = 6
+		6:
+			mundo.get_tree().quit()
+
+
+## A habilidade (tecla E) do herói escolhido: 30 monstros em volta (e uma fila à frente, para a investida do Nicão) e o herói imortal e parado, com a
+## ultimate (Q) a 55% para o HUD mostrar os dois slots. Fotos 1_pronto (slot E pronto), 2_habilidade (o momento forte; no Hazaki, a ruptura recém solta) e
+## 3_recarga (0,4 s depois de acabar: o slot E em recarga). O Hazaki segura a E (ruptura_forcada) por 1,1 s; os outros disparam no aperto.
+func _r_habilidade() -> void:
+	var h = mundo.heroi
+	match passo:
+		0:
+			_preparar()
+			mundo.mouse_forcado = h.centro() + Vector2(100, 0)
+			var tipos := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_lobo_sombrio", "inimigo_espantalho"]
+			var rng := RandomNumberGenerator.new()
+			rng.seed = 23
+			for i in 30:
+				var a := TAU * float(i) / 30.0 + rng.randf_range(-0.1, 0.1)
+				var r := rng.randf_range(70.0, 230.0)
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(cos(a) * r, sin(a) * r * 0.62), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			for i in 6:
+				var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(70.0 + 35.0 * float(i), rng.randf_range(-6.0, 6.0)), true)
+				m.vida = 99999.0
+				m.vida_max = 99999.0
+			h.esp_carga = h.esp_carga_max * 0.55
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.3:
+				_foto("1_pronto")
+				passo = 2
+				t_passo = 0.0
+		2:
+			if h.hab_id == "ruptura":
+				h.ruptura_forcada = true
+				h.ruptura()
+			else:
+				h.habilidade()
+			passo = 3
+			t_passo = 0.0
+		3:
+			var b: Dictionary = mundo.combate.habilidade.bloco_de(str(h.chave))
+			if h.hab_id == "ruptura":
+				if t_passo > 1.1:
+					h.ruptura_forcada = false
+					passo = 5
+					t_passo = 0.0
+			elif h.estado == h.Estado.HABILIDADE and h.hab_t >= float(b.get("foto", 0.2)):
+				_foto("2_habilidade")
+				passo = 4
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 4
+		4:
+			if h.estado != h.Estado.HABILIDADE:
+				passo = 7
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				passo = 7
+		5:  # o Hazaki: a ruptura saiu agora; a foto sai um instante depois, com a onda no ar
+			if t_passo > 0.1:
+				_foto("2_habilidade")
+				passo = 7
+				t_passo = 0.0
+		7:
+			if t_passo > 0.4:
+				_foto("3_recarga")
+				passo = 8
+		8:
+			mundo.get_tree().quit()
+
+
 func _r_oclusao() -> void:
 	var h = mundo.heroi
 	match passo:
@@ -862,6 +1046,8 @@ const QUADROS_TRAVA_RELOGIO := 600  # 10 s de quadros sem o relógio da partida 
 const QUADROS_TRAVA_TELA := 1200  # 20 s de quadros com a mesma tela aberta (cartas, baú, queda, vitória)
 const SEG_MORTE_INICIO := 1.0  # --playtest_fim=morte: a partir de 1 s de jogo o robô fica parado, com 1 de vida, até um monstro matá-lo
 const SEG_TRAVA_PRESO := 30.0  # 30 s de jogo com o herói no mesmo lugar (menos de 6 px) querendo andar
+const MARGEM_BORDA_ROBO := 50.0
+const EPS_DIRECAO_BORDA := 0.0001
 
 
 func _pt_iniciar() -> void:
@@ -871,6 +1057,13 @@ func _pt_iniciar() -> void:
 		"max": float(args.get("playtest_max", 900.0)),
 		"trava_forcada": str(args.get("playtest_trava", "")),
 		"fim": str(args.get("playtest_fim", "")),
+		"q": args.has("playtest_q"),  # --playtest_q: o robô aperta o Q assim que a carga enche
+		"q_vistos": 0,
+		"q_prontos": [],
+		"q_disparos": [],
+		"e_disparos": 0,
+		"golpe_bloq_s": 0.0,  # s em que o ataque principal estava esfriando (fôlego zerado no Médio/Difícil)
+		"cansado_s": 0.0,  # s cansado (sem correr nem esquivar)
 		"rng": RandomNumberGenerator.new(),
 		"quadros": 0,
 		"us_ant": int(mundo._us_total),
@@ -921,6 +1114,9 @@ func _playtest(dt: float) -> void:
 	pt.us_ant = us
 	pt.quadro_ms.append(dt * 1000.0)
 	pt.pico_vivos = maxi(int(pt.pico_vivos), mundo.monstros.size())
+	while int(pt.q_vistos) < int(c.especial.prontos):  # a carga do Q chegou a 100: anota o segundo de jogo
+		pt.q_vistos = int(pt.q_vistos) + 1
+		pt.q_prontos.append(snappedf(mundo.tempo_partida, 0.1))
 	if mundo.tempo_partida >= float(pt.prox_linha):
 		pt.prox_linha = float(pt.prox_linha) + 60.0
 		pt.linha.append({"t": roundi(mundo.tempo_partida), "nivel": h.nivel, "vida": roundi(h.vida), "vivos": mundo.monstros.size(), "abates": mundo.abates})
@@ -943,7 +1139,9 @@ func _playtest(dt: float) -> void:
 		"escolha":
 			h.entrada_forcada = Vector2.ZERO
 			h.ataque_forcado = false
-			if pt.trava_forcada != "cartas" and pt.estado_q >= 20 and not c.progresso.cartas.is_empty():
+			if pt.trava_forcada == "cartas":
+				c.telas.limite_t = 1.0e9  # a prova do vigia precisa da tela aberta: o limite de 8 s das cartas escolheria sozinho
+			elif pt.estado_q >= 20 and not c.progresso.cartas.is_empty():
 				_pt_escolher_carta()
 		"bau":
 			h.entrada_forcada = Vector2.ZERO
@@ -1001,6 +1199,11 @@ func _pt_jogar(dt: float) -> void:
 			var rel2: Vector2 = h.pos - av.pos[i]
 			fuga += (lado if rel2.dot(lado) >= 0.0 else -lado) * 3.0
 			chefe_colado = true
+		elif av.tipo[i] == 3 and av.na_setor(i, h.pos, 30.0):  # o leque: foge para longe de quem bate (e do lado do setor)
+			var rel3: Vector2 = h.pos - av.pos[i]
+			var lado3 := Vector2(-av.dir[i].y, av.dir[i].x)
+			fuga += (rel3.normalized() if rel3.length() > 1.0 else Vector2.RIGHT) * 2.0 + (lado3 if rel3.dot(lado3) >= 0.0 else -lado3) * 2.0
+			chefe_colado = true
 	# para onde ir: baú no chão, senão orbe perto, senão um ponto do mapa que muda de tempos em tempos.
 	# Em desvio (acabou de ficar preso), só o ponto: sem rota, o baú do outro lado de uma árvore prende o herói nela.
 	var alvo: Vector2 = pt.ponto
@@ -1025,19 +1228,9 @@ func _pt_jogar(dt: float) -> void:
 		_pt_novo_ponto()
 	var hp: Vector2 = h.pos
 	var ir: Vector2 = (alvo - hp).normalized() if alvo.distance_squared_to(h.pos) > 16.0 else Vector2.ZERO
-	var dir: Vector2 = ir * 0.7 + fuga * 1.4
-	if dir.length() < 0.15:
-		dir = ir
-	# perto da borda do mapa (50 px): corta o que empurra para a parede e corre ao longo dela, em vez de ficar prensado
 	var lim: Rect2 = mundo.limite_andavel
-	if (hp.x < lim.position.x + 50.0 and dir.x < 0.0) or (hp.x > lim.end.x - 50.0 and dir.x > 0.0):
-		dir.x = 0.0
-		if absf(dir.y) < 0.4:
-			dir.y = signf(fuga.y) if absf(fuga.y) > 0.1 else signf(lim.get_center().y - hp.y)
-	if (hp.y < lim.position.y + 50.0 and dir.y < 0.0) or (hp.y > lim.end.y - 50.0 and dir.y > 0.0):
-		dir.y = 0.0
-		if absf(dir.x) < 0.4:
-			dir.x = signf(fuga.x) if absf(fuga.x) > 0.1 else signf(lim.get_center().x - hp.x)
+	# Projeta a soma pronta: zerar só a fuga antes de somar deixa a direção trocar de sinal ao cruzar a faixa.
+	var dir: Vector2 = _pt_direcao_final(hp, lim, ir * 0.7 + fuga * 1.4, ir)
 	h.entrada_forcada = dir.normalized() if dir.length() > 0.01 else Vector2.ZERO
 	pt.alvo = alvo  # só para a mensagem de TRAVA
 	pt.fuga = fuga
@@ -1056,17 +1249,84 @@ func _pt_jogar(dt: float) -> void:
 		mundo.mouse_forcado = h.centro() + h.entrada_forcada * 60.0
 	h.fonte = h.Fonte.MOUSE
 	h.ataque_forcado = perto != null and perto_d < 78.0 * 78.0
+	if pt.q and perto != null and perto_d < 150.0 * 150.0 and h.esp_carga >= h.esp_carga_max and h.especial():
+		pt.q_disparos.append(snappedf(mundo.tempo_partida, 0.1))
+	if pt.q and perto != null and perto_d < 130.0 * 130.0 and h.hab_id != "ruptura" and h.hab_recarga <= 0.0 and h.habilidade():
+		pt.e_disparos = int(pt.e_disparos) + 1  # a E dos heróis que não têm a ruptura (investida, salto)
+	if h.golpe_calor_t > 0.0:
+		pt.golpe_bloq_s = float(pt.golpe_bloq_s) + dt
+	if h.cansado:
+		pt.cansado_s = float(pt.cansado_s) + dt
 	pt.esquiva_q += 1
 	if (colados >= 5 or (chefe_colado and h.invenc <= 0.0)) and pt.esquiva_q > 60:
 		h.esquivar()
 		pt.esquiva_q = 0
-	# vigia: herói no mesmo lugar por muito tempo
-	pt.preso_t = float(pt.preso_t) + dt
-	if pt.preso_t >= SEG_TRAVA_PRESO:
-		if h.pos.distance_to(pt.preso_pos) < 6.0:
-			_pt_trava("heroi_preso pos=%s alvo=%s bau=%s fuga=%s" % [str(h.pos.round()), str(pt.alvo.round()), str(achou), str(pt.fuga.round())])
+	# Vigia por deslocamento acumulado em passos de 6 px; um retorno ao início não apaga que houve movimento no intervalo.
+	if h.pos.distance_to(pt.preso_pos) >= 6.0:
 		pt.preso_pos = h.pos
 		pt.preso_t = 0.0
+	else:
+		pt.preso_t = float(pt.preso_t) + dt
+		if pt.preso_t >= SEG_TRAVA_PRESO:
+			_pt_trava("heroi_preso pos=%s alvo=%s bau=%s fuga=%s" % [str(h.pos.round()), str(pt.alvo.round()), str(achou), str(pt.fuga.round())])
+			pt.preso_pos = h.pos
+			pt.preso_t = 0.0
+
+
+## Remove somente componentes que apontam para fora na faixa de borda. Se a projeção zera, usa uma tangente cardinal estável, sem
+## restaurar a direção que apontava para fora.
+static func _pt_direcao_borda(hp: Vector2, lim: Rect2, direcao: Vector2, ir: Vector2) -> Vector2:
+	var esquerda := hp.x <= lim.position.x + MARGEM_BORDA_ROBO
+	var direita := hp.x >= lim.end.x - MARGEM_BORDA_ROBO
+	var cima := hp.y <= lim.position.y + MARGEM_BORDA_ROBO
+	var baixo := hp.y >= lim.end.y - MARGEM_BORDA_ROBO
+	if not esquerda and not direita and not cima and not baixo:
+		return direcao
+	var projetada := _pt_projetar_borda(direcao, esquerda, direita, cima, baixo)
+	if projetada.length_squared() > EPS_DIRECAO_BORDA:
+		return projetada
+	# O alvo direto para dentro faria o robô atravessar o limiar e reativar a fuga externa no quadro seguinte.
+	# No zero da projeção, conserva só a preferência tangencial do alvo; sem ela, usa +X/+Y de modo estável.
+	# Em cantos, a tangente escolhida também aponta para dentro da outra borda.
+	if cima or baixo:
+		return _pt_tangente_borda(0, ir.x, esquerda, direita)
+	if esquerda or direita:
+		return _pt_tangente_borda(1, ir.y, cima, baixo)
+	return Vector2.ZERO
+
+
+static func _pt_na_faixa_borda(hp: Vector2, lim: Rect2) -> bool:
+	return (
+		hp.x <= lim.position.x + MARGEM_BORDA_ROBO
+		or hp.x >= lim.end.x - MARGEM_BORDA_ROBO
+		or hp.y <= lim.position.y + MARGEM_BORDA_ROBO
+		or hp.y >= lim.end.y - MARGEM_BORDA_ROBO
+	)
+
+
+static func _pt_direcao_final(hp: Vector2, lim: Rect2, direcao: Vector2, ir: Vector2) -> Vector2:
+	var resultado := direcao
+	if resultado.length() < 0.15 and not _pt_na_faixa_borda(hp, lim):
+		resultado = ir if ir != Vector2.ZERO else (lim.get_center() - hp).normalized()
+	return _pt_direcao_borda(hp, lim, resultado, ir)
+
+
+static func _pt_projetar_borda(dir: Vector2, esquerda: bool, direita: bool, cima: bool, baixo: bool) -> Vector2:
+	var resultado := dir
+	if (esquerda and resultado.x < 0.0) or (direita and resultado.x > 0.0):
+		resultado.x = 0.0
+	if (cima and resultado.y < 0.0) or (baixo and resultado.y > 0.0):
+		resultado.y = 0.0
+	return resultado
+
+
+static func _pt_tangente_borda(eixo: int, preferencia: float, negativo_bloqueado: bool, positivo_bloqueado: bool) -> Vector2:
+	var sinal := -1.0 if preferencia < -0.001 else 1.0
+	if (sinal < 0.0 and negativo_bloqueado) or (sinal > 0.0 and positivo_bloqueado):
+		sinal = -sinal
+	if eixo == 0:
+		return Vector2(sinal, 0.0)
+	return Vector2(0.0, sinal)
 
 
 ## --playtest_fim=morte: parado, sem golpe nem esquiva e com 1 de vida; quem mata é o dano normal dos monstros, então a morte segue o
@@ -1143,6 +1403,18 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 		"elites": pt.elites,
 		"chefes": pt.chefes,
 		"pico_vivos": pt.pico_vivos,
+		"ritmo": c.ritmo.relatorio(),
+		"q_prontos": pt.q_prontos,
+		"q_disparos": pt.q_disparos,
+		"e_disparos": pt.e_disparos,
+		"golpe_bloq_s": snappedf(float(pt.golpe_bloq_s), 0.1),
+		"cansado_s": snappedf(float(pt.cansado_s), 0.1),
+		"q_carga":
+		{
+			"dano": snappedf(float(c.especial.carga_total.dano), 0.1),
+			"abate": snappedf(float(c.especial.carga_total.abate), 0.1),
+			"recebido": snappedf(float(c.especial.carga_total.recebido), 0.1)
+		},
 		"quadros": pt.quadros,
 		"proc_ms": _pt_pcts(pt.proc_ms),
 		"quadro_ms": _pt_pcts(pt.quadro_ms),

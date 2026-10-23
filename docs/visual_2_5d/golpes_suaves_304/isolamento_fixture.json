@@ -1,0 +1,442 @@
+{
+  "produto": "af89857b4fdc99c077f31d39759953a017f58a74",
+  "guard_fixture391": "f3119e0a5917015d26bae224fd88e59278d145f3",
+  "merge391": "cba9f1433bc4231b018b53010e4f5b3689e367b8",
+  "perfil": "QA sintética gravável, opções migráveis e progresso alto; nenhum arquivo real copiado/lido/restaurado",
+  "protegidos_antes": {
+    "v2_progresso.cfg": {
+      "bytes": 40,
+      "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05"
+    },
+    "v2_personagem_p1.cfg.bak": {
+      "bytes": 60,
+      "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB"
+    },
+    "opcoes.cfg": {
+      "bytes": 114,
+      "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88"
+    },
+    "v2_personagem_p1.cfg.tmp": {
+      "bytes": 36,
+      "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5"
+    },
+    "v2_personagens.cfg.tmp": {
+      "bytes": 36,
+      "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5"
+    },
+    "v2_personagens.cfg.bak": {
+      "bytes": 87,
+      "sha256": "DC2906CB9998E8DB646AB2B4D15A3674BF879975E49AAE5116A3CAD2AF35FDF9"
+    },
+    "opcoes.cfg.tmp": {
+      "bytes": 36,
+      "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5"
+    },
+    "v2_progresso.cfg.tmp": {
+      "bytes": 36,
+      "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5"
+    },
+    "v2_personagem_p1.cfg": {
+      "bytes": 40,
+      "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675"
+    },
+    "v2_personagens.cfg": {
+      "bytes": 67,
+      "sha256": "02C11C897C0DD3075E714BBF16BCF3C799F505781A0C7CE7ED5FE2E512323DBD"
+    },
+    "opcoes.cfg.bak": {
+      "bytes": 134,
+      "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB"
+    },
+    "v2_progresso.cfg.bak": {
+      "bytes": 60,
+      "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF"
+    }
+  },
+  "vermelho": {
+    "codigo": 0,
+    "extras_raiz": [
+      "teste_adagas_impacto_indice.cfg"
+    ],
+    "script_error": false,
+    "hashes_iguais": false,
+    "fixture_limpa": false,
+    "passou": true,
+    "cena": "v2_adagas_impacto",
+    "user_dir_confirmado": false,
+    "arquivos_depois": {
+      "v2_progresso.cfg.bak": {
+        "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF",
+        "bytes": 60,
+        "existe": true
+      },
+      "v2_personagens.cfg.bak": {
+        "sha256": "DC2906CB9998E8DB646AB2B4D15A3674BF879975E49AAE5116A3CAD2AF35FDF9",
+        "bytes": 87,
+        "existe": true
+      },
+      "v2_personagens.cfg": {
+        "sha256": "02C11C897C0DD3075E714BBF16BCF3C799F505781A0C7CE7ED5FE2E512323DBD",
+        "bytes": 67,
+        "existe": true
+      },
+      "opcoes.cfg.bak": {
+        "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB",
+        "bytes": 134,
+        "existe": true
+      },
+      "opcoes.cfg.tmp": {
+        "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+        "bytes": 36,
+        "existe": true
+      },
+      "v2_progresso.cfg.tmp": {
+        "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+        "bytes": 36,
+        "existe": true
+      },
+      "v2_progresso.cfg": {
+        "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05",
+        "bytes": 40,
+        "existe": true
+      },
+      "v2_personagem_p1.cfg": {
+        "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675",
+        "bytes": 40,
+        "existe": true
+      },
+      "v2_personagens.cfg.tmp": {
+        "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+        "bytes": 36,
+        "existe": true
+      },
+      "opcoes.cfg": {
+        "sha256": "385B0DE8A96657F179E3FA9C41247794B532A0A0677A15F54DFBD5C1F3E73495",
+        "bytes": 113,
+        "existe": true
+      },
+      "v2_personagem_p1.cfg.bak": {
+        "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB",
+        "bytes": 60,
+        "existe": true
+      },
+      "v2_personagem_p1.cfg.tmp": {
+        "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+        "bytes": 36,
+        "existe": true
+      }
+    }
+  },
+  "verde": [
+    {
+      "codigo": 0,
+      "extras_raiz": [],
+      "script_error": false,
+      "hashes_iguais": true,
+      "fixture_limpa": true,
+      "passou": true,
+      "cena": "v2_adagas_impacto",
+      "user_dir_confirmado": true,
+      "arquivos_depois": {
+        "v2_progresso.cfg.bak": {
+          "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF",
+          "bytes": 60,
+          "existe": true
+        },
+        "v2_personagens.cfg.bak": {
+          "sha256": "DC2906CB9998E8DB646AB2B4D15A3674BF879975E49AAE5116A3CAD2AF35FDF9",
+          "bytes": 87,
+          "existe": true
+        },
+        "v2_personagens.cfg": {
+          "sha256": "02C11C897C0DD3075E714BBF16BCF3C799F505781A0C7CE7ED5FE2E512323DBD",
+          "bytes": 67,
+          "existe": true
+        },
+        "opcoes.cfg.bak": {
+          "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB",
+          "bytes": 134,
+          "existe": true
+        },
+        "opcoes.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "v2_progresso.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "v2_progresso.cfg": {
+          "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05",
+          "bytes": 40,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg": {
+          "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675",
+          "bytes": 40,
+          "existe": true
+        },
+        "v2_personagens.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "opcoes.cfg": {
+          "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88",
+          "bytes": 114,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB",
+          "bytes": 60,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        }
+      },
+      "exportacao_explicita": true
+    },
+    {
+      "codigo": 0,
+      "extras_raiz": [],
+      "script_error": false,
+      "hashes_iguais": true,
+      "fixture_limpa": true,
+      "passou": true,
+      "cena": "v2_golpes_visuais",
+      "user_dir_confirmado": true,
+      "arquivos_depois": {
+        "v2_progresso.cfg.bak": {
+          "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF",
+          "bytes": 60,
+          "existe": true
+        },
+        "v2_personagens.cfg.bak": {
+          "sha256": "DC2906CB9998E8DB646AB2B4D15A3674BF879975E49AAE5116A3CAD2AF35FDF9",
+          "bytes": 87,
+          "existe": true
+        },
+        "v2_personagens.cfg": {
+          "sha256": "02C11C897C0DD3075E714BBF16BCF3C799F505781A0C7CE7ED5FE2E512323DBD",
+          "bytes": 67,
+          "existe": true
+        },
+        "opcoes.cfg.bak": {
+          "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB",
+          "bytes": 134,
+          "existe": true
+        },
+        "opcoes.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "v2_progresso.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "v2_progresso.cfg": {
+          "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05",
+          "bytes": 40,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg": {
+          "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675",
+          "bytes": 40,
+          "existe": true
+        },
+        "v2_personagens.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "opcoes.cfg": {
+          "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88",
+          "bytes": 114,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB",
+          "bytes": 60,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        }
+      },
+      "exportacao_explicita": true
+    },
+    {
+      "codigo": 0,
+      "fixture_limpa": true,
+      "extras_raiz": [],
+      "script_error": false,
+      "hashes_iguais": true,
+      "exportacao_explicita": true,
+      "passou": true,
+      "cena": "fotos/v2_contrato_golpes",
+      "user_dir_confirmado": true,
+      "arquivos_depois": {
+        "v2_progresso.cfg.bak": {
+          "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF",
+          "bytes": 60,
+          "existe": true
+        },
+        "v2_personagens.cfg.bak": {
+          "sha256": "DC2906CB9998E8DB646AB2B4D15A3674BF879975E49AAE5116A3CAD2AF35FDF9",
+          "bytes": 87,
+          "existe": true
+        },
+        "v2_personagens.cfg": {
+          "sha256": "02C11C897C0DD3075E714BBF16BCF3C799F505781A0C7CE7ED5FE2E512323DBD",
+          "bytes": 67,
+          "existe": true
+        },
+        "opcoes.cfg.bak": {
+          "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB",
+          "bytes": 134,
+          "existe": true
+        },
+        "opcoes.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "v2_progresso.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "v2_progresso.cfg": {
+          "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05",
+          "bytes": 40,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg": {
+          "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675",
+          "bytes": 40,
+          "existe": true
+        },
+        "v2_personagens.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "opcoes.cfg": {
+          "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88",
+          "bytes": 114,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB",
+          "bytes": 60,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        }
+      }
+    },
+    {
+      "codigo": 0,
+      "fixture_limpa": true,
+      "extras_raiz": [],
+      "script_error": false,
+      "hashes_iguais": true,
+      "exportacao_explicita": false,
+      "passou": true,
+      "cena": "fotos/v2_contrato_golpes",
+      "user_dir_confirmado": true,
+      "arquivos_depois": {
+        "v2_progresso.cfg.bak": {
+          "sha256": "B2F6081ECCD510F5E86EF9101EC6856E9F28E81C7DC38EC4E9D4CFD628C10FEF",
+          "bytes": 60,
+          "existe": true
+        },
+        "v2_personagens.cfg.bak": {
+          "sha256": "DC2906CB9998E8DB646AB2B4D15A3674BF879975E49AAE5116A3CAD2AF35FDF9",
+          "bytes": 87,
+          "existe": true
+        },
+        "v2_personagens.cfg": {
+          "sha256": "02C11C897C0DD3075E714BBF16BCF3C799F505781A0C7CE7ED5FE2E512323DBD",
+          "bytes": 67,
+          "existe": true
+        },
+        "opcoes.cfg.bak": {
+          "sha256": "865308B56F3A22B88E30E270138279F410B811B469F77D1F1DAA617047122AAB",
+          "bytes": 134,
+          "existe": true
+        },
+        "opcoes.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "v2_progresso.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "v2_progresso.cfg": {
+          "sha256": "4FA63A036DDEA025AEB6232262EAB08F33CC1E519E05E2BD22D1A34AD4A28D05",
+          "bytes": 40,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg": {
+          "sha256": "D807BA4F546EF1F0AB7A566102CFCF51FD0DEB89E86F1507A400F2461167A675",
+          "bytes": 40,
+          "existe": true
+        },
+        "v2_personagens.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        },
+        "opcoes.cfg": {
+          "sha256": "ECA3A95BF299B996185F09BA28B93D83BD7C480250F6EFECCA5B5EE9DF447A88",
+          "bytes": 114,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg.bak": {
+          "sha256": "067CE1F15489F86A9D8A78D02CAD6DEAF906C7030D4BCC039FF212B25E36F0EB",
+          "bytes": 60,
+          "existe": true
+        },
+        "v2_personagem_p1.cfg.tmp": {
+          "sha256": "FCC4F32AC5D1C10B1A2FC36C412B416C73F97E7A5CFAE8707D51BD2355B698F5",
+          "bytes": 36,
+          "existe": true
+        }
+      }
+    }
+  ],
+  "produto_8_casos_iguais": {
+    "igualdade_exata": true,
+    "sha256_json_canonico_antes": "0788423cfb1bda0b42c3dd7ede49e0ba62073043c068c21642cfbb8e315da163",
+    "sha256_json_canonico_depois": "0788423cfb1bda0b42c3dd7ede49e0ba62073043c068c21642cfbb8e315da163",
+    "campos": "todos: mecânica, visual, quadros, efeitos, RNG; quatro visuais em60/120Hz"
+  },
+  "sha256_fontes_lf": {
+    "jogos/hordas/projeto/testes/v2_adagas_impacto.gd": "dec6838bfab5b37efd0bca1660bb018b2d04f6f5f5530311031f537d54888323",
+    "jogos/hordas/projeto/testes/v2_golpes_visuais.gd": "ba6e6b6ab8edee4262f755ae80b027b7dfdd32cf5d16cc685ceb55a8e62161a3",
+    "jogos/hordas/projeto/testes/fotos/v2_contrato_golpes.gd": "20db40fdeddfad204afdae9238ad61d4e4c4beba7989aa2f430abfcbf32d0e2c",
+    "jogos/hordas/projeto/scripts/hordas/config.gd": "f71833ae3aae09a39f012bc70de84aa011b0cef74c176a980dfc7dd6d804a074",
+    "ferramentas/teste_golpes_isolados.ps1": "7e292db3678a70e8cfb014a96c4a1fd8972bb5a0371204310e4600ec437d7778"
+  },
+  "limites": [
+    "Hashes finais não demonstram ausência de leitura ou escrita transitória restaurada",
+    "Vermelho antigo não emitia marcador de user_dir; alterações dos arquivos protegidos da própria QA e resíduos são os achados concretos",
+    "Avisos RID/recursos no encerramento preservados nos logs externos; não houve SCRIPT ERROR no verde"
+  ]
+}

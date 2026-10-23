@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 # Teste automático da RUPTURA, a habilidade da tecla E (LB no controle) (v2/ruptura.gd, heroi.gd, combate.gd, cartas.gd, hud.gd, dados/v2_ruptura.json):
 # dados, ação de entrada (tecla E e LB), carga que cresce, toque curto que cancela, disparo em 360 graus pela elipse do chão
 # (cheio, parcial, perfeito), apanhar sem cancelar, esquiva que cancela, pausa/escolha/baú/morte que cancelam e não deixam o clique vazar, salto de
@@ -163,7 +163,7 @@ func _ready() -> void:
 		ok(not (e is InputEventMouseButton), "ruptura: nenhum botão do mouse (o direito é do escudo)")
 	ok(tem_direito, "ruptura: tecla E")
 	ok(tem_gatilho, "ruptura: LB do controle")
-	ok(InputMap.has_action("ultimate") and InputMap.has_action("escudo"), "as ações escudo e ultimate (reservada) existem")
+	ok(InputMap.has_action("ultimate") and InputMap.has_action("escudo"), "as ações escudo e ultimate (o especial) existem")
 	var atacar_esquerdo := false
 	for e in InputMap.action_get_events("atacar"):
 		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
@@ -248,7 +248,7 @@ func _ready() -> void:
 	ok(dano6 >= 19.0 and dano6 <= 25.0, "dano 22 mais ou menos 12%% (%.0f)" % dano6)
 	ok(perto(a_perto.atordoa_t, 0.5, 0.01), "atordoa 0,5 s (%.3f)" % a_perto.atordoa_t)
 	ok(a_perto.emp.x > 240.0 and esq.emp.x < -240.0, "o empurrão aponta para fora (%.0f e %.0f)" % [a_perto.emp.x, esq.emp.x])
-	ok(perto(h.rup_recarga, 2.6, 0.01) and perto(h.rup_recarga_max, 2.6, 0.01), "recarga de 2,6 s (%.2f)" % h.rup_recarga)
+	ok(perto(h.rup_recarga, 8.0, 0.01) and perto(h.rup_recarga_max, 8.0, 0.01), "recarga de 8 s (%.2f)" % h.rup_recarga)
 	ok(perto(h.contragolpe_t, 1.5, 0.01), "acertou: abre a janela do contragolpe de 1,5 s (%.2f)" % h.contragolpe_t)
 	ok(h.vida == h.vida_max, "a ruptura nunca fere o herói")
 
@@ -286,7 +286,7 @@ func _ready() -> void:
 		perto(float(rp.ultimo.dano), 27.5, 0.01) and perto(float(rp.ultimo.atordoa), 0.65, 0.001),
 		"perfeito: dano 27,5 e atordoa 0,65 (%.2f, %.3f)" % [rp.ultimo.dano, rp.ultimo.atordoa]
 	)
-	ok(perto(h.rup_recarga, 2.2, 0.05), "perfeito: recarga 2,2 s (%.2f)" % h.rup_recarga)
+	ok(perto(h.rup_recarga, 7.6, 0.05), "perfeito: recarga 7,6 s (%.2f)" % h.rup_recarga)
 	ok(m8.acertos == 1 and h.rup_disparos == 1, "o cão a 105 px só apanha com o raio perfeito")
 	zerar()
 	segurar()
@@ -294,7 +294,7 @@ func _ready() -> void:
 	ok(not h.rup_perfeita and h.rup_carga == 1.0, "passada a janela a carga fica cheia e sem bônus")
 	soltar()
 	passos(1)
-	ok(not rp.ultimo.perfeito and perto(float(rp.ultimo.raio), 96.0, 0.01) and perto(h.rup_recarga, 2.6, 0.05), "soltar tarde: raio 96 e recarga 2,6")
+	ok(not rp.ultimo.perfeito and perto(float(rp.ultimo.raio), 96.0, 0.01) and perto(h.rup_recarga, 8.0, 0.05), "soltar tarde: raio 96 e recarga 8")
 	zerar()
 	h.m_vel_ataque = 2.0
 	segurar()
@@ -638,10 +638,10 @@ func _ready() -> void:
 	zerar()
 	var def_rec: Dictionary = cs.definicao("rb_recarga")
 	cs.aplicar(cs.montar_carta(def_rec, 0))
-	ok(perto(rp.recarga_de(false), 2.444, 0.001), "Pulso ligeiro comum: recarga 2,444 s (%.3f)" % rp.recarga_de(false))
+	ok(perto(rp.recarga_de(false), 7.52, 0.001), "Pulso ligeiro comum: recarga 7,52 s (%.3f)" % rp.recarga_de(false))
 	for i in 3:
 		cs.aplicar(cs.montar_carta(def_rec, 3))
-	ok(rp.recarga_de(false) == 2.0 and rp.recarga_de(true) == 2.0, "com 4 cartas a recarga nunca passa do piso de 2,0 s (%.3f)" % rp.recarga_de(false))
+	ok(rp.recarga_de(false) == 4.0 and rp.recarga_de(true) == 4.0, "com 4 cartas a recarga nunca passa do piso de 4,0 s (%.3f)" % rp.recarga_de(false))
 	ok(cs.nivel_de("rb_recarga") == 4 and not cs._disponivel(def_rec) and not cs.disponiveis().has(def_rec), "no máximo (4) a carta deixa de sair")
 	# Estrondo
 	zerar()
@@ -761,8 +761,11 @@ func _ready() -> void:
 	ok(w.combate.fx.usados.flashes - fl0 <= 21, "no máximo 20 piscadas dos monstros mais a do herói (%d)" % (w.combate.fx.usados.flashes - fl0))
 	h.m_critico = 1.0
 	nu0 = w.combate.fx.usados.numeros
+	var pronto0: int = w.combate.especial.prontos
 	rp.disparar(h, 1.0, false)
-	ok(w.combate.fx.usados.numeros - nu0 == 24, "todo crítico tem número (%d)" % (w.combate.fx.usados.numeros - nu0))
+	# o dano da ruptura carrega o Q e, ao encher, o aviso "ULTIMATE PRONTA" é mais um número flutuante (não é de dano): não entra na conta
+	var n_dano: int = w.combate.fx.usados.numeros - nu0 - (w.combate.especial.prontos - pronto0)
+	ok(n_dano == 24, "todo crítico tem número (%d)" % n_dano)
 
 	# 23. reinício: morrer carregando e jogar de novo zeram tudo
 	zerar()
@@ -785,7 +788,7 @@ func _ready() -> void:
 	)
 	ok(rp.somas.dano == 0.0 and rp.disparos == 0, "reiniciar zera os bônus das cartas da ruptura")
 
-	# 24. HUD: o slot aparece com o herói da ruptura e some no mundo falso
+	# 24. HUD: o slot E (v2/hud_habilidades.gd, canto de baixo à direita) lê a ruptura do herói e fica apagado no mundo falso
 	zerar()
 	var vista := SubViewport.new()
 	vista.size = Vector2i(960, 540)
@@ -795,28 +798,30 @@ func _ready() -> void:
 	vista.add_child(hud)
 	hud.set_process(false)
 	hud.avancar(PASSO)
-	ok(hud._rb != null and hud._rb.visible, "o slot da ruptura aparece com o herói da v2")
-	ok(hud._rb.light_mask == 0 and hud._rb.mouse_filter == Control.MOUSE_FILTER_IGNORE, "o slot é fora da luz e não pega o mouse")
+	var slot = hud.get_node("Raiz/Habilidades")
+	slot.sincronizar(h)
+	ok(slot.e_disponivel and slot.estado_e == "ruptura", "o slot E mostra a ruptura com o herói da v2")
+	ok(slot.light_mask == 0 and slot.mouse_filter == Control.MOUSE_FILTER_IGNORE, "o slot é fora da luz e não pega o mouse")
 	segurar()
 	passos(30)
-	hud.avancar(PASSO)
-	ok(hud._rb_barra > 5, "em carga a barra do slot enche (%d px)" % hud._rb_barra)
+	slot.sincronizar(h)
+	ok(slot.carga_px > 5, "em carga a barra do slot enche (%d px)" % slot.carga_px)
 	h.cancelar_ruptura(false)
-	h.rup_recarga = 1.3
-	h.rup_recarga_max = 2.6
-	hud.avancar(PASSO)
-	ok(hud._rb_cortina >= 9 and hud._rb_cortina <= 11 and not hud._rb_pronta, "em recarga a cortina cobre a fração que falta (%d px)" % hud._rb_cortina)
+	h.rup_recarga = 4.0
+	h.rup_recarga_max = 8.0
+	slot.sincronizar(h)
+	ok(slot.recarga_px >= 9 and slot.recarga_px <= 11 and not slot.e_pronta, "em recarga a cortina cobre a fração que falta (%d px)" % slot.recarga_px)
 	h.rup_recarga = 0.0
-	hud.avancar(PASSO)
-	ok(hud._rb_pronta and hud._rb_pop > 0.0, "recarga zerada: pop de 'pronta'")
+	slot.sincronizar(h)
+	ok(slot.e_pronta, "recarga zerada: o slot volta pronto")
 	h.rup_nega_t = 0.2
-	hud.avancar(PASSO)
-	ok(hud._rb_nega, "negado: moldura vermelha")
+	slot.sincronizar(h)
+	ok(slot.negada, "negado: moldura vermelha")
 	h.rup_nega_t = 0.0
 	h.contragolpe_t = 0.75
 	h.contragolpe_max = 1.5
-	hud.avancar(PASSO)
-	ok(hud._rb_contra == 10, "contragolpe aberto: faísca proporcional (%d px)" % hud._rb_contra)
+	slot.sincronizar(h)
+	ok(slot.contragolpe_px == 10, "contragolpe aberto: faísca proporcional (%d px)" % slot.contragolpe_px)
 	h.contragolpe_t = 0.0
 	hud.queue_free()
 	var vista2 := SubViewport.new()
@@ -826,13 +831,17 @@ func _ready() -> void:
 	vista2.add_child(hud2)
 	hud2.set_process(false)
 	hud2.avancar(PASSO)
-	ok(hud2._rb != null and not hud2._rb.visible, "sem os campos da ruptura no herói o slot fica invisível")
+	var slot2 = hud2.get_node("Raiz/Habilidades")
+	slot2.sincronizar(hud2.mundo.heroi)
+	ok(not slot2.e_disponivel and slot2._rotulo_e() == "INDISP.", "sem os campos da ruptura no herói o slot fica apagado")
 	hud2.queue_free()
 	var hud3 = Hud.criar(null)
 	vista2.add_child(hud3)
 	hud3.set_process(false)
 	hud3.avancar(PASSO)
-	ok(not hud3._rb.visible, "sem mundo o slot fica invisível")
+	var slot3 = hud3.get_node("Raiz/Habilidades")
+	slot3.sincronizar(null)
+	ok(not slot3.e_disponivel, "sem mundo o slot fica apagado")
 	hud3.queue_free()
 
 	# 25. painel de status: resumo() e linha()
@@ -840,12 +849,12 @@ func _ready() -> void:
 	var r: Dictionary = rp.resumo()
 	ok(r.dano_min == 10.0 and r.dano_max == 22.0 and r.raio_min == 56.0 and r.raio_max == 96.0, "resumo(): dano 10 a 22 e raio 56 a 96")
 	ok(
-		r.atordoa_max == 0.5 and r.recarga == 2.6 and perto(float(r.contra_bonus), 0.3, 0.0001) and r.contra_tempo == 1.5 and r.eco_pct == 0.0,
+		r.atordoa_max == 0.5 and r.recarga == 8.0 and perto(float(r.contra_bonus), 0.3, 0.0001) and r.contra_tempo == 1.5 and r.eco_pct == 0.0,
 		"resumo(): atordoa, recarga, contragolpe e eco"
 	)
 	var linha: String = rp.linha()
 	ok(
-		linha.begins_with("Ruptura (E): dano 10 a 22 | raio 56 a 96 px | recarga 2,6 s | atordoa 0,25 a 0,5 s | contragolpe +30% por 1,5 s | eco 0%"),
+		linha.begins_with("Ruptura (E): dano 10 a 22 | raio 56 a 96 px | recarga 8 s | atordoa 0,25 a 0,5 s | contragolpe +30% por 1,5 s | eco 0%"),
 		"linha(): %s" % linha
 	)
 
@@ -914,11 +923,11 @@ func _ready() -> void:
 	zerar()
 	var chave0: String = h.chave
 	ok(rp.trocas is Dictionary and rp.trocas.is_empty(), "nenhum herói tem troca nos dados por enquanto (todos usam a base)")
-	rp.trocas["teste_forte"] = {"raio": [100, 200], "recarga": 3.0, "perfeito": {"dano": 2.0}, "contragolpe": {"tempo": 2.5}}
+	rp.trocas["teste_forte"] = {"raio": [100, 200], "recarga": 9.0, "perfeito": {"dano": 2.0}, "contragolpe": {"tempo": 2.5}}
 	h.chave = "teste_forte"
 	passos(2)  # o quadro dos efeitos pega a chave do herói
 	ok(perto(rp.raio_de(h, 1.0, false), 200.0, 0.01) and perto(rp.raio_de(h, 0.0, false), 100.0, 0.01), "a troca do herói muda o par do raio (100 a 200)")
-	ok(perto(rp.recarga_de(false), 3.0, 0.001), "a troca muda um número solto (recarga 3,0)")
+	ok(perto(rp.recarga_de(false), 9.0, 0.001), "a troca muda um número solto (recarga 9,0)")
 	ok(
 		perto(float(rp.cfg.perfeito.dano), 2.0, 0.001) and perto(float(rp.cfg.perfeito.raio), 1.15, 0.001),
 		"um bloco troca só as chaves que a troca traz (perfeito.dano 2,0 e perfeito.raio continua 1,15)"
@@ -927,13 +936,13 @@ func _ready() -> void:
 	var m26d = monstro_a(150)
 	rp.disparar(h, 1.0, false)
 	ok(
-		m26d.acertos == 1 and perto(h.rup_recarga, 3.0, 0.001) and perto(h.contragolpe_t, 2.5, 0.001),
+		m26d.acertos == 1 and perto(h.rup_recarga, 9.0, 0.001) and perto(h.contragolpe_t, 2.5, 0.001),
 		"o disparo usa os números do herói (alcance 200, recarga, contragolpe)"
 	)
 	ok(rp._base.raio[1] == 96 and rp._base.perfeito.dano == 1.25, "a base lida do arquivo não foi alterada pela troca")
 	h.chave = chave0
 	passos(2)
-	ok(perto(rp.raio_de(h, 1.0, false), 96.0, 0.01) and perto(rp.recarga_de(false), 2.6, 0.001), "voltando ao herói de antes, voltam os números da base")
+	ok(perto(rp.raio_de(h, 1.0, false), 96.0, 0.01) and perto(rp.recarga_de(false), 8.0, 0.001), "voltando ao herói de antes, voltam os números da base")
 	rp.trocas.erase("teste_forte")
 
 	# 27. medição do alívio do cerco (só imprime e avisa; o equilíbrio é do playtest)

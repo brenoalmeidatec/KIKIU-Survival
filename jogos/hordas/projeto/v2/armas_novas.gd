@@ -82,6 +82,7 @@ var q_tipo := PackedByteArray()
 var q_cor := PackedColorArray()
 var q_ativas := 0
 var _qi := 0
+var _rng_fumaca := RandomNumberGenerator.new()  # o sorteio só do enfeite (fumaca_impacto), fora do randf() global
 var _relogio := 0.0
 var _num_acum := {}  # id do monstro -> [quando abriu a janela da soma (s do relógio daqui, -1 = fechada), dano somado, monstro, direção, cor, quando mostrou o último]
 var _slot_num := {}  # id do monstro -> Vector2(quando saiu o último número em leque, quantos saíram nessa rajada)
@@ -476,7 +477,10 @@ func _desenhar_fx(ci: CanvasItem, chao: bool) -> void:
 		if x_t[i] >= x_dur[i] or (x_chao[i] == 1) != chao:
 			continue
 		var f: Dictionary = x_folha[i]
-		Anim.desenhar(ci, f, Anim.quadro_em(f, x_t[i]), x_pos[i], 0.0, Vector2(x_esc[i], x_esc[i]))
+		var esc := x_esc[i]
+		if not chao:  # o soco do impacto: incha 14% nos primeiros 0,16 s e assenta (só o desenho; a área do dano é a mesma)
+			esc *= 1.0 + 0.14 * sin(PI * clampf(x_t[i] / 0.16, 0.0, 1.0))
+		Anim.desenhar_suave(ci, f, Anim.quadro_em_f(f, x_t[i]), x_pos[i], 0.0, Vector2(esc, esc))
 
 
 ## PREPARO do tiro: fica na boca (acompanha o herói), sem colidir; quando acaba, sai voando na direção guardada.
@@ -518,6 +522,11 @@ func _mover_projetil(it: Dictionary, dt: float, perto: Array) -> void:
 		var fa: Dictionary = it.fa
 		if fa.has("impacto"):  # o impacto toca no ponto do acerto (o evento real), não no fim da animação do voo
 			tocar_fx(fa.impacto, p, 2.0 if crit else 1.0)
+		if Anim.suave:  # brilhos no acerto; o crítico estoura com anéis e soca a câmera
+			pai.fx.brilhos(p, 12.0, a.cor, 3)
+			if crit:
+				pai.fx.explosao(p, 24.0, COR_CRIT, 1.0, 0.45)
+				pai.mundo.cam.socar(0.012)
 		if estilhaco:
 			_numero_estilhaco(m, dano, dir, a, it)
 		pai._acertou("projetil")
@@ -591,6 +600,9 @@ func _tique_nuvem(it: Dictionary, dt: float) -> void:
 	if dano_total > 0.0:
 		# O brilho acompanha a vida realmente removida; um tique sem alvo ou sem dano não pulsa.
 		it.pulso = clampf(dano_total / maxf(1.0, _dano(st) * 4.0), 0.0, 1.0)
+		if Anim.suave:  # o tique que dói respinga: brilhos e um fio de vapor dentro da nuvem
+			pai.fx.brilhos(it.p, float(it.r) * 0.8, a.cor, 4)
+			fumaca_impacto(it.p, float(it.r) * 0.5, a.cor, 0.4)
 
 
 ## Puxa os monstros dentro de `raio` até `forca` px na direção de `p` (a tempestade primordial).
@@ -652,10 +664,27 @@ func _anel(a: Dictionary, h) -> void:
 	if it.is_empty():
 		return
 	it.r = 0.0
+	fumaca_impacto(h.pos, 30.0, a.cor, 0.5)  # o sopro da onda saindo: poeira rasteira na cor dela
+	if prep <= 0.0:
+		pai.fx.explosao(h.pos, float(st.raio), a.cor, 0.0, _dur_onda(st))
+		_empurrao_onda(st)
 	if prep > 0.0:  # PREPARO: o anel junta força no herói (o primeiro quadro da folha pulsa), sem hitbox
 		it.fk = F_PREPARO
 		it.ft = prep
 		it.aux = prep
+
+
+## O tranco da onda saindo do herói: tremor curto e um soco de zoom, maiores nos anéis largos. Só com os golpes suaves ligados.
+func _empurrao_onda(st: Dictionary) -> void:
+	if not Anim.suave:
+		return
+	pai.mundo.cam.tremer(clampf(float(st.raio) / 60.0, 1.0, 2.5), 0.14)
+	pai.mundo.cam.socar(clampf(float(st.raio) / 4000.0, 0.01, 0.03))
+
+
+## Duração da explosão que acompanha a onda do anel: o anel de energia do shader chega à borda em 40% dela, junto da frente real.
+func _dur_onda(st: Dictionary) -> float:
+	return clampf(float(st.raio) / maxf(float(st.vel), 1.0) / 0.4, 0.5, 2.0)
 
 
 func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
@@ -667,9 +696,17 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 		if float(it.ft) > 0.0:
 			return
 		it.fk = F_ATIVO
+		pai.fx.explosao(it.p, float(st.raio), a.cor, 0.0, _dur_onda(st))  # a onda sai: os anéis de energia abrem junto dela até a borda
+		_empurrao_onda(st)
 		if Anim.de(str(a.id) + "_queda").has("queda"):  # a peça bateu no chão: a onda nasce aqui, com tremor e poeira
-			pai.mundo.cam.tremer(1.5, 0.1)
+			pai.mundo.cam.tremer(4.0 if Anim.suave else 1.5, 0.25 if Anim.suave else 0.1)
+			if Anim.suave:  # o martelo bate: soco de zoom e clarão
+				pai.mundo.cam.socar(0.045)
+				pai.fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)
 			_poeira(it.p, 6, Color(0.6, 0.62, 0.7), 80.0, 0.4)
+			fumaca_impacto(it.p, 40.0, a.cor)
+			pai.fx.explosao(it.p, 44.0, a.cor)
+			pai.fx.marca_chao(it.p, 34.0, a.cor)
 	it.r = float(it.r) + float(st.vel) * dt
 	var c: Vector2 = it.p
 	var r := float(it.r)
@@ -718,8 +755,15 @@ func _cair_meteoro(it: Dictionary, dt: float) -> void:
 		tocar_fx(fa.marca, it.p, 1.0, true)
 	if fa.has("queda"):  # o peso da queda: poeira rasteira (pool de partículas, poucas) e um tremor curto nos grandes
 		_poeira(it.p, 5, Color(0.55, 0.5, 0.42), 70.0, 0.45)
-		if float(st.raio) >= 40.0:
+		if Anim.suave:  # o cometa pesa: tremor e soco de zoom pelo tamanho, e o clarão na cor dele
+			pai.mundo.cam.tremer(clampf(float(st.raio) / 22.0, 1.5, 4.0), 0.2)
+			pai.mundo.cam.socar(clampf(float(st.raio) / 2500.0, 0.015, 0.04))
+			pai.fx.clarao(Color(a.cor.r, a.cor.g, a.cor.b, 0.22), 0.16)
+		elif float(st.raio) >= 40.0:
 			pai.mundo.cam.tremer(1.0, 0.08)
+		if Anim.suave:  # a segunda onda, mais larga e lenta, e o clarão branco no centro (só desenho: o dano já saiu acima)
+			pai.fx.onda(it.p, Color(1, 1, 1, 0.55), float(st.raio) * 0.8, 0.4)
+			pai.fx.luz_rapida(it.p + Vector2(0, -6), Color(1, 1, 1), 1.2, float(st.raio) * 2.0, 0.18)
 	if st.has("cadeia") and not bool(it.get("filho", false)):  # o juízo: cada queda chama outro meteoro no inimigo mais perto
 		var alvo = _mais_perto(it.p, 400.0, pai.mundo.monstros)
 		if alvo != null:
@@ -975,6 +1019,53 @@ func _fumaca_subindo(p: Vector2, n: int, raio: float, tam: float) -> void:
 			tam * randf_range(0.9, 1.4),
 			Color(0.6, 0.55, 0.52, 0.9)
 		)
+
+
+## Fumaça e poeira de impacto (só efeito, nada de dano): um anel de poeira rasteira que abre para os lados e umas bolas de fumaça que sobem
+## e incham, tingidas de leve pela cor do golpe. Cresce com a área (`raio`) e com `forca`; segue a opção de partículas (nenhuma = sem fumaça)
+## e usa o pool fixo de partículas daqui (MAX_PARTS, a mais velha é sobrescrita), então muitos impactos juntos não pesam mais.
+## O sorteio é do `_rng_fumaca` (próprio): enfeite não gasta o randf() global, de que o jogo e os testes dependem.
+func fumaca_impacto(p: Vector2, raio: float, cor: Color, forca := 1.0) -> void:
+	if pai.fx.fator_part <= 0.0:
+		return
+	var r := _rng_fumaca
+	var tinta := Color(0.52, 0.5, 0.48).lerp(Color(cor.r, cor.g, cor.b), 0.3)
+	var n := clampi(roundi(raio / 10.0 * forca), 3, 9)
+	var tam := clampf(raio * 0.09, 3.5, 8.0) * lerpf(0.75, 1.0, clampf(forca, 0.0, 1.0))
+	var n_chao := maxi(2, roundi(n * pai.fx.fator_part))
+	for i in n_chao:  # a poeira rasteira (como _nuvem_poeira)
+		var ang := TAU * (float(i) + r.randf() * 0.6) / float(n_chao)
+		var v := Vector2(cos(ang), sin(ang) * 0.45) * r.randf_range(0.6, 1.0) * raio * 1.2
+		_parte(
+			PT_FUMACA,
+			p + v * 0.05,
+			1.0,
+			v,
+			r.randf_range(5.0, 14.0),
+			r.randf_range(0.45, 0.7),
+			tam * r.randf_range(0.7, 1.1),
+			Color(tinta.r, tinta.g, tinta.b, 0.45)
+		)
+	for i in maxi(1, roundi(float(n) * 0.5 * pai.fx.fator_part)):  # a fumaça que sobe
+		var q := p + Vector2(r.randf_range(-0.35, 0.35) * raio, r.randf_range(-0.15, 0.15) * raio)
+		_parte(
+			PT_FUMACA,
+			q,
+			r.randf_range(2.0, 8.0),
+			Vector2(r.randf_range(-10.0, 10.0), 0.0),
+			r.randf_range(18.0, 36.0),
+			r.randf_range(0.7, 1.05),
+			tam * r.randf_range(1.0, 1.4),
+			Color(tinta.r, tinta.g, tinta.b, 0.5)
+		)
+	var claro := cor.lerp(Color(1.0, 0.9, 0.7), 0.4)
+	for i in maxi(2, roundi(float(n) * pai.fx.fator_part)):  # lascas do chão que pulam e quicam, e brasas na cor do golpe que sobem
+		var ang := r.randf() * TAU
+		var v := Vector2(cos(ang), sin(ang) * 0.5) * r.randf_range(0.4, 1.0) * (60.0 + raio * 1.2)
+		var lasca := Color(0.32, 0.27, 0.24) if i % 2 == 0 else Color(0.5, 0.44, 0.38)
+		_parte(PT_LASCA, p, 3.0, v, r.randf_range(90.0, 180.0), r.randf_range(0.6, 0.9), 2.0 + float(i % 2), lasca)
+		var q := p + Vector2(cos(ang), sin(ang) * ACHATA) * raio * 0.6 * sqrt(r.randf())
+		_parte(PT_BRASA, q, r.randf_range(0.0, 4.0), Vector2(r.randf_range(-10.0, 10.0), 0.0), r.randf_range(12.0, 30.0), r.randf_range(0.6, 1.2), 2.0, claro)
 
 
 ## Brasas no chão (e subindo, se `sobe` > 0): pontos quentes que piscam e apagam devagar.
@@ -1361,6 +1452,13 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
 				ci.draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(cor.r, cor.g, cor.b, 0.85 * fade_a), 3.0)
 				ci.draw_arc(Vector2.ZERO, maxf(r - 4.0, 0.5), 0.0, TAU, 48, Color(1, 1, 1, 0.45 * fade_a), 1.5)
+				if Anim.suave:  # o eco: uma onda fraca que vem atrás da frente, e o estouro de luz no herói quando a onda sai
+					var fr_a := r / maxf(float(st.raio), 1.0)
+					if r > 12.0:
+						ci.draw_arc(Vector2.ZERO, r * 0.78, 0.0, TAU, 40, Color(cor.r, cor.g, cor.b, 0.3 * fade_a), 2.0)
+					if fr_a < 0.3:
+						var rb := 10.0 + float(st.raio) * 0.5 * fr_a / 0.3
+						ci.draw_texture_rect(tex, Rect2(-Vector2(rb, rb), Vector2(rb, rb) * 2.0), false, Color(cor.r, cor.g, cor.b, 0.4 * (1.0 - fr_a / 0.3)))
 				if not (it.fa as Dictionary).has("expandir"):  # com folha o motivo (raios, cristais, rachaduras) já está nos quadros
 					_desenhar_motivo_anel(ci, str(a.get("id", "")), r, float(it.fase), fade_a, cor)
 				ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -1447,7 +1545,13 @@ func desenhar_sprites(ci: CanvasItem) -> void:
 			if int(it.fk) == F_ATIVO:  # no preparo o tiro ainda é só a carga na boca (camada de brilho)
 				var voo: Dictionary = fa.voo
 				var giro := 0.0 if bool(voo.gira) else (it.v as Vector2).angle()
-				Anim.desenhar(ci, voo, Anim.quadro_em(voo, _relogio), p, giro, Vector2.ONE, Color(1, 1, 1, clampf(float(it.vida) / 0.12, 0.0, 1.0)))  # some no fim do alcance
+				var qv := Anim.quadro_em_f(voo, _relogio)
+				var al_v := clampf(float(it.vida) / 0.12, 0.0, 1.0)  # some no fim do alcance
+				if Anim.suave:  # o rastro de movimento: duas cópias fracas e menores, um pouco para trás no voo
+					for c in range(2, 0, -1):
+						var atras := ((it.p as Vector2) - (it.v as Vector2) * 0.018 * float(c)).round()
+						Anim.desenhar(ci, voo, int(qv), atras, giro, Vector2.ONE * (1.0 - 0.1 * float(c)), Color(1, 1, 1, al_v * (0.34 - 0.12 * float(c))))
+				Anim.desenhar_suave(ci, voo, qv, p, giro, Vector2.ONE, Color(1, 1, 1, al_v))
 			continue
 		if str(it.k) == "meteoro" and fa.has("queda"):
 			if float(it.t) > 0.0:
@@ -1531,6 +1635,7 @@ func _area(ci: CanvasItem, sp: Dictionary, c: Vector2, r: float, cor: Color) -> 
 const QUEDA_ALTO := Vector2(-40.0, -100.0)  # de onde vem, a partir do ponto de queda (o x espelha com o lado)
 const QUEDA_CINTILA := 0.25  # fração do aviso em que ele só cintila no alto
 const QUEDA_RASTRO := 2  # cópias que ficam para trás e somem
+const QUEDA_RASTRO_SUAVE := 5  # com os golpes suaves ligados (Anim.suave)
 
 
 ## O progresso acelerado da descida: 0 no alto, 1 no chão; -1 enquanto ainda cintila.
@@ -1569,14 +1674,19 @@ func _desenhar_queda(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		return
 	var f: Dictionary = it.fa.queda
 	var ang := (-_queda_de(it)).angle()
-	var q := Anim.quadro_em(f, _relogio + float(it.fase))
-	for c in range(QUEDA_RASTRO, 0, -1):
-		var ec := e - 0.07 * float(c) * (0.35 + e)
+	var qf := Anim.quadro_em_f(f, _relogio + float(it.fase))
+	var q := int(qf)
+	var n_r := QUEDA_RASTRO_SUAVE if Anim.suave else QUEDA_RASTRO
+	var passo := 0.07 * float(QUEDA_RASTRO) / float(n_r)  # mais cópias, mais juntas: o rastro fica corrido em vez de pontilhado
+	for c in range(n_r, 0, -1):
+		var ec := e - passo * float(c) * (0.35 + e)
 		if ec <= 0.0:
 			continue
-		var s := 1.0 - 0.12 * float(c)
-		Anim.desenhar(ci, f, (q + int(f.n) - c) % int(f.n), _queda_em(it, ec), ang, Vector2(s, s), Color(1, 1, 1, 0.55 - 0.15 * float(c)))
-	Anim.desenhar(ci, f, q, _queda_em(it, e), ang)
+		var t := float(c) / float(n_r)
+		var s := 1.0 - 0.24 * t
+		Anim.desenhar(ci, f, (q + int(f.n) - c) % int(f.n), _queda_em(it, ec), ang, Vector2(s, s), Color(1, 1, 1, 0.55 - 0.42 * t))
+	var estica := 1.0 + 0.18 * e if Anim.suave else 1.0  # estica um pouco no sentido da queda conforme acelera
+	Anim.desenhar_suave(ci, f, qf, _queda_em(it, e), ang, Vector2(estica, 1.0 / sqrt(estica)))
 
 
 ## O brilho da queda (camada aditiva): no alto, a cintilada que avisa de onde ele vem; descendo, o calor em volta da cabeça.
@@ -1922,13 +2032,18 @@ func _desenhar_anel_anim(ci: CanvasItem, it: Dictionary, st: Dictionary, p: Vect
 	var esc := raio * 2.0 / q.x
 	if int(it.fk) == F_PREPARO:
 		var k := 1.0 - clampf(float(it.ft) / maxf(float(it.aux), 0.001), 0.0, 1.0)
-		Anim.desenhar(ci, f, 0, p, 0.0, Vector2.ONE * esc * (0.6 + 0.4 * k), Color(1, 1, 1, 0.5 + 0.5 * k))
+		var ke := 1.0 - (1.0 - k) * (1.0 - k)  # ease-out: junta força rápido e assenta
+		Anim.desenhar(ci, f, 0, p, 0.0, Vector2.ONE * esc * (0.6 + 0.4 * ke), Color(1, 1, 1, 0.5 + 0.5 * ke))
 		return
 	var fr := float(it.r) / maxf(raio, 1.0)
 	var i := 0
 	while i + 1 < FRENTE_ANEL.size() and fr >= float(FRENTE_ANEL[i + 1]):
 		i += 1
-	Anim.desenhar(ci, f, mini(i, int(f.n) - 1), p, 0.0, Vector2(esc, esc))
+	var u := 0.0  # quanto a frente já andou até a do próximo quadro (o meio-quadro de desenhar_suave)
+	if i + 1 < FRENTE_ANEL.size():
+		u = clampf((fr - float(FRENTE_ANEL[i])) / (float(FRENTE_ANEL[i + 1]) - float(FRENTE_ANEL[i])), 0.0, 1.0)
+	var some := 1.0 - smoothstep(0.82, 1.0, fr)  # apaga nos últimos 18% em vez de sumir de uma vez
+	Anim.desenhar_suave(ci, f, minf(float(i) + u, float(f.n) - 1.0), p, 0.0, Vector2(esc, esc), Color(1, 1, 1, some), true)
 
 
 ## A nuvem com folha (camada aditiva), esticada até o raio real: entrada (se forma, sem dano), loop (os tiques) e saída (dissolve).
@@ -1940,14 +2055,14 @@ func _desenhar_nuvem_anim(ci: CanvasItem, it: Dictionary, st: Dictionary, p: Vec
 	var passou := float(st.duracao) + prep - float(it.vida)
 	var cor := Color(1, 1, 1, 0.45)  # rala: a nuvem não pode esconder os monstros dentro dela
 	if passou < prep and fa.has("entrada"):
-		Anim.desenhar(ci, fa.entrada, Anim.quadro_frac(fa.entrada, passou / maxf(prep, 0.001)), p, 0.0, Vector2(esc, esc), cor)
+		Anim.desenhar_suave(ci, fa.entrada, Anim.quadro_frac_f(fa.entrada, passou / maxf(prep, 0.001)), p, 0.0, Vector2(esc, esc), cor, true)
 		return
 	if fa.has("saida"):
 		var sai := Anim.duracao(fa.saida)
 		if float(it.vida) < sai:
-			Anim.desenhar(ci, fa.saida, Anim.quadro_frac(fa.saida, 1.0 - float(it.vida) / sai), p, 0.0, Vector2(esc, esc), cor)
+			Anim.desenhar_suave(ci, fa.saida, Anim.quadro_frac_f(fa.saida, 1.0 - float(it.vida) / sai), p, 0.0, Vector2(esc, esc), cor, true)
 			return
-	Anim.desenhar(ci, fa.loop, Anim.quadro_em(fa.loop, passou - prep), p, 0.0, Vector2(esc, esc), cor)
+	Anim.desenhar_suave(ci, fa.loop, Anim.quadro_em_f(fa.loop, passou - prep), p, 0.0, Vector2(esc, esc), cor, true)
 
 
 func _desenhar_projetil(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Color, p: Vector2, dir: Vector2) -> void:

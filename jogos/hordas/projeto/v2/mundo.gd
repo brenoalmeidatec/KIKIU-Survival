@@ -12,8 +12,8 @@ extends Node
 ##   --imortal --robo --estresse=N --roteiro=combate|correr (medição e fotos do combate, v2/roteiro.gd)
 ##   --picos=MS (imprime cada quadro mais lento que MS ms, com as partes que pesaram nele, e um resumo no fim: v2/picos.gd)
 ##   --depur (liga o texto de depuração do combate; F1 alterna)
-##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --maximizada (janela maximizada do SO, como no notebook) --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
-## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ultimate (reservado), Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
+##   --tamanho_ui=auto|pequeno|medio|grande (vale o tamanho da interface, sem gravar nas opções) --dpi=150 (finge a escala de tela do sistema, em %, para o Automático) --ui_congelada (medição: o SubViewport da UI para de redesenhar) --janela=1280x720 --maximizada (janela maximizada do SO, como no notebook) --rotulo (começa com o texto de fps ligado) --escala_pura (nearest fracionário em vez do sharp bilinear) --colisao (formas de colisão ligadas)
+## Modo livre: WASD/analógico anda, o mouse mira, clique esquerdo golpeia (combo de 3), botão direito (ou LT) ergue o ESCUDO, E (ou LB) é a RUPTURA, Q (ou RB) o ESPECIAL do herói, Espaço esquiva, Shift corre, 1/2/3 trocam a sombra (baixa/média/alta),
 ## 0 desliga, F1 liga o texto de depuração do combate, F3 liga o texto de fps e atores (desligado na partida normal), F4 mostra a colisão, C liga o card da build (v2/status.gd), Esc (ou Start) pausa e abre o menu (v2/pausa.gd: opções e Sair).
 ## API pública para o HUD e o minimapa (ler com get() e valor padrão): no mundo abates, combo, tempo_partida, monstros_vivos, almas_partida,
 ## e os sinais nivel_subiu, onda_forte, elite_apareceu, chefe_apareceu, chefe_vida, evolucao, anuncio e partida_terminou;
@@ -24,6 +24,7 @@ const CameraMundo := preload("res://v2/camera_mundo.gd")
 const Atmosfera := preload("res://v2/atmosfera.gd")
 const Luzes := preload("res://v2/luzes.gd")
 const Sombras := preload("res://v2/sombras.gd")
+const AnimGolpes := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (meio-quadro e rastros), pela opção de partículas
 const Cenario := preload("res://v2/cenario.gd")
 const Sprites := preload("res://v2/sprites.gd")
 const Heroi := preload("res://v2/heroi.gd")
@@ -99,7 +100,7 @@ var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, 
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
 var maior_combo := 0
-var xp_coletado := 0.0  # soma do XP dos orbes pegos (com o bônus do combo)
+var xp_coletado := 0.0  # XP BASE dos orbes pegos, com combo e sem dificuldade: calcula almas/mercador; o bônus de XP vai só ao herói
 var resultado: Dictionary = {}  # o último resultado de partida (vazio enquanto joga)
 var almas_partida: int:  # almas ganhas na partida = XP coletado / 10, arredondado (a meta-progressão lê isto)
 	get:
@@ -169,6 +170,8 @@ func _ready() -> void:
 		picos = preload("res://v2/picos.gd").new(float(args.picos))
 	if args.has("tamanho_ui") and not modo_teste:  # fotos: vale o tamanho da interface (auto, pequeno, medio, grande) sem gravar nas opções
 		Config.temporario("tamanho_ui", str(args.tamanho_ui))
+	if args.has("dpi") and not modo_teste:  # fotos: finge a escala de tela do Windows (125, 150, 175...) que o Automático lê
+		preload("res://v2/escala_ui.gd").dpi_forcado = float(args.dpi) / 100.0
 	if args.has("perfil") and not modo_teste:  # medição: valer o perfil de gráficos (baixo, medio, alto) sem mexer no que está salvo
 		Config.g_perfil_temporario(str(args.perfil))
 	if id_mapa == "":
@@ -308,6 +311,8 @@ func _montar() -> void:
 	oclusao = Oclusao.new().montar(sv, heroi)
 	combate.iniciar_heroi()
 	Meta.aplicar(self)  # melhorias do santuário sobre os valores iniciais do herói (um ponto só, em v2/meta.gd)
+	combate.diretor.zerar()  # os primeiros relógios também usam a dificuldade recém-lida
+	combate.elites.zerar()
 	horda = Horda.new()
 	horda.montar(self)
 	braseiros = Braseiros.new()
@@ -342,7 +347,7 @@ func _criar_heroi() -> void:
 	herois = [heroi]
 	if _modo != "livre":  # foto e medição não dependem do teclado de quem estiver na máquina
 		heroi.entrada_forcada = _entrada_roteiro()
-	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite(combate.heroi_id, args.has("basico"))), p)
+	heroi.criar(self, no_mundo, sprites.tipo(Herois.sprite_da_partida(combate.heroi_id, args.has("basico"))), p)
 	# a tocha e a aura andam com o herói (a posição é o ponto no chão que a luz ilumina)
 	luzes.prender(luzes.criar("tocha", p), heroi, Vector2(-38, -32))
 	luzes.prender(luzes.criar("aura", p), heroi, Vector2(30, -8))
@@ -645,6 +650,8 @@ func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k
 		mo = lista.pop_back()
 	mo.aplicar_stats(combate.cfg.monstros[nome], k_vida * fator_pesadelo("vida_mult"), k_dano * fator_pesadelo("dano_mult"))
 	mo.cacador = cacador
+	var dif := preload("res://v2/dificuldade.gd").da_partida(self)
+	mo.vel_caca *= float(dif.vel_mult)
 	mo.raio_vaga = 90.0
 	mo.reviver(p)
 	monstros.append(mo)
@@ -731,12 +738,13 @@ func _ler_graficos() -> void:
 	var nivel := str(args.get("particulas", Config.g("particulas_sim")))
 	var f: Dictionary = Config.PART_NIVEL.get(nivel, {})
 	atm.definir_fatores(float(f.get("amb_particulas", 1.0)), float(f.get("efe_particulas", 1.0)))
+	AnimGolpes.suave = nivel in ["medias", "muitas"]  # golpes suaves custam uma chamada a mais por golpe: o perfil Baixo (poucas) fica sem
 	if combate != null:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
 
 
-## Perfil Dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um,
-## só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
+## Detalhe dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um, mas só
+## até o Perfil escolhido (o teto), só na memória. Config.g_perfil_temporario avisa a partida (graficos_mudou relê luzes e sombras) e o combate anuncia.
 func _baixar_qualidade(dt: float, fps: float) -> void:
 	if (
 		not _qualidade_ligada
@@ -752,15 +760,15 @@ func _baixar_qualidade(dt: float, fps: float) -> void:
 	var limite := int(Config.g("limite_fps"))
 	var alvo := 55.0 if limite <= 0 or limite >= 60 else limite * 0.92  # com limite baixo de fps, "firme" é perto do limite
 	var antes := Config.g_perfil()
-	var nome := _qualidade.passo(dt, fps, antes, alvo)
+	var nome := _qualidade.passo(dt, fps, antes, alvo, Config.g_perfil_escolhido())
 	if nome == "":
 		return
 	Config.g_perfil_temporario(nome)
-	var degrau := {"alto": "alta", "medio": "média", "baixo": "baixa"}
+	var degrau: String = QualidadeAuto.NOMES_ANUNCIO.get(nome, nome)
 	if QualidadeAuto.DEGRAUS.find(nome) < QualidadeAuto.DEGRAUS.find(antes):
-		combate.anunciar("FPS firme: qualidade gráfica %s" % degrau[nome], Color(0.6, 1, 0.6))
+		combate.anunciar("FPS firme: qualidade gráfica %s" % degrau, Color(0.6, 1, 0.6))
 	else:
-		combate.anunciar("FPS baixo: qualidade gráfica %s" % degrau[nome], Color(1, 0.8, 0.4))
+		combate.anunciar("FPS baixo: qualidade gráfica %s" % degrau, Color(1, 0.8, 0.4))
 
 
 # ------------------------------------------------------------------ movimento e mouse
@@ -983,6 +991,8 @@ func reiniciar() -> void:
 	heroi.resetar(Vector2(float(c[0]), float(c[1])))
 	combate.iniciar_heroi()
 	Meta.aplicar(self)
+	combate.diretor.zerar()
+	combate.elites.zerar()
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_popular_inicial()
 	if is_instance_valid(minimapa):

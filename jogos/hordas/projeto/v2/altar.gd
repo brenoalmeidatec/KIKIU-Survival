@@ -270,7 +270,7 @@ func _montar() -> void:
 func _itens_dica() -> Array:
 	var r: Array = [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
 	if not Glifos.eh_controle():
-		r.insert(2, ["", "Mouse também"])
+		r.insert(2, ["mouse", "também"])
 	return r
 
 
@@ -523,14 +523,19 @@ func _atualizar_mapa() -> void:
 
 
 func _trocar_mapa() -> void:
-	if not Mapas.escolher(Mapas.proximo(_mapa_id)):
+	var seguinte := Mapas.proximo(_mapa_id)
+	if seguinte == _mapa_id:  # só este mapa está aberto: o seguinte da lista mostra o que falta para abrir
+		var trancado: Dictionary = Mapas.LISTA[posmod(Mapas.ids().find(_mapa_id) + 1, Mapas.LISTA.size())]
+		_avisar(Mapas.condicao(trancado) if Mapas.condicao(trancado) != "" else "Só há este mapa")
+		return
+	if not Mapas.escolher(seguinte):
 		_avisar("Não foi possível salvar")
 		return
 	_atualizar_mapa()
 
 
 func _entrar_floresta() -> void:
-	get_tree().change_scene_to_file(FLORESTA)
+	Transicoes.ir_para(self, FLORESTA)
 
 
 class Marcadores:
@@ -570,7 +575,7 @@ func _unhandled_input(e: InputEvent) -> void:
 
 
 func _voltar_menu() -> void:
-	get_tree().change_scene_to_file("res://v2/menu_principal.tscn")
+	Transicoes.ir_para(self, "res://v2/menu_principal.tscn", true)
 
 
 func _botao_detalhe(r: Rect2) -> Button:

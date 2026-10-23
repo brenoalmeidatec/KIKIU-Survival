@@ -1,4 +1,4 @@
-extends Node
+extends "res://testes/isolamento_v2.gd"
 ## Fotos de conferência dos glifos de controle e da grade dos menus da v2 (precisa de janela, não roda em --headless).
 ## Só o viewport do Godot, nunca a área de trabalho. Um dispositivo por execução, com o flag depois do "--":
 ##   godot --path jogos/hordas/projeto res://testes/v2_controle_fotos.tscn -- --fotos=PASTA --prefixo=depois_xbox --controle=xbox
@@ -9,10 +9,11 @@ const Altar := preload("res://v2/altar.tscn")
 const Titulo := preload("res://v2/menu_principal.tscn")
 const Personagens := preload("res://v2/personagens.tscn")
 const Salao := preload("res://v2/salao.tscn")
+const Slots := preload("res://v2/personagens.gd")
 const Meta := preload("res://v2/meta.gd")
 const Resultado := preload("res://v2/resultado_meta.gd")
-const SAVE_TESTE := "user://teste_v2_controle_meta.cfg"
-const OPCOES_TESTE := "user://teste_v2_controle_opcoes.cfg"
+const SAVE_TESTE := "user://testes_v2/v2_controle_fotos/teste_v2_controle_meta.cfg"
+const OPCOES_TESTE := "user://testes_v2/v2_controle_fotos/teste_v2_controle_opcoes.cfg"
 
 var pasta := ""
 var prefixo := "foto"
@@ -39,7 +40,7 @@ func _ready() -> void:
 	for c in [SAVE_TESTE, SAVE_TESTE + ".bak", SAVE_TESTE + ".tmp", OPCOES_TESTE]:
 		if FileAccess.file_exists(c):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(c))
-	Config.arquivo = "user://opcoes.cfg"
+	Config.arquivo = "user://testes_v2/v2_controle_fotos/opcoes.cfg"
 	print("v2_controle_fotos em ", pasta)
 	get_tree().quit()
 
@@ -116,6 +117,8 @@ func _personagens() -> void:
 
 
 func _salao() -> void:
+	# A fixture começa sem slot ativo: o salão exige um personagem, mesmo na ferramenta de fotos.
+	Slots.ativar(Slots.criar("Breno"))
 	var s = Salao.instantiate()
 	add_child(s)
 	await _assentar(12)
@@ -139,10 +142,11 @@ func _partida() -> void:
 	await get_tree().process_frame
 	var sv: SubViewport = mundo.ui
 	await mundo.ap.foto(pasta.path_join(prefixo + "_hud.png"))
-	# pausa, depois Ajustes (o primeiro item do menu é Continuar; o segundo abre Ajustes)
+	# pausa, depois Ajustes (Continuar, Conquistas e Ajustes: o terceiro item abre Ajustes)
 	var pausa = _pausa_de(sv)
 	_tecla(KEY_ESCAPE)
 	await mundo.ap.foto(pasta.path_join(prefixo + "_pausa.png"))
+	_tecla(KEY_DOWN)
 	_tecla(KEY_DOWN)
 	_tecla(KEY_ENTER)
 	await mundo.ap.foto(pasta.path_join(prefixo + "_ajustes_partida.png"))
