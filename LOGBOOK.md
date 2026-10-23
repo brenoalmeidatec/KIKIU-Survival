@@ -2525,3 +2525,17 @@ _Claude do Alisson (nuvem)_
 - **Pendente:** as frases de conquistas, Pesadelo e Rastro de katana estão no dado mas ainda não aparecem na tela (o Códice usa o texto de "fazer"). "Pode mergear" do Alisson para este PR.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-23 · Claude do Alisson (nuvem) · v2.0-beta com instalador Windows (#418)
+
+- **Pedido (Alisson):** "solta o beta, com instalador" e "pode mergear amigo".
+- **#418 (substitui o rascunho #393 do Codex, fecha #379):** trouxe `ferramentas/instalador/` e aplicou no `release.yml` o diff que o Codex não conseguiu subir (faltava o escopo `workflow`). A Release agora compila o `KIKIU-Setup-<versão>.exe` (Inno Setup 6.7.3, por usuário em `%LOCALAPPDATA%\Programs\KIKIU`, sem admin, desktop opcional), testa instalar/reinstalar/atalhos/HKCU/desinstalar preservando o save no runner Windows e roda o smoke do ELF Linux. `config/version` 0.1.0 → 2.0.0.
+- **Ajuste:** o smoke Linux reprovava só pelo `ERROR: 2 resources still in use at exit` que o motor imprime ao sair pelo `--quit-after`; esse aviso é filtrado, o resto continua reprovando.
+- **Provas:** CI 7/7 + exportações + instalador verdes em `b4a4333` (run manual 40024618307); merge `eeabaac`; build `build-2026-10-23-eeabaac` com o `KIKIU-Setup-2.0.0.exe`.
+- **Tag/Release `v2.0-beta`: PENDENTE (vai pelo chat local do PC).** A nuvem não pode criar tag nem Release (403) e o Claude Code do PC barrou o `gh release create` ("Create Public Surface"). Os 4 arquivos já estão em `%TEMP%\kikiu-beta` no PC (SHA-256 conferidos) e as notas em `E:\Dev\KIKIU\notas_release_v2.0-beta.md` (fora do Git). Comando, rodado pelo Alisson ou com a permissão dele:
+  `gh release create v2.0-beta (Get-ChildItem $env:TEMP\kikiu-beta).FullName -R brenoalmeidatec/KIKIU-Survival --target eeabaacc2a0fd064a8907cf87ea83e7b14a8a97e --title "K.I.K.I.U v2.0-beta" --notes-file E:\Dev\KIKIU\notas_release_v2.0-beta.md --prerelease --latest=false`
+  É **pré-release e não vira a Latest** (o atualizador e o atalho de teste leem a Latest `build-*`). Depois: conferir 4 arquivos e que a Latest segue `build-2026-10-23-eeabaac`, apagar as notas e a pasta temporária, e avisar na #342. Se `%TEMP%\kikiu-beta` sumir, os mesmos arquivos estão na Release `build-2026-10-23-eeabaac` (renomear os ZIPs trocando o sufixo por `v2.0-beta`).
+- **Wine (pergunta do Alisson):** o jogo usa `gl_compatibility` (OpenGL 3.3), então no Wine/Proton vai pelo Mesa do sistema; fallback `--rendering-driver opengl3`. Nas notas, mas **ninguém testou ainda**.
+- **Próximo:** polimento e bugs do beta (sáb/dom), `v2.0-rc1` na seg 26/10.
+
+_Claude do Alisson (nuvem)_
