@@ -8,6 +8,17 @@ extends RefCounted
 ## Lê o save a cada chamada, como o resto da meta-progressão. Sem class_name: carregue com preload.
 
 const Meta := preload("res://v2/meta.gd")
+const ARG_BETA := "--beta-tester"
+
+## Só para teste: lista de argumentos no lugar da linha de comando (null = usa OS.get_cmdline_user_args()).
+static var args_teste = null
+
+
+## Modo beta tester (jogo aberto com `-- --beta-tester`): todos os portais e estruturas ficam liberados em tempo de execução. Não grava
+## nada no save: a trava some só aqui, em aberto() (e curto()/aviso() herdam).
+static func beta_tester() -> bool:
+	var args: Array = args_teste if args_teste != null else Array(OS.get_cmdline_user_args())
+	return ARG_BETA in args
 
 
 static func regras() -> Dictionary:
@@ -56,6 +67,8 @@ static func _cumpre(cond: Dictionary, cf: ConfigFile) -> bool:
 
 ## Aberto? Sem save legível, só o que não tem condição.
 static func aberto(tipo: String, id: String) -> bool:
+	if beta_tester():
+		return true
 	var conds := condicoes(tipo, id)
 	if conds.is_empty():
 		return true
