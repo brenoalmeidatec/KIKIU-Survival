@@ -2515,3 +2515,13 @@ _Claude do Alisson (nuvem)_
 - **Pendente:** "pode mergear" do Alisson. Depois do merge, liberar as travas na #348.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-23 · Claude do Alisson (nuvem) · Frases do santuário: #402 mergeado e subtítulo das estruturas
+
+- **Pedido (Alisson):** "pode mergear o #402" (frases do Breno, #328) e os textos de Estátuas, Altar e Códice.
+- **#402:** sem conflito com a main; branch atualizada com o #413, CI 7/7 no `1e77578`, revisão registrada no PR e merge (`0b1171c`).
+- **Seguimento (este PR):** as frases do Breno ganharam maiúscula na primeira letra (aparecem como subtítulo) e o tab a mais do Pesadelo saiu. Estátuas, Altar e Códice usam os textos que o Breno já tinha dado na #328, em `dados/v2_salao.json > estruturas[].frase`, mostrados num subtítulo novo (`_p_sub`) embaixo do título do painel (título subiu 10 px). `v2_salao_visual` confere que a frase cabe numa linha e fica acima da lista.
+- **Testes:** `v2_salao_visual`, `v2_salao`, `v2_salao_vivo`, `v2_santuario` e `v2_meta` com falhas=0 no Godot 4.4.1 headless; fotos com xvfb fora do repositório; `gdformat -l 160` limpo.
+- **Pendente:** as frases de conquistas, Pesadelo e Rastro de katana estão no dado mas ainda não aparecem na tela (o Códice usa o texto de "fazer"). "Pode mergear" do Alisson para este PR.
+
+_Claude do Alisson (nuvem)_

@@ -143,7 +143,9 @@ func foto(nome: String) -> void:
 
 func geometria() -> void:
 	var cartao := Rect2(36, 26, 888, 488)
-	for controle in [s._p_titulo, s._p_icone_estrutura, s._p_icone, s._p_nome, s._p_frase, s._p_card, s._p_saldo, s._p_aviso, s._p_comprar, s._p_rolagem]:
+	for controle in [
+		s._p_titulo, s._p_sub, s._p_icone_estrutura, s._p_icone, s._p_nome, s._p_frase, s._p_card, s._p_saldo, s._p_aviso, s._p_comprar, s._p_rolagem
+	]:
 		if controle.visible:
 			ok(cartao.encloses(controle.get_rect()), "conteudo dentro do cartao: " + str(controle.name))
 			ok(controle.get_minimum_size().y <= controle.size.y + 0.5, "altura minima medida cabe: " + str(controle.name))
@@ -169,6 +171,8 @@ func saldo_no_painel() -> void:
 	s.abrir_estrutura("estatuas")
 	s._mostrar_item(0)
 	ok(s._p_saldo.text == "ALMAS %d" % Meta.saldo(), "saldo no cabecalho do painel")
+	ok(s._p_sub.text != "" and s._p_sub.get_line_count() == 1, "frase da estrutura no cabecalho, numa linha (#328)")
+	ok(s._p_sub.get_rect().end.y <= s._p_rolagem.position.y, "frase da estrutura acima da lista")
 	ok(Rect2(36, 26, 888, 70).encloses(s._p_saldo.get_rect()), "saldo no cabecalho, ao lado do VOLTAR")
 	ok(Meta.saldo() == 0 and s._p_comprar.disabled and s._p_comprar.text == "SEM ALMAS", "sem almas: botao desligado e diz por que")
 	ok(s._p_comprar.focus_mode == Control.FOCUS_NONE, "desligado nao recebe o foco dourado")

@@ -87,6 +87,7 @@ var _nome_lbl: Label
 # painel de uma estrutura (ou do códice): fica por cima da sala até ESC fechar
 var _painel: Control
 var _p_titulo: Label
+var _p_sub: Label  # subtítulo da estrutura (a "frase" dela em dados/v2_salao.json), embaixo do título
 var _p_lista: VBoxContainer
 var _p_icone_estrutura: TextureRect
 var _p_icone: TextureRect
@@ -330,8 +331,11 @@ func _montar_painel() -> void:
 	_painel.add_child(cartao)
 	_p_icone_estrutura = _caixa_icone(Rect2(56, 36, 48, 48))  # o ícone da estrutura (assets/v2/icones_santuario): 24 px a 2x
 	_painel.add_child(_p_icone_estrutura)
-	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(112, 38, 330, 46), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(112, 28, 330, 46), HORIZONTAL_ALIGNMENT_LEFT)
 	_painel.add_child(_p_titulo)
+	_p_sub = _rotulo("", Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.TEXTO_SECUNDARIO, Rect2(112, 68, 600, 32), HORIZONTAL_ALIGNMENT_LEFT)
+	_p_sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS  # uma linha só
+	_painel.add_child(_p_sub)
 	var fechar := Button.new()
 	fechar.text = "VOLTAR"
 	fechar.position = Vector2(742, 42)
@@ -607,6 +611,7 @@ func abrir_estrutura(id: String) -> void:
 	_p_codice = bool(e.get("conquistas", false))
 	_ajustar_painel()
 	_p_titulo.text = str(e.nome)
+	_p_sub.text = str(e.get("frase", ""))
 	_p_icone_estrutura.texture = Icones.textura(id)
 	_p_itens = _itens_da(e)
 	_montar_lista()
