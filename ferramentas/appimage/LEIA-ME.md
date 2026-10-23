@@ -10,7 +10,7 @@ para abrir com dois cliques.
    executar como programa").
 3. Dois cliques no arquivo, ou `./KIKIU-*-x86_64.AppImage` no terminal.
 
-Os saves ficam em `~/.local/share/godot/app_userdata/K.I.K.I.U`, fora do AppImage: apagar ou trocar o arquivo não
+Os saves ficam em `~/.local/share/kikiu` (ou `$XDG_DATA_HOME/kikiu`), fora do AppImage; quem tinha save em `~/.local/share/godot/app_userdata/K.I.K.I.U` tem a pasta copiada para lá no primeiro boot, e a antiga fica como backup: apagar ou trocar o arquivo não
 perde o progresso.
 
 ## Item no menu de aplicativos

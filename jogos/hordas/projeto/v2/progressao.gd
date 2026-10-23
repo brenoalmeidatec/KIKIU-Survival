@@ -9,16 +9,41 @@ extends RefCounted
 
 const Meta := preload("res://v2/meta.gd")
 const ARG_BETA := "--beta-tester"
+const SEGREDO := "tudo_liberado"  # a chave em Config.segredo
 
 ## Só para teste: lista de argumentos no lugar da linha de comando (null = usa OS.get_cmdline_user_args()).
 static var args_teste = null
 
 
-## Modo beta tester (jogo aberto com `-- --beta-tester`): todos os portais e estruturas ficam liberados em tempo de execução. Não grava
-## nada no save: a trava some só aqui, em aberto() (e curto()/aviso() herdam).
+## Modo beta tester: todos os portais e estruturas ficam liberados em tempo de execução. Não grava nada no save do personagem: a trava
+## some só aqui, em aberto() (e curto()/aviso() herdam). Duas fontes: o argumento `-- --beta-tester` (vale só nesta execução) e o código
+## secreto (Konami ou IDKFA, v2/codigo_secreto.gd), que fica ligado nas opções do jogador (Config, segredo "tudo_liberado") até digitar
+## o código de novo.
 static func beta_tester() -> bool:
+	return por_argumento() or codigo_ligado()
+
+
+static func por_argumento() -> bool:
 	var args: Array = args_teste if args_teste != null else Array(OS.get_cmdline_user_args())
 	return ARG_BETA in args
+
+
+static func codigo_ligado() -> bool:
+	return Config.segredo(SEGREDO)
+
+
+## Liga ou desliga o código secreto (opção salva em Config). Devolve o estado novo.
+static func alternar_codigo() -> bool:
+	var novo := not codigo_ligado()
+	Config.definir_segredo(SEGREDO, novo)
+	return novo
+
+
+## O texto do selo do canto ("" = sem selo): BETA TESTER pelo argumento, CÓDIGO SECRETO só pelo código.
+static func selo() -> String:
+	if por_argumento():
+		return "BETA TESTER"
+	return "CÓDIGO SECRETO" if codigo_ligado() else ""
 
 
 static func regras() -> Dictionary:

@@ -380,6 +380,17 @@ func v(chave: String) -> Variant:
 	return _cfg.get_value("opcoes", chave, item(chave).get("padrao"))
 
 
+## Segredos (seção [segredos] das opções): interruptores que ficam fora de ITENS e não aparecem na tela de Opções. Vivem no arquivo de
+## opções do jogador, nunca no save do personagem. Hoje: "tudo_liberado" (código secreto, v2/codigo_secreto.gd).
+func segredo(chave: String) -> bool:
+	return bool(_cfg.get_value("segredos", chave, false))
+
+
+func definir_segredo(chave: String, valor: bool) -> void:
+	_cfg.set_value("segredos", chave, valor)
+	_cfg.save(arquivo)
+
+
 ## Só na memória (não grava no arquivo): usado pelos prints de teste (--grande, --daltonico) pra não mexer nas opções do jogador.
 func temporario(chave: String, valor: Variant) -> void:
 	_cfg.set_value("opcoes", chave, valor)

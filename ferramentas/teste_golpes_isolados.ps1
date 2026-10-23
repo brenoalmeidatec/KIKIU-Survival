@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 $execucao = Join-Path ([IO.Path]::GetFullPath($AppDataQA)) ('golpes_' + [guid]::NewGuid().ToString('N'))
-$userQA = Join-Path $execucao 'Godot\app_userdata\K.I.K.I.U'
+$userQA = Join-Path $execucao 'kikiu'
 New-Item -ItemType Directory -Path $userQA -Force | Out-Null
 $sentinelas = @{
     'opcoes.cfg' = "[opcoes]`nqualidade=`"baixa`"`nqualidade_auto=true`n[graficos]`nperfil=`"personalizado`"`nbase=`"alto`"`nsombras=`"projetadas`"`n"

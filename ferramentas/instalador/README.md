@@ -9,7 +9,7 @@ menu Iniciar. O atalho na área de trabalho é opcional e começa desmarcado. A 
 atualizações. A `AppId` é fixa: uma nova versão reutiliza a instalação e a entrada de desinstalação.
 
 O desinstalador remove o executável e os atalhos que instalou. Não contém `UninstallDelete` nem toca em `user://`, que
-neste projeto fica em `%APPDATA%\Godot\app_userdata\K.I.K.I.U`. Saves e configurações sobrevivem à desinstalação.
+neste projeto fica em `%APPDATA%\kikiu` (a pasta padrão do Godot, `%APPDATA%\Godot\app_userdata\K.I.K.I.U`, é copiada para lá no primeiro boot e fica como backup). Saves e configurações sobrevivem à desinstalação.
 O preset Windows embute o PCK; se a exportação passar a exigir arquivos auxiliares, eles também precisarão entrar em
 `[Files]` e no teste de instalação.
 

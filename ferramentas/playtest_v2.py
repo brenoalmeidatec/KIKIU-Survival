@@ -15,7 +15,7 @@ Uso (a partir da raiz do repo; só biblioteca padrão do Python 3):
 Tudo depois de um `--` sozinho vai para o jogo, no fim da linha de cada partida (ex.: `-- --playtest_trava=cartas`).
 
 Guarda do save real (só Windows): antes e depois do lote, tira o retrato (sha256) dos arquivos regulares da raiz de `user://`
-(%APPDATA%/Godot/app_userdata/K.I.K.I.U/, sem olhar as pastas playtest/ e logs/). Se algo mudou, o relatório ganha a seção
+(%APPDATA%/kikiu/, a custom_user_dir_name do project.godot; sem olhar as pastas playtest/ e logs/). Se algo mudou, o relatório ganha a seção
 "SAVE REAL ALTERADO" e a saída é 4. `--sem-guarda-save` desliga (para depurar). No início do lote, também apaga os
 `meta_*.cfg*` órfãos de `user://playtest/` com mais de 1 hora.
 
@@ -71,10 +71,25 @@ def nome_user():
     return m.group(1) if m else NOME_USER_PADRAO
 
 
+def nome_pasta_propria():
+    """Nome da pasta de user:// se o project.godot liga use_custom_user_dir (custom_user_dir_name); "" se usa a pasta padrão do Godot."""
+    try:
+        txt = (PROJETO / "project.godot").read_text(encoding="utf-8")
+    except OSError:
+        return ""
+    if not re.search(r"^config/use_custom_user_dir=true", txt, re.M):
+        return ""
+    m = re.search(r'^config/custom_user_dir_name="([^"]+)"', txt, re.M)
+    return m.group(1) if m else ""
+
+
 def pasta_user():
-    """Raiz de user:// no Windows (%APPDATA%/Godot/app_userdata/<nome>); None fora do Windows ou sem %APPDATA%."""
+    """Raiz de user:// no Windows (%APPDATA%/<custom_user_dir_name>, ou %APPDATA%/Godot/app_userdata/<nome> sem pasta própria); None fora do Windows ou sem %APPDATA%."""
     base = os.environ.get("APPDATA") if os.name == "nt" else None
-    return Path(base) / "Godot" / "app_userdata" / nome_user() if base else None
+    if not base:
+        return None
+    pasta = nome_pasta_propria()
+    return Path(base) / pasta if pasta else Path(base) / "Godot" / "app_userdata" / nome_user()
 
 
 def retrato_user(pasta):

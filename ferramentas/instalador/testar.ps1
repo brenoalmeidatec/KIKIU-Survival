@@ -56,7 +56,7 @@ try {
 } finally { $fluxo.Dispose() }
 Confirmar ($nivelExecucao -eq 'asInvoker') 'O instalador nao declara execucao sem elevacao.'
 
-$pastaSave = Join-Path $env:APPDATA 'Godot\app_userdata\K.I.K.I.U'
+$pastaSave = Join-Path $env:APPDATA 'kikiu'
 New-Item -ItemType Directory -Force -Path $pastaSave | Out-Null
 $sentinela = Join-Path $pastaSave "qa379-$([guid]::NewGuid().ToString('N')).txt"
 Set-Content -LiteralPath $sentinela -Value 'Save que a desinstalacao deve preservar.' -Encoding utf8

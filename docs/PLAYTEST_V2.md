@@ -75,7 +75,7 @@ vale mais que o 1 e o 130, para ninguém tomar um lote que mexeu no save do joga
 
 O robô joga com um save temporário (`user://playtest/meta_<pid>.cfg`) e não deveria tocar em nada da raiz de `user://`. Para provar
 isso a cada lote, o runner tira um retrato (sha256) dos arquivos regulares da **raiz** de `user://` antes e depois do lote inteiro
-(Windows: `%APPDATA%\Godot\app_userdata\K.I.K.I.U\`). As subpastas, `playtest/` e `logs/` entre elas, não entram, e só o **conteúdo**
+(Windows: `%APPDATA%\kikiu\`, a `custom_user_dir_name` do `project.godot`). As subpastas, `playtest/` e `logs/` entre elas, não entram, e só o **conteúdo**
 conta: um arquivo regravado igual (mtime novo) não acusa. Se um arquivo mudou, foi criado ou foi apagado, o relatório ganha a seção
 "SAVE REAL ALTERADO" com o mtime de cada um (dizendo se caiu dentro da janela do lote) e a saída é 4. Duas causas possíveis: o jogo
 real estava aberto durante o lote (o normal) ou o robô escreveu onde não devia (bug: confira o desvio `Meta.caminho_save` no `mundo.gd`).
@@ -142,7 +142,7 @@ O vigia e o robô contam **quadros**, não segundos: 600 quadros de relógio par
 trava em ~4 s e o robô desvia e esquiva em outro ritmo, então o desfecho dessas partidas não se compara com o do headless.
 
 A partida que o runner mata por timeout não chega a apagar o save temporário. Fica um `meta_<pid>.cfg` órfão em `user://playtest/`
-(no Windows, `%APPDATA%\Godot\app_userdata\K.I.K.I.U\playtest\`). O runner apaga, no **início** de cada lote, os `meta_*.cfg*` dali com mais de 1 hora (os mais novos podem ser de um lote
+(no Windows, `%APPDATA%\kikiu\playtest\`). O runner apaga, no **início** de cada lote, os `meta_*.cfg*` dali com mais de 1 hora (os mais novos podem ser de um lote
 paralelo ainda vivo, então ficam). Fora do Windows essa limpeza não roda.
 
 ## FPS: o headless é teto, o alvo é o i5-3470
