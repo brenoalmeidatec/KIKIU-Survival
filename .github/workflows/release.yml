@@ -56,7 +56,15 @@ jobs:
           mkdir -p ../build/linux ../build/web
           ~/godot/godot --headless --path . --export-release "Linux" ../build/linux/KIKIU.x86_64
           ~/godot/godot --headless --path . --export-release "Web" ../build/web/index.html
-          test -f ../build/linux/KIKIU.x86_64 && test -f ../build/web/index.html
+          test -s ../build/linux/KIKIU.x86_64 && test -s ../build/web/index.html
+      - name: Smoke do executavel Linux exportado (nativo, sem projeto-fonte)
+        run: bash ferramentas/instalador/testar_linux.sh "$PROJETO/../build/linux/KIKIU.x86_64" "$RUNNER_TEMP/kikiu-linux-smoke/godot.log"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-smoke-logs
+          path: ${{ runner.temp }}/kikiu-linux-smoke
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: linux
@@ -102,8 +110,13 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $v = [regex]::Match((Get-Content project.godot -Raw), 'config/version="([^"]+)"').Groups[1].Value
-          if (-not $v) { throw 'config/version nao encontrado em project.godot' }
-          $ver = "$v.0"
+          if ($v -notmatch '^\d+\.\d+\.\d+(?:\.\d+)?$') { throw 'config/version deve ter tres ou quatro componentes numericos' }
+          $partes = @($v.Split('.') | ForEach-Object {
+            if ([int]$_ -gt 65535) { throw 'Componente de config/version maior que 65535' }
+            [int]$_
+          })
+          while ($partes.Count -lt 4) { $partes += 0 }
+          $ver = $partes -join '.'
           $t = Get-Content export_presets.cfg -Raw
           $t = $t -replace 'application/product_version="[^"]*"', "application/product_version=`"$ver`""
           $t = $t -replace 'application/file_version="[^"]*"', "application/file_version=`"$ver`""
@@ -118,14 +131,31 @@ jobs:
           & $godot --headless --path . --import | Out-Null
           New-Item -ItemType Directory -Force -Path ..\build\win | Out-Null
           & $godot --headless --path . --export-release "Windows Desktop" "..\build\win\KIKIU.exe" | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "Exportacao Windows falhou: codigo $LASTEXITCODE" }
           $exe = Get-Item ..\build\win\KIKIU.exe
+          if ($exe.Length -eq 0) { throw 'O executavel Windows esta vazio' }
           $vi = $exe.VersionInfo
           Write-Host "FileVersion=$($vi.FileVersion) ProductVersion=$($vi.ProductVersion) ProductName=$($vi.ProductName)"
           if (-not $vi.FileVersion -or $vi.FileVersion -eq '0.0.0.0') { throw 'o .exe saiu sem VersionInfo (rcedit nao rodou)' }
+      - name: Compilar instalador Inno Setup (por usuario)
+        run: ./ferramentas/instalador/compilar.ps1 -BaixarCompilador
+      - name: Testar instalacao, atalhos e desinstalacao preservando save
+        run: ./ferramentas/instalador/testar.ps1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installer-smoke-logs
+          path: ${{ runner.temp }}/kikiu-installer-qa
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: jogos/hordas/build/win
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: jogos/hordas/build/instalador/KIKIU-Setup-*.exe
           if-no-files-found: error
 
   # So publica Release a partir da main; nas branches os exports ficam como artefatos do run.
@@ -149,14 +179,18 @@ jobs:
           (cd baixados/windows && zip -qr "$GITHUB_WORKSPACE/pacotes/KIKIU-windows-$TAG.zip" .)
           (cd baixados/linux && zip -qr "$GITHUB_WORKSPACE/pacotes/KIKIU-linux-$TAG.zip" .)
           (cd baixados/web && zip -qr "$GITHUB_WORKSPACE/pacotes/KIKIU-web-$TAG.zip" .)
+          instaladores=(baixados/windows-installer/KIKIU-Setup-*.exe)
+          test "${#instaladores[@]}" -eq 1
+          test -s "${instaladores[0]}"
+          cp -- "${instaladores[0]}" pacotes/
           ls -la pacotes
       - name: Publicar Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           T=${{ steps.v.outputs.tag }}
-          gh release create "$T" pacotes/KIKIU-*.zip --target "$GITHUB_SHA" \
-            --title "$T" --notes "Build automatico do commit $GITHUB_SHA na main. O .exe traz icone e versao."
+          gh release create "$T" pacotes/KIKIU-*.zip pacotes/KIKIU-Setup-*.exe --target "$GITHUB_SHA" \
+            --title "$T" --notes "Build automatico do commit $GITHUB_SHA na main. ZIPs portateis e instalador Windows por usuario (preserva saves ao desinstalar)."
       # Também publica no repositório público só de versões (#106), que o atualizador do jogo consulta primeiro.
       # Sem o segredo RELEASES_TOKEN o passo é pulado sem falhar, para o release do jogo nunca depender dele.
       - name: Publicar também no KIKIU-Releases
@@ -168,5 +202,5 @@ jobs:
             exit 0
           fi
           T=${{ steps.v.outputs.tag }}
-          gh release create "$T" pacotes/KIKIU-*.zip --repo brenoalmeidatec/KIKIU-Releases \
-            --title "$T" --notes "Build automatico do KIKIU-Survival (commit $GITHUB_SHA). O .exe traz icone e versao."
+          gh release create "$T" pacotes/KIKIU-*.zip pacotes/KIKIU-Setup-*.exe --repo brenoalmeidatec/KIKIU-Releases \
+            --title "$T" --notes "Build automatico do KIKIU-Survival (commit $GITHUB_SHA). ZIPs portateis e instalador Windows por usuario (preserva saves ao desinstalar)."

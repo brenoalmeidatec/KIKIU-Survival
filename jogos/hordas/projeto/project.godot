@@ -5,7 +5,7 @@ config_version=5
 
 config/name="K.I.K.I.U"
 config/description="Knights In Kaos, Infinite Upgrades: sobreviva à horda e vença o duelo final."
-config/version="0.1.0"
+config/version="2.0.0"
 config/icon="res://assets/icone/kikiu_256.png"
 config/windows_native_icon="res://assets/icone/kikiu.ico"
 run/main_scene="res://v2/menu_principal.tscn"
