@@ -12,6 +12,7 @@ const Entrada := preload("res://v2/entrada.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const Meta := preload("res://v2/meta.gd")
 const Dificuldade := preload("res://v2/dificuldade.gd")
+const Herois := preload("res://v2/herois.gd")
 const BLOCO := Vector2(960, 540)
 const CORES := [Paleta.BONUS, Paleta.OURO, Paleta.PERIGO]
 
@@ -21,6 +22,7 @@ var _confirmando := false
 var _opcoes: Array = []
 var _cartoes: Array[Button] = []
 var _marcas: Array[Label] = []
+var _recordes: Array[Label] = []  # o recorde do herói escolhido neste mapa, em cada dificuldade (Meta.recorde_hmd)
 var _mapa: Label
 var _aviso: Label
 var _aviso_caixa: Panel
@@ -40,9 +42,12 @@ func _ready() -> void:
 	_montar()
 
 
-func abrir(nome_mapa: String) -> void:
+## `id_mapa` (opcional) mostra em cada cartão o recorde do herói escolhido naquele mapa e dificuldade.
+func abrir(nome_mapa: String, id_mapa := "") -> void:
 	_montar()
 	_mapa.text = "PORTAL · %s" % nome_mapa.to_upper()
+	for i in _opcoes.size():
+		_recordes[i].text = texto_recorde(Meta.recorde_hmd(Herois.escolhido(), id_mapa, str(_opcoes[i].id))) if id_mapa != "" else ""
 	selecionado = 0
 	for i in _opcoes.size():
 		if str(_opcoes[i].id) == Meta.dificuldade():
@@ -108,7 +113,7 @@ func _montar_cartao(pai: Control, i: int) -> void:
 	var d: Dictionary = _opcoes[i]
 	var cartao := Button.new()
 	cartao.position = Vector2(48 + i * 294, 150)
-	cartao.size = Vector2(276, 192)
+	cartao.size = Vector2(276, 204)
 	cartao.focus_mode = Control.FOCUS_NONE
 	cartao.pressed.connect(_selecionar.bind(i))
 	pai.add_child(cartao)
@@ -129,6 +134,18 @@ func _montar_cartao(pai: Control, i: int) -> void:
 	var bonus := roundi((float(d.almas_mult) - 1.0) * 100.0)
 	_texto(cartao, "+%d%%" % bonus, Rect2(18, 148, 110, 24), 16, cor, false, true)
 	_texto(cartao, "ALMAS E XP", Rect2(142, 148, 116, 24), 16, Paleta.TEXTO)
+	var rec := _texto(cartao, "", Rect2(18, 170, 240, 22), 16, Paleta.TEXTO_SECUNDARIO)
+	rec.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_recordes.append(rec)
+
+
+## "RECORDE 12:34 · 850 ABATES", "RECORDE 15:00 · VENCEU" ou "SEM RECORDE" (o melhor do herói no mapa e na dificuldade).
+static func texto_recorde(r: Dictionary) -> String:
+	if not bool(r.get("tem", false)):
+		return "SEM RECORDE"
+	var seg := int(float(r.tempo))
+	var fim := "VENCEU" if bool(r.venceu) else "%d ABATES" % int(r.abates)
+	return "RECORDE %02d:%02d · %s" % [floori(seg / 60.0), seg % 60, fim]
 
 
 func _texto(pai: Control, txt: String, r: Rect2, tam: int, cor: Color, titulo := false, numero := false, quebra := false) -> Label:

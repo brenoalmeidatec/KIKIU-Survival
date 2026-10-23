@@ -451,12 +451,12 @@ func _fluxo_real(i: int, pesadelo: bool) -> void:
 	c.fim_de_partida(true)
 	ok(int(w.resultado.almas) == bruto - 8 and str(w.resultado.dificuldade) == str(IDS[i]), rotulo + " fim real fotografa moeda e dificuldade")
 	ok(
-		res._save_ok and res._ganhas == esperadas and Meta.saldo() == antes + esperadas,
+		res._save_ok and res._ganhas == esperadas and Meta.saldo() == antes + esperadas + res._premios,  # prêmio em almas de conquista nova à parte
 		rotulo + " sinal credita o mesmo valor previsto pelo card uma única vez"
 	)
 	ok(int(Meta.estado().ultima.ganhas) == esperadas and bool(Meta.estado().ultima.pesadelo) == pesadelo, rotulo + " crédito e Pesadelo persistidos no resumo")
 	c.fim_de_partida(true)
-	ok(Meta.saldo() == antes + esperadas, rotulo + " fim repetido não duplica crédito")
+	ok(Meta.saldo() == antes + esperadas + res._premios, rotulo + " fim repetido não duplica crédito")
 	res.free()
 	w.reiniciar()
 	ok(w.xp_coletado == 0.0 and w._almas_gastas == 0 and w.almas_partida == 0, rotulo + " reinício zera moeda base e gastos")

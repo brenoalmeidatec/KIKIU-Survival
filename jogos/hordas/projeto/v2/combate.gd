@@ -118,6 +118,8 @@ var anuncios := 0  # quantos anúncios saíram (testes)
 var ultimo_anuncio := ""
 var ferimentos := 0  # golpes secundários que feriram (testes)
 var dano_causado := 0.0  # soma do dano nos monstros na partida (robô de playtest, #301)
+var dano_por_fonte := {}  # fonte -> dano útil (o que cabia na vida do monstro) na partida: a tela de fim mostra (ranking_dano)
+var fonte_dano := ""  # quem fere agora: cada golpe põe o seu id antes de chamar ferir() ("principal", "especial", "habilidade", "ruptura" ou o id do golpe secundário)
 var dano_sofrido := 0.0  # soma do dano que o herói tomou
 var golpes_tomados := 0
 var us_armas := 0  # microssegundos gastos em armas.atualizar (medição)
@@ -578,6 +580,7 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 
 ## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
 func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
+	fonte_dano = "principal"  # as adagas do Lucas, o crítico explosivo e as ondas da katana contam no ataque principal
 	if str(passo.get("tipo", "melee")) == "adagas":  # o Lucas: as adagas saem (v2/adagas.gd) e acertam por conta própria
 		adagas.lancar(h, origem, dir, passo, true)  # true: o alcance das adagas do golpe cresce com o nível (as do especial Q, não)
 		return 0
@@ -617,6 +620,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		var util := minf(float(dano), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 		var morreu: bool = m.apanhar(dano, emp, float(passo.atordoa) * (1.3 if crit else 1.0) * (1.0 + (forca - 1.0) * 0.5))
 		especial.dano(util)
+		contar_dano("principal", util)
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
 		if crit and float(armas.mods.explode) > 0.0:  # crítico explosivo
 			var raio_e: float = float(cartas.definicao("explode").raio) * (1.0 + (h.m_area - 1.0) * 0.6)
@@ -717,6 +721,7 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 	var util := minf(float(dn), maxf(m.vida, 0.0))  # o que passa da vida dele não conta para a carga do Q
 	var morreu: bool = m.apanhar(dn, dir * empurrao, atordoa)
 	especial.dano(util)
+	contar_dano(fonte_dano, util)
 	ferimentos += 1
 	dano_causado += dn
 	if numero:
@@ -726,6 +731,44 @@ func ferir(m, dano: float, dir: Vector2, empurrao: float, atordoa: float, cor: C
 		m.morrendo = true
 		_fila.append(m)
 	return morreu
+
+
+## Soma o dano útil de uma fonte para a tela de fim (sem fonte conhecida vai para "outros").
+func contar_dano(fonte: String, util: float) -> void:
+	var f := fonte if fonte != "" else "outros"
+	dano_por_fonte[f] = float(dano_por_fonte.get(f, 0.0)) + util
+
+
+## O nome de uma fonte de dano para a tela de fim: a arma do herói, o Q e o E pelo nome do herói, ou o nome da carta do golpe.
+func nome_da_fonte(f: String) -> String:
+	var h = mundo.heroi if mundo != null else null
+	match f:
+		"principal":
+			return str(Herois.heroi(heroi_id).get("arma", "Ataque")).capitalize()
+		"especial":
+			return str(h.esp_nome) if h != null and str(h.esp_nome) != "" else "Especial"
+		"habilidade":
+			return str(h.hab_nome) if h != null and str(h.hab_nome) != "" else "Habilidade"
+		"ruptura":
+			return "Ruptura"
+		"outros":
+			return "Outros"
+	var d: Dictionary = cartas.definicao(f) if cartas != null else {}
+	return str(d.get("nome", f.capitalize()))
+
+
+## O dano da partida por fonte, do maior para o menor: [{fonte, nome, dano, frac (do total)}]. Fontes sem dano ficam de fora.
+func ranking_dano() -> Array:
+	var total := 0.0
+	for f in dano_por_fonte:
+		total += float(dano_por_fonte[f])
+	var out: Array = []
+	for f in dano_por_fonte:
+		var v := float(dano_por_fonte[f])
+		if v >= 1.0:
+			out.append({"fonte": str(f), "nome": nome_da_fonte(str(f)), "dano": v, "frac": v / maxf(total, 1.0)})
+	out.sort_custom(func(a, b): return float(a.dano) > float(b.dano))
+	return out
 
 
 ## Mata quem morreu por golpe secundário ou fogo desde a última vez.
@@ -919,7 +962,9 @@ func fim_de_partida(ganhou: bool) -> void:
 		"mapa": str(mundo.id_mapa),
 		"nivel_mapa": diretor.nivel,
 		"dificuldade": str(preload("res://v2/dificuldade.gd").da_partida(mundo).id),
-		"niveis_mapa": diretor.niveis_total
+		"niveis_mapa": diretor.niveis_total,
+		"heroi": heroi_id,
+		"evolucoes": int(cartas.evolucoes_feitas) if cartas != null else 0,
 	}
 	if ganhou:
 		r["mapa_vencido_agora"] = Meta.marcar_mapa_vencido(str(mundo.id_mapa))  # registra a vitória e preserva o anúncio da conquista no resultado
@@ -982,6 +1027,8 @@ func limpar_partida() -> void:
 	mortes = 0
 	ferimentos = 0
 	dano_causado = 0.0
+	dano_por_fonte.clear()
+	fonte_dano = ""
 	dano_sofrido = 0.0
 	golpes_tomados = 0
 	fim_emitido = false

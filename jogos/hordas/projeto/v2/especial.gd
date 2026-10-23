@@ -346,6 +346,7 @@ func _faixa(h, olhar: float) -> void:
 		if crit:
 			d *= float(c.cfg.golpe.critico.mult)
 		var dn := maxi(1, roundi(d))
+		c.fonte_dano = "especial"
 		if c.ferir(m, d, fora, float(_c.empurrao), float(_c.atordoa), COR_NUM, false):
 			_mortes += 1
 		var ponto: Vector2 = m.pos + Vector2(0, -8)
@@ -462,6 +463,7 @@ func atualizar(dt: float) -> void:
 		if crit:
 			d *= float(c.cfg.golpe.critico.mult)
 		var dn := maxi(1, roundi(d))
+		c.fonte_dano = "especial"
 		if c.ferir(m, d, fora, float(o.empurrao), float(o.atordoa), COR_NUM, false):
 			_mortes += 1
 		if m.chefe:
@@ -526,6 +528,7 @@ func _rodada(h, n: int, p: Dictionary) -> void:
 		"cor": [cor.r, cor.g, cor.b],
 	}
 	var base: Vector2 = h.pos + h.ORIGEM_GOLPE
+	combate.fonte_dano = "especial"
 	combate.adagas.lancar(h, base, Vector2.from_angle(_giro), passo)
 
 
@@ -552,6 +555,7 @@ func _pulso(h, centro: Vector2, raio: float, dano_b: float, emp: float, atordoa:
 		if crit:
 			d *= float(c.cfg.golpe.critico.mult)
 		var dn := maxi(1, roundi(d))
+		c.fonte_dano = "especial"
 		if c.ferir(m, d, fora, emp, atordoa, COR_NUM, false):
 			_mortes += 1
 		if lento > 0.0 and m.chefe:

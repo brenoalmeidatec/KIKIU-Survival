@@ -396,6 +396,7 @@ func _montar_resultado_conquistas(quantidade: int, foto := false) -> Dictionary:
 	m.abates = 70
 	m.xp_coletado = 460.0
 	var partidas_antes := int(Meta._ler().get_value("progressao", "partidas", 0))
+	m.combate.heroi_id = "teste"  # sem herói do catálogo: as conquistas "vença com X" não entram na contagem do layout
 	m.combate.fim_de_partida(true)
 	res._animar(2.0)
 	return {"mundo": m, "resultado": res, "ids": ids, "partidas_antes": partidas_antes}

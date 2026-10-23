@@ -272,6 +272,8 @@ func quadro(h, dt: float, perto: Array) -> void:
 		it.vida = float(it.vida) - dt
 		it.fase = float(it.fase) + dt * 6.0
 		it.pulso = maxf(0.0, float(it.pulso) - dt * 4.0)
+		if it.a != null:
+			pai.combate.fonte_dano = str(it.a.id)  # o dano por golpe da tela de fim (combate.ranking_dano)
 		match str(it.k):
 			"projetil":
 				if int(it.fk) == F_PREPARO:
