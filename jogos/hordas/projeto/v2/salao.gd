@@ -554,7 +554,7 @@ func usar_portal(id: String) -> bool:
 	_alvo_destino = {}
 	_fechar_painel()
 	_mapa_pendente = id
-	_escolha_dificuldade.abrir(str(m.nome))
+	_escolha_dificuldade.abrir(str(m.nome), id)
 	return true
 
 

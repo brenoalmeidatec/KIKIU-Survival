@@ -285,6 +285,7 @@ func _pulso(h, centro: Vector2, raio: float, dano_b: float, atordoa: float, emp:
 			d *= mult_crit
 		var dn := maxi(1, roundi(d))
 		# numero = false: o número e a piscada saem abaixo, com limite (a horda de 100 não vira uma parede de texto)
+		c.fonte_dano = "ruptura"
 		if c.ferir(m, d, fora, emp, atordoa, COR_NUM, false):
 			_mortes += 1
 		if m.chefe and not eco:

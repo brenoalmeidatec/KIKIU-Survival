@@ -5,6 +5,7 @@ extends RefCounted
 ## ({"tempo": s, "combo": n}) traz a partida em andamento e vale se for maior que o recorde.
 
 const Meta := preload("res://v2/meta.gd")
+const UNIDADES := {"abates": "abates", "nivel": "nível", "evolucoes": "evoluções", "partidas": "partidas", "abates_total": "abates"}
 
 
 ## Uma linha por conquista, na ordem do catálogo: {id, nome, fazer, feita, frac (0..1), progresso, premio, icone, icone_premio}.
@@ -28,6 +29,9 @@ static func linhas(vivo := {}) -> Array:
 			"combo":
 				atual = float(combo)
 				unidade = "abates"
+			"abates", "nivel", "evolucoes", "partidas", "abates_total":  # o recorde (ou o total) do save; na pausa, a partida viva se for maior
+				atual = maxf(float(r.get(str(c.condicao), 0)), float(vivo.get(str(c.condicao), 0)))
+				unidade = UNIDADES[str(c.condicao)]
 			_:
 				atual = 1.0 if feita else 0.0
 				unidade = "chefe"
@@ -55,6 +59,16 @@ static func fazer(c: Dictionary) -> String:
 			return "Sobreviver %d min numa partida" % roundi(float(c.get("limite", 0)) / 60.0)
 		"combo":
 			return "Fazer um combo de %d abates" % int(c.get("limite", 0))
+		"abates":
+			return "Derrubar %d monstros numa partida" % int(c.get("limite", 0))
+		"nivel":
+			return "Chegar ao nível %d numa partida" % int(c.get("limite", 0))
+		"evolucoes":
+			return "Fazer %d %s numa partida" % [int(c.get("limite", 0)), "evolução" if int(c.get("limite", 0)) == 1 else "evoluções"]
+		"partidas":
+			return "Jogar %d partidas" % int(c.get("limite", 0))
+		"abates_total":
+			return "Derrubar %d monstros no total" % int(c.get("limite", 0))
 	return str(c.get("desc", "Vencer o chefe"))
 
 

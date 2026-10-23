@@ -369,6 +369,7 @@ func atualizar(dt: float) -> void:
 		var vel_a: float = h.m_vel_ataque
 		for id in ativas:
 			var a: Dictionary = ativas[id]
+			combate.fonte_dano = str(id)  # o dano por golpe da tela de fim (combate.ranking_dano)
 			match str(a.tipo):
 				"orbita":
 					_orbita(a, h, dt, vel_a)
@@ -622,6 +623,7 @@ func _corvos_mover(h, dt: float) -> void:
 				c_z[i] += 6.0
 				var dano: float = float(st.dano) * h.m_dano
 				var fora: Vector2 = (alvo.pos - h.pos).normalized()
+				combate.fonte_dano = str(a.id)
 				combate.ferir(alvo, dano, fora, 20.0, 0.12, _cor_num(a.cor))
 				_acertou("corvos")
 				fx.faiscas(alvo.pos + Vector2(0, -8), fora, 3, Color(0.8, 0.5, 1.0), 110.0)
@@ -687,6 +689,7 @@ func _raio(a: Dictionary, h, vel_a: float, dt: float) -> void:
 
 
 func _cair_raio(a: Dictionary, h, alvo) -> void:
+	combate.fonte_dano = str(a.id)
 	var st: Dictionary = a.st
 	var dano: float = float(st.dano) * h.m_dano
 	var pontos: Array = [alvo.pos + Vector2(randf_range(-26, 26), -280), alvo.pos + Vector2(0, -8)]
@@ -837,6 +840,7 @@ func _explodir_runa(i: int, a: Dictionary, h) -> void:
 	var k_area: float = 1.0 + (h.m_area - 1.0) * 0.6
 	var raio := float(st.explosao) * k_area
 	var dano: float = float(st.dano) * h.m_dano
+	combate.fonte_dano = str(a.id)
 	_dano_area(p, raio, dano, 160.0, 0.3, a.cor, "runa", float(st.get("lentidao", 0.0)))
 	var fr := Anim.de(str(a.id))
 	if fr.has("explosao"):  # o estouro do glifo toca no instante do dano, do tamanho da área real
@@ -956,6 +960,7 @@ func _ondas_mover(dt: float) -> void:
 			if absf(rel.cross(dir)) > meia + m.raio:
 				continue
 			m.ultimo_proj = id
+			combate.fonte_dano = "principal"  # ondas e lanças são modificadores do ataque principal
 			combate.ferir(m, w_dano[i], dir, 90.0, 0.15, Color(0.85, 1.0, 0.95))
 			_acertou("lanca" if w_tipo[i] == 1 else "onda")
 			fx.faiscas(m.pos + Vector2(0, -8), dir, 4, Color(0.8, 1.0, 0.95), 130.0)

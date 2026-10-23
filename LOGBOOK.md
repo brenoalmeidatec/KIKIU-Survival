@@ -2490,3 +2490,14 @@ _Claude do Alisson (nuvem)_
 - **Pendente:** "pode mergear" do Alisson. Se o Médio/Difícil ficarem fáceis demais, o botão é `folego.por_nivel` (crescimento) ou `folego_cheio` (enche), sem mexer em código.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-23 · Claude do Alisson (nuvem) · Extras da RC: dano por golpe, conquistas 11 → 25 e recorde por herói x mapa x dificuldade
+
+- **Pedido (Alisson):** os três itens "antes da RC" da pesquisa de survivors (PR #414). As outras três ideias viraram a issue #416 (v3).
+- **Dano por golpe na tela de fim:** `combate.dano_por_fonte` soma o dano útil por fonte; cada golpe põe `combate.fonte_dano` antes do `ferir()` ("principal", "especial", "habilidade", "ruptura" ou o id do golpe secundário; as adagas guardam a fonte do arremesso e o fogo guarda quem acendeu). `resultado_meta.gd` mostra os 5 maiores à direita dos números, com nome, total, % e barra que cresce junto com as almas.
+- **Conquistas:** 14 novas em `dados/v2_meta.json` (abates, nível e evoluções numa partida, partidas jogadas, abates no total, combo 150, 10 min e "vença com" cada herói). Prêmios novos: `almas` (entra no saldo uma vez) e `nivel_max` (+1 nível no máximo de uma melhoria do santuário; `Meta.melhorias()` já devolve o máximo somado). Com mais de 6 conquistas de uma vez, a tela de fim mostra 5 e "+N conquistas".
+- **Recorde:** `[recordes_hmd]` no save guarda, por herói x mapa x dificuldade, o maior tempo, os abates dele e se já venceu. A escolha de dificuldade mostra "RECORDE 12:34 · VENCEU" / "· 618 ABATES" / "SEM RECORDE" em cada cartão (cartão 4 px mais alto).
+- **Testes:** novo `testes/v2_rc_extras` (falhas=0); `v2_meta` (fixture sem herói do catálogo), `v2_conquistas` e `v2_escolha_dificuldade` com falhas=0; suíte inteira no Godot 4.4.1 headless; `gdformat -l 160` e ortografia limpos. Fotos (xvfb) anexadas no PR, fora do repositório.
+- **Pendente:** "pode mergear" do Alisson. Depois do merge, liberar as travas na #348.
+
+_Claude do Alisson (nuvem)_
