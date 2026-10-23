@@ -5,6 +5,8 @@ extends RefCounted
 ## Várias subidas seguidas viram várias escolhas, uma depois da outra. A curva de nível fica em dados/v2_combate.json ("xp", "nivel") e as
 ## cartas em dados/v2_cartas.json.
 
+const Dificuldade := preload("res://v2/dificuldade.gd")
+
 var combate
 var cfg: Dictionary
 var melhorias := {}  # id da carta -> quantas vezes pegou
@@ -41,6 +43,16 @@ static func bonus_por_nivel(nivel: int, regra: Dictionary) -> float:
 	return minf(float(maxi(nivel - 1, 0)) * float(regra.por_nivel), float(regra.teto))
 
 
+## Cada nível acima do 1 soma folego.por_nivel cargas ao fôlego máximo, até o teto (dados/v2_combate.json); soma só a diferença do nível
+## novo, então o santuário e o herói continuam valendo por baixo. No Médio e no Difícil (folego_cheio) o fôlego também enche.
+func _folego_do_nivel(h) -> void:
+	var regra: Dictionary = cfg.folego.get("por_nivel", {})
+	if not regra.is_empty():
+		h.folego_max += bonus_por_nivel(h.nivel, regra) - bonus_por_nivel(h.nivel - 1, regra)
+	if bool(Dificuldade.da_partida(combate.mundo).get("folego_cheio", false)):
+		h.encher_folego()
+
+
 func zerar() -> void:
 	melhorias.clear()
 	pendentes = 0
@@ -66,6 +78,7 @@ func ganhar_xp(v: float) -> void:
 		h.nivel += 1
 		h.xp_proximo = xp_para(h.nivel)
 		h.curar(cura_por_nivel())
+		_folego_do_nivel(h)
 		pendentes += 1
 		combate.nivel_subiu(h.nivel)
 	if pendentes > 0 and combate.lento_acao == "" and not combate.pausado and combate.jogo == "jogando":

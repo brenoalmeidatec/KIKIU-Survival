@@ -26,6 +26,7 @@ const ONDA := [1.0, 0.9, 0.8]
 const CHEFE := [1.0, 0.95, 0.9]
 const CUSTO := [0.0, 0.22, 0.3]
 const CALOR := [0.0, 1.5, 2.0]
+const ENCHE := [false, true, true]
 const PASSO := 1.0 / 60.0
 const MONSTRO := "inimigo_cao_ossos"
 
@@ -137,6 +138,7 @@ func _ready() -> void:
 		_diretor(i, false)
 		_chefe(i, false)
 		_ataque(i)
+		_folego_nivel_e_bau(i)
 		_preparar(str(IDS[i]), true)
 		_monstros(i, true)
 		_diretor(i, true)
@@ -340,6 +342,43 @@ func _ataque(i: int) -> void:
 	h.golpe_calor_t = float(CALOR[i])
 	w.reiniciar()
 	ok(h.golpe_calor_t == 0.0 and h.folego == h.folego_max, str(IDS[i]) + " reinício limpa calor e recupera fôlego")
+
+
+## Subir de nível aumenta o fôlego máximo em todas (até o teto); no Médio e no Difícil subir de nível e abrir baú também enchem o fôlego.
+func _folego_nivel_e_bau(i: int) -> void:
+	var h = w.heroi
+	var id := str(IDS[i])
+	var regra: Dictionary = w.combate.cfg.folego.por_nivel
+	w.reiniciar()
+	w.combate.limpar_partida()
+	w.combate.diretor.ligado = false
+	h.imortal = true
+	var base := float(h.folego_max)
+	h.folego = 0.4
+	h.cansado = true
+	h.golpe_calor_t = float(CALOR[i])
+	w.combate.progresso.ganhar_xp(float(h.xp_proximo))
+	ok(h.nivel == 2, id + " o XP sobe um nível")
+	perto(h.folego_max, base + float(regra.por_nivel), id + " fôlego máximo cresce no nível 2")
+	if ENCHE[i]:
+		ok(h.folego == h.folego_max and not h.cansado and h.golpe_calor_t == 0.0, id + " subir de nível enche o fôlego e tira o cansaço")
+	else:
+		perto(h.folego, 0.4, id + " Fácil não enche o fôlego ao subir de nível")
+	for n in 40:
+		w.combate.progresso.ganhar_xp(float(h.xp_proximo))
+	perto(h.folego_max, base + float(regra.teto), id + " fôlego máximo para no teto")
+	h.folego = 0.4
+	w.combate.baus.soltar(h.pos + Vector2(400, 0), 1.0, 1)
+	for b in w.combate.baus.lista:
+		if b.ativo:
+			w.combate.baus.abrir(b)
+	if ENCHE[i]:
+		ok(h.folego == h.folego_max, id + " abrir baú enche o fôlego")
+	else:
+		perto(h.folego, 0.4, id + " Fácil não enche o fôlego no baú")
+	w.combate.baus.fechar()
+	w.reiniciar()
+	perto(h.folego_max, base, id + " reinício volta o fôlego máximo ao do nível 1")
 
 
 ## O XP residual sozinho esconde o que já virou níveis. Soma os custos consumidos sem abrir/selecionar cartas na fixture.

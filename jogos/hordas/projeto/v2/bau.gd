@@ -192,6 +192,8 @@ func abrir(b: Dictionary) -> void:
 	b.brilho.visible = false
 	b.luz.enabled = false
 	abertos += 1
+	if bool(preload("res://v2/dificuldade.gd").da_partida(mundo).get("folego_cheio", false)):
+		mundo.heroi.encher_folego()
 	var n: int = int(b.forcar)
 	var fixo := n > 0
 	if n <= 0:
