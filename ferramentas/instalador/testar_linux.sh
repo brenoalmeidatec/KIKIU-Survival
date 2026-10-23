@@ -37,7 +37,9 @@ if [ "$codigo" -ne 0 ]; then
 fi
 test -s "$log"
 grep -q 'Godot Engine v4.4.1.stable' "$log"
-if grep -Eiq '(^|[[:space:]])ERROR:|SCRIPT ERROR|Parse Error|Failed loading resource|Error loading resource|Cannot open file|no valid main pack' "$log" "$log.stdout"; then
+# O --quit-after encerra no meio da cena e o motor reclama de recurso ainda em uso na saida: isso nao e erro do pacote.
+if cat "$log" "$log.stdout" | grep -Eiv 'resources still in use at exit' |
+  grep -Eiq '(^|[[:space:]])ERROR:|SCRIPT ERROR|Parse Error|Failed loading resource|Error loading resource|Cannot open file|no valid main pack'; then
   echo 'Smoke Linux encontrou erro do motor, script ou recurso no pacote exportado.' >&2
   exit 1
 fi
