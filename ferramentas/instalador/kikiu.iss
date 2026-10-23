@@ -47,4 +47,4 @@ Name: "{group}\K.I.K.I.U"; Filename: "{app}\KIKIU.exe"; WorkingDir: "{app}"
 Name: "{autodesktop}\K.I.K.I.U"; Filename: "{app}\KIKIU.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 ; Sem UninstallDelete: so os arquivos/atalhos registrados pelo Inno sao removidos.
-; user:// (%APPDATA%\Godot\app_userdata\K.I.K.I.U) permanece intacto.
+; user:// (%APPDATA%\kikiu; a pasta antiga %APPDATA%\Godot\app_userdata\K.I.K.I.U e migrada pelo jogo, que a mantem) permanece intacto.

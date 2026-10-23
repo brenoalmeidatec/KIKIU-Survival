@@ -18,6 +18,7 @@ const Personagens := preload("res://v2/personagens.gd")
 const Herois := preload("res://v2/herois.gd")
 const Entrada := preload("res://v2/entrada.gd")  # garante as ações de controle (Enter e A confirmam, ESC e B voltam)
 const Pausa := preload("res://v2/pausa.tscn")
+const CodigoSecreto := preload("res://v2/codigo_secreto.gd")  # Konami ou IDKFA: liga o "tudo liberado" (Progressao)
 const Trilha := preload("res://v2/trilha.gd")
 const Icones := preload("res://v2/icones_santuario.gd")
 const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas do Códice (a mesma da pausa)
@@ -78,6 +79,9 @@ var _destino := Vector2.INF  # clique numa estrutura ou portal: anda até ele e 
 var _alvo_destino := {}
 var _prompt: Label
 var _prompt_de := ""
+var recarregar_ao_codigo := true  # gancho: os testes desligam a remontagem da sala
+var codigo  # o código secreto (codigo_secreto.gd): o último filho, para ver a entrada antes do resto
+var _selo: Label  # BETA TESTER / CÓDIGO SECRETO: só existe com o modo ligado
 var _prompt_acao := ""
 var _prompt_glifo: Control
 var _saldo_lbl: Label
@@ -143,6 +147,31 @@ func _ready() -> void:
 	_escolha_dificuldade.confirmou.connect(_confirmar_dificuldade)
 	_escolha_dificuldade.cancelou.connect(func(): _mapa_pendente = "")
 	_atualizar_textos()
+	codigo = CodigoSecreto.new()
+	codigo.bloqueado = func() -> bool: return pausa.aberto or _escolha_dificuldade.visible or _entrando or _painel.visible
+	codigo.alternado.connect(_codigo_alternou)
+	add_child(codigo)
+
+
+## Selo do modo "tudo liberado" (argumento --beta-tester ou código secreto; nada vai para o save), ao lado do nome do personagem.
+func _atualizar_selo() -> void:
+	var texto := Progressao.selo()
+	if texto == "":
+		if _selo != null:
+			_selo.queue_free()
+			_selo = null
+		return
+	if _selo == null:
+		_selo = _rotulo(texto, Dados.fonte_texto, 13, COR_AVISO, Rect2(262, 2, 200, 17), HORIZONTAL_ALIGNMENT_LEFT)
+		add_child(_selo)
+	_selo.text = texto
+
+
+## O código foi digitado: o selo muda na hora e a sala é montada de novo, porque cadeados, nomes e luzes dos portais são desenhados uma vez.
+func _codigo_alternou(_ligado: bool) -> void:
+	_atualizar_selo()
+	if is_inside_tree() and recarregar_ao_codigo:
+		get_tree().reload_current_scene.call_deferred()
 
 
 func _ajustar_janela() -> void:
@@ -265,9 +294,7 @@ func _montar_hud() -> void:
 	add_child(topo)
 	add_child(_rotulo("SANTUÁRIO", Dados.fonte_titulo, 37, COR_OURO, Rect2(24, 3, 230, 44), HORIZONTAL_ALIGNMENT_LEFT))
 	_nome_lbl = _rotulo(Personagens.nome(Personagens.ativo()), Dados.fonte_texto, 16, COR_TEXTO, Rect2(258, 19, 330, 24), HORIZONTAL_ALIGNMENT_LEFT)
-	if Progressao.beta_tester():  # selo do modo de teste (tudo liberado, nada gravado)
-		var selo := _rotulo("BETA TESTER", Dados.fonte_texto, 13, COR_AVISO, Rect2(262, 2, 200, 17), HORIZONTAL_ALIGNMENT_LEFT)
-		add_child(selo)
+	_atualizar_selo()
 	_saldo_lbl = _rotulo("", Dados.fonte_titulo, 37, COR_ALMA, Rect2(610, 3, 326, 44), HORIZONTAL_ALIGNMENT_RIGHT)
 	_prompt = _rotulo("", Dados.fonte_texto, 16, COR_FOCO, Rect2(0, 0, 440, 26), HORIZONTAL_ALIGNMENT_CENTER)
 	_prompt.add_theme_stylebox_override("normal", _caixa(Paleta.PAINEL, Paleta.BORDA))

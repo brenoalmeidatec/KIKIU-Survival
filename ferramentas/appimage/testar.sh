@@ -17,6 +17,14 @@ cd "$isolado/pacote"
 export XDG_DATA_HOME="$isolado/dados"
 export XDG_CONFIG_HOME="$isolado/config"
 export XDG_CACHE_HOME="$isolado/cache"
+# Save de uma versao antiga na pasta padrao do Godot: o jogo exportado deve copiar para a pasta propria (kikiu) sem mexer na antiga.
+antiga="$isolado/dados/godot/app_userdata/K.I.K.I.U"
+nova="$isolado/dados/kikiu"
+mkdir -p "$antiga"
+printf '[opcoes]
+mostrar_fps=true
+' > "$antiga/opcoes.cfg"
+hash_antiga="$(sha256sum "$antiga/opcoes.cfg")"
 set +e
 timeout --signal=TERM --kill-after=10s 120s ./KIKIU.AppImage --appimage-extract-and-run --headless --quit-after 120 --log-file "$log" > "$log.stdout" 2>&1
 codigo=$?
@@ -35,4 +43,8 @@ if cat "$log" "$log.stdout" | grep -Eiv 'resources still in use at exit' |
   echo 'Smoke do AppImage encontrou erro do motor, script ou recurso.' >&2
   exit 1
 fi
-echo 'Smoke do AppImage: executou a cena principal via AppRun com PCK embutido e save isolado.'
+# Migracao do save (scripts/hordas/migracao_save.gd): copiou para a pasta propria, gravou o marcador e deixou a antiga intacta.
+test -f "$nova/migrado_da_pasta_godot.txt"
+grep -q 'mostrar_fps=true' "$nova/opcoes.cfg"
+test "$hash_antiga" = "$(sha256sum "$antiga/opcoes.cfg")"
+echo 'Smoke do AppImage: executou a cena principal via AppRun com PCK embutido, save isolado e migracao do save antigo.'

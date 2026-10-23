@@ -34,6 +34,8 @@ const ORNAMENTO_Y := 196.0  # a linha dourada entre o logo e os botões
 const LOGO_ESCALA := 1.4  # o logo é desenhado na fonte do título (TAM_LOGO) e ampliado: marca de jogo, não só um texto
 const INTRO_T := 1.4  # s da entrada: a tela sai do preto, o logo desce e os botões sobem um a um
 const Glifos := preload("res://v2/glifos.gd")
+const CodigoSecreto := preload("res://v2/codigo_secreto.gd")  # Konami ou IDKFA: liga o "tudo liberado" (Progressao)
+const Progressao := preload("res://v2/progressao.gd")
 
 var ao_jogar := Callable()  # gancho: os testes trocam a ida ao santuário; vazio = troca a cena
 var pausa  # o menu de pausa (pausa.gd) no modo do título: Ajustes, Créditos e a confirmação de Sair
@@ -47,6 +49,8 @@ var aviso_versao: Button  # "Versão nova disponível": só existe depois que a 
 var abrir_url := Callable()  # gancho: os testes trocam a abertura da página no navegador; vazio = OS.shell_open
 var _url_versao := ""
 var _logo: Label
+var codigo  # o código secreto (codigo_secreto.gd): o último filho, para ver a entrada antes dos botões
+var _selo: Label  # BETA TESTER / CÓDIGO SECRETO, no canto: só existe com o modo ligado
 var _seletor: Node2D  # os dois losangos dourados que marcam o botão com foco
 var _seletor_alvo := Vector2.ZERO
 var _t := 0.0
@@ -70,6 +74,11 @@ func _ready() -> void:
 	add_child(atualizador)
 	atualizador.nova_versao.connect(_mostrar_aviso_versao)
 	atualizador.verificar()  # sem carimbo (build dev) ou com a opção desligada, não faz nada
+	codigo = CodigoSecreto.new()
+	codigo.bloqueado = func() -> bool: return pausa.aberto
+	codigo.alternado.connect(func(_ligado: bool) -> void: _atualizar_selo())
+	add_child(codigo)
+	_atualizar_selo()
 
 
 func _ajustar_janela() -> void:
@@ -290,6 +299,20 @@ func _estilo_botao(b: Button) -> void:
 
 func _lembrar(b: Button) -> void:
 	_ultimo = b
+
+
+## O selo do modo "tudo liberado" no canto de cima à esquerda: aparece e some com o modo.
+func _atualizar_selo() -> void:
+	var texto := Progressao.selo()
+	if texto == "":
+		if _selo != null:
+			_selo.queue_free()
+			_selo = null
+		return
+	if _selo == null:
+		_selo = _texto(texto, TAM_DICA, false, Paleta.VALOR, HORIZONTAL_ALIGNMENT_LEFT, Rect2(14, 10, 300, 20))
+		add_child(_selo)
+	_selo.text = texto
 
 
 func _devolver_foco() -> void:

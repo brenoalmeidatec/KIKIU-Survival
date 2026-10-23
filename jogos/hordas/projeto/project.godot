@@ -8,6 +8,8 @@ config/description="Knights In Kaos, Infinite Upgrades: sobreviva à horda e ven
 config/version="2.0.0"
 config/icon="res://assets/icone/kikiu_256.png"
 config/windows_native_icon="res://assets/icone/kikiu.ico"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="kikiu"
 run/main_scene="res://v2/menu_principal.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 boot_splash/show_image=true
@@ -22,6 +24,7 @@ enabled=PackedStringArray("res://addons/kikiu_versao/plugin.cfg")
 
 [autoload]
 
+MigracaoSave="*res://scripts/hordas/migracao_save.gd"
 Dados="*res://scripts/hordas/dados.gd"
 Som="*res://scripts/hordas/som.gd"
 Rede="*res://scripts/hordas/rede.gd"

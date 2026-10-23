@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 $execucao = Join-Path ([IO.Path]::GetFullPath($AppDataQA)) ('gifs_' + [guid]::NewGuid().ToString('N'))
-$userQA = Join-Path $execucao 'Godot\app_userdata\K.I.K.I.U'
+$userQA = Join-Path $execucao 'kikiu'
 New-Item -ItemType Directory -Path $userQA -Force | Out-Null
 $sentinelas = @{
     # O autoload migraria e gravaria essa opção antiga antes do _ready do helper.

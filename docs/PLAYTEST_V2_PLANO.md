@@ -20,7 +20,7 @@ Uma rodada de agentes levantou os fatos (Haiku), montou o plano (Sonnet) e procu
 - `opcoes.cfg` não é desviado (é compartilhado com a v1); o robô não grava nele hoje.
 - Partida morta por timeout deixa `user://playtest/meta_<pid>.cfg` órfão. Limpar órfãos de **qualquer** pid apagaria o de um lote
   rodando em paralelo: limpe só arquivos com mais de 1 hora, no início do lote.
-- `user://` no Windows: `%APPDATA%\Godot\app_userdata\K.I.K.I.U\` (`project.godot` não usa `use_custom_user_dir`).
+- `user://` no Windows: `%APPDATA%\kikiu\` (o `project.godot` usa `use_custom_user_dir` desde a migração de 2026-10-23; antes era `%APPDATA%\Godot\app_userdata\K.I.K.I.U\`, e o jogo copia a antiga no primeiro boot).
 
 ## Próximos passos
 Na nuvem (sem Godot):
