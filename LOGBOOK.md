@@ -2487,5 +2487,24 @@ _Claude do Alisson (nuvem)_
 - **v3:** mais heróis, modo infinito, maldição/calor, fusão de golpes, overclock, coleção, missões longas, equipamento, objetivo no mapa, retomar partida, coop local.
 - **Código aberto:** os clones Godot achados são tutoriais menores que a v2; um é GPL v3 (copyleft, não usar). Nada para importar.
 - **Pendente:** o Alisson escolher o que entra antes do congelamento de domingo.
+## 2026-10-23 · Claude do Alisson (nuvem) · Fôlego enche ao subir de nível e no baú (M/D) e cresce por nível
+
+- **Pedido (Alisson):** no Médio e no Difícil, subir de nível ou ganhar baú enche o fôlego; e o fôlego fica maior a cada nível, até o último.
+- **Achado:** o fôlego máximo não crescia por nível (só santuário e herói). Subir de nível só curava vida.
+- **Feito (PR #415):** `dados/v2_combate.json > folego.por_nivel` = +0,1 carga por nível acima do 1, até +1,9 (nível 20, o `nivel_fim` das cartas): 3 → 4,9 cargas, nas três dificuldades e por cima do santuário. `dados/v2_dificuldade.json > folego_cheio` (true em M/D, false no Fácil). `heroi.encher_folego()` enche e tira cansaço, calor do golpe e atraso; chamado por `progresso._folego_do_nivel` e no início de `bau.abrir`. Reinício volta ao fôlego do nível 1.
+- **Testes:** `v2_dificuldade` ganhou o caso de nível, teto, reinício e baú por dificuldade (inverter a regra derruba 4 checagens). Suíte completa local 140/140, CI 7/7 no `c3304fc`, `gdformat` limpo.
+- **Robô (3 heróis × floresta e cidade, 360 s, semente 1, antes → depois):** Médio: ataque travado 8 → 2 s somados, cansado 23 → 2 s, dano sofrido 425 → 260, 1 morte → 0 (Lucas na cidade). Difícil: travado 40 → 2 s, cansado 61 → 3 s, dano 316 → 287, 0 mortes nos dois. O robô passa do nível 20 em ~3 min, então nele o teto chega cedo; gente sobe mais devagar.
+- **Pendente:** "pode mergear" do Alisson. Se o Médio/Difícil ficarem fáceis demais, o botão é `folego.por_nivel` (crescimento) ou `folego_cheio` (enche), sem mexer em código.
+
+_Claude do Alisson (nuvem)_
+
+## 2026-10-23 · Claude do Alisson (nuvem) · Extras da RC: dano por golpe, conquistas 11 → 25 e recorde por herói x mapa x dificuldade
+
+- **Pedido (Alisson):** os três itens "antes da RC" da pesquisa de survivors (PR #414). As outras três ideias viraram a issue #416 (v3).
+- **Dano por golpe na tela de fim:** `combate.dano_por_fonte` soma o dano útil por fonte; cada golpe põe `combate.fonte_dano` antes do `ferir()` ("principal", "especial", "habilidade", "ruptura" ou o id do golpe secundário; as adagas guardam a fonte do arremesso e o fogo guarda quem acendeu). `resultado_meta.gd` mostra os 5 maiores à direita dos números, com nome, total, % e barra que cresce junto com as almas.
+- **Conquistas:** 14 novas em `dados/v2_meta.json` (abates, nível e evoluções numa partida, partidas jogadas, abates no total, combo 150, 10 min e "vença com" cada herói). Prêmios novos: `almas` (entra no saldo uma vez) e `nivel_max` (+1 nível no máximo de uma melhoria do santuário; `Meta.melhorias()` já devolve o máximo somado). Com mais de 6 conquistas de uma vez, a tela de fim mostra 5 e "+N conquistas".
+- **Recorde:** `[recordes_hmd]` no save guarda, por herói x mapa x dificuldade, o maior tempo, os abates dele e se já venceu. A escolha de dificuldade mostra "RECORDE 12:34 · VENCEU" / "· 618 ABATES" / "SEM RECORDE" em cada cartão (cartão 4 px mais alto).
+- **Testes:** novo `testes/v2_rc_extras` (falhas=0); `v2_meta` (fixture sem herói do catálogo), `v2_conquistas` e `v2_escolha_dificuldade` com falhas=0; suíte inteira no Godot 4.4.1 headless; `gdformat -l 160` e ortografia limpos. Fotos (xvfb) anexadas no PR, fora do repositório.
+- **Pendente:** "pode mergear" do Alisson. Depois do merge, liberar as travas na #348.
 
 _Claude do Alisson (nuvem)_

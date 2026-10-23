@@ -17,6 +17,10 @@ const SANTUARIO := "res://v2/salao.tscn"
 const TEMPO_ANIM := 1.4  # s para as almas subirem até o total
 const TEMPO_ACEITA := 0.8  # s antes de aceitar continuar (evita o clique de quem estava segurando o golpe)
 const TEMPO_AVISO := 2.6
+const MAX_NOVAS := 6  # conquistas que cabem embaixo das almas (três linhas de duas)
+const DANO_LINHAS := 5  # golpes no quadro "dano por golpe" (os maiores; o resto soma em "outros" só no total)
+const DANO_X := 500.0
+const DANO_LARG := 380.0
 const TAM_TITULO := Paleta.TITULO_GRANDE
 const TAM_TEXTO := Paleta.TEXTO_TAMANHO
 const COR_OURO := Paleta.OURO
@@ -45,6 +49,11 @@ var _saldo: Label
 var _novas: Label
 var _botao: Control
 var _aviso: Label
+var _dano_tit: Label
+var _dano_nomes: Array[Label] = []
+var _dano_pct: Array[Label] = []
+var _dano_barras: Array[ColorRect] = []
+var _dano_fundos: Array[ColorRect] = []
 
 
 func montar(m) -> void:
@@ -65,15 +74,16 @@ func montar(m) -> void:
 	_titulo.size = Vector2(LARG, 72)
 	_res.add_child(_titulo)
 	_linhas = _rotulo("Tempo\nAbates\nMaior combo\nNível", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_LEFT)
-	_linhas.position = Vector2(250, 150)
+	_linhas.position = Vector2(90, 150)
 	_linhas.size = Vector2(230, 140)
 	_linhas.add_theme_constant_override("line_spacing", 12)
 	_res.add_child(_linhas)
 	_valores = _rotulo("", TAM_TEXTO, false, Paleta.VALOR, HORIZONTAL_ALIGNMENT_RIGHT)
-	_valores.position = Vector2(480, 150)
+	_valores.position = Vector2(220, 150)
 	_valores.size = Vector2(230, 140)
 	_valores.add_theme_constant_override("line_spacing", 12)
 	_res.add_child(_valores)
+	_montar_dano()
 	_almas_tit = _rotulo("ALMAS GANHAS", Paleta.TITULO_MEDIO, true, COR_ALMA, HORIZONTAL_ALIGNMENT_CENTER)
 	_almas_tit.position = Vector2(0, 302)
 	_almas_tit.size = Vector2(LARG, 40)
@@ -112,6 +122,69 @@ func montar(m) -> void:
 	add_child(_aviso)
 	if mundo.has_signal("partida_terminou"):
 		mundo.connect("partida_terminou", _ao_terminar)
+
+
+## O quadro "dano por golpe" (à direita dos números): nome, % do total e uma barra por golpe, do maior para o menor.
+func _montar_dano() -> void:
+	_dano_tit = _rotulo("DANO POR GOLPE", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_LEFT)
+	_dano_tit.position = Vector2(DANO_X, 128)
+	_dano_tit.size = Vector2(DANO_LARG, 20)
+	_res.add_child(_dano_tit)
+	for i in DANO_LINHAS:
+		var y := 152.0 + i * 28.0
+		var nome := _rotulo("", TAM_TEXTO, false, Paleta.TEXTO, HORIZONTAL_ALIGNMENT_LEFT)
+		nome.position = Vector2(DANO_X, y)
+		nome.size = Vector2(DANO_LARG - 80, 20)
+		nome.clip_text = true
+		_res.add_child(nome)
+		var pct := _rotulo("", TAM_TEXTO, false, Paleta.VALOR, HORIZONTAL_ALIGNMENT_RIGHT)
+		pct.position = Vector2(DANO_X + DANO_LARG - 80, y)
+		pct.size = Vector2(80, 20)
+		_res.add_child(pct)
+		var fundo := ColorRect.new()
+		fundo.color = Paleta.alfa(Paleta.BORDA, 0.6)
+		fundo.position = Vector2(DANO_X, y + 20)
+		fundo.size = Vector2(DANO_LARG, 3)
+		fundo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_res.add_child(fundo)
+		var barra := ColorRect.new()
+		barra.color = COR_OURO if i == 0 else Paleta.FOCO
+		barra.position = fundo.position
+		barra.size = Vector2(0, 3)
+		barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_res.add_child(barra)
+		_dano_nomes.append(nome)
+		_dano_pct.append(pct)
+		_dano_fundos.append(fundo)
+		_dano_barras.append(barra)
+
+
+## Preenche o quadro com o ranking do combate (combate.ranking_dano). Sem dano nenhum, o quadro some.
+func _mostrar_dano() -> void:
+	var lista: Array = mundo.combate.ranking_dano() if mundo.combate != null else []
+	_dano_tit.visible = not lista.is_empty()
+	for i in DANO_LINHAS:
+		var tem := i < lista.size()
+		_dano_nomes[i].visible = tem
+		_dano_pct[i].visible = tem
+		_dano_fundos[i].visible = tem
+		_dano_barras[i].visible = tem
+		if not tem:
+			continue
+		var d: Dictionary = lista[i]
+		_dano_nomes[i].text = "%s  %s" % [str(d.nome), _curto(float(d.dano))]
+		_dano_pct[i].text = "%d%%" % roundi(float(d.frac) * 100.0)
+		_dano_barras[i].size.x = 0.0
+		_dano_barras[i].set_meta("alvo", DANO_LARG * float(lista[i].dano) / maxf(float(lista[0].dano), 1.0))  # a barra do maior enche tudo
+
+
+## 1234 -> "1,2 mil"; 1234567 -> "1,2 mi" (cabe na linha do nome).
+static func _curto(v: float) -> String:
+	if v >= 1000000.0:
+		return ("%.1f mi" % (v / 1000000.0)).replace(".", ",")
+	if v >= 1000.0:
+		return ("%.1f mil" % (v / 1000.0)).replace(".", ",")
+	return str(roundi(v))
 
 
 func _rotulo(texto: String, tam: int, titulo: bool, cor: Color, alin: HorizontalAlignment) -> Label:
@@ -154,7 +227,7 @@ func _process(dt: float) -> void:
 	_checa_t -= dt
 	if _checa_t <= 0.0 and not _terminou:
 		_checa_t = 0.5
-		var novas: Array = Meta.checar_ao_vivo(mundo.tempo_partida, mundo.maior_combo)
+		var novas: Array = Meta.checar_ao_vivo(mundo.tempo_partida, mundo.maior_combo, Meta.vivo_da_partida(mundo))
 		if not novas.is_empty():
 			_avisar(novas)
 	var tela = mundo.combate.telas if mundo.combate != null else null
@@ -168,7 +241,7 @@ func _ao_terminar(r: Dictionary) -> void:
 
 
 func _resultado_do_mundo() -> Dictionary:
-	return {
+	var r := {
 		"tempo": mundo.tempo_partida,
 		"abates": mundo.abates,
 		"nivel": mundo.heroi.nivel,
@@ -176,6 +249,8 @@ func _resultado_do_mundo() -> Dictionary:
 		"venceu": false,
 		"almas": Meta.almas_da_partida(mundo),
 	}
+	r.merge(Meta.vivo_da_partida(mundo))  # herói e evoluções, para as conquistas
+	return r
 
 
 func _terminar(r: Dictionary) -> void:
@@ -213,13 +288,19 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 	var seg := int(float(r.get("tempo", 0.0)))
 	_valores.text = "%02d:%02d\n%d\nx%d\n%d" % [floori(seg / 60.0), seg % 60, int(r.get("abates", 0)), int(r.get("maior_combo", 0)), int(r.get("nivel", 1))]
 	var linhas: Array = []
-	# Até seis marcos podem chegar juntos (tempo, combo, chefe, mapa, dificuldade e Pesadelo): dois por linha, sem reduzir a fonte.
-	for i in range(0, novas.size(), 2):
-		var pares: Array = []
-		for j in range(i, mini(i + 2, novas.size())):
-			pares.append("Conquista: " + _nome_conquista(novas[j]))
-		linhas.append("   ·   ".join(PackedStringArray(pares)))
+	# Até seis marcos cabem (três linhas, dois por linha, sem reduzir a fonte). Com mais (a primeira vitória pode trazer herói, abates,
+	# nível...), os cinco primeiros aparecem e o sexto vira "+N conquistas": a lista inteira está no Códice.
+	var nomes: Array = []
+	for id in novas:
+		nomes.append("Conquista: " + _nome_conquista(id))
+	if nomes.size() > MAX_NOVAS:
+		var resto := nomes.size() - (MAX_NOVAS - 1)
+		nomes = nomes.slice(0, MAX_NOVAS - 1)
+		nomes.append("+%d conquistas" % resto)
+	for i in range(0, nomes.size(), 2):
+		linhas.append("   ·   ".join(PackedStringArray(nomes.slice(i, i + 2))))
 	_novas.text = "\n".join(PackedStringArray(linhas))
+	_mostrar_dano()
 	_almas_num.text = "+0"
 	_saldo.text = "Saldo: %d" % _antes
 	mundo.combate.audio.tocar("carta", 0.7, 0.0, 0.0)
@@ -228,6 +309,9 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 func _animar(dt: float) -> void:
 	_t += dt
 	_botao.modulate.a = clampf((_t - 0.4) / 0.4, 0.0, 1.0)
+	var kb := 1.0 - pow(1.0 - clampf(_t / TEMPO_ANIM, 0.0, 1.0), 3.0)
+	for b in _dano_barras:  # as barras do dano crescem junto com as almas
+		b.size.x = float(b.get_meta("alvo", 0.0)) * kb
 	if not _save_ok:
 		return
 	var k := clampf(_t / TEMPO_ANIM, 0.0, 1.0)

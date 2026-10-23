@@ -50,6 +50,7 @@ var cd := PackedFloat32Array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # por go
 var ultimo_proj := 0  # id do último projétil (onda ou lança) que o acertou: cada um acerta uma vez
 var queima_t := 0.0  # s de fogo que faltam
 var queima_dps := 0.0
+var queima_fonte := ""  # quem pôs o fogo (combate.fonte_dano), para o dano por golpe da tela de fim
 var lento_t := 0.0  # s de lentidão que faltam
 var elite := false  # elite: maior, com contorno colorido e um modificador (v2/elites.gd)
 var mod_elite := ""
@@ -502,6 +503,8 @@ func definir_escala(e: float) -> void:
 func queimar(dps: float, t: float) -> void:
 	queima_dps = maxf(queima_dps if queima_t > 0.0 else 0.0, dps)
 	queima_t = maxf(queima_t, t)
+	if mundo != null and mundo.combate != null:
+		queima_fonte = str(mundo.combate.fonte_dano)
 
 
 func deixar_lento(t: float) -> void:
@@ -517,6 +520,7 @@ func _queimar(dt: float) -> void:
 	var c = mundo.combate
 	if c == null:
 		return
+	c.fonte_dano = queima_fonte
 	c.ferir(self, queima_dps * 0.5, Vector2.ZERO, 0.0, 0.0, Color(1.0, 0.6, 0.25), false)
 	if ativo:
 		for i in maxi(1, roundi(2.0 * c.fx.fator_part)):
