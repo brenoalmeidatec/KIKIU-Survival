@@ -33,6 +33,7 @@ var _saindo := false
 var _t := 0.0
 var _antes := 0
 var _ganhas := 0
+var _premios := 0  # almas de prêmio das conquistas novas (Meta.registrar_partida.premios)
 var _save_ok := true
 var _tocou := false
 var _checa_t := 0.0
@@ -270,7 +271,8 @@ func _terminar(r: Dictionary) -> void:
 		_almas_num.text = "+0"
 		_saldo.text = "Saldo não atualizado"
 		return
-	_antes = int(res.antes)
+	_premios = int(res.get("premios", 0))
+	_antes = int(res.antes) + _premios  # os prêmios em almas das conquistas já entram no saldo de partida: só as almas da partida sobem
 	_ganhas = int(res.ganhas)
 	_mostrar(r, res.novas)
 

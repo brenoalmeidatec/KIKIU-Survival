@@ -501,10 +501,11 @@ func definir_escala(e: float) -> void:
 
 ## Fogo: derrete `dps` de vida por segundo durante `t` s (reaplicar só renova; vale o maior).
 func queimar(dps: float, t: float) -> void:
-	queima_dps = maxf(queima_dps if queima_t > 0.0 else 0.0, dps)
-	queima_t = maxf(queima_t, t)
-	if mundo != null and mundo.combate != null:
+	var atual := queima_dps if queima_t > 0.0 else 0.0
+	if dps >= atual and mundo != null and mundo.combate != null:  # o fogo mais forte é o que queima: o dano fica com quem o acendeu
 		queima_fonte = str(mundo.combate.fonte_dano)
+	queima_dps = maxf(atual, dps)
+	queima_t = maxf(queima_t, t)
 
 
 func deixar_lento(t: float) -> void:

@@ -95,8 +95,10 @@ static func oculto(item: Dictionary) -> bool:
 
 
 ## As melhorias que o santuário e o card SUA BUILD mostram (sem as ocultas).
-static func melhorias_visiveis() -> Array:
-	return melhorias().filter(func(m): return not oculto(m))
+## `ler_save` false devolve o catálogo puro (sem os níveis extras), sem abrir o save: é o que o card SUA BUILD usa no tique da partida.
+static func melhorias_visiveis(ler_save := true) -> Array:
+	var lista: Array = melhorias() if ler_save else catalogo().get("melhorias", [])
+	return lista.filter(func(m): return not oculto(m))
 
 
 ## O item (melhoria, modo ou visual do catálogo) que uma recompensa de conquista libera; {} se não achar.
