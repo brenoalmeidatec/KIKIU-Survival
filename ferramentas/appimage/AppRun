@@ -1,0 +1,5 @@
+#!/bin/sh
+# Ponto de entrada do AppImage: roda o binario do jogo (PCK embutido) e repassa os argumentos como vieram.
+# Nao forca renderizador nem variavel nenhuma. Se o OpenGL do sistema falhar, rode: ./KIKIU-*.AppImage --rendering-driver opengl3
+AQUI="$(dirname "$(readlink -f "$0")")"
+exec "$AQUI/usr/bin/KIKIU.x86_64" "$@"

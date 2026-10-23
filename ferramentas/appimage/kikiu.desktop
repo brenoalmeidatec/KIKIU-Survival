@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=K.I.K.I.U
+Comment=Sobreviva às hordas em ação 2.5D
+Categories=Game;ActionGame;
+Icon=kikiu
+Exec=KIKIU.x86_64
+Terminal=false
