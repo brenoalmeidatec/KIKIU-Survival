@@ -2487,3 +2487,13 @@ _Claude do Alisson (nuvem)_
 - **Próximo:** v2.0-beta hoje (23/10).
 
 _Claude do Alisson (PC)_
+## 2026-10-23 · Claude do Alisson (nuvem) · Fôlego enche ao subir de nível e no baú (M/D) e cresce por nível
+
+- **Pedido (Alisson):** no Médio e no Difícil, subir de nível ou ganhar baú enche o fôlego; e o fôlego fica maior a cada nível, até o último.
+- **Achado:** o fôlego máximo não crescia por nível (só santuário e herói). Subir de nível só curava vida.
+- **Feito (PR #415):** `dados/v2_combate.json > folego.por_nivel` = +0,1 carga por nível acima do 1, até +1,9 (nível 20, o `nivel_fim` das cartas): 3 → 4,9 cargas, nas três dificuldades e por cima do santuário. `dados/v2_dificuldade.json > folego_cheio` (true em M/D, false no Fácil). `heroi.encher_folego()` enche e tira cansaço, calor do golpe e atraso; chamado por `progresso._folego_do_nivel` e no início de `bau.abrir`. Reinício volta ao fôlego do nível 1.
+- **Testes:** `v2_dificuldade` ganhou o caso de nível, teto, reinício e baú por dificuldade (inverter a regra derruba 4 checagens). Suíte completa local 140/140, CI 7/7 no `c3304fc`, `gdformat` limpo.
+- **Robô (3 heróis × floresta e cidade, 360 s, semente 1, antes → depois):** Médio: ataque travado 8 → 2 s somados, cansado 23 → 2 s, dano sofrido 425 → 260, 1 morte → 0 (Lucas na cidade). Difícil: travado 40 → 2 s, cansado 61 → 3 s, dano 316 → 287, 0 mortes nos dois. O robô passa do nível 20 em ~3 min, então nele o teto chega cedo; gente sobe mais devagar.
+- **Pendente:** "pode mergear" do Alisson. Se o Médio/Difícil ficarem fáceis demais, o botão é `folego.por_nivel` (crescimento) ou `folego_cheio` (enche), sem mexer em código.
+
+_Claude do Alisson (nuvem)_
