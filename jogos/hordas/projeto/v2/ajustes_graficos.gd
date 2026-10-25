@@ -20,6 +20,7 @@ extends RefCounted
 ## máquina nova é Sim).
 ## Tela cheia, o Detalhe dinâmico e o contador de fps são opções do jogador (seção "opcoes" do Config, não a "graficos"): mexer nelas não vira Personalizado.
 
+const CursorKikiu := preload("res://v2/cursor_kikiu.gd")
 const PERFIS := ["baixo", "medio", "alto"]
 const NOMES_PERFIL := {"baixo": "Baixo", "medio": "Médio", "alto": "Alto", "personalizado": "Personalizado"}
 const SECOES := ["cpu", "gpu"]
@@ -34,6 +35,8 @@ const AJUDA_DETECTAR := "Escolhe o perfil pela máquina: placa de vídeo e núme
 const AJUDA_FPS := "Mostra os quadros por segundo no canto de baixo da tela."
 const AJUDA_UI := "Tamanho de menus, cartas e HUD. Automático ajusta à janela num tamanho confortável, sem cortar nada; Pequeno, Médio e Grande são fixos."
 const AJUDA_TELA := "Ocupa a tela inteira. F11 também liga e desliga, em qualquer tela da v2."
+const AJUDA_CURSOR_FORMA := "Desenho do cursor dentro da partida: a mira (retícula) ou a seta. Nos menus o cursor é sempre a seta."
+const AJUDA_CURSOR_COR := "Cor do cursor em pixel art, nos menus e na partida."
 
 var mensagem := ""  # aviso curto do detectar, mostrado no rodapé da pausa
 
@@ -55,6 +58,8 @@ func itens() -> Array:
 				_it("g:tela", "Tela cheia (F11)", _sim_nao("tela_cheia"), AJUDA_TELA),
 				_it("g:fps", "Mostrar FPS", _sim_nao("mostrar_fps"), AJUDA_FPS),
 				_it("g:ui", "Tamanho da interface", Config.rotulo("tamanho_ui"), AJUDA_UI),
+				_it("g:cursor_forma", "Cursor na partida", CursorKikiu.ROTULOS_FORMA.get(CursorKikiu._opcao("cursor_forma", "mira"), "Mira"), AJUDA_CURSOR_FORMA),
+				_it("g:cursor_cor", "Cor do cursor", CursorKikiu.ROTULOS_COR.get(CursorKikiu.cor_atual(), "Ouro"), AJUDA_CURSOR_COR),
 				_it("g:avancado", "Avançado", "CPU e GPU", AJUDA_AVANCADO),
 				_it("voltar", "Voltar"),
 			]
@@ -103,6 +108,10 @@ func agir(id: String, passo: int) -> void:
 		_alternar("mostrar_fps")
 	elif id == "ui":
 		Config.girar("tamanho_ui", passo)  # a apresentação e as telas refazem o layout na hora (Config.tamanho_ui_mudou)
+	elif id == "cursor_forma":
+		_girar_cursor("cursor_forma", CursorKikiu.FORMAS, passo)
+	elif id == "cursor_cor":
+		_girar_cursor("cursor_cor", CursorKikiu.CORES.keys(), passo)
 	elif id.begins_with("op:"):
 		_mudar_opcao(id.substr(3), passo)
 
@@ -118,6 +127,13 @@ func lida_na_v2(chave: String) -> bool:
 
 
 ## Liga ou desliga uma opção de sim ou não que fica fora do perfil (tela cheia, o Detalhe dinâmico, o contador de fps).
+## Forma e cor do cursor: giram na lista e o cursor já muda na tela (v2/cursor_kikiu.gd lê a escolha de novo).
+func _girar_cursor(chave: String, vals: Array, passo: int) -> void:
+	var i := maxi(0, vals.find(CursorKikiu._opcao(chave, str(vals[0]))))
+	Config.definir(chave, vals[posmod(i + passo, vals.size())])
+	CursorKikiu.refrescar()
+
+
 func _alternar(chave: String) -> void:
 	Config.definir(chave, not bool(Config.v(chave)))
 
