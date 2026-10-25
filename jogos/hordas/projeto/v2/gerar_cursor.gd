@@ -6,8 +6,8 @@ extends SceneTree
 
 const PX := 2
 const PASTA := "res://assets/v2/cursor/"
-## k = contorno (PAINEL), w = miolo (TEXTO). "." é transparente.
-const CORES := {"k": Color("#01030b"), "w": Color("#ebe6f5")}
+## k = contorno (PAINEL), w = miolo (TEXTO), o = ouro da interface (OURO). "." é transparente.
+const CORES := {"k": Color("#01030b"), "w": Color("#ebe6f5"), "o": Color("#ffdb6b")}
 const SETA := [
 	"k..........",
 	"kk.........",
@@ -31,17 +31,17 @@ const SETA := [
 ## Mira de 13x13 com o centro na célula (6, 6): a ponta do hotspot fica no meio da imagem.
 const MIRA := [
 	"......k......",
-	".....kwk.....",
-	".....kwk.....",
-	".....kwk.....",
-	".....kwk.....",
+	".....kok.....",
+	".....kok.....",
+	".....kok.....",
+	".....kok.....",
 	"kkkkk...kkkkk",
-	"wwwww.w.wwwww",
+	"ooooo.o.ooooo",
 	"kkkkk...kkkkk",
-	".....kwk.....",
-	".....kwk.....",
-	".....kwk.....",
-	".....kwk.....",
+	".....kok.....",
+	".....kok.....",
+	".....kok.....",
+	".....kok.....",
 	"......k......",
 ]
 
