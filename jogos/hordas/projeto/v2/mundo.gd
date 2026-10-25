@@ -22,6 +22,7 @@ extends Node
 const Apresentacao := preload("res://v2/apresentacao.gd")
 const CameraMundo := preload("res://v2/camera_mundo.gd")
 const Atmosfera := preload("res://v2/atmosfera.gd")
+const CursorKikiu := preload("res://v2/cursor_kikiu.gd")  # mira em pixel art na partida; volta à seta ao sair
 const Luzes := preload("res://v2/luzes.gd")
 const Sombras := preload("res://v2/sombras.gd")
 const AnimGolpes := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (meio-quadro e rastros), pela opção de partículas
@@ -152,6 +153,7 @@ var picos = null  # --picos=MS: registro dos quadros lentos (v2/picos.gd)
 
 func _ready() -> void:
 	var t0 := Time.get_ticks_usec()
+	CursorKikiu.aplicar("mira")
 	args = _argumentos()
 	coop_modo = str(args.get("coop", ""))  # lida e ignorada por enquanto: o solo não muda (docs/ONLINE_V2_PLANO.md, etapa 0)
 	_modo = "medir" if args.has("medir") else ("foto" if args.has("fotos") else "livre")
@@ -223,6 +225,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	CursorKikiu.aplicar("seta")
 	if picos != null:
 		picos.resumo()
 		picos = null
