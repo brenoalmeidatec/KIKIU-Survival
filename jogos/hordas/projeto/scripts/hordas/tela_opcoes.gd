@@ -30,7 +30,7 @@ func _ready() -> void:
 	layer = 30
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_quadro = Engine.get_process_frames()  # a tecla que abriu a tela não conta aqui
-	_itens = Config.ITENS.filter(func(it): return it.chave != "tamanho_ui")  # a v1 não tem tamanho de interface: a linha não faria nada
+	_itens = Config.ITENS.filter(func(it): return not it.chave in ["tamanho_ui", "cursor_forma", "cursor_cor"])  # a v1 não tem tamanho de interface nem cursor da v2: as linhas não fariam nada
 	_itens.insert(0, {"chave": "", "grupo": "Visual", "nome": "Gráficos: perfil, CPU e GPU", "abre": true})
 	_tela.size = Vector2(W, H)
 	_tela.mouse_filter = Control.MOUSE_FILTER_IGNORE
