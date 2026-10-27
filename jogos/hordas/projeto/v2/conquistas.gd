@@ -72,7 +72,7 @@ static func fazer(c: Dictionary) -> String:
 	return str(c.get("desc", "Vencer o chefe"))
 
 
-## O que a conquista libera, em texto ("Treino de guerreiro", "a Torre do Alquimista e o Altar").
+## O que a conquista libera, em texto ("Treino de guerreiro", "a Torre e o Altar").
 static func premio(c: Dictionary) -> String:
 	var item := Meta.item_da_recompensa(c.get("recompensa", {}))
 	if not item.is_empty():

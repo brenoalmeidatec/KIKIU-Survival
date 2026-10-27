@@ -49,6 +49,9 @@ MEDIDAS = {
     "lixeira_rodas": _m(0.68, 0.8, 1.1, lx=0.4, yb=0.9),
     "lixeira_azul": _m(0.68, 0.8, 1.1, lx=0.4, zmax=1.6),
     "banco": _m(1.8, 0.6, 0.95, lx=0.95),
+    # cemitério (#429): lápide de pedra e cruz de madeira sobre o túmulo
+    "lapide": _m(0.5, 0.3, 0.95, lx=0.4),
+    "cruz_tumulo": _m(0.6, 0.8, 1.45, lx=0.55, yb=0.5, yf=0.5),
     # adereços de rua
     "sacos_areia": _m(2.6, 0.8, 0.8, lx=1.4, yf=0.7),
     "barricada_concreto": _m(4.4, 1.0, 0.9, lx=2.4, zmax=0.95, yf=0.8),

@@ -24,7 +24,7 @@ FUNCOES = {
     # ruas
     "poste_rua": P.poste_rua, "poste_rua_e": P.poste_rua_e, "poste_quebrado": P.poste_quebrado, "semaforo": P.semaforo,
     "semaforo_torto": P.semaforo_torto, "placa_pare": P.placa_pare, "placa_rua": P.placa_rua, "placa_neon": P.placa_neon,
-    "hidrante": P.hidrante, "cone": P.cone_transito, "cone_tombado": P.cone_tombado, "barril_fogo": P.barril_fogo,
+    "lapide": P.lapide, "cruz_tumulo": P.cruz_tumulo, "hidrante": P.hidrante, "cone": P.cone_transito, "cone_tombado": P.cone_tombado, "barril_fogo": P.barril_fogo,
     "lixeira_metal": P.lixeira_metal, "lixeira_rodas": P.lixeira_rodas, "lixeira_azul": P.lixeira_azul, "banco": P.banco,
     "ponto_onibus": P.ponto_onibus,
     # carroças (os "_v" ao longo de Y)

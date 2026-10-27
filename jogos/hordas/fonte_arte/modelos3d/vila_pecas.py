@@ -511,3 +511,25 @@ def ponto_onibus(r):
     esfera("pao", 0.18, (1.2, 0.05, 1.0), M("a8763a", 0.9), escala=(1.4, 0.8, 0.7))
     barra((0.75, -0.55, 1.95), (0.75, -0.55, 1.6), 0.01, ferro(), v=4)
     lanterna(0.75, -0.55, 1.35, VELA, 3.0, 1.3)
+
+
+# ------------------------------------------------------------------ cemitério (lotes vazios)
+def lapide(r):
+    """Lápide de pedra de topo arredondado, um pouco torta, com uma cruz gravada e musgo na base."""
+    B(0.52, 0.34, 0.12, 0, 0, 0.0, pedra(PEDRA_ESC), ch=0.03, rot=(0, 0, 0.08))
+    B(0.4, 0.14, 0.62, 0, 0, 0.1, pedra(PEDRA_CLARA), ch=0.04, rot=(0.04, 0.05, 0.08))
+    CR(0.2, 0.14, 0.0, 0.0, 0.72, pedra(PEDRA_CLARA), (math.pi / 2, 0, 0.08), v=12)
+    B(0.04, 0.03, 0.26, 0.0, -0.08, 0.5, M(CARVAO, 0.9), ch=0.0)
+    B(0.16, 0.03, 0.04, 0.0, -0.08, 0.64, M(CARVAO, 0.9), ch=0.0)
+    esfera("musgo", 1.0, (0.0, -0.12, 0.12), M(MUSGO, 0.98, 0.5, 0.3, 14.0), escala=(0.24, 0.1, 0.07))
+
+
+def cruz_tumulo(r):
+    """Monte de terra revolvida com uma cruz de madeira torta, uma tira de pano e uma vela apagada."""
+    esfera("monte", 1.0, (0.0, 0.1, 0.0), M("3a2c20", 0.98, 0.7, 0.4, 10.0), escala=(0.3, 0.55, 0.16))
+    for k in range(4):
+        B(0.12, 0.1, 0.06, -0.15 + k * 0.1, 0.1 + (k % 2) * 0.1, 0.1, pedra(), ch=0.02, rot=(0, 0, k))
+    B(0.07, 0.07, 1.2, 0.0, -0.2, 0.0, madeira(MADEIRA_ESC), ch=0.01, rot=(0.05, 0.06, 0.0))
+    B(0.5, 0.06, 0.07, 0.0, -0.2, 0.85, madeira(MADEIRA_ESC), ch=0.01, rot=(0, 0.06, 0.1))
+    B(0.05, 0.02, 0.2, 0.18, -0.24, 0.62, M("6e3030", 0.95), ch=0.0, rot=(0, 0, 0.1))
+    C(0.03, 0.1, 0.22, -0.3, 0.0, M("e8dcc0", 0.8), v=8)

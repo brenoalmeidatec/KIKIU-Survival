@@ -16,6 +16,7 @@ from kit_decalques import cor
 
 SEMENTE = 47
 W, H = 2880, 1620
+PRESERVAR = ["nascimento"]   # as zonas de monstros (e quem mexer nelas, como a #430) não mudam quando a vila é regerada
 AJUDA = (
     "A Vila Amaldiçoada da v2 (id cidade, 2880x1620 = 3x3 telas, y para baixo), lida por v2/cenario.gd como o laboratório (mesmo formato; veja v2_floresta.json), com "
     "\"mapa.pastas\" apontando para a arte (assets/v2/mapas/cidade), \"minimapa\" (cores do minimapa por objeto e decalque) e \"atmosfera\" (partículas "
@@ -64,6 +65,8 @@ def _mancha(w, h, c="14100c", alfa=190):
 
 
 DECALQUES = {
+    "laje_tumulo": lambda rng: kd.retangulo(34, 52, cor("4a463f"), cor("2a2724"), rng, 0.05),   # a laje de pedra sobre a sepultura
+    "tumulo_terra": lambda rng: kd.mancha(46, 30, rng, cor("3a2c20"), alfa=215),                  # terra revolvida
     "bueiro": lambda rng: dc.bueiro(rng),
     "bueiro_aberto": lambda rng: dc.bueiro(rng, aberto=True),
     "poca_oleo_g": _poca_oleo(100, 70),
@@ -104,7 +107,7 @@ MINIMAPA = {
         "carro_a": ["7d5c3a", 1], "carro_b": ["7d5c3a", 1], "carro_c": ["7d5c3a", 1], "carro_queimado": ["2b2b2b", 1],
         "carro_a_v": ["7d5c3a", 1], "carro_b_v": ["7d5c3a", 1], "carro_c_v": ["7d5c3a", 1],
         "muro_tijolo": ["8a8478", 1], "muro_quebrado": ["8a8478", 1], "barricada_concreto": ["8a8478", 1],
-        "barricada_madeira": ["8a6a3a", 1], "sacos_areia": ["a89a72", 1], "lixeira_azul": ["8aa0b0", 1],
+        "barricada_madeira": ["8a6a3a", 1], "sacos_areia": ["a89a72", 1], "lixeira_azul": ["8aa0b0", 1], "lapide": ["a39d90", 1], "cruz_tumulo": ["7d5c3a", 1],
     },
     "decalques": {"bueiro": ["5a4a38", 1], "poca_chuva_g": ["4d7a8c", 2], "poca_oleo_g": ["3e3226", 1]},
 }
@@ -158,7 +161,7 @@ def montar(tam, rng):
             obj("banco", lx + 58, cy - 40)
             obj("banco", lx + 166, cy - 40)
             obj("barril_fogo", cx + 52, cy + 36)                    # fogueira de barril com luz laranja
-            obj("lixeira_metal", lx + 14, ly + 14)
+            obj("lixeira_azul", cx - 4, cy + 6)                     # o poço da praça (a pegada é a da antiga lixeira)
             obj("placa_neon", lx + 214, ly + 18)
             dec("mancha_sangue" if rng.random() < 0.4 else "mancha_b", lx + 90, cy + 40)
             dec("papeis_b", cx - 30, cy + 24, rng.random() < 0.5)
@@ -172,13 +175,17 @@ def montar(tam, rng):
             dec("mancha_sangue", lx + 150, cy + 56, rng.random() < 0.5)
             obj("pneus", lx + 196, ly + 120)
         elif tipo == "V":
-            obj("barricada_madeira", lx + 60, ly + lh - 34)        # tapume no sul do lote
-            obj("cone", lx + 200, cy + 30)
+            # CEMITÉRIO: o lote vazio vira camposanto, com a cerca de estacas ao sul, quatro lápides, três cruzes sobre túmulos e terra revolvida
+            obj("barricada_madeira", lx + 60, ly + lh - 34)
             dec("rachadura_c", cx - 20, cy - 18, rng.random() < 0.5)
             dec("poca_chuva_g", lx + 150, cy - 30, rng.random() < 0.5)
             dec("mancha_c", cx + 40, cy + 40, rng.random() < 0.5)
-            obj("cone", lx + 44, cy + 64)
-            obj("sacos_areia", lx + 170, cy + 58)
+            for k in range(4):
+                obj("lapide", lx + 28 + 56 * k, ly + 44)
+                dec("laje_tumulo", lx + 28 + 56 * k, ly + 56)
+            for k in range(3):
+                obj("cruz_tumulo", lx + 56 + 56 * k, ly + 92)
+                dec("tumulo_terra", lx + 56 + 56 * k, ly + 92)
         # calçada: um poste por quarteirão (canto alternado), lixeira e hidrante no meio-fio
         if (i + j) % 2 == 0:
             obj("poste_rua", bx + 8, by + 8)
