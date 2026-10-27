@@ -212,8 +212,6 @@ func _fotos(pasta: String) -> void:
 		if a.begins_with("--janela="):
 			var wh := a.trim_prefix("--janela=").split("x")
 			_janela = Vector2i(int(wh[0]), int(wh[1]))
-			for c in get_window().size_changed.get_connections():  # a Config força 16:9 a cada mudança de tamanho
-				get_window().size_changed.disconnect(c.callable)
 			get_window().size = _janela
 	for id in HEROIS:
 		Herois.forcado = id

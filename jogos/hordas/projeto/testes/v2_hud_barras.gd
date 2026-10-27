@@ -223,8 +223,6 @@ func _fotos(pasta: String) -> void:
 		if a.begins_with("--janela="):  # o mundo só ajusta a janela fora do modo de teste: a foto usa o tamanho pedido
 			var wh := a.trim_prefix("--janela=").split("x")
 			_janela = Vector2i(int(wh[0]), int(wh[1]))
-			for c in get_window().size_changed.get_connections():  # a Config (_corrigir_proporcao) força 16:9 a cada mudança de tamanho: a foto precisa do tamanho pedido
-				get_window().size_changed.disconnect(c.callable)
 			get_window().size = _janela
 	var w = Mundo.instantiate()
 	w.modo_teste = true
