@@ -8,6 +8,7 @@ extends RefCounted
 ## dados/v2_especial.json): tecla Q e RB do controle (apertar dispara).
 
 const Glifos := preload("res://v2/glifos.gd")
+const Controles := preload("res://v2/controles.gd")  # as teclas e botões que o jogador trocou em Ajustes > Controles (#422)
 
 const TECLAS := {"esquerda": [KEY_A, KEY_LEFT], "direita": [KEY_D, KEY_RIGHT], "cima": [KEY_W, KEY_UP], "baixo": [KEY_S, KEY_DOWN]}
 const EIXOS := {
@@ -104,3 +105,4 @@ static func garantir() -> void:
 		var rb := InputEventJoypadButton.new()
 		rb.button_index = JOY_BUTTON_RIGHT_SHOULDER
 		InputMap.action_add_event("ultimate", rb)
+	Controles.aplicar()  # o padrão está completo: põe por cima o que o jogador trocou (idempotente; cada tela chama garantir)

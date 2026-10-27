@@ -19,6 +19,7 @@ extends CanvasLayer
 const Paleta := preload("res://v2/paleta.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
+const AjustesControles := preload("res://v2/ajustes_controles.gd")  # Ajustes > Controles: remapear teclado, mouse e controle (#422)
 const Creditos := preload("res://v2/creditos.gd")
 const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas, a mesma do Códice do santuário (#373)
 const Meta := preload("res://v2/meta.gd")
@@ -38,8 +39,8 @@ const LINHA0 := 118.0  # primeira linha, a partir do topo do painel
 const LINHA_H := 36.0
 const LINHA_ALT := 32.0  # altura da faixa de cada linha
 const VISIVEIS := 5  # linhas visíveis de uma vez nas telas com rodapé de ajuda; a lista rola com a seleção
-const VISIVEIS_LIVRES := 7  # sem rodapé (pausa, Ajustes, confirmações) cabe duas a mais: o Ajustes tem 7 linhas (fora da partida) e o "Voltar" é a última
-const TELAS_COM_RODAPE := ["audio", "graficos", "avancado", "creditos", "conquistas"]  # as que usam o espaço de AJUDA_Y
+const VISIVEIS_LIVRES := 8  # sem rodapé (pausa, Ajustes, confirmações) cabe três a mais: o Ajustes tem 8 linhas (fora da partida) e o "Voltar" é a última
+const TELAS_COM_RODAPE := ["audio", "graficos", "avancado", "creditos", "conquistas", "controles"]  # as que usam o espaço de AJUDA_Y
 const AJUDA_Y := LINHA0 + VISIVEIS * LINHA_H + 8.0  # rodapé com a ajuda da linha escolhida
 const AJUDA_H := 96.0
 const DICA_Y := 406.0  # PAINEL.size.y - 24
@@ -68,6 +69,7 @@ var _topo := 0  # primeira linha visível da lista
 var _origem := "menu"  # para onde "Não" de uma confirmação volta; "" = fecha (santuário, sem menu por trás)
 var _itens_atuais: Array = []
 var _graficos := AjustesGraficos.new()
+var _controles := AjustesControles.new()
 var _raiz: Control
 var _conteudo: Control  # tudo menos o fundo escuro: a troca de tela do menu (Ajustes, Conquistas...) desliza só isto (#377)
 var _titulo: Label
@@ -184,7 +186,11 @@ func _montar() -> void:
 		ico.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ico.visible = false
 		linha.add_child(ico)
-		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val, "icone": ico})
+		var glifos := AjustesControles.LinhaGlifos.new()  # os glifos da tecla e do botão (Ajustes > Controles); só aparece nessa tela
+		glifos.size = Vector2(w, LINHA_ALT)
+		glifos.visible = false
+		linha.add_child(glifos)
+		_linhas.append({"linha": linha, "marca": marca, "rotulo": rot, "valor": val, "icone": ico, "glifos": glifos})
 	_ajuda = _rotulo(
 		Dados.fonte_texto, TAM_AJUDA, COR_TEXTO, Vector2(PAINEL.position.x + 34, PAINEL.position.y + AJUDA_Y), PAINEL.size.x - 68, HORIZONTAL_ALIGNMENT_LEFT  # a mesma coluna do texto das linhas (margem 24 + 10 do painel da linha)
 	)
@@ -308,6 +314,7 @@ func _ir(nova: String, origem := "menu") -> void:
 		Transicoes.entrar(_conteudo, Vector2(10.0, 0.0), 0.0)  # troca de tela dentro do menu: o texto desliza, o fundo fica
 	tela = nova
 	_origem = origem
+	_controles.limpar()
 	sel = 1 if nova.begins_with("confirmar") or nova == "avancado" else 0  # confirmação começa em "Não"; Avançado, na 1ª opção (o 0 é cabeçalho)
 	_topo = 0
 	_desenhar()
@@ -330,7 +337,7 @@ func _voltar_tela() -> void:
 			_ir("menu")
 			sel = 1  # volta parado em "Conquistas", onde o jogador estava
 			_desenhar()
-		"graficos", "audio", "creditos":
+		"graficos", "audio", "creditos", "controles":
 			if tela == "creditos" and _origem == "":
 				fechar()  # Créditos abertos direto pelo título: não há Ajustes por trás
 			else:
@@ -369,6 +376,12 @@ func entrada(e: InputEvent) -> bool:
 		if tl != null and tl.intercepta_pausa():
 			return true
 		return pausar()
+	# Ajustes > Controles esperando o comando novo: tudo o que é tecla, mouse e controle vai para a captura (Esc e Start cancelam)
+	if _controles.capturando != "":
+		if _controles.capturar(e):
+			_som_ok()
+		_desenhar()
+		return true
 	# Tab: o card "SUA BUILD" ao lado do menu troca a página visual pela de detalhes (status.gd)
 	if e is InputEventKey and e.keycode == KEY_TAB and e.pressed and not e.echo and tela == "menu" and mundo != null and mundo.get("status") != null:
 		mundo.status.alternar_detalhe()
@@ -425,6 +438,8 @@ func entrada(e: InputEvent) -> bool:
 
 ## A dica da pausa: só os botões do dispositivo em uso. Detalhes e páginas do SUA BUILD ficam na dica do próprio card (não cabem aqui: 424 px).
 func _itens_dica() -> Array:
+	if _controles.capturando != "":
+		return [["pausa", "Cancelar"]]
 	return [["navegar", "Escolher"], ["confirmar", "Confirmar"], ["voltar", "Voltar"]]
 
 
@@ -446,6 +461,7 @@ func _mover(d: int) -> void:
 		sel = posmod(sel + d, n)
 		if str(_itens_atuais[sel].id) != "":
 			break
+	_controles.mensagem = ""
 	_som_cursor()
 	_desenhar()
 
@@ -512,6 +528,8 @@ func _executar(id: String, passo: int) -> void:
 			_ir("audio")
 		"creditos":
 			_ir("creditos")
+		"controles":
+			_ir("controles")
 		"voltar":
 			_voltar_tela()
 		"santuario":
@@ -542,6 +560,8 @@ func _executar(id: String, passo: int) -> void:
 		_:
 			if id.begins_with("g:"):
 				_graficos.agir(id.substr(2), passo)
+			elif id.begins_with("ct:"):
+				_controles.agir(id.substr(3))
 	_desenhar()
 
 
@@ -587,6 +607,7 @@ func _itens() -> Array:
 			var r := [
 				_it("graficos", "Gráficos"),
 				_it("audio", "Áudio"),
+				_it("controles", "Controles"),
 				_it("animacoes", "Reduzir animações", "Sim" if Transicoes.reduzido() else "Não"),
 				_it("versao", "Avisar versão nova", "Sim" if bool(Config.v("verificar_versao")) else "Não"),
 				_it("creditos", "Créditos")
@@ -603,6 +624,8 @@ func _itens() -> Array:
 			return _graficos.itens()
 		"avancado":
 			return _graficos.itens_avancado()
+		"controles":
+			return _controles.itens()
 		"audio":
 			return [_it("musica", "Música", _pct(Config.v("musica"))), _it("efeitos", "Efeitos", _pct(Config.v("efeitos"))), _it("voltar", "Voltar")]
 		"confirmar_santuario":
@@ -650,6 +673,8 @@ func _titulo_tela() -> String:
 			return "AVANÇADO"
 		"audio":
 			return "ÁUDIO"
+		"controles":
+			return "CONTROLES"
 		"creditos":
 			return "CRÉDITOS"
 		"conquistas":
@@ -672,6 +697,8 @@ func _sub_tela() -> String:
 		return "Apaga almas, estátuas e conquistas de todos."
 	if tela == "graficos":
 		return _graficos.mensagem
+	if tela == "controles":
+		return _controles.mensagem
 	if tela == "avancado":
 		return "CPU e GPU, uma opção por vez."
 	if tela == "conquistas":
@@ -714,6 +741,11 @@ func _desenhar() -> void:
 			cor = COR_OURO  # conquista cumprida: nome em dourado, mesmo sem o foco
 		l["rotulo"].add_theme_color_override("font_color", cor)
 		l["valor"].add_theme_color_override("font_color", Paleta.BONUS if bool(it.get("feita", false)) else cor)
+		var gl: AjustesControles.LinhaGlifos = l["glifos"]
+		gl.visible = it.has("glifos")
+		if gl.visible:
+			gl.acao = str(it.glifos)
+			gl.queue_redraw()
 		var ico: TextureRect = l["icone"]
 		var tex: Texture2D = it.get("textura")
 		l["rotulo"].position.x = 42.0 if tex != null else 12.0  # com o ícone da conquista (24 px) o nome começa depois dele
@@ -734,7 +766,7 @@ func _desenhar() -> void:
 func _texto_ajuda() -> String:
 	if tela == "audio":
 		return CREDITO_MUSICA
-	if (tela != "graficos" and tela != "avancado" and tela != "creditos" and tela != "conquistas") or sel >= _itens_atuais.size():
+	if (tela != "graficos" and tela != "avancado" and tela != "creditos" and tela != "conquistas" and tela != "controles") or sel >= _itens_atuais.size():
 		return ""
 	return str(_itens_atuais[sel].get("ajuda", ""))
 
