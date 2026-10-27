@@ -80,6 +80,10 @@ func _ready() -> void:
 	var vizinho_grade = lista_original[1]
 	var pos_ator_original: Vector2 = ator_grade.pos
 	var pos_vizinho_original: Vector2 = vizinho_grade.pos
+	var raio_ator_original: float = ator_grade.raio
+	var raio_vizinho_original: float = vizinho_grade.raio
+	ator_grade.raio = 8.0  # os dois primeiros moradores mudam com o elenco do mapa (#430): o raio fixo mantém os dois encostados em (84,214)/(73,203)
+	vizinho_grade.raio = 8.0
 	ator_grade.definir_pos(Vector2(84, 214))
 	vizinho_grade.definir_pos(Vector2(73, 203))
 	w.monstros = [ator_grade, vizinho_grade]
@@ -94,6 +98,8 @@ func _ready() -> void:
 	w.monstros = lista_original
 	ator_grade.definir_pos(pos_ator_original)
 	vizinho_grade.definir_pos(pos_vizinho_original)
+	ator_grade.raio = raio_ator_original
+	vizinho_grade.raio = raio_vizinho_original
 
 	# 1. sem clique não sai golpe
 	zerar()

@@ -60,7 +60,8 @@ var vel_ia := Vector2.ZERO  # chefe: a velocidade que o controlador quer (px/s)
 var vel_mult := 1.0
 var stun_mult := 1.0  # quanto do atordoamento vale (chefe: 0)
 var emp_mult := 1.0  # quanto do empurrão vale
-var tinta := Color.WHITE  # cor nova do sprite (chefes e elites)
+var tinta := Color.WHITE  # cor nova do sprite (chefes, elites e variações do elenco do mapa)
+var variante := ""  # id do tipo do elenco do mapa (v2/elenco.gd) de que ele nasceu; vazio = o monstro puro do sprite
 var carga := 0.0  # 0 a 1: o chefe armando o golpe (incha 6% e clareia até branco)
 var contorno: Sprite2D = null  # o contorno colorido da elite (camada glow, aditivo)
 var invoca_t := 0.0
@@ -139,6 +140,17 @@ func aplicar_stats(d: Dictionary, k_vida := 1.0, k_dano := 1.0) -> void:
 	definir_escala(1.0)
 
 
+## Faz dele a VARIAÇÃO `t` do elenco do mapa (v2/elenco.gd): tinta e multiplicadores de vida, dano e velocidade. Vem DEPOIS de `aplicar_stats` e de
+## `reviver` (que zera a tinta e enche a vida).
+func aplicar_variante(t: Dictionary) -> void:
+	variante = str(t.id)
+	vida_max *= float(t.vida)
+	vida = vida_max
+	dano *= float(t.dano)
+	vel_caca *= float(t.vel)
+	tinta = t.tinta
+
+
 ## Volta do pool: vivo de novo em `p`, com vida cheia. Renasce como monstro comum (em lote), mesmo que tenha sido elite ou chefe.
 func reviver(p: Vector2) -> void:
 	vivo = true
@@ -160,6 +172,7 @@ func reviver(p: Vector2) -> void:
 	vel_ia = Vector2.ZERO
 	vel_v = Vector2.ZERO
 	tinta = Color.WHITE
+	variante = ""
 	carga = 0.0
 	v_cor = Color.WHITE
 	v_sx = 1.0
