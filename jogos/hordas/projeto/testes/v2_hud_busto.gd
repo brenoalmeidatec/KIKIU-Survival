@@ -158,8 +158,6 @@ func _hud() -> void:
 func _fotos(pasta: String, janela: Vector2i) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
 	if janela != Vector2i.ZERO:
-		for c in get_window().size_changed.get_connections():  # a Config força 16:9 a cada mudança de tamanho
-			get_window().size_changed.disconnect(c.callable)
 		get_window().size = janela
 	Herois.forcado = "hazaki"
 	for i in 3:
