@@ -43,7 +43,7 @@ static func conquistas() -> Array:
 					{
 						"id": id_conquista(str(s.id)),
 						"nome": str(s.nome),
-						"desc": lore(s),
+						"desc": "Um segredo escondido num mapa.",  # curto e sem spoiler: é o que a tela antiga do santuário (altar.gd) mostra
 						"condicao": "segredo",
 						"limite": 1,
 						"icone": str(s.get("icone", "codice")),
