@@ -135,7 +135,9 @@ func _mapa(id: String) -> void:
 			var bp := Vector2(float(s.bau_pos[0]), float(s.bau_pos[1]))
 			var cb := Passagens.celula_de(g, bp)
 			ok(Colisao.livre(bp, Passagens.RAIO_HEROI) and vis[cb.y * int(g.w) + cb.x] == 1, "%s: o baú em %s esta livre e alcancavel" % [rotulo, str(bp)])
-			ok(bp.distance_to(p) > 30.0, "%s: o baú cai ao lado, nao em cima do herói" % rotulo)
+			var d := p - bp  # a conta de pegar do baú (v2/bau.gd): elipse de alcance `bau.alcance`, com o chão achatado
+			var alcance := float(Dados.json("v2_cartas").bau.alcance)
+			ok(sqrt(d.x * d.x + (d.y / 0.62) * (d.y / 0.62)) > alcance * 1.5, "%s: o baú cai fora do alcance de pegar, o herói anda até ele" % rotulo)
 		ok(w.segredos.itens.size() == Segredos.lista(id).size(), "%s: o mundo montou os segredos do mapa" % rotulo)
 		_sem_monstros(w)
 		var linha := _linha(str(s.id))
