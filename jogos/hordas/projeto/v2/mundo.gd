@@ -43,6 +43,7 @@ const Herois := preload("res://v2/herois.gd")  # heróis jogáveis (Hazaki, Nic�
 const Meta := preload("res://v2/meta.gd")  # meta-progressão entre partidas (melhorias do santuário, almas, conquistas)
 const ResultadoMeta := preload("res://v2/resultado_meta.gd")
 const Mapas := preload("res://v2/mapas.gd")  # a lista de mapas e o escolhido no santuário
+const VigiaSegredos := preload("res://v2/vigia_segredos.gd")  # os segredos escondidos do mapa (dados/v2_segredos.json)
 const Trilha := preload("res://v2/trilha.gd")  # a música de fundo da partida (faixa por momento, volume no bus Musica)
 const QualidadeAuto := preload("res://v2/qualidade_auto.gd")  # "Baixar a qualidade se travar": desce o perfil quando o fps trava
 const LARG := 960
@@ -114,6 +115,7 @@ var monstros_vivos: int:
 		return monstros.size()
 var _pool_monstros := {}  # tipo -> monstros mortos prontos para renascer
 var _todos_monstros: Array = []
+var segredos := VigiaSegredos.new()  # confere o gatilho dos segredos do mapa a cada passo
 var _marcadores: Array = []  # marcas do mapa (dados "marcadores"): cada uma faz o efeito ao o herói entrar no raio (_tocar_marca)
 var _tem_chave := false  # achou a chave da ruína nesta partida (abre o baú trancado)
 var _fragmentos := 0  # fragmentos da relíquia achados nesta partida
@@ -409,6 +411,7 @@ func _tipo_morador() -> Dictionary:
 ## Os monstros que já estão no mapa quando a partida começa (zonas do json).
 func _popular_inicial() -> void:
 	_montar_marcadores()  # as marcas voltam a nascer também no "Jogar de novo"
+	segredos.montar(self)  # e os segredos também voltam
 	var nasc: Dictionary = dados.get("nascimento", {})
 	for z in nasc.get("monstros", []):
 		var centro := Vector2(float(z.centro[0]), float(z.centro[1]))
@@ -942,6 +945,7 @@ func avancar(dt: float) -> void:
 			var p2 := Time.get_ticks_usec()
 			combate.atualizar(dtm)
 			_checar_marcadores(dtm)
+			segredos.atualizar(dtm)
 			braseiros.atualizar(dtm)
 			var p3 := Time.get_ticks_usec()
 			_perfil("heroi", p1 - p0)

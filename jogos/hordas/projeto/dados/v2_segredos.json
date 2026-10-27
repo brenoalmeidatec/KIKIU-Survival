@@ -1,0 +1,63 @@
+{
+	"_ajuda": "Segredos escondidos dos mapas da v2 (#424), lidos por v2/segredos.gd; o vigia da partida é v2/vigia_segredos.gd. Cada segredo: id; local (id do mapa, v2/mapas.gd); nome; dica (a linha que o Códice mostra enquanto ele não foi achado); lore (as frases do fragmento, 1 a 2, escritas juntas no Códice); gatilho: \"encostar\" (entrar no raio), \"parado\" (ficar `tempo` s sem andar dentro do raio) ou \"golpe\" (atacar dentro do raio); pos [x, y] em px do mapa (fora de colisão e alcançável: o teste v2_segredos confere) e raio; recompensa {tipo: almas, n}: almas permanentes, creditadas só na primeira vez que o personagem acha; bau: quantas cartas o baú oferece (0 = nenhum) e bau_pos [x, y], onde ele cai (ao lado: o herói anda até ele), a cada partida; icone: arquivo de assets/v2/icones_santuario. O segredo vira uma conquista de id segredo_<id> (Meta.conquistas): o Códice mostra a dica e '???' até achar, depois o nome e a lore. A posição não aparece em lugar nenhum da tela: é para achar por acidente. A faixa de anúncio corta o que passa de ~28 letras, então só o nome e o prêmio saem nela; a lore inteira fica no Códice.",
+	"parado_vel_max": 8.0,
+	"segredos": [
+		{
+			"id": "lapide_muda",
+			"local": "floresta",
+			"nome": "A Lápide Muda",
+			"dica": "Um túmulo da floresta responde ao ferro.",
+			"lore": ["A pedra sangrou ao primeiro golpe.", "Quem jaz aqui pediu para ser esquecido."],
+			"gatilho": "golpe",
+			"pos": [2420, 364],
+			"raio": 70,
+			"recompensa": {"tipo": "almas", "n": 25},
+			"bau": 0,
+			"icone": "codice"
+		},
+		{
+			"id": "sarcofago_desperto",
+			"local": "medio",
+			"nome": "O Sarcófago Desperto",
+			"dica": "Um sarcófago esquecido espera quem sabe esperar.",
+			"lore": ["O sarcófago está vazio, mas algo respira nele.", "Quem espera em silêncio ouve o rei contar os séculos."],
+			"gatilho": "parado",
+			"tempo": 3.0,
+			"pos": [400, 424],
+			"raio": 40,
+			"recompensa": {"tipo": "almas", "n": 30},
+			"bau": 3,
+			"bau_pos": [400, 480],
+			"icone": "codice"
+		},
+		{
+			"id": "cobaia_sete",
+			"local": "laboratorio",
+			"nome": "A Cobaia Sete",
+			"dica": "Entre as jaulas, alguém nunca foi esquecido.",
+			"lore": ["Entre os restos, uma placa de ferro: COBAIA 7.", "Escapou da jaula, mas a torre nunca teve saída."],
+			"gatilho": "encostar",
+			"pos": [2420, 386],
+			"raio": 22,
+			"recompensa": {"tipo": "almas", "n": 30},
+			"bau": 3,
+			"bau_pos": [2420, 446],
+			"icone": "codice"
+		},
+		{
+			"id": "vigilia_da_cruz",
+			"local": "cidade",
+			"nome": "A Vigília da Cruz",
+			"dica": "No canto dos mortos da vila, alguém ainda vela.",
+			"lore": ["Três cruzes, e a do meio ainda está quente.", "Alguém velou aqui até a vila esquecer o nome dele."],
+			"gatilho": "parado",
+			"tempo": 3.0,
+			"pos": [2314, 1299],
+			"raio": 40,
+			"recompensa": {"tipo": "almas", "n": 30},
+			"bau": 3,
+			"bau_pos": [2280, 1289],
+			"icone": "codice"
+		}
+	]
+}
