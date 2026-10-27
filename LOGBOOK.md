@@ -2539,3 +2539,22 @@ _Claude do Alisson (nuvem)_
 - **Próximo:** polimento e bugs do beta (sáb/dom), `v2.0-rc1` na seg 26/10.
 
 _Claude do Alisson (nuvem)_
+
+## 2026-10-27 · Claude do Alisson (PC) · Noite de segunda: bugs do beta, mapas próprios e inimigos por fase
+
+- **Pedido (Alisson):** trabalhar o cronograma da RC 06/11 com economia (parar entre 10 e 12% do uso semanal), mesclar o que o Breno mandou e suspender o PC ao terminar.
+- **Mesclados (CI 7/7 em cada um):**
+  - #431 (Breno): cursor em pixel art (seta/mira, cor nas Opções). Só faltava o `gdformat` em `config.gd` e `ajustes_graficos.gd`.
+  - #432 (fecha #421): janela. A `Config` do #312 forçava 16:9 com `window.size` 250 ms depois de cada resize e brigava com o gerenciador de janelas. O bloco saiu. Conferido no Windows em janela real (1000x800 e 2560x1080 ficam como pedidos, restaurar volta ao tamanho). **Linux/Wayland não testado: o Isac confere.** A v1 volta a ter faixa fora de 16:9 (pausada, aceito).
+  - #433 (fecha #426): EXCLUIR na escolha de personagem e "Apagar todo o progresso" nos Ajustes (título e santuário), confirmação com NÃO em foco. Apaga `.cfg/.bak/.tmp`, índice e o save antigo `v2_progresso.cfg` (senão a migração trazia de volta). Preserva `opcoes.cfg` e o marcador de migração. Controle físico e mouse real não testados.
+  - #434 (fecha #423): o Enter no portal apertava AJUSTES/VOLTAR, que ganhavam foco com o mouse por cima. Os dois ficaram com `FOCUS_NONE`. Teste `v2_salao_entrada` manda o evento pelo viewport. Efeito colateral: AJUSTES do santuário não é mais alcançável por Tab/controle.
+  - #435 (parte da #127): o "Invalid polygon data" vinha do miolo dos avisos de ataque (`v2/avisos.gd`) com raio quase 0. Agora só desenha a partir de 6 px. 0 erros na reprodução, mas **o ganho de FPS no i5 do Breno não foi medido**.
+  - #436 (fecha #425): Ruínas da Floresta (`medio`) com cenário próprio (templo de pedra fria engolido pela mata, 23 objetos novos no Blender). Marcadores, nascimento e `m4_*` iguais. ~830 objetos (antes 579): **FPS no i5 a conferir**.
+  - #437 (fecha #430): elencos por mapa em `dados/v2_elencos.json` (variações de tinta, nome e números dos 5 sprites; mapa sem elenco = padrão antigo). Orçamento de ameaça igual ±10%. Lista de quem merece sprite próprio no PR (corvo, homúnculo, golem de vidro, aldeão, espectro).
+  - #438 (fecha #429): Laboratório → **Torre do Alquimista** e Cidade → **Vila Amaldiçoada** (mesmos ids, planta e colisão; arte, paleta e nomes novos; poço e cemitério na Vila). Conflito só no fim de `LICENCAS_ARTE.md` e `mapas_v2/LEIA-ME.md`, resolvido com as duas entradas.
+- **Este PR:** também versiona o `testes/v2_excluir_save.gd.uid` que ficou de fora do #433.
+- **Ninguém viu em movimento:** partidas inteiras nos 3 mapas novos, as cores dos elencos combinando com cada cenário, a confirmação de excluir com controle físico.
+- **Pendente do cronograma (#342):** #422 tela de controles, #424 segredos/lore, #378 poças, #137 equilíbrio jogando. Release `v2.0-beta` ainda espera o OK do Alisson.
+- **Para o Claude do Breno:** quando der, jogar Ruínas, Torre e Vila no i5 (perfil Baixo) e dizer na #127 o FPS do fim da partida; ver se as cores dos inimigos combinam.
+
+_Claude do Alisson (PC)_
