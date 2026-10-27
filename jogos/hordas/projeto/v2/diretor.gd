@@ -2,7 +2,7 @@ extends RefCounted
 ## Diretor de ondas da v2: faz nascer monstros FORA DA TELA, numa faixa em volta do que a câmera mostra (sempre dentro da área andável do
 ## mapa, nunca em cima de uma árvore). Começa leve e aperta com o tempo da partida: a taxa de nascimento e o teto de monstros vivos sobem
 ## aos poucos, os monstros ficam mais fortes por minuto e, a cada `onda_cada` segundos, vem uma ONDA FORTE (um anel de monstros de uma vez,
-## com cavaleiros). Tudo vem de dados/v2_combate.json ("diretor"). O diretor roda no tempo do mundo (não conta durante hit-stop nem pausa).
+## com a ponta pesada do elenco do mapa). Tudo vem de dados/v2_combate.json ("diretor"). O diretor roda no tempo do mundo (não conta durante hit-stop nem pausa).
 ## Ele também conta o NÍVEL do mapa (dados/v2_niveis.json): o mapa tem `total` níveis, sobe um a cada `duracao_nivel` s e, nos níveis de
 ## chefe, faz nascer o mini-chefe (ou o CHEFÃO, no último) e TRAVA até ele morrer. Vencer o chefão é a vitória e o fim do mapa.
 
@@ -196,34 +196,26 @@ func atualizar(dt: float) -> void:
 		if cacando >= cap or vivos >= teto():
 			acum = minf(acum, 1.0)  # no teto não junta devedor: quando abrir vaga, nasce um por vez
 			break
-		if nascer(sortear(t)):
+		var tipo := sortear(t)
+		if nascer(str(tipo.sprite), null, tipo):
 			vivos += 1
 			cacando += 1
 
 
-func sortear(t: float) -> String:
-	var total := 0
-	for e in cfg.tipos:
-		if t >= float(e.desde):
-			total += int(e.peso)
-	var r := rng.randi() % maxi(total, 1)
-	for e in cfg.tipos:
-		if t >= float(e.desde):
-			r -= int(e.peso)
-			if r < 0:
-				return str(e.sprite)
-	return str(cfg.tipos[0].sprite)
+## O tipo do elenco do mapa (v2/elenco.gd) sorteado para o instante `t` da partida: {sprite, nome, tinta, ...}.
+func sortear(t: float) -> Dictionary:
+	return mundo.elenco.sortear(t, rng)
 
 
-## Nasce um monstro fora da tela. Devolve false se não achou lugar (a taxa tenta de novo no próximo).
-func nascer(nome: String, forcar: Variant = null) -> bool:
+## Nasce um monstro fora da tela. `tipo` (opcional) é a variação do elenco do mapa. Devolve false se não achou lugar (a taxa tenta de novo no próximo).
+func nascer(nome: String, forcar: Variant = null, tipo := {}) -> bool:
 	var p: Variant = forcar if forcar != null else ponto_fora_da_tela()
 	if p == null:
 		return false
 	var minutos: float = mundo.tempo_partida / 60.0
 	var kv := 1.0 + float(cfg.vida_por_min) * minutos
 	var kd := 1.0 + float(cfg.dano_por_min) * minutos
-	var m = mundo.nascer_monstro(nome, p, true, kv, kd)
+	var m = mundo.nascer_monstro(nome, p, true, kv, kd, tipo)
 	if m == null:
 		return false
 	nascidos += 1
@@ -257,7 +249,7 @@ func ponto_fora_da_tela() -> Variant:
 	return null
 
 
-## Onda forte: um anel de monstros de uma vez em volta da tela, com cavaleiros.
+## Onda forte: um anel de monstros de uma vez em volta da tela, com a ponta pesada do elenco do mapa (o cavaleiro, no padrão).
 func onda_forte() -> void:
 	ondas += 1
 	var n := int(cfg.onda_base) + int(cfg.onda_mais) * (ondas - 1)
@@ -266,6 +258,6 @@ func onda_forte() -> void:
 	var folga: int = teto() - mundo.monstros.size()
 	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult") * dificuldade("densidade_mult")) + elite, maxi(folga, 0))
 	for i in n:
-		var nome := "inimigo_cavaleiro_oco" if i < elite else sortear(t)
-		nascer(nome)
+		var tipo: Dictionary = mundo.elenco.pesado if i < elite else sortear(t)
+		nascer(str(tipo.sprite), null, tipo)
 	combate.onda_forte(ondas)

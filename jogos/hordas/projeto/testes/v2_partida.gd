@@ -62,6 +62,14 @@ func pegar(id: String, rar := 0) -> Dictionary:
 	return c
 
 
+## O nome da elite pelo elenco do mapa (o do tipo que tem o sprite dela): muda de mapa para mapa (#430).
+func _nome_elite(e) -> String:
+	for t in w.elenco.elites_lista:
+		if t.sprite == e.chave:
+			return str(t.nome)
+	return ""
+
+
 func conta(nome: String) -> int:
 	return int(sinais.get(nome, 0))
 
@@ -486,7 +494,7 @@ func _ready() -> void:
 	)
 	ok(el.contorno != null and el.contorno.visible, "a elite tem o contorno colorido")
 	ok(
-		conta("elite") == 1 and str(sinais.get("elite_nome", "")).contains("Cão de Ossos Blindado"),
+		conta("elite") == 1 and str(sinais.get("elite_nome", "")) == "%s Blindado" % _nome_elite(el),
 		"sinal elite_apareceu(nome): %s" % str(sinais.get("elite_nome", ""))
 	)
 	passos(5)

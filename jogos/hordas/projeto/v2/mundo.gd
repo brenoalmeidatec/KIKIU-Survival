@@ -32,6 +32,7 @@ const Heroi := preload("res://v2/heroi.gd")
 const Monstro := preload("res://v2/monstro.gd")
 const Entrada := preload("res://v2/entrada.gd")
 const Combate := preload("res://v2/combate.gd")
+const Elenco := preload("res://v2/elenco.gd")  # os inimigos de cada mapa (dados/v2_elencos.json)
 const Roteiro := preload("res://v2/roteiro.gd")
 const Copas := preload("res://v2/copas.gd")
 const Braseiros := preload("res://v2/braseiros.gd")  # o Braseiro Antigo: apagado, acende com o herói por perto e deixa a área mais segura
@@ -90,6 +91,7 @@ var herois: Array = []  # todos os heróis do mundo (local + remotos do coop + l
 var coop_modo := ""  # --coop=host|join (etapa 1 do coop usa; hoje só é lido)
 var monstros: Array = []  # os monstros VIVOS (quem morre volta para o pool e renasce depois)
 var combate
+var elenco  # o elenco de inimigos deste mapa (v2/elenco.gd): quem faz nascer monstro de horda sorteia daqui
 var roteiro  # opções de medição e fotos (roteiro.gd); null no jogo normal
 var meta_res  # resultado com as almas (resultado_meta.gd); null no modo de teste
 var status  # card "SUA BUILD" (status.gd): a tecla C liga no HUD e a pausa o mostra ao lado do menu
@@ -310,6 +312,8 @@ func _montar() -> void:
 	_rng.seed = int(dados.get("semente", 11))
 	combate = Combate.new()
 	combate.montar(self)
+	elenco = Elenco.new()
+	elenco.montar(id_mapa, combate.cfg.diretor, combate.cartas.cfg.elites)
 	_criar_heroi()
 	oclusao = Oclusao.new().montar(sv, heroi)
 	combate.iniciar_heroi()
@@ -396,6 +400,12 @@ func _pre_criar_monstros() -> void:
 			_pool_monstros[nome].append(mo)
 
 
+## O tipo do elenco do mapa para um morador ou monstro de defesa de ponto (por peso, sem olhar o `desde`); vazio quando o mapa usa o elenco
+## padrão (então vale o sorteio antigo, TIPOS_MONSTRO/PESOS_MONSTRO).
+func _tipo_morador() -> Dictionary:
+	return elenco.sortear_qualquer(_rng)
+
+
 ## Os monstros que já estão no mapa quando a partida começa (zonas do json).
 func _popular_inicial() -> void:
 	_montar_marcadores()  # as marcas voltam a nascer também no "Jogar de novo"
@@ -404,10 +414,11 @@ func _popular_inicial() -> void:
 		var centro := Vector2(float(z.centro[0]), float(z.centro[1]))
 		var raio := float(z.get("raio", 120.0))
 		for i in int(z.get("n", 1)):
-			var nome := _sorteia(TIPOS_MONSTRO, PESOS_MONSTRO)
+			var tipo := _tipo_morador()
+			var nome := str(tipo.sprite) if not tipo.is_empty() else _sorteia(TIPOS_MONSTRO, PESOS_MONSTRO)
 			var a := _rng.randf() * TAU
 			var p := centro + Vector2(cos(a), sin(a) * 0.6) * raio * sqrt(_rng.randf())
-			var mo = nascer_monstro(nome, p)
+			var mo = nascer_monstro(nome, p, false, 1.0, 1.0, tipo)
 			mo.raio_vaga = float(z.get("vaga", 90.0))
 
 
@@ -523,7 +534,9 @@ func _defesa(m: Dictionary, dt: float) -> void:
 		m.onda = DEFESA_ONDA_S
 		for i in DEFESA_MONSTROS_POR_ONDA:
 			var a := _rng.randf() * TAU
-			nascer_monstro(_sorteia(TIPOS_MONSTRO, PESOS_MONSTRO), m.pos + Vector2(cos(a), sin(a)) * m.raio * 0.9, true)
+			var tipo := _tipo_morador()
+			var nome := str(tipo.sprite) if not tipo.is_empty() else _sorteia(TIPOS_MONSTRO, PESOS_MONSTRO)
+			nascer_monstro(nome, m.pos + Vector2(cos(a), sin(a)) * m.raio * 0.9, true, 1.0, 1.0, tipo)
 	if m.t >= m.tempo:
 		m.feito = true
 		combate.baus.soltar(m.pos, 1.0, m.forcar)
@@ -643,8 +656,9 @@ func _novo_monstro(nome: String):
 	return mo
 
 
-## Faz um monstro do tipo `nome` nascer em `p` (do pool, ou novo se o pool esvaziou). `cacador` = persegue de qualquer distância.
-func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k_dano := 1.0):
+## Faz um monstro do tipo `nome` (um dos sprites de TIPOS_MONSTRO) nascer em `p` (do pool, ou novo se o pool esvaziou). `cacador` = persegue de qualquer
+## distância. `tipo` (opcional) é a variação do elenco do mapa (v2/elenco.gd); sem ele nasce o monstro puro.
+func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k_dano := 1.0, tipo := {}):
 	var lista: Array = _pool_monstros.get(nome, [])
 	var mo
 	if lista.is_empty():
@@ -657,6 +671,8 @@ func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k
 	mo.vel_caca *= float(dif.vel_mult)
 	mo.raio_vaga = 90.0
 	mo.reviver(p)
+	if not tipo.is_empty() and not tipo.get("liso", false):
+		mo.aplicar_variante(tipo)  # a variação do elenco do mapa (nome, tinta e números), por cima do que o sprite traz
 	monstros.append(mo)
 	return mo
 
