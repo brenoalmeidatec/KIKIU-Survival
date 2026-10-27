@@ -90,7 +90,7 @@ func _dados() -> void:
 		ok(Mapas.ids().has(id), "v2_elencos.json: o elenco '%s' é de um mapa que existe" % id)
 
 
-## A média ponderada de vida x dano e de xp dos tipos possíveis em cada marco do tempo fica a FOLGA_ORCAMENTO do padrão.
+## A média ponderada de vida x dano x velocidade e de xp dos tipos possíveis em cada marco do tempo fica a FOLGA_ORCAMENTO do padrão.
 func _media(el, t: float) -> Dictionary:
 	var peso := 0.0
 	var ameaca := 0.0
@@ -98,7 +98,7 @@ func _media(el, t: float) -> Dictionary:
 	for e in el.tipos:
 		if t >= float(e.desde):
 			var b: Dictionary = monstros_cfg[e.sprite]
-			ameaca += float(e.peso) * float(b.vida) * float(e.vida) * float(b.dano) * float(e.dano)
+			ameaca += float(e.peso) * float(b.vida) * float(e.vida) * float(b.dano) * float(e.dano) * float(b.vel) * float(e.vel)
 			xp += float(e.peso) * float(b.xp)
 			peso += float(e.peso)
 	return {"ameaca": ameaca / peso, "xp": xp / peso}
