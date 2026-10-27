@@ -95,6 +95,7 @@ XP dourado e ouro de seleção são papéis distintos. Fusão magenta continua d
 
 ## 4. Componentes
 
+- **Excluir save (#426)**: na escolha de personagem, o botão EXCLUIR (Jersey 37, canto de cima à direita, alinhado à margem da ficha) aparece com um personagem na ficha; a seta para a direita (teclado e controle) sai da lista e chega nele, o Delete abre direto e o mouse clica. Abre a confirmação (painel premium de 480x200 no centro do bloco, véu escuro, "EXCLUIR LUCAS?" e o que se perde, NÃO e SIM lado a lado): o foco começa em NÃO, o foco fica preso nos dois botões e ESC/B são NÃO. Em Ajustes (só no título e no santuário, nunca na partida) a linha "Apagar todo o progresso" abre a confirmação "APAGAR TUDO?" no padrão das de sair, com "Não" marcado.
 - **Visual premium dos menus (#152 V6, 2026-10-20)**: `v2/estilo_premium.gd` é a fonte única. `painel()` = `moldura_premium.png` 32x32 (bisel dourado, filetes e um losango em cada canto, miolo azul-noite a 0,93) em `StyleBoxTexture` com margem de 10 px; `foco()` = `foco_premium.png` (barra dourada à esquerda e brilho que some para a direita), a linha ou o botão escolhido; `estilo_botao(b, recuo)` = painel escuro translúcido com filete dourado e a faixa no foco; `ornamento(largura)` = a linha dourada com losango sob os títulos. Arte gerada por `v2/hud/gerar_moldura_premium.py`. Usam: pausa (painel, linhas, ornamento), SUA BUILD, escolha de personagem e o painel e os botões do salão. A tela de título tem o próprio fundo vivo (`titulo_vivo.gd`), que a escolha de personagem também usa.
 - **Painel de pedra** (relógio, abates, XP e chefe do HUD; telas antigas): `moldura_pedra.png` 20x20 em `StyleBoxTexture`, margem de textura 5 px e de conteúdo 4 px, tingida por `modulate` (`altar.gd:256-265`, `hud.tscn:33`). Sem sombra.
 - **Cartão** (escolha, baú, resultado): `StyleBoxFlat` quadrado, borda de 2 px (+1 em épico ou lendário, +1 se selecionado), brilho externo a partir de raro (`telas.gd:122-132`). Moldura do ícone: fundo `#08060d` a 0,95 e borda de 2 px (`telas.gd:266-272`).
@@ -147,6 +148,7 @@ Comando: `godot --path jogos/hordas/projeto res://testes/<nome>.tscn`. A maioria
 |---|---|
 | `v2_fontes` | fontes do Dados, grade, dígitos, caixas (`v2/LEIA-ME.md:53`) |
 | `v2_pausa` | 4 itens, Esc e Start, Ajustes, Sair com confirmação (`:51`) |
+| `v2_excluir_save` | Excluir personagem (EXCLUIR na escolha, confirmação com foco em NÃO, ESC = Não) e Apagar todo o progresso (Ajustes, só fora da partida): um slot não toca nos outros, o ativo volta à escolha, apagar tudo preserva as opções (#426) |
 | `v2_glifos` | dispositivo (teclado, Xbox, PS) pelo evento e pelo nome, troca na hora, dica refeita, título sem o mouse no controle |
 | `v2_controle_nav` | trava o Xbox no próprio teste: X rerrola, Y escolhe automático e LB bane nas cartas, A fecha o baú, A e B mapeados em personagens e salão (apertos pela janela) |
 | `v2_controle_fotos` | ferramenta de foto, com janela: `-- --fotos=PASTA --prefixo=X --controle=xbox\|ps\|teclado` (título, Ajustes, Créditos, santuário, personagens, salão, HUD, pausa, SUA BUILD, cartas, baú, resultado); sem `--fotos` sai com `falhas=0` |

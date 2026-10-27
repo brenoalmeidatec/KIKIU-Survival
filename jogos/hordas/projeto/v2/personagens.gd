@@ -5,6 +5,9 @@ extends RefCounted
 ## valer para esse personagem. Criar um personagem novo começa com o santuário zerado.
 ## Migração: se o índice ainda não existe e há o save antigo (user://v2_progresso.cfg), ele vira o primeiro personagem. O arquivo
 ## antigo fica como está (e o .bak também), então nada se perde se algo der errado.
+## Excluir: excluir(id) tira o personagem do índice e apaga o save dele (o .cfg, o .bak e o .tmp); apagar_tudo() zera todos os slots, o
+## índice e o save antigo copiado (sem ele a migração traria o progresso de volta). Nenhum dos dois toca nas opções do jogador (Config:
+## gráficos, som e controle), no marcador da migração de pasta nem na pasta antiga do Godot.
 ## Nomes, pastas dos retratos e arma inicial vêm de dados/v2_salao.json. Sem class_name: carregue com preload, como o resto do projeto.
 
 const Meta := preload("res://v2/meta.gd")
@@ -168,6 +171,53 @@ static func ativar(id: String) -> bool:
 		return false
 	Meta.caminho_save = caminho_do_save(id)
 	return true
+
+
+static func _apagar_arquivo(caminho: String) -> void:
+	if FileAccess.file_exists(caminho):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(caminho))
+
+
+## O save de um slot e o que anda junto dele (.bak do backup e .tmp de uma gravação interrompida).
+static func _apagar_save(caminho: String) -> void:
+	for sufixo in ["", ".bak", ".tmp"]:
+		_apagar_arquivo(caminho + sufixo)
+
+
+## Exclui o personagem `id`: sai do índice (e do ativo, se era ele) e o save do slot é apagado. Devolve false, sem apagar nada, se o
+## id não existe ou o índice não gravou. Se o excluído era o que a meta lia, a meta deixa de apontar para o slot (não o recria ao gravar).
+static func excluir(id: String) -> bool:
+	var ids := lista()
+	if not ids.has(id):
+		return false
+	var cf := _indice()
+	ids.erase(id)
+	cf.set_value("geral", "lista", ids)
+	if ativo() == id:
+		cf.set_value("geral", "ativo", "")
+	if cf.has_section(id):
+		cf.erase_section(id)
+	if cf.save(caminho_indice) != OK:
+		return false
+	_apagar_save(caminho_do_save(id))
+	if Meta.caminho_save == caminho_do_save(id):
+		Meta.caminho_save = caminho_antigo
+	return true
+
+
+## Apaga TODO o progresso: todos os slots (também os que o índice não lista), o índice e o save antigo (user://v2_progresso.cfg), que
+## senão seria migrado de volta como personagem. Fica de fora tudo o que não é progresso: opções do jogador (Config) e marcador da migração.
+static func apagar_tudo() -> void:
+	var pasta := caminho_base.get_base_dir()
+	var prefixo := caminho_base.get_file()
+	var d := DirAccess.open(pasta)
+	if d != null:
+		for f in d.get_files():
+			if f.begins_with(prefixo) and (f.ends_with(".cfg") or f.ends_with(".cfg.bak") or f.ends_with(".cfg.tmp")):
+				_apagar_arquivo(pasta.path_join(f))
+	_apagar_save(caminho_indice)
+	_apagar_save(caminho_antigo)
+	Meta.caminho_save = caminho_antigo
 
 
 ## Ao abrir o jogo: garante a migração e aponta a meta para o personagem ativo (se houver um).

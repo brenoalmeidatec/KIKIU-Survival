@@ -139,6 +139,7 @@ func _ready() -> void:
 	pausa.sair_no_frontend = false
 	add_child(pausa)
 	pausa.fechou.connect(_devolver_foco)
+	pausa.apagou_tudo.connect(func(): Transicoes.ir_para(self, ESCOLHA, true))  # sem save não há santuário
 	_trilha = Trilha.new()
 	add_child(_trilha)
 	_trilha.tocar("santuario")
