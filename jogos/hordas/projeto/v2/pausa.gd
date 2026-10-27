@@ -22,6 +22,7 @@ const AjustesGraficos := preload("res://v2/ajustes_graficos.gd")
 const Creditos := preload("res://v2/creditos.gd")
 const Conquistas := preload("res://v2/conquistas.gd")  # a lista de conquistas, a mesma do Códice do santuário (#373)
 const Meta := preload("res://v2/meta.gd")
+const Personagens := preload("res://v2/personagens.gd")  # Apagar todo o progresso (Ajustes, só no título e no santuário)
 const Icones := preload("res://v2/icones_santuario.gd")
 const EstiloPremium := preload("res://v2/estilo_premium.gd")  # moldura dourada e faixa de seleção dos menus (#152 V6)
 const TAM_TITULO := Paleta.TITULO_GRANDE  # grade da Jersey 10 (56, 37, 19; ver v2/LEIA-ME.md)
@@ -37,7 +38,7 @@ const LINHA0 := 118.0  # primeira linha, a partir do topo do painel
 const LINHA_H := 36.0
 const LINHA_ALT := 32.0  # altura da faixa de cada linha
 const VISIVEIS := 5  # linhas visíveis de uma vez nas telas com rodapé de ajuda; a lista rola com a seleção
-const VISIVEIS_LIVRES := 6  # sem rodapé (pausa, Ajustes, confirmações) cabe uma a mais: o Ajustes tem 6 linhas e o "Voltar" é a última
+const VISIVEIS_LIVRES := 7  # sem rodapé (pausa, Ajustes, confirmações) cabe duas a mais: o Ajustes tem 7 linhas (fora da partida) e o "Voltar" é a última
 const TELAS_COM_RODAPE := ["audio", "graficos", "avancado", "creditos", "conquistas"]  # as que usam o espaço de AJUDA_Y
 const AJUDA_Y := LINHA0 + VISIVEIS * LINHA_H + 8.0  # rodapé com a ajuda da linha escolhida
 const AJUDA_H := 96.0
@@ -52,6 +53,7 @@ const STEPPERS := ["musica", "efeitos"]  # linhas de volume: a esquerda e a dire
 const AudioV2 := preload("res://v2/audio.gd")  # o clique do santuário (sem partida), com os WAV da v2
 
 signal fechou  # o menu fechou: quem o abriu (o santuário, o título) devolve o foco ao botão
+signal apagou_tudo  # "Apagar todo o progresso" confirmado: o menu já fechou; o santuário volta à escolha de personagem (não há mais save)
 
 var mundo  # a partida (mundo.gd); null no santuário (altar.gd) e no título (menu_principal.gd)
 var mouse_fn := Callable()  # mouse em 960x540 (o Apresentacao da partida); vazio = mouse da janela (santuário)
@@ -516,6 +518,8 @@ func _executar(id: String, passo: int) -> void:
 			_ir("confirmar_santuario")
 		"sair":
 			_ir("confirmar_sair")
+		"apagar":
+			_ir("confirmar_apagar", "ajustes")  # "Não" volta a Ajustes
 		"nao":
 			if _origem == "":
 				fechar()
@@ -525,6 +529,10 @@ func _executar(id: String, passo: int) -> void:
 			_voltar_santuario()
 		"ok_sair":
 			_sair()
+		"ok_apagar":
+			Personagens.apagar_tudo()  # só o progresso: as opções (Config) e o marcador da migração de pasta ficam
+			fechar()
+			apagou_tudo.emit()
 		"musica", "efeitos":
 			_volume(id, passo)
 		"animacoes":
@@ -576,14 +584,17 @@ func _itens() -> Array:
 			r.append(_it("sair", "Sair do jogo"))
 			return r
 		"ajustes":
-			return [
+			var r := [
 				_it("graficos", "Gráficos"),
 				_it("audio", "Áudio"),
 				_it("animacoes", "Reduzir animações", "Sim" if Transicoes.reduzido() else "Não"),
 				_it("versao", "Avisar versão nova", "Sim" if bool(Config.v("verificar_versao")) else "Não"),
-				_it("creditos", "Créditos"),
-				_it("voltar", "Voltar")
+				_it("creditos", "Créditos")
 			]
+			if mundo == null:  # no meio de uma partida não: as almas dela ainda vão para o save no fim
+				r.append(_it("apagar", "Apagar todo o progresso"))
+			r.append(_it("voltar", "Voltar"))
+			return r
 		"creditos":
 			return Creditos.itens() + [_it("voltar", "Voltar")]
 		"conquistas":
@@ -598,6 +609,8 @@ func _itens() -> Array:
 			return [_it("ok_santuario", "Sim"), _it("nao", "Não")]
 		"confirmar_sair":
 			return [_it("ok_sair", "Sim"), _it("nao", "Não")]
+		"confirmar_apagar":
+			return [_it("ok_apagar", "Sim"), _it("nao", "Não")]
 	return []
 
 
@@ -645,6 +658,8 @@ func _titulo_tela() -> String:
 			return "VOLTAR?"
 		"confirmar_sair":
 			return "SAIR?"
+		"confirmar_apagar":
+			return "APAGAR TUDO?"
 	return "PAUSADO"
 
 
@@ -653,6 +668,8 @@ func _sub_tela() -> String:
 		return "A partida conta como abandonada."
 	if tela == "confirmar_sair":
 		return "Fecha o jogo de vez."
+	if tela == "confirmar_apagar":
+		return "Apaga almas, estátuas e conquistas de todos."
 	if tela == "graficos":
 		return _graficos.mensagem
 	if tela == "avancado":

@@ -3,6 +3,9 @@ extends Control
 ## À esquerda, os personagens salvos e, no fim, NOVO PERSONAGEM: escolhe um nome livre e o santuário começa zerado. À direita, o
 ## retrato grande, as almas, as melhorias e a arma inicial do herói (o foco na lista mostra o personagem). Escolher leva ao salão
 ## dele. ESC volta: da lista de nomes para a lista de personagens, e dela para o título. Botões do Godot: mouse, teclado e controle.
+## EXCLUIR (canto de cima à direita, só com um personagem na ficha): a seta para a direita sai da lista e chega nele (o Delete também
+## abre), e o clique vale em qualquer dispositivo. Abre a confirmação "Excluir <nome>?" com o foco em NÃO (ESC e B também são NÃO); SIM
+## apaga o save do slot (Personagens.excluir) e a lista se refaz. É o segundo passo: o primeiro é pedir EXCLUIR.
 
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const UiJanela := preload("res://v2/ui_janela.gd")
@@ -35,6 +38,7 @@ const INFO_Y := RETRATO_Y + RETRATO_ALT
 const INFO_ALT := 70
 const DETALHE_Y := INFO_Y + INFO_ALT
 const DETALHE_ALT := 114
+const EXCLUIR_L := 170  # largura do botão EXCLUIR (canto de cima à direita, alinhado à margem da ficha)
 const COR_OURO := Color(1.0, 0.86, 0.42)
 const COR_TEXTO := Color(0.92, 0.9, 0.96)
 const COR_APAGADO := Color(0.55, 0.56, 0.64)
@@ -50,6 +54,15 @@ var _nome: Label
 var _info: Label
 var _detalhe: Label
 var _aviso: Label
+var _excluir: Button  # EXCLUIR do personagem na ficha (_alvo); escondido nas outras linhas da lista
+var _alvo := ""  # o personagem na ficha de agora
+var _botao_alvo: Button  # o botão dele na lista (para onde o EXCLUIR devolve o foco)
+var _modal: Control  # a confirmação de exclusão; null enquanto nunca abriu
+var _modal_titulo: Label
+var _modal_texto: Label
+var _modal_nao: Button
+var _modal_sim: Button
+var _excluindo := ""  # o personagem que a confirmação aberta quer excluir
 
 
 func _ready() -> void:
@@ -116,6 +129,14 @@ func _montar() -> void:
 	# entre o título e a ficha (y 80 a 100): dentro da ficha, o detalhe de 6 linhas (até y 481) ocuparia o lugar do aviso
 	_aviso = _rotulo("", Dados.fonte_texto, 16, COR_AVISO, Rect2(0, 80, LARG, 20), HORIZONTAL_ALIGNMENT_CENTER)
 	add_child(_aviso)
+	_excluir = Button.new()
+	_excluir.text = "EXCLUIR"
+	_excluir.position = Vector2(FICHA_X + FICHA_L - EXCLUIR_L, 26)
+	_excluir.size = Vector2(EXCLUIR_L, 42)
+	_estilo_botao(_excluir)
+	_excluir.pressed.connect(_pedir_exclusao)
+	_excluir.visible = false
+	add_child(_excluir)
 	var faixa := ColorRect.new()
 	faixa.color = Color(0.01, 0.02, 0.035, 0.7)
 	faixa.position = Vector2(0, ALT - 42)
@@ -168,7 +189,8 @@ func _montar_lista() -> void:
 		_novo_botao("VOLTAR", _voltar_lista, _mostrar_texto.bind("Volta à lista de personagens."))
 	else:
 		for id in Personagens.lista():
-			_novo_botao(Personagens.nome(id), _escolher.bind(id), _mostrar_personagem.bind(id))
+			var b := _novo_botao(Personagens.nome(id), _escolher.bind(id), _mostrar_personagem.bind(id))
+			b.focus_neighbor_right = _excluir.get_path()  # a seta para a direita chega ao EXCLUIR do personagem em foco
 		if not Personagens.nomes_livres().is_empty():
 			_novo_botao("NOVO PERSONAGEM", _abrir_nomes, _mostrar_texto.bind("Cria um personagem com um dos nomes livres."))
 	if _lista.get_child_count() > 0:
@@ -177,7 +199,7 @@ func _montar_lista() -> void:
 		_mostrar_texto()
 
 
-func _novo_botao(txt: String, acao: Callable, ao_focar: Callable) -> void:
+func _novo_botao(txt: String, acao: Callable, ao_focar: Callable) -> Button:
 	var b := Button.new()
 	b.text = txt
 	b.custom_minimum_size = Vector2(0, 42)
@@ -185,12 +207,23 @@ func _novo_botao(txt: String, acao: Callable, ao_focar: Callable) -> void:
 	b.pressed.connect(acao)
 	b.focus_entered.connect(ao_focar)
 	_lista.add_child(b)
+	return b
 
 
 # ------------------------------------------------------------------ o que aparece à direita
 
 
 func _mostrar_personagem(id: String) -> void:
+	_alvo = id
+	_botao_alvo = _botao_de(id)
+	_excluir.visible = true
+	if _botao_alvo != null:  # o EXCLUIR volta para a lista pelo botão do personagem que ele apaga
+		var caminho := _botao_alvo.get_path()
+		_excluir.focus_neighbor_left = caminho
+		_excluir.focus_neighbor_top = caminho
+		_excluir.focus_neighbor_bottom = caminho
+		_excluir.focus_previous = caminho
+		_excluir.focus_next = caminho
 	var r := Personagens.resumo(id)
 	_nome.text = str(r.nome)
 	_definir_retrato(_pasta_do_nome(str(r.nome)), true, Personagens.folha(id))
@@ -210,6 +243,7 @@ func _mostrar_personagem(id: String) -> void:
 
 
 func _mostrar_nome(n: Dictionary) -> void:
+	_sem_alvo()
 	_nome.text = str(n.nome)
 	_definir_retrato(str(n.pasta), true, Personagens.folha_do_nome(str(n.nome)))
 	_info.text = "Herói: %s" % _heroi_e_arma(Personagens.heroi_do_nome(str(n.nome)))
@@ -218,10 +252,23 @@ func _mostrar_nome(n: Dictionary) -> void:
 
 ## Sem personagem na ficha: a ficha fica vazia; só o texto de ajuda do botão com o foco aparece.
 func _mostrar_texto(txt := "") -> void:
+	_sem_alvo()
 	_nome.text = ""
 	_info.text = ""
 	_detalhe.text = txt
 	_definir_retrato("", false)
+
+
+func _sem_alvo() -> void:
+	_alvo = ""
+	_botao_alvo = null
+	_excluir.visible = false
+
+
+## O botão da lista do personagem `id` (a lista tem os botões na ordem de Personagens.lista()).
+func _botao_de(id: String) -> Button:
+	var i := Personagens.lista().find(id)
+	return _lista.get_child(i) as Button if i >= 0 and i < _lista.get_child_count() else null
 
 
 func _heroi_e_arma(heroi_id: String) -> String:
@@ -304,6 +351,15 @@ func _ir_ao_salao() -> void:
 
 
 func _unhandled_input(e: InputEvent) -> void:
+	if _modal_aberto():  # a confirmação é modal: ESC e B são NÃO, e nada mais passa
+		if e.is_action_pressed("ui_cancel"):
+			_fechar_confirmacao()
+		get_viewport().set_input_as_handled()
+		return
+	if e is InputEventKey and e.pressed and not e.echo and e.keycode == KEY_DELETE and _alvo != "":
+		get_viewport().set_input_as_handled()
+		_pedir_exclusao()
+		return
 	if not e.is_action_pressed("ui_cancel"):
 		return
 	get_viewport().set_input_as_handled()
@@ -311,3 +367,89 @@ func _unhandled_input(e: InputEvent) -> void:
 		_voltar_lista()
 	else:
 		Transicoes.ir_para(self, TITULO, true)
+
+
+# ------------------------------------------------------------------ excluir um personagem (dois passos)
+
+
+func _modal_aberto() -> bool:
+	return _modal != null and _modal.visible
+
+
+## Primeiro passo: EXCLUIR abre a confirmação, com o foco em NÃO.
+func _pedir_exclusao() -> void:
+	if _alvo == "" or not Personagens.lista().has(_alvo):
+		return
+	_excluindo = _alvo
+	if _modal == null:
+		_montar_confirmacao()
+	var nome_txt := Personagens.nome(_excluindo)
+	_modal_titulo.text = "EXCLUIR %s?" % nome_txt.to_upper()
+	_modal_texto.text = "Isso apaga as almas, as estátuas e as conquistas de %s. Não dá para desfazer." % nome_txt
+	_modal.visible = true
+	_modal_nao.grab_focus()
+
+
+func _fechar_confirmacao() -> void:
+	_modal.visible = false
+	_excluindo = ""
+	if _botao_alvo != null and is_instance_valid(_botao_alvo):
+		_botao_alvo.grab_focus()  # devolve o foco ao personagem que estava na ficha
+
+
+## Segundo passo: SIM apaga o save do slot e refaz a lista. Excluir o ativo também volta à escolha (é esta tela): ninguém fica ativo.
+func _confirmar_exclusao() -> void:
+	var id := _excluindo
+	var nome_txt := Personagens.nome(id)
+	var gravou := Personagens.excluir(id)
+	_modal.visible = false
+	_excluindo = ""
+	_montar_lista()
+	_aviso.text = "%s excluído." % nome_txt if gravou else "Não foi possível excluir. Tente de novo."
+
+
+func _montar_confirmacao() -> void:
+	_modal = Control.new()  # sem tamanho: só agrupa (o véu cobre o canvas sozinho, e o resto fica nas coordenadas do bloco)
+	_modal.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_modal.visible = false
+	add_child(_modal)
+	var veu := ColorRect.new()
+	veu.color = Color(0.0, 0.0, 0.02, 0.72)
+	EscalaUi.cobrir(veu)
+	veu.mouse_filter = Control.MOUSE_FILTER_STOP  # o clique fora dos botões não chega à lista por trás
+	_modal.add_child(veu)
+	var painel := Panel.new()
+	painel.position = Vector2(240, 170)
+	painel.size = Vector2(480, 200)
+	painel.add_theme_stylebox_override("panel", EstiloPremium.painel())
+	painel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_modal.add_child(painel)
+	_modal_titulo = _rotulo("", Dados.fonte_titulo, 37, COR_OURO, Rect2(260, 184, 440, 44), HORIZONTAL_ALIGNMENT_CENTER)
+	_modal.add_child(_modal_titulo)
+	_modal_texto = _rotulo("", Dados.fonte_texto, 16, COR_TEXTO, Rect2(264, 234, 432, 60), HORIZONTAL_ALIGNMENT_CENTER)
+	_modal_texto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_modal.add_child(_modal_texto)
+	_modal_nao = _botao_confirmacao("NÃO", Vector2(260, 306), _fechar_confirmacao)
+	_modal_sim = _botao_confirmacao("SIM", Vector2(480, 306), _confirmar_exclusao)
+	# o foco fica preso nos dois botões da confirmação: nenhuma seta, Tab ou controle chega à lista por trás
+	_modal_nao.focus_neighbor_left = _modal_sim.get_path()
+	_modal_nao.focus_neighbor_right = _modal_sim.get_path()
+	_modal_sim.focus_neighbor_left = _modal_nao.get_path()
+	_modal_sim.focus_neighbor_right = _modal_nao.get_path()
+	for b in [_modal_nao, _modal_sim]:
+		var outro: Button = _modal_sim if b == _modal_nao else _modal_nao
+		b.focus_neighbor_top = b.get_path()
+		b.focus_neighbor_bottom = b.get_path()
+		b.focus_next = outro.get_path()
+		b.focus_previous = outro.get_path()
+
+
+func _botao_confirmacao(txt: String, pos: Vector2, acao: Callable) -> Button:
+	var b := Button.new()
+	b.text = txt
+	b.position = pos
+	b.size = Vector2(200, 42)
+	_estilo_botao(b)
+	b.pressed.connect(acao)
+	_modal.add_child(b)
+	return b

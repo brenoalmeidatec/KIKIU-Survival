@@ -76,6 +76,7 @@ func _ready() -> void:
 	add_child(pausa)
 	_ajustes.pressed.connect(pausa.abrir_ajustes)
 	pausa.fechou.connect(func(): _ajustes.grab_focus())
+	pausa.apagou_tudo.connect(func(): Transicoes.ir_para(self, "res://v2/personagens.tscn", true))  # sem save não há santuário
 	trilha = Trilha.new()
 	add_child(trilha)
 	trilha.tocar("santuario")
