@@ -627,7 +627,7 @@ func _linhas_conquistas() -> Array:
 func _itens_conquistas() -> Array:
 	var r := []
 	for l in _linhas_conquistas():
-		var it := _it("c:%s" % l.id, str(l.nome), "CUMPRIDA" if l.feita else str(l.progresso))
+		var it := _it("c:%s" % l.id, str(l.nome), str(l.selo) if l.feita else str(l.progresso))
 		it["textura"] = Icones.textura(str(l.icone))
 		it["feita"] = l.feita
 		it["ajuda"] = "%s\nPrêmio: %s" % [l.fazer, l.premio] if str(l.premio) != "" else str(l.fazer)

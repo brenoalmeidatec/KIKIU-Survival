@@ -5,10 +5,13 @@ extends RefCounted
 ## ({"tempo": s, "combo": n}) traz a partida em andamento e vale se for maior que o recorde.
 
 const Meta := preload("res://v2/meta.gd")
+const Mapas := preload("res://v2/mapas.gd")
 const UNIDADES := {"abates": "abates", "nivel": "nível", "evolucoes": "evoluções", "partidas": "partidas", "abates_total": "abates"}
 
 
-## Uma linha por conquista, na ordem do catálogo: {id, nome, fazer, feita, frac (0..1), progresso, premio, icone, icone_premio}.
+## Uma linha por conquista, na ordem do catálogo: {id, nome, fazer, feita, frac (0..1), progresso, premio, icone, icone_premio, selo, lore}.
+## Segredo dos mapas (#424): antes de achar, nome "???" e `fazer` é a dica; depois, o nome e `lore` traz as frases do fragmento (o Códice escreve uma por linha extra).
+## `selo` é o rótulo de quem está feita ("CUMPRIDA", ou "ACHADO" no segredo).
 ## `premio` vem vazio só quando a recompensa não existe no catálogo; o último mapa não abre nada e diz "o fim da jornada".
 static func linhas(vivo := {}) -> Array:
 	var e := Meta.estado()
@@ -29,6 +32,9 @@ static func linhas(vivo := {}) -> Array:
 			"combo":
 				atual = float(combo)
 				unidade = "abates"
+			"segredo":
+				atual = 1.0 if feita else 0.0
+				unidade = "segredo"
 			"abates", "nivel", "evolucoes", "partidas", "abates_total":  # o recorde (ou o total) do save; na pausa, a partida viva se for maior
 				atual = maxf(float(r.get(str(c.condicao), 0)), float(vivo.get(str(c.condicao), 0)))
 				unidade = UNIDADES[str(c.condicao)]
@@ -47,9 +53,23 @@ static func linhas(vivo := {}) -> Array:
 			"premio": premio(c),
 			"icone": icone_da_conquista(c),
 			"icone_premio": icone_do_premio(c.get("recompensa", {})),
+			"selo": "ACHADO" if c.has("segredo") else "CUMPRIDA",
+			"lore": [],
 		}
+		if c.has("segredo"):
+			linha.nome = str(c.nome) if feita else "???"
+			linha.fazer = "Segredo: %s" % _nome_do_mapa(str(c.local)) if feita else str(c.dica)
+			linha.lore = c.lore if feita else []
 		out.append(linha)
 	return out
+
+
+## O nome do mapa (v2/mapas.gd) pelo id; o próprio id se não existir.
+static func _nome_do_mapa(id: String) -> String:
+	for m in Mapas.LISTA:
+		if str(m.id) == id:
+			return str(m.nome).substr(0, 1) + str(m.nome).substr(1).to_lower()
+	return id
 
 
 ## O que fazer, curto. Conquista de vitória usa o texto do próprio catálogo (cada mapa tem o seu chefe).

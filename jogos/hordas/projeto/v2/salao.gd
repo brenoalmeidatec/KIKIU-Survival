@@ -46,6 +46,7 @@ const CORES_MAPA := {
 	"floresta": Color(0.3, 0.62, 0.36), "laboratorio": Color(0.3, 0.68, 0.78), "cidade": Color(0.85, 0.58, 0.3), "medio": Color(0.5, 0.55, 0.8)
 }
 const LINHA_CONQUISTA := 72.0  # altura de cada conquista no Códice
+const LINHA_LORE := 20.0  # a mais por frase de lore, no segredo achado
 const COR_TRAVADO := Color(0.22, 0.22, 0.25)
 const Glifos := preload("res://v2/glifos.gd")
 
@@ -711,7 +712,8 @@ func _montar_lista_codice() -> void:
 	for i in _p_itens.size():
 		var l: Dictionary = _p_itens[i]
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(0, LINHA_CONQUISTA)
+		var frases: Array = l.lore  # segredo achado (#424): cada frase do fragmento de lore ganha uma linha extra embaixo
+		b.custom_minimum_size = Vector2(0, LINHA_CONQUISTA + LINHA_LORE * frases.size())
 		b.material = Card.sem_luz()  # a luz da sala não pinta a linha (os filhos herdam o material)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_estilo_botao(b, 10)
@@ -732,7 +734,7 @@ func _montar_lista_codice() -> void:
 		var cor_prog := Paleta.BONUS if l.feita else COR_TEXTO
 		b.add_child(_rotulo(str(l.progresso), Dados.fonte_texto, Paleta.TEXTO_TAMANHO, cor_prog, Rect2(504, 6, 150, 22), HORIZONTAL_ALIGNMENT_LEFT))
 		if l.feita:
-			b.add_child(_rotulo("CUMPRIDA", Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.BONUS, Rect2(654, 6, 130, 22), HORIZONTAL_ALIGNMENT_RIGHT))
+			b.add_child(_rotulo(str(l.selo), Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.BONUS, Rect2(654, 6, 130, 22), HORIZONTAL_ALIGNMENT_RIGHT))
 		var fundo := ColorRect.new()  # a barra: o trilho escuro e o que já foi feito por cima
 		fundo.color = Paleta.alfa(Paleta.TEXTO_APAGADO, 0.28)
 		fundo.position = Vector2(504, 30)
@@ -759,6 +761,17 @@ func _montar_lista_codice() -> void:
 			)
 			premio.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			b.add_child(premio)
+		for k in frases.size():
+			b.add_child(
+				_rotulo(
+					str(frases[k]),
+					Dados.fonte_texto,
+					Paleta.TEXTO_TAMANHO,
+					COR_OURO,
+					Rect2(72, LINHA_CONQUISTA - 4 + LINHA_LORE * k, 712, LINHA_LORE),
+					HORIZONTAL_ALIGNMENT_LEFT
+				)
+			)
 		for f in b.get_children():  # rótulos e barras usam o material sem luz do botão (os ícones já têm o seu)
 			if f is Label or f is ColorRect:
 				f.use_parent_material = true

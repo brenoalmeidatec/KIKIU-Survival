@@ -452,7 +452,7 @@ func _texto_recompensa(r: Dictionary) -> String:
 	var item := Meta.item_da_recompensa(r)
 	if Meta.oculto(item):
 		return ""
-	var nome := str(item.get("nome", r.id))
+	var nome := str(item.get("nome", r.get("id", "")))
 	if str(r.tipo) == "modo":
 		nome = "modo " + nome
 	if str(item.get("efeito", "")) == "pendente":

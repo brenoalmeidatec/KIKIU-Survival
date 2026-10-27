@@ -12,6 +12,7 @@ extends RefCounted
 
 const VERSAO_PROGRESSAO := 2
 const Dificuldade := preload("res://v2/dificuldade.gd")
+const Segredos := preload("res://v2/segredos.gd")  # os segredos dos mapas viram conquistas segredo_<id> (#424)
 
 static var caminho_save := "user://v2_progresso.cfg"
 static var erro_save := false
@@ -64,7 +65,7 @@ static func _niveis_extras(cf: ConfigFile) -> Dictionary:
 
 
 static func conquistas() -> Array:
-	return catalogo().get("conquistas", []) + Dados.json("v2_dificuldade").get("conquistas", [])
+	return catalogo().get("conquistas", []) + Dados.json("v2_dificuldade").get("conquistas", []) + Segredos.conquistas()
 
 
 static func dificuldade() -> String:
@@ -451,6 +452,40 @@ static func marcar_mapa_vencido(id: String, cf: ConfigFile = null) -> bool:
 		erro_save = not _gravar(cf)
 		return not erro_save
 	return true
+
+
+## Segredo achado (#424): marca a conquista segredo_<id> e credita as almas do prêmio, uma vez por personagem. Grava direto, como
+## marcar_mapa_vencido. True só se marcou agora (e salvou); id desconhecido ou já achado devolve false.
+static func achar_segredo(id: String) -> bool:
+	erro_save = false
+	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return false
+	var cid := Segredos.id_conquista(id)
+	for c in Segredos.conquistas():
+		if str(c.id) != cid:
+			continue
+		if bool(cf.get_value("conquistas", cid, false)):
+			return false
+		cf.set_value("conquistas", cid, true)
+		var premio: Dictionary = c.get("recompensa", {})
+		if str(premio.get("tipo", "")) == "almas":
+			cf.set_value("moeda", "almas", int(cf.get_value("moeda", "almas", 0)) + int(premio.get("n", 0)))
+		erro_save = not _gravar(cf)
+		return not erro_save
+	return false
+
+
+## Os ids dos segredos que o personagem já achou (lê o save).
+static func segredos_achados() -> Array:
+	var cf := _ler()
+	var ids := []
+	if cf != null:
+		for c in Segredos.conquistas():
+			if bool(cf.get_value("conquistas", str(c.id), false)):
+				ids.append(str(c.id).trim_prefix(Segredos.PREFIXO))
+	return ids
 
 
 ## Os ids dos mapas vencidos, derivados das conquistas: portais, chefes e códice leem o mesmo estado.
