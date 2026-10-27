@@ -9,6 +9,7 @@ extends RefCounted
 
 const Paleta := preload("res://v2/paleta.gd")
 const G := preload("res://v2/glifos.gd")  # as classes internas chamam o estático do arquivo por aqui
+const Controles := preload("res://v2/controles.gd")  # as teclas que o jogador trocou (#422): o glifo da ação segue o que vale no InputMap
 
 enum Disp { TECLADO, XBOX, PS }
 
@@ -75,6 +76,45 @@ const TABELA := {
 	"esquiva": [[[TECLA, "Espaço"]], [[FACE, "B"]], [[PS, "o"]]],
 }
 
+## papel do glifo -> ação do InputMap que o remapeamento pode ter trocado (Ajustes > Controles). Só estes papéis seguem a troca.
+const PAPEL_ACAO := {"habilidade": "ruptura", "ultimate": "ultimate", "secundario": "escudo", "clique": "atacar", "correr": "correr", "esquiva": "esquiva"}
+const NOMES_TECLA := {
+	KEY_SPACE: "Espaço",
+	KEY_ENTER: "Enter",
+	KEY_KP_ENTER: "Enter",
+	KEY_BACKSPACE: "Apagar",
+	KEY_LEFT: "Esq",
+	KEY_RIGHT: "Dir",
+	KEY_UP: "Cima",
+	KEY_DOWN: "Baixo",
+	KEY_SHIFT: "Shift",
+	KEY_CTRL: "Ctrl",
+	KEY_ALT: "Alt",
+	KEY_CAPSLOCK: "Caps",
+	KEY_INSERT: "Ins",
+	KEY_HOME: "Home",
+	KEY_END: "End"
+}
+## botão do controle -> [Xbox, PlayStation], cada um [tipo, texto]
+const BOTOES_JOY := {
+	JOY_BUTTON_A: [[FACE, "A"], [PS, "x"]],
+	JOY_BUTTON_B: [[FACE, "B"], [PS, "o"]],
+	JOY_BUTTON_X: [[FACE, "X"], [PS, "q"]],
+	JOY_BUTTON_Y: [[FACE, "Y"], [PS, "t"]],
+	JOY_BUTTON_LEFT_SHOULDER: [[TECLA, "LB"], [TECLA, "L1"]],
+	JOY_BUTTON_RIGHT_SHOULDER: [[TECLA, "RB"], [TECLA, "R1"]],
+	JOY_BUTTON_LEFT_STICK: [[TECLA, "L3"], [TECLA, "L3"]],
+	JOY_BUTTON_RIGHT_STICK: [[TECLA, "R3"], [TECLA, "R3"]],
+	JOY_BUTTON_BACK: [[TECLA, "View"], [TECLA, "Share"]],
+	JOY_BUTTON_START: [[TECLA, "Menu"], [TECLA, "Options"]],
+	JOY_BUTTON_GUIDE: [[TECLA, "Guia"], [TECLA, "PS"]],
+	JOY_BUTTON_MISC1: [[TECLA, "Misc"], [TECLA, "Misc"]],
+	JOY_BUTTON_DPAD_UP: [[TECLA, "D-cima"], [TECLA, "D-cima"]],
+	JOY_BUTTON_DPAD_DOWN: [[TECLA, "D-baixo"], [TECLA, "D-baixo"]],
+	JOY_BUTTON_DPAD_LEFT: [[TECLA, "D-esq"], [TECLA, "D-esq"]],
+	JOY_BUTTON_DPAD_RIGHT: [[TECLA, "D-dir"], [TECLA, "D-dir"]],
+}
+
 static var disp: int = Disp.TECLADO
 static var forcado := false  # --controle=...: a detecção fica parada
 static var _ouvintes: Array[Callable] = []
@@ -138,6 +178,11 @@ static func definir(d: int) -> void:
 	if d == disp:
 		return
 	disp = d
+	avisar()
+
+
+## Chama quem escuta (dispositivo trocado ou comando remapeado): cada glifo e dica se refaz. Callable de nó liberado é descartado.
+static func avisar() -> void:
 	var vivos: Array[Callable] = []
 	for c in _ouvintes:
 		if c.is_valid():
@@ -146,7 +191,8 @@ static func definir(d: int) -> void:
 	_ouvintes = vivos
 
 
-## Avisa quando o dispositivo troca. Callable de nó liberado é descartado sozinho.
+## Avisa quando o dispositivo troca (ou quando o jogador remapeia um comando: o glifo muda mesmo com o mesmo dispositivo). Callable de nó
+## liberado é descartado sozinho.
 static func ao_mudar(c: Callable) -> void:
 	_ouvintes.append(c)
 
@@ -157,8 +203,56 @@ static func eh_controle() -> bool:
 
 ## Lista de [tipo, texto] do botão da ação no dispositivo atual (vazia se a ação não existe nele).
 static func descritor(acao: String) -> Array:
+	var real: String = PAPEL_ACAO.get(acao, "")
+	if real != "" and Controles.alterada(real, "controle" if eh_controle() else "teclado"):
+		return descritor_da_acao(real)
 	var t: Array = TABELA.get(acao, [])
 	return t[disp] if not t.is_empty() else []
+
+
+## O que o jogador deixou na ação do InputMap, no dispositivo em uso (teclado e mouse, ou controle): uma lista de [tipo, texto], vazia se o slot ficou sem nada.
+static func descritor_da_acao(id: String) -> Array:
+	var r: Array = []
+	for e in Controles.eventos(id, "controle" if eh_controle() else "teclado"):
+		var d := descritor_evento(e, disp)
+		if not d.is_empty():
+			r.append(d)
+	return r
+
+
+## Os dois slots de uma ação lado a lado, para a tela de Controles: [teclado e mouse, controle (Xbox ou PS; o teclado vale como Xbox)].
+static func descritores_da_acao(id: String) -> Array:
+	var d_joy := disp if disp != Disp.TECLADO else Disp.XBOX
+	var kb: Array = []
+	for e in Controles.eventos(id, "teclado"):
+		kb.append(descritor_evento(e, Disp.TECLADO))
+	var jo: Array = []
+	for e in Controles.eventos(id, "controle"):
+		jo.append(descritor_evento(e, d_joy))
+	return [kb, jo]
+
+
+## [tipo, texto] do glifo de um evento do InputMap no dispositivo `d` (vazio se não há como desenhar).
+static func descritor_evento(e: InputEvent, d: int) -> Array:
+	if e is InputEventKey:
+		var k: int = e.physical_keycode if e.physical_keycode != KEY_NONE else e.keycode
+		return [TECLA, NOMES_TECLA.get(k, OS.get_keycode_string(k as Key))]
+	if e is InputEventMouseButton:
+		match e.button_index:
+			MOUSE_BUTTON_LEFT:
+				return [MOUSE, "e"]
+			MOUSE_BUTTON_RIGHT:
+				return [MOUSE, "d"]
+			MOUSE_BUTTON_MIDDLE:
+				return [MOUSE, "m"]
+		return [TECLA, "Mouse %d" % (e.button_index - 4)]  # os botões laterais: Mouse 4 e Mouse 5
+	if e is InputEventJoypadButton:
+		var par: Array = BOTOES_JOY.get(e.button_index, [[TECLA, "Botão %d" % e.button_index], [TECLA, "Botão %d" % e.button_index]])
+		return par[1 if d == Disp.PS else 0]
+	if e is InputEventJoypadMotion:
+		var esq: bool = e.axis == JOY_AXIS_TRIGGER_LEFT
+		return [TECLA, ("L2" if esq else "R2") if d == Disp.PS else ("LT" if esq else "RT")]
+	return []
 
 
 ## Só texto curto da ação (para o que é desenhado por código): "Esc", "A", "LB/RB". Cruz, bola, quadrado e triângulo viram X, O, Quad e Tri.

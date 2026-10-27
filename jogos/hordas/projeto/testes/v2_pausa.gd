@@ -240,24 +240,24 @@ func _testes() -> void:
 	_ir_para(pausa, "ajustes")
 	_tecla(KEY_ENTER)
 	ok(
-		pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "animacoes", "versao", "creditos", "voltar"],
-		"Ajustes abre com Gráficos, Áudio, Reduzir animações, aviso de versão, Créditos e Voltar"
+		pausa.tela == "ajustes" and _ids(pausa) == ["graficos", "audio", "controles", "animacoes", "versao", "creditos", "voltar"],
+		"Ajustes abre com Gráficos, Áudio, Controles, Reduzir animações, aviso de versão, Créditos e Voltar"
 	)
-	# as seis linhas aparecem de uma vez (sem rodapé de ajuda cabe uma a mais): o "Voltar", a última, não pode sumir da lista
+	# as sete linhas aparecem de uma vez (sem rodapé de ajuda cabem três a mais): o "Voltar", a última, não pode sumir da lista
 	ok(
-		_linhas_visiveis(pausa) == 6 and pausa._topo == 0,
-		"Ajustes mostra as 6 linhas, sem rolar (%d visíveis, topo %d)" % [_linhas_visiveis(pausa), pausa._topo]
+		_linhas_visiveis(pausa) == 7 and pausa._topo == 0,
+		"Ajustes mostra as 7 linhas, sem rolar (%d visíveis, topo %d)" % [_linhas_visiveis(pausa), pausa._topo]
 	)
-	var l_voltar: Dictionary = pausa._linhas[5]
-	ok(l_voltar["linha"].visible and l_voltar["rotulo"].text == "Voltar", "a 6ª linha de Ajustes é o Voltar e está visível")
+	var l_voltar: Dictionary = pausa._linhas[6]
+	ok(l_voltar["linha"].visible and l_voltar["rotulo"].text == "Voltar", "a 7ª linha de Ajustes é o Voltar e está visível")
 	ok(
-		Pausa.PAINEL.position.y + Pausa.LINHA0 + 5 * Pausa.LINHA_H + Pausa.LINHA_ALT < Pausa.PAINEL.position.y + Pausa.DICA_Y,
-		"a 6ª linha termina acima da dica do rodapé"
+		Pausa.PAINEL.position.y + Pausa.LINHA0 + 6 * Pausa.LINHA_H + Pausa.LINHA_ALT < Pausa.PAINEL.position.y + Pausa.DICA_Y,
+		"a 7ª linha termina acima da dica do rodapé"
 	)
 	pausa.mouse_fn = Callable(self, "_mouse_teste")
-	_mouse_alvo = Vector2(354, Pausa.PAINEL.position.y + Pausa.LINHA0 + 5 * Pausa.LINHA_H + 16.0)
+	_mouse_alvo = Vector2(354, Pausa.PAINEL.position.y + Pausa.LINHA0 + 6 * Pausa.LINHA_H + 16.0)
 	_clique(_mouse_alvo)
-	ok(pausa.tela == "menu" and pausa.aberto, "clicar no Voltar (6ª linha) volta ao menu da pausa")
+	ok(pausa.tela == "menu" and pausa.aberto, "clicar no Voltar (7ª linha) volta ao menu da pausa")
 	pausa.mouse_fn = Callable()
 	_ir_para(pausa, "ajustes")
 	_tecla(KEY_ENTER)
