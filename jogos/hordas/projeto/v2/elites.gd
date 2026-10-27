@@ -83,14 +83,15 @@ func nascer(sprite := "", mod := "", onde: Variant = null):
 	var t: float = mundo.tempo_partida
 	var info: Dictionary = {}
 	var pool: Array = []
-	for e in cfg.tipos:
+	var candidatas: Array = mundo.elenco.elites_lista  # de quem a elite pode nascer neste mapa (no padrão, cfg.tipos)
+	for e in candidatas:
 		if sprite != "":
 			if e.sprite == sprite:
 				info = e
 		elif t >= float(e.desde):
 			pool.append(e)
 	if info.is_empty():
-		info = pool[_rng.randi() % pool.size()] if not pool.is_empty() else cfg.tipos[0]
+		info = pool[_rng.randi() % pool.size()] if not pool.is_empty() else candidatas[0]
 	var md: Dictionary = {}
 	for e in cfg.modificadores:
 		if mod != "" and e.id == mod:
@@ -99,7 +100,7 @@ func nascer(sprite := "", mod := "", onde: Variant = null):
 		md = cfg.modificadores[_rng.randi() % cfg.modificadores.size()]
 	var minutos: float = t / 60.0
 	var dcfg: Dictionary = combate.cfg.diretor
-	var m = mundo.nascer_monstro(str(info.sprite), p, true, 1.0 + float(dcfg.vida_por_min) * minutos, 1.0 + float(dcfg.dano_por_min) * minutos)
+	var m = mundo.nascer_monstro(str(info.sprite), p, true, 1.0 + float(dcfg.vida_por_min) * minutos, 1.0 + float(dcfg.dano_por_min) * minutos, info.tipo)
 	if m == null:
 		return null
 	marcar(m, md)
@@ -124,7 +125,7 @@ func marcar(m, md: Dictionary) -> void:
 	m.vel_mult = float(md.get("vel_mult", 1.0))
 	m.emp_mult = float(md.get("empurrao_mult", 1.0))
 	m.stun_mult = 0.5
-	m.tinta = Color.WHITE.lerp(m.cor_elite, 0.25)
+	m.tinta = m.tinta * Color.WHITE.lerp(m.cor_elite, 0.25)  # soma-se à tinta da variação do elenco (branca para o monstro puro)
 	m.invoca_t = float(md.get("cada", 4.5)) * 0.6
 	m.definir_escala(float(cfg.escala))
 	dar_contorno(m, m.cor_elite)
@@ -171,7 +172,8 @@ func _invocar(m) -> void:
 		if lista.size() >= int(md.max):
 			break
 		var a := _rng.randf() * TAU
-		var f = mundo.nascer_monstro("inimigo_aranha_tecela" if k % 2 == 0 else "inimigo_cao_ossos", m.pos + Vector2(cos(a), sin(a) * 0.6) * 22.0, true)
+		var filho: Dictionary = mundo.elenco.invocado(k)  # os dois bichos pequenos do elenco do mapa (aranha e cão, no padrão)
+		var f = mundo.nascer_monstro(str(filho.sprite), m.pos + Vector2(cos(a), sin(a) * 0.6) * 22.0, true, 1.0, 1.0, filho)
 		if f != null:
 			lista.append(f)
 			combate.fx.onda(f.pos, Color(m.cor_elite.r, m.cor_elite.g, m.cor_elite.b, 0.8), 16.0, 0.25)

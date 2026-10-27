@@ -1,0 +1,1011 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/gerar_v2_mapas.py (nao edite a mao)",
+ "enfeites": "enfeites.png",
+ "enfeites_normal": "enfeites_normal.png",
+ "itens": [
+  {
+   "nome": "coluna_alta",
+   "peso": 1,
+   "pe": [
+    17,
+    110
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      13.4,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    0,
+    34,
+    113
+   ]
+  },
+  {
+   "nome": "coluna_quebrada",
+   "peso": 1,
+   "pe": [
+    21,
+    60
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.6
+     ],
+     "raio": [
+      14.3,
+      10.1
+     ]
+    }
+   ],
+   "regiao": [
+    36,
+    0,
+    43,
+    64
+   ]
+  },
+  {
+   "nome": "base_coluna",
+   "peso": 1,
+   "pe": [
+    17,
+    37
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.6
+     ],
+     "raio": [
+      14.3,
+      10.1
+     ]
+    }
+   ],
+   "regiao": [
+    81,
+    0,
+    34,
+    39
+   ]
+  },
+  {
+   "nome": "coluna_caida",
+   "peso": 1,
+   "pe": [
+    61,
+    39
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      56.0,
+      9.1
+     ]
+    }
+   ],
+   "regiao": [
+    117,
+    0,
+    121,
+    40
+   ]
+  },
+  {
+   "nome": "tambor_coluna",
+   "peso": 1,
+   "pe": [
+    16,
+    31
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -6.8
+     ],
+     "raio": [
+      11.8,
+      7.1
+     ]
+    }
+   ],
+   "regiao": [
+    240,
+    0,
+    32,
+    35
+   ]
+  },
+  {
+   "nome": "muro_ruina_a",
+   "peso": 1,
+   "pe": [
+    53,
+    68
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -6.8
+     ],
+     "raio": [
+      51.2,
+      6.8
+     ]
+    }
+   ],
+   "regiao": [
+    274,
+    0,
+    106,
+    69
+   ]
+  },
+  {
+   "nome": "muro_ruina_b",
+   "peso": 1,
+   "pe": [
+    40,
+    48
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -6.8
+     ],
+     "raio": [
+      38.4,
+      6.8
+     ]
+    }
+   ],
+   "regiao": [
+    382,
+    0,
+    80,
+    49
+   ]
+  },
+  {
+   "nome": "muro_ruina_c",
+   "peso": 1,
+   "pe": [
+    46,
+    28
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -6.8
+     ],
+     "raio": [
+      44.8,
+      6.8
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    115,
+    92,
+    29
+   ]
+  },
+  {
+   "nome": "muro_alto",
+   "peso": 1,
+   "pe": [
+    56,
+    105
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      54.4,
+      9.1
+     ]
+    }
+   ],
+   "regiao": [
+    94,
+    115,
+    106,
+    106
+   ]
+  },
+  {
+   "nome": "arco_ruina",
+   "peso": 1,
+   "pe": [
+    67,
+    136
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -49.6,
+      -9.1
+     ],
+     "raio": [
+      16.5,
+      9.0
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      49.6,
+      -9.1
+     ],
+     "raio": [
+      16.5,
+      9.0
+     ]
+    }
+   ],
+   "regiao": [
+    202,
+    115,
+    134,
+    137
+   ]
+  },
+  {
+   "nome": "bloco_pedra",
+   "peso": 1,
+   "pe": [
+    17,
+    34
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -8.5
+     ],
+     "raio": [
+      15.1,
+      8.9
+     ]
+    }
+   ],
+   "regiao": [
+    338,
+    115,
+    34,
+    35
+   ]
+  },
+  {
+   "nome": "pilha_escombros",
+   "peso": 1,
+   "pe": [
+    31,
+    44
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -10.2
+     ],
+     "raio": [
+      26.9,
+      10.7
+     ]
+    }
+   ],
+   "regiao": [
+    374,
+    115,
+    61,
+    46
+   ]
+  },
+  {
+   "nome": "laje_tombada",
+   "peso": 1,
+   "pe": [
+    35,
+    42
+   ],
+   "colisao": [],
+   "regiao": [
+    0,
+    254,
+    70,
+    43
+   ]
+  },
+  {
+   "nome": "degraus",
+   "peso": 1,
+   "pe": [
+    39,
+    31
+   ],
+   "colisao": [],
+   "regiao": [
+    72,
+    254,
+    78,
+    34
+   ]
+  },
+  {
+   "nome": "pedestal_ruina",
+   "peso": 1,
+   "pe": [
+    17,
+    48
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -10.7
+     ],
+     "raio": [
+      16.0,
+      11.3
+     ]
+    }
+   ],
+   "regiao": [
+    152,
+    254,
+    34,
+    49
+   ]
+  },
+  {
+   "nome": "estatua_quebrada",
+   "peso": 1,
+   "pe": [
+    17,
+    71
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -11.3
+     ],
+     "raio": [
+      16.8,
+      11.9
+     ]
+    }
+   ],
+   "regiao": [
+    188,
+    254,
+    43,
+    76
+   ]
+  },
+  {
+   "nome": "fonte_seca",
+   "peso": 1,
+   "pe": [
+    43,
+    74
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -28.3
+     ],
+     "raio": [
+      42.0,
+      29.7
+     ]
+    }
+   ],
+   "regiao": [
+    233,
+    254,
+    86,
+    76
+   ]
+  },
+  {
+   "nome": "sarcofago",
+   "peso": 1,
+   "pe": [
+    17,
+    66
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -22.6
+     ],
+     "raio": [
+      16.0,
+      23.8
+     ]
+    }
+   ],
+   "regiao": [
+    321,
+    254,
+    36,
+    67
+   ]
+  },
+  {
+   "nome": "obelisco_runico",
+   "peso": 1,
+   "pe": [
+    17,
+    103
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -9.1
+     ],
+     "raio": [
+      13.4,
+      9.5
+     ]
+    }
+   ],
+   "regiao": [
+    359,
+    254,
+    36,
+    106
+   ]
+  },
+  {
+   "nome": "lapide_antiga",
+   "peso": 1,
+   "pe": [
+    13,
+    27
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.0,
+      -3.4
+     ],
+     "raio": [
+      8.4,
+      3.6
+     ]
+    }
+   ],
+   "regiao": [
+    397,
+    254,
+    26,
+    29
+   ]
+  },
+  {
+   "nome": "cacos_pedra",
+   "peso": 1,
+   "pe": [
+    19,
+    14
+   ],
+   "colisao": [],
+   "regiao": [
+    425,
+    254,
+    33,
+    16
+   ]
+  },
+  {
+   "nome": "samambaia",
+   "peso": 1,
+   "pe": [
+    15,
+    16
+   ],
+   "colisao": [],
+   "regiao": [
+    0,
+    362,
+    31,
+    17
+   ]
+  },
+  {
+   "nome": "cranio_antigo",
+   "peso": 1,
+   "pe": [
+    17,
+    16
+   ],
+   "colisao": [],
+   "regiao": [
+    33,
+    362,
+    35,
+    17
+   ]
+  },
+  {
+   "nome": "arvore",
+   "peso": 1,
+   "pe": [
+    71,
+    149
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -33.0,
+      -9.5
+     ],
+     "raio": [
+      12.6,
+      6.3
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      -5.5,
+      -5.7
+     ],
+     "raio": [
+      13.8,
+      6.9
+     ]
+    }
+   ],
+   "regiao": [
+    70,
+    362,
+    116,
+    150
+   ]
+  },
+  {
+   "nome": "arvore_morta",
+   "peso": 1,
+   "pe": [
+    22,
+    103
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -11.0,
+      -6.0
+     ],
+     "raio": [
+      13.6,
+      6.8
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      8.5,
+      -5.5
+     ],
+     "raio": [
+      14.8,
+      7.4
+     ]
+    }
+   ],
+   "regiao": [
+    188,
+    362,
+    60,
+    104
+   ]
+  },
+  {
+   "nome": "arvore_pantano",
+   "peso": 1,
+   "pe": [
+    55,
+    128
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -48.5,
+      -11.0
+     ],
+     "raio": [
+      3.6,
+      1.8
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      -4.0,
+      -6.0
+     ],
+     "raio": [
+      13.6,
+      6.8
+     ]
+    }
+   ],
+   "regiao": [
+    250,
+    362,
+    96,
+    129
+   ]
+  },
+  {
+   "nome": "arbusto",
+   "peso": 1,
+   "pe": [
+    24,
+    40
+   ],
+   "colisao": [],
+   "regiao": [
+    348,
+    362,
+    48,
+    41
+   ]
+  },
+  {
+   "nome": "raizes",
+   "peso": 1,
+   "pe": [
+    24,
+    31
+   ],
+   "colisao": [],
+   "regiao": [
+    398,
+    362,
+    55,
+    32
+   ]
+  },
+  {
+   "nome": "toco",
+   "peso": 1,
+   "pe": [
+    11,
+    39
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      1.5,
+      -6.7
+     ],
+     "raio": [
+      13.8,
+      6.9
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      23.3,
+      -8.0
+     ],
+     "raio": [
+      12.0,
+      6.0
+     ]
+    }
+   ],
+   "regiao": [
+    0,
+    514,
+    47,
+    40
+   ]
+  },
+  {
+   "nome": "tronco",
+   "peso": 1,
+   "pe": [
+    12,
+    40
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      3.5,
+      -7.0
+     ],
+     "raio": [
+      15.8,
+      7.9
+     ]
+    },
+    {
+     "tipo": "elipse",
+     "centro": [
+      31.1,
+      -7.5
+     ],
+     "raio": [
+      15.0,
+      7.5
+     ]
+    }
+   ],
+   "regiao": [
+    49,
+    514,
+    75,
+    41
+   ]
+  },
+  {
+   "nome": "cogumelos",
+   "peso": 1,
+   "pe": [
+    12,
+    19
+   ],
+   "colisao": [],
+   "regiao": [
+    126,
+    514,
+    22,
+    20
+   ]
+  },
+  {
+   "nome": "pedras",
+   "peso": 1,
+   "pe": [
+    11,
+    17
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -0.5,
+      -2.5
+     ],
+     "raio": [
+      5.0,
+      2.5
+     ]
+    }
+   ],
+   "regiao": [
+    150,
+    514,
+    22,
+    18
+   ]
+  },
+  {
+   "nome": "pedra",
+   "peso": 1,
+   "pe": [
+    18,
+    29
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.2,
+      -6.5
+     ],
+     "raio": [
+      13.0,
+      6.5
+     ]
+    }
+   ],
+   "regiao": [
+    174,
+    514,
+    46,
+    31
+   ]
+  },
+  {
+   "nome": "rocha",
+   "peso": 1,
+   "pe": [
+    18,
+    42
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      0.5,
+      -4.8
+     ],
+     "raio": [
+      9.5,
+      4.8
+     ]
+    }
+   ],
+   "regiao": [
+    222,
+    514,
+    39,
+    44
+   ]
+  },
+  {
+   "nome": "braseiro",
+   "peso": 1,
+   "pe": [
+    25,
+    61
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -1.2,
+      -5.2
+     ],
+     "raio": [
+      10.5,
+      5.2
+     ]
+    }
+   ],
+   "regiao": [
+    263,
+    514,
+    47,
+    62
+   ],
+   "fogo": [
+    23,
+    13
+   ]
+  },
+  {
+   "nome": "fogueira",
+   "peso": 1,
+   "pe": [
+    23,
+    38
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      2.0,
+      -10.0
+     ],
+     "raio": [
+      20.0,
+      10.0
+     ]
+    }
+   ],
+   "regiao": [
+    312,
+    514,
+    58,
+    39
+   ],
+   "fogo": [
+    27,
+    17
+   ]
+  },
+  {
+   "nome": "altar",
+   "peso": 1,
+   "pe": [
+    11,
+    39
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      10.8,
+      -10.8
+     ],
+     "raio": [
+      21.5,
+      10.8
+     ]
+    }
+   ],
+   "regiao": [
+    372,
+    514,
+    46,
+    41
+   ]
+  },
+  {
+   "nome": "caixa_oferenda",
+   "peso": 1,
+   "pe": [
+    24,
+    35
+   ],
+   "colisao": [
+    {
+     "tipo": "elipse",
+     "centro": [
+      -2.5,
+      -5.2
+     ],
+     "raio": [
+      10.5,
+      5.2
+     ]
+    }
+   ],
+   "regiao": [
+    420,
+    514,
+    36,
+    36
+   ]
+  }
+ ]
+}

@@ -120,6 +120,20 @@ def formas_colisao(alb, pe, nome, cfg):
     return GO._elipse_da_base(alb, pe, nome)
 
 
+def importar_floresta(nome, cfg, tingir):
+    """Recorta um objeto do atlas da floresta (prototipos/objetos) para o atlas do mapa: albedo (passado por `tingir`, se houver), normal, pé,
+    colisão e ponto de fogo vêm do cenario.json dela. Serve aos mapas que reaproveitam árvores e arbustos com outra tinta (as Ruínas)."""
+    pasta = HORDAS / "projeto" / "prototipos" / "objetos"
+    cen = json.loads((pasta / "cenario.json").read_text(encoding="utf-8"))
+    it = next(i for i in cen["itens"] if i["nome"] == cfg["importar"])
+    x, y, w, h = it["regiao"]
+    alb = Image.open(pasta / cen["enfeites"]).convert("RGBA").crop((x, y, x + w, y + h))
+    nor = Image.open(pasta / cen["enfeites_normal"]).convert("RGBA").crop((x, y, x + w, y + h))
+    if tingir is not None:
+        alb = tingir(alb, cfg["importar"])
+    return alb, nor, list(it["pe"]), it["colisao"], it.get("fogo")
+
+
 def pegadas_do_mapa(mapa):
     """Pegadas de colisão feitas à mão (pegadas_<mapa>.json, ao lado deste script): {nome: [formas]} que substituem as calculadas."""
     arq = AQUI / ("pegadas_%s.json" % mapa)
@@ -128,10 +142,20 @@ def pegadas_do_mapa(mapa):
     return {n: d["formas"] for n, d in json.loads(arq.read_text(encoding="utf-8"))["itens"].items()}
 
 
-def montar_atlas_objetos(mapa, defs, saida):
+def montar_atlas_objetos(mapa, defs, saida, tingir=None):
     pegadas = pegadas_do_mapa(mapa)
     itens, albs, nors = [], [], []
+    fogos = {}
     for nome, cfg in defs.items():
+        if "importar" in cfg:  # vem pronto do atlas da floresta (pé, colisão e fogo inclusos)
+            alb, nor, pe, formas, fogo = importar_floresta(nome, cfg, tingir)
+            if fogo:
+                fogos[nome] = fogo
+            albs.append(alb)
+            nors.append(nor)
+            itens.append({"nome": nome, "peso": cfg.get("peso", 1), "pe": pe, "colisao": formas})
+            print("  %-20s %3dx%-3d pe %s colisao %d (importado de %s)" % (nome, alb.width, alb.height, pe, len(formas), cfg["importar"]))
+            continue
         alb, nor, origem = processar_objeto(mapa, nome)
         if cfg.get("pe"):
             pe = cfg["pe"]
@@ -139,7 +163,7 @@ def montar_atlas_objetos(mapa, defs, saida):
             pe = [int(round(origem[0])), min(alb.height - 1, int(round(origem[1] + cfg["d"] * 11.315)))]
         else:
             pe = GO.pe_do_objeto(alb)
-        formas = pegadas[nome] if nome in pegadas else formas_colisao(alb, pe, nome, cfg)
+        formas = pegadas[nome] if nome in pegadas else (cfg["formas"] if "formas" in cfg else formas_colisao(alb, pe, nome, cfg))
         albs.append(alb)
         nors.append(nor)
         itens.append({"nome": nome, "peso": cfg.get("peso", 1), "pe": list(pe), "colisao": formas})
@@ -151,7 +175,9 @@ def montar_atlas_objetos(mapa, defs, saida):
         folha.paste(a, (x, y))
         folha_n.paste(n, (x, y))
         it["regiao"] = [x, y, a.width, a.height]
-        if "fogo" in defs[it["nome"]]:
+        if it["nome"] in fogos:
+            it["fogo"] = fogos[it["nome"]]
+        elif "fogo" in defs[it["nome"]]:
             fx, fy = defs[it["nome"]]["fogo"]
             it["fogo"] = [int(fx * a.width), int(fy * a.height)]
     folha.save(saida / "enfeites.png")
@@ -202,7 +228,7 @@ def montar_decalques(defs, saida, rng):
 
 # ------------------------------------------------------------------ JSON do mapa
 def escrever_json(caminho, mapa_json):
-    ordem = ["_ajuda", "semente", "mapa", "nascimento", "luz_tipos", "luz_objetos", "luzes", "minimapa", "atmosfera", "objetos", "decalques"]
+    ordem = ["_ajuda", "semente", "mapa", "nascimento", "luz_tipos", "luz_objetos", "luzes", "minimapa", "atmosfera", "marcadores", "objetos", "decalques"]
     linhas = ["{"]
     for k in ordem:
         if k not in mapa_json:
@@ -210,7 +236,7 @@ def escrever_json(caminho, mapa_json):
         v = mapa_json[k]
         ult = k == ordem[-1] or k == [x for x in ordem if x in mapa_json][-1]
         fim = "" if ult else ","
-        if k in ("objetos", "decalques", "luzes"):
+        if k in ("objetos", "decalques", "luzes", "marcadores"):
             linhas.append('\t"%s": [\n' % k + ",\n".join("\t\t" + json.dumps(e, ensure_ascii=False) for e in v) + "\n\t]" + fim)
         elif k in ("luz_tipos", "luz_objetos", "minimapa", "atmosfera"):
             linhas.append('\t"%s": {\n' % k + ",\n".join("\t\t%s: %s" % (json.dumps(a, ensure_ascii=False), json.dumps(b, ensure_ascii=False))
@@ -236,7 +262,11 @@ def previa(mapa_json, obj_info, obj_folha, dec_info, dec_folha, piso, caminho, r
         if r:
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
         tela.alpha_composite(im, (int(x - i["centro"][0]), int(y - i["centro"][1]))) if 0 <= x < W and 0 <= y < H else None
+    from PIL import ImageDraw
     for n, x, y in sorted(mapa_json["objetos"], key=lambda o: o[2]):
+        if n not in obj_info:  # estrutura de outro atlas (m4_*): só um retângulo magenta no lugar do pé
+            ImageDraw.Draw(tela).rectangle((x - 30, y - 40, x + 30, y), outline=(255, 0, 255, 255), width=2)
+            continue
         i = obj_info[n]
         rg = i["regiao"]
         im = obj_folha.crop((rg[0], rg[1], rg[0] + rg[2], rg[1] + rg[3]))
@@ -277,22 +307,44 @@ def main():
     if "--so-mapa" in sys.argv:
         obj_info, obj_folha, dec_info, dec_folha, piso = carregar_existentes(saida)
     else:
-        obj_info, obj_folha = montar_atlas_objetos(mapa, mod.OBJETOS, saida)
+        obj_info, obj_folha = montar_atlas_objetos(mapa, mod.OBJETOS, saida, getattr(mod, "tingir", None))
         piso = processar_piso(mapa, saida, getattr(mod, "detalhar_piso", None))
         dec_info, dec_folha = montar_decalques(mod.DECALQUES, saida, random.Random(mod.SEMENTE + 1))
     tam = {n: (i["regiao"][2], i["regiao"][3], i["pe"]) for n, i in obj_info.items()}
+    anterior = {}
+    arq_json = PROJ / "dados" / ("v2_%s.json" % mapa)
+    if getattr(mod, "PRESERVAR", None) and arq_json.exists():  # chaves que não são do gerador (marcadores, nascimento...) voltam como estavam
+        anterior = json.loads(arq_json.read_text(encoding="utf-8"))
+    if getattr(mod, "ATLAS_EXTRA", None):  # estruturas de outro atlas (Marco 4) que o mapa também usa: entram no `tam` para o montar
+        for n, i in mod.ATLAS_EXTRA().items():
+            tam[n] = (i["regiao"][2], i["regiao"][3], i["pe"])
     mapa_json = mod.montar(tam, rng)
+    W_MAPA = mapa_json["mapa"]["tam"][0]
+    for k in getattr(mod, "PRESERVAR", []):
+        if k in anterior:
+            mapa_json[k] = anterior[k]
     mapa_json["mapa"]["pastas"] = {"objetos": "res://assets/v2/mapas/" + mapa, "decalques": "res://assets/v2/mapas/" + mapa,
                                    "piso": "res://assets/v2/mapas/" + mapa}
     mapa_json.setdefault("_ajuda", mod.AJUDA)
-    escrever_json(PROJ / "dados" / ("v2_%s.json" % mapa), mapa_json)
+    escrever_json(arq_json, mapa_json)
     print("objetos", len(mapa_json["objetos"]), "decalques", len(mapa_json["decalques"]), "luzes", len(mapa_json["luzes"]))
     if "--previa" in sys.argv:
         rec = None
         for a in sys.argv:
             if a.startswith("--recorte="):
                 rec = [int(v) for v in a.split("=")[1].split(",")]
-        previa(mapa_json, obj_info, obj_folha, dec_info, dec_folha, piso, sys.argv[sys.argv.index("--previa") + 1], rec)
+        saida_previa = sys.argv[sys.argv.index("--previa") + 1]
+        previa(mapa_json, obj_info, obj_folha, dec_info, dec_folha, piso, saida_previa, rec)
+        dep = getattr(mod, "DEPURAR", None)
+        if "--depurar" in sys.argv and dep:  # elipses de colisão dos sólidos (ciano) e discos reservados (vermelho) por cima da prévia
+            from PIL import ImageDraw
+            im = Image.open(saida_previa).convert("RGB")
+            d = ImageDraw.Draw(im)
+            k = im.width / float(W_MAPA)
+            for chave, c in (("solidos", (0, 255, 255)), ("reservas", (255, 60, 60))):
+                for cx, cy, rx, ry in dep.get(chave, []):
+                    d.ellipse(((cx - rx) * k, (cy - ry) * k, (cx + rx) * k, (cy + ry) * k), outline=c)
+            im.save(saida_previa.replace(".png", "_dep.png"))
 
 
 if __name__ == "__main__":

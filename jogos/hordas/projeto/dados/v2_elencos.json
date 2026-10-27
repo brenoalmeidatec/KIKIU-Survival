@@ -1,0 +1,57 @@
+{
+	"_ajuda": "Elenco de inimigos de cada mapa da v2 (lido por v2/elenco.gd), chaveado pelo ID do mapa (os ids não mudam, mesmo que o nome na tela mude). Cada entrada em \"tipos\" é uma VARIAÇÃO de um dos 5 monstros que têm folha de sprite na v2 (\"sprite\" tem de ser um de mundo.gd TIPOS_MONSTRO): mesmo desenho, com outro nome, outra tinta e números próprios. Campos: id (único no mapa), nome (aparece no anúncio da elite), sprite, tinta [r,g,b] (multiplica a folha; a folha é escura, então canais acima de 1 clareiam), desde (s de partida a partir dos quais pode nascer), peso (sorteio), vida/dano/vel (multiplicadores sobre os números do sprite em v2_combate.json > monstros; padrão 1; xp e orbes não mudam), elite_desde (opcional: o tipo também pode ser elite a partir desse tempo). \"pesado\" = id do tipo que forma a ponta de cada onda forte (no padrão, o Cavaleiro Oco); \"invocados\" = ids dos tipos que a elite Invocadora faz nascer. Os moradores do mapa e as defesas de ponto sorteiam por peso entre todos os tipos, sem olhar o desde. ORÇAMENTO: o diretor sorteia pelo tempo de partida, então a curva de ameaça por minuto depende de desde/peso/números; o teste testes/v2_elencos.gd exige que a média de vida x dano x velocidade e de xp de cada elenco fique a 10% da do padrão (v2_combate.json > diretor > tipos) em cada marco do tempo. Um mapa que não está aqui usa o padrão (v2_combate.json > diretor > tipos, sem tinta), igual ao jogo antes dos elencos.",
+	"mapas": {
+		"floresta": {
+			"_nota": "Floresta: lobos, aranhas e espíritos da mata",
+			"pesado": "guardiao",
+			"invocados": ["aranha_mata", "lobo_faminto"],
+			"tipos": [
+				{"id": "lobo_faminto", "nome": "Lobo Faminto", "sprite": "inimigo_cao_ossos", "tinta": [1.25, 1, 0.7], "desde": 0, "peso": 3, "vel": 1.1, "elite_desde": 0},
+				{"id": "raposa_espectral", "nome": "Raposa Espectral", "sprite": "inimigo_cao_ossos", "tinta": [0.75, 1, 1.5], "desde": 0, "peso": 2, "vida": 0.8, "vel": 1.2},
+				{"id": "aranha_mata", "nome": "Aranha da Mata", "sprite": "inimigo_aranha_tecela", "tinta": [0.9, 1.6, 0.8], "desde": 0, "peso": 4, "elite_desde": 0},
+				{"id": "lobo_cinzento", "nome": "Lobo Cinzento", "sprite": "inimigo_lobo_sombrio", "tinta": [1, 1.1, 1.1], "desde": 40, "peso": 3, "elite_desde": 60},
+				{"id": "espirito_mata", "nome": "Espírito da Mata", "sprite": "inimigo_espantalho", "tinta": [0.7, 1.5, 1.1], "desde": 75, "peso": 3, "elite_desde": 100},
+				{"id": "guardiao", "nome": "Guardião Musgoso", "sprite": "inimigo_cavaleiro_oco", "tinta": [0.7, 1.3, 0.6], "desde": 130, "peso": 1, "elite_desde": 160}
+			]
+		},
+		"medio": {
+			"_nota": "Ruínas da Floresta (id medio): esqueletos, larvas de cripta, espectros e cavaleiros caídos",
+			"pesado": "cavaleiro_caido",
+			"invocados": ["larva_cripta", "esqueleto"],
+			"tipos": [
+				{"id": "esqueleto", "nome": "Esqueleto Errante", "sprite": "inimigo_cao_ossos", "tinta": [1, 1, 1.15], "desde": 0, "peso": 3, "elite_desde": 0},
+				{"id": "esqueleto_podre", "nome": "Esqueleto Podre", "sprite": "inimigo_cao_ossos", "tinta": [0.85, 0.9, 0.7], "desde": 0, "peso": 2, "vida": 1.15, "dano": 0.9, "vel": 0.95},
+				{"id": "larva_cripta", "nome": "Larva de Cripta", "sprite": "inimigo_aranha_tecela", "tinta": [1.1, 1, 1.5], "desde": 0, "peso": 4, "elite_desde": 0},
+				{"id": "espectro_uivante", "nome": "Espectro Uivante", "sprite": "inimigo_lobo_sombrio", "tinta": [0.7, 1, 1.9], "desde": 40, "peso": 3, "elite_desde": 60},
+				{"id": "estatua_viva", "nome": "Estátua Viva", "sprite": "inimigo_espantalho", "tinta": [1.3, 1.3, 1.4], "desde": 75, "peso": 3, "vida": 1.15, "dano": 0.9, "vel": 0.9, "elite_desde": 100},
+				{"id": "cavaleiro_caido", "nome": "Cavaleiro Caído", "sprite": "inimigo_cavaleiro_oco", "tinta": [1, 0.9, 0.75], "desde": 130, "peso": 1, "elite_desde": 160}
+			]
+		},
+		"laboratorio": {
+			"_nota": "Laboratório (Torre do Alquimista): homúnculos, bichos de frasco e golens",
+			"pesado": "golem_alquimista",
+			"invocados": ["homunculo", "larva_frasco"],
+			"tipos": [
+				{"id": "larva_frasco", "nome": "Larva de Frasco", "sprite": "inimigo_cao_ossos", "tinta": [0.8, 1.5, 0.8], "desde": 0, "peso": 3, "elite_desde": 0},
+				{"id": "homunculo", "nome": "Homúnculo", "sprite": "inimigo_aranha_tecela", "tinta": [1.6, 1, 1.3], "desde": 0, "peso": 4, "elite_desde": 0},
+				{"id": "rato_alquimico", "nome": "Rato Alquímico", "sprite": "inimigo_aranha_tecela", "tinta": [1.5, 1.4, 0.7], "desde": 0, "peso": 2, "vida": 1.2, "dano": 1.2},
+				{"id": "quimera_frasco", "nome": "Quimera de Frasco", "sprite": "inimigo_lobo_sombrio", "tinta": [1, 1.5, 0.7], "desde": 40, "peso": 3, "elite_desde": 60},
+				{"id": "golem_vidro", "nome": "Golem de Vidro", "sprite": "inimigo_espantalho", "tinta": [0.8, 1.4, 1.9], "desde": 75, "peso": 3, "elite_desde": 100},
+				{"id": "golem_alquimista", "nome": "Golem Alquimista", "sprite": "inimigo_cavaleiro_oco", "tinta": [1.5, 1.15, 0.6], "desde": 130, "peso": 1, "elite_desde": 160}
+			]
+		},
+		"cidade": {
+			"_nota": "Cidade (Vila Amaldiçoada): aldeões mortos-vivos, corvos e espantalhos",
+			"pesado": "carrasco",
+			"invocados": ["corvo", "aldeao_morto"],
+			"tipos": [
+				{"id": "aldeao_morto", "nome": "Aldeão Morto-vivo", "sprite": "inimigo_cao_ossos", "tinta": [0.9, 1.1, 0.85], "desde": 0, "peso": 3, "elite_desde": 0},
+				{"id": "cao_amaldicoado", "nome": "Cão Amaldiçoado", "sprite": "inimigo_cao_ossos", "tinta": [1.25, 0.7, 0.65], "desde": 0, "peso": 2},
+				{"id": "corvo", "nome": "Corvo Agourento", "sprite": "inimigo_aranha_tecela", "tinta": [0.8, 0.8, 1.2], "desde": 0, "peso": 4, "elite_desde": 0},
+				{"id": "lobisomem", "nome": "Lobisomem da Vila", "sprite": "inimigo_lobo_sombrio", "tinta": [1.2, 0.9, 0.75], "desde": 40, "peso": 3, "elite_desde": 60},
+				{"id": "espantalho_vila", "nome": "Espantalho Maldito", "sprite": "inimigo_espantalho", "tinta": [1.3, 1, 0.7], "desde": 75, "peso": 3, "elite_desde": 100},
+				{"id": "carrasco", "nome": "Carrasco Morto-vivo", "sprite": "inimigo_cavaleiro_oco", "tinta": [1.3, 0.7, 0.7], "desde": 130, "peso": 1, "elite_desde": 160}
+			]
+		}
+	}
+}
