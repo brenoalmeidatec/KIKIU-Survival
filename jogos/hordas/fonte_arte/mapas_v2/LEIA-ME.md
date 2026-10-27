@@ -64,3 +64,7 @@ A Cidade da PR #211 integra a seleção junto de Floresta, Laboratório e Ruína
 
 ## Laboratório por salas (18/10/2026)
 O desenho do laboratório agora segue `docs/laboratorio/PLANTA_PROPOSTA.md`: 9 salas em grade 3x3, quatro corredores de 160 px, uma receita por sala em `def_laboratorio.py`. Para mexer em onde as coisas ficam, mude o gerador e rode `python jogos/hordas/fonte_arte/gerar_v2_mapas.py laboratorio --so-mapa [--previa x.png]` (sem refazer atlas nem piso, então sem Blender; troque CRLF por LF no JSON gerado). Confira com `testes/v2_mapas` e `testes/v2_laboratorio_colisao`.
+
+## Ruínas da Floresta com cenário próprio (26/10/2026, #425)
+O mapa `medio` deixou de ser a Floresta com estruturas por cima: objetos e piso vêm do Blender (`modelos3d/mapa_medio.py`, 23 peças de pedra e o piso de lajes com musgo), a composição é `mapas_v2/def_medio.py`. A vegetação é recorte do atlas da floresta esfriado por `tingir()` (opção `importar` do `OBJETOS`; a colisão, o pé e o fogo vêm de lá). O gerador mantém `marcadores` e `nascimento` do JSON como estão (`PRESERVAR`) e põe as sete estruturas `m4_*` nas posições de sempre (`ATLAS_EXTRA`). Regerar só o desenho: `python -X utf8 jogos/hordas/fonte_arte/gerar_v2_mapas.py medio --so-mapa [--previa x.png --depurar]` (`--depurar` desenha por cima as elipses de colisão em ciano e os discos reservados em vermelho); tudo (atlas, piso, decalques): sem `--so-mapa`, depois do Blender (`blender -b -P modelos3d/mapas_v2.py -- medio`, com o Blender 4.5). Troque CRLF por LF nos JSON gerados.
+

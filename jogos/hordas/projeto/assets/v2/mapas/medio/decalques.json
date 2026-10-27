@@ -1,0 +1,265 @@
+{
+ "_gerado_por": "jogos/hordas/fonte_arte/gerar_v2_mapas.py (nao edite a mao)",
+ "itens": [
+  {
+   "nome": "pavimento_g",
+   "regiao": [
+    0,
+    0,
+    260,
+    120
+   ],
+   "centro": [
+    130,
+    60
+   ]
+  },
+  {
+   "nome": "pavimento_m",
+   "regiao": [
+    262,
+    0,
+    170,
+    85
+   ],
+   "centro": [
+    85,
+    42
+   ]
+  },
+  {
+   "nome": "pavimento_p",
+   "regiao": [
+    0,
+    122,
+    100,
+    57
+   ],
+   "centro": [
+    50,
+    28
+   ]
+  },
+  {
+   "nome": "musgo_g",
+   "regiao": [
+    102,
+    122,
+    110,
+    52
+   ],
+   "centro": [
+    55,
+    26
+   ]
+  },
+  {
+   "nome": "musgo_m",
+   "regiao": [
+    214,
+    122,
+    70,
+    34
+   ],
+   "centro": [
+    35,
+    17
+   ]
+  },
+  {
+   "nome": "musgo_p",
+   "regiao": [
+    286,
+    122,
+    40,
+    20
+   ],
+   "centro": [
+    20,
+    10
+   ]
+  },
+  {
+   "nome": "terra_a",
+   "regiao": [
+    328,
+    122,
+    90,
+    42
+   ],
+   "centro": [
+    45,
+    21
+   ]
+  },
+  {
+   "nome": "terra_b",
+   "regiao": [
+    420,
+    122,
+    60,
+    28
+   ],
+   "centro": [
+    30,
+    14
+   ]
+  },
+  {
+   "nome": "folhas_a",
+   "regiao": [
+    0,
+    181,
+    64,
+    28
+   ],
+   "centro": [
+    32,
+    14
+   ]
+  },
+  {
+   "nome": "folhas_b",
+   "regiao": [
+    66,
+    181,
+    46,
+    21
+   ],
+   "centro": [
+    23,
+    10
+   ]
+  },
+  {
+   "nome": "folhas_c",
+   "regiao": [
+    114,
+    181,
+    90,
+    40
+   ],
+   "centro": [
+    45,
+    20
+   ]
+  },
+  {
+   "nome": "ervas_a",
+   "regiao": [
+    206,
+    181,
+    28,
+    18
+   ],
+   "centro": [
+    14,
+    9
+   ]
+  },
+  {
+   "nome": "ervas_b",
+   "regiao": [
+    236,
+    181,
+    20,
+    14
+   ],
+   "centro": [
+    10,
+    7
+   ]
+  },
+  {
+   "nome": "rachadura_a",
+   "regiao": [
+    258,
+    181,
+    130,
+    28
+   ],
+   "centro": [
+    65,
+    14
+   ]
+  },
+  {
+   "nome": "rachadura_b",
+   "regiao": [
+    0,
+    223,
+    100,
+    25
+   ],
+   "centro": [
+    50,
+    12
+   ]
+  },
+  {
+   "nome": "rachadura_c",
+   "regiao": [
+    102,
+    223,
+    150,
+    31
+   ],
+   "centro": [
+    75,
+    15
+   ]
+  },
+  {
+   "nome": "poca_ruina",
+   "regiao": [
+    254,
+    223,
+    104,
+    49
+   ],
+   "centro": [
+    52,
+    24
+   ]
+  },
+  {
+   "nome": "poca_ruina_p",
+   "regiao": [
+    360,
+    223,
+    60,
+    30
+   ],
+   "centro": [
+    30,
+    15
+   ]
+  },
+  {
+   "nome": "selo_runico",
+   "regiao": [
+    0,
+    274,
+    300,
+    212
+   ],
+   "centro": [
+    150,
+    106
+   ]
+  },
+  {
+   "nome": "selo_pequeno",
+   "regiao": [
+    302,
+    274,
+    110,
+    78
+   ],
+   "centro": [
+    55,
+    39
+   ]
+  }
+ ]
+}
