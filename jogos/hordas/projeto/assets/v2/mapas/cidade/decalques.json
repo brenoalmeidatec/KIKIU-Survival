@@ -2,9 +2,35 @@
  "_gerado_por": "jogos/hordas/fonte_arte/gerar_v2_mapas.py (nao edite a mao)",
  "itens": [
   {
-   "nome": "bueiro",
+   "nome": "laje_tumulo",
    "regiao": [
     0,
+    0,
+    34,
+    37
+   ],
+   "centro": [
+    17,
+    18
+   ]
+  },
+  {
+   "nome": "tumulo_terra",
+   "regiao": [
+    36,
+    0,
+    46,
+    21
+   ],
+   "centro": [
+    23,
+    10
+   ]
+  },
+  {
+   "nome": "bueiro",
+   "regiao": [
+    84,
     0,
     46,
     33
@@ -17,7 +43,7 @@
   {
    "nome": "bueiro_aberto",
    "regiao": [
-    48,
+    132,
     0,
     68,
     48
@@ -30,7 +56,7 @@
   {
    "nome": "poca_oleo_g",
    "regiao": [
-    118,
+    202,
     0,
     100,
     49
@@ -43,7 +69,7 @@
   {
    "nome": "poca_oleo_p",
    "regiao": [
-    220,
+    304,
     0,
     58,
     28
@@ -56,8 +82,8 @@
   {
    "nome": "poca_chuva_g",
    "regiao": [
-    280,
     0,
+    51,
     120,
     55
    ],
@@ -69,8 +95,8 @@
   {
    "nome": "poca_chuva_p",
    "regiao": [
-    402,
-    0,
+    122,
+    51,
     66,
     31
    ],
@@ -82,8 +108,8 @@
   {
    "nome": "mancha_a",
    "regiao": [
-    0,
-    57,
+    190,
+    51,
     96,
     47
    ],
@@ -95,8 +121,8 @@
   {
    "nome": "mancha_b",
    "regiao": [
-    98,
-    57,
+    288,
+    51,
     70,
     34
    ],
@@ -108,8 +134,8 @@
   {
    "nome": "mancha_c",
    "regiao": [
-    170,
-    57,
+    360,
+    51,
     120,
     57
    ],
@@ -121,8 +147,8 @@
   {
    "nome": "mancha_sangue",
    "regiao": [
-    292,
-    57,
+    0,
+    110,
     76,
     37
    ],
@@ -134,8 +160,8 @@
   {
    "nome": "fuligem",
    "regiao": [
-    0,
-    116,
+    78,
+    110,
     150,
     68
    ],
@@ -147,8 +173,8 @@
   {
    "nome": "rachadura_a",
    "regiao": [
-    152,
-    116,
+    230,
+    110,
     130,
     28
    ],
@@ -160,8 +186,8 @@
   {
    "nome": "rachadura_b",
    "regiao": [
-    284,
-    116,
+    362,
+    110,
     100,
     25
    ],
@@ -174,7 +200,7 @@
    "nome": "rachadura_c",
    "regiao": [
     0,
-    186,
+    180,
     150,
     31
    ],
@@ -187,7 +213,7 @@
    "nome": "cabo_b",
    "regiao": [
     152,
-    186,
+    180,
     110,
     21
    ],
@@ -200,7 +226,7 @@
    "nome": "grade_dreno",
    "regiao": [
     264,
-    186,
+    180,
     72,
     31
    ],
@@ -213,7 +239,7 @@
    "nome": "papeis_a",
    "regiao": [
     338,
-    186,
+    180,
     60,
     28
    ],
@@ -226,7 +252,7 @@
    "nome": "papeis_b",
    "regiao": [
     400,
-    186,
+    180,
     48,
     24
    ],
@@ -239,7 +265,7 @@
    "nome": "faixa_obra_g",
    "regiao": [
     0,
-    219,
+    213,
     176,
     14
    ],
@@ -252,7 +278,7 @@
    "nome": "faixa_obra_p",
    "regiao": [
     178,
-    219,
+    213,
     88,
     14
    ],

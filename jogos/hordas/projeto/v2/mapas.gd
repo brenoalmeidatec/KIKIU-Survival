@@ -9,8 +9,8 @@ const Progressao := preload("res://v2/progressao.gd")  # travas dos portais (dad
 const PADRAO := "floresta"
 const LISTA := [
 	{"id": "floresta", "nome": "FLORESTA", "entrar": "ENTRAR NA FLORESTA", "dados": "v2_floresta"},
-	{"id": "laboratorio", "nome": "LABORATÓRIO", "entrar": "ENTRAR NO LABORATÓRIO", "dados": "v2_laboratorio"},
-	{"id": "cidade", "nome": "CIDADE", "entrar": "ENTRAR NA CIDADE", "dados": "v2_cidade"},
+	{"id": "laboratorio", "nome": "TORRE DO ALQUIMISTA", "entrar": "ENTRAR NA TORRE", "dados": "v2_laboratorio"},
+	{"id": "cidade", "nome": "VILA AMALDIÇOADA", "entrar": "ENTRAR NA VILA", "dados": "v2_cidade"},
 	{"id": "medio", "nome": "RUÍNAS DA FLORESTA", "entrar": "ENTRAR NAS RUÍNAS", "dados": "v2_medio"},
 ]
 

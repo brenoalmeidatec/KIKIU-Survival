@@ -1,10 +1,11 @@
-"""Cidade da v2: o que cada objeto é para o jogo (colisão), os decalques de rua e o desenho do mapa (2880x1620 = 3x3 telas).
+"""Vila Amaldiçoada da v2 (id interno "cidade"): o que cada objeto é para o jogo (colisão), os decalques de chão e o desenho do mapa (2880x1620 = 3x3 telas).
 
-Os objetos e o piso vêm do Blender (modelos3d/mapa_cidade.py); as medidas (pegada, altura e luz de cada um) estão em mapas_v2/medidas_cidade.py,
-que este arquivo lê. Lido por fonte_arte/gerar_v2_mapas.py. Composição (coordenadas do mundo, y para baixo): uma grade de 5 x 4 quarteirões. Cada
-azulejo do piso (512 x 362 px) tem um cruzamento no canto e um quarteirão no meio, com o lote de concreto de 7 x 7 m. As RUAS ficam livres: o
-herói e os monstros andam pelo eixo e pelas pistas. Carros estacionados, postes e semáforos ficam no meio-fio; os prédios encostam no fundo dos
-lotes; as bordas do mapa (fora da área andável) têm a fileira de prédios e de contêineres que fecha a cidade. O herói nasce no cruzamento central.
+Os objetos e o piso vêm do Blender (modelos3d/mapa_cidade.py); as medidas (pegada, altura e luz de cada um) estão em mapas_v2/medidas_cidade.py, que este arquivo lê.
+Lido por fonte_arte/gerar_v2_mapas.py. A planta é a de antes da #429 (a cidade pós-apocalíptica virou vila medieval amaldiçoada sem mexer em nomes de objeto,
+pegadas nem posições): uma grade de 5 x 4 quarteirões. Cada azulejo do piso (512 x 362 px) tem um cruzamento no canto e um quarteirão no meio, com o lote de
+7 x 7 m. As RUAS ficam livres: o herói e os monstros andam pelo eixo e pelas pistas. Carroças estacionadas, lampiões e placas ficam no meio-fio; as casas encostam
+no fundo dos lotes (predio_* = casas, taverna, capela e uma casa queimada); a praça (B) tem a barraca de mercado, bancos e o braseiro; as bordas do mapa (fora da
+área andável) têm a fileira de casas e de celeiros que fecha a vila. O herói nasce no cruzamento central.
 """
 import math
 
@@ -15,8 +16,9 @@ from kit_decalques import cor
 
 SEMENTE = 47
 W, H = 2880, 1620
+PRESERVAR = ["nascimento"]   # as zonas de monstros (e quem mexer nelas, como a #430) não mudam quando a vila é regerada
 AJUDA = (
-    "A cidade da v2 (2880x1620 = 3x3 telas, y para baixo), lida por v2/cenario.gd como o laboratório (mesmo formato; veja v2_floresta.json), com "
+    "A Vila Amaldiçoada da v2 (id cidade, 2880x1620 = 3x3 telas, y para baixo), lida por v2/cenario.gd como o laboratório (mesmo formato; veja v2_floresta.json), com "
     "\"mapa.pastas\" apontando para a arte (assets/v2/mapas/cidade), \"minimapa\" (cores do minimapa por objeto e decalque) e \"atmosfera\" (partículas "
     "do ambiente). Foi montada por fonte_arte/gerar_v2_mapas.py (semente fixa) a partir dos objetos do Blender (modelos3d/mapa_cidade.py) e das medidas "
     "de mapas_v2/medidas_cidade.py; depois disso o JSON é a fonte: edite aqui."
@@ -51,18 +53,20 @@ EXTRAS = med.luzes_extras()          # luzes além da principal (fachada com vit
 
 # ------------------------------------------------------------------ chão: decalques (Pillow, achatados por sen 45)
 def _poca_oleo(w, h):
-    return lambda rng: kd.poca(w, h, rng, cor("13161a"), cor("6b7c8c"), cor("2a3036"))
+    return lambda rng: kd.poca(w, h, rng, cor("2a2018"), cor("7a6a52"), cor("3e3226"))   # poça de lama
 
 
 def _poca_chuva(w, h):
     return lambda rng: kd.poca(w, h, rng, cor("1d2a33"), cor("a9c2cf"), cor("3b4b56"), alfa=200)
 
 
-def _mancha(w, h, c="0c0e11", alfa=190):
+def _mancha(w, h, c="14100c", alfa=190):
     return lambda rng: kd.mancha(w, h, rng, cor(c), alfa=alfa)
 
 
 DECALQUES = {
+    "laje_tumulo": lambda rng: kd.retangulo(34, 52, cor("4a463f"), cor("2a2724"), rng, 0.05),   # a laje de pedra sobre a sepultura
+    "tumulo_terra": lambda rng: kd.mancha(46, 30, rng, cor("3a2c20"), alfa=215),                  # terra revolvida
     "bueiro": lambda rng: dc.bueiro(rng),
     "bueiro_aberto": lambda rng: dc.bueiro(rng, aberto=True),
     "poca_oleo_g": _poca_oleo(100, 70),
@@ -77,39 +81,39 @@ DECALQUES = {
     "rachadura_a": lambda rng: kd.rachadura(130, 40, rng, cor("0b0c0e")),
     "rachadura_b": lambda rng: kd.rachadura(100, 36, rng, cor("0b0c0e")),
     "rachadura_c": lambda rng: kd.rachadura(150, 44, rng, cor("0b0c0e"), ramos=3),
-    "cabo_b": lambda rng: kd.cabo(110, 30, rng, cor("1b1d22"), cor("8a8f96")),
-    "grade_dreno": lambda rng: kd.grade(72, 44, cor("39424c"), cor("0a0c0e"), rng),
-    "papeis_a": lambda rng: kd.papeis(60, 40, rng),
-    "papeis_b": lambda rng: kd.papeis(48, 34, rng),
-    "faixa_obra_g": lambda rng: kd.faixa_diagonal(176, 20, cor("d6ac26"), cor("15171b"), 6, rng),
-    "faixa_obra_p": lambda rng: kd.faixa_diagonal(88, 20, cor("d6ac26"), cor("15171b"), 6, rng),
+    "cabo_b": lambda rng: kd.cabo(110, 30, rng, cor("6b5030"), cor("3a2a18")),      # corda
+    "grade_dreno": lambda rng: kd.grade(72, 44, cor("4a4540"), cor("0a0907"), rng),
+    "papeis_a": lambda rng: kd.papeis(60, 40, rng, ("d8c9a0", "c4b48a", "b0a07a")),   # pergaminhos
+    "papeis_b": lambda rng: kd.papeis(48, 34, rng, ("d8c9a0", "c4b48a", "b0a07a")),
+    "faixa_obra_g": lambda rng: kd.retangulo(176, 20, cor("5a3f28"), cor("2e2014"), rng, 0.1),   # tábuas
+    "faixa_obra_p": lambda rng: kd.retangulo(88, 20, cor("5a3f28"), cor("2e2014"), rng, 0.1),
 }
 
 
 # ------------------------------------------------------------------ luzes
-# os tipos da cidade vêm de medidas_cidade (sódio, neon, vitrine...); tocha e aura são as do herói (como no laboratório)
+# os tipos da vila vêm de medidas_cidade (lampião, vitral roxo, lanterna rubra, janela quente...); tocha e aura são as do herói (como no laboratório)
 LUZ_TIPOS = dict(med.LUZ_TIPOS)
 LUZ_TIPOS["tocha"] = {"cor": [1.0, 0.62, 0.26], "e": 1.9, "r": 290, "h": 45, "tremor": 0.07}
 LUZ_TIPOS["aura"] = {"cor": [0.45, 0.72, 1.0], "e": 0.7, "r": 120, "h": 60}
 LUZ_OBJETOS = med.luz_objetos()
 MINIMAPA = {
-    "chao": "2a2e34",
-    "fechado": "0c0f13",
+    "chao": "2e2a26",
+    "fechado": "0e0c0a",
     "objetos": {
-        "predio_loja": ["6a7681", 2], "predio_bar": ["6a7681", 2], "predio_apto_a": ["5c6672", 2], "predio_apto_b": ["5c6672", 2],
-        "predio_torre": ["6a7681", 2], "predio_ruina": ["4a525b", 2], "poste_rua": ["d6ac26", 1], "poste_rua_e": ["d6ac26", 1],
-        "semaforo": ["ec3b2e", 1], "placa_neon": ["ff4fa6", 1], "barril_fogo": ["ff8a3d", 1], "ponto_onibus": ["8a98a6", 1],
-        "container_a": ["8c6a4a", 2], "container_b": ["8c6a4a", 2], "cacamba": ["7a6a4a", 1], "pneus": ["262626", 1],
-        "carro_a": ["5a6470", 1], "carro_b": ["5a6470", 1], "carro_c": ["5a6470", 1], "carro_queimado": ["2b2b2b", 1],
-        "carro_a_v": ["5a6470", 1], "carro_b_v": ["5a6470", 1], "carro_c_v": ["5a6470", 1],
-        "muro_tijolo": ["7a4a3a", 1], "muro_quebrado": ["7a4a3a", 1], "barricada_concreto": ["9aa3ad", 1],
-        "barricada_madeira": ["8a6a3a", 1], "sacos_areia": ["9c9274", 1],
+        "predio_loja": ["9a7a5a", 2], "predio_bar": ["a8885a", 2], "predio_apto_a": ["8f7a62", 2], "predio_apto_b": ["8f7a62", 2],
+        "predio_torre": ["9a948a", 2], "predio_ruina": ["4a443e", 2], "poste_rua": ["ffb257", 1], "poste_rua_e": ["ffb257", 1],
+        "semaforo": ["e0453a", 1], "placa_neon": ["a678f0", 1], "barril_fogo": ["ff8a3d", 1], "ponto_onibus": ["b04a4a", 1],
+        "container_a": ["a88b4c", 2], "container_b": ["a88b4c", 2], "cacamba": ["a88b4c", 1], "pneus": ["a88b4c", 1],
+        "carro_a": ["7d5c3a", 1], "carro_b": ["7d5c3a", 1], "carro_c": ["7d5c3a", 1], "carro_queimado": ["2b2b2b", 1],
+        "carro_a_v": ["7d5c3a", 1], "carro_b_v": ["7d5c3a", 1], "carro_c_v": ["7d5c3a", 1],
+        "muro_tijolo": ["8a8478", 1], "muro_quebrado": ["8a8478", 1], "barricada_concreto": ["8a8478", 1],
+        "barricada_madeira": ["8a6a3a", 1], "sacos_areia": ["a89a72", 1], "lixeira_azul": ["8aa0b0", 1], "lapide": ["a39d90", 1], "cruz_tumulo": ["7d5c3a", 1],
     },
-    "decalques": {"bueiro": ["3a3d42", 1], "poca_chuva_g": ["4d7a8c", 2], "poca_oleo_g": ["1b1f24", 1]},
+    "decalques": {"bueiro": ["5a4a38", 1], "poca_chuva_g": ["4d7a8c", 2], "poca_oleo_g": ["3e3226", 1]},
 }
 ATMOSFERA = {
     "vaga": {"n": 20, "cor": [1.0, 0.62, 0.3], "tam": 0.7, "vel": 0.7},          # faíscas e brasas
-    "folhas": {"n": 12, "cor": [0.62, 0.62, 0.66, 0.5], "tam": 0.8, "vel": 0.5},  # cinza que cai
+    "folhas": {"n": 12, "cor": [0.55, 0.4, 0.25, 0.6], "tam": 0.8, "vel": 0.5},  # folhas secas que caem
 }
 
 
@@ -157,7 +161,7 @@ def montar(tam, rng):
             obj("banco", lx + 58, cy - 40)
             obj("banco", lx + 166, cy - 40)
             obj("barril_fogo", cx + 52, cy + 36)                    # fogueira de barril com luz laranja
-            obj("lixeira_metal", lx + 14, ly + 14)
+            obj("lixeira_azul", cx - 4, cy + 6)                     # o poço da praça (a pegada é a da antiga lixeira)
             obj("placa_neon", lx + 214, ly + 18)
             dec("mancha_sangue" if rng.random() < 0.4 else "mancha_b", lx + 90, cy + 40)
             dec("papeis_b", cx - 30, cy + 24, rng.random() < 0.5)
@@ -171,13 +175,17 @@ def montar(tam, rng):
             dec("mancha_sangue", lx + 150, cy + 56, rng.random() < 0.5)
             obj("pneus", lx + 196, ly + 120)
         elif tipo == "V":
-            obj("barricada_madeira", lx + 60, ly + lh - 34)        # tapume no sul do lote
-            obj("cone", lx + 200, cy + 30)
+            # CEMITÉRIO: o lote vazio vira camposanto, com a cerca de estacas ao sul, quatro lápides, três cruzes sobre túmulos e terra revolvida
+            obj("barricada_madeira", lx + 60, ly + lh - 34)
             dec("rachadura_c", cx - 20, cy - 18, rng.random() < 0.5)
             dec("poca_chuva_g", lx + 150, cy - 30, rng.random() < 0.5)
             dec("mancha_c", cx + 40, cy + 40, rng.random() < 0.5)
-            obj("cone", lx + 44, cy + 64)
-            obj("sacos_areia", lx + 170, cy + 58)
+            for k in range(4):
+                obj("lapide", lx + 28 + 56 * k, ly + 44)
+                dec("laje_tumulo", lx + 28 + 56 * k, ly + 56)
+            for k in range(3):
+                obj("cruz_tumulo", lx + 56 + 56 * k, ly + 92)
+                dec("tumulo_terra", lx + 56 + 56 * k, ly + 92)
         # calçada: um poste por quarteirão (canto alternado), lixeira e hidrante no meio-fio
         if (i + j) % 2 == 0:
             obj("poste_rua", bx + 8, by + 8)
@@ -261,7 +269,7 @@ def montar(tam, rng):
 
     return {
         "semente": SEMENTE,
-        "mapa": {"tam": [W, H], "chao": {"piso": "piso", "ganho": 2.6, "verde": 1.0, "dessat": 0.35}, "ambiente": "15161c",
+        "mapa": {"tam": [W, H], "chao": {"piso": "piso", "ganho": 2.7, "verde": 0.9, "dessat": 0.2}, "ambiente": "1c1d26",
                  "luar": {"e": 0.25, "h": 0.2, "ang": 70}, "ganho_objetos": 1.8, "ganho_decalques": 1.4, "borda_andavel": BORDA_ANDAVEL},
         "nascimento": {"heroi": [int(heroi[0]), int(heroi[1])], "monstros": monstros},
         "luz_tipos": LUZ_TIPOS,
