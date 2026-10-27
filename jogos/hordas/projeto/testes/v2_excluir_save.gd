@@ -210,14 +210,14 @@ func _ajustes() -> void:
 	p.abrir_ajustes()
 	var itens: Array = p._itens_atuais.map(func(i): return i.id)
 	ok(
-		itens == ["graficos", "audio", "animacoes", "versao", "creditos", "apagar", "voltar"],
+		itens == ["graficos", "audio", "controles", "animacoes", "versao", "creditos", "apagar", "voltar"],
 		"Ajustes (fora da partida) tem Apagar todo o progresso: %s" % [itens]
 	)
-	ok(str(p._itens_atuais[5].rotulo) == "Apagar todo o progresso", "o rótulo da opção")
+	ok(str(p._itens_atuais[6].rotulo) == "Apagar todo o progresso", "o rótulo da opção")
 	var visiveis := 0
 	for l in p._linhas:
 		visiveis += 1 if l["linha"].visible else 0
-	ok(visiveis == 7, "as 7 linhas cabem sem rolar: %d" % visiveis)
+	ok(visiveis == 8, "as 8 linhas cabem sem rolar: %d" % visiveis)
 	# passo 1: pede; "Não" é o padrão e devolve a Ajustes
 	p._executar("apagar", 0)
 	ok(p.tela == "confirmar_apagar" and p.sel == 1, "pedir abre a confirmação com 'Não' marcado")
