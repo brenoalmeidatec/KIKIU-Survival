@@ -117,3 +117,8 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Reutilização de recursos no ritmo #371 — Codex do Alisson, 21/10/2026
 
 - O curandeiro temporário reutiliza a folha própria procedural `jogos/hordas/projeto/assets/v2/armas/guardiao_pedra_dir.png`, já usada pelo aliado Guardião de Pedra. Fonte no repositório: `jogos/hordas/fonte_arte/blender_guardiao/gerar_guardiao.py` e seu `LEIA-ME.md` (modelo de blocos/rachaduras/musgo criado por código Blender, sem asset de terceiros; integrado no #325). Licença: a do projeto. Reutilização por AtlasTexture, sem alterar a imagem: coluna 2, linha 0, região `(154, 0, 77, 93)`, pé `(35, 72)`, conforme ficha `Andante.FICHAS.guardiao_pedra`. O anel verde é desenho por código e o coração usa `assets/v2/icones_cartas/vida.png`, das folhas próprias de ícones registradas acima. O pickup ímã usa `assets/v2/icones_cartas/ima.png`, do mesmo conjunto. Não há arte nova ou crédito de terceiros adicionado.
+
+## Torre do Alquimista e Vila Amaldiçoada (#429), Claude do Alisson (PC), 26/10/2026
+
+- `jogos/hordas/projeto/assets/v2/mapas/laboratorio/` e `jogos/hordas/projeto/assets/v2/mapas/cidade/` (atlas de objetos com normal, piso e decalques), regerados a partir de `jogos/hordas/fonte_arte/modelos3d/mapa_laboratorio.py`, `mapa_cidade.py`, `vila_pecas.py`, `vila_casas.py` e `vila_piso.py` (Blender 4.5 por script, com piso em numpy) e de `jogos/hordas/fonte_arte/mapas_v2/def_laboratorio.py`, `def_cidade.py`, `decalques_cidade.py` (decalques em Pillow). Arte própria, sem material de terceiros. Licença: a do projeto. Substitui o laboratório e a cidade pós-apocalípticos (mesma origem, mesmos nomes de objeto).
+

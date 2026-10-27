@@ -1,14 +1,15 @@
-"""Piso da cidade: azulejo de 16 m (512 px) que repete sem emenda, com ASFALTO, CALÇADA e um LOTE de concreto no meio de cada azulejo.
+"""Piso da Vila Amaldiçoada (id interno "cidade"): azulejo de 16 m (512 px) que repete sem emenda, com RUA de paralelepípedos e lama, CALÇADA de lajes e um LOTE
+de terra batida e pedra no meio de cada azulejo. A geometria é a de antes da #429 (ruas de 6,5 m com o eixo nas bordas, bloco de 9,5 m, lote de 7 m): só a
+pele mudou (asfalto -> calçamento, concreto -> lajes e terra, tinta de rua saiu, buracos -> poças de lama, marcas de pneu -> sulcos de roda).
 
 Em vez de 256 caixas (como o piso do laboratório), o chão é um CAMPO DE ALTURAS (malha de 1024 x 1024 quadrinhos, 1,56 cm cada) montado em numpy e
-renderizado pelo Blender de cima, com o sol rasante: as sombras e o normal map saem da geometria de verdade (meio-fio, juntas, rachaduras, buracos,
-pedriscos), e a cor (asfalto, tinta, mato, musgo) é uma textura pintada em numpy sobre a mesma malha. Tudo é periódico: o azulejo não tem emenda.
+renderizado pelo Blender de cima, com o sol rasante: as sombras e o normal map saem da geometria de verdade (meio-fio, juntas, pedras, rachaduras, lama),
+e a cor é uma textura pintada em numpy sobre a mesma malha. Tudo é periódico: o azulejo não tem emenda.
 
 Desenho de um azulejo (metros, x para a direita, y para cima na imagem; o jogo põe o azulejo na ordem do mapa):
-  - RUAS de asfalto de 6,5 m de largura com o eixo em x = 0 e y = 0 (as bordas do azulejo): uma rua que cruza a outra no canto do azulejo.
-  - BLOCO de calçada de 9,5 m (de 3,25 a 12,75) com o meio-fio levantado 14 cm e cantos arredondados; a calçada tem 1,25 m de largura;
-  - LOTE de 7 m (de 4,5 a 11,5): concreto com juntas de 1,75 m, rachado, com mato e terra. Os prédios ficam no lote, com a fachada voltada para o sul.
-  - faixa dupla amarela no eixo das ruas, faixas de pedestre e linha de retenção em cada ponta da rua (tinta gasta), buracos, remendos e rachaduras.
+  - RUAS de calçamento de 6,5 m de largura com o eixo em x = 0 e y = 0 (as bordas do azulejo): uma rua que cruza a outra no canto do azulejo;
+  - BLOCO de calçada de 9,5 m (de 3,25 a 12,75) com o meio-fio de pedra levantado 14 cm e cantos arredondados; a calçada tem 1,25 m de largura;
+  - LOTE de 7 m (de 4,5 a 11,5): lajes de 1,75 m, rachadas, com terra, mato e musgo. As casas ficam no lote, com a fachada voltada para o sul.
 """
 import os
 
@@ -27,14 +28,15 @@ LOTE_0, LOTE_1 = 4.5, 11.5
 ALT_MEIO_FIO = 0.14
 
 # cores (sRGB 0 a 255)
-C_ASFALTO = (53, 55, 59)
-C_CALCADA = (98, 97, 90)
-C_MEIO_FIO = (148, 146, 136)
-C_LOTE = (84, 82, 75)
-C_TERRA = (80, 70, 56)
-C_MATO = (60, 82, 44)
-C_MUSGO = (66, 84, 56)
-C_JUNTA = (36, 36, 35)
+C_ASFALTO = (104, 96, 85)      # calçamento (o nome é o de antes: a rua)
+C_CALCADA = (116, 106, 92)
+C_MEIO_FIO = (150, 142, 126)
+C_LOTE = (92, 82, 66)
+C_TERRA = (66, 54, 40)
+C_MATO = (58, 84, 44)
+C_MUSGO = (62, 84, 50)
+C_JUNTA = (30, 26, 22)
+C_LAMA = (52, 40, 28)
 C_AMARELO = (186, 152, 46)
 C_BRANCO = (178, 176, 166)
 
@@ -64,6 +66,21 @@ def borrar(a, sigma):
     fx = np.fft.fftfreq(N)
     f2 = fx[None, :] ** 2 + fx[:, None] ** 2
     return np.fft.ifft2(np.fft.fft2(a) * np.exp(-2.0 * (np.pi * sigma) ** 2 * f2)).real
+
+
+def pedras_calcamento(X, Y):
+    """Paralelepípedos de 0,32 x 0,25 m em fiadas deslocadas (50 colunas e 64 fiadas por azulejo: periódico). Devolve a distância até a junta (m) e um
+    número 0..1 por pedra (para o brilho e a altura de cada uma)."""
+    cw, ch = 0.32, 0.25
+    row = np.floor(Y / ch)
+    u = X / cw + 0.5 * (row % 2)
+    cx = np.floor(u)
+    fx = u - cx
+    fy = Y / ch - row
+    dj = np.minimum(np.minimum(fx, 1 - fx) * cw, np.minimum(fy, 1 - fy) * ch)
+    cid = (cx % 50 + 50 * (row % 64)).astype(np.int64)
+    hs = ((cid * 2654435761) % 4294967296) / 4294967296.0
+    return dj, hs
 
 
 def sdf_caixa_redonda(X, Y, cx, cy, hx, hy, raio):
@@ -118,6 +135,7 @@ def campos(semente=7):
     d_bloco = sdf_caixa_redonda(X, Y, 8.0, 8.0, 4.75, 4.75, 0.8)         # < 0: dentro do meio-fio (calçada e lote)
     d_lote = sdf_caixa_redonda(X, Y, 8.0, 8.0, 3.5, 3.5, 0.12)           # < 0: dentro do lote
     asf = d_bloco >= 0.0
+    dj_c, hs_c = pedras_calcamento(X, Y)
     cal = (d_bloco < 0.0) & (d_lote >= 0.0)
     lote = d_lote < 0.0
 
@@ -133,7 +151,7 @@ def campos(semente=7):
     h += ALT_MEIO_FIO * t                                              # meio-fio com chanfro
     sulco_calha = np.exp(-((d_bloco - 0.12) / 0.14) ** 2) * (d_bloco > 0)
     h -= 0.012 * sulco_calha                                           # calha de sujeira ao lado do meio-fio
-    h += 0.004 * n_baixo * asf + 0.0035 * n_alto * asf                  # relevo do asfalto: ondulação e grão
+    h += asf * (0.035 * suave(0.006, 0.05, dj_c) * (0.6 + 0.8 * hs_c)) + 0.003 * n_alto * asf   # paralelepípedos abaulados
     h += 0.0035 * n_alto * (cal | lote) + 0.002 * n_med * (cal | lote)
 
     # lajes da calçada (1,25 m) e do lote (1,75 m): cada uma com um desnível e uma inclinação própria
@@ -197,6 +215,7 @@ def campos(semente=7):
         dx = (X - cx + LADO / 2) % LADO - LADO / 2
         dy = (Y - cy + LADO / 2) % LADO - LADO / 2
         remendos |= (np.abs(dx) < w_ / 2) & (np.abs(dy) < h_ / 2) & asf & (d_bloco > 0.9)
+    remendos[:] = False                                                # (sem remendo de asfalto na vila)
     h += 0.006 * remendos
 
     # pedriscos no asfalto e na calçada
@@ -218,7 +237,7 @@ def campos(semente=7):
     h += 0.02 * borrar(mato.astype(float), 0.9)
 
     # ---------------- cor
-    luz_var = 1.0 + 0.09 * n_baixo + 0.07 * n_alto + 0.05 * n_med
+    luz_var = (1.0 + 0.09 * n_baixo + 0.07 * n_alto + 0.05 * n_med) * np.where(asf, 0.7 + 0.6 * hs_c, 1.0)
     cor = np.zeros((N, N, 3))
     for c in range(3):
         cor[..., c] = np.where(asf, C_ASFALTO[c], np.where(cal, C_CALCADA[c], C_LOTE[c])) * luz_var
@@ -244,20 +263,20 @@ def campos(semente=7):
     oleo = np.clip((n_med - 1.15) * 1.5, 0, 1) * asf
     cor *= (1 - 0.28 * oleo[..., None])
     # juntas e rachaduras escuras
-    escuro = np.clip(juntas * 0.55 + rach * 0.95, 0, 1)
+    escuro = np.clip(juntas * 0.55 + rach * 0.95 + asf * (1 - suave(0.004, 0.03, dj_c)) * 0.9, 0, 1)
     for c in range(3):
         cor[..., c] = cor[..., c] * (1 - escuro) + C_JUNTA[c] * escuro
     # remendos mais escuros
     cor[remendos] *= 0.78
     # buraco: escuro, com brita
     for c in range(3):
-        cor[..., c] = cor[..., c] * (1 - 0.6 * buracos) + 44.0 * 0.6 * buracos * (1.0 + 0.4 * n_alto)
+        cor[..., c] = cor[..., c] * (1 - 0.75 * buracos) + C_LAMA[c] * 0.75 * buracos * (1.0 + 0.25 * n_alto)
     # mato
     mato_f = borrar(mato.astype(float), 0.6)
     for c in range(3):
         cor[..., c] = cor[..., c] * (1 - np.clip(mato_f * 1.4, 0, 1)) + C_MATO[c] * (0.8 + 0.4 * (n_alto > 0)) * np.clip(mato_f * 1.4, 0, 1)
 
-    # ---------------- tinta das ruas (gasta)
+    # ---------------- sulcos de roda (a tinta de rua saiu)
     desgaste = (n_alto > -0.45) & (n_med > -1.25)
     dxr = np.abs(((X + LADO / 2) % LADO) - LADO / 2)          # distância ao eixo x = 0 (rua norte-sul)
     dyr = np.abs(((Y + LADO / 2) % LADO) - LADO / 2)          # distância ao eixo y = 0 (rua leste-oeste)
@@ -269,7 +288,7 @@ def campos(semente=7):
     zebra_ns = na_ns & sul & (dyr > 3.6) & (dyr < 4.9) & (dxr < 3.0) & (np.abs(((dxr + 0.425) % 0.85) - 0.425) < 0.225)
     zebra_lo = na_lo & leste & (dxr > 3.6) & (dxr < 4.9) & (dyr < 3.0) & (np.abs(((dyr + 0.425) % 0.85) - 0.425) < 0.225)
     retencao = (na_ns & sul & (dyr > 5.0) & (dyr < 5.28) & (dxr > 0.3) & (dxr < 3.0)) | (na_lo & leste & (dxr > 5.0) & (dxr < 5.28) & (dyr > 0.3) & (dyr < 3.0))
-    for faixa, tom in ((amarela, C_AMARELO), (zebra_ns | zebra_lo | retencao, C_BRANCO)):
+    for faixa, tom in ():   # sem tinta de rua na vila
         a = faixa & desgaste
         af = np.clip(borrar(a.astype(float), 0.7) * 1.2, 0, 1) * 0.92
         for c in range(3):
@@ -279,7 +298,7 @@ def campos(semente=7):
         pista = (np.abs(dxr - ctr) < 0.5) & na_ns & (dyr > 5.4)
         pista |= (np.abs(dyr - ctr) < 0.5) & na_lo & (dxr > 5.4)
         pf = borrar(pista.astype(float), 6.0) * 0.8
-        cor *= (1 - 0.1 * pf[..., None])
+        cor *= (1 - 0.3 * pf[..., None])
     return h, np.clip(cor / 255.0, 0.0, 1.0)
 
 
@@ -301,7 +320,7 @@ def malha(h):
     nf = N * N
     uvs = np.stack([np.stack([kk / N, 1.0 - ii / N], axis=-1), np.stack([kk / N, 1.0 - (ii + 1) / N], axis=-1),
                     np.stack([(kk + 1) / N, 1.0 - (ii + 1) / N], axis=-1), np.stack([(kk + 1) / N, 1.0 - ii / N], axis=-1)], axis=2).reshape(-1, 2)
-    me = bpy.data.meshes.new("piso_cidade")
+    me = bpy.data.meshes.new("piso_vila")
     me.vertices.add(nv)
     me.vertices.foreach_set("co", co.ravel())
     me.loops.add(4 * nf)
@@ -317,7 +336,7 @@ def malha(h):
     return me
 
 
-def piso_cidade(r):
+def piso_vila(r):
     """Constrói o piso na cena: malha de alturas + textura de cor. Também grava a cor e a altura em brutos/cidade/ para conferir a olho."""
     h, alb = campos()
     pasta = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "mapas_v2", "brutos", "cidade"))
@@ -327,9 +346,9 @@ def piso_cidade(r):
     hn = (h - h.min()) / (h.max() - h.min())
     px3.salvar_png(np.dstack([hn, hn, hn, np.ones((N, N))]).astype(np.float32), os.path.join(pasta, "_piso_altura.png"))
     me = malha(h)
-    ob = bpy.data.objects.new("piso_cidade", me)
+    ob = bpy.data.objects.new("piso_vila", me)
     bpy.context.collection.objects.link(ob)
-    m = bpy.data.materials.new("piso_cidade")
+    m = bpy.data.materials.new("piso_vila")
     m.use_nodes = True
     n, l = m.node_tree.nodes, m.node_tree.links
     p = n.get("Principled BSDF")

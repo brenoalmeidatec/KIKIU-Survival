@@ -1,4 +1,6 @@
-# Cidade: objetos, piso e mapa (Blender -> pixel art)
+# Vila Amaldiçoada (id interno `cidade`): objetos, piso e mapa (Blender -> pixel art)
+
+**#429 (26/10/2026):** a cidade pós-apocalíptica virou vila medieval amaldiçoada. Os NOMES dos objetos, as medidas de pegada (colisão), a planta e as passagens são os de antes (`predio_loja` é uma casa de comércio, `carro_a` uma carroça, `lixeira_azul` o poço, `ponto_onibus` a barraca de mercado...); mudaram a arte (`vila_*.py`), as luzes (`medidas_cidade.LUZES`) e a paleta. O texto abaixo foi escrito antes e ainda descreve o fluxo; onde ele fala de asfalto, neon, prédios ou carros, leia calçamento, vitral, casas e carroças.
 
 **Estado (2026-10-12):** etapa 1 feita (os 41 objetos e o piso: asfalto, calçada e lote, conferidos a olho no tamanho do jogo) e **etapa 2 feita**: `mapas_v2/def_cidade.py` (grade de 5 x 4 quarteirões, colisão, decalques, luzes e zonas de monstros), a linha em `Mapas.LISTA` e o JSON `dados/v2_cidade.json`, gerados por `gerar_v2_mapas.py cidade`. Os brutos do Blender (`mapas_v2/brutos/cidade/`) ficam fora do Git: rode o comando abaixo antes do gerador.
 
@@ -15,10 +17,9 @@ Arquivos (todos em `jogos/hordas/fonte_arte/`):
 | Arquivo | O que faz |
 |---|---|
 | `modelos3d/mapa_cidade.py` | Junta tudo: `OBJETOS` (nome -> tela do render + função) e `PISO`, que o `mapas_v2.py` lê. |
-| `modelos3d/cidade_pecas.py` | Cores, materiais com cache, letras de neon (fonte 3x5, cada pixel vira uma caixa emissiva), tijolo (nó Brick), rua (postes, semáforos, placas, hidrante, cones, barril, lixeiras, banco) e carros. |
-| `modelos3d/cidade_predios.py` | Janelas, toldos, escada de incêndio, telhado (piche, ar-condicionado, caixa d'água, mato) e os 6 prédios. |
-| `modelos3d/cidade_adereco.py` | Caçamba, contêineres, barricadas, sacos de areia, pneus, entulho, muros e o ponto de ônibus. |
-| `modelos3d/cidade_piso.py` | O piso: campo de alturas em numpy (1024 x 1024) + cor pintada em numpy, renderizado de cima pelo Blender. |
+| `modelos3d/vila_pecas.py` | Cores, materiais com cache e os objetos de rua (lampiões, postes, placas, poço, toco, braseiro, barril, banco), as carroças, barricadas, celeiros, muros e a barraca de mercado. |
+| `modelos3d/vila_casas.py` | As seis casas (comércio, taverna, duas casas altas, capela com campanário, casa queimada): pedra embaixo, enxaimel em cima, telhado de duas águas, janelas acesas. |
+| `modelos3d/vila_piso.py` | O piso: campo de alturas em numpy (1024 x 1024) + cor pintada em numpy, renderizado de cima pelo Blender (calçamento de paralelepípedos, lajes, lote de terra). |
 | `mapas_v2/medidas_cidade.py` | **Python puro**, lido pelo Blender e pelo `def_cidade.py`: `MEDIDAS` (pegada w x d, altura, tela), `LUZES`, `LUZ_TIPOS`, `luz_objetos()`, `luzes_extras()`, `PISO`, `lote_px(i, j)`. |
 | `mapas_v2/def_cidade.py` | A etapa 2: `OBJETOS` (a pegada de `medidas_cidade`), `DECALQUES`, `GRADE` dos quarteirões (P prédio no lote, E pátio, B praça com ponto de ônibus e fogueira, R ruína, V vazio), `montar()`: ruas livres, meio-fio, bordas fora da área andável, luzes e zonas de monstros. Lido por `gerar_v2_mapas.py cidade`. |
 | `mapas_v2/decalques_cidade.py` | Decalques da cidade em Pillow: `bueiro(rng)` e `bueiro(rng, aberto=True)`. |

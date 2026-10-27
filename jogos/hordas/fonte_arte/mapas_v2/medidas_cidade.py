@@ -1,4 +1,4 @@
-"""Cidade da v2: as MEDIDAS dos objetos e as LUZES deles, em Python puro (sem Blender), numa fonte só para os dois passos.
+"""Vila Amaldiçoada da v2 (id interno "cidade"): as MEDIDAS dos objetos e as LUZES deles, em Python puro (sem Blender), numa fonte só para os dois passos.
 
 Quem lê:
   modelos3d/mapa_cidade.py   (Blender)  o tamanho da tela de cada objeto e o ponto da luz;
@@ -26,12 +26,12 @@ def _m(w, d, h, lx=None, zmax=None, yb=None, yf=None, col="caixa"):
 # nome -> medidas. Carros "_v" são o mesmo carro virado de frente ou de costas (comprimento ao longo de Y).
 MEDIDAS = {
     # prédios: a fachada (lado -Y) fica no plano da frente da pegada; toldos, escadas de incêndio e entulho avançam para a frente (yf)
-    "predio_loja": _m(6.2, 2.6, 4.0, lx=3.3, zmax=5.3, yb=1.45, yf=2.0),
-    "predio_bar": _m(5.6, 2.6, 4.2, lx=3.1, zmax=5.2, yb=1.45, yf=2.0),
-    "predio_apto_a": _m(5.4, 2.1, 5.8, lx=3.1, zmax=7.5, yb=1.15, yf=2.1),
-    "predio_apto_b": _m(5.4, 2.1, 5.8, lx=3.1, zmax=7.5, yb=1.15, yf=2.1),
-    "predio_torre": _m(5.6, 2.0, 6.0, lx=3.1, zmax=7.3, yb=1.1, yf=1.4),
-    "predio_ruina": _m(5.8, 2.2, 5.2, lx=3.3, zmax=5.8, yb=1.2, yf=2.2),
+    "predio_loja": _m(6.2, 2.6, 4.0, lx=3.4, zmax=6.1, yb=1.45, yf=2.4),
+    "predio_bar": _m(5.6, 2.6, 4.2, lx=3.1, zmax=6.1, yb=1.45, yf=2.0),
+    "predio_apto_a": _m(5.4, 2.1, 5.8, lx=3.1, zmax=6.7, yb=1.15, yf=2.1),
+    "predio_apto_b": _m(5.4, 2.1, 5.8, lx=3.1, zmax=6.7, yb=1.15, yf=2.1),
+    "predio_torre": _m(5.6, 2.0, 6.0, lx=3.4, zmax=7.7, yb=1.1, yf=1.4),
+    "predio_ruina": _m(5.8, 2.2, 5.2, lx=3.3, zmax=3.8, yb=1.2, yf=2.6),
     # ruas
     "poste_rua": _m(0.4, 0.4, 5.4, lx=1.95, zmax=5.5),
     "poste_rua_e": _m(0.4, 0.4, 5.4, lx=1.95, zmax=5.5),
@@ -39,37 +39,37 @@ MEDIDAS = {
     "semaforo": _m(0.35, 0.35, 3.5, lx=0.85, zmax=3.65),
     "semaforo_torto": _m(0.35, 0.35, 3.4, lx=0.85, zmax=3.65),
     "placa_pare": _m(0.2, 0.2, 2.4, lx=0.45),
-    "placa_rua": _m(0.2, 0.2, 2.7, lx=0.65),
+    "placa_rua": _m(0.2, 0.2, 2.7, lx=0.9),
     "placa_neon": _m(0.4, 0.4, 3.4, lx=0.75),
     "hidrante": _m(0.4, 0.4, 0.7, lx=0.3),
-    "cone": _m(0.42, 0.42, 0.7, lx=0.25),
+    "cone": _m(0.42, 0.42, 0.7, lx=0.3),
     "cone_tombado": _m(0.7, 0.6, 0.35, lx=0.8, yb=0.45, yf=0.5, col=None),
     "barril_fogo": _m(0.65, 0.65, 0.95, lx=0.36),
     "lixeira_metal": _m(0.62, 0.62, 0.95, lx=0.36),
-    "lixeira_rodas": _m(0.68, 0.8, 1.1, lx=0.4),
-    "lixeira_azul": _m(0.68, 0.8, 1.1, lx=0.4),
+    "lixeira_rodas": _m(0.68, 0.8, 1.1, lx=0.4, yb=0.9),
+    "lixeira_azul": _m(0.68, 0.8, 1.1, lx=0.4, zmax=1.6),
     "banco": _m(1.8, 0.6, 0.95, lx=0.95),
     # adereços de rua
     "sacos_areia": _m(2.6, 0.8, 0.8, lx=1.4, yf=0.7),
     "barricada_concreto": _m(4.4, 1.0, 0.9, lx=2.4, zmax=0.95, yf=0.8),
-    "barricada_madeira": _m(3.2, 0.9, 1.55, lx=1.7, yf=0.6),
+    "barricada_madeira": _m(3.2, 0.9, 1.55, lx=1.7, zmax=1.9, yf=0.6),
     "pneus": _m(1.3, 1.1, 1.0, lx=1.05, yb=0.8, yf=0.8),
-    "cacamba": _m(2.5, 1.3, 1.2, lx=1.4, zmax=1.7, yf=0.8),
-    "container_a": _m(6.0, 2.4, 2.6, lx=3.1, zmax=2.75, yf=1.4),
-    "container_b": _m(6.0, 2.4, 2.6, lx=3.1, zmax=2.75, yf=1.4),
+    "cacamba": _m(2.5, 1.3, 1.2, lx=1.7, zmax=1.7, yf=0.8),
+    "container_a": _m(6.0, 2.4, 2.6, lx=3.3, zmax=3.4, yb=1.8, yf=1.8),
+    "container_b": _m(6.0, 2.4, 2.6, lx=3.3, zmax=3.4, yb=1.8, yf=1.8),
     "entulho_a": _m(1.0, 0.7, 0.5, lx=0.9, yb=0.7, yf=0.7, col=None),
     "entulho_b": _m(2.0, 1.2, 1.0, lx=1.7, zmax=1.5, yb=1.0, yf=1.1),
     "muro_tijolo": _m(3.0, 0.4, 2.0, lx=1.6, zmax=2.7, yf=0.5),
     "muro_quebrado": _m(3.0, 0.4, 2.0, lx=1.7, zmax=2.7, yf=0.9),
     "ponto_onibus": _m(3.4, 1.3, 2.4, lx=2.3, zmax=2.9, yf=1.0),
     # carros: comprimento ao longo de X; os "_v" ao longo de Y (a frente para a câmera, ou de costas)
-    "carro_a": _m(4.5, 1.9, 1.5, lx=2.4, yb=1.0, yf=1.0),
-    "carro_b": _m(4.5, 1.9, 1.5, lx=2.4, yb=1.0, yf=1.0),
-    "carro_c": _m(4.5, 1.9, 1.6, lx=2.4, yb=1.0, yf=1.0),
-    "carro_queimado": _m(4.5, 1.9, 1.5, lx=2.4, yb=1.0, yf=1.0),
-    "carro_a_v": _m(1.9, 4.5, 1.5, lx=1.05, yb=2.4, yf=2.4),
-    "carro_b_v": _m(1.9, 4.5, 1.5, lx=1.05, yb=2.4, yf=2.4),
-    "carro_c_v": _m(1.9, 4.5, 1.6, lx=1.05, yb=2.4, yf=2.4),
+    "carro_a": _m(4.5, 1.9, 1.5, lx=2.6, yb=1.1, yf=1.1),
+    "carro_b": _m(4.5, 1.9, 1.5, lx=2.6, yb=1.1, yf=1.1),
+    "carro_c": _m(4.5, 1.9, 1.6, lx=2.6, yb=1.1, yf=1.1),
+    "carro_queimado": _m(4.5, 1.9, 1.5, lx=2.6, yb=1.1, yf=1.1),
+    "carro_a_v": _m(1.9, 4.5, 1.5, lx=1.2, yb=2.7, yf=2.7),
+    "carro_b_v": _m(1.9, 4.5, 1.5, lx=1.2, yb=2.7, yf=2.7),
+    "carro_c_v": _m(1.9, 4.5, 1.6, lx=1.2, yb=2.7, yf=2.7),
 }
 
 # ------------------------------------------------------------------ luzes
@@ -78,31 +78,27 @@ MEDIDAS = {
 # (luzes soltas do mapa) ao lado de cada cópia do objeto. Cada fonte: tipo, p = ponto 3D da luz em metros a partir da origem (x, y, z) e orbe = ponto 3D do
 # brilho que aparece no sprite (padrão: o mesmo), fogo = escala do fogo em partículas (só o barril).
 LUZES = {
-    "poste_rua": [{"tipo": "sodio", "p": (1.42, 0.0, 5.12), "orbe": (1.42, 0.0, 5.2)}],
-    "poste_rua_e": [{"tipo": "sodio", "p": (-1.42, 0.0, 5.12), "orbe": (-1.42, 0.0, 5.2)}],
-    "semaforo": [{"tipo": "semaforo", "p": (-0.55, -0.16, 3.3)}],
-    "placa_neon": [{"tipo": "neon_rosa", "p": (0.0, -0.2, 2.78)}],
-    "barril_fogo": [{"tipo": "fogo_barril", "p": (0.0, 0.0, 1.0), "orbe": (0.0, 0.0, 1.05), "fogo": 1.0}],
-    "ponto_onibus": [{"tipo": "vitrine", "p": (0.75, 0.15, 1.05)}],
-    "predio_loja": [{"tipo": "vitrine", "p": (-1.0, -1.7, 1.45)}, {"tipo": "neon_verde", "p": (-0.5, -1.7, 3.4)}, {"tipo": "neon_verde", "p": (2.35, -1.7, 3.4)}],
-    "predio_bar": [{"tipo": "neon_rosa", "p": (0.3, -1.5, 3.2)}, {"tipo": "neon_rosa", "p": (-1.6, -1.45, 1.1)}, {"tipo": "neon_azul", "p": (1.95, -1.4, 1.5)}],
-    "predio_torre": [{"tipo": "neon_vermelho", "p": (0.0, -0.6, 7.1)}, {"tipo": "baliza", "p": (1.9, 0.1, 7.15)}],
-    "predio_apto_a": [{"tipo": "janela", "p": (0.0, -1.1, 2.9)}, {"tipo": "janela", "p": (-1.75, -1.1, 4.75)}],
-    "predio_apto_b": [{"tipo": "janela", "p": (-1.7, -1.1, 2.9)}, {"tipo": "janela", "p": (1.7, -1.1, 2.9)}],
+    "poste_rua": [{"tipo": "lampiao", "p": (1.42, 0.0, 5.12), "orbe": (1.42, 0.0, 5.2)}],
+    "poste_rua_e": [{"tipo": "lampiao", "p": (-1.42, 0.0, 5.12), "orbe": (-1.42, 0.0, 5.2)}],
+    "semaforo": [{"tipo": "lanterna_rubra", "p": (-0.55, -0.16, 2.95)}],
+    "placa_neon": [{"tipo": "vitral_roxo", "p": (0.0, -0.2, 2.72)}],
+    "barril_fogo": [{"tipo": "fogo_barril", "p": (0.0, 0.0, 0.85), "orbe": (0.0, 0.0, 0.9), "fogo": 1.0}],
+    "ponto_onibus": [{"tipo": "janela_quente", "p": (0.75, -0.55, 1.5)}],
+    "predio_loja": [{"tipo": "janela_quente", "p": (-1.0, -1.6, 1.4)}, {"tipo": "lampiao", "p": (-0.5, -1.6, 3.1)}],
+    "predio_bar": [{"tipo": "vitral_roxo", "p": (-0.7, -1.75, 2.8)}, {"tipo": "janela", "p": (-1.7, -1.5, 1.2)}],
+    "predio_torre": [{"tipo": "lanterna_rubra", "p": (-0.1, -1.2, 3.1)}],
+    "predio_apto_a": [{"tipo": "janela", "p": (0.0, -1.2, 3.1)}, {"tipo": "janela", "p": (-1.7, -1.2, 3.1)}],
+    "predio_apto_b": [{"tipo": "janela", "p": (-1.7, -1.2, 3.1)}, {"tipo": "janela", "p": (1.7, -1.2, 3.1)}],
 }
 
 # Sugestão de luz_tipos (mesmo formato do v2_laboratorio.json): e = energia, r = raio em px, h = altura da luz para o normal map.
 LUZ_TIPOS = {
-    "sodio": {"cor": [1.0, 0.68, 0.3], "e": 1.8, "r": 300, "h": 90, "tremor": 0.02, "orbe": 0.4},
+    "lampiao": {"cor": [1.0, 0.68, 0.3], "e": 1.8, "r": 300, "h": 90, "tremor": 0.08, "orbe": 0.4},
     "fogo_barril": {"cor": [1.0, 0.56, 0.22], "e": 1.9, "r": 250, "h": 30, "tremor": 0.12, "orbe": 0.5},
-    "neon_rosa": {"cor": [1.0, 0.25, 0.65], "e": 1.3, "r": 190, "h": 50, "tremor": 0.07, "orbe": 0.3},
-    "neon_azul": {"cor": [0.3, 0.7, 1.0], "e": 1.2, "r": 170, "h": 40, "tremor": 0.05, "orbe": 0.25},
-    "neon_verde": {"cor": [0.3, 1.0, 0.55], "e": 1.2, "r": 170, "h": 50, "tremor": 0.06, "orbe": 0.3},
-    "neon_vermelho": {"cor": [1.0, 0.18, 0.12], "e": 1.3, "r": 200, "h": 80, "tremor": 0.1, "orbe": 0.35},
-    "vitrine": {"cor": [0.78, 0.92, 1.0], "e": 1.0, "r": 150, "h": 30, "tremor": 0.02, "orbe": 0.15},
-    "janela": {"cor": [1.0, 0.68, 0.34], "e": 0.8, "r": 110, "h": 30, "tremor": 0.01, "orbe": 0.1},
-    "semaforo": {"cor": [1.0, 0.18, 0.12], "e": 0.7, "r": 80, "h": 30, "tremor": 0.03, "orbe": 0.15},
-    "baliza": {"cor": [1.0, 0.12, 0.08], "e": 0.6, "r": 100, "h": 70, "tremor": 0.45, "orbe": 0.2},
+    "vitral_roxo": {"cor": [0.66, 0.42, 1.0], "e": 1.3, "r": 190, "h": 50, "tremor": 0.07, "orbe": 0.3},
+    "lanterna_rubra": {"cor": [1.0, 0.2, 0.14], "e": 0.9, "r": 150, "h": 60, "tremor": 0.12, "orbe": 0.25},
+    "janela_quente": {"cor": [1.0, 0.76, 0.42], "e": 1.0, "r": 150, "h": 30, "tremor": 0.04, "orbe": 0.15},
+    "janela": {"cor": [1.0, 0.68, 0.34], "e": 0.8, "r": 110, "h": 30, "tremor": 0.03, "orbe": 0.1},
 }
 
 
