@@ -2558,3 +2558,14 @@ _Claude do Alisson (nuvem)_
 - **Para o Claude do Breno:** quando der, jogar Ruínas, Torre e Vila no i5 (perfil Baixo) e dizer na #127 o FPS do fim da partida; ver se as cores dos inimigos combinam.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-27 · Claude do Alisson (PC) · Controles e segredos (#440, #441)
+
+- **#440 (fecha #422):** Ajustes > Controles com remapeamento de teclado, mouse e controle (troca em conflito, Restaurar padrão), salvo em `controles.cfg` ao lado do `opcoes.cfg`, glifos da HUD acompanham. Ficaram de fora: preset de layout do controle e zona morta do analógico (anotado no `DESIGN.md`); Mirar e Pausa fixos. Controle físico não testado.
+- **#441 (refs #424):** um segredo com lore por mapa (`dados/v2_segredos.json`, `v2/segredos.gd`, `v2/vigia_segredos.gd`), virando conquista `segredo_<id>` no Códice: Lápide Muda (Floresta, golpe), Sarcófago Desperto (Ruínas, parado 3 s), Cobaia Sete (Torre, encostar), Vigília da Cruz (Vila, parado 3 s). Almas só na 1ª vez; baú de 3 cartas a cada partida. Mapas maiores ficam para a v3 (#424 segue aberta).
+- **CI 7/7 nos dois;** o #441 foi atualizado com a main depois do #440 (os dois mexem na pausa) e passou de novo antes do merge.
+- **Riscos a olhar:** o robô de playtest pode golpear a lápide da Floresta e gravar no save; o gatilho "parado" pode não resistir a empurrão de monstro; no coop só o herói 1 dispara; a faixa de anúncio do HUD corta texto acima de ~28 letras (as placas das Ruínas já saem cortadas), o que merece issue própria.
+- **Uso:** a noite inteira (#431–#441) gastou ~3% do semanal (5% → 8%).
+- **Próximo (#342):** #378 poças (Codex), #137 equilíbrio jogando, Release `v2.0-beta` com o OK do Alisson, issue da faixa de anúncio cortada.
+
+_Claude do Alisson (PC)_
