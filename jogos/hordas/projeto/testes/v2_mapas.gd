@@ -577,7 +577,7 @@ func _santuario() -> void:
 	a._mapa.pressed.emit()
 	ok(Mapas.escolhido() == "laboratorio", "santuário: o botão passa para o laboratório e grava")
 	ok(
-		a._mapa.text.contains("LABORATÓRIO") and a._entrar.text == "ENTRAR NO LABORATÓRIO",
+		a._mapa.text.contains("TORRE DO ALQUIMISTA") and a._entrar.text == "ENTRAR NA TORRE",
 		"santuário: o texto acompanha (%s / %s)" % [a._mapa.text, a._entrar.text]
 	)
 	await get_tree().process_frame

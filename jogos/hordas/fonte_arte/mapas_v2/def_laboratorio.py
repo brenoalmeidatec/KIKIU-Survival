@@ -1,10 +1,11 @@
-"""Laboratório da v2: o que cada objeto é para o jogo (colisão), os decalques de chão e o desenho do mapa (2880x1620 = 3x3 telas).
+"""Torre do Alquimista da v2 (id interno "laboratorio"): o que cada objeto é para o jogo (colisão), os decalques de chão e o desenho do mapa (2880x1620 = 3x3 telas).
 
-Os objetos e o piso vêm do Blender (modelos3d/mapa_laboratorio.py); este arquivo diz como entram no jogo e onde ficam. Lido por
-fonte_arte/gerar_v2_mapas.py. O mapa segue a planta de docs/laboratorio/PLANTA_PROPOSTA.md: uma grade 3x3 de salas (servidores, comando,
-espécimes / depósito, contenção, criogenia / geradores, pesquisa, ruínas) separadas por quatro corredores de 160 px, cada sala montada por uma
-"receita" (fileiras com passo, equipamento alto encostado na parede, ilhas no miolo, decalques junto do objeto que os explica). A sala de
-contenção fica no centro, onde o herói nasce no selo. As bordas fecham o mapa com a parede dos fundos e fileiras de equipamento alto.
+Os objetos e o piso vêm do Blender (modelos3d/mapa_laboratorio.py: pedra, madeira, alambiques, frascos acesos, círculos rúnicos; antes era um laboratório de
+contenção pós-apocalíptico, trocado na #429 sem mexer em nomes, medidas nem na planta); este arquivo diz como entram no jogo e onde ficam. Lido por
+fonte_arte/gerar_v2_mapas.py. O mapa segue a planta de docs/laboratorio/PLANTA_PROPOSTA.md: uma grade 3x3 de salas (servidores = grimórios, comando, espécimes /
+depósito, contenção, criogenia / geradores = athanors, pesquisa, ruínas) separadas por quatro corredores de 160 px, cada sala montada por uma "receita" (fileiras
+com passo, equipamento alto encostado na parede, ilhas no miolo, decalques junto do objeto que os explica). A sala de contenção fica no centro, onde o herói nasce
+no selo. As bordas fecham o mapa com a parede dos fundos e fileiras de equipamento alto.
 """
 import math
 
@@ -14,7 +15,7 @@ from kit_decalques import cor
 SEMENTE = 31
 W, H = 2880, 1620
 AJUDA = (
-    "O laboratório da v2 (2880x1620 = 3x3 telas, y para baixo), lido por v2/cenario.gd como a floresta (mesmo formato; veja v2_floresta.json), com "
+    "A Torre do Alquimista da v2 (id laboratorio, 2880x1620 = 3x3 telas, y para baixo), lido por v2/cenario.gd como a floresta (mesmo formato; veja v2_floresta.json), com "
     "\"mapa.pastas\" apontando para a arte (assets/v2/mapas/laboratorio), \"minimapa\" (cores do minimapa por objeto e decalque) e \"atmosfera\" (partículas "
     "do ambiente). É GERADO por fonte_arte/gerar_v2_mapas.py laboratorio --so-mapa (semente fixa; a planta das salas está em mapas_v2/def_laboratorio.py e em "
     "docs/laboratorio/PLANTA_PROPOSTA.md): para mudar onde as coisas ficam, mude o gerador e regere; editar este JSON à mão se perde na próxima geração."
@@ -69,11 +70,10 @@ TEMAS = {
 }
 
 
-# ------------------------------------------------------------------ piso: desgaste por cima do azulejo do Blender (já achatado)
+# ------------------------------------------------------------------ piso: grão e desgaste por cima do azulejo do Blender (já achatado)
 def detalhar_piso(img):
-    """O azulejo do Blender sai limpo e regular demais ao lado da floresta (que tem pedra, musgo e terra em cada pixel). Aqui entram: brilho
-    próprio de cada placa, quina clara em cima e à esquerda e escura embaixo e à direita, sujeira nos cantos, grão, riscos, ferrugem e
-    manchas de água. Tudo dá a volta nas bordas (o azulejo repete) e usa semente fixa."""
+    """O azulejo do Blender sai limpo demais ao lado da floresta. Aqui entram: brilho próprio de cada laje (32 px), quina clara em cima e à esquerda e
+    escura embaixo e à direita, sujeira nos cantos, grão e riscos claros. Tudo dá a volta nas bordas (o azulejo repete) e usa semente fixa."""
     import numpy as np
     from PIL import Image
 
@@ -85,92 +85,56 @@ def detalhar_piso(img):
     yy, xx = np.mgrid[0:h, 0:w]
     ti, tj = np.minimum(xx // 32, n - 1), np.minimum((yy / th).astype(int), n - 1)
     tx, ty = (xx % 32).astype(np.float32), (yy % th).astype(np.float32)
-    # 0. as manchas redondas do Blender (cilindros pretos) viram sujeira picotada: metade dos pixels delas clareia
-    lum = a.mean(axis=2)
-    interior = (tx >= 3) & (tx < 29) & (ty >= 2.2) & (ty < 19.4)
-    pinta_mancha = interior & (lum < 27)
-    clareia = pinta_mancha & (r.rand(h, w) < 0.55)
-    a[clareia] *= 1.7
-    # 1. cada placa com o seu brilho e um leve degradê (uma metade mais clara, como chapa que pegou luz do teto)
-    base = 0.82 + 0.34 * r.rand(n, n)
-    fator = base[tj, ti]
-    inclina = (r.rand(n, n) - 0.5)[tj, ti] * 0.18
-    fator = fator * (1.0 + inclina * (tx / 32.0 - 0.5) * 2.0)
-    a *= fator[..., None]
-    # 2. quinas: claro em cima e à esquerda, escuro embaixo e à direita
-    luz = ((tx >= 1) & (tx < 3)) | ((ty >= 0.7) & (ty < 1.8))
-    sombra = ((tx >= 28) & (tx < 31)) | ((ty >= 19.6) & (ty < 21.9))
-    a[luz] *= 1.28
-    a[sombra] *= 0.72
-    # 3. cantos sujos: o canto de baixo de cada placa escurece e uns cantos ganham ferrugem
+    a *= (0.86 + 0.28 * r.rand(n, n))[tj, ti][..., None]
+    a[((tx >= 1) & (tx < 3)) | ((ty >= 0.7) & (ty < 1.8))] *= 1.18
+    a[((tx >= 28) & (tx < 31)) | ((ty >= 19.6) & (ty < 21.9))] *= 0.78
     canto = np.clip((tx - 18) / 14.0, 0, 1) * np.clip((ty - 11) / 11.0, 0, 1)
-    a *= (1.0 - 0.28 * canto)[..., None]
-    # 4. grão: pixels soltos mais claros e mais escuros
+    a *= (1.0 - 0.2 * canto)[..., None]
     g = r.rand(h, w)
-    a[g < 0.06] *= 1.22
-    a[(g > 0.06) & (g < 0.14)] *= 0.8
-    # 5. riscos claros curtos e arranhões diagonais
-    for _ in range(150):
+    a[g < 0.06] *= 1.18
+    a[(g > 0.06) & (g < 0.14)] *= 0.82
+    for _ in range(110):
         x0, y0 = r.randint(0, w), r.randint(0, h)
-        comp = r.randint(5, 16)
-        dx, dy = (1, 0) if r.rand() < 0.45 else ((1, 1) if r.rand() < 0.5 else (1, -1))
-        for k in range(comp):
-            px, py = (x0 + dx * k) % w, (y0 + dy * k) % h
-            a[py, px] += np.array([22, 26, 30], np.float32)
-    # 6. ferrugem e água: manchas de pixels (blobs irregulares com borda picotada)
-    def blob(cx, cy, rx, ry, cor, forca):
-        for y in range(int(cy - ry - 1), int(cy + ry + 2)):
-            for x in range(int(cx - rx - 1), int(cx + rx + 2)):
-                d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-                if d < 1.0 and r.rand() < (1.0 - d) * 1.4:
-                    p = (y % h, x % w)
-                    a[p] = a[p] * (1 - forca) + np.array(cor, np.float32) * forca
-    for _ in range(46):
-        blob(r.randint(0, w), r.randint(0, h), r.uniform(3, 10), r.uniform(2, 5), (118, 70, 40), r.uniform(0.35, 0.6))
-    for _ in range(22):
-        blob(r.randint(0, w), r.randint(0, h), r.uniform(8, 20), r.uniform(4, 9), (20, 30, 40), r.uniform(0.25, 0.4))
-    for _ in range(16):
-        blob(r.randint(0, w), r.randint(0, h), r.uniform(4, 9), r.uniform(2, 5), (40, 108, 120), r.uniform(0.18, 0.3))
+        dx, dy = (1, 0) if r.rand() < 0.5 else (1, 1)
+        for k in range(r.randint(5, 14)):
+            a[(y0 + dy * k) % h, (x0 + dx * k) % w] += np.array([20, 18, 15], np.float32)
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB")
 
 
 # ------------------------------------------------------------------ decalques (já achatados por sen 45)
-def _poca_acido(w, h):
-    return lambda rng: kd.poca(w, h, rng, cor("33b560"), cor("b8ffcb"), cor("1b5e36"))
+def _poca(w, h, agua, brilho, borda):
+    return lambda rng: kd.poca(w, h, rng, cor(agua), cor(brilho), cor(borda))
 
 
-def _poca_oleo(w, h):
-    return lambda rng: kd.poca(w, h, rng, cor("13161a"), cor("6b7c8c"), cor("2a3036"))
-
-
-def _mancha(w, h, c="0c0e11", alfa=190):
+def _mancha(w, h, c="0e0b09", alfa=190):
     return lambda rng: kd.mancha(w, h, rng, cor(c), alfa=alfa)
 
 
+PERGAMINHOS = ("d8c9a0", "c4b48a", "b0a07a")
 DECALQUES = {
-    "selo_central": lambda rng: kd.anel(300, 4, cor("d6ac26"), 24, cor("98791a")),
-    "selo_pequeno": lambda rng: kd.anel(120, 3, cor("d6ac26"), 12, cor("98791a")),
-    "faixa_perigo_g": lambda rng: kd.faixa_diagonal(176, 20, cor("d6ac26"), cor("15171b"), 6, rng),
-    "faixa_perigo_p": lambda rng: kd.faixa_diagonal(88, 20, cor("d6ac26"), cor("15171b"), 6, rng),
-    "seta_chao": lambda rng: kd.seta(88, 44, cor("c9cdd1"), rng),
-    "poca_acido_g": _poca_acido(110, 76),
-    "poca_acido_p": _poca_acido(64, 44),
-    "poca_oleo_g": _poca_oleo(100, 70),
-    "poca_oleo_p": _poca_oleo(58, 40),
+    "selo_central": lambda rng: kd.anel(300, 4, cor("6fb2ff"), 24, cor("3f78c0")),
+    "selo_pequeno": lambda rng: kd.anel(120, 3, cor("6fb2ff"), 12, cor("3f78c0")),
+    "faixa_perigo_g": lambda rng: kd.retangulo(176, 20, cor("6a2433"), cor("c9a24a"), rng, 0.05),   # tapete vermelho com a barra dourada
+    "faixa_perigo_p": lambda rng: kd.retangulo(88, 20, cor("6a2433"), cor("c9a24a"), rng, 0.05),
+    "seta_chao": lambda rng: kd.seta(88, 44, cor("6fa0d8"), rng),                                    # seta de runa azul gasta
+    "poca_acido_g": _poca(110, 76, "33b560", "b8ffcb", "1b5e36"),                                    # poção verde derramada
+    "poca_acido_p": _poca(64, 44, "33b560", "b8ffcb", "1b5e36"),
+    "poca_oleo_g": _poca(100, 70, "1c1226", "8a62c0", "2e1d42"),                                     # tinta arcana roxa
+    "poca_oleo_p": _poca(58, 40, "1c1226", "8a62c0", "2e1d42"),
     "mancha_a": _mancha(96, 66),
     "mancha_b": _mancha(70, 48),
     "mancha_c": _mancha(120, 80, alfa=150),
     "mancha_sangue": _mancha(76, 52, "4a1515", 200),
-    "rachadura_a": lambda rng: kd.rachadura(130, 40, rng, cor("0b0c0e")),
-    "rachadura_b": lambda rng: kd.rachadura(100, 36, rng, cor("0b0c0e")),
-    "rachadura_c": lambda rng: kd.rachadura(150, 44, rng, cor("0b0c0e"), ramos=3),
-    "cabo_a": lambda rng: kd.cabo(140, 34, rng, cor("1b1d22"), cor("8c2a24")),
-    "cabo_b": lambda rng: kd.cabo(110, 30, rng, cor("1b1d22"), cor("8a8f96")),
-    "cabo_c": lambda rng: kd.cabo(170, 36, rng, cor("2a2218"), cor("c8a020")),
-    "grade_dreno": lambda rng: kd.grade(72, 44, cor("39424c"), cor("0a0c0e"), rng),
-    "placa_chao": lambda rng: kd.retangulo(76, 52, cor("39424d"), cor("20262c"), rng, 0.04),
-    "papeis_a": lambda rng: kd.papeis(60, 40, rng),
-    "papeis_b": lambda rng: kd.papeis(48, 34, rng),
+    "rachadura_a": lambda rng: kd.rachadura(130, 40, rng, cor("0f0d0b")),
+    "rachadura_b": lambda rng: kd.rachadura(100, 36, rng, cor("0f0d0b")),
+    "rachadura_c": lambda rng: kd.rachadura(150, 44, rng, cor("0f0d0b"), ramos=3),
+    "cabo_a": lambda rng: kd.rachadura(140, 34, rng, cor("4a3320"), ramos=3),                      # raiz que rachou as lajes
+    "cabo_b": lambda rng: kd.rachadura(110, 30, rng, cor("2a1f14"), ramos=2),                      # fenda escura
+    "cabo_c": lambda rng: kd.rachadura(170, 36, rng, cor("3a2a1c"), ramos=4),                      # raízes finas
+    "grade_dreno": lambda rng: kd.grade(72, 44, cor("4a4540"), cor("0a0907"), rng),
+    "placa_chao": lambda rng: kd.retangulo(76, 52, cor("5a544c"), cor("2e2a26"), rng, 0.04),
+    "papeis_a": lambda rng: kd.papeis(60, 40, rng, PERGAMINHOS),
+    "papeis_b": lambda rng: kd.papeis(48, 34, rng, PERGAMINHOS),
 }
 
 
@@ -180,17 +144,17 @@ LUZ_TIPOS = {
     "aura": {"cor": [0.45, 0.72, 1.0], "e": 0.7, "r": 120, "h": 60},
     "tanque_verde": {"cor": [0.3, 1.0, 0.45], "e": 1.7, "r": 190, "h": 55, "tremor": 0.05, "orbe": 0.4},
     "tanque_fraco": {"cor": [0.3, 0.9, 0.5], "e": 0.8, "r": 120, "h": 40, "tremor": 0.2, "orbe": 0.15},
-    "tela_ciano": {"cor": [0.3, 0.85, 1.0], "e": 1.2, "r": 130, "h": 30, "tremor": 0.03, "orbe": 0.15},
-    "emergencia": {"cor": [1.0, 0.16, 0.1], "e": 1.8, "r": 220, "h": 60, "tremor": 0.28, "orbe": 0.4},
-    "cripto_azul": {"cor": [0.35, 0.82, 1.0], "e": 1.5, "r": 150, "h": 30, "tremor": 0.04, "orbe": 0.25},
+    "tela_ciano": {"cor": [0.4, 0.65, 1.0], "e": 1.2, "r": 130, "h": 30, "tremor": 0.03, "orbe": 0.15},
+    "emergencia": {"cor": [1.0, 0.22, 0.14], "e": 1.8, "r": 220, "h": 60, "tremor": 0.28, "orbe": 0.4},
+    "cripto_azul": {"cor": [0.4, 0.7, 1.0], "e": 1.5, "r": 150, "h": 30, "tremor": 0.04, "orbe": 0.25},
     "toxico": {"cor": [0.4, 1.0, 0.4], "e": 0.8, "r": 95, "h": 20, "tremor": 0.1, "orbe": 0.0},
-    "gerador": {"cor": [1.0, 0.6, 0.25], "e": 1.4, "r": 160, "h": 40, "tremor": 0.12, "orbe": 0.25},
-    "fio_solto": {"cor": [0.8, 0.92, 1.0], "e": 1.8, "r": 130, "h": 45, "tremor": 0.4, "orbe": 0.3, "faiscas": True},
+    "gerador": {"cor": [1.0, 0.55, 0.2], "e": 1.6, "r": 170, "h": 40, "tremor": 0.14, "orbe": 0.25},
+    "fio_solto": {"cor": [0.7, 0.75, 1.0], "e": 1.8, "r": 130, "h": 45, "tremor": 0.4, "orbe": 0.3, "faiscas": True},
     # luzes das bordas (sem orbe): altas e largas, para pegar a frente do equipamento alto que a câmera vê de frente
-    "borda_ciano": {"cor": [0.3, 0.8, 1.0], "e": 1.1, "r": 250, "h": 70, "tremor": 0.03, "orbe": 0.0},
+    "borda_ciano": {"cor": [0.4, 0.6, 1.0], "e": 1.1, "r": 250, "h": 70, "tremor": 0.03, "orbe": 0.0},
     "borda_verde": {"cor": [0.3, 1.0, 0.5], "e": 1.0, "r": 240, "h": 70, "tremor": 0.06, "orbe": 0.0},
-    "borda_ambar": {"cor": [1.0, 0.62, 0.26], "e": 1.0, "r": 240, "h": 70, "tremor": 0.1, "orbe": 0.0},
-    "borda_vermelha": {"cor": [1.0, 0.2, 0.12], "e": 1.0, "r": 230, "h": 70, "tremor": 0.25, "orbe": 0.0},
+    "borda_ambar": {"cor": [1.0, 0.6, 0.24], "e": 1.0, "r": 240, "h": 70, "tremor": 0.12, "orbe": 0.0},
+    "borda_vermelha": {"cor": [1.0, 0.22, 0.14], "e": 1.0, "r": 230, "h": 70, "tremor": 0.25, "orbe": 0.0},
 }
 LUZ_OBJETOS = {
     "tanque_alto": {"tipo": "tanque_verde", "luz": [0, -8], "orbe": [0, -58]},
@@ -203,22 +167,22 @@ LUZ_OBJETOS = {
     "gerador": {"tipo": "gerador", "luz": [0, 6], "orbe": [18, -40]},
 }
 MINIMAPA = {
-    "chao": "222b34",
-    "fechado": "0d1217",
+    "chao": "2a2630",
+    "fechado": "0f0c14",
     "objetos": {
-        "parede_lab_a": ["56626f", 2], "parede_lab_b": ["56626f", 2], "parede_lab_c": ["56626f", 2], "pilar_lab": ["56626f", 2],
-        "rack_servidores": ["7a8896", 1], "armario_aco": ["7a8896", 1], "tanque_alto": ["44d870", 2], "tanque_quebrado": ["2f9a50", 2],
-        "capsula_cripto": ["5adcf2", 2], "gerador": ["d6ac26", 2], "cano_grosso": ["8c6a4a", 1], "mesa_lab": ["8a98a6", 1],
-        "bancada_lab": ["8a98a6", 2], "console": ["5adcf2", 1], "console_quebrado": ["8aa0b0", 1], "caixa_suprimentos": ["8a7a5a", 1],
-        "caixa_empilhada": ["8a7a5a", 1], "barril_toxico": ["5bd06a", 1], "maca": ["b9bdc2", 1], "gaiola": ["7a8896", 1],
-        "lampada_emergencia": ["ec3b2e", 1], "porta_blindada": ["56626f", 2], "duto_ventilacao": ["7a8896", 1], "estante_amostras": ["7a8896", 1],
+        "parede_lab_a": ["6a655f", 2], "parede_lab_b": ["6a655f", 2], "parede_lab_c": ["6a655f", 2], "pilar_lab": ["8a847b", 2],
+        "rack_servidores": ["6b2a2a", 1], "armario_aco": ["8c6a45", 1], "tanque_alto": ["5fe08a", 2], "tanque_quebrado": ["3a9a5a", 2],
+        "capsula_cripto": ["58b8ff", 2], "gerador": ["ff8a2a", 2], "cano_grosso": ["b0693a", 1], "mesa_lab": ["8c6a45", 1],
+        "bancada_lab": ["8a847b", 2], "console": ["58b8ff", 1], "console_quebrado": ["8aa0d0", 1], "caixa_suprimentos": ["8c6a45", 1],
+        "caixa_empilhada": ["6a4a2f", 1], "barril_toxico": ["5fe08a", 1], "maca": ["8a847b", 1], "gaiola": ["5a5d62", 1],
+        "lampada_emergencia": ["e0453a", 1], "porta_blindada": ["6a4a2f", 2], "duto_ventilacao": ["b0693a", 1], "estante_amostras": ["8c6a45", 1],
     },
-    "decalques": {"selo_central": ["ddcc80", 5, "anel"], "poca_acido_g": ["3fcf6a", 2], "faixa_perigo_g": ["d6ac26", 1]},
+    "decalques": {"selo_central": ["6fb2ff", 5, "anel"], "poca_acido_g": ["5fe08a", 2], "faixa_perigo_g": ["6a2433", 1]},
     "luzes_fortes": ["gerador"],
 }
 ATMOSFERA = {
-    "vaga": {"n": 26, "cor": [0.55, 0.95, 1.0], "tam": 0.8, "vel": 0.6},
-    "folhas": {"n": 14, "cor": [0.75, 0.8, 0.85, 0.55], "tam": 0.7, "vel": 0.45},
+    "vaga": {"n": 26, "cor": [0.55, 0.75, 1.0], "tam": 0.8, "vel": 0.6},          # faíscas arcanas azuis
+    "folhas": {"n": 14, "cor": [0.8, 0.75, 0.62, 0.55], "tam": 0.7, "vel": 0.45},  # poeira e cinza de pergaminho
 }
 
 
@@ -556,7 +520,7 @@ def montar(tam, rng):
     ]
     return {
         "semente": SEMENTE,
-        "mapa": {"tam": [W, H], "chao": {"piso": "piso", "ganho": 2.2, "verde": 1.0, "dessat": 0.3}, "ambiente": "16232d",
+        "mapa": {"tam": [W, H], "chao": {"piso": "piso", "ganho": 2.6, "verde": 0.9, "dessat": 0.15}, "ambiente": "211c2c",
                  "luar": {"e": 0.3, "h": 0.2, "ang": 70}, "ganho_objetos": 1.8, "ganho_decalques": 1.4, "borda_andavel": 150,
                  "sombra_ambiente": {"e": 1.1, "ang": 58, "comp": 0.6}, "copas_altura_min": 52},
         "nascimento": {"heroi": [CX - 10, CY - 22], "monstros": monstros},

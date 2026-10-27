@@ -263,7 +263,7 @@ func _testes() -> void:
 	s3._mostrar_item(pos_rar)
 	ok(s3._p_comprar.text == "BLOQUEADA" and s3._p_comprar.disabled, "12: o botão diz BLOQUEADA (%s)" % s3._p_comprar.text)
 	ok(
-		s3._motivo_recusa(s3._p_itens[pos_rar]) == "Falta a conquista: Vença o Laboratório",
+		s3._motivo_recusa(s3._p_itens[pos_rar]) == "Falta a conquista: Vença a Torre do Alquimista",
 		"12: o motivo escreve o requisito (%s)" % s3._motivo_recusa(s3._p_itens[pos_rar])
 	)
 	await foto("05_altar_melhoria_trancada")
