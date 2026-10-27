@@ -7,6 +7,7 @@ extends RefCounted
 
 const MAX := 24
 const ACHATA := 0.62
+const MIOLO_MIN := 6.0  # px: abaixo disso o miolo do aviso não vira polígono (os pontos arredondados coincidem, #127)
 const Anim := preload("res://v2/anim_golpes.gd")  # as folhas dos ataques inimigos (indice_perigo.json; docs/combate_v2)
 ## Estilo do aviso: 0 = só o chão pisca (como antes); 1 = QUEDA, uma pedra de energia cai do céu no círculo e estoura no disparo (a chuva do
 ## chefe); 2 = ESTOURO, o chão racha e explode no disparo (o estouro do chefe e a elite explosiva); 3 = TEIA, fios e anéis de teia desenhados
@@ -304,7 +305,8 @@ func _desenhar() -> void:
 			var poly := _elipse(pos[i], r, 28)
 			no.draw_colored_polygon(poly, Color(c.r, c.g, c.b, al))
 			# o miolo vai enchendo até o raio todo: quando enche, dispara
-			no.draw_colored_polygon(_elipse(pos[i], r * k, 24), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca))
+			if r * k >= MIOLO_MIN:
+				no.draw_colored_polygon(_elipse(pos[i], r * k, 24), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca))
 			var borda := poly.duplicate()
 			borda.append(poly[0])
 			no.draw_polyline(borda, Color(c.r, c.g * 0.8, c.b * 0.8, 0.8 + 0.2 * pisca), 3.0)
@@ -313,7 +315,8 @@ func _desenhar() -> void:
 		elif tipo[i] == 3:
 			var leque := _fatia(pos[i], dir[i], tam[i], larg[i])
 			no.draw_colored_polygon(leque, Color(c.r, c.g, c.b, al))
-			no.draw_colored_polygon(_fatia(pos[i], dir[i], tam[i] * k, larg[i]), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca))
+			if tam[i] * k >= MIOLO_MIN:
+				no.draw_colored_polygon(_fatia(pos[i], dir[i], tam[i] * k, larg[i]), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca))
 			leque.append(leque[0])
 			no.draw_polyline(leque, Color(1.0, 0.9, 0.8, 0.5 + 0.4 * pisca), 2.0)
 		else:
@@ -325,9 +328,10 @@ func _desenhar() -> void:
 			var quad := PackedVector2Array([(a0 + o).round(), (a1 + o).round(), (a1 - o).round(), (a0 - o).round()])
 			no.draw_colored_polygon(quad, Color(c.r, c.g, c.b, al))
 			var fim := a0.lerp(a1, k)
-			no.draw_colored_polygon(
-				PackedVector2Array([(a0 + o).round(), (fim + o).round(), (fim - o).round(), (a0 - o).round()]), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca)
-			)
+			if a0.distance_to(fim) >= MIOLO_MIN:
+				no.draw_colored_polygon(
+					PackedVector2Array([(a0 + o).round(), (fim + o).round(), (fim - o).round(), (a0 - o).round()]), Color(c.r, c.g, c.b, 0.22 + 0.2 * pisca)
+				)
 			no.draw_polyline(
 				PackedVector2Array([(a0 + o).round(), (a1 + o).round(), (a1 - o).round(), (a0 - o).round(), (a0 + o).round()]),
 				Color(1.0, 0.9, 0.8, 0.5 + 0.4 * pisca),
