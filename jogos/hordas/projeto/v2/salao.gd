@@ -320,6 +320,7 @@ func _montar_hud() -> void:
 	ajustes.position = Vector2(682, 507)
 	ajustes.size = Vector2(120, 30)
 	_estilo_botao(ajustes, 16)
+	ajustes.focus_mode = Control.FOCUS_NONE  # só clique: com foco, o Enter/A que usa um portal apertava o AJUSTES (#423)
 	ajustes.pressed.connect(func(): pausa.abrir_ajustes())
 	add_child(ajustes)
 	var voltar := Button.new()
@@ -327,6 +328,7 @@ func _montar_hud() -> void:
 	voltar.position = Vector2(810, 507)
 	voltar.size = Vector2(136, 30)
 	_estilo_botao(voltar, 16)
+	voltar.focus_mode = Control.FOCUS_NONE  # idem: o teclado e o controle voltam pelo Esc/B (_unhandled_input), nunca pelo foco
 	_glifo_no_botao(voltar, "voltar")  # depois do tamanho: o glifo usa a largura do botão
 	voltar.pressed.connect(func(): Transicoes.ir_para(self, ESCOLHA, true))
 	add_child(voltar)
