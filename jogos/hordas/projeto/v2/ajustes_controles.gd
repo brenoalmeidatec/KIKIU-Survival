@@ -81,8 +81,8 @@ func capturar(e: InputEvent) -> bool:
 			cancelar()
 			return true
 	elif e is InputEventJoypadMotion:
-		if absf(e.axis_value) < GATILHO_FIRME:
-			return false
+		if not (e.axis == JOY_AXIS_TRIGGER_LEFT or e.axis == JOY_AXIS_TRIGGER_RIGHT) or e.axis_value < GATILHO_FIRME:
+			return false  # o analógico e o gatilho de leve (ou parado em -1 no repouso) não são comando
 	else:
 		return false
 	var acao := capturando

@@ -15,6 +15,7 @@ const Meta := preload("res://v2/meta.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const Pausa := preload("res://v2/pausa.tscn")
 const Altar := preload("res://v2/altar.tscn")
+const Mundo := preload("res://v2/mundo.tscn")
 
 var falhas := 0
 
@@ -254,10 +255,14 @@ func _glifos() -> void:
 	ok(Glifos.descritor("esquiva") == [[Glifos.FACE, "X"]], "Xbox: esquiva no X")
 	Glifos.definir(Glifos.Disp.PS)
 	ok(Glifos.descritor("esquiva") == [[Glifos.PS, "q"]], "PlayStation: esquiva no quadrado")
-	Controles.definir("atacar", _gatilho(JOY_AXIS_TRIGGER_LEFT))
-	ok(Glifos.descritor("clique") == [[Glifos.TECLA, "L2"]], "PlayStation: atacar no L2")
+	Controles.definir("escudo", _gatilho(JOY_AXIS_TRIGGER_RIGHT))
+	ok(Glifos.descritor("secundario") == [[Glifos.TECLA, "R2"]], "PlayStation: escudo no R2")
 	Glifos.definir(Glifos.Disp.XBOX)
-	ok(Glifos.descritor("clique") == [[Glifos.TECLA, "LT"]], "Xbox: atacar no LT")
+	ok(Glifos.descritor("secundario") == [[Glifos.TECLA, "RT"]], "Xbox: escudo no RT")
+	Controles.definir("atacar", _k(KEY_X))
+	Glifos.definir(Glifos.Disp.TECLADO)
+	ok(Glifos.descritor("clique") == [[Glifos.MOUSE, "e"]], "o clique do salão (explorar) é o mouse, não segue o atacar")
+	Glifos.definir(Glifos.Disp.XBOX)
 	ok(Glifos.descritor("ultimate") == [[Glifos.TECLA, "RB"]], "o especial não mudou")
 	var d: Array = Glifos.descritores_da_acao("esquiva")
 	ok(d[0] == [[Glifos.TECLA, "J"]] and d[1] == [[Glifos.FACE, "X"]], "a tela mostra os dois slots lado a lado: %s" % [d])
@@ -377,6 +382,14 @@ func _tela() -> void:
 	deriva.axis_value = 0.2
 	_enviar(deriva)
 	ok(p._controles.capturando == "escudo", "gatilho de leve (deriva) não conta")
+	var repouso := _gatilho(JOY_AXIS_TRIGGER_RIGHT)
+	repouso.axis_value = -1.0  # alguns drivers deixam o gatilho parado em -1
+	_enviar(repouso)
+	var stick := InputEventJoypadMotion.new()
+	stick.axis = JOY_AXIS_LEFT_X
+	stick.axis_value = 1.0
+	_enviar(stick)
+	ok(p._controles.capturando == "escudo" and p._sub.text == "", "gatilho em repouso e analógico firme são ignorados em silêncio")
 	_enviar(_gatilho(JOY_AXIS_TRIGGER_RIGHT))
 	ok(
 		(
@@ -416,6 +429,21 @@ func _tela() -> void:
 
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
+	# a HUD da partida com a habilidade no Shift e o especial no Espaço (as teclas de nome mais largo): o selo tem de caber no slot
+	var mundo = Mundo.instantiate()
+	mundo.modo_teste = true
+	add_child(mundo)
+	mundo.set_process(false)
+	await get_tree().process_frame
+	Controles.definir("ruptura", _k(KEY_SHIFT))
+	Controles.definir("ultimate", _k(KEY_SPACE))
+	Glifos.avisar()
+	await get_tree().process_frame
+	await mundo.ap.foto(pasta.path_join("controles_hud.png"))
+	Controles.restaurar()
+	Glifos.avisar()
+	mundo.queue_free()
+	await get_tree().process_frame  # a janela volta à escala antes de o santuário montar a dele
 	var altar = Altar.instantiate()  # a janela de verdade: o santuário monta a escala da UI (960x540) e o menu de pausa dele
 	add_child(altar)
 	await _quadros(3)

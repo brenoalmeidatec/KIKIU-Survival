@@ -77,7 +77,7 @@ const TABELA := {
 }
 
 ## papel do glifo -> ação do InputMap que o remapeamento pode ter trocado (Ajustes > Controles). Só estes papéis seguem a troca.
-const PAPEL_ACAO := {"habilidade": "ruptura", "ultimate": "ultimate", "secundario": "escudo", "clique": "atacar", "correr": "correr", "esquiva": "esquiva"}
+const PAPEL_ACAO := {"habilidade": "ruptura", "ultimate": "ultimate", "secundario": "escudo", "correr": "correr", "esquiva": "esquiva"}
 const NOMES_TECLA := {
 	KEY_SPACE: "Espaço",
 	KEY_ENTER: "Enter",
