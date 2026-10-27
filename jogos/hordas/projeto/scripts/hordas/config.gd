@@ -57,7 +57,14 @@ const ITENS := [
 		"padrao": "auto"
 	},
 	{"chave": "cursor_forma", "grupo": "Gráfico", "nome": "Cursor na partida", "valores": ["mira", "seta"], "rotulos": ["Mira", "Seta"], "padrao": "mira"},
-	{"chave": "cursor_cor", "grupo": "Gráfico", "nome": "Cor do cursor", "valores": ["ouro", "branco", "ciano", "alma"], "rotulos": ["Ouro", "Branco", "Ciano", "Roxo"], "padrao": "ouro"},
+	{
+		"chave": "cursor_cor",
+		"grupo": "Gráfico",
+		"nome": "Cor do cursor",
+		"valores": ["ouro", "branco", "ciano", "alma"],
+		"rotulos": ["Ouro", "Branco", "Ciano", "Roxo"],
+		"padrao": "ouro"
+	},
 	{"chave": "musica", "grupo": "Som", "nome": "Música", "valores": VOLUMES, "formato": "pct", "padrao": 0.6},
 	{"chave": "efeitos", "grupo": "Som", "nome": "Efeitos", "valores": VOLUMES, "formato": "pct", "padrao": 0.8},
 	{

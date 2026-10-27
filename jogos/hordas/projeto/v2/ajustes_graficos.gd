@@ -58,7 +58,9 @@ func itens() -> Array:
 				_it("g:tela", "Tela cheia (F11)", _sim_nao("tela_cheia"), AJUDA_TELA),
 				_it("g:fps", "Mostrar FPS", _sim_nao("mostrar_fps"), AJUDA_FPS),
 				_it("g:ui", "Tamanho da interface", Config.rotulo("tamanho_ui"), AJUDA_UI),
-				_it("g:cursor_forma", "Cursor na partida", CursorKikiu.ROTULOS_FORMA.get(CursorKikiu._opcao("cursor_forma", "mira"), "Mira"), AJUDA_CURSOR_FORMA),
+				_it(
+					"g:cursor_forma", "Cursor na partida", CursorKikiu.ROTULOS_FORMA.get(CursorKikiu._opcao("cursor_forma", "mira"), "Mira"), AJUDA_CURSOR_FORMA
+				),
 				_it("g:cursor_cor", "Cor do cursor", CursorKikiu.ROTULOS_COR.get(CursorKikiu.cor_atual(), "Ouro"), AJUDA_CURSOR_COR),
 				_it("g:avancado", "Avançado", "CPU e GPU", AJUDA_AVANCADO),
 				_it("voltar", "Voltar"),
