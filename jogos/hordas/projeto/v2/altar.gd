@@ -29,6 +29,9 @@ const COR_FOCO := Paleta.FOCO  # texto do botão com foco ou sob o mouse (o fund
 const COR_ALMA := Paleta.ALMA
 const Glifos := preload("res://v2/glifos.gd")
 const TEMPO_AVISO := 3.0
+const X_CONQ := 632  # coluna CONQUISTAS: x 632 a 924 (a borda direita é a da caixa ALMAS e a do VOLTAR)
+const LARG_CONQ := 292
+const PASSO_CONQ := 108  # altura do item (100) mais 8 de vão
 
 var _saldo: Label
 var _ultima: Label
@@ -36,6 +39,7 @@ var _status: Label
 var _status_t := 0.0
 var _linhas := {}  # id da melhoria -> {nome, efeito, botao, cadeado}
 var _conq := {}  # id da conquista -> {cadeado, nome, desc, rec}
+var _rolagem: ScrollContainer  # a lista de conquistas, limitada a y 106-446
 var _entrar: Button
 var _mapa: Button  # escolhe o mapa da próxima partida (Mapas.LISTA); o texto de ENTRAR acompanha
 var _mapa_id := Mapas.PADRAO
@@ -150,12 +154,12 @@ func _montar() -> void:
 	veu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(veu)
 
-	add_child(_texto("SANTUÁRIO", Paleta.TITULO_GRANDE, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 6, LARG, 56)))
+	add_child(_texto("SANTUÁRIO", Paleta.TITULO_GRANDE, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, 6, LARG, 52)))
 	add_child(_painel(Rect2(684, 10, 240, 46)))  # a borda direita (924) é a da coluna CONQUISTAS e a do VOLTAR
 	add_child(_texto("ALMAS", Paleta.NUMERO_PEQUENO, false, COR_ALMA, HORIZONTAL_ALIGNMENT_LEFT, Rect2(700, 14, 120, 12)))
 	_saldo = _texto("0", Paleta.TITULO_MEDIO, true, COR_ALMA, HORIZONTAL_ALIGNMENT_RIGHT, Rect2(700, 16, 208, 38))
 	add_child(_saldo)
-	_ultima = _texto("", Paleta.NUMERO_PEQUENO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 62, 920, 14))
+	_ultima = _texto("", Paleta.NUMERO_PEQUENO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(20, 58, 920, 10))  # y 58-68: acaba onde os títulos MELHORIAS/CONQUISTAS (y 68) começam
 	add_child(_ultima)
 
 	# Grade de cartões: o detalhe da seleção ocupa uma única faixa, sem repetir parágrafos.
@@ -194,26 +198,48 @@ func _montar() -> void:
 	_detalhe.add_theme_constant_override("line_spacing", LINHA_DETALHE - 16)  # linhas de 17 px (16 da fonte + 1): 5 linhas = 85 px
 	_detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_detalhe)
-	add_child(_texto("CONQUISTAS", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(632, 68, 292, 38)))
+	add_child(_texto("CONQUISTAS", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(X_CONQ, 68, LARG_CONQ, 38)))
+	# A lista tem ~26 conquistas: rola dentro da área livre (y 106 a 446, acima do MAPA/status e dos botões). Roda do mouse, barra,
+	# e o foco (teclado/controle) rola sozinho até o item (follow_focus). Os itens usam coordenadas locais do `conteudo`.
+	_rolagem = ScrollContainer.new()
+	_rolagem.position = Vector2(X_CONQ, 106)
+	_rolagem.size = Vector2(LARG_CONQ, 340)
+	_rolagem.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_rolagem.follow_focus = true
+	_rolagem.add_theme_constant_override("scrollbar_h_separation", 0)
+	var barra_rolagem := _rolagem.get_v_scroll_bar()
+	barra_rolagem.custom_minimum_size.x = 8
+	var grabber := StyleBoxFlat.new()
+	grabber.bg_color = Color(COR_OURO, 0.7)
+	barra_rolagem.add_theme_stylebox_override("grabber", grabber)
+	barra_rolagem.add_theme_stylebox_override("grabber_highlight", grabber)
+	barra_rolagem.add_theme_stylebox_override("grabber_pressed", grabber)
+	var trilho_rolagem := StyleBoxFlat.new()
+	trilho_rolagem.bg_color = Color(Paleta.BARRA_VAZIA, 0.6)
+	barra_rolagem.add_theme_stylebox_override("scroll", trilho_rolagem)
+	add_child(_rolagem)
+	var conteudo := Control.new()
+	conteudo.custom_minimum_size = Vector2(LARG_CONQ - 12, Meta.conquistas().size() * PASSO_CONQ - 8)
+	_rolagem.add_child(conteudo)
 	i = 0
 	for c in Meta.conquistas():
-		var y := 106.0 + i * 108.0
-		add_child(_painel(Rect2(632, y, 292, 100)))
-		var selecionar := _botao_detalhe(Rect2(636, y + 2, 284, 94))
+		var y := float(i * PASSO_CONQ)
+		conteudo.add_child(_painel(Rect2(0, y, LARG_CONQ - 12, 100)))
+		var selecionar := _botao_detalhe(Rect2(4, y + 2, LARG_CONQ - 20, 94), conteudo)
 		selecionar.focus_entered.connect(_selecionar_conquista.bind(str(c.id)))
 		selecionar.mouse_entered.connect(_selecionar_conquista.bind(str(c.id)))
 		selecionar.pressed.connect(_selecionar_conquista.bind(str(c.id)))
 		var cadeado := Cadeado.new()
-		cadeado.position = Vector2(642, y + 8)
-		var nome := _texto("", Paleta.TITULO_PEQUENO, true, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(664, y + 3, 250, 24))
-		var desc := _texto("", Paleta.TEXTO_TAMANHO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(642, y + 43, 272, 34))
+		cadeado.position = Vector2(10, y + 8)
+		var nome := _texto("", Paleta.TITULO_PEQUENO, true, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(32, y + 3, 238, 24))
+		var desc := _texto("", Paleta.TEXTO_TAMANHO, false, COR_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(10, y + 43, 260, 34))
 		desc.add_theme_font_override("font", Dados.fonte_texto)
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		var rec := _texto("", Paleta.NUMERO_PEQUENO, false, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(642, y + 79, 272, 14))
+		var rec := _texto("", Paleta.NUMERO_PEQUENO, false, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(10, y + 79, 260, 14))
 		rec.clip_text = true
 		var barra := ProgressBar.new()
-		barra.position = Vector2(642, y + 29)
-		barra.size = Vector2(272, 8)
+		barra.position = Vector2(10, y + 29)
+		barra.size = Vector2(260, 8)
 		barra.show_percentage = false
 		var trilho := StyleBoxFlat.new()
 		trilho.bg_color = Paleta.BARRA_VAZIA
@@ -223,16 +249,16 @@ func _montar() -> void:
 		barra.add_theme_stylebox_override("fill", preenchimento)
 		barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		for no in [cadeado, nome, desc, rec, barra]:
-			add_child(no)
+			conteudo.add_child(no)
 		_conq[str(c.id)] = {"cadeado": cadeado, "nome": nome, "desc": desc, "rec": rec, "barra": barra, "selecionar": selecionar}
 		i += 1
 
-	_status = _texto("", Paleta.NUMERO_PEQUENO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(300, 446, 360, 12))
+	_status = _texto("", Paleta.NUMERO_PEQUENO, false, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(296, 446, 324, 12))
 	add_child(_status)
 	_entrar = Button.new()
 	_entrar.text = "ENTRAR NA FLORESTA"
-	_entrar.position = Vector2(300, 458)
-	_entrar.size = Vector2(360, 40)
+	_entrar.position = Vector2(296, 458)
+	_entrar.size = Vector2(324, 40)  # termina em 620: a coluna CONQUISTAS começa em 632
 	_entrar.add_theme_font_override("font", Dados.fonte_titulo)
 	_entrar.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO)
 	_estilo_botao(_entrar, Paleta.TITULO_MEDIO)
@@ -589,7 +615,7 @@ func _voltar_menu() -> void:
 	Transicoes.ir_para(self, "res://v2/menu_principal.tscn", true)
 
 
-func _botao_detalhe(r: Rect2) -> Button:
+func _botao_detalhe(r: Rect2, pai: Node = null) -> Button:
 	var b := Button.new()
 	b.position = r.position
 	b.size = r.size
@@ -600,7 +626,7 @@ func _botao_detalhe(r: Rect2) -> Button:
 	foco.set_border_width_all(1)
 	foco.border_color = COR_OURO
 	b.add_theme_stylebox_override("focus", foco)
-	add_child(b)
+	(pai if pai != null else self).add_child(b)
 	return b
 
 
