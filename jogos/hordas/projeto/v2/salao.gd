@@ -45,7 +45,8 @@ const COR_ALMA := Paleta.ALMA
 const CORES_MAPA := {
 	"floresta": Color(0.3, 0.62, 0.36), "laboratorio": Color(0.3, 0.68, 0.78), "cidade": Color(0.85, 0.58, 0.3), "medio": Color(0.5, 0.55, 0.8)
 }
-const LINHA_CONQUISTA := 92.0  # altura de cada conquista no Códice: nome, o que fazer e a frase da conquista (uma linha só)
+const LINHA_CONQUISTA := 72.0  # altura de cada conquista no Códice
+const LINHA_FRASE := 20.0  # a mais quando a conquista tem a frase do Breno (uma linha só, embaixo do que fazer)
 const LINHA_LORE := 20.0  # a mais por frase de lore, no segredo achado
 const COR_TRAVADO := Color(0.22, 0.22, 0.25)
 const Glifos := preload("res://v2/glifos.gd")
@@ -713,7 +714,8 @@ func _montar_lista_codice() -> void:
 		var l: Dictionary = _p_itens[i]
 		var b := Button.new()
 		var frases: Array = l.lore  # segredo achado (#424): cada frase do fragmento de lore ganha uma linha extra embaixo
-		b.custom_minimum_size = Vector2(0, LINHA_CONQUISTA + LINHA_LORE * frases.size())
+		var base := LINHA_CONQUISTA + (LINHA_FRASE if str(l.frase) != "" else 0.0)  # sem frase, sem os 20 px vazios
+		b.custom_minimum_size = Vector2(0, base + LINHA_LORE * frases.size())
 		b.material = Card.sem_luz()  # a luz da sala não pinta a linha (os filhos herdam o material)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_estilo_botao(b, 10)
@@ -780,7 +782,7 @@ func _montar_lista_codice() -> void:
 					Dados.fonte_texto,
 					Paleta.TEXTO_TAMANHO,
 					COR_OURO,
-					Rect2(72, LINHA_CONQUISTA - 4 + LINHA_LORE * k, 712, LINHA_LORE),
+					Rect2(72, base - 4 + LINHA_LORE * k, 712, LINHA_LORE),
 					HORIZONTAL_ALIGNMENT_LEFT
 				)
 			)

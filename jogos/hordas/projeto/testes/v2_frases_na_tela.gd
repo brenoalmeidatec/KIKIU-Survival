@@ -2,20 +2,24 @@ extends "res://testes/isolamento_v2.gd"
 # Teste automático das frases do Breno (dados/v2_meta.json) que existiam no dado e não apareciam na tela (LOGBOOK de 23/10):
 # a frase de cada conquista e a do prêmio dela (Pesadelo, Rastro de katana, melhorias). Confere, no nó certo de cada tela e sem
 # estourar a caixa de texto: o Códice do santuário (salao.gd: rótulo "frase" de cada linha), o rodapé da lista de Conquistas da
-# pausa (pausa.gd: _ajuda) e o detalhe do Pesadelo e do Rastro de katana no santuário (altar.gd: _detalhe e tooltip do botão).
+# pausa (pausa.gd: _ajuda) e o tooltip do Pesadelo e do Rastro de katana no santuário (altar.gd), com o detalhe sem a frase.
 # Usa saves TEMPORÁRIOS (meta, personagens e opções); o save real da meta não é tocado (conferência por md5).
 # Roda: godot --headless --audio-driver Dummy --path jogos/hordas/projeto res://testes/v2_frases_na_tela.tscn  (imprime "v2_frases_na_tela falhas=0")
 
 const Meta := preload("res://v2/meta.gd")
+const Paleta := preload("res://v2/paleta.gd")
 const Conquistas := preload("res://v2/conquistas.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const Salao := preload("res://v2/salao.tscn")
+const SalaoGd := preload("res://v2/salao.gd")
 const Altar := preload("res://v2/altar.tscn")
 const Mundo := preload("res://v2/mundo.tscn")
 const PASTA := "user://testes_v2/v2_frases_na_tela/"
 const SAVE_TESTE := PASTA + "teste_v2_frases_na_tela_meta.cfg"
 const OPCOES_TESTE := PASTA + "teste_v2_frases_na_tela_opcoes.cfg"
 const SAVE_REAL := PASTA + "v2_progresso.cfg"
+
+const DETALHE_H := 54.0  # a caixa do detalhe no santuário (altar.gd: Rect2(48, 386, 384, 54))
 
 var falhas := 0
 
@@ -95,7 +99,15 @@ func _codice() -> void:
 		var rotulo: Label = b.get_node_or_null("frase")
 		if str(l.frase) == "":
 			ok(rotulo == null, "sem frase no catalogo, sem rotulo no Codice: " + str(l.id))
+			ok(
+				b.custom_minimum_size.y == SalaoGd.LINHA_CONQUISTA + SalaoGd.LINHA_LORE * l.lore.size(),
+				"sem frase, a linha de %s nao ganha os 20 px a mais" % l.id
+			)
 			continue
+		ok(
+			b.custom_minimum_size.y == SalaoGd.LINHA_CONQUISTA + SalaoGd.LINHA_FRASE + SalaoGd.LINHA_LORE * l.lore.size(),
+			"com frase, a linha de %s ganha os 20 px" % l.id
+		)
 		vistas += 1
 		ok(rotulo != null and rotulo.text == str(l.frase), "o Codice mostra a frase de " + str(l.id))
 		if rotulo == null:
@@ -103,18 +115,28 @@ func _codice() -> void:
 		var fonte: Font = rotulo.get_theme_font("font")
 		var larg := fonte.get_string_size(rotulo.text, HORIZONTAL_ALIGNMENT_LEFT, -1, rotulo.get_theme_font_size("font_size")).x
 		ok(larg <= rotulo.size.x, "a frase de %s cabe na coluna do nome (%.0f de %.0f px)" % [l.id, larg, rotulo.size.x])
-		ok(
-			rotulo.position.y + rotulo.size.y <= b.custom_minimum_size.y,
-			"a frase de %s fica dentro da linha (%s + %s de %s px)" % [l.id, rotulo.position.y, rotulo.size.y, b.custom_minimum_size.y]
-		)
+		ok(rotulo.get_line_count() == 1, "a frase de %s fica numa linha so (%d)" % [l.id, rotulo.get_line_count()])
 		var fazer: Label = null
 		for f in b.get_children():
 			if f is Label and f.text == str(l.fazer):
 				fazer = f
+		if fazer == null:
+			ok(false, "o Codice tem o rotulo do que fazer de " + str(l.id))
+			continue
+		# Geometria pelas ORIGENS dos rótulos. A caixa do Label e a altura da linha NÃO servem aqui: com --headless a fonte Spleen mede o dobro
+		# (get_line_height 32 e Label de 32 px; no jogo de verdade são 16 px de linha, 12 de ascent, e o rótulo fica nos 22 px de Rect2).
+		# Medido no jogo com janela: tinta do "o que fazer" em y 45..59, da frase em y 67..81, folga mínima de 8 px, e a linha tem 92 px.
+		var altura_texto: float = Paleta.TEXTO_TAMANHO + 4.0  # a linha de 16 px mais a descida das letras
 		ok(
-			fazer != null and fazer.position.y + fazer.size.y <= rotulo.position.y,
-			"a frase de %s fica embaixo do que fazer, sem cobrir (%s + %s)" % [l.id, fazer.position.y if fazer else -1, fazer.size.y if fazer else -1]
+			rotulo.position.y - fazer.position.y >= altura_texto,
+			"a frase de %s comeca embaixo do que fazer (%.0f px abaixo, minimo %.0f)" % [l.id, rotulo.position.y - fazer.position.y, altura_texto]
 		)
+		var fundo_linha: float = b.custom_minimum_size.y - SalaoGd.LINHA_LORE * l.lore.size()
+		ok(
+			rotulo.position.y + altura_texto <= fundo_linha,
+			"a frase de %s fica dentro da linha (%.0f de %.0f px)" % [l.id, rotulo.position.y + altura_texto, fundo_linha]
+		)
+		ok(rotulo.position.x == fazer.position.x and rotulo.size.x == fazer.size.x, "a frase de %s fica na mesma coluna do que fazer" % l.id)
 	ok(vistas == _com_frase().size(), "o Codice mostrou todas as frases do catalogo (%d de %d)" % [vistas, _com_frase().size()])
 	s._fechar_painel()
 	s.queue_free()
@@ -161,7 +183,7 @@ func _pausa() -> void:
 	await get_tree().process_frame
 
 
-## O santuário com os botões do Pesadelo e do Rastro de katana: o detalhe e o tooltip trazem a frase e o detalhe cabe na caixa.
+## O santuário com os botões do Pesadelo e do Rastro de katana: o tooltip traz a frase; o detalhe fica como era e tem que caber na caixa.
 func _altar() -> void:
 	Meta.caminho_save = SAVE_TESTE
 	Meta.registrar_partida({"tempo": 100.0, "venceu": true, "mapa": "floresta", "maior_combo": 60, "mapa_vencido_agora": false})
@@ -180,12 +202,12 @@ func _altar() -> void:
 		ok(b.tooltip_text.contains(str(item.frase)), "o tooltip de %s traz a frase" % par[2])
 		b.focus_entered.emit()
 		await get_tree().process_frame
-		var linhas: PackedStringArray = a._detalhe.text.split("\n")
-		ok(linhas.size() >= 2 and linhas[0] == str(item.nome) and linhas[1] == str(item.frase), "o detalhe de %s tem o nome e logo depois a frase" % par[2])
-		ok(a._detalhe.text.contains(Meta.texto_item(item)), "o detalhe de %s segue com o texto do efeito" % par[2])
-		ok(
-			a._detalhe.get_minimum_size().y <= a._detalhe.size.y,
-			"o detalhe de %s cabe na caixa (%.0f de %.0f px)" % [par[2], a._detalhe.get_minimum_size().y, a._detalhe.size.y]
-		)
+		# A frase fica só no tooltip: a caixa do detalhe (384x54 px, 3 linhas) já não comporta o efeito do Pesadelo (5 linhas no jogo), então o
+		# detalhe tem que seguir IDÊNTICO ao de antes, sem a frase, para não piorar. (Cabe ou não cabe só se vê com janela: headless mede a fonte em dobro.)
+		var texto: String = a._detalhe.text
+		ok(texto == "%s\n%s" % [item.nome, Meta.texto_item(item)], "o detalhe de %s segue como antes: o nome e o texto do efeito" % par[2])
+		ok(not texto.contains(str(item.frase)), "o detalhe de %s nao leva a frase (ela vai so no tooltip)" % par[2])
+		ok(b.tooltip_text.begins_with(str(item.nome) + "\n" + str(item.frase)), "o tooltip de %s abre com o nome e a frase" % par[2])
+		ok(b.tooltip_text.ends_with(Meta.texto_item(item)), "o tooltip de %s termina com o efeito" % par[2])
 	a.queue_free()
 	await get_tree().process_frame
