@@ -20,6 +20,7 @@ const CENA_V1 := "res://main.tscn"
 const ARGS_V1 := ["v1", "cena", "prototipo", "bot", "online", "sair", "print_tela"]
 const LARG := 960
 const ALT := 540
+const LINHA_DETALHE := 17  # altura de cada linha do detalhe: fonte de 16 px (Spleen 8x16, medida em janela) + 1 px de entrelinha
 const COR_OURO := Paleta.OURO
 const COR_TEXTO := Paleta.TEXTO
 const COR_APAGADO := Paleta.TEXTO_APAGADO
@@ -158,11 +159,11 @@ func _montar() -> void:
 	add_child(_ultima)
 
 	# Grade de cartões: o detalhe da seleção ocupa uma única faixa, sem repetir parágrafos.
-	add_child(_texto("MELHORIAS", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 86, 572, 38)))
+	add_child(_texto("MELHORIAS", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(36, 68, 572, 38)))
 	var i := 0
 	for m in Meta.melhorias_visiveis():
 		var x := 36.0 + (i % 3) * 194.0
-		var y := 128.0 + floori(i / 3.0) * 82.0  # cartões de 78 px, 4 px de folga: a grade acaba em y 370
+		var y := 106.0 + floori(i / 3.0) * 82.0  # cartões de 78 px, 4 px de folga: a grade acaba em y 348
 		add_child(_painel(Rect2(x, y, 184, 78)))
 		var selecionar := _botao_detalhe(Rect2(x + 4, y + 2, 176, 42))
 		selecionar.focus_entered.connect(_selecionar.bind(str(m.id)))
@@ -185,17 +186,18 @@ func _montar() -> void:
 			add_child(no)
 		_linhas[str(m.id)] = {"nome": nome, "efeito": efeito, "botao": botao, "cadeado": cadeado, "progresso": progresso, "selecionar": selecionar}
 		i += 1
-	add_child(_painel(Rect2(36, 380, 408, 60)))  # 10 px abaixo da grade e 6 px acima do rótulo MAPA
-	_modo_btn = _botao_extra(Rect2(452, 380, 156, 28), "modo", "pesadelo")
-	_rastro_btn = _botao_extra(Rect2(452, 412, 156, 28), "visual", "rastro_katana")
-	_detalhe = _texto("", Paleta.TEXTO_TAMANHO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(48, 386, 384, 54))
+	add_child(_painel(Rect2(36, 354, 408, 90)))  # 6 px abaixo da grade e 2 px acima do rótulo MAPA (y 446); cabe 5 linhas de 17 px (o pior detalhe)
+	_modo_btn = _botao_extra(Rect2(452, 354, 156, 28), "modo", "pesadelo")
+	_rastro_btn = _botao_extra(Rect2(452, 416, 156, 28), "visual", "rastro_katana")
+	_detalhe = _texto("", Paleta.TEXTO_TAMANHO, false, COR_TEXTO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(48, 356, 384, 85))
 	_detalhe.add_theme_font_override("font", Dados.fonte_texto)
+	_detalhe.add_theme_constant_override("line_spacing", LINHA_DETALHE - 16)  # linhas de 17 px (16 da fonte + 1): 5 linhas = 85 px
 	_detalhe.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(_detalhe)
-	add_child(_texto("CONQUISTAS", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(632, 86, 292, 38)))
+	add_child(_texto("CONQUISTAS", Paleta.TITULO_MEDIO, true, COR_OURO, HORIZONTAL_ALIGNMENT_LEFT, Rect2(632, 68, 292, 38)))
 	i = 0
 	for c in Meta.conquistas():
-		var y := 128.0 + i * 108.0
+		var y := 106.0 + i * 108.0
 		add_child(_painel(Rect2(632, y, 292, 100)))
 		var selecionar := _botao_detalhe(Rect2(636, y + 2, 284, 94))
 		selecionar.focus_entered.connect(_selecionar_conquista.bind(str(c.id)))
@@ -262,7 +264,7 @@ func _montar() -> void:
 	_voltar.pressed.connect(_voltar_menu)
 	add_child(_voltar)
 	var dica := Glifos.dica(_itens_dica, HORIZONTAL_ALIGNMENT_CENTER, COR_APAGADO)
-	dica.position = Vector2(0, 510)  # rodapé (DESIGN.md §1b): caixa de 22 px, glifo centrado em 513-529; os botões terminam em 498
+	dica.position = Vector2(0, 510)  # rodapé (DESIGN.md §1b): caixa de 22 px, glifo centrado em 513-529; os botões terminam em 498; o MAPA e o status ficam em 446-458
 	dica.size = Vector2(LARG, 22)
 	add_child(dica)
 
@@ -301,7 +303,7 @@ func _detalhar_extra(tipo: String, id: String) -> void:
 
 
 ## O texto de um modo ou visual: o nome, a frase do Breno (dados/v2_meta.json, quando tem) e o que ele faz.
-## A frase só entra no tooltip: o detalhe (caixa de 384x54 px, 3 linhas) já está cheio com o efeito do Pesadelo.
+## A frase só entra no tooltip: o detalhe (caixa de 384x85 px, 5 linhas) já está cheio com o efeito do Pesadelo.
 func _texto_extra(item: Dictionary, id: String, com_frase: bool) -> String:
 	var partes: Array[String] = [str(item.get("nome", id))]
 	if com_frase and str(item.get("frase", "")) != "":

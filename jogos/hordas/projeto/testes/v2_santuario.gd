@@ -2,6 +2,11 @@ extends "res://testes/isolamento_v2.gd"
 ## Navegação real do frontend e legibilidade do santuário em 960x540. Save/opções isolados.
 const Meta := preload("res://v2/meta.gd")
 const Altar := preload("res://v2/altar.tscn")
+## Altura de UMA linha de texto em janela: a fonte Spleen 8x16 mede 16 px. Em --headless get_line_height devolve 32 (o dobro) e o
+## size de um Label é forçado ao mínimo, então NENHUM dos dois serve de régua: a régua é esta constante de projeto mais a
+## entrelinha do tema, contra as medidas de projeto (posições e tamanhos dos nós) da caixa.
+const ALTURA_FONTE := 16
+const TELA := Rect2(0, 0, 960, 540)
 const SAVE := "user://testes_v2/v2_santuario/teste_v2_santuario.cfg"
 const OPCOES := "user://testes_v2/v2_santuario/teste_v2_santuario_opcoes.cfg"
 var falhas := 0
@@ -35,6 +40,7 @@ func _ready() -> void:
 		await _frames(1)
 		ok(not a.pausa.aberto and get_tree().current_scene == a, "ESC em Ajustes permanece no santuário")
 		ok(get_viewport().gui_get_focus_owner() == a._ajustes, "Ajustes devolve foco")
+		await _ver_caixa_detalhe(a)
 		_ver_visual(a)
 		if acao == "escape":
 			_tecla(KEY_ESCAPE)
@@ -118,6 +124,62 @@ func _ver_visual(a) -> void:
 	ok(vida.progresso.nivel == vida.progresso.maximo, "nível máximo preenche todos marcadores")
 	ok(a._detalhe.get_minimum_size().y <= a._detalhe.size.y, "detalhe máximo cabe")
 	_limpar()
+
+
+## A caixa de detalhe tem que comportar o MAIOR detalhe do santuário (melhorias, conquistas, modos e visuais, com os
+## placeholders preenchidos) e nada pode se sobrepor nem sair dos 960x540.
+func _ver_caixa_detalhe(a) -> void:
+	var caixa: Panel = null
+	for no in a.get_children():
+		if no is Panel and Rect2(no.position, no.size).has_point(a._detalhe.position):
+			caixa = no
+	ok(caixa != null, "o detalhe está dentro de um painel")
+	if caixa == null:
+		return
+	var folga: float = a._detalhe.position.y - caixa.position.y
+	var util: float = caixa.size.y - 2.0 * folga  # a mesma folga em cima e embaixo
+	var linha: int = ALTURA_FONTE + a._detalhe.get_theme_constant("line_spacing")
+	var pior := 0
+	var textos: Dictionary = {}
+	for id in a._linhas:
+		a._linhas[id].selecionar.grab_focus()
+		textos["melhoria " + id] = a._detalhe.text
+	for id in a._conq:
+		a._conq[id].selecionar.grab_focus()
+		textos["conquista " + id] = a._detalhe.text
+	for par in [["modo", "pesadelo"], ["visual", "rastro_katana"]]:
+		a._detalhar_extra(par[0], par[1])
+		textos["extra " + par[1]] = a._detalhe.text
+	for chave in textos:
+		a._detalhe.text = textos[chave]
+		var n: int = a._detalhe.get_line_count()
+		pior = maxi(pior, n)
+		ok(n * linha <= util, "detalhe '%s' (%d linhas x %d px = %d) cabe na caixa de %d px úteis" % [chave, n, linha, n * linha, util])
+	print("v2_santuario: pior detalhe = %d linhas, %d px; caixa útil = %d px" % [pior, pior * linha, util])
+	ok(pior >= 5, "o pior caso medido inclui o Pesadelo (5 linhas)")
+	# Nada se sobrepõe: grade -> caixa -> rótulo MAPA/status -> botões, e tudo dentro da tela mínima.
+	var fim_grade := 0.0
+	for id in a._linhas:
+		var b: Control = a._linhas[id].botao
+		fim_grade = maxf(fim_grade, b.position.y + b.size.y)
+	ok(caixa.position.y >= fim_grade, "a caixa começa depois da grade")
+	var rotulo: Label = null
+	for no in a.get_children():
+		if no is Label and no.text == "MAPA":
+			rotulo = no
+	ok(rotulo != null and caixa.position.y + caixa.size.y <= rotulo.position.y, "a caixa termina acima do rótulo MAPA")
+	ok(caixa.position.y + caixa.size.y <= a._status.position.y, "a caixa termina acima do status")
+	for b in [a._modo_btn, a._rastro_btn]:
+		var r := Rect2(b.position, b.size)
+		ok(r.position.y >= caixa.position.y and r.end.y <= caixa.position.y + caixa.size.y, "botão de extra dentro da faixa da caixa")
+		ok(r.position.x >= caixa.position.x + caixa.size.x, "botão de extra não invade a caixa")
+	ok(a._modo_btn.position.y + a._modo_btn.size.y <= a._rastro_btn.position.y, "os dois botões de extra não se sobrepõem")
+	var fixos: Array = [caixa, a._detalhe, a._modo_btn, a._rastro_btn, rotulo, a._status, a._mapa, a._entrar, a._ajustes, a._voltar]
+	for c in fixos:
+		ok(TELA.encloses(Rect2(c.position, c.size)), "%s dentro dos 960x540" % c.name)
+	for c in [rotulo, a._status]:
+		for d in [a._mapa, a._entrar, a._ajustes, a._voltar]:
+			ok(not Rect2(c.position, c.size).intersects(Rect2(d.position, d.size)), "rótulo/status não toca os botões de baixo")
 
 
 func _tecla(tecla: Key) -> void:
