@@ -149,6 +149,11 @@ func _nao_se_cobrem(hud, janela: Vector2, opcao: String) -> void:
 ## dentro do canvas e sem cobrir nenhum outro bloco.
 func _anuncio_longo(hud) -> void:
 	var an = hud.get_node("Raiz/Anuncio")
+	an.fila.clear()
+	for i in 400:
+		if not an.ocupado():
+			break
+		hud.avancar(PASSO)  # o anúncio longo entra na faixa livre, não atrás de outro
 	an.anunciar("Aqui os santos caíram, e ninguém lembra o nome do último que tentou segurar o portão", Color.WHITE, 0)
 	for i in 20:
 		hud.avancar(PASSO)  # a entrada (0,18 s) assenta na escala 1,0

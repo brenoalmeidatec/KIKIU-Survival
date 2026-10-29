@@ -150,21 +150,29 @@ func _encaixar(texto: String) -> float:
 	else:
 		largura_texto = util
 		_texto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_texto.size = Vector2(util, ALTURA)
 		tam = TAM_FONTE
 		while true:
-			_texto.add_theme_font_size_override("font_size", tam)
-			linhas = _texto.get_line_count()
+			linhas = _contar_linhas(fonte, texto, tam, util)
 			if linhas <= LINHAS_PREFERIDAS or tam <= TAM_MIN:
 				break
 			tam -= PASSO_FONTE
 	_texto.add_theme_font_size_override("font_size", tam)
-	var altura := maxf(ALTURA, linhas * fonte.get_height(tam) + MARGEM_V)
+	# O Label não serve para medir aqui: o size dele é forçado ao mínimo do momento (ainda da quebra e da fonte anteriores), então
+	# as linhas e a altura saem da própria fonte, com a mesma quebra do Label (WORD_SMART) e a entrelinha do tema.
+	var altura_texto := linhas * fonte.get_height(tam) + (linhas - 1) * _texto.get_theme_constant("line_spacing")
+	var altura := maxf(ALTURA, altura_texto + MARGEM_V)
 	var largura := minf(ceilf(largura_texto) + FOLGA, LARGURA_MAX)
 	size = Vector2(largura, altura)
 	_texto.position = Vector2(FOLGA * 0.5, 0.0)
 	_texto.size = Vector2(largura - FOLGA, altura)
 	return largura
+
+
+## Quantas linhas o texto ocupa na largura dada, com a quebra do Label em WORD_SMART (palavra comprida demais quebra no meio).
+func _contar_linhas(fonte: Font, texto: String, tam: int, largura: float) -> int:
+	var quebra := TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE | TextServer.BREAK_TRIM_EDGE_SPACES
+	var medida := fonte.get_multiline_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, largura, tam, -1, quebra)
+	return maxi(1, roundi(medida.y / fonte.get_height(tam)))
 
 
 ## A faixa: escura no meio e sumindo nas pontas, com um filete em cima e outro embaixo na cor do anúncio e um losango de cada lado

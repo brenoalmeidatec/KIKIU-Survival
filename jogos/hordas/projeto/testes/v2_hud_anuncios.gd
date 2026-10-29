@@ -8,6 +8,7 @@ const Anuncios := preload("res://v2/hud_anuncios.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const PASSO := 1.0 / 60.0
 const CANVAS_MIN := Vector2(960, 540)
+const TAM_MIN := 14  # a menor fonte da faixa quando quebra em linhas
 const COR := Color(1.0, 0.8, 0.4)
 ## Textos fixos: os de hoje e os que vêm por aí (nomes de chefe mais longos).
 const FIXOS := [
@@ -131,11 +132,12 @@ func _cabe_inteiro(hud, texto: String) -> void:
 	ok(lb.get_line_count() == lb.get_visible_line_count(), "%s: todas as linhas do Label estão visíveis" % rot)
 	var fonte: Font = lb.get_theme_font("font")
 	var tam: int = lb.get_theme_font_size("font_size")
-	ok(tam >= Anuncios.TAM_MIN and tam <= Anuncios.TAM_FONTE, "%s: fonte %d dentro dos limites" % [rot, tam])
+	ok(tam >= TAM_MIN and tam <= Anuncios.TAM_FONTE, "%s: fonte %d dentro dos limites" % [rot, tam])
 	var linhas := lb.get_line_count()
 	ok(linhas * fonte.get_height(tam) <= lb.size.y + 0.01, "%s: %d linhas de %d px cabem na altura %s" % [rot, linhas, tam, lb.size.y])
 	# a maior linha, medida com a mesma quebra do Label, cabe na largura dele
-	var medida := fonte.get_multiline_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, lb.size.x, tam)
+	var quebra := TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE | TextServer.BREAK_TRIM_EDGE_SPACES  # WORD_SMART
+	var medida := fonte.get_multiline_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, lb.size.x, tam, -1, quebra)
 	ok(medida.x <= lb.size.x + 0.5, "%s: a maior linha (%s) cabe na largura do Label (%s)" % [rot, medida.x, lb.size.x])
 	if linhas == 1:
 		var w := fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x
