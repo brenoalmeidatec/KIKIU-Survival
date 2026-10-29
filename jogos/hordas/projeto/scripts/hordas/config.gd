@@ -271,11 +271,13 @@ func g_opcao(chave: String) -> Dictionary:
 
 
 ## Partículas por efeito e nível da opção "particulas_sim" (a ÚNICA opção de partículas): os valores antigos de
-## dados/qualidade.json (muitas = 1). Nenhuma = tudo zero (inclusive o ambiente e os elementos).
+## dados/qualidade.json (muitas = 1). Nenhuma = tudo zero (inclusive o ambiente e os elementos). "amb_detritos" (detritos flutuantes da v2,
+## v2/atmosfera.gd) é 0 em nenhuma e poucas (o perfil Baixo): lá o emissor nem nasce.
 const PART_NIVEL := {
 	"nenhuma":
 	{
 		"amb_particulas": 0.0,
+		"amb_detritos": 0.0,
 		"efe_faiscas": 0.0,
 		"efe_impactos": 0.0,
 		"efe_particulas": 0.0,
@@ -287,6 +289,7 @@ const PART_NIVEL := {
 	"poucas":
 	{
 		"amb_particulas": 0.25,
+		"amb_detritos": 0.0,
 		"efe_faiscas": 0.3,
 		"efe_impactos": 0.34,
 		"efe_particulas": 0.3,
@@ -298,6 +301,7 @@ const PART_NIVEL := {
 	"medias":
 	{
 		"amb_particulas": 0.5,
+		"amb_detritos": 0.5,
 		"efe_faiscas": 0.6,
 		"efe_impactos": 0.67,
 		"efe_particulas": 0.6,

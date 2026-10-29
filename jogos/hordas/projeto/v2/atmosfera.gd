@@ -3,6 +3,8 @@ extends RefCounted
 ## de verdade (chama, brasas e fumaça) e faíscas das magias. Tudo CPUParticles2D baratas, na camada sem escurecimento (a do brilho).
 ## A quantidade vem da opção "particulas_sim" da aba Gráficos (Config.fator_particulas): "amb_particulas" para o ambiente e
 ## "efe_particulas" para fogo e faíscas. Nenhuma = nada emite. Fogo e faíscas fora da tela ficam parados (`ligar`).
+## Detritos flutuantes (terra e pedacinhos subindo devagar) só existem nos mapas que trazem "detritos" no json e NÃO existem no perfil Baixo
+## ("poucas" e "nenhuma" valem 0 em "amb_detritos"): sem emissor, sem processamento. O i5-3470 já sofre nesses mapas (#127).
 
 const LARG := 960
 const ALT := 540
@@ -10,12 +12,17 @@ const ALT := 540
 var tex_brilho: GradientTexture2D
 var fator_amb := 1.0
 var fator_efe := 1.0
+## Fração dos detritos flutuantes (Config.PART_NIVEL "amb_detritos": 0 em nenhuma e poucas, 0,5 em médias, 1 em muitas).
+var fator_det := 1.0
 var _glow: Node
 var _regs: Array = []  # {"p": CPUParticles2D, "base": amount, "tipo": "amb" | "efe"}
 var _vaga: CPUParticles2D
 var _folhas: CPUParticles2D
+var _detritos: CPUParticles2D
+var _centro := Vector2.ZERO
 ## Do json do mapa ("atmosfera"): {"vaga": {n, cor [r,g,b(,a)], tam, vel}, "folhas": {n, cor, tam, vel}}. Sem a chave valem os vaga-lumes
-## verdes e as folhas vermelhas da floresta; n = 0 desliga aquele emissor.
+## verdes e as folhas vermelhas da floresta; n = 0 desliga aquele emissor. "detritos" (opcional, veja `_criar_detritos`) traz a terra que
+## sobe devagar; sem a chave o mapa não tem detritos.
 var config := {}
 
 
@@ -63,20 +70,27 @@ func _registrar(p: CPUParticles2D, base: int, tipo: String) -> void:
 
 func _aplicar(r: Dictionary) -> void:
 	var p: CPUParticles2D = r.p
-	var f := fator_amb if r.tipo == "amb" else fator_efe
+	var f := fator_amb if r.tipo == "amb" else (fator_det if r.tipo == "det" else fator_efe)
 	var n := int(round(float(r.base) * f))
 	if n <= 0:
 		p.emitting = false
+		if r.tipo == "det":
+			ligar(p, false)  # detrito desligado não processa nada por quadro
 		return
+	if r.tipo == "det":
+		ligar(p, true)
 	if p.amount != n:
 		p.amount = n
 	p.emitting = true
 
 
 ## Aplica os fatores de partículas (Config.fator_particulas) a tudo que já existe.
-func definir_fatores(amb: float, efe: float) -> void:
+func definir_fatores(amb: float, efe: float, det := 1.0) -> void:
 	fator_amb = amb
 	fator_efe = efe
+	fator_det = det
+	if _detritos == null and _glow != null and fator_det > 0.0:
+		_criar_detritos()  # o perfil subiu (Detalhe dinâmico ou menu): só agora o emissor passa a existir
 	for r in _regs:
 		_aplicar(r)
 
@@ -99,6 +113,7 @@ func ambiente(centro: Vector2) -> void:
 	f.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	f.emission_rect_extents = Vector2(LARG / 2.0, ALT / 2.0)
 	f.position = centro
+	_centro = centro
 	f.direction = Vector2(0, -1)
 	f.spread = 180.0
 	f.gravity = Vector2(0, -2)
@@ -143,6 +158,49 @@ func ambiente(centro: Vector2) -> void:
 	fo.scale_amount_max = 1.4 * float(cf.get("tam", 1.0))
 	_folhas = fo
 	_registrar(fo, nf, "amb")
+	if fator_det > 0.0:
+		_criar_detritos()
+
+
+## Detritos flutuantes (ideia do Isac: terra e pedaços subindo, como se algo tivesse abstraído a matéria). Do json do mapa ("detritos"):
+## {n, cor [r,g,b(,a)], cor2 (opcional: cada pedaço sorteia uma cor entre cor e cor2), tam, vel}. Sem a chave, ou com n = 0, não cria nada.
+## Pedacinhos opacos de 3 a 9 px, sem brilho aditivo (é terra, não luz), que nascem em toda a tela, sobem devagar, giram e somem.
+func _criar_detritos() -> void:
+	var cd: Dictionary = config.get("detritos", {})
+	var nd := int(cd.get("n", 0))
+	if nd <= 0:
+		return
+	var d := CPUParticles2D.new()
+	d.amount = maxi(nd, 1)
+	d.lifetime = 16.0
+	d.preprocess = 16.0
+	d.local_coords = false
+	d.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	d.emission_rect_extents = Vector2(LARG / 2.0, ALT / 2.0)
+	d.position = _centro
+	d.direction = Vector2(0.15, -1)
+	d.spread = 25.0
+	d.gravity = Vector2.ZERO
+	d.initial_velocity_min = 5.0 * float(cd.get("vel", 1.0))
+	d.initial_velocity_max = 14.0 * float(cd.get("vel", 1.0))
+	d.angular_velocity_min = -40.0
+	d.angular_velocity_max = 40.0
+	d.tangential_accel_min = -3.0
+	d.tangential_accel_max = 3.0
+	var c1 := _cor(cd.get("cor", [0.35, 0.28, 0.2, 0.85]))
+	var c2 := _cor(cd.get("cor2", [c1.r, c1.g, c1.b, c1.a]))
+	var gi := Gradient.new()
+	gi.offsets = PackedFloat32Array([0.0, 1.0])
+	gi.colors = PackedColorArray([c1, c2])
+	d.color_initial_ramp = gi
+	d.color_ramp = _rampa_alfa([0.0, 0.15, 0.75, 1.0], [0.0, 1.0, 0.8, 0.0])
+	var im := Image.create(4, 4, false, Image.FORMAT_RGBA8)
+	im.fill(Color.WHITE)
+	d.texture = ImageTexture.create_from_image(im)
+	d.scale_amount_min = 0.8 * float(cd.get("tam", 1.0))
+	d.scale_amount_max = 2.2 * float(cd.get("tam", 1.0))
+	_detritos = d
+	_registrar(d, nd, "det")
 
 
 func _cor(c: Array) -> Color:
@@ -150,6 +208,9 @@ func _cor(c: Array) -> Color:
 
 
 func seguir(centro: Vector2) -> void:
+	_centro = centro
+	if _detritos != null:
+		_detritos.position = centro
 	if _vaga != null:
 		_vaga.position = centro
 	if _folhas != null:
