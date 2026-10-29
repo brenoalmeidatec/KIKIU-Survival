@@ -1,5 +1,5 @@
 {
-	"_ajuda": "O FOGUINHO no peito de cada herói (v2/foguinho.gd; ideia do Isac, aprovada pelo Alisson em 29/10): a essência que resiste ao fim (\"eu não aceito\"), um brilho pequeno e quente que pulsa no meio do boneco. Só visual: é um sprite aditivo preso ao herói, sem colisão, sem dano e sem mexer na hitbox. Para ajustar, mexa só neste arquivo. cor: [vermelho, verde, azul] de 0 a 1 (o miolo da chama é a mesma cor clareada em direção ao branco, por miolo_branco). tamanho: lado do brilho em px do jogo (o boneco tem uns 44 px; use número ímpar de 9 a 17). intensidade: força do brilho aditivo, de 0 (some) a 1 (estoura); 0.5 a 0.8 é discreto. miolo_branco: de 0 a 1, quanto o miolo da chama clareia. pulso_hz: pulsos por segundo. pulso_amp: de 0 a 1, quanto a intensidade oscila (0.25 = vai de 75% a 125% do valor). peito: [x, y] do centro do foguinho em relação aos pés do herói (y negativo sobe). herois: ajuste por herói (chaves de dados/v2_herois.json); aceita peito, tamanho e intensidade. perfis: um por perfil gráfico (Ajustes > Gráficos). ligado=false apaga o foguinho naquele perfil; pulsa=false deixa o brilho fixo, sem nenhuma conta por quadro (é a versão barata do perfil Baixo: um sprite parado); intensidade_mult multiplica a intensidade. O perfil Personalizado segue a opção Brilhos e halos: 0% desligado, até 25% como Baixo, até 50% como Médio e acima disso como Alto.",
+	"_ajuda": "O FOGUINHO no peito de cada herói (v2/foguinho.gd; ideia do Isac, aprovada pelo Alisson em 29/10): a essência que resiste ao fim (\"eu não aceito\"), um brilho pequeno e quente que pulsa no meio do boneco. Só visual: é um sprite aditivo preso ao herói, sem colisão, sem dano e sem mexer na hitbox. Para ajustar, mexa só neste arquivo. cor: [vermelho, verde, azul] de 0 a 1 (o miolo da chama é a mesma cor clareada em direção ao branco, por miolo_branco). tamanho: lado do brilho em px do jogo (o boneco tem uns 44 px; use número ímpar de 9 a 17). intensidade: força do brilho aditivo, de 0 (some) a 1 (estoura); 0.5 a 0.8 é discreto. miolo_branco: de 0 a 1, quanto o miolo da chama clareia. pulso_hz: pulsos por segundo. pulso_amp: de 0 a 1, quanto a intensidade oscila (0.25 = vai de 75% a 125% do valor). peito: [x, y] do centro do foguinho em relação aos pés do herói (y negativo sobe). herois: ajuste por herói (chaves de dados/v2_herois.json); aceita peito, tamanho, intensidade, cor e miolo_branco. As cores por herói abaixo são uma PROPOSTA visual para o Isac avaliar nas capturas antes/depois; não representam aprovação final de arte. Matheus usa a chave hazaki e compartilha o dourado. perfis: um por perfil gráfico (Ajustes > Gráficos). ligado=false apaga o foguinho naquele perfil; pulsa=false deixa o brilho fixo, sem nenhuma conta por quadro (é a versão barata do perfil Baixo: um sprite parado); intensidade_mult multiplica a intensidade. O perfil Personalizado segue a opção Brilhos e halos: 0% desligado, até 25% como Baixo, até 50% como Médio e acima disso como Alto.",
 	"cor": [1.0, 0.62, 0.18],
 	"tamanho": 13,
 	"intensidade": 0.75,
@@ -8,8 +8,9 @@
 	"pulso_amp": 0.25,
 	"peito": [0, -20],
 	"herois": {
-		"nicao": {"peito": [0, -12]},
-		"lucas": {"peito": [0, -15]}
+		"hazaki": {"cor": [1.0, 0.84, 0.12], "miolo_branco": 0.25},
+		"nicao": {"peito": [0, -12], "cor": [0.5, 0.88, 1.0], "miolo_branco": 0.25},
+		"lucas": {"peito": [0, -15], "cor": [0.4, 1.0, 0.7], "miolo_branco": 0.25}
 	},
 	"perfis": {
 		"baixo": {"ligado": true, "pulsa": false, "intensidade_mult": 0.85},

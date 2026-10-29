@@ -2620,3 +2620,12 @@ Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e
   - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-29: proposta de cores do foguinho (#467, item 3)
+
+- PROPOSTA para o Isac avaliar: dourado no Hazaki e no visual Matheus, ciano no Nicão e verde no Lucas, com menos branco no miolo. A captura anterior deixava o Hazaki rosado sobre a jaqueta vermelha; a proposta ficou dourada em Baixo e Alto. Matheus compartilha a chave `hazaki`, portanto este PR de dados oferece três cores para quatro visuais. A decisão final de arte continua com o Isac.
+- Só `dados/v2_foguinho.json`: cores e proporção de branco por herói, mais a ajuda. Tamanho, intensidade, posição, pulso, perfis, colisão e atributos permanecem iguais. Nenhuma mudança de motor, sprite ou licença.
+- Evidência externa: 48 PNGs antes/depois dos quatro visuais (desligado/Baixo/Alto), quadros 960x540 e recortes ampliados pelo Godot, capturados em janela Windows real. Helpers, logs e manifesto ficam fora do Git. Não foi vista partida completa, coop, todos os ângulos ou desempenho no i5; aprovação de arte pendente.
+- Godot 4.4.1 pela fila, APPDATA QA própria e import prévio. Testes locais `v2_foguinho`, `v2_fontes` e `v2_status`: `falhas=0`. `gdformat -l 160 --check`: 371 arquivos limpos. Os logs preservam mensagens de recursos ainda em uso ao encerrar; não houve teste de vazamentos.
+
+_Codex do Alisson_
