@@ -339,6 +339,7 @@ func _montar() -> void:
 	cam.cravar(heroi.pos + Heroi.CENTRO_CORPO)
 	_luar(m)
 	atm.config = dados.get("atmosfera", {})
+	atm.fator_det = float(_nivel_particulas().get("amb_detritos", 1.0))  # antes do ambiente: no Baixo o emissor de detritos nem nasce
 	atm.ambiente(cam.position)
 	_vinheta()
 	_ler_graficos()
@@ -761,11 +762,16 @@ func _ler_graficos() -> void:
 	var relevo := str(Config.g("luz_relevo"))
 	luzes.orcamento = int(args.get("luzes", ORCAMENTO_LUZES.get(relevo, 0)))
 	var nivel := str(args.get("particulas", Config.g("particulas_sim")))
-	var f: Dictionary = Config.PART_NIVEL.get(nivel, {})
-	atm.definir_fatores(float(f.get("amb_particulas", 1.0)), float(f.get("efe_particulas", 1.0)))
+	var f := _nivel_particulas()
+	atm.definir_fatores(float(f.get("amb_particulas", 1.0)), float(f.get("efe_particulas", 1.0)), float(f.get("amb_detritos", 1.0)))
 	AnimGolpes.suave = nivel in ["medias", "muitas"]  # golpes suaves custam uma chamada a mais por golpe: o perfil Baixo (poucas) fica sem
 	if combate != null:
 		combate.fx.fator_part = clampf(float(f.get("efe_particulas", 1.0)), 0.25, 1.0)
+
+
+## Os fatores de partículas do nível de agora (`--particulas=` vale por cima da opção "particulas_sim"); "muitas" não tem entrada: tudo 1.
+func _nivel_particulas() -> Dictionary:
+	return Config.PART_NIVEL.get(str(args.get("particulas", Config.g("particulas_sim"))), {})
 
 
 ## Detalhe dinâmico (opção "qualidade_auto", aba Gráficos): fps abaixo de 40 por 8 s desce um perfil e fps firme por 30 s sobe um, mas só

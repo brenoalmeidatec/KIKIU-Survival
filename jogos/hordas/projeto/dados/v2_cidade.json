@@ -57,7 +57,8 @@
 	},
 	"atmosfera": {
 		"vaga": {"n": 20, "cor": [1.0, 0.62, 0.3], "tam": 0.7, "vel": 0.7},
-		"folhas": {"n": 12, "cor": [0.55, 0.4, 0.25, 0.6], "tam": 0.8, "vel": 0.5}
+		"folhas": {"n": 12, "cor": [0.55, 0.4, 0.25, 0.6], "tam": 0.8, "vel": 0.5},
+		"detritos": {"_ajuda": "Detritos flutuantes (v2/atmosfera.gd): terra e pedacinhos que sobem devagar. n = quantidade na tela no perfil Alto (Médio usa metade; Baixo e Nenhum desligam, o emissor nem nasce), cor e cor2 = [r, g, b, a] de 0 a 1 (cada pedaço sorteia uma cor entre as duas; cor2 é opcional), tam = escala (1 = pedaços de 3 a 9 px), vel = velocidade (1 = 5 a 14 px/s). Sem a chave 'detritos' o mapa não tem detritos; n = 0 também desliga.", "n": 26, "cor": [0.62, 0.55, 0.5, 0.9], "cor2": [0.4, 0.36, 0.34, 0.9], "tam": 1.0, "vel": 0.8}
 	},
 	"objetos": [
 		["predio_loja", 256, 165],
