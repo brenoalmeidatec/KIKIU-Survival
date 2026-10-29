@@ -11,6 +11,13 @@ const CENTRO_X := 480.0
 const LARGURA_MAX := 640.0
 const ALTURA := 44.0
 const TAM_FONTE := 22
+## Texto que não cabe numa linha em TAM_FONTE: primeiro encolhe a fonte (até TAM_UMA_LINHA) para ainda caber numa linha; se nem assim,
+## a faixa fica na largura máxima e quebra em linhas (a fonte desce até TAM_MIN, que aceita quantas linhas precisar). Nada é cortado.
+const TAM_UMA_LINHA := 16
+const TAM_MIN := 14
+const LINHAS_PREFERIDAS := 2
+const PASSO_FONTE := 2
+const MARGEM_V := 18.0  # altura da faixa além das linhas de texto (ALTURA = 1 linha de TAM_FONTE + isto, mais ou menos)
 const FOLGA := 96.0  # espaço do texto até a ponta da faixa (somado): cabe o losango de cada lado
 const PONTA := 80.0  # quanto a faixa se estende além da caixa, sumindo
 const ENTRADA_T := 0.18
@@ -47,6 +54,8 @@ func _ready() -> void:
 	visible = false
 	_moldura.visible = false  # a faixa é desenhada em _draw
 	_texto.add_theme_font_size_override("font_size", TAM_FONTE)
+	_texto.clip_text = false
+	_texto.set_anchors_preset(Control.PRESET_TOP_LEFT, true)  # largura e posição do texto são calculadas em _mostrar
 
 
 ## O HUD gruda a faixa no topo do canvas: dy é o quanto subir (ou descer) em relação ao .tscn.
@@ -114,13 +123,48 @@ func _mostrar(anuncio: Dictionary) -> void:
 	_t = 0.0
 	_texto.text = texto_ativo
 	_texto.add_theme_color_override("font_color", _cor)
-	var fonte: Font = _texto.get_theme_font("font")
-	var largura := minf(fonte.get_string_size(texto_ativo, HORIZONTAL_ALIGNMENT_LEFT, -1, TAM_FONTE).x + FOLGA, LARGURA_MAX)
-	size = Vector2(largura, ALTURA)
+	var largura := _encaixar(texto_ativo)
 	pivot_offset = size * 0.5
 	position = Vector2(roundf(CENTRO_X - largura * 0.5), _y)
 	visible = true
 	queue_redraw()
+
+
+## Escolhe tamanho de fonte e número de linhas para o texto caber inteiro na faixa, põe o Label no lugar, dá o tamanho da faixa e
+## devolve a largura dela. Uma linha só quando cabe (fonte cheia, ou encolhida até TAM_UMA_LINHA); senão, largura máxima e quebra de linha.
+func _encaixar(texto: String) -> float:
+	var fonte: Font = _texto.get_theme_font("font")
+	var util := LARGURA_MAX - FOLGA
+	var tam := TAM_FONTE
+	var linhas := 1
+	var largura_texto := 0.0
+	var coube := false
+	while tam >= TAM_UMA_LINHA:
+		largura_texto = fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x
+		if largura_texto <= util:
+			coube = true
+			break
+		tam -= PASSO_FONTE
+	if coube:
+		_texto.autowrap_mode = TextServer.AUTOWRAP_OFF
+	else:
+		largura_texto = util
+		_texto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_texto.size = Vector2(util, ALTURA)
+		tam = TAM_FONTE
+		while true:
+			_texto.add_theme_font_size_override("font_size", tam)
+			linhas = _texto.get_line_count()
+			if linhas <= LINHAS_PREFERIDAS or tam <= TAM_MIN:
+				break
+			tam -= PASSO_FONTE
+	_texto.add_theme_font_size_override("font_size", tam)
+	var altura := maxf(ALTURA, linhas * fonte.get_height(tam) + MARGEM_V)
+	var largura := minf(ceilf(largura_texto) + FOLGA, LARGURA_MAX)
+	size = Vector2(largura, altura)
+	_texto.position = Vector2(FOLGA * 0.5, 0.0)
+	_texto.size = Vector2(largura - FOLGA, altura)
+	return largura
 
 
 ## A faixa: escura no meio e sumindo nas pontas, com um filete em cima e outro embaixo na cor do anúncio e um losango de cada lado

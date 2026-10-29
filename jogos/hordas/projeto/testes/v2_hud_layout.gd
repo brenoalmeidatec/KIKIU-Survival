@@ -96,6 +96,7 @@ func _testes() -> void:
 	_barras_no_teto(hud, falso)
 	_colunas_do_card(hud)
 	_circulo_do_q(hud, falso)
+	_anuncio_longo(hud)  # por último: a faixa fica com o tamanho do texto longo
 	vista.queue_free()
 
 
@@ -142,6 +143,22 @@ func _nao_se_cobrem(hud, janela: Vector2, opcao: String) -> void:
 	var xp: Rect2 = rects.Xp
 	ok(absf(ult.get_center().x - canvas.x * 0.5) <= 0.5 and absf(xp.get_center().x - canvas.x * 0.5) <= 0.5, "%s: o Q e o XP no centro (%s)" % [rotulo, ult])
 	ok(absf(xp.end.y - (canvas.y - 6.0)) <= 1.0 and ult.end.y < xp.position.y, "%s: o Q fica acima do XP, que cola embaixo" % rotulo)
+
+
+## Faixa de anúncio com o texto mais longo (quebra em linhas e cresce para baixo, #443): em cada tela e tamanho de interface ela continua
+## dentro do canvas e sem cobrir nenhum outro bloco.
+func _anuncio_longo(hud) -> void:
+	var an = hud.get_node("Raiz/Anuncio")
+	an.anunciar("Aqui os santos caíram, e ninguém lembra o nome do último que tentou segurar o portão", Color.WHITE, 0)
+	for i in 20:
+		hud.avancar(PASSO)  # a entrada (0,18 s) assenta na escala 1,0
+	ok(an.size.y > 44.0, "o anúncio longo cresce em altura (%s)" % an.size.y)
+	for tela in TELAS:
+		_nao_se_cobrem(hud, tela[0], tela[1])
+	hud.ui_reencaixar(Vector2(960, 540), Vector2.ZERO)
+	for i in 200:
+		hud.avancar(PASSO)  # esvazia a faixa
+	hud.get_node("Raiz/Anuncio").visible = true
 
 
 ## No teto de capacidade, a moldura compacta de 252x66 px cabe em todas as resoluções e fica antes do Q, da faixa de XP e do selo.
