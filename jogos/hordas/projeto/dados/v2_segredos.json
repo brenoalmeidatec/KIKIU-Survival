@@ -1,5 +1,5 @@
 {
-	"_ajuda": "Segredos escondidos dos mapas da v2 (#424), lidos por v2/segredos.gd; o vigia da partida é v2/vigia_segredos.gd. Cada segredo: id; local (id do mapa, v2/mapas.gd); nome; dica (a linha que o Códice mostra enquanto ele não foi achado); lore (as frases do fragmento, 1 a 2, escritas juntas no Códice); gatilho: \"encostar\" (entrar no raio), \"parado\" (ficar `tempo` s sem andar dentro do raio) ou \"golpe\" (atacar dentro do raio); pos [x, y] em px do mapa (fora de colisão e alcançável: o teste v2_segredos confere) e raio; recompensa {tipo: almas, n}: almas permanentes, creditadas só na primeira vez que o personagem acha; bau: quantas cartas o baú oferece (0 = nenhum) e bau_pos [x, y], onde ele cai (ao lado: o herói anda até ele), a cada partida; icone: arquivo de assets/v2/icones_santuario. O segredo vira uma conquista de id segredo_<id> (Meta.conquistas): o Códice mostra a dica e '???' até achar, depois o nome e a lore. A posição não aparece em lugar nenhum da tela: é para achar por acidente. A faixa de anúncio corta o que passa de ~28 letras, então só o nome e o prêmio saem nela; a lore inteira fica no Códice.",
+	"_ajuda": "Segredos escondidos dos mapas da v2 (#424), lidos por v2/segredos.gd; o vigia da partida é v2/vigia_segredos.gd. Cada segredo: id; local (id do mapa, v2/mapas.gd); nome; dica (a linha que o Códice mostra enquanto ele não foi achado); lore (as frases do fragmento, 1 a 2, escritas juntas no Códice); gatilho: \"encostar\" (entrar no raio), \"parado\" (ficar `tempo` s sem andar dentro do raio) ou \"golpe\" (atacar dentro do raio); pos [x, y] em px do mapa (fora de colisão e alcançável: o teste v2_segredos confere) e raio; recompensa {tipo: almas, n}: almas permanentes, creditadas só na primeira vez que o personagem acha ({} = fragmento só de lore, sem almas e sem linha de prêmio no Códice; o segundo de cada mapa é assim); lore: 1 a 5 frases, uma por linha no Códice (até 56 letras cada); bau: quantas cartas o baú oferece (0 = nenhum) e bau_pos [x, y], onde ele cai (ao lado: o herói anda até ele), a cada partida; icone: arquivo de assets/v2/icones_santuario. O segredo vira uma conquista de id segredo_<id> (Meta.conquistas): o Códice mostra a dica e '???' até achar, depois o nome e a lore. A posição não aparece em lugar nenhum da tela: é para achar por acidente. A faixa de anúncio corta o que passa de ~28 letras, então só o nome e o prêmio saem nela; a lore inteira fica no Códice.",
 	"parado_vel_max": 8.0,
 	"segredos": [
 		{
@@ -12,6 +12,20 @@
 			"pos": [2420, 364],
 			"raio": 70,
 			"recompensa": {"tipo": "almas", "n": 25},
+			"bau": 0,
+			"icone": "codice"
+		},
+		{
+			"id": "oferenda_vazia",
+			"local": "floresta",
+			"nome": "A Oferenda Vazia",
+			"dica": "Numa caixa de pedra, alguém ainda deixa pedidos.",
+			"lore": ["A caixa guarda nomes riscados, não moedas.", "Cada nome foi arrancado por uma garra, um a um.", "O lobo devora a carne e também o que ela lembrava.", "Quem ficou oferece o que sobrou: não aceitar."],
+			"gatilho": "parado",
+			"tempo": 3.0,
+			"pos": [500, 1310],
+			"raio": 40,
+			"recompensa": {"tipo": "nenhuma"},
 			"bau": 0,
 			"icone": "codice"
 		},
@@ -31,6 +45,19 @@
 			"icone": "codice"
 		},
 		{
+			"id": "fonte_sem_agua",
+			"local": "medio",
+			"nome": "A Fonte Sem Água",
+			"dica": "No pátio das ruínas, uma fonte ainda tem sede.",
+			"lore": ["A fonte secou antes de a cidade cair.", "Primeiro a Terra bebeu a água, depois o chão inteiro.", "O rei mandou cavar fundo e achou só fome.", "Dessa fome nasceram os Devoradores, servos da Entropia."],
+			"gatilho": "encostar",
+			"pos": [1440, 910],
+			"raio": 30,
+			"recompensa": {"tipo": "nenhuma"},
+			"bau": 0,
+			"icone": "codice"
+		},
+		{
 			"id": "cobaia_sete",
 			"local": "laboratorio",
 			"nome": "A Cobaia Sete",
@@ -42,6 +69,19 @@
 			"recompensa": {"tipo": "almas", "n": 30},
 			"bau": 3,
 			"bau_pos": [2420, 446],
+			"icone": "codice"
+		},
+		{
+			"id": "capsula_rachada",
+			"local": "laboratorio",
+			"nome": "A Cápsula Rachada",
+			"dica": "Uma cápsula guarda o que ninguém quis acordar.",
+			"lore": ["A cápsula rachou por dentro, não por fora.", "A Estrutura que a sustinha foi devorada primeiro.", "O que dormia ali acordou sem nome e sem memória.", "Levantou mesmo assim: algo nele não aceitou."],
+			"gatilho": "golpe",
+			"pos": [2400, 830],
+			"raio": 40,
+			"recompensa": {"tipo": "nenhuma"},
+			"bau": 0,
 			"icone": "codice"
 		},
 		{
@@ -57,6 +97,20 @@
 			"recompensa": {"tipo": "almas", "n": 30},
 			"bau": 3,
 			"bau_pos": [2280, 1289],
+			"icone": "codice"
+		},
+		{
+			"id": "banco_voltado_ao_ceu",
+			"local": "cidade",
+			"nome": "O Banco Voltado ao Céu",
+			"dica": "Num banco da vila, alguém ainda espera a noite.",
+			"lore": ["Um banco da praça, virado para o céu e não para a rua.", "Quem senta ali vê as estrelas ficarem vermelhas.", "Elas não piscam: abrem devagar, como olhos.", "A Entropia da Miséria olha, e a vila não desvia."],
+			"gatilho": "parado",
+			"tempo": 3.0,
+			"pos": [1226, 550],
+			"raio": 40,
+			"recompensa": {"tipo": "nenhuma"},
+			"bau": 0,
 			"icone": "codice"
 		}
 	]
