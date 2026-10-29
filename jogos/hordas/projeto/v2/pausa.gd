@@ -653,10 +653,22 @@ func _itens_conquistas() -> Array:
 		var it := _it("c:%s" % l.id, str(l.nome), str(l.selo) if l.feita else str(l.progresso))
 		it["textura"] = Icones.textura(str(l.icone))
 		it["feita"] = l.feita
-		it["ajuda"] = "%s\nPrêmio: %s" % [l.fazer, l.premio] if str(l.premio) != "" else str(l.fazer)
+		it["ajuda"] = _ajuda_conquista(l)
 		r.append(it)
 	r.append(_it("voltar", "Voltar"))
 	return r
+
+
+## O rodapé de uma conquista: a frase dela, o que fazer e o prêmio (com a frase do item, quando ele tem: Pesadelo, Rastro de katana...).
+## Tem que caber nas 96 px de AJUDA_H.
+func _ajuda_conquista(l: Dictionary) -> String:
+	var linhas: Array[String] = []
+	if str(l.frase) != "":
+		linhas.append(str(l.frase))
+	linhas.append(str(l.fazer))
+	if str(l.premio) != "":
+		linhas.append("Prêmio: %s — %s" % [l.premio, l.frase_premio] if str(l.frase_premio) != "" else "Prêmio: %s" % l.premio)
+	return "\n".join(PackedStringArray(linhas))
 
 
 func _it(id: String, rotulo: String, valor := "") -> Dictionary:

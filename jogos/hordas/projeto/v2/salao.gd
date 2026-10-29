@@ -45,7 +45,7 @@ const COR_ALMA := Paleta.ALMA
 const CORES_MAPA := {
 	"floresta": Color(0.3, 0.62, 0.36), "laboratorio": Color(0.3, 0.68, 0.78), "cidade": Color(0.85, 0.58, 0.3), "medio": Color(0.5, 0.55, 0.8)
 }
-const LINHA_CONQUISTA := 72.0  # altura de cada conquista no Códice
+const LINHA_CONQUISTA := 92.0  # altura de cada conquista no Códice: nome, o que fazer e a frase da conquista (uma linha só)
 const LINHA_LORE := 20.0  # a mais por frase de lore, no segredo achado
 const COR_TRAVADO := Color(0.22, 0.22, 0.25)
 const Glifos := preload("res://v2/glifos.gd")
@@ -731,6 +731,18 @@ func _montar_lista_codice() -> void:
 		var fazer := _rotulo(str(l.fazer), Dados.fonte_texto, Paleta.TEXTO_TAMANHO, Paleta.TEXTO_SECUNDARIO, Rect2(72, 44, 420, 22), HORIZONTAL_ALIGNMENT_LEFT)
 		fazer.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		b.add_child(fazer)
+		if str(l.frase) != "":  # a frase do Breno (dados/v2_meta.json): uma linha só, embaixo do que fazer, na coluna do nome
+			var frase := _rotulo(
+				str(l.frase),
+				Dados.fonte_texto,
+				Paleta.TEXTO_TAMANHO,
+				Paleta.alfa(COR_OURO, 0.75) if l.feita else COR_APAGADO,
+				Rect2(72, 66, 420, 22),
+				HORIZONTAL_ALIGNMENT_LEFT
+			)
+			frase.name = "frase"
+			frase.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			b.add_child(frase)
 		var cor_prog := Paleta.BONUS if l.feita else COR_TEXTO
 		b.add_child(_rotulo(str(l.progresso), Dados.fonte_texto, Paleta.TEXTO_TAMANHO, cor_prog, Rect2(504, 6, 150, 22), HORIZONTAL_ALIGNMENT_LEFT))
 		if l.feita:

@@ -9,7 +9,9 @@ const Mapas := preload("res://v2/mapas.gd")
 const UNIDADES := {"abates": "abates", "nivel": "nível", "evolucoes": "evoluções", "partidas": "partidas", "abates_total": "abates"}
 
 
-## Uma linha por conquista, na ordem do catálogo: {id, nome, fazer, feita, frac (0..1), progresso, premio, icone, icone_premio, selo, lore}.
+## Uma linha por conquista, na ordem do catálogo: {id, nome, frase, fazer, feita, frac (0..1), progresso, premio, frase_premio, icone, icone_premio, selo, lore}.
+## `frase` é a frase do Breno da própria conquista (dados/v2_meta.json; "" quando o catálogo não traz) e `frase_premio` a do item que ela
+## libera (Pesadelo, Rastro de katana, melhorias; "" se o prêmio não tem frase). O Códice mostra a `frase`; a pausa, as duas.
 ## Segredo dos mapas (#424): antes de achar, nome "???" e `fazer` é a dica; depois, o nome e `lore` traz as frases do fragmento (o Códice escreve uma por linha extra).
 ## `selo` é o rótulo de quem está feita ("CUMPRIDA", ou "ACHADO" no segredo).
 ## `premio` vem vazio só quando a recompensa não existe no catálogo; o último mapa não abre nada e diz "o fim da jornada".
@@ -46,11 +48,13 @@ static func linhas(vivo := {}) -> Array:
 		var linha := {
 			"id": str(c.id),
 			"nome": str(c.nome),
+			"frase": str(c.get("frase", "")),
 			"fazer": fazer(c),
 			"feita": feita,
 			"frac": frac,
 			"progresso": "%d/%d %s" % [int(mostra), int(lim), unidade],
 			"premio": premio(c),
+			"frase_premio": str(Meta.item_da_recompensa(c.get("recompensa", {})).get("frase", "")),
 			"icone": icone_da_conquista(c),
 			"icone_premio": icone_do_premio(c.get("recompensa", {})),
 			"selo": "ACHADO" if c.has("segredo") else "CUMPRIDA",
