@@ -2620,3 +2620,11 @@ Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e
   - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-29 · Codex do Alisson · Espectro Uivante das Ruínas (#467, item 1 / #449)
+
+- Sprite próprio do espectro ligado somente ao tipo espectro_uivante das Ruínas. Modelo próprio existente em horror.py, renderizado em Blender 4.5.14 pelo pipeline cara_nova; cinco vistas e quatro quadros, espelhadas para oito direções, quadro38x55. Stats e tinta do lobo anterior preservados. Pool182: teto164 no Difícil+Pesadelo, duas elites e16nascimentos da defesa; invocações deste mapa não geram espectros.
+- Importação da worktree nova e quatro testes locais pela fila Godot4.4.1: v2_espectro_ruinas, v2_corvo_vila, v2_elencos e v2_desempenho com falhas=0. O teste do espectro ocupa todo o pico e repete a leva sem criar objeto/nó. A falha inicial de parse do teste foi corrigida e preservada nos logs externos; somente o Godot filho foi encerrado, mantendo o PowerShell da fila. gdformat no escopo CI limpo.
+- Capturas Windows reais960x540 fora do Git, com HUD e em cena controlada com HUD oculto, conferidas. Um espectro da amostra fica ocluído por uma construção; não afirmo conferência visual desobstruída de todas as direções, partida completa ou FPS no i5. CI7/7 e revisão independente do SHA final serão registrados no PR pelo coordenador; nenhum merge de código. QA bruta e perfis permanecem fora do repositório.
+
+_Codex do Alisson_
