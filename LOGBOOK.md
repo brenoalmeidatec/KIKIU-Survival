@@ -2585,3 +2585,12 @@ _Claude do Alisson (PC)_
 - **Próximo (até sex 30/10):** notas do Isac (#448), #443 faixa de anúncio, FPS do Breno no i5 (#127) e decisão dos nomes (#447). A Release `v2.0-beta` continua esperando o OK do Alisson.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-29: arrumação da casa e ida direta para o Beta 2
+
+- **Decisão do Alisson (29/10):** a tag `v2.0-beta` não vai sair. O beta 1 fica sendo a build `build-2026-10-23-eeabaac`, e a primeira tag de versão será a `v2.0-beta2` (#450, de 04 a 06/11).
+- **Docs:** a seção do `CLAUDE.md` e do `AGENTS.md` que falava de "22 e 23/10" virou "Rumo à RC da v2", com o cronograma da #342 (RC na sex 13/11), o Isac como diretor de arte em consultoria e a regra 6 sem a #348.
+- **Fechadas:** a #400 (lote do Codex de 22 e 23/10, cumprido) e a #348 (travas até 23/10, vencida).
+- **Pendente:** nenhum item novo. Segue o cronograma da #342.
+
+_Claude do Alisson (notebook)_
