@@ -13,7 +13,7 @@ As 7 entram no mapa médio primeiro, nesta ordem de rota:
 | 1 | Cabana do Lenhador (`cabana_lenhador`) | 1 a 3 | Dá a primeira carta cedo, com custo de vida e 2 lobos |
 | 2 | Árvore Anciã Oca (`arvore_ancia`) | 1 a 5 | Sem carta e sem custo de horda: ensina o jogador a guardar almas |
 | 3 | Fogueira de Acampamento (`fogueira_acampamento`) | 2 a 6 | Buff de dano com custo de 4 s parado e anel de 6 monstros |
-| 4 | Totem de Madeira (`totem_madeira`) | 2 a 3 | Antes do mini-chefe 1 (cavaleiro rubro, 3 min): XP em troca de vida dos monstros |
+| 4 | Totem de Madeira (`totem_madeira`) | 2 a 3 | Antes do mini-chefe 1 (Devorador da Carne, 3 min): XP em troca de vida dos monstros |
 | 5 | Armadilha de Troncos (`armadilha_troncos`) | 2 a 7 | No corredor, sem carta: dano de corredor |
 | 6 | Poço Antigo (`poco_antigo`) | 3 a 8 | Carta única, com custo de barra de XP e chance de espectro |
 | 7 | Torre de Vigia (`torre_vigia`) | 4 a 9 | Informação antes do mini-chefe 2 (aranha, 6 min) |

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dtqswulvnkp64"
-path="res://.godot/imported/rainha_tecela.png-5d98e0bdc3abaeb4b028f0c081982f99.ctex"
+uid="uid://begwt0g2h5vew"
+path="res://.godot/imported/devorador_da_terra.png-743a7588997616469aa3b74f7dc8884a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/chefes/rainha_tecela.png"
-dest_files=["res://.godot/imported/rainha_tecela.png-5d98e0bdc3abaeb4b028f0c081982f99.ctex"]
+source_file="res://assets/v2/chefes/devorador_da_terra.png"
+dest_files=["res://.godot/imported/devorador_da_terra.png-743a7588997616469aa3b74f7dc8884a.ctex"]
 
 [params]
 

@@ -4,7 +4,7 @@
 
 **O que é:** um totem de tronco talhado, com olhos pintados de carvão. Ao ser ativado, abençoa a área em volta: quem abate ali ganha mais almas. Os monstros da área também ficam mais duros.
 
-**Como aparece no mapa:** objeto de 40 x 64 px (2,5 x 4 células), com colisão de 1 célula na base. Sugestão: antes do mini-chefe 1 (cavaleiro rubro, 3 min), perto de 760, 1000 (validar).
+**Como aparece no mapa:** objeto de 40 x 64 px (2,5 x 4 células), com colisão de 1 célula na base. Sugestão: antes do mini-chefe 1 (Devorador da Carne, 3 min), perto de 760, 1000 (validar).
 
 ```
      __

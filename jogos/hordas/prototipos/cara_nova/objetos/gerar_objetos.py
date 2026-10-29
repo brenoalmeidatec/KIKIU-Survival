@@ -1818,7 +1818,12 @@ def gerar_habilidades_e():
 # ------------------------------------------------------------------ bustos dos chefes da v2 (#360): fontes do Codex (#349) -> barra do chefe, 36 px
 CHEFES_FONTE = os.path.join(HORDAS, "fonte_arte", "chefes_v2")
 CHEFES_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "chefes")
-CHEFES_BUSTOS = ("cavaleiro_rubro", "rainha_tecela", "rei_espantalho")  # o nome do arquivo e a chave do busto em v2/hud.gd (BUSTOS)
+# (arquivo-fonte em fonte_arte/chefes_v2, arquivo do busto em assets/v2/chefes): o do busto e o nome do chefe sem acento (#447; o teste v2_hud_busto confere)
+CHEFES_BUSTOS = (
+    ("cavaleiro_rubro", "devorador_da_carne"),
+    ("rainha_tecela", "devoradora_da_estrutura"),
+    ("rei_espantalho", "devorador_da_terra"),
+)
 CHEFES_TAM = 36  # a barra do chefe tem 46 px com a moldura de pedra de 5 px: o busto cabe no miolo, sem encostar na moldura
 
 
@@ -1835,10 +1840,10 @@ def icone_chefe(caminho):
 
 def gerar_chefes():
     os.makedirs(CHEFES_SAIDA, exist_ok=True)
-    feitos = [icone_chefe(os.path.join(CHEFES_FONTE, b + ".png")) for b in CHEFES_BUSTOS]
-    for b, img in zip(CHEFES_BUSTOS, quantizar_lista(feitos, ICONES_COR)):
-        img.save(os.path.join(CHEFES_SAIDA, b + ".png"))
-        print("  %-14s %dx%d" % (b, img.width, img.height))
+    feitos = [icone_chefe(os.path.join(CHEFES_FONTE, fonte + ".png")) for fonte, _ in CHEFES_BUSTOS]
+    for (_, saida), img in zip(CHEFES_BUSTOS, quantizar_lista(feitos, ICONES_COR)):
+        img.save(os.path.join(CHEFES_SAIDA, saida + ".png"))
+        print("  %-24s %dx%d" % (saida, img.width, img.height))
 
 
 if __name__ == "__main__":

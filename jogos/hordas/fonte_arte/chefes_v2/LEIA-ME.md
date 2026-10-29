@@ -12,6 +12,8 @@ Cada PNG é uma folha **1 × 1**: uma única célula ocupando a imagem inteira, 
 | `rainha_tecela.png` | linha 1, coluna 1 | 1254 × 1254, RGBA | Rainha Tecelã (`mini2`): aranha de quitina escura, olhos verdes e coroa de teias; não é uma rainha humana. |
 | `rei_espantalho.png` | linha 1, coluna 1 | 1254 × 1254, RGBA | Rei Espantalho (`chefe`): rosto de estopa, palha, coroa dourada com joias magenta e corvos. |
 
+**Nomes no jogo (#447):** os arquivos-fonte guardam os nomes de trabalho; no jogo os chefes são `mini1` = Devorador da Carne, `mini2` = Devoradora da Estrutura e `chefe` = Devorador da Terra, e os bustos integrados são `devorador_da_carne.png`, `devoradora_da_estrutura.png` e `devorador_da_terra.png` (mapeamento em `gerar_objetos.py`, `CHEFES_BUSTOS`).
+
 ## Integração pelo Claude
 
 - Referência de estilo: `docs/imagens/referencia_2_5d.webp`; pixel art dark fantasy, sombras frias e luz quente pontual.

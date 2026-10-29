@@ -111,7 +111,7 @@ func _ready() -> void:
 	ok(not w.combate.chefes.vivo and dir.nivel == 9, "no nível 9 ainda não tem mini-chefe")
 	passos(40)
 	ok(dir.nivel == 10 and w.combate.chefes.vivo and w.combate.chefes.marca.id == "n10", "o mini-chefe nasce ao chegar no nível 10")
-	ok(w.combate.chefes.marca.nome == "Cavaleiro Rubro", "o do nível 10 é o Cavaleiro Rubro")
+	ok(w.combate.chefes.marca.nome == "Devorador da Carne", "o do nível 10 é o Devorador da Carne")
 	ok(dir.travado(), "com o mini-chefe vivo o nível trava")
 	dir.avancar_nivel(seg * 5.0)
 	ok(dir.nivel == 10 and dir.fracao_mapa() <= 9.0 / 29.0 + 0.001, "travado: o nível e a barra não andam (%d)" % dir.nivel)

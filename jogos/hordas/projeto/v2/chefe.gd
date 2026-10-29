@@ -6,9 +6,9 @@ extends RefCounted
 ## antes do dano, então dá para sair ou esquivar.
 ##   comuns:   estouro = um círculo grande sob o herói;   chuva = vários círculos pequenos em volta dele, um atrás do outro;
 ##             investida = uma faixa avisa o caminho e o chefe corre por ela.
-##   próprios: leque (Cavaleiro Rubro) = um setor de golpe de lâmina voltado para o herói (na fúria, um segundo para o lado oposto);
-##             teia (Rainha Tecelã) = um círculo de teia que, ao disparar, deixa o herói lento e solta filhotes de aranha;
-##             revoada (Rei Espantalho, o chefão) = faixas paralelas que partem dele, uma por cima do herói, varridas por corvos no disparo.
+##   próprios: leque (Devorador da Carne) = um setor de golpe de lâmina voltado para o herói (na fúria, um segundo para o lado oposto);
+##             teia (Devoradora da Estrutura) = um círculo de teia que, ao disparar, deixa o herói lento e solta filhotes de aranha;
+##             revoada (Devorador da Terra, o chefão) = faixas paralelas que partem dele, uma por cima do herói, varridas por corvos no disparo.
 ## Abaixo de `fase2` da vida o chefe fica mais rápido e os ataques crescem (chuva com mais círculos, segundo leque, mais filhotes e faixas). Vencer o
 ## CHEFE é a vitória da partida. As fichas (marcas) ficam em dados/v2_cartas.json > "chefes" (os ataques em "ataques", a lista de cada marca em
 ## "marcas" > "ataques" e a aparência em "visual"); o diretor copia a marca com a vida do mapa e mini = false só no último nível. O mundo expõe os
@@ -268,7 +268,7 @@ func _comecar_ataque() -> void:
 	_prox_ataque = _intervalo()
 
 
-## O LEQUE do Cavaleiro Rubro: um golpe de lâmina em setor voltado para o herói. Na fúria a lâmina gira: logo depois vem um segundo, para o lado oposto.
+## O LEQUE do Devorador da Carne: um golpe de lâmina em setor voltado para o herói. Na fúria a lâmina gira: logo depois vem um segundo, para o lado oposto.
 func _leque(at: Dictionary) -> void:
 	var m = atual
 	var d: Vector2 = mundo.heroi.pos - m.pos
@@ -279,7 +279,7 @@ func _leque(at: Dictionary) -> void:
 		_meu(combate.avisos.setor(m.pos, -d, float(at.raio), float(at.abertura), _aviso_dur, float(at.dano), m.cor_elite))
 
 
-## A TEIA da Rainha Tecelã: um círculo de teia sobre o herói; ao disparar, quem está dentro fica lento e a teia solta filhotes de aranha.
+## A TEIA da Devoradora da Estrutura: um círculo de teia sobre o herói; ao disparar, quem está dentro fica lento e a teia solta filhotes de aranha.
 func _teia(at: Dictionary) -> void:
 	var centro: Vector2 = mundo.heroi.pos
 	var i: int = _meu(combate.avisos.circulo(centro, float(at.raio), float(at.aviso), float(at.dano), atual.cor_elite, _teia_disparou.bind(centro, at)))
@@ -334,7 +334,7 @@ func _teia_atualizar(dt: float) -> void:
 		)
 
 
-## A REVOADA do Rei Espantalho: faixas paralelas que partem dele na direção do herói (uma por cima do herói, as outras dos lados, com vãos entre elas
+## A REVOADA do Devorador da Terra: faixas paralelas que partem dele na direção do herói (uma por cima do herói, as outras dos lados, com vãos entre elas
 ## onde dá para ficar); no disparo os corvos varrem as faixas e quem está nelas apanha.
 func _revoada(at: Dictionary) -> void:
 	var m = atual
