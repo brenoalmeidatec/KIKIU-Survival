@@ -24,9 +24,10 @@
 		"inimigo_espantalho": {"vida": 38, "dano": 8, "xp": 2, "vel": 46, "raio": 8, "peso": 1.4, "orbes": 1},
 		"inimigo_lobo_sombrio": {"vida": 30, "dano": 8, "xp": 2, "vel": 90, "raio": 8, "peso": 1.1, "orbes": 1},
 		"inimigo_cavaleiro_oco": {"vida": 96, "dano": 14, "xp": 6, "vel": 52, "raio": 9, "peso": 2.6, "orbes": 3},
+		"inimigo_homunculo": {"vida": 16, "dano": 5, "xp": 1, "vel": 74, "raio": 6, "peso": 0.8, "orbes": 1},
 		"inimigo_corvo_carniceiro": {"vida": 16, "dano": 5, "xp": 1, "vel": 74, "raio": 6, "peso": 0.8, "orbes": 1}
 	},
-	"pool": {"inimigo_cao_ossos": 30, "inimigo_aranha_tecela": 30, "inimigo_espantalho": 22, "inimigo_lobo_sombrio": 22, "inimigo_cavaleiro_oco": 12, "inimigo_corvo_carniceiro": 30},
+	"pool": {"inimigo_cao_ossos": 30, "inimigo_aranha_tecela": 30, "inimigo_espantalho": 22, "inimigo_lobo_sombrio": 22, "inimigo_cavaleiro_oco": 12, "inimigo_corvo_carniceiro": 30, "inimigo_homunculo": 192},
 	"morte": {"hit_stop": 0.05, "tremor": 1, "particulas": 16},
 	"xp": {"base": 5, "passo": 3, "quad": 0.7, "ima_vel": 190, "ima_acel": 900, "plim_janela": 0.55, "plim_passo": 0.07, "plim_max": 2.2},
 	"combo_abates": {"janela": 3.0, "xp_por_abate": 0.03, "xp_max": 3.0},

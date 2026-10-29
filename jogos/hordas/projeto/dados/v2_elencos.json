@@ -33,7 +33,7 @@
 			"invocados": ["homunculo", "larva_frasco"],
 			"tipos": [
 				{"id": "larva_frasco", "nome": "Larva de Frasco", "sprite": "inimigo_cao_ossos", "tinta": [0.8, 1.5, 0.8], "desde": 0, "peso": 3, "elite_desde": 0},
-				{"id": "homunculo", "nome": "Homúnculo", "sprite": "inimigo_aranha_tecela", "tinta": [1.6, 1, 1.3], "desde": 0, "peso": 4, "elite_desde": 0},
+				{"id": "homunculo", "nome": "Homúnculo", "sprite": "inimigo_homunculo", "tinta": [1.6, 1, 1.3], "desde": 0, "peso": 4, "elite_desde": 0},
 				{"id": "rato_alquimico", "nome": "Rato Alquímico", "sprite": "inimigo_aranha_tecela", "tinta": [1.5, 1.4, 0.7], "desde": 0, "peso": 2, "vida": 1.2, "dano": 1.2},
 				{"id": "quimera_frasco", "nome": "Quimera de Frasco", "sprite": "inimigo_lobo_sombrio", "tinta": [1, 1.5, 0.7], "desde": 40, "peso": 3, "elite_desde": 60},
 				{"id": "golem_vidro", "nome": "Golem de Vidro", "sprite": "inimigo_espantalho", "tinta": [0.8, 1.4, 1.9], "desde": 75, "peso": 3, "elite_desde": 100},

@@ -130,3 +130,7 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Sprite próprio do corvo da Vila Amaldiçoada (#449), Claude do Alisson (notebook), 29/10/2026
 
 - `jogos/hordas/projeto/prototipos/cara_nova/sprites/inimigo_corvo_carniceiro.json`, `inimigo_corvo_carniceiro_albedo.png`, `inimigo_corvo_carniceiro_normal.png` e `inimigo_corvo_carniceiro_emissao.png` (5 vistas x 4 quadros de andar/voo; o jogo espelha para as 8 direções), gerados por `jogos/hordas/prototipos/cara_nova/gerar_cara_nova.py` (`blender -b -P gerar_cara_nova.py -- monstro floresta corvo_carniceiro`, Blender 4.5) a partir do modelo `corvo_carniceiro` de `jogos/hordas/fonte_arte/modelos3d/floresta.py`. Arte própria, modelada por script, sem material de terceiros. Licença: a do projeto. Substitui, só para o "Corvo Agourento" da Vila (`dados/v2_elencos.json`), a aranha recolorida que ele usava.
+
+## Homúnculo da Torre (#449), Codex do Alisson, 29/10/2026
+
+- Modelo próprio `jogos/hordas/fonte_arte/modelos3d/torre_homunculo.py`, usando as primitivas do pipeline do projeto. Folhas `inimigo_homunculo.json`, `inimigo_homunculo_albedo.png`, `inimigo_homunculo_normal.png` e `inimigo_homunculo_emissao.png` em `jogos/hordas/projeto/prototipos/cara_nova/sprites/`: cinco vistas e quatro quadros, espelhados para oito direções. Geradas no Blender 4.5.14 por `gerar_cara_nova.py -- monstro torre_homunculo homunculo`. Sem arte de terceiros; licença do projeto. Troca somente a folha do homúnculo da Torre, preservando os números e a tinta do elenco.

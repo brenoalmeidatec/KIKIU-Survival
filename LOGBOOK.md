@@ -2620,3 +2620,12 @@ Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e
   - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-29 · Codex do Alisson · Homúnculo da Torre (#449/#467)
+
+- Modelo Blender próprio com cabeça grande, costura e braços assimétricos; folha34×42, cinco vistas e quatro quadros, albedo/normal/emissão. Somente o homúnculo da Torre troca de sprite; números e tinta preservados.
+- Pool192 cobre o piso conservador178 e o pico observado41 do estresse Difícil/Pesadelo, semente1, imortal e comQ (59.925 amostras, 880,8s de jogo); não é teto global nem vitória de equilíbrio. Prova de192 simultâneos e reciclagem sem nós novos. Novo teste, corvo, elencos e desempenho passaram; novo teste em janela e corvo repetidos após as mudanças finais. Godot4.4.1 sempre pela fila, APPDATA própria e import primeiro; gdformat372scripts limpo.
+- Captura Windows960×540 real conferida, cena controlada com oito direções; cenário pode ocluir parte dos corpos. Não foram vistos partida humana completa, controle físico, Linux ou FPS no i5. Evidências e tentativas inválidas de helper ficam anexadas fora do Git; nenhum CFG privado publicado.
+- Pendente: CI7/7 do head final e revisão independente registrados no PR, depois Claude integra com o ok do Alisson. Nenhum merge de código pelo Codex. Preservar os outros três sprites e os acréscimos de licença/LOGBOOK ao conciliar os PRs.
+
+_Codex do Alisson_
