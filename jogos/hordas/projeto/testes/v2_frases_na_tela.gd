@@ -202,7 +202,7 @@ func _altar() -> void:
 		ok(b.tooltip_text.contains(str(item.frase)), "o tooltip de %s traz a frase" % par[2])
 		b.focus_entered.emit()
 		await get_tree().process_frame
-		# A frase fica só no tooltip: a caixa do detalhe (384x54 px, 3 linhas) já não comporta o efeito do Pesadelo (5 linhas no jogo), então o
+		# A frase fica só no tooltip: a caixa do detalhe já é ocupada inteira pelo efeito do Pesadelo (5 linhas), então o
 		# detalhe tem que seguir IDÊNTICO ao de antes, sem a frase, para não piorar. (Cabe ou não cabe só se vê com janela: headless mede a fonte em dobro.)
 		var texto: String = a._detalhe.text
 		ok(texto == "%s\n%s" % [item.nome, Meta.texto_item(item)], "o detalhe de %s segue como antes: o nome e o texto do efeito" % par[2])
