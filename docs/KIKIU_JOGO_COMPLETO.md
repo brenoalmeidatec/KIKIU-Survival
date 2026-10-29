@@ -342,9 +342,9 @@ Definidos em `dados/v2_cartas.json > chefes > marcas`:
 
 | Marca | Nome | Vida base | Dano base | Ataques |
 |---|---|---:|---:|---|
-| mini1 | Cavaleiro Rubro | 1100 | 20 | estouro, chuva |
-| mini2 | Rainha Tecelã | 3000 | 26 | estouro, investida, chuva |
-| chefe | Rei Espantalho | 9000 | 34 | estouro, chuva, investida, chuva |
+| mini1 | Devorador da Carne | 1100 | 20 | estouro, chuva |
+| mini2 | Devoradora da Estrutura | 3000 | 26 | estouro, investida, chuva |
+| chefe | Devorador da Terra | 9000 | 34 | estouro, chuva, investida, chuva |
 
 - **Estouro:** um aviso no chão e uma explosão em área.
 - **Chuva:** cinco pancadas em sequência que espalham pelo chão.

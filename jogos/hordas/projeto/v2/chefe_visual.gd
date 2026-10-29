@@ -1,9 +1,9 @@
 extends RefCounted
 ## A APARÊNCIA própria de cada chefe da v2 (v2/chefe.gd), feita em código sobre o sprite 2D do monstro: nada de arte nova nem de 3D.
 ## O `adorno` de cada marca (dados/v2_cartas.json > chefes > marcas > visual) escolhe o conjunto:
-##   elmo  = Cavaleiro Rubro: capa rubra atrás do corpo, pluma e ombreiras de espinho no elmo, anel de runas vermelho no chão e brasas que sobem;
-##   teia  = Rainha Tecelã: teia grande no chão sob ela, coroa flutuando sobre o abdômen e esporos verdes que sobem;
-##   coroa = Rei Espantalho (o chefão): manto rasgado, coroa de ouro com gemas, sigilo de estrela no chão, quatro corvos girando em volta
+##   elmo  = Devorador da Carne: capa rubra atrás do corpo, pluma e ombreiras de espinho no elmo, anel de runas vermelho no chão e brasas que sobem;
+##   teia  = Devoradora da Estrutura: teia grande no chão sob ela, coroa flutuando sobre o abdômen e esporos verdes que sobem;
+##   coroa = Devorador da Terra (o chefão): manto rasgado, coroa de ouro com gemas, sigilo de estrela no chão, quatro corvos girando em volta
 ##           (passam por trás e pela frente do corpo) e brasas e penas; na fúria a coroa brilha e os corvos giram mais rápido.
 ## Dois nós filhos do corpo do chefe (`atras`, desenhado antes do sprite, e `frente`, depois) e um nó do mundo (`no_voo`) com os corvos da REVOADA,
 ## o ataque próprio do Rei (chefe.gd chama `revoada` no disparo das faixas). Tudo é desenhado sem luz 2D (o chefe já tem a luz própria dele) e

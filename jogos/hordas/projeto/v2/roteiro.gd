@@ -9,7 +9,7 @@ extends RefCounted
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
 ##   --build=golpes        idem com os 36 projéteis, anéis, meteoros e nuvens no nível 5 (as folhas animadas de docs/combate_v2)
 ##   --build=tudo          os 36 mais corvos, aura, raio, runa, lâminas e as evoluções desses tipos
-##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, dos três chefes (Cavaleiro Rubro, Rainha Tecelã e Rei Espantalho) anunciando
+##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, dos três chefes (Devorador da Carne, Devoradora da Estrutura e Devorador da Terra) anunciando
 ##                         o ataque próprio e logo depois do disparo, e do chefão na fúria, da tela de vitória e da escolha com raridades (na trava, 20_escolha_trava, e depois de liberar,
 ##                         21_escolha_liberada). Fotos 11_build ... 21_escolha_liberada: a janela inteira (mundo e interface; em headless, só o viewport do mundo).
 ##   --roteiro=vitrine|ordem|cerco   (leva 4, desempenho) vitrine: os 5 tipos parados em 3 fileiras, para comparar antes e depois do mesmo quadro;

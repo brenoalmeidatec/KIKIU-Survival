@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://begwt0g2h5vew"
-path="res://.godot/imported/rei_espantalho.png-3670afab85102548b57e45905d2b5af6.ctex"
+uid="uid://dtqswulvnkp64"
+path="res://.godot/imported/devoradora_da_estrutura.png-09250b49a9a47b71c60026f258cc566c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/chefes/rei_espantalho.png"
-dest_files=["res://.godot/imported/rei_espantalho.png-3670afab85102548b57e45905d2b5af6.ctex"]
+source_file="res://assets/v2/chefes/devoradora_da_estrutura.png"
+dest_files=["res://.godot/imported/devoradora_da_estrutura.png-09250b49a9a47b71c60026f258cc566c.ctex"]
 
 [params]
 
