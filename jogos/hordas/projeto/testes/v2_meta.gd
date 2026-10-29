@@ -240,6 +240,48 @@ func _testes() -> void:
 	res._animar(2.0)
 	ok(res._almas_num.text == "+%d" % res._ganhas, "a animação termina no total: %s" % res._almas_num.text)
 	ok(res._saldo.text == "Saldo: %d" % Meta.saldo(), "o saldo na tela bate com o save")
+	# 7a. frase de sabor sob o VOCÊ CAIU: vem da lista de dados, cabe na largura, não repete a da derrota anterior e some na vitória
+	var frases: Array = Meta.frases_derrota()
+	ok(frases.size() >= 10 and frases.size() <= 12, "a lista de frases de derrota tem 10 a 12 (tem %d)" % frases.size())
+	var vistas := {}
+	for f in frases:
+		ok(f.length() <= 40, "frase curta (até 40 letras): " + f)
+		ok(not vistas.has(f), "frase sem duplicata: " + f)
+		vistas[f] = true
+		# em --headless a fonte mede o dobro: o limite de 912 px vale mesmo assim para as 40 letras
+		ok(
+			Dados.fonte_texto.get_string_size(f, HORIZONTAL_ALIGNMENT_LEFT, -1, Resultado.TAM_TEXTO).x <= res._frase.size.x,
+			"a frase cabe na largura do resultado: " + f
+		)
+	ok(
+		res._frase.get_parent() == res._res and res._frase.visible and frases.has(res._frase.text),
+		"na derrota a frase aparece no nó certo, vinda da lista: " + res._frase.text
+	)
+	ok(res._frase.position.x >= 0.0 and res._frase.position.x + res._frase.size.x <= float(Resultado.LARG), "o nó da frase fica dentro dos 960 px")
+	ok(
+		res._frase.position.y > res._titulo.position.y and res._frase.position.y + res._frase.size.y <= res._linhas.position.y,
+		"a frase fica entre o título e os números"
+	)
+	ok(res._frase.position.y + res._frase.size.y <= res._dano_tit.position.y, "a frase não encosta no quadro do dano")
+	ok(res._frase.text == Meta.ultima_frase_derrota(), "a frase mostrada fica no save, para a próxima derrota não repetir")
+	var frase_1: String = res._frase.text
+	res._mostrar({"venceu": true, "frase_derrota": frase_1}, [])
+	ok(not res._frase.visible and res._frase.text == "", "na vitória não há frase")
+	var res_b = Resultado.new()
+	res_b.montar(m2)
+	res_b._terminar({"tempo": 40.0, "abates": 3, "nivel": 2, "maior_combo": 2, "venceu": false, "almas": 5})
+	ok(res_b._frase.visible and frases.has(res_b._frase.text) and res_b._frase.text != frase_1, "a derrota seguinte mostra outra frase da lista")
+	res_b._terminou = true
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var anterior := frase_1
+	var sorteadas := {}
+	for i in 200:
+		var f: String = Meta.sortear_frase_derrota(anterior, rng)
+		ok(f != anterior and frases.has(f), "o sorteio nunca repete a anterior")
+		sorteadas[f] = true
+		anterior = f
+	ok(sorteadas.size() == frases.size(), "em 200 sorteios todas as frases saem (%d de %d)" % [sorteadas.size(), frases.size()])
 	res._terminou = true  # garante que nada mais grava nesta tela
 	m2.queue_free()
 	await get_tree().process_frame

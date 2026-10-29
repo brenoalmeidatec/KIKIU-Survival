@@ -19,6 +19,7 @@ const TEMPO_ACEITA := 0.8  # s antes de aceitar continuar (evita o clique de que
 const TEMPO_AVISO := 2.6
 const MAX_NOVAS := 6  # conquistas que cabem embaixo das almas (três linhas de duas)
 const DANO_LINHAS := 5  # golpes no quadro "dano por golpe" (os maiores; o resto soma em "outros" só no total)
+const FRASE_Y := 110.0  # sob o título (y 52, Jersey 56) e acima do quadro "dano por golpe" (y 128)
 const DANO_X := 500.0
 const DANO_LARG := 380.0
 const TAM_TITULO := Paleta.TITULO_GRANDE
@@ -42,6 +43,7 @@ var _aviso_t := 0.0
 var _fundo: ColorRect
 var _res: Control
 var _titulo: Label
+var _frase: Label  # sabor da derrota, sob o VOCÊ CAIU (Meta.sortear_frase_derrota)
 var _linhas: Label
 var _valores: Label
 var _almas_tit: Label
@@ -74,6 +76,11 @@ func montar(m) -> void:
 	_titulo.position = Vector2(0, 52)
 	_titulo.size = Vector2(LARG, 72)
 	_res.add_child(_titulo)
+	_frase = _rotulo("", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
+	_frase.position = Vector2(24, FRASE_Y)
+	_frase.size = Vector2(LARG - 48, 18)
+	_frase.visible = false
+	_res.add_child(_frase)
 	_linhas = _rotulo("Tempo\nAbates\nMaior combo\nNível", TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_LEFT)
 	_linhas.position = Vector2(90, 150)
 	_linhas.size = Vector2(230, 140)
@@ -256,6 +263,8 @@ func _resultado_do_mundo() -> Dictionary:
 
 func _terminar(r: Dictionary) -> void:
 	_terminou = true
+	if not bool(r.get("venceu", false)):
+		r["frase_derrota"] = Meta.sortear_frase_derrota(Meta.ultima_frase_derrota())  # antes de registrar_partida, que guarda a frase
 	r["pesadelo"] = mundo.pesadelo()  # o Pesadelo rende mais almas (Meta.registrar_partida)
 	if not r.has("mapa") and mundo.get("id_mapa") != null:
 		r["mapa"] = str(mundo.id_mapa)  # vencer um mapa abre o seguinte no santuário (vence_<mapa>, dados/v2_progressao.json)
@@ -287,6 +296,8 @@ func _mostrar(r: Dictionary, novas: Array) -> void:
 	if bool(r.get("pesadelo", false)):
 		_titulo.text += " · PESADELO"
 	_titulo.add_theme_color_override("font_color", COR_OURO if venceu else Paleta.PERIGO)
+	_frase.text = "" if venceu else str(r.get("frase_derrota", ""))
+	_frase.visible = _frase.text != ""
 	var seg := int(float(r.get("tempo", 0.0)))
 	_valores.text = "%02d:%02d\n%d\nx%d\n%d" % [floori(seg / 60.0), seg % 60, int(r.get("abates", 0)), int(r.get("maior_combo", 0)), int(r.get("nivel", 1))]
 	var linhas: Array = []

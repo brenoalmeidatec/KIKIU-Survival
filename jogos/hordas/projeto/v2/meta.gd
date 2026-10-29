@@ -34,6 +34,34 @@ static func catalogo() -> Dictionary:
 	return Dados.json("v2_meta")
 
 
+## As frases de sabor da tela de derrota (dados/v2_meta.json, "frases_derrota"): só as que são texto e não estão vazias.
+static func frases_derrota() -> Array:
+	var bloco = catalogo().get("frases_derrota", {})
+	var lista: Array = []
+	var cruas: Array = bloco.get("lista", []) if bloco is Dictionary else []
+	for f in cruas:
+		if f is String and f.strip_edges() != "":
+			lista.append(f)
+	return lista
+
+
+## A frase mostrada na derrota anterior (guardada em [ultima] frase_derrota por registrar_partida); "" se não há.
+static func ultima_frase_derrota() -> String:
+	var cf := _ler()
+	return str(cf.get_value("ultima", "frase_derrota", "")) if cf != null else ""
+
+
+## Sorteia a frase da derrota, nunca igual à `anterior` (com uma só frase na lista, não há como evitar a repetição).
+## `rng` opcional deixa o teste determinístico; sem ele, usa o gerador global.
+static func sortear_frase_derrota(anterior: String, rng: RandomNumberGenerator = null) -> String:
+	var lista := frases_derrota()
+	if lista.size() > 1:
+		lista.erase(anterior)
+	if lista.is_empty():
+		return ""
+	return lista[rng.randi_range(0, lista.size() - 1) if rng != null else randi() % lista.size()]
+
+
 ## As melhorias do catálogo com o "max" já somado dos níveis extras que as conquistas liberaram (recompensa "nivel_max");
 ## "max_base" guarda o do catálogo. `cf` opcional: sem ele, lê o save.
 static func melhorias(cf: ConfigFile = null) -> Array:
@@ -555,6 +583,8 @@ static func registrar_partida(r: Dictionary) -> Dictionary:
 	cf.set_value("ultima", "venceu", bool(r.get("venceu", false)))
 	cf.set_value("ultima", "ganhas", ganhas)
 	cf.set_value("ultima", "pesadelo", pesadelo)
+	if not bool(r.get("venceu", false)) and str(r.get("frase_derrota", "")) != "":
+		cf.set_value("ultima", "frase_derrota", str(r.frase_derrota))  # a próxima derrota não repete esta (sortear_frase_derrota)
 	cf.set_value("ultima", "dificuldade", str(dif.id) if r.has("dificuldade") else "")
 	if r.has("dificuldade") and bool(r.get("venceu", false)) and str(r.get("mapa", "")) != "":
 		cf.set_value("dificuldades_vencidas", "%s_%s" % [str(r.mapa), str(dif.id)], true)
