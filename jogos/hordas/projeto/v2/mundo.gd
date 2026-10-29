@@ -663,7 +663,7 @@ func _novo_monstro(nome: String):
 	return mo
 
 
-## Faz um monstro do tipo `nome` (um dos sprites de TIPOS_MONSTRO) nascer em `p` (do pool, ou novo se o pool esvaziou). `cacador` = persegue de qualquer
+## Faz um monstro do tipo `nome` (um dos sprites de SPRITES_MONSTRO) nascer em `p` (do pool, ou novo se o pool esvaziou). `cacador` = persegue de qualquer
 ## distância. `tipo` (opcional) é a variação do elenco do mapa (v2/elenco.gd); sem ele nasce o monstro puro.
 func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k_dano := 1.0, tipo := {}):
 	var lista: Array = _pool_monstros.get(nome, [])

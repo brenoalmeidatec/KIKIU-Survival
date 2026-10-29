@@ -2620,3 +2620,13 @@ Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e
   - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-29: pendências da revisão do notebook (#467, item 4)
+
+- Segredo parado: herói caído perde a espera parcial, exigindo um período inteiro ao levantar. Regressão local reproduzida (2 falhas) e corrigida (0); o teste de andar enquanto apanha agora usa entrada e velocidade reais, sem teleporte por quadro.
+- Faixa de anúncio: até três linhas, com prefixo e reticências quando excede o teto; mensagens que já cabiam e o original da fila ficam íntegros. Em janela Windows 960x540, 300 letras passaram de 8 linhas/133 px para 3 linhas/48 px dentro de 66 px planejados; RED 5 falhas e GREEN 0. Teste mede fonte/entrelinha contra orçamento independente do tamanho forçado do Label.
+- Godot 4.4.1 pela fila e APPDATA própria: importação, v2_segredos, v2_hud_anuncios (headless e janela) e v2_hud concluídos; todos os testes finais com falhas=0. Avisos de recursos/RIDs no encerramento de segredos/HUD permanecem registrados. Fotos e logs estão fora do repositório; fotos iniciais vazias do helper foram descartadas como prova visual. Captura válida mostra HUD de teste em janela, não partida completa; sem nova prova de FPS.
+- Comentários de elenco/nascimento/segredos alinhados; DESIGN registra que as frases aguardam o ok do Isac. Tabela de duração inclui os testes ausentes com estimativa explícita de 15 s, igual ao fallback existente, sem alegar medição.
+- Código enviado para revisão independente e CI no próprio commit; merge, Release e tag aguardam o fluxo do Claude do Alisson. Na integração, preservar também o trecho de foco do santuário do PR #475 em DESIGN.md.
+
+_Codex do Alisson_
