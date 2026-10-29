@@ -297,8 +297,17 @@ func _alternar_extra(tipo: String, id: String) -> void:
 
 
 func _detalhar_extra(tipo: String, id: String) -> void:
-	var item := Meta.item_extra(tipo, id)
-	_detalhe.text = "%s\n%s" % [item.get("nome", id), Meta.texto_item(item)]
+	_detalhe.text = _texto_extra(Meta.item_extra(tipo, id), id, false)
+
+
+## O texto de um modo ou visual: o nome, a frase do Breno (dados/v2_meta.json, quando tem) e o que ele faz.
+## A frase só entra no tooltip: o detalhe (caixa de 384x54 px, 3 linhas) já está cheio com o efeito do Pesadelo.
+func _texto_extra(item: Dictionary, id: String, com_frase: bool) -> String:
+	var partes: Array[String] = [str(item.get("nome", id))]
+	if com_frase and str(item.get("frase", "")) != "":
+		partes.append(str(item.frase))
+	partes.append(Meta.texto_item(item))
+	return "\n".join(PackedStringArray(partes))
 
 
 ## Mostra os botões dos extras liberados, com o estado (LIGADO ou DESLIGADO).
@@ -307,8 +316,7 @@ func _atualizar_extras() -> void:
 		var b: Button = par[0]
 		b.visible = Meta.liberado(par[1], par[2])
 		b.text = "%s: %s" % [par[3], "LIGADO" if Meta.ligado(par[1], par[2]) else "DESLIGADO"]
-		var item := Meta.item_extra(par[1], par[2])
-		b.tooltip_text = "%s\n%s" % [item.get("nome", par[2]), Meta.texto_item(item)]
+		b.tooltip_text = _texto_extra(Meta.item_extra(par[1], par[2]), par[2], true)
 		b.add_theme_color_override("font_color", COR_OURO if Meta.ligado(par[1], par[2]) else COR_TEXTO)
 
 
