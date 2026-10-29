@@ -1,4 +1,4 @@
-﻿# LOGBOOK
+# LOGBOOK
 
 Diário **append-only** do repositório: o que foi feito, o que ficou pendente, recados.
 Escrito para quem chega sem contexto: o Breno, o Alisson e os Claude Code de cada um
@@ -2620,3 +2620,13 @@ Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e
   - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
 
 _Claude do Alisson (notebook)_
+
+### 2026-10-29 — Foco do santuário, item 3 da #467
+
+- Reproduzido em janela 960x540: Direita em ENTRAR e Esquerda em AJUSTES saltavam para a lista de conquistas; a posição da rolagem também desviava Cima da primeira linha de melhorias.
+- `codex/foco-santuario-467`: vizinhos explícitos na grade, lista e rodapé, preservando o foco inicial em ENTRAR e a rolagem automática. Compras bloqueadas/no máximo são puladas; Pesadelo e Rastro liberados continuam no percurso.
+- Teste comportamental `v2_santuario_foco`: eventos de teclado e D-pad sintetizado, 33 conquistas, rodapé completo e extras. Prova RED em janela com o altar da main: 38 falhas; GREEN com a correção: falhas=0 e exit 0. Regressões headless `v2_santuario_foco`, `v2_santuario`, `v2_meta` e `v2_conquistas`: falhas=0 e exit 0; as quatro cenas imprimem avisos de recursos no encerramento. gdformat -l 160 --check: 372 arquivos limpos.
+- Capturas e logs ficam fora do repositório. O acento de SANTUÁRIO e a linha Última partida foram vistos inteiros na janela; a métrica da Jersey mede 60 px contra a caixa projetada de 52 px, por isso a caixa/mínimo não foi usada para afirmar ausência de sobreposição. Nenhuma alteração de fonte ou layout neste bloco.
+- Limites: não foi usado controle físico, nem medido FPS no i5. PR e CI no SHA final ficam para a conferência do integrador; nenhum merge. Godot/robô próprios encerrados.
+
+_Codex do Alisson_
