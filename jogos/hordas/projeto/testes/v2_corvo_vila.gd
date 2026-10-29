@@ -24,7 +24,7 @@ const OUTROS := {
 		"esqueleto": "inimigo_cao_ossos",
 		"esqueleto_podre": "inimigo_cao_ossos",
 		"larva_cripta": "inimigo_aranha_tecela",
-		"espectro_uivante": "inimigo_lobo_sombrio",
+		"espectro_uivante": "inimigo_espectro",
 		"estatua_viva": "inimigo_espantalho",
 		"cavaleiro_caido": "inimigo_cavaleiro_oco"
 	},
@@ -121,7 +121,10 @@ func _dados() -> void:
 	var mundo = preload("res://v2/mundo.gd")
 	ok(mundo.TIPOS_MONSTRO.size() == 5 and not mundo.TIPOS_MONSTRO.has(CORVO), "padrão: TIPOS_MONSTRO continua com os 5 de sempre")
 	ok(mundo.PESOS_MONSTRO.size() == mundo.TIPOS_MONSTRO.size(), "padrão: um peso por tipo")
-	ok(mundo.SPRITES_MONSTRO.has(CORVO) and mundo.SPRITES_MONSTRO.size() == 6, "SPRITES_MONSTRO = os 5 + o corvo")
+	ok(
+		mundo.SPRITES_MONSTRO.has(CORVO) and mundo.SPRITES_MONSTRO.size() == mundo.TIPOS_MONSTRO.size() + mundo.SPRITES_EXTRA.size(),
+		"SPRITES_MONSTRO contém os padrões e as folhas extras"
+	)
 	for t in comb.diretor.tipos:
 		ok(t.sprite != CORVO, "padrão: o diretor não sorteia o corvo")
 	for t in Dados.json("v2_cartas").elites.tipos:
