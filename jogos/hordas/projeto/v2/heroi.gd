@@ -37,6 +37,7 @@ const CurvaGolpe := preload("res://v2/curva_golpe.gd")
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
 const VEL := 100.0  # px/s
+const AMORTECE_EMP := 11.0  # o empurrão que o herói leva perde força: emp *= exp(-AMORTECE_EMP dt) (o vigia dos segredos lê para não confundir com andar)
 const PASSO_ANIM := 0.13  # s por quadro de andar
 const MORTE_DISSOLVE := 0.3  # s de jogo (relógio do herói: hit-stop e câmera lenta esticam) que o corpo leva para se desfazer
 const MORTE_FLASH := 0.2  # fração inicial da dissolução em que o corpo fica branco (o "flash" do golpe fatal)
@@ -560,7 +561,7 @@ func atualizar(dt: float) -> void:
 			desl = mundo.combate.habilidade.quadro(self, dt, v)
 	if emp.length_squared() > 4.0:
 		desl += emp * dt
-		emp *= exp(-11.0 * dt)
+		emp *= exp(-AMORTECE_EMP * dt)
 	else:
 		emp = Vector2.ZERO
 	if estado != Estado.LIVRE:

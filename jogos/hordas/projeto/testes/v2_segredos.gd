@@ -6,6 +6,8 @@ extends "res://testes/isolamento_v2.gd"
 # golpear longe, ficar parado fora do raio); dispara UMA vez por partida (sem repetir almas nem baú, mesmo saindo e voltando); grava a
 # conquista no save e credita as almas só na primeira vez do personagem (uma partida nova dispara de novo o anúncio e o baú, sem almas);
 # o Códice esconde o nome e a lore ("???" e a dica) até achar e depois mostra o fragmento; achar um segredo abre o Códice.
+# Riscos do LOGBOOK (#424): o robô (--robo, --estresse, --playtest...) não grava segredo no save; o "parado" resiste a empurrão de monstro;
+# no coop qualquer herói de `mundo.herois` dispara (não só o 1).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_segredos.tscn  (imprime "v2_segredos falhas=0")
 # Foto (precisa de janela): ... res://testes/v2_segredos.tscn -- --fotos=PASTA  grava segredo_<mapa>.png no instante em que o segredo é achado.
 
@@ -20,6 +22,7 @@ const Icones := preload("res://v2/icones_santuario.gd")
 const Personagens := preload("res://v2/personagens.gd")
 const Salao := preload("res://v2/salao.tscn")
 const Mundo := preload("res://v2/mundo.tscn")
+const Roteiro := preload("res://v2/roteiro.gd")
 const PASSO := 1.0 / 60.0
 const PASTA := "user://testes_v2/v2_segredos/"
 const SAVE_TESTE := PASTA + "teste_v2_segredos_meta.cfg"
@@ -29,6 +32,15 @@ const GATILHOS := ["encostar", "parado", "golpe"]
 
 var falhas := 0
 var pasta_fotos := ""
+
+
+## Um herói de coop de mentira: só o que o vigia lê (posição, vida, golpes e empurrão).
+class Falso:
+	var pos := Vector2.ZERO
+	var raio := 6.0
+	var vida := 10.0
+	var golpes := 0
+	var emp := Vector2.ZERO
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -51,6 +63,7 @@ func _ready() -> void:
 	_dados()
 	for id in Mapas.ids():
 		await _mapa(id)
+	await _riscos()
 	_nova_partida_e_estado()
 	await _codice()
 	_limpar()
@@ -201,6 +214,138 @@ func _mapa(id: String) -> void:
 		remove_child(w2)
 		w2.free()
 		await get_tree().process_frame
+
+
+## Os três riscos do LOGBOOK: robô fora do save, "parado" com empurrão de monstro e coop com qualquer herói.
+func _riscos() -> void:
+	_limpar()  # save zerado: o que muda aqui é só o que o vigia fez
+	await _risco_robo()
+	await _risco_empurrao()
+	await _risco_coop()
+
+
+## O robô (roteiro ativo) pode golpear a lápide, mas o segredo não vai para o save: nem conquista, nem almas.
+func _risco_robo() -> void:
+	var s: Dictionary = Segredos.lista("floresta")[0]
+	var p := Vector2(float(s.pos[0]), float(s.pos[1]))
+	for opcao in ["robo", "estresse"]:
+		_limpar()  # cada opção parte de um save zerado: o que sobrasse da anterior esconderia a gravação
+		var w = _novo_mundo("floresta")
+		_sem_monstros(w)
+		w.roteiro = Roteiro.new()
+		w.roteiro.montar(w, {"robo": "1"} if opcao == "robo" else {"estresse": "1"})
+		ok(w.roteiro.ativo(), "robo/%s: o roteiro esta ativo" % opcao)
+		var saldo0 := Meta.saldo()
+		_disparar(w, s, p)
+		ok(w.segredos.achados == 1, "robo/%s: o gatilho ainda dispara na partida do robo (%d)" % [opcao, w.segredos.achados])
+		ok(Meta.saldo() == saldo0, "robo/%s: o robo nao credita almas no save (%d -> %d)" % [opcao, saldo0, Meta.saldo()])
+		ok(Meta.segredos_achados().is_empty(), "robo/%s: o robo nao grava o segredo no save" % opcao)
+		ok(not bool(Meta.estado().conquistas.get(Segredos.id_conquista(str(s.id)), false)), "robo/%s: a conquista do segredo nao e gravada" % opcao)
+		remove_child(w)
+		w.free()
+		await get_tree().process_frame
+	# sem robô a mesma partida grava (a guarda não pode desligar o segredo do jogador)
+	var w2 = _novo_mundo("floresta")
+	_sem_monstros(w2)
+	_disparar(w2, s, p)
+	ok(Meta.segredos_achados().has(str(s.id)), "sem robo o mesmo golpe grava o segredo")
+	remove_child(w2)
+	w2.free()
+	_limpar()
+	await get_tree().process_frame
+
+
+## Empurrão de monstro não zera o "parado": o herói apanha a cada 1 s, anda ~10 px por empurrão e a contagem chega ao fim.
+func _risco_empurrao() -> void:
+	var s: Dictionary = Segredos.lista("medio")[0]
+	var p := Vector2(float(s.pos[0]), float(s.pos[1]))
+	ok(str(s.gatilho) == "parado", "empurrao: o segredo do Medio e o de ficar parado")
+	var w = _novo_mundo("medio")
+	_sem_monstros(w)
+	w.heroi.imortal = false
+	w.heroi.vida = w.heroi.vida_max
+	w.heroi.definir_pos(p)
+	var afastou := 0.0
+	for i in 270:  # 4,5 s; o tempo do segredo é 3 s
+		if i % 60 == 0:  # um bicho bate de um lado, depois do outro: o herói é empurrado e fica dentro do raio
+			var lado := -30.0 if (i / 60) % 2 == 0 else 30.0
+			ok(w.heroi.levar_dano(1.0, p + Vector2(lado, 0.0)), "empurrao: o herói levou o golpe (passo %d)" % i)
+		w.avancar(PASSO)
+		afastou = maxf(afastou, w.heroi.pos.distance_to(p))
+		if i == 150:  # 2,5 s: ainda falta
+			ok(w.segredos.achados == 0, "empurrao: com 2,5 s de espera ainda nao revela")
+	ok(afastou >= 5.0 and afastou < float(s.raio), "empurrao: o herói foi mesmo empurrado e seguiu dentro do raio (%.1f px)" % afastou)
+	ok(w.segredos.achados == 1, "empurrao: o parado resiste ao empurrao de monstro (%d)" % w.segredos.achados)
+	# o empurrão não vira licença para andar: andar dentro do raio, apanhando, continua não contando
+	var w3 = _novo_mundo("medio")
+	_sem_monstros(w3)
+	w3.heroi.imortal = false
+	w3.heroi.vida = w3.heroi.vida_max
+	for i in 270:
+		if i % 60 == 0:
+			w3.heroi.levar_dano(1.0, p + Vector2(-30.0 if (i / 60) % 2 == 0 else 30.0, 0.0))
+		w3.heroi.definir_pos(p + Vector2(20.0 * (i % 2), 0.0))
+		w3.avancar(PASSO)
+	ok(w3.segredos.achados == 0, "empurrao: andar e apanhar nao conta como parado (%d)" % w3.segredos.achados)
+	for x in [w, w3]:
+		remove_child(x)
+		x.free()
+	await get_tree().process_frame
+
+
+## No coop qualquer herói de `mundo.herois` dispara o segredo, cada gatilho com o seu: o 2 sozinho no ponto, o 1 longe.
+func _risco_coop() -> void:
+	for caso in [["laboratorio", "encostar"], ["medio", "parado"], ["floresta", "golpe"]]:
+		var s: Dictionary = Segredos.lista(caso[0])[0]
+		ok(str(s.gatilho) == caso[1], "coop/%s: o gatilho esperado e %s" % [caso[0], caso[1]])
+		var p := Vector2(float(s.pos[0]), float(s.pos[1]))
+		var w = _novo_mundo(caso[0])
+		_sem_monstros(w)
+		var f := Falso.new()
+		f.pos = w.heroi.pos  # o 2 chega ao ponto depois: o 1 fica no nascimento, longe
+		w.herois = [w.heroi, f]
+		_passos(w, 2)
+		var rotulo := "coop/%s" % caso[0]
+		ok(w.segredos.achados == 0, "%s: com os dois fora do ponto nada revela" % rotulo)
+		f.pos = p
+		match caso[1]:
+			"parado":
+				_passos(w, ceili(float(s.tempo) / PASSO) + 20)
+			"golpe":
+				_passos(w, 2)
+				f.golpes += 1
+				_passos(w, 4)
+			_:
+				_passos(w, 4)
+		ok(w.segredos.achados == 1, "%s: o herói 2 dispara o segredo %s (%d)" % [rotulo, caso[1], w.segredos.achados])
+		remove_child(w)
+		w.free()
+	# o herói 2 caído não dispara
+	var s2: Dictionary = Segredos.lista("laboratorio")[0]
+	var w4 = _novo_mundo("laboratorio")
+	_sem_monstros(w4)
+	var f2 := Falso.new()
+	f2.pos = Vector2(float(s2.pos[0]), float(s2.pos[1]))
+	f2.vida = 0.0
+	w4.herois = [w4.heroi, f2]
+	_passos(w4, 10)
+	ok(w4.segredos.achados == 0, "coop: herói caído em cima do segredo nao dispara")
+	# o 2 andando dentro do raio não zera a contagem do 1, que está parado ali (o estado do parado é de cada herói)
+	var s3: Dictionary = Segredos.lista("medio")[0]
+	var p3 := Vector2(float(s3.pos[0]), float(s3.pos[1]))
+	var w5 = _novo_mundo("medio")
+	_sem_monstros(w5)
+	var f3 := Falso.new()
+	w5.herois = [w5.heroi, f3]
+	w5.heroi.definir_pos(p3)
+	for i in ceili(float(s3.tempo) / PASSO) + 30:
+		f3.pos = p3 + Vector2(20.0 * (i % 2), 0.0)
+		w5.avancar(PASSO)
+	ok(w5.segredos.achados == 1, "coop: o 2 andando perto nao impede o 1 parado de disparar (%d)" % w5.segredos.achados)
+	for x in [w4, w5]:
+		remove_child(x)
+		x.free()
+	await get_tree().process_frame
 
 
 func _linha(id: String) -> Dictionary:
