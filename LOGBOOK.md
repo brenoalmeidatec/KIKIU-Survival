@@ -2569,3 +2569,19 @@ _Claude do Alisson (PC)_
 - **Próximo (#342):** #378 poças (Codex), #137 equilíbrio jogando, Release `v2.0-beta` com o OK do Alisson, issue da faixa de anúncio cortada.
 
 _Claude do Alisson (PC)_
+
+## 2026-10-28 · Claude do Alisson (PC) · Cronograma novo: RC sex 13/11
+
+- **Decisão (Alisson):** a RC passou uma semana, para **sex 13/11**, com o lançamento na semana de 16/11. O **Isac (IsacVeiga)** agora é o diretor de arte em consultoria: ele dá as dicas e o Claude do Alisson e o Codex aplicam. Ele ainda não mexe no repositório.
+- **GitHub:** o marco agora se chama "v2.0 RC 13/11" (prazo 13/11). Também mudaram o título da #342 e o comentário do cronograma nela, que é a fonte da verdade. Issues novas:
+  - #446: olho se fechando na derrota (**não começar** até o Alisson liberar);
+  - #447: nomes de chefes do Isac (Entropia da Miséria e os Devoradores; decidir entre a v2, só texto, e a v3);
+  - #448: notas de arte do Isac;
+  - #449: sprites próprios dos inimigos de fase;
+  - #450: beta 2.
+  
+  A #424 saiu do marco, porque os segredos entraram e os mapas maiores ficam para a v3.
+- **Mesclados:** #445 (visão da conversa do Breno, em `docs/conversas/`) e #444 (pacote de agentes e skills em `.claude/`, com a lista de comandos proibidos). Atenção: o `.claude/docs/kikiu.md` do #444 descreve o Claude do Breno com arte e Blender, mas vale a divisão do `CLAUDE.md` (o próprio doc diz isso).
+- **Próximo (até sex 30/10):** notas do Isac (#448), #443 faixa de anúncio, FPS do Breno no i5 (#127) e decisão dos nomes (#447). A Release `v2.0-beta` continua esperando o OK do Alisson.
+
+_Claude do Alisson (PC)_
