@@ -98,13 +98,13 @@ func _ver_visual(a) -> void:
 		for chave in ["nome", "efeito", "botao", "cadeado", "progresso", "selecionar"]:
 			var c: Control = linha[chave]
 			ok(c.position.x >= 36 and c.position.x + c.size.x <= 608, "cartão %s/%s cabe na coluna" % [id, chave])
-		ok(a._detalhe.get_minimum_size().y <= a._detalhe.size.y, "detalhe %s cabe" % id)
+		ok(_detalhe_cabe(a), "detalhe %s cabe" % id)
 	a._linhas["treino"].selecionar.grab_focus()
 	ok(a._detalhe.text.contains("Sobreviva 5 minutos"), "bloqueado explica requisito ao teclado")
 	for id in a._conq:
 		a._conq[id].selecionar.grab_focus()
 		ok(a._detalhe.text.contains(str(Meta.conquistas().filter(func(c): return str(c.id) == id)[0].desc)), "conquista %s tem detalhe por foco" % id)
-		ok(a._detalhe.get_minimum_size().y <= a._detalhe.size.y, "detalhe conquista %s cabe" % id)
+		ok(_detalhe_cabe(a), "detalhe conquista %s cabe" % id)
 	a._conq["combo_50"].selecionar.grab_focus()  # a última do laço é uma conquista de progresso (vence_medio), sem recompensa
 	ok(
 		a._detalhe.text.contains("Libera: Rastro de katana") and not a._detalhe.text.contains("sem efeito"),
@@ -123,7 +123,7 @@ func _ver_visual(a) -> void:
 	vida.selecionar.grab_focus()
 	ok(a._detalhe.text.contains("nível máximo"), "máximo explica estado por foco")
 	ok(vida.progresso.nivel == vida.progresso.maximo, "nível máximo preenche todos marcadores")
-	ok(a._detalhe.get_minimum_size().y <= a._detalhe.size.y, "detalhe máximo cabe")
+	ok(_detalhe_cabe(a), "detalhe máximo cabe")
 	_limpar()
 
 
@@ -181,6 +181,11 @@ func _ver_caixa_detalhe(a) -> void:
 	for c in [rotulo, a._status]:
 		for d in [a._mapa, a._entrar, a._ajustes, a._voltar]:
 			ok(not Rect2(c.position, c.size).intersects(Rect2(d.position, d.size)), "rótulo/status não toca os botões de baixo")
+
+
+## O detalhe cabe na própria caixa: linhas x altura da linha de projeto (get_minimum_size mede o dobro em --headless).
+func _detalhe_cabe(a) -> bool:
+	return a._detalhe.get_line_count() * (ALTURA_FONTE + a._detalhe.get_theme_constant("line_spacing")) <= a._detalhe.size.y
 
 
 ## Retângulo de um nó em coordenadas do canvas, recortado pelos ScrollContainer que o contêm (o que realmente aparece).
