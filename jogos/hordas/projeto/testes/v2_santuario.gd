@@ -41,6 +41,7 @@ func _ready() -> void:
 		ok(not a.pausa.aberto and get_tree().current_scene == a, "ESC em Ajustes permanece no santuário")
 		ok(get_viewport().gui_get_focus_owner() == a._ajustes, "Ajustes devolve foco")
 		await _ver_caixa_detalhe(a)
+		await _ver_conquistas(a)
 		_ver_visual(a)
 		if acao == "escape":
 			_tecla(KEY_ESCAPE)
@@ -180,6 +181,97 @@ func _ver_caixa_detalhe(a) -> void:
 	for c in [rotulo, a._status]:
 		for d in [a._mapa, a._entrar, a._ajustes, a._voltar]:
 			ok(not Rect2(c.position, c.size).intersects(Rect2(d.position, d.size)), "rótulo/status não toca os botões de baixo")
+
+
+## Retângulo de um nó em coordenadas do canvas, recortado pelos ScrollContainer que o contêm (o que realmente aparece).
+func _visivel(c: Control) -> Rect2:
+	var r := c.get_global_rect()
+	var p := c.get_parent()
+	while p != null:
+		if p is ScrollContainer:
+			r = r.intersection(p.get_global_rect())
+		p = p.get_parent()
+	return r
+
+
+## #457: ~26 conquistas não cabem nos 340 px livres da coluna. Nenhuma parte visível pode cruzar ENTRAR, MAPA, AJUSTES, VOLTAR, o
+## status e o rodapé; o ENTRAR não invade a coluna; a rolagem (roda e foco) alcança a última; os títulos não tocam a "Última partida".
+## Medido por geometria de projeto (posição e tamanho dos nós), nunca pelo tamanho da fonte (em --headless ela mede o dobro).
+func _ver_conquistas(a) -> void:
+	await _frames(3)  # o contêiner de rolagem dimensiona o conteúdo no primeiro layout
+	var ids: Array = a._conq.keys()
+	ok(ids.size() >= 20, "o teste cobre a lista cheia de conquistas (%d)" % ids.size())
+	var botoes: Array = [a._entrar, a._mapa, a._ajustes, a._voltar]
+	var proibidos: Array = []
+	for b in botoes:
+		proibidos.append(Rect2(a.get_global_transform() * b.position, b.size))
+	proibidos.append(Rect2(a.get_global_transform() * a._status.position, a._status.size))
+	proibidos.append(Rect2(a.get_global_transform() * Vector2(0, 508), Vector2(960, 32)))  # rodapé de teclas (y 510 a 532)
+	var cruza := 0
+	var topo_col := 1.0e9
+	for id in ids:
+		var v := _visivel(a._conq[id].selecionar)
+		if v.size.x <= 0.0 or v.size.y <= 0.0:
+			continue
+		topo_col = minf(topo_col, v.position.y)
+		for r in proibidos:
+			if v.intersects(r):
+				cruza += 1
+	ok(cruza == 0, "nenhuma conquista visível cruza botão, status ou rodapé (%d cruzamentos)" % cruza)
+	var x_col: float = a.get_global_transform().origin.x + 632.0
+	ok(a._entrar.position.x + a._entrar.size.x <= 632.0, "ENTRAR termina antes da coluna CONQUISTAS (x 632)")
+	var x_item_min := 1.0e9
+	for id in ids:
+		x_item_min = minf(x_item_min, a._conq[id].selecionar.get_global_rect().position.x)
+	ok(x_item_min >= x_col, "as conquistas começam na coluna (x 632)")
+	# Rolagem: a roda do mouse anda a lista e o foco leva até a última conquista, sempre inteira dentro da área livre.
+	var rol = a.get("_rolagem")
+	ok(rol != null, "a lista de conquistas tem área de rolagem")
+	if rol != null:
+		ok(rol.get_global_rect().end.y <= a._status.get_global_rect().position.y + 0.5, "a área da lista termina acima do MAPA/status")
+		rol.scroll_vertical = 0
+		var antes: int = rol.scroll_vertical
+		var ev := InputEventMouseButton.new()
+		ev.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		ev.pressed = true
+		ev.position = get_viewport().get_final_transform() * rol.get_global_rect().get_center()
+		ev.global_position = ev.position
+		get_viewport().push_input(ev)
+		var solta := ev.duplicate()  # a roda precisa do "soltar", senão o viewport segura o mouse na lista e o clique do VOLTAR não chega
+		solta.pressed = false
+		get_viewport().push_input(solta)  # direto no viewport: não mexe no estado do mouse do Input (o clique no VOLTAR vem depois)
+		await _frames(2)
+		var mov := InputEventMouseMotion.new()  # tira o mouse de cima da lista (o hover ficaria preso nela e o clique do VOLTAR iria para lá)
+		mov.position = get_viewport().get_final_transform() * a._voltar.get_global_rect().get_center()
+		mov.global_position = mov.position
+		get_viewport().push_input(mov)
+		await _frames(1)
+		ok(rol.scroll_vertical > antes, "a roda do mouse rola a lista de conquistas")
+		rol.scroll_vertical = 0
+	var ultima_id: String = ids[ids.size() - 1]
+	a._entrar.grab_focus()  # a última pode já ter o foco (pelos testes anteriores): sem trocar, grab_focus não rola nada
+	await _frames(1)
+	a._conq[ultima_id].selecionar.grab_focus()
+	await _frames(3)
+	var ult := a._conq[ultima_id].selecionar as Control
+	var area: Rect2 = rol.get_global_rect() if rol != null else TELA
+	ok(area.encloses(ult.get_global_rect()), "o foco leva a última conquista (%s) inteira para a área visível" % ultima_id)
+	ok(not _visivel(ult).intersects(proibidos[0]) and not _visivel(ult).intersects(proibidos[3]), "a última conquista não cruza ENTRAR/VOLTAR")
+	# Foco de teclado: cada conquista, uma a uma, fica visível ao receber o foco.
+	var fora := 0
+	for id in ids:
+		a._conq[id].selecionar.grab_focus()
+		await _frames(2)
+		if not area.encloses(a._conq[id].selecionar.get_global_rect()):
+			fora += 1
+	ok(fora == 0, "toda conquista fica visível ao receber o foco (%d fora)" % fora)
+	# Títulos MELHORIAS/CONQUISTAS não tocam a linha "Última partida" (caixas de texto dos rótulos).
+	var tocam := 0
+	for no in a.get_children():
+		if no is Label and no.text in ["MELHORIAS", "CONQUISTAS"]:
+			if Rect2(no.position, no.size).intersects(Rect2(a._ultima.position, a._ultima.size)):
+				tocam += 1
+	ok(tocam == 0, "os títulos MELHORIAS/CONQUISTAS não tocam a linha 'Última partida'")
 
 
 func _tecla(tecla: Key) -> void:
