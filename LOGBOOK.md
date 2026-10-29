@@ -2594,3 +2594,29 @@ _Claude do Alisson (PC)_
 - **Pendente:** nenhum item novo. Segue o cronograma da #342.
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-29 (tarde): lote do notebook, 11 PRs
+
+Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e merge com o "pode mergear" do Alisson.
+- **#453:** nomes dos chefes do Isac (#447). Cavaleiro Rubro virou Devorador da Carne, Rainha Tecelã virou Devoradora da Estrutura e Rei Espantalho virou Devorador da Terra. Os bustos foram renomeados, e os saves usam o id da marca, então nada quebra.
+- **#455:** a faixa de anúncio do HUD não corta mais texto (#443). A fonte encolhe até 16 e, se precisar, quebra em linhas com fonte até 14.
+- **#454:** as frases do Breno aparecem na tela: no Códice, no rodapé da pausa e no tooltip do santuário (Pesadelo e Rastro).
+- **#456:** a caixa de detalhe do santuário passou de 60 para 90 px e cabe as 5 linhas do Pesadelo. **#462:** a coluna de conquistas do santuário ganhou rolagem, o ENTRAR não invade mais a coluna e a "Última partida" subiu (#457).
+- **#460:** os três riscos dos segredos eram reais e foram consertados. O robô gravava o segredo no save, o empurrão zerava o "parado" e no coop só o herói 1 disparava.
+- **#458:** sprite próprio do corvo da Vila, saído do pipeline do Blender, com pool 30 (#449, primeiro dos cinco).
+- **Ideias do Isac (#459):** #461 frase de derrota, #465 foguinho no peito, #463 segundo fragmento de lore por mapa e #464 detritos nas Ruínas e na Vila.
+- **Fila do Godot no notebook** (`C:\Dev\KIKIU\notas\godot_fila.ps1`, fora do repo): cada vaga agora é um Mutex nomeado (`Local\KIKIU_Godot_vaga_N`). Quando quem segura morre, a vaga volta sozinha. O semáforo antigo perdia a vaga quando um agente era parado e travou duas vezes hoje.
+- **Não verificado (precisa de olho humano no jogo):**
+  - o anúncio com os nomes novos;
+  - a faixa em 3 linhas;
+  - a navegação por teclado e controle na lista de conquistas do santuário;
+  - se o Á de "SANTUÁRIO" encosta em "Última partida";
+  - o foguinho no Hazaki, que fica rosado sobre a jaqueta vermelha;
+  - os textos do lore 2, que esperam o ok do Isac e do Breno;
+  - FPS no i5 com detritos e corvo (#127).
+- **Próximo:**
+  - notas do Isac até sex 30/10 (#448);
+  - de 31/10 a 03/11, aplicar as notas e fazer os outros 4 sprites da #449 (homúnculo, golem de vidro, aldeão e espectro);
+  - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
+
+_Claude do Alisson (notebook)_
