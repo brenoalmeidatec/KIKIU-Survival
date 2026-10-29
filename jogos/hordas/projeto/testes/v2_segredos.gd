@@ -79,18 +79,21 @@ func _dados() -> void:
 		ok(s.pos is Array and s.pos.size() == 2 and float(s.raio) > 0.0, "%s: posicao e raio" % s.id)
 		ok(str(s.gatilho) != "parado" or float(s.get("tempo", 0.0)) > 0.0, "%s: parado tem tempo" % s.id)
 		ok(
-			str(s.nome) != "" and str(s.dica) != "" and s.lore is Array and s.lore.size() >= 1 and s.lore.size() <= 2,
-			"%s: nome, dica e 1 a 2 frases de lore" % s.id
+			str(s.nome) != "" and str(s.dica) != "" and s.lore is Array and s.lore.size() >= 1 and s.lore.size() <= 5,
+			"%s: nome, dica e 1 a 5 frases de lore" % s.id
 		)
 		for frase in s.lore:
 			ok(str(frase).length() <= 56, "%s: a frase cabe na linha do Codice (%d): %s" % [s.id, str(frase).length(), frase])
 		ok(str(s.dica).length() <= 56, "%s: a dica cabe numa linha do Codice" % s.id)
 		ok(str(s.nome).length() <= 26, "%s: o nome cabe na faixa de anuncio (~28 letras, o resto e cortado)" % s.id)
 		ok(int(s.get("bau", 0)) == 0 or s.get("bau_pos", []).size() == 2, "%s: baú com posicao" % s.id)
-		ok(str(s.recompensa.get("tipo", "")) == "almas" and int(s.recompensa.get("n", 0)) > 0, "%s: recompensa em almas" % s.id)
+		var premio: Dictionary = s.recompensa  # almas, ou tipo "nenhuma" no fragmento só de lore (o segundo de cada mapa: sem almas e sem linha de prêmio)
+		var so_lore := str(premio.get("tipo", "")) == "nenhuma"
+		ok(so_lore or (str(premio.get("tipo", "")) == "almas" and int(premio.get("n", 0)) > 0), "%s: recompensa em almas ou nenhuma" % s.id)
 		ok(Icones.textura(str(s.icone)) != null and Icones.textura(str(s.icone)) != Icones.textura("generico"), "%s: icone proprio" % s.id)
 	for id in Mapas.ids():
-		ok(Segredos.lista(id).size() >= 1, "o mapa %s tem pelo menos 1 segredo" % id)
+		ok(Segredos.lista(id).size() >= 2, "o mapa %s tem pelo menos 2 fragmentos" % id)
+		ok(Segredos.lista(id).any(func(s): return str(s.recompensa.get("tipo", "")) == "nenhuma"), "o mapa %s tem um fragmento só de lore (sem almas)" % id)
 	ok(Meta.conquistas().size() >= Segredos.conquistas().size() + 22, "os segredos entram no catalogo de conquistas")
 	for c in Segredos.conquistas():
 		ok(not c.has("mapa"), "segredo nunca tem 'mapa' (seria vitoria de mapa): " + str(c.id))
@@ -151,27 +154,36 @@ func _mapa(id: String) -> void:
 		ok(w.segredos.achados == 0 and Meta.saldo() == saldo0, "%s: os gatilhos errados nao revelam nada" % rotulo)
 		_disparar(w, s, p)
 		ok(w.segredos.achados == 1, "%s: o gatilho %s revela o segredo (%d)" % [rotulo, s.gatilho, w.segredos.achados])
-		ok(Meta.saldo() == saldo0 + int(s.recompensa.n), "%s: credita as almas na primeira vez (%d -> %d)" % [rotulo, saldo0, Meta.saldo()])
+		ok(Meta.saldo() == saldo0 + int(s.recompensa.get("n", 0)), "%s: credita as almas na primeira vez (%d -> %d)" % [rotulo, saldo0, Meta.saldo()])
 		var esperado_baus := baus0 + (1 if int(s.get("bau", 0)) > 0 else 0)
 		ok(w.combate.baus.soltos == esperado_baus, "%s: baus caidos %d (esperado %d)" % [rotulo, w.combate.baus.soltos, esperado_baus])
 		ok(bool(Meta.estado().conquistas.get(Segredos.id_conquista(str(s.id)), false)), "%s: a conquista do segredo fica gravada" % rotulo)
 		ok(Meta.segredos_achados().has(str(s.id)), "%s: segredos_achados lista o id" % rotulo)
-		ok(
-			w.combate.anuncios >= 3 and str(w.combate.ultimo_anuncio).begins_with("NO CÓDICE"),
-			"%s: anuncia o achado, o nome e o prêmio (%s)" % [rotulo, w.combate.ultimo_anuncio]
-		)
+		if str(s.recompensa.get("tipo", "")) == "nenhuma":  # só lore: o título curto e nada de prêmio
+			ok(
+				w.combate.anuncios >= 2 and str(w.combate.ultimo_anuncio) == str(s.nome).to_upper(),
+				"%s: anuncia o achado e só o título, sem prêmio (%s)" % [rotulo, w.combate.ultimo_anuncio]
+			)
+		else:
+			ok(
+				w.combate.anuncios >= 3 and str(w.combate.ultimo_anuncio).begins_with("NO CÓDICE"),
+				"%s: anuncia o achado, o nome e o prêmio (%s)" % [rotulo, w.combate.ultimo_anuncio]
+			)
 		if pasta_fotos != "" and DisplayServer.get_name() != "headless":
 			await _foto(w, id)
 		# uma vez só: ficar, sair e voltar não repete almas, baú nem anúncio
-		var anuncios: int = w.combate.anuncios
 		_passos(w, 120)
 		w.heroi.definir_pos(p + Vector2(raio + 200.0, 0.0))
 		_passos(w, 4)
+		var anuncios: int = w.combate.anuncios  # depois de sair: avisos dos marcadores do mapa (placa, mirante) não contam, só o do segredo
 		_disparar(w, s, p)
 		_passos(w, 200)
 		ok(w.segredos.achados == 1, "%s: dispara uma vez por partida (%d)" % [rotulo, w.segredos.achados])
-		ok(Meta.saldo() == saldo0 + int(s.recompensa.n), "%s: as almas nao se repetem" % rotulo)
-		ok(w.combate.baus.soltos == esperado_baus and w.combate.anuncios == anuncios, "%s: baú e anuncio nao se repetem" % rotulo)
+		ok(Meta.saldo() == saldo0 + int(s.recompensa.get("n", 0)), "%s: as almas nao se repetem" % rotulo)
+		ok(
+			w.combate.baus.soltos == esperado_baus and w.combate.anuncios == anuncios,
+			"%s: baú e anuncio nao se repetem (baus %d/%d, anuncios %d/%d)" % [rotulo, w.combate.baus.soltos, esperado_baus, w.combate.anuncios, anuncios]
+		)
 		var linha2 := _linha(str(s.id))
 		ok(
 			linha2.feita and linha2.nome == str(s.nome) and linha2.lore == s.lore and linha2.selo == "ACHADO",
@@ -192,12 +204,12 @@ func _mapa(id: String) -> void:
 		ok(w2.segredos.achados == 0, "%s: a partida nova comeca sem segredo achado" % rotulo)
 		_disparar(w2, s, p)
 		ok(w2.segredos.achados == 1, "%s: a partida nova dispara de novo" % rotulo)
-		ok(Meta.saldo() == saldo0 + int(s.recompensa.n), "%s: partida nova nao credita almas de novo" % rotulo)
+		ok(Meta.saldo() == saldo0 + int(s.recompensa.get("n", 0)), "%s: partida nova nao credita almas de novo" % rotulo)
 		ok(w2.combate.baus.soltos == baus1 + (1 if int(s.get("bau", 0)) > 0 else 0), "%s: partida nova solta o baú de novo" % rotulo)
 		ok(str(w2.combate.ultimo_anuncio) == str(s.nome).to_upper(), "%s: partida nova so anuncia o nome (%s)" % [rotulo, w2.combate.ultimo_anuncio])
 		# "Jogar de novo": montar outra vez volta a vigiar
 		w2.segredos.montar(w2)
-		ok(w2.segredos.achados == 0 and not w2.segredos.itens[0].feito, "%s: montar de novo (Jogar de novo) rearma o segredo" % rotulo)
+		ok(w2.segredos.achados == 0 and w2.segredos.itens.all(func(it): return not it.feito), "%s: montar de novo (Jogar de novo) rearma o segredo" % rotulo)
 		remove_child(w2)
 		w2.free()
 		await get_tree().process_frame
@@ -286,8 +298,8 @@ func _nova_partida_e_estado() -> void:
 	ok(Progressao.aviso("estrutura", "codice") != "", "sem conquistas o Codice segue trancado")
 	var s: Dictionary = Segredos.lista()[0]
 	ok(not Meta.achar_segredo("nao_existe"), "id desconhecido nao marca nada")
-	ok(Meta.achar_segredo(str(s.id)) and Meta.saldo() == 7 + int(s.recompensa.n), "achar grava e credita")
-	ok(not Meta.achar_segredo(str(s.id)) and Meta.saldo() == 7 + int(s.recompensa.n), "achar de novo nao repete")
+	ok(Meta.achar_segredo(str(s.id)) and Meta.saldo() == 7 + int(s.recompensa.get("n", 0)), "achar grava e credita")
+	ok(not Meta.achar_segredo(str(s.id)) and Meta.saldo() == 7 + int(s.recompensa.get("n", 0)), "achar de novo nao repete")
 	ok(Progressao.aviso("estrutura", "codice") == "", "achar um segredo abre o Codice")
 	ok(not Meta.mapas_vencidos().has(str(s.local)), "achar um segredo nao conta como vencer o mapa")
 
@@ -297,7 +309,10 @@ func _codice() -> void:
 	Personagens.ativar(Personagens.criar("Teste"))
 	var achado: Dictionary = Segredos.lista("cidade")[0]
 	var escondido: Dictionary = Segredos.lista("floresta")[0]
+	var achado2: Dictionary = Segredos.lista("cidade")[1]  # o segundo fragmento da cidade: só lore, sem almas
 	ok(Meta.achar_segredo(str(achado.id)), "o personagem de teste acha o segredo da cidade")
+	var saldo := Meta.saldo()
+	ok(Meta.achar_segredo(str(achado2.id)) and Meta.saldo() == saldo, "o segundo fragmento da cidade grava e nao credita almas")
 	var s = Salao.instantiate()
 	add_child(s)
 	await get_tree().process_frame
@@ -306,25 +321,25 @@ func _codice() -> void:
 	ok(s._p_codice and s._p_lista.get_child_count() == Meta.conquistas().size(), "o Codice tem uma linha por conquista, segredos incluidos")
 	var textos := []
 	var alturas := {}
+	var premios_do_achado2 := 0  # linhas "Prêmio:" na linha do fragmento só de lore (tem que ser 0)
 	for i in s._p_itens.size():
 		var b: Button = s._p_lista.get_child(i)
 		alturas[str(s._p_itens[i].id)] = b.custom_minimum_size.y
 		for f in b.get_children():
 			if f is Label:
 				textos.append(str(f.text))
+				if str(s._p_itens[i].id) == Segredos.id_conquista(str(achado2.id)) and str(f.text).begins_with("Prêmio:"):
+					premios_do_achado2 += 1
 	for esperado in [
-		str(achado.nome),
-		str(achado.lore[0]),
-		str(achado.lore[1]),
-		"ACHADO",
-		"1/1 segredo",
-		"Prêmio: +%d almas" % int(achado.recompensa.n),
-		"???",
-		str(escondido.dica),
-		"0/1 segredo"
+		str(achado.nome), "ACHADO", "1/1 segredo", "Prêmio: +%d almas" % int(achado.recompensa.n), "???", str(escondido.dica), "0/1 segredo", str(achado2.nome)
 	]:
 		ok(textos.has(esperado), "o Codice mostra '%s'" % esperado)
-	ok(not textos.has(str(escondido.nome)) and not textos.has(str(escondido.lore[0])), "o Codice nao entrega o segredo que falta")
+	for fragmento in [achado, achado2]:  # as frases dos dois fragmentos, uma por linha
+		for frase in fragmento.lore:
+			ok(textos.has(str(frase)), "o Codice mostra a frase do fragmento %s: %s" % [fragmento.id, frase])
+	for oculto in Segredos.lista("floresta"):  # os dois fragmentos da floresta seguem escondidos
+		ok(not textos.has(str(oculto.nome)) and not textos.has(str(oculto.lore[0])), "o Codice nao entrega o fragmento que falta (%s)" % oculto.id)
+	ok(premios_do_achado2 == 0, "o fragmento so de lore nao mostra linha de premio")
 	ok(float(alturas[Segredos.id_conquista(str(achado.id))]) > float(alturas[Segredos.id_conquista(str(escondido.id))]), "a linha com lore e mais alta")
 	if pasta_fotos != "" and DisplayServer.get_name() != "headless":
 		s._p_rolagem.scroll_vertical = 1000000  # os segredos são os últimos da lista

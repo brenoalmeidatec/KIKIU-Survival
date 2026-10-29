@@ -18,7 +18,16 @@ const Mundo := preload("res://v2/mundo.tscn")
 const SAVE_TESTE := "user://testes_v2/v2_conquistas/teste_v2_conquistas_meta.cfg"
 const OPCOES_TESTE := "user://testes_v2/v2_conquistas/teste_v2_conquistas_opcoes.cfg"
 const SAVE_REAL := "user://testes_v2/v2_conquistas/v2_progresso.cfg"
-const SEM_PREMIO := ["vence_pesadelo", "vence_dificuldade_facil", "vence_dificuldade_medio", "vence_dificuldade_dificil"]  # marcos sem prêmio
+const SEM_PREMIO := [
+	"vence_pesadelo",
+	"vence_dificuldade_facil",
+	"vence_dificuldade_medio",
+	"vence_dificuldade_dificil",
+	"segredo_oferenda_vazia",
+	"segredo_fonte_sem_agua",
+	"segredo_capsula_rachada",
+	"segredo_banco_voltado_ao_ceu"
+]  # marcos e fragmentos só de lore, sem prêmio
 
 var falhas := 0
 
