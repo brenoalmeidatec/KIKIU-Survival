@@ -2620,3 +2620,11 @@ Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e
   - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-29 · Codex do Alisson · Aldeão morto-vivo da Vila (#449/#467)
+
+- Modelo Blender próprio, folha35×52, cinco vistas e quatro quadros com albedo/normal/emissão. Só `cidade/aldeao_morto` troca de sprite; números, pesos e tinta preservados. Pool64: picos medidos34 (semente1, Q) e39 (semente7, semQ), Difícil/Pesadelo ativado no primeiro quadro, robô imortal. São estresses de capacidade, não equilíbrio nem FPS.
+- Godot4.4.1 pela fila, APPDATA própria e import primeiro. Novo teste prova64 instâncias distintas pré-criadas, reciclagem, atlas, oito direções e piso25% sobre o pico observado39. Novo teste, corvo e elencos passaram com falhas0; gdformat372scripts limpo. Captura Windows real960×540 conferida; não foi vista partida humana completa, Linux, controle físico nem i5-3470.
+- Licença append-only e evidências externas com logs/duas amostras e tentativas iniciais preservadas. A medição também revelou43 corvos contra pool30 existente; complemento separado. Pendente: CI7/7 no SHA final e revisão independente no PR, depois Claude integra com o ok do Alisson. Nenhum merge de código pelo Codex.
+
+_Codex do Alisson_
