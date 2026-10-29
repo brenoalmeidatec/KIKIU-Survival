@@ -161,7 +161,7 @@ func montar(m) -> void:
 	mundo = m
 	sombras = m.sombras
 	com_normal = m.sprites.com_normal
-	atlas = m.sprites.atlas(m.TIPOS_MONSTRO)
+	atlas = m.sprites.atlas(m.SPRITES_MONSTRO)
 	_quad = _quadrado()
 	_mat_sprite = _material(SHADER_SPRITE)
 	lote_blob = Lote.new()
