@@ -9,6 +9,7 @@ extends RefCounted
 ## Posições são arredondadas para pixel inteiro ao desenhar (o pixel art não treme).
 
 const MAX_PART := 360
+const MAX_FRAGMENTOS := 24
 const MAX_NUM := 64
 const MAX_CORTES := 4
 const MAX_FLASH := 24
@@ -175,6 +176,10 @@ void fragment() {
 """
 
 var mundo
+var _fragmentos: Array[Sprite2D] = []
+var _frag_t := PackedFloat32Array()
+var _frag_v := PackedVector2Array()
+var _frag_i := 0
 var raiz: Node  # a camada glow
 var add: Node2D  # desenho aditivo (partículas, ondas)
 var txt: Node2D  # desenho normal (números)
@@ -312,9 +317,44 @@ func montar(m, camada: Node, sv: Node, tex_glow: Texture2D) -> void:
 	_montar_cortes()
 	_montar_luzes(sv)
 	_montar_flashes()
+	_montar_fragmentos()
 	_montar_folhas()
 	_montar_explosoes()
 	_montar_chao(m)
+
+
+func _montar_fragmentos() -> void:
+	_frag_t.resize(MAX_FRAGMENTOS)
+	_frag_v.resize(MAX_FRAGMENTOS)
+	for i in MAX_FRAGMENTOS:
+		var s := Sprite2D.new()
+		s.region_enabled = true
+		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		s.visible = false
+		raiz.add_child(s)
+		_fragmentos.append(s)
+
+
+## Recortes do quadro atual, antes de devolver o inimigo ao pool. Só visuais, sem física ou dano.
+func fragmentar(m, fora: Vector2) -> void:
+	if float(mundo._nivel_particulas().get("efe_particulas", 1.0)) <= 0.0 or m.tipo.is_empty() or m.chefe:
+		return
+	var reg: Rect2 = m.regiao
+	for parte in 2:
+		var i := _frag_i
+		_frag_i = (_frag_i + 1) % MAX_FRAGMENTOS
+		var s := _fragmentos[i]
+		s.texture = m.tipo.alb
+		s.region_rect = Rect2(reg.position + Vector2(reg.size.x * 0.25 * parte, reg.size.y * 0.2), reg.size * Vector2(0.5, 0.6))
+		s.flip_h = m.espelha
+		s.scale = Vector2.ONE * m.escala
+		s.modulate = m.tinta
+		s.position = m.raiz.position + m.offset * m.escala
+		s.rotation = 0.0
+		s.visible = true
+		_frag_t[i] = 0.6
+		var lado := -1.0 if parte == 0 else 1.0
+		_frag_v[i] = fora * 125.0 + Vector2(lado * 40.0, -70.0)
 
 
 func _montar_cortes() -> void:
@@ -788,6 +828,9 @@ func numero(pos: Vector2, texto: String, cor: Color, grande := false, tam := 0, 
 
 
 func limpar() -> void:
+	_frag_t.fill(0.0)
+	for s in _fragmentos:
+		s.visible = false
 	p_vida.fill(0.0)
 	p_ativas = 0
 	n_t.fill(9.0)
@@ -824,6 +867,17 @@ func limpar() -> void:
 
 
 func atualizar(dt: float) -> void:
+	for i in MAX_FRAGMENTOS:
+		if _frag_t[i] <= 0.0:
+			continue
+		_frag_t[i] -= dt
+		var s := _fragmentos[i]
+		if _frag_t[i] <= 0.0:
+			s.visible = false
+			continue
+		s.position += _frag_v[i] * dt
+		_frag_v[i].y += 180.0 * dt
+		s.rotation += dt * (2.0 if i % 2 == 0 else -2.0)
 	var desenha := false
 	# partículas
 	if p_ativas > 0:

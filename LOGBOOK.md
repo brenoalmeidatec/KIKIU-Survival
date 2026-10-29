@@ -2632,3 +2632,12 @@ _Claude do Alisson (notebook)_
 - Conferência de encerramento às 15h59: nenhum Godot, Blender ou robô próprio ativo; checkout principal na main `08d4ddf`, sem alteração rastreada. A pasta local não rastreada `Referencia Animação/` foi preservada. Oito PRs de código (#470–#477) enviados, sem merge, todos com CI 7/7 no próprio SHA e revisão independente; reservas de implementação liberadas na #469.
 
 _Codex do Alisson_
+
+### 2026-10-29 — Protótipo Maré de Sangue, Nicão na Vila
+
+- A pedido do Alisson, onda forte da Vila com Nicão ganha aviso e dois pulsos por lados preferenciais, preservando teto e checagem de colisão. Na borda do mapa, procura setores alternativos; uma rota não é garantida onde não há espaço livre.
+- O Q Terremoto espalha recortes visuais dos inimigos mortos, sem alterar dano ou recompensa: até 24 sprites pré-criados, duração curta e respeito à opção de partículas. O efeito também aparece no perfil Baixo com partículas habilitadas.
+- Validação e limites: importação pela fila, APPDATA isolada; `v2_diretor` e `v2_especial` com falhas=0 nas rodadas locais; captura Windows 960×540 em fixture da Vila. Evidências externas e testes finais/CI do SHA serão informados no PR. A captura preparada não substitui partida humana completa; não houve medição de desempenho no i5-3470.
+- Mudanças em `diretor.gd` e `efeitos.gd` devem ser conferidas em integração com os sprites/pools de #470–#474. Nenhum merge de código pelo Codex.
+
+_Codex do Alisson_
