@@ -33,6 +33,7 @@ extends "res://v2/ator.gd"
 
 const Herois := preload("res://v2/herois.gd")
 const CurvaGolpe := preload("res://v2/curva_golpe.gd")
+const Foguinho := preload("res://v2/foguinho.gd")
 
 enum Fonte { ANDA, MOUSE, STICK }
 enum Estado { LIVRE, GOLPE, ESQUIVA, MORTO, CARGA, ESPECIAL, HABILIDADE }  # CARGA, ESPECIAL e HABILIDADE no fim: nada é renumerado
@@ -185,6 +186,7 @@ var _morte_t := 0.0  # s desde que morreu (animação de morte da folha)
 var _off_base := Vector2.ZERO
 var morte_t := 0.0  # s de jogo desde a morte (só anda em _visual_morto, no dt do herói: hit-stop e pausa o congelam)
 var _mat_morte: ShaderMaterial = null
+var foguinho = null  # o brilho no peito (v2/foguinho.gd): só visual, sem colisão; `foguinho.no` é o Sprite2D
 
 
 func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
@@ -193,6 +195,8 @@ func criar(m, pai: Node, t: Dictionary, p: Vector2) -> void:
 	raio = float(Herois.heroi(chave).get("raio", 6.0))
 	montar_animado(pai, t, p, 0, 0, false)
 	_off_base = sprite.offset
+	foguinho = Foguinho.new()
+	foguinho.montar(raiz, chave)
 
 
 ## Lê as vidas e as regras do dados/v2_combate.json (chamado pelo combate depois de criar o herói).
@@ -278,6 +282,7 @@ func resetar(p: Vector2) -> void:
 	sprite.offset = _off_base
 	sprite.material = null
 	morte_t = 0.0
+	foguinho.resetar()
 	definir_pos(p)
 	iniciar_stats(mundo.combate.cfg)
 
@@ -1034,6 +1039,8 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.modulate = Color.WHITE.lerp(Color(1.0, 0.85, 0.65), rup_carga)  # o corpo esquenta com a carga
 	else:
 		sprite.modulate = Color.WHITE
+	foguinho.seguir(desloca)
+	foguinho.atualizar(dt)
 
 
 ## Gancho do visual da morte: põe o shader de dissolução no corpo (só agora, então o herói vivo não paga nada por ele).
@@ -1078,6 +1085,7 @@ func _visual_morto(dt: float) -> void:
 			return
 	morte_t += dt / c_lenta  # com a queda do Blender o dissolve também conta em tempo real (a tela de resultado não corta ele)
 	var k := morte_k()
+	foguinho.desvanecer(1.0 - k)  # a chama apaga junto com o corpo
 	if _mat_morte != null:
 		if sprite.material != _mat_morte:
 			sprite.material = _mat_morte
