@@ -2620,3 +2620,12 @@ Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e
   - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-29 · Codex do Alisson · Sprite do golem de vidro (#449/#467)
+
+- **Feito:** modelo próprio `torre_golem_vidro.py`, renderizado pelo pipeline Blender 4.5.14 em cinco vistas e quatro quadros (49×56 px por quadro, albedo/normal/emissão). Só `laboratorio/golem_vidro` troca de folha; números, tinta, peso e tempo do elenco preservados. Licença registrada ao fim de `docs/LICENCAS_ARTE.md`.
+- **Pool:** 166 instâncias pré-criadas: teto conservador do diretor no Difícil+Pesadelo (`round(84×1,5×1,3)=164`) mais as duas elites. A Torre não tem defesa de ponto e o golem não é invocado. O teste faz nascer 166 simultâneos sem aumentar `_todos_monstros`, devolve todos e prova a reutilização. Esse é um limite adversarial, não um pico medido de partida humana.
+- **Validação:** Godot 4.4.1 pela fila, import inicial/final com APPDATA própria; `v2_golem_vidro`, `v2_corvo_vila`, `v2_elencos` e `v2_horda_chega` com falhas=0; formatação no escopo do CI limpa. Captura de janela real 960×540 na Torre, oito direções, fora do Git. Conferidos folha e captura; algumas vistas ficam parcialmente atrás de objetos do mapa. Não foi vista uma partida inteira, não houve benchmark nem teste no i5-3470. Avisos de recursos ao encerrar permanecem nos logs.
+- **Pendente:** revisão independente e CI no SHA final do PR, registrados na #467; integração fica com o Claude após o ok do Alisson. Nenhum código mesclado pelo Codex.
+
+_Codex do Alisson_
