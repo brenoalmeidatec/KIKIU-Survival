@@ -1,4 +1,4 @@
-# LOGBOOK
+﻿# LOGBOOK
 
 Diário **append-only** do repositório: o que foi feito, o que ficou pendente, recados.
 Escrito para quem chega sem contexto: o Breno, o Alisson e os Claude Code de cada um
