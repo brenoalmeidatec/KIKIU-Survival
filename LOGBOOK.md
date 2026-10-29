@@ -2620,3 +2620,12 @@ Todos com CI 7/7 no mesmo SHA, revisão independente (Sonnet) registrada no PR e
   - de 04 a 06/11, Beta 2 com `v2.0-beta2` (#450).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-29 · Codex do Alisson · Folga do pool do corvo (#449/#467)
+
+- **Achado:** o estresse da Vila usado no sprite do aldeão observou 39/43 corvos vivos (sementes 1/7, Difícil+Pesadelo, imortalidade; a segunda sem Q), acima das 30 instâncias pré-criadas. Não é uma medição de FPS ou de equilíbrio humano.
+- **Conserto:** somente o pool do corvo sobe para 64, com 48,8% de folga sobre o maior pico 43 observado. Nenhum sprite ou número de combate muda. O teste exige ao menos 25% de folga e prova 64 instâncias distintas já existentes, devolução e reutilização. Os quatro aliases aprovados da #449 permanecem compatíveis com PRs separados.
+- **Validação:** import da worktree antes dos testes, Godot 4.4.1 sempre pela fila e APPDATA própria. Prova dirigida RED no pool 30: código 1/falhas=38 (uma causa: alocações depois de esgotar 30); GREEN no pool 64: `v2_corvo_vila` e `v2_elencos` com código 0/falhas=0, formatação no escopo CI limpa. Logs fora do Git, inclusive o RED. Sem captura nova, pois este PR só muda capacidade; sem benchmark no i5-3470. Não é um teto matemático para toda semente/build.
+- **Pendente:** revisão independente e CI do mesmo SHA, registrados na #467. Claude integra após o ok do Alisson, preservando pool 64 ao conciliar as linhas de pool dos outros quatro PRs. Nenhum código mesclado pelo Codex.
+
+_Codex do Alisson_
