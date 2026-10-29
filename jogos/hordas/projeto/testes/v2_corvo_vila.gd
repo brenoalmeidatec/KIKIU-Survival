@@ -8,7 +8,7 @@ const Sprites := preload("res://v2/sprites.gd")
 const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"
 const CORVO := "inimigo_corvo_carniceiro"
 const ANTIGO := "inimigo_aranha_tecela"
-## O sprite de cada tipo de cada elenco ANTES do corvo novo (id do mapa -> id do tipo -> sprite). O corvo da cidade não está aqui de propósito.
+## O sprite preservado de cada tipo; os quatro aliases aprovados da #449 aceitam a entrega independente (id do mapa -> id do tipo -> sprite). O corvo da cidade não está aqui de propósito.
 const OUTROS := {
 	"floresta":
 	{
@@ -24,22 +24,22 @@ const OUTROS := {
 		"esqueleto": "inimigo_cao_ossos",
 		"esqueleto_podre": "inimigo_cao_ossos",
 		"larva_cripta": "inimigo_aranha_tecela",
-		"espectro_uivante": "inimigo_lobo_sombrio",
+		"espectro_uivante": ["inimigo_lobo_sombrio", "inimigo_espectro"],
 		"estatua_viva": "inimigo_espantalho",
 		"cavaleiro_caido": "inimigo_cavaleiro_oco"
 	},
 	"laboratorio":
 	{
 		"larva_frasco": "inimigo_cao_ossos",
-		"homunculo": "inimigo_aranha_tecela",
+		"homunculo": ["inimigo_aranha_tecela", "inimigo_homunculo"],
 		"rato_alquimico": "inimigo_aranha_tecela",
 		"quimera_frasco": "inimigo_lobo_sombrio",
-		"golem_vidro": "inimigo_espantalho",
+		"golem_vidro": ["inimigo_espantalho", "inimigo_golem_vidro"],
 		"golem_alquimista": "inimigo_cavaleiro_oco"
 	},
 	"cidade":
 	{
-		"aldeao_morto": "inimigo_cao_ossos",
+		"aldeao_morto": ["inimigo_cao_ossos", "inimigo_aldeao_morto"],
 		"cao_amaldicoado": "inimigo_cao_ossos",
 		"lobisomem": "inimigo_lobo_sombrio",
 		"espantalho_vila": "inimigo_espantalho",
@@ -103,7 +103,10 @@ func _dados() -> void:
 				usam += 1
 				ok(mapa == "cidade" and tp.id == "corvo", "%s/%s: só o corvo da cidade pode usar o sprite novo" % [mapa, tp.id])
 			elif OUTROS.has(mapa) and OUTROS[mapa].has(tp.id):
-				ok(tp.sprite == OUTROS[mapa][tp.id], "%s/%s: o sprite continua %s (é %s)" % [mapa, tp.id, OUTROS[mapa][tp.id], tp.sprite])
+				ok(
+					_sprite_preservado(str(mapa), str(tp.id), str(tp.sprite)),
+					"%s/%s: o sprite continua %s (é %s)" % [mapa, tp.id, OUTROS[mapa][tp.id], tp.sprite]
+				)
 			else:
 				ok(false, "%s/%s: tipo que o teste não conhece (atualize OUTROS)" % [mapa, tp.id])
 	ok(usam == 1, "o sprite novo é usado por 1 tipo, não %d" % usam)
@@ -121,7 +124,7 @@ func _dados() -> void:
 	var mundo = preload("res://v2/mundo.gd")
 	ok(mundo.TIPOS_MONSTRO.size() == 5 and not mundo.TIPOS_MONSTRO.has(CORVO), "padrão: TIPOS_MONSTRO continua com os 5 de sempre")
 	ok(mundo.PESOS_MONSTRO.size() == mundo.TIPOS_MONSTRO.size(), "padrão: um peso por tipo")
-	ok(mundo.SPRITES_MONSTRO.has(CORVO) and mundo.SPRITES_MONSTRO.size() == 6, "SPRITES_MONSTRO = os 5 + o corvo")
+	ok(mundo.SPRITES_MONSTRO.has(CORVO) and mundo.SPRITES_MONSTRO.size() >= 6, "SPRITES_MONSTRO inclui os 5 originais e o corvo")
 	for t in comb.diretor.tipos:
 		ok(t.sprite != CORVO, "padrão: o diretor não sorteia o corvo")
 	for t in Dados.json("v2_cartas").elites.tipos:
@@ -150,7 +153,7 @@ func _mundo() -> void:
 			ok(m.variante == "corvo", "cidade: o corvo mantém o id do tipo (%s)" % m.variante)
 			ok(m.n_lin == 5 and m.vida_max > 0.0, "cidade: o corvo tem 5 linhas e vida")
 		else:
-			ok(m.chave == OUTROS.cidade[tp.id], "cidade/%s: nasce com %s (é %s)" % [tp.id, OUTROS.cidade[tp.id], m.chave])
+			ok(_sprite_preservado("cidade", str(tp.id), str(m.chave)), "cidade/%s: nasce com %s (é %s)" % [tp.id, OUTROS.cidade[tp.id], m.chave])
 	ok(visto.size() == 6, "cidade: os 6 tipos do elenco nasceram (%d)" % visto.size())
 	# as 8 direções: a linha e o espelho do corvo seguem o movimento como nos outros monstros
 	var c = w.nascer_monstro(CORVO, w.heroi.pos + Vector2(220, 20))
@@ -162,3 +165,11 @@ func _mundo() -> void:
 	ok(combos.size() == 8, "corvo: as 8 direções dão 8 combinações de linha/espelho (%d: %s)" % [combos.size(), combos.keys()])
 	w.queue_free()
 	await get_tree().process_frame
+
+
+## Os quatro sprites aprovados na #449 podem entrar em PRs separados; cada alias continua vinculado ao seu tipo.
+func _sprite_preservado(mapa: String, id: String, sprite: String) -> bool:
+	if not preload("res://v2/mundo.gd").SPRITES_MONSTRO.has(sprite):
+		return false
+	var esperado: Variant = OUTROS[mapa][id]
+	return esperado.has(sprite) if esperado is Array else sprite == str(esperado)

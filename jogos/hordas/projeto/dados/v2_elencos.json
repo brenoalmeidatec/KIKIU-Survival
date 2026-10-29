@@ -45,7 +45,7 @@
 			"pesado": "carrasco",
 			"invocados": ["corvo", "aldeao_morto"],
 			"tipos": [
-				{"id": "aldeao_morto", "nome": "Aldeão Morto-vivo", "sprite": "inimigo_cao_ossos", "tinta": [0.9, 1.1, 0.85], "desde": 0, "peso": 3, "elite_desde": 0},
+				{"id": "aldeao_morto", "nome": "Aldeão Morto-vivo", "sprite": "inimigo_aldeao_morto", "tinta": [0.9, 1.1, 0.85], "desde": 0, "peso": 3, "elite_desde": 0},
 				{"id": "cao_amaldicoado", "nome": "Cão Amaldiçoado", "sprite": "inimigo_cao_ossos", "tinta": [1.25, 0.7, 0.65], "desde": 0, "peso": 2},
 				{"id": "corvo", "nome": "Corvo Agourento", "sprite": "inimigo_corvo_carniceiro", "tinta": [0.8, 0.8, 1.2], "desde": 0, "peso": 4, "elite_desde": 0},
 				{"id": "lobisomem", "nome": "Lobisomem da Vila", "sprite": "inimigo_lobo_sombrio", "tinta": [1.2, 0.9, 0.75], "desde": 40, "peso": 3, "elite_desde": 60},

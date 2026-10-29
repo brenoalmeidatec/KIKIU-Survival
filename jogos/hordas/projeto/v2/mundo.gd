@@ -57,7 +57,7 @@ const Colisao := preload("res://v2/colisao.gd")
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
 const PESOS_MONSTRO := [4, 4, 3, 3, 1]
 ## Folhas que só os elencos dos mapas usam (#449): não entram no sorteio padrão (TIPOS_MONSTRO/PESOS_MONSTRO), mas têm atlas, stats e pool.
-const SPRITES_EXTRA := ["inimigo_corvo_carniceiro"]
+const SPRITES_EXTRA := ["inimigo_corvo_carniceiro", "inimigo_aldeao_morto"]
 const SPRITES_MONSTRO := TIPOS_MONSTRO + SPRITES_EXTRA
 
 signal nivel_subiu(nivel: int)
