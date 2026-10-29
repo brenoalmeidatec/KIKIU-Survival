@@ -56,6 +56,9 @@ const MARGEM_COLISAO := 120.0  # monstro só colide com as barreiras a até 120 
 const Colisao := preload("res://v2/colisao.gd")
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
 const PESOS_MONSTRO := [4, 4, 3, 3, 1]
+## Folhas que só os elencos dos mapas usam (#449): não entram no sorteio padrão (TIPOS_MONSTRO/PESOS_MONSTRO), mas têm atlas, stats e pool.
+const SPRITES_EXTRA := ["inimigo_corvo_carniceiro"]
+const SPRITES_MONSTRO := TIPOS_MONSTRO + SPRITES_EXTRA
 
 signal nivel_subiu(nivel: int)
 ## Sinais da partida (leva 3), para o HUD e a meta-progressão: onda forte começou, elite/chefe apareceu, vida do chefe mudou, evolução feita,
@@ -392,7 +395,7 @@ func _entrada_roteiro() -> Vector2:
 ## Cria os monstros do pool de uma vez (e escondidos): morrer e renascer não cria nó nenhum durante a partida.
 func _pre_criar_monstros() -> void:
 	var pool: Dictionary = combate.cfg.get("pool", {})
-	for nome in TIPOS_MONSTRO:
+	for nome in SPRITES_MONSTRO:
 		for i in int(pool.get(nome, 0)):
 			var mo = _novo_monstro(nome)
 			mo.vivo = false

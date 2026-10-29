@@ -48,7 +48,7 @@ func _elenco(id: String):
 ## Os dados: todo mapa da lista tem elenco; cada tipo é válido; os nomes não se repetem entre mapas nem usam os nomes do padrão.
 func _dados() -> void:
 	var arq: Dictionary = Dados.json("v2_elencos")
-	var tipos_sprite: Array = preload("res://v2/mundo.gd").TIPOS_MONSTRO
+	var tipos_sprite: Array = preload("res://v2/mundo.gd").SPRITES_MONSTRO
 	var nomes_vistos := {}
 	for id in Mapas.ids():
 		var m: Variant = arq.mapas.get(id)
@@ -63,7 +63,7 @@ func _dados() -> void:
 		for t in el.tipos:
 			ok(not ids.has(t.id), "%s: id de tipo repetido (%s)" % [id, t.id])
 			ids[t.id] = true
-			ok(tipos_sprite.has(t.sprite), "%s/%s: sprite %s tem folha na v2 (TIPOS_MONSTRO)" % [id, t.id, t.sprite])
+			ok(tipos_sprite.has(t.sprite), "%s/%s: sprite %s tem folha na v2 (SPRITES_MONSTRO)" % [id, t.id, t.sprite])
 			ok(monstros_cfg.has(t.sprite), "%s/%s: sprite tem números em v2_combate.json > monstros" % [id, t.id])
 			ok(str(t.nome).strip_edges() != "", "%s/%s: tem nome" % [id, t.id])
 			ok(not NOMES_PROIBIDOS.has(t.nome), "%s/%s: nome %s é do elenco padrão" % [id, t.id, t.nome])
