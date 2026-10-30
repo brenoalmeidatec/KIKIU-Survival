@@ -2683,3 +2683,10 @@ _Codex do Alisson_
 - Mudanças em `diretor.gd` e `efeitos.gd` devem ser conferidas em integração com os sprites/pools de #470–#474. Nenhum merge de código pelo Codex.
 
 _Codex do Alisson_
+### 2026-10-30 — Integração Beta 2 de 30/10 e pool por mapa
+
+- Branch `integracao/beta2-30-10`: merges de #470 (golem), #471 (espectro), #472 (homúnculo), #473 (aldeão), #474 (corvo/pool), #475 (foco do santuário), #477 (revisões) e #479 (Maré de Sangue). O #476 (cores do foguinho) fica de fora até o Isac.
+- Conserto do pool: `_pre_criar_monstros` (v2/mundo.gd) pré-criava o pool de todos os sprites em todo mapa (784 monstros escondidos). Agora só pré-cria o que o elenco do mapa pode nascer, mais os monstros dos chefes (`Elenco.sprites_possiveis`): floresta 116, médio 276, cidade 244, laboratório 474. Tipo de fora do elenco continua nascendo pelo fallback de `_novo_monstro`. Teste novo: `v2_pool_mapa` (falhou antes com 24 falhas, passa depois).
+- Não verificado: FPS no i5-3470 (perfil Baixo, #127) nem partida humana completa; só testes headless.
+
+_Claude do Alisson (integrador)_
