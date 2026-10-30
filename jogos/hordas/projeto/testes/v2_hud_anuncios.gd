@@ -1,6 +1,6 @@
 extends "res://testes/isolamento_v2.gd"
-# Teste automático da FAIXA DE ANÚNCIO do HUD da v2 (v2/hud_anuncios.gd, no hud.tscn): o texto aparece INTEIRO, sem corte (#443). Texto curto fica
-# numa linha na fonte cheia; o que passa disso encolhe a fonte; o que ainda não cabe quebra em linhas na largura máxima. Confere com o maior texto
+# Teste automático da FAIXA DE ANÚNCIO do HUD da v2 (v2/hud_anuncios.gd, no hud.tscn): até 3 linhas o texto aparece inteiro (#443).
+# Texto curto fica numa linha na fonte cheia; o que passa disso encolhe a fonte e quebra em até 3 linhas; acima disso, prefixo com reticências. Confere com o maior texto
 # de placa que os dados da v2 trazem, com nomes de chefe longos e com textos de 45+ e 120+ letras, em telas do HUD de 960x540 para cima.
 # Roda: godot --headless --audio-driver Dummy --path jogos/hordas/projeto res://testes/v2_hud_anuncios.tscn  (imprime "v2_hud_anuncios falhas=0")
 const Hud := preload("res://v2/hud.gd")
@@ -58,9 +58,16 @@ func ok(cond: bool, msg: String) -> void:
 
 
 func _ready() -> void:
-	var vista := SubViewport.new()
-	vista.size = Vector2i(960, 540)
-	vista.disable_3d = true
+	var vista: Node
+	if DisplayServer.get_name() == "headless":
+		var sub := SubViewport.new()
+		sub.size = Vector2i(960, 540)
+		sub.disable_3d = true
+		vista = sub
+	else:
+		get_window().size = Vector2i(960, 540)
+		get_window().content_scale_size = Vector2i(960, 540)
+		vista = Node.new()  # janela real: HUD no viewport visível, não num render target fora da tela
 	add_child(vista)
 	var hud = Hud.criar(MundoFalso.new())
 	vista.add_child(hud)
@@ -75,9 +82,10 @@ func _ready() -> void:
 		_cabe_inteiro(hud, str(t))
 	_curto_fica_como_antes(hud)
 	_fila_com_longos(hud)
+	await _teto_de_linhas(hud)
 	vista.queue_free()
 	print("v2_hud_anuncios falhas=%d" % falhas)
-	get_tree().quit()
+	get_tree().quit(1 if falhas > 0 else 0)
 
 
 ## O maior "texto" de uma placa em dados/v2_*.json (as placas das Ruínas são o caso do relato).
@@ -127,17 +135,27 @@ func _cabe_inteiro(hud, texto: String) -> void:
 		hud.avancar(PASSO)
 	var rot := "'%s' (%d letras)" % [texto.left(30), texto.length()]
 	var lb: Label = an.get_node("Texto")
-	ok(an.texto_ativo == texto and lb.text == texto, "%s: o texto na tela é o inteiro" % rot)
-	ok(not lb.clip_text and lb.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING, "%s: o Label não corta nem põe reticências" % rot)
-	ok(lb.get_line_count() == lb.get_visible_line_count(), "%s: todas as linhas do Label estão visíveis" % rot)
 	var fonte: Font = lb.get_theme_font("font")
 	var tam: int = lb.get_theme_font_size("font_size")
+	var quebra := TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE | TextServer.BREAK_TRIM_EDGE_SPACES  # WORD_SMART
+	var natural := fonte.get_multiline_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, Anuncios.LARGURA_MAX - Anuncios.FOLGA, TAM_MIN, -1, quebra)
+	var cabia := natural.y <= 3 * fonte.get_height(TAM_MIN) + 0.01
+	ok(an.texto_ativo == texto, "%s: fila preserva o texto inteiro" % rot)
+	if cabia:
+		ok(lb.text == texto, "%s: texto que já cabia em três linhas permanece inteiro" % rot)
+	else:
+		ok(lb.text.ends_with("…") and texto.begins_with(lb.text.trim_suffix("…")), "%s: texto excepcional tem prefixo e reticências" % rot)
+	ok(not lb.clip_text and lb.text_overrun_behavior == TextServer.OVERRUN_NO_TRIMMING, "%s: o Label não corta nem põe reticências" % rot)
+	ok(lb.get_line_count() == lb.get_visible_line_count(), "%s: todas as linhas do Label estão visíveis" % rot)
 	ok(tam >= TAM_MIN and tam <= Anuncios.TAM_FONTE, "%s: fonte %d dentro dos limites" % [rot, tam])
 	var linhas := lb.get_line_count()
-	ok(linhas * fonte.get_height(tam) <= lb.size.y + 0.01, "%s: %d linhas de %d px cabem na altura %s" % [rot, linhas, tam, lb.size.y])
+	var espacamento := lb.get_theme_constant("line_spacing")
+	var linhas_planejadas := mini(linhas, 3)
+	var caixa_planejada := maxf(Anuncios.ALTURA, linhas_planejadas * fonte.get_height(tam) + (linhas_planejadas - 1) * espacamento + Anuncios.MARGEM_V)
+	var conteudo := linhas * fonte.get_height(tam) + maxi(linhas - 1, 0) * espacamento
+	ok(conteudo <= caixa_planejada - Anuncios.MARGEM_V + 0.01, "%s: linhas e fonte cabem na caixa planejada, sem size forçado" % rot)
 	# a maior linha, medida com a mesma quebra do Label, cabe na largura dele
-	var quebra := TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_ADAPTIVE | TextServer.BREAK_TRIM_EDGE_SPACES  # WORD_SMART
-	var medida := fonte.get_multiline_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, lb.size.x, tam, -1, quebra)
+	var medida := fonte.get_multiline_string_size(lb.text, HORIZONTAL_ALIGNMENT_LEFT, lb.size.x, tam, -1, quebra)
 	ok(medida.x <= lb.size.x + 0.5, "%s: a maior linha (%s) cabe na largura do Label (%s)" % [rot, medida.x, lb.size.x])
 	if linhas == 1:
 		var w := fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x
@@ -187,3 +205,45 @@ func _fila_com_longos(hud) -> void:
 		lb.get_line_count() == 1 and lb.get_theme_font_size("font_size") == Anuncios.TAM_FONTE and an.size.y == Anuncios.ALTURA,
 		"depois de um longo, o curto volta à fonte cheia, uma linha e altura normal"
 	)
+
+
+## O pior texto mantém só três linhas, com reticências; altura medida na fonte contra a caixa de projeto, sem confiar no size forçado.
+func _teto_de_linhas(hud) -> void:
+	_esvaziar(hud)
+	var an = hud.get_node("Raiz/Anuncio")
+	var lb: Label = an.get_node("Texto")
+	var original := "M".repeat(300)
+	an.anunciar(original, COR, 0)
+	for i in 30:
+		hud.avancar(PASSO)
+	await get_tree().process_frame
+	var fonte: Font = lb.get_theme_font("font")
+	var tam: int = lb.get_theme_font_size("font_size")
+	var linhas := lb.get_line_count()
+	var entrelinha := lb.get_theme_constant("line_spacing")
+	var altura_planejada := 3 * fonte.get_height(TAM_MIN) + 2 * entrelinha + Anuncios.MARGEM_V
+	var conteudo := linhas * fonte.get_height(tam) + maxi(linhas - 1, 0) * entrelinha
+	ok(original.length() == 300 and an.texto_ativo == original, "300 letras: fila preserva o texto original")
+	ok(lb.text.length() < original.length() and lb.text.ends_with("…"), "300 letras: encurtamento sinalizado com reticências")
+	ok(linhas <= 3 and lb.get_visible_line_count() == linhas, "300 letras: no máximo três linhas visíveis")
+	ok(conteudo <= altura_planejada - Anuncios.MARGEM_V + 0.01, "300 letras: linhas e fonte cabem na altura planejada")
+	ok(an.size.y <= altura_planejada + 0.01, "300 letras: faixa respeita a altura máxima de projeto")
+	print(
+		(
+			"ANUNCIO_300 janela=%s linhas=%d fonte=%d conteudo=%.1f altura_planejada=%.1f texto=%s"
+			% [DisplayServer.get_name(), linhas, tam, conteudo, altura_planejada, lb.text]
+		)
+	)
+	if DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		for arg in OS.get_cmdline_user_args():
+			if arg.begins_with("--fotos="):
+				var caminho := arg.trim_prefix("--fotos=")
+				ok(caminho.is_absolute_path() and not caminho.begins_with(ProjectSettings.globalize_path("res://")), "captura fora do projeto")
+				if caminho.is_absolute_path() and not caminho.begins_with(ProjectSettings.globalize_path("res://")):
+					ok(get_viewport().get_texture().get_image().save_png(caminho) == OK, "captura de janela salva")
+	# Um texto curto seguinte não pode herdar a truncagem.
+	_esvaziar(hud)
+	an.anunciar("ONDA FORTE!", COR, 0)
+	hud.avancar(PASSO)
+	ok(lb.text == "ONDA FORTE!" and lb.get_line_count() == 1, "depois de 300 letras, o curto volta inteiro")

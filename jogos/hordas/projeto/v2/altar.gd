@@ -468,6 +468,56 @@ func _atualizar() -> void:
 		(v.rec as Label).tooltip_text = texto
 		(v.rec as Label).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		(v.rec as Label).text = texto
+	_ligar_foco()
+
+
+## A busca geométrica do Godot pode preferir uma conquista fora da área rolada ao botão vizinho.
+## Fixamos a grade e o rodapé; follow_focus continua responsável por trazer as conquistas para a tela.
+func _ligar_foco() -> void:
+	var ids: Array = _linhas.keys()
+	var conquistas: Array = _conq.values()
+	var primeira: Button = conquistas[0].selecionar
+	for i in ids.size():
+		var cartao: Button = _linhas[ids[i]].selecionar
+		var compra: Button = _linhas[ids[i]].botao
+		var fim: Button = _mapa if i % 3 == 0 else _entrar
+		if i % 3 == 2 and _modo_btn.visible:
+			fim = _modo_btn
+		var abaixo: Button = _linhas[ids[i + 3]].selecionar if i + 3 < ids.size() else fim
+		cartao.focus_neighbor_top = cartao.get_path_to(cartao if i < 3 else _compra_ou_cartao(ids[i - 3]))
+		cartao.focus_neighbor_bottom = cartao.get_path_to(abaixo if compra.disabled else compra)
+		compra.focus_neighbor_top = compra.get_path_to(cartao)
+		compra.focus_neighbor_bottom = compra.get_path_to(abaixo)
+		for par in [[cartao, false], [compra, true]]:
+			var b: Button = par[0]
+			var esquerda: Button = b if i % 3 == 0 else (_compra_ou_cartao(ids[i - 1]) if par[1] else _linhas[ids[i - 1]].selecionar)
+			var direita: Button = primeira if i % 3 == 2 else (_compra_ou_cartao(ids[i + 1]) if par[1] else _linhas[ids[i + 1]].selecionar)
+			b.focus_neighbor_left = b.get_path_to(esquerda)
+			b.focus_neighbor_right = b.get_path_to(direita)
+	for i in conquistas.size():
+		var b: Button = conquistas[i].selecionar
+		b.focus_neighbor_top = b.get_path_to(b if i == 0 else conquistas[i - 1].selecionar)
+		b.focus_neighbor_bottom = b.get_path_to(_ajustes if i + 1 == conquistas.size() else conquistas[i + 1].selecionar)
+		b.focus_neighbor_left = b.get_path_to(_linhas[ids[mini(i, 2) * 3 + 2]].selecionar)
+		b.focus_neighbor_right = b.get_path_to(b)
+	var rodape: Array[Button] = [_mapa, _entrar, _ajustes, _voltar]
+	for i in rodape.size():
+		var b := rodape[i]
+		b.focus_neighbor_left = b.get_path_to(rodape[maxi(0, i - 1)])
+		b.focus_neighbor_right = b.get_path_to(rodape[mini(rodape.size() - 1, i + 1)])
+		b.focus_neighbor_bottom = b.get_path_to(b)
+	_mapa.focus_neighbor_top = _mapa.get_path_to(_compra_ou_cartao(ids[ids.size() - 3]))
+	_entrar.focus_neighbor_top = _entrar.get_path_to(
+		_rastro_btn if _rastro_btn.visible else (_modo_btn if _modo_btn.visible else _compra_ou_cartao(ids[ids.size() - 2]))
+	)
+	_modo_btn.focus_neighbor_top = _modo_btn.get_path_to(_compra_ou_cartao(ids[ids.size() - 1]))
+	_modo_btn.focus_neighbor_bottom = _modo_btn.get_path_to(_rastro_btn if _rastro_btn.visible else _entrar)
+	_rastro_btn.focus_neighbor_top = _rastro_btn.get_path_to(_modo_btn if _modo_btn.visible else _compra_ou_cartao(ids[ids.size() - 1]))
+	_rastro_btn.focus_neighbor_bottom = _rastro_btn.get_path_to(_entrar)
+
+
+func _compra_ou_cartao(id: String) -> Button:
+	return _linhas[id].selecionar if _linhas[id].botao.disabled else _linhas[id].botao
 
 
 func _liberada(m: Dictionary, e: Dictionary) -> bool:

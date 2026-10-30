@@ -12,10 +12,11 @@ const LARGURA_MAX := 640.0
 const ALTURA := 44.0
 const TAM_FONTE := 22
 ## Texto que não cabe numa linha em TAM_FONTE: primeiro encolhe a fonte (até TAM_UMA_LINHA) para ainda caber numa linha; se nem assim,
-## a faixa fica na largura máxima e quebra em linhas (a fonte desce até TAM_MIN, que aceita quantas linhas precisar). Nada é cortado.
+## a faixa fica na largura máxima e quebra em até LINHAS_MAX; acima disso, um prefixo termina em reticências. A fila guarda o original.
 const TAM_UMA_LINHA := 16
 const TAM_MIN := 14
 const LINHAS_PREFERIDAS := 2
+const LINHAS_MAX := 3
 const PASSO_FONTE := 2
 const MARGEM_V := 18.0  # altura da faixa além das linhas de texto (ALTURA = 1 linha de TAM_FONTE + isto, mais ou menos)
 const FOLGA := 96.0  # espaço do texto até a ponta da faixa (somado): cabe o losango de cada lado
@@ -130,8 +131,8 @@ func _mostrar(anuncio: Dictionary) -> void:
 	queue_redraw()
 
 
-## Escolhe tamanho de fonte e número de linhas para o texto caber inteiro na faixa, põe o Label no lugar, dá o tamanho da faixa e
-## devolve a largura dela. Uma linha só quando cabe (fonte cheia, ou encolhida até TAM_UMA_LINHA); senão, largura máxima e quebra de linha.
+## Escolhe fonte e linhas para caber na faixa, até LINHAS_MAX; acima disso usa prefixo com reticências. Posiciona o Label e devolve a largura.
+## Uma linha só quando cabe (fonte cheia, ou encolhida até TAM_UMA_LINHA); senão, largura máxima e quebra de linha.
 func _encaixar(texto: String) -> float:
 	var fonte: Font = _texto.get_theme_font("font")
 	var util := LARGURA_MAX - FOLGA
@@ -156,6 +157,9 @@ func _encaixar(texto: String) -> float:
 			if linhas <= LINHAS_PREFERIDAS or tam <= TAM_MIN:
 				break
 			tam -= PASSO_FONTE
+		if linhas > LINHAS_MAX:
+			_texto.text = _encurtar(fonte, texto, tam, util)
+			linhas = _contar_linhas(fonte, _texto.text, tam, util)
 	_texto.add_theme_font_size_override("font_size", tam)
 	# O Label não serve para medir aqui: o size dele é forçado ao mínimo do momento (ainda da quebra e da fonte anteriores), então
 	# as linhas e a altura saem da própria fonte, com a mesma quebra do Label (WORD_SMART) e a entrelinha do tema.
@@ -166,6 +170,22 @@ func _encaixar(texto: String) -> float:
 	_texto.position = Vector2(FOLGA * 0.5, 0.0)
 	_texto.size = Vector2(largura - FOLGA, altura)
 	return largura
+
+
+## Busca binária evita medir cada um dos caracteres de uma mensagem longa.
+func _encurtar(fonte: Font, texto: String, tam: int, largura: float) -> String:
+	var inicio := 0
+	var fim := texto.length()
+	var melhor := "…"
+	while inicio <= fim:
+		var meio := (inicio + fim) / 2
+		var candidato := texto.left(meio).strip_edges() + "…"
+		if _contar_linhas(fonte, candidato, tam, largura) <= LINHAS_MAX:
+			melhor = candidato
+			inicio = meio + 1
+		else:
+			fim = meio - 1
+	return melhor
 
 
 ## Quantas linhas o texto ocupa na largura dada, com a quebra do Label em WORD_SMART (palavra comprida demais quebra no meio).

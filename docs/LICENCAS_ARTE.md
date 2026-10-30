@@ -130,3 +130,19 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Sprite próprio do corvo da Vila Amaldiçoada (#449), Claude do Alisson (notebook), 29/10/2026
 
 - `jogos/hordas/projeto/prototipos/cara_nova/sprites/inimigo_corvo_carniceiro.json`, `inimigo_corvo_carniceiro_albedo.png`, `inimigo_corvo_carniceiro_normal.png` e `inimigo_corvo_carniceiro_emissao.png` (5 vistas x 4 quadros de andar/voo; o jogo espelha para as 8 direções), gerados por `jogos/hordas/prototipos/cara_nova/gerar_cara_nova.py` (`blender -b -P gerar_cara_nova.py -- monstro floresta corvo_carniceiro`, Blender 4.5) a partir do modelo `corvo_carniceiro` de `jogos/hordas/fonte_arte/modelos3d/floresta.py`. Arte própria, modelada por script, sem material de terceiros. Licença: a do projeto. Substitui, só para o "Corvo Agourento" da Vila (`dados/v2_elencos.json`), a aranha recolorida que ele usava.
+
+## Sprite próprio do golem de vidro da Torre (#449), Codex do Alisson, 29/10/2026
+
+- `jogos/hordas/fonte_arte/modelos3d/torre_golem_vidro.py` e os quatro derivados `prototipos/cara_nova/sprites/inimigo_golem_vidro{.json,_albedo.png,_normal.png,_emissao.png}`: arte própria, modelada por script no Blender 4.5.14, com facetas opacas em gelo/cobalto, núcleo e olhos emissivos. Usa o pipeline local `gerar_cara_nova.py` (cinco vistas, quatro quadros de andar; o jogo espelha para oito direções). Sem material, textura ou imagem de terceiros. Licença: a do projeto. Reprodução: `blender -b -P jogos/hordas/prototipos/cara_nova/gerar_cara_nova.py -- monstro torre_golem_vidro golem_vidro`.
+
+## Sprite próprio do Espectro Uivante das Ruínas (#449), Codex do Alisson, 29/10/2026
+
+- Folhas inimigo_espectro_albedo.png, inimigo_espectro_normal.png, inimigo_espectro_emissao.png e inimigo_espectro.json em jogos/hordas/projeto/prototipos/cara_nova/sprites/: cinco vistas por quatro quadros, espelhadas para oito direções. Render próprio em Blender 4.5.14 LTS pelo pipeline gerar_cara_nova.py, usando o modelo espectro já existente em fonte_arte/modelos3d/horror.py. Arte própria por script, sem materiais de terceiros; licença do projeto. Integração restrita ao Espectro Uivante das Ruínas, preservando tinta e números de combate.
+
+## Homúnculo da Torre (#449), Codex do Alisson, 29/10/2026
+
+- Modelo próprio `jogos/hordas/fonte_arte/modelos3d/torre_homunculo.py`, usando as primitivas do pipeline do projeto. Folhas `inimigo_homunculo.json`, `inimigo_homunculo_albedo.png`, `inimigo_homunculo_normal.png` e `inimigo_homunculo_emissao.png` em `jogos/hordas/projeto/prototipos/cara_nova/sprites/`: cinco vistas e quatro quadros, espelhados para oito direções. Geradas no Blender 4.5.14 por `gerar_cara_nova.py -- monstro torre_homunculo homunculo`. Sem arte de terceiros; licença do projeto. Troca somente a folha do homúnculo da Torre, preservando os números e a tinta do elenco.
+
+## Aldeão morto-vivo da Vila (#449), Codex do Alisson, 29/10/2026
+
+- `jogos/hordas/projeto/prototipos/cara_nova/sprites/inimigo_aldeao_morto.json`, `inimigo_aldeao_morto_albedo.png`, `inimigo_aldeao_morto_normal.png` e `inimigo_aldeao_morto_emissao.png`: cinco vistas por quatro quadros, espelhados pelo jogo para oito direções. Modelo próprio `jogos/hordas/fonte_arte/modelos3d/vila_aldeao.py`, renderizado pelo pipeline `gerar_cara_nova.py -- monstro vila_aldeao aldeao_morto` no Blender 4.5. Arte modelada por script, sem material de terceiros; licença do projeto. Substitui somente o cão recolorido de `cidade/aldeao_morto`, preservando os números de combate.

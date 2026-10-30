@@ -2630,5 +2630,63 @@ _Claude do Alisson (notebook)_
 - Item 5: [benchmark publicado na #127](https://github.com/brenoalmeidatec/KIKIU-Survival/issues/127#issuecomment-6505720355), main `08d4ddf`, Iris Xe/i5-1345U, janela/render 960×540, 160 comuns, duas rodadas invertidas (12 trechos). Baixo nativo: Floresta 219,64; Ruínas 177,75; Vila 187,85 FPS. Detritos nativos=0; cenário artificial forçado separado. Sem mudança de produto, sem aprovação de i5-3470, novos sprites, Release ou endgame; proposta é medir o alvo antes de escolher otimização grande. Engine encerrado às 15h54; dados brutos, receitas, logs e seis PNGs somente no anexo.
 - Notas do Isac na #448 ainda não haviam chegado na conferência deste bloco; continuam prioritárias quando chegarem. Poças (#378) permanecem opcionais. Tags, Release e merge de código ficam com o Claude do Alisson, após os portões do projeto e o ok do Alisson.
 - Conferência de encerramento às 15h59: nenhum Godot, Blender ou robô próprio ativo; checkout principal na main `08d4ddf`, sem alteração rastreada. A pasta local não rastreada `Referencia Animação/` foi preservada. Oito PRs de código (#470–#477) enviados, sem merge, todos com CI 7/7 no próprio SHA e revisão independente; reservas de implementação liberadas na #469.
+## 2026-10-29 · Codex do Alisson · Sprite do golem de vidro (#449/#467)
+
+- **Feito:** modelo próprio `torre_golem_vidro.py`, renderizado pelo pipeline Blender 4.5.14 em cinco vistas e quatro quadros (49×56 px por quadro, albedo/normal/emissão). Só `laboratorio/golem_vidro` troca de folha; números, tinta, peso e tempo do elenco preservados. Licença registrada ao fim de `docs/LICENCAS_ARTE.md`.
+- **Pool:** 166 instâncias pré-criadas: teto conservador do diretor no Difícil+Pesadelo (`round(84×1,5×1,3)=164`) mais as duas elites. A Torre não tem defesa de ponto e o golem não é invocado. O teste faz nascer 166 simultâneos sem aumentar `_todos_monstros`, devolve todos e prova a reutilização. Esse é um limite adversarial, não um pico medido de partida humana.
+- **Validação:** Godot 4.4.1 pela fila, import inicial/final com APPDATA própria; `v2_golem_vidro`, `v2_corvo_vila`, `v2_elencos` e `v2_horda_chega` com falhas=0; formatação no escopo do CI limpa. Captura de janela real 960×540 na Torre, oito direções, fora do Git. Conferidos folha e captura; algumas vistas ficam parcialmente atrás de objetos do mapa. Não foi vista uma partida inteira, não houve benchmark nem teste no i5-3470. Avisos de recursos ao encerrar permanecem nos logs.
+- **Pendente:** revisão independente e CI no SHA final do PR, registrados na #467; integração fica com o Claude após o ok do Alisson. Nenhum código mesclado pelo Codex.
+## 2026-10-29 · Codex do Alisson · Espectro Uivante das Ruínas (#467, item 1 / #449)
+
+- Sprite próprio do espectro ligado somente ao tipo espectro_uivante das Ruínas. Modelo próprio existente em horror.py, renderizado em Blender 4.5.14 pelo pipeline cara_nova; cinco vistas e quatro quadros, espelhadas para oito direções, quadro38x55. Stats e tinta do lobo anterior preservados. Pool182: teto164 no Difícil+Pesadelo, duas elites e16nascimentos da defesa; invocações deste mapa não geram espectros.
+- Importação da worktree nova e quatro testes locais pela fila Godot4.4.1: v2_espectro_ruinas, v2_corvo_vila, v2_elencos e v2_desempenho com falhas=0. O teste do espectro ocupa todo o pico e repete a leva sem criar objeto/nó. A falha inicial de parse do teste foi corrigida e preservada nos logs externos; somente o Godot filho foi encerrado, mantendo o PowerShell da fila. gdformat no escopo CI limpo.
+- Capturas Windows reais960x540 fora do Git, com HUD e em cena controlada com HUD oculto, conferidas. Um espectro da amostra fica ocluído por uma construção; não afirmo conferência visual desobstruída de todas as direções, partida completa ou FPS no i5. CI7/7 e revisão independente do SHA final serão registrados no PR pelo coordenador; nenhum merge de código. QA bruta e perfis permanecem fora do repositório.
+## 2026-10-29 · Codex do Alisson · Homúnculo da Torre (#449/#467)
+
+- Modelo Blender próprio com cabeça grande, costura e braços assimétricos; folha34×42, cinco vistas e quatro quadros, albedo/normal/emissão. Somente o homúnculo da Torre troca de sprite; números e tinta preservados.
+- Pool192 cobre o piso conservador178 e o pico observado41 do estresse Difícil/Pesadelo, semente1, imortal e comQ (59.925 amostras, 880,8s de jogo); não é teto global nem vitória de equilíbrio. Prova de192 simultâneos e reciclagem sem nós novos. Novo teste, corvo, elencos e desempenho passaram; novo teste em janela e corvo repetidos após as mudanças finais. Godot4.4.1 sempre pela fila, APPDATA própria e import primeiro; gdformat372scripts limpo.
+- Captura Windows960×540 real conferida, cena controlada com oito direções; cenário pode ocluir parte dos corpos. Não foram vistos partida humana completa, controle físico, Linux ou FPS no i5. Evidências e tentativas inválidas de helper ficam anexadas fora do Git; nenhum CFG privado publicado.
+- Pendente: CI7/7 do head final e revisão independente registrados no PR, depois Claude integra com o ok do Alisson. Nenhum merge de código pelo Codex. Preservar os outros três sprites e os acréscimos de licença/LOGBOOK ao conciliar os PRs.
+## 2026-10-29 · Codex do Alisson · Aldeão morto-vivo da Vila (#449/#467)
+
+- Modelo Blender próprio, folha35×52, cinco vistas e quatro quadros com albedo/normal/emissão. Só `cidade/aldeao_morto` troca de sprite; números, pesos e tinta preservados. Pool64: picos medidos34 (semente1, Q) e39 (semente7, semQ), Difícil/Pesadelo ativado no primeiro quadro, robô imortal. São estresses de capacidade, não equilíbrio nem FPS.
+- Godot4.4.1 pela fila, APPDATA própria e import primeiro. Novo teste prova64 instâncias distintas pré-criadas, reciclagem, atlas, oito direções e piso25% sobre o pico observado39. Novo teste, corvo e elencos passaram com falhas0; gdformat372scripts limpo. Captura Windows real960×540 conferida; não foi vista partida humana completa, Linux, controle físico nem i5-3470.
+- Licença append-only e evidências externas com logs/duas amostras e tentativas iniciais preservadas. A medição também revelou43 corvos contra pool30 existente; complemento separado. Pendente: CI7/7 no SHA final e revisão independente no PR, depois Claude integra com o ok do Alisson. Nenhum merge de código pelo Codex.
+## 2026-10-29 · Codex do Alisson · Folga do pool do corvo (#449/#467)
+
+- **Achado:** o estresse da Vila usado no sprite do aldeão observou 39/43 corvos vivos (sementes 1/7, Difícil+Pesadelo, imortalidade; a segunda sem Q), acima das 30 instâncias pré-criadas. Não é uma medição de FPS ou de equilíbrio humano.
+- **Conserto:** somente o pool do corvo sobe para 64, com 48,8% de folga sobre o maior pico 43 observado. Nenhum sprite ou número de combate muda. O teste exige ao menos 25% de folga e prova 64 instâncias distintas já existentes, devolução e reutilização. Os quatro aliases aprovados da #449 permanecem compatíveis com PRs separados.
+- **Validação:** import da worktree antes dos testes, Godot 4.4.1 sempre pela fila e APPDATA própria. Prova dirigida RED no pool 30: código 1/falhas=38 (uma causa: alocações depois de esgotar 30); GREEN no pool 64: `v2_corvo_vila` e `v2_elencos` com código 0/falhas=0, formatação no escopo CI limpa. Logs fora do Git, inclusive o RED. Sem captura nova, pois este PR só muda capacidade; sem benchmark no i5-3470. Não é um teto matemático para toda semente/build.
+- **Pendente:** revisão independente e CI do mesmo SHA, registrados na #467. Claude integra após o ok do Alisson, preservando pool 64 ao conciliar as linhas de pool dos outros quatro PRs. Nenhum código mesclado pelo Codex.
+### 2026-10-29 — Foco do santuário, item 3 da #467
+
+- Reproduzido em janela 960x540: Direita em ENTRAR e Esquerda em AJUSTES saltavam para a lista de conquistas; a posição da rolagem também desviava Cima da primeira linha de melhorias.
+- `codex/foco-santuario-467`: vizinhos explícitos na grade, lista e rodapé, preservando o foco inicial em ENTRAR e a rolagem automática. Compras bloqueadas/no máximo são puladas; Pesadelo e Rastro liberados continuam no percurso.
+- Teste comportamental `v2_santuario_foco`: eventos de teclado e D-pad sintetizado, 33 conquistas, rodapé completo e extras. Prova RED em janela com o altar da main: 38 falhas; GREEN com a correção: falhas=0 e exit 0. Regressões headless `v2_santuario_foco`, `v2_santuario`, `v2_meta` e `v2_conquistas`: falhas=0 e exit 0; as quatro cenas imprimem avisos de recursos no encerramento. gdformat -l 160 --check: 372 arquivos limpos.
+- Capturas e logs ficam fora do repositório. O acento de SANTUÁRIO e a linha Última partida foram vistos inteiros na janela; a métrica da Jersey mede 60 px contra a caixa projetada de 52 px, por isso a caixa/mínimo não foi usada para afirmar ausência de sobreposição. Nenhuma alteração de fonte ou layout neste bloco.
+- Limites: não foi usado controle físico, nem medido FPS no i5. PR e CI no SHA final ficam para a conferência do integrador; nenhum merge. Godot/robô próprios encerrados.
+## 2026-10-29: pendências da revisão do notebook (#467, item 4)
+
+- Segredo parado: herói caído perde a espera parcial, exigindo um período inteiro ao levantar. Regressão local reproduzida (2 falhas) e corrigida (0); o teste de andar enquanto apanha agora usa entrada e velocidade reais, sem teleporte por quadro.
+- Faixa de anúncio: até três linhas, com prefixo e reticências quando excede o teto; mensagens que já cabiam e o original da fila ficam íntegros. Em janela Windows 960x540, 300 letras passaram de 8 linhas/133 px para 3 linhas/48 px dentro de 66 px planejados; RED 5 falhas e GREEN 0. Teste mede fonte/entrelinha contra orçamento independente do tamanho forçado do Label.
+- Godot 4.4.1 pela fila e APPDATA própria: importação, v2_segredos, v2_hud_anuncios (headless e janela) e v2_hud concluídos; todos os testes finais com falhas=0. Avisos de recursos/RIDs no encerramento de segredos/HUD permanecem registrados. Fotos e logs estão fora do repositório; fotos iniciais vazias do helper foram descartadas como prova visual. Captura válida mostra HUD de teste em janela, não partida completa; sem nova prova de FPS.
+- Comentários de elenco/nascimento/segredos alinhados; DESIGN registra que as frases aguardam o ok do Isac. Tabela de duração inclui os testes ausentes com estimativa explícita de 15 s, igual ao fallback existente, sem alegar medição.
+- Código enviado para revisão independente e CI no próprio commit; merge, Release e tag aguardam o fluxo do Claude do Alisson. Na integração, preservar também o trecho de foco do santuário do PR #475 em DESIGN.md.
 
 _Codex do Alisson_
+
+### 2026-10-29 — Protótipo Maré de Sangue, Nicão na Vila
+
+- A pedido do Alisson, onda forte da Vila com Nicão ganha aviso e dois pulsos por lados preferenciais, preservando teto e checagem de colisão. Na borda do mapa, procura setores alternativos; uma rota não é garantida onde não há espaço livre.
+- O Q Terremoto espalha recortes visuais dos inimigos mortos, sem alterar dano ou recompensa: até 24 sprites pré-criados, duração curta e respeito à opção de partículas. O efeito também aparece no perfil Baixo com partículas habilitadas.
+- Validação e limites: importação pela fila, APPDATA isolada; `v2_diretor` e `v2_especial` com falhas=0 nas rodadas locais; captura Windows 960×540 em fixture da Vila. Evidências externas e testes finais/CI do SHA serão informados no PR. A captura preparada não substitui partida humana completa; não houve medição de desempenho no i5-3470.
+- Mudanças em `diretor.gd` e `efeitos.gd` devem ser conferidas em integração com os sprites/pools de #470–#474. Nenhum merge de código pelo Codex.
+
+_Codex do Alisson_
+### 2026-10-30 — Integração Beta 2 de 30/10 e pool por mapa
+
+- Branch `integracao/beta2-30-10`: merges de #470 (golem), #471 (espectro), #472 (homúnculo), #473 (aldeão), #474 (corvo/pool), #475 (foco do santuário), #477 (revisões) e #479 (Maré de Sangue). O #476 (cores do foguinho) fica de fora até o Isac.
+- Conserto do pool: `_pre_criar_monstros` (v2/mundo.gd) pré-criava o pool de todos os sprites em todo mapa (784 monstros escondidos). Agora só pré-cria o que o elenco do mapa pode nascer, mais os monstros dos chefes (`Elenco.sprites_possiveis`): floresta 116, médio 276, cidade 244, laboratório 474. Tipo de fora do elenco continua nascendo pelo fallback de `_novo_monstro`. Teste novo: `v2_pool_mapa` (falhou antes com 24 falhas, passa depois).
+- Não verificado: FPS no i5-3470 (perfil Baixo, #127) nem partida humana completa; só testes headless.
+
+_Claude do Alisson (integrador)_

@@ -72,7 +72,10 @@ func atualizar(dt: float) -> void:
 		var emp_aplicado := maxf((antes.emp as Vector2).length(), _emp(h).length() * exp(Heroi.AMORTECE_EMP * dt))
 		var quieto: bool = h.pos.distance_to(antes.ultima) <= (vel_max + emp_aplicado) * dt
 		for it in itens:
-			if it.feito or not vivo:
+			if it.feito:
+				continue
+			if not vivo:
+				it.t.erase(h)
 				continue
 			var dentro: bool = h.pos.distance_squared_to(it.pos) <= it.raio * it.raio
 			match str(it.s.gatilho):
@@ -103,7 +106,7 @@ func _achar(it: Dictionary) -> void:
 	combate.fx.onda(it.pos, Color(COR, 0.9), 64.0, 0.6)
 	combate.fx.faiscas(it.pos + Vector2(0, -10), Vector2(0, -1), 14, COR, 140.0)
 	combate.audio.tocar("nivel", 1.0, -2.0, 0.0)
-	# A faixa de anúncio corta o que passa de ~28 letras (Label com clip_text): são faixas curtas, e a lore inteira fica no Códice.
+	# O anúncio usa até três linhas; os títulos continuam curtos e a lore inteira fica no Códice.
 	if novo:
 		combate.anunciar("SEGREDO ACHADO!", COR)
 		combate.anunciar(str(s.nome).to_upper(), COR)

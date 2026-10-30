@@ -466,6 +466,8 @@ func atualizar(dt: float) -> void:
 		c.fonte_dano = "especial"
 		if c.ferir(m, d, fora, float(o.empurrao), float(o.atordoa), COR_NUM, false):
 			_mortes += 1
+			if str(mundo.id_mapa) == "cidade" and str(h.chave) == "nicao":
+				c.fx.fragmentar(m, fora)
 		if m.chefe:
 			m.deixar_lento(_onda_lento)
 		if _numeros < int(comum.numeros_max) or crit:
@@ -558,6 +560,8 @@ func _pulso(h, centro: Vector2, raio: float, dano_b: float, emp: float, atordoa:
 		c.fonte_dano = "especial"
 		if c.ferir(m, d, fora, emp, atordoa, COR_NUM, false):
 			_mortes += 1
+			if _id == "terremoto" and str(mundo.id_mapa) == "cidade" and str(h.chave) == "nicao":
+				c.fx.fragmentar(m, fora)
 		if lento > 0.0 and m.chefe:
 			m.deixar_lento(lento)
 		if marcar:

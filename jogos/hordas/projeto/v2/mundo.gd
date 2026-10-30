@@ -57,7 +57,7 @@ const Colisao := preload("res://v2/colisao.gd")
 const TIPOS_MONSTRO := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio", "inimigo_cavaleiro_oco"]
 const PESOS_MONSTRO := [4, 4, 3, 3, 1]
 ## Folhas que só os elencos dos mapas usam (#449): não entram no sorteio padrão (TIPOS_MONSTRO/PESOS_MONSTRO), mas têm atlas, stats e pool.
-const SPRITES_EXTRA := ["inimigo_corvo_carniceiro"]
+const SPRITES_EXTRA := ["inimigo_corvo_carniceiro", "inimigo_golem_vidro", "inimigo_espectro", "inimigo_homunculo", "inimigo_aldeao_morto"]
 const SPRITES_MONSTRO := TIPOS_MONSTRO + SPRITES_EXTRA
 
 signal nivel_subiu(nivel: int)
@@ -393,10 +393,15 @@ func _entrada_roteiro() -> Vector2:
 	return Vector2.ZERO
 
 
-## Cria os monstros do pool de uma vez (e escondidos): morrer e renascer não cria nó nenhum durante a partida.
+## Cria os monstros do pool de uma vez (e escondidos): morrer e renascer não cria nó nenhum durante a partida. Só os sprites que o elenco do
+## mapa pode fazer nascer (v2/elenco.gd, com os chefes): pré-criar o pool de todos os inimigos em todo mapa passava de 780 nós escondidos (#127).
+## Um tipo de fora que nasça mesmo assim (roteiro, teste) é criado na hora por `nascer_monstro`.
 func _pre_criar_monstros() -> void:
 	var pool: Dictionary = combate.cfg.get("pool", {})
+	var usados: Dictionary = elenco.sprites_possiveis(combate.cartas.cfg.chefes, TIPOS_MONSTRO)
 	for nome in SPRITES_MONSTRO:
+		if not usados.has(nome):
+			continue
 		for i in int(pool.get(nome, 0)):
 			var mo = _novo_monstro(nome)
 			mo.vivo = false
@@ -663,7 +668,7 @@ func _novo_monstro(nome: String):
 	return mo
 
 
-## Faz um monstro do tipo `nome` (um dos sprites de TIPOS_MONSTRO) nascer em `p` (do pool, ou novo se o pool esvaziou). `cacador` = persegue de qualquer
+## Faz um monstro do tipo `nome` (um dos sprites de SPRITES_MONSTRO) nascer em `p` (do pool, ou novo se o pool esvaziou). `cacador` = persegue de qualquer
 ## distância. `tipo` (opcional) é a variação do elenco do mapa (v2/elenco.gd); sem ele nasce o monstro puro.
 func nascer_monstro(nome: String, p: Vector2, cacador := false, k_vida := 1.0, k_dano := 1.0, tipo := {}):
 	var lista: Array = _pool_monstros.get(nome, [])

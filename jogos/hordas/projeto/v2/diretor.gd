@@ -18,6 +18,10 @@ var ondas := 0  # quantas ondas fortes já vieram
 var nascidos := 0  # total nascido pelo diretor (testes)
 var rng := RandomNumberGenerator.new()
 var ligado := true
+var mare_pendente := 0
+var mare_elites := 0
+var mare_t := -1.0
+var mare_aviso := false
 # Nível do mapa (dados/v2_niveis.json): `nivel` vai de 1 a `niveis_total`; `t_nivel` é o relógio do nível atual, que só anda sem chefe vivo.
 var nivel := 1
 var niveis_total := 30
@@ -56,6 +60,10 @@ func carregar_niveis(id: String) -> void:
 
 
 func zerar() -> void:
+	mare_pendente = 0
+	mare_elites = 0
+	mare_t = -1.0
+	mare_aviso = false
 	acum = 0.0
 	ondas = 0
 	nascidos = 0
@@ -175,9 +183,20 @@ func atualizar(dt: float) -> void:
 	if not ligado:
 		return
 	var t: float = mundo.tempo_partida
+	if mare_t >= 0.0:
+		mare_t -= dt
+		if mare_t <= 0.0:
+			_mare_pulso(mare_pendente, 1)
+			mare_pendente = 0
+			mare_t = -1.0
+	if _mare_ativa() and not mare_aviso and t >= proxima_onda - 1.2:
+		mare_aviso = true
+		combate.anunciar("MARÉ DE SANGUE!", Color(1.0, 0.25, 0.2))
+		combate.audio.tocar("onda", 0.8, -2.0, 0.0)
 	if t >= proxima_onda:
 		onda_forte()
 		proxima_onda += intervalo_onda()
+		mare_aviso = false
 	var folga: float = 0.4 if combate.chefes.vivo else 1.0  # com chefe em campo a horda dá uma folga
 	acum += taxa(t) * dt * folga
 	if acum < 1.0:
@@ -257,7 +276,50 @@ func onda_forte() -> void:
 	var elite := int(cfg.onda_elite) * ondas
 	var folga: int = teto() - mundo.monstros.size()
 	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult") * dificuldade("densidade_mult")) + elite, maxi(folga, 0))
+	if _mare_ativa():
+		mare_elites = elite
+		var primeiro := ceili(float(n) * 0.5)
+		_mare_pulso(primeiro, -1)
+		mare_pendente = n - primeiro
+		mare_t = 1.0 if mare_pendente > 0 else -1.0
+		combate.onda_forte(ondas)
+		return
 	for i in n:
 		var tipo: Dictionary = mundo.elenco.pesado if i < elite else sortear(t)
 		nascer(str(tipo.sprite), null, tipo)
 	combate.onda_forte(ondas)
+
+
+func _mare_ativa() -> bool:
+	return str(mundo.id_mapa) == "cidade" and str(combate.heroi_id) == "nicao"
+
+
+## Prefere um lado por pulso; preserva corredor quando a geometria permite. Respeita teto e colisão.
+func _mare_pulso(n: int, lado: int) -> void:
+	for i in n:
+		if mundo.monstros.size() >= teto():
+			break
+		var p = _ponto_mare(lado)
+		if p == null:
+			continue
+		var tipo: Dictionary = mundo.elenco.pesado if mare_elites > 0 else sortear(mundo.tempo_partida)
+		if nascer(str(tipo.sprite), p, tipo) and mare_elites > 0:
+			mare_elites -= 1
+
+
+func _ponto_mare(lado: int) -> Variant:
+	var tela: Rect2 = mundo.cam.retangulo()
+	# Em borda de mapa, procura o setor de cima/baixo e por último o lateral oposto.
+	for setor in [lado, lado * 2, -lado]:
+		for i in 30:
+			var margem := rng.randf_range(float(cfg.margem_min), float(cfg.margem_max))
+			var p: Vector2
+			if absi(setor) == 1:
+				var x := tela.position.x - margem if setor < 0 else tela.end.x + margem
+				p = Vector2(x, rng.randf_range(tela.position.y, tela.end.y))
+			else:
+				var y := tela.position.y - margem if setor < 0 else tela.end.y + margem
+				p = Vector2(rng.randf_range(tela.position.x, tela.end.x), y)
+			if mundo.limite_andavel.has_point(p) and not tela.has_point(p) and Colisao.livre(p, 7.0):
+				return p
+	return null

@@ -1,6 +1,6 @@
 extends RefCounted
 ## O ELENCO de inimigos de um mapa da v2 (dados/v2_elencos.json, chaveado pelo ID do mapa). Cada mapa tem os seus tipos de inimigo: uma
-## VARIAÇÃO de um dos monstros que têm folha de sprite (mundo.gd TIPOS_MONSTRO) com outro nome, outra tinta (cor que multiplica a folha) e
+## VARIAÇÃO de um dos monstros que têm folha de sprite (mundo.gd SPRITES_MONSTRO) com outro nome, outra tinta (cor que multiplica a folha) e
 ## números próprios (vida, dano e velocidade como multiplicadores; xp e orbes não mudam, para o ritmo de nível ser o mesmo em todo mapa).
 ## Quem faz nascer monstro de horda (diretor, onda forte, moradores, defesa de ponto, elite e invocados da elite) pede o tipo aqui e passa
 ## o dicionário a mundo.nascer_monstro, que o aplica. Mapa fora do arquivo usa o PADRÃO: o que o jogo sorteava antes dos elencos
@@ -127,6 +127,29 @@ func sortear_qualquer(rng: RandomNumberGenerator) -> Dictionary:
 		if r < 0:
 			return e
 	return tipos[0]
+
+
+## Os sprites que o mapa pode fazer nascer: o elenco (tipos, elites, pesado e invocados), os dois sorteios padrão quando o mapa não tem elenco e os
+## monstros que os chefes reaproveitam (marcas > tipo e ataques > filhote, em v2_cartas.json > chefes). O mundo pré-cria só o pool deles (#127).
+func sprites_possiveis(cfg_chefes: Dictionary, sprites_padrao: Array) -> Dictionary:
+	var s := {}
+	for t in tipos:
+		s[str(t.sprite)] = true
+	for e in elites_lista:
+		s[str(e.sprite)] = true
+	for t in invocados:
+		s[str(t.sprite)] = true
+	s[str(pesado.sprite)] = true
+	if padrao:
+		for nome in sprites_padrao:
+			s[str(nome)] = true
+	for mk in cfg_chefes.get("marcas", []):
+		if mk is Dictionary and mk.has("tipo"):
+			s[str(mk.tipo)] = true
+	for at in cfg_chefes.get("ataques", {}).values():
+		if at is Dictionary and at.has("filhote"):
+			s[str(at.filhote)] = true
+	return s
 
 
 ## O `k`-ésimo invocado da elite Invocadora (alterna entre os dois do mapa; no padrão: aranha e cão, como sempre).
