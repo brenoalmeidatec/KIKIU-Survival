@@ -393,10 +393,15 @@ func _entrada_roteiro() -> Vector2:
 	return Vector2.ZERO
 
 
-## Cria os monstros do pool de uma vez (e escondidos): morrer e renascer não cria nó nenhum durante a partida.
+## Cria os monstros do pool de uma vez (e escondidos): morrer e renascer não cria nó nenhum durante a partida. Só os sprites que o elenco do
+## mapa pode fazer nascer (v2/elenco.gd, com os chefes): pré-criar o pool de todos os inimigos em todo mapa passava de 780 nós escondidos (#127).
+## Um tipo de fora que nasça mesmo assim (roteiro, teste) é criado na hora por `nascer_monstro`.
 func _pre_criar_monstros() -> void:
 	var pool: Dictionary = combate.cfg.get("pool", {})
+	var usados: Dictionary = elenco.sprites_possiveis(combate.cartas.cfg.chefes, TIPOS_MONSTRO)
 	for nome in SPRITES_MONSTRO:
+		if not usados.has(nome):
+			continue
 		for i in int(pool.get(nome, 0)):
 			var mo = _novo_monstro(nome)
 			mo.vivo = false

@@ -129,6 +129,29 @@ func sortear_qualquer(rng: RandomNumberGenerator) -> Dictionary:
 	return tipos[0]
 
 
+## Os sprites que o mapa pode fazer nascer: o elenco (tipos, elites, pesado e invocados), os dois sorteios padrão quando o mapa não tem elenco e os
+## monstros que os chefes reaproveitam (marcas > tipo e ataques > filhote, em v2_cartas.json > chefes). O mundo pré-cria só o pool deles (#127).
+func sprites_possiveis(cfg_chefes: Dictionary, sprites_padrao: Array) -> Dictionary:
+	var s := {}
+	for t in tipos:
+		s[str(t.sprite)] = true
+	for e in elites_lista:
+		s[str(e.sprite)] = true
+	for t in invocados:
+		s[str(t.sprite)] = true
+	s[str(pesado.sprite)] = true
+	if padrao:
+		for nome in sprites_padrao:
+			s[str(nome)] = true
+	for mk in cfg_chefes.get("marcas", []):
+		if mk is Dictionary and mk.has("tipo"):
+			s[str(mk.tipo)] = true
+	for at in cfg_chefes.get("ataques", {}).values():
+		if at is Dictionary and at.has("filhote"):
+			s[str(at.filhote)] = true
+	return s
+
+
 ## O `k`-ésimo invocado da elite Invocadora (alterna entre os dois do mapa; no padrão: aranha e cão, como sempre).
 func invocado(k: int) -> Dictionary:
 	return invocados[k % invocados.size()]
