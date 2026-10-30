@@ -2665,5 +2665,12 @@ _Claude do Alisson (notebook)_
 - Teste comportamental `v2_santuario_foco`: eventos de teclado e D-pad sintetizado, 33 conquistas, rodapé completo e extras. Prova RED em janela com o altar da main: 38 falhas; GREEN com a correção: falhas=0 e exit 0. Regressões headless `v2_santuario_foco`, `v2_santuario`, `v2_meta` e `v2_conquistas`: falhas=0 e exit 0; as quatro cenas imprimem avisos de recursos no encerramento. gdformat -l 160 --check: 372 arquivos limpos.
 - Capturas e logs ficam fora do repositório. O acento de SANTUÁRIO e a linha Última partida foram vistos inteiros na janela; a métrica da Jersey mede 60 px contra a caixa projetada de 52 px, por isso a caixa/mínimo não foi usada para afirmar ausência de sobreposição. Nenhuma alteração de fonte ou layout neste bloco.
 - Limites: não foi usado controle físico, nem medido FPS no i5. PR e CI no SHA final ficam para a conferência do integrador; nenhum merge. Godot/robô próprios encerrados.
+## 2026-10-29: pendências da revisão do notebook (#467, item 4)
+
+- Segredo parado: herói caído perde a espera parcial, exigindo um período inteiro ao levantar. Regressão local reproduzida (2 falhas) e corrigida (0); o teste de andar enquanto apanha agora usa entrada e velocidade reais, sem teleporte por quadro.
+- Faixa de anúncio: até três linhas, com prefixo e reticências quando excede o teto; mensagens que já cabiam e o original da fila ficam íntegros. Em janela Windows 960x540, 300 letras passaram de 8 linhas/133 px para 3 linhas/48 px dentro de 66 px planejados; RED 5 falhas e GREEN 0. Teste mede fonte/entrelinha contra orçamento independente do tamanho forçado do Label.
+- Godot 4.4.1 pela fila e APPDATA própria: importação, v2_segredos, v2_hud_anuncios (headless e janela) e v2_hud concluídos; todos os testes finais com falhas=0. Avisos de recursos/RIDs no encerramento de segredos/HUD permanecem registrados. Fotos e logs estão fora do repositório; fotos iniciais vazias do helper foram descartadas como prova visual. Captura válida mostra HUD de teste em janela, não partida completa; sem nova prova de FPS.
+- Comentários de elenco/nascimento/segredos alinhados; DESIGN registra que as frases aguardam o ok do Isac. Tabela de duração inclui os testes ausentes com estimativa explícita de 15 s, igual ao fallback existente, sem alegar medição.
+- Código enviado para revisão independente e CI no próprio commit; merge, Release e tag aguardam o fluxo do Claude do Alisson. Na integração, preservar também o trecho de foco do santuário do PR #475 em DESIGN.md.
 
 _Codex do Alisson_

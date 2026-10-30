@@ -98,7 +98,7 @@ func _dados() -> void:
 		for frase in s.lore:
 			ok(str(frase).length() <= 56, "%s: a frase cabe na linha do Codice (%d): %s" % [s.id, str(frase).length(), frase])
 		ok(str(s.dica).length() <= 56, "%s: a dica cabe numa linha do Codice" % s.id)
-		ok(str(s.nome).length() <= 26, "%s: o nome cabe na faixa de anuncio (~28 letras, o resto e cortado)" % s.id)
+		ok(str(s.nome).length() <= 26, "%s: nome curto para a faixa de anúncio; lore completa no Códice" % s.id)
 		ok(int(s.get("bau", 0)) == 0 or s.get("bau_pos", []).size() == 2, "%s: baú com posicao" % s.id)
 		var premio: Dictionary = s.recompensa  # almas, ou tipo "nenhuma" no fragmento só de lore (o segundo de cada mapa: sem almas e sem linha de prêmio)
 		var so_lore := str(premio.get("tipo", "")) == "nenhuma"
@@ -293,15 +293,44 @@ func _risco_empurrao() -> void:
 	_sem_monstros(w3)
 	w3.heroi.imortal = false
 	w3.heroi.vida = w3.heroi.vida_max
+	w3.heroi.definir_pos(p)
+	var percurso := 0.0
 	for i in 270:
+		w3.heroi.entrada_forcada = Vector2(1 if (i / 30) % 2 == 0 else -1, 0)
 		if i % 60 == 0:
-			w3.heroi.levar_dano(1.0, p + Vector2(-30.0 if (i / 60) % 2 == 0 else 30.0, 0.0))
-		w3.heroi.definir_pos(p + Vector2(20.0 * (i % 2), 0.0))
+			w3.heroi.levar_dano(1.0, w3.heroi.pos + Vector2(-30.0 if (i / 60) % 2 == 0 else 30.0, 0.0))
+		var anterior: Vector2 = w3.heroi.pos
 		w3.avancar(PASSO)
+		percurso += w3.heroi.pos.distance_to(anterior)
+	ok(percurso > 150.0, "empurrao: andar usa a velocidade real do herói, não teleporte")
 	ok(w3.segredos.achados == 0, "empurrao: andar e apanhar nao conta como parado (%d)" % w3.segredos.achados)
 	for x in [w, w3]:
 		remove_child(x)
 		x.free()
+	await get_tree().process_frame
+	await _risco_caido()
+
+
+## Cair interrompe a espera; levantar exige cumprir o tempo inteiro novamente.
+func _risco_caido() -> void:
+	var s: Dictionary = Segredos.lista("medio")[0]
+	var w = _novo_mundo("medio")
+	_sem_monstros(w)
+	var f := Falso.new()
+	f.pos = Vector2(float(s.pos[0]), float(s.pos[1]))
+	w.herois = [w.heroi, f]
+	_passos(w, 120)
+	var it: Dictionary = w.segredos.itens[0]
+	ok(float(it.t.get(f, 0)) > 1.0 and not it.feito, "caído: espera parcial começa")
+	f.vida = 0.0
+	_passos(w, 1)
+	ok(not it.t.has(f), "caído: timer parcial é removido ao cair")
+	f.vida = 10.0
+	_passos(w, 120)
+	ok(not it.feito, "caído: levantar não herda o tempo anterior")
+	_passos(w, 70)
+	ok(it.feito, "caído: novo período inteiro revela o segredo")
+	w.queue_free()
 	await get_tree().process_frame
 
 

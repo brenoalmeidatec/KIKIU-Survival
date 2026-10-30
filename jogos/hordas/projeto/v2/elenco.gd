@@ -1,6 +1,6 @@
 extends RefCounted
 ## O ELENCO de inimigos de um mapa da v2 (dados/v2_elencos.json, chaveado pelo ID do mapa). Cada mapa tem os seus tipos de inimigo: uma
-## VARIAÇÃO de um dos monstros que têm folha de sprite (mundo.gd TIPOS_MONSTRO) com outro nome, outra tinta (cor que multiplica a folha) e
+## VARIAÇÃO de um dos monstros que têm folha de sprite (mundo.gd SPRITES_MONSTRO) com outro nome, outra tinta (cor que multiplica a folha) e
 ## números próprios (vida, dano e velocidade como multiplicadores; xp e orbes não mudam, para o ritmo de nível ser o mesmo em todo mapa).
 ## Quem faz nascer monstro de horda (diretor, onda forte, moradores, defesa de ponto, elite e invocados da elite) pede o tipo aqui e passa
 ## o dicionário a mundo.nascer_monstro, que o aplica. Mapa fora do arquivo usa o PADRÃO: o que o jogo sorteava antes dos elencos
