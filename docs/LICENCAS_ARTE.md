@@ -138,3 +138,7 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Sprite próprio do Espectro Uivante das Ruínas (#449), Codex do Alisson, 29/10/2026
 
 - Folhas inimigo_espectro_albedo.png, inimigo_espectro_normal.png, inimigo_espectro_emissao.png e inimigo_espectro.json em jogos/hordas/projeto/prototipos/cara_nova/sprites/: cinco vistas por quatro quadros, espelhadas para oito direções. Render próprio em Blender 4.5.14 LTS pelo pipeline gerar_cara_nova.py, usando o modelo espectro já existente em fonte_arte/modelos3d/horror.py. Arte própria por script, sem materiais de terceiros; licença do projeto. Integração restrita ao Espectro Uivante das Ruínas, preservando tinta e números de combate.
+
+## Homúnculo da Torre (#449), Codex do Alisson, 29/10/2026
+
+- Modelo próprio `jogos/hordas/fonte_arte/modelos3d/torre_homunculo.py`, usando as primitivas do pipeline do projeto. Folhas `inimigo_homunculo.json`, `inimigo_homunculo_albedo.png`, `inimigo_homunculo_normal.png` e `inimigo_homunculo_emissao.png` em `jogos/hordas/projeto/prototipos/cara_nova/sprites/`: cinco vistas e quatro quadros, espelhados para oito direções. Geradas no Blender 4.5.14 por `gerar_cara_nova.py -- monstro torre_homunculo homunculo`. Sem arte de terceiros; licença do projeto. Troca somente a folha do homúnculo da Torre, preservando os números e a tinta do elenco.
