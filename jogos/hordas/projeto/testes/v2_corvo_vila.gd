@@ -8,6 +8,9 @@ const Sprites := preload("res://v2/sprites.gd")
 const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"
 const CORVO := "inimigo_corvo_carniceiro"
 const ANTIGO := "inimigo_aranha_tecela"
+## Duas partidas de estresse na Vila (#467), Difícil+Pesadelo: picos 39/43; pool64 dá 48,8% sobre o maior.
+const PICO_MEDIDO := 43
+const CAPACIDADE_PROVADA := 64
 ## O sprite preservado de cada tipo; os quatro aliases aprovados da #449 aceitam a entrega independente (id do mapa -> id do tipo -> sprite). O corvo da cidade não está aqui de propósito.
 const OUTROS := {
 	"floresta":
@@ -144,6 +147,7 @@ func _mundo() -> void:
 	for s in w.TIPOS_MONSTRO:
 		ok(w.horda.atlas.origem.has(s), "horda: o atlas continua com %s" % s)
 	ok(not w._pool_monstros.get(CORVO, []).is_empty(), "o pool do corvo foi pré-criado")
+	_pool(w)
 	var visto := {}
 	for tp in w.elenco.tipos:
 		var m = w.nascer_monstro(str(tp.sprite), w.heroi.pos + Vector2(200, 0), false, 1.0, 1.0, tp)
@@ -165,6 +169,30 @@ func _mundo() -> void:
 	ok(combos.size() == 8, "corvo: as 8 direções dão 8 combinações de linha/espelho (%d: %s)" % [combos.size(), combos.keys()])
 	w.queue_free()
 	await get_tree().process_frame
+
+
+## Até 64 corvos usam somente instâncias pré-criadas; a devolução e o renascimento não alocam outro monstro.
+func _pool(w) -> void:
+	w.combate.limpar_partida()
+	var capacidade := int(Dados.json("v2_combate").pool[CORVO])
+	ok(capacidade >= ceili(float(PICO_MEDIDO) * 1.25), "pool: pelo menos 25% de folga sobre o pico 43")
+	var ids := {}
+	for m in w._pool_monstros[CORVO]:
+		ids[m.get_instance_id()] = true
+	ok(ids.size() == capacidade, "pool: instâncias pré-criadas são distintas")
+	var antes: int = w._todos_monstros.size()
+	var ativos := {}
+	for i in CAPACIDADE_PROVADA:
+		var m = w.nascer_monstro(CORVO, w.heroi.pos + Vector2(250, 0))
+		ok(ids.has(m.get_instance_id()), "pool: corvo %d já existia antes da partida" % i)
+		ativos[m.get_instance_id()] = true
+	ok(ativos.size() == CAPACIDADE_PROVADA, "pool: 64 vivos distintos")
+	ok(w._todos_monstros.size() == antes, "pool: nenhuma alocação tardia até 64 vivos")
+	w.combate.limpar_partida()
+	ok(w._pool_monstros[CORVO].size() == capacidade, "pool: todos os corvos voltam")
+	var reciclado = w.nascer_monstro(CORVO, w.heroi.pos + Vector2(220, 0))
+	ok(ids.has(reciclado.get_instance_id()) and w._todos_monstros.size() == antes, "pool: renascer reutiliza instância")
+	w.combate.limpar_partida()
 
 
 ## Os quatro sprites aprovados na #449 podem entrar em PRs separados; cada alias continua vinculado ao seu tipo.
