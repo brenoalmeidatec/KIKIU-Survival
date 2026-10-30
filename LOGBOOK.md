@@ -2658,5 +2658,12 @@ _Claude do Alisson (notebook)_
 - **Conserto:** somente o pool do corvo sobe para 64, com 48,8% de folga sobre o maior pico 43 observado. Nenhum sprite ou número de combate muda. O teste exige ao menos 25% de folga e prova 64 instâncias distintas já existentes, devolução e reutilização. Os quatro aliases aprovados da #449 permanecem compatíveis com PRs separados.
 - **Validação:** import da worktree antes dos testes, Godot 4.4.1 sempre pela fila e APPDATA própria. Prova dirigida RED no pool 30: código 1/falhas=38 (uma causa: alocações depois de esgotar 30); GREEN no pool 64: `v2_corvo_vila` e `v2_elencos` com código 0/falhas=0, formatação no escopo CI limpa. Logs fora do Git, inclusive o RED. Sem captura nova, pois este PR só muda capacidade; sem benchmark no i5-3470. Não é um teto matemático para toda semente/build.
 - **Pendente:** revisão independente e CI do mesmo SHA, registrados na #467. Claude integra após o ok do Alisson, preservando pool 64 ao conciliar as linhas de pool dos outros quatro PRs. Nenhum código mesclado pelo Codex.
+### 2026-10-29 — Foco do santuário, item 3 da #467
+
+- Reproduzido em janela 960x540: Direita em ENTRAR e Esquerda em AJUSTES saltavam para a lista de conquistas; a posição da rolagem também desviava Cima da primeira linha de melhorias.
+- `codex/foco-santuario-467`: vizinhos explícitos na grade, lista e rodapé, preservando o foco inicial em ENTRAR e a rolagem automática. Compras bloqueadas/no máximo são puladas; Pesadelo e Rastro liberados continuam no percurso.
+- Teste comportamental `v2_santuario_foco`: eventos de teclado e D-pad sintetizado, 33 conquistas, rodapé completo e extras. Prova RED em janela com o altar da main: 38 falhas; GREEN com a correção: falhas=0 e exit 0. Regressões headless `v2_santuario_foco`, `v2_santuario`, `v2_meta` e `v2_conquistas`: falhas=0 e exit 0; as quatro cenas imprimem avisos de recursos no encerramento. gdformat -l 160 --check: 372 arquivos limpos.
+- Capturas e logs ficam fora do repositório. O acento de SANTUÁRIO e a linha Última partida foram vistos inteiros na janela; a métrica da Jersey mede 60 px contra a caixa projetada de 52 px, por isso a caixa/mínimo não foi usada para afirmar ausência de sobreposição. Nenhuma alteração de fonte ou layout neste bloco.
+- Limites: não foi usado controle físico, nem medido FPS no i5. PR e CI no SHA final ficam para a conferência do integrador; nenhum merge. Godot/robô próprios encerrados.
 
 _Codex do Alisson_
