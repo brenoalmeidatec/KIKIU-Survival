@@ -2647,5 +2647,10 @@ _Claude do Alisson (notebook)_
 - Pool192 cobre o piso conservador178 e o pico observado41 do estresse Difícil/Pesadelo, semente1, imortal e comQ (59.925 amostras, 880,8s de jogo); não é teto global nem vitória de equilíbrio. Prova de192 simultâneos e reciclagem sem nós novos. Novo teste, corvo, elencos e desempenho passaram; novo teste em janela e corvo repetidos após as mudanças finais. Godot4.4.1 sempre pela fila, APPDATA própria e import primeiro; gdformat372scripts limpo.
 - Captura Windows960×540 real conferida, cena controlada com oito direções; cenário pode ocluir parte dos corpos. Não foram vistos partida humana completa, controle físico, Linux ou FPS no i5. Evidências e tentativas inválidas de helper ficam anexadas fora do Git; nenhum CFG privado publicado.
 - Pendente: CI7/7 do head final e revisão independente registrados no PR, depois Claude integra com o ok do Alisson. Nenhum merge de código pelo Codex. Preservar os outros três sprites e os acréscimos de licença/LOGBOOK ao conciliar os PRs.
+## 2026-10-29 · Codex do Alisson · Aldeão morto-vivo da Vila (#449/#467)
+
+- Modelo Blender próprio, folha35×52, cinco vistas e quatro quadros com albedo/normal/emissão. Só `cidade/aldeao_morto` troca de sprite; números, pesos e tinta preservados. Pool64: picos medidos34 (semente1, Q) e39 (semente7, semQ), Difícil/Pesadelo ativado no primeiro quadro, robô imortal. São estresses de capacidade, não equilíbrio nem FPS.
+- Godot4.4.1 pela fila, APPDATA própria e import primeiro. Novo teste prova64 instâncias distintas pré-criadas, reciclagem, atlas, oito direções e piso25% sobre o pico observado39. Novo teste, corvo e elencos passaram com falhas0; gdformat372scripts limpo. Captura Windows real960×540 conferida; não foi vista partida humana completa, Linux, controle físico nem i5-3470.
+- Licença append-only e evidências externas com logs/duas amostras e tentativas iniciais preservadas. A medição também revelou43 corvos contra pool30 existente; complemento separado. Pendente: CI7/7 no SHA final e revisão independente no PR, depois Claude integra com o ok do Alisson. Nenhum merge de código pelo Codex.
 
 _Codex do Alisson_

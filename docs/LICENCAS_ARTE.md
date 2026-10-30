@@ -142,3 +142,7 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Homúnculo da Torre (#449), Codex do Alisson, 29/10/2026
 
 - Modelo próprio `jogos/hordas/fonte_arte/modelos3d/torre_homunculo.py`, usando as primitivas do pipeline do projeto. Folhas `inimigo_homunculo.json`, `inimigo_homunculo_albedo.png`, `inimigo_homunculo_normal.png` e `inimigo_homunculo_emissao.png` em `jogos/hordas/projeto/prototipos/cara_nova/sprites/`: cinco vistas e quatro quadros, espelhados para oito direções. Geradas no Blender 4.5.14 por `gerar_cara_nova.py -- monstro torre_homunculo homunculo`. Sem arte de terceiros; licença do projeto. Troca somente a folha do homúnculo da Torre, preservando os números e a tinta do elenco.
+
+## Aldeão morto-vivo da Vila (#449), Codex do Alisson, 29/10/2026
+
+- `jogos/hordas/projeto/prototipos/cara_nova/sprites/inimigo_aldeao_morto.json`, `inimigo_aldeao_morto_albedo.png`, `inimigo_aldeao_morto_normal.png` e `inimigo_aldeao_morto_emissao.png`: cinco vistas por quatro quadros, espelhados pelo jogo para oito direções. Modelo próprio `jogos/hordas/fonte_arte/modelos3d/vila_aldeao.py`, renderizado pelo pipeline `gerar_cara_nova.py -- monstro vila_aldeao aldeao_morto` no Blender 4.5. Arte modelada por script, sem material de terceiros; licença do projeto. Substitui somente o cão recolorido de `cidade/aldeao_morto`, preservando os números de combate.
