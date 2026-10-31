@@ -1820,9 +1820,9 @@ CHEFES_FONTE = os.path.join(HORDAS, "fonte_arte", "chefes_v2")
 CHEFES_SAIDA = os.path.join(HORDAS, "projeto", "assets", "v2", "chefes")
 # (arquivo-fonte em fonte_arte/chefes_v2, arquivo do busto em assets/v2/chefes): o do busto e o nome do chefe sem acento (#447; o teste v2_hud_busto confere)
 CHEFES_BUSTOS = (
-    ("cavaleiro_rubro", "devorador_da_carne"),
-    ("rainha_tecela", "devoradora_da_estrutura"),
-    ("rei_espantalho", "devorador_da_terra"),
+    ("cavaleiro_rubro", "devourer_of_flesh"),
+    ("rainha_tecela", "devourer_of_structure"),
+    ("rei_espantalho", "devourer_of_land"),
 )
 CHEFES_TAM = 36  # a barra do chefe tem 46 px com a moldura de pedra de 5 px: o busto cabe no miolo, sem encostar na moldura
 

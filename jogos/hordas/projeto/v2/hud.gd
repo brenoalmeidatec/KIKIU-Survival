@@ -44,9 +44,9 @@ const CHEFE_QUEDA := 1.2  # quão rápido a fantasma desce atrás da real (fraç
 ## Os bustos da barra do chefe (assets/v2/chefes/, 36 px, gerados por `gerar_objetos.py chefes`), pelo id da marca em campo (dados/v2_cartas.json, "marcas").
 ## Chefe sem busto, ou sinal sem marca (mundo falso dos testes), deixa a barra sem o retrato.
 const BUSTOS := {
-	"mini1": preload("res://assets/v2/chefes/devorador_da_carne.png"),
-	"mini2": preload("res://assets/v2/chefes/devoradora_da_estrutura.png"),
-	"chefe": preload("res://assets/v2/chefes/devorador_da_terra.png"),
+	"mini1": preload("res://assets/v2/chefes/devourer_of_flesh.png"),
+	"mini2": preload("res://assets/v2/chefes/devourer_of_structure.png"),
+	"chefe": preload("res://assets/v2/chefes/devourer_of_land.png"),
 }
 const COR_ONDA := Paleta.PERIGO
 const COR_ELITE := Paleta.ANUNCIO_ELITE
@@ -243,7 +243,7 @@ func _retrato_do_heroi() -> void:
 	if not info is Dictionary or not info.has("quadro"):
 		return
 	var regiao := Rect2(0.0, 0.0, float(info.quadro[0]), float(info.quadro[1]))
-	var propria: Variant = info.get("retrato", null)  # folha com quadro grande e vazio em volta (Nicão): só o corpo, recortado
+	var propria: Variant = info.get("retrato", null)  # folha com quadro grande e vazio em volta (Nick): só o corpo, recortado
 	if propria is Dictionary:
 		var r: Array = propria.regiao
 		regiao = Rect2(float(r[0]), float(r[1]), float(r[2]), float(r[3]))

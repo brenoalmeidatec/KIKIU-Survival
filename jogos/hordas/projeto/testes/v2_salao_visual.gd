@@ -34,7 +34,7 @@ func _ready() -> void:
 	Personagens.caminho_base = "user://testes_v2/v2_salao_visual/" + prefixo + "p"
 	Personagens.caminho_antigo = "user://testes_v2/v2_salao_visual/" + prefixo + "antigo.cfg"
 	Meta.caminho_save = "user://testes_v2/v2_salao_visual/" + prefixo + "meta.cfg"
-	var id := Personagens.criar("Matheus")
+	var id := Personagens.criar("Matthew")
 	ok(Personagens.ativar(id), "slot isolado ativo")
 	# tudo liberado (os três mapas vencidos e 3 partidas): aqui se confere a sala aberta; as travas ficam no v2_progressao
 	var cf: ConfigFile = Meta._ler()
@@ -50,7 +50,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await foto("01_salao")
-	ok(s._nome_lbl.text == "Matheus", "nome completo preservado")
+	ok(s._nome_lbl.text == "Matthew", "nome completo preservado")
 	assets()
 	camadas()
 	saldo_no_painel()

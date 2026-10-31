@@ -33,7 +33,7 @@ func _ready() -> void:
 	Personagens.caminho_base = "user://testes_v2/v2_salao_vivo/" + prefixo + "p"
 	Personagens.caminho_antigo = "user://testes_v2/v2_salao_vivo/" + prefixo + "antigo.cfg"
 	Meta.caminho_save = "user://testes_v2/v2_salao_vivo/" + prefixo + "meta.cfg"
-	ok(Personagens.ativar(Personagens.criar("Matheus")), "slot isolado ativo")
+	ok(Personagens.ativar(Personagens.criar("Matthew")), "slot isolado ativo")
 	DisplayServer.window_set_size(Vector2i(960, 540))
 	for perfil in ["baixo", "medio", "alto"]:
 		if so == "" or so == perfil:

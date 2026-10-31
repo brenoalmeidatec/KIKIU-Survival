@@ -1,5 +1,5 @@
 extends "res://v2/ator.gd"
-## Herói da v2 (o escolhido no santuário: Hazaki, Nicão ou Lucas, v2/herois.gd; os números vêm do cfg dele): anda com WASD, setas e analógico esquerdo; fica virado para o MOUSE (8 direções) quando o mouse mexe, e para onde
+## Herói da v2 (o escolhido no santuário: Hazaki, Nick ou Luke, v2/herois.gd; os números vêm do cfg dele): anda com WASD, setas e analógico esquerdo; fica virado para o MOUSE (8 direções) quando o mouse mexe, e para onde
 ## anda quando a direção de andar muda; com o controle, o analógico direito manda. Anima parado e andando com a folha do protótipo.
 ##
 ## Combate (números em dados/v2_combate.json):
@@ -23,7 +23,7 @@ extends "res://v2/ator.gd"
 ##    dura `esp_dur` s, não golpeia nem corre, é INVULNERÁVEL e cancela a ruptura, o escudo e a esquiva. Sem a carga cheia o aperto é negado. A carga
 ##    (esp_carga, 0 a 100) NÃO corre por tempo: enche por dano causado, abates e dano recebido (combate chama especial.dano, abate e recebeu) e zera ao disparar.
 ##  - HABILIDADE (ação "ruptura", tecla E ou LB; UMA POR HERÓI, dados/v2_habilidade.json, disparo em v2/habilidade.gd): `hab_id` diz qual. "ruptura" (Hazaki)
-##    segue o caminho da RUPTURA acima (rup_*). Os outros (investida_escudo do Nicão, salto_adagas do Lucas) disparam no APERTO: Estado.HABILIDADE dura `hab_dur` s,
+##    segue o caminho da RUPTURA acima (rup_*). Os outros (investida_escudo do Nick, salto_adagas do Luke) disparam no APERTO: Estado.HABILIDADE dura `hab_dur` s,
 ##    não golpeia nem corre, é INVULNERÁVEL e cancela a ruptura, o escudo e a esquiva; o Q cancela a E. Na recarga o aperto é negado. A recarga corre por tempo
 ##    (hab_recarga) e a partida começa com a E pronta.
 ## API pública lida pelo HUD (get() com padrão): vida, vida_max, xp, xp_proximo, nivel, folego, folego_max, cansado (bool), correndo (bool), da
@@ -322,7 +322,7 @@ func ruptura() -> void:
 		rup_pedido_t += maxf(golpe_dur - golpe_t, 0.0)
 
 
-## O botão da E foi apertado e a E do herói NÃO é a ruptura (investida do Nicão, salto do Lucas): dispara na hora, se o jogo está rolando e a recarga
+## O botão da E foi apertado e a E do herói NÃO é a ruptura (investida do Nick, salto do Luke): dispara na hora, se o jogo está rolando e a recarga
 ## zerou. Cancela o golpe, a ruptura em carga, o escudo e a esquiva. Na recarga é negado: som grave e o slot do HUD treme. Devolve true se disparou.
 func habilidade() -> bool:
 	var c = mundo.combate
@@ -1165,7 +1165,7 @@ func _coluna_acao(dt: float) -> int:
 		var passo_h := mini(hab_anim_passo, maxi(int(tipo.info.animacoes.combo.get("golpes", 3)) - 1, 0))
 		var k_h := hab_t / maxf(hab_dur, 0.001)
 		var de_h := 0.0
-		if hab_anim_antes != "" and _tem_anim(hab_anim_antes):  # a pose própria da E primeiro (Nicão: a marreta de través, de escudo), depois o golpe
+		if hab_anim_antes != "" and _tem_anim(hab_anim_antes):  # a pose própria da E primeiro (Nick: a marreta de través, de escudo), depois o golpe
 			if k_h < hab_anim_antes_ate:
 				return _coluna_por_tempo(hab_anim_antes, hab_t)
 			de_h = hab_anim_antes_ate

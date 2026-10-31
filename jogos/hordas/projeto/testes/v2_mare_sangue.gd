@@ -92,7 +92,7 @@ func _onda() -> void:
 	await _novo("nicao", "cidade")
 	var d = w.combate.diretor
 	d.rng.seed = 449
-	ok(d._mare_ativa(), "Maré ativa para Nicão na Vila")
+	ok(d._mare_ativa(), "Maré ativa para Nick na Vila")
 	var tela: Rect2 = w.cam.retangulo()
 	for lado in [-1, 1]:
 		var ponto = d._ponto_mare(lado)

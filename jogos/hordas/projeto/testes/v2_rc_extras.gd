@@ -75,9 +75,9 @@ func _conquistas() -> void:
 	ok(Meta.nivel("dano") == 6, "6 níveis comprados")
 	# herói: só a vitória com ele
 	Meta.registrar_partida({"tempo": 10.0, "venceu": true, "almas": 0, "mapa": "floresta", "heroi": "nicao"})
-	ok(_feita("vence_nicao") and not _feita("vence_hazaki") and not _feita("vence_lucas"), "vencer com o Nicão marca só a dele")
+	ok(_feita("vence_nicao") and not _feita("vence_hazaki") and not _feita("vence_lucas"), "vencer com o Nick marca só a dele")
 	Meta.registrar_partida({"tempo": 10.0, "venceu": false, "almas": 0, "heroi": "lucas"})
-	ok(not _feita("vence_lucas"), "perder com o Lucas não marca a dele")
+	ok(not _feita("vence_lucas"), "perder com o Luke não marca a dele")
 	# partidas: contadas no save, antes de conferir
 	for i in 6:
 		Meta.registrar_partida({"tempo": 1.0, "venceu": false, "almas": 0})

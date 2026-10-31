@@ -190,7 +190,7 @@ func _nomes() -> void:
 		var heroi := Personagens.heroi_do_nome(str(n.nome))
 		var info := "Almas: 99999\nHerói: %s (%s)" % [str(Herois.heroi(heroi).nome), Personagens.arma_inicial(heroi)]
 		_cabe_texto(info, t._info.size, 32, "info com o herói de %s" % n.nome)
-		# só o nome sem rosto.png usa o sprite parado: a folha própria do nome (Matheus) ou a do herói dele; cada nome com rosto mostra o próprio rosto
+		# só o nome sem rosto.png usa o sprite parado: a folha própria do nome (Matthew) ou a do herói dele; cada nome com rosto mostra o próprio rosto
 		var pasta := str(n.get("pasta", ""))
 		if pasta == "" or not ResourceLoader.exists("res://assets/personagens/%s/rosto.png" % pasta):
 			var folha := Personagens.folha_do_nome(str(n.nome))
@@ -217,7 +217,7 @@ func _retrato_certo(t, nome: String) -> void:
 	ok(is_equal_approx(esc, roundf(esc)) and esc >= 1.0, "retrato de %s em escala inteira (%s)" % [nome, esc])
 	ok(is_equal_approx(t._retrato.size.y, reg.size.y * esc), "retrato de %s sem distorção" % nome)
 	# o herói parado sai em 3x (96x132): em 2x (88 px) a tela ficou com metade do tamanho; o rosto segue em 2x
-	if tex.atlas.resource_path.ends_with("_albedo.png"):  # sem rosto: o quadro parado da folha (3x: 132 px; o Nicão, recortado no corpo, 126)
+	if tex.atlas.resource_path.ends_with("_albedo.png"):  # sem rosto: o quadro parado da folha (3x: 132 px; o Nick, recortado no corpo, 126)
 		ok(t._retrato.size.y >= 120.0, "herói de %s parado com pelo menos 120 px de altura (tem %s)" % [nome, t._retrato.size.y])
 	else:
 		ok(esc >= 2.0, "rosto de %s em pelo menos 2x (%s)" % [nome, esc])
@@ -226,7 +226,7 @@ func _retrato_certo(t, nome: String) -> void:
 
 func _lista() -> void:
 	Personagens.criar("Breno", "hazaki")
-	Personagens.criar("Lucas", "lucas")
+	Personagens.criar("Luke", "lucas")
 	var t = Tela.instantiate()
 	add_child(t)
 	await _assentar()

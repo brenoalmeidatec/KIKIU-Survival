@@ -148,15 +148,15 @@ func _testes() -> void:
 		preload("res://v2/minimapa.gd").MARGEM_TELA == 6 and retrato_q.position == Vector2(6, 540 - 6 - retrato_q.size.y),
 		"minimapa e retrato com a mesma margem de 6 px (o retrato %s)" % retrato_q.position
 	)
-	# o retrato de CADA herói cabe na moldura de 90x108, centrado nela e em escala INTEIRA (o Nicão sai recortado no corpo)
+	# o retrato de CADA herói cabe na moldura de 90x108, centrado nela e em escala INTEIRA (o Nick sai recortado no corpo)
 	var pers_antes := [Personagens.caminho_base, Personagens.caminho_indice, Personagens.caminho_antigo, Meta.caminho_save]
-	Personagens.caminho_base = "user://teste_v2_hud_p"  # o Matheus é um PERSONAGEM (joga de Hazaki com a folha dele): save isolado, o real não é tocado
+	Personagens.caminho_base = "user://teste_v2_hud_p"  # o Matthew é um PERSONAGEM (joga de Hazaki com a folha dele): save isolado, o real não é tocado
 	Personagens.caminho_indice = "user://teste_v2_hud_personagens.cfg"
 	Personagens.caminho_antigo = "user://teste_v2_hud_antigo.cfg"
 	for id in ["hazaki", "matheus", "nicao", "lucas"]:
 		if id == "matheus":
 			Herois.forcado = ""
-			Personagens.ativar(Personagens.criar("Matheus", Personagens.heroi_do_nome("Matheus")))
+			Personagens.ativar(Personagens.criar("Matthew", Personagens.heroi_do_nome("Matthew")))
 		else:
 			Herois.forcado = id
 		var h2 = Hud.criar(falso)
@@ -174,9 +174,9 @@ func _testes() -> void:
 			"retrato de %s centrado na moldura (%s)" % [id, rect.get_center()]
 		)
 		if id == "nicao":
-			ok(reg.x < 64.0 and reg.y < 96.0, "retrato do Nicão: recorte do corpo, sem o vazio do quadro (%s)" % reg)
+			ok(reg.x < 64.0 and reg.y < 96.0, "retrato do Nick: recorte do corpo, sem o vazio do quadro (%s)" % reg)
 		if id == "matheus":
-			ok((img.texture as AtlasTexture).atlas.resource_path.ends_with("matheus_albedo.png"), "retrato do Matheus: a folha dele, não a do Hazaki")
+			ok((img.texture as AtlasTexture).atlas.resource_path.ends_with("matheus_albedo.png"), "retrato do Matthew: a folha dele, não a do Hazaki")
 		h2.queue_free()
 	Herois.forcado = ""
 	DirAccess.remove_absolute(Personagens.caminho_indice)

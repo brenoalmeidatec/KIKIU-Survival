@@ -86,7 +86,7 @@ func _arte() -> void:
 
 
 ## Os ids de dados/v2_cartas.json (marcas dos chefes) são exatamente as chaves de BUSTOS: nenhum chefe sem busto, nenhum busto sem chefe.
-## E o arquivo de cada busto é o do nome do chefe ("Devoradora da Estrutura" -> devoradora_da_estrutura.png), para um busto trocado de chefe não passar.
+## E o arquivo de cada busto é o do nome do chefe ("Devourer of Structure" -> devourer_of_structure.png), para um busto trocado de chefe não passar.
 func _marcas() -> void:
 	var dados = JSON.parse_string(FileAccess.get_file_as_string(CAMINHO_CARTAS))
 	var marcas := _achar_marcas(dados)
@@ -104,7 +104,7 @@ func _marcas() -> void:
 		ok(ids.has(id), "busto %s sem marca em dados/v2_cartas.json" % id)
 
 
-## "Devoradora da Estrutura" -> "devoradora_da_estrutura": minúsculas, espaço vira _, sem acento (o nome do arquivo do busto).
+## "Devourer of Structure" -> "devourer_of_structure": minúsculas, espaço vira _, sem acento (o nome do arquivo do busto).
 func _slug(nome: String) -> String:
 	var s := nome.to_lower().replace(" ", "_")
 	for par in [["á", "a"], ["â", "a"], ["ã", "a"], ["é", "e"], ["ê", "e"], ["í", "i"], ["ó", "o"], ["ô", "o"], ["ú", "u"], ["ç", "c"]]:

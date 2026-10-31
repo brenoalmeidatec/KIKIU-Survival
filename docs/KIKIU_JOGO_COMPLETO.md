@@ -59,12 +59,12 @@ Um roguelike de ação com controle de verdade: você se mexe, mira, esquiva, es
 | Personagem | Ideia central | Papel no jogo |
 |---|---|---|
 | Hazaki | Samurai, lutador e feiticeiro; começa simples e vira lenda | Herói padrão da v2 e da v1 |
-| Nicão | Guardião manso, de marreta; tranquilo e de boa | Herói da v2 e da v1 |
-| Lucas | Adagueiro à distância, caótico, veloz e com sorte | Herói da v2 e da v1 |
+| Nick | Guardião manso, de marreta; tranquilo e de boa | Herói da v2 e da v1 |
+| Luke | Adagueiro à distância, caótico, veloz e com sorte | Herói da v2 e da v1 |
 | Matheus, João, Beto, Lukako, Fábio | Rivais do duelo final na v1 | Estão em `dados/pvp.json` |
 
 Notas de estado:
-- Os personagens **Matheus, Lucas e Nicão** como *novos* personagens (PRs #286, #296, #297, #298) estão **de lado**, por decisão do Breno de 15/10. O foco é o jogo.
+- Os personagens **Matthew, Luke e Nick** como *novos* personagens (PRs #286, #296, #297, #298) estão **de lado**, por decisão do Breno de 15/10. O foco é o jogo.
 - Os rivais de duelo (João, Beto, Lukako, Fábio, Matheus) são da v1. Na v2 o duelo **não encontrado**.
 - A história de cada um (falas e piadas internas) é de responsabilidade do Breno; números e textos vêm dele.
 
@@ -89,8 +89,8 @@ Notas de estado:
 | Mirar | Mouse | Analógico direito |
 | Golpe principal (katana) | Clique esquerdo (segurar repete o combo) | Gatilho (ver `v2/LEIA-ME.md`) |
 | Escudo | Botão direito | LT |
-| Habilidade do herói (Hazaki: ruptura, carregar e soltar; Nicão: investida de escudo; Lucas: salto das adagas; recarga por tempo) | E | LB |
-| Especial do herói (um por herói: Hazaki, investida; Nicão, terremoto; Lucas, chuva de adagas) | Q (ultimate: carga de 0 a 100 por dano causado, abates e dano recebido; não recarrega por tempo) | RB |
+| Habilidade do herói (Hazaki: ruptura, carregar e soltar; Nick: investida de escudo; Luke: salto das adagas; recarga por tempo) | E | LB |
+| Especial do herói (um por herói: Hazaki, investida; Nick, terremoto; Luke, chuva de adagas) | Q (ultimate: carga de 0 a 100 por dano causado, abates e dano recebido; não recarrega por tempo) | RB |
 | Esquiva | Espaço | Não confirmado |
 | Correr | Shift (gasta o mesmo fôlego) | Não confirmado |
 | Trocar sombra | 1, 2, 3 | Não confirmado |
@@ -120,14 +120,14 @@ Lista em `dados/v2_herois.json`. O primeiro é o padrão (Hazaki).
 | Herói | Título | Vida | Velocidade | Bônus de dano | Área | Sorte | Outras notas |
 |---|---|---:|---:|---:|---:|---:|---|
 | Hazaki | O Samurai | 100 | 100 | ×1,0 | ×1,0 | +0% | Combo de dois cortes e uma estocada que empurra. Equilibrado. |
-| Nicão | O Guardião | 180 | 78 | ×1,0 | ×1,2 | +0% | Marreta; batida larga e pancada no chão em área. Recuo ao apanhar: 70. |
-| Lucas | O Caótico | 70 | 118 | ×1,0 | ×1,0 | +15% | Adagas em leque na direção da mira; segure para repetir. Recuo ao apanhar: 130. |
+| Nick | O Guardião | 180 | 78 | ×1,0 | ×1,2 | +0% | Marreta; batida larga e pancada no chão em área. Recuo ao apanhar: 70. |
+| Luke | O Caótico | 70 | 118 | ×1,0 | ×1,0 | +15% | Adagas em leque na direção da mira; segure para repetir. Recuo ao apanhar: 130. |
 
 Notas:
 - **Vida, velocidade e sorte** são os números do herói como vêm no arquivo (`cfg.heroi`); os bônus são multiplicadores. "Sorte" é a chance de uma carta comum subir para rara, somada à do santuário.
-- **Mover durante o golpe** (`mov_golpe`): Hazaki 55%, Nicão 30%, Lucas 80% da velocidade de andar.
+- **Mover durante o golpe** (`mov_golpe`): Hazaki 55%, Nick 30%, Luke 80% da velocidade de andar.
 - **Escudo (botão direito):** `dados/v2_secundario.json` atribui o escudo aos três heróis.
-- **Habilidade (E ou LB):** uma por herói, em `dados/v2_habilidade.json`: Hazaki tem a ruptura (números em `dados/v2_ruptura.json`), Nicão a investida de escudo e Lucas o salto das adagas.
+- **Habilidade (E ou LB):** uma por herói, em `dados/v2_habilidade.json`: Hazaki tem a ruptura (números em `dados/v2_ruptura.json`), Nick a investida de escudo e Luke o salto das adagas.
 
 ### Combo da katana (Hazaki, base antes dos bônus)
 
@@ -155,7 +155,7 @@ Sete atributos sobem com cartas (`dados/v2_cartas.json > stats`):
 
 ### Heróis da v1 (pausada)
 
-Em `dados/herois.json` a v1 tem Hazaki, Nicão e Lucas como heróis da escolha, e os rivais do duelo (João, Matheus, Beto, Lukako, Fábio). A v1 não recebe mais atualização de conteúdo.
+Em `dados/herois.json` a v1 tem Hazaki, Nick e Luke como heróis da escolha, e os rivais do duelo (João, Matthew, Beto, Lukako, Fábio). A v1 não recebe mais atualização de conteúdo.
 
 ---
 
@@ -277,8 +277,8 @@ Oito modificadores (`dados/v2_cartas.json > modificadores`), cada um com um valo
 - **Fôlego de caçador:** cada abate devolve uma carga de fôlego.
 - **Abalo sísmico:** a pancada no chão solta uma onda de choque.
 - **Peso de muralha:** os golpes empurram e atordoam mais.
-- **Chuva de adagas:** cada adaga que acerta pode soltar outra (Lucas).
-- **Mira longa:** as adagas voam mais longe e mais rápido (Lucas).
+- **Chuva de adagas:** cada adaga que acerta pode soltar outra (Luke).
+- **Mira longa:** as adagas voam mais longe e mais rápido (Luke).
 
 ### Elementos
 
@@ -342,9 +342,9 @@ Definidos em `dados/v2_cartas.json > chefes > marcas`:
 
 | Marca | Nome | Vida base | Dano base | Ataques |
 |---|---|---:|---:|---|
-| mini1 | Devorador da Carne | 1100 | 20 | estouro, chuva |
-| mini2 | Devoradora da Estrutura | 3000 | 26 | estouro, investida, chuva |
-| chefe | Devorador da Terra | 9000 | 34 | estouro, chuva, investida, chuva |
+| mini1 | Devourer of Flesh | 1100 | 20 | estouro, chuva |
+| mini2 | Devourer of Structure | 3000 | 26 | estouro, investida, chuva |
+| chefe | Devourer of Land | 9000 | 34 | estouro, chuva, investida, chuva |
 
 - **Estouro:** um aviso no chão e uma explosão em área.
 - **Chuva:** cinco pancadas em sequência que espalham pelo chão.

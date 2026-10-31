@@ -1,5 +1,5 @@
 extends Node
-## Quadros do Nicão (folha do Blender) em jogo, para os GIFs do PR (não roda no CI: fica em testes/fotos/). Monta uma partida sem diretor, com o
+## Quadros do Nick (folha do Blender) em jogo, para os GIFs do PR (não roda no CI: fica em testes/fotos/). Monta uma partida sem diretor, com o
 ## herói imortal e monstros parados na frente, faz a ação e grava um PNG do viewport do mundo a cada 2 passos de 1/60 s (30 quadros por segundo de
 ## jogo), recortado em volta do herói. O ferramentas/gifs_golpes.py junta os PNG de cada subpasta num GIF ampliado sem suavizar.
 ## Uso: godot --path jogos/hordas/projeto res://testes/fotos/nicao_gifs.tscn -- --fotos=PASTA [--cena=nome] [--heroi=hazaki]

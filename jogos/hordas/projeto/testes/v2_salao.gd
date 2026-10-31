@@ -87,10 +87,10 @@ func _testes() -> void:
 
 	# 2. criar personagens: cada um ganha o prÃ³prio slot de save e o nome que escolheu
 	var p1 := Personagens.criar("Breno")
-	var p2 := Personagens.criar("Lucas")
+	var p2 := Personagens.criar("Luke")
 	ok(p1 == "p1" and p2 == "p2", "os personagens novos ganham os ids p1 e p2 (%s, %s)" % [p1, p2])
 	ok(Personagens.lista() == ["p1", "p2"], "a lista guarda a ordem de criaÃ§Ã£o")
-	ok(Personagens.nome("p2") == "Lucas", "o nome fica no Ã­ndice")
+	ok(Personagens.nome("p2") == "Luke", "o nome fica no Ã­ndice")
 	ok(Personagens.resumo("p2").almas == 0 and Personagens.resumo("p2").niveis == 0, "um personagem novo comeÃ§a com o santuÃ¡rio zerado")
 
 	# 3. isolamento: almas do p1 nÃ£o aparecem no p2
@@ -184,15 +184,15 @@ func _testes() -> void:
 	s2.queue_free()
 
 	# 8. escolha de personagem: lista os personagens e os nomes livres; criar um personagem novo abre o salÃ£o zerado
-	Personagens.criar("Lucas")  # a migração deixou só o p1: agora são dois personagens, o Breno e o Lucas
+	Personagens.criar("Luke")  # a migração deixou só o p1: agora são dois personagens, o Breno e o Luke
 	var t = Tela.instantiate()
 	add_child(t)
 	t.ao_escolher = func(cena): cenas.append(cena)
 	ok(t._lista.get_child_count() == 2 + 1, "a escolha mostra 2 personagens e NOVO PERSONAGEM")
 	t._abrir_nomes()
 	ok(t._lista.get_child_count() == Personagens.nomes_livres().size() + 1, "criar mostra os nomes livres e VOLTAR")
-	var lucas_usado := Personagens.nomes().filter(func(n): return n.nome == "Lucas")
-	ok(lucas_usado.size() == 1 and not Personagens.nomes_livres().any(func(n): return n.nome == "Lucas"), "um nome jÃ¡ usado nÃ£o volta a ser oferecido")
+	var lucas_usado := Personagens.nomes().filter(func(n): return n.nome == "Luke")
+	ok(lucas_usado.size() == 1 and not Personagens.nomes_livres().any(func(n): return n.nome == "Luke"), "um nome jÃ¡ usado nÃ£o volta a ser oferecido")
 	t._criar(Personagens.nomes_livres()[0])
 	ok(Personagens.lista().size() == 3 and Personagens.ativo() == "p3", "criar um personagem novo o deixa ativo")
 	ok(Meta.saldo() == 0 and Meta.caminho_save == Personagens.caminho_do_save("p3"), "o personagem criado comeÃ§a com 0 almas e usa o prÃ³prio save")
@@ -200,26 +200,38 @@ func _testes() -> void:
 	remove_child(t)
 	t.queue_free()
 
-	# 9. o personagem que joga o Nicão anda no salão com a folha do Nicão (64x96, pés na linha 74, andar de 6 quadros; o do Hazaki segue na folha dele)
-	var id_nicao := Personagens.criar("Nicão", "nicao")
-	ok(Personagens.heroi(id_nicao) == "nicao" and Personagens.ativar(id_nicao), "o Nicão joga o herói nicao")
+	# 8b. save antigo: o índice guarda o nome em português (Nicão, Matheus...) e o jogo mostra o nome em inglês, com o herói e a folha certos
+	var id_velho := Personagens.criar("Matheus")
+	ok(Personagens.nome(id_velho) == "Matthew", "o save com o nome antigo (Matheus) aparece como Matthew")
+	ok(
+		Personagens.sprite(id_velho) == "matheus" and Personagens.nome(Personagens.criar("Nicão", "nicao")) == "Nick",
+		"e a folha e o nome novo seguem o nome antigo"
+	)
+	ok(
+		Personagens.nome(Personagens.criar("Breno")) == "Brendan" and Personagens.nome(Personagens.criar("Lukako")) == "Lukako",
+		"Breno vira Brendan; o que não mudou fica"
+	)
+
+	# 9. o personagem que joga o Nick anda no salão com a folha do Nick (64x96, pés na linha 74, andar de 6 quadros; o do Hazaki segue na folha dele)
+	var id_nicao := Personagens.criar("Nick", "nicao")
+	ok(Personagens.heroi(id_nicao) == "nicao" and Personagens.ativar(id_nicao), "o Nick joga o herói nicao")
 	var s3 = Salao.instantiate()
 	add_child(s3)
 	ok(
 		s3._quadro_w == 64 and s3._quadro_h == 96 and s3._pe_y == 74 and s3._passos == 6,
-		"o salão do Nicão usa a folha dele (%dx%d, pés %d, %d passos)" % [s3._quadro_w, s3._quadro_h, s3._pe_y, s3._passos]
+		"o salão do Nick usa a folha dele (%dx%d, pés %d, %d passos)" % [s3._quadro_w, s3._quadro_h, s3._pe_y, s3._passos]
 	)
-	ok(s3._sprite.resource_path.ends_with("nicao_albedo.png"), "e a textura é a do Nicão (%s)" % s3._sprite.resource_path)
+	ok(s3._sprite.resource_path.ends_with("nicao_albedo.png"), "e a textura é a do Nick (%s)" % s3._sprite.resource_path)
 	remove_child(s3)
 	s3.queue_free()
 
-	# 10. a MESMA regra para os quatro: o salão desenha a folha do personagem (Matheus tem a dele) ou, sem ela, a do herói (Hazaki, Lucas, Nicão);
+	# 10. a MESMA regra para os quatro: o salão desenha a folha do personagem (Matthew tem a dele) ou, sem ela, a do herói (Hazaki, Luke, Nick);
 	# o andar usa o ciclo inteiro (6 passos) e o parado toca os 4 quadros (colunas 0, 7, 8 e 9)
 	var casos := [
 		["Breno", "hazaki", "hazaki_samurai_albedo.png", Vector2i(32, 44), 42],
-		["Matheus", "hazaki", "matheus_albedo.png", Vector2i(32, 44), 42],
-		["Lucas", "lucas", "lucas_albedo.png", Vector2i(32, 44), 42],
-		["Nicão", "nicao", "nicao_albedo.png", Vector2i(64, 96), 74],
+		["Matthew", "hazaki", "matheus_albedo.png", Vector2i(32, 44), 42],
+		["Luke", "lucas", "lucas_albedo.png", Vector2i(32, 44), 42],
+		["Nick", "nicao", "nicao_albedo.png", Vector2i(64, 96), 74],
 	]
 	for c in casos:
 		var id_c := Personagens.criar(str(c[0]), str(c[1]))

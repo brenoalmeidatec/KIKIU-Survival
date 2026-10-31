@@ -118,7 +118,7 @@ func _ready() -> void:
 	get_tree().quit()
 
 
-## A roda do Q deixa dois cavaleiros a +/-32, +60: o quadro 64x96 do Nicão cruza os dois,
+## A roda do Q deixa dois cavaleiros a +/-32, +60: o quadro 64x96 do Nick cruza os dois,
 ## mas o corpo 38x42 fica livre. Antes a silhueta inteira clareava o herói mesmo após o especial.
 func _t_nicao_sem_vazio() -> void:
 	var t: Dictionary = w.sprites.tipo("nicao")
@@ -129,9 +129,9 @@ func _t_nicao_sem_vazio() -> void:
 		{"pos": Vector2(32, 60), "tipo": cavaleiro, "escala": 1.0},
 	]
 	var oc = Oclusao.new()
-	ok(Oclusao._corpo(Vector2.ZERO, t, 1.0) == Rect2(-22, -40, 38, 42), "Nicão: corpo sem o vazio do quadro e a marreta")
-	ok(not oc._coberto(heroi, roda), "Nicão depois do Q: cavaleiros ao lado não acendem silhueta sobre o corpo livre")
+	ok(Oclusao._corpo(Vector2.ZERO, t, 1.0) == Rect2(-22, -40, 38, 42), "Nick: corpo sem o vazio do quadro e a marreta")
+	ok(not oc._coberto(heroi, roda), "Nick depois do Q: cavaleiros ao lado não acendem silhueta sobre o corpo livre")
 	var cobrindo: Array = [{"pos": Vector2(0, 12), "tipo": cavaleiro, "escala": 1.0}]
-	ok(oc._coberto(heroi, cobrindo), "Nicão realmente coberto por cavaleiro: a silhueta continua disponível")
+	ok(oc._coberto(heroi, cobrindo), "Nick realmente coberto por cavaleiro: a silhueta continua disponível")
 	var simples := {"w": 32, "h": 44, "pe": 42}
 	ok(Oclusao._corpo(Vector2.ZERO, simples, 1.0) == Rect2(-16, -21, 32, 44), "folha sem recorte mantém a cobertura anterior")

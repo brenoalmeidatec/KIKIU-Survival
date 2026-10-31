@@ -1,6 +1,6 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste automático do ESPECIAL de cada herói, a tecla Q (v2/especial.gd, heroi.gd, combate.gd, hud_habilidades.gd, entrada.gd, dados/v2_especial.json):
-# dados e entrada (Q e RB = ação ultimate, e o evento dispara o especial), o mapa herói -> id (Hazaki: investida, Nicão: terremoto, Lucas: chuva), e
+# dados e entrada (Q e RB = ação ultimate, e o evento dispara o especial), o mapa herói -> id (Hazaki: investida, Nick: terremoto, Luke: chuva), e
 # para CADA herói numa partida de verdade: nasce com a carga em 0, o aperto sem a carga cheia é negado (slot treme, nada acontece), o aperto com a
 # carga cheia dispara, o herói fica invulnerável e em Estado.ESPECIAL pela duração, o especial causa dano de verdade na horda (os alvos certos,
 # nem mais nem menos), a carga volta a 0 e NÃO corre por tempo. A carga do Q (ultimate estilo Overwatch) enche por dano causado, por abate (comum,
@@ -181,7 +181,7 @@ func _comum(id: String) -> void:
 	ok(absf(float(n) * PASSO - dur) < 0.15, "%s: o especial dura ~%s s (durou %s)" % [id, dur, float(n) * PASSO])
 	ok(h.estado == Heroi.Estado.LIVRE and not h.esp_invul, "%s: acabou: herói livre e vulnerável de novo" % id)
 	ok(h.esp_carga == 0.0, "%s: o dano do próprio Q não enche a carga (%s)" % [id, h.esp_carga])
-	passos(80)  # a onda do Nicão ainda corre
+	passos(80)  # a onda do Nick ainda corre
 	var feridos := 0
 	for m in ring:
 		if perdeu(m) > 0.0:
@@ -365,7 +365,7 @@ func _fim_de_partida(id: String) -> void:
 		ok(h.estado != Heroi.Estado.ESPECIAL and not h.esp_invul and esp._id == "", "fim de partida: sai do especial na derrota")
 
 
-## Nicão: a batida fere e empurra quem está perto, a onda de choque fere quem está longe depois, e quem está fora de tudo não é ferido.
+## Nick: a batida fere e empurra quem está perto, a onda de choque fere quem está longe depois, e quem está fora de tudo não é ferido.
 func _nicao() -> void:
 	var h = w.heroi
 	zerar()
@@ -389,7 +389,7 @@ func _nicao() -> void:
 	ok(esp.ultimo.get("mortes", 0) >= 1, "nicão: o especial conta a morte")
 
 
-## Lucas: a tempestade solta adagas em todas as direções e fere os monstros em volta, sem sair do lugar de graça.
+## Luke: a tempestade solta adagas em todas as direções e fere os monstros em volta, sem sair do lugar de graça.
 func _lucas() -> void:
 	var h = w.heroi
 	zerar()
