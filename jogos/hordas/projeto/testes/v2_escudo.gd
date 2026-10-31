@@ -317,6 +317,11 @@ func _ready() -> void:
 	fx_passos(2)
 	var ve: Dictionary = esc.visual_estado()
 	ok(ve.visivel and str(ve.estilo) != "", "erguido: o sprite do escudo aparece (estilo %s)" % ve.estilo)
+	ok(str(ve.estilo) == "hazaki", "a partida do Hazaki usa o escudo do Hazaki (%s)" % ve.estilo)
+	ok(
+		esc._bri.visible and esc._bri.get_parent() == esc._raiz and esc._raiz.get_parent() == w.no_mundo,
+		"o clarão da janela perfeita é filho do escudo, dentro do y-sort (não na camada glow, por cima do herói)"
+	)
 	ok(ve.celula == 1 and not ve.flip and ve.pos.x > h.pos.x, "mira para a direita: vista de lado, na frente do herói (%s)" % ve)
 	w.mouse_forcado = h.centro() + Vector2(-100, 0)
 	fx_passos(4)
@@ -343,6 +348,13 @@ func _ready() -> void:
 	fx_passos(4)
 	ve = esc.visual_estado()
 	ok(ve.rachado and ve.celula == 3 and h.escudo_ativo, "fôlego no fim: o quadro do escudo racha (aviso de que vai cair)")
+	# de lado não há quadro rachado: o aviso é o escudo avermelhado
+	w.mouse_forcado = h.centro() + Vector2(100, 0)
+	fx_passos(4)
+	ve = esc.visual_estado()
+	ok(not ve.rachado and ve.celula == 1 and ve.aviso, "fôlego no fim, mira de lado: sem quadro rachado, mas o escudo avermelha (aviso)")
+	w.mouse_forcado = h.centro() + Vector2(0, 100)
+	fx_passos(2)
 	# o fôlego zerou: quebra em 4 pedaços que caem e somem; o próximo erguer volta reforjado
 	for i in 120:
 		if h.cansado:
@@ -366,6 +378,28 @@ func _ready() -> void:
 	)
 	# a regra não muda com o visual: o arco e o bloqueio são os mesmos
 	ok(esc.cobre(h, h.pos + Vector2(0, 40)) and not esc.cobre(h, h.pos + Vector2(0, -40)), "o bloqueio segue pelo arco, com o visual novo")
+	# um escudo por personagem: cada nome do salão joga com o seu (o Matheus tem o kit do Hazaki e o escudo dele)
+	var Pers := preload("res://v2/personagens.gd")
+	var Meta := preload("res://v2/meta.gd")
+	var save_antes: String = Meta.caminho_save
+	var chave_antes: String = h.chave
+	var heroi_antes: String = esc.combate.heroi_id
+	var vistos := {}
+	for ent in Pers.nomes():
+		var heroi_ent := str(ent.get("heroi", "hazaki"))
+		var esperado := str(ent.get("sprite", heroi_ent))
+		if not ["hazaki", "nicao", "lucas", "matheus"].has(esperado):
+			continue
+		var pid: String = Pers.criar(str(ent.nome), heroi_ent)
+		ok(pid != "" and Pers.ativar(pid), "personagem de teste %s criado e ativo" % ent.nome)
+		esc.combate.heroi_id = heroi_ent
+		h.chave = heroi_ent
+		ok(esc._estilo_de(h) == esperado, "%s joga com o escudo %s (veio %s)" % [ent.nome, esperado, esc._estilo_de(h)])
+		vistos[esperado] = true
+	ok(vistos.size() == 4, "os quatro escudos (hazaki, nicao, lucas, matheus) saem de personagens diferentes do salão (%s)" % [vistos.keys()])
+	h.chave = chave_antes
+	esc.combate.heroi_id = heroi_antes
+	Meta.caminho_save = save_antes
 	# perfil Baixo: sem pedaços
 	zerar()
 	w.args["particulas"] = "poucas"

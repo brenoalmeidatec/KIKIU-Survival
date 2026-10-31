@@ -3,7 +3,7 @@ extends "res://testes/isolamento_v2.gd"
 # bonus_por_nivel e bonus_nivel_golpe, v2/escudo.gd raio, arco e pontos_do_arco, v2/adagas.gd lancar; dados/v2_combate.json > golpe.raio_por_nivel e dados/v2_secundario.json >
 # escudo.raio_por_nivel e arco_por_nivel): nível 1 igual ao de antes, cresce por nível e para no teto, o golpe soma com a área do herói
 # (h.m_area) sem duplicar e o escudo não usa a área, o arco do golpe não muda com o nível, o acerto (golpear) e o desenho (fx.corte) crescem
-# juntos, o escudo cresce em COBERTURA (arco do bloqueio, `cobre`) e o desenho (pontos_do_arco) acompanha, as adagas do golpe crescem e as do
+# juntos, o escudo cresce em COBERTURA (arco do bloqueio, `cobre`) e a geometria da cobertura (pontos_do_arco) acompanha, as adagas do golpe crescem e as do
 # especial Q não, e o nível lido é o de quem golpeia (co-op). O mundo anda em passos fixos de 1/60 s.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_raio_por_nivel.tscn  (imprime "v2_raio_por_nivel falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -138,7 +138,7 @@ func _ready() -> void:
 	h.nivel = 500
 	ok(perto(esc.raio(h), raio0 * 1.3), "escudo nível 500: o raio para no teto (x1,3)")
 
-	# 10. escudo, a COBERTURA: o arco de bloqueio cresce 1 grau por nível até +25, e o que é desenhado (pontos_do_arco) acompanha raio e arco.
+	# 10. escudo, a COBERTURA: o arco de bloqueio cresce 1 grau por nível até +25, e a geometria da cobertura (pontos_do_arco, que NÃO é desenhada: o sprite tem o mesmo tamanho em qualquer nível) acompanha raio e arco.
 	# Os números esperados saem dos DADOS e do nível, não das funções raio/arco do escudo: desfazer o uso delas no desenho faz isto falhar.
 	var arco0: float = float(esc.cfg.arco)
 	var da: Dictionary = Dados.json("v2_secundario").escudo.arco_por_nivel
@@ -157,9 +157,9 @@ func _ready() -> void:
 		var raios_ok := true
 		for q in no_chao:
 			raios_ok = raios_ok and perto(q.length(), esp_raio)
-		ok(raios_ok, "nível %d: todo ponto desenhado do escudo está a %.2f px do corpo (raio)" % [caso[0], esp_raio])
+		ok(raios_ok, "nível %d: todo ponto do arco de cobertura está a %.2f px do corpo (raio)" % [caso[0], esp_raio])
 		var aberto := rad_to_deg(absf(no_chao[0].angle_to(no_chao[no_chao.size() - 1])))
-		ok(perto(aberto, esp_arco), "nível %d: o escudo desenhado abre %.1f graus (visto %.2f)" % [caso[0], esp_arco, aberto])
+		ok(perto(aberto, esp_arco), "nível %d: o arco de cobertura abre %.1f graus (visto %.2f)" % [caso[0], esp_arco, aberto])
 
 	# 11. o bloqueio: a cobertura cresce com o arco. A 68 graus da mira: fora do arco no nível 1 (60 de cada lado), dentro no 20 (69,5)
 	var a68: Vector2 = Vector2.from_angle(deg_to_rad(68.0)) * 100.0

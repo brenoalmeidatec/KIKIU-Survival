@@ -15,9 +15,9 @@ extends RefCounted
 ## O VISUAL é um escudo de verdade, um por personagem (pixel art de assets/v2/escudos/<id>.png, gerada por fonte_arte/escudos/gerar_escudos.py): uma faixa de 8
 ## células 32x32 (frente, lado, costas, rachado e 4 pedaços). O Sprite2D fica no mundo (y-sort: passa por trás do herói quando a mira vai para cima), na
 ## mira, a `distancia * raio` do herói, e troca de vista pelo ângulo. A animação é toda em código no relógio de parede (`efeitos`): ergue com um pulo,
-## treme e solta faísca ao aparar, racha quando o fôlego está no fim, QUEBRA em 4 pedaços que caem (fôlego zerou: o escudo cai) e volta "reforjado"
-## no próximo erguer. Nada do visual muda a regra: `cobre`, `arco`, `raio` e `bloquear` seguem iguais. Perfil Baixo (sem partículas): sem tremor, faísca
-## nem pedaços, só some e aparece. O Node2D aditivo da camada glow (`no`) ficou só para o clarão do acerto e as faíscas.
+## treme e solta faísca ao aparar, racha quando o fôlego está no fim (só o quadro de frente racha; de lado e de costas o aviso é o escudo avermelhado pulsando; os pedaços da quebra são sempre os da frente), QUEBRA em 4 pedaços que caem (fôlego zerou: o escudo cai) e volta "reforjado"
+## no próximo erguer. Nada do visual muda a regra: `cobre`, `arco`, `raio` e `bloquear` seguem iguais. Perfil Baixo (sem partículas): sem tremor, faísca,
+## estouro nem pedaços, só some e aparece. O clarão do acerto é um sprite aditivo filho do escudo (dentro do y-sort); o Node2D aditivo da camada glow (`no`) ficou só para as faíscas. A cobertura (arco por nível) não aparece no desenho.
 ##
 ## API: montar(c, camada), limpar(), id_de(chave) -> String, ativo_para(chave) -> bool, para_heroi(chave), cobre(h, de) -> bool, raio(h) -> float, arco(h) -> float, pontos_do_arco(h),
 ## ergueu(h), abaixou(h), bloquear(h, valor, de, quem) -> bool [perfeito?], efeitos(dt) [relógio de parede: o visual], resumo().
@@ -25,7 +25,7 @@ extends RefCounted
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura e dos avisos)
 const COR_AZUL := Color(0.45, 0.82, 1.0)
 const COR_OURO := Color(1.0, 0.85, 0.3)
-const PTS := 20  # pontos do arco desenhado
+const PTS := 20  # pontos do arco de cobertura (só para medir)
 const FRENTE := 0  # células da faixa do escudo
 const LADO := 1
 const COSTAS := 2
@@ -52,6 +52,7 @@ var _impacto := Vector2.ZERO
 var visual: Dictionary = {}  # dados/v2_secundario.json > escudo > visual
 var _raiz: Node2D  # o escudo no mundo (y-sort), com `_spr` dentro
 var _spr: Sprite2D
+var _bri: Sprite2D  # o clarão aditivo do escudo (filho de `_raiz`)
 var _frags: Array = []  # 4 Sprite2D soltos no mundo (a quebra)
 var _fv: Array = []  # estado de cada pedaço: {x, gy, z, vx, vz, rot, vrot, t}
 var _tex: Texture2D  # guardado: o `load` solto devolve outra textura a cada uso
@@ -64,10 +65,8 @@ var _treme_dur := 0.16
 var _glint_t := 0.0  # clarão do "reforjado" e do aparo perfeito
 var _quebra_t := 99.0  # s desde a quebra
 var _quebrado := false  # o último erguer terminou em quebra: o próximo volta reforjado
-var _pos_centro := Vector2.ZERO  # onde o sprite está no mundo (o clarão aditivo desenha aqui)
 var _celula := -1
 var _flip := false
-var _escala := 1.0
 var _relogio := 0.0
 var rachado_visivel := false  # testes: o quadro de agora é o rachado
 
@@ -119,20 +118,20 @@ func ativo_para(chave: String) -> bool:
 	return id_de(chave) == "escudo"
 
 
-## O raio do desenho deste herói agora: o do dado MAIS o crescimento por nível (dados > escudo.raio_por_nivel). Não usa a área das cartas
-## (h.m_area): o escudo do nível 1 é o de antes, para todo herói. Lido pelo desenho (pontos_do_arco) e pelo ponto da faísca.
+## O raio do escudo deste herói agora (a distância do sprite e a cobertura): o do dado MAIS o crescimento por nível (dados > escudo.raio_por_nivel). Não usa a área das cartas
+## (h.m_area): o escudo do nível 1 é o de antes, para todo herói. Lido pela distância do sprite à frente do herói (`_deslocamento`) e pelo ponto da faísca.
 func raio(h) -> float:
 	return float(cfg.raio) * (1.0 + Progresso.bonus_por_nivel(int(h.nivel), cfg.raio_por_nivel))
 
 
 ## A abertura do escudo deste herói agora, em graus: a do dado MAIS o crescimento por nível (dados > escudo.arco_por_nivel). É a COBERTURA
-## do bloqueio (`cobre` barra tudo o que vem dentro dela) e o arco do desenho: o escudo cresce em quanto protege, não só em quanto aparece.
+## do bloqueio (`cobre` barra tudo o que vem dentro dela). O sprite tem o mesmo tamanho em qualquer nível: o ganho de cobertura NÃO aparece no desenho.
 func arco(h) -> float:
 	return float(cfg.arco) + Progresso.bonus_por_nivel(int(h.nivel), cfg.arco_por_nivel)
 
 
-## Os pontos do arco da base do escudo no chão (projetados na tela, de `h.pos + (0, -8)`): é daqui que o desenho tira o raio e a abertura,
-## e é isto que o teste mede.
+## Os pontos do arco de COBERTURA do escudo no chão (projetados na tela, de `h.pos + (0, -8)`): a geometria do bloqueio (raio e abertura) para os
+## testes medirem. Não é desenhada: o visual é o sprite.
 func pontos_do_arco(h) -> PackedVector2Array:
 	var c: Vector2 = h.pos + Vector2(0, -8)
 	var a0: float = atan2(h.dir_olhar.y / ACHATA, h.dir_olhar.x)  # o ângulo no chão, de volta para a tela
@@ -145,7 +144,7 @@ func pontos_do_arco(h) -> PackedVector2Array:
 	return pts
 
 
-## O dano que vem de `de` (posição no mundo) cai dentro do arco do escudo? A conta é no chão (y dividido pela achatada), a mesma do desenho.
+## O dano que vem de `de` (posição no mundo) cai dentro do arco do escudo? A conta é no chão (y dividido pela achatada), a mesma da ruptura e dos avisos.
 func cobre(h, de: Vector2) -> bool:
 	var rel: Vector2 = de - h.pos
 	rel = Vector2(rel.x, rel.y / ACHATA)
@@ -208,7 +207,8 @@ func bloquear(h, valor: float, de: Vector2, quem) -> bool:
 		_glint_t = 0.2
 	var ponto: Vector2 = h.pos + _impacto
 	var cor := COR_OURO if perfeito else COR_AZUL
-	fx.estouro(ponto, cor, 6 if perfeito else 3)
+	if not _leve():  # perfil Baixo: sem partículas (o estouro tem piso de cinco mesmo com a escala no mínimo)
+		fx.estouro(ponto, cor, 6 if perfeito else 3)
 	fx.luz_rapida(ponto, cor, 1.6, 40.0, 0.18)
 	if perfeito:
 		_perf_t = 0.22
@@ -265,6 +265,7 @@ func _carregar(h) -> void:
 		_estilo = id
 		_tex = load(str(visual.pasta) + id + ".png") as Texture2D if id != "" else null
 		_spr.texture = _tex
+		_bri.texture = _tex
 		_celula = -1
 
 
@@ -289,6 +290,14 @@ func _garantir_visual() -> bool:
 	_spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_spr.region_enabled = true
 	_raiz.add_child(_spr)
+	_bri = Sprite2D.new()  # o clarão: o mesmo quadro por cima, aditivo, DENTRO do y-sort (na camada glow ele passaria por cima do herói de costas)
+	_bri.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_bri.region_enabled = true
+	_bri.visible = false
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_bri.material = mat
+	_raiz.add_child(_bri)
 	for i in 4:
 		var f := Sprite2D.new()
 		f.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -318,7 +327,6 @@ func _quebrar(_h) -> void:
 	_glint_t = 0.0
 	_celula = RACHADO
 	_flip = false
-	_escala = 1.0
 	_raiz.visible = false
 	combate.audio.tocar("impacto", 0.55, 0.0, 0.05)
 	combate.audio.tocar("critico", 0.7, -4.0, 0.0)
@@ -351,7 +359,7 @@ func _quebrar(_h) -> void:
 	combate.fx.estouro(centro, Color(0.8, 0.7, 0.55), 4)
 
 
-## O visual no relógio de parede: troca de vista, ergue, treme, racha, solta e cai. Só redesenha o clarão aditivo enquanto há algo (e uma vez ao apagar).
+## O visual no relógio de parede: troca de vista, ergue, treme, racha, solta e cai. Só redesenha as faíscas enquanto há algo (e uma vez ao apagar).
 func efeitos(dt: float) -> void:
 	_relogio += dt
 	_flash_t = maxf(_flash_t - dt, 0.0)
@@ -365,9 +373,7 @@ func efeitos(dt: float) -> void:
 	var ativo: bool = h != null and h.escudo_ativo
 	_atualizar_sprite(h, ativo)
 	_atualizar_pedacos(dt)
-	var brilho := _flash_t > 0.0 or _perf_t > 0.0 or _glint_t > 0.0 or _quebra_t < 0.1
-	if ativo and h.escudo_t <= float((cfg.perfeito as Dictionary).janela):
-		brilho = true  # a janela do bloqueio perfeito se lê num brilho dourado que apaga
+	var brilho := _flash_t > 0.0 or _perf_t > 0.0  # só as faíscas do acerto ficam na camada glow
 	if brilho or _desenhou:
 		_desenhou = brilho
 		no.queue_redraw()
@@ -433,10 +439,20 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	_spr.position = (Vector2(0, float(visual.get("centro_y", -15.0)) + dy) + desl).round()
 	_spr.scale = Vector2(esc, esc)
 	_spr.flip_h = flip
-	_spr.modulate = Color(1, 1, 1, alfa)
+	var tom := Color(1, 1, 1, alfa)
+	if baixo and not rachado_visivel:  # de lado ou de costas não há quadro rachado: o aviso é o escudo avermelhado, pulsando
+		var pulso := 0.5 + 0.5 * sin(_relogio * 14.0)
+		tom = Color(1.0, 0.82 - 0.2 * pulso, 0.78 - 0.2 * pulso, alfa)
+	_spr.modulate = tom
 	_raiz.visible = true
-	_pos_centro = _raiz.position + _spr.position
-	_escala = esc
+	var b := _brilho(h)
+	_bri.visible = b.a > 0.0
+	if _bri.visible:
+		_bri.region_rect = _spr.region_rect
+		_bri.position = _spr.position
+		_bri.scale = _spr.scale
+		_bri.flip_h = flip
+		_bri.modulate = b
 	_flip = flip
 
 
@@ -481,34 +497,31 @@ func visual_estado() -> Dictionary:
 		"quebrado": _quebrado,
 		"pedacos": vivos,
 		"flip": _flip,
+		"aviso": _spr != null and is_instance_valid(_spr) and _spr.modulate.g < 0.9,
 		"pos": _raiz.position if _raiz != null and is_instance_valid(_raiz) else Vector2.ZERO,
 	}
 
 
-## O que sobrou no glow: o clarão aditivo do escudo (acerto, janela perfeita, reforjado, quebra) e as faíscas do acerto.
+## A cor e o alfa do clarão aditivo do escudo agora: acerto comum (branco), bloqueio perfeito (dourado), reforjado e a janela do perfeito logo depois de erguer.
+func _brilho(h) -> Color:
+	if _perf_t > 0.0:
+		return Color(COR_OURO.r, COR_OURO.g, COR_OURO.b, _perf_t / 0.22 * 0.8)
+	if _flash_t > 0.0:
+		return Color(1, 1, 1, _flash_t / 0.14 * 0.55)
+	if _glint_t > 0.0:
+		var c := COR_OURO.lerp(Color.WHITE, 0.5)
+		return Color(c.r, c.g, c.b, sin(_glint_t / 0.24 * PI) * 0.6)
+	var janela := float((cfg.perfeito as Dictionary).janela)
+	if h.escudo_ativo and h.escudo_t <= janela:
+		return Color(COR_OURO.r, COR_OURO.g, COR_OURO.b, 0.35 * (1.0 - h.escudo_t / maxf(janela, 0.001)))
+	return Color(1, 1, 1, 0)
+
+
+## O que sobrou no glow: as faíscas do acerto (o clarão do escudo é o `_bri`, dentro do y-sort).
 func _desenhar() -> void:
 	var h = mundo.heroi
 	if h == null:
 		return
-	var cor := Color.WHITE
-	var a := 0.0
-	if _perf_t > 0.0:
-		cor = COR_OURO
-		a = _perf_t / 0.22 * 0.8
-	elif _flash_t > 0.0:
-		a = _flash_t / 0.14 * 0.55
-	elif _glint_t > 0.0:
-		cor = COR_OURO.lerp(Color.WHITE, 0.5)
-		a = sin(_glint_t / 0.24 * PI) * 0.6
-	elif _quebra_t < 0.1:
-		a = (1.0 - _quebra_t / 0.1) * 0.55
-	elif h.escudo_ativo and h.escudo_t <= float((cfg.perfeito as Dictionary).janela):
-		cor = COR_OURO
-		a = 0.35 * (1.0 - h.escudo_t / maxf(float((cfg.perfeito as Dictionary).janela), 0.001))
-	if a > 0.0 and _tex != null and _celula >= 0:
-		no.draw_set_transform(_pos_centro, 0.0, Vector2(-_escala if _flip else _escala, _escala))
-		no.draw_texture_rect_region(_tex, Rect2(-CEL * 0.5, -CEL * 0.5, CEL, CEL), Rect2(_celula * CEL, 0, CEL, CEL), Color(cor.r, cor.g, cor.b, a))
-		no.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if (_flash_t > 0.0 or _perf_t > 0.0) and not _leve():
 		var perfeito := _perf_t > 0.0
 		var t := _perf_t / 0.22 if perfeito else _flash_t / 0.14
