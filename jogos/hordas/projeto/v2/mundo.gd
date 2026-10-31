@@ -103,7 +103,7 @@ var pausa  # menu de pausa (pausa.gd): pausa.aberto diz se está aberto (as tela
 var trilha  # música de fundo (trilha.gd); null nas medições e nas fotos, que ficam mudas
 var _qualidade := QualidadeAuto.new()  # a contagem do fps travado (opção qualidade_auto)
 var _qualidade_ligada := false  # só no jogo de verdade: sem teste, sem argumentos e com janela
-var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, rolagem, almas (meta.gd aplicar)
+var meta_bonus := {}  # bônus do santuário que não são do herói: raridade, almas (meta.gd aplicar)
 var abates := 0  # monstros mortos na partida
 var combo := 0  # abates em sequência (zera depois de ~3 s sem matar)
 var maior_combo := 0

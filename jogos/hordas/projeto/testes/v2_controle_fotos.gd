@@ -160,7 +160,7 @@ func _partida() -> void:
 	await mundo.ap.foto(pasta.path_join(prefixo + "_sua_build.png"))
 	_tecla(KEY_C)
 	await get_tree().process_frame
-	# escolha de cartas: três raridades diferentes, com Rerrolar e Banir (a trava de 3 s anda em tempo real)
+	# escolha de cartas: três raridades diferentes (a trava de 3 s anda em tempo real)
 	var c = mundo.combate
 	c.limpar_partida()
 	c.diretor.ligado = false

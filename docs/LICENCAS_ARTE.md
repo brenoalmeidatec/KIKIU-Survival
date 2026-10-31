@@ -154,3 +154,7 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Troca de nomes dos bustos dos chefes, Claude do Alisson (PC), 31/10/2026
 
 - Os três bustos de `jogos/hordas/projeto/assets/v2/chefes/` só mudaram de nome de arquivo (a imagem é a mesma, a origem e a licença continuam as da entrada dos bustos acima): `devorador_da_carne.png` virou `devourer_of_flesh.png`, `devoradora_da_estrutura.png` virou `devourer_of_structure.png` e `devorador_da_terra.png` virou `devourer_of_land.png`, porque os chefes passaram a ter nome em inglês (#467).
+
+## Nota: onde `morte.wav` e `dano_heroi.wav` tocam hoje (31/10/2026, Claude do Alisson (PC))
+
+Rerrolar e banir saíram da escolha de cartas, então as duas entradas acima citam usos que não existem mais. Hoje: `morte.wav` toca na morte de monstro (`v2/combate.gd`, `matar`) e no "sumir" do golem (`v2/audio.gd`); `dano_heroi.wav` toca quando o herói apanha (`v2/combate.gd`, `heroi_apanhou`) e quando o Automático não acha carta para completar a escolha (`v2/telas.gd`, `_automatico`). O arquivo e a licença não mudaram.
