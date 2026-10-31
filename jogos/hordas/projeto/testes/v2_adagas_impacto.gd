@@ -194,7 +194,7 @@ func _ready() -> void:
 	calculos = c._ciclo_adagas_calculos
 	c.ciclo_do_combo(1.0 / 120.0)
 	ok(c._ciclo_adagas_calculos == calculos + 1, "dt invalida cache")
-	ok(c._ciclo_adagas_chave.size() == 4 + c.cfg.golpe.passos.size() * 2, "cache único tem tamanho limitado aos parâmetros")
+	ok(c._ciclo_adagas_chave.size() == 5 + c.cfg.golpe.passos.size() * 2, "cache único tem tamanho limitado aos parâmetros")
 	var medidas := []
 	for hz in [60, 120]:
 		for vel in [1.0, 1.5, 3.0]:
