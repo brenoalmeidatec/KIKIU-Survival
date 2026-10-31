@@ -1,5 +1,6 @@
 {
-	"_ajuda": "Ritmo #371. Curvas: fração adicional por nível acima do primeiro, limitada pelo teto. Coleta e densidade multiplicam os valores atuais, preservando cartas/dificuldade e teto técnico. Q: dano e raio capturados uma vez por disparo; não alteram carga nem duração. Cura por nível recebe 80% da base anterior; drops curam 8% da vida máxima. Chance de cura por abate = chance * (1 + baixa_vida * (1 - vida/vida_max)^2), com intervalo entre drops e limite no chão. Ímã atrai só almas visíveis ao ser coletado, sem gerar XP. Sorteios têm RNG próprio. Tempos em segundos de jogo ativo; pool fixo, sem crescimento durante combate.",
+	"_ajuda": "Ritmo #371. Curvas: fração adicional por nível acima do primeiro, limitada pelo teto. Coleta e densidade multiplicam os valores atuais, preservando cartas/dificuldade e teto técnico. Q: dano e raio capturados uma vez por disparo; não alteram carga nem duração. Cura por nível recebe 80% da base anterior; drops curam 8% da vida máxima. Chance de cura por abate = chance * (1 + baixa_vida * (1 - vida/vida_max)^2), com intervalo entre drops e limite no chão. Ímã atrai só almas visíveis ao ser coletado, sem gerar XP. Sorteios têm RNG próprio. Tempos em segundos de jogo ativo; pool fixo, sem crescimento durante combate. velocidade_partida: fator do relógio do mundo (monstros, herói, armas, ondas, XP) aplicado em combate.passo_tempo; menus, pausa, escolha de cartas e áudio não aceleram.",
+	"velocidade_partida": 1.25,
 	"pool": 4,
 	"coleta_raio": 26,
 	"cura_nivel_mult": 0.8,

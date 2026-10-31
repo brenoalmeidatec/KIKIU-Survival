@@ -99,6 +99,7 @@ var pausado_mundo := false  # pausa que vale para todos (resultado da partida); 
 var tempo_local_separado := false  # coop e tela dividida: hit-stop, câmera lenta e escolha só valem para o herói local; o solo deixa false
 var dt_mundo := 0.0  # o dt do último passo_tempo para o mundo (monstros, relógio, combate)
 var dt_local := 0.0  # o dt do último passo_tempo para o herói local (animação e movimento); no solo é igual a dt_mundo
+var velocidade := 1.0  # fator do ritmo da partida (dados/v2_ritmo.json, `velocidade_partida`): o relógio do MUNDO anda `velocidade` vezes mais rápido; os testes ficam em 1
 var jogo := "jogando"  # jogando, escolha, morte
 
 # contadores e estado (testes)
@@ -179,6 +180,7 @@ func montar(m) -> void:
 	chefes.montar(self)
 	ritmo = Ritmo.new()
 	ritmo.montar(self)
+	velocidade = 1.0 if m.modo_teste else clampf(float(ritmo.cfg.get("velocidade_partida", 1.0)), 0.5, 2.0)
 
 
 ## Liga o herói às regras dos dados (vida, fôlego, curva de XP). Chamado quando o herói nasce e quando a partida recomeça.
@@ -190,16 +192,18 @@ func iniciar_heroi() -> void:
 # ------------------------------------------------------------------ tempo
 
 
-## dt do mundo a partir do dt real: hit-stop e pausa travam o mundo; a câmera lenta o desacelera. Devolve o dt do MUNDO e deixa em
+## dt do mundo a partir do dt real: hit-stop e pausa travam o mundo; a câmera lenta o desacelera; `velocidade` (ritmo da partida, 1,25) o acelera.
+## Só o relógio do mundo é multiplicado: interface, tweens de UI, pausa, escolha de cartas, áudio e os temporizadores de hit-stop/câmera lenta
+## seguem em tempo real (por isso não se usa Engine.time_scale, que aceleraria tudo isso junto). Devolve o dt do MUNDO e deixa em
 ## `dt_local` o do herói local. No solo os dois são iguais (comportamento de sempre); com `tempo_local_separado` (coop, tela dividida) o
 ## hit-stop, a câmera lenta e a escolha só afetam `dt_local` e o mundo segue, salvo `pausado_mundo` (resultado), que para todos.
 func passo_tempo(dt: float) -> float:
-	var dl := _passo_local(dt)
+	var dl := _passo_local(dt) * velocidade
 	dt_local = dl
 	if not tempo_local_separado:
 		dt_mundo = dl
 	else:
-		dt_mundo = 0.0 if pausado_mundo else dt
+		dt_mundo = 0.0 if pausado_mundo else dt * velocidade
 	return dt_mundo
 
 
