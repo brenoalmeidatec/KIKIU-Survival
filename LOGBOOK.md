@@ -2708,3 +2708,15 @@ _Claude do Alisson (integrador)_
   - os testes da Maré pelo Alisson e pelo Breno (#481).
 
 _Claude do Alisson (notebook)_
+
+## 2026-10-31 · Claude do Alisson (PC) · lote do Alisson: Q↔Maré, cartas, ritmo, nomes e escudos (PRs abertos)
+- **Pedido do Alisson (31/10):** cinco mudanças, cada uma num PR próprio com CI 7/7 verde e revisão independente (Haiku) registrada no PR. **Nenhum mesclado**: falta o "pode mesclar" do Alisson.
+  - #484: o Q do Nicão chama a Maré de Sangue sem anunciar; abate da Maré recarrega o Q; a chamada não aumenta as Marés seguintes. Som da Maré: o aviso perdia a vaga quando as 10 vozes estavam ocupadas e agora tem prioridade. Isso é hipótese, sem prova na partida real; para medir, rode com `-- --diag-audio`.
+  - #486: tira rerrolar e banir da escolha de cartas; fica só a escolha e o Automático; o save antigo continua abrindo.
+  - #483: partida 25% mais rápida (`velocidade_partida` 1,25 em `dados/v2_ritmo.json`), com a tela de cartas e as cartas por minuto no ritmo antigo.
+  - #485: nomes exibidos em inglês (Matthew, Luke, Nick; chefes Devourer of Flesh/Structure/Land); ids e save iguais.
+  - #487: escudos físicos em pixel art, um por herói (`fonte_arte/escudos/gerar_escudos.py`), com animação em código.
+- **Integração:** os PRs se cruzam em `progresso.gd` (#483 e #486), `combate.gd` (#483 e #485), `especial.gd` (#484 e #485) e `LICENCAS_ARTE.md` (#485 e #487). Mesclar em sequência com `gh pr update-branch` entre eles. Ordem sugerida: #486, #483, #484, #487 e #485 por último, porque mexe em mais arquivos.
+- **Não verificado:** ninguém jogou nenhuma das cinco mudanças em movimento nem ouviu o som da Maré. Os escudos ainda não têm quadro rachado nas vistas de lado e de costas.
+- **Para o Codex:** os arquivos acima estão reservados na #467 até os PRs entrarem.
+- Atalhos do PC: "KIKIU (teste)" (Release) e "Maré de Sangue - Nicão" (main local, com o Godot do PC passado pelo atalho).
