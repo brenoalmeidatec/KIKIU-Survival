@@ -154,3 +154,7 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## Troca de nomes dos bustos dos chefes, Claude do Alisson (PC), 31/10/2026
 
 - Os três bustos de `jogos/hordas/projeto/assets/v2/chefes/` só mudaram de nome de arquivo (a imagem é a mesma, a origem e a licença continuam as da entrada dos bustos acima): `devorador_da_carne.png` virou `devourer_of_flesh.png`, `devoradora_da_estrutura.png` virou `devourer_of_structure.png` e `devorador_da_terra.png` virou `devourer_of_land.png`, porque os chefes passaram a ter nome em inglês (#467).
+
+## pixelfx: base do tocador de folhas, Claude do Alisson (notebook), 31/10/2026
+
+- `jogos/hordas/projeto/assets/v2/pixelfx/pickups/collect-burst.png` (e o `.import`): folha 784x648, 42 quadros de 112x108 (o registro usa os 34 primeiros), do efeito `pickups/collect-burst` do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez (uso comercial, redistribuição e modificação permitidos, com o aviso de copyright e a licença junto). Exportada sem o boneco com `node tools/render.mjs pickups/collect-burst --sheet --no-actor` no clone do pixelfx; sem retoque no PNG. No jogo é recolorida por modulate (azul-ciano da alma) em `dados/v2_pixelfx.json`. Toca ao pegar um orbe de XP (`v2/fx_folha.gd`). Como regenerar e registrar outro efeito: `docs/PIXELFX.md`.
