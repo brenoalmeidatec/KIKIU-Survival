@@ -205,7 +205,7 @@ func atualizar(dt: float) -> void:
 			mare_chamada_t = -1.0
 			var fator := mare_chamada_fator
 			mare_chamada_fator = 1.0
-			onda_forte(fator)
+			onda_forte(fator, false)  # a chamada do Q não sobe o contador de escalada: as Marés normais seguem o relógio
 			mare_aviso = false
 			proxima_onda = maxf(proxima_onda, t + _mare_cfg("intervalo_min"))  # a Maré normal não vem colada na que o Q chamou
 	if _mare_ativa() and t >= proxima_onda - 1.2:
@@ -286,13 +286,16 @@ func ponto_fora_da_tela() -> Variant:
 
 
 ## Onda forte: um anel de monstros de uma vez em volta da tela, com a ponta pesada do elenco do mapa (o cavaleiro, no padrão).
-## `fator` < 1 faz uma onda mais curta (a Maré chamada pelo Q logo depois de outra).
-func onda_forte(fator := 1.0) -> void:
-	ondas += 1
-	var n := int(cfg.onda_base) + int(cfg.onda_mais) * (ondas - 1)
+## `fator` < 1 faz uma onda mais curta (a Maré chamada pelo Q logo depois de outra). `conta` = false (a chamada do Q): usa o tamanho da onda
+## em que a partida está, mas NÃO avança `ondas`, para o Q não escalar as Marés seguintes.
+func onda_forte(fator := 1.0, conta := true) -> void:
+	if conta:
+		ondas += 1
+	var idx := maxi(ondas, 1)
+	var n := int(cfg.onda_base) + int(cfg.onda_mais) * (idx - 1)
 	var t: float = mundo.tempo_partida
 	mare_ultima_t = t
-	var elite := roundi(float(cfg.onda_elite) * ondas * fator)
+	var elite := roundi(float(cfg.onda_elite) * idx * fator)
 	var folga: int = teto() - mundo.monstros.size()
 	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult") * dificuldade("densidade_mult") * fator) + elite, maxi(folga, 0))
 	if _mare_ativa():
@@ -301,12 +304,12 @@ func onda_forte(fator := 1.0) -> void:
 		_mare_pulso(primeiro, -1)
 		mare_pendente = n - primeiro
 		mare_t = 1.0 if mare_pendente > 0 else -1.0
-		combate.onda_forte(ondas)
+		combate.onda_forte(idx)
 		return
 	for i in n:
 		var tipo: Dictionary = mundo.elenco.pesado if i < elite else sortear(t)
 		nascer(str(tipo.sprite), null, tipo)
-	combate.onda_forte(ondas)
+	combate.onda_forte(idx)
 
 
 func _mare_ativa() -> bool:
@@ -324,6 +327,8 @@ func _mare_avisar() -> void:
 	mare_aviso = true
 	combate.anunciar("MARÉ DE SANGUE!", Color(1.0, 0.25, 0.2))
 	combate.audio.tocar("onda", 0.8, -2.0, 0.0)
+	if OS.get_cmdline_user_args().has("--diag-audio"):  # medição do atalho de teste: vozes ocupadas na hora do aviso
+		print("[mare] aviso: descartados=%d roubados=%d" % [combate.audio.descartados, combate.audio.roubados])
 
 
 ## O Q (Terremoto) acabou de bater: chama uma Maré daqui a `q_atraso` s. Só onde a Maré vale, sem outra pendente, respeitando o intervalo mínimo

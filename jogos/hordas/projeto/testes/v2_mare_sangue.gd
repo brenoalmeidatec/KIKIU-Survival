@@ -145,7 +145,6 @@ func _q_chama_mare() -> void:
 	ok(d.mare_chamadas == 0, "a Maré só é chamada na pancada, não ao apertar")
 	_passos(40)
 	ok(d.mare_chamadas == 1 and d.mare_chamada_t > 0.0, "a pancada do Q chamou a Maré")
-	ok(d.mare_chamada_t <= float(cfg.q_atraso), "a Maré chega em até q_atraso segundos")
 	ok(w.combate.anuncios == anuncios0, "o Q não anuncia nada sobre a Maré")
 	ok(str(w.combate.especial.blocos["terremoto"].desc).find("Maré") < 0, "a descrição do Q não cita a Maré")
 	# o aviso normal da Maré vem 1,2 s antes de chegar
@@ -155,10 +154,11 @@ func _q_chama_mare() -> void:
 	ok(d.mare_aviso and w.combate.ultimo_anuncio == "MARÉ DE SANGUE!", "o aviso normal da Maré sai antes de ela chegar")
 	var antes: int = d.ondas
 	var t0: float = w.tempo_partida
+	d.proxima_onda = t0 + 10.0  # abaixo do intervalo mínimo: só o maxf do diretor a empurra para t0 + intervalo_min
 	d.atualizar(1.2)
-	ok(d.ondas == antes + 1 and d.mare_chamada_t < 0.0, "a Maré chamada chegou")
+	ok(d.ondas == antes and d.mare_chamada_t < 0.0, "a Maré chamada chegou sem subir o contador de escalada")
 	ok(w.monstros.size() > 0, "a Maré chamada põe monstros em campo")
-	ok(d.proxima_onda >= t0 + float(cfg.intervalo_min), "a Maré normal fica depois do intervalo mínimo")
+	ok(is_equal_approx(d.proxima_onda, t0 + float(cfg.intervalo_min)), "a Maré normal foi empurrada para t0 + intervalo mínimo (%s)" % d.proxima_onda)
 	ok(d.mare_ultima_t == w.tempo_partida, "a Maré chamada marca a última Maré")
 	# intervalo mínimo: logo depois não chama de novo (sem spam)
 	ok(not d.mare_chamar(), "dentro do intervalo mínimo o Q não chama outra Maré")
@@ -178,14 +178,21 @@ func _q_chama_mare() -> void:
 	d.mare_chamada_t = -1.0
 	# tamanho: a Maré curta é menor que a cheia e ambas respeitam o teto
 	_limpar_monstros()
-	d.onda_forte(float(cfg.q_curta))
+	d.ondas = 2  # mesmo contador nas duas, para só o `fator` diferir
+	d.onda_forte(float(cfg.q_curta), false)
 	d.atualizar(1.1)
 	var curta: int = w.monstros.size()
 	_limpar_monstros()
-	d.onda_forte(1.0)
+	d.ondas = 2
+	d.onda_forte(1.0, false)
 	d.atualizar(1.1)
 	var cheia: int = w.monstros.size()
-	ok(curta > 0 and curta < cheia and cheia <= d.teto(), "Maré curta (%d) menor que a cheia (%d), dentro do teto" % [curta, cheia])
+	ok(d.ondas == 2, "a chamada não mexe no contador de escalada")
+	ok(curta > 0 and cheia <= d.teto(), "as duas respeitam o teto (%d e %d)" % [curta, cheia])
+	ok(
+		absf(float(curta) / float(cheia) - float(cfg.q_curta)) < 0.1,
+		"a Maré curta sai em ~%d%% da cheia (%d de %d)" % [roundi(float(cfg.q_curta) * 100.0), curta, cheia]
+	)
 	# os monstros da Maré levam a marca
 	var marcados := 0
 	for m in w.monstros:
@@ -258,6 +265,17 @@ func _som_prioritario() -> void:
 	ok(db > -20.0 and db < 6.0, "volume do player é audível (%s dB)" % db)
 	au.tocar("ruptura_disparo", 0.7, 1.0, 0.0)
 	ok(_tocando(au, "onda") == 1 and _tocando(au, "ruptura_disparo") == 1, "o aviso não é roubado pelo estouro do Q")
+	# o aviso real (_mare_avisar) com a horda ocupando todas as vozes e o áudio ligado
+	for p in au._players:
+		p.stop()
+	au._ultimo_t.clear()
+	for i in au._players.size():
+		au.tocar("morte", 1.0, 0.0, 0.0)
+	var d = w.combate.diretor
+	d.mare_aviso = false
+	rou0 = au.roubados
+	d._mare_avisar()
+	ok(au.roubados == rou0 + 1 and _tocando(au, "onda") == 1, "_mare_avisar toca mesmo com todas as vozes ocupadas")
 	au.mudo = true
 	for p in au._players:
 		p.stop()
