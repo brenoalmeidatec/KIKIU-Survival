@@ -3,7 +3,7 @@ extends "res://testes/isolamento_v2.gd"
 # Roleta: ao abrir a escolha de nível as cartas descem em rolos e param uma a uma (esquerda -> direita) em no máximo 1,2 s de tempo real; depois de 0,3 s
 # só o Enter, o A do controle e o clique SOBRE as cartas pulam para o fim (Espaço, E e o clique fora são esquiva, habilidade e ataque e não pulam); nada escolhe
 # durante os rolos; a trava de 1 s corre junto e o limite de 8 s só começa quando TODAS pararam; ESC durante a roleta abre o "Pausar agora?" (o tempo dela
-# fica parado; Não volta, Sim descarta a rodada); rerrolar não rola; escolher no meio desfaz os rolos; roleta_s = 0 e roleta_ligada = false mostram as
+# fica parado; Não volta, Sim descarta a rodada); escolher no meio desfaz os rolos; roleta_s = 0 e roleta_ligada = false mostram as
 # cartas direto. O enfeite dos rolos usa um sorteador próprio. Baú: raridade melhor que a escolha comum (estatística com semente), nunca comum, e a
 # ESCOLHA com 12 s (bau.limite_s) contra os 8 s do nível: 1 ou 2 melhorias para pegar entre 3 cartas, automático (a mais rara) ao zerar o tempo.
 # Os outros testes nascem com a roleta desligada (mundo.modo_teste); este liga.
@@ -164,7 +164,7 @@ func _testes() -> void:
 		var comum_no_bau := 0
 		for i in 3000:
 			var rc: int = cs.sortear(1, nivel)[0].rar
-			var rb: int = cs.sortear(1, nivel, float(bau.bonus_raridade), [], int(bau.piso_raridade))[0].rar
+			var rb: int = cs.sortear(1, nivel, float(bau.bonus_raridade), int(bau.piso_raridade))[0].rar
 			soma_comum += rc
 			soma_bau += rb
 			epico_comum += 1 if rc >= 2 else 0
@@ -196,9 +196,9 @@ func _testes() -> void:
 		ok(t._rolos[i].visible and not t._cartas[i].visible, "rolo %d aparece e a carta de verdade espera" % i)
 	ok(lim() == limite, "o limite abre cheio (%.2f)" % lim())
 	var esc0: int = c.progresso.escolhidas
-	for k in [KEY_2, KEY_R, KEY_Q, KEY_B, KEY_LEFT]:
+	for k in [KEY_2, KEY_Q, KEY_LEFT]:
 		_toque(k)
-	ok(c.progresso.escolhidas == esc0 and c.jogo == "escolha" and t.roleta_ativa, "teclas de escolha, rerrolar, automático e banir não fazem nada na roleta")
+	ok(c.progresso.escolhidas == esc0 and c.jogo == "escolha" and t.roleta_ativa, "teclas de escolha e automático não fazem nada na roleta")
 
 	# 3. termina em até 1,2 s, esquerda -> direita, o limite parado até o fim
 	zerar()
@@ -391,21 +391,6 @@ func _testes() -> void:
 	for i in 3:
 		ok(not t._rolos[i].visible and t._cartas[i].visible, "rolo %d escondido e carta de volta" % i)
 
-	# 10. rerrolar e banir não rolam
-	zerar()
-	subir_nivel()
-	passos(20)
-	_toque(KEY_ENTER)
-	ate(func(): return t.espera_escolha <= 0.0, 120)
-	passos(2)
-	ok(c.progresso.rerrolar(), "rerrolar depois da roleta")
-	ok(not t.roleta_ativa and t._cartas[0].visible and t._cartas[2].visible, "rerrolar mostra as cartas direto, sem roleta")
-	ate(func(): return t.espera_escolha <= 0.0, 120)
-	passos(2)
-	ok(c.progresso.banir(0), "banir")
-	ok(not t.roleta_ativa, "banir também não rola")
-	t._automatico()
-
 	# 11. desligar: reduzir animação (roleta_ligada = false) e roleta_s = 0
 	zerar()
 	t.roleta_ligada = false
@@ -447,7 +432,7 @@ func _testes() -> void:
 	var pesos0: Array = bau.n_pesos.duplicate()
 	var lim_bau := float(bau.limite_s)
 	ok(lim_bau == 12.0 and lim_bau > limite, "o baú dá mais tempo para escolher que o nível: %.0f s contra %.0f s" % [lim_bau, limite])
-	# 13a. uma melhoria (n_pesos [1, 0, 0]): a escolha abre na tela do nível, com a roleta, 12 s e sem rerrolar nem banir
+	# 13a. uma melhoria (n_pesos [1, 0, 0]): a escolha abre na tela do nível, com a roleta, 12 s
 	zerar()
 	abrir_bau(1)
 	ok(c.jogo == "escolha" and t.escolha_aberta and not t.bau_aberto, "o baú de 1 melhoria abre a escolha (não a roleta de revelação): %s" % c.jogo)
@@ -460,8 +445,7 @@ func _testes() -> void:
 	ok(todas_raras, "todas raras ou melhores (o piso do baú)")
 	ok(t.roleta_ativa, "a roleta das cartas gira também no baú")
 	ok(lim() == lim_bau and t._limite_total == lim_bau, "o limite abre com os 12 s do baú (%.2f)" % lim())
-	ok(not t._btn_r.visible and not t._btn_b.visible and t._btn_a.visible, "sem Rerrolar nem Banir, só o Automático")
-	ok(not c.progresso.rerrolar() and not c.progresso.banir(0), "e rerrolar e banir são recusados no código também")
+	ok(t._btn_a.visible, "o Automático aparece no baú")
 	var nivel0: int = c.progresso.pendentes
 	ok(c.baus.ultimas.is_empty(), "nenhuma carta foi aplicada antes de escolher")
 	var gasto_bau: int = ate(func(): return c.jogo != "escolha", 60 * 15)
@@ -547,10 +531,7 @@ func _testes() -> void:
 	bau.n_pesos = pesos0
 	zerar()
 	subir_nivel()
-	ok(
-		c.progresso.bau_picks == 0 and t._btn_r.visible and t._btn_b.visible and t._titulo.text.begins_with("NÍVEL"),
-		"a escolha de nível segue com Rerrolar e Banir"
-	)
+	ok(c.progresso.bau_picks == 0 and t._btn_a.visible and t._titulo.text.begins_with("NÍVEL"), "a escolha de nível segue com o Automático")
 	ok(t._limite_total == limite, "e com os 8 s")
 	t._automatico()
 

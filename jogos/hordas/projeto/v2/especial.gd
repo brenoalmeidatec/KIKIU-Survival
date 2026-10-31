@@ -427,6 +427,7 @@ func _bater(h) -> void:
 	c.audio.tocar("impacto", 0.45, 3.0, 0.0)
 	c.audio.tocar("ruptura_disparo", 0.7, 1.0, 0.0)
 	mundo.cam.tremer(float(b.tremor), 0.3)
+	combate.diretor.mare_chamar()  # na Vila, com o Nicão, a pancada chama a Maré (o aviso é o da própria Maré)
 	if _n > 0:
 		c.hit_stop(float(b.hit_stop))
 
@@ -624,6 +625,8 @@ func abate(m) -> void:
 		return
 	var a: Dictionary = comum.carga.abate
 	var s := float(a.chefe) if m.chefe else (float(a.elite) if m.elite else float(a.comum))
+	if m.mare:
+		s *= float(combate.cfg.diretor.mare.abate_carga)  # monstro da Maré de Sangue: o Q enche mais rápido
 	carregar(mundo.heroi, s, "abate")
 
 

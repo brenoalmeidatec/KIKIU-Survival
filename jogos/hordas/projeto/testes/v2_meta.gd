@@ -96,7 +96,10 @@ func _testes() -> void:
 	ok(Meta.comprar("dano"), "compra o 1º nível de dano")
 	Meta.aplicar(m)
 	ok(is_equal_approx(m.heroi.m_dano, 1.06), "aplicar: dano inicial sobe 6%% (%s)" % str(m.heroi.m_dano))
-	ok(m.meta_bonus.has("raridade") and m.meta_bonus.has("rolagem") and m.meta_bonus.has("almas"), "os bônus de raridade, rolagem e almas ficam em meta_bonus")
+	ok(
+		m.meta_bonus.has("raridade") and not m.meta_bonus.has("rolagem") and m.meta_bonus.has("almas"),
+		"os bônus de raridade e almas ficam em meta_bonus (e o de rolagem saiu)"
+	)
 	m.queue_free()
 	await get_tree().process_frame
 
@@ -151,8 +154,8 @@ func _testes() -> void:
 	ok(not Meta.oculto(modo_pesadelo) and not Meta.oculto(visual_rastro), "pesadelo e rastro de katana não estão mais escondidos")
 	ok(str(modo_pesadelo.get("efeito", "")) != "pendente" and str(visual_rastro.get("efeito", "")) != "pendente", "nenhum dos dois tem efeito pendente")
 	ok(
-		not Meta.oculto(Meta.melhoria("raridade")) and not Meta.oculto(Meta.melhoria("rolagem")) and not Meta.oculto(Meta.melhoria("almas")),
-		"raridade, rolagem e almas têm efeito e seguem visíveis"
+		not Meta.oculto(Meta.melhoria("raridade")) and Meta.melhoria("rolagem").is_empty() and not Meta.oculto(Meta.melhoria("almas")),
+		"raridade e almas têm efeito e seguem visíveis; a Segunda chance (rolagem) saiu do catálogo"
 	)
 	a._atualizar()
 	ok(
@@ -395,6 +398,25 @@ func _testes() -> void:
 	_apagar_caminho(SAVE_FALHA)
 	_apagar_caminho(SAVE_FALHA + ".bak")
 	DirAccess.remove_absolute(temp_como_pasta)
+
+	# save antigo com a "Segunda chance" (rolagem, removida com o rerrolar): carrega sem erro e devolve as almas gastas (90 + 180 no nível 2)
+	_apagar_save()
+	var velho := ConfigFile.new()
+	velho.set_value("moeda", "almas", 10)
+	velho.set_value("melhorias", "rolagem", 2)
+	velho.set_value("melhorias", "vida", 1)
+	velho.save(SAVE_TESTE)
+	ok(Meta.saldo() == 10 + 270, "save com a Segunda chance: as 270 almas gastas voltam ao saldo (%d)" % Meta.saldo())
+	ok(Meta.nivel("rolagem") == 0 and Meta.nivel("vida") == 1, "a chave velha não conta e as outras melhorias seguem")
+	ok(not Meta.estado().niveis.has("rolagem"), "estado() não lista mais a rolagem")
+	Meta.creditar(5)  # qualquer gravação leva o reembolso para o arquivo, uma vez só
+	var gravado := ConfigFile.new()
+	gravado.load(SAVE_TESTE)
+	ok(
+		not gravado.has_section_key("melhorias", "rolagem") and int(gravado.get_value("moeda", "almas", 0)) == 10 + 270 + 5,
+		"depois de gravar o reembolso fica no arquivo, sem repetir"
+	)
+	_apagar_save()
 
 	# o save real não foi tocado por este teste
 	var md5_depois := FileAccess.get_md5(SAVE_REAL) if FileAccess.file_exists(SAVE_REAL) else ""

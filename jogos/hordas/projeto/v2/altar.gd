@@ -471,6 +471,12 @@ func _atualizar() -> void:
 	_ligar_foco()
 
 
+## O índice do último cartão da coluna `coluna` (0 a 2) numa grade de 3 colunas com `total` cartões (a última linha pode ter menos de 3).
+func _fim_da_coluna(total: int, coluna: int) -> int:
+	var ultimo := coluna + 3 * floori((total - 1 - coluna) / 3.0)
+	return clampi(ultimo, 0, maxi(total - 1, 0))
+
+
 ## A busca geométrica do Godot pode preferir uma conquista fora da área rolada ao botão vizinho.
 ## Fixamos a grade e o rodapé; follow_focus continua responsável por trazer as conquistas para a tela.
 func _ligar_foco() -> void:
@@ -491,14 +497,16 @@ func _ligar_foco() -> void:
 		for par in [[cartao, false], [compra, true]]:
 			var b: Button = par[0]
 			var esquerda: Button = b if i % 3 == 0 else (_compra_ou_cartao(ids[i - 1]) if par[1] else _linhas[ids[i - 1]].selecionar)
-			var direita: Button = primeira if i % 3 == 2 else (_compra_ou_cartao(ids[i + 1]) if par[1] else _linhas[ids[i + 1]].selecionar)
+			var direita: Button = (
+				primeira if i % 3 == 2 or i + 1 >= ids.size() else (_compra_ou_cartao(ids[i + 1]) if par[1] else _linhas[ids[i + 1]].selecionar)
+			)
 			b.focus_neighbor_left = b.get_path_to(esquerda)
 			b.focus_neighbor_right = b.get_path_to(direita)
 	for i in conquistas.size():
 		var b: Button = conquistas[i].selecionar
 		b.focus_neighbor_top = b.get_path_to(b if i == 0 else conquistas[i - 1].selecionar)
 		b.focus_neighbor_bottom = b.get_path_to(_ajustes if i + 1 == conquistas.size() else conquistas[i + 1].selecionar)
-		b.focus_neighbor_left = b.get_path_to(_linhas[ids[mini(i, 2) * 3 + 2]].selecionar)
+		b.focus_neighbor_left = b.get_path_to(_linhas[ids[mini(mini(i, 2) * 3 + 2, ids.size() - 1)]].selecionar)
 		b.focus_neighbor_right = b.get_path_to(b)
 	var rodape: Array[Button] = [_mapa, _entrar, _ajustes, _voltar]
 	for i in rodape.size():
@@ -506,13 +514,13 @@ func _ligar_foco() -> void:
 		b.focus_neighbor_left = b.get_path_to(rodape[maxi(0, i - 1)])
 		b.focus_neighbor_right = b.get_path_to(rodape[mini(rodape.size() - 1, i + 1)])
 		b.focus_neighbor_bottom = b.get_path_to(b)
-	_mapa.focus_neighbor_top = _mapa.get_path_to(_compra_ou_cartao(ids[ids.size() - 3]))
+	_mapa.focus_neighbor_top = _mapa.get_path_to(_compra_ou_cartao(ids[_fim_da_coluna(ids.size(), 0)]))
 	_entrar.focus_neighbor_top = _entrar.get_path_to(
-		_rastro_btn if _rastro_btn.visible else (_modo_btn if _modo_btn.visible else _compra_ou_cartao(ids[ids.size() - 2]))
+		_rastro_btn if _rastro_btn.visible else (_modo_btn if _modo_btn.visible else _compra_ou_cartao(ids[_fim_da_coluna(ids.size(), 1)]))
 	)
-	_modo_btn.focus_neighbor_top = _modo_btn.get_path_to(_compra_ou_cartao(ids[ids.size() - 1]))
+	_modo_btn.focus_neighbor_top = _modo_btn.get_path_to(_compra_ou_cartao(ids[_fim_da_coluna(ids.size(), 2)]))
 	_modo_btn.focus_neighbor_bottom = _modo_btn.get_path_to(_rastro_btn if _rastro_btn.visible else _entrar)
-	_rastro_btn.focus_neighbor_top = _rastro_btn.get_path_to(_modo_btn if _modo_btn.visible else _compra_ou_cartao(ids[ids.size() - 1]))
+	_rastro_btn.focus_neighbor_top = _rastro_btn.get_path_to(_modo_btn if _modo_btn.visible else _compra_ou_cartao(ids[_fim_da_coluna(ids.size(), 2)]))
 	_rastro_btn.focus_neighbor_bottom = _rastro_btn.get_path_to(_entrar)
 
 

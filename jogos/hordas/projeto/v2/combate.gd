@@ -99,6 +99,7 @@ var pausado_mundo := false  # pausa que vale para todos (resultado da partida); 
 var tempo_local_separado := false  # coop e tela dividida: hit-stop, câmera lenta e escolha só valem para o herói local; o solo deixa false
 var dt_mundo := 0.0  # o dt do último passo_tempo para o mundo (monstros, relógio, combate)
 var dt_local := 0.0  # o dt do último passo_tempo para o herói local (animação e movimento); no solo é igual a dt_mundo
+var velocidade := 1.0  # fator do ritmo da partida (dados/v2_ritmo.json, `velocidade_partida`): o relógio do MUNDO anda `velocidade` vezes mais rápido; os testes ficam em 1
 var jogo := "jogando"  # jogando, escolha, morte
 
 # contadores e estado (testes)
@@ -179,6 +180,7 @@ func montar(m) -> void:
 	chefes.montar(self)
 	ritmo = Ritmo.new()
 	ritmo.montar(self)
+	velocidade = 1.0 if m.modo_teste else clampf(float(ritmo.cfg.get("velocidade_partida", 1.0)), 0.5, 2.0)
 
 
 ## Liga o herói às regras dos dados (vida, fôlego, curva de XP). Chamado quando o herói nasce e quando a partida recomeça.
@@ -190,16 +192,18 @@ func iniciar_heroi() -> void:
 # ------------------------------------------------------------------ tempo
 
 
-## dt do mundo a partir do dt real: hit-stop e pausa travam o mundo; a câmera lenta o desacelera. Devolve o dt do MUNDO e deixa em
+## dt do mundo a partir do dt real: hit-stop e pausa travam o mundo; a câmera lenta o desacelera; `velocidade` (ritmo da partida, 1,25) o acelera.
+## Só o relógio do mundo é multiplicado: interface, tweens de UI, pausa, escolha de cartas, áudio e os temporizadores de hit-stop/câmera lenta
+## seguem em tempo real (por isso não se usa Engine.time_scale, que aceleraria tudo isso junto). Devolve o dt do MUNDO e deixa em
 ## `dt_local` o do herói local. No solo os dois são iguais (comportamento de sempre); com `tempo_local_separado` (coop, tela dividida) o
 ## hit-stop, a câmera lenta e a escolha só afetam `dt_local` e o mundo segue, salvo `pausado_mundo` (resultado), que para todos.
 func passo_tempo(dt: float) -> float:
-	var dl := _passo_local(dt)
+	var dl := _passo_local(dt) * velocidade
 	dt_local = dl
 	if not tempo_local_separado:
 		dt_mundo = dl
 	else:
-		dt_mundo = 0.0 if pausado_mundo else dt
+		dt_mundo = 0.0 if pausado_mundo else dt * velocidade
 	return dt_mundo
 
 
@@ -481,14 +485,17 @@ func hit_stop_do_acerto(passo: Dictionary, crit: bool) -> float:
 ## O padrão é o quadro de 60 Hz (`QUADRO_REF`), com o qual o "Combo completo" do card de status bate com o que o jogador vê (1,30 s com a
 ## velocidade base, onde só a soma dos passos daria 0,88 s). O hit-stop é o médio (com a chance de crítico) e supõe que todo passo acerta; sem
 ## mortes no meio (cada abate soma `morte.hit_stop`). O teste v2_status mede o ciclo de verdade em vários `dt` e compara.
+## Dois relógios: passos e pausa do fim do combo são tempo de MUNDO e andam `velocidade` vezes mais rápido (cada quadro real vale dt*velocidade);
+## o hit-stop segue em tempo real (a pausa conta em `dt`). O resultado é em segundos reais.
 func ciclo_do_combo(dt := QUADRO_REF) -> float:
 	if str(cfg.golpe.passos[0].get("tipo", "melee")) == "adagas":
 		return _ciclo_adagas(dt)
 	var pc := clampf(chance_critico(), 0.0, 1.0)
-	var quadros := float(_quadros(float(cfg.golpe.pausa_fim_combo), dt))
+	var dm := dt * velocidade  # quadro do mundo
+	var quadros := float(_quadros(float(cfg.golpe.pausa_fim_combo), dm))
 	for i in cfg.golpe.passos.size():
 		var p: Dictionary = cfg.golpe.passos[i]
-		quadros += 1.0 + float(_quadros(mundo.heroi.duracao_do_passo(i), dt))
+		quadros += 1.0 + float(_quadros(mundo.heroi.duracao_do_passo(i), dm))
 		quadros += lerpf(float(_quadros(hit_stop_do_acerto(p, false), dt)), float(_quadros(hit_stop_do_acerto(p, true), dt)), pc)
 	return quadros * dt
 
@@ -498,7 +505,8 @@ func ciclo_do_combo(dt := QUADRO_REF) -> float:
 ## Aquece oito ciclos e mede 32, pois em ataque rápido a elegibilidade pode atravessar o combo.
 func _ciclo_adagas(dt: float) -> float:
 	var impacto: Dictionary = cfg.golpe.get("impacto_adagas", {})
-	var chave: Array = [dt, float(cfg.golpe.pausa_fim_combo), float(impacto.get("hit_stop", 0.0)), float(impacto.get("recarga", 0.0))]
+	var dm := dt * velocidade  # passos, recarga e pausa do fim do combo são tempo de mundo; só o hit-stop (`pausa`) conta em `dt`
+	var chave: Array = [dt, velocidade, float(cfg.golpe.pausa_fim_combo), float(impacto.get("hit_stop", 0.0)), float(impacto.get("recarga", 0.0))]
 	for i in cfg.golpe.passos.size():
 		chave.append(mundo.heroi.duracao_do_passo(i))
 		chave.append(float(cfg.golpe.passos[i].acerto_em))
@@ -508,7 +516,7 @@ func _ciclo_adagas(dt: float) -> float:
 	var recarga := float(impacto.get("recarga", 0.0))
 	var cooldown := 0
 	while recarga > 0.0:  # mesma subtração usada pelo cooldown real, inclusive o arredondamento float
-		recarga = maxf(0.0, recarga - dt)
+		recarga = maxf(0.0, recarga - dm)
 		cooldown += 1
 	var pausa := _quadros(float(impacto.get("hit_stop", 0.0)), dt)
 	var sim := 0
@@ -518,10 +526,10 @@ func _ciclo_adagas(dt: float) -> float:
 	var acertos_nominais := PackedInt32Array()
 	for i in cfg.golpe.passos.size():
 		var dur: float = mundo.heroi.duracao_do_passo(i)
-		passos.append(1 + _quadros_golpe_adagas(dur, 1.0, dt))
-		acertos_nominais.append(1 + _quadros_golpe_adagas(dur, float(cfg.golpe.passos[i].acerto_em), dt))
+		passos.append(1 + _quadros_golpe_adagas(dur, 1.0, dm))
+		acertos_nominais.append(1 + _quadros_golpe_adagas(dur, float(cfg.golpe.passos[i].acerto_em), dm))
 	for ciclo in 40:
-		var real_ciclo := _quadros(float(cfg.golpe.pausa_fim_combo), dt)
+		var real_ciclo := _quadros(float(cfg.golpe.pausa_fim_combo), dm)
 		for i in cfg.golpe.passos.size():
 			var acerto := sim + acertos_nominais[i]
 			if acerto - ultimo >= cooldown:
@@ -530,7 +538,7 @@ func _ciclo_adagas(dt: float) -> float:
 			var passo := passos[i]
 			sim += passo
 			real_ciclo += passo
-		sim += _quadros(float(cfg.golpe.pausa_fim_combo), dt)
+		sim += _quadros(float(cfg.golpe.pausa_fim_combo), dm)
 		if ciclo >= 8:
 			total += real_ciclo
 	_ciclo_adagas_chave = chave

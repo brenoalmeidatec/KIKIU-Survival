@@ -147,6 +147,10 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 
 - `jogos/hordas/projeto/prototipos/cara_nova/sprites/inimigo_aldeao_morto.json`, `inimigo_aldeao_morto_albedo.png`, `inimigo_aldeao_morto_normal.png` e `inimigo_aldeao_morto_emissao.png`: cinco vistas por quatro quadros, espelhados pelo jogo para oito direções. Modelo próprio `jogos/hordas/fonte_arte/modelos3d/vila_aldeao.py`, renderizado pelo pipeline `gerar_cara_nova.py -- monstro vila_aldeao aldeao_morto` no Blender 4.5. Arte modelada por script, sem material de terceiros; licença do projeto. Substitui somente o cão recolorido de `cidade/aldeao_morto`, preservando os números de combate.
 
+## Escudos de verdade, um por personagem (#467), Claude do Alisson (PC), 31/10/2026
+
+- `jogos/hordas/projeto/assets/v2/escudos/hazaki.png`, `nicao.png`, `lucas.png` e `matheus.png` (e os `.import`): faixas 256x32 de 8 células (frente, lado, costas, rachado e 4 pedaços da quebra). Pixel art desenhada pixel a pixel por script (Python + Pillow) em `jogos/hordas/fonte_arte/escudos/gerar_escudos.py`, que também imprime os centros dos pedaços usados em `dados/v2_secundario.json`. Hazaki: tate de madeira laqueada vermelha com mon dourado; Nicão: redondo de ferro rebitado, amassado e enferrujado; Lucas: broquel de couro com aro de bronze; Matheus: escudo em gota de laca azul com um sino dourado. Arte própria gerada por script, sem material de terceiros e sem imagem gerada por IA; licença do projeto. Substitui o campo translúcido do escudo (só visual; as regras do bloqueio não mudaram).
+
 ## Troca de nomes dos bustos dos chefes, Claude do Alisson (PC), 31/10/2026
 
 - Os três bustos de `jogos/hordas/projeto/assets/v2/chefes/` só mudaram de nome de arquivo (a imagem é a mesma, a origem e a licença continuam as da entrada dos bustos acima): `devorador_da_carne.png` virou `devourer_of_flesh.png`, `devoradora_da_estrutura.png` virou `devourer_of_structure.png` e `devorador_da_terra.png` virou `devourer_of_land.png`, porque os chefes passaram a ter nome em inglês (#467).

@@ -1,6 +1,6 @@
 extends "res://testes/isolamento_v2.gd"
 # Navegação com controle Xbox nas telas com glifo da v2: os apertos entram pelo caminho da janela (Input.parse_input_event), o mesmo do controle de
-# verdade. Cartas: X rerrola, LB bane e Y escolhe automaticamente (os rótulos contam os usos). Baú: A fecha quando a roleta acabou. Personagens e
+# verdade. Cartas: Y escolhe automaticamente (X e LB não fazem mais nada). Baú: A fecha quando a roleta acabou. Personagens e
 # Salão: A e B estão mapeados nas ações ui_accept e ui_cancel (quem decide é cada tela). O próprio teste trava o dispositivo em Xbox.
 # Índice, slots de personagem, save antigo e opções são isolados: o teste funciona também num user:// vazio, como o do CI.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_controle_nav.tscn  (imprime "v2_controle_nav falhas=0")
@@ -102,27 +102,21 @@ func _cartas() -> void:
 	c.telas.mostrar_escolha(c.progresso.cartas, 20)
 	c.telas.espera_escolha = 0.0  # a trava de 3 s não é o que este teste mede
 	await get_tree().process_frame
-	var r_antes: String = c.telas._btn_r_txt.text
-	var b_antes: String = c.telas._btn_b_txt.text
-	# LB antes de X: a carta marcada (a 1ª) é banível; rerrolar troca as cartas e a 1ª pode virar uma cura, que não se bane
-	await _aperto(JOY_BUTTON_LEFT_SHOULDER)
-	var b_depois: String = c.telas._btn_b_txt.text
-	ok(b_depois != b_antes and c.jogo == "escolha", "LB bane a marcada e mantém a escolha (%s -> %s)" % [b_antes, b_depois])
-	c.telas.espera_escolha = 0.0  # o banimento mostra cartas novas e reabre a trava de 3 s; zerada de novo para o X
+	var ids_antes: Array = []
+	for k in c.progresso.cartas:
+		ids_antes.append(k.id)
+	# X e LB (os antigos rerrolar e banir) não fazem mais nada: as mesmas cartas seguem na tela
 	await _aperto(JOY_BUTTON_X)
-	var r_depois: String = c.telas._btn_r_txt.text
-	ok(r_depois != r_antes, "X rerrola (%s -> %s)" % [r_antes, r_depois])
-	ok(
-		Glifos.texto("rerrolar") == "X" and Glifos.texto("automatico") == "Y" and Glifos.texto("banir") == "LB",
-		"no controle os rótulos são X rerrolar, Y automático e LB banir"
-	)
+	await _aperto(JOY_BUTTON_LEFT_SHOULDER)
+	var ids_depois: Array = []
+	for k in c.progresso.cartas:
+		ids_depois.append(k.id)
+	ok(c.jogo == "escolha" and ids_depois == ids_antes, "X e LB não trocam nem tiram cartas")
+	ok(Glifos.texto("automatico") == "Y", "no controle o rótulo do automático é Y")
 	c.telas.espera_escolha = 0.0
 	var escolhas_antes: int = c.progresso.escolhidas
-	var banimentos_antes: int = cs.banimentos_restantes()
-	var rerrolares_antes: int = cs.rerrolares_restantes()
 	await _aperto(JOY_BUTTON_Y)
 	ok(c.jogo != "escolha" and c.progresso.escolhidas == escolhas_antes + 1, "Y aplica o automático pela entrada real e fecha a escolha")
-	ok(cs.banimentos_restantes() == banimentos_antes and cs.rerrolares_restantes() == rerrolares_antes, "Y não gasta banimento nem rerrolagem")
 	c.telas.esconder()
 	mundo.queue_free()
 	await get_tree().process_frame

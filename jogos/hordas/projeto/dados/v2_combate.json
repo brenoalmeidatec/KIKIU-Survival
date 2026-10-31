@@ -49,6 +49,14 @@
 		"onda_base": 18,
 		"onda_mais": 6,
 		"onda_elite": 1,
+		"mare": {
+			"_ajuda": "Maré de Sangue (Nicão na Vila). Sem aviso de que são ligados: o Q Terremoto chama a próxima Maré e matar monstros da Maré enche o Q mais rápido. q_atraso: segundos entre a pancada do Q e a Maré chegar (o aviso normal sai 1,2 s antes); intervalo_min: segundos mínimos entre duas Marés (a do Q é recusada se a anterior foi há menos que isso; a Maré normal agendada nunca vem antes disso depois de uma chamada); q_cheia_apos: se a última Maré foi há menos que isso, a chamada vem curta; q_curta: fração do tamanho (e dos elites) da Maré curta; abate_carga: multiplicador da carga do Q por abate de monstro da Maré.",
+			"q_atraso": 3.0,
+			"intervalo_min": 25,
+			"q_cheia_apos": 45,
+			"q_curta": 0.6,
+			"abate_carga": 2.2
+		},
 		"vida_por_min": 0.22,
 		"dano_por_min": 0.1,
 		"tipos": [

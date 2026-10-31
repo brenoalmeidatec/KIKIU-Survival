@@ -1,6 +1,5 @@
 extends "res://testes/isolamento_v2.gd"
-# Teste automático da profundidade da partida da v2 (leva 3): raridade que sobe com o nível, cartas (stat, golpe, modificador), rerrolar e
-# banir, os 5 golpes secundários acertando, os modificadores da katana, as evoluções, a elite que solta baú e o baú que dá melhorias, a
+# Teste automático da profundidade da partida da v2 (leva 3): raridade que sobe com o nível, cartas (stat, golpe, modificador), os 5 golpes secundários acertando, os modificadores da katana, as evoluções, a elite que solta baú e o baú que dá melhorias, a
 # derrota e o sinal partida_terminou com os campos certos. Os níveis do mapa estão em v2_diretor.gd; os chefes e a vitória, em v2_chefe.gd.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_partida.tscn  (imprime "v2_partida falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
@@ -174,35 +173,14 @@ func _ready() -> void:
 			sem_golpe += 1
 	ok(sem_golpe == 0, "no começo a escolha sempre traz um golpe secundário")
 
-	# 2. escolha de nível: rerrolar (1x por tela) e banir
+	# 2. escolha de nível
 	zerar()
 	var h = w.heroi
 	h.xp = h.xp_proximo - 0.1
 	w.combate.progresso.ganhar_xp(0.2)
 	ate(func(): return w.combate.jogo == "escolha", 120)
 	ok(w.combate.jogo == "escolha" and w.combate.progresso.cartas.size() == 3, "a escolha abre com 3 cartas")
-	var antes_ids: Array = []
-	for c in w.combate.progresso.cartas:
-		antes_ids.append(c.id)
-	ok(w.combate.progresso.rerrolar(), "rerrolar funciona uma vez")
-	var depois_ids: Array = []
-	for c in w.combate.progresso.cartas:
-		depois_ids.append(c.id)
-	var repetiu := false
-	for id in depois_ids:
-		if antes_ids.has(id):
-			repetiu = true
-	ok(not repetiu, "as cartas rerroladas são novas")
-	ok(not w.combate.progresso.rerrolar(), "só 1 rerrolar por tela")
-	ok(cs.rerrolar_usados == 1, "o rerrolar gasta um uso da partida")
-	var alvo_ban: String = w.combate.progresso.cartas[1].id
-	ok(w.combate.progresso.banir(1), "banir funciona")
-	ok(w.combate.progresso.cartas.size() == 3 and not _tem_id(w.combate.progresso.cartas, alvo_ban), "a carta banida some e outra toma o lugar")
-	var voltou := false
-	for i in 80:
-		if _tem_id(cs.sortear(3, 5), alvo_ban):
-			voltou = true
-	ok(not voltou, "a carta banida nunca mais sai")
+	ok(not w.combate.progresso.has_method("rerrolar") and not w.combate.progresso.has_method("banir"), "a escolha não tem mais rerrolar nem banir")
 	# 2b. carta escondida até ter efeito (oculta_ate_ter_efeito em dados/v2_cartas.json) não sai no sorteio, e volta sem a flag
 	var escondida: Dictionary = cs.definicao("critico")
 	var tinha: bool = cs.disponiveis().has(escondida)
@@ -216,7 +194,6 @@ func _ready() -> void:
 	ok(not saiu_escondida, "a carta escondida nunca sai no sorteio")
 	escondida.erase("oculta_ate_ter_efeito")
 	ok(cs.disponiveis().has(escondida), "sem a flag a carta volta a ficar disponível")
-	ok(w.combate.progresso.banir(0) and not w.combate.progresso.banir(0), "os banimentos acabam (%d no total)" % int(cfg.escolha.banir_total))
 	w.combate.progresso.escolher(0)
 	ok(not w.combate.pausado and w.combate.jogo == "jogando", "escolher fecha a tela")
 
@@ -590,19 +567,17 @@ func _ready() -> void:
 	w.combate.ferir(mn, 10.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
 	ok(w.combate.fx.n_tam.has(16), "o número de dano normal tem 16 px")
 
-	# 11. bônus do santuário (mundo.meta_bonus): raridade melhor e rolagem a mais
+	# 11. bônus do santuário (mundo.meta_bonus): raridade melhor
 	zerar()
 	var base_soma := 0
 	var meta_soma := 0
-	w.meta_bonus = {"raridade": 0.0, "rolagem": 0, "almas": 0.0}
+	w.meta_bonus = {"raridade": 0.0, "almas": 0.0}
 	for i in 3000:
 		base_soma += cs.sortear_raridade(1)
-	ok(cs.rerrolar_total() == int(cfg.escolha.rerrolar_total), "sem bônus, o total de rerrolar é o dos dados")
-	w.meta_bonus = {"raridade": 0.5, "rolagem": 2, "almas": 0.0}
+	w.meta_bonus = {"raridade": 0.5, "almas": 0.0}
 	for i in 3000:
 		meta_soma += cs.sortear_raridade(1)
 	ok(meta_soma > base_soma * 2, "o bônus de raridade do santuário melhora as cartas (%d contra %d)" % [meta_soma, base_soma])
-	ok(cs.rerrolar_total() == int(cfg.escolha.rerrolar_total) + 2 and cs.rerrolar_por_tela() == 3, "o bônus de rolagem soma rerrolares")
 	w.meta_bonus = {}
 
 	# 5b2. (leva 6) a receita à vista: a carta de uma peça diz com quem junta e o que sai; a fusão pede o cartão grande e câmera lenta

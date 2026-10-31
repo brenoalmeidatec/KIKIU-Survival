@@ -1,5 +1,5 @@
 {
-	"_ajuda": "O tiro SECUNDÁRIO do botão direito (mouse) ou gatilho esquerdo (controle), no padrão Overwatch: botão direito = secundário, E (LB) = habilidade (a ruptura, v2/ruptura.gd), Q = especial (um por herói, v2/especial.gd, dados/v2_especial.json). O secundário é definido POR HERÓI: padrao é o id usado por quem não está em herois; herois mapeia a chave do herói (a mesma de `chave` no herói) para o id do secundário dele, por exemplo {\"nicao\": \"escudo\"}. Hoje só existe o id escudo (v2/escudo.gd); id desconhecido deixa o botão direito sem efeito (um herói novo pode usar outro id quando o módulo dele existir). ESCUDO (bloco escudo): segurar ergue um escudo na frente do herói, na direção da mira (mouse ou analógico direito); arco: abertura em graus (ângulo no chão, a mesma conta da elipse do chão); raio: distância do desenho do arco ao corpo, em px (o base, antes do crescimento por nível); raio_por_nivel: o raio cresce essa fração do base por nível acima do 1, até o teto (NÃO usa a área das cartas, h.m_area: o nível 1 é o de antes); arco_por_nivel: o arco (a cobertura do bloqueio) ganha por_nivel graus por nível acima do 1, até o teto em graus (+1 grau por nível, até +25); o bloqueio é pelo ângulo (arco), sem limite de distância, então é o arco que dá a proteção a mais; mov: fração da velocidade de andar enquanto ergue (não corre nem golpeia); gasto: fôlego por segundo (é o MESMO fôlego da corrida e da esquiva; zerar deixa o herói cansado e o escudo cai); gasto_golpe: fôlego que cada golpe bloqueado custa (o bloqueio perfeito não custa nada); folego_min: fôlego mínimo para erguer; perfeito: janela em s desde o instante em que ergueu em que o bloqueio é PERFEITO, empurrao (px/s, dividido pelo peso do monstro) e atordoa (s) do quem bateu (elite vale metade e chefe não é atordoado, como em qualquer golpe); empurrao: o empurrão do bloqueio comum; hit_stop e tremor: o peso do bloqueio perfeito. Bloqueia qualquer dano que chegue de dentro do arco: contato dos monstros, ataques anunciados no chão e ataques do chefe. Dano que vem de fora do arco (costas e lados) entra normal.",
+	"_ajuda": "O tiro SECUNDÁRIO do botão direito (mouse) ou gatilho esquerdo (controle), no padrão Overwatch: botão direito = secundário, E (LB) = habilidade (a ruptura, v2/ruptura.gd), Q = especial (um por herói, v2/especial.gd, dados/v2_especial.json). O secundário é definido POR HERÓI: padrao é o id usado por quem não está em herois; herois mapeia a chave do herói (a mesma de `chave` no herói) para o id do secundário dele, por exemplo {\"nicao\": \"escudo\"}. Hoje só existe o id escudo (v2/escudo.gd); id desconhecido deixa o botão direito sem efeito (um herói novo pode usar outro id quando o módulo dele existir). ESCUDO (bloco escudo): segurar ergue um escudo na frente do herói, na direção da mira (mouse ou analógico direito); arco: abertura em graus (ângulo no chão, a mesma conta da elipse do chão); raio: distância do desenho do arco ao corpo, em px (o base, antes do crescimento por nível); raio_por_nivel: o raio cresce essa fração do base por nível acima do 1, até o teto (NÃO usa a área das cartas, h.m_area: o nível 1 é o de antes); arco_por_nivel: o arco (a cobertura do bloqueio) ganha por_nivel graus por nível acima do 1, até o teto em graus (+1 grau por nível, até +25); o bloqueio é pelo ângulo (arco), sem limite de distância, então é o arco que dá a proteção a mais; mov: fração da velocidade de andar enquanto ergue (não corre nem golpeia); gasto: fôlego por segundo (é o MESMO fôlego da corrida e da esquiva; zerar deixa o herói cansado e o escudo cai); gasto_golpe: fôlego que cada golpe bloqueado custa (o bloqueio perfeito não custa nada); folego_min: fôlego mínimo para erguer; perfeito: janela em s desde o instante em que ergueu em que o bloqueio é PERFEITO, empurrao (px/s, dividido pelo peso do monstro) e atordoa (s) do quem bateu (elite vale metade e chefe não é atordoado, como em qualquer golpe); empurrao: o empurrão do bloqueio comum; hit_stop e tremor: o peso do bloqueio perfeito. VISUAL (bloco visual): o escudo é um sprite de verdade por personagem (pasta/<id>.png, faixa de 8 células 32x32: frente, lado, costas, rachado e 4 pedaços; o id é a folha de sprites do personagem, como matheus, ou a chave do herói), gerado por fonte_arte/escudos/gerar_escudos.py. centro_y: altura do centro do sprite acima dos pés (px); costas_dy: quanto o escudo sobe, em px, quando a mira vai para cima (de costas o corpo do herói o esconderia); distancia: a que fração do raio do herói ele fica, na direção da mira; sobe_s, volta_s (depois de quebrar, reforjado) e desce_s: durações em s das animações; folego_rachado: fração do fôlego em que o quadro racha (aviso de que vai cair); quebra_s: quanto os pedaços ficam no chão; fragmentos: o centro de cada pedaço na célula (gerar_escudos.py imprime). Só visual: nada aqui muda a regra do bloqueio. Bloqueia qualquer dano que chegue de dentro do arco: contato dos monstros, ataques anunciados no chão e ataques do chefe. Dano que vem de fora do arco (costas e lados) entra normal.",
 	"padrao": "escudo",
 	"herois": {"hazaki": "escudo", "nicao": "escudo", "lucas": "escudo"},
 	"escudo": {
@@ -12,6 +12,23 @@
 		"gasto_golpe": 0.35,
 		"folego_min": 0.15,
 		"empurrao": 90,
-		"perfeito": {"janela": 0.15, "empurrao": 360, "atordoa": 0.7, "hit_stop": 0.06, "tremor": 2.5}
+		"perfeito": {"janela": 0.15, "empurrao": 360, "atordoa": 0.7, "hit_stop": 0.06, "tremor": 2.5},
+		"visual": {
+			"pasta": "res://assets/v2/escudos/",
+			"centro_y": -15,
+			"costas_dy": -6,
+			"distancia": 0.6,
+			"sobe_s": 0.1,
+			"volta_s": 0.24,
+			"desce_s": 0.1,
+			"folego_rachado": 0.25,
+			"quebra_s": 0.9,
+			"fragmentos": {
+				"hazaki": [[11.9, 9.8], [19.4, 8.4], [11.9, 21.9], [19.7, 20.5]],
+				"nicao": [[10.5, 10.6], [21.0, 10.2], [11.0, 20.8], [21.3, 20.7]],
+				"lucas": [[12.0, 12.0], [18.8, 11.3], [11.7, 19.5], [19.9, 18.9]],
+				"matheus": [[11.7, 10.0], [20.6, 9.5], [13.4, 20.3], [19.6, 20.8]]
+			}
+		}
 	}
 }

@@ -231,12 +231,27 @@ static func _migrar(cf: ConfigFile) -> ConfigFile:
 		if bool(cf.get_value("conquistas", "derrota_chefe", false)) and not bool(cf.get_value("conquistas", "vence_floresta", false)):
 			cf.set_value("conquistas", "vence_floresta", true)
 		cf.set_value("progressao", "versao", VERSAO_PROGRESSAO)
+	_reembolsar_rolagem(cf)
 	if cf.has_section("mapas_vencidos"):
 		for c in conquistas():
 			if c.has("mapa") and bool(cf.get_value("mapas_vencidos", str(c.mapa), false)):
 				cf.set_value("conquistas", str(c.id), true)
 		cf.erase_section("mapas_vencidos")
 	return cf
+
+
+## A melhoria "Segunda chance" (rerrolar a mais) saiu do jogo junto com o rerrolar e o banir (31/10). Quem já tinha comprado níveis dela recebe as
+## almas de volta (custo 90, dobrando a cada nível: 90 no nível 1, 270 no 2) e a chave velha sai do save. Sem a chave, não faz nada.
+static func _reembolsar_rolagem(cf: ConfigFile) -> void:
+	if not cf.has_section_key("melhorias", "rolagem"):
+		return
+	var n := clampi(int(cf.get_value("melhorias", "rolagem", 0)), 0, 2)
+	var volta := 0
+	for k in n:
+		volta += 90 * (1 << k)
+	cf.erase_section_key("melhorias", "rolagem")
+	if volta > 0:
+		cf.set_value("moeda", "almas", int(cf.get_value("moeda", "almas", 0)) + volta)
 
 
 static func _ler() -> ConfigFile:
@@ -659,7 +674,7 @@ static func texto_proximo(m: Dictionary, n: int) -> String:
 
 
 ## Põe as melhorias compradas no herói, no começo da partida. Os valores são ABSOLUTOS (base do dados/v2_combate.json mais o
-## bônus), então chamar de novo não soma em cima. Os bônus de raridade, rolagem e almas (e as regras do Pesadelo, se ligado) ficam em mundo.meta_bonus; o Rastro de katana troca mundo.combate.fx.variante.
+## bônus), então chamar de novo não soma em cima. Os bônus de raridade e almas (e as regras do Pesadelo, se ligado) ficam em mundo.meta_bonus; o Rastro de katana troca mundo.combate.fx.variante.
 static func aplicar(mundo) -> void:
 	var cf := _ler()
 	var dif := Dificuldade.regras(str(mundo.args.get("dificuldade", dificuldade())))
@@ -676,12 +691,7 @@ static func aplicar(mundo) -> void:
 	h.m_vel_mov = 1.0 + _bonus("velocidade", cf)
 	h.m_ima = 1.0 + _bonus("ima", cf)
 	h.m_vel_ataque = 1.0 + _bonus("treino", cf)
-	mundo.meta_bonus = {
-		"raridade": _bonus("raridade", cf),
-		"rolagem": int(_total("rolagem", cf)),
-		"almas": (1.0 + _bonus("almas", cf)) * float(dif.almas_mult) - 1.0,
-		"dificuldade": dif
-	}
+	mundo.meta_bonus = {"raridade": _bonus("raridade", cf), "almas": (1.0 + _bonus("almas", cf)) * float(dif.almas_mult) - 1.0, "dificuldade": dif}
 	if ligado("modo", "pesadelo"):
 		mundo.meta_bonus["pesadelo"] = regras_pesadelo()  # as regras do modo; sem a chave a partida é normal (mundo.fator_pesadelo)
 	if mundo.combate != null and mundo.combate.fx != null:  # visual do santuário: a folha do corte da katana (só cosmético, o dano é o mesmo)
