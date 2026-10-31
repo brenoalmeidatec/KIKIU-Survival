@@ -133,6 +133,20 @@ func teste_monstro() -> void:
 	ok(absf(rapido / maxf(lento, 0.001) - FATOR) < 0.05, "a 1,25x o monstro anda 25%% mais no mesmo tempo real (%.1f vs %.1f px)" % [rapido, lento])
 
 
+func teste_xp() -> void:
+	zerar()
+	var h = w.heroi
+	h.xp = 0.0
+	h.xp_proximo = 1000.0
+	w.combate.progresso.ganhar_xp(5.0)
+	ok(is_equal_approx(h.xp, 5.0), "base: 5 de XP somam 5 (%.3f)" % h.xp)
+	h.xp = 0.0
+	w.combate.velocidade = FATOR
+	w.combate.progresso.ganhar_xp(5.0)
+	ok(is_equal_approx(h.xp, 5.0 / FATOR), "a 1,25x o XP vale 1/1,25: as cartas seguem no mesmo ritmo por minuto real (%.3f)" % h.xp)
+	w.combate.velocidade = 1.0
+
+
 func _ready() -> void:
 	w = Mundo.instantiate()
 	w.modo_teste = true
@@ -144,5 +158,6 @@ func _ready() -> void:
 	teste_relogio()
 	teste_ui_nao_acelera()
 	teste_monstro()
+	teste_xp()
 	print("v2_velocidade falhas=%d" % falhas)
 	get_tree().quit()
