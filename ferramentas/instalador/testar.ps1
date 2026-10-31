@@ -9,8 +9,9 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Teste de instalacao permitido somente no runner descartavel do GitHub Actions.' }
-$versao = [regex]::Match((Get-Content -LiteralPath (Join-Path $Projeto 'project.godot') -Raw), 'config/version="([^"]+)"').Groups[1].Value
-$instalador = (Resolve-Path -LiteralPath (Join-Path $Saida "KIKIU-Setup-$versao.exe")).Path
+$instaladores = @(Get-ChildItem -LiteralPath $Saida -Filter 'KIKIU-Setup-*.exe')
+if ($instaladores.Count -ne 1) { throw "Esperava um instalador em $Saida, achei $($instaladores.Count)." }
+$instalador = $instaladores[0].FullName
 $pastaApp = Join-Path $env:LOCALAPPDATA 'Programs\KIKIU'
 $pastaMenu = Join-Path ([Environment]::GetFolderPath('Programs')) 'K.I.K.I.U'
 $atalhoMenu = Join-Path $pastaMenu 'K.I.K.I.U.lnk'
