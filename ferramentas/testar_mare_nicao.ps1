@@ -6,7 +6,8 @@
 # O Godot vem de $env:KIKIU_GODOT ou de C:\Dev\Tools\Godot\Godot_v4.4.1-stable_win64.exe.
 #
 # O que observar: o Q começa vazio e carrega matando monstro; a primeira onda forte vem por volta de 60 s, com aviso
-# antes e em dois pulsos; quem morre pelo Q Terremoto sai voando em pedaços. Relatar na #481.
+# antes e em dois pulsos; quem morre pelo Q Terremoto sai voando em pedaços. Usar o Q chama outra Maré uns 3 s depois da pancada (sem texto nenhum dizendo isso),
+# e matar monstros da Maré enche o Q mais rápido. O aviso e o estouro da Maré têm prioridade no áudio (não somem no meio da horda). Relatar na #481.
 #
 # Instalar o atalho na área de trabalho (uma vez, em cada máquina):
 #   powershell -ExecutionPolicy Bypass -File ferramentas\testar_mare_nicao.ps1 -Instalar

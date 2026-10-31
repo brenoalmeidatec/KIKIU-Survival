@@ -12,10 +12,18 @@ const INV_INTERVALOS := {"nascer": 0.16, "atacar": 0.12, "sumir": 0.16}
 const INV_ATAQUES := {"garras": "corte2", "arco": "corte1", "fogo": "fogo", "pancada": "impacto", "nevoa": "corvo", "bote": "estocada", "golem": "impacto"}
 const INV_STREAMS := ["runa_poe", "bau_cai", "esquiva", "morte", "corte2", "corte1", "fogo", "impacto", "corvo", "estocada"]
 
+## Sons que não podem se perder no meio da horda: se as 10 vozes estiverem ocupadas, eles tomam a voz de um som comum (golpe, morte, orbe).
+## Antes a voz ocupada descartava o som em silêncio, e o aviso e o estouro da Maré de Sangue sumiam justo quando 20 monstros morriam de uma vez.
+const PRIORITARIOS := ["onda", "elite", "chefe", "evolucao", "nivel", "vitoria", "derrota", "aviso", "ruptura_pronta", "ruptura_carga", "ruptura_disparo"]
+
 var mudo := false
+var descartados := 0  # sons comuns que ficaram sem voz livre (testes e medição)
+var roubados := 0  # vozes tomadas por um som prioritário
 var tocados := 0  # quantos sons saíram (testes)
 var ultimo := ""  # o último som pedido (testes)
 var _players: Array[AudioStreamPlayer] = []
+var _voz_nome: Array[String] = []  # o que cada voz de _players toca (para saber quem pode ser roubado)
+var _voz_ini: Array[float] = []  # quando cada voz começou (s)
 var _streams := {}
 var _ultimo_t := {}
 var inv_tocados := 0
@@ -38,6 +46,8 @@ func _ready() -> void:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		_players.append(p)
+		_voz_nome.append("")
+		_voz_ini.append(0.0)
 	for i in INV_VOZES:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
@@ -212,13 +222,41 @@ func tocar(nome: String, tom := 1.0, vol_db := 0.0, intervalo := 0.04) -> void:
 	var som := get_node_or_null("/root/Som")
 	if som != null:
 		vol = float(som.get("volume_efeitos"))
-	for p in _players:
-		if not p.playing:
-			p.stream = s
-			p.pitch_scale = tom
-			p.volume_db = linear_to_db(maxf(vol, 0.0001)) + vol_db
-			p.play()
+	var i := _voz_livre()
+	if i < 0:
+		if not PRIORITARIOS.has(nome):
+			descartados += 1
 			return
+		i = _voz_para_roubar()
+		if i < 0:
+			descartados += 1
+			return
+		roubados += 1
+	var p := _players[i]
+	p.stream = s
+	p.pitch_scale = tom
+	p.volume_db = linear_to_db(maxf(vol, 0.0001)) + vol_db
+	p.play()
+	_voz_nome[i] = nome
+	_voz_ini[i] = agora
+
+
+func _voz_livre() -> int:
+	for i in _players.size():
+		if not _players[i].playing:
+			return i
+	return -1
+
+
+## A voz com um som comum que começou há mais tempo (a mais perto de acabar); -1 se todas tocam sons prioritários.
+func _voz_para_roubar() -> int:
+	var melhor := -1
+	for i in _players.size():
+		if PRIORITARIOS.has(_voz_nome[i]):
+			continue
+		if melhor < 0 or _voz_ini[i] < _voz_ini[melhor]:
+			melhor = i
+	return melhor
 
 
 func _stream(nome: String) -> AudioStream:
