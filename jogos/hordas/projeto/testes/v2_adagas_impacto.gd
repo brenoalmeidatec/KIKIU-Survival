@@ -85,13 +85,13 @@ func medir(hz: int, velocidade: float, impacto: bool) -> Dictionary:
 				danos.append(m.vida_max - m.vida)
 		if inicios.size() >= 17:
 			break
-	ok(inicios.size() >= 17, "Lucas completa ciclos medidos")
+	ok(inicios.size() >= 17, "Luke completa ciclos medidos")
 	if inicios.size() < 17:
 		return {}
 	var dur: float = float(inicios[16]) - float(inicios[8])
 	var ciclo := dur / 8.0
 	var erro := absf(ciclo - modelo)
-	print("CICLO Lucas hz=", hz, " vel=", velocidade, " impacto=", impacto, " real=", ciclo, " modelo=", modelo, " erro=", erro)
+	print("CICLO Luke hz=", hz, " vel=", velocidade, " impacto=", impacto, " real=", ciclo, " modelo=", modelo, " erro=", erro)
 	ok(erro <= dt + 0.000001, "modelo de alvo próximo difere no máximo um quadro por combo")
 	return {
 		"hz": hz,
@@ -112,7 +112,7 @@ func _ready() -> void:
 	ok(Meta.saldo() == 0 and Meta.nivel("vida") == 0, "fixture começa sem progresso herdado")
 	ok(Config.arquivo.begins_with(Ambiente.raiz) and Personagens.caminho_antigo.begins_with(Ambiente.raiz), "opções e save antigo já isolados antes do ready")
 	Config.temporario("pausar_fora", false)
-	Personagens.ativar(Personagens.criar("Lucas", "lucas"))
+	Personagens.ativar(Personagens.criar("Luke", "lucas"))
 	Herois.forcado = ""
 	w = Mundo.instantiate()
 	w.modo_teste = true
@@ -159,7 +159,7 @@ func _ready() -> void:
 	for dx in [24, 40, 56]:
 		alvo(dx)
 	w.heroi.esp_carga = w.heroi.esp_carga_max
-	ok(w.heroi.especial(), "Q real do Lucas iniciou")
+	ok(w.heroi.especial(), "Q real do Luke iniciou")
 	passos(180)
 	ok(w.combate.adagas.acertos > 0 and w.combate.hit_stops == 0, "Tempestade real atinge sem pedir hit-stop")
 	zerar()

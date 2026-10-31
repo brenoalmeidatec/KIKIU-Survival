@@ -122,7 +122,7 @@ func limpar() -> void:
 
 ## Põe os números do herói `chave`: a base com a troca dele (dados > herois > chave) por cima. Chave que não está em `herois` fica com a base.
 ## Um bloco (perfeito, contragolpe, chefe, eco) troca só as chaves que a troca traz; um par ([min, max]) ou um número troca inteiro. O herói
-## é o mesmo script para todos (Hazaki, Nicão, Lucas...): quem quiser uma ruptura diferente (ou mais fraca) só escreve a troca nos dados.
+## é o mesmo script para todos (Hazaki, Nick, Luke...): quem quiser uma ruptura diferente (ou mais fraca) só escreve a troca nos dados.
 func para_heroi(chave: String) -> void:
 	if chave == _cfg_chave:
 		return

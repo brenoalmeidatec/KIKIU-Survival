@@ -1,7 +1,7 @@
 extends RefCounted
 ## Ataques ANUNCIADOS no chão (leva 3): uma área (círculo ou faixa) que PISCA cada vez mais rápido durante `dur` s e só então causa o dano,
 ## para o jogador ter tempo de sair (a esquiva também vale). Quem usa: os chefes (estouro, chuva e investida, mais o leque, a teia e a revoada,
-## que são cada um de uma marca, ver v2/chefe.gd) e a elite explosiva. Formas: círculo, faixa (com ou sem dano) e SETOR (o leque do Devorador da Carne).
+## que são cada um de uma marca, ver v2/chefe.gd) e a elite explosiva. Formas: círculo, faixa (com ou sem dano) e SETOR (o leque do Devourer of Flesh).
 ## Pool de MAX avisos e UMA chamada de desenho aditiva por quadro na camada glow. O chão é uma elipse (y achatado por ACHATA), igual às
 ## sombras e aos golpes secundários: um círculo no chão é uma elipse na tela, e o dano usa a mesma elipse.
 
@@ -11,7 +11,7 @@ const MIOLO_MIN := 6.0  # px: abaixo disso o miolo do aviso não vira polígono 
 const Anim := preload("res://v2/anim_golpes.gd")  # as folhas dos ataques inimigos (indice_perigo.json; docs/combate_v2)
 ## Estilo do aviso: 0 = só o chão pisca (como antes); 1 = QUEDA, uma pedra de energia cai do céu no círculo e estoura no disparo (a chuva do
 ## chefe); 2 = ESTOURO, o chão racha e explode no disparo (o estouro do chefe e a elite explosiva); 3 = TEIA, fios e anéis de teia desenhados
-## sobre o círculo (a teia da Devoradora da Estrutura). O dano continua no disparo, como sempre.
+## sobre o círculo (a teia da Devourer of Structure). O dano continua no disparo, como sempre.
 const QUEDA_DE := Vector2(-34.0, -96.0)  # de onde a pedra vem, a partir do centro do círculo
 const QUEDA_COMECA := 0.35  # fração do aviso em que a pedra aparece no alto
 

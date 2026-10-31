@@ -129,7 +129,7 @@ func _t_herois() -> void:
 	# 3 heróis, 3 cores/tamanhos que o json pode dar: um ajuste por herói vale
 	var base := Foguinho.config_do_heroi("hazaki")
 	var nic := Foguinho.config_do_heroi("nicao")
-	ok(base.peito != nic.peito, "o json ajusta o peito do Nicão (mais baixo)")
+	ok(base.peito != nic.peito, "o json ajusta o peito do Nick (mais baixo)")
 
 
 # ------------------------------------------------------------------ perfis

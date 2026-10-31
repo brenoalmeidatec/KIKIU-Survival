@@ -43,8 +43,14 @@ static func ativo() -> String:
 	return str(_indice().get_value("geral", "ativo", ""))
 
 
+## O nome atual do personagem. Saves antigos guardam o nome de antes da troca para nomes em inglês (Nicão, Lucas...): o campo
+## "nome_antigo" de dados/v2_salao.json traduz para o atual, então o que está gravado no índice não precisa ser migrado.
 static func nome(id: String) -> String:
-	return str(_indice().get_value(id, "nome", ""))
+	var gravado := str(_indice().get_value(id, "nome", ""))
+	for n in nomes():
+		if str(n.get("nome_antigo", "")) == gravado and gravado != "":
+			return str(n.nome)
+	return gravado
 
 
 static func heroi(id: String) -> String:
@@ -74,7 +80,7 @@ static func sprite(id: String) -> String:
 	return sprite_do_nome(nome(id))
 
 
-## A folha que o personagem `id` desenha (retrato sem rosto, etc.): a própria (Matheus) ou, sem ela, a do herói dele (Hazaki, Nicão, Lucas).
+## A folha que o personagem `id` desenha (retrato sem rosto, etc.): a própria (Matthew) ou, sem ela, a do herói dele (Hazaki, Nick, Luke).
 static func folha(id: String) -> String:
 	var s := sprite(id)
 	return s if s != "" else Herois.sprite(heroi(id))
@@ -140,7 +146,7 @@ static func migrar_se_preciso() -> void:
 	var cf := ConfigFile.new()
 	cf.set_value("geral", "lista", ["p1"])
 	cf.set_value("geral", "ativo", "p1")
-	cf.set_value("p1", "nome", str(nomes()[0].nome) if not nomes().is_empty() else "Breno")
+	cf.set_value("p1", "nome", str(nomes()[0].nome) if not nomes().is_empty() else "Brendan")
 	cf.set_value("p1", "heroi", HEROI_PADRAO)
 	cf.save(caminho_indice)
 

@@ -139,7 +139,7 @@ func _testes() -> void:
 		"volta ao máximo de partida: 208 px (%s, %s)" % [hud._vida_barra.size.x, hud._folego.size.x]
 	)
 
-	# 5. a base vem do herói: com 180 de vida de partida (Nicão) a barra começa em 208 px; 50 de bônus somam 25 px
+	# 5. a base vem do herói: com 180 de vida de partida (Nick) a barra começa em 208 px; 50 de bônus somam 25 px
 	falso.combate.cfg = {"heroi": {"vida": 180}, "folego": {"max": 3}}
 	h.vida_max = 180.0
 	_passar(hud, 1.0)

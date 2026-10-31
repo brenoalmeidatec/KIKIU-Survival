@@ -1,8 +1,8 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste automático da HABILIDADE de cada herói, a tecla E (v2/habilidade.gd, heroi.gd, combate.gd, hud_habilidades.gd, dados/v2_habilidade.json,
-# dados/v2_ruptura.json > cartas): o mapa herói -> id (Hazaki: ruptura, Nicão: investida_escudo, Lucas: salto_adagas), os campos hab_* que o HUD lê, e para
+# dados/v2_ruptura.json > cartas): o mapa herói -> id (Hazaki: ruptura, Nick: investida_escudo, Luke: salto_adagas), os campos hab_* que o HUD lê, e para
 # CADA herói numa partida de verdade: a E nasce pronta, o aperto dispara (a ruptura do Hazaki pelo caminho antigo, segurando; as outras na hora), o herói
-# fica invulnerável em Estado.HABILIDADE, a E faz o que diz (Nicão: investe empurrando e atordoando a faixa e fecha com a pancada; Lucas: salta para
+# fica invulnerável em Estado.HABILIDADE, a E faz o que diz (Nick: investe empurrando e atordoando a faixa e fecha com a pancada; Luke: salta para
 # trás soltando dois leques de adagas), entra em recarga por TEMPO (8 a 14 s), o aperto na recarga é negado, a recarga corre sozinha e a E dispara de
 # novo. Também: o Q corta a E, a E não dispara em pausa, as cartas da E (dano, recarga, atordoa) valem para qualquer E e Contragolpe/Eco só saem para a
 # ruptura, o dano da E enche a carga do Q, e o slot E do HUD mostra o ícone, o rótulo e a recarga da E do herói. O mundo anda em passos fixos de 1/60 s.
@@ -159,7 +159,7 @@ func _hazaki() -> void:
 	ok(hab.disparos == 0, "hazaki: o módulo da habilidade nova não foi usado")
 
 
-## Nicão: investe para a frente (invulnerável) empurrando e atordoando quem está na faixa, fecha com a pancada; quem ficou para trás ou ao lado não leva.
+## Nick: investe para a frente (invulnerável) empurrando e atordoando quem está na faixa, fecha com a pancada; quem ficou para trás ou ao lado não leva.
 func _nicao() -> void:
 	var h = w.heroi
 	var hab = w.combate.habilidade
@@ -199,7 +199,7 @@ func _nicao() -> void:
 	ok(frente.atordoa_t > 0.3, "nicão: atordoa quem a faixa pega (%s s)" % frente.atordoa_t)
 
 
-## O que vale para as E novas (Nicão e Lucas): recarga por tempo, negado, de novo, o Q corta a E, nada em pausa, a E enche a carga do Q.
+## O que vale para as E novas (Nick e Luke): recarga por tempo, negado, de novo, o Q corta a E, nada em pausa, a E enche a carga do Q.
 func _comum(id: String) -> void:
 	var h = w.heroi
 	var hab = w.combate.habilidade
@@ -259,7 +259,7 @@ func _comum(id: String) -> void:
 	h.estado = Heroi.Estado.MORTO
 	ok(not h.habilidade(), "%s: morto, a E não dispara" % id)
 	h.estado = Heroi.Estado.LIVRE
-	# o dano da E carrega a ultimate (a do Nicão fere a faixa; a do Lucas, as adagas): só fora do Q
+	# o dano da E carrega a ultimate (a do Nick fere a faixa; a do Luke, as adagas): só fora do Q
 	zerar()
 	monstro_a(80)
 	monstro_a(140, 8)
@@ -270,7 +270,7 @@ func _comum(id: String) -> void:
 	ok(b.has("nome"), "%s: bloco da E" % id)
 
 
-## Lucas: salta para trás (contra a mira) soltando um leque na decolagem e outro no pouso; as adagas ferem quem está à frente.
+## Luke: salta para trás (contra a mira) soltando um leque na decolagem e outro no pouso; as adagas ferem quem está à frente.
 func _lucas() -> void:
 	var h = w.heroi
 	var hab = w.combate.habilidade
@@ -372,7 +372,7 @@ func _bordas() -> void:
 	ev.action = "ruptura"
 	ev.pressed = true
 	h.entrada_evento(ev)
-	ok(h.estado == Heroi.Estado.HABILIDADE, "o evento da ação ruptura (tecla E, LB) dispara a E do Nicão")
+	ok(h.estado == Heroi.Estado.HABILIDADE, "o evento da ação ruptura (tecla E, LB) dispara a E do Nick")
 	hab.cancelar(h)
 	# fim de partida com a E no ar
 	zerar()

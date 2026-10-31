@@ -8,8 +8,8 @@ extends RefCounted
 ##
 ## Qual especial cada herói tem é DADO (dados/v2_especial.json > padrao e herois > chave do herói), igual ao secundário. Os três de hoje:
 ##  - INVESTIDA (Hazaki, "Corte Relâmpago"): mira um instante, some num clarão na direção da mira cortando tudo na faixa e fecha com um corte em cruz em volta.
-##  - TERREMOTO (Nicão): ergue a marreta e bate: pancada enorme em volta, rachaduras e uma onda de choque que sai da batida e varre quem estava longe.
-##  - CHUVA (Lucas, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
+##  - TERREMOTO (Nick): ergue a marreta e bate: pancada enorme em volta, rachaduras e uma onda de choque que sai da batida e varre quem estava longe.
+##  - CHUVA (Luke, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
 ## Id desconhecido deixa a tecla Q sem efeito.
 ##
 ## O herói (v2/heroi.gd) cuida da entrada (`especial()`), do estado (Estado.ESPECIAL), da carga e dos campos que o HUD lê (esp_*); este módulo cuida do
@@ -384,7 +384,7 @@ func _final_investida(h) -> void:
 		c.hit_stop(float(f.hit_stop))
 
 
-# ------------------------------------------------------------------ o terremoto (Nicão)
+# ------------------------------------------------------------------ o terremoto (Nick)
 
 
 func _q_terremoto(h) -> void:
@@ -486,7 +486,7 @@ func atualizar(dt: float) -> void:
 	_desenhou = true
 
 
-# ------------------------------------------------------------------ a tempestade de adagas (Lucas)
+# ------------------------------------------------------------------ a tempestade de adagas (Luke)
 
 
 func _q_chuva(h, dt: float, v: Vector2) -> Vector2:
@@ -515,7 +515,7 @@ func _q_chuva(h, dt: float, v: Vector2) -> Vector2:
 	return v * h.vel_andar() * float(_c.mov) * dt
 
 
-## Uma rodada de `n` adagas em círculo a partir do ângulo `_giro` (as adagas do Lucas, v2/adagas.gd: o dano de cada uma já leva o bônus de dano).
+## Uma rodada de `n` adagas em círculo a partir do ângulo `_giro` (as adagas do Luke, v2/adagas.gd: o dano de cada uma já leva o bônus de dano).
 func _rodada(h, n: int, p: Dictionary) -> void:
 	var cor := _cor(_c.cor)
 	var passo := {

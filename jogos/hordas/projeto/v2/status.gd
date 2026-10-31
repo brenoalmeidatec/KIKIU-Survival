@@ -502,7 +502,7 @@ static func _sec_katana(m) -> Dictionary:
 				curto = [[_p(valor), 1], ["% de carga por abate", 0]]
 				uma = [[_p(valor) + "%", 1]]
 			"abalo":
-				# o Nicão: a pancada no chão solta uma onda de choque com esse % do dano dela
+				# o Nick: a pancada no chão solta uma onda de choque com esse % do dano dela
 				var danos_abalo: Array = []
 				for p in c.passos_de("pancada"):
 					danos_abalo.append(valor / 100.0 * c.dano_do_passo(p))
@@ -512,17 +512,17 @@ static func _sec_katana(m) -> Dictionary:
 				curto = [[_p(valor), 1], ["% da pancada (", 0], [txt_a, 1], [")", 0]]
 				uma = [[_p(valor) + "%", 1]]
 			"muralha":
-				# o Nicão: empurra e atordoa mais (o empurrão do golpe e o atordoamento sobem esse %)
+				# o Nick: empurra e atordoa mais (o empurrão do golpe e o atordoamento sobem esse %)
 				tr = [["+", 0], [_p(valor), 1], ["% de empurrão e atordoamento", 0]]
 				curto = [["+", 0], [_p(valor), 1], ["% empurrão", 0]]
 				uma = [["+" + _p(valor) + "%", 1]]
 			"chuva":
-				# o Lucas: cada acerto solta uma adaga extra com esse % de chance
+				# o Luke: cada acerto solta uma adaga extra com esse % de chance
 				tr = [[_p(valor), 1], ["% de chance de cada acerto soltar uma adaga extra", 0]]
 				curto = [[_p(valor), 1], ["% de adaga extra", 0]]
 				uma = [[_p(valor) + "%", 1]]
 			"mira":
-				# o Lucas: alcance e velocidade das adagas
+				# o Luke: alcance e velocidade das adagas
 				tr = [["+", 0], [_p(valor), 1], ["% de alcance e velocidade das adagas", 0]]
 				curto = [["+", 0], [_p(valor), 1], ["% alcance das adagas", 0]]
 				uma = [["+" + _p(valor) + "%", 1]]

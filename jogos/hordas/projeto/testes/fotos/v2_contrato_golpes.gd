@@ -26,7 +26,7 @@ func _ready() -> void:
 	Config.temporario("pausar_fora", false)
 	Config.temporario("qualidade_auto", false)
 	var casos := []
-	for nome in ["Breno", "Matheus", "Nicão", "Lucas"]:
+	for nome in ["Brendan", "Matthew", "Nick", "Luke"]:
 		for hz in [60, 120]:
 			var id = Personagens.criar(nome, Personagens.heroi_do_nome(nome))
 			Personagens.ativar(id)

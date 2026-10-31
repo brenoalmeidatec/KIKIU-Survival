@@ -63,7 +63,7 @@ var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário ca
 var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a ruptura continua em v2/ruptura.gd)
 var ritmo
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
-var adagas  # as adagas do Lucas (pool, v2/adagas.gd)
+var adagas  # as adagas do Luke (pool, v2/adagas.gd)
 var heroi_id := "hazaki"  # o herói da partida (v2/herois.gd)
 var fim_emitido := false  # partida_terminou já saiu
 var venceu := false
@@ -457,7 +457,7 @@ func alcance_do_passo(passo: Dictionary, h = null) -> float:
 	return float(passo.alcance) * (quem.m_area + bonus_nivel_golpe(quem))
 
 
-## O arco com a área do herói, até 360 graus: a pancada do Nicão é em volta toda, e sem o teto 360 com a área vira 396 e o cosseno do acerto inverte.
+## O arco com a área do herói, até 360 graus: a pancada do Nick é em volta toda, e sem o teto 360 com a área vira 396 e o cosseno do acerto inverte.
 func arco_do_passo(passo: Dictionary) -> float:
 	return minf(float(passo.arco) * (1.0 + (mundo.heroi.m_area - 1.0) * 0.5), 360.0)
 
@@ -575,7 +575,7 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 	var cor := _cor(passo.cor)
 	if h.contragolpe_t > 0.0:  # a janela do contragolpe (depois da ruptura): o corte sai alaranjado
 		cor = cor.lerp(Color(1.0, 0.55, 0.2), 0.6)
-	var tom := float(passo.get("tom", 1.0))  # tom e vol opcionais do passo: o Nicão é grave, o Lucas agudo
+	var tom := float(passo.get("tom", 1.0))  # tom e vol opcionais do passo: o Nick é grave, o Luke agudo
 	if str(passo.get("tipo", "melee")) == "adagas" or passo.nome == "pancada":  # sem corte desenhado: as adagas e o chão aparecem no acerto
 		audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
 		return
@@ -588,14 +588,14 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 
 ## O dano do golpe, no quadro "acerto_em": tudo o que está no arco apanha. Devolve quantos acertou.
 func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
-	fonte_dano = "principal"  # as adagas do Lucas, o crítico explosivo e as ondas da katana contam no ataque principal
-	if str(passo.get("tipo", "melee")) == "adagas":  # o Lucas: as adagas saem (v2/adagas.gd) e acertam por conta própria
+	fonte_dano = "principal"  # as adagas do Luke, o crítico explosivo e as ondas da katana contam no ataque principal
+	if str(passo.get("tipo", "melee")) == "adagas":  # o Luke: as adagas saem (v2/adagas.gd) e acertam por conta própria
 		adagas.lancar(h, origem, dir, passo, true)  # true: o alcance das adagas do golpe cresce com o nível (as do especial Q, não)
 		return 0
 	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
-	var pancada: bool = passo.nome == "pancada"  # o Nicão no chão: em volta, empurrão para fora
-	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nicão: empurra e atordoa mais
+	var pancada: bool = passo.nome == "pancada"  # o Nick no chão: em volta, empurrão para fora
+	var forca: float = 1.0 + float(armas.mods.muralha) / 100.0  # modificador do Nick: empurra e atordoa mais
 	if pancada:
 		_estouro_chao(h, alc, passo)
 	var cos_meio := cos(deg_to_rad(arco * 0.5))
@@ -653,7 +653,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 		armas.lancar_onda(origem, dir, armas.dano_da_onda(dano_do_passo(passo)))
 	elif passo.nome == "estocada" and float(armas.mods.fura) > 0.0:
 		armas.lancar_lanca(origem, dir, armas.dano_da_lanca(dano_do_passo(passo)))
-	if pancada and float(armas.mods.abalo) > 0.0:  # modificador do Nicão: a pancada solta uma onda de choque para a frente
+	if pancada and float(armas.mods.abalo) > 0.0:  # modificador do Nick: a pancada solta uma onda de choque para a frente
 		armas.lancar_onda(origem, dir, dano_do_passo(passo) * float(armas.mods.abalo) / 100.0)
 	processar_mortes()
 	if n > 0:
@@ -669,7 +669,7 @@ func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> 
 	return n
 
 
-## A pancada no chão do Nicão: duas ondas de poeira, estouro de pedrinhas, luz e o baque grave.
+## A pancada no chão do Nick: duas ondas de poeira, estouro de pedrinhas, luz e o baque grave.
 func _estouro_chao(h, alc: float, passo: Dictionary) -> void:
 	var cor := _cor(passo.cor)
 	var p: Vector2 = h.pos + Vector2(0, -2)

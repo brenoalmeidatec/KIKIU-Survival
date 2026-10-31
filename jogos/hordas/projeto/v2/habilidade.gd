@@ -5,9 +5,9 @@ extends RefCounted
 ## Qual E cada herói tem é DADO (dados/v2_habilidade.json > padrao e herois > chave do herói), igual ao secundário e ao Q. Os três de hoje:
 ##  - RUPTURA (Hazaki): a ruptura de sempre (v2/ruptura.gd: segurar carrega, soltar racha o chão em 360 graus e abre o contragolpe da katana). Não é
 ##    disparada por este módulo: ele só diz "a E dele é a ruptura" (hab_id = "ruptura") e o herói segue o caminho antigo (rup_*).
-##  - INVESTIDA DE ESCUDO (Nicão): investe para a frente com o escudo erguido, INVULNERÁVEL, empurrando e atordoando tudo o que está na faixa, e fecha com
+##  - INVESTIDA DE ESCUDO (Nick): investe para a frente com o escudo erguido, INVULNERÁVEL, empurrando e atordoando tudo o que está na faixa, e fecha com
 ##    uma pancada curta onde para. O Q dele (Terremoto) é a pancada gigante parado; a E é a entrada em movimento.
-##  - SALTO DAS ADAGAS (Lucas): salta para TRÁS (contra a mira), INVULNERÁVEL, soltando um leque de adagas para a frente na decolagem e outro menor ao
+##  - SALTO DAS ADAGAS (Luke): salta para TRÁS (contra a mira), INVULNERÁVEL, soltando um leque de adagas para a frente na decolagem e outro menor ao
 ##    pousar. O Q dele (Tempestade) é o círculo parado; a E é o recuo que abre distância já atirando.
 ## Id desconhecido deixa a tecla E sem efeito.
 ##
@@ -38,7 +38,7 @@ var _c: Dictionary = {}  # o bloco dela
 var _t := 0.0  # s desde o disparo (tempo do mundo)
 var _fase := 0
 var _dir := Vector2.RIGHT  # a direção do movimento, travada no disparo
-var _mira := Vector2.RIGHT  # a direção da mira no disparo (as adagas do Lucas saem para ela)
+var _mira := Vector2.RIGHT  # a direção da mira no disparo (as adagas do Luke saem para ela)
 var _andou := 0.0  # px já andados
 var _rastro_t := 0.0
 var _ja: Dictionary = {}  # instance_id -> true: quem esta E já feriu (a faixa não repete)
@@ -152,7 +152,7 @@ func iniciar(h) -> bool:
 	h.dir_olhar = _mira
 	_dir = _mira
 	if id == "salto_adagas":
-		_dir = -_mira  # o Lucas salta para trás, de frente para a mira
+		_dir = -_mira  # o Luke salta para trás, de frente para a mira
 	h.hab_t = 0.0
 	h.hab_dur = float(_c.dur)
 	h.hab_invul = true
@@ -256,7 +256,7 @@ func _faixa(h) -> void:
 		c.processar_mortes()
 
 
-## Um leque de adagas na direção da mira (as adagas do Lucas, v2/adagas.gd: o dano de cada uma já leva o bônus de dano do herói e as cartas da E).
+## Um leque de adagas na direção da mira (as adagas do Luke, v2/adagas.gd: o dano de cada uma já leva o bônus de dano do herói e as cartas da E).
 func _leque(h, p: Dictionary) -> void:
 	var cor := _cor(_c.cor)
 	var passo := {

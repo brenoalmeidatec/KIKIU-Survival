@@ -23,7 +23,7 @@ preservando o teto técnico do diretor. A carga, duração e quantidade de proj�
 do Q permanecem as anteriores. Cada disparo copia seu bloco de dados e captura
 os fatores uma vez; subir de nível durante o disparo não aumenta o mesmo Q.
 O catálogo e os modificadores do herói não são alterados. Há três caminhos
-mecânicos (Hazaki, Nicão e Lucas); Matheus reutiliza o arquétipo no #394, cuja
+mecânicos (Hazaki, Nick e Luke); Matthew reutiliza o arquétipo no #394, cuja
 cobertura visual continua separada.
 
 A cura por nível vale 80% da base anterior (12% → 9,6% da vida máxima).

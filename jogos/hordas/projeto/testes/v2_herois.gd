@@ -1,9 +1,9 @@
 extends "res://testes/isolamento_v2.gd"
-# Teste automático dos heróis da v2 (v2/herois.gd, adagas.gd, personagens.gd, dados/v2_herois.json): Hazaki (padrão), Nicão (marreta) e Lucas
+# Teste automático dos heróis da v2 (v2/herois.gd, adagas.gd, personagens.gd, dados/v2_herois.json): Hazaki (padrão), Nick (marreta) e Luke
 # (adagas). Usa um save TEMPORÁRIO (user://teste_v2_herois.cfg): o save real não é tocado. Confere: o JSON (3 heróis, folhas de sprites que
 # existem, o Hazaki repetindo os números do v2_combate.json); a escolha (sem chave = Hazaki, grava e relê, id inválido ignorado, o resto do
-# save intacto); cada herói criando a partida de verdade (vida, velocidade, tamanho, bônus, sprite); o Hazaki sem mudar; o Nicão batendo em
-# arco e depois em volta, empurrando para fora; o Lucas jogando adagas em leque na direção do mouse, que acertam monstro da horda, elite e
+# save intacto); cada herói criando a partida de verdade (vida, velocidade, tamanho, bônus, sprite); o Hazaki sem mudar; o Nick batendo em
+# arco e depois em volta, empurrando para fora; o Luke jogando adagas em leque na direção do mouse, que acertam monstro da horda, elite e
 # chefe, furam, somem, repetem segurando e não criam nó; o filtro das cartas por herói (e as cartas novas funcionando); e o santuário
 # com a seleção (cartões, mouse, teclado, ESC e a escolha gravada); e o card SUA BUILD com o herói escolhido (nome, arma e os
 # modificadores dele).
@@ -175,7 +175,7 @@ func _t_dados() -> void:
 			and float(nc.heroi.recuo_dano) == 70.0
 			and float(nc.heroi.invencivel) == float(base.heroi.invencivel)
 		),
-		"Nicão: cobre só o que muda e mantém o resto (invencivel)"
+		"Nick: cobre só o que muda e mantém o resto (invencivel)"
 	)
 	var num := Herois.numeros("lucas", base)
 	ok(num.size() == 3 and num[0][0] == "VIDA" and num[0][1] == "70" and num[1][1] == "118", "números do cartão: vida e velocidade saem do cfg (%s)" % str(num))
@@ -184,7 +184,7 @@ func _t_dados() -> void:
 func _t_escolha() -> void:
 	ok(not FileAccess.file_exists(INDICE_TESTE) and Herois.escolhido() == "hazaki", "sem personagem: o herói é o Hazaki")
 	# o herói é do personagem (dados/v2_salao.json > nomes > heroi), escolhido ao criá-lo no salão
-	ok(Personagens.heroi_do_nome("Nicão") == "nicao" and Personagens.heroi_do_nome("Lucas") == "lucas", "Nicão e Lucas jogam com o herói deles")
+	ok(Personagens.heroi_do_nome("Nick") == "nicao" and Personagens.heroi_do_nome("Luke") == "lucas", "Nick e Luke jogam com o herói deles")
 	ok(
 		Personagens.heroi_do_nome("Breno") == "hazaki" and Personagens.heroi_do_nome("Fábio") == "hazaki" and Personagens.heroi_do_nome("Ninguém") == "hazaki",
 		"os outros nomes (e um nome fora da lista) jogam de Hazaki"
@@ -194,14 +194,14 @@ func _t_escolha() -> void:
 		"a arma inicial vem do herói"
 	)
 	var id_h := Personagens.criar("Breno", Personagens.heroi_do_nome("Breno"))
-	var id_n := Personagens.criar("Nicão", Personagens.heroi_do_nome("Nicão"))
-	var id_l := Personagens.criar("Lucas", Personagens.heroi_do_nome("Lucas"))
+	var id_n := Personagens.criar("Nick", Personagens.heroi_do_nome("Nick"))
+	var id_l := Personagens.criar("Luke", Personagens.heroi_do_nome("Luke"))
 	ok(
 		Personagens.heroi(id_h) == "hazaki" and Personagens.heroi(id_n) == "nicao" and Personagens.heroi(id_l) == "lucas",
 		"o índice guarda o herói de cada personagem"
 	)
-	ok(Personagens.ativar(id_n) and Herois.escolhido() == "nicao", "ativar o personagem do Nicão faz o herói da partida ser o Nicão")
-	ok(Personagens.ativar(id_l) and Herois.escolhido() == "lucas", "e o do Lucas, o Lucas")
+	ok(Personagens.ativar(id_n) and Herois.escolhido() == "nicao", "ativar o personagem do Nick faz o herói da partida ser o Nick")
+	ok(Personagens.ativar(id_l) and Herois.escolhido() == "lucas", "e o do Luke, o Luke")
 	ok(Personagens.ativar(id_h) and Herois.escolhido() == "hazaki", "e o do Breno, o Hazaki")
 	ok(Personagens.resumo(id_n).heroi == "nicao", "o resumo do personagem traz o herói")
 	var id_x := Personagens.criar("Beto", "sumiu")  # herói removido dos dados: cai no Hazaki
@@ -248,18 +248,18 @@ func _t_hazaki() -> void:
 	_t_animacoes("Hazaki")
 
 
-## A folha por personagem (campo "sprite" de dados/v2_salao.json): o Matheus joga de Hazaki mas com a folha dele; o Breno (sem sprite) segue com a do Hazaki.
+## A folha por personagem (campo "sprite" de dados/v2_salao.json): o Matthew joga de Hazaki mas com a folha dele; o Breno (sem sprite) segue com a do Hazaki.
 func _t_matheus() -> void:
-	ok(Personagens.sprite_do_nome("Matheus") == "matheus", "o Matheus tem folha própria (campo sprite)")
+	ok(Personagens.sprite_do_nome("Matthew") == "matheus", "o Matthew tem folha própria (campo sprite)")
 	ok(
-		Personagens.sprite_do_nome("Breno") == "" and Personagens.sprite_do_nome("Nicão") == "" and Personagens.sprite_do_nome("Ninguém") == "",
+		Personagens.sprite_do_nome("Breno") == "" and Personagens.sprite_do_nome("Nick") == "" and Personagens.sprite_do_nome("Ninguém") == "",
 		"quem não tem sprite fica sem folha própria"
 	)
 	var mat: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + "matheus.json"))
 	var haz: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PASTA_SPRITES + "hazaki_samurai.json"))
 	ok(
 		mat.quadro == haz.quadro and mat.linhas == haz.linhas and mat.colunas == haz.colunas and mat.pe_y == haz.pe_y,
-		"a folha do Matheus tem o formato da do Hazaki (quadro, linhas, colunas, pé)"
+		"a folha do Matthew tem o formato da do Hazaki (quadro, linhas, colunas, pé)"
 	)
 	ok(mat.animacoes.keys() == haz.animacoes.keys() and mat.grade == haz.grade, "e as mesmas animações e a mesma grade")
 	var colunas_iguais := true
@@ -271,15 +271,15 @@ func _t_matheus() -> void:
 	)
 	ok(
 		ResourceLoader.exists(PASTA_SPRITES + "matheus_albedo.png") and ResourceLoader.exists(PASTA_SPRITES + "matheus_normal.png"),
-		"as imagens da folha do Matheus existem"
+		"as imagens da folha do Matthew existem"
 	)
 	var id_h := Personagens.criar("Breno", Personagens.heroi_do_nome("Breno"))
-	var id_m := Personagens.criar("Matheus", Personagens.heroi_do_nome("Matheus"))
+	var id_m := Personagens.criar("Matthew", Personagens.heroi_do_nome("Matthew"))
 	ok(
 		Personagens.heroi(id_m) == "hazaki" and Personagens.sprite(id_m) == "matheus" and Personagens.sprite(id_h) == "",
-		"o Matheus joga de Hazaki, com a folha dele"
+		"o Matthew joga de Hazaki, com a folha dele"
 	)
-	ok(Personagens.ativar(id_m) and Herois.sprite_da_partida("hazaki") == "matheus", "partida do Matheus: a folha é a dele")
+	ok(Personagens.ativar(id_m) and Herois.sprite_da_partida("hazaki") == "matheus", "partida do Matthew: a folha é a dele")
 	ok(
 		Herois.sprite_da_partida("hazaki", true) == "hazaki" and Herois.sprite_da_partida("nicao") == "nicao",
 		"--basico e outro herói forçado ficam com a folha do herói"
@@ -287,31 +287,31 @@ func _t_matheus() -> void:
 	await novo("hazaki")
 	var h = w.heroi
 	var tm = w.sprites.tipo("matheus")
-	ok(h.tipo.alb == tm.alb and h.chave == "hazaki" and h.vida_max == 100.0, "o herói da partida do Matheus usa a folha dele, com as regras do Hazaki")
+	ok(h.tipo.alb == tm.alb and h.chave == "hazaki" and h.vida_max == 100.0, "o herói da partida do Matthew usa a folha dele, com as regras do Hazaki")
 	var retrato: TextureRect = null
 	for n in w.ui.get_children():
 		if n.has_node("Raiz/Retrato/Heroi"):
 			retrato = n.get_node("Raiz/Retrato/Heroi")
 	ok(
 		retrato != null and retrato.texture is AtlasTexture and retrato.texture.atlas.resource_path == PASTA_SPRITES + "matheus_albedo.png",
-		"o retrato do HUD na partida do Matheus é o quadro parado da folha dele"
+		"o retrato do HUD na partida do Matthew é o quadro parado da folha dele"
 	)
 	if retrato != null:  # como os outros três: dentro da moldura de 90x108, centrado e em escala inteira
 		var caixa := retrato.get_parent() as Control
 		var rect := Rect2(retrato.position, retrato.size)
 		var k := retrato.size.x / float(mat.quadro[0])
-		ok(Rect2(Vector2.ZERO, caixa.size).encloses(rect), "retrato do Matheus cabe na moldura (%s em %s)" % [rect, caixa.size])
-		ok(k >= 1.0 and k == floorf(k), "retrato do Matheus em escala inteira (%sx)" % k)
+		ok(Rect2(Vector2.ZERO, caixa.size).encloses(rect), "retrato do Matthew cabe na moldura (%s em %s)" % [rect, caixa.size])
+		ok(k >= 1.0 and k == floorf(k), "retrato do Matthew em escala inteira (%sx)" % k)
 		ok(
 			absf(rect.get_center().x - caixa.size.x / 2.0) <= 1.0 and absf(rect.get_center().y - caixa.size.y / 2.0) <= 1.0,
-			"retrato do Matheus centrado na moldura (%s)" % rect.get_center()
+			"retrato do Matthew centrado na moldura (%s)" % rect.get_center()
 		)
 	var c := 0
 	for y in mat.quadro[1]:
 		for x in mat.quadro[0]:
 			c += 1 if h.tipo.alb.get_image().get_pixel(x, y).a > 0.5 else 0
-	ok(c > 200, "a folha do Matheus tem o corpo desenhado no quadro parado (%d px)" % c)
-	_t_animacoes("Matheus")
+	ok(c > 200, "a folha do Matthew tem o corpo desenhado no quadro parado (%d px)" % c)
+	_t_animacoes("Matthew")
 	ok(Personagens.ativar(id_h) and Herois.sprite_da_partida("hazaki") == "hazaki_samurai", "partida do Breno: continua com a folha do Hazaki")
 	await novo("hazaki")
 	ok(w.heroi.tipo.alb == w.sprites.tipo("hazaki_samurai").alb and w.heroi.tipo.alb != tm.alb, "o herói do Breno usa a folha do Hazaki")
@@ -327,7 +327,7 @@ func _cols(nome: String) -> Vector2i:
 	return Vector2i(int(c[0]), int(c[c.size() - 1]))
 
 
-## As linhas da folha do Blender ligadas ao herói: combo, rolamento, escudo, dano e morte (sem girar o sprite). Vale para o Hazaki e o Lucas: as colunas vêm do json.
+## As linhas da folha do Blender ligadas ao herói: combo, rolamento, escudo, dano e morte (sem girar o sprite). Vale para o Hazaki e o Luke: as colunas vêm do json.
 func _t_animacoes(quem: String) -> void:
 	var h = w.heroi
 	var an: Dictionary = h.tipo.info.get("animacoes", {})
@@ -395,28 +395,28 @@ func _t_animacoes(quem: String) -> void:
 	ok(is_zero_approx(h.sprite.rotation), "morte: o sprite não gira 90 graus (rotação %.2f)" % h.sprite.rotation)
 
 
-# ------------------------------------------------------------------ Nicão
+# ------------------------------------------------------------------ Nick
 
 
 func _t_nicao() -> void:
 	await novo("nicao")
 	var h = w.heroi
-	ok(w.combate.heroi_id == "nicao" and h.chave == "nicao", "a partida do Nicão: heroi_id e chave")
-	ok(h.vida_max == 180.0 and h.vida == 180.0, "Nicão: 180 de vida (Meta.aplicar não voltou para 100)")
-	ok(h.vel_base == 78.0 and h.raio == 8.0, "Nicão: anda a 78 px/s e o corpo é maior (raio 8)")
-	ok(absf(h.m_area - 1.2) < 0.001, "Nicão: bônus de área 1,2 (%.2f)" % h.m_area)
+	ok(w.combate.heroi_id == "nicao" and h.chave == "nicao", "a partida do Nick: heroi_id e chave")
+	ok(h.vida_max == 180.0 and h.vida == 180.0, "Nick: 180 de vida (Meta.aplicar não voltou para 100)")
+	ok(h.vel_base == 78.0 and h.raio == 8.0, "Nick: anda a 78 px/s e o corpo é maior (raio 8)")
+	ok(absf(h.m_area - 1.2) < 0.001, "Nick: bônus de área 1,2 (%.2f)" % h.m_area)
 	ok(
 		h.tipo.w == 64 and h.tipo.h == 96 and h.tipo.has("alb") and h.sprite.texture != null,
-		"Nicão: folha própria do Blender, de quadro maior (64x96, a marreta passa da cabeça)"
+		"Nick: folha própria do Blender, de quadro maior (64x96, a marreta passa da cabeça)"
 	)
-	ok(w.combate.cfg.golpe.passos.size() == 2 and w.combate.cfg.golpe.passos[1].nome == "pancada", "Nicão: combo curto, batida e pancada no chão")
+	ok(w.combate.cfg.golpe.passos.size() == 2 and w.combate.cfg.golpe.passos[1].nome == "pancada", "Nick: combo curto, batida e pancada no chão")
 	w.reiniciar()
-	ok(h.vida_max == 180.0 and absf(h.m_area - 1.2) < 0.001 and h.vel_base == 78.0, "jogar de novo: os números do Nicão continuam (valores absolutos)")
+	ok(h.vida_max == 180.0 and absf(h.m_area - 1.2) < 0.001 and h.vel_base == 78.0, "jogar de novo: os números do Nick continuam (valores absolutos)")
 	# anda mais devagar que o Hazaki
 	zerar()
 	h.entrada_forcada = Vector2(0, 1)
 	passos(30)
-	ok(absf(h.vel.length() - 78.0) < 8.0, "Nicão anda a ~78 px/s (%.1f)" % h.vel.length())
+	ok(absf(h.vel.length() - 78.0) < 8.0, "Nick anda a ~78 px/s (%.1f)" % h.vel.length())
 	h.entrada_forcada = Vector2.ZERO
 	passos(10)
 	# batida em arco e pancada em volta
@@ -446,7 +446,7 @@ func _t_nicao() -> void:
 	var d0: float = atras.pos.distance_to(h.pos)
 	passos(20)
 	ok(atras.pos.distance_to(h.pos) > d0 + 10.0, "o monstro de trás foi mesmo empurrado (%.0f -> %.0f px)" % [d0, atras.pos.distance_to(h.pos)])
-	# cartas do Nicão
+	# cartas do Nick
 	var cs = w.combate.cartas
 	cs.aplicar(cs.montar_carta(cs.definicao("muralha"), 0))
 	ok(float(w.combate.armas.mods.muralha) == 25.0, "carta Peso de muralha liga o modificador")
@@ -470,14 +470,14 @@ func _t_nicao() -> void:
 	_t_nicao_animacoes()
 
 
-## As animações do Nicão feitas no Blender (folha de 38 colunas, quadro 64x96) ligadas ao herói: combo de 2 golpes (batida e pancada), rolamento,
+## As animações do Nick feitas no Blender (folha de 38 colunas, quadro 64x96) ligadas ao herói: combo de 2 golpes (batida e pancada), rolamento,
 ## defesa, dano e morte. As colunas vêm do JSON da folha (`animacoes`), então o teste vale para qualquer reordenação da folha.
 func _t_nicao_animacoes() -> void:
 	var h = w.heroi
 	var an: Dictionary = h.tipo.info.get("animacoes", {})
-	ok(an.has("combo") and an.has("rolamento") and an.has("escudo") and an.has("dano") and an.has("morte"), "Nicão: a folha traz as animações de ação")
-	ok(int(an.combo.golpes) == 2 and int(an.combo.quadros_por_golpe) == 6 and (an.combo.colunas as Array).size() == 12, "Nicão: combo de 2 golpes x 6 quadros")
-	ok(h.tipo.info.colunas.size() == 7 and h.tipo.info.has("pe_y"), "Nicão: 'colunas' é só o andar (parado + 6) e a folha tem pe_y")
+	ok(an.has("combo") and an.has("rolamento") and an.has("escudo") and an.has("dano") and an.has("morte"), "Nick: a folha traz as animações de ação")
+	ok(int(an.combo.golpes) == 2 and int(an.combo.quadros_por_golpe) == 6 and (an.combo.colunas as Array).size() == 12, "Nick: combo de 2 golpes x 6 quadros")
+	ok(h.tipo.info.colunas.size() == 7 and h.tipo.info.has("pe_y"), "Nick: 'colunas' é só o andar (parado + 6) e a folha tem pe_y")
 	var cc: Array = an.combo.colunas
 	var cr: Array = an.rolamento.colunas
 	var ce: Array = an.escudo.colunas
@@ -541,7 +541,7 @@ func _t_nicao_animacoes() -> void:
 	w.reiniciar()
 
 
-## E (investida) e Q (terremoto) do Nicão com quadros coerentes da folha: a E segura a guarda (marreta de través) e fecha na pancada até o impacto;
+## E (investida) e Q (terremoto) do Nick com quadros coerentes da folha: a E segura a guarda (marreta de través) e fecha na pancada até o impacto;
 ## o Q toca a pancada inteira (antecipação, impacto no `golpe` do terremoto, volta). Sem pose própria: reaproveitam a defesa e o combo.
 func _t_nicao_e_q(cc: Array, ce: Array) -> void:
 	var h = w.heroi
@@ -579,24 +579,24 @@ func _t_nicao_e_q(cc: Array, ce: Array) -> void:
 	ok(tempo >= dur * 3.0 / 6.0 and tempo < dur * 4.0 / 6.0, "Q: o quadro de impacto da pancada cobre o instante do golpe (%.2f s de %.2f s)" % [tempo, dur])
 
 
-# ------------------------------------------------------------------ Lucas
+# ------------------------------------------------------------------ Luke
 
 
 func _t_lucas() -> void:
 	await novo("lucas")
 	var h = w.heroi
 	var ad = w.combate.adagas
-	ok(w.combate.heroi_id == "lucas" and h.chave == "lucas", "a partida do Lucas: heroi_id e chave")
-	ok(h.vida_max == 70.0 and h.vel_base == 118.0 and h.raio == 5.0, "Lucas: frágil (70), rápido (118 px/s), pequeno (raio 5)")
-	ok(h.tipo.w == 32 and h.tipo.h == 44, "Lucas: folha própria (a do Blender, 32x44)")
-	ok(float(w.meta_bonus.raridade) >= 0.15 - 0.0001, "Lucas: sorte nas cartas (meta_bonus.raridade %.2f)" % float(w.meta_bonus.raridade))
-	ok(w.combate.cfg.golpe.passos.size() == 3 and str(w.combate.cfg.golpe.passos[0].tipo) == "adagas", "Lucas: combo de 3 arremessos de adagas")
+	ok(w.combate.heroi_id == "lucas" and h.chave == "lucas", "a partida do Luke: heroi_id e chave")
+	ok(h.vida_max == 70.0 and h.vel_base == 118.0 and h.raio == 5.0, "Luke: frágil (70), rápido (118 px/s), pequeno (raio 5)")
+	ok(h.tipo.w == 32 and h.tipo.h == 44, "Luke: folha própria (a do Blender, 32x44)")
+	ok(float(w.meta_bonus.raridade) >= 0.15 - 0.0001, "Luke: sorte nas cartas (meta_bonus.raridade %.2f)" % float(w.meta_bonus.raridade))
+	ok(w.combate.cfg.golpe.passos.size() == 3 and str(w.combate.cfg.golpe.passos[0].tipo) == "adagas", "Luke: combo de 3 arremessos de adagas")
 	w.reiniciar()
 	ok(float(w.meta_bonus.raridade) < 0.2, "jogar de novo não soma a sorte duas vezes (%.2f)" % float(w.meta_bonus.raridade))
 	zerar()
 	h.entrada_forcada = Vector2(0, 1)
 	passos(30)
-	ok(absf(h.vel.length() - 118.0) < 10.0, "Lucas anda a ~118 px/s (%.1f)" % h.vel.length())
+	ok(absf(h.vel.length() - 118.0) < 10.0, "Luke anda a ~118 px/s (%.1f)" % h.vel.length())
 	h.entrada_forcada = Vector2.ZERO
 	# o arremesso: leque na direção do mouse
 	zerar()
@@ -665,7 +665,7 @@ func _t_lucas() -> void:
 	h.atacar()
 	ate(func(): return h.golpes >= g0 + 3 and h.golpe_acertou, 80)
 	ok(ad.lancadas - l0 == 5, "o 3º arremesso é o leque de 5 adagas (%d)" % (ad.lancadas - l0))
-	# modificadores do Lucas
+	# modificadores do Luke
 	zerar()
 	var cs = w.combate.cartas
 	cs.aplicar(cs.montar_carta(cs.definicao("mira"), 0))
@@ -690,10 +690,10 @@ func _t_lucas() -> void:
 	# limpar a partida tira as adagas do ar
 	w.combate.limpar_partida()
 	ok(ad.ativas() == 0 and ad.lancadas == 0, "limpar a partida zera as adagas")
-	_t_animacoes("Lucas")
+	_t_animacoes("Luke")
 	ok(
 		int(h.tipo.info.animacoes.combo.get("golpes", 0)) == 3 and int(h.tipo.info.animacoes.combo.get("quadros_por_golpe", 0)) == 4,
-		"Lucas: o combo da folha tem 3 arremessos de 4 quadros"
+		"Luke: o combo da folha tem 3 arremessos de 4 quadros"
 	)
 
 
@@ -808,16 +808,16 @@ func _t_altar() -> void:
 	await novo("nicao")
 	ok(
 		w.heroi.vida_max == 180.0 + float(Meta.melhoria("vida").valor) * Meta.nivel("vida"),
-		"Meta.aplicar soma a melhoria de vida à vida do Nicão (%.0f)" % w.heroi.vida_max
+		"Meta.aplicar soma a melhoria de vida à vida do Nick (%.0f)" % w.heroi.vida_max
 	)
 	await novo("lucas")
-	ok(w.heroi.vida_max == 70.0 + float(Meta.melhoria("vida").valor) * Meta.nivel("vida"), "e à do Lucas (%.0f)" % w.heroi.vida_max)
+	ok(w.heroi.vida_max == 70.0 + float(Meta.melhoria("vida").valor) * Meta.nivel("vida"), "e à do Luke (%.0f)" % w.heroi.vida_max)
 	zerar()
 	var m = monstro_a(40)
 	w.heroi.atacar()
 	passos(40)
 	w.combate.abandonar()  # resultado e almas funcionam com qualquer herói
-	ok(w.combate.fim_emitido, "a partida do Lucas termina e registra o resultado")
+	ok(w.combate.fim_emitido, "a partida do Luke termina e registra o resultado")
 
 
 func _tecla(k: Key) -> void:

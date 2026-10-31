@@ -15,9 +15,9 @@ const FIXOS := [
 	"VITÓRIA!",
 	"ULTIMATE PRONTA",
 	"ORDEM ERRADA: os pilares se apagam",
-	"Devoradora da Estrutura chegou!",
+	"Devourer of Structure chegou!",
 	"CHEFE: DEVORADORA DA ESTRUTURA",
-	"CHEFE: Devoradora da Estrutura, Senhora das Ruínas",
+	"CHEFE: Devourer of Structure, Senhora das Ruínas",
 	"MINI-CHEFE: Vigia Esquecido do Portão do Cemitério Velho",
 	"MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM",
 	"Um texto muito, muito, muito longo para uma faixa de anúncio de HUD, de propósito, para estressar a quebra de linha e a fonte mínima da faixa",
@@ -184,9 +184,9 @@ func _curto_fica_como_antes(hud) -> void:
 	ok(lb.get_theme_font_size("font_size") == Anuncios.TAM_FONTE and lb.get_line_count() == 1, "texto curto: fonte cheia e uma linha")
 	ok(an.size.y == Anuncios.ALTURA, "texto curto: faixa na altura de sempre (%s)" % an.size.y)
 	_esvaziar(hud)
-	an.anunciar("Devoradora da Estrutura chegou!", COR, 0)
+	an.anunciar("Devourer of Structure chegou!", COR, 0)
 	hud.avancar(PASSO)
-	ok(an.size.y == Anuncios.ALTURA and lb.get_line_count() == 1, "'Devoradora da Estrutura chegou!' cabe numa linha (altura %s)" % an.size.y)
+	ok(an.size.y == Anuncios.ALTURA and lb.get_line_count() == 1, "'Devourer of Structure chegou!' cabe numa linha (altura %s)" % an.size.y)
 
 
 ## Um anúncio longo na frente de outro: o seguinte volta à fonte, às linhas e à altura certas (a faixa não herda o ajuste do anterior).

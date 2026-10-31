@@ -119,7 +119,7 @@ func identidade_dos_chefes() -> void:
 		ok(str(mk.ataques[0]) == meu, "%s: o primeiro ataque é o próprio" % mk.nome)
 		adornos[str(mk.visual.adorno)] = true
 	ok(adornos.size() == marcas.size(), "cada marca tem um adorno diferente")
-	# --- Devorador da Carne: o leque (setor no chão)
+	# --- Devourer of Flesh: o leque (setor no chão)
 	var m = ate_o_aviso(0)
 	ok(ch._ataque == "leque" and conta_tipo(av, 3) == 1 and av.ativos() == 1, "leque: o aviso é um setor no chão")
 	var d0: int = av.disparados
@@ -136,7 +136,7 @@ func identidade_dos_chefes() -> void:
 	ok(av.disparados == d0 + 1 and h.vida == h.vida_max, "leque: dá para esquivar (sair do setor)")
 	m = ate_o_aviso(0, true)
 	ok(ch._fase2 and ch._ataque == "leque" and conta_tipo(av, 3) == 2, "leque na fúria: um segundo golpe para o lado oposto")
-	# --- Devoradora da Estrutura: a teia (círculo que deixa lento e solta filhotes)
+	# --- Devourer of Structure: a teia (círculo que deixa lento e solta filhotes)
 	m = ate_o_aviso(1)
 	ok(ch._ataque == "teia" and conta_tipo(av, 1) == 1 and av.estilo[0] == 3, "teia: o aviso é um círculo de teia")
 	d0 = av.disparados
@@ -207,7 +207,7 @@ func identidade_dos_chefes() -> void:
 	m = ate_o_aviso(1, true)
 	ate(func(): return not ch._filhotes.is_empty(), 150)
 	ok(ch._filhotes.size() == int(ch.cfg.ataques.teia.filhotes_fase2), "teia na fúria: mais filhotes (%d)" % ch._filhotes.size())
-	# --- Devorador da Terra: a revoada (faixas paralelas varridas por corvos)
+	# --- Devourer of Land: a revoada (faixas paralelas varridas por corvos)
 	m = ate_o_aviso(2)
 	var linhas := int(ch.cfg.ataques.revoada.linhas)
 	ok(ch._ataque == "revoada" and conta_tipo(av, 2) == linhas, "revoada: o aviso são %d faixas no chão" % linhas)
@@ -387,7 +387,7 @@ func _ready() -> void:
 	dir.ir_para_nivel(20)
 	passos(2)
 	ok(
-		w.combate.chefes.vivo and w.combate.chefes.marca.id == "n20" and w.combate.chefes.marca.nome == "Devoradora da Estrutura",
+		w.combate.chefes.vivo and w.combate.chefes.marca.id == "n20" and w.combate.chefes.marca.nome == "Devourer of Structure",
 		"nível 20: o segundo mini-chefe"
 	)
 	w.combate.ferir(w.combate.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)

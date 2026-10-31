@@ -23,7 +23,7 @@ func _ready() -> void:
 	for f in DirAccess.get_files_at("user://"):  # zera os saves temporários de uma foto anterior
 		if f.begins_with("foto_salao_"):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://" + f))
-	Personagens.ativar(Personagens.criar("Breno"))
+	Personagens.ativar(Personagens.criar("Brendan"))
 	Meta.creditar(int(args.get("almas", 0)))
 	if str(args.get("compras", "0")) == "1":
 		Meta.comprar("vida")

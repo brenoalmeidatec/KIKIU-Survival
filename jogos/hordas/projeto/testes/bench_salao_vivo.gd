@@ -32,7 +32,7 @@ func _ready() -> void:
 	Personagens.caminho_base = "user://" + prefixo + "p"
 	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
 	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
-	Personagens.ativar(Personagens.criar("Matheus"))
+	Personagens.ativar(Personagens.criar("Matthew"))
 	# Prime ambos os shaders antes dos pares para evitar favorecer o segundo cenário.
 	for versao in ["antes", "depois"]:
 		if versao == "antes" and baseline.is_empty():

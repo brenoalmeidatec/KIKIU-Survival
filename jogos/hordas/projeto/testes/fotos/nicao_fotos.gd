@@ -1,5 +1,5 @@
 extends Node
-## Prints REAIS do Nicão (folha do Blender, PR "nicao no Blender") na partida da v2, em 960x540. Não roda no CI (fica em testes/fotos/).
+## Prints REAIS do Nick (folha do Blender, PR "nicao no Blender") na partida da v2, em 960x540. Não roda no CI (fica em testes/fotos/).
 ## Grava: parado, andando (para a direita e para baixo), a batida e a pancada no quadro de impacto (de frente e de perfil) e o herói morto.
 ## Uso (janela oculta): godot --path jogos/hordas/projeto res://testes/fotos/nicao_fotos.tscn -- --fotos=PASTA [--prefixo=nicao]
 ## Imprime "FOTO <caminho>" a cada print.

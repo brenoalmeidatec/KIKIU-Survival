@@ -1,6 +1,6 @@
 extends Node
-## Quadros do Matheus em jogo (andar, combo, E, Q, rolamento, escudo, dano, morte) para os GIFs de docs/visual_2_5d/ (não roda no CI).
-## Monta uma partida real sem diretor, com o personagem ATIVO escolhido (--ativo=matheus usa a folha do Matheus; --ativo=breno, a do Hazaki: o "antes"),
+## Quadros do Matthew em jogo (andar, combo, E, Q, rolamento, escudo, dano, morte) para os GIFs de docs/visual_2_5d/ (não roda no CI).
+## Monta uma partida real sem diretor, com o personagem ATIVO escolhido (--ativo=matheus usa a folha do Matthew; --ativo=breno, a do Hazaki: o "antes"),
 ## e grava um PNG do viewport do mundo a cada 2 passos de 1/60 s, recortado em volta do herói. ferramentas/gifs_golpes.py junta os PNG em GIFs.
 ## Uso: godot --path jogos/hordas/projeto res://testes/fotos/matheus_gif.tscn -- --fotos=PASTA --ativo=matheus [--cena=nome] [--colisao]
 ## Cenas: parado, andar, andar_diag, combo, e, q, rolamento, escudo, dano, morte, pe (foto cheia com o círculo de colisão), hud (a tela inteira com o retrato do HUD).
@@ -40,7 +40,7 @@ func _ready() -> void:
 	Personagens.caminho_indice = "user://qa_mgif_indice.cfg"
 	Personagens.caminho_base = "user://qa_mgif_p"
 	Personagens.caminho_antigo = "user://qa_mgif_antigo.cfg"
-	var nome := "Matheus" if ativo == "matheus" else "Breno"
+	var nome := "Matthew" if ativo == "matheus" else "Brendan"
 	var id := Personagens.criar(nome, Personagens.heroi_do_nome(nome))
 	Personagens.ativar(id)
 	Herois.forcado = ""
