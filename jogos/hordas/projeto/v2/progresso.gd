@@ -72,7 +72,7 @@ func ganhar_xp(v: float) -> void:
 	var h = combate.mundo.heroi
 	if not h.vivo():
 		return
-	h.xp += v
+	h.xp += v / combate.velocidade  # ritmo da partida 1,25: abates/s sobem 25%, então cada ponto vale 1/1,25 e as cartas aparecem no mesmo ritmo por minuto real
 	while h.xp >= h.xp_proximo:
 		h.xp -= h.xp_proximo
 		h.nivel += 1

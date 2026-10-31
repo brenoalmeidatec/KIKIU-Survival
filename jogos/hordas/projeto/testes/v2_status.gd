@@ -250,6 +250,7 @@ func _ready() -> void:
 		_heroi()
 		_katana()
 		_combo_veloz()
+		_combo_ritmo()
 		_percentuais()
 		_golpes()
 		_modificadores()
@@ -631,6 +632,22 @@ func _combo_veloz() -> void:
 		"o card soma o hit-stop e a pausa do fim do combo (%.3f s contra só os passos, %.3f s)" % [float(n_de("katana.combo")[0]), soma]
 	)
 	_confere_ciclo("x%.2f" % h.m_vel_ataque)
+	cfg.golpe.variacao = var_antes
+	cfg.golpe.critico.chance = crit_antes
+
+
+## Com o ritmo da partida a 1,25 (`combate.velocidade`) os passos e a pausa do fim do combo andam 1,25x e o hit-stop segue em tempo real: o card
+## tem de bater com o ciclo medido em segundos reais (dividir tudo por 1,25 erraria o hit-stop; não dividir erraria os passos).
+func _combo_ritmo() -> void:
+	zerar()
+	var cfg: Dictionary = w.combate.cfg
+	var var_antes: float = cfg.golpe.variacao
+	var crit_antes: float = cfg.golpe.critico.chance
+	cfg.golpe.variacao = 0.0
+	cfg.golpe.critico.chance = -5.0
+	w.combate.velocidade = 1.25
+	_confere_ciclo("ritmo 1,25")
+	w.combate.velocidade = 1.0
 	cfg.golpe.variacao = var_antes
 	cfg.golpe.critico.chance = crit_antes
 
