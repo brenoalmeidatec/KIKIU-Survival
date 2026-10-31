@@ -7,8 +7,8 @@ extends "res://testes/isolamento_v2.gd"
 #  2. Perder o foco abre a pausa (aqui chamada por pausar(), porque em headless o foco não conta) e ESC, Start e clique a fecham:
 #     a árvore não fica congelada.
 #  3. Soltar um botão que já estava apertado antes de o menu abrir (o golpe segurado, o clique da carta) não aciona a linha sob o cursor.
-#  4. ESC sobre a escolha de cartas e sobre o baú abre o menu por cima e, ao fechar, tudo volta INTACTO: cartas, seleção, rerrolar e
-#     banir usados, a roleta, get_tree().paused, combate.pausado e combate.jogo. As teclas do menu não escolhem carta nem fecham o baú.
+#  4. ESC sobre a escolha de cartas e sobre o baú abre o menu por cima e, ao fechar, tudo volta INTACTO: cartas, seleção,
+#     a roleta, get_tree().paused, combate.pausado e combate.jogo. As teclas do menu não escolhem carta nem fecham o baú.
 #  5. Na câmera lenta de morte e de vitória e nas telas de resultado a pausa não abre, e o ESC não fecha o jogo.
 #  6. Intercalações: nível ganho durante o baú, câmera lenta do nível, Ajustes e volta, foco, hit-stop, ESC em sequência.
 #  7. Com o processo de verdade (quadros reais), a pausa congela o mundo, a roleta e a escolha; ao fechar, tudo anda de novo.
@@ -252,9 +252,6 @@ func _snap(sem_arvore := false) -> Dictionary:
 			ids.append(str(k.id))
 		d["cartas"] = ids
 		d["sel"] = t.sel
-		d["rr_usados"] = c.cartas.rerrolar_usados
-		d["rr_tela"] = c.cartas.rerrolar_na_tela
-		d["banidas"] = c.cartas.banidas.keys()
 	if t.bau_aberto:
 		d["bau_i"] = t._bau_i
 		d["bau_t"] = t._bau_t
@@ -444,9 +441,6 @@ func _t_escolha() -> void:
 	var c = mundo.combate
 	_abrir_escolha()
 	ok(c.jogo == "escolha" and c.pausado and c.telas.escolha_aberta and not get_tree().paused, "a escolha abre pausando o combate, não a árvore")
-	ok(c.progresso.rerrolar(), "rerrolar uma vez")
-	var banida: String = str(c.progresso.cartas[1].id)
-	ok(c.progresso.banir(1), "banir a carta do meio")
 	c.telas.sel = 2
 	c.telas._marcar()
 	var antes := _snap()
@@ -458,18 +452,17 @@ func _t_escolha() -> void:
 	_pausa_foco()
 	ok(pausa.aberto and get_tree().paused, "a pausa abre por cima da escolha por outro caminho (perder o foco da janela)")
 	ok(_snap(true) == _sem_arvore(antes), "com a pausa aberta a escolha segue exatamente como estava")
-	# as teclas e os cliques da escolha não passam pelo menu: nada escolhe, rerrola, bane nem muda a seleção
+	# as teclas e os cliques da escolha não passam pelo menu: nada escolhe nem muda a seleção
 	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B, KEY_X, KEY_A, KEY_D, KEY_E]:
 		_tecla(k)
 	_tecla(KEY_RIGHT)
 	_clique(Vector2(120, 300))
 	_clique(Vector2(480, 440))
 	ok(pausa.aberto and pausa.tela == "menu", "as teclas e os cliques da escolha são do menu enquanto ele está aberto")
-	ok(_snap(true) == _sem_arvore(antes), "nada da escolha mudou com o menu aberto (cartas, seleção, rerrolar e banir)")
+	ok(_snap(true) == _sem_arvore(antes), "nada da escolha mudou com o menu aberto (cartas e seleção)")
 	_esc()
 	ok(not pausa.aberto, "ESC fecha a pausa sobre a escolha")
 	ok(_snap() == antes, "ao fechar, a escolha, get_tree().paused, combate.pausado e combate.jogo voltam exatamente ao que eram")
-	ok(c.cartas.banidas.has(banida) and c.cartas.rerrolar_usados == antes.rr_usados, "banir e rerrolar continuam gastos")
 
 	# Ajustes por cima da escolha e volta
 	_pausa_foco()

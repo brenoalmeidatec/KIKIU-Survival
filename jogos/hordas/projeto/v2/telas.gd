@@ -1,21 +1,21 @@
 extends RefCounted
 ## Telas simples do combate da v2 (o HUD bonito é de outro módulo): a escolha de cartas ao subir de nível (3 cartas com cor e brilho pela
-## RARIDADE, mais rerrolar e banir), a roleta do baú, a tela de resultado (VOCÊ CAIU ou VITÓRIA, com as almas ganhas), os anúncios grandes
+## RARIDADE, mais o botão Automático), a roleta do baú, a tela de resultado (VOCÊ CAIU ou VITÓRIA, com as almas ganhas), os anúncios grandes
 ## e um texto de DEPURAÇÃO com vida, nível, XP, combo e abates (DESLIGADO por padrão agora que o HUD existe: ligue com --depur ou F1). Tudo é desenhado numa CanvasLayer dentro
 ## do SubViewport 960x540; o mouse não chega nos Controls de dentro dele, então o clique é lido por aqui (mundo.ap.mouse_ui()) e a
-## escolha também aceita 1, 2, 3, setas, Enter, R (rerrolar), Q (AUTOMÁTICO: o sistema escolhe pelo que o herói já tem, com raridade menor) e B (banir a carta
-## marcada). No controle: A escolhe, X rerrola, Y é o automático e LB bane.
-## TRAVA: a escolha abre com as cartas apagadas por 1 s de TEMPO REAL (0,8 s depois de rerrolar ou banir). Nesse tempo clique, tecla e
+## escolha também aceita 1, 2, 3, setas, Enter e Q (AUTOMÁTICO: o sistema escolhe pelo que o herói já tem, com raridade menor). No controle: A escolhe
+## e Y é o automático. Não há rerrolar nem banir (removidos em 31/10, pedido do Alisson).
+## TRAVA: a escolha abre com as cartas apagadas por 1 s de TEMPO REAL (0,8 s quando o baú reabre com as cartas que sobraram). Nesse tempo clique, tecla e
 ## botão são descartados (a contagem pulsa) e nada chega ao herói; ESC passa, é da pausa. O baú tem a sua trava (bau_espera_s). Os tempos
 ## vêm de dados/v2_cartas.json e a contagem corre no `atualizar` (relógio de parede), congelada com a pausa aberta (mundo.pausa.aberto).
 ## LIMITE: depois da trava as cartas valem por `escolha.limite_s` (8 s) de tempo real, com uma barra e a contagem no topo. Zerou, o sistema escolhe
-## sozinho pela MESMA regra do botão Automático (progresso.automatico) e o HUD avisa "Escolhida automaticamente". Rerrolar ou banir renovam o limite.
+## sozinho pela MESMA regra do botão Automático (progresso.automatico) e o HUD avisa "Escolhida automaticamente".
 ## ESC (ou Start) na escolha NÃO pausa direto: a pausa.gd chama intercepta_pausa() e abre "Pausar agora? Você perde estas cartas" (Não é o padrão); com
 ## ela aberta o tempo (trava e limite) fica parado. Sim descarta a rodada (nenhuma carta, sem reembolso) e abre a pausa; Não volta com o tempo que restava.
 ## ROLETA (#376): ao abrir a escolha de NÍVEL as cartas descem em rolos de caça-níquel e param uma a uma, da esquerda para a direita, em no máximo
 ## `escolha.roleta_s` (1,2 s) de tempo real. Depois de 0,3 s, só o Enter, o A do controle e o clique SOBRE as cartas pulam para o fim (Espaço, E e o
 ## clique fora são esquiva, habilidade e ataque do jogo e não pulam). A trava corre junto com a roleta e o limite de 8 s só
-## começa quando TODAS pararam; ESC durante a roleta abre o "Pausar agora?" (o tempo dela fica parado). Rerrolar e banir não rolam, e o baú tem a sua
+## começa quando TODAS pararam; ESC durante a roleta abre o "Pausar agora?" (o tempo dela fica parado). O baú tem a sua
 ## roleta de revelação. `roleta_ligada` = false (nos testes o mundo começa desligado) e a opção de acessibilidade "reduzir animações" (animacao_reduzida())
 ## mostram as cartas direto.
 ## Os anúncios grandes e a barra do chefe são do HUD (v2/hud_anuncios.gd e hud.gd), que escutam os sinais do mundo.
@@ -32,7 +32,7 @@ const CARTA_Y := 146.0
 const LENDARIA_COR := Paleta.FUSAO  # magenta: a faixa e o rodapé de uma peça que fecha lendária
 const FOLGA := 20.0
 const BTN_Y := 440.0
-const BTN_L := 200.0  # largura dos três botões da escolha (Rerrolar, Automático, Banir)
+const BTN_L := 200.0  # largura do botão Automático da escolha
 const MARGEM := 12.0  # margem interna do cartão, igual nos dois lados
 const ICONE := 32.0  # ícone próprio da carta (assets/v2/icones_cartas, 32x32): sai 1 para 1, pixel a pixel
 const TAM_TITULO := Paleta.TITULO_GRANDE  # múltiplo de 3 px da grade da Jersey 10 (sem meio pixel)
@@ -106,13 +106,9 @@ var _cartas: Array[Control] = []
 var _estilos: Array[StyleBoxFlat] = []
 var _titulo: Label
 var _sub: Label
-var _btn_r: Panel
-var _btn_b: Panel
 var _btn_a: Panel
 var _btn_a_txt: Label
 var _auto_dica: Label
-var _btn_r_txt: Label
-var _btn_b_txt: Label
 var _build: Label
 var _res: Control
 var _res_titulo: Label
@@ -240,15 +236,10 @@ func _montar_escolha() -> void:
 		p.add_child(barra)
 		_escolha.add_child(p)
 		_cartas.append(p)
-	# rerrolar e banir
-	# Rerrolar, AUTOMÁTICO (no centro) e Banir: três botões de 200 px com 14 px entre eles, o do meio exatamente no meio da tela
-	_btn_r = _botao(Vector2(LARG * 0.5 - 100 - 14 - BTN_L, BTN_Y), "r")
-	_btn_a = _botao(Vector2(LARG * 0.5 - 100, BTN_Y), "a")
-	_btn_b = _botao(Vector2(LARG * 0.5 + 100 + 14, BTN_Y), "b")
-	_btn_r_txt = _btn_r.get_node("t")
+	# AUTOMÁTICO: um botão de 200 px exatamente no meio da tela, com a borda de ouro (é o atalho)
+	_btn_a = _botao(Vector2(LARG * 0.5 - 100, BTN_Y))
 	_btn_a_txt = _btn_a.get_node("t")
-	_btn_b_txt = _btn_b.get_node("t")
-	_btn_a.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))  # o do meio com a borda de ouro: é o atalho
+	_btn_a.add_theme_stylebox_override("panel", _estilo(false, Paleta.OURO))
 	_auto_dica = _rotulo(AUTO_DICA, TAM_TEXTO, false, Paleta.TEXTO_SECUNDARIO, HORIZONTAL_ALIGNMENT_CENTER)
 	_auto_dica.position = Vector2(20, 496)
 	_auto_dica.size = Vector2(LARG - 40, 20)
@@ -412,7 +403,7 @@ func _gerador_jogar_de_novo() -> Array:
 	return [["confirmar", "para jogar de novo" if Glifos.eh_controle() else "ou clique para jogar de novo"]]
 
 
-func _botao(pos: Vector2, id: String) -> Panel:
+func _botao(pos: Vector2) -> Panel:
 	var p := Panel.new()
 	p.position = pos
 	p.size = Vector2(BTN_L, 28)
@@ -423,8 +414,7 @@ func _botao(pos: Vector2, id: String) -> Panel:
 	t.position = Vector2(40, 5)  # reserva uma coluna para o glifo, inclusive LB/L1 (24 px)
 	t.size = Vector2(BTN_L - 46.0, 18)
 	p.add_child(t)
-	var acoes := {"r": "rerrolar", "a": "automatico", "b": "banir"}
-	var g := Glifos.glifo(acoes[id], HORIZONTAL_ALIGNMENT_CENTER)
+	var g := Glifos.glifo("automatico", HORIZONTAL_ALIGNMENT_CENTER)
 	g.name = "glifo"
 	g.position = Vector2(6, 6)
 	g.size = Vector2(28, 16)
@@ -484,19 +474,17 @@ func _montar_resultado() -> void:
 # ------------------------------------------------------------------ mostrar
 
 
-## Mostra a escolha. `refresh` = é o mesmo menu com cartas novas (rerrolar ou banir): mantém a marcação.
+## Mostra a escolha. `refresh` = é o mesmo menu com as cartas que sobraram (o baú entre uma pega e outra): mantém a marcação.
 func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 	escolha_aberta = true
 	if not refresh:
 		sel = 0
 	else:
-		_encerrar_roleta()  # cartas novas (rerrolar ou banir): sem roleta, os rolos que sobraram somem
+		_encerrar_roleta()  # mesmo menu de novo (baú): sem roleta, os rolos que sobraram somem
 	_fundo.visible = true
 	_escolha.visible = true
 	var do_bau := _escolha_do_bau()
 	_titulo.text = "BAÚ!" if do_bau else "NÍVEL %d" % nivel
-	_btn_r.visible = not do_bau  # o baú não rerrola nem bane: a raridade dele não passaria pelo sorteio do baú
-	_btn_b.visible = not do_bau
 	_auto_dica.text = AUTO_DICA_BAU if do_bau else AUTO_DICA
 	var maxn := cartas.size()
 	sel = clampi(sel, 0, maxi(maxn - 1, 0))
@@ -510,7 +498,7 @@ func mostrar_escolha(cartas: Array, nivel: int, refresh := false) -> void:
 		var rar := int(c.get("rar", 0))
 		_estilos[i].shadow_size = 0 if rar == 0 else 4 + 3 * rar
 	var ec: Dictionary = combate.cartas.cfg.escolha
-	_espera_total = float(ec.rerrolar_espera_s) if refresh else float(ec.espera_s)
+	_espera_total = float(ec.proxima_espera_s) if refresh else float(ec.espera_s)
 	espera_escolha = _espera_total
 	_limite_total = _limite_da_escolha(do_bau)
 	limite_t = _limite_total  # só começa a correr quando a trava acaba
@@ -584,15 +572,8 @@ func _marcar() -> void:
 
 
 func _atualizar_botoes() -> void:
-	var cs = combate.cartas
-	var pr: bool = cs.pode_rerrolar() and espera_escolha <= 0.0
-	var pb: bool = cs.pode_banir() and espera_escolha <= 0.0
-	_btn_r_txt.text = "Rerrolar (%d)" % cs.rerrolares_restantes() if cs.rerrolar_na_tela < cs.rerrolar_por_tela() else "Rerrolar (já usou)"
-	_btn_b_txt.text = "Banir a marcada (%d)" % cs.banimentos_restantes()
 	_btn_a_txt.text = "Automático"
 	_btn_a.modulate = Paleta.BRANCO if espera_escolha <= 0.0 else Paleta.alfa(Paleta.BRANCO, 0.4)
-	_btn_r.modulate = Paleta.BRANCO if pr else Paleta.alfa(Paleta.BRANCO, 0.4)
-	_btn_b.modulate = Paleta.BRANCO if pb else Paleta.alfa(Paleta.BRANCO, 0.4)
 
 
 ## "Sua build" em UMA linha, sempre (o mesmo tamanho e a mesma altura com 1 golpe ou com 8): o que não cabe na largura vira "e mais N".
@@ -853,7 +834,7 @@ func _painel_build_aberto() -> bool:
 	return st != null and st.central_aberto()
 
 
-## Tempo REAL da escolha: a trava das cartas (1 s; 0,8 s depois de rerrolar ou banir), o brilho ao liberar e a pulsada da contagem.
+## Tempo REAL da escolha: a trava das cartas (1 s; 0,8 s quando o baú reabre), o brilho ao liberar e a pulsada da contagem.
 ## O dt vem do relógio de parede (combate.efeitos), então câmera lenta e hit-stop não mexem nele.
 func _atualizar_escolha(dt: float) -> void:
 	var parado := _pausa_aberta() or conf_aberta or _painel_build_aberto()  # a pausa, o "Pausar agora?" e o painel da build (C) param a trava e o limite
@@ -958,7 +939,7 @@ func _marcar_conf() -> void:
 		_conf_estilos[i].set_border_width_all(2 + (1 if i == conf_sel else 0))
 
 
-## "Sim": a rodada de cartas é perdida (nenhuma carta escolhida, sem reembolso de rerrolar ou banir) e a pausa normal abre.
+## "Sim": a rodada de cartas é perdida (nenhuma carta escolhida) e a pausa normal abre.
 func _conf_sim() -> void:
 	_fechar_conf()
 	combate.progresso.descartar_rodada()
@@ -975,7 +956,7 @@ func _conf_botao_sob_mouse() -> int:
 	return -1
 
 
-## Entrada com o "Pausar agora?" aberto: ele come tudo (as cartas, o rerrolar e o banir ficam quietos). Esquerda e direita trocam Sim/Não, confirmar
+## Entrada com o "Pausar agora?" aberto: ele come tudo (as cartas ficam quietas). Esquerda e direita trocam Sim/Não, confirmar
 ## aciona o marcado e B/ESC/Start/N = Não. Nenhuma tecla de movimento (S, W...) confirma: Sim só por escolha explícita (navegar até ele e
 ## confirmar, ou o clique). O mouse marca ao passar e aciona no aperto.
 func _entrada_conf(e: InputEvent) -> bool:
@@ -1340,17 +1321,13 @@ func _carta_sob_mouse() -> int:
 
 func _botao_sob_mouse() -> String:
 	var m := _mouse()
-	if _btn_r.visible and Rect2(_btn_r.position, _btn_r.size).has_point(m):
-		return "r"
-	if _btn_b.visible and Rect2(_btn_b.position, _btn_b.size).has_point(m):
-		return "b"
 	if Rect2(_btn_a.position, _btn_a.size).has_point(m):
 		return "a"
 	return ""
 
 
-## Na trava (espera_escolha > 0) qualquer clique, tecla ou botão de escolha é DESCARTADO e pulsa a contagem: nada escolhe, nada
-## rerrola, nada bane e nada chega ao herói. Um clique que já estava apertado antes da liberação não conta: só aperto novo (press) vale.
+## Na trava (espera_escolha > 0) qualquer clique, tecla ou botão de escolha é DESCARTADO e pulsa a contagem: nada escolhe
+## e nada chega ao herói. Um clique que já estava apertado antes da liberação não conta: só aperto novo (press) vale.
 func _entrada_escolha(e: InputEvent) -> bool:
 	if roleta_ativa:
 		return _entrada_roleta(e)
@@ -1372,12 +1349,6 @@ func _entrada_escolha(e: InputEvent) -> bool:
 			return true
 		if e.button_index == MOUSE_BUTTON_LEFT:
 			var b := _botao_sob_mouse()
-			if b == "r":
-				_rerrolar()
-				return true
-			if b == "b":
-				_banir()
-				return true
 			if b == "a":
 				_automatico()
 				return true
@@ -1404,25 +1375,15 @@ func _entrada_escolha(e: InputEvent) -> bool:
 				_mover(1, n)
 			KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_E:
 				combate.progresso.escolher(sel)
-			KEY_R:
-				_rerrolar()
 			KEY_Q:
 				_automatico()
-			KEY_B, KEY_X:
-				_banir()
 		return true
-	if e is InputEventJoypadButton and e.pressed:  # controle: X rerrola, Y é o automático, LB bane (o A e o direcional já vêm pelas ações ui_*)
+	if e is InputEventJoypadButton and e.pressed:  # controle: Y é o automático (o A e o direcional já vêm pelas ações ui_*)
 		if travada:
 			_pulso = PULSO_T
 			return true
-		if e.button_index == JOY_BUTTON_X:
-			_rerrolar()
-			return true
 		if e.button_index == JOY_BUTTON_Y:
 			_automatico()
-			return true
-		if e.button_index == JOY_BUTTON_LEFT_SHOULDER:
-			_banir()
 			return true
 	if e is InputEventJoypadMotion:
 		return false  # o analógico não navega nem escolhe: cada quadro com ele acima do limite contaria como um aperto (o direcional e o A fazem isso)
@@ -1439,21 +1400,9 @@ func _entrada_escolha(e: InputEvent) -> bool:
 	return false
 
 
-func _rerrolar() -> void:
-	if not combate.progresso.rerrolar():
-		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
-
-
 func _automatico() -> void:
 	if not combate.progresso.automatico():
 		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
-
-
-func _banir() -> void:
-	if not combate.progresso.banir(sel):
-		combate.audio.tocar("dano_heroi", 1.4, -10.0, 0.1)
-	else:
-		combate.audio.tocar("morte", 1.2, -4.0, 0.0)
 
 
 func _mover(d: int, n: int) -> void:

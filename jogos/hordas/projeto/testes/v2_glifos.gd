@@ -94,10 +94,10 @@ func _troca() -> void:
 
 
 func _cartas() -> void:
-	var esperado := [["R", "Q", "B"], ["X", "Y", "LB"], ["Quad.", "Tri.", "L1"]]
+	var esperado := [["Q"], ["Y"], ["Tri."]]
 	for d in 3:
 		Glifos.definir(d)
-		var acoes := ["rerrolar", "automatico", "banir"]
+		var acoes := ["automatico"]
 		for i in acoes.size():
 			ok(Glifos.texto(acoes[i]) == esperado[d][i], "carta: %s usa %s no dispositivo %d" % [acoes[i], esperado[d][i], d])
 

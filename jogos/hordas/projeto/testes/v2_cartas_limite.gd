@@ -2,7 +2,7 @@ extends "res://testes/isolamento_v2.gd"
 # Teste do LIMITE DE TEMPO da escolha de cartas da v2 e do ESC na escolha (dados/v2_cartas.json: escolha.limite_s = 8 s, limite_urgente_s = 3 s).
 # Confere: o limite abre cheio e só corre depois da trava de 1 s (que continua valendo: nada escolhe nela); a barra e a contagem na legenda andam e
 # ficam vermelhas nos últimos 3 s; ao zerar o sistema escolhe pela MESMA regra do botão Automático (progresso.automatico) e o HUD avisa
-# "Escolhida automaticamente"; rerrolar e banir renovam o limite; limite_s = 0 desliga. O ESC (e o Start do controle) na escolha NÃO pausa: abre
+# "Escolhida automaticamente"; limite_s = 0 desliga. O ESC (e o Start do controle) na escolha NÃO pausa: abre
 # "Pausar agora? Você perde estas cartas" com "Não" marcado; com ela aberta a trava e o limite ficam parados, as cartas não reagem; Não (ESC, B, Enter,
 # N, clique) volta com o tempo que restava; Sim (só por escolha explícita: seta até Sim e Enter, A, clique; S e as outras teclas de andar NUNCA confirmam) descarta a rodada (nenhuma carta, sem reembolso, nível pendente
 # consumido) e abre a pausa normal. O baú segue pausando direto. A entrada vai pela JANELA (Input.parse_input_event), a rota do jogador de verdade.
@@ -212,22 +212,6 @@ func _testes() -> void:
 	t._automatico()
 	ok(c.jogo == "jogando" and c.anuncios == ant, "escolher à mão (Automático) não avisa")
 
-	# 5. rerrolar e banir renovam o limite
-	zerar()
-	subir_nivel()
-	liberar()
-	passos(60 * 3)
-	var restava := lim()
-	ok(restava < limite - 2.5, "passaram 3 s (%.2f)" % restava)
-	ok(c.progresso.rerrolar(), "rerrolar")
-	ok(lim() == limite, "rerrolar renova o limite (%.2f)" % lim())
-	ok(t.espera_escolha > 0.0, "e a trava de 0,8 s volta")
-	liberar()
-	passos(60 * 2)
-	ok(c.progresso.banir(0), "banir")
-	ok(lim() == limite, "banir renova o limite")
-	t._automatico()
-
 	# 6. limite_s = 0 desliga o limite
 	cs.cfg.escolha["limite_s"] = 0.0
 	zerar()
@@ -257,7 +241,7 @@ func _testes() -> void:
 	ok(lim() == resto, "com a confirmação aberta o limite fica parado (%.3f contra %.3f)" % [lim(), resto])
 	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B, KEY_Q, KEY_X]:
 		_toque(k)
-	ok(t.conf_aberta and c.progresso.escolhidas == esc0 and c.jogo == "escolha", "nada escolheu, rerrolou ou baniu com a confirmação aberta")
+	ok(t.conf_aberta and c.progresso.escolhidas == esc0 and c.jogo == "escolha", "nada escolheu com a confirmação aberta")
 	_clique(Vector2(120, 300))  # um clique numa carta, fora dos botões da confirmação
 	ok(t.conf_aberta and c.progresso.escolhidas == esc0, "o clique numa carta não escolhe")
 	_acao("ui_accept")  # o A do controle com 'Não' marcado só fecha: nada escolhe
@@ -266,7 +250,7 @@ func _testes() -> void:
 	var ids2: Array = []
 	for k in c.progresso.cartas:
 		ids2.append(k.id)
-	ok(ids2 == cartas_ids and cs.rerrolar_usados == 0, "as mesmas cartas, sem rerrolar gasto")
+	ok(ids2 == cartas_ids, "as mesmas cartas")
 	passos(60)
 	ok(lim() < resto - 0.9, "e o tempo volta a correr (%.2f)" % lim())
 
@@ -297,14 +281,11 @@ func _testes() -> void:
 	_toque(KEY_ESCAPE)
 	ok(not t.conf_aberta and c.jogo == "escolha", "ESC com Sim marcado ainda é Não")
 
-	# 9. Sim: perde a rodada (nenhuma carta, sem reembolso), consome o nível e abre a pausa normal
+	# 9. Sim: perde a rodada (nenhuma carta), consome o nível e abre a pausa normal
 	zerar()
 	subir_nivel()
 	liberar()
-	ok(c.progresso.rerrolar(), "rerrolar antes (para conferir que não há reembolso)")
-	liberar()
 	esc0 = c.progresso.escolhidas
-	var usados: int = cs.rerrolar_usados
 	var pend: int = c.progresso.pendentes
 	var habil: Array = cs.resumo()
 	_toque(KEY_ESCAPE)
@@ -314,7 +295,6 @@ func _testes() -> void:
 	ok(w.pausa.aberto and get_tree().paused and w.pausa.tela == "menu", "e abre a pausa normal")
 	ok(c.progresso.escolhidas == esc0 and cs.resumo() == habil, "nenhuma carta foi escolhida nem aplicada")
 	ok(c.progresso.pendentes == pend - 1 and c.progresso.cartas.is_empty(), "o nível pendente foi consumido (a rodada se perdeu)")
-	ok(cs.rerrolar_usados == usados, "sem reembolso do rerrolar")
 	ok(c.jogo == "jogando" and not c.pausado, "o combate está em 'jogando' sob a pausa")
 	_toque(KEY_ESCAPE)
 	ok(not w.pausa.aberto and not get_tree().paused and c.jogo == "jogando", "ESC na pausa fecha e o jogo segue sem as cartas")

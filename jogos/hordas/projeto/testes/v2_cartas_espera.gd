@@ -1,7 +1,7 @@
 extends "res://testes/isolamento_v2.gd"
-# Teste da TRAVA das cartas e do baú da v2 (tempo real, dados/v2_cartas.json: escolha.espera_s, escolha.rerrolar_espera_s, bau.bau_espera_s).
+# Teste da TRAVA das cartas e do baú da v2 (tempo real, dados/v2_cartas.json: escolha.espera_s, escolha.proxima_espera_s, bau.bau_espera_s).
 # Nada escolhe nos primeiros 1,0 s depois de a escolha abrir (clique, 1/2/3, Enter, Espaço, E, direcional, ui_accept, R, B, botões);
-# depois escolhe. Rerrolar e banir travam 0,8 s; nível pendente trava 1 s de novo; o baú trava 1 s; a contagem congela com a pausa
+# depois escolhe. O baú que reabre com as cartas que sobraram trava 0,8 s; nível pendente trava 1 s de novo; o baú trava 1 s; a contagem congela com a pausa
 # aberta; câmera lenta e hit-stop não mudam o tempo da trava; um clique segurado desde antes não escolhe; ESC passa pela trava; a
 # contagem e a barra aparecem, e as cartas acendem ao liberar. O ESC e o Start entram pela JANELA (Input.parse_input_event, a rota do
 # teclado de verdade; a pausa mora no SubViewport e só recebe pelo mundo._input) e abrem a pausa na partida, na escolha e no baú, com a
@@ -120,10 +120,10 @@ func ids_cartas() -> Array:
 ## Estado que só muda se alguma carta, botão ou tecla tiver agido.
 func estado() -> Array:
 	var cs = w.combate.cartas
-	return [w.combate.progresso.escolhidas, cs.rerrolar_usados, cs.banimentos_restantes(), w.combate.jogo, w.combate.telas.sel, ids_cartas()]
+	return [w.combate.progresso.escolhidas, w.combate.jogo, w.combate.telas.sel, ids_cartas()]
 
 
-## Manda uma rajada de clique, tecla e ação em tudo que escolhe, mais os botões de rerrolar e banir.
+## Manda uma rajada de clique, tecla e ação em tudo que escolhe, mais o botão Automático.
 func rajada() -> void:
 	mouse_pos = _centro_carta(1)
 	w._input(_clique(mouse_pos))
@@ -135,10 +135,6 @@ func rajada() -> void:
 	w._input(_acao("ui_left"))
 	w._input(_acao("ui_right"))
 	var t = w.combate.telas
-	mouse_pos = t._btn_r.position + t._btn_r.size * 0.5
-	w._input(_clique(mouse_pos))
-	mouse_pos = t._btn_b.position + t._btn_b.size * 0.5
-	w._input(_clique(mouse_pos))
 	mouse_pos = t._btn_a.position + t._btn_a.size * 0.5
 	w._input(_clique(mouse_pos))
 	var y := InputEventJoypadButton.new()
@@ -170,7 +166,7 @@ func _run() -> void:
 	var antes := estado()
 	passos(6)  # 0,1 s
 	rajada()
-	ok(estado() == antes, "na trava (0,1 s) nenhuma carta, botão ou tecla escolhe, rerrola ou bane")
+	ok(estado() == antes, "na trava (0,1 s) nenhuma carta, botão ou tecla escolhe")
 	ok(t._pulso > 0.0, "o clique descartado pulsa a contagem")
 	var hover: int = t.sel
 	w._input(_movimento(_centro_carta(2)))
@@ -216,36 +212,31 @@ func _run() -> void:
 	w._input(_clique(mouse_pos))
 	ok(w.combate.progresso.escolhidas == esc0 + 1 and w.combate.jogo == "jogando", "um aperto novo, depois da liberação, escolhe")
 
-	# 5. rerrolar trava 0,8 s; a tecla 1 não escolhe antes
+	# 5. R, B e X (as antigas teclas de rerrolar e banir) não fazem mais nada, nem depois da trava
 	zerar()
 	subir_nivel()
 	ate(func(): return trava() <= 0.0, 200)
-	esc0 = w.combate.progresso.escolhidas
-	var rer0: int = w.combate.cartas.rerrolar_usados
-	w._input(_tecla(KEY_R))
-	ok(w.combate.cartas.rerrolar_usados == rer0 + 1, "R rerrola depois da trava")
-	ok(absf(trava() - 0.8) < 0.05, "rerrolar trava de novo por 0,8 s (%.3f)" % trava())
-	passos(30)
-	w._input(_tecla(KEY_1))
-	ok(w.combate.progresso.escolhidas == esc0 and w.combate.jogo == "escolha", "aos 0,5 s depois de rerrolar a tecla 1 ainda não vale")
-	ate(func(): return trava() <= 0.0, 60)
-	w._input(_tecla(KEY_1))
-	ok(w.combate.progresso.escolhidas == esc0 + 1, "depois da trava de rerrolar, a tecla 1 escolhe")
+	var antes_rb := estado()
+	for k in [KEY_R, KEY_B, KEY_X]:
+		w._input(_tecla(k))
+		w._input(_tecla(k, false, false))
+	ok(estado() == antes_rb and trava() <= 0.0, "depois da trava R, B e X não rerrolam, não banem e não travam de novo")
+	ok(w.combate.telas.get("_btn_r") == null and w.combate.telas.get("_btn_b") == null, "a tela não tem mais botão de rerrolar nem de banir")
+	w.combate.progresso.escolher(0)
 
-	# 6. banir trava 0,8 s
+	# 6. o baú que reabre com as cartas que sobraram trava 0,8 s (proxima_espera_s); a tecla 1 não escolhe antes
 	zerar()
-	subir_nivel()
+	w.combate.progresso.abrir_escolha_bau(w.combate.cartas.sortear(3, 3), 2)
 	ate(func(): return trava() <= 0.0, 200)
 	esc0 = w.combate.progresso.escolhidas
-	var ban0: int = w.combate.cartas.banimentos_restantes()
-	w._input(_tecla(KEY_B))
-	ok(w.combate.cartas.banimentos_restantes() == ban0 - 1, "B bane depois da trava")
-	ok(absf(trava() - 0.8) < 0.05, "banir trava por 0,8 s (%.3f)" % trava())
+	w.combate.progresso.escolher(0)
+	ok(w.combate.jogo == "escolha" and w.combate.progresso.bau_picks == 1, "pegou a 1ª do baú e a escolha segue aberta")
+	ok(absf(trava() - 0.8) < 0.05, "o baú reaberto trava por 0,8 s (%.3f)" % trava())
 	w._input(_tecla(KEY_ENTER))
-	ok(w.combate.progresso.escolhidas == esc0, "Enter logo depois de banir não escolhe")
+	ok(w.combate.progresso.escolhidas == esc0 + 1, "Enter logo depois de reabrir o baú não escolhe")
 	ate(func(): return trava() <= 0.0, 60)
 	w._input(_tecla(KEY_ENTER))
-	ok(w.combate.progresso.escolhidas == esc0 + 1, "depois da trava de banir, Enter escolhe")
+	ok(w.combate.progresso.escolhidas == esc0 + 2 and w.combate.jogo == "jogando", "depois da trava, Enter pega a 2ª do baú")
 
 	# 7. nível pendente: a próxima escolha trava de novo o segundo completo
 	zerar()
@@ -350,7 +341,7 @@ func _run() -> void:
 	ok(w.combate.jogo == "escolha" and w.combate.telas.escolha_aberta, "e a escolha continua aberta por baixo")
 	passos(120)
 	ok(trava() == t_antes, "com a confirmação aberta a trava não anda (%.3f contra %.3f)" % [trava(), t_antes])
-	for k in [KEY_1, KEY_2, KEY_3, KEY_R, KEY_B]:  # a confirmação come a entrada: nada chega às cartas
+	for k in [KEY_1, KEY_2, KEY_3, KEY_Q]:  # a confirmação come a entrada: nada chega às cartas
 		Input.parse_input_event(_tecla(k))
 		Input.parse_input_event(_tecla(k, false, false))
 	ok(w.combate.progresso.escolhidas == escolhidas0 and w.combate.jogo == "escolha", "com a confirmação aberta as teclas não escolhem carta")

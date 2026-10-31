@@ -1,7 +1,7 @@
 extends RefCounted
 ## XP, nível e escolha de cartas da v2. O XP vem dos orbes (combate.coletar). Ao encher a barra: sobe o nível (sinal nivel_subiu do mundo),
 ## câmera lenta de 0,4 s e a escolha de 1 entre 3 cartas (v2/cartas.gd: raridade, golpes secundários, modificadores da katana, evoluções), que
-## pausa o mundo até o jogador escolher. Na escolha dá para RERROLAR (1 vez por tela, poucas na partida) e BANIR uma carta (ela não volta mais).
+## pausa o mundo até o jogador escolher. Na escolha o jogador pega uma carta ou usa o AUTOMÁTICO (não há rerrolar nem banir).
 ## Várias subidas seguidas viram várias escolhas, uma depois da outra. A curva de nível fica em dados/v2_combate.json ("xp", "nivel") e as
 ## cartas em dados/v2_cartas.json.
 
@@ -88,7 +88,6 @@ func ganhar_xp(v: float) -> void:
 ## Sorteia as cartas (até 3, diferentes) e abre a escolha (pausa o mundo).
 func abrir_escolha() -> void:
 	var cs = combate.cartas
-	cs.rerrolar_na_tela = 0
 	cartas = cs.sortear(int(cs.cfg.escolha.cartas), combate.mundo.heroi.nivel)
 	if cartas.is_empty():  # tudo no máximo: uma carta de cura para não travar
 		cartas = [_carta_cura()]
@@ -97,10 +96,8 @@ func abrir_escolha() -> void:
 	combate.telas.mostrar_escolha(cartas, combate.mundo.heroi.nivel)
 
 
-## Abre a escolha do BAÚ (v2/bau.gd): as mesmas cartas na mesma tela da escolha de nível, com a raridade melhor do baú, mais tempo (bau.limite_s)
-## e sem rerrolar nem banir. O jogador pega `picks` delas, uma por vez; as que sobram continuam na tela. Não mexe nos níveis pendentes.
+## Abre a escolha do BAÚ (v2/bau.gd): as mesmas cartas na mesma tela da escolha de nível, com a raridade melhor do baú, mais tempo (bau.limite_s). O jogador pega `picks` delas, uma por vez; as que sobram continuam na tela. Não mexe nos níveis pendentes.
 func abrir_escolha_bau(candidatas: Array, picks: int) -> void:
-	combate.cartas.rerrolar_na_tela = 0
 	bau_picks = picks
 	cartas = candidatas
 	combate.jogo = "escolha"
@@ -154,8 +151,8 @@ func escolher(i: int) -> void:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
-## Perde a rodada de cartas aberta (o "Sim" de "Pausar agora?" na escolha): nenhuma carta é aplicada, o nível pendente é consumido e não
-## há reembolso de rerrolar nem de banir. Com mais níveis pendentes a próxima rodada abre depois, como depois de uma escolha.
+## Perde a rodada de cartas aberta (o "Sim" de "Pausar agora?" na escolha): nenhuma carta é aplicada e o nível pendente é consumido.
+## Com mais níveis pendentes a próxima rodada abre depois, como depois de uma escolha.
 func descartar_rodada() -> void:
 	if combate.jogo != "escolha":
 		return
@@ -191,47 +188,6 @@ func automatico() -> bool:
 		return false
 	cartas = [c]
 	escolher(0)
-	return true
-
-
-## Rerrola as 3 cartas (novas, sem repetir as que estavam na tela). Devolve false se não pode (acabaram os usos). Não vale no baú.
-func rerrolar() -> bool:
-	var cs = combate.cartas
-	if not combate.jogo == "escolha" or bau_picks > 0 or not cs.pode_rerrolar():
-		return false
-	var ids: Array = []
-	for c in cartas:
-		ids.append(c.id)
-	var novas: Array = cs.sortear(int(cs.cfg.escolha.cartas), combate.mundo.heroi.nivel, 1.0, ids)
-	if novas.size() < cartas.size():  # quase nada sobrou: completa com o que já estava
-		novas = cs.sortear(int(cs.cfg.escolha.cartas), combate.mundo.heroi.nivel)
-	cs.rerrolar_usados += 1
-	cs.rerrolar_na_tela += 1
-	cartas = novas
-	combate.telas.mostrar_escolha(cartas, combate.mundo.heroi.nivel, true)
-	return true
-
-
-## Bane a carta `i`: nunca mais sai nesta partida, e uma carta nova toma o lugar dela. Devolve false se acabaram os banimentos. Não vale no baú.
-func banir(i: int) -> bool:
-	var cs = combate.cartas
-	if combate.jogo != "escolha" or bau_picks > 0 or i < 0 or i >= cartas.size() or not cs.pode_banir():
-		return false
-	var velha: Dictionary = cartas[i]
-	if str(velha.id) == "cura":
-		return false
-	cs.banir(str(velha.id))
-	var ids: Array = []
-	for c in cartas:
-		ids.append(c.id)
-	var nova: Array = cs.sortear(1, combate.mundo.heroi.nivel, 1.0, ids)
-	if nova.is_empty():
-		cartas.remove_at(i)
-		if cartas.is_empty():
-			cartas = [_carta_cura()]
-	else:
-		cartas[i] = nova[0]
-	combate.telas.mostrar_escolha(cartas, combate.mundo.heroi.nivel, true)
 	return true
 
 
