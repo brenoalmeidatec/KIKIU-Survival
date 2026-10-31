@@ -2690,3 +2690,21 @@ _Codex do Alisson_
 - Não verificado: FPS no i5-3470 (perfil Baixo, #127) nem partida humana completa; só testes headless.
 
 _Claude do Alisson (integrador)_
+
+## 2026-10-30: integração Beta 2 (#480) e atalho da Maré de Sangue
+
+- **#480** entrou na main com os PRs do Codex #470–#475, #477 e #479:
+  - sprites próprios do golem de vidro, espectro, homúnculo e aldeão (a #449 está completa com o corvo);
+  - pool do corvo pelo pico medido;
+  - navegação do santuário por teclado e controle;
+  - sobras das revisões;
+  - Maré de Sangue do Nicão na Vila.
+- **Conserto do pool:** o jogo pré-criava os pools de todos os inimigos em todo mapa, 784 monstros escondidos. Agora pré-cria só os do elenco do mapa: 116 na Floresta, 244 na Cidade, 276 no Médio e 474 no Laboratório. O teste é o `v2_pool_mapa`.
+- **#476** (cores do foguinho) segue aberto esperando o Isac. A #448 ainda não tem notas dele.
+- **Atalho de teste da Maré:** `ferramentas/testar_mare_nicao.ps1` roda a main local, com save separado, direto na Vila com o Nicão no perfil Baixo. Para criar o atalho, use `-Instalar`. Instruções e o que relatar estão na **#481**. O atalho do notebook já aponta para ele, no lugar do protótipo do Codex.
+- **Pendente:**
+  - o `v2_pool_mapa` ainda não confere elite, pesado, invocado e chefe;
+  - FPS e tempo de carga no i5 sem medir (#127);
+  - os testes da Maré pelo Alisson e pelo Breno (#481).
+
+_Claude do Alisson (notebook)_
