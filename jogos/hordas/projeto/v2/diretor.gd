@@ -22,6 +22,10 @@ var mare_pendente := 0
 var mare_elites := 0
 var mare_t := -1.0
 var mare_aviso := false
+var mare_chamada_t := -1.0  # >= 0: o Q chamou uma Maré, que chega quando zerar
+var mare_chamada_fator := 1.0
+var mare_ultima_t := -1000.0  # tempo da partida da última Maré (normal ou chamada)
+var mare_chamadas := 0  # quantas Marés o Q chamou (testes)
 # Nível do mapa (dados/v2_niveis.json): `nivel` vai de 1 a `niveis_total`; `t_nivel` é o relógio do nível atual, que só anda sem chefe vivo.
 var nivel := 1
 var niveis_total := 30
@@ -64,6 +68,10 @@ func zerar() -> void:
 	mare_elites = 0
 	mare_t = -1.0
 	mare_aviso = false
+	mare_chamada_t = -1.0
+	mare_chamada_fator = 1.0
+	mare_ultima_t = -1000.0
+	mare_chamadas = 0
 	acum = 0.0
 	ondas = 0
 	nascidos = 0
@@ -189,10 +197,19 @@ func atualizar(dt: float) -> void:
 			_mare_pulso(mare_pendente, 1)
 			mare_pendente = 0
 			mare_t = -1.0
-	if _mare_ativa() and not mare_aviso and t >= proxima_onda - 1.2:
-		mare_aviso = true
-		combate.anunciar("MARÉ DE SANGUE!", Color(1.0, 0.25, 0.2))
-		combate.audio.tocar("onda", 0.8, -2.0, 0.0)
+	if mare_chamada_t >= 0.0:
+		mare_chamada_t -= dt
+		if mare_chamada_t <= 1.2:
+			_mare_avisar()
+		if mare_chamada_t <= 0.0:
+			mare_chamada_t = -1.0
+			var fator := mare_chamada_fator
+			mare_chamada_fator = 1.0
+			onda_forte(fator, false)  # a chamada do Q não sobe o contador de escalada: as Marés normais seguem o relógio
+			mare_aviso = false
+			proxima_onda = maxf(proxima_onda, t + _mare_cfg("intervalo_min"))  # a Maré normal não vem colada na que o Q chamou
+	if _mare_ativa() and t >= proxima_onda - 1.2:
+		_mare_avisar()
 	if t >= proxima_onda:
 		onda_forte()
 		proxima_onda += intervalo_onda()
@@ -269,29 +286,64 @@ func ponto_fora_da_tela() -> Variant:
 
 
 ## Onda forte: um anel de monstros de uma vez em volta da tela, com a ponta pesada do elenco do mapa (o cavaleiro, no padrão).
-func onda_forte() -> void:
-	ondas += 1
-	var n := int(cfg.onda_base) + int(cfg.onda_mais) * (ondas - 1)
+## `fator` < 1 faz uma onda mais curta (a Maré chamada pelo Q logo depois de outra). `conta` = false (a chamada do Q): usa o tamanho da onda
+## em que a partida está, mas NÃO avança `ondas`, para o Q não escalar as Marés seguintes.
+func onda_forte(fator := 1.0, conta := true) -> void:
+	if conta:
+		ondas += 1
+	var idx := maxi(ondas, 1)
+	var n := int(cfg.onda_base) + int(cfg.onda_mais) * (idx - 1)
 	var t: float = mundo.tempo_partida
-	var elite := int(cfg.onda_elite) * ondas
+	mare_ultima_t = t
+	var elite := roundi(float(cfg.onda_elite) * idx * fator)
 	var folga: int = teto() - mundo.monstros.size()
-	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult") * dificuldade("densidade_mult")) + elite, maxi(folga, 0))
+	n = mini(roundi(float(n) * mundo.fator_pesadelo("densidade_mult") * dificuldade("densidade_mult") * fator) + elite, maxi(folga, 0))
 	if _mare_ativa():
 		mare_elites = elite
 		var primeiro := ceili(float(n) * 0.5)
 		_mare_pulso(primeiro, -1)
 		mare_pendente = n - primeiro
 		mare_t = 1.0 if mare_pendente > 0 else -1.0
-		combate.onda_forte(ondas)
+		combate.onda_forte(idx)
 		return
 	for i in n:
 		var tipo: Dictionary = mundo.elenco.pesado if i < elite else sortear(t)
 		nascer(str(tipo.sprite), null, tipo)
-	combate.onda_forte(ondas)
+	combate.onda_forte(idx)
 
 
 func _mare_ativa() -> bool:
 	return str(mundo.id_mapa) == "cidade" and str(combate.heroi_id) == "nicao"
+
+
+func _mare_cfg(chave: String) -> float:
+	return float(cfg.mare[chave])
+
+
+## O aviso da Maré (texto e som), uma vez por onda, tanto da normal quanto da chamada pelo Q.
+func _mare_avisar() -> void:
+	if mare_aviso:
+		return
+	mare_aviso = true
+	combate.anunciar("MARÉ DE SANGUE!", Color(1.0, 0.25, 0.2))
+	combate.audio.tocar("onda", 0.8, -2.0, 0.0)
+	if OS.get_cmdline_user_args().has("--diag-audio"):  # medição do atalho de teste: vozes ocupadas na hora do aviso
+		print("[mare] aviso: descartados=%d roubados=%d" % [combate.audio.descartados, combate.audio.roubados])
+
+
+## O Q (Terremoto) acabou de bater: chama uma Maré daqui a `q_atraso` s. Só onde a Maré vale, sem outra pendente, respeitando o intervalo mínimo
+## e sem chamar se a normal já está para chegar. Vem mais curta se a última foi há pouco. Devolve se chamou.
+func mare_chamar() -> bool:
+	if not ligado or not _mare_ativa() or mare_chamada_t >= 0.0 or mare_t >= 0.0:
+		return false
+	var t: float = mundo.tempo_partida
+	var desde := t - mare_ultima_t
+	if desde < _mare_cfg("intervalo_min") or proxima_onda - t <= _mare_cfg("q_atraso"):
+		return false
+	mare_chamada_t = _mare_cfg("q_atraso")
+	mare_chamada_fator = 1.0 if desde >= _mare_cfg("q_cheia_apos") else _mare_cfg("q_curta")
+	mare_chamadas += 1
+	return true
 
 
 ## Prefere um lado por pulso; preserva corredor quando a geometria permite. Respeita teto e colisão.
@@ -303,8 +355,10 @@ func _mare_pulso(n: int, lado: int) -> void:
 		if p == null:
 			continue
 		var tipo: Dictionary = mundo.elenco.pesado if mare_elites > 0 else sortear(mundo.tempo_partida)
-		if nascer(str(tipo.sprite), p, tipo) and mare_elites > 0:
-			mare_elites -= 1
+		if nascer(str(tipo.sprite), p, tipo):
+			mundo.monstros.back().mare = true
+			if mare_elites > 0:
+				mare_elites -= 1
 
 
 func _ponto_mare(lado: int) -> Variant:

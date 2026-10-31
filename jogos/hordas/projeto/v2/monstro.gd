@@ -33,6 +33,7 @@ var persegue := false
 var rng: RandomNumberGenerator
 var vivo := true
 var cacador := false  # nasceu de uma onda: persegue de qualquer distância
+var mare := false  # nasceu da Maré de Sangue (Nicão na Vila): o abate dele carrega o Q mais rápido
 var vida := 20.0
 var vida_max := 20.0
 var dano := 6.0  # dano por contato
@@ -154,6 +155,7 @@ func aplicar_variante(t: Dictionary) -> void:
 ## Volta do pool: vivo de novo em `p`, com vida cheia. Renasce como monstro comum (em lote), mesmo que tenha sido elite ou chefe.
 func reviver(p: Vector2) -> void:
 	vivo = true
+	mare = false
 	vida = vida_max
 	atordoa_t = 0.0
 	emp = Vector2.ZERO
