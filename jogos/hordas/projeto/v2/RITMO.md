@@ -52,3 +52,15 @@ caminhos do Q nos níveis 1, 20 e 500, inclusive onda e rodada final.
 A cena usa fixture explícita antes de montar o Mundo nesta base empilhada sobre
 #390. A proteção anterior ao autoload Config depende da integração do #391;
 o APPDATA local de QA é exclusivo. A prova de isolamento completo está no #391.
+
+## Velocidade da partida (1,25x)
+
+`velocidade_partida` em `dados/v2_ritmo.json` (hoje 1,25) acelera o relógio do **mundo**:
+`combate.passo_tempo` multiplica o dt do mundo e o do herói local, então monstros, herói,
+armas, recargas, ondas, XP e o tempo de partida andam 25% mais rápido por segundo real. Não se
+usa `Engine.time_scale`, porque ele aceleraria também a interface, os tweens de UI e a pausa.
+Ficam em tempo real: a tela de cartas e o baú (o dt do mundo já é 0), a pausa, o menu, o
+resultado, o áudio (sem mudança de tom) e os contadores de hit-stop e câmera lenta (a câmera
+lenta multiplica o fator, não o sobrescreve). Nos testes (`modo_teste`) o fator é 1,0 para os
+tempos medidos em segundos não mudarem; `v2_velocidade` prova o 1,25 numa partida de verdade.
+Dano, cura e XP por evento não mudam: o que muda é quantos eventos cabem por segundo real.
