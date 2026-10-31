@@ -13,7 +13,7 @@
 	"arma_inicial": "Katana",
 	"estruturas": [
 		{"id": "estatuas", "nome": "ESTÁTUAS", "frase": "Onde você guarda a sua força.", "x": 250, "y": 330, "melhorias": ["vida", "dano", "velocidade", "folego", "treino"]},
-		{"id": "altar", "nome": "ALTAR", "frase": "O lugar das oferendas e das mudanças.", "x": 480, "y": 300, "melhorias": ["ima", "almas", "raridade", "rolagem"]},
+		{"id": "altar", "nome": "ALTAR", "frase": "O lugar das oferendas e das mudanças.", "x": 480, "y": 300, "melhorias": ["ima", "almas", "raridade"]},
 		{"id": "codice", "nome": "CÓDICE", "frase": "A memória de tudo que você já conquistou.", "x": 710, "y": 330, "conquistas": true}
 	]
 }

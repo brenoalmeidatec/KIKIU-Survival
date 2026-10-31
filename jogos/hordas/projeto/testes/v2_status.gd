@@ -5,7 +5,7 @@ extends "res://testes/isolamento_v2.gd"
 # esquivas, simula cada golpe automático (aura, lâminas, corvos, raio, runa e o Anel de Brasas) e confere o dano por acerto e o dano por
 # segundo, dispara a onda e a lança da katana e lê o dano delas, e confere os bônus do Santuário e os contadores da partida. O "Combo
 # completo" é medido segurando o clique num boneco (passos + hit-stop + pausa do fim do combo, margem de 5%), o alcance inclui o avanço
-# do golpe (a estocada alcança o que o card diz), a onda sai em todos os cortes, as dicas de evolução acompanham banimento e evolução, o
+# do golpe (a estocada alcança o que o card diz), a onda sai em todos os cortes, as dicas de evolução acompanham a evolução, o
 # crítico para em 100% e as almas são as que o fim da partida credita (com "Almas abundantes").
 # Interface: C liga e desliga o card pela entrada de verdade (Input.parse_input_event, a mesma que a janela usa). Sobre a escolha de cartas
 # e o baú o C abre o painel CENTRAL (opaco, por cima das cartas): enquanto está aberto, tecla e clique não escolhem carta, a trava de 1 s
@@ -274,14 +274,14 @@ func _md5(caminho: String) -> String:
 	return FileAccess.get_md5(caminho) if FileAccess.file_exists(caminho) else ""
 
 
-## Compra melhorias no save temporário: vida 2, dano 2, velocidade 1, fôlego 1, ímã 1, treino 1 (precisa da conquista de 5 min), raridade 1, rolagem 1,
+## Compra melhorias no save temporário: vida 2, dano 2, velocidade 1, fôlego 1, ímã 1, treino 1 (precisa da conquista de 5 min), raridade 1,
 ## almas 2 (+16% de almas por partida).
 func _santuario() -> void:
 	Meta.registrar_partida({"tempo": 400.0, "abates": 0, "nivel": 1, "maior_combo": 0, "venceu": false, "almas": 5000})
-	# Raridade e rolagem só abrem ao vencer o Laboratório e a Cidade (dados/v2_meta.json, requer): libera de forma explícita.
+	# A raridade só abre ao vencer o Laboratório (dados/v2_meta.json, requer): libera de forma explícita.
 	for mapa in ["floresta", "laboratorio", "cidade"]:
 		Meta.marcar_mapa_vencido(mapa)
-	for par in [["vida", 2], ["dano", 2], ["velocidade", 1], ["folego", 1], ["ima", 1], ["treino", 1], ["raridade", 1], ["rolagem", 1], ["almas", 2]]:
+	for par in [["vida", 2], ["dano", 2], ["velocidade", 1], ["folego", 1], ["ima", 1], ["treino", 1], ["raridade", 1], ["almas", 2]]:
 		for i in int(par[1]):
 			ok(Meta.comprar(str(par[0])), "comprou %s no Santuário de teste" % par[0])
 
@@ -872,29 +872,22 @@ func _golpes() -> void:
 	m = boneco(30.0)
 	q = _quedas(m, 30.0)
 	faixa(float(n[2]) * 30.0, _soma(q), 0.5, 1.15, "Círculo Rúnico: dano por segundo do card x 30 s (um boneco só: a explosão em área bate em todos em volta)")
-	# --- dicas que não mentem: peça banida (evolução impossível), banida mas já no nível (continua possível) e peça gasta em outra evolução
+	# --- dicas que não mentem: a promessa de evolução e a peça gasta em outra evolução
 	zerar()
 	pegar("aura_fogo", 1)
 	pegar("aura_fogo")
 	pegar("aura_fogo")
 	var dica_ok := str(lin("arma.aura_fogo").dica)
-	ok(dica_ok == "Evolui: Anel de Brasas (falta Lâminas Rodopiantes nv 3)", "antes de banir, a dica promete a evolução (%s)" % dica_ok)
-	cs.banir("laminas")
-	var dica_b := str(lin("arma.aura_fogo").dica)
-	ok(
-		dica_b.contains("Evolução perdida") and dica_b.contains("Lâminas Rodopiantes banida") and not dica_b.contains("Evolui:"),
-		"com a outra peça banida, a dica diz que a evolução está perdida (%s)" % dica_b
-	)
+	ok(dica_ok == "Evolui: Anel de Brasas (falta Lâminas Rodopiantes nv 3)", "antes de gastar a outra peça, a dica promete a evolução (%s)" % dica_ok)
 	zerar()
 	pegar("laminas", 1)
 	pegar("laminas")
 	pegar("laminas")
 	pegar("aura_fogo")
 	pegar("aura_fogo")
-	cs.banir("laminas")
 	ok(
 		str(lin("arma.aura_fogo").dica).contains("Evolui: Anel de Brasas (falta Aura de Fogo nv 3)"),
-		"banir uma peça que já está no nível pedido não perde a evolução (%s)" % lin("arma.aura_fogo").dica
+		"com a outra peça já no nível pedido, a evolução segue possível (%s)" % lin("arma.aura_fogo").dica
 	)
 	cs.estado["laminas"].usada = true  # a outra peça já virou parte de outra evolução (não existe nos dados de hoje: simula)
 	ok(
@@ -1051,8 +1044,6 @@ func _partida() -> void:
 	w.combo = 5
 	w.maior_combo = 12
 	w.xp_coletado = 574.0
-	c.cartas.rerrolar_usados = 1
-	c.cartas.banir_usados = 1
 	c.diretor.ondas = 2
 	c.diretor.proxima_onda = w.tempo_partida + 23.4
 	ok(lin("partida.tempo").valor == "2:05", "o tempo do card é minutos:segundos (%s)" % lin("partida.tempo").valor)
@@ -1071,12 +1062,9 @@ func _partida() -> void:
 		int(reg.ganhas) == creditadas and Meta.saldo() == saldo_antes + creditadas,
 		"o que o card anunciou é o que Meta.registrar_partida creditou (%d contra %d)" % [creditadas, int(reg.ganhas)]
 	)
-	# rerrolar: 3 dos dados + 1 da "Segunda chance" do Santuário, menos 1 usado; banir: 2 dos dados, menos 1
-	ok(int(n_de("partida.rerrolar")[0]) == 3 and c.cartas.rerrolares_restantes() == 3, "rerrolar restantes = 3 + 1 do Santuário - 1 usado")
-	ok(int(n_de("partida.rerrolar")[1]) == 1 and c.cartas.banimentos_restantes() == 1, "banir restantes = 2 - 1 usado")
 	ok(int(n_de("partida.onda")[0]) == 2 and ceili(float(n_de("partida.proxima")[0])) == 24, "onda forte atual e quanto falta para a próxima")
 	ok(lin("partida.proxima").valor == "em 24 s", "a próxima onda aparece em segundos (%s)" % lin("partida.proxima").valor)
-	perto(float(n_de("santuario.rolagem")[0]), 1.0, 0.001, "o Santuário mostra a rolagem extra que ele deu")
+	ok(Status.linha(secoes(), "santuario.rolagem").is_empty(), "o Santuário não lista mais a rolagem (Segunda chance saiu do jogo)")
 	perto(float(n_de("santuario.raridade")[0]), 4.0, 0.001, "o Santuário mostra a chance de rara que ele deu")
 	perto(w.meta_bonus.raridade, 0.04, 0.0001, "o jogo aplicou a chance de rara do Santuário")
 	# o card não confunde o Santuário com a build: sem compra nenhuma, diz que não há melhoria
@@ -1478,8 +1466,6 @@ func _escolha_e_bau(st, c, pausa) -> void:
 		ok(cartao.visible, "a carta %d está na tela" % i)
 	var escolhidas0: int = c.progresso.escolhidas
 	var sel0: int = tela_c.sel
-	var rerrolar0: int = c.cartas.rerrolar_usados
-	var banir0: int = c.cartas.banir_usados
 	# --- C abre o painel central
 	tecla(KEY_C)
 	await esperar()
@@ -1510,7 +1496,7 @@ func _escolha_e_bau(st, c, pausa) -> void:
 		tecla(k)
 	await esperar()
 	ok(c.progresso.escolhidas == escolhidas0 and c.jogo == "escolha" and tela_c.escolha_aberta, "com o painel aberto nenhuma tecla escolhe carta")
-	ok(c.cartas.rerrolar_usados == rerrolar0 and c.cartas.banir_usados == banir0 and tela_c.sel == sel0, "e nenhuma tecla rerrola, bane ou muda a seleção")
+	ok(tela_c.sel == sel0, "e nenhuma tecla muda a seleção")
 	var centro1: Vector2 = (tela_c._cartas[1] as Control).position + (tela_c._cartas[1] as Control).size * 0.5
 	tela_c.mouse_fn = func(): return centro1
 	var mov := InputEventMouseMotion.new()
@@ -1821,7 +1807,6 @@ func _fotos(pasta: String) -> void:
 	w.maior_combo = 34
 	w.combo = 11
 	w.xp_coletado = 1580.0
-	c.cartas.rerrolar_usados = 1
 	c.diretor.ondas = 5
 	c.diretor.proxima_onda = w.tempo_partida + 17.0
 	h.nivel = 14

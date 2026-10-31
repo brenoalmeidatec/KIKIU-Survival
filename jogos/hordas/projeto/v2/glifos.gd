@@ -3,7 +3,7 @@ extends RefCounted
 ## de cada ação, em pixel. Tocar num botão do controle troca na hora todos os rótulos; mexer no teclado ou no mouse troca de volta.
 ## Todas as telas pedem aqui o nome da tecla (nunca escrevem "Esc/B" no texto): `descritor(acao)` diz o que desenhar, `texto(acao)` devolve só
 ## um texto curto (para o que é desenhado por código, como o SUA BUILD) e `dica(...)` / `glifo(...)` devolvem o Control que desenha o botão
-## sozinho e se refaz quando o dispositivo muda. As ações são nomes de PAPEL (confirmar, voltar, pausa, rerrolar, banir, abas...), não de tecla.
+## sozinho e se refaz quando o dispositivo muda. As ações são nomes de PAPEL (confirmar, voltar, pausa, automatico, abas...), não de tecla.
 ## Em teste ou foto: `--controle=xbox` / `--controle=ps` / `--controle=teclado` trava o dispositivo (a detecção para).
 ## No Godot o botão de baixo é o JOY_BUTTON_A nos dois controles (Xbox A = PlayStation cruz); direita = B = bola; esquerda = X = quadrado; cima = Y = triângulo.
 
@@ -57,9 +57,7 @@ const TABELA := {
 	"confirmar": [[[TECLA, "Enter"]], [[FACE, "A"]], [[PS, "x"]]],
 	"voltar": [[[TECLA, "Esc"]], [[FACE, "B"]], [[PS, "o"]]],
 	"pausa": [[[TECLA, "Esc"]], [[TECLA, "Menu"]], [[TECLA, "Options"]]],
-	"rerrolar": [[[TECLA, "R"]], [[FACE, "X"]], [[PS, "q"]]],
 	"automatico": [[[TECLA, "Q"]], [[FACE, "Y"]], [[PS, "t"]]],
-	"banir": [[[TECLA, "B"]], [[TECLA, "LB"]], [[TECLA, "L1"]]],
 	"aba_anterior": [[[TECLA, "Q"]], [[TECLA, "LB"]], [[TECLA, "L1"]]],
 	"aba_proxima": [[[TECLA, "E"]], [[TECLA, "RB"]], [[TECLA, "R1"]]],
 	"abas": [[[TECLA, "Q"], [TECLA, "E"]], [[TECLA, "LB"], [TECLA, "RB"]], [[TECLA, "L1"], [TECLA, "R1"]]],
