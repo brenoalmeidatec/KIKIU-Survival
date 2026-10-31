@@ -56,6 +56,9 @@ func _mapa(id: String, elencos: Dictionary, pool: Dictionary, antes: int) -> voi
 	else:
 		for tipo in Dados.json("v2_combate").diretor.tipos:
 			usados[str(tipo.sprite)] = true
+	var especiais := _especiais(id, elencos)
+	for nome in especiais:
+		usados[nome] = true
 	for nome in usados:
 		ok(int(c.get(nome, 0)) == int(pool[nome]), "%s: %s tem o pool configurado (%d)" % [id, nome, int(pool[nome])])
 	for nome in EXTRAS:
@@ -69,7 +72,47 @@ func _mapa(id: String, elencos: Dictionary, pool: Dictionary, antes: int) -> voi
 		for nome in EXTRAS:
 			ok(not c.has(nome), "floresta: nenhum dos 5 extras (%s)" % nome)
 		ok(total < antes, "floresta: bem menos que os %d de antes" % antes)
+	await _nascer_especiais(w, id, especiais)
 	w.queue_free()
+	await get_tree().process_frame
+
+
+## Os sprites que o mapa faz nascer fora do sorteio comum: elite, pesado, invocados da elite (elenco do mapa) e os dos chefes (marcas e filhotes
+## de dados/v2_cartas.json). Lido do JSON, sem chamar o elenco do jogo, para o teste não repetir a conta que testa.
+func _especiais(id: String, elencos: Dictionary) -> Dictionary:
+	var r := {}
+	if not elencos.has(id):
+		return r
+	var m: Dictionary = elencos[id]
+	for t in m.tipos:
+		if int(t.get("elite_desde", -1)) >= 0 or str(t.id) == str(m.pesado) or str(t.id) in m.invocados:
+			r[str(t.sprite)] = true
+	var chefes: Dictionary = Dados.json("v2_cartas").chefes
+	for mk in chefes.marcas:
+		r[str(mk.tipo)] = true
+	for at in chefes.ataques.values():
+		if at is Dictionary and at.has("filhote"):
+			r[str(at.filhote)] = true
+	return r
+
+
+## Nascer no meio da partida: cada tipo especial sai do pool pré-criado (`nascer_monstro` reusa o pool), e nenhum nó novo aparece.
+func _nascer_especiais(w, id: String, especiais: Dictionary) -> void:
+	var casos: Array = []  # [sprite, tipo do elenco (vazio para chefe)]
+	for e in w.elenco.elites_lista:
+		casos.append([str(e.sprite), e.tipo])
+	casos.append([str(w.elenco.pesado.sprite), w.elenco.pesado])
+	for k in 2:
+		casos.append([str(w.elenco.invocado(k).sprite), w.elenco.invocado(k)])
+	for nome in especiais:
+		casos.append([nome, {}])  # chefes e o que não é de elenco (marca e filhote)
+	var n0: int = w._todos_monstros.size()
+	var i := 0
+	for caso in casos:
+		var m = w.nascer_monstro(str(caso[0]), w.heroi.pos + Vector2(200 + 10 * i, 0), true, 1.0, 1.0, caso[1])
+		ok(m != null and m.vivo and m.chave == caso[0], "%s: %s nasce" % [id, caso[0]])
+		i += 1
+	ok(w._todos_monstros.size() == n0, "%s: nenhum nó novo no meio da partida (%d criados)" % [id, w._todos_monstros.size() - n0])
 	await get_tree().process_frame
 
 
