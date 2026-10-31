@@ -27,6 +27,13 @@ func passos(n: int) -> void:
 		w.avancar(PASSO)
 
 
+## Passos do mundo com o relógio de parede do visual (o escudo se anima em `combate.efeitos`).
+func fx_passos(n: int) -> void:
+	for i in n:
+		w.avancar(PASSO)
+		w.combate.efeitos(PASSO)
+
+
 ## Começa de novo: mapa sem monstros, herói parado e mortal, de cara para a direita (mouse 100 px à direita), escudo baixo.
 func zerar() -> void:
 	w.reiniciar()
@@ -297,6 +304,116 @@ func _ready() -> void:
 	ok(esc.resumo().arco == 120.0 and esc.resumo().mov == 0.6, "resumo(): arco e movimento")
 	zerar()
 	ok(not h.escudo_ativo and esc.bloqueios == 0, "reiniciar zera o escudo e os contadores")
+
+	# 15. o escudo de verdade: um sprite por personagem, vistas pela mira, rachado, quebra em pedaços e volta reforjado
+	w.args["particulas"] = "muitas"
+	for id in ["hazaki", "nicao", "lucas", "matheus"]:
+		var tex := load("res://assets/v2/escudos/%s.png" % id) as Texture2D
+		ok(tex != null and tex.get_width() == 256 and tex.get_height() == 32, "o escudo %s existe: faixa 256x32 (8 células)" % id)
+		ok((d.escudo.visual.fragmentos as Dictionary).has(id), "dados > visual > fragmentos tem o escudo %s" % id)
+	zerar()
+	ok(not esc.visual_estado().visivel, "sem erguer o sprite do escudo não aparece")
+	erguer()
+	fx_passos(2)
+	var ve: Dictionary = esc.visual_estado()
+	ok(ve.visivel and str(ve.estilo) != "", "erguido: o sprite do escudo aparece (estilo %s)" % ve.estilo)
+	ok(str(ve.estilo) == "hazaki", "a partida do Hazaki usa o escudo do Hazaki (%s)" % ve.estilo)
+	ok(
+		esc._bri.visible and esc._bri.get_parent() == esc._raiz and esc._raiz.get_parent() == w.no_mundo,
+		"o clarão da janela perfeita é filho do escudo, dentro do y-sort (não na camada glow, por cima do herói)"
+	)
+	ok(ve.celula == 1 and not ve.flip and ve.pos.x > h.pos.x, "mira para a direita: vista de lado, na frente do herói (%s)" % ve)
+	w.mouse_forcado = h.centro() + Vector2(-100, 0)
+	fx_passos(4)
+	ve = esc.visual_estado()
+	ok(ve.celula == 1 and ve.flip and ve.pos.x < h.pos.x, "mira para a esquerda: a mesma vista, espelhada")
+	w.mouse_forcado = h.centro() + Vector2(0, 100)
+	fx_passos(4)
+	ve = esc.visual_estado()
+	ok(ve.celula == 0 and ve.pos.y > h.pos.y, "mira para baixo: a frente do escudo, na frente do herói no y-sort (%s)" % ve)
+	w.mouse_forcado = h.centro() + Vector2(0, -100)
+	fx_passos(4)
+	ve = esc.visual_estado()
+	ok(ve.celula == 2 and ve.pos.y < h.pos.y, "mira para cima: as costas do escudo, atrás do herói no y-sort (%s)" % ve)
+	# soltar de propósito: some sem quebrar
+	h.escudo_forcado = false
+	fx_passos(12)
+	ve = esc.visual_estado()
+	ok(not ve.visivel and not ve.quebrado and ve.pedacos == 0, "soltar o botão: o escudo desce e some, sem quebrar")
+	# fôlego baixo: o quadro racha
+	zerar()
+	w.mouse_forcado = h.centro() + Vector2(0, 100)
+	h.folego = h.folego_max * 0.2
+	erguer()
+	fx_passos(4)
+	ve = esc.visual_estado()
+	ok(ve.rachado and ve.celula == 3 and h.escudo_ativo, "fôlego no fim: o quadro do escudo racha (aviso de que vai cair)")
+	# de lado não há quadro rachado: o aviso é o escudo avermelhado
+	w.mouse_forcado = h.centro() + Vector2(100, 0)
+	fx_passos(4)
+	ve = esc.visual_estado()
+	ok(not ve.rachado and ve.celula == 1 and ve.aviso, "fôlego no fim, mira de lado: sem quadro rachado, mas o escudo avermelha (aviso)")
+	w.mouse_forcado = h.centro() + Vector2(0, 100)
+	fx_passos(2)
+	# o fôlego zerou: quebra em 4 pedaços que caem e somem; o próximo erguer volta reforjado
+	for i in 120:
+		if h.cansado:
+			break
+		fx_passos(1)
+	h.escudo_forcado = false  # soltou o botão: não ergue de novo quando o fôlego voltar sozinho
+	fx_passos(2)
+	ve = esc.visual_estado()
+	ok(h.cansado and not h.escudo_ativo and not ve.visivel and ve.quebrado and ve.pedacos == 4, "fôlego zerou: o escudo quebra e 4 pedaços caem (%s)" % ve)
+	fx_passos(80)
+	ve = esc.visual_estado()
+	ok(ve.pedacos == 0 and ve.quebrado, "os pedaços caem, ficam no chão e se apagam; ainda falta reforjar")
+	h.cansado = false
+	h.folego = h.folego_max
+	h.escudo_forcado = true
+	fx_passos(2)
+	ve = esc.visual_estado()
+	ok(
+		ve.visivel and not ve.quebrado and is_equal_approx(esc._sobe_dur, float(d.escudo.visual.volta_s)),
+		"recarregou: volta reforjado, com a subida mais lenta"
+	)
+	# a regra não muda com o visual: o arco e o bloqueio são os mesmos
+	ok(esc.cobre(h, h.pos + Vector2(0, 40)) and not esc.cobre(h, h.pos + Vector2(0, -40)), "o bloqueio segue pelo arco, com o visual novo")
+	# um escudo por personagem: cada nome do salão joga com o seu (o Matheus tem o kit do Hazaki e o escudo dele)
+	var Pers := preload("res://v2/personagens.gd")
+	var Meta := preload("res://v2/meta.gd")
+	var save_antes: String = Meta.caminho_save
+	var chave_antes: String = h.chave
+	var heroi_antes: String = esc.combate.heroi_id
+	var vistos := {}
+	for ent in Pers.nomes():
+		var heroi_ent := str(ent.get("heroi", "hazaki"))
+		var esperado := str(ent.get("sprite", heroi_ent))
+		if not ["hazaki", "nicao", "lucas", "matheus"].has(esperado):
+			continue
+		var pid: String = Pers.criar(str(ent.nome), heroi_ent)
+		ok(pid != "" and Pers.ativar(pid), "personagem de teste %s criado e ativo" % ent.nome)
+		esc.combate.heroi_id = heroi_ent
+		h.chave = heroi_ent
+		ok(esc._estilo_de(h) == esperado, "%s joga com o escudo %s (veio %s)" % [ent.nome, esperado, esc._estilo_de(h)])
+		vistos[esperado] = true
+	ok(vistos.size() == 4, "os quatro escudos (hazaki, nicao, lucas, matheus) saem de personagens diferentes do salão (%s)" % [vistos.keys()])
+	h.chave = chave_antes
+	esc.combate.heroi_id = heroi_antes
+	Meta.caminho_save = save_antes
+	# perfil Baixo: sem pedaços
+	zerar()
+	w.args["particulas"] = "poucas"
+	h.folego = 0.5
+	erguer()
+	for i in 120:
+		if h.cansado:
+			break
+		fx_passos(1)
+	h.escudo_forcado = false
+	fx_passos(2)
+	ve = esc.visual_estado()
+	ok(h.cansado and not ve.visivel and ve.pedacos == 0, "perfil Baixo: o escudo só some, sem pedaços")
+	w.args.erase("particulas")
 
 	print("v2_escudo falhas=%d" % falhas)
 	get_tree().quit()
