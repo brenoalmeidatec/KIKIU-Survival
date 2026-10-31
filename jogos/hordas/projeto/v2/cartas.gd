@@ -1,7 +1,7 @@
 extends RefCounted
 ## As cartas da v2 (leva 3): montagem de build. Sorteia cartas com RARIDADE (comum, raro, épico, lendário; a chance das altas sobe com o
 ## nível), aplica melhorias de stat, golpes secundários automáticos (v2/armas.gd), modificadores da katana e as EVOLUÇÕES (duas peças viram
-## uma versão evoluída). Também guarda os banidos e os usos de rerrolar/banir. Tudo vem de dados/v2_cartas.json (veja o `_ajuda` de lá).
+## uma versão evoluída). Tudo vem de dados/v2_cartas.json (veja o `_ajuda` de lá).
 ## As 5 melhorias da RUPTURA (tecla E) vêm de dados/v2_ruptura.json > cartas, entram aqui com cat "rb" e sorteiam, evoluem de raridade e
 ## aparecem no resumo como as outras (o ramo "rb" de aplicar soma o valor e avisa combate.ruptura.definir).
 ##
@@ -18,10 +18,6 @@ var rar: Array = []
 var rng := RandomNumberGenerator.new()
 var estado := {}  # id -> {n: vezes que pegou, bonus: dano extra do golpe pela raridade, soma: valor acumulado (mod), usada: virou parte de evolução}
 var evoluidas: Array = []  # ids das evoluções já feitas
-var banidas := {}
-var rerrolar_usados := 0
-var banir_usados := 0
-var rerrolar_na_tela := 0
 var evolucoes_feitas := 0
 var lendarias_feitas := 0  # só uma lendária por partida
 var _def := {}  # id -> definição (stat, golpe ou modificador)
@@ -50,10 +46,6 @@ func montar(c) -> void:
 func zerar() -> void:
 	estado.clear()
 	evoluidas.clear()
-	banidas.clear()
-	rerrolar_usados = 0
-	banir_usados = 0
-	rerrolar_na_tela = 0
 	evolucoes_feitas = 0
 	lendarias_feitas = 0
 	rng.randomize()
@@ -90,7 +82,7 @@ func sortear_raridade(nivel: int, bonus := 1.0) -> int:
 	return saiu
 
 
-## Bônus do santuário (v2/meta.gd) lidos do mundo com valor padrão 0: raridade (fração), rolagem (inteiro) e almas (fração).
+## Bônus do santuário (v2/meta.gd) lidos do mundo com valor padrão 0: raridade (fração) e almas (fração).
 func meta(nome: String) -> float:
 	var mb = combate.mundo.get("meta_bonus")
 	if mb == null or not (mb is Dictionary):
@@ -115,7 +107,7 @@ func ativa(id: String) -> bool:
 
 func _disponivel(d: Dictionary) -> bool:
 	var id := str(d.id)
-	if banidas.has(id) or bool(estado.get(id, {}).get("usada", false)):
+	if bool(estado.get(id, {}).get("usada", false)):
 		return false
 	if bool(d.get("oculta_ate_ter_efeito", false)):  # escondida até ter efeito real (dados/v2_cartas.json, _ajuda)
 		return false
@@ -204,8 +196,8 @@ func _sinergia_ev(id: String) -> Dictionary:
 
 
 ## Evoluções ainda não feitas que usam a peça `id` (o card de status mostra): [{nome, falta, perdida}], onde `falta` lista as peças que ainda
-## não estão no nível pedido ("Aura de Fogo nv 3") e `perdida` as que NÃO CHEGAM MAIS lá (banida abaixo do nível pedido, ou já gasta em outra
-## evolução), cada uma como "Lâminas Rodopiantes banida": se não está vazia, a evolução é impossível. Vazio = a peça não entra em evolução
+## não estão no nível pedido ("Aura de Fogo nv 3") e `perdida` as que NÃO CHEGAM MAIS lá (já gasta em outra evolução),
+## cada uma como "Lâminas Rodopiantes já evoluiu em outra": se não está vazia, a evolução é impossível. Vazio = a peça não entra em evolução
 ## nenhuma, ou a evolução dela já aconteceu.
 func evolucoes_com(id: String) -> Array:
 	var r: Array = []
@@ -223,8 +215,6 @@ func evolucoes_com(id: String) -> Array:
 				falta.append("%s nv %d" % [nome, int(p.nivel)])
 				if bool(estado.get(str(p.id), {}).get("usada", false)):
 					perdida.append("%s já evoluiu em outra" % nome)
-				elif banidas.has(str(p.id)):
-					perdida.append("%s banida" % nome)
 		if usa:
 			r.append({"nome": str(ev.nome), "falta": falta, "perdida": perdida})
 	return r
@@ -239,15 +229,15 @@ func golpes_ativos() -> int:
 
 
 ## Sorteia `n` cartas diferentes. `bonus` = quanto o baú favorece as raridades altas. Até o nível `garantir_golpe_ate`, quem ainda não tem
-## nenhum golpe secundário vê pelo menos um na escolha (o começo da build). `excluir` = ids que não podem sair nesta rodada (rerrolar).
+## nenhum golpe secundário vê pelo menos um na escolha (o começo da build).
 ## `piso` = a menor raridade que pode sair (o baú dá `bau.piso_raridade`, 1 = nunca comum).
-func sortear(n: int, nivel: int, bonus := 1.0, excluir: Array = [], piso := 0) -> Array:
+func sortear(n: int, nivel: int, bonus := 1.0, piso := 0) -> Array:
 	var cand: Array = []
 	var pesos: Array = []
 	var sinergia := _pesos_sinergia()
 	for id in _def:
 		var d: Dictionary = _def[id]
-		if not _disponivel(d) or excluir.has(id):
+		if not _disponivel(d):
 			continue
 		cand.append(d)
 		pesos.append(float(d.get("peso", 1.0)) * float(sinergia.get(str(id), 1.0)))
@@ -274,7 +264,7 @@ func sortear(n: int, nivel: int, bonus := 1.0, excluir: Array = [], piso := 0) -
 		if not tem:
 			var gs: Array = []
 			for d in cfg.golpes:
-				if _disponivel(d) and not excluir.has(d.id):
+				if _disponivel(d):
 					gs.append(d)
 			if not gs.is_empty():
 				escolhidas[escolhidas.size() - 1] = gs[rng.randi() % gs.size()]
@@ -483,38 +473,6 @@ func evoluir(ev: Dictionary) -> void:
 	if ev.has("katana"):
 		combate.armas.definir_evolucao_katana(ev)
 	combate.evolucao_feita(ev)
-
-
-# ------------------------------------------------------------------ rerrolar e banir
-
-
-func rerrolar_total() -> int:
-	return int(cfg.escolha.rerrolar_total) + int(meta("rolagem"))
-
-
-func rerrolar_por_tela() -> int:
-	return int(cfg.escolha.rerrolar_por_tela) + int(meta("rolagem"))
-
-
-func pode_rerrolar() -> bool:
-	return rerrolar_usados < rerrolar_total() and rerrolar_na_tela < rerrolar_por_tela()
-
-
-func rerrolares_restantes() -> int:
-	return rerrolar_total() - rerrolar_usados
-
-
-func banimentos_restantes() -> int:
-	return int(cfg.escolha.banir_total) - banir_usados
-
-
-func pode_banir() -> bool:
-	return banir_usados < int(cfg.escolha.banir_total)
-
-
-func banir(id: String) -> void:
-	banidas[id] = true
-	banir_usados += 1
 
 
 ## Dados de resumo para a tela (build atual): lista de {nome, nivel, cor}.

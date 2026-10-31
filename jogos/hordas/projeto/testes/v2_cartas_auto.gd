@@ -1,8 +1,8 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste da escolha AUTOMÁTICA das cartas da v2 (cartas.escolha_automatica, progresso.automatico, o botão do meio e as teclas Q / Y do controle).
 # Confere: completa uma fusão a que falta uma peça; sobe um golpe que o herói já tem; cobre o que falta (golpe novo); a raridade sai rebaixada
-# (nunca passa de rara e sai mais comum que no sorteio normal); aplica a carta de verdade e fecha a escolha sem gastar rerrolar nem banir; o botão,
-# o Q e o Y do controle chamam o automático; a trava descarta; o botão fica no meio da tela entre Rerrolar e Banir.
+# (nunca passa de rara e sai mais comum que no sorteio normal); aplica a carta de verdade e fecha a escolha; o botão,
+# o Q e o Y do controle chamam o automático; a trava descarta; o botão fica no meio da tela (e não há Rerrolar nem Banir).
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cartas_auto.tscn  (imprime "v2_cartas_auto falhas=0")
 # Fotos: godot --path jogos/hordas/projeto res://testes/v2_cartas_auto.tscn -- --fotos=PASTA  (grava a tela de escolha e sai)
 const Mundo := preload("res://v2/mundo.tscn")
@@ -141,16 +141,14 @@ func _testes() -> void:
 			golpes += 1
 	ok(golpes >= 15, "sem golpe nenhum, o automático traz golpe novo (%d de 20)" % golpes)
 
-	# 5. na tela: aplica a carta, fecha a escolha e não gasta rerrolar nem banir
+	# 5. na tela: aplica a carta e fecha a escolha
 	zerar()
 	subir_nivel()
 	ok(w.combate.jogo == "escolha", "o nível abre a escolha")
 	var t = w.combate.telas
 	var esc0: int = w.combate.progresso.escolhidas
-	var rr0: int = cs.rerrolar_usados
 	w._input(_tecla(KEY_Q))
 	ok(w.combate.jogo == "jogando" and w.combate.progresso.escolhidas == esc0 + 1, "Q escolhe sozinho e fecha a escolha")
-	ok(cs.rerrolar_usados == rr0 and cs.banimentos_restantes() == int(cs.cfg.escolha.banir_total), "o automático não gasta rerrolar nem banir")
 
 	# 6. botão do meio com o mouse, e Y do controle
 	zerar()
@@ -172,28 +170,20 @@ func _testes() -> void:
 	t.espera_escolha = 0.5
 	w._input(_tecla(KEY_Q))
 	ok(w.combate.jogo == "escolha", "na trava o automático é descartado")
-	var banimentos_trava: int = cs.banimentos_restantes()
 	w._input(y)
-	var lb := InputEventJoypadButton.new()
-	lb.button_index = JOY_BUTTON_LEFT_SHOULDER
-	lb.pressed = true
-	w._input(lb)
-	ok(w.combate.jogo == "escolha" and cs.banimentos_restantes() == banimentos_trava, "na trava Y e LB não escolhem nem banem")
+	ok(w.combate.jogo == "escolha", "na trava o Y do controle também não escolhe")
 	t.espera_escolha = 0.0
 	w.combate.progresso.escolher(0)
 
-	# 8. o botão fica no meio da tela, entre Rerrolar e Banir, sem encostar neles
+	# 8. o botão fica no meio da tela, e Rerrolar e Banir não existem mais
 	var cx: float = t._btn_a.position.x + t._btn_a.size.x * 0.5
 	ok(absf(cx - 480.0) < 0.5, "o botão Automático está no centro da tela (%.1f)" % cx)
-	ok(
-		t._btn_r.position.x + t._btn_r.size.x < t._btn_a.position.x and t._btn_a.position.x + t._btn_a.size.x < t._btn_b.position.x,
-		"Rerrolar, Automático e Banir não se sobrepõem"
-	)
-	ok(t._btn_b.position.x + t._btn_b.size.x <= 960.0 and t._btn_r.position.x >= 0.0, "os três botões cabem na tela")
-	# Os glifos de LB/L1 são mais largos: o texto deve continuar dentro do botão, depois da coluna reservada ao glifo.
+	ok(t._btn_a.position.x >= 0.0 and t._btn_a.position.x + t._btn_a.size.x <= 960.0, "o botão cabe na tela")
+	ok(t.get("_btn_r") == null and t.get("_btn_b") == null, "não há botão de Rerrolar nem de Banir")
+	# O texto deve continuar dentro do botão, depois da coluna reservada ao glifo.
 	for d in 3:
 		Glifos.definir(d)
-		for botao in [t._btn_r, t._btn_a, t._btn_b]:
+		for botao in [t._btn_a]:
 			var texto: Label = botao.get_node("t")
 			var glifo: Control = botao.get_node("glifo")
 			var largura := texto.get_theme_font("font").get_string_size(texto.text, HORIZONTAL_ALIGNMENT_LEFT, -1, texto.get_theme_font_size("font_size")).x
@@ -208,7 +198,7 @@ func _testes() -> void:
 	# 9. sem carta nenhuma disponível, o automático devolve vazio
 	zerar()
 	for id in cs._def:
-		cs.banidas[id] = true
+		cs.estado[id] = {"n": 0, "usada": true}
 	ok(cs.escolha_automatica(3).is_empty(), "sem carta disponível o automático devolve vazio")
 
 

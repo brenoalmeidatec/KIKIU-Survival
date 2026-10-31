@@ -315,8 +315,8 @@ A chance de raridade alta sobe com o nível: o peso de cada raridade anda em lin
 
 ### Escolha
 
-- Quantas cartas aparecem por tela e quantas vezes você pode **rerrolar** (trocar as cartas) estão em `escolha` no mesmo arquivo.
-- Há **banir** (tirar uma carta da mesa) e **garantir golpe** (uma carta de golpe aparece até um nível-alvo).
+- Quantas cartas aparecem por tela estão em `escolha` no mesmo arquivo. Não há rerrolar nem banir (removidos em 31/10); sobra o botão **Automático**.
+- Há **garantir golpe** (uma carta de golpe aparece até um nível-alvo).
 - Os campos `auto_*` servem para a escolha automática do robô de playtest (issue [#301](https://github.com/brenoalmeidatec/KIKIU-Survival/issues/301), fechada).
 
 ---
@@ -426,7 +426,6 @@ A v1 tem mochila e itens em `dados/itens.json`: comida (vale pelos primeiros and
 | Fôlego de corredor | Fôlego máximo | 4 | 40 |
 | Ímã de almas | Alcance de almas | 4 | 35 |
 | Olho para o raro | Chance de carta rara | 4 | 60 |
-| Segunda chance | Rolagem extra nas cartas | 2 | 90 |
 | Almas abundantes | Almas por partida | 5 | 50 |
 | Treino de guerreiro | Velocidade de ataque | 4 | 70 |
 
@@ -574,7 +573,7 @@ Os chefes da v3 não seguem o pipeline de sprites: são **modelos 3D reais anima
 | `heroi.gd` | O herói: movimento, golpes, esquiva, fôlego |
 | `armas.gd` / `armas_novas.gd` | Armas das cartas e os golpes secundários (fases de preparo e impacto) |
 | `anim_golpes.gd` | Toca os quadros das folhas de animação |
-| `cartas.gd` | Escolha de cartas e rerrolagem |
+| `cartas.gd` | Escolha de cartas |
 | `bau.gd` | Baús e a roleta |
 | `diretor.gd` | Quem nasce e quando (ondas, elites, chefes) |
 | `chefe.gd`, `elites.gd` | Chefes e elites |

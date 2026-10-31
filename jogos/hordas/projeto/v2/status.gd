@@ -641,8 +641,8 @@ static func _lista_dano(danos: Array) -> String:
 	return "/".join(t)
 
 
-## "Evolui: Anel de Brasas (falta Lâminas Rodopiantes nv 3)", ou, se uma peça não chega mais lá (banida, ou já gasta em outra evolução),
-## "Evolução perdida (Anel de Brasas: Lâminas Rodopiantes banida)", ou "".
+## "Evolui: Anel de Brasas (falta Lâminas Rodopiantes nv 3)", ou, se uma peça não chega mais lá (já gasta em outra evolução),
+## "Evolução perdida (Anel de Brasas: Lâminas Rodopiantes já evoluiu em outra)", ou "".
 static func _dica_evolucao(cs, id: String) -> String:
 	var partes: Array = []
 	for e in cs.evolucoes_com(id):
@@ -703,14 +703,6 @@ static func _sec_partida(m) -> Dictionary:
 	lin.append(_l("partida.abates", "Abates", str(m.abates), [m.abates], "", true))
 	lin.append(_l("partida.combo", "Combo", "x%d · maior x%d" % [m.combo, m.maior_combo], [m.combo, m.maior_combo], "", true))
 	lin.append(_l("partida.almas", "Almas a receber", str(creditadas), [bruto, creditadas], _mais(float(creditadas - bruto))))
-	lin.append(
-		_l(
-			"partida.rerrolar",
-			"Rerrolar / banir",
-			"%d / %d" % [cs.rerrolares_restantes(), cs.banimentos_restantes()],
-			[cs.rerrolares_restantes(), cs.banimentos_restantes()]
-		)
-	)
 	lin.append(_l("partida.onda", "Onda forte", str(c.diretor.ondas), [c.diretor.ondas]))
 	lin.append(_l("partida.proxima", "Próxima onda", "em %d s" % ceili(falta_onda), [falta_onda]))
 	return _sec("partida", "PARTIDA", Paleta.SECAO_PARTIDA, lin)
@@ -1113,8 +1105,6 @@ const ICONES := {
 	"tempo": ["..###...", ".#o..#..", "#..#..#.", "#..##.#.", "#.....#.", ".#...#..", "..###...", "........"],
 	"abates": [".####...", "#o####..", "#.##.#..", "######..", ".#..#...", ".####...", "........", "........"],
 	"almas": ["...#....", "..##....", ".#o##...", ".####...", "######..", "#o####..", ".####...", "........"],
-	"rerrolar": ["######..", "#o...#..", "#.#..#..", "#..#.#..", "#...##..", "######..", "........", "........"],
-	"banir": ["#.....#.", ".#...#..", "..#.#...", "...#....", "..#.#...", ".#...#..", "#.....#.", "........"],
 }
 
 var _detalhe := false  # pausa e painel central: true = a página de detalhes (a tabela), false = a visual
@@ -1376,12 +1366,9 @@ func _v_partida(x: float, y: float, w: float, seco: bool) -> float:
 	var t := float(linha(secoes, "partida.tempo").get("n", [0])[0])
 	var ab := int(linha(secoes, "partida.abates").get("n", [0])[0])
 	var al := int(linha(secoes, "partida.almas").get("n", [0, 0])[1])
-	var rb: Array = linha(secoes, "partida.rerrolar").get("n", [0, 0])  # as cartas: rerrolar e banir que restam
 	itens.append(["tempo", COR_DICA, "Tempo", _tempo(t)])
 	itens.append(["abates", COR_ROTULO, "Abates", str(ab)])
 	itens.append(["almas", COR_SANTUARIO, "Almas", str(al)])
-	itens.append(["rerrolar", COR_DICA, "Rerrolar", str(int(rb[0]))])
-	itens.append(["banir", COR_VIDA, "Banir", str(int(rb[1]))])
 	if not seco:
 		for i in itens.size():
 			_stat(str(itens[i][0]), itens[i][1], str(itens[i][2]), str(itens[i][3]), x, y + i * ALT_STAT, w)

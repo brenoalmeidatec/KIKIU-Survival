@@ -243,13 +243,13 @@ func _testes() -> void:
 	var migrado := ConfigFile.new()
 	migrado.load(Meta.caminho_save)
 	ok(not migrado.has_section("mapas_vencidos") and bool(migrado.get_value("conquistas", "vence_floresta", false)), "grava só o estado canônico")
-	# 12. as melhorias do Altar abrem pelos mapas vencidos: Olho para o raro (Laboratório) e Segunda chance (Cidade), com o requisito escrito
+	# 12. as melhorias do Altar abrem pelos mapas vencidos: Olho para o raro (Laboratório), com o requisito escrito
 	_novo("Altar")
 	Meta.creditar(2000)
 	ok(Meta.marcar_mapa_vencido("floresta"), "12: vence a Floresta")
 	ok(Meta.comprar("ima") and Meta.comprar("almas"), "12: com o Altar aberto, Ímã e Almas abundantes compram")
 	ok(not Meta.comprar("raridade") and Meta.nivel("raridade") == 0, "12: Olho para o raro segue trancada sem vencer o Laboratório")
-	ok(not Meta.comprar("rolagem") and Meta.nivel("rolagem") == 0, "12: Segunda chance segue trancada sem vencer a Cidade")
+	ok(not Meta.comprar("rolagem") and Meta.nivel("rolagem") == 0, "12: a Segunda chance saiu do jogo (não existe mais para comprar)")
 	var s3 = Salao.instantiate()
 	add_child(s3)
 	await get_tree().process_frame
@@ -270,8 +270,7 @@ func _testes() -> void:
 	s3.queue_free()
 	await get_tree().process_frame
 	ok(Meta.marcar_mapa_vencido("laboratorio") and Meta.comprar("raridade"), "12: vencer o Laboratório libera Olho para o raro")
-	ok(not Meta.comprar("rolagem"), "12: o Laboratório não libera a Segunda chance")
-	ok(Meta.marcar_mapa_vencido("cidade") and Meta.comprar("rolagem"), "12: vencer a Cidade libera Segunda chance")
+	ok(Meta.marcar_mapa_vencido("cidade") and not Meta.comprar("rolagem"), "12: vencer a Cidade não traz a Segunda chance de volta")
 	fim = true
 
 
