@@ -304,7 +304,7 @@ func _provar_q_real() -> void:
 					c.adagas.a_dir[0] = Vector2.RIGHT
 					for i in 100:
 						c.adagas.atualizar(1.0 / 60.0)
-					ok(igual(10000.0 - m.vida, roundf(float(b[fase].dano) * k * 1.5)), "Lucas %s acerto real n%d" % [fase, nivel])
+					ok(igual(10000.0 - m.vida, roundf(float(b[fase].dano) * k * 1.5)), "Luke %s acerto real n%d" % [fase, nivel])
 					m.morrendo = true
 			e.cancelar(h)
 

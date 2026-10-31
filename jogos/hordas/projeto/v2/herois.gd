@@ -1,5 +1,5 @@
 extends RefCounted
-## Os heróis jogáveis da v2 (Hazaki, Nicão e Lucas): catálogo em dados/v2_herois.json, herói de cada personagem do salão (v2/personagens.gd) e a aplicação dos números do herói escolhido. Tudo estático, sem estado além de `forcado`.
+## Os heróis jogáveis da v2 (Hazaki, Nick e Luke): catálogo em dados/v2_herois.json, herói de cada personagem do salão (v2/personagens.gd) e a aplicação dos números do herói escolhido. Tudo estático, sem estado além de `forcado`.
 ##
 ## Como o herói entra na partida (sem espalhar `if` pelo combate):
 ##  - `cfg_para(base, id)`: o dados/v2_combate.json COPIADO e coberto pelo `cfg` do herói (vida, velocidade, fôlego, combo de golpes). O

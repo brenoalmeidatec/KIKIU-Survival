@@ -67,7 +67,7 @@ var _sprite: Texture2D
 var _quadro_w := 32
 var _quadro_h := 44
 var _pe_y := 42  # linha do quadro onde ficam os pés (info.pe_y; sem ele, 2 px acima da base, como no Hazaki)
-var _passos := 4  # quadros do andar (as colunas da folha menos o "parado"): 4 no Hazaki, 6 no Nicão e no Lucas
+var _passos := 4  # quadros do andar (as colunas da folha menos o "parado"): 4 no Hazaki, 6 no Nick e no Luke
 var _pos := Vector2(480, 400)  # onde estão os pés do herói
 var _dir := 0  # linha da folha de sprites: baixo, esquerda, direita, cima
 var _quadro := 0  # coluna da folha: parado (0) ou um dos passos da animação (1 a 4)
@@ -75,7 +75,7 @@ var _tempo := 0.0
 var _tempo_passo := 0.0
 var _tempo_parado := 0.0
 var _andando := false  # o herói anda (a coluna sozinha não diz: o parado também passa por várias colunas); o salao_vivo lê
-var _parado: Array = [0]  # colunas da animação "parado" da folha (Hazaki, Matheus, Lucas e Nicão: 0, 7, 8 e 9)
+var _parado: Array = [0]  # colunas da animação "parado" da folha (Hazaki, Matthew, Luke e Nick: 0, 7, 8 e 9)
 var _parado_s := 0.25  # segundos por quadro do parado
 var _destino := Vector2.INF  # clique numa estrutura ou portal: anda até ele e usa
 var _alvo_destino := {}
@@ -122,7 +122,7 @@ func _ready() -> void:
 	_ajustar_janela()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE  # a sala recebe o clique em _unhandled_input (andar até um alvo), não a tela inteira
 	_carregar_dados()
-	# a mesma folha da partida e do HUD: a do personagem ativo (Matheus tem a dele) e, sem ela, a do herói (Hazaki, Nicão ou Lucas)
+	# a mesma folha da partida e do HUD: a do personagem ativo (Matthew tem a dele) e, sem ela, a do herói (Hazaki, Nick ou Luke)
 	var folha: String = PASTA_SPRITES + Herois.sprite_da_partida(Herois.escolhido())
 	_sprite = load(folha + "_albedo.png") as Texture2D
 	var info: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(folha + ".json"))

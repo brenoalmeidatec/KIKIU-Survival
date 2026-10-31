@@ -35,7 +35,7 @@ func _ready() -> void:
 	t._abrir_nomes()
 	await _assentar()
 	await _foto("nomes")
-	t._lista.get_child(1).grab_focus()  # o 2º nome (Nicão) tem rosto: a tira de rostos vira o retrato
+	t._lista.get_child(1).grab_focus()  # o 2º nome (Nick) tem rosto: a tira de rostos vira o retrato
 	await _assentar()
 	await _foto("nomes_rosto")
 	var ultimo: Control = t._lista.get_child(t._lista.get_child_count() - 1)

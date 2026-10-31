@@ -59,7 +59,7 @@ func _limpar() -> void:
 func _criar(n: int) -> Array:
 	var ids := []
 	for i in n:
-		var id := Personagens.criar(["Breno", "Nicão", "Lucas", "Matheus"][i])
+		var id := Personagens.criar(["Breno", "Nick", "Luke", "Matthew"][i])
 		Personagens.ativar(id)
 		Meta.creditar(10 * (i + 1))
 		Meta.creditar(5)
@@ -104,7 +104,7 @@ func _slot() -> void:
 	Personagens.iniciar()
 	ok(Personagens.ativo() == "" and Personagens.lista() == [ids[0]], "reabrir o jogo não reativa nem migra nada")
 	# um personagem novo não herda o slot apagado
-	var novo := Personagens.criar("Lucas")
+	var novo := Personagens.criar("Luke")
 	ok(novo != "" and not _existe(Personagens.caminho_do_save(novo)), "o personagem novo começa sem save")
 	_limpar()
 
@@ -138,7 +138,7 @@ func _tudo() -> void:
 
 func _tela() -> void:
 	_limpar()
-	var ids := _criar(3)  # Breno, Nicão, Lucas; o Lucas é o ativo
+	var ids := _criar(3)  # Breno, Nick, Luke; o Luke é o ativo
 	var t = Tela.instantiate()
 	add_child(t)
 	await _frames()
@@ -154,7 +154,7 @@ func _tela() -> void:
 	# passo 1: pedir; padrão em NÃO
 	t._excluir.pressed.emit()
 	ok(t._modal_aberto(), "EXCLUIR abre a confirmação")
-	ok(t._modal_titulo.text == "EXCLUIR LUCAS?", "o título nomeia o personagem: %s" % t._modal_titulo.text)
+	ok(t._modal_titulo.text == "EXCLUIR LUKE?", "o título nomeia o personagem: %s" % t._modal_titulo.text)
 	var txt: String = t._modal_texto.text
 	ok(txt.contains("almas") and txt.contains("estátuas") and txt.contains("conquistas"), "o texto diz o que se perde")
 	ok(get_viewport().gui_get_focus_owner() == t._modal_nao, "o foco começa em NÃO")
@@ -175,18 +175,18 @@ func _tela() -> void:
 	t._excluir.pressed.emit()
 	var preso: bool = t._modal_nao.focus_neighbor_left == t._modal_sim.get_path() and t._modal_nao.focus_neighbor_top == t._modal_nao.get_path()
 	ok(preso, "o foco fica preso na confirmação")
-	# passo 2: SIM (o Lucas é o ativo)
+	# passo 2: SIM (o Luke é o ativo)
 	var md5_p1 := _md5(Personagens.caminho_do_save(ids[0]))
-	ok(Personagens.ativo() == ids[2], "o Lucas é o ativo antes")
+	ok(Personagens.ativo() == ids[2], "o Luke é o ativo antes")
 	t._modal_sim.pressed.emit()
 	await _frames()
 	ok(not t._modal_aberto(), "SIM fecha a confirmação")
-	ok(Personagens.lista() == [ids[0], ids[1]], "SIM exclui o Lucas")
+	ok(Personagens.lista() == [ids[0], ids[1]], "SIM exclui o Luke")
 	var c_lucas := Personagens.caminho_do_save(ids[2])
 	ok(not _existe(c_lucas) and not _existe(c_lucas + ".bak"), "o save e o .bak dele saem")
 	ok(Personagens.ativo() == "", "excluir o ativo volta à escolha: ninguém ativo")
 	ok(_md5(Personagens.caminho_do_save(ids[0])) == md5_p1, "o save do Breno não é tocado")
-	ok(t._lista.get_child_count() == 3 and t._aviso.text == "Lucas excluído.", "a lista se refaz e avisa: %s" % t._aviso.text)
+	ok(t._lista.get_child_count() == 3 and t._aviso.text == "Luke excluído.", "a lista se refaz e avisa: %s" % t._aviso.text)
 	# excluir os dois que sobram: a lista fica só com NOVO PERSONAGEM
 	for i in 2:
 		t._lista.get_child(0).grab_focus()

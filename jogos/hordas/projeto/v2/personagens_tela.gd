@@ -297,7 +297,7 @@ func _definir_retrato(pasta: String, visivel := true, folha_nome := "") -> void:
 		var folha := load(base + "_albedo.png") as Texture2D
 		var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
 		if folha != null and info is Dictionary:
-			var r: Array = info.retrato.regiao if info.get("retrato") is Dictionary else [0, 0, info.quadro[0], info.quadro[1]]  # Nicão: só o corpo
+			var r: Array = info.retrato.regiao if info.get("retrato") is Dictionary else [0, 0, info.quadro[0], info.quadro[1]]  # Nick: só o corpo
 			tex = _quadro_de(folha, Rect2(float(r[0]), float(r[1]), float(r[2]), float(r[3])))
 	_retrato.visible = visivel and tex != null
 	_retrato.texture = tex

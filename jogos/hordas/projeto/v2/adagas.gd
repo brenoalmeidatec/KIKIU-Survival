@@ -1,5 +1,5 @@
 extends RefCounted
-## As adagas do Lucas (v2): projétil em POOL, sem nó por adaga. `combate.golpear` chama `lancar` no quadro do arremesso (passo de tipo
+## As adagas do Luke (v2): projétil em POOL, sem nó por adaga. `combate.golpear` chama `lancar` no quadro do arremesso (passo de tipo
 ## "adagas" do combo, dados/v2_herois.json); `atualizar` as move, acha quem elas acertam e as faz sumir. Os números vivem em vetores planos
 ## (posição, direção, velocidade, alcance que falta...), o desenho é um Node2D com texturas prontas (a lâmina) e uma linha de brilho aditivo,
 ## na mesma camada `glow` das armas automáticas (v2/armas.gd).
@@ -7,10 +7,10 @@ extends RefCounted
 ## Acerto: segmento do passo da adaga contra o corpo do monstro (centro no peito, raio do monstro + raio da adaga). Vale para o monstro
 ## da horda em lote, a elite e o chefe (todos estão em `mundo.monstros`). Cada adaga fura `perfura` monstros a mais e nunca acerta o mesmo
 ## duas vezes. O dano passa por `combate.ferir` (número, flash, empurrão, atordoamento, morte na fila). Crítico usa os números do combate.
-## Modificadores das cartas do Lucas (armas.mods): `chuva` (% de chance de cada acerto soltar uma adaga extra para um lado qualquer) e `mira`
+## Modificadores das cartas do Luke (armas.mods): `chuva` (% de chance de cada acerto soltar uma adaga extra para um lado qualquer) e `mira`
 ## (% de alcance e velocidade). O crítico explosivo (`explode`) também vale aqui.
 
-const MAX := 96  # cabe a Tempestade de Adagas (Q do Lucas: ~42 em voo + rodada final de 18) junto com as adagas normais
+const MAX := 96  # cabe a Tempestade de Adagas (Q do Luke: ~42 em voo + rodada final de 18) junto com as adagas normais
 const ALCANCE_EXTRA := 120.0  # a Chuva pode nascer e andar ainda neste quadro
 const R_ADAGA := 4.0  # raio de acerto da adaga (cresce com a área do herói)
 const COMPR := 16.0  # a lâmina desenhada: 16x5 px, apontando para a direita
@@ -118,7 +118,7 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 	var abre: float = 1.0 if passo.get("anel", false) else 1.0 + (h.m_area - 1.0) * 0.5
 	var leque := deg_to_rad(float(passo.get("leque", 0.0)) * abre)
 	var mira := 1.0 + float(combate.armas.mods.mira) / 100.0
-	var alcance_k: float = mira * (1.0 + (combate.bonus_nivel_golpe(h) if cresce_com_nivel else 0.0))  # o golpe do Lucas cresce com o nível, o especial Q não
+	var alcance_k: float = mira * (1.0 + (combate.bonus_nivel_golpe(h) if cresce_com_nivel else 0.0))  # o golpe do Luke cresce com o nível, o especial Q não
 	var cor := Color(passo.cor[0], passo.cor[1], passo.cor[2])
 	_grupo += 1
 	for k in n:

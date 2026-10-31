@@ -131,7 +131,7 @@ func _ready() -> void:
 	h.nivel = 1
 	ok(perto(esc.raio(h), raio0), "escudo nível 1: o raio do dado (%s px)" % raio0)
 	h.m_area = 1.2
-	ok(perto(esc.raio(h), raio0), "escudo nível 1 com área 1,2 (Nicão): o raio continua o do dado, a área das cartas não entra")
+	ok(perto(esc.raio(h), raio0), "escudo nível 1 com área 1,2 (Nick): o raio continua o do dado, a área das cartas não entra")
 	h.nivel = 20
 	ok(perto(esc.raio(h), raio0 * 1.19), "escudo nível 20: raio x 1,19 mesmo com área 1,2 (%.2f px)" % esc.raio(h))
 	h.m_area = 1.0
@@ -176,7 +176,7 @@ func _ready() -> void:
 	h.nivel = 500
 	ok(perto(float(esc.resumo().arco), arco0 + 25.0), "o painel de status lê o arco crescido (teto +25 graus)")
 
-	# 12. as adagas do Lucas: o golpe cresce com o nível (mesmo ponto central, combate.bonus_nivel_golpe), o especial Q (lancar sem a marca) não
+	# 12. as adagas do Luke: o golpe cresce com o nível (mesmo ponto central, combate.bonus_nivel_golpe), o especial Q (lancar sem a marca) não
 	var adaga := {
 		"tipo": "adagas",
 		"nome": "adaga",

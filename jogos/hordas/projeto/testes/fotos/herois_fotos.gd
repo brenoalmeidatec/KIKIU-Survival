@@ -1,5 +1,5 @@
 extends Control
-## Prints dos quatro heróis do Blender (Hazaki, Matheus, Lucas, Nicão) com a MESMA regra de folha: HUD na partida, Santuário (parado e andando) e a escolha
+## Prints dos quatro heróis do Blender (Hazaki, Matthew, Luke, Nick) com a MESMA regra de folha: HUD na partida, Santuário (parado e andando) e a escolha
 ## de personagem. Não roda no CI (fica em testes/fotos/). Usa personagens isolados (user://qa_herois_*): os saves reais não são tocados.
 ## Uso (janela fora da tela): godot --path jogos/hordas/projeto --position -3000,0 res://testes/fotos/herois_fotos.tscn -- --fotos=PASTA
 ## Grava, por herói: partida_<id>.png, salao_<id>_parado.png, salao_<id>_andando.png e escolha_<id>.png (em 960x540).
@@ -7,10 +7,10 @@ const Personagens = preload("res://v2/personagens.gd")
 const Meta = preload("res://v2/meta.gd")
 const Mundo = preload("res://v2/mundo.tscn")
 const CASOS := [
-	["hazaki", "Breno", "hazaki"],
-	["matheus", "Matheus", "hazaki"],
-	["lucas", "Lucas", "lucas"],
-	["nicao", "Nicão", "nicao"],
+	["hazaki", "Brendan", "hazaki"],
+	["matheus", "Matthew", "hazaki"],
+	["lucas", "Luke", "lucas"],
+	["nicao", "Nick", "nicao"],
 ]
 const PASSO := 1.0 / 60.0
 var pasta := "user://herois_fotos"

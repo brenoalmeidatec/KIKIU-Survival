@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://begwt0g2h5vew"
-path="res://.godot/imported/devorador_da_terra.png-743a7588997616469aa3b74f7dc8884a.ctex"
+uid="uid://w6fgews5ugqc"
+path="res://.godot/imported/devourer_of_flesh.png-8cc0fb796382e704be020c1b59b20d81.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/chefes/devorador_da_terra.png"
-dest_files=["res://.godot/imported/devorador_da_terra.png-743a7588997616469aa3b74f7dc8884a.ctex"]
+source_file="res://assets/v2/chefes/devourer_of_flesh.png"
+dest_files=["res://.godot/imported/devourer_of_flesh.png-8cc0fb796382e704be020c1b59b20d81.ctex"]
 
 [params]
 

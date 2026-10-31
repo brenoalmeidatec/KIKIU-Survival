@@ -1,6 +1,6 @@
 extends Control
-## Os dois slots de habilidade do canto inferior DIREITO do HUD (estilo Overwatch): E (a habilidade do herói: a ruptura do Hazaki, a investida do Nicão, o salto
-## do Lucas; v2/habilidade.gd) e o SECUNDÁRIO (botão direito ou gatilho esquerdo: o escudo, v2/escudo.gd). Também lê, no mesmo passo, o estado do Q (a ultimate
+## Os dois slots de habilidade do canto inferior DIREITO do HUD (estilo Overwatch): E (a habilidade do herói: a ruptura do Hazaki, a investida do Nick, o salto
+## do Luke; v2/habilidade.gd) e o SECUNDÁRIO (botão direito ou gatilho esquerdo: o escudo, v2/escudo.gd). Também lê, no mesmo passo, o estado do Q (a ultimate
 ## do herói, v2/especial.gd), que é DESENHADO pelo círculo do centro (v2/hud_ultimate.gd, o nó "Ultimate"). Tudo vem somente dos campos publicados pelo herói:
 ## sem os campos o slot fica apagado (E e secundário "INDISP.", Q "EM BREVE") e nunca indica uma habilidade pronta que não existe. Quem tem a ruptura (hab_id
 ## "ruptura" ou sem hab_*) usa os rup_*; as outras E usam os hab_* (nome, ícone, cor, recarga). O escudo não tem recarga própria: ele gasta o FÔLEGO da corrida,

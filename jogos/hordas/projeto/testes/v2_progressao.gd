@@ -114,13 +114,13 @@ func _testes() -> void:
 	await get_tree().process_frame
 
 	# 3. vencer OUTRO mapa não abre o Laboratório; morrer na Floresta também não
-	_novo("Lucas")
+	_novo("Luke")
 	_partida(true, "cidade")
 	_partida(false, "floresta")
 	ok(not _abertos().has("laboratorio"), "vencer a Cidade (ou morrer na Floresta) não abre o Laboratório")
 
 	# 4. vencer a Floresta abre o Laboratório e o Altar (e só eles)
-	_novo("Matheus")
+	_novo("Matthew")
 	var r := _partida(true, "floresta")
 	ok(r.get("novas", []).has("vence_floresta"), "vencer a Floresta cumpre vence_floresta (%s)" % str(r.get("novas", [])))
 	ok(_abertos() == ["floresta", "laboratorio"], "vencer a Floresta abre o Laboratório (%s)" % str(_abertos()))

@@ -1,6 +1,6 @@
 extends Control
-## Prints do Nicão (folha do Blender) no Salão da v2, em 960x540. Não roda no CI (fica em testes/fotos/). O Salão (v2/salao.gd) desenha a folha do herói
-## do personagem ativo (Herois.sprite); aqui o ativo joga o Nicão. Usa um personagem isolado (user://qa_nicao_*), sem tocar nos saves reais.
+## Prints do Nick (folha do Blender) no Salão da v2, em 960x540. Não roda no CI (fica em testes/fotos/). O Salão (v2/salao.gd) desenha a folha do herói
+## do personagem ativo (Herois.sprite); aqui o ativo joga o Nick. Usa um personagem isolado (user://qa_nicao_*), sem tocar nos saves reais.
 ## Uso (janela oculta): godot --path jogos/hordas/projeto res://testes/fotos/nicao_salao_fotos.tscn -- --fotos=PASTA
 ## Grava salao_parado.png (coluna 0, de frente), salao_andando.png (andar3, direita) e salao_andando_baixo.png (andar1, de frente).
 const Personagens = preload("res://v2/personagens.gd")
@@ -19,7 +19,7 @@ func _ready() -> void:
 	Personagens.caminho_base = "user://" + prefixo + "p"
 	Personagens.caminho_antigo = "user://" + prefixo + "antigo.cfg"
 	Meta.caminho_save = "user://" + prefixo + "meta.cfg"
-	Personagens.ativar(Personagens.criar("Nicão", "nicao"))
+	Personagens.ativar(Personagens.criar("Nick", "nicao"))
 	DisplayServer.window_set_size(Vector2i(960, 540))
 	var s = load("res://v2/salao.tscn").instantiate()
 	add_child(s)

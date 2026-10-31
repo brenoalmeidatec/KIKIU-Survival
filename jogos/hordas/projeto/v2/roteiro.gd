@@ -9,7 +9,7 @@ extends RefCounted
 ##   --build               começa a partida com uma build cheia (aura, lâminas, corvos, raio e runa) para medir o desempenho
 ##   --build=golpes        idem com os 36 projéteis, anéis, meteoros e nuvens no nível 5 (as folhas animadas de docs/combate_v2)
 ##   --build=tudo          os 36 mais corvos, aura, raio, runa, lâminas e as evoluções desses tipos
-##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, dos três chefes (Devorador da Carne, Devoradora da Estrutura e Devorador da Terra) anunciando
+##   --roteiro=build|elite|chefe|vitoria|escolha   (leva 3) fotos da build cheia, da elite com baú e roleta, dos três chefes (Devourer of Flesh, Devourer of Structure e Devourer of Land) anunciando
 ##                         o ataque próprio e logo depois do disparo, e do chefão na fúria, da tela de vitória e da escolha com raridades (na trava, 20_escolha_trava, e depois de liberar,
 ##                         21_escolha_liberada). Fotos 11_build ... 21_escolha_liberada: a janela inteira (mundo e interface; em headless, só o viewport do mundo).
 ##   --roteiro=vitrine|ordem|cerco   (leva 4, desempenho) vitrine: os 5 tipos parados em 3 fileiras, para comparar antes e depois do mesmo quadro;
@@ -30,7 +30,7 @@ extends RefCounted
 ##                         no contragolpe) e 5_slot (HUD com o slot em recarga). Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=especial    (tecla Q) o ESPECIAL do herói escolhido (--heroi=hazaki|nicao|lucas) contra 30 monstros em volta (e uma fila à frente, para
 ##                         a investida). Fotos do viewport: 0_vazio (o slot Q com 0% de carga) e 0b_meio (55%), 1_pronto (o slot Q cheio e pulsando, antes de apertar), 2_especial (o momento forte: a investida do
-##                         Hazaki, a batida e a onda do Nicão, a tempestade do Lucas) e 3_slot (0,25 s depois de acabar: o slot Q vazio de novo). Usar com --fotos=PASTA --nome=prefixo.
+##                         Hazaki, a batida e a onda do Nick, a tempestade do Luke) e 3_slot (0,25 s depois de acabar: o slot Q vazio de novo). Usar com --fotos=PASTA --nome=prefixo.
 ##   --roteiro=habilidade  (tecla E) a HABILIDADE do herói escolhido (--heroi=hazaki|nicao|lucas: a ruptura, a investida de escudo ou o salto das adagas)
 ##                         contra 30 monstros em volta (e uma fila à frente). Fotos do viewport: 1_pronto (slots E pronto e Q a 55%), 2_habilidade (o momento
 ##                         forte) e 3_recarga (0,4 s depois: o slot E em recarga). Usar com --fotos=PASTA --nome=prefixo.
@@ -935,7 +935,7 @@ func _r_especial() -> void:
 			mundo.get_tree().quit()
 
 
-## A habilidade (tecla E) do herói escolhido: 30 monstros em volta (e uma fila à frente, para a investida do Nicão) e o herói imortal e parado, com a
+## A habilidade (tecla E) do herói escolhido: 30 monstros em volta (e uma fila à frente, para a investida do Nick) e o herói imortal e parado, com a
 ## ultimate (Q) a 55% para o HUD mostrar os dois slots. Fotos 1_pronto (slot E pronto), 2_habilidade (o momento forte; no Hazaki, a ruptura recém solta) e
 ## 3_recarga (0,4 s depois de acabar: o slot E em recarga). O Hazaki segura a E (ruptura_forcada) por 1,1 s; os outros disparam no aperto.
 func _r_habilidade() -> void:

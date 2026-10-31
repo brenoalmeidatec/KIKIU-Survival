@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dtqswulvnkp64"
-path="res://.godot/imported/devoradora_da_estrutura.png-09250b49a9a47b71c60026f258cc566c.ctex"
+uid="uid://dk46kpfepc6vy"
+path="res://.godot/imported/devourer_of_structure.png-0d64a750a97eebf8518abb68a2e7b80d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/v2/chefes/devoradora_da_estrutura.png"
-dest_files=["res://.godot/imported/devoradora_da_estrutura.png-09250b49a9a47b71c60026f258cc566c.ctex"]
+source_file="res://assets/v2/chefes/devourer_of_structure.png"
+dest_files=["res://.godot/imported/devourer_of_structure.png-0d64a750a97eebf8518abb68a2e7b80d.ctex"]
 
 [params]
 
