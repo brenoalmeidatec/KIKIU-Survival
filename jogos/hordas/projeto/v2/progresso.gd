@@ -171,7 +171,7 @@ func descartar_rodada() -> void:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
-## Escolha AUTOMÁTICA: o sistema escolhe a carta pelo que o herói já tem (cartas.escolha_automatica) e aplica na hora. Sem custo, mas a
+## Escolha AUTOMÁTICA: o sistema escolhe a carta dentro da mão pelo que o herói já tem (cartas.escolha_automatica) e aplica na hora. Sem custo, mas a
 ## raridade vem rebaixada. Devolve false se não está na escolha ou não sobrou carta nenhuma.
 func automatico() -> bool:
 	var cs = combate.cartas
@@ -186,7 +186,7 @@ func automatico() -> bool:
 			return false
 		escolher(melhor)
 		return true
-	var c: Dictionary = cs.escolha_automatica(combate.mundo.heroi.nivel)
+	var c: Dictionary = cs.escolha_automatica(cartas)
 	if c.is_empty():
 		return false
 	cartas = [c]

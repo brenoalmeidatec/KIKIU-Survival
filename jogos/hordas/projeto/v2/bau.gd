@@ -234,7 +234,7 @@ func abrir(b: Dictionary) -> void:
 	var piso := int(b.piso) if int(b.piso) >= 0 else int(cfg.get("piso_raridade", 0))
 	var qtd := int(combate.cartas.cfg.escolha.cartas)
 	if not fixo and n < qtd:
-		var candidatas: Array = combate.cartas.montar_mao(h.nivel, bonus, piso, qtd)  # a mesma mão da escolha de nível: 2 upgrades + 1 novidade
+		var candidatas: Array = combate.cartas.montar_mao(h.nivel, bonus, piso, qtd, false)  # a mesma mão da escolha de nível (2 upgrades + 1 novidade); não entra em vistas aqui, só se a escolha abrir
 		if candidatas.size() > n:
 			_abrir_escolha(b, candidatas, n)
 			return
@@ -272,6 +272,7 @@ func abrir(b: Dictionary) -> void:
 func _abrir_escolha(b: Dictionary, candidatas: Array, picks: int) -> void:
 	ultimas = []
 	_efeitos_de_abertura(b)
+	combate.cartas.registrar_mao(candidatas)  # só a mão que abre a escolha entra em vistas (CAR-2, ressalva 1)
 	combate.progresso.abrir_escolha_bau(candidatas, picks)
 
 

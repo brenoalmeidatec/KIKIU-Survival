@@ -280,6 +280,39 @@ func _testes() -> void:
 	# o atalho (baú que entrega de graça) respeita a quantidade pedida
 	ok(cs.sortear(2, 8).size() == 2 and cs.sortear(1, 8).size() == 1, "o atalho sortear devolve a quantidade pedida")
 
+	# 12. ressalva 2 do CAR-2: quando todo golpe passou há pouco, a garantia do golpe não repete um deles (carta não se repete)
+	zerar()
+	var todos: Array = []
+	for d in cs.cfg.golpes:
+		todos.append(str(d.id))
+	cs.vistas = [todos]
+	var mao12: Array = cs.montar_mao(1, 1.0, 0, -1, false)
+	var golpes12 := 0
+	for c in mao12:
+		if cs._cat[str(c.id)] == "golpe":
+			golpes12 += 1
+	ok(golpes12 == 0, "a garantia não repete golpe visto nas últimas rodadas (%d golpes na mão)" % golpes12)
+
+	# 13. ressalva 1 do CAR-2: o baú monta a mão, mas se só sobra uma carta ela nem é mostrada, e então não entra em vistas
+	zerar()
+	for id in cs._def:
+		if id != "dano":
+			cs.estado[id] = {"n": 0, "usada": true}
+	var n_vistas: int = cs.vistas.size()
+	var bau = w.combate.baus
+	bau.soltar(Vector2(480, 270), 1.0, 0)
+	var b_aberto = null
+	for x in bau.lista:
+		if x.ativo:
+			b_aberto = x
+	ok(b_aberto != null, "o baú foi solto para o teste")
+	if b_aberto != null:
+		bau.abrir(b_aberto)
+	ok(cs.vistas.size() == n_vistas, "a mão do baú que não é mostrada não entra em vistas (%d -> %d)" % [n_vistas, cs.vistas.size()])
+	# e a mão que abre a escolha entra, uma vez
+	cs.registrar_mao(cs.montar_mao(1, 1.0, 0, 3, false))
+	ok(cs.vistas.size() == n_vistas + 1, "registrar_mao guarda a mão mostrada")
+
 	# 11. zerar a partida limpa vistas e descartadas
 	cs.descartadas.append("area")
 	cs.zerar()
