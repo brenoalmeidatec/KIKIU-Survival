@@ -36,6 +36,9 @@ extends RefCounted
 ##   --roteiro=habilidade  (tecla E) a HABILIDADE do herói escolhido (--heroi=hazaki|nicao|lucas: a ruptura, a investida de escudo ou o salto das adagas)
 ##                         contra 30 monstros em volta (e uma fila à frente). Fotos do viewport: 1_pronto (slots E pronto e Q a 55%), 2_habilidade (o momento
 ##                         forte) e 3_recarga (0,4 s depois: o slot E em recarga). Usar com --fotos=PASTA --nome=prefixo.
+##   --roteiro=lightwolf   (LW-8, com --heroi=lightwolf) o LightWolf em cada estado: 1_mecha, 2_matriz (a matriz erguida), 3_misseis (a E no disparo),
+##                         4_salto, 5_aceso e 6_explosao (o Q, Autodestruição: o piloto salta, o mecha acende, o estouro), 7_lobo (o Lobo livre), 8_chamado
+##                         (o CHAMAR apertado) e 9_volta (o mecha de volta), e 10_carta (escolha com uma carta só dele). Usar com --fotos=PASTA --nome=prefixo.
 ##   --playtest            robô de playtest (#301): joga a partida INTEIRA sozinho (anda, foge, golpeia, esquiva, pega baú, escolhe cartas)
 ##                         até morrer ou vencer e imprime uma linha `PLAYTEST_JSON: {...}` com o desfecho e os números. Vigia de trava: sem
 ##                         avanço do relógio, tela (cartas/baú) aberta demais ou herói parado no mesmo lugar imprime `TRAVA: <estado>` e sai
@@ -61,6 +64,9 @@ var playtest := false
 var pt := {}  # estado do robô de playtest (_pt_iniciar)
 var pt_disparos := 0  # quantos avisos já tinham disparado quando o chefe nasceu (a foto do disparo)
 var pt_fogo := -1.0  # t_passo em que o primeiro aviso disparou (a foto do disparo sai 0,12 s depois)
+const LW_CARTAS := ["sifao", "ampla", "cabo"]  # as cartas só do LightWolf (dados/v2_cartas.json, herois: lightwolf)
+var lw_expl0 := 0  # o roteiro do LightWolf: quantas explosões já tinham saído antes do Q
+var lw_atrasos := 0  # o roteiro do LightWolf: passos que esperaram um estado até o prazo e seguiram sem ele (o teste exige 0)
 
 
 func montar(m, a: Dictionary) -> void:
@@ -144,6 +150,8 @@ func atualizar(dt: float) -> void:
 				_r_cores()
 			"inicio":
 				_r_inicio()
+			"lightwolf":
+				_r_lightwolf()
 
 
 ## Cores de perigo (fotos antes e depois): o herói com as armas e os aliados que tinham vermelho, cercado de monstros, e um Explosivo
@@ -188,6 +196,181 @@ func _r_cores() -> void:
 				t_passo = 0.0
 		7:
 			mundo.get_tree().quit()
+
+
+# ------------------------------------------------------------------ LightWolf (LW-8)
+
+
+## Uma foto de cada estado do LightWolf (LW-2 a LW-6), com `--heroi=lightwolf` (o beta só entra por esse argumento). Herói imortal e parado,
+## com 14 monstros parados em volta. Fotos: 1_mecha (o mecha, vida cheia), 2_matriz (a matriz erguida), 3_misseis (a E no meio do disparo),
+## 4_salto (o Q: o piloto já saltou para trás da mira e o mecha segue no lugar), 5_aceso (o mecha aceso perto de explodir), 6_explosao (0,12 s
+## depois do estouro: onda e tela limpa), 7_lobo (o Lobo livre), 8_chamado (o CHAMAR apertado, com o aviso sobre os pés), 9_volta (o mecha de
+## volta) e 10_carta (escolha com uma carta só do LightWolf). Um passo que espera um estado até o prazo e segue sem ele soma em lw_atrasos.
+func _r_lightwolf() -> void:
+	var h = mundo.heroi
+	var c = mundo.combate
+	var esp = c.especial
+	match passo:
+		0:
+			_preparar()
+			_cercar_lightwolf(14)
+			passo = 1
+			t_passo = 0.0
+		1:
+			if t_passo > 0.4:
+				_foto("1_mecha")
+				passo = 2
+				t_passo = 0.0
+		2:  # a matriz (LW-3): segurar o secundário ergue a barra de defesa
+			h.escudo_forcado = true
+			passo = 3
+			t_passo = 0.0
+		3:
+			if t_passo > 0.4:
+				_foto("2_matriz")
+				h.escudo_forcado = false
+				passo = 4
+				t_passo = 0.0
+		4:  # a E Mísseis (LW-4) com a recarga zerada
+			h.hab_recarga = 0.0
+			h.hab_nega_t = 0.0
+			if not h.habilidade():
+				lw_atrasos += 1
+			passo = 5
+			t_passo = 0.0
+		5:
+			var b: Dictionary = c.habilidade.bloco_de(str(h.chave))
+			if h.estado == h.Estado.HABILIDADE and h.hab_t >= float(b.get("foto", 0.2)):
+				_foto("3_misseis")
+				passo = 6
+				t_passo = 0.0
+			elif t_passo > 3.0:
+				lw_atrasos += 1
+				passo = 6
+				t_passo = 0.0
+		6:
+			if h.estado != h.Estado.HABILIDADE:
+				passo = 7
+				t_passo = 0.0
+		7:  # o Q, Autodestruição (LW-5): o piloto salta e o mecha fica aceso até explodir
+			lw_expl0 = esp.explosoes
+			h.esp_carga = h.esp_carga_max
+			if not h.especial():
+				lw_atrasos += 1
+			passo = 8
+			t_passo = 0.0
+		8:  # 0,45 s: o salto acabou (dura 0,3 s) e o mecha ainda está no lugar
+			if h.esp_t >= 0.45:
+				_foto("4_salto")
+				passo = 9
+				t_passo = 0.0
+			elif t_passo > 2.0:
+				lw_atrasos += 1
+				passo = 9
+				t_passo = 0.0
+		9:  # o momento forte do Q (o "foto" do bloco): o mecha aceso, perto de estourar
+			if h.esp_t >= float(esp.bloco_de("lightwolf").get("foto", 0.9)):
+				_foto("5_aceso")
+				passo = 10
+				t_passo = 0.0
+			elif t_passo > 2.0:
+				lw_atrasos += 1
+				passo = 10
+				t_passo = 0.0
+		10:
+			if esp.explosoes > lw_expl0:
+				passo = 11
+				t_passo = 0.0
+			elif t_passo > 2.0:
+				lw_atrasos += 1
+				passo = 11
+				t_passo = 0.0
+		11:  # 0,12 s depois do estouro: a onda e a tela limpa
+			if t_passo > 0.12:
+				_foto("6_explosao")
+				passo = 12
+				t_passo = 0.0
+		12:  # o Lobo livre (LW-2): de volta ao estado normal, ainda Lobo
+			if h.forma_lobo and h.estado == h.Estado.LIVRE and t_passo > 0.3:
+				_foto("7_lobo")
+				passo = 13
+				t_passo = 0.0
+			elif t_passo > 4.0:
+				lw_atrasos += 1
+				passo = 13
+				t_passo = 0.0
+		13:  # o Q do Lobo: o CHAMAR com o chamado cheio
+			h.esp_carga = h.esp_carga_max
+			if not h.especial():
+				lw_atrasos += 1
+			passo = 14
+			t_passo = 0.0
+		14:  # 0,7 s: o aviso sobre os pés do Lobo, antes da queda do mecha (o "foto" do chamar)
+			if h.estado == h.Estado.ESPECIAL and h.esp_t >= float(esp.bloco_de(str(h.chave)).get("foto", 0.7)):
+				_foto("8_chamado")
+				passo = 15
+				t_passo = 0.0
+			elif t_passo > 2.0:
+				lw_atrasos += 1
+				passo = 15
+				t_passo = 0.0
+		15:  # o mecha de volta, com a vida cheia (LW-2 e LW-5)
+			if not h.forma_lobo and t_passo > 0.3:
+				_foto("9_volta")
+				passo = 16
+				t_passo = 0.0
+			elif t_passo > 3.0:
+				lw_atrasos += 1
+				passo = 16
+				t_passo = 0.0
+		16:  # a escolha de cartas com uma carta só do LightWolf (LW-6)
+			_carta_lightwolf()
+			passo = 17
+			t_passo = 0.0
+		17:
+			if c.telas.espera_escolha <= 0.0 and t_passo > 0.12:
+				_foto("10_carta")
+				passo = 18
+			elif t_passo > 6.0:
+				lw_atrasos += 1
+				_foto("10_carta")
+				passo = 18
+		18:
+			mundo.get_tree().quit()
+
+
+func _cercar_lightwolf(n: int) -> void:
+	var h = mundo.heroi
+	var tipos := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_lobo_sombrio", "inimigo_espantalho"]
+	for i in n:
+		var a := TAU * float(i) / float(n)
+		var m = mundo.nascer_monstro(tipos[i % tipos.size()], h.pos + Vector2(cos(a) * 150.0, sin(a) * 150.0 * 0.62), false)
+		m.vida = 99999.0
+		m.vida_max = 99999.0
+
+
+## Procura uma escolha que traga uma das cartas só do LightWolf (sifao, ampla ou cabo) e a mostra parada, como o roteiro da escolha.
+func _carta_lightwolf() -> void:
+	var c = mundo.combate
+	var achou := false
+	var achada := 0
+	for semente in 400:
+		c.cartas.rng.seed = semente
+		var mao: Array = c.cartas.sortear(3, 20)
+		for k in mao:
+			if LW_CARTAS.has(str(k.id)):
+				achou = true
+		if achou:
+			achada = semente
+			break
+	if not achou:
+		lw_atrasos += 1
+	c.cartas.rng.seed = achada
+	c.progresso.cartas = c.cartas.sortear(3, 20)
+	c.jogo = "escolha"
+	c.pausado = true
+	c.telas.roleta_ligada = false
+	c.telas.mostrar_escolha(c.progresso.cartas, 20)
 
 
 # ------------------------------------------------------------------ robô e estresse

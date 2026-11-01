@@ -211,3 +211,23 @@ Corações e ímãs reutilizam os ícones de cartas; o curandeiro usa o Guardiã
 A faixa de anúncio preserva integralmente o conteúdo que ocupa até três linhas. Acima desse teto, mostra um prefixo com reticências, mantendo a mensagem original na fila. O teto evita que mensagens excepcionais encubram o centro da partida.
 
 - **Níveis por mapa e relógio do diretor (ECO-1, `dados/v2_niveis.json` e `v2/diretor.gd`)**: Floresta com 10 níveis (chefão no 10), Torre 20, Vila 30, Ruínas 40; duração do nível de 25, 24, 22 e 22 s. O campo `tempo_mult` (1,0 / 1,15 / 1,25 / 1,4) faz o relógio do diretor andar mais depressa que a partida: ondas fortes, Maré, taxa de nascimento, teto de vivos, elenco e a força por minuto leem `relogio()`, que é o tempo da partida vezes o fator. `taxa`, `limite` e `sortear` recebem o tempo real e aplicam o fator dentro delas. Nos níveis e chefes (`duracao_nivel`) o relógio segue o tempo real. Chefão com vida de 0,5 / 1,2 / 1,7 / 2,2 vezes 9.000 (4.500, 10.800, 15.300 e 19.800). Teste `testes/v2_tempo_mult`. **Efeito honesto no fim da Floresta:** o mapa nominal dura 250 s (10 x 25 s), contra 600 s antes; o chefão nasce aos 225 s e a Floresta ganha 4.500 de vida (metade da marca), então o fim fica mais leve, com 3 ondas fortes antes dele (antes eram ~9). Ondas fortes por mapa até o fim nominal (`total x duração x fator`, intervalo 60 s no Fácil, 54 s no Médio e 48 s no Difícil, no relógio do diretor): Fácil 4/9/13/20, Médio 4/10/15/22, Difícil 5/11/17/25 (Floresta/Torre/Vila/Ruínas). Decisão de 01/11 (integrador, registrada na #509): os fatores 1,0/1,15/1,25/1,4 ficam; o fim da Floresta fica mais leve porque o mapa ficou mais curto. Pedidos 14 e 16 do Alisson. Pendências: `v2/elites.gd` segue no tempo real (fora da lista do ECO-1); a conquista `sobreviva_5min` na Floresta fica quase inalcançável, porque o chefão nasce aos 225 s e vencê-lo encerra o mapa (sobreviver 75 s com o chefão vivo não foi testado); `v2_meta.json` sem ajuste (decisão do Alisson).
+
+## LightWolf (LW-8): formas, matriz, E, Q e cartas
+
+Resumo do que já está no código (LW-2 a LW-6). Os números vêm de `dados/v2_herois.json`, `v2_secundario.json`, `v2_habilidade.json`, `v2_especial.json` e `v2_cartas.json`; o herói é `beta` e entra com `-- --heroi=lightwolf` (ver LEIA-ME).
+
+**Mecha** (forma inicial). Vida 130, velocidade 90, recuo 40, raio 9. O canhão atira sem parar e não gasta fôlego. A defesa é a barra da matriz (100).
+
+**Lobo** (`lightwolf_lobo`). Quando a vida do mecha zera, o herói vira Lobo em vez de morrer: 31% da vida do mecha (40 com os 130 de agora), 1,5 s invencível ao virar, velocidade 130, recuo 150. Não tem E nem matriz. A pistola de plasma dá 34 de dano, atravessa 3 monstros e tira de 3 a 4 tiros por segundo. Não se escolhe no salão.
+
+**Matriz** (secundário S, segurar). Barra de 100, gasta 5/s, recarrega 6/s depois de 2 s sem absorver e volta a 35% depois da sobrecarga. O arco tem 140 graus e empurra os monstros da casca (40 px). Erguida, o herói anda a 75%. Absorve 1 para 1 o dano que vem de dentro do arco; o que passa da barra vaza.
+
+**E: Mísseis** (`v2_habilidade.json`). Recarga de 9 s, dura 0,9 s, anda a 50% e não é invulnerável. Solta 12 micro-mísseis que buscam o monstro mais perto no cone de 50 graus (até 2 por alvo), com 11 de dano e explosão de raio 26.
+
+**Q: Autodestruição** (`v2_especial.json > autodestruicao`). O piloto salta 56 px para trás da mira em 0,3 s e vira Lobo na hora, invulnerável. O mecha acende por 1 s e explode, limpando a tela inteira (onda de raio 150). O Lobo nasce com o chamado em 35, e 4 s depois a Maré do LightWolf chega.
+
+**Q do Lobo: CHAMAR** (`chamar`). Aviso de 0,8 s sobre os pés; depois o mecha cai (raio 60, dano 60, empurrão 300) e o herói volta a mecha com a vida cheia. O chamado começa em 20 se o mecha quebrou, em 35 na autodestruição, e enche com dano (0,10 por ponto), abates (0,8 comum, 12 elite, 40 chefe) e tempo (2,5 por segundo). Só aperta com a carga cheia.
+
+**Cartas só do LightWolf** (`v2_cartas.json`, `herois: ["lightwolf"]`, até 5 de cada). Sifão da Matriz: a matriz cura 12% do dano que absorve por nível, com teto de 8 PV/s. Matriz Ampla: 10 graus a mais de arco por nível, parando em 300. Cabo de Resgate: 15% mais rápido o chamado por nível, só no Lobo. A evolução Aurora Lunar (Sifão 3 e Ampla 3, sem consumir nada) dobra a cura e o teto, e a cura que passa da vida cheia vira defesa. A carta Alma robusta (`vida`, +32 de vida máxima por nível) soma no mecha, e o Lobo leva a fração dela.
+
+**Testes**: `v2_lightwolf`, `v2_lightwolf_formas`, `v2_lightwolf_q`, `v2_matriz`, `v2_misseis`, `v2_lw_cartas` e o roteiro de fotos `v2_lightwolf_roteiro` (em `testes/`).
