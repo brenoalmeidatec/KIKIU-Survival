@@ -158,3 +158,14 @@ Além da licença, o item tem de combinar com o jogo: pixel art 2.5D a 45 graus,
 ## pixelfx: base do tocador de folhas, Claude do Alisson (notebook), 31/10/2026
 
 - `jogos/hordas/projeto/assets/v2/pixelfx/pickups/collect-burst.png` (e o `.import`): folha 784x648, 42 quadros de 112x108 (o registro usa os 34 primeiros), do efeito `pickups/collect-burst` do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez (uso comercial, redistribuição e modificação permitidos, com o aviso de copyright e a licença junto). Exportada sem o boneco com `node tools/render.mjs pickups/collect-burst --sheet --no-actor` no clone do pixelfx; sem retoque no PNG. No jogo é recolorida por modulate (azul-ciano da alma) em `dados/v2_pixelfx.json`. Toca ao pegar um orbe de XP (`v2/fx_folha.gd`). Como regenerar e registrar outro efeito: `docs/PIXELFX.md`.
+
+## pixelfx: recompensa e chegadas, Claude do Alisson (notebook), 31/10/2026
+
+Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez (uso comercial, redistribuição e modificação permitidos, com o aviso de copyright e a licença junto). Todas exportadas sem o boneco com `node tools/render.mjs <efeito> --sheet --no-actor` no clone do pixelfx. Cada uma tem o `.import` versionado junto, e o registro de uso está em `dados/v2_pixelfx.json`.
+
+- `jogos/hordas/projeto/assets/v2/pixelfx/pickups/chest-open.png`: efeito `pickups/chest-open`. **Recortada**: só as linhas 3 a 10 da folha original (80 quadros de 176x112, do 21º ao 100º; os 20 primeiros eram o baú parado e o fim só brilho). Toca quando a escolha do baú fecha.
+- `jogos/hordas/projeto/assets/v2/pixelfx/pickups/loot-beam.png`: efeito `pickups/loot-beam`, sem retoque; recolorida em dourado por modulate. Feixe preso ao baú enquanto ele espera.
+- `jogos/hordas/projeto/assets/v2/pixelfx/ui/level-up.png`: efeito `ui/level-up`, sem retoque no PNG; o registro usa só os 18 primeiros quadros (a coluna de luz), sem o texto em inglês "LEVEL UP!". Toca nos pés do herói ao subir de nível.
+- `jogos/hordas/projeto/assets/v2/pixelfx/spawn/spawn-portal.png`: efeito `spawn/spawn-portal`, sem retoque; recolorida pela cor da elite ou do chefe. Toca onde a elite e o chefe chegam.
+- `jogos/hordas/projeto/assets/v2/pixelfx/spawn/summon-rise.png`: efeito `spawn/summon-rise`, sem retoque; o registro usa só os 44 primeiros quadros (o círculo e as faíscas, antes do demônio que a folha desenha). Toca nos filhotes da elite Invocadora.
+- `jogos/hordas/projeto/assets/v2/pixelfx/spawn/soul-rise.png`: efeito `spawn/soul-rise`, sem retoque; o registro usa só os 64 primeiros quadros. Toca quando a elite ou o chefe morre.

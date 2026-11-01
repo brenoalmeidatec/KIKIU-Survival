@@ -891,6 +891,7 @@ func nivel_subiu(nivel: int) -> void:
 	fx.onda(h.pos + Vector2(0, -12), Color(1.0, 0.95, 0.7, 0.8), 70.0, 0.3)
 	fx.luz_rapida(h.pos + Vector2(0, -12), Color(0.6, 0.95, 1.0), 1.8, 190.0, 0.5)
 	fx.flash(h, 0.3, Color(0.7, 1.0, 1.0), 0, 0.8)
+	fx_folha.tocar("level-up", h.pos)  # a coluna de luz do pixelfx nos pés do herói (sem o texto da folha: só os primeiros quadros)
 	orbes.atrair_todos(h.pos, 700.0)
 	mundo.nivel_subiu.emit(nivel)
 
