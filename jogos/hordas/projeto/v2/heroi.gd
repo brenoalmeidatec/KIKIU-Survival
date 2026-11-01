@@ -16,6 +16,12 @@ extends "res://v2/ator.gd"
 ##    segurar ergue um escudo na frente (arco de ~120 graus na direção da mira) que bloqueia o dano vindo da frente (levar_dano). Anda a 60%, não
 ##    corre nem golpeia e gasta a BARRA DE DEFESA própria (def, def_max; não o fôlego: o escudo não deixa cansado); defesa zerada = escudo quebrado. A defesa
 ##    recarrega devagar (defesa_regen_mult da dificuldade; no Difícil só a cura repõe, repor_defesa); o bloqueio nos primeiros ~0,15 s é PERFEITO (empurra e atordoa, sem gasto).
+##  - APARO (a mesma ação "escudo"; é o secundário de quem não é do escudo, dados/v2_secundario.json; v2/escudo.gd): APERTAR abre a postura de iai por ~0,30 s (aparo_fase 1)
+##    com arco de 140 graus na direção da mira; todo golpe que chega de dentro do arco é um bloqueio PERFEITO (empurra e atordoa) e abre o contragolpe da katana.
+##    Janela sem golpe: recuperação parado (aparo_fase 2) e recarga longa. Sem barra de defesa. Cancelam, como o escudo: golpe, esquiva, E, Q.
+##  - MATRIZ DE DEFESA (LW-3; o secundário do mecha do LightWolf, v2/matriz.gd): segurar, como o escudo (mesmo `escudo_ativo`, mesma barra def/def_max, anda a 75%, não corre nem atira). Em vez de
+##    barrar o golpe, `levar_dano` manda o dano que vem de dentro do arco para `matriz.absorver`, que tira da barra 1 para 1 e devolve o que vazou para a vida; a barreira também empurra quem chega na casca.
+##  - SECUNDÁRIO PARA A HUD: o herói publica `sec_*` (nome, ícone, pronta, ativo, barra, recarga); o slot S só lê isso e não conhece o escudo nem o aparo.
 ##  - RUPTURA (ação "ruptura", tecla E ou LB do controle; números em dados/v2_ruptura.json, disparo em v2/ruptura.gd): o APERTO
 ##    (evento) pede, a POSSE (polling) carrega. Estado.CARGA anda a 45%, não corre nem golpeia, NÃO é invencível e apanhar não cancela. Soltar
 ##    com carga mínima dispara em 360 graus (soltura perfeita na janela depois da carga cheia). Cancelam sem disparar e sem gastar recarga: a
@@ -66,7 +72,17 @@ const ORIGEM_GOLPE := Vector2(0, -10)  # de onde o arco do golpe parte (altura d
 
 # ---- API pública (HUD)
 var vida := 100.0
-var vida_max := 100.0
+var vida_max := 100.0:
+	set(v):
+		if forma_lobo:  # LW-2: cartas e melhorias mexem na vida do MECHA (+v); a do Lobo é a fração dela (assim cartas.gd não precisa saber das formas)
+			vida_mecha_max += v - vida_max
+			vida_max = vida_mecha_max * lobo_pct
+		else:
+			vida_max = v
+var forma_lobo := false  # LightWolf: o mecha quebrou e o herói é o Lobo (v2/mecha.gd). Só a morte do Lobo é derrota
+var vida_mecha_max := 0.0  # a vida máxima do mecha enquanto é Lobo (vale só com forma_lobo)
+var lobo_pct := 0.31  # a fração da vida máxima do mecha que o Lobo tem (dados/v2_herois.json > lightwolf_lobo > vida_pct)
+var vida_base := 100.0  # a vida do herói no começo da partida (cfg.heroi.vida do herói escolhido): o card de status mostra o que passa disso
 var xp := 0.0
 var xp_proximo := 5.0
 var nivel := 1
@@ -133,6 +149,27 @@ var def := 0.0
 var def_max := 0.0
 var def_atraso_t := 0.0  # s até a defesa começar a recarregar (depois de baixar o escudo ou de levar golpe)
 var def_quebrado := false  # a defesa zerou: o escudo caiu e só volta a erguer depois de recarregar o retorno (no Difícil, de uma reposição)
+var def_reserva := -1.0  # a defesa que o mecha tinha quando virou Lobo (negativa = nada guardado): volta com ele, não enche (LW-3)
+var def_reserva_quebrado := false  # e se a matriz estava em sobrecarga
+# aparo (secundário de quem não é do escudo, v2/escudo.gd): fase 0 = fora, 1 = janela aberta (golpes viram bloqueio perfeito), 2 = recuperação do erro
+var aparo_fase := 0
+var aparo_t := 0.0  # s na fase de agora
+var aparo_acertou := false  # a janela de agora já aparou um golpe
+var aparo_recarga := 0.0  # s até poder aparar de novo (conta depois da recuperação)
+var aparo_recarga_max := 1.0  # a recarga cheia (a fração do HUD)
+var aparo_disparos := 0  # testes
+var aparo_acertos := 0  # testes: golpes aparados
+var aparo_erros := 0  # testes: janelas sem golpe
+var sec_pedido_t := 0.0  # s que um aperto do secundário fica guardado (o aparo é por aperto, não por posse)
+var _sec_ant := false  # o botão do secundário estava segurado no quadro anterior
+# o que o slot S da HUD lê (contrato sec_*): quem tem secundário publica; sec_nome vazio = não tem (slot apagado)
+var sec_nome := ""
+var sec_icone := ""  # o id do ícone de carta (a HUD prefere assets/v2/secundario_s/<chave>.png)
+var sec_pronta := false  # pode usar agora
+var sec_ativo := false  # em uso agora (escudo erguido, janela do aparo aberta)
+var sec_barra := 1.0  # fração da barra de defesa (1 para quem não tem barra)
+var sec_recarga := 0.0  # fração da cortina de recarga, de 0 (nenhuma) a 1 (cheia)
+var sec_recarga_s := 0.0  # s que faltam para voltar a ficar pronto (0 = sem contagem de tempo)
 # especial (tecla Q, v2/especial.gd)
 var esp_nome := ""  # o nome do especial do herói ("" = não tem): o HUD só acende o slot Q com ele
 var esp_rotulo := ""  # o texto curto do slot
@@ -213,6 +250,7 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	golpe_calor_t = 0.0
 	vel_base = float(cfg.heroi.get("vel", VEL))
 	vida_max = float(cfg.heroi.vida)
+	vida_base = vida_max
 	vida = vida_max
 	folego_max = float(cfg.folego.max)
 	folego = folego_max
@@ -220,6 +258,7 @@ func iniciar_stats(cfg: Dictionary) -> void:
 	correndo = false
 	escudo_ativo = false
 	escudo_t = 0.0
+	def_reserva = -1.0
 	_iniciar_defesa()
 	var esp = mundo.combate.especial
 	if esp != null:
@@ -234,6 +273,8 @@ func iniciar_stats(cfg: Dictionary) -> void:
 
 ## Volta ao começo de uma partida (jogar de novo).
 func resetar(p: Vector2) -> void:
+	if mundo.combate.mecha != null:
+		mundo.combate.mecha.reiniciar(self)  # recomeçar volta o LightWolf à forma mecha (derrota como Lobo, ou jogar de novo no meio)
 	m_dano = 1.0
 	m_vel_ataque = 1.0
 	m_area = 1.0
@@ -247,6 +288,15 @@ func resetar(p: Vector2) -> void:
 	escudo_t = 0.0
 	escudo_bloqueios = 0
 	escudo_perfeitos = 0
+	aparo_fase = 0
+	aparo_t = 0.0
+	aparo_acertou = false
+	aparo_recarga = 0.0
+	aparo_disparos = 0
+	aparo_acertos = 0
+	aparo_erros = 0
+	sec_pedido_t = 0.0
+	_sec_ant = false
 	def = def_max
 	def_atraso_t = 0.0
 	def_quebrado = false
@@ -358,6 +408,7 @@ func habilidade() -> bool:
 		return false
 	cancelar_ruptura(false)
 	_baixar_escudo()
+	_cancelar_aparo()
 	estado = Estado.HABILIDADE
 	pedido_t = 0.0
 	combo_t = 0.0
@@ -388,6 +439,7 @@ func especial() -> bool:
 		return false
 	cancelar_ruptura(false)
 	_baixar_escudo()
+	_cancelar_aparo()
 	if c.habilidade != null:
 		c.habilidade.cancelar(self)  # o Q corta a E em andamento
 	estado = Estado.ESPECIAL
@@ -440,6 +492,61 @@ func vulneravel() -> bool:
 
 func curar(v: float) -> void:
 	vida = minf(vida_max, vida + v)
+
+
+## O que a vida máxima tem a mais que a do começo (cartas, melhorias, Santuário). No Lobo conta a vida do MECHA (+20 da carta é +20, não a fração dele).
+func vida_bonus() -> float:
+	return (vida_mecha_max if forma_lobo else vida_max) - vida_base
+
+
+## O mecha estourou: o herói passa a ser o Lobo, com `pct` da vida máxima do mecha e a vida cheia (v2/mecha.gd chama).
+func entrar_lobo(pct: float) -> void:
+	vida_mecha_max = vida_max
+	lobo_pct = pct
+	vida_max = vida_mecha_max * pct  # ainda com forma_lobo false: o setter só grava
+	forma_lobo = true
+	vida = vida_max
+
+
+## O mecha voltou: a vida máxima é a do mecha (com o que as cartas somaram no meio-tempo) e a vida vem cheia.
+func sair_lobo() -> void:
+	if not forma_lobo:
+		return
+	forma_lobo = false
+	vida_max = vida_mecha_max
+	vida = vida_max
+
+
+## Troca de forma do LightWolf (v2/mecha.gd) SEM `iniciar_stats`: o Q, a E e o resto da partida não se zeram. Muda a chave (que escolhe o Q, a E e o
+## secundário), a folha de sprites, o corpo, a velocidade e a defesa; a vida e o Q de cada forma são de quem chama. O `cfg` do combate já é o da forma.
+## A barra de defesa NÃO se reabastece com a troca (só a cura repõe, combinado 2; no Difícil ela não recarrega sozinha): o Lobo não tem matriz, então a barra do mecha fica
+## guardada (`def_reserva`, com a sobrecarga) enquanto durar o Lobo e volta como estava, ao contrário da vida, que volta cheia. Partida nova (`iniciar_stats`) enche e esquece a reserva.
+func trocar_forma(nova: String, folha: Dictionary) -> void:
+	cancelar_ruptura(false)
+	_baixar_escudo()
+	_cancelar_aparo()
+	if def_max > 0.0:  # a forma que sai tem barra (o mecha): guarda como estava, a de quem entra é decidida abaixo
+		def_reserva = def
+		def_reserva_quebrado = def_quebrado
+	chave = nova
+	raio = float(Herois.heroi(nova).get("raio", raio))
+	trocar_tipo(folha)
+	_off_base = sprite.offset
+	vel_base = float(mundo.combate.cfg.heroi.get("vel", VEL))
+	_iniciar_defesa()
+	if def_max > 0.0 and def_reserva >= 0.0:  # voltou ao mecha: a barra e a sobrecarga de quando virou Lobo, não a barra cheia
+		def = minf(def_max, def_reserva)
+		def_quebrado = def_reserva_quebrado and def < def_max
+		def_reserva = -1.0
+	var esp = mundo.combate.especial
+	if esp != null:
+		esp.armar(self)
+	var hab = mundo.combate.habilidade
+	if hab != null:
+		if estado == Estado.HABILIDADE:
+			hab.cancelar(self)
+			estado = Estado.LIVRE
+		hab.armar(self)
 
 
 ## Velocidade de andar (px/s) com o bônus de movimento, e a de correr. O card de status (status.gd) lê estas duas; `_livre` anda com elas.
@@ -497,8 +604,19 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 	if not vulneravel():
 		return false
 	var esc = mundo.combate.escudo
-	if bloqueavel and escudo_ativo and esc != null and esc.cobre(self, de):
+	if bloqueavel and escudo_ativo and esc != null:
+		if esc.matriz_para(str(chave)):  # a matriz do LightWolf (LW-3) absorve 1 para 1 da barra de defesa; o que passa do que a barra tem vaza para a vida, logo abaixo
+			var mat = mundo.combate.matriz
+			if mat != null and mat.cobre(self, de):
+				valor = mat.absorver(self, valor, de)
+				if valor <= 0.0:
+					return true
+		elif esc.cobre(self, de):
+			esc.bloquear(self, valor, de, quem)
+			return true
+	if bloqueavel and aparo_fase == 1 and esc != null and esc.cobre_aparo(self, de):  # a janela do aparo: todo golpe da frente é perfeito
 		esc.bloquear(self, valor, de, quem)
+		_aparo_acertou()
 		return true
 	if def_max > 0.0:  # apanhar (mesmo pelas costas) adia a recarga da defesa
 		def_atraso_t = maxf(def_atraso_t, _def_cfg().atraso_recarga)
@@ -513,9 +631,13 @@ func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> b
 	mundo.combate.heroi_apanhou(valor)
 	_dano_t = 0.0
 	if vida <= 0.0:
+		var mecha = mundo.combate.mecha
+		if mecha != null and mecha.quebrou(self):  # LW-2: a vida do mecha zerou: ele estoura e o herói vira Lobo (só a morte do Lobo cai no código abaixo)
+			return true
 		_morte_t = 0.0
 		cancelar_ruptura(false)
 		escudo_ativo = false
+		aparo_fase = 0
 		estado = Estado.MORTO
 		_iniciar_morte()
 		mundo.combate.heroi_morreu()
@@ -550,6 +672,7 @@ func atualizar(dt: float) -> void:
 		_hab_relogios(dt)
 	if esp_nega_t > 0.0:
 		esp_nega_t = maxf(0.0, esp_nega_t - dt)  # só o tremor do slot: a carga do Q não corre por tempo
+	_secundario_relogios(dt)
 	var parado := v == Vector2.ZERO and (estado == Estado.LIVRE or estado == Estado.CARGA)
 	_recuperar(dt, parado)
 	_recuperar_defesa(dt, parado)
@@ -590,11 +713,14 @@ func atualizar(dt: float) -> void:
 	if estado != Estado.LIVRE:
 		correndo = false
 		_baixar_escudo()
+		_cancelar_aparo()
 	var antes := pos
 	if desl != Vector2.ZERO:
 		mundo.mover(self, desl)
 	vel = (pos - antes) / maxf(dt, 0.0001)
 	_camera_adiantada(dt)
+	if mundo.combate.escudo != null:
+		_publicar_secundario(mundo.combate.escudo)  # no fim do quadro: a HUD lê o estado de agora, não o do quadro anterior
 	_visual(dt, v)
 
 
@@ -611,7 +737,9 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 	if rup_pedido_t > 0.0 and pode_ruptura() and _segurando_ruptura():  # a ruptura vem antes do golpe: segurar o clique e apertar o direito carrega
 		_iniciar_carga()
 		return Vector2.ZERO
-	if _quer_escudo():  # o escudo vem antes do golpe: segurar o direito e o clique esquerdo ergue o escudo, não golpeia
+	if aparo_fase != 0 or _quer_aparar():  # o aparo (apertar) também vem antes do golpe: a janela e a recuperação não golpeiam
+		return _aparo(dt, v)
+	if _quer_secundario():  # o escudo vem antes do golpe: segurar o direito e o clique esquerdo ergue o escudo, não golpeia
 		return _escudo(dt, v)
 	_baixar_escudo()
 	if (pedido_t > 0.0 or segurando) and pausa_t <= 0.0:  # o golpe tem prioridade sobre a corrida
@@ -639,16 +767,20 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 	return v * k * dt
 
 
-## O botão do escudo (secundário) está segurado e o herói pode erguer? Polling, como o atacar. Em modo forçado (testes) vale `escudo_forcado`.
-func _quer_escudo() -> bool:
-	var c = mundo.combate
-	if c.escudo == null or not c.escudo.ativo_para(str(chave)) or c.jogo != "jogando" or c.pausado or _pausa_aberta():
-		return false
-	var apertado: bool
+## O botão do secundário está segurado? Polling, como o atacar. Em modo forçado (testes) vale `escudo_forcado`. A ação do InputMap segue chamada "escudo"
+## (ninguém perde o remapeamento salvo); o rótulo na tela de controles é "Secundário".
+func _sec_apertado() -> bool:
 	if entrada_forcada != null:
-		apertado = escudo_forcado != null and bool(escudo_forcado)
-	else:
-		apertado = InputMap.has_action("escudo") and Input.is_action_pressed("escudo")
+		return escudo_forcado != null and bool(escudo_forcado)
+	return InputMap.has_action("escudo") and Input.is_action_pressed("escudo")
+
+
+## O secundário deste herói é por POSSE (o escudo) e o botão está segurado e o herói pode erguer?
+func _quer_secundario() -> bool:
+	var c = mundo.combate
+	if c.escudo == null or not c.escudo.posse_para(str(chave)) or c.jogo != "jogando" or c.pausado or _pausa_aberta():
+		return false
+	var apertado := _sec_apertado()
 	if not apertado or def_quebrado:
 		return false
 	# erguer pede um mínimo de defesa; já erguido segue até zerar (a defesa zerada quebra o escudo)
@@ -663,17 +795,137 @@ func _escudo(dt: float, v: Vector2) -> Vector2:
 		escudo_t = 0.0
 		if fonte == Fonte.ANDA and entrada_forcada == null:
 			fonte = Fonte.MOUSE  # o escudo olha para a mira, não para onde anda
-		esc.ergueu(self)
+		esc.modulo_de(str(chave)).ergueu(self)
 	else:
 		escudo_t += dt
 	pedido_t = 0.0  # um clique de golpe guardado não vaza para depois
 	_gastar_defesa(float(_def_cfg().gasto_s) * dt)
 	if def_quebrado:  # a defesa acabou agora: o escudo cai na hora (quebra), o herói só anda mais devagar, sem ficar cansado
 		_baixar_escudo()
-		return v * vel_andar() * float(esc.cfg.mov) * dt
+		return v * vel_andar() * esc.mov_de(str(chave)) * dt
 	if v == Vector2.ZERO:
 		return Vector2.ZERO
-	return v * vel_andar() * float(esc.cfg.mov) * dt
+	return v * vel_andar() * esc.mov_de(str(chave)) * dt
+
+
+## Os relógios do secundário, todo quadro: a recarga do aparo corre e o aperto novo do botão fica guardado um instante (o aparo é por aperto, não por
+## posse como o escudo). O que o slot S da HUD lê (`sec_*`) é publicado no fim do quadro, em `_publicar_secundario`.
+func _secundario_relogios(dt: float) -> void:
+	var esc = mundo.combate.escudo
+	if esc == null:
+		return
+	aparo_recarga = maxf(0.0, aparo_recarga - dt)
+	sec_pedido_t = maxf(0.0, sec_pedido_t - dt)
+	if esc.aparo_para(str(chave)):
+		var apertado := _sec_apertado()
+		if apertado and not _sec_ant and mundo.combate.jogo == "jogando" and not mundo.combate.pausado:
+			sec_pedido_t = float(esc.cfg_aparo.pedido)
+		_sec_ant = apertado
+
+
+## Publica o secundário de agora para a HUD (contrato `sec_*`). Quem entra depois (matriz do LightWolf, fumaça do Luke) só preenche os mesmos campos.
+func _publicar_secundario(esc) -> void:
+	var rot: Dictionary = esc.rotulo_de(str(chave))
+	sec_nome = str(rot.get("nome", ""))
+	sec_icone = str(rot.get("icone", ""))
+	sec_ativo = false
+	sec_pronta = false
+	sec_barra = 1.0
+	sec_recarga = 0.0
+	sec_recarga_s = 0.0
+	if sec_nome == "":
+		return
+	if esc.posse_para(str(chave)):  # escudo ou matriz: pronto com o mínimo de defesa e sem estar quebrado; quebrado, a cortina sobe até o retorno
+		var c := _def_cfg()
+		sec_ativo = escudo_ativo
+		sec_barra = clampf(def / def_max, 0.0, 1.0) if def_max > 0.0 else 1.0
+		sec_pronta = escudo_ativo or (not def_quebrado and def >= float(c.minimo))
+		if def_quebrado and not escudo_ativo and def_max > 0.0:
+			sec_recarga = clampf(1.0 - def / maxf(float(c.retorno) * def_max, 0.001), 0.0, 1.0)
+	elif esc.aparo_para(str(chave)):
+		var a: Dictionary = esc.cfg_aparo
+		sec_ativo = aparo_fase == 1
+		sec_pronta = sec_ativo or (aparo_fase == 0 and aparo_recarga <= 0.0)
+		if aparo_fase == 2:  # recuperando: falta o resto da recuperação mais a recarga do erro
+			sec_recarga = 1.0
+			sec_recarga_s = maxf(float(a.recuperacao) - aparo_t, 0.0) + float(a.recarga_erro)
+		elif aparo_fase == 0 and aparo_recarga > 0.0:
+			sec_recarga = clampf(aparo_recarga / maxf(aparo_recarga_max, 0.001), 0.0, 1.0)
+			sec_recarga_s = aparo_recarga
+
+
+## O botão do secundário foi apertado de novo e este herói tem o aparo? (O aperto fica guardado dados > aparo > pedido s; a recarga e o jogo parado negam.)
+func _quer_aparar() -> bool:
+	var c = mundo.combate
+	if sec_pedido_t <= 0.0 or aparo_recarga > 0.0 or c.escudo == null or not c.escudo.aparo_para(str(chave)):
+		return false
+	return c.jogo == "jogando" and not c.pausado and not _pausa_aberta()
+
+
+## Um quadro de aparo (janela ou recuperação): o primeiro abre a janela; a janela anda devagar, a recuperação fica parada (dados > aparo). Não corre nem golpeia.
+func _aparo(dt: float, v: Vector2) -> Vector2:
+	var esc = mundo.combate.escudo
+	var a: Dictionary = esc.cfg_aparo
+	if aparo_fase == 0:
+		aparo_fase = 1
+		aparo_t = 0.0
+		aparo_acertou = false
+		aparo_disparos += 1
+		sec_pedido_t = 0.0
+		if fonte == Fonte.ANDA and entrada_forcada == null:
+			fonte = Fonte.MOUSE  # o aparo olha para a mira, como o escudo
+		esc.abriu_aparo(self)
+	else:
+		aparo_t += dt
+	pedido_t = 0.0  # um clique de golpe guardado não vaza para depois
+	var k := float(a.mov_janela) if aparo_fase == 1 else float(a.mov_recuperacao)
+	if aparo_fase == 1 and aparo_t >= float(a.janela):
+		if aparo_acertou:
+			_aparo_fechar(float(a.recarga_acerto))
+		else:  # a janela passou sem golpe: erro, fica parado a recuperação e depois recarrega
+			aparo_erros += 1
+			aparo_fase = 2
+			aparo_t = 0.0
+	elif aparo_fase == 2 and aparo_t >= float(a.recuperacao):
+		_aparo_fechar(float(a.recarga_erro))
+	if v == Vector2.ZERO or k <= 0.0:
+		return Vector2.ZERO
+	return v * vel_andar() * k * dt
+
+
+func _aparo_fechar(recarga: float) -> void:
+	aparo_fase = 0
+	aparo_t = 0.0
+	aparo_recarga = recarga
+	aparo_recarga_max = recarga
+
+
+## Um golpe caiu na janela do aparo (o bloqueio perfeito já foi feito em `escudo.bloquear`): abre o contragolpe da katana, o mesmo da ruptura. A janela segue até o
+## fim (outros monstros em contato também são barrados) e a recarga curta do acerto conta depois dela.
+func _aparo_acertou() -> void:
+	aparo_acertou = true
+	aparo_acertos += 1
+	var r = mundo.combate.ruptura
+	if r != null:
+		r.abrir_contragolpe(self)
+
+
+## Outra ação (golpe, esquiva, E, Q, troca de forma) corta o aparo: a janela sem golpe conta como erro (a recarga longa evita aparar-e-cancelar sem custo).
+func _cancelar_aparo() -> void:
+	if aparo_fase == 0:
+		return
+	var esc = mundo.combate.escudo
+	if esc != null:
+		var a: Dictionary = esc.cfg_aparo
+		if aparo_fase == 1 and aparo_acertou:
+			_aparo_fechar(float(a.recarga_acerto))
+			return
+		if aparo_fase == 1:
+			aparo_erros += 1
+		_aparo_fechar(float(a.recarga_erro))
+		return
+	aparo_fase = 0
+	aparo_t = 0.0
 
 
 func _baixar_escudo() -> void:
@@ -685,18 +937,18 @@ func _baixar_escudo() -> void:
 		def_atraso_t = maxf(def_atraso_t, _def_cfg().atraso_recarga)
 	var esc = mundo.combate.escudo
 	if esc != null:
-		esc.abaixou(self)
+		esc.modulo_de(str(chave)).abaixou(self)
 
 
-## O bloco de números da barra de defesa (dados/v2_secundario.json > escudo > barra). O LightWolf (matriz) usa o mesmo bloco.
+## O bloco de números da barra de defesa do herói (dados/v2_secundario.json > escudo > barra; o LightWolf usa o da matriz, que é o mesmo com as chaves dela por cima).
 func _def_cfg() -> Dictionary:
-	return mundo.combate.escudo.cfg.barra
+	return mundo.combate.escudo.barra_de(str(chave))
 
 
 ## Começo da partida: quem tem escudo (dados > herois) ganha a barra cheia; quem não tem fica com def_max 0 (sem barra na HUD).
 func _iniciar_defesa() -> void:
 	var esc = mundo.combate.escudo
-	def_max = float(esc.cfg.barra.max) if esc != null and esc.ativo_para(str(chave)) else 0.0
+	def_max = float(esc.barra_de(str(chave)).max) if esc != null and esc.posse_para(str(chave)) else 0.0
 	def = def_max
 	def_atraso_t = 0.0
 	def_quebrado = false
@@ -808,7 +1060,10 @@ func _camera_adiantada(dt: float) -> void:
 
 func _iniciar_golpe() -> bool:
 	var dif := preload("res://v2/dificuldade.gd").da_partida(mundo)
-	var custo := float(dif.golpe_custo)
+	var passos: Array = mundo.combate.cfg.golpe.passos
+	var idx: int = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
+	# custo_mult do passo (LW-1): 0 = o tiro do mecha nunca gasta fôlego nem espera o calor; o resto dos heróis não tem o campo (1).
+	var custo := float(dif.golpe_custo) * float((passos[idx] as Dictionary).get("custo_mult", 1.0))
 	if custo > 0.0:
 		if golpe_calor_t > 0.0:
 			return false
@@ -818,8 +1073,7 @@ func _iniciar_golpe() -> bool:
 		_gastar(custo, false)
 		if folego <= 0.0:
 			golpe_calor_t = float(dif.golpe_calor)
-	var passos: Array = mundo.combate.cfg.golpe.passos
-	golpe_i = proximo if (combo_t > 0.0 and proximo < passos.size()) else 0
+	golpe_i = idx
 	golpe_cfg = passos[golpe_i]
 	golpe_dur = duracao_do_passo(golpe_i)
 	golpe_t = 0.0

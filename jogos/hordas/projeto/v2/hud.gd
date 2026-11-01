@@ -22,6 +22,7 @@ extends CanvasLayer
 const Paleta := preload("res://v2/paleta.gd")
 const EscalaUi := preload("res://v2/escala_ui.gd")
 const Herois := preload("res://v2/herois.gd")
+const Dificuldade := preload("res://v2/dificuldade.gd")  # defesa_regen_mult 0 = a barra de defesa não recarrega sozinha (sem recarga)
 const CENA := "res://v2/hud.tscn"
 const SPRITES := "res://prototipos/cara_nova/sprites/"
 const FONTE := "res://assets/fonte/atkinson/AtkinsonHyperlegible-Regular.ttf"  # SIL OFL 1.1, legível em tamanho pequeno (trocou a Press Start 2P, #152 V1)
@@ -68,11 +69,20 @@ const BARRA_FOLGA := 4.0  # a moldura de pedra fica 4 px fora de cada lado da ba
 const BARRA_VELOC := 7.0  # quão rápido a barra desliza até o comprimento novo (suavização exponencial, por segundo)
 const BASE_VIDA := 100.0  # sem combate (mundo falso dos testes)
 const BASE_FOLEGO := 3.0
+## Terceira barra, a de DEFESA do escudo (própria, separada do fôlego; def e def_max do herói). Só aparece com def_max > 0: sem barra, a moldura
+## fica com MOLDURA_ALTURA; com ela, cresce MOLDURA_COM_DEFESA. Abaixo de LIMIAR_DEFESA_BAIXA fica vermelha; no Difícil (sem recarga) fica apagada.
+const MOLDURA_ALTURA := 66.0
+const MOLDURA_COM_DEFESA := 78.0
+const LIMIAR_DEFESA_BAIXA := 0.25
+const DEFESA_AZUL := Color(0.35, 0.7, 1.0)
+const DEFESA_BAIXA := Color(1.0, 0.35, 0.35)
+const DEFESA_SEM_RECARGA := Color(0.5, 0.56, 0.66)
 ## Onde cada peça do HUD gruda: -1 = na borda esquerda/de cima do canvas, +1 = na direita/de baixo, 0 = fica no meio (centro do bloco).
 const ANCORAS := {
 	"Retrato": Vector2(-1, 1),
 	"Vida": Vector2(-1, 1),
 	"Folego": Vector2(-1, 1),
+	"Defesa": Vector2(-1, 1),
 	"MolduraBarras": Vector2(-1, 1),
 	"Tempo": Vector2(0, -1),
 	"Nivel": Vector2(0, -1),
@@ -150,6 +160,7 @@ var _barra_px := -1.0  # comprimento atual das barras de vida e de fôlego (desl
 @onready var _vida_barra: TextureProgressBar = $Raiz/Vida/Barra
 @onready var _vida_txt: Label = $Raiz/Vida/Texto
 @onready var _folego: TextureProgressBar = $Raiz/Folego
+@onready var _defesa: TextureProgressBar = $Raiz/Defesa
 @onready var _vida_caixa: Control = $Raiz/Vida
 @onready var _moldura_barras: NinePatchRect = $Raiz/MolduraBarras
 @onready var _relogio: Label = $Raiz/Tempo/Relogio
@@ -313,6 +324,7 @@ func avancar(dt: float) -> void:
 	_abates.text = "ABATES %d\nVIVOS %d" % [abates, roundi(_num(mundo, "monstros_vivos", 0.0))]
 	var cartas_na_tela := _cartas_na_tela()  # a escolha e o baú ocupam a tela toda: a HUD inteira some (volta ao fechar), sem misturar com os botões
 	visible = not cartas_na_tela
+	_defesa_quadro(h)
 	_barras(0.0 if cartas_na_tela else dt, vida_max, folego_max, _base_barras())  # sem correr com a HUD escondida: a barra cresce quando ela volta
 	_folego_em_pixels()
 	_combo.visible = combo > 0 and not cartas_na_tela
@@ -410,9 +422,34 @@ func _barras(dt: float, vida_max: float, folego_max: float, base: Vector2) -> vo
 	_vida_barra.size.x = roundf(_barra_px)
 	_vida_txt.size.x = roundf(_barra_px)
 	_folego.size.x = roundf(_barra_px)
+	_defesa.size.x = roundf(_barra_px)
 	var moldura := roundf(_barra_px + 2.0 * BARRA_FOLGA)
 	_vida_caixa.size.x = moldura
 	_moldura_barras.size.x = moldura
+	_moldura_barras.size.y = MOLDURA_COM_DEFESA if _defesa.visible else MOLDURA_ALTURA
+
+
+## A barra de defesa do escudo (DEF-3): só existe com def_max > 0 (o herói tem escudo). Valor = def de def_max; vermelha abaixo de 25%;
+## apagada no Difícil, onde a defesa não recarrega sozinha (defesa_regen_mult 0, dados/v2_dificuldade.json). Sem herói ou sem def_max, some.
+func _defesa_quadro(h) -> void:
+	var dmax := _num(h, "def_max", 0.0)
+	_defesa.visible = dmax > 0.0
+	if not _defesa.visible:
+		return
+	var atual := clampf(_num(h, "def", dmax), 0.0, dmax)
+	_defesa.max_value = dmax
+	_defesa.value = atual
+	if atual / dmax < LIMIAR_DEFESA_BAIXA:
+		_defesa.tint_progress = DEFESA_BAIXA
+	elif _sem_recarga():
+		_defesa.tint_progress = DEFESA_SEM_RECARGA
+	else:
+		_defesa.tint_progress = DEFESA_AZUL
+
+
+## Difícil: a defesa não se recarrega sozinha. Mundo sem meta (falso dos testes) segue como Fácil, com recarga.
+func _sem_recarga() -> bool:
+	return _campo(mundo, "meta_bonus") != null and Dificuldade.fator(mundo, "defesa_regen_mult") <= 0.0
 
 
 ## O fôlego desce pixel a pixel: o valor da barra vai para a fração do comprimento arredondada em pixels inteiros (a barra tem 208 a 244, então são 208 a 244

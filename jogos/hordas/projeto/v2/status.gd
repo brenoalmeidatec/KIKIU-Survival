@@ -414,7 +414,7 @@ static func _sec_heroi(m) -> Dictionary:
 	var rp := float(cfg.folego.regen_parado)
 	var ra := float(cfg.folego.regen_andando)
 	var lin: Array = []
-	lin.append(_l("heroi.vida", "Vida", "%d / %d" % [roundi(h.vida), roundi(h.vida_max)], [h.vida, h.vida_max], _mais(h.vida_max - float(cfg.heroi.vida))))
+	lin.append(_l("heroi.vida", "Vida", "%d / %d" % [roundi(h.vida), roundi(h.vida_max)], [h.vida, h.vida_max], _mais(h.vida_bonus())))
 	lin.append(_l("heroi.cura", "Cura por nível", "+%d (%s%%)" % [roundi(cura), _p(frac)], [cura, frac]))
 	lin.append(_l("heroi.andar", "Andar", "%d px/s" % roundi(h.vel_andar()), [h.vel_andar()], _mais_pct((h.m_vel_mov - 1.0) * 100.0)))
 	lin.append(_l("heroi.correr", "Correr", "%d px/s" % roundi(h.vel_correr()), [h.vel_correr()]))
@@ -423,9 +423,10 @@ static func _sec_heroi(m) -> Dictionary:
 	lin.append(_l("heroi.recupera", "Recupera parado", "%s/s" % _v(rp, 1), [rp]))
 	lin.append(_l("heroi.recupera_andando", "Recupera em ação", "%s/s" % _v(ra, 1), [ra]))
 	if h.def_max > 0.0:  # a barra de defesa do escudo (própria, separada do fôlego); quem não tem escudo não vê estas linhas
-		var barra: Dictionary = c.escudo.cfg.barra
+		var barra: Dictionary = c.escudo.barra_de(str(h.chave))  # o escudo e a matriz do LightWolf têm números diferentes na mesma barra
+		var nome_def := "Defesa da matriz" if c.escudo.matriz_para(str(h.chave)) else "Defesa do escudo"
 		var regen: float = Dificuldade.fator(m, "defesa_regen_mult")
-		lin.append(_l("heroi.defesa", "Defesa do escudo", "%d (%s s erguido)" % [roundi(h.def_max), _v(h.def_max / float(barra.gasto_s))], [h.def_max]))
+		lin.append(_l("heroi.defesa", nome_def, "%d (%s s erguido)" % [roundi(h.def_max), _v(h.def_max / float(barra.gasto_s))], [h.def_max]))
 		lin.append(
 			_l(
 				"heroi.defesa_recarga",
@@ -436,6 +437,9 @@ static func _sec_heroi(m) -> Dictionary:
 		)
 	lin.append(_l("heroi.ima", "Ímã de almas", "%d px" % roundi(h.alcance_ima()), [h.alcance_ima()], _mais_pct((h.m_ima - 1.0) * 100.0)))
 	lin.append(_l("heroi.nivel", "Nível", "%d · XP %d/%d" % [h.nivel, roundi(h.xp), roundi(h.xp_proximo)], [h.nivel, h.xp, h.xp_proximo], "", true))
+	var limite: int = c.cartas.limite_bonus() if c.cartas != null else 0
+	if limite > 0:  # o limite de bônus do Difícil: quantas vagas já estão ocupadas
+		lin.append(_l("heroi.bonus", "Bônus", "%d / %d" % [c.cartas.bonus_contados(), limite], [c.cartas.bonus_contados(), limite]))
 	lin.append(_l("heroi.esquiva", "Esquiva", "%d seguidas" % seguidas, [seguidas, h.esq_dur]))
 	lin.append(_l("heroi.imune", "Imune na esquiva", "%s s" % _v(h.esq_inv, 2), [h.esq_inv]))
 	return _sec("heroi", "HERÓI: " + str(_cadastro(m).get("nome", "")).to_upper(), Paleta.SECAO_HEROI, lin)

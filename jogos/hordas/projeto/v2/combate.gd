@@ -30,6 +30,8 @@ const Ruptura := preload("res://v2/ruptura.gd")
 const Escudo := preload("res://v2/escudo.gd")
 const Ritmo := preload("res://v2/ritmo.gd")
 const Especial := preload("res://v2/especial.gd")
+const Mecha := preload("res://v2/mecha.gd")
+const Matriz := preload("res://v2/matriz.gd")
 const Habilidade := preload("res://v2/habilidade.gd")
 const Herois := preload("res://v2/herois.gd")
 const Adagas := preload("res://v2/adagas.gd")
@@ -66,6 +68,8 @@ var ruptura  # a habilidade (tecla E, v2/ruptura.gd)
 var escudo  # o secundário do botão direito (v2/escudo.gd; qual secundário cada herói tem vem de dados/v2_secundario.json)
 var habilidade  # a habilidade da tecla E, uma por herói (v2/habilidade.gd; a ruptura continua em v2/ruptura.gd)
 var ritmo
+var matriz  # a matriz de defesa do LightWolf, o secundário do mecha (v2/matriz.gd; só age com ela erguida)
+var mecha  # as formas Mecha e Lobo do LightWolf (v2/mecha.gd; só age em eventos, sem custo para os outros heróis)
 var especial  # o especial da tecla Q, um por herói (v2/especial.gd; qual cada herói tem vem de dados/v2_especial.json)
 var adagas  # as adagas do Luke (pool, v2/adagas.gd)
 var heroi_id := "hazaki"  # o herói da partida (v2/herois.gd)
@@ -113,6 +117,7 @@ var criticos := 0
 var mortes := 0
 var hit_stops := 0
 var ultimo_hit_stop := 0.0
+var tiros_som := 0  # quantos golpes de adagas já começaram (som_cada do passo: toca o som só de 1 em cada N)
 var _ciclo_adagas_chave: Array = []  # uma única entrada; nunca guarda histórico de builds/consultas
 var _ciclo_adagas_valor := 0.0
 var _ciclo_adagas_calculos := 0  # diagnóstico para provar reutilização/invalidação do modelo
@@ -195,6 +200,10 @@ func montar(m) -> void:
 	especial.montar(self, m.glow)
 	habilidade = Habilidade.new()
 	habilidade.montar(self)
+	matriz = Matriz.new()
+	matriz.montar(self, m.glow)
+	mecha = Mecha.new()
+	mecha.montar(self)
 	elites = Elites.new()
 	elites.montar(self)
 	baus = Baus.new()
@@ -319,6 +328,8 @@ func atualizar(dt: float) -> void:
 		avisos.atualizar(dt)
 		ruptura.atualizar(dt)
 		especial.atualizar(dt)
+		matriz.atualizar(dt)
+		mecha.atualizar(dt)
 		drenar_limpa(dt)
 		baus.atualizar(dt)
 		ritmo.atualizar(dt)
@@ -460,6 +471,7 @@ func efeitos(dt: float) -> void:
 	fx_folha.atualizar(dt)
 	ruptura.efeitos(dt)
 	escudo.efeitos(dt)
+	matriz.efeitos(dt)
 	especial.efeitos(dt)
 	telas.atualizar(dt)
 
@@ -605,7 +617,10 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 		cor = cor.lerp(Color(1.0, 0.55, 0.2), 0.6)
 	var tom := float(passo.get("tom", 1.0))  # tom e vol opcionais do passo: o Nick é grave, o Luke agudo
 	if str(passo.get("tipo", "melee")) == "adagas" or passo.nome == "pancada":  # sem corte desenhado: as adagas e o chão aparecem no acerto
-		audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
+		var cada := maxi(1, int(passo.get("som_cada", 1)))  # som_cada (LW-1): o tiro do mecha sai ~10x por segundo; o som toca em 1 de cada `cada`
+		tiros_som += 1
+		if cada == 1 or tiros_som % cada == 1:
+			audio.tocar(str(passo.som), randf_range(0.96, 1.06) * tom, float(passo.get("vol", -2.0)), 0.02)
 		return
 	var alc: float = alcance_do_passo(passo, h)
 	var arco: float = arco_do_passo(passo)
@@ -618,6 +633,9 @@ func golpe_comecou(h, passo: Dictionary, dir: Vector2, dur: float) -> void:
 func golpear(h, origem: Vector2, dir: Vector2, passo: Dictionary, _idx: int) -> int:
 	fonte_dano = "principal"  # as adagas do Luke, o crítico explosivo e as ondas da katana contam no ataque principal
 	if str(passo.get("tipo", "melee")) == "adagas":  # o Luke: as adagas saem (v2/adagas.gd) e acertam por conta própria
+		var lateral := float(passo.get("lateral", 0.0))  # lateral (LW-1): px da boca da arma para o lado da mira; o mecha alterna mão esquerda e direita
+		if lateral != 0.0:
+			origem += dir.orthogonal() * lateral
 		adagas.lancar(h, origem, dir, passo, true)  # true: o alcance das adagas do golpe cresce com o nível (as do especial Q, não)
 		return 0
 	var alc: float = alcance_do_passo(passo, h)
@@ -1142,6 +1160,7 @@ func limpar_partida() -> void:
 	avisos.limpar()
 	ruptura.limpar()
 	escudo.limpar()
+	matriz.limpar()
 	especial.limpar()
 	habilidade.limpar()
 	baus.limpar()
@@ -1199,8 +1218,10 @@ func liberar() -> void:
 		avisos,
 		ruptura,
 		escudo,
+		matriz,
 		especial,
 		habilidade,
+		mecha,
 		elites,
 		baus,
 		chefes
@@ -1223,9 +1244,11 @@ func liberar() -> void:
 	avisos = null
 	ruptura = null
 	escudo = null
+	matriz = null
 	ritmo = null
 	especial = null
 	habilidade = null
+	mecha = null
 	elites = null
 	baus = null
 	chefes = null

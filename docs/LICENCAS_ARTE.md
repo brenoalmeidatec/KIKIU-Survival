@@ -183,3 +183,21 @@ Seis folhas do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT
 ## pixelfx: clima por mapa, Claude do Alisson (notebook), 31/10/2026
 
 - 2026-10-31, clima por mapa (`jogos/hordas/projeto/v2/clima.gd`, dados em `dados/v2_clima.json`): sem PNG novo. A lógica de vagalumes (ritmo de acender e apagar), folhas (pêndulo com queda acelerada no fundo do arco e giro), névoa (ruído de valor em bancos com pontilhado), chuva (gotas inclinadas em duas profundidades com respingo) e glitch (rajadas com faixas deslocadas em vermelho e ciano) foi portada para GDScript a partir dos efeitos `weather/fireflies`, `weather/falling-leaves`, `weather/fog`, `weather/rain` e `scifi/glitch` do **pixelfx** (https://github.com/patch-gg/pixelfx), licença **MIT**, Copyright (c) 2026 Patch e Hugo Duprez (os arquivos de origem citam as versões do Sprite Fusion, MIT, Copyright (c) 2026 Hugo Duprez). Reescrita em código e desenhada em espaço de tela, sem usar as folhas exportadas; a textura de névoa é gerada em código na montagem.
+
+## PER-2b: folhas de voo de shuriken, kunai e flecha, Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/fonte_arte/armas_anim/A06_shuriken_voo.png`, `A07_kunai_voo.png` e `A08_flecha_voo.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com os prompts em `jogos/hordas/fonte_arte/armas_anim/PROMPTS.md`. Sem direitos de terceiros declarados. Fontes copiadas sem alteração; **fundo não transparente** (alfa 255 em todos os pixels), por isso ainda não estão no jogo (`assets/v2/armas_anim/` continua sem `*_heroi_voo.png`).
+
+## PER-2b (continuação): correção do fundo e folhas de voo derivadas, Claude do Alisson, 01/11/2026
+
+- Correção da entrada acima: as três fontes são RGBA de verdade (alfa 0 em 67% a 92% dos pixels, máximo 254). O halo de alfa baixo em volta do objeto é cortado por alfa >= 160 antes de qualquer redução.
+- Derivadas (mesma arte, nenhuma arte nova): `jogos/hordas/projeto/assets/v2/armas_anim/shuriken_heroi_voo.png` (8 quadros de 14x14, giro de 11,25 graus a partir do 1º quadro), `kunai_heroi_voo.png` (4 de 24x10) e `flecha_heroi_voo.png` (4 de 28x8), geradas por `jogos/hordas/fonte_arte/armas_anim/importar_projeteis_heroi.py`. Mudanças: corte por alfa, recorte pela caixa do objeto, redução por vizinho mais próximo e giro da shuriken.
+
+## LW-3: ícones da matriz e dos mísseis do LightWolf, Claude do Alisson (notebook), 01/11/2026
+
+- `jogos/hordas/fonte_arte/lightwolf_icones/A19_lw_misseis.png` e `A22_lw_matriz.png`: arte gerada por IA (ChatGPT, conta do Alisson) para o projeto, com os prompts em `jogos/hordas/fonte_arte/lightwolf_icones/PROMPTS.md`. Sem direitos de terceiros declarados. Fontes copiadas sem alteração.
+- Derivados (mesma arte, nenhuma arte nova): `jogos/hordas/projeto/assets/v2/secundario_s/lightwolf.png` (a matriz, slot S) e `jogos/hordas/projeto/assets/v2/habilidade_e/lightwolf.png` (os mísseis, slot E; só é ligado no LW-4), 32x32, gerados por `reduzir_icones.py`. Mudanças: corte do halo de alfa baixo, recorte pela caixa do objeto, redução por média de caixa e alfa endurecido.
+
+## LW-4: ícone da E Mísseis ligado no HUD, Claude do Alisson (notebook), 01/11/2026
+
+- O ícone A19 (`assets/v2/habilidade_e/lightwolf.png`, derivado registrado na entrada do LW-3) passa a ser lido pelo slot E do HUD (`v2/hud_habilidades.gd`, `ICONES_E`). Nenhuma arte nova. O míssil em voo (10x4 px) é desenhado em código em `v2/adagas.gd` (`_img_missil`), sem arte de terceiros.

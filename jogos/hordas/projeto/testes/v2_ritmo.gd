@@ -306,6 +306,7 @@ func _provar_q_real() -> void:
 			h.m_area = 1.0
 			h.m_dano = 1.5
 			h.mira_mundo = h.centro() + Vector2(100, 0)
+			h.dir_olhar = Vector2.RIGHT  # o Q segue para onde o herói está virado (ULT-B), não a mira: o teste põe o corpo para a direita
 			e.iniciar(h)
 			var k: float = c.ritmo.multiplicador("q_dano", nivel)
 			var area: float = e._escala

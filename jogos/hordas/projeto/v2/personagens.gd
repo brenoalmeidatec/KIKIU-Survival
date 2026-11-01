@@ -106,7 +106,8 @@ static func nomes_livres() -> Array:
 	var usados := []
 	for id in lista():
 		usados.append(nome(id))
-	return nomes().filter(func(n): return not usados.has(n.nome))
+	# nome de herói escondido (LightWolf, "beta": true em dados/v2_herois.json) só é oferecido a quem tem o herói liberado
+	return nomes().filter(func(n): return not usados.has(n.nome) and (str(n.get("heroi", "")) == "" or Herois.existe(str(n.heroi))))
 
 
 ## Nível de cada melhoria do slot (id -> nível), lido do save dele, sem mexer na meta ativa.

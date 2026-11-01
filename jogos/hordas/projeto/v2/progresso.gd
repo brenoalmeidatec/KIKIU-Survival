@@ -6,6 +6,7 @@ extends RefCounted
 ## cartas em dados/v2_cartas.json.
 
 const Dificuldade := preload("res://v2/dificuldade.gd")
+const Paleta := preload("res://v2/paleta.gd")
 
 var combate
 var cfg: Dictionary
@@ -86,12 +87,16 @@ func ganhar_xp(v: float) -> void:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
-## Sorteia as cartas (até 3, diferentes) e abre a escolha (pausa o mundo).
+## Monta a mão (2 upgrades + 1 novidade, v2/cartas.gd montar_mao) e abre a escolha (pausa o mundo). Com as vagas cheias (limite do Difícil) a
+## novidade vem marcada TROCA; se nenhuma carta servir ao automático (só TROCA e upgrades que passariam do nível 4), a última vira a cura: o limite de tempo sempre acha o que escolher.
 func abrir_escolha() -> void:
 	var cs = combate.cartas
-	cartas = cs.sortear(int(cs.cfg.escolha.cartas), combate.mundo.heroi.nivel)
-	if cartas.is_empty():  # tudo no máximo: uma carta de cura para não travar
-		cartas = [_carta_cura()]
+	cartas = cs.montar_mao(combate.mundo.heroi.nivel, 1.0, 0, -1, true, true)
+	var qtd := int(cs.cfg.escolha.cartas)
+	if cartas.size() < qtd:  # sobrou pouca carta (tudo no máximo): uma cura ocupa o espaço, para não travar nem ficar sem mão
+		cartas.append(_carta_cura())
+	elif cs.limite_bonus() > 0 and not cartas.any(func(c: Dictionary) -> bool: return cs.serve_ao_automatico(c)):
+		cartas[qtd - 1] = _carta_cura()
 	combate.jogo = "escolha"
 	combate.pausado = true
 	combate.telas.mostrar_escolha(cartas, combate.mundo.heroi.nivel)
@@ -113,6 +118,8 @@ func _carta_cura() -> Dictionary:
 		"desc": "Cura toda a vida",
 		"cat": "stat",
 		"stat": "cura",
+		"icone": "icone_vida",
+		"tipo": "",
 		"valor": 0,
 		"max": 99,
 		"rar": 0,
@@ -122,10 +129,15 @@ func _carta_cura() -> Dictionary:
 	}
 
 
+## Escolhe a carta `i`. Uma carta TROCA (bônus novo com as vagas cheias) ainda não vale: abre o painel em que o jogador larga um bônus (telas.abrir_troca),
+## e é `trocar` que conclui.
 func escolher(i: int) -> void:
 	if i < 0 or i >= cartas.size():
 		return
 	var c: Dictionary = cartas[i]
+	if str(c.get("tipo", "")) == "troca":
+		combate.telas.abrir_troca(i)
+		return
 	aplicar(c)
 	escolhidas += 1
 	ultima_nome = str(c.get("nome", ""))
@@ -152,6 +164,20 @@ func escolher(i: int) -> void:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
+## Conclui a carta TROCA `i`: larga o bônus `saida` (cartas.remover_bonus desfaz o efeito dele) e leva o bônus novo. Devolve false, sem mexer em nada,
+## se `i` não é uma carta de troca ou `saida` não é um bônus que o herói possa largar.
+func trocar(i: int, saida: String) -> bool:
+	if i < 0 or i >= cartas.size() or str(cartas[i].get("tipo", "")) != "troca":
+		return false
+	var nome_saida := str(combate.cartas.definicao(saida).get("nome", saida))
+	if not combate.cartas.remover_bonus(saida):
+		return false
+	cartas[i].tipo = "nov"  # a vaga abriu: a carta vale como novidade comum
+	combate.anunciar("Largou %s por %s" % [nome_saida, str(cartas[i].get("nome", ""))], Paleta.OURO)
+	escolher(i)
+	return true
+
+
 ## Perde a rodada de cartas aberta (o "Sim" de "Pausar agora?" na escolha): nenhuma carta é aplicada e o nível pendente é consumido.
 ## Com mais níveis pendentes a próxima rodada abre depois, como depois de uma escolha.
 func descartar_rodada() -> void:
@@ -169,7 +195,7 @@ func descartar_rodada() -> void:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
-## Escolha AUTOMÁTICA: o sistema escolhe a carta pelo que o herói já tem (cartas.escolha_automatica) e aplica na hora. Sem custo, mas a
+## Escolha AUTOMÁTICA: o sistema escolhe a carta dentro da mão pelo que o herói já tem (cartas.escolha_automatica) e aplica na hora. Sem custo, mas a
 ## raridade vem rebaixada. Devolve false se não está na escolha ou não sobrou carta nenhuma.
 func automatico() -> bool:
 	var cs = combate.cartas
@@ -184,7 +210,7 @@ func automatico() -> bool:
 			return false
 		escolher(melhor)
 		return true
-	var c: Dictionary = cs.escolha_automatica(combate.mundo.heroi.nivel)
+	var c: Dictionary = cs.escolha_automatica(cartas)
 	if c.is_empty():
 		return false
 	cartas = [c]

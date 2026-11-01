@@ -8,6 +8,7 @@ extends "res://testes/isolamento_v2.gd"
 # Prints: godot --path jogos/hordas/projeto res://testes/v2_hud_barras.tscn -- --fotos=PASTA --janela=WxH  (o HUD do mundo real: antes, no meio do deslize, depois, teto e fôlego no teto com vida de partida; com o tamanho pedido, confere o tamanho gravado e imprime os comprimentos; sai)
 const Hud := preload("res://v2/hud.gd")
 const Mundo := preload("res://v2/mundo.tscn")
+const Dificuldade := preload("res://v2/dificuldade.gd")
 const PASSO := 1.0 / 60.0
 const SELO_X := 362.0  # o selo de nível (hud.tscn, Raiz/Selo) fica na altura das barras: a moldura no teto acaba antes dele
 
@@ -22,6 +23,8 @@ class Heroi:
 	var folego := 3.0
 	var folego_max := 3.0
 	var cansado := false
+	var def := 0.0  # barra de defesa do escudo: 0 de def_max 0 = sem barra (DEF-3)
+	var def_max := 0.0
 
 
 class Telas:
@@ -44,6 +47,7 @@ class MundoFalso:
 	var abates := 0
 	var combo := 0
 	var monstros_vivos := 0
+	var meta_bonus := {}  # sem "dificuldade": a HUD usa o Fácil (com recarga da defesa)
 
 
 func ok(cond: bool, msg: String) -> void:
@@ -214,6 +218,61 @@ func _testes() -> void:
 	sem.avancar(PASSO)
 	ok(sem._vida_barra.size.x == 208.0 and sem._folego.size.x == 208.0, "sem mundo: barras de 208 px (%s, %s)" % [sem._vida_barra.size.x, sem._folego.size.x])
 
+	# 10. barra de defesa do escudo (DEF-3): sem escudo (def_max 0) a barra some e a moldura fica com 66 px; com escudo aparece, fina (6 px),
+	# abaixo do fôlego, do mesmo comprimento, e a moldura cresce 12 px (78). Vermelha abaixo de 25%; apagada no Difícil (sem recarga); anda com o bloco.
+	h.vida_max = 100.0
+	h.vida = 100.0
+	h.folego_max = 3.0
+	h.folego = 3.0
+	h.def_max = 0.0
+	h.def = 0.0
+	_passar(hud, 0.5)
+	ok(
+		not hud._defesa.visible and hud._moldura_barras.size.y == 66.0,
+		"sem escudo: a barra de defesa some e a moldura fica com 66 px (%s)" % hud._moldura_barras.size.y
+	)
+	h.def_max = 100.0
+	h.def = 100.0
+	_passar(hud, 0.5)
+	ok(hud._defesa.visible and hud._moldura_barras.size.y == 78.0, "com escudo: a barra aparece e a moldura vai a 78 px (%s)" % hud._moldura_barras.size.y)
+	ok(
+		hud._defesa.size.y == 6.0 and hud._defesa.size.x == hud._folego.size.x,
+		"a barra de defesa tem 6 px de altura e o comprimento das outras (%s x %s)" % [hud._defesa.size.y, hud._defesa.size.x]
+	)
+	ok(
+		hud._defesa.max_value == 100.0 and hud._defesa.value == 100.0,
+		"a barra de defesa mostra 100 de 100 (%s de %s)" % [hud._defesa.value, hud._defesa.max_value]
+	)
+	var r_moldura_d: Rect2 = hud._moldura_barras.get_global_rect()
+	var r_defesa: Rect2 = hud._defesa.get_global_rect()
+	var r_folego_d: Rect2 = hud._folego.get_global_rect()
+	ok(r_moldura_d.encloses(r_defesa), "a barra de defesa cabe dentro da moldura")
+	ok(r_defesa.position.y >= r_folego_d.end.y, "a barra de defesa fica abaixo do fôlego, sem sobrepor")
+	h.def = 20.0
+	hud.avancar(PASSO)
+	ok(hud._defesa.tint_progress == Hud.DEFESA_BAIXA, "abaixo de 25% a barra de defesa fica vermelha")
+	h.def = 60.0
+	hud.avancar(PASSO)
+	ok(hud._defesa.tint_progress == Hud.DEFESA_AZUL, "acima de 25% a barra de defesa fica azul")
+	falso.meta_bonus = {"dificuldade": {"defesa_regen_mult": 0.0}}
+	hud.avancar(PASSO)
+	ok(hud._defesa.tint_progress == Hud.DEFESA_SEM_RECARGA, "no Difícil (defesa sem recarga) a barra fica apagada")
+	falso.meta_bonus = {}
+	hud.ui_reencaixar(Vector2(1024, 576), Vector2(32, 18))
+	_passar(hud, 0.5)
+	ok(
+		hud._defesa.position.x == hud._folego.position.x and hud._defesa.position.y - hud._folego.position.y == 12.0,
+		(
+			"a barra de defesa anda com o bloco, 12 px abaixo do fôlego (dx %s, dy %s)"
+			% [hud._defesa.position.x - hud._folego.position.x, hud._defesa.position.y - hud._folego.position.y]
+		)
+	)
+	hud.ui_reencaixar(Vector2(960, 540), Vector2.ZERO)
+	h.def_max = 0.0
+	h.def = 0.0
+	_passar(hud, 0.5)
+	ok(not hud._defesa.visible and hud._moldura_barras.size.y == 66.0, "tirado o escudo, a barra some e a moldura volta a 66 px")
+
 
 ## Prints do HUD do mundo real (o herói e o cfg da v2): antes (vida 100, fôlego 3), no meio do deslize (0,1 s depois),
 ## depois (vida 230, fôlego 5) e no teto (vida 400, fôlego 7).
@@ -272,6 +331,25 @@ func _fotos(pasta: String) -> void:
 	w.heroi.cansado = true
 	await get_tree().create_timer(0.3).timeout
 	await _foto(w, pasta, "selo_mouse_cinza")
+	# DEF-3: a barra de defesa do escudo: cheia, abaixo de 25% (vermelha), no Difícil (sem recarga, apagada) e sem escudo (a moldura volta a 66 px)
+	w.heroi.cansado = false
+	w.heroi.folego = w.heroi.folego_max
+	w.heroi.def_max = 100.0
+	w.heroi.def = 100.0
+	await get_tree().create_timer(0.3).timeout
+	await _foto(w, pasta, "defesa_cheia")
+	w.heroi.def = 18.0
+	await get_tree().create_timer(0.3).timeout
+	await _foto(w, pasta, "defesa_baixa")
+	w.meta_bonus = {"dificuldade": Dificuldade.regras("dificil")}
+	w.heroi.def = 60.0
+	await get_tree().create_timer(0.3).timeout
+	await _foto(w, pasta, "defesa_dificil_sem_recarga")
+	w.meta_bonus = {}
+	w.heroi.def_max = 0.0
+	w.heroi.def = 0.0
+	await get_tree().create_timer(0.3).timeout
+	await _foto(w, pasta, "sem_defesa")
 
 
 func _foto(w, pasta: String, nome: String) -> void:

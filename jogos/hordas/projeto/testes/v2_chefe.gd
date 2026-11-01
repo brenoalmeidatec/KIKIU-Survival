@@ -177,6 +177,8 @@ func identidade_dos_chefes() -> void:
 	h.estado = Heroi.Estado.LIVRE
 	# escudo erguido de frente para a teia: o escudo consome o golpe (levar_dano devolve true), mas a vida fica intacta e o herói NÃO fica lento
 	m = ate_o_aviso(1)
+	w.combate.escudo.herois[str(h.chave)] = "escudo"  # DEF-2: o escudo é só do Nick; aqui o herói padrão o ganha pelo dado para testar o bloqueio da teia
+	h._iniciar_defesa()
 	h.escudo_forcado = true
 	ate(func(): return av.t[0] >= av.dur[0] - 2.0 * PASSO, 150)
 	ok(h.escudo_ativo, "teia (escudo): o escudo está erguido no disparo")

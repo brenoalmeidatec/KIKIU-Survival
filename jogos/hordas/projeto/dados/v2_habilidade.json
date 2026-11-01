@@ -1,7 +1,7 @@
 {
-	"_ajuda": "A HABILIDADE de cada herói, na tecla E (LB no controle), no padrão Overwatch: botão direito = secundário (o escudo, v2/escudo.gd), E = habilidade (v2/habilidade.gd e, no caso da ruptura, v2/ruptura.gd), Q = ultimate (v2/especial.gd, enche por dano e abates). A E tem recarga por TEMPO, curta (8 a 14 s), e a partida já começa com ela pronta; apertar na recarga é negado (som grave e o slot do HUD treme). A E é definida POR HERÓI: padrao é o id de quem não está em herois; herois mapeia a chave do herói (a mesma de `chave` no herói) para o id dele. Ids: ruptura (Hazaki: a ruptura de sempre, segurar carrega e soltar racha o chão; TODOS os números dela ficam em dados/v2_ruptura.json, inclusive a recarga e as trocas por herói), investida_escudo (Nick) e salto_adagas (Luke); id desconhecido deixa a tecla E sem efeito. Bloco comum: nega_t: tempo do slot do HUD tremendo quando o aperto cai na recarga; area_k: quanto a área do herói (cartas) amplia os raios, como na ruptura; piso: a menor recarga possível com as cartas de recarga (o teto de redução é o recarga_cartas_max da ruptura); numeros_max: números de dano mostrados por disparo (mais todo crítico). Cada id tem o seu bloco, com nome, rotulo (texto curto do slot do HUD, até 10 letras), icone (id de assets/v2/icones_cartas), desc e cor (RGB 0 a 1: o brilho do slot e dos efeitos). Os ids novos têm também: recarga (segundos entre dois usos, antes das cartas), dur (segundos do movimento, em que o herói fica INVULNERÁVEL e sem golpear; a ruptura, o escudo e a esquiva são cancelados ao apertar), distancia (px de chão andados, sempre inteiros em qualquer passo de tempo), anim (passo do combo cuja animação do herói toca e quantos ciclos dela cabem em dur; opcionais: antes = animação da folha que toca primeiro, até a fração antes_ate de dur, e quadros = quais quadros do passo tocam no resto: a investida do Nick segura a marreta de través (escudo) e fecha com a pancada, quadros 1 a 3) e foto (segundos de E em que o roteiro --roteiro=habilidade tira a foto). Distâncias em px de chão, empurrão em px/s (dividido pelo peso do monstro), atordoa e tempos em segundos; o dano passa pelo bônus de dano do herói e pelas cartas da E (Punho de terra, Pulso ligeiro e Estrondo valem para qualquer E; Contragolpe e Eco do chão só para a ruptura) e vale também para elite e chefe (elite vale metade do empurrão e chefe não é atordoado, como em qualquer golpe). INVESTIDA_ESCUDO (Nick): alcance e largura: a faixa à frente do herói em que quem entra leva dano, empurrao (para a frente) e atordoa, uma vez só; final: no fim do avanço, uma pancada curta em volta (raio, dano, empurrao, atordoa, hit_stop, tremor). SALTO_ADAGAS (Luke): o herói salta PARA TRÁS (contra a mira) e solta um leque de adagas para a frente na saida (decolagem) e outro, menor, no pouso; cada leque: n adagas em leque graus, com dano de CADA adaga, vel (px/s), alcance (px), perfura (monstros a mais que atravessa), empurrao e atordoa.",
+	"_ajuda": "A HABILIDADE de cada herói, na tecla E (LB no controle), no padrão Overwatch: botão direito = secundário (o escudo, v2/escudo.gd), E = habilidade (v2/habilidade.gd e, no caso da ruptura, v2/ruptura.gd), Q = ultimate (v2/especial.gd, enche por dano e abates). A E tem recarga por TEMPO, curta (8 a 14 s), e a partida já começa com ela pronta; apertar na recarga é negado (som grave e o slot do HUD treme). A E é definida POR HERÓI: padrao é o id de quem não está em herois; herois mapeia a chave do herói (a mesma de `chave` no herói) para o id dele. Ids: ruptura (Hazaki: a ruptura de sempre, segurar carrega e soltar racha o chão; TODOS os números dela ficam em dados/v2_ruptura.json, inclusive a recarga e as trocas por herói), investida_escudo (Nick), salto_adagas (Luke) e misseis (LightWolf); id desconhecido deixa a tecla E sem efeito. Bloco comum: nega_t: tempo do slot do HUD tremendo quando o aperto cai na recarga; area_k: quanto a área do herói (cartas) amplia os raios, como na ruptura; piso: a menor recarga possível com as cartas de recarga (o teto de redução é o recarga_cartas_max da ruptura); numeros_max: números de dano mostrados por disparo (mais todo crítico). Cada id tem o seu bloco, com nome, rotulo (texto curto do slot do HUD, até 10 letras), icone (id de assets/v2/icones_cartas), desc e cor (RGB 0 a 1: o brilho do slot e dos efeitos). Os ids novos têm também: recarga (segundos entre dois usos, antes das cartas), dur (segundos do movimento, em que o herói fica INVULNERÁVEL e sem golpear; a ruptura, o escudo e a esquiva são cancelados ao apertar), distancia (px de chão andados, sempre inteiros em qualquer passo de tempo), anim (passo do combo cuja animação do herói toca e quantos ciclos dela cabem em dur; opcionais: antes = animação da folha que toca primeiro, até a fração antes_ate de dur, e quadros = quais quadros do passo tocam no resto: a investida do Nick segura a marreta de través (escudo) e fecha com a pancada, quadros 1 a 3) e foto (segundos de E em que o roteiro --roteiro=habilidade tira a foto). Distâncias em px de chão, empurrão em px/s (dividido pelo peso do monstro), atordoa e tempos em segundos; o dano passa pelo bônus de dano do herói e pelas cartas da E (Punho de terra, Pulso ligeiro e Estrondo valem para qualquer E; Contragolpe e Eco do chão só para a ruptura) e vale também para elite e chefe (elite vale metade do empurrão e chefe não é atordoado, como em qualquer golpe). INVESTIDA_ESCUDO (Nick): alcance e largura: a faixa à frente do herói em que quem entra leva dano, empurrao (para a frente) e atordoa, uma vez só; final: no fim do avanço, uma pancada curta em volta (raio, dano, empurrao, atordoa, hit_stop, tremor). SALTO_ADAGAS (Luke): o herói salta PARA TRÁS (contra a mira) e solta um leque de adagas para a frente na saida (decolagem) e outro, menor, no pouso; cada leque: n adagas em leque graus, com dano de CADA adaga, vel (px/s), alcance (px), perfura (monstros a mais que atravessa), empurrao e atordoa. MISSEIS (LightWolf, beta; LW-4): o mecha solta `n` micro-mísseis em `dur` s, um a cada dur/n, alternando os ombros (`ombro` px para cada lado da mira), e anda a `mov` (fração da velocidade de andar) enquanto isso; NÃO fica invulnerável (`invul`, opcional em qualquer E: sem o campo vale true) e não golpeia. A mira trava no disparo. Cada míssil sai com uma abertura aleatória de até `abre` graus e escolhe, ao sair, o monstro vivo mais perto dentro de um cone de `cone` graus em volta da mira, até `alcance` px (no máximo `por_alvo` mísseis no mesmo alvo, enquanto houver outro no cone); depois gira até `giro` rad/s para ele. Sem alvo, ou se o alvo morre antes, segue reto (a busca contínua fica para a v3). Acerta o primeiro monstro no caminho (`dano`, `empurrao`, `atordoa`, como qualquer E) e explode em área pequena (`expl_raio` px, `expl_dano`, pela mesma conta do dano em área das armas); o míssil usa o pool de projéteis de v2/adagas.gd (imagem `missil`). As cartas da E (dano, recarga, atordoa) valem como nas outras.",
 	"padrao": "ruptura",
-	"herois": {"hazaki": "ruptura", "nicao": "investida_escudo", "lucas": "salto_adagas"},
+	"herois": {"hazaki": "ruptura", "nicao": "investida_escudo", "lucas": "salto_adagas", "lightwolf": "misseis", "lightwolf_lobo": "nenhuma"},
 	"comum": {
 		"nega_t": 0.25,
 		"area_k": 0.6,
@@ -46,5 +46,31 @@
 		"foto": 0.16,
 		"saida": {"n": 9, "leque": 70, "dano": 10, "vel": 470, "alcance": 260, "perfura": 1, "empurrao": 90, "atordoa": 0.25},
 		"pouso": {"n": 5, "leque": 36, "dano": 8, "vel": 470, "alcance": 230, "perfura": 1, "empurrao": 70, "atordoa": 0.15}
+	},
+	"misseis": {
+		"nome": "Mísseis",
+		"rotulo": "MÍSSEIS",
+		"icone": "explode",
+		"desc": "O mecha solta 12 micro-mísseis dos ombros em um segundo, andando devagar. Cada um busca o monstro mais perto à frente e explode em área pequena.",
+		"cor": [0.5, 0.95, 1.0],
+		"recarga": 9.0,
+		"dur": 0.9,
+		"invul": false,
+		"mov": 0.5,
+		"anim": {"passo": 0, "ciclos": 2},
+		"foto": 0.45,
+		"n": 12,
+		"ombro": 9,
+		"abre": 16,
+		"cone": 50,
+		"giro": 3.2,
+		"por_alvo": 2,
+		"vel": 270,
+		"alcance": 320,
+		"dano": 11,
+		"empurrao": 90,
+		"atordoa": 0.12,
+		"expl_raio": 26,
+		"expl_dano": 6
 	}
 }

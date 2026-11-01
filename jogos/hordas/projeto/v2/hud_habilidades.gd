@@ -1,10 +1,12 @@
 extends Control
 ## Os dois slots de habilidade do canto inferior DIREITO do HUD (estilo Overwatch): E (a habilidade do herói: a ruptura do Hazaki, a investida do Nick, o salto
-## do Luke; v2/habilidade.gd) e o SECUNDÁRIO (botão direito ou gatilho esquerdo: o escudo, v2/escudo.gd). Também lê, no mesmo passo, o estado do Q (a ultimate
+## do Luke; v2/habilidade.gd) e o SECUNDÁRIO (botão direito ou gatilho esquerdo: o escudo do Nick, o aparo do Hazaki e dos outros, v2/escudo.gd). Também lê, no mesmo passo, o estado do Q (a ultimate
 ## do herói, v2/especial.gd), que é DESENHADO pelo círculo do centro (v2/hud_ultimate.gd, o nó "Ultimate"). Tudo vem somente dos campos publicados pelo herói:
 ## sem os campos o slot fica apagado (E e secundário "INDISP.", Q "EM BREVE") e nunca indica uma habilidade pronta que não existe. Quem tem a ruptura (hab_id
-## "ruptura" ou sem hab_*) usa os rup_*; as outras E usam os hab_* (nome, ícone, cor, recarga). O escudo não tem recarga própria: ele gasta o FÔLEGO da corrida,
-## então o slot do secundário acende pronto, pulsa erguido e, com o herói CANSADO (fôlego zerado), mostra a cortina de recarga até o fôlego voltar ao limite.
+## "ruptura" ou sem hab_*) usa os rup_*; as outras E usam os hab_* (nome, ícone, cor, recarga). O slot do secundário NÃO conhece o escudo nem o aparo:
+## lê só o contrato `sec_*` que o herói publica (sec_nome, sec_icone, sec_pronta, sec_ativo, sec_barra, sec_recarga, sec_recarga_s). Acende pronto, pulsa em uso e
+## mostra a cortina de recarga (fração `sec_recarga`) com o tempo que falta (`sec_recarga_s`). O ícone é assets/v2/secundario_s/<chave do herói>.png quando existir,
+## senão o ícone de carta de `sec_icone`.
 
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
@@ -15,12 +17,12 @@ const ESPACO_CARD := 2.0
 const TAM_ICON := Vector2(44.0, 44.0)  # o ícone (32 px) com 6 px de folga; era 48 e encolheu para o selo da tecla caber com 16 px de altura
 const CARGA_LARANJA := Paleta.CARGA_LARANJA
 const COR_ESCUDO := Color(0.45, 0.82, 1.0)  # o azul do escudo (o mesmo do desenho dele no mundo, v2/escudo.gd)
-const FOLEGO_MIN_PADRAO := 0.15  # fôlego mínimo para erguer o escudo e fração de volta do cansaço: lidos do cfg do combate; estes só valem sem combate
+const PASTA_ICONE_S := "res://assets/v2/secundario_s/"  # <chave do herói>.png: o ícone próprio do slot S (opcional; senão vale o de carta)
 const ICONES_E := {
 	"nicao": preload("res://assets/v2/habilidade_e/nicao.png"),
 	"lucas": preload("res://assets/v2/habilidade_e/lucas.png"),
+	"lightwolf": preload("res://assets/v2/habilidade_e/lightwolf.png"),
 }
-const CANSADO_ATE_PADRAO := 0.34
 const BORDA := Paleta.HABILIDADE_BORDA
 const DESATIVADO := Paleta.HABILIDADE_DESATIVADA
 const FUNDO := Color(Paleta.CARTAO, 0.92)
@@ -41,10 +43,14 @@ var q_implementada := false  # Q só acende se o herói publica um especial real
 var q_pronta := false
 var q_carga_px := 0  # a carga da ultimate em 0 a 20 (a cortina que sobe no ícone)
 var q_carga_pct := 0  # a carga da ultimate em % (o texto do slot)
-var s_disponivel := false  # o herói publica o escudo (escudo_ativo): senão o slot do secundário fica apagado
-var s_pronta := false  # pode erguer (não cansado e com o fôlego mínimo) ou já está erguido
-var s_ativo := false  # o escudo está erguido
-var s_recarga_px := 0  # a cortina do cansaço em 0 a 20: sobe a 20 com o fôlego zerado e desce até o fôlego voltar ao limite
+var s_disponivel := false  # o herói publica um secundário (sec_nome): senão o slot fica apagado
+var s_pronta := false  # pode usar agora (sec_pronta) ou já está em uso
+var s_ativo := false  # em uso agora (escudo erguido, janela do aparo aberta)
+var s_recarga_px := 0  # a cortina de recarga em 0 a 20 (sec_recarga)
+var s_recarga_s := 0.0  # s que faltam para ficar pronto (sec_recarga_s; 0 = sem contagem)
+var s_nome := ""  # o rótulo do slot (sec_nome)
+var s_icone := ""  # o id do ícone de carta (sec_icone)
+var _icones_s := {}  # caminho -> Texture2D (ou null): o ícone próprio do slot S, carregado uma vez
 var q_negada := false
 var q_ativa := false  # o especial está em andamento
 var q_rotulo := ""
@@ -160,7 +166,7 @@ func sincronizar(heroi) -> void:
 	var fase_perfeita := int(Time.get_ticks_msec() / 50.0) % 2 if perfeita and not Piscadas.ligado() else 0
 	var fase_pulso := int(Time.get_ticks_msec() / 160.0) % 2 if (e_ativa or s_ativo) and not Piscadas.ligado() else 0  # o quadro da E em andamento e o do escudo erguido pulsam
 	var nova_chave := (
-		"%s|%s|%d|%d|%d|%s|%s|%s|%d|%d|%s|%s|%s|%d|%s"
+		"%s|%s|%d|%d|%d|%s|%s|%s|%d|%d|%s|%s|%s|%d|%s|%s|%s|%s"
 		% [
 			estado_e,
 			e_pronta,
@@ -176,7 +182,10 @@ func sincronizar(heroi) -> void:
 			e_icone,
 			s_disponivel,
 			s_recarga_px,
-			"%s%s%d" % [s_pronta, s_ativo, fase_pulso]
+			"%s%s%d" % [s_pronta, s_ativo, fase_pulso],
+			s_nome,
+			s_icone,
+			"%.1f" % s_recarga_s
 		]
 	)
 	if nova_chave != _chave:
@@ -184,27 +193,23 @@ func sincronizar(heroi) -> void:
 		queue_redraw()
 
 
-## O secundário (escudo): disponível se o herói publica escudo_ativo. Pronto se erguido ou se não está cansado e tem o fôlego mínimo; cansado, a cortina
-## de recarga mede quanto falta para o fôlego voltar ao limite em que o cansaço acaba (cfg.folego.cansado_ate).
+## O secundário: disponível se o herói publica um nome (sec_nome); tudo o mais vem dos campos sec_* (o herói decide o que é "pronto", "em uso" e a recarga).
 func _sincronizar_secundario(heroi) -> void:
-	s_disponivel = _tem_propriedade(heroi, "escudo_ativo")
+	s_nome = str(_campo(heroi, "sec_nome", ""))
+	s_disponivel = s_nome != ""
 	s_pronta = false
 	s_ativo = false
 	s_recarga_px = 0
+	s_recarga_s = 0.0
+	s_icone = ""
 	if not s_disponivel:
 		return
-	s_ativo = _campo(heroi, "escudo_ativo", false) == true
-	var cansado: bool = _campo(heroi, "cansado", false) == true
-	var folego := maxf(float(_campo(heroi, "folego", 0.0)), 0.0)
-	var folego_max := maxf(float(_campo(heroi, "folego_max", 1.0)), 0.001)
-	var combate = _campo(_campo(heroi, "mundo", null), "combate", null)
-	var cfg_escudo = _campo(_campo(combate, "escudo", null), "cfg", null)
-	var cfg_folego = _cfg(_campo(combate, "cfg", null), "folego", null)
-	var minimo := float(_cfg(cfg_escudo, "folego_min", FOLEGO_MIN_PADRAO))
-	var cansado_ate := float(_cfg(cfg_folego, "cansado_ate", CANSADO_ATE_PADRAO))
-	s_pronta = s_ativo or (not cansado and folego >= minimo)
-	if cansado and not s_ativo:
-		s_recarga_px = ceili((1.0 - clampf(folego / (folego_max * maxf(cansado_ate, 0.001)), 0.0, 1.0)) * 20.0)
+	s_icone = str(_campo(heroi, "sec_icone", ""))
+	s_ativo = _campo(heroi, "sec_ativo", false) == true
+	s_pronta = s_ativo or _campo(heroi, "sec_pronta", false) == true
+	var recarga := clampf(float(_campo(heroi, "sec_recarga", 0.0)), 0.0, 1.0)
+	s_recarga_px = 0 if s_ativo or recarga <= 0.0 else mini(ceili(recarga * 20.0), 20)
+	s_recarga_s = 0.0 if s_ativo else maxf(float(_campo(heroi, "sec_recarga_s", 0.0)), 0.0)
 
 
 func _draw() -> void:
@@ -213,7 +218,7 @@ func _draw() -> void:
 	_desenhar_card(Vector2(TAM_CARD.x + ESPACO_CARD, 0.0), "S", fonte)
 
 
-## Um card: "E" (a habilidade do herói) ou "S" (o secundário, o escudo).
+## Um card: "E" (a habilidade do herói) ou "S" (o secundário: escudo, aparo...).
 func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var e := tecla == "E"
 	var card := Rect2(origem, TAM_CARD)
@@ -224,7 +229,7 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	var cor := _cor_do_card(e, _pulsa())
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
-	var arte: Texture2D = arte_e() if e else Dados.icone_carta("escudo")
+	var arte: Texture2D = arte_e() if e else arte_s()
 	if arte != null:
 		# o ícone próprio da carta (32x32, assets/v2/icones_cartas) no centro do quadro; apagado quando não está disponível
 		var tinta := Color.WHITE if (e_disponivel if e else s_pronta) else DESATIVADO
@@ -307,6 +312,17 @@ func arte_e() -> Texture2D:
 	return Dados.icone_carta(e_icone)
 
 
+## O ícone do slot S: o próprio do herói (assets/v2/secundario_s/<chave>.png) quando existir, senão o ícone de carta do `sec_icone`.
+func arte_s() -> Texture2D:
+	if q_heroi != "":
+		var caminho := PASTA_ICONE_S + q_heroi + ".png"
+		if not _icones_s.has(caminho):
+			_icones_s[caminho] = load(caminho) if ResourceLoader.exists(caminho) else null
+		if _icones_s[caminho] != null:
+			return _icones_s[caminho]
+	return Dados.icone_carta(s_icone)
+
+
 ## Tudo o que o círculo do Q desenha, numa chave: só redesenha quando ela muda, ou enquanto pulsa.
 func q_chave() -> String:
 	return "%s|%s|%d|%s|%s|%s|%s|%s" % [q_implementada, q_pronta, q_carga_pct, q_negada, q_ativa, q_rotulo, q_cor.to_html(), q_heroi]
@@ -327,9 +343,9 @@ func _rotulo_q() -> String:
 func _rotulo_s() -> String:
 	if not s_disponivel:
 		return "INDISP."
-	if s_ativo:
-		return "ERGUIDO"
-	return "ESCUDO" if s_pronta else "CANSADO"
+	if s_pronta:
+		return s_nome
+	return "%.1f S" % s_recarga_s if s_recarga_s > 0.0 else "RECARGA"
 
 
 func _rotulo_e() -> String:
