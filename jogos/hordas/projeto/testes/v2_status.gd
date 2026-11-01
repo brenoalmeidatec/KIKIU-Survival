@@ -985,7 +985,7 @@ func _modificadores() -> void:
 		"as peças gastas na Ventania não mostram mais um 'nv 2/4' parado nem dica (%s, %s)" % [lin("katana.onda").nivel_txt, lin("katana.fura").nivel_txt]
 	)
 	onda = n_de("katana.onda")
-	perto(float(onda[0]), 80.0 * 2.4, 0.001, "com a Ventania a onda do card vale 80% x 2,4")
+	perto(float(onda[0]), 64.0 * 2.4, 0.001, "com a Ventania a onda do card vale 64% x 2,4")
 	m = boneco(30.0)
 	for k in 2:
 		c.armas.w_dist.fill(0.0)

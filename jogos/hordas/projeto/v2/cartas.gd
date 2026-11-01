@@ -405,6 +405,7 @@ func aplicar(c: Dictionary) -> void:
 			combate.ruptura.definir(str(d.chave), float(e.soma))
 		_:
 			e.n = int(e.n) + 1
+			e.soma = float(e.soma) + float(c.get("valor", 0.0))  # a soma aplicada: a troca no Difícil (CAR-4) desfaz por ela
 			_aplicar_stat(h, str(c.get("stat", "")), float(c.get("valor", 0.0)))
 	combate.progresso.melhorias[id] = int(e.n)
 	_checar_evolucoes()

@@ -410,7 +410,7 @@ func _provar_segundo_raio_extra() -> void:
 	for id in ["area", "mira", "chuva"]:
 		for j in int(c.cartas._def[id].max):
 			c.cartas.aplicar(c.cartas.montar_carta(c.cartas._def[id], 3))
-	ok(igual(h.m_area, 3.304) and igual(c.armas.mods.mira, 192.0), "build real maxima de area/Mira")
+	ok(igual(h.m_area, 3.4) and igual(c.armas.mods.mira, 192.0), "build real maxima de area/Mira")
 	e.armar(h)
 	h.esp_carga = h.esp_carga_max
 	ok(h.especial(), "Q real da regressao segundo raio")

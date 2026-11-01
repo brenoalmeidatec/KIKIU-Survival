@@ -29,13 +29,13 @@ func _ready() -> void:
 	ok(float(cfg.folego.get("abate_max_s", 0.0)) > 0.0, "dados: folego.abate_max_s existe e é maior que zero")
 	var teto := float(cfg.folego.abate_max_s)
 
-	# 4 cartas lendárias (38,4% cada, 153,6% de carga por abate): sem teto, UM abate já enchia a barra
-	w.combate.armas.definir_modificador("folego", 153.6)
+	# 5 cartas lendárias (32% cada, 160% de carga por abate): sem teto, UM abate já enchia a barra
+	w.combate.armas.definir_modificador("folego", 160.0)
 	var h = w.heroi
 	h.folego = 0.0
 	h._credito_abate = teto
 	_abates(h, 1)
-	ok(h.folego <= teto + 0.001, "um abate de 153%% devolve no máximo o crédito de %s carga (%s)" % [teto, h.folego])
+	ok(h.folego <= teto + 0.001, "um abate de 160%% devolve no máximo o crédito de %s carga (%s)" % [teto, h.folego])
 
 	# uma rajada de 40 abates no mesmo quadro não passa do teto (a barra não enche)
 	h.folego = 0.0
