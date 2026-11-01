@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Metainfo do AppImage (AppStream). Sem ele o appimagetool avisa que falta usr/share/metainfo/kikiu.appdata.xml. -->
+<!-- Metainfo do AppImage (AppStream). O montar.sh instala como usr/share/metainfo/io.github.brenoalmeidatec.kikiu.appdata.xml: o nome do arquivo tem de ser o <id>. -->
 <component type="desktop-application">
   <id>io.github.brenoalmeidatec.kikiu</id>
   <launchable type="desktop-id">kikiu.desktop</launchable>
