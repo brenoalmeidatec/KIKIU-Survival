@@ -239,8 +239,9 @@ func _ready() -> void:
 			nomes.append(a._proj_lista[a.a_proj[i]].nome)
 	nomes.sort()
 	ok(nomes == ["bala", "plasma"], "proj escolhe o desenho da bala e do plasma (%s)" % str(nomes))
+	var tamanho: int = a._proj_lista.size()  # as entradas desenhadas em código (adaga, bala, plasma, míssil)
 	lancar_um(0, true, "nome_que_nao_existe")
-	ok(a._proj_lista.size() == 3 and a._proj_nomes["nome_que_nao_existe"] == 0, "proj desconhecido cai na adaga sem criar entrada")
+	ok(a._proj_lista.size() == tamanho and a._proj_nomes["nome_que_nao_existe"] == 0, "proj desconhecido cai na adaga sem criar entrada")
 	passos(3)  # o desenho dos três passa pelo _desenhar_corpo / _desenhar_brilho sem erro
 	zerar()
 	ok(a.a_ric.count(0) == a.MAX and a.a_proj.count(0) == a.MAX, "restart limpa ricochete e imagem")
