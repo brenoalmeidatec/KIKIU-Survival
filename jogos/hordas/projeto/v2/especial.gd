@@ -33,7 +33,7 @@ extends RefCounted
 ## efeitos(dt) [relógio de parede: o visual].
 
 const Armas := preload("res://v2/armas.gd")
-const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: a fonte da mira (o Q com mouse segue o cursor ao vivo)
+const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: só o analógico de mira (STICK) não segue o cursor no Q
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
 const PTS := 40  # pontos da elipse desenhada
 const MAX_ANEIS := 10
@@ -241,11 +241,11 @@ func iniciar(h) -> bool:
 	_tick_t = 0.0
 	_giro = randf() * TAU
 	_escala = (1.0 + (float(h.m_area) - 1.0) * float(comum.area_k)) * combate.ritmo.multiplicador("q_area", h.nivel)
-	# a direção é para onde o herói está virado, travada no aperto (ULT-B): com mouse é a mira (o mouse vira o corpo fora do especial); com teclado ou analógico é o corpo
-	# com mouse usa a mira AO VIVO (mira_mundo - centro): em GOLPE e em HABILIDADE o mouse não vira o corpo, então dir_olhar ficaria preso na direção do começo do golpe
+	# a direção é travada no aperto (ULT-B, D31): com mouse e teclado é SEMPRE o cursor ao vivo, seja qual for a última fonte de entrada (andando para um lado com o mouse
+	# do outro, o Q vai para o cursor); em GOLPE e HABILIDADE o mouse não vira o corpo, então dir_olhar não serve. Só o analógico de mira (STICK, sem cursor) usa o corpo
 	_dir = h.dir_olhar.normalized()
-	if h.fonte == Heroi.Fonte.MOUSE:
-		var viva: Vector2 = h.mira_mundo - h.centro()
+	if h.fonte != Heroi.Fonte.STICK:
+		var viva: Vector2 = h.mundo.mouse_mundo() - h.centro()
 		if viva.length() > 4.0:
 			_dir = viva.normalized()
 	if _dir.length_squared() < 0.01:
