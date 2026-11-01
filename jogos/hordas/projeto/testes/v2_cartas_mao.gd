@@ -6,6 +6,7 @@ extends "res://testes/isolamento_v2.gd"
 # pool esgotado cai na cura (sem travar); o selo e o rodapé do cartão; o baú usa a mesma mão; o atalho `sortear` não guarda nada.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cartas_mao.tscn  (imprime "v2_cartas_mao falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 const PASSO := 1.0 / 60.0
 var falhas := 0
 var w
@@ -23,6 +24,7 @@ func zerar() -> void:
 	w.combate.limpar_partida()
 	w.combate.diretor.ligado = false
 	w.heroi.imortal = true
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o último mapa dá a cota de 5/5 (a Floresta não deixa nenhum bônus passar do nível 4)
 	w.combate.cartas.rng.seed = 4242
 	for i in 3:
 		w.avancar(PASSO)

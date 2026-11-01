@@ -11,6 +11,7 @@ extends RefCounted
 ## Perfil Baixo (Anim.suave desligado): efeito `decorativo` não nasce e some dos que já estavam no ar. `clarao` escala o alfa pela opção
 ## "Tremor e clarões" (0% não acende).
 
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": folha de clarão não nasce
 const Anim := preload("res://v2/anim_golpes.gd")  # só a chave Anim.suave (perfil Baixo = desligada)
 const PASTA := "res://assets/v2/pixelfx/"
 const MAX := 48  # efeitos ao mesmo tempo, somando todos os ids (a alça guarda o slot em 8 bits)
@@ -185,6 +186,8 @@ func _alocar(id: String, modo: int, opcoes: Dictionary) -> int:
 		return -1
 	var cor: Color = opcoes.get("cor", d.cor)
 	if d.clarao:
+		if not Piscadas.clarao_permitido():
+			return -1
 		var f = Config.g("tremor_clarao")
 		if f != null:
 			cor.a *= clampf(float(f) / 100.0, 0.0, 1.0)

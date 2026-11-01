@@ -4,6 +4,7 @@ extends Control
 ## campo a ponta da barra pisca em vermelho (o nível está travado até ele morrer). Os números vêm do diretor (v2/diretor.gd) via hud.gd.
 
 const Paleta := preload("res://v2/paleta.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a ponta travada fica vermelha e parada
 const BARRA_X := 6.0
 const BARRA_A := 4.0
 const BORDA := 5.0  # a borda da moldura de pedra
@@ -35,6 +36,11 @@ func mostrar(n: int, t: int, f: float, lista: Array, trava: bool, dt: float) -> 
 	_pisca = _pisca + dt if trava else 0.0
 	if mudou or trava:
 		queue_redraw()
+
+
+## A ponta travada (e a caveira do chefão) está na metade vermelha do pisca de 2 Hz? Com "Reduzir piscadas": vermelho parado.
+func _ponta_acesa() -> bool:
+	return Piscadas.ligado() or int(_pisca * 4.0) % 2 == 0
 
 
 func texto() -> String:
@@ -74,7 +80,7 @@ func _draw() -> void:
 	if cheio > 0.0:
 		draw_rect(Rect2(BARRA_X, barra_y, cheio, BARRA_A), Paleta.XP)
 		draw_rect(Rect2(BARRA_X, barra_y, cheio, 1.0), Paleta.VALOR)
-	if travado and int(_pisca * 4.0) % 2 == 0:
+	if travado and _ponta_acesa():
 		draw_rect(Rect2(BARRA_X + cheio - 2.0, barra_y - 1.0, 3.0, BARRA_A + 2.0), Paleta.PERIGO)
 	# as marcas dos chefes (as já vencidas ficam apagadas)
 	for c in chefes:
@@ -89,7 +95,7 @@ func _draw() -> void:
 				draw_rect(Rect2(x - meia - 0.5, cy - 2.5 + i, meia * 2.0 + 1.0, 1.0), cor)
 				draw_rect(Rect2(x - meia - 0.5, cy + 2.5 - i - 1.0, meia * 2.0 + 1.0, 1.0), cor)
 		else:
-			var cor_c := Paleta.PERIGO if not travado or int(_pisca * 4.0) % 2 == 0 else Paleta.BRANCO
+			var cor_c := Paleta.PERIGO if not travado or _ponta_acesa() else Paleta.BRANCO
 			var o := Vector2(minf(x - 2.0, size.x - 6.0), barra_y - 1.0)
 			draw_rect(Rect2(o - Vector2(1, 1), Vector2(7, 7)), Paleta.BARRA_BORDA)
 			for yy in CAVEIRA.size():

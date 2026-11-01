@@ -29,6 +29,9 @@ const INTENSIDADE_MAX := 4
 ## Anúncios que furam a fila: entram na hora, por cima do que está na tela (o ULTIMATE PRONTA não pode esperar atrás de NÍVEL, ONDA ou ELITE,
 ## porque o jogador precisa saber já que o Q está pronto). O que estava na tela volta à frente da fila, se ainda não deu tempo de ler.
 const PRIORITARIOS := ["ULTIMATE PRONTA"]
+## Os que começam com este texto também furam a fila: o ÁPICE (CAR-5) é ganho com o jogo parado na escolha de carta, e o "NÍVEL N!" que estava na tela
+## ficou escondido por ela; sem furar, "ÁPICE: nome" esperaria o NÍVEL acabar.
+const PRIORITARIOS_INICIO := ["ÁPICE"]
 const LIDO_T := 0.6  # s de anúncio na tela a partir dos quais ele conta como lido (não volta à fila se for interrompido)
 
 ## Anúncios esperando: cada um é {texto, cor, intensidade}.
@@ -71,7 +74,7 @@ func anunciar(texto: String, cor: Color = Color.WHITE, intensidade: int = 0) -> 
 	if not _ativo:
 		_mostrar(anuncio)
 		return
-	if PRIORITARIOS.has(texto) and not PRIORITARIOS.has(texto_ativo):
+	if _prioritario(texto) and not _prioritario(texto_ativo):
 		if _t < ENTRADA_T + LIDO_T:
 			fila.push_front({"texto": texto_ativo, "cor": _cor, "intensidade": _intensidade})
 			if fila.size() > CAPACIDADE:
@@ -81,6 +84,15 @@ func anunciar(texto: String, cor: Color = Color.WHITE, intensidade: int = 0) -> 
 	fila.append(anuncio)
 	if fila.size() > CAPACIDADE:
 		fila.pop_front()
+
+
+func _prioritario(texto: String) -> bool:
+	if PRIORITARIOS.has(texto):
+		return true
+	for p in PRIORITARIOS_INICIO:
+		if texto.begins_with(p):
+			return true
+	return false
 
 
 ## Verdadeiro se há anúncio na tela ou esperando.

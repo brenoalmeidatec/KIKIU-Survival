@@ -14,6 +14,7 @@ const Paleta := preload("res://v2/paleta.gd")
 const Meta := preload("res://v2/meta.gd")
 const Mapas := preload("res://v2/mapas.gd")
 const Luzes := preload("res://v2/luzes.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o tremeluzir das chamas e tochas fica parado
 const Sombras := preload("res://v2/sombras.gd")
 const Ator := preload("res://v2/ator.gd")
 const Sombreador := preload("res://v2/salao_vivo.gdshader")
@@ -852,6 +853,8 @@ func _aplicar_niveis() -> void:
 
 
 func _flick(sem: float, vel := 6.0) -> float:
+	if Piscadas.ligado():  # o ruído muda a energia em ±36% a alguns Hz: com a opção, 1,0 parado
+		return 1.0
 	var n := _ruido.get_noise_1d(_tempo * vel + sem * 37.0)
 	var s := sin(_tempo * 11.3 + sem) * sin(_tempo * 4.7 + sem * 2.1)
 	return clampf(1.0 + 0.36 * n + 0.07 * s, 0.55, 1.45)

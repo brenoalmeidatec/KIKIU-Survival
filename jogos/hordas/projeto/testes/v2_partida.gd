@@ -3,6 +3,7 @@ extends "res://testes/isolamento_v2.gd"
 # derrota e o sinal partida_terminou com os campos certos. Os níveis do mapa estão em v2_diretor.gd; os chefes e a vitória, em v2_chefe.gd.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_partida.tscn  (imprime "v2_partida falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const ArmasNovas := preload("res://v2/armas_novas.gd")
 const PASSO := 1.0 / 60.0
@@ -35,6 +36,7 @@ func zerar() -> void:
 	w.combate.limpar_partida()
 	w.combate.diretor.ligado = false
 	w.heroi.imortal = true
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o último mapa dá a cota de 5/5 (a Floresta não deixa nenhum bônus passar do nível 4)
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.heroi.ataque_forcado = null
 	w.heroi.correr_forcado = null

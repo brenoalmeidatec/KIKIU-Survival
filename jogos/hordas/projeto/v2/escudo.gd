@@ -42,6 +42,7 @@ const RACHADO := 3
 const PEDACO := 4  # 4..7
 const CEL := 32
 const GRAVIDADE := 420.0  # px/s2 dos pedaços
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o escudo não solta clarão no bloqueio
 const Herois := preload("res://v2/herois.gd")  # a folha da partida decide qual escudo desenhar
 const Progresso := preload("res://v2/progresso.gd")  # bonus_por_nivel: o crescimento do raio por nível (a mesma regra do golpe, outra tabela)
 
@@ -526,7 +527,7 @@ func _atualizar_sprite(h, ativo: bool) -> void:
 	_spr.flip_h = flip
 	var tom := Color(1, 1, 1, alfa)
 	if baixo and not rachado_visivel:  # de lado ou de costas não há quadro rachado: o aviso é o escudo avermelhado, pulsando
-		var pulso := 0.5 + 0.5 * sin(_relogio * 14.0)
+		var pulso := Piscadas.valor(0.5 + 0.5 * sin(_relogio * 14.0), Piscadas.PULSO_ESCUDO_FIXO)  # com "Reduzir piscadas": o vermelho fica parado no centro do pulso
 		tom = Color(1.0, 0.82 - 0.2 * pulso, 0.78 - 0.2 * pulso, alfa)
 	_spr.modulate = tom
 	_raiz.visible = true
@@ -589,11 +590,12 @@ func visual_estado() -> Dictionary:
 
 ## A cor e o alfa do clarão aditivo do escudo agora: acerto comum (branco), bloqueio perfeito (dourado), reforjado e a janela do perfeito logo depois de erguer.
 func _brilho(h) -> Color:
-	if _perf_t > 0.0:
+	var clarao := Piscadas.clarao_permitido()  # com "Reduzir piscadas" os clarões do bloqueio não acendem (a janela do perfeito, que cresce devagar, fica)
+	if clarao and _perf_t > 0.0:
 		return Color(COR_OURO.r, COR_OURO.g, COR_OURO.b, _perf_t / 0.22 * 0.8)
-	if _flash_t > 0.0:
+	if clarao and _flash_t > 0.0:
 		return Color(1, 1, 1, _flash_t / 0.14 * 0.55)
-	if _glint_t > 0.0:
+	if clarao and _glint_t > 0.0:
 		var c := COR_OURO.lerp(Color.WHITE, 0.5)
 		return Color(c.r, c.g, c.b, sin(_glint_t / 0.24 * PI) * 0.6)
 	var janela := float((cfg.perfeito as Dictionary).janela)

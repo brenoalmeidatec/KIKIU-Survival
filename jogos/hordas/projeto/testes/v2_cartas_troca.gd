@@ -315,15 +315,15 @@ func _testes() -> void:
 	# 8. mão toda de TROCA (todos os bônus no máximo) ganha a cura para o tempo esgotado ter o que escolher
 	zerar("dificil")
 	for id in ["dano", "vida", "area", "vel_ataque", "vel_mov", "ima", "critico", "explode", "folego", "abalo", "rb_dano", "rb_recarga"]:
-		dar(id, int(cs.definicao(id).max) - cs.nivel_de(id))
+		dar(id, int(cs.definicao(id).max))  # na Floresta (cota de 5/5 = 0, CAR-5) cada um para no nível 4: sem upgrade possível
 	var cheios := 0
 	for id in cs.bonus_trocaveis():
-		if cs.nivel_de(id) >= int(cs.definicao(id).max):
+		if cs.nivel_de(id) >= cs.teto_de(id):
 			cheios += 1
 	var niveis := {}
 	for id in cs.bonus_trocaveis():
 		niveis[id] = cs.nivel_de(id)
-	ok(cs.cheio() and cheios == 12, "doze bônus no máximo (%d no máximo, %d no total, %s)" % [cheios, cs.bonus_contados(), niveis])
+	ok(cs.cheio() and cheios == 12, "doze bônus sem upgrade possível (%d no teto, %d no total, %s)" % [cheios, cs.bonus_contados(), niveis])
 	c.progresso.pendentes = 1
 	c.progresso.abrir_escolha()
 	var tp8 := tipos(c.progresso.cartas)

@@ -55,6 +55,7 @@ const COR_NIVEL := Paleta.ANUNCIO_NIVEL
 const PESADELO_POS := Vector2(540.0, 10.0)  # o aviso PESADELO, ao lado do relógio
 const NIVEL_RECT := Rect2(284.0, 38.0, 140.0, 36.0)  # linha 2 da grade do topo: mesma altura e mesmo y dos abates (428, 38, 104x36), logo à esquerda dele e abaixo das barras
 const HudNivel := preload("res://v2/hud_nivel.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": fôlego cansado e vida baixa viram cor fixa
 ## Comprimento das barras de vida e de fôlego, o mesmo para as duas. No máximo de partida do herói escolhido (cfg do combate) a barra mede BARRA_BASE_PX;
 ## cada ponto de vida máxima acima da base soma BARRA_PX_VIDA px, e cada carga de fôlego, BARRA_PX_FOLEGO; vale a meta maior das duas. O teto
 ## (BARRA_TETO_PX) segura a moldura antes do selo de nível e do Q (x 432). Ver _barras.
@@ -304,7 +305,7 @@ func avancar(dt: float) -> void:
 	# Herói cansado (corrida no Shift esgotou o fôlego): a barra pisca em vermelho até recuperar.
 	var cansado: bool = _campo(h, "cansado") == true
 	_piscada = _piscada + dt if cansado else 0.0
-	var pisca: bool = cansado and int(_piscada * 6.0) % 2 == 0
+	var pisca: bool = cansado and (Piscadas.ligado() or int(_piscada * 6.0) % 2 == 0)  # com a opção: vermelho fixo até recuperar
 	_folego.modulate = PISCA_CANSADO if pisca else Color.WHITE
 	var xp_prox := maxf(_num(h, "xp_proximo", 100.0), 1.0)
 	var xp_alvo := clampf(_num(h, "xp", 0.0), 0.0, xp_prox)
@@ -485,6 +486,8 @@ func _animar(dt: float) -> void:
 	# Brilho do XP: a barra e o selo clareiam para o dourado, piscando em degraus de 1/4 (pixel art não tem alfa suave) e apagando até zero.
 	brilho = maxf(brilho - dt, 0.0)
 	var f := roundf(4.0 * (brilho / BRILHO_T) * (0.5 + 0.5 * sin(brilho * 16.0))) / 4.0
+	if Piscadas.ligado():  # "Reduzir piscadas": o seno de ~2,5 Hz some; dourado fixo enquanto o brilho dura, uma subida e uma descida só
+		f = Piscadas.BRILHO_XP_FIXO if brilho > 0.0 else 0.0
 	_xp_barra.modulate = Color.WHITE.lerp(BRILHO_XP, f)
 	# Pop do selo ao subir de nível (cresce 0,4 e volta, em degraus de 0,05) e o anel de luz que sai dele.
 	_pop_selo = maxf(_pop_selo - dt, 0.0)
@@ -502,16 +505,16 @@ func _animar(dt: float) -> void:
 	_relogio.modulate = Color.WHITE.lerp(OURO, roundf(4.0 * _relogio_pisca / RELOGIO_PISCA_T) / 4.0)
 
 
-## Vida baixa (abaixo de 25%): a barra de vida pisca e a vinheta vermelha pulsa nas bordas. A vinheta entra e sai aos poucos.
+## Vida baixa (abaixo de 25%): a barra de vida pisca e a vinheta vermelha pulsa nas bordas (com "Reduzir piscadas" as duas ficam paradas). A vinheta entra e sai aos poucos.
 func _vida_baixa(dt: float, fracao: float) -> void:
 	var baixa := fracao < LIMIAR_VIDA_BAIXA
 	_pisca_vida = _pisca_vida + dt if baixa else 0.0
 	_tempo_vinheta = _tempo_vinheta + dt if baixa else 0.0
-	var pisca := baixa and int(_pisca_vida * 5.0) % 2 == 0
+	var pisca := baixa and (Piscadas.ligado() or int(_pisca_vida * 5.0) % 2 == 0)  # com a opção: cor fixa enquanto estiver baixa
 	_vida_barra.modulate = PISCA_VIDA if pisca else Color.WHITE
 	var alvo := 0.0
 	if baixa:
-		alvo = VINHETA_MAX * (0.75 + 0.25 * sin(_tempo_vinheta * 7.0))
+		alvo = Piscadas.valor(VINHETA_MAX * (0.75 + 0.25 * sin(_tempo_vinheta * 7.0)), VINHETA_MAX * Piscadas.VINHETA_FIXA_K)  # com a opção: vermelho parado
 	vinheta_alfa = move_toward(vinheta_alfa, alvo, dt * 3.0)
 	_vinheta.modulate = Color(VERMELHO_VINHETA.r, VERMELHO_VINHETA.g, VERMELHO_VINHETA.b, vinheta_alfa)
 	_vinheta.visible = vinheta_alfa > 0.0
