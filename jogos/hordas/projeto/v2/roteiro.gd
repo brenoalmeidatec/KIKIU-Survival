@@ -1113,6 +1113,7 @@ func _pt_iniciar() -> void:
 		"baus": 0,
 		"elites": 0,
 		"chefes": [],
+		"chefes_tempo": [],  # ECO-8: quando cada chefe nasce e cai (segundos de jogo), para a tabela de chefes do relatório
 		"evolucoes": [],
 		"linha": [],
 		"prox_linha": 60.0,
@@ -1138,10 +1139,29 @@ func _pt_iniciar() -> void:
 	mundo.heroi.imortal = false
 	mundo.heroi.fonte = mundo.heroi.Fonte.MOUSE
 	mundo.elite_apareceu.connect(func(_n): pt.elites += 1)
-	mundo.chefe_apareceu.connect(func(n, _v): pt.chefes.append(n))
+	mundo.chefe_apareceu.connect(_pt_chefe_nasceu)
+	mundo.chefe_vida.connect(_pt_chefe_vida)
 	mundo.evolucao.connect(func(n, _d): pt.evolucoes.append(n))
 	_pt_novo_ponto()
 	print("PLAYTEST inicio heroi=%s mapa=%s semente=%d" % [mundo.combate.heroi_id, mundo.id_mapa, semente])
+
+
+## ECO-8: o chefe nasce (chefe_apareceu). Guarda o nome, o nível do mapa e o segundo de jogo; a queda vem em _pt_chefe_vida.
+func _pt_chefe_nasceu(nome: String, vida_max: float) -> void:
+	pt.chefes.append(nome)
+	var registro := {"nome": nome, "vida_max": roundi(vida_max), "nivel": mundo.combate.diretor.nivel}
+	registro.aparece = snappedf(mundo.tempo_partida, 0.1)
+	registro.cai = -1.0
+	pt.chefes_tempo.append(registro)
+
+
+## ECO-8: chefe_vida manda a vida do chefe em jogo e 0 na morte (chefe.gd, ao_morrer). O primeiro 0 é a queda do último chefe que nasceu.
+func _pt_chefe_vida(vida: float) -> void:
+	if vida > 0.0 or pt.chefes_tempo.is_empty():
+		return
+	var ultimo: Dictionary = pt.chefes_tempo[-1]
+	if float(ultimo.cai) < 0.0:
+		ultimo.cai = snappedf(mundo.tempo_partida, 0.1)
 
 
 func _playtest(dt: float) -> void:
@@ -1441,6 +1461,9 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 		"baus": pt.baus,
 		"elites": pt.elites,
 		"chefes": pt.chefes,
+		"chefes_tempo": pt.chefes_tempo,
+		"dificuldade": str((mundo.meta_bonus.get("dificuldade", {}) as Dictionary).get("id", "")),
+		"fracao_mapa": snappedf(c.diretor.fracao_mapa(), 0.01),
 		"pico_vivos": pt.pico_vivos,
 		"ritmo": c.ritmo.relatorio(),
 		"q_prontos": pt.q_prontos,

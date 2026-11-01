@@ -1,0 +1,7 @@
+{
+	"_ajuda": "Tabela esperada do ECO-8 (calibração com o robô, plano de 01/11/2026, seção 3.5 e ECO-1). Lida por ferramentas/playtest_v2.py (--tabela). vitoria_min: minutos de jogo até vencer o mapa (com os chefes), por id de mapa. chefao_s: faixa em segundos de jogo para derrubar o chefão do último nível. tolerancia: desvio relativo a partir do qual o relatório marca DESVIA (o alvo do ECO-8 é 20%). eco7: os limites do plano B de dificuldade (ECO-7, pedido 14): derrotas antes de 60% do mapa no Médio/Difícil e dano sofrido no Médio sobre o do Fácil.",
+	"tolerancia": 0.2,
+	"vitoria_min": {"floresta": 4.8, "laboratorio": 7.9, "cidade": 11.3, "medio": 15.2},
+	"chefao_s": [35, 60],
+	"eco7": {"derrotas_antes_60_pct_max": 0.25, "dano_medio_sobre_facil_max": 1.4}
+}
