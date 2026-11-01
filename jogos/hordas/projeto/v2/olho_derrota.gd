@@ -4,8 +4,9 @@ extends CanvasLayer
 ## O HUD da partida (que mora na UI, acima do mundo) apaga junto.
 ## Quem manda é o combate: no fim da câmera lenta da morte chama por_restante(s que faltam). O efeito ocupa os últimos DURACAO s dessa
 ## janela (relógio real), sem somar nenhum segundo à espera pela tela de resultado.
-## Versão completa: duas piscadas curtas, desfoque crescente e borda macia. Versão simples (perfil Baixo ou "Tremor e clarões" em 0%):
-## só as pálpebras e o escurecimento, sem piscar, sem desfoque e sem mipmap da tela.
+## Uma só curva para as duas versões (UI-4, D12): fecha de 0 a 1 em DURACAO s, suave e sem piscada (antes a completa fechava em 0,72 s,
+## com duas piscadas). Versão completa (perfil Alto): desfoque crescente e borda macia. Versão simples (perfis Médio e Baixo, ou
+## "Tremor e clarões" em 0%): só as pálpebras e o escurecimento, sem desfoque e sem mipmap da tela (o mipmap pesa no Iris Xe).
 
 const DURACAO := 1.2  # s do efeito (a câmera lenta da morte dura pelo menos 1,3 s)
 const SHADER := """shader_type canvas_item;
@@ -41,9 +42,9 @@ func _init() -> void:
 	visible = false
 
 
-## A versão simples vale com o perfil Baixo ou "Tremor e clarões" em 0%.
+## A versão simples vale com o perfil Médio ou Baixo, ou "Tremor e clarões" em 0%.
 static func versao_simples() -> bool:
-	if Config.g_perfil() == "baixo":
+	if Config.g_perfil() in ["baixo", "medio"]:
 		return true
 	var f = Config.g("tremor_clarao")
 	return f != null and float(f) <= 0.0
@@ -73,7 +74,7 @@ func iniciar(hud: Node = null, minimapa: CanvasLayer = null) -> void:
 func por_restante(restante: float) -> void:
 	if _ret == null:
 		return
-	_aplicar(curva(DURACAO - restante, simples))
+	_aplicar(curva(DURACAO - restante))
 
 
 ## Fecha de volta e some (nova partida).
@@ -90,17 +91,9 @@ func limpar() -> void:
 		_mat = null
 
 
-## Quanto está fechado (0 a 1) `t` s depois do começo do efeito. A completa pisca duas vezes (até 35% e 50%) antes de fechar de vez.
-static func curva(t: float, modo_basico: bool) -> float:
-	var u := clampf(t / DURACAO, 0.0, 1.0)
-	if u <= 0.0:
-		return 0.0
-	if modo_basico:
-		return smoothstep(0.0, 1.0, u)
-	var fim := smoothstep(0.0, 1.0, clampf((u - 0.4) / 0.6, 0.0, 1.0))
-	var p1 := 0.35 * sin(PI * clampf(u / 0.14, 0.0, 1.0))
-	var p2 := 0.5 * sin(PI * clampf((u - 0.2) / 0.14, 0.0, 1.0))
-	return maxf(fim, maxf(p1, p2))
+## Quanto está fechado (0 a 1) `t` s depois do começo do efeito: suave, de 0 a 1 em DURACAO s, sem piscar.
+static func curva(t: float) -> float:
+	return smoothstep(0.0, 1.0, clampf(t / DURACAO, 0.0, 1.0))
 
 
 func _aplicar(k: float) -> void:
