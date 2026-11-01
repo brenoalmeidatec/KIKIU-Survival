@@ -12,5 +12,6 @@ python medir.py combo                  # largura/altura por direção e se algo 
 ```
 Depois copie `lightwolf_mecha_final_albedo.png`, `_normal.png` e `.json` para `projeto/prototipos/cara_nova/sprites/` como `lightwolf_mecha_albedo.png`, `_normal.png` e `.json`.
 
-Quadro 64x96: a maça foi encurtada em vez de aumentar o quadro. Borda: andar, parado, escudo, dano e morte não encostam; combo e rolamento encostam em poucos quadros
-(a maça e a poeira do impacto, como no Nicão, que também tem 8 direções com toque no combo). Paleta escura do jogo, contorno no tom escuro da própria cor.
+Quadro 64x96, sem aumentá-lo. Borda medida (`medir.py`): andar, parado, combo, escudo, dano e morte não encostam; o rolamento encosta em 2 direções (poucos pixels).
+Pendente: os braços ainda seguem as poses do Nicão (a mão esquerda "segura" um cabo que não existe), então o combo é um gesto de martelo sem martelo; refazer as poses com os canhões apontados para a frente.
+Paleta escura do jogo, contorno no tom escuro da própria cor.
