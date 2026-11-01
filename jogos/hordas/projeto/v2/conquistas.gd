@@ -15,8 +15,10 @@ const UNIDADES := {"abates": "abates", "nivel": "nível", "evolucoes": "evoluç�
 ## Segredo dos mapas (#424): antes de achar, nome "???" e `fazer` é a dica; depois, o nome e `lore` traz as frases do fragmento (o Códice escreve uma por linha extra).
 ## `selo` é o rótulo de quem está feita ("CUMPRIDA", ou "ACHADO" no segredo).
 ## `premio` vem vazio só quando a recompensa não existe no catálogo; o último mapa não abre nada e diz "o fim da jornada".
-static func linhas(vivo := {}) -> Array:
-	var e := Meta.estado()
+## `estado` é o Meta.estado() já lido (a HUD lê uma vez por partida); vazio, a função lê o save.
+## Campos extras para a escolha da conquista em andamento: `condicao` (o tipo do catálogo), `heroi` ("" se vale para todos) e `segredo`.
+static func linhas(vivo := {}, estado := {}) -> Array:
+	var e: Dictionary = estado if not estado.is_empty() else Meta.estado()
 	var r: Dictionary = e.recordes
 	var tempo := maxf(float(r.tempo), float(vivo.get("tempo", 0.0)))
 	var combo := maxi(int(r.combo), int(vivo.get("combo", 0)))
@@ -59,6 +61,9 @@ static func linhas(vivo := {}) -> Array:
 			"icone_premio": icone_do_premio(c.get("recompensa", {})),
 			"selo": "ACHADO" if c.has("segredo") else "CUMPRIDA",
 			"lore": [],
+			"condicao": str(c.get("condicao", "")),
+			"heroi": str(c.get("heroi", "")),
+			"segredo": c.has("segredo"),
 		}
 		if c.has("segredo"):
 			linha.nome = str(c.nome) if feita else "???"
@@ -66,6 +71,32 @@ static func linhas(vivo := {}) -> Array:
 			linha.lore = c.lore if feita else []
 		out.append(linha)
 	return out
+
+
+## As condições que a partida em andamento consegue medir (o save só soma no fim: partidas e abates_total ficam de fora, e "venceu" e segredos também).
+const CONDICOES_AO_VIVO := ["tempo", "combo", "abates", "nivel", "evolucoes"]
+
+
+## A conquista em andamento: a linha de maior fração entre as que a partida em andamento pode cumprir (não feitas, não segredo, do herói
+## da partida ou de todos). Empate vale a primeira do catálogo. Vazia ({}) quando não sobra nenhuma.
+static func escolher(linhas_: Array, heroi := "") -> Dictionary:
+	var melhor := {}
+	for l in linhas_:
+		if bool(l.feita) or bool(l.segredo) or not CONDICOES_AO_VIVO.has(str(l.condicao)):
+			continue
+		if str(l.heroi) != "" and str(l.heroi) != heroi:
+			continue
+		if melhor.is_empty() or float(l.frac) > float(melhor.frac):
+			melhor = l
+	return melhor
+
+
+## A linha com este id (dentro de uma lista de `linhas`); {} se não estiver.
+static func linha_da_id(linhas_: Array, id: String) -> Dictionary:
+	for l in linhas_:
+		if str(l.id) == id:
+			return l
+	return {}
 
 
 ## O nome do mapa (v2/mapas.gd) pelo id; o próprio id se não existir.

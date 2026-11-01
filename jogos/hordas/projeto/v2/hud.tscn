@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://v2/hud.gd" id="1_hud"]
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_premium_fina.png" id="2_moldura"]
@@ -16,6 +16,7 @@
 [ext_resource type="Texture2D" path="res://v2/hud/moldura_barra.png" id="14_barra"]
 [ext_resource type="Script" path="res://v2/hud_golpes.gd" id="15_golpes"]
 [ext_resource type="Script" path="res://v2/hud_ultimate.gd" id="16_ultimate"]
+[ext_resource type="Script" path="res://v2/hud_conquista.gd" id="17_conquista"]
 
 [node name="Hud" type="CanvasLayer"]
 layer = 10
@@ -421,3 +422,11 @@ script = ExtResource("12_habilidades")
 [node name="Golpes" type="Control" parent="Raiz"]
 anchors_preset = 0
 script = ExtResource("15_golpes")
+
+[node name="Conquista" type="Control" parent="Raiz"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 274.0
+offset_bottom = 46.0
+script = ExtResource("17_conquista")
