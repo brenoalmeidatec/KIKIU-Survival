@@ -167,7 +167,7 @@
 			"valor": 32,
 			"max": 5,
 			"peso": 1.1,
-			"herois": ["hazaki"],
+			"herois": ["hazaki", "joao", "lukako"],
 			"alcance": 150,
 			"vel": 250
 		},
@@ -181,7 +181,7 @@
 			"valor": 36,
 			"max": 5,
 			"peso": 1.1,
-			"herois": ["hazaki"],
+			"herois": ["hazaki", "joao"],
 			"alcance": 190,
 			"vel": 380
 		},
@@ -233,24 +233,24 @@
 		{
 			"id": "chuva",
 			"icone": "icone_adaga",
-			"nome": "Chuva de adagas",
-			"desc": "Cada adaga que acerta tem {v}% de chance de soltar outra.",
+			"nome": "Chuva de lâminas",
+			"desc": "Cada lâmina que acerta tem {v}% de chance de soltar outra.",
 			"mod": "chuva",
 			"valor": 12,
 			"max": 5,
 			"peso": 1.2,
-			"herois": ["lucas"]
+			"herois": ["lucas", "matheus", "fabio"]
 		},
 		{
 			"id": "mira",
 			"icone": "icone_u_adaga_sombria",
 			"nome": "Mira longa",
-			"desc": "As adagas voam {v}% mais longe e mais rápido.",
+			"desc": "As lâminas voam {v}% mais longe e mais rápido.",
 			"mod": "mira",
 			"valor": 12,
 			"max": 5,
 			"peso": 1.1,
-			"herois": ["lucas"]
+			"herois": ["lucas", "matheus", "fabio"]
 		}
 	],
 	"evolucoes": [
