@@ -513,6 +513,7 @@ func _q_cursor_com_teclado() -> void:
 	ok(h.estado == Heroi.Estado.GOLPE, "D31 golpe: o golpe começou")
 	h.entrada_forcada = Vector2.LEFT
 	passos(2)
+	ok(h.estado == Heroi.Estado.GOLPE, "D31 golpe: ainda no golpe quando o Q é apertado")
 	ok(h.especial(), "D31 golpe: dispara no meio do golpe")
 	ok(esp._dir.dot(Vector2.RIGHT) > 0.99, "D31 golpe: com WASD para a esquerda e o mouse à direita o Q vai para a direita (%s)" % esp._dir)
 	h.entrada_forcada = Vector2.ZERO

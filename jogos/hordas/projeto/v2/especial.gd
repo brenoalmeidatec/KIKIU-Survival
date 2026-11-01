@@ -33,7 +33,7 @@ extends RefCounted
 ## efeitos(dt) [relógio de parede: o visual].
 
 const Armas := preload("res://v2/armas.gd")
-const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: só o analógico de mira (STICK) não segue o cursor no Q
+const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: o analógico de mira (STICK) e o controle (Glifos) não seguem o cursor no Q
 const Glifos := preload("res://v2/glifos.gd")  # no controle não há cursor: o Q segue o corpo
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
 const PTS := 40  # pontos da elipse desenhada
