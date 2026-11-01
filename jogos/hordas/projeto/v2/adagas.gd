@@ -13,6 +13,10 @@ extends RefCounted
 ## Projétil genérico (#509, PER-2): o campo `proj` do passo escolhe a imagem no pool (`_proj_lista`; sem o campo, ou com nome que não existe,
 ## é a adaga). Entradas desenhadas em código: `adaga`, `bala` e `plasma` (a pistola e o canhão do LightWolf). Qualquer outro nome procura uma
 ## folha animada em `assets/v2/armas_anim/` (v2/anim_golpes.gd): a arma `<proj>_heroi`, animação `voo` (shuriken_heroi, kunai_heroi, flecha_heroi).
+## Míssil (LW-4, a E do LightWolf; entrada `missil` da mesma tabela): o passo `giro` (rad/s) faz o projétil buscar UM alvo, escolhido ao sair: o monstro vivo mais perto dentro
+## de um cone de `cone` graus em volta de `cone_dir` (a mira; senão a direção do tiro), até `alcance` px, com no máximo `por_alvo` mísseis no mesmo alvo enquanto houver outro no
+## cone. Sem alvo, ou com o alvo morto no caminho, segue reto (a busca contínua fica para a v3). `expl_raio` > 0 faz o acerto explodir em área (`expl_dano`, pela conta de dano em área
+## de v2/armas.gd, sem repetir o monstro acertado). Os campos só valem para quem os escreve no passo: adaga, bala e plasma seguem como antes.
 ## Ricochete: o campo `ricochete` do passo (n) vale só no golpe principal (`cresce_com_nivel`); o Q, a E e a chuva usam o projétil sem ricochetear.
 ## No acerto, uma varredura acha o monstro vivo mais perto (até RIC_ALCANCE px) que a lâmina ainda não acertou e a vira para ele; a direção nova
 ## vale no quadro seguinte, porque a lista de candidatos deste quadro foi montada com a direção antiga.
@@ -45,6 +49,10 @@ var a_raio := PackedFloat32Array()
 var a_perf := PackedInt32Array()  # monstros que ainda pode furar (-1 = acabou)
 var a_proj := PackedInt32Array()  # qual imagem (índice em _proj_lista)
 var a_ric := PackedInt32Array()  # ricochetes que ainda faltam
+var a_giro := PackedFloat32Array()  # rad/s com que busca o alvo (0 = reto)
+var a_expl := PackedFloat32Array()  # raio da explosão no acerto (px; 0 = não explode)
+var a_expl_d := PackedFloat32Array()  # dano da explosão em cada monstro dentro do raio
+var a_alvo: Array = []  # o monstro que o míssil busca (null = reto)
 var a_extra := PackedByteArray()  # 1 = veio do modificador "chuva" (não solta outra)
 var a_grupo := PackedInt64Array()  # arremesso principal; tamanho fixo MAX, sem histórico crescente
 var a_pausa := PackedByteArray()  # 1 até o primeiro acerto de qualquer lâmina desse grupo
@@ -71,6 +79,7 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	_registrar("adaga", _img_adaga(), COMPR, 5.0)
 	_registrar("bala", _img_bala(), 7.0, 3.0)
 	_registrar("plasma", _img_plasma(), 11.0, 7.0)
+	_registrar("missil", _img_missil(), 10.0, 4.0)
 	a_pos.resize(MAX)
 	a_dir.resize(MAX)
 	a_vel.resize(MAX)
@@ -82,6 +91,10 @@ func montar(c, camada: Node, tex: Texture2D) -> void:
 	a_perf.resize(MAX)
 	a_proj.resize(MAX)
 	a_ric.resize(MAX)
+	a_giro.resize(MAX)
+	a_expl.resize(MAX)
+	a_expl_d.resize(MAX)
+	a_alvo.resize(MAX)
 	a_extra.resize(MAX)
 	a_grupo.resize(MAX)
 	a_pausa.resize(MAX)
@@ -107,12 +120,15 @@ func limpar() -> void:
 	a_pausa.fill(0)
 	a_ric.fill(0)
 	a_proj.fill(0)
+	a_giro.fill(0.0)
+	a_expl.fill(0.0)
 	_grupo = 0
 	_pausa_recarga = 0.0
 	for i in MAX:
 		a_u0[i] = null
 		a_u1[i] = null
 		a_u2[i] = null
+		a_alvo[i] = null
 	lancadas = 0
 	acertos = 0
 	sumiram = 0
@@ -165,6 +181,10 @@ func lancar(h, origem: Vector2, dir: Vector2, passo: Dictionary, cresce_com_nive
 		)
 		a_proj[i] = proj
 		a_ric[i] = ric
+		if float(passo.get("giro", 0.0)) > 0.0:
+			_mirar(i, h, passo, dir)
+		a_expl[i] = float(passo.get("expl_raio", 0.0))
+		a_expl_d[i] = float(passo.get("expl_dano", 0.0)) * h.m_dano
 		if cresce_com_nivel:  # só combate.golpear; Q e chuva nunca recebem grupo elegível
 			a_grupo[i] = _grupo
 			a_pausa[i] = 1
@@ -197,6 +217,10 @@ func _nova(
 	a_extra[i] = 1 if extra else 0
 	a_proj[i] = 0
 	a_ric[i] = 0
+	a_giro[i] = 0.0
+	a_expl[i] = 0.0
+	a_expl_d[i] = 0.0
+	a_alvo[i] = null
 	a_grupo[i] = 0
 	a_pausa[i] = 0
 	a_cor[i] = cor
@@ -225,6 +249,7 @@ func atualizar(dt: float) -> void:
 			no_corpo.queue_redraw()
 			no_brilho.queue_redraw()
 		return
+	_guiar(dt)
 	_selecionar_candidatos(dt)
 	for i in MAX:
 		if a_rest[i] <= 0.0:
@@ -233,6 +258,60 @@ func atualizar(dt: float) -> void:
 	_desenha = true
 	no_corpo.queue_redraw()
 	no_brilho.queue_redraw()
+
+
+## Os mísseis giram até `a_giro` rad/s para o alvo, ANTES de a lista de candidatos do quadro ser montada (que usa a direção de agora). Alvo morto ou sumido: segue reto.
+func _guiar(dt: float) -> void:
+	for i in MAX:
+		if a_rest[i] <= 0.0 or a_giro[i] <= 0.0:
+			continue
+		var alvo = a_alvo[i]
+		if alvo == null:
+			continue
+		if not is_instance_valid(alvo) or not alvo.vivo or alvo.morrendo:
+			a_alvo[i] = null
+			continue
+		var atual: float = (a_dir[i] as Vector2).angle()
+		var quer: float = (alvo.pos + Vector2(0, -6) - (a_pos[i] as Vector2)).angle()
+		var giro := clampf(angle_difference(atual, quer), -a_giro[i] * dt, a_giro[i] * dt)
+		a_dir[i] = Vector2.from_angle(atual + giro)
+
+
+## Escolhe o alvo do míssil `i` ao sair (veja o cabeçalho): o mais perto no cone, de preferência um que ainda não tem `por_alvo` mísseis atrás dele.
+func _mirar(i: int, h, passo: Dictionary, dir: Vector2) -> void:
+	a_giro[i] = float(passo.giro)
+	var centro: Vector2 = passo.get("cone_dir", dir)
+	var meio := deg_to_rad(float(passo.get("cone", 50.0))) * 0.5
+	var alcance := float(passo.alcance)
+	var teto := maxi(1, int(passo.get("por_alvo", 99)))
+	var origem: Vector2 = a_pos[i]
+	var melhor = null
+	var melhor_d2 := INF
+	var reserva = null
+	var reserva_d2 := INF
+	for m in mundo.monstros:
+		if not m.vivo or m.morrendo:
+			continue
+		var rel: Vector2 = m.pos + Vector2(0, -6) - origem
+		var d2 := rel.length_squared()
+		if d2 > alcance * alcance or d2 < 4.0 or absf(centro.angle_to(rel)) > meio:
+			continue
+		if d2 < reserva_d2:
+			reserva = m
+			reserva_d2 = d2
+		if d2 < melhor_d2 and _mirando(m) < teto:
+			melhor = m
+			melhor_d2 = d2
+	a_alvo[i] = melhor if melhor != null else reserva
+
+
+## Quantos mísseis em voo buscam `m`.
+func _mirando(m) -> int:
+	var n := 0
+	for j in MAX:
+		if a_rest[j] > 0.0 and a_alvo[j] == m:
+			n += 1
+	return n
 
 
 ## Busca O(MAX + monstros), independente da distância atual do herói. A união cobre os
@@ -347,6 +426,8 @@ func _acertar(i: int, m, p: Vector2) -> void:
 	combate.fonte_dano = str(a_fonte[i])
 	combate.ferir(m, d, dir, a_emp[i] * (1.25 if crit else 1.0), a_atord[i] * (1.3 if crit else 1.0), cor.lerp(Color.WHITE, 0.45), true, crit)
 	_pausar_grupo(i)
+	if a_expl[i] > 0.0:
+		_explodir(i, m)
 	combate.fx.faiscas(m.pos + Vector2(0, -8), dir, 6 if crit else 3, cor, 150.0 if crit else 110.0)
 	combate.audio.tocar("critico" if crit else "impacto", randf_range(1.25, 1.5), -7.0, 0.05)
 	if crit and float(combate.armas.mods.explode) > 0.0:
@@ -357,6 +438,18 @@ func _acertar(i: int, m, p: Vector2) -> void:
 		var j := _nova(m.pos + Vector2(0, -8), Vector2.from_angle(a), a_vel[i], ALCANCE_EXTRA, a_dano[i] * 0.6, a_emp[i], a_atord[i], cor, 0, true, a_raio[i])
 		a_proj[j] = a_proj[i]
 		a_u0[j] = m  # a extra não volta no monstro que a soltou
+
+
+## A explosão pequena do míssil `i` em volta do monstro acertado: dano em área pelo mesmo caminho das armas (elipse do chão), sem repetir o monstro `m` que ele já feriu.
+## Só desenha uma onda curta e algumas faíscas (a `armas.explodir` faz 7 efeitos por estouro, caro para 12 mísseis em um segundo).
+func _explodir(i: int, m) -> void:
+	var cor: Color = a_cor[i]
+	var raio := float(a_expl[i])
+	combate.fonte_dano = str(a_fonte[i])
+	combate.armas._dano_area(m.pos, raio, a_expl_d[i], a_emp[i], a_atord[i], cor, "missil", 0.0, m)
+	combate.fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.8), raio, 0.16)
+	combate.fx.estouro(m.pos + Vector2(0, -6), Color(1.0, 0.85, 0.5), 3)
+	combate.audio.tocar("impacto", randf_range(1.5, 1.8), -8.0, 0.05)
 
 
 ## Um pedido por arremesso principal, não por lâmina/perfuração. Mesmo bloqueado pelo cooldown,
@@ -445,6 +538,29 @@ func _img_bala() -> Texture2D:
 	im.set_pixel(0, 0, Color(0, 0, 0, 0))
 	im.set_pixel(0, 2, Color(0, 0, 0, 0))
 	im.set_pixel(5, 1, ponta)
+	return ImageTexture.create_from_image(im)
+
+
+## O micro-míssil do LightWolf: 10x4 px apontando para a direita, corpo branco-azulado, ponta clara, aletas azuis e chama ciano na cauda (esquerda).
+func _img_missil() -> Texture2D:
+	var im := Image.create(10, 4, false, Image.FORMAT_RGBA8)
+	var corpo := Color(0.93, 0.97, 1.0)
+	var sombra := Color(0.55, 0.78, 0.94)
+	var ponta := Color(0.75, 0.9, 1.0)
+	var aleta := Color(0.23, 0.44, 0.65)
+	var chama := Color(0.5, 0.95, 1.0)
+	for x in range(2, 9):
+		im.set_pixel(x, 1, corpo)
+		im.set_pixel(x, 2, sombra)
+	im.set_pixel(9, 1, ponta)
+	im.set_pixel(9, 2, ponta)
+	im.set_pixel(2, 0, aleta)
+	im.set_pixel(3, 0, aleta)
+	im.set_pixel(2, 3, aleta)
+	im.set_pixel(3, 3, aleta)
+	im.set_pixel(0, 1, chama)
+	im.set_pixel(1, 1, chama)
+	im.set_pixel(1, 2, chama)
 	return ImageTexture.create_from_image(im)
 
 

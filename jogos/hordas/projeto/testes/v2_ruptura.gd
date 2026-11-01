@@ -6,6 +6,7 @@ extends "res://testes/isolamento_v2.gd"
 # crítico explosivo, limites de efeito, reinício, o slot do HUD e a medição do alívio do cerco (só imprime) e do tempo do disparo com 100 monstros.
 # O mundo anda em passos fixos de 1/60 s. Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_ruptura.tscn  (imprime "v2_ruptura falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Hud := preload("res://v2/hud.gd")
 const PASSO := 1.0 / 60.0
@@ -57,6 +58,7 @@ func zerar() -> void:
 	w.combate.diretor.ligado = false
 	var h = w.heroi
 	h.imortal = true
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o último mapa dá a cota de 5/5 (a Floresta não deixa nenhum bônus passar do nível 4)
 	h.entrada_forcada = Vector2.ZERO
 	h.ataque_forcado = null
 	h.correr_forcado = null
@@ -146,8 +148,8 @@ func _ready() -> void:
 		ok(ResourceLoader.exists("res://assets/audio/v2/%s.wav" % som), "o WAV %s existe" % som)
 		ok(w.combate.audio._stream(som) != null, "o WAV %s carrega" % som)
 	ok(
-		cs.cfg.stats.size() == 7 and cs.cfg.golpes.size() == 52 and cs.cfg.modificadores.size() == 8,
-		"v2_cartas preserva 7 stats, 52 golpes e 8 modificadores (4 da base e 4 dos heróis)"
+		cs.cfg.stats.size() == 7 and cs.cfg.golpes.size() == 52 and cs.cfg.modificadores.size() == 11,
+		"v2_cartas preserva 7 stats, 52 golpes e 11 modificadores (4 da base, 4 dos heróis e 3 do LightWolf)"
 	)
 	ok(w.combate != null and rp != null and rp.no != null, "o combate tem o módulo da ruptura")
 

@@ -3,6 +3,7 @@ extends "res://testes/isolamento_v2.gd"
 const Mundo := preload("res://v2/mundo.tscn")
 const Herois := preload("res://v2/herois.gd")
 const Colisao := preload("res://v2/colisao.gd")
+const Diretor := preload("res://v2/diretor.gd")
 const PASSO := 1.0 / 60.0
 var falhas := 0
 var w
@@ -125,10 +126,14 @@ func _onda() -> void:
 		ok(w.limite_andavel.has_point(ponto_borda) and Colisao.livre(ponto_borda, 7.0), "borda: ponto livre e andável")
 	w.reiniciar()
 	ok(d.mare_pendente == 0 and d.mare_t < 0.0 and not d.mare_aviso, "reiniciar limpa estado da Maré")
+	# ULT-C: a Maré vale em todo mapa e para todo herói com Q; só `mare: false` no mapa a desliga (válvula)
 	await _novo("nicao", "floresta")
-	ok(not w.combate.diretor._mare_ativa(), "outro mapa não ativa Maré")
+	ok(w.combate.diretor._mare_ativa(), "a Maré vale na Floresta com o Nick (todo mapa)")
+	w.dados = w.dados.duplicate()
+	w.dados["mare"] = false
+	ok(not w.combate.diretor._mare_ativa(), "mare: false no mapa desliga a Maré")
 	await _novo("hazaki", "cidade")
-	ok(not w.combate.diretor._mare_ativa(), "outro herói não ativa Maré")
+	ok(w.combate.diretor._mare_ativa(), "a Maré vale para o Hazaki (todo herói tem a sua)")
 
 
 ## O Q Terremoto chama a próxima Maré (sem texto de ligação) e os abates da Maré carregam o Q mais rápido.
@@ -143,9 +148,9 @@ func _q_chama_mare() -> void:
 	ok(d.mare_chamada_t < 0.0 and d.mare_chamadas == 0, "sem Q, nenhuma Maré chamada")
 	var anuncios0: int = w.combate.anuncios
 	ok(w.heroi.especial(), "Q do Nicão dispara na Vila")
-	ok(d.mare_chamadas == 0, "a Maré só é chamada na pancada, não ao apertar")
+	ok(d.mare_chamadas == 0, "a Maré só é chamada na limpeza da tela, não ao apertar")
 	_passos(40)
-	ok(d.mare_chamadas == 1 and d.mare_chamada_t > 0.0, "a pancada do Q chamou a Maré")
+	ok(d.mare_chamadas == 1 and d.mare_chamada_t > 0.0, "a limpeza do Q chamou a Maré")
 	ok(w.combate.anuncios == anuncios0, "o Q não anuncia nada sobre a Maré")
 	ok(str(w.combate.especial.blocos["terremoto"].desc).find("Maré") < 0, "a descrição do Q não cita a Maré")
 	# o aviso normal da Maré vem 1,2 s antes de chegar
@@ -165,7 +170,7 @@ func _q_chama_mare() -> void:
 	ok(not d.mare_chamar(), "dentro do intervalo mínimo o Q não chama outra Maré")
 	# recusa quando a Maré normal já está para chegar
 	d.mare_ultima_t = w.tempo_partida - 100.0
-	d.proxima_onda = w.tempo_partida + float(cfg.q_atraso) - 0.5
+	d.proxima_onda = w.tempo_partida + float(_mare("nicao").atraso) - 0.5
 	ok(not d.mare_chamar(), "com a Maré normal logo ali o Q não chama")
 	# curta se a última foi há pouco, cheia se faz tempo
 	d.mare_pendente = 0
@@ -215,38 +220,40 @@ func _q_chama_mare() -> void:
 	w.heroi.esp_carga = 0.0
 	e.abate(mare_m)
 	var c_mare: float = w.heroi.esp_carga
-	ok(c_comum > 0.0 and is_equal_approx(c_mare / c_comum, float(cfg.abate_carga)), "abate da Maré carrega x%s (%s / %s)" % [cfg.abate_carga, c_mare, c_comum])
+	var ac: float = float(_mare("nicao").abate_carga)
+	ok(c_comum > 0.0 and is_equal_approx(c_mare / c_comum, ac), "abate da Maré carrega x%s (%s / %s)" % [ac, c_mare, c_comum])
 	_limpar_monstros()
 	var tipo: Dictionary = w.elenco.tipos[0]
 	var reaproveitado = w.nascer_monstro(str(tipo.sprite), w.heroi.pos + Vector2(200, 0), true, 1.0, 1.0, tipo)
 	ok(not reaproveitado.mare, "monstro reaproveitado do pool nasce sem a marca da Maré")
-	# fora da Vila / sem o Nicão nada acontece
+	# ULT-C: a Maré vale na Floresta com o Nick; com mare: false no mapa o Q não chama
 	await _novo("nicao", "floresta")
 	w.combate.diretor.ligado = true
-	ok(not w.combate.diretor.mare_chamar(), "na floresta o Q não chama Maré")
-	await _novo("hazaki", "cidade")
+	ok(w.combate.diretor.mare_chamar(), "na Floresta o Nick chama Maré (ULT-C)")
+	await _novo("nicao", "floresta")
+	w.dados = w.dados.duplicate()
+	w.dados["mare"] = false
 	w.combate.diretor.ligado = true
-	ok(not w.combate.diretor.mare_chamar(), "outro herói não chama Maré")
+	ok(not w.combate.diretor.mare_chamar(), "com mare: false no mapa o Q não chama Maré")
 
 
-## A Maré da Vila no fator de tempo REAL do mapa (ECO-1, tempo_mult 1,25): proxima_onda está no relógio do diretor, mas q_atraso e o aviso de
+## A Maré da Vila no fator de tempo REAL do mapa (ECO-1, tempo_mult 1,25): proxima_onda está no relógio do diretor, mas o atraso da Maré e o aviso de
 ## 1,2 s andam em dt (tempo real). A guarda do Q e o aviso comparam o tempo real que falta, não os segundos do relógio.
 func _mare_no_fator() -> void:
 	await _novo("nicao", "cidade")
 	var d = w.combate.diretor
-	var cfg: Dictionary = w.combate.cfg.diretor.mare
 	d.tempo_mult = 1.25
 	d.ligado = true
 	w.tempo_partida = 30.0
 	ok(is_equal_approx(d.relogio(), 37.5), "Vila: aos 30 s reais o relógio do diretor marca 37,5 s")
 	d.proxima_onda = d.relogio() + 5.0
 	ok(is_equal_approx(d.falta_onda_real(), 4.0), "faltam 5 s do relógio = 4 s reais (%s)" % d.falta_onda_real())
-	# 3,5 s do relógio = 2,8 s reais, menos que q_atraso (3 s): a Maré normal chega antes da chamada, então o Q não chama
-	d.proxima_onda = d.relogio() + float(cfg.q_atraso) + 0.5
-	ok(not d.mare_chamar(), "Vila 1,25: a Maré normal chega em 2,8 s reais (< q_atraso), o Q não chama")
-	# 3,9 s do relógio = 3,12 s reais, mais que q_atraso: chama
+	# 3,5 s do relógio = 2,8 s reais, menos que o atraso do Nick (3 s): a Maré normal chega antes da chamada, então o Q não chama
+	d.proxima_onda = d.relogio() + float(_mare("nicao").atraso) + 0.5
+	ok(not d.mare_chamar(), "Vila 1,25: a Maré normal chega em 2,8 s reais (< atraso do Nick), o Q não chama")
+	# 3,9 s do relógio = 3,12 s reais, mais que o atraso: chama
 	d.proxima_onda = d.relogio() + 3.9
-	ok(d.mare_chamar() and d.mare_chamadas == 1, "Vila 1,25: a Maré normal só chega em 3,12 s reais (> q_atraso), o Q chama")
+	ok(d.mare_chamar() and d.mare_chamadas == 1, "Vila 1,25: a Maré normal só chega em 3,12 s reais (> atraso), o Q chama")
 	d.mare_chamada_t = -1.0
 	d.mare_aviso = false
 	# o aviso sai 1,2 s REAIS antes: 2 s do relógio = 1,6 s reais ainda não, 1,4 s do relógio = 1,12 s reais já
@@ -319,6 +326,94 @@ func _tocando(au, nome: String) -> int:
 	return n
 
 
+func _mare(chave: String) -> Dictionary:
+	return w.combate.especial.mare_de(chave)
+
+
+## O bloco `mare` de cada Q (ULT-C): a formação e o atraso de cada herói, e o padrão do abate quando o bloco não diz outro.
+func _formacao_por_heroi() -> void:
+	await _novo("hazaki", "floresta")
+	ok(str(_mare("hazaki").formacao) == "cone" and is_equal_approx(float(_mare("hazaki").atraso), 2.5), "Hazaki: cone, atraso 2,5 s")
+	ok(str(_mare("nicao").formacao) == "pinca" and is_equal_approx(float(_mare("nicao").atraso), 3.0), "Nick: pinça, atraso 3,0 s")
+	ok(str(_mare("lucas").formacao) == "anel" and is_equal_approx(float(_mare("lucas").atraso), 3.5), "Luke: anel, atraso 3,5 s")
+	ok(is_equal_approx(float(_mare("hazaki").abate_carga), 2.2), "abate da Maré: padrão 2,2 onde o bloco não diz outro")
+	ok(str(_mare("sem_q").formacao) == "cone", "herói fora de herois cai no Q padrão (investida) e na Maré dele")
+
+
+## O cone do Hazaki (ULT-C): os pontos saem do leque centrado na direção em que ele está virado, fora da tela, andáveis e livres.
+func _cone() -> void:
+	await _novo("hazaki", "floresta")
+	var d = w.combate.diretor
+	d.rng.seed = 311
+	var tela: Rect2 = w.cam.retangulo()
+	var centro := tela.get_center()
+	var meio := deg_to_rad(35.0) + 0.02
+	for dir in [Vector2.RIGHT, Vector2.LEFT, Vector2.UP, Vector2.DOWN]:
+		w.heroi.dir_olhar = dir
+		var pontos := 0
+		var no_leque := 0
+		var fora := 0
+		var andaveis := 0
+		for i in 40:
+			var p = d._ponto_cone(70.0)
+			if p == null:
+				continue
+			pontos += 1
+			if absf(angle_difference(dir.angle(), (p - centro).angle())) <= meio:
+				no_leque += 1
+			if not tela.has_point(p):
+				fora += 1
+			if w.limite_andavel.has_point(p) and Colisao.livre(p, 7.0):
+				andaveis += 1
+		ok(pontos >= 30, "cone %s: quase todo sorteio acha ponto (%d de 40)" % [dir, pontos])
+		ok(no_leque == pontos, "cone %s: todo ponto cai no leque de 70 graus (%d de %d)" % [dir, no_leque, pontos])
+		ok(fora == pontos and andaveis == pontos, "cone %s: pontos fora da tela, andáveis e livres" % dir)
+
+
+## O ponto de borda (função pura): o raio do centro cruza a borda certa em cada direção, inclusive os cantos.
+func _borda() -> void:
+	var r := Rect2(0, 0, 960, 540)
+	var c := Vector2(480, 270)
+	ok(Diretor.ponto_na_borda(c, Vector2.RIGHT, r).is_equal_approx(Vector2(960, 270)), "borda: direita")
+	ok(Diretor.ponto_na_borda(c, Vector2.LEFT, r).is_equal_approx(Vector2(0, 270)), "borda: esquerda")
+	ok(Diretor.ponto_na_borda(c, Vector2.UP, r).is_equal_approx(Vector2(480, 0)), "borda: cima")
+	ok(Diretor.ponto_na_borda(c, Vector2.DOWN, r).is_equal_approx(Vector2(480, 540)), "borda: baixo")
+	ok(Diretor.ponto_na_borda(c, (Vector2(960, 540) - c).normalized(), r).is_equal_approx(Vector2(960, 540)), "borda: canto")
+
+
+## O Q chama a Maré no instante da limpeza (não ao apertar), com o atraso do herói: Hazaki 2,5 s, Nick 3,0 s, Luke 3,5 s.
+func _chamada_por_heroi() -> void:
+	for par in [["hazaki", 2.5], ["nicao", 3.0], ["lucas", 3.5]]:
+		await _novo(str(par[0]), "floresta")
+		var d = w.combate.diretor
+		d.ligado = true
+		d.proxima_onda = 900.0
+		d.mare_ultima_t = -1000.0
+		w.tempo_partida = 30.0
+		var limpa: float = float(w.combate.especial.bloco_de(str(par[0])).limpa_em)
+		ok(w.heroi.especial(), "%s: Q dispara" % par[0])
+		ok(d.mare_chamada_t < 0.0, "%s: ao apertar o Q não chama Maré" % par[0])
+		var n := 0
+		while d.mare_chamada_t < 0.0 and n < 240:
+			_passos(1)
+			n += 1
+		ok(d.mare_chamadas == 1, "%s: a limpeza chama uma Maré" % par[0])
+		ok(absf(n * PASSO - limpa) <= 2.0 * PASSO + 0.01, "%s: chama no instante da limpeza (%.2f s, limpa em %.2f)" % [par[0], n * PASSO, limpa])
+		var atraso := float(par[1])
+		ok(
+			d.mare_chamada_t <= atraso + 0.001 and d.mare_chamada_t >= atraso - 2.0 * PASSO,
+			"%s: a Maré chega em %s s (%.3f)" % [par[0], atraso, d.mare_chamada_t]
+		)
+		d.atualizar(atraso + 0.05)
+		var marcados := 0
+		for m in w.monstros:
+			if m.mare:
+				marcados += 1
+		ok(d.mare_chamada_t < 0.0 and marcados > 0, "%s: a Maré chegou com monstros marcados (%d)" % [par[0], marcados])
+
+
+## Metade 1: o Q real, a onda e o Q que chama a Maré. A metade 2 (Maré no fator, Maré de cada herói, cone, borda, chamada pelo Q e som) é o
+## testes/v2_mare_heroi.gd, que herda daqui: as duas juntas passavam do limite de 120 s por cena do CI.
 func _ready() -> void:
 	await _q_real("nicao", "cidade", 1.0, true)
 	await _q_real("nicao", "cidade", 0.0, false)
@@ -326,11 +421,13 @@ func _ready() -> void:
 	await _q_real("hazaki", "cidade", 1.0, false)
 	await _onda()
 	await _q_chama_mare()
-	await _mare_no_fator()
-	await _som_prioritario()
+	await _fim("v2_mare_sangue")
+
+
+func _fim(nome: String) -> void:
 	Herois.forcado = ""
 	if w != null:
 		w.queue_free()
 	await get_tree().process_frame
-	print("v2_mare_sangue falhas=%d" % falhas)
+	print("%s falhas=%d" % [nome, falhas])
 	get_tree().quit(1 if falhas else 0)

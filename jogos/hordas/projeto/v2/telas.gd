@@ -528,6 +528,9 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	var tipo := str(c.get("tipo", ""))
 	selo.text = "UPGRADE" if tipo == "up" else ("NOVO" if tipo == "nov" else ("TROCA" if tipo == "troca" else ""))
 	selo.add_theme_color_override("font_color", Paleta.BONUS if tipo == "up" else (Paleta.PERIGO if tipo == "troca" else Paleta.OURO))
+	if tipo == "up" and bool(c.get("apice", false)):  # a carta que leva o bônus ao 5/5 (CAR-5): selo dourado ÁPICE no lugar de UPGRADE
+		selo.text = "ÁPICE"
+		selo.add_theme_color_override("font_color", Paleta.OURO)
 	var evo := p.get_node("evolui") as Label
 	evo.text = str(c.get("evolui", ""))
 	var lendaria := bool(c.get("lendaria", false))  # a peça que fecha uma lendária ganha o magenta da fusão

@@ -3,6 +3,7 @@ extends "res://testes/isolamento_v2.gd"
 # derrota e o sinal partida_terminou com os campos certos. Os níveis do mapa estão em v2_diretor.gd; os chefes e a vitória, em v2_chefe.gd.
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_partida.tscn  (imprime "v2_partida falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const ArmasNovas := preload("res://v2/armas_novas.gd")
 const PASSO := 1.0 / 60.0
@@ -35,6 +36,7 @@ func zerar() -> void:
 	w.combate.limpar_partida()
 	w.combate.diretor.ligado = false
 	w.heroi.imortal = true
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o último mapa dá a cota de 5/5 (a Floresta não deixa nenhum bônus passar do nível 4)
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.heroi.ataque_forcado = null
 	w.heroi.correr_forcado = null
@@ -124,8 +126,8 @@ func _ready() -> void:
 	# 0. dados
 	ok(str(cfg.get("_ajuda", "")) != "", "v2_cartas.json tem _ajuda")
 	ok(
-		cfg.raridades.size() == 4 and cfg.golpes.size() == 52 and cfg.modificadores.size() == 8,
-		"4 raridades, 52 golpes secundários e 8 modificadores (4 de sempre, 2 do Nick e 2 do Luke, que só saem para eles)"
+		cfg.raridades.size() == 4 and cfg.golpes.size() == 52 and cfg.modificadores.size() == 11,
+		"4 raridades, 52 golpes secundários e 11 modificadores (4 de sempre, 2 do Nick, 2 do Luke e 3 do LightWolf, que só saem para eles)"
 	)
 	ok(cfg.evolucoes.size() == 27, "27 evoluções nos dados (4 antigas, 5 novas, 16 de 2, 3 e 4 peças e 2 da leva 6)")
 	ok(cfg.chefes.marcas.size() == 3, "3 fichas de chefe (2 mini-chefes e o chefão)")

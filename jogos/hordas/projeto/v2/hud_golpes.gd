@@ -7,6 +7,8 @@ extends Control
 ## enquanto recarrega, nos golpes que têm recarga: corvos, raio, runa, projétil, nuvem, anel, meteoro, aliado e torre; lâmina e aura batem sem
 ## parar). Sem barra de fusão: quando falta só UM nível para fundir uma receita, um losango magenta pisca no canto do ícone.
 ## A peça já fundida ganha a moldura dourada e os pips dourados cheios.
+## O golpe no ÁPICE (5/5, CAR-5) ganha a mesma moldura e pips dourados, um halo fino na cor do golpe e uma estrela dourada no canto de cima do ícone;
+## ao chegar lá, o pulso dourado grande (anel e faíscas) da fusão, mas em ouro.
 ## Animação: golpe novo entra com pop curto (sem invadir o vizinho), anel, faíscas e brilho; nível novo dá um pulso que CLAREIA o ícone e o pip
 ## novo pisca; a fusão dá o mesmo em magenta. Tudo desenhado por código, em pixel inteiro, num só Control.
 ## Posição: âncora no canto inferior esquerdo do pai (a Raiz do HUD), logo ACIMA do retrato e das barras de vida e fôlego (MARGEM_BAIXO), sem coordenada
@@ -19,6 +21,7 @@ extends Control
 ## Lê, com get() e valor padrão: hud.mundo; mundo.combate (.armas.ativas, .cartas), mundo.heroi.m_vel_ataque, mundo.status.aberto().
 
 const Paleta := preload("res://v2/paleta.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o losango de fusão quase pronta não pisca
 const ICONE := 24  # lado do ícone desenhado (a arte da carta tem 32 e é reduzida a 0,75)
 const CAIXA := 26  # lado da caixa do ícone: moldura de 1 px em volta
 const ALTURA := 32  # caixa (26) + pips (3) + folgas
@@ -111,7 +114,7 @@ func avancar(dt: float) -> void:
 		# opaca ao mudar, translúcida parada: só o modulate do nó, sem redesenho
 		var alvo := 1.0 if _destaque > 0.0 else ALFA_PARADA
 		modulate.a = move_toward(modulate.a, alvo, dt * (6.0 if alvo > modulate.a else 1.5))
-	_fase_quase = int(Time.get_ticks_msec() / 250) % 2
+	_fase_quase = _fase_quase_agora()
 	var pisca := false
 	for it in itens:
 		pisca = pisca or bool(it.quase)
@@ -120,6 +123,11 @@ func avancar(dt: float) -> void:
 		_chave_desenhada = chave
 		pedidos += 1
 		queue_redraw()
+
+
+## A fase do losango "falta um nível para fundir" (0 ou 1, troca a cada 250 ms = 4 trocas/s). Com "Reduzir piscadas": sempre 0, magenta parado.
+func _fase_quase_agora() -> int:
+	return 0 if Piscadas.ligado() else int(Time.get_ticks_msec() / 250) % 2
 
 
 ## O retângulo que a faixa ocupa agora, nas coordenadas do pai, a Raiz do HUD (vazio sem golpes). Os testes conferem que não cruza o resto do HUD.
@@ -151,7 +159,7 @@ func _ler() -> bool:
 		visible = not escondido
 	var partes: PackedStringArray = []
 	for it in novos:
-		partes.append("%s,%d,%d,%d,%d" % [it.id, it.nivel, int(it.evo), it.rec, int(it.quase)])
+		partes.append("%s,%d,%d,%d,%d,%d" % [it.id, it.nivel, int(it.evo), it.rec, int(it.quase), int(it.apice)])
 	var chave := ",".join(partes)
 	_animar_chegadas(novos)
 	itens = novos
@@ -169,6 +177,7 @@ func _item(id: String, a: Dictionary, cartas, vel: float, relogio := 0.0) -> Dic
 		"nivel": int(a.get("nivel", 1)),
 		"max": 5 if evo or not def is Dictionary or not def.has("max") else int(def.max),
 		"evo": evo,
+		"apice": bool(a.get("apice", false)),
 		"cor": a.get("cor", Paleta.OURO),
 		"rec": -1,
 		"quase": false
@@ -218,11 +227,14 @@ func _animar_chegadas(novos: Array) -> void:
 	var agora := {}
 	for it in novos:
 		var id: String = it.id
-		agora[id] = [it.nivel, it.evo]
+		agora[id] = [it.nivel, it.evo, it.apice]
 		if not _iniciado:
 			continue
 		if not _vistos.has(id):
 			anims[id] = {"t": ANIM_S, "tipo": "fusao" if it.evo else "novo"}
+			_destaque = DESTAQUE_S
+		elif it.apice and not _vistos[id][2]:
+			anims[id] = {"t": ANIM_S, "tipo": "apice"}
 			_destaque = DESTAQUE_S
 		elif it.nivel > _vistos[id][0]:
 			anims[id] = {"t": ANIM_S, "tipo": "nivel"}
@@ -272,15 +284,18 @@ func _desenhar_slot(i: int, it: Dictionary) -> void:
 	match tipo:
 		"novo":
 			escala = lerpf(0.6, 1.1, u / 0.4) if u < 0.4 else lerpf(1.1, 1.0, (u - 0.4) / 0.6)
-		"nivel", "fusao":
-			escala = 1.0 + (0.1 if tipo == "fusao" else 0.07) * sin(u * PI)
+		"nivel", "fusao", "apice":
+			escala = 1.0 + (0.1 if tipo != "nivel" else 0.07) * sin(u * PI)
 	var brilho := (1.0 - u) * (1.0 - u) if tipo != "" else 0.0
 	var centro := o + Vector2(CAIXA, CAIXA) * 0.5
 	draw_set_transform(centro, 0.0, Vector2(escala, escala))
 	var c0 := -Vector2(CAIXA, CAIXA) * 0.5  # canto da caixa no espaço escalado
 	var caixa := Rect2(c0, Vector2(CAIXA, CAIXA))
 	draw_rect(caixa, FUNDO)
-	var borda: Color = Paleta.OURO if it.evo else Color(cor.lerp(Color.WHITE, 0.2), 0.95)
+	var dourado: bool = it.evo or it.apice
+	if it.apice:  # o halo fino na cor do golpe, por fora da moldura dourada (cabe na folga de 3 px entre as caixas)
+		_moldura(caixa.grow(1.0), Color(cor, 0.5))
+	var borda: Color = Paleta.OURO if dourado else Color(cor.lerp(Color.WHITE, 0.2), 0.95)
 	if tipo != "":
 		borda = borda.lerp(cor_an.lerp(Color.WHITE, 0.4), brilho)
 	_moldura(caixa, borda)
@@ -300,6 +315,10 @@ func _desenhar_slot(i: int, it: Dictionary) -> void:
 			draw_rect(Rect2(pos_icone.x, y, it.rec, 2.0), cor.lerp(Color.WHITE, 0.35))
 	if tipo != "":
 		draw_rect(area_icone, Color(cor_an.lerp(Color.WHITE, 0.7), 0.4 * brilho))
+	if it.apice:  # a estrela dourada do ÁPICE no canto de cima, à esquerda do ícone
+		var pe := pos_icone + Vector2(4.0, 4.0)
+		draw_rect(Rect2(pe + Vector2(-1.0, 0.0), Vector2(3.0, 1.0)), Paleta.OURO)
+		draw_rect(Rect2(pe + Vector2(0.0, -1.0), Vector2(1.0, 3.0)), Paleta.OURO)
 	if it.quase:  # falta um nível para fundir: losango magenta que pisca no canto de cima do ícone
 		var pc := pos_icone + Vector2(ICONE - 4.0, 3.0)
 		var cor_f: Color = Paleta.FUSAO.lerp(Color.WHITE, 0.7 if _fase_quase == 1 else 0.0)
@@ -312,7 +331,7 @@ func _desenhar_slot(i: int, it: Dictionary) -> void:
 	var x_pip := c0.x + floorf((CAIXA - (it.max * (PIP_L + 1) - 1)) * 0.5)
 	for k in int(it.max):
 		var cheio: bool = k < int(it.nivel) or bool(it.evo)
-		var cor_pip: Color = Paleta.OURO if it.evo else cor.lerp(Color.WHITE, 0.2)
+		var cor_pip: Color = Paleta.OURO if dourado else cor.lerp(Color.WHITE, 0.2)
 		var r := Rect2(x_pip + k * (PIP_L + 1), y_pip, PIP_L, PIP_A)
 		if not cheio:
 			draw_rect(r, Color(Paleta.BARRA_VAZIA, 0.95))
@@ -322,8 +341,8 @@ func _desenhar_slot(i: int, it: Dictionary) -> void:
 			cor_pip = Color.WHITE
 		draw_rect(r, cor_pip)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	if tipo == "novo" or tipo == "fusao":
-		_anel_e_faiscas(centro, u, cor_an, str(it.id), tipo == "fusao")
+	if tipo == "novo" or tipo == "fusao" or tipo == "apice":
+		_anel_e_faiscas(centro, u, cor_an, str(it.id), tipo != "novo")
 	elif tipo == "nivel":
 		_anel_e_faiscas(centro, u, cor_an, str(it.id), false, 4)
 

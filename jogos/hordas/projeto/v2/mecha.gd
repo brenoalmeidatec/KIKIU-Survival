@@ -4,13 +4,15 @@ extends RefCounted
 ##    vira o Lobo, com 31% da vida máxima do mecha (cheia), invencível por um instante. O Q do mecha fica guardado e a carga do Q passa a ser o CHAMADO.
 ##  - CHAMADO (o Q do Lobo, `chamar` em v2/especial.gd): com a carga cheia o Lobo aperta Q, o mecha cai (aviso de 0,8 s, dano de queda) e `chegar` o devolve
 ##    à forma mecha com a vida cheia e o Q de antes. A carga do chamado enche por dano, abates e (para nunca travar sem monstro) por tempo (`atualizar`).
+##  - AUTODESTRUIÇÃO (o Q do mecha, `autodestruir`, chamada por v2/especial.gd, LW-5): o piloto salta e vira Lobo NA HORA, sem o estouro da quebra (o fusível e a explosão são do Q),
+##    com o chamado já em `inicio_autodestruicao` (35) e o Q do mecha gasto (volta a 0 quando o mecha cai). Depois dela o Lobo chama o mecha de volta como depois de uma quebra.
 ##  - Só a morte do Lobo é derrota: ela cai no `heroi_morreu` de sempre (tela de resultado e olho). Recomeçar a partida volta ao mecha (`reiniciar`).
 ## A troca NUNCA chama `iniciar_stats` (zeraria Q e E): `Heroi.trocar_forma` mexe só na chave, na folha, no corpo e na defesa, e `combate.cfg` passa a ser o do
 ## herói-forma (dados/v2_herois.json > lightwolf_lobo, com `forma_de`). O herói da partida (`combate.heroi_id`) segue "lightwolf": cartas, bônus e resultado
 ## não enxergam a troca. A segunda folha é carregada uma vez (`precarregar`), então trocar no meio da luta não decodifica nada.
 ## Números: dados/v2_herois.json (lightwolf > forma_lobo; lightwolf_lobo > vida_pct, invencivel, quebra) e dados/v2_especial.json > chamar (carga, queda).
 ##
-## API: montar(c), tem(), precarregar(), quebrou(h) -> bool, virar_lobo(h, chamado), chegar(h), reiniciar(h), atualizar(dt).
+## API: montar(c), tem(), precarregar(), quebrou(h) -> bool, autodestruir(h) -> bool, virar_lobo(h, chamado, quebra), chegar(h), reiniciar(h), atualizar(dt).
 
 const Herois := preload("res://v2/herois.gd")
 const COR := Color(0.75, 0.95, 1.0)
@@ -23,6 +25,7 @@ var cfg_lobo: Dictionary = {}  # o registro do Lobo (vida_pct, invencivel, quebr
 var carga_mecha := 0.0  # o Q do mecha, guardado enquanto o herói é Lobo
 var recarga_mecha := 0.0  # a recarga da E do mecha, guardada junto (a troca não zera nem enche a E)
 var quebras := 0  # testes e calibragem: quantas vezes o mecha quebrou na partida
+var autodestruicoes := 0  # quantas vezes o piloto saltou e o mecha explodiu (o Q do mecha, LW-5)
 var chamados := 0  # quantas vezes o mecha foi chamado de volta
 var tempo_lobo := 0.0  # s de Lobo na partida (calibragem: 8 a 18 s por quebra)
 
@@ -58,8 +61,19 @@ func quebrou(h) -> bool:
 	return true
 
 
-## Mecha -> Lobo. `chamado`: a carga do chamado com que o Lobo começa (a quebra dá 20; a Autodestruição do LW-5 dá 45).
-func virar_lobo(h, chamado: float) -> void:
+## O Q do mecha (LW-5): o piloto salta e vira Lobo na hora, com o chamado em `inicio_autodestruicao`. Sem o estouro da quebra e sem tirar o herói do Estado.ESPECIAL
+## (o fusível de 1 s e a explosão são do próprio Q, v2/especial.gd). O Q do mecha já foi gasto pelo disparo: `carga_mecha` guarda 0. false se o herói não tem formas ou já é Lobo.
+func autodestruir(h) -> bool:
+	if not tem() or h.forma_lobo or combate.jogo != "jogando":
+		return false
+	autodestruicoes += 1
+	virar_lobo(h, float(_bloco().get("inicio_autodestruicao", 35.0)), false)
+	return true
+
+
+## Mecha -> Lobo. `chamado`: a carga do chamado com que o Lobo começa (a quebra dá 20; a Autodestruição do LW-5 dá 35, ULT-D). `quebra` = false (a Autodestruição): sem o estouro,
+## o anúncio e o empurrão da quebra, e o estado do herói não muda (o Q segue em Estado.ESPECIAL).
+func virar_lobo(h, chamado: float, quebra := true) -> void:
 	var c = combate
 	carga_mecha = h.esp_carga
 	recarga_mecha = h.hab_recarga
@@ -68,10 +82,13 @@ func virar_lobo(h, chamado: float) -> void:
 	h.trocar_forma(lobo_id, mundo.sprites.tipo(Herois.sprite(lobo_id)))
 	h.esp_carga = minf(chamado, h.esp_carga_max)
 	h.invenc = maxf(h.invenc, float(cfg_lobo.get("invencivel", 1.5)))
-	h.estado = h.Estado.LIVRE
+	if quebra:
+		h.estado = h.Estado.LIVRE
 	h.combo_t = 0.0
 	h.proximo = 0
 	tempo_lobo = 0.0
+	if not quebra:
+		return
 	# o mecha estoura: onda, estouro de cascos azuis, luz local e um empurrão nos vizinhos (sem dano, sem flash por monstro)
 	var q: Dictionary = cfg_lobo.get("quebra", {})
 	var raio := float(q.get("raio", 70.0))
@@ -114,6 +131,7 @@ func reiniciar(h) -> void:
 	carga_mecha = 0.0
 	recarga_mecha = 0.0
 	quebras = 0
+	autodestruicoes = 0
 	chamados = 0
 	tempo_lobo = 0.0
 	if not tem() or str(h.chave) == str(combate.heroi_id):

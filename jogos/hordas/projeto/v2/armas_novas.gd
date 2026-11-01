@@ -48,6 +48,7 @@ const PASTA_SPRITES := "res://assets/v2/armas/"
 const PASTA_FUSOES := "res://assets/v2/fusoes/"
 const Golem := preload("res://v2/golem.gd")  # o Golem de Barro e o Colosso: andar, ataque e as 8 direções
 const Andante := preload("res://v2/andante.gd")  # as outras invocações que andam de verdade (Espírito do Urso...): folha de 8 direções, andar e ataque
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": brasas e marcas com alfa parado, sem clarão de tela
 const Anim := preload("res://v2/anim_golpes.gd")  # as folhas animadas de projétil, meteoro, anel e nuvem (docs/combate_v2/SPEC_ARTE.md)
 ## Fases dos golpes com folha (docs/combate_v2/ENTREGA.md): no PREPARO não há hitbox (o tiro carrega na boca, o anel junta força, a nuvem se
 ## forma); no ATIVO a colisão vale e cada monstro é atingido uma vez por item; o IMPACTO e a marca no chão são só efeito (pool `x_*`), tocados no
@@ -170,6 +171,27 @@ func limpar() -> void:
 	_slot_num.clear()
 
 
+## Solta uma nuvem de um "golpe" que não é arma (a fumaça do Luke, v2/fumaca.gd) num slot livre do pool, em `p`. Devolve false se o pool estiver cheio. Não cria nó nem
+## dicionário: reaproveita o slot, que volta ao pool quando a vida da nuvem (`st.duracao`) acaba.
+func soltar_nuvem(a: Dictionary, p: Vector2) -> bool:
+	var it := _novo("nuvem", a, p, float(a.st.duracao))
+	if it.is_empty():
+		return false
+	it.r = float(a.st.raio)
+	it.t = 0.05  # o primeiro tique já vem logo
+	return true
+
+
+## Há uma nuvem viva do "golpe" `id` cobrindo o ponto `p` (na conta do chão, a mesma do tique)?
+func nuvem_cobre(id: String, p: Vector2) -> bool:
+	for it in itens:
+		if float(it.vida) <= 0.0 or str(it.k) != "nuvem" or str(it.a.get("id", "")) != id:
+			continue
+		if pai.na_elipse(p - (it.p as Vector2), float(it.r)):
+			return true
+	return false
+
+
 func remover(a: Dictionary) -> void:
 	for it in itens:
 		if is_same(it.a, a):
@@ -272,7 +294,7 @@ func quadro(h, dt: float, perto: Array) -> void:
 		it.vida = float(it.vida) - dt
 		it.fase = float(it.fase) + dt * 6.0
 		it.pulso = maxf(0.0, float(it.pulso) - dt * 4.0)
-		if it.a != null:
+		if it.a != null and not it.a.has("fumaca"):  # a fumaça do Luke não fere: não mexe na fonte do dano
 			pai.combate.fonte_dano = str(it.a.id)  # o dano por golpe da tela de fim (combate.ranking_dano)
 		match str(it.k):
 			"projetil":
@@ -404,7 +426,7 @@ func _brilho_partes(ci: CanvasItem, tex: Texture2D) -> void:
 		var k := v / q_max[i]
 		var c := q_cor[i]
 		var p := (q_pos[i] + Vector2(0, -q_z[i])).round()
-		var pisca := 0.7 + 0.3 * sin(v * 23.0 + float(i))
+		var pisca := Piscadas.valor(0.7 + 0.3 * sin(v * 23.0 + float(i)), Piscadas.BRASA_FIXA)
 		var a := minf(1.0, k * 2.0) * pisca
 		var t := q_tam[i]
 		ci.draw_texture_rect(tex, Rect2(p - Vector2(t, t) * 2.0, Vector2(t, t) * 4.0), false, Color(c.r, c.g, c.b, 0.55 * a))
@@ -576,6 +598,11 @@ func _tique_nuvem(it: Dictionary, dt: float) -> void:
 	var a: Dictionary = it.a
 	var st: Dictionary = a.st
 	it.t = float(st.tique)
+	if st.has("so_lentidao"):  # a fumaça do Luke: só atrasa quem está dentro, sem dano, número, flash nem evento de golpe
+		for m in pai.mundo.monstros:
+			if m.vivo and not m.morrendo and pai.na_elipse(m.pos - it.p, float(it.r) + m.raio):
+				m.deixar_lento(float(st.lentidao))
+		return
 	var alvos := 0
 	var dano_total := 0.0
 	for m in pai.mundo.monstros:
@@ -704,7 +731,7 @@ func _mover_anel(it: Dictionary, h, dt: float, perto: Array) -> void:
 			pai.mundo.cam.tremer(4.0 if Anim.suave else 1.5, 0.25 if Anim.suave else 0.1)
 			if Anim.suave:  # o martelo bate: soco de zoom e clarão
 				pai.mundo.cam.socar(0.045)
-				pai.fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)
+				pai.fx.clarao(Color(0.8, 0.85, 1.0, 0.25), 0.15)  # Piscadas: o próprio clarao() recusa com a opção ligada
 			_poeira(it.p, 6, Color(0.6, 0.62, 0.7), 80.0, 0.4)
 			fumaca_impacto(it.p, 40.0, a.cor)
 			pai.fx.explosao(it.p, 44.0, a.cor)
@@ -1468,7 +1495,7 @@ func desenhar(ci: CanvasItem, tex: Texture2D) -> void:
 				var raio := float(st.raio)
 				if float(it.t) > 0.0:
 					var k := 1.0 - float(it.t) / float(st.aviso)
-					var pisca := 0.5 + 0.5 * sin(float(it.fase) * 2.0)
+					var pisca := pisca_aviso(float(it.fase))
 					ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
 					ci.draw_arc(Vector2.ZERO, raio * (1.0 - 0.4 * k), 0.0, TAU, 32, Color(cor.r, cor.g, cor.b, 0.5 + 0.4 * pisca), 2.0)
 					ci.draw_circle(Vector2.ZERO, raio * 0.35 * k, Color(cor.r, cor.g, cor.b, 0.25 * k))
@@ -1605,7 +1632,7 @@ func _marca_amigo(ci: CanvasItem, it: Dictionary, p: Vector2, topo: float, raio:
 	var total := float(st.duracao)
 	var falta := float(it.vida) if resta < 0.0 else resta
 	var frac := clampf(falta / maxf(total, 0.1), 0.0, 1.0)
-	var pisca := 1.0 if (falta > 5.0 or fmod(_relogio, 0.4) < 0.25) else 0.35  # nos últimos 5 s a marca pisca: vai sumir
+	var pisca := 1.0 if (falta > 5.0 or Piscadas.ligado() or fmod(_relogio, 0.4) < 0.25) else 0.35  # nos últimos 5 s a marca pisca: vai sumir (a opção deixa parada)
 	ci.draw_set_transform(p, 0.0, Vector2(1.0, 0.62))
 	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, Color(0.1, 0.35, 0.15, 0.45 * pisca), 2.5)
 	ci.draw_arc(Vector2.ZERO, raio, 0.0, TAU, 20, Color(0.45, 1.0, 0.5, 0.7 * pisca), 1.0)
@@ -1698,7 +1725,7 @@ func _brilho_queda(ci: CanvasItem, it: Dictionary, tex: Texture2D, cor: Color) -
 		var k := 1.0 - float(it.t) / maxf(float(it.a.st.aviso), 0.01)
 		var c := _queda_em(it, 0.0)
 		var cresce := clampf(k / QUEDA_CINTILA, 0.0, 1.0)
-		var pisca := 0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase))
+		var pisca := Piscadas.valor(0.6 + 0.4 * sin(_relogio * 30.0 + float(it.fase)), Piscadas.ALFA_FIXO_QUEDA)
 		var br := roundf(2.0 + 5.0 * cresce * pisca)
 		ci.draw_line(c - Vector2(br, 0), c + Vector2(br, 0), Color(1, 1, 1, 0.8 * cresce), 1.0)
 		ci.draw_line(c - Vector2(0, br), c + Vector2(0, br), Color(1, 1, 1, 0.8 * cresce), 1.0)
@@ -1741,7 +1768,7 @@ func _desenhar_torre(ci: CanvasItem, it: Dictionary, p: Vector2) -> void:
 		afunda = d * 10.0
 		alfa = 1.0 - d
 	elif util < 1.0:
-		alfa = 0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0))
+		alfa = Piscadas.valor(0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0)), Piscadas.ALFA_FIXO_PECA)  # peça por desmontar: tremeluz (a opção deixa parado)
 	ci.draw_set_transform(p, 0.0, Vector2(1, ACHATA))
 	var raio_s := maxf(5.0, 17.0 - queda * 0.1)
 	ci.draw_circle(Vector2.ZERO, raio_s + 2.0, Color(0, 0, 0, 0.18 * alfa))
@@ -1857,7 +1884,7 @@ func _brilho_torre(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2) -
 	if util <= 0.0:
 		fade = clampf(float(it.vida) / DESMONTA, 0.0, 1.0)
 	elif util < 1.0:
-		fade = 0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0))
+		fade = Piscadas.valor(0.4 + 0.6 * (0.5 + 0.5 * sin(age * 26.0)), Piscadas.ALFA_FIXO_PECA)
 	var topo := p + Vector2(0, TORRE_TOPO)
 	var pulso := 0.5 + 0.5 * sin(age * 5.0)
 	var tom := Color(0.5, 0.75, 1.0) if pagode else Color(1.0, 0.62, 0.28)
@@ -1923,9 +1950,30 @@ func _desenhar_granada(ci: CanvasItem, it: Dictionary) -> void:
 	ci.draw_line(Vector2(0, -7.5), Vector2(3, -11), Color(0.92, 0.85, 0.62), 1.2)  # o pavio
 	if est == 2:
 		var f := clampf(float(it.age) / float(st.get("pavio", 0.5)), 0.0, 1.0)
-		if fposmod(float(it.age) * (6.0 + 18.0 * f), 1.0) < 0.5:
-			ci.draw_circle(Vector2(0, 0), 6.2, Color(1, 1, 1, 0.7))
+		var a_est := alfa_pavio_estourando(float(it.age), f)
+		if a_est > 0.0:
+			ci.draw_circle(Vector2(0, 0), 6.2, Color(1, 1, 1, a_est))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## "Reduzir piscadas": as três luzes da granada e do meteoro que oscilavam acima de 1,5 Hz (mais de 3 trocas por segundo). Funções à parte para o teste
+## amostrar a mesma conta que o desenho usa. `fase` é it.fase (6 rad/s). Cada uma devolve o valor variável; a opção devolve o centro da faixa.
+static func alfa_pavio(fase: float) -> float:  # a faísca do pavio: 0,7 + 0,3 sin(3 fase) = ~2,9 Hz
+	return Piscadas.valor(0.7 + 0.3 * sin(fase * 3.0), 0.7)
+
+
+static func pulso_mira(fase: float) -> float:  # a mira no chão da granada: 0,8 + 0,2 sin(2 fase) = ~1,9 Hz
+	return Piscadas.valor(0.8 + 0.2 * sin(fase * 2.0), 0.8)
+
+
+static func pisca_aviso(fase: float) -> float:  # o aviso do meteoro e do cometa: 0,5 + 0,5 sin(2 fase) = ~1,9 Hz
+	return Piscadas.valor(0.5 + 0.5 * sin(fase * 2.0), 0.5)  # 0,5 -> alfa do arco 0,5 + 0,4 x 0,5 = 0,7
+
+
+static func alfa_pavio_estourando(age: float, f: float) -> float:  # o disco branco dos últimos 0,5 s do pavio: liga e desliga de 6 a 24 Hz
+	if Piscadas.ligado():
+		return 0.35  # parado: o brilho médio do liga e desliga (0,7 na metade do tempo)
+	return 0.7 if fposmod(age * (6.0 + 18.0 * f), 1.0) < 0.5 else 0.0
 
 
 ## O brilho da cabaça (camada aditiva): a faísca do pavio, a mira onde ela vai cair, o círculo de aviso que cresce até o raio, o clarão da
@@ -1941,7 +1989,7 @@ func _brilho_granada(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2)
 	if est == 0:  # a mira no chão: disco e anel no ponto de queda, com um anel que fecha sobre ele e quatro riscas; esquenta enquanto a cabaça desce
 		var k := clampf(age / float(st.get("voo", 0.55)), 0.0, 1.0)
 		var alvo: Vector2 = (it.dest as Vector2).round()
-		var pulso := 0.8 + 0.2 * sin(float(it.fase) * 2.0)
+		var pulso := pulso_mira(float(it.fase))
 		ci.draw_set_transform(alvo, 0.0, Vector2(1, ACHATA))
 		ci.draw_circle(Vector2.ZERO, raio * 0.6, Color(1.0, 0.4, 0.1, (0.1 + 0.12 * k) * pulso))
 		ci.draw_arc(Vector2.ZERO, raio * 0.6, 0.0, TAU, 32, Color(1.0, 0.55, 0.18, (0.4 + 0.45 * k) * pulso), 2.0)
@@ -1957,7 +2005,7 @@ func _brilho_granada(ci: CanvasItem, it: Dictionary, tex: Texture2D, p: Vector2)
 		ci.draw_texture_rect(tex, Rect2(p + Vector2(-tam, -tam * ACHATA), Vector2(tam, tam * ACHATA) * 2.0), false, Color(1.0, 0.5, 0.15, 0.42 - 0.18 * alta))
 	if est <= 2:
 		var ponta := _ponta_pavio(it).round()
-		ci.draw_texture_rect(tex, Rect2(ponta - Vector2(7, 7), Vector2(14, 14)), false, Color(1.0, 0.8, 0.3, 0.7 + 0.3 * sin(float(it.fase) * 3.0)))
+		ci.draw_texture_rect(tex, Rect2(ponta - Vector2(7, 7), Vector2(14, 14)), false, Color(1.0, 0.8, 0.3, alfa_pavio(float(it.fase))))
 		ci.draw_circle(ponta, 1.6, Color(1, 1, 0.9, 0.95))
 		var c := p + Vector2(0, -_altura_granada(it) - 6.0)
 		ci.draw_texture_rect(tex, Rect2(c - Vector2(11, 11), Vector2(22, 22)), false, Color(1.0, 0.55, 0.15, 0.16))  # o calor em volta da cabaça
@@ -2245,6 +2293,9 @@ func _desenhar_nuvem(ci: CanvasItem, it: Dictionary, st: Dictionary, cor: Color,
 		"brasas":
 			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, Color(0.37, 0.4, 0.44), 7, 32.0, 1.35, 0.72)
 			_desenhar_brasa(ci, p, fase, fade, cor)
+		"bomba":  # a bomba de fumaça do Luke (v2/fumaca.gd): densa o bastante para ler no escuro, rala o bastante para ver os monstros dentro
+			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, cor, 9, 44.0, 1.5, 0.55, 0.72)
+			_desenhar_volume_nuvem(ci, tex, p + Vector2(0, -8), r * 0.7, fase + 1.7, fade, cor.lightened(0.18), 5, 26.0, 1.2, 0.42, 0.7)
 		_:
 			_desenhar_volume_nuvem(ci, tex, p, r, fase, fade, cor, 5, 24.0, 0.76, 0.28)
 
@@ -2275,6 +2326,8 @@ static func motivo_nuvem(id: String) -> String:
 			return "cristais"
 		"cinzas_vulcanicas":
 			return "brasas"
+		"fumaca_luke":
+			return "bomba"
 	return "fumaca"
 
 

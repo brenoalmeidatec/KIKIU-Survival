@@ -91,14 +91,14 @@ func _foto_salao(s, nome: String, quadro: int, dir: int) -> void:
 	print("FOTO salao_%s %s (folha %s)" % [nome, img.get_size(), s._sprite.resource_path.get_file()])
 
 
-## A escolha de personagem sem rosto.png (pasta vazia): o retrato é o quadro parado da folha do personagem ou do herói dele.
+## A escolha de personagem: o retrato é sempre o corpo, o quadro parado da folha do personagem ou do herói dele (PER-1b).
 func _escolha(nome: String, id: String) -> void:
 	var t = load("res://v2/personagens.tscn").instantiate()
 	add_child(t)
 	for i in 6:
 		await get_tree().process_frame
 	t._mostrar_personagem(id)
-	t._definir_retrato("", true, Personagens.folha(id))
+	t._definir_retrato(true, Personagens.folha(id))
 	for i in 6:
 		await get_tree().process_frame
 	await RenderingServer.frame_post_draw

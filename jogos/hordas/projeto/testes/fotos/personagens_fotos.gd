@@ -2,7 +2,7 @@ extends Node
 ## Fotos da tela PERSONAGENS (v2/personagens_tela.gd) numa janela real (sem --headless). Só o viewport do jogo é salvo.
 ## Usa índice e saves TEMPORÁRIOS (user://teste_fotos_*): não toca nos personagens do jogador.
 ## Roda: godot --path jogos/hordas/projeto --resolution 1280x720 res://testes/fotos/personagens_fotos.tscn -- --fotos=PASTA --prefixo=X
-## Grava PREFIXO_nomes.png (NOVO PERSONAGEM: os 7 nomes e VOLTAR), PREFIXO_nomes_rosto.png (foco num nome com rosto),
+## Grava PREFIXO_nomes.png (NOVO PERSONAGEM: os 7 nomes e VOLTAR), PREFIXO_nomes_<n>.png (foco em cada nome: o retrato é o corpo, PER-1b),
 ## PREFIXO_nomes_fim.png (foco no VOLTAR), PREFIXO_lista.png (2 salvos), PREFIXO_pior_detalhe.png (o pior caso do texto,
 ## medido com a fonte da janela) e PREFIXO_aviso.png (o aviso de erro entre o título e a ficha).
 const Tela := preload("res://v2/personagens.tscn")
@@ -35,9 +35,10 @@ func _ready() -> void:
 	t._abrir_nomes()
 	await _assentar()
 	await _foto("nomes")
-	t._lista.get_child(1).grab_focus()  # o 2º nome (Nick) tem rosto: a tira de rostos vira o retrato
-	await _assentar()
-	await _foto("nomes_rosto")
+	for i in t._lista.get_child_count() - 1:  # cada nome (menos o VOLTAR): o retrato de corpo inteiro, no mesmo enquadramento
+		t._lista.get_child(i).grab_focus()
+		await _assentar()
+		await _foto("nomes_%d" % (i + 1))
 	var ultimo: Control = t._lista.get_child(t._lista.get_child_count() - 1)
 	ultimo.grab_focus()
 	await _assentar()

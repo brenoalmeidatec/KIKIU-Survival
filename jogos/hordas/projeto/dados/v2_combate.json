@@ -30,7 +30,7 @@
 		"inimigo_homunculo": {"vida": 16, "dano": 5, "xp": 1, "vel": 74, "raio": 6, "peso": 0.8, "orbes": 1},
 		"inimigo_aldeao_morto": {"vida": 22, "dano": 6, "xp": 1, "vel": 62, "raio": 7, "peso": 1.0, "orbes": 1}
 	},
-	"pool": {"inimigo_cao_ossos": 65, "inimigo_aranha_tecela": 58, "inimigo_espantalho": 40, "inimigo_lobo_sombrio": 39, "inimigo_cavaleiro_oco": 48, "inimigo_corvo_carniceiro": 64, "inimigo_golem_vidro": 166, "inimigo_espectro": 182, "inimigo_homunculo": 192, "inimigo_aldeao_morto": 64},
+	"pool": {"inimigo_cao_ossos": 80, "inimigo_aranha_tecela": 58, "inimigo_espantalho": 40, "inimigo_lobo_sombrio": 48, "inimigo_cavaleiro_oco": 48, "inimigo_corvo_carniceiro": 64, "inimigo_golem_vidro": 166, "inimigo_espectro": 182, "inimigo_homunculo": 192, "inimigo_aldeao_morto": 64},
 	"morte": {"hit_stop": 0.05, "tremor": 1, "particulas": 16},
 	"xp": {"base": 5, "passo": 3, "quad": 0.7, "ima_vel": 190, "ima_acel": 900, "plim_janela": 0.55, "plim_passo": 0.07, "plim_max": 2.2},
 	"combo_abates": {"janela": 3.0, "xp_por_abate": 0.03, "xp_max": 3.0},
@@ -50,12 +50,10 @@
 		"onda_mais": 6,
 		"onda_elite": 1,
 		"mare": {
-			"_ajuda": "Maré de Sangue (Nicão na Vila). Sem aviso de que são ligados: o Q Terremoto chama a próxima Maré e matar monstros da Maré enche o Q mais rápido. q_atraso: segundos entre a pancada do Q e a Maré chegar (o aviso normal sai 1,2 s antes); intervalo_min: segundos mínimos entre duas Marés (a do Q é recusada se a anterior foi há menos que isso; a Maré normal agendada nunca vem antes disso depois de uma chamada); q_cheia_apos: se a última Maré foi há menos que isso, a chamada vem curta; q_curta: fração do tamanho (e dos elites) da Maré curta; abate_carga: multiplicador da carga do Q por abate de monstro da Maré.",
-			"q_atraso": 3.0,
+			"_ajuda": "MARÉ para todo herói e mapa (ULT-C; antes era só a Maré de Sangue do Nicão na Vila). A onda forte de cada 60 s vira Maré: metade nasce num lado e metade 1 s depois, ou em cone, ou em anel, conforme o bloco `mare` do Q do herói (v2_especial.json, com comum.mare de padrão). Sem aviso de que são ligados: o Q do herói chama a próxima Maré na limpeza da tela (no instante limpa_em) e matar monstros da Maré enche o Q mais rápido. Cada herói tem o seu atraso e o seu abate_carga no bloco mare do Q. O aviso normal sai 1,2 s antes da Maré (o da Maré chamada também). mare: false em v2_<mapa>.json desliga a Maré naquele mapa (válvula de segurança; a onda forte volta a ser um anel só). intervalo_min: segundos mínimos entre duas Marés (a do Q é recusada se a anterior foi há menos que isso; a Maré normal agendada nunca vem antes disso depois de uma chamada); q_cheia_apos: se a última Maré foi há menos que isso, a chamada vem curta; q_curta: fração do tamanho (e dos elites) da Maré curta.",
 			"intervalo_min": 25,
 			"q_cheia_apos": 45,
-			"q_curta": 0.6,
-			"abate_carga": 2.2
+			"q_curta": 0.6
 		},
 		"vida_por_min": 0.22,
 		"dano_por_min": 0.1,

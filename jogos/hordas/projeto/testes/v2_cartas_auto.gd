@@ -6,6 +6,7 @@ extends "res://testes/isolamento_v2.gd"
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_cartas_auto.tscn  (imprime "v2_cartas_auto falhas=0")
 # Fotos: godot --path jogos/hordas/projeto res://testes/v2_cartas_auto.tscn -- --fotos=PASTA  (grava a tela de escolha e sai)
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 const Glifos := preload("res://v2/glifos.gd")
 const PASSO := 1.0 / 60.0
 var falhas := 0
@@ -33,6 +34,7 @@ func zerar() -> void:
 	w.combate.limpar_partida()
 	w.combate.diretor.ligado = false
 	w.heroi.imortal = true
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o último mapa dá a cota de 5/5 (a Floresta não deixa nenhum bônus passar do nível 4)
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.combate.cartas.rng.seed = 777
 	w.combate.telas.mouse_fn = Callable(self, "_mouse_teste")
@@ -287,6 +289,9 @@ func _testes() -> void:
 		"muralha": 100.0,
 		"chuva": 60.0,
 		"mira": 60.0,
+		"sifao": 60.0,
+		"ampla": 50.0,
+		"cabo": 75.0,
 		"rb_dano": 90.0,
 		"rb_recarga": 24.0,
 		"rb_estrondo": 60.0,
@@ -320,11 +325,12 @@ func _testes() -> void:
 		cs.aplicar(cs.montar_carta(cs.definicao("dano"), 0))
 		cs.aplicar(cs.montar_carta(cs.definicao("vida"), 0))
 	ok(cs.nivel_de("dano") == 5 and not cs._disponivel(cs.definicao("dano")), "o dano para de sair no nível 5")
-	ok(is_equal_approx(float(cs.estado.dano.soma), 120.0), "o stat guarda a soma aplicada (dano: %.1f)" % float(cs.estado.dano.soma))
-	ok(is_equal_approx(h.m_dano - dano0, 1.2), "5 cartas de dano somam +120%% (%.2f)" % (h.m_dano - dano0))
+	# o 5/5 é o ÁPICE (CAR-5): a soma das 5 cartas vezes 1,5 (a soma guardada é a aplicada, a troca no Difícil desfaz por ela)
+	ok(is_equal_approx(float(cs.estado.dano.soma), 120.0 * 1.5), "o stat guarda a soma aplicada (dano: %.1f)" % float(cs.estado.dano.soma))
+	ok(is_equal_approx(h.m_dano - dano0, 1.2 * 1.5), "5 cartas de dano somam +120%% x 1,5 do ÁPICE (%.2f)" % (h.m_dano - dano0))
 	ok(
-		is_equal_approx(float(cs.estado.vida.soma), 160.0) and is_equal_approx(h.vida_max - vida0, 160.0),
-		"5 cartas de vida somam +160 (%.0f)" % (h.vida_max - vida0)
+		is_equal_approx(float(cs.estado.vida.soma), 160.0 * 1.5) and is_equal_approx(h.vida_max - vida0, 160.0 * 1.5),
+		"5 cartas de vida somam +160 x 1,5 do ÁPICE (%.0f)" % (h.vida_max - vida0)
 	)
 	cs.aplicar(cs.montar_carta(cs.definicao("critico"), 3))
 	ok(

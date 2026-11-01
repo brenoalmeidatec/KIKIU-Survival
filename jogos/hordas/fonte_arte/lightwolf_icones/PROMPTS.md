@@ -13,3 +13,17 @@ Gerados no ChatGPT logado do Alisson em 01/11/2026, com os prompts da seção 5.
 ## A22 Secundário, Matriz (`A22_lw_matriz.png`) -> `assets/v2/secundario_s/lightwolf.png`
 
 > a curved arc-shaped energy barrier made of interlocking light sky-blue hexagon panels with thin white highlights and a cyan edge, seen slightly from above, with three small cyan sparks where it deflects impacts. (S)
+
+## A20 Q Autodestruição (`A20_lw_autodestruicao.png`) -> `assets/v2/especial_q/lightwolf.png` (círculo do Q do mecha, LW-5)
+
+> a small white wolf-head emblem on a light sky-blue mech chest-core about to detonate, a big crisp starburst of white and cyan hard-edged spikes radiating from the center, a tiny silhouette of a wolf figure leaping out of the top-left. (S)
+
+## A21 Q Chamar o mecha (`A21_lw_chamar_mecha.png`) -> `assets/v2/especial_q/lightwolf_lobo.png` (círculo do Q do Lobo, LW-5)
+
+> a light sky-blue armored mech silhouette dropping from above onto a small circular cyan landing ring on the ground, one thick vertical cyan beam from the top edge to the mech, a tiny white wolf-head emblem on its chest. (S)
+
+## A23 Cartas do LightWolf (`A23_lw_cartas.png`) -> `assets/v2/icones_cartas/{sifao,ampla,cabo,aurora_lunar}.png` (LW-6)
+
+Folha 1448x1086 (grade 4x3 pedida, só as 4 primeiras células preenchidas; os desenhos não caem na grade, então `reduzir_cartas.py` os acha pelas colunas com alfa). Gerada no ChatGPT logado do Alisson em 01/11/2026, prompt da seção 5 do plano (A23), sufixo S incluído:
+
+> Icon sheet for a dark fantasy roguelike card game: 1448x1086 canvas, a 4-column by 3-row invisible grid (cells 362x362), real alpha transparency, ONLY the first four cells (left to right, top row) contain an icon, the other eight are completely empty. Each icon is ONE compact centered motif with generous padding, chunky hard pixel clusters, few flat tones, deep navy outline (#1d2c4a), readable at 32x32. Palette: light sky-blue (#bfe4ff, #8cc6f0, #3b6fa6), white, cyan (#7ff3ff), small warm green-gold heal sparkles. Cell 1 'Siphon': a hexagonal panel barrier with a glowing green-gold stream flowing from it into a small heart. Cell 2 'Wide Matrix': two nested hexagonal arcs, the outer clearly larger, with small outward arrows. Cell 3 'Rescue Cable': a coiled cable with a cyan hook descending from above onto a tiny white wolf paw print. Cell 4 'Lunar Dawn' (evolution, more ornate): a large crescent moon embracing a glowing hexagon barrier with radiating light and a heart at its center. (S)

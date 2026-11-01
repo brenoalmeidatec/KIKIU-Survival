@@ -251,6 +251,42 @@
 			"max": 5,
 			"peso": 1.1,
 			"herois": ["lucas", "matheus", "fabio"]
+		},
+		{
+			"id": "sifao",
+			"icone": "icone_matriz_sifao",
+			"nome": "Sifão da Matriz",
+			"curto": "Sifão",
+			"desc": "A matriz cura {v}% do dano que absorve.",
+			"mod": "sifao",
+			"valor": 12,
+			"max": 5,
+			"peso": 1.0,
+			"herois": ["lightwolf"]
+		},
+		{
+			"id": "ampla",
+			"icone": "icone_matriz_ampla",
+			"nome": "Matriz Ampla",
+			"curto": "Ampla",
+			"desc": "A matriz abre {v} graus a mais de arco.",
+			"mod": "ampla",
+			"valor": 10,
+			"max": 5,
+			"peso": 1.0,
+			"herois": ["lightwolf"]
+		},
+		{
+			"id": "cabo",
+			"icone": "icone_cabo_resgate",
+			"nome": "Cabo de Resgate",
+			"curto": "Cabo",
+			"desc": "O chamado do mecha carrega {v}% mais rápido.",
+			"mod": "cabo",
+			"valor": 15,
+			"max": 5,
+			"peso": 1.0,
+			"herois": ["lightwolf"]
 		}
 	],
 	"evolucoes": [
@@ -323,6 +359,29 @@
 		{"id": "pagode_do_trovao", "nome": "Pagode do Trovão", "curto": "Pagode", "desc": "Junte Sentinela de Bambu e Raio em Cadeia, os dois no nível 3. Uma torre de duas camadas cujos virotes viram arcos elétricos e saltam entre os inimigos. Dura 45 s e some.", "pecas": [{"id": "sentinela_bambu", "nivel": 3}, {"id": "raio", "nivel": 3}], "consome": ["sentinela_bambu", "raio"], "tipo": "torre", "desenho": "codigo", "cor": [0.55, 0.8, 1.0], "raridade": "comum", "arma": {"dano": 14, "recarga": 30.0, "quantidade": 1, "duracao": 45.0, "tique": 0.5, "alcance": 260, "vel": 480, "perfura": 0, "cadeia": 2}},
 		{"id": "fogos_de_festival", "nome": "Fogos de Festival", "curto": "Fogos", "desc": "Junte Cabaça de Pólvora e Bola de Fogo, as duas no nível 3. Cada estilhaço estoura de novo numa chuva de fogos coloridos.", "pecas": [{"id": "cabaca_polvora", "nivel": 3}, {"id": "bola_fogo", "nivel": 3}], "consome": ["cabaca_polvora", "bola_fogo"], "tipo": "granada", "desenho": "codigo", "cor": [0.5, 0.95, 1.0], "raridade": "comum", "arma": {"dano": 26, "recarga": 3.0, "quantidade": 1, "raio": 58, "alcance": 230, "voo": 0.55, "pavio": 0.5, "estilhacos": 8, "frac_estilhaco": 0.5, "vel_estilhaco": 300, "fogos": 1, "raio_fogo": 22, "frac_fogo": 0.5}}
 	],
+	"evolucoes_matriz": [
+		{
+			"id": "aurora_lunar",
+			"nome": "Aurora Lunar",
+			"curto": "Aurora",
+			"rotulo": "EVOLUÇÃO",
+			"desc": "Junte Sifão da Matriz e Matriz Ampla, os dois no nível 3. A cura da matriz dobra e a cura que sobra vira defesa. As duas cartas continuam valendo.",
+			"pecas": [
+				{ "id": "sifao", "nivel": 3 },
+				{ "id": "ampla", "nivel": 3 }
+			],
+			"consome": [],
+			"cor": [0.75, 0.93, 1.0],
+			"cura_mult": 2.0,
+			"teto_mult": 2.0,
+			"excedente_barra": 0.5
+		}
+	],
+	"matriz_cartas": {
+		"sifao_teto_s": 8.0,
+		"arco_max": 300.0,
+		"numero_s": 0.6
+	},
 	"elites": {
 		"primeira": 45,
 		"cada": 50,
@@ -423,6 +482,42 @@
 				"visual": {"adorno": "coroa", "cor2": [1.0, 0.8, 0.3], "luz": 1.35}
 			}
 		]
+	},
+	"maestria": {
+		"_ajuda": "A COTA de 5/5 por mapa (CAR-5, pedido 20). O nível 4 vale em todo mapa; o nível 5 (que vira o ÁPICE, veja \"apice\") só abre para max(piso, ceil(fracao x bônus que o herói tem)) bônus ao mesmo tempo. Contam os bônus ativos (golpe, stat, modificador e ruptura; a peça consumida por uma fusão lendária não conta, nem como bônus nem como ÁPICE). \"mapas\" tem uma linha por mapa de v2/mapas.gd (LISTA); o último mapa da LISTA é o que dá 50%: pelo menos metade dos bônus em 5/5 só lá. Mapa fora da lista usa \"padrao\". As lendárias (4 peças em 5/5) só são viáveis onde a cota chega a 4. Os percentuais são palpite a confirmar com o robô (ECO-8).",
+		"padrao": "floresta",
+		"mapas": {
+			"floresta": {"fracao": 0.0, "piso": 0},
+			"laboratorio": {"fracao": 0.2, "piso": 1},
+			"cidade": {"fracao": 0.35, "piso": 1},
+			"medio": {"fracao": 0.5, "piso": 2}
+		}
+	},
+	"apice": {
+		"_ajuda": "O ÁPICE (CAR-5, pedido 20): o bônus que chega ao 5/5 (dentro da cota de \"maestria\") vira a versão ÁPICE. Efeito numérico: stat, modificador e ruptura ficam com a soma aplicada x \"stat\" (o que passa da soma é aplicado de uma vez; largar o bônus no Difícil desfaz tudo pela soma guardada). Golpe: \"golpe.tipos\" tem uma linha por tipo (12), com \"mult\" (multiplica o número do golpe, se ele tem), \"soma\" (soma ao número) e \"texto\" (o que o cartão diz na linha Próximo). Corvos e runas ficam sem mais quantidade nem recarga menor, para não passar de MAX_CORVOS (16) e MAX_RUNAS (14) do armas.gd. Uma peça em ÁPICE não é consumida por fusão comum ou rara; as 4 lendárias consomem. Animação (degraus a e b; a cinemática de tela cheia é o CAR-6, da v3): \"anuncio\", \"hit_stop\" (s), \"camera_lenta\" (s) a \"escala_lenta\" (velocidade do mundo), onda (anéis) e a \"passada\" de dano: uma só, no máximo \"max\" monstros dentro da câmera mais \"margem\" px, tirando \"vida_pct\" da vida máxima (\"elite_pct\" na elite; o chefe e o mini-chefe não levam). No perfil Baixo ficam só o anúncio, os anéis e a passada (sem luz, partículas, tremor nem clarão).",
+		"stat": 1.5,
+		"golpe": {
+			"tipos": {
+				"orbita": {"mult": {"dano": 1.5}, "texto": "dano x1,5 e +1 lâmina", "soma": {"quantidade": 1}},
+				"aura": {"mult": {"dano": 1.5, "raio": 1.3}, "texto": "dano x1,5 e raio +30%"},
+				"corvos": {"mult": {"dano": 1.5}, "texto": "dano x1,5"},
+				"raio": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 raio e mais rápido", "soma": {"quantidade": 1}},
+				"runa": {"mult": {"dano": 1.5, "explosao": 1.3}, "texto": "dano x1,5 e explosão maior"},
+				"projetil": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 tiro e mais rápido", "soma": {"quantidade": 1}},
+				"nuvem": {"mult": {"dano": 1.5, "recarga": 0.85, "raio": 1.3}, "texto": "dano x1,5, nuvem maior e mais rápida"},
+				"anel": {"mult": {"dano": 1.5, "recarga": 0.85, "raio": 1.3}, "texto": "dano x1,5, anel maior e mais rápido"},
+				"meteoro": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 meteoro e mais rápido", "soma": {"quantidade": 1}},
+				"aliado": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 aliado e mais rápido", "soma": {"quantidade": 1}},
+				"torre": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 virote e mais rápida", "soma": {"quantidade": 1}},
+				"granada": {"mult": {"dano": 1.5, "recarga": 0.85}, "texto": "dano x1,5, +1 cabaça e mais rápida", "soma": {"quantidade": 1}}
+			}
+		},
+		"anuncio": "ÁPICE: {nome}",
+		"cor": [1.0, 0.84, 0.3],
+		"hit_stop": 0.1,
+		"camera_lenta": 0.9,
+		"escala_lenta": 0.3,
+		"passada": {"max": 350, "margem": 0.0, "vida_pct": 0.5, "elite_pct": 0.1}
 	},
 	"anuncios": {
 		"minichefe": {"texto": "MINI-CHEFE: {nome}", "cor": [1.0, 0.4, 0.3]},

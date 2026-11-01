@@ -10,6 +10,7 @@ extends Control
 
 const Paleta := preload("res://v2/paleta.gd")
 const Glifos := preload("res://v2/glifos.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": os quadros que pulsam ficam num tom fixo
 const TAM_CARD := Vector2(86.0, 74.0)
 const ESCALA := 1.5  # decisão do Alisson: o HUD da partida é 1,5x. O nó inteiro é escalado (`scale`): o desenho e `size` ficam no espaço de 86x74 por card
 const ESPACO_CARD := 2.0
@@ -20,6 +21,7 @@ const PASTA_ICONE_S := "res://assets/v2/secundario_s/"  # <chave do herói>.png:
 const ICONES_E := {
 	"nicao": preload("res://assets/v2/habilidade_e/nicao.png"),
 	"lucas": preload("res://assets/v2/habilidade_e/lucas.png"),
+	"lightwolf": preload("res://assets/v2/habilidade_e/lightwolf.png"),
 }
 const BORDA := Paleta.HABILIDADE_BORDA
 const DESATIVADO := Paleta.HABILIDADE_DESATIVADA
@@ -161,8 +163,8 @@ func sincronizar(heroi) -> void:
 		negada = float(_campo(heroi, "rup_nega_t", 0.0)) > 0.0
 	_sincronizar_secundario(heroi)
 	var rotulo := _rotulo_e()
-	var fase_perfeita := int(Time.get_ticks_msec() / 50.0) % 2 if perfeita else 0
-	var fase_pulso := int(Time.get_ticks_msec() / 160.0) % 2 if e_ativa or s_ativo else 0  # o quadro da E em andamento e o do escudo erguido pulsam
+	var fase_perfeita := int(Time.get_ticks_msec() / 50.0) % 2 if perfeita and not Piscadas.ligado() else 0
+	var fase_pulso := int(Time.get_ticks_msec() / 160.0) % 2 if (e_ativa or s_ativo) and not Piscadas.ligado() else 0  # o quadro da E em andamento e o do escudo erguido pulsam
 	var nova_chave := (
 		"%s|%s|%d|%d|%d|%s|%s|%s|%d|%d|%s|%s|%s|%d|%s|%s|%s|%s"
 		% [
@@ -224,8 +226,7 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	_moldura_pedra(card, e_disponivel if e else s_disponivel)
 	var icon_pos := origem + Vector2((TAM_CARD.x - TAM_ICON.x) * 0.5, FOLGA_MOLDURA + 1.0)
 	var icone := Rect2(icon_pos, TAM_ICON)
-	var pulsa := int(Time.get_ticks_msec() / 160.0) % 2 == 0
-	var cor := _cor_do_card(e, pulsa)
+	var cor := _cor_do_card(e, _pulsa())
 	draw_rect(icone, FUNDO)
 	_moldura(icone, cor)
 	var arte: Texture2D = arte_e() if e else arte_s()
@@ -261,7 +262,7 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	elif not e and s_disponivel:
 		_cortina(icon_pos, s_recarga_px)
 		if s_ativo:  # erguido: o quadro pulsa
-			var pulso := 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) / 1000.0 * TAU * 2.0)
+			var pulso := Piscadas.pulso(float(Time.get_ticks_msec()) / 1000.0, 2.0)
 			draw_rect(Rect2(icon_pos + Vector2(1.0, 1.0), TAM_ICON - Vector2(2.0, 2.0)), Color(COR_ESCUDO, 0.10 + 0.22 * pulso))
 	var rotulo := _rotulo_e() if e else _rotulo_s()
 	var texto_aceso := e_disponivel if e else s_pronta
@@ -269,6 +270,11 @@ func _desenhar_card(origem: Vector2, tecla: String, fonte: Font) -> void:
 	draw_string(fonte, Vector2(origem.x, 57.0), rotulo, HORIZONTAL_ALIGNMENT_CENTER, TAM_CARD.x, Paleta.NUMERO_PEQUENO, cor_texto)
 	# o selo da tecla na borda de baixo do card (E e LB numa teclinha, o botão direito no mouse desenhado), do mesmo tamanho dos glifos das telas
 	Glifos.desenhar_selo(self, "habilidade" if e else "secundario", origem.x + TAM_CARD.x * 0.5, TAM_CARD.y - Glifos.ALTURA_SELO, cor, texto_aceso, DESATIVADO)
+
+
+## O quadro em andamento está na metade clara do pulso (3,1 Hz)? Com "Reduzir piscadas": claro e parado.
+func _pulsa() -> bool:
+	return Piscadas.ligado() or int(Time.get_ticks_msec() / 160.0) % 2 == 0
 
 
 ## A cor do quadro do ícone: a do estado do slot (pronto, em andamento, negado, apagado).
@@ -284,7 +290,7 @@ func _cor_do_card(e: bool, pulsa: bool) -> Color:
 		cor = e_cor.lerp(Paleta.BRANCO, 0.45)  # a E em andamento: o quadro do ícone pulsa
 	if negada:
 		cor = Paleta.PERIGO
-	if perfeita and int(Time.get_ticks_msec() / 50.0) % 2 == 0:
+	if perfeita and (Piscadas.ligado() or int(Time.get_ticks_msec() / 50.0) % 2 == 0):  # a janela perfeita pisca a 10 Hz; com a opção, branco parado
 		cor = Paleta.BRANCO
 	return cor
 

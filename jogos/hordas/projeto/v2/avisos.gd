@@ -8,6 +8,7 @@ extends RefCounted
 const MAX := 24
 const ACHATA := 0.62
 const MIOLO_MIN := 6.0  # px: abaixo disso o miolo do aviso não vira polígono (os pontos arredondados coincidem, #127)
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": o chão cresce sem pulsar
 const Anim := preload("res://v2/anim_golpes.gd")  # as folhas dos ataques inimigos (indice_perigo.json; docs/combate_v2)
 ## Estilo do aviso: 0 = só o chão pisca (como antes); 1 = QUEDA, uma pedra de energia cai do céu no círculo e estoura no disparo (a chuva do
 ## chefe); 2 = ESTOURO, o chão racha e explode no disparo (o estouro do chefe e a elite explosiva); 3 = TEIA, fios e anéis de teia desenhados
@@ -280,6 +281,14 @@ func _elipse(p: Vector2, r: float, n: int) -> PackedVector2Array:
 	return v
 
 
+## O pulso do aviso `i` (0 a 1): o chão pisca cada vez mais rápido. Com "Reduzir piscadas" não pulsa, só cresce com o tempo (o teste amostra aqui).
+func pulso(i: int) -> float:
+	var k := t[i] / dur[i]
+	if Piscadas.ligado():
+		return k
+	return 0.5 + 0.5 * sin(t[i] * (9.0 + 30.0 * k))
+
+
 func _desenhar() -> void:
 	if ret_t < ret_dur and mundo.heroi != null:
 		var k := ret_t / ret_dur
@@ -298,7 +307,7 @@ func _desenhar() -> void:
 			continue
 		var k := t[i] / dur[i]
 		var c: Color = cor[i]
-		var pisca := 0.5 + 0.5 * sin(t[i] * (9.0 + 30.0 * k))
+		var pisca := pulso(i)
 		var al := 0.26 + 0.4 * pisca * (0.4 + 0.6 * k)
 		if tipo[i] == 1:
 			var r := tam[i]

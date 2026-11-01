@@ -10,6 +10,7 @@ extends RefCounted
 
 const Colisao := preload("res://v2/colisao.gd")
 const Novas := preload("res://v2/armas_novas.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a luz do fogo da aura fica com energia fixa
 const Anim := preload("res://v2/anim_golpes.gd")
 const MAX_CORVOS := 16
 const MAX_RUNAS := 14
@@ -26,7 +27,9 @@ var combate
 var mundo
 var fx
 var ativas := {}  # id -> golpe secundário {id, tipo, cor, slot, nivel, bonus, st (números), t, t2, ang, pulso, pts, R, evo}
-var mods := {"onda": 0.0, "fura": 0.0, "explode": 0.0, "folego": 0.0, "abalo": 0.0, "muralha": 0.0, "chuva": 0.0, "mira": 0.0}  # valor acumulado (em %) de cada modificador da katana
+var mods := {
+	"onda": 0.0, "fura": 0.0, "explode": 0.0, "folego": 0.0, "abalo": 0.0, "muralha": 0.0, "chuva": 0.0, "mira": 0.0, "sifao": 0.0, "ampla": 0.0, "cabo": 0.0
+}  # valor acumulado (em %) de cada modificador da katana; sifao, ampla (graus) e cabo são as cartas da matriz do LightWolf (LW-6, v2/matriz.gd)
 var ventania := {}  # evolução da katana, ou {}
 var acertos := {}  # tipo -> quantos acertos (testes)
 var lancadas := 0  # ondas e lanças lançadas (testes)
@@ -213,12 +216,14 @@ func _nova(id: String, tipo: String, cor: Color) -> Dictionary:
 		"pulso": 0.0,
 		"pts": PackedVector2Array(),
 		"R": 40.0,
-		"evo": false
+		"evo": false,
+		"apice": false  # o golpe chegou ao 5/5 (CAR-5): o HUD de golpes põe o selo dourado
 	}
 
 
 ## Põe (ou sobe) o golpe `id` ao nível `nivel`: os números são a base mais o que cada nível até ali soma; o dano ganha o bônus da raridade.
-func definir_golpe(id: String, nivel: int, bonus: float) -> void:
+## `apice` (CAR-5): o golpe chegou ao 5/5 e vira a versão ÁPICE: os números do tipo mudam como diz dados/v2_cartas.json > apice.golpe.tipos.
+func definir_golpe(id: String, nivel: int, bonus: float, apice := false) -> void:
 	var d: Dictionary = combate.cartas.definicao(id)
 	if d.is_empty():
 		return
@@ -228,6 +233,7 @@ func definir_golpe(id: String, nivel: int, bonus: float) -> void:
 		ativas[id] = a
 	a.nivel = nivel
 	a.bonus = bonus
+	a.apice = apice
 	var st: Dictionary = (d.base as Dictionary).duplicate()
 	for k in range(nivel - 1):
 		var n: Dictionary = d.niveis[k]
@@ -235,7 +241,23 @@ func definir_golpe(id: String, nivel: int, bonus: float) -> void:
 			if chave != "texto":
 				st[chave] = float(st.get(chave, 0.0)) + float(n[chave])
 	st.dano = float(st.dano) * (1.0 + bonus)
+	if apice:
+		numeros_apice(str(d.tipo), st)
 	a.st = st
+
+
+## Os números do golpe `st` na versão ÁPICE, no lugar: para cada tipo, `mult` multiplica o número (se o golpe o tem) e `soma` soma ao número
+## (dados/v2_cartas.json > apice.golpe.tipos). Quantidade fica inteira. Não passa dos tetos de pool (MAX_CORVOS, MAX_RUNAS): corvos e runas só ganham dano e área.
+func numeros_apice(tipo: String, st: Dictionary) -> void:
+	var regra: Dictionary = combate.cartas.cfg.apice.golpe.tipos.get(tipo, {})
+	var mult: Dictionary = regra.get("mult", {})
+	for chave in mult:
+		if st.has(chave):
+			st[chave] = float(st[chave]) * float(mult[chave])
+	var soma: Dictionary = regra.get("soma", {})
+	for chave in soma:
+		if st.has(chave):
+			st[chave] = float(st[chave]) + float(soma[chave])
 
 
 func adicionar_evoluida(ev: Dictionary, bonus: float) -> void:
@@ -988,7 +1010,7 @@ func _luzes(h, dt: float) -> void:
 	if fogo:
 		luz_fogo.position = (h.pos + Vector2(0, -6)).round()
 		luz_fogo.texture_scale = fogo_r * 2.4 / 128.0
-		luz_fogo.energy = 0.75 + 0.2 * sin(_fase * 17.0) + 0.1 * sin(_fase * 31.0)
+		luz_fogo.energy = Piscadas.valor(0.75 + 0.2 * sin(_fase * 17.0) + 0.1 * sin(_fase * 31.0), Piscadas.ENERGIA_FOGO_FIXA)  # tremeluz a ~3-5 Hz; com a opção, parada
 	luz_lamina.enabled = lamina
 	if lamina:
 		luz_lamina.position = lamina_p.round()
@@ -1159,8 +1181,8 @@ func _aura_visual(h) -> void:
 	_aura_sp.scale = Vector2(raio * 2.3 / 4.0, raio * 2.3 * ACHATA / 4.0)
 	var mat := _aura_sp.material as ShaderMaterial
 	mat.set_shader_parameter("cor", cor)
-	mat.set_shader_parameter("t", _fase)
-	mat.set_shader_parameter("pulso", pulso)
+	mat.set_shader_parameter("t", Piscadas.valor(_fase, 0.0))  # "Reduzir piscadas": a chama não gira (a ~1,1 e 1,75 Hz por pixel) nem pulsa
+	mat.set_shader_parameter("pulso", Piscadas.valor(pulso, 0.0))
 
 
 func _desenhar_corpo() -> void:
@@ -1336,6 +1358,11 @@ func _desenhar_laminas(a: Dictionary) -> void:
 			no_brilho.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
+## Brilho do glifo da runa armada: pulsa ~1 Hz (0,7 a 1,0); com "Reduzir piscadas" fica parado. Público para o teste.
+func _pulso_runa(i: int) -> float:
+	return Piscadas.valor(0.7 + 0.3 * sin(_fase * 6.0 + float(i)), Piscadas.PULSO_RUNA_FIXO)
+
+
 func _desenhar_runa(i: int) -> void:
 	var a: Dictionary = r_arma[i]
 	var p: Vector2 = r_pos[i]
@@ -1345,7 +1372,7 @@ func _desenhar_runa(i: int) -> void:
 	var raio := float(a.st.explosao) * 0.42
 	var surge := clampf(idade / 0.3, 0.0, 1.0)
 	var fade := clampf(r_vida[i] / 0.8, 0.0, 1.0)
-	var pulso := 0.7 + 0.3 * sin(_fase * 6.0 + float(i))
+	var pulso := _pulso_runa(i)
 	var al := surge * fade * (pulso if armada else 0.5)
 	no_brilho.draw_texture_rect(
 		tex_brilho, Rect2(p - Vector2(raio, raio * ACHATA) * 1.5, Vector2(raio, raio * ACHATA) * 3.0), false, Color(cor.r, cor.g, cor.b, 0.22 * al)

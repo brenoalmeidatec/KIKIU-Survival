@@ -8,6 +8,7 @@ extends "res://testes/isolamento_v2.gd"
 #  - a evolução Pagode do Trovão (sentinela 3 + raio 3) entra, consome as peças e o virote vira arco elétrico (acertos "raio").
 # Roda: godot --headless --path jogos/hordas/projeto res://testes/v2_sentinela.tscn  (imprime "v2_sentinela falhas=0")
 const Mundo := preload("res://v2/mundo.tscn")
+const Mapas := preload("res://v2/mapas.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Novas := preload("res://v2/armas_novas.gd")
 const Golem := preload("res://v2/golem.gd")
@@ -41,6 +42,7 @@ func zerar() -> void:
 	w.reiniciar()
 	w.combate.limpar_partida()
 	w.combate.diretor.ligado = false
+	w.id_mapa = str(Mapas.LISTA[Mapas.LISTA.size() - 1].id)  # CAR-5: o último mapa dá a cota de 5/5 (a Floresta não deixa nenhum bônus passar do nível 4)
 	w.heroi.imortal = true
 	w.heroi.entrada_forcada = Vector2.ZERO
 	w.heroi.ataque_forcado = null

@@ -9,6 +9,9 @@ extends RefCounted
 ## rar_nome, cor (Color), valor (stat/mod/rb, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat,
 ## tipo ("up" = sobe um bônus que o herói já tem; "nov" = bônus novo; "troca" = bônus novo com as vagas cheias (limite do Difícil): escolher abre o
 ## painel para o jogador largar um bônus; o cartão mostra o selo UPGRADE, NOVO ou TROCA)}.
+## O ÁPICE (CAR-5): o bônus que chega ao último nível (5/5) vira a versão ÁPICE (dados/v2_cartas.json > apice), mas só dentro da COTA do mapa
+## (> maestria): o nível 4 vale em todo mapa; o 5 só abre para max(piso, ceil(fração x bônus que o herói tem)) bônus ao mesmo tempo. A carta que leva
+## ao ÁPICE traz `apice: true`. O automático nunca chega lá (escolha.auto_nivel_max).
 ## O cartão (telas.gd) mostra nessa ordem: raridade e tecla, ícone, nome, desc, proximo e, no rodapé, nivel_txt e evolui.
 
 const Armas := preload("res://v2/armas.gd")
@@ -19,8 +22,9 @@ var combate
 var cfg: Dictionary = {}
 var rar: Array = []
 var rng := RandomNumberGenerator.new()
-var estado := {}  # id -> {n: vezes que pegou, bonus: dano extra do golpe pela raridade, soma: valor acumulado (mod), usada: virou parte de evolução}
+var estado := {}  # id -> {n: vezes que pegou, bonus: dano extra do golpe pela raridade, soma: valor acumulado (mod), usada: virou parte de evolução, apice: chegou ao 5/5}
 var evoluidas: Array = []  # ids das evoluções já feitas
+var _evos: Array = []  # as fusões (cfg.evolucoes) e as evoluções da matriz do LightWolf (cfg.evolucoes_matriz, LW-6: não consomem as peças)
 var evolucoes_feitas := 0
 var lendarias_feitas := 0  # só uma lendária por partida
 var vistas: Array = []  # as últimas rodadas de cartas (listas de ids oferecidos): a novidade não repete o que acabou de passar (escolha.vistas_rodadas)
@@ -42,6 +46,7 @@ func montar(c) -> void:
 	for d in cfg.modificadores:
 		_def[d.id] = d
 		_cat[d.id] = "mod"
+	_evos = (cfg.evolucoes as Array) + (cfg.get("evolucoes_matriz", []) as Array)
 	for d in Dados.json("v2_ruptura").get("cartas", []):  # a ruptura da tecla E (v2/ruptura.gd)
 		_def[d.id] = d
 		_cat[d.id] = "rb"
@@ -120,7 +125,12 @@ func _disponivel(d: Dictionary) -> bool:
 		return false
 	if d.has("herois") and not (d.herois as Array).has(combate.heroi_id):  # carta de um herói só: não aparece para os outros
 		return false
-	return nivel_de(id) < int(d.max)
+	var n := nivel_de(id)
+	if n >= int(d.max):
+		return false
+	if n == int(d.max) - 1:  # o último passo é o ÁPICE: só com vaga na cota do mapa
+		return apice_livre()
+	return true
 
 
 ## Quantas cartas ainda poderiam sair (testes).
@@ -137,7 +147,7 @@ func disponiveis() -> Array:
 func _pesos_sinergia() -> Dictionary:
 	var r := {}
 	var peso := float(cfg.escolha.peso_sinergia)
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if not _evo_livre(ev):
 			continue
 		var tem := 0
@@ -169,13 +179,14 @@ func _sinergia_texto(id: String) -> String:
 		if str(p.id) != id:
 			outras.append(p)
 	var fusao := str(ev.get("curto", ev.nome))
+	var rotulo := str(ev.get("rotulo", "FUSÃO"))  # a Aurora Lunar (matriz do LightWolf) não funde nada: diz EVOLUÇÃO
 	var texto: String
 	if outras.size() == 1:
-		texto = "%s nv%d » FUSÃO %s" % [_curto(str(outras[0].id)), int(outras[0].nivel), fusao]
+		texto = "%s nv%d » %s %s" % [_curto(str(outras[0].id)), int(outras[0].nivel), rotulo, fusao]
 	else:
-		texto = "%s +%d » FUSÃO %s" % [_curto(str(outras[0].id)), outras.size() - 1, fusao]
+		texto = "%s +%d » %s %s" % [_curto(str(outras[0].id)), outras.size() - 1, rotulo, fusao]
 	if texto.length() > LINHA_RODAPE:  # sem a palavra FUSÃO quando não cabe: a fusão já aparece no nome
-		texto = texto.replace("FUSÃO ", "")
+		texto = texto.replace(rotulo + " ", "")
 	if texto.length() > LINHA_RODAPE:  # última saída: só a primeira palavra da peça e da fusão ("Guerreiro » Exército")
 		texto = "%s » %s" % [_curto(str(outras[0].id)).split(" ")[0], fusao.split(" ")[0]]
 	return texto
@@ -193,7 +204,7 @@ func fusao_de(id: String) -> String:
 
 ## A evolução (ainda livre) que esta peça ajuda a fechar, ou {} se nenhuma.
 func _sinergia_ev(id: String) -> Dictionary:
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if not _evo_livre(ev):
 			continue
 		for p in ev.pecas:
@@ -208,7 +219,7 @@ func _sinergia_ev(id: String) -> Dictionary:
 ## nenhuma, ou a evolução dela já aconteceu.
 func evolucoes_com(id: String) -> Array:
 	var r: Array = []
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if evoluidas.has(ev.id):
 			continue
 		var usa := false
@@ -225,6 +236,55 @@ func evolucoes_com(id: String) -> Array:
 		if usa:
 			r.append({"nome": str(ev.nome), "falta": falta, "perdida": perdida})
 	return r
+
+
+# ------------------------------------------------------------------ cota de 5/5 e ÁPICE (CAR-5)
+
+
+## A regra de cota deste mapa (dados/v2_cartas.json > maestria): {fracao, piso}. Mapa fora da lista usa o padrão.
+func regra_maestria() -> Dictionary:
+	var m: Dictionary = cfg.get("maestria", {})
+	var mapas: Dictionary = m.get("mapas", {})
+	var id := ""
+	if combate != null and combate.mundo != null and combate.mundo.get("id_mapa") != null:
+		id = str(combate.mundo.get("id_mapa"))
+	if not mapas.has(id):
+		id = str(m.get("padrao", "floresta"))
+	return mapas.get(id, {"fracao": 0.0, "piso": 0})
+
+
+## Quantos bônus podem estar no ÁPICE (5/5) ao mesmo tempo: max(piso, ceil(fração x bônus que o herói tem)). Os consumidos em lendária não contam.
+func cota_apice() -> int:
+	var r := regra_maestria()
+	return maxi(int(r.get("piso", 0)), ceili(float(r.get("fracao", 0.0)) * float(bonus_trocaveis().size()) - 0.0001))
+
+
+## Quantos bônus estão no ÁPICE agora (os consumidos por uma lendária já saíram da conta).
+func apices_atuais() -> int:
+	var n := 0
+	for id in bonus_trocaveis():
+		if apice_de(str(id)):
+			n += 1
+	return n
+
+
+func apice_livre() -> bool:
+	return apices_atuais() < cota_apice()
+
+
+func apice_de(id: String) -> bool:
+	return bool(estado.get(id, {}).get("apice", false))
+
+
+## O maior nível que o bônus `id` pode ter agora: o máximo se a cota deixa (ou se ele já é ÁPICE), senão o máximo menos 1.
+func teto_de(id: String) -> int:
+	var mx := int(_def[id].max)
+	return mx if apice_de(id) or apice_livre() else mx - 1
+
+
+## O que o ÁPICE traz a um golpe deste tipo, em palavras curtas (a linha "Próximo" do cartão): vem de apice.golpe.tipos.<tipo>.texto.
+func _texto_apice(tipo: String) -> String:
+	return str(cfg.apice.golpe.tipos.get(tipo, {}).get("texto", "bem mais forte"))
 
 
 func golpes_ativos() -> int:
@@ -266,6 +326,7 @@ func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true,
 		elif not sem_novidade and not descartadas.has(str(id)) and not recentes.has(str(id)):
 			novs.append(d)
 			pesos_nov.append(peso)
+	var livres_apice := maxi(cota_apice() - apices_atuais(), 0)  # vagas de ÁPICE: cada upgrade que fecha o 5/5 gasta uma, e sem sobra os outros saem da mão
 	var quer_nov := 0 if n < 2 else clampi(int(cfg.escolha.get("mao_novidades", 1)), 0, n)
 	var escolhidas: Array = []
 	for k in n:
@@ -278,6 +339,10 @@ func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true,
 		if d.is_empty():
 			break
 		escolhidas.append(d)
+		if nivel_de(str(d.id)) == int(d.max) - 1:
+			livres_apice -= 1
+			if livres_apice <= 0:
+				_tirar_apices(ups, pesos_up)
 		if nivel_de(str(d.id)) == 0:  # uma novidade ocupa uma vaga: acabaram, as outras viram upgrade (o baú aplica a mão inteira, ou várias pegas)
 			vagas -= 1
 			if vagas <= 0 and not com_troca:
@@ -306,6 +371,16 @@ func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true,
 	if registrar:
 		registrar_mao(cartas)
 	return cartas
+
+
+## Tira da lista de upgrades os que fechariam o 5/5 (a cota de ÁPICE da mão acabou).
+func _tirar_apices(ups: Array, pesos: Array) -> void:
+	var i := ups.size() - 1
+	while i >= 0:
+		if nivel_de(str(ups[i].id)) == int(ups[i].max) - 1:
+			ups.remove_at(i)
+			pesos.remove_at(i)
+		i -= 1
 
 
 ## Guarda em `vistas` a mão que o jogador VIU (a novidade não repete o que passou nas últimas `escolha.vistas_rodadas` rodadas). Quem monta
@@ -446,12 +521,13 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 		"proximo": "",  # linha abaixo da descrição: o que o golpe ganha no próximo nível (ou o bônus da raridade)
 		"tipo": "up" if n > 0 else ("troca" if cheio() else "nov"),  # o selo do cartão: UPGRADE (já tenho), NOVO ou TROCA (novo, mas as vagas estão cheias)
 		"nivel_txt": "",  # rodapé: "Nível 2 » 3 de 5" (upgrade), "Novo golpe" ou "Novo bônus"
-		"evolui": ""  # rodapé: "Evolui: ..." quando esta peça fecha uma evolução
+		"evolui": "",  # rodapé: "Evolui: ..." quando esta peça fecha uma evolução
+		"apice": false  # esta carta leva o bônus ao 5/5, a versão ÁPICE (o selo do cartão fica dourado)
 	}
 	var bonus_pct := roundi(float(ra.bonus_arma) * 100.0)
 	if cat == "golpe":
 		var sobe := 2 if r == rar.size() - 1 else 1
-		c.nivel_novo = mini(n + sobe, int(d.max))
+		c.nivel_novo = mini(n + sobe, teto_de(id))  # sem vaga na cota, a carta lendária também para no 4
 		c.desc = str(d.desc)
 		var ni: int = c.nivel_novo
 		if n == 0:
@@ -464,12 +540,19 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 			for k in range(n, ni):
 				partes.append(str(d.niveis[k - 1].texto))
 			c.proximo = "Próximo: %s" % ", ".join(partes)
-			if ra.bonus_arma > 0.0:
+			if ni >= int(d.max):  # o último nível é o ÁPICE: o cartão mostra só o que ele traz (duas linhas; o resto não cabe)
+				c.proximo = "ÁPICE: %s" % _texto_apice(str(d.tipo))
+			elif ra.bonus_arma > 0.0:
 				c.proximo += " (+%d%% de dano)" % bonus_pct
 	else:
 		c.valor = float(d.valor) * float(ra.mult)
 		c.desc = str(d.desc).replace("{v}", str(roundi(float(c.valor))))
 		c.nivel_txt = "Nível %d » %d de %d" % [n, n + 1, int(d.max)] if n > 0 else "Novo bônus"
+		if n > 0 and n + 1 >= int(d.max):
+			c.proximo = "ÁPICE: o bônus todo x%s" % str(cfg.apice.stat).replace(".", ",")
+	c.apice = n > 0 and int(c.nivel_novo) >= int(d.max)
+	if c.apice:
+		c.nivel_txt = "Nível %d » ÁPICE" % n
 	if c.tipo == "troca":
 		c.nivel_txt = "Cheio: escolha quem sai"
 	var sin := _sinergia_texto(id)
@@ -490,28 +573,42 @@ func aplicar(c: Dictionary) -> void:
 		_aplicar_stat(h, str(c.get("stat", "")), float(c.get("valor", 0.0)))
 		return
 	if not estado.has(id):
-		estado[id] = {"n": 0, "bonus": 0.0, "soma": 0.0, "usada": false}
+		estado[id] = {"n": 0, "bonus": 0.0, "soma": 0.0, "usada": false, "apice": false}
 	var e: Dictionary = estado[id]
 	var d: Dictionary = _def.get(id, {})
+	var teto := teto_de(id)  # a cota do mapa (CAR-5): uma carta velha na tela não leva o bônus além do que o mapa deixa
+	if (cat == "golpe" and mini(int(c.get("nivel_novo", int(e.n) + 1)), teto) <= int(e.n)) or (cat != "golpe" and int(e.n) + 1 > teto):
+		return
 	match cat:
 		"golpe":
-			var ni: int = int(c.get("nivel_novo", e.n + 1))
-			e.n = clampi(ni, 1, int(d.max))
+			e.n = clampi(mini(int(c.get("nivel_novo", int(e.n) + 1)), teto), 1, int(d.max))
 			e.bonus = float(e.bonus) + float(rar[int(c.get("rar", 0))].bonus_arma)
-			combate.armas.definir_golpe(id, int(e.n), float(e.bonus))
-		"mod":
+		"mod", "rb":
 			e.n = int(e.n) + 1
 			e.soma = float(e.soma) + float(c.get("valor", d.valor))
-			combate.armas.definir_modificador(str(d.mod), float(e.soma))
-		"rb":
-			e.n = int(e.n) + 1
-			e.soma = float(e.soma) + float(c.get("valor", d.valor))
-			combate.ruptura.definir(str(d.chave), float(e.soma))
 		_:
 			e.n = int(e.n) + 1
 			e.soma = float(e.soma) + float(c.get("valor", 0.0))  # a soma aplicada: a troca no Difícil (CAR-4) desfaz por ela
 			_aplicar_stat(h, str(c.get("stat", "")), float(c.get("valor", 0.0)))
+	var vira_apice := int(e.n) >= int(d.max) and not bool(e.apice)
+	if vira_apice:
+		e.apice = true
+		if cat != "golpe":  # stat, modificador e ruptura: a soma aplicada vezes o fator do ÁPICE (o que passa da soma entra de uma vez)
+			var antes := float(e.soma)
+			e.soma = antes * float(cfg.apice.stat)
+			if cat == "stat":
+				_aplicar_stat(h, str(d.get("stat", "")), float(e.soma) - antes)
+	match cat:
+		"golpe":
+			combate.armas.definir_golpe(id, int(e.n), float(e.bonus), bool(e.apice))
+		"mod":
+			combate.armas.definir_modificador(str(d.mod), float(e.soma))
+		"rb":
+			combate.ruptura.definir(str(d.chave), float(e.soma))
 	combate.progresso.melhorias[id] = int(e.n)
+	if vira_apice:
+		var cor := Color(d.cor[0], d.cor[1], d.cor[2]) if d.has("cor") else Color(cfg.apice.cor[0], cfg.apice.cor[1], cfg.apice.cor[2])
+		combate.apice_ganho(id, str(d.nome), cor)
 	_checar_evolucoes()
 
 
@@ -554,9 +651,13 @@ func bonus_trocaveis() -> Array:
 	return r
 
 
-## Quantas vagas de bônus estão ocupadas: os bônus de `bonus_trocaveis` e cada fusão feita (conta 1; as peças consumidas deixam de contar).
+## Quantas vagas de bônus estão ocupadas: os bônus de `bonus_trocaveis` e cada fusão feita (conta 1; as peças consumidas deixam de contar). A Aurora Lunar não conta.
 func bonus_contados() -> int:
-	return bonus_trocaveis().size() + evoluidas.size()
+	var sem_consumo := 0  # a evolução que não consome peça (Aurora Lunar) não ocupa vaga: as duas peças dela já ocupam
+	for ev in cfg.get("evolucoes_matriz", []):
+		if evoluidas.has(ev.id):
+			sem_consumo += 1
+	return bonus_trocaveis().size() + evoluidas.size() - sem_consumo
 
 
 ## Quantos bônus novos ainda cabem no limite (999 sem limite). Nunca negativo.
@@ -597,10 +698,32 @@ func remover_bonus(id: String) -> bool:
 	e.n = 0
 	e.bonus = 0.0
 	e.soma = 0.0
+	e.apice = false
 	combate.progresso.melhorias.erase(id)
 	if not descartadas.has(id):
 		descartadas.append(id)
 	return true
+
+
+# ------------------------------------------------------------------ cartas da matriz do LightWolf (LW-6)
+
+
+## A evolução da matriz (dados/v2_cartas.json > evolucoes_matriz) com o id dado, ou {}.
+func evolucao_matriz(id: String) -> Dictionary:
+	for ev in cfg.get("evolucoes_matriz", []):
+		if str(ev.id) == id:
+			return ev
+	return {}
+
+
+## A Aurora Lunar está valendo: a evolução aconteceu e o Sifão ainda está com o herói (largado no Difícil, a cura some e ela não faz nada sozinha).
+func aurora_ativa() -> bool:
+	return evoluidas.has("aurora_lunar") and ativa("sifao")
+
+
+## Quanto o Cabo de Resgate multiplica a carga do chamado do mecha (1 sem a carta; 1,15 por nível, mais a raridade e o ÁPICE: a soma guardada em armas.mods).
+func mult_cabo() -> float:
+	return 1.0 + float(combate.armas.mods.get("cabo", 0.0)) / 100.0
 
 
 # ------------------------------------------------------------------ evolução
@@ -613,7 +736,7 @@ func _peca_ok(p: Dictionary) -> bool:
 ## Confere se alguma evolução ficou pronta (as duas peças no nível pedido) e faz acontecer. Devolve o nome da última feita, ou "".
 func _checar_evolucoes() -> String:
 	var feita := ""
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if evoluidas.has(ev.id):
 			continue
 		if not _evo_livre(ev):
@@ -635,8 +758,11 @@ func evoluir(ev: Dictionary) -> void:
 	if str(ev.get("raridade", "")) == "lendario":
 		lendarias_feitas += 1
 	var bonus := 0.0
+	var lendaria := str(ev.get("raridade", "")) == "lendario"
 	for id in ev.consome:
 		bonus = maxf(bonus, float(estado.get(id, {}).get("bonus", 0.0)))
+		if apice_de(str(id)) and not lendaria:  # a peça em ÁPICE fica: só as 4 lendárias consomem (D23)
+			continue
 		if estado.has(id):
 			estado[id].usada = true
 		combate.armas.remover(str(id))
@@ -654,7 +780,7 @@ func resumo() -> Array:
 		var e: Dictionary = estado[id]
 		if int(e.n) > 0 and not bool(e.usada) and _cat[id] != "stat":
 			r.append({"id": id, "nome": str(_def[id].nome), "nivel": int(e.n)})
-	for ev in cfg.evolucoes:
+	for ev in _evos:
 		if evoluidas.has(ev.id):
 			r.append({"id": ev.id, "nome": str(ev.nome), "nivel": 0})
 	return r

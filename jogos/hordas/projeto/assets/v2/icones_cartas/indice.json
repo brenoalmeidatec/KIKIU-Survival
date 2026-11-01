@@ -687,6 +687,30 @@
    "pequeno": "16/fogos_de_festival.png",
    "categoria": "evolucao",
    "proprio": true
+  },
+  "sifao": {
+   "arquivo": "sifao.png",
+   "pequeno": "16/sifao.png",
+   "categoria": "modificador",
+   "proprio": true
+  },
+  "ampla": {
+   "arquivo": "ampla.png",
+   "pequeno": "16/ampla.png",
+   "categoria": "modificador",
+   "proprio": true
+  },
+  "cabo": {
+   "arquivo": "cabo.png",
+   "pequeno": "16/cabo.png",
+   "categoria": "modificador",
+   "proprio": true
+  },
+  "aurora_lunar": {
+   "arquivo": "aurora_lunar.png",
+   "pequeno": "16/aurora_lunar.png",
+   "categoria": "evolucao",
+   "proprio": true
   }
  }
 }

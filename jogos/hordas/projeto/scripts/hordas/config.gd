@@ -48,6 +48,8 @@ const ITENS := [
 	{"chave": "qualidade_auto", "grupo": "Gráfico", "nome": "Ajuste dinâmico", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "verificar_versao", "grupo": "Gráfico", "nome": "Avisar versão nova", "valores": [false, true], "formato": "sim_nao", "padrao": true},
 	{"chave": "mostrar_fps", "grupo": "Gráfico", "nome": "Mostrar FPS", "valores": [false, true], "formato": "sim_nao", "padrao": false},
+	# Reduzir piscadas (#512): no máximo 3 trocas de luz por segundo, nenhum vermelho piscando. Fora do perfil dos Gráficos: não vira Personalizado. Quem pisca consulta v2/piscadas.gd.
+	{"chave": "reduzir_piscadas", "grupo": "Gráfico", "nome": "Reduzir piscadas", "valores": [false, true], "formato": "sim_nao", "padrao": false},
 	{
 		"chave": "tamanho_ui",
 		"grupo": "Gráfico",
@@ -90,6 +92,7 @@ signal tamanho_ui_mudou  # a opção "tamanho_ui" (v2/escala_ui.gd) mudou: as te
 var _perfil_padrao := "alto"  # sem nada salvo: o perfil pela máquina (jogo de verdade) ou alto (testes e headless)
 var _temp: Dictionary = {}  # valores só da memória (baixa automática, g_temporario): ficam por cima do salvo e nunca vão ao arquivo
 var _temp_perfil := ""  # perfil só da memória ("" = nenhum); some ao mexer numa opção da aba ou ao recarregar
+var reduzir_piscadas := false  # cache da opção "reduzir_piscadas" (v2/piscadas.gd lê todo quadro): refeito em recarregar(), definir() e temporario()
 
 
 func _ready() -> void:
@@ -158,6 +161,11 @@ func recarregar() -> void:
 	# 1ª vez no jogo de verdade: a máquina fraca já começa em médio ou baixo (só em memória até o jogador mexer)
 	if OS.get_cmdline_user_args().is_empty() and DisplayServer.get_name() != "headless":
 		_perfil_padrao = g_detectar()
+	_atualizar_piscadas()
+
+
+func _atualizar_piscadas() -> void:
+	reduzir_piscadas = bool(v("reduzir_piscadas"))
 
 
 ## Valor atual de uma opção de graficos.json: o que o jogador salvou ou, se não mexeu, o do perfil base.
@@ -368,6 +376,7 @@ func definir_segredo(chave: String, valor: bool) -> void:
 ## Só na memória (não grava no arquivo): usado pelos prints de teste (--grande, --daltonico) pra não mexer nas opções do jogador.
 func temporario(chave: String, valor: Variant) -> void:
 	_cfg.set_value("opcoes", chave, valor)
+	_atualizar_piscadas()
 
 
 ## Como temporario, mas para uma opção da aba Gráficos (dados/graficos.json). Só na memória, sem mudar o perfil: vai para _temp.
@@ -378,6 +387,7 @@ func g_temporario(chave: String, valor: Variant) -> void:
 func definir(chave: String, valor: Variant) -> void:
 	_cfg.set_value("opcoes", chave, valor)
 	_cfg.save(arquivo)
+	_atualizar_piscadas()
 	aplicar()
 	if chave == "tamanho_ui":
 		tamanho_ui_mudou.emit()
