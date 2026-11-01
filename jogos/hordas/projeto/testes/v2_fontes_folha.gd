@@ -48,7 +48,7 @@ func _carregar(arq: String) -> Font:
 	f.antialiasing = TextServer.FONT_ANTIALIASING_NONE
 	f.hinting = TextServer.HINTING_NONE
 	f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_DISABLED
-	f.oversampling = 0.0
+	f.oversampling = 1.0  # igual aos .import das fontes pixel (o automático estragava depois de tela cheia e volta)
 	var ts := TextServerManager.get_primary_interface()
 	f.opentype_feature_overrides = {ts.name_to_tag("liga"): 0, ts.name_to_tag("clig"): 0}
 	return f
