@@ -1,6 +1,6 @@
 # Prompt do rosto do LightWolf (LW-7)
 
-Gerado no ChatGPT logado do Alisson em 01/11/2026, com o prompt da seção 5 de `notas/plano_2026-11-01.md` (A17, sufixo S incluído). A fonte saiu 1254x1254, RGBA com fundo transparente. `reduzir_rosto.py` gera `projeto/assets/personagens/lightwolf/rosto.png` (52x52, o tamanho dos rostos do jogo).
+Gerado no ChatGPT logado do Alisson em 01/11/2026, com o prompt da seção 5 de `notas/plano_2026-11-01.md` (A17, sufixo S incluído). A fonte saiu 1254x1254, RGBA com fundo transparente. O `rosto.png` final NÃO é a A17 reduzida (ficava detalhada e com degradê, destoando do Hazaki): `gerar_rosto.py` desenha o rosto em blocos de pixel (52x52), usando a A17 só como referência de cores e de desenho.
 
 ## A17 Rosto do LightWolf (`A17_lw_rosto.png`) -> `assets/personagens/lightwolf/rosto.png`
 
