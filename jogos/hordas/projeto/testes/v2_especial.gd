@@ -100,6 +100,10 @@ func _ready() -> void:
 	_revisao_hazaki()
 	_raio_hazaki()
 	_raio_com_limpeza()
+	_q_em_golpe_com_mouse()
+	for id in ["nicao", "lucas"]:
+		await novo(id)
+		_q_em_habilidade_com_mouse(id)
 	for id in ["hazaki", "nicao", "lucas"]:
 		await novo(id)
 		_fim_de_partida(id)
@@ -435,6 +439,62 @@ func _raio_com_limpeza() -> void:
 			ok(frente.morrendo or not frente.vivo, "raio+limpeza %s: a limpeza também pegou o que o raio deixou" % nome)
 			ok(perdeu(atras) == 0.0, "raio+limpeza %s: quem está atrás não é ferido pelo raio (%s)" % [nome, perdeu(atras)])
 	esp.limpa_ligada = false
+
+
+## ULT-B, com mouse o Q vai para a mira AO VIVO mesmo apertado no meio de um golpe: em GOLPE o mouse não vira o corpo e `dir_olhar` fica preso na direção do começo
+## do golpe (`golpe_dir`). O Q lia `dir_olhar` e o raio saía para onde o golpe começou, não para o cursor (regressão da revisão da rodada 2).
+func _q_em_golpe_com_mouse() -> void:
+	var h = w.heroi
+	var esp = w.combate.especial
+	for i in 8:
+		var d := Vector2.from_angle(float(i) * TAU / 8.0)
+		var gira := Vector2.from_angle(float(i) * TAU / 8.0 + PI * 0.75)  # o cursor muda de lado depois que o golpe começou
+		var nome := "golpe %d" % i
+		zerar()
+		h.fonte = Heroi.Fonte.MOUSE
+		w.mouse_forcado = h.centro() + d * 100.0
+		passos(3)
+		var frente = monstro_a(gira.x * 150.0, gira.y * 150.0)
+		h.atacar()
+		var q := 0
+		while h.estado != Heroi.Estado.GOLPE and q < 30:
+			passos(1)
+			q += 1
+		ok(h.estado == Heroi.Estado.GOLPE, "Q em golpe %s: o golpe começou" % nome)
+		w.mouse_forcado = h.centro() + gira * 100.0
+		passos(2)
+		ok(h.estado == Heroi.Estado.GOLPE, "Q em golpe %s: ainda no golpe quando o Q é apertado" % nome)
+		ok(h.dir_olhar.dot(d) > 0.999, "Q em golpe %s: durante o golpe o corpo segue a direção em que ele começou" % nome)
+		ok(h.especial(), "Q em golpe %s: dispara no meio do golpe" % nome)
+		ok(esp._dir.dot(gira) > 0.999, "Q em golpe %s: o raio vai para o cursor, não para onde o golpe começou (%s)" % [nome, esp._dir])
+		var quadros := 0
+		while esp._fase == 0 and quadros < 120:
+			passos(1)
+			quadros += 1
+		ok(perdeu(frente) > 30.0, "Q em golpe %s: o raio fere quem está no cursor (%s)" % [nome, perdeu(frente)])
+
+
+## ULT-B, o mesmo para a E (investida do Nicão, salto do Lucas): o mouse não vira o corpo em HABILIDADE e o Q apertado nela segue o cursor.
+func _q_em_habilidade_com_mouse(id: String) -> void:
+	var h = w.heroi
+	var esp = w.combate.especial
+	for i in 8:
+		var d := Vector2.from_angle(float(i) * TAU / 8.0)
+		var gira := Vector2.from_angle(float(i) * TAU / 8.0 + PI * 0.75)
+		var nome := "%s %d" % [id, i]
+		zerar()
+		h.fonte = Heroi.Fonte.MOUSE
+		w.mouse_forcado = h.centro() + d * 100.0
+		passos(3)
+		ok(h.habilidade(), "Q em habilidade %s: a E dispara" % nome)
+		ok(h.estado == Heroi.Estado.HABILIDADE, "Q em habilidade %s: está na E" % nome)
+		w.mouse_forcado = h.centro() + gira * 100.0
+		passos(2)
+		ok(h.estado == Heroi.Estado.HABILIDADE, "Q em habilidade %s: ainda na E quando o Q é apertado" % nome)
+		var viva: Vector2 = (w.mouse_forcado - h.centro()).normalized()  # a E move o herói: a mira ao vivo parte de onde ele está agora
+		ok(h.especial(), "Q em habilidade %s: dispara no meio da E" % nome)
+		ok(esp._dir.dot(viva) > 0.999, "Q em habilidade %s: a direção é a do cursor ao vivo (%s, esperava %s)" % [nome, esp._dir, viva])
+		ok(esp._dir.dot(d) < 0.5, "Q em habilidade %s: não é a direção em que a E começou (%s)" % [nome, esp._dir])
 
 
 ## Põe o herói virado para `d` pela fonte dada (mouse: a mira; teclado: andando nessa direção; analógico: o stick), e o deixa parado no fim.

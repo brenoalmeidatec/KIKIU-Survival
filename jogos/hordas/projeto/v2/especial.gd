@@ -29,6 +29,7 @@ extends RefCounted
 ## efeitos(dt) [relógio de parede: o visual].
 
 const Armas := preload("res://v2/armas.gd")
+const Heroi := preload("res://v2/heroi.gd")  # Heroi.Fonte: a fonte da mira (o Q com mouse segue o cursor ao vivo)
 const ACHATA := 0.62  # o chão visto de lado: y vale 62% do x (a mesma da ruptura, do escudo e dos avisos)
 const PTS := 40  # pontos da elipse desenhada
 const MAX_ANEIS := 10
@@ -231,7 +232,12 @@ func iniciar(h) -> bool:
 	_giro = randf() * TAU
 	_escala = (1.0 + (float(h.m_area) - 1.0) * float(comum.area_k)) * combate.ritmo.multiplicador("q_area", h.nivel)
 	# a direção é para onde o herói está virado, travada no aperto (ULT-B): com mouse é a mira (o mouse vira o corpo fora do especial); com teclado ou analógico é o corpo
+	# com mouse usa a mira AO VIVO (mira_mundo - centro): em GOLPE e em HABILIDADE o mouse não vira o corpo, então dir_olhar ficaria preso na direção do começo do golpe
 	_dir = h.dir_olhar.normalized()
+	if h.fonte == Heroi.Fonte.MOUSE:
+		var viva: Vector2 = h.mira_mundo - h.centro()
+		if viva.length() > 4.0:
+			_dir = viva.normalized()
 	if _dir.length_squared() < 0.01:
 		_dir = Vector2.RIGHT
 	_origem = h.pos
