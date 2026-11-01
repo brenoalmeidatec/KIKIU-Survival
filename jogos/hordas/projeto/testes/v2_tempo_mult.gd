@@ -66,9 +66,11 @@ func _ready() -> void:
 	f.tempo_partida = 140.0
 	df.nascer("inimigo_cao_ossos")
 	var vida_f_140: float = f.monstros.back().vida_max
+	var dano_f_140: float = f.monstros.back().dano
 	f.tempo_partida = 100.0
 	df.nascer("inimigo_cao_ossos")
 	var vida_f_100: float = f.monstros.back().vida_max
+	var dano_f_100: float = f.monstros.back().dano
 	df.ligado = true
 	df.proxima_onda = 60.0
 	f.tempo_partida = 59.5
@@ -94,6 +96,28 @@ func _ready() -> void:
 	var vida_m_100: float = m.monstros.back().vida_max
 	ok(absf(vida_m_100 - vida_f_140) < 0.01, "vida de um monstro das Ruínas aos 100 s = a da Floresta aos 140 s (%.3f x %.3f)" % [vida_m_100, vida_f_140])
 	ok(absf(vida_m_100 - vida_f_100) > 0.01, "e a vida muda com o relógio: as Ruínas aos 100 s não são a Floresta aos 100 s")
+	var dano_m_100: float = m.monstros.back().dano
+	ok(
+		absf(dano_m_100 - dano_f_140) < 0.001,
+		"dano por minuto: um monstro das Ruínas aos 100 s = o da Floresta aos 140 s (%.3f x %.3f)" % [dano_m_100, dano_f_140]
+	)
+	ok(absf(dano_m_100 - dano_f_100) > 0.001, "e o dano também muda com o relógio (%.3f x %.3f)" % [dano_m_100, dano_f_100])
+	# elenco: o último tipo a entrar (maior `desde`) é sorteado pelo tempo multiplicado, ou seja, aos desde / 1,4 s reais
+	var ultimo: Dictionary = dm.mundo.elenco.tipos[0]
+	for tp in dm.mundo.elenco.tipos:
+		if float(tp.desde) > float(ultimo.desde):
+			ultimo = tp
+	var desde_u: float = float(ultimo.desde)
+	ok(desde_u > 0.0, "o elenco das Ruínas tem tipo que entra mais tarde (desde %s)" % desde_u)
+	var antes_u := false
+	var depois_u := false
+	for i in 400:
+		if str(dm.sortear(desde_u / 1.4 - 1.0).id) == str(ultimo.id):
+			antes_u = true
+		if str(dm.sortear(desde_u / 1.4 + 1.0).id) == str(ultimo.id):
+			depois_u = true
+	ok(not antes_u, "elenco: '%s' (desde %s) ainda não nasce 1 s real antes de desde / 1,4" % [ultimo.id, desde_u])
+	ok(depois_u, "elenco: '%s' (desde %s) nasce 1 s real depois de desde / 1,4" % [ultimo.id, desde_u])
 
 	# 4. a onda forte das Ruínas vem aos 60 s do relógio do diretor, ou seja ~42,9 s reais
 	dm.ligado = true

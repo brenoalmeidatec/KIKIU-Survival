@@ -97,6 +97,12 @@ func relogio() -> float:
 	return mundo.tempo_partida * tempo_mult
 
 
+## Quantos segundos REAIS faltam para a próxima onda forte. `proxima_onda` está no relógio do diretor, então a conta divide por `tempo_mult`
+## (o status e a guarda da Maré chamada pelo Q medem em tempo real: `mare_chamada_t` e `q_atraso` andam em dt).
+func falta_onda_real() -> float:
+	return maxf(0.0, proxima_onda - relogio()) / maxf(tempo_mult, 0.0001)
+
+
 ## Ponto único de leitura das regras para o diretor e o relógio de elites.
 func dificuldade(chave: String) -> float:
 	return Dificuldade.fator(mundo, chave)
@@ -220,7 +226,7 @@ func atualizar(dt: float) -> void:
 			onda_forte(fator, false)  # a chamada do Q não sobe o contador de escalada: as Marés normais seguem o relógio
 			mare_aviso = false
 			proxima_onda = maxf(proxima_onda, td + _mare_cfg("intervalo_min"))  # a Maré normal não vem colada na que o Q chamou
-	if _mare_ativa() and td >= proxima_onda - 1.2:
+	if _mare_ativa() and falta_onda_real() <= 1.2:  # o aviso sai 1,2 s REAIS antes da Maré
 		_mare_avisar()
 	if td >= proxima_onda:
 		onda_forte()
@@ -350,7 +356,7 @@ func mare_chamar() -> bool:
 		return false
 	var t: float = relogio()
 	var desde := t - mare_ultima_t
-	if desde < _mare_cfg("intervalo_min") or proxima_onda - t <= _mare_cfg("q_atraso"):
+	if desde < _mare_cfg("intervalo_min") or falta_onda_real() <= _mare_cfg("q_atraso"):  # tempo real dos dois lados (o Q chama em dt)
 		return false
 	mare_chamada_t = _mare_cfg("q_atraso")
 	mare_chamada_fator = 1.0 if desde >= _mare_cfg("q_cheia_apos") else _mare_cfg("q_curta")

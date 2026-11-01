@@ -399,5 +399,32 @@ func _ready() -> void:
 	ok(str(res.get("mapa", "")) == "floresta" and int(res.get("nivel_mapa", 0)) == 10, "a vitória é no último nível da floresta (o 10)")
 	ok(w.combate.telas._res_linhas.text.contains("Almas") and w.combate.telas._res_valores.text.contains("123"), "a tela mostra as almas ganhas")
 	ok(Meta.mapa_vencido("floresta") and Meta.mapas_vencidos().size() == 1, "vencer o chefão marca a Floresta como vencida no save")
+	# o ciclo do mini-chefe (ECO-1 o tirou da Floresta, cujo chefão agora está no nível 10): na Torre o nível 10 é mini e o 20 é o chefão
+	zerar()
+	dir.carregar_niveis("laboratorio")
+	dir.zerar()
+	seg = dir.seg_nivel()
+	dir.ir_para_nivel(9)
+	dir.t_nivel = seg - 0.5
+	passos(50)
+	ok(
+		dir.nivel == 10 and w.combate.chefes.vivo and bool(w.combate.chefes.marca.mini) and w.combate.chefes.marca.id == "n10",
+		"Torre: o mini-chefe do nível 10 está em campo"
+	)
+	var baus0: int = w.combate.baus.soltos
+	w.combate.ferir(w.combate.chefes.atual, 99999999.0, Vector2.RIGHT, 0.0, 0.0, Color.WHITE)
+	w.combate.processar_mortes()
+	ok(not w.combate.chefes.vivo and float(sinais.get("chefe_vida_ultima", 1.0)) == 0.0, "a morte do mini-chefe emite chefe_vida(0)")
+	ok(w.combate.baus.soltos == baus0 + 1, "o mini-chefe solta um baú")
+	ok(w.combate.jogo == "jogando", "matar o mini-chefe não é vitória")
+	ok(not dir.travado(), "mini-chefe morto: o nível destrava")
+	dir.avancar_nivel(seg + 0.01)
+	ok(dir.nivel == 11, "e segue para o nível 11")
+	dir.ir_para_nivel(19)
+	dir.t_nivel = 0.0
+	dir.avancar_nivel(seg + 0.01)
+	ok(dir.nivel == 20 and w.combate.chefes.vivo and not bool(w.combate.chefes.marca.mini), "o CHEFÃO nasce no nível 20, o último da Torre")
+	dir.avancar_nivel(seg * 10.0)
+	ok(dir.nivel == 20, "o mapa tem fim: não passa do nível 20")
 	print("v2_chefe falhas=%d" % falhas)
 	get_tree().quit()

@@ -1066,6 +1066,16 @@ func _partida() -> void:
 	)
 	ok(int(n_de("partida.onda")[0]) == 2 and ceili(float(n_de("partida.proxima")[0])) == 24, "onda forte atual e quanto falta para a próxima")
 	ok(lin("partida.proxima").valor == "em 24 s", "a próxima onda aparece em segundos (%s)" % lin("partida.proxima").valor)
+	# ECO-1: proxima_onda está no relógio do diretor (tempo real x tempo_mult). Nas Ruínas (1,4) a onda do relógio 60 vem aos ~42,9 s reais:
+	# aos 40 s reais o relógio marca 56 e faltam 4 s do relógio = 2,86 s reais, não os 20 s que a subtração direta mostraria
+	c.diretor.tempo_mult = 1.4
+	w.tempo_partida = 40.0
+	c.diretor.proxima_onda = 60.0
+	perto(float(n_de("partida.proxima")[0]), 4.0 / 1.4, 0.001, "tempo_mult 1,4: faltam (60 - 56) / 1,4 s reais")
+	ok(lin("partida.proxima").valor == "em 3 s", "tempo_mult 1,4: a próxima onda aparece em segundos reais (%s)" % lin("partida.proxima").valor)
+	c.diretor.tempo_mult = 1.0
+	w.tempo_partida = 125.4
+	c.diretor.proxima_onda = w.tempo_partida + 23.4
 	ok(Status.linha(secoes(), "santuario.rolagem").is_empty(), "o Santuário não lista mais a rolagem (Segunda chance saiu do jogo)")
 	perto(float(n_de("santuario.raridade")[0]), 4.0, 0.001, "o Santuário mostra a chance de rara que ele deu")
 	perto(w.meta_bonus.raridade, 0.04, 0.0001, "o jogo aplicou a chance de rara do Santuário")
