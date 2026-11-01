@@ -188,4 +188,6 @@ v2_mare_heroi 50
 v2_cartas_apice 8
 v2_mare_matriz 45
 v2_misseis 10
+v2_fumaca 10
+
 v2_lightwolf_q 30

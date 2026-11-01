@@ -21,6 +21,8 @@ extends "res://v2/ator.gd"
 ##    Janela sem golpe: recuperação parado (aparo_fase 2) e recarga longa. Sem barra de defesa. Cancelam, como o escudo: golpe, esquiva, E, Q.
 ##  - MATRIZ DE DEFESA (LW-3; o secundário do mecha do LightWolf, v2/matriz.gd): segurar, como o escudo (mesmo `escudo_ativo`, mesma barra def/def_max, anda a 75%, não corre nem atira). Em vez de
 ##    barrar o golpe, `levar_dano` manda o dano que vem de dentro do arco para `matriz.absorver`, que tira da barra 1 para 1 e devolve o que vazou para a vida; a barreira também empurra quem chega na casca.
+##  - FUMAÇA (DEF-5; o secundário do Luke, v2/fumaca.gd): APERTAR lança uma bomba no ponto da mira (até 180 px) que abre uma nuvem por 4 s: os monstros dentro andam bem mais devagar e o herói
+##    leva metade do dano (levar_dano) enquanto estiver dentro. Sai sem parar o herói, recarrega em 9 s, sem barra de defesa.
 ##  - SECUNDÁRIO PARA A HUD: o herói publica `sec_*` (nome, ícone, pronta, ativo, barra, recarga); o slot S só lê isso e não conhece o escudo nem o aparo.
 ##  - RUPTURA (ação "ruptura", tecla E ou LB do controle; números em dados/v2_ruptura.json, disparo em v2/ruptura.gd): o APERTO
 ##    (evento) pede, a POSSE (polling) carrega. Estado.CARGA anda a 45%, não corre nem golpeia, NÃO é invencível e apanhar não cancela. Soltar
@@ -603,6 +605,9 @@ func ganhar_folego(x: float) -> void:
 func levar_dano(valor: float, de: Vector2, quem = null, bloqueavel := true) -> bool:
 	if not vulneravel():
 		return false
+	var fum = mundo.combate.fumaca
+	if fum != null and fum.para(str(chave)) and fum.protege(self):  # dentro da fumaça do Luke (DEF-5): leva só uma parte do dano, de qualquer origem
+		valor *= fum.mult_dano()
 	var esc = mundo.combate.escudo
 	if bloqueavel and escudo_ativo and esc != null:
 		if esc.matriz_para(str(chave)):  # a matriz do LightWolf (LW-3) absorve 1 para 1 da barra de defesa; o que passa do que a barra tem vaza para a vida, logo abaixo
@@ -739,6 +744,9 @@ func _livre(dt: float, v: Vector2, segurando: bool) -> Vector2:
 		return Vector2.ZERO
 	if aparo_fase != 0 or _quer_aparar():  # o aparo (apertar) também vem antes do golpe: a janela e a recuperação não golpeiam
 		return _aparo(dt, v)
+	if _quer_fumaca():  # a bomba de fumaça (apertar) sai sem parar o herói: ele segue andando e golpeando
+		sec_pedido_t = 0.0
+		mundo.combate.fumaca.lancar(self)
 	if _quer_secundario():  # o escudo vem antes do golpe: segurar o direito e o clique esquerdo ergue o escudo, não golpeia
 		return _escudo(dt, v)
 	_baixar_escudo()
@@ -816,10 +824,12 @@ func _secundario_relogios(dt: float) -> void:
 		return
 	aparo_recarga = maxf(0.0, aparo_recarga - dt)
 	sec_pedido_t = maxf(0.0, sec_pedido_t - dt)
-	if esc.aparo_para(str(chave)):
+	var fum = mundo.combate.fumaca
+	var por_aperto: bool = esc.aparo_para(str(chave)) or (fum != null and fum.para(str(chave)))  # aparo e fumaça são por aperto, não por posse como o escudo
+	if por_aperto:
 		var apertado := _sec_apertado()
 		if apertado and not _sec_ant and mundo.combate.jogo == "jogando" and not mundo.combate.pausado:
-			sec_pedido_t = float(esc.cfg_aparo.pedido)
+			sec_pedido_t = fum.pedido() if fum != null and fum.para(str(chave)) else float(esc.cfg_aparo.pedido)
 		_sec_ant = apertado
 
 
@@ -852,12 +862,22 @@ func _publicar_secundario(esc) -> void:
 		elif aparo_fase == 0 and aparo_recarga > 0.0:
 			sec_recarga = clampf(aparo_recarga / maxf(aparo_recarga_max, 0.001), 0.0, 1.0)
 			sec_recarga_s = aparo_recarga
+	elif mundo.combate.fumaca != null and mundo.combate.fumaca.para(str(chave)):  # a fumaça do Luke preenche os mesmos campos
+		mundo.combate.fumaca.publicar(self)
 
 
 ## O botão do secundário foi apertado de novo e este herói tem o aparo? (O aperto fica guardado dados > aparo > pedido s; a recarga e o jogo parado negam.)
 func _quer_aparar() -> bool:
 	var c = mundo.combate
 	if sec_pedido_t <= 0.0 or aparo_recarga > 0.0 or c.escudo == null or not c.escudo.aparo_para(str(chave)):
+		return false
+	return c.jogo == "jogando" and not c.pausado and not _pausa_aberta()
+
+
+## O botão do secundário foi apertado de novo e este herói tem a fumaça pronta? (O aperto fica guardado dados > fumaca > pedido s; a recarga e o jogo parado negam.)
+func _quer_fumaca() -> bool:
+	var c = mundo.combate
+	if sec_pedido_t <= 0.0 or c.fumaca == null or not c.fumaca.para(str(chave)) or not c.fumaca.pronta():
 		return false
 	return c.jogo == "jogando" and not c.pausado and not _pausa_aberta()
 
