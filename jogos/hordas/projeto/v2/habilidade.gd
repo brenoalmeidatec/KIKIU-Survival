@@ -9,6 +9,9 @@ extends RefCounted
 ##    uma pancada curta onde para. O Q dele (Terremoto) é a pancada gigante parado; a E é a entrada em movimento.
 ##  - SALTO DAS ADAGAS (Luke): salta para TRÁS (contra a mira), INVULNERÁVEL, soltando um leque de adagas para a frente na decolagem e outro menor ao
 ##    pousar. O Q dele (Tempestade) é o círculo parado; a E é o recuo que abre distância já atirando.
+##  - MÍSSEIS (LightWolf, mecha; LW-4): como a D.Va, o mecha solta 12 micro-mísseis dos ombros em 0,9 s, com a mira travada no disparo, andando a 50% e SEM
+##    invulnerabilidade (`invul: false` nos dados; nas outras E o campo não existe e vale true). Cada míssil é um projétil do pool de v2/adagas.gd (`missil`,
+##    com giro e explosão pequena), que escolhe o alvo ao sair; a mecânica dele mora lá e os números em dados/v2_habilidade.json > misseis.
 ## Id desconhecido deixa a tecla E sem efeito.
 ##
 ## O herói (v2/heroi.gd) cuida da entrada (`habilidade()`), do estado (Estado.HABILIDADE), da recarga (hab_recarga, por tempo) e dos campos que o HUD
@@ -45,6 +48,7 @@ var _ja: Dictionary = {}  # instance_id -> true: quem esta E já feriu (a faixa 
 var _n := 0
 var _mortes := 0
 var _numeros := 0
+var _lancados := 0  # mísseis já soltos nesta E (a do LightWolf)
 var _escala := 1.0  # a área do herói (cartas) nos raios desta E
 
 
@@ -144,6 +148,7 @@ func iniciar(h) -> bool:
 	_mortes = 0
 	_andou = 0.0
 	_rastro_t = 0.0
+	_lancados = 0
 	_escala = 1.0 + (float(h.m_area) - 1.0) * float(comum.area_k)
 	var d: Vector2 = h.mira_mundo - h.centro()
 	_mira = d.normalized() if d.length() > 4.0 else h.dir_olhar
@@ -155,7 +160,7 @@ func iniciar(h) -> bool:
 		_dir = -_mira  # o Luke salta para trás, de frente para a mira
 	h.hab_t = 0.0
 	h.hab_dur = float(_c.dur)
-	h.hab_invul = true
+	h.hab_invul = bool(_c.get("invul", true))  # os Mísseis do LightWolf não são invulneráveis; as outras E sim
 	h.hab_anim_passo = int(_c.anim.passo)
 	h.hab_anim_ciclos = float(_c.anim.ciclos)
 	h.hab_anim_antes = str(_c.anim.get("antes", ""))
@@ -174,6 +179,8 @@ func iniciar(h) -> bool:
 			c.audio.tocar("ruptura_carga", 0.9, -3.0, 0.0)
 		"salto_adagas":
 			_leque(h, _c.saida)
+		"misseis":
+			c.audio.tocar("ruptura_carga", 1.4, -4.0, 0.0)
 	return true
 
 
@@ -188,6 +195,8 @@ func quadro(h, dt: float, _v: Vector2) -> Vector2:
 	_t += dt
 	h.hab_t = _t
 	var dur := float(_c.dur)
+	if _id == "misseis":
+		return _quadro_misseis(h, dt, _v)
 	var cor := _cor(_c.cor)
 	# o movimento: arranca rápido e desacelera no fim (a distância total é sempre a dos dados, em qualquer passo de tempo)
 	var f0 := clampf((_t - dt) / dur, 0.0, 1.0)
@@ -207,6 +216,55 @@ func quadro(h, dt: float, _v: Vector2) -> Vector2:
 		_fim(h)
 		_encerrar(h)
 	return desl
+
+
+## Os Mísseis (um quadro): solta os que já deviam ter saído (um a cada dur/n, alternando os ombros), o herói anda a `mov` da velocidade de andar
+## (a direção é a do teclado ou analógico; a mira não muda) e a E acaba no fim da `dur`.
+func _quadro_misseis(h, dt: float, v: Vector2) -> Vector2:
+	var dur := float(_c.dur)
+	var n := int(_c.n)
+	while _lancados < n and _t >= float(_lancados) * dur / float(n):
+		_missil(h, _lancados)
+		_lancados += 1
+	h.andando = v != Vector2.ZERO
+	if _t >= dur:
+		while _lancados < n:  # um passo de tempo enorme (teste, travada): nenhum míssil fica por soltar
+			_missil(h, _lancados)
+			_lancados += 1
+		_encerrar(h)
+	return v * h.vel_andar() * float(_c.mov) * dt
+
+
+## O míssil `k`: sai do ombro (esquerdo nos pares, direito nos ímpares), abrindo até `abre` graus para o lado do ombro e depois buscando o alvo (v2/adagas.gd).
+func _missil(h, k: int) -> void:
+	var c = combate
+	var cor := _cor(_c.cor)
+	var lado := -1.0 if k % 2 == 0 else 1.0
+	var perp := Vector2(-_mira.y, _mira.x)
+	var origem: Vector2 = h.pos + h.ORIGEM_GOLPE + perp * lado * float(_c.ombro) * _escala
+	var ang := deg_to_rad(float(_c.abre)) * lado * randf_range(0.15, 1.0)
+	var passo := {
+		"n": 1,
+		"leque": 0.0,
+		"dano": float(_c.dano) * _bonus_dano(),
+		"vel": float(_c.vel),
+		"alcance": float(_c.alcance),
+		"perfura": 0,
+		"empurrao": float(_c.empurrao),
+		"atordoa": _bonus_atordoa(float(_c.atordoa)),
+		"cor": [cor.r, cor.g, cor.b],
+		"proj": "missil",
+		"giro": float(_c.giro),
+		"cone": float(_c.cone),
+		"cone_dir": _mira,
+		"por_alvo": int(_c.por_alvo),
+		"expl_raio": float(_c.expl_raio) * _escala,
+		"expl_dano": float(_c.expl_dano) * _bonus_dano(),
+	}
+	c.fonte_dano = "habilidade"
+	c.adagas.lancar(h, origem, _mira.rotated(ang), passo)
+	c.fx.faiscas(origem, _mira.rotated(ang), 2, cor, 90.0)
+	c.audio.tocar("corte2", randf_range(1.6, 1.9), -9.0, 0.05)
 
 
 ## A fração do caminho andada em f (0 a 1): sobe rápido e termina devagar (ease-out), de 0 a 1.
