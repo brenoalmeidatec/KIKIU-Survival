@@ -40,6 +40,7 @@ func novo(id: String) -> void:
 	add_child(w)
 	w.set_process(false)
 	w.combate.audio.mudo = true
+	w.combate.especial.limpa_ligada = false  # este teste mede o dano por área de cada Q; a limpeza da tela tem teste próprio (v2_limpa_tela)
 
 
 ## Mapa sem monstros, herói parado e mortal, sem crítico (o dano fica previsível), mira (mouse) 100 px à direita, especial pronto.
