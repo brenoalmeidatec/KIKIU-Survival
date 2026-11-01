@@ -135,7 +135,7 @@ func _t_quebra() -> void:
 	var h = w.heroi
 	var c = w.combate
 	ok(h.chave == "lightwolf" and not h.forma_lobo and is_equal_approx(h.vida_max, 130.0), "começa mecha, 130 de vida")
-	ok(h.tipo.w == 64 and h.def_max == 100.0 and h.hab_nome != "", "mecha: folha 64x96, E e a barra de defesa da matriz (def_max %.0f)" % h.def_max)
+	ok(h.tipo.w == 128 and h.def_max == 100.0 and h.hab_nome != "", "mecha: folha 128x192, E e a barra de defesa da matriz (def_max %.0f)" % h.def_max)
 	var fol: float = h.folego
 	h.esp_carga = 77.0
 	h.hab_recarga = 3.5
@@ -343,7 +343,7 @@ func _t_derrota_e_recomeco() -> void:
 	w.reiniciar()
 	passos(3)
 	ok(not h.forma_lobo and h.chave == "lightwolf" and h.estado != Heroi.Estado.MORTO, "recomeçar volta à forma mecha, viva")
-	ok(is_equal_approx(h.vida_max, 130.0) and is_equal_approx(h.vida, 130.0) and h.tipo.w == 64, "vida 130 e folha do mecha")
+	ok(is_equal_approx(h.vida_max, 130.0) and is_equal_approx(h.vida, 130.0) and h.tipo.w == 128, "vida 130 e folha ampliada do mecha")
 	ok(h.esp_rotulo != "CHAMAR" and h.esp_carga < 1.0 and c.mecha.quebras == 0, "Q do mecha zerado, contadores zerados")
 	ok(str(c.cfg.golpe.passos[0].proj) == "bala" and h.def_max == 100.0, "tiro do mecha e barra da matriz de volta")
 	quebrar()
