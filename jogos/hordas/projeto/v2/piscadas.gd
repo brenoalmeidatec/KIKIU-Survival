@@ -4,20 +4,20 @@ extends RefCounted
 ## A opção fica em Config.ITENS (grupo Gráfico, ao lado de mostrar_fps), fora do perfil dos Gráficos: ligar ou desligar não vira "Personalizado".
 ## Com ela ligada: a invencibilidade vira um tom vermelho translúcido fixo; os clarões de tela não acendem; o glitch do clima fica desligado;
 ## vida baixa e fôlego cansado viram cor fixa; o chão anunciado cresce sem pulsar; o flash de acerto vira tinta de alfa 0,5 que não repete
-## no mesmo monstro em menos de FLASH_REPETE_S (o flash da morte fica); brasas e cintilas com alfa constante.
+## no mesmo monstro em menos de FLASH_REPETE_S (0,34 s) (o flash da morte fica); brasas e cintilas com alfa constante.
 ## Toda luz de tela cheia nova (limpeza, aviso da Maré, explosão do mecha, ÁPICE) passa por `clarao_permitido()`.
 
 const OPCAO := "reduzir_piscadas"
 const MAX_TROCAS_S := 3.0  # o teto que o teste confere
 const INVENCIVEL := Color(1.0, 0.7, 0.7, 0.6)  # herói invencível: translúcido, vermelho fixo (sem liga e desliga)
 const FLASH_ALFA := 0.5  # flash de acerto: tinta da própria cor, alfa fixo
-const FLASH_REPETE_S := 0.33  # o mesmo monstro não leva outro flash de acerto antes disso
+const FLASH_REPETE_S := 0.34  # o mesmo monstro não leva outro flash de acerto antes disso (a cada 0,34 s cabem 3 por segundo: 0,33 deixava 4 em 1 s)
 const ALFA_FIXO := 0.8  # brasas, cintilas e torres por expirar: o alfa constante no lugar do tremeluzir
 
 
 ## A opção está ligada? (lê o Config na hora, então vale assim que o jogador muda)
 static func ligado() -> bool:
-	return bool(Config.v(OPCAO))
+	return Config.reduzir_piscadas  # cache do Config (refeito quando a opção muda): ler por quadro não varre Config.ITENS
 
 
 ## Pode acender uma luz de tela cheia agora? Falso com a opção ligada.
@@ -37,9 +37,10 @@ static func valor(variavel: float, fixo: float) -> float:
 	return fixo if ligado() else variavel
 
 
-## Quantas vezes a série `amostras` cruza o ponto médio entre o menor e o maior valor (as "trocas" do teste). Série quase parada
-## (variação menor que `minimo`) não troca. É a conta que o teste usa para conferir o teto de MAX_TROCAS_S por segundo.
-static func trocas(amostras: Array, minimo := 0.05) -> int:
+## Quantas vezes a série `amostras` cruza o ponto médio entre o menor e o maior valor (as "trocas" do teste). Só uma série praticamente
+## parada (variação de até `minimo`, ruído de ponto flutuante) não troca: qualquer oscilação real conta. É a conta que o teste usa para
+## conferir o teto de MAX_TROCAS_S por segundo.
+static func trocas(amostras: Array, minimo := 0.0005) -> int:
 	if amostras.size() < 2:
 		return 0
 	var menor := float(amostras[0])
@@ -47,7 +48,7 @@ static func trocas(amostras: Array, minimo := 0.05) -> int:
 	for a in amostras:
 		menor = minf(menor, float(a))
 		maior = maxf(maior, float(a))
-	if maior - menor < minimo:
+	if maior - menor <= minimo:
 		return 0
 	var meio := (menor + maior) * 0.5
 	var n := 0

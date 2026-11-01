@@ -1036,7 +1036,7 @@ func _visual(dt: float, v: Vector2) -> void:
 		sprite.modulate = Color.WHITE.lerp(esp_cor, 0.45)  # o corpo toma a cor do especial
 	elif estado == Estado.HABILIDADE:
 		sprite.modulate = Color.WHITE.lerp(hab_cor, 0.4)  # o corpo toma a cor da E
-	elif invenc > 0.0 and Piscadas.ligado():
+	elif invenc > 0.0 and Piscadas.ligado() and estado != Estado.CARGA:  # a carga esquenta o corpo mesmo invencível: a cor da carga prevalece
 		sprite.modulate = Piscadas.INVENCIVEL  # sem liga e desliga: translúcido, vermelho fixo
 	elif piscando:
 		sprite.modulate = Color(1, 0.55, 0.55, 0.38)

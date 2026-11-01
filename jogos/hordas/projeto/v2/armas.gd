@@ -10,6 +10,7 @@ extends RefCounted
 
 const Colisao := preload("res://v2/colisao.gd")
 const Novas := preload("res://v2/armas_novas.gd")
+const Piscadas := preload("res://v2/piscadas.gd")  # "Reduzir piscadas": a luz do fogo da aura fica com energia fixa
 const Anim := preload("res://v2/anim_golpes.gd")
 const MAX_CORVOS := 16
 const MAX_RUNAS := 14
@@ -968,6 +969,8 @@ func _ondas_mover(dt: float) -> void:
 
 # ------------------------------------------------------------------ luz
 
+const ENERGIA_FOGO_FIXA := 0.75  # energia da luz do fogo com "Reduzir piscadas" (o centro do tremeluzir)
+
 
 func _luzes(h, dt: float) -> void:
 	var fogo := false
@@ -988,7 +991,7 @@ func _luzes(h, dt: float) -> void:
 	if fogo:
 		luz_fogo.position = (h.pos + Vector2(0, -6)).round()
 		luz_fogo.texture_scale = fogo_r * 2.4 / 128.0
-		luz_fogo.energy = 0.75 + 0.2 * sin(_fase * 17.0) + 0.1 * sin(_fase * 31.0)
+		luz_fogo.energy = Piscadas.valor(0.75 + 0.2 * sin(_fase * 17.0) + 0.1 * sin(_fase * 31.0), ENERGIA_FOGO_FIXA)  # tremeluz a ~3-5 Hz; com a opção, parada
 	luz_lamina.enabled = lamina
 	if lamina:
 		luz_lamina.position = lamina_p.round()
