@@ -436,6 +436,9 @@ static func _sec_heroi(m) -> Dictionary:
 		)
 	lin.append(_l("heroi.ima", "Ímã de almas", "%d px" % roundi(h.alcance_ima()), [h.alcance_ima()], _mais_pct((h.m_ima - 1.0) * 100.0)))
 	lin.append(_l("heroi.nivel", "Nível", "%d · XP %d/%d" % [h.nivel, roundi(h.xp), roundi(h.xp_proximo)], [h.nivel, h.xp, h.xp_proximo], "", true))
+	var limite: int = c.cartas.limite_bonus() if c.cartas != null else 0
+	if limite > 0:  # o limite de bônus do Difícil: quantas vagas já estão ocupadas
+		lin.append(_l("heroi.bonus", "Bônus", "%d / %d" % [c.cartas.bonus_contados(), limite], [c.cartas.bonus_contados(), limite]))
 	lin.append(_l("heroi.esquiva", "Esquiva", "%d seguidas" % seguidas, [seguidas, h.esq_dur]))
 	lin.append(_l("heroi.imune", "Imune na esquiva", "%s s" % _v(h.esq_inv, 2), [h.esq_inv]))
 	return _sec("heroi", "HERÓI: " + str(_cadastro(m).get("nome", "")).to_upper(), Paleta.SECAO_HEROI, lin)

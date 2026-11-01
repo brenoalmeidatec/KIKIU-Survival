@@ -1207,8 +1207,6 @@ def conferir():
             ax, ay = d["ancora"]
             if not (0 <= ax < w and 0 <= ay < h):
                 msg.append("ancora fora")
-            sp = SPRITES[nome][an]
-            fa = None
             sol = sum(len(isolados(q, faiscas=())) for q in qs)
             cores = len({tuple(p) for p in img[img[..., 3] > 0][:, :3].tolist()})
             print(f"  {d['arquivo']:28s} {img.shape[1]:4d}x{img.shape[0]:<3d} n={n} tons={cores:2d} "
@@ -1229,8 +1227,12 @@ def main():
                 Image.fromarray(tira, "RGBA").save(os.path.join(SAIDA, f"{nome}_{an}.png"), optimize=True)
                 tiras[an] = qs
             previa(nome, tiras["voo"], tiras["impacto"], s["voo"], s["impacto"])
+        # as folhas de herói (`*_heroi`) vêm de importar_projeteis_heroi.py, não daqui: sem isto a geração apagaria o índice delas
+        novo = indice()
+        antigo = json.load(open(os.path.join(SAIDA, "indice_projeteis.json"), encoding="utf-8"))
+        novo["folhas"].update({k: v for k, v in antigo["folhas"].items() if k.endswith("_heroi")})
         with open(os.path.join(SAIDA, "indice_projeteis.json"), "w", encoding="utf-8", newline="\n") as f:
-            json.dump(indice(), f, ensure_ascii=False, indent=1)
+            json.dump(novo, f, ensure_ascii=False, indent=1)
             f.write("\n")
     falhas = conferir()
     if falhas:
