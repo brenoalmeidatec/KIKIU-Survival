@@ -411,7 +411,10 @@ func _fluxo_real(i: int, pesadelo: bool) -> void:
 	var base: Dictionary = c.cfg.monstros.inimigo_cavaleiro_oco
 	var m = w.nascer_monstro("inimigo_cavaleiro_oco", h.pos + Vector2(60, 0), true)
 	c.matar(m)
-	var mk: Dictionary = c.diretor.chefes_mapa[0].mk
+	# o chefe da Floresta é o chefão (último nível, morrer vence): este teste mede a conta de XP, orbes e almas de um MINI-chefe, então usa a marca mini1
+	var mk: Dictionary = c.cartas.cfg.chefes.marcas.filter(func(x): return str(x.id) == "mini1")[0].duplicate(true)
+	mk.id = "n10"
+	mk.mini = true
 	ok(bool(mk.mini), rotulo + " usa mini-chefe sem disparar a vitória e suas mortes extras")
 	var chefe = c.chefes.nascer(mk, h.pos + Vector2(80, 0))
 	c.matar(chefe)
@@ -480,7 +483,9 @@ func _snapshot_e_resultado() -> void:
 	ok(Meta.escolher_dificuldade("dificil"), "altera preferência durante uma partida Média")
 	ok(Dificuldade.da_partida(w) == foto, "mudar o save não altera o snapshot da partida")
 	_monstros(1, false)
-	var mk: Dictionary = w.combate.diretor.chefes_mapa[0].mk
+	# a Floresta tem 10 níveis: chefes_mapa[0] é o chefão (vence o mapa), e este teste mede o XP/orbes/almas de um MINI-chefe, então usa a marca mini1 como em _fluxo_real
+	var mk: Dictionary = w.combate.cartas.cfg.chefes.marcas.filter(func(x): return str(x.id) == "mini1")[0].duplicate(true)
+	mk.mini = true
 	var chefe = w.combate.chefes.nascer(mk, w.heroi.pos + Vector2(80, 0))
 	w.combate.matar(chefe)
 	_coletar_orbes()

@@ -86,12 +86,12 @@ func ganhar_xp(v: float) -> void:
 		combate.camera_lenta("nivel", float(cfg.nivel.camera_lenta), float(cfg.nivel.escala_lenta))
 
 
-## Sorteia as cartas (até 3, diferentes) e abre a escolha (pausa o mundo).
+## Monta a mão (2 upgrades + 1 novidade, v2/cartas.gd montar_mao) e abre a escolha (pausa o mundo).
 func abrir_escolha() -> void:
 	var cs = combate.cartas
-	cartas = cs.sortear(int(cs.cfg.escolha.cartas), combate.mundo.heroi.nivel)
-	if cartas.is_empty():  # tudo no máximo: uma carta de cura para não travar
-		cartas = [_carta_cura()]
+	cartas = cs.montar_mao(combate.mundo.heroi.nivel)
+	if cartas.size() < int(cs.cfg.escolha.cartas):  # sobrou pouca carta (tudo no máximo): uma cura ocupa o espaço, para não travar nem ficar sem mão
+		cartas.append(_carta_cura())
 	combate.jogo = "escolha"
 	combate.pausado = true
 	combate.telas.mostrar_escolha(cartas, combate.mundo.heroi.nivel)
@@ -113,6 +113,8 @@ func _carta_cura() -> Dictionary:
 		"desc": "Cura toda a vida",
 		"cat": "stat",
 		"stat": "cura",
+		"icone": "icone_vida",
+		"tipo": "",
 		"valor": 0,
 		"max": 99,
 		"rar": 0,
