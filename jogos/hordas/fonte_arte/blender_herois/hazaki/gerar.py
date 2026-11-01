@@ -555,6 +555,8 @@ def renderizar_animacao(nome):
     pasta.mkdir(parents=True, exist_ok=True)
     usa_ang = len(inspect.signature(mod.posar).parameters) >= 4          # posar(arm, quadro, n, ang): ang = giro do herói na direção
     efeito = getattr(mod, "efeito", None)                                # efeito(arm, quadro, n, ang) -> polígonos 2D do golpe (ver pintar_poligonos)
+    if perfil and hasattr(perfil, "efeito"):
+        efeito = perfil.efeito(nome, efeito)                             # o perfil pode trocar ou tirar o efeito da animação (ex.: sem rastro de lâmina no leque)
     for q in range(n):
         for dname, ang in DIRECOES:
             ossos.zerar(arm)
@@ -564,6 +566,8 @@ def renderizar_animacao(nome):
                 mod.posar(arm, q, n, ang)
             else:
                 mod.posar(arm, q, n)
+            if perfil and hasattr(perfil, "quadro"):
+                perfil.quadro(nome, q, n)                                # o perfil mostra/esconde peças por animação e quadro (ex.: leque aberto no golpe)
             bpy.context.view_layer.update()
             base = pasta / ("%s_%d" % (dname, q))
             renderizar(str(base) + "_cor.png")

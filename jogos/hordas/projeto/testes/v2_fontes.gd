@@ -1,7 +1,8 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste das fontes da v2 (regra em v2/LEIA-ME.md). Roda sem janela e confere o que se pode medir sem olhar:
 #  - as fontes vêm do lugar central (Dados) e estão sem anti-aliasing, sem hinting e sem posição de subpixel (o pixel da fonte cai no
-#    pixel da tela; é isso que mantém o desenho nítido no shader sharp bilinear);
+#    pixel da tela; é isso que mantém o desenho nítido no shader sharp bilinear), e com oversampling 1 fixo (o automático estragava a
+#    fonte depois de ir para tela cheia e voltar para janela);
 #  - o texto corrido está na Spleen 8x16 e todo tamanho dele nas telas é múltiplo da grade (16);
 #  - todos os caracteres do português e os símbolos das telas existem em cada fonte que os desenha;
 #  - os dígitos têm desenhos próprios: os contornos de 5 e S, 0 e O, 1 e I e l, 2 e Z, 6 e G, 8 e B, e dos dez dígitos entre si, são
@@ -60,6 +61,8 @@ func _fontes_centrais() -> void:
 		ok(ff.antialiasing == TextServer.FONT_ANTIALIASING_NONE, "%s sem anti-aliasing" % nome)
 		ok(ff.hinting == TextServer.HINTING_NONE, "%s sem hinting" % nome)
 		ok(ff.subpixel_positioning == TextServer.SUBPIXEL_POSITIONING_DISABLED, "%s sem posição de subpixel" % nome)
+	for nome in _fontes():  # oversampling 0 (automático) deixa o glifo feito para outra escala depois de tela cheia e volta para janela
+		ok(is_equal_approx((_fontes()[nome] as FontFile).oversampling, 1.0), "%s com oversampling 1 fixo" % nome)
 	ok((Dados.fonte_texto as FontFile).resource_path.ends_with("spleen-8x16.otf"), "o texto corrido é a Spleen 8x16")
 	ok(FileAccess.file_exists("res://assets/fonte/spleen/LICENSE.txt"), "a licença da Spleen está ao lado da fonte")
 	ok(FileAccess.file_exists("res://assets/fonte/jersey10/OFL.txt"), "a licença da Jersey 10 está ao lado da fonte")
@@ -115,6 +118,7 @@ func _tamanhos() -> void:
 	for t in [Telas.TAM_TITULO, Telas.TAM_NOME, Telas.TAM_CONTAGEM, Status.TAM_CAB, Status.TAM_NOME_PEQ, ResultadoMeta.TAM_TITULO, MenuPrincipal.TAM_BOTAO]:
 		ok(t in [19, 37, 56], "tamanho %d da Jersey 10 na grade (19, 37, 56)" % t)
 	ok(MenuPrincipal.TAM_LOGO == 2 * 56, "o logo usa a exceção documentada de 2 x 56")
+	ok(MenuPrincipal.TAM_SUBTITULO in [19, 37, 56], "o subtítulo do logo na grade da Jersey 10")
 	for t in [Status.TAM_NUM, Status.TAM_GRANDE]:
 		ok(t > 0 and t % 8 == 0, "números na grade de 8 px")
 
