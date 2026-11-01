@@ -1,6 +1,6 @@
 extends "res://testes/isolamento_v2.gd"
 # Teste automático dos heróis da v2 (v2/herois.gd, adagas.gd, personagens.gd, dados/v2_herois.json): Hazaki (padrão), Nick (marreta) e Luke
-# (adagas). Usa um save TEMPORÁRIO (user://teste_v2_herois.cfg): o save real não é tocado. Confere: o JSON (3 heróis, folhas de sprites que
+# (adagas). Os cinco do PER-3 (Matthew, John, Bert, Lukako e Fabian) têm o teste deles em v2_herois_novos; aqui o Matthew entra só pela folha própria. Usa um save TEMPORÁRIO (user://teste_v2_herois.cfg): o save real não é tocado. Confere: o JSON (3 heróis, folhas de sprites que
 # existem, o Hazaki repetindo os números do v2_combate.json); a escolha (sem chave = Hazaki, grava e relê, id inválido ignorado, o resto do
 # save intacto); cada herói criando a partida de verdade (vida, velocidade, tamanho, bônus, sprite); o Hazaki sem mudar; o Nick batendo em
 # arco e depois em volta, empurrando para fora; o Luke jogando adagas em leque na direção do mouse, que acertam monstro da horda, elite e
@@ -24,6 +24,7 @@ const PREFIXO_TESTE := "user://testes_v2/v2_herois/teste_v2_herois_p"
 const ANTIGO_TESTE := "user://testes_v2/v2_herois/teste_v2_herois_antigo.cfg"
 const PASSO := 1.0 / 60.0
 const PASTA_SPRITES := "res://prototipos/cara_nova/sprites/"
+const NOVOS := ["matheus", "joao", "beto", "lukako", "fabio"]  # os cinco do PER-3 (fotos)
 
 var falhas := 0
 var w
@@ -150,7 +151,10 @@ func _t_dados() -> void:
 		)
 		var ps: Array = h.cfg.golpe.passos
 		ok(ps.size() >= 1, "%s tem passos de golpe" % h.id)
-	ok(ids == ["hazaki", "nicao", "lucas"], "3 heróis na ordem hazaki, nicao, lucas (%s)" % str(ids))
+	ok(
+		ids == ["hazaki", "nicao", "lucas", "matheus", "joao", "beto", "lukako", "fabio"],
+		"8 heróis na ordem hazaki, nicao, lucas, matheus, joao, beto, lukako, fabio (%s)" % str(ids)
+	)
 	ok(str(cat.get("_ajuda", "")) != "", "v2_herois.json tem _ajuda")
 	# o Hazaki repete v2_combate.json: nada muda para ele
 	var base := Dados.json("v2_combate")
@@ -276,18 +280,18 @@ func _t_matheus() -> void:
 	var id_h := Personagens.criar("Breno", Personagens.heroi_do_nome("Breno"))
 	var id_m := Personagens.criar("Matthew", Personagens.heroi_do_nome("Matthew"))
 	ok(
-		Personagens.heroi(id_m) == "hazaki" and Personagens.sprite(id_m) == "matheus" and Personagens.sprite(id_h) == "",
-		"o Matthew joga de Hazaki, com a folha dele"
+		Personagens.heroi(id_m) == "matheus" and Personagens.sprite(id_m) == "matheus" and Personagens.sprite(id_h) == "",
+		"o Matthew joga de matheus (shuriken), com a folha dele"
 	)
-	ok(Personagens.ativar(id_m) and Herois.sprite_da_partida("hazaki") == "matheus", "partida do Matthew: a folha é a dele")
+	ok(Personagens.ativar(id_m) and Herois.sprite_da_partida("matheus") == "matheus", "partida do Matthew: a folha é a dele")
 	ok(
 		Herois.sprite_da_partida("hazaki", true) == "hazaki" and Herois.sprite_da_partida("nicao") == "nicao",
 		"--basico e outro herói forçado ficam com a folha do herói"
 	)
-	await novo("hazaki")
+	await novo("matheus")
 	var h = w.heroi
 	var tm = w.sprites.tipo("matheus")
-	ok(h.tipo.alb == tm.alb and h.chave == "hazaki" and h.vida_max == 100.0, "o herói da partida do Matthew usa a folha dele, com as regras do Hazaki")
+	ok(h.tipo.alb == tm.alb and h.chave == "matheus" and h.vida_max == 80.0, "o herói da partida do Matthew usa a folha dele, com as regras dele (80 de vida)")
 	var retrato: TextureRect = null
 	for n in w.ui.get_children():
 		if n.has_node("Raiz/Retrato/Heroi"):
@@ -846,7 +850,7 @@ func _foto_janela(pasta: String, nome: String) -> void:
 
 func _fotos(pasta: String) -> void:
 	DirAccess.make_dir_recursive_absolute(pasta)
-	for id in ["hazaki", "nicao", "lucas"]:
+	for id in ["hazaki", "nicao", "lucas"] + NOVOS:
 		Herois.forcado = id
 		w = Mundo.instantiate()
 		w.modo_teste = false
@@ -912,7 +916,7 @@ func _golpes_foto(pasta: String, id: String) -> void:
 	var h = w.heroi
 	var tipos := ["inimigo_cao_ossos", "inimigo_aranha_tecela", "inimigo_espantalho", "inimigo_lobo_sombrio"]
 	var k := 0
-	if id == "lucas":  # horda à frente, em fila e espalhada
+	if ["lucas", "matheus", "fabio"].has(id):  # horda à frente, em fila e espalhada
 		for fila in 4:
 			for lado in 3:
 				monstro_a(70.0 + fila * 38.0, (lado - 1) * 26.0 + (fila % 2) * 9.0, tipos[(fila + lado) % 4])
@@ -936,7 +940,18 @@ func _golpes_foto(pasta: String, id: String) -> void:
 		passos(5)
 		await RenderingServer.frame_post_draw
 		await w.ap.foto(pasta.path_join("%s_pancada.png" % id))
-	elif id == "lucas":
+	elif id == "beto":  # a corrente que puxa e o giro em volta
+		ate(func(): return h.golpe_acertou, 80)
+		passos(5)
+		await RenderingServer.frame_post_draw
+		await w.ap.foto(pasta.path_join("%s_corrente.png" % id))
+		ate(func(): return h.estado == Heroi.Estado.LIVRE, 80)
+		h.atacar()
+		ate(func(): return h.golpes > g0 + 1 and h.golpe_acertou, 80)
+		passos(4)
+		await RenderingServer.frame_post_draw
+		await w.ap.foto(pasta.path_join("%s_giro.png" % id))
+	elif ["lucas", "matheus", "fabio"].has(id):
 		ate(func(): return h.golpes >= g0 + 1 and h.estado == Heroi.Estado.LIVRE, 60)
 		h.atacar()
 		ate(func(): return h.golpes >= g0 + 2 and h.estado == Heroi.Estado.LIVRE, 60)
