@@ -62,20 +62,28 @@ static func sortear_frase_derrota(anterior: String, rng: RandomNumberGenerator =
 	return lista[rng.randi_range(0, lista.size() - 1) if rng != null else randi() % lista.size()]
 
 
-## As melhorias do catálogo com o "max" já somado dos níveis extras que as conquistas liberaram (recompensa "nivel_max");
-## "max_base" guarda o do catálogo. `cf` opcional: sem ele, lê o save.
+## As melhorias do catálogo com o "max" já somado dos níveis extras que as conquistas liberaram (recompensa "nivel_max") e das
+## edições compradas no Códice (ECO-6): "max_base" guarda o do catálogo e "max_normal" o do catálogo mais as conquistas (o teto do
+## comprar() normal); "max" é o maior entre esse teto e o nível salvo, então uma edição comprada aparece como nível cheio (6/6).
+## `cf` opcional: sem ele, lê o save.
 static func melhorias(cf: ConfigFile = null) -> Array:
 	var lista: Array = catalogo().get("melhorias", [])
 	if cf == null:
 		cf = _ler()
 	var extra := _niveis_extras(cf)
-	if extra.is_empty():
-		return lista
+	var ed := int(edicoes_cfg().extras)
 	var out: Array = []
 	for m in lista:
+		var normal := int(m.max) + int(extra.get(str(m.id), 0))
+		var n := int(cf.get_value("melhorias", str(m.id), 0)) if cf != null else 0
+		var teto := maxi(normal, mini(n, normal + ed))
+		if teto == int(m.max):
+			out.append(m)
+			continue
 		var c: Dictionary = m.duplicate()
 		c["max_base"] = int(m.max)
-		c["max"] = int(m.max) + int(extra.get(str(m.id), 0))
+		c["max_normal"] = normal
+		c["max"] = teto
 		out.append(c)
 	return out
 
@@ -431,6 +439,65 @@ static func comprar_chave(id: String, preco: int) -> bool:
 		return false
 	cf.set_value("moeda", "almas", almas - preco)
 	cf.set_value("compras", "mapa_" + id, true)
+	erro_save = not _gravar(cf)
+	return not erro_save
+
+
+## Regras da loja de edições do Códice (ECO-6), de dados/v2_meta.json: quantos níveis extras por melhoria e o multiplicador do preço.
+static func edicoes_cfg() -> Dictionary:
+	var c: Dictionary = catalogo().get("edicoes", {})
+	return {"extras": int(c.get("extras", 2)), "preco_mult": float(c.get("preco_mult", 2.0))}
+
+
+## O teto do comprar() normal de uma melhoria: o do catálogo mais os níveis das conquistas (sem as edições).
+static func max_normal(m: Dictionary) -> int:
+	return int(m.get("max_normal", m.max))
+
+
+## Almas que a edição de uma melhoria custa estando no nível `n`: o custo normal do nível seguinte vezes `preco_mult` (2x).
+static func custo_edicao(m: Dictionary, n: int) -> int:
+	return roundi(float(m.custo) * pow(float(m.cresce), n) * float(edicoes_cfg().preco_mult))
+
+
+## Situação da edição de uma melhoria para a tela: {estado, n, feitas, extras, preco}. Sem estado guardado: as edições feitas são os
+## níveis acima do teto normal. estado = "bloqueada" (falta a conquista da melhoria), "antes" (falta comprar o nível máximo normal),
+## "completa" (já tem todas as edições), "sem_almas" ou "pronta".
+static func edicao(id: String, cf: ConfigFile = null) -> Dictionary:
+	if cf == null:
+		cf = _ler()
+	var m := melhoria(id, cf)
+	if m.is_empty() or cf == null:
+		return {"estado": "bloqueada", "n": 0, "feitas": 0, "extras": 0, "preco": 0}
+	var n := int(cf.get_value("melhorias", id, 0))
+	var normal := max_normal(m)
+	var extras := int(edicoes_cfg().extras)
+	var r := {"n": n, "feitas": maxi(0, n - normal), "extras": extras, "preco": custo_edicao(m, n)}
+	if not _liberada(m, cf):
+		r["estado"] = "bloqueada"
+	elif n < normal:
+		r["estado"] = "antes"
+	elif n >= normal + extras:
+		r["estado"] = "completa"
+	elif int(cf.get_value("moeda", "almas", 0)) < int(r.preco):
+		r["estado"] = "sem_almas"
+	else:
+		r["estado"] = "pronta"
+	return r
+
+
+## Compra uma edição (ECO-6): +1 nível máximo da melhoria, já comprado, por `preco_mult` vezes o custo normal desse nível. Só depois do
+## nível máximo normal e até `extras` por melhoria. Debita e sobe o nível numa só gravação. True só se comprou agora.
+static func comprar_edicao(id: String) -> bool:
+	erro_save = false
+	var cf := _ler()
+	if cf == null:
+		erro_save = true
+		return false
+	var e := edicao(id, cf)
+	if str(e.estado) != "pronta":
+		return false
+	cf.set_value("moeda", "almas", int(cf.get_value("moeda", "almas", 0)) - int(e.preco))
+	cf.set_value("melhorias", id, int(e.n) + 1)
 	erro_save = not _gravar(cf)
 	return not erro_save
 

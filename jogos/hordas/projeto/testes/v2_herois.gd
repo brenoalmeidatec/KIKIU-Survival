@@ -373,8 +373,10 @@ func _t_animacoes(quem: String) -> void:
 	ok(h.coluna >= roll.x and h.coluna <= roll.y, "esquiva: usa as colunas do rolamento %d-%d (coluna %d)" % [roll.x, roll.y, h.coluna])
 	ok(is_zero_approx(h.sprite.rotation), "esquiva: o sprite não gira (o rolamento é da folha)")
 	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
-	# escudo
+	# escudo (DEF-2: o escudo é só do Nick; o herói da partida o ganha pelo dado para a animação da guarda ser medida)
 	zerar()
+	w.combate.escudo.herois[str(h.chave)] = "escudo"
+	h._iniciar_defesa()
 	h.escudo_forcado = true
 	passos(30)
 	ok(h.escudo_ativo and h.coluna >= esc.x and h.coluna <= esc.y, "escudo: usa as colunas %d-%d (coluna %d)" % [esc.x, esc.y, h.coluna])
@@ -518,6 +520,8 @@ func _t_nicao_animacoes() -> void:
 	ate(func(): return h.estado == Heroi.Estado.LIVRE, 120)
 	# defesa
 	zerar()
+	w.combate.escudo.herois[str(h.chave)] = "escudo"
+	h._iniciar_defesa()
 	h.escudo_forcado = true
 	passos(30)
 	ok(h.escudo_ativo and h.coluna >= int(ce[0]) and h.coluna <= int(ce[1]), "defesa: usa as 2 colunas da guarda (coluna %d)" % h.coluna)

@@ -110,6 +110,8 @@ var _p_dica: Label  # "Selecione para consultar", só nas estruturas de melhoria
 var _p_itens: Array = []  # o que a estrutura aberta mostra (melhorias ou conquistas), na ordem da lista
 var _p_atual := 0  # índice do item selecionado em _p_itens
 var _p_codice := false
+var _p_edicoes := false  # ECO-6: o Códice na página EDIÇÕES (a loja de níveis extras, no desenho das Estátuas)
+var _p_pagina: Button  # troca CONQUISTAS e EDIÇÕES, só no Códice
 var _escolha_dificuldade
 var _mapa_pendente := ""
 var _entrando := false
@@ -431,6 +433,12 @@ func _montar_painel() -> void:
 	_painel.add_child(_p_comprar)
 	_p_dica = _rotulo("Selecione para consultar", Dados.fonte_texto, 16, COR_APAGADO, Rect2(60, 474, 322, 24), HORIZONTAL_ALIGNMENT_LEFT)
 	_painel.add_child(_p_dica)
+	_p_pagina = Button.new()
+	_p_pagina.position = Vector2(60, 480)
+	_p_pagina.size = Vector2(322, 28)
+	_estilo_botao(_p_pagina, 16)
+	_p_pagina.pressed.connect(_alternar_edicoes)
+	_painel.add_child(_p_pagina)
 
 
 func _caixa_icone(r: Rect2) -> TextureRect:
@@ -690,6 +698,7 @@ func abrir_estrutura(id: String) -> void:
 		_avisar("%s trancado. %s" % [str(e.nome).capitalize(), trava])
 		return
 	_p_codice = bool(e.get("conquistas", false))
+	_p_edicoes = false
 	_ajustar_painel()
 	_p_titulo.text = str(e.nome)
 	_p_sub.text = str(e.get("frase", ""))
@@ -720,7 +729,7 @@ func _montar_lista() -> void:
 	for filho in _p_lista.get_children():
 		filho.queue_free()
 		_p_lista.remove_child(filho)
-	if _p_codice:
+	if _p_codice and not _p_edicoes:
 		_montar_lista_codice()
 		return
 	for i in _p_itens.size():
@@ -744,12 +753,37 @@ func _montar_lista() -> void:
 
 
 ## O Códice é só a lista (sem o painel da direita, sem COMPRAR): a lista ocupa a largura toda e o cabeçalho conta as cumpridas.
-## As outras estruturas voltam ao desenho de sempre (lista estreita à esquerda, item à direita).
+## As outras estruturas voltam ao desenho de sempre (lista estreita à esquerda, item à direita). A página EDIÇÕES do Códice (ECO-6)
+## usa o desenho das Estátuas; o botão embaixo à esquerda troca as duas páginas.
 func _ajustar_painel() -> void:
-	for w in [_p_icone, _p_nome, _p_frase, _p_card, _p_aviso, _p_dica]:
-		w.visible = not _p_codice
-	_p_comprar.visible = not _p_codice
-	_p_rolagem.size = Vector2(828, 376) if _p_codice else Vector2(322, 360)
+	var so_lista := _p_codice and not _p_edicoes
+	for w in [_p_icone, _p_nome, _p_frase, _p_card, _p_aviso]:
+		w.visible = not so_lista
+	_p_comprar.visible = not so_lista
+	_p_dica.visible = not _p_codice
+	_p_rolagem.size = Vector2(828, 376) if so_lista else Vector2(322, 360)
+	_p_pagina.visible = _p_codice
+	_p_pagina.text = _texto_edicoes("botao_volta" if _p_edicoes else "botao")
+
+
+func _texto_edicoes(chave: String) -> String:
+	return str(Dados.json("v2_salao").get("edicoes", {}).get(chave, ""))
+
+
+## Troca a página do Códice: conquistas (a lista larga) ou EDIÇÕES (as melhorias do santuário, com +1 nível máximo à venda).
+func _alternar_edicoes() -> void:
+	if not _p_codice:
+		return
+	_p_edicoes = not _p_edicoes
+	_p_itens = Meta.melhorias_visiveis() if _p_edicoes else Conquistas.linhas()
+	_p_sub.text = _texto_edicoes("sub") if _p_edicoes else str(_estrutura("codice").get("frase", ""))
+	_p_atual = 0
+	_p_aviso.text = ""
+	_ajustar_painel()
+	_montar_lista()
+	_mostrar_item(0)
+	if _p_lista.get_child_count() > 0:
+		_p_lista.get_child(0).grab_focus()
 
 
 ## Uma linha por conquista: ícone, nome, o que fazer, progresso (3/5 min) com barra e o prêmio. Cumprida fica em dourado, com o
@@ -844,6 +878,9 @@ func _montar_lista_codice() -> void:
 
 func _texto_da_lista(it: Dictionary) -> String:
 	var nivel := Meta.nivel(str(it.id))
+	if _p_edicoes:
+		var e := Meta.edicao(str(it.id))
+		return "%s\n%d/%d - %s" % [it.nome, nivel, int(e.extras) + Meta.max_normal(it), _resumo_edicao(e)]
 	if nivel < int(it.max) and not _liberada(it):  # trancada: a lista já diz o que abre (não some, não precisa abrir o item)
 		return "%s\n%d/%d - %s" % [it.nome, nivel, int(it.max), _nome_conquista(str(it.requer))]
 	return "%s\n%d/%d" % [it.nome, nivel, int(it.max)]
@@ -853,7 +890,7 @@ func _mostrar_item(i: int) -> void:
 	if _p_itens.is_empty():
 		return
 	_p_atual = i
-	if _p_codice:
+	if _p_codice and not _p_edicoes:
 		return  # o Códice é só a lista: cada linha já traz tudo (ícone, o que fazer, progresso e prêmio)
 	var it: Dictionary = _p_itens[i]
 	_p_saldo.text = "ALMAS %d" % Meta.saldo()
@@ -864,7 +901,96 @@ func _mostrar_item(i: int) -> void:
 	var fonte: Font = _p_nome.get_theme_font("font")
 	var cabe := fonte.get_string_size(_p_nome.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Paleta.TITULO_MEDIO).x <= _p_nome.size.x
 	_p_nome.add_theme_font_size_override("font_size", Paleta.TITULO_MEDIO if cabe else Paleta.TEXTO_GRANDE)
-	_mostrar_melhoria(it)
+	if _p_edicoes:
+		_mostrar_edicao(it)
+	else:
+		_mostrar_melhoria(it)
+
+
+## Uma frase curta para a lista da página EDIÇÕES, pelo estado da melhoria.
+func _resumo_edicao(e: Dictionary) -> String:
+	match str(e.estado):
+		"bloqueada":
+			return "bloqueada"
+		"antes":
+			return "falta o máximo normal"
+		"completa":
+			return "edições completas"
+	return "edição %d/%d por %d" % [int(e.feitas) + 1, int(e.extras), int(e.preco)]
+
+
+## O item da página EDIÇÕES: o nível (com as vagas de edição no fim), o efeito do próximo nível e o preço (2x o normal).
+func _mostrar_edicao(m: Dictionary) -> void:
+	var e := Meta.edicao(str(m.id))
+	var n := int(e.n)
+	var teto := Meta.max_normal(m) + int(e.extras)
+	var saldo := Meta.saldo()
+	var preco := int(e.preco)
+	var m2: Dictionary = m.duplicate()
+	m2["max"] = teto  # o efeito mostra o próximo nível mesmo no máximo normal
+	_p_frase.text = _texto_edicoes("frase")
+	var linhas := [
+		{"rotulo": "NÍVEL", "valor": "%d / %d" % [n, teto], "tipo": "segmentos", "n": n, "max": teto, "cor": Paleta.OURO, "nota": ""},
+		{
+			"rotulo": "EFEITO",
+			"valor": _valor_efeito(m2, n),
+			"cor_valor": Paleta.FOCO if n < teto else Paleta.OURO,
+			"tipo": "barra",
+			"frac": float(n) / maxf(1.0, teto),
+			"fantasma": float(mini(n + 1, teto)) / maxf(1.0, teto),
+			"cor": Paleta.BONUS,
+			"nota": Meta.texto_efeito(m, n) if n > 0 else "Ainda sem efeito.",
+		},
+	]
+	var custo := {
+		"rotulo": "CUSTO", "valor": "%d almas" % preco, "cor_valor": COR_ALMA, "tipo": "barra", "frac": float(saldo) / maxf(1.0, preco), "cor": COR_ALMA
+	}
+	match str(e.estado):
+		"completa":
+			custo = {
+				"rotulo": "CUSTO",
+				"valor": "COMPLETO",
+				"cor_valor": Paleta.OURO,
+				"tipo": "barra",
+				"frac": 1.0,
+				"cor": Paleta.OURO,
+				"nota": "Todas as edições compradas."
+			}
+		"bloqueada":
+			custo.merge(
+				{
+					"rotulo": "BLOQUEADA",
+					"cor_valor": COR_APAGADO,
+					"frac": 0.0,
+					"cor": COR_APAGADO,
+					"nota": "Falta a conquista: %s" % _nome_conquista(str(m.get("requer", ""))),
+					"cor_nota": COR_AVISO
+				},
+				true
+			)
+		"antes":
+			custo.merge(
+				{
+					"cor_valor": COR_APAGADO,
+					"frac": 0.0,
+					"cor": COR_APAGADO,
+					"nota": "Compre antes o nível máximo normal (%d/%d)." % [n, Meta.max_normal(m)],
+					"cor_nota": COR_AVISO
+				},
+				true
+			)
+		_:
+			var falta := preco - saldo
+			custo["nota"] = "Você tem %d. Faltam %d." % [saldo, falta] if falta > 0 else "Você tem %d. Dá para comprar!" % saldo
+			custo["cor_nota"] = Paleta.TEXTO_SECUNDARIO if falta > 0 else Paleta.BONUS
+	linhas.append(custo)
+	_p_card.mostrar(linhas)
+	var botoes := {"completa": "NO MÁXIMO", "bloqueada": "BLOQUEADA", "antes": "FALTA O MÁXIMO", "sem_almas": "SEM ALMAS", "pronta": "COMPRAR EDIÇÃO"}
+	_p_comprar.text = botoes[str(e.estado)]
+	_p_comprar.disabled = str(e.estado) != "pronta"
+	_p_comprar.focus_mode = Control.FOCUS_NONE if _p_comprar.disabled else Control.FOCUS_ALL
+	if _p_comprar.disabled and _p_comprar.has_focus() and _p_atual < _p_lista.get_child_count():
+		_p_lista.get_child(_p_atual).grab_focus()
 
 
 func _mostrar_melhoria(m: Dictionary) -> void:
@@ -968,10 +1094,26 @@ func comprar_item(id: String) -> bool:
 	return ok
 
 
+## Compra a edição (+1 nível máximo) da melhoria `id` na loja do Códice (ECO-6). Devolve true se comprou. Atualiza o saldo e a tela.
+func comprar_edicao(id: String) -> bool:
+	var ok := Meta.comprar_edicao(id)
+	_atualizar_textos()
+	if _painel.visible and _p_edicoes and _p_itens.size() > 0:
+		_mostrar_item(_p_atual)
+	return ok
+
+
 func _comprar_atual() -> void:
 	if _p_itens.is_empty():
 		return
 	var m: Dictionary = _p_itens[_p_atual]
+	if _p_edicoes:
+		if comprar_edicao(str(m.id)):
+			_p_aviso.text = "Comprado: %s, edição" % m.nome
+		else:
+			_p_aviso.text = _motivo_edicao(Meta.edicao(str(m.id)))
+		_montar_lista_niveis()
+		return
 	if comprar_item(str(m.id)):
 		_p_aviso.text = "Comprado: %s" % m.nome
 	else:
@@ -988,6 +1130,19 @@ func _motivo_recusa(m: Dictionary) -> String:
 	if not _liberada(m):
 		return "Falta a conquista: %s" % _nome_conquista(str(m.requer))
 	return "Faltam %d almas." % (Meta.custo_do_nivel(m, Meta.nivel(id)) - Meta.saldo())
+
+
+func _motivo_edicao(e: Dictionary) -> String:
+	if Meta.erro_save:
+		return "Não foi possível gravar o save."
+	match str(e.estado):
+		"completa":
+			return "Já tem todas as edições."
+		"bloqueada":
+			return "Falta a conquista dessa melhoria."
+		"antes":
+			return "Compre antes o nível máximo normal."
+	return "Faltam %d almas." % (int(e.preco) - Meta.saldo())
 
 
 func _montar_lista_niveis() -> void:

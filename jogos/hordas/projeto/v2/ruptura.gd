@@ -192,6 +192,12 @@ func bonus_contragolpe() -> float:
 	return minf(float(cfg.contragolpe.bonus) + float(somas.contra) / 100.0, float(cfg.contragolpe.bonus_max))
 
 
+## Abre a janela do contragolpe da katana (dados > contragolpe > tempo): depois de uma ruptura que acertou e depois de um aparo (secundário, v2/escudo.gd).
+func abrir_contragolpe(h) -> void:
+	h.contragolpe_t = float(cfg.contragolpe.tempo)
+	h.contragolpe_max = float(cfg.contragolpe.tempo)
+
+
 ## Multiplicador do golpe direto da katana (combate.golpear): vale enquanto a janela do contragolpe do herói está aberta.
 func fator_contragolpe(h) -> float:
 	return 1.0 + bonus_contragolpe() if h.contragolpe_t > 0.0 else 1.0
@@ -217,8 +223,7 @@ func disparar(h, f: float, perfeito: bool) -> int:
 	h.rup_recarga = rec
 	h.rup_recarga_max = rec
 	if n > 0:
-		h.contragolpe_t = float(cfg.contragolpe.tempo)
-		h.contragolpe_max = float(cfg.contragolpe.tempo)
+		abrir_contragolpe(h)
 	if float(somas.eco) > 0.0:
 		_eco_t = float(cfg.eco.atraso)
 		_eco_raio = raio * float(cfg.eco.raio)
