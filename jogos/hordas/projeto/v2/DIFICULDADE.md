@@ -29,6 +29,11 @@ combo. `xp_coletado` guarda essa base para a moeda e o mercador; somente o XP
 entregue à progressão recebe `xp_mult`. O crédito final aplica `almas_mult` uma
 vez. Isso evita que os dois bônus se multipliquem sobre a mesma moeda.
 
+Os valores atuais são `almas_mult` 1,0 / 1,5 / 2,25 e `xp_mult` 1,0 / 1,25 / 1,6
+(Fácil / Médio / Difícil; decisão D21 do plano de 01/11, ECO-4). O cartão de
+escolha mostra os dois bônus separados ("ALMAS +50%", "XP +25%"), lidos desses
+campos. Com o Pesadelo, as almas do Difícil sobem a até 3,4x.
+
 Pesadelo é um modificador independente, com as regras existentes. As três
 conquistas de dificuldade usam o prefixo `vence_dificuldade_`; `vence_medio`
 continua identificando a vitória nas Ruínas. Resultados antigos sem dificuldade

@@ -8,6 +8,7 @@ const Personagens := preload("res://v2/personagens.gd")
 const Herois := preload("res://v2/herois.gd")
 const Heroi := preload("res://v2/heroi.gd")
 const Dificuldade := preload("res://v2/dificuldade.gd")
+const Escolha := preload("res://v2/escolha_dificuldade.gd")
 const Colisao := preload("res://v2/colisao.gd")
 const Resultado := preload("res://v2/resultado_meta.gd")
 const Status := preload("res://v2/status.gd")
@@ -19,7 +20,7 @@ const ANTIGO := "user://teste_v2_dificuldade_antigo.cfg"
 const OPCOES := "user://teste_v2_dificuldade_opcoes.cfg"
 const IDS := ["facil", "medio", "dificil"]
 const XP := [1.0, 1.25, 1.6]
-const ALMAS := [1.0, 1.25, 1.6]
+const ALMAS := [1.0, 1.5, 2.25]
 const VELOCIDADE := [1.0, 1.1, 1.2]
 const DENSIDADE := [1.0, 1.25, 1.5]
 const ONDA := [1.0, 0.9, 0.8]
@@ -148,6 +149,7 @@ func _ready() -> void:
 			_fluxo_real(i, pesadelo)
 	_snapshot_e_resultado()
 	_creditos_e_conquistas()
+	_cartoes_dois_numeros()
 	remove_child(w)
 	w.free()
 	w = null
@@ -511,6 +513,24 @@ func _snapshot_e_resultado() -> void:
 	res.free()
 	w.reiniciar()
 	ok(str(Dificuldade.da_partida(w).id) == "dificil", "a próxima partida passa a usar a preferência nova")
+
+
+## ECO-4: o cartão mostra dois números, almas (almas_mult) e XP (xp_mult), cada um com a sua base.
+func _cartoes_dois_numeros() -> void:
+	var escolha := Escolha.new()
+	add_child(escolha)
+	escolha.abrir("Floresta")
+	ok(escolha._cartoes.size() == IDS.size(), "a escolha monta um cartão por dificuldade")
+	for i in mini(escolha._cartoes.size(), IDS.size()):
+		var textos: Array = []
+		for filho in escolha._cartoes[i].get_children():
+			if filho is Label:
+				textos.append(filho.text)
+		var almas := "ALMAS +%d%%" % roundi((float(ALMAS[i]) - 1.0) * 100.0)
+		var xp := "XP +%d%%" % roundi((float(XP[i]) - 1.0) * 100.0)
+		ok(almas in textos and xp in textos, "cartão %s mostra '%s' e '%s' (%s)" % [IDS[i], almas, xp, str(textos)])
+	remove_child(escolha)
+	escolha.free()
 
 
 func _creditos_e_conquistas() -> void:
