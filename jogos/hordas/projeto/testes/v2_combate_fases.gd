@@ -68,6 +68,8 @@ func vivos(k: String) -> Array:
 func existe(id: String) -> bool:
 	if id.begins_with("perigo_"):  # os ataques inimigos (chefe e elite) não são golpes das cartas
 		return true
+	if id.ends_with("_heroi"):  # arma do herói no `proj` (shuriken_heroi etc.), não é carta
+		return true
 	if id.ends_with("_queda"):  # a peça que cai antes do golpe ("martelo_trovao_queda"): vale o golpe de base
 		id = id.trim_suffix("_queda")
 	if not w.combate.cartas.definicao(id).is_empty():
@@ -103,6 +105,7 @@ func checar_folhas() -> void:
 	ids += ["urso_solar", "chuva_de_lacas", "bola_incendiaria", "chuva_de_ferro", "tempestade_primordial", "estrondo", "terra_partida"]
 	ids += ["juramento_sagrado", "pedreira_ardente", "cometa_duplo", "eclipse_negro", "juizo_final", "nevasca_congelante", "cinzas_acidas"]
 	ids += ["peste_negra", "furacao_glacial"]
+	ids += ["shuriken_heroi", "kunai_heroi", "flecha_heroi"]
 	for id in ids:
 		ok(not Anim.de(id).is_empty(), "%s tem folha animada" % id)
 	var voo: Dictionary = Anim.de("bola_fogo").voo
