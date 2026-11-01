@@ -183,9 +183,8 @@ func _testes() -> void:
 	zerar()
 	subir_nivel()
 	liberar()
-	var nivel: int = w.heroi.nivel
 	cs.rng.seed = 4242
-	var esperada: Dictionary = cs.escolha_automatica(nivel)
+	var esperada: Dictionary = cs.escolha_automatica(c.progresso.cartas)
 	ok(not esperada.is_empty(), "o automático tem uma carta")
 	var id: String = esperada.id
 	var nv_antes: int = cs.nivel_de(id)
