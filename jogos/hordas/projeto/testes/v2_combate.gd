@@ -303,7 +303,8 @@ func _ready() -> void:
 	var tp7: float = w.tempo_partida
 	passos(40)
 	ok(w.tempo_partida == tp7, "com a escolha aberta o mundo está parado")
-	passos(150)  # a trava de 3 s (tempo real) passa antes de a tecla valer (v2_cartas_espera.tscn testa a trava)
+	var passos_trava := ate(func(): return w.combate.telas.espera_escolha <= 0.0, 300)  # a trava (1 s, espera_s) solta antes de a tecla valer
+	ok(passos_trava >= 0, "a trava da escolha libera dentro do teto (passos %d)" % passos_trava)
 	var snap_antes := [h.m_dano, h.m_vel_ataque, h.m_area, h.m_vel_mov, h.vida_max, h.m_ima, h.m_critico]
 	var carta: Dictionary = w.combate.progresso.cartas[1]
 	var tecla := InputEventKey.new()
