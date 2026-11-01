@@ -119,6 +119,19 @@ var _ciclo_adagas_calculos := 0  # diagnóstico para provar reutilização/inval
 var _plim_t := 0.0
 var _plim_n := 0
 var _fila: Array = []  # monstros que morreram no quadro por golpe secundário ou fogo (saem em processar_mortes)
+# Limpar a tela (ULT-A): quem a limpeza marcou espera aqui, com a hora da morte (distância / velocidade da frente de onda), em arrays de tamanho fixo
+# preparados na montagem. `drenar_limpa` mata no máximo `_lp_max` por quadro, para 164 mortes não virarem um soluço no i5.
+const LIMPA_CAP := 320
+var limpa_mortes := 0  # testes: quantos morreram pela limpeza na partida
+var limpa_quadro := 0  # testes: quantos morreram pela limpeza no último quadro
+var limpa_pico := 0  # testes: o maior número de mortes da limpeza num quadro só
+var limpa_info := {}  # testes: a última limpeza (comuns marcados, elites e chefes atingidos)
+var _lp_m: Array = []
+var _lp_t := PackedFloat32Array()
+var _lp_n := 0
+var _lp_relogio := 0.0
+var _lp_max := 24
+var _lp_part := 0.35
 var anuncios := 0  # quantos anúncios saíram (testes)
 var ultimo_anuncio := ""
 var ferimentos := 0  # golpes secundários que feriram (testes)
@@ -144,6 +157,8 @@ var _q := 0
 
 func montar(m) -> void:
 	mundo = m
+	_lp_m.resize(LIMPA_CAP)
+	_lp_t.resize(LIMPA_CAP)
 	heroi_id = Herois.escolhido()
 	cfg = Herois.cfg_para(Dados.json("v2_combate"), heroi_id)  # o herói escolhido cobre vida, velocidade, fôlego e o combo
 	audio = AudioV2.new()
@@ -304,6 +319,7 @@ func atualizar(dt: float) -> void:
 		avisos.atualizar(dt)
 		ruptura.atualizar(dt)
 		especial.atualizar(dt)
+		drenar_limpa(dt)
 		baus.atualizar(dt)
 		ritmo.atualizar(dt)
 		mundo._perfil("c_diretor", t0 - d0)
@@ -704,7 +720,7 @@ func _estouro_chao(h, alc: float, passo: Dictionary) -> void:
 # ------------------------------------------------------------------ morte, orbes e combo
 
 
-func matar(m) -> void:
+func matar(m, leve := false) -> void:
 	if not m.vivo:
 		return
 	mortes += 1
@@ -715,7 +731,10 @@ func matar(m) -> void:
 	mundo.sombras.ativar(m, false)
 	var grande: bool = m.elite or m.chefe
 	fx.flash(m, 0.24, Color(1, 1, 1), 1)
-	fx.estouro(c, Color(0.9, 0.9, 0.85), int(cfg.morte.particulas) * (3 if grande else 1))
+	var parts := float(cfg.morte.particulas) * (3.0 if grande else 1.0)
+	if leve:  # morte da limpeza da tela: só uma fração das partículas (são dezenas de mortes juntas)
+		parts *= _lp_part
+	fx.estouro(c, Color(0.9, 0.9, 0.85), roundi(parts))
 	audio.tocar("morte", randf_range(0.9, 1.12) * (0.7 if grande else 1.0), -1.0, 0.03)
 	mundo.abates += 1
 	mundo.combo += 1
@@ -738,6 +757,83 @@ func matar(m) -> void:
 	if m.chefe:
 		chefes.ao_morrer(m)
 		m.chefe = false
+
+
+## Limpar a tela (ULT-A): chamada UMA vez no instante da limpeza de um Q (e pela Autodestruição do LightWolf). `centro` = de onde a frente de onda sai
+## (o herói), `L` = dados/v2_especial.json > comum.limpa. Uma só passada em `mundo.monstros`, dentro do retângulo da câmera mais `L.margem`: o comum
+## (e o morador) é marcado como morrendo (para de andar e de atacar; sem nó novo) e entra na fila adiada com a hora da morte; a elite perde `elite_perde`
+## da vida máxima e fica atordoada, mas só morre se já estava abaixo disso (matar elite solta baú); mini-chefe e chefão levam `mini_perde` e `chefe_perde`
+## e ficam lentos, nunca atordoados nem empurrados, e os ataques anunciados deles seguem. Devolve quantos comuns foram marcados.
+func limpar_tela(centro: Vector2, L: Dictionary) -> int:
+	var t0 := Time.get_ticks_usec()
+	var rect: Rect2 = mundo.cam.retangulo(float(L.margem))
+	var vel := maxf(float(L.vel), 1.0)
+	_lp_max = maxi(1, int(L.por_quadro))
+	_lp_part = float(L.particulas)
+	_lp_relogio = 0.0
+	var marcados := 0
+	var elites_n := 0
+	var chefes_n := 0
+	var chefao = null
+	if chefes != null and chefes.atual != null and not bool(chefes.marca.get("mini", true)):
+		chefao = chefes.atual
+	fonte_dano = "especial"
+	for m in mundo.monstros:
+		if not m.vivo or m.morrendo or not rect.has_point(m.pos):
+			continue
+		if m.chefe:
+			var pct := float(L.chefe_perde) if m == chefao else float(L.mini_perde)
+			ferir(m, pct * float(m.vida_max), Vector2.ZERO, 0.0, 0.0, COR_NUM, false)
+			m.deixar_lento(float(L.chefe_lento))
+			chefes_n += 1
+		elif m.elite:
+			ferir(m, float(L.elite_perde) * float(m.vida_max), Vector2.ZERO, 0.0, float(L.elite_atordoa), COR_NUM, false)
+			elites_n += 1
+		elif _lp_n < LIMPA_CAP:
+			m.morrendo = true
+			m.atordoa_t = maxf(m.atordoa_t, float(L.travada))
+			m.emp = Vector2.ZERO
+			_lp_m[_lp_n] = m
+			_lp_t[_lp_n] = (m.pos - centro).length() / vel
+			_lp_n += 1
+			marcados += 1
+	limpa_info = {"comuns": marcados, "elites": elites_n, "chefes": chefes_n}
+	processar_mortes()
+	mundo._perfil("c_limpa", Time.get_ticks_usec() - t0)
+	return marcados
+
+
+## Um quadro da fila adiada da limpeza (tempo do mundo, chamada logo depois de `especial.atualizar`): mata no máximo `_lp_max` comuns marcados cuja
+## hora da frente de onda já chegou (remoção por troca com o último, sem ordenar). Pausa, cartas e hit-stop congelam (o combate nem chama).
+func drenar_limpa(dt: float) -> void:
+	limpa_quadro = 0
+	if _lp_n == 0 or jogo != "jogando" or pausado:
+		return
+	var t0 := Time.get_ticks_usec()
+	_lp_relogio += dt
+	var feitos := 0
+	var i := 0
+	while i < _lp_n and feitos < _lp_max:
+		if _lp_t[i] > _lp_relogio:
+			i += 1
+			continue
+		var m = _lp_m[i]
+		_lp_n -= 1
+		_lp_m[i] = _lp_m[_lp_n]
+		_lp_t[i] = _lp_t[_lp_n]
+		_lp_m[_lp_n] = null
+		if m.vivo:
+			matar(m, true)
+			feitos += 1
+	limpa_quadro = feitos
+	limpa_mortes += feitos
+	limpa_pico = maxi(limpa_pico, feitos)
+	mundo._perfil("c_limpa", Time.get_ticks_usec() - t0)
+
+
+## Quantos comuns marcados ainda esperam a frente de onda (testes).
+func limpa_pendentes() -> int:
+	return _lp_n
 
 
 ## Golpe de fonte secundária (aura, lâminas, corvos, raio, runa, ondas, fogo): tira vida, empurra e mostra o número. A morte NÃO é
@@ -1031,6 +1127,14 @@ func limpar_partida() -> void:
 		mundo.sombras.ativar(m, false)
 		mundo.devolver_monstro(m)
 	_fila.clear()
+	for i in _lp_n:
+		_lp_m[i] = null
+	_lp_n = 0
+	_lp_relogio = 0.0
+	limpa_mortes = 0
+	limpa_quadro = 0
+	limpa_pico = 0
+	limpa_info = {}
 	orbes.limpar()
 	ritmo.limpar()
 	armas.limpar()

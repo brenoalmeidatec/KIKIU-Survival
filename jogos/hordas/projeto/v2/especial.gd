@@ -10,6 +10,8 @@ extends RefCounted
 ##  - INVESTIDA (Hazaki, "Corte Relâmpago"): mira um instante, some num clarão na direção da mira cortando tudo na faixa e fecha com um corte em cruz em volta.
 ##  - TERREMOTO (Nick): ergue a marreta e bate: pancada enorme em volta, rachaduras e uma onda de choque que sai da batida e varre quem estava longe.
 ##  - CHUVA (Luke, "Tempestade de Adagas"): gira soltando rodadas de adagas em círculo, andando devagar, e fecha com uma rodada enorme.
+## Todo Q também LIMPA A TELA (ULT-A, `limpar_tela`, dados > comum.limpa e `limpa_em` de cada bloco): comuns morrem aos poucos numa frente de onda (a fila adiada
+## é do combate: `combate.limpar_tela` e `combate.drenar_limpa`), elite perde parte da vida e chefe só uma fatia.
 ## Id desconhecido deixa a tecla Q sem efeito.
 ##
 ## O herói (v2/heroi.gd) cuida da entrada (`especial()`), do estado (Estado.ESPECIAL), da carga e dos campos que o HUD lê (esp_*); este módulo cuida do
@@ -45,6 +47,9 @@ var ondas := 0  # testes: quantas ondas de choque do terremoto saíram
 var prontos := 0  # quantas vezes a carga chegou a 100 na partida (o robô de playtest e os testes)
 var carga_total := {"dano": 0.0, "abate": 0.0, "recebido": 0.0}  # pontos de carga ganhos na partida por fonte (calibragem, robô de playtest)
 var _graca := 0.0  # s depois do fim do Q em que ainda não carrega (as últimas adagas voando)
+var limpa_ligada := true  # a limpeza da tela (ULT-A) liga/desliga por instância (os testes antigos de dano por área desligam)
+var limpas := 0  # testes: quantas limpezas saíram
+var _limpa_pend := false  # a limpeza deste Q ainda não saiu (espera `limpa_em`)
 
 var _id := ""  # o especial em andamento ("" = nenhum)
 var _c: Dictionary = {}  # o bloco dele
@@ -122,6 +127,8 @@ func limpar() -> void:
 	_c = {}
 	_t = 0.0
 	_fase = 0
+	_limpa_pend = false
+	limpas = 0
 	_ja.clear()
 	_numeros = 0
 	_onda_t = -1.0
@@ -197,6 +204,7 @@ func iniciar(h) -> bool:
 	_escalar_danos(_c, combate.ritmo.multiplicador("q_dano", h.nivel))
 	_t = 0.0
 	_fase = 0
+	_limpa_pend = limpa_ligada and _c.has("limpa_em")
 	_ja.clear()
 	_n = 0
 	_numeros = 0
@@ -253,6 +261,9 @@ func quadro(h, dt: float, v: Vector2) -> Vector2:
 			_q_terremoto(h)
 		"chuva":
 			desl = _q_chuva(h, dt, v)
+	if _limpa_pend and _t >= float(_c.limpa_em):
+		_limpa_pend = false
+		limpar_tela(h)
 	if _t >= float(_c.dur):
 		_encerrar(h)
 	return desl
@@ -272,9 +283,27 @@ func cancelar(h) -> void:
 	_encerrar(h)
 
 
+## Limpar a tela (ULT-A): bloco comum.limpa dos dados. No instante `limpa_em` do Q, a peça do combate marca os comuns da tela (e da margem) e a frente
+## de onda os mata aos poucos; elite e chefe levam só uma parte da vida. Um anel que cresce com a frente e UM número "LIMPOU xN" no herói; nenhuma luz de
+## tela cheia (o clarão passa pelo helper Piscadas, do UI-2, quando ele existir). A Autodestruição do LightWolf (LW-5) chama esta mesma peça.
+func limpar_tela(h) -> int:
+	var c = combate
+	var L: Dictionary = comum.limpa
+	var n: int = c.limpar_tela(h.pos, L)
+	limpas += 1
+	var cor: Color = h.esp_cor
+	var rmax := Vector2(float(mundo.cam.LARG), float(mundo.cam.ALT)).length() * 0.5 + float(L.margem)
+	_anel(h.pos, 16.0, rmax, rmax / maxf(float(L.vel), 1.0), 3.0, cor.lerp(Color.WHITE, 0.4), 0.55)
+	if n > 0:
+		c.fx.numero(h.pos + Vector2(0, -52), "LIMPOU x%d" % n, COR_CRIT, true)
+	c.audio.tocar("ruptura_disparo", 0.9, -3.0, 0.0)
+	return n
+
+
 func _encerrar(h) -> void:
 	ultimo = {"id": _id, "n": _n, "mortes": _mortes}
 	_id = ""
+	_limpa_pend = false
 	_graca = float(comum.carga.graca)
 	h.esp_invul = false
 	h.esp_t = 0.0

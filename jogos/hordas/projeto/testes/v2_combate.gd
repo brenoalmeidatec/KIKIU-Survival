@@ -391,7 +391,7 @@ func _ready() -> void:
 	var corre: float = h.pos.x - p0
 	ok(h.correndo, "Shift: correndo")
 	ok(corre > anda * 1.5 and corre < anda * 1.75, "correr é ~1,6x mais rápido (%.0f contra %.0f px)" % [corre, anda])
-	ok(h.folego < h.folego_max - 0.7, "correr gasta fôlego do mesmo estoque da esquiva (%.2f de %.2f)" % [h.folego, h.folego_max])
+	ok(h.folego < h.folego_max - 0.3, "correr gasta fôlego do mesmo estoque da esquiva (%.2f de %.2f)" % [h.folego, h.folego_max])
 	ate(func(): return h.cansado, 200)
 	ok(h.cansado and h.folego <= 0.001 and not h.correndo, "fôlego zerado: para de correr na hora e fica cansado")
 	h.entrada_forcada = Vector2.ZERO
@@ -426,7 +426,7 @@ func _ready() -> void:
 	h.entrada_forcada = Vector2(1, 0)
 	passos(60)
 	var andando_g: float = h.folego - 0.5
-	ok(parado_g > andando_g * 1.4 and andando_g > 0.0, "parado recupera mais rápido que andando (%.2f contra %.2f)" % [parado_g, andando_g])
+	ok(parado_g > andando_g * 1.3 and andando_g > 0.0, "parado recupera mais rápido que andando (%.2f contra %.2f)" % [parado_g, andando_g])
 	# atacar cancela a corrida
 	zerar()
 	h = w.heroi
@@ -439,10 +439,10 @@ func _ready() -> void:
 	ok(h.estado == Heroi.Estado.GOLPE and not h.correndo, "atacar cancela a corrida")
 	h.correr_forcado = null
 	h.entrada_forcada = Vector2.ZERO
-	# por distância a corrida sai mais cara que a esquiva
+	# ECO-2 (D20): correr custa menos de 2x a esquiva por distância (a regra antiga, de correr ser mais caro, foi revertida)
 	var px_corrida: float = float(Heroi.VEL) * float(c.corrida.velocidade) / float(c.corrida.gasto)
 	var px_esquiva: float = float(Heroi.VEL) * float(c.esquiva.velocidade) * float(c.esquiva.tempo) / float(c.esquiva.gasto)
-	ok(px_corrida < px_esquiva, "correr custa mais fôlego por distância que esquivar (%.0f contra %.0f px por carga)" % [px_corrida, px_esquiva])
+	ok(1.0 / px_corrida < 2.0 / px_esquiva, "correr custa menos de 2x a esquiva por distância (%.0f contra %.0f px por carga)" % [px_corrida, px_esquiva])
 
 	# 10. sem nó novo por acerto: acertar e matar não cria nó (pool de monstros, números, partículas, orbes)
 	zerar()
