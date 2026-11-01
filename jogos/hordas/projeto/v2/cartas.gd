@@ -6,7 +6,8 @@ extends RefCounted
 ## aparecem no resumo como as outras (o ramo "rb" de aplicar soma o valor e avisa combate.ruptura.definir).
 ##
 ## Uma carta é um Dictionary: {id, icone (nome do PNG em assets/gerado/), nome, desc (já com o valor), cat ("stat", "golpe" ou "mod"), rar (0 a 3),
-## rar_nome, cor (Color), valor (stat/mod/rb, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat}.
+## rar_nome, cor (Color), valor (stat/mod/rb, já multiplicado pela raridade), max, nivel_atual, nivel_novo, proximo, nivel_txt, evolui, stat,
+## tipo ("up" = sobe um bônus que o herói já tem; "nov" = bônus novo; o cartão mostra o selo UPGRADE ou NOVO)}.
 ## O cartão (telas.gd) mostra nessa ordem: raridade e tecla, ícone, nome, desc, proximo e, no rodapé, nivel_txt e evolui.
 
 const Armas := preload("res://v2/armas.gd")
@@ -20,6 +21,8 @@ var estado := {}  # id -> {n: vezes que pegou, bonus: dano extra do golpe pela r
 var evoluidas: Array = []  # ids das evoluções já feitas
 var evolucoes_feitas := 0
 var lendarias_feitas := 0  # só uma lendária por partida
+var vistas: Array = []  # as últimas rodadas de cartas (listas de ids oferecidos): a novidade não repete o que acabou de passar (escolha.vistas_rodadas)
+var descartadas: Array = []  # ids de bônus que o jogador largou (a troca do Difícil, CAR-4): a novidade nunca os oferece de novo
 var _def := {}  # id -> definição (stat, golpe ou modificador)
 var _cat := {}
 
@@ -48,6 +51,8 @@ func zerar() -> void:
 	evoluidas.clear()
 	evolucoes_feitas = 0
 	lendarias_feitas = 0
+	vistas.clear()
+	descartadas.clear()
 	rng.randomize()
 
 
@@ -228,34 +233,45 @@ func golpes_ativos() -> int:
 	return n
 
 
-## Sorteia `n` cartas diferentes. `bonus` = quanto o baú favorece as raridades altas. Até o nível `garantir_golpe_ate`, quem ainda não tem
-## nenhum golpe secundário vê pelo menos um na escolha (o começo da build).
-## `piso` = a menor raridade que pode sair (o baú dá `bau.piso_raridade`, 1 = nunca comum).
-func sortear(n: int, nivel: int, bonus := 1.0, piso := 0) -> Array:
-	var cand: Array = []
-	var pesos: Array = []
+## A MÃO de cartas da escolha de nível e do baú: `escolha.cartas` (3) cartas diferentes em dois tipos, [upgrade, upgrade, novidade]. UPGRADE = bônus
+## que o herói já tem (nível > 0) e ainda não está no máximo; NOVIDADE = bônus de nível 0 que não saiu nas últimas `escolha.vistas_rodadas` rodadas
+## (`vistas`) nem foi descartado (`descartadas`). Assim a carta só repete quando aumenta um bônus que o jogador já tem. Sem candidato de um tipo,
+## o espaço vira o outro tipo; sem nenhum, a mão fica menor (quem abre a escolha completa com a cura, progresso.abrir_escolha). No começo da
+## partida (nenhum bônus) são 3 novidades. `bonus` = quanto o baú favorece as raridades altas e `piso` = a menor raridade que pode sair (o baú dá
+## `bau.piso_raridade`, 1 = nunca comum). Até o nível `garantir_golpe_ate`, quem ainda não tem nenhum golpe secundário vê pelo menos um na mão
+## (o começo da build). `registrar` guarda a mão em `vistas` (o roteiro de fotos e o atalho `sortear` não guardam).
+func montar_mao(nivel: int, bonus := 1.0, piso := 0, n := -1, registrar := true) -> Array:
+	if n < 0:
+		n = int(cfg.escolha.cartas)
 	var sinergia := _pesos_sinergia()
+	var recentes := _ids_vistos()
+	var ups: Array = []
+	var pesos_up: Array = []
+	var novs: Array = []
+	var pesos_nov: Array = []
 	for id in _def:
 		var d: Dictionary = _def[id]
 		if not _disponivel(d):
 			continue
-		cand.append(d)
-		pesos.append(float(d.get("peso", 1.0)) * float(sinergia.get(str(id), 1.0)))
+		var peso := float(d.get("peso", 1.0)) * float(sinergia.get(str(id), 1.0))
+		if nivel_de(str(id)) > 0:
+			ups.append(d)
+			pesos_up.append(peso)
+		elif not descartadas.has(str(id)) and not recentes.has(str(id)):
+			novs.append(d)
+			pesos_nov.append(peso)
+	var quer_nov := 0 if n < 2 else clampi(int(cfg.escolha.get("mao_novidades", 1)), 0, n)
 	var escolhidas: Array = []
-	for k in mini(n, cand.size()):
-		var total := 0.0
-		for p in pesos:
-			total += float(p)
-		var r := rng.randf() * total
-		var i := 0
-		while i < cand.size() - 1:
-			r -= float(pesos[i])
-			if r < 0.0:
-				break
-			i += 1
-		escolhidas.append(cand[i])
-		cand.remove_at(i)
-		pesos.remove_at(i)
+	for k in n:
+		var e_nov := k >= n - quer_nov  # os últimos espaços da mão são as novidades
+		var d: Dictionary
+		if e_nov:
+			d = _tirar(novs, pesos_nov) if not novs.is_empty() else _tirar(ups, pesos_up)
+		else:
+			d = _tirar(ups, pesos_up) if not ups.is_empty() else _tirar(novs, pesos_nov)
+		if d.is_empty():
+			break
+		escolhidas.append(d)
 	if nivel <= int(cfg.escolha.garantir_golpe_ate) and golpes_ativos() == 0 and not escolhidas.is_empty():
 		var tem := false
 		for d in escolhidas:
@@ -264,14 +280,59 @@ func sortear(n: int, nivel: int, bonus := 1.0, piso := 0) -> Array:
 		if not tem:
 			var gs: Array = []
 			for d in cfg.golpes:
-				if _disponivel(d):
+				if _disponivel(d) and not descartadas.has(str(d.id)) and not recentes.has(str(d.id)):
 					gs.append(d)
+			if gs.is_empty():  # tudo isso passou há pouco: melhor repetir um golpe do que deixar o começo sem nenhum
+				for d in cfg.golpes:
+					if _disponivel(d) and not descartadas.has(str(d.id)):
+						gs.append(d)
 			if not gs.is_empty():
 				escolhidas[escolhidas.size() - 1] = gs[rng.randi() % gs.size()]
 	var cartas: Array = []
+	var ids: Array = []
 	for d in escolhidas:
 		cartas.append(montar_carta(d, maxi(sortear_raridade(nivel, bonus), piso)))
+		ids.append(str(d.id))
+	if registrar:
+		vistas.append(ids)
+		while vistas.size() > int(cfg.escolha.get("vistas_rodadas", 2)):
+			vistas.pop_front()
 	return cartas
+
+
+## O atalho antigo: `n` cartas pelo mesmo critério da mão (upgrade e novidade) sem guardar nada em `vistas`. O baú que entrega de graça e o roteiro
+## de fotos usam; a escolha de nível e a do baú com escolha chamam `montar_mao`.
+func sortear(n: int, nivel: int, bonus := 1.0, piso := 0) -> Array:
+	return montar_mao(nivel, bonus, piso, n, false)
+
+
+## Tira uma carta da lista pelo peso (e a tira também da lista de pesos). Lista vazia devolve {}.
+func _tirar(cand: Array, pesos: Array) -> Dictionary:
+	if cand.is_empty():
+		return {}
+	var total := 0.0
+	for p in pesos:
+		total += float(p)
+	var r := rng.randf() * total
+	var i := 0
+	while i < cand.size() - 1:
+		r -= float(pesos[i])
+		if r < 0.0:
+			break
+		i += 1
+	var d: Dictionary = cand[i]
+	cand.remove_at(i)
+	pesos.remove_at(i)
+	return d
+
+
+## Os ids das últimas rodadas de cartas (as novidades não voltam).
+func _ids_vistos() -> Dictionary:
+	var r := {}
+	for rodada in vistas:
+		for id in rodada:
+			r[str(id)] = true
+	return r
 
 
 ## ESCOLHA AUTOMÁTICA (botão do meio da tela de cartas). Olha o que o herói já tem e escolhe sozinho, sem sorteio de 3: fecha uma fusão que
@@ -346,7 +407,8 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 		"stat": str(d.get("stat", "")),
 		"desc": "",
 		"proximo": "",  # linha abaixo da descrição: o que o golpe ganha no próximo nível (ou o bônus da raridade)
-		"nivel_txt": "",  # rodapé: "Nível 2/5" ou "Novo golpe"
+		"tipo": "up" if n > 0 else "nov",  # o selo do cartão: UPGRADE (já tenho) ou NOVO
+		"nivel_txt": "",  # rodapé: "Nível 2 » 3 de 5" (upgrade), "Novo golpe" ou "Novo bônus"
 		"evolui": ""  # rodapé: "Evolui: ..." quando esta peça fecha uma evolução
 	}
 	var bonus_pct := roundi(float(ra.bonus_arma) * 100.0)
@@ -360,7 +422,7 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 			if ra.bonus_arma > 0.0:
 				c.proximo = "+%d%% de dano pela raridade" % bonus_pct
 		else:
-			c.nivel_txt = "Nível %d/%d" % [ni, int(d.max)]
+			c.nivel_txt = "Nível %d » %d de %d" % [n, ni, int(d.max)]
 			var partes: Array = []
 			for k in range(n, ni):
 				partes.append(str(d.niveis[k - 1].texto))
@@ -370,7 +432,7 @@ func montar_carta(d: Dictionary, r: int) -> Dictionary:
 	else:
 		c.valor = float(d.valor) * float(ra.mult)
 		c.desc = str(d.desc).replace("{v}", str(roundi(float(c.valor))))
-		c.nivel_txt = "Nível %d/%d" % [n + 1, int(d.max)]
+		c.nivel_txt = "Nível %d » %d de %d" % [n, n + 1, int(d.max)] if n > 0 else "Novo bônus"
 	var sin := _sinergia_texto(id)
 	if sin != "" and cat != "stat":
 		c.evolui = sin

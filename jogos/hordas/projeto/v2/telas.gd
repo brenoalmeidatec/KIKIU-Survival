@@ -323,6 +323,7 @@ func _montar_cartao(p: Panel, tecla: String) -> void:
 	var larg := CARTA_L - 2.0 * MARGEM
 	_campo(p, "tecla", TAM_TEXTO, false, Paleta.TEXTO_APAGADO, HORIZONTAL_ALIGNMENT_LEFT, MARGEM, 8, larg, 20).text = tecla
 	_campo(p, "rar", TAM_TEXTO, false, Paleta.BRANCO, HORIZONTAL_ALIGNMENT_RIGHT, MARGEM, 8, larg, 20)
+	_campo(p, "selo", TAM_TEXTO, false, Paleta.BONUS, HORIZONTAL_ALIGNMENT_CENTER, MARGEM, 8, larg, 20)  # UPGRADE ou NOVO, no meio da linha da tecla e da raridade
 	var faixa := ColorRect.new()
 	faixa.name = "faixa"
 	faixa.position = Vector2(MARGEM, 32)
@@ -368,6 +369,10 @@ func _preencher(p: Panel, c: Dictionary) -> void:
 	(p.get_node("desc") as Label).text = str(c.desc)
 	(p.get_node("proximo") as Label).text = str(c.get("proximo", ""))
 	(p.get_node("nivel") as Label).text = str(c.get("nivel_txt", ""))
+	var selo := p.get_node("selo") as Label  # texto em código até a arte A04 (selos de 48x16) chegar
+	var tipo := str(c.get("tipo", ""))
+	selo.text = "UPGRADE" if tipo == "up" else ("NOVO" if tipo == "nov" else "")
+	selo.add_theme_color_override("font_color", Paleta.BONUS if tipo == "up" else Paleta.OURO)
 	var evo := p.get_node("evolui") as Label
 	evo.text = str(c.get("evolui", ""))
 	var lendaria := bool(c.get("lendaria", false))  # a peça que fecha uma lendária ganha o magenta da fusão
@@ -669,7 +674,7 @@ func mostrar_bau(cartas: Array) -> void:
 func _limpar_slot(i: int) -> void:
 	var p := _bau_slots[i]
 	(p.get_node("nome") as Label).text = "?"
-	for campo in ["rar", "desc", "proximo", "nivel", "evolui"]:
+	for campo in ["rar", "selo", "desc", "proximo", "nivel", "evolui"]:
 		(p.get_node(campo) as Label).text = ""
 	(p.get_node("icone") as TextureRect).texture = null
 	(p.get_node("moldura") as Panel).add_theme_stylebox_override("panel", _moldura(Paleta.BORDA))

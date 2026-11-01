@@ -170,3 +170,4 @@ v2_golem_vidro 5
 v2_homunculo_torre 11
 v2_escudo_barra 17
 v2_herois_novos 52.0
+v2_cartas_mao 15
