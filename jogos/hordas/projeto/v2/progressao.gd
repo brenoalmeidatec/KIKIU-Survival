@@ -2,7 +2,8 @@ extends RefCounted
 ## Progressão do santuário: o que fica trancado no começo (portais dos mapas e estruturas) e o que abre cada um. As regras ficam em
 ## dados/v2_progressao.json: para cada mapa e cada estrutura, uma lista de condições ALTERNATIVAS (basta cumprir uma); lista vazia =
 ## aberto desde o começo. Condições: {"conquista": id} (de dados/v2_meta.json, por exemplo vence_floresta), {"partidas": N} (partidas
-## terminadas, contadas em Meta.registrar_partida) e {"conquistas": N} (quantas conquistas cumpridas, qualquer uma).
+## terminadas, contadas em Meta.registrar_partida), {"conquistas": N} (quantas conquistas cumpridas, qualquer uma) e {"almas": N}
+## (a chave do mapa, ECO-5: comprada uma vez por N almas; não abre pelo saldo, só pela compra gravada em [compras] mapa_<id>).
 ## Save antigo segue as mesmas travas e mantém o que conquistou (Meta._migrar): não existe mais "tudo aberto" por ser save velho.
 ## Mapa já vencido fica aberto mesmo que o anterior não conste no save (quem venceu um mapa já esteve nele).
 ## Lê o save a cada chamada, como o resto da meta-progressão. Sem class_name: carregue com preload.
@@ -105,7 +106,28 @@ static func aberto(tipo: String, id: String) -> bool:
 	for c in conds:
 		if _cumpre(c, cf):
 			return true
-	return false
+	return tipo == "mapa" and chave_comprada(id, cf)
+
+
+## O preço da chave do mapa em almas (a condição {"almas": N}); 0 = o mapa não se compra.
+static func preco_chave(id: String) -> int:
+	for c in condicoes("mapa", id):
+		if c.has("almas"):
+			return int(c.almas)
+	return 0
+
+
+## A chave do mapa já foi comprada por este personagem (`[compras] mapa_<id>` no save). Não cumpre conquista nenhuma.
+static func chave_comprada(id: String, cf: ConfigFile = null) -> bool:
+	if cf == null:
+		cf = Meta._ler()
+	return cf != null and bool(cf.get_value("compras", "mapa_" + id, false))
+
+
+## Compra a chave do mapa com as almas do personagem, uma vez só (quem grava o saldo e a compra é Meta.comprar_chave). True se comprou agora.
+static func comprar_chave(id: String) -> bool:
+	var preco := preco_chave(id)
+	return preco > 0 and Meta.comprar_chave(id, preco)
 
 
 ## Texto curto de uma condição, para o rótulo com cadeado no chão do santuário.
@@ -118,6 +140,8 @@ static func _curto(cond: Dictionary) -> String:
 	if cond.has("conquistas"):
 		var n := int(cond.conquistas)
 		return "%d conquista%s" % [n, "" if n == 1 else "s"]
+	if cond.has("almas"):
+		return "%d almas" % int(cond.almas)
 	return "?"
 
 
@@ -131,6 +155,9 @@ static func _longo(cond: Dictionary, cf: ConfigFile) -> String:
 	if cond.has("conquistas"):
 		var n := int(cond.conquistas)
 		return "cumpra %d conquista%s (%d/%d)" % [n, "" if n == 1 else "s", mini(_cumpridas(cf), n), n]
+	if cond.has("almas"):
+		var tem := int(cf.get_value("moeda", "almas", 0)) if cf != null else 0
+		return "compre a chave por %d almas (tem %d)" % [int(cond.almas), tem]
 	return "?"
 
 

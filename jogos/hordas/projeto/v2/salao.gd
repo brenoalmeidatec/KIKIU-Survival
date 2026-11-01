@@ -35,6 +35,7 @@ const ANDAR_MAX := Vector2(920, 505)
 const VELOCIDADE := 208.0  # px/s andando (1,6x a da primeira sala: o santuário é passagem, não pede caminhada lenta)
 const PASSOS_POR_S := 13.0  # quadros da animação de andar por segundo (sobe com a velocidade, senão o pé desliza)
 const ALCANCE := 70.0  # px entre os pés do herói e a estrutura ou portal para ele responder
+const JANELA_COMPRA_MS := 4000  # ECO-5: o 2º E que compra a chave de um portal trancado vale até 4 s depois do 1º
 const ESCALA := 2.0
 const COR_OURO := Paleta.OURO
 const COR_TEXTO := Paleta.TEXTO
@@ -89,6 +90,8 @@ var _prompt_glifo: Control
 var _saldo_lbl: Label
 var _aviso_lbl: Label
 var _aviso_t := 0.0
+var _compra_id := ""  # ECO-5: o portal cuja chave foi oferecida; o próximo E dentro da janela compra
+var _compra_ate := 0  # ms (Time.get_ticks_msec) em que a oferta de compra vence
 var _nome_lbl: Label
 # painel de uma estrutura (ou do códice): fica por cima da sala até ESC fechar
 var _painel: Control
@@ -196,7 +199,17 @@ func _carregar_dados() -> void:
 	for i in Mapas.LISTA.size():
 		var m: Dictionary = Mapas.LISTA[i]
 		var x: float = lerp(180.0, 780.0, float(i) / maxf(1.0, Mapas.LISTA.size() - 1.0))
-		_alvos.append({"tipo": "portal", "id": str(m.id), "nome": str(m.nome), "acao": str(m.entrar), "pos": Vector2(x, CHAO_Y + 8.0), "trava": Mapas.curto(m)})
+		_alvos.append(
+			{
+				"tipo": "portal",
+				"id": str(m.id),
+				"nome": str(m.nome),
+				"acao": str(m.entrar),
+				"pos": Vector2(x, CHAO_Y + 8.0),
+				"trava": Mapas.curto(m),
+				"preco": Progressao.preco_chave(str(m.id))
+			}
+		)
 
 
 func _estrutura(id: String) -> Dictionary:
@@ -587,13 +600,46 @@ func usar_portal(id: String) -> bool:
 		return false
 	var fechado := Mapas.condicao(m)
 	if fechado != "":
-		_avisar(fechado)
+		if not _oferecer_chave(id):
+			_avisar(fechado)
 		return false
 	_destino = Vector2.INF
 	_alvo_destino = {}
 	_fechar_painel()
 	_mapa_pendente = id
 	_escolha_dificuldade.abrir(str(m.nome), id)
+	return true
+
+
+## ECO-5: portal trancado que se compra com almas ({"almas": N} em dados/v2_progressao.json). O 1º E pede a confirmação; o 2º, em até
+## 4 s, compra a chave (o saldo cai o preço e o portal abre; o próximo E já escolhe a dificuldade). Sem almas, diz quanto falta.
+## True se tratou o portal (pediu, recusou por falta de almas ou comprou); False deixa o aviso da trava como está.
+func _oferecer_chave(id: String) -> bool:
+	var preco := Progressao.preco_chave(id)
+	if preco <= 0:
+		return false
+	var chave := str(Mapas.buscar(id).chave)
+	var saldo := Meta.saldo()
+	if saldo < preco:
+		_compra_id = ""
+		_avisar("Trancado: faltam %d almas para a %s (você tem %d)." % [preco - saldo, chave, saldo])
+		return true
+	if _compra_id != id or Time.get_ticks_msec() > _compra_ate:
+		_compra_id = id
+		_compra_ate = Time.get_ticks_msec() + JANELA_COMPRA_MS
+		_avisar("Trancado: comprar a %s por %d almas? Confirme de novo em 4 s." % [chave, preco])
+		return true
+	_compra_id = ""
+	if not Progressao.comprar_chave(id):
+		_avisar("Não foi possível gravar a compra.")
+		return true
+	for a in _alvos:
+		if a.tipo == "portal" and str(a.id) == id:
+			a.trava = Mapas.curto(Mapas.buscar(id))  # agora vazia: o prompt do portal deixa de dizer Trancado
+	_prompt_de = ""
+	_cenario.queue_redraw()  # o desenho do portal lê o cadeado ao vivo (Mapas.condicao)
+	_atualizar_textos()
+	_avisar("A %s foi comprada. Saldo: %d almas." % [chave, Meta.saldo()])
 	return true
 
 
