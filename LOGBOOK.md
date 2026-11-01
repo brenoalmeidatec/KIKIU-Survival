@@ -2823,3 +2823,4 @@ _Claude do Alisson (notebook)_
 - Pendente: o Alisson conferir no notebook (F11 ida e volta).
 
 **Subtítulo do título (01/11, Claude do Alisson, notebook):** a tela de título mostra o acrônimo por extenso, "Knights In Kaos, Infinite Upgrades", em dourado na Jersey 10 (19 px), logo abaixo da linha dourada do logo (`v2/menu_principal.gd`, `SUBTITULO`; o #134 dizia que o acrônimo vira subtítulo). Foto real em janela 960x540 vista. v2_fontes e v2_codigo_secreto com falhas=0. Esperando o Alisson aprovar o visual.
+- Ajuste no mesmo dia, pedido do Alisson: o subtítulo subiu para ENTRE o logo e a linha dourada e cresceu para 37 px (`TITULO_MEDIO`); a linha desceu de 196 para 206. Foto real em 960x540 vista.

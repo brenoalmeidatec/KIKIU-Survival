@@ -31,10 +31,10 @@ const BOTAO_LARG := 260.0
 const BOTAO_ALT := 44.0
 const BOTAO_Y0 := 300.0
 const BOTAO_PASSO := 52.0
-const ORNAMENTO_Y := 196.0  # a linha dourada entre o logo e os botões
-const SUBTITULO := "Knights In Kaos, Infinite Upgrades"  # o acrônimo por extenso, logo abaixo da linha dourada (#134: o acrônimo vira subtítulo)
-const SUBTITULO_Y := 212.0
-const TAM_SUBTITULO := Paleta.TITULO_PEQUENO
+const ORNAMENTO_Y := 206.0  # a linha dourada entre o logo e os botões
+const SUBTITULO := "Knights In Kaos, Infinite Upgrades"  # o acrônimo por extenso, entre o logo e a linha dourada (#134: o acrônimo vira subtítulo)
+const SUBTITULO_Y := 150.0
+const TAM_SUBTITULO := Paleta.TITULO_MEDIO
 const LOGO_ESCALA := 1.4  # o logo é desenhado na fonte do título (TAM_LOGO) e ampliado: marca de jogo, não só um texto
 const INTRO_T := 1.4  # s da entrada: a tela sai do preto, o logo desce e os botões sobem um a um
 const Glifos := preload("res://v2/glifos.gd")
@@ -115,7 +115,7 @@ func _montar() -> void:
 	ornamento.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ornamento.draw.connect(_desenhar_ornamento.bind(ornamento))
 	add_child(ornamento)
-	_subtitulo = _texto(SUBTITULO, TAM_SUBTITULO, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, SUBTITULO_Y, LARG, 28))
+	_subtitulo = _texto(SUBTITULO, TAM_SUBTITULO, true, COR_OURO, HORIZONTAL_ALIGNMENT_CENTER, Rect2(0, SUBTITULO_Y, LARG, 48))
 	add_child(_subtitulo)
 	var textos := ["JOGAR", "AJUSTES", "CRÉDITOS", "SAIR"]
 	var acoes := [_jogar, _abrir_ajustes, _abrir_creditos, _sair]
