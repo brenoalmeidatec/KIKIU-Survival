@@ -12,6 +12,7 @@ extends RefCounted
 const Efeitos := preload("res://v2/efeitos.gd")
 const Anim := preload("res://v2/anim_golpes.gd")  # a chave dos golpes suaves (tremor mínimo e soco de zoom no acerto da katana)
 const FxFolha := preload("res://v2/fx_folha.gd")  # folhas do pixelfx (docs/PIXELFX.md)
+const FxStatus := preload("res://v2/fx_status.gd")  # chama, relógio e estrelas sobre quem queima, está lento ou atordoado
 const Orbes := preload("res://v2/orbes.gd")
 const Progresso := preload("res://v2/progresso.gd")
 const Meta := preload("res://v2/meta.gd")
@@ -49,6 +50,7 @@ var mundo
 var cfg: Dictionary = {}
 var fx
 var fx_folha  # folhas do pixelfx em pool fixo (v2/fx_folha.gd): os módulos de status e coleta tocam por aqui
+var fx_status  # os status visíveis (v2/fx_status.gd): acha quem queima, está lento ou atordoado e prende o efeito do fx_folha
 var orbes
 var audio
 var progresso
@@ -150,6 +152,8 @@ func montar(m) -> void:
 	fx.montar(m, m.glow, m.sv, m.atm.tex_brilho)
 	fx_folha = FxFolha.new()
 	fx_folha.montar(m.glow)
+	fx_status = FxStatus.new()
+	fx_status.montar(self, m.glow)
 	orbes = Orbes.new()
 	orbes.montar(self, m.glow, m.atm.tex_brilho)
 	orbes.ima_vel = float(cfg.xp.ima_vel)
@@ -436,6 +440,7 @@ func _contato(h) -> void:
 ## Efeitos visuais no relógio de parede (continuam andando no hit-stop).
 func efeitos(dt: float) -> void:
 	fx.atualizar(dt)
+	fx_status.atualizar(dt)
 	fx_folha.atualizar(dt)
 	ruptura.efeitos(dt)
 	escudo.efeitos(dt)
@@ -1029,6 +1034,7 @@ func limpar_partida() -> void:
 	elites.zerar()
 	chefes.zerar()
 	fx.limpar()
+	fx_status.limpar()
 	fx_folha.limpar()
 	parada_t = 0.0
 	lento_t = 0.0
@@ -1065,7 +1071,25 @@ func liberar() -> void:
 	if chefes != null:
 		chefes.liberar()  # o visual do chefe aponta de volta para ele e tem nós órfãos
 	for m in [
-		ritmo, orbes, progresso, diretor, telas, fx, fx_folha, cartas, armas, adagas, avisos, ruptura, escudo, especial, habilidade, elites, baus, chefes
+		ritmo,
+		orbes,
+		progresso,
+		diretor,
+		telas,
+		fx,
+		fx_folha,
+		fx_status,
+		cartas,
+		armas,
+		adagas,
+		avisos,
+		ruptura,
+		escudo,
+		especial,
+		habilidade,
+		elites,
+		baus,
+		chefes
 	]:
 		if m == null:
 			continue
@@ -1078,6 +1102,7 @@ func liberar() -> void:
 	telas = null
 	fx = null
 	fx_folha = null
+	fx_status = null
 	cartas = null
 	armas = null
 	adagas = null
