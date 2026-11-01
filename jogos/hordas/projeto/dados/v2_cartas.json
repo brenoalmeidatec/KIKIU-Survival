@@ -517,6 +517,20 @@
 		"hit_stop": 0.1,
 		"camera_lenta": 0.9,
 		"escala_lenta": 0.3,
+		"tela": {
+			"_ajuda": "CAR-6a: uma varredura genérica por execução da fila de ÁPICES. duracao (s reais) vale para o anel e o envelope suave da luz; espessura_anel e espessura_borda (px do mundo) desenham a cor do bônus com contorno dourado; o raio final é a diagonal da câmera mais margem (px do mundo). alfa_anel, alfa_vinheta e alfa_clarao são intensidades de 0 a 1; vinheta_largura (px de UI), vinheta_faixas e mistura_dourado (0 a 1) definem a borda de tela sem shader; segmentos_anel é a resolução geométrica dos círculos. A luz respeita Tremor e clarões, Reduzir piscadas e o perfil Baixo: nestes casos fica só o anel. Os nós são preparados uma vez e escondidos ao terminar.",
+			"duracao": 0.6,
+			"espessura_anel": 12.0,
+			"espessura_borda": 3.0,
+			"alfa_anel": 0.95,
+			"alfa_vinheta": 0.18,
+			"alfa_clarao": 0.075,
+			"margem": 64.0,
+			"vinheta_largura": 72.0,
+			"vinheta_faixas": 8,
+			"mistura_dourado": 0.5,
+			"segmentos_anel": 96
+		},
 		"passada": {"max": 350, "margem": 0.0, "vida_pct": 0.5, "elite_pct": 0.1}
 	},
 	"anuncios": {
