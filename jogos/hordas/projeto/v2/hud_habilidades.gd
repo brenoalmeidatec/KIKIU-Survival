@@ -20,6 +20,7 @@ const PASTA_ICONE_S := "res://assets/v2/secundario_s/"  # <chave do herói>.png:
 const ICONES_E := {
 	"nicao": preload("res://assets/v2/habilidade_e/nicao.png"),
 	"lucas": preload("res://assets/v2/habilidade_e/lucas.png"),
+	"lightwolf": preload("res://assets/v2/habilidade_e/lightwolf.png"),
 }
 const BORDA := Paleta.HABILIDADE_BORDA
 const DESATIVADO := Paleta.HABILIDADE_DESATIVADA
