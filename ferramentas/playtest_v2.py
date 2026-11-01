@@ -202,9 +202,12 @@ def ids_dificuldade():
         return []
 
 
-def conferir_ids(pedidos, validos, nome):
+def conferir_ids(pedidos, validos, nome, exigir=False):
+    """`exigir`: sem a lista de válidos (arquivo de dados ilegível) o lote não roda, em vez de aceitar qualquer id."""
     if not pedidos:
         raise ErroUso(f"nenhum {nome} na lista")
+    if exigir and not validos:
+        raise ErroUso(f"não consegui ler a lista de {nome} válidos (dados/v2_*.json); sem ela não dá para conferir '{', '.join(pedidos)}'")
     if validos:
         ruins = [x for x in pedidos if x not in validos]
         if ruins:
@@ -372,6 +375,18 @@ def classificar(r, estourou, timeout):
         r["motivo"] = r["motivo"] or f"saiu sem PLAYTEST_JSON, código {descrever_codigo(r['codigo'])} (crash?)"
 
 
+def conferir_dificuldade(r):
+    """ECO-8: o relatório rotula pela dificuldade PEDIDA (--dificuldades); o jogo grava a que usou no PLAYTEST_JSON. Se as duas diferem, a
+    partida é de outra dificuldade e não pode entrar na matriz com o rótulo errado: vira problema (sem_json) com o motivo."""
+    j = r.get("json")
+    if not isinstance(j, dict) or not r.get("dificuldade"):
+        return
+    usada = str(j.get("dificuldade") or "")
+    if usada != r["dificuldade"]:
+        r["desfecho"] = "sem_json"
+        r["motivo"] = (r.get("motivo") or "") + f"dificuldade pedida '{r['dificuldade']}', mas o jogo gravou '{usada or '(nenhuma)'}' no PLAYTEST_JSON"
+
+
 def nome_partida(p):
     """Nome dos arquivos da partida; com dificuldade, entra no nome para a matriz não sobrescrever os logs."""
     base = f"{p['heroi']}_{p['mapa']}_s{p['semente']}"
@@ -427,6 +442,8 @@ def rodar_partida(cfg, p):
     classificar(r, estourou, cfg["timeout"])
     if not r["dificuldade"]:  # sem --dificuldades, a dificuldade é a que o jogo usou (vem no PLAYTEST_JSON)
         r["dificuldade"] = str((r["json"] or {}).get("dificuldade") or "—")
+    else:
+        conferir_dificuldade(r)
     if _PARAR.is_set() and r["desfecho"] in PROBLEMAS:
         r["motivo"] += " (lote interrompido)"
     return r
@@ -698,6 +715,31 @@ def levou(c):
     return float(cai) - float(c.get("aparece", 0.0))
 
 
+def maior_repeticao(cartas):
+    """Maior sequência de escolhas IGUAIS e seguidas em `cartas` (a lista de ids que o robô escolheu). Uma escolha concluída entra uma vez; o
+    robô preso numa carta TROCA (bug do ECO-8) repetia a mesma a cada quadro: 533 vezes seguidas no Difícil."""
+    melhor = atual = 0
+    ant = None
+    for c in cartas if isinstance(cartas, list) else []:
+        atual = atual + 1 if c == ant else 1
+        ant = c
+        melhor = max(melhor, atual)
+    return melhor
+
+
+REPETICAO_INVALIDA = 50  # escolhas iguais e seguidas a partir daqui: o robô não concluiu a escolha e a partida não vale como medição
+
+
+def partidas_invalidas(res):
+    """Partidas cujo JSON mostra o robô repetindo a mesma escolha (ver maior_repeticao): [(r, repetições)]."""
+    out = []
+    for r in res:
+        n = maior_repeticao((r.get("json") or {}).get("cartas"))
+        if n >= REPETICAO_INVALIDA:
+            out.append((r, n))
+    return out
+
+
 def matriz_mapa_dif(res):
     grupos = {}
     for r in res:
@@ -738,10 +780,10 @@ def tabela_chefes(res):
 
 
 def _desvio(medido, esperado, tol):
-    """Desvio relativo; para faixa (lista [lo, hi]) é 0 dentro da faixa e a distância relativa até ela fora."""
+    """Desvio relativo COM SINAL; para faixa (lista [lo, hi]) é 0 dentro dela, negativo abaixo (relativo a lo) e positivo acima (relativo a hi)."""
     if isinstance(esperado, list):
         lo, hi = float(esperado[0]), float(esperado[1])
-        d = (lo - medido) / lo if medido < lo else ((medido - hi) / hi if medido > hi else 0.0)
+        d = (medido - lo) / lo if medido < lo else ((medido - hi) / hi if medido > hi else 0.0)
     else:
         d = (medido - float(esperado)) / float(esperado)
     return d, abs(d) > tol
@@ -754,7 +796,13 @@ def desvios_tabela(cfg, res):
     except (OSError, ValueError) as e:
         return [f"Sem tabela para comparar (`{cfg['tabela']}`: {e})."]
     tol = float(t.get("tolerancia", 0.2))
-    out = ["Tolerância: " + f"{tol:.0%}" + " (o que passar disso é DESVIA: ajustar o dado do mapa ou da dificuldade).", ""]
+    out = []
+    for r, n in partidas_invalidas(res):
+        out.append(f"- **MEDIÇÃO INVÁLIDA:** {r['heroi']} {r['mapa']} {dif_de(r)} semente {r['semente']} repetiu a mesma escolha de carta {n} vezes seguidas "
+                   f"(o robô não concluiu a escolha); não use esta partida para desvio, chefão ou gatilho do plano B.")
+    if out:
+        out.append("")
+    out += ["Tolerância: " + f"{tol:.0%}" + " (o que passar disso é DESVIA: ajustar o dado do mapa ou da dificuldade).", ""]
     linhas = []
     for mapa, dif in dict.fromkeys((r["mapa"], dif_de(r)) for r in res):
         rs = [r for r in res if r["mapa"] == mapa and dif_de(r) == dif]
@@ -811,7 +859,7 @@ def preparar(a, extras):
     difs = [None]
     if a.dificuldades is not None:
         difs = lista(a.dificuldades)
-        conferir_ids(difs, ids_dificuldade(), "dificuldade")
+        conferir_ids(difs, ids_dificuldade(), "dificuldade", exigir=True)
         if any(x.startswith("--dificuldade") for x in extras):
             raise ErroUso("use --dificuldades OU --dificuldade nos extras (depois do `--`), não os dois")
     tabela = Path(a.tabela).resolve() if a.tabela else TABELA_PADRAO

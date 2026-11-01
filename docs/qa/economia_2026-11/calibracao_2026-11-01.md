@@ -1,61 +1,69 @@
 # Calibração com o robô (ECO-8), 01/11/2026
 
-Matriz 1 herói x 4 mapas x 1 semente x 3 dificuldades, rodada pela fila do Godot (`notas/godot_fila.ps1`), uma partida por vez, `--fixed-fps 60`, teto de 900 s de jogo por partida. Herói: Hazaki. Semente: 1. Tempo real do lote: 30 min (07:17 às 07:47). Relatórios e JSON brutos ficam fora do repo, em `notas/o6_logs/eco-8/` (`facil/`, `medio/`, `dificil/`).
+Duas rodadas no mesmo dia. **A primeira (07:17 às 07:47) é inválida para o Difícil** e a segunda (08:22 às 08:45) é a que vale. Relatórios e JSON brutos ficam fora do repo: `notas/o6_logs/eco-8/` (rodada 1) e `notas/o6_logs/eco-8f/lote/` (rodada 2).
 
-**Nenhum dado foi alterado neste PR.** Os desvios abaixo são para decidir depois.
+Só um herói (Hazaki) e uma semente (1). O comando do plano é 3 heróis x 4 mapas x sementes 1-3 por dificuldade (108 partidas); aqui foram 12. **O que sai daqui é indício, não calibração.**
 
-## Resultado das 12 partidas
+## Por que a rodada 1 do Difícil é inválida
+
+O robô (`v2/roteiro.gd`, `_pt_escolher_carta`) escolhia a carta de maior raridade, e no Difícil cheio (limite de 12 bônus) a carta mais rara era a TROCA. `progresso.escolher` numa TROCA só abre o painel de troca, então o robô repetia o pedido a cada quadro até o limite de 8,9 s da tela de cartas e nunca largava um bônus. No JSON bruto da rodada 1 isso aparece como blocos de exatamente 533 quadros com a mesma carta: **11 no Laboratório, 21 na Cidade e 37 na Ruínas** (Floresta Difícil, Fácil e Médio: zero). O build do robô no Difícil não era o de um jogador, e as vitórias, os chefões e a derrota do Laboratório Difícil da rodada 1 **não valem**: nem para desvio da tabela, nem para o gatilho do plano B (ECO-7).
+
+Conserto (este PR): o robô prefere a carta mais rara que **não** é troca; só com mão toda de troca ele larga o bônus mais recente (`progresso.trocar`). Teste novo `v2_roteiro_robo` (falha 7 vezes com o código antigo, passa com o novo). O relatório agora marca "MEDIÇÃO INVÁLIDA" quando o JSON mostra 50 ou mais escolhas iguais e seguidas.
+
+Erros de fato da rodada 1 que ficam corrigidos aqui (a versão anterior deste texto, o corpo do PR e o LOGBOOK diziam outra coisa):
+
+- **Ruínas Fácil não estourou o teto.** Foi derrota aos 3:35, com 23% do mapa, para o mini-chefe de nível 10 (nasceu aos 198 s). Na rodada 2 a mesma combinação (Hazaki, Ruínas, Fácil, semente 1) deu vitória aos 15:32. Mesma semente, resultados opostos: **a semente 1 não repete a partida de uma rodada para outra**, e uma partida só não diz nada sobre o mapa.
+- Chefões do Difícil na rodada 1: 20 s (Cidade), 45 s (Ruínas) e 96 s (Floresta). Não eram "8 a 45 s", e "o Difícil derruba mais rápido" não vale (Floresta passa de 60 s). Cidade e Ruínas são das partidas contaminadas.
+
+## Rodada 2: resultado das 12 partidas (teto de 1200 s, uma por vez pela fila)
 
 | Mapa | Fácil | Médio | Difícil |
 |---|---|---|---|
-| Floresta | vitória 5:52 (nível 24) | derrota 3:54 (nível 24) | vitória 4:59 (nível 32) |
-| Laboratório | vitória 11:17 (nível 49) | vitória 8:09 (nível 44) | derrota 7:36 (nível 49) |
-| Cidade | teto 15:00, sem chefão final (nível 49) | vitória 12:31 (nível 56) | vitória 10:13 (nível 62) |
-| Ruínas (medio) | derrota 3:35 (nível 20) | teto 15:00, sem chefão final (nível 64) | vitória 14:27 (nível 73) |
+| Floresta | vitória 5:33 (nível 22) | vitória 5:02 (nível 27) | vitória 4:47 (nível 46) |
+| Laboratório | vitória 8:34 (nível 38) | vitória 10:49 (nível 47) | vitória 8:24 (nível 50) |
+| Cidade | vitória 13:11 (nível 48) | vitória 10:48 (nível 57) | vitória 12:03 (nível 64) |
+| Ruínas (`medio`) | vitória 15:32 (nível 59) | vitória 15:53 (nível 65) | **derrota 18:59** (nível 78, no chefão final) |
 
-Travas: 0. Partidas sem JSON: 0. SCRIPT ERROR (`erros_script`): 0.
+11 vitórias e 1 derrota. 0 travas, 0 sem JSON, 0 SCRIPT ERROR, nenhum bloco de escolha repetida (maior sequência igual: abaixo de 50 em todas). O robô fez 0 trocas: com a preferência por carta que não é troca, nunca sobrou mão só de troca.
 
-## Desvios da tabela (tolerância 20%)
+## Desvios da tabela (tolerância 20%), rodada 2
 
-Tempo de vitória, comparado com `tabela_esperada.json`:
+Tempo de vitória: só **Laboratório Médio** desvia (10,8 min contra 7,9, +37%). Os outros 10 ficam em -4% a +17%.
 
-- Floresta Fácil: 5,9 min contra 4,8 esperados, **+22%, DESVIA** (1 partida).
-- Laboratório Fácil: 11,3 min contra 7,9, **+43%, DESVIA** (1 partida).
-- Laboratório Médio: 8,1 contra 7,9, +3%, ok.
-- Cidade Médio: 12,5 contra 11,3, +11%, ok.
-- Floresta Difícil: 5,0 contra 4,8, +4%, ok.
-- Cidade Difícil: 10,2 contra 11,3, -10%, ok.
-- Ruínas Difícil: 14,4 contra 15,2, -5%, ok.
+Chefão do último nível (faixa de 35 a 60 s; o desvio agora sai com sinal):
 
-Sem vitória para comparar: Cidade Fácil e Ruínas Fácil e Médio (estouraram o teto de 15 min), Floresta Médio e Laboratório Difícil (derrota).
+| Mapa | Fácil | Médio | Difícil |
+|---|---|---|---|
+| Floresta | 108 s (+79%) | 87 s (+45%) | 84 s (+39%) |
+| Laboratório | 27 s (-22%) | 109 s (+81%) | 38 s (ok) |
+| Cidade | 58 s (ok) | 11 s (-68%) | 83 s (+38%) |
+| Ruínas | 31 s (-13%, ok) | 28 s (-21%) | não caiu (derrota) |
 
-Tempo do chefão do último nível (faixa esperada de 35 a 60 s; o relatório mostra a magnitude fora da faixa, sem sinal):
-
-- Floresta Fácil: 127 s, **fora, +111%** (acima de 60).
-- Laboratório Fácil: 140 s, **fora, +133%** (acima de 60).
-- Floresta Difícil: 96 s, **fora, +60%** (acima de 60).
-- Cidade Difícil: 20 s, **fora, 42%** (abaixo de 35).
-- Laboratório Médio: 31 s, dentro da tolerância (12% abaixo de 35).
-- Cidade Médio: 30 s, dentro da tolerância (13% abaixo de 35).
-- Ruínas Difícil: 45 s, dentro da faixa.
+Leitura honesta: **só a Floresta é consistente** (84 a 108 s nas três dificuldades, acima de 60 s). Nos outros mapas o mesmo chefão varia de 11 s a 109 s entre dificuldades (Laboratório: 27, 109, 38; Cidade: 58, 11, 83), e isso é ruído de uma partida só, não efeito da dificuldade. A vida máxima do chefe é a mesma nas três dificuldades.
 
 ## Gatilhos do plano B (ECO-7)
 
-- Médio: derrotas antes de 60% do mapa = 0 de 4 (0%). Limite 25%: **não aciona**.
-- Difícil: derrotas antes de 60% do mapa = 0 de 4 (0%). **Não aciona**.
-- Dano sofrido Médio sobre Fácil = 1,28. Limite 1,4: **não aciona**.
+- Médio: derrotas antes de 60% do mapa = 0 de 4. Difícil: 0 de 4. Limite 25%: **não acionam**.
+- Dano sofrido Médio sobre Fácil = 0,64 (limite 1,4): **não aciona**.
 
-Cada dificuldade tem só 4 partidas e uma semente, então estes números não bastam para decidir o plano B.
+Com 4 partidas por dificuldade, 1 herói e 1 semente, **não decide o plano B**. Também ainda não existe, no plano, a amostra que o gatilho exige: isso fica para o Alisson definir.
 
-## Achados
+## Nenhum dado foi ajustado (desvio do plano, a confirmar)
 
-1. **O teto de 900 s de jogo corta medições.** A tabela espera 15,2 min para Ruínas, e o teto é 15 min. Cidade Fácil também estourou o teto antes do chefão. Para a próxima rodada, usar `--max 1200`.
-2. **Chefões do Fácil demoram mais que o esperado, e os do Difícil, menos.** A vida máxima dos chefes é igual nas três dificuldades (4500, 1430, 1650 e 2200), então a diferença vem da produção de dano do robô na hora do chefe, e não do HP. Não há explicação medida ainda.
-3. **Guarda do save real acusou em Médio e Difícil (código de saída 4).** Arquivos `foto_ed_personagens.cfg`, `foto_ed_pp1.cfg` e `.bak` foram criados às 07:30 na raiz do save real (`%APPDATA%\kikiu`), e o `.recovery_mode_lock` foi apagado durante o Difícil. Nada no repo grava esses nomes. O robô grava em `user://playtest/`. Não dá para atribuir a mudança ao robô com os dados que temos; conferir antes da próxima rodada, com o jogo real fechado.
+O plano manda "ajustar o que desviar mais de 20%". Este PR **não ajustou nada**, de propósito: metade do que desvia é a Floresta (consistente, mas é um mapa e um herói) e o resto muda de sinal de uma dificuldade para outra com a mesma vida de chefe, e a própria rodada 1 mostrou que a mesma semente dá derrota num dia e vitória no outro. Ajustar dado de mapa ou de chefão em cima disso seria chute. Esta decisão está no LOGBOOK e precisa da confirmação do Alisson. A tabela `tabela_esperada.json` usa **o mesmo** tempo de vitória e a mesma faixa de chefão para as três dificuldades (o plano não dá um por dificuldade).
 
-## Próximos passos (sem mexer em dado agora)
+## Guarda do save real (código 4 na rodada 1)
 
-- Repetir Fácil e Difícil com sementes 2 e 3, e `--max 1200`, antes de qualquer ajuste de chefão.
-- Investigar por que o robô mata o chefão no Fácil mais devagar que no Difícil (build e dano na hora do chefe).
-- Conferir a guarda do save real com o jogo fechado.
-- Só então decidir sobre o plano B (ECO-7) e sobre a afinação do chefão (CAR-5 depende da medição de escolhas por mapa).
+Na rodada 1 a guarda acusou em Médio e Difícil: `foto_ed_personagens.cfg`, `foto_ed_pp1.cfg` e `.bak` criados às 07:30 e `.recovery_mode_lock` apagado. A guarda mede a raiz de `user://` (`%APPDATA%\kikiu`), e **o robô usa a mesma raiz do jogo real**: "o robô grava em `user://playtest/`" isola o save, mas não a raiz, que é compartilhada com todo Godot da máquina. O que se sabe:
+
+- Nenhum arquivo do repo (nem de outras worktrees em `jogos/`) grava `foto_ed_*`. Quem criou foi outro processo Godot da máquina às 07:30 (há vários agentes e capturas rodando; a raiz também tem `captura_piscadas_opcoes.cfg` e `zz_captura_def1_*.cfg` de outras sessões).
+- `.recovery_mode_lock` é arquivo de controle do **editor** do Godot, criado e apagado a cada `--import`/`--editor`. Ele existe de novo agora (08:08), sem robô nenhum rodando.
+- **Prova de que o robô não escreve na raiz:** a rodada 2 rodou com `APPDATA` apontando para uma pasta vazia só dela (`notas/o6_appdata/eco-8f`). Depois das 12 partidas a árvore tinha só `kikiu/playtest/` (vazia, os `meta_<pid>.cfg` foram apagados). Nenhum arquivo na raiz, nem `.recovery_mode_lock`. A guarda daquela rodada ficou "pulada" (a pasta não existia no começo), então a prova é a listagem da pasta, não a guarda.
+- Os arquivos de outras sessões **não foram apagados** (não são deste PR).
+
+Para as próximas rodadas, com agentes em paralelo: rodar com `APPDATA` isolado (`set APPDATA=<pasta só do lote>`) e criar a pasta `kikiu` antes, para a guarda ficar ligada e sem falso positivo.
+
+## Próximos passos
+
+- Rodar a matriz cheia numa invocação só: `--herois hazaki,nicao,lucas --sementes 1-3 --dificuldades facil,medio,dificil --max 1200` (108 partidas, cerca de 3 h a 2 min por partida), de preferência fora do horário de jogo do Breno e do Isac. Uma invocação só dá a matriz cruzada, os chefes e o gatilho de dano no mesmo relatório.
+- Só então decidir ajuste de chefão (CAR-5) e plano B (ECO-7). Floresta é o primeiro candidato.

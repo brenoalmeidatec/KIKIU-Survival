@@ -1111,6 +1111,7 @@ func _pt_iniciar() -> void:
 		"pico_vivos": 0,
 		"cartas": [],
 		"baus": 0,
+		"trocas": 0,
 		"elites": 0,
 		"chefes": [],
 		"chefes_tempo": [],  # ECO-8: quando cada chefe nasce e cai (segundos de jogo), para a tabela de chefes do relatório
@@ -1403,15 +1404,36 @@ func _pt_novo_ponto() -> void:
 	pt.ponto_t = 0.0
 
 
-## Maior raridade; no empate, a primeira.
-func _pt_escolher_carta() -> void:
-	var cs: Array = mundo.combate.progresso.cartas
-	var i := 0
+## O robô escolhe como um jogador: maior raridade entre as cartas que NÃO são troca; no empate, a primeira. Se só sobrou troca (vagas cheias), pega a mais
+## rara e larga o bônus mais recente (o que teve menos tempo de subir de nível). Devolve {"i": índice da carta, "saida": id do bônus largado, "" se a carta
+## não é troca}; `i` = -1 se a mão está vazia. (Antes o robô escolhia a mais rara mesmo sendo troca, e `escolher` só abre o painel de troca: ele repetia o
+## pedido a cada quadro até o limite de 8,9 s da tela e nunca concluía; no Difícil isso virava blocos de 533 quadros.)
+static func decidir_carta_robo(cs: Array, trocaveis: Array) -> Dictionary:
+	var i := -1
 	for k in cs.size():
-		if int(cs[k].get("rar", 0)) > int(cs[i].get("rar", 0)):
+		if str(cs[k].get("tipo", "")) != "troca" and (i < 0 or int(cs[k].get("rar", 0)) > int(cs[i].get("rar", 0))):
 			i = k
-	pt.cartas.append(str(cs[i].get("id", "?")))
-	mundo.combate.progresso.escolher(i)
+	if i >= 0:
+		return {"i": i, "saida": ""}
+	for k in cs.size():
+		if i < 0 or int(cs[k].get("rar", 0)) > int(cs[i].get("rar", 0)):
+			i = k
+	return {"i": i, "saida": str(trocaveis.back()) if i >= 0 and not trocaveis.is_empty() else ""}
+
+
+func _pt_escolher_carta() -> void:
+	var prog = mundo.combate.progresso
+	var d: Dictionary = decidir_carta_robo(prog.cartas, mundo.combate.cartas.bonus_trocaveis())
+	var i: int = d.i
+	if i < 0:
+		return
+	pt.cartas.append(str(prog.cartas[i].get("id", "?")))
+	if str(d.saida) != "":
+		pt.trocas += 1
+		if not prog.trocar(i, str(d.saida)):  # não largou: sem esta trava o robô repetiria o pedido a cada quadro
+			_pt_trava("troca_recusada")
+		return
+	prog.escolher(i)
 
 
 func _pt_vigiar_relogio() -> void:
@@ -1459,6 +1481,7 @@ func _pt_fim(desfecho: String, trava := "") -> void:
 		"build": c.progresso.melhorias,
 		"evolucoes": pt.evolucoes,
 		"baus": pt.baus,
+		"trocas": pt.trocas,
 		"elites": pt.elites,
 		"chefes": pt.chefes,
 		"chefes_tempo": pt.chefes_tempo,
