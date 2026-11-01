@@ -152,6 +152,7 @@ func nascer(mk: Dictionary, onde: Variant = null):
 	_vida_enviada = -1.0
 	_t_vida = 0.0
 	combate.chefe_apareceu(m, mk)
+	combate.fx_folha.tocar("spawn-portal", m.pos, {"escala": 0.8 if bool(mk.mini) else 1.3, "cor": cor})  # o portal do pixelfx onde ele chega
 	if not bool(mk.mini):  # o chefão entra com mais peso: duas ondas a mais e a câmera treme
 		combate.fx.onda(m.pos, Color(cor.r, cor.g, cor.b, 0.8), 190.0, 1.0)
 		combate.fx.onda(m.pos, Color(1.0, 0.85, 0.4, 0.6), 260.0, 1.3)
@@ -394,6 +395,7 @@ func ao_morrer(m) -> void:
 	luz.enabled = false
 	visual.desligar()
 	derrotados += 1
+	combate.fx_folha.tocar("soul-rise", m.pos, {"escala": 1.3 if bool(mk.mini) else 2.0})  # a alma sobe (no chefão, na câmera lenta da vitória)
 	mundo.chefe_vida.emit(0.0)
 	if bool(mk.mini):
 		combate.baus.soltar(m.pos, 1.0, 3)

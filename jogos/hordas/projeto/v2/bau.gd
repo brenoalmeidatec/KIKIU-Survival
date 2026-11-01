@@ -11,13 +11,15 @@ const ACHATA := 0.62
 var combate
 var mundo
 var cfg: Dictionary = {}
-var lista: Array = []  # {raiz, corpo, brilho, luz, ativo, pos, t, bonus, forcar}
+var lista: Array = []  # {raiz, corpo, brilho, luz, ativo, pos, t, bonus, forcar, fx (alça do feixe do pixelfx)}
 var abertos := 0  # baús abertos na partida (testes)
 var soltos := 0  # baús que já caíram (testes)
 var ultimas: Array = []  # as cartas do último baú aberto
 var _tex: Texture2D
 var _tex_sombra: Texture2D
 var _prox := 0
+var _abertura := Vector2.ZERO  # onde o último baú abriu: o chest-open toca quando a escolha fecha e o mundo volta (a roleta cobre a tela)
+var _abertura_pendente := false
 
 
 func montar(c) -> void:
@@ -59,7 +61,9 @@ func montar(c) -> void:
 		luz.enabled = false
 		luz.shadow_enabled = false
 		mundo.sv.add_child(luz)
-		lista.append({"raiz": raiz, "corpo": corpo, "brilho": brilho, "luz": luz, "ativo": false, "pos": Vector2.ZERO, "t": 0.0, "bonus": 1.0, "forcar": 0})
+		lista.append(
+			{"raiz": raiz, "corpo": corpo, "brilho": brilho, "luz": luz, "ativo": false, "pos": Vector2.ZERO, "t": 0.0, "bonus": 1.0, "forcar": 0, "fx": 0}
+		)
 
 
 func _textura() -> Texture2D:
@@ -113,6 +117,9 @@ func limpar() -> void:
 		b.corpo.visible = false
 		b.brilho.visible = false
 		b.luz.enabled = false
+		combate.fx_folha.soltar(b.fx)
+		b.fx = 0
+	_abertura_pendente = false
 	abertos = 0
 	soltos = 0
 	ultimas = []
@@ -148,6 +155,8 @@ func soltar(p: Vector2, bonus := 1.0, forcar_n := 0) -> void:
 	b.brilho.visible = true
 	b.luz.enabled = true
 	b.luz.position = (q + Vector2(0, -8)).round()
+	combate.fx_folha.soltar(b.fx)  # um baú reaproveitado ainda aceso não deixa o feixe antigo para trás
+	b.fx = combate.fx_folha.prender("loot-beam", b.raiz)  # o feixe dourado do pixelfx enquanto ele espera ser aberto (0 no perfil Baixo)
 	soltos += 1
 	combate.fx.onda(q, Color(1.0, 0.85, 0.4, 0.9), 34.0, 0.4)
 	combate.fx.faiscas(q + Vector2(0, -10), Vector2(0, -1), 10, Color(1.0, 0.85, 0.4), 120.0)
@@ -156,6 +165,9 @@ func soltar(p: Vector2, bonus := 1.0, forcar_n := 0) -> void:
 
 func atualizar(dt: float) -> void:
 	var h = mundo.heroi
+	if _abertura_pendente and combate.jogo == "jogando":
+		_abertura_pendente = false
+		combate.fx_folha.tocar("chest-open", _abertura)  # a tampa abre e as moedas voam depois da roleta (a folha traz o próprio baú, no lugar do que sumiu)
 	for b in lista:
 		if not b.ativo:
 			continue
@@ -191,6 +203,10 @@ func abrir(b: Dictionary) -> void:
 	b.corpo.visible = false
 	b.brilho.visible = false
 	b.luz.enabled = false
+	combate.fx_folha.soltar(b.fx)
+	b.fx = 0
+	_abertura = b.pos
+	_abertura_pendente = true
 	abertos += 1
 	if bool(preload("res://v2/dificuldade.gd").da_partida(mundo).get("folego_cheio", false)):
 		mundo.heroi.encher_folego()
